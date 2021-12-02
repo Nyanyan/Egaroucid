@@ -1,20 +1,25 @@
-// Egaroucid5 board
-
 #pragma once
 #include <iostream>
 
 using namespace std;
 
 #define hw 8
+#define hw_m1 7
+#define hw_p1 9
 #define hw2 64
-#define n_board_idx 38
+#define hw22 128
+#define hw2_m1 63
+#define hw2_mhw 56
+#define hw2_p1 65
+#define b_idx_num 38
 #define n_line 6561
 #define black 0
 #define white 1
 #define vacant 2
 
-const int move_offset[n_board_idx] = {1, 1, 1, 1, 1, 1, 1, 1, 8, 8, 8, 8, 8, 8, 8, 8, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7};
-const int global_place[n_board_idx][hw] = {
+const int idx_n_cell[b_idx_num] = {8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 3, 4, 5, 6, 7, 8, 7, 6, 5, 4, 3, 3, 4, 5, 6, 7, 8, 7, 6, 5, 4, 3};
+const int move_offset[b_idx_num] = {1, 1, 1, 1, 1, 1, 1, 1, 8, 8, 8, 8, 8, 8, 8, 8, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7};
+const int global_place[b_idx_num][hw] = {
     {0, 1, 2, 3, 4, 5, 6, 7},{8, 9, 10, 11, 12, 13, 14, 15},{16, 17, 18, 19, 20, 21, 22, 23},{24, 25, 26, 27, 28, 29, 30, 31},{32, 33, 34, 35, 36, 37, 38, 39},{40, 41, 42, 43, 44, 45, 46, 47},{48, 49, 50, 51, 52, 53, 54, 55},{56, 57, 58, 59, 60, 61, 62, 63},
     {0, 8, 16, 24, 32, 40, 48, 56},{1, 9, 17, 25, 33, 41, 49, 57},{2, 10, 18, 26, 34, 42, 50, 58},{3, 11, 19, 27, 35, 43, 51, 59},{4, 12, 20, 28, 36, 44, 52, 60},{5, 13, 21, 29, 37, 45, 53, 61},{6, 14, 22, 30, 38, 46, 54, 62},{7, 15, 23, 31, 39, 47, 55, 63},
     {5, 14, 23, -1, -1, -1, -1, -1},{4, 13, 22, 31, -1, -1, -1, -1},{3, 12, 21, 30, 39, -1, -1, -1},{2, 11, 20, 29, 38, 47, -1, -1},{1, 10, 19, 28, 37, 46, 55, -1},{0, 9, 18, 27, 36, 45, 54, 63},{8, 17, 26, 35, 44, 53, 62, -1},{16, 25, 34, 43, 52, 61, -1, -1},{24, 33, 42, 51, 60, -1, -1, -1},{32, 41, 50, 59, -1, -1, -1, -1},{40, 49, 58, -1, -1, -1, -1, -1},
@@ -24,7 +29,7 @@ int move_arr[2][n_line][hw][2];
 bool legal_arr[2][n_line][hw];
 int flip_arr[2][n_line][hw];
 int put_arr[2][n_line][hw];
-int local_place[n_board_idx][hw2];
+int local_place[b_idx_num][hw2];
 int place_included[hw2][4];
 int reverse_board[n_line];
 int pow3[11];
@@ -123,7 +128,7 @@ void board_init() {
     }
     for (place = 0; place < hw2; ++place){
         inc_idx = 0;
-        for (idx = 0; idx < n_board_idx; ++idx){
+        for (idx = 0; idx < b_idx_num; ++idx){
             for (l_place = 0; l_place < hw; ++l_place){
                 if (global_place[idx][l_place] == place)
                     place_included[place][inc_idx++] = idx;
@@ -132,7 +137,7 @@ void board_init() {
         if (inc_idx == 3)
             place_included[place][inc_idx] = -1;
     }
-    for (idx = 0; idx < n_board_idx; ++idx){
+    for (idx = 0; idx < b_idx_num; ++idx){
         for (place = 0; place < hw2; ++place){
             local_place[idx][place] = -1;
             for (l_place = 0; l_place < hw; ++l_place){
@@ -146,48 +151,34 @@ void board_init() {
 
 class board {
     public:
-        int board_idx[n_board_idx];
-        int player;
+        int b[b_idx_num];
+        int p;
         int policy;
-        int value;
-        int n_stones;
+        int v;
+        int n;
 
     public:
         bool operator<(const board& another) const {
-            return value > another.value;
-        }
-
-        bool operator==(const board& another) const {
-            if (this->player != another.player)
-                return false;
-            for (int i = 0; i < hw; ++i) {
-                if (this->board_idx[i] != another.board_idx[i])
-                    return false;
-            }
-            return true;
-        }
-
-        bool operator!=(const board& another) const {
-            return !(this->operator==(another));
+            return v > another.v;
         }
 
         unsigned long long hash(){
             return
-                this->board_idx[0] + 
-                this->board_idx[1] * 17 + 
-                this->board_idx[2] * 289 + 
-                this->board_idx[3] * 4913 + 
-                this->board_idx[4] * 83521 + 
-                this->board_idx[5] * 1419857 + 
-                this->board_idx[6] * 24137549 + 
-                this->board_idx[7] * 410338673;
+                this->b[0] + 
+                this->b[1] * 17 + 
+                this->b[2] * 289 + 
+                this->b[3] * 4913 + 
+                this->b[4] * 83521 + 
+                this->b[5] * 1419857 + 
+                this->b[6] * 24137549 + 
+                this->b[7] * 410338673;
         }
 
         inline void print() {
             int i, j, tmp;
             string res;
             for (i = 0; i < hw; ++i) {
-                tmp = this->board_idx[i];
+                tmp = this->b[i];
                 res = "";
                 for (j = 0; j < hw; ++j) {
                     if (tmp % 3 == 0)
@@ -205,30 +196,30 @@ class board {
 
         inline bool legal(int g_place) {
             bool res = 
-                legal_arr[this->player][this->board_idx[place_included[g_place][0]]][local_place[place_included[g_place][0]][g_place]] || 
-                legal_arr[this->player][this->board_idx[place_included[g_place][1]]][local_place[place_included[g_place][1]][g_place]] || 
-                legal_arr[this->player][this->board_idx[place_included[g_place][2]]][local_place[place_included[g_place][2]][g_place]];
+                legal_arr[this->p][this->b[place_included[g_place][0]]][local_place[place_included[g_place][0]][g_place]] || 
+                legal_arr[this->p][this->b[place_included[g_place][1]]][local_place[place_included[g_place][1]][g_place]] || 
+                legal_arr[this->p][this->b[place_included[g_place][2]]][local_place[place_included[g_place][2]][g_place]];
             if (place_included[g_place][3] != -1)
-                res |= legal_arr[this->player][this->board_idx[place_included[g_place][3]]][local_place[place_included[g_place][3]][g_place]];
+                res |= legal_arr[this->p][this->b[place_included[g_place][3]]][local_place[place_included[g_place][3]][g_place]];
             return res;
         }
 
         inline board move(const int g_place) {
             board res;
-            for (int i = 0; i < n_board_idx; ++i)
-                res.board_idx[i] = this->board_idx[i];
+            for (int i = 0; i < b_idx_num; ++i)
+                res.b[i] = this->b[i];
             move_p(&res, g_place, 0);
             move_p(&res, g_place, 1);
             move_p(&res, g_place, 2);
             if (place_included[g_place][3] != -1)
                 move_p(&res, g_place, 3);
-            res.board_idx[place_included[g_place][0]] = put_arr[this->player][res.board_idx[place_included[g_place][0]]][local_place[place_included[g_place][0]][g_place]];
-            res.board_idx[place_included[g_place][1]] = put_arr[this->player][res.board_idx[place_included[g_place][1]]][local_place[place_included[g_place][1]][g_place]];
-            res.board_idx[place_included[g_place][2]] = put_arr[this->player][res.board_idx[place_included[g_place][2]]][local_place[place_included[g_place][2]][g_place]];
+            res.b[place_included[g_place][0]] = put_arr[this->p][res.b[place_included[g_place][0]]][local_place[place_included[g_place][0]][g_place]];
+            res.b[place_included[g_place][1]] = put_arr[this->p][res.b[place_included[g_place][1]]][local_place[place_included[g_place][1]][g_place]];
+            res.b[place_included[g_place][2]] = put_arr[this->p][res.b[place_included[g_place][2]]][local_place[place_included[g_place][2]][g_place]];
             if (place_included[g_place][3] != -1)
-                res.board_idx[place_included[g_place][3]] = put_arr[this->player][res.board_idx[place_included[g_place][3]]][local_place[place_included[g_place][3]][g_place]];
-            res.player = 1 - this->player;
-            res.n_stones = this->n_stones + 1;
+                res.b[place_included[g_place][3]] = put_arr[this->p][res.b[place_included[g_place][3]]][local_place[place_included[g_place][3]][g_place]];
+            res.p = 1 - this->p;
+            res.n = this->n + 1;
             res.policy = g_place;
             return res;
         }
@@ -237,45 +228,45 @@ class board {
             int i, j;
             for (i = 0; i < hw; ++i) {
                 for (j = 0; j < hw; ++j)
-                    res[i * hw + j] = pop_digit[this->board_idx[i]][j];
+                    res[i * hw + j] = pop_digit[this->b[i]][j];
             }
         }
 
         inline void translate_from_arr(const int arr[], int player) {
             int i, j;
-            for (i = 0; i < n_board_idx; ++i)
-                this->board_idx[i] = n_line - 1;
-            this->n_stones = hw2;
+            for (i = 0; i < b_idx_num; ++i)
+                this->b[i] = n_line - 1;
+            this->n = hw2;
             for (i = 0; i < hw2; ++i) {
                 for (j = 0; j < 4; ++j) {
                     if (place_included[i][j] == -1)
                         continue;
                     if (arr[i] == black)
-                        this->board_idx[place_included[i][j]] -= 2 * pow3[hw - 1 - local_place[place_included[i][j]][i]];
+                        this->b[place_included[i][j]] -= 2 * pow3[hw - 1 - local_place[place_included[i][j]][i]];
                     else if (arr[i] == white)
-                        this->board_idx[place_included[i][j]] -= pow3[hw - 1 - local_place[place_included[i][j]][i]];
+                        this->b[place_included[i][j]] -= pow3[hw - 1 - local_place[place_included[i][j]][i]];
                     else if (j == 0)
-                        --this->n_stones;
+                        --this->n;
                 }
             }
-            this->player = player;
+            this->p = player;
         }
 
     private:
         inline void flip(board *res, int g_place) {
-            res->board_idx[place_included[g_place][0]] = flip_arr[this->player][res->board_idx[place_included[g_place][0]]][local_place[place_included[g_place][0]][g_place]];
-            res->board_idx[place_included[g_place][1]] = flip_arr[this->player][res->board_idx[place_included[g_place][1]]][local_place[place_included[g_place][1]][g_place]];
-            res->board_idx[place_included[g_place][2]] = flip_arr[this->player][res->board_idx[place_included[g_place][2]]][local_place[place_included[g_place][2]][g_place]];
+            res->b[place_included[g_place][0]] = flip_arr[this->p][res->b[place_included[g_place][0]]][local_place[place_included[g_place][0]][g_place]];
+            res->b[place_included[g_place][1]] = flip_arr[this->p][res->b[place_included[g_place][1]]][local_place[place_included[g_place][1]][g_place]];
+            res->b[place_included[g_place][2]] = flip_arr[this->p][res->b[place_included[g_place][2]]][local_place[place_included[g_place][2]][g_place]];
             if (place_included[g_place][3] != -1)
-                res->board_idx[place_included[g_place][3]] = flip_arr[this->player][res->board_idx[place_included[g_place][3]]][local_place[place_included[g_place][3]][g_place]];
+                res->b[place_included[g_place][3]] = flip_arr[this->p][res->b[place_included[g_place][3]]][local_place[place_included[g_place][3]][g_place]];
         }
 
         inline void move_p(board *res, int g_place, int i) {
             int j, place;
             place = local_place[place_included[g_place][i]][g_place];
-            for (j = 1; j <= move_arr[this->player][this->board_idx[place_included[g_place][i]]][place][0]; ++j)
+            for (j = 1; j <= move_arr[this->p][this->b[place_included[g_place][i]]][place][0]; ++j)
                 flip(res, g_place - move_offset[place_included[g_place][i]] * j);
-            for (j = 1; j <= move_arr[this->player][this->board_idx[place_included[g_place][i]]][place][1]; ++j)
+            for (j = 1; j <= move_arr[this->p][this->b[place_included[g_place][i]]][place][1]; ++j)
                 flip(res, g_place + move_offset[place_included[g_place][i]] * j);
         }
 
