@@ -2,15 +2,17 @@
 #include "common.hpp"
 #include "board.hpp"
 #include "book.hpp"
+#include "evaluate.hpp"
 #include "search_common.hpp"
 #include "midsearch.hpp"
 #include "endsearch.hpp"
-#include "evaluate.hpp"
+#include "book.hpp"
 
 inline void init(){
     board_init();
     search_common_init();
     evaluate_init();
+    book_init();
 }
 
 inline int input_board(int board[]){
@@ -64,13 +66,32 @@ int main(){
     init();
     board b;
     search_result result;
-    int depth, end_depth;
+    const int first_moves[4] = {19, 26, 37, 44};
+    int depth, end_depth, policy;
     cin >> b.p;
-    cin >> depth;
-    cin >> end_depth;
+    //cin >> depth;
+    //cin >> end_depth;
+    depth = 16;
+    end_depth = 20;
     while (true){
         b.n = input_board(b.b);
         cerr << b.n << endl;
+        if (b.n == 4){
+            policy = first_moves[myrandrange(0, 4)];
+            print_result(policy, 0);
+            continue;
+        }
+        if (b.n < book_stones){
+            policy = book.get(&b);
+            cerr << "book policy " << policy << endl;
+            if (policy != -1){
+                b = b.move(policy);
+                ++b.n;
+                result = midsearch(b, tim(), 10);
+                print_result(policy, -result.value);
+                continue;
+            }
+        }
         if (b.n >= hw2 - end_depth)
             result = endsearch(b, tim());
         else

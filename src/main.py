@@ -10,7 +10,7 @@ rect_size = 60
 circle_offset = 3
 
 ai_player = int(input('AI moves (0: black 1: white): '))
-ai_exe = subprocess.Popen('./egaroucid4.out'.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+ai_exe = subprocess.Popen('./egaroucid5.out'.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 ai_exe.stdin.write((str(ai_player) + '\n').encode('utf-8'))
 ai_exe.stdin.flush()
 record = ''
@@ -22,7 +22,7 @@ legal_buttons = []
 
 app = tkinter.Tk()
 app.geometry('1000x700')
-app.title('Egaroucid4')
+app.title('Egaroucid5')
 canvas = tkinter.Canvas(app, width=1000, height = 700)
 pixel_virtual = tkinter.PhotoImage(width=1, height=1)
 
