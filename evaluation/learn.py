@@ -28,7 +28,7 @@ for stone_strt in reversed([0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55]):
     min_n_stones = 4 + stone_strt
     max_n_stones = 4 + stone_end
     test_ratio = 0.1
-    n_epochs = 10
+    n_epochs = 60
 
 
     line2_idx = [[8, 9, 10, 11, 12, 13, 14, 15], [1, 9, 17, 25, 33, 41, 49, 57], [6, 14, 22, 30, 38, 46, 54, 62], [48, 49, 50, 51, 52, 53, 54, 55]] # line2
@@ -204,8 +204,6 @@ for stone_strt in reversed([0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55]):
     y_add = Dense(8, name='add_dense1')(y_add)
     y_add = LeakyReLU(alpha=0.01)(y_add)
     y_all = Concatenate(axis=-1)([y_pattern, y_add])
-    #y_all = Dense(8, name='all_dense0')(y_all)
-    #y_all = LeakyReLU(alpha=0.01)(y_all)
     y_all = Dense(1, name='all_dense0')(y_all)
 
     model = Model(inputs=x, outputs=y_all)
@@ -226,20 +224,14 @@ for stone_strt in reversed([0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55]):
         collect_data('records1', i)
     len_data = len(all_labels)
     print(len_data)
-
-    tmp_data = deepcopy(all_data)
-    tmp_labels = deepcopy(all_labels)
-    all_data = [[] for _ in range(len(tmp_data))]
-    all_labels = []
-    shuffled = list(range(len_data))
-    shuffle(shuffled)
-    for i in shuffled:
-        all_labels.append(tmp_labels[i])
-        for j in range(len(tmp_data)):
-            all_data[j].append(tmp_data[j][i])
-
+    
     all_data = [np.array(arr) for arr in all_data]
     all_labels = np.array(all_labels)
+    print('converted to numpy arr')
+    
+    p = np.random.permutation(len_data)
+    all_data = [arr[p] for arr in all_data]
+    all_labels = all_labels[p]
 
     n_train_data = int(len_data * (1.0 - test_ratio))
     n_test_data = int(len_data * test_ratio)
@@ -250,11 +242,11 @@ for stone_strt in reversed([0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55]):
     test_labels = all_labels[n_train_data:len_data]
 
 
-    print(model.evaluate(test_data, test_labels))
-    early_stop = EarlyStopping(monitor='val_loss', patience=5)
+    #print(model.evaluate(test_data, test_labels))
+    early_stop = EarlyStopping(monitor='val_loss', patience=10)
     model_checkpoint = ModelCheckpoint(filepath=os.path.join('learned_data/' + str(stone_strt) + '_' + str(stone_end), 'model_{epoch:02d}_{val_loss:.5f}_{val_mae:.5f}.h5'), monitor='val_loss', verbose=1)
     reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=2, min_lr=0.0001)
-    history = model.fit(train_data, train_labels, epochs=n_epochs, validation_data=(test_data, test_labels), callbacks=[early_stop, model_checkpoint, reduce_lr])
+    history = model.fit(train_data, train_labels, epochs=n_epochs, batch_size=4096, validation_data=(test_data, test_labels), callbacks=[early_stop, model_checkpoint, reduce_lr])
 
     now = datetime.datetime.today()
     print(str(now.year) + digit(now.month, 2) + digit(now.day, 2) + '_' + digit(now.hour, 2) + digit(now.minute, 2))
