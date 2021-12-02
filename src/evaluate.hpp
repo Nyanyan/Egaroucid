@@ -16,6 +16,8 @@ using namespace std;
 #define max_canput 30
 #define max_surround 50
 #define max_evaluate_idx 59049
+#define sc_w 6400
+#define step 100
 #define p31 3
 #define p32 9
 #define p33 27

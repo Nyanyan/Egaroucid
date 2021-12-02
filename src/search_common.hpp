@@ -1,12 +1,11 @@
 #pragma once
 #include "common.hpp"
 #include "board.hpp"
+#include "evaluate.hpp"
 
 using namespace std;
 
 #define search_epsilon 1
-#define sc_w 6400
-#define step 100
 #define cache_hit 10000
 #define cache_both 1000
 #define mtd_threshold 400
@@ -48,12 +47,20 @@ int mpctsd[6][mpc_max_depth + 1];
 int mpctsd_final[mpc_max_depth_final + 1];
 
 int searched_nodes;
+vector<int> vacant_lst;
 
 struct search_node{
     bool reg;
     int k[hw];
     int l;
     int u;
+};
+
+struct search_result{
+    int policy;
+    int value;
+    int depth;
+    int nps;
 };
 
 class transpose_table{
@@ -78,8 +85,8 @@ class transpose_table{
         inline void reg(const int key[], int hash, int l, int u){
             ++this->hash_reg;
             this->table[this->now][hash].reg = true;
-            for (int i = 0; i < 4; ++i)
-                this->table[this->now][hash].k[i] = key[i * 2] + key[i * 2 + 1] * n_line;
+            for (int i = 0; i < hw; ++i)
+                this->table[this->now][hash].k[i] = key[i];
             this->table[this->now][hash].l = l;
             this->table[this->now][hash].u = u;
         }
@@ -124,6 +131,18 @@ int cmp_vacant(int p, int q){
     return cell_weight[p] > cell_weight[q];
 }
 
+inline void move_ordering(board *b){
+    int l, u;
+    transpose_table.get_prev(b->b, b->hash() & search_hash_mask, &l, &u);
+    b->v = -max(l, u);
+    if (u != -inf && l != -inf)
+        b->v += cache_both;
+    if (u != -inf || l != -inf)
+        b->v += cache_hit;
+    else
+        b->v = -mid_evaluate(b);
+}
+
 inline void search_common_init(){
     int i, j;
     for (i = 0; i < 6; ++i){
@@ -132,6 +151,10 @@ inline void search_common_init(){
     }
     for (i = 0; i < mpc_max_depth_final - mpc_min_depth_final + 1; ++i)
         mpctsd_final[mpc_min_depth_final + i] = (int)(mpct_final * mpcsd_final[i]);
+    transpose_table.now = 0;
+    transpose_table.prev = 1;
+    transpose_table.init_now();
+    transpose_table.init_prev();
     cerr << "search common initialized" << endl;
 }
 

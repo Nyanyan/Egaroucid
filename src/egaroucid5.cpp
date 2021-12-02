@@ -4,7 +4,7 @@
 #include "book.hpp"
 #include "search_common.hpp"
 #include "midsearch.hpp"
-//#include "endsearch.hpp"
+#include "endsearch.hpp"
 #include "evaluate.hpp"
 
 inline void init(){
@@ -13,7 +13,7 @@ inline void init(){
     evaluate_init();
 }
 
-inline int input_board(int (&board)[b_idx_num]){
+inline int input_board(int board[]){
     int i, j;
     unsigned long long b = 0, w = 0;
     char elem;
@@ -48,12 +48,34 @@ inline int input_board(int (&board)[b_idx_num]){
     return n_stones;
 }
 
+inline double calc_result_value(int v){
+    return (double)v * hw2 / sc_w;
+}
+
+inline void print_result(int policy, int value){
+    cout << policy / hw << " " << policy % hw << " " << calc_result_value(value) << endl;
+}
+
+inline void print_result(search_result result){
+    cout << result.policy / hw << " " << result.policy % hw << " " << calc_result_value(result.value) << endl;
+}
+
 int main(){
     init();
     board b;
+    search_result result;
+    int depth, end_depth;
+    cin >> b.p;
+    cin >> depth;
+    cin >> end_depth;
     while (true){
         b.n = input_board(b.b);
         cerr << b.n << endl;
+        if (b.n >= hw2 - end_depth)
+            result = endsearch(b, tim());
+        else
+            result = midsearch(b, tim(), depth);
+        print_result(result);
     }
     return 0;
 }
