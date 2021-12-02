@@ -1,3 +1,5 @@
 *.out
 */__pycache__
 */third_party
+*/data
+*/learned_data
