@@ -230,7 +230,7 @@ int nega_alpha_final(board *b, bool skipped, int depth, int alpha, int beta){
     return v;
 }
 
-int nega_alpha_ordering_final(board *b, const long long strt, bool skipped, int depth, int alpha, int beta){
+int nega_alpha_ordering_final(board *b, bool skipped, int depth, int alpha, int beta){
     ++searched_nodes;
     if (mpc_min_depth_final <= depth && depth <= mpc_max_depth_final){
         if (mpc_higher_final(b, skipped, depth, beta))
@@ -258,7 +258,7 @@ int nega_alpha_ordering_final(board *b, const long long strt, bool skipped, int 
             rb.b[i] = b->b[i];
         rb.p = 1 - b->p;
         rb.n = b->n;
-        return -nega_alpha_ordering_final(&rb, strt, true, depth, -beta, -alpha);
+        return -nega_alpha_ordering_final(&rb, true, depth, -beta, -alpha);
     }
     if (canput >= 2)
         sort(nb.begin(), nb.end());
@@ -279,7 +279,7 @@ int nega_alpha_ordering_final(board *b, const long long strt, bool skipped, int 
     }
     int g, v = -inf, first_alpha = alpha;
     for (board &nnb: nb){
-        g = -nega_alpha_ordering_final(&nnb, strt, false, depth - 1, -beta, -alpha);
+        g = -nega_alpha_ordering_final(&nnb, false, depth - 1, -beta, -alpha);
         alpha = max(alpha, g);
         if (beta <= alpha){
             if (l < g)
@@ -295,7 +295,7 @@ int nega_alpha_ordering_final(board *b, const long long strt, bool skipped, int 
     return v;
 }
 
-int nega_scout_final(board *b, const long long strt, bool skipped, int depth, int alpha, int beta){
+int nega_scout_final(board *b, bool skipped, int depth, int alpha, int beta){
     ++searched_nodes;
     if (depth <= 9)
         return nega_alpha_final(b, skipped, depth, alpha, beta);
@@ -317,7 +317,7 @@ int nega_scout_final(board *b, const long long strt, bool skipped, int depth, in
             rb.b[i] = b->b[i];
         rb.p = 1 - b->p;
         rb.n = b->n;
-        return -nega_scout_final(&rb, strt, true, depth, -beta, -alpha);
+        return -nega_scout_final(&rb, true, depth, -beta, -alpha);
     }
     if (canput >= 2)
         sort(nb.begin(), nb.end());
@@ -339,7 +339,7 @@ int nega_scout_final(board *b, const long long strt, bool skipped, int depth, in
     int g = alpha, v = -inf, first_alpha = alpha;
     for (board &nnb: nb){
         if (&nnb - &nb[0]){
-            g = -nega_alpha_ordering_final(&nnb, strt, false, depth - 1, -alpha - step, -alpha);
+            g = -nega_alpha_ordering_final(&nnb, false, depth - 1, -alpha - step, -alpha);
             if (beta <= g){
                 if (l < g)
                     transpose_table.reg(b->b, hash, g, u);
@@ -348,7 +348,7 @@ int nega_scout_final(board *b, const long long strt, bool skipped, int depth, in
             v = max(v, g);
         }
         if (alpha <= g){
-            g = -nega_scout_final(&nnb, strt, false, depth - 1, -beta, -g);
+            g = -nega_scout_final(&nnb, false, depth - 1, -beta, -g);
             if (beta <= g){
                 if (l < g)
                     transpose_table.reg(b->b, hash, g, u);
@@ -403,12 +403,12 @@ inline search_result endsearch(board b, long long strt){
     }
     if (canput >= 2)
         sort(nb.begin(), nb.end());
-    alpha = -nega_scout_final(&nb[0], strt, false, max_depth, -beta, -alpha);
+    alpha = -nega_scout_final(&nb[0], false, max_depth, -beta, -alpha);
     tmp_policy = nb[0].policy;
     for (i = 1; i < canput; ++i){
-        g = -nega_alpha_ordering_final(&nb[i], strt, false, max_depth, -alpha - step, -alpha);
+        g = -nega_alpha_ordering_final(&nb[i], false, max_depth, -alpha - step, -alpha);
         if (alpha < g){
-            g = -nega_scout_final(&nb[i], strt, false, max_depth, -beta, -g);
+            g = -nega_scout_final(&nb[i], false, max_depth, -beta, -g);
             if (alpha <= g){
                 alpha = g;
                 tmp_policy = nb[i].policy;
