@@ -1,5 +1,6 @@
 #pragma once
 #include <iostream>
+#include "setting.hpp"
 
 using namespace std;
 

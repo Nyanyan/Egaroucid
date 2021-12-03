@@ -1,5 +1,7 @@
 #pragma once
 #include <iostream>
+#include "setting.hpp"
+#include "common.hpp"
 #include "board.hpp"
 #include "evaluate.hpp"
 #include "search_common.hpp"
@@ -11,8 +13,10 @@ int nega_alpha_ordering_nompc(board *b, bool skipped, int depth, int alpha, int 
     if (depth <= 10)
         return nega_alpha(b, skipped, depth, alpha, beta);
     ++searched_nodes;
-    if (stability_cut(b, &alpha, &beta))
-        return alpha;
+    #if USE_END_SC
+        if (stability_cut(b, &alpha, &beta))
+            return alpha;
+    #endif
     vector<board> nb;
     int canput = 0;
     for (const int &cell: vacant_lst){
@@ -184,8 +188,10 @@ int nega_alpha_final(board *b, bool skipped, int depth, int alpha, int beta){
         return last3(b, skipped, alpha, beta, cells[0], cells[1], cells[2]);
     }
     ++searched_nodes;
-    if (stability_cut(b, &alpha, &beta))
-        return alpha;
+    #if USE_END_SC
+        if (stability_cut(b, &alpha, &beta))
+            return alpha;
+    #endif
     board nb;
     bool passed = true;
     int g, v = -inf;
@@ -223,14 +229,18 @@ int nega_alpha_ordering_final(board *b, bool skipped, int depth, int alpha, int 
     beta = min(beta, u);
     if (alpha >= beta)
         return alpha;
-    if (stability_cut(b, &alpha, &beta))
-        return alpha;
-    if (mpc_min_depth_final <= depth && depth <= mpc_max_depth_final){
-        if (mpc_higher_final(b, skipped, depth, beta))
-            return beta;
-        if (mpc_lower_final(b, skipped, depth, alpha))
+    #if USE_END_SC
+        if (stability_cut(b, &alpha, &beta))
             return alpha;
-    }
+    #endif
+    #if USE_END_MPC
+        if (mpc_min_depth_final <= depth && depth <= mpc_max_depth_final){
+            if (mpc_higher_final(b, skipped, depth, beta))
+                return beta;
+            if (mpc_lower_final(b, skipped, depth, alpha))
+                return alpha;
+        }
+    #endif
     vector<board> nb;
     int canput = 0;
     for (const int &cell: vacant_lst){
@@ -289,14 +299,18 @@ int nega_scout_final(board *b, bool skipped, int depth, int alpha, int beta){
     beta = min(beta, u);
     if (alpha >= beta)
         return alpha;
-    if (stability_cut(b, &alpha, &beta))
-        return alpha;
-    if (mpc_min_depth_final <= depth && depth <= mpc_max_depth_final){
-        if (mpc_higher_final(b, skipped, depth, beta))
-            return beta;
-        if (mpc_lower_final(b, skipped, depth, alpha))
+    #if USE_END_SC
+        if (stability_cut(b, &alpha, &beta))
             return alpha;
-    }
+    #endif
+    #if USE_END_MPC
+        if (mpc_min_depth_final <= depth && depth <= mpc_max_depth_final){
+            if (mpc_higher_final(b, skipped, depth, beta))
+                return beta;
+            if (mpc_lower_final(b, skipped, depth, alpha))
+                return alpha;
+        }
+    #endif
     vector<board> nb;
     int canput = 0;
     for (const int &cell: vacant_lst){

@@ -1,6 +1,8 @@
 #pragma once
 #include <chrono>
 #include <random>
+#include "setting.hpp"
+#include "board.hpp"
 
 using namespace std;
 
@@ -18,4 +20,8 @@ inline double myrandom(){
 
 inline int myrandrange(int s, int e){
     return s +(int)((e - s) * myrandom());
+}
+
+inline int calc_phase_idx(const board *b){
+    return (b->n - 4) / 5;
 }

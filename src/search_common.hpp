@@ -1,4 +1,5 @@
 #pragma once
+#include "setting.hpp"
 #include "common.hpp"
 #include "board.hpp"
 #include "evaluate.hpp"
@@ -188,17 +189,17 @@ inline int calc_stability(board *b, int p){
         calc_x_stability(b, p);
 }
 
-inline int narrow_stability_upper(board *b){
+inline int stability_opponent(board *b){
     return step * (hw2 - 2 * calc_stability(b, 1 - b->p));
 }
 
-inline int narrow_stability_lower(board *b){
+inline int stability_player(board *b){
     return step * (2 * calc_stability(b, b->p) - hw2);
 }
 
 inline bool stability_cut(board *b, int *alpha, int *beta){
-    *alpha = max(*alpha, narrow_stability_lower(b));
-    *beta = min(*beta, narrow_stability_upper(b));
+    *alpha = max(*alpha, stability_player(b));
+    *beta = min(*beta, stability_opponent(b));
     return *alpha >= *beta;
 }
 

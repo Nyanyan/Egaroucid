@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <fstream>
+#include "setting.hpp"
 #include "common.hpp"
 #include "board.hpp"
 
@@ -380,10 +381,6 @@ inline int calc_surround(const board *b, int p){
         surround_arr[p][sfill2(b->b[19])] + surround_arr[p][sfill2(b->b[23])] + surround_arr[p][sfill2(b->b[30])] + surround_arr[p][sfill2(b->b[34])] + 
         surround_arr[p][sfill1(b->b[20])] + surround_arr[p][sfill1(b->b[22])] + surround_arr[p][sfill1(b->b[31])] + surround_arr[p][sfill1(b->b[33])] + 
         surround_arr[p][b->b[21]] + surround_arr[p][b->b[32]];
-}
-
-inline int calc_phase_idx(const board *b){
-    return (b->n - 4) / 5;
 }
 
 inline double edge_2x(int phase_idx, const int b[], int x, int y){

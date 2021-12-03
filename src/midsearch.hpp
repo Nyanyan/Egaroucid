@@ -2,6 +2,7 @@
 #include <iostream>
 #include <algorithm>
 #include <vector>
+#include "setting.hpp"
 #include "common.hpp"
 #include "board.hpp"
 #include "evaluate.hpp"
@@ -10,13 +11,14 @@
 using namespace std;
 
 int nega_alpha(board *b, bool skipped, int depth, int alpha, int beta);
+int nega_alpha_ordering(board *b, bool skipped, int depth, int alpha, int beta);
 
 inline bool mpc_higher(board *b, bool skipped, int depth, int beta){
     //return false;
     int bound = beta + mpctsd[calc_phase_idx(b)][depth];
     if (bound > sc_w)
         return false;
-    return nega_alpha(b, skipped, mpcd[depth], bound - search_epsilon, bound) >= bound;
+    return nega_alpha_ordering(b, skipped, mpcd[depth], bound - search_epsilon, bound) >= bound;
 }
 
 inline bool mpc_lower(board *b, bool skipped, int depth, int alpha){
@@ -24,7 +26,7 @@ inline bool mpc_lower(board *b, bool skipped, int depth, int alpha){
     int bound = alpha - mpctsd[calc_phase_idx(b)][depth];
     if (bound < -sc_w)
         return false;
-    return nega_alpha(b, skipped, mpcd[depth], bound, bound + search_epsilon) <= bound;
+    return nega_alpha_ordering(b, skipped, mpcd[depth], bound, bound + search_epsilon) <= bound;
 }
 
 int nega_alpha(board *b, bool skipped, int depth, int alpha, int beta){
@@ -35,8 +37,10 @@ int nega_alpha(board *b, bool skipped, int depth, int alpha, int beta){
         else
             return end_evaluate(b);
     }
-    if (stability_cut(b, &alpha, &beta))
-        return alpha;
+    #if USE_MID_SC
+        if (stability_cut(b, &alpha, &beta))
+            return alpha;
+    #endif
     board nb;
     bool passed = true;
     int g, v = -inf;
@@ -75,14 +79,18 @@ int nega_alpha_ordering(board *b, bool skipped, int depth, int alpha, int beta){
     beta = min(beta, u);
     if (alpha >= beta)
         return alpha;
-    if (stability_cut(b, &alpha, &beta))
-        return alpha;
-    if (mpc_min_depth <= depth && depth <= mpc_max_depth){
-        if (mpc_higher(b, skipped, depth, beta))
-            return beta;
-        if (mpc_lower(b, skipped, depth, alpha))
+    #if USE_MID_SC
+        if (stability_cut(b, &alpha, &beta))
             return alpha;
-    }
+    #endif
+    #if USE_MID_MPC
+        if (mpc_min_depth <= depth && depth <= mpc_max_depth){
+            if (mpc_higher(b, skipped, depth, beta))
+                return beta;
+            if (mpc_lower(b, skipped, depth, alpha))
+                return alpha;
+        }
+    #endif
     vector<board> nb;
     int canput = 0;
     for (const int &cell: vacant_lst){
@@ -133,14 +141,18 @@ int nega_scout(board *b, bool skipped, int depth, int alpha, int beta){
     beta = min(beta, u);
     if (alpha >= beta)
         return alpha;
-    if (stability_cut(b, &alpha, &beta))
-        return alpha;
-    if (mpc_min_depth <= depth && depth <= mpc_max_depth){
-        if (mpc_higher(b, skipped, depth, beta))
-            return beta;
-        if (mpc_lower(b, skipped, depth, alpha))
+    #if USE_MID_SC
+        if (stability_cut(b, &alpha, &beta))
             return alpha;
-    }
+    #endif
+    #if USE_MID_MPC
+        if (mpc_min_depth <= depth && depth <= mpc_max_depth){
+            if (mpc_higher(b, skipped, depth, beta))
+                return beta;
+            if (mpc_lower(b, skipped, depth, alpha))
+                return alpha;
+        }
+    #endif
     vector<board> nb;
     int canput = 0;
     for (const int &cell: vacant_lst){

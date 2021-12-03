@@ -1,4 +1,5 @@
 #include <iostream>
+#include "setting.hpp"
 #include "common.hpp"
 #include "board.hpp"
 #include "book.hpp"
