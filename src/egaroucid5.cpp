@@ -16,7 +16,7 @@ inline void init(){
     book_init();
 }
 
-inline int input_board(int board[]){
+inline int input_board(int bd[]){
     int i, j;
     unsigned long long b = 0, w = 0;
     char elem;
@@ -40,12 +40,12 @@ inline int input_board(int board[]){
     if (n_stones < hw2_m1)
         sort(vacant_lst.begin(), vacant_lst.end(), cmp_vacant);
     for (i = 0; i < b_idx_num; ++i){
-        board[i] = n_line - 1;
+        bd[i] = n_line - 1;
         for (j = 0; j < idx_n_cell[i]; ++j){
             if (1 & (b >> global_place[i][j]))
-                board[i] -= pow3[hw_m1 - j] * 2;
+                bd[i] -= pow3[hw_m1 - j] * 2;
             else if (1 & (w >> global_place[i][j]))
-                board[i] -= pow3[hw_m1 - j];
+                bd[i] -= pow3[hw_m1 - j];
         }
     }
     return n_stones;

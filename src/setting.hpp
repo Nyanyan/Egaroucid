@@ -11,3 +11,5 @@ using namespace std;
 #define USE_MID_SC  true
 #define USE_END_SC  true
 
+// odd ordering
+#define USE_END_OO  false

@@ -10,7 +10,7 @@
 using namespace std;
 
 int nega_alpha_ordering_nompc(board *b, bool skipped, int depth, int alpha, int beta){
-    if (depth <= 10)
+    if (depth <= simple_end_threshold)
         return nega_alpha(b, skipped, depth, alpha, beta);
     ++searched_nodes;
     #if USE_END_SC
@@ -51,7 +51,6 @@ int nega_alpha_ordering_nompc(board *b, bool skipped, int depth, int alpha, int 
 }
 
 inline bool mpc_higher_final(board *b, bool skipped, int depth, int beta){
-    //return false;
     int bound = beta + mpctsd_final[depth];
     if (bound >= sc_w)
         return false;
@@ -59,7 +58,6 @@ inline bool mpc_higher_final(board *b, bool skipped, int depth, int beta){
 }
 
 inline bool mpc_lower_final(board *b, bool skipped, int depth, int alpha){
-    //return false;
     int bound = alpha - mpctsd_final[depth];
     if (bound <= -sc_w)
         return false;
@@ -219,7 +217,7 @@ int nega_alpha_final(board *b, bool skipped, int depth, int alpha, int beta){
 }
 
 int nega_alpha_ordering_final(board *b, bool skipped, int depth, int alpha, int beta){
-    if (depth <= 10)
+    if (depth <= simple_end_threshold)
         return nega_alpha_final(b, skipped, depth, alpha, beta);
     ++searched_nodes;
     int hash = (int)(b->hash() & search_hash_mask);
@@ -289,7 +287,7 @@ int nega_alpha_ordering_final(board *b, bool skipped, int depth, int alpha, int 
 }
 
 int nega_scout_final(board *b, bool skipped, int depth, int alpha, int beta){
-    if (depth <= 10)
+    if (depth <= simple_end_threshold)
         return nega_alpha_final(b, skipped, depth, alpha, beta);
     ++searched_nodes;
     int hash = (int)(b->hash() & search_hash_mask);
@@ -311,13 +309,21 @@ int nega_scout_final(board *b, bool skipped, int depth, int alpha, int beta){
                 return alpha;
         }
     #endif
+    #if USE_END_OO
+        bool odd_vacant[hw2];
+        pick_vacant_odd(b->b, odd_vacant);
+    #endif
     vector<board> nb;
     int canput = 0;
     for (const int &cell: vacant_lst){
         if (b->legal(cell)){
             nb.push_back(b->move(cell));
             move_ordering(&(nb[canput]));
-            nb[canput].v -= 100 * calc_canput_exact(&(nb[canput]));
+            nb[canput].v -= canput_bonus * calc_canput_exact(&(nb[canput]));
+            #if USE_END_OO
+                if (odd_vacant[cell])
+                    nb[canput].v += odd_vacant_bonus;
+            #endif
             ++canput;
         }
     }
@@ -403,7 +409,7 @@ inline search_result endsearch(board b, long long strt){
     transpose_table.hash_reg = 0;
     int order_l, order_u;
     int max_depth = hw2 - b.n;
-    int pre_search_depth = min(17, max_depth - 10);
+    int pre_search_depth = min(17, max_depth - simple_end_threshold);
     transpose_table.init_now();
     transpose_table.init_prev();
     if (pre_search_depth > 0)

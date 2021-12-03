@@ -14,7 +14,6 @@ int nega_alpha(board *b, bool skipped, int depth, int alpha, int beta);
 int nega_alpha_ordering(board *b, bool skipped, int depth, int alpha, int beta);
 
 inline bool mpc_higher(board *b, bool skipped, int depth, int beta){
-    //return false;
     int bound = beta + mpctsd[calc_phase_idx(b)][depth];
     if (bound > sc_w)
         return false;
@@ -22,7 +21,6 @@ inline bool mpc_higher(board *b, bool skipped, int depth, int beta){
 }
 
 inline bool mpc_lower(board *b, bool skipped, int depth, int alpha){
-    //return false;
     int bound = alpha - mpctsd[calc_phase_idx(b)][depth];
     if (bound < -sc_w)
         return false;
@@ -69,7 +67,7 @@ int nega_alpha(board *b, bool skipped, int depth, int alpha, int beta){
 }
 
 int nega_alpha_ordering(board *b, bool skipped, int depth, int alpha, int beta){
-    if (depth <= 3)
+    if (depth <= simple_mid_threshold)
         return nega_alpha(b, skipped, depth, alpha, beta);
     ++searched_nodes;
     int hash = (int)(b->hash() & search_hash_mask);
@@ -131,7 +129,7 @@ int nega_alpha_ordering(board *b, bool skipped, int depth, int alpha, int beta){
 }
 
 int nega_scout(board *b, bool skipped, int depth, int alpha, int beta){
-    if (depth <= 3)
+    if (depth <= simple_mid_threshold)
         return nega_alpha(b, skipped, depth, alpha, beta);
     ++searched_nodes;
     int hash = (int)(b->hash() & search_hash_mask);
