@@ -72,14 +72,14 @@ int main(){
     //cin >> depth;
     //cin >> end_depth;
     depth = 16;
-    end_depth = 20;
+    end_depth = 30;
     while (true){
         //cin >> ai_player;
         //int d;
         //cin >> d;
         b.p = ai_player;
         b.n = input_board(b.b);
-        //cout << midsearch(b, tim(), d).value << endl;
+        //cout << nega_scout(&b, false, d, -sc_w, sc_w) << endl;
         //continue;
         cerr << b.n << endl;
         if (b.n == 4){

@@ -7,14 +7,72 @@
 
 using namespace std;
 
+int nega_alpha_ordering_nompc(board *b, bool skipped, int depth, int alpha, int beta){
+    ++searched_nodes;
+    if (depth <= 10)
+        return nega_alpha(b, skipped, depth, alpha, beta);
+    int hash = (int)(b->hash() & search_hash_mask);
+    int l, u;
+    transpose_table.get_now(b->b, hash, &l, &u);
+    if (l != -inf){
+        if (l == u)
+            return l;
+        alpha = max(alpha, l);
+        if (alpha >= beta)
+            return alpha;
+    }
+    if (u != -inf){
+        beta = min(beta, u);
+        if (alpha >= beta)
+            return alpha;
+    }
+    vector<board> nb;
+    int canput = 0;
+    for (const int &cell: vacant_lst){
+        if (b->legal(cell)){
+            nb.emplace_back(b->move(cell));
+            move_ordering(&(nb[canput]));
+            ++canput;
+        }
+    }
+    if (canput == 0){
+        if (skipped)
+            return end_evaluate(b);
+        board rb;
+        for (int i = 0; i < b_idx_num; ++i)
+            rb.b[i] = b->b[i];
+        rb.p = 1 - b->p;
+        rb.n = b->n;
+        return -nega_alpha_ordering_nompc(&rb, true, depth, -beta, -alpha);
+    }
+    if (canput >= 2)
+        sort(nb.begin(), nb.end());
+    int first_alpha = alpha, g, v = -inf;
+    for (board &nnb: nb){
+        g = -nega_alpha_ordering_nompc(&nnb, false, depth - 1, -beta, -alpha);
+        if (beta <= g){
+            if (l < g)
+                transpose_table.reg(b->b, hash, g, u);
+            return g;
+        }
+        alpha = max(alpha, g);
+        v = max(v, g);
+    }
+    if (v <= first_alpha)
+        transpose_table.reg(b->b, hash, l, v);
+    else
+        transpose_table.reg(b->b, hash, v, v);
+    return v;
+}
+
 inline bool mpc_higher_final(board *b, bool skipped, int depth, int beta){
     int bound = beta + mpctsd_final[depth];
-    return nega_alpha(b, skipped, mpcd[depth], bound - search_epsilon, bound) >= bound;
+    return nega_alpha_ordering_nompc(b, skipped, mpcd[depth], bound - search_epsilon, bound) >= bound;
 }
 
 inline bool mpc_lower_final(board *b, bool skipped, int depth, int alpha){
     int bound = alpha - mpctsd_final[depth];
-    return nega_alpha(b, skipped, mpcd[depth], bound, bound + search_epsilon) <= bound;
+    return nega_alpha_ordering_nompc(b, skipped, mpcd[depth], bound, bound + search_epsilon) <= bound;
 }
 
 inline int calc_canput_exact(board *b){
