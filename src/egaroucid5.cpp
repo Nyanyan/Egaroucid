@@ -10,7 +10,7 @@
 
 inline void init(){
     board_init();
-    search_common_init();
+    search_init();
     evaluate_init();
     book_init();
 }

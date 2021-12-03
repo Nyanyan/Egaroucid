@@ -150,7 +150,7 @@ inline void move_ordering(board *b){
         b->v = -mid_evaluate(b);
 }
 
-inline void search_common_init(){
+inline void search_init(){
     int i, j;
     for (i = 0; i < n_phases; ++i){
         for (j = 0; j < mpc_max_depth - mpc_min_depth + 1; ++j)
@@ -162,6 +162,19 @@ inline void search_common_init(){
     transpose_table.prev = 1;
     transpose_table.init_now();
     transpose_table.init_prev();
-    cerr << "search common initialized" << endl;
+    cerr << "search initialized" << endl;
 }
 
+inline int calc_stability(board *b, int p){
+    return
+        stability_edge_arr[p][b->b[0]] + stability_edge_arr[p][b->b[7]] + stability_edge_arr[p][b->b[8]] + stability_edge_arr[p][b->b[15]] + 
+        stability_corner_arr[p][b->b[0]] + stability_corner_arr[p][b->b[7]];
+}
+
+inline int narrow_stability_upper(board *b){
+    return step * (hw2 - 2 * calc_stability(b, 1 - b->p));
+}
+
+inline int narrow_stability_lower(board *b){
+    return step * (2 * calc_stability(b, b->p) - hw2);
+}

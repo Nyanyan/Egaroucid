@@ -11,6 +11,10 @@ int nega_alpha_ordering_nompc(board *b, bool skipped, int depth, int alpha, int 
     ++searched_nodes;
     if (depth <= 9)
         return nega_alpha(b, skipped, depth, alpha, beta);
+    alpha = max(alpha, narrow_stability_lower(b));
+    beta = min(beta, narrow_stability_upper(b));
+    if (alpha >= beta)
+        return alpha;
     vector<board> nb;
     int canput = 0;
     for (const int &cell: vacant_lst){
@@ -188,6 +192,10 @@ int nega_alpha_final(board *b, bool skipped, int depth, int alpha, int beta){
         pick_vacant(b, cells);
         return last3(b, skipped, alpha, beta, cells[0], cells[1], cells[2]);
     }
+    alpha = max(alpha, narrow_stability_lower(b));
+    beta = min(beta, narrow_stability_upper(b));
+    if (alpha >= beta)
+        return alpha;
     board nb;
     bool passed = true;
     int g, v = -inf;
@@ -216,6 +224,10 @@ int nega_alpha_final(board *b, bool skipped, int depth, int alpha, int beta){
 
 int nega_alpha_ordering_final(board *b, bool skipped, int depth, int alpha, int beta){
     ++searched_nodes;
+    alpha = max(alpha, narrow_stability_lower(b));
+    beta = min(beta, narrow_stability_upper(b));
+    if (alpha >= beta)
+        return alpha;
     if (mpc_min_depth_final <= depth && depth <= mpc_max_depth_final){
         if (mpc_higher_final(b, skipped, depth, beta))
             return beta;
@@ -281,6 +293,10 @@ int nega_alpha_ordering_final(board *b, bool skipped, int depth, int alpha, int 
 
 int nega_scout_final(board *b, bool skipped, int depth, int alpha, int beta){
     ++searched_nodes;
+    alpha = max(alpha, narrow_stability_lower(b));
+    beta = min(beta, narrow_stability_upper(b));
+    if (alpha >= beta)
+        return alpha;
     if (mpc_min_depth_final <= depth && depth <= mpc_max_depth_final){
         if (mpc_higher_final(b, skipped, depth, beta))
             return beta;

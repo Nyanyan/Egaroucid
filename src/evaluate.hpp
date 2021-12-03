@@ -34,6 +34,8 @@ int count_black_arr[n_line];
 int count_both_arr[n_line];
 int mobility_arr[2][n_line];
 int surround_arr[2][n_line];
+int stability_edge_arr[2][n_line];
+int stability_corner_arr[2][n_line];
 double pattern_arr[n_phases][n_patterns][max_evaluate_idx];
 double add_arr[n_phases][max_canput * 2 + 1][max_surround + 1][max_surround + 1][n_add_dense1];
 double all_dense[n_phases][n_all_input];
@@ -166,6 +168,7 @@ inline void pre_evaluation_add(int phase_idx, double dense0[n_add_dense0][n_add_
 
 inline void init_evaluation1() {
     int idx, place, b, w;
+    bool full_black, full_white;
     for (idx = 0; idx < n_line; ++idx) {
         b = create_one_color(idx, 0);
         w = create_one_color(idx, 1);
@@ -175,6 +178,10 @@ inline void init_evaluation1() {
         surround_arr[white][idx] = 0;
         count_black_arr[idx] = 0;
         count_both_arr[idx] = 0;
+        stability_edge_arr[black][idx] = 0;
+        stability_edge_arr[white][idx] = 0;
+        stability_corner_arr[black][idx] = 0;
+        stability_corner_arr[white][idx] = 0;
         for (place = 0; place < hw; ++place) {
             if (1 & (b >> place)){
                 ++count_black_arr[idx];
@@ -206,6 +213,38 @@ inline void init_evaluation1() {
             if (legal_arr[white][idx][place])
                 ++mobility_arr[white][idx];
         }
+        full_black = true;
+        full_white = true;
+        for (place = 0; place < hw; ++place){
+            full_black &= 1 & (b >> place);
+            full_white &= 1 & (w >> place);
+            stability_edge_arr[black][idx] += full_black;
+            stability_edge_arr[white][idx] += full_white;
+        }
+        full_black = true;
+        full_white = true;
+        for (place = hw_m1; place >= 0; --place){
+            full_black &= 1 & (b >> place);
+            full_white &= 1 & (w >> place);
+            stability_edge_arr[black][idx] += full_black;
+            stability_edge_arr[white][idx] += full_white;
+        }
+        if (1 & b){
+            --stability_edge_arr[black][idx];
+            ++stability_corner_arr[black][idx];
+        }
+        if (1 & (b >> hw_m1)){
+            --stability_edge_arr[black][idx];
+            ++stability_corner_arr[black][idx];
+        }
+        if (1 & w){
+            --stability_edge_arr[white][idx];
+            ++stability_corner_arr[white][idx];
+        }
+        if (1 & (w >> hw_m1)){
+            --stability_edge_arr[white][idx];
+            ++stability_corner_arr[white][idx];
+        }
     }
 }
 
@@ -229,6 +268,7 @@ inline void init_evaluation2(){
     double add_bias1[n_add_dense1];
     const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10};
     for (phase_idx = 0; phase_idx < n_phases; ++phase_idx){
+        cerr << "=";
         for (pattern_idx = 0; pattern_idx < n_patterns; ++pattern_idx){
             for (i = 0; i < pattern_sizes[pattern_idx] * 2; ++i){
                 for (j = 0; j < n_dense0; ++j){
@@ -286,6 +326,7 @@ inline void init_evaluation2(){
         getline(ifs, line);
         all_bias[phase_idx] = stof(line);
     }
+    cerr << endl;
 }
 
 inline void evaluate_init(){
