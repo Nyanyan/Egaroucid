@@ -22,7 +22,7 @@ inline bool mpc_higher(board *b, bool skipped, int depth, int beta){
 inline bool mpc_lower(board *b, bool skipped, int depth, int alpha){
     //return false;
     int bound = alpha - mpctsd[calc_phase_idx(b)][depth];
-    if (bound < sc_w)
+    if (bound < -sc_w)
         return false;
     return nega_alpha(b, skipped, mpcd[depth], bound, bound + search_epsilon) <= bound;
 }
@@ -35,6 +35,8 @@ int nega_alpha(board *b, bool skipped, int depth, int alpha, int beta){
         else
             return end_evaluate(b);
     }
+    if (stability_cut(b, &alpha, &beta))
+        return alpha;
     board nb;
     bool passed = true;
     int g, v = -inf;
@@ -63,28 +65,22 @@ int nega_alpha(board *b, bool skipped, int depth, int alpha, int beta){
 }
 
 int nega_alpha_ordering(board *b, bool skipped, int depth, int alpha, int beta){
+    if (depth <= 3)
+        return nega_alpha(b, skipped, depth, alpha, beta);
     ++searched_nodes;
+    int hash = (int)(b->hash() & search_hash_mask);
+    int l, u;
+    transpose_table.get_now(b, hash, &l, &u);
+    alpha = max(alpha, l);
+    beta = min(beta, u);
+    if (alpha >= beta)
+        return alpha;
+    if (stability_cut(b, &alpha, &beta))
+        return alpha;
     if (mpc_min_depth <= depth && depth <= mpc_max_depth){
         if (mpc_higher(b, skipped, depth, beta))
             return beta;
         if (mpc_lower(b, skipped, depth, alpha))
-            return alpha;
-    }
-    if (depth <= 3)
-        return nega_alpha(b, skipped, depth, alpha, beta);
-    int hash = (int)(b->hash() & search_hash_mask);
-    int l, u;
-    transpose_table.get_now(b->b, hash, &l, &u);
-    if (l != -inf){
-        if (l == u)
-            return l;
-        alpha = max(alpha, l);
-        if (alpha >= beta)
-            return alpha;
-    }
-    if (u != -inf){
-        beta = min(beta, u);
-        if (alpha >= beta)
             return alpha;
     }
     vector<board> nb;
@@ -113,42 +109,36 @@ int nega_alpha_ordering(board *b, bool skipped, int depth, int alpha, int beta){
         g = -nega_alpha_ordering(&nnb, false, depth - 1, -beta, -alpha);
         if (beta <= g){
             if (l < g)
-                transpose_table.reg(b->b, hash, g, u);
+                transpose_table.reg(b, hash, g, u);
             return g;
         }
         alpha = max(alpha, g);
         v = max(v, g);
     }
     if (v <= first_alpha)
-        transpose_table.reg(b->b, hash, l, v);
+        transpose_table.reg(b, hash, l, v);
     else
-        transpose_table.reg(b->b, hash, v, v);
+        transpose_table.reg(b, hash, v, v);
     return v;
 }
 
 int nega_scout(board *b, bool skipped, int depth, int alpha, int beta){
+    if (depth <= 3)
+        return nega_alpha(b, skipped, depth, alpha, beta);
     ++searched_nodes;
+    int hash = (int)(b->hash() & search_hash_mask);
+    int l, u;
+    transpose_table.get_now(b, hash, &l, &u);
+    alpha = max(alpha, l);
+    beta = min(beta, u);
+    if (alpha >= beta)
+        return alpha;
+    if (stability_cut(b, &alpha, &beta))
+        return alpha;
     if (mpc_min_depth <= depth && depth <= mpc_max_depth){
         if (mpc_higher(b, skipped, depth, beta))
             return beta;
         if (mpc_lower(b, skipped, depth, alpha))
-            return alpha;
-    }
-    if (depth <= 3)
-        return nega_alpha(b, skipped, depth, alpha, beta);
-    int hash = (int)(b->hash() & search_hash_mask);
-    int l, u;
-    transpose_table.get_now(b->b, hash, &l, &u);
-    if (l != -inf){
-        if (l == u)
-            return l;
-        alpha = max(alpha, l);
-        if (alpha >= beta)
-            return alpha;
-    }
-    if (u != -inf){
-        beta = min(beta, u);
-        if (alpha >= beta)
             return alpha;
     }
     vector<board> nb;
@@ -178,7 +168,7 @@ int nega_scout(board *b, bool skipped, int depth, int alpha, int beta){
             g = -nega_alpha_ordering(&nnb, false, depth - 1, -alpha - search_epsilon, -alpha);
             if (beta <= g){
                 if (l < g)
-                    transpose_table.reg(b->b, hash, g, u);
+                    transpose_table.reg(b, hash, g, u);
                 return g;
             }
             v = max(v, g);
@@ -187,7 +177,7 @@ int nega_scout(board *b, bool skipped, int depth, int alpha, int beta){
             g = -nega_scout(&nnb, false, depth - 1, -beta, -g);
             if (beta <= g){
                 if (l < g)
-                    transpose_table.reg(b->b, hash, g, u);
+                    transpose_table.reg(b, hash, g, u);
                 return g;
             }
             alpha = max(alpha, g);
@@ -195,9 +185,9 @@ int nega_scout(board *b, bool skipped, int depth, int alpha, int beta){
         }
     }
     if (v <= first_alpha)
-        transpose_table.reg(b->b, hash, l, v);
+        transpose_table.reg(b, hash, l, v);
     else
-        transpose_table.reg(b->b, hash, v, v);
+        transpose_table.reg(b, hash, v, v);
     return v;
 }
 
@@ -242,7 +232,7 @@ inline search_result midsearch(board b, long long strt, int max_depth){
         beta = sc_w;
         transpose_table.init_now();
         for (i = 0; i < canput; ++i){
-            transpose_table.get_prev(nb[i].b, nb[i].hash() & search_hash_mask, &order_l, &order_u);
+            transpose_table.get_prev(&nb[i], nb[i].hash() & search_hash_mask, &order_l, &order_u);
             nb[i].v = -max(order_l, order_u);
             if (order_l != -inf && order_u != -inf)
                 nb[i].v += 100000;
@@ -256,7 +246,7 @@ inline search_result midsearch(board b, long long strt, int max_depth){
         g = -mtd(&nb[0], false, depth, -beta, -alpha);
         if (g == inf)
             break;
-        transpose_table.reg(nb[0].b, (int)(nb[0].hash() & search_hash_mask), g, g);
+        transpose_table.reg(&nb[0], (int)(nb[0].hash() & search_hash_mask), g, g);
         alpha = max(alpha, g);
         tmp_policy = nb[0].policy;
         for (i = 1; i < canput; ++i){
@@ -264,13 +254,13 @@ inline search_result midsearch(board b, long long strt, int max_depth){
             if (alpha < g){
                 alpha = g;
                 g = -mtd(&nb[i], false, depth, -beta, -alpha);
-                transpose_table.reg(nb[i].b, (int)(nb[i].hash() & search_hash_mask), g, g);
+                transpose_table.reg(&nb[i], (int)(nb[i].hash() & search_hash_mask), g, g);
                 if (alpha < g){
                     alpha = g;
                     tmp_policy = nb[i].policy;
                 }
             } else{
-                transpose_table.reg(nb[i].b, (int)(nb[i].hash() & search_hash_mask), -inf, g);
+                transpose_table.reg(&nb[i], (int)(nb[i].hash() & search_hash_mask), -inf, g);
             }
         }
         swap(transpose_table.now, transpose_table.prev);

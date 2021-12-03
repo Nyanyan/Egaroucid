@@ -15,7 +15,7 @@ using namespace std;
 #define mpc_max_depth 10
 #define mpc_min_depth_final 9
 #define mpc_max_depth_final 28
-#define mpct_final 2.0
+#define mpct_final 3.5
 
 #define search_hash_table_size 1048576
 constexpr int search_hash_mask = search_hash_table_size - 1;
@@ -58,6 +58,7 @@ vector<int> vacant_lst;
 
 struct search_node{
     bool reg;
+    int p;
     int k[hw];
     int l;
     int u;
@@ -89,18 +90,19 @@ class transpose_table{
                 this->table[this->now][i].reg = false;
         }
 
-        inline void reg(const int key[], int hash, int l, int u){
+        inline void reg(board *key, int hash, int l, int u){
             ++this->hash_reg;
             this->table[this->now][hash].reg = true;
+            this->table[this->now][hash].p = key->p;
             for (int i = 0; i < hw; ++i)
-                this->table[this->now][hash].k[i] = key[i];
+                this->table[this->now][hash].k[i] = key->b[i];
             this->table[this->now][hash].l = l;
             this->table[this->now][hash].u = u;
         }
 
-        inline void get_now(const int key[], const int hash, int *l, int *u){
+        inline void get_now(board *key, const int hash, int *l, int *u){
             if (table[this->now][hash].reg){
-                if (compare_key(key, table[this->now][hash].k)){
+                if (compare_key(key, &table[this->now][hash])){
                     *l = table[this->now][hash].l;
                     *u = table[this->now][hash].u;
                     ++this->hash_get;
@@ -108,12 +110,12 @@ class transpose_table{
                 }
             }
             *l = -inf;
-            *u = -inf;
+            *u = inf;
         }
 
-        inline void get_prev(const int key[], const int hash, int *l, int *u){
+        inline void get_prev(board *key, const int hash, int *l, int *u){
             if (table[this->prev][hash].reg){
-                if (compare_key(key, table[this->prev][hash].k)){
+                if (compare_key(key, &table[this->prev][hash])){
                     *l = table[this->prev][hash].l;
                     *u = table[this->prev][hash].u;
                     ++this->hash_get;
@@ -121,14 +123,14 @@ class transpose_table{
                 }
             }
             *l = -inf;
-            *u = -inf;
+            *u = inf;
         }
     
     private:
-        inline bool compare_key(const int a[], const int b[]){
-            return
-                a[0] == b[0] && a[1] == b[1] && a[2] == b[2] && a[3] == b[3] && 
-                a[4] == b[4] && a[5] == b[5] && a[6] == b[6] && a[7] == b[7];
+        inline bool compare_key(board *a, search_node *b){
+            return a->p == b->p && 
+                a->b[0] == b->k[0] && a->b[1] == b->k[1] && a->b[2] == b->k[2] && a->b[3] == b->k[3] && 
+                a->b[4] == b->k[4] && a->b[5] == b->k[5] && a->b[6] == b->k[6] && a->b[7] == b->k[7];
         }
 };
 
@@ -140,12 +142,13 @@ int cmp_vacant(int p, int q){
 
 inline void move_ordering(board *b){
     int l, u;
-    transpose_table.get_prev(b->b, b->hash() & search_hash_mask, &l, &u);
-    b->v = -max(l, u);
-    if (u != -inf && l != -inf)
-        b->v += cache_both;
-    if (u != -inf || l != -inf)
-        b->v += cache_hit;
+    transpose_table.get_prev(b, b->hash() & search_hash_mask, &l, &u);
+    if (u != inf && l != -inf)
+        b->v = u + cache_both + cache_hit;
+    else if (u != inf)
+        b->v += u + cache_hit;
+    else if (l != -inf)
+        b->v += l + cache_hit;
     else
         b->v = -mid_evaluate(b);
 }
@@ -153,10 +156,10 @@ inline void move_ordering(board *b){
 inline void search_init(){
     int i, j;
     for (i = 0; i < n_phases; ++i){
-        for (j = 0; j < mpc_max_depth - mpc_min_depth + 1; ++j)
+        for (j = 0; j <= mpc_max_depth - mpc_min_depth; ++j)
             mpctsd[i][mpc_min_depth + j] = (int)(mpct[i] * mpcsd[i][j]);
     }
-    for (i = 0; i < mpc_max_depth_final - mpc_min_depth_final + 1; ++i)
+    for (i = 0; i <= mpc_max_depth_final - mpc_min_depth_final; ++i)
         mpctsd_final[mpc_min_depth_final + i] = (int)(mpct_final * mpcsd_final[i]);
     transpose_table.now = 0;
     transpose_table.prev = 1;
@@ -165,10 +168,24 @@ inline void search_init(){
     cerr << "search initialized" << endl;
 }
 
+inline int calc_x_stability(board *b, int p){
+    int res = 0;
+    if (pop_digit[b->b[1]][1] == p && (pop_digit[b->b[0]][2] == p || pop_digit[b->b[2]][0] == p) && pop_digit[b->b[0]][1] == p && pop_digit[b->b[1]][0] == p && pop_digit[b->b[0]][0] == p)
+        ++res;
+    if (pop_digit[b->b[1]][6] == p && (pop_digit[b->b[0]][5] == p || pop_digit[b->b[2]][7] == p) && pop_digit[b->b[0]][6] == p && pop_digit[b->b[1]][7] == p && pop_digit[b->b[0]][7] == p)
+        ++res;
+    if (pop_digit[b->b[6]][1] == p && (pop_digit[b->b[7]][2] == p || pop_digit[b->b[5]][0] == p) && pop_digit[b->b[7]][1] == p && pop_digit[b->b[6]][0] == p && pop_digit[b->b[7]][0] == p)
+        ++res;
+    if (pop_digit[b->b[6]][6] == p && (pop_digit[b->b[7]][5] == p || pop_digit[b->b[5]][7] == p) && pop_digit[b->b[7]][6] == p && pop_digit[b->b[6]][7] == p && pop_digit[b->b[7]][7] == p)
+        ++res;
+    return res;
+}
+
 inline int calc_stability(board *b, int p){
     return
         stability_edge_arr[p][b->b[0]] + stability_edge_arr[p][b->b[7]] + stability_edge_arr[p][b->b[8]] + stability_edge_arr[p][b->b[15]] + 
-        stability_corner_arr[p][b->b[0]] + stability_corner_arr[p][b->b[7]];
+        stability_corner_arr[p][b->b[0]] + stability_corner_arr[p][b->b[7]] + 
+        calc_x_stability(b, p);
 }
 
 inline int narrow_stability_upper(board *b){
@@ -177,4 +194,17 @@ inline int narrow_stability_upper(board *b){
 
 inline int narrow_stability_lower(board *b){
     return step * (2 * calc_stability(b, b->p) - hw2);
+}
+
+inline bool stability_cut(board *b, int *alpha, int *beta){
+    *alpha = max(*alpha, narrow_stability_lower(b));
+    *beta = min(*beta, narrow_stability_upper(b));
+    return *alpha >= *beta;
+}
+
+inline int calc_canput_exact(board *b){
+    int res = 0;
+    for (const int &cell: vacant_lst)
+        res += b->legal(cell);
+    return res;
 }
