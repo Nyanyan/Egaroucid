@@ -27,7 +27,7 @@ def calc_n_stones(board):
 evaluate = subprocess.Popen('../src/egaroucid5.out'.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
 sleep(1)
 
-min_depth = 3
+min_depth = 9
 max_depth = 28
 
 vhs = [[] for _ in range(max_depth - min_depth + 1)]
@@ -35,7 +35,7 @@ vds = [[] for _ in range(max_depth - min_depth + 1)]
 
 vh_vd = []
 
-mpcd = [0,1,0,1,2,1,2,3,4,3,4,3,4,5,6,5,6,5,6,7,6,7,8,9,8,9,10,11,10,11]
+mpcd = [0,1,0,1,2,3,2,3,4,3,4,3,4,5,4,5,4,5,4,5,4,5,4,5,4,5,4,5,4,5]
 
 
 def collect_data(num):
@@ -46,8 +46,8 @@ def collect_data(num):
     except:
         print('cannot open')
         return
-    for _ in trange(1000):
-        datum = data[randrange(0, len(data))]
+    for data_idx in trange(len(data)):
+        datum = data[data_idx]
         board, player, _, _, _, vh = datum.split()
         n_stones = calc_n_stones(board)
         depth = 64 - n_stones
@@ -69,7 +69,7 @@ def collect_data(num):
             vhs[depth - min_depth].append(vh)
             vds[depth - min_depth].append(vd)
 
-for i in range(1):
+for i in range(11):
     collect_data(i)
 evaluate.kill()
 

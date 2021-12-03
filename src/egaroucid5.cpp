@@ -68,19 +68,23 @@ int main(){
     search_result result;
     const int first_moves[4] = {19, 26, 37, 44};
     int depth, end_depth, policy, ai_player;
-    cin >> ai_player;
+    //cin >> ai_player;
     //cin >> depth;
     //cin >> end_depth;
-    depth = 16;
-    end_depth = 30;
+    depth = 10;
+    end_depth = 20;
     while (true){
-        //cin >> ai_player;
+        cin >> ai_player;
         //int d;
         //cin >> d;
         b.p = ai_player;
         b.n = input_board(b.b);
-        //cout << nega_scout(&b, false, d, -sc_w, sc_w) << endl;
-        //continue;
+        /*
+        transpose_table.init_now();
+        transpose_table.init_prev();
+        cout << nega_scout(&b, false, d, -sc_w, sc_w) << endl;
+        continue;
+        */
         cerr << b.n << endl;
         if (b.n == 4){
             policy = first_moves[myrandrange(0, 4)];

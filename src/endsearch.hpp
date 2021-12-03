@@ -9,23 +9,8 @@ using namespace std;
 
 int nega_alpha_ordering_nompc(board *b, bool skipped, int depth, int alpha, int beta){
     ++searched_nodes;
-    if (depth <= 10)
+    if (depth <= 9)
         return nega_alpha(b, skipped, depth, alpha, beta);
-    int hash = (int)(b->hash() & search_hash_mask);
-    int l, u;
-    transpose_table.get_now(b->b, hash, &l, &u);
-    if (l != -inf){
-        if (l == u)
-            return l;
-        alpha = max(alpha, l);
-        if (alpha >= beta)
-            return alpha;
-    }
-    if (u != -inf){
-        beta = min(beta, u);
-        if (alpha >= beta)
-            return alpha;
-    }
     vector<board> nb;
     int canput = 0;
     for (const int &cell: vacant_lst){
@@ -47,31 +32,30 @@ int nega_alpha_ordering_nompc(board *b, bool skipped, int depth, int alpha, int 
     }
     if (canput >= 2)
         sort(nb.begin(), nb.end());
-    int first_alpha = alpha, g, v = -inf;
+    int g, v = -inf;
     for (board &nnb: nb){
         g = -nega_alpha_ordering_nompc(&nnb, false, depth - 1, -beta, -alpha);
-        if (beta <= g){
-            if (l < g)
-                transpose_table.reg(b->b, hash, g, u);
+        if (beta <= g)
             return g;
-        }
         alpha = max(alpha, g);
         v = max(v, g);
     }
-    if (v <= first_alpha)
-        transpose_table.reg(b->b, hash, l, v);
-    else
-        transpose_table.reg(b->b, hash, v, v);
     return v;
 }
 
 inline bool mpc_higher_final(board *b, bool skipped, int depth, int beta){
+    //return false;
     int bound = beta + mpctsd_final[depth];
+    if (bound > sc_w)
+        return false;
     return nega_alpha_ordering_nompc(b, skipped, mpcd[depth], bound - search_epsilon, bound) >= bound;
 }
 
 inline bool mpc_lower_final(board *b, bool skipped, int depth, int alpha){
+    //return false;
     int bound = alpha - mpctsd_final[depth];
+    if (bound < sc_w)
+        return false;
     return nega_alpha_ordering_nompc(b, skipped, mpcd[depth], bound, bound + search_epsilon) <= bound;
 }
 
@@ -234,9 +218,9 @@ int nega_alpha_ordering_final(board *b, bool skipped, int depth, int alpha, int 
     ++searched_nodes;
     if (mpc_min_depth_final <= depth && depth <= mpc_max_depth_final){
         if (mpc_higher_final(b, skipped, depth, beta))
-            return beta + step;
+            return beta;
         if (mpc_lower_final(b, skipped, depth, beta))
-            return alpha - step;
+            return alpha;
     }
     if (depth <= 9)
         return nega_alpha_final(b, skipped, depth, alpha, beta);
@@ -297,6 +281,12 @@ int nega_alpha_ordering_final(board *b, bool skipped, int depth, int alpha, int 
 
 int nega_scout_final(board *b, bool skipped, int depth, int alpha, int beta){
     ++searched_nodes;
+    if (mpc_min_depth_final <= depth && depth <= mpc_max_depth_final){
+        if (mpc_higher_final(b, skipped, depth, beta))
+            return beta;
+        if (mpc_lower_final(b, skipped, depth, beta))
+            return alpha;
+    }
     if (depth <= 9)
         return nega_alpha_final(b, skipped, depth, alpha, beta);
     vector<board> nb;
@@ -365,6 +355,20 @@ int nega_scout_final(board *b, bool skipped, int depth, int alpha, int beta){
     return v;
 }
 
+int mtd_final(board *b, bool skipped, int depth, int l, int u){
+    int g = mid_evaluate(b), beta;
+    while (u - l > mtd_threshold_final){
+        beta = g;
+        g = nega_alpha_ordering_final(b, skipped, depth, beta - search_epsilon, beta);
+        if (g < beta)
+            u = g;
+        else
+            l = g;
+        g = (l + u) / 2 / step * step;
+    }
+    return nega_scout_final(b, skipped, depth, l, u);
+}
+
 inline search_result endsearch(board b, long long strt){
     vector<board> nb;
     int i;
@@ -385,9 +389,12 @@ inline search_result endsearch(board b, long long strt){
     transpose_table.hash_reg = 0;
     int order_l, order_u;
     int max_depth = hw2 - b.n;
-    if (max_depth - 9 > 0)
-        midsearch(b, strt, max_depth - 9);
-    cerr << "start final search" << endl;
+    int pre_search_depth = min(17, max_depth - 9);
+    transpose_table.init_now();
+    transpose_table.init_prev();
+    if (pre_search_depth > 0)
+        midsearch(b, strt, pre_search_depth);
+    cerr << "start final search depth " << max_depth << endl;
     alpha = -sc_w;
     beta = sc_w;
     transpose_table.init_now();

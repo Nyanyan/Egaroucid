@@ -11,8 +11,8 @@ circle_offset = 3
 
 ai_player = int(input('AI moves (0: black 1: white): '))
 ai_exe = subprocess.Popen('./egaroucid5.out'.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-ai_exe.stdin.write((str(ai_player) + '\n').encode('utf-8'))
-ai_exe.stdin.flush()
+#ai_exe.stdin.write((str(ai_player) + '\n').encode('utf-8'))
+#ai_exe.stdin.flush()
 record = ''
 vals = []
 
@@ -70,6 +70,8 @@ def translate_coord(y, x):
 
 def ai():
     global clicked, record
+    ai_exe.stdin.write((str(ai_player) + '\n').encode('utf-8'))
+    ai_exe.stdin.flush()
     grid_str = ''
     for i in range(hw):
         for j in range(hw):

@@ -28,14 +28,14 @@ evaluate = subprocess.Popen('../src/egaroucid5.out'.split(), stdin=subprocess.PI
 sleep(1)
 
 min_depth = 3
-max_depth = 12
+max_depth = 10
 
 vhs = [[[] for _ in range(max_depth - min_depth + 1)] for _ in range(12)]
 vds = [[[] for _ in range(max_depth - min_depth + 1)] for _ in range(12)]
 
 vh_vd = []
 
-mpcd = [0,1,0,1,2,1,2,3,4,3,4,3,4,5,6,5,6,5,6,7]
+mpcd = [0,1,0,1,2,3,2,3,4,3,4,3,4,5,6,5,6,5,6,7,6,7,8,9,8,9,10,11,10,11]
 
 
 def collect_data(num):
