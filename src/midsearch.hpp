@@ -12,12 +12,14 @@ using namespace std;
 int nega_alpha(board *b, bool skipped, int depth, int alpha, int beta);
 
 inline bool mpc_higher(board *b, bool skipped, int depth, int beta){
-    int bound = beta + mpctsd[(b->n - 4) / 10][depth];
+    //return false;
+    int bound = beta + mpctsd[calc_phase_idx(b)][depth];
     return nega_alpha(b, skipped, mpcd[depth], bound - search_epsilon, bound) >= bound;
 }
 
 inline bool mpc_lower(board *b, bool skipped, int depth, int alpha){
-    int bound = alpha - mpctsd[(b->n - 4) / 10][depth];
+    //return false;
+    int bound = alpha - mpctsd[calc_phase_idx(b)][depth];
     return nega_alpha(b, skipped, mpcd[depth], bound, bound + search_epsilon) <= bound;
 }
 
@@ -213,14 +215,9 @@ inline search_result midsearch(board b, long long strt, int max_depth){
     vector<board> nb;
     int i;
     for (const int &cell: vacant_lst){
-        for (i = 0; i < 4; ++i){
-            if (place_included[cell][i] == -1)
-                break;
-            if (b.legal(cell)){
-                cerr << cell << " ";
-                nb.push_back(b.move(cell));
-                break;
-            }
+        if (b.legal(cell)){
+            cerr << cell << " ";
+            nb.push_back(b.move(cell));
         }
     }
     cerr << endl;

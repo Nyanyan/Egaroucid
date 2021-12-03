@@ -311,14 +311,9 @@ inline search_result endsearch(board b, long long strt){
     vector<board> nb;
     int i;
     for (const int &cell: vacant_lst){
-        for (i = 0; i < 4; ++i){
-            if (place_included[cell][i] == -1)
-                break;
-            if (legal_arr[b.p][b.b[place_included[cell][i]]][local_place[place_included[cell][i]][cell]]){
-                cerr << cell << " ";
-                nb.push_back(b.move(cell));
-                break;
-            }
+        if (b.legal(cell)){
+            cerr << cell << " ";
+            nb.push_back(b.move(cell));
         }
     }
     cerr << endl;

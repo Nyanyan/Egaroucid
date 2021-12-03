@@ -6,9 +6,10 @@
 
 using namespace std;
 
+#define n_phases 12
 #define n_patterns 11
-#define n_dense0 16
-#define n_dense1 16
+#define n_dense0 32
+#define n_dense1 32
 #define n_add_input 3
 #define n_add_dense0 8
 #define n_add_dense1 8
@@ -43,7 +44,7 @@ inline double leaky_relu(double x){
 }
 
 inline double predict(int pattern_size, double in_arr[], double dense0[n_dense0][20], double bias0[n_dense0], double dense1[n_dense1][n_dense0], double bias1[n_dense1], double dense2[n_dense1], double bias2){
-    double hidden0[16], hidden1;
+    double hidden0[32], hidden1;
     int i, j;
     for (i = 0; i < n_dense0; ++i){
         hidden0[i] = bias0[i];
@@ -341,7 +342,7 @@ inline int calc_surround(const board *b, int p){
 }
 
 inline int calc_phase_idx(const board *b){
-    return max(0, min(3, (b->n - 4) / 10 - 2));
+    return (b->n - 4) / 5;
 }
 
 inline double edge_2x(int phase_idx, const int b[], int x, int y){

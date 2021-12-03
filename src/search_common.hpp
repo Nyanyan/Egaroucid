@@ -10,11 +10,11 @@ using namespace std;
 #define cache_both 1000
 #define mtd_threshold 400
 
-#define mpc_min_depth 1
-#define mpc_max_depth 10
+#define mpc_min_depth 3
+#define mpc_max_depth 12
 #define mpc_min_depth_final 10
 #define mpc_max_depth_final 28
-#define mpct_final 1.1
+#define mpct_final 1.7
 
 #define search_hash_table_size 1048576
 constexpr int search_hash_mask = search_hash_table_size - 1;
@@ -30,20 +30,26 @@ const int cell_weight[hw2] = {
     120, -20, 20, 5, 5, 20, -20, 120
 };
 
-const int mpcd[30]={0,0,0,1,2,1,2,3,4,3,4,3,4,5,6,5,6,5,6,7,6,7,8,9,8,9,10,11,10,11};
-const double mpct[6]={1.6,1.6,1.6,1.5,1.5,1.4};
-const double mpcsd[6][mpc_max_depth-mpc_min_depth+1]={
-    {482,512,352,298,474,372,349,323,463,335},
-    {312,381,310,261,354,322,291,313,389,371},
-    {389,463,392,352,548,402,422,441,530,538},
-    {417,490,436,405,570,494,452,438,527,524},
-    {486,554,519,463,635,665,555,550,635,581},
-    {433,517,430,391,560,556,383,345,567,332}
+const int mpcd[30]={0,1,0,1,2,1,2,3,4,3,4,3,4,5,6,5,6,5,6,7,6,7,8,9,8,9,10,11,10,11};
+const double mpct[n_phases]={1.6,1.6,1.6,1.6,1.6,1.6,1.5,1.5,1.5,1.5,1.4,1.4};
+const double mpcsd[n_phases][mpc_max_depth-mpc_min_depth+1]={
+{1815, 380, 1889, 361, 409, 204, 339, 168, 362, 167},
+{1691, 304, 1973, 336, 302, 249, 238, 269, 300, 271},
+{1987, 823, 2088, 308, 347, 245, 321, 280, 350, 268},
+{1912, 381, 2083, 343, 300, 295, 321, 328, 329, 309},
+{2141, 332, 1861, 413, 358, 356, 396, 344, 415, 420},
+{2382, 333, 2682, 424, 425, 364, 434, 426, 459, 496},
+{2266, 394, 2527, 427, 486, 445, 486, 458, 618, 509},
+{2368, 428, 2696, 513, 501, 462, 548, 552, 498, 555},
+{3049, 492, 2635, 597, 580, 490, 623, 526, 677, 662},
+{2673, 493, 2914, 636, 653, 659, 722, 667, 817, 810},
+{3018, 614, 3070, 850, 649, 620, 667, 621, 673, 691},
+{2755, 317, 2687, 382, 313, 158, 216, 0, 0, 0}
 };
 const double mpcsd_final[mpc_max_depth_final - mpc_min_depth_final + 1] = {
-    1564, 1309, 1440, 1453, 1152, 1580, 1394, 1655, 1381, 1578, 1660, 1452, 1574, 1725, 1655, 1514, 1378, 1622, 1489
+    567, 638, 579, 554, 579, 537, 548, 551, 560, 443, 503, 477, 444, 444, 465, 486, 397, 423, 412
 };
-int mpctsd[6][mpc_max_depth + 1];
+int mpctsd[n_phases][mpc_max_depth + 1];
 int mpctsd_final[mpc_max_depth_final + 1];
 
 int searched_nodes;
@@ -145,7 +151,7 @@ inline void move_ordering(board *b){
 
 inline void search_common_init(){
     int i, j;
-    for (i = 0; i < 6; ++i){
+    for (i = 0; i < n_phases; ++i){
         for (j = 0; j < mpc_max_depth - mpc_min_depth + 1; ++j)
             mpctsd[i][mpc_min_depth + j] = (int)(mpct[i] * mpcsd[i][j]);
     }

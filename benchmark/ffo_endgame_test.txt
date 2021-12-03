@@ -1,0 +1,3 @@
+2021/12/03
+#40 final depth: 20 time: 256 policy: 8 value: 3800 nodes: 2234172 nps: 8727234 get: 2069 reg: 5007
+#41 

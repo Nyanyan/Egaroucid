@@ -67,14 +67,20 @@ int main(){
     board b;
     search_result result;
     const int first_moves[4] = {19, 26, 37, 44};
-    int depth, end_depth, policy;
-    cin >> b.p;
+    int depth, end_depth, policy, ai_player;
+    cin >> ai_player;
     //cin >> depth;
     //cin >> end_depth;
     depth = 16;
     end_depth = 20;
     while (true){
+        //cin >> ai_player;
+        //int d;
+        //cin >> d;
+        b.p = ai_player;
         b.n = input_board(b.b);
+        //cout << midsearch(b, tim(), d).value << endl;
+        //continue;
         cerr << b.n << endl;
         if (b.n == 4){
             policy = first_moves[myrandrange(0, 4)];
