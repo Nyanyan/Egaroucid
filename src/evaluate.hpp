@@ -7,7 +7,6 @@
 
 using namespace std;
 
-#define n_phases 12
 #define n_patterns 11
 #define n_dense0 32
 #define n_dense1 32
