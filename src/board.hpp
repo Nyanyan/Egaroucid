@@ -78,7 +78,7 @@ void board_init() {
         pow3[idx] = pow3[idx- 1] * 3;
     for (i = 0; i < n_line; ++i){
         for (j = 0; j < hw; ++j)
-            pop_digit[i][j] = (i / pow3[hw - 1 - j]) % 3;
+            pop_digit[i][j] = (i / pow3[hw_m1 - j]) % 3;
     }
     for (i = 0; i < n_line; ++i){
         for (j = 0; j < hw; ++j){
@@ -118,12 +118,12 @@ void board_init() {
             put_arr[black][idx][place] = idx;
             put_arr[white][idx][place] = idx;
             if (b & (1 << (hw - 1 - place)))
-                flip_arr[white][idx][place] += pow3[hw - 1 - place];
+                flip_arr[white][idx][place] += pow3[hw_m1 - place];
             else if (w & (1 << (hw - 1 - place)))
-                flip_arr[black][idx][place] -= pow3[hw - 1 - place];
+                flip_arr[black][idx][place] -= pow3[hw_m1 - place];
             else{
-                put_arr[black][idx][place] -= pow3[hw - 1 - place] * 2;
-                put_arr[white][idx][place] -= pow3[hw - 1 - place];
+                put_arr[black][idx][place] -= pow3[hw_m1 - place] * 2;
+                put_arr[white][idx][place] -= pow3[hw_m1 - place];
             }
         }
     }
@@ -262,9 +262,9 @@ class board {
                     if (place_included[i][j] == -1)
                         continue;
                     if (arr[i] == black)
-                        this->b[place_included[i][j]] -= 2 * pow3[hw - 1 - local_place[place_included[i][j]][i]];
+                        this->b[place_included[i][j]] -= 2 * pow3[hw_m1 - local_place[place_included[i][j]][i]];
                     else if (arr[i] == white)
-                        this->b[place_included[i][j]] -= pow3[hw - 1 - local_place[place_included[i][j]][i]];
+                        this->b[place_included[i][j]] -= pow3[hw_m1 - local_place[place_included[i][j]][i]];
                     else if (j == 0)
                         --this->n;
                 }
