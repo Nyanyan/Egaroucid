@@ -1,6 +1,12 @@
-2021/12/03
+2021/12/03 laptop
 #40 final depth: 20 time: 1878 policy: 8 value: 3800 nodes: 16604675 nps: 8836974 get: 1308 reg: 18943
 #41 final depth: 22 time: 17250 policy: 31 value: 0 nodes: 151663732 nps: 8792100 get: 39917 reg: 181605
 #42 final depth: 22 time: 12177 policy: 14 value: 600 nodes: 116546930 nps: 9569499 get: 32630 reg: 215986
 #43 final depth: 23 time: 25082 policy: 22 value: -1200 nodes: 228186005 nps: 9096874 get: 51892 reg: 331184
 #44 final depth: 23 time: 18461 policy: 11 value: -1400 nodes: 167432869 nps: 9069053 get: 39534 reg: 298423
+
+2021/12/04 without mpc laptop
+#40 final depth: 20 time: 3833 policy: 8 value: 3800 nodes: 25984672 nps: 6777431 get: 20497 reg: 325578
+#41 final depth: 22 time: 57463 policy: 31 value: 0 nodes: 400687708 nps: 6972726 get: 1306818 reg: 5702178
+#42 final depth: 22 time: 30736 policy: 14 value: 600 nodes: 230594286 nps: 7501928 get: 596743 reg: 3071300
+#43 final depth: 23 time: 63222 policy: 50 value: -1200 nodes: 380086347 nps: 6011741 get: 1835485 reg: 10293531

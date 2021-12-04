@@ -392,18 +392,6 @@ int mtd_final(board *b, bool skipped, int depth, int l, int u){
         u = min(u, (g + step - 1) / step * step);
     else
         l = max(l, g / step * step);
-    /*
-    int g = mid_evaluate(b), beta;
-    while (u - l > mtd_threshold_final){
-        beta = g;
-        g = nega_alpha_ordering_final(b, skipped, depth, beta - search_epsilon, beta);
-        if (g < beta)
-            u = g;
-        else
-            l = g;
-        g = (l + u) / 2 / step * step;
-    }
-    */
     cerr << l << " " << u << "  ";
     int nl = l, nu = u;
     if (u - l > mtd_threshold_final){
