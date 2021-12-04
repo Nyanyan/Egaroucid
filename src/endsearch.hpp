@@ -289,6 +289,10 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
                 return alpha;
         }
     #endif
+    #if USE_END_PO
+        bool parity_vacant[hw2];
+        calc_parity(b->b, parity_vacant);
+    #endif
     board nb[depth];
     int canput = 0;
     for (const int &cell: vacant_lst){
@@ -299,7 +303,11 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
                     return alpha;
             #endif
             //move_ordering(&nb[canput]);
-            nb[canput].v = -calc_canput_exact(&nb[canput]);
+            nb[canput].v = -canput_bonus * calc_canput_exact(&nb[canput]);
+            #if USE_END_PO
+                if (parity_vacant[cell])
+                    nb[canput].v += parity_vacant_bonus;
+            #endif
             ++canput;
         }
     }

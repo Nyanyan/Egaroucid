@@ -9,7 +9,7 @@ using namespace std;
 #define search_epsilon 1
 #define cache_hit 10000
 #define cache_both 1000
-#define parity_vacant_bonus 1000
+#define parity_vacant_bonus 50
 #define canput_bonus 100
 #define mtd_threshold 400
 #define mtd_threshold_final 100
