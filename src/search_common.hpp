@@ -21,7 +21,7 @@ using namespace std;
 #define mpct_final 4.0
 
 #define simple_mid_threshold 3
-#define simple_end_threshold 7
+#define simple_end_threshold 5
 
 #define search_hash_table_size 1048576
 constexpr int search_hash_mask = search_hash_table_size - 1;
@@ -224,21 +224,17 @@ int parity_dfs(const bool vacant_arr[hw][hw], bool checked[hw][hw], int y, int x
         parity_dfs(vacant_arr, checked, y + 1, x) + 
         parity_dfs(vacant_arr, checked, y - 1, x) + 
         parity_dfs(vacant_arr, checked, y, x + 1) + 
-        parity_dfs(vacant_arr, checked, y, x - 1) + 
-        parity_dfs(vacant_arr, checked, y + 1, x + 1) + 
-        parity_dfs(vacant_arr, checked, y - 1, x - 1) + 
-        parity_dfs(vacant_arr, checked, y + 1, x - 1) + 
-        parity_dfs(vacant_arr, checked, y - 1, x + 1);
+        parity_dfs(vacant_arr, checked, y, x - 1);
 }
 
-inline void calc_parity(const int b[], bool odd_vacant[]){
+inline void calc_parity(const int b[], bool parity_arr[]){
     bool checked[hw][hw], registered[hw][hw];
     bool vacant_arr[hw][hw];
     int i, j, k, n_neighbor, y, x;
     for (i = 0; i < hw; ++i){
         for (j = 0; j < hw; ++j){
             registered[i][j] = false;
-            odd_vacant[i * hw + j] = false;
+            parity_arr[i * hw + j] = false;
             vacant_arr[i][j] = pop_digit[b[i]][j] == vacant;
         }
     }
@@ -255,7 +251,7 @@ inline void calc_parity(const int b[], bool odd_vacant[]){
                         for (k = 0; k < hw; ++k){
                             if (checked[j][k]){
                                 registered[j][k] = true;
-                                odd_vacant[j * hw + k] = true;
+                                parity_arr[j * hw + k] = true;
                             }
                         }
                     }

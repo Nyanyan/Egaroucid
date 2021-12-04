@@ -174,42 +174,119 @@ inline int last4(board *b, bool skipped, int alpha, int beta, int p0, int p1, in
     board nb;
     bool passed = true;
     int v = -inf, g;
-    if (b->legal(p0)){
-        passed = false;
-        b->move(p0, &nb);
-        g = -last3(&nb, false, -beta, -alpha, p1, p2, p3);
-        alpha = max(alpha, g);
-        if (beta <= alpha)
-            return alpha;
-        v = max(v, g);
-    }
-    if (b->legal(p1)){
-        passed = false;
-        b->move(p1, &nb);
-        g = -last3(&nb, false, -beta, -alpha, p0, p2, p3);
-        alpha = max(alpha, g);
-        if (beta <= alpha)
-            return alpha;
-        v = max(v, g);
-    }
-    if (b->legal(p2)){
-        passed = false;
-        b->move(p2, &nb);
-        g = -last3(&nb, false, -beta, -alpha, p0, p1, p3);
-        alpha = max(alpha, g);
-        if (beta <= alpha)
-            return alpha;
-        v = max(v, g);
-    }
-    if (b->legal(p3)){
-        passed = false;
-        b->move(p3, &nb);
-        g = -last3(&nb, false, -beta, -alpha, p0, p1, p2);
-        alpha = max(alpha, g);
-        if (beta <= alpha)
-            return alpha;
-        v = max(v, g);
-    }
+    #if USE_END_PO
+        bool parity_vacant[hw2];
+        calc_parity(b->b, parity_vacant);
+        if (parity_vacant[p0] && b->legal(p0)){
+            passed = false;
+            b->move(p0, &nb);
+            g = -last3(&nb, false, -beta, -alpha, p1, p2, p3);
+            alpha = max(alpha, g);
+            if (beta <= alpha)
+                return alpha;
+            v = max(v, g);
+        }
+        if (parity_vacant[p1] && b->legal(p1)){
+            passed = false;
+            b->move(p1, &nb);
+            g = -last3(&nb, false, -beta, -alpha, p0, p2, p3);
+            alpha = max(alpha, g);
+            if (beta <= alpha)
+                return alpha;
+            v = max(v, g);
+        }
+        if (parity_vacant[p2] && b->legal(p2)){
+            passed = false;
+            b->move(p2, &nb);
+            g = -last3(&nb, false, -beta, -alpha, p0, p1, p3);
+            alpha = max(alpha, g);
+            if (beta <= alpha)
+                return alpha;
+            v = max(v, g);
+        }
+        if (parity_vacant[p3] && b->legal(p3)){
+            passed = false;
+            b->move(p3, &nb);
+            g = -last3(&nb, false, -beta, -alpha, p0, p1, p2);
+            alpha = max(alpha, g);
+            if (beta <= alpha)
+                return alpha;
+            v = max(v, g);
+        }
+        if (!parity_vacant[p0] && b->legal(p0)){
+            passed = false;
+            b->move(p0, &nb);
+            g = -last3(&nb, false, -beta, -alpha, p1, p2, p3);
+            alpha = max(alpha, g);
+            if (beta <= alpha)
+                return alpha;
+            v = max(v, g);
+        }
+        if (!parity_vacant[p1] && b->legal(p1)){
+            passed = false;
+            b->move(p1, &nb);
+            g = -last3(&nb, false, -beta, -alpha, p0, p2, p3);
+            alpha = max(alpha, g);
+            if (beta <= alpha)
+                return alpha;
+            v = max(v, g);
+        }
+        if (!parity_vacant[p2] && b->legal(p2)){
+            passed = false;
+            b->move(p2, &nb);
+            g = -last3(&nb, false, -beta, -alpha, p0, p1, p3);
+            alpha = max(alpha, g);
+            if (beta <= alpha)
+                return alpha;
+            v = max(v, g);
+        }
+        if (!parity_vacant[p3] && b->legal(p3)){
+            passed = false;
+            b->move(p3, &nb);
+            g = -last3(&nb, false, -beta, -alpha, p0, p1, p2);
+            alpha = max(alpha, g);
+            if (beta <= alpha)
+                return alpha;
+            v = max(v, g);
+        }
+    #else
+        if (b->legal(p0)){
+            passed = false;
+            b->move(p0, &nb);
+            g = -last3(&nb, false, -beta, -alpha, p1, p2, p3);
+            alpha = max(alpha, g);
+            if (beta <= alpha)
+                return alpha;
+            v = max(v, g);
+        }
+        if (b->legal(p1)){
+            passed = false;
+            b->move(p1, &nb);
+            g = -last3(&nb, false, -beta, -alpha, p0, p2, p3);
+            alpha = max(alpha, g);
+            if (beta <= alpha)
+                return alpha;
+            v = max(v, g);
+        }
+        if (b->legal(p2)){
+            passed = false;
+            b->move(p2, &nb);
+            g = -last3(&nb, false, -beta, -alpha, p0, p1, p3);
+            alpha = max(alpha, g);
+            if (beta <= alpha)
+                return alpha;
+            v = max(v, g);
+        }
+        if (b->legal(p3)){
+            passed = false;
+            b->move(p3, &nb);
+            g = -last3(&nb, false, -beta, -alpha, p0, p1, p2);
+            alpha = max(alpha, g);
+            if (beta <= alpha)
+                return alpha;
+            v = max(v, g);
+        }
+    #endif
     if (passed){
         if (skipped)
             return end_evaluate(b);
@@ -241,21 +318,56 @@ int nega_alpha_final(board *b, bool skipped, const int depth, int alpha, int bet
     board nb;
     bool passed = true;
     int g, v = -inf;
-    for (const int &cell: vacant_lst){
-        if (b->legal(cell)){
-            passed = false;
-            b->move(cell, &nb);
-            #if USE_END_SC
-                if (stability_cut(&nb, &alpha, &beta))
+    #if USE_END_PO
+        bool parity_vacant[hw2];
+        calc_parity(b->b, parity_vacant);
+        for (const int &cell: vacant_lst){
+            if (parity_vacant[cell] && b->legal(cell)){
+                passed = false;
+                b->move(cell, &nb);
+                #if USE_END_SC
+                    if (stability_cut(&nb, &alpha, &beta))
+                        return alpha;
+                #endif
+                g = -nega_alpha_final(&nb, false, depth - 1, -beta, -alpha);
+                alpha = max(alpha, g);
+                if (beta <= alpha)
                     return alpha;
-            #endif
-            g = -nega_alpha_final(&nb, false, depth - 1, -beta, -alpha);
-            alpha = max(alpha, g);
-            if (beta <= alpha)
-                return alpha;
-            v = max(v, g);
+                v = max(v, g);
+            }
         }
-    }
+        for (const int &cell: vacant_lst){
+            if (!parity_vacant[cell] && b->legal(cell)){
+                passed = false;
+                b->move(cell, &nb);
+                #if USE_END_SC
+                    if (stability_cut(&nb, &alpha, &beta))
+                        return alpha;
+                #endif
+                g = -nega_alpha_final(&nb, false, depth - 1, -beta, -alpha);
+                alpha = max(alpha, g);
+                if (beta <= alpha)
+                    return alpha;
+                v = max(v, g);
+            }
+        }
+    #else
+        for (const int &cell: vacant_lst){
+            if (b->legal(cell)){
+                passed = false;
+                b->move(cell, &nb);
+                #if USE_END_SC
+                    if (stability_cut(&nb, &alpha, &beta))
+                        return alpha;
+                #endif
+                g = -nega_alpha_final(&nb, false, depth - 1, -beta, -alpha);
+                alpha = max(alpha, g);
+                if (beta <= alpha)
+                    return alpha;
+                v = max(v, g);
+            }
+        }
+    #endif
     if (passed){
         if (skipped)
             return end_evaluate(b);
@@ -289,10 +401,6 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
                 return alpha;
         }
     #endif
-    #if USE_END_PO
-        bool parity_vacant[hw2];
-        calc_parity(b->b, parity_vacant);
-    #endif
     board nb[depth];
     int canput = 0;
     for (const int &cell: vacant_lst){
@@ -304,10 +412,6 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
             #endif
             //move_ordering(&nb[canput]);
             nb[canput].v = -canput_bonus * calc_canput_exact(&nb[canput]);
-            #if USE_END_PO
-                if (parity_vacant[cell])
-                    nb[canput].v += parity_vacant_bonus;
-            #endif
             ++canput;
         }
     }
@@ -372,10 +476,6 @@ int nega_scout_final(board *b, bool skipped, int depth, int alpha, int beta){
                 return alpha;
         }
     #endif
-    #if USE_END_PO
-        bool parity_vacant[hw2];
-        calc_parity(b->b, parity_vacant);
-    #endif
     board nb[depth];
     int canput = 0;
     for (const int &cell: vacant_lst){
@@ -387,10 +487,6 @@ int nega_scout_final(board *b, bool skipped, int depth, int alpha, int beta){
             #endif
             move_ordering(&nb[canput]);
             nb[canput].v -= canput_bonus * calc_canput_exact(&nb[canput]);
-            #if USE_END_PO
-                if (parity_vacant[cell])
-                    nb[canput].v += parity_vacant_bonus;
-            #endif
             ++canput;
         }
     }
