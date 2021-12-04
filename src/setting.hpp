@@ -16,5 +16,5 @@
 
 /* ordering */
 
-// odd ordering
-#define USE_END_OO  true
+// parity ordering
+#define USE_END_PO  true

@@ -364,9 +364,9 @@ int nega_scout_final(board *b, bool skipped, int depth, int alpha, int beta){
                 return alpha;
         }
     #endif
-    #if USE_END_OO
-        bool odd_vacant[hw2];
-        pick_vacant_odd(b->b, odd_vacant);
+    #if USE_END_PO
+        bool parity_vacant[hw2];
+        calc_parity(b->b, parity_vacant);
     #endif
     board nb[depth];
     int canput = 0;
@@ -379,9 +379,9 @@ int nega_scout_final(board *b, bool skipped, int depth, int alpha, int beta){
             #endif
             move_ordering(&nb[canput]);
             nb[canput].v -= canput_bonus * calc_canput_exact(&nb[canput]);
-            #if USE_END_OO
-                if (odd_vacant[cell])
-                    nb[canput].v += odd_vacant_bonus;
+            #if USE_END_PO
+                if (parity_vacant[cell])
+                    nb[canput].v += parity_vacant_bonus;
             #endif
             ++canput;
         }

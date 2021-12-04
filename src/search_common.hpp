@@ -9,7 +9,7 @@ using namespace std;
 #define search_epsilon 1
 #define cache_hit 10000
 #define cache_both 1000
-#define odd_vacant_bonus 1000
+#define parity_vacant_bonus 1000
 #define canput_bonus 100
 #define mtd_threshold 400
 #define mtd_threshold_final 100
@@ -214,24 +214,24 @@ inline int calc_canput_exact(board *b){
     return res;
 }
 
-int vacant_odd_dfs(const bool vacant_arr[hw][hw], bool checked[hw][hw], int y, int x){
+int parity_dfs(const bool vacant_arr[hw][hw], bool checked[hw][hw], int y, int x){
     if (y < 0 || hw2 <= y || x < 0 || hw2 <= x)
         return 0;
     if (!vacant_arr[y][x] || checked[y][x])
         return 0;
     checked[y][x] = true;
     return 1 + 
-        vacant_odd_dfs(vacant_arr, checked, y + 1, x) + 
-        vacant_odd_dfs(vacant_arr, checked, y - 1, x) + 
-        vacant_odd_dfs(vacant_arr, checked, y, x + 1) + 
-        vacant_odd_dfs(vacant_arr, checked, y, x - 1) + 
-        vacant_odd_dfs(vacant_arr, checked, y + 1, x + 1) + 
-        vacant_odd_dfs(vacant_arr, checked, y - 1, x - 1) + 
-        vacant_odd_dfs(vacant_arr, checked, y + 1, x - 1) + 
-        vacant_odd_dfs(vacant_arr, checked, y - 1, x + 1);
+        parity_dfs(vacant_arr, checked, y + 1, x) + 
+        parity_dfs(vacant_arr, checked, y - 1, x) + 
+        parity_dfs(vacant_arr, checked, y, x + 1) + 
+        parity_dfs(vacant_arr, checked, y, x - 1) + 
+        parity_dfs(vacant_arr, checked, y + 1, x + 1) + 
+        parity_dfs(vacant_arr, checked, y - 1, x - 1) + 
+        parity_dfs(vacant_arr, checked, y + 1, x - 1) + 
+        parity_dfs(vacant_arr, checked, y - 1, x + 1);
 }
 
-inline void pick_vacant_odd(const int b[], bool odd_vacant[]){
+inline void calc_parity(const int b[], bool odd_vacant[]){
     bool checked[hw][hw], registered[hw][hw];
     bool vacant_arr[hw][hw];
     int i, j, k, n_neighbor, y, x;
@@ -249,7 +249,7 @@ inline void pick_vacant_odd(const int b[], bool odd_vacant[]){
                     for (k = 0; k < hw; ++k)
                         checked[j][k] = false;
                 }
-                n_neighbor = vacant_odd_dfs(vacant_arr, checked, y, x);
+                n_neighbor = parity_dfs(vacant_arr, checked, y, x);
                 if (n_neighbor & 1){
                     for (j = 0; j < hw; ++j){
                         for (k = 0; k < hw; ++k){
