@@ -142,6 +142,21 @@ class transpose_table{
 
 transpose_table transpose_table;
 
+inline void search_init(){
+    int i, j;
+    for (i = 0; i < n_phases; ++i){
+        for (j = 0; j <= mpc_max_depth - mpc_min_depth; ++j)
+            mpctsd[i][mpc_min_depth + j] = (int)(mpct[i] * mpcsd[i][j]);
+    }
+    for (i = 0; i <= mpc_max_depth_final - mpc_min_depth_final; ++i)
+        mpctsd_final[mpc_min_depth_final + i] = (int)(mpct_final * mpcsd_final[i]);
+    transpose_table.now = 0;
+    transpose_table.prev = 1;
+    transpose_table.init_now();
+    transpose_table.init_prev();
+    cerr << "search initialized" << endl;
+}
+
 int cmp_vacant(int p, int q){
     return cell_weight[p] > cell_weight[q];
 }
@@ -157,21 +172,6 @@ inline void move_ordering(board *b){
         b->v += l + cache_hit;
     else
         b->v = -mid_evaluate(b);
-}
-
-inline void search_init(){
-    int i, j;
-    for (i = 0; i < n_phases; ++i){
-        for (j = 0; j <= mpc_max_depth - mpc_min_depth; ++j)
-            mpctsd[i][mpc_min_depth + j] = (int)(mpct[i] * mpcsd[i][j]);
-    }
-    for (i = 0; i <= mpc_max_depth_final - mpc_min_depth_final; ++i)
-        mpctsd_final[mpc_min_depth_final + i] = (int)(mpct_final * mpcsd_final[i]);
-    transpose_table.now = 0;
-    transpose_table.prev = 1;
-    transpose_table.init_now();
-    transpose_table.init_prev();
-    cerr << "search initialized" << endl;
 }
 
 inline int calc_xx_stability(board *b, int p){

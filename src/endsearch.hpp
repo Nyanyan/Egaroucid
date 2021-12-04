@@ -68,11 +68,9 @@ inline bool mpc_lower_final(board *b, bool skipped, int depth, int alpha){
 
 inline int last1(board *b, bool skipped, int p0){
     ++searched_nodes;
-    int i, before_score = 0;
-    for (i = 0; i < hw; ++i)
-        before_score += count_black_arr[b->b[i]];
-    if (b->p)
-        before_score = -before_score;
+    int before_score = (b->p ? -1 : 1) * (
+        count_black_arr[b->b[0]] + count_black_arr[b->b[1]] + count_black_arr[b->b[2]] + count_black_arr[b->b[3]] + 
+        count_black_arr[b->b[4]] + count_black_arr[b->b[5]] + count_black_arr[b->b[6]] + count_black_arr[b->b[7]]);
     int score = before_score + 1 + (
         move_arr[b->p][b->b[place_included[p0][0]]][local_place[place_included[p0][0]][p0]][0] + move_arr[b->p][b->b[place_included[p0][0]]][local_place[place_included[p0][0]][p0]][1] + 
         move_arr[b->p][b->b[place_included[p0][1]]][local_place[place_included[p0][1]][p0]][0] + move_arr[b->p][b->b[place_included[p0][1]]][local_place[place_included[p0][1]][p0]][1] + 
@@ -83,7 +81,7 @@ inline int last1(board *b, bool skipped, int p0){
         if (skipped)
             return end_evaluate(b);
         board rb;
-        for (i = 0; i < b_idx_num; ++i)
+        for (int i = 0; i < b_idx_num; ++i)
             rb.b[i] = b->b[i];
         rb.p = 1 - b->p;
         rb.n = b->n;
