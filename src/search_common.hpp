@@ -18,7 +18,7 @@ using namespace std;
 #define mpc_max_depth 10
 #define mpc_min_depth_final 9
 #define mpc_max_depth_final 28
-#define mpct_final 3.5
+#define mpct_final 2.5
 
 #define simple_mid_threshold 3
 #define simple_end_threshold 7
@@ -202,8 +202,8 @@ inline int calc_stability(board *b, int p){
 }
 
 inline bool stability_cut(board *b, int *alpha, int *beta){
-    *alpha = max(*alpha, step * (2 * calc_stability(b, b->p) - hw2));
-    *beta = min(*beta, step * (hw2 - 2 * calc_stability(b, 1 - b->p)));
+    *alpha = max(*alpha, step * (2 * calc_stability(b, 1 - b->p) - hw2));
+    *beta = min(*beta, step * (hw2 - 2 * calc_stability(b, b->p)));
     return *alpha >= *beta;
 }
 
