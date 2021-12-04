@@ -12,24 +12,32 @@
 using namespace std;
 
 int nega_alpha_ordering_nompc(board *b, bool skipped, int depth, int alpha, int beta){
-    if (depth <= simple_end_threshold)
-        return nega_alpha(b, skipped, depth, alpha, beta);
     ++searched_nodes;
-    #if USE_END_SC
-        if (stability_cut(b, &alpha, &beta))
-            return alpha;
-    #endif
-    vector<board> nb;
-    int canput = 0;
+    if (depth == 0){
+        if (b->n < hw2)
+            return mid_evaluate(b);
+        else
+            return end_evaluate(b);
+    }
+    board nb;
+    bool passed = true;
+    int g, v = -inf;
     for (const int &cell: vacant_lst){
         if (b->legal(cell)){
-            nb.emplace_back(b->move(cell));
-            //move_ordering(&(nb[canput]));
-            nb[canput].v = -calc_canput_exact(&(nb[canput]));
-            ++canput;
+            passed = false;
+            b->move(cell, &nb);
+            #if USE_END_SC
+                if (stability_cut(&nb, &alpha, &beta))
+                    return alpha;
+            #endif
+            g = -nega_alpha(&nb, false, depth - 1, -beta, -alpha);
+            alpha = max(alpha, g);
+            if (beta <= alpha)
+                return alpha;
+            v = max(v, g);
         }
     }
-    if (canput == 0){
+    if (passed){
         if (skipped)
             return end_evaluate(b);
         board rb;
@@ -37,17 +45,7 @@ int nega_alpha_ordering_nompc(board *b, bool skipped, int depth, int alpha, int 
             rb.b[i] = b->b[i];
         rb.p = 1 - b->p;
         rb.n = b->n;
-        return -nega_alpha_ordering_nompc(&rb, true, depth, -beta, -alpha);
-    }
-    if (canput >= 2)
-        sort(nb.begin(), nb.end());
-    int g, v = -inf;
-    for (board &nnb: nb){
-        g = -nega_alpha_ordering_nompc(&nnb, false, depth - 1, -beta, -alpha);
-        if (beta <= g)
-            return g;
-        alpha = max(alpha, g);
-        v = max(v, g);
+        return -nega_alpha(&rb, true, depth, -beta, -alpha);
     }
     return v;
 }

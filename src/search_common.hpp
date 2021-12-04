@@ -18,7 +18,7 @@ using namespace std;
 #define mpc_max_depth 10
 #define mpc_min_depth_final 9
 #define mpc_max_depth_final 28
-#define mpct_final 1.5
+#define mpct_final 4.0
 
 #define simple_mid_threshold 3
 #define simple_end_threshold 7
