@@ -226,6 +226,24 @@ class board {
             return res;
         }
 
+        inline void move(const int g_place, board *res) {
+            for (int i = 0; i < b_idx_num; ++i)
+                res->b[i] = this->b[i];
+            move_p(res, g_place, 0);
+            move_p(res, g_place, 1);
+            move_p(res, g_place, 2);
+            if (place_included[g_place][3] != -1)
+                move_p(res, g_place, 3);
+            res->b[place_included[g_place][0]] = put_arr[this->p][res->b[place_included[g_place][0]]][local_place[place_included[g_place][0]][g_place]];
+            res->b[place_included[g_place][1]] = put_arr[this->p][res->b[place_included[g_place][1]]][local_place[place_included[g_place][1]][g_place]];
+            res->b[place_included[g_place][2]] = put_arr[this->p][res->b[place_included[g_place][2]]][local_place[place_included[g_place][2]][g_place]];
+            if (place_included[g_place][3] != -1)
+                res->b[place_included[g_place][3]] = put_arr[this->p][res->b[place_included[g_place][3]]][local_place[place_included[g_place][3]][g_place]];
+            res->p = 1 - this->p;
+            res->n = this->n + 1;
+            res->policy = g_place;
+        }
+
         inline void translate_to_arr(int res[]) {
             int i, j;
             for (i = 0; i < hw; ++i) {

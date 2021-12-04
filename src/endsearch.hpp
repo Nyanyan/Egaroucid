@@ -97,7 +97,7 @@ inline int last2(board *b, bool skipped, int alpha, int beta, int p0, int p1){
     int v = -inf, g;
     if (b->legal(p0)){
         passed = false;
-        nb = b->move(p0);
+        b->move(p0, &nb);
         g = -last1(&nb, false, p1);
         alpha = max(alpha, g);
         if (beta <= alpha)
@@ -106,7 +106,7 @@ inline int last2(board *b, bool skipped, int alpha, int beta, int p0, int p1){
     }
     if (b->legal(p1)){
         passed = false;
-        nb = b->move(p1);
+        b->move(p1, &nb);
         g = -last1(&nb, false, p0);
         alpha = max(alpha, g);
         if (beta <= alpha)
@@ -133,7 +133,7 @@ inline int last3(board *b, bool skipped, int alpha, int beta, int p0, int p1, in
     int v = -inf, g;
     if (b->legal(p0)){
         passed = false;
-        nb = b->move(p0);
+        b->move(p0, &nb);
         g = -last2(&nb, false, -beta, -alpha, p1, p2);
         alpha = max(alpha, g);
         if (beta <= alpha)
@@ -142,7 +142,7 @@ inline int last3(board *b, bool skipped, int alpha, int beta, int p0, int p1, in
     }
     if (b->legal(p1)){
         passed = false;
-        nb = b->move(p1);
+        b->move(p1, &nb);
         g = -last2(&nb, false, -beta, -alpha, p0, p2);
         alpha = max(alpha, g);
         if (beta <= alpha)
@@ -151,7 +151,7 @@ inline int last3(board *b, bool skipped, int alpha, int beta, int p0, int p1, in
     }
     if (b->legal(p2)){
         passed = false;
-        nb = b->move(p2);
+        b->move(p2, &nb);
         g = -last2(&nb, false, -beta, -alpha, p0, p1);
         alpha = max(alpha, g);
         if (beta <= alpha)
@@ -179,7 +179,7 @@ inline void pick_vacant(board *b, int cells[]){
     }
 }
 
-int nega_alpha_final(board *b, bool skipped, int depth, int alpha, int beta){
+int nega_alpha_final(board *b, bool skipped, const int depth, int alpha, int beta){
     if (b->n == hw2 - 3){
         int cells[3];
         pick_vacant(b, cells);
@@ -196,7 +196,7 @@ int nega_alpha_final(board *b, bool skipped, int depth, int alpha, int beta){
     for (const int &cell: vacant_lst){
         if (b->legal(cell)){
             passed = false;
-            nb = b->move(cell);
+            b->move(cell, &nb);
             g = -nega_alpha_final(&nb, false, depth - 1, -beta, -alpha);
             alpha = max(alpha, g);
             if (beta <= alpha)
@@ -216,7 +216,7 @@ int nega_alpha_final(board *b, bool skipped, int depth, int alpha, int beta){
     return v;
 }
 
-int nega_alpha_ordering_final(board *b, bool skipped, int depth, int alpha, int beta){
+int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha, int beta){
     if (depth <= simple_end_threshold)
         return nega_alpha_final(b, skipped, depth, alpha, beta);
     ++searched_nodes;
@@ -239,13 +239,13 @@ int nega_alpha_ordering_final(board *b, bool skipped, int depth, int alpha, int 
                 return alpha;
         }
     #endif
-    vector<board> nb;
+    board nb[depth];
     int canput = 0;
     for (const int &cell: vacant_lst){
         if (b->legal(cell)){
-            nb.push_back(b->move(cell));
-            //move_ordering(&(nb[canput]));
-            nb[canput].v = -calc_canput_exact(&(nb[canput]));
+            b->move(cell, &nb[canput]);
+            //move_ordering(&nb[canput]);
+            nb[canput].v = -calc_canput_exact(&nb[canput]);
             ++canput;
         }
     }
@@ -267,10 +267,10 @@ int nega_alpha_ordering_final(board *b, bool skipped, int depth, int alpha, int 
         return res;
     }
     if (canput >= 2)
-        sort(nb.begin(), nb.end());
+        sort(nb, nb + canput);
     int g, v = -inf, first_alpha = alpha;
-    for (board &nnb: nb){
-        g = -nega_alpha_ordering_final(&nnb, false, depth - 1, -beta, -alpha);
+    for (int i = 0; i < canput; ++i){
+        g = -nega_alpha_ordering_final(&nb[i], false, depth - 1, -beta, -alpha);
         alpha = max(alpha, g);
         if (beta <= alpha){
             if (l < g)
@@ -313,13 +313,13 @@ int nega_scout_final(board *b, bool skipped, int depth, int alpha, int beta){
         bool odd_vacant[hw2];
         pick_vacant_odd(b->b, odd_vacant);
     #endif
-    vector<board> nb;
+    board nb[depth];
     int canput = 0;
     for (const int &cell: vacant_lst){
         if (b->legal(cell)){
-            nb.push_back(b->move(cell));
-            move_ordering(&(nb[canput]));
-            nb[canput].v -= canput_bonus * calc_canput_exact(&(nb[canput]));
+            b->move(cell, &nb[canput]);
+            move_ordering(&nb[canput]);
+            nb[canput].v -= canput_bonus * calc_canput_exact(&nb[canput]);
             #if USE_END_OO
                 if (odd_vacant[cell])
                     nb[canput].v += odd_vacant_bonus;
@@ -345,11 +345,11 @@ int nega_scout_final(board *b, bool skipped, int depth, int alpha, int beta){
         return res;
     }
     if (canput >= 2)
-        sort(nb.begin(), nb.end());
+        sort(nb, nb + canput);
     int g = alpha, v = -inf, first_alpha = alpha;
-    for (board &nnb: nb){
-        if (&nnb - &nb[0]){
-            g = -nega_alpha_ordering_final(&nnb, false, depth - 1, -alpha - step, -alpha);
+    for (int i = 0; i < canput; ++i){
+        if (i > 0){
+            g = -nega_alpha_ordering_final(&nb[i], false, depth - 1, -alpha - step, -alpha);
             if (beta <= g){
                 if (l < g)
                     transpose_table.reg(b, hash, g, u);
@@ -358,7 +358,7 @@ int nega_scout_final(board *b, bool skipped, int depth, int alpha, int beta){
             v = max(v, g);
         }
         if (alpha <= g){
-            g = -nega_scout_final(&nnb, false, depth - 1, -beta, -g);
+            g = -nega_scout_final(&nb[i], false, depth - 1, -beta, -g);
             if (beta <= g){
                 if (l < g)
                     transpose_table.reg(b, hash, g, u);

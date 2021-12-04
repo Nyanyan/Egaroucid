@@ -45,7 +45,7 @@ int nega_alpha(board *b, bool skipped, int depth, int alpha, int beta){
     for (const int &cell: vacant_lst){
         if (b->legal(cell)){
             passed = false;
-            nb = b->move(cell);
+            b->move(cell, &nb);
             g = -nega_alpha(&nb, false, depth - 1, -beta, -alpha);
             alpha = max(alpha, g);
             if (beta <= alpha)
