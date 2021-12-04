@@ -10,3 +10,10 @@
 #41 final depth: 22 time: 57463 policy: 31 value: 0 nodes: 400687708 nps: 6972726 get: 1306818 reg: 5702178
 #42 final depth: 22 time: 30736 policy: 14 value: 600 nodes: 230594286 nps: 7501928 get: 596743 reg: 3071300
 #43 final depth: 23 time: 63222 policy: 50 value: -1200 nodes: 380086347 nps: 6011741 get: 1835485 reg: 10293531
+
+2021/12/04 without mpc laptop
+#40 final depth: 20 time: 3122 policy: 8 value: 3800 nodes: 26353793 nps: 8438614 get: 18447 reg: 323262
+#41 final depth: 22 time: 26595 policy: 31 value: 0 nodes: 220694488 nps: 8297721 get: 670603 reg: 3598507
+#42 final depth: 22 time: 16466 policy: 14 value: 600 nodes: 157525931 nps: 9566158 get: 340227 reg: 2142856
+#43 final depth: 23 time: 42877 policy: 22 value: -1200 nodes: 342316427 nps: 7983311 get: 1657383 reg: 9589142
+#44 final depth: 23 time: 26912 policy: 11 value: -1400 nodes: 218822108 nps: 8130419 get: 901845 reg: 5190381
