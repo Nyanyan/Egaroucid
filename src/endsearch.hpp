@@ -173,19 +173,73 @@ inline int last3(board *b, bool skipped, int alpha, int beta, int p0, int p1, in
     return v;
 }
 
+inline int last4(board *b, bool skipped, int alpha, int beta, int p0, int p1, int p2, int p3){
+    ++searched_nodes;
+    board nb;
+    bool passed = true;
+    int v = -inf, g;
+    if (b->legal(p0)){
+        passed = false;
+        b->move(p0, &nb);
+        g = -last3(&nb, false, -beta, -alpha, p1, p2, p3);
+        alpha = max(alpha, g);
+        if (beta <= alpha)
+            return alpha;
+        v = max(v, g);
+    }
+    if (b->legal(p1)){
+        passed = false;
+        b->move(p1, &nb);
+        g = -last3(&nb, false, -beta, -alpha, p0, p2, p3);
+        alpha = max(alpha, g);
+        if (beta <= alpha)
+            return alpha;
+        v = max(v, g);
+    }
+    if (b->legal(p2)){
+        passed = false;
+        b->move(p2, &nb);
+        g = -last3(&nb, false, -beta, -alpha, p0, p1, p3);
+        alpha = max(alpha, g);
+        if (beta <= alpha)
+            return alpha;
+        v = max(v, g);
+    }
+    if (b->legal(p3)){
+        passed = false;
+        b->move(p3, &nb);
+        g = -last3(&nb, false, -beta, -alpha, p0, p1, p2);
+        alpha = max(alpha, g);
+        if (beta <= alpha)
+            return alpha;
+        v = max(v, g);
+    }
+    if (passed){
+        if (skipped)
+            return end_evaluate(b);
+        board rb;
+        for (int i = 0; i < b_idx_num; ++i)
+            rb.b[i] = b->b[i];
+        rb.p = 1 - b->p;
+        rb.n = b->n;
+        return -last4(&rb, true, -beta, -alpha, p0, p1, p2, p3);
+    }
+    return v;
+}
+
 inline void pick_vacant(board *b, int cells[]){
     int idx = 0;
     for (const int &cell: vacant_lst){
-        if (pop_digit[b->b[cell / hw]][cell % hw] == 2)
+        if (pop_digit[b->b[cell / hw]][cell % hw] == vacant)
             cells[idx++] = cell;
     }
 }
 
 int nega_alpha_final(board *b, bool skipped, const int depth, int alpha, int beta){
-    if (b->n == hw2 - 3){
-        int cells[3];
+    if (b->n == hw2 - 4){
+        int cells[5];
         pick_vacant(b, cells);
-        return last3(b, skipped, alpha, beta, cells[0], cells[1], cells[2]);
+        return last4(b, skipped, alpha, beta, cells[0], cells[1], cells[2], cells[3]);
     }
     ++searched_nodes;
     board nb;
