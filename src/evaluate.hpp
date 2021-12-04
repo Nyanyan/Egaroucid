@@ -213,37 +213,42 @@ inline void init_evaluation1() {
             if (legal_arr[white][idx][place])
                 ++mobility_arr[white][idx];
         }
-        full_black = true;
-        full_white = true;
-        for (place = 0; place < hw; ++place){
-            full_black &= 1 & (b >> place);
-            full_white &= 1 & (w >> place);
-            stability_edge_arr[black][idx] += full_black;
-            stability_edge_arr[white][idx] += full_white;
-        }
-        full_black = true;
-        full_white = true;
-        for (place = hw_m1; place >= 0; --place){
-            full_black &= 1 & (b >> place);
-            full_white &= 1 & (w >> place);
-            stability_edge_arr[black][idx] += full_black;
-            stability_edge_arr[white][idx] += full_white;
-        }
-        if (1 & b){
-            --stability_edge_arr[black][idx];
-            ++stability_corner_arr[black][idx];
-        }
-        if (1 & (b >> hw_m1)){
-            --stability_edge_arr[black][idx];
-            ++stability_corner_arr[black][idx];
-        }
-        if (1 & w){
-            --stability_edge_arr[white][idx];
-            ++stability_corner_arr[white][idx];
-        }
-        if (1 & (w >> hw_m1)){
-            --stability_edge_arr[white][idx];
-            ++stability_corner_arr[white][idx];
+        if (count_both_arr[idx] == hw){
+            stability_edge_arr[black][idx] = (count_black_arr[idx] + hw) / 2;
+            stability_edge_arr[white][idx] += hw - stability_edge_arr[black][idx];
+        } else{
+            full_black = true;
+            full_white = true;
+            for (place = 0; place < hw; ++place){
+                full_black &= 1 & (b >> place);
+                full_white &= 1 & (w >> place);
+                stability_edge_arr[black][idx] += full_black;
+                stability_edge_arr[white][idx] += full_white;
+            }
+            full_black = true;
+            full_white = true;
+            for (place = hw_m1; place >= 0; --place){
+                full_black &= 1 & (b >> place);
+                full_white &= 1 & (w >> place);
+                stability_edge_arr[black][idx] += full_black;
+                stability_edge_arr[white][idx] += full_white;
+            }
+            if (1 & b){
+                --stability_edge_arr[black][idx];
+                ++stability_corner_arr[black][idx];
+            }
+            if (1 & (b >> hw_m1)){
+                --stability_edge_arr[black][idx];
+                ++stability_corner_arr[black][idx];
+            }
+            if (1 & w){
+                --stability_edge_arr[white][idx];
+                ++stability_corner_arr[white][idx];
+            }
+            if (1 & (w >> hw_m1)){
+                --stability_edge_arr[white][idx];
+                ++stability_corner_arr[white][idx];
+            }
         }
     }
 }

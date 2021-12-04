@@ -274,7 +274,7 @@ int nega_alpha_ordering_final(board *b, bool skipped, int depth, int alpha, int 
         alpha = max(alpha, g);
         if (beta <= alpha){
             if (l < g)
-                transpose_table.reg(b, hash, alpha, u);
+                transpose_table.reg(b, hash, g, u);
             return alpha;
         }
         v = max(v, g);
