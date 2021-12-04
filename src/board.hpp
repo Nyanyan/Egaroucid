@@ -282,8 +282,7 @@ class board {
         }
 
         inline void move_p(board *res, int g_place, int i) {
-            int j, place;
-            place = local_place[place_included[g_place][i]][g_place];
+            int j, place = local_place[place_included[g_place][i]][g_place];
             for (j = 1; j <= move_arr[this->p][this->b[place_included[g_place][i]]][place][0]; ++j)
                 flip(res, g_place - move_offset[place_included[g_place][i]] * j);
             for (j = 1; j <= move_arr[this->p][this->b[place_included[g_place][i]]][place][1]; ++j)

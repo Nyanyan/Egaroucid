@@ -488,7 +488,7 @@ inline search_result endsearch(board b, long long strt){
     transpose_table.hash_reg = 0;
     int order_l, order_u;
     int max_depth = hw2 - b.n - 1;
-    int pre_search_depth = min(17, max_depth - simple_end_threshold + 1);
+    int pre_search_depth = min(17, max_depth - simple_end_threshold - 2);
     transpose_table.init_now();
     transpose_table.init_prev();
     if (pre_search_depth > 0)
