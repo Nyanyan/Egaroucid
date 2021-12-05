@@ -37,6 +37,17 @@ int pow3[11];
 int pop_digit[n_line][hw];
 int pop_mid[n_line][hw][hw];
 
+const int cell_div4[hw2] = {
+    1, 1, 1, 1, 2, 2, 2, 2, 
+    1, 1, 1, 1, 2, 2, 2, 2, 
+    1, 1, 1, 1, 2, 2, 2, 2, 
+    1, 1, 1, 1, 2, 2, 2, 2, 
+    4, 4, 4, 4, 8, 8, 8, 8, 
+    4, 4, 4, 4, 8, 8, 8, 8, 
+    4, 4, 4, 4, 8, 8, 8, 8, 
+    4, 4, 4, 4, 8, 8, 8, 8
+};
+
 inline int create_one_color(int idx, const int k) {
     int res = 0;
     for (int i = 0; i < hw; ++i) {
@@ -157,6 +168,7 @@ class board {
         int policy;
         int v;
         int n;
+        int parity;
 
     public:
         bool operator<(const board& another) const {
@@ -223,6 +235,7 @@ class board {
             res.p = 1 - this->p;
             res.n = this->n + 1;
             res.policy = g_place;
+            res.parity = this->parity ^ cell_div4[g_place];
             return res;
         }
 
@@ -242,6 +255,7 @@ class board {
             res->p = 1 - this->p;
             res->n = this->n + 1;
             res->policy = g_place;
+            res->parity = this->parity ^ cell_div4[g_place];
         }
 
         inline void translate_to_arr(int res[]) {

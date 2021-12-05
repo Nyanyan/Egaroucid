@@ -1,3 +1,6 @@
+/** search **/
+
+
 /* cutting */
 
 // multi prob cut
@@ -18,3 +21,10 @@
 
 // parity ordering
 #define USE_END_PO  true
+
+
+
+/* multi threading*/
+
+// usage
+#define USE_MULTI_THREAD false

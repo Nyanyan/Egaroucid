@@ -14,41 +14,47 @@ inline void init(){
     search_init();
     evaluate_init();
     book_init();
+    #if USE_MULTI_THREAD
+        multi_thread_init();
+    #endif
 }
 
-inline int input_board(int bd[]){
+inline void input_board(board *b, int ai_player){
     int i, j;
-    unsigned long long b = 0, w = 0;
+    unsigned long long bk = 0, wt = 0;
     char elem;
-    int n_stones = 0;
+    b->p = ai_player;
+    b->n = 0;
+    b->parity = 0;
     vacant_lst.clear();
     for (i = 0; i < hw; ++i){
         string raw_board;
-        cin >> raw_board; cin.ignore();
+        cin >> raw_board;
+        cin.ignore();
         cerr << raw_board << endl;
         for (j = 0; j < hw; ++j){
             elem = raw_board[j];
             if (elem != '.'){
-                b |= (unsigned long long)(elem == '0') << (i * hw + j);
-                w |= (unsigned long long)(elem == '1') << (i * hw + j);
-                ++n_stones;
+                bk |= (unsigned long long)(elem == '0') << (i * hw + j);
+                wt |= (unsigned long long)(elem == '1') << (i * hw + j);
+                ++b->n;
             } else{
                 vacant_lst.push_back(i * hw + j);
+                b->parity ^= cell_div4[i * hw + j];
             }
         }
     }
-    if (n_stones < hw2_m1)
+    if (b->n < hw2_m1)
         sort(vacant_lst.begin(), vacant_lst.end(), cmp_vacant);
     for (i = 0; i < b_idx_num; ++i){
-        bd[i] = n_line - 1;
+        b->b[i] = n_line - 1;
         for (j = 0; j < idx_n_cell[i]; ++j){
-            if (1 & (b >> global_place[i][j]))
-                bd[i] -= pow3[hw_m1 - j] * 2;
-            else if (1 & (w >> global_place[i][j]))
-                bd[i] -= pow3[hw_m1 - j];
+            if (1 & (bk >> global_place[i][j]))
+                b->b[i] -= pow3[hw_m1 - j] * 2;
+            else if (1 & (wt >> global_place[i][j]))
+                b->b[i] -= pow3[hw_m1 - j];
         }
     }
-    return n_stones;
 }
 
 inline double calc_result_value(int v){
@@ -78,8 +84,7 @@ int main(){
         cin >> ai_player;
         //int d;
         //cin >> d;
-        b.p = ai_player;
-        b.n = input_board(b.b);
+        input_board(&b, ai_player);
         /*
         transpose_table.init_now();
         transpose_table.init_prev();
