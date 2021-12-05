@@ -25,6 +25,8 @@ using namespace std;
 
 #define po_max_depth 10
 
+#define extra_stability_threshold 54
+
 #define search_hash_table_size 1048576
 constexpr int search_hash_mask = search_hash_table_size - 1;
 
@@ -196,6 +198,18 @@ inline int calc_x_stability(board *b, int p){
         (pop_digit[b->b[6]][6] == p && (pop_digit[b->b[7]][5] == p || pop_digit[b->b[5]][7] == p || (pop_digit[b->b[7]][5] != vacant || pop_digit[b->b[5]][7] != vacant)) && pop_digit[b->b[7]][6] == p && pop_digit[b->b[6]][7] == p && pop_digit[b->b[7]][7] == p);
 }
 
+inline int calc_stability(board *b, int p, bool extra_stability[]){
+    int res = 
+        stability_edge_arr[p][b->b[0]] + stability_edge_arr[p][b->b[7]] + stability_edge_arr[p][b->b[8]] + stability_edge_arr[p][b->b[15]] + 
+        stability_corner_arr[p][b->b[0]] + stability_corner_arr[p][b->b[7]] + 
+        calc_x_stability(b, p); // + calc_xx_stability(b, p);
+    for (int i = 0; i < hw2; ++i){
+        if (extra_stability[i] && pop_digit[b->b[i / hw]][i % hw] == p)
+            ++res;
+    }
+    return res;
+}
+
 inline int calc_stability(board *b, int p){
     return
         stability_edge_arr[p][b->b[0]] + stability_edge_arr[p][b->b[7]] + stability_edge_arr[p][b->b[8]] + stability_edge_arr[p][b->b[15]] + 
@@ -204,8 +218,46 @@ inline int calc_stability(board *b, int p){
 }
 
 inline bool stability_cut(board *b, int *alpha, int *beta){
-    *alpha = max(*alpha, step * (2 * calc_stability(b, 1 - b->p) - hw2));
-    *beta = min(*beta, step * (hw2 - 2 * calc_stability(b, b->p)));
+    if (b->n >= extra_stability_threshold){
+        bool extra_stability[hw2] = {
+            false, false, false, false, false, false, false, false, 
+            false, false, true,  true,  true,  true,  false, false, 
+            false, true,  true,  true,  true,  true,  true,  false, 
+            false, true,  true,  true,  true,  true,  true,  false, 
+            false, true,  true,  true,  true,  true,  true,  false, 
+            false, true,  true,  true,  true,  true,  true,  false, 
+            false, false, true,  true,  true,  true,  false, false, 
+            false, false, false, false, false, false, false, false
+        };
+        int i;
+        for (const &cell: vacant_lst){
+            if (pop_digit[b->b[cell / hw]][cell % hw] == vacant){
+                for (i = 0; i < hw; ++i){
+                    if (global_place[place_included[cell][0]][i] != -1)
+                        extra_stability[global_place[place_included[cell][0]][i]] = false;
+                }
+                for (i = 0; i < hw; ++i){
+                    if (global_place[place_included[cell][1]][i] != -1)
+                        extra_stability[global_place[place_included[cell][1]][i]] = false;
+                }
+                for (i = 0; i < hw; ++i){
+                    if (global_place[place_included[cell][2]][i] != -1)
+                        extra_stability[global_place[place_included[cell][2]][i]] = false;
+                }
+                if (place_included[cell][3] != -1){
+                    for (i = 0; i < hw; ++i){
+                        if (global_place[place_included[cell][3]][i] != -1)
+                            extra_stability[global_place[place_included[cell][3]][i]] = false;
+                    }
+                }
+            }
+        }
+        *alpha = max(*alpha, step * (2 * calc_stability(b, 1 - b->p, extra_stability) - hw2));
+        *beta = min(*beta, step * (hw2 - 2 * calc_stability(b, b->p, extra_stability)));
+    } else{
+        *alpha = max(*alpha, step * (2 * calc_stability(b, 1 - b->p) - hw2));
+        *beta = min(*beta, step * (hw2 - 2 * calc_stability(b, b->p)));
+    }
     return *alpha >= *beta;
 }
 
