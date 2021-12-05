@@ -386,12 +386,16 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
     int hash = (int)(b->hash() & search_hash_mask);
     int l, u;
     transpose_table.get_now(b, b->hash() & search_hash_mask, &l, &u);
+    #if USE_END_TC
+        if (l >= beta)
+            return l;
+        if (alpha >= u)
+            return u;
+        if (u == l)
+            return u;
+    #endif
     alpha = max(alpha, l);
     beta = min(beta, u);
-    #if USE_END_TC
-        if (alpha >= beta)
-            return alpha;
-    #endif
     #if USE_END_MPC
         if (mpc_min_depth_final <= depth && depth <= mpc_max_depth_final){
             if (mpc_higher_final(b, skipped, depth, beta))
@@ -497,16 +501,20 @@ int nega_scout_final(board *b, bool skipped, int depth, int alpha, int beta){
     if (beta - alpha <= step)
         return nega_alpha_ordering_final(b, skipped, depth, alpha, beta);
     ++searched_nodes;
-    int first_alpha = alpha;
     int hash = (int)(b->hash() & search_hash_mask);
     int l, u;
     transpose_table.get_now(b, b->hash() & search_hash_mask, &l, &u);
+    #if USE_END_TC
+        if (l >= beta)
+            return l;
+        if (alpha >= u)
+            return u;
+        if (u == l)
+            return u;
+    #endif
     alpha = max(alpha, l);
     beta = min(beta, u);
-    #if USE_END_TC
-        if (alpha >= beta)
-            return alpha;
-    #endif
+    int first_alpha = alpha;
     #if USE_END_MPC
         if (mpc_min_depth_final <= depth && depth <= mpc_max_depth_final){
             if (mpc_higher_final(b, skipped, depth, beta))

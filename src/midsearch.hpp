@@ -72,13 +72,17 @@ int nega_alpha_ordering(board *b, bool skipped, int depth, int alpha, int beta){
     ++searched_nodes;
     int hash = (int)(b->hash() & search_hash_mask);
     int l, u;
-    transpose_table.get_now(b, hash, &l, &u);
+    transpose_table.get_now(b, b->hash() & search_hash_mask, &l, &u);
+    #if USE_MID_TC
+        if (l >= beta)
+            return l;
+        if (alpha >= u)
+            return u;
+        if (u == l)
+            return u;
+    #endif
     alpha = max(alpha, l);
     beta = min(beta, u);
-    #if USE_MID_TC
-        if (alpha >= beta)
-            return alpha;
-    #endif
     #if USE_MID_MPC
         if (mpc_min_depth <= depth && depth <= mpc_max_depth){
             if (mpc_higher(b, skipped, depth, beta))
@@ -137,12 +141,16 @@ int nega_scout(board *b, bool skipped, int depth, int alpha, int beta){
     int hash = (int)(b->hash() & search_hash_mask);
     int l, u;
     transpose_table.get_now(b, hash, &l, &u);
+    #if USE_MID_TC
+        if (l >= beta)
+            return l;
+        if (alpha >= u)
+            return u;
+        if (u == l)
+            return u;
+    #endif
     alpha = max(alpha, l);
     beta = min(beta, u);
-    #if USE_MID_TC
-        if (alpha >= beta)
-            return alpha;
-    #endif
     #if USE_MID_MPC
         if (mpc_min_depth <= depth && depth <= mpc_max_depth){
             if (mpc_higher(b, skipped, depth, beta))
