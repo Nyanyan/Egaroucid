@@ -324,10 +324,10 @@ int nega_alpha_final(board *b, bool skipped, const int depth, int alpha, int bet
             if ((b->parity & cell_div4[cell]) && b->legal(cell)){
                 passed = false;
                 b->move(cell, &nb);
-                #if USE_END_SC
-                    if (stability_cut(&nb, &alpha, &beta))
-                        return alpha;
-                #endif
+                //#if USE_END_SC
+                //    if (stability_cut(&nb, &alpha, &beta))
+                //        return alpha;
+                //#endif
                 g = -nega_alpha_final(&nb, false, depth - 1, -beta, -alpha);
                 alpha = max(alpha, g);
                 if (beta <= alpha)
@@ -339,10 +339,10 @@ int nega_alpha_final(board *b, bool skipped, const int depth, int alpha, int bet
             if (!(b->parity & cell_div4[cell]) && b->legal(cell)){
                 passed = false;
                 b->move(cell, &nb);
-                #if USE_END_SC
-                    if (stability_cut(&nb, &alpha, &beta))
-                        return alpha;
-                #endif
+                //#if USE_END_SC
+                //    if (stability_cut(&nb, &alpha, &beta))
+                //        return alpha;
+                //#endif
                 g = -nega_alpha_final(&nb, false, depth - 1, -beta, -alpha);
                 alpha = max(alpha, g);
                 if (beta <= alpha)

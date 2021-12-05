@@ -25,7 +25,7 @@ using namespace std;
 
 #define po_max_depth 10
 
-#define extra_stability_threshold 54
+#define extra_stability_threshold 58
 
 #define search_hash_table_size 1048576
 constexpr int search_hash_mask = search_hash_table_size - 1;

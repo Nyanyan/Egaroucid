@@ -24,3 +24,10 @@
 #42 final depth: 22 time: 16575 policy: 14 value: 600 nodes: 84767757 nps: 5113884 get: 585203 reg: 5989871
 #43 final depth: 23 time: 48259 policy: 50 value: -1200 nodes: 161077777 nps: 3337776 get: 2213065 reg: 20902019
 #44 final depth: 23 time: 30318 policy: 11 value: -1400 nodes: 119612559 nps: 3945005 get: 1384351 reg: 11680451
+
+2021/12/06 without mpc laptop update SC
+#40 final depth: 20 time: 2806 policy: 8 value: 3800 nodes: 15802525 nps: 5629684 get: 51976 reg: 1000635
+#41 final depth: 22 time: 23484 policy: 31 value: 0 nodes: 102025905 nps: 4344115 get: 1013726 reg: 8507775
+#42 final depth: 22 time: 24029 policy: 14 value: 600 nodes: 121441390 nps: 5053320 get: 1060999 reg: 8530458
+#43 final depth: 23 time: 41835 policy: 50 value: -1200 nodes: 149313551 nps: 3568850 get: 1931967 reg: 19277672
+#44 final depth: 23 time: 39977 policy: 11 value: -1400 nodes: 164981605 nps: 4126809 get: 1798613 reg: 16429895
