@@ -94,12 +94,6 @@ inline int last1(board *b, bool skipped, int p0){
 
 inline int last2(board *b, bool skipped, int alpha, int beta, int p0, int p1){
     ++searched_nodes;
-    #if USE_END_PO
-        int p0_parity = (b->parity & cell_div4[p0]);
-        int p1_parity = (b->parity & cell_div4[p1]);
-        if (!p0_parity && p1_parity)
-            swap(p0, p1);
-    #endif
     board nb;
     bool passed = true;
     int v = -inf, g;
@@ -202,7 +196,7 @@ inline int last3(board *b, bool skipped, int alpha, int beta, int p0, int p1, in
 inline int last4(board *b, bool skipped, int alpha, int beta, int p0, int p1, int p2, int p3){
     ++searched_nodes;
     board nb;
-    #if USE_END_PO
+    #if 0
         int p0_parity = (b->parity & cell_div4[p0]);
         int p1_parity = (b->parity & cell_div4[p1]);
         int p2_parity = (b->parity & cell_div4[p2]);
@@ -417,6 +411,10 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
             #endif
             //move_ordering(&nb[canput]);
             nb[canput].v = -canput_bonus * calc_canput_exact(&nb[canput]);
+            #if USE_END_PO
+                if (depth <= po_max_depth && b->parity & cell_div4[cell])
+                    nb[canput].v += parity_vacant_bonus;
+            #endif
             ++canput;
         }
     }
@@ -528,6 +526,10 @@ int nega_scout_final(board *b, bool skipped, int depth, int alpha, int beta){
             #endif
             move_ordering(&nb[canput]);
             nb[canput].v -= canput_bonus * calc_canput_exact(&nb[canput]);
+            #if USE_END_PO
+                if (depth <= po_max_depth && b->parity & cell_div4[cell])
+                    nb[canput].v += parity_vacant_bonus;
+            #endif
             ++canput;
         }
     }

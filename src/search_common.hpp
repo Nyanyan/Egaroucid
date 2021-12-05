@@ -23,6 +23,8 @@ using namespace std;
 #define simple_mid_threshold 3
 #define simple_end_threshold 5
 
+#define po_max_depth 10
+
 #define search_hash_table_size 1048576
 constexpr int search_hash_mask = search_hash_table_size - 1;
 
