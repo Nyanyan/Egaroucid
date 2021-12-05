@@ -62,6 +62,7 @@ const double mpcsd_final[mpc_max_depth_final - mpc_min_depth_final + 1] = {
 };
 int mpctsd[n_phases][mpc_max_depth + 1];
 int mpctsd_final[mpc_max_depth_final + 1];
+unsigned long long can_be_flipped[hw2];
 
 int searched_nodes;
 vector<int> vacant_lst;
@@ -158,6 +159,27 @@ inline void search_init(){
     transpose_table.prev = 1;
     transpose_table.init_now();
     transpose_table.init_prev();
+    for (int cell = 0; cell < hw2; ++cell){
+        can_be_flipped[cell] = 0b1111111111000011100000011000000110000001100000011100001111111111;
+        for (i = 0; i < hw; ++i){
+            if (global_place[place_included[cell][0]][i] != -1)
+                can_be_flipped[cell] |= 1ULL << global_place[place_included[cell][0]][i];
+        }
+        for (i = 0; i < hw; ++i){
+            if (global_place[place_included[cell][1]][i] != -1)
+                can_be_flipped[cell] |= 1ULL << global_place[place_included[cell][1]][i];
+        }
+        for (i = 0; i < hw; ++i){
+            if (global_place[place_included[cell][2]][i] != -1)
+                can_be_flipped[cell] |= 1ULL << global_place[place_included[cell][2]][i];
+        }
+        if (place_included[cell][3] != -1){
+            for (i = 0; i < hw; ++i){
+                if (global_place[place_included[cell][3]][i] != -1)
+                    can_be_flipped[cell] |= 1ULL << global_place[place_included[cell][3]][i];
+            }
+        }
+    }
     cerr << "search initialized" << endl;
 }
 
@@ -198,14 +220,21 @@ inline int calc_x_stability(board *b, int p){
         (pop_digit[b->b[6]][6] == p && (pop_digit[b->b[7]][5] == p || pop_digit[b->b[5]][7] == p || (pop_digit[b->b[7]][5] != vacant || pop_digit[b->b[5]][7] != vacant)) && pop_digit[b->b[7]][6] == p && pop_digit[b->b[6]][7] == p && pop_digit[b->b[7]][7] == p);
 }
 
-inline int calc_stability(board *b, int p, bool extra_stability[]){
+inline int calc_stability(board *b, int p, unsigned long long extra_stability){
     int res = 
         stability_edge_arr[p][b->b[0]] + stability_edge_arr[p][b->b[7]] + stability_edge_arr[p][b->b[8]] + stability_edge_arr[p][b->b[15]] + 
         stability_corner_arr[p][b->b[0]] + stability_corner_arr[p][b->b[7]] + 
         calc_x_stability(b, p); // + calc_xx_stability(b, p);
-    for (int i = 0; i < hw2; ++i){
-        if (extra_stability[i] && pop_digit[b->b[i / hw]][i % hw] == p)
-            ++res;
+    int y, x;
+    extra_stability >>= hw;
+    for (y = 1; y < hw_m1; ++y){
+        extra_stability >>= 1;
+        for (x = 1; x < hw_m1; ++x){
+            if ((extra_stability & 1) == 0 && pop_digit[b->b[y]][x] == p)
+                ++res;
+            extra_stability >>= 1;
+        }
+        extra_stability >>= 1;
     }
     return res;
 }
@@ -217,41 +246,18 @@ inline int calc_stability(board *b, int p){
         calc_x_stability(b, p); // + calc_xx_stability(b, p);
 }
 
+inline unsigned long long calc_extra_stability(board *b){
+    unsigned long long extra_stability = 0b1111111111000011100000011000000110000001100000011100001111111111;
+    for (const &cell: vacant_lst){
+        if (pop_digit[b->b[cell / hw]][cell % hw] == vacant)
+            extra_stability |= can_be_flipped[cell];
+    }
+    return extra_stability;
+}
+
 inline bool stability_cut(board *b, int *alpha, int *beta){
     if (b->n >= extra_stability_threshold){
-        bool extra_stability[hw2] = {
-            false, false, false, false, false, false, false, false, 
-            false, false, true,  true,  true,  true,  false, false, 
-            false, true,  true,  true,  true,  true,  true,  false, 
-            false, true,  true,  true,  true,  true,  true,  false, 
-            false, true,  true,  true,  true,  true,  true,  false, 
-            false, true,  true,  true,  true,  true,  true,  false, 
-            false, false, true,  true,  true,  true,  false, false, 
-            false, false, false, false, false, false, false, false
-        };
-        int i;
-        for (const &cell: vacant_lst){
-            if (pop_digit[b->b[cell / hw]][cell % hw] == vacant){
-                for (i = 0; i < hw; ++i){
-                    if (global_place[place_included[cell][0]][i] != -1)
-                        extra_stability[global_place[place_included[cell][0]][i]] = false;
-                }
-                for (i = 0; i < hw; ++i){
-                    if (global_place[place_included[cell][1]][i] != -1)
-                        extra_stability[global_place[place_included[cell][1]][i]] = false;
-                }
-                for (i = 0; i < hw; ++i){
-                    if (global_place[place_included[cell][2]][i] != -1)
-                        extra_stability[global_place[place_included[cell][2]][i]] = false;
-                }
-                if (place_included[cell][3] != -1){
-                    for (i = 0; i < hw; ++i){
-                        if (global_place[place_included[cell][3]][i] != -1)
-                            extra_stability[global_place[place_included[cell][3]][i]] = false;
-                    }
-                }
-            }
-        }
+        unsigned long long extra_stability = calc_extra_stability(b);
         *alpha = max(*alpha, step * (2 * calc_stability(b, 1 - b->p, extra_stability) - hw2));
         *beta = min(*beta, step * (hw2 - 2 * calc_stability(b, b->p, extra_stability)));
     } else{
