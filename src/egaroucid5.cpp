@@ -63,7 +63,7 @@ inline void input_board(board *b, int ai_player){
 }
 
 inline double calc_result_value(int v){
-    return (double)v * hw2 / sc_w;
+    return (double)round((double)v * hw2 / sc_w * 100) / 100.0;
 }
 
 inline void print_result(int policy, int value){

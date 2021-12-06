@@ -140,25 +140,6 @@ inline int calc_x_stability(board *b, int p){
         (pop_digit[b->b[6]][6] == p && (pop_digit[b->b[7]][5] == p || pop_digit[b->b[5]][7] == p || (pop_digit[b->b[7]][5] != vacant || pop_digit[b->b[5]][7] != vacant)) && pop_digit[b->b[7]][6] == p && pop_digit[b->b[6]][7] == p && pop_digit[b->b[7]][7] == p);
 }
 
-inline int calc_stability(board *b, int p, unsigned long long extra_stability){
-    int res = 
-        stability_edge_arr[p][b->b[0]] + stability_edge_arr[p][b->b[7]] + stability_edge_arr[p][b->b[8]] + stability_edge_arr[p][b->b[15]] + 
-        stability_corner_arr[p][b->b[0]] + stability_corner_arr[p][b->b[7]] + 
-        calc_x_stability(b, p); // + calc_xx_stability(b, p);
-    int y, x;
-    extra_stability >>= hw;
-    for (y = 1; y < hw_m1; ++y){
-        extra_stability >>= 1;
-        for (x = 1; x < hw_m1; ++x){
-            if ((extra_stability & 1) == 0 && pop_digit[b->b[y]][x] == p)
-                ++res;
-            extra_stability >>= 1;
-        }
-        extra_stability >>= 1;
-    }
-    return res;
-}
-
 inline int calc_stability(board *b, int p){
     return
         stability_edge_arr[p][b->b[0]] + stability_edge_arr[p][b->b[7]] + stability_edge_arr[p][b->b[8]] + stability_edge_arr[p][b->b[15]] + 
@@ -166,7 +147,27 @@ inline int calc_stability(board *b, int p){
         calc_x_stability(b, p); // + calc_xx_stability(b, p);
 }
 
-inline unsigned long long calc_extra_stability(board *b){
+inline void calc_extra_stability(board *b, int p, unsigned long long extra_stability, int *pres, int *ores){
+    *pres = 0;
+    *ores = 0;
+    int y, x;
+    extra_stability >>= hw;
+    for (y = 1; y < hw_m1; ++y){
+        extra_stability >>= 1;
+        for (x = 1; x < hw_m1; ++x){
+            if ((extra_stability & 1) == 0){
+                if (pop_digit[b->b[y]][x] == p)
+                    ++*pres;
+                else if (pop_digit[b->b[y]][x] == 1 - p)
+                    ++*ores;
+            }
+            extra_stability >>= 1;
+        }
+        extra_stability >>= 1;
+    }
+}
+
+inline unsigned long long calc_extra_stability_ull(board *b){
     unsigned long long extra_stability = 0b1111111111000011100000011000000110000001100000011100001111111111;
     for (const &cell: vacant_lst){
         if (pop_digit[b->b[cell / hw]][cell % hw] == vacant)
@@ -177,9 +178,10 @@ inline unsigned long long calc_extra_stability(board *b){
 
 inline bool stability_cut(board *b, int *alpha, int *beta){
     if (b->n >= extra_stability_threshold){
-        unsigned long long extra_stability = calc_extra_stability(b);
-        *alpha = max(*alpha, step * (2 * calc_stability(b, 1 - b->p, extra_stability) - hw2));
-        *beta = min(*beta, step * (hw2 - 2 * calc_stability(b, b->p, extra_stability)));
+        int ps, os;
+        calc_extra_stability(b, b->p, calc_extra_stability_ull(b), &ps, &os);
+        *alpha = max(*alpha, step * (2 * (calc_stability(b, 1 - b->p) + os) - hw2));
+        *beta = min(*beta, step * (hw2 - 2 * (calc_stability(b, b->p) + ps)));
     } else{
         *alpha = max(*alpha, step * (2 * calc_stability(b, 1 - b->p) - hw2));
         *beta = min(*beta, step * (hw2 - 2 * calc_stability(b, b->p)));
