@@ -443,7 +443,7 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
         sort(nb, nb + canput);
     int g, v = -inf, first_alpha = alpha;
     #if USE_MULTI_THREAD
-        if (use_multi_thread){
+        if (use_multi_thread && depth <= 20){
             int i;
             g = -nega_alpha_ordering_final(&nb[0], false, depth - 1, -beta, -alpha, true);
             alpha = max(alpha, g);
@@ -457,8 +457,7 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
             for (i = 1; i < canput; ++i)
                 task_ids[i] = thread_pool.push(bind(&nega_alpha_ordering_final, &nb[i], false, depth - 1, -beta, -alpha, false));
             for (i = 1; i < canput; ++i){
-                thread_pool.get(task_ids[i], &g);
-                g = -g;
+                g = -thread_pool.get(task_ids[i]);
                 alpha = max(alpha, g);
                 v = max(v, g);
             }
@@ -579,8 +578,7 @@ int nega_scout_final(board *b, bool skipped, const int depth, int alpha, int bet
             task_ids[i] = thread_pool.push(bind(&nega_alpha_ordering_final, &nb[i], false, depth - 1, -alpha - step, -alpha, false));
         bool re_search[canput];
         for (i = 1; i < canput; ++i){
-            thread_pool.get(task_ids[i], &g);
-            g = -g;
+            g = -thread_pool.get(task_ids[i]);
             alpha = max(alpha, g);
             v = max(v, g);
             re_search[i] = first_alpha < g;
@@ -670,13 +668,14 @@ inline search_result endsearch(board b, long long strt){
     if (canput >= 2)
         sort(nb.begin(), nb.end());
     alpha = -nega_scout_final(&nb[0], false, max_depth, -beta, -alpha);
-    //alpha = -mtd_final(&nb[0], false, max_depth, -beta, -alpha);
     tmp_policy = nb[0].policy;
+    //cerr << 0 << " " << alpha << endl;
     for (i = 1; i < canput; ++i){
         g = -nega_alpha_ordering_final(&nb[i], false, max_depth, -alpha - step, -alpha, true);
+        //cerr << i << " " << g << " " << (alpha < g) << endl;
         if (alpha < g){
             g = -nega_scout_final(&nb[i], false, max_depth, -beta, -g);
-            //g = -mtd_final(&nb[i], false, max_depth, -beta, -g);
+            //cerr << i << " " << g << endl;
             if (alpha <= g){
                 alpha = g;
                 tmp_policy = nb[i].policy;

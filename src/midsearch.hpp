@@ -135,8 +135,7 @@ int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int 
             for (i = 1; i < canput; ++i)
                 task_ids[i] = thread_pool.push(bind(&nega_alpha_ordering, &nb[i], false, depth - 1, -beta, -alpha, false));
             for (i = 1; i < canput; ++i){
-                thread_pool.get(task_ids[i], &g);
-                g = -g;
+                g = -thread_pool.get(task_ids[i]);
                 alpha = max(alpha, g);
                 v = max(v, g);
             }
@@ -243,8 +242,7 @@ int nega_scout(board *b, bool skipped, const int depth, int alpha, int beta){
             task_ids[i] = thread_pool.push(bind(&nega_alpha_ordering, &nb[i], false, depth - 1, -alpha - search_epsilon, -alpha, false));
         bool re_search[canput];
         for (i = 1; i < canput; ++i){
-            thread_pool.get(task_ids[i], &g);
-            g = -g;
+            g = -thread_pool.get(task_ids[i]);
             alpha = max(alpha, g);
             v = max(v, g);
             re_search[i] = first_alpha < g;

@@ -45,16 +45,13 @@ class thread_pool {
             return task_id;
         }
 
-        inline bool get(int task_id, int *res){
+        inline int get(int task_id){
             this->mtx.lock();
-            int worker_id = worker_ids[task_id];
-            //if (workers[worker_id].wait_for(chrono::milliseconds(0)) == future_status::ready){
-            *res = this->workers[worker_id].get();
+            int worker_id = this->worker_ids[task_id];
+            int res = this->workers[worker_id].get();
             this->busy[worker_id] = false;
             this->mtx.unlock();
-            return true;
-            //}
-            //return false;
+            return res;
         }
     
     private:
