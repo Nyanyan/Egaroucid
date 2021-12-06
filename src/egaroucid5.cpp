@@ -5,6 +5,7 @@
 #include "book.hpp"
 #include "evaluate.hpp"
 #include "search_common.hpp"
+#include "transpose_table.hpp"
 #include "midsearch.hpp"
 #include "endsearch.hpp"
 #include "book.hpp"
@@ -15,6 +16,7 @@
 inline void init(){
     board_init();
     search_init();
+    transpose_table_init();
     evaluate_init();
     book_init();
     #if USE_MULTI_THREAD

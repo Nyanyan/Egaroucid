@@ -8,6 +8,7 @@
 #include "board.hpp"
 #include "evaluate.hpp"
 #include "search_common.hpp"
+#include "transpose_table.hpp"
 #include "midsearch.hpp"
 #if USE_MULTI_THREAD
     #include "multi_threading.hpp"
@@ -16,32 +17,27 @@
 using namespace std;
 
 int nega_alpha_ordering_nompc(board *b, bool skipped, int depth, int alpha, int beta){
+    if (depth <= simple_mid_threshold)
+        return nega_alpha(b, skipped, depth, alpha, beta);
     ++searched_nodes;
-    if (depth == 0){
-        if (b->n < hw2)
-            return mid_evaluate(b);
-        else
-            return end_evaluate(b);
-    }
-    board nb;
-    bool passed = true;
-    int g, v = -inf;
+    vector<board> nb;
+    int canput = 0;
     for (const int &cell: vacant_lst){
         if (b->legal(cell)){
-            passed = false;
-            b->move(cell, &nb);
+            nb.push_back(b->move(cell));
             #if USE_END_SC
-                if (stability_cut(&nb, &alpha, &beta))
+                if (stability_cut(&nb[canput], &alpha, &beta))
                     return alpha;
             #endif
-            g = -nega_alpha(&nb, false, depth - 1, -beta, -alpha);
-            alpha = max(alpha, g);
-            if (beta <= alpha)
-                return alpha;
-            v = max(v, g);
+            nb[canput].v = -canput_bonus * calc_canput_exact(&nb[canput]);
+            #if USE_END_PO
+                if (depth <= po_max_depth && b->parity & cell_div4[cell])
+                    nb[canput].v += parity_vacant_bonus;
+            #endif
+            ++canput;
         }
     }
-    if (passed){
+    if (canput == 0){
         if (skipped)
             return end_evaluate(b);
         board rb;
@@ -49,7 +45,17 @@ int nega_alpha_ordering_nompc(board *b, bool skipped, int depth, int alpha, int 
             rb.b[i] = b->b[i];
         rb.p = 1 - b->p;
         rb.n = b->n;
-        return -nega_alpha(&rb, true, depth, -beta, -alpha);
+        return -nega_alpha_ordering_nompc(&rb, true, depth, -beta, -alpha);
+    }
+    if (canput >= 2)
+        sort(nb.begin(), nb.end());
+    int g, v = -inf;
+    for (board &nnb: nb){
+        g = -nega_alpha_ordering_nompc(&nnb, false, depth - 1, -beta, -alpha);
+        alpha = max(alpha, g);
+        if (beta <= alpha)
+            return alpha;
+        v = max(v, g);
     }
     return v;
 }
