@@ -15,7 +15,6 @@ using namespace std;
 #define parity_vacant_bonus 50
 #define canput_bonus 100
 #define mtd_threshold 400
-#define mtd_threshold_final 100
 
 #define mpc_min_depth 3
 #define mpc_max_depth 10
