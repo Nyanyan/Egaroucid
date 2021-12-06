@@ -10,11 +10,11 @@
 using namespace std;
 
 #define search_epsilon 1
-#define cache_hit 10000
-#define cache_both 1000
-#define parity_vacant_bonus 50
-#define canput_bonus 100
-#define mtd_threshold 400
+constexpr int cache_hit = step * 100;
+constexpr int cache_both = step * 10;
+constexpr int parity_vacant_bonus = step / 2;
+constexpr int canput_bonus = step;
+constexpr int mtd_threshold = step * 4;
 
 #define mpc_min_depth 3
 #define mpc_max_depth 10
