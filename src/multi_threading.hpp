@@ -5,6 +5,7 @@
 #include <future>
 #include <queue>
 #include <chrono>
+#include <mutex>
 #include "setting.hpp"
 #include "board.hpp"
 
@@ -20,6 +21,7 @@ class thread_pool {
         int result[max_id];
         int worker_ids[max_id];
         unsigned long long id;
+        mutex mtx;
     
     public:
         inline void init(){
@@ -28,10 +30,12 @@ class thread_pool {
         }
         
         inline int push(function<int()> task){
+            this->mtx.lock();
             int task_id = this->id++;
             this->id &= max_id;
             //cerr << "push " << task_id << endl;
             this->tasks.push(make_pair(task, task_id));
+            this->mtx.unlock();
             for (int i = 0; i < (int)this->workers.size(); ++i){
                 if (!this->busy[i] && !this->tasks.empty())
                     execute_task(i);
@@ -42,11 +46,12 @@ class thread_pool {
         }
 
         inline bool get(int task_id, int *res){
+            this->mtx.lock();
             int worker_id = worker_ids[task_id];
             //if (workers[worker_id].wait_for(chrono::milliseconds(0)) == future_status::ready){
             *res = this->workers[worker_id].get();
             this->busy[worker_id] = false;
-            cerr << "done " << worker_id << endl;
+            this->mtx.unlock();
             return true;
             //}
             //return false;
@@ -54,20 +59,22 @@ class thread_pool {
     
     private:
         inline void execute_task(int i){
+            this->mtx.lock();
             this->workers[i] = async(launch::async, this->tasks.front().first);
             this->busy[i] = true;
             this->worker_ids[this->tasks.front().second] = i;
             this->tasks.pop();
-            cerr << "execute " << i << endl;
+            this->mtx.unlock();
         }
 
         inline void execute_task_expand(){
+            this->mtx.lock();
             int i = (int)this->busy.size();
             this->busy.push_back(true);
             this->workers.push_back(async(launch::async, this->tasks.front().first));
             this->worker_ids[this->tasks.front().second] = i;
             this->tasks.pop();
-            cerr << "NEW execute " << i << endl;
+            this->mtx.unlock();
         }
 };
 

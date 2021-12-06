@@ -8,6 +8,9 @@
 #include "midsearch.hpp"
 #include "endsearch.hpp"
 #include "book.hpp"
+#if USE_MULTI_THREAD
+    #include "multi_threading.hpp"
+#endif
 
 inline void init(){
     board_init();

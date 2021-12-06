@@ -1,4 +1,7 @@
 #pragma once
+#if USE_MULTI_THREAD
+    #include <mutex>
+#endif
 #include "setting.hpp"
 #include "common.hpp"
 #include "board.hpp"
@@ -26,6 +29,8 @@ using namespace std;
 #define po_max_depth 10
 
 #define extra_stability_threshold 58
+
+#define multi_thread_single_num 1
 
 #define search_hash_table_size 1048576
 constexpr int search_hash_mask = search_hash_table_size - 1;
@@ -89,6 +94,11 @@ class transpose_table{
         int now;
         int hash_reg;
         int hash_get;
+    
+    #if USE_MULTI_THREAD
+        private:
+            mutex mtx;
+    #endif
 
     public:
         inline void init_prev(){
@@ -102,6 +112,9 @@ class transpose_table{
         }
 
         inline void reg(board *key, int hash, int l, int u){
+            #if USE_MULTI_THREAD
+                this->mtx.lock();
+            #endif
             ++this->hash_reg;
             this->table[this->now][hash].reg = true;
             this->table[this->now][hash].p = key->p;
@@ -109,6 +122,9 @@ class transpose_table{
                 this->table[this->now][hash].k[i] = key->b[i];
             this->table[this->now][hash].l = l;
             this->table[this->now][hash].u = u;
+            #if USE_MULTI_THREAD
+                this->mtx.unlock();
+            #endif
         }
 
         inline void get_now(board *key, const int hash, int *l, int *u){

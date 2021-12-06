@@ -27,4 +27,4 @@
 /* multi threading*/
 
 // usage
-#define USE_MULTI_THREAD false
+#define USE_MULTI_THREAD true
