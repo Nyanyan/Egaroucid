@@ -32,21 +32,21 @@
 #43 final depth: 23 time: 41835 policy: 50 value: -1200 nodes: 149313551 nps: 3568850 get: 1931967 reg: 19277672
 #44 final depth: 23 time: 39977 policy: 11 value: -1400 nodes: 164981605 nps: 4126809 get: 1798613 reg: 16429895
 
-2021/12/06 without mpc use YBWC
+2021/12/06 without mpc laptop use YBWC
 #40 final depth: 20 time: 2337 policy: 8 value: 3800 nodes: 27093201 nps: 11583241 get: 13334 reg: 216996
 #41 final depth: 22 time: 16759 policy: 31 value: 0 nodes: 190925192 nps: 11391038 get: 302750 reg: 1718255
 #42 final depth: 22 time: 12179 policy: 14 value: 600 nodes: 139324922 nps: 11439766 get: 157267 reg: 1358959
 #43 final depth: 23 time: 28724 policy: 22 value: -1200 nodes: 301139085 nps: 10483519 get: 930434 reg: 6160902
 #44 final depth: 23 time: 27630 policy: 11 value: -1400 nodes: 334245946 nps: 12096335 get: 719462 reg: 4894732
 
-2021/12/06 without mpc use int only in evaluation
+2021/12/06 without mpc laptop use int only in evaluation
 #40 final depth: 20 time: 2670 policy: 8 value: 3800 nodes: 33923333 nps: 12700611 get: 27061 reg: 287037
 #41 final depth: 22 time: 15929 policy: 31 value: 0 nodes: 175596346 nps: 11023689 get: 232210 reg: 1739266
 #42 final depth: 22 time: 9213 policy: 14 value: 600 nodes: 110592831 nps: 12002694 get: 112029 reg: 1104282
 #43 final depth: 23 time: 32512 policy: 22 value: -1200 nodes: 353003560 nps: 10857305 get: 1039483 reg: 7022724
 #44 final depth: 23 time: 18697 policy: 11 value: -1400 nodes: 210518693 nps: 11259490 get: 460294 reg: 3343580
 
-2021/12/06 without mpc updated int only evaluation *step is 128
+2021/12/06 without mpc laptop updated int only evaluation *step is 128
 #40 final depth: 20 time: 2763 policy: 8 value: 4864 nodes: 33848437 nps: 12246178 get: 23975 reg: 280599
 #41 final depth: 22 time: 15131 policy: 31 value: 0 nodes: 174893503 nps: 11557093 get: 233083 reg: 1740293
 #42 final depth: 22 time: 9731 policy: 14 value: 768 nodes: 109590372 nps: 11260827 get: 111830 reg: 1104440
