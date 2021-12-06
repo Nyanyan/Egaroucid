@@ -24,7 +24,7 @@ using namespace std;
 #define mpct_final 4.0
 
 #define simple_mid_threshold 3
-#define simple_end_threshold 5
+#define simple_end_threshold 6
 
 #define po_max_depth 10
 
