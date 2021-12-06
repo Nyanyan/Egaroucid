@@ -4,7 +4,7 @@
 #include "board.hpp"
 #include "book.hpp"
 #include "evaluate.hpp"
-#include "search_common.hpp"
+#include "search.hpp"
 #include "transpose_table.hpp"
 #include "midsearch.hpp"
 #include "endsearch.hpp"
@@ -84,7 +84,7 @@ int main(){
     //cin >> depth;
     //cin >> end_depth;
     depth = 10;
-    end_depth = 30;
+    end_depth = 20;
     while (true){
         cin >> ai_player;
         //int d;

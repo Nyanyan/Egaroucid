@@ -6,7 +6,7 @@
 #include "common.hpp"
 #include "board.hpp"
 #include "evaluate.hpp"
-#include "search_common.hpp"
+#include "search.hpp"
 #include "transpose_table.hpp"
 #if USE_MULTI_THREAD
     #include "multi_threading.hpp"
