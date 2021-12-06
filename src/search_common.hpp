@@ -164,10 +164,10 @@ inline void search_init(){
     int i, j;
     for (i = 0; i < n_phases; ++i){
         for (j = 0; j <= mpc_max_depth - mpc_min_depth; ++j)
-            mpctsd[i][mpc_min_depth + j] = (int)(mpct[i] * mpcsd[i][j]);
+            mpctsd[i][mpc_min_depth + j] = (int)(mpct[i] * mpcsd[i][j] * step / 100);
     }
     for (i = 0; i <= mpc_max_depth_final - mpc_min_depth_final; ++i)
-        mpctsd_final[mpc_min_depth_final + i] = (int)(mpct_final * mpcsd_final[i]);
+        mpctsd_final[mpc_min_depth_final + i] = (int)(mpct_final * mpcsd_final[i] * step / 100);
     transpose_table.now = 0;
     transpose_table.prev = 1;
     transpose_table.init_now();
