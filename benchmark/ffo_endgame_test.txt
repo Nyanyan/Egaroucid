@@ -38,3 +38,10 @@
 #42 final depth: 22 time: 12179 policy: 14 value: 600 nodes: 139324922 nps: 11439766 get: 157267 reg: 1358959
 #43 final depth: 23 time: 28724 policy: 22 value: -1200 nodes: 301139085 nps: 10483519 get: 930434 reg: 6160902
 #44 final depth: 23 time: 27630 policy: 11 value: -1400 nodes: 334245946 nps: 12096335 get: 719462 reg: 4894732
+
+2021/12/06 without mpc use int only in evaluation
+#40 final depth: 20 time: 2670 policy: 8 value: 3800 nodes: 33923333 nps: 12700611 get: 27061 reg: 287037
+#41 final depth: 22 time: 15929 policy: 31 value: 0 nodes: 175596346 nps: 11023689 get: 232210 reg: 1739266
+#42 final depth: 22 time: 9213 policy: 14 value: 600 nodes: 110592831 nps: 12002694 get: 112029 reg: 1104282
+#43 final depth: 23 time: 32512 policy: 22 value: -1200 nodes: 353003560 nps: 10857305 get: 1039483 reg: 7022724
+#44 final depth: 23 time: 18697 policy: 11 value: -1400 nodes: 210518693 nps: 11259490 get: 460294 reg: 3343580

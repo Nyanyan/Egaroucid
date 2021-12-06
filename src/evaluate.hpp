@@ -19,10 +19,11 @@ using namespace std;
 #define max_evaluate_idx 59049
 #define sc_w 6400
 #define step 100
-#define pre_calc_weight 4096
-#define pre_calc_shift1 9
+#define pre_calc_weight 8192
+#define pre_calc_shift1 8
 constexpr int sc_w_proc = sc_w >> pre_calc_shift1;
-constexpr int pre_calc_shift2 = 24 - pre_calc_shift1;
+constexpr int pre_calc_shift2 = 26 - pre_calc_shift1;
+constexpr int pre_calc_plus = pow(2, pre_calc_shift2) - 1;
 #define p31 3
 #define p32 9
 #define p33 27
@@ -440,7 +441,7 @@ inline int mid_evaluate(const board *b){
     if (b->p)
         res = -res;
     //return (int)(max(-1.0, min(1.0, res)) * sc_w);
-    return sc_w_proc * (res >> pre_calc_shift2);
+    return sc_w_proc * ((res + pre_calc_plus) >> pre_calc_shift2);
 }
 
 inline int end_evaluate(const board *b){
