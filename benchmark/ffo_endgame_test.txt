@@ -52,3 +52,10 @@
 #42 final depth: 22 time: 9731 policy: 14 value: 768 nodes: 109590372 nps: 11260827 get: 111830 reg: 1104440
 #43 final depth: 23 time: 30130 policy: 22 value: -1536 nodes: 340023206 nps: 11284829 get: 997824 reg: 6867082
 #44 final depth: 23 time: 16779 policy: 11 value: -1792 nodes: 190555498 nps: 11355431 get: 345170 reg: 3177458
+
+2021/12/07 without mpc laptop double evaluation
+#40 final depth: 20 time: 2281 policy: 8 value: 3800 nodes: 21962352 nps: 9624168 get: 14016 reg: 218690
+#41 final depth: 22 time: 21762 policy: 31 value: 0 nodes: 203015045 nps: 9328449 get: 317904 reg: 1669023
+#42 final depth: 22 time: 14773 policy: 14 value: 600 nodes: 137228357 nps: 9288503 get: 172659 reg: 1376462
+#43 final depth: 23 time: 36697 policy: 22 value: -1200 nodes: 317645550 nps: 8655427 get: 1230258 reg: 6845253
+#44 final depth: 23 time: 48201 policy: 11 value: -1400 nodes: 510314018 nps: 10586988 get: 1404667 reg: 7430278

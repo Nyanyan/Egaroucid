@@ -17,12 +17,8 @@ using namespace std;
 #define max_canput 30
 #define max_surround 50
 #define max_evaluate_idx 59049
-#define sc_w 8192
-#define step 128
-#define pre_calc_weight 8192
-#define pre_calc_max 75000
-constexpr int pre_calc_shift = log2(pre_calc_weight) * 2 - log2(sc_w);
-constexpr int pre_calc_plus = pre_calc_weight * pre_calc_weight / sc_w;
+#define sc_w 6400
+#define step 100
 #define p31 3
 #define p32 9
 #define p33 27
@@ -40,16 +36,16 @@ int mobility_arr[2][n_line];
 int surround_arr[2][n_line];
 int stability_edge_arr[2][n_line];
 int stability_corner_arr[2][n_line];
-int pattern_arr[n_phases][n_patterns][max_evaluate_idx];
-int add_arr[n_phases][max_canput * 2 + 1][max_surround + 1][max_surround + 1][n_add_dense1];
-int all_dense[n_phases][n_all_input];
-int all_bias[n_phases];
+double pattern_arr[n_phases][n_patterns][max_evaluate_idx];
+double add_arr[n_phases][max_canput * 2 + 1][max_surround + 1][max_surround + 1][n_add_dense1];
+double all_dense[n_phases][n_all_input];
+double all_bias[n_phases];
 
 inline double leaky_relu(double x){
     return max(0.01 * x, x);
 }
 
-inline int predict(int pattern_size, double in_arr[], double dense0[n_dense0][20], double bias0[n_dense0], double dense1[n_dense1][n_dense0], double bias1[n_dense1], double dense2[n_dense1], double bias2){
+inline double predict(int pattern_size, double in_arr[], double dense0[n_dense0][20], double bias0[n_dense0], double dense1[n_dense1][n_dense0], double bias1[n_dense1], double dense2[n_dense1], double bias2){
     double hidden0[32], hidden1;
     int i, j;
     for (i = 0; i < n_dense0; ++i){
@@ -67,7 +63,7 @@ inline int predict(int pattern_size, double in_arr[], double dense0[n_dense0][20
         res += hidden1 * dense2[i];
     }
     res = leaky_relu(res);
-    return max(-pre_calc_max, min(pre_calc_max, (int)round(res * pre_calc_weight)));
+    return res;
 }
 
 inline int calc_pop(int a, int b, int s){
@@ -118,8 +114,7 @@ inline int calc_rev_idx(int pattern_idx, int pattern_size, int idx){
 
 inline void pre_evaluation(int pattern_idx, int phase_idx, int evaluate_idx, int pattern_size, double dense0[n_dense0][20], double bias0[n_dense0], double dense1[n_dense1][n_dense0], double bias1[n_dense1], double dense2[n_dense1], double bias2){
     int digit, idx, i;
-    double arr[20];
-    int tmp_pattern_arr[max_evaluate_idx];
+    double arr[20], tmp_pattern_arr[max_evaluate_idx];
     for (idx = 0; idx < pow3[pattern_size]; ++idx){
         for (i = 0; i < pattern_size; ++i){
             digit = (idx / pow3[pattern_size - 1 - i]) % 3;
@@ -141,9 +136,8 @@ inline void pre_evaluation(int pattern_idx, int phase_idx, int evaluate_idx, int
         pattern_arr[phase_idx][evaluate_idx][idx] += tmp_pattern_arr[idx];
 }
 
-inline void predict_add(int canput, int sur0, int sur1, double dense0[n_add_dense0][n_add_input], double bias0[n_add_dense0], double dense1[n_add_dense1][n_add_dense0], double bias1[n_add_dense1], int res[n_add_dense1]){
+inline void predict_add(int canput, int sur0, int sur1, double dense0[n_add_dense0][n_add_input], double bias0[n_add_dense0], double dense1[n_add_dense1][n_add_dense0], double bias1[n_add_dense1], double res[n_add_dense1]){
     double hidden0[n_add_dense0], in_arr[n_add_input];
-    double res_double[n_add_dense1];
     int i, j;
     in_arr[0] = (double)canput / 30.0;
     in_arr[1] = ((double)sur0 - 15.0) / 15.0;
@@ -155,11 +149,10 @@ inline void predict_add(int canput, int sur0, int sur1, double dense0[n_add_dens
         hidden0[i] = leaky_relu(hidden0[i]);
     }
     for (i = 0; i < n_add_dense1; ++i){
-        res_double[i] = bias1[i];
+        res[i] = bias1[i];
         for (j = 0; j < n_add_dense0; ++j)
-            res_double[i] += hidden0[j] * dense1[i][j];
-        res_double[i] = leaky_relu(res[i]);
-        res[i] = max(-pre_calc_max, min(pre_calc_max, (int)round(res_double[i] * pre_calc_weight)));
+            res[i] += hidden0[j] * dense1[i][j];
+        res[i] = leaky_relu(res[i]);
     }
 }
 
@@ -333,10 +326,10 @@ inline void init_evaluation2(){
         pre_evaluation_add(phase_idx, add_dense0, add_bias0, add_dense1, add_bias1);
         for (i = 0; i < n_all_input; ++i){
             getline(ifs, line);
-            all_dense[phase_idx][i] = round(stof(line) * pre_calc_weight);
+            all_dense[phase_idx][i] = stof(line);
         }
         getline(ifs, line);
-        all_bias[phase_idx] = round(stof(line) * pre_calc_weight * pre_calc_weight);
+        all_bias[phase_idx] = stof(line);
     }
     cerr << endl;
 }
@@ -394,28 +387,28 @@ inline int calc_surround(const board *b, int p){
         surround_arr[p][b->b[21]] + surround_arr[p][b->b[32]];
 }
 
-inline int edge_2x(int phase_idx, const int b[], int x, int y){
+inline double edge_2x(int phase_idx, const int b[], int x, int y){
     return pattern_arr[phase_idx][7][pop_digit[b[x]][1] * p39 + b[y] * p31 + pop_digit[b[x]][6]];
 }
 
-inline int triangle0(int phase_idx, const int b[], int w, int x, int y, int z){
+inline double triangle0(int phase_idx, const int b[], int w, int x, int y, int z){
     return pattern_arr[phase_idx][8][b[w] / p34 * p36 + b[x] / p35 * p33 + b[y] / p36 * p31 + b[z] / p37];
 }
 
-inline int triangle1(int phase_idx, const int b[], int w, int x, int y, int z){
+inline double triangle1(int phase_idx, const int b[], int w, int x, int y, int z){
     return pattern_arr[phase_idx][8][reverse_board[b[w]] / p34 * p36 + reverse_board[b[x]] / p35 * p33 + reverse_board[b[y]] / p36 * p31 + reverse_board[b[z]] / p37];
 }
 
-inline int edge_block(int phase_idx, const int b[], int x, int y){
+inline double edge_block(int phase_idx, const int b[], int x, int y){
     return pattern_arr[phase_idx][9][pop_digit[b[x]][0] * p39 + pop_mid[b[x]][6][2] * p35 + pop_digit[b[x]][7] * p34 + pop_mid[b[y]][6][2]];
 }
 
-inline int cross(int phase_idx, const int b[], int x, int y, int z){
+inline double cross(int phase_idx, const int b[], int x, int y, int z){
     return pattern_arr[phase_idx][10][b[x] / p34 * p36 + b[y] / p35 * p33 + b[z] / p35] + 
         pattern_arr[phase_idx][10][reverse_board[b[x]] / p34 * p36 + pop_mid[reverse_board[b[y]]][7][4] * p33 + pop_mid[reverse_board[b[z]]][7][4]];
 }
 
-inline int calc_pattern(int phase_idx, const board *b){
+inline double calc_pattern(int phase_idx, const board *b){
     return all_dense[phase_idx][0] * (pattern_arr[phase_idx][0][b->b[1]] + pattern_arr[phase_idx][0][b->b[6]] + pattern_arr[phase_idx][0][b->b[9]] + pattern_arr[phase_idx][0][b->b[14]]) + 
         all_dense[phase_idx][1] * (pattern_arr[phase_idx][1][b->b[2]] + pattern_arr[phase_idx][1][b->b[5]] + pattern_arr[phase_idx][1][b->b[10]] + pattern_arr[phase_idx][1][b->b[13]]) + 
         all_dense[phase_idx][2] * (pattern_arr[phase_idx][2][b->b[3]] + pattern_arr[phase_idx][2][b->b[4]] + pattern_arr[phase_idx][2][b->b[11]] + pattern_arr[phase_idx][2][b->b[12]]) + 
@@ -434,13 +427,12 @@ inline int mid_evaluate(const board *b){
     canput = min(max_canput * 2, max(0, max_canput + calc_canput(b)));
     sur0 = min(max_surround, calc_surround(b, black));
     sur1 = min(max_surround, calc_surround(b, white));
-    int res = all_bias[phase_idx] + calc_pattern(phase_idx, b) + 
+    double res = all_bias[phase_idx] + calc_pattern(phase_idx, b) + 
         all_dense[phase_idx][11] * add_arr[phase_idx][canput][sur0][sur1][0] + all_dense[phase_idx][12] * add_arr[phase_idx][canput][sur0][sur1][1] + all_dense[phase_idx][13] * add_arr[phase_idx][canput][sur0][sur1][2] + all_dense[phase_idx][14] * add_arr[phase_idx][canput][sur0][sur1][3] + 
         all_dense[phase_idx][15] * add_arr[phase_idx][canput][sur0][sur1][4] + all_dense[phase_idx][16] * add_arr[phase_idx][canput][sur0][sur1][5] + all_dense[phase_idx][17] * add_arr[phase_idx][canput][sur0][sur1][6] + all_dense[phase_idx][18] * add_arr[phase_idx][canput][sur0][sur1][7];
     if (b->p)
         res = -res;
-    //return (int)(max(-1.0, min(1.0, res)) * sc_w);
-    return (res + pre_calc_plus) >> pre_calc_shift;
+    return (int)(max(-1.0, min(1.0, res)) * sc_w);
 }
 
 inline int end_evaluate(const board *b){
