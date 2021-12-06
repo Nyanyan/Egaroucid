@@ -30,8 +30,6 @@ using namespace std;
 
 #define extra_stability_threshold 58
 
-#define multi_thread_single_num 1
-
 #define search_hash_table_size 1048576
 constexpr int search_hash_mask = search_hash_table_size - 1;
 

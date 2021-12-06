@@ -445,25 +445,23 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
     #if USE_MULTI_THREAD
         if (use_multi_thread){
             int i;
-            for (i = 0; i < min(canput, multi_thread_single_num); ++i){
-                g = -nega_alpha_ordering_final(&nb[i], false, depth - 1, -beta, -alpha, true);
-                alpha = max(alpha, g);
-                if (beta <= alpha){
-                    if (l < g)
-                        transpose_table.reg(b, hash, g, u);
-                    return alpha;
-                }
-                v = max(v, g);
+            g = -nega_alpha_ordering_final(&nb[0], false, depth - 1, -beta, -alpha, true);
+            alpha = max(alpha, g);
+            if (beta <= alpha){
+                if (l < g)
+                    transpose_table.reg(b, hash, g, u);
+                return alpha;
             }
+            v = max(v, g);
             int task_ids[depth];
-            for (i = multi_thread_single_num; i < canput; ++i)
+            for (i = 1; i < canput; ++i)
                 task_ids[i] = thread_pool.push(bind(&nega_alpha_ordering_final, &nb[i], false, depth - 1, -beta, -alpha, false));
-            int done_tasks = multi_thread_single_num;
+            int done_tasks = 1;
             bool done[depth];
-            for (i = multi_thread_single_num; i < canput; ++i)
+            for (i = 1; i < canput; ++i)
                 done[i] = false;
             while (done_tasks < canput){
-                for (i = multi_thread_single_num; i < canput; ++i){
+                for (i = 1; i < canput; ++i){
                     if (!done[i]){
                         done[i] = thread_pool.get(task_ids[i], &g);
                         g = -g;
@@ -530,7 +528,6 @@ int nega_scout_final(board *b, bool skipped, int depth, int alpha, int beta){
     #endif
     alpha = max(alpha, l);
     beta = min(beta, u);
-    int first_alpha = alpha;
     #if USE_END_MPC
         if (mpc_min_depth_final <= depth && depth <= mpc_max_depth_final){
             if (mpc_higher_final(b, skipped, depth, beta))
@@ -577,27 +574,75 @@ int nega_scout_final(board *b, bool skipped, int depth, int alpha, int beta){
     if (canput >= 2)
         sort(nb, nb + canput);
     int g = alpha, v = -inf;
-    for (int i = 0; i < canput; ++i){
-        if (i > 0){
-            g = -nega_alpha_ordering_final(&nb[i], false, depth - 1, -alpha - step, -alpha, true);
-            if (beta <= g){
-                if (l < g)
-                    transpose_table.reg(b, hash, g, u);
-                return g;
-            }
-            v = max(v, g);
+    #if USE_MULTI_THREAD
+        int i;
+        g = -nega_scout_final(&nb[0], false, depth - 1, -beta, -alpha);
+        alpha = max(alpha, g);
+        if (beta <= alpha){
+            if (l < g)
+                transpose_table.reg(b, hash, g, u);
+            return alpha;
         }
-        if (alpha <= g){
-            g = -nega_scout_final(&nb[i], false, depth - 1, -beta, -g);
-            if (beta <= g){
-                if (l < g)
-                    transpose_table.reg(b, hash, g, u);
-                return g;
+        v = max(v, g);
+        int first_alpha = alpha;
+        int task_ids[depth];
+        for (i = 1; i < canput; ++i)
+            task_ids[i] = thread_pool.push(bind(&nega_alpha_ordering_final, &nb[i], false, depth - 1, -beta, -alpha, false));
+        int done_tasks = 1;
+        bool done[depth];
+        bool re_search[depth];
+        for (i = 1; i < canput; ++i)
+            done[i] = false;
+        while (done_tasks < canput){
+            for (i = 1; i < canput; ++i){
+                if (!done[i]){
+                    done[i] = thread_pool.get(task_ids[i], &g);
+                    g = -g;
+                    if (done[i]){
+                        ++done_tasks;
+                        alpha = max(alpha, g);
+                        v = max(v, g);
+                        re_search[i] = first_alpha <= g;
+                    }
+                }
             }
-            alpha = max(alpha, g);
-            v = max(v, g);
         }
-    }
+        for (i = 1; i < canput; ++i){
+            if (re_search[i]){
+                g = -nega_scout(&nb[i], false, depth - 1, -beta, -alpha);
+                if (beta <= g){
+                    if (l < g)
+                        transpose_table.reg(b, hash, g, u);
+                    return g;
+                }
+                alpha = max(alpha, g);
+                v = max(v, g);
+            }
+        }
+    #else
+        int first_alpha = alpha;
+        for (int i = 0; i < canput; ++i){
+            if (i > 0){
+                g = -nega_alpha_ordering_final(&nb[i], false, depth - 1, -alpha - step, -alpha, true);
+                if (beta <= g){
+                    if (l < g)
+                        transpose_table.reg(b, hash, g, u);
+                    return g;
+                }
+                v = max(v, g);
+            }
+            if (alpha <= g){
+                g = -nega_scout_final(&nb[i], false, depth - 1, -beta, -g);
+                if (beta <= g){
+                    if (l < g)
+                        transpose_table.reg(b, hash, g, u);
+                    return g;
+                }
+                alpha = max(alpha, g);
+                v = max(v, g);
+            }
+        }
+    #endif
     if (v <= first_alpha)
         transpose_table.reg(b, hash, l, v);
     else
