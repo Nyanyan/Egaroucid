@@ -31,3 +31,10 @@
 #42 final depth: 22 time: 24029 policy: 14 value: 600 nodes: 121441390 nps: 5053320 get: 1060999 reg: 8530458
 #43 final depth: 23 time: 41835 policy: 50 value: -1200 nodes: 149313551 nps: 3568850 get: 1931967 reg: 19277672
 #44 final depth: 23 time: 39977 policy: 11 value: -1400 nodes: 164981605 nps: 4126809 get: 1798613 reg: 16429895
+
+2021/12/06 without mpc use YBWC
+#40 final depth: 20 time: 2337 policy: 8 value: 3800 nodes: 27093201 nps: 11583241 get: 13334 reg: 216996
+#41 final depth: 22 time: 16759 policy: 31 value: 0 nodes: 190925192 nps: 11391038 get: 302750 reg: 1718255
+#42 final depth: 22 time: 12179 policy: 14 value: 600 nodes: 139324922 nps: 11439766 get: 157267 reg: 1358959
+#43 final depth: 23 time: 28724 policy: 22 value: -1200 nodes: 301139085 nps: 10483519 get: 930434 reg: 6160902
+#44 final depth: 23 time: 27630 policy: 11 value: -1400 nodes: 334245946 nps: 12096335 get: 719462 reg: 4894732
