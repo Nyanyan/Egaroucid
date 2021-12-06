@@ -20,6 +20,7 @@ using namespace std;
 #define sc_w 8192
 #define step 128
 #define pre_calc_weight 8192
+#define pre_calc_max 75000
 constexpr int pre_calc_shift = log2(pre_calc_weight) * 2 - log2(sc_w);
 constexpr int pre_calc_plus = pre_calc_weight * pre_calc_weight / sc_w;
 #define p31 3
@@ -66,7 +67,7 @@ inline int predict(int pattern_size, double in_arr[], double dense0[n_dense0][20
         res += hidden1 * dense2[i];
     }
     res = leaky_relu(res);
-    return round(res * pre_calc_weight);
+    return max(-pre_calc_max, min(pre_calc_max, (int)round(res * pre_calc_weight)));
 }
 
 inline int calc_pop(int a, int b, int s){
@@ -158,7 +159,7 @@ inline void predict_add(int canput, int sur0, int sur1, double dense0[n_add_dens
         for (j = 0; j < n_add_dense0; ++j)
             res_double[i] += hidden0[j] * dense1[i][j];
         res_double[i] = leaky_relu(res[i]);
-        res[i] = round(res_double[i] * pre_calc_weight);
+        res[i] = max(-pre_calc_max, min(pre_calc_max, (int)round(res_double[i] * pre_calc_weight)));
     }
 }
 

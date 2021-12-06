@@ -207,7 +207,6 @@ inline int last3(board *b, bool skipped, int alpha, int beta, int p0, int p1, in
 
 inline int last4(board *b, bool skipped, int alpha, int beta, int p0, int p1, int p2, int p3){
     ++searched_nodes;
-    board nb;
     #if USE_END_PO
         int p0_parity = (b->parity & cell_div4[p0]);
         int p1_parity = (b->parity & cell_div4[p1]);
@@ -262,6 +261,7 @@ inline int last4(board *b, bool skipped, int alpha, int beta, int p0, int p1, in
             swap(p0, p1);
         }
     #endif
+    board nb;
     bool passed = true;
     int v = -inf, g;
     if (b->legal(p0)){
@@ -336,10 +336,10 @@ int nega_alpha_final(board *b, bool skipped, const int depth, int alpha, int bet
             if ((b->parity & cell_div4[cell]) && b->legal(cell)){
                 passed = false;
                 b->move(cell, &nb);
-                //#if USE_END_SC
-                //    if (stability_cut(&nb, &alpha, &beta))
-                //        return alpha;
-                //#endif
+                #if USE_END_SC
+                    if (stability_cut(&nb, &alpha, &beta))
+                        return alpha;
+                #endif
                 g = -nega_alpha_final(&nb, false, depth - 1, -beta, -alpha);
                 alpha = max(alpha, g);
                 if (beta <= alpha)
@@ -351,10 +351,10 @@ int nega_alpha_final(board *b, bool skipped, const int depth, int alpha, int bet
             if (!(b->parity & cell_div4[cell]) && b->legal(cell)){
                 passed = false;
                 b->move(cell, &nb);
-                //#if USE_END_SC
-                //    if (stability_cut(&nb, &alpha, &beta))
-                //        return alpha;
-                //#endif
+                #if USE_END_SC
+                    if (stability_cut(&nb, &alpha, &beta))
+                        return alpha;
+                #endif
                 g = -nega_alpha_final(&nb, false, depth - 1, -beta, -alpha);
                 alpha = max(alpha, g);
                 if (beta <= alpha)
