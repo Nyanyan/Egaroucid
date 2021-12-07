@@ -59,3 +59,10 @@
 #42 final depth: 22 time: 14773 policy: 14 value: 600 nodes: 137228357 nps: 9288503 get: 172659 reg: 1376462
 #43 final depth: 23 time: 36697 policy: 22 value: -1200 nodes: 317645550 nps: 8655427 get: 1230258 reg: 6845253
 #44 final depth: 23 time: 48201 policy: 11 value: -1400 nodes: 510314018 nps: 10586988 get: 1404667 reg: 7430278
+
+2021/12/07 without mpc laptop float evaluation, fixed eval bug
+#40 final depth: 20 time: 2770 policy: 8 value: 3800 nodes: 27365774 nps: 9875775 get: 23867 reg: 279946
+#41 final depth: 22 time: 18255 policy: 31 value: 0 nodes: 160719069 nps: 8803629 get: 240819 reg: 1357125
+#42 final depth: 22 time: 12301 policy: 14 value: 600 nodes: 112402098 nps: 9136896 get: 144782 reg: 1137847
+#43 final depth: 23 time: 40924 policy: 22 value: -1200 nodes: 362242094 nps: 8851148 get: 1235721 reg: 7138584
+#44 final depth: 23 time: 27474 policy: 11 value: -1400 nodes: 250649218 nps: 9123142 get: 625197 reg: 3774536
