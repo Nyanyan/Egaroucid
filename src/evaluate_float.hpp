@@ -19,8 +19,10 @@ typedef float eval_type;
 #define max_canput 30
 #define max_surround 50
 #define max_evaluate_idx 59049
+
 #define sc_w 6400
 #define step 100
+
 #define p31 3
 #define p32 9
 #define p33 27
@@ -31,6 +33,16 @@ typedef float eval_type;
 #define p38 6561
 #define p39 19683
 #define p310 59049
+#define p31m 2
+#define p32m 8
+#define p33m 26
+#define p34m 80
+#define p35m 242
+#define p36m 728
+#define p37m 2186
+#define p38m 6560
+#define p39m 19682
+#define p310m 59048
 
 int count_black_arr[n_line];
 int count_both_arr[n_line];
@@ -351,23 +363,23 @@ inline void evaluate_init(){
 }
 
 inline int sfill5(int b){
-    return pop_digit[b][2] != 2 ? b - p35 + 1 : b;
+    return pop_digit[b][2] != 2 ? b - p35m : b;
 }
 
 inline int sfill4(int b){
-    return pop_digit[b][3] != 2 ? b - p34 + 1 : b;
+    return pop_digit[b][3] != 2 ? b - p34m : b;
 }
 
 inline int sfill3(int b){
-    return pop_digit[b][4] != 2 ? b - p33 + 1 : b;
+    return pop_digit[b][4] != 2 ? b - p33m : b;
 }
 
 inline int sfill2(int b){
-    return pop_digit[b][5] != 2 ? b - p32 + 1 : b;
+    return pop_digit[b][5] != 2 ? b - p32m : b;
 }
 
 inline int sfill1(int b){
-    return pop_digit[b][6] != 2 ? b - p31 + 1 : b;
+    return pop_digit[b][6] != 2 ? b - p31m : b;
 }
 
 inline int calc_canput(const board *b){
@@ -376,16 +388,17 @@ inline int calc_canput(const board *b){
         mobility_arr[b->p][b->b[4]] + mobility_arr[b->p][b->b[5]] + mobility_arr[b->p][b->b[6]] + mobility_arr[b->p][b->b[7]] + 
         mobility_arr[b->p][b->b[8]] + mobility_arr[b->p][b->b[9]] + mobility_arr[b->p][b->b[10]] + mobility_arr[b->p][b->b[11]] + 
         mobility_arr[b->p][b->b[12]] + mobility_arr[b->p][b->b[13]] + mobility_arr[b->p][b->b[14]] + mobility_arr[b->p][b->b[15]] + 
-        mobility_arr[b->p][b->b[16] - p35 + 1] + mobility_arr[b->p][b->b[26] - p35 + 1] + mobility_arr[b->p][b->b[27] - p35 + 1] + mobility_arr[b->p][b->b[37] - p35 + 1] + 
-        mobility_arr[b->p][b->b[17] - p34 + 1] + mobility_arr[b->p][b->b[25] - p34 + 1] + mobility_arr[b->p][b->b[28] - p34 + 1] + mobility_arr[b->p][b->b[36] - p34 + 1] + 
-        mobility_arr[b->p][b->b[18] - p33 + 1] + mobility_arr[b->p][b->b[24] - p33 + 1] + mobility_arr[b->p][b->b[29] - p33 + 1] + mobility_arr[b->p][b->b[35] - p33 + 1] + 
-        mobility_arr[b->p][b->b[19] - p32 + 1] + mobility_arr[b->p][b->b[23] - p32 + 1] + mobility_arr[b->p][b->b[30] - p32 + 1] + mobility_arr[b->p][b->b[34] - p32 + 1] + 
-        mobility_arr[b->p][b->b[20] - p31 + 1] + mobility_arr[b->p][b->b[22] - p31 + 1] + mobility_arr[b->p][b->b[31] - p31 + 1] + mobility_arr[b->p][b->b[33] - p31 + 1] + 
+        mobility_arr[b->p][b->b[16] - p35m] + mobility_arr[b->p][b->b[26] - p35m] + mobility_arr[b->p][b->b[27] - p35m] + mobility_arr[b->p][b->b[37] - p35m] + 
+        mobility_arr[b->p][b->b[17] - p34m] + mobility_arr[b->p][b->b[25] - p34m] + mobility_arr[b->p][b->b[28] - p34m] + mobility_arr[b->p][b->b[36] - p34m] + 
+        mobility_arr[b->p][b->b[18] - p33m] + mobility_arr[b->p][b->b[24] - p33m] + mobility_arr[b->p][b->b[29] - p33m] + mobility_arr[b->p][b->b[35] - p33m] + 
+        mobility_arr[b->p][b->b[19] - p32m] + mobility_arr[b->p][b->b[23] - p32m] + mobility_arr[b->p][b->b[30] - p32m] + mobility_arr[b->p][b->b[34] - p32m] + 
+        mobility_arr[b->p][b->b[20] - p31m] + mobility_arr[b->p][b->b[22] - p31m] + mobility_arr[b->p][b->b[31] - p31m] + mobility_arr[b->p][b->b[33] - p31m] + 
         mobility_arr[b->p][b->b[21]] + mobility_arr[b->p][b->b[32]]);
 }
 
 inline int calc_surround(const board *b, int p){
-    return surround_arr[p][b->b[0]] + surround_arr[p][b->b[1]] + surround_arr[p][b->b[2]] + surround_arr[p][b->b[3]] + 
+    return 
+        surround_arr[p][b->b[0]] + surround_arr[p][b->b[1]] + surround_arr[p][b->b[2]] + surround_arr[p][b->b[3]] + 
         surround_arr[p][b->b[4]] + surround_arr[p][b->b[5]] + surround_arr[p][b->b[6]] + surround_arr[p][b->b[7]] + 
         surround_arr[p][b->b[8]] + surround_arr[p][b->b[9]] + surround_arr[p][b->b[10]] + surround_arr[p][b->b[11]] + 
         surround_arr[p][b->b[12]] + surround_arr[p][b->b[13]] + surround_arr[p][b->b[14]] + surround_arr[p][b->b[15]] + 
@@ -419,7 +432,8 @@ inline eval_type cross(int phase_idx, const int b[], int x, int y, int z){
 }
 
 inline eval_type calc_pattern(int phase_idx, const board *b){
-    return all_dense[phase_idx][0] * (pattern_arr[phase_idx][0][b->b[1]] + pattern_arr[phase_idx][0][b->b[6]] + pattern_arr[phase_idx][0][b->b[9]] + pattern_arr[phase_idx][0][b->b[14]]) + 
+    return 
+        all_dense[phase_idx][0] * (pattern_arr[phase_idx][0][b->b[1]] + pattern_arr[phase_idx][0][b->b[6]] + pattern_arr[phase_idx][0][b->b[9]] + pattern_arr[phase_idx][0][b->b[14]]) + 
         all_dense[phase_idx][1] * (pattern_arr[phase_idx][1][b->b[2]] + pattern_arr[phase_idx][1][b->b[5]] + pattern_arr[phase_idx][1][b->b[10]] + pattern_arr[phase_idx][1][b->b[13]]) + 
         all_dense[phase_idx][2] * (pattern_arr[phase_idx][2][b->b[3]] + pattern_arr[phase_idx][2][b->b[4]] + pattern_arr[phase_idx][2][b->b[11]] + pattern_arr[phase_idx][2][b->b[12]]) + 
         all_dense[phase_idx][3] * (pattern_arr[phase_idx][3][b->b[18] / p33] + pattern_arr[phase_idx][3][b->b[24] / p33] + pattern_arr[phase_idx][3][b->b[29] / p33] + pattern_arr[phase_idx][3][b->b[35] / p33]) + 
@@ -437,11 +451,10 @@ inline int mid_evaluate(const board *b){
     canput = min(max_canput * 2, max(0, max_canput + calc_canput(b)));
     sur0 = min(max_surround, calc_surround(b, black));
     sur1 = min(max_surround, calc_surround(b, white));
-    eval_type res = all_bias[phase_idx] + calc_pattern(phase_idx, b) + 
+    eval_type res = (b->p ? -1 : 1) * (
+        all_bias[phase_idx] + calc_pattern(phase_idx, b) + 
         all_dense[phase_idx][11] * add_arr[phase_idx][canput][sur0][sur1][0] + all_dense[phase_idx][12] * add_arr[phase_idx][canput][sur0][sur1][1] + all_dense[phase_idx][13] * add_arr[phase_idx][canput][sur0][sur1][2] + all_dense[phase_idx][14] * add_arr[phase_idx][canput][sur0][sur1][3] + 
-        all_dense[phase_idx][15] * add_arr[phase_idx][canput][sur0][sur1][4] + all_dense[phase_idx][16] * add_arr[phase_idx][canput][sur0][sur1][5] + all_dense[phase_idx][17] * add_arr[phase_idx][canput][sur0][sur1][6] + all_dense[phase_idx][18] * add_arr[phase_idx][canput][sur0][sur1][7];
-    if (b->p)
-        res = -res;
+        all_dense[phase_idx][15] * add_arr[phase_idx][canput][sur0][sur1][4] + all_dense[phase_idx][16] * add_arr[phase_idx][canput][sur0][sur1][5] + all_dense[phase_idx][17] * add_arr[phase_idx][canput][sur0][sur1][6] + all_dense[phase_idx][18] * add_arr[phase_idx][canput][sur0][sur1][7]);
     return (int)(max(-1.0, min(1.0, res)) * sc_w);
 }
 
