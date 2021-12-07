@@ -7,6 +7,8 @@
 
 using namespace std;
 
+typedef float eval_type;
+
 #define n_patterns 11
 #define n_dense0 32
 #define n_dense1 32
@@ -36,17 +38,25 @@ int mobility_arr[2][n_line];
 int surround_arr[2][n_line];
 int stability_edge_arr[2][n_line];
 int stability_corner_arr[2][n_line];
-double pattern_arr[n_phases][n_patterns][max_evaluate_idx];
-double add_arr[n_phases][max_canput * 2 + 1][max_surround + 1][max_surround + 1][n_add_dense1];
-double all_dense[n_phases][n_all_input];
-double all_bias[n_phases];
+eval_type pattern_arr[n_phases][n_patterns][max_evaluate_idx];
+eval_type add_arr[n_phases][max_canput * 2 + 1][max_surround + 1][max_surround + 1][n_add_dense1];
+eval_type all_dense[n_phases][n_all_input];
+eval_type all_bias[n_phases];
 
-inline double leaky_relu(double x){
+inline eval_type max(eval_type a, eval_type b){
+    return a < b ? b : a;
+}
+
+inline eval_type min(eval_type a, eval_type b){
+    return a > b ? b : a;
+}
+
+inline eval_type leaky_relu(eval_type x){
     return max(0.01 * x, x);
 }
 
-inline double predict(int pattern_size, double in_arr[], double dense0[n_dense0][20], double bias0[n_dense0], double dense1[n_dense1][n_dense0], double bias1[n_dense1], double dense2[n_dense1], double bias2){
-    double hidden0[32], hidden1;
+inline eval_type predict(int pattern_size, eval_type in_arr[], eval_type dense0[n_dense0][20], eval_type bias0[n_dense0], eval_type dense1[n_dense1][n_dense0], eval_type bias1[n_dense1], eval_type dense2[n_dense1], eval_type bias2){
+    eval_type hidden0[32], hidden1;
     int i, j;
     for (i = 0; i < n_dense0; ++i){
         hidden0[i] = bias0[i];
@@ -54,7 +64,7 @@ inline double predict(int pattern_size, double in_arr[], double dense0[n_dense0]
             hidden0[i] += in_arr[j] * dense0[i][j];
         hidden0[i] = leaky_relu(hidden0[i]);
     }
-    double res = bias2;
+    eval_type res = bias2;
     for (i = 0; i < n_dense1; ++i){
         hidden1 = bias1[i];
         for (j = 0; j < n_dense0; ++j)
@@ -112,9 +122,9 @@ inline int calc_rev_idx(int pattern_idx, int pattern_size, int idx){
     return res;
 }
 
-inline void pre_evaluation(int pattern_idx, int phase_idx, int evaluate_idx, int pattern_size, double dense0[n_dense0][20], double bias0[n_dense0], double dense1[n_dense1][n_dense0], double bias1[n_dense1], double dense2[n_dense1], double bias2){
+inline void pre_evaluation(int pattern_idx, int phase_idx, int evaluate_idx, int pattern_size, eval_type dense0[n_dense0][20], eval_type bias0[n_dense0], eval_type dense1[n_dense1][n_dense0], eval_type bias1[n_dense1], eval_type dense2[n_dense1], eval_type bias2){
     int digit, idx, i;
-    double arr[20], tmp_pattern_arr[max_evaluate_idx];
+    eval_type arr[20], tmp_pattern_arr[max_evaluate_idx];
     for (idx = 0; idx < pow3[pattern_size]; ++idx){
         for (i = 0; i < pattern_size; ++i){
             digit = (idx / pow3[pattern_size - 1 - i]) % 3;
@@ -136,12 +146,12 @@ inline void pre_evaluation(int pattern_idx, int phase_idx, int evaluate_idx, int
         pattern_arr[phase_idx][evaluate_idx][idx] += tmp_pattern_arr[idx];
 }
 
-inline void predict_add(int canput, int sur0, int sur1, double dense0[n_add_dense0][n_add_input], double bias0[n_add_dense0], double dense1[n_add_dense1][n_add_dense0], double bias1[n_add_dense1], double res[n_add_dense1]){
-    double hidden0[n_add_dense0], in_arr[n_add_input];
+inline void predict_add(int canput, int sur0, int sur1, eval_type dense0[n_add_dense0][n_add_input], eval_type bias0[n_add_dense0], eval_type dense1[n_add_dense1][n_add_dense0], eval_type bias1[n_add_dense1], eval_type res[n_add_dense1]){
+    eval_type hidden0[n_add_dense0], in_arr[n_add_input];
     int i, j;
-    in_arr[0] = (double)canput / 30.0;
-    in_arr[1] = ((double)sur0 - 15.0) / 15.0;
-    in_arr[2] = ((double)sur1 - 15.0) / 15.0;
+    in_arr[0] = (eval_type)canput / 30.0;
+    in_arr[1] = ((eval_type)sur0 - 15.0) / 15.0;
+    in_arr[2] = ((eval_type)sur1 - 15.0) / 15.0;
     for (i = 0; i < n_add_dense0; ++i){
         hidden0[i] = bias0[i];
         for (j = 0; j < n_add_input; ++j)
@@ -156,7 +166,7 @@ inline void predict_add(int canput, int sur0, int sur1, double dense0[n_add_dens
     }
 }
 
-inline void pre_evaluation_add(int phase_idx, double dense0[n_add_dense0][n_add_input], double bias0[n_add_dense0], double dense1[n_add_dense1][n_add_dense0], double bias1[n_add_dense1]){
+inline void pre_evaluation_add(int phase_idx, eval_type dense0[n_add_dense0][n_add_input], eval_type bias0[n_add_dense0], eval_type dense1[n_add_dense1][n_add_dense0], eval_type bias1[n_add_dense1]){
     int canput, sur0, sur1;
     for (canput = -max_canput; canput <= max_canput; ++canput){
         for (sur0 = 0; sur0 <= max_surround; ++sur0){
@@ -261,16 +271,16 @@ inline void init_evaluation2(){
     }
     string line;
     int i, j, phase_idx, pattern_idx;
-    double dense0[n_dense0][20];
-    double bias0[n_dense0];
-    double dense1[n_dense1][n_dense0];
-    double bias1[n_dense1];
-    double dense2[n_dense1];
-    double bias2;
-    double add_dense0[n_add_dense0][n_add_input];
-    double add_bias0[n_add_dense0];
-    double add_dense1[n_add_dense1][n_add_dense0];
-    double add_bias1[n_add_dense1];
+    eval_type dense0[n_dense0][20];
+    eval_type bias0[n_dense0];
+    eval_type dense1[n_dense1][n_dense0];
+    eval_type bias1[n_dense1];
+    eval_type dense2[n_dense1];
+    eval_type bias2;
+    eval_type add_dense0[n_add_dense0][n_add_input];
+    eval_type add_bias0[n_add_dense0];
+    eval_type add_dense1[n_add_dense1][n_add_dense0];
+    eval_type add_bias1[n_add_dense1];
     const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10};
     for (phase_idx = 0; phase_idx < n_phases; ++phase_idx){
         cerr << "=";
@@ -361,7 +371,7 @@ inline int sfill1(int b){
 }
 
 inline int calc_canput(const board *b){
-    return (b->p ? -1 : 1) * 
+    return (b->p ? -1 : 1) * (
         mobility_arr[b->p][b->b[0]] + mobility_arr[b->p][b->b[1]] + mobility_arr[b->p][b->b[2]] + mobility_arr[b->p][b->b[3]] + 
         mobility_arr[b->p][b->b[4]] + mobility_arr[b->p][b->b[5]] + mobility_arr[b->p][b->b[6]] + mobility_arr[b->p][b->b[7]] + 
         mobility_arr[b->p][b->b[8]] + mobility_arr[b->p][b->b[9]] + mobility_arr[b->p][b->b[10]] + mobility_arr[b->p][b->b[11]] + 
@@ -371,7 +381,7 @@ inline int calc_canput(const board *b){
         mobility_arr[b->p][b->b[18] - p33 + 1] + mobility_arr[b->p][b->b[24] - p33 + 1] + mobility_arr[b->p][b->b[29] - p33 + 1] + mobility_arr[b->p][b->b[35] - p33 + 1] + 
         mobility_arr[b->p][b->b[19] - p32 + 1] + mobility_arr[b->p][b->b[23] - p32 + 1] + mobility_arr[b->p][b->b[30] - p32 + 1] + mobility_arr[b->p][b->b[34] - p32 + 1] + 
         mobility_arr[b->p][b->b[20] - p31 + 1] + mobility_arr[b->p][b->b[22] - p31 + 1] + mobility_arr[b->p][b->b[31] - p31 + 1] + mobility_arr[b->p][b->b[33] - p31 + 1] + 
-        mobility_arr[b->p][b->b[21]] + mobility_arr[b->p][b->b[32]];
+        mobility_arr[b->p][b->b[21]] + mobility_arr[b->p][b->b[32]]);
 }
 
 inline int calc_surround(const board *b, int p){
@@ -387,28 +397,28 @@ inline int calc_surround(const board *b, int p){
         surround_arr[p][b->b[21]] + surround_arr[p][b->b[32]];
 }
 
-inline double edge_2x(int phase_idx, const int b[], int x, int y){
+inline eval_type edge_2x(int phase_idx, const int b[], int x, int y){
     return pattern_arr[phase_idx][7][pop_digit[b[x]][1] * p39 + b[y] * p31 + pop_digit[b[x]][6]];
 }
 
-inline double triangle0(int phase_idx, const int b[], int w, int x, int y, int z){
+inline eval_type triangle0(int phase_idx, const int b[], int w, int x, int y, int z){
     return pattern_arr[phase_idx][8][b[w] / p34 * p36 + b[x] / p35 * p33 + b[y] / p36 * p31 + b[z] / p37];
 }
 
-inline double triangle1(int phase_idx, const int b[], int w, int x, int y, int z){
+inline eval_type triangle1(int phase_idx, const int b[], int w, int x, int y, int z){
     return pattern_arr[phase_idx][8][reverse_board[b[w]] / p34 * p36 + reverse_board[b[x]] / p35 * p33 + reverse_board[b[y]] / p36 * p31 + reverse_board[b[z]] / p37];
 }
 
-inline double edge_block(int phase_idx, const int b[], int x, int y){
+inline eval_type edge_block(int phase_idx, const int b[], int x, int y){
     return pattern_arr[phase_idx][9][pop_digit[b[x]][0] * p39 + pop_mid[b[x]][6][2] * p35 + pop_digit[b[x]][7] * p34 + pop_mid[b[y]][6][2]];
 }
 
-inline double cross(int phase_idx, const int b[], int x, int y, int z){
+inline eval_type cross(int phase_idx, const int b[], int x, int y, int z){
     return pattern_arr[phase_idx][10][b[x] / p34 * p36 + b[y] / p35 * p33 + b[z] / p35] + 
         pattern_arr[phase_idx][10][reverse_board[b[x]] / p34 * p36 + pop_mid[reverse_board[b[y]]][7][4] * p33 + pop_mid[reverse_board[b[z]]][7][4]];
 }
 
-inline double calc_pattern(int phase_idx, const board *b){
+inline eval_type calc_pattern(int phase_idx, const board *b){
     return all_dense[phase_idx][0] * (pattern_arr[phase_idx][0][b->b[1]] + pattern_arr[phase_idx][0][b->b[6]] + pattern_arr[phase_idx][0][b->b[9]] + pattern_arr[phase_idx][0][b->b[14]]) + 
         all_dense[phase_idx][1] * (pattern_arr[phase_idx][1][b->b[2]] + pattern_arr[phase_idx][1][b->b[5]] + pattern_arr[phase_idx][1][b->b[10]] + pattern_arr[phase_idx][1][b->b[13]]) + 
         all_dense[phase_idx][2] * (pattern_arr[phase_idx][2][b->b[3]] + pattern_arr[phase_idx][2][b->b[4]] + pattern_arr[phase_idx][2][b->b[11]] + pattern_arr[phase_idx][2][b->b[12]]) + 
@@ -427,7 +437,7 @@ inline int mid_evaluate(const board *b){
     canput = min(max_canput * 2, max(0, max_canput + calc_canput(b)));
     sur0 = min(max_surround, calc_surround(b, black));
     sur1 = min(max_surround, calc_surround(b, white));
-    double res = all_bias[phase_idx] + calc_pattern(phase_idx, b) + 
+    eval_type res = all_bias[phase_idx] + calc_pattern(phase_idx, b) + 
         all_dense[phase_idx][11] * add_arr[phase_idx][canput][sur0][sur1][0] + all_dense[phase_idx][12] * add_arr[phase_idx][canput][sur0][sur1][1] + all_dense[phase_idx][13] * add_arr[phase_idx][canput][sur0][sur1][2] + all_dense[phase_idx][14] * add_arr[phase_idx][canput][sur0][sur1][3] + 
         all_dense[phase_idx][15] * add_arr[phase_idx][canput][sur0][sur1][4] + all_dense[phase_idx][16] * add_arr[phase_idx][canput][sur0][sur1][5] + all_dense[phase_idx][17] * add_arr[phase_idx][canput][sur0][sur1][6] + all_dense[phase_idx][18] * add_arr[phase_idx][canput][sur0][sur1][7];
     if (b->p)
