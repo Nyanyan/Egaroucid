@@ -25,8 +25,6 @@ class thread_pool {
         }
         
         inline int push(function<int()> task){
-            this->mtx.lock();
-            this->mtx.unlock();
             bool flag = true;
             int res = -1;
             for (int i = 0; i < this->worker_size; ++i){
