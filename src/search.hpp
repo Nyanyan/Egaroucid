@@ -80,7 +80,7 @@ inline void search_init(){
     for (i = 0; i <= mpc_max_depth_final - mpc_min_depth_final; ++i)
         mpctsd_final[mpc_min_depth_final + i] = (int)(mpct_final * mpcsd_final[i] * step / 100);
     for (int cell = 0; cell < hw2; ++cell){
-        can_be_flipped[cell] = 0b1111111111000011100000011000000110000001100000011100001111111111;
+        can_be_flipped[cell] = 0b1111111110000001100000011000000110000001100000011000000111111111;
         for (i = 0; i < hw; ++i){
             if (global_place[place_included[cell][0]][i] != -1)
                 can_be_flipped[cell] |= 1ULL << global_place[place_included[cell][0]][i];
@@ -120,6 +120,7 @@ inline void move_ordering(board *b){
         b->v = -mid_evaluate(b);
 }
 
+/*
 inline int calc_xx_stability(board *b, int p){
     return
         (pop_digit[b->b[1]][2] == p && pop_digit[b->b[0]][2] == p && pop_digit[b->b[0]][1] == p && pop_digit[b->b[1]][0] == p && pop_digit[b->b[1]][1] == p && (pop_digit[b->b[0]][3] == p || (pop_digit[b->b[2]][1] == p && pop_digit[b->b[3]][0] == p) || (pop_digit[b->b[0]][3] != vacant && pop_digit[b->b[2]][1] != vacant && pop_digit[b->b[3]][0] != vacant))) + 
@@ -139,12 +140,13 @@ inline int calc_x_stability(board *b, int p){
         (pop_digit[b->b[6]][1] == p && (pop_digit[b->b[7]][2] == p || pop_digit[b->b[5]][0] == p || (pop_digit[b->b[7]][2] != vacant || pop_digit[b->b[5]][0] != vacant)) && pop_digit[b->b[7]][1] == p && pop_digit[b->b[6]][0] == p && pop_digit[b->b[7]][0] == p) + 
         (pop_digit[b->b[6]][6] == p && (pop_digit[b->b[7]][5] == p || pop_digit[b->b[5]][7] == p || (pop_digit[b->b[7]][5] != vacant || pop_digit[b->b[5]][7] != vacant)) && pop_digit[b->b[7]][6] == p && pop_digit[b->b[6]][7] == p && pop_digit[b->b[7]][7] == p);
 }
+*/
 
 inline int calc_stability(board *b, int p){
     return
         stability_edge_arr[p][b->b[0]] + stability_edge_arr[p][b->b[7]] + stability_edge_arr[p][b->b[8]] + stability_edge_arr[p][b->b[15]] + 
-        stability_corner_arr[p][b->b[0]] + stability_corner_arr[p][b->b[7]] + 
-        calc_x_stability(b, p); // + calc_xx_stability(b, p);
+        stability_corner_arr[p][b->b[0]] + stability_corner_arr[p][b->b[7]];// + 
+        //calc_x_stability(b, p); // + calc_xx_stability(b, p);
 }
 
 inline void calc_extra_stability(board *b, int p, unsigned long long extra_stability, int *pres, int *ores){
@@ -168,7 +170,7 @@ inline void calc_extra_stability(board *b, int p, unsigned long long extra_stabi
 }
 
 inline unsigned long long calc_extra_stability_ull(board *b){
-    unsigned long long extra_stability = 0b1111111111000011100000011000000110000001100000011100001111111111;
+    unsigned long long extra_stability = 0b1111111110000001100000011000000110000001100000011000000111111111;
     for (const &cell: vacant_lst){
         if (pop_digit[b->b[cell / hw]][cell % hw] == vacant)
             extra_stability |= can_be_flipped[cell];
