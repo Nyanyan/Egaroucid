@@ -11,43 +11,38 @@
 
 using namespace std;
 
-#define max_id 1048575
-
 class thread_pool {
     private:
         vector<future<int>> workers;
         vector<bool> busy;
-        queue<pair<function<int()>, int>> tasks;
-        int result[max_id];
-        int worker_ids[max_id];
-        unsigned long long id;
         mutex mtx;
+        int worker_size;
     
     public:
         inline void init(){
-            this->id = 0;
+            this->worker_size = 0;
             cerr << "thread pool initialized" << endl;
         }
         
         inline int push(function<int()> task){
             this->mtx.lock();
-            int task_id = this->id++;
-            this->id &= max_id;
-            //cerr << "push " << task_id << endl;
-            this->tasks.push(make_pair(task, task_id));
             this->mtx.unlock();
-            for (int i = 0; i < (int)this->workers.size(); ++i){
-                if (!this->busy[i] && !this->tasks.empty())
-                    execute_task(i);
+            bool flag = true;
+            int res = -1;
+            for (int i = 0; i < this->worker_size; ++i){
+                if (!this->busy[i] && flag){
+                    execute_task(i, task);
+                    res = i;
+                    flag = false;
+                }
             }
-            while (!this->tasks.empty())
-                execute_task_expand();
-            return task_id;
+            if (flag)
+                res = execute_task_expand(task);
+            return res;
         }
 
-        inline int get(int task_id){
+        inline int get(int worker_id){
             this->mtx.lock();
-            int worker_id = this->worker_ids[task_id];
             int res = this->workers[worker_id].get();
             this->busy[worker_id] = false;
             this->mtx.unlock();
@@ -55,23 +50,21 @@ class thread_pool {
         }
     
     private:
-        inline void execute_task(int i){
+        inline void execute_task(int i, function<int()> task){
             this->mtx.lock();
-            this->workers[i] = async(launch::async, this->tasks.front().first);
+            this->workers[i] = async(launch::async, task);
             this->busy[i] = true;
-            this->worker_ids[this->tasks.front().second] = i;
-            this->tasks.pop();
             this->mtx.unlock();
         }
 
-        inline void execute_task_expand(){
+        inline int execute_task_expand(function<int()> task){
             this->mtx.lock();
-            int i = (int)this->busy.size();
+            int i = this->worker_size;
             this->busy.push_back(true);
-            this->workers.push_back(async(launch::async, this->tasks.front().first));
-            this->worker_ids[this->tasks.front().second] = i;
-            this->tasks.pop();
+            this->workers.push_back(async(launch::async, task));
+            ++this->worker_size;
             this->mtx.unlock();
+            return i;
         }
 };
 
