@@ -313,6 +313,230 @@ inline int last4(board *b, bool skipped, int alpha, int beta, int p0, int p1, in
     return v;
 }
 
+inline int last5(board *b, bool skipped, int alpha, int beta, int p0, int p1, int p2, int p3, int p4){
+    ++searched_nodes;
+    #if USE_END_PO
+        int p0_parity = (b->parity & cell_div4[p0]);
+        int p1_parity = (b->parity & cell_div4[p1]);
+        int p2_parity = (b->parity & cell_div4[p2]);
+        int p3_parity = (b->parity & cell_div4[p3]);
+        int p4_parity = (b->parity & cell_div4[p4]);
+        board nb;
+        bool passed = true;
+        int v = -inf, g;
+        if (p0_parity && b->legal(p0)){
+            passed = false;
+            b->move(p0, &nb);
+            #if USE_END_SC
+                if (stability_cut(&nb, &alpha, &beta))
+                    return alpha;
+            #endif
+            g = -last4(&nb, false, -beta, -alpha, p1, p2, p3, p4);
+            alpha = max(alpha, g);
+            if (beta <= alpha)
+                return alpha;
+            v = max(v, g);
+        }
+        if (p1_parity && b->legal(p1)){
+            passed = false;
+            b->move(p1, &nb);
+            #if USE_END_SC
+                if (stability_cut(&nb, &alpha, &beta))
+                    return alpha;
+            #endif
+            g = -last4(&nb, false, -beta, -alpha, p0, p2, p3, p4);
+            alpha = max(alpha, g);
+            if (beta <= alpha)
+                return alpha;
+            v = max(v, g);
+        }
+        if (p2_parity && b->legal(p2)){
+            passed = false;
+            b->move(p2, &nb);
+            #if USE_END_SC
+                if (stability_cut(&nb, &alpha, &beta))
+                    return alpha;
+            #endif
+            g = -last4(&nb, false, -beta, -alpha, p0, p1, p3, p4);
+            alpha = max(alpha, g);
+            if (beta <= alpha)
+                return alpha;
+            v = max(v, g);
+        }
+        if (p3_parity && b->legal(p3)){
+            passed = false;
+            b->move(p3, &nb);
+            #if USE_END_SC
+                if (stability_cut(&nb, &alpha, &beta))
+                    return alpha;
+            #endif
+            g = -last4(&nb, false, -beta, -alpha, p0, p1, p2, p4);
+            alpha = max(alpha, g);
+            if (beta <= alpha)
+                return alpha;
+            v = max(v, g);
+        }
+        if (p4_parity && b->legal(p4)){
+            passed = false;
+            b->move(p4, &nb);
+            #if USE_END_SC
+                if (stability_cut(&nb, &alpha, &beta))
+                    return alpha;
+            #endif
+            g = -last4(&nb, false, -beta, -alpha, p0, p1, p2, p3);
+            alpha = max(alpha, g);
+            if (beta <= alpha)
+                return alpha;
+            v = max(v, g);
+        }
+        if (p0_parity == 0 && b->legal(p0)){
+            passed = false;
+            b->move(p0, &nb);
+            #if USE_END_SC
+                if (stability_cut(&nb, &alpha, &beta))
+                    return alpha;
+            #endif
+            g = -last4(&nb, false, -beta, -alpha, p1, p2, p3, p4);
+            alpha = max(alpha, g);
+            if (beta <= alpha)
+                return alpha;
+            v = max(v, g);
+        }
+        if (p1_parity == 0 && b->legal(p1)){
+            passed = false;
+            b->move(p1, &nb);
+            #if USE_END_SC
+                if (stability_cut(&nb, &alpha, &beta))
+                    return alpha;
+            #endif
+            g = -last4(&nb, false, -beta, -alpha, p0, p2, p3, p4);
+            alpha = max(alpha, g);
+            if (beta <= alpha)
+                return alpha;
+            v = max(v, g);
+        }
+        if (p2_parity == 0 && b->legal(p2)){
+            passed = false;
+            b->move(p2, &nb);
+            #if USE_END_SC
+                if (stability_cut(&nb, &alpha, &beta))
+                    return alpha;
+            #endif
+            g = -last4(&nb, false, -beta, -alpha, p0, p1, p3, p4);
+            alpha = max(alpha, g);
+            if (beta <= alpha)
+                return alpha;
+            v = max(v, g);
+        }
+        if (p3_parity == 0 && b->legal(p3)){
+            passed = false;
+            b->move(p3, &nb);
+            #if USE_END_SC
+                if (stability_cut(&nb, &alpha, &beta))
+                    return alpha;
+            #endif
+            g = -last4(&nb, false, -beta, -alpha, p0, p1, p2, p4);
+            alpha = max(alpha, g);
+            if (beta <= alpha)
+                return alpha;
+            v = max(v, g);
+        }
+        if (p4_parity == 0 && b->legal(p4)){
+            passed = false;
+            b->move(p4, &nb);
+            #if USE_END_SC
+                if (stability_cut(&nb, &alpha, &beta))
+                    return alpha;
+            #endif
+            g = -last4(&nb, false, -beta, -alpha, p0, p1, p2, p3);
+            alpha = max(alpha, g);
+            if (beta <= alpha)
+                return alpha;
+            v = max(v, g);
+        }
+    #else
+        board nb;
+        bool passed = true;
+        int v = -inf, g;
+        if (b->legal(p0)){
+            passed = false;
+            b->move(p0, &nb);
+            #if USE_END_SC
+                if (stability_cut(&nb, &alpha, &beta))
+                    return alpha;
+            #endif
+            g = -last4(&nb, false, -beta, -alpha, p1, p2, p3, p4);
+            alpha = max(alpha, g);
+            if (beta <= alpha)
+                return alpha;
+            v = max(v, g);
+        }
+        if (b->legal(p1)){
+            passed = false;
+            b->move(p1, &nb);
+            #if USE_END_SC
+                if (stability_cut(&nb, &alpha, &beta))
+                    return alpha;
+            #endif
+            g = -last4(&nb, false, -beta, -alpha, p0, p2, p3, p4);
+            alpha = max(alpha, g);
+            if (beta <= alpha)
+                return alpha;
+            v = max(v, g);
+        }
+        if (b->legal(p2)){
+            passed = false;
+            b->move(p2, &nb);
+            #if USE_END_SC
+                if (stability_cut(&nb, &alpha, &beta))
+                    return alpha;
+            #endif
+            g = -last4(&nb, false, -beta, -alpha, p0, p1, p3, p4);
+            alpha = max(alpha, g);
+            if (beta <= alpha)
+                return alpha;
+            v = max(v, g);
+        }
+        if (b->legal(p3)){
+            passed = false;
+            b->move(p3, &nb);
+            #if USE_END_SC
+                if (stability_cut(&nb, &alpha, &beta))
+                    return alpha;
+            #endif
+            g = -last4(&nb, false, -beta, -alpha, p0, p1, p2, p4);
+            alpha = max(alpha, g);
+            if (beta <= alpha)
+                return alpha;
+            v = max(v, g);
+        }
+        if (b->legal(p4)){
+            passed = false;
+            b->move(p4, &nb);
+            #if USE_END_SC
+                if (stability_cut(&nb, &alpha, &beta))
+                    return alpha;
+            #endif
+            g = -last4(&nb, false, -beta, -alpha, p0, p1, p2, p3);
+            alpha = max(alpha, g);
+            if (beta <= alpha)
+                return alpha;
+            v = max(v, g);
+        }
+    #endif
+    if (passed){
+        if (skipped)
+            return end_evaluate(b);
+        board rb;
+        for (int i = 0; i < b_idx_num; ++i)
+            rb.b[i] = b->b[i];
+        rb.p = 1 - b->p;
+        rb.n = b->n;
+        return -last5(&rb, true, -beta, -alpha, p0, p1, p2, p3, p4);
+    }
+    return v;
+}
+
 inline void pick_vacant(board *b, int cells[]){
     int idx = 0;
     for (const int &cell: vacant_lst){
@@ -321,11 +545,12 @@ inline void pick_vacant(board *b, int cells[]){
     }
 }
 
+/*
 int nega_alpha_final(board *b, bool skipped, const int depth, int alpha, int beta){
-    if (b->n == hw2 - 4){
-        int cells[4];
+    if (b->n == hw2 - 5){
+        int cells[5];
         pick_vacant(b, cells);
-        return last4(b, skipped, alpha, beta, cells[0], cells[1], cells[2], cells[3]);
+        return last5(b, skipped, alpha, beta, cells[0], cells[1], cells[2], cells[3], cells[4]);
     }
     ++searched_nodes;
     board nb;
@@ -390,10 +615,16 @@ int nega_alpha_final(board *b, bool skipped, const int depth, int alpha, int bet
     }
     return v;
 }
+*/
 
 int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha, int beta, bool use_multi_thread){
-    if (depth <= simple_end_threshold)
-        return nega_alpha_final(b, skipped, depth, alpha, beta);
+    //if (depth <= simple_end_threshold)
+    //    return nega_alpha_final(b, skipped, depth, alpha, beta);
+    if (depth == 5){
+        int cells[5];
+        pick_vacant(b, cells);
+        return last5(b, skipped, alpha, beta, cells[0], cells[1], cells[2], cells[3], cells[4]);
+    }
     ++searched_nodes;
     int hash = (int)(b->hash() & search_hash_mask);
     int l, u;
@@ -510,8 +741,13 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
 }
 
 int nega_scout_final(board *b, bool skipped, const int depth, int alpha, int beta){
-    if (depth <= simple_end_threshold)
-        return nega_alpha_final(b, skipped, depth, alpha, beta);
+    //if (depth <= simple_end_threshold)
+    //    return nega_alpha_final(b, skipped, depth, alpha, beta);
+    if (depth == 5){
+        int cells[5];
+        pick_vacant(b, cells);
+        return last5(b, skipped, alpha, beta, cells[0], cells[1], cells[2], cells[3], cells[4]);
+    }
     if (beta - alpha <= step)
         return nega_alpha_ordering_final(b, skipped, depth, alpha, beta, true);
     ++searched_nodes;
