@@ -32,6 +32,7 @@ class thread_pool {
                     execute_task(i, task);
                     res = i;
                     flag = false;
+                    break;
                 }
             }
             if (flag)

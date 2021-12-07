@@ -19,16 +19,16 @@ struct search_node{
 
 class transpose_table{
     public:
-        search_node table[2][search_hash_table_size];
         int prev;
         int now;
         int hash_reg;
         int hash_get;
     
-    #if USE_MULTI_THREAD
-        private:
+    private:
+        search_node table[2][search_hash_table_size];
+        #if USE_MULTI_THREAD
             mutex mtx;
-    #endif
+        #endif
 
     public:
         inline void init_prev(){
@@ -58,36 +58,42 @@ class transpose_table{
         }
 
         inline void get_now(board *key, const int hash, int *l, int *u){
-            if (table[this->now][hash].reg){
-                if (compare_key(key, &table[this->now][hash])){
-                    *l = table[this->now][hash].l;
-                    *u = table[this->now][hash].u;
+            if (this->table[this->now][hash].reg){
+                if (compare_key(key->b, this->table[this->now][hash].k)){
+                    *l = this->table[this->now][hash].l;
+                    *u = this->table[this->now][hash].u;
                     ++this->hash_get;
-                    return;
+                } else{
+                    *l = -inf;
+                    *u = inf;
                 }
+            } else{
+                *l = -inf;
+                *u = inf;
             }
-            *l = -inf;
-            *u = inf;
         }
 
         inline void get_prev(board *key, const int hash, int *l, int *u){
-            if (table[this->prev][hash].reg){
-                if (compare_key(key, &table[this->prev][hash])){
-                    *l = table[this->prev][hash].l;
-                    *u = table[this->prev][hash].u;
+            if (this->table[this->prev][hash].reg){
+                if (compare_key(key->b, this->table[this->prev][hash].k)){
+                    *l = this->table[this->prev][hash].l;
+                    *u = this->table[this->prev][hash].u;
                     ++this->hash_get;
-                    return;
+                } else{
+                    *l = -inf;
+                    *u = inf;
                 }
+            } else{
+                *l = -inf;
+                *u = inf;
             }
-            *l = -inf;
-            *u = inf;
         }
     
     private:
-        inline bool compare_key(board *a, search_node *b){
-            return a->p == b->p && 
-                a->b[0] == b->k[0] && a->b[1] == b->k[1] && a->b[2] == b->k[2] && a->b[3] == b->k[3] && 
-                a->b[4] == b->k[4] && a->b[5] == b->k[5] && a->b[6] == b->k[6] && a->b[7] == b->k[7];
+        inline bool compare_key(int b[], int k[]){
+            return 
+                b[0] == k[0] && b[1] == k[1] && b[2] == k[2] && b[3] == k[3] && 
+                b[4] == k[4] && b[5] == k[5] && b[6] == k[6] && b[7] == k[7];
         }
 };
 
