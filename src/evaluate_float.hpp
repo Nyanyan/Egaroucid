@@ -47,6 +47,7 @@ typedef float eval_type;
 int count_black_arr[n_line];
 int count_both_arr[n_line];
 int mobility_arr[2][n_line];
+int mobility_arr2[2][n_line * n_line];
 int surround_arr[2][n_line];
 int stability_edge_arr[2][n_line];
 int stability_corner_arr[2][n_line];

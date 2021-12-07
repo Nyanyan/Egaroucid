@@ -323,7 +323,7 @@ inline void pick_vacant(board *b, int cells[]){
 
 int nega_alpha_final(board *b, bool skipped, const int depth, int alpha, int beta){
     if (b->n == hw2 - 4){
-        int cells[5];
+        int cells[4];
         pick_vacant(b, cells);
         return last4(b, skipped, alpha, beta, cells[0], cells[1], cells[2], cells[3]);
     }

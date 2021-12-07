@@ -19,14 +19,14 @@ int nega_alpha_ordering(board *b, bool skipped, int depth, int alpha, int beta, 
 
 inline bool mpc_higher(board *b, bool skipped, int depth, int beta){
     int bound = beta + mpctsd[calc_phase_idx(b)][depth];
-    if (bound > sc_w)
+    if (bound >= sc_w)
         return false;
     return nega_alpha_ordering(b, skipped, mpcd[depth], bound - search_epsilon, bound, false) >= bound;
 }
 
 inline bool mpc_lower(board *b, bool skipped, int depth, int alpha){
     int bound = alpha - mpctsd[calc_phase_idx(b)][depth];
-    if (bound < -sc_w)
+    if (bound <= -sc_w)
         return false;
     return nega_alpha_ordering(b, skipped, mpcd[depth], bound, bound + search_epsilon, false) <= bound;
 }
