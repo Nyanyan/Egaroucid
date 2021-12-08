@@ -5,7 +5,7 @@
 
 // multi prob cut
 #define USE_MID_MPC true
-#define USE_END_MPC false
+#define USE_END_MPC true
 
 // stability cut
 #define USE_MID_SC  false

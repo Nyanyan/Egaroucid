@@ -35,7 +35,7 @@ vds = [[] for _ in range(max_depth - min_depth + 1)]
 
 vh_vd = []
 
-mpcd = [0,1,0,1,2,3,2,3,4,3,4,3,4,5,4,5,4,5,4,5,4,5,4,5,4,5,4,5,4,5]
+mpcd = [0, 1, 0, 1, 2, 3, 2, 3, 4, 3, 4, 3, 4, 5, 4, 5, 6, 5, 6, 7, 6, 7, 6, 7, 8, 7, 8, 9, 8, 9]
 
 
 def collect_data(num):
@@ -48,7 +48,8 @@ def collect_data(num):
         return
     for data_idx in trange(len(data)):
         datum = data[data_idx]
-        board, player, _, _, _, vh = datum.split()
+        board, player, vh = datum.split()
+        #board, player, _, _, _, vh = datum.split()
         n_stones = calc_n_stones(board)
         depth = 64 - n_stones
         if min_depth <= depth <= max_depth:
@@ -69,7 +70,7 @@ def collect_data(num):
             vhs[depth - min_depth].append(vh)
             vds[depth - min_depth].append(vd)
 
-for i in range(11):
+for i in range(1):
     collect_data(i)
 evaluate.kill()
 

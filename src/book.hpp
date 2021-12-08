@@ -2,9 +2,6 @@
 #include <iostream>
 #include <fstream>
 #include <unordered_map>
-#include <string>
-#include <filesystem>
-#include <unistd.h>
 #include "board.hpp"
 
 #define book_hash_table_size 8192
@@ -29,9 +26,7 @@ class book{
             string param_compressed1;
             for (i = 0; i < hw2; ++i)
                 char_keys[book_chars[i]] = i;
-            char dr[256];
-            getcwd(dr, 256);
-            ifstream ifs((string)dr + "/resources/book.txt");
+            ifstream ifs("resources/book.txt");
             if (ifs.fail()){
                 cerr << "book file not exist" << endl;
                 exit(1);
