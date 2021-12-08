@@ -80,3 +80,10 @@
 #42 final depth: 22 time: 18648 policy: 14 value: 600 nodes: 200803371 nps: 10767514 get: 23399 reg: 229599
 #43 final depth: 23 time: 20599 policy: 22 value: -1200 nodes: 216564455 nps: 10512327 get: 25687 reg: 251651
 #44 final depth: 23 time: 38737 policy: 11 value: -1400 nodes: 406852864 nps: 10502681 get: 62873 reg: 527279
+
+2021/12/09 without mpc fast
+#40 final depth: 20 time: 2908 policy: 8 value: 3800 nodes: 37515877 nps: 12896485 get: 3397 reg: 52682
+#41 final depth: 22 time: 19577 policy: 31 value: 0 nodes: 234448664 nps: 11975107 get: 44164 reg: 362132
+#42 final depth: 22 time: 18451 policy: 14 value: 600 nodes: 232135386 nps: 12579818 get: 65534 reg: 456697
+#43 final depth: 23 time: 36185 policy: 22 value: -1200 nodes: 465406078 nps: 12861495 get: 372890 reg: 1821703
+#44 final depth: 23 time: 27876 policy: 11 value: -1400 nodes: 321382667 nps: 11528595 get: 192769 reg: 976891
