@@ -9,7 +9,7 @@ constexpr int book_hash_mask = book_hash_table_size - 1;
 #define book_stones 64
 
 struct book_node{
-    int k[hw];
+    uint_fast16_t k[hw];
     int policies[35];
     int size;
     book_node* p_n_node;
@@ -87,13 +87,13 @@ class book{
         }
 
     private:
-        inline bool compare_key(const int a[], const int b[]){
+        inline bool compare_key(const uint_fast16_t a[], const uint_fast16_t b[]){
             return
                 a[0] == b[0] && a[1] == b[1] && a[2] == b[2] && a[3] == b[3] && 
                 a[4] == b[4] && a[5] == b[5] && a[6] == b[6] && a[7] == b[7];
         }
 
-        inline book_node* book_node_init(const int key[], int policy){
+        inline book_node* book_node_init(const uint_fast16_t key[], int policy){
             book_node* p_node = NULL;
             p_node = (book_node*)malloc(sizeof(book_node));
             for (int i = 0; i < hw; ++i)
@@ -104,7 +104,7 @@ class book{
             return p_node;
         }
 
-        inline void register_book(const int key[], int hash, int policy){
+        inline void register_book(const uint_fast16_t key[], int hash, int policy){
             if(this->book[hash] == NULL){
                 this->book[hash] = book_node_init(key, policy);
             } else {

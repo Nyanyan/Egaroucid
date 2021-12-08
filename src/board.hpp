@@ -26,16 +26,16 @@ const int global_place[b_idx_num][hw] = {
     {5, 14, 23, -1, -1, -1, -1, -1},{4, 13, 22, 31, -1, -1, -1, -1},{3, 12, 21, 30, 39, -1, -1, -1},{2, 11, 20, 29, 38, 47, -1, -1},{1, 10, 19, 28, 37, 46, 55, -1},{0, 9, 18, 27, 36, 45, 54, 63},{8, 17, 26, 35, 44, 53, 62, -1},{16, 25, 34, 43, 52, 61, -1, -1},{24, 33, 42, 51, 60, -1, -1, -1},{32, 41, 50, 59, -1, -1, -1, -1},{40, 49, 58, -1, -1, -1, -1, -1},
     {2, 9, 16, -1, -1, -1, -1, -1},{3, 10, 17, 24, -1, -1, -1, -1},{4, 11, 18, 25, 32, -1, -1, -1},{5, 12, 19, 26, 33, 40, -1, -1},{6, 13, 20, 27, 34, 41, 48, -1},{7, 14, 21, 28, 35, 42, 49, 56},{15, 22, 29, 36, 43, 50, 57, -1},{23, 30, 37, 44, 51, 58, -1, -1},{31, 38, 45, 52, 59, -1, -1, -1},{39, 46, 53, 60, -1, -1, -1, -1},{47, 54, 61, -1, -1, -1, -1, -1}
 };
-int move_arr[2][n_line][hw][2];
+uint_fast16_t move_arr[2][n_line][hw][2];
 bool legal_arr[2][n_line][hw];
-int flip_arr[2][n_line][hw];
-int put_arr[2][n_line][hw];
-int local_place[b_idx_num][hw2];
-int place_included[hw2][4];
-int reverse_board[n_line];
-int pow3[11];
-int pop_digit[n_line][hw];
-int pop_mid[n_line][hw][hw];
+uint_fast16_t flip_arr[2][n_line][hw];
+uint_fast16_t put_arr[2][n_line][hw];
+int_fast8_t local_place[b_idx_num][hw2];
+int_fast8_t place_included[hw2][4];
+uint_fast16_t reverse_board[n_line];
+uint_fast16_t pow3[11];
+uint_fast16_t pop_digit[n_line][hw];
+uint_fast16_t pop_mid[n_line][hw][hw];
 
 const int cell_div4[hw2] = {
     1, 1, 1, 1, 2, 2, 2, 2, 
@@ -163,7 +163,7 @@ void board_init() {
 
 class board {
     public:
-        int b[b_idx_num];
+        uint_fast16_t b[b_idx_num];
         int p;
         int policy;
         int v;

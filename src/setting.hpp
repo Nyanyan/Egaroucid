@@ -5,7 +5,7 @@
 
 // multi prob cut
 #define USE_MID_MPC true
-#define USE_END_MPC true
+#define USE_END_MPC false
 
 // stability cut
 #define USE_MID_SC  false
@@ -28,13 +28,6 @@
 
 // use multi thread
 #define USE_MULTI_THREAD true
-
-
-
-/** evaluation **/
-
-// use only int in evaluation function
-#define USE_INT_EVAL false
 
 
 

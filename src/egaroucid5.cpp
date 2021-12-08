@@ -86,7 +86,7 @@ int main(){
     //cin >> depth;
     //cin >> end_depth;
     depth = 10;
-    end_depth = 20;
+    end_depth = 30;
     while (true){
         #if MPC_MODE
             cin >> ai_player;

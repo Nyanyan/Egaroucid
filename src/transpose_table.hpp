@@ -12,7 +12,7 @@ constexpr int search_hash_mask = search_hash_table_size - 1;
 struct search_node{
     bool reg;
     int p;
-    int k[hw];
+    uint_fast16_t k[hw];
     int l;
     int u;
 };
@@ -90,7 +90,7 @@ class transpose_table{
         }
     
     private:
-        inline bool compare_key(int b[], int k[]){
+        inline bool compare_key(uint_fast16_t b[], uint_fast16_t k[]){
             return 
                 b[0] == k[0] && b[1] == k[1] && b[2] == k[2] && b[3] == k[3] && 
                 b[4] == k[4] && b[5] == k[5] && b[6] == k[6] && b[7] == k[7];
