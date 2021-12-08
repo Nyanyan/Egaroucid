@@ -456,7 +456,7 @@ inline int mid_evaluate(const board *b){
         all_bias[phase_idx] + calc_pattern(phase_idx, b) + 
         all_dense[phase_idx][11] * add_arr[phase_idx][canput][sur0][sur1][0] + all_dense[phase_idx][12] * add_arr[phase_idx][canput][sur0][sur1][1] + all_dense[phase_idx][13] * add_arr[phase_idx][canput][sur0][sur1][2] + all_dense[phase_idx][14] * add_arr[phase_idx][canput][sur0][sur1][3] + 
         all_dense[phase_idx][15] * add_arr[phase_idx][canput][sur0][sur1][4] + all_dense[phase_idx][16] * add_arr[phase_idx][canput][sur0][sur1][5] + all_dense[phase_idx][17] * add_arr[phase_idx][canput][sur0][sur1][6] + all_dense[phase_idx][18] * add_arr[phase_idx][canput][sur0][sur1][7]);
-    return (int)(max(-1.0, min(1.0, res)) * sc_w);
+    return round(max(-1.0, min(1.0, res)) * sc_w);
 }
 
 inline int end_evaluate(const board *b){
