@@ -39,6 +39,10 @@ int nega_alpha(board *b, bool skipped, int depth, int alpha, int beta){
         else
             return end_evaluate(b);
     }
+    #if USE_MID_SC
+        if (stability_cut(b, &alpha, &beta))
+            return alpha;
+    #endif
     board nb;
     bool passed = true;
     int g, v = -inf;
@@ -46,10 +50,6 @@ int nega_alpha(board *b, bool skipped, int depth, int alpha, int beta){
         if (b->legal(cell)){
             passed = false;
             b->move(cell, &nb);
-            #if USE_MID_SC
-                if (stability_cut(&nb, &alpha, &beta))
-                    return alpha;
-            #endif
             g = -nega_alpha(&nb, false, depth - 1, -beta, -alpha);
             alpha = max(alpha, g);
             if (beta <= alpha)
@@ -74,6 +74,10 @@ int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int 
     if (depth <= simple_mid_threshold)
         return nega_alpha(b, skipped, depth, alpha, beta);
     ++searched_nodes;
+    #if USE_MID_SC
+        if (stability_cut(b, &alpha, &beta))
+            return alpha;
+    #endif
     int hash = (int)(b->hash() & search_hash_mask);
     int l, u;
     transpose_table.get_now(b, b->hash() & search_hash_mask, &l, &u);
@@ -100,10 +104,6 @@ int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int 
     for (const int &cell: vacant_lst){
         if (b->legal(cell)){
             nb.emplace_back(b->move(cell));
-            #if USE_MID_SC
-                if (stability_cut(&nb[canput], &alpha, &beta))
-                    return alpha;
-            #endif
             move_ordering(&(nb[canput]));
             ++canput;
         }
@@ -180,6 +180,10 @@ int nega_scout(board *b, bool skipped, const int depth, int alpha, int beta){
     if (depth <= simple_mid_threshold)
         return nega_alpha(b, skipped, depth, alpha, beta);
     ++searched_nodes;
+    #if USE_MID_SC
+        if (stability_cut(b, &alpha, &beta))
+            return alpha;
+    #endif
     int hash = (int)(b->hash() & search_hash_mask);
     int l, u;
     transpose_table.get_now(b, hash, &l, &u);
@@ -206,10 +210,6 @@ int nega_scout(board *b, bool skipped, const int depth, int alpha, int beta){
     for (const int &cell: vacant_lst){
         if (b->legal(cell)){
             nb.emplace_back(b->move(cell));
-            #if USE_MID_SC
-                if (stability_cut(&nb[canput], &alpha, &beta))
-                    return alpha;
-            #endif
             move_ordering(&(nb[canput]));
             ++canput;
         }

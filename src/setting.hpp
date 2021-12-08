@@ -9,18 +9,18 @@
 
 // stability cut
 #define USE_MID_SC  false
-#define USE_END_SC  false
+#define USE_END_SC  true
 
 // transpose table cut
 #define USE_MID_TC true
-#define USE_END_TC false
+#define USE_END_TC true
 
 
 
 /* ordering */
 
 // parity ordering
-#define USE_END_PO  false
+#define USE_END_PO  true
 
 
 
