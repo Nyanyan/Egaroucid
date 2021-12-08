@@ -27,8 +27,9 @@ constexpr int mtd_threshold = step * 4;
 
 #define extra_stability_threshold 58
 
+#define multi_thread_first_num 2
 #define multi_thread_depth 1
-#define multi_thread_start_depth 15
+#define multi_thread_start_depth 20
 
 const int cell_weight[hw2] = {
     120, -20, 20, 5, 5, 20, -20, 120,

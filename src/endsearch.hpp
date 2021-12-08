@@ -489,7 +489,13 @@ inline void pick_vacant(board *b, int cells[]){
     }
 }
 
-int nega_alpha_final(board *b, bool skipped, const int depth, int alpha, int beta){
+int nega_alpha_final(board *b, bool skipped, const int depth, int alpha, int beta, int worker_id){
+    #if USE_MULTI_THREAD
+        if (worker_id != -1){
+            if (thread_pool.stop[worker_id])
+                return -inf;
+        }
+    #endif
     if (depth == 5){
         int cells[5];
         pick_vacant(b, cells);
@@ -509,7 +515,7 @@ int nega_alpha_final(board *b, bool skipped, const int depth, int alpha, int bet
                 if ((b->parity & cell_div4[cell]) && b->legal(cell)){
                     passed = false;
                     b->move(cell, &nb);
-                    g = -nega_alpha_final(&nb, false, depth - 1, -beta, -alpha);
+                    g = -nega_alpha_final(&nb, false, depth - 1, -beta, -alpha, worker_id);
                     alpha = max(alpha, g);
                     if (beta <= alpha)
                         return alpha;
@@ -520,7 +526,7 @@ int nega_alpha_final(board *b, bool skipped, const int depth, int alpha, int bet
                 if (!(b->parity & cell_div4[cell]) && b->legal(cell)){
                     passed = false;
                     b->move(cell, &nb);
-                    g = -nega_alpha_final(&nb, false, depth - 1, -beta, -alpha);
+                    g = -nega_alpha_final(&nb, false, depth - 1, -beta, -alpha, worker_id);
                     alpha = max(alpha, g);
                     if (beta <= alpha)
                         return alpha;
@@ -532,7 +538,7 @@ int nega_alpha_final(board *b, bool skipped, const int depth, int alpha, int bet
                 if (b->legal(cell)){
                     passed = false;
                     b->move(cell, &nb);
-                    g = -nega_alpha_final(&nb, false, depth - 1, -beta, -alpha);
+                    g = -nega_alpha_final(&nb, false, depth - 1, -beta, -alpha, worker_id);
                     alpha = max(alpha, g);
                     if (beta <= alpha)
                         return alpha;
@@ -545,7 +551,7 @@ int nega_alpha_final(board *b, bool skipped, const int depth, int alpha, int bet
             if (b->legal(cell)){
                 passed = false;
                 b->move(cell, &nb);
-                g = -nega_alpha_final(&nb, false, depth - 1, -beta, -alpha);
+                g = -nega_alpha_final(&nb, false, depth - 1, -beta, -alpha, worker_id);
                 alpha = max(alpha, g);
                 if (beta <= alpha)
                     return alpha;
@@ -560,14 +566,20 @@ int nega_alpha_final(board *b, bool skipped, const int depth, int alpha, int bet
             nb.b[i] = b->b[i];
         nb.p = 1 - b->p;
         nb.n = b->n;
-        return -nega_alpha_final(&nb, true, depth, -beta, -alpha);
+        return -nega_alpha_final(&nb, true, depth, -beta, -alpha, worker_id);
     }
     return v;
 }
 
-int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha, int beta, int use_multi_thread){
+int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha, int beta, int use_multi_thread, int worker_id){
+    #if USE_MULTI_THREAD
+        if (worker_id != -1){
+            if (thread_pool.stop[worker_id])
+                return -inf;
+        }
+    #endif
     if (depth <= simple_end_threshold)
-        return nega_alpha_final(b, skipped, depth, alpha, beta);
+        return nega_alpha_final(b, skipped, depth, alpha, beta, worker_id);
     ++searched_nodes;
     #if USE_END_SC
         if (stability_cut(b, &alpha, &beta))
@@ -615,7 +627,7 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
             rb.b[i] = b->b[i];
         rb.p = 1 - b->p;
         rb.n = b->n;
-        int res = -nega_alpha_ordering_final(&rb, true, depth, -beta, -alpha, use_multi_thread);
+        int res = -nega_alpha_ordering_final(&rb, true, depth, -beta, -alpha, use_multi_thread, worker_id);
         if (res >= beta)
             transpose_table.reg(b, hash, res, u);
         else if (res <= alpha)
@@ -629,51 +641,60 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
     int g, v = -inf;
     #if USE_MULTI_THREAD
         if (use_multi_thread > 0 && depth <= multi_thread_start_depth){
-            int i;
-            g = -nega_alpha_ordering_final(&nb[0], false, depth - 1, -beta, -alpha, use_multi_thread);
-            alpha = max(alpha, g);
-            if (beta <= alpha){
-                if (l < g)
-                    transpose_table.reg(b, hash, g, u);
-                return alpha;
+            int i, j;
+            for (i = 0; i < min(canput, multi_thread_first_num); ++i){
+                g = -nega_alpha_ordering_final(&nb[i], false, depth - 1, -beta, -alpha, use_multi_thread, -1);
+                alpha = max(alpha, g);
+                if (beta <= alpha){
+                    if (l < g)
+                        transpose_table.reg(b, hash, g, u);
+                    return alpha;
+                }
+                v = max(v, g);
             }
-            v = max(v, g);
             int task_ids[canput];
-            for (i = 1; i < canput; ++i)
-                task_ids[i] = thread_pool.push(bind(&nega_alpha_ordering_final, &nb[i], false, depth - 1, -beta, -alpha, use_multi_thread - 1));
-            if (use_multi_thread - 1 > 0){
-                bool got[canput];
-                for (i = 1; i < canput; ++i)
-                    got[i] = false;
-                int n_got = 1;
-                while (n_got < canput){
-                    for (i = 1; i < canput; ++i){
-                        if (!got[i]){
-                            if (thread_pool.get_check(task_ids[i], &g)){
-                                g *= -1;
-                                alpha = max(alpha, g);
-                                v = max(v, g);
-                                got[i] = true;
-                                ++n_got;
+            for (i = multi_thread_first_num; i < canput; ++i){
+                task_ids[i] = thread_pool.get_worker_id();
+                thread_pool.push_id(bind(&nega_alpha_ordering_final, &nb[i], false, depth - 1, -beta, -alpha, use_multi_thread - 1, task_ids[i]), task_ids[i]);
+            }
+            bool got[canput];
+            for (i = multi_thread_first_num; i < canput; ++i)
+                got[i] = false;
+            int n_got = multi_thread_first_num;
+            while (n_got < canput){
+                for (i = multi_thread_first_num; i < canput; ++i){
+                    if (!got[i]){
+                        if (thread_pool.get_check(task_ids[i], &g)){
+                            g *= -1;
+                            alpha = max(alpha, g);
+                            v = max(v, g);
+                            got[i] = true;
+                            ++n_got;
+                            if (alpha >= beta){
+                                for (j = multi_thread_first_num; j < canput; ++j){
+                                    if (!got[j])
+                                        thread_pool.stop[task_ids[j]] = true;
+                                }
+                                for (j = multi_thread_first_num; j < canput; ++j){
+                                    if (!got[j])
+                                        thread_pool.get(task_ids[j]);
+                                }
+                                if (l < alpha)
+                                    transpose_table.reg(b, hash, g, u);
+                                return alpha;
                             }
                         }
                     }
                 }
-            } else{
-                for (i = 1; i < canput; ++i){
-                    g = -thread_pool.get(task_ids[i]);
-                    alpha = max(alpha, g);
-                    v = max(v, g);
-                }
             }
             if (beta <= alpha){
-                if (l < g)
-                    transpose_table.reg(b, hash, g, u);
+                if (l < alpha)
+                    transpose_table.reg(b, hash, alpha, u);
                 return alpha;
             }
         } else{
             for (int i = 0; i < canput; ++i){
-                g = -nega_alpha_ordering_final(&nb[i], false, depth - 1, -beta, -alpha, use_multi_thread);
+                g = -nega_alpha_ordering_final(&nb[i], false, depth - 1, -beta, -alpha, use_multi_thread, -1);
                 alpha = max(alpha, g);
                 if (beta <= alpha){
                     if (l < g)
@@ -685,7 +706,7 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
         }
     #else
         for (int i = 0; i < canput; ++i){
-            g = -nega_alpha_ordering_final(&nb[i], false, depth - 1, -beta, -alpha, 0);
+            g = -nega_alpha_ordering_final(&nb[i], false, depth - 1, -beta, -alpha, 0, -1);
             alpha = max(alpha, g);
             if (beta <= alpha){
                 if (l < g)
@@ -704,9 +725,9 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
 
 int nega_scout_final(board *b, bool skipped, const int depth, int alpha, int beta){
     if (depth <= simple_end_threshold)
-        return nega_alpha_final(b, skipped, depth, alpha, beta);
+        return nega_alpha_final(b, skipped, depth, alpha, beta, -1);
     if (beta - alpha <= step)
-        return nega_alpha_ordering_final(b, skipped, depth, alpha, beta, multi_thread_depth);
+        return nega_alpha_ordering_final(b, skipped, depth, alpha, beta, multi_thread_depth, -1);
     ++searched_nodes;
     #if USE_END_SC
         if (stability_cut(b, &alpha, &beta))
@@ -769,38 +790,42 @@ int nega_scout_final(board *b, bool skipped, const int depth, int alpha, int bet
     int g = alpha, v = -inf;
     #if USE_MULTI_THREAD
         int i;
-        g = -nega_scout_final(&nb[0], false, depth - 1, -beta, -alpha);
-        alpha = max(alpha, g);
-        if (beta <= alpha){
-            if (l < g)
-                transpose_table.reg(b, hash, g, u);
-            return alpha;
+        for (i = 0; i < min(canput, multi_thread_first_num); ++i){
+            g = -nega_scout_final(&nb[i], false, depth - 1, -beta, -alpha);
+            alpha = max(alpha, g);
+            if (beta <= alpha){
+                if (l < g)
+                    transpose_table.reg(b, hash, g, u);
+                return alpha;
+            }
+            v = max(v, g);
         }
-        v = max(v, g);
         int first_alpha = alpha;
         int task_ids[canput];
-        for (i = 1; i < canput; ++i)
-            task_ids[i] = thread_pool.push(bind(&nega_alpha_ordering_final, &nb[i], false, depth - 1, -alpha - step, -alpha, multi_thread_depth));
+        for (i = multi_thread_first_num; i < canput; ++i){
+            task_ids[i] = thread_pool.get_worker_id();
+            thread_pool.push_id(bind(&nega_alpha_ordering_final, &nb[i], false, depth - 1, -alpha - step, -alpha, multi_thread_depth, task_ids[i]), task_ids[i]);
+        }
         bool re_search[canput];
         bool got[canput];
-        for (i = 1; i < canput; ++i)
+        for (i = multi_thread_first_num; i < canput; ++i)
             got[i] = false;
-        int n_got = 1;
+        int n_got = multi_thread_first_num;
         while (n_got < canput){
-            for (i = 1; i < canput; ++i){
+            for (i = multi_thread_first_num; i < canput; ++i){
                 if (!got[i]){
                     if (thread_pool.get_check(task_ids[i], &g)){
                         g *= -1;
                         alpha = max(alpha, g);
                         v = max(v, g);
-                        re_search[i] = first_alpha < g;
                         got[i] = true;
                         ++n_got;
+                        re_search[i] = first_alpha < g;
                     }
                 }
             }
         }
-        for (i = 1; i < canput; ++i){
+        for (i = multi_thread_first_num; i < canput; ++i){
             if (re_search[i]){
                 g = -nega_scout_final(&nb[i], false, depth - 1, -beta, -alpha);
                 if (beta <= g){
@@ -815,7 +840,7 @@ int nega_scout_final(board *b, bool skipped, const int depth, int alpha, int bet
     #else
         for (int i = 0; i < canput; ++i){
             if (i > 0){
-                g = -nega_alpha_ordering_final(&nb[i], false, depth - 1, -alpha - step, -alpha, 0);
+                g = -nega_alpha_ordering_final(&nb[i], false, depth - 1, -alpha - step, -alpha, 0, -1);
                 if (beta <= g){
                     if (l < g)
                         transpose_table.reg(b, hash, g, u);
@@ -887,7 +912,7 @@ inline search_result endsearch(board b, long long strt){
         alpha = -nega_scout_final(&nb[0], false, max_depth, -beta, -alpha);
         tmp_policy = nb[0].policy;
         for (i = 1; i < canput; ++i){
-            g = -nega_alpha_ordering_final(&nb[i], false, max_depth, -alpha - step, -alpha, multi_thread_depth);
+            g = -nega_alpha_ordering_final(&nb[i], false, max_depth, -alpha - step, -alpha, multi_thread_depth, -1);
             if (alpha < g){
                 g = -nega_scout_final(&nb[i], false, max_depth, -beta, -g);
                 if (alpha <= g){
