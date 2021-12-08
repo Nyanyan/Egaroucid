@@ -42,7 +42,7 @@ const int cell_weight[hw2] = {
 };
 
 const int mpcd[30]={0, 1, 0, 1, 2, 3, 2, 3, 4, 3, 4, 3, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5};
-const double mpct[n_phases]={1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6};
+const double mpct[n_phases]={1.7, 1.7, 1.7, 1.7, 1.7, 1.7, 1.7, 1.7, 1.7, 1.7, 1.7, 1.7};
 const double mpcsd[n_phases][mpc_max_depth - mpc_min_depth + 1]={
     {301, 216, 187, 258, 252, 197, 272, 193},
     {302, 237, 210, 307, 320, 192, 222, 235},
@@ -185,11 +185,11 @@ inline bool stability_cut(board *b, int *alpha, int *beta){
     if (b->n >= extra_stability_threshold){
         int ps, os;
         calc_extra_stability(b, b->p, calc_extra_stability_ull(b), &ps, &os);
-        *alpha = max(*alpha, step * (2 * (calc_stability(b, 1 - b->p) + os) - hw2));
-        *beta = min(*beta, step * (hw2 - 2 * (calc_stability(b, b->p) + ps)));
+        *alpha = max(*alpha, step * (2 * (calc_stability(b, b->p) + ps) - hw2));
+        *beta = min(*beta, step * (hw2 - 2 * (calc_stability(b, 1 - b->p) + os)));
     } else{
-        *alpha = max(*alpha, step * (2 * calc_stability(b, 1 - b->p) - hw2));
-        *beta = min(*beta, step * (hw2 - 2 * calc_stability(b, b->p)));
+        *alpha = max(*alpha, step * (2 * calc_stability(b, b->p) - hw2));
+        *beta = min(*beta, step * (hw2 - 2 * calc_stability(b, 1 - b->p)));
     }
     return *alpha >= *beta;
 }

@@ -1,6 +1,9 @@
 #pragma once
 #include <iostream>
 #include <fstream>
+#include <string>
+#include <filesystem>
+#include <unistd.h>
 #include "setting.hpp"
 #include "common.hpp"
 #include "board.hpp"
@@ -277,7 +280,9 @@ inline void init_evaluation1() {
 }
 
 inline void init_evaluation2(){
-    ifstream ifs("resources/param.txt");
+    char dr[256];
+    getcwd(dr, 256);
+    ifstream ifs((string)dr + "/resources/param.txt");
     if (ifs.fail()){
         cerr << "evaluation file not exist" << endl;
         exit(1);
