@@ -13,7 +13,7 @@ using namespace std;
 class thread_pool {
     private:
         vector<future<int>> workers;
-        vector<bool> busy;
+        vector<int> not_busy;
         mutex mtx;
         int worker_size;
     
@@ -25,17 +25,12 @@ class thread_pool {
         
         inline int push(function<int()> task){
             this->mtx.lock();
-            bool flag = true;
             int res = -1;
-            for (int i = 0; i < this->worker_size; ++i){
-                if (!this->busy[i] && flag){
-                    execute_task(i, task);
-                    res = i;
-                    flag = false;
-                    break;
-                }
-            }
-            if (flag)
+            if (!not_busy.empty()){
+                res = not_busy.back();
+                execute_task(res, task);
+                not_busy.pop_back();
+            } else
                 res = execute_task_expand(task);
             this->mtx.unlock();
             return res;
@@ -44,7 +39,7 @@ class thread_pool {
         inline int get(int worker_id){
             this->mtx.lock();
             int res = this->workers[worker_id].get();
-            this->busy[worker_id] = false;
+            this->not_busy.push_back(worker_id);
             this->mtx.unlock();
             return res;
         }
@@ -52,12 +47,10 @@ class thread_pool {
         inline bool get_check(int worker_id, int *val){
             this->mtx.lock();
             bool res = false;
-            if (this->busy[worker_id]){
-                if (this->workers[worker_id].wait_for(chrono::seconds(0)) == future_status::ready){
-                    res = true;
-                    *val = this->workers[worker_id].get();
-                    this->busy[worker_id] = false;
-                }
+            if (this->workers[worker_id].wait_for(chrono::seconds(0)) == future_status::ready){
+                res = true;
+                *val = this->workers[worker_id].get();
+                this->not_busy.push_back(worker_id);
             }
             this->mtx.unlock();
             return res;
@@ -66,12 +59,10 @@ class thread_pool {
     private:
         inline void execute_task(int i, function<int()> task){
             this->workers[i] = async(launch::async, task);
-            this->busy[i] = true;
         }
 
         inline int execute_task_expand(function<int()> task){
             int i = this->worker_size;
-            this->busy.push_back(true);
             this->workers.push_back(async(launch::async, task));
             ++this->worker_size;
             return i;
