@@ -21,7 +21,7 @@ constexpr int mtd_threshold = step * 4;
 #define mpct_final 4.0
 
 #define simple_mid_threshold 3
-#define simple_end_threshold 5
+#define simple_end_threshold 10
 
 #define po_max_depth 10
 

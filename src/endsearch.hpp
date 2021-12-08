@@ -313,6 +313,7 @@ inline int last4(board *b, bool skipped, int alpha, int beta, int p0, int p1, in
     return v;
 }
 
+/*
 inline int last5(board *b, bool skipped, int alpha, int beta, int p0, int p1, int p2, int p3, int p4){
     ++searched_nodes;
     #if USE_END_PO
@@ -536,6 +537,7 @@ inline int last5(board *b, bool skipped, int alpha, int beta, int p0, int p1, in
     }
     return v;
 }
+*/
 
 inline void pick_vacant(board *b, int cells[]){
     int idx = 0;
@@ -545,12 +547,11 @@ inline void pick_vacant(board *b, int cells[]){
     }
 }
 
-/*
 int nega_alpha_final(board *b, bool skipped, const int depth, int alpha, int beta){
-    if (b->n == hw2 - 5){
-        int cells[5];
+    if (b->n == hw2 - 4){
+        int cells[4];
         pick_vacant(b, cells);
-        return last5(b, skipped, alpha, beta, cells[0], cells[1], cells[2], cells[3], cells[4]);
+        return last4(b, skipped, alpha, beta, cells[0], cells[1], cells[2], cells[3]);
     }
     ++searched_nodes;
     board nb;
@@ -615,7 +616,6 @@ int nega_alpha_final(board *b, bool skipped, const int depth, int alpha, int bet
     }
     return v;
 }
-*/
 
 int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha, int beta, int use_multi_thread, bool senior){
     if (depth <= simple_end_threshold)
@@ -759,13 +759,8 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
 }
 
 int nega_scout_final(board *b, bool skipped, const int depth, int alpha, int beta){
-    //if (depth <= simple_end_threshold)
-    //    return nega_alpha_final(b, skipped, depth, alpha, beta);
-    if (depth == 5){
-        int cells[5];
-        pick_vacant(b, cells);
-        return last5(b, skipped, alpha, beta, cells[0], cells[1], cells[2], cells[3], cells[4]);
-    }
+    if (depth <= simple_end_threshold)
+        return nega_alpha_final(b, skipped, depth, alpha, beta);
     if (beta - alpha <= step)
         return nega_alpha_ordering_final(b, skipped, depth, alpha, beta, multi_thread_depth, true);
     ++searched_nodes;
