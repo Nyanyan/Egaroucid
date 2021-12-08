@@ -18,7 +18,7 @@ inline void init(){
     search_init();
     transpose_table_init();
     evaluate_init();
-    book_init();
+    //book_init();
     #if USE_MULTI_THREAD
         multi_thread_init();
     #endif
@@ -84,7 +84,7 @@ int main(){
     //cin >> depth;
     //cin >> end_depth;
     depth = 10;
-    end_depth = 30;
+    end_depth = 20;
     while (true){
         cin >> ai_player;
         //int d;

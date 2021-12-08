@@ -546,7 +546,7 @@ inline void pick_vacant(board *b, int cells[]){
 }
 
 int nega_alpha_final(board *b, bool skipped, const int depth, int alpha, int beta){
-    if (b->n == hw2 - 5){
+    if (depth == 5){
         int cells[5];
         pick_vacant(b, cells);
         return last5(b, skipped, alpha, beta, cells[0], cells[1], cells[2], cells[3], cells[4]);
@@ -936,15 +936,38 @@ inline search_result endsearch(board b, long long strt){
     }
     if (canput >= 2)
         sort(nb.begin(), nb.end());
-    alpha = -nega_scout_final(&nb[0], false, max_depth, -beta, -alpha);
-    tmp_policy = nb[0].policy;
-    //cerr << 0 << " " << alpha << endl;
-    for (i = 1; i < canput; ++i){
-        g = -nega_alpha_ordering_final(&nb[i], false, max_depth, -alpha - search_epsilon, -alpha, multi_thread_depth, true);
-        //cerr << i << " " << g << " " << (alpha < g) << endl;
-        if (alpha < g){
-            g = -nega_scout_final(&nb[i], false, max_depth, -beta, -g);
-            //cerr << i << " " << g << endl;
+    if (nb[0].n < hw2 - 5){
+        alpha = -nega_scout_final(&nb[0], false, max_depth, -beta, -alpha);
+        tmp_policy = nb[0].policy;
+        //cerr << 0 << " " << alpha << endl;
+        for (i = 1; i < canput; ++i){
+            g = -nega_alpha_ordering_final(&nb[i], false, max_depth, -alpha - search_epsilon, -alpha, multi_thread_depth, true);
+            //cerr << i << " " << g << " " << (alpha < g) << endl;
+            if (alpha < g){
+                g = -nega_scout_final(&nb[i], false, max_depth, -beta, -g);
+                //cerr << i << " " << g << endl;
+                if (alpha <= g){
+                    alpha = g;
+                    tmp_policy = nb[i].policy;
+                }
+            }
+        }
+    } else{
+        int cells[5];
+        for (i = 0; i < canput; ++i){
+            pick_vacant(&nb[i], cells);
+            if (nb[i].n == hw2 - 5)
+                g = -last5(&nb[i], false, -beta, -alpha, cells[0], cells[1], cells[2], cells[3], cells[4]);
+            else if (nb[i].n == hw2 - 4)
+                g = -last4(&nb[i], false, -beta, -alpha, cells[0], cells[1], cells[2], cells[3]);
+            else if (nb[i].n == hw2 - 3)
+                g = -last3(&nb[i], false, -beta, -alpha, cells[0], cells[1], cells[2]);
+            else if (nb[i].n == hw2 - 2)
+                g = -last2(&nb[i], false, -beta, -alpha, cells[0], cells[1]);
+            else if (nb[i].n == hw2 - 1)
+                g = -last1(&nb[i], false, cells[0]);
+            else
+                g = -end_evaluate(&nb[i]);
             if (alpha <= g){
                 alpha = g;
                 tmp_policy = nb[i].policy;
