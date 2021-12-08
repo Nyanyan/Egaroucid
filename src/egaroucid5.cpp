@@ -18,7 +18,7 @@ inline void init(){
     search_init();
     transpose_table_init();
     evaluate_init();
-    //book_init();
+    book_init();
     #if USE_MULTI_THREAD
         multi_thread_init();
     #endif
