@@ -10,7 +10,7 @@ using namespace std;
 #define search_epsilon 1
 constexpr int cache_hit = step * 100;
 constexpr int cache_both = step * 10;
-constexpr int parity_vacant_bonus = step * 10;
+constexpr int parity_vacant_bonus = step * 100;
 constexpr int canput_bonus = step / 10;
 constexpr int mtd_threshold = step * 4;
 
@@ -65,7 +65,7 @@ int mpctsd[n_phases][mpc_max_depth + 1];
 int mpctsd_final[mpc_max_depth_final + 1];
 unsigned long long can_be_flipped[hw2];
 
-int searched_nodes;
+unsigned long long searched_nodes;
 vector<int> vacant_lst;
 
 struct search_result{
