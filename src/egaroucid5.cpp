@@ -18,7 +18,9 @@ inline void init(){
     search_init();
     transpose_table_init();
     evaluate_init();
-    book_init();
+    #if !MPC_MODE
+        book_init();
+    #endif
     #if USE_MULTI_THREAD
         multi_thread_init();
     #endif
@@ -86,38 +88,40 @@ int main(){
     depth = 10;
     end_depth = 20;
     while (true){
-        cin >> ai_player;
-        //int d;
-        //cin >> d;
-        input_board(&b, ai_player);
-        /*
-        transpose_table.init_now();
-        transpose_table.init_prev();
-        cout << nega_scout(&b, false, d, -sc_w, sc_w) << endl;
-        continue;
-        */
-        cerr << b.n << endl;
-        if (b.n == 4){
-            policy = first_moves[myrandrange(0, 4)];
-            print_result(policy, 0);
-            continue;
-        }
-        if (b.n < book_stones){
-            policy = book.get(&b);
-            cerr << "book policy " << policy << endl;
-            if (policy != -1){
-                b = b.move(policy);
-                ++b.n;
-                result = midsearch(b, tim(), 10);
-                print_result(policy, -result.value);
+        #if MPC_MODE
+            cin >> ai_player;
+            int d;
+            cin >> d;
+            input_board(&b, ai_player);
+            transpose_table.init_now();
+            transpose_table.init_prev();
+            cout << nega_scout(&b, false, d, -sc_w, sc_w) << endl;
+        #else
+            cin >> ai_player;
+            input_board(&b, ai_player);
+            cerr << b.n << endl;
+            if (b.n == 4){
+                policy = first_moves[myrandrange(0, 4)];
+                print_result(policy, 0);
                 continue;
             }
-        }
-        if (b.n >= hw2 - end_depth)
-            result = endsearch(b, tim());
-        else
-            result = midsearch(b, tim(), depth);
-        print_result(result);
+            if (b.n < book_stones){
+                policy = book.get(&b);
+                cerr << "book policy " << policy << endl;
+                if (policy != -1){
+                    b = b.move(policy);
+                    ++b.n;
+                    result = midsearch(b, tim(), 10);
+                    print_result(policy, -result.value);
+                    continue;
+                }
+            }
+            if (b.n >= hw2 - end_depth)
+                result = endsearch(b, tim());
+            else
+                result = midsearch(b, tim(), depth);
+            print_result(result);
+        #endif
     }
     return 0;
 }

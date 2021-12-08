@@ -35,3 +35,10 @@
 
 // use only int in evaluation function
 #define USE_INT_EVAL false
+
+
+
+/** other **/
+
+// MPC calculation mode
+#define MPC_MODE false

@@ -42,7 +42,7 @@ const int cell_weight[hw2] = {
 };
 
 const int mpcd[30]={0, 1, 0, 1, 2, 3, 2, 3, 4, 3, 4, 3, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5};
-const double mpct[n_phases]={1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5};
+const double mpct[n_phases]={1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6};
 const double mpcsd[n_phases][mpc_max_depth - mpc_min_depth + 1]={
     {301, 216, 187, 258, 252, 197, 272, 193},
     {302, 237, 210, 307, 320, 192, 222, 235},

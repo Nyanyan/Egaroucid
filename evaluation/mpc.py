@@ -35,7 +35,7 @@ vds = [[[] for _ in range(max_depth - min_depth + 1)] for _ in range(12)]
 
 vh_vd = []
 
-mpcd = [0,1,0,1,2,3,2,3,4,3,4,3,4,5,6,5,6,5,6,7,6,7,8,9,8,9,10,11,10,11]
+mpcd = [0, 1, 0, 1, 2, 3, 2, 3, 4, 3, 4, 3, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5]
 
 
 def collect_data(num):
@@ -75,6 +75,7 @@ def collect_data(num):
 
 for i in range(10):
     collect_data(i)
+evaluate.kill()
 
 start_temp = 1000.0
 end_temp   = 10.0
@@ -133,4 +134,3 @@ vh_vd = [[[vhs[i][j][k] - f(vds[i][j][k]) for k in range(len(vhs[i][j]))] for j 
 sd = [[round(statistics.stdev(vh_vd[i][j])) for j in range(len(vh_vd[i]))] for i in range(len(vh_vd))]
 for each_sd in sd:
     print(str(each_sd).replace('[', '{').replace(']', '}') + ',')
-evaluate.kill()
