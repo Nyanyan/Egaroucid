@@ -3,7 +3,6 @@
 #include <functional>
 #include <thread>
 #include <future>
-#include <queue>
 #include <chrono>
 #include <mutex>
 #include "setting.hpp"
@@ -25,6 +24,7 @@ class thread_pool {
         }
         
         inline int push(function<int()> task){
+            this->mtx.lock();
             bool flag = true;
             int res = -1;
             for (int i = 0; i < this->worker_size; ++i){
@@ -37,6 +37,7 @@ class thread_pool {
             }
             if (flag)
                 res = execute_task_expand(task);
+            this->mtx.unlock();
             return res;
         }
 
@@ -47,22 +48,32 @@ class thread_pool {
             this->mtx.unlock();
             return res;
         }
+
+        inline bool get_check(int worker_id, int *val){
+            this->mtx.lock();
+            bool res = false;
+            if (this->busy[worker_id]){
+                if (this->workers[worker_id].wait_for(chrono::seconds(0)) == future_status::ready){
+                    res = true;
+                    *val = this->workers[worker_id].get();
+                    this->busy[worker_id] = false;
+                }
+            }
+            this->mtx.unlock();
+            return res;
+        }
     
     private:
         inline void execute_task(int i, function<int()> task){
-            this->mtx.lock();
             this->workers[i] = async(launch::async, task);
             this->busy[i] = true;
-            this->mtx.unlock();
         }
 
         inline int execute_task_expand(function<int()> task){
-            this->mtx.lock();
             int i = this->worker_size;
             this->busy.push_back(true);
             this->workers.push_back(async(launch::async, task));
             ++this->worker_size;
-            this->mtx.unlock();
             return i;
         }
 };

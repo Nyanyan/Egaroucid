@@ -27,6 +27,8 @@ constexpr int mtd_threshold = step * 4;
 
 #define extra_stability_threshold 58
 
+#define multi_thread_depth 2
+
 const int cell_weight[hw2] = {
     120, -20, 20, 5, 5, 20, -20, 120,
     -20, -40, -5, -5, -5, -5, -40, -20,
@@ -145,7 +147,7 @@ inline int calc_x_stability(board *b, int p){
 inline int calc_stability(board *b, int p){
     return
         stability_edge_arr[p][b->b[0]] + stability_edge_arr[p][b->b[7]] + stability_edge_arr[p][b->b[8]] + stability_edge_arr[p][b->b[15]] + 
-        stability_corner_arr[p][b->b[0]] + stability_corner_arr[p][b->b[7]];// + 
+        stability_corner_arr[p][b->b[0]] + stability_corner_arr[p][b->b[7]]; // + 
         //calc_x_stability(b, p); // + calc_xx_stability(b, p);
 }
 

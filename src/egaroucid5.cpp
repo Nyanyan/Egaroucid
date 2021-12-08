@@ -84,7 +84,7 @@ int main(){
     //cin >> depth;
     //cin >> end_depth;
     depth = 10;
-    end_depth = 20;
+    end_depth = 30;
     while (true){
         cin >> ai_player;
         //int d;

@@ -26,7 +26,7 @@
 
 /* multi threading*/
 
-// usage
+// use multi thread
 #define USE_MULTI_THREAD true
 
 
