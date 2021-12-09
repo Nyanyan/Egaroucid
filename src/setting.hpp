@@ -15,6 +15,9 @@
 #define USE_MID_TC true
 #define USE_END_TC true
 
+// YBWC early cut **If you want to set these true, you must set USE_MULTI_THREAD true**
+#define USE_YBWC_MID_EARLY_CUT false
+#define USE_YBWC_END_EARLY_CUT true
 
 
 /* ordering */

@@ -27,7 +27,8 @@ constexpr int mtd_threshold = step * 4;
 
 #define extra_stability_threshold 58
 
-#define multi_thread_first_num 2
+#define ybwc_mid_first_num 1
+#define ybwc_end_first_num 2
 #define multi_thread_depth 1
 #define multi_thread_start_depth 20
 

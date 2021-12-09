@@ -490,7 +490,7 @@ inline void pick_vacant(board *b, int cells[]){
 }
 
 int nega_alpha_final(board *b, bool skipped, const int depth, int alpha, int beta, int worker_id){
-    #if USE_MULTI_THREAD
+    #if USE_MULTI_THREAD && USE_YBWC_END_EARLY_CUT
         if (worker_id != -1){
             if (thread_pool.stop[worker_id])
                 return -inf;
@@ -572,7 +572,7 @@ int nega_alpha_final(board *b, bool skipped, const int depth, int alpha, int bet
 }
 
 int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha, int beta, int use_multi_thread, int worker_id){
-    #if USE_MULTI_THREAD
+    #if USE_MULTI_THREAD && USE_YBWC_END_EARLY_CUT
         if (worker_id != -1){
             if (thread_pool.stop[worker_id])
                 return -inf;
@@ -641,9 +641,12 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
     int g, v = -inf;
     #if USE_MULTI_THREAD
         if (use_multi_thread > 0 && depth <= multi_thread_start_depth){
-            int i, j;
-            for (i = 0; i < min(canput, multi_thread_first_num); ++i){
-                g = -nega_alpha_ordering_final(&nb[i], false, depth - 1, -beta, -alpha, use_multi_thread, -1);
+            int i;
+            #if USE_YBWC_END_EARLY_CUT
+                int j;
+            #endif
+            for (i = 0; i < min(canput, ybwc_end_first_num); ++i){
+                g = -nega_alpha_ordering_final(&nb[i], false, depth - 1, -beta, -alpha, use_multi_thread, worker_id);
                 alpha = max(alpha, g);
                 if (beta <= alpha){
                     if (l < g)
@@ -653,16 +656,16 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
                 v = max(v, g);
             }
             int task_ids[canput];
-            for (i = multi_thread_first_num; i < canput; ++i){
+            for (i = ybwc_end_first_num; i < canput; ++i){
                 task_ids[i] = thread_pool.get_worker_id();
                 thread_pool.push_id(bind(&nega_alpha_ordering_final, &nb[i], false, depth - 1, -beta, -alpha, use_multi_thread - 1, task_ids[i]), task_ids[i]);
             }
             bool got[canput];
-            for (i = multi_thread_first_num; i < canput; ++i)
+            for (i = ybwc_end_first_num; i < canput; ++i)
                 got[i] = false;
-            int n_got = multi_thread_first_num;
+            int n_got = ybwc_end_first_num;
             while (n_got < canput){
-                for (i = multi_thread_first_num; i < canput; ++i){
+                for (i = ybwc_end_first_num; i < canput; ++i){
                     if (!got[i]){
                         if (thread_pool.get_check(task_ids[i], &g)){
                             g *= -1;
@@ -670,27 +673,30 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
                             v = max(v, g);
                             got[i] = true;
                             ++n_got;
-                            if (alpha >= beta){
-                                for (j = multi_thread_first_num; j < canput; ++j){
-                                    if (!got[j])
-                                        thread_pool.stop[task_ids[j]] = true;
+                            #if USE_YBWC_END_EARLY_CUT
+                                if (alpha >= beta){
+                                    for (j = ybwc_end_first_num; j < canput; ++j){
+                                        if (!got[j])
+                                            thread_pool.stop[task_ids[j]] = true;
+                                    }
+                                    while (n_got < canput){
+                                        for (j = ybwc_end_first_num; j < canput; ++j){
+                                            if (!got[j]){
+                                                if (thread_pool.get_check(task_ids[j], &g)){
+                                                    ++n_got;
+                                                    got[j] = true;
+                                                }
+                                            }
+                                        }
+                                    }
+                                    if (l < alpha)
+                                        transpose_table.reg(b, hash, alpha, u);
+                                    return alpha;
                                 }
-                                for (j = multi_thread_first_num; j < canput; ++j){
-                                    if (!got[j])
-                                        thread_pool.get(task_ids[j]);
-                                }
-                                if (l < alpha)
-                                    transpose_table.reg(b, hash, alpha, u);
-                                return alpha;
-                            }
+                            #endif
                         }
                     }
                 }
-            }
-            if (beta <= alpha){
-                if (l < alpha)
-                    transpose_table.reg(b, hash, alpha, u);
-                return alpha;
             }
         } else{
             for (int i = 0; i < canput; ++i){
@@ -790,29 +796,27 @@ int nega_scout_final(board *b, bool skipped, const int depth, int alpha, int bet
     int g = alpha, v = -inf;
     #if USE_MULTI_THREAD
         int i;
-        for (i = 0; i < min(canput, multi_thread_first_num); ++i){
-            g = -nega_scout_final(&nb[i], false, depth - 1, -beta, -alpha);
-            alpha = max(alpha, g);
-            if (beta <= alpha){
-                if (l < g)
-                    transpose_table.reg(b, hash, g, u);
-                return alpha;
-            }
-            v = max(v, g);
+        g = -nega_scout_final(&nb[0], false, depth - 1, -beta, -alpha);
+        alpha = max(alpha, g);
+        if (beta <= alpha){
+            if (l < g)
+                transpose_table.reg(b, hash, g, u);
+            return alpha;
         }
+        v = max(v, g);
         int first_alpha = alpha;
         int task_ids[canput];
-        for (i = multi_thread_first_num; i < canput; ++i){
+        for (i = 1; i < canput; ++i){
             task_ids[i] = thread_pool.get_worker_id();
             thread_pool.push_id(bind(&nega_alpha_ordering_final, &nb[i], false, depth - 1, -first_alpha - step, -first_alpha, multi_thread_depth, task_ids[i]), task_ids[i]);
         }
         bool re_search[canput];
         bool got[canput];
-        for (i = multi_thread_first_num; i < canput; ++i)
+        for (i = 1; i < canput; ++i)
             got[i] = false;
-        int n_got = multi_thread_first_num;
+        int n_got = 1;
         while (n_got < canput){
-            for (i = multi_thread_first_num; i < canput; ++i){
+            for (i = 1; i < canput; ++i){
                 if (!got[i]){
                     if (thread_pool.get_check(task_ids[i], &g)){
                         g *= -1;
@@ -825,7 +829,7 @@ int nega_scout_final(board *b, bool skipped, const int depth, int alpha, int bet
                 }
             }
         }
-        for (i = multi_thread_first_num; i < canput; ++i){
+        for (i = 1; i < canput; ++i){
             if (re_search[i]){
                 g = -nega_scout_final(&nb[i], false, depth - 1, -beta, -alpha);
                 if (beta <= g){
