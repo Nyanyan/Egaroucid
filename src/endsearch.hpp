@@ -587,7 +587,7 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
     #endif
     int hash = (int)(b->hash() & search_hash_mask);
     int l, u;
-    transpose_table.get_now(b, b->hash() & search_hash_mask, &l, &u);
+    transpose_table.get_now(b, hash, &l, &u);
     #if USE_END_TC
         if (l >= beta)
             return l;
@@ -680,7 +680,7 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
                                         thread_pool.get(task_ids[j]);
                                 }
                                 if (l < alpha)
-                                    transpose_table.reg(b, hash, g, u);
+                                    transpose_table.reg(b, hash, alpha, u);
                                 return alpha;
                             }
                         }
@@ -735,7 +735,7 @@ int nega_scout_final(board *b, bool skipped, const int depth, int alpha, int bet
     #endif
     int hash = (int)(b->hash() & search_hash_mask);
     int l, u;
-    transpose_table.get_now(b, b->hash() & search_hash_mask, &l, &u);
+    transpose_table.get_now(b, hash, &l, &u);
     #if USE_END_TC
         if (l >= beta)
             return l;
@@ -804,7 +804,7 @@ int nega_scout_final(board *b, bool skipped, const int depth, int alpha, int bet
         int task_ids[canput];
         for (i = multi_thread_first_num; i < canput; ++i){
             task_ids[i] = thread_pool.get_worker_id();
-            thread_pool.push_id(bind(&nega_alpha_ordering_final, &nb[i], false, depth - 1, -alpha - step, -alpha, multi_thread_depth, task_ids[i]), task_ids[i]);
+            thread_pool.push_id(bind(&nega_alpha_ordering_final, &nb[i], false, depth - 1, -first_alpha - step, -first_alpha, multi_thread_depth, task_ids[i]), task_ids[i]);
         }
         bool re_search[canput];
         bool got[canput];

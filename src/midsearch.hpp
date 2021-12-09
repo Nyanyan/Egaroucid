@@ -80,7 +80,7 @@ int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int 
     #endif
     int hash = (int)(b->hash() & search_hash_mask);
     int l, u;
-    transpose_table.get_now(b, b->hash() & search_hash_mask, &l, &u);
+    transpose_table.get_now(b, hash, &l, &u);
     #if USE_MID_TC
         if (l >= beta)
             return l;
