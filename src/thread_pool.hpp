@@ -94,6 +94,6 @@ class thread_pool {
 
 thread_pool thread_pool;
 
-inline void multi_thread_init(){
+inline void thread_pool_init(){
     thread_pool.init();
 }

@@ -9,7 +9,7 @@
 #include "search.hpp"
 #include "transpose_table.hpp"
 #if USE_MULTI_THREAD
-    #include "multi_threading.hpp"
+    #include "thread_pool.hpp"
 #endif
 
 using namespace std;

@@ -10,7 +10,7 @@
 #include "endsearch.hpp"
 #include "book.hpp"
 #if USE_MULTI_THREAD
-    #include "multi_threading.hpp"
+    #include "thread_pool.hpp"
 #endif
 
 inline void init(){
@@ -22,7 +22,7 @@ inline void init(){
         book_init();
     #endif
     #if USE_MULTI_THREAD
-        multi_thread_init();
+        thread_pool_init();
     #endif
 }
 
@@ -86,7 +86,7 @@ int main(){
     //cin >> depth;
     //cin >> end_depth;
     depth = 10;
-    end_depth = 30;
+    end_depth = 20;
     while (true){
         #if MPC_MODE
             cin >> ai_player;
