@@ -188,6 +188,13 @@ int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int 
                     }
                 }
             }
+            #if !USE_YBWC_MID_EARLY_CUT
+                if (beta <= alpha){
+                    if (l < alpha)
+                        transpose_table.reg(b, hash, alpha, u);
+                    return alpha;
+                }
+            #endif
         } else{
             for (int i = 0; i < canput; ++i){
                 g = -nega_alpha_ordering(&nb[i], false, depth - 1, -beta, -alpha, 0, -1);
@@ -431,5 +438,8 @@ inline search_result midsearch(board b, long long strt, int max_depth){
     res.value = value;
     res.depth = res_depth;
     res.nps = searched_nodes * 1000 / max(1LL, tim() - strt);
+    #if USE_MULTI_THREAD
+        cerr << "worker_size " << thread_pool.get_worker_size() << endl;
+    #endif
     return res;
 }

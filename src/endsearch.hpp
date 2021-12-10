@@ -674,7 +674,7 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
                             got[i] = true;
                             ++n_got;
                             #if USE_YBWC_END_EARLY_CUT
-                                if (alpha >= beta){
+                                if (beta <= alpha){
                                     for (j = ybwc_end_first_num; j < canput; ++j){
                                         if (!got[j])
                                             thread_pool.stop[task_ids[j]] = true;
@@ -698,6 +698,13 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
                     }
                 }
             }
+            #if !USE_YBWC_END_EARLY_CUT
+                if (beta <= alpha){
+                    if (l < alpha)
+                        transpose_table.reg(b, hash, alpha, u);
+                    return alpha;
+                }
+            #endif
         } else{
             for (int i = 0; i < canput; ++i){
                 g = -nega_alpha_ordering_final(&nb[i], false, depth - 1, -beta, -alpha, use_multi_thread, -1);
@@ -956,5 +963,8 @@ inline search_result endsearch(board b, long long strt){
     res.value = value;
     res.depth = max_depth;
     res.nps = searched_nodes * 1000 / max(1LL, tim() - strt);
+    #if USE_MULTI_THREAD
+        cerr << "worker_size " << thread_pool.get_worker_size() << endl;
+    #endif
     return res;
 }

@@ -10,9 +10,12 @@
 
 using namespace std;
 
+constexpr chrono::duration<int> seconds0 = chrono::seconds(0);
+
 class thread_pool {
     public:
         vector<bool> stop;
+
     private:
         vector<future<int>> workers;
         vector<int> not_busy;
@@ -47,10 +50,10 @@ class thread_pool {
         inline int push(function<int()> task){
             this->mtx.lock();
             int res = -1;
-            if (!not_busy.empty()){
-                res = not_busy.back();
+            if (!this->not_busy.empty()){
+                res = this->not_busy.back();
                 execute_task(res, task);
-                not_busy.pop_back();
+                this->not_busy.pop_back();
             } else
                 res = execute_task_expand(task);
             this->mtx.unlock();
@@ -68,13 +71,17 @@ class thread_pool {
         inline bool get_check(int worker_id, int *val){
             this->mtx.lock();
             bool res = false;
-            if (this->workers[worker_id].wait_for(chrono::seconds(0)) == future_status::ready){
+            if (this->workers[worker_id].wait_for(seconds0) == future_status::ready){
                 res = true;
                 *val = this->workers[worker_id].get();
                 this->not_busy.push_back(worker_id);
             }
             this->mtx.unlock();
             return res;
+        }
+
+        inline int get_worker_size(){
+            return this->worker_size;
         }
     
     private:
