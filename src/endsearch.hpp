@@ -1,7 +1,5 @@
 #pragma once
 #include <iostream>
-#include <thread>
-#include <future>
 #include <functional>
 #include "setting.hpp"
 #include "common.hpp"
@@ -659,6 +657,7 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
             for (i = ybwc_end_first_num; i < canput; ++i){
                 task_ids[i] = thread_pool.get_worker_id();
                 thread_pool.push_id(bind(&nega_alpha_ordering_final, &nb[i], false, depth - 1, -beta, -alpha, use_multi_thread - 1, task_ids[i]), task_ids[i]);
+                //thread_pool.push_id(end_search, &nb[i], false, depth - 1, -beta, -alpha, use_multi_thread - 1, task_ids[i]);
             }
             bool got[canput];
             for (i = ybwc_end_first_num; i < canput; ++i)
@@ -816,6 +815,7 @@ int nega_scout_final(board *b, bool skipped, const int depth, int alpha, int bet
         for (i = 1; i < canput; ++i){
             task_ids[i] = thread_pool.get_worker_id();
             thread_pool.push_id(bind(&nega_alpha_ordering_final, &nb[i], false, depth - 1, -first_alpha - step, -first_alpha, multi_thread_depth, task_ids[i]), task_ids[i]);
+            //thread_pool.push_id(end_search, &nb[i], false, depth - 1, -first_alpha - step, -first_alpha, multi_thread_depth, task_ids[i]);
         }
         bool re_search[canput];
         bool got[canput];
@@ -898,7 +898,7 @@ inline search_result endsearch(board b, long long strt){
     transpose_table.hash_reg = 0;
     int order_l, order_u;
     int max_depth = hw2 - b.n - 1;
-    int pre_search_depth = min(17, max_depth - simple_end_threshold - 2);
+    int pre_search_depth = min(17, max_depth - 12);
     transpose_table.init_now();
     transpose_table.init_prev();
     if (pre_search_depth > 0)

@@ -149,6 +149,7 @@ int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int 
             for (i = ybwc_mid_first_num; i < canput; ++i){
                 task_ids[i] = thread_pool.get_worker_id();
                 thread_pool.push_id(bind(&nega_alpha_ordering, &nb[i], false, depth - 1, -beta, -alpha, use_multi_thread - 1, task_ids[i]), task_ids[i]);
+                //thread_pool.push_id(mid_search, &nb[i], false, depth - 1, -beta, -alpha, use_multi_thread - 1, task_ids[i]);
             }
             bool got[canput];
             for (i = ybwc_mid_first_num; i < canput; ++i)
@@ -292,6 +293,7 @@ int nega_scout(board *b, bool skipped, const int depth, int alpha, int beta){
         for (i = 1; i < canput; ++i){
             task_ids[i] = thread_pool.get_worker_id();
             thread_pool.push_id(bind(&nega_alpha_ordering, &nb[i], false, depth - 1, -first_alpha - search_epsilon, -first_alpha, multi_thread_depth, task_ids[i]), task_ids[i]);
+            //thread_pool.push_id(mid_search, &nb[i], false, depth - 1, -first_alpha - search_epsilon, -first_alpha, multi_thread_depth, task_ids[i]);
         }
         bool got[canput];
         for (i = 1; i < canput; ++i)
