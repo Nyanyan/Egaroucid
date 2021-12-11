@@ -410,6 +410,7 @@ inline search_result midsearch(board b, long long strt, int max_depth){
         if (canput >= 2)
             sort(nb.begin(), nb.end());
         g = -mtd(&nb[0], false, depth, -beta, -alpha);
+        //g = -nega_scout(&nb[0], false, depth, -beta, -alpha);
         if (g == inf)
             break;
         transpose_table.reg(&nb[0], (int)(nb[0].hash() & search_hash_mask), g, g);
@@ -420,6 +421,7 @@ inline search_result midsearch(board b, long long strt, int max_depth){
             if (alpha < g){
                 alpha = g;
                 g = -mtd(&nb[i], false, depth, -beta, -alpha);
+                //g = -nega_scout(&nb[i], false, depth, -beta, -alpha);
                 transpose_table.reg(&nb[i], (int)(nb[i].hash() & search_hash_mask), g, g);
                 if (alpha < g){
                     alpha = g;

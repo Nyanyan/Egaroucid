@@ -879,6 +879,20 @@ int nega_scout_final(board *b, bool skipped, const int depth, int alpha, int bet
     return v;
 }
 
+int mtd_final(board *b, bool skipped, int depth, int l, int u){
+    int g = mid_evaluate(b), beta;
+    while (u - l > mtd_threshold){
+        beta = g;
+        g = nega_alpha_ordering_final(b, skipped, depth, beta - search_epsilon, beta, multi_thread_depth, -1);
+        if (g < beta)
+            u = g;
+        else
+            l = g;
+        g = (l + u) / 2;
+    }
+    return nega_scout(b, skipped, depth, l, u);
+}
+
 inline search_result endsearch(board b, long long strt){
     vector<board> nb;
     int i;
