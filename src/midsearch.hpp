@@ -357,8 +357,8 @@ int nega_scout(board *b, bool skipped, const int depth, int alpha, int beta){
     return v;
 }
 
-int mtd(board *b, bool skipped, int depth, int l, int u){
-    int g = mid_evaluate(b), beta;
+int mtd(board *b, bool skipped, int depth, int l, int u, int g){
+    int beta;
     while (u - l > mtd_threshold){
         beta = g;
         g = nega_alpha_ordering(b, skipped, depth, beta - search_epsilon, beta, multi_thread_depth, -1);
@@ -373,6 +373,7 @@ int mtd(board *b, bool skipped, int depth, int l, int u){
 
 inline search_result midsearch(board b, long long strt, int max_depth){
     vector<board> nb;
+    vector<int> prev_vals;
     int i;
     for (const int &cell: vacant_lst){
         if (b.legal(cell)){
@@ -409,7 +410,10 @@ inline search_result midsearch(board b, long long strt, int max_depth){
         }
         if (canput >= 2)
             sort(nb.begin(), nb.end());
-        g = -mtd(&nb[0], false, depth, -beta, -alpha);
+        prev_vals.clear();
+        for (i = 0; i < canput; ++i)
+            prev_vals.push_back(nega_scout(&nb[i], false, depth / 2, -sc_w, sc_w));
+        g = -mtd(&nb[0], false, depth, -beta, -alpha, prev_vals[0]);
         //g = -nega_scout(&nb[0], false, depth, -beta, -alpha);
         if (g == inf)
             break;
@@ -420,7 +424,7 @@ inline search_result midsearch(board b, long long strt, int max_depth){
             g = -nega_alpha_ordering(&nb[i], false, depth, -alpha - search_epsilon, -alpha, ybwc_mid_first_num, -1);
             if (alpha < g){
                 alpha = g;
-                g = -mtd(&nb[i], false, depth, -beta, -alpha);
+                g = -mtd(&nb[i], false, depth, -beta, -alpha, prev_vals[i]);
                 //g = -nega_scout(&nb[i], false, depth, -beta, -alpha);
                 transpose_table.reg(&nb[i], (int)(nb[i].hash() & search_hash_mask), g, g);
                 if (alpha < g){

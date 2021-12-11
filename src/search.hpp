@@ -13,6 +13,7 @@ constexpr int cache_both = step * 10;
 constexpr int parity_vacant_bonus = step * 10;
 constexpr int canput_bonus = step;
 constexpr int mtd_threshold = step * 4;
+constexpr int mtd_end_threshold = step * 5;
 
 #define mpc_min_depth 3
 #define mpc_max_depth 10
