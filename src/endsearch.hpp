@@ -609,6 +609,7 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
     for (const int &cell: vacant_lst){
         if (b->legal(cell)){
             b->move(cell, &nb[canput]);
+            //move_ordering(&nb[canput]);
             nb[canput].v = -canput_bonus * calc_canput_exact(&nb[canput]);
             #if USE_END_PO
                 if (depth <= po_max_depth && b->parity & cell_div4[cell])
@@ -638,7 +639,7 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
         sort(nb, nb + canput);
     int g, v = -inf;
     #if USE_MULTI_THREAD
-        if (use_multi_thread > 0 && depth <= multi_thread_start_depth){
+        if (use_multi_thread > 0){
             int i;
             #if USE_YBWC_END_EARLY_CUT
                 int j;

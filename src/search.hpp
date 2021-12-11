@@ -10,8 +10,8 @@ using namespace std;
 #define search_epsilon 1
 constexpr int cache_hit = step * 100;
 constexpr int cache_both = step * 10;
-constexpr int parity_vacant_bonus = step * 100;
-constexpr int canput_bonus = step * 100;
+constexpr int parity_vacant_bonus = step * 10;
+constexpr int canput_bonus = step;
 constexpr int mtd_threshold = step * 4;
 
 #define mpc_min_depth 3
@@ -30,7 +30,6 @@ constexpr int mtd_threshold = step * 4;
 #define ybwc_mid_first_num 1
 #define ybwc_end_first_num 2
 #define multi_thread_depth 1
-#define multi_thread_start_depth 20
 
 const int cell_weight[hw2] = {
     10, 3, 9, 7, 7, 9, 3, 10, 
