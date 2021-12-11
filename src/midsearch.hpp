@@ -220,9 +220,9 @@ int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int 
             v = max(v, g);
         }
     #endif
-    if (v <= first_alpha)
+    if (v <= first_alpha && v < u)
         transpose_table.reg(b, hash, l, v);
-    else
+    else if (v > first_alpha)
         transpose_table.reg(b, hash, v, v);
     return v;
 }
@@ -350,9 +350,9 @@ int nega_scout(board *b, bool skipped, const int depth, int alpha, int beta){
             }
         }
     #endif
-    if (v <= first_alpha)
+    if (v <= first_alpha && v < u)
         transpose_table.reg(b, hash, l, v);
-    else
+    else if (v > first_alpha)
         transpose_table.reg(b, hash, v, v);
     return v;
 }

@@ -729,9 +729,9 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
             v = max(v, g);
         }
     #endif
-    if (v <= alpha)
+    if (v <= alpha && v < u)
         transpose_table.reg(b, hash, l, v);
-    else
+    else if (v > alpha)
         transpose_table.reg(b, hash, v, v);
     return v;
 }
@@ -872,9 +872,9 @@ int nega_scout_final(board *b, bool skipped, const int depth, int alpha, int bet
             }
         }
     #endif
-    if (v <= alpha)
+    if (v <= alpha && v < u)
         transpose_table.reg(b, hash, l, v);
-    else
+    else if (v > alpha)
         transpose_table.reg(b, hash, v, v);
     return v;
 }
@@ -885,9 +885,10 @@ int mtd_final(board *b, bool skipped, int depth, int l, int u, int g){
     u /= step;
     g /= step;
     g = min(u, max(l, g));
-    cerr << l << " " << g << " " << u << " FIRST " << endl;
-    while ((u - l) * step > mtd_end_threshold){
-        beta = g;
+    cerr << l << " " << g << " " << u << endl;
+    while (u - l > 0){
+        //cerr << l << " " << g << " " << u << endl;
+        beta = max(l + 1, g);
         g = nega_alpha_ordering_final(b, skipped, depth, beta * step - step, beta * step, multi_thread_depth, -1);
         g /= step;
         if (g < beta)
@@ -896,8 +897,10 @@ int mtd_final(board *b, bool skipped, int depth, int l, int u, int g){
             l = g;
         g = (l + u) / 2;
     }
-    cerr << l << " " << u << endl;
-    return nega_scout_final(b, skipped, depth, l * step, u * step);
+    //cerr << l << " " << u << endl;
+    //return nega_scout_final(b, skipped, depth, l * step, u * step);
+    cerr << l << endl;
+    return l * step;
 }
 
 inline search_result endsearch(board b, long long strt){
@@ -953,7 +956,7 @@ inline search_result endsearch(board b, long long strt){
             if (alpha < g){
                 g = -nega_scout_final(&nb[i], false, max_depth, -beta, -g);
                 //g = -mtd_final(&nb[i], false, max_depth, -beta, -g, prev_vals[i]);
-                if (alpha <= g){
+                if (alpha < g){
                     alpha = g;
                     tmp_policy = nb[i].policy;
                 }
