@@ -432,25 +432,40 @@ inline int calc_surround(const board *b, int p){
         surround_arr[p][b->b[21]] + surround_arr[p][b->b[32]];
 }
 
-inline eval_type edge_2x(int phase_idx, const uint_fast16_t b[], int idx, int x, int y){
-    return pattern_arr[phase_idx][7][pop_digit[b[x]][1] * p39 + b[y] * p31 + pop_digit[b[x]][6]][idx];
+inline eval_type edge_2x(int phase_idx, const uint_fast16_t b[], int x, int y){
+    int idx = pop_digit[b[x]][1] * p39 + b[y] * p31 + pop_digit[b[x]][6];
+    return 
+        all_dense[phase_idx][14] * pattern_arr[phase_idx][7][idx][0] + 
+        all_dense[phase_idx][15] * pattern_arr[phase_idx][7][idx][1];
 }
 
-inline eval_type triangle0(int phase_idx, const uint_fast16_t b[], int idx, int w, int x, int y, int z){
-    return pattern_arr[phase_idx][8][b[w] / p34 * p36 + b[x] / p35 * p33 + b[y] / p36 * p31 + b[z] / p37][idx];
+inline eval_type triangle0(int phase_idx, const uint_fast16_t b[], int w, int x, int y, int z){
+    int idx = b[w] / p34 * p36 + b[x] / p35 * p33 + b[y] / p36 * p31 + b[z] / p37;
+    return 
+        all_dense[phase_idx][16] * pattern_arr[phase_idx][8][idx][0] + 
+        all_dense[phase_idx][17] * pattern_arr[phase_idx][8][idx][1];
 }
 
-inline eval_type triangle1(int phase_idx, const uint_fast16_t b[], int idx, int w, int x, int y, int z){
-    return pattern_arr[phase_idx][8][reverse_board[b[w]] / p34 * p36 + reverse_board[b[x]] / p35 * p33 + reverse_board[b[y]] / p36 * p31 + reverse_board[b[z]] / p37][idx];
+inline eval_type triangle1(int phase_idx, const uint_fast16_t b[], int w, int x, int y, int z){
+    int idx = reverse_board[b[w]] / p34 * p36 + reverse_board[b[x]] / p35 * p33 + reverse_board[b[y]] / p36 * p31 + reverse_board[b[z]] / p37;
+    return 
+        all_dense[phase_idx][16] * pattern_arr[phase_idx][8][idx][0] + 
+        all_dense[phase_idx][17] * pattern_arr[phase_idx][8][idx][1];
 }
 
-inline eval_type edge_block(int phase_idx, const uint_fast16_t b[], int idx, int x, int y){
-    return pattern_arr[phase_idx][9][pop_digit[b[x]][0] * p39 + pop_mid[b[x]][6][2] * p35 + pop_digit[b[x]][7] * p34 + pop_mid[b[y]][6][2]][idx];
+inline eval_type edge_block(int phase_idx, const uint_fast16_t b[], int x, int y){
+    int idx = pop_digit[b[x]][0] * p39 + pop_mid[b[x]][6][2] * p35 + pop_digit[b[x]][7] * p34 + pop_mid[b[y]][6][2];
+    return 
+        all_dense[phase_idx][18] * pattern_arr[phase_idx][9][idx][0] + 
+        all_dense[phase_idx][19] * pattern_arr[phase_idx][9][idx][1];
 }
 
-inline eval_type cross(int phase_idx, const uint_fast16_t b[], int idx, int x, int y, int z){
-    return pattern_arr[phase_idx][10][b[x] / p34 * p36 + b[y] / p35 * p33 + b[z] / p35][idx] + 
-        pattern_arr[phase_idx][10][reverse_board[b[x]] / p34 * p36 + pop_mid[reverse_board[b[y]]][7][4] * p33 + pop_mid[reverse_board[b[z]]][7][4]][idx];
+inline eval_type cross(int phase_idx, const uint_fast16_t b[], int x, int y, int z){
+    int idx1 = b[x] / p34 * p36 + b[y] / p35 * p33 + b[z] / p35;
+    int idx2 = reverse_board[b[x]] / p34 * p36 + pop_mid[reverse_board[b[y]]][7][4] * p33 + pop_mid[reverse_board[b[z]]][7][4];
+    return 
+        all_dense[phase_idx][20] * (pattern_arr[phase_idx][10][idx1][0] + pattern_arr[phase_idx][10][idx2][0]) + 
+        all_dense[phase_idx][21] * (pattern_arr[phase_idx][10][idx1][1] + pattern_arr[phase_idx][10][idx2][1]);
 }
 
 inline eval_type calc_pattern(int phase_idx, const board *b){
@@ -469,14 +484,10 @@ inline eval_type calc_pattern(int phase_idx, const board *b){
         all_dense[phase_idx][11] * (pattern_arr[phase_idx][5][b->b[20] / p31][1] + pattern_arr[phase_idx][5][b->b[22] / p31][1] + pattern_arr[phase_idx][5][b->b[31] / p31][1] + pattern_arr[phase_idx][5][b->b[33] / p31][1]) + 
         all_dense[phase_idx][12] * (pattern_arr[phase_idx][6][b->b[21]][0] + pattern_arr[phase_idx][6][b->b[32]][0]) + 
         all_dense[phase_idx][13] * (pattern_arr[phase_idx][6][b->b[21]][1] + pattern_arr[phase_idx][6][b->b[32]][1]) + 
-        all_dense[phase_idx][14] * (edge_2x(phase_idx, b->b, 0, 1, 0) + edge_2x(phase_idx, b->b, 0, 6, 7) + edge_2x(phase_idx, b->b, 0, 9, 8) + edge_2x(phase_idx, b->b, 0, 14, 15)) + 
-        all_dense[phase_idx][15] * (edge_2x(phase_idx, b->b, 1, 1, 0) + edge_2x(phase_idx, b->b, 1, 6, 7) + edge_2x(phase_idx, b->b, 1, 9, 8) + edge_2x(phase_idx, b->b, 1, 14, 15)) + 
-        all_dense[phase_idx][16] * (triangle0(phase_idx, b->b, 0, 0, 1, 2, 3) + triangle0(phase_idx, b->b, 0, 7, 6, 5, 4) + triangle0(phase_idx, b->b, 0, 15, 14, 13, 12) + triangle1(phase_idx, b->b, 0, 15, 14, 13, 12)) + 
-        all_dense[phase_idx][17] * (triangle0(phase_idx, b->b, 1, 0, 1, 2, 3) + triangle0(phase_idx, b->b, 1, 7, 6, 5, 4) + triangle0(phase_idx, b->b, 1, 15, 14, 13, 12) + triangle1(phase_idx, b->b, 1, 15, 14, 13, 12)) + 
-        all_dense[phase_idx][18] * (edge_block(phase_idx, b->b, 0, 0, 1) + edge_block(phase_idx, b->b, 0, 7, 6) + edge_block(phase_idx, b->b, 0, 8, 9) + edge_block(phase_idx, b->b, 0, 15, 14)) + 
-        all_dense[phase_idx][19] * (edge_block(phase_idx, b->b, 1, 0, 1) + edge_block(phase_idx, b->b, 1, 7, 6) + edge_block(phase_idx, b->b, 1, 8, 9) + edge_block(phase_idx, b->b, 1, 15, 14)) + 
-        all_dense[phase_idx][20] * (cross(phase_idx, b->b, 0, 21, 20, 22) + cross(phase_idx, b->b, 0, 32, 31, 33)) + 
-        all_dense[phase_idx][21] * (cross(phase_idx, b->b, 1, 21, 20, 22) + cross(phase_idx, b->b, 1, 32, 31, 33));
+        edge_2x(phase_idx, b->b, 1, 0) + edge_2x(phase_idx, b->b, 6, 7) + edge_2x(phase_idx, b->b, 9, 8) + edge_2x(phase_idx, b->b, 14, 15) + 
+        triangle0(phase_idx, b->b, 0, 1, 2, 3) + triangle0(phase_idx, b->b, 7, 6, 5, 4) + triangle0(phase_idx, b->b, 15, 14, 13, 12) + triangle1(phase_idx, b->b, 15, 14, 13, 12) + 
+        edge_block(phase_idx, b->b, 0, 1) + edge_block(phase_idx, b->b, 7, 6) + edge_block(phase_idx, b->b, 8, 9) + edge_block(phase_idx, b->b, 15, 14) + 
+        cross(phase_idx, b->b, 21, 20, 22) + cross(phase_idx, b->b, 32, 31, 33);
 }
 
 inline int mid_evaluate(const board *b){
