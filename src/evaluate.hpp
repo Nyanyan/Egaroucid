@@ -12,10 +12,11 @@ typedef float eval_type;
 #define n_patterns 11
 #define n_dense0 32
 #define n_dense1 32
-#define n_add_input 3
+#define n_dense2 2
+#define n_add_input 4
 #define n_add_dense0 8
 #define n_add_dense1 8
-#define n_all_input 19
+#define n_all_input 30
 #define max_canput 30
 #define max_surround 50
 #define max_evaluate_idx 59049
@@ -51,8 +52,8 @@ int mobility_arr2[2][n_line * n_line];
 int surround_arr[2][n_line];
 int stability_edge_arr[2][n_line];
 int stability_corner_arr[2][n_line];
-eval_type pattern_arr[n_phases][n_patterns][max_evaluate_idx];
-eval_type add_arr[n_phases][max_canput * 2 + 1][max_surround + 1][max_surround + 1][n_add_dense1];
+eval_type pattern_arr[n_phases][n_patterns][max_evaluate_idx][n_dense2];
+eval_type add_arr[n_phases][2][max_canput * 2 + 1][max_surround + 1][max_surround + 1][n_add_dense1];
 eval_type all_dense[n_phases][n_all_input];
 eval_type all_bias[n_phases];
 
@@ -68,8 +69,8 @@ inline eval_type leaky_relu(eval_type x){
     return max(0.01 * x, x);
 }
 
-inline eval_type predict(int pattern_size, eval_type in_arr[], eval_type dense0[n_dense0][20], eval_type bias0[n_dense0], eval_type dense1[n_dense1][n_dense0], eval_type bias1[n_dense1], eval_type dense2[n_dense1], eval_type bias2){
-    eval_type hidden0[32], hidden1;
+inline void predict(int pattern_size, eval_type in_arr[], eval_type dense0[n_dense0][20], eval_type bias0[n_dense0], eval_type dense1[n_dense1][n_dense0], eval_type bias1[n_dense1], eval_type dense2[n_dense2][n_dense1], eval_type bias2[n_dense2], eval_type res[n_dense2]){
+    eval_type hidden0[32], hidden1[32];
     int i, j;
     for (i = 0; i < n_dense0; ++i){
         hidden0[i] = bias0[i];
@@ -77,16 +78,18 @@ inline eval_type predict(int pattern_size, eval_type in_arr[], eval_type dense0[
             hidden0[i] += in_arr[j] * dense0[i][j];
         hidden0[i] = leaky_relu(hidden0[i]);
     }
-    eval_type res = bias2;
     for (i = 0; i < n_dense1; ++i){
-        hidden1 = bias1[i];
+        hidden1[i] = bias1[i];
         for (j = 0; j < n_dense0; ++j)
-            hidden1 += hidden0[j] * dense1[i][j];
-        hidden1 = leaky_relu(hidden1);
-        res += hidden1 * dense2[i];
+            hidden1[i] += hidden0[j] * dense1[i][j];
+        hidden1[i] = leaky_relu(hidden1[i]);
     }
-    res = leaky_relu(res);
-    return res;
+    for (i = 0; i < n_dense2; ++i){
+        res[i] = bias2[i];
+        for (j = 0; j < n_dense1; ++j)
+            res[i] += hidden1[j] * dense2[i][j];
+        res[i] = leaky_relu(res[i]);
+    }
 }
 
 inline int calc_pop(int a, int b, int s){
@@ -135,9 +138,9 @@ inline int calc_rev_idx(int pattern_idx, int pattern_size, int idx){
     return res;
 }
 
-inline void pre_evaluation(int pattern_idx, int phase_idx, int evaluate_idx, int pattern_size, eval_type dense0[n_dense0][20], eval_type bias0[n_dense0], eval_type dense1[n_dense1][n_dense0], eval_type bias1[n_dense1], eval_type dense2[n_dense1], eval_type bias2){
-    int digit, idx, i;
-    eval_type arr[20], tmp_pattern_arr[max_evaluate_idx];
+inline void pre_evaluation(int pattern_idx, int phase_idx, int evaluate_idx, int pattern_size, eval_type dense0[n_dense0][20], eval_type bias0[n_dense0], eval_type dense1[n_dense1][n_dense0], eval_type bias1[n_dense1], eval_type dense2[n_dense2][n_dense1], eval_type bias2[n_dense2]){
+    int digit, idx, i, rev_idx;
+    eval_type arr[20], tmp_pattern_arr[max_evaluate_idx][n_dense2];
     for (idx = 0; idx < pow3[pattern_size]; ++idx){
         for (i = 0; i < pattern_size; ++i){
             digit = (idx / pow3[pattern_size - 1 - i]) % 3;
@@ -152,19 +155,29 @@ inline void pre_evaluation(int pattern_idx, int phase_idx, int evaluate_idx, int
                 arr[pattern_size + i] = 0.0;
             }
         }
-        pattern_arr[phase_idx][evaluate_idx][idx] = predict(pattern_size, arr, dense0, bias0, dense1, bias1, dense2, bias2);
-        tmp_pattern_arr[calc_rev_idx(pattern_idx, pattern_size, idx)] = pattern_arr[phase_idx][evaluate_idx][idx];
+        predict(pattern_size, arr, dense0, bias0, dense1, bias1, dense2, bias2, pattern_arr[phase_idx][evaluate_idx][idx]);
+        rev_idx = calc_rev_idx(pattern_idx, pattern_size, idx);
+        for (i = 0; i < n_dense2; ++i)
+            tmp_pattern_arr[rev_idx][i] = pattern_arr[phase_idx][evaluate_idx][idx][i];
     }
-    for (idx = 0; idx < pow3[pattern_size]; ++idx)
-        pattern_arr[phase_idx][evaluate_idx][idx] += tmp_pattern_arr[idx];
+    for (idx = 0; idx < pow3[pattern_size]; ++idx){
+        for (i = 0; i < n_dense2; ++i)
+            pattern_arr[phase_idx][evaluate_idx][idx][i] += tmp_pattern_arr[idx][i];
+    }
 }
 
-inline void predict_add(int canput, int sur0, int sur1, eval_type dense0[n_add_dense0][n_add_input], eval_type bias0[n_add_dense0], eval_type dense1[n_add_dense1][n_add_dense0], eval_type bias1[n_add_dense1], eval_type res[n_add_dense1]){
+inline void predict_add(int player, int canput, int sur0, int sur1, eval_type dense0[n_add_dense0][n_add_input], eval_type bias0[n_add_dense0], eval_type dense1[n_add_dense1][n_add_dense0], eval_type bias1[n_add_dense1], eval_type res[n_add_dense1]){
     eval_type hidden0[n_add_dense0], in_arr[n_add_input];
     int i, j;
-    in_arr[0] = (eval_type)canput / 30.0;
-    in_arr[1] = ((eval_type)sur0 - 15.0) / 15.0;
-    in_arr[2] = ((eval_type)sur1 - 15.0) / 15.0;
+    if (player == black){
+        in_arr[0] = ((eval_type)canput - 15.0) / 15.0;
+        in_arr[1] = 0.0;
+    } else{
+        in_arr[0] = 0.0;
+        in_arr[1] = ((eval_type)canput - 15.0) / 15.0;
+    }
+    in_arr[2] = ((eval_type)sur0 - 15.0) / 15.0;
+    in_arr[3] = ((eval_type)sur1 - 15.0) / 15.0;
     for (i = 0; i < n_add_dense0; ++i){
         hidden0[i] = bias0[i];
         for (j = 0; j < n_add_input; ++j)
@@ -180,11 +193,13 @@ inline void predict_add(int canput, int sur0, int sur1, eval_type dense0[n_add_d
 }
 
 inline void pre_evaluation_add(int phase_idx, eval_type dense0[n_add_dense0][n_add_input], eval_type bias0[n_add_dense0], eval_type dense1[n_add_dense1][n_add_dense0], eval_type bias1[n_add_dense1]){
-    int canput, sur0, sur1;
-    for (canput = -max_canput; canput <= max_canput; ++canput){
-        for (sur0 = 0; sur0 <= max_surround; ++sur0){
-            for (sur1 = 0; sur1 <= max_surround; ++sur1)
-                predict_add(canput, sur0, sur1, dense0, bias0, dense1, bias1, add_arr[phase_idx][canput + max_canput][sur0][sur1]);
+    int canput, sur0, sur1, player;
+    for (player = 0; player < 2; ++player){
+        for (canput = -max_canput; canput <= max_canput; ++canput){
+            for (sur0 = 0; sur0 <= max_surround; ++sur0){
+                for (sur1 = 0; sur1 <= max_surround; ++sur1)
+                    predict_add(player, canput, sur0, sur1, dense0, bias0, dense1, bias1, add_arr[phase_idx][player][canput + max_canput][sur0][sur1]);
+            }
         }
     }
 }
@@ -288,8 +303,8 @@ inline void init_evaluation2(){
     eval_type bias0[n_dense0];
     eval_type dense1[n_dense1][n_dense0];
     eval_type bias1[n_dense1];
-    eval_type dense2[n_dense1];
-    eval_type bias2;
+    eval_type dense2[n_dense2][n_dense1];
+    eval_type bias2[n_dense2];
     eval_type add_dense0[n_add_dense0][n_add_input];
     eval_type add_bias0[n_add_dense0];
     eval_type add_dense1[n_add_dense1][n_add_dense0];
@@ -319,11 +334,15 @@ inline void init_evaluation2(){
                 bias1[i] = stof(line);
             }
             for (i = 0; i < n_dense1; ++i){
-                getline(ifs, line);
-                dense2[i] = stof(line);
+                for (j = 0; j < n_dense2; ++j){
+                    getline(ifs, line);
+                    dense2[j][i] = stof(line);
+                }
             }
-            getline(ifs, line);
-            bias2 = stof(line);
+            for (i = 0; i < n_dense2; ++i){
+                getline(ifs, line);
+                bias2[i] = stof(line);
+            }
             pre_evaluation(pattern_idx, phase_idx, pattern_idx, pattern_sizes[pattern_idx], dense0, bias0, dense1, bias1, dense2, bias2);
         }
         for (i = 0; i < n_add_input; ++i){
@@ -359,7 +378,9 @@ inline void init_evaluation2(){
 
 inline void evaluate_init(){
     init_evaluation1();
-    init_evaluation2();
+    #if !EVAL_MODE
+        init_evaluation2();
+    #endif
     cerr << "evaluation function initialized" << endl;
 }
 
@@ -384,7 +405,7 @@ inline int sfill1(int b){
 }
 
 inline int calc_canput(const board *b){
-    return (b->p ? -1 : 1) * (
+    return 
         mobility_arr[b->p][b->b[0]] + mobility_arr[b->p][b->b[1]] + mobility_arr[b->p][b->b[2]] + mobility_arr[b->p][b->b[3]] + 
         mobility_arr[b->p][b->b[4]] + mobility_arr[b->p][b->b[5]] + mobility_arr[b->p][b->b[6]] + mobility_arr[b->p][b->b[7]] + 
         mobility_arr[b->p][b->b[8]] + mobility_arr[b->p][b->b[9]] + mobility_arr[b->p][b->b[10]] + mobility_arr[b->p][b->b[11]] + 
@@ -394,7 +415,7 @@ inline int calc_canput(const board *b){
         mobility_arr[b->p][b->b[18] - p33m] + mobility_arr[b->p][b->b[24] - p33m] + mobility_arr[b->p][b->b[29] - p33m] + mobility_arr[b->p][b->b[35] - p33m] + 
         mobility_arr[b->p][b->b[19] - p32m] + mobility_arr[b->p][b->b[23] - p32m] + mobility_arr[b->p][b->b[30] - p32m] + mobility_arr[b->p][b->b[34] - p32m] + 
         mobility_arr[b->p][b->b[20] - p31m] + mobility_arr[b->p][b->b[22] - p31m] + mobility_arr[b->p][b->b[31] - p31m] + mobility_arr[b->p][b->b[33] - p31m] + 
-        mobility_arr[b->p][b->b[21]] + mobility_arr[b->p][b->b[32]]);
+        mobility_arr[b->p][b->b[21]] + mobility_arr[b->p][b->b[32]];
 }
 
 inline int calc_surround(const board *b, int p){
@@ -411,40 +432,51 @@ inline int calc_surround(const board *b, int p){
         surround_arr[p][b->b[21]] + surround_arr[p][b->b[32]];
 }
 
-inline eval_type edge_2x(int phase_idx, const uint_fast16_t b[], int x, int y){
-    return pattern_arr[phase_idx][7][pop_digit[b[x]][1] * p39 + b[y] * p31 + pop_digit[b[x]][6]];
+inline eval_type edge_2x(int phase_idx, const uint_fast16_t b[], int idx, int x, int y){
+    return pattern_arr[phase_idx][7][pop_digit[b[x]][1] * p39 + b[y] * p31 + pop_digit[b[x]][6]][idx];
 }
 
-inline eval_type triangle0(int phase_idx, const uint_fast16_t b[], int w, int x, int y, int z){
-    return pattern_arr[phase_idx][8][b[w] / p34 * p36 + b[x] / p35 * p33 + b[y] / p36 * p31 + b[z] / p37];
+inline eval_type triangle0(int phase_idx, const uint_fast16_t b[], int idx, int w, int x, int y, int z){
+    return pattern_arr[phase_idx][8][b[w] / p34 * p36 + b[x] / p35 * p33 + b[y] / p36 * p31 + b[z] / p37][idx];
 }
 
-inline eval_type triangle1(int phase_idx, const uint_fast16_t b[], int w, int x, int y, int z){
-    return pattern_arr[phase_idx][8][reverse_board[b[w]] / p34 * p36 + reverse_board[b[x]] / p35 * p33 + reverse_board[b[y]] / p36 * p31 + reverse_board[b[z]] / p37];
+inline eval_type triangle1(int phase_idx, const uint_fast16_t b[], int idx, int w, int x, int y, int z){
+    return pattern_arr[phase_idx][8][reverse_board[b[w]] / p34 * p36 + reverse_board[b[x]] / p35 * p33 + reverse_board[b[y]] / p36 * p31 + reverse_board[b[z]] / p37][idx];
 }
 
-inline eval_type edge_block(int phase_idx, const uint_fast16_t b[], int x, int y){
-    return pattern_arr[phase_idx][9][pop_digit[b[x]][0] * p39 + pop_mid[b[x]][6][2] * p35 + pop_digit[b[x]][7] * p34 + pop_mid[b[y]][6][2]];
+inline eval_type edge_block(int phase_idx, const uint_fast16_t b[], int idx, int x, int y){
+    return pattern_arr[phase_idx][9][pop_digit[b[x]][0] * p39 + pop_mid[b[x]][6][2] * p35 + pop_digit[b[x]][7] * p34 + pop_mid[b[y]][6][2]][idx];
 }
 
-inline eval_type cross(int phase_idx, const uint_fast16_t b[], int x, int y, int z){
-    return pattern_arr[phase_idx][10][b[x] / p34 * p36 + b[y] / p35 * p33 + b[z] / p35] + 
-        pattern_arr[phase_idx][10][reverse_board[b[x]] / p34 * p36 + pop_mid[reverse_board[b[y]]][7][4] * p33 + pop_mid[reverse_board[b[z]]][7][4]];
+inline eval_type cross(int phase_idx, const uint_fast16_t b[], int idx, int x, int y, int z){
+    return pattern_arr[phase_idx][10][b[x] / p34 * p36 + b[y] / p35 * p33 + b[z] / p35][idx] + 
+        pattern_arr[phase_idx][10][reverse_board[b[x]] / p34 * p36 + pop_mid[reverse_board[b[y]]][7][4] * p33 + pop_mid[reverse_board[b[z]]][7][4]][idx];
 }
 
 inline eval_type calc_pattern(int phase_idx, const board *b){
     return 
-        all_dense[phase_idx][0] * (pattern_arr[phase_idx][0][b->b[1]] + pattern_arr[phase_idx][0][b->b[6]] + pattern_arr[phase_idx][0][b->b[9]] + pattern_arr[phase_idx][0][b->b[14]]) + 
-        all_dense[phase_idx][1] * (pattern_arr[phase_idx][1][b->b[2]] + pattern_arr[phase_idx][1][b->b[5]] + pattern_arr[phase_idx][1][b->b[10]] + pattern_arr[phase_idx][1][b->b[13]]) + 
-        all_dense[phase_idx][2] * (pattern_arr[phase_idx][2][b->b[3]] + pattern_arr[phase_idx][2][b->b[4]] + pattern_arr[phase_idx][2][b->b[11]] + pattern_arr[phase_idx][2][b->b[12]]) + 
-        all_dense[phase_idx][3] * (pattern_arr[phase_idx][3][b->b[18] / p33] + pattern_arr[phase_idx][3][b->b[24] / p33] + pattern_arr[phase_idx][3][b->b[29] / p33] + pattern_arr[phase_idx][3][b->b[35] / p33]) + 
-        all_dense[phase_idx][4] * (pattern_arr[phase_idx][4][b->b[19] / p32] + pattern_arr[phase_idx][4][b->b[23] / p32] + pattern_arr[phase_idx][4][b->b[30] / p32] + pattern_arr[phase_idx][4][b->b[34] / p32]) + 
-        all_dense[phase_idx][5] * (pattern_arr[phase_idx][5][b->b[20] / p31] + pattern_arr[phase_idx][5][b->b[22] / p31] + pattern_arr[phase_idx][5][b->b[31] / p31] + pattern_arr[phase_idx][5][b->b[33] / p31]) + 
-        all_dense[phase_idx][6] * (pattern_arr[phase_idx][6][b->b[21]] + pattern_arr[phase_idx][6][b->b[32]]) + 
-        all_dense[phase_idx][7] * (edge_2x(phase_idx, b->b, 1, 0) + edge_2x(phase_idx, b->b, 6, 7) + edge_2x(phase_idx, b->b, 9, 8) + edge_2x(phase_idx, b->b, 14, 15)) + 
-        all_dense[phase_idx][8] * (triangle0(phase_idx, b->b, 0, 1, 2, 3) + triangle0(phase_idx, b->b, 7, 6, 5, 4) + triangle0(phase_idx, b->b, 15, 14, 13, 12) + triangle1(phase_idx, b->b, 15, 14, 13, 12)) + 
-        all_dense[phase_idx][9] * (edge_block(phase_idx, b->b, 0, 1) + edge_block(phase_idx, b->b, 7, 6) + edge_block(phase_idx, b->b, 8, 9) + edge_block(phase_idx, b->b, 15, 14)) + 
-        all_dense[phase_idx][10] * (cross(phase_idx, b->b, 21, 20, 22) + cross(phase_idx, b->b, 32, 31, 33));
+        all_dense[phase_idx][0] * (pattern_arr[phase_idx][0][b->b[1]][0] + pattern_arr[phase_idx][0][b->b[6]][0] + pattern_arr[phase_idx][0][b->b[9]][0] + pattern_arr[phase_idx][0][b->b[14]][0]) + 
+        all_dense[phase_idx][1] * (pattern_arr[phase_idx][0][b->b[1]][1] + pattern_arr[phase_idx][0][b->b[6]][1] + pattern_arr[phase_idx][0][b->b[9]][1] + pattern_arr[phase_idx][0][b->b[14]][1]) + 
+        all_dense[phase_idx][2] * (pattern_arr[phase_idx][1][b->b[2]][0] + pattern_arr[phase_idx][1][b->b[5]][0] + pattern_arr[phase_idx][1][b->b[10]][0] + pattern_arr[phase_idx][1][b->b[13]][0]) + 
+        all_dense[phase_idx][3] * (pattern_arr[phase_idx][1][b->b[2]][1] + pattern_arr[phase_idx][1][b->b[5]][1] + pattern_arr[phase_idx][1][b->b[10]][1] + pattern_arr[phase_idx][1][b->b[13]][1]) + 
+        all_dense[phase_idx][4] * (pattern_arr[phase_idx][2][b->b[3]][0] + pattern_arr[phase_idx][2][b->b[4]][0] + pattern_arr[phase_idx][2][b->b[11]][0] + pattern_arr[phase_idx][2][b->b[12]][0]) + 
+        all_dense[phase_idx][5] * (pattern_arr[phase_idx][2][b->b[3]][1] + pattern_arr[phase_idx][2][b->b[4]][1] + pattern_arr[phase_idx][2][b->b[11]][1] + pattern_arr[phase_idx][2][b->b[12]][1]) + 
+        all_dense[phase_idx][6] * (pattern_arr[phase_idx][3][b->b[18] / p33][0] + pattern_arr[phase_idx][3][b->b[24] / p33][0] + pattern_arr[phase_idx][3][b->b[29] / p33][0] + pattern_arr[phase_idx][3][b->b[35] / p33][0]) + 
+        all_dense[phase_idx][7] * (pattern_arr[phase_idx][3][b->b[18] / p33][1] + pattern_arr[phase_idx][3][b->b[24] / p33][1] + pattern_arr[phase_idx][3][b->b[29] / p33][1] + pattern_arr[phase_idx][3][b->b[35] / p33][1]) + 
+        all_dense[phase_idx][8] * (pattern_arr[phase_idx][4][b->b[19] / p32][0] + pattern_arr[phase_idx][4][b->b[23] / p32][0] + pattern_arr[phase_idx][4][b->b[30] / p32][0] + pattern_arr[phase_idx][4][b->b[34] / p32][0]) + 
+        all_dense[phase_idx][9] * (pattern_arr[phase_idx][4][b->b[19] / p32][1] + pattern_arr[phase_idx][4][b->b[23] / p32][1] + pattern_arr[phase_idx][4][b->b[30] / p32][1] + pattern_arr[phase_idx][4][b->b[34] / p32][1]) + 
+        all_dense[phase_idx][10] * (pattern_arr[phase_idx][5][b->b[20] / p31][0] + pattern_arr[phase_idx][5][b->b[22] / p31][0] + pattern_arr[phase_idx][5][b->b[31] / p31][0] + pattern_arr[phase_idx][5][b->b[33] / p31][0]) + 
+        all_dense[phase_idx][11] * (pattern_arr[phase_idx][5][b->b[20] / p31][1] + pattern_arr[phase_idx][5][b->b[22] / p31][1] + pattern_arr[phase_idx][5][b->b[31] / p31][1] + pattern_arr[phase_idx][5][b->b[33] / p31][1]) + 
+        all_dense[phase_idx][12] * (pattern_arr[phase_idx][6][b->b[21]][0] + pattern_arr[phase_idx][6][b->b[32]][0]) + 
+        all_dense[phase_idx][13] * (pattern_arr[phase_idx][6][b->b[21]][1] + pattern_arr[phase_idx][6][b->b[32]][1]) + 
+        all_dense[phase_idx][14] * (edge_2x(phase_idx, b->b, 0, 1, 0) + edge_2x(phase_idx, b->b, 0, 6, 7) + edge_2x(phase_idx, b->b, 0, 9, 8) + edge_2x(phase_idx, b->b, 0, 14, 15)) + 
+        all_dense[phase_idx][15] * (edge_2x(phase_idx, b->b, 1, 1, 0) + edge_2x(phase_idx, b->b, 1, 6, 7) + edge_2x(phase_idx, b->b, 1, 9, 8) + edge_2x(phase_idx, b->b, 1, 14, 15)) + 
+        all_dense[phase_idx][16] * (triangle0(phase_idx, b->b, 0, 0, 1, 2, 3) + triangle0(phase_idx, b->b, 0, 7, 6, 5, 4) + triangle0(phase_idx, b->b, 0, 15, 14, 13, 12) + triangle1(phase_idx, b->b, 0, 15, 14, 13, 12)) + 
+        all_dense[phase_idx][17] * (triangle0(phase_idx, b->b, 1, 0, 1, 2, 3) + triangle0(phase_idx, b->b, 1, 7, 6, 5, 4) + triangle0(phase_idx, b->b, 1, 15, 14, 13, 12) + triangle1(phase_idx, b->b, 1, 15, 14, 13, 12)) + 
+        all_dense[phase_idx][18] * (edge_block(phase_idx, b->b, 0, 0, 1) + edge_block(phase_idx, b->b, 0, 7, 6) + edge_block(phase_idx, b->b, 0, 8, 9) + edge_block(phase_idx, b->b, 0, 15, 14)) + 
+        all_dense[phase_idx][19] * (edge_block(phase_idx, b->b, 1, 0, 1) + edge_block(phase_idx, b->b, 1, 7, 6) + edge_block(phase_idx, b->b, 1, 8, 9) + edge_block(phase_idx, b->b, 1, 15, 14)) + 
+        all_dense[phase_idx][20] * (cross(phase_idx, b->b, 0, 21, 20, 22) + cross(phase_idx, b->b, 0, 32, 31, 33)) + 
+        all_dense[phase_idx][21] * (cross(phase_idx, b->b, 1, 21, 20, 22) + cross(phase_idx, b->b, 1, 32, 31, 33));
 }
 
 inline int mid_evaluate(const board *b){
@@ -454,8 +486,8 @@ inline int mid_evaluate(const board *b){
     sur1 = min(max_surround, calc_surround(b, white));
     eval_type res = (b->p ? -1 : 1) * (
         all_bias[phase_idx] + calc_pattern(phase_idx, b) + 
-        all_dense[phase_idx][11] * add_arr[phase_idx][canput][sur0][sur1][0] + all_dense[phase_idx][12] * add_arr[phase_idx][canput][sur0][sur1][1] + all_dense[phase_idx][13] * add_arr[phase_idx][canput][sur0][sur1][2] + all_dense[phase_idx][14] * add_arr[phase_idx][canput][sur0][sur1][3] + 
-        all_dense[phase_idx][15] * add_arr[phase_idx][canput][sur0][sur1][4] + all_dense[phase_idx][16] * add_arr[phase_idx][canput][sur0][sur1][5] + all_dense[phase_idx][17] * add_arr[phase_idx][canput][sur0][sur1][6] + all_dense[phase_idx][18] * add_arr[phase_idx][canput][sur0][sur1][7]);
+        all_dense[phase_idx][22] * add_arr[phase_idx][b->p][canput][sur0][sur1][0] + all_dense[phase_idx][23] * add_arr[phase_idx][b->p][canput][sur0][sur1][1] + all_dense[phase_idx][24] * add_arr[phase_idx][b->p][canput][sur0][sur1][2] + all_dense[phase_idx][25] * add_arr[phase_idx][b->p][canput][sur0][sur1][3] + 
+        all_dense[phase_idx][26] * add_arr[phase_idx][b->p][canput][sur0][sur1][4] + all_dense[phase_idx][27] * add_arr[phase_idx][b->p][canput][sur0][sur1][5] + all_dense[phase_idx][28] * add_arr[phase_idx][b->p][canput][sur0][sur1][6] + all_dense[phase_idx][29] * add_arr[phase_idx][b->p][canput][sur0][sur1][7]);
     return round(max(-1.0, min(1.0, res)) * sc_w);
 }
 

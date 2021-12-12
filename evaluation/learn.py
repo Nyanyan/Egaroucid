@@ -166,13 +166,10 @@ for stone_strt in reversed([0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55]):
                     for line in lines:
                         all_data[idx].append(line)
                         idx += 1
-                all_data[idx].append([v1 / 30, (v2 - 15) / 15, (v3 - 15) / 15])
-                '''
                 if player == 0:
                     all_data[idx].append([(v1 - 15) / 15, 0.0, (v2 - 15) / 15, (v3 - 15) / 15])
                 else:
-                    all_data[idx].append([0.0, (-v1 - 15) / 15, (v2 - 15) / 15, (v3 - 15) / 15])
-                '''
+                    all_data[idx].append([0.0, (v1 - 15) / 15, (v2 - 15) / 15, (v3 - 15) / 15])
                 all_labels.append(result)
 
     
@@ -186,7 +183,7 @@ for stone_strt in reversed([0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55]):
         layers.append(LeakyReLU(alpha=0.01))
         layers.append(Dense(32, name=names[i] + '_dense1'))
         layers.append(LeakyReLU(alpha=0.01))
-        layers.append(Dense(1, name=names[i] + '_out'))
+        layers.append(Dense(2, name=names[i] + '_out'))
         layers.append(LeakyReLU(alpha=0.01))
         add_elems = []
         for j in range(len(pattern_idx[i])):
@@ -198,7 +195,7 @@ for stone_strt in reversed([0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55]):
             idx += 1
         ys.append(Add()(add_elems))
     y_pattern = Concatenate(axis=-1)(ys)
-    x[idx] = Input(shape=3, name='additional_input')
+    x[idx] = Input(shape=4, name='additional_input')
     y_add = Dense(8, name='add_dense0')(x[idx])
     y_add = LeakyReLU(alpha=0.01)(y_add)
     y_add = Dense(8, name='add_dense1')(y_add)
@@ -210,7 +207,7 @@ for stone_strt in reversed([0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55]):
     
     #model = load_model('learned_data/bef_' + str(stone_strt) + '_' + str(stone_end) + '.h5')
 
-    model.summary()
+    #model.summary()
     plot_model(model, to_file='learned_data/model.png', show_shapes=True)
 
     def my_loss(y_true, y_pred):
@@ -218,10 +215,8 @@ for stone_strt in reversed([0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55]):
 
     model.compile(loss='mse', metrics='mae', optimizer='adam')
 
-    for i in trange(127):
-        collect_data('records0', i)
-    for i in trange(11):
-        collect_data('records1', i)
+    for i in trange(138):
+        collect_data('records2', i)
     len_data = len(all_labels)
     print(len_data)
     

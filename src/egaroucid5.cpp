@@ -18,7 +18,7 @@ inline void init(){
     search_init();
     transpose_table_init();
     evaluate_init();
-    #if !MPC_MODE
+    #if !MPC_MODE && !EVAL_MODE
         book_init();
     #endif
     #if USE_MULTI_THREAD
@@ -79,14 +79,17 @@ inline void print_result(search_result result){
 int main(){
     init();
     board b;
-    search_result result;
-    const int first_moves[4] = {19, 26, 37, 44};
-    int depth, end_depth, policy, ai_player;
+    #if !MPC_MODE && !EVAL_MODE
+        search_result result;
+        const int first_moves[4] = {19, 26, 37, 44};
+        int depth, end_depth, policy;
+        depth = 10;
+        end_depth = 30;
+    #endif
+    int ai_player;
     //cin >> ai_player;
     //cin >> depth;
     //cin >> end_depth;
-    depth = 10;
-    end_depth = 30;
     while (true){
         #if MPC_MODE
             cin >> ai_player;
@@ -96,10 +99,14 @@ int main(){
             transpose_table.init_now();
             transpose_table.init_prev();
             cout << nega_scout(&b, false, d, -sc_w, sc_w) << endl;
+        #elif EVAL_MODE
+            cin >> ai_player;
+            input_board(&b, ai_player);
+            cout << calc_canput(&b) << " " << calc_surround(&b, black) << " " << calc_surround(&b, white) << endl;
         #else
             cin >> ai_player;
             input_board(&b, ai_player);
-            cerr << b.n << endl;
+            cerr << b.n << " " << mid_evaluate(&b) << endl;
             if (b.n == 4){
                 policy = first_moves[myrandrange(0, 4)];
                 print_result(policy, 0);
