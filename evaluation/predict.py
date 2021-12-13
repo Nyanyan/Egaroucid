@@ -22,8 +22,8 @@ from copy import deepcopy
 
 
 
-stone_strt = 10
-stone_end = stone_strt + 5
+stone_strt = 52
+stone_end = stone_strt + 4
 
 line2_idx = [[8, 9, 10, 11, 12, 13, 14, 15], [1, 9, 17, 25, 33, 41, 49, 57], [6, 14, 22, 30, 38, 46, 54, 62], [48, 49, 50, 51, 52, 53, 54, 55]] # line2
 for pattern in deepcopy(line2_idx):
@@ -173,19 +173,20 @@ def collect_data(directory, num):
                 board_proc += '\n'
             raw_data.append(board_proc)
 
-collect_data('records2', 0)
+collect_data('records2', 137)
 
 all_data = [np.array(arr) for arr in all_data]
 all_labels = np.array(all_labels)
 
 model = load_model('learned_data/' + str(stone_strt) + '_' + str(stone_end) + '.h5')
 
+model.evaluate(all_data, all_labels)
 
 prediction = model.predict(all_data)
 
 print(prediction.shape)
 
-for use_idx in [10]:
+for use_idx in [50]:
     print('raw:')
     print(raw_data[use_idx])
     print('')

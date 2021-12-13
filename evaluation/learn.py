@@ -22,13 +22,13 @@ from copy import deepcopy
 
 inf = 10000000.0
 
-for stone_strt in reversed([0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55]):
-    stone_end = stone_strt + 5
+for stone_strt in reversed([0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56]):
+    stone_end = stone_strt + 4
 
     min_n_stones = 4 + stone_strt
     max_n_stones = 4 + stone_end
     test_ratio = 0.1
-    n_epochs = 60
+    n_epochs = 100
 
 
     line2_idx = [[8, 9, 10, 11, 12, 13, 14, 15], [1, 9, 17, 25, 33, 41, 49, 57], [6, 14, 22, 30, 38, 46, 54, 62], [48, 49, 50, 51, 52, 53, 54, 55]] # line2

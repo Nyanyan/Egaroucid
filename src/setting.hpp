@@ -4,7 +4,7 @@
 /* cutting */
 
 // multi prob cut
-#define USE_MID_MPC true
+#define USE_MID_MPC false
 #define USE_END_MPC false
 
 // stability cut
@@ -23,14 +23,14 @@
 /* ordering */
 
 // parity ordering
-#define USE_END_PO  true
+#define USE_END_PO true
 
 
 
 /* multi threading*/
 
 // use multi thread
-#define USE_MULTI_THREAD true
+#define USE_MULTI_THREAD false
 
 
 

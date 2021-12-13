@@ -41,14 +41,14 @@ mpcd = [0, 1, 0, 1, 2, 3, 2, 3, 4, 3, 4, 3, 4, 5, 4, 5, 6, 5, 6, 7, 6, 7, 6, 7, 
 def collect_data(num):
     global vhs, vds, vh_vd
     try:
-        with open('data/records1/' + digit(num, 7) + '.txt', 'r') as f:
+        with open('data/records2/' + digit(num, 7) + '.txt', 'r') as f:
             data = list(f.read().splitlines())
     except:
         print('cannot open')
         return
     for data_idx in trange(len(data)):
         datum = data[data_idx]
-        board, player, vh = datum.split()
+        board, player, _, _, _, vh = datum.split()
         #board, player, _, _, _, vh = datum.split()
         n_stones = calc_n_stones(board)
         depth = 64 - n_stones
@@ -70,7 +70,7 @@ def collect_data(num):
             vhs[depth - min_depth].append(vh)
             vds[depth - min_depth].append(vd)
 
-for i in range(1):
+for i in range(136, 138):
     collect_data(i)
 evaluate.kill()
 

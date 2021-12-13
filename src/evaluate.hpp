@@ -17,8 +17,8 @@ typedef float eval_type;
 #define n_add_dense0 8
 #define n_add_dense1 8
 #define n_all_input 30
-#define max_canput 30
-#define max_surround 50
+#define max_canput 40
+#define max_surround 60
 #define max_evaluate_idx 59049
 
 #define sc_w 6400
@@ -53,7 +53,7 @@ int surround_arr[2][n_line];
 int stability_edge_arr[2][n_line];
 int stability_corner_arr[2][n_line];
 eval_type pattern_arr[n_phases][n_patterns][max_evaluate_idx][n_dense2];
-eval_type add_arr[n_phases][2][max_canput * 2 + 1][max_surround + 1][max_surround + 1][n_add_dense1];
+eval_type add_arr[n_phases][2][max_canput + 1][max_surround + 1][max_surround + 1][n_add_dense1];
 eval_type all_dense[n_phases][n_all_input];
 eval_type all_bias[n_phases];
 
@@ -195,10 +195,10 @@ inline void predict_add(int player, int canput, int sur0, int sur1, eval_type de
 inline void pre_evaluation_add(int phase_idx, eval_type dense0[n_add_dense0][n_add_input], eval_type bias0[n_add_dense0], eval_type dense1[n_add_dense1][n_add_dense0], eval_type bias1[n_add_dense1]){
     int canput, sur0, sur1, player;
     for (player = 0; player < 2; ++player){
-        for (canput = -max_canput; canput <= max_canput; ++canput){
+        for (canput = 0; canput <= max_canput; ++canput){
             for (sur0 = 0; sur0 <= max_surround; ++sur0){
                 for (sur1 = 0; sur1 <= max_surround; ++sur1)
-                    predict_add(player, canput, sur0, sur1, dense0, bias0, dense1, bias1, add_arr[phase_idx][player][canput + max_canput][sur0][sur1]);
+                    predict_add(player, canput, sur0, sur1, dense0, bias0, dense1, bias1, add_arr[phase_idx][player][canput][sur0][sur1]);
             }
         }
     }
@@ -492,7 +492,7 @@ inline eval_type calc_pattern(int phase_idx, const board *b){
 
 inline int mid_evaluate(const board *b){
     int phase_idx = calc_phase_idx(b), canput, sur0, sur1;
-    canput = min(max_canput * 2, max(0, max_canput + calc_canput(b)));
+    canput = min(max_canput, calc_canput(b));
     sur0 = min(max_surround, calc_surround(b, black));
     sur1 = min(max_surround, calc_surround(b, white));
     eval_type res = (b->p ? -1 : 1) * (
@@ -506,7 +506,8 @@ inline int end_evaluate(const board *b){
     int count = (b->p ? -1 : 1) * 
         (count_black_arr[b->b[0]] + count_black_arr[b->b[1]] + count_black_arr[b->b[2]] + count_black_arr[b->b[3]] + 
         count_black_arr[b->b[4]] + count_black_arr[b->b[5]] + count_black_arr[b->b[6]] + count_black_arr[b->b[7]]);
-    int empty = hw2 - count_both_arr[b->b[0]] - count_both_arr[b->b[1]] - count_both_arr[b->b[2]] - count_both_arr[b->b[3]] - 
+    int empty = hw2 - 
+        count_both_arr[b->b[0]] - count_both_arr[b->b[1]] - count_both_arr[b->b[2]] - count_both_arr[b->b[3]] - 
         count_both_arr[b->b[4]] - count_both_arr[b->b[5]] - count_both_arr[b->b[6]] - count_both_arr[b->b[7]];
     if (count > 0)
         count += empty;

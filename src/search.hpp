@@ -9,9 +9,9 @@ using namespace std;
 
 #define search_epsilon 1
 constexpr int cache_hit = step * 100;
-constexpr int cache_both = step * 10;
+constexpr int cache_both = step * 100;
 constexpr int parity_vacant_bonus = step * 10;
-constexpr int canput_bonus = step;
+constexpr int canput_bonus = step / 10;
 constexpr int mtd_threshold = step * 4;
 constexpr int mtd_end_threshold = step * 5;
 
@@ -19,10 +19,10 @@ constexpr int mtd_end_threshold = step * 5;
 #define mpc_max_depth 10
 #define mpc_min_depth_final 9
 #define mpc_max_depth_final 28
-#define mpct_final 4.2
+#define mpct_final 2.5
 
 #define simple_mid_threshold 3
-#define simple_end_threshold 10
+#define simple_end_threshold 7
 
 #define po_max_depth 8
 
@@ -60,7 +60,7 @@ const double mpcsd[n_phases][mpc_max_depth - mpc_min_depth + 1]={
     {440, 294, 266, 358, 257, 207, 235, 183}
 };
 const double mpcsd_final[mpc_max_depth_final - mpc_min_depth_final + 1] = {
-    580, 537, 607, 538, 494, 565, 518, 475, 492, 448, 432, 463, 431, 431, 416, 405, 390, 375, 366, 393
+    578, 551, 624, 588, 577, 614, 585, 537, 571, 535, 500, 469, 453, 480, 461, 443, 452, 441, 425, 462
 };
 int mpctsd[n_phases][mpc_max_depth + 1];
 int mpctsd_final[mpc_max_depth_final + 1];
@@ -116,7 +116,7 @@ inline void move_ordering(board *b){
     int l, u;
     transpose_table.get_prev(b, b->hash() & search_hash_mask, &l, &u);
     if (u != inf && l != -inf)
-        b->v = u + cache_both + cache_hit;
+        b->v = (u + l) / 2 + cache_hit + cache_both;
     else if (u != inf)
         b->v += u + cache_hit;
     else if (l != -inf)

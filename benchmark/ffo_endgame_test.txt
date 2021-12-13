@@ -87,3 +87,7 @@
 #42 final depth: 22 time: 18451 policy: 14 value: 600 nodes: 232135386 nps: 12579818 get: 65534 reg: 456697
 #43 final depth: 23 time: 36185 policy: 22 value: -1200 nodes: 465406078 nps: 12861495 get: 372890 reg: 1821703
 #44 final depth: 23 time: 27876 policy: 11 value: -1400 nodes: 321382667 nps: 11528595 get: 192769 reg: 976891
+
+2021/12/13 without mpc desktop new evaluation single thread
+#40 final depth: 20 time: 2413 policy: 8 value: 3800 nodes: 28081449 nps: 11632746 get: 41476 reg: 394232
+#41 
