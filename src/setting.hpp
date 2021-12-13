@@ -29,7 +29,7 @@
 
 /* multi threading*/
 
-// use multi thread
+// use multi thread ** UNDER CONSTRUCTION **
 #define USE_MULTI_THREAD false
 
 

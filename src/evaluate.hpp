@@ -377,14 +377,13 @@ inline void init_evaluation_pred(){
 }
 */
 inline void init_evaluation_calc(){
-    ifstream ifs("resources/param.txt");
+    ifstream ifs("C:/github/egaroucid/Egaroucid5/src/resources/param.txt");
     if (ifs.fail()){
         cerr << "evaluation file not exist" << endl;
         exit(1);
     }
     string line;
     int i, phase_idx, player_idx, pattern_idx, pattern_elem, dense_idx, canput, sur0, sur1;
-    //int tmp_pattern_arr[max_evaluate_idx][n_dense2];
     const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10};
     for (phase_idx = 0; phase_idx < n_phases; ++phase_idx){
         for (player_idx = 0; player_idx < 2; ++player_idx){
@@ -394,18 +393,9 @@ inline void init_evaluation_calc(){
                     for (dense_idx = 0; dense_idx < n_dense2; ++dense_idx){
                         getline(ifs, line);
                         pattern_arr[phase_idx][player_idx][pattern_idx][pattern_elem][dense_idx] = stof(line);
-                        //tmp_pattern_arr[calc_rev_idx(pattern_idx, pattern_sizes[pattern_idx], pattern_elem)][dense_idx] = pattern_arr[phase_idx][player_idx][pattern_idx][pattern_elem][dense_idx];
                     }
                 }
             }
-            /*
-            for (pattern_idx = 0; pattern_idx < n_patterns; ++pattern_idx){
-                for (pattern_elem = 0; pattern_elem < pow3[pattern_sizes[pattern_idx]]; ++pattern_elem){
-                    for (dense_idx = 0; dense_idx < n_dense2; ++dense_idx)
-                        pattern_arr[phase_idx][player_idx][pattern_idx][pattern_elem][dense_idx] += tmp_pattern_arr[pattern_elem][dense_idx];
-                }
-            }
-            */
             for (canput = 0; canput <= max_canput; ++canput){
                 for (sur0 = 0; sur0 <= max_surround; ++sur0){
                     for (sur1 = 0; sur1 <= max_surround; ++sur1){
@@ -547,10 +537,10 @@ inline int mid_evaluate(const board *b){
     canput = min(max_canput, calc_canput(b));
     sur0 = min(max_surround, calc_surround(b, black));
     sur1 = min(max_surround, calc_surround(b, white));
-    eval_type res = (b->p ? -1 : 1) * (
+    eval_type res = 
         all_bias[phase_idx][b->p] + calc_pattern(phase_idx, b) + 
         all_dense[phase_idx][b->p][22] * add_arr[phase_idx][b->p][canput][sur0][sur1][0] + all_dense[phase_idx][b->p][23] * add_arr[phase_idx][b->p][canput][sur0][sur1][1] + all_dense[phase_idx][b->p][24] * add_arr[phase_idx][b->p][canput][sur0][sur1][2] + all_dense[phase_idx][b->p][25] * add_arr[phase_idx][b->p][canput][sur0][sur1][3] + 
-        all_dense[phase_idx][b->p][26] * add_arr[phase_idx][b->p][canput][sur0][sur1][4] + all_dense[phase_idx][b->p][27] * add_arr[phase_idx][b->p][canput][sur0][sur1][5] + all_dense[phase_idx][b->p][28] * add_arr[phase_idx][b->p][canput][sur0][sur1][6] + all_dense[phase_idx][b->p][29] * add_arr[phase_idx][b->p][canput][sur0][sur1][7]);
+        all_dense[phase_idx][b->p][26] * add_arr[phase_idx][b->p][canput][sur0][sur1][4] + all_dense[phase_idx][b->p][27] * add_arr[phase_idx][b->p][canput][sur0][sur1][5] + all_dense[phase_idx][b->p][28] * add_arr[phase_idx][b->p][canput][sur0][sur1][6] + all_dense[phase_idx][b->p][29] * add_arr[phase_idx][b->p][canput][sur0][sur1][7];
     return round(max(-1.0, min(1.0, res)) * sc_w);
 }
 

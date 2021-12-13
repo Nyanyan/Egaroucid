@@ -22,9 +22,9 @@ from copy import deepcopy
 
 
 
-stone_strt = 20
+stone_strt = 50
 stone_end = stone_strt + 10
-black_white = 0
+black_white = 1
 
 line2_idx = [[8, 9, 10, 11, 12, 13, 14, 15], [1, 9, 17, 25, 33, 41, 49, 57], [6, 14, 22, 30, 38, 46, 54, 62], [48, 49, 50, 51, 52, 53, 54, 55]] # line2
 for pattern in deepcopy(line2_idx):
@@ -163,6 +163,8 @@ def collect_data(directory, num):
                     all_data[idx].append(line)
                     idx += 1
             all_data[idx].append([(v1 - 15) / 15, (v2 - 15) / 15, (v3 - 15) / 15])
+            if player == 1:
+                result = -result
             all_labels.append(result)
             board_proc = str(player) + '\n'
             for y in range(8):
@@ -184,7 +186,7 @@ prediction = model.predict(all_data)
 
 print(prediction.shape)
 
-for use_idx in [21]:
+for use_idx in [1]:
     print('raw:')
     print(raw_data[use_idx])
     print('')

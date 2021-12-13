@@ -83,8 +83,8 @@ int main(){
         search_result result;
         const int first_moves[4] = {19, 26, 37, 44};
         int depth, end_depth, policy;
-        depth = 10;
-        end_depth = 18;
+        depth = 12;
+        end_depth = 30;
     #endif
     int ai_player;
     //cin >> ai_player;
@@ -106,6 +106,7 @@ int main(){
         #else
             cin >> ai_player;
             input_board(&b, ai_player);
+            cerr << b.p << endl;
             cerr << b.n << " " << mid_evaluate(&b) << endl;
             if (b.n == 4){
                 policy = first_moves[myrandrange(0, 4)];
