@@ -377,7 +377,7 @@ inline void init_evaluation_pred(){
 }
 */
 inline void init_evaluation_calc(){
-    ifstream ifs("C:/github/egaroucid/Egaroucid5/src/resources/param.txt");
+    ifstream ifs("resources/param.txt");
     if (ifs.fail()){
         cerr << "evaluation file not exist" << endl;
         exit(1);
