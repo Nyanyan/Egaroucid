@@ -22,8 +22,9 @@ from copy import deepcopy
 
 
 
-stone_strt = 52
-stone_end = stone_strt + 4
+stone_strt = 20
+stone_end = stone_strt + 10
+black_white = 0
 
 line2_idx = [[8, 9, 10, 11, 12, 13, 14, 15], [1, 9, 17, 25, 33, 41, 49, 57], [6, 14, 22, 30, 38, 46, 54, 62], [48, 49, 50, 51, 52, 53, 54, 55]] # line2
 for pattern in deepcopy(line2_idx):
@@ -145,7 +146,7 @@ def collect_data(directory, num):
         #board, player, v1, v2, v3, score, result = datum.split()
         board, player, v1, v2, v3, result = datum.split()
         n_stones = calc_n_stones(board)
-        if stone_strt + 4 <= n_stones < stone_end + 4:
+        if stone_strt + 4 <= n_stones < stone_end + 4 and player == str(black_white):
             v1 = float(v1)
             v2 = float(v2)
             v3 = float(v3)
@@ -161,10 +162,7 @@ def collect_data(directory, num):
                 for line in lines:
                     all_data[idx].append(line)
                     idx += 1
-            if player == 0:
-                all_data[idx].append([(v1 - 15) / 15, 0.0, (v2 - 15) / 15, (v3 - 15) / 15])
-            else:
-                all_data[idx].append([0.0, (v1 - 15) / 15, (v2 - 15) / 15, (v3 - 15) / 15])
+            all_data[idx].append([(v1 - 15) / 15, (v2 - 15) / 15, (v3 - 15) / 15])
             all_labels.append(result)
             board_proc = str(player) + '\n'
             for y in range(8):
@@ -178,7 +176,7 @@ collect_data('records2', 137)
 all_data = [np.array(arr) for arr in all_data]
 all_labels = np.array(all_labels)
 
-model = load_model('learned_data/' + str(stone_strt) + '_' + str(stone_end) + '.h5')
+model = load_model('learned_data/' + str(black_white) + '_' + str(stone_strt) + '_' + str(stone_end) + '.h5')
 
 model.evaluate(all_data, all_labels)
 
@@ -186,7 +184,7 @@ prediction = model.predict(all_data)
 
 print(prediction.shape)
 
-for use_idx in [50]:
+for use_idx in [21]:
     print('raw:')
     print(raw_data[use_idx])
     print('')

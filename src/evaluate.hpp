@@ -52,10 +52,10 @@ int mobility_arr2[2][n_line * n_line];
 int surround_arr[2][n_line];
 int stability_edge_arr[2][n_line];
 int stability_corner_arr[2][n_line];
-eval_type pattern_arr[n_phases][n_patterns][max_evaluate_idx][n_dense2];
+eval_type pattern_arr[n_phases][2][n_patterns][max_evaluate_idx][n_dense2];
 eval_type add_arr[n_phases][2][max_canput + 1][max_surround + 1][max_surround + 1][n_add_dense1];
-eval_type all_dense[n_phases][n_all_input];
-eval_type all_bias[n_phases];
+eval_type all_dense[n_phases][2][n_all_input];
+eval_type all_bias[n_phases][2];
 
 inline eval_type max(eval_type a, eval_type b){
     return a < b ? b : a;
@@ -64,7 +64,7 @@ inline eval_type max(eval_type a, eval_type b){
 inline eval_type min(eval_type a, eval_type b){
     return a > b ? b : a;
 }
-
+/*
 inline eval_type leaky_relu(eval_type x){
     return max(0.01 * x, x);
 }
@@ -91,7 +91,7 @@ inline void predict(int pattern_size, eval_type in_arr[], eval_type dense0[n_den
         res[i] = leaky_relu(res[i]);
     }
 }
-
+*/
 inline int calc_pop(int a, int b, int s){
     return (a / pow3[s - 1 - b]) % 3;
 }
@@ -137,7 +137,7 @@ inline int calc_rev_idx(int pattern_idx, int pattern_size, int idx){
     }
     return res;
 }
-
+/*
 inline void pre_evaluation(int pattern_idx, int phase_idx, int evaluate_idx, int pattern_size, eval_type dense0[n_dense0][20], eval_type bias0[n_dense0], eval_type dense1[n_dense1][n_dense0], eval_type bias1[n_dense1], eval_type dense2[n_dense2][n_dense1], eval_type bias2[n_dense2]){
     int digit, idx, i, rev_idx;
     eval_type arr[20], tmp_pattern_arr[max_evaluate_idx][n_dense2];
@@ -203,8 +203,8 @@ inline void pre_evaluation_add(int phase_idx, eval_type dense0[n_add_dense0][n_a
         }
     }
 }
-
-inline void init_evaluation1() {
+*/
+inline void init_evaluation_base() {
     int idx, place, b, w;
     bool full_black, full_white;
     for (idx = 0; idx < n_line; ++idx) {
@@ -290,8 +290,8 @@ inline void init_evaluation1() {
         }
     }
 }
-
-inline void init_evaluation2(){
+/*
+inline void init_evaluation_pred(){
     ifstream ifs("resources/param.txt");
     if (ifs.fail()){
         cerr << "evaluation file not exist" << endl;
@@ -375,11 +375,63 @@ inline void init_evaluation2(){
     }
     cerr << endl;
 }
+*/
+inline void init_evaluation_calc(){
+    ifstream ifs("resources/param.txt");
+    if (ifs.fail()){
+        cerr << "evaluation file not exist" << endl;
+        exit(1);
+    }
+    string line;
+    int i, phase_idx, player_idx, pattern_idx, pattern_elem, dense_idx, canput, sur0, sur1;
+    //int tmp_pattern_arr[max_evaluate_idx][n_dense2];
+    const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10};
+    for (phase_idx = 0; phase_idx < n_phases; ++phase_idx){
+        for (player_idx = 0; player_idx < 2; ++player_idx){
+            cerr << "=";
+            for (pattern_idx = 0; pattern_idx < n_patterns; ++pattern_idx){
+                for (pattern_elem = 0; pattern_elem < pow3[pattern_sizes[pattern_idx]]; ++pattern_elem){
+                    for (dense_idx = 0; dense_idx < n_dense2; ++dense_idx){
+                        getline(ifs, line);
+                        pattern_arr[phase_idx][player_idx][pattern_idx][pattern_elem][dense_idx] = stof(line);
+                        //tmp_pattern_arr[calc_rev_idx(pattern_idx, pattern_sizes[pattern_idx], pattern_elem)][dense_idx] = pattern_arr[phase_idx][player_idx][pattern_idx][pattern_elem][dense_idx];
+                    }
+                }
+            }
+            /*
+            for (pattern_idx = 0; pattern_idx < n_patterns; ++pattern_idx){
+                for (pattern_elem = 0; pattern_elem < pow3[pattern_sizes[pattern_idx]]; ++pattern_elem){
+                    for (dense_idx = 0; dense_idx < n_dense2; ++dense_idx)
+                        pattern_arr[phase_idx][player_idx][pattern_idx][pattern_elem][dense_idx] += tmp_pattern_arr[pattern_elem][dense_idx];
+                }
+            }
+            */
+            for (canput = 0; canput <= max_canput; ++canput){
+                for (sur0 = 0; sur0 <= max_surround; ++sur0){
+                    for (sur1 = 0; sur1 <= max_surround; ++sur1){
+                        for (dense_idx = 0; dense_idx < n_add_dense1; ++dense_idx){
+                            getline(ifs, line);
+                            add_arr[phase_idx][player_idx][canput][sur0][sur1][dense_idx] = stof(line);
+                        }
+                    }
+                }
+            }
+            for (i = 0; i < n_all_input; ++i){
+                getline(ifs, line);
+                all_dense[phase_idx][player_idx][i] = stof(line);
+            }
+            getline(ifs, line);
+            all_bias[phase_idx][player_idx] = stof(line);
+        }
+    }
+    cerr << endl;
+}
 
 inline void evaluate_init(){
-    init_evaluation1();
+    init_evaluation_base();
     #if !EVAL_MODE
-        init_evaluation2();
+        //init_evaluation_pred();
+        init_evaluation_calc();
     #endif
     cerr << "evaluation function initialized" << endl;
 }
@@ -432,62 +484,62 @@ inline int calc_surround(const board *b, int p){
         surround_arr[p][b->b[21]] + surround_arr[p][b->b[32]];
 }
 
-inline eval_type edge_2x(int phase_idx, const uint_fast16_t b[], int x, int y){
-    int idx = pop_digit[b[x]][1] * p39 + b[y] * p31 + pop_digit[b[x]][6];
+inline eval_type edge_2x(int phase_idx, const board *b, int x, int y){
+    int idx = pop_digit[b->b[x]][1] * p39 + b->b[y] * p31 + pop_digit[b->b[x]][6];
     return 
-        all_dense[phase_idx][14] * pattern_arr[phase_idx][7][idx][0] + 
-        all_dense[phase_idx][15] * pattern_arr[phase_idx][7][idx][1];
+        all_dense[phase_idx][b->p][14] * pattern_arr[phase_idx][b->p][7][idx][0] + 
+        all_dense[phase_idx][b->p][15] * pattern_arr[phase_idx][b->p][7][idx][1];
 }
 
-inline eval_type triangle0(int phase_idx, const uint_fast16_t b[], int w, int x, int y, int z){
-    int idx = b[w] / p34 * p36 + b[x] / p35 * p33 + b[y] / p36 * p31 + b[z] / p37;
+inline eval_type triangle0(int phase_idx, const board *b, int w, int x, int y, int z){
+    int idx = b->b[w] / p34 * p36 + b->b[x] / p35 * p33 + b->b[y] / p36 * p31 + b->b[z] / p37;
     return 
-        all_dense[phase_idx][16] * pattern_arr[phase_idx][8][idx][0] + 
-        all_dense[phase_idx][17] * pattern_arr[phase_idx][8][idx][1];
+        all_dense[phase_idx][b->p][16] * pattern_arr[phase_idx][b->p][8][idx][0] + 
+        all_dense[phase_idx][b->p][17] * pattern_arr[phase_idx][b->p][8][idx][1];
 }
 
-inline eval_type triangle1(int phase_idx, const uint_fast16_t b[], int w, int x, int y, int z){
-    int idx = reverse_board[b[w]] / p34 * p36 + reverse_board[b[x]] / p35 * p33 + reverse_board[b[y]] / p36 * p31 + reverse_board[b[z]] / p37;
+inline eval_type triangle1(int phase_idx, const board *b, int w, int x, int y, int z){
+    int idx = reverse_board[b->b[w]] / p34 * p36 + reverse_board[b->b[x]] / p35 * p33 + reverse_board[b->b[y]] / p36 * p31 + reverse_board[b->b[z]] / p37;
     return 
-        all_dense[phase_idx][16] * pattern_arr[phase_idx][8][idx][0] + 
-        all_dense[phase_idx][17] * pattern_arr[phase_idx][8][idx][1];
+        all_dense[phase_idx][b->p][16] * pattern_arr[phase_idx][b->p][8][idx][0] + 
+        all_dense[phase_idx][b->p][17] * pattern_arr[phase_idx][b->p][8][idx][1];
 }
 
-inline eval_type edge_block(int phase_idx, const uint_fast16_t b[], int x, int y){
-    int idx = pop_digit[b[x]][0] * p39 + pop_mid[b[x]][6][2] * p35 + pop_digit[b[x]][7] * p34 + pop_mid[b[y]][6][2];
+inline eval_type edge_block(int phase_idx, const board *b, int x, int y){
+    int idx = pop_digit[b->b[x]][0] * p39 + pop_mid[b->b[x]][6][2] * p35 + pop_digit[b->b[x]][7] * p34 + pop_mid[b->b[y]][6][2];
     return 
-        all_dense[phase_idx][18] * pattern_arr[phase_idx][9][idx][0] + 
-        all_dense[phase_idx][19] * pattern_arr[phase_idx][9][idx][1];
+        all_dense[phase_idx][b->p][18] * pattern_arr[phase_idx][b->p][9][idx][0] + 
+        all_dense[phase_idx][b->p][19] * pattern_arr[phase_idx][b->p][9][idx][1];
 }
 
-inline eval_type cross(int phase_idx, const uint_fast16_t b[], int x, int y, int z){
-    int idx1 = b[x] / p34 * p36 + b[y] / p35 * p33 + b[z] / p35;
-    int idx2 = reverse_board[b[x]] / p34 * p36 + pop_mid[reverse_board[b[y]]][7][4] * p33 + pop_mid[reverse_board[b[z]]][7][4];
+inline eval_type cross(int phase_idx, const board *b, int x, int y, int z){
+    int idx1 = b->b[x] / p34 * p36 + b->b[y] / p35 * p33 + b->b[z] / p35;
+    int idx2 = reverse_board[b->b[x]] / p34 * p36 + pop_mid[reverse_board[b->b[y]]][7][4] * p33 + pop_mid[reverse_board[b->b[z]]][7][4];
     return 
-        all_dense[phase_idx][20] * (pattern_arr[phase_idx][10][idx1][0] + pattern_arr[phase_idx][10][idx2][0]) + 
-        all_dense[phase_idx][21] * (pattern_arr[phase_idx][10][idx1][1] + pattern_arr[phase_idx][10][idx2][1]);
+        all_dense[phase_idx][b->p][20] * (pattern_arr[phase_idx][b->p][10][idx1][0] + pattern_arr[phase_idx][b->p][10][idx2][0]) + 
+        all_dense[phase_idx][b->p][21] * (pattern_arr[phase_idx][b->p][10][idx1][1] + pattern_arr[phase_idx][b->p][10][idx2][1]);
 }
 
 inline eval_type calc_pattern(int phase_idx, const board *b){
     return 
-        all_dense[phase_idx][0] * (pattern_arr[phase_idx][0][b->b[1]][0] + pattern_arr[phase_idx][0][b->b[6]][0] + pattern_arr[phase_idx][0][b->b[9]][0] + pattern_arr[phase_idx][0][b->b[14]][0]) + 
-        all_dense[phase_idx][1] * (pattern_arr[phase_idx][0][b->b[1]][1] + pattern_arr[phase_idx][0][b->b[6]][1] + pattern_arr[phase_idx][0][b->b[9]][1] + pattern_arr[phase_idx][0][b->b[14]][1]) + 
-        all_dense[phase_idx][2] * (pattern_arr[phase_idx][1][b->b[2]][0] + pattern_arr[phase_idx][1][b->b[5]][0] + pattern_arr[phase_idx][1][b->b[10]][0] + pattern_arr[phase_idx][1][b->b[13]][0]) + 
-        all_dense[phase_idx][3] * (pattern_arr[phase_idx][1][b->b[2]][1] + pattern_arr[phase_idx][1][b->b[5]][1] + pattern_arr[phase_idx][1][b->b[10]][1] + pattern_arr[phase_idx][1][b->b[13]][1]) + 
-        all_dense[phase_idx][4] * (pattern_arr[phase_idx][2][b->b[3]][0] + pattern_arr[phase_idx][2][b->b[4]][0] + pattern_arr[phase_idx][2][b->b[11]][0] + pattern_arr[phase_idx][2][b->b[12]][0]) + 
-        all_dense[phase_idx][5] * (pattern_arr[phase_idx][2][b->b[3]][1] + pattern_arr[phase_idx][2][b->b[4]][1] + pattern_arr[phase_idx][2][b->b[11]][1] + pattern_arr[phase_idx][2][b->b[12]][1]) + 
-        all_dense[phase_idx][6] * (pattern_arr[phase_idx][3][b->b[18] / p33][0] + pattern_arr[phase_idx][3][b->b[24] / p33][0] + pattern_arr[phase_idx][3][b->b[29] / p33][0] + pattern_arr[phase_idx][3][b->b[35] / p33][0]) + 
-        all_dense[phase_idx][7] * (pattern_arr[phase_idx][3][b->b[18] / p33][1] + pattern_arr[phase_idx][3][b->b[24] / p33][1] + pattern_arr[phase_idx][3][b->b[29] / p33][1] + pattern_arr[phase_idx][3][b->b[35] / p33][1]) + 
-        all_dense[phase_idx][8] * (pattern_arr[phase_idx][4][b->b[19] / p32][0] + pattern_arr[phase_idx][4][b->b[23] / p32][0] + pattern_arr[phase_idx][4][b->b[30] / p32][0] + pattern_arr[phase_idx][4][b->b[34] / p32][0]) + 
-        all_dense[phase_idx][9] * (pattern_arr[phase_idx][4][b->b[19] / p32][1] + pattern_arr[phase_idx][4][b->b[23] / p32][1] + pattern_arr[phase_idx][4][b->b[30] / p32][1] + pattern_arr[phase_idx][4][b->b[34] / p32][1]) + 
-        all_dense[phase_idx][10] * (pattern_arr[phase_idx][5][b->b[20] / p31][0] + pattern_arr[phase_idx][5][b->b[22] / p31][0] + pattern_arr[phase_idx][5][b->b[31] / p31][0] + pattern_arr[phase_idx][5][b->b[33] / p31][0]) + 
-        all_dense[phase_idx][11] * (pattern_arr[phase_idx][5][b->b[20] / p31][1] + pattern_arr[phase_idx][5][b->b[22] / p31][1] + pattern_arr[phase_idx][5][b->b[31] / p31][1] + pattern_arr[phase_idx][5][b->b[33] / p31][1]) + 
-        all_dense[phase_idx][12] * (pattern_arr[phase_idx][6][b->b[21]][0] + pattern_arr[phase_idx][6][b->b[32]][0]) + 
-        all_dense[phase_idx][13] * (pattern_arr[phase_idx][6][b->b[21]][1] + pattern_arr[phase_idx][6][b->b[32]][1]) + 
-        edge_2x(phase_idx, b->b, 1, 0) + edge_2x(phase_idx, b->b, 6, 7) + edge_2x(phase_idx, b->b, 9, 8) + edge_2x(phase_idx, b->b, 14, 15) + 
-        triangle0(phase_idx, b->b, 0, 1, 2, 3) + triangle0(phase_idx, b->b, 7, 6, 5, 4) + triangle0(phase_idx, b->b, 15, 14, 13, 12) + triangle1(phase_idx, b->b, 15, 14, 13, 12) + 
-        edge_block(phase_idx, b->b, 0, 1) + edge_block(phase_idx, b->b, 7, 6) + edge_block(phase_idx, b->b, 8, 9) + edge_block(phase_idx, b->b, 15, 14) + 
-        cross(phase_idx, b->b, 21, 20, 22) + cross(phase_idx, b->b, 32, 31, 33);
+        all_dense[phase_idx][b->p][0] * (pattern_arr[phase_idx][b->p][0][b->b[1]][0] + pattern_arr[phase_idx][b->p][0][b->b[6]][0] + pattern_arr[phase_idx][b->p][0][b->b[9]][0] + pattern_arr[phase_idx][b->p][0][b->b[14]][0]) + 
+        all_dense[phase_idx][b->p][1] * (pattern_arr[phase_idx][b->p][0][b->b[1]][1] + pattern_arr[phase_idx][b->p][0][b->b[6]][1] + pattern_arr[phase_idx][b->p][0][b->b[9]][1] + pattern_arr[phase_idx][b->p][0][b->b[14]][1]) + 
+        all_dense[phase_idx][b->p][2] * (pattern_arr[phase_idx][b->p][1][b->b[2]][0] + pattern_arr[phase_idx][b->p][1][b->b[5]][0] + pattern_arr[phase_idx][b->p][1][b->b[10]][0] + pattern_arr[phase_idx][b->p][1][b->b[13]][0]) + 
+        all_dense[phase_idx][b->p][3] * (pattern_arr[phase_idx][b->p][1][b->b[2]][1] + pattern_arr[phase_idx][b->p][1][b->b[5]][1] + pattern_arr[phase_idx][b->p][1][b->b[10]][1] + pattern_arr[phase_idx][b->p][1][b->b[13]][1]) + 
+        all_dense[phase_idx][b->p][4] * (pattern_arr[phase_idx][b->p][2][b->b[3]][0] + pattern_arr[phase_idx][b->p][2][b->b[4]][0] + pattern_arr[phase_idx][b->p][2][b->b[11]][0] + pattern_arr[phase_idx][b->p][2][b->b[12]][0]) + 
+        all_dense[phase_idx][b->p][5] * (pattern_arr[phase_idx][b->p][2][b->b[3]][1] + pattern_arr[phase_idx][b->p][2][b->b[4]][1] + pattern_arr[phase_idx][b->p][2][b->b[11]][1] + pattern_arr[phase_idx][b->p][2][b->b[12]][1]) + 
+        all_dense[phase_idx][b->p][6] * (pattern_arr[phase_idx][b->p][3][b->b[18] / p33][0] + pattern_arr[phase_idx][b->p][3][b->b[24] / p33][0] + pattern_arr[phase_idx][b->p][3][b->b[29] / p33][0] + pattern_arr[phase_idx][b->p][3][b->b[35] / p33][0]) + 
+        all_dense[phase_idx][b->p][7] * (pattern_arr[phase_idx][b->p][3][b->b[18] / p33][1] + pattern_arr[phase_idx][b->p][3][b->b[24] / p33][1] + pattern_arr[phase_idx][b->p][3][b->b[29] / p33][1] + pattern_arr[phase_idx][b->p][3][b->b[35] / p33][1]) + 
+        all_dense[phase_idx][b->p][8] * (pattern_arr[phase_idx][b->p][4][b->b[19] / p32][0] + pattern_arr[phase_idx][b->p][4][b->b[23] / p32][0] + pattern_arr[phase_idx][b->p][4][b->b[30] / p32][0] + pattern_arr[phase_idx][b->p][4][b->b[34] / p32][0]) + 
+        all_dense[phase_idx][b->p][9] * (pattern_arr[phase_idx][b->p][4][b->b[19] / p32][1] + pattern_arr[phase_idx][b->p][4][b->b[23] / p32][1] + pattern_arr[phase_idx][b->p][4][b->b[30] / p32][1] + pattern_arr[phase_idx][b->p][4][b->b[34] / p32][1]) + 
+        all_dense[phase_idx][b->p][10] * (pattern_arr[phase_idx][b->p][5][b->b[20] / p31][0] + pattern_arr[phase_idx][b->p][5][b->b[22] / p31][0] + pattern_arr[phase_idx][b->p][5][b->b[31] / p31][0] + pattern_arr[phase_idx][b->p][5][b->b[33] / p31][0]) + 
+        all_dense[phase_idx][b->p][11] * (pattern_arr[phase_idx][b->p][5][b->b[20] / p31][1] + pattern_arr[phase_idx][b->p][5][b->b[22] / p31][1] + pattern_arr[phase_idx][b->p][5][b->b[31] / p31][1] + pattern_arr[phase_idx][b->p][5][b->b[33] / p31][1]) + 
+        all_dense[phase_idx][b->p][12] * (pattern_arr[phase_idx][b->p][6][b->b[21]][0] + pattern_arr[phase_idx][b->p][6][b->b[32]][0]) + 
+        all_dense[phase_idx][b->p][13] * (pattern_arr[phase_idx][b->p][6][b->b[21]][1] + pattern_arr[phase_idx][b->p][6][b->b[32]][1]) + 
+        edge_2x(phase_idx, b, 1, 0) + edge_2x(phase_idx, b, 6, 7) + edge_2x(phase_idx, b, 9, 8) + edge_2x(phase_idx, b, 14, 15) + 
+        triangle0(phase_idx, b, 0, 1, 2, 3) + triangle0(phase_idx, b, 7, 6, 5, 4) + triangle0(phase_idx, b, 15, 14, 13, 12) + triangle1(phase_idx, b, 15, 14, 13, 12) + 
+        edge_block(phase_idx, b, 0, 1) + edge_block(phase_idx, b, 7, 6) + edge_block(phase_idx, b, 8, 9) + edge_block(phase_idx, b, 15, 14) + 
+        cross(phase_idx, b, 21, 20, 22) + cross(phase_idx, b, 32, 31, 33);
 }
 
 inline int mid_evaluate(const board *b){
@@ -496,9 +548,9 @@ inline int mid_evaluate(const board *b){
     sur0 = min(max_surround, calc_surround(b, black));
     sur1 = min(max_surround, calc_surround(b, white));
     eval_type res = (b->p ? -1 : 1) * (
-        all_bias[phase_idx] + calc_pattern(phase_idx, b) + 
-        all_dense[phase_idx][22] * add_arr[phase_idx][b->p][canput][sur0][sur1][0] + all_dense[phase_idx][23] * add_arr[phase_idx][b->p][canput][sur0][sur1][1] + all_dense[phase_idx][24] * add_arr[phase_idx][b->p][canput][sur0][sur1][2] + all_dense[phase_idx][25] * add_arr[phase_idx][b->p][canput][sur0][sur1][3] + 
-        all_dense[phase_idx][26] * add_arr[phase_idx][b->p][canput][sur0][sur1][4] + all_dense[phase_idx][27] * add_arr[phase_idx][b->p][canput][sur0][sur1][5] + all_dense[phase_idx][28] * add_arr[phase_idx][b->p][canput][sur0][sur1][6] + all_dense[phase_idx][29] * add_arr[phase_idx][b->p][canput][sur0][sur1][7]);
+        all_bias[phase_idx][b->p] + calc_pattern(phase_idx, b) + 
+        all_dense[phase_idx][b->p][22] * add_arr[phase_idx][b->p][canput][sur0][sur1][0] + all_dense[phase_idx][b->p][23] * add_arr[phase_idx][b->p][canput][sur0][sur1][1] + all_dense[phase_idx][b->p][24] * add_arr[phase_idx][b->p][canput][sur0][sur1][2] + all_dense[phase_idx][b->p][25] * add_arr[phase_idx][b->p][canput][sur0][sur1][3] + 
+        all_dense[phase_idx][b->p][26] * add_arr[phase_idx][b->p][canput][sur0][sur1][4] + all_dense[phase_idx][b->p][27] * add_arr[phase_idx][b->p][canput][sur0][sur1][5] + all_dense[phase_idx][b->p][28] * add_arr[phase_idx][b->p][canput][sur0][sur1][6] + all_dense[phase_idx][b->p][29] * add_arr[phase_idx][b->p][canput][sur0][sur1][7]);
     return round(max(-1.0, min(1.0, res)) * sc_w);
 }
 

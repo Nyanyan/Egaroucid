@@ -7,7 +7,7 @@
 using namespace std;
 
 #define inf 100000000
-#define n_phases 15
+#define n_phases 6
 constexpr int phase_n_stones = 60 / n_phases;
 
 inline long long tim(){
