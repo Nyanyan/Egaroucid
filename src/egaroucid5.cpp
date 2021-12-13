@@ -84,7 +84,7 @@ int main(){
         const int first_moves[4] = {19, 26, 37, 44};
         int depth, end_depth, policy;
         depth = 10;
-        end_depth = 30;
+        end_depth = 18;
     #endif
     int ai_player;
     //cin >> ai_player;
@@ -114,8 +114,8 @@ int main(){
             }
             if (b.n < book_stones){
                 policy = book.get(&b);
-                cerr << "book policy " << policy << endl;
                 if (policy != -1){
+                    cerr << "BOOK " << policy << endl;
                     b = b.move(policy);
                     ++b.n;
                     result = midsearch(b, tim(), 10);
