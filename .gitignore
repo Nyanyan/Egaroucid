@@ -4,3 +4,5 @@
 */data
 */learned_data
 */legacy
+/src/resources
+/evaluation/*.txt
