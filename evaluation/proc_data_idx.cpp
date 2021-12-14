@@ -1,10 +1,15 @@
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include "board.hpp"
 
 using namespace std;
 
 #define black 0
 #define white 1
+
+#define n_phases 15
+#define phase_n_stones 4
 
 #define max_canput 50
 #define max_surround 80
@@ -37,6 +42,10 @@ int mobility_arr2[2][n_line * n_line];
 int surround_arr[2][n_line];
 int stability_edge_arr[2][n_line];
 int stability_corner_arr[2][n_line];
+
+inline int calc_phase_idx(const board *b){
+    return (b->n - 4) / phase_n_stones;
+}
 
 inline void init_evaluation_base() {
     int idx, place, b, w;
@@ -244,48 +253,78 @@ inline void calc_idx(int phase_idx, const board *b, int idxes[]){
     idxes[44] = min(max_surround, calc_surround(b, white));
 }
 
-inline void input_board(board *b, int ai_player){
+inline void convert_idx(string str){
     int i, j;
     unsigned long long bk = 0, wt = 0;
     char elem;
-    b->p = ai_player;
-    b->n = 0;
-    b->parity = 0;
-    vacant_lst.clear();
+    board b;
+    b.n = 0;
+    b.parity = 0;
     for (i = 0; i < hw; ++i){
-        string raw_board;
-        cin >> raw_board;
-        cin.ignore();
-        cerr << raw_board << endl;
         for (j = 0; j < hw; ++j){
-            elem = raw_board[j];
+            elem = str[i * hw + j];
             if (elem != '.'){
                 bk |= (unsigned long long)(elem == '0') << (i * hw + j);
                 wt |= (unsigned long long)(elem == '1') << (i * hw + j);
-                ++b->n;
-            } else{
-                vacant_lst.push_back(i * hw + j);
-                b->parity ^= cell_div4[i * hw + j];
+                ++b.n;
             }
         }
     }
-    if (b->n < hw2_m1)
-        sort(vacant_lst.begin(), vacant_lst.end(), cmp_vacant);
     for (i = 0; i < b_idx_num; ++i){
-        b->b[i] = n_line - 1;
+        b.b[i] = n_line - 1;
         for (j = 0; j < idx_n_cell[i]; ++j){
             if (1 & (bk >> global_place[i][j]))
-                b->b[i] -= pow3[hw_m1 - j] * 2;
+                b.b[i] -= pow3[hw_m1 - j] * 2;
             else if (1 & (wt >> global_place[i][j]))
-                b->b[i] -= pow3[hw_m1 - j];
+                b.b[i] -= pow3[hw_m1 - j];
         }
     }
+    int ai_player = (str[65] == '0' ? 0 : 1);
+    int phase_idx = calc_phase_idx(&b);
+    int idxes[45];
+    calc_idx(phase_idx, &b, idxes);
+    cout << phase_idx << " " << ai_player << " ";
+    for (i = 0; i < 45; ++i)
+        cout << idxes[i] << " ";
+    string score;
+    istringstream iss(str);
+    for (i = 0; i < 6; ++i)
+        iss >> score;
+    cout << score << endl;
 }
 
+#define n_files 10
+
+const string file_names[n_files] = {
+    "0000137.txt",
+    "0000136.txt",
+    "0000135.txt",
+    "0000134.txt",
+    "0000133.txt",
+    "0000132.txt",
+    "0000131.txt",
+    "0000130.txt",
+    "0000129.txt",
+    "0000128.txt",
+};
 
 int main(){
     board_init();
     init_evaluation_base();
+
+    for (int i = 0; i < n_files; ++i){
+        cerr << "=";
+        ifstream ifs("data/records2/" + file_names[i]);
+        if (ifs.fail()){
+            cerr << "evaluation file not exist" << endl;
+            exit(1);
+        }
+        string line;
+        while (getline(ifs, line)){
+            convert_idx(line);
+        }
+    }
+    cerr << endl;
 
     return 0;
 
