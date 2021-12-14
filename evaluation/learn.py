@@ -105,9 +105,11 @@ cross_idx = [
 pattern_idx = [line2_idx, line3_idx, line4_idx, diagonal5_idx, diagonal6_idx, diagonal7_idx, diagonal8_idx, edge_2x_idx, triangle_idx, edge_block, cross_idx]
 ln_in = sum([len(elem) for elem in pattern_idx]) + 1
 
-for stone_strt in reversed([0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56]):
+# [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56]
+
+for stone_strt in reversed([0, 10, 20, 30, 40, 50]):
     for black_white in range(2):
-        stone_end = stone_strt + 4
+        stone_end = stone_strt + 10
 
         min_n_stones = 4 + stone_strt
         max_n_stones = 4 + stone_end
@@ -188,12 +190,13 @@ for stone_strt in reversed([0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52,
         idx = 0
         for i in range(len(pattern_idx)):
             layers = []
-            layers.append(Dense(64, name=names[i] + '_dense0'))
+            layers.append(Dense(32, name=names[i] + '_dense0'))
             layers.append(LeakyReLU(alpha=0.01))
-            layers.append(Dense(64, name=names[i] + '_dense1'))
+            layers.append(Dense(32, name=names[i] + '_dense1'))
             layers.append(LeakyReLU(alpha=0.01))
-            layers.append(Dense(2, name=names[i] + '_out'))
+            layers.append(Dense(32, name=names[i] + '_dense2'))
             layers.append(LeakyReLU(alpha=0.01))
+            layers.append(Dense(1, name=names[i] + '_out'))
             add_elems = []
             for j in range(len(pattern_idx[i])):
                 x[idx] = Input(shape=len(pattern_idx[i][0]) * 2, name=names[i] + '_in_' + str(j))
@@ -209,10 +212,11 @@ for stone_strt in reversed([0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52,
         y_add = LeakyReLU(alpha=0.01)(y_add)
         y_add = Dense(8, name='add_dense1')(y_add)
         y_add = LeakyReLU(alpha=0.01)(y_add)
-        y_all = Concatenate(axis=-1, name='pre_prediction')([y_pattern, y_add])
-        #y_all = Dense(16, name='all_dense0')(y_all)
-        #y_all = LeakyReLU(alpha=0.01)(y_all)
-        y_all = Dense(1, name='all_dense0')(y_all)
+        y_add = Dense(8, name='add_dense2')(y_add)
+        y_add = LeakyReLU(alpha=0.01)(y_add)
+        y_add = Dense(1, name='add_dense3')(y_add)
+        ys.append(y_add)
+        y_all = Add()(ys)
 
         model = Model(inputs=x, outputs=y_all)
 
@@ -270,3 +274,6 @@ for stone_strt in reversed([0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52,
         plt.legend(loc='best')
         plt.savefig('learned_data/mae_' + str(black_white) + '_' + str(stone_strt) + '_' + str(stone_end) + '.png')
         plt.clf()
+        
+        with open('learned_data/result.txt', 'a') as f:
+            f.write(str(black_white) + '_' + str(stone_strt) + '_' + str(stone_end) + '\t' + str(history.history['loss'][-1]) + '\t' + str(history.history['val_loss'][-1]) + '\t' + str(history.history['mae'][-1]) + '\t' + str(history.history['val_mae'][-1]) + '\n')

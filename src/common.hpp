@@ -7,8 +7,8 @@
 using namespace std;
 
 #define inf 100000000
-#define n_phases 15
-#define phase_n_stones 4
+#define n_phases 6
+#define phase_n_stones 10
 
 inline long long tim(){
     return chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now().time_since_epoch()).count();

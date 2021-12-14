@@ -22,9 +22,9 @@ from copy import deepcopy
 
 
 
-stone_strt = 48
-stone_end = stone_strt + 4
-black_white = 0
+stone_strt = 30
+stone_end = stone_strt + 10
+black_white = 1
 
 line2_idx = [[8, 9, 10, 11, 12, 13, 14, 15], [1, 9, 17, 25, 33, 41, 49, 57], [6, 14, 22, 30, 38, 46, 54, 62], [48, 49, 50, 51, 52, 53, 54, 55]] # line2
 for pattern in deepcopy(line2_idx):
