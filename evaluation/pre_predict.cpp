@@ -293,7 +293,7 @@ void output_param(){
             for (pattern_idx = 0; pattern_idx < n_patterns; ++pattern_idx){
                 for (pattern_elem = 0; pattern_elem < pow3[pattern_sizes[pattern_idx]]; ++pattern_elem){
                     for (dense_idx = 0; dense_idx < n_dense2; ++dense_idx){
-                        cout << pattern_arr[phase_idx][player_idx][pattern_idx][pattern_elem][dense_idx] << endl;
+                        cout << pattern_arr[phase_idx][player_idx][pattern_idx][pattern_elem][dense_idx] * all_dense[phase_idx][player_idx][pattern_idx * n_dense2 + dense_idx] + all_bias[phase_idx][player_idx] / n_all_input << endl;
                     }
                 }
             }
@@ -301,15 +301,15 @@ void output_param(){
                 for (sur0 = 0; sur0 <= max_surround; ++sur0){
                     for (sur1 = 0; sur1 <= max_surround; ++sur1){
                         for (dense_idx = 0; dense_idx < n_add_dense1; ++dense_idx){
-                            cout << add_arr[phase_idx][player_idx][canput][sur0][sur1][dense_idx] << endl;
+                            cout << add_arr[phase_idx][player_idx][canput][sur0][sur1][dense_idx] * all_dense[phase_idx][player_idx][n_patterns * n_dense2 + n_add_dense1] + all_bias[phase_idx][player_idx] / n_all_input << endl;
                         }
                     }
                 }
             }
-            for (i = 0; i < n_all_input; ++i){
-                cout << all_dense[phase_idx][player_idx][i] << endl;
-            }
-            cout << all_bias[phase_idx][player_idx] << endl;
+            //for (i = 0; i < n_all_input; ++i){
+            //    cout << all_dense[phase_idx][player_idx][i] << endl;
+            //}
+            //cout << all_bias[phase_idx][player_idx] << endl;
         }
     }
     cerr << endl;

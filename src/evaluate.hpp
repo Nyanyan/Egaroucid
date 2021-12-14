@@ -17,8 +17,8 @@ typedef float eval_type;
 #define n_add_dense0 8
 #define n_add_dense1 8
 #define n_all_input 30
-#define max_canput 40
-#define max_surround 60
+#define max_canput 50
+#define max_surround 80
 #define max_evaluate_idx 59049
 
 #define sc_w 6400
