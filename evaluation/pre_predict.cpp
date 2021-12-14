@@ -5,7 +5,7 @@ using namespace std;
 
 typedef float eval_type;
 
-#define n_phases 6
+#define n_phases 15
 #define n_line 6561
 
 #define n_patterns 11

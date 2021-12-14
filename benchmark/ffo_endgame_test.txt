@@ -94,3 +94,10 @@
 #42 final depth: 22 time: 13988 policy: 14 value: 600 nodes: 168916410 nps: 12074945 get: 450983 reg: 2532204
 #43 final depth: 23 time: 24067 policy: 50 value: -1200 nodes: 236819905 nps: 9840025 get: 762730 reg: 6524374
 #44 final depth: 23 time: 20641 policy: 11 value: -1400 nodes: 200635161 nps: 9720224 get: 772166 reg: 5310442
+
+2021/12/14 without mpc new evaluation 15 phase single thread
+#40 final depth: 20 time: 1900 policy: 8 value: 3800 nodes: 21727643 nps: 11429586 get: 18984 reg: 311956
+#41 final depth: 22 time: 13632 policy: 31 value: 0 nodes: 155052950 nps: 11373355 get: 373721 reg: 2570888
+#42 final depth: 22 time: 9545 policy: 14 value: 600 nodes: 116976092 nps: 12255221 get: 187008 reg: 1762643
+#43 final depth: 23 time: 23297 policy: 50 value: -1200 nodes: 230431900 nps: 9890630 get: 910020 reg: 6586392
+#44 final depth: 23 time: 10307 policy: 11 value: -1400 nodes: 103983354 nps: 10086657 get: 345469 reg: 2757554

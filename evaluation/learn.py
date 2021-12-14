@@ -23,7 +23,7 @@ from copy import deepcopy
 inf = 10000000.0
 
 test_ratio = 0.1
-n_epochs = 100
+n_epochs = 300
 
 
 line2_idx = [[8, 9, 10, 11, 12, 13, 14, 15], [1, 9, 17, 25, 33, 41, 49, 57], [6, 14, 22, 30, 38, 46, 54, 62], [48, 49, 50, 51, 52, 53, 54, 55]] # line2
@@ -105,11 +105,9 @@ cross_idx = [
 pattern_idx = [line2_idx, line3_idx, line4_idx, diagonal5_idx, diagonal6_idx, diagonal7_idx, diagonal8_idx, edge_2x_idx, triangle_idx, edge_block, cross_idx]
 ln_in = sum([len(elem) for elem in pattern_idx]) + 1
 
-# [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56]
-
-for stone_strt in reversed([0, 10, 20, 30, 40, 50]):
+for stone_strt in reversed([0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56]):
     for black_white in range(2):
-        stone_end = stone_strt + 10
+        stone_end = stone_strt + 4
 
         min_n_stones = 4 + stone_strt
         max_n_stones = 4 + stone_end
@@ -225,7 +223,7 @@ for stone_strt in reversed([0, 10, 20, 30, 40, 50]):
 
         model.compile(loss='mse', metrics='mae', optimizer='adam')
 
-        for i in trange(120, 138):
+        for i in trange(138):
             collect_data('records2', i)
         len_data = len(all_labels)
         print(len_data)

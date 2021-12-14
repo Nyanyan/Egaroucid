@@ -10,10 +10,10 @@ using namespace std;
 typedef float eval_type;
 
 #define n_patterns 11
-#define n_dense0 32
-#define n_dense1 32
+#define n_dense0 64
+#define n_dense1 64
 #define n_dense2 2
-#define n_add_input 4
+#define n_add_input 3
 #define n_add_dense0 8
 #define n_add_dense1 8
 #define n_all_input 30
