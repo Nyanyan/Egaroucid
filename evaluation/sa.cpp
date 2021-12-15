@@ -166,7 +166,7 @@ void input_test_data(){
     int t = 0;
     //for (i = 0; i < 220000; ++i)
     //    getline(ifs, line);
-    while (getline(ifs, line) && t < 200000){
+    while (getline(ifs, line) && t < 500000000){
         ++t;
         istringstream iss(line);
         iss >> phase;
@@ -266,12 +266,12 @@ inline double loss(int x, int siz){
     return tmp * tmp;
 }
 
-inline int first_scoring(){
+inline double first_scoring(){
     int phase, player, i, j, score;
     double avg_score, res = 0.0;
     for (phase = 0; phase < n_phases; ++phase){
         for (player = 0; player < 2; ++player){
-            avg_score = 0;
+            avg_score = 0.0;
             for (i = 0; i < test_data[phase][player].size(); ++i){
                 score = 
                     eval_arr[phase][player][0][test_data[phase][player][i][0]] + 
@@ -326,10 +326,10 @@ inline int first_scoring(){
             res += avg_score / n_phases / 2;
         }
     }
-    return round(res);
+    return res;
 }
 
-inline int scoring(int phase, int player){
+inline double scoring(int phase, int player){
     int i, j, score;
     double avg_score = 0.0, res = 0.0;
     for (i = 0; i < test_data[phase][player].size(); ++i){
@@ -388,7 +388,7 @@ inline int scoring(int phase, int player){
         for (j = 0; j < 2; ++j)
             res += n_scores[i][j] / n_phases / 2;
     }
-    return round(res);
+    return res;
 }
 
 inline void scoring_mae(){
@@ -453,7 +453,7 @@ inline void scoring_mae(){
 
 void sa(unsigned long long tl){
     unsigned long long strt = tim(), now = tim();
-    int score = first_scoring(), n_score;
+    double score = first_scoring(), n_score;
     int phase, player, pattern, idx, f_val;
     int t = 0, u = 0;
     cerr << t << " " << u << " ";
