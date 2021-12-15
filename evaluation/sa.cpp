@@ -112,7 +112,7 @@ double prob_fast(double p_score, double n_score, double strt, double now, double
 }
 
 void input_param(){
-    ifstream ifs("nn_param.txt");
+    ifstream ifs("f_param.txt");
     if (ifs.fail()){
         cerr << "evaluation file not exist" << endl;
         exit(1);
@@ -166,7 +166,7 @@ void input_test_data(){
     int t = 0;
     //for (i = 0; i < 220000; ++i)
     //    getline(ifs, line);
-    while (getline(ifs, line) && t < 50000){
+    while (getline(ifs, line) && t < 200000){
         ++t;
         istringstream iss(line);
         iss >> phase;
@@ -448,7 +448,7 @@ inline void scoring_mae(){
             res += avg_score / n_phases / 2;
         }
     }
-    cerr << " " << res << endl;
+    cerr << " " << res << "                                     ";
 }
 
 void sa(unsigned long long tl){
@@ -459,6 +459,7 @@ void sa(unsigned long long tl){
     cerr << t << " " << u << " ";
     cerr << score << " ";
     scoring_mae();
+    cerr << endl;
     for (;;){
         ++t;
         phase = myrandrange(0, n_phases);
@@ -479,14 +480,15 @@ void sa(unsigned long long tl){
             now = tim();
             if (now - strt > tl)
                 break;
-            cerr << (int)((double)(now - strt) / tl * 1000) << " " << t << " " << u << " ";
+            cerr << '\r' << (int)((double)(now - strt) / tl * 1000) << " " << t << " " << u << " ";
             cerr << score << " ";
             scoring_mae();
         }
     }
-    cerr << t << " " << u << " ";
+    cerr << '\r' << t << " " << u << " ";
     cerr << score << " ";
     scoring_mae();
+    cerr << endl;
     cerr << first_scoring() << endl;
 }
 
