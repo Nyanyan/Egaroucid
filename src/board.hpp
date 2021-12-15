@@ -174,7 +174,7 @@ class board {
         int v;
         int n;
         int parity;
-        int move_log[4][2];
+        //int move_log[4][2];
 
     public:
         bool operator<(const board& another) const {
@@ -264,6 +264,7 @@ class board {
             res->parity = this->parity ^ cell_div4[g_place];
         }
 
+        /*
         inline void self_move(const int g_place) {
             move_p_log(g_place, 0);
             move_p_log(g_place, 1);
@@ -297,6 +298,7 @@ class board {
             this->parity ^= cell_div4[this->policy];
             this->policy = -1;
         }
+        */
 
         inline void translate_to_arr(int res[]) {
             int i, j;
@@ -335,6 +337,7 @@ class board {
                 res->b[place_included[g_place][3]] = flip_arr[this->p][res->b[place_included[g_place][3]]][local_place[place_included[g_place][3]][g_place]];
         }
 
+        /*
         inline void flip(int g_place) {
             this->b[place_included[g_place][0]] = flip_arr[this->p][this->b[place_included[g_place][0]]][local_place[place_included[g_place][0]][g_place]];
             this->b[place_included[g_place][1]] = flip_arr[this->p][this->b[place_included[g_place][1]]][local_place[place_included[g_place][1]][g_place]];
@@ -342,6 +345,7 @@ class board {
             if (place_included[g_place][3] != -1)
                 this->b[place_included[g_place][3]] = flip_arr[this->p][this->b[place_included[g_place][3]]][local_place[place_included[g_place][3]][g_place]];
         }
+        */
 
         inline void move_p(board *res, int g_place, int i) {
             int j, place = local_place[place_included[g_place][i]][g_place];
@@ -351,6 +355,7 @@ class board {
                 flip(res, g_place + move_offset[place_included[g_place][i]] * j);
         }
 
+        /*
         inline void move_p_log(int g_place, int i) {
             int j, place = local_place[place_included[g_place][i]][g_place];
             this->move_log[i][0] = move_arr[this->p][this->b[place_included[g_place][i]]][place][0];
@@ -368,5 +373,6 @@ class board {
             for (j = 1; j <= this->move_log[i][1]; ++j)
                 flip(g_place + move_offset[place_included[g_place][i]] * j);
         }
+        */
 
 };
