@@ -30,6 +30,7 @@ uint_fast16_t move_arr[2][n_line][hw][2];
 bool legal_arr[2][n_line][hw];
 uint_fast16_t flip_arr[2][n_line][hw];
 uint_fast16_t put_arr[2][n_line][hw];
+uint_fast16_t redo_arr[2][n_line][hw];
 int_fast8_t local_place[b_idx_num][hw2];
 int_fast8_t place_included[hw2][4];
 uint_fast16_t reverse_board[n_line];
@@ -128,11 +129,15 @@ void board_init() {
             flip_arr[white][idx][place] = idx;
             put_arr[black][idx][place] = idx;
             put_arr[white][idx][place] = idx;
-            if (b & (1 << (hw - 1 - place)))
+            redo_arr[black][idx][place] = idx;
+            redo_arr[white][idx][place] = idx;
+            if (b & (1 << (hw - 1 - place))){
                 flip_arr[white][idx][place] += pow3[hw_m1 - place];
-            else if (w & (1 << (hw - 1 - place)))
+                redo_arr[black][idx][place] += pow3[hw_m1 - place] * 2;
+            } else if (w & (1 << (hw - 1 - place))){
                 flip_arr[black][idx][place] -= pow3[hw_m1 - place];
-            else{
+                redo_arr[white][idx][place] += pow3[hw_m1 - place];
+            } else{
                 put_arr[black][idx][place] -= pow3[hw_m1 - place] * 2;
                 put_arr[white][idx][place] -= pow3[hw_m1 - place];
             }
@@ -169,6 +174,7 @@ class board {
         int v;
         int n;
         int parity;
+        int move_log[4][2];
 
     public:
         bool operator<(const board& another) const {
@@ -259,11 +265,11 @@ class board {
         }
 
         inline void self_move(const int g_place) {
-            move_p(this, g_place, 0);
-            move_p(this, g_place, 1);
-            move_p(this, g_place, 2);
+            move_p_log(g_place, 0);
+            move_p_log(g_place, 1);
+            move_p_log(g_place, 2);
             if (place_included[g_place][3] != -1)
-                move_p(this, g_place, 3);
+                move_p_log(g_place, 3);
             this->b[place_included[g_place][0]] = put_arr[this->p][this->b[place_included[g_place][0]]][local_place[place_included[g_place][0]][g_place]];
             this->b[place_included[g_place][1]] = put_arr[this->p][this->b[place_included[g_place][1]]][local_place[place_included[g_place][1]][g_place]];
             this->b[place_included[g_place][2]] = put_arr[this->p][this->b[place_included[g_place][2]]][local_place[place_included[g_place][2]][g_place]];
@@ -273,15 +279,23 @@ class board {
             ++this->n;
             this->policy = g_place;
             this->parity ^= cell_div4[g_place];
-            return res;
         }
 
         inline void redo(){
-            this->b[place_included[this->policy][0]] = redo_arr[this->p][this->b[place_included[this->policy][0]]][local_place[place_included[this->policy][0]][this->policy]];
-            this->b[place_included[this->policy][1]] = redo_arr[this->p][this->b[place_included[this->policy][1]]][local_place[place_included[this->policy][1]][this->policy]];
-            this->b[place_included[this->policy][2]] = redo_arr[this->p][this->b[place_included[this->policy][2]]][local_place[place_included[this->policy][2]][this->policy]];
+            redo_p(this->policy, 0);
+            redo_p(this->policy, 1);
+            redo_p(this->policy, 2);
             if (place_included[this->policy][3] != -1)
-                this->b[place_included[this->policy][3]] = put_arr[this->p][this->b[place_included[this->policy][3]]][local_place[place_included[this->policy][3]][this->policy]];
+                redo_p(this->policy, 3);
+            this->b[place_included[this->policy][0]] = redo_arr[1 - this->p][this->b[place_included[this->policy][0]]][local_place[place_included[this->policy][0]][this->policy]];
+            this->b[place_included[this->policy][1]] = redo_arr[1 - this->p][this->b[place_included[this->policy][1]]][local_place[place_included[this->policy][1]][this->policy]];
+            this->b[place_included[this->policy][2]] = redo_arr[1 - this->p][this->b[place_included[this->policy][2]]][local_place[place_included[this->policy][2]][this->policy]];
+            if (place_included[this->policy][3] != -1)
+                this->b[place_included[this->policy][3]] = redo_arr[1 - this->p][this->b[place_included[this->policy][3]]][local_place[place_included[this->policy][3]][this->policy]];
+            this->p = 1 - this->p;
+            --this->n;
+            this->parity ^= cell_div4[this->policy];
+            this->policy = -1;
         }
 
         inline void translate_to_arr(int res[]) {
@@ -321,12 +335,38 @@ class board {
                 res->b[place_included[g_place][3]] = flip_arr[this->p][res->b[place_included[g_place][3]]][local_place[place_included[g_place][3]][g_place]];
         }
 
+        inline void flip(int g_place) {
+            this->b[place_included[g_place][0]] = flip_arr[this->p][this->b[place_included[g_place][0]]][local_place[place_included[g_place][0]][g_place]];
+            this->b[place_included[g_place][1]] = flip_arr[this->p][this->b[place_included[g_place][1]]][local_place[place_included[g_place][1]][g_place]];
+            this->b[place_included[g_place][2]] = flip_arr[this->p][this->b[place_included[g_place][2]]][local_place[place_included[g_place][2]][g_place]];
+            if (place_included[g_place][3] != -1)
+                this->b[place_included[g_place][3]] = flip_arr[this->p][this->b[place_included[g_place][3]]][local_place[place_included[g_place][3]][g_place]];
+        }
+
         inline void move_p(board *res, int g_place, int i) {
             int j, place = local_place[place_included[g_place][i]][g_place];
             for (j = 1; j <= move_arr[this->p][this->b[place_included[g_place][i]]][place][0]; ++j)
                 flip(res, g_place - move_offset[place_included[g_place][i]] * j);
             for (j = 1; j <= move_arr[this->p][this->b[place_included[g_place][i]]][place][1]; ++j)
                 flip(res, g_place + move_offset[place_included[g_place][i]] * j);
+        }
+
+        inline void move_p_log(int g_place, int i) {
+            int j, place = local_place[place_included[g_place][i]][g_place];
+            this->move_log[i][0] = move_arr[this->p][this->b[place_included[g_place][i]]][place][0];
+            this->move_log[i][1] = move_arr[this->p][this->b[place_included[g_place][i]]][place][1];
+            for (j = 1; j <= this->move_log[i][0]; ++j)
+                flip(g_place - move_offset[place_included[g_place][i]] * j);
+            for (j = 1; j <= this->move_log[i][1]; ++j)
+                flip(g_place + move_offset[place_included[g_place][i]] * j);
+        }
+
+        inline void redo_p(int g_place, int i){
+            int j;
+            for (j = 1; j <= this->move_log[i][0]; ++j)
+                flip(g_place - move_offset[place_included[g_place][i]] * j);
+            for (j = 1; j <= this->move_log[i][1]; ++j)
+                flip(g_place + move_offset[place_included[g_place][i]] * j);
         }
 
 };
