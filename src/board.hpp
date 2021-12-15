@@ -258,6 +258,32 @@ class board {
             res->parity = this->parity ^ cell_div4[g_place];
         }
 
+        inline void self_move(const int g_place) {
+            move_p(this, g_place, 0);
+            move_p(this, g_place, 1);
+            move_p(this, g_place, 2);
+            if (place_included[g_place][3] != -1)
+                move_p(this, g_place, 3);
+            this->b[place_included[g_place][0]] = put_arr[this->p][this->b[place_included[g_place][0]]][local_place[place_included[g_place][0]][g_place]];
+            this->b[place_included[g_place][1]] = put_arr[this->p][this->b[place_included[g_place][1]]][local_place[place_included[g_place][1]][g_place]];
+            this->b[place_included[g_place][2]] = put_arr[this->p][this->b[place_included[g_place][2]]][local_place[place_included[g_place][2]][g_place]];
+            if (place_included[g_place][3] != -1)
+                this->b[place_included[g_place][3]] = put_arr[this->p][this->b[place_included[g_place][3]]][local_place[place_included[g_place][3]][g_place]];
+            this->p = 1 - this->p;
+            ++this->n;
+            this->policy = g_place;
+            this->parity ^= cell_div4[g_place];
+            return res;
+        }
+
+        inline void redo(){
+            this->b[place_included[this->policy][0]] = redo_arr[this->p][this->b[place_included[this->policy][0]]][local_place[place_included[this->policy][0]][this->policy]];
+            this->b[place_included[this->policy][1]] = redo_arr[this->p][this->b[place_included[this->policy][1]]][local_place[place_included[this->policy][1]][this->policy]];
+            this->b[place_included[this->policy][2]] = redo_arr[this->p][this->b[place_included[this->policy][2]]][local_place[place_included[this->policy][2]][this->policy]];
+            if (place_included[this->policy][3] != -1)
+                this->b[place_included[this->policy][3]] = put_arr[this->p][this->b[place_included[this->policy][3]]][local_place[place_included[this->policy][3]][this->policy]];
+        }
+
         inline void translate_to_arr(int res[]) {
             int i, j;
             for (i = 0; i < hw; ++i) {

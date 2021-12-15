@@ -22,7 +22,7 @@ constexpr int mtd_end_threshold = step * 5;
 #define mpct_final 2.3
 
 #define simple_mid_threshold 3
-#define simple_end_threshold 7
+#define simple_end_threshold 5
 
 #define po_max_depth 8
 
@@ -107,6 +107,7 @@ int cmp_vacant(int p, int q){
 }
 
 inline void move_ordering(board *b){
+    /*
     int l, u;
     transpose_table.get_prev(b, b->hash() & search_hash_mask, &l, &u);
     if (u != inf && l != -inf)
@@ -117,6 +118,8 @@ inline void move_ordering(board *b){
         b->v += l + cache_hit;
     else
         b->v = -mid_evaluate(b);
+    */
+    b->v = -mid_evaluate(b);
 }
 
 /*

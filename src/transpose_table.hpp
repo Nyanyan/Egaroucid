@@ -11,7 +11,6 @@ constexpr int search_hash_mask = search_hash_table_size - 1;
 
 struct search_node{
     bool reg;
-    int p;
     uint_fast16_t k[hw];
     int l;
     int u;
@@ -47,9 +46,10 @@ class transpose_table{
             #endif
             ++this->hash_reg;
             this->table[this->now][hash].reg = true;
-            this->table[this->now][hash].p = key->p;
-            for (int i = 0; i < hw; ++i)
-                this->table[this->now][hash].k[i] = key->b[i];
+            if (!compare_key(key->b, this->table[this->now][hash].k)){
+                for (int i = 0; i < hw; ++i)
+                    this->table[this->now][hash].k[i] = key->b[i];
+            }
             this->table[this->now][hash].l = l;
             this->table[this->now][hash].u = u;
             #if USE_MULTI_THREAD

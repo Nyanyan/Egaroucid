@@ -586,7 +586,7 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
     #endif
     int hash = (int)(b->hash() & search_hash_mask);
     int l, u;
-    transpose_table.get_now(b, b->hash() & search_hash_mask, &l, &u);
+    transpose_table.get_now(b, hash, &l, &u);
     #if USE_END_TC
         if (l >= beta)
             return l;
@@ -605,11 +605,11 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
                 return alpha;
         }
     #endif
-    board nb[depth];
+    vector<board> nb;
     int canput = 0;
     for (const int &cell: vacant_lst){
         if (b->legal(cell)){
-            b->move(cell, &nb[canput]);
+            nb.emplace_back(b->move(cell));
             nb[canput].v = -canput_bonus * calc_canput_exact(&nb[canput]);
             #if USE_END_PO
                 if (depth <= po_max_depth && b->parity & cell_div4[cell])
@@ -636,7 +636,7 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
         return res;
     }
     if (canput >= 2)
-        sort(nb, nb + canput);
+        sort(nb.begin(), nb.end());
     int g, v = -inf;
     #if USE_MULTI_THREAD
         if (use_multi_thread > 0){
@@ -706,8 +706,8 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
             }
         }
     #else
-        for (int i = 0; i < canput; ++i){
-            g = -nega_alpha_ordering_final(&nb[i], false, depth - 1, -beta, -alpha, 0, -1);
+        for (board &nnb: nb){
+            g = -nega_alpha_ordering_final(&nnb, false, depth - 1, -beta, -alpha, 0, -1);
             alpha = max(alpha, g);
             if (beta <= alpha){
                 if (l < g)
@@ -736,7 +736,7 @@ int nega_scout_final(board *b, bool skipped, const int depth, int alpha, int bet
     #endif
     int hash = (int)(b->hash() & search_hash_mask);
     int l, u;
-    transpose_table.get_now(b, b->hash() & search_hash_mask, &l, &u);
+    transpose_table.get_now(b, hash, &l, &u);
     #if USE_END_TC
         if (l >= beta)
             return l;
@@ -912,11 +912,11 @@ inline search_result endsearch(board b, long long strt){
     transpose_table.hash_get = 0;
     transpose_table.hash_reg = 0;
     int max_depth = hw2 - b.n - 1;
-    int pre_search_depth = min(17, max_depth - simple_end_threshold);
+    //int pre_search_depth = min(17, max_depth - simple_end_threshold);
     transpose_table.init_now();
     transpose_table.init_prev();
-    if (pre_search_depth > 0)
-        midsearch(b, strt, pre_search_depth);
+    //if (pre_search_depth > 0)
+    //    midsearch(b, strt, pre_search_depth);
     cerr << "start final search depth " << max_depth + 1 << endl;
     alpha = -sc_w;
     beta = sc_w;
@@ -927,6 +927,8 @@ inline search_result endsearch(board b, long long strt){
     //for (i = 0; i < canput; ++i)
     //    prev_vals.push_back(nega_scout(&nb[i], false, min(8, max_depth / 2), -sc_w, sc_w));
     transpose_table.init_now();
+    long long final_strt = tim();
+    searched_nodes = 0;
     if (nb[0].n < hw2 - 5){
         alpha = -nega_scout_final(&nb[0], false, max_depth, -beta, -alpha);
         //alpha = -mtd_final(&nb[0], false, max_depth, -beta, -alpha, prev_vals[0]);
@@ -967,7 +969,7 @@ inline search_result endsearch(board b, long long strt){
     swap(transpose_table.now, transpose_table.prev);
     policy = tmp_policy;
     value = alpha;
-    cerr << "final depth: " << max_depth + 1 << " time: " << tim() - strt << " policy: " << policy << " value: " << alpha << " nodes: " << searched_nodes << " nps: " << (long long)searched_nodes * 1000 / max(1LL, tim() - strt) << " get: " << transpose_table.hash_get << " reg: " << transpose_table.hash_reg << endl;
+    cerr << "final depth: " << max_depth + 1 << " time: " << tim() - strt << " policy: " << policy << " value: " << alpha << " nodes: " << searched_nodes << " nps: " << (long long)searched_nodes * 1000 / max(1LL, tim() - final_strt) << " get: " << transpose_table.hash_get << " reg: " << transpose_table.hash_reg << endl;
     search_result res;
     res.policy = policy;
     res.value = value;

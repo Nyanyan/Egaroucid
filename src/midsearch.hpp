@@ -327,48 +327,47 @@ inline search_result midsearch(board b, long long strt, int max_depth){
     transpose_table.init_now();
     transpose_table.init_prev();
     int order_l, order_u;
-    for (int depth = min(5, max(1, max_depth - 5)); depth < min(hw2 - b.n, max_depth); ++depth){
-        alpha = -sc_w;
-        beta = sc_w;
-        transpose_table.init_now();
-        for (i = 0; i < canput; ++i){
-            transpose_table.get_prev(&nb[i], nb[i].hash() & search_hash_mask, &order_l, &order_u);
-            nb[i].v = -max(order_l, order_u);
-            if (order_l != -inf && order_u != -inf)
-                nb[i].v += 100000;
-            if (order_l == -inf && order_u == -inf)
-                nb[i].v = -mid_evaluate(&nb[i]);
-            else
-                nb[i].v += cache_hit;
-        }
-        if (canput >= 2)
-            sort(nb.begin(), nb.end());
-        g = -mtd(&nb[0], false, depth, -beta, -alpha);
-        if (g == inf)
-            break;
-        transpose_table.reg(&nb[0], (int)(nb[0].hash() & search_hash_mask), g, g);
-        alpha = max(alpha, g);
-        tmp_policy = nb[0].policy;
-        for (i = 1; i < canput; ++i){
-            g = -nega_alpha_ordering(&nb[i], false, depth, -alpha - search_epsilon, -alpha, true);
+    int depth = min(hw2 - b.n - 1, max_depth - 1);
+    //for (int depth = min(5, max(1, max_depth - 5)); depth < min(hw2 - b.n, max_depth); ++depth){
+    alpha = -sc_w;
+    beta = sc_w;
+    transpose_table.init_now();
+    for (i = 0; i < canput; ++i){
+        transpose_table.get_prev(&nb[i], nb[i].hash() & search_hash_mask, &order_l, &order_u);
+        nb[i].v = -max(order_l, order_u);
+        if (order_l != -inf && order_u != -inf)
+            nb[i].v += 100000;
+        if (order_l == -inf && order_u == -inf)
+            nb[i].v = -mid_evaluate(&nb[i]);
+        else
+            nb[i].v += cache_hit;
+    }
+    if (canput >= 2)
+        sort(nb.begin(), nb.end());
+    g = -mtd(&nb[0], false, depth, -beta, -alpha);
+    transpose_table.reg(&nb[0], (int)(nb[0].hash() & search_hash_mask), g, g);
+    alpha = max(alpha, g);
+    tmp_policy = nb[0].policy;
+    for (i = 1; i < canput; ++i){
+        g = -nega_alpha_ordering(&nb[i], false, depth, -alpha - search_epsilon, -alpha, true);
+        if (alpha < g){
+            alpha = g;
+            g = -mtd(&nb[i], false, depth, -beta, -alpha);
+            transpose_table.reg(&nb[i], (int)(nb[i].hash() & search_hash_mask), g, g);
             if (alpha < g){
                 alpha = g;
-                g = -mtd(&nb[i], false, depth, -beta, -alpha);
-                transpose_table.reg(&nb[i], (int)(nb[i].hash() & search_hash_mask), g, g);
-                if (alpha < g){
-                    alpha = g;
-                    tmp_policy = nb[i].policy;
-                }
-            } else{
-                transpose_table.reg(&nb[i], (int)(nb[i].hash() & search_hash_mask), -inf, g);
+                tmp_policy = nb[i].policy;
             }
+        } else{
+            transpose_table.reg(&nb[i], (int)(nb[i].hash() & search_hash_mask), -inf, g);
         }
-        swap(transpose_table.now, transpose_table.prev);
-        policy = tmp_policy;
-        value = alpha;
-        res_depth = depth + 1;
-        cerr << "depth: " << depth + 1 << " time: " << tim() - strt << " policy: " << policy << " value: " << alpha << " nodes: " << searched_nodes << " nps: " << (long long)searched_nodes * 1000 / max(1LL, tim() - strt) << " get: " << transpose_table.hash_get << " reg: " << transpose_table.hash_reg << endl;
     }
+    swap(transpose_table.now, transpose_table.prev);
+    policy = tmp_policy;
+    value = alpha;
+    res_depth = depth + 1;
+    cerr << "depth: " << depth + 1 << " time: " << tim() - strt << " policy: " << policy << " value: " << alpha << " nodes: " << searched_nodes << " nps: " << (long long)searched_nodes * 1000 / max(1LL, tim() - strt) << " get: " << transpose_table.hash_get << " reg: " << transpose_table.hash_reg << endl;
+    //}
     search_result res;
     res.policy = policy;
     res.value = value;
