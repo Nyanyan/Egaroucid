@@ -101,3 +101,17 @@
 #42 final depth: 22 time: 9545 policy: 14 value: 600 nodes: 116976092 nps: 12255221 get: 187008 reg: 1762643
 #43 final depth: 23 time: 23297 policy: 50 value: -1200 nodes: 230431900 nps: 9890630 get: 910020 reg: 6586392
 #44 final depth: 23 time: 10307 policy: 11 value: -1400 nodes: 103983354 nps: 10086657 get: 345469 reg: 2757554
+
+2021/12/15 without mpc new 6 phase evaluation with sa
+#40 final depth: 20 time: 1873 policy: 8 value: 3800 nodes: 21503061 nps: 11480545 get: 17384 reg: 308143
+#41 final depth: 22 time: 18042 policy: 31 value: 0 nodes: 216078589 nps: 11976421 get: 575890 reg: 3208085
+#42 final depth: 22 time: 8383 policy: 14 value: 600 nodes: 101989297 nps: 12164753 get: 194455 reg: 1619225
+#43 final depth: 23 time: 17569 policy: 50 value: -1200 nodes: 172811272 nps: 9836147 get: 472913 reg: 5054379
+#44 final depth: 23 time: 15610 policy: 11 value: -1400 nodes: 161171011 nps: 10324856 get: 637839 reg: 4383162
+
+2021/12/15 with mpc
+#40 final depth: 20 time: 80 policy: 8 value: 3800 nodes: 359510 nps: 4493875 get: 188 reg: 1792
+#41 final depth: 22 time: 11725 policy: 31 value: 0 nodes: 115752778 nps: 9872305 get: 89223 reg: 703722
+#42 final depth: 22 time: 5642 policy: 14 value: 600 nodes: 54962479 nps: 9741665 get: 39004 reg: 387241
+#43 final depth: 23 time: 14350 policy: 22 value: -1000 nodes: 128409787 nps: 8947793 get: 98741 reg: 850277    WRONG
+#44 final depth: 23 time: 7656 policy: 11 value: -1400 nodes: 66525320 nps: 8688170 get: 70621 reg: 481035
