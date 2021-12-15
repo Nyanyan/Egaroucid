@@ -77,6 +77,8 @@ for stone_strt in [0, 10, 20, 30, 40, 50]:
                     break
             print(n_weight)
 
+print('')
+
 data = ''
 for stone_strt in [0, 10, 20, 30, 40, 50]:
     for black_white in range(2):

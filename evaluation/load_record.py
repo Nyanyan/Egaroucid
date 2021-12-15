@@ -198,22 +198,26 @@ def collect_data(num, s):
 
 
 games = []
+
+'''
 for year in reversed(range(1977, 2019 + 1)):
     raw_data = ''
     with open('third_party/records/' + str(year) + '.csv', 'r', encoding='utf-8-sig') as f:
         raw_data = f.read()
     games.extend([i for i in raw_data.splitlines()])
-raw_data = ''
-with open('third_party/records2/records.txt', 'r') as f:
-    raw_data = f.read()
-games.extend([i for i in raw_data.splitlines()])
+'''
+for i in range(4, 14):
+    raw_data = ''
+    with open('third_party/records2/' + digit(i, 7) + '.txt', 'r') as f:
+        raw_data = f.read()
+    games.extend([i for i in raw_data.splitlines()])
 print(len(games))
 dict_data = {}
 idx = 0
 for i in trange(len(games)):
     if len(games[i]) == 0:
         continue
-    collect_data(idx // 1000, games[i])
+    collect_data(30 + idx // 1000, games[i])
     idx += 1
 print(idx)
 

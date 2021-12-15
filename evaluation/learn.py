@@ -227,8 +227,8 @@ for stone_strt in reversed([0, 10, 20, 30, 40, 50]):
 
         model.compile(loss='mse', metrics='mae', optimizer='adam')
 
-        for i in trange(138):
-            collect_data('records2', i)
+        for i in trange(40):
+            collect_data('records3', i)
         len_data = len(all_labels)
         print(len_data)
         
@@ -253,7 +253,7 @@ for stone_strt in reversed([0, 10, 20, 30, 40, 50]):
         early_stop = EarlyStopping(monitor='val_loss', patience=10)
         model_checkpoint = ModelCheckpoint(filepath=os.path.join('learned_data/' + str(black_white) + '_' + str(stone_strt) + '_' + str(stone_end), 'model_{epoch:02d}_{val_loss:.5f}_{val_mae:.5f}.h5'), monitor='val_loss', verbose=1)
         reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=2, min_lr=0.0001)
-        history = model.fit(train_data, train_labels, epochs=n_epochs, batch_size=4096, validation_data=(test_data, test_labels), callbacks=[early_stop])
+        history = model.fit(train_data, train_labels, epochs=n_epochs, batch_size=2048, validation_data=(test_data, test_labels), callbacks=[early_stop])
 
         now = datetime.datetime.today()
         print(str(now.year) + digit(now.month, 2) + digit(now.day, 2) + '_' + digit(now.hour, 2) + digit(now.minute, 2))
