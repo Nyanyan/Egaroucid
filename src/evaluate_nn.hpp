@@ -404,7 +404,6 @@ inline void evaluate_init(){
     init_evaluation_base();
     #if !EVAL_MODE
         init_evaluation_pred();
-        //init_evaluation_calc();
     #endif
     cerr << "evaluation function initialized" << endl;
 }

@@ -36,7 +36,7 @@
 
 
 /** evaluation **/
-#define USE_PRE_CALCULATED_EVALUATION false
+#define USE_PRE_CALCULATED_EVALUATION true
 
 
 
