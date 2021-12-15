@@ -432,7 +432,9 @@ int main(){
     input_param();
     input_test_data();
 
-    int minute = 10;
+    int hour = 1;
+    int minute = 0;
+    minute += hour * 60;
 
     sa(minute * 60 * 1000);
     output_param();

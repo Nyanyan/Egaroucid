@@ -41,7 +41,7 @@ mpcd = [0, 1, 0, 1, 2, 3, 2, 3, 4, 3, 4, 3, 4, 5, 4, 5, 6, 5, 6, 7, 6, 7, 6, 7, 
 def collect_data(num):
     global vhs, vds, vh_vd
     try:
-        with open('data/records2/' + digit(num, 7) + '.txt', 'r') as f:
+        with open('data/records3/' + digit(num, 7) + '.txt', 'r') as f:
             data = list(f.read().splitlines())
     except:
         print('cannot open')
@@ -70,7 +70,7 @@ def collect_data(num):
             vhs[depth - min_depth].append(vh)
             vds[depth - min_depth].append(vd)
 
-for i in range(130, 138):
+for i in range(5):
     collect_data(i)
 evaluate.kill()
 

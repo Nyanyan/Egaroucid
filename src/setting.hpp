@@ -43,7 +43,7 @@
 /** other **/
 
 // MPC calculation mode
-#define MPC_MODE false
+#define MPC_MODE true
 
 // creatring evaluation data mode
 #define EVAL_MODE false
