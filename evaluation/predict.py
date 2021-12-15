@@ -145,17 +145,14 @@ def collect_data(directory, num):
     for datum in data:
         #board, player, v1, v2, v3, score, result = datum.split()
         board, player, v1, v2, v3, result = datum.split()
+        player = int(player)
         n_stones = calc_n_stones(board)
-        if stone_strt + 4 <= n_stones < stone_end + 4 and player == str(black_white):
+        if stone_strt + 4 <= n_stones < stone_end + 4 and player == black_white:
             v1 = float(v1)
             v2 = float(v2)
             v3 = float(v3)
-            #score = float(score)
             result = float(result)
-            #score = tanh(score / 20)
-            #score = score / 64
             result = result / 64
-            player = int(player)
             idx = 0
             for i in range(len(pattern_idx)):
                 lines = make_lines(board, pattern_idx[i], 0)
@@ -173,7 +170,7 @@ def collect_data(directory, num):
                 board_proc += '\n'
             raw_data.append(board_proc)
 
-collect_data('records3', 10)
+collect_data('records3', 30)
 
 all_data = [np.array(arr) for arr in all_data]
 all_labels = np.array(all_labels)

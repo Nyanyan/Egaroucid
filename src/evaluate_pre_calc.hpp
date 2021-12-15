@@ -55,7 +55,7 @@ int surround_arr[2][n_line];
 int stability_edge_arr[2][n_line];
 int stability_corner_arr[2][n_line];
 int pattern_arr[n_phases][2][n_patterns][max_evaluate_idx];
-int add_arr[n_phases][2][max_canput_2][max_surround_2][max_surround_2];
+int add_arr[n_phases][2][max_canput][max_surround_2][max_surround_2];
 
 inline void init_evaluation_base() {
     int idx, place, b, w;
@@ -162,7 +162,7 @@ inline void init_evaluation_calc(){
                     pattern_arr[phase_idx][player_idx][pattern_idx][pattern_elem] = stoi(line);
                 }
             }
-            for (canput = 0; canput < max_canput_2; ++canput){
+            for (canput = 0; canput < max_canput; ++canput){
                 for (sur0 = 0; sur0 < max_surround_2; ++sur0){
                     for (sur1 = 0; sur1 < max_surround_2; ++sur1){
                         getline(ifs, line);
@@ -270,7 +270,7 @@ inline eval_type calc_pattern(int phase_idx, const board *b){
 
 inline int mid_evaluate(const board *b){
     int phase_idx = calc_phase_idx(b), canput, sur0, sur1;
-    canput = min(max_canput_2 - 1, calc_canput(b) / 2);
+    canput = min(max_canput - 1, calc_canput(b));
     sur0 = min(max_surround_2 - 1, calc_surround(b, black) / 2);
     sur1 = min(max_surround_2 - 1, calc_surround(b, white) / 2);
     return calc_pattern(phase_idx, b) + add_arr[phase_idx][b->p][canput][sur0][sur1];

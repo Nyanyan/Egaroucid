@@ -4,8 +4,8 @@
 /* cutting */
 
 // multi prob cut
-#define USE_MID_MPC true
-#define USE_END_MPC true
+#define USE_MID_MPC false
+#define USE_END_MPC false
 
 // stability cut
 #define USE_MID_SC  false
@@ -36,7 +36,7 @@
 
 
 /** evaluation **/
-#define USE_PRE_CALCULATED_EVALUATION false
+#define USE_PRE_CALCULATED_EVALUATION true
 
 
 

@@ -322,18 +322,16 @@ void output_param(){
                 }
             }
             
-            for (canput = 0; canput < max_canput; canput += 2){
+            for (canput = 0; canput < max_canput; ++canput){
                 for (sur0 = 0; sur0 < max_surround; sur0 += 2){
                     for (sur1 = 0; sur1 < max_surround; sur1 += 2){
                         tmp = 0;
-                        for (i = 0; i < 2; ++i){
-                            for (j = 0; j < 2; ++j){
-                                for (k = 0; k < 2; ++k)
-                                    tmp += add_arr[phase_idx][player_idx][canput + i][sur0 + j][sur1 + k];
-                            }
+                        for (j = 0; j < 2; ++j){
+                            for (k = 0; k < 2; ++k)
+                                tmp += add_arr[phase_idx][player_idx][canput][sur0 + j][sur1 + k];
                         }
                         //cerr << add_arr[phase_idx][player_idx][canput][sur0][sur1] << " " << tmp / 8 << endl;
-                        cout << tmp / 8 << endl;
+                        cout << tmp / 4 << endl;
                     }
                 }
             }

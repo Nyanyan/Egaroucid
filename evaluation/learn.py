@@ -23,7 +23,7 @@ from copy import deepcopy
 inf = 10000000.0
 
 test_ratio = 0.1
-n_epochs = 300
+n_epochs = 20
 
 
 line2_idx = [[8, 9, 10, 11, 12, 13, 14, 15], [1, 9, 17, 25, 33, 41, 49, 57], [6, 14, 22, 30, 38, 46, 54, 62], [48, 49, 50, 51, 52, 53, 54, 55]] # line2
@@ -107,8 +107,8 @@ ln_in = sum([len(elem) for elem in pattern_idx]) + 1
 
 # [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56]
 
-for stone_strt in reversed([0, 10, 20, 30, 40, 50]):
-    for black_white in range(2):
+for stone_strt in reversed([30]):
+    for black_white in range(1, 2):
         stone_end = stone_strt + 10
 
         min_n_stones = 4 + stone_strt
@@ -159,19 +159,17 @@ for stone_strt in reversed([0, 10, 20, 30, 40, 50]):
             #for _ in range(10000):
             #    datum = data[randrange(len(data))]
             for datum in data:
-                #board, player, v1, v2, v3, score, result = datum.split()
                 board, player, v1, v2, v3, result = datum.split()
+                player = int(player)
                 n_stones = calc_n_stones(board)
-                if min_n_stones <= n_stones < max_n_stones and player == str(black_white):
+                if min_n_stones <= n_stones < max_n_stones and player == black_white:
                     v1 = float(v1)
                     v2 = float(v2)
                     v3 = float(v3)
-                    #score = float(score)
                     result = float(result)
-                    #score = tanh(score / 20)
-                    #score = score / 64
                     result = result / 64
-                    player = int(player)
+                    if player == 1:
+                        result = -result
                     idx = 0
                     for i in range(len(pattern_idx)):
                         lines = make_lines(board, pattern_idx[i], 0)
@@ -179,8 +177,6 @@ for stone_strt in reversed([0, 10, 20, 30, 40, 50]):
                             all_data[idx].append(line)
                             idx += 1
                     all_data[idx].append([(v1 - 15) / 15, (v2 - 15) / 15, (v3 - 15) / 15])
-                    if player == 1:
-                        result = -result
                     all_labels.append(result)
 
         
@@ -206,7 +202,6 @@ for stone_strt in reversed([0, 10, 20, 30, 40, 50]):
                 add_elems.append(tmp)
                 idx += 1
             ys.append(Add(name=names[i] + '_pre_prediction')(add_elems))
-        y_pattern = Concatenate(axis=-1)(ys)
         x[idx] = Input(shape=3, name='additional_input')
         y_add = Dense(8, name='add_dense0')(x[idx])
         y_add = LeakyReLU(alpha=0.01)(y_add)
@@ -217,17 +212,22 @@ for stone_strt in reversed([0, 10, 20, 30, 40, 50]):
         y_add = Dense(1, name='add_dense3')(y_add)
         ys.append(y_add)
         y_all = Add()(ys)
-
+        '''
+        y_all = Concatenate(axis=-1)(ys)
+        y_all = Dense(16, name='final_dense0')(y_all)
+        y_all = LeakyReLU(alpha=0.01)(y_all)
+        y_all = Dense(1, name='final_dense1')(y_all)
+        '''
         model = Model(inputs=x, outputs=y_all)
 
-        #model = load_model('learned_data/bef_' + str(stone_strt) + '_' + str(stone_end) + '.h5')
+        model = load_model('learned_data/bef_' + str(black_white) + '_' + str(stone_strt) + '_' + str(stone_end) + '.h5')
 
         #model.summary()
-        plot_model(model, to_file='learned_data/model.png', show_shapes=True)
+        #plot_model(model, to_file='learned_data/model.png', show_shapes=True)
 
         model.compile(loss='mse', metrics='mae', optimizer='adam')
 
-        for i in trange(40):
+        for i in trange(1, 40):
             collect_data('records3', i)
         len_data = len(all_labels)
         print(len_data)
@@ -249,7 +249,7 @@ for stone_strt in reversed([0, 10, 20, 30, 40, 50]):
         test_labels = all_labels[n_train_data:len_data]
 
 
-        #print(model.evaluate(test_data, test_labels))
+        #print(model.evaluate(all_data, all_labels))
         early_stop = EarlyStopping(monitor='val_loss', patience=10)
         model_checkpoint = ModelCheckpoint(filepath=os.path.join('learned_data/' + str(black_white) + '_' + str(stone_strt) + '_' + str(stone_end), 'model_{epoch:02d}_{val_loss:.5f}_{val_mae:.5f}.h5'), monitor='val_loss', verbose=1)
         reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=2, min_lr=0.0001)
