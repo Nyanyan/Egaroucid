@@ -17,6 +17,8 @@ using namespace std;
 #define n_all_input 30
 #define max_canput 40
 #define max_surround 80
+#define max_canput_2 20
+#define max_surround_2 40
 #define max_evaluate_idx 59049
 
 #define p31 3
@@ -34,7 +36,7 @@ using namespace std;
 #define step 100
 
 const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10};
-const int eval_sizes[n_patterns + 1] = {p38, p38, p38, p35, p36, p37, p38, p310, p310, p310, p310, max_canput / 2 * max_surround / 2 * max_surround / 2};
+const int eval_sizes[n_patterns + 1] = {p38, p38, p38, p35, p36, p37, p38, p310, p310, p310, p310, max_canput_2 * max_surround_2 * max_surround_2};
 int eval_arr[n_phases][2][n_patterns + 1][max_evaluate_idx];
 vector<vector<vector<vector<int>>>> test_data;
 vector<vector<vector<double>>> test_labels;
@@ -106,33 +108,28 @@ double prob_fast(double p_score, double n_score, double strt, double now, double
     return prob_arr[prob_idx];
 }
 
-inline double loss(double x, int siz){
-    double sq_size = sqrt((double)siz);
-    double tmp = x / sq_size;
-    return tmp * tmp;
-}
-
 void input_param(){
-    ifstream ifs("nn_proc_param.txt");
+    ifstream ifs("bef_param.txt");
     if (ifs.fail()){
         cerr << "evaluation file not exist" << endl;
         exit(1);
     }
     string line;
+    int t =0;
     int phase_idx, player_idx, pattern_idx, pattern_elem, dense_idx, canput, sur0, sur1, i, j, k;
     for (phase_idx = 0; phase_idx < n_phases; ++phase_idx){
         for (player_idx = 0; player_idx < 2; ++player_idx){
             cerr << "=";
             for (pattern_idx = 0; pattern_idx < n_patterns + 1; ++pattern_idx){
                 for (pattern_elem = 0; pattern_elem < eval_sizes[pattern_idx]; ++pattern_elem){
+                    ++t;
                     getline(ifs, line);
                     eval_arr[phase_idx][player_idx][pattern_idx][pattern_elem] = stoi(line);
-                    //eval_arr[phase_idx][player_idx][pattern_idx][pattern_elem] = 0;
                 }
             }
         }
     }
-    cerr << endl;
+    cerr << t << endl;
 }
 
 void input_test_data(){
@@ -140,16 +137,16 @@ void input_test_data(){
     for (i = 0; i < n_phases; ++i){
         vector<vector<vector<int>>> tmp_data;
         test_data.push_back(tmp_data);
-        vector<vector<int>> tmp_data3;
+        vector<vector<double>> tmp_data3;
         test_labels.push_back(tmp_data3);
         for (j = 0; j < 2; ++j){
             vector<vector<int>> tmp_data2;
             test_data[i].push_back(tmp_data2);
-            vector<int> tmp_data4;
+            vector<double> tmp_data4;
             test_labels[i].push_back(tmp_data4);
         }
     }
-    ifstream ifs("data.txt");
+    ifstream ifs("big_data.txt");
     if (ifs.fail()){
         cerr << "evaluation file not exist" << endl;
         exit(1);
@@ -157,19 +154,28 @@ void input_test_data(){
     string line;
     int phase, player, score;
     int idxes[45];
-    while (getline(ifs, line)){
+    int t = 0;
+    for (i = 0; i < 220000; ++i)
+        getline(ifs, line);
+    while (getline(ifs, line) && t < 100000){
+        ++t;
         istringstream iss(line);
         iss >> phase;
         iss >> player;
         for (i = 0; i < 45; ++i)
             iss >> idxes[i];
         iss >> score;
+        if (player == 1)
+            score = -score;
         vector<int> tmp;
-        for (i = 0; i < 45; ++i)
+        //cerr << phase << " " << player << " " << score << endl;
+        for (i = 0; i < 45; ++i){
             tmp.push_back(idxes[i]);
+        }
         test_data[phase][player].push_back(tmp);
-        test_labels[phase][player].push_back(score / 64.0);
+        test_labels[phase][player].push_back(score * step);
     }
+    cerr << t << endl;
     cerr << "loaded data" << endl;
 }
 
@@ -178,7 +184,7 @@ void output_param(){
     for (phase_idx = 0; phase_idx < n_phases; ++phase_idx){
         for (player_idx = 0; player_idx < 2; ++player_idx){
             cerr << "=";
-            for (pattern_idx = 0; pattern_idx < n_patterns + n_add_input; ++pattern_idx){
+            for (pattern_idx = 0; pattern_idx < n_patterns + 1; ++pattern_idx){
                 for (pattern_elem = 0; pattern_elem < eval_sizes[pattern_idx]; ++pattern_elem){
                     cout << eval_arr[phase_idx][player_idx][pattern_idx][pattern_elem] << endl;
                 }
@@ -188,11 +194,18 @@ void output_param(){
     cerr << endl;
 }
 
-inline int calc_add_idx(int arr[]){
-    return arr[42] * max_surround / 2 * max_surround / 2 + arr[43] * max_surround / 2 + arr[44];
+inline int calc_add_idx(vector<int> arr){
+    //return arr[42] * max_surround * max_surround + arr[43] * max_surround + arr[44];
+    return arr[42] / 2 * max_surround_2 * max_surround_2 + arr[43] / 2 * max_surround_2 + arr[44] / 2;
 }
 
-inline double first_scoring(){
+inline double loss(int x, int siz){
+    double sq_size = sqrt((double)siz);
+    double tmp = (double)x / sq_size;
+    return tmp * tmp;
+}
+
+inline int first_scoring(){
     int phase, player, i, j, score;
     double avg_score, res = 0.0;
     for (phase = 0; phase < n_phases; ++phase){
@@ -243,16 +256,19 @@ inline double first_scoring(){
                     eval_arr[phase][player][10][test_data[phase][player][i][40]] + 
                     eval_arr[phase][player][10][test_data[phase][player][i][41]] + 
                     eval_arr[phase][player][11][calc_add_idx(test_data[phase][player][i])];
-                avg_score += loss(test_labels[phase][player][i] - (double)score / sc_w, test_data[phase][player].size());
+                //cerr << eval_arr[phase][player][11][calc_add_idx(test_data[phase][player][i])] << endl;
+                //cerr << score << endl;
+                //exit(0);
+                avg_score += loss(test_labels[phase][player][i] - score, test_data[phase][player].size());
             }
-            scores[phases][player] = avg_score;
+            scores[phase][player] = avg_score;
             res += avg_score / n_phases / 2;
         }
     }
-    return res;
+    return round(res);
 }
 
-inline double scoring(int phase, int player){
+inline int scoring(int phase, int player){
     int i, j, score;
     double avg_score = 0.0, res = 0.0;
     for (i = 0; i < test_data[phase][player].size(); ++i){
@@ -300,7 +316,7 @@ inline double scoring(int phase, int player){
             eval_arr[phase][player][10][test_data[phase][player][i][40]] + 
             eval_arr[phase][player][10][test_data[phase][player][i][41]] + 
             eval_arr[phase][player][11][calc_add_idx(test_data[phase][player][i])];
-        avg_score += loss(test_labels[phase][player][i] - (double)score / sc_w, test_data[phase][player].size());
+        avg_score += loss(test_labels[phase][player][i] - score, test_data[phase][player].size());
     }
     for (i = 0; i < n_phases; ++i){
         for (j = 0; j < 2; ++j)
@@ -311,10 +327,10 @@ inline double scoring(int phase, int player){
         for (j = 0; j < 2; ++j)
             res += n_scores[i][j] / n_phases / 2;
     }
-    return res;
+    return round(res);
 }
 
-inline double scoring_mae(){
+inline void scoring_mae(){
     int phase, player, i, j, score;
     double avg_score, res = 0.0;
     for (phase = 0; phase < n_phases; ++phase){
@@ -365,23 +381,23 @@ inline double scoring_mae(){
                     eval_arr[phase][player][10][test_data[phase][player][i][40]] + 
                     eval_arr[phase][player][10][test_data[phase][player][i][41]] + 
                     eval_arr[phase][player][11][calc_add_idx(test_data[phase][player][i])];
-                avg_score += (double)abs(test_labels[phase][player][i] - (double)score / sc_w) / test_data[phase][player].size();
+                avg_score += fabs(test_labels[phase][player][i] - (double)score) / test_data[phase][player].size();
             }
             cerr << avg_score << " ";
             res += avg_score / n_phases / 2;
         }
     }
-    cerr << res << endl;
-    return res;
+    cerr << " " << res << endl;
 }
 
 void sa(unsigned long long tl){
     unsigned long long strt = tim(), now = tim();
-    double score = first_scoring();
-    cerr << score << endl;
+    int score = first_scoring(), n_score;
+    int phase, player, pattern, idx, f_val;
+    int t = 0, u = 0;
+    cerr << t << " " << u << " ";
+    cerr << score << " ";
     scoring_mae();
-    int phase, player, pattern, idx, f_val, n_score;
-    int t;
     for (;;){
         ++t;
         phase = myrandrange(0, n_phases);
@@ -389,33 +405,36 @@ void sa(unsigned long long tl){
         pattern = myrandrange(0, n_patterns + 1);
         idx = myrandrange(0, eval_sizes[n_patterns]);
         f_val = eval_arr[phase][player][pattern][idx];
-        f_val += myrandrange(-100, 101);
+        eval_arr[phase][player][pattern][idx] += myrandrange(-100, 101);
         n_score = scoring(phase, player);
         if (n_score < score){
-            //score = n_score;
+            score = n_score;
             scores[phase][player] = n_scores[phase][player];
-            cerr << score << endl;
+            ++u;
         } else{
             eval_arr[phase][player][pattern][idx] = f_val;
         }
-        if ((t & 0b11111111) == 0){
+        if ((t & 0b111111111) == 0){
             now = tim();
             if (now - strt > tl)
                 break;
-            cerr << score << endl;
+            cerr << (int)((double)(now - strt) / tl * 1000) << " " << t << " " << u << " ";
+            cerr << score << " ";
             scoring_mae();
         }
     }
-    cerr << t << endl;
-    cerr << score << endl;
+    cerr << t << " " << u << " ";
+    cerr << score << " ";
     scoring_mae();
 }
 
 int main(){
+    input_param();
     input_test_data();
 
-    input_param();
-    sa(10000);
+    int minute = 10;
+
+    sa(minute * 60 * 1000);
     output_param();
 
     return 0;

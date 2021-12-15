@@ -173,7 +173,7 @@ def collect_data(directory, num):
                 board_proc += '\n'
             raw_data.append(board_proc)
 
-collect_data('records2', 136)
+collect_data('records3', 10)
 
 all_data = [np.array(arr) for arr in all_data]
 all_labels = np.array(all_labels)

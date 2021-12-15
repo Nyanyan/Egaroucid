@@ -1,9 +1,12 @@
 #include <iostream>
 #include <fstream>
+#include <cmath>
 
 using namespace std;
 
 typedef float eval_type;
+
+#define hw 8
 
 #define n_phases 6
 #define n_line 6561
@@ -45,7 +48,9 @@ typedef float eval_type;
 #define p310m 59048
 
 int pattern_arr[n_phases][2][n_patterns][max_evaluate_idx];
-int add_arr[n_phases][2][max_canput + 1][max_surround + 1][max_surround + 1];
+int add_arr[n_phases][2][max_canput][max_surround][max_surround];
+
+int pow3[12];
 
 inline eval_type max(eval_type a, eval_type b){
     return a < b ? b : a;
@@ -188,103 +193,16 @@ inline int predict_add(int canput, int sur0, int sur1, eval_type dense0[n_add_de
 
 inline void pre_evaluation_add(int phase_idx, int player_idx, eval_type dense0[n_add_dense0][n_add_input], eval_type bias0[n_add_dense0], eval_type dense1[n_add_dense1][n_add_dense0], eval_type bias1[n_add_dense1], eval_type dense2[n_add_dense2][n_add_dense1], eval_type bias2[n_add_dense2], eval_type dense3[n_add_dense2], eval_type bias3){
     int canput, sur0, sur1;
-    for (canput = 0; canput <= max_canput; ++canput){
-        for (sur0 = 0; sur0 <= max_surround; ++sur0){
-            for (sur1 = 0; sur1 <= max_surround; ++sur1)
+    for (canput = 0; canput < max_canput; ++canput){
+        for (sur0 = 0; sur0 < max_surround; ++sur0){
+            for (sur1 = 0; sur1 < max_surround; ++sur1)
                 add_arr[phase_idx][player_idx][canput][sur0][sur1] = predict_add(canput, sur0, sur1, dense0, bias0, dense1, bias1, dense2, bias2, dense3, bias3);
         }
     }
 }
 
-inline void init_evaluation_base() {
-    int idx, place, b, w;
-    bool full_black, full_white;
-    for (idx = 0; idx < n_line; ++idx) {
-        b = create_one_color(idx, 0);
-        w = create_one_color(idx, 1);
-        mobility_arr[black][idx] = 0;
-        mobility_arr[white][idx] = 0;
-        surround_arr[black][idx] = 0;
-        surround_arr[white][idx] = 0;
-        count_black_arr[idx] = 0;
-        count_both_arr[idx] = 0;
-        stability_edge_arr[black][idx] = 0;
-        stability_edge_arr[white][idx] = 0;
-        stability_corner_arr[black][idx] = 0;
-        stability_corner_arr[white][idx] = 0;
-        for (place = 0; place < hw; ++place) {
-            if (1 & (b >> place)){
-                ++count_black_arr[idx];
-                ++count_both_arr[idx];
-            } else if (1 & (w >> place)){
-                --count_black_arr[idx];
-                ++count_both_arr[idx];
-            }
-            if (place > 0) {
-                if ((1 & (b >> (place - 1))) == 0 && (1 & (w >> (place - 1))) == 0) {
-                    if (1 & (b >> place))
-                        ++surround_arr[black][idx];
-                    else if (1 & (w >> place))
-                        ++surround_arr[white][idx];
-                }
-            }
-            if (place < hw - 1) {
-                if ((1 & (b >> (place + 1))) == 0 && (1 & (w >> (place + 1))) == 0) {
-                    if (1 & (b >> place))
-                        ++surround_arr[black][idx];
-                    else if (1 & (w >> place))
-                        ++surround_arr[white][idx];
-                }
-            }
-        }
-        for (place = 0; place < hw; ++place) {
-            if (legal_arr[black][idx][place])
-                ++mobility_arr[black][idx];
-            if (legal_arr[white][idx][place])
-                ++mobility_arr[white][idx];
-        }
-        if (count_both_arr[idx] == hw){
-            stability_edge_arr[black][idx] = (count_black_arr[idx] + hw) / 2;
-            stability_edge_arr[white][idx] += hw - stability_edge_arr[black][idx];
-        } else{
-            full_black = true;
-            full_white = true;
-            for (place = 0; place < hw; ++place){
-                full_black &= 1 & (b >> place);
-                full_white &= 1 & (w >> place);
-                stability_edge_arr[black][idx] += full_black;
-                stability_edge_arr[white][idx] += full_white;
-            }
-            full_black = true;
-            full_white = true;
-            for (place = hw_m1; place >= 0; --place){
-                full_black &= 1 & (b >> place);
-                full_white &= 1 & (w >> place);
-                stability_edge_arr[black][idx] += full_black;
-                stability_edge_arr[white][idx] += full_white;
-            }
-            if (1 & b){
-                --stability_edge_arr[black][idx];
-                ++stability_corner_arr[black][idx];
-            }
-            if (1 & (b >> hw_m1)){
-                --stability_edge_arr[black][idx];
-                ++stability_corner_arr[black][idx];
-            }
-            if (1 & w){
-                --stability_edge_arr[white][idx];
-                ++stability_corner_arr[white][idx];
-            }
-            if (1 & (w >> hw_m1)){
-                --stability_edge_arr[white][idx];
-                ++stability_corner_arr[white][idx];
-            }
-        }
-    }
-}
-
 inline void init_evaluation_pred(){
-    ifstream ifs("resources/param.txt");
+    ifstream ifs("raw_param.txt");
     if (ifs.fail()){
         cerr << "evaluation file not exist" << endl;
         exit(1);
@@ -400,23 +318,35 @@ void output_param(){
             cerr << "=";
             for (pattern_idx = 0; pattern_idx < n_patterns; ++pattern_idx){
                 for (pattern_elem = 0; pattern_elem < pow3[pattern_sizes[pattern_idx]]; ++pattern_elem){
-                    cout << pattern_arr[phase_idx][player_idx][pattern_idx][pattern_elem][0] << endl;
+                    cout << pattern_arr[phase_idx][player_idx][pattern_idx][pattern_elem] << endl;
                 }
             }
-            for (canput = 0; canput <= max_canput / 2; canput += 2){
-                for (sur0 = 0; sur0 <= max_surround / 2; sur0 += 2){
-                    for (sur1 = 0; sur1 <= max_surround / 2; sur1 += 2){
+            
+            for (canput = 0; canput < max_canput; canput += 2){
+                for (sur0 = 0; sur0 < max_surround; sur0 += 2){
+                    for (sur1 = 0; sur1 < max_surround; sur1 += 2){
                         tmp = 0;
                         for (i = 0; i < 2; ++i){
-                            for (j = 0; j < 2; ++i){
+                            for (j = 0; j < 2; ++j){
                                 for (k = 0; k < 2; ++k)
                                     tmp += add_arr[phase_idx][player_idx][canput + i][sur0 + j][sur1 + k];
                             }
                         }
+                        //cerr << add_arr[phase_idx][player_idx][canput][sur0][sur1] << " " << tmp / 8 << endl;
                         cout << tmp / 8 << endl;
                     }
                 }
             }
+            
+            /*
+            for (canput = 0; canput < max_canput; ++canput){
+                for (sur0 = 0; sur0 < max_surround; ++sur0){
+                    for (sur1 = 0; sur1 < max_surround; ++sur1){
+                        cout << add_arr[phase_idx][player_idx][canput][sur0][sur1] << endl;
+                    }
+                }
+            }
+            */
         }
     }
     cerr << endl;

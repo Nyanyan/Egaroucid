@@ -292,7 +292,7 @@ inline void init_evaluation_base() {
 }
 
 inline void init_evaluation_pred(){
-    ifstream ifs("resources/param.txt");
+    ifstream ifs("resources/raw_param.txt");
     if (ifs.fail()){
         cerr << "evaluation file not exist" << endl;
         exit(1);
@@ -499,6 +499,7 @@ inline int mid_evaluate(const board *b){
     canput = min(max_canput, calc_canput(b));
     sur0 = min(max_surround, calc_surround(b, black));
     sur1 = min(max_surround, calc_surround(b, white));
+    cerr << add_arr[phase_idx][b->p][canput][sur0][sur1] << endl;
     return calc_pattern(phase_idx, b) + add_arr[phase_idx][b->p][canput][sur0][sur1];
 }
 

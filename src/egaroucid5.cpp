@@ -108,6 +108,7 @@ int main(){
             input_board(&b, ai_player);
             cerr << b.p << endl;
             cerr << b.n << " " << mid_evaluate(&b) << endl;
+            continue;
             if (b.n == 4){
                 policy = first_moves[myrandrange(0, 4)];
                 print_result(policy, 0);
