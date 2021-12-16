@@ -41,8 +41,10 @@ const int eval_sizes[n_patterns + 1] = {p38, p38, p38, p35, p36, p37, p38, p310,
 int eval_arr[n_phases][2][n_patterns + 1][max_evaluate_idx];
 vector<vector<vector<vector<int>>>> test_data;
 vector<vector<vector<double>>> test_labels;
-double scores[n_phases][2], n_scores[n_phases][2];
-// phase, player
+double scores[n_phases][2];
+vector<int> test_memo[n_phases][2][n_patterns + 1][max_evaluate_idx];
+vector<double> test_scores[n_phases][2];
+//vector<double> test_memo_scores[n_phases][2][n_patterns + 1][max_evaluate_idx];
 unordered_set<int> used_idxes[n_phases][2][n_patterns + 1];
 vector<int> used_idxes_vector[n_phases][2][n_patterns + 1];
 
@@ -166,7 +168,25 @@ void input_test_data(){
     int t = 0;
     //for (i = 0; i < 220000; ++i)
     //    getline(ifs, line);
-    while (getline(ifs, line) && t < 500000000){
+    int nums[n_phases][2];
+    for (i = 0; i < n_phases; ++i){
+        for (j = 0; j < 2; ++j)
+            nums[i][j] = 0;
+    }
+    const int pattern_nums[42] = {
+        0, 0, 0, 0,
+        1, 1, 1, 1,
+        2, 2, 2, 2,
+        3, 3, 3, 3,
+        4, 4, 4, 4,
+        5, 5, 5, 5,
+        6, 6,
+        7, 7, 7, 7,
+        8, 8, 8, 8,
+        9, 9, 9, 9,
+        10, 10, 10, 10
+    };
+    while (getline(ifs, line) && t < 200000000){
         ++t;
         istringstream iss(line);
         iss >> phase;
@@ -178,54 +198,18 @@ void input_test_data(){
             score = -score;
         vector<int> tmp;
         //cerr << phase << " " << player << " " << score << endl;
-        for (i = 0; i < 45; ++i){
+        for (i = 0; i < 45; ++i)
             tmp.push_back(idxes[i]);
-        }
-        used_idxes[phase][player][0].emplace(tmp[0]);
-        used_idxes[phase][player][0].emplace(tmp[1]);
-        used_idxes[phase][player][0].emplace(tmp[2]);
-        used_idxes[phase][player][0].emplace(tmp[3]);
-        used_idxes[phase][player][1].emplace(tmp[4]);
-        used_idxes[phase][player][1].emplace(tmp[5]);
-        used_idxes[phase][player][1].emplace(tmp[6]);
-        used_idxes[phase][player][1].emplace(tmp[7]);
-        used_idxes[phase][player][2].emplace(tmp[8]);
-        used_idxes[phase][player][2].emplace(tmp[9]);
-        used_idxes[phase][player][2].emplace(tmp[10]);
-        used_idxes[phase][player][2].emplace(tmp[11]);
-        used_idxes[phase][player][3].emplace(tmp[12]);
-        used_idxes[phase][player][3].emplace(tmp[13]);
-        used_idxes[phase][player][3].emplace(tmp[14]);
-        used_idxes[phase][player][3].emplace(tmp[15]);
-        used_idxes[phase][player][4].emplace(tmp[16]);
-        used_idxes[phase][player][4].emplace(tmp[17]);
-        used_idxes[phase][player][4].emplace(tmp[18]);
-        used_idxes[phase][player][4].emplace(tmp[19]);
-        used_idxes[phase][player][5].emplace(tmp[20]);
-        used_idxes[phase][player][5].emplace(tmp[21]);
-        used_idxes[phase][player][5].emplace(tmp[22]);
-        used_idxes[phase][player][5].emplace(tmp[23]);
-        used_idxes[phase][player][6].emplace(tmp[24]);
-        used_idxes[phase][player][6].emplace(tmp[25]);
-        used_idxes[phase][player][7].emplace(tmp[26]);
-        used_idxes[phase][player][7].emplace(tmp[27]);
-        used_idxes[phase][player][7].emplace(tmp[28]);
-        used_idxes[phase][player][7].emplace(tmp[29]);
-        used_idxes[phase][player][8].emplace(tmp[30]);
-        used_idxes[phase][player][8].emplace(tmp[31]);
-        used_idxes[phase][player][8].emplace(tmp[32]);
-        used_idxes[phase][player][8].emplace(tmp[33]);
-        used_idxes[phase][player][9].emplace(tmp[34]);
-        used_idxes[phase][player][9].emplace(tmp[35]);
-        used_idxes[phase][player][9].emplace(tmp[36]);
-        used_idxes[phase][player][9].emplace(tmp[37]);
-        used_idxes[phase][player][10].emplace(tmp[38]);
-        used_idxes[phase][player][10].emplace(tmp[39]);
-        used_idxes[phase][player][10].emplace(tmp[40]);
-        used_idxes[phase][player][10].emplace(tmp[41]);
+        for (i = 0; i < 42; ++i)
+            used_idxes[phase][player][pattern_nums[i]].emplace(tmp[i]);
         used_idxes[phase][player][11].emplace(calc_add_idx(tmp));
         test_data[phase][player].push_back(tmp);
         test_labels[phase][player].push_back(score * step);
+        for (i = 0; i < 42; ++i)
+            test_memo[phase][player][pattern_nums[i]][tmp[i]].push_back(nums[phase][player]);
+        test_memo[phase][player][11][calc_add_idx(tmp)].push_back(nums[phase][player]);
+        test_scores[phase][player].push_back(0);
+        ++nums[phase][player];
     }
     cerr << t << endl;
     cerr << "loaded data" << endl;
@@ -266,61 +250,67 @@ inline double loss(int x, int siz){
     return tmp * tmp;
 }
 
+inline int calc_score(int phase, int player, int i){
+    return
+        eval_arr[phase][player][0][test_data[phase][player][i][0]] + 
+        eval_arr[phase][player][0][test_data[phase][player][i][1]] + 
+        eval_arr[phase][player][0][test_data[phase][player][i][2]] + 
+        eval_arr[phase][player][0][test_data[phase][player][i][3]] + 
+        eval_arr[phase][player][1][test_data[phase][player][i][4]] + 
+        eval_arr[phase][player][1][test_data[phase][player][i][5]] + 
+        eval_arr[phase][player][1][test_data[phase][player][i][6]] + 
+        eval_arr[phase][player][1][test_data[phase][player][i][7]] + 
+        eval_arr[phase][player][2][test_data[phase][player][i][8]] + 
+        eval_arr[phase][player][2][test_data[phase][player][i][9]] + 
+        eval_arr[phase][player][2][test_data[phase][player][i][10]] + 
+        eval_arr[phase][player][2][test_data[phase][player][i][11]] + 
+        eval_arr[phase][player][3][test_data[phase][player][i][12]] + 
+        eval_arr[phase][player][3][test_data[phase][player][i][13]] + 
+        eval_arr[phase][player][3][test_data[phase][player][i][14]] + 
+        eval_arr[phase][player][3][test_data[phase][player][i][15]] + 
+        eval_arr[phase][player][4][test_data[phase][player][i][16]] + 
+        eval_arr[phase][player][4][test_data[phase][player][i][17]] + 
+        eval_arr[phase][player][4][test_data[phase][player][i][18]] + 
+        eval_arr[phase][player][4][test_data[phase][player][i][19]] + 
+        eval_arr[phase][player][5][test_data[phase][player][i][20]] + 
+        eval_arr[phase][player][5][test_data[phase][player][i][21]] + 
+        eval_arr[phase][player][5][test_data[phase][player][i][22]] + 
+        eval_arr[phase][player][5][test_data[phase][player][i][23]] + 
+        eval_arr[phase][player][6][test_data[phase][player][i][24]] + 
+        eval_arr[phase][player][6][test_data[phase][player][i][25]] + 
+        eval_arr[phase][player][7][test_data[phase][player][i][26]] + 
+        eval_arr[phase][player][7][test_data[phase][player][i][27]] + 
+        eval_arr[phase][player][7][test_data[phase][player][i][28]] + 
+        eval_arr[phase][player][7][test_data[phase][player][i][29]] + 
+        eval_arr[phase][player][8][test_data[phase][player][i][30]] + 
+        eval_arr[phase][player][8][test_data[phase][player][i][31]] + 
+        eval_arr[phase][player][8][test_data[phase][player][i][32]] + 
+        eval_arr[phase][player][8][test_data[phase][player][i][33]] + 
+        eval_arr[phase][player][9][test_data[phase][player][i][34]] + 
+        eval_arr[phase][player][9][test_data[phase][player][i][35]] + 
+        eval_arr[phase][player][9][test_data[phase][player][i][36]] + 
+        eval_arr[phase][player][9][test_data[phase][player][i][37]] + 
+        eval_arr[phase][player][10][test_data[phase][player][i][38]] + 
+        eval_arr[phase][player][10][test_data[phase][player][i][39]] + 
+        eval_arr[phase][player][10][test_data[phase][player][i][40]] + 
+        eval_arr[phase][player][10][test_data[phase][player][i][41]] + 
+        eval_arr[phase][player][11][calc_add_idx(test_data[phase][player][i])];
+}
+
 inline double first_scoring(){
     int phase, player, i, j, score;
-    double avg_score, res = 0.0;
+    double avg_score, res = 0.0, err;
     for (phase = 0; phase < n_phases; ++phase){
         for (player = 0; player < 2; ++player){
             avg_score = 0.0;
             for (i = 0; i < test_data[phase][player].size(); ++i){
-                score = 
-                    eval_arr[phase][player][0][test_data[phase][player][i][0]] + 
-                    eval_arr[phase][player][0][test_data[phase][player][i][1]] + 
-                    eval_arr[phase][player][0][test_data[phase][player][i][2]] + 
-                    eval_arr[phase][player][0][test_data[phase][player][i][3]] + 
-                    eval_arr[phase][player][1][test_data[phase][player][i][4]] + 
-                    eval_arr[phase][player][1][test_data[phase][player][i][5]] + 
-                    eval_arr[phase][player][1][test_data[phase][player][i][6]] + 
-                    eval_arr[phase][player][1][test_data[phase][player][i][7]] + 
-                    eval_arr[phase][player][2][test_data[phase][player][i][8]] + 
-                    eval_arr[phase][player][2][test_data[phase][player][i][9]] + 
-                    eval_arr[phase][player][2][test_data[phase][player][i][10]] + 
-                    eval_arr[phase][player][2][test_data[phase][player][i][11]] + 
-                    eval_arr[phase][player][3][test_data[phase][player][i][12]] + 
-                    eval_arr[phase][player][3][test_data[phase][player][i][13]] + 
-                    eval_arr[phase][player][3][test_data[phase][player][i][14]] + 
-                    eval_arr[phase][player][3][test_data[phase][player][i][15]] + 
-                    eval_arr[phase][player][4][test_data[phase][player][i][16]] + 
-                    eval_arr[phase][player][4][test_data[phase][player][i][17]] + 
-                    eval_arr[phase][player][4][test_data[phase][player][i][18]] + 
-                    eval_arr[phase][player][4][test_data[phase][player][i][19]] + 
-                    eval_arr[phase][player][5][test_data[phase][player][i][20]] + 
-                    eval_arr[phase][player][5][test_data[phase][player][i][21]] + 
-                    eval_arr[phase][player][5][test_data[phase][player][i][22]] + 
-                    eval_arr[phase][player][5][test_data[phase][player][i][23]] + 
-                    eval_arr[phase][player][6][test_data[phase][player][i][24]] + 
-                    eval_arr[phase][player][6][test_data[phase][player][i][25]] + 
-                    eval_arr[phase][player][7][test_data[phase][player][i][26]] + 
-                    eval_arr[phase][player][7][test_data[phase][player][i][27]] + 
-                    eval_arr[phase][player][7][test_data[phase][player][i][28]] + 
-                    eval_arr[phase][player][7][test_data[phase][player][i][29]] + 
-                    eval_arr[phase][player][8][test_data[phase][player][i][30]] + 
-                    eval_arr[phase][player][8][test_data[phase][player][i][31]] + 
-                    eval_arr[phase][player][8][test_data[phase][player][i][32]] + 
-                    eval_arr[phase][player][8][test_data[phase][player][i][33]] + 
-                    eval_arr[phase][player][9][test_data[phase][player][i][34]] + 
-                    eval_arr[phase][player][9][test_data[phase][player][i][35]] + 
-                    eval_arr[phase][player][9][test_data[phase][player][i][36]] + 
-                    eval_arr[phase][player][9][test_data[phase][player][i][37]] + 
-                    eval_arr[phase][player][10][test_data[phase][player][i][38]] + 
-                    eval_arr[phase][player][10][test_data[phase][player][i][39]] + 
-                    eval_arr[phase][player][10][test_data[phase][player][i][40]] + 
-                    eval_arr[phase][player][10][test_data[phase][player][i][41]] + 
-                    eval_arr[phase][player][11][calc_add_idx(test_data[phase][player][i])];
+                score = calc_score(phase, player, i);
                 //cerr << eval_arr[phase][player][11][calc_add_idx(test_data[phase][player][i])] << endl;
                 //cerr << score << endl;
                 //exit(0);
-                avg_score += loss(test_labels[phase][player][i] - score, test_data[phase][player].size());
+                err = loss(test_labels[phase][player][i] - score, test_data[phase][player].size());
+                avg_score += err;
+                test_scores[phase][player][i] = err;
             }
             scores[phase][player] = avg_score;
             res += avg_score / n_phases / 2;
@@ -329,64 +319,22 @@ inline double first_scoring(){
     return res;
 }
 
-inline double scoring(int phase, int player){
+inline double scoring(int phase, int player, int pattern, int idx){
     int i, j, score;
-    double avg_score = 0.0, res = 0.0;
-    for (i = 0; i < test_data[phase][player].size(); ++i){
-        score = 
-            eval_arr[phase][player][0][test_data[phase][player][i][0]] + 
-            eval_arr[phase][player][0][test_data[phase][player][i][1]] + 
-            eval_arr[phase][player][0][test_data[phase][player][i][2]] + 
-            eval_arr[phase][player][0][test_data[phase][player][i][3]] + 
-            eval_arr[phase][player][1][test_data[phase][player][i][4]] + 
-            eval_arr[phase][player][1][test_data[phase][player][i][5]] + 
-            eval_arr[phase][player][1][test_data[phase][player][i][6]] + 
-            eval_arr[phase][player][1][test_data[phase][player][i][7]] + 
-            eval_arr[phase][player][2][test_data[phase][player][i][8]] + 
-            eval_arr[phase][player][2][test_data[phase][player][i][9]] + 
-            eval_arr[phase][player][2][test_data[phase][player][i][10]] + 
-            eval_arr[phase][player][2][test_data[phase][player][i][11]] + 
-            eval_arr[phase][player][3][test_data[phase][player][i][12]] + 
-            eval_arr[phase][player][3][test_data[phase][player][i][13]] + 
-            eval_arr[phase][player][3][test_data[phase][player][i][14]] + 
-            eval_arr[phase][player][3][test_data[phase][player][i][15]] + 
-            eval_arr[phase][player][4][test_data[phase][player][i][16]] + 
-            eval_arr[phase][player][4][test_data[phase][player][i][17]] + 
-            eval_arr[phase][player][4][test_data[phase][player][i][18]] + 
-            eval_arr[phase][player][4][test_data[phase][player][i][19]] + 
-            eval_arr[phase][player][5][test_data[phase][player][i][20]] + 
-            eval_arr[phase][player][5][test_data[phase][player][i][21]] + 
-            eval_arr[phase][player][5][test_data[phase][player][i][22]] + 
-            eval_arr[phase][player][5][test_data[phase][player][i][23]] + 
-            eval_arr[phase][player][6][test_data[phase][player][i][24]] + 
-            eval_arr[phase][player][6][test_data[phase][player][i][25]] + 
-            eval_arr[phase][player][7][test_data[phase][player][i][26]] + 
-            eval_arr[phase][player][7][test_data[phase][player][i][27]] + 
-            eval_arr[phase][player][7][test_data[phase][player][i][28]] + 
-            eval_arr[phase][player][7][test_data[phase][player][i][29]] + 
-            eval_arr[phase][player][8][test_data[phase][player][i][30]] + 
-            eval_arr[phase][player][8][test_data[phase][player][i][31]] + 
-            eval_arr[phase][player][8][test_data[phase][player][i][32]] + 
-            eval_arr[phase][player][8][test_data[phase][player][i][33]] + 
-            eval_arr[phase][player][9][test_data[phase][player][i][34]] + 
-            eval_arr[phase][player][9][test_data[phase][player][i][35]] + 
-            eval_arr[phase][player][9][test_data[phase][player][i][36]] + 
-            eval_arr[phase][player][9][test_data[phase][player][i][37]] + 
-            eval_arr[phase][player][10][test_data[phase][player][i][38]] + 
-            eval_arr[phase][player][10][test_data[phase][player][i][39]] + 
-            eval_arr[phase][player][10][test_data[phase][player][i][40]] + 
-            eval_arr[phase][player][10][test_data[phase][player][i][41]] + 
-            eval_arr[phase][player][11][calc_add_idx(test_data[phase][player][i])];
-        avg_score += loss(test_labels[phase][player][i] - score, test_data[phase][player].size());
+    double avg_score, res = 0.0, err;
+    int data_size = test_data[phase][player].size();
+    avg_score = scores[phase][player];
+    for (i = 0; i < test_memo[phase][player][pattern][idx].size(); ++i){
+        avg_score -= test_scores[phase][player][test_memo[phase][player][pattern][idx][i]];
+        score = calc_score(phase, player, test_memo[phase][player][pattern][idx][i]);
+        err = loss(test_labels[phase][player][test_memo[phase][player][pattern][idx][i]] - score, data_size);
+        test_scores[phase][player][test_memo[phase][player][pattern][idx][i]] = err;
+        avg_score += err;
     }
+    scores[phase][player] = avg_score;
     for (i = 0; i < n_phases; ++i){
         for (j = 0; j < 2; ++j)
-            n_scores[i][j] = scores[i][j];
-    }
-    n_scores[phase][player] = avg_score;
-    for (i = 0; i < n_phases; ++i){
-        for (j = 0; j < 2; ++j)
-            res += n_scores[i][j] / n_phases / 2;
+            res += scores[i][j] / n_phases / 2;
     }
     return res;
 }
@@ -398,50 +346,7 @@ inline void scoring_mae(){
         for (player = 0; player < 2; ++player){
             avg_score = 0;
             for (i = 0; i < test_data[phase][player].size(); ++i){
-                score = 
-                    eval_arr[phase][player][0][test_data[phase][player][i][0]] + 
-                    eval_arr[phase][player][0][test_data[phase][player][i][1]] + 
-                    eval_arr[phase][player][0][test_data[phase][player][i][2]] + 
-                    eval_arr[phase][player][0][test_data[phase][player][i][3]] + 
-                    eval_arr[phase][player][1][test_data[phase][player][i][4]] + 
-                    eval_arr[phase][player][1][test_data[phase][player][i][5]] + 
-                    eval_arr[phase][player][1][test_data[phase][player][i][6]] + 
-                    eval_arr[phase][player][1][test_data[phase][player][i][7]] + 
-                    eval_arr[phase][player][2][test_data[phase][player][i][8]] + 
-                    eval_arr[phase][player][2][test_data[phase][player][i][9]] + 
-                    eval_arr[phase][player][2][test_data[phase][player][i][10]] + 
-                    eval_arr[phase][player][2][test_data[phase][player][i][11]] + 
-                    eval_arr[phase][player][3][test_data[phase][player][i][12]] + 
-                    eval_arr[phase][player][3][test_data[phase][player][i][13]] + 
-                    eval_arr[phase][player][3][test_data[phase][player][i][14]] + 
-                    eval_arr[phase][player][3][test_data[phase][player][i][15]] + 
-                    eval_arr[phase][player][4][test_data[phase][player][i][16]] + 
-                    eval_arr[phase][player][4][test_data[phase][player][i][17]] + 
-                    eval_arr[phase][player][4][test_data[phase][player][i][18]] + 
-                    eval_arr[phase][player][4][test_data[phase][player][i][19]] + 
-                    eval_arr[phase][player][5][test_data[phase][player][i][20]] + 
-                    eval_arr[phase][player][5][test_data[phase][player][i][21]] + 
-                    eval_arr[phase][player][5][test_data[phase][player][i][22]] + 
-                    eval_arr[phase][player][5][test_data[phase][player][i][23]] + 
-                    eval_arr[phase][player][6][test_data[phase][player][i][24]] + 
-                    eval_arr[phase][player][6][test_data[phase][player][i][25]] + 
-                    eval_arr[phase][player][7][test_data[phase][player][i][26]] + 
-                    eval_arr[phase][player][7][test_data[phase][player][i][27]] + 
-                    eval_arr[phase][player][7][test_data[phase][player][i][28]] + 
-                    eval_arr[phase][player][7][test_data[phase][player][i][29]] + 
-                    eval_arr[phase][player][8][test_data[phase][player][i][30]] + 
-                    eval_arr[phase][player][8][test_data[phase][player][i][31]] + 
-                    eval_arr[phase][player][8][test_data[phase][player][i][32]] + 
-                    eval_arr[phase][player][8][test_data[phase][player][i][33]] + 
-                    eval_arr[phase][player][9][test_data[phase][player][i][34]] + 
-                    eval_arr[phase][player][9][test_data[phase][player][i][35]] + 
-                    eval_arr[phase][player][9][test_data[phase][player][i][36]] + 
-                    eval_arr[phase][player][9][test_data[phase][player][i][37]] + 
-                    eval_arr[phase][player][10][test_data[phase][player][i][38]] + 
-                    eval_arr[phase][player][10][test_data[phase][player][i][39]] + 
-                    eval_arr[phase][player][10][test_data[phase][player][i][40]] + 
-                    eval_arr[phase][player][10][test_data[phase][player][i][41]] + 
-                    eval_arr[phase][player][11][calc_add_idx(test_data[phase][player][i])];
+                score = calc_score(phase, player, i);
                 avg_score += fabs(test_labels[phase][player][i] - (double)score) / test_data[phase][player].size();
             }
             cerr << avg_score << " ";
@@ -456,7 +361,6 @@ void sa(unsigned long long tl){
     double score = first_scoring(), n_score;
     int phase, player, pattern, idx, f_val;
     int t = 0, u = 0;
-    cerr << t << " " << u << " ";
     cerr << score << " ";
     scoring_mae();
     cerr << endl;
@@ -468,15 +372,15 @@ void sa(unsigned long long tl){
         idx = used_idxes_vector[phase][player][pattern][myrandrange(0, (int)used_idxes[phase][player][pattern].size())];
         f_val = eval_arr[phase][player][pattern][idx];
         eval_arr[phase][player][pattern][idx] += myrandrange(-100, 101);
-        n_score = scoring(phase, player);
+        n_score = scoring(phase, player, pattern, idx);
         if (n_score < score){
             score = n_score;
-            scores[phase][player] = n_scores[phase][player];
             ++u;
         } else{
             eval_arr[phase][player][pattern][idx] = f_val;
+            scoring(phase, player, pattern, idx);
         }
-        if ((t & 0b111111111) == 0){
+        if ((t & 0b11111111111) == 0){
             now = tim();
             if (now - strt > tl)
                 break;
@@ -485,7 +389,7 @@ void sa(unsigned long long tl){
             scoring_mae();
         }
     }
-    cerr << '\r' << t << " " << u << " ";
+    cerr << '\r';
     cerr << score << " ";
     scoring_mae();
     cerr << endl;
@@ -496,8 +400,8 @@ int main(){
     input_param();
     input_test_data();
 
-    int hour = 8;
-    int minute = 30;
+    int hour = 0;
+    int minute = 10;
     minute += hour * 60;
 
     sa(minute * 60 * 1000);
