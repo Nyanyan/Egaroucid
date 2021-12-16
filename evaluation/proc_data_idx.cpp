@@ -293,7 +293,7 @@ inline void convert_idx(string str){
     cout << score << endl;
 }
 
-#define n_files 39
+#define n_files 46
 
 const string file_names[n_files] = {
     "0000001.txt",
@@ -334,7 +334,14 @@ const string file_names[n_files] = {
     "0000036.txt",
     "0000037.txt",
     "0000038.txt",
-    "0000039.txt"
+    "0000039.txt",
+    "0000040.txt",
+    "0000041.txt",
+    "0000042.txt",
+    "0000043.txt",
+    "0000044.txt",
+    "0000045.txt",
+    "0000046.txt"
 };
 
 int main(){

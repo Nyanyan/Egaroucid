@@ -19,7 +19,7 @@ inline void init(){
     transpose_table_init();
     evaluate_init();
     #if !MPC_MODE && !EVAL_MODE
-        book_init();
+        //book_init();
     #endif
     #if USE_MULTI_THREAD
         thread_pool_init();
@@ -83,8 +83,8 @@ int main(){
         search_result result;
         const int first_moves[4] = {19, 26, 37, 44};
         int depth, end_depth, policy;
-        depth = 4;
-        end_depth = 8;
+        depth = 10;
+        end_depth = 20;
     #endif
     int ai_player;
     //cin >> ai_player;

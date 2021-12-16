@@ -245,9 +245,9 @@ void output_param(){
 }
 
 inline double loss(int x, int siz){
-    double sq_size = sqrt((double)siz);
-    double tmp = (double)x / sq_size;
-    return tmp * tmp;
+    //double sq_size = sqrt((double)siz);
+    //double tmp = (double)x / sq_size;
+    return (double)x / (double)siz * (double)x;
 }
 
 inline int calc_score(int phase, int player, int i){
@@ -371,7 +371,7 @@ void sa(unsigned long long tl){
         pattern = myrandrange(0, n_patterns + 1);
         idx = used_idxes_vector[phase][player][pattern][myrandrange(0, (int)used_idxes[phase][player][pattern].size())];
         f_val = eval_arr[phase][player][pattern][idx];
-        eval_arr[phase][player][pattern][idx] += myrandrange(-100, 101);
+        eval_arr[phase][player][pattern][idx] += myrandrange(-50, 51);
         n_score = scoring(phase, player, pattern, idx);
         if (n_score < score){
             score = n_score;
@@ -394,6 +394,7 @@ void sa(unsigned long long tl){
     scoring_mae();
     cerr << endl;
     cerr << first_scoring() << endl;
+    cerr << t << " " << u << endl;
 }
 
 int main(){
@@ -401,7 +402,7 @@ int main(){
     input_test_data();
 
     int hour = 0;
-    int minute = 10;
+    int minute = 30;
     minute += hour * 60;
 
     sa(minute * 60 * 1000);

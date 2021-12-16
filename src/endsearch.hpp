@@ -920,8 +920,10 @@ inline search_result endsearch(board b, long long strt){
     cerr << "start final search depth " << max_depth + 1 << endl;
     alpha = -sc_w;
     beta = sc_w;
-    for (i = 0; i < canput; ++i)
+    for (i = 0; i < canput; ++i){
+        //nb[i].v = -nega_scout(&nb[i], false, 10, -sc_w, sc_w);
         move_ordering(&nb[i]);
+    }
     if (canput >= 2)
         sort(nb.begin(), nb.end());
     //for (i = 0; i < canput; ++i)
