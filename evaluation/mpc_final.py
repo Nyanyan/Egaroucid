@@ -70,7 +70,7 @@ def collect_data(num):
             vhs[depth - min_depth].append(vh)
             vds[depth - min_depth].append(vd)
 
-for i in range(3):
+for i in range(10, 13):
     collect_data(i)
 evaluate.kill()
 

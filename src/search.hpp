@@ -16,10 +16,10 @@ constexpr int mtd_threshold = step * 4;
 constexpr int mtd_end_threshold = step * 5;
 
 #define mpc_min_depth 3
-#define mpc_max_depth 10
+#define mpc_max_depth 12
 #define mpc_min_depth_final 9
 #define mpc_max_depth_final 28
-#define mpct_final 2.3
+#define mpct_final 2.5
 
 #define simple_mid_threshold 3
 #define simple_end_threshold 8
@@ -46,15 +46,15 @@ const int cell_weight[hw2] = {
 const int mpcd[30] = {0, 1, 0, 1, 2, 3, 2, 3, 4, 3, 4, 3, 4, 5, 4, 5, 6, 5, 6, 7, 6, 7, 6, 7, 8, 7, 8, 9, 8, 9};
 const double mpct[n_phases]={1.5, 1.5, 1.5, 1.5, 1.5, 1.5};
 const double mpcsd[n_phases][mpc_max_depth - mpc_min_depth + 1]={
-    {659, 354, 420, 489, 329, 332, 437, 300},
-    {544, 325, 317, 414, 402, 342, 471, 383},
-    {414, 352, 346, 447, 534, 392, 445, 428},
-    {634, 541, 365, 580, 523, 477, 583, 554},
-    {615, 564, 564, 774, 661, 610, 643, 675},
-    {658, 518, 380, 672, 499, 476, 533, 558}
+    {776, 483, 538, 462, 437, 290, 546, 345, 493, 346},
+    {856, 617, 405, 557, 547, 389, 622, 429, 660, 397},
+    {593, 367, 347, 478, 420, 393, 452, 388, 563, 432},
+    {597, 404, 506, 597, 647, 438, 648, 577, 608, 554},
+    {576, 616, 541, 756, 626, 687, 610, 730, 817, 764},
+    {559, 478, 543, 657, 608, 447, 567, 573, 584, 481}
 };
 const double mpcsd_final[mpc_max_depth_final - mpc_min_depth_final + 1] = {
-    523, 504, 559, 532, 514, 579, 551, 524, 533, 501, 472, 491, 475, 483, 471, 449, 470, 459, 435, 465
+    496, 475, 541, 532, 524, 570, 550, 533, 502, 480, 462, 452, 440, 449, 429, 414, 435, 431, 421, 458
 };
 int mpctsd[n_phases][mpc_max_depth + 1];
 int mpctsd_final[mpc_max_depth_final + 1];

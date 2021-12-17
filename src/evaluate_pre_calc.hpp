@@ -7,8 +7,6 @@
 
 using namespace std;
 
-typedef float eval_type;
-
 #define n_patterns 11
 #define n_dense0 32
 #define n_dense1 32
@@ -231,29 +229,29 @@ inline int calc_surround(const board *b, int p){
         surround_arr[p][b->b[21]] + surround_arr[p][b->b[32]];
 }
 
-inline eval_type edge_2x(int phase_idx, const board *b, int x, int y){
+inline int edge_2x(int phase_idx, const board *b, int x, int y){
     return pattern_arr[phase_idx][b->p][7][pop_digit[b->b[x]][1] * p39 + b->b[y] * p31 + pop_digit[b->b[x]][6]];
 }
 
-inline eval_type triangle0(int phase_idx, const board *b, int w, int x, int y, int z){
+inline int triangle0(int phase_idx, const board *b, int w, int x, int y, int z){
     return pattern_arr[phase_idx][b->p][8][b->b[w] / p34 * p36 + b->b[x] / p35 * p33 + b->b[y] / p36 * p31 + b->b[z] / p37];
 }
 
-inline eval_type triangle1(int phase_idx, const board *b, int w, int x, int y, int z){
+inline int triangle1(int phase_idx, const board *b, int w, int x, int y, int z){
     return pattern_arr[phase_idx][b->p][8][reverse_board[b->b[w]] / p34 * p36 + reverse_board[b->b[x]] / p35 * p33 + reverse_board[b->b[y]] / p36 * p31 + reverse_board[b->b[z]] / p37];
 }
 
-inline eval_type edge_block(int phase_idx, const board *b, int x, int y){
+inline int edge_block(int phase_idx, const board *b, int x, int y){
     return pattern_arr[phase_idx][b->p][9][pop_digit[b->b[x]][0] * p39 + pop_mid[b->b[x]][6][2] * p35 + pop_digit[b->b[x]][7] * p34 + pop_mid[b->b[y]][6][2]];
 }
 
-inline eval_type cross(int phase_idx, const board *b, int x, int y, int z){
+inline int cross(int phase_idx, const board *b, int x, int y, int z){
     return 
         pattern_arr[phase_idx][b->p][10][b->b[x] / p34 * p36 + b->b[y] / p35 * p33 + b->b[z] / p35] + 
         pattern_arr[phase_idx][b->p][10][reverse_board[b->b[x]] / p34 * p36 + pop_mid[reverse_board[b->b[y]]][7][4] * p33 + pop_mid[reverse_board[b->b[z]]][7][4]];
 }
 
-inline eval_type calc_pattern(int phase_idx, const board *b){
+inline int calc_pattern(int phase_idx, const board *b){
     return 
         pattern_arr[phase_idx][b->p][0][b->b[1]] + pattern_arr[phase_idx][b->p][0][b->b[6]] + pattern_arr[phase_idx][b->p][0][b->b[9]] + pattern_arr[phase_idx][b->p][0][b->b[14]] + 
         pattern_arr[phase_idx][b->p][1][b->b[2]] + pattern_arr[phase_idx][b->p][1][b->b[5]] + pattern_arr[phase_idx][b->p][1][b->b[10]] + pattern_arr[phase_idx][b->p][1][b->b[13]] + 
@@ -273,7 +271,7 @@ inline int mid_evaluate(const board *b){
     canput = min(max_canput - 1, calc_canput(b));
     sur0 = min(max_surround_2 - 1, calc_surround(b, black) / 2);
     sur1 = min(max_surround_2 - 1, calc_surround(b, white) / 2);
-    return calc_pattern(phase_idx, b) + add_arr[phase_idx][b->p][canput][sur0][sur1];
+    return max(-sc_w, min(sc_w, calc_pattern(phase_idx, b) + add_arr[phase_idx][b->p][canput][sur0][sur1]));
 }
 
 inline int end_evaluate(const board *b){
