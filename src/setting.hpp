@@ -35,10 +35,6 @@
 
 
 
-/** evaluation **/
-#define USE_PRE_CALCULATED_EVALUATION true
-
-
 
 /** book **/
 #define USE_BOOK true
