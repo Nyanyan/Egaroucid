@@ -1,5 +1,10 @@
 egaroucid5 vs edax without book
 
+"133   89 30 149   30 19" means:
+Egaroucid won 89 times
+Edax won 149 times
+39 draws
+
 2021/12/16
 eg lv10 vs ed lv10
 133   89 30 149   30 19
@@ -18,3 +23,6 @@ eg lv10 vs ed lv9
 hillclimb
 eg lv10 vs ed lv9
 133   132 26 110   30 133
+
+eg lv10 ed lv10
+133   97 32 139   30 133
