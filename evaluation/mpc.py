@@ -73,7 +73,7 @@ def collect_data(num):
         vhs[(n_stones - 4) // 10][depth - min_depth].append(vh)
         vds[(n_stones - 4) // 10][depth - min_depth].append(vd)
 
-for i in range(5):
+for i in range(10):
     collect_data(i)
 evaluate.kill()
 

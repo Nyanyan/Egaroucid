@@ -51,9 +51,9 @@ int nega_alpha(board *b, bool skipped, int depth, int alpha, int beta){
             passed = false;
             b->move(cell, &nb);
             g = -nega_alpha(&nb, false, depth - 1, -beta, -alpha);
+            if (beta <= g)
+                return g;
             alpha = max(alpha, g);
-            if (beta <= alpha)
-                return alpha;
             v = max(v, g);
         }
     }
@@ -158,14 +158,14 @@ int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int 
             }
         }
     #else
-        for (int i = 0; i < canput; ++i){
-            g = -nega_alpha_ordering(&nb[i], false, depth - 1, -beta, -alpha, false);
-            alpha = max(alpha, g);
-            if (beta <= alpha){
+        for (board &nnb: nb){
+            g = -nega_alpha_ordering(&nnb, false, depth - 1, -beta, -alpha, false);
+            if (beta <= g){
                 if (l < g)
                     transpose_table.reg(b, hash, g, u);
-                return alpha;
+                return g;
             }
+            alpha = max(alpha, g);
             v = max(v, g);
         }
     #endif
@@ -327,47 +327,47 @@ inline search_result midsearch(board b, long long strt, int max_depth){
     transpose_table.init_now();
     transpose_table.init_prev();
     int order_l, order_u;
-    int depth = min(hw2 - b.n - 1, max_depth - 1);
-    //for (int depth = min(5, max(1, max_depth - 5)); depth < min(hw2 - b.n, max_depth); ++depth){
-    alpha = -sc_w;
-    beta = sc_w;
-    transpose_table.init_now();
-    for (i = 0; i < canput; ++i){
-        transpose_table.get_prev(&nb[i], nb[i].hash() & search_hash_mask, &order_l, &order_u);
-        nb[i].v = -max(order_l, order_u);
-        if (order_l != -inf && order_u != -inf)
-            nb[i].v += 100000;
-        if (order_l == -inf && order_u == -inf)
-            nb[i].v = -mid_evaluate(&nb[i]);
-        else
-            nb[i].v += cache_hit;
-    }
-    if (canput >= 2)
-        sort(nb.begin(), nb.end());
-    g = -mtd(&nb[0], false, depth, -beta, -alpha);
-    transpose_table.reg(&nb[0], (int)(nb[0].hash() & search_hash_mask), g, g);
-    alpha = max(alpha, g);
-    tmp_policy = nb[0].policy;
-    for (i = 1; i < canput; ++i){
-        g = -nega_alpha_ordering(&nb[i], false, depth, -alpha - search_epsilon, -alpha, true);
-        if (alpha < g){
-            alpha = g;
-            g = -mtd(&nb[i], false, depth, -beta, -alpha);
-            transpose_table.reg(&nb[i], (int)(nb[i].hash() & search_hash_mask), g, g);
+    //int depth = min(hw2 - b.n - 1, max_depth - 1);
+    for (int depth = min(5, max(0, max_depth - 5)); depth <= min(hw2 - b.n, max_depth - 1); ++depth){
+        alpha = -sc_w;
+        beta = sc_w;
+        transpose_table.init_now();
+        for (i = 0; i < canput; ++i){
+            transpose_table.get_prev(&nb[i], nb[i].hash() & search_hash_mask, &order_l, &order_u);
+            nb[i].v = -max(order_l, order_u);
+            if (order_l != -inf && order_u != -inf)
+                nb[i].v += 100000;
+            if (order_l == -inf && order_u == -inf)
+                nb[i].v = -mid_evaluate(&nb[i]);
+            else
+                nb[i].v += cache_hit;
+        }
+        if (canput >= 2)
+            sort(nb.begin(), nb.end());
+        g = -mtd(&nb[0], false, depth, -beta, -alpha);
+        transpose_table.reg(&nb[0], (int)(nb[0].hash() & search_hash_mask), g, g);
+        alpha = max(alpha, g);
+        tmp_policy = nb[0].policy;
+        for (i = 1; i < canput; ++i){
+            g = -nega_alpha_ordering(&nb[i], false, depth, -alpha - search_epsilon, -alpha, true);
             if (alpha < g){
                 alpha = g;
-                tmp_policy = nb[i].policy;
+                g = -mtd(&nb[i], false, depth, -beta, -alpha);
+                transpose_table.reg(&nb[i], (int)(nb[i].hash() & search_hash_mask), g, g);
+                if (alpha < g){
+                    alpha = g;
+                    tmp_policy = nb[i].policy;
+                }
+            } else{
+                transpose_table.reg(&nb[i], (int)(nb[i].hash() & search_hash_mask), -inf, g);
             }
-        } else{
-            transpose_table.reg(&nb[i], (int)(nb[i].hash() & search_hash_mask), -inf, g);
         }
+        swap(transpose_table.now, transpose_table.prev);
+        policy = tmp_policy;
+        value = alpha;
+        res_depth = depth + 1;
+        cerr << "depth: " << depth + 1 << " time: " << tim() - strt << " policy: " << policy << " value: " << alpha << " nodes: " << searched_nodes << " nps: " << (long long)searched_nodes * 1000 / max(1LL, tim() - strt) << " get: " << transpose_table.hash_get << " reg: " << transpose_table.hash_reg << endl;
     }
-    swap(transpose_table.now, transpose_table.prev);
-    policy = tmp_policy;
-    value = alpha;
-    res_depth = depth + 1;
-    cerr << "depth: " << depth + 1 << " time: " << tim() - strt << " policy: " << policy << " value: " << alpha << " nodes: " << searched_nodes << " nps: " << (long long)searched_nodes * 1000 / max(1LL, tim() - strt) << " get: " << transpose_table.hash_get << " reg: " << transpose_table.hash_reg << endl;
-    //}
     search_result res;
     res.policy = policy;
     res.value = value;

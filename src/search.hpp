@@ -44,14 +44,14 @@ const int cell_weight[hw2] = {
 };
 
 const int mpcd[30] = {0, 1, 0, 1, 2, 3, 2, 3, 4, 3, 4, 3, 4, 5, 4, 5, 6, 5, 6, 7, 6, 7, 6, 7, 8, 7, 8, 9, 8, 9};
-const double mpct[n_phases]={};
+const double mpct[n_phases]={1.5, 1.5, 1.5, 1.5, 1.5, 1.5};
 const double mpcsd[n_phases][mpc_max_depth - mpc_min_depth + 1]={
-    {325, 283, 308, 316, 282, 229, 371, 212},
-    {328, 263, 222, 318, 292, 247, 321, 240},
-    {382, 446, 308, 406, 393, 349, 419, 385},
-    {435, 326, 334, 514, 430, 405, 553, 583},
-    {544, 437, 466, 601, 552, 526, 754, 744},
-    {542, 499, 467, 532, 575, 435, 517, 569}
+    {659, 354, 420, 489, 329, 332, 437, 300},
+    {544, 325, 317, 414, 402, 342, 471, 383},
+    {414, 352, 346, 447, 534, 392, 445, 428},
+    {634, 541, 365, 580, 523, 477, 583, 554},
+    {615, 564, 564, 774, 661, 610, 643, 675},
+    {658, 518, 380, 672, 499, 476, 533, 558}
 };
 const double mpcsd_final[mpc_max_depth_final - mpc_min_depth_final + 1] = {
     523, 504, 559, 532, 514, 579, 551, 524, 533, 501, 472, 491, 475, 483, 471, 449, 470, 459, 435, 465
@@ -107,7 +107,6 @@ int cmp_vacant(int p, int q){
 }
 
 inline void move_ordering(board *b){
-    /*
     int l, u;
     transpose_table.get_prev(b, b->hash() & search_hash_mask, &l, &u);
     if (u != inf && l != -inf)
@@ -118,7 +117,9 @@ inline void move_ordering(board *b){
         b->v += l + cache_hit;
     else
         b->v = -mid_evaluate(b);
-    */
+}
+
+inline void move_ordering_eval(board *b){
     b->v = -mid_evaluate(b);
 }
 

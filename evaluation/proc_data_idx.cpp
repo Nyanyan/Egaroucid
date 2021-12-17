@@ -293,7 +293,7 @@ inline void convert_idx(string str){
     cout << score << endl;
 }
 
-#define n_files 46
+#define n_files 51
 
 const string file_names[n_files] = {
     "0000001.txt",
@@ -341,12 +341,19 @@ const string file_names[n_files] = {
     "0000043.txt",
     "0000044.txt",
     "0000045.txt",
-    "0000046.txt"
+    "0000046.txt",
+    "0000047.txt",
+    "0000048.txt",
+    "0000049.txt",
+    "0000050.txt",
+    "0000051.txt"
 };
 
 int main(){
     board_init();
     init_evaluation_base();
+
+    int t = 0;
 
     for (int i = 0; i < n_files; ++i){
         cerr << "=";
@@ -357,10 +364,11 @@ int main(){
         }
         string line;
         while (getline(ifs, line)){
+            ++t;
             convert_idx(line);
         }
     }
-    cerr << endl;
+    cerr << t << endl;
 
     return 0;
 

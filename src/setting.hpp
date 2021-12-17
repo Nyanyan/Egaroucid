@@ -40,6 +40,10 @@
 
 
 
+/** book **/
+#define USE_BOOK true
+
+
 /** other **/
 
 // MPC calculation mode

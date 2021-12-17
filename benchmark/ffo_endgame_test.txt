@@ -115,3 +115,10 @@
 #42 final depth: 22 time: 5642 policy: 14 value: 600 nodes: 54962479 nps: 9741665 get: 39004 reg: 387241
 #43 final depth: 23 time: 14350 policy: 22 value: -1000 nodes: 128409787 nps: 8947793 get: 98741 reg: 850277    WRONG
 #44 final depth: 23 time: 7656 policy: 11 value: -1400 nodes: 66525320 nps: 8688170 get: 70621 reg: 481035
+
+2021/12/17 hillclimb
+#40 final depth: 20 time: 3038 policy: 8 value: 3800 nodes: 41512468 nps: 13691447 get: 22216 reg: 251937
+#41 final depth: 22 time: 11432 policy: 31 value: 0 nodes: 158891392 nps: 13908560 get: 183353 reg: 1237842
+#42 final depth: 22 time: 9532 policy: 14 value: 600 nodes: 132779150 nps: 13938604 get: 92568 reg: 1032950
+#43 final depth: 23 time: 19061 policy: 50 value: -1200 nodes: 226305453 nps: 11877057 get: 393232 reg: 3361460
+#44 final depth: 23 time: 11868 policy: 11 value: -1400 nodes: 150897265 nps: 12721064 get: 235038 reg: 1798696

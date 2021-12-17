@@ -18,8 +18,8 @@ inline void init(){
     search_init();
     transpose_table_init();
     evaluate_init();
-    #if !MPC_MODE && !EVAL_MODE
-        //book_init();
+    #if !MPC_MODE && !EVAL_MODE && USE_BOOK
+        book_init();
     #endif
     #if USE_MULTI_THREAD
         thread_pool_init();
@@ -84,7 +84,7 @@ int main(){
         const int first_moves[4] = {19, 26, 37, 44};
         int depth, end_depth, policy;
         depth = 10;
-        end_depth = 20;
+        end_depth = 30;
     #endif
     int ai_player;
     //cin >> ai_player;

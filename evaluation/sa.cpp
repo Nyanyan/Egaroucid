@@ -227,6 +227,21 @@ void input_test_data(){
             cerr << test_labels[i][j].size() << " ";
         cerr << endl;
     }
+
+    int u = 0;
+    for (i = 0; i < n_patterns + 1; ++i)
+        u += eval_sizes[i];
+    cerr << u << endl;
+    for (phase = 0; phase < n_phases; ++phase){
+        for (player = 0; player < 2; ++player){
+            u = 0;
+            for (i = 0; i < n_patterns + 1; ++i){
+                u += (int)used_idxes[phase][player][i].size();
+            }
+            cerr << u << " ";
+        }
+        cerr << endl;
+    }
 }
 
 void output_param(){
@@ -401,8 +416,8 @@ int main(){
     input_param();
     input_test_data();
 
-    int hour = 0;
-    int minute = 30;
+    int hour = 9;
+    int minute = 0;
     minute += hour * 60;
 
     sa(minute * 60 * 1000);

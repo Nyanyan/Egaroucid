@@ -760,7 +760,7 @@ int nega_scout_final(board *b, bool skipped, const int depth, int alpha, int bet
     for (const int &cell: vacant_lst){
         if (b->legal(cell)){
             b->move(cell, &nb[canput]);
-            move_ordering(&nb[canput]);
+            move_ordering_eval(&nb[canput]);
             nb[canput].v -= canput_bonus * calc_canput_exact(&nb[canput]);
             #if USE_END_PO
                 if (depth <= po_max_depth && b->parity & cell_div4[cell])
@@ -922,7 +922,7 @@ inline search_result endsearch(board b, long long strt){
     beta = sc_w;
     for (i = 0; i < canput; ++i){
         //nb[i].v = -nega_scout(&nb[i], false, 10, -sc_w, sc_w);
-        move_ordering(&nb[i]);
+        move_ordering_eval(&nb[i]);
     }
     if (canput >= 2)
         sort(nb.begin(), nb.end());
