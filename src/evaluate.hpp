@@ -237,12 +237,10 @@ inline int cross(int phase_idx, const board *b, int x, int y, int z){
         pattern_arr[phase_idx][10][reverse_board[b->b[x]] / p34 * p36 + pop_mid[reverse_board[b->b[y]]][7][4] * p33 + pop_mid[reverse_board[b->b[z]]][7][4]];
 }
 
-inline int corner90(int phase_idx, const board *b, int x, int y, int z){
-    return pattern_arr[phase_idx][11][b->b[x] / p35 * p36 + b->b[y] / p35 * p33 + b->b[z] / p35];
-}
-
-inline int corner91(int phase_idx, const board *b, int x, int y, int z){
-    return pattern_arr[phase_idx][11][reverse_board[b->b[x]] / p35 * p36 + reverse_board[b->b[y]] / p35 * p33 + reverse_board[b->b[z]] / p35];
+inline int corner9(int phase_idx, const board *b, int x, int y, int z){
+    return 
+        pattern_arr[phase_idx][11][b->b[x] / p35 * p36 + b->b[y] / p35 * p33 + b->b[z] / p35] + 
+        pattern_arr[phase_idx][11][reverse_board[b->b[x]] / p35 * p36 + reverse_board[b->b[y]] / p35 * p33 + reverse_board[b->b[z]] / p35];
 }
 
 inline int calc_pattern(int phase_idx, const board *b){
@@ -258,7 +256,7 @@ inline int calc_pattern(int phase_idx, const board *b){
         triangle0(phase_idx, b, 0, 1, 2, 3) + triangle0(phase_idx, b, 7, 6, 5, 4) + triangle0(phase_idx, b, 15, 14, 13, 12) + triangle1(phase_idx, b, 15, 14, 13, 12) + 
         edge_block(phase_idx, b, 0, 1) + edge_block(phase_idx, b, 7, 6) + edge_block(phase_idx, b, 8, 9) + edge_block(phase_idx, b, 15, 14) + 
         cross(phase_idx, b, 21, 20, 22) + cross(phase_idx, b, 32, 31, 33) + 
-        corner90(phase_idx, b, 0, 1, 2) + corner91(phase_idx, b, 0, 1, 2) + corner90(phase_idx, b, 7, 6, 5) + corner91(phase_idx, b, 7, 6, 5);
+        corner9(phase_idx, b, 0, 1, 2) + corner9(phase_idx, b, 7, 6, 5);
 }
 
 inline int mid_evaluate(const board *b){

@@ -420,7 +420,7 @@ void sa(unsigned long long tl){
     cerr << endl;
     for (;;){
         ++t;
-        phase = myrandrange(0, n_phases);
+        phase = myrandrange(3, n_phases);
         pattern = myrandrange(0, n_patterns + 1);
         idx = used_idxes_vector[phase][pattern][myrandrange(0, (int)used_idxes[phase][pattern].size())];
         if (pattern < n_patterns){

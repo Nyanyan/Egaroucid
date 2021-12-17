@@ -1,0 +1,20 @@
+egaroucid5 vs edax without book
+
+2021/12/16
+eg lv10 vs ed lv10
+133   89 30 149   30 19
+
+eg lv10 vs ed lv9
+133   106 34 128   30 61
+
+2021/12/17
+eg lv10 vs ed lv8
+133   136 43 89   30 133
+
+new simple evaluation function
+eg lv10 vs ed lv9
+133   108 37 123   30 133
+
+hillclimb
+eg lv10 vs ed lv9
+133   132 26 110   30 133
