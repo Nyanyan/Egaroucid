@@ -201,8 +201,17 @@ inline int edge_block(int phase_idx, const board *b, int x, int y){
 inline int cross0(int phase_idx, const board *b, int x, int y, int z){
     return b->b[x] / p34 * p36 + b->b[y] / p35 * p33 + b->b[z] / p35;
 }
+
 inline int cross1(int phase_idx, const board *b, int x, int y, int z){
     return reverse_board[b->b[x]] / p34 * p36 + pop_mid[reverse_board[b->b[y]]][7][4] * p33 + pop_mid[reverse_board[b->b[z]]][7][4];
+}
+
+inline int corner90(int phase_idx, const board *b, int x, int y, int z){
+    return b->b[x] / p35 * p36 + b->b[y] / p35 * p33 + b->b[z] / p35;
+}
+
+inline int corner91(int phase_idx, const board *b, int x, int y, int z){
+    return reverse_board[b->b[x]] / p35 * p36 + reverse_board[b->b[y]] / p35 * p33 + reverse_board[b->b[z]] / p35;
 }
 
 inline void calc_idx(int phase_idx, const board *b, int idxes[]){
@@ -248,9 +257,12 @@ inline void calc_idx(int phase_idx, const board *b, int idxes[]){
     idxes[39] = cross1(phase_idx, b, 21, 20, 22);
     idxes[40] = cross0(phase_idx, b, 32, 31, 33);
     idxes[41] = cross1(phase_idx, b, 32, 31, 33);
-    idxes[42] = min(max_canput - 1, calc_canput(b));
-    idxes[43] = min(max_surround - 1, calc_surround(b, black));
-    idxes[44] = min(max_surround - 1, calc_surround(b, white));
+    idxes[42] = corner90(phase_idx, b, 0, 1, 2);
+    idxes[43] = corner91(phase_idx, b, 0, 1, 2);
+    idxes[44] = corner90(phase_idx, b, 7, 6, 5);
+    idxes[45] = corner91(phase_idx, b, 7, 6, 5);
+    idxes[46] = min(max_surround - 1, calc_surround(b, black));
+    idxes[47] = min(max_surround - 1, calc_surround(b, white));
 }
 
 inline void convert_idx(string str){
@@ -281,10 +293,10 @@ inline void convert_idx(string str){
     }
     int ai_player = (str[65] == '0' ? 0 : 1);
     int phase_idx = calc_phase_idx(&b);
-    int idxes[45];
+    int idxes[48];
     calc_idx(phase_idx, &b, idxes);
     cout << phase_idx << " " << ai_player << " ";
-    for (i = 0; i < 45; ++i)
+    for (i = 0; i < 48; ++i)
         cout << idxes[i] << " ";
     string score;
     istringstream iss(str);

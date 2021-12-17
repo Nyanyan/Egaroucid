@@ -23,7 +23,7 @@ from copy import deepcopy
 inf = 10000000.0
 
 test_ratio = 0.1
-n_epochs = 20
+n_epochs = 300
 
 
 line2_idx = [[8, 9, 10, 11, 12, 13, 14, 15], [1, 9, 17, 25, 33, 41, 49, 57], [6, 14, 22, 30, 38, 46, 54, 62], [48, 49, 50, 51, 52, 53, 54, 55]] # line2
@@ -102,178 +102,176 @@ cross_idx = [
     [63, 54, 45, 36, 62, 53, 44, 55, 46, 37], [63, 54, 45, 36, 55, 46, 37, 62, 53, 44]
 ]
 
-pattern_idx = [line2_idx, line3_idx, line4_idx, diagonal5_idx, diagonal6_idx, diagonal7_idx, diagonal8_idx, edge_2x_idx, triangle_idx, edge_block, cross_idx]
+pattern_idx = [line2_idx, line3_idx, line4_idx, diagonal5_idx, diagonal6_idx, diagonal7_idx, diagonal8_idx, edge_2x_idx, triangle_idx, edge_block, cross_idx, corner9_idx]
 ln_in = sum([len(elem) for elem in pattern_idx]) + 1
 
 # [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56]
 
-for stone_strt in reversed([30]):
-    for black_white in range(1, 2):
-        stone_end = stone_strt + 10
+for stone_strt in [50, 40, 30, 20, 10, 0]:
+    stone_end = stone_strt + 10
 
-        min_n_stones = 4 + stone_strt
-        max_n_stones = 4 + stone_end
+    min_n_stones = 4 + stone_strt
+    max_n_stones = 4 + stone_end
 
-        all_data = [[] for _ in range(ln_in)]
-        all_labels = []
+    all_data = [[] for _ in range(ln_in)]
+    all_labels = []
 
-        def make_lines(board, patterns, player):
-            res = []
-            for pattern in patterns:
-                tmp = []
-                black_num = 0
-                white_num = 0
-                for elem in pattern:
-                    tmp.append(1.0 if board[elem] == str(player) else 0.0)
-                    black_num += 1.0 if board[elem] == str(player) else 0.0
-                for elem in pattern:
-                    tmp.append(1.0 if board[elem] == str(1 - player) else 0.0)
-                    white_num += 1.0 if board[elem] == str(1 - player) else 0.0
-                #tmp.append((black_num - 5) / 5)
-                #tmp.append((white_num - 5) / 5)
-                #tmp.append((black_num + white_num - 10) / 10)
-                res.append(tmp)
-            return res
+    def make_lines(board, patterns, player):
+        res = []
+        for pattern in patterns:
+            tmp = []
+            black_num = 0
+            white_num = 0
+            for elem in pattern:
+                tmp.append(1.0 if board[elem] == str(player) else 0.0)
+                black_num += 1.0 if board[elem] == str(player) else 0.0
+            for elem in pattern:
+                tmp.append(1.0 if board[elem] == str(1 - player) else 0.0)
+                white_num += 1.0 if board[elem] == str(1 - player) else 0.0
+            #tmp.append((black_num - 5) / 5)
+            #tmp.append((white_num - 5) / 5)
+            #tmp.append((black_num + white_num - 10) / 10)
+            res.append(tmp)
+        return res
 
-        def digit(n, r):
-            n = str(n)
-            l = len(n)
-            for i in range(r - l):
-                n = '0' + n
-            return n
+    def digit(n, r):
+        n = str(n)
+        l = len(n)
+        for i in range(r - l):
+            n = '0' + n
+        return n
 
-        def calc_n_stones(board):
-            res = 0
-            for elem in board:
-                res += int(elem != '.')
-            return res
+    def calc_n_stones(board):
+        res = 0
+        for elem in board:
+            res += int(elem != '.')
+        return res
 
-        def collect_data(directory, num):
-            global all_data, all_labels
-            try:
-                with open('data/' + directory + '/' + digit(num, 7) + '.txt', 'r') as f:
-                    data = list(f.read().splitlines())
-            except:
-                print('cannot open')
-                return
-            #for _ in range(10000):
-            #    datum = data[randrange(len(data))]
-            for datum in data:
-                board, player, v1, v2, v3, result = datum.split()
-                player = int(player)
-                n_stones = calc_n_stones(board)
-                if min_n_stones <= n_stones < max_n_stones and player == black_white:
-                    v1 = float(v1)
-                    v2 = float(v2)
-                    v3 = float(v3)
-                    result = float(result)
-                    result = result / 64
-                    if player == 1:
-                        result = -result
-                    idx = 0
-                    for i in range(len(pattern_idx)):
-                        lines = make_lines(board, pattern_idx[i], 0)
-                        for line in lines:
-                            all_data[idx].append(line)
-                            idx += 1
-                    all_data[idx].append([(v1 - 15) / 15, (v2 - 15) / 15, (v3 - 15) / 15])
-                    all_labels.append(result)
+    def collect_data(directory, num):
+        global all_data, all_labels
+        try:
+            with open('data/' + directory + '/' + digit(num, 7) + '.txt', 'r') as f:
+                data = list(f.read().splitlines())
+        except:
+            print('cannot open')
+            return
+        #for _ in range(10000):
+        #    datum = data[randrange(len(data))]
+        for datum in data:
+            board, player, v1, v2, v3, result = datum.split()
+            player = int(player)
+            n_stones = calc_n_stones(board)
+            if min_n_stones <= n_stones < max_n_stones: # and player == black_white:
+                v1 = float(v1)
+                v2 = float(v2)
+                v3 = float(v3)
+                result = float(result)
+                result = result / 64
+                #if player == 1:
+                #    result = -result
+                idx = 0
+                for i in range(len(pattern_idx)):
+                    lines = make_lines(board, pattern_idx[i], 0)
+                    for line in lines:
+                        all_data[idx].append(line)
+                        idx += 1
+                all_data[idx].append([(v2 - 15) / 15, (v3 - 15) / 15])
+                all_labels.append(result)
 
-        
-        x = [None for _ in range(ln_in)]
-        ys = []
-        names = ['line2', 'line3', 'line4', 'diagonal5', 'diagonal6', 'diagonal7', 'diagonal8', 'edge2X', 'triangle', 'edgeblock', 'cross']
-        idx = 0
-        for i in range(len(pattern_idx)):
-            layers = []
-            layers.append(Dense(32, name=names[i] + '_dense0'))
-            layers.append(LeakyReLU(alpha=0.01))
-            layers.append(Dense(32, name=names[i] + '_dense1'))
-            layers.append(LeakyReLU(alpha=0.01))
-            layers.append(Dense(32, name=names[i] + '_dense2'))
-            layers.append(LeakyReLU(alpha=0.01))
-            layers.append(Dense(1, name=names[i] + '_out'))
-            add_elems = []
-            for j in range(len(pattern_idx[i])):
-                x[idx] = Input(shape=len(pattern_idx[i][0]) * 2, name=names[i] + '_in_' + str(j))
-                tmp = x[idx]
-                for layer in layers:
-                    tmp = layer(tmp)
-                add_elems.append(tmp)
-                idx += 1
-            ys.append(Add(name=names[i] + '_pre_prediction')(add_elems))
-        x[idx] = Input(shape=3, name='additional_input')
-        y_add = Dense(8, name='add_dense0')(x[idx])
-        y_add = LeakyReLU(alpha=0.01)(y_add)
-        y_add = Dense(8, name='add_dense1')(y_add)
-        y_add = LeakyReLU(alpha=0.01)(y_add)
-        y_add = Dense(8, name='add_dense2')(y_add)
-        y_add = LeakyReLU(alpha=0.01)(y_add)
-        y_add = Dense(1, name='add_dense3')(y_add)
-        ys.append(y_add)
-        y_all = Add()(ys)
-        '''
-        y_all = Concatenate(axis=-1)(ys)
-        y_all = Dense(16, name='final_dense0')(y_all)
-        y_all = LeakyReLU(alpha=0.01)(y_all)
-        y_all = Dense(1, name='final_dense1')(y_all)
-        '''
-        model = Model(inputs=x, outputs=y_all)
+    x = [None for _ in range(ln_in)]
+    ys = []
+    names = ['line2', 'line3', 'line4', 'diagonal5', 'diagonal6', 'diagonal7', 'diagonal8', 'edge2X', 'triangle', 'edgeblock', 'cross', 'corner9']
+    idx = 0
+    for i in range(len(pattern_idx)):
+        layers = []
+        layers.append(Dense(32, name=names[i] + '_dense0'))
+        layers.append(LeakyReLU(alpha=0.01))
+        layers.append(Dense(32, name=names[i] + '_dense1'))
+        layers.append(LeakyReLU(alpha=0.01))
+        layers.append(Dense(32, name=names[i] + '_dense2'))
+        layers.append(LeakyReLU(alpha=0.01))
+        layers.append(Dense(1, name=names[i] + '_out'))
+        add_elems = []
+        for j in range(len(pattern_idx[i])):
+            x[idx] = Input(shape=len(pattern_idx[i][0]) * 2, name=names[i] + '_in_' + str(j))
+            tmp = x[idx]
+            for layer in layers:
+                tmp = layer(tmp)
+            add_elems.append(tmp)
+            idx += 1
+        ys.append(Add(name=names[i] + '_pre_prediction')(add_elems))
+    x[idx] = Input(shape=2, name='additional_input')
+    y_add = Dense(8, name='add_dense0')(x[idx])
+    y_add = LeakyReLU(alpha=0.01)(y_add)
+    y_add = Dense(8, name='add_dense1')(y_add)
+    y_add = LeakyReLU(alpha=0.01)(y_add)
+    y_add = Dense(8, name='add_dense2')(y_add)
+    y_add = LeakyReLU(alpha=0.01)(y_add)
+    y_add = Dense(1, name='add_dense3')(y_add)
+    ys.append(y_add)
+    y_all = Add()(ys)
+    '''
+    y_all = Concatenate(axis=-1)(ys)
+    y_all = Dense(16, name='final_dense0')(y_all)
+    y_all = LeakyReLU(alpha=0.01)(y_all)
+    y_all = Dense(1, name='final_dense1')(y_all)
+    '''
+    model = Model(inputs=x, outputs=y_all)
 
-        model = load_model('learned_data/bef_' + str(black_white) + '_' + str(stone_strt) + '_' + str(stone_end) + '.h5')
+    #model = load_model('learned_data/bef_' + str(stone_strt) + '_' + str(stone_end) + '.h5')
 
-        #model.summary()
-        #plot_model(model, to_file='learned_data/model.png', show_shapes=True)
+    #model.summary()
+    plot_model(model, to_file='learned_data/model.png', show_shapes=True)
 
-        model.compile(loss='mse', metrics='mae', optimizer='adam')
+    model.compile(loss='mse', metrics='mae', optimizer='adam')
 
-        for i in trange(1, 40):
-            collect_data('records3', i)
-        len_data = len(all_labels)
-        print(len_data)
-        
-        all_data = [np.array(arr) for arr in all_data]
-        all_labels = np.array(all_labels)
-        print('converted to numpy arr')
-        
-        p = np.random.permutation(len_data)
-        all_data = [arr[p] for arr in all_data]
-        all_labels = all_labels[p]
+    for i in trange(1, 52):
+        collect_data('records3', i)
+    len_data = len(all_labels)
+    print(len_data)
+    
+    all_data = [np.array(arr) for arr in all_data]
+    all_labels = np.array(all_labels)
+    print('converted to numpy arr')
+    
+    p = np.random.permutation(len_data)
+    all_data = [arr[p] for arr in all_data]
+    all_labels = all_labels[p]
 
-        n_train_data = int(len_data * (1.0 - test_ratio))
-        n_test_data = int(len_data * test_ratio)
+    n_train_data = int(len_data * (1.0 - test_ratio))
+    n_test_data = int(len_data * test_ratio)
 
-        train_data = [arr[0:n_train_data] for arr in all_data]
-        train_labels = all_labels[0:n_train_data]
-        test_data = [arr[n_train_data:len_data] for arr in all_data]
-        test_labels = all_labels[n_train_data:len_data]
+    train_data = [arr[0:n_train_data] for arr in all_data]
+    train_labels = all_labels[0:n_train_data]
+    test_data = [arr[n_train_data:len_data] for arr in all_data]
+    test_labels = all_labels[n_train_data:len_data]
 
 
-        #print(model.evaluate(all_data, all_labels))
-        early_stop = EarlyStopping(monitor='val_loss', patience=10)
-        model_checkpoint = ModelCheckpoint(filepath=os.path.join('learned_data/' + str(black_white) + '_' + str(stone_strt) + '_' + str(stone_end), 'model_{epoch:02d}_{val_loss:.5f}_{val_mae:.5f}.h5'), monitor='val_loss', verbose=1)
-        reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=2, min_lr=0.0001)
-        history = model.fit(train_data, train_labels, epochs=n_epochs, batch_size=2048, validation_data=(test_data, test_labels), callbacks=[early_stop])
+    #print(model.evaluate(all_data, all_labels))
+    early_stop = EarlyStopping(monitor='val_loss', patience=10)
+    model_checkpoint = ModelCheckpoint(filepath=os.path.join('learned_data/' + str(stone_strt) + '_' + str(stone_end), 'model_{epoch:02d}_{val_loss:.5f}_{val_mae:.5f}.h5'), monitor='val_loss', verbose=1)
+    reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=2, min_lr=0.0001)
+    history = model.fit(train_data, train_labels, epochs=n_epochs, batch_size=2048, validation_data=(test_data, test_labels), callbacks=[early_stop])
 
-        now = datetime.datetime.today()
-        print(str(now.year) + digit(now.month, 2) + digit(now.day, 2) + '_' + digit(now.hour, 2) + digit(now.minute, 2))
-        model.save('learned_data/' + str(black_white) + '_' + str(stone_strt) + '_' + str(stone_end) + '.h5')
+    now = datetime.datetime.today()
+    print(str(now.year) + digit(now.month, 2) + digit(now.day, 2) + '_' + digit(now.hour, 2) + digit(now.minute, 2))
+    model.save('learned_data/' + str(stone_strt) + '_' + str(stone_end) + '.h5')
 
-        for key in ['loss', 'val_loss']:
-            plt.plot(history.history[key], label=key)
-        plt.xlabel('epoch')
-        plt.ylabel('loss')
-        plt.legend(loc='best')
-        plt.savefig('learned_data/loss_' + str(black_white) + '_' + str(stone_strt) + '_' + str(stone_end) + '.png')
-        plt.clf()
-        
-        for key in ['mae', 'val_mae']:
-            plt.plot(history.history[key], label=key)
-        plt.xlabel('epoch')
-        plt.ylabel('mae')
-        plt.legend(loc='best')
-        plt.savefig('learned_data/mae_' + str(black_white) + '_' + str(stone_strt) + '_' + str(stone_end) + '.png')
-        plt.clf()
-        
-        with open('learned_data/result.txt', 'a') as f:
-            f.write(str(black_white) + '_' + str(stone_strt) + '_' + str(stone_end) + '\t' + str(history.history['loss'][-1]) + '\t' + str(history.history['val_loss'][-1]) + '\t' + str(history.history['mae'][-1]) + '\t' + str(history.history['val_mae'][-1]) + '\n')
+    for key in ['loss', 'val_loss']:
+        plt.plot(history.history[key], label=key)
+    plt.xlabel('epoch')
+    plt.ylabel('loss')
+    plt.legend(loc='best')
+    plt.savefig('learned_data/loss_' + str(stone_strt) + '_' + str(stone_end) + '.png')
+    plt.clf()
+    
+    for key in ['mae', 'val_mae']:
+        plt.plot(history.history[key], label=key)
+    plt.xlabel('epoch')
+    plt.ylabel('mae')
+    plt.legend(loc='best')
+    plt.savefig('learned_data/mae_' + str(stone_strt) + '_' + str(stone_end) + '.png')
+    plt.clf()
+    
+    with open('learned_data/result.txt', 'a') as f:
+        f.write(str(stone_strt) + '_' + str(stone_end) + '\t' + str(history.history['loss'][-1]) + '\t' + str(history.history['val_loss'][-1]) + '\t' + str(history.history['mae'][-1]) + '\t' + str(history.history['val_mae'][-1]) + '\n')
