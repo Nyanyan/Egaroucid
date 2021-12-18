@@ -214,6 +214,10 @@ inline int corner91(int phase_idx, const board *b, int x, int y, int z){
     return reverse_board[b->b[x]] / p35 * p36 + reverse_board[b->b[y]] / p35 * p33 + reverse_board[b->b[z]] / p35;
 }
 
+inline int edge_2y(int phase_idx, const board *b, int x, int y){
+    return pop_digit[b->b[x]][2] * p39 + b->b[y] * p31 + pop_digit[b->b[x]][5];
+}
+
 inline void calc_idx(int phase_idx, const board *b, int idxes[]){
     idxes[0] = b->b[1];
     idxes[1] = b->b[6];
@@ -261,8 +265,12 @@ inline void calc_idx(int phase_idx, const board *b, int idxes[]){
     idxes[43] = corner91(phase_idx, b, 0, 1, 2);
     idxes[44] = corner90(phase_idx, b, 7, 6, 5);
     idxes[45] = corner91(phase_idx, b, 7, 6, 5);
-    idxes[46] = min(max_surround - 1, calc_surround(b, black));
-    idxes[47] = min(max_surround - 1, calc_surround(b, white));
+    idxes[46] = edge_2y(phase_idx, b, 1, 0);
+    idxes[47] = edge_2y(phase_idx, b, 6, 7);
+    idxes[48] = edge_2y(phase_idx, b, 9, 8);
+    idxes[49] = edge_2y(phase_idx, b, 14, 15);
+    idxes[50] = min(max_surround - 1, calc_surround(b, black));
+    idxes[51] = min(max_surround - 1, calc_surround(b, white));
 }
 
 inline void convert_idx(string str){
@@ -293,10 +301,10 @@ inline void convert_idx(string str){
     }
     int ai_player = (str[65] == '0' ? 0 : 1);
     int phase_idx = calc_phase_idx(&b);
-    int idxes[48];
+    int idxes[52];
     calc_idx(phase_idx, &b, idxes);
     cout << phase_idx << " " << ai_player << " ";
-    for (i = 0; i < 48; ++i)
+    for (i = 0; i < 52; ++i)
         cout << idxes[i] << " ";
     string score;
     istringstream iss(str);
@@ -305,7 +313,7 @@ inline void convert_idx(string str){
     cout << score << endl;
 }
 
-#define n_files 51
+#define n_files 71
 
 const string file_names[n_files] = {
     "0000001.txt",
@@ -358,7 +366,27 @@ const string file_names[n_files] = {
     "0000048.txt",
     "0000049.txt",
     "0000050.txt",
-    "0000051.txt"
+    "0000051.txt",
+    "0000052.txt",
+    "0000053.txt",
+    "0000054.txt",
+    "0000055.txt",
+    "0000056.txt",
+    "0000057.txt",
+    "0000058.txt",
+    "0000059.txt",
+    "0000060.txt",
+    "0000061.txt",
+    "0000062.txt",
+    "0000063.txt",
+    "0000064.txt",
+    "0000065.txt",
+    "0000066.txt",
+    "0000067.txt",
+    "0000068.txt",
+    "0000069.txt",
+    "0000070.txt",
+    "0000071.txt"
 };
 
 int main(){

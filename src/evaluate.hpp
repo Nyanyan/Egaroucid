@@ -7,7 +7,7 @@
 
 using namespace std;
 
-#define n_patterns 12
+#define n_patterns 13
 #define max_surround 80
 #define max_evaluate_idx 59049
 
@@ -133,14 +133,14 @@ inline void init_evaluation_base() {
 }
 
 inline void init_evaluation_calc(){
-    ifstream ifs("C:/github/egaroucid/Egaroucid5/src/resources/param.txt");
+    ifstream ifs("resources/param.txt");
     if (ifs.fail()){
         cerr << "evaluation file not exist" << endl;
         exit(1);
     }
     string line;
     int phase_idx, pattern_idx, pattern_elem, sur0, sur1;
-    const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9};
+    const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10};
     for (phase_idx = 0; phase_idx < n_phases; ++phase_idx){
         cerr << "=";
         for (pattern_idx = 0; pattern_idx < n_patterns; ++pattern_idx){
@@ -243,6 +243,10 @@ inline int corner9(int phase_idx, const board *b, int x, int y, int z){
         pattern_arr[phase_idx][11][reverse_board[b->b[x]] / p35 * p36 + reverse_board[b->b[y]] / p35 * p33 + reverse_board[b->b[z]] / p35];
 }
 
+inline int edge_2y(int phase_idx, const board *b, int x, int y){
+    return pattern_arr[phase_idx][12][pop_digit[b->b[x]][2] * p39 + b->b[y] * p31 + pop_digit[b->b[x]][5]];
+}
+
 inline int calc_pattern(int phase_idx, const board *b){
     return 
         pattern_arr[phase_idx][0][b->b[1]] + pattern_arr[phase_idx][0][b->b[6]] + pattern_arr[phase_idx][0][b->b[9]] + pattern_arr[phase_idx][0][b->b[14]] + 
@@ -256,7 +260,8 @@ inline int calc_pattern(int phase_idx, const board *b){
         triangle0(phase_idx, b, 0, 1, 2, 3) + triangle0(phase_idx, b, 7, 6, 5, 4) + triangle0(phase_idx, b, 15, 14, 13, 12) + triangle1(phase_idx, b, 15, 14, 13, 12) + 
         edge_block(phase_idx, b, 0, 1) + edge_block(phase_idx, b, 7, 6) + edge_block(phase_idx, b, 8, 9) + edge_block(phase_idx, b, 15, 14) + 
         cross(phase_idx, b, 21, 20, 22) + cross(phase_idx, b, 32, 31, 33) + 
-        corner9(phase_idx, b, 0, 1, 2) + corner9(phase_idx, b, 7, 6, 5);
+        corner9(phase_idx, b, 0, 1, 2) + corner9(phase_idx, b, 7, 6, 5) + 
+        edge_2y(phase_idx, b, 1, 0) + edge_2y(phase_idx, b, 6, 7) + edge_2y(phase_idx, b, 9, 8) + edge_2y(phase_idx, b, 14, 15);
 }
 
 inline int mid_evaluate(const board *b){

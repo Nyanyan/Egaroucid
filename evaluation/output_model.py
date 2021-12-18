@@ -34,7 +34,7 @@ for stone_strt in [0, 10, 20, 30, 40, 50]:
 
     model = load_model('learned_data/' + str(stone_strt) + '_' + str(stone_end) + '.h5', custom_objects={'my_loss': my_loss})
 
-    layer_names = ['line2', 'line3', 'line4', 'diagonal5', 'diagonal6', 'diagonal7', 'diagonal8', 'edge2X', 'triangle', 'edgeblock', 'cross', 'corner9']
+    layer_names = ['line2', 'line3', 'line4', 'diagonal5', 'diagonal6', 'diagonal7', 'diagonal8', 'edge2X', 'triangle', 'edgeblock', 'cross', 'corner9', 'edge2Y']
     names = []
     for name in layer_names:
         names.append(name + '_dense0')

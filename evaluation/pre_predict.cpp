@@ -11,7 +11,7 @@ typedef float eval_type;
 #define n_phases 6
 #define n_line 6561
 
-#define n_patterns 12
+#define n_patterns 13
 #define n_dense0 32
 #define n_dense1 32
 #define n_dense2 32
@@ -46,6 +46,8 @@ typedef float eval_type;
 #define p38m 6560
 #define p39m 19682
 #define p310m 59048
+
+const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10};
 
 int pattern_arr[n_phases][n_patterns][max_evaluate_idx];
 int add_arr[n_phases][max_surround][max_surround];
@@ -96,7 +98,7 @@ inline int calc_pop(int a, int b, int s){
 
 inline int calc_rev_idx(int pattern_idx, int pattern_size, int idx){
     int res = 0;
-    if (pattern_idx <= 7){
+    if (pattern_idx <= 7 || pattern_idx == 12){
         for (int i = 0; i < pattern_size; ++i)
             res += pow3[i] * calc_pop(idx, i, pattern_size);
     } else if (pattern_idx == 8){
@@ -232,7 +234,6 @@ inline void init_evaluation_pred(){
     eval_type add_bias2[n_add_dense2];
     eval_type add_dense3[n_add_dense2];
     eval_type add_bias3;
-    const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9};
     for (phase_idx = 0; phase_idx < n_phases; ++phase_idx){
         cerr << "=";
         for (pattern_idx = 0; pattern_idx < n_patterns; ++pattern_idx){
@@ -317,7 +318,6 @@ inline void init_evaluation_pred(){
 
 void output_param(){
     int phase_idx, pattern_idx, pattern_elem, dense_idx, canput, sur0, sur1, tmp, i, j, k;
-    const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9};
     for (phase_idx = 0; phase_idx < n_phases; ++phase_idx){
         cerr << "=";
         for (pattern_idx = 0; pattern_idx < n_patterns; ++pattern_idx){

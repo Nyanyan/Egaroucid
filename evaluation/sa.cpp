@@ -12,11 +12,7 @@ using namespace std;
 
 #define n_phases 6
 #define phase_n_stones 10
-#define n_patterns 12
-#define n_dense2 2
-#define n_add_input 2
-#define n_add_dense1 8
-#define n_all_input 30
+#define n_patterns 13
 #define max_surround 80
 #define max_evaluate_idx 59049
 
@@ -34,8 +30,8 @@ using namespace std;
 #define sc_w 6400
 #define step 100
 
-const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9};
-const int eval_sizes[n_patterns + 1] = {p38, p38, p38, p35, p36, p37, p38, p310, p310, p310, p310, p39, max_surround * max_surround};
+const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10};
+const int eval_sizes[n_patterns + 1] = {p38, p38, p38, p35, p36, p37, p38, p310, p310, p310, p310, p39, p310, max_surround * max_surround};
 int eval_arr[n_phases][n_patterns + 1][max_evaluate_idx];
 vector<vector<vector<int>>> test_data;
 vector<vector<double>> test_labels;
@@ -137,7 +133,7 @@ inline int calc_add_idx(vector<int> arr){
     //return arr[42] * max_surround * max_surround + arr[43] * max_surround + arr[44];
     //return arr[42] / 2 * max_surround_2 * max_surround_2 + arr[43] / 2 * max_surround_2 + arr[44] / 2;
     //return arr[42] * max_surround_2 * max_surround_2 + arr[43] / 2 * max_surround_2 + arr[44] / 2;
-    return arr[46] * max_surround + arr[47];
+    return arr[50] * max_surround + arr[51];
 }
 
 void input_test_data(){
@@ -155,7 +151,7 @@ void input_test_data(){
     }
     string line;
     int phase, player, score;
-    int idxes[48];
+    int idxes[52];
     int t = 0;
     //for (i = 0; i < 220000; ++i)
     //    getline(ifs, line);
@@ -163,7 +159,7 @@ void input_test_data(){
     for (i = 0; i < n_phases; ++i){
         nums[i] = 0;
     }
-    const int pattern_nums[46] = {
+    const int pattern_nums[50] = {
         0, 0, 0, 0,
         1, 1, 1, 1,
         2, 2, 2, 2,
@@ -175,32 +171,37 @@ void input_test_data(){
         8, 8, 8, 8,
         9, 9, 9, 9,
         10, 10, 10, 10,
-        11, 11, 11, 11
+        11, 11, 11, 11,
+        12, 12, 12, 12
     };
-    while (getline(ifs, line) && t < 200000000){
+    for (i = 0; i < 1000000; ++i)
+        getline(ifs, line);
+    while (getline(ifs, line) && t < 3000000){
         ++t;
+        if ((t & 0b111111111111111) == 0b111111111111111)
+            cerr << '\r' << t;
         istringstream iss(line);
         iss >> phase;
         iss >> player;
-        for (i = 0; i < 48; ++i)
+        for (i = 0; i < 52; ++i)
             iss >> idxes[i];
         iss >> score;
         vector<int> tmp;
         //cerr << phase << " " << player << " " << score << endl;
-        for (i = 0; i < 48; ++i)
+        for (i = 0; i < 52; ++i)
             tmp.push_back(idxes[i]);
-        for (i = 0; i < 46; ++i)
+        for (i = 0; i < 50; ++i)
             used_idxes[phase][pattern_nums[i]].emplace(tmp[i]);
-        used_idxes[phase][12].emplace(calc_add_idx(tmp));
+        used_idxes[phase][13].emplace(calc_add_idx(tmp));
         test_data[phase].push_back(tmp);
         test_labels[phase].push_back(score * step);
-        for (i = 0; i < 46; ++i)
+        for (i = 0; i < 50; ++i)
             test_memo[phase][pattern_nums[i]][tmp[i]].push_back(nums[phase]);
-        test_memo[phase][12][calc_add_idx(tmp)].push_back(nums[phase]);
+        test_memo[phase][13][calc_add_idx(tmp)].push_back(nums[phase]);
         test_scores[phase].push_back(0);
         ++nums[phase];
     }
-    cerr << t << endl;
+    cerr << '\r' << t << endl;
     cerr << "loaded data" << endl;
     for (phase = 0; phase < n_phases; ++phase){
         for (i = 0; i < n_patterns + 1; ++i){
@@ -300,7 +301,11 @@ inline int calc_score(int phase, int i){
         eval_arr[phase][11][test_data[phase][i][43]] + 
         eval_arr[phase][11][test_data[phase][i][44]] + 
         eval_arr[phase][11][test_data[phase][i][45]] + 
-        eval_arr[phase][12][calc_add_idx(test_data[phase][i])];
+        eval_arr[phase][12][test_data[phase][i][46]] + 
+        eval_arr[phase][12][test_data[phase][i][47]] + 
+        eval_arr[phase][12][test_data[phase][i][48]] + 
+        eval_arr[phase][12][test_data[phase][i][49]] + 
+        eval_arr[phase][13][calc_add_idx(test_data[phase][i])];
 }
 
 inline double first_scoring(){
@@ -360,7 +365,7 @@ inline int calc_pop(int a, int b, int s){
 
 inline int calc_rev_idx(int pattern_idx, int pattern_size, int idx){
     int res = 0;
-    if (pattern_idx <= 7){
+    if (pattern_idx <= 7 || pattern_idx == 12){
         for (int i = 0; i < pattern_size; ++i)
             res += pow3[i] * calc_pop(idx, i, pattern_size);
     } else if (pattern_idx == 8){
@@ -420,9 +425,9 @@ void sa(unsigned long long tl){
     cerr << endl;
     for (;;){
         ++t;
-        phase = myrandrange(3, n_phases);
+        phase = myrandrange(0, n_phases);
         pattern = myrandrange(0, n_patterns + 1);
-        idx = used_idxes_vector[phase][pattern][myrandrange(0, (int)used_idxes[phase][pattern].size())];
+        idx = used_idxes_vector[phase][pattern][myrandrange(0, (int)used_idxes_vector[phase][pattern].size())];
         if (pattern < n_patterns){
             f_val = eval_arr[phase][pattern][idx];
             eval_arr[phase][pattern][idx] += myrandrange(-50, 51);
@@ -468,8 +473,8 @@ int main(){
     input_param();
     input_test_data();
 
-    int hour = 1;
-    int minute = 0;
+    int hour = 0;
+    int minute = 10;
     minute += hour * 60;
 
     sa(minute * 60 * 1000);

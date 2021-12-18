@@ -102,12 +102,18 @@ cross_idx = [
     [63, 54, 45, 36, 62, 53, 44, 55, 46, 37], [63, 54, 45, 36, 55, 46, 37, 62, 53, 44]
 ]
 
-pattern_idx = [line2_idx, line3_idx, line4_idx, diagonal5_idx, diagonal6_idx, diagonal7_idx, diagonal8_idx, edge_2x_idx, triangle_idx, edge_block, cross_idx, corner9_idx]
+edge_2y_idx = [[10, 0, 1, 2, 3, 4, 5, 6, 7, 13], [17, 0, 8, 16, 24, 32, 40, 48, 56, 41], [50, 56, 57, 58, 59, 60, 61, 62, 63, 53], [46, 63, 55, 47, 39, 31, 23, 15, 7, 22]]
+for pattern in deepcopy(edge_2y_idx):
+    edge_2y_idx.append(list(reversed(pattern)))
+
+
+pattern_idx = [line2_idx, line3_idx, line4_idx, diagonal5_idx, diagonal6_idx, diagonal7_idx, diagonal8_idx, edge_2x_idx, triangle_idx, edge_block, cross_idx, corner9_idx, edge_2y_idx]
 ln_in = sum([len(elem) for elem in pattern_idx]) + 1
 
 # [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56]
+# [0, 6, 12, 18, 24, 30, 36, 42, 48, 54]
 
-for stone_strt in [50, 40, 30, 20, 10, 0]:
+for stone_strt in reversed([0, 10, 20, 30, 40, 50]):
     stone_end = stone_strt + 10
 
     min_n_stones = 4 + stone_strt
@@ -180,7 +186,7 @@ for stone_strt in [50, 40, 30, 20, 10, 0]:
 
     x = [None for _ in range(ln_in)]
     ys = []
-    names = ['line2', 'line3', 'line4', 'diagonal5', 'diagonal6', 'diagonal7', 'diagonal8', 'edge2X', 'triangle', 'edgeblock', 'cross', 'corner9']
+    names = ['line2', 'line3', 'line4', 'diagonal5', 'diagonal6', 'diagonal7', 'diagonal8', 'edge2X', 'triangle', 'edgeblock', 'cross', 'corner9', 'edge2Y']
     idx = 0
     for i in range(len(pattern_idx)):
         layers = []
@@ -225,7 +231,7 @@ for stone_strt in [50, 40, 30, 20, 10, 0]:
 
     model.compile(loss='mse', metrics='mae', optimizer='adam')
 
-    for i in trange(1, 52):
+    for i in trange(1, 72):
         collect_data('records3', i)
     len_data = len(all_labels)
     print(len_data)
