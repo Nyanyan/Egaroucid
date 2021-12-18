@@ -16,6 +16,8 @@ using namespace std;
 #define max_surround 80
 #define max_evaluate_idx 59049
 
+#define sa_phase 3
+
 #define p31 3
 #define p32 9
 #define p33 27
@@ -30,20 +32,19 @@ using namespace std;
 #define sc_w 6400
 #define step 100
 
-#define n_data 3000000
+#define n_data 5000000
 
 const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10};
 const int eval_sizes[n_patterns + 1] = {p38, p38, p38, p35, p36, p37, p38, p310, p310, p310, p310, p39, p310, max_surround * max_surround};
 int eval_arr[n_phases][n_patterns + 1][max_evaluate_idx];
-int test_data[n_phases][n_data / 6 + 1000][52];
-double test_labels[n_phases][n_data / 6 + 1000];
-int nums[n_phases];
-double scores[n_phases];
-vector<int> test_memo[n_phases][n_patterns + 1][max_evaluate_idx];
-vector<double> test_scores[n_phases];
-//vector<double> test_memo_scores[n_phases][2][n_patterns + 1][max_evaluate_idx];
-unordered_set<int> used_idxes[n_phases][n_patterns + 1];
-vector<int> used_idxes_vector[n_phases][n_patterns + 1];
+int test_data[n_data / 6 + 10000][52];
+double test_labels[n_data / 6 + 10000];
+int nums;
+double scores;
+vector<int> test_memo[n_patterns + 1][max_evaluate_idx];
+vector<double> test_scores;
+unordered_set<int> used_idxes[n_patterns + 1];
+vector<int> used_idxes_vector[n_patterns + 1];
 
 
 inline unsigned long long tim(){
@@ -149,8 +150,7 @@ void input_test_data(int strt){
     string line;
     int phase, player, score;
     int t = 0;
-    for (i = 0; i < n_phases; ++i)
-        nums[i] = 0;
+    nums = 0;
     const int pattern_nums[50] = {
         0, 0, 0, 0,
         1, 1, 1, 1,
@@ -166,14 +166,12 @@ void input_test_data(int strt){
         11, 11, 11, 11,
         12, 12, 12, 12
     };
-    for (i = 0; i < n_phases; ++i){
-        for (j = 0; j < n_patterns + 1; ++j){
-            used_idxes[i][j].clear();
-            for (k = 0; k < max_evaluate_idx; ++k)
-                test_memo[i][j][k].clear();
-        }
-        test_scores[i].clear();
+    for (j = 0; j < n_patterns + 1; ++j){
+        used_idxes[j].clear();
+        for (k = 0; k < max_evaluate_idx; ++k)
+            test_memo[j][k].clear();
     }
+    test_scores.clear();
     for (i = 0; i < strt; ++i)
         getline(ifs, line);
     while (getline(ifs, line) && t < n_data){
@@ -182,48 +180,40 @@ void input_test_data(int strt){
             cerr << '\r' << t;
         istringstream iss(line);
         iss >> phase;
-        iss >> player;
-        for (i = 0; i < 52; ++i)
-            iss >> test_data[phase][nums[phase]][i];
-        iss >> score;
-        for (i = 0; i < 50; ++i)
-            used_idxes[phase][pattern_nums[i]].emplace(test_data[phase][nums[phase]][i]);
-        used_idxes[phase][13].emplace(calc_add_idx(test_data[phase][nums[phase]]));
-        test_labels[phase][nums[phase]] = score * step;
-        for (i = 0; i < 50; ++i)
-            test_memo[phase][pattern_nums[i]][test_data[phase][nums[phase]][i]].push_back(nums[phase]);
-        test_memo[phase][13][calc_add_idx(test_data[phase][nums[phase]])].push_back(nums[phase]);
-        test_scores[phase].push_back(0);
-        ++nums[phase];
+        if (phase == sa_phase){
+            iss >> player;
+            for (i = 0; i < 52; ++i)
+                iss >> test_data[nums][i];
+            iss >> score;
+            for (i = 0; i < 50; ++i)
+                used_idxes[pattern_nums[i]].emplace(test_data[nums][i]);
+            used_idxes[13].emplace(calc_add_idx(test_data[nums]));
+            test_labels[nums] = score * step;
+            for (i = 0; i < 50; ++i)
+                test_memo[pattern_nums[i]][test_data[nums][i]].push_back(nums);
+            test_memo[13][calc_add_idx(test_data[nums])].push_back(nums);
+            test_scores.push_back(0);
+            ++nums;
+        }
     }
     cerr << '\r' << t << endl;
     cerr << "loaded data" << endl;
-    for (phase = 0; phase < n_phases; ++phase){
-        for (i = 0; i < n_patterns + 1; ++i){
-            for (auto elem: used_idxes[phase][i])
-                used_idxes_vector[phase][i].push_back(elem);
-        }
+    for (i = 0; i < n_patterns + 1; ++i){
+        for (auto elem: used_idxes[i])
+            used_idxes_vector[i].push_back(elem);
     }
 
-    cerr << t << endl;
-
-    
-    for (i = 0; i < n_phases; ++i)
-        cerr << nums[i] << " ";
-    cerr << endl;
+    cerr << "n_data " << t << endl;
 
     int u = 0;
     for (i = 0; i < n_patterns + 1; ++i)
         u += eval_sizes[i];
-    cerr << u << endl;
-    for (phase = 0; phase < n_phases; ++phase){
-        u = 0;
-        for (i = 0; i < n_patterns + 1; ++i){
-            u += (int)used_idxes[phase][i].size();
-        }
-        cerr << u << " ";
+    cerr << "n_all_param " << u << endl;
+    u = 0;
+    for (i = 0; i < n_patterns + 1; ++i){
+        u += (int)used_idxes[i].size();
     }
-    cerr << endl;
+    cerr << "used_param " << u << endl;
     
     ifs.close();
 }
@@ -255,108 +245,104 @@ inline int calc_score(int phase, int i){
     cerr << test_data[phase][i].size() << endl;
     */
     return
-        eval_arr[phase][0][test_data[phase][i][0]] + 
-        eval_arr[phase][0][test_data[phase][i][1]] + 
-        eval_arr[phase][0][test_data[phase][i][2]] + 
-        eval_arr[phase][0][test_data[phase][i][3]] + 
-        eval_arr[phase][1][test_data[phase][i][4]] + 
-        eval_arr[phase][1][test_data[phase][i][5]] + 
-        eval_arr[phase][1][test_data[phase][i][6]] + 
-        eval_arr[phase][1][test_data[phase][i][7]] + 
-        eval_arr[phase][2][test_data[phase][i][8]] + 
-        eval_arr[phase][2][test_data[phase][i][9]] + 
-        eval_arr[phase][2][test_data[phase][i][10]] + 
-        eval_arr[phase][2][test_data[phase][i][11]] + 
-        eval_arr[phase][3][test_data[phase][i][12]] + 
-        eval_arr[phase][3][test_data[phase][i][13]] + 
-        eval_arr[phase][3][test_data[phase][i][14]] + 
-        eval_arr[phase][3][test_data[phase][i][15]] + 
-        eval_arr[phase][4][test_data[phase][i][16]] + 
-        eval_arr[phase][4][test_data[phase][i][17]] + 
-        eval_arr[phase][4][test_data[phase][i][18]] + 
-        eval_arr[phase][4][test_data[phase][i][19]] + 
-        eval_arr[phase][5][test_data[phase][i][20]] + 
-        eval_arr[phase][5][test_data[phase][i][21]] + 
-        eval_arr[phase][5][test_data[phase][i][22]] + 
-        eval_arr[phase][5][test_data[phase][i][23]] + 
-        eval_arr[phase][6][test_data[phase][i][24]] + 
-        eval_arr[phase][6][test_data[phase][i][25]] + 
-        eval_arr[phase][7][test_data[phase][i][26]] + 
-        eval_arr[phase][7][test_data[phase][i][27]] + 
-        eval_arr[phase][7][test_data[phase][i][28]] + 
-        eval_arr[phase][7][test_data[phase][i][29]] + 
-        eval_arr[phase][8][test_data[phase][i][30]] + 
-        eval_arr[phase][8][test_data[phase][i][31]] + 
-        eval_arr[phase][8][test_data[phase][i][32]] + 
-        eval_arr[phase][8][test_data[phase][i][33]] + 
-        eval_arr[phase][9][test_data[phase][i][34]] + 
-        eval_arr[phase][9][test_data[phase][i][35]] + 
-        eval_arr[phase][9][test_data[phase][i][36]] + 
-        eval_arr[phase][9][test_data[phase][i][37]] + 
-        eval_arr[phase][10][test_data[phase][i][38]] + 
-        eval_arr[phase][10][test_data[phase][i][39]] + 
-        eval_arr[phase][10][test_data[phase][i][40]] + 
-        eval_arr[phase][10][test_data[phase][i][41]] + 
-        eval_arr[phase][11][test_data[phase][i][42]] + 
-        eval_arr[phase][11][test_data[phase][i][43]] + 
-        eval_arr[phase][11][test_data[phase][i][44]] + 
-        eval_arr[phase][11][test_data[phase][i][45]] + 
-        eval_arr[phase][12][test_data[phase][i][46]] + 
-        eval_arr[phase][12][test_data[phase][i][47]] + 
-        eval_arr[phase][12][test_data[phase][i][48]] + 
-        eval_arr[phase][12][test_data[phase][i][49]] + 
-        eval_arr[phase][13][calc_add_idx(test_data[phase][i])];
+        eval_arr[phase][0][test_data[i][0]] + 
+        eval_arr[phase][0][test_data[i][1]] + 
+        eval_arr[phase][0][test_data[i][2]] + 
+        eval_arr[phase][0][test_data[i][3]] + 
+        eval_arr[phase][1][test_data[i][4]] + 
+        eval_arr[phase][1][test_data[i][5]] + 
+        eval_arr[phase][1][test_data[i][6]] + 
+        eval_arr[phase][1][test_data[i][7]] + 
+        eval_arr[phase][2][test_data[i][8]] + 
+        eval_arr[phase][2][test_data[i][9]] + 
+        eval_arr[phase][2][test_data[i][10]] + 
+        eval_arr[phase][2][test_data[i][11]] + 
+        eval_arr[phase][3][test_data[i][12]] + 
+        eval_arr[phase][3][test_data[i][13]] + 
+        eval_arr[phase][3][test_data[i][14]] + 
+        eval_arr[phase][3][test_data[i][15]] + 
+        eval_arr[phase][4][test_data[i][16]] + 
+        eval_arr[phase][4][test_data[i][17]] + 
+        eval_arr[phase][4][test_data[i][18]] + 
+        eval_arr[phase][4][test_data[i][19]] + 
+        eval_arr[phase][5][test_data[i][20]] + 
+        eval_arr[phase][5][test_data[i][21]] + 
+        eval_arr[phase][5][test_data[i][22]] + 
+        eval_arr[phase][5][test_data[i][23]] + 
+        eval_arr[phase][6][test_data[i][24]] + 
+        eval_arr[phase][6][test_data[i][25]] + 
+        eval_arr[phase][7][test_data[i][26]] + 
+        eval_arr[phase][7][test_data[i][27]] + 
+        eval_arr[phase][7][test_data[i][28]] + 
+        eval_arr[phase][7][test_data[i][29]] + 
+        eval_arr[phase][8][test_data[i][30]] + 
+        eval_arr[phase][8][test_data[i][31]] + 
+        eval_arr[phase][8][test_data[i][32]] + 
+        eval_arr[phase][8][test_data[i][33]] + 
+        eval_arr[phase][9][test_data[i][34]] + 
+        eval_arr[phase][9][test_data[i][35]] + 
+        eval_arr[phase][9][test_data[i][36]] + 
+        eval_arr[phase][9][test_data[i][37]] + 
+        eval_arr[phase][10][test_data[i][38]] + 
+        eval_arr[phase][10][test_data[i][39]] + 
+        eval_arr[phase][10][test_data[i][40]] + 
+        eval_arr[phase][10][test_data[i][41]] + 
+        eval_arr[phase][11][test_data[i][42]] + 
+        eval_arr[phase][11][test_data[i][43]] + 
+        eval_arr[phase][11][test_data[i][44]] + 
+        eval_arr[phase][11][test_data[i][45]] + 
+        eval_arr[phase][12][test_data[i][46]] + 
+        eval_arr[phase][12][test_data[i][47]] + 
+        eval_arr[phase][12][test_data[i][48]] + 
+        eval_arr[phase][12][test_data[i][49]] + 
+        //eval_arr[phase][13][test_data[i][50]] + 
+        //eval_arr[phase][13][test_data[i][51]] + 
+        //eval_arr[phase][13][test_data[i][52]] + 
+        //eval_arr[phase][13][test_data[i][53]] + 
+        eval_arr[phase][13][calc_add_idx(test_data[i])];
 }
 
 inline double first_scoring(){
-    int phase, i, j, score;
+    int i, j, score;
     double avg_score, res = 0.0, err;
-    for (phase = 0; phase < n_phases; ++phase){
-        avg_score = 0.0;
-        for (i = 0; i < nums[phase]; ++i){
-            score = calc_score(phase, i);
-            err = loss(test_labels[phase][i] - score, nums[phase]);
-            avg_score += err;
-            test_scores[phase][i] = err;
-        }
-        scores[phase] = avg_score;
-        res += avg_score / n_phases;
+    avg_score = 0.0;
+    for (i = 0; i < nums; ++i){
+        score = calc_score(sa_phase, i);
+        err = loss(test_labels[i] - score, nums);
+        avg_score += err;
+        test_scores[i] = err;
     }
+    scores = avg_score;
+    res = avg_score;
     return res;
 }
 
-inline double scoring(int phase, int pattern, int idx){
+inline double scoring(int pattern, int idx){
     int i, j, score;
     double avg_score, res = 0.0, err;
-    int data_size = nums[phase];
-    avg_score = scores[phase];
-    for (i = 0; i < test_memo[phase][pattern][idx].size(); ++i){
-        avg_score -= test_scores[phase][test_memo[phase][pattern][idx][i]];
-        score = calc_score(phase, test_memo[phase][pattern][idx][i]);
-        err = loss(test_labels[phase][test_memo[phase][pattern][idx][i]] - score, data_size);
-        test_scores[phase][test_memo[phase][pattern][idx][i]] = err;
+    int data_size = nums;
+    avg_score = scores;
+    for (i = 0; i < test_memo[pattern][idx].size(); ++i){
+        avg_score -= test_scores[test_memo[pattern][idx][i]];
+        score = calc_score(sa_phase, test_memo[pattern][idx][i]);
+        err = loss(test_labels[test_memo[pattern][idx][i]] - score, data_size);
+        test_scores[test_memo[pattern][idx][i]] = err;
         avg_score += err;
     }
-    scores[phase] = avg_score;
-    for (i = 0; i < n_phases; ++i){
-        res += scores[i] / n_phases;
-    }
+    scores = avg_score;
+    res = scores;
     return res;
 }
 
 inline void scoring_mae(){
-    int phase, i, j, score;
+    int i, j, score;
     double avg_score, res = 0.0;
-    for (phase = 0; phase < n_phases; ++phase){
-        avg_score = 0;
-        for (i = 0; i < nums[phase]; ++i){
-            score = calc_score(phase, i);
-            avg_score += fabs(test_labels[phase][i] - (double)score) / nums[phase];
-        }
-        cerr << avg_score << " ";
-        res += avg_score / n_phases;
+    avg_score = 0;
+    for (i = 0; i < nums; ++i){
+        score = calc_score(sa_phase, i);
+        avg_score += fabs(test_labels[i] - (double)score) / nums;
     }
-    cerr << " " << res << "                                     ";
+    cerr << " " << avg_score << "                      ";
 }
 
 inline int calc_pop(int a, int b, int s){
@@ -411,6 +397,17 @@ inline int calc_rev_idx(int pattern_idx, int pattern_size, int idx){
         res += p32 * calc_pop(idx, 2, pattern_size);
         res += p31 * calc_pop(idx, 5, pattern_size);
         res += calc_pop(idx, 8, pattern_size);
+    } else if (pattern_idx == 13){
+        res += p39 * calc_pop(idx, 0, pattern_size);
+        res += p38 * calc_pop(idx, 5, pattern_size);
+        res += p37 * calc_pop(idx, 7, pattern_size);
+        res += p36 * calc_pop(idx, 8, pattern_size);
+        res += p35 * calc_pop(idx, 9, pattern_size);
+        res += p34 * calc_pop(idx, 1, pattern_size);
+        res += p33 * calc_pop(idx, 6, pattern_size);
+        res += p32 * calc_pop(idx, 2, pattern_size);
+        res += p31 * calc_pop(idx, 3, pattern_size);
+        res += calc_pop(idx, 4, pattern_size);
     }
     return res;
 }
@@ -425,30 +422,30 @@ void sa(unsigned long long tl){
     cerr << endl;
     for (;;){
         ++t;
-        phase = myrandrange(0, n_phases);
+        phase = sa_phase; //myrandrange(0, n_phases);
         pattern = myrandrange(0, n_patterns + 1);
-        idx = used_idxes_vector[phase][pattern][myrandrange(0, (int)used_idxes_vector[phase][pattern].size())];
+        idx = used_idxes_vector[pattern][myrandrange(0, (int)used_idxes_vector[pattern].size())];
         if (pattern < n_patterns){
             f_val = eval_arr[phase][pattern][idx];
             eval_arr[phase][pattern][idx] += myrandrange(-50, 51);
             rev_idx = calc_rev_idx(pattern, pattern_sizes[pattern], idx);
             eval_arr[phase][pattern][rev_idx] = eval_arr[phase][pattern][idx];
-            scoring(phase, pattern, idx);
-            n_score = scoring(phase, pattern, rev_idx);
+            scoring(pattern, idx);
+            n_score = scoring(pattern, rev_idx);
         } else{
             f_val = eval_arr[phase][pattern][idx];
             eval_arr[phase][pattern][idx] += myrandrange(-50, 51);
-            n_score = scoring(phase, pattern, idx);
+            n_score = scoring(pattern, idx);
         }
         if (n_score < score){
             score = n_score;
             ++u;
         } else{
             eval_arr[phase][pattern][idx] = f_val;
-            scoring(phase, pattern, idx);
+            scoring(pattern, idx);
             if (pattern < n_patterns){
                 eval_arr[phase][pattern][rev_idx] = f_val;
-                scoring(phase, pattern, rev_idx);
+                scoring(pattern, rev_idx);
             }
         }
         if ((t & 0b11111111111) == 0){

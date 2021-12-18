@@ -47,7 +47,7 @@ typedef float eval_type;
 #define p39m 19682
 #define p310m 59048
 
-const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10};
+const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10, 10};
 
 int pattern_arr[n_phases][n_patterns][max_evaluate_idx];
 int add_arr[n_phases][max_surround][max_surround];
@@ -144,6 +144,17 @@ inline int calc_rev_idx(int pattern_idx, int pattern_size, int idx){
         res += p32 * calc_pop(idx, 2, pattern_size);
         res += p31 * calc_pop(idx, 5, pattern_size);
         res += calc_pop(idx, 8, pattern_size);
+    } else if (pattern_idx == 13){
+        res += p39 * calc_pop(idx, 0, pattern_size);
+        res += p38 * calc_pop(idx, 5, pattern_size);
+        res += p37 * calc_pop(idx, 7, pattern_size);
+        res += p36 * calc_pop(idx, 8, pattern_size);
+        res += p35 * calc_pop(idx, 9, pattern_size);
+        res += p34 * calc_pop(idx, 1, pattern_size);
+        res += p33 * calc_pop(idx, 6, pattern_size);
+        res += p32 * calc_pop(idx, 2, pattern_size);
+        res += p31 * calc_pop(idx, 3, pattern_size);
+        res += calc_pop(idx, 4, pattern_size);
     }
     return res;
 }

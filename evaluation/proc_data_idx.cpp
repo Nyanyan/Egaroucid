@@ -218,6 +218,14 @@ inline int edge_2y(int phase_idx, const board *b, int x, int y){
     return pop_digit[b->b[x]][2] * p39 + b->b[y] * p31 + pop_digit[b->b[x]][5];
 }
 
+inline int narrow_triangle0(int phase_idx, const board *b, int v, int w, int x, int y, int z){
+    return b->b[v] / p33 * p35 + b->b[w] / p36 * p33 + b->b[x] / p37 * p32 + b->b[y] / p37 * p31 + b->b[z] / p37;
+}
+
+inline int narrow_triangle1(int phase_idx, const board *b, int v, int w, int x, int y, int z){
+    return reverse_board[b->b[v]] / p33 * p35 + reverse_board[b->b[w]] / p36 * p33 + pop_digit[b->b[x]][7] * p32 + pop_digit[b->b[y]][7] / p37 * p31 + pop_digit[b->b[z]][7] / p37;
+}
+
 inline void calc_idx(int phase_idx, const board *b, int idxes[]){
     idxes[0] = b->b[1];
     idxes[1] = b->b[6];
@@ -313,7 +321,7 @@ inline void convert_idx(string str){
     cout << score << endl;
 }
 
-#define n_files 71
+#define n_files 76
 
 const string file_names[n_files] = {
     "0000001.txt",
@@ -386,7 +394,12 @@ const string file_names[n_files] = {
     "0000068.txt",
     "0000069.txt",
     "0000070.txt",
-    "0000071.txt"
+    "0000071.txt",
+    "0000072.txt",
+    "0000073.txt",
+    "0000074.txt",
+    "0000075.txt",
+    "0000076.txt"
 };
 
 int main(){
@@ -407,6 +420,8 @@ int main(){
             ++t;
             convert_idx(line);
         }
+        if (i % 10 == 9)
+            cerr << endl;
     }
     cerr << t << endl;
 

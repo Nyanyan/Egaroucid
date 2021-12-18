@@ -106,6 +106,12 @@ edge_2y_idx = [[10, 0, 1, 2, 3, 4, 5, 6, 7, 13], [17, 0, 8, 16, 24, 32, 40, 48, 
 for pattern in deepcopy(edge_2y_idx):
     edge_2y_idx.append(list(reversed(pattern)))
 
+narrow_triangle_idx = [
+    [0, 1, 2, 3, 4, 8, 9, 16, 24, 32], [0, 8, 16, 24, 32, 1, 9, 2, 3, 4],
+    [7, 6, 5, 4, 3, 15, 14, 23, 31, 39], [7, 15, 23, 31, 39, 6, 14, 5, 4, 3],
+    [63, 62, 61, 60, 59, 55, 54, 47, 39, 31], [63, 55, 47, 39, 31, 62, 54, 61, 60, 59],
+    [56, 57, 58, 59, 60, 48, 49, 40, 32, 24], [56, 48, 40, 32, 24, 57, 49, 58, 59, 60]
+]
 
 pattern_idx = [line2_idx, line3_idx, line4_idx, diagonal5_idx, diagonal6_idx, diagonal7_idx, diagonal8_idx, edge_2x_idx, triangle_idx, edge_block, cross_idx, corner9_idx, edge_2y_idx]
 ln_in = sum([len(elem) for elem in pattern_idx]) + 1
@@ -231,7 +237,7 @@ for stone_strt in reversed([0, 10, 20, 30, 40, 50]):
 
     model.compile(loss='mse', metrics='mae', optimizer='adam')
 
-    for i in trange(1, 72):
+    for i in trange(1, 77):
         collect_data('records3', i)
     len_data = len(all_labels)
     print(len_data)
