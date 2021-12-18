@@ -26,3 +26,19 @@ eg lv10 vs ed lv9
 
 eg lv10 ed lv10
 133   97 32 139   30 133
+
+2021/12/18
+new evaluation function (with 13 patterns) without hillclimb
+eg lv10 vs ed lv9
+133   125 35 108   30 133
+
+eg lv10 vs ed lv10
+133   106 42 120   30 133
+
+hillclimb
+eg lv10 vs ed lv9
+133   130 37 101   30 133
+
+eg lv10 vs ed lv10
+133   102 38 128   30 133
+
