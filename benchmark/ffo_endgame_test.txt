@@ -122,3 +122,10 @@
 #42 final depth: 22 time: 9532 policy: 14 value: 600 nodes: 132779150 nps: 13938604 get: 92568 reg: 1032950
 #43 final depth: 23 time: 19061 policy: 50 value: -1200 nodes: 226305453 nps: 11877057 get: 393232 reg: 3361460
 #44 final depth: 23 time: 11868 policy: 11 value: -1400 nodes: 150897265 nps: 12721064 get: 235038 reg: 1798696
+
+2021/12/19 new evaluation function with 10 phase
+#40 final depth: 20 time: 2829 policy: 8 value: 3800 nodes: 38534774 nps: 13650291 get: 13573 reg: 225224
+#41 final depth: 22 time: 9709 policy: 31 value: 0 nodes: 133911422 nps: 13801032 get: 149514 reg: 1078385
+#42 final depth: 22 time: 7981 policy: 14 value: 600 nodes: 107686616 nps: 13506411 get: 89980 reg: 868444
+#43 final depth: 23 time: 18099 policy: 50 value: -1200 nodes: 210640665 nps: 11640821 get: 387509 reg: 3290939
+#44 final depth: 23 time: 11761 policy: 11 value: -1400 nodes: 145804410 nps: 12403607 get: 190668 reg: 1809181
