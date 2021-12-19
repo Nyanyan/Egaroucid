@@ -237,7 +237,7 @@ for stone_strt in reversed([0, 10, 20, 30, 40, 50]):
 
     model.compile(loss='mse', metrics='mae', optimizer='adam')
 
-    for i in trange(1, 77):
+    for i in trange(1, 96):
         collect_data('records3', i)
     len_data = len(all_labels)
     print(len_data)

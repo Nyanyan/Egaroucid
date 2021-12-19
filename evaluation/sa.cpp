@@ -16,7 +16,7 @@ using namespace std;
 #define max_surround 80
 #define max_evaluate_idx 59049
 
-#define sa_phase 3
+#define sa_phase 4
 
 #define p31 3
 #define p32 9
@@ -32,7 +32,7 @@ using namespace std;
 #define sc_w 6400
 #define step 100
 
-#define n_data 5000000
+#define n_data 10000000
 
 const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10};
 const int eval_sizes[n_patterns + 1] = {p38, p38, p38, p35, p36, p37, p38, p310, p310, p310, p310, p39, p310, max_surround * max_surround};
@@ -477,17 +477,7 @@ int main(){
     board_init();
     input_param();
 
-    /*
-    for (j = 0; j < 10; ++j){
-        for (i = 0; i < 4000000; i += n_data){
-            cerr << "                 loading data " << i << " ";
-            input_test_data(i);
-            sa(second * 1000);
-        }
-    }
-    */
-
-    input_test_data(1000000);
+    input_test_data(0);
     sa(second * 1000);
 
     output_param();

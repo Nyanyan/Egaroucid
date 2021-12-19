@@ -83,8 +83,8 @@ int main(){
         search_result result;
         const int first_moves[4] = {19, 26, 37, 44};
         int depth, end_depth, policy;
-        depth = 8;
-        end_depth = 16;
+        depth = 10;
+        end_depth = 30;
     #endif
     int ai_player;
     //cin >> ai_player;

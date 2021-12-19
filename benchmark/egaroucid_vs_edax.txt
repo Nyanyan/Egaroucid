@@ -42,3 +42,11 @@ eg lv10 vs ed lv9
 eg lv10 vs ed lv10
 133   102 38 128   30 133
 
+new hillclimb
+eg lv10 vs ed lv10
+133   112 35 121   30 133
+
+hillclimb
+eg lv10 vs ed lv10
+133   109 44 115   30 133
+
