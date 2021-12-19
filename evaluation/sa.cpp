@@ -10,13 +10,13 @@
 
 using namespace std;
 
-#define n_phases 6
-#define phase_n_stones 10
+#define n_phases 10
+#define phase_n_stones 6
 #define n_patterns 13
 #define max_surround 80
 #define max_evaluate_idx 59049
 
-#define sa_phase 4
+#define sa_phase 7
 
 #define p31 3
 #define p32 9

@@ -50,3 +50,14 @@ hillclimb
 eg lv10 vs ed lv10
 133   109 44 115   30 133
 
+new evaluation function with 10 phases
+eg lv10 vs ed lv10
+133   107 51 110   30 133
+
+hillclimb
+eg lv10 vs ed lv10
+133   115 45 108   30 133
+
+hillclimb
+eg lv10 vs ed lv10
+133   115 45 108   30 133

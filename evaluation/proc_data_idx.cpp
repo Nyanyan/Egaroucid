@@ -8,8 +8,8 @@ using namespace std;
 #define black 0
 #define white 1
 
-#define n_phases 6
-#define phase_n_stones 10
+#define n_phases 10
+#define phase_n_stones 6
 
 #define max_canput 40
 #define max_surround 80
