@@ -8,7 +8,7 @@ typedef float eval_type;
 
 #define hw 8
 
-#define n_phases 6
+#define n_phases 10
 #define n_line 6561
 
 #define n_patterns 13
@@ -47,7 +47,7 @@ typedef float eval_type;
 #define p39m 19682
 #define p310m 59048
 
-const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10, 10};
+const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10};
 
 int pattern_arr[n_phases][n_patterns][max_evaluate_idx];
 int add_arr[n_phases][max_surround][max_surround];

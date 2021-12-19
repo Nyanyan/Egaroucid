@@ -469,7 +469,7 @@ int main(){
     int i, j;
 
     unsigned long long hour = 0;
-    unsigned long long minute = 20;
+    unsigned long long minute = 5;
     unsigned long long second = 0;
     minute += hour * 60;
     second += minute * 60;
