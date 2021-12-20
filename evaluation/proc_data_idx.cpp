@@ -11,7 +11,6 @@ using namespace std;
 #define n_phases 10
 #define phase_n_stones 6
 
-#define max_canput 40
 #define max_surround 80
 
 #define p31 3
@@ -277,6 +276,10 @@ inline void calc_idx(int phase_idx, const board *b, int idxes[]){
     idxes[47] = edge_2y(phase_idx, b, 6, 7);
     idxes[48] = edge_2y(phase_idx, b, 9, 8);
     idxes[49] = edge_2y(phase_idx, b, 14, 15);
+    //idxes[50] = narrow_triangle0(phase_idx, b, 0, 1, 2, 3, 4);
+    //idxes[51] = narrow_triangle0(phase_idx, b, 7, 6, 5, 4, 3);
+    //idxes[52] = narrow_triangle1(phase_idx, b, 0, 1, 2, 3, 4);
+    //idxes[53] = narrow_triangle1(phase_idx, b, 7, 6, 5, 4, 3);
     idxes[50] = min(max_surround - 1, calc_surround(b, black));
     idxes[51] = min(max_surround - 1, calc_surround(b, white));
 }
@@ -321,7 +324,7 @@ inline void convert_idx(string str){
     cout << score << endl;
 }
 
-#define n_files 95
+#define n_files 103
 
 const string file_names[n_files] = {
     "0000001.txt",
@@ -418,7 +421,15 @@ const string file_names[n_files] = {
     "0000092.txt",
     "0000093.txt",
     "0000094.txt",
-    "0000095.txt"
+    "0000095.txt",
+    "0000096.txt",
+    "0000097.txt",
+    "0000098.txt",
+    "0000099.txt",
+    "0000100.txt",
+    "0000101.txt",
+    "0000102.txt",
+    "0000103.txt"
 };
 
 int main(){

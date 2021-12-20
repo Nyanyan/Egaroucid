@@ -29,12 +29,12 @@ def get_layer_index(model, layer_name, not_found=None):
 def my_loss(y_true, y_pred):
     return tf.keras.backend.square(y_true - y_pred) * (tf.keras.backend.exp(-tf.keras.backend.abs(10.0 * y_true)) + 1)
 
-for stone_strt in [0, 6, 12, 18, 24, 30, 36, 42, 48, 54]:
-    stone_end = stone_strt + 6
+for stone_strt in [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56]:
+    stone_end = stone_strt + 4
 
     model = load_model('learned_data/' + str(stone_strt) + '_' + str(stone_end) + '.h5', custom_objects={'my_loss': my_loss})
 
-    layer_names = ['line2', 'line3', 'line4', 'diagonal5', 'diagonal6', 'diagonal7', 'diagonal8', 'edge2X', 'triangle', 'edgeblock', 'cross', 'corner9', 'edge2Y']
+    layer_names = ['line2', 'line3', 'line4', 'diagonal5', 'diagonal6', 'diagonal7', 'diagonal8', 'edge2X', 'triangle', 'edgeblock', 'cross', 'corner9', 'edge2Y', 'narrowTriangle']
     names = []
     for name in layer_names:
         names.append(name + '_dense0')
@@ -79,8 +79,8 @@ for stone_strt in [0, 6, 12, 18, 24, 30, 36, 42, 48, 54]:
 print('')
 
 data = ''
-for stone_strt in [0, 6, 12, 18, 24, 30, 36, 42, 48, 54]:
-    stone_end = stone_strt + 6
+for stone_strt in [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56]:
+    stone_end = stone_strt + 4
     
     with open('learned_data/' + str(stone_strt) + '_' + str(stone_end) + '.txt', 'r') as f:
         tmp = f.read()

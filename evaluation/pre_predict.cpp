@@ -180,9 +180,8 @@ inline void pre_evaluation(int phase_idx, int pattern_idx, int pattern_size, eva
         pattern_arr[phase_idx][pattern_idx][idx] = predict(pattern_size, arr, dense0, bias0, dense1, bias1, dense2, bias2, dense3, bias3);
         tmp_pattern_arr[calc_rev_idx(pattern_idx, pattern_size, idx)] = pattern_arr[phase_idx][pattern_idx][idx];
     }
-    for (idx = 0; idx < pow3[pattern_size]; ++idx){
+    for (idx = 0; idx < pow3[pattern_size]; ++idx)
         pattern_arr[phase_idx][pattern_idx][idx] += tmp_pattern_arr[idx];
-    }
 }
 
 inline int predict_add(int sur0, int sur1, eval_type dense0[n_add_dense0][n_add_input], eval_type bias0[n_add_dense0], eval_type dense1[n_add_dense1][n_add_dense0], eval_type bias1[n_add_dense1], eval_type dense2[n_add_dense2][n_add_dense1], eval_type bias2[n_add_dense2], eval_type dense3[n_add_dense2], eval_type bias3){

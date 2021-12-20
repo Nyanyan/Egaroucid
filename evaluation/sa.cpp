@@ -16,7 +16,7 @@ using namespace std;
 #define max_surround 80
 #define max_evaluate_idx 59049
 
-#define sa_phase 7
+#define sa_phase 8
 
 #define p31 3
 #define p32 9
@@ -151,7 +151,7 @@ void input_test_data(int strt){
     int phase, player, score;
     int t = 0;
     nums = 0;
-    const int pattern_nums[50] = {
+    const int pattern_nums[54] = {
         0, 0, 0, 0,
         1, 1, 1, 1,
         2, 2, 2, 2,
@@ -164,7 +164,8 @@ void input_test_data(int strt){
         9, 9, 9, 9,
         10, 10, 10, 10,
         11, 11, 11, 11,
-        12, 12, 12, 12
+        12, 12, 12, 12,
+        13, 13, 13, 13
     };
     for (j = 0; j < n_patterns + 1; ++j){
         used_idxes[j].clear();
