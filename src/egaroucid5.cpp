@@ -83,7 +83,7 @@ int main(){
         search_result result;
         const int first_moves[4] = {19, 26, 37, 44};
         int depth, end_depth, policy;
-        depth = 14;
+        depth = 16;
         end_depth = 23;
     #endif
     int ai_player;
@@ -98,7 +98,7 @@ int main(){
             input_board(&b, ai_player);
             transpose_table.init_now();
             transpose_table.init_prev();
-            cout << nega_scout(&b, false, d, -sc_w, sc_w) << endl;
+            cout << nega_scout(&b, false, d, -sc_w, sc_w, false) << endl;
         #elif EVAL_MODE
             cin >> ai_player;
             input_board(&b, ai_player);

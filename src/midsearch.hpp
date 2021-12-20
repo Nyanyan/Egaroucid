@@ -15,20 +15,70 @@
 using namespace std;
 
 int nega_alpha(board *b, bool skipped, int depth, int alpha, int beta);
-int nega_alpha_ordering(board *b, bool skipped, int depth, int alpha, int beta, bool use_multi_thread, bool use_mpc);
+inline bool mpc_higher(board *b, bool skipped, int depth, int beta, double t);
+inline bool mpc_lower(board *b, bool skipped, int depth, int alpha, double t);
 
-inline bool mpc_higher(board *b, bool skipped, int depth, int beta){
-    int bound = beta + mpct * mpcsd[calc_phase_idx(b)][depth];
-    if (bound >= sc_w)
-        return false;
-    return nega_alpha_ordering(b, skipped, mpcd[depth], bound - search_epsilon, bound, false, true) >= bound;
+int nega_alpha_ordering_nomemo(board *b, bool skipped, int depth, int alpha, int beta){
+    if (depth <= simple_mid_threshold)
+        return nega_alpha(b, skipped, depth, alpha, beta);
+    ++searched_nodes;
+    #if USE_MID_SC
+        if (stability_cut(b, &alpha, &beta))
+            return alpha;
+    #endif
+    #if USE_MID_MPC
+        if (mpc_min_depth <= depth && depth <= mpc_max_depth){
+            if (mpc_higher(b, skipped, depth, beta, mpct))
+                return beta;
+            if (mpc_lower(b, skipped, depth, alpha, mpct))
+                return alpha;
+        }
+    #endif
+    vector<board> nb;
+    int canput = 0;
+    for (const int &cell: vacant_lst){
+        if (b->legal(cell)){
+            nb.emplace_back(b->move(cell));
+            //move_ordering(&(nb[canput]));
+            move_ordering_eval(&(nb[canput]));
+            ++canput;
+        }
+    }
+    if (canput == 0){
+        if (skipped)
+            return end_evaluate(b);
+        board rb;
+        for (int i = 0; i < b_idx_num; ++i)
+            rb.b[i] = b->b[i];
+        rb.p = 1 - b->p;
+        rb.n = b->n;
+        return -nega_alpha_ordering_nomemo(&rb, true, depth, -beta, -alpha);
+    }
+    if (canput >= 2)
+        sort(nb.begin(), nb.end());
+    int g, v = -inf;
+    for (board &nnb: nb){
+        g = -nega_alpha_ordering_nomemo(&nnb, false, depth - 1, -beta, -alpha);
+        if (beta <= g)
+            return g;
+        alpha = max(alpha, g);
+        v = max(v, g);
+    }
+    return v;
 }
 
-inline bool mpc_lower(board *b, bool skipped, int depth, int alpha){
-    int bound = alpha - mpct * mpcsd[calc_phase_idx(b)][depth];
-    if (bound <= -sc_w)
+inline bool mpc_higher(board *b, bool skipped, int depth, int beta, double t){
+    int bound = beta + t * mpcsd[calc_phase_idx(b)][depth - mpc_min_depth];
+    if (bound > sc_w)
         return false;
-    return nega_alpha_ordering(b, skipped, mpcd[depth], bound, bound + search_epsilon, false, true) <= bound;
+    return nega_alpha_ordering_nomemo(b, skipped, mpcd[depth], bound - search_epsilon, bound) >= bound;
+}
+
+inline bool mpc_lower(board *b, bool skipped, int depth, int alpha, double t){
+    int bound = alpha - t * mpcsd[calc_phase_idx(b)][depth - mpc_min_depth];
+    if (bound < -sc_w)
+        return false;
+    return nega_alpha_ordering_nomemo(b, skipped, mpcd[depth], bound, bound + search_epsilon) <= bound;
 }
 
 int nega_alpha(board *b, bool skipped, int depth, int alpha, int beta){
@@ -93,9 +143,9 @@ int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int 
     beta = min(beta, u);
     #if USE_MID_MPC
         if (mpc_min_depth <= depth && depth <= mpc_max_depth && use_mpc){
-            if (mpc_higher(b, skipped, depth, beta))
+            if (mpc_higher(b, skipped, depth, beta, mpct))
                 return beta;
-            if (mpc_lower(b, skipped, depth, alpha))
+            if (mpc_lower(b, skipped, depth, alpha, mpct))
                 return alpha;
         }
     #endif
@@ -200,9 +250,9 @@ int nega_scout(board *b, bool skipped, const int depth, int alpha, int beta, boo
     beta = min(beta, u);
     #if USE_MID_MPC
         if (mpc_min_depth <= depth && depth <= mpc_max_depth && use_mpc){
-            if (mpc_higher(b, skipped, depth, beta))
+            if (mpc_higher(b, skipped, depth, beta, mpct))
                 return beta;
-            if (mpc_lower(b, skipped, depth, alpha))
+            if (mpc_lower(b, skipped, depth, alpha, mpct))
                 return alpha;
         }
     #endif

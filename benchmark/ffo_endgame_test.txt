@@ -138,3 +138,15 @@
 #44 final depth: 23 time: 4013 policy: 11 value: -1400 nodes: 35452810 nps: 8856560 get: 16894 reg: 122228
 #45 final depth: 24 time: 38409 policy: 9 value: 600 nodes: 398324005 nps: 10372210 get: 97972 reg: 1012144
 #46 final depth: 24 time: 11978 policy: 17 value: -800 nodes: 114435072 nps: 9557760 get: 23753 reg: 308910
+
+2021/12/20 with mpc
+#40 final depth: 20 time: 600 policy: 8 value: 3800 nodes: 6732300 nps: 11314789 get: 2083 reg: 19031
+#41 final depth: 22 time: 4106 policy: 31 value: 0 nodes: 46195517 nps: 11267199 get: 22468 reg: 145757
+#42 final depth: 22 time: 3282 policy: 14 value: 600 nodes: 38305368 nps: 11689157 get: 15560 reg: 143524
+#43 final depth: 23 time: 2692 policy: 50 value: -1200 nodes: 29332913 nps: 10920667 get: 15214 reg: 95335
+#44 final depth: 23 time: 3125 policy: 11 value: -1400 nodes: 31774869 nps: 10184252 get: 16841 reg: 124062
+#45 final depth: 24 time: 31499 policy: 9 value: 600 nodes: 377114056 nps: 11974535 get: 98598 reg: 1020183
+#46 final depth: 24 time: 9316 policy: 17 value: -800 nodes: 103635108 nps: 11131590 get: 23998 reg: 310756
+#47 final depth: 25 time: 13502 policy: 14 value: 400 nodes: 146816819 nps: 10878543 get: 53164 reg: 494963
+#48 final depth: 25 time: 21471 policy: 45 value: 2500 nodes: 246145926 nps: 11468384 get: 48788 reg: 644216    WRONG
+#49 final depth: 26 time: 64650 policy: 4 value: 1500 nodes: 737566641 nps: 11409668 get: 180471 reg: 2445688   WRONG
