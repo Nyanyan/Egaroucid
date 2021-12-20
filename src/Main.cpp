@@ -78,6 +78,14 @@ inline future<search_result> ai(board bd, int depth, int end_depth, int bd_arr[]
 	}
 }
 
+inline void check_pass(board *bd) {
+	bool not_passed = false;
+	for (int i = 0; i < hw2; ++i)
+		not_passed |= bd->legal(i);
+	if (!not_passed)
+		bd->p = 1 - bd->p;
+}
+
 void Main() {
 	constexpr int offset_y = 60;
 	constexpr int offset_x = 60;
@@ -148,6 +156,7 @@ void Main() {
 					legals[coord].draw(Palette::Blue);
 					if (bd.p != ai_player && cells[coord].leftClicked()) {
 						bd = bd.move(coord);
+						check_pass(&bd);
 						if (bd.p == ai_player)
 							future_result = ai(bd, depth, end_depth, bd_arr);
 					}
@@ -158,8 +167,11 @@ void Main() {
 		if (bd.p == ai_player) {
 			if (future_result.wait_for(seconds0) == future_status::ready) {
 				result = future_result.get();
-				Print << result.value;
+				Print << (double)result.value / step;
 				bd = bd.move(result.policy);
+				check_pass(&bd);
+				if (bd.p == ai_player)
+					future_result = ai(bd, depth, end_depth, bd_arr);
 			}
 		}
 
