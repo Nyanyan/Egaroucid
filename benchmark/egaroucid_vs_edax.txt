@@ -61,3 +61,7 @@ eg lv10 vs ed lv10
 hillclimb
 eg lv10 vs ed lv10
 133   115 45 108   30 133
+
+with big book
+eg lv10 vs ed lv10
+133   130 64 74   30 17

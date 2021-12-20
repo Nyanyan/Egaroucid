@@ -16,7 +16,7 @@ using namespace std;
 #define max_surround 80
 #define max_evaluate_idx 59049
 
-#define sa_phase 8
+#define sa_phase 4
 
 #define p31 3
 #define p32 9
@@ -470,7 +470,7 @@ int main(){
     int i, j;
 
     unsigned long long hour = 0;
-    unsigned long long minute = 5;
+    unsigned long long minute = 1;
     unsigned long long second = 0;
     minute += hour * 60;
     second += minute * 60;
