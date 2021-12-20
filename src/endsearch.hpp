@@ -59,14 +59,14 @@ int nega_alpha_ordering_nompc(board *b, bool skipped, int depth, int alpha, int 
 }
 
 inline bool mpc_higher_final(board *b, bool skipped, int depth, int beta){
-    int bound = beta + mpctsd_final[depth];
+    int bound = beta + mpct_final * mpcsd_final[depth];
     if (bound >= sc_w)
         return false;
     return nega_alpha_ordering_nompc(b, skipped, mpcd[depth], bound - step, bound) >= bound;
 }
 
 inline bool mpc_lower_final(board *b, bool skipped, int depth, int alpha){
-    int bound = alpha - mpctsd_final[depth];
+    int bound = alpha - mpct_final * mpcsd_final[depth];
     if (bound <= -sc_w)
         return false;
     return nega_alpha_ordering_nompc(b, skipped, mpcd[depth], bound, bound + step) <= bound;

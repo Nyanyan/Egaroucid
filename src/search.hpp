@@ -16,10 +16,11 @@ constexpr int mtd_threshold = step * 4;
 constexpr int mtd_end_threshold = step * 5;
 
 #define mpc_min_depth 3
-#define mpc_max_depth 12
+#define mpc_max_depth 10
 #define mpc_min_depth_final 9
 #define mpc_max_depth_final 28
-#define mpct_final 2.5
+double mpct_final = 2.4;
+double mpct = 1.7;
 
 #define simple_mid_threshold 3
 #define simple_end_threshold 8
@@ -44,20 +45,21 @@ const int cell_weight[hw2] = {
 };
 
 const int mpcd[30] = {0, 1, 0, 1, 2, 3, 2, 3, 4, 3, 4, 3, 4, 5, 4, 5, 6, 5, 6, 7, 6, 7, 6, 7, 8, 7, 8, 9, 8, 9};
-const double mpct[n_phases]={1.5, 1.5, 1.5, 1.5, 1.5, 1.5};
 const double mpcsd[n_phases][mpc_max_depth - mpc_min_depth + 1]={
-    {776, 483, 538, 462, 437, 290, 546, 345, 493, 346},
-    {856, 617, 405, 557, 547, 389, 622, 429, 660, 397},
-    {593, 367, 347, 478, 420, 393, 452, 388, 563, 432},
-    {597, 404, 506, 597, 647, 438, 648, 577, 608, 554},
-    {576, 616, 541, 756, 626, 687, 610, 730, 817, 764},
-    {559, 478, 543, 657, 608, 447, 567, 573, 584, 481}
+    {207, 235, 209, 267, 267, 237, 296, 277},
+    {317, 265, 199, 294, 277, 276, 254, 258},
+    {358, 344, 355, 382, 379, 339, 337, 278},
+    {431, 364, 369, 456, 381, 345, 361, 322},
+    {423, 338, 269, 397, 420, 402, 361, 397},
+    {472, 377, 477, 433, 488, 552, 630, 664},
+    {465, 471, 409, 607, 509, 501, 558, 510},
+    {519, 494, 514, 546, 613, 522, 584, 625},
+    {486, 431, 364, 645, 569, 526, 601, 654},
+    {370, 414, 258, 330, 269, 159, 274, 235}
 };
 const double mpcsd_final[mpc_max_depth_final - mpc_min_depth_final + 1] = {
-    496, 475, 541, 532, 524, 570, 550, 533, 502, 480, 462, 452, 440, 449, 429, 414, 435, 431, 421, 458
+    510, 484, 522, 498, 483, 502, 481, 452, 498, 475, 458, 448, 435, 462, 449, 430, 462, 452, 444, 415
 };
-int mpctsd[n_phases][mpc_max_depth + 1];
-int mpctsd_final[mpc_max_depth_final + 1];
 unsigned long long can_be_flipped[hw2];
 
 unsigned long long searched_nodes;
@@ -71,13 +73,7 @@ struct search_result{
 };
 
 inline void search_init(){
-    int i, j;
-    for (i = 0; i < n_phases; ++i){
-        for (j = 0; j <= mpc_max_depth - mpc_min_depth; ++j)
-            mpctsd[i][mpc_min_depth + j] = (int)(mpct[i] * mpcsd[i][j] * step / 100);
-    }
-    for (i = 0; i <= mpc_max_depth_final - mpc_min_depth_final; ++i)
-        mpctsd_final[mpc_min_depth_final + i] = (int)(mpct_final * mpcsd_final[i] * step / 100);
+    int i;
     for (int cell = 0; cell < hw2; ++cell){
         can_be_flipped[cell] = 0b1111111110000001100000011000000110000001100000011000000111111111;
         for (i = 0; i < hw; ++i){
