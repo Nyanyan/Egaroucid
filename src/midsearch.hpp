@@ -15,20 +15,20 @@
 using namespace std;
 
 int nega_alpha(board *b, bool skipped, int depth, int alpha, int beta);
-int nega_alpha_ordering(board *b, bool skipped, int depth, int alpha, int beta, bool use_multi_thread);
+int nega_alpha_ordering(board *b, bool skipped, int depth, int alpha, int beta, bool use_multi_thread, bool use_mpc);
 
 inline bool mpc_higher(board *b, bool skipped, int depth, int beta){
     int bound = beta + mpct * mpcsd[calc_phase_idx(b)][depth];
     if (bound >= sc_w)
         return false;
-    return nega_alpha_ordering(b, skipped, mpcd[depth], bound - search_epsilon, bound, false) >= bound;
+    return nega_alpha_ordering(b, skipped, mpcd[depth], bound - search_epsilon, bound, false, true) >= bound;
 }
 
 inline bool mpc_lower(board *b, bool skipped, int depth, int alpha){
     int bound = alpha - mpct * mpcsd[calc_phase_idx(b)][depth];
     if (bound <= -sc_w)
         return false;
-    return nega_alpha_ordering(b, skipped, mpcd[depth], bound, bound + search_epsilon, false) <= bound;
+    return nega_alpha_ordering(b, skipped, mpcd[depth], bound, bound + search_epsilon, false, true) <= bound;
 }
 
 int nega_alpha(board *b, bool skipped, int depth, int alpha, int beta){
@@ -70,7 +70,7 @@ int nega_alpha(board *b, bool skipped, int depth, int alpha, int beta){
     return v;
 }
 
-int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int beta, bool use_multi_thread){
+int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int beta, bool use_multi_thread, bool use_mpc){
     if (depth <= simple_mid_threshold)
         return nega_alpha(b, skipped, depth, alpha, beta);
     ++searched_nodes;
@@ -92,7 +92,7 @@ int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int 
     alpha = max(alpha, l);
     beta = min(beta, u);
     #if USE_MID_MPC
-        if (mpc_min_depth <= depth && depth <= mpc_max_depth){
+        if (mpc_min_depth <= depth && depth <= mpc_max_depth && use_mpc){
             if (mpc_higher(b, skipped, depth, beta))
                 return beta;
             if (mpc_lower(b, skipped, depth, alpha))
@@ -104,7 +104,8 @@ int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int 
     for (const int &cell: vacant_lst){
         if (b->legal(cell)){
             nb.emplace_back(b->move(cell));
-            move_ordering(&(nb[canput]));
+            //move_ordering(&(nb[canput]));
+            move_ordering_eval(&(nb[canput]));
             ++canput;
         }
     }
@@ -116,7 +117,7 @@ int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int 
             rb.b[i] = b->b[i];
         rb.p = 1 - b->p;
         rb.n = b->n;
-        return -nega_alpha_ordering(&rb, true, depth, -beta, -alpha, use_multi_thread);
+        return -nega_alpha_ordering(&rb, true, depth, -beta, -alpha, use_multi_thread, use_mpc);
     }
     if (canput >= 2)
         sort(nb.begin(), nb.end());
@@ -159,7 +160,7 @@ int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int 
         }
     #else
         for (board &nnb: nb){
-            g = -nega_alpha_ordering(&nnb, false, depth - 1, -beta, -alpha, false);
+            g = -nega_alpha_ordering(&nnb, false, depth - 1, -beta, -alpha, false, use_mpc);
             if (beta <= g){
                 if (l < g)
                     transpose_table.reg(b, hash, g, u);
@@ -176,7 +177,7 @@ int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int 
     return v;
 }
 
-int nega_scout(board *b, bool skipped, const int depth, int alpha, int beta){
+int nega_scout(board *b, bool skipped, const int depth, int alpha, int beta, bool use_mpc){
     if (depth <= simple_mid_threshold)
         return nega_alpha(b, skipped, depth, alpha, beta);
     ++searched_nodes;
@@ -198,7 +199,7 @@ int nega_scout(board *b, bool skipped, const int depth, int alpha, int beta){
     alpha = max(alpha, l);
     beta = min(beta, u);
     #if USE_MID_MPC
-        if (mpc_min_depth <= depth && depth <= mpc_max_depth){
+        if (mpc_min_depth <= depth && depth <= mpc_max_depth && use_mpc){
             if (mpc_higher(b, skipped, depth, beta))
                 return beta;
             if (mpc_lower(b, skipped, depth, alpha))
@@ -210,7 +211,8 @@ int nega_scout(board *b, bool skipped, const int depth, int alpha, int beta){
     for (const int &cell: vacant_lst){
         if (b->legal(cell)){
             nb.emplace_back(b->move(cell));
-            move_ordering(&(nb[canput]));
+            //move_ordering(&(nb[canput]));
+            move_ordering_eval(&(nb[canput]));
             ++canput;
         }
     }
@@ -222,7 +224,7 @@ int nega_scout(board *b, bool skipped, const int depth, int alpha, int beta){
             rb.b[i] = b->b[i];
         rb.p = 1 - b->p;
         rb.n = b->n;
-        return -nega_scout(&rb, true, depth, -beta, -alpha);
+        return -nega_scout(&rb, true, depth, -beta, -alpha, use_mpc);
     }
     if (canput >= 2)
         sort(nb.begin(), nb.end());
@@ -264,7 +266,7 @@ int nega_scout(board *b, bool skipped, const int depth, int alpha, int beta){
         int first_alpha = alpha;
         for (int i = 0; i < canput; ++i){
             if (i > 0){
-                g = -nega_alpha_ordering(&nb[i], false, depth - 1, -alpha - search_epsilon, -alpha, true);
+                g = -nega_alpha_ordering(&nb[i], false, depth - 1, -alpha - search_epsilon, -alpha, true, use_mpc);
                 if (beta <= g){
                     if (l < g)
                         transpose_table.reg(b, hash, g, u);
@@ -273,7 +275,7 @@ int nega_scout(board *b, bool skipped, const int depth, int alpha, int beta){
                 v = max(v, g);
             }
             if (alpha <= g){
-                g = -nega_scout(&nb[i], false, depth - 1, -beta, -g);
+                g = -nega_scout(&nb[i], false, depth - 1, -beta, -g, use_mpc);
                 if (beta <= g){
                     if (l < g)
                         transpose_table.reg(b, hash, g, u);
@@ -291,18 +293,18 @@ int nega_scout(board *b, bool skipped, const int depth, int alpha, int beta){
     return v;
 }
 
-int mtd(board *b, bool skipped, int depth, int l, int u){
+int mtd(board *b, bool skipped, int depth, int l, int u, bool use_mpc){
     int g = mid_evaluate(b), beta;
     while (u - l > mtd_threshold){
         beta = g;
-        g = nega_alpha_ordering(b, skipped, depth, beta - search_epsilon, beta, true);
+        g = nega_alpha_ordering(b, skipped, depth, beta - search_epsilon, beta, true, use_mpc);
         if (g < beta)
             u = g;
         else
             l = g;
         g = (l + u) / 2;
     }
-    return nega_scout(b, skipped, depth, l, u);
+    return nega_scout(b, skipped, depth, l, u, use_mpc);
 }
 
 inline search_result midsearch(board b, long long strt, int max_depth){
@@ -326,48 +328,52 @@ inline search_result midsearch(board b, long long strt, int max_depth){
     transpose_table.hash_reg = 0;
     transpose_table.init_now();
     transpose_table.init_prev();
-    int order_l, order_u;
-    //int depth = min(hw2 - b.n - 1, max_depth - 1);
-    for (int depth = min(5, max(0, max_depth - 5)); depth <= min(hw2 - b.n, max_depth - 1); ++depth){
-        alpha = -sc_w;
-        beta = sc_w;
-        transpose_table.init_now();
-        for (i = 0; i < canput; ++i){
-            transpose_table.get_prev(&nb[i], nb[i].hash() & search_hash_mask, &order_l, &order_u);
-            nb[i].v = -max(order_l, order_u);
-            if (order_l != -inf && order_u != -inf)
-                nb[i].v += 100000;
-            if (order_l == -inf && order_u == -inf)
-                nb[i].v = -mid_evaluate(&nb[i]);
-            else
-                nb[i].v += cache_hit;
-        }
-        if (canput >= 2)
-            sort(nb.begin(), nb.end());
-        g = -mtd(&nb[0], false, depth, -beta, -alpha);
-        transpose_table.reg(&nb[0], (int)(nb[0].hash() & search_hash_mask), g, g);
-        alpha = max(alpha, g);
-        tmp_policy = nb[0].policy;
-        for (i = 1; i < canput; ++i){
-            g = -nega_alpha_ordering(&nb[i], false, depth, -alpha - search_epsilon, -alpha, true);
+    //int order_l, order_u;
+    int depth = min(hw2 - b.n - 1, max_depth - 1);
+    bool use_mpc = depth >= 12 ? true : false;
+    //for (int depth = min(5, max(0, max_depth - 5)); depth <= min(hw2 - b.n, max_depth - 1); ++depth){
+    alpha = -sc_w;
+    beta = sc_w;
+    transpose_table.init_now();
+    for (i = 0; i < canput; ++i){
+        move_ordering_eval(&nb[i]);
+        /*
+        transpose_table.get_prev(&nb[i], nb[i].hash() & search_hash_mask, &order_l, &order_u);
+        nb[i].v = -max(order_l, order_u);
+        if (order_l != -inf && order_u != -inf)
+            nb[i].v += 100000;
+        if (order_l == -inf && order_u == -inf)
+            nb[i].v = -mid_evaluate(&nb[i]);
+        else
+            nb[i].v += cache_hit;
+        */
+    }
+    if (canput >= 2)
+        sort(nb.begin(), nb.end());
+    g = -mtd(&nb[0], false, depth, -beta, -alpha, use_mpc);
+    transpose_table.reg(&nb[0], (int)(nb[0].hash() & search_hash_mask), g, g);
+    alpha = max(alpha, g);
+    tmp_policy = nb[0].policy;
+    for (i = 1; i < canput; ++i){
+        g = -nega_alpha_ordering(&nb[i], false, depth, -alpha - search_epsilon, -alpha, true, use_mpc);
+        if (alpha < g){
+            alpha = g;
+            g = -mtd(&nb[i], false, depth, -beta, -alpha, use_mpc);
+            transpose_table.reg(&nb[i], (int)(nb[i].hash() & search_hash_mask), g, g);
             if (alpha < g){
                 alpha = g;
-                g = -mtd(&nb[i], false, depth, -beta, -alpha);
-                transpose_table.reg(&nb[i], (int)(nb[i].hash() & search_hash_mask), g, g);
-                if (alpha < g){
-                    alpha = g;
-                    tmp_policy = nb[i].policy;
-                }
-            } else{
-                transpose_table.reg(&nb[i], (int)(nb[i].hash() & search_hash_mask), -inf, g);
+                tmp_policy = nb[i].policy;
             }
+        } else{
+            transpose_table.reg(&nb[i], (int)(nb[i].hash() & search_hash_mask), -inf, g);
         }
-        swap(transpose_table.now, transpose_table.prev);
-        policy = tmp_policy;
-        value = alpha;
-        res_depth = depth + 1;
-        cerr << "depth: " << depth + 1 << " time: " << tim() - strt << " policy: " << policy << " value: " << alpha << " nodes: " << searched_nodes << " nps: " << (long long)searched_nodes * 1000 / max(1LL, tim() - strt) << " get: " << transpose_table.hash_get << " reg: " << transpose_table.hash_reg << endl;
     }
+    swap(transpose_table.now, transpose_table.prev);
+    policy = tmp_policy;
+    value = alpha;
+    res_depth = depth + 1;
+    cerr << "depth: " << depth + 1 << " time: " << tim() - strt << " policy: " << policy << " value: " << alpha << " nodes: " << searched_nodes << " nps: " << (long long)searched_nodes * 1000 / max(1LL, tim() - strt) << " get: " << transpose_table.hash_get << " reg: " << transpose_table.hash_reg << endl;
+    //}
     search_result res;
     res.policy = policy;
     res.value = value;
