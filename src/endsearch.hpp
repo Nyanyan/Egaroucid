@@ -755,11 +755,11 @@ int nega_scout_final(board *b, bool skipped, const int depth, int alpha, int bet
                 return alpha;
         }
     #endif
-    board nb[depth];
+    vector<board> nb;
     int canput = 0;
     for (const int &cell: vacant_lst){
         if (b->legal(cell)){
-            b->move(cell, &nb[canput]);
+            nb.push_back(b->move(cell));
             move_ordering_eval(&nb[canput]);
             nb[canput].v -= canput_bonus * calc_canput_exact(&nb[canput]);
             #if USE_END_PO
@@ -787,7 +787,7 @@ int nega_scout_final(board *b, bool skipped, const int depth, int alpha, int bet
         return res;
     }
     if (canput >= 2)
-        sort(nb, nb + canput);
+        sort(nb.begin(), nb.end());
     int g = alpha, v = -inf;
     #if USE_MULTI_THREAD
         int i;

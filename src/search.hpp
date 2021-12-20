@@ -170,7 +170,7 @@ inline void calc_extra_stability(board *b, int p, unsigned long long extra_stabi
 
 inline unsigned long long calc_extra_stability_ull(board *b){
     unsigned long long extra_stability = 0b1111111110000001100000011000000110000001100000011000000111111111;
-    for (const &cell: vacant_lst){
+    for (const int &cell: vacant_lst){
         if (pop_digit[b->b[cell / hw]][cell % hw] == vacant)
             extra_stability |= can_be_flipped[cell];
     }
