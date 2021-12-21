@@ -83,6 +83,17 @@ class book{
             cerr << "book initialized " << n_book << " boards in book" << endl;
         }
 
+        inline int get(board *b){
+            book_node *p_node = this->book[b->hash() & book_hash_mask];
+            while(p_node != NULL){
+                if(compare_key(b->b, p_node->k)){
+                    return (b->p ? -1.0 : 1.0) * p_node->value * step;
+                }
+                p_node = p_node->p_n_node;
+            }
+            return -inf;
+        }
+
         inline book_value get_random(board *b, double min_value){
             vector<int> policies;
             vector<double> values;

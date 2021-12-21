@@ -14,7 +14,7 @@ for datum in data:
     val = float(val)
     book[board] = val
 
-val_threshold = 7
+val_threshold = 5
 move_threshold = 0
 
 que = deque([])
@@ -40,6 +40,7 @@ def calc_value(o):
         with open('learned_data/book.txt', 'a') as f:
             f.write(grid_str.replace('\n', '') + ' ' + str(val) + '\n')
     if sum(o.n_stones) > move_threshold + 4 and abs(val) > abs(val_threshold):
+        print('out of range')
         return
     for i in range(hw):
         for j in range(hw):
