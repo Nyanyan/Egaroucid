@@ -20,7 +20,11 @@ constexpr int mtd_end_threshold = step * 5;
 #define mpc_min_depth_final 9
 #define mpc_max_depth_final 28
 #define mpct_final 2.4
-#define mpct 1.7
+#if BOOK_MODE
+    #define mpct 0.4
+#else
+    #define mpct 1.7
+#endif
 
 #define simple_mid_threshold 3
 #define simple_end_threshold 8

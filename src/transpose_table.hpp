@@ -12,6 +12,7 @@ constexpr int search_hash_mask = search_hash_table_size - 1;
 struct search_node{
     bool reg;
     uint_fast16_t k[hw];
+    int p;
     int l;
     int u;
 };
@@ -46,9 +47,10 @@ class transpose_table{
             #endif
             ++this->hash_reg;
             this->table[this->now][hash].reg = true;
-            if (!compare_key(key->b, this->table[this->now][hash].k)){
+            if (key->p != this->table[this->now][hash].p || !compare_key(key->b, this->table[this->now][hash].k)){
                 for (int i = 0; i < hw; ++i)
                     this->table[this->now][hash].k[i] = key->b[i];
+                this->table[this->now][hash].p = key->p;
             }
             this->table[this->now][hash].l = l;
             this->table[this->now][hash].u = u;
@@ -59,7 +61,7 @@ class transpose_table{
 
         inline void get_now(board *key, const int hash, int *l, int *u){
             if (this->table[this->now][hash].reg){
-                if (compare_key(key->b, this->table[this->now][hash].k)){
+                if (key->p == this->table[this->now][hash].p && compare_key(key->b, this->table[this->now][hash].k)){
                     *l = this->table[this->now][hash].l;
                     *u = this->table[this->now][hash].u;
                     ++this->hash_get;
@@ -75,7 +77,7 @@ class transpose_table{
 
         inline void get_prev(board *key, const int hash, int *l, int *u){
             if (this->table[this->prev][hash].reg){
-                if (compare_key(key->b, this->table[this->prev][hash].k)){
+                if (key->p == this->table[this->now][hash].p && compare_key(key->b, this->table[this->prev][hash].k)){
                     *l = this->table[this->prev][hash].l;
                     *u = this->table[this->prev][hash].u;
                     ++this->hash_get;

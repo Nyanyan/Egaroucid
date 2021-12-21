@@ -18,7 +18,7 @@ inline void init(){
     search_init();
     transpose_table_init();
     evaluate_init();
-    #if !MPC_MODE && !EVAL_MODE && USE_BOOK
+    #if !MPC_MODE && !EVAL_MODE && !BOOK_MODE && USE_BOOK
         book_init();
     #endif
     #if USE_MULTI_THREAD
@@ -82,8 +82,9 @@ int main(){
     #if !MPC_MODE && !EVAL_MODE
         search_result result;
         const int first_moves[4] = {19, 26, 37, 44};
-        int depth, end_depth, policy;
-        depth = 16;
+        int depth, end_depth;
+        book_value book_result;
+        depth = 23;
         end_depth = 23;
     #endif
     int ai_player;
@@ -109,18 +110,16 @@ int main(){
             cerr << b.p << endl;
             cerr << b.n << " " << mid_evaluate(&b) << endl;
             if (b.n == 4){
-                policy = first_moves[myrandrange(0, 4)];
+                int policy = first_moves[myrandrange(0, 4)];
+                cerr << "BOOK " << policy << endl;
                 print_result(policy, 0);
                 continue;
             }
             if (b.n < book_stones){
-                policy = book.get(&b);
-                if (policy != -1){
-                    cerr << "BOOK " << policy << endl;
-                    b = b.move(policy);
-                    ++b.n;
-                    result = midsearch(b, tim(), 10);
-                    print_result(policy, -result.value);
+                book_result = book.get_half_random(&b);
+                if (book_result.policy != -1){
+                    cerr << "BOOK " << book_result.policy << endl;
+                    print_result(book_result.policy, book_result.value);
                     continue;
                 }
             }

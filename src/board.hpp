@@ -182,7 +182,6 @@ class board {
 
         unsigned long long hash(){
             return
-                this->p + 
                 this->b[0] + 
                 this->b[1] * 17 + 
                 this->b[2] * 289 + 

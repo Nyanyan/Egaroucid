@@ -47,3 +47,6 @@
 
 // creatring evaluation data mode
 #define EVAL_MODE false
+
+// book mode
+#define BOOK_MODE false

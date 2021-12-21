@@ -149,7 +149,7 @@ void input_test_data(int strt){
     }
     string line;
     int phase, player, score;
-    int t = 0;
+    int t = 0, u = 0;
     nums = 0;
     const int pattern_nums[54] = {
         0, 0, 0, 0,
@@ -182,6 +182,7 @@ void input_test_data(int strt){
         istringstream iss(line);
         iss >> phase;
         if (phase == sa_phase){
+            ++u;
             iss >> player;
             for (i = 0; i < 52; ++i)
                 iss >> test_data[nums][i];
@@ -204,9 +205,9 @@ void input_test_data(int strt){
             used_idxes_vector[i].push_back(elem);
     }
 
-    cerr << "n_data " << t << endl;
+    cerr << "n_data " << u << endl;
 
-    int u = 0;
+    u = 0;
     for (i = 0; i < n_patterns + 1; ++i)
         u += eval_sizes[i];
     cerr << "n_all_param " << u << endl;
@@ -470,7 +471,7 @@ int main(){
     int i, j;
 
     unsigned long long hour = 0;
-    unsigned long long minute = 1;
+    unsigned long long minute = 3;
     unsigned long long second = 0;
     minute += hour * 60;
     second += minute * 60;
