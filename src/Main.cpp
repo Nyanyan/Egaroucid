@@ -19,6 +19,14 @@
 
 using namespace std;
 
+#define final_value 100
+#define book_value -1
+
+struct cell_value {
+	int value;
+	int depth;
+};
+
 inline void init() {
 	board_init();
 	search_init();
@@ -48,40 +56,25 @@ search_result calc_value_end(board nb) {
 	return res;
 }
 
-search_result cell_value_search(board bd, int depth, int end_depth) {
-	if (bd.n >= hw2 - end_depth)
-		return endsearch(bd, tim());
-	return midsearch(bd, tim(), depth);
-}
-
-search_result calc_value_p(board bd, int depth, int end_depth) {
-	search_result res;
-	bool not_passed = false;
-	for (int i = 0; i < hw2; ++i)
-		not_passed |= bd.legal(i);
-	if (!not_passed) {
-		bd.p = 1 - bd.p;
-		not_passed = false;
-		for (int i = 0; i < hw2; ++i)
-			not_passed |= bd.legal(i);
-		if (!not_passed) {
-			res.value = -end_evaluate(&bd);
-			return res;
-		} else {
-			res = cell_value_search(bd, depth, end_depth);
-			res.value = -res.value;
-			return res;
-		}
+cell_value cell_value_search(board bd, int depth, int end_depth) {
+	cell_value res;
+	if (bd.n >= hw2 - end_depth) {
+		bool use_mpc = hw2 - bd.n >= 16 ? true : false;
+		res.value = nega_scout_final(&bd, false, hw2 - bd.n, -sc_w, sc_w, use_mpc, 1.7);
+		res.depth = use_mpc ? hw2 - bd.n : final_value;
+	} else {
+		bool use_mpc = hw2 - bd.n >= 10 ? true : false;
+		res.value = nega_scout(&bd, false, depth, -sc_w, sc_w, use_mpc, 1.3);
+		res.depth = depth;
 	}
-	res = cell_value_search(bd, depth, end_depth);
 	return res;
 }
 
-inline future<search_result> calc_value(board bd, int policy) {
-	constexpr int depth = 12;
-	constexpr int end_depth = 18;
+inline future<cell_value> calc_value(board bd, int policy) {
+	constexpr int depth = 14;
+	constexpr int end_depth = 20;
 	board nb = bd.move(policy);
-	return async(launch::async, calc_value_p, nb, depth, end_depth);
+	return async(launch::async, cell_value_search, nb, depth, end_depth);
 }
 
 inline int proc_coord(int y, int x) {
@@ -163,12 +156,14 @@ void Main() {
 	int bd_arr[hw2];
 	future<search_result> future_result;
 	search_result result;
-	future<search_result> future_cell_values[hw2];
-	int calc_cell_values[hw2];
+	future<cell_value> future_cell_values[hw2];
+	int cell_value_state[hw2];
 	int cell_values[hw2];
-	Font cell_value(15);
+	int cell_depth[hw2];
+	Font cell_value_font(15);
+	Font cell_depth_font(10);
 	int depth, end_depth, ai_player;
-	depth = 10;
+	depth = 14;
 	end_depth = 20;
 	ai_player = 1;
 
@@ -188,7 +183,7 @@ void Main() {
 	bd.translate_from_arr(bd_arr, black);
 
 	for (int i = 0; i < hw2; ++i)
-		calc_cell_values[i] = 0;
+		cell_value_state[i] = 0;
 	create_vacant_lst(bd, bd_arr);
 
 	if (bd.p == ai_player)
@@ -209,16 +204,24 @@ void Main() {
 				else if (bd.legal(coord)) {
 					legals[coord].draw(Palette::Blue);
 					if (bd.p != ai_player) {
-						if (calc_cell_values[coord] == 0) {
+						if (cell_value_state[coord] == 0) {
 							future_cell_values[coord] = calc_value(bd, coord);
-							calc_cell_values[coord] = 1;
-						} else if (calc_cell_values[coord] == 1) {
+							cell_value_state[coord] = 1;
+						} else if (cell_value_state[coord] == 1) {
 							if (future_cell_values[coord].wait_for(seconds0) == future_status::ready){
-								cell_values[coord] = round(-(double)future_cell_values[coord].get().value / step);
-								calc_cell_values[coord] = 2;
+								cell_value cell_value_result = future_cell_values[coord].get();
+								cell_values[coord] = round(-(double)cell_value_result.value / step);
+								cell_depth[coord] = cell_value_result.depth;
+								cell_value_state[coord] = 2;
 							}
-						} else if (calc_cell_values[coord] == 2) {
-							cell_value(cell_values[coord]).draw(offset_x + (coord % hw) * cell_hw, offset_y + (coord / hw) * cell_hw);
+						} else if (cell_value_state[coord] == 2) {
+							cell_value_font(cell_values[coord]).draw(offset_x + (coord % hw) * cell_hw, offset_y + (coord / hw) * cell_hw);
+							if (cell_depth[coord] == final_value)
+								cell_depth_font(cell_depth[coord], U"%").draw(offset_x + (coord % hw) * cell_hw, offset_y + (coord / hw) * cell_hw + 18);
+							else if (cell_depth[coord] == book_value)
+								cell_depth_font(U"book").draw(offset_x + (coord % hw) * cell_hw, offset_y + (coord / hw) * cell_hw + 18);
+							else
+								cell_depth_font(cell_depth[coord]).draw(offset_x + (coord % hw) * cell_hw, offset_y + (coord / hw) * cell_hw + 18);
 						}
 						if (cells[coord].leftClicked()) {
 							bd = bd.move(coord);
@@ -226,7 +229,7 @@ void Main() {
 							create_vacant_lst(bd, bd_arr);
 							check_pass(&bd);
 							for (int i = 0; i < hw2; ++i)
-								calc_cell_values[i] = 0;
+								cell_value_state[i] = 0;
 							if (bd.p == ai_player)
 								future_result = ai(bd, depth, end_depth, bd_arr);
 						}
