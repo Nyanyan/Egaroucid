@@ -64,15 +64,15 @@ int nega_alpha_ordering_final_mpc(board *b, bool skipped, int depth, int alpha, 
     return v;
 }
 
-inline bool mpc_higher_final(board *b, bool skipped, int depth, int beta){
-    int bound = beta + mpct_final * mpcsd_final[depth - mpc_min_depth_final];
+inline bool mpc_higher_final(board *b, bool skipped, int depth, int beta, double t){
+    int bound = beta + t * mpcsd_final[depth - mpc_min_depth_final];
     if (bound > sc_w)
         return false;
     return nega_alpha_ordering_final_mpc(b, skipped, mpcd[depth], bound - step, bound) >= bound;
 }
 
-inline bool mpc_lower_final(board *b, bool skipped, int depth, int alpha){
-    int bound = alpha - mpct_final * mpcsd_final[depth - mpc_min_depth_final];
+inline bool mpc_lower_final(board *b, bool skipped, int depth, int alpha, double t){
+    int bound = alpha - t * mpcsd_final[depth - mpc_min_depth_final];
     if (bound < -sc_w)
         return false;
     return nega_alpha_ordering_final_mpc(b, skipped, mpcd[depth], bound, bound + step) <= bound;
@@ -576,7 +576,7 @@ int nega_alpha_final(board *b, bool skipped, const int depth, int alpha, int bet
     return v;
 }
 
-int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha, int beta, int use_multi_thread, int worker_id, bool use_mpc){
+int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha, int beta, int use_multi_thread, int worker_id, bool use_mpc, double mpct_in){
     #if USE_MULTI_THREAD
         if (worker_id != -1){
             if (thread_pool.stop[worker_id])
@@ -605,9 +605,9 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
     beta = min(beta, u);
     #if USE_END_MPC
         if (mpc_min_depth_final <= depth && depth <= mpc_max_depth_final && use_mpc){
-            if (mpc_higher_final(b, skipped, depth, beta))
+            if (mpc_higher_final(b, skipped, depth, beta, mpct_in))
                 return beta;
-            if (mpc_lower_final(b, skipped, depth, alpha))
+            if (mpc_lower_final(b, skipped, depth, alpha, mpct_in))
                 return alpha;
         }
     #endif
@@ -632,7 +632,7 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
             rb.b[i] = b->b[i];
         rb.p = 1 - b->p;
         rb.n = b->n;
-        int res = -nega_alpha_ordering_final(&rb, true, depth, -beta, -alpha, use_multi_thread, worker_id, use_mpc);
+        int res = -nega_alpha_ordering_final(&rb, true, depth, -beta, -alpha, use_multi_thread, worker_id, use_mpc, mpct_in);
         if (res >= beta)
             transpose_table.reg(b, hash, res, u);
         else if (res <= alpha)
@@ -713,7 +713,7 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
         }
     #else
         for (board &nnb: nb){
-            g = -nega_alpha_ordering_final(&nnb, false, depth - 1, -beta, -alpha, 0, -1, use_mpc);
+            g = -nega_alpha_ordering_final(&nnb, false, depth - 1, -beta, -alpha, 0, -1, use_mpc, mpct_in);
             alpha = max(alpha, g);
             if (beta <= alpha){
                 if (l < g)
@@ -730,11 +730,11 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
     return v;
 }
 
-int nega_scout_final(board *b, bool skipped, const int depth, int alpha, int beta, bool use_mpc){
+int nega_scout_final(board *b, bool skipped, const int depth, int alpha, int beta, bool use_mpc, double mpct_in){
     if (depth <= simple_end_threshold)
         return nega_alpha_final(b, skipped, depth, alpha, beta, -1);
     if (beta - alpha <= step)
-        return nega_alpha_ordering_final(b, skipped, depth, alpha, beta, multi_thread_depth, -1, use_mpc);
+        return nega_alpha_ordering_final(b, skipped, depth, alpha, beta, multi_thread_depth, -1, use_mpc, mpct_in);
     ++searched_nodes;
     #if USE_END_SC
         if (stability_cut(b, &alpha, &beta))
@@ -755,9 +755,9 @@ int nega_scout_final(board *b, bool skipped, const int depth, int alpha, int bet
     beta = min(beta, u);
     #if USE_END_MPC
         if (mpc_min_depth_final <= depth && depth <= mpc_max_depth_final && use_mpc){
-            if (mpc_higher_final(b, skipped, depth, beta))
+            if (mpc_higher_final(b, skipped, depth, beta, mpct_in))
                 return beta;
-            if (mpc_lower_final(b, skipped, depth, alpha))
+            if (mpc_lower_final(b, skipped, depth, alpha, mpct_in))
                 return alpha;
         }
     #endif
@@ -783,7 +783,7 @@ int nega_scout_final(board *b, bool skipped, const int depth, int alpha, int bet
             rb.b[i] = b->b[i];
         rb.p = 1 - b->p;
         rb.n = b->n;
-        int res = -nega_scout_final(&rb, true, depth, -beta, -alpha, use_mpc);
+        int res = -nega_scout_final(&rb, true, depth, -beta, -alpha, use_mpc, mpct_in);
         if (res >= beta)
             transpose_table.reg(b, hash, res, u);
         else if (res <= alpha)
@@ -847,7 +847,7 @@ int nega_scout_final(board *b, bool skipped, const int depth, int alpha, int bet
     #else
         for (int i = 0; i < canput; ++i){
             if (i > 0){
-                g = -nega_alpha_ordering_final(&nb[i], false, depth - 1, -alpha - step, -alpha, 0, -1, use_mpc);
+                g = -nega_alpha_ordering_final(&nb[i], false, depth - 1, -alpha - step, -alpha, 0, -1, use_mpc, mpct_in);
                 if (beta <= g){
                     if (l < g)
                         transpose_table.reg(b, hash, g, u);
@@ -856,7 +856,7 @@ int nega_scout_final(board *b, bool skipped, const int depth, int alpha, int bet
                 v = max(v, g);
             }
             if (alpha <= g){
-                g = -nega_scout_final(&nb[i], false, depth - 1, -beta, -g, use_mpc);
+                g = -nega_scout_final(&nb[i], false, depth - 1, -beta, -g, use_mpc, mpct_in);
                 if (beta <= g){
                     if (l < g)
                         transpose_table.reg(b, hash, g, u);
@@ -915,13 +915,13 @@ inline search_result endsearch(board b, long long strt){
     long long final_strt = tim();
     searched_nodes = 0;
     if (nb[0].n < hw2 - 5){
-        alpha = -nega_scout_final(&nb[0], false, max_depth, -beta, -alpha, use_mpc);
+        alpha = -nega_scout_final(&nb[0], false, max_depth, -beta, -alpha, use_mpc, mpct_final);
         //alpha = -mtd_final(&nb[0], false, max_depth, -beta, -alpha, prev_vals[0]);
         tmp_policy = nb[0].policy;
         for (i = 1; i < canput; ++i){
-            g = -nega_alpha_ordering_final(&nb[i], false, max_depth, -alpha - step, -alpha, multi_thread_depth, -1, use_mpc);
+            g = -nega_alpha_ordering_final(&nb[i], false, max_depth, -alpha - step, -alpha, multi_thread_depth, -1, use_mpc, mpct_final);
             if (alpha < g){
-                g = -nega_scout_final(&nb[i], false, max_depth, -beta, -g, use_mpc);
+                g = -nega_scout_final(&nb[i], false, max_depth, -beta, -g, use_mpc, mpct_final);
                 //g = -mtd_final(&nb[i], false, max_depth, -beta, -g, prev_vals[i]);
                 if (alpha < g){
                     alpha = g;
