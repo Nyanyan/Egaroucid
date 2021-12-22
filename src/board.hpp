@@ -36,6 +36,8 @@ uint_fast16_t reverse_board[n_line];
 uint_fast16_t pow3[11];
 uint_fast16_t pop_digit[n_line][hw];
 uint_fast16_t pop_mid[n_line][hw][hw];
+int count_black_arr[n_line];
+int count_both_arr[n_line];
 
 const int cell_div4[hw2] = {
     1, 1, 1, 1, 2, 2, 2, 2, 
@@ -139,6 +141,17 @@ void board_init() {
             } else{
                 put_arr[black][idx][place] -= pow3[hw_m1 - place] * 2;
                 put_arr[white][idx][place] -= pow3[hw_m1 - place];
+            }
+        }
+        count_black_arr[idx] = 0;
+        count_both_arr[idx] = 0;
+        for (place = 0; place < hw; ++place) {
+            if (1 & (b >> place)){
+                ++count_black_arr[idx];
+                ++count_both_arr[idx];
+            } else if (1 & (w >> place)){
+                --count_black_arr[idx];
+                ++count_both_arr[idx];
             }
         }
     }
@@ -324,6 +337,18 @@ class board {
                 }
             }
             this->p = player;
+        }
+
+        inline int count(int player){
+            int bk_score = 0, sum_stones = 0;
+            for (int i = 0; i < hw; ++i){
+                bk_score += count_black_arr[this->b[i]];
+                sum_stones += count_both_arr[this->b[i]];
+            }
+            if (player == black)
+                return (sum_stones + bk_score) / 2;
+            else
+                return (sum_stones - bk_score) / 2;
         }
 
     private:

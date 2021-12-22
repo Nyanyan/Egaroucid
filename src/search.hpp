@@ -23,7 +23,7 @@ constexpr int mtd_end_threshold = step * 5;
 #if BOOK_MODE
     #define mpct 0.4
 #else
-    #define mpct 1.7
+    #define mpct 1.6
 #endif
 
 #define simple_mid_threshold 3

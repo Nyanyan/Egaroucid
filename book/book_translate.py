@@ -19,7 +19,7 @@ all_chars = [
     '[', ']', '^', '_', '`', 'a', 'b', 'c', 
     'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '{', '|', '}', '~']
 
-with open('learned_data/book_killer.txt', 'r') as f:
+with open('learned_data/book_change.txt', 'r') as f:
     data = f.read()
 killer_boards = []
 idx = 0
@@ -59,6 +59,9 @@ move_threshold = 0
 que = deque([])
 
 def start_calc_value(o, ai_num):
+    if sum(o.nums) == 64:
+        print('end')
+        return False
     grid_str = ''
     for i in range(hw):
         for j in range(hw):

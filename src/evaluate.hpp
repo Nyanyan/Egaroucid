@@ -35,8 +35,6 @@ using namespace std;
 #define p39m 19682
 #define p310m 59048
 
-int count_black_arr[n_line];
-int count_both_arr[n_line];
 int mobility_arr[2][n_line];
 int mobility_arr2[2][n_line * n_line];
 int surround_arr[2][n_line];
@@ -55,20 +53,11 @@ inline void init_evaluation_base() {
         mobility_arr[white][idx] = 0;
         surround_arr[black][idx] = 0;
         surround_arr[white][idx] = 0;
-        count_black_arr[idx] = 0;
-        count_both_arr[idx] = 0;
         stability_edge_arr[black][idx] = 0;
         stability_edge_arr[white][idx] = 0;
         stability_corner_arr[black][idx] = 0;
         stability_corner_arr[white][idx] = 0;
         for (place = 0; place < hw; ++place) {
-            if (1 & (b >> place)){
-                ++count_black_arr[idx];
-                ++count_both_arr[idx];
-            } else if (1 & (w >> place)){
-                --count_black_arr[idx];
-                ++count_both_arr[idx];
-            }
             if (place > 0) {
                 if ((1 & (b >> (place - 1))) == 0 && (1 & (w >> (place - 1))) == 0) {
                     if (1 & (b >> place))
@@ -133,7 +122,7 @@ inline void init_evaluation_base() {
 }
 
 inline void init_evaluation_calc(){
-    ifstream ifs("C:/github/egaroucid/Egaroucid5/src/resources/param.txt");
+    ifstream ifs("src/resources/param.txt");
     if (ifs.fail()){
         cerr << "evaluation file not exist" << endl;
         exit(1);
