@@ -161,6 +161,8 @@ class book{
 
         inline book_value get_exact(board *b){
             book_value res;
+            res.policy = -1;
+            res.value = -inf;
             board nb;
             double max_val = -inf, value;
             for (int coord = 0; coord < hw2; ++coord){

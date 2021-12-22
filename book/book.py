@@ -35,13 +35,13 @@ def start_calc_value(o, ai_num):
     return True
 
 def calc_value(o, ai_num, flag):
-    o.print_info()
     grid_str = ''
     for i in range(hw):
         for j in range(hw):
             grid_str += '0' if o.grid[i][j] == 0 else '1' if o.grid[i][j] == 1 else '.'
         grid_str += '\n'
     if flag:
+        o.print_info()
         _, _, val = [float(elem) for elem in ai_exe[ai_num].stdout.readline().decode().split()]
         if o.player == white:
             val = -val
