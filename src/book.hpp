@@ -94,20 +94,20 @@ class book{
             return -inf;
         }
 
-        inline book_value get_random(board *b, double min_value){
+        inline book_value get_random(board *b, double accept_value){
             vector<int> policies;
             vector<double> values;
             board nb;
+            double max_value = -inf;
             for (int coord = 0; coord < hw2; ++coord){
                 if (b->legal(coord)){
                     b->move(coord, &nb);
                     book_node *p_node = this->book[nb.hash() & book_hash_mask];
                     while(p_node != NULL){
                         if(compare_key(nb.b, p_node->k)){
-                            if ((b->p ? -1.0 : 1.0) * p_node->value >= min_value){
-                                policies.push_back(coord);
-                                values.push_back((b->p ? -1.0 : 1.0) * p_node->value);
-                            }
+                            policies.push_back(coord);
+                            values.push_back((b->p ? -1.0 : 1.0) * p_node->value);
+                            max_value = max(max_value, (b->p ? -1.0 : 1.0) * p_node->value);
                             break;
                         }
                         p_node = p_node->p_n_node;
@@ -120,9 +120,15 @@ class book{
                 res.value = -inf;
                 return res;
             }
-            int idx = myrandrange(0, policies.size());
-            res.policy = policies[idx];
-            res.value = values[idx] * step;
+            int idx;
+            while (true){
+                idx = myrandrange(0, policies.size());
+                if (values[idx] >= max_value - accept_value){
+                    res.policy = policies[idx];
+                    res.value = values[idx] * step;
+                    break;
+                }
+            }
             return res;
         }
 

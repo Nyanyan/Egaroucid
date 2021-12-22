@@ -32,6 +32,7 @@ while idx < len(data):
     if data[idx] == ' ':
         coord = all_chars.index(data[idx + 1])
         o.move(coord // hw, coord % hw)
+        o.check_legal()
         killer_boards.append(o)
         idx += 2
         o = othello()
@@ -59,9 +60,6 @@ move_threshold = 0
 que = deque([])
 
 def start_calc_value(o, ai_num):
-    if sum(o.nums) == 64:
-        print('end')
-        return False
     grid_str = ''
     for i in range(hw):
         for j in range(hw):
@@ -71,6 +69,15 @@ def start_calc_value(o, ai_num):
     if grid_str.replace('\n', '') in book:
         print('in book')
         return False
+    flag = False
+    for i in range(hw):
+        for j in range(hw):
+            flag = flag or (o.grid[i][j] == legal)
+    if not flag:
+        print('no legal')
+        return False
+    #print(o.player)
+    #print(grid_str)
     ai_exe[ai_num].stdin.write((str(o.player) + '\n' + grid_str).encode('utf-8'))
     ai_exe[ai_num].stdin.flush()
     return True
