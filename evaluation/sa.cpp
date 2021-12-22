@@ -16,7 +16,7 @@ using namespace std;
 #define max_surround 80
 #define max_evaluate_idx 59049
 
-#define sa_phase 4
+#define sa_phase 9
 
 #define p31 3
 #define p32 9
@@ -467,6 +467,73 @@ void sa(unsigned long long tl){
     cerr << t << " " << u << endl;
 }
 
+void sa2(unsigned long long tl){
+    unsigned long long strt = tim(), now = tim();
+    double score = first_scoring(), n_score;
+    int phase, pattern, idx1, idx2, rev_idx1, rev_idx2, f_val1, f_val2;
+    int t = 0, u = 0;
+    cerr << score << " ";
+    scoring_mae();
+    cerr << endl;
+    for (;;){
+        ++t;
+        phase = sa_phase; //myrandrange(0, n_phases);
+        pattern = myrandrange(0, n_patterns + 1);
+        idx1 = used_idxes_vector[pattern][myrandrange(0, (int)used_idxes_vector[pattern].size())];
+        idx2 = used_idxes_vector[pattern][myrandrange(0, (int)used_idxes_vector[pattern].size())];
+        if (pattern < n_patterns){
+            f_val1 = eval_arr[phase][pattern][idx1];
+            f_val2 = eval_arr[phase][pattern][idx2];
+            eval_arr[phase][pattern][idx1] += myrandrange(-50, 51);
+            eval_arr[phase][pattern][idx2] += myrandrange(-50, 51);
+            rev_idx1 = calc_rev_idx(pattern, pattern_sizes[pattern], idx1);
+            rev_idx2 = calc_rev_idx(pattern, pattern_sizes[pattern], idx2);
+            eval_arr[phase][pattern][rev_idx1] = eval_arr[phase][pattern][idx1];
+            eval_arr[phase][pattern][rev_idx2] = eval_arr[phase][pattern][idx2];
+            scoring(pattern, idx1);
+            scoring(pattern, idx2);
+            scoring(pattern, rev_idx1);
+            n_score = scoring(pattern, rev_idx2);
+        } else{
+            f_val1 = eval_arr[phase][pattern][idx1];
+            f_val2 = eval_arr[phase][pattern][idx2];
+            eval_arr[phase][pattern][idx1] += myrandrange(-50, 51);
+            eval_arr[phase][pattern][idx2] += myrandrange(-50, 51);
+            scoring(pattern, idx1);
+            n_score = scoring(pattern, idx2);
+        }
+        if (n_score < score){
+            score = n_score;
+            ++u;
+        } else{
+            eval_arr[phase][pattern][idx1] = f_val1;
+            eval_arr[phase][pattern][idx2] = f_val2;
+            scoring(pattern, idx1);
+            scoring(pattern, idx2);
+            if (pattern < n_patterns){
+                eval_arr[phase][pattern][rev_idx1] = f_val1;
+                eval_arr[phase][pattern][rev_idx2] = f_val2;
+                scoring(pattern, rev_idx1);
+                scoring(pattern, rev_idx2);
+            }
+        }
+        if ((t & 0b11111111111) == 0){
+            now = tim();
+            if (now - strt > tl)
+                break;
+            cerr << '\r' << (int)((double)(now - strt) / tl * 1000) << " " << t << " " << u << " ";
+            cerr << score << " ";
+            scoring_mae();
+        }
+    }
+    cerr << '\r';
+    cerr << score << " ";
+    scoring_mae();
+    //cerr << endl;
+    //cerr << first_scoring() << endl;
+    cerr << t << " " << u << endl;
+}
+
 int main(){
     int i, j;
 
@@ -480,7 +547,7 @@ int main(){
     input_param();
 
     input_test_data(0);
-    sa(second * 1000);
+    sa2(second * 1000);
 
     output_param();
 
