@@ -1,9 +1,27 @@
 # Egaroucid5
 Strong Othello AI based on Egaroucid4, which got 1st place in the world
 
+**You can use the application in Japanese or use Python tkinter version**
 
 
-**アプリの使い方は下部に日本語で書きました**
+
+## アプリの使い方
+
+**The main application is only in Japanese.**
+
+### book
+
+#### bookの手動修正・追加
+
+修正したい局面にセットして、修正したいマスを右クリックします。そうするとbook修正・追加モードに入ります。
+
+数字キーまたはテンキー(テンキーは動作未確認)とマイナス符号```-```と小数点```.```とバックスペースキーを使って修正した評価値を入力してください。このとき、小数点を使って実数を登録できます。同じマスを再び右クリックすると新しい評価値がbookに登録されます。
+
+実数に変換できなかった場合は「形式エラー」と表示されます。
+
+誤ってbook修正・追加モードに入ってしまった場合は何も入力せずに同じマスを右クリックすると抜けられます。
+
+誤ってbookを登録してしまった場合は手動で戻すか、resourcesフォルダの```book_backup.txt```を```book.txt```にリネームしてください。
 
 
 
@@ -43,7 +61,7 @@ None
 
 
 
-## How to use solver
+## How to use with tkinter
 
 First, you have to clone this repository. For example,
 
@@ -76,24 +94,4 @@ AI moves (0: black 1: white):
 ```
 
 Press ```Start``` button to play!
-
-
-
-## アプリの使い方
-
-**The main application is written in Japanese.**
-
-### book
-
-#### bookの手動修正・追加
-
-修正したい局面にセットして、修正したいマスを右クリックします。そうするとbook修正・追加モードに入ります。
-
-数字キーまたはテンキー(テンキーは動作未確認)とマイナス符号```-```と小数点```.```とバックスペースキーを使って修正した評価値を入力してください。このとき、小数点を使って実数を登録できます。同じマスを再び右クリックすると新しい評価値がbookに登録されます。
-
-実数に変換できなかった場合は「形式エラー」と表示されます。
-
-誤ってbook修正・追加モードに入ってしまった場合は何も入力せずに同じマスを右クリックすると抜けられます。
-
-誤ってbookを登録してしまった場合は手動で戻すか、resourcesフォルダの```book_backup.txt```を```book.txt```にリネームしてください。
 
