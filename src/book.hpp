@@ -13,6 +13,7 @@ struct book_node{
     uint_fast16_t k[hw];
     double value;
     book_node* p_n_node;
+    int line;
 };
 
 struct book_value{
@@ -37,7 +38,6 @@ class book{
             string book_line;
             int n_book = 0;
             board b;
-            int tmp[b_idx_num];
             double value;
             for(i = 0; i < book_hash_table_size; ++i)
                 this->book[i] = NULL;
@@ -64,20 +64,7 @@ class book{
                 for (j = hw2 + 1; j < (int)book_line.size(); ++j)
                     value_str += book_line[j];
                 value = stof(value_str);
-                register_book(b.b, b.hash() & book_hash_mask, value);
-                for (i = 0; i < 8; ++i)
-                    swap(b.b[i], b.b[8 + i]);
-                register_book(b.b, b.hash() & book_hash_mask, value);
-                for (i = 0; i < 16; ++i)
-                    tmp[i] = b.b[i];
-                for (i = 0; i < 8; ++i)
-                    b.b[i] = reverse_board[tmp[7 - i]];
-                for (i = 0; i < 8; ++i)
-                    b.b[8 + i] = reverse_board[tmp[15 - i]];
-                register_book(b.b, b.hash() & book_hash_mask, value);
-                for (i = 0; i < 8; ++i)
-                    swap(b.b[i], b.b[8 + i]);
-                register_book(b.b, b.hash() & book_hash_mask, value);
+                register_symmetric_book(b, value, n_book);
                 ++n_book;
             }
             cerr << "book initialized " << n_book << " boards in book" << endl;
@@ -197,6 +184,22 @@ class book{
             return res;
         }
 
+        inline void change(board b, double value){
+            if (b.p)
+                value = -value;
+            book_node *p_node = this->book[b.hash() & book_hash_mask];
+            while(p_node != NULL){
+                if(compare_key(b.b, p_node->k)){
+                    register_symmetric_book(b, value, p_node->line);
+                    save_book(b, value, p_node->line);
+                    return;
+                }
+                p_node = p_node->p_n_node;
+            }
+            register_symmetric_book(b, value, -1);
+            save_book(b, value, -1);
+        }
+
     private:
         inline bool compare_key(const uint_fast16_t a[], const uint_fast16_t b[]){
             return
@@ -204,19 +207,20 @@ class book{
                 a[4] == b[4] && a[5] == b[5] && a[6] == b[6] && a[7] == b[7];
         }
 
-        inline book_node* book_node_init(const uint_fast16_t key[], double value){
+        inline book_node* book_node_init(const uint_fast16_t key[], double value, int line){
             book_node* p_node = NULL;
             p_node = (book_node*)malloc(sizeof(book_node));
             for (int i = 0; i < hw; ++i)
                 p_node->k[i] = key[i];
             p_node->value = value;
+            p_node->line = line;
             p_node->p_n_node = NULL;
             return p_node;
         }
 
-        inline void register_book(const uint_fast16_t key[], int hash, double value){
+        inline void register_book(const uint_fast16_t key[], int hash, double value, int line){
             if(this->book[hash] == NULL){
-                this->book[hash] = book_node_init(key, value);
+                this->book[hash] = book_node_init(key, value, line);
             } else {
                 book_node *p_node = this->book[hash];
                 book_node *p_pre_node = NULL;
@@ -224,12 +228,72 @@ class book{
                 while(p_node != NULL){
                     if(compare_key(key, p_node->k)){
                         p_node->value = value;
+                        p_node->line = line;
                         return;
                     }
                     p_pre_node = p_node;
                     p_node = p_node->p_n_node;
                 }
-                p_pre_node->p_n_node = book_node_init(key, value);
+                p_pre_node->p_n_node = book_node_init(key, value, line);
+            }
+        }
+
+        inline void register_symmetric_book(board b, double value, int line){
+            int i;
+            int tmp[b_idx_num];
+            register_book(b.b, b.hash() & book_hash_mask, value, line);
+            for (i = 0; i < 8; ++i)
+                swap(b.b[i], b.b[8 + i]);
+            register_book(b.b, b.hash() & book_hash_mask, value, line);
+            for (i = 0; i < 16; ++i)
+                tmp[i] = b.b[i];
+            for (i = 0; i < 8; ++i)
+                b.b[i] = reverse_board[tmp[7 - i]];
+            for (i = 0; i < 8; ++i)
+                b.b[8 + i] = reverse_board[tmp[15 - i]];
+            register_book(b.b, b.hash() & book_hash_mask, value, line);
+            for (i = 0; i < 8; ++i)
+                swap(b.b[i], b.b[8 + i]);
+            register_book(b.b, b.hash() & book_hash_mask, value, line);
+        }
+
+        inline string create_book_data(board b, double value){
+            string res = "";
+            int arr[hw2];
+            b.translate_to_arr(arr);
+            for (int i = 0; i < hw2; ++i){
+                if (arr[i] == black)
+                    res += to_string(black);
+                else if (arr[i] == white)
+                    res += to_string(white);
+                else
+                    res += ".";
+            }
+            res += " ";
+            res += to_string(value);
+            return res;
+        }
+
+        inline void save_book(board b, double value, int line){
+            rename("resources/book.txt", "resources/book_backup.txt");
+            ifstream ifs("resources/book_backup.txt");
+            if (ifs.fail()){
+                cerr << "book file not exist" << endl;
+                exit(1);
+            }
+            ofstream ofs("resources/book.txt");
+            if (ofs.fail()){
+                cerr << "book file not exist" << endl;
+                exit(1);
+            }
+            int idx = 0;
+            string book_line;
+            while (getline(ifs, book_line)){
+                if (idx == line){
+                    ofs << create_book_data(b, value) << endl;
+                } else
+                    ofs << book_line << endl;
+                ++idx;
             }
         }
 };
