@@ -17,6 +17,7 @@
 	#include "thread_pool.hpp"
 #endif
 #include "pulldown.hpp"
+#include "graph.hpp"
 
 using namespace std;
 
@@ -24,9 +25,9 @@ using namespace std;
 #define book_define_value -1
 #define end_game_define_player 2
 #define both_ai_define 100
-#define half_random_define 0
-#define n_accept_define 1
-#define exact_define 2
+#define n_accept_define 0
+#define exact_define 1
+#define graph_font_size 10
 
 struct cell_value {
 	int value;
@@ -108,9 +109,7 @@ inline future<search_result> ai(board bd, int depth, int end_depth, int bd_arr[]
 	}
 	if (bd.n < book_stones) {
 		book_value book_result;
-		if (book_mode == half_random_define)
-			book_result = book.get_half_random(&bd);
-		else if (book_mode == n_accept_define)
+		if (book_mode == n_accept_define)
 			book_result = book.get_random(&bd, (double)book_accept);
 		else
 			book_result = book.get_exact(&bd);
@@ -146,6 +145,7 @@ inline String coord_translate(int coord) {
 void Main() {
 	Size window_size = Size(1000, 700);
 	Window::Resize(window_size);
+	Window::SetTitle(U"Egaroucid5");
 	constexpr int offset_y = 150;
 	constexpr int offset_x = 60;
 	constexpr int cell_hw = 50;
@@ -182,18 +182,22 @@ void Main() {
 	Font coord_ui(40);
 	Font score_ui(40);
 	Font record_ui(20);
-	bool playing = false, thinking = false, cell_value_thinking = false;
+	Font value_ui(30);
+	Font change_book_ui(20);
+	Font graph_font(graph_font_size);
+	bool playing = false, thinking = false, cell_value_thinking = false, changing_book = false;
 	int last_played = -1;
-	int depth, end_depth, ai_player, cell_value_depth, cell_value_end_depth, book_mode, book_accept;
-	bool show_cell_value;
-	//depth = 14;
-	//end_depth = 22;
-	//cell_value_depth = 12;
-	//cell_value_end_depth = 20;
+	int depth, end_depth, ai_player, cell_value_depth, cell_value_end_depth, book_mode, book_accept, show_cell_value, show_value, n_moves;
+	double value;
+	String change_book_value_str = U"";
+	String change_book_value_info_str = U"修正した評価値";
+	String change_book_value_coord_str = U"";
+	int change_book_coord = -1;
 	ai_player = 0;
-	show_cell_value = true;
+	show_cell_value = 0;
+	show_value = 0;
 	book_mode = 0;
-	book_accept = -2;
+	book_accept = 0;
 	String record = U"";
 
 	double depth_double = 14, end_depth_double = 22, cell_value_depth_double = 12, cell_value_end_depth_double = 20, book_accept_double = 2;
@@ -201,10 +205,21 @@ void Main() {
 	const Font pulldown_font{15};
 	const Array<String> player_items = { U"先手", U"後手", U"人間同士", U"AI同士"};
 	const Array<String> hint_items = {U"ヒントあり", U"ヒントなし"};
-	const Array<String> book_items = { U"最大ランダム", U"誤差許容", U"厳密"};
-	Pulldown pulldown_player{player_items, pulldown_font, Point{125, 0}};
-	Pulldown pulldown_hint{hint_items, pulldown_font, Point{215, 0}};
-	Pulldown pulldown_book{book_items, pulldown_font, Point{320, 0}};
+	const Array<String> book_items = {U"誤差許容", U"厳密"};
+	const Array<String> value_items = { U"評価値表示", U"評価値非表示"};
+	Pulldown pulldown_player{ player_items, pulldown_font, Point{145, 0}, ai_player};
+	Pulldown pulldown_hint{hint_items, pulldown_font, Point{235, 0}, show_cell_value};
+	Pulldown pulldown_book{book_items, pulldown_font, Point{340, 0}, book_mode};
+	Pulldown pulldown_value{value_items, pulldown_font, Point{430, 0}, show_value};
+
+	Graph graph;
+	graph.sx = 550;
+	graph.sy = 220;
+	graph.size_x = 420;
+	graph.size_y = 300;
+	graph.resolution = 10;
+	graph.font_size = graph_font_size;
+	graph.font = graph_font;
 
 	for (int i = 0; i < hw; ++i) {
 		cell_center_y.push_back(offset_y + i * cell_size.y + cell_hw / 2);
@@ -217,21 +232,24 @@ void Main() {
 		cells << Rect{ (offset_x + (i % hw) * cell_size.x), (offset_y + (i / hw) * cell_size.y), cell_size};
 	}
 
+	for (int i = 0; i < hw2; ++i)
+		cell_value_state[i] = 0;
+
 	while (System::Update()) {
 
 		cell_value_thinking = false;
 		for (int i = 0; i < hw2; ++i)
 			cell_value_thinking = cell_value_thinking || (cell_value_state[i] == 1);
-		SimpleGUI::Slider(U"中盤{:.0f}手読み"_fmt(depth_double), depth_double, 1, 60, Vec2(550, 5), 150, 250, !thinking);
+		SimpleGUI::Slider(U"中盤{:.0f}手読み"_fmt(depth_double), depth_double, 1, 60, Vec2(600, 5), 150, 250, !thinking);
 		depth = round(depth_double);
-		SimpleGUI::Slider(U"終盤{:.0f}空読み"_fmt(end_depth_double), end_depth_double, 1, 60, Vec2(550, 40), 150, 250, !thinking);
+		SimpleGUI::Slider(U"終盤{:.0f}空読み"_fmt(end_depth_double), end_depth_double, 1, 60, Vec2(600, 40), 150, 250, !thinking);
 		end_depth = round(end_depth_double);
-		SimpleGUI::Slider(U"ヒント中盤{:.0f}手読み"_fmt(cell_value_depth_double), cell_value_depth_double, 1, 60, Vec2(500, 75), 200, 250, !cell_value_thinking);
+		SimpleGUI::Slider(U"ヒント中盤{:.0f}手読み"_fmt(cell_value_depth_double), cell_value_depth_double, 1, 60, Vec2(550, 75), 200, 250, !cell_value_thinking);
 		cell_value_depth = round(cell_value_depth_double);
-		SimpleGUI::Slider(U"ヒント終盤{:.0f}空読み"_fmt(cell_value_end_depth_double), cell_value_end_depth_double, 1, 60, Vec2(500, 110), 200, 250, !cell_value_thinking);
+		SimpleGUI::Slider(U"ヒント終盤{:.0f}空読み"_fmt(cell_value_end_depth_double), cell_value_end_depth_double, 1, 60, Vec2(550, 110), 200, 250, !cell_value_thinking);
 		cell_value_end_depth = round(cell_value_end_depth_double);
 		if (book_mode == n_accept_define) {
-			SimpleGUI::Slider(U"book誤差{:.0f}石"_fmt(book_accept_double), book_accept_double, 0, 60, Vec2(500, 145), 200, 250);
+			SimpleGUI::Slider(U"book誤差{:.0f}石"_fmt(book_accept_double), book_accept_double, 0, 60, Vec2(550, 145), 200, 250);
 			book_accept = round(book_accept_double);
 		}
 
@@ -248,6 +266,7 @@ void Main() {
 			playing = true;
 			thinking = false;
 			last_played = -1;
+			value = 0.0;
 			record.clear();
 			for (int i = 0; i < hw2; ++i)
 				bd_arr[i] = first_board[i];
@@ -255,6 +274,10 @@ void Main() {
 			create_vacant_lst(bd, bd_arr);
 			for (int i = 0; i < hw2; ++i)
 				cell_value_state[i] = 0;
+			change_book_value_str.clear();
+			changing_book = false;
+			n_moves = 0;
+			graph.clear();
 		}
 
 		record_ui(record).draw(0, 550);
@@ -268,7 +291,7 @@ void Main() {
 		for (const auto& cell : cells)
 			cell.stretched(-1).draw(Palette::Green);
 		for (int i = 0; i < hw; ++i)
-			coord_ui((char)('A' + i)).draw(offset_x + i * cell_hw + 10, offset_y - cell_hw);
+			coord_ui((char)('a' + i)).draw(offset_x + i * cell_hw + 10, offset_y - cell_hw);
 		for (int i = 0; i < hw; ++i)
 			coord_ui(i + 1).draw(offset_x - cell_hw, offset_y + i * cell_hw);
 		Circle(offset_x + 2 * cell_hw, offset_y + 2 * cell_hw, 5).draw(Palette::Black);
@@ -290,7 +313,7 @@ void Main() {
 						if (bd.p != ai_player && bd.p != end_game_define_player && ai_player != both_ai_define) {
 							if (cell_value_state[coord] == 0) {
 								legals[coord].draw(Palette::Blue);
-								if (show_cell_value) {
+								if (show_cell_value == 0) {
 									future_cell_values[coord] = calc_value(bd, coord, cell_value_depth, cell_value_end_depth);
 									cell_value_state[coord] = 1;
 								}
@@ -305,7 +328,7 @@ void Main() {
 								}
 							}
 							else if (cell_value_state[coord] == 2) {
-								if (show_cell_value) {
+								if (show_cell_value == 0) {
 									cell_value_font(cell_values[coord]).draw(offset_x + (coord % hw) * cell_hw + 2, offset_y + (coord / hw) * cell_hw);
 									if (cell_depth[coord] == final_define_value)
 										cell_depth_font(cell_depth[coord], U"%").draw(offset_x + (coord % hw) * cell_hw + 2, offset_y + (coord / hw) * cell_hw + 21);
@@ -317,10 +340,13 @@ void Main() {
 								else
 									legals[coord].draw(Palette::Blue);
 							}
-							if (cells[coord].leftClicked()) {
+							if (cells[coord].leftClicked() && !changing_book) {
 								bd = bd.move(coord);
+								++n_moves;
 								record += coord_translate(coord);
-								if (record.size() == 60)
+								String record_copy = record;
+								record_copy.replace(U"\n", U"");
+								if (record_copy.size() % 40 == 0)
 									record += U"\n";
 								last_played = coord;
 								bd.translate_to_arr(bd_arr);
@@ -328,6 +354,27 @@ void Main() {
 								check_pass(&bd);
 								for (int i = 0; i < hw2; ++i)
 									cell_value_state[i] = 0;
+							} else if (cells[coord].rightClicked()) {
+								if (changing_book && coord == change_book_coord) {
+									if (change_book_value_str.size() == 0) {
+										changing_book = false;
+									} else {
+										double change_book_value = ParseOr<double>(change_book_value_str, -1000.0);
+										if (change_book_value == -1000.0)
+											change_book_value_info_str = U"形式エラー";
+										else {
+											book.change(bd.move(coord), -change_book_value);
+											cell_value_state[coord] = 0;
+											change_book_value_str.clear();
+											changing_book = false;
+										}
+									}
+								} else {
+									change_book_value_str.clear();
+									changing_book = true;
+									change_book_value_coord_str = coord_translate(coord);
+									change_book_coord = coord;
+								}
 							}
 						}
 					}
@@ -338,10 +385,14 @@ void Main() {
 					if (future_result.wait_for(seconds0) == future_status::ready) {
 						thinking = false;
 						result = future_result.get();
-						//Print << (double)result.value / step;
+						value = (double)result.value / step;
 						bd = bd.move(result.policy);
 						record += coord_translate(result.policy);
-						if (record.size() == 60)
+						graph.push(n_moves, (double)result.value / step);
+						++n_moves;
+						String record_copy = record;
+						record_copy.replace(U"\n", U"");
+						if (record_copy.size() % 40 == 0)
 							record += U"\n";
 						last_played = result.policy;
 						bd.translate_to_arr(bd_arr);
@@ -354,14 +405,58 @@ void Main() {
 				}
 			}
 			score_ui(U"黒 ", bd.count(black), U" ", bd.count(white), U" 白").draw(10, 640);
+			if (show_value == 0)
+				value_ui(U"評価値: ", value).draw(250, 650);
+		}
+
+		if (changing_book) {
+			if (Key0.down() || KeyNum0.down()) {
+				change_book_value_str += U"0";
+				change_book_value_info_str = U"修正した評価値";
+			} else if (Key1.down() || KeyNum1.down()) {
+				change_book_value_str += U"1";
+				change_book_value_info_str = U"修正した評価値";
+			} else if (Key2.down() || KeyNum2.down()) {
+				change_book_value_str += U"2";
+				change_book_value_info_str = U"修正した評価値";
+			} else if (Key3.down() || KeyNum3.down()) {
+				change_book_value_str += U"3";
+				change_book_value_info_str = U"修正した評価値";
+			} else if (Key4.down() || KeyNum4.down()) {
+				change_book_value_str += U"4";
+				change_book_value_info_str = U"修正した評価値";
+			} else if (Key5.down() || KeyNum5.down()) {
+				change_book_value_str += U"5";
+				change_book_value_info_str = U"修正した評価値";
+			} else if (Key6.down() || KeyNum6.down()) {
+				change_book_value_str += U"6";
+				change_book_value_info_str = U"修正した評価値";
+			} else if (Key7.down() || KeyNum7.down()) {
+				change_book_value_str += U"7";
+				change_book_value_info_str = U"修正した評価値";
+			} else if (Key8.down() || KeyNum8.down()) {
+				change_book_value_str += U"8";
+				change_book_value_info_str = U"修正した評価値";
+			} else if (Key9.down() || KeyNum9.down()) {
+				change_book_value_str += U"9";
+				change_book_value_info_str = U"修正した評価値";
+			} else if (KeyPeriod.down()) {
+				change_book_value_str += U".";
+				change_book_value_info_str = U"修正した評価値";
+			} else if (KeyMinus.down()) {
+				change_book_value_str += U"-";
+				change_book_value_info_str = U"修正した評価値";
+			} else if (KeyBackspace.down()) {
+				if (change_book_value_str.size())
+					change_book_value_str.pop_back();
+				change_book_value_info_str = U"修正した評価値";
+			}
+			change_book_ui(change_book_value_info_str, U"(", change_book_value_coord_str, U"): ", change_book_value_str).draw(450, 660);
 		}
 
 		pulldown_hint.update();
 		pulldown_hint.draw();
-		if (pulldown_hint.getIndex() == 0)
-			show_cell_value = true;
-		else
-			show_cell_value = false;
+		show_cell_value = pulldown_hint.getIndex();
 
 		pulldown_player.update();
 		pulldown_player.draw();
@@ -370,5 +465,11 @@ void Main() {
 		pulldown_book.draw();
 		book_mode = pulldown_book.getIndex();
 
+		pulldown_value.update();
+		pulldown_value.draw();
+		show_value = pulldown_value.getIndex();
+
+		graph.draw();
+		
 	}
 }
