@@ -2,32 +2,6 @@
 #include <Siv3D.hpp> // OpenSiv3D v0.6.3
 #include <vector>
 
-struct Node {
-	int x;
-	int y;
-	int dx;
-	int dy;
-	int sx;
-	int sy;
-
-	void draw() const {
-		Circle{sx + dx * x, sy + dy * y, 10}.draw(Palette::Black);
-	}
-};
-
-struct Edge {
-	int sx;
-	int sy;
-	int ex;
-	int ey;
-	int ssx;
-	int ssy;
-
-	void draw() const {
-		Line{ssx + sx, ssy + sy, ssx + ex, ssy + ey}.draw(5, Palette::Black);
-	}
-};
-
 class Graph {
 	public:
 		int sx;
