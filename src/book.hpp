@@ -277,6 +277,7 @@ class book{
         }
 
         inline void save_book(board b, double value, int line){
+            remove("resources/book_backup.txt");
             rename("resources/book.txt", "resources/book_backup.txt");
             ifstream ifs("resources/book_backup.txt");
             if (ifs.fail()){

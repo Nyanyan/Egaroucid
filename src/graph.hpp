@@ -27,7 +27,11 @@ class Graph {
 				if (y_max - y == 0)
 					Line{sx, sy + y * dy, sx + size_x, sy + y * dy}.draw(2, Palette::White);
 				else
-					Line{ sx, sy + y * dy, sx + size_x, sy + y * dy }.draw(1, Palette::White);
+					Line{sx, sy + y * dy, sx + size_x, sy + y * dy}.draw(1, Palette::White);
+			}
+			for (int x = 0; x <= 60; x += 10){
+				font(x).draw(sx + x * dx, sy - 2 * font_size);
+				Line{sx + x * dx, sy, sx + x * dx, sy + size_y}.draw(1, Palette::White);
 			}
 			for (pair<int, int> yx : nodes)
 				Circle{sx + yx.first * dx, sy + y_max * dy - yx.second * dy, 3}.draw(Palette::White);
