@@ -11,7 +11,7 @@ constexpr int book_hash_mask = book_hash_table_size - 1;
 
 struct book_node{
     uint_fast16_t k[hw];
-    double value;
+    int value;
     book_node* p_n_node;
     int line;
 };
@@ -63,7 +63,7 @@ class book{
                 string value_str = "";
                 for (j = hw2 + 1; j < (int)book_line.size(); ++j)
                     value_str += book_line[j];
-                value = stof(value_str);
+                value = stoi(value_str);
                 register_symmetric_book(b, value, n_book);
                 ++n_book;
             }
@@ -74,18 +74,18 @@ class book{
             book_node *p_node = this->book[b->hash() & book_hash_mask];
             while(p_node != NULL){
                 if(compare_key(b->b, p_node->k)){
-                    return (b->p ? -1.0 : 1.0) * p_node->value * step;
+                    return (b->p ? -1 : 1) * p_node->value * step;
                 }
                 p_node = p_node->p_n_node;
             }
             return -inf;
         }
 
-        inline book_value get_random(board *b, double accept_value){
+        inline book_value get_random(board *b, int accept_value){
             vector<int> policies;
-            vector<double> values;
+            vector<int> values;
             board nb;
-            double max_value = -inf;
+            int max_value = -inf;
             for (int coord = 0; coord < hw2; ++coord){
                 if (b->legal(coord)){
                     b->move(coord, &nb);
@@ -93,8 +93,8 @@ class book{
                     while(p_node != NULL){
                         if(compare_key(nb.b, p_node->k)){
                             policies.push_back(coord);
-                            values.push_back((b->p ? -1.0 : 1.0) * p_node->value);
-                            max_value = max(max_value, (b->p ? -1.0 : 1.0) * p_node->value);
+                            values.push_back((b->p ? -1 : 1) * p_node->value);
+                            max_value = max(max_value, (b->p ? -1 : 1) * p_node->value);
                             break;
                         }
                         p_node = p_node->p_n_node;
@@ -119,74 +119,7 @@ class book{
             return res;
         }
 
-        inline book_value get_half_random(board *b){
-            vector<int> policies;
-            vector<double> values;
-            board nb;
-            int max_val = -inf, value;
-            for (int coord = 0; coord < hw2; ++coord){
-                if (b->legal(coord)){
-                    b->move(coord, &nb);
-                    book_node *p_node = this->book[nb.hash() & book_hash_mask];
-                    while(p_node != NULL){
-                        if(compare_key(nb.b, p_node->k)){
-                            value = round((b->p ? -1.0 : 1.0) * p_node->value);
-                            if (value == max_val){
-                                policies.push_back(coord);
-                                values.push_back((b->p ? -1.0 : 1.0) * p_node->value);
-                            } else if (value > max_val){
-                                max_val = value;
-                                policies.clear();
-                                values.clear();
-                                policies.push_back(coord);
-                                values.push_back((b->p ? -1.0 : 1.0) * p_node->value);
-                            }
-                            break;
-                        }
-                        p_node = p_node->p_n_node;
-                    }
-                }
-            }
-            book_value res;
-            if (policies.size() == 0){
-                res.policy = -1;
-                res.value = -inf;
-                return res;
-            }
-            int idx = myrandrange(0, policies.size());
-            res.policy = policies[idx];
-            res.value = values[idx] * step;
-            return res;
-        }
-
-        inline book_value get_exact(board *b){
-            book_value res;
-            res.policy = -1;
-            res.value = -inf;
-            board nb;
-            double max_val = -inf, value;
-            for (int coord = 0; coord < hw2; ++coord){
-                if (b->legal(coord)){
-                    b->move(coord, &nb);
-                    book_node *p_node = this->book[nb.hash() & book_hash_mask];
-                    while(p_node != NULL){
-                        if(compare_key(nb.b, p_node->k)){
-                            value = (b->p ? -1.0 : 1.0) * p_node->value;
-                            if (value > max_val){
-                                max_val = value;
-                                res.policy = coord;
-                                res.value = value * step;
-                            }
-                            break;
-                        }
-                        p_node = p_node->p_n_node;
-                    }
-                }
-            }
-            return res;
-        }
-
-        inline void change(board b, double value){
+        inline void change(board b, int value){
             if (b.p)
                 value = -value;
             book_node *p_node = this->book[b.hash() & book_hash_mask];
@@ -209,7 +142,7 @@ class book{
                 a[4] == b[4] && a[5] == b[5] && a[6] == b[6] && a[7] == b[7];
         }
 
-        inline book_node* book_node_init(const uint_fast16_t key[], double value, int line){
+        inline book_node* book_node_init(const uint_fast16_t key[], int value, int line){
             book_node* p_node = NULL;
             p_node = (book_node*)malloc(sizeof(book_node));
             for (int i = 0; i < hw; ++i)
@@ -220,7 +153,7 @@ class book{
             return p_node;
         }
 
-        inline void register_book(const uint_fast16_t key[], int hash, double value, int line){
+        inline void register_book(const uint_fast16_t key[], int hash, int value, int line){
             if(this->book[hash] == NULL){
                 this->book[hash] = book_node_init(key, value, line);
             } else {
@@ -240,7 +173,7 @@ class book{
             }
         }
 
-        inline void register_symmetric_book(board b, double value, int line){
+        inline void register_symmetric_book(board b, int value, int line){
             int i;
             int tmp[b_idx_num];
             register_book(b.b, b.hash() & book_hash_mask, value, line);
@@ -259,7 +192,7 @@ class book{
             register_book(b.b, b.hash() & book_hash_mask, value, line);
         }
 
-        inline string create_book_data(board b, double value){
+        inline string create_book_data(board b, int value){
             string res = "";
             int arr[hw2];
             b.translate_to_arr(arr);
@@ -276,7 +209,7 @@ class book{
             return res;
         }
 
-        inline void save_book(board b, double value, int line){
+        inline void save_book(board b, int value, int line){
             remove("resources/book_backup.txt");
             rename("resources/book.txt", "resources/book_backup.txt");
             ifstream ifs("resources/book_backup.txt");

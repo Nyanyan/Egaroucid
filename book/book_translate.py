@@ -110,7 +110,7 @@ for i in range(0, len(killer_boards), n_parallel):
                     grid_str += '0' if killer_boards[j].grid[k][l] == 0 else '1' if killer_boards[j].grid[k][l] == 1 else '.'
             book[grid_str] = val
             with open('learned_data/book.txt', 'a') as f:
-                f.write(grid_str + ' ' + str(val) + '\n')
+                f.write(grid_str + ' ' + str(round(val)) + '\n')
 
 for i in range(n_parallel):
     ai_exe[i].kill()

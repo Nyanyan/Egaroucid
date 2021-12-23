@@ -116,7 +116,7 @@ int main(){
                 continue;
             }
             if (b.n < book_stones){
-                book_result = book.get_half_random(&b);
+                book_result = book.get_random(&b, 0);
                 if (book_result.policy != -1){
                     cerr << "BOOK " << book_result.policy << endl;
                     print_result(book_result.policy, book_result.value);

@@ -48,7 +48,7 @@ def calc_value(o, ai_num, flag):
         print(val)
         book[grid_str.replace('\n', '')] = val
         with open('learned_data/book.txt', 'a') as f:
-            f.write(grid_str.replace('\n', '') + ' ' + str(val) + '\n')
+            f.write(grid_str.replace('\n', '') + ' ' + str(round(val)) + '\n')
     else:
         val = book[grid_str.replace('\n', '')]
     if sum(o.n_stones) > move_threshold + 4 and abs(val) > abs(val_threshold):
