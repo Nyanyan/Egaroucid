@@ -16,7 +16,7 @@ using namespace std;
 #define max_surround 80
 #define max_evaluate_idx 59049
 
-#define sa_phase 0
+#define sa_phase 7
 
 #define p31 3
 #define p32 9
@@ -69,8 +69,8 @@ inline int myrandrange(int s, int e){
 #define time_step_width (1.0 / time_num_step)
 #define prob_num_step 1000000
 #define prob_step_width (100.0 / prob_num_step)
-double start_temp = 0.00000001;
-double end_temp = 0.00000000001;
+double start_temp = 10.0;
+double end_temp = 0.01;
 double temperature_arr[time_num_step];
 double prob_arr[prob_num_step];
 
@@ -502,6 +502,7 @@ void sa2(unsigned long long tl){
             scoring(pattern, idx1);
             n_score = scoring(pattern, idx2);
         }
+        //if (prob(score, n_score, strt, now, tl) > myrandom()){
         if (n_score < score){
             score = n_score;
             ++u;
@@ -517,7 +518,7 @@ void sa2(unsigned long long tl){
                 scoring(pattern, rev_idx2);
             }
         }
-        if ((t & 0b11111111111) == 0){
+        if ((t & 0b11111111) == 0){
             now = tim();
             if (now - strt > tl)
                 break;
@@ -537,8 +538,8 @@ void sa2(unsigned long long tl){
 int main(){
     int i, j;
 
-    unsigned long long hour = 0;
-    unsigned long long minute = 1;
+    unsigned long long hour = 1;
+    unsigned long long minute = 0;
     unsigned long long second = 0;
     minute += hour * 60;
     second += minute * 60;

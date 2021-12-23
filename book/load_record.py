@@ -202,7 +202,7 @@ def collect_data(num, boards):
                     xx = 7 - x
                     rec_num += raw_record[i - 1] + all_chars[yy * 8 + xx]
                 record = rec_num + ' ' + score
-            elif raw_record[0] == all_chars[19]:
+            elif raw_record[1] == all_chars[19]:
                 rec_num = ''
                 for i in range(1, len(raw_record), 2):
                     coord = char_translate[raw_record[i]]
@@ -212,7 +212,7 @@ def collect_data(num, boards):
                     xx = 7 - y
                     rec_num += raw_record[i - 1] + all_chars[yy * 8 + xx]
                 record = rec_num + ' ' + score
-            elif raw_record[0] == all_chars[44]:
+            elif raw_record[1] == all_chars[44]:
                 rec_num = ''
                 for i in range(1, len(raw_record), 2):
                     coord = char_translate[raw_record[i]]
@@ -227,7 +227,7 @@ def collect_data(num, boards):
 
 games = []
 
-for idx in range(104): #range(1111111, 1111112):
+for idx in range(109): #range(1111111, 1111112):
     raw_data = ''
     with open('third_party/self_play/' + digit(idx, 7) + '.txt', 'r') as f:
         raw_data = f.read()
