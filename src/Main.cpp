@@ -64,10 +64,29 @@ cell_value cell_value_search(board bd, int depth, int end_depth) {
 		res.depth = book_define_value;
 	}else if (hw2 - bd.n <= end_depth) {
 		bool use_mpc = hw2 - bd.n >= 18 ? true : false;
-		res.value = nega_scout_final(&bd, false, hw2 - bd.n, -sc_w, sc_w, use_mpc, 1.7);
+		if (hw2 - bd.n <= 5) {
+			int cells[5];
+			pick_vacant(&bd, cells);
+			if (bd.n == hw2 - 5)
+				res.value = last5(&bd, false, -sc_w, sc_w, cells[0], cells[1], cells[2], cells[3], cells[4]);
+			else if (bd.n == hw2 - 4)
+				res.value = last4(&bd, false, -sc_w, sc_w, cells[0], cells[1], cells[2], cells[3]);
+			else if (bd.n == hw2 - 3)
+				res.value = last3(&bd, false, -sc_w, sc_w, cells[0], cells[1], cells[2]);
+			else if (bd.n == hw2 - 2)
+				res.value = last2(&bd, false, -sc_w, sc_w, cells[0], cells[1]);
+			else if (bd.n == hw2 - 1)
+				res.value = last1(&bd, false, cells[0]);
+			else
+				res.value = end_evaluate(&bd);
+		} else {
+			transpose_table.init_now();
+			res.value = nega_scout_final(&bd, false, hw2 - bd.n, -sc_w, sc_w, use_mpc, 1.7);
+		}
 		res.depth = use_mpc ? hw2 - bd.n : final_define_value;
 	} else {
 		bool use_mpc = hw2 - bd.n >= 10 ? true : false;
+		transpose_table.init_now();
 		res.value = nega_scout(&bd, false, depth, -sc_w, sc_w, use_mpc, 1.3);
 		res.depth = depth;
 	}
@@ -197,7 +216,7 @@ void Main() {
 	vector<board> board_history;
 	vector<int> last_played;
 	bool finished = false;
-	double depth_double = 14, end_depth_double = 22, cell_value_depth_double = 12, cell_value_end_depth_double = 20, book_accept_double = 2;
+	double depth_double = 12, end_depth_double = 20, cell_value_depth_double = 10, cell_value_end_depth_double = 18, book_accept_double = 2;
 
 	const Font pulldown_font{15};
 	const Array<String> player_items = { U"先手", U"後手", U"人間同士", U"AI同士"};
@@ -286,18 +305,35 @@ void Main() {
 		}
 
 		if (playing) {
-			move_font(n_moves + 1, U"手目").draw(420, 650);
-			if (SimpleGUI::Button(U"<", Vec2(550, 650))) {
-				if (n_moves >= 1)
-					--n_moves;
-				bd = board_history[n_moves];
-				bd.translate_to_arr(bd_arr);
-			}
-			if (SimpleGUI::Button(U">", Vec2(600, 650))) {
-				if (n_moves < board_history.size() - 1)
-					++n_moves;
-				bd = board_history[n_moves];
-				bd.translate_to_arr(bd_arr);
+			if (n_moves != 60)
+				move_font(n_moves + 1, U"手目").draw(420, 650);
+			else
+				move_font(U"終局").draw(420, 650);
+			bool flag = false;
+			for (int i = 0; i < hw2; ++i)
+				flag |= (cell_value_state[i] == 1);
+			if (flag) {
+				SimpleGUI::Button(U"<", Vec2(550, 650), 50, false);
+				SimpleGUI::Button(U">", Vec2(600, 650), 50, false);
+			} else {
+				if (SimpleGUI::Button(U"<", Vec2(550, 650), 50)) {
+					if (n_moves >= 1)
+						--n_moves;
+					bd = board_history[n_moves];
+					bd.translate_to_arr(bd_arr);
+					create_vacant_lst(bd, bd_arr);
+					for (int i = 0; i < hw2; ++i)
+						cell_value_state[i] = 0;
+				}
+				if (SimpleGUI::Button(U">", Vec2(600, 650), 50)) {
+					if (n_moves < board_history.size() - 1)
+						++n_moves;
+					bd = board_history[n_moves];
+					bd.translate_to_arr(bd_arr);
+					create_vacant_lst(bd, bd_arr);
+					for (int i = 0; i < hw2; ++i)
+						cell_value_state[i] = 0;
+				}
 			}
 		}
 
@@ -356,7 +392,6 @@ void Main() {
 							if (cells[coord].leftClicked() && !changing_book && !finished && n_moves == board_history.size() - 1) {
 								bd = bd.move(coord);
 								++n_moves;
-								board_history.push_back(bd);
 								record += coord_translate(coord);
 								String record_copy = record;
 								record_copy.replace(U"\n", U"");
@@ -366,6 +401,7 @@ void Main() {
 								bd.translate_to_arr(bd_arr);
 								create_vacant_lst(bd, bd_arr);
 								finished = check_pass(&bd);
+								board_history.push_back(bd);
 								for (int i = 0; i < hw2; ++i)
 									cell_value_state[i] = 0;
 							} else if (cells[coord].rightClicked()) {
@@ -406,7 +442,6 @@ void Main() {
 						else
 							graph.push(n_moves, (double)result.value / step);
 						bd = bd.move(result.policy);
-						board_history.push_back(bd);
 						++n_moves;
 						String record_copy = record;
 						record_copy.replace(U"\n", U"");
@@ -416,6 +451,7 @@ void Main() {
 						bd.translate_to_arr(bd_arr);
 						create_vacant_lst(bd, bd_arr);
 						finished = check_pass(&bd);
+						board_history.push_back(bd);
 					}
 				} else {
 					thinking = true;
@@ -466,7 +502,7 @@ void Main() {
 					change_book_value_str.pop_back();
 				change_book_value_info_str = U"修正した評価値";
 			}
-			change_book_ui(change_book_value_info_str, U"(", change_book_value_coord_str, U"): ", change_book_value_str).draw(650, 660);
+			change_book_ui(change_book_value_info_str, U"(", change_book_value_coord_str, U"): ", change_book_value_str).draw(670, 660);
 		}
 
 		pulldown_hint.update();
