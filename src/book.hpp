@@ -225,12 +225,14 @@ class book{
             int idx = 0;
             string book_line;
             while (getline(ifs, book_line)){
-                if (idx == line){
+                if (idx == line)
                     ofs << create_book_data(b, value) << endl;
-                } else
+                else
                     ofs << book_line << endl;
                 ++idx;
             }
+            if (line == -1)
+                ofs << create_book_data(b, value) << endl;
         }
 };
 
