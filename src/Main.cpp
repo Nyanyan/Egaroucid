@@ -199,6 +199,7 @@ void Main() {
 	Font record_ui(20);
 	Font value_ui(30);
 	Font change_book_ui(20);
+	Font input_board_ui(20);
 	Font graph_font(graph_font_size);
 	Font move_font(30);
 	bool playing = false, thinking = false, cell_value_thinking = false, changing_book = false;
@@ -216,6 +217,7 @@ void Main() {
 	vector<board> board_history;
 	vector<int> last_played;
 	bool finished = false;
+	int input_board_state = 0;
 	double depth_double = 12, end_depth_double = 20, cell_value_depth_double = 10, cell_value_end_depth_double = 18, book_accept_double = 2;
 
 	const Font pulldown_font{15};
@@ -265,6 +267,75 @@ void Main() {
 		SimpleGUI::Slider(U"book誤差{:.0f}石"_fmt(book_accept_double), book_accept_double, 0, 60, Vec2(550, 145), 200, 250);
 		book_accept = round(book_accept_double);
 
+		for (const auto& cell : cells)
+			cell.stretched(-1).draw(Palette::Green);
+		for (int i = 0; i < hw; ++i)
+			coord_ui((char)('a' + i)).draw(offset_x + i * cell_hw + 10, offset_y - cell_hw);
+		for (int i = 0; i < hw; ++i)
+			coord_ui(i + 1).draw(offset_x - cell_hw, offset_y + i * cell_hw);
+		Circle(offset_x + 2 * cell_hw, offset_y + 2 * cell_hw, 5).draw(Palette::Black);
+		Circle(offset_x + 2 * cell_hw, offset_y + 6 * cell_hw, 5).draw(Palette::Black);
+		Circle(offset_x + 6 * cell_hw, offset_y + 2 * cell_hw, 5).draw(Palette::Black);
+		Circle(offset_x + 6 * cell_hw, offset_y + 6 * cell_hw, 5).draw(Palette::Black);
+
+		if (SimpleGUI::Button(U"局面入力", Vec2(500, 600))) {
+			String board_str;
+			if (!Clipboard::GetText(board_str)) {
+				input_board_state = 1;
+			}
+			else {
+				bool flag = true;
+				int player = -1;
+				if (board_str.size() != hw2 + 1) {
+					flag = false;
+				}
+				else {
+					for (int i = 0; i < hw2; ++i) {
+						if (board_str[i] == '0')
+							bd_arr[i] = black;
+						else if (board_str[i] == '1')
+							bd_arr[i] = white;
+						else if (board_str[i] == '.')
+							bd_arr[i] = vacant;
+						else {
+							flag = false;
+							break;
+						}
+					}
+					if (board_str[hw2] == '0')
+						player = 0;
+					else if (board_str[hw2] == '1')
+						player = 1;
+					else
+						flag = false;
+				}
+				if (flag) {
+					bd.translate_from_arr(bd_arr, player);
+					input_board_state = 2;
+					playing = false;
+					record.clear();
+				}
+				else {
+					input_board_state = 1;
+				}
+			}
+		}
+		if (input_board_state == 1)
+			input_board_ui(U"取得失敗").draw(625, 605);
+		else if (input_board_state == 2) {
+			input_board_ui(U"取得成功").draw(625, 605);
+			for (int y = 0; y < hw; ++y) {
+				for (int x = 0; x < hw; ++x) {
+					int coord = proc_coord(y, x);
+					if (bd_arr[coord] == black)
+						stones[coord].draw(Palette::Black);
+					else if (bd_arr[coord] == white)
+						stones[coord].draw(Palette::White);
+				}
+			}
+		}
+		
+
 		if (SimpleGUI::Button(U"対局開始", Vec2(0, 0))) {
 			int player_idx = pulldown_player.getIndex();
 			if (player_idx == 0)
@@ -279,9 +350,11 @@ void Main() {
 			thinking = false;
 			value = 0.0;
 			record.clear();
-			for (int i = 0; i < hw2; ++i)
-				bd_arr[i] = first_board[i];
-			bd.translate_from_arr(bd_arr, black);
+			if (input_board_state != 2) {
+				for (int i = 0; i < hw2; ++i)
+					bd_arr[i] = first_board[i];
+				bd.translate_from_arr(bd_arr, black);
+			}
 			create_vacant_lst(bd, bd_arr);
 			for (int i = 0; i < hw2; ++i)
 				cell_value_state[i] = 0;
@@ -294,6 +367,7 @@ void Main() {
 			board_history.push_back(bd);
 			last_played.push_back(-1);
 			finished = false;
+			input_board_state = 0;
 		}
 
 		record_ui(record).draw(0, 550);
@@ -336,17 +410,6 @@ void Main() {
 				}
 			}
 		}
-
-		for (const auto& cell : cells)
-			cell.stretched(-1).draw(Palette::Green);
-		for (int i = 0; i < hw; ++i)
-			coord_ui((char)('a' + i)).draw(offset_x + i * cell_hw + 10, offset_y - cell_hw);
-		for (int i = 0; i < hw; ++i)
-			coord_ui(i + 1).draw(offset_x - cell_hw, offset_y + i * cell_hw);
-		Circle(offset_x + 2 * cell_hw, offset_y + 2 * cell_hw, 5).draw(Palette::Black);
-		Circle(offset_x + 2 * cell_hw, offset_y + 6 * cell_hw, 5).draw(Palette::Black);
-		Circle(offset_x + 6 * cell_hw, offset_y + 2 * cell_hw, 5).draw(Palette::Black);
-		Circle(offset_x + 6 * cell_hw, offset_y + 6 * cell_hw, 5).draw(Palette::Black);
 
 		if (playing) {
 			for (int y = 0; y < hw; ++y) {
@@ -438,9 +501,9 @@ void Main() {
 						value = (double)result.value / step;
 						record += coord_translate(result.policy);
 						if (ai_player == both_ai_define && bd.p == white)
-							graph.push(n_moves, -(double)result.value / step);
+							graph.push(bd.n - 4, -(double)result.value / step);
 						else
-							graph.push(n_moves, (double)result.value / step);
+							graph.push(bd.n - 4, (double)result.value / step);
 						bd = bd.move(result.policy);
 						++n_moves;
 						String record_copy = record;
