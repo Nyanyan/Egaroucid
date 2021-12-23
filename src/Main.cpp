@@ -23,7 +23,6 @@ using namespace std;
 
 #define final_define_value 100
 #define book_define_value -1
-#define end_game_define_player 2
 #define both_ai_define 100
 #define n_accept_define 0
 #define exact_define 1
@@ -95,7 +94,7 @@ search_result book_return(board bd, book_value book_result) {
 	return res;
 }
 
-inline future<search_result> ai(board bd, int depth, int end_depth, int bd_arr[], int book_mode, int book_accept) {
+inline future<search_result> ai(board bd, int depth, int end_depth, int bd_arr[], int book_accept) {
 	constexpr int first_moves[4] = { 19, 26, 37, 44 };
 	int policy;
 	search_result result;
@@ -108,11 +107,7 @@ inline future<search_result> ai(board bd, int depth, int end_depth, int bd_arr[]
 		return async(launch::async, return_result, result);
 	}
 	if (bd.n < book_stones) {
-		book_value book_result;
-		if (book_mode == n_accept_define)
-			book_result = book.get_random(&bd, (double)book_accept);
-		else
-			book_result = book.get_exact(&bd);
+		book_value book_result = book.get_random(&bd, (double)book_accept);
 		if (book_result.policy != -1)
 			return async(launch::async, book_return, bd, book_result);
 	}
@@ -121,7 +116,7 @@ inline future<search_result> ai(board bd, int depth, int end_depth, int bd_arr[]
 	return async(launch::async, midsearch, bd, tim(), depth);
 }
 
-inline void check_pass(board *bd) {
+inline bool check_pass(board *bd) {
 	bool not_passed = false;
 	for (int i = 0; i < hw2; ++i)
 		not_passed |= bd->legal(i);
@@ -131,8 +126,9 @@ inline void check_pass(board *bd) {
 		for (int i = 0; i < hw2; ++i)
 			not_passed |= bd->legal(i);
 		if (!not_passed)
-			bd->p = end_game_define_player;
+			return true;
 	}
+	return false;
 }
 
 inline String coord_translate(int coord) {
@@ -185,9 +181,9 @@ void Main() {
 	Font value_ui(30);
 	Font change_book_ui(20);
 	Font graph_font(graph_font_size);
+	Font move_font(30);
 	bool playing = false, thinking = false, cell_value_thinking = false, changing_book = false;
-	int last_played = -1;
-	int depth, end_depth, ai_player, cell_value_depth, cell_value_end_depth, book_mode, book_accept, show_cell_value, show_value, n_moves;
+	int depth, end_depth, ai_player, cell_value_depth, cell_value_end_depth, book_accept, show_cell_value, show_value, n_moves = 0;
 	double value;
 	String change_book_value_str = U"";
 	String change_book_value_info_str = U"修正した評価値";
@@ -196,21 +192,20 @@ void Main() {
 	ai_player = 0;
 	show_cell_value = 0;
 	show_value = 0;
-	book_mode = 0;
 	book_accept = 0;
 	String record = U"";
-
+	vector<board> board_history;
+	vector<int> last_played;
+	bool finished = false;
 	double depth_double = 14, end_depth_double = 22, cell_value_depth_double = 12, cell_value_end_depth_double = 20, book_accept_double = 2;
 
 	const Font pulldown_font{15};
 	const Array<String> player_items = { U"先手", U"後手", U"人間同士", U"AI同士"};
 	const Array<String> hint_items = {U"ヒントあり", U"ヒントなし"};
-	const Array<String> book_items = {U"誤差許容", U"厳密"};
 	const Array<String> value_items = { U"評価値表示", U"評価値非表示"};
 	Pulldown pulldown_player{ player_items, pulldown_font, Point{145, 0}, ai_player};
 	Pulldown pulldown_hint{hint_items, pulldown_font, Point{235, 0}, show_cell_value};
-	Pulldown pulldown_book{book_items, pulldown_font, Point{340, 0}, book_mode};
-	Pulldown pulldown_value{value_items, pulldown_font, Point{430, 0}, show_value};
+	Pulldown pulldown_value{value_items, pulldown_font, Point{340, 0}, show_value};
 
 	Graph graph;
 	graph.sx = 550;
@@ -248,10 +243,8 @@ void Main() {
 		cell_value_depth = round(cell_value_depth_double);
 		SimpleGUI::Slider(U"ヒント終盤{:.0f}空読み"_fmt(cell_value_end_depth_double), cell_value_end_depth_double, 1, 60, Vec2(550, 110), 200, 250, !cell_value_thinking);
 		cell_value_end_depth = round(cell_value_end_depth_double);
-		if (book_mode == n_accept_define) {
-			SimpleGUI::Slider(U"book誤差{:.0f}石"_fmt(book_accept_double), book_accept_double, 0, 60, Vec2(550, 145), 200, 250);
-			book_accept = round(book_accept_double);
-		}
+		SimpleGUI::Slider(U"book誤差{:.0f}石"_fmt(book_accept_double), book_accept_double, 0, 60, Vec2(550, 145), 200, 250);
+		book_accept = round(book_accept_double);
 
 		if (SimpleGUI::Button(U"対局開始", Vec2(0, 0))) {
 			int player_idx = pulldown_player.getIndex();
@@ -265,7 +258,6 @@ void Main() {
 				ai_player = both_ai_define;
 			playing = true;
 			thinking = false;
-			last_played = -1;
 			value = 0.0;
 			record.clear();
 			for (int i = 0; i < hw2; ++i)
@@ -278,6 +270,11 @@ void Main() {
 			changing_book = false;
 			n_moves = 0;
 			graph.clear();
+			board_history.clear();
+			last_played.clear();
+			board_history.push_back(bd);
+			last_played.push_back(-1);
+			finished = false;
 		}
 
 		record_ui(record).draw(0, 550);
@@ -286,6 +283,22 @@ void Main() {
 			String record_copy = record;
 			record_copy.replace(U"\n", U"");
 			Clipboard::SetText(record_copy);
+		}
+
+		if (playing) {
+			move_font(n_moves + 1, U"手目").draw(420, 650);
+			if (SimpleGUI::Button(U"<", Vec2(550, 650))) {
+				if (n_moves >= 1)
+					--n_moves;
+				bd = board_history[n_moves];
+				bd.translate_to_arr(bd_arr);
+			}
+			if (SimpleGUI::Button(U">", Vec2(600, 650))) {
+				if (n_moves < board_history.size() - 1)
+					++n_moves;
+				bd = board_history[n_moves];
+				bd.translate_to_arr(bd_arr);
+			}
 		}
 
 		for (const auto& cell : cells)
@@ -307,10 +320,10 @@ void Main() {
 						stones[coord].draw(Palette::Black);
 					else if (bd_arr[coord] == white)
 						stones[coord].draw(Palette::White);
-					if (last_played == coord)
+					if (last_played[n_moves] == coord)
 						Circle(cell_center_x[coord % hw], cell_center_y[coord / hw], 5).draw(Palette::Red);
 					else if (bd.legal(coord)) {
-						if (bd.p != ai_player && bd.p != end_game_define_player && ai_player != both_ai_define) {
+						if ((bd.p != ai_player && ai_player != both_ai_define) || n_moves != board_history.size() - 1){
 							if (cell_value_state[coord] == 0) {
 								legals[coord].draw(Palette::Blue);
 								if (show_cell_value == 0) {
@@ -340,18 +353,19 @@ void Main() {
 								else
 									legals[coord].draw(Palette::Blue);
 							}
-							if (cells[coord].leftClicked() && !changing_book) {
+							if (cells[coord].leftClicked() && !changing_book && !finished && n_moves == board_history.size() - 1) {
 								bd = bd.move(coord);
 								++n_moves;
+								board_history.push_back(bd);
 								record += coord_translate(coord);
 								String record_copy = record;
 								record_copy.replace(U"\n", U"");
 								if (record_copy.size() % 40 == 0)
 									record += U"\n";
-								last_played = coord;
+								last_played.push_back(coord);
 								bd.translate_to_arr(bd_arr);
 								create_vacant_lst(bd, bd_arr);
-								check_pass(&bd);
+								finished = check_pass(&bd);
 								for (int i = 0; i < hw2; ++i)
 									cell_value_state[i] = 0;
 							} else if (cells[coord].rightClicked()) {
@@ -359,8 +373,8 @@ void Main() {
 									if (change_book_value_str.size() == 0) {
 										changing_book = false;
 									} else {
-										double change_book_value = ParseOr<double>(change_book_value_str, -1000.0);
-										if (change_book_value == -1000.0)
+										int change_book_value = ParseOr<int>(change_book_value_str, -1000);
+										if (change_book_value == -1000)
 											change_book_value_info_str = U"形式エラー";
 										else {
 											book.change(bd.move(coord), -change_book_value);
@@ -380,33 +394,37 @@ void Main() {
 					}
 				}
 			}
-			if ((bd.p == ai_player || ai_player == both_ai_define) && bd.p != end_game_define_player) {
+			if ((bd.p == ai_player || ai_player == both_ai_define) && !finished && n_moves == board_history.size() - 1) {
 				if (thinking) {
 					if (future_result.wait_for(seconds0) == future_status::ready) {
 						thinking = false;
 						result = future_result.get();
 						value = (double)result.value / step;
-						bd = bd.move(result.policy);
 						record += coord_translate(result.policy);
-						graph.push(n_moves, (double)result.value / step);
+						if (ai_player == both_ai_define && bd.p == white)
+							graph.push(n_moves, -(double)result.value / step);
+						else
+							graph.push(n_moves, (double)result.value / step);
+						bd = bd.move(result.policy);
+						board_history.push_back(bd);
 						++n_moves;
 						String record_copy = record;
 						record_copy.replace(U"\n", U"");
 						if (record_copy.size() % 40 == 0)
 							record += U"\n";
-						last_played = result.policy;
+						last_played.push_back(result.policy);
 						bd.translate_to_arr(bd_arr);
 						create_vacant_lst(bd, bd_arr);
-						check_pass(&bd);
+						finished = check_pass(&bd);
 					}
 				} else {
 					thinking = true;
-					future_result = ai(bd, depth, end_depth, bd_arr, book_mode, book_accept);
+					future_result = ai(bd, depth, end_depth, bd_arr, book_accept);
 				}
 			}
 			score_ui(U"黒 ", bd.count(black), U" ", bd.count(white), U" 白").draw(10, 640);
 			if (show_value == 0)
-				value_ui(U"評価値: ", value).draw(250, 650);
+				value_ui(U"評価値: ", round(value)).draw(250, 650);
 		}
 
 		if (changing_book) {
@@ -440,9 +458,6 @@ void Main() {
 			} else if (Key9.down() || KeyNum9.down()) {
 				change_book_value_str += U"9";
 				change_book_value_info_str = U"修正した評価値";
-			} else if (KeyPeriod.down()) {
-				change_book_value_str += U".";
-				change_book_value_info_str = U"修正した評価値";
 			} else if (KeyMinus.down()) {
 				change_book_value_str += U"-";
 				change_book_value_info_str = U"修正した評価値";
@@ -451,7 +466,7 @@ void Main() {
 					change_book_value_str.pop_back();
 				change_book_value_info_str = U"修正した評価値";
 			}
-			change_book_ui(change_book_value_info_str, U"(", change_book_value_coord_str, U"): ", change_book_value_str).draw(450, 660);
+			change_book_ui(change_book_value_info_str, U"(", change_book_value_coord_str, U"): ", change_book_value_str).draw(650, 660);
 		}
 
 		pulldown_hint.update();
@@ -461,15 +476,12 @@ void Main() {
 		pulldown_player.update();
 		pulldown_player.draw();
 
-		pulldown_book.update();
-		pulldown_book.draw();
-		book_mode = pulldown_book.getIndex();
-
 		pulldown_value.update();
 		pulldown_value.draw();
 		show_value = pulldown_value.getIndex();
 
-		graph.draw();
+		if (show_value == 0)
+			graph.draw();
 		
 	}
 }
