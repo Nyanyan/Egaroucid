@@ -87,7 +87,7 @@ cell_value cell_value_search(board bd, int depth, int end_depth) {
 	} else {
 		bool use_mpc = hw2 - bd.n >= 10 ? true : false;
 		transpose_table.init_now();
-		res.value = nega_scout(&bd, false, depth, -sc_w, sc_w, use_mpc, 1.3);
+		res.value = max(-sc_w, min(sc_w, nega_scout(&bd, false, depth, -sc_w, sc_w, use_mpc, 1.3)));
 		res.depth = depth;
 	}
 	return res;
@@ -199,7 +199,7 @@ void Main() {
 	Font record_ui(20);
 	Font value_ui(30);
 	Font change_book_ui(20);
-	Font input_board_ui(20);
+	Font input_board_record_ui(20);
 	Font graph_font(graph_font_size);
 	Font move_font(30);
 	bool playing = false, thinking = false, cell_value_thinking = false, changing_book = false;
@@ -217,7 +217,7 @@ void Main() {
 	vector<board> board_history;
 	vector<int> last_played;
 	bool finished = false;
-	int input_board_state = 0;
+	int input_board_state = 0, input_record_state = 0;
 	double depth_double = 12, end_depth_double = 20, cell_value_depth_double = 10, cell_value_end_depth_double = 18, book_accept_double = 2;
 
 	const Font pulldown_font{15};
@@ -278,6 +278,82 @@ void Main() {
 		Circle(offset_x + 6 * cell_hw, offset_y + 2 * cell_hw, 5).draw(Palette::Black);
 		Circle(offset_x + 6 * cell_hw, offset_y + 6 * cell_hw, 5).draw(Palette::Black);
 
+		if (SimpleGUI::Button(U"棋譜入力", Vec2(500, 550))) {
+			String record_str;
+			if (!Clipboard::GetText(record_str)) {
+				input_record_state = 1;
+			} else {
+				bool flag = true;
+				String record_tmp = U"";
+				last_played.clear();
+				board_history.clear();
+				if (record_str.size() % 2 != 0) {
+					flag = false;
+				} else {
+					int y, x;
+					for (int i = 0; i < hw2; ++i)
+						bd_arr[i] = first_board[i];
+					bd.translate_from_arr(bd_arr, black);
+					board_history.push_back(bd);
+					last_played.push_back(-1);
+					for (int i = 0; i < record_str.size(); i += 2) {
+						x = (int)record_str[i] - (int)'a';
+						if (x < 0 || hw <= x) {
+							x = (int)record_str[i] - (int)'A';
+							if (x < 0 || hw <= x) {
+								flag = false;
+								break;
+							}
+						}
+						y = (int)record_str[i + 1] - (int)'1';
+						if (y < 0 || hw <= y) {
+							flag = false;
+							break;
+						}
+						if (bd.legal(y * hw + x)) {
+							bd = bd.move(y * hw + x);
+						} else {
+							bd.p = 1 - bd.p;
+							if (bd.legal(y * hw + x)) {
+								bd = bd.move(y * hw + x);
+							} else {
+								flag = false;
+								break;
+							}
+						}
+						last_played.push_back(y * hw + x);
+						board_history.push_back(bd);
+						record_tmp += coord_translate(y * hw + x);
+					}
+				}
+				if (flag) {
+					input_record_state = 2;
+					bd.translate_to_arr(bd_arr);
+					record = record_tmp;
+					playing = false;
+				} else {
+					input_record_state = 1;
+					last_played.clear();
+					board_history.clear();
+					record.clear();
+				}
+			}
+		}
+		if (input_record_state == 1)
+			input_board_record_ui(U"取得失敗").draw(625, 555);
+		else if (input_record_state == 2) {
+			input_board_record_ui(U"取得成功").draw(625, 555);
+			for (int y = 0; y < hw; ++y) {
+				for (int x = 0; x < hw; ++x) {
+					int coord = proc_coord(y, x);
+					if (bd_arr[coord] == black)
+						stones[coord].draw(Palette::Black);
+					else if (bd_arr[coord] == white)
+						stones[coord].draw(Palette::White);
+				}
+			}
+		}
+
 		if (SimpleGUI::Button(U"局面入力", Vec2(500, 600))) {
 			String board_str;
 			if (!Clipboard::GetText(board_str)) {
@@ -321,9 +397,11 @@ void Main() {
 			}
 		}
 		if (input_board_state == 1)
-			input_board_ui(U"取得失敗").draw(625, 605);
+			input_board_record_ui(U"取得失敗").draw(625, 605);
 		else if (input_board_state == 2) {
-			input_board_ui(U"取得成功").draw(625, 605);
+			input_board_record_ui(U"取得成功").draw(625, 605);
+			for (int i = 0; i < hw2; ++i)
+				cell_value_state[i] = 0;
 			for (int y = 0; y < hw; ++y) {
 				for (int x = 0; x < hw; ++x) {
 					int coord = proc_coord(y, x);
@@ -349,8 +427,7 @@ void Main() {
 			playing = true;
 			thinking = false;
 			value = 0.0;
-			record.clear();
-			if (input_board_state != 2) {
+			if (input_board_state != 2 && input_record_state != 2) {
 				for (int i = 0; i < hw2; ++i)
 					bd_arr[i] = first_board[i];
 				bd.translate_from_arr(bd_arr, black);
@@ -360,14 +437,18 @@ void Main() {
 				cell_value_state[i] = 0;
 			change_book_value_str.clear();
 			changing_book = false;
-			n_moves = 0;
+			n_moves = bd.n - 4;
 			graph.clear();
-			board_history.clear();
-			last_played.clear();
-			board_history.push_back(bd);
-			last_played.push_back(-1);
+			if (input_record_state != 2) {
+				record.clear();
+				board_history.clear();
+				last_played.clear();
+				board_history.push_back(bd);
+				last_played.push_back(-1);
+			}
 			finished = false;
 			input_board_state = 0;
+			input_record_state = 0;
 		}
 
 		record_ui(record).draw(0, 550);
