@@ -382,8 +382,8 @@ inline search_result midsearch(board b, long long strt, int max_depth){
     int depth = min(hw2 - b.n - 1, max_depth - 1);
     bool use_mpc = depth >= 12 ? true : false;
     //for (int depth = min(5, max(0, max_depth - 5)); depth <= min(hw2 - b.n, max_depth - 1); ++depth){
-    alpha = -sc_w;
-    beta = sc_w;
+    alpha = -inf;
+    beta = inf;
     transpose_table.init_now();
     for (i = 0; i < canput; ++i){
         move_ordering_eval(&nb[i]);
@@ -426,7 +426,7 @@ inline search_result midsearch(board b, long long strt, int max_depth){
     //}
     search_result res;
     res.policy = policy;
-    res.value = value;
+    res.value = max(-sc_w, min(sc_w, value));
     res.depth = res_depth;
     res.nps = searched_nodes * 1000 / max(1LL, tim() - strt);
     return res;

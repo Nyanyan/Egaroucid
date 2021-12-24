@@ -8,8 +8,8 @@ using namespace std;
 #define black 0
 #define white 1
 
-#define n_phases 10
-#define phase_n_stones 6
+#define n_phases 15
+#define phase_n_stones 4
 
 #define max_surround 80
 
@@ -324,7 +324,7 @@ inline void convert_idx(string str){
     cout << score << endl;
 }
 
-#define n_files 107
+#define n_files 176
 
 const string file_names[n_files] = {
     "0000001.txt",
@@ -433,7 +433,76 @@ const string file_names[n_files] = {
     "0000104.txt",
     "0000105.txt",
     "0000106.txt",
-    "0000107.txt"
+    "0000107.txt",
+    "0000108.txt",
+    "0000109.txt",
+    "0000110.txt",
+    "0000111.txt",
+    "0000112.txt",
+    "0000113.txt",
+    "0000114.txt",
+    "0000115.txt",
+    "0000116.txt",
+    "0000117.txt",
+    "0000118.txt",
+    "0000119.txt",
+    "0000120.txt",
+    "0000121.txt",
+    "0000122.txt",
+    "0000123.txt",
+    "0000124.txt",
+    "0000125.txt",
+    "0000126.txt",
+    "0000127.txt",
+    "0000128.txt",
+    "0000129.txt",
+    "0000130.txt",
+    "0000131.txt",
+    "0000132.txt",
+    "0000133.txt",
+    "0000134.txt",
+    "0000135.txt",
+    "0000136.txt",
+    "0000137.txt",
+    "0000138.txt",
+    "0000139.txt",
+    "0000140.txt",
+    "0000141.txt",
+    "0000142.txt",
+    "0000143.txt",
+    "0000144.txt",
+    "0000145.txt",
+    "0000146.txt",
+    "0000147.txt",
+    "0000148.txt",
+    "0000149.txt",
+    "0000150.txt",
+    "0000151.txt",
+    "0000152.txt",
+    "0000153.txt",
+    "0000154.txt",
+    "0000155.txt",
+    "0000156.txt",
+    "0000157.txt",
+    "0000158.txt",
+    "0000159.txt",
+    "0000160.txt",
+    "0000161.txt",
+    "0000162.txt",
+    "0000163.txt",
+    "0000164.txt",
+    "0000165.txt",
+    "0000166.txt",
+    "0000167.txt",
+    "0000168.txt",
+    "0000169.txt",
+    "0000170.txt",
+    "0000171.txt",
+    "0000172.txt",
+    "0000173.txt",
+    "0000174.txt",
+    "0000175.txt",
+    "0000176.txt"
 };
 
 int main(){

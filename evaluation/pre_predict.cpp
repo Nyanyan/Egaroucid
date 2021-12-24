@@ -8,13 +8,13 @@ typedef float eval_type;
 
 #define hw 8
 
-#define n_phases 10
+#define n_phases 15
 #define n_line 6561
 
 #define n_patterns 13
-#define n_dense0 32
-#define n_dense1 32
-#define n_dense2 32
+#define n_dense0 64
+#define n_dense1 64
+#define n_dense2 64
 #define n_add_input 2
 #define n_add_dense0 8
 #define n_add_dense1 8

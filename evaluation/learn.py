@@ -212,15 +212,15 @@ for stone_strt in reversed([0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52,
 
     x = [None for _ in range(ln_in)]
     ys = []
-    names = ['line2', 'line3', 'line4', 'diagonal5', 'diagonal6', 'diagonal7', 'diagonal8', 'edge2X', 'triangle', 'edgeblock', 'cross', 'corner9', 'edge2Y', 'narrowTriangle']
+    names = ['line2', 'line3', 'line4', 'diagonal5', 'diagonal6', 'diagonal7', 'diagonal8', 'edge2X', 'triangle', 'edgeblock', 'cross', 'corner9', 'edge2Y']
     idx = 0
     for i in range(len(pattern_idx)):
         layers = []
-        layers.append(Dense(32, name=names[i] + '_dense0'))
+        layers.append(Dense(64, name=names[i] + '_dense0'))
         layers.append(LeakyReLU(alpha=0.01))
-        layers.append(Dense(32, name=names[i] + '_dense1'))
+        layers.append(Dense(64, name=names[i] + '_dense1'))
         layers.append(LeakyReLU(alpha=0.01))
-        layers.append(Dense(32, name=names[i] + '_dense2'))
+        layers.append(Dense(64, name=names[i] + '_dense2'))
         layers.append(LeakyReLU(alpha=0.01))
         layers.append(Dense(1, name=names[i] + '_out'))
         add_elems = []
@@ -261,7 +261,7 @@ for stone_strt in reversed([0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52,
 
     model.compile(loss='mse', metrics='mae', optimizer='adam')
 
-    for i in trange(109):
+    for i in trange(177):
         collect_data('records3', i)
     len_data = len(all_labels)
     print(len_data)

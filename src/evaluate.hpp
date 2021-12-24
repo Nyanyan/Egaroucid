@@ -267,7 +267,8 @@ inline int mid_evaluate(const board *b){
     sur0 = min(max_surround - 1, calc_surround(b, black));
     sur1 = min(max_surround - 1, calc_surround(b, white));
     res = (b->p ? -1 : 1) * (calc_pattern(phase_idx, b) + add_arr[phase_idx][sur0][sur1]);
-    return max(-sc_w, min(sc_w, res));
+    return res;
+    //return max(-sc_w, min(sc_w, res));
 }
 
 inline int end_evaluate(const board *b){
