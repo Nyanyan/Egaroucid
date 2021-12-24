@@ -84,8 +84,8 @@ int main(){
         const int first_moves[4] = {19, 26, 37, 44};
         int depth, end_depth;
         book_value book_result;
-        depth = 10; //23;
-        end_depth = 20; //23;
+        depth = 1; //23;
+        end_depth = 2; //23;
     #endif
     int ai_player;
     //cin >> ai_player;
@@ -99,7 +99,7 @@ int main(){
             input_board(&b, ai_player);
             transpose_table.init_now();
             transpose_table.init_prev();
-            cout << nega_scout(&b, false, d, -sc_w, sc_w, false) << endl;
+            cout << nega_scout(&b, false, d, -sc_w, sc_w, false, 0.0) << endl;
         #elif EVAL_MODE
             cin >> ai_player;
             input_board(&b, ai_player);

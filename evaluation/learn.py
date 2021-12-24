@@ -132,6 +132,17 @@ narrow_triangle_idx = [
     [56, 48, 40, 32, 24, 57, 49, 58, 59, 60]
 ]
 
+middle_idx = [
+    [42, 43, 44, 45, 49, 50, 51, 52, 53, 54],
+    [21, 29, 37, 45, 14, 22, 30, 38, 46, 54],
+    [18, 19, 20, 21, 9, 10, 11, 12, 13, 14],
+    [18, 26, 34, 42, 9, 17, 25, 33, 41, 49],
+    [45, 44, 43, 42, 54, 53, 52, 51, 50, 49],
+    [45, 37, 29, 21, 54, 46, 38, 30, 22, 14],
+    [21, 20, 19, 18, 14, 13, 12, 11, 10, 9],
+    [42, 34, 26, 18, 49, 41, 33, 25, 17, 9]
+]
+
 pattern_idx = [line2_idx, line3_idx, line4_idx, diagonal5_idx, diagonal6_idx, diagonal7_idx, diagonal8_idx, edge_2x_idx, triangle_idx, edge_block, cross_idx, corner9_idx, edge_2y_idx]
 ln_in = sum([len(elem) for elem in pattern_idx]) + 1
 
@@ -252,9 +263,9 @@ for stone_strt in reversed([0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52,
     y_all = LeakyReLU(alpha=0.01)(y_all)
     y_all = Dense(1, name='final_dense1')(y_all)
     '''
-    model = Model(inputs=x, outputs=y_all)
+    #model = Model(inputs=x, outputs=y_all)
 
-    #model = load_model('learned_data/bef_' + str(stone_strt) + '_' + str(stone_end) + '.h5')
+    model = load_model('learned_data/f_' + str(stone_strt) + '_' + str(stone_end) + '.h5')
 
     #model.summary()
     plot_model(model, to_file='learned_data/model.png', show_shapes=True)
@@ -284,7 +295,7 @@ for stone_strt in reversed([0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52,
 
 
     #print(model.evaluate(all_data, all_labels))
-    early_stop = EarlyStopping(monitor='val_loss', patience=10)
+    early_stop = EarlyStopping(monitor='val_loss', patience=20)
     model_checkpoint = ModelCheckpoint(filepath=os.path.join('learned_data/' + str(stone_strt) + '_' + str(stone_end), 'model_{epoch:02d}_{val_loss:.5f}_{val_mae:.5f}.h5'), monitor='val_loss', verbose=1)
     reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=2, min_lr=0.0001)
     history = model.fit(train_data, train_labels, epochs=n_epochs, batch_size=2048, validation_data=(test_data, test_labels), callbacks=[early_stop])

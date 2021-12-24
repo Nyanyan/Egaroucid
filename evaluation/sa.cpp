@@ -10,13 +10,13 @@
 
 using namespace std;
 
-#define n_phases 10
-#define phase_n_stones 6
+#define n_phases 15
+#define phase_n_stones 4
 #define n_patterns 13
 #define max_surround 80
 #define max_evaluate_idx 59049
 
-#define sa_phase 7
+int sa_phase;
 
 #define p31 3
 #define p32 9
@@ -484,8 +484,8 @@ void sa2(unsigned long long tl){
         if (pattern < n_patterns){
             f_val1 = eval_arr[phase][pattern][idx1];
             f_val2 = eval_arr[phase][pattern][idx2];
-            eval_arr[phase][pattern][idx1] += myrandrange(-50, 51);
-            eval_arr[phase][pattern][idx2] += myrandrange(-50, 51);
+            eval_arr[phase][pattern][idx1] += myrandrange(-10, 11);
+            eval_arr[phase][pattern][idx2] += myrandrange(-10, 11);
             rev_idx1 = calc_rev_idx(pattern, pattern_sizes[pattern], idx1);
             rev_idx2 = calc_rev_idx(pattern, pattern_sizes[pattern], idx2);
             eval_arr[phase][pattern][rev_idx1] = eval_arr[phase][pattern][idx1];
@@ -497,8 +497,8 @@ void sa2(unsigned long long tl){
         } else{
             f_val1 = eval_arr[phase][pattern][idx1];
             f_val2 = eval_arr[phase][pattern][idx2];
-            eval_arr[phase][pattern][idx1] += myrandrange(-50, 51);
-            eval_arr[phase][pattern][idx2] += myrandrange(-50, 51);
+            eval_arr[phase][pattern][idx1] += myrandrange(-10, 11);
+            eval_arr[phase][pattern][idx2] += myrandrange(-10, 11);
             scoring(pattern, idx1);
             n_score = scoring(pattern, idx2);
         }
@@ -535,11 +535,12 @@ void sa2(unsigned long long tl){
     cerr << t << " " << u << endl;
 }
 
-int main(){
+int main(int argc, char *argv[]){
+    sa_phase = atoi(argv[1]);
     int i, j;
 
-    unsigned long long hour = 1;
-    unsigned long long minute = 0;
+    unsigned long long hour = 0;
+    unsigned long long minute = 3;
     unsigned long long second = 0;
     minute += hour * 60;
     second += minute * 60;

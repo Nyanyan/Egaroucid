@@ -380,7 +380,7 @@ inline search_result midsearch(board b, long long strt, int max_depth){
     transpose_table.init_prev();
     //int order_l, order_u;
     int depth = min(hw2 - b.n - 1, max_depth - 1);
-    bool use_mpc = depth >= 12 ? true : false;
+    bool use_mpc = depth >= 11 ? true : false;
     //for (int depth = min(5, max(0, max_depth - 5)); depth <= min(hw2 - b.n, max_depth - 1); ++depth){
     alpha = -inf;
     beta = inf;

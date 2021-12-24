@@ -4,8 +4,8 @@
 /* cutting */
 
 // multi prob cut
-#define USE_MID_MPC true
-#define USE_END_MPC true
+#define USE_MID_MPC false
+#define USE_END_MPC false
 
 // stability cut
 #define USE_MID_SC  false
@@ -36,8 +36,16 @@
 
 
 
+
+
 /** book **/
-#define USE_BOOK true
+#define USE_BOOK false
+
+
+
+
+
+
 
 
 /** other **/
