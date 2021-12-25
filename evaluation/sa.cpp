@@ -32,7 +32,7 @@ int sa_phase;
 #define sc_w 6400
 #define step 100
 
-#define n_data 10000000
+#define n_data 20000000
 
 const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10};
 const int eval_sizes[n_patterns + 1] = {p38, p38, p38, p35, p36, p37, p38, p310, p310, p310, p310, p39, p310, max_surround * max_surround};
@@ -133,6 +133,26 @@ void input_param(){
     cerr << t << endl;
 }
 
+void input_param_onephase(){
+    ifstream ifs("f_param.txt");
+    if (ifs.fail()){
+        cerr << "evaluation file not exist" << endl;
+        exit(1);
+    }
+    string line;
+    int t =0;
+    int pattern_idx, pattern_elem, dense_idx, canput, sur0, sur1, i, j, k;
+    for (pattern_idx = 0; pattern_idx < n_patterns + 1; ++pattern_idx){
+        cerr << "=";
+        for (pattern_elem = 0; pattern_elem < eval_sizes[pattern_idx]; ++pattern_elem){
+            ++t;
+            getline(ifs, line);
+            eval_arr[sa_phase][pattern_idx][pattern_elem] = stoi(line);
+        }
+    }
+    cerr << t << endl;
+}
+
 inline int calc_add_idx(int arr[]){
     //return arr[42] * max_surround * max_surround + arr[43] * max_surround + arr[44];
     //return arr[42] / 2 * max_surround_2 * max_surround_2 + arr[43] / 2 * max_surround_2 + arr[44] / 2;
@@ -228,6 +248,17 @@ void output_param(){
             for (pattern_elem = 0; pattern_elem < eval_sizes[pattern_idx]; ++pattern_elem){
                 cout << eval_arr[phase_idx][pattern_idx][pattern_elem] << endl;
             }
+        }
+    }
+    cerr << endl;
+}
+
+void output_param_onephase(){
+    int pattern_idx, pattern_elem, dense_idx, canput, sur0, sur1, i, j;
+    cerr << "=";
+    for (pattern_idx = 0; pattern_idx < n_patterns + 1; ++pattern_idx){
+        for (pattern_elem = 0; pattern_elem < eval_sizes[pattern_idx]; ++pattern_elem){
+            cout << eval_arr[sa_phase][pattern_idx][pattern_elem] << endl;
         }
     }
     cerr << endl;
@@ -540,7 +571,7 @@ int main(int argc, char *argv[]){
     int i, j;
 
     unsigned long long hour = 0;
-    unsigned long long minute = 3;
+    unsigned long long minute = 1;
     unsigned long long second = 0;
     minute += hour * 60;
     second += minute * 60;
@@ -551,7 +582,7 @@ int main(int argc, char *argv[]){
     input_test_data(0);
     sa2(second * 1000);
 
-    output_param();
+    output_param_onephase();
 
     return 0;
 }
