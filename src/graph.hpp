@@ -1,6 +1,9 @@
 ﻿#pragma once
 #include <Siv3D.hpp> // OpenSiv3D v0.6.3
 #include <vector>
+#include <algorithm>
+
+using namespace std;
 
 class Graph {
 	public:
@@ -19,9 +22,12 @@ class Graph {
 		int y_min;
 	public:
 		void draw() {
+			sort(nodes.begin(), nodes.end());
 			calc_range();
 			dy = size_y / (y_max - y_min);
 			dx = size_x / 60;
+			font(U"黒").draw(sx + 5, sy);
+			font(U"白").draw(sx + 5, sy + size_y - font_size * 1.5);
 			for (int y = 0; y <= y_max - y_min; y += resolution) {
 				font(y_max - y).draw(sx - font_size * 3, sy + y * dy - font_size);
 				if (y_max - y == 0)
@@ -44,6 +50,10 @@ class Graph {
 
 		void push(int x, double y) {
 			nodes.push_back(make_pair(x, (int)round(y)));
+		}
+
+		void push(int x, int y) {
+			nodes.push_back(make_pair(x, y));
 		}
 
 		void clear() {

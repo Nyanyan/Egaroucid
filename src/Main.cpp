@@ -3,6 +3,9 @@
 #include <thread>
 #include <future>
 #include <chrono>
+#include <fstream>
+#include <sstream>
+#include <time.h>
 #include "setting.hpp"
 #include "common.hpp"
 #include "board.hpp"
@@ -98,6 +101,10 @@ inline future<cell_value> calc_value(board bd, int policy, int depth, int end_de
 	return async(launch::async, cell_value_search, nb, depth, end_depth);
 }
 
+inline future<cell_value> calc_value_nopolicy(board bd, int depth, int end_depth) {
+	return async(launch::async, cell_value_search, bd, depth, end_depth);
+}
+
 inline int proc_coord(int y, int x) {
 	return y * hw + x;
 }
@@ -189,6 +196,9 @@ void Main() {
 	future<search_result> future_result;
 	search_result result;
 	future<cell_value> future_cell_values[hw2];
+	future<cell_value> future_val;
+	bool analysys_start = false;
+	int analysys_n_moves = 1000;
 	int cell_value_state[hw2];
 	int cell_values[hw2];
 	int cell_depth[hw2];
@@ -282,14 +292,16 @@ void Main() {
 			String record_str;
 			if (!Clipboard::GetText(record_str)) {
 				input_record_state = 1;
-			} else {
+			}
+			else {
 				bool flag = true;
 				String record_tmp = U"";
 				last_played.clear();
 				board_history.clear();
 				if (record_str.size() % 2 != 0) {
 					flag = false;
-				} else {
+				}
+				else {
 					int y, x;
 					for (int i = 0; i < hw2; ++i)
 						bd_arr[i] = first_board[i];
@@ -312,11 +324,13 @@ void Main() {
 						}
 						if (bd.legal(y * hw + x)) {
 							bd = bd.move(y * hw + x);
-						} else {
+						}
+						else {
 							bd.p = 1 - bd.p;
 							if (bd.legal(y * hw + x)) {
 								bd = bd.move(y * hw + x);
-							} else {
+							}
+							else {
 								flag = false;
 								break;
 							}
@@ -331,7 +345,8 @@ void Main() {
 					bd.translate_to_arr(bd_arr);
 					record = record_tmp;
 					playing = false;
-				} else {
+				}
+				else {
 					input_record_state = 1;
 					last_played.clear();
 					board_history.clear();
@@ -339,9 +354,10 @@ void Main() {
 				}
 			}
 		}
-		if (input_record_state == 1)
+		if (input_record_state == 1){
 			input_board_record_ui(U"取得失敗").draw(625, 555);
-		else if (input_record_state == 2) {
+			playing = false;
+		} else if (input_record_state == 2) {
 			input_board_record_ui(U"取得成功").draw(625, 555);
 			for (int y = 0; y < hw; ++y) {
 				for (int x = 0; x < hw; ++x) {
@@ -352,6 +368,7 @@ void Main() {
 						stones[coord].draw(Palette::White);
 				}
 			}
+			playing = false;
 		}
 
 		if (SimpleGUI::Button(U"局面入力", Vec2(500, 600))) {
@@ -396,9 +413,10 @@ void Main() {
 				}
 			}
 		}
-		if (input_board_state == 1)
+		if (input_board_state == 1){
 			input_board_record_ui(U"取得失敗").draw(625, 605);
-		else if (input_board_state == 2) {
+			playing = false;
+		} else if (input_board_state == 2) {
 			input_board_record_ui(U"取得成功").draw(625, 605);
 			for (int i = 0; i < hw2; ++i)
 				cell_value_state[i] = 0;
@@ -411,6 +429,68 @@ void Main() {
 						stones[coord].draw(Palette::White);
 				}
 			}
+			playing = false;
+		}
+
+		if (analysys_n_moves <= n_moves){
+			SimpleGUI::Button(U"棋譜解析", Vec2(800, 600), 120, false);
+			if (!analysys_start) {
+				board_history[analysys_n_moves - n_moves + (int)board_history.size() - 1].translate_to_arr(bd_arr);
+				create_vacant_lst(board_history[analysys_n_moves - n_moves + (int)board_history.size() - 1], bd_arr);
+				future_val = calc_value_nopolicy(board_history[analysys_n_moves - n_moves + (int)board_history.size() - 1], depth, end_depth);
+				analysys_start = true;
+			} else if (future_val.wait_for(seconds0) == future_status::ready) {
+				int val = (board_history[analysys_n_moves - n_moves + (int)board_history.size() - 1].p ? -1 : 1) * round((double)future_val.get().value / step);
+				graph.push(analysys_n_moves - 1, val);
+				++analysys_n_moves;
+				analysys_start = false;
+			}
+		} else if (SimpleGUI::Button(U"棋譜解析", Vec2(800, 600), 120)) {
+			graph.clear();
+			analysys_n_moves = 1;
+			analysys_start = false;
+		} else {
+			analysys_n_moves = 1000;
+		}
+
+		if (SimpleGUI::Button(U"対局保存", Vec2(800, 555), 120)) {
+			String record_copy = record;
+			record_copy.replace(U"\n", U"");
+			string record_stdstr = record_copy.narrow();
+			__time64_t now;
+			tm newtime;
+			_time64(&now);
+			errno_t err = localtime_s(&newtime, &now);
+			ostringstream sout;
+			string year = to_string(newtime.tm_year + 1900);
+			sout << setfill('0') << setw(2) << newtime.tm_mon + 1;
+			string month = sout.str();
+			sout.str("");
+			sout.clear(stringstream::goodbit);
+			sout << setfill('0') << setw(2) << newtime.tm_mday;
+			string day = sout.str();
+			sout.str("");
+			sout.clear(stringstream::goodbit);
+			sout << setfill('0') << setw(2) << newtime.tm_hour;
+			string hour = sout.str();
+			sout.str("");
+			sout.clear(stringstream::goodbit);
+			sout << setfill('0') << setw(2) << newtime.tm_min;
+			string minute = sout.str();
+			string info = year + month + day + "_" + hour + minute + "_" + to_string(depth) + "_" + to_string(end_depth) + "_" + to_string(ai_player);
+			ofstream of("record/" + info + ".txt");
+			string result = "?";
+			if (finished) {
+				int int_result = bd.count(0) - bd.count(1);
+				int sum_stones = bd.count(0) + bd.count(1);
+				if (int_result > 0)
+					int_result += hw2 - sum_stones;
+				else if (int_result < 0)
+					int_result -= hw2 - sum_stones;
+				result = to_string(int_result);
+			}
+			of << record_stdstr << " " << bd.count(0) << " " << bd.count(1) << " " << result << endl;
+			of.close();
 		}
 		
 
@@ -584,7 +664,7 @@ void Main() {
 						if (ai_player == both_ai_define && bd.p == white)
 							graph.push(bd.n - 4, -(double)result.value / step);
 						else
-							graph.push(bd.n - 4, (double)result.value / step);
+							graph.push(bd.n - 4, (bd.p ? -1.0 : 1.0) * (double)result.value / step);
 						bd = bd.move(result.policy);
 						++n_moves;
 						String record_copy = record;
