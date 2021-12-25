@@ -54,7 +54,7 @@
 #define MPC_MODE false
 
 // creatring evaluation data mode
-#define EVAL_MODE false
+#define EVAL_MODE true
 
 // book mode
 #define BOOK_MODE false

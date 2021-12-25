@@ -12,9 +12,9 @@ typedef float eval_type;
 #define n_line 6561
 
 #define n_patterns 13
-#define n_dense0 64
-#define n_dense1 64
-#define n_dense2 64
+#define n_dense0 256
+#define n_dense1 128
+#define n_dense2 128
 #define n_add_input 2
 #define n_add_dense0 8
 #define n_add_dense1 8
@@ -89,7 +89,7 @@ inline int predict(int pattern_size, eval_type in_arr[], eval_type dense0[n_dens
         hidden2 = leaky_relu(hidden2);
         res += hidden2 * dense3[i];
     }
-    return round(res * sc_w);
+    return round(tanh(res) * sc_w);
 }
 
 inline int calc_pop(int a, int b, int s){
@@ -187,8 +187,8 @@ inline void pre_evaluation(int phase_idx, int pattern_idx, int pattern_size, eva
 inline int predict_add(int sur0, int sur1, eval_type dense0[n_add_dense0][n_add_input], eval_type bias0[n_add_dense0], eval_type dense1[n_add_dense1][n_add_dense0], eval_type bias1[n_add_dense1], eval_type dense2[n_add_dense2][n_add_dense1], eval_type bias2[n_add_dense2], eval_type dense3[n_add_dense2], eval_type bias3){
     eval_type hidden0[n_add_dense0], hidden1[n_add_dense1], in_arr[n_add_input], hidden2, res;
     int i, j;
-    in_arr[0] = ((eval_type)sur0 - 15.0) / 15.0;
-    in_arr[1] = ((eval_type)sur1 - 15.0) / 15.0;
+    in_arr[0] = ((eval_type)sur0 - 20.0) / 20.0;
+    in_arr[1] = ((eval_type)sur1 - 20.0) / 20.0;
     for (i = 0; i < n_add_dense0; ++i){
         hidden0[i] = bias0[i];
         for (j = 0; j < n_add_input; ++j)
@@ -209,7 +209,7 @@ inline int predict_add(int sur0, int sur1, eval_type dense0[n_add_dense0][n_add_
         hidden2 = leaky_relu(hidden2);
         res += hidden2 * dense3[i];
     }
-    return round(res * sc_w);
+    return round(tanh(res) * sc_w);
 }
 
 inline void pre_evaluation_add(int phase_idx, eval_type dense0[n_add_dense0][n_add_input], eval_type bias0[n_add_dense0], eval_type dense1[n_add_dense1][n_add_dense0], eval_type bias1[n_add_dense1], eval_type dense2[n_add_dense2][n_add_dense1], eval_type bias2[n_add_dense2], eval_type dense3[n_add_dense2], eval_type bias3){

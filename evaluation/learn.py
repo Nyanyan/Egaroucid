@@ -187,7 +187,8 @@ for stone_strt in reversed([0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52,
     def calc_n_stones(board):
         res = 0
         for elem in board:
-            res += int(elem != '.')
+            if elem != '.':
+                res += 1
         return res
 
     def collect_data(directory, num):
@@ -198,8 +199,6 @@ for stone_strt in reversed([0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52,
         except:
             print('cannot open')
             return
-        #for _ in range(10000):
-        #    datum = data[randrange(len(data))]
         for datum in data:
             board, player, v1, v2, v3, result = datum.split()
             player = int(player)
@@ -210,15 +209,13 @@ for stone_strt in reversed([0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52,
                 v3 = float(v3)
                 result = float(result)
                 result = result / 64
-                #if player == 1:
-                #    result = -result
                 idx = 0
                 for i in range(len(pattern_idx)):
                     lines = make_lines(board, pattern_idx[i], 0)
                     for line in lines:
                         all_data[idx].append(line)
                         idx += 1
-                all_data[idx].append([(v2 - 15) / 15, (v3 - 15) / 15])
+                all_data[idx].append([(v2 - 20) / 20, (v3 - 20) / 20])
                 all_labels.append(result)
 
     x = [None for _ in range(ln_in)]
@@ -227,13 +224,14 @@ for stone_strt in reversed([0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52,
     idx = 0
     for i in range(len(pattern_idx)):
         layers = []
-        layers.append(Dense(64, name=names[i] + '_dense0'))
+        layers.append(Dense(256, name=names[i] + '_dense0'))
         layers.append(LeakyReLU(alpha=0.01))
-        layers.append(Dense(64, name=names[i] + '_dense1'))
+        layers.append(Dense(128, name=names[i] + '_dense1'))
         layers.append(LeakyReLU(alpha=0.01))
-        layers.append(Dense(64, name=names[i] + '_dense2'))
+        layers.append(Dense(128, name=names[i] + '_dense2'))
         layers.append(LeakyReLU(alpha=0.01))
         layers.append(Dense(1, name=names[i] + '_out'))
+        layers.append(Activation('tanh'))
         add_elems = []
         for j in range(len(pattern_idx[i])):
             x[idx] = Input(shape=len(pattern_idx[i][0]) * 2, name=names[i] + '_in_' + str(j))
@@ -254,6 +252,7 @@ for stone_strt in reversed([0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52,
     y_add = Dense(8, name='add_dense2')(y_add)
     y_add = LeakyReLU(alpha=0.01)(y_add)
     y_add = Dense(1, name='add_dense3')(y_add)
+    y_add = Activation('tanh')(y_add)
     #y_add = LeakyReLU(alpha=0.01)(y_add)
     ys.append(y_add)
     y_all = Add()(ys)
@@ -263,16 +262,16 @@ for stone_strt in reversed([0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52,
     y_all = LeakyReLU(alpha=0.01)(y_all)
     y_all = Dense(1, name='final_dense1')(y_all)
     '''
-    #model = Model(inputs=x, outputs=y_all)
+    model = Model(inputs=x, outputs=y_all)
 
-    model = load_model('learned_data/f_' + str(stone_strt) + '_' + str(stone_end) + '.h5')
+    #model = load_model('learned_data/f_' + str(stone_strt) + '_' + str(stone_end) + '.h5')
 
     #model.summary()
     plot_model(model, to_file='learned_data/model.png', show_shapes=True)
 
     model.compile(loss='mse', metrics='mae', optimizer='adam')
 
-    for i in trange(177):
+    for i in trange(263):
         collect_data('records3', i)
     len_data = len(all_labels)
     print(len_data)
@@ -295,17 +294,17 @@ for stone_strt in reversed([0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52,
 
 
     #print(model.evaluate(all_data, all_labels))
-    early_stop = EarlyStopping(monitor='val_loss', patience=20)
+    early_stop = EarlyStopping(monitor='val_loss', patience=15)
     model_checkpoint = ModelCheckpoint(filepath=os.path.join('learned_data/' + str(stone_strt) + '_' + str(stone_end), 'model_{epoch:02d}_{val_loss:.5f}_{val_mae:.5f}.h5'), monitor='val_loss', verbose=1)
-    reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=2, min_lr=0.0001)
-    history = model.fit(train_data, train_labels, epochs=n_epochs, batch_size=2048, validation_data=(test_data, test_labels), callbacks=[early_stop])
+    reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=5, min_lr=0.0001)
+    history = model.fit(train_data, train_labels, epochs=n_epochs, batch_size=2048, validation_data=(test_data, test_labels), callbacks=[early_stop, reduce_lr])
 
     now = datetime.datetime.today()
     print(str(now.year) + digit(now.month, 2) + digit(now.day, 2) + '_' + digit(now.hour, 2) + digit(now.minute, 2))
     model.save('learned_data/' + str(stone_strt) + '_' + str(stone_end) + '.h5')
 
     for key in ['loss', 'val_loss']:
-        plt.plot(history.history[key], label=key)
+        plt.plot([history.history[key][i] for i in range(1, len(history.history[key]))], label=key)
     plt.xlabel('epoch')
     plt.ylabel('loss')
     plt.legend(loc='best')
@@ -313,7 +312,7 @@ for stone_strt in reversed([0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52,
     plt.clf()
     
     for key in ['mae', 'val_mae']:
-        plt.plot(history.history[key], label=key)
+        plt.plot([history.history[key][i] for i in range(1, len(history.history[key]))], label=key)
     plt.xlabel('epoch')
     plt.ylabel('mae')
     plt.legend(loc='best')
