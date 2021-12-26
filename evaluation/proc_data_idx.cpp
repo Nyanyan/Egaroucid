@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <iomanip>
 #include "board.hpp"
 
 using namespace std;
@@ -12,6 +13,7 @@ using namespace std;
 #define phase_n_stones 4
 
 #define max_surround 80
+#define max_canput 50
 
 #define p31 3
 #define p32 9
@@ -154,7 +156,7 @@ inline int sfill1(int b){
 }
 
 inline int calc_canput(const board *b){
-    return 
+    return (b->p ? -1 : 1) * (
         mobility_arr[b->p][b->b[0]] + mobility_arr[b->p][b->b[1]] + mobility_arr[b->p][b->b[2]] + mobility_arr[b->p][b->b[3]] + 
         mobility_arr[b->p][b->b[4]] + mobility_arr[b->p][b->b[5]] + mobility_arr[b->p][b->b[6]] + mobility_arr[b->p][b->b[7]] + 
         mobility_arr[b->p][b->b[8]] + mobility_arr[b->p][b->b[9]] + mobility_arr[b->p][b->b[10]] + mobility_arr[b->p][b->b[11]] + 
@@ -164,7 +166,7 @@ inline int calc_canput(const board *b){
         mobility_arr[b->p][b->b[18] - p33m] + mobility_arr[b->p][b->b[24] - p33m] + mobility_arr[b->p][b->b[29] - p33m] + mobility_arr[b->p][b->b[35] - p33m] + 
         mobility_arr[b->p][b->b[19] - p32m] + mobility_arr[b->p][b->b[23] - p32m] + mobility_arr[b->p][b->b[30] - p32m] + mobility_arr[b->p][b->b[34] - p32m] + 
         mobility_arr[b->p][b->b[20] - p31m] + mobility_arr[b->p][b->b[22] - p31m] + mobility_arr[b->p][b->b[31] - p31m] + mobility_arr[b->p][b->b[33] - p31m] + 
-        mobility_arr[b->p][b->b[21]] + mobility_arr[b->p][b->b[32]];
+        mobility_arr[b->p][b->b[21]] + mobility_arr[b->p][b->b[32]]);
 }
 
 inline int calc_surround(const board *b, int p){
@@ -317,6 +319,7 @@ inline void convert_idx(string str){
     cout << phase_idx << " " << ai_player << " ";
     for (i = 0; i < 52; ++i)
         cout << idxes[i] << " ";
+    cout << max(0, min(max_canput * 2 - 1, calc_canput(&b))) << " ";
     string score;
     istringstream iss(str);
     for (i = 0; i < 6; ++i)
@@ -324,220 +327,7 @@ inline void convert_idx(string str){
     cout << score << endl;
 }
 
-#define n_files 210
-
-const string file_names[n_files] = {
-    "0000000.txt",
-    "0000001.txt",
-    "0000002.txt",
-    "0000003.txt",
-    "0000004.txt",
-    "0000005.txt",
-    "0000006.txt",
-    "0000007.txt",
-    "0000008.txt",
-    "0000009.txt",
-    "0000010.txt",
-    "0000011.txt",
-    "0000012.txt",
-    "0000013.txt",
-    "0000014.txt",
-    "0000015.txt",
-    "0000016.txt",
-    "0000017.txt",
-    "0000018.txt",
-    "0000019.txt",
-    "0000020.txt",
-    "0000021.txt",
-    "0000022.txt",
-    "0000023.txt",
-    "0000024.txt",
-    "0000025.txt",
-    "0000026.txt",
-    "0000027.txt",
-    "0000028.txt",
-    "0000029.txt",
-    "0000030.txt",
-    "0000031.txt",
-    "0000032.txt",
-    "0000033.txt",
-    "0000034.txt",
-    "0000035.txt",
-    "0000036.txt",
-    "0000037.txt",
-    "0000038.txt",
-    "0000039.txt",
-    "0000040.txt",
-    "0000041.txt",
-    "0000042.txt",
-    "0000043.txt",
-    "0000044.txt",
-    "0000045.txt",
-    "0000046.txt",
-    "0000047.txt",
-    "0000048.txt",
-    "0000049.txt",
-    "0000050.txt",
-    "0000051.txt",
-    "0000052.txt",
-    "0000053.txt",
-    "0000054.txt",
-    "0000055.txt",
-    "0000056.txt",
-    "0000057.txt",
-    "0000058.txt",
-    "0000059.txt",
-    "0000060.txt",
-    "0000061.txt",
-    "0000062.txt",
-    "0000063.txt",
-    "0000064.txt",
-    "0000065.txt",
-    "0000066.txt",
-    "0000067.txt",
-    "0000068.txt",
-    "0000069.txt",
-    "0000070.txt",
-    "0000071.txt",
-    "0000072.txt",
-    "0000073.txt",
-    "0000074.txt",
-    "0000075.txt",
-    "0000076.txt",
-    "0000077.txt",
-    "0000078.txt",
-    "0000079.txt",
-    "0000080.txt",
-    "0000081.txt",
-    "0000082.txt",
-    "0000083.txt",
-    "0000084.txt",
-    "0000085.txt",
-    "0000086.txt",
-    "0000087.txt",
-    "0000088.txt",
-    "0000089.txt",
-    "0000090.txt",
-    "0000091.txt",
-    "0000092.txt",
-    "0000093.txt",
-    "0000094.txt",
-    "0000095.txt",
-    "0000096.txt",
-    "0000097.txt",
-    "0000098.txt",
-    "0000099.txt",
-    "0000100.txt",
-    "0000101.txt",
-    "0000102.txt",
-    "0000103.txt",
-    "0000104.txt",
-    "0000105.txt",
-    "0000106.txt",
-    "0000107.txt",
-    "0000108.txt",
-    "0000109.txt",
-    "0000110.txt",
-    "0000111.txt",
-    "0000112.txt",
-    "0000113.txt",
-    "0000114.txt",
-    "0000115.txt",
-    "0000116.txt",
-    "0000117.txt",
-    "0000118.txt",
-    "0000119.txt",
-    "0000120.txt",
-    "0000121.txt",
-    "0000122.txt",
-    "0000123.txt",
-    "0000124.txt",
-    "0000125.txt",
-    "0000126.txt",
-    "0000127.txt",
-    "0000128.txt",
-    "0000129.txt",
-    "0000130.txt",
-    "0000131.txt",
-    "0000132.txt",
-    "0000133.txt",
-    "0000134.txt",
-    "0000135.txt",
-    "0000136.txt",
-    "0000137.txt",
-    "0000138.txt",
-    "0000139.txt",
-    "0000140.txt",
-    "0000141.txt",
-    "0000142.txt",
-    "0000143.txt",
-    "0000144.txt",
-    "0000145.txt",
-    "0000146.txt",
-    "0000147.txt",
-    "0000148.txt",
-    "0000149.txt",
-    "0000150.txt",
-    "0000151.txt",
-    "0000152.txt",
-    "0000153.txt",
-    "0000154.txt",
-    "0000155.txt",
-    "0000156.txt",
-    "0000157.txt",
-    "0000158.txt",
-    "0000159.txt",
-    "0000160.txt",
-    "0000161.txt",
-    "0000162.txt",
-    "0000163.txt",
-    "0000164.txt",
-    "0000165.txt",
-    "0000166.txt",
-    "0000167.txt",
-    "0000168.txt",
-    "0000169.txt",
-    "0000170.txt",
-    "0000171.txt",
-    "0000172.txt",
-    "0000173.txt",
-    "0000174.txt",
-    "0000175.txt",
-    "0000176.txt",
-    "0000177.txt",
-    "0000178.txt",
-    "0000179.txt",
-    "0000180.txt",
-    "0000181.txt",
-    "0000182.txt",
-    "0000183.txt",
-    "0000184.txt",
-    "0000185.txt",
-    "0000186.txt",
-    "0000187.txt",
-    "0000188.txt",
-    "0000189.txt",
-    "0000190.txt",
-    "0000191.txt",
-    "0000192.txt",
-    "0000193.txt",
-    "0000194.txt",
-    "0000195.txt",
-    "0000196.txt",
-    "0000197.txt",
-    "0000198.txt",
-    "0000199.txt",
-    "0000200.txt",
-    "0000201.txt",
-    "0000202.txt",
-    "0000203.txt",
-    "0000204.txt",
-    "0000205.txt",
-    "0000206.txt",
-    "0000207.txt",
-    "0000208.txt",
-    "0000209.txt"
-};
+#define n_files 263
 
 int main(){
     board_init();
@@ -547,7 +337,10 @@ int main(){
 
     for (int i = 0; i < n_files; ++i){
         cerr << "=";
-        ifstream ifs("data/records3/" + file_names[i]);
+        ostringstream sout;
+        sout << setfill('0') << setw(7) << i;
+        string file_name = sout.str();
+        ifstream ifs("data/records3/" + file_name + ".txt");
         if (ifs.fail()){
             cerr << "evaluation file not exist" << endl;
             exit(1);

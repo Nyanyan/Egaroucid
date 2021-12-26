@@ -150,7 +150,7 @@ ln_in = sum([len(elem) for elem in pattern_idx]) + 1
 # [0, 6, 12, 18, 24, 30, 36, 42, 48, 54]
 # [0, 10, 20, 30, 40, 50]
 
-for stone_strt in reversed([0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56]):
+for stone_strt in reversed([0, 4, 8, 12, 16, 20, 24, 28, 32, 36]):
     stone_end = stone_strt + 4
 
     min_n_stones = 4 + stone_strt

@@ -131,6 +131,12 @@ void input_param(){
         }
     }
     cerr << t << endl;
+    
+    for (pattern_idx = 0; pattern_idx < n_patterns + 1; ++pattern_idx){
+        for (pattern_elem = 0; pattern_elem < eval_sizes[pattern_idx]; ++pattern_elem)
+            eval_arr[sa_phase][pattern_idx][pattern_elem] = 0;
+    }
+    
 }
 
 void input_param_onephase(){
@@ -515,8 +521,8 @@ void sa2(unsigned long long tl){
         if (pattern < n_patterns){
             f_val1 = eval_arr[phase][pattern][idx1];
             f_val2 = eval_arr[phase][pattern][idx2];
-            eval_arr[phase][pattern][idx1] += myrandrange(-10, 11);
-            eval_arr[phase][pattern][idx2] += myrandrange(-10, 11);
+            eval_arr[phase][pattern][idx1] += myrandrange(-100, 101);
+            eval_arr[phase][pattern][idx2] += myrandrange(-100, 101);
             rev_idx1 = calc_rev_idx(pattern, pattern_sizes[pattern], idx1);
             rev_idx2 = calc_rev_idx(pattern, pattern_sizes[pattern], idx2);
             eval_arr[phase][pattern][rev_idx1] = eval_arr[phase][pattern][idx1];
@@ -528,8 +534,8 @@ void sa2(unsigned long long tl){
         } else{
             f_val1 = eval_arr[phase][pattern][idx1];
             f_val2 = eval_arr[phase][pattern][idx2];
-            eval_arr[phase][pattern][idx1] += myrandrange(-10, 11);
-            eval_arr[phase][pattern][idx2] += myrandrange(-10, 11);
+            eval_arr[phase][pattern][idx1] += myrandrange(-100, 101);
+            eval_arr[phase][pattern][idx2] += myrandrange(-100, 101);
             scoring(pattern, idx1);
             n_score = scoring(pattern, idx2);
         }
@@ -571,7 +577,7 @@ int main(int argc, char *argv[]){
     int i, j;
 
     unsigned long long hour = 0;
-    unsigned long long minute = 1;
+    unsigned long long minute = 25;
     unsigned long long second = 0;
     minute += hour * 60;
     second += minute * 60;
@@ -582,7 +588,7 @@ int main(int argc, char *argv[]){
     input_test_data(0);
     sa2(second * 1000);
 
-    output_param_onephase();
+    output_param();
 
     return 0;
 }

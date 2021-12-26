@@ -72,3 +72,15 @@ eg 14/23 vs ed lv10
 
 new 15 phase evaluation function
 149   112 89 99   35 233
+
+new 15 phase big model read depth 1/2
+199   140 84 176   54 199
+199   151 28 221   50 199
+199   161 16 223   46 199
+
+15 phase with only hillclimb
+499   354 273 373   57 499
+499   381 176 443   53 499
+
+10 phase hillclimb
+499   372 217 411   55 499

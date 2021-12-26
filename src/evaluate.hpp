@@ -122,7 +122,7 @@ inline void init_evaluation_base() {
 }
 
 inline void init_evaluation_calc(){
-    ifstream ifs("C:/github/egaroucid/Egaroucid5/src/resources/param.txt");
+    ifstream ifs("resources/param.txt");
     if (ifs.fail()){
         cerr << "evaluation file not exist" << endl;
         exit(1);
@@ -262,15 +262,6 @@ inline int calc_pattern(int phase_idx, const board *b){
         //narrow_triangle0(phase_idx, b, 0, 1, 2, 3, 4) + narrow_triangle0(phase_idx, b, 7, 6, 5, 4, 3) + narrow_triangle1(phase_idx, b, 0, 1, 2, 3, 4) + narrow_triangle1(phase_idx, b, 7, 6, 5, 4, 3);
 }
 
-inline int mid_evaluate(const board *b){
-    int phase_idx = calc_phase_idx(b), sur0, sur1, res;
-    sur0 = min(max_surround - 1, calc_surround(b, black));
-    sur1 = min(max_surround - 1, calc_surround(b, white));
-    res = (b->p ? -1 : 1) * (calc_pattern(phase_idx, b) + add_arr[phase_idx][sur0][sur1]);
-    return res;
-    //return max(-sc_w, min(sc_w, res));
-}
-
 inline int end_evaluate(const board *b){
     int count = (b->p ? -1 : 1) * 
         (count_black_arr[b->b[0]] + count_black_arr[b->b[1]] + count_black_arr[b->b[2]] + count_black_arr[b->b[3]] + 
@@ -283,4 +274,22 @@ inline int end_evaluate(const board *b){
     else if (count < 0)
         count -= empty;
     return count * step;
+}
+
+inline int mid_evaluate(board *b, bool passed = false){
+    int phase_idx, sur0, sur1, res;
+    if (calc_canput(b) == 0){
+        if (passed)
+            return end_evaluate(b);
+        b->p = 1 - b->p;
+        res = -mid_evaluate(b, true);
+        b->p = 1 - b->p;
+        return res;
+    }
+    phase_idx = calc_phase_idx(b);
+    sur0 = min(max_surround - 1, calc_surround(b, black));
+    sur1 = min(max_surround - 1, calc_surround(b, white));
+    res = (b->p ? -1 : 1) * (calc_pattern(phase_idx, b) + add_arr[phase_idx][sur0][sur1]);
+    return res;
+    //return max(-sc_w, min(sc_w, res));
 }

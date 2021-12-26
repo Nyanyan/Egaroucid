@@ -29,7 +29,7 @@ def get_layer_index(model, layer_name, not_found=None):
 def my_loss(y_true, y_pred):
     return tf.keras.backend.square(y_true - y_pred) * (tf.keras.backend.exp(-tf.keras.backend.abs(10.0 * y_true)) + 1)
 
-for stone_strt in [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56]:
+for stone_strt in [40, 44, 48, 52, 56]:
     stone_end = stone_strt + 4
 
     model = load_model('learned_data/' + str(stone_strt) + '_' + str(stone_end) + '.h5', custom_objects={'my_loss': my_loss})
@@ -79,7 +79,7 @@ for stone_strt in [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56]:
 print('')
 
 data = ''
-for stone_strt in [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56]:
+for stone_strt in [40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 44, 48, 52, 56]:
     stone_end = stone_strt + 4
     
     with open('learned_data/' + str(stone_strt) + '_' + str(stone_end) + '.txt', 'r') as f:
