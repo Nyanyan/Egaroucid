@@ -39,7 +39,7 @@ int sa_phase;
 #define n_raw_params (50 + 3)
 
 double alpha;
-#define beta 0.01
+#define beta 0.005
 
 const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10};
 const int eval_sizes[n_eval] = {p38, p38, p38, p35, p36, p37, p38, p310, p310, p310, p310, p39, p310, max_surround * max_surround, max_surround * max_canput * 2, max_surround * max_canput * 2};
@@ -106,8 +106,8 @@ void input_param(){
     cerr << t << endl;
 }
 
-void input_param_onephase(){
-    ifstream ifs("f_param.txt");
+void input_param_onephase(string file){
+    ifstream ifs(file);
     if (ifs.fail()){
         cerr << "evaluation file not exist" << endl;
         exit(1);
@@ -482,19 +482,19 @@ int main(int argc, char *argv[]){
     cerr << sa_phase << endl;
     int i, j;
 
-    unsigned long long hour = 0;
-    unsigned long long minute = 20;
+    unsigned long long hour = 6;
+    unsigned long long minute = 0;
     unsigned long long second = 0;
     minute += hour * 60;
     second += minute * 60;
 
     board_init();
-    input_param();
+    input_param_onephase((string)(argv[2]));
     input_test_data(0);
 
     sd(second * 1000);
 
-    output_param();
+    output_param_onephase();
 
     return 0;
 }

@@ -85,7 +85,7 @@ int main(){
         int depth, end_depth;
         book_value book_result;
         depth = 1; //23;
-        end_depth = 2; //23;
+        end_depth = 30; //23;
     #endif
     int ai_player;
     //cin >> ai_player;
