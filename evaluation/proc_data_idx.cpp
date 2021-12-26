@@ -319,7 +319,8 @@ inline void convert_idx(string str){
     cout << phase_idx << " " << ai_player << " ";
     for (i = 0; i < 52; ++i)
         cout << idxes[i] << " ";
-    cout << max(0, min(max_canput * 2 - 1, calc_canput(&b))) << " ";
+    b.p = ai_player;
+    cout << max(0, min(max_canput * 2 - 1, calc_canput(&b) + max_canput)) << " ";
     string score;
     istringstream iss(str);
     for (i = 0; i < 6; ++i)

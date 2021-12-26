@@ -42,7 +42,7 @@ double alpha;
 #define beta 0.01
 
 const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10};
-const int eval_sizes[n_eval] = {p38, p38, p38, p35, p36, p37, p38, p310, p310, p310, p310, p39, p310, max_surround * max_surround, max_surround * max_canput, max_surround * max_canput};
+const int eval_sizes[n_eval] = {p38, p38, p38, p35, p36, p37, p38, p310, p310, p310, p310, p39, p310, max_surround * max_surround, max_surround * max_canput * 2, max_surround * max_canput * 2};
 double eval_arr[n_phases][n_eval][max_evaluate_idx];
 int test_data[n_data / 6 + 10000][n_raw_params];
 double test_labels[n_data / 6 + 10000];
@@ -483,13 +483,13 @@ int main(int argc, char *argv[]){
     int i, j;
 
     unsigned long long hour = 0;
-    unsigned long long minute = 30;
+    unsigned long long minute = 20;
     unsigned long long second = 0;
     minute += hour * 60;
     second += minute * 60;
 
     board_init();
-    initialize_param();
+    input_param();
     input_test_data(0);
 
     sd(second * 1000);
