@@ -26,7 +26,7 @@ using namespace std;
 
 #define final_define_value 100
 #define book_define_value -1
-#define both_ai_define 100
+#define both_ai_define 3
 #define n_accept_define 0
 #define exact_define 1
 #define graph_font_size 10
@@ -212,6 +212,8 @@ void Main() {
 	Font input_board_record_ui(20);
 	Font graph_font(graph_font_size);
 	Font move_font(30);
+	Font saved_ui(20);
+	Font copy_ui(20);
 	bool playing = false, thinking = false, cell_value_thinking = false, changing_book = false;
 	int depth, end_depth, ai_player, cell_value_depth, cell_value_end_depth, book_accept, show_cell_value, show_value, n_moves = 0;
 	double value;
@@ -226,11 +228,12 @@ void Main() {
 	String record = U"";
 	vector<board> board_history;
 	vector<int> last_played;
-	bool finished = false;
+	bool finished = false, copied = false;
+	int saved = 0;
 	int input_board_state = 0, input_record_state = 0;
 	double depth_double = 12, end_depth_double = 20, cell_value_depth_double = 10, cell_value_end_depth_double = 18, book_accept_double = 2;
 
-	const Font pulldown_font{15};
+	const Font pulldown_font(15);
 	const Array<String> player_items = { U"先手", U"後手", U"人間同士", U"AI同士"};
 	const Array<String> hint_items = {U"ヒントあり", U"ヒントなし"};
 	const Array<String> value_items = { U"評価値表示", U"評価値非表示"};
@@ -433,7 +436,7 @@ void Main() {
 		}
 
 		if (analysys_n_moves <= n_moves){
-			SimpleGUI::Button(U"棋譜解析", Vec2(800, 600), 120, false);
+			SimpleGUI::Button(U"棋譜解析", Vec2(0, 50), 120, false);
 			if (!analysys_start) {
 				board_history[analysys_n_moves - n_moves + (int)board_history.size() - 1].translate_to_arr(bd_arr);
 				create_vacant_lst(board_history[analysys_n_moves - n_moves + (int)board_history.size() - 1], bd_arr);
@@ -445,7 +448,7 @@ void Main() {
 				++analysys_n_moves;
 				analysys_start = false;
 			}
-		} else if (SimpleGUI::Button(U"棋譜解析", Vec2(800, 600), 120)) {
+		} else if (SimpleGUI::Button(U"棋譜解析", Vec2(0, 50), 120)) {
 			graph.clear();
 			analysys_n_moves = 1;
 			analysys_start = false;
@@ -453,44 +456,73 @@ void Main() {
 			analysys_n_moves = 1000;
 		}
 
-		if (SimpleGUI::Button(U"対局保存", Vec2(800, 555), 120)) {
+		if (SimpleGUI::Button(U"対局保存", Vec2(750, 555), 120)) {
+			if (playing || finished) {
+				String record_copy = record;
+				record_copy.replace(U"\n", U"");
+				string record_stdstr = record_copy.narrow();
+				__time64_t now;
+				tm newtime;
+				_time64(&now);
+				errno_t err = localtime_s(&newtime, &now);
+				ostringstream sout;
+				string year = to_string(newtime.tm_year + 1900);
+				sout << setfill('0') << setw(2) << newtime.tm_mon + 1;
+				string month = sout.str();
+				sout.str("");
+				sout.clear(stringstream::goodbit);
+				sout << setfill('0') << setw(2) << newtime.tm_mday;
+				string day = sout.str();
+				sout.str("");
+				sout.clear(stringstream::goodbit);
+				sout << setfill('0') << setw(2) << newtime.tm_hour;
+				string hour = sout.str();
+				sout.str("");
+				sout.clear(stringstream::goodbit);
+				sout << setfill('0') << setw(2) << newtime.tm_min;
+				string minute = sout.str();
+				sout.str("");
+				sout.clear(stringstream::goodbit);
+				sout << setfill('0') << setw(2) << newtime.tm_sec;
+				string second = sout.str();
+				string info = year + month + day + "_" + hour + minute + second + "_" + to_string(depth) + "_" + to_string(end_depth) + "_" + to_string(ai_player);
+				ofstream of("record/" + info + ".txt");
+				if (of.fail()) {
+					saved = 2;
+				}
+				else {
+					string result = "?";
+					if (finished) {
+						int int_result = bd.count(0) - bd.count(1);
+						int sum_stones = bd.count(0) + bd.count(1);
+						if (int_result > 0)
+							int_result += hw2 - sum_stones;
+						else if (int_result < 0)
+							int_result -= hw2 - sum_stones;
+						result = to_string(int_result);
+					}
+					of << record_stdstr << " " << bd.count(0) << " " << bd.count(1) << " " << result << endl;
+					of.close();
+					saved = 1;
+				}
+			}
+			else
+				saved = 2;
+		}
+		if (saved == 1) {
+			saved_ui(U"完了").draw(900, 560);
+		} else if (saved == 2) {
+			saved_ui(U"失敗").draw(900, 560);
+		}
+
+		if (SimpleGUI::Button(U"棋譜コピー", Vec2(750, 600))) {
 			String record_copy = record;
 			record_copy.replace(U"\n", U"");
-			string record_stdstr = record_copy.narrow();
-			__time64_t now;
-			tm newtime;
-			_time64(&now);
-			errno_t err = localtime_s(&newtime, &now);
-			ostringstream sout;
-			string year = to_string(newtime.tm_year + 1900);
-			sout << setfill('0') << setw(2) << newtime.tm_mon + 1;
-			string month = sout.str();
-			sout.str("");
-			sout.clear(stringstream::goodbit);
-			sout << setfill('0') << setw(2) << newtime.tm_mday;
-			string day = sout.str();
-			sout.str("");
-			sout.clear(stringstream::goodbit);
-			sout << setfill('0') << setw(2) << newtime.tm_hour;
-			string hour = sout.str();
-			sout.str("");
-			sout.clear(stringstream::goodbit);
-			sout << setfill('0') << setw(2) << newtime.tm_min;
-			string minute = sout.str();
-			string info = year + month + day + "_" + hour + minute + "_" + to_string(depth) + "_" + to_string(end_depth) + "_" + to_string(ai_player);
-			ofstream of("record/" + info + ".txt");
-			string result = "?";
-			if (finished) {
-				int int_result = bd.count(0) - bd.count(1);
-				int sum_stones = bd.count(0) + bd.count(1);
-				if (int_result > 0)
-					int_result += hw2 - sum_stones;
-				else if (int_result < 0)
-					int_result -= hw2 - sum_stones;
-				result = to_string(int_result);
-			}
-			of << record_stdstr << " " << bd.count(0) << " " << bd.count(1) << " " << result << endl;
-			of.close();
+			Clipboard::SetText(record_copy);
+			copied = true;
+		}
+		if (copied) {
+			copy_ui(U"完了").draw(900, 600);
 		}
 		
 
@@ -501,7 +533,7 @@ void Main() {
 			else if (player_idx == 1)
 				ai_player = 0;
 			else if (player_idx == 2)
-				ai_player = -1;
+				ai_player = 2;
 			else
 				ai_player = both_ai_define;
 			playing = true;
@@ -527,17 +559,13 @@ void Main() {
 				last_played.push_back(-1);
 			}
 			finished = false;
+			saved = 0;
+			copied = false;
 			input_board_state = 0;
 			input_record_state = 0;
 		}
 
 		record_ui(record).draw(0, 550);
-
-		if (SimpleGUI::Button(U"棋譜コピー", Vec2(0, 50))) {
-			String record_copy = record;
-			record_copy.replace(U"\n", U"");
-			Clipboard::SetText(record_copy);
-		}
 
 		if (playing) {
 			if (n_moves != 60)
@@ -628,6 +656,8 @@ void Main() {
 								board_history.push_back(bd);
 								for (int i = 0; i < hw2; ++i)
 									cell_value_state[i] = 0;
+								saved = 0;
+								copied = false;
 							} else if (cells[coord].rightClicked()) {
 								if (changing_book && coord == change_book_coord) {
 									if (change_book_value_str.size() == 0) {
@@ -676,6 +706,7 @@ void Main() {
 						create_vacant_lst(bd, bd_arr);
 						finished = check_pass(&bd);
 						board_history.push_back(bd);
+						saved = 0;
 					}
 				} else {
 					thinking = true;
