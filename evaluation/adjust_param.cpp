@@ -39,7 +39,7 @@ int sa_phase;
 #define n_raw_params (50 + 3)
 
 double alpha;
-#define beta 0.01
+#define beta 0.1
 
 const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10};
 const int eval_sizes[n_eval] = {p38, p38, p38, p35, p36, p37, p38, p310, p310, p310, p310, p39, p310, max_surround * max_surround, max_surround * max_canput * 2, max_surround * max_canput * 2};
@@ -426,12 +426,11 @@ inline void scoring_mae(){
 }
 
 inline double scoring_next_step(int pattern, int idx){
-    int i;
     double score, res = 0.0, err;
     int data_size = nums;
-    for (i = 0; i < test_memo[pattern][idx].size(); ++i){
-        score = pre_calc_scores[test_memo[pattern][idx][i]]; //calc_score(sa_phase, test_memo[pattern][idx][i]);
-        err = test_labels[test_memo[pattern][idx][i]] - score;
+    for (const int &i: test_memo[pattern][idx]){
+        score = pre_calc_scores[i]; //calc_score(sa_phase, test_memo[pattern][idx][i]);
+        err = test_labels[i] - score;
         res += err;
     }
     return res;
@@ -482,8 +481,8 @@ int main(int argc, char *argv[]){
     cerr << sa_phase << endl;
     int i, j;
 
-    unsigned long long hour = 1;
-    unsigned long long minute = 0;
+    unsigned long long hour = 0;
+    unsigned long long minute = 30;
     unsigned long long second = 0;
     minute += hour * 60;
     second += minute * 60;
