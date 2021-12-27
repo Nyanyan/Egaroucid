@@ -16,6 +16,7 @@
 #include "midsearch.hpp"
 #include "endsearch.hpp"
 #include "book.hpp"
+#include "joseki.hpp"
 #if USE_MULTI_THREAD
 	#include "thread_pool.hpp"
 #endif
@@ -47,6 +48,7 @@ inline void init() {
 	#if USE_MULTI_THREAD
 		thread_pool_init();
 	#endif
+	joseki_init();
 }
 
 inline void create_vacant_lst(board bd, int bd_arr[]) {
@@ -214,6 +216,7 @@ void Main() {
 	Font move_font(30);
 	Font saved_ui(20);
 	Font copy_ui(20);
+	Font joseki_ui(20);
 	bool playing = false, thinking = false, cell_value_thinking = false, changing_book = false;
 	int depth, end_depth, ai_player, cell_value_depth, cell_value_end_depth, book_accept, show_cell_value, show_value, n_moves = 0;
 	double value;
@@ -796,6 +799,8 @@ void Main() {
 
 		if (show_value == 0)
 			graph.draw();
+
+		joseki_ui(Unicode::FromUTF8(joseki.get(bd))).draw(145, 60);
 		
 	}
 	ofstream ofs("resources/settings.txt");
