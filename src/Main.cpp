@@ -224,6 +224,7 @@ void Main() {
 	ai_player = 0;
 	show_cell_value = 0;
 	show_value = 0;
+	int player_default = 0, hint_default = 0, value_default = 0;
 	book_accept = 0;
 	String record = U"";
 	vector<board> board_history;
@@ -233,13 +234,35 @@ void Main() {
 	int input_board_state = 0, input_record_state = 0;
 	double depth_double = 12, end_depth_double = 20, cell_value_depth_double = 10, cell_value_end_depth_double = 18, book_accept_double = 2;
 
+	ifstream ifs("resources/settings.txt");
+	if (!ifs.fail()) {
+		string line;
+		getline(ifs, line);
+		player_default = stoi(line);
+		getline(ifs, line);
+		hint_default = stoi(line);
+		getline(ifs, line);
+		value_default = stoi(line);
+		getline(ifs, line);
+		depth_double = stof(line);
+		getline(ifs, line);
+		end_depth_double = stof(line);
+		getline(ifs, line);
+		cell_value_depth_double = stof(line);
+		getline(ifs, line);
+		cell_value_end_depth_double = stof(line);
+		getline(ifs, line);
+		book_accept_double = stof(line);
+	}
+	ifs.close();
+
 	const Font pulldown_font(15);
 	const Array<String> player_items = { U"先手", U"後手", U"人間同士", U"AI同士"};
 	const Array<String> hint_items = {U"ヒントあり", U"ヒントなし"};
 	const Array<String> value_items = { U"評価値表示", U"評価値非表示"};
-	Pulldown pulldown_player{ player_items, pulldown_font, Point{145, 0}, ai_player};
-	Pulldown pulldown_hint{hint_items, pulldown_font, Point{235, 0}, show_cell_value};
-	Pulldown pulldown_value{value_items, pulldown_font, Point{340, 0}, show_value};
+	Pulldown pulldown_player{ player_items, pulldown_font, Point{145, 0}, player_default};
+	Pulldown pulldown_hint{hint_items, pulldown_font, Point{235, 0}, hint_default};
+	Pulldown pulldown_value{value_items, pulldown_font, Point{340, 0}, value_default};
 
 	Graph graph;
 	graph.sx = 550;
@@ -270,14 +293,14 @@ void Main() {
 		for (int i = 0; i < hw2; ++i)
 			cell_value_thinking = cell_value_thinking || (cell_value_state[i] == 1);
 		SimpleGUI::Slider(U"中盤{:.0f}手読み"_fmt(depth_double), depth_double, 1, 60, Vec2(600, 5), 150, 250, !thinking);
-		depth = round(depth_double);
 		SimpleGUI::Slider(U"終盤{:.0f}空読み"_fmt(end_depth_double), end_depth_double, 1, 60, Vec2(600, 40), 150, 250, !thinking);
-		end_depth = round(end_depth_double);
 		SimpleGUI::Slider(U"ヒント中盤{:.0f}手読み"_fmt(cell_value_depth_double), cell_value_depth_double, 1, 60, Vec2(550, 75), 200, 250, !cell_value_thinking);
-		cell_value_depth = round(cell_value_depth_double);
 		SimpleGUI::Slider(U"ヒント終盤{:.0f}空読み"_fmt(cell_value_end_depth_double), cell_value_end_depth_double, 1, 60, Vec2(550, 110), 200, 250, !cell_value_thinking);
-		cell_value_end_depth = round(cell_value_end_depth_double);
 		SimpleGUI::Slider(U"book誤差{:.0f}石"_fmt(book_accept_double), book_accept_double, 0, 60, Vec2(550, 145), 200, 250);
+		depth = round(depth_double);
+		end_depth = round(end_depth_double);
+		cell_value_depth = round(cell_value_depth_double);
+		cell_value_end_depth = round(cell_value_end_depth_double);
 		book_accept = round(book_accept_double);
 
 		for (const auto& cell : cells)
@@ -486,8 +509,8 @@ void Main() {
 				sout << setfill('0') << setw(2) << newtime.tm_sec;
 				string second = sout.str();
 				string info = year + month + day + "_" + hour + minute + second + "_" + to_string(depth) + "_" + to_string(end_depth) + "_" + to_string(ai_player);
-				ofstream of("record/" + info + ".txt");
-				if (of.fail()) {
+				ofstream ofs("record/" + info + ".txt");
+				if (ofs.fail()) {
 					saved = 2;
 				}
 				else {
@@ -501,8 +524,8 @@ void Main() {
 							int_result -= hw2 - sum_stones;
 						result = to_string(int_result);
 					}
-					of << record_stdstr << " " << bd.count(0) << " " << bd.count(1) << " " << result << endl;
-					of.close();
+					ofs << record_stdstr << " " << bd.count(0) << " " << bd.count(1) << " " << result << endl;
+					ofs.close();
 					saved = 1;
 				}
 			}
@@ -775,4 +798,16 @@ void Main() {
 			graph.draw();
 		
 	}
+	ofstream ofs("resources/settings.txt");
+	if (!ofs.fail()) {
+		ofs << pulldown_player.getIndex() << endl;
+		ofs << pulldown_hint.getIndex() << endl;
+		ofs << pulldown_value.getIndex() << endl;
+		ofs << depth << endl;
+		ofs << end_depth << endl;
+		ofs << cell_value_depth << endl;
+		ofs << cell_value_end_depth << endl;
+		ofs << book_accept << endl;
+	}
+	ofs.close();
 }
