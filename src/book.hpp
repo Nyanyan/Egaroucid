@@ -93,8 +93,8 @@ class book{
                     while(p_node != NULL){
                         if(compare_key(nb.b, p_node->k)){
                             policies.push_back(coord);
-                            values.push_back((b->p ? -1 : 1) * p_node->value);
-                            max_value = max(max_value, (b->p ? -1 : 1) * p_node->value);
+                            values.push_back((b->p ? 1 : -1) * p_node->value);
+                            max_value = max(max_value, (b->p ? 1 : -1) * p_node->value);
                             break;
                         }
                         p_node = p_node->p_n_node;
