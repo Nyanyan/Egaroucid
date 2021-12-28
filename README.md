@@ -3,6 +3,8 @@ Strong Othello AI based on Egaroucid4, which got 1st place in the world
 
 **You can use the [application in Japanese](#application_version) or use Python [tkinter version](#tkinter_version)**
 
+**You can [play light version of this AI on the Web](https://www.egaroucid.nyanyan.dev/).**
+
 
 
 <a id="application_version"></a>
@@ -259,7 +261,7 @@ book誤差は、ある局面において複数の手がbookに登録されてい
 
 ### 定石
 
-画面左上に定石名が表示できる場合は表示されます。
+画面中央上に定石名が表示できる場合は表示されます。
 
 定石データはこちらのものを使っています: http://evaccaneer.livedoor.blog/archives/11101657.html
 
@@ -272,8 +274,6 @@ book誤差は、ある局面において複数の手がbookに登録されてい
 ## Abstract
 
 Egaroucid5 is an Othello AI.
-
-**You can [play light version of this AI on the Web](https://www.egaroucid.nyanyan.dev/).**
 
 There are former versions:
 
