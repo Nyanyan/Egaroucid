@@ -13,6 +13,8 @@ Strong Othello AI Application based on Egaroucid4, which got 1st place in the wo
 
 **The main application is only in Japanese.**
 
+このアプリケーションの仕様について、不便なところや「この機能がほしい！」といった要望を募集しています。作者のTwitter([@Nyanyan_Cube](https://twitter.com/Nyanyan_Cube)または[@takuto_yamana](https://twitter.com/takuto_yamana))またはGitHubのissueやpull requestなどから要望をお送りください。
+
 
 
 ### 目次
