@@ -39,7 +39,7 @@ int sa_phase;
 #define n_raw_params (50 + 3)
 
 double alpha;
-#define beta 0.04
+#define beta 0.1
 
 const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10};
 const int eval_sizes[n_eval] = {p38, p38, p38, p35, p36, p37, p38, p310, p310, p310, p310, p39, p310, max_surround * max_surround, max_surround * max_canput * 2, max_surround * max_canput * 2};
