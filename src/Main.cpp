@@ -168,6 +168,7 @@ void Main() {
 	Size window_size = Size(1000, 700);
 	Window::Resize(window_size);
 	Window::SetTitle(U"Egaroucid5");
+	System::SetTerminationTriggers(UserAction::NoAction);
 	constexpr int offset_y = 150;
 	constexpr int offset_x = 60;
 	constexpr int cell_hw = 50;
@@ -237,6 +238,7 @@ void Main() {
 	int input_board_state = 0, input_record_state = 0;
 	double depth_double = 12, end_depth_double = 20, cell_value_depth_double = 10, cell_value_end_depth_double = 18, book_accept_double = 2;
 	int board_start_moves, finish_moves, max_cell_value = -inf, start_moves = 0;
+	bool book_changed = false, closing = false;
 
 	ifstream ifs("resources/settings.txt");
 	if (!ifs.fail()) {
@@ -298,6 +300,60 @@ void Main() {
 				initialized = true;
 			}
 			initializing(U"AI初期化中…").draw(0, 0);
+			continue;
+		}
+
+		if (System::GetUserActions() & UserAction::CloseButtonClicked)
+			closing = true;
+		if (closing){
+			if (book_changed) {
+				initializing(U"bookが変更されました。保存しますか？").draw(0, 0);
+				if (SimpleGUI::Button(U"保存する", Vec2(0, 150))) {
+					book.save();
+					ofstream ofs("resources/settings.txt");
+					if (!ofs.fail()) {
+						ofs << pulldown_player.getIndex() << endl;
+						ofs << pulldown_hint.getIndex() << endl;
+						ofs << pulldown_value.getIndex() << endl;
+						ofs << depth << endl;
+						ofs << end_depth << endl;
+						ofs << cell_value_depth << endl;
+						ofs << cell_value_end_depth << endl;
+						ofs << book_accept << endl;
+					}
+					ofs.close();
+					System::Exit();
+				}
+				if (SimpleGUI::Button(U"保存しない", Vec2(0, 300))) {
+					ofstream ofs("resources/settings.txt");
+					if (!ofs.fail()) {
+						ofs << pulldown_player.getIndex() << endl;
+						ofs << pulldown_hint.getIndex() << endl;
+						ofs << pulldown_value.getIndex() << endl;
+						ofs << depth << endl;
+						ofs << end_depth << endl;
+						ofs << cell_value_depth << endl;
+						ofs << cell_value_end_depth << endl;
+						ofs << book_accept << endl;
+					}
+					ofs.close();
+					System::Exit();
+				}
+			} else {
+				ofstream ofs("resources/settings.txt");
+				if (!ofs.fail()) {
+					ofs << pulldown_player.getIndex() << endl;
+					ofs << pulldown_hint.getIndex() << endl;
+					ofs << pulldown_value.getIndex() << endl;
+					ofs << depth << endl;
+					ofs << end_depth << endl;
+					ofs << cell_value_depth << endl;
+					ofs << cell_value_end_depth << endl;
+					ofs << book_accept << endl;
+				}
+				ofs.close();
+				System::Exit();
+			}
 			continue;
 		}
 
@@ -728,6 +784,7 @@ void Main() {
 											cell_value_state[coord] = 0;
 											change_book_value_str.clear();
 											changing_book = false;
+											book_changed = true;
 										}
 									}
 								} else {
@@ -837,16 +894,4 @@ void Main() {
 			graph.draw();
 		
 	}
-	ofstream ofs("resources/settings.txt");
-	if (!ofs.fail()) {
-		ofs << pulldown_player.getIndex() << endl;
-		ofs << pulldown_hint.getIndex() << endl;
-		ofs << pulldown_value.getIndex() << endl;
-		ofs << depth << endl;
-		ofs << end_depth << endl;
-		ofs << cell_value_depth << endl;
-		ofs << cell_value_end_depth << endl;
-		ofs << book_accept << endl;
-	}
-	ofs.close();
 }

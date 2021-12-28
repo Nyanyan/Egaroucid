@@ -1,7 +1,8 @@
-#pragma once
+﻿#pragma once
 #include <iostream>
 #include <fstream>
 #include <unordered_map>
+#include <unordered_set>
 #include "evaluate.hpp"
 #include "board.hpp"
 
@@ -126,13 +127,31 @@ class book{
             while(p_node != NULL){
                 if(compare_key(b.b, p_node->k)){
                     register_symmetric_book(b, value, p_node->line);
-                    save_book(b, value, p_node->line);
+                    //save_book(b, value, p_node->line);
                     return;
                 }
                 p_node = p_node->p_n_node;
             }
             register_symmetric_book(b, value, -1);
-            save_book(b, value, -1);
+            //save_book(b, value, -1);
+        }
+
+        inline void save(){
+            remove("resources/book_backup.txt");
+            rename("resources/book.txt", "resources/book_backup.txt");
+            ofstream ofs("resources/book.txt");
+            if (ofs.fail()){
+                cerr << "book file not exist" << endl;
+                exit(1);
+            }
+            unordered_set<int> saved_idxes;
+            for (int i = 0; i < book_hash_table_size; ++i){
+                book_node *p_node = this->book[i];
+                while(p_node != NULL){
+                    ofs << create_book_data(p_node->k, p_node->value) << endl;
+                    p_node = p_node->p_n_node;
+                }
+            }
         }
 
     private:
@@ -207,6 +226,13 @@ class book{
             res += " ";
             res += to_string(value);
             return res;
+        }
+
+        inline string create_book_data(uint_fast16_t key[], int value){
+            board b;
+            for (int i = 0; i < hw; ++i)
+                b.b[i] = key[i];
+            create_book_data(b, value);
         }
 
         inline void save_book(board b, int value, int line){
