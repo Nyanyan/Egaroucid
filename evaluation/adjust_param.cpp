@@ -39,7 +39,7 @@ int sa_phase;
 #define n_raw_params (50 + 3)
 
 double alpha;
-#define beta 0.1
+#define beta 0.15
 
 const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10};
 const int eval_sizes[n_eval] = {p38, p38, p38, p35, p36, p37, p38, p310, p310, p310, p310, p39, p310, max_surround * max_surround, max_surround * max_canput * 2, max_surround * max_canput * 2};
@@ -52,6 +52,7 @@ vector<int> test_memo[n_eval][max_evaluate_idx];
 vector<double> test_scores, pre_calc_scores;
 unordered_set<int> used_idxes[n_eval];
 vector<int> used_idxes_vector[n_eval];
+int rev_idxes[n_patterns][max_evaluate_idx];
 
 
 inline unsigned long long tim(){
@@ -382,44 +383,12 @@ inline int calc_rev_idx(int pattern_idx, int pattern_size, int idx){
     return res;
 }
 
-inline double first_scoring(){
-    int i, j;
-    double score, avg_score, res = 0.0, err;
-    avg_score = 0.0;
-    for (i = 0; i < nums; ++i){
-        score = calc_score(sa_phase, i);
-        err = loss(test_labels[i] - score, nums);
-        avg_score += err;
-        test_scores[i] = err;
-    }
-    scores = avg_score;
-    res = avg_score;
-    return res;
-}
-
-inline double scoring(int pattern, int idx){
-    int i, j;
-    double score, avg_score, res = 0.0, err;
-    int data_size = nums;
-    avg_score = scores;
-    for (i = 0; i < test_memo[pattern][idx].size(); ++i){
-        avg_score -= test_scores[test_memo[pattern][idx][i]];
-        score = calc_score(sa_phase, test_memo[pattern][idx][i]);
-        err = loss(test_labels[test_memo[pattern][idx][i]] - score, data_size);
-        test_scores[test_memo[pattern][idx][i]] = err;
-        avg_score += err;
-    }
-    scores = avg_score;
-    res = scores;
-    return res;
-}
-
 inline void scoring_mae(){
     int i, j, score;
     double avg_score, res = 0.0;
     avg_score = 0;
     for (i = 0; i < nums; ++i){
-        score = calc_score(sa_phase, i);
+        score = pre_calc_scores[i];
         avg_score += fabs(test_labels[i] - (double)score) / nums;
     }
     cerr << " " << avg_score << "                   ";
@@ -429,7 +398,7 @@ inline double scoring_next_step(int pattern, int idx){
     double score, res = 0.0, err;
     int data_size = nums;
     for (const int &i: test_memo[pattern][idx]){
-        score = pre_calc_scores[i]; //calc_score(sa_phase, test_memo[pattern][idx][i]);
+        score = pre_calc_scores[i];
         err = test_labels[i] - score;
         res += err;
     }
@@ -444,10 +413,15 @@ inline void next_step(){
     for (pattern = 0; pattern < n_eval; ++pattern){
         for (const int &idx: used_idxes_vector[pattern]){
             if (pattern < n_patterns){
-                rev_idx = calc_rev_idx(pattern, pattern_sizes[pattern], idx);
-                err = scoring_next_step(pattern, idx) + scoring_next_step(pattern, rev_idx);
-                eval_arr[sa_phase][pattern][idx] += 2.0 * alpha * err;
-                eval_arr[sa_phase][pattern][rev_idx] += 2.0 * alpha * err;
+                rev_idx = rev_idxes[pattern][idx];
+                if (idx < rev_idx){
+                    err = scoring_next_step(pattern, idx) + scoring_next_step(pattern, rev_idx);
+                    eval_arr[sa_phase][pattern][idx] += 2.0 * alpha * err;
+                    eval_arr[sa_phase][pattern][rev_idx] += 2.0 * alpha * err;
+                } else if (idx == rev_idx){
+                    err = scoring_next_step(pattern, idx);
+                    eval_arr[sa_phase][pattern][idx] += 2.0 * alpha * err;
+                }
             } else{
                 err = scoring_next_step(pattern, idx);
                 eval_arr[sa_phase][pattern][idx] += 2.0 * alpha * err;
@@ -476,18 +450,27 @@ void sd(unsigned long long tl){
     cerr << endl;
 }
 
+void init(){
+    int i, j;
+    for (i = 0; i < n_patterns; ++i){
+        for (j = 0; j < eval_sizes[i]; ++j)
+            rev_idxes[i][j] = calc_rev_idx(i, pattern_sizes[i], j);
+    }
+}
+
 int main(int argc, char *argv[]){
     sa_phase = atoi(argv[1]);
     cerr << sa_phase << endl;
     int i, j;
 
     unsigned long long hour = 0;
-    unsigned long long minute = 30;
+    unsigned long long minute = 10;
     unsigned long long second = 0;
     minute += hour * 60;
     second += minute * 60;
 
     board_init();
+    init();
     input_param_onephase((string)(argv[2]));
     input_test_data(0);
 

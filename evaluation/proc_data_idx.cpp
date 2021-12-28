@@ -328,7 +328,7 @@ inline void convert_idx(string str){
     cout << score << endl;
 }
 
-#define n_files 270
+#define n_files 2
 
 int main(){
     board_init();
