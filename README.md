@@ -11,7 +11,18 @@ Strong Othello AI based on Egaroucid4, which got 1st place in the world
 
 
 
+### 目次
+
+* [基本操作](#basic)
+  * [フォルダ構成](#folder)
+
+
+
+<a id="basic"></a>
+
 ### 基本操作
+
+<a id="folder"></a>
 
 #### フォルダ構成
 
