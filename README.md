@@ -28,6 +28,8 @@ Strong Othello AI based on Egaroucid4, which got 1st place in the world
 
 
 
+  
+
 <a id="folder"></a>
 
 ### フォルダ構成
@@ -45,6 +47,8 @@ recordフォルダ
 ```
 
 ```Egaroucid5.exe```をダブルクリックなどで実行するとアプリが起動します。
+
+  
 
 <a id="battle"></a>
 
