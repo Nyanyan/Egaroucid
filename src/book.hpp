@@ -148,7 +148,10 @@ class book{
             for (int i = 0; i < book_hash_table_size; ++i){
                 book_node *p_node = this->book[i];
                 while(p_node != NULL){
-                    ofs << create_book_data(p_node->k, p_node->value) << endl;
+					if (saved_idxes.find(p_node->line) == saved_idxes.end()) {
+						saved_idxes.emplace(p_node->line);
+						ofs << create_book_data(p_node->k, p_node->value) << endl;
+					}
                     p_node = p_node->p_n_node;
                 }
             }
@@ -232,7 +235,7 @@ class book{
             board b;
             for (int i = 0; i < hw; ++i)
                 b.b[i] = key[i];
-            create_book_data(b, value);
+            return create_book_data(b, value);
         }
 
         inline void save_book(board b, int value, int line){
