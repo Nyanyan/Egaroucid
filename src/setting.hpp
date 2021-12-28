@@ -22,6 +22,10 @@
 #define USE_END_PO true
 
 
+/* smoothing */
+#define USE_MID_SMOOTH true
+
+
 
 /* multi threading*/
 

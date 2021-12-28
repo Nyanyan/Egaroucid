@@ -14,7 +14,7 @@
 
 using namespace std;
 
-int nega_alpha_ordering_final_mpc(board *b, bool skipped, int depth, int alpha, int beta){
+int nega_alpha_ordering_final_mpc(board *b, bool skipped, int depth, int alpha, int beta, double use_mpct){
     if (depth <= simple_mid_threshold)
         return nega_alpha(b, skipped, depth, alpha, beta);
     ++searched_nodes;
@@ -23,9 +23,9 @@ int nega_alpha_ordering_final_mpc(board *b, bool skipped, int depth, int alpha, 
             return alpha;
     #endif
     if (mpc_min_depth <= depth && depth <= mpc_max_depth){
-        if (mpc_higher(b, skipped, depth, beta, mpct))
+        if (mpc_higher(b, skipped, depth, beta, use_mpct))
             return beta;
-        if (mpc_lower(b, skipped, depth, alpha, mpct))
+        if (mpc_lower(b, skipped, depth, alpha, use_mpct))
             return alpha;
     }
     vector<board> nb;
@@ -49,13 +49,13 @@ int nega_alpha_ordering_final_mpc(board *b, bool skipped, int depth, int alpha, 
             rb.b[i] = b->b[i];
         rb.p = 1 - b->p;
         rb.n = b->n;
-        return -nega_alpha_ordering_final_mpc(&rb, true, depth, -beta, -alpha);
+        return -nega_alpha_ordering_final_mpc(&rb, true, depth, -beta, -alpha, use_mpct);
     }
     if (canput >= 2)
         sort(nb.begin(), nb.end());
     int g, v = -inf;
     for (board &nnb: nb){
-        g = -nega_alpha_ordering_final_mpc(&nnb, false, depth - 1, -beta, -alpha);
+        g = -nega_alpha_ordering_final_mpc(&nnb, false, depth - 1, -beta, -alpha, use_mpct);
         alpha = max(alpha, g);
         if (beta <= alpha)
             return alpha;
@@ -68,14 +68,14 @@ inline bool mpc_higher_final(board *b, bool skipped, int depth, int beta, double
     int bound = beta + t * mpcsd_final[depth - mpc_min_depth_final];
     if (bound > sc_w)
         return false;
-    return nega_alpha_ordering_final_mpc(b, skipped, mpcd[depth], bound - step, bound) >= bound;
+    return nega_alpha_ordering_final_mpc(b, skipped, mpcd[depth], bound - step, bound, t) >= bound;
 }
 
 inline bool mpc_lower_final(board *b, bool skipped, int depth, int alpha, double t){
     int bound = alpha - t * mpcsd_final[depth - mpc_min_depth_final];
     if (bound < -sc_w)
         return false;
-    return nega_alpha_ordering_final_mpc(b, skipped, mpcd[depth], bound, bound + step) <= bound;
+    return nega_alpha_ordering_final_mpc(b, skipped, mpcd[depth], bound, bound + step, t) <= bound;
 }
 
 inline int last1(board *b, bool skipped, int p0){

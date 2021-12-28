@@ -96,10 +96,40 @@ int nega_alpha(board *b, bool skipped, int depth, int alpha, int beta){
     board nb;
     bool passed = true;
     int g, v = -inf;
+    #if USE_MID_SMOOTH
+        if (depth == 1){
+            int nv = mid_evaluate(b, skipped);
+            for (const int &cell: vacant_lst){
+                if (b->legal(cell)){
+                    passed = false;
+                    b->move(cell, &nb);
+                    g = (-nega_alpha(&nb, false, depth - 1, -beta, -alpha) + nv) / 2;
+                    if (beta <= g)
+                        return g;
+                    alpha = max(alpha, g);
+                    v = max(v, g);
+                }
+            }
+            if (passed){
+                if (skipped)
+                    return end_evaluate(b);
+                board rb;
+                for (int i = 0; i < b_idx_num; ++i)
+                    rb.b[i] = b->b[i];
+                rb.p = 1 - b->p;
+                rb.n = b->n;
+                return -nega_alpha(&rb, true, depth, -beta, -alpha);
+            }
+            return v;
+        }
+    #endif
     for (const int &cell: vacant_lst){
         if (b->legal(cell)){
             passed = false;
             b->move(cell, &nb);
+            //if (depth == 1)
+            //    g = (-nega_alpha(&nb, false, depth - 1, -beta, -alpha) + nv) / 2;
+            //else
             g = -nega_alpha(&nb, false, depth - 1, -beta, -alpha);
             if (beta <= g)
                 return g;
@@ -354,7 +384,7 @@ int mtd(board *b, bool skipped, int depth, int l, int u, bool use_mpc, double us
             l = g;
         g = (l + u) / 2;
     }
-    return nega_scout(b, skipped, depth, l, u, use_mpc, mpct);
+    return nega_scout(b, skipped, depth, l, u, use_mpc, use_mpct);
 }
 
 inline search_result midsearch(board b, long long strt, int max_depth){
