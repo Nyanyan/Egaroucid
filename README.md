@@ -23,7 +23,7 @@ Strong Othello AI based on Egaroucid4, which got 1st place in the world
 * [ヒント表示](#hint)
 * [評価値/グラフ表示](#value)
 * [棋譜解析](#analyze)
-* [打った手の履歴](#history)
+* [履歴](#history)
 * [入出力](#inout)
 * [book](#book)
 * [定石](#joseki)
@@ -131,7 +131,7 @@ book登録局面の場合は以下のように評価値と```book```という表
 
 <a id="history"></a>
 
-### 打った手の履歴
+### 履歴
 
 対局中または対局終了後には、画面中央下に```<```と```>```のボタンが現れます。このボタンを押すことで、手を戻したり進めたりできます。ただし、表示される局面は閲覧専用で、そこから手を進めることはできません
 
