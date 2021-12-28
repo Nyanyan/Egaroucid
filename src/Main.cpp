@@ -134,11 +134,9 @@ inline future<search_result> ai(board bd, int depth, int end_depth, int bd_arr[]
 		result.nps = 0;
 		return async(launch::async, return_result, result);
 	}
-	if (bd.n < book_stones) {
-		book_value book_result = book.get_random(&bd, (double)book_accept);
-		if (book_result.policy != -1)
-			return async(launch::async, book_return, bd, book_result);
-	}
+	book_value book_result = book.get_random(&bd, book_accept);
+	if (book_result.policy != -1)
+		return async(launch::async, book_return, bd, book_result);
 	if (bd.n >= hw2 - end_depth)
 		return async(launch::async, endsearch, bd, tim());
 	return async(launch::async, midsearch, bd, tim(), depth);
@@ -238,7 +236,7 @@ void Main() {
 	int saved = 0;
 	int input_board_state = 0, input_record_state = 0;
 	double depth_double = 12, end_depth_double = 20, cell_value_depth_double = 10, cell_value_end_depth_double = 18, book_accept_double = 2;
-	int board_start_moves;
+	int board_start_moves, finish_moves, max_cell_value = -inf, start_moves = 0;
 
 	ifstream ifs("resources/settings.txt");
 	if (!ifs.fail()) {
@@ -472,22 +470,24 @@ void Main() {
 			playing = false;
 		}
 
-		if (analysys_n_moves <= n_moves){
+		if (analysys_n_moves < (int)board_history.size()){
 			SimpleGUI::Button(U"棋譜解析", Vec2(0, 50), 120, false);
 			if (!analysys_start) {
-				board_history[analysys_n_moves - n_moves + (int)board_history.size() - 1].translate_to_arr(bd_arr);
-				create_vacant_lst(board_history[analysys_n_moves - n_moves + (int)board_history.size() - 1], bd_arr);
-				future_val = calc_value_nopolicy(board_history[analysys_n_moves - n_moves + (int)board_history.size() - 1], depth, end_depth);
+				board_history[analysys_n_moves].translate_to_arr(bd_arr);
+				create_vacant_lst(board_history[analysys_n_moves], bd_arr);
+				future_val = calc_value_nopolicy(board_history[analysys_n_moves], depth, end_depth);
 				analysys_start = true;
 			} else if (future_val.wait_for(seconds0) == future_status::ready) {
-				int val = (board_history[analysys_n_moves - n_moves + (int)board_history.size() - 1].p ? -1 : 1) * round((double)future_val.get().value / step);
-				graph.push(analysys_n_moves - 1, val);
+				int val = (board_history[analysys_n_moves].p ? -1 : 1) * round((double)future_val.get().value / step);
+				graph.push(analysys_n_moves + start_moves, val);
 				++analysys_n_moves;
 				analysys_start = false;
 			}
-		} else if (SimpleGUI::Button(U"棋譜解析", Vec2(0, 50), 120)) {
+		} else if (SimpleGUI::Button(U"棋譜解析", Vec2(0, 50), 120, !thinking)) {
 			graph.clear();
-			analysys_n_moves = 1;
+			n_moves = board_history[board_history.size() - 1].n - 4;
+			bd = board_history[board_history.size() - 1];
+			analysys_n_moves = 0;
 			analysys_start = false;
 		} else {
 			analysys_n_moves = 1000;
@@ -610,12 +610,13 @@ void Main() {
 			copied = false;
 			input_board_state = 0;
 			input_record_state = 0;
+			start_moves = bd.n - 4;
 		}
 
 		record_ui(record).draw(0, 550);
 
 		if (playing) {
-			if (finished)
+			if (finished && n_moves == finish_moves)
 				move_font(U"終局").draw(420, 650);
 			else
 				move_font(n_moves + 1, U"手目").draw(420, 650);
@@ -634,6 +635,7 @@ void Main() {
 					create_vacant_lst(bd, bd_arr);
 					for (int i = 0; i < hw2; ++i)
 						cell_value_state[i] = 0;
+					max_cell_value = -inf;
 				}
 				if (SimpleGUI::Button(U">", Vec2(600, 650), 50)) {
 					if (n_moves - board_start_moves < board_history.size() - 1)
@@ -643,6 +645,7 @@ void Main() {
 					create_vacant_lst(bd, bd_arr);
 					for (int i = 0; i < hw2; ++i)
 						cell_value_state[i] = 0;
+					max_cell_value = -inf;
 				}
 			}
 		}
@@ -655,7 +658,7 @@ void Main() {
 						stones[coord].draw(Palette::Black);
 					else if (bd_arr[coord] == white)
 						stones[coord].draw(Palette::White);
-					if (last_played[n_moves] == coord)
+					if (last_played[n_moves - start_moves] == coord)
 						Circle(cell_center_x[coord % hw], cell_center_y[coord / hw], 5).draw(Palette::Red);
 					else if (bd.legal(coord)) {
 						if ((bd.p != ai_player && ai_player != both_ai_define) || n_moves != board_history.size() - 1){
@@ -673,17 +676,21 @@ void Main() {
 									cell_values[coord] = round(-(double)cell_value_result.value / step);
 									cell_depth[coord] = cell_value_result.depth;
 									cell_value_state[coord] = 2;
+									max_cell_value = max(max_cell_value, cell_values[coord]);
 								}
 							}
 							else if (cell_value_state[coord] == 2) {
 								if (show_cell_value == 0) {
-									cell_value_font(cell_values[coord]).draw(offset_x + (coord % hw) * cell_hw + 2, offset_y + (coord / hw) * cell_hw);
+									Color color = Palette::White;
+									if (cell_values[coord] == max_cell_value)
+										color = Palette::Yellow;
+									cell_value_font(cell_values[coord]).draw(offset_x + (coord % hw) * cell_hw + 2, offset_y + (coord / hw) * cell_hw, color);
 									if (cell_depth[coord] == final_define_value)
-										cell_depth_font(cell_depth[coord], U"%").draw(offset_x + (coord % hw) * cell_hw + 2, offset_y + (coord / hw) * cell_hw + 21);
+										cell_depth_font(cell_depth[coord], U"%").draw(offset_x + (coord % hw) * cell_hw + 2, offset_y + (coord / hw) * cell_hw + 21, color);
 									else if (cell_depth[coord] == book_define_value)
-										cell_depth_font(U"book").draw(offset_x + (coord % hw) * cell_hw + 2, offset_y + (coord / hw) * cell_hw + 21);
+										cell_depth_font(U"book").draw(offset_x + (coord % hw) * cell_hw + 2, offset_y + (coord / hw) * cell_hw + 21, color);
 									else
-										cell_depth_font(cell_depth[coord], U"手").draw(offset_x + (coord % hw) * cell_hw + 2, offset_y + (coord / hw) * cell_hw + 21);
+										cell_depth_font(cell_depth[coord], U"手").draw(offset_x + (coord % hw) * cell_hw + 2, offset_y + (coord / hw) * cell_hw + 21, color);
 								}
 								else
 									legals[coord].draw(Palette::Blue);
@@ -696,10 +703,13 @@ void Main() {
 								record_copy.replace(U"\n", U"");
 								if (record_copy.size() % 40 == 0)
 									record += U"\n";
+								max_cell_value = -inf;
 								last_played.push_back(coord);
 								bd.translate_to_arr(bd_arr);
 								create_vacant_lst(bd, bd_arr);
 								finished = check_pass(&bd);
+								if (finished)
+									finish_moves = n_moves;
 								board_history.push_back(bd);
 								for (int i = 0; i < hw2; ++i)
 									cell_value_state[i] = 0;
@@ -748,10 +758,13 @@ void Main() {
 						record_copy.replace(U"\n", U"");
 						if (record_copy.size() % 40 == 0)
 							record += U"\n";
+						max_cell_value = -inf;
 						last_played.push_back(result.policy);
 						bd.translate_to_arr(bd_arr);
 						create_vacant_lst(bd, bd_arr);
 						finished = check_pass(&bd);
+						if (finished)
+							finish_moves = n_moves;
 						board_history.push_back(bd);
 						saved = 0;
 					}
