@@ -343,11 +343,11 @@ int nega_scout(board *b, bool skipped, const int depth, int alpha, int beta, boo
     return v;
 }
 
-int mtd(board *b, bool skipped, int depth, int l, int u, bool use_mpc){
+int mtd(board *b, bool skipped, int depth, int l, int u, bool use_mpc, double use_mpct){
     int g = mid_evaluate(b), beta;
     while (u - l > mtd_threshold){
         beta = g;
-        g = nega_alpha_ordering(b, skipped, depth, beta - search_epsilon, beta, true, use_mpc, mpct);
+        g = nega_alpha_ordering(b, skipped, depth, beta - search_epsilon, beta, true, use_mpc, use_mpct);
         if (g < beta)
             u = g;
         else
@@ -381,6 +381,19 @@ inline search_result midsearch(board b, long long strt, int max_depth){
     //int order_l, order_u;
     int depth = min(hw2 - b.n - 1, max_depth - 1);
     bool use_mpc = depth >= 11 ? true : false;
+    double use_mpct = 1.7;
+    if (depth >= 15)
+        use_mpct = 1.5;
+    if (depth >= 17)
+        use_mpct = 1.3;
+    if (depth >= 19)
+        use_mpct = 1.0;
+    if (depth >= 21)
+        use_mpct = 0.7;
+    if (depth >= 23)
+        use_mpct = 0.4;
+    if (depth >= 25)
+        use_mpct = 0.3;
     //for (int depth = min(5, max(0, max_depth - 5)); depth <= min(hw2 - b.n, max_depth - 1); ++depth){
     alpha = -inf;
     beta = inf;
@@ -400,15 +413,15 @@ inline search_result midsearch(board b, long long strt, int max_depth){
     }
     if (canput >= 2)
         sort(nb.begin(), nb.end());
-    g = -mtd(&nb[0], false, depth, -beta, -alpha, use_mpc);
+    g = -mtd(&nb[0], false, depth, -beta, -alpha, use_mpc, use_mpct);
     transpose_table.reg(&nb[0], (int)(nb[0].hash() & search_hash_mask), g, g);
     alpha = max(alpha, g);
     tmp_policy = nb[0].policy;
     for (i = 1; i < canput; ++i){
-        g = -nega_alpha_ordering(&nb[i], false, depth, -alpha - search_epsilon, -alpha, true, use_mpc, mpct);
+        g = -nega_alpha_ordering(&nb[i], false, depth, -alpha - search_epsilon, -alpha, true, use_mpc, use_mpct);
         if (alpha < g){
             alpha = g;
-            g = -mtd(&nb[i], false, depth, -beta, -alpha, use_mpc);
+            g = -mtd(&nb[i], false, depth, -beta, -alpha, use_mpc, use_mpct);
             transpose_table.reg(&nb[i], (int)(nb[i].hash() & search_hash_mask), g, g);
             if (alpha < g){
                 alpha = g;

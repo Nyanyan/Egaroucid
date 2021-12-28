@@ -895,6 +895,21 @@ inline search_result endsearch(board b, long long strt){
     transpose_table.hash_reg = 0;
     int max_depth = hw2 - b.n - 1;
     bool use_mpc = max_depth >= 19 ? true : false;
+    double use_mpct = 2.0;
+    if (max_depth >= 21)
+        use_mpct = 1.7;
+    if (max_depth >= 23)
+        use_mpct = 1.5;
+    if (max_depth >= 25)
+        use_mpct = 1.3;
+    if (max_depth >= 27)
+        use_mpct = 1.1;
+    if (max_depth >= 29)
+        use_mpct = 0.9;
+    if (max_depth >= 31)
+        use_mpct = 0.6;
+    if (max_depth >= 33)
+        use_mpct = 0.4;
     //int pre_search_depth = min(17, max_depth - simple_end_threshold);
     transpose_table.init_now();
     transpose_table.init_prev();
@@ -915,13 +930,13 @@ inline search_result endsearch(board b, long long strt){
     long long final_strt = tim();
     searched_nodes = 0;
     if (nb[0].n < hw2 - 5){
-        alpha = -nega_scout_final(&nb[0], false, max_depth, -beta, -alpha, use_mpc, mpct_final);
+        alpha = -nega_scout_final(&nb[0], false, max_depth, -beta, -alpha, use_mpc, use_mpct);
         //alpha = -mtd_final(&nb[0], false, max_depth, -beta, -alpha, prev_vals[0]);
         tmp_policy = nb[0].policy;
         for (i = 1; i < canput; ++i){
-            g = -nega_alpha_ordering_final(&nb[i], false, max_depth, -alpha - step, -alpha, multi_thread_depth, -1, use_mpc, mpct_final);
+            g = -nega_alpha_ordering_final(&nb[i], false, max_depth, -alpha - step, -alpha, multi_thread_depth, -1, use_mpc, use_mpct);
             if (alpha < g){
-                g = -nega_scout_final(&nb[i], false, max_depth, -beta, -g, use_mpc, mpct_final);
+                g = -nega_scout_final(&nb[i], false, max_depth, -beta, -g, use_mpc, use_mpct);
                 //g = -mtd_final(&nb[i], false, max_depth, -beta, -g, prev_vals[i]);
                 if (alpha < g){
                     alpha = g;
