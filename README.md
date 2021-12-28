@@ -1,5 +1,5 @@
 # Egaroucid5
-Strong Othello AI based on Egaroucid4, which got 1st place in the world
+Strong Othello AI Application based on Egaroucid4, which got 1st place in the world    
 
 **You can use the [application in Japanese](#application_version) or use Python [tkinter version](#tkinter_version)**
 
