@@ -227,8 +227,8 @@ def collect_data(num, boards):
 
 games = []
 
-for idx in range(109): #range(1111111, 1111112):
+for idx in range(2, 124): #range(1111111, 1111112):
     raw_data = ''
     with open('third_party/self_play/' + digit(idx, 7) + '.txt', 'r') as f:
         raw_data = f.read()
-    collect_data(127 + idx, [list(i.split()) for i in raw_data.splitlines()])
+    collect_data(idx, [list(i.split()) for i in raw_data.splitlines()])

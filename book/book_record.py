@@ -62,7 +62,7 @@ exit()
 black_win = 0
 white_win = 0
 
-for i in trange(236):
+for i in trange(2, 124):
     with open('data/' + digit(i, 7) + '.txt', 'r') as f:
         records = f.read().splitlines()
     for datum in records:
@@ -74,84 +74,6 @@ for i in trange(236):
         elif score < 0:
             white_win += 1
 print(len(record_all))
-
-'''
-inf = 1000000000
-with open('third_party/records4.txt', 'r') as f:
-    records = f.read().splitlines()
-for record in records:
-    record_proc = ''
-    for i in range(0, len(record), 2):
-        x = ord(record[i]) - ord('a')
-        y = int(record[i + 1]) - 1
-        record_proc += all_chars[y * 8 + x]
-        if not record_proc in record_all:
-            record_all[record_proc] = [100, inf]
-        else:
-            record_all[record_proc][0] += 100
-            record_all[record_proc][1] += inf
-print(len(record_all))
-print(black_win, white_win)
-
-hand_book = set()
-with open('third_party/records5.txt', 'r') as f:
-    dat_handbook = f.read().splitlines()
-for elem in dat_handbook:
-    hand_book.add(elem)
-
-with open('third_party/records6.txt', 'r') as f:
-    records6 = f.read().splitlines()
-print(len(records6))
-for record in records6:
-    record_proc = ''
-    for i in range(0, len(record), 2):
-        x = ord(record[i]) - ord('a')
-        y = int(record[i + 1]) - 1
-        record_proc += all_chars[y * 8 + x]
-        if i % 4 == 0:
-            if not record_proc in record_all:
-                record_all[record_proc] = [1000, inf * 1000]
-            else:
-                record_all[record_proc][0] += 1000
-                record_all[record_proc][1] += inf * 1000
-        else:
-            if not record_proc in record_all:
-                record_all[record_proc] = [0, 0]
-
-with open('third_party/records7.txt', 'r') as f:
-    records7 = f.read().splitlines()
-print(len(records7))
-for record in records7:
-    record_proc = ''
-    for i in range(0, len(record), 2):
-        x = ord(record[i]) - ord('a')
-        y = int(record[i + 1]) - 1
-        record_proc += all_chars[y * 8 + x]
-        if i % 4 == 2:
-            if not record_proc in record_all:
-                record_all[record_proc] = [1000, inf * 1000]
-            else:
-                record_all[record_proc][0] += 1000
-                record_all[record_proc][1] += inf * 1000
-        else:
-            if not record_proc in record_all:
-                record_all[record_proc] = [0, 0]
-
-with open('third_party/records8.txt', 'r') as f:
-    records8 = f.read().splitlines()
-print(len(records8))
-for record in records8:
-    record_proc = ''
-    for i in range(0, len(record), 2):
-        x = ord(record[i]) - ord('a')
-        y = int(record[i + 1]) - 1
-        record_proc += all_chars[y * 8 + x]
-        if not record_proc in record_all:
-            record_all[record_proc] = [1000, inf * 1000]
-        else:
-            record_all[record_proc][0] += 1000
-            record_all[record_proc][1] += inf * 1000
-'''
 
 book = {}
 
@@ -167,42 +89,117 @@ def calc_value(r):
             return -inf
         val = record_all[r][1] / record_all[r][0]
         #val += 0.01 * record_all[r][0]
-        return val
+        return round(val)
     return -inf
 
 def create_board(record):
+    res = []
     o = othello()
     for i in range(len(record)):
         if not o.check_legal():
             o.player = 1 - o.player
+            o.check_legal()
         coord = char_coord[record[i]]
         if not o.move(coord // hw, coord % hw):
-            return ''
-    res = ''
+            return []
+    board = ''
     for y in range(hw):
         for x in range(hw):
             if o.grid[y][x] == 0:
-                res += '0'
+                board += '0'
             elif o.grid[y][x] == 1:
-                res += '1'
+                board += '1'
             else:
-                res += '.'
+                board += '.'
+    res.append(board)
+    o = othello()
+    for i in range(len(record)):
+        if not o.check_legal():
+            o.player = 1 - o.player
+            o.check_legal()
+        y = char_coord[record[i]] // hw
+        x = char_coord[record[i]] % hw
+        coord = (7 - y) * hw + (7 - x)
+        if not o.move(coord // hw, coord % hw):
+            return []
+    board = ''
+    for y in range(hw):
+        for x in range(hw):
+            if o.grid[y][x] == 0:
+                board += '0'
+            elif o.grid[y][x] == 1:
+                board += '1'
+            else:
+                board += '.'
+    res.append(board)
+    o = othello()
+    for i in range(len(record)):
+        if not o.check_legal():
+            o.player = 1 - o.player
+            o.check_legal()
+        y = char_coord[record[i]] // hw
+        x = char_coord[record[i]] % hw
+        coord = (7 - x) * hw + (7 - y)
+        if not o.move(coord // hw, coord % hw):
+            return []
+    board = ''
+    for y in range(hw):
+        for x in range(hw):
+            if o.grid[y][x] == 0:
+                board += '0'
+            elif o.grid[y][x] == 1:
+                board += '1'
+            else:
+                board += '.'
+    res.append(board)
+    o = othello()
+    for i in range(len(record)):
+        if not o.check_legal():
+            o.player = 1 - o.player
+            o.check_legal()
+        y = char_coord[record[i]] // hw
+        x = char_coord[record[i]] % hw
+        coord = x * hw + y
+        if not o.move(coord // hw, coord % hw):
+            return []
+    board = ''
+    for y in range(hw):
+        for x in range(hw):
+            if o.grid[y][x] == 0:
+                board += '0'
+            elif o.grid[y][x] == 1:
+                board += '1'
+            else:
+                board += '.'
+    res.append(board)
     return res
 
 def create_book(record):
     for i in range(64):
         val = calc_value(record + all_chars[i])
         if val != -inf:
-            board = create_board(record + all_chars[i])
-            if board != '':
-                if not (board in book.keys()):
+            boards = create_board(record + all_chars[i])
+            if boards:
+                contain = False
+                for board in boards:
+                    if board in book.keys():
+                        contain = True
+                if not contain:
                     book[board] = val
-                    create_book(record + all_chars[i])
+                create_book(record + all_chars[i])
 
 book = {}
+with open('learned_data/before_book.txt', 'r') as f:
+    data = f.read().splitlines()
+for datum in data:
+    board, value = datum.split()
+    value = int(value)
+    book[board] = value
+print(len(data))
+
 create_book('')
 print(len(book))
 #if (input('sure?: ') == 'yes'):
-with open('learned_data/book_record.txt', 'w') as f:
+with open('learned_data/book.txt', 'w') as f:
     for board in book.keys():
         f.write(board + ' ' + str(round(book[board])) + '\n')
