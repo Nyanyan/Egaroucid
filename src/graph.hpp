@@ -43,7 +43,7 @@ class Graph {
 				Circle{sx + yx.first * dx, sy + y_max * dy - yx.second * dy, 3}.draw(Palette::White);
 			if (nodes.size() >= 2) {
 				for (int i = 0; i < (int)nodes.size() - 1; ++i) {
-					Line(sx + nodes[i].first * dx, sy + y_max * dy - nodes[i].second * dy, sx + nodes[i + 1].first * dx, sy + y_max * dy - nodes[i + 1].second * dy).draw(3, Palette::White);
+					Line(sx + nodes[i].first * dx, sy + y_max * dy - nodes[i].second * dy, sx + nodes[i + 1].first * dx, sy + y_max * dy - nodes[i + 1].second * dy).draw(4, Palette::White);
 				}
 			}
 		}
