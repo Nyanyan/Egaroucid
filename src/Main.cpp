@@ -30,7 +30,7 @@ using namespace std;
 #define both_ai_define 3
 #define n_accept_define 0
 #define exact_define 1
-#define graph_font_size 10
+#define graph_font_size 15
 
 struct cell_value {
 	int value;
@@ -260,7 +260,7 @@ void Main() {
 	ifs.close();
 
 	const Font pulldown_font(15);
-	const Array<String> player_items = { U"先手", U"後手", U"人間同士", U"AI同士"};
+	const Array<String> player_items = { U"人間先手", U"人間後手", U"人間同士", U"AI同士"};
 	const Array<String> hint_items = {U"ヒントあり", U"ヒントなし"};
 	const Array<String> value_items = { U"評価値表示", U"評価値非表示"};
 	Pulldown pulldown_player{ player_items, pulldown_font, Point{145, 0}, player_default};
@@ -511,7 +511,16 @@ void Main() {
 				sout.clear(stringstream::goodbit);
 				sout << setfill('0') << setw(2) << newtime.tm_sec;
 				string second = sout.str();
-				string info = year + month + day + "_" + hour + minute + second + "_" + to_string(depth) + "_" + to_string(end_depth) + "_" + to_string(ai_player);
+				int player_idx = -1;
+				if (ai_player == 0)
+					player_idx = 1;
+				else if (ai_player == 1)
+					player_idx = 0;
+				else if (ai_player == 2)
+					player_idx = 2;
+				else
+					player_idx = 3;
+				string info = year + month + day + "_" + hour + minute + second + "_" + to_string(depth) + "_" + to_string(end_depth) + "_" + to_string(player_idx);
 				ofstream ofs("record/" + info + ".txt");
 				if (ofs.fail()) {
 					saved = 2;
@@ -536,7 +545,7 @@ void Main() {
 				saved = 2;
 		}
 		if (saved == 1) {
-			saved_ui(U"完了").draw(900, 560);
+			saved_ui(U"成功").draw(900, 560);
 		} else if (saved == 2) {
 			saved_ui(U"失敗").draw(900, 560);
 		}
@@ -786,6 +795,8 @@ void Main() {
 			change_book_ui(change_book_value_info_str, U"(", change_book_value_coord_str, U"): ", change_book_value_str).draw(670, 660);
 		}
 
+		joseki_ui(Unicode::FromUTF8(joseki.get(bd))).draw(145, 60);
+
 		pulldown_hint.update();
 		pulldown_hint.draw();
 		show_cell_value = pulldown_hint.getIndex();
@@ -799,8 +810,6 @@ void Main() {
 
 		if (show_value == 0)
 			graph.draw();
-
-		joseki_ui(Unicode::FromUTF8(joseki.get(bd))).draw(145, 60);
 		
 	}
 	ofstream ofs("resources/settings.txt");

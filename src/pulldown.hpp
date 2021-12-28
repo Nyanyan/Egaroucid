@@ -125,6 +125,10 @@ public:
 		return m_items[m_index];
 	}
 
+	bool isOpen(){
+		return m_isOpen;
+	}
+
 private:
 
 	Font m_font;
