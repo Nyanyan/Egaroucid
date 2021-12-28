@@ -28,8 +28,6 @@ Strong Othello AI based on Egaroucid4, which got 1st place in the world
 
 
 
-  
-
 <a id="folder"></a>
 
 ### フォルダ構成
@@ -47,8 +45,6 @@ recordフォルダ
 ```
 
 ```Egaroucid5.exe```をダブルクリックなどで実行するとアプリが起動します。
-
-  
 
 <a id="battle"></a>
 
@@ -256,6 +252,8 @@ book誤差は、ある局面において複数
 <a id="joseki"></a>
 
 ### 定石
+
+画面左上に定石名が表示できる場合は表示されます。
 
 定石データはこちらのものを使っています: http://evaccaneer.livedoor.blog/archives/11101657.html
 
