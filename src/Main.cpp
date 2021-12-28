@@ -188,7 +188,8 @@ void Main() {
 	};
 	constexpr chrono::duration<int> seconds0 = chrono::seconds(0);
 
-	init();
+	future<void> future_initialize = async(launch::async, init);
+	bool initialized = false;
 
 	Array<Rect> cells;
 	Array<Circle> stones, legals;
@@ -217,6 +218,7 @@ void Main() {
 	Font saved_ui(20);
 	Font copy_ui(20);
 	Font joseki_ui(20);
+	Font initializing(50);
 	bool playing = false, thinking = false, cell_value_thinking = false, changing_book = false;
 	int depth, end_depth, ai_player, cell_value_depth, cell_value_end_depth, book_accept, show_cell_value, show_value, n_moves = 0;
 	double value;
@@ -236,6 +238,7 @@ void Main() {
 	int saved = 0;
 	int input_board_state = 0, input_record_state = 0;
 	double depth_double = 12, end_depth_double = 20, cell_value_depth_double = 10, cell_value_end_depth_double = 18, book_accept_double = 2;
+	int board_start_moves;
 
 	ifstream ifs("resources/settings.txt");
 	if (!ifs.fail()) {
@@ -291,6 +294,14 @@ void Main() {
 		cell_value_state[i] = 0;
 
 	while (System::Update()) {
+		if (!initialized) {
+			if (future_initialize.wait_for(seconds0) == future_status::ready) {
+				future_initialize.get();
+				initialized = true;
+			}
+			initializing(U"AI初期化中…").draw(0, 0);
+			continue;
+		}
 
 		cell_value_thinking = false;
 		for (int i = 0; i < hw2; ++i)
@@ -593,6 +604,7 @@ void Main() {
 				board_history.push_back(bd);
 				last_played.push_back(-1);
 			}
+			board_start_moves = bd.n - 4;
 			finished = false;
 			saved = 0;
 			copied = false;
@@ -603,10 +615,10 @@ void Main() {
 		record_ui(record).draw(0, 550);
 
 		if (playing) {
-			if (n_moves != 60)
-				move_font(n_moves + 1, U"手目").draw(420, 650);
-			else
+			if (finished)
 				move_font(U"終局").draw(420, 650);
+			else
+				move_font(n_moves + 1, U"手目").draw(420, 650);
 			bool flag = false;
 			for (int i = 0; i < hw2; ++i)
 				flag |= (cell_value_state[i] == 1);
@@ -615,18 +627,18 @@ void Main() {
 				SimpleGUI::Button(U">", Vec2(600, 650), 50, false);
 			} else {
 				if (SimpleGUI::Button(U"<", Vec2(550, 650), 50)) {
-					if (n_moves >= 1)
+					if (n_moves - board_start_moves >= 1)
 						--n_moves;
-					bd = board_history[n_moves];
+					bd = board_history[n_moves - board_start_moves];
 					bd.translate_to_arr(bd_arr);
 					create_vacant_lst(bd, bd_arr);
 					for (int i = 0; i < hw2; ++i)
 						cell_value_state[i] = 0;
 				}
 				if (SimpleGUI::Button(U">", Vec2(600, 650), 50)) {
-					if (n_moves < board_history.size() - 1)
+					if (n_moves - board_start_moves < board_history.size() - 1)
 						++n_moves;
-					bd = board_history[n_moves];
+					bd = board_history[n_moves - board_start_moves];
 					bd.translate_to_arr(bd_arr);
 					create_vacant_lst(bd, bd_arr);
 					for (int i = 0; i < hw2; ++i)
@@ -676,7 +688,7 @@ void Main() {
 								else
 									legals[coord].draw(Palette::Blue);
 							}
-							if (cells[coord].leftClicked() && !changing_book && !finished && n_moves == board_history.size() - 1) {
+							if (cells[coord].leftClicked() && !changing_book && !finished && n_moves == board_history.size() - 1 + board_start_moves) {
 								bd = bd.move(coord);
 								++n_moves;
 								record += coord_translate(coord);

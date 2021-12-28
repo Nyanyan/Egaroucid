@@ -895,7 +895,7 @@ inline search_result endsearch(board b, long long strt){
     transpose_table.hash_reg = 0;
     int max_depth = hw2 - b.n - 1;
     bool use_mpc = max_depth >= 19 ? true : false;
-    double use_mpct = 2.0;
+    double use_mpct = 1.8;
     if (max_depth >= 21)
         use_mpct = 1.7;
     if (max_depth >= 23)

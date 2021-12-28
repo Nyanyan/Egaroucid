@@ -34,7 +34,7 @@ int sa_phase;
 #define sc_w 6400
 #define step 100
 
-#define n_data 20000000
+#define n_data 30000000
 
 #define n_raw_params (50 + 3)
 

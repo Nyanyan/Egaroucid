@@ -4,8 +4,8 @@
 /* cutting */
 
 // multi prob cut
-#define USE_MID_MPC false
-#define USE_END_MPC false
+#define USE_MID_MPC true
+#define USE_END_MPC true
 
 // stability cut
 #define USE_MID_SC  false
@@ -54,7 +54,7 @@
 #define MPC_MODE false
 
 // creatring evaluation data mode
-#define EVAL_MODE true
+#define EVAL_MODE false
 
 // book mode
 #define BOOK_MODE false
