@@ -912,19 +912,19 @@ inline search_result endsearch(board b, long long strt){
     bool use_mpc = max_depth >= 19 ? true : false;
     double use_mpct = 1.7;
     if (max_depth >= 21)
-        use_mpct = 1.5;
-    if (max_depth >= 23)
         use_mpct = 1.4;
-    if (max_depth >= 25)
-        use_mpct = 1.2;
-    if (max_depth >= 27)
+    if (max_depth >= 23)
         use_mpct = 1.1;
-    if (max_depth >= 29)
+    if (max_depth >= 25)
         use_mpct = 0.9;
+    if (max_depth >= 27)
+        use_mpct = 0.7;
+    if (max_depth >= 29)
+        use_mpct = 0.5;
     if (max_depth >= 31)
-        use_mpct = 0.6;
+        use_mpct = 0.3;
     if (max_depth >= 33)
-        use_mpct = 0.4;
+        use_mpct = 0.2;
     //int pre_search_depth = min(17, max_depth - simple_end_threshold);
     transpose_table.init_now();
     transpose_table.init_prev();
