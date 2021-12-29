@@ -32,6 +32,7 @@ max_depth = 28
 
 vhs = [[] for _ in range(max_depth - min_depth + 1)]
 vds = [[] for _ in range(max_depth - min_depth + 1)]
+v0s = [[] for _ in range(max_depth - min_depth + 1)]
 
 vh_vd = []
 
@@ -66,11 +67,21 @@ def collect_data(num):
             if player == '1':
                 vh = -vh
             vh *= 100
+            board_proc = player + '\n' + str(0) + '\n'
+            for i in range(hw):
+                for j in range(hw):
+                    board_proc += board[i * hw + j]
+                board_proc += '\n'
+            #print(board_proc)
+            evaluate.stdin.write(board_proc.encode('utf-8'))
+            evaluate.stdin.flush()
+            v0 = float(evaluate.stdout.readline().decode().strip())
             #print(score)
             vhs[depth - min_depth].append(vh)
             vds[depth - min_depth].append(vd)
+            v0s[depth - min_depth].append(v0)
 
-for i in range(10, 11):
+for i in range(3, 4):
     collect_data(i)
 evaluate.kill()
 
@@ -108,8 +119,11 @@ f_score = scoring()
 print(f_score)
 
 vh_vd = [[vhs[j][k] - f(vds[j][k]) for k in range(len(vhs[j]))] for j in range(len(vhs))]
+vh_v0 = [[vhs[j][k] - f(v0s[j][k]) for k in range(len(vhs[j]))] for j in range(len(vhs))]
 sd = [round(statistics.stdev(vh_vd[j])) for j in range(len(vh_vd))]
+sd0 = [round(statistics.stdev(vh_v0[j])) for j in range(len(vh_vd))]
 print(sd)
+print(sd0)
 
 tl = 10.0
 strt = time()

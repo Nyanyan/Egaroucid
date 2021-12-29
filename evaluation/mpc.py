@@ -32,6 +32,7 @@ max_depth = 10
 
 vhs = [[[] for _ in range(max_depth - min_depth + 1)] for _ in range(15)]
 vds = [[[] for _ in range(max_depth - min_depth + 1)] for _ in range(15)]
+v0s = [[[] for _ in range(max_depth - min_depth + 1)] for _ in range(15)]
 
 vh_vd = []
 
@@ -69,9 +70,19 @@ def collect_data(num):
         evaluate.stdin.write(board_proc.encode('utf-8'))
         evaluate.stdin.flush()
         vh = float(evaluate.stdout.readline().decode().strip())
+        board_proc = player + '\n' + str(0) + '\n'
+        for i in range(hw):
+            for j in range(hw):
+                board_proc += board[i * hw + j]
+            board_proc += '\n'
+        #print(board_proc)
+        evaluate.stdin.write(board_proc.encode('utf-8'))
+        evaluate.stdin.flush()
+        v0 = float(evaluate.stdout.readline().decode().strip())
         #print(score)
         vhs[(n_stones - 4) // 4][depth - min_depth].append(vh)
         vds[(n_stones - 4) // 4][depth - min_depth].append(vd)
+        v0s[(n_stones - 4) // 4][depth - min_depth].append(v0)
 
 for i in range(10):
     collect_data(i)
@@ -131,6 +142,11 @@ print(f_score)
 '''
 
 vh_vd = [[[vhs[i][j][k] - f(vds[i][j][k]) for k in range(len(vhs[i][j]))] for j in range(len(vhs[i]))] for i in range(len(vhs))]
+vh_v0 = [[[vhs[i][j][k] - f(v0s[i][j][k]) for k in range(len(vhs[i][j]))] for j in range(len(vhs[i]))] for i in range(len(vhs))]
 sd = [[round(statistics.stdev(vh_vd[i][j])) for j in range(len(vh_vd[i]))] for i in range(len(vh_vd))]
+sd0 = [[round(statistics.stdev(vh_v0[i][j])) for j in range(len(vh_v0[i]))] for i in range(len(vh_v0))]
 for each_sd in sd:
+    print(str(each_sd).replace('[', '{').replace(']', '}') + ',')
+print('')
+for each_sd in sd0:
     print(str(each_sd).replace('[', '{').replace(']', '}') + ',')

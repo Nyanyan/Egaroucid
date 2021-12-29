@@ -464,13 +464,14 @@ int main(int argc, char *argv[]){
     int i, j;
 
     unsigned long long hour = 0;
-    unsigned long long minute = 30;
+    unsigned long long minute = 10;
     unsigned long long second = 0;
     minute += hour * 60;
     second += minute * 60;
 
     board_init();
     init();
+    //initialize_param();
     input_param_onephase((string)(argv[2]));
     input_test_data(0);
 

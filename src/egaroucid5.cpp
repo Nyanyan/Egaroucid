@@ -84,8 +84,8 @@ int main(){
         const int first_moves[4] = {19, 26, 37, 44};
         int depth, end_depth;
         book_value book_result;
-        depth = 10; //23;
-        end_depth = 20; //23;
+        depth = 14; //23;
+        end_depth = 22; //23;
     #endif
     int ai_player;
     //cin >> ai_player;
