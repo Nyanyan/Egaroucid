@@ -23,15 +23,10 @@ int nega_alpha_ordering_final_mpc(board *b, bool skipped, int depth, int alpha, 
             return alpha;
     #endif
     if (mpc_min_depth <= depth && depth <= mpc_max_depth){
-        int val0 = mid_evaluate(b);
-        if (val0 > beta + use_mpct * mpcsd0[calc_phase_idx(b)][depth - mpc_min_depth]){
-            if (mpc_higher(b, skipped, depth, beta, use_mpct))
-                return beta;
-        }
-        if (val0 < alpha - use_mpct * mpcsd0[calc_phase_idx(b)][depth - mpc_min_depth]){
-            if (mpc_lower(b, skipped, depth, alpha, use_mpct))
-                return alpha;
-        }
+        if (mpc_higher(b, skipped, depth, beta, use_mpct))
+            return beta;
+        if (mpc_lower(b, skipped, depth, alpha, use_mpct))
+            return alpha;
     }
     vector<board> nb;
     int canput = 0;
@@ -610,15 +605,10 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
     beta = min(beta, u);
     #if USE_END_MPC
         if (mpc_min_depth_final <= depth && depth <= mpc_max_depth_final && use_mpc){
-            int val0 = mid_evaluate(b);
-            if (val0 > beta + mpct_in * mpcsd0_final[depth - mpc_min_depth_final]){
-                if (mpc_higher_final(b, skipped, depth, beta, mpct_in))
-                    return beta;
-            }
-            if (val0 < alpha - mpct_in * mpcsd0_final[depth - mpc_min_depth_final]){
-                if (mpc_lower_final(b, skipped, depth, alpha, mpct_in))
-                    return alpha;
-            }
+            if (mpc_higher_final(b, skipped, depth, beta, mpct_in))
+                return beta;
+            if (mpc_lower_final(b, skipped, depth, alpha, mpct_in))
+                return alpha;
         }
     #endif
     vector<board> nb;
@@ -765,15 +755,10 @@ int nega_scout_final(board *b, bool skipped, const int depth, int alpha, int bet
     beta = min(beta, u);
     #if USE_END_MPC
         if (mpc_min_depth_final <= depth && depth <= mpc_max_depth_final && use_mpc){
-            int val0 = mid_evaluate(b);
-            if (val0 > beta + mpct_in * mpcsd0_final[depth - mpc_min_depth_final]){
-                if (mpc_higher_final(b, skipped, depth, beta, mpct_in))
-                    return beta;
-            }
-            if (val0 < alpha - mpct_in * mpcsd0_final[depth - mpc_min_depth_final]){
-                if (mpc_lower_final(b, skipped, depth, alpha, mpct_in))
-                    return alpha;
-            }
+            if (mpc_higher_final(b, skipped, depth, beta, mpct_in))
+                return beta;
+            if (mpc_lower_final(b, skipped, depth, alpha, mpct_in))
+                return alpha;
         }
     #endif
     vector<board> nb;
@@ -918,9 +903,9 @@ inline search_result endsearch(board b, long long strt){
     if (max_depth >= 25)
         use_mpct = 0.9;
     if (max_depth >= 27)
-        use_mpct = 0.7;
+        use_mpct = 0.6;
     if (max_depth >= 29)
-        use_mpct = 0.5;
+        use_mpct = 0.4;
     if (max_depth >= 31)
         use_mpct = 0.3;
     if (max_depth >= 33)

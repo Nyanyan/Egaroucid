@@ -62,6 +62,8 @@ inline void create_vacant_lst(board bd, int bd_arr[]) {
 }
 
 cell_value cell_value_search(board bd, int depth, int end_depth) {
+	--depth;
+	--end_depth;
 	cell_value res;
 	int value = book.get(&bd);
 	if (value != -inf) {
@@ -88,12 +90,12 @@ cell_value cell_value_search(board bd, int depth, int end_depth) {
 			transpose_table.init_now();
 			res.value = nega_scout_final(&bd, false, hw2 - bd.n, -sc_w, sc_w, use_mpc, 1.7);
 		}
-		res.depth = use_mpc ? hw2 - bd.n : final_define_value;
+		res.depth = use_mpc ? hw2 - bd.n + 1 : final_define_value;
 	} else {
 		bool use_mpc = hw2 - bd.n >= 10 ? true : false;
 		transpose_table.init_now();
 		res.value = max(-sc_w, min(sc_w, nega_scout(&bd, false, depth, -sc_w, sc_w, use_mpc, 1.3)));
-		res.depth = depth;
+		res.depth = depth + 1;
 	}
 	return res;
 }
@@ -119,6 +121,8 @@ search_result book_return(board bd, book_value book_result) {
 	search_result res;
 	res.policy = book_result.policy;
 	res.value = book_result.value;
+	res.depth = -1;
+	res.nps = 0;
 	return res;
 }
 
@@ -803,6 +807,7 @@ void Main() {
 					if (future_result.wait_for(seconds0) == future_status::ready) {
 						thinking = false;
 						result = future_result.get();
+						Print << result.nps;
 						value = (double)result.value / step;
 						record += coord_translate(result.policy);
 						if (ai_player == both_ai_define && bd.p == white)

@@ -28,15 +28,10 @@ int nega_alpha_ordering_nomemo(board *b, bool skipped, int depth, int alpha, int
     #endif
     #if USE_MID_MPC
         if (mpc_min_depth <= depth && depth <= mpc_max_depth){
-            int val0 = mid_evaluate(b);
-            if (val0 > beta + mpct_in * mpcsd0[calc_phase_idx(b)][depth - mpc_min_depth]){
-                if (mpc_higher(b, skipped, depth, beta, mpct_in))
-                    return beta;
-            }
-            if (val0 < alpha - mpct_in * mpcsd0[calc_phase_idx(b)][depth - mpc_min_depth]){
-                if (mpc_lower(b, skipped, depth, alpha, mpct_in))
-                    return alpha;
-            }
+            if (mpc_higher(b, skipped, depth, beta, mpct_in))
+                return beta;
+            if (mpc_lower(b, skipped, depth, alpha, mpct_in))
+                return alpha;
         }
     #endif
     vector<board> nb;
@@ -178,15 +173,10 @@ int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int 
     beta = min(beta, u);
     #if USE_MID_MPC
         if (mpc_min_depth <= depth && depth <= mpc_max_depth && use_mpc){
-            int val0 = mid_evaluate(b);
-            if (val0 > beta + mpct_in * mpcsd0[calc_phase_idx(b)][depth - mpc_min_depth]){
-                if (mpc_higher(b, skipped, depth, beta, mpct_in))
-                    return beta;
-            }
-            if (val0 < alpha - mpct_in * mpcsd0[calc_phase_idx(b)][depth - mpc_min_depth]){
-                if (mpc_lower(b, skipped, depth, alpha, mpct_in))
-                    return alpha;
-            }
+            if (mpc_higher(b, skipped, depth, beta, mpct_in))
+                return beta;
+            if (mpc_lower(b, skipped, depth, alpha, mpct_in))
+                return alpha;
         }
     #endif
     vector<board> nb;
@@ -290,15 +280,10 @@ int nega_scout(board *b, bool skipped, const int depth, int alpha, int beta, boo
     beta = min(beta, u);
     #if USE_MID_MPC
         if (mpc_min_depth <= depth && depth <= mpc_max_depth && use_mpc){
-            int val0 = mid_evaluate(b);
-            if (val0 > beta + mpct_in * mpcsd0[calc_phase_idx(b)][depth - mpc_min_depth]){
-                if (mpc_higher(b, skipped, depth, beta, mpct_in))
-                    return beta;
-            }
-            if (val0 < alpha - mpct_in * mpcsd0[calc_phase_idx(b)][depth - mpc_min_depth]){
-                if (mpc_lower(b, skipped, depth, alpha, mpct_in))
-                    return alpha;
-            }
+            if (mpc_higher(b, skipped, depth, beta, mpct_in))
+                return beta;
+            if (mpc_lower(b, skipped, depth, alpha, mpct_in))
+                return alpha;
         }
     #endif
     vector<board> nb;
