@@ -85,7 +85,7 @@ int nega_alpha(board *b, bool skipped, int depth, int alpha, int beta){
     ++searched_nodes;
     if (depth == 0){
         if (b->n < hw2)
-            return mid_evaluate(b);
+            return mid_evaluate(b, skipped);
         else
             return end_evaluate(b);
     }
@@ -374,7 +374,7 @@ int nega_scout(board *b, bool skipped, const int depth, int alpha, int beta, boo
 }
 
 int mtd(board *b, bool skipped, int depth, int l, int u, bool use_mpc, double use_mpct){
-    int g = mid_evaluate(b), beta;
+    int g = mid_evaluate(b, skipped), beta;
     while (u - l > mtd_threshold){
         beta = g;
         g = nega_alpha_ordering(b, skipped, depth, beta - search_epsilon, beta, true, use_mpc, use_mpct);

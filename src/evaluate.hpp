@@ -131,7 +131,7 @@ inline void init_evaluation_calc(){
         exit(1);
     }
     string line;
-    int phase_idx, pattern_idx, pattern_elem, sur0, sur1, canput;
+    int phase_idx, pattern_idx, pattern_elem, sur0, sur1; //, canput;
     const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10};
     for (phase_idx = 0; phase_idx < n_phases; ++phase_idx){
         cerr << "=";
@@ -147,6 +147,7 @@ inline void init_evaluation_calc(){
                 sur0_sur1_arr[phase_idx][sur0][sur1] = stoi(line);
             }
         }
+        /*
         for (sur0 = 0; sur0 < max_surround; ++sur0){
             for (canput = 0; canput < max_canput * 2; ++canput){
                 getline(ifs, line);
@@ -159,6 +160,7 @@ inline void init_evaluation_calc(){
                 sur1_canput_arr[phase_idx][sur1][canput] = stoi(line);
             }
         }
+        */
     }
     cerr << endl;
 }
@@ -291,9 +293,9 @@ inline int end_evaluate(const board *b){
     return count * step;
 }
 
-inline int mid_evaluate(board *b, bool passed = false){
-    int phase_idx, sur0, sur1, canput, res;
-    canput = calc_canput(b);
+inline int mid_evaluate(board *b, bool passed){
+    int phase_idx, sur0, sur1, res;
+    int canput = calc_canput(b);
     if (canput == 0){
         if (passed)
             return end_evaluate(b);
@@ -302,11 +304,12 @@ inline int mid_evaluate(board *b, bool passed = false){
         b->p = 1 - b->p;
         return res;
     }
-    canput = min(max_canput * 2 - 1, max(0, canput + max_canput));
+    //canput = min(max_canput * 2 - 1, max(0, canput + max_canput));
     phase_idx = calc_phase_idx(b);
     sur0 = min(max_surround - 1, calc_surround(b, black));
     sur1 = min(max_surround - 1, calc_surround(b, white));
-    res = (b->p ? -1 : 1) * (calc_pattern(phase_idx, b) + sur0_sur1_arr[phase_idx][sur0][sur1] + sur0_canput_arr[phase_idx][sur0][canput] + sur1_canput_arr[phase_idx][sur1][canput]);
+    //res = (b->p ? -1 : 1) * (calc_pattern(phase_idx, b) + sur0_sur1_arr[phase_idx][sur0][sur1] + sur0_canput_arr[phase_idx][sur0][canput] + sur1_canput_arr[phase_idx][sur1][canput]);
+    res = (b->p ? -1 : 1) * (calc_pattern(phase_idx, b) + sur0_sur1_arr[phase_idx][sur0][sur1]);
     return res;
     //return max(-sc_w, min(sc_w, res));
 }
