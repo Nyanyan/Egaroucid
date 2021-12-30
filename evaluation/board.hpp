@@ -85,7 +85,7 @@ void board_init() {
     int idx, b, w, place, i, j, k, l_place, inc_idx;
     pow3[0] = 1;
     for (idx = 1; idx < 11; ++idx)
-        pow3[idx] = pow3[idx- 1] * 3;
+        pow3[idx] = pow3[idx - 1] * 3;
     for (i = 0; i < n_line; ++i){
         for (j = 0; j < hw; ++j)
             pop_digit[i][j] = (i / pow3[hw_m1 - j]) % 3;
