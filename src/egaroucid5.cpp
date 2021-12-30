@@ -9,9 +9,6 @@
 #include "midsearch.hpp"
 #include "endsearch.hpp"
 #include "book.hpp"
-#if USE_MULTI_THREAD
-    #include "thread_pool.hpp"
-#endif
 
 inline void init(){
     board_init();
@@ -20,9 +17,6 @@ inline void init(){
     evaluate_init();
     #if !MPC_MODE && !EVAL_MODE && !BOOK_MODE && USE_BOOK
         book_init();
-    #endif
-    #if USE_MULTI_THREAD
-        thread_pool_init();
     #endif
 }
 
@@ -85,8 +79,8 @@ int main(){
         int depth, end_depth;
         bool pre_searched = false;
         book_value book_result;
-        depth = 2; //23;
-        end_depth = 4; //23;
+        depth = 10; //23;
+        end_depth = 10; //23;
     #endif
     int ai_player;
     //cin >> ai_player;

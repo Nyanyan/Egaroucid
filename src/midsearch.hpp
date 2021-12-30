@@ -9,7 +9,7 @@
 #include "search.hpp"
 #include "transpose_table.hpp"
 #if USE_MULTI_THREAD
-    #include "multi_threading.hpp"
+    #include "thread_pool.hpp"
 #endif
 
 using namespace std;
@@ -205,7 +205,7 @@ int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int 
     #if USE_MULTI_THREAD
         if (use_multi_thread){
             int i;
-            g = -nega_alpha_ordering(&nb[0], false, depth - 1, -beta, -alpha, true);
+            g = -nega_alpha_ordering(&nb[0], false, depth - 1, -beta, -alpha, true, use_mpc, mpct_in);
             alpha = max(alpha, g);
             if (beta <= alpha){
                 if (l < g)
@@ -213,22 +213,22 @@ int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int 
                 return alpha;
             }
             v = max(v, g);
-            int task_ids[canput];
+            future<int> future_tasks[canput - 1];
             for (i = 1; i < canput; ++i)
-                task_ids[i] = thread_pool.push(bind(&nega_alpha_ordering, &nb[i], false, depth - 1, -beta, -alpha, false));
+                future_tasks[i - 1] = thread_pool.push(bind(&nega_alpha_ordering, &nb[i], false, depth - 1, -beta, -alpha, false, use_mpc, mpct_in));
             for (i = 1; i < canput; ++i){
-                g = -thread_pool.get(task_ids[i]);
+                g = -future_tasks[i - 1].get();
                 alpha = max(alpha, g);
                 v = max(v, g);
             }
             if (beta <= alpha){
-                if (l < g)
-                    transpose_table.reg(b, hash, g, u);
+                if (l < alpha)
+                    transpose_table.reg(b, hash, alpha, u);
                 return alpha;
             }
         } else{
             for (int i = 0; i < canput; ++i){
-                g = -nega_alpha_ordering(&nb[i], false, depth - 1, -beta, -alpha, false);
+                g = -nega_alpha_ordering(&nb[i], false, depth - 1, -beta, -alpha, false, use_mpc, mpct_in);
                 alpha = max(alpha, g);
                 if (beta <= alpha){
                     if (l < g)
@@ -311,7 +311,7 @@ int nega_scout(board *b, bool skipped, const int depth, int alpha, int beta, boo
     int g = alpha, v = -inf;
     #if USE_MULTI_THREAD
         int i;
-        g = -nega_scout(&nb[0], false, depth - 1, -beta, -alpha);
+        g = -nega_scout(&nb[0], false, depth - 1, -beta, -alpha, use_mpc, mpct_in);
         alpha = max(alpha, g);
         if (beta <= alpha){
             if (l < g)
@@ -320,19 +320,19 @@ int nega_scout(board *b, bool skipped, const int depth, int alpha, int beta, boo
         }
         v = max(v, g);
         int first_alpha = alpha;
-        int task_ids[canput];
+        future<int> future_tasks[canput - 1];
+        bool re_search[canput - 1];
         for (i = 1; i < canput; ++i)
-            task_ids[i] = thread_pool.push(bind(&nega_alpha_ordering, &nb[i], false, depth - 1, -alpha - search_epsilon, -alpha, false));
-        bool re_search[canput];
+            future_tasks[i - 1] = thread_pool.push(bind(&nega_alpha_ordering, &nb[i], false, depth - 1, -alpha - search_epsilon, -alpha, false, use_mpc, mpct_in));
         for (i = 1; i < canput; ++i){
-            g = -thread_pool.get(task_ids[i]);
+            g = -future_tasks[i - 1].get();
             alpha = max(alpha, g);
             v = max(v, g);
-            re_search[i] = first_alpha < g;
+            re_search[i - 1] = first_alpha < g;
         }
         for (i = 1; i < canput; ++i){
-            if (re_search[i]){
-                g = -nega_scout(&nb[i], false, depth - 1, -beta, -alpha);
+            if (re_search[i - 1]){
+                g = -nega_scout(&nb[i], false, depth - 1, -beta, -alpha, use_mpc, mpct_in);
                 if (beta <= g){
                     if (l < g)
                         transpose_table.reg(b, hash, g, u);

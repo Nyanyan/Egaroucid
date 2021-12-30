@@ -495,12 +495,6 @@ inline void pick_vacant(board *b, int cells[]){
 
 
 int nega_alpha_final(board *b, bool skipped, const int depth, int alpha, int beta, int worker_id){
-    #if USE_MULTI_THREAD
-        if (worker_id != -1){
-            if (thread_pool.stop[worker_id])
-                return -inf;
-        }
-    #endif
     if (depth == 5){
         int cells[5];
         pick_vacant(b, cells);
@@ -577,12 +571,6 @@ int nega_alpha_final(board *b, bool skipped, const int depth, int alpha, int bet
 }
 
 int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha, int beta, int use_multi_thread, int worker_id, bool use_mpc, double mpct_in){
-    #if USE_MULTI_THREAD
-        if (worker_id != -1){
-            if (thread_pool.stop[worker_id])
-                return -inf;
-        }
-    #endif
     if (depth <= simple_end_threshold)
         return nega_alpha_final(b, skipped, depth, alpha, beta, worker_id);
     ++searched_nodes;
@@ -644,7 +632,7 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
     if (canput >= 2)
         sort(nb.begin(), nb.end());
     int g, v = -inf;
-    #if USE_MULTI_THREAD
+    #if USE_MULTI_THREAD && false
         if (use_multi_thread > 0){
             int i, j;
             for (i = 0; i < min(canput, ybwc_end_first_num); ++i){
@@ -795,7 +783,7 @@ int nega_scout_final(board *b, bool skipped, const int depth, int alpha, int bet
     if (canput >= 2)
         sort(nb.begin(), nb.end());
     int g = alpha, v = -inf;
-    #if USE_MULTI_THREAD
+    #if USE_MULTI_THREAD && false
         int i;
         for (i = 0; i < min(canput, ybwc_end_first_num); ++i){
             g = -nega_scout_final(&nb[i], false, depth - 1, -beta, -alpha);
@@ -979,8 +967,5 @@ inline search_result endsearch(board b, long long strt, bool pre_searched){
     res.value = value;
     res.depth = max_depth;
     res.nps = searched_nodes * 1000 / max(1LL, tim() - strt);
-    #if USE_MULTI_THREAD
-        cerr << "worker_size " << thread_pool.get_worker_size() << endl;
-    #endif
     return res;
 }
