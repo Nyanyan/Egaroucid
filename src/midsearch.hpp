@@ -184,8 +184,8 @@ int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int 
     for (const int &cell: vacant_lst){
         if (b->legal(cell)){
             nb.emplace_back(b->move(cell));
-            //move_ordering(&(nb[canput]));
-            move_ordering_eval(&(nb[canput]));
+            move_ordering(&(nb[canput]));
+            //move_ordering_eval(&(nb[canput]));
             ++canput;
         }
     }
@@ -291,8 +291,8 @@ int nega_scout(board *b, bool skipped, const int depth, int alpha, int beta, boo
     for (const int &cell: vacant_lst){
         if (b->legal(cell)){
             nb.emplace_back(b->move(cell));
-            //move_ordering(&(nb[canput]));
-            move_ordering_eval(&(nb[canput]));
+            move_ordering(&(nb[canput]));
+            //move_ordering_eval(&(nb[canput]));
             ++canput;
         }
     }
@@ -347,7 +347,7 @@ int nega_scout(board *b, bool skipped, const int depth, int alpha, int beta, boo
         for (int i = 0; i < canput; ++i){
             if (i > 0){
                 g = -nega_alpha_ordering(&nb[i], false, depth - 1, -alpha - search_epsilon, -alpha, true, use_mpc, mpct_in);
-                if (beta <= g){
+                if (beta < g){
                     if (l < g)
                         transpose_table.reg(b, hash, g, u);
                     return g;
@@ -408,64 +408,64 @@ inline search_result midsearch(board b, long long strt, int max_depth){
     transpose_table.hash_reg = 0;
     transpose_table.init_now();
     transpose_table.init_prev();
-    //int order_l, order_u;
-    int depth = min(hw2 - b.n - 1, max_depth - 1);
-    bool use_mpc = depth >= 11 ? true : false;
+    int order_l, order_u;
+    //int depth = min(hw2 - b.n - 1, max_depth - 1);
+    bool use_mpc = max_depth >= 11 ? true : false;
     double use_mpct = 1.6;
-    if (depth >= 13)
+    if (max_depth >= 13)
         use_mpct = 0.8;
-    if (depth >= 15)
+    if (max_depth >= 15)
         use_mpct = 0.6;
-    if (depth >= 17)
+    if (max_depth >= 17)
         use_mpct = 0.5;
-    if (depth >= 19)
+    if (max_depth >= 19)
         use_mpct = 0.4;
-    if (depth >= 21)
+    if (max_depth >= 21)
         use_mpct = 0.3;
-    if (depth >= 23)
+    if (max_depth >= 23)
         use_mpct = 0.2;
-    //for (int depth = min(5, max(0, max_depth - 5)); depth <= min(hw2 - b.n, max_depth - 1); ++depth){
-    alpha = -inf;
-    beta = inf;
-    transpose_table.init_now();
-    for (i = 0; i < canput; ++i){
-        move_ordering_eval(&nb[i]);
-        /*
-        transpose_table.get_prev(&nb[i], nb[i].hash() & search_hash_mask, &order_l, &order_u);
-        nb[i].v = -max(order_l, order_u);
-        if (order_l != -inf && order_u != -inf)
-            nb[i].v += 100000;
-        if (order_l == -inf && order_u == -inf)
-            nb[i].v = -mid_evaluate(&nb[i]);
-        else
-            nb[i].v += cache_hit;
-        */
-    }
-    if (canput >= 2)
-        sort(nb.begin(), nb.end());
-    g = -mtd(&nb[0], false, depth, -beta, -alpha, use_mpc, use_mpct);
-    transpose_table.reg(&nb[0], (int)(nb[0].hash() & search_hash_mask), g, g);
-    alpha = max(alpha, g);
-    tmp_policy = nb[0].policy;
-    for (i = 1; i < canput; ++i){
-        g = -nega_alpha_ordering(&nb[i], false, depth, -alpha - search_epsilon, -alpha, true, use_mpc, use_mpct);
-        if (alpha <= g){
-            g = -mtd(&nb[i], false, depth, -beta, -g, use_mpc, use_mpct);
-            transpose_table.reg(&nb[i], (int)(nb[i].hash() & search_hash_mask), g, g);
-            if (alpha < g){
-                alpha = g;
-                tmp_policy = nb[i].policy;
-            }
-        } else{
-            transpose_table.reg(&nb[i], (int)(nb[i].hash() & search_hash_mask), -inf, g);
+    for (int depth = min(11, max(0, max_depth - 5)); depth <= min(hw2 - b.n, max_depth - 1); ++depth){
+        alpha = -inf;
+        beta = inf;
+        transpose_table.init_now();
+        for (i = 0; i < canput; ++i){
+            //move_ordering_eval(&nb[i]);
+            
+            transpose_table.get_prev(&nb[i], nb[i].hash() & search_hash_mask, &order_l, &order_u);
+            nb[i].v = -max(order_l, order_u);
+            if (order_l != -inf && order_u != -inf)
+                nb[i].v += 100000;
+            if (order_l == -inf && order_u == -inf)
+                nb[i].v = -mid_evaluate(&nb[i], false);
+            else
+                nb[i].v += cache_hit;
+            
         }
+        if (canput >= 2)
+            sort(nb.begin(), nb.end());
+        g = -mtd(&nb[0], false, depth, -beta, -alpha, use_mpc, use_mpct);
+        transpose_table.reg(&nb[0], (int)(nb[0].hash() & search_hash_mask), g, g);
+        alpha = max(alpha, g);
+        tmp_policy = nb[0].policy;
+        for (i = 1; i < canput; ++i){
+            g = -nega_alpha_ordering(&nb[i], false, depth, -alpha - search_epsilon, -alpha, true, use_mpc, use_mpct);
+            if (alpha < g){
+                g = -mtd(&nb[i], false, depth, -beta, -g, use_mpc, use_mpct);
+                transpose_table.reg(&nb[i], (int)(nb[i].hash() & search_hash_mask), g, g);
+                if (alpha < g){
+                    alpha = g;
+                    tmp_policy = nb[i].policy;
+                }
+            } else{
+                transpose_table.reg(&nb[i], (int)(nb[i].hash() & search_hash_mask), -inf, g);
+            }
+        }
+        swap(transpose_table.now, transpose_table.prev);
+        policy = tmp_policy;
+        value = alpha;
+        res_depth = depth + 1;
+        cerr << "depth: " << depth + 1 << " time: " << tim() - strt << " policy: " << policy << " value: " << alpha << " nodes: " << searched_nodes << " nps: " << (long long)searched_nodes * 1000 / max(1LL, tim() - strt) << " get: " << transpose_table.hash_get << " reg: " << transpose_table.hash_reg << endl;
     }
-    swap(transpose_table.now, transpose_table.prev);
-    policy = tmp_policy;
-    value = alpha;
-    res_depth = depth + 1;
-    cerr << "depth: " << depth + 1 << " time: " << tim() - strt << " policy: " << policy << " value: " << alpha << " nodes: " << searched_nodes << " nps: " << (long long)searched_nodes * 1000 / max(1LL, tim() - strt) << " get: " << transpose_table.hash_get << " reg: " << transpose_table.hash_reg << endl;
-    //}
     search_result res;
     res.policy = policy;
     res.value = max(-sc_w, min(sc_w, value));

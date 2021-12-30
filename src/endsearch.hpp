@@ -855,7 +855,7 @@ int nega_scout_final(board *b, bool skipped, const int depth, int alpha, int bet
                 }
                 v = max(v, g);
             }
-            if (alpha <= g){
+            if (alpha < g || i == 0){
                 g = -nega_scout_final(&nb[i], false, depth - 1, -beta, -g, use_mpc, mpct_in);
                 if (beta <= g){
                     if (l < g)
@@ -894,10 +894,8 @@ inline search_result endsearch(board b, long long strt){
     transpose_table.hash_get = 0;
     transpose_table.hash_reg = 0;
     int max_depth = hw2 - b.n - 1;
-    bool use_mpc = max_depth >= 19 ? true : false;
+    bool use_mpc = max_depth >= 21 ? true : false;
     double use_mpct = 1.7;
-    if (max_depth >= 21)
-        use_mpct = 1.4;
     if (max_depth >= 23)
         use_mpct = 1.1;
     if (max_depth >= 25)
@@ -910,17 +908,17 @@ inline search_result endsearch(board b, long long strt){
         use_mpct = 0.3;
     if (max_depth >= 33)
         use_mpct = 0.2;
-    //int pre_search_depth = min(17, max_depth - simple_end_threshold);
+    int pre_search_depth = min(12, max_depth - simple_end_threshold);
+    if (pre_search_depth > 0)
+        midsearch(b, strt, pre_search_depth);
     transpose_table.init_now();
-    transpose_table.init_prev();
-    //if (pre_search_depth > 0)
-    //    midsearch(b, strt, pre_search_depth);
     cerr << "start final search depth " << max_depth + 1 << endl;
     alpha = -sc_w;
     beta = sc_w;
     for (i = 0; i < canput; ++i){
         //nb[i].v = -nega_scout(&nb[i], false, 10, -sc_w, sc_w);
-        move_ordering_eval(&nb[i]);
+        //move_ordering_eval(&nb[i]);
+        move_ordering(&nb[i]);
     }
     if (canput >= 2)
         sort(nb.begin(), nb.end());
@@ -935,7 +933,7 @@ inline search_result endsearch(board b, long long strt){
         tmp_policy = nb[0].policy;
         for (i = 1; i < canput; ++i){
             g = -nega_alpha_ordering_final(&nb[i], false, max_depth, -alpha - step, -alpha, multi_thread_depth, -1, use_mpc, use_mpct);
-            if (alpha <= g){
+            if (alpha < g){
                 g = -nega_scout_final(&nb[i], false, max_depth, -beta, -g, use_mpc, use_mpct);
                 //g = -mtd_final(&nb[i], false, max_depth, -beta, -g, prev_vals[i]);
                 if (alpha < g){
