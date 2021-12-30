@@ -10,6 +10,8 @@ using namespace std;
 #define n_patterns 13
 #define max_surround 80
 #define max_canput 50
+#define max_stability 29
+#define max_stone_num 65
 #define max_evaluate_idx 59049
 
 #define sc_w 6400
@@ -42,9 +44,10 @@ int surround_arr[2][n_line];
 int stability_edge_arr[2][n_line];
 int stability_corner_arr[2][n_line];
 int pattern_arr[n_phases][n_patterns][max_evaluate_idx];
-int sur0_sur1_arr[n_phases][max_surround][max_surround];
-int sur0_canput_arr[n_phases][max_surround][max_canput * 2];
-int sur1_canput_arr[n_phases][max_surround][max_canput * 2];
+int eval_sur0_sur1_arr[n_phases][max_surround][max_surround];
+int eval_canput_arr[n_phases][max_canput * 2];
+int eval_stab0_stab1_arr[n_phases][max_stability][max_stability];
+int eval_num0_num1_arr[n_phases][max_stone_num][max_stone_num];
 
 inline void init_evaluation_base() {
     int idx, place, b, w;
@@ -131,7 +134,7 @@ inline void init_evaluation_calc(){
         exit(1);
     }
     string line;
-    int phase_idx, pattern_idx, pattern_elem, sur0, sur1, canput;
+    int phase_idx, pattern_idx, pattern_elem, sur0, sur1, canput, stab0, stab1, num0, num1;
     const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10};
     for (phase_idx = 0; phase_idx < n_phases; ++phase_idx){
         cerr << "=";
@@ -144,23 +147,25 @@ inline void init_evaluation_calc(){
         for (sur0 = 0; sur0 < max_surround; ++sur0){
             for (sur1 = 0; sur1 < max_surround; ++sur1){
                 getline(ifs, line);
-                sur0_sur1_arr[phase_idx][sur0][sur1] = stoi(line);
+                eval_sur0_sur1_arr[phase_idx][sur0][sur1] = stoi(line);
             }
         }
-        
-        for (sur0 = 0; sur0 < max_surround; ++sur0){
-            for (canput = 0; canput < max_canput * 2; ++canput){
+        for (canput = 0; canput < max_canput * 2; ++canput){
+            getline(ifs, line);
+            eval_canput_arr[phase_idx][canput] = stoi(line);
+        }
+        for (stab0 = 0; stab0 < max_stability; ++stab0){
+            for (stab1 = 0; stab1 < max_stability; ++stab1){
                 getline(ifs, line);
-                sur0_canput_arr[phase_idx][sur0][canput] = stoi(line);
+                eval_stab0_stab1_arr[phase_idx][stab0][stab1] = stoi(line);
             }
         }
-        for (sur1 = 0; sur1 < max_surround; ++sur1){
-            for (canput = 0; canput < max_canput * 2; ++canput){
+        for (num0 = 0; num0 < max_stone_num; ++num0){
+            for (num1 = 0; num1 < max_stone_num; ++num1){
                 getline(ifs, line);
-                sur1_canput_arr[phase_idx][sur1][canput] = stoi(line);
+                eval_num0_num1_arr[phase_idx][num0][num1] = stoi(line);
             }
         }
-        
     }
     cerr << endl;
 }
@@ -219,6 +224,35 @@ inline int calc_surround(const board *b, int p){
         surround_arr[p][sfill2(b->b[19])] + surround_arr[p][sfill2(b->b[23])] + surround_arr[p][sfill2(b->b[30])] + surround_arr[p][sfill2(b->b[34])] + 
         surround_arr[p][sfill1(b->b[20])] + surround_arr[p][sfill1(b->b[22])] + surround_arr[p][sfill1(b->b[31])] + surround_arr[p][sfill1(b->b[33])] + 
         surround_arr[p][b->b[21]] + surround_arr[p][b->b[32]];
+}
+
+/*
+inline int calc_xx_stability(board *b, int p){
+    return
+        (pop_digit[b->b[1]][2] == p && pop_digit[b->b[0]][2] == p && pop_digit[b->b[0]][1] == p && pop_digit[b->b[1]][0] == p && pop_digit[b->b[1]][1] == p && (pop_digit[b->b[0]][3] == p || (pop_digit[b->b[2]][1] == p && pop_digit[b->b[3]][0] == p) || (pop_digit[b->b[0]][3] != vacant && pop_digit[b->b[2]][1] != vacant && pop_digit[b->b[3]][0] != vacant))) + 
+        (pop_digit[b->b[1]][5] == p && pop_digit[b->b[0]][5] == p && pop_digit[b->b[0]][6] == p && pop_digit[b->b[1]][7] == p && pop_digit[b->b[1]][6] == p && (pop_digit[b->b[0]][4] == p || (pop_digit[b->b[2]][6] == p && pop_digit[b->b[3]][7] == p) || (pop_digit[b->b[0]][4] != vacant && pop_digit[b->b[2]][6] != vacant && pop_digit[b->b[3]][7] != vacant))) + 
+        (pop_digit[b->b[6]][2] == p && pop_digit[b->b[7]][2] == p && pop_digit[b->b[7]][1] == p && pop_digit[b->b[6]][0] == p && pop_digit[b->b[6]][1] == p && (pop_digit[b->b[7]][3] == p || (pop_digit[b->b[5]][1] == p && pop_digit[b->b[4]][0] == p) || (pop_digit[b->b[7]][3] != vacant && pop_digit[b->b[5]][1] != vacant && pop_digit[b->b[4]][0] != vacant))) + 
+        (pop_digit[b->b[6]][5] == p && pop_digit[b->b[7]][5] == p && pop_digit[b->b[7]][6] == p && pop_digit[b->b[6]][7] == p && pop_digit[b->b[6]][6] == p && (pop_digit[b->b[7]][4] == p || (pop_digit[b->b[5]][6] == p && pop_digit[b->b[4]][7] == p) || (pop_digit[b->b[7]][4] != vacant && pop_digit[b->b[5]][6] != vacant && pop_digit[b->b[4]][7] != vacant))) + 
+        (pop_digit[b->b[9]][2] == p && pop_digit[b->b[8]][2] == p && pop_digit[b->b[8]][1] == p && pop_digit[b->b[9]][0] == p && pop_digit[b->b[9]][1] == p && (pop_digit[b->b[8]][3] == p || (pop_digit[b->b[10]][1] == p && pop_digit[b->b[11]][0] == p) || (pop_digit[b->b[8]][3] != vacant && pop_digit[b->b[10]][1] != vacant && pop_digit[b->b[11]][0] != vacant))) + 
+        (pop_digit[b->b[9]][5] == p && pop_digit[b->b[8]][5] == p && pop_digit[b->b[8]][6] == p && pop_digit[b->b[9]][7] == p && pop_digit[b->b[9]][6] == p && (pop_digit[b->b[8]][4] == p || (pop_digit[b->b[10]][6] == p && pop_digit[b->b[11]][7] == p) || (pop_digit[b->b[8]][4] != vacant && pop_digit[b->b[10]][6] != vacant && pop_digit[b->b[11]][7] != vacant))) + 
+        (pop_digit[b->b[14]][2] == p && pop_digit[b->b[15]][2] == p && pop_digit[b->b[15]][1] == p && pop_digit[b->b[14]][0] == p && pop_digit[b->b[14]][1] == p && (pop_digit[b->b[15]][3] == p || (pop_digit[b->b[13]][1] == p && pop_digit[b->b[12]][0] == p) || (pop_digit[b->b[15]][3] != vacant && pop_digit[b->b[13]][1] != vacant && pop_digit[b->b[12]][0] != vacant))) + 
+        (pop_digit[b->b[14]][5] == p && pop_digit[b->b[15]][5] == p && pop_digit[b->b[15]][6] == p && pop_digit[b->b[14]][7] == p && pop_digit[b->b[14]][6] == p && (pop_digit[b->b[15]][4] == p || (pop_digit[b->b[13]][6] == p && pop_digit[b->b[12]][7] == p) || (pop_digit[b->b[15]][4] != vacant && pop_digit[b->b[13]][6] != vacant && pop_digit[b->b[12]][7] != vacant)));
+}
+
+inline int calc_x_stability(board *b, int p){
+    return
+        (pop_digit[b->b[1]][1] == p && (pop_digit[b->b[0]][2] == p || pop_digit[b->b[2]][0] == p || (pop_digit[b->b[0]][2] != vacant || pop_digit[b->b[2]][0] != vacant)) && pop_digit[b->b[0]][1] == p && pop_digit[b->b[1]][0] == p && pop_digit[b->b[0]][0] == p) + 
+        (pop_digit[b->b[1]][6] == p && (pop_digit[b->b[0]][5] == p || pop_digit[b->b[2]][7] == p || (pop_digit[b->b[0]][5] != vacant || pop_digit[b->b[2]][7] != vacant)) && pop_digit[b->b[0]][6] == p && pop_digit[b->b[1]][7] == p && pop_digit[b->b[0]][7] == p) + 
+        (pop_digit[b->b[6]][1] == p && (pop_digit[b->b[7]][2] == p || pop_digit[b->b[5]][0] == p || (pop_digit[b->b[7]][2] != vacant || pop_digit[b->b[5]][0] != vacant)) && pop_digit[b->b[7]][1] == p && pop_digit[b->b[6]][0] == p && pop_digit[b->b[7]][0] == p) + 
+        (pop_digit[b->b[6]][6] == p && (pop_digit[b->b[7]][5] == p || pop_digit[b->b[5]][7] == p || (pop_digit[b->b[7]][5] != vacant || pop_digit[b->b[5]][7] != vacant)) && pop_digit[b->b[7]][6] == p && pop_digit[b->b[6]][7] == p && pop_digit[b->b[7]][7] == p);
+}
+*/
+
+inline int calc_stability(board *b, int p){
+    return
+        stability_edge_arr[p][b->b[0]] + stability_edge_arr[p][b->b[7]] + stability_edge_arr[p][b->b[8]] + stability_edge_arr[p][b->b[15]] + 
+        stability_corner_arr[p][b->b[0]] + stability_corner_arr[p][b->b[7]]; // + 
+        //calc_x_stability(b, p); // + calc_xx_stability(b, p);
 }
 
 inline int edge_2x(int phase_idx, const board *b, int x, int y){
@@ -294,22 +328,34 @@ inline int end_evaluate(const board *b){
 }
 
 inline int mid_evaluate(board *b, bool passed){
-    int phase_idx, sur0, sur1, res;
-    int canput = calc_canput(b);
+    int phase_idx, sur0, sur1, canput, stab0, stab1, num0, num1;
+    canput = calc_canput(b);
     if (canput == 0){
         if (passed)
             return end_evaluate(b);
         b->p = 1 - b->p;
-        res = -mid_evaluate(b, true);
+        int res = -mid_evaluate(b, true);
         b->p = 1 - b->p;
         return res;
     }
-    //canput = min(max_canput * 2 - 1, max(0, canput + max_canput));
     phase_idx = calc_phase_idx(b);
     sur0 = min(max_surround - 1, calc_surround(b, black));
     sur1 = min(max_surround - 1, calc_surround(b, white));
-    res = (b->p ? -1 : 1) * (calc_pattern(phase_idx, b) + sur0_sur1_arr[phase_idx][sur0][sur1] + sur0_canput_arr[phase_idx][sur0][canput] + sur1_canput_arr[phase_idx][sur1][canput]);
-    //res = (b->p ? -1 : 1) * (calc_pattern(phase_idx, b) + sur0_sur1_arr[phase_idx][sur0][sur1]);
-    return res;
-    //return max(-sc_w, min(sc_w, res));
+    canput = min(max_canput * 2 - 1, max(0, canput + max_canput));
+    stab0 = calc_stability(b, black);
+    stab1 = calc_stability(b, white);
+    int count = 
+        count_black_arr[b->b[0]] + count_black_arr[b->b[1]] + count_black_arr[b->b[2]] + count_black_arr[b->b[3]] + 
+        count_black_arr[b->b[4]] + count_black_arr[b->b[5]] + count_black_arr[b->b[6]] + count_black_arr[b->b[7]];
+    int filled = 
+        count_both_arr[b->b[0]] + count_both_arr[b->b[1]] + count_both_arr[b->b[2]] + count_both_arr[b->b[3]] + 
+        count_both_arr[b->b[4]] + count_both_arr[b->b[5]] + count_both_arr[b->b[6]] + count_both_arr[b->b[7]];
+    num0 = (filled + count) / 2;
+    num1 = (filled - count) / 2;
+    return (b->p ? -1 : 1) * (
+        calc_pattern(phase_idx, b) + 
+        eval_sur0_sur1_arr[phase_idx][sur0][sur1] + 
+        eval_canput_arr[phase_idx][canput] + 
+        eval_stab0_stab1_arr[phase_idx][stab0][stab1] + 
+        eval_num0_num1_arr[phase_idx][num0][num1]);
 }
