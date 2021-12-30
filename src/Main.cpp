@@ -126,7 +126,7 @@ search_result book_return(board bd, book_value book_result) {
 	return res;
 }
 
-inline future<search_result> ai(board bd, int depth, int end_depth, int bd_arr[], int book_accept) {
+inline future<search_result> ai(board bd, int depth, int end_depth, int bd_arr[], int book_accept, bool *pre_searched) {
 	constexpr int first_moves[4] = { 19, 26, 37, 44 };
 	int policy;
 	search_result result;
@@ -141,8 +141,13 @@ inline future<search_result> ai(board bd, int depth, int end_depth, int bd_arr[]
 	book_value book_result = book.get_random(&bd, book_accept);
 	if (book_result.policy != -1)
 		return async(launch::async, book_return, bd, book_result);
-	if (bd.n >= hw2 - end_depth)
-		return async(launch::async, endsearch, bd, tim());
+	if (bd.n >= hw2 - end_depth) {
+		if (!*pre_searched) {
+			*pre_searched = true;
+			return async(launch::async, endsearch, bd, tim(), false);
+		}
+		return async(launch::async, endsearch, bd, tim(), true);
+	}
 	return async(launch::async, midsearch, bd, tim(), depth);
 }
 
@@ -242,7 +247,7 @@ void Main() {
 	int input_board_state = 0, input_record_state = 0;
 	double depth_double = 12, end_depth_double = 20, cell_value_depth_double = 10, cell_value_end_depth_double = 18, book_accept_double = 2;
 	int board_start_moves, finish_moves, max_cell_value = -inf, start_moves = 0;
-	bool book_changed = false, closing = false;
+	bool book_changed = false, closing = false, pre_searched = false;
 
 	ifstream ifs("resources/settings.txt");
 	if (!ifs.fail()) {
@@ -671,6 +676,7 @@ void Main() {
 			input_board_state = 0;
 			input_record_state = 0;
 			start_moves = bd.n - 4;
+			pre_searched = false;
 		}
 
 		record_ui(record).draw(0, 550);
@@ -807,7 +813,6 @@ void Main() {
 					if (future_result.wait_for(seconds0) == future_status::ready) {
 						thinking = false;
 						result = future_result.get();
-						Print << result.nps;
 						value = (double)result.value / step;
 						record += coord_translate(result.policy);
 						if (ai_player == both_ai_define && bd.p == white)
@@ -832,7 +837,7 @@ void Main() {
 					}
 				} else {
 					thinking = true;
-					future_result = ai(bd, depth, end_depth, bd_arr, book_accept);
+					future_result = ai(bd, depth, end_depth, bd_arr, book_accept, &pre_searched);
 				}
 			}
 			score_ui(U"黒 ", bd.count(black), U" ", bd.count(white), U" 白").draw(10, 640);
