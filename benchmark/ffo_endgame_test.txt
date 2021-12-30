@@ -150,3 +150,10 @@
 #47 final depth: 25 time: 13502 policy: 14 value: 400 nodes: 146816819 nps: 10878543 get: 53164 reg: 494963
 #48 final depth: 25 time: 21471 policy: 45 value: 2500 nodes: 246145926 nps: 11468384 get: 48788 reg: 644216    WRONG
 #49 final depth: 26 time: 64650 policy: 4 value: 1500 nodes: 737566641 nps: 11409668 get: 180471 reg: 2445688   WRONG
+
+2021/12/31 without mpc
+#40 final depth: 20 time: 2718 policy: 8 value: 3800 nodes: 28660315 nps: 11454962 get: 61369 reg: 489956
+#41 final depth: 22 time: 47988 policy: 31 value: 0 nodes: 503517193 nps: 11910237 get: 2277031 reg: 13569962
+#42 final depth: 22 time: 8443 policy: 14 value: 600 nodes: 90858285 nps: 12027837 get: 235867 reg: 2016062
+#43 final depth: 23 time: 18586 policy: 22 value: -1200 nodes: 155691101 nps: 12205323 get: 1171388 reg: 8487180
+#44 final depth: 23 time: 20603 policy: 11 value: -1400 nodes: 177676410 nps: 11166891 get: 1137652 reg: 7643342
