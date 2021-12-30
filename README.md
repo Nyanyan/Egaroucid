@@ -306,7 +306,8 @@ https://github.com/Nyanyan/Egaroucid4
 
 ### Additional C++ libraries
 
-None
+* CTPL thread pool library
+  * https://github.com/vit-vit/CTPL
 
 
 

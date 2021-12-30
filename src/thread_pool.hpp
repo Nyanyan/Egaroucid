@@ -7,20 +7,15 @@
 #include <mutex>
 #include "setting.hpp"
 #include "board.hpp"
+#include "CTPL/ctpl_stl.h"
 
 using namespace std;
 
-constexpr chrono::duration<int> seconds0 = chrono::seconds(0);
+#define n_threads 6
 
 class thread_pool {
-    public:
-        vector<bool> stop;
-
     private:
-        vector<future<int>> workers;
-        vector<int> not_busy;
-        mutex mtx;
-        int worker_size;
+        ctpl::thread_pool p(n_thread);
     
     public:
         inline void init(){
