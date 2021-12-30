@@ -45,7 +45,7 @@ int stability_edge_arr[2][n_line];
 int stability_corner_arr[2][n_line];
 int pattern_arr[n_phases][n_patterns][max_evaluate_idx];
 int eval_sur0_sur1_arr[n_phases][max_surround][max_surround];
-int eval_canput_arr[n_phases][max_canput * 2];
+int eval_canput0_canput1_arr[n_phases][max_canput][max_canput];
 int eval_stab0_stab1_arr[n_phases][max_stability][max_stability];
 int eval_num0_num1_arr[n_phases][max_stone_num][max_stone_num];
 
@@ -134,7 +134,7 @@ inline void init_evaluation_calc(){
         exit(1);
     }
     string line;
-    int phase_idx, pattern_idx, pattern_elem, sur0, sur1, canput, stab0, stab1, num0, num1;
+    int phase_idx, pattern_idx, pattern_elem, sur0, sur1, canput0, canput1, stab0, stab1, num0, num1;
     const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10};
     for (phase_idx = 0; phase_idx < n_phases; ++phase_idx){
         cerr << "=";
@@ -150,9 +150,11 @@ inline void init_evaluation_calc(){
                 eval_sur0_sur1_arr[phase_idx][sur0][sur1] = stoi(line);
             }
         }
-        for (canput = 0; canput < max_canput * 2; ++canput){
-            getline(ifs, line);
-            eval_canput_arr[phase_idx][canput] = stoi(line);
+        for (canput0 = 0; canput0 < max_canput; ++canput0){
+            for (canput1 = 0; canput1 < max_canput; ++canput1){
+                getline(ifs, line);
+                eval_canput0_canput1_arr[phase_idx][canput0][canput1] = stoi(line);
+            }
         }
         for (stab0 = 0; stab0 < max_stability; ++stab0){
             for (stab1 = 0; stab1 < max_stability; ++stab1){
@@ -198,18 +200,18 @@ inline int sfill1(int b){
     return pop_digit[b][6] != 2 ? b - p31m : b;
 }
 
-inline int calc_canput(const board *b){
-    return (b->p ? -1 : 1) * (
-        mobility_arr[b->p][b->b[0]] + mobility_arr[b->p][b->b[1]] + mobility_arr[b->p][b->b[2]] + mobility_arr[b->p][b->b[3]] + 
-        mobility_arr[b->p][b->b[4]] + mobility_arr[b->p][b->b[5]] + mobility_arr[b->p][b->b[6]] + mobility_arr[b->p][b->b[7]] + 
-        mobility_arr[b->p][b->b[8]] + mobility_arr[b->p][b->b[9]] + mobility_arr[b->p][b->b[10]] + mobility_arr[b->p][b->b[11]] + 
-        mobility_arr[b->p][b->b[12]] + mobility_arr[b->p][b->b[13]] + mobility_arr[b->p][b->b[14]] + mobility_arr[b->p][b->b[15]] + 
-        mobility_arr[b->p][b->b[16] - p35m] + mobility_arr[b->p][b->b[26] - p35m] + mobility_arr[b->p][b->b[27] - p35m] + mobility_arr[b->p][b->b[37] - p35m] + 
-        mobility_arr[b->p][b->b[17] - p34m] + mobility_arr[b->p][b->b[25] - p34m] + mobility_arr[b->p][b->b[28] - p34m] + mobility_arr[b->p][b->b[36] - p34m] + 
-        mobility_arr[b->p][b->b[18] - p33m] + mobility_arr[b->p][b->b[24] - p33m] + mobility_arr[b->p][b->b[29] - p33m] + mobility_arr[b->p][b->b[35] - p33m] + 
-        mobility_arr[b->p][b->b[19] - p32m] + mobility_arr[b->p][b->b[23] - p32m] + mobility_arr[b->p][b->b[30] - p32m] + mobility_arr[b->p][b->b[34] - p32m] + 
-        mobility_arr[b->p][b->b[20] - p31m] + mobility_arr[b->p][b->b[22] - p31m] + mobility_arr[b->p][b->b[31] - p31m] + mobility_arr[b->p][b->b[33] - p31m] + 
-        mobility_arr[b->p][b->b[21]] + mobility_arr[b->p][b->b[32]]);
+inline int calc_canput(const board *b, int p){
+    return 
+        mobility_arr[p][b->b[0]] + mobility_arr[p][b->b[1]] + mobility_arr[p][b->b[2]] + mobility_arr[p][b->b[3]] + 
+        mobility_arr[p][b->b[4]] + mobility_arr[p][b->b[5]] + mobility_arr[p][b->b[6]] + mobility_arr[p][b->b[7]] + 
+        mobility_arr[p][b->b[8]] + mobility_arr[p][b->b[9]] + mobility_arr[p][b->b[10]] + mobility_arr[p][b->b[11]] + 
+        mobility_arr[p][b->b[12]] + mobility_arr[p][b->b[13]] + mobility_arr[p][b->b[14]] + mobility_arr[p][b->b[15]] + 
+        mobility_arr[p][b->b[16] - p35m] + mobility_arr[p][b->b[26] - p35m] + mobility_arr[p][b->b[27] - p35m] + mobility_arr[p][b->b[37] - p35m] + 
+        mobility_arr[p][b->b[17] - p34m] + mobility_arr[p][b->b[25] - p34m] + mobility_arr[p][b->b[28] - p34m] + mobility_arr[p][b->b[36] - p34m] + 
+        mobility_arr[p][b->b[18] - p33m] + mobility_arr[p][b->b[24] - p33m] + mobility_arr[p][b->b[29] - p33m] + mobility_arr[p][b->b[35] - p33m] + 
+        mobility_arr[p][b->b[19] - p32m] + mobility_arr[p][b->b[23] - p32m] + mobility_arr[p][b->b[30] - p32m] + mobility_arr[p][b->b[34] - p32m] + 
+        mobility_arr[p][b->b[20] - p31m] + mobility_arr[p][b->b[22] - p31m] + mobility_arr[p][b->b[31] - p31m] + mobility_arr[p][b->b[33] - p31m] + 
+        mobility_arr[p][b->b[21]] + mobility_arr[p][b->b[32]];
 }
 
 inline int calc_surround(const board *b, int p){
@@ -327,21 +329,15 @@ inline int end_evaluate(const board *b){
     return count * step;
 }
 
-inline int mid_evaluate(board *b, bool passed){
-    int phase_idx, sur0, sur1, canput, stab0, stab1, num0, num1;
-    canput = calc_canput(b);
-    if (canput == 0){
-        if (passed)
-            return end_evaluate(b);
-        b->p = 1 - b->p;
-        int res = -mid_evaluate(b, true);
-        b->p = 1 - b->p;
-        return res;
-    }
+inline int mid_evaluate(board *b){
+    int phase_idx, sur0, sur1, canput0, canput1, stab0, stab1, num0, num1;
+    canput0 = min(max_canput - 1, calc_canput(b, black));
+    canput1 = min(max_canput - 1, calc_canput(b, white));
+    if (canput0 == 0 && canput1 == 0)
+        return end_evaluate(b);
     phase_idx = calc_phase_idx(b);
     sur0 = min(max_surround - 1, calc_surround(b, black));
     sur1 = min(max_surround - 1, calc_surround(b, white));
-    canput = min(max_canput * 2 - 1, max(0, canput + max_canput));
     stab0 = calc_stability(b, black);
     stab1 = calc_stability(b, white);
     int count = 
@@ -355,7 +351,7 @@ inline int mid_evaluate(board *b, bool passed){
     return (b->p ? -1 : 1) * (
         calc_pattern(phase_idx, b) + 
         eval_sur0_sur1_arr[phase_idx][sur0][sur1] + 
-        eval_canput_arr[phase_idx][canput] + 
+        eval_canput0_canput1_arr[phase_idx][canput0][canput1] + 
         eval_stab0_stab1_arr[phase_idx][stab0][stab1] + 
         eval_num0_num1_arr[phase_idx][num0][num1]);
 }

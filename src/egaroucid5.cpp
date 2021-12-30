@@ -85,8 +85,8 @@ int main(){
         int depth, end_depth;
         bool pre_searched = false;
         book_value book_result;
-        depth = 2; //23;
-        end_depth = 4; //23;
+        depth = 15; //23;
+        end_depth = 22; //23;
     #endif
     int ai_player;
     //cin >> ai_player;
@@ -109,7 +109,7 @@ int main(){
             cin >> ai_player;
             input_board(&b, ai_player);
             cerr << b.p << endl;
-            cerr << b.n << " " << mid_evaluate(&b, false) << endl;
+            cerr << b.n << " " << mid_evaluate(&b) << endl;
             if (b.n == 4){
                 int policy = first_moves[myrandrange(0, 4)];
                 cerr << "BOOK " << policy << endl;
@@ -125,7 +125,8 @@ int main(){
                 }
             }
             if (b.n >= hw2 - end_depth){
-                result = endsearch(b, tim(), pre_searched);
+                //result = endsearch(b, tim(), pre_searched);
+                result = endsearch(b, tim(), false);
                 pre_searched = true;
             } else
                 result = midsearch(b, tim(), depth);

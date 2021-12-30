@@ -155,18 +155,18 @@ inline int sfill1(int b){
     return pop_digit[b][6] != 2 ? b - p31m : b;
 }
 
-inline int calc_canput(const board *b){
-    return (b->p ? -1 : 1) * (
-        mobility_arr[b->p][b->b[0]] + mobility_arr[b->p][b->b[1]] + mobility_arr[b->p][b->b[2]] + mobility_arr[b->p][b->b[3]] + 
-        mobility_arr[b->p][b->b[4]] + mobility_arr[b->p][b->b[5]] + mobility_arr[b->p][b->b[6]] + mobility_arr[b->p][b->b[7]] + 
-        mobility_arr[b->p][b->b[8]] + mobility_arr[b->p][b->b[9]] + mobility_arr[b->p][b->b[10]] + mobility_arr[b->p][b->b[11]] + 
-        mobility_arr[b->p][b->b[12]] + mobility_arr[b->p][b->b[13]] + mobility_arr[b->p][b->b[14]] + mobility_arr[b->p][b->b[15]] + 
-        mobility_arr[b->p][b->b[16] - p35m] + mobility_arr[b->p][b->b[26] - p35m] + mobility_arr[b->p][b->b[27] - p35m] + mobility_arr[b->p][b->b[37] - p35m] + 
-        mobility_arr[b->p][b->b[17] - p34m] + mobility_arr[b->p][b->b[25] - p34m] + mobility_arr[b->p][b->b[28] - p34m] + mobility_arr[b->p][b->b[36] - p34m] + 
-        mobility_arr[b->p][b->b[18] - p33m] + mobility_arr[b->p][b->b[24] - p33m] + mobility_arr[b->p][b->b[29] - p33m] + mobility_arr[b->p][b->b[35] - p33m] + 
-        mobility_arr[b->p][b->b[19] - p32m] + mobility_arr[b->p][b->b[23] - p32m] + mobility_arr[b->p][b->b[30] - p32m] + mobility_arr[b->p][b->b[34] - p32m] + 
-        mobility_arr[b->p][b->b[20] - p31m] + mobility_arr[b->p][b->b[22] - p31m] + mobility_arr[b->p][b->b[31] - p31m] + mobility_arr[b->p][b->b[33] - p31m] + 
-        mobility_arr[b->p][b->b[21]] + mobility_arr[b->p][b->b[32]]);
+inline int calc_canput(const board *b, int p){
+    return 
+        mobility_arr[p][b->b[0]] + mobility_arr[p][b->b[1]] + mobility_arr[p][b->b[2]] + mobility_arr[p][b->b[3]] + 
+        mobility_arr[p][b->b[4]] + mobility_arr[p][b->b[5]] + mobility_arr[p][b->b[6]] + mobility_arr[p][b->b[7]] + 
+        mobility_arr[p][b->b[8]] + mobility_arr[p][b->b[9]] + mobility_arr[p][b->b[10]] + mobility_arr[p][b->b[11]] + 
+        mobility_arr[p][b->b[12]] + mobility_arr[p][b->b[13]] + mobility_arr[p][b->b[14]] + mobility_arr[p][b->b[15]] + 
+        mobility_arr[p][b->b[16] - p35m] + mobility_arr[p][b->b[26] - p35m] + mobility_arr[p][b->b[27] - p35m] + mobility_arr[p][b->b[37] - p35m] + 
+        mobility_arr[p][b->b[17] - p34m] + mobility_arr[p][b->b[25] - p34m] + mobility_arr[p][b->b[28] - p34m] + mobility_arr[p][b->b[36] - p34m] + 
+        mobility_arr[p][b->b[18] - p33m] + mobility_arr[p][b->b[24] - p33m] + mobility_arr[p][b->b[29] - p33m] + mobility_arr[p][b->b[35] - p33m] + 
+        mobility_arr[p][b->b[19] - p32m] + mobility_arr[p][b->b[23] - p32m] + mobility_arr[p][b->b[30] - p32m] + mobility_arr[p][b->b[34] - p32m] + 
+        mobility_arr[p][b->b[20] - p31m] + mobility_arr[p][b->b[22] - p31m] + mobility_arr[p][b->b[31] - p31m] + mobility_arr[p][b->b[33] - p31m] + 
+        mobility_arr[p][b->b[21]] + mobility_arr[p][b->b[32]];
 }
 
 inline int calc_surround(const board *b, int p){
@@ -290,17 +290,18 @@ inline void calc_idx(int phase_idx, board *b, int idxes[]){
     //idxes[53] = narrow_triangle1(phase_idx, b, 7, 6, 5, 4, 3);
     idxes[50] = min(max_surround - 1, calc_surround(b, black));
     idxes[51] = min(max_surround - 1, calc_surround(b, white));
-    idxes[52] = max(0, min(max_canput * 2 - 1, calc_canput(b) + max_canput));
-    idxes[53] = calc_stability(b, black);
-    idxes[54] = calc_stability(b, white);
+    idxes[52] = calc_canput(b, black);
+    idxes[53] = calc_canput(b, white);
+    idxes[54] = calc_stability(b, black);
+    idxes[55] = calc_stability(b, white);
     int count = 
         count_black_arr[b->b[0]] + count_black_arr[b->b[1]] + count_black_arr[b->b[2]] + count_black_arr[b->b[3]] + 
         count_black_arr[b->b[4]] + count_black_arr[b->b[5]] + count_black_arr[b->b[6]] + count_black_arr[b->b[7]];
     int filled = 
         count_both_arr[b->b[0]] + count_both_arr[b->b[1]] + count_both_arr[b->b[2]] + count_both_arr[b->b[3]] + 
         count_both_arr[b->b[4]] + count_both_arr[b->b[5]] + count_both_arr[b->b[6]] + count_both_arr[b->b[7]];
-    idxes[55] = (filled + count) / 2;
-    idxes[56] = (filled - count) / 2;
+    idxes[56] = (filled + count) / 2;
+    idxes[57] = (filled - count) / 2;
 }
 
 inline void convert_idx(string str){
@@ -409,10 +410,10 @@ inline void convert_idx(string str){
     iss >> score;
     b.translate_from_arr(arr, ai_player);
     //b.print();
-    int idxes[57];
+    int idxes[58];
     calc_idx(phase_idx, &b, idxes);
     cout << phase_idx << " " << ai_player << " ";
-    for (i = 0; i < 57; ++i)
+    for (i = 0; i < 58; ++i)
         cout << idxes[i] << " ";
     cout << score << endl;
 }

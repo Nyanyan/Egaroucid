@@ -128,11 +128,11 @@ inline void move_ordering(board *b){
     else if (l != -inf)
         b->v += l + cache_hit;
     else
-        b->v = -mid_evaluate(b, false);
+        b->v = -mid_evaluate(b);
 }
 
 inline void move_ordering_eval(board *b){
-    b->v = -mid_evaluate(b, false);
+    b->v = -mid_evaluate(b);
 }
 
 inline void calc_extra_stability(board *b, int p, unsigned long long extra_stability, int *pres, int *ores){

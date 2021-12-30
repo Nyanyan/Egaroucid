@@ -85,7 +85,7 @@ int nega_alpha(board *b, bool skipped, int depth, int alpha, int beta){
     ++searched_nodes;
     if (depth == 0){
         if (b->n < hw2)
-            return mid_evaluate(b, skipped);
+            return mid_evaluate(b);
         else
             return end_evaluate(b);
     }
@@ -98,7 +98,7 @@ int nega_alpha(board *b, bool skipped, int depth, int alpha, int beta){
     int g, v = -inf;
     #if USE_MID_SMOOTH
         if (depth == 1){
-            int nv = mid_evaluate(b, skipped);
+            int nv = mid_evaluate(b);
             for (const int &cell: vacant_lst){
                 if (b->legal(cell)){
                     passed = false;
@@ -374,7 +374,7 @@ int nega_scout(board *b, bool skipped, const int depth, int alpha, int beta, boo
 }
 
 int mtd(board *b, bool skipped, int depth, int l, int u, bool use_mpc, double use_mpct){
-    int g = mid_evaluate(b, skipped), beta;
+    int g = mid_evaluate(b), beta;
     while (u - l > mtd_threshold){
         beta = g;
         g = nega_alpha_ordering(b, skipped, depth, beta - search_epsilon, beta, true, use_mpc, use_mpct);
@@ -436,7 +436,7 @@ inline search_result midsearch(board b, long long strt, int max_depth){
             if (order_l != -inf && order_u != -inf)
                 nb[i].v += 100000;
             if (order_l == -inf && order_u == -inf)
-                nb[i].v = -mid_evaluate(&nb[i], false);
+                nb[i].v = -mid_evaluate(&nb[i]);
             else
                 nb[i].v += cache_hit;
             

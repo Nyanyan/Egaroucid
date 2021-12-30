@@ -38,13 +38,13 @@ int sa_phase;
 
 #define n_data 30000000
 
-#define n_raw_params (50 + 7)
+#define n_raw_params (50 + 8)
 
 double alpha;
-#define beta 0.1
+#define beta 0.075
 
 const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10};
-const int eval_sizes[n_eval] = {p38, p38, p38, p35, p36, p37, p38, p310, p310, p310, p310, p39, p310, max_surround * max_surround, max_canput * 2, max_stability * max_stability, max_stone_num * max_stone_num};
+const int eval_sizes[n_eval] = {p38, p38, p38, p35, p36, p37, p38, p310, p310, p310, p310, p39, p310, max_surround * max_surround, max_canput * max_canput, max_stability * max_stability, max_stone_num * max_stone_num};
 double eval_arr[n_phases][n_eval][max_evaluate_idx];
 int test_data[n_data / 6 + 10000][n_raw_params];
 double test_labels[n_data / 6 + 10000];
@@ -133,16 +133,16 @@ inline int calc_sur0_sur1(int arr[]){
     return arr[50] * max_surround + arr[51];
 }
 
-inline int calc_canput(int arr[]){
-    return arr[52];
+inline int calc_canput0_canput1(int arr[]){
+    return arr[52] * max_canput + arr[53];
 }
 
 inline int calc_stab0_stab1(int arr[]){
-    return arr[53] * max_stability + arr[54];
+    return arr[54] * max_stability + arr[55];
 }
 
 inline int calc_num0_num1(int arr[]){
-    return arr[55] * max_stone_num + arr[56];
+    return arr[56] * max_stone_num + arr[57];
 }
 
 void input_test_data(int strt){
@@ -194,14 +194,14 @@ void input_test_data(int strt){
             for (i = 0; i < 50; ++i)
                 used_idxes[pattern_nums[i]].emplace(test_data[nums][i]);
             used_idxes[13].emplace(calc_sur0_sur1(test_data[nums]));
-            used_idxes[14].emplace(calc_canput(test_data[nums]));
+            used_idxes[14].emplace(calc_canput0_canput1(test_data[nums]));
             used_idxes[15].emplace(calc_stab0_stab1(test_data[nums]));
             used_idxes[16].emplace(calc_num0_num1(test_data[nums]));
             test_labels[nums] = score * step;
             for (i = 0; i < 50; ++i)
                 test_memo[pattern_nums[i]][test_data[nums][i]].push_back(nums);
             test_memo[13][calc_sur0_sur1(test_data[nums])].push_back(nums);
-            test_memo[14][calc_canput(test_data[nums])].push_back(nums);
+            test_memo[14][calc_canput0_canput1(test_data[nums])].push_back(nums);
             test_memo[15][calc_stab0_stab1(test_data[nums])].push_back(nums);
             test_memo[16][calc_num0_num1(test_data[nums])].push_back(nums);
             test_scores.push_back(0);
@@ -320,7 +320,7 @@ inline double calc_score(int phase, int i){
         //eval_arr[phase][13][test_data[i][52]] + 
         //eval_arr[phase][13][test_data[i][53]] + 
         eval_arr[phase][13][calc_sur0_sur1(test_data[i])] + 
-        eval_arr[phase][14][calc_canput(test_data[i])] + 
+        eval_arr[phase][14][calc_canput0_canput1(test_data[i])] + 
         eval_arr[phase][15][calc_stab0_stab1(test_data[i])] + 
         eval_arr[phase][16][calc_num0_num1(test_data[i])];
 }
@@ -480,8 +480,10 @@ int main(int argc, char *argv[]){
 
     board_init();
     init();
-    //initialize_param();
-    input_param_onephase((string)(argv[2]));
+    initialize_param();
+    output_param_onephase();
+    return 0;
+    //input_param_onephase((string)(argv[2]));
     input_test_data(0);
 
     sd(second * 1000);
