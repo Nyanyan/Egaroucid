@@ -32,10 +32,6 @@
 // use multi thread ** UNDER CONSTRUCTION **
 #define USE_MULTI_THREAD true
 
-// YBWC early cut **If you want to set these true, you must set USE_MULTI_THREAD true**
-#define USE_YBWC_MID_EARLY_CUT true
-#define USE_YBWC_END_EARLY_CUT true
-
 
 
 
