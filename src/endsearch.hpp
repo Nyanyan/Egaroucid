@@ -874,7 +874,7 @@ int nega_scout_final(board *b, bool skipped, const int depth, int alpha, int bet
     return v;
 }
 
-inline search_result endsearch(board b, long long strt){
+inline search_result endsearch(board b, long long strt, bool pre_searched){
     vector<board> nb;
     vector<int> prev_vals;
     int i;
@@ -895,7 +895,7 @@ inline search_result endsearch(board b, long long strt){
     transpose_table.hash_reg = 0;
     int max_depth = hw2 - b.n - 1;
     bool use_mpc = max_depth >= 21 ? true : false;
-    double use_mpct = 1.7;
+    double use_mpct = 1.3;
     if (max_depth >= 23)
         use_mpct = 1.1;
     if (max_depth >= 25)
@@ -908,9 +908,11 @@ inline search_result endsearch(board b, long long strt){
         use_mpct = 0.3;
     if (max_depth >= 33)
         use_mpct = 0.2;
-    int pre_search_depth = min(12, max_depth - simple_end_threshold);
+    //if (!pre_searched){
+    int pre_search_depth = min(15, max_depth - simple_end_threshold);
     if (pre_search_depth > 0)
         midsearch(b, strt, pre_search_depth);
+    //}
     transpose_table.init_now();
     cerr << "start final search depth " << max_depth + 1 << endl;
     alpha = -sc_w;
@@ -929,17 +931,21 @@ inline search_result endsearch(board b, long long strt){
     searched_nodes = 0;
     if (nb[0].n < hw2 - 5){
         alpha = -nega_scout_final(&nb[0], false, max_depth, -beta, -alpha, use_mpc, use_mpct);
+        transpose_table.reg(&nb[0], nb[0].hash() & search_hash_mask, alpha, alpha);
         //alpha = -mtd_final(&nb[0], false, max_depth, -beta, -alpha, prev_vals[0]);
         tmp_policy = nb[0].policy;
         for (i = 1; i < canput; ++i){
             g = -nega_alpha_ordering_final(&nb[i], false, max_depth, -alpha - step, -alpha, multi_thread_depth, -1, use_mpc, use_mpct);
             if (alpha < g){
                 g = -nega_scout_final(&nb[i], false, max_depth, -beta, -g, use_mpc, use_mpct);
+                transpose_table.reg(&nb[i], nb[i].hash() & search_hash_mask, g, g);
                 //g = -mtd_final(&nb[i], false, max_depth, -beta, -g, prev_vals[i]);
                 if (alpha < g){
                     alpha = g;
                     tmp_policy = nb[i].policy;
                 }
+            } else{
+                transpose_table.reg(&nb[i], nb[i].hash() & search_hash_mask, g, alpha);
             }
         }
     } else{

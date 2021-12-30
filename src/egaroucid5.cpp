@@ -83,6 +83,7 @@ int main(){
         search_result result;
         const int first_moves[4] = {19, 26, 37, 44};
         int depth, end_depth;
+        bool pre_searched = false;
         book_value book_result;
         depth = 15; //23;
         end_depth = 20; //23;
@@ -123,9 +124,10 @@ int main(){
                     continue;
                 }
             }
-            if (b.n >= hw2 - end_depth)
-                result = endsearch(b, tim());
-            else
+            if (b.n >= hw2 - end_depth){
+                result = endsearch(b, tim(), pre_searched);
+                pre_searched = true;
+            } else
                 result = midsearch(b, tim(), depth);
             print_result(result);
         #endif
