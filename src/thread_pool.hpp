@@ -4,7 +4,7 @@
 //#include <future>
 #include "setting.hpp"
 #include "board.hpp"
-#include "CTPL/ctpl_stl.h"
+#include "CTPL/ctpl_stl.h" // from https://github.com/vit-vit/CTPL
 
 using namespace std;
 
