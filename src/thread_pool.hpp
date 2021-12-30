@@ -8,7 +8,7 @@
 
 using namespace std;
 
-#define n_threads 6
+unsigned int n_threads = thread::hardware_concurrency();
 
 /*
 class egaroucid_thread_pool {

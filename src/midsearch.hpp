@@ -213,9 +213,9 @@ int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int 
                 return alpha;
             }
             v = max(v, g);
-            future<int> future_tasks[canput - 1];
+            vector<future<int>> future_tasks;
             for (i = 1; i < canput; ++i)
-                future_tasks[i - 1] = thread_pool.push(bind(&nega_alpha_ordering, &nb[i], false, depth - 1, -beta, -alpha, false, use_mpc, mpct_in));
+                future_tasks.emplace_back(thread_pool.push(bind(&nega_alpha_ordering, &nb[i], false, depth - 1, -beta, -alpha, false, use_mpc, mpct_in)));
             for (i = 1; i < canput; ++i){
                 g = -future_tasks[i - 1].get();
                 alpha = max(alpha, g);
@@ -320,15 +320,15 @@ int nega_scout(board *b, bool skipped, const int depth, int alpha, int beta, boo
         }
         v = max(v, g);
         int first_alpha = alpha;
-        future<int> future_tasks[canput - 1];
-        bool re_search[canput - 1];
+        vector<future<int>> future_tasks;
+        vector<bool> re_search;
         for (i = 1; i < canput; ++i)
-            future_tasks[i - 1] = thread_pool.push(bind(&nega_alpha_ordering, &nb[i], false, depth - 1, -alpha - search_epsilon, -alpha, false, use_mpc, mpct_in));
+            future_tasks.emplace_back(thread_pool.push(bind(&nega_alpha_ordering, &nb[i], false, depth - 1, -alpha - search_epsilon, -alpha, false, use_mpc, mpct_in)));
         for (i = 1; i < canput; ++i){
             g = -future_tasks[i - 1].get();
             alpha = max(alpha, g);
             v = max(v, g);
-            re_search[i - 1] = first_alpha < g;
+            re_search.emplace_back(first_alpha < g);
         }
         for (i = 1; i < canput; ++i){
             if (re_search[i - 1]){
