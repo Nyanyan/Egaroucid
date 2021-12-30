@@ -480,8 +480,8 @@ int main(int argc, char *argv[]){
 
     board_init();
     init();
-    initialize_param();
-    //input_param_onephase((string)(argv[2]));
+    //initialize_param();
+    input_param_onephase((string)(argv[2]));
     input_test_data(0);
 
     sd(second * 1000);
