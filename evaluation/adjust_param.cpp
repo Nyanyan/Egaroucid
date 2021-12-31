@@ -20,7 +20,7 @@ using namespace std;
 #define max_stone_num 65
 #define max_evaluate_idx 59049
 
-int sa_phase;
+int sa_phase, sa_player;
 
 #define p31 3
 #define p32 9
@@ -41,7 +41,7 @@ int sa_phase;
 #define n_raw_params (50 + 8)
 
 double alpha;
-#define beta 0.1
+#define beta 0.05
 
 const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10};
 const int eval_sizes[n_eval] = {p38, p38, p38, p35, p36, p37, p38, p310, p310, p310, p310, p39, p310, max_surround * max_surround, max_canput * max_canput, max_stability * max_stability, max_stone_num * max_stone_num};
@@ -185,9 +185,9 @@ void input_test_data(int strt){
             cerr << '\r' << t;
         istringstream iss(line);
         iss >> phase;
-        if (phase == sa_phase){
+        iss >> player;
+        if (phase == sa_phase && player == sa_player){
             ++u;
-            iss >> player;
             for (i = 0; i < n_raw_params; ++i)
                 iss >> test_data[nums][i];
             iss >> score;
@@ -469,18 +469,20 @@ void init(){
 
 int main(int argc, char *argv[]){
     sa_phase = atoi(argv[1]);
-    cerr << sa_phase << endl;
+    sa_player = atoi(argv[2]);
+    cerr << sa_phase << " " << sa_player << endl;
     int i, j;
 
     unsigned long long hour = 0;
-    unsigned long long minute = 10;
+    unsigned long long minute = 5;
     unsigned long long second = 0;
     minute += hour * 60;
     second += minute * 60;
 
     board_init();
     init();
-    input_param_onephase((string)(argv[2]));
+    initialize_param();
+    //input_param_onephase((string)(argv[3]));
     input_test_data(0);
 
     sd(second * 1000);

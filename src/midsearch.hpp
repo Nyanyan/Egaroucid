@@ -411,7 +411,7 @@ inline search_result midsearch(board b, long long strt, int max_depth){
     int order_l, order_u;
     //int depth = min(hw2 - b.n - 1, max_depth - 1);
     bool use_mpc = max_depth >= 11 ? true : false;
-    double use_mpct = 1.6;
+    double use_mpct = 1.0;
     if (max_depth >= 13)
         use_mpct = 0.8;
     if (max_depth >= 15)
