@@ -43,11 +43,11 @@ int mobility_arr2[2][n_line * n_line];
 int surround_arr[2][n_line];
 int stability_edge_arr[2][n_line];
 int stability_corner_arr[2][n_line];
-int pattern_arr[n_phases][n_patterns][max_evaluate_idx];
-int eval_sur0_sur1_arr[n_phases][max_surround][max_surround];
-int eval_canput0_canput1_arr[n_phases][max_canput][max_canput];
-int eval_stab0_stab1_arr[n_phases][max_stability][max_stability];
-int eval_num0_num1_arr[n_phases][max_stone_num][max_stone_num];
+int pattern_arr[n_phases][2][n_patterns][max_evaluate_idx];
+int eval_sur0_sur1_arr[n_phases][2][max_surround][max_surround];
+int eval_canput0_canput1_arr[n_phases][2][max_canput][max_canput];
+int eval_stab0_stab1_arr[n_phases][2][max_stability][max_stability];
+int eval_num0_num1_arr[n_phases][2][max_stone_num][max_stone_num];
 
 inline void init_evaluation_base() {
     int idx, place, b, w;
@@ -128,44 +128,46 @@ inline void init_evaluation_base() {
 }
 
 inline void init_evaluation_calc(){
-    ifstream ifs("C:\\github\\egaroucid\\Egaroucid5\\src\\resources/param.txt");
+    ifstream ifs("resources/param.txt");
     if (ifs.fail()){
         cerr << "evaluation file not exist" << endl;
         exit(1);
     }
     string line;
-    int phase_idx, pattern_idx, pattern_elem, sur0, sur1, canput0, canput1, stab0, stab1, num0, num1;
+    int phase_idx, player_idx, pattern_idx, pattern_elem, sur0, sur1, canput0, canput1, stab0, stab1, num0, num1;
     const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10};
     for (phase_idx = 0; phase_idx < n_phases; ++phase_idx){
-        cerr << "=";
-        for (pattern_idx = 0; pattern_idx < n_patterns; ++pattern_idx){
-            for (pattern_elem = 0; pattern_elem < pow3[pattern_sizes[pattern_idx]]; ++pattern_elem){
-                getline(ifs, line);
-                pattern_arr[phase_idx][pattern_idx][pattern_elem] = stoi(line);
+        for (player_idx = 0; player_idx < 2; ++player_idx){
+            cerr << "=";
+            for (pattern_idx = 0; pattern_idx < n_patterns; ++pattern_idx){
+                for (pattern_elem = 0; pattern_elem < pow3[pattern_sizes[pattern_idx]]; ++pattern_elem){
+                    getline(ifs, line);
+                    pattern_arr[phase_idx][player_idx][pattern_idx][pattern_elem] = stoi(line);
+                }
             }
-        }
-        for (sur0 = 0; sur0 < max_surround; ++sur0){
-            for (sur1 = 0; sur1 < max_surround; ++sur1){
-                getline(ifs, line);
-                eval_sur0_sur1_arr[phase_idx][sur0][sur1] = stoi(line);
+            for (sur0 = 0; sur0 < max_surround; ++sur0){
+                for (sur1 = 0; sur1 < max_surround; ++sur1){
+                    getline(ifs, line);
+                    eval_sur0_sur1_arr[phase_idx][player_idx][sur0][sur1] = stoi(line);
+                }
             }
-        }
-        for (canput0 = 0; canput0 < max_canput; ++canput0){
-            for (canput1 = 0; canput1 < max_canput; ++canput1){
-                getline(ifs, line);
-                eval_canput0_canput1_arr[phase_idx][canput0][canput1] = stoi(line);
+            for (canput0 = 0; canput0 < max_canput; ++canput0){
+                for (canput1 = 0; canput1 < max_canput; ++canput1){
+                    getline(ifs, line);
+                    eval_canput0_canput1_arr[phase_idx][player_idx][canput0][canput1] = stoi(line);
+                }
             }
-        }
-        for (stab0 = 0; stab0 < max_stability; ++stab0){
-            for (stab1 = 0; stab1 < max_stability; ++stab1){
-                getline(ifs, line);
-                eval_stab0_stab1_arr[phase_idx][stab0][stab1] = stoi(line);
+            for (stab0 = 0; stab0 < max_stability; ++stab0){
+                for (stab1 = 0; stab1 < max_stability; ++stab1){
+                    getline(ifs, line);
+                    eval_stab0_stab1_arr[phase_idx][player_idx][stab0][stab1] = stoi(line);
+                }
             }
-        }
-        for (num0 = 0; num0 < max_stone_num; ++num0){
-            for (num1 = 0; num1 < max_stone_num; ++num1){
-                getline(ifs, line);
-                eval_num0_num1_arr[phase_idx][num0][num1] = stoi(line);
+            for (num0 = 0; num0 < max_stone_num; ++num0){
+                for (num1 = 0; num1 < max_stone_num; ++num1){
+                    getline(ifs, line);
+                    eval_num0_num1_arr[phase_idx][player_idx][num0][num1] = stoi(line);
+                }
             }
         }
     }
@@ -258,54 +260,54 @@ inline int calc_stability(board *b, int p){
 }
 
 inline int edge_2x(int phase_idx, const board *b, int x, int y){
-    return pattern_arr[phase_idx][7][pop_digit[b->b[x]][1] * p39 + b->b[y] * p31 + pop_digit[b->b[x]][6]];
+    return pattern_arr[phase_idx][b->p][7][pop_digit[b->b[x]][1] * p39 + b->b[y] * p31 + pop_digit[b->b[x]][6]];
 }
 
 inline int triangle0(int phase_idx, const board *b, int w, int x, int y, int z){
-    return pattern_arr[phase_idx][8][b->b[w] / p34 * p36 + b->b[x] / p35 * p33 + b->b[y] / p36 * p31 + b->b[z] / p37];
+    return pattern_arr[phase_idx][b->p][8][b->b[w] / p34 * p36 + b->b[x] / p35 * p33 + b->b[y] / p36 * p31 + b->b[z] / p37];
 }
 
 inline int triangle1(int phase_idx, const board *b, int w, int x, int y, int z){
-    return pattern_arr[phase_idx][8][reverse_board[b->b[w]] / p34 * p36 + reverse_board[b->b[x]] / p35 * p33 + reverse_board[b->b[y]] / p36 * p31 + reverse_board[b->b[z]] / p37];
+    return pattern_arr[phase_idx][b->p][8][reverse_board[b->b[w]] / p34 * p36 + reverse_board[b->b[x]] / p35 * p33 + reverse_board[b->b[y]] / p36 * p31 + reverse_board[b->b[z]] / p37];
 }
 
 inline int edge_block(int phase_idx, const board *b, int x, int y){
-    return pattern_arr[phase_idx][9][pop_digit[b->b[x]][0] * p39 + pop_mid[b->b[x]][6][2] * p35 + pop_digit[b->b[x]][7] * p34 + pop_mid[b->b[y]][6][2]];
+    return pattern_arr[phase_idx][b->p][9][pop_digit[b->b[x]][0] * p39 + pop_mid[b->b[x]][6][2] * p35 + pop_digit[b->b[x]][7] * p34 + pop_mid[b->b[y]][6][2]];
 }
 
 inline int cross(int phase_idx, const board *b, int x, int y, int z){
     return 
-        pattern_arr[phase_idx][10][b->b[x] / p34 * p36 + b->b[y] / p35 * p33 + b->b[z] / p35] + 
-        pattern_arr[phase_idx][10][reverse_board[b->b[x]] / p34 * p36 + pop_mid[reverse_board[b->b[y]]][7][4] * p33 + pop_mid[reverse_board[b->b[z]]][7][4]];
+        pattern_arr[phase_idx][b->p][10][b->b[x] / p34 * p36 + b->b[y] / p35 * p33 + b->b[z] / p35] + 
+        pattern_arr[phase_idx][b->p][10][reverse_board[b->b[x]] / p34 * p36 + pop_mid[reverse_board[b->b[y]]][7][4] * p33 + pop_mid[reverse_board[b->b[z]]][7][4]];
 }
 
 inline int corner9(int phase_idx, const board *b, int x, int y, int z){
     return 
-        pattern_arr[phase_idx][11][b->b[x] / p35 * p36 + b->b[y] / p35 * p33 + b->b[z] / p35] + 
-        pattern_arr[phase_idx][11][reverse_board[b->b[x]] / p35 * p36 + reverse_board[b->b[y]] / p35 * p33 + reverse_board[b->b[z]] / p35];
+        pattern_arr[phase_idx][b->p][11][b->b[x] / p35 * p36 + b->b[y] / p35 * p33 + b->b[z] / p35] + 
+        pattern_arr[phase_idx][b->p][11][reverse_board[b->b[x]] / p35 * p36 + reverse_board[b->b[y]] / p35 * p33 + reverse_board[b->b[z]] / p35];
 }
 
 inline int edge_2y(int phase_idx, const board *b, int x, int y){
-    return pattern_arr[phase_idx][12][pop_digit[b->b[x]][2] * p39 + b->b[y] * p31 + pop_digit[b->b[x]][5]];
+    return pattern_arr[phase_idx][b->p][12][pop_digit[b->b[x]][2] * p39 + b->b[y] * p31 + pop_digit[b->b[x]][5]];
 }
 
 inline int narrow_triangle0(int phase_idx, const board *b, int v, int w, int x, int y, int z){
-    return pattern_arr[phase_idx][13][b->b[v] / p33 * p35 + b->b[w] / p36 * p33 + b->b[x] / p37 * p32 + b->b[y] / p37 * p31 + b->b[z] / p37];
+    return pattern_arr[phase_idx][b->p][13][b->b[v] / p33 * p35 + b->b[w] / p36 * p33 + b->b[x] / p37 * p32 + b->b[y] / p37 * p31 + b->b[z] / p37];
 }
 
 inline int narrow_triangle1(int phase_idx, const board *b, int v, int w, int x, int y, int z){
-    return pattern_arr[phase_idx][13][reverse_board[b->b[v]] / p33 * p35 + reverse_board[b->b[w]] / p36 * p33 + pop_digit[b->b[x]][7] * p32 + pop_digit[b->b[y]][7] / p37 * p31 + pop_digit[b->b[z]][7] / p37];
+    return pattern_arr[phase_idx][b->p][13][reverse_board[b->b[v]] / p33 * p35 + reverse_board[b->b[w]] / p36 * p33 + pop_digit[b->b[x]][7] * p32 + pop_digit[b->b[y]][7] / p37 * p31 + pop_digit[b->b[z]][7] / p37];
 }
 
 inline int calc_pattern(int phase_idx, const board *b){
     return 
-        pattern_arr[phase_idx][0][b->b[1]] + pattern_arr[phase_idx][0][b->b[6]] + pattern_arr[phase_idx][0][b->b[9]] + pattern_arr[phase_idx][0][b->b[14]] + 
-        pattern_arr[phase_idx][1][b->b[2]] + pattern_arr[phase_idx][1][b->b[5]] + pattern_arr[phase_idx][1][b->b[10]] + pattern_arr[phase_idx][1][b->b[13]] + 
-        pattern_arr[phase_idx][2][b->b[3]] + pattern_arr[phase_idx][2][b->b[4]] + pattern_arr[phase_idx][2][b->b[11]] + pattern_arr[phase_idx][2][b->b[12]] + 
-        pattern_arr[phase_idx][3][b->b[18] / p33] + pattern_arr[phase_idx][3][b->b[24] / p33] + pattern_arr[phase_idx][3][b->b[29] / p33] + pattern_arr[phase_idx][3][b->b[35] / p33] + 
-        pattern_arr[phase_idx][4][b->b[19] / p32] + pattern_arr[phase_idx][4][b->b[23] / p32] + pattern_arr[phase_idx][4][b->b[30] / p32] + pattern_arr[phase_idx][4][b->b[34] / p32] + 
-        pattern_arr[phase_idx][5][b->b[20] / p31] + pattern_arr[phase_idx][5][b->b[22] / p31] + pattern_arr[phase_idx][5][b->b[31] / p31] + pattern_arr[phase_idx][5][b->b[33] / p31] + 
-        pattern_arr[phase_idx][6][b->b[21]] + pattern_arr[phase_idx][6][b->b[32]] + 
+        pattern_arr[phase_idx][b->p][0][b->b[1]] + pattern_arr[phase_idx][b->p][0][b->b[6]] + pattern_arr[phase_idx][b->p][0][b->b[9]] + pattern_arr[phase_idx][b->p][0][b->b[14]] + 
+        pattern_arr[phase_idx][b->p][1][b->b[2]] + pattern_arr[phase_idx][b->p][1][b->b[5]] + pattern_arr[phase_idx][b->p][1][b->b[10]] + pattern_arr[phase_idx][b->p][1][b->b[13]] + 
+        pattern_arr[phase_idx][b->p][2][b->b[3]] + pattern_arr[phase_idx][b->p][2][b->b[4]] + pattern_arr[phase_idx][b->p][2][b->b[11]] + pattern_arr[phase_idx][b->p][2][b->b[12]] + 
+        pattern_arr[phase_idx][b->p][3][b->b[18] / p33] + pattern_arr[phase_idx][b->p][3][b->b[24] / p33] + pattern_arr[phase_idx][b->p][3][b->b[29] / p33] + pattern_arr[phase_idx][b->p][3][b->b[35] / p33] + 
+        pattern_arr[phase_idx][b->p][4][b->b[19] / p32] + pattern_arr[phase_idx][b->p][4][b->b[23] / p32] + pattern_arr[phase_idx][b->p][4][b->b[30] / p32] + pattern_arr[phase_idx][b->p][4][b->b[34] / p32] + 
+        pattern_arr[phase_idx][b->p][5][b->b[20] / p31] + pattern_arr[phase_idx][b->p][5][b->b[22] / p31] + pattern_arr[phase_idx][b->p][5][b->b[31] / p31] + pattern_arr[phase_idx][b->p][5][b->b[33] / p31] + 
+        pattern_arr[phase_idx][b->p][6][b->b[21]] + pattern_arr[phase_idx][b->p][6][b->b[32]] + 
         edge_2x(phase_idx, b, 1, 0) + edge_2x(phase_idx, b, 6, 7) + edge_2x(phase_idx, b, 9, 8) + edge_2x(phase_idx, b, 14, 15) + 
         triangle0(phase_idx, b, 0, 1, 2, 3) + triangle0(phase_idx, b, 7, 6, 5, 4) + triangle0(phase_idx, b, 15, 14, 13, 12) + triangle1(phase_idx, b, 15, 14, 13, 12) + 
         edge_block(phase_idx, b, 0, 1) + edge_block(phase_idx, b, 7, 6) + edge_block(phase_idx, b, 8, 9) + edge_block(phase_idx, b, 15, 14) + 
@@ -350,8 +352,9 @@ inline int mid_evaluate(board *b){
     num1 = (filled - count) / 2;
     return (b->p ? -1 : 1) * (
         calc_pattern(phase_idx, b) + 
-        eval_sur0_sur1_arr[phase_idx][sur0][sur1] + 
-        eval_canput0_canput1_arr[phase_idx][canput0][canput1] + 
-        eval_stab0_stab1_arr[phase_idx][stab0][stab1] + 
-        eval_num0_num1_arr[phase_idx][num0][num1]);
+        eval_sur0_sur1_arr[phase_idx][b->p][sur0][sur1] + 
+        eval_canput0_canput1_arr[phase_idx][b->p][canput0][canput1] + 
+        eval_stab0_stab1_arr[phase_idx][b->p][stab0][stab1] + 
+        eval_num0_num1_arr[phase_idx][b->p][num0][num1]
+        );
 }

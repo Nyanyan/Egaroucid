@@ -41,7 +41,7 @@ int sa_phase, sa_player;
 #define n_raw_params (50 + 8)
 
 double alpha;
-#define beta 0.05
+#define beta 0.001
 
 const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10};
 const int eval_sizes[n_eval] = {p38, p38, p38, p35, p36, p37, p38, p310, p310, p310, p310, p39, p310, max_surround * max_surround, max_canput * max_canput, max_stability * max_stability, max_stone_num * max_stone_num};
@@ -474,15 +474,15 @@ int main(int argc, char *argv[]){
     int i, j;
 
     unsigned long long hour = 0;
-    unsigned long long minute = 5;
-    unsigned long long second = 0;
+    unsigned long long minute = 0;
+    unsigned long long second = 10;
     minute += hour * 60;
     second += minute * 60;
 
     board_init();
     init();
-    initialize_param();
-    //input_param_onephase((string)(argv[3]));
+    //initialize_param();
+    input_param_onephase((string)(argv[3]));
     input_test_data(0);
 
     sd(second * 1000);
