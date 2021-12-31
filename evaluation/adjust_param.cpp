@@ -474,8 +474,8 @@ int main(int argc, char *argv[]){
     int i, j;
 
     unsigned long long hour = 0;
-    unsigned long long minute = 0;
-    unsigned long long second = 10;
+    unsigned long long minute = 2;
+    unsigned long long second = 30;
     minute += hour * 60;
     second += minute * 60;
 
