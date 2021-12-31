@@ -829,16 +829,19 @@ int mtd_final(board *b, bool skipped, int depth, int l, int u, bool use_mpc, dou
     l /= step;
     u /= step;
     g = max(l + 1, min(u, g));
+    //cerr << l << " " << g << " " << u << endl;
     while (u - l > 0){
-        beta = g;
+        beta = max(l + 1, g);
         g = nega_alpha_ordering_final(b, skipped, depth, beta * step - step, beta * step, true, use_mpc, use_mpct);
         g /= step;
+        //cerr << l << " " << g << " " << u << endl;
         if (g < beta)
             u = g;
         else
             l = g;
         g = (l + u) / 2;
     }
+    //cerr << g << endl;
     return l * step;
 }
 
