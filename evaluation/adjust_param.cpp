@@ -145,6 +145,8 @@ inline int calc_num0_num1(int arr[]){
     return arr[56] * max_stone_num + arr[57];
 }
 
+inline double calc_score(int phase, int i);
+
 void input_test_data(int strt){
     int i, j, k;
     ifstream ifs("big_data.txt");
@@ -206,6 +208,13 @@ void input_test_data(int strt){
             test_memo[16][calc_num0_num1(test_data[nums])].push_back(nums);
             test_scores.push_back(0);
             pre_calc_scores.push_back(0);
+            /*
+            if (nums == 0){
+                for (i = 0; i < n_raw_params; ++i)
+                    cerr << test_data[nums][i] << " ";
+                cerr << score << " " << calc_score(sa_phase, nums) << endl;
+            }
+            */
             ++nums;
         }
     }

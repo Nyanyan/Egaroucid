@@ -375,8 +375,8 @@ int nega_scout(board *b, bool skipped, const int depth, int alpha, int beta, boo
 
 int mtd(board *b, bool skipped, int depth, int l, int u, bool use_mpc, double use_mpct){
     int g = mid_evaluate(b), beta;
-    while (u - l > mtd_threshold){
-        beta = g;
+    while (u - l > 0){
+        beta = max(l + search_epsilon, g);
         g = nega_alpha_ordering(b, skipped, depth, beta - search_epsilon, beta, true, use_mpc, use_mpct);
         if (g < beta)
             u = g;
@@ -384,7 +384,8 @@ int mtd(board *b, bool skipped, int depth, int l, int u, bool use_mpc, double us
             l = g;
         g = (l + u) / 2;
     }
-    return nega_scout(b, skipped, depth, l, u, use_mpc, use_mpct);
+    return l;
+    //return nega_scout(b, skipped, depth, l, u, use_mpc, use_mpct);
 }
 
 inline search_result midsearch(board b, long long strt, int max_depth){
