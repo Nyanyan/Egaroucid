@@ -23,7 +23,7 @@ from copy import deepcopy
 inf = 10000000.0
 
 test_ratio = 0.1
-n_epochs = 50
+n_epochs = 25
 
 pow3 = [1]
 for i in range(11):
@@ -314,7 +314,7 @@ for ml_phase in reversed(range(15)):
             with open('big_data.txt', 'r') as f:
                 for _ in range(1000000):
                     f.readline()
-                for _ in trange(2500000):
+                for _ in trange(5000000):
                     try:
                         datum = [int(elem) for elem in f.readline().split()]
                         phase = datum[0]
@@ -372,7 +372,7 @@ for ml_phase in reversed(range(15)):
         y_all = Add()(ys)
         model = Model(inputs=x, outputs=y_all)
         
-        #model = load_model('learned_data/' + str(ml_phase) + '_' + str(black_white) + '.h5')
+        model = load_model('learned_data/' + str(ml_phase) + '_' + str(black_white) + '.h5')
 
         #model.summary()
         #plot_model(model, to_file='learned_data/model.png', show_shapes=True)
@@ -427,4 +427,5 @@ for ml_phase in reversed(range(15)):
         plt.clf()
         
         with open('learned_data/result.txt', 'a') as f:
-            f.write(str(ml_phase) + '_' + str(black_white) + '\t' + str(history.history['loss'][-1]) + '\t' + str(history.history['val_loss'][-1]) + '\t' + str(history.history['mae'][-1]) + '\t' + str(history.history['val_mae'][-1]) + '\n')
+            #f.write(str(ml_phase) + '_' + str(black_white) + '\t' + str(history.history['loss'][-1]) + '\t' + str(history.history['val_loss'][-1]) + '\t' + str(history.history['mae'][-1]) + '\t' + str(history.history['val_mae'][-1]) + '\n')
+            f.write(str(ml_phase) + '_' + str(black_white) + '\t' + str(model.evaluate(all_data, all_labels)) + '\n')

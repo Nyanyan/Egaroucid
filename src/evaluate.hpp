@@ -300,7 +300,7 @@ inline int narrow_triangle1(int phase_idx, const board *b, int v, int w, int x, 
 }
 
 inline int calc_pattern(int phase_idx, const board *b){
-    cerr << pattern_arr[phase_idx][b->p][0][b->b[1]] + pattern_arr[phase_idx][b->p][0][b->b[6]] + pattern_arr[phase_idx][b->p][0][b->b[9]] + pattern_arr[phase_idx][b->p][0][b->b[14]] << endl;
+    //cerr << pattern_arr[phase_idx][b->p][0][b->b[1]] + pattern_arr[phase_idx][b->p][0][b->b[6]] + pattern_arr[phase_idx][b->p][0][b->b[9]] + pattern_arr[phase_idx][b->p][0][b->b[14]] << endl;
     return 
         pattern_arr[phase_idx][b->p][0][b->b[1]] + pattern_arr[phase_idx][b->p][0][b->b[6]] + pattern_arr[phase_idx][b->p][0][b->b[9]] + pattern_arr[phase_idx][b->p][0][b->b[14]] + 
         pattern_arr[phase_idx][b->p][1][b->b[2]] + pattern_arr[phase_idx][b->p][1][b->b[5]] + pattern_arr[phase_idx][b->p][1][b->b[10]] + pattern_arr[phase_idx][b->p][1][b->b[13]] + 
@@ -352,7 +352,7 @@ inline int mid_evaluate(board *b){
     num0 = (filled + count) / 2;
     num1 = (filled - count) / 2;
     //cerr << sur0 << " " << sur1 << " " << canput0 << " " << canput1 << " " << stab0 << " " << stab1 << " " << num0 << " " << num1 << endl;
-    cerr << calc_pattern(phase_idx, b) << " " << eval_sur0_sur1_arr[phase_idx][b->p][sur0][sur1] << " " << eval_canput0_canput1_arr[phase_idx][b->p][canput0][canput1] << " " << eval_stab0_stab1_arr[phase_idx][b->p][stab0][stab1] << " " << eval_num0_num1_arr[phase_idx][b->p][num0][num1] << endl;
+    //cerr << calc_pattern(phase_idx, b) << " " << eval_sur0_sur1_arr[phase_idx][b->p][sur0][sur1] << " " << eval_canput0_canput1_arr[phase_idx][b->p][canput0][canput1] << " " << eval_stab0_stab1_arr[phase_idx][b->p][stab0][stab1] << " " << eval_num0_num1_arr[phase_idx][b->p][num0][num1] << endl;
     return (b->p ? -1 : 1) * (
         calc_pattern(phase_idx, b) + 
         eval_sur0_sur1_arr[phase_idx][b->p][sur0][sur1] + 
