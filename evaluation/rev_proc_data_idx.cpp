@@ -412,7 +412,7 @@ inline void convert_idx(string str){
     //b.print();
     int idxes[58];
     calc_idx(phase_idx, &b, idxes);
-    cout << phase_idx << " " << ai_player << " ";
+    cout << idxes[56] + idxes[57] << " " << ai_player << " ";
     for (i = 0; i < 58; ++i)
         cout << idxes[i] << " ";
     cout << score << endl;

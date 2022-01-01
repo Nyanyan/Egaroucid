@@ -187,8 +187,18 @@ pattern_idxes = [
 # [0, 6, 12, 18, 24, 30, 36, 42, 48, 54]
 # [0, 10, 20, 30, 40, 50]
 
-for ml_phase in reversed(range(14, 15)):
+strt_moves = [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56]
+delta_stones = 4
+#strt_moves = [0, 6, 12, 18, 24, 30, 36, 42, 48, 54]
+#delta_stones = 6
+#strt_moves = [0, 10, 20, 30, 40, 50]
+#delta_stones = 10
+
+for ml_phase in reversed(range(len(strt_moves))):
     for black_white in range(2):
+        strt_stones = strt_moves[ml_phase] + 4
+        end_stones = strt_stones + delta_stones
+        print(ml_phase, black_white, strt_stones, end_stones)
 
         all_data = [[] for _ in range(ln_in)]
         all_labels = []
@@ -314,12 +324,12 @@ for ml_phase in reversed(range(14, 15)):
             with open('big_data.txt', 'r') as f:
                 #for _ in range(1000000):
                 #    f.readline()
-                for _ in trange(20000000):
+                for _ in trange(21000000):
                     try:
                         datum = [int(elem) for elem in f.readline().split()]
-                        phase = datum[0]
+                        n_stones = datum[0]
                         player = datum[1]
-                        if phase == ml_phase and player == black_white:
+                        if strt_stones <= n_stones < end_stones and player == black_white:
                             idx = 0
                             for i in range(50):
                                 num = datum[2 + i]
@@ -335,7 +345,7 @@ for ml_phase in reversed(range(14, 15)):
                             all_labels.append(score)
                     except:
                         break
-        '''
+        
         x = [None for _ in range(ln_in)]
         ys = []
         names = ['line2', 'line3', 'line4', 'diagonal5', 'diagonal6', 'diagonal7', 'diagonal8', 'edge2X', 'triangle', 'edgeblock', 'cross', 'corner9', 'edge2Y', 'narrowTriangle']
@@ -371,8 +381,8 @@ for ml_phase in reversed(range(14, 15)):
             ys.append(y_add)
         y_all = Add()(ys)
         model = Model(inputs=x, outputs=y_all)
-        '''
-        model = load_model('learned_data/' + str(ml_phase) + '_' + str(black_white) + '.h5')
+        
+        #model = load_model('learned_data/' + str(ml_phase) + '_' + str(black_white) + '.h5')
 
         #model.summary()
         #plot_model(model, to_file='learned_data/model.png', show_shapes=True)
@@ -404,7 +414,7 @@ for ml_phase in reversed(range(14, 15)):
         early_stop = EarlyStopping(monitor='val_loss', patience=10)
         #model_checkpoint = ModelCheckpoint(filepath=os.path.join('learned_data/' + str(stone_strt) + '_' + str(stone_end), 'model_{epoch:02d}_{val_loss:.5f}_{val_mae:.5f}.h5'), monitor='val_loss', verbose=1)
         reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=2, min_lr=0.0001)
-        history = model.fit(train_data, train_labels, epochs=n_epochs, initial_epoch=25, batch_size=2048, validation_data=(test_data, test_labels), callbacks=[early_stop])
+        history = model.fit(train_data, train_labels, epochs=n_epochs, initial_epoch=0, batch_size=2048, validation_data=(test_data, test_labels), callbacks=[early_stop])
 
         now = datetime.datetime.today()
         print(str(now.year) + digit(now.month, 2) + digit(now.day, 2) + '_' + digit(now.hour, 2) + digit(now.minute, 2))

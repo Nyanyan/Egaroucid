@@ -188,7 +188,7 @@ pattern_idxes = [
 # [0, 10, 20, 30, 40, 50]
 
 ml_phase = 0
-black_white = 0
+black_white = 1
 
 all_data = [[] for _ in range(ln_in)]
 all_labels = []
@@ -335,7 +335,7 @@ def collect_data():
             except:
                 break
 
-model = load_model('learned_data/0_0.h5')
+model = load_model('learned_data/0_1.h5')
 before_adding = Model(inputs=model.input, outputs=model.get_layer('line2_pre_prediction').output)
 
 collect_data()
