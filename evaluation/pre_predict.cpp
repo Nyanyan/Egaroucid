@@ -4,8 +4,6 @@
 
 using namespace std;
 
-typedef float eval_type;
-
 #define hw 8
 
 #define n_phases 15
@@ -54,20 +52,12 @@ const int add_sizes[4] = {max_surround, max_canput, max_stability, max_stone_num
 
 int pow3[12];
 
-inline eval_type max(eval_type a, eval_type b){
-    return a < b ? b : a;
-}
-
-inline eval_type min(eval_type a, eval_type b){
-    return a > b ? b : a;
-}
-
-inline eval_type leaky_relu(eval_type x){
+inline double leaky_relu(double x){
     return max(0.01 * x, x);
 }
 
-inline int predict(int pattern_size, eval_type in_arr[], eval_type dense0[n_dense0][20], eval_type bias0[n_dense0], eval_type dense1[n_dense1][n_dense0], eval_type bias1[n_dense1], eval_type dense2[n_dense2][n_dense1], eval_type bias2[n_dense2], eval_type dense3[n_dense2], eval_type bias3){
-    eval_type hidden0[n_dense0], hidden1[n_dense1], hidden2, res;
+inline int predict(int pattern_size, double in_arr[], double dense0[n_dense0][20], double bias0[n_dense0], double dense1[n_dense1][n_dense0], double bias1[n_dense1], double dense2[n_dense2][n_dense1], double bias2[n_dense2], double dense3[n_dense2], double bias3){
+    double hidden0[n_dense0], hidden1[n_dense1], hidden2, res;
     int i, j;
     for (i = 0; i < n_dense0; ++i){
         hidden0[i] = bias0[i];
@@ -159,9 +149,9 @@ inline int calc_rev_idx(int pattern_idx, int pattern_size, int idx){
     return res;
 }
 
-inline void pre_evaluation(int phase_idx, int pattern_idx, int pattern_size, eval_type dense0[n_dense0][20], eval_type bias0[n_dense0], eval_type dense1[n_dense1][n_dense0], eval_type bias1[n_dense1], eval_type dense2[n_dense2][n_dense1], eval_type bias2[n_dense2], eval_type dense3[n_dense2], eval_type bias3){
+inline void pre_evaluation(int phase_idx, int pattern_idx, int pattern_size, double dense0[n_dense0][20], double bias0[n_dense0], double dense1[n_dense1][n_dense0], double bias1[n_dense1], double dense2[n_dense2][n_dense1], double bias2[n_dense2], double dense3[n_dense2], double bias3){
     int digit, idx, i, tmp_idx;
-    eval_type arr[20];
+    double arr[20];
     int pattern_arr[max_evaluate_idx], tmp_pattern_arr[max_evaluate_idx];
     for (idx = 0; idx < pow3[pattern_size]; ++idx){
         tmp_idx = idx;
@@ -188,11 +178,11 @@ inline void pre_evaluation(int phase_idx, int pattern_idx, int pattern_size, eva
     }
 }
 
-inline int predict_add(int sur0, int sur1, eval_type dense0[n_add_dense0][n_add_input], eval_type bias0[n_add_dense0], eval_type dense1[n_add_dense1][n_add_dense0], eval_type bias1[n_add_dense1], eval_type dense2[n_add_dense2][n_add_dense1], eval_type bias2[n_add_dense2], eval_type dense3[n_add_dense2], eval_type bias3){
-    eval_type hidden0[n_add_dense0], hidden1[n_add_dense1], in_arr[n_add_input], hidden2, res;
+inline int predict_add(int sur0, int sur1, double dense0[n_add_dense0][n_add_input], double bias0[n_add_dense0], double dense1[n_add_dense1][n_add_dense0], double bias1[n_add_dense1], double dense2[n_add_dense2][n_add_dense1], double bias2[n_add_dense2], double dense3[n_add_dense2], double bias3){
+    double hidden0[n_add_dense0], hidden1[n_add_dense1], in_arr[n_add_input], hidden2, res;
     int i, j;
-    in_arr[0] = ((eval_type)sur0 - 15.0) / 15.0;
-    in_arr[1] = ((eval_type)sur1 - 15.0) / 15.0;
+    in_arr[0] = ((double)sur0 - 15.0) / 15.0;
+    in_arr[1] = ((double)sur1 - 15.0) / 15.0;
     for (i = 0; i < n_add_dense0; ++i){
         hidden0[i] = bias0[i];
         for (j = 0; j < n_add_input; ++j)
@@ -216,7 +206,7 @@ inline int predict_add(int sur0, int sur1, eval_type dense0[n_add_dense0][n_add_
     return round(res * sc_w);
 }
 
-inline void pre_evaluation_add(int phase_idx, int pattern_idx, eval_type dense0[n_add_dense0][n_add_input], eval_type bias0[n_add_dense0], eval_type dense1[n_add_dense1][n_add_dense0], eval_type bias1[n_add_dense1], eval_type dense2[n_add_dense2][n_add_dense1], eval_type bias2[n_add_dense2], eval_type dense3[n_add_dense2], eval_type bias3){
+inline void pre_evaluation_add(int phase_idx, int pattern_idx, double dense0[n_add_dense0][n_add_input], double bias0[n_add_dense0], double dense1[n_add_dense1][n_add_dense0], double bias1[n_add_dense1], double dense2[n_add_dense2][n_add_dense1], double bias2[n_add_dense2], double dense3[n_add_dense2], double bias3){
     int sur0, sur1;
     for (sur0 = 0; sur0 < add_sizes[pattern_idx]; ++sur0){
         for (sur1 = 0; sur1 < add_sizes[pattern_idx]; ++sur1)
@@ -231,102 +221,104 @@ inline void init_evaluation_pred(){
         exit(1);
     }
     string line;
-    int i, j, phase_idx, pattern_idx;
-    eval_type dense0[n_dense0][20];
-    eval_type bias0[n_dense0];
-    eval_type dense1[n_dense1][n_dense0];
-    eval_type bias1[n_dense1];
-    eval_type dense2[n_dense2][n_dense1];
-    eval_type bias2[n_dense2];
-    eval_type dense3[n_dense2];
-    eval_type bias3;
-    eval_type add_dense0[n_add_dense0][n_add_input];
-    eval_type add_bias0[n_add_dense0];
-    eval_type add_dense1[n_add_dense1][n_add_dense0];
-    eval_type add_bias1[n_add_dense1];
-    eval_type add_dense2[n_add_dense2][n_add_dense1];
-    eval_type add_bias2[n_add_dense2];
-    eval_type add_dense3[n_add_dense2];
-    eval_type add_bias3;
+    int i, j, phase_idx, player_idx, pattern_idx;
+    double dense0[n_dense0][20];
+    double bias0[n_dense0];
+    double dense1[n_dense1][n_dense0];
+    double bias1[n_dense1];
+    double dense2[n_dense2][n_dense1];
+    double bias2[n_dense2];
+    double dense3[n_dense2];
+    double bias3;
+    double add_dense0[n_add_dense0][n_add_input];
+    double add_bias0[n_add_dense0];
+    double add_dense1[n_add_dense1][n_add_dense0];
+    double add_bias1[n_add_dense1];
+    double add_dense2[n_add_dense2][n_add_dense1];
+    double add_bias2[n_add_dense2];
+    double add_dense3[n_add_dense2];
+    double add_bias3;
     for (phase_idx = 0; phase_idx < n_phases; ++phase_idx){
-        cerr << "=";
-        for (pattern_idx = 0; pattern_idx < n_patterns; ++pattern_idx){
-            for (i = 0; i < pattern_sizes[pattern_idx] * 2; ++i){
-                for (j = 0; j < n_dense0; ++j){
-                    getline(ifs, line);
-                    dense0[j][i] = stof(line);
+        for (player_idx = 0; player_idx < 2; ++player_idx){
+            cerr << "=";
+            for (pattern_idx = 0; pattern_idx < n_patterns; ++pattern_idx){
+                for (i = 0; i < pattern_sizes[pattern_idx] * 2; ++i){
+                    for (j = 0; j < n_dense0; ++j){
+                        getline(ifs, line);
+                        dense0[j][i] = stof(line);
+                    }
                 }
-            }
-            for (i = 0; i < n_dense0; ++i){
-                getline(ifs, line);
-                bias0[i] = stof(line);
-            }
-            for (i = 0; i < n_dense0; ++i){
-                for (j = 0; j < n_dense1; ++j){
+                for (i = 0; i < n_dense0; ++i){
                     getline(ifs, line);
-                    dense1[j][i] = stof(line);
+                    bias0[i] = stof(line);
                 }
-            }
-            for (i = 0; i < n_dense1; ++i){
-                getline(ifs, line);
-                bias1[i] = stof(line);
-            }
-            for (i = 0; i < n_dense1; ++i){
-                for (j = 0; j < n_dense2; ++j){
+                for (i = 0; i < n_dense0; ++i){
+                    for (j = 0; j < n_dense1; ++j){
+                        getline(ifs, line);
+                        dense1[j][i] = stof(line);
+                    }
+                }
+                for (i = 0; i < n_dense1; ++i){
                     getline(ifs, line);
-                    dense2[j][i] = stof(line);
+                    bias1[i] = stof(line);
                 }
-            }
-            for (i = 0; i < n_dense2; ++i){
-                getline(ifs, line);
-                bias2[i] = stof(line);
-            }
-            for (i = 0; i < n_dense2; ++i){
-                getline(ifs, line);
-                dense3[i] = stof(line);
-            }
-            getline(ifs, line);
-            bias3 = stof(line);
-            pre_evaluation(phase_idx, pattern_idx, pattern_sizes[pattern_idx], dense0, bias0, dense1, bias1, dense2, bias2, dense3, bias3);
-        }
-        for (pattern_idx = 0; pattern_idx < 4; ++pattern_idx){
-            for (i = 0; i < n_add_input; ++i){
-                for (j = 0; j < n_add_dense0; ++j){
+                for (i = 0; i < n_dense1; ++i){
+                    for (j = 0; j < n_dense2; ++j){
+                        getline(ifs, line);
+                        dense2[j][i] = stof(line);
+                    }
+                }
+                for (i = 0; i < n_dense2; ++i){
                     getline(ifs, line);
-                    add_dense0[j][i] = stof(line);
+                    bias2[i] = stof(line);
                 }
-            }
-            for (i = 0; i < n_add_dense0; ++i){
-                getline(ifs, line);
-                add_bias0[i] = stof(line);
-            }
-            for (i = 0; i < n_add_dense0; ++i){
-                for (j = 0; j < n_add_dense1; ++j){
+                for (i = 0; i < n_dense2; ++i){
                     getline(ifs, line);
-                    add_dense1[j][i] = stof(line);
+                    dense3[i] = stof(line);
                 }
-            }
-            for (i = 0; i < n_add_dense1; ++i){
                 getline(ifs, line);
-                add_bias1[i] = stof(line);
+                bias3 = stof(line);
+                pre_evaluation(phase_idx, pattern_idx, pattern_sizes[pattern_idx], dense0, bias0, dense1, bias1, dense2, bias2, dense3, bias3);
             }
-            for (i = 0; i < n_add_dense1; ++i){
-                for (j = 0; j < n_add_dense2; ++j){
+            for (pattern_idx = 0; pattern_idx < 4; ++pattern_idx){
+                for (i = 0; i < n_add_input; ++i){
+                    for (j = 0; j < n_add_dense0; ++j){
+                        getline(ifs, line);
+                        add_dense0[j][i] = stof(line);
+                    }
+                }
+                for (i = 0; i < n_add_dense0; ++i){
                     getline(ifs, line);
-                    add_dense2[j][i] = stof(line);
+                    add_bias0[i] = stof(line);
                 }
-            }
-            for (i = 0; i < n_add_dense2; ++i){
+                for (i = 0; i < n_add_dense0; ++i){
+                    for (j = 0; j < n_add_dense1; ++j){
+                        getline(ifs, line);
+                        add_dense1[j][i] = stof(line);
+                    }
+                }
+                for (i = 0; i < n_add_dense1; ++i){
+                    getline(ifs, line);
+                    add_bias1[i] = stof(line);
+                }
+                for (i = 0; i < n_add_dense1; ++i){
+                    for (j = 0; j < n_add_dense2; ++j){
+                        getline(ifs, line);
+                        add_dense2[j][i] = stof(line);
+                    }
+                }
+                for (i = 0; i < n_add_dense2; ++i){
+                    getline(ifs, line);
+                    add_bias2[i] = stof(line);
+                }
+                for (i = 0; i < n_add_dense2; ++i){
+                    getline(ifs, line);
+                    add_dense3[i] = stof(line);
+                }
                 getline(ifs, line);
-                add_bias2[i] = stof(line);
+                add_bias3 = stof(line);
+                pre_evaluation_add(phase_idx, pattern_idx, add_dense0, add_bias0, add_dense1, add_bias1, add_dense2, add_bias2, add_dense3, add_bias3);
             }
-            for (i = 0; i < n_add_dense2; ++i){
-                getline(ifs, line);
-                add_dense3[i] = stof(line);
-            }
-            getline(ifs, line);
-            add_bias3 = stof(line);
-            pre_evaluation_add(phase_idx, pattern_idx, add_dense0, add_bias0, add_dense1, add_bias1, add_dense2, add_bias2, add_dense3, add_bias3);
         }
     }
     cerr << endl;

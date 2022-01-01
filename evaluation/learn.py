@@ -279,6 +279,7 @@ for ml_phase in reversed(range(15)):
 
 
         def make_lines_idx(num, siz, pattern_idx):
+            rev_num = calc_rev_idx(pattern_idx, siz, num)
             res = [-1 for _ in range(siz * 2)]
             for i in range(siz):
                 dig = num % 3
@@ -292,7 +293,7 @@ for ml_phase in reversed(range(15)):
                     res[i] = 0
                     res[i + siz] = 0
                 num //= 3
-            num = calc_rev_idx(pattern_idx, siz, num)
+            num = rev_num
             res2 = [-1 for _ in range(siz * 2)]
             for i in range(siz):
                 dig = num % 3
@@ -307,12 +308,13 @@ for ml_phase in reversed(range(15)):
                     res2[i + siz] = 0
                 num //= 3
             return [res, res2]
-            
 
         def collect_data():
             global all_data, all_labels
             with open('big_data.txt', 'r') as f:
-                for _ in trange(10000000):
+                for _ in range(1000000):
+                    f.readline()
+                for _ in trange(2500000):
                     try:
                         datum = [int(elem) for elem in f.readline().split()]
                         phase = datum[0]
@@ -324,16 +326,16 @@ for ml_phase in reversed(range(15)):
                                 for arr in make_lines_idx(num, pattern_sizes[i], pattern_idxes[i]):
                                     all_data[idx].append(arr)
                                     idx += 1
-                            for _ in range(4):
-                                all_data[100].append([(datum[52] - 15) / 15, (datum[53] - 15) / 15])
-                                all_data[101].append([(datum[54] - 15) / 15, (datum[55] - 15) / 15])
-                                all_data[102].append([(datum[56] - 15) / 15, (datum[57] - 15) / 15])
-                                all_data[103].append([(datum[58] - 15) / 15, (datum[59] - 15) / 15])
+                            #for _ in range(4):
+                            all_data[100].append([(datum[52] - 15) / 15, (datum[53] - 15) / 15])
+                            all_data[101].append([(datum[54] - 15) / 15, (datum[55] - 15) / 15])
+                            all_data[102].append([(datum[56] - 15) / 15, (datum[57] - 15) / 15])
+                            all_data[103].append([(datum[58] - 15) / 15, (datum[59] - 15) / 15])
                             score = datum[60] / 64
                             all_labels.append(score)
                     except:
                         break
-
+        
         x = [None for _ in range(ln_in)]
         ys = []
         names = ['line2', 'line3', 'line4', 'diagonal5', 'diagonal6', 'diagonal7', 'diagonal8', 'edge2X', 'triangle', 'edgeblock', 'cross', 'corner9', 'edge2Y', 'narrowTriangle']
@@ -369,8 +371,8 @@ for ml_phase in reversed(range(15)):
             ys.append(y_add)
         y_all = Add()(ys)
         model = Model(inputs=x, outputs=y_all)
-
-        #model = load_model('learned_data/bef_' + str(stone_strt) + '_' + str(stone_end) + '.h5')
+        
+        #model = load_model('learned_data/' + str(ml_phase) + '_' + str(black_white) + '.h5')
 
         #model.summary()
         #plot_model(model, to_file='learned_data/model.png', show_shapes=True)
