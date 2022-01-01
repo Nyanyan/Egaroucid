@@ -187,12 +187,12 @@ pattern_idxes = [
 # [0, 6, 12, 18, 24, 30, 36, 42, 48, 54]
 # [0, 10, 20, 30, 40, 50]
 
-strt_moves = [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56]
-delta_stones = 4
+#strt_moves = [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56]
+#delta_stones = 4
 #strt_moves = [0, 6, 12, 18, 24, 30, 36, 42, 48, 54]
 #delta_stones = 6
-#strt_moves = [0, 10, 20, 30, 40, 50]
-#delta_stones = 10
+strt_moves = [0, 10, 20, 30, 40, 50]
+delta_stones = 10
 
 for ml_phase in reversed(range(len(strt_moves))):
     for black_white in range(2):
@@ -352,11 +352,11 @@ for ml_phase in reversed(range(len(strt_moves))):
         idx = 0
         for i in range(len(pattern_idx)):
             layers = []
-            layers.append(Dense(32, name=names[i] + '_dense0'))
+            layers.append(Dense(16, name=names[i] + '_dense0'))
             layers.append(LeakyReLU(alpha=0.01))
-            layers.append(Dense(32, name=names[i] + '_dense1'))
+            layers.append(Dense(16, name=names[i] + '_dense1'))
             layers.append(LeakyReLU(alpha=0.01))
-            layers.append(Dense(32, name=names[i] + '_dense2'))
+            layers.append(Dense(16, name=names[i] + '_dense2'))
             layers.append(LeakyReLU(alpha=0.01))
             layers.append(Dense(1, name=names[i] + '_out'))
             add_elems = []

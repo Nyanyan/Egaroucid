@@ -328,7 +328,7 @@ inline void convert_idx(string str){
     cout << score << endl;
 }
 
-#define n_files 5
+#define n_files 127
 
 int main(){
     board_init();
@@ -341,7 +341,7 @@ int main(){
         ostringstream sout;
         sout << setfill('0') << setw(7) << i;
         string file_name = sout.str();
-        ifstream ifs("data/records3/" + file_name + ".txt");
+        ifstream ifs("data/raw/" + file_name + ".txt");
         if (ifs.fail()){
             cerr << "evaluation file not exist" << endl;
             exit(1);
