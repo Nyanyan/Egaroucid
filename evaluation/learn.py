@@ -23,7 +23,7 @@ from copy import deepcopy
 inf = 10000000.0
 
 test_ratio = 0.1
-n_epochs = 25
+n_epochs = 100
 
 pow3 = [1]
 for i in range(11):
@@ -187,7 +187,7 @@ pattern_idxes = [
 # [0, 6, 12, 18, 24, 30, 36, 42, 48, 54]
 # [0, 10, 20, 30, 40, 50]
 
-for ml_phase in reversed(range(15)):
+for ml_phase in reversed(range(14, 15)):
     for black_white in range(2):
 
         all_data = [[] for _ in range(ln_in)]
@@ -312,9 +312,9 @@ for ml_phase in reversed(range(15)):
         def collect_data():
             global all_data, all_labels
             with open('big_data.txt', 'r') as f:
-                for _ in range(1000000):
-                    f.readline()
-                for _ in trange(5000000):
+                #for _ in range(1000000):
+                #    f.readline()
+                for _ in trange(20000000):
                     try:
                         datum = [int(elem) for elem in f.readline().split()]
                         phase = datum[0]
@@ -335,7 +335,7 @@ for ml_phase in reversed(range(15)):
                             all_labels.append(score)
                     except:
                         break
-        
+        '''
         x = [None for _ in range(ln_in)]
         ys = []
         names = ['line2', 'line3', 'line4', 'diagonal5', 'diagonal6', 'diagonal7', 'diagonal8', 'edge2X', 'triangle', 'edgeblock', 'cross', 'corner9', 'edge2Y', 'narrowTriangle']
@@ -371,7 +371,7 @@ for ml_phase in reversed(range(15)):
             ys.append(y_add)
         y_all = Add()(ys)
         model = Model(inputs=x, outputs=y_all)
-        
+        '''
         model = load_model('learned_data/' + str(ml_phase) + '_' + str(black_white) + '.h5')
 
         #model.summary()
@@ -404,7 +404,7 @@ for ml_phase in reversed(range(15)):
         early_stop = EarlyStopping(monitor='val_loss', patience=10)
         #model_checkpoint = ModelCheckpoint(filepath=os.path.join('learned_data/' + str(stone_strt) + '_' + str(stone_end), 'model_{epoch:02d}_{val_loss:.5f}_{val_mae:.5f}.h5'), monitor='val_loss', verbose=1)
         reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=2, min_lr=0.0001)
-        history = model.fit(train_data, train_labels, epochs=n_epochs, batch_size=2048, validation_data=(test_data, test_labels), callbacks=[early_stop])
+        history = model.fit(train_data, train_labels, epochs=n_epochs, initial_epoch=25, batch_size=2048, validation_data=(test_data, test_labels), callbacks=[early_stop])
 
         now = datetime.datetime.today()
         print(str(now.year) + digit(now.month, 2) + digit(now.day, 2) + '_' + digit(now.hour, 2) + digit(now.minute, 2))

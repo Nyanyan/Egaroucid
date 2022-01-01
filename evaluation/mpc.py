@@ -30,9 +30,9 @@ sleep(1)
 min_depth = 3
 max_depth = 10
 
-vhs = [[[] for _ in range(max_depth - min_depth + 1)] for _ in range(10)]
-vds = [[[] for _ in range(max_depth - min_depth + 1)] for _ in range(10)]
-v0s = [[[] for _ in range(max_depth - min_depth + 1)] for _ in range(10)]
+vhs = [[[] for _ in range(max_depth - min_depth + 1)] for _ in range(15)]
+vds = [[[] for _ in range(max_depth - min_depth + 1)] for _ in range(15)]
+v0s = [[[] for _ in range(max_depth - min_depth + 1)] for _ in range(15)]
 
 vh_vd = []
 
@@ -80,9 +80,9 @@ def collect_data(num):
         evaluate.stdin.flush()
         v0 = float(evaluate.stdout.readline().decode().strip())
         #print(score)
-        vhs[(n_stones - 4) // 6][depth - min_depth].append(vh)
-        vds[(n_stones - 4) // 6][depth - min_depth].append(vd)
-        v0s[(n_stones - 4) // 6][depth - min_depth].append(v0)
+        vhs[(n_stones - 4) // 4][depth - min_depth].append(vh)
+        vds[(n_stones - 4) // 4][depth - min_depth].append(vd)
+        v0s[(n_stones - 4) // 4][depth - min_depth].append(v0)
 
 for i in range(10):
     collect_data(i)
