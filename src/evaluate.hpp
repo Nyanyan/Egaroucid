@@ -357,7 +357,7 @@ inline int mid_evaluate(board *b){
         eval_stab0_stab1_arr[phase_idx][b->p][stab0][stab1] + 
         eval_num0_num1_arr[phase_idx][b->p][num0][num1]
         );
-    res += (res > 0 ? 50 : -50);
+    res += (res > 0 ? step / 2 : -step / 2);
     res /= step;
     res *= step;
     return res;

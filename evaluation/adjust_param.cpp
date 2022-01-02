@@ -201,7 +201,7 @@ void input_test_data(int strt){
             used_idxes[15].emplace(calc_canput0_canput1(test_data[nums]));
             used_idxes[16].emplace(calc_stab0_stab1(test_data[nums]));
             used_idxes[17].emplace(calc_num0_num1(test_data[nums]));
-            test_labels[nums] = score;
+            test_labels[nums] = score * step;
             for (i = 0; i < 54; ++i)
                 test_memo[pattern_nums[i]][test_data[nums][i]].push_back(nums);
             test_memo[14][calc_sur0_sur1(test_data[nums])].push_back(nums);
@@ -334,9 +334,15 @@ inline double calc_score(int phase, int i){
         eval_arr[phase][15][calc_canput0_canput1(test_data[i])] + 
         eval_arr[phase][16][calc_stab0_stab1(test_data[i])] + 
         eval_arr[phase][17][calc_num0_num1(test_data[i])];
-    res += (res > 0 ? 50 : -50);
+    /*
+    if (res > 0)
+        res += step / 2;
+    else if (res < 0)
+        res -= step / 2;
     res /= step;
     res = max(-64, min(64, res));
+    res *= step;
+    */
     return res;
 }
 
@@ -496,8 +502,9 @@ int main(int argc, char *argv[]){
 
     board_init();
     init();
-    initialize_param();
-    //input_param_onephase((string)(argv[3]));
+    //initialize_param();
+    //output_param_onephase();
+    input_param_onephase((string)(argv[3]));
     input_test_data(0);
 
     sd(second * 1000);
