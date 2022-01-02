@@ -23,7 +23,7 @@ from copy import deepcopy
 inf = 10000000.0
 
 test_ratio = 0.1
-n_epochs = 100
+n_epochs = 10
 
 pow3 = [1]
 for i in range(11):
@@ -148,8 +148,8 @@ narrow_triangle_idx = [
     [56, 48, 40, 32, 24, 57, 49, 58, 59, 60]
 ]
 
-pattern_idx = [line2_idx, line3_idx, line4_idx, diagonal5_idx, diagonal6_idx, diagonal7_idx, diagonal8_idx, edge_2x_idx, triangle_idx, edge_block, cross_idx, corner9_idx, edge_2y_idx]
-ln_in = 104 #sum([len(elem) for elem in pattern_idx]) + 1
+pattern_idx = [line2_idx, line3_idx, line4_idx, diagonal5_idx, diagonal6_idx, diagonal7_idx, diagonal8_idx, edge_2x_idx, triangle_idx, edge_block, cross_idx, corner9_idx, edge_2y_idx, narrow_triangle_idx]
+ln_in = 112 #sum([len(elem) for elem in pattern_idx]) + 1
 
 pattern_sizes = [
     8, 8, 8, 8, 
@@ -164,6 +164,7 @@ pattern_sizes = [
     10, 10, 10, 10, 
     10, 10, 10, 10, 
     9, 9, 9, 9, 
+    10, 10, 10, 10,
     10, 10, 10, 10
 ]
 
@@ -180,19 +181,20 @@ pattern_idxes = [
     9, 9, 9, 9, 
     10, 10, 10, 10, 
     11, 11, 11, 11, 
-    12, 12, 12, 12
+    12, 12, 12, 12, 
+    13, 13, 13, 13
 ]
 
 # [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56]
 # [0, 6, 12, 18, 24, 30, 36, 42, 48, 54]
 # [0, 10, 20, 30, 40, 50]
 
-#strt_moves = [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56]
-#delta_stones = 4
+strt_moves = [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56]
+delta_stones = 4
 #strt_moves = [0, 6, 12, 18, 24, 30, 36, 42, 48, 54]
 #delta_stones = 6
-strt_moves = [0, 10, 20, 30, 40, 50]
-delta_stones = 10
+#strt_moves = [0, 10, 20, 30, 40, 50]
+#delta_stones = 10
 
 for ml_phase in reversed(range(len(strt_moves))):
     for black_white in range(2):
@@ -285,6 +287,17 @@ for ml_phase in reversed(range(len(strt_moves))):
                 res += p32 * calc_pop(idx, 2, pattern_size)
                 res += p31 * calc_pop(idx, 5, pattern_size)
                 res += calc_pop(idx, 8, pattern_size)
+            elif pattern_idx == 13:
+                res += p39 * calc_pop(idx, 0, pattern_size)
+                res += p38 * calc_pop(idx, 5, pattern_size)
+                res += p37 * calc_pop(idx, 7, pattern_size)
+                res += p36 * calc_pop(idx, 8, pattern_size)
+                res += p35 * calc_pop(idx, 9, pattern_size)
+                res += p34 * calc_pop(idx, 1, pattern_size)
+                res += p33 * calc_pop(idx, 6, pattern_size)
+                res += p32 * calc_pop(idx, 2, pattern_size)
+                res += p31 * calc_pop(idx, 3, pattern_size)
+                res += calc_pop(idx, 4, pattern_size)
             return res
 
 
@@ -324,24 +337,24 @@ for ml_phase in reversed(range(len(strt_moves))):
             with open('big_data.txt', 'r') as f:
                 #for _ in range(1000000):
                 #    f.readline()
-                for _ in trange(21000000):
+                for _ in trange(21000):
                     try:
                         datum = [int(elem) for elem in f.readline().split()]
                         n_stones = datum[0]
                         player = datum[1]
                         if strt_stones <= n_stones < end_stones and player == black_white:
                             idx = 0
-                            for i in range(50):
+                            for i in range(54):
                                 num = datum[2 + i]
                                 for arr in make_lines_idx(num, pattern_sizes[i], pattern_idxes[i]):
                                     all_data[idx].append(arr)
                                     idx += 1
                             #for _ in range(4):
-                            all_data[100].append([(datum[52] - 15) / 15, (datum[53] - 15) / 15])
-                            all_data[101].append([(datum[54] - 15) / 15, (datum[55] - 15) / 15])
-                            all_data[102].append([(datum[56] - 15) / 15, (datum[57] - 15) / 15])
-                            all_data[103].append([(datum[58] - 15) / 15, (datum[59] - 15) / 15])
-                            score = datum[60] / 64
+                            all_data[108].append([(datum[56] - 15) / 15, (datum[57] - 15) / 15])
+                            all_data[109].append([(datum[58] - 15) / 15, (datum[59] - 15) / 15])
+                            all_data[110].append([(datum[60] - 15) / 15, (datum[61] - 15) / 15])
+                            all_data[111].append([(datum[62] - 15) / 15, (datum[63] - 15) / 15])
+                            score = datum[64] / 64
                             all_labels.append(score)
                     except:
                         break
@@ -352,11 +365,11 @@ for ml_phase in reversed(range(len(strt_moves))):
         idx = 0
         for i in range(len(pattern_idx)):
             layers = []
-            layers.append(Dense(16, name=names[i] + '_dense0'))
+            layers.append(Dense(32, name=names[i] + '_dense0'))
             layers.append(LeakyReLU(alpha=0.01))
-            layers.append(Dense(16, name=names[i] + '_dense1'))
+            layers.append(Dense(32, name=names[i] + '_dense1'))
             layers.append(LeakyReLU(alpha=0.01))
-            layers.append(Dense(16, name=names[i] + '_dense2'))
+            layers.append(Dense(32, name=names[i] + '_dense2'))
             layers.append(LeakyReLU(alpha=0.01))
             layers.append(Dense(1, name=names[i] + '_out'))
             add_elems = []
@@ -379,16 +392,16 @@ for ml_phase in reversed(range(len(strt_moves))):
             y_add = LeakyReLU(alpha=0.01)(y_add)
             y_add = Dense(1, name=names_add[i] + '_out')(y_add)
             ys.append(y_add)
-        y_all = Add()(ys)
-        model = Model(inputs=x, outputs=y_all)
+        y_all = Concatenate(axis=-1)(ys)
+        y_all = Dense(16, name='all_dense0')(y_all)
+        y_all = LeakyReLU(alpha=0.01)(y_all)
+        y_all = Dense(1, name='all_dense1')(y_all)
+        
+        last_layers = {'all_dense0', 'all_dense1'}
         
         #model = load_model('learned_data/' + str(ml_phase) + '_' + str(black_white) + '.h5')
-
-        #model.summary()
         #plot_model(model, to_file='learned_data/model.png', show_shapes=True)
-
-        model.compile(loss='mse', metrics='mae', optimizer='adam')
-
+        
         collect_data()
         len_data = len(all_labels)
         print(len_data)
@@ -408,18 +421,33 @@ for ml_phase in reversed(range(len(strt_moves))):
         train_labels = all_labels[0:n_train_data]
         test_data = [arr[n_train_data:len_data] for arr in all_data]
         test_labels = all_labels[n_train_data:len_data]
+        
+        for i in range(len(ys)):
+            model = Model(inputs=x, outputs=ys[i])
+            model.compile(loss='mse', metrics='mae', optimizer='adam')
+            #model.summary()
+            #print(model.evaluate(all_data, all_labels))
+            early_stop = EarlyStopping(monitor='val_loss', patience=10)
+            #model_checkpoint = ModelCheckpoint(filepath=os.path.join('learned_data/' + str(stone_strt) + '_' + str(stone_end), 'model_{epoch:02d}_{val_loss:.5f}_{val_mae:.5f}.h5'), monitor='val_loss', verbose=1)
+            reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=2, min_lr=0.0001)
+            history = model.fit(train_data, train_labels, epochs=n_epochs, initial_epoch=0, batch_size=2048, validation_data=(test_data, test_labels), callbacks=[early_stop])
 
-
-        #print(model.evaluate(all_data, all_labels))
+        model = Model(inputs=x, outputs=y_all)
+        for layer in model.layers:
+            if not (layer.name in last_layers):
+                layer.trainable = False
+        model.compile(loss='mse', metrics='mae', optimizer='adam')
+        model.summary()
         early_stop = EarlyStopping(monitor='val_loss', patience=10)
         #model_checkpoint = ModelCheckpoint(filepath=os.path.join('learned_data/' + str(stone_strt) + '_' + str(stone_end), 'model_{epoch:02d}_{val_loss:.5f}_{val_mae:.5f}.h5'), monitor='val_loss', verbose=1)
         reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=2, min_lr=0.0001)
         history = model.fit(train_data, train_labels, epochs=n_epochs, initial_epoch=0, batch_size=2048, validation_data=(test_data, test_labels), callbacks=[early_stop])
 
+
         now = datetime.datetime.today()
         print(str(now.year) + digit(now.month, 2) + digit(now.day, 2) + '_' + digit(now.hour, 2) + digit(now.minute, 2))
         model.save('learned_data/' + str(ml_phase) + '_' + str(black_white) + '.h5')
-
+        
         for key in ['loss', 'val_loss']:
             plt.plot(history.history[key], label=key)
         plt.xlabel('epoch')

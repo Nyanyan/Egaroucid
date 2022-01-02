@@ -7,7 +7,7 @@
 
 using namespace std;
 
-#define n_patterns 13
+#define n_patterns 14
 #define max_surround 80
 #define max_canput 50
 #define max_stability 29
@@ -128,14 +128,14 @@ inline void init_evaluation_base() {
 }
 
 inline void init_evaluation_calc(){
-    ifstream ifs("C:\\github\\egaroucid\\Egaroucid5\\src\\resources/param.txt");
+    ifstream ifs("resources/param.txt");
     if (ifs.fail()){
         cerr << "evaluation file not exist" << endl;
         exit(1);
     }
     string line;
     int phase_idx, player_idx, pattern_idx, pattern_elem, sur0, sur1, canput0, canput1, stab0, stab1, num0, num1;
-    const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10};
+    const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10, 10};
     for (phase_idx = 0; phase_idx < n_phases; ++phase_idx){
         for (player_idx = 0; player_idx < 2; ++player_idx){
             cerr << "=";
@@ -300,7 +300,6 @@ inline int narrow_triangle1(int phase_idx, const board *b, int v, int w, int x, 
 }
 
 inline int calc_pattern(int phase_idx, const board *b){
-    //cerr << pattern_arr[phase_idx][b->p][0][b->b[1]] + pattern_arr[phase_idx][b->p][0][b->b[6]] + pattern_arr[phase_idx][b->p][0][b->b[9]] + pattern_arr[phase_idx][b->p][0][b->b[14]] << endl;
     return 
         pattern_arr[phase_idx][b->p][0][b->b[1]] + pattern_arr[phase_idx][b->p][0][b->b[6]] + pattern_arr[phase_idx][b->p][0][b->b[9]] + pattern_arr[phase_idx][b->p][0][b->b[14]] + 
         pattern_arr[phase_idx][b->p][1][b->b[2]] + pattern_arr[phase_idx][b->p][1][b->b[5]] + pattern_arr[phase_idx][b->p][1][b->b[10]] + pattern_arr[phase_idx][b->p][1][b->b[13]] + 
@@ -314,8 +313,8 @@ inline int calc_pattern(int phase_idx, const board *b){
         edge_block(phase_idx, b, 0, 1) + edge_block(phase_idx, b, 7, 6) + edge_block(phase_idx, b, 8, 9) + edge_block(phase_idx, b, 15, 14) + 
         cross(phase_idx, b, 21, 20, 22) + cross(phase_idx, b, 32, 31, 33) + 
         corner9(phase_idx, b, 0, 1, 2) + corner9(phase_idx, b, 7, 6, 5) + 
-        edge_2y(phase_idx, b, 1, 0) + edge_2y(phase_idx, b, 6, 7) + edge_2y(phase_idx, b, 9, 8) + edge_2y(phase_idx, b, 14, 15); // + 
-        //narrow_triangle0(phase_idx, b, 0, 1, 2, 3, 4) + narrow_triangle0(phase_idx, b, 7, 6, 5, 4, 3) + narrow_triangle1(phase_idx, b, 0, 1, 2, 3, 4) + narrow_triangle1(phase_idx, b, 7, 6, 5, 4, 3);
+        edge_2y(phase_idx, b, 1, 0) + edge_2y(phase_idx, b, 6, 7) + edge_2y(phase_idx, b, 9, 8) + edge_2y(phase_idx, b, 14, 15) + 
+        narrow_triangle0(phase_idx, b, 0, 1, 2, 3, 4) + narrow_triangle0(phase_idx, b, 7, 6, 5, 4, 3) + narrow_triangle1(phase_idx, b, 0, 1, 2, 3, 4) + narrow_triangle1(phase_idx, b, 7, 6, 5, 4, 3);
 }
 
 inline int end_evaluate(const board *b){

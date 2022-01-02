@@ -12,7 +12,7 @@ using namespace std;
 
 #define n_phases 15
 #define phase_n_stones 4
-#define n_patterns 13
+#define n_patterns 14
 #define n_eval (n_patterns + 4)
 #define max_surround 80
 #define max_canput 50
@@ -38,13 +38,13 @@ int sa_phase, sa_player;
 
 #define n_data 30000000
 
-#define n_raw_params (50 + 8)
+#define n_raw_params 62
 
 double alpha;
-#define beta 0.001
+#define beta 0.1
 
-const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10};
-const int eval_sizes[n_eval] = {p38, p38, p38, p35, p36, p37, p38, p310, p310, p310, p310, p39, p310, max_surround * max_surround, max_canput * max_canput, max_stability * max_stability, max_stone_num * max_stone_num};
+const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10, 10};
+const int eval_sizes[n_eval] = {p38, p38, p38, p35, p36, p37, p38, p310, p310, p310, p310, p39, p310, p310, max_surround * max_surround, max_canput * max_canput, max_stability * max_stability, max_stone_num * max_stone_num};
 double eval_arr[n_phases][n_eval][max_evaluate_idx];
 int test_data[n_data / 6 + 10000][n_raw_params];
 double test_labels[n_data / 6 + 10000];
@@ -130,19 +130,19 @@ void input_param_onephase(string file){
 }
 
 inline int calc_sur0_sur1(int arr[]){
-    return arr[50] * max_surround + arr[51];
+    return arr[54] * max_surround + arr[55];
 }
 
 inline int calc_canput0_canput1(int arr[]){
-    return arr[52] * max_canput + arr[53];
+    return arr[56] * max_canput + arr[57];
 }
 
 inline int calc_stab0_stab1(int arr[]){
-    return arr[54] * max_stability + arr[55];
+    return arr[58] * max_stability + arr[59];
 }
 
 inline int calc_num0_num1(int arr[]){
-    return arr[56] * max_stone_num + arr[57];
+    return arr[60] * max_stone_num + arr[61];
 }
 
 inline double calc_score(int phase, int i);
@@ -158,7 +158,7 @@ void input_test_data(int strt){
     int phase, player, score;
     int t = 0, u = 0;
     nums = 0;
-    const int pattern_nums[50] = {
+    const int pattern_nums[54] = {
         0, 0, 0, 0,
         1, 1, 1, 1,
         2, 2, 2, 2,
@@ -171,7 +171,8 @@ void input_test_data(int strt){
         9, 9, 9, 9,
         10, 10, 10, 10,
         11, 11, 11, 11,
-        12, 12, 12, 12
+        12, 12, 12, 12,
+        13, 13, 13, 13
     };
     for (j = 0; j < n_eval; ++j){
         used_idxes[j].clear();
@@ -187,25 +188,26 @@ void input_test_data(int strt){
             cerr << '\r' << t;
         istringstream iss(line);
         iss >> phase;
+        phase = (phase - 4) / 6;
         iss >> player;
         if (phase == sa_phase && player == sa_player){
             ++u;
             for (i = 0; i < n_raw_params; ++i)
                 iss >> test_data[nums][i];
             iss >> score;
-            for (i = 0; i < 50; ++i)
+            for (i = 0; i < 54; ++i)
                 used_idxes[pattern_nums[i]].emplace(test_data[nums][i]);
-            used_idxes[13].emplace(calc_sur0_sur1(test_data[nums]));
-            used_idxes[14].emplace(calc_canput0_canput1(test_data[nums]));
-            used_idxes[15].emplace(calc_stab0_stab1(test_data[nums]));
-            used_idxes[16].emplace(calc_num0_num1(test_data[nums]));
+            used_idxes[14].emplace(calc_sur0_sur1(test_data[nums]));
+            used_idxes[15].emplace(calc_canput0_canput1(test_data[nums]));
+            used_idxes[16].emplace(calc_stab0_stab1(test_data[nums]));
+            used_idxes[17].emplace(calc_num0_num1(test_data[nums]));
             test_labels[nums] = score * step;
-            for (i = 0; i < 50; ++i)
+            for (i = 0; i < 54; ++i)
                 test_memo[pattern_nums[i]][test_data[nums][i]].push_back(nums);
-            test_memo[13][calc_sur0_sur1(test_data[nums])].push_back(nums);
-            test_memo[14][calc_canput0_canput1(test_data[nums])].push_back(nums);
-            test_memo[15][calc_stab0_stab1(test_data[nums])].push_back(nums);
-            test_memo[16][calc_num0_num1(test_data[nums])].push_back(nums);
+            test_memo[14][calc_sur0_sur1(test_data[nums])].push_back(nums);
+            test_memo[15][calc_canput0_canput1(test_data[nums])].push_back(nums);
+            test_memo[16][calc_stab0_stab1(test_data[nums])].push_back(nums);
+            test_memo[17][calc_num0_num1(test_data[nums])].push_back(nums);
             test_scores.push_back(0);
             pre_calc_scores.push_back(0);
             /*
@@ -483,8 +485,8 @@ int main(int argc, char *argv[]){
     int i, j;
 
     unsigned long long hour = 0;
-    unsigned long long minute = 2;
-    unsigned long long second = 30;
+    unsigned long long minute = 5;
+    unsigned long long second = 0;
     minute += hour * 60;
     second += minute * 60;
 

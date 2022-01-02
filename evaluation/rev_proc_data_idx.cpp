@@ -284,24 +284,24 @@ inline void calc_idx(int phase_idx, board *b, int idxes[]){
     idxes[47] = edge_2y(phase_idx, b, 6, 7);
     idxes[48] = edge_2y(phase_idx, b, 9, 8);
     idxes[49] = edge_2y(phase_idx, b, 14, 15);
-    //idxes[50] = narrow_triangle0(phase_idx, b, 0, 1, 2, 3, 4);
-    //idxes[51] = narrow_triangle0(phase_idx, b, 7, 6, 5, 4, 3);
-    //idxes[52] = narrow_triangle1(phase_idx, b, 0, 1, 2, 3, 4);
-    //idxes[53] = narrow_triangle1(phase_idx, b, 7, 6, 5, 4, 3);
-    idxes[50] = min(max_surround - 1, calc_surround(b, black));
-    idxes[51] = min(max_surround - 1, calc_surround(b, white));
-    idxes[52] = calc_canput(b, black);
-    idxes[53] = calc_canput(b, white);
-    idxes[54] = calc_stability(b, black);
-    idxes[55] = calc_stability(b, white);
+    idxes[50] = narrow_triangle0(phase_idx, b, 0, 1, 2, 3, 4);
+    idxes[51] = narrow_triangle0(phase_idx, b, 7, 6, 5, 4, 3);
+    idxes[52] = narrow_triangle1(phase_idx, b, 0, 1, 2, 3, 4);
+    idxes[53] = narrow_triangle1(phase_idx, b, 7, 6, 5, 4, 3);
+    idxes[54] = min(max_surround - 1, calc_surround(b, black));
+    idxes[55] = min(max_surround - 1, calc_surround(b, white));
+    idxes[56] = calc_canput(b, black);
+    idxes[57] = calc_canput(b, white);
+    idxes[58] = calc_stability(b, black);
+    idxes[59] = calc_stability(b, white);
     int count = 
         count_black_arr[b->b[0]] + count_black_arr[b->b[1]] + count_black_arr[b->b[2]] + count_black_arr[b->b[3]] + 
         count_black_arr[b->b[4]] + count_black_arr[b->b[5]] + count_black_arr[b->b[6]] + count_black_arr[b->b[7]];
     int filled = 
         count_both_arr[b->b[0]] + count_both_arr[b->b[1]] + count_both_arr[b->b[2]] + count_both_arr[b->b[3]] + 
         count_both_arr[b->b[4]] + count_both_arr[b->b[5]] + count_both_arr[b->b[6]] + count_both_arr[b->b[7]];
-    idxes[56] = (filled + count) / 2;
-    idxes[57] = (filled - count) / 2;
+    idxes[60] = (filled + count) / 2;
+    idxes[61] = (filled - count) / 2;
 }
 
 inline void convert_idx(string str){
@@ -410,10 +410,10 @@ inline void convert_idx(string str){
     iss >> score;
     b.translate_from_arr(arr, ai_player);
     //b.print();
-    int idxes[58];
+    int idxes[62];
     calc_idx(phase_idx, &b, idxes);
-    cout << idxes[56] + idxes[57] << " " << ai_player << " ";
-    for (i = 0; i < 58; ++i)
+    cout << idxes[60] + idxes[61] << " " << ai_player << " ";
+    for (i = 0; i < 62; ++i)
         cout << idxes[i] << " ";
     cout << score << endl;
 }
@@ -425,7 +425,7 @@ int main(){
     int t = 0;
 
     cerr << "=";
-    ifstream ifs("small_data_old.txt");
+    ifstream ifs("big_data_old.txt");
     if (ifs.fail()){
         cerr << "evaluation file not exist" << endl;
         exit(1);
