@@ -23,7 +23,7 @@ from copy import deepcopy
 inf = 10000000.0
 
 test_ratio = 0.1
-n_epochs = 100
+n_epochs = 200
 
 pow3 = [1]
 for i in range(11):
@@ -335,9 +335,9 @@ for ml_phase in reversed(range(len(strt_moves))):
         def collect_data():
             global all_data, all_labels
             with open('big_data.txt', 'r') as f:
-                #for _ in range(1000000):
-                #    f.readline()
-                for _ in trange(21000000):
+                for _ in range(5000000):
+                    f.readline()
+                for _ in trange(2500000):
                     try:
                         datum = [int(elem) for elem in f.readline().split()]
                         n_stones = datum[0]
@@ -372,15 +372,16 @@ for ml_phase in reversed(range(len(strt_moves))):
             layers.append(Dense(32, name=names[i] + '_dense2'))
             layers.append(LeakyReLU(alpha=0.01))
             layers.append(Dense(1, name=names[i] + '_out'))
-            add_elems = []
-            for j in range(len(pattern_idx[i])):
-                x[idx] = Input(shape=len(pattern_idx[i][0]) * 2, name=names[i] + '_in_' + str(j))
-                tmp = x[idx]
-                for layer in layers:
-                    tmp = layer(tmp)
-                add_elems.append(tmp)
-                idx += 1
-            ys.append(Add(name=names[i] + '_pre_prediction')(add_elems))
+            for j in range(0, len(pattern_idx[i]), 2):
+                add_elems = []
+                for k in range(2):
+                    x[idx] = Input(shape=len(pattern_idx[i][0]) * 2, name=names[i] + '_in_' + str(j + k))
+                    tmp = x[idx]
+                    for layer in layers:
+                        tmp = layer(tmp)
+                    add_elems.append(tmp)
+                    idx += 1
+                ys.append(Add(name=names[i] + '_pre_prediction_' + str(j // 2))(add_elems))
         names_add = ['surround', 'canput', 'stability', 'stone']
         for i in range(4):
             x[idx + i] = Input(shape=2, name=names_add[i] + '_in')
@@ -421,7 +422,7 @@ for ml_phase in reversed(range(len(strt_moves))):
         train_labels = all_labels[0:n_train_data]
         test_data = [arr[n_train_data:len_data] for arr in all_data]
         test_labels = all_labels[n_train_data:len_data]
-        
+        '''
         for i in range(len(ys)):
             print(i, len(ys), ys[i].name)
             model = Model(inputs=x, outputs=ys[i])
@@ -432,13 +433,15 @@ for ml_phase in reversed(range(len(strt_moves))):
             #model_checkpoint = ModelCheckpoint(filepath=os.path.join('learned_data/' + str(stone_strt) + '_' + str(stone_end), 'model_{epoch:02d}_{val_loss:.5f}_{val_mae:.5f}.h5'), monitor='val_loss', verbose=1)
             reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=2, min_lr=0.0001)
             history = model.fit(train_data, train_labels, epochs=n_epochs, initial_epoch=0, batch_size=2048, validation_data=(test_data, test_labels), callbacks=[early_stop])
-
+        '''
         model = Model(inputs=x, outputs=y_all)
+        '''
         for layer in model.layers:
             if not (layer.name in last_layers):
                 layer.trainable = False
+        '''
         model.compile(loss='mse', metrics='mae', optimizer='adam')
-        #model.summary()
+        model.summary()
         early_stop = EarlyStopping(monitor='val_loss', patience=10)
         #model_checkpoint = ModelCheckpoint(filepath=os.path.join('learned_data/' + str(stone_strt) + '_' + str(stone_end), 'model_{epoch:02d}_{val_loss:.5f}_{val_mae:.5f}.h5'), monitor='val_loss', verbose=1)
         reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=4, min_lr=0.0001)
