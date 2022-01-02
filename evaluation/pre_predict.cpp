@@ -9,7 +9,7 @@ using namespace std;
 #define n_phases 15
 #define n_line 6561
 
-#define n_patterns 13
+#define n_patterns 14
 #define n_dense0 32
 #define n_dense1 32
 #define n_dense2 32
@@ -47,7 +47,7 @@ using namespace std;
 #define p39m 19682
 #define p310m 59048
 
-const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10};
+const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10, 10};
 const int add_sizes[4] = {max_surround, max_canput, max_stability, max_stone_num};
 
 int pow3[12];

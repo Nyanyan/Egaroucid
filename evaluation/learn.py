@@ -23,7 +23,7 @@ from copy import deepcopy
 inf = 10000000.0
 
 test_ratio = 0.1
-n_epochs = 10
+n_epochs = 100
 
 pow3 = [1]
 for i in range(11):
@@ -337,7 +337,7 @@ for ml_phase in reversed(range(len(strt_moves))):
             with open('big_data.txt', 'r') as f:
                 #for _ in range(1000000):
                 #    f.readline()
-                for _ in trange(21000):
+                for _ in trange(21000000):
                     try:
                         datum = [int(elem) for elem in f.readline().split()]
                         n_stones = datum[0]
@@ -423,6 +423,7 @@ for ml_phase in reversed(range(len(strt_moves))):
         test_labels = all_labels[n_train_data:len_data]
         
         for i in range(len(ys)):
+            print(i, len(ys), ys[i].name)
             model = Model(inputs=x, outputs=ys[i])
             model.compile(loss='mse', metrics='mae', optimizer='adam')
             #model.summary()
@@ -437,11 +438,11 @@ for ml_phase in reversed(range(len(strt_moves))):
             if not (layer.name in last_layers):
                 layer.trainable = False
         model.compile(loss='mse', metrics='mae', optimizer='adam')
-        model.summary()
+        #model.summary()
         early_stop = EarlyStopping(monitor='val_loss', patience=10)
         #model_checkpoint = ModelCheckpoint(filepath=os.path.join('learned_data/' + str(stone_strt) + '_' + str(stone_end), 'model_{epoch:02d}_{val_loss:.5f}_{val_mae:.5f}.h5'), monitor='val_loss', verbose=1)
-        reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=2, min_lr=0.0001)
-        history = model.fit(train_data, train_labels, epochs=n_epochs, initial_epoch=0, batch_size=2048, validation_data=(test_data, test_labels), callbacks=[early_stop])
+        reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=4, min_lr=0.0001)
+        history = model.fit(train_data, train_labels, epochs=n_epochs, initial_epoch=0, batch_size=2048, validation_data=(test_data, test_labels), callbacks=[early_stop, reduce_lr])
 
 
         now = datetime.datetime.today()
