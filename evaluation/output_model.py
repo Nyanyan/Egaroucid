@@ -34,7 +34,7 @@ for phase in range(15):
 
         model = load_model('learned_data/' + str(phase) + '_' + str(black_white) + '.h5', custom_objects={'my_loss': my_loss})
 
-        layer_names = ['line2', 'line3', 'line4', 'diagonal5', 'diagonal6', 'diagonal7', 'diagonal8', 'edge2X', 'triangle', 'edgeblock', 'cross', 'corner9', 'edge2Y']
+        layer_names = ['line2', 'line3', 'line4', 'diagonal5', 'diagonal6', 'diagonal7', 'diagonal8', 'edge2X', 'triangle', 'edgeblock', 'cross', 'corner9', 'edge2Y', 'narrowTriangle']
         names_add = ['surround', 'canput', 'stability', 'stone']
         names = []
         for name in layer_names:
@@ -47,6 +47,8 @@ for phase in range(15):
             names.append(name + '_dense1')
             names.append(name + '_dense2')
             names.append(name + '_out')
+        names.append('all_dense0')
+        names.append('all_dense1')
 
         with open('learned_data/' + str(phase) + '_' + str(black_white) + '.txt', 'w') as f:
             n_weight = 0

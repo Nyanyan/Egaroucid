@@ -196,7 +196,7 @@ delta_stones = 4
 #strt_moves = [0, 10, 20, 30, 40, 50]
 #delta_stones = 10
 
-ml_phase = 14
+ml_phase = 10
 black_white = 0
 
 strt_stones = strt_moves[ml_phase] + 4

@@ -17,6 +17,8 @@ using namespace std;
 #define n_add_dense0 8
 #define n_add_dense1 8
 #define n_add_dense2 8
+#define n_all_input 58
+#define n_all_dense0 16
 #define max_surround 80
 #define max_canput 50
 #define max_stability 29
@@ -56,7 +58,7 @@ inline double leaky_relu(double x){
     return max(0.01 * x, x);
 }
 
-inline int predict(int pattern_size, double in_arr[], double dense0[n_dense0][20], double bias0[n_dense0], double dense1[n_dense1][n_dense0], double bias1[n_dense1], double dense2[n_dense2][n_dense1], double bias2[n_dense2], double dense3[n_dense2], double bias3){
+inline double predict(int pattern_size, double in_arr[], double dense0[n_dense0][20], double bias0[n_dense0], double dense1[n_dense1][n_dense0], double bias1[n_dense1], double dense2[n_dense2][n_dense1], double bias2[n_dense2], double dense3[n_dense2], double bias3){
     double hidden0[n_dense0], hidden1[n_dense1], hidden2, res;
     int i, j;
     for (i = 0; i < n_dense0; ++i){
@@ -79,7 +81,7 @@ inline int predict(int pattern_size, double in_arr[], double dense0[n_dense0][20
         hidden2 = leaky_relu(hidden2);
         res += hidden2 * dense3[i];
     }
-    return round(res * sc_w);
+    return res * sc_w;
 }
 
 inline int calc_pop(int a, int b, int s){
@@ -152,7 +154,7 @@ inline int calc_rev_idx(int pattern_idx, int pattern_size, int idx){
 inline void pre_evaluation(int phase_idx, int pattern_idx, int pattern_size, double dense0[n_dense0][20], double bias0[n_dense0], double dense1[n_dense1][n_dense0], double bias1[n_dense1], double dense2[n_dense2][n_dense1], double bias2[n_dense2], double dense3[n_dense2], double bias3){
     int digit, idx, i, tmp_idx;
     double arr[20];
-    int pattern_arr[max_evaluate_idx], tmp_pattern_arr[max_evaluate_idx];
+    double pattern_arr[max_evaluate_idx], tmp_pattern_arr[max_evaluate_idx];
     for (idx = 0; idx < pow3[pattern_size]; ++idx){
         tmp_idx = idx;
         for (i = 0; i < pattern_size; ++i){
@@ -178,7 +180,7 @@ inline void pre_evaluation(int phase_idx, int pattern_idx, int pattern_size, dou
     }
 }
 
-inline int predict_add(int sur0, int sur1, double dense0[n_add_dense0][n_add_input], double bias0[n_add_dense0], double dense1[n_add_dense1][n_add_dense0], double bias1[n_add_dense1], double dense2[n_add_dense2][n_add_dense1], double bias2[n_add_dense2], double dense3[n_add_dense2], double bias3){
+inline double predict_add(int sur0, int sur1, double dense0[n_add_dense0][n_add_input], double bias0[n_add_dense0], double dense1[n_add_dense1][n_add_dense0], double bias1[n_add_dense1], double dense2[n_add_dense2][n_add_dense1], double bias2[n_add_dense2], double dense3[n_add_dense2], double bias3){
     double hidden0[n_add_dense0], hidden1[n_add_dense1], in_arr[n_add_input], hidden2, res;
     int i, j;
     in_arr[0] = ((double)sur0 - 15.0) / 15.0;
@@ -203,7 +205,7 @@ inline int predict_add(int sur0, int sur1, double dense0[n_add_dense0][n_add_inp
         hidden2 = leaky_relu(hidden2);
         res += hidden2 * dense3[i];
     }
-    return round(res * sc_w);
+    return res * sc_w;
 }
 
 inline void pre_evaluation_add(int phase_idx, int pattern_idx, double dense0[n_add_dense0][n_add_input], double bias0[n_add_dense0], double dense1[n_add_dense1][n_add_dense0], double bias1[n_add_dense1], double dense2[n_add_dense2][n_add_dense1], double bias2[n_add_dense2], double dense3[n_add_dense2], double bias3){
@@ -319,6 +321,22 @@ inline void init_evaluation_pred(){
                 add_bias3 = stof(line);
                 pre_evaluation_add(phase_idx, pattern_idx, add_dense0, add_bias0, add_dense1, add_bias1, add_dense2, add_bias2, add_dense3, add_bias3);
             }
+            for (i = 0; i < n_all_input; ++i){
+                for (j = 0; j < n_all_dense0; ++j){
+                    getline(ifs, line);
+                    cout << line << endl;
+                }
+            }
+            for (i = 0; i < n_all_dense0; ++i){
+                getline(ifs, line);
+                cout << line << endl;
+            }
+            for (i = 0; i < n_all_dense0; ++i){
+                getline(ifs, line);
+                cout << line << endl;
+            }
+            getline(ifs, line);
+            cout << line << endl;
         }
     }
     cerr << endl;
