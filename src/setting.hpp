@@ -30,7 +30,7 @@
 /* multi threading*/
 
 // use multi thread ** UNDER CONSTRUCTION **
-#define USE_MULTI_THREAD true
+#define USE_MULTI_THREAD false
 
 
 

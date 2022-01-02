@@ -13,8 +13,6 @@ using namespace std;
 #define max_stability 29
 #define max_stone_num 65
 #define max_evaluate_idx 59049
-#define n_all_input 58
-#define n_all_dense0 16
 
 #define sc_w 6400
 #define step 100
@@ -45,15 +43,11 @@ int mobility_arr2[2][n_line * n_line];
 int surround_arr[2][n_line];
 int stability_edge_arr[2][n_line];
 int stability_corner_arr[2][n_line];
-double pattern_arr[n_phases][2][n_patterns][max_evaluate_idx];
-double eval_sur0_sur1_arr[n_phases][2][max_surround][max_surround];
-double eval_canput0_canput1_arr[n_phases][2][max_canput][max_canput];
-double eval_stab0_stab1_arr[n_phases][2][max_stability][max_stability];
-double eval_num0_num1_arr[n_phases][2][max_stone_num][max_stone_num];
-double all_dense0[n_phases][2][n_all_dense0][n_all_input];
-double all_bias0[n_phases][2][n_all_dense0];
-double all_dense1[n_phases][2][n_all_dense0];
-double all_bias1[n_phases][2];
+int pattern_arr[n_phases][2][n_patterns][max_evaluate_idx];
+int eval_sur0_sur1_arr[n_phases][2][max_surround][max_surround];
+int eval_canput0_canput1_arr[n_phases][2][max_canput][max_canput];
+int eval_stab0_stab1_arr[n_phases][2][max_stability][max_stability];
+int eval_num0_num1_arr[n_phases][2][max_stone_num][max_stone_num];
 
 inline void init_evaluation_base() {
     int idx, place, b, w;
@@ -140,7 +134,7 @@ inline void init_evaluation_calc(){
         exit(1);
     }
     string line;
-    int phase_idx, player_idx, pattern_idx, pattern_elem, sur0, sur1, canput0, canput1, stab0, stab1, num0, num1, i, j;
+    int phase_idx, player_idx, pattern_idx, pattern_elem, sur0, sur1, canput0, canput1, stab0, stab1, num0, num1;
     const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10, 10};
     for (phase_idx = 0; phase_idx < n_phases; ++phase_idx){
         for (player_idx = 0; player_idx < 2; ++player_idx){
@@ -148,49 +142,33 @@ inline void init_evaluation_calc(){
             for (pattern_idx = 0; pattern_idx < n_patterns; ++pattern_idx){
                 for (pattern_elem = 0; pattern_elem < pow3[pattern_sizes[pattern_idx]]; ++pattern_elem){
                     getline(ifs, line);
-                    pattern_arr[phase_idx][player_idx][pattern_idx][pattern_elem] = stof(line);
+                    pattern_arr[phase_idx][player_idx][pattern_idx][pattern_elem] = stoi(line);
                 }
             }
             for (sur0 = 0; sur0 < max_surround; ++sur0){
                 for (sur1 = 0; sur1 < max_surround; ++sur1){
                     getline(ifs, line);
-                    eval_sur0_sur1_arr[phase_idx][player_idx][sur0][sur1] = stof(line);
+                    eval_sur0_sur1_arr[phase_idx][player_idx][sur0][sur1] = stoi(line);
                 }
             }
             for (canput0 = 0; canput0 < max_canput; ++canput0){
                 for (canput1 = 0; canput1 < max_canput; ++canput1){
                     getline(ifs, line);
-                    eval_canput0_canput1_arr[phase_idx][player_idx][canput0][canput1] = stof(line);
+                    eval_canput0_canput1_arr[phase_idx][player_idx][canput0][canput1] = stoi(line);
                 }
             }
             for (stab0 = 0; stab0 < max_stability; ++stab0){
                 for (stab1 = 0; stab1 < max_stability; ++stab1){
                     getline(ifs, line);
-                    eval_stab0_stab1_arr[phase_idx][player_idx][stab0][stab1] = stof(line);
+                    eval_stab0_stab1_arr[phase_idx][player_idx][stab0][stab1] = stoi(line);
                 }
             }
             for (num0 = 0; num0 < max_stone_num; ++num0){
                 for (num1 = 0; num1 < max_stone_num; ++num1){
                     getline(ifs, line);
-                    eval_num0_num1_arr[phase_idx][player_idx][num0][num1] = stof(line);
+                    eval_num0_num1_arr[phase_idx][player_idx][num0][num1] = stoi(line);
                 }
             }
-            for (i = 0; i < n_all_input; ++i){
-                for (j = 0; j < n_all_dense0; ++j){
-                    getline(ifs, line);
-                    all_dense0[phase_idx][player_idx][j][i] = stof(line);
-                }
-            }
-            for (i = 0; i < n_all_dense0; ++i){
-                getline(ifs, line);
-                all_bias0[phase_idx][player_idx][i] = stof(line);
-            }
-            for (i = 0; i < n_all_dense0; ++i){
-                getline(ifs, line);
-                all_dense1[phase_idx][player_idx][i] = stof(line);
-            }
-            getline(ifs, line);
-            all_bias1[phase_idx][player_idx] = stof(line);
         }
     }
     cerr << endl;
@@ -297,20 +275,16 @@ inline int edge_block(int phase_idx, const board *b, int x, int y){
     return pattern_arr[phase_idx][b->p][9][pop_digit[b->b[x]][0] * p39 + pop_mid[b->b[x]][6][2] * p35 + pop_digit[b->b[x]][7] * p34 + pop_mid[b->b[y]][6][2]];
 }
 
-inline int cross0(int phase_idx, const board *b, int x, int y, int z){
-    return pattern_arr[phase_idx][b->p][10][b->b[x] / p34 * p36 + b->b[y] / p35 * p33 + b->b[z] / p35];
+inline int cross(int phase_idx, const board *b, int x, int y, int z){
+    return 
+        pattern_arr[phase_idx][b->p][10][b->b[x] / p34 * p36 + b->b[y] / p35 * p33 + b->b[z] / p35] + 
+        pattern_arr[phase_idx][b->p][10][reverse_board[b->b[x]] / p34 * p36 + pop_mid[reverse_board[b->b[y]]][7][4] * p33 + pop_mid[reverse_board[b->b[z]]][7][4]];
 }
 
-inline int cross1(int phase_idx, const board *b, int x, int y, int z){
-    return pattern_arr[phase_idx][b->p][10][reverse_board[b->b[x]] / p34 * p36 + pop_mid[reverse_board[b->b[y]]][7][4] * p33 + pop_mid[reverse_board[b->b[z]]][7][4]];
-}
-
-inline int corner90(int phase_idx, const board *b, int x, int y, int z){
-    return pattern_arr[phase_idx][b->p][11][b->b[x] / p35 * p36 + b->b[y] / p35 * p33 + b->b[z] / p35];
-}
-
-inline int corner91(int phase_idx, const board *b, int x, int y, int z){
-    return pattern_arr[phase_idx][b->p][11][reverse_board[b->b[x]] / p35 * p36 + reverse_board[b->b[y]] / p35 * p33 + reverse_board[b->b[z]] / p35];
+inline int corner9(int phase_idx, const board *b, int x, int y, int z){
+    return 
+        pattern_arr[phase_idx][b->p][11][b->b[x] / p35 * p36 + b->b[y] / p35 * p33 + b->b[z] / p35] + 
+        pattern_arr[phase_idx][b->p][11][reverse_board[b->b[x]] / p35 * p36 + reverse_board[b->b[y]] / p35 * p33 + reverse_board[b->b[z]] / p35];
 }
 
 inline int edge_2y(int phase_idx, const board *b, int x, int y){
@@ -325,91 +299,25 @@ inline int narrow_triangle1(int phase_idx, const board *b, int v, int w, int x, 
     return pattern_arr[phase_idx][b->p][13][reverse_board[b->b[v]] / p33 * p35 + reverse_board[b->b[w]] / p36 * p33 + pop_digit[b->b[x]][7] * p32 + pop_digit[b->b[y]][7] / p37 * p31 + pop_digit[b->b[z]][7] / p37];
 }
 
-inline void calc_input(int phase_idx, board *b, double arr[]){
-    arr[0] = pattern_arr[phase_idx][b->p][0][b->b[1]];
-    arr[1] = pattern_arr[phase_idx][b->p][0][b->b[6]];
-    arr[2] = pattern_arr[phase_idx][b->p][0][b->b[9]];
-    arr[3] = pattern_arr[phase_idx][b->p][0][b->b[14]];
-    arr[4] = pattern_arr[phase_idx][b->p][1][b->b[2]];
-    arr[5] = pattern_arr[phase_idx][b->p][1][b->b[5]];
-    arr[6] = pattern_arr[phase_idx][b->p][1][b->b[10]];
-    arr[7] = pattern_arr[phase_idx][b->p][1][b->b[13]];
-    arr[8] = pattern_arr[phase_idx][b->p][2][b->b[3]];
-    arr[9] = pattern_arr[phase_idx][b->p][2][b->b[4]];
-    arr[10] = pattern_arr[phase_idx][b->p][2][b->b[11]];
-    arr[11] = pattern_arr[phase_idx][b->p][2][b->b[12]];
-    arr[12] = pattern_arr[phase_idx][b->p][3][b->b[18] / p33];
-    arr[13] = pattern_arr[phase_idx][b->p][3][b->b[24] / p33];
-    arr[14] = pattern_arr[phase_idx][b->p][3][b->b[29] / p33];
-    arr[15] = pattern_arr[phase_idx][b->p][3][b->b[35] / p33];
-    arr[16] = pattern_arr[phase_idx][b->p][4][b->b[19] / p32];
-    arr[17] = pattern_arr[phase_idx][b->p][4][b->b[23] / p32];
-    arr[18] = pattern_arr[phase_idx][b->p][4][b->b[30] / p32];
-    arr[19] = pattern_arr[phase_idx][b->p][4][b->b[34] / p32];
-    arr[20] = pattern_arr[phase_idx][b->p][5][b->b[20] / p31];
-    arr[21] = pattern_arr[phase_idx][b->p][5][b->b[22] / p31];
-    arr[22] = pattern_arr[phase_idx][b->p][5][b->b[31] / p31];
-    arr[23] = pattern_arr[phase_idx][b->p][5][b->b[33] / p31];
-    arr[24] = pattern_arr[phase_idx][b->p][6][b->b[21]];
-    arr[25] = pattern_arr[phase_idx][b->p][6][b->b[32]];
-    arr[26] = edge_2x(phase_idx, b, 1, 0);
-    arr[27] = edge_2x(phase_idx, b, 6, 7);
-    arr[28] = edge_2x(phase_idx, b, 9, 8);
-    arr[29] = edge_2x(phase_idx, b, 14, 15);
-    arr[30] = triangle0(phase_idx, b, 0, 1, 2, 3);
-    arr[31] = triangle0(phase_idx, b, 7, 6, 5, 4);
-    arr[32] = triangle0(phase_idx, b, 15, 14, 13, 12);
-    arr[33] = triangle1(phase_idx, b, 15, 14, 13, 12);
-    arr[34] = edge_block(phase_idx, b, 0, 1);
-    arr[35] = edge_block(phase_idx, b, 7, 6);
-    arr[36] = edge_block(phase_idx, b, 8, 9);
-    arr[37] = edge_block(phase_idx, b, 15, 14);
-    arr[38] = cross0(phase_idx, b, 21, 20, 22);
-    arr[39] = cross1(phase_idx, b, 21, 20, 22);
-    arr[40] = cross0(phase_idx, b, 32, 31, 33);
-    arr[41] = cross1(phase_idx, b, 32, 31, 33);
-    arr[42] = corner90(phase_idx, b, 0, 1, 2);
-    arr[43] = corner91(phase_idx, b, 0, 1, 2);
-    arr[44] = corner90(phase_idx, b, 7, 6, 5);
-    arr[45] = corner91(phase_idx, b, 7, 6, 5);
-    arr[46] = edge_2y(phase_idx, b, 1, 0);
-    arr[47] = edge_2y(phase_idx, b, 6, 7);
-    arr[48] = edge_2y(phase_idx, b, 9, 8);
-    arr[49] = edge_2y(phase_idx, b, 14, 15);
-    arr[50] = narrow_triangle0(phase_idx, b, 0, 1, 2, 3, 4);
-    arr[51] = narrow_triangle0(phase_idx, b, 7, 6, 5, 4, 3);
-    arr[52] = narrow_triangle1(phase_idx, b, 0, 1, 2, 3, 4);
-    arr[53] = narrow_triangle1(phase_idx, b, 7, 6, 5, 4, 3);
-    arr[54] = eval_sur0_sur1_arr[phase_idx][b->p][min(max_surround - 1, calc_surround(b, black))][min(max_surround - 1, calc_surround(b, white))];
-    arr[55] = eval_canput0_canput1_arr[phase_idx][b->p][min(max_canput - 1, calc_canput(b, black))][min(max_canput - 1, calc_canput(b, white))];
-    arr[56] = eval_stab0_stab1_arr[phase_idx][b->p][calc_stability(b, black)][calc_stability(b, white)];
-    int count = 
-        count_black_arr[b->b[0]] + count_black_arr[b->b[1]] + count_black_arr[b->b[2]] + count_black_arr[b->b[3]] + 
-        count_black_arr[b->b[4]] + count_black_arr[b->b[5]] + count_black_arr[b->b[6]] + count_black_arr[b->b[7]];
-    int filled = 
-        count_both_arr[b->b[0]] + count_both_arr[b->b[1]] + count_both_arr[b->b[2]] + count_both_arr[b->b[3]] + 
-        count_both_arr[b->b[4]] + count_both_arr[b->b[5]] + count_both_arr[b->b[6]] + count_both_arr[b->b[7]];
-    arr[57] = eval_num0_num1_arr[phase_idx][b->p][(filled + count) / 2][(filled - count) / 2];
+inline int calc_pattern(int phase_idx, const board *b){
+    return 
+        pattern_arr[phase_idx][b->p][0][b->b[1]] + pattern_arr[phase_idx][b->p][0][b->b[6]] + pattern_arr[phase_idx][b->p][0][b->b[9]] + pattern_arr[phase_idx][b->p][0][b->b[14]] + 
+        pattern_arr[phase_idx][b->p][1][b->b[2]] + pattern_arr[phase_idx][b->p][1][b->b[5]] + pattern_arr[phase_idx][b->p][1][b->b[10]] + pattern_arr[phase_idx][b->p][1][b->b[13]] + 
+        pattern_arr[phase_idx][b->p][2][b->b[3]] + pattern_arr[phase_idx][b->p][2][b->b[4]] + pattern_arr[phase_idx][b->p][2][b->b[11]] + pattern_arr[phase_idx][b->p][2][b->b[12]] + 
+        pattern_arr[phase_idx][b->p][3][b->b[18] / p33] + pattern_arr[phase_idx][b->p][3][b->b[24] / p33] + pattern_arr[phase_idx][b->p][3][b->b[29] / p33] + pattern_arr[phase_idx][b->p][3][b->b[35] / p33] + 
+        pattern_arr[phase_idx][b->p][4][b->b[19] / p32] + pattern_arr[phase_idx][b->p][4][b->b[23] / p32] + pattern_arr[phase_idx][b->p][4][b->b[30] / p32] + pattern_arr[phase_idx][b->p][4][b->b[34] / p32] + 
+        pattern_arr[phase_idx][b->p][5][b->b[20] / p31] + pattern_arr[phase_idx][b->p][5][b->b[22] / p31] + pattern_arr[phase_idx][b->p][5][b->b[31] / p31] + pattern_arr[phase_idx][b->p][5][b->b[33] / p31] + 
+        pattern_arr[phase_idx][b->p][6][b->b[21]] + pattern_arr[phase_idx][b->p][6][b->b[32]] + 
+        edge_2x(phase_idx, b, 1, 0) + edge_2x(phase_idx, b, 6, 7) + edge_2x(phase_idx, b, 9, 8) + edge_2x(phase_idx, b, 14, 15) + 
+        triangle0(phase_idx, b, 0, 1, 2, 3) + triangle0(phase_idx, b, 7, 6, 5, 4) + triangle0(phase_idx, b, 15, 14, 13, 12) + triangle1(phase_idx, b, 15, 14, 13, 12) + 
+        edge_block(phase_idx, b, 0, 1) + edge_block(phase_idx, b, 7, 6) + edge_block(phase_idx, b, 8, 9) + edge_block(phase_idx, b, 15, 14) + 
+        cross(phase_idx, b, 21, 20, 22) + cross(phase_idx, b, 32, 31, 33) + 
+        corner9(phase_idx, b, 0, 1, 2) + corner9(phase_idx, b, 7, 6, 5) + 
+        edge_2y(phase_idx, b, 1, 0) + edge_2y(phase_idx, b, 6, 7) + edge_2y(phase_idx, b, 9, 8) + edge_2y(phase_idx, b, 14, 15) + 
+        narrow_triangle0(phase_idx, b, 0, 1, 2, 3, 4) + narrow_triangle0(phase_idx, b, 7, 6, 5, 4, 3) + narrow_triangle1(phase_idx, b, 0, 1, 2, 3, 4) + narrow_triangle1(phase_idx, b, 7, 6, 5, 4, 3);
 }
 
-inline double leaky_relu(double x){
-    return max(0.01 * x, x);
-}
-
-inline int mid_evaluate(board *b){
-    int phase_idx = calc_phase_idx(b), i, j;
-    double input_arr[n_all_input], res = all_bias1[phase_idx][b->p], hidden;
-    calc_input(phase_idx, b, input_arr);
-    for (i = 0; i < n_all_dense0; ++i){
-        hidden = all_bias0[phase_idx][b->p][i] * sc_w;
-        for (j = 0; j < n_all_input; ++j)
-            hidden += all_dense0[phase_idx][b->p][i][j] * input_arr[j];
-        res += all_dense1[phase_idx][b->p][i] * leaky_relu(hidden);
-    }
-    return (b->p ? -1 : 1) * round(res);
-}
-
-inline int end_evaluate(board *b){
+inline int end_evaluate(const board *b){
     int count = (b->p ? -1 : 1) * 
         (count_black_arr[b->b[0]] + count_black_arr[b->b[1]] + count_black_arr[b->b[2]] + count_black_arr[b->b[3]] + 
         count_black_arr[b->b[4]] + count_black_arr[b->b[5]] + count_black_arr[b->b[6]] + count_black_arr[b->b[7]]);
@@ -421,4 +329,36 @@ inline int end_evaluate(board *b){
     else if (count < 0)
         count -= empty;
     return count * step;
+}
+
+inline int mid_evaluate(board *b){
+    int phase_idx, sur0, sur1, canput0, canput1, stab0, stab1, num0, num1;
+    canput0 = min(max_canput - 1, calc_canput(b, black));
+    canput1 = min(max_canput - 1, calc_canput(b, white));
+    if (canput0 == 0 && canput1 == 0)
+        return end_evaluate(b);
+    phase_idx = calc_phase_idx(b);
+    sur0 = min(max_surround - 1, calc_surround(b, black));
+    sur1 = min(max_surround - 1, calc_surround(b, white));
+    stab0 = calc_stability(b, black);
+    stab1 = calc_stability(b, white);
+    int count = 
+        count_black_arr[b->b[0]] + count_black_arr[b->b[1]] + count_black_arr[b->b[2]] + count_black_arr[b->b[3]] + 
+        count_black_arr[b->b[4]] + count_black_arr[b->b[5]] + count_black_arr[b->b[6]] + count_black_arr[b->b[7]];
+    int filled = 
+        count_both_arr[b->b[0]] + count_both_arr[b->b[1]] + count_both_arr[b->b[2]] + count_both_arr[b->b[3]] + 
+        count_both_arr[b->b[4]] + count_both_arr[b->b[5]] + count_both_arr[b->b[6]] + count_both_arr[b->b[7]];
+    num0 = (filled + count) / 2;
+    num1 = (filled - count) / 2;
+    int res = (b->p ? -1 : 1) * (
+        calc_pattern(phase_idx, b) + 
+        eval_sur0_sur1_arr[phase_idx][b->p][sur0][sur1] + 
+        eval_canput0_canput1_arr[phase_idx][b->p][canput0][canput1] + 
+        eval_stab0_stab1_arr[phase_idx][b->p][stab0][stab1] + 
+        eval_num0_num1_arr[phase_idx][b->p][num0][num1]
+        );
+    res += (res > 0 ? 50 : -50);
+    res /= step;
+    res *= step;
+    return res;
 }

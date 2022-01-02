@@ -10,8 +10,8 @@
 
 using namespace std;
 
-#define n_phases 15
-#define phase_n_stones 4
+#define n_phases 10
+#define phase_n_stones 6
 #define n_patterns 14
 #define n_eval (n_patterns + 4)
 #define max_surround 80
@@ -201,7 +201,7 @@ void input_test_data(int strt){
             used_idxes[15].emplace(calc_canput0_canput1(test_data[nums]));
             used_idxes[16].emplace(calc_stab0_stab1(test_data[nums]));
             used_idxes[17].emplace(calc_num0_num1(test_data[nums]));
-            test_labels[nums] = score * step;
+            test_labels[nums] = score;
             for (i = 0; i < 54; ++i)
                 test_memo[pattern_nums[i]][test_data[nums][i]].push_back(nums);
             test_memo[14][calc_sur0_sur1(test_data[nums])].push_back(nums);
@@ -275,7 +275,7 @@ inline double loss(double x, int siz){
 }
 
 inline double calc_score(int phase, int i){
-    return
+    int res = 
         eval_arr[phase][0][test_data[i][0]] + 
         eval_arr[phase][0][test_data[i][1]] + 
         eval_arr[phase][0][test_data[i][2]] + 
@@ -326,14 +326,18 @@ inline double calc_score(int phase, int i){
         eval_arr[phase][12][test_data[i][47]] + 
         eval_arr[phase][12][test_data[i][48]] + 
         eval_arr[phase][12][test_data[i][49]] + 
-        //eval_arr[phase][13][test_data[i][50]] + 
-        //eval_arr[phase][13][test_data[i][51]] + 
-        //eval_arr[phase][13][test_data[i][52]] + 
-        //eval_arr[phase][13][test_data[i][53]] + 
-        eval_arr[phase][13][calc_sur0_sur1(test_data[i])] + 
-        eval_arr[phase][14][calc_canput0_canput1(test_data[i])] + 
-        eval_arr[phase][15][calc_stab0_stab1(test_data[i])] + 
-        eval_arr[phase][16][calc_num0_num1(test_data[i])];
+        eval_arr[phase][13][test_data[i][50]] + 
+        eval_arr[phase][13][test_data[i][51]] + 
+        eval_arr[phase][13][test_data[i][52]] + 
+        eval_arr[phase][13][test_data[i][53]] + 
+        eval_arr[phase][14][calc_sur0_sur1(test_data[i])] + 
+        eval_arr[phase][15][calc_canput0_canput1(test_data[i])] + 
+        eval_arr[phase][16][calc_stab0_stab1(test_data[i])] + 
+        eval_arr[phase][17][calc_num0_num1(test_data[i])];
+    res += (res > 0 ? 50 : -50);
+    res /= step;
+    res = max(-64, min(64, res));
+    return res;
 }
 
 inline int calc_pop(int a, int b, int s){
@@ -492,8 +496,8 @@ int main(int argc, char *argv[]){
 
     board_init();
     init();
-    //initialize_param();
-    input_param_onephase((string)(argv[3]));
+    initialize_param();
+    //input_param_onephase((string)(argv[3]));
     input_test_data(0);
 
     sd(second * 1000);
