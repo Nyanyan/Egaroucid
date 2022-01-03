@@ -75,7 +75,7 @@ class book{
             book_node *p_node = this->book[b->hash() & book_hash_mask];
             while(p_node != NULL){
                 if(compare_key(b->b, p_node->k)){
-                    return (b->p ? -1 : 1) * p_node->value * step;
+                    return (b->p ? -1 : 1) * p_node->value;
                 }
                 p_node = p_node->p_n_node;
             }
@@ -113,7 +113,7 @@ class book{
                 idx = myrandrange(0, (int)policies.size());
                 if (values[idx] >= max_value - accept_value){
                     res.policy = policies[idx];
-                    res.value = values[idx] * step;
+                    res.value = values[idx];
                     break;
                 }
             }

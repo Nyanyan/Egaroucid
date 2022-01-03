@@ -69,14 +69,14 @@ int nega_alpha_ordering_nomemo(board *b, bool skipped, int depth, int alpha, int
 
 inline bool mpc_higher(board *b, bool skipped, int depth, int beta, double t){
     int bound = beta + t * mpcsd[calc_phase_idx(b)][depth - mpc_min_depth];
-    if (bound > sc_w)
+    if (bound > hw2)
         return false;
     return nega_alpha_ordering_nomemo(b, skipped, mpcd[depth], bound - search_epsilon, bound, t) >= bound;
 }
 
 inline bool mpc_lower(board *b, bool skipped, int depth, int alpha, double t){
     int bound = alpha - t * mpcsd[calc_phase_idx(b)][depth - mpc_min_depth];
-    if (bound < -sc_w)
+    if (bound < -hw2)
         return false;
     return nega_alpha_ordering_nomemo(b, skipped, mpcd[depth], bound, bound + search_epsilon, t) <= bound;
 }
@@ -412,22 +412,22 @@ inline search_result midsearch(board b, long long strt, int max_depth){
     int order_l, order_u;
     //int depth = min(hw2 - b.n - 1, max_depth - 1);
     bool use_mpc = max_depth >= 11 ? true : false;
-    double use_mpct = 1.0;
+    double use_mpct = 1.7;
     if (max_depth >= 13)
-        use_mpct = 0.8;
+        use_mpct = 1.6;
     if (max_depth >= 15)
-        use_mpct = 0.6;
+        use_mpct = 1.5;
     if (max_depth >= 17)
-        use_mpct = 0.5;
+        use_mpct = 1.3;
     if (max_depth >= 19)
-        use_mpct = 0.4;
+        use_mpct = 1.0;
     if (max_depth >= 21)
-        use_mpct = 0.3;
+        use_mpct = 0.7;
     if (max_depth >= 23)
-        use_mpct = 0.2;
+        use_mpct = 0.4;
     for (int depth = min(11, max(0, max_depth - 5)); depth <= min(hw2 - b.n, max_depth - 1); ++depth){
-        alpha = -sc_w;
-        beta = sc_w;
+        alpha = -hw2;
+        beta = hw2;
         transpose_table.init_now();
         for (i = 0; i < canput; ++i){
             //move_ordering_eval(&nb[i]);
@@ -469,7 +469,7 @@ inline search_result midsearch(board b, long long strt, int max_depth){
     }
     search_result res;
     res.policy = policy;
-    res.value = max(-sc_w, min(sc_w, value));
+    res.value = value;
     res.depth = res_depth;
     res.nps = searched_nodes * 1000 / max(1LL, tim() - strt);
     return res;

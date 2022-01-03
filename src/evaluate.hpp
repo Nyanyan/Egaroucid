@@ -14,7 +14,7 @@ using namespace std;
 #define max_stone_num 65
 #define max_evaluate_idx 59049
 
-#define sc_w 6400
+//#define sc_w 6400
 #define step 100
 
 #define p31 3
@@ -328,7 +328,7 @@ inline int end_evaluate(const board *b){
         count += empty;
     else if (count < 0)
         count -= empty;
-    return count * step;
+    return count;
 }
 
 inline int mid_evaluate(board *b){
@@ -357,13 +357,11 @@ inline int mid_evaluate(board *b){
         eval_stab0_stab1_arr[phase_idx][b->p][stab0][stab1] + 
         eval_num0_num1_arr[phase_idx][b->p][num0][num1]
         );
-    /*
     if (res > 0)
         res += step / 2;
     else if (res < 0)
         res -= step / 2;
     res /= step;
-    res *= step;
-    */
-    return res;
+    //res *= step;
+    return max(-hw2, min(hw2, res));
 }

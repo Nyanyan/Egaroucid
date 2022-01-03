@@ -59,7 +59,8 @@ inline void input_board(board *b, int ai_player){
 }
 
 inline double calc_result_value(int v){
-    return (double)round((double)v * hw2 / sc_w * 100) / 100.0;
+    return v;
+    //return (double)round((double)v * hw2 / sc_w * 100) / 100.0;
 }
 
 inline void print_result(int policy, int value){
@@ -79,8 +80,8 @@ int main(){
         int depth, end_depth;
         bool pre_searched = false;
         book_value book_result;
-        depth = 15; //23;
-        end_depth = 20; //23;
+        depth = 1; //23;
+        end_depth = 2; //23;
     #endif
     int ai_player;
     //cin >> ai_player;

@@ -8,12 +8,12 @@
 using namespace std;
 
 #define search_epsilon 1
-constexpr int cache_hit = step * 100;
-constexpr int cache_both = step * 100;
-constexpr int parity_vacant_bonus = step * 10;
-constexpr int canput_bonus = step / 10;
-//constexpr int mtd_threshold = step * 0;
-constexpr int mtd_end_threshold = step * 5;
+constexpr int cache_hit = 100;
+constexpr int cache_both = 100;
+constexpr int parity_vacant_bonus = 10;
+constexpr int canput_bonus = 1;
+//constexpr int mtd_threshold = 0;
+constexpr int mtd_end_threshold = 5;
 
 #define mpc_min_depth 3
 #define mpc_max_depth 10
@@ -44,7 +44,7 @@ const int cell_weight[hw2] = {
 
 const int mpcd[30] = {0, 1, 0, 1, 2, 3, 2, 3, 4, 3, 4, 3, 4, 5, 4, 5, 6, 5, 6, 7, 6, 7, 6, 7, 8, 7, 8, 9, 8, 9};
 #if USE_MID_SMOOTH
-    const double mpcsd[n_phases][mpc_max_depth - mpc_min_depth + 1]={
+    double mpcsd[n_phases][mpc_max_depth - mpc_min_depth + 1]={
         {32, 23, 19, 32, 43, 70, 105, 103},
         {127, 194, 125, 184, 176, 142, 190, 221},
         {235, 207, 172, 284, 220, 206, 285, 215},
@@ -56,11 +56,11 @@ const int mpcd[30] = {0, 1, 0, 1, 2, 3, 2, 3, 4, 3, 4, 3, 4, 5, 4, 5, 6, 5, 6, 7
         {468, 362, 442, 597, 538, 510, 729, 655},
         {372, 359, 242, 441, 329, 215, 283, 197}
     };
-    const double mpcsd_final[mpc_max_depth_final - mpc_min_depth_final + 1] = {
+    double mpcsd_final[mpc_max_depth_final - mpc_min_depth_final + 1] = {
         527, 506, 557, 541, 535, 587, 558, 532, 522, 512, 489, 488, 477, 529, 529, 523, 534, 536, 542, 571
     };
 #else
-    const double mpcsd[n_phases][mpc_max_depth - mpc_min_depth + 1]={
+    double mpcsd[n_phases][mpc_max_depth - mpc_min_depth + 1]={
         {37, 30, 30, 30, 46, 96, 120, 132},
         {174, 159, 153, 188, 177, 167, 240, 158},
         {229, 211, 177, 273, 202, 203, 297, 233},
@@ -72,7 +72,7 @@ const int mpcd[30] = {0, 1, 0, 1, 2, 3, 2, 3, 4, 3, 4, 3, 4, 5, 4, 5, 6, 5, 6, 7
         {460, 364, 392, 618, 498, 500, 741, 555},
         {373, 281, 285, 391, 410, 209, 282, 264}
     };
-    const double mpcsd_final[mpc_max_depth_final - mpc_min_depth_final + 1] = {
+    double mpcsd_final[mpc_max_depth_final - mpc_min_depth_final + 1] = {
         558, 535, 555, 534, 523, 570, 541, 516, 546, 543, 526, 483, 463, 519, 512, 509, 562, 563, 572, 565
     };
 #endif
@@ -88,7 +88,18 @@ struct search_result{
     int nps;
 };
 
+inline void mpc_init(){
+    int i, j;
+    for (i = 0; i < n_phases; ++i){
+        for (j = 0; j < mpc_max_depth - mpc_min_depth + 1; ++j)
+            mpcsd[i][j] /= step;
+    }
+    for (i = 0; i < mpc_max_depth_final - mpc_min_depth_final + 1; ++i)
+        mpcsd_final[i] /= step;
+}
+
 inline void search_init(){
+    mpc_init();
     int i;
     for (int cell = 0; cell < hw2; ++cell){
         can_be_flipped[cell] = 0b1111111110000001100000011000000110000001100000011000000111111111;
@@ -168,11 +179,11 @@ inline bool stability_cut(board *b, int *alpha, int *beta){
     if (b->n >= extra_stability_threshold){
         int ps, os;
         calc_extra_stability(b, b->p, calc_extra_stability_ull(b), &ps, &os);
-        *alpha = max(*alpha, step * (2 * (calc_stability(b, b->p) + ps) - hw2));
-        *beta = min(*beta, step * (hw2 - 2 * (calc_stability(b, 1 - b->p) + os)));
+        *alpha = max(*alpha, (2 * (calc_stability(b, b->p) + ps) - hw2));
+        *beta = min(*beta, (hw2 - 2 * (calc_stability(b, 1 - b->p) + os)));
     } else{
-        *alpha = max(*alpha, step * (2 * calc_stability(b, b->p) - hw2));
-        *beta = min(*beta, step * (hw2 - 2 * calc_stability(b, 1 - b->p)));
+        *alpha = max(*alpha, (2 * calc_stability(b, b->p) - hw2));
+        *beta = min(*beta, (hw2 - 2 * calc_stability(b, 1 - b->p)));
     }
     return *alpha >= *beta;
 }
