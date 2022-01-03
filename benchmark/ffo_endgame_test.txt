@@ -164,3 +164,10 @@
 #42 final depth: 22 time: 13922 policy: 14 value: 600 nodes: 137853340 nps: 11496400 get: 460756 reg: 2651649
 #43 final depth: 23 time: 31951 policy: 50 value: -1200 nodes: 280425824 nps: 10803892 get: 1678103 reg: 12166945
 #44 final depth: 23 time: 22365 policy: 11 value: -1400 nodes: 179253442 nps: 11088984 get: 1171070 reg: 7906254
+
+2022/01/03 with mpc new 10 phase evaluation function
+#40 final depth: 20 time: 531 policy: 8 value: 3800 nodes: 3868413 nps: 8161208 get: 4255 reg: 25563
+#41 final depth: 22 time: 4802 policy: 31 value: 0 nodes: 37097063 nps: 7986450 get: 21470 reg: 259095
+#42 final depth: 22 time: 2383 policy: 14 value: 100 nodes: 16547652 nps: 7427132 get: 10605 reg: 118210    WRONG
+#43 final depth: 23 time: 3284 policy: 50 value: -1000 nodes: 23925421 nps: 7658585 get: 23314 reg: 164635  WRONG
+#44 final depth: 23 time: 6241 policy: 57 value: -1400 nodes: 46657047 nps: 7637427 get: 38195 reg: 391565

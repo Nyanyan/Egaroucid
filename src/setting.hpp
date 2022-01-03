@@ -4,8 +4,8 @@
 /* cutting */
 
 // multi prob cut
-#define USE_MID_MPC false
-#define USE_END_MPC false
+#define USE_MID_MPC true
+#define USE_END_MPC true
 
 // stability cut
 #define USE_MID_SC  false
@@ -23,14 +23,14 @@
 
 
 /* smoothing */
-#define USE_MID_SMOOTH false
+#define USE_MID_SMOOTH true
 
 
 
 /* multi threading*/
 
-// use multi thread ** UNDER CONSTRUCTION **
-#define USE_MULTI_THREAD false
+// multi thread
+#define USE_MULTI_THREAD true
 
 
 
