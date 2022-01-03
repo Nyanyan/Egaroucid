@@ -45,9 +45,6 @@ inline void init() {
 	#if !MPC_MODE && !EVAL_MODE && USE_BOOK
 		book_init();
 	#endif
-	#if USE_MULTI_THREAD
-		thread_pool_init();
-	#endif
 	joseki_init();
 }
 
@@ -373,7 +370,7 @@ void Main() {
 		SimpleGUI::Slider(U"終盤{:.0f}空読み"_fmt(end_depth_double), end_depth_double, 1, 60, Vec2(600, 40), 150, 250, !thinking);
 		SimpleGUI::Slider(U"ヒント中盤{:.0f}手読み"_fmt(cell_value_depth_double), cell_value_depth_double, 1, 60, Vec2(550, 75), 200, 250, !cell_value_thinking);
 		SimpleGUI::Slider(U"ヒント終盤{:.0f}空読み"_fmt(cell_value_end_depth_double), cell_value_end_depth_double, 1, 60, Vec2(550, 110), 200, 250, !cell_value_thinking);
-		SimpleGUI::Slider(U"book誤差{:.0f}石"_fmt(book_accept_double), book_accept_double, 0, 60, Vec2(550, 145), 200, 250);
+		SimpleGUI::Slider(U"book誤差{:.0f}石"_fmt(book_accept_double), book_accept_double, 0, 64, Vec2(550, 145), 200, 250);
 		depth = round(depth_double);
 		end_depth = round(end_depth_double);
 		cell_value_depth = round(cell_value_depth_double);
