@@ -40,8 +40,8 @@ int sa_phase, sa_player;
 
 #define n_raw_params 62
 
-double alpha;
-#define beta 0.075
+#define beta 0.001
+double alpha[n_eval][max_evaluate_idx];
 
 const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10, 10};
 const int eval_sizes[n_eval] = {p38, p38, p38, p35, p36, p37, p38, p310, p310, p310, p310, p39, p310, p310, max_surround * max_surround, max_canput * max_canput, max_stability * max_stability, max_stone_num * max_stone_num};
@@ -229,8 +229,6 @@ void input_test_data(int strt){
 
     cerr << "n_data " << u << endl;
 
-    alpha = beta / (double)u;
-
     u = 0;
     for (i = 0; i < n_eval; ++i)
         u += eval_sizes[i];
@@ -241,6 +239,11 @@ void input_test_data(int strt){
     }
     cerr << "used_param " << u << endl;
     
+    for (i = 0; i < n_eval; ++i){
+        for (const int &used_idx: used_idxes_vector[i])
+            alpha[i][used_idx] = beta / max(50, (int)test_memo[i][used_idx].size());
+    }
+
     ifs.close();
 }
 
@@ -446,15 +449,15 @@ inline void next_step(){
                 rev_idx = rev_idxes[pattern][idx];
                 if (idx < rev_idx){
                     err = scoring_next_step(pattern, idx) + scoring_next_step(pattern, rev_idx);
-                    eval_arr[sa_phase][pattern][idx] += 2.0 * alpha * err;
-                    eval_arr[sa_phase][pattern][rev_idx] += 2.0 * alpha * err;
+                    eval_arr[sa_phase][pattern][idx] += 2.0 * alpha[pattern][idx] * err;
+                    eval_arr[sa_phase][pattern][rev_idx] += 2.0 * alpha[pattern][idx] * err;
                 } else if (idx == rev_idx){
                     err = scoring_next_step(pattern, idx);
-                    eval_arr[sa_phase][pattern][idx] += 2.0 * alpha * err;
+                    eval_arr[sa_phase][pattern][idx] += 2.0 * alpha[pattern][idx] * err;
                 }
             } else{
                 err = scoring_next_step(pattern, idx);
-                eval_arr[sa_phase][pattern][idx] += 2.0 * alpha * err;
+                eval_arr[sa_phase][pattern][idx] += 2.0 * alpha[pattern][idx] * err;
             }
         }
     }
@@ -495,7 +498,7 @@ int main(int argc, char *argv[]){
     int i, j;
 
     unsigned long long hour = 0;
-    unsigned long long minute = 30;
+    unsigned long long minute = 5;
     unsigned long long second = 0;
     minute += hour * 60;
     second += minute * 60;
