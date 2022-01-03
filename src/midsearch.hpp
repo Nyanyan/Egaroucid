@@ -426,8 +426,8 @@ inline search_result midsearch(board b, long long strt, int max_depth){
     if (max_depth >= 23)
         use_mpct = 0.2;
     for (int depth = min(11, max(0, max_depth - 5)); depth <= min(hw2 - b.n, max_depth - 1); ++depth){
-        alpha = -inf;
-        beta = inf;
+        alpha = -sc_w;
+        beta = sc_w;
         transpose_table.init_now();
         for (i = 0; i < canput; ++i){
             //move_ordering_eval(&nb[i]);
