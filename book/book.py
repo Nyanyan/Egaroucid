@@ -9,14 +9,15 @@ n_parallel = 14
 ai_exe = [subprocess.Popen('./../src/egaroucid5.out'.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL) for _ in range(n_parallel)]
 
 book = {}
-
-with open('learned_data/book.txt') as f:
-    data = f.read().splitlines()
-for datum in data:
-    board, val = datum.split()
-    val = float(val)
-    book[board] = val
-
+try:
+    with open('learned_data/book.txt') as f:
+        data = f.read().splitlines()
+    for datum in data:
+        board, val = datum.split()
+        val = float(val)
+        book[board] = val
+except:
+    print('no book found')
 val_threshold = 5
 move_threshold = 0
 
@@ -42,7 +43,9 @@ def calc_value(o, ai_num, flag):
         grid_str += '\n'
     if flag:
         o.print_info()
-        _, _, val = [float(elem) for elem in ai_exe[ai_num].stdout.readline().decode().split()]
+        line = ai_exe[ai_num].stdout.readline()
+        print(line)
+        _, _, val = [float(elem) for elem in line.decode().split()]
         if o.player == white:
             val = -val
         print(val)
