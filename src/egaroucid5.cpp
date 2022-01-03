@@ -79,7 +79,7 @@ int main(){
         int depth, end_depth;
         bool pre_searched = false;
         book_value book_result;
-        depth = 21; //23;
+        depth = 15; //23;
         end_depth = 20; //23;
     #endif
     int ai_player;
