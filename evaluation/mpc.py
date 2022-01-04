@@ -143,7 +143,7 @@ print(f_score)
 
 vh_vd = [[[vhs[i][j][k] - f(vds[i][j][k]) for k in range(len(vhs[i][j]))] for j in range(len(vhs[i]))] for i in range(len(vhs))]
 vh_v0 = [[[vhs[i][j][k] - f(v0s[i][j][k]) for k in range(len(vhs[i][j]))] for j in range(len(vhs[i]))] for i in range(len(vhs))]
-sd = [[round(statistics.stdev(vh_vd[i][j])) for j in range(len(vh_vd[i]))] for i in range(len(vh_vd))]
+sd = [[round(statistics.stdev(vh_vd[i][j]), 3) for j in range(len(vh_vd[i]))] for i in range(len(vh_vd))]
 sd0 = [[round(statistics.stdev(vh_v0[i][j])) for j in range(len(vh_v0[i]))] for i in range(len(vh_v0))]
 for each_sd in sd:
     print(str(each_sd).replace('[', '{').replace(']', '}') + ',')

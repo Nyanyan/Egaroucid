@@ -81,7 +81,7 @@ int main(){
         bool pre_searched = false;
         book_value book_result;
         depth = 1; //23;
-        end_depth = 2; //23;
+        end_depth = 30; //23;
     #endif
     int ai_player;
     //cin >> ai_player;
@@ -95,7 +95,7 @@ int main(){
             input_board(&b, ai_player);
             transpose_table.init_now();
             transpose_table.init_prev();
-            cout << nega_scout(&b, false, d, -sc_w, sc_w, false, 0.0) << endl;
+            cout << nega_scout(&b, false, d, -hw2, hw2, false, 0.0) << endl;
         #elif EVAL_MODE
             cin >> ai_player;
             input_board(&b, ai_player);

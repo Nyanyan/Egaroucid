@@ -66,7 +66,7 @@ def collect_data(num):
             vh = float(vh)
             if player == '1':
                 vh = -vh
-            vh *= 100
+            #vh *= 100
             board_proc = player + '\n' + str(0) + '\n'
             for i in range(hw):
                 for j in range(hw):
@@ -153,5 +153,5 @@ print(a, b)
 
 
 vh_vd = [[vhs[j][k] - f(vds[j][k]) for k in range(len(vhs[j]))] for j in range(len(vhs))]
-sd = [round(statistics.stdev(vh_vd[j])) for j in range(len(vh_vd))]
+sd = [round(statistics.stdev(vh_vd[j]), 3) for j in range(len(vh_vd))]
 print(sd)
