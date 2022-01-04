@@ -11,9 +11,7 @@ using namespace std;
 constexpr int cache_hit = 100;
 constexpr int cache_both = 100;
 constexpr int parity_vacant_bonus = 10;
-constexpr int canput_bonus = 1;
-//constexpr int mtd_threshold = 0;
-constexpr int mtd_end_threshold = 5;
+constexpr int canput_bonus = 0;
 
 #define mpc_min_depth 3
 #define mpc_max_depth 10
@@ -26,10 +24,6 @@ constexpr int mtd_end_threshold = 5;
 #define po_max_depth 8
 
 #define extra_stability_threshold 58
-
-#define ybwc_mid_first_num 1
-#define ybwc_end_first_num 2
-#define multi_thread_depth 1
 
 const int cell_weight[hw2] = {
     10, 3, 9, 7, 7, 9, 3, 10, 

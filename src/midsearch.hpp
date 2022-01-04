@@ -68,14 +68,14 @@ int nega_alpha_ordering_nomemo(board *b, bool skipped, int depth, int alpha, int
 }
 
 inline bool mpc_higher(board *b, bool skipped, int depth, int beta, double t){
-    int bound = beta + t * mpcsd[calc_phase_idx(b)][depth - mpc_min_depth];
+    int bound = beta + ceil(t * mpcsd[calc_phase_idx(b)][depth - mpc_min_depth]);
     if (bound > hw2)
         return false;
     return nega_alpha_ordering_nomemo(b, skipped, mpcd[depth], bound - search_epsilon, bound, t) >= bound;
 }
 
 inline bool mpc_lower(board *b, bool skipped, int depth, int alpha, double t){
-    int bound = alpha - t * mpcsd[calc_phase_idx(b)][depth - mpc_min_depth];
+    int bound = alpha - floor(t * mpcsd[calc_phase_idx(b)][depth - mpc_min_depth]);
     if (bound < -hw2)
         return false;
     return nega_alpha_ordering_nomemo(b, skipped, mpcd[depth], bound, bound + search_epsilon, t) <= bound;
@@ -445,20 +445,20 @@ inline search_result midsearch(board b, long long strt, int max_depth){
         if (canput >= 2)
             sort(nb.begin(), nb.end());
         g = -mtd(&nb[0], false, depth, -beta, -alpha, use_mpc, use_mpct);
-        transpose_table.reg(&nb[0], (int)(nb[0].hash() & search_hash_mask), g, g);
+        transpose_table.reg(&nb[0], (int)(nb[0].hash() & search_hash_mask), -g, -g);
         alpha = max(alpha, g);
         tmp_policy = nb[0].policy;
         for (i = 1; i < canput; ++i){
             g = -nega_alpha_ordering(&nb[i], false, depth, -alpha - search_epsilon, -alpha, true, use_mpc, use_mpct);
             if (alpha < g){
                 g = -mtd(&nb[i], false, depth, -beta, -g, use_mpc, use_mpct);
-                transpose_table.reg(&nb[i], (int)(nb[i].hash() & search_hash_mask), g, g);
+                transpose_table.reg(&nb[i], (int)(nb[i].hash() & search_hash_mask), -g, -g);
                 if (alpha < g){
                     alpha = g;
                     tmp_policy = nb[i].policy;
                 }
             } else{
-                transpose_table.reg(&nb[i], (int)(nb[i].hash() & search_hash_mask), -inf, g);
+                transpose_table.reg(&nb[i], (int)(nb[i].hash() & search_hash_mask), -inf, -g);
             }
         }
         swap(transpose_table.now, transpose_table.prev);

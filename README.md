@@ -338,7 +338,7 @@ $ cd Egaroucid5/src
 Compile ```egaroucid5.cpp```
 
 ```
-$ g++ egaroucid5.cpp -O3 -march=native -fexcess-precision=fast -funroll-loops -flto -mtune=native -lpthread -Wall -o egaroucid5.out
+$ g++ egaroucid5.cpp -O3 -fexcess-precision=fast -funroll-loops -flto -mtune=native -lpthread -Wall -o egaroucid5.out
 ```
 
 Execute ```main.py```

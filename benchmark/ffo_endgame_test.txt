@@ -171,3 +171,6 @@
 #42 final depth: 22 time: 2383 policy: 14 value: 100 nodes: 16547652 nps: 7427132 get: 10605 reg: 118210    WRONG
 #43 final depth: 23 time: 3284 policy: 50 value: -1000 nodes: 23925421 nps: 7658585 get: 23314 reg: 164635  WRONG
 #44 final depth: 23 time: 6241 policy: 57 value: -1400 nodes: 46657047 nps: 7637427 get: 38195 reg: 391565
+
+2022/01/04 without mpc multi thread
+#40 final depth: 20 time: 6061 policy: 8 value: 38 nodes: 83228061 nps: 14183377 get: 150473 reg: 975918
