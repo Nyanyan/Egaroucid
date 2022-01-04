@@ -23,7 +23,7 @@
 
 
 /* smoothing */
-#define USE_MID_SMOOTH false
+#define USE_MID_SMOOTH true
 
 
 

@@ -27,8 +27,8 @@ class book{
         book_node *book[book_hash_table_size];
     public:
         void init(){
-            int i, j, k;
-            unsigned long long bk, wt;
+            int i, j;
+            int board_arr[hw2];
             string book_str;
             char elem;
             ifstream ifs("resources/book.txt");
@@ -43,27 +43,17 @@ class book{
             for(i = 0; i < book_hash_table_size; ++i)
                 this->book[i] = NULL;
             while (getline(ifs, book_line)){
-                bk = 0;
-                wt = 0;
                 for (j = 0; j < hw2; ++j){
                     elem = book_line[j];
-                    if (elem != '.'){
-                        bk |= (unsigned long long)(elem == '0') << j;
-                        wt |= (unsigned long long)(elem == '1') << j;
-                    }
+                    if (elem == '0')
+                        board_arr[j] = 0;
+                    else if (elem == '1')
+                        board_arr[j] = 1;
+                    else
+                        board_arr[j] = 2;
                 }
-                for (j = 0; j < b_idx_num; ++j){
-                    b.b[j] = n_line - 1;
-                    for (k = 0; k < idx_n_cell[j]; ++k){
-                        if (1 & (bk >> global_place[j][k]))
-                            b.b[j] -= pow3[hw_m1 - k] * 2;
-                        else if (1 & (wt >> global_place[j][k]))
-                            b.b[j] -= pow3[hw_m1 - k];
-                    }
-                }
-                string value_str = "";
-                for (j = hw2 + 1; j < (int)book_line.size(); ++j)
-                    value_str += book_line[j];
+                b.translate_from_arr(board_arr, black);
+                string value_str = book_line.substr(hw2 + 1, book_line.size() - hw2 - 1);
                 value = stoi(value_str);
                 register_symmetric_book(b, value, n_book);
                 ++n_book;
