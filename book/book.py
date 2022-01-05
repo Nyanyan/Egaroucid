@@ -18,7 +18,7 @@ try:
         book[board] = val
 except:
     print('no book found')
-val_threshold = 5
+val_threshold = 3
 move_threshold = 0
 
 que = deque([])
@@ -74,6 +74,7 @@ o.move(4, 5)
 o.check_legal()
 que.append(o)
 while que:
+    print('                                      ', len(que))
     lst = []
     num = min(n_parallel, len(que))
     for i in range(num):
