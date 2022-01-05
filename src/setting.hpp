@@ -30,7 +30,7 @@
 /* multi threading*/
 
 // multi thread
-#define USE_MULTI_THREAD false
+#define USE_MULTI_THREAD true
 
 
 
@@ -39,7 +39,7 @@
 
 
 /** book **/
-#define USE_BOOK true
+#define USE_BOOK false
 
 
 
@@ -57,4 +57,4 @@
 #define EVAL_MODE false
 
 // book mode
-#define BOOK_MODE false
+#define BOOK_MODE true

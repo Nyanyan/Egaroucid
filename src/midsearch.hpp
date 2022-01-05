@@ -413,17 +413,17 @@ inline search_result midsearch(board b, long long strt, int max_depth){
     bool use_mpc = max_depth >= 11 ? true : false;
     double use_mpct = 1.7;
     if (max_depth >= 13)
-        use_mpct = 1.6;
-    if (max_depth >= 15)
         use_mpct = 1.5;
+    if (max_depth >= 15)
+        use_mpct = 1.2;
     if (max_depth >= 17)
-        use_mpct = 1.3;
+        use_mpct = 0.8;
     if (max_depth >= 19)
-        use_mpct = 1.0;
+        use_mpct = 0.6;
     if (max_depth >= 21)
-        use_mpct = 0.7;
+        use_mpct = 0.3;
     if (max_depth >= 23)
-        use_mpct = 0.4;
+        use_mpct = 0.2;
     for (int depth = min(11, max(0, max_depth - 5)); depth <= min(hw2 - b.n, max_depth - 1); ++depth){
         alpha = -hw2;
         beta = hw2;

@@ -4,7 +4,7 @@ from collections import deque
 from othello_py import *
 
 
-n_parallel = 14
+n_parallel = 8
 
 ai_exe = [subprocess.Popen('./../src/egaroucid5.out'.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL) for _ in range(n_parallel)]
 

@@ -821,7 +821,7 @@ int nega_scout_final(board *b, bool skipped, const int depth, int alpha, int bet
 int mtd_final(board *b, bool skipped, int depth, int l, int u, bool use_mpc, double use_mpct, int g){
     int beta;
     g = max(l + 1, min(u, g));
-    #if USE_MULTI_THREAD
+    #if USE_MULTI_THREAD && false
         int i, start_beta;
         vector<int> result(n_threads);
         //cerr << l << " " << g << " " << u << endl;
@@ -888,7 +888,7 @@ inline search_result endsearch(board b, long long strt, bool pre_searched){
     if (max_depth >= 27)
         use_mpct = 1.5;
     if (max_depth >= 29)
-        use_mpct = 1.0;
+        use_mpct = 0.8;
     if (max_depth >= 31)
         use_mpct = 0.6;
     if (max_depth >= 33)
