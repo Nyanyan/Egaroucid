@@ -116,11 +116,11 @@ inline void move_ordering(board *b){
     int l, u;
     transpose_table.get_prev(b, b->hash() & search_hash_mask, &l, &u);
     if (u != inf && l != -inf)
-        b->v = (u + l) / 2 + cache_hit + cache_both;
+        b->v = -(u + l) / 2 + cache_hit + cache_both;
     else if (u != inf)
-        b->v += u + cache_hit;
+        b->v = -(u + mid_evaluate(b)) / 2 + cache_hit;
     else if (l != -inf)
-        b->v += l + cache_hit;
+        b->v = -(l + mid_evaluate(b)) / 2 + cache_hit;
     else
         b->v = -mid_evaluate(b);
 }

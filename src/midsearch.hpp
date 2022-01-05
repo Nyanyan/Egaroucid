@@ -184,7 +184,7 @@ int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int 
     for (const int &cell: vacant_lst){
         if (b->legal(cell)){
             nb.emplace_back(b->move(cell));
-            move_ordering(&(nb[canput]));
+            move_ordering(&nb[canput]);
             //move_ordering_eval(&(nb[canput]));
             ++canput;
         }
@@ -241,12 +241,12 @@ int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int 
     #else
         for (board &nnb: nb){
             g = -nega_alpha_ordering(&nnb, false, depth - 1, -beta, -alpha, false, use_mpc, mpct_in);
-            if (beta <= g){
-                if (l < g)
-                    transpose_table.reg(b, hash, g, u);
-                return g;
-            }
             alpha = max(alpha, g);
+            if (beta <= alpha){
+                if (l < alpha)
+                    transpose_table.reg(b, hash, alpha, u);
+                return alpha;
+            }
             v = max(v, g);
         }
     #endif
@@ -291,7 +291,7 @@ int nega_scout(board *b, bool skipped, const int depth, int alpha, int beta, boo
     for (const int &cell: vacant_lst){
         if (b->legal(cell)){
             nb.emplace_back(b->move(cell));
-            move_ordering(&(nb[canput]));
+            move_ordering(&nb[canput]);
             //move_ordering_eval(&(nb[canput]));
             ++canput;
         }
@@ -382,7 +382,6 @@ int mtd(board *b, bool skipped, int depth, int l, int u, bool use_mpc, double us
             u = g;
         else
             l = g;
-        g = (l + u) / 2;
     }
     return l;
     //return nega_scout(b, skipped, depth, l, u, use_mpc, use_mpct);

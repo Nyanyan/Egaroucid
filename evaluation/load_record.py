@@ -156,7 +156,7 @@ class reversi:
             #print('Draw!', self.nums[0], '-', self.nums[1])
             return -1
 
-evaluate = subprocess.Popen('../src/egaroucid5.out'.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+#evaluate = subprocess.Popen('../src/egaroucid5.out'.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
 
 def collect_data(num, s):
     global dict_data
@@ -178,11 +178,12 @@ def collect_data(num, s):
                 for j in range(hw):
                     grid_str += '0' if rv.grid[i][j] == 0 else '1' if rv.grid[i][j] == 1 else '.'
                 grid_str += '\n'
-            evaluate.stdin.write((str(rv.player) + '\n' + grid_str + '\n').encode('utf-8'))
-            evaluate.stdin.flush()
-            add_data = evaluate.stdout.readline().decode().replace('\r\n', '')
+            #evaluate.stdin.write((str(rv.player) + '\n' + grid_str + '\n').encode('utf-8'))
+            #evaluate.stdin.flush()
+            #add_data = evaluate.stdout.readline().decode().replace('\r\n', '')
             if idx >= 24:
-                grids.append(grid_str.replace('\n', '') + ' ' + str(rv.player) + ' ' + add_data)
+                #grids.append(grid_str.replace('\n', '') + ' ' + str(rv.player) + ' ' + add_data)
+                grids.append(grid_str.replace('\n', '') + ' ' + str(rv.player))
         if rv.move(y, x):
             print('error')
             exit()
@@ -207,9 +208,9 @@ for year in reversed(range(1977, 2019 + 1)):
         raw_data = f.read()
     games.extend([i for i in raw_data.splitlines()])
 '''
-for i in range(0, 1):
+for i in range(44, 46):
     raw_data = ''
-    with open('third_party/records2/' + digit(i, 7) + '.txt', 'r') as f:
+    with open('third_party/records3/' + digit(i, 7) + '.txt', 'r') as f:
         raw_data = f.read()
     games.extend([i for i in raw_data.splitlines()])
 print(len(games))
@@ -218,8 +219,8 @@ idx = 0
 for i in trange(len(games)):
     if len(games[i]) == 0:
         continue
-    collect_data(idx // 1000, games[i])
+    collect_data(270 + idx // 1000, games[i])
     idx += 1
 print(idx)
 
-evaluate.kill()
+#evaluate.kill()

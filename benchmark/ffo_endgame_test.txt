@@ -174,3 +174,29 @@
 
 2022/01/04 without mpc multi thread
 #40 final depth: 20 time: 6061 policy: 8 value: 38 nodes: 83228061 nps: 14183377 get: 150473 reg: 975918
+
+2022/01/05 without mpc single thread no fast first search
+#40 final depth: 20 time: 3244 policy: 8 value: 38 nodes: 33791292 nps: 11396725 get: 36067 reg: 410821
+#41 final depth: 22 time: 6840 policy: 31 value: 0 nodes: 46527663 nps: 8229158 get: 260269 reg: 1281454
+#42 final depth: 22 time: 5313 policy: 14 value: 6 nodes: 42531826 nps: 9364118 get: 243988 reg: 978018
+#43 final depth: 23 time: 36798 policy: 50 value: -12 nodes: 288692891 nps: 8414494 get: 829316 reg: 7438632
+#44 final depth: 23 time: 18228 policy: 57 value: -14 nodes: 127109739 nps: 8005904 get: 831650 reg: 3689252
+
+2022/01/05 with mpc single thread
+#40 final depth: 20 time: 347 policy: 8 value: 38 nodes: 357171 nps: 6158120 get: 3910 reg: 16508
+#41 final depth: 22 time: 1610 policy: 31 value: 0 nodes: 8232860 nps: 7253621 get: 9165 reg: 70060
+#42 final depth: 22 time: 3242 policy: 14 value: 6 nodes: 18971812 nps: 6814587 get: 35669 reg: 140751
+#43 final depth: 23 time: 2454 policy: 50 value: -12 nodes: 14631941 nps: 6451473 get: 25453 reg: 96480
+#44 final depth: 23 time: 7962 policy: 11 value: -14 nodes: 49732439 nps: 6636300 get: 29072 reg: 413571
+#45 final depth: 24 time: 10017 policy: 9 value: 6 nodes: 72558346 nps: 8087198 get: 28986 reg: 393006
+#46 final depth: 24 time: 4867 policy: 17 value: -8 nodes: 28923215 nps: 6937686 get: 16727 reg: 210719
+#47 final depth: 25 time: 1161 policy: 14 value: 4 nodes: 6168656 nps: 7541144 get: 4997 reg: 53038
+#48 final depth: 25 time: 4577 policy: 45 value: 24 nodes: 26128705 nps: 6522392 get: 44668 reg: 191452     WRONG
+#49 final depth: 26 time: 14811 policy: 4 value: 15 nodes: 98420606 nps: 6796533 get: 71467 reg: 588315     WRONG
+
+2022/01/05 with mpc multi thread
+#40 final depth: 20 time: 354 policy: 8 value: 38 nodes: 297090 nps: 7073571 get: 4601 reg: 24988
+#41 final depth: 22 time: 1535 policy: 31 value: 0 nodes: 8186107 nps: 8129202 get: 10502 reg: 86702
+#42 final depth: 22 time: 2134 policy: 14 value: 6 nodes: 15739266 nps: 9608831 get: 38984 reg: 176106
+#43 final depth: 23 time: 2774 policy: 50 value: -12 nodes: 21627378 nps: 8305444 get: 26289 reg: 180929
+#44 final depth: 23 time: 13640 policy: 11 value: -14 nodes: 120379584 nps: 9230855 get: 93650 reg: 1254680

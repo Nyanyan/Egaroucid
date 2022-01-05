@@ -323,12 +323,13 @@ inline void convert_idx(string str){
     cout << max(0, min(max_canput * 2 - 1, calc_canput(&b) + max_canput)) << " ";
     string score;
     istringstream iss(str);
-    for (i = 0; i < 6; ++i)
+    for (i = 0; i < 3; ++i)
         iss >> score;
     cout << score << endl;
 }
 
-#define n_files 127
+#define start_file 270
+#define n_files 1000
 
 int main(){
     board_init();
@@ -336,12 +337,12 @@ int main(){
 
     int t = 0;
 
-    for (int i = 0; i < n_files; ++i){
+    for (int i = start_file; i < n_files; ++i){
         cerr << "=";
         ostringstream sout;
         sout << setfill('0') << setw(7) << i;
         string file_name = sout.str();
-        ifstream ifs("data/raw/" + file_name + ".txt");
+        ifstream ifs("data/records3/" + file_name + ".txt");
         if (ifs.fail()){
             cerr << "evaluation file not exist" << endl;
             exit(1);

@@ -99,7 +99,7 @@ int main(){
         #elif EVAL_MODE
             cin >> ai_player;
             input_board(&b, ai_player);
-            cout << calc_canput(&b) << " " << calc_surround(&b, black) << " " << calc_surround(&b, white) << endl;
+            cout << calc_canput(&b, ai_player) << " " << calc_surround(&b, black) << " " << calc_surround(&b, white) << endl;
         #else
             cin >> ai_player;
             input_board(&b, ai_player);
