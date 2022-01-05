@@ -635,7 +635,7 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
     if (canput >= 2)
         sort(nb.begin(), nb.end());
     int g, v = -inf;
-    #if USE_MULTI_THREAD
+    #if USE_MULTI_THREAD && false
         if (use_multi_thread){
             int i;
             g = -nega_alpha_ordering_final(&nb[0], false, depth - 1, -beta, -alpha, true, use_mpc, mpct_in);
@@ -755,7 +755,7 @@ int nega_scout_final(board *b, bool skipped, const int depth, int alpha, int bet
     if (canput >= 2)
         sort(nb.begin(), nb.end());
     int g = alpha, v = -inf;
-    #if USE_MULTI_THREAD
+    #if USE_MULTI_THREAD && false
         int i;
         g = -nega_scout_final(&nb[0], false, depth - 1, -beta, -alpha, use_mpc, mpct_in);
         alpha = max(alpha, g);
@@ -821,17 +821,41 @@ int nega_scout_final(board *b, bool skipped, const int depth, int alpha, int bet
 int mtd_final(board *b, bool skipped, int depth, int l, int u, bool use_mpc, double use_mpct, int g){
     int beta;
     g = max(l + 1, min(u, g));
-    //cerr << l << " " << g << " " << u << endl;
-    while (u - l > 0){
-        beta = max(l + search_epsilon, g);
-        g = nega_alpha_ordering_final(b, skipped, depth, beta - search_epsilon, beta, true, use_mpc, use_mpct);
-        if (g < beta)
-            u = g;
-        else
-            l = g;
+    #if USE_MULTI_THREAD
+        int i, start_beta;
+        vector<int> result(n_threads);
         //cerr << l << " " << g << " " << u << endl;
-    }
-    //cerr << g << endl;
+        while (u - l > 0){
+            vector<future<int>> future_tasks;
+            start_beta = max(l + search_epsilon, g - (int)n_threads / 2);
+            for (i = 0; i < (int)n_threads; ++i)
+                future_tasks.emplace_back(thread_pool.push(bind(&nega_alpha_ordering_final, b, skipped, depth, start_beta + i - search_epsilon, start_beta + i, true, use_mpc, use_mpct)));
+            for (i = 0; i < (int)n_threads; ++i)
+                result[i] = future_tasks[i].get();
+            while (u - l > 0){
+                beta = max(l + search_epsilon, g);
+                g = result[beta - start_beta];
+                if (g < beta)
+                    u = g;
+                else
+                    l = g;
+                //cerr << l << " " << g << " " << u << endl;
+            }
+        }
+        //cerr << g << endl;
+    #else
+        //cerr << l << " " << g << " " << u << endl;
+        while (u - l > 0){
+            beta = max(l + search_epsilon, g);
+            g = nega_alpha_ordering_final(b, skipped, depth, beta - search_epsilon, beta, true, use_mpc, use_mpct);
+            if (g < beta)
+                u = g;
+            else
+                l = g;
+            //cerr << l << " " << g << " " << u << endl;
+        }
+        //cerr << g << endl;
+    #endif
     return l;
 }
 

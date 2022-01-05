@@ -200,3 +200,11 @@
 #42 final depth: 22 time: 2134 policy: 14 value: 6 nodes: 15739266 nps: 9608831 get: 38984 reg: 176106
 #43 final depth: 23 time: 2774 policy: 50 value: -12 nodes: 21627378 nps: 8305444 get: 26289 reg: 180929
 #44 final depth: 23 time: 13640 policy: 11 value: -14 nodes: 120379584 nps: 9230855 get: 93650 reg: 1254680
+
+2022/01/05 with mpc new multi thread alg
+#40 final depth: 20 time: 285 policy: 8 value: 38 nodes: 279929 nps: 5598580 get: 4411 reg: 18740
+#41 final depth: 22 time: 2081 policy: 31 value: 0 nodes: 11929620 nps: 8502936 get: 31715 reg: 125264
+#42 final depth: 22 time: 3168 policy: 14 value: 6 nodes: 21512023 nps: 8296190 get: 71235 reg: 218933
+#43 final depth: 23 time: 2057 policy: 50 value: -12 nodes: 15738016 nps: 8375740 get: 69879 reg: 182722
+#44 final depth: 23 time: 11963 policy: 11 value: -14 nodes: 63734330 nps: 5647703 get: 102666 reg: 573636
+#45 final depth: 24 time: 13514 policy: 9 value: 6 nodes: 81105920 nps: 6699646 get: 104000 reg: 565473
