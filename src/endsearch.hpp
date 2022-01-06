@@ -635,7 +635,7 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
     if (canput >= 2)
         sort(nb.begin(), nb.end());
     int g, v = -inf;
-    #if USE_MULTI_THREAD && false
+    #if USE_MULTI_THREAD
         if (use_multi_thread){
             int i;
             g = -nega_alpha_ordering_final(&nb[0], false, depth - 1, -beta, -alpha, true, use_mpc, mpct_in);
@@ -755,7 +755,7 @@ int nega_scout_final(board *b, bool skipped, const int depth, int alpha, int bet
     if (canput >= 2)
         sort(nb.begin(), nb.end());
     int g = alpha, v = -inf;
-    #if USE_MULTI_THREAD && false
+    #if USE_MULTI_THREAD
         int i;
         g = -nega_scout_final(&nb[0], false, depth - 1, -beta, -alpha, use_mpc, mpct_in);
         alpha = max(alpha, g);
@@ -884,11 +884,11 @@ inline search_result endsearch(board b, long long strt, bool pre_searched){
     if (max_depth >= 23)
         use_mpct = 2.0;
     if (max_depth >= 25)
-        use_mpct = 1.7;
-    if (max_depth >= 27)
         use_mpct = 1.5;
+    if (max_depth >= 27)
+        use_mpct = 1.1;
     if (max_depth >= 29)
-        use_mpct = 0.8;
+        use_mpct = 0.7;
     if (max_depth >= 31)
         use_mpct = 0.5;
     if (max_depth >= 33)
@@ -896,7 +896,7 @@ inline search_result endsearch(board b, long long strt, bool pre_searched){
     cerr << "start final search depth " << max_depth + 1 << endl;
     alpha = -hw2;
     beta = hw2;
-    int pre_search_depth = min(18, max_depth);
+    int pre_search_depth = min(17, max_depth);
     cerr << "pre search depth " << pre_search_depth << endl;
     transpose_table.init_now();
     for (i = 0; i < canput; ++i)

@@ -208,3 +208,12 @@
 #43 final depth: 23 time: 2057 policy: 50 value: -12 nodes: 15738016 nps: 8375740 get: 69879 reg: 182722
 #44 final depth: 23 time: 11963 policy: 11 value: -14 nodes: 63734330 nps: 5647703 get: 102666 reg: 573636
 #45 final depth: 24 time: 13514 policy: 9 value: 6 nodes: 81105920 nps: 6699646 get: 104000 reg: 565473
+
+2022/01/06 with new mpc
+#40 final depth: 20 time: 236 policy: 8 value: 38 nodes: 281387 nps: 7034675 get: 2284 reg: 12456
+#41 final depth: 22 time: 1256 policy: 31 value: 0 nodes: 6992399 nps: 8632591 get: 12074 reg: 71100
+#42 final depth: 22 time: 2656 policy: 14 value: 5 nodes: 22485123 nps: 10616205 get: 70139 reg: 229418     WRONG
+#43 final depth: 23 time: 2031 policy: 50 value: -12 nodes: 15136415 nps: 8085691 get: 31472 reg: 116106
+#44 final depth: 23 time: 8238 policy: 11 value: -14 nodes: 74901480 nps: 9643553 get: 138865 reg: 838863
+#45 final depth: 24 time: 3665 policy: 9 value: 6 nodes: 31572850 nps: 11497760 get: 14950 reg: 199972
+#46 final depth: 24 time: 2906 policy: 17 value: -8 nodes: 19567443 nps: 8526118 get: 9273 reg: 178383
