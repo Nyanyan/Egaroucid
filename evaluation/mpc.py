@@ -28,7 +28,7 @@ evaluate = subprocess.Popen('../src/egaroucid5.out'.split(), stdin=subprocess.PI
 sleep(1)
 
 min_depth = 3
-max_depth = 10
+max_depth = 18
 
 vhs = [[[] for _ in range(max_depth - min_depth + 1)] for _ in range(10)]
 vds = [[[] for _ in range(max_depth - min_depth + 1)] for _ in range(10)]
@@ -42,7 +42,7 @@ mpcd = [0, 1, 0, 1, 2, 3, 2, 3, 4, 3, 4, 3, 4, 5, 4, 5, 6, 5, 6, 7, 6, 7, 6, 7, 
 def collect_data(num):
     global vhs, vds, vh_vd
     try:
-        with open('data/records0/' + digit(num, 7) + '.txt', 'r') as f:
+        with open('data/records3/' + digit(num, 7) + '.txt', 'r') as f:
             data = list(f.read().splitlines())
     except:
         print('cannot open')
@@ -84,7 +84,7 @@ def collect_data(num):
         vds[(n_stones - 4) // 6][depth - min_depth].append(vd)
         v0s[(n_stones - 4) // 6][depth - min_depth].append(v0)
 
-for i in range(10):
+for i in range(30, 40):
     collect_data(i)
 evaluate.kill()
 

@@ -95,7 +95,21 @@ int main(){
             input_board(&b, ai_player);
             transpose_table.init_now();
             transpose_table.init_prev();
-            cout << nega_scout(&b, false, d, -hw2, hw2, false, 0.0) << endl;
+            bool use_mpc = d >= 11 ? true : false;
+            double use_mpct = 1.7;
+            if (d >= 13)
+                use_mpct = 1.5;
+            if (d >= 15)
+                use_mpct = 1.2;
+            if (d >= 17)
+                use_mpct = 0.8;
+            if (d >= 19)
+                use_mpct = 0.6;
+            if (d >= 21)
+                use_mpct = 0.3;
+            if (d >= 23)
+                use_mpct = 0.2;
+            cout << mtd(&b, false, d, -hw2, hw2, use_mpc, use_mpct) << endl;
         #elif EVAL_MODE
             cin >> ai_player;
             input_board(&b, ai_player);

@@ -57,4 +57,4 @@
 #define EVAL_MODE false
 
 // book mode
-#define BOOK_MODE true
+#define BOOK_MODE false
