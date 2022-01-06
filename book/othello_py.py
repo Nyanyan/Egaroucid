@@ -20,6 +20,9 @@ class othello:
         self.grid[4][4] = white
         self.player = black
         self.n_stones = [2, 2]
+    
+    def __lt__(self, other):
+        return sum(self.n_stones) < sum(other.n_stones)
 
     def check_legal(self):
         for ny in range(hw):

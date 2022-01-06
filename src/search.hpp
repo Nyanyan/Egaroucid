@@ -118,9 +118,9 @@ inline void move_ordering(board *b){
     if (u != inf && l != -inf)
         b->v = -(u + l) / 2 + cache_hit + cache_both;
     else if (u != inf)
-        b->v = -(u + mid_evaluate(b)) / 2 + cache_hit;
+        b->v = -mid_evaluate(b) + cache_hit;
     else if (l != -inf)
-        b->v = -(l + mid_evaluate(b)) / 2 + cache_hit;
+        b->v = -mid_evaluate(b) + cache_hit;
     else
         b->v = -mid_evaluate(b);
 }

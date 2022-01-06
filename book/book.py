@@ -1,6 +1,7 @@
 import subprocess
 from copy import deepcopy
 from collections import deque
+import heapq
 from othello_py import *
 
 
@@ -15,13 +16,13 @@ try:
     for datum in data:
         board, val = datum.split()
         val = float(val)
-        book[board] = val
+        book[board] = [val, False]
 except:
     print('no book found')
-val_threshold = 3
+val_threshold = 2
 move_threshold = 0
 
-que = deque([])
+que = []
 
 def start_calc_value(o, ai_num):
     grid_str = ''
@@ -36,6 +37,8 @@ def start_calc_value(o, ai_num):
     return True
 
 def calc_value(o, ai_num, flag):
+    if sum(o.n_stones) > 30:
+        return
     grid_str = ''
     for i in range(hw):
         for j in range(hw):
@@ -49,11 +52,13 @@ def calc_value(o, ai_num, flag):
         if o.player == white:
             val = -val
         print(val)
-        book[grid_str.replace('\n', '')] = val
+        book[grid_str.replace('\n', '')] = [val, True]
         with open('learned_data/book.txt', 'a') as f:
             f.write(grid_str.replace('\n', '') + ' ' + str(round(val)) + '\n')
     else:
-        val = book[grid_str.replace('\n', '')]
+        val, flag = book[grid_str.replace('\n', '')]
+        if flag:
+            return
     if sum(o.n_stones) > move_threshold + 4 and abs(val) > abs(val_threshold):
         print('out of range')
         return
@@ -66,19 +71,20 @@ def calc_value(o, ai_num, flag):
                     next_o.player = 1 - next_o.player
                     if not next_o.check_legal():
                         continue
-                que.append(next_o)
+                heapq.heappush(que, (abs(val), next_o))
 
 o = othello()
 o.check_legal()
 o.move(4, 5)
 o.check_legal()
-que.append(o)
+heapq.heappush(que, (0, o))
 while que:
     print('                                      ', len(que))
     lst = []
     num = min(n_parallel, len(que))
     for i in range(num):
-        tmp = que.popleft()
+        val, tmp = heapq.heappop(que)
+        print(val)
         lst.append([tmp, start_calc_value(tmp, i)])
     for i in range(num):
         calc_value(lst[i][0], i, lst[i][1])
