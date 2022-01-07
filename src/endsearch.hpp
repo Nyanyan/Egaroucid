@@ -886,21 +886,21 @@ inline search_result endsearch(board b, long long strt, bool pre_searched){
     if (max_depth >= 25)
         use_mpct = 1.1;
     if (max_depth >= 27)
-        use_mpct = 0.9;
+        use_mpct = 1.0;
     if (max_depth >= 29)
-        use_mpct = 0.8;
+        use_mpct = 0.9;
     if (max_depth >= 31)
-        use_mpct = 0.7;
+        use_mpct = 0.8;
     if (max_depth >= 33)
-        use_mpct = 0.6;
+        use_mpct = 0.7;
     cerr << "start final search depth " << max_depth << endl;
     alpha = -hw2;
     beta = hw2;
-    int pre_search_depth = min(17, max_depth - 1);
+    int pre_search_depth = min(18, max_depth - 1);
     cerr << "pre search depth " << pre_search_depth << endl;
     transpose_table.init_now();
     for (i = 0; i < canput; ++i)
-        nb[i].v = -nega_scout(&nb[i], false, pre_search_depth, -hw2, hw2, true, 0.8);
+        nb[i].v = -mtd(&nb[i], false, pre_search_depth, -hw2, hw2, true, 0.8);
     if (canput >= 2)
         sort(nb.begin(), nb.end());
     //for (i = 0; i < canput; ++i)
