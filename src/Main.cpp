@@ -66,33 +66,29 @@ cell_value cell_value_search(board bd, int depth, int end_depth) {
 	if (value != -inf) {
 		res.value = value;
 		res.depth = book_define_value;
-	}else if (hw2 - bd.n <= end_depth) {
-		bool use_mpc = hw2 - bd.n >= 18 ? true : false;
-		if (hw2 - bd.n <= 5) {
-			int cells[5];
-			pick_vacant(&bd, cells);
-			if (bd.n == hw2 - 5)
-				res.value = last5(&bd, false, -sc_w, sc_w, cells[0], cells[1], cells[2], cells[3], cells[4]);
-			else if (bd.n == hw2 - 4)
-				res.value = last4(&bd, false, -sc_w, sc_w, cells[0], cells[1], cells[2], cells[3]);
-			else if (bd.n == hw2 - 3)
-				res.value = last3(&bd, false, -sc_w, sc_w, cells[0], cells[1], cells[2]);
-			else if (bd.n == hw2 - 2)
-				res.value = last2(&bd, false, -sc_w, sc_w, cells[0], cells[1]);
-			else if (bd.n == hw2 - 1)
-				res.value = last1(&bd, false, cells[0]);
-			else
-				res.value = end_evaluate(&bd);
-		} else {
-			transpose_table.init_now();
-			res.value = nega_scout_final(&bd, false, hw2 - bd.n, -sc_w, sc_w, use_mpc, 1.7);
-		}
-		res.depth = use_mpc ? hw2 - bd.n + 1 : final_define_value;
 	} else {
-		bool use_mpc = hw2 - bd.n >= 10 ? true : false;
-		transpose_table.init_now();
-		res.value = max(-sc_w, min(sc_w, nega_scout(&bd, false, depth, -sc_w, sc_w, use_mpc, 1.3)));
-		res.depth = depth + 1;
+		bool legal1 = false, legal2 = false;
+		for (int i = 0; i < hw2; ++i)
+			legal1 |= bd.legal(i);
+		if (!legal1) {
+			bd.p = 1 - bd.p;
+			for (int i = 0; i < hw2; ++i)
+				legal2 |= bd.legal(i);
+		}
+		if (!legal1 && !legal2) {
+			res.value = -end_evaluate(&bd);
+			res.depth = final_define_value;
+		} else if (hw2 - bd.n <= end_depth) {
+			res.value = endsearch(bd, tim(), depth).value;
+			if (!legal1)
+				res.value - -res.value;
+			res.depth = depth >= 19 ? hw2 - bd.n + 1 : final_define_value;
+		} else {
+			res.value = midsearch(bd, tim(), depth).value;
+			if (!legal1)
+				res.value - -res.value;
+			res.depth = depth + 1;
+		}
 	}
 	return res;
 }
@@ -175,6 +171,7 @@ void Main() {
 	Window::Resize(window_size);
 	Window::SetTitle(U"Egaroucid5");
 	System::SetTerminationTriggers(UserAction::NoAction);
+	Console.open();
 	constexpr int offset_y = 150;
 	constexpr int offset_x = 60;
 	constexpr int cell_hw = 50;
@@ -366,6 +363,8 @@ void Main() {
 		cell_value_thinking = false;
 		for (int i = 0; i < hw2; ++i)
 			cell_value_thinking = cell_value_thinking || (cell_value_state[i] == 1);
+		end_depth_double = max(end_depth_double, depth_double);
+		cell_value_end_depth_double = max(cell_value_end_depth_double, cell_value_depth_double);
 		SimpleGUI::Slider(U"中盤{:.0f}手読み"_fmt(depth_double), depth_double, 1, 60, Vec2(600, 5), 150, 250, !thinking);
 		SimpleGUI::Slider(U"終盤{:.0f}空読み"_fmt(end_depth_double), end_depth_double, 1, 60, Vec2(600, 40), 150, 250, !thinking);
 		SimpleGUI::Slider(U"ヒント中盤{:.0f}手読み"_fmt(cell_value_depth_double), cell_value_depth_double, 1, 60, Vec2(550, 75), 200, 250, !cell_value_thinking);
@@ -540,7 +539,7 @@ void Main() {
 				future_val = calc_value_nopolicy(board_history[analysys_n_moves], depth, end_depth);
 				analysys_start = true;
 			} else if (future_val.wait_for(seconds0) == future_status::ready) {
-				int val = (board_history[analysys_n_moves].p ? -1 : 1) * round((double)future_val.get().value / step);
+				int val = (board_history[analysys_n_moves].p ? -1 : 1) * round((double)future_val.get().value);
 				graph.push(analysys_n_moves + start_moves, val);
 				++analysys_n_moves;
 				analysys_start = false;
@@ -736,7 +735,7 @@ void Main() {
 								legals[coord].draw(Palette::Blue);
 								if (future_cell_values[coord].wait_for(seconds0) == future_status::ready) {
 									cell_value cell_value_result = future_cell_values[coord].get();
-									cell_values[coord] = round(-(double)cell_value_result.value / step);
+									cell_values[coord] = -cell_value_result.value;
 									cell_depth[coord] = cell_value_result.depth;
 									cell_value_state[coord] = 2;
 									max_cell_value = max(max_cell_value, cell_values[coord]);
@@ -810,12 +809,12 @@ void Main() {
 					if (future_result.wait_for(seconds0) == future_status::ready) {
 						thinking = false;
 						result = future_result.get();
-						value = (double)result.value / step;
+						value = result.value;
 						record += coord_translate(result.policy);
 						if (ai_player == both_ai_define && bd.p == white)
-							graph.push(bd.n - 4, -(double)result.value / step);
+							graph.push(bd.n - 4, -result.value);
 						else
-							graph.push(bd.n - 4, (bd.p ? -1.0 : 1.0) * (double)result.value / step);
+							graph.push(bd.n - 4, (bd.p ? -1.0 : 1.0) * (double)result.value);
 						bd = bd.move(result.policy);
 						++n_moves;
 						String record_copy = record;
