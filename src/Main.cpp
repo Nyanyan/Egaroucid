@@ -210,7 +210,7 @@ inline int get_value(board bd, int depth, int end_depth) {
 	return value;
 }
 
-void learn_book(board bd, int depth, int end_depth, board *bd_ptr) {
+void learn_book(board bd, int depth, int end_depth, board *bd_ptr, double *value_ptr) {
 	cerr << "start learning book" << endl;
 	cerr << "finish learning book" << endl;
 	priority_queue<pair<int, board>> que;
@@ -219,8 +219,6 @@ void learn_book(board bd, int depth, int end_depth, board *bd_ptr) {
 	int weight, i, j, value;
 	board b, nb;
 	while (!que.empty()) {
-		if (!book_learning)
-			return;
 		popped = que.top();
 		que.pop();
 		weight = -popped.first;
@@ -228,8 +226,11 @@ void learn_book(board bd, int depth, int end_depth, board *bd_ptr) {
 		for (i = 0; i < hw2; ++i) {
 			if (b.legal(i)) {
 				nb = b.move(i);
-				nb.copy(bd_ptr);
+				if (!book_learning)
+					return;
 				value = get_value(nb, depth, end_depth);
+				nb.copy(bd_ptr);
+				*value_ptr = value;
 				book.reg(nb, value);
 				que.push(make_pair(-(weight + abs(value)), nb));
 			}
@@ -483,7 +484,7 @@ void Main() {
 		Circle(offset_x + 6 * cell_hw, offset_y + 2 * cell_hw, 5).draw(Palette::Black);
 		Circle(offset_x + 6 * cell_hw, offset_y + 6 * cell_hw, 5).draw(Palette::Black);
 
-		if (SimpleGUI::Button(U"棋譜入力", Vec2(500, 550))) {
+		if (SimpleGUI::Button(U"棋譜入力", Vec2(500, 550), 120, !book_learning)) {
 			String record_str;
 			if (!Clipboard::GetText(record_str)) {
 				input_record_state = 1;
@@ -566,7 +567,7 @@ void Main() {
 			playing = false;
 		}
 
-		if (SimpleGUI::Button(U"局面入力", Vec2(500, 600))) {
+		if (SimpleGUI::Button(U"局面入力", Vec2(500, 600), 120, !book_learning)) {
 			String board_str;
 			if (!Clipboard::GetText(board_str)) {
 				input_board_state = 1;
@@ -640,7 +641,7 @@ void Main() {
 				++analysys_n_moves;
 				analysys_start = false;
 			}
-		} else if (SimpleGUI::Button(U"棋譜解析", Vec2(0, 50), 120, !thinking)) {
+		} else if (SimpleGUI::Button(U"棋譜解析", Vec2(0, 50), 120, !thinking && !book_learning)) {
 			graph.clear();
 			n_moves = board_history[board_history.size() - 1].n - 4;
 			bd = board_history[board_history.size() - 1];
@@ -658,7 +659,7 @@ void Main() {
 				book_learning = true;
 				book_learning_button = true;
 				book_changed = true;
-				book_learn_future = async(launch::async, learn_book, bd, depth, end_depth, &bd);
+				book_learn_future = async(launch::async, learn_book, bd, depth, end_depth, &bd, &value);
 			}
 		} else {
 			if (SimpleGUI::Button(U"学習停止", Vec2(470, 0), 120, !thinking)) {
@@ -667,7 +668,12 @@ void Main() {
 				book_learn_future.get();
 			}
 		}
-		if (SimpleGUI::Button(U"対局保存", Vec2(750, 555), 120)) {
+
+		if (book_learning) {
+			value_ui(U"評価値: ", round(value)).draw(250, 650);
+		}
+
+		if (SimpleGUI::Button(U"対局保存", Vec2(750, 555), 120, !book_learning)) {
 			if (playing || finished) {
 				String record_copy = record;
 				record_copy.replace(U"\n", U"");
@@ -735,7 +741,7 @@ void Main() {
 			saved_ui(U"失敗").draw(900, 560);
 		}
 
-		if (SimpleGUI::Button(U"棋譜コピー", Vec2(750, 600))) {
+		if (SimpleGUI::Button(U"棋譜コピー", Vec2(750, 600), 120, !book_learning)) {
 			String record_copy = record;
 			record_copy.replace(U"\n", U"");
 			Clipboard::SetText(record_copy);
@@ -746,7 +752,7 @@ void Main() {
 		}
 		
 
-		if (SimpleGUI::Button(U"対局開始", Vec2(0, 0))) {
+		if (SimpleGUI::Button(U"対局開始", Vec2(0, 0), 120, !book_learning)) {
 			int player_idx = pulldown_player.getIndex();
 			if (player_idx == 0)
 				ai_player = 1;
