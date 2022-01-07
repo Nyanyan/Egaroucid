@@ -193,7 +193,29 @@ class board {
             return v > another.v;
         }
 
-        unsigned long long hash(){
+        inline board copy(){
+            board res;
+            for (int i = 0; i < b_idx_num; ++i)
+                res.b[i] = this->b[i];
+            res.p = this->p;
+            res.policy = this->policy;
+            res.v = this->v;
+            res.n = this->n;
+            res.parity = this->parity;
+            return res;
+        }
+
+        void copy(board *res){
+            for (int i = 0; i < b_idx_num; ++i)
+                res->b[i] = this->b[i];
+            res->p = this->p;
+            res->policy = this->policy;
+            res->v = this->v;
+            res->n = this->n;
+            res->parity = this->parity;
+        }
+
+        inline unsigned long long hash(){
             return
                 this->b[0] + 
                 this->b[1] * 17 + 

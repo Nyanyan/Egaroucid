@@ -79,6 +79,10 @@ class book{
             return true;
         }
 
+        inline void reg(board b, int value){
+            n_book += register_symmetric_book(b, (b.p ? -1 : 1) * value, n_book);
+        }
+
         inline int get(board *b){
             book_node *p_node = this->book[b->hash() & book_hash_mask];
             while(p_node != NULL){

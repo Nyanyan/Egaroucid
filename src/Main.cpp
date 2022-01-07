@@ -6,6 +6,7 @@
 #include <fstream>
 #include <sstream>
 #include <time.h>
+#include <queue>
 #include "setting.hpp"
 #include "common.hpp"
 #include "board.hpp"
@@ -31,6 +32,8 @@ using namespace std;
 #define n_accept_define 0
 #define exact_define 1
 #define graph_font_size 15
+
+bool book_learning = false;
 
 struct cell_value {
 	int value;
@@ -175,6 +178,66 @@ inline void import_book(string file) {
 		cerr << "book NOT fully imported" << endl;
 }
 
+bool operator< (const pair<int, board>& a, const pair<int, board>& b) {
+	if (a.first != b.first)
+		return a.first < b.first;
+	return a.second.n < b.second.n;
+};
+
+inline int get_value(board bd, int depth, int end_depth) {
+	int value = book.get(&bd);
+	if (value == -inf) {
+		bool legal1 = false, legal2 = false;
+		for (int i = 0; i < hw2; ++i)
+			legal1 |= bd.legal(i);
+		if (!legal1) {
+			bd.p = 1 - bd.p;
+			for (int i = 0; i < hw2; ++i)
+				legal2 |= bd.legal(i);
+		}
+		if (!legal1 && !legal2) {
+			return -end_evaluate(&bd);
+		} else if (hw2 - bd.n <= end_depth) {
+			value = endsearch(bd, tim(), depth).value;
+			if (!legal1)
+				value = -value;
+		} else {
+			value = midsearch(bd, tim(), depth).value;
+			if (!legal1)
+				value = -value;
+		}
+	}
+	return value;
+}
+
+void learn_book(board bd, int depth, int end_depth, board *bd_ptr) {
+	cerr << "start learning book" << endl;
+	cerr << "finish learning book" << endl;
+	priority_queue<pair<int, board>> que;
+	que.push(make_pair(-abs(get_value(bd, depth, end_depth)), bd));
+	pair<int, board> popped;
+	int weight, i, j, value;
+	board b, nb;
+	while (!que.empty()) {
+		if (!book_learning)
+			return;
+		popped = que.top();
+		que.pop();
+		weight = -popped.first;
+		b = popped.second;
+		for (i = 0; i < hw2; ++i) {
+			if (b.legal(i)) {
+				nb = b.move(i);
+				nb.copy(bd_ptr);
+				value = get_value(nb, depth, end_depth);
+				book.reg(nb, value);
+				que.push(make_pair(-(weight + abs(value)), nb));
+			}
+		}
+	}
+	book_learning = false;
+}
+
 void Main() {
 	Size window_size = Size(1000, 700);
 	Window::Resize(window_size);
@@ -250,8 +313,8 @@ void Main() {
 	int input_board_state = 0, input_record_state = 0;
 	double depth_double = 12, end_depth_double = 20, cell_value_depth_double = 10, cell_value_end_depth_double = 18, book_accept_double = 2;
 	int board_start_moves, finish_moves, max_cell_value = -inf, start_moves = 0;
-	bool book_changed = false, book_changing = false, closing = false, pre_searched = false;
-	future<void> book_import_future;
+	bool book_changed = false, book_changing = false, closing = false, pre_searched = false, book_learning_button = false;
+	future<void> book_import_future, book_learn_future;
 
 	ifstream ifs("resources/settings.txt");
 	if (!ifs.fail()) {
@@ -381,7 +444,6 @@ void Main() {
 			for (const auto& dropped : DragDrop::GetDroppedFilePaths()) {
 				book_changed = true;
 				book_changing = true;
-				//import_book(dropped.path.narrow());
 				book_import_future = async(launch::async, import_book, dropped.path.narrow());
 				break;
 			}
@@ -399,8 +461,8 @@ void Main() {
 			cell_value_thinking = cell_value_thinking || (cell_value_state[i] == 1);
 		end_depth_double = max(end_depth_double, depth_double);
 		cell_value_end_depth_double = max(cell_value_end_depth_double, cell_value_depth_double);
-		SimpleGUI::Slider(U"中盤{:.0f}手読み"_fmt(depth_double), depth_double, 1, 60, Vec2(600, 5), 150, 250, !thinking);
-		SimpleGUI::Slider(U"終盤{:.0f}空読み"_fmt(end_depth_double), end_depth_double, 1, 60, Vec2(600, 40), 150, 250, !thinking);
+		SimpleGUI::Slider(U"中盤{:.0f}手読み"_fmt(depth_double), depth_double, 1, 60, Vec2(600, 5), 150, 250, !thinking && !book_learning);
+		SimpleGUI::Slider(U"終盤{:.0f}空読み"_fmt(end_depth_double), end_depth_double, 1, 60, Vec2(600, 40), 150, 250, !thinking && !book_learning);
 		SimpleGUI::Slider(U"ヒント中盤{:.0f}手読み"_fmt(cell_value_depth_double), cell_value_depth_double, 1, 60, Vec2(550, 75), 200, 250, !cell_value_thinking);
 		SimpleGUI::Slider(U"ヒント終盤{:.0f}空読み"_fmt(cell_value_end_depth_double), cell_value_end_depth_double, 1, 60, Vec2(550, 110), 200, 250, !cell_value_thinking);
 		SimpleGUI::Slider(U"book誤差{:.0f}石"_fmt(book_accept_double), book_accept_double, 0, 64, Vec2(550, 145), 200, 250);
@@ -588,6 +650,23 @@ void Main() {
 			analysys_n_moves = 1000;
 		}
 
+		if (!book_learning) {
+			if (book_learning_button) {
+				book_learning_button = false;
+				book_learn_future.get();
+			} else if (SimpleGUI::Button(U"book学習", Vec2(470, 0), 120, !thinking && playing)) {
+				book_learning = true;
+				book_learning_button = true;
+				book_changed = true;
+				book_learn_future = async(launch::async, learn_book, bd, depth, end_depth, &bd);
+			}
+		} else {
+			if (SimpleGUI::Button(U"学習停止", Vec2(470, 0), 120, !thinking)) {
+				book_learning = false;
+				book_learning_button = false;
+				book_learn_future.get();
+			}
+		}
 		if (SimpleGUI::Button(U"対局保存", Vec2(750, 555), 120)) {
 			if (playing || finished) {
 				String record_copy = record;
@@ -746,7 +825,18 @@ void Main() {
 			}
 		}
 
-		if (playing) {
+		if (book_learning) {
+			bd.translate_to_arr(bd_arr);
+			for (int y = 0; y < hw; ++y) {
+				for (int x = 0; x < hw; ++x) {
+					int coord = proc_coord(y, x);
+					if (bd_arr[coord] == black)
+						stones[coord].draw(Palette::Black);
+					else if (bd_arr[coord] == white)
+						stones[coord].draw(Palette::White);
+				}
+			}
+		} else if (playing && !book_learning) {
 			for (int y = 0; y < hw; ++y) {
 				for (int x = 0; x < hw; ++x) {
 					int coord = proc_coord(y, x);
