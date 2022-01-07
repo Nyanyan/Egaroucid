@@ -193,10 +193,11 @@ games = []
 
 for i in range(0, 1):
     raw_data = ''
-    with open('third_party/records3/' + digit(i, 7) + '.txt', 'r') as f:
+    with open('third_party/records4/' + digit(i, 7) + '.txt', 'r') as f:
         raw_data = f.read()
     games.extend([i for i in raw_data.splitlines()])
 print(len(games))
+games = list(set(games))
 dict_data = {}
 idx = 0
 for i in trange(len(games)):

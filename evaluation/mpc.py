@@ -28,7 +28,7 @@ evaluate = subprocess.Popen('../src/egaroucid5.out'.split(), stdin=subprocess.PI
 sleep(1)
 
 min_depth = 3
-max_depth = 18
+max_depth = 22
 
 vhs = [[[] for _ in range(max_depth - min_depth + 1)] for _ in range(10)]
 vds = [[[] for _ in range(max_depth - min_depth + 1)] for _ in range(10)]
