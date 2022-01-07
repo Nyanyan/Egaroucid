@@ -90,26 +90,26 @@ int main(){
     while (true){
         #if MPC_MODE
             cin >> ai_player;
-            int d;
-            cin >> d;
+            int max_depth;
+            cin >> max_depth;
             input_board(&b, ai_player);
             transpose_table.init_now();
             transpose_table.init_prev();
-            bool use_mpc = d >= 11 ? true : false;
-            double use_mpct = 1.7;
-            if (d >= 13)
+            bool use_mpc = max_depth >= 11 ? true : false;
+            double use_mpct = 2.0;
+            if (max_depth >= 13)
+                use_mpct = 1.7;
+            if (max_depth >= 15)
                 use_mpct = 1.5;
-            if (d >= 15)
-                use_mpct = 1.2;
-            if (d >= 17)
+            if (max_depth >= 17)
+                use_mpct = 1.3;
+            if (max_depth >= 19)
+                use_mpct = 1.1;
+            if (max_depth >= 21)
                 use_mpct = 0.8;
-            if (d >= 19)
-                use_mpct = 0.6;
-            if (d >= 21)
-                use_mpct = 0.3;
-            if (d >= 23)
-                use_mpct = 0.2;
-            cout << mtd(&b, false, d, -hw2, hw2, use_mpc, use_mpct) << endl;
+            if (max_depth >= 23)
+                use_mpct = 0.4;
+            cout << mtd(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct) << endl;
         #elif EVAL_MODE
             cin >> ai_player;
             input_board(&b, ai_player);
