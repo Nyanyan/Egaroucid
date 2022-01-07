@@ -25,23 +25,29 @@ struct book_value{
 class book{
     private:
         book_node *book[book_hash_table_size];
+		int n_book;
     public:
         void init(){
-            int i, j;
+			for (int i = 0; i < book_hash_table_size; ++i)
+				this->book[i] = NULL;
+			n_book = 0;
+            import_file("resources/book.txt");
+        }
+
+        inline void import_file(string file){
+            int j;
             int board_arr[hw2];
             string book_str;
             char elem;
-            ifstream ifs("resources/book.txt");
+            ifstream ifs(file);
             if (ifs.fail()){
                 cerr << "book file not exist" << endl;
-                exit(1);
+                //exit(1);
+				return;
             }
             string book_line;
-            int n_book = 0;
             board b;
             double value;
-            for(i = 0; i < book_hash_table_size; ++i)
-                this->book[i] = NULL;
             while (getline(ifs, book_line)){
                 for (j = 0; j < hw2; ++j){
                     elem = book_line[j];
@@ -55,8 +61,7 @@ class book{
                 b.translate_from_arr(board_arr, black);
                 string value_str = book_line.substr(hw2 + 1, book_line.size() - hw2 - 1);
                 value = stoi(value_str);
-                register_symmetric_book(b, value, n_book);
-                ++n_book;
+                n_book += register_symmetric_book(b, value, n_book);
             }
             cerr << "book initialized " << n_book << " boards in book" << endl;
         }
@@ -165,7 +170,7 @@ class book{
             return p_node;
         }
 
-        inline void register_book(const uint_fast16_t key[], int hash, int value, int line){
+        inline bool register_book(const uint_fast16_t key[], int hash, int value, int line){
             if(this->book[hash] == NULL){
                 this->book[hash] = book_node_init(key, value, line);
             } else {
@@ -176,19 +181,21 @@ class book{
                     if(compare_key(key, p_node->k)){
                         p_node->value = value;
                         p_node->line = line;
-                        return;
+                        return false;
                     }
                     p_pre_node = p_node;
                     p_node = p_node->p_n_node;
                 }
                 p_pre_node->p_n_node = book_node_init(key, value, line);
             }
+			return true;
         }
 
-        inline void register_symmetric_book(board b, int value, int line){
-            int i;
+        inline int register_symmetric_book(board b, int value, int line){
+            int i, res = 1;
             int tmp[b_idx_num];
-            register_book(b.b, b.hash() & book_hash_mask, value, line);
+			if (!register_book(b.b, b.hash() & book_hash_mask, value, line))
+				res = 0;
             for (i = 0; i < 8; ++i)
                 swap(b.b[i], b.b[8 + i]);
             register_book(b.b, b.hash() & book_hash_mask, value, line);
@@ -202,6 +209,7 @@ class book{
             for (i = 0; i < 8; ++i)
                 swap(b.b[i], b.b[8 + i]);
             register_book(b.b, b.hash() & book_hash_mask, value, line);
+			return res;
         }
 
         inline string create_book_data(board b, int value){

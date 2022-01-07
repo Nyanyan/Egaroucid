@@ -166,6 +166,11 @@ inline String coord_translate(int coord) {
 	return res;
 }
 
+inline void import_book(string file) {
+	cerr << "book import" << endl;
+	book.import_file(file);
+}
+
 void Main() {
 	Size window_size = Size(1000, 700);
 	Window::Resize(window_size);
@@ -220,7 +225,7 @@ void Main() {
 	Font saved_ui(20);
 	Font copy_ui(20);
 	Font joseki_ui(20);
-	Font initializing(50);
+	Font font50(50);
 	bool playing = false, thinking = false, cell_value_thinking = false, changing_book = false;
 	int depth, end_depth, ai_player, cell_value_depth, cell_value_end_depth, book_accept, show_cell_value, show_value, n_moves = 0;
 	double value;
@@ -241,7 +246,8 @@ void Main() {
 	int input_board_state = 0, input_record_state = 0;
 	double depth_double = 12, end_depth_double = 20, cell_value_depth_double = 10, cell_value_end_depth_double = 18, book_accept_double = 2;
 	int board_start_moves, finish_moves, max_cell_value = -inf, start_moves = 0;
-	bool book_changed = false, closing = false, pre_searched = false;
+	bool book_changed = false, book_changing = false, closing = false, pre_searched = false;
+	future<void> book_import_future;
 
 	ifstream ifs("resources/settings.txt");
 	if (!ifs.fail()) {
@@ -302,7 +308,7 @@ void Main() {
 				future_initialize.get();
 				initialized = true;
 			}
-			initializing(U"AI初期化中…").draw(0, 0);
+			font50(U"AI初期化中…").draw(0, 0);
 			continue;
 		}
 
@@ -310,7 +316,7 @@ void Main() {
 			closing = true;
 		if (closing){
 			if (book_changed) {
-				initializing(U"bookが変更されました。保存しますか？").draw(0, 0);
+				font50(U"bookが変更されました。保存しますか？").draw(0, 0);
 				if (SimpleGUI::Button(U"保存する", Vec2(0, 150))) {
 					book.save();
 					ofstream ofs("resources/settings.txt");
@@ -359,6 +365,30 @@ void Main() {
 			}
 			continue;
 		}
+
+		if (book_changing) {
+			font50(U"book追加中…").draw(0, 0);
+			if (book_import_future.wait_for(seconds0) == future_status::ready) {
+				book_changing = false;
+				book_import_future.get();
+			}
+			continue;
+		} else if (DragDrop::HasNewFilePaths()) {
+			for (const auto& dropped : DragDrop::GetDroppedFilePaths()) {
+				book_changed = true;
+				book_changing = true;
+				//import_book(dropped.path.narrow());
+				book_import_future = async(launch::async, import_book, dropped.path.narrow());
+				break;
+			}
+			continue;
+		} else if (const auto status = DragDrop::DragOver()) {
+			if (status->itemType == DragItemType::FilePaths) {
+				font50(U"ドラッグ&ドロップでbookを追加").draw(0, 0);
+				continue;
+			}
+		}
+
 
 		cell_value_thinking = false;
 		for (int i = 0; i < hw2; ++i)
