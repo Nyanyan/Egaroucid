@@ -93,7 +93,7 @@ class book{
         inline int get(board *b){
             book_node *p_node = this->book[b->hash() & book_hash_mask];
             while(p_node != NULL){
-                if(b->p == p_node->p && compare_key(b->b, p_node->k)){
+                if(compare_key(b->b, p_node->k)){
                     return (b->p ? -1 : 1) * p_node->value;
                 }
                 p_node = p_node->p_n_node;
@@ -111,7 +111,7 @@ class book{
                     b->move(coord, &nb);
                     book_node *p_node = this->book[nb.hash() & book_hash_mask];
                     while(p_node != NULL){
-                        if(b->p == p_node->p && compare_key(nb.b, p_node->k)){
+                        if(compare_key(nb.b, p_node->k)){
                             policies.push_back(coord);
                             values.push_back((b->p ? -1 : 1) * p_node->value);
                             max_value = max(max_value, (b->p ? -1 : 1) * p_node->value);
@@ -144,7 +144,7 @@ class book{
                 value = -value;
             book_node *p_node = this->book[b.hash() & book_hash_mask];
             while(p_node != NULL){
-                if(b.p == p_node->p && compare_key(b.b, p_node->k)){
+                if(compare_key(b.b, p_node->k)){
                     register_symmetric_book(b, value, p_node->line);
                     //save_book(b, value, p_node->line);
                     return;
