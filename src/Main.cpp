@@ -179,9 +179,7 @@ inline void import_book(string file) {
 }
 
 bool operator< (const pair<int, board>& a, const pair<int, board>& b) {
-	if (a.first != b.first)
-		return a.first < b.first;
-	return a.second.n < b.second.n;
+	return a.first - a.second.n < b.first - b.second.n;
 };
 
 inline int get_value(board bd, int depth, int end_depth) {
@@ -212,12 +210,15 @@ inline int get_value(board bd, int depth, int end_depth) {
 
 void learn_book(board bd, int depth, int end_depth, board *bd_ptr, double *value_ptr) {
 	cerr << "start learning book" << endl;
-	cerr << "finish learning book" << endl;
 	priority_queue<pair<int, board>> que;
 	que.push(make_pair(-abs(get_value(bd, depth, end_depth)), bd));
 	pair<int, board> popped;
 	int weight, i, j, value;
 	board b, nb;
+	value = get_value(bd, depth, end_depth);
+	bd.copy(bd_ptr);
+	*value_ptr = (bd.p ? -1 : 1) * value;
+	book.reg(bd, value);
 	while (!que.empty()) {
 		popped = que.top();
 		que.pop();
@@ -230,7 +231,7 @@ void learn_book(board bd, int depth, int end_depth, board *bd_ptr, double *value
 					return;
 				value = get_value(nb, depth, end_depth);
 				nb.copy(bd_ptr);
-				*value_ptr = value;
+				*value_ptr = (nb.p ? -1 : 1) * value;
 				book.reg(nb, value);
 				que.push(make_pair(-(weight + abs(value)), nb));
 			}
@@ -380,7 +381,7 @@ void Main() {
 			continue;
 		}
 
-		if (System::GetUserActions() & UserAction::CloseButtonClicked)
+		if (System::GetUserActions() & UserAction::CloseButtonClicked && !book_learning)
 			closing = true;
 		if (closing){
 			if (book_changed) {
