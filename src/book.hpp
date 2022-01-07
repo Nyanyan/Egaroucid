@@ -34,7 +34,7 @@ class book{
             import_file("resources/book.txt");
         }
 
-        inline void import_file(string file){
+        inline bool import_file(string file){
             int j;
             int board_arr[hw2];
             string book_str;
@@ -42,28 +42,41 @@ class book{
             ifstream ifs(file);
             if (ifs.fail()){
                 cerr << "book file not exist" << endl;
-                //exit(1);
-				return;
+				return false;
             }
             string book_line;
             board b;
             double value;
             while (getline(ifs, book_line)){
+                if (book_line.size() < hw2 + 2){
+                    cerr << "book import error" << endl;
+                    return false;
+                }
                 for (j = 0; j < hw2; ++j){
                     elem = book_line[j];
                     if (elem == '0')
                         board_arr[j] = 0;
                     else if (elem == '1')
                         board_arr[j] = 1;
-                    else
+                    else if (elem == '.')
                         board_arr[j] = 2;
+                    else{
+                        cerr << "book import error" << endl;
+                        return false;
+                    }
                 }
                 b.translate_from_arr(board_arr, black);
                 string value_str = book_line.substr(hw2 + 1, book_line.size() - hw2 - 1);
-                value = stoi(value_str);
+                try{
+                    value = stoi(value_str);
+                } catch (const invalid_argument& err){
+                    cerr << "book import error" << endl;
+                    return false;
+                }
                 n_book += register_symmetric_book(b, value, n_book);
             }
             cerr << "book initialized " << n_book << " boards in book" << endl;
+            return true;
         }
 
         inline int get(board *b){

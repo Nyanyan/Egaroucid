@@ -168,7 +168,11 @@ inline String coord_translate(int coord) {
 
 inline void import_book(string file) {
 	cerr << "book import" << endl;
-	book.import_file(file);
+	bool result = book.import_file(file);
+	if (result)
+		cerr << "book imported" << endl;
+	else
+		cerr << "book NOT fully imported" << endl;
 }
 
 void Main() {
