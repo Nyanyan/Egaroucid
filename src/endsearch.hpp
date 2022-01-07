@@ -878,25 +878,25 @@ inline search_result endsearch(board b, long long strt, bool pre_searched){
     searched_nodes = 0;
     transpose_table.hash_get = 0;
     transpose_table.hash_reg = 0;
-    int max_depth = hw2 - b.n - 1;
+    int max_depth = hw2 - b.n;
     bool use_mpc = max_depth >= 19 ? true : false;
     double use_mpct = 2.5;
     if (max_depth >= 23)
-        use_mpct = 2.0;
-    if (max_depth >= 25)
         use_mpct = 1.5;
-    if (max_depth >= 27)
+    if (max_depth >= 25)
         use_mpct = 1.1;
+    if (max_depth >= 27)
+        use_mpct = 0.9;
     if (max_depth >= 29)
         use_mpct = 0.7;
     if (max_depth >= 31)
         use_mpct = 0.5;
     if (max_depth >= 33)
         use_mpct = 0.3;
-    cerr << "start final search depth " << max_depth + 1 << endl;
+    cerr << "start final search depth " << max_depth << endl;
     alpha = -hw2;
     beta = hw2;
-    int pre_search_depth = min(17, max_depth);
+    int pre_search_depth = min(17, max_depth - 1);
     cerr << "pre search depth " << pre_search_depth << endl;
     transpose_table.init_now();
     for (i = 0; i < canput; ++i)
@@ -912,15 +912,15 @@ inline search_result endsearch(board b, long long strt, bool pre_searched){
     cerr << "start main search" << endl;
     if (nb[0].n < hw2 - 5){
         //alpha = -nega_scout_final(&nb[0], false, max_depth, -beta, -alpha, use_mpc, use_mpct);
-        alpha = -mtd_final(&nb[0], false, max_depth, -beta, -alpha, use_mpc, use_mpct, -nb[0].v);
+        alpha = -mtd_final(&nb[0], false, max_depth - 1, -beta, -alpha, use_mpc, use_mpct, -nb[0].v);
         transpose_table.reg(&nb[0], nb[0].hash() & search_hash_mask, -alpha, -alpha);
         tmp_policy = nb[0].policy;
         for (i = 1; i < canput; ++i){
-            g = -nega_alpha_ordering_final(&nb[i], false, max_depth, -alpha - search_epsilon, -alpha, true, use_mpc, use_mpct);
+            g = -nega_alpha_ordering_final(&nb[i], false, max_depth - 1, -alpha - search_epsilon, -alpha, true, use_mpc, use_mpct);
             //cerr << g << endl;
             if (alpha < g){
                 //g = -nega_scout_final(&nb[i], false, max_depth, -beta, -g, use_mpc, use_mpct);
-                g = -mtd_final(&nb[i], false, max_depth, -beta, -g, use_mpc, use_mpct, -nb[i].v);
+                g = -mtd_final(&nb[i], false, max_depth - 1, -beta, -g, use_mpc, use_mpct, -nb[i].v);
                 transpose_table.reg(&nb[i], nb[i].hash() & search_hash_mask, -g, -g);
                 if (alpha < g){
                     alpha = g;

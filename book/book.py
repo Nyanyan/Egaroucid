@@ -54,7 +54,7 @@ def calc_value(o, ai_num, flag):
         print(val)
         book[grid_str.replace('\n', '')] = [val, True]
         with open('learned_data/book.txt', 'a') as f:
-            f.write(grid_str.replace('\n', '') + ' ' + str(round(val)) + '\n')
+            f.write(grid_str.replace('\n', '') + ' ' + str(o.player) + ' ' + str(round(val)) + '\n')
     else:
         val, flag = book[grid_str.replace('\n', '')]
         if flag:

@@ -411,17 +411,17 @@ inline search_result midsearch(board b, long long strt, int max_depth){
     int order_l, order_u;
     //int depth = min(hw2 - b.n - 1, max_depth - 1);
     bool use_mpc = max_depth >= 11 ? true : false;
-    double use_mpct = 1.7;
+    double use_mpct = 2.0;
     if (max_depth >= 13)
-        use_mpct = 1.5;
+        use_mpct = 1.7;
     if (max_depth >= 15)
-        use_mpct = 1.2;
+        use_mpct = 1.5;
     if (max_depth >= 17)
-        use_mpct = 0.8;
+        use_mpct = 1.3;
     if (max_depth >= 19)
-        use_mpct = 0.6;
+        use_mpct = 1.1;
     if (max_depth >= 21)
-        use_mpct = 0.5;
+        use_mpct = 0.8;
     if (max_depth >= 23)
         use_mpct = 0.4;
     for (int depth = min(11, max(0, max_depth - 5)); depth <= min(hw2 - b.n, max_depth - 1); ++depth){

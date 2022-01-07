@@ -328,7 +328,7 @@ inline void convert_idx(string str){
     cout << score << endl;
 }
 
-#define start_file 270
+#define start_file 305
 #define n_files 1000
 
 int main(){

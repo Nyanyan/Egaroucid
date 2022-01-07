@@ -40,7 +40,7 @@ int sa_phase, sa_player;
 
 #define n_raw_params 62
 
-#define beta 0.005
+#define beta 0.002
 double alpha[n_eval][max_evaluate_idx];
 
 const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10, 10};
@@ -498,7 +498,7 @@ int main(int argc, char *argv[]){
     int i, j;
 
     unsigned long long hour = 0;
-    unsigned long long minute = 10;
+    unsigned long long minute = 2;
     unsigned long long second = 0;
     minute += hour * 60;
     second += minute * 60;

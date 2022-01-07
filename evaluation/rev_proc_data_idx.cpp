@@ -425,7 +425,7 @@ int main(){
     int t = 0;
 
     cerr << "=";
-    ifstream ifs("records3_2.txt");
+    ifstream ifs("records3_5.txt");
     if (ifs.fail()){
         cerr << "evaluation file not exist" << endl;
         exit(1);
