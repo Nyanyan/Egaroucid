@@ -6,7 +6,7 @@
 #include "evaluate.hpp"
 #include "board.hpp"
 
-#define book_hash_table_size 8192
+#define book_hash_table_size 32768
 constexpr int book_hash_mask = book_hash_table_size - 1;
 #define book_stones 64
 
@@ -174,6 +174,7 @@ class book{
                     p_node = p_node->p_n_node;
                 }
             }
+            cerr << "saved" << endl;
         }
 
     private:
@@ -205,7 +206,6 @@ class book{
                 while(p_node != NULL){
                     if(p_node->p == b.p && compare_key(b.b, p_node->k)){
                         p_node->value = value;
-                        p_node->line = line;
                         return false;
                     }
                     p_pre_node = p_node;
