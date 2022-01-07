@@ -81,7 +81,7 @@ def collect_data(num):
             vds[depth - min_depth].append(vd)
             v0s[depth - min_depth].append(v0)
 
-for i in range(3, 4):
+for i in range(5, 6):
     collect_data(i)
 evaluate.kill()
 
@@ -120,7 +120,7 @@ print(f_score)
 
 vh_vd = [[vhs[j][k] - f(vds[j][k]) for k in range(len(vhs[j]))] for j in range(len(vhs))]
 vh_v0 = [[vhs[j][k] - f(v0s[j][k]) for k in range(len(vhs[j]))] for j in range(len(vhs))]
-sd = [round(statistics.stdev(vh_vd[j])) for j in range(len(vh_vd))]
+sd = [round(statistics.stdev(vh_vd[j]), 3) for j in range(len(vh_vd))]
 sd0 = [round(statistics.stdev(vh_v0[j])) for j in range(len(vh_vd))]
 print(sd)
 print(sd0)

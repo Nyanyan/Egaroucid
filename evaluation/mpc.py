@@ -28,7 +28,7 @@ evaluate = subprocess.Popen('../src/egaroucid5.out'.split(), stdin=subprocess.PI
 sleep(1)
 
 min_depth = 3
-max_depth = 22
+max_depth = 24
 
 vhs = [[[] for _ in range(max_depth - min_depth + 1)] for _ in range(10)]
 vds = [[[] for _ in range(max_depth - min_depth + 1)] for _ in range(10)]
@@ -84,7 +84,7 @@ def collect_data(num):
         vds[(n_stones - 4) // 6][depth - min_depth].append(vd)
         v0s[(n_stones - 4) // 6][depth - min_depth].append(v0)
 
-for i in range(30, 40):
+for i in range(30, 45):
     collect_data(i)
 evaluate.kill()
 
