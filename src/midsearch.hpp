@@ -423,7 +423,7 @@ inline search_result midsearch(board b, long long strt, int max_depth){
     if (max_depth >= 21)
         use_mpct = 0.8;
     if (max_depth >= 23)
-        use_mpct = 0.4;
+        use_mpct = 0.6;
     for (int depth = min(11, max(0, max_depth - 5)); depth <= min(hw2 - b.n, max_depth - 1); ++depth){
         alpha = -hw2;
         beta = hw2;
