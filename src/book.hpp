@@ -151,7 +151,7 @@ class book{
                 }
                 p_node = p_node->p_n_node;
             }
-            register_symmetric_book(b, value, -1);
+            n_book += register_symmetric_book(b, value, n_book);
             //save_book(b, value, -1);
         }
 
