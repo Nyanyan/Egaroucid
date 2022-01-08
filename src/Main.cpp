@@ -72,11 +72,11 @@ cell_value cell_value_search(board bd, int depth, int end_depth) {
 	} else {
 		bool legal1 = false, legal2 = false;
 		for (int i = 0; i < hw2; ++i)
-			legal1 |= bd.legal(i);
+			legal1 = legal1 || bd.legal(i);
 		if (!legal1) {
 			bd.p = 1 - bd.p;
 			for (int i = 0; i < hw2; ++i)
-				legal2 |= bd.legal(i);
+				legal2 = legal2 || bd.legal(i);
 		}
 		if (!legal1 && !legal2) {
 			res.value = -end_evaluate(&bd);
@@ -84,12 +84,14 @@ cell_value cell_value_search(board bd, int depth, int end_depth) {
 		} else if (hw2 - bd.n <= end_depth) {
 			res.value = endsearch(bd, tim(), depth).value;
 			if (!legal1)
-				res.value - -res.value;
+				res.value = -res.value;
 			res.depth = depth >= 21 ? hw2 - bd.n + 1 : final_define_value;
 		} else {
 			res.value = midsearch(bd, tim(), depth).value;
-			if (!legal1)
-				res.value - -res.value;
+			if (!legal1) {
+				Print << U"passed";
+				res.value = -res.value;
+			}
 			res.depth = depth + 1;
 		}
 	}
@@ -535,6 +537,10 @@ void Main() {
 						last_played.push_back(y * hw + x);
 						board_history.push_back(bd);
 						record_tmp += coord_translate(y * hw + x);
+						String record_copy = record_tmp;
+						record_copy.replace(U"\n", U"");
+						if (record_copy.size() % 40 == 0)
+							record_tmp += U"\n";
 					}
 				}
 				if (flag) {
