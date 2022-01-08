@@ -898,6 +898,7 @@ inline search_result endsearch(board b, long long strt, bool pre_searched){
     beta = hw2;
     int pre_search_depth = min(18, max_depth - 1);
     cerr << "pre search depth " << pre_search_depth << endl;
+    transpose_table.init_prev();
     transpose_table.init_now();
     for (i = 0; i < canput; ++i)
         nb[i].v = -mtd(&nb[i], false, pre_search_depth, -hw2, hw2, true, 0.8);
