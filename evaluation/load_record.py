@@ -181,9 +181,9 @@ def collect_data(num, s):
             #evaluate.stdin.write((str(rv.player) + '\n' + grid_str + '\n').encode('utf-8'))
             #evaluate.stdin.flush()
             #add_data = evaluate.stdout.readline().decode().replace('\r\n', '')
-            #if idx >= 24:
-                #grids.append(grid_str.replace('\n', '') + ' ' + str(rv.player) + ' ' + add_data)
-            grids.append(grid_str.replace('\n', '') + ' ' + str(rv.player))
+            if idx >= 24:
+                grids.append(grid_str.replace('\n', '') + ' ' + str(rv.player))
+            #grids.append(grid_str.replace('\n', '') + ' ' + str(rv.player) + ' ' + add_data)
         if rv.move(y, x):
             print('error')
             exit()
@@ -208,7 +208,7 @@ for year in reversed(range(1977, 2019 + 1)):
         raw_data = f.read()
     games.extend([i for i in raw_data.splitlines()])
 '''
-for i in range(52, 53):
+for i in range(30, 52):
     raw_data = ''
     with open('third_party/records3/' + digit(i, 7) + '.txt', 'r') as f:
         raw_data = f.read()
@@ -219,7 +219,7 @@ idx = 0
 for i in trange(len(games)):
     if len(games[i]) == 0:
         continue
-    collect_data(373 + idx // 1000, games[i])
+    collect_data(106 + idx // 1000, games[i])
     idx += 1
 print(idx)
 

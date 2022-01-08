@@ -59,7 +59,7 @@ for file in tqdm(files):
         else:
             data_dict[board] = [1, score, player]
 
-use_threshold = 250
+use_threshold = 500
 n_boards = 0
 with open('learned_data/book.txt', 'w') as f:
     for board in data_dict.keys():

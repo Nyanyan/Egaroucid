@@ -73,7 +73,7 @@ class book{
                     return false;
                 }
                 b.translate_from_arr(board_arr, p);
-                string value_str = book_line.substr(hw2 + 3, book_line.size() - hw2 - 1);
+                string value_str = book_line.substr(hw2 + 3, book_line.size() - hw2 - 3);
                 try{
                     value = stoi(value_str);
                 } catch (const invalid_argument& err){
