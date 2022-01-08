@@ -1,0 +1,18 @@
+html, body {
+    font-family: "Arial", "メイリオ";
+}
+.title {
+    text-align: center;
+    font-size: xx-large;
+    font-weight: bolder;
+}
+.sub_title {
+    text-align: center;
+    font-size: x-large;
+    font-weight: bold;
+}
+.sub_sub_title {
+    text-align: center;
+    font-size: large;
+    font-weight: bold;
+}
