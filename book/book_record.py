@@ -24,21 +24,21 @@ def rotate_board(board):
     for y in range(hw):
         for x in range(hw):
             n_board += board[hw * x + y]
-    if compare(board, n_board):
+    if compare(res, n_board):
         res = n_board
     
     n_board = ''
     for y in range(hw):
         for x in range(hw):
             n_board += board[hw * (7 - y) + (7 - x)]
-    if compare(board, n_board):
+    if compare(res, n_board):
         res = n_board
     
     n_board = ''
     for y in range(hw):
         for x in range(hw):
             n_board += board[hw * (7 - x) + (7 - y)]
-    if compare(board, n_board):
+    if compare(res, n_board):
         res = n_board
     
     return res
@@ -59,11 +59,11 @@ for file in tqdm(files):
         else:
             data_dict[board] = [1, score, player]
 
-use_threshold = 10
+use_threshold = 250
 n_boards = 0
 with open('learned_data/book.txt', 'w') as f:
     for board in data_dict.keys():
         if data_dict[board][0] >= use_threshold:
-            f.write(board + ' ' + str(data_dict[board][2]) + ' ' + round(data_dict[board][1] / data_dict[board][0]) + '\n')
+            f.write(board + ' ' + str(data_dict[board][2]) + ' ' + str(round(data_dict[board][1] / data_dict[board][0])) + '\n')
             n_boards += 1
 print(n_boards)
