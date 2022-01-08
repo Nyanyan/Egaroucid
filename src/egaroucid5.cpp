@@ -108,7 +108,7 @@ int main(){
             if (max_depth >= 21)
                 use_mpct = 0.8;
             if (max_depth >= 23)
-                use_mpct = 0.4;
+                use_mpct = 0.6;
             cout << mtd(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct) << endl;
         #elif EVAL_MODE
             cin >> ai_player;
