@@ -85,7 +85,7 @@ cell_value cell_value_search(board bd, int depth, int end_depth) {
 			res.value = endsearch(bd, tim(), depth).value;
 			if (!legal1)
 				res.value - -res.value;
-			res.depth = depth >= 19 ? hw2 - bd.n + 1 : final_define_value;
+			res.depth = depth >= 21 ? hw2 - bd.n + 1 : final_define_value;
 		} else {
 			res.value = midsearch(bd, tim(), depth).value;
 			if (!legal1)
@@ -785,7 +785,7 @@ void Main() {
 				board_history.push_back(bd);
 				last_played.push_back(-1);
 			}
-			board_start_moves = bd.n - 4;
+			board_start_moves = board_history[0].n - 4;
 			finished = false;
 			saved = 0;
 			copied = false;
@@ -851,9 +851,11 @@ void Main() {
 						stones[coord].draw(Palette::Black);
 					else if (bd_arr[coord] == white)
 						stones[coord].draw(Palette::White);
-					if (last_played[n_moves - start_moves] == coord)
-						Circle(cell_center_x[coord % hw], cell_center_y[coord / hw], 5).draw(Palette::Red);
-					else if (bd.legal(coord)) {
+					if (n_moves - start_moves >= 0) {
+						if (last_played[n_moves - start_moves] == coord)
+							Circle(cell_center_x[coord % hw], cell_center_y[coord / hw], 5).draw(Palette::Red);
+					}
+					if (bd.legal(coord)) {
 						if ((bd.p != ai_player && ai_player != both_ai_define) || n_moves != board_history.size() - 1){
 							if (cell_value_state[coord] == 0) {
 								legals[coord].draw(Palette::Blue);
