@@ -150,19 +150,19 @@ inline int last3(board *b, bool skipped, int alpha, int beta, int p0, int p1, in
         int p0_parity = (b->parity & cell_div4[p0]);
         int p1_parity = (b->parity & cell_div4[p1]);
         int p2_parity = (b->parity & cell_div4[p2]);
-        if (!p0_parity && p1_parity && p2_parity){
+        if (p0_parity == 0 && p1_parity && p2_parity){
             int tmp = p0;
             p0 = p1;
             p1 = p2;
             p2 = tmp;
-        } else if (p0_parity && !p1_parity && p2_parity){
+        } else if (p0_parity && p1_parity == 0 && p2_parity){
             swap(p1, p2);
-        } else if (!p0_parity && !p1_parity && p2_parity){
+        } else if (p0_parity == 0 && p1_parity == 0 && p2_parity){
             int tmp = p0;
             p0 = p2;
             p2 = p1;
             p1 = tmp;
-        } else if (!p0_parity && p1_parity && !p2_parity){
+        } else if (p0_parity == 0 && p1_parity && p2_parity == 0){
             swap(p0, p1);
         }
     #endif
@@ -216,52 +216,52 @@ inline int last4(board *b, bool skipped, int alpha, int beta, int p0, int p1, in
         int p1_parity = (b->parity & cell_div4[p1]);
         int p2_parity = (b->parity & cell_div4[p2]);
         int p3_parity = (b->parity & cell_div4[p3]);
-        if (!p0_parity && p1_parity && p2_parity && p3_parity){
+        if (p0_parity == 0 && p1_parity && p2_parity && p3_parity){
             int tmp = p0;
             p0 = p1;
             p1 = p2;
             p2 = p3;
             p3 = tmp;
-        } else if (p0_parity && !p1_parity && p2_parity && p3_parity){
+        } else if (p0_parity && p1_parity == 0 && p2_parity && p3_parity){
             int tmp = p1;
             p1 = p2;
             p2 = p3;
             p3 = tmp;
-        } else if (p0_parity && p1_parity && !p2_parity && p3_parity){
+        } else if (p0_parity && p1_parity && p2_parity == 0 && p3_parity){
             swap(p2, p3);
-        } else if (!p0_parity && !p1_parity && p2_parity && p3_parity){
+        } else if (p0_parity == 0 && p1_parity == 0 && p2_parity && p3_parity){
             swap(p0, p2);
             swap(p1, p3);
-        } else if (!p0_parity && p1_parity && !p2_parity && p3_parity){
+        } else if (p0_parity == 0 && p1_parity && p2_parity == 0 && p3_parity){
             int tmp = p0;
             p0 = p1;
             p1 = p3;
             p3 = p2;
             p2 = tmp;
-        } else if (!p0_parity && p1_parity && p2_parity && !p3_parity){
+        } else if (p0_parity == 0 && p1_parity && p2_parity && p3_parity == 0){
             int tmp = p0;
             p0 = p1;
             p1 = p2;
             p2 = tmp;
-        } else if (p0_parity && !p1_parity && !p2_parity && p3_parity){
+        } else if (p0_parity && p1_parity == 0 && p2_parity == 0 && p3_parity){
             int tmp = p1;
             p1 = p3;
             p3 = p2;
             p2 = tmp;
-        } else if (p0_parity && !p1_parity && p2_parity && !p3_parity){
+        } else if (p0_parity && p1_parity == 0 && p2_parity && p3_parity == 0){
             swap(p1, p2);
-        } else if (!p0_parity && !p1_parity && !p2_parity && p3_parity){
+        } else if (p0_parity == 0 && p1_parity == 0 && p2_parity == 0 && p3_parity){
             int tmp = p0;
             p0 = p3;
             p3 = p2;
             p2 = p1;
             p1 = tmp;
-        } else if (!p0_parity && !p1_parity && p2_parity && !p3_parity){
+        } else if (p0_parity == 0 && p1_parity == 0 && p2_parity && p3_parity == 0){
             int tmp = p0;
             p0 = p2;
             p2 = p1;
             p1 = tmp;
-        } else if (!p0_parity && p1_parity && !p2_parity && !p3_parity){
+        } else if (p0_parity == 0 && p1_parity && p2_parity == 0 && p3_parity == 0){
             swap(p0, p1);
         }
     #endif
@@ -898,7 +898,6 @@ inline search_result endsearch(board b, long long strt, bool pre_searched){
     beta = hw2;
     int pre_search_depth = min(18, max_depth - 1);
     cerr << "pre search depth " << pre_search_depth << endl;
-    transpose_table.init_prev();
     transpose_table.init_now();
     for (i = 0; i < canput; ++i)
         nb[i].v = -mtd(&nb[i], false, pre_search_depth, -hw2, hw2, true, 0.8);
@@ -914,7 +913,6 @@ inline search_result endsearch(board b, long long strt, bool pre_searched){
     if (nb[0].n < hw2 - 5){
         //alpha = -nega_scout_final(&nb[0], false, max_depth, -beta, -alpha, use_mpc, use_mpct);
         alpha = -mtd_final(&nb[0], false, max_depth - 1, -beta, -alpha, use_mpc, use_mpct, -nb[0].v);
-        transpose_table.reg(&nb[0], nb[0].hash() & search_hash_mask, -alpha, -alpha);
         tmp_policy = nb[0].policy;
         for (i = 1; i < canput; ++i){
             g = -nega_alpha_ordering_final(&nb[i], false, max_depth - 1, -alpha - search_epsilon, -alpha, true, use_mpc, use_mpct);
@@ -922,13 +920,10 @@ inline search_result endsearch(board b, long long strt, bool pre_searched){
             if (alpha < g){
                 //g = -nega_scout_final(&nb[i], false, max_depth, -beta, -g, use_mpc, use_mpct);
                 g = -mtd_final(&nb[i], false, max_depth - 1, -beta, -g, use_mpc, use_mpct, -nb[i].v);
-                transpose_table.reg(&nb[i], nb[i].hash() & search_hash_mask, -g, -g);
                 if (alpha < g){
                     alpha = g;
                     tmp_policy = nb[i].policy;
                 }
-            } else{
-                transpose_table.reg(&nb[i], nb[i].hash() & search_hash_mask, -g, -alpha);
             }
         }
     } else{

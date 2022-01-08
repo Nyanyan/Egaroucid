@@ -61,14 +61,9 @@ class transpose_table{
 
         inline void get_now(board *key, const int hash, int *l, int *u){
             if (this->table[this->now][hash].reg){
-                if (compare_key(key->b, this->table[this->now][hash].k)){
-                    if (key->p == this->table[this->now][hash].p){
-                        *l = this->table[this->now][hash].l;
-                        *u = this->table[this->now][hash].u;
-                    } else{
-                        *l = -this->table[this->now][hash].u;
-                        *u = -this->table[this->now][hash].l;
-                    }
+                if (key->p == this->table[this->now][hash].p && compare_key(key->b, this->table[this->now][hash].k)){
+					*l = this->table[this->now][hash].l;
+					*u = this->table[this->now][hash].u;
                     ++this->hash_get;
                 } else{
                     *l = -inf;
