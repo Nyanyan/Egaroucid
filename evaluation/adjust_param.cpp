@@ -33,14 +33,18 @@ int sa_phase, sa_player;
 #define p39 19683
 #define p310 59049
 
-#define sc_w 6400
-#define step 100
+#define step 128
+#define sc_w (step * hw2)
 
 #define n_data 30000000
 
 #define n_raw_params 62
 
-#define beta 0.001
+#define beta 0.002
+unsigned long long hour = 0;
+unsigned long long minute = 10;
+unsigned long long second = 0;
+
 double alpha[n_eval][max_evaluate_idx];
 
 const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10, 10};
@@ -346,7 +350,7 @@ inline double calc_score(int phase, int i){
     res = max(-64, min(64, res));
     res *= step;
     */
-    return res;
+    return max(-sc_w, min(sc_w, res));
 }
 
 inline int calc_pop(int a, int b, int s){
@@ -424,7 +428,7 @@ inline void scoring_mae(){
         score = pre_calc_scores[i];
         avg_score += fabs(test_labels[i] - (double)score) / nums;
     }
-    cerr << " " << avg_score << "                   ";
+    cerr << " " << avg_score << " " << avg_score / step << "                   ";
 }
 
 inline double scoring_next_step(int pattern, int idx){
@@ -497,17 +501,14 @@ int main(int argc, char *argv[]){
     cerr << sa_phase << " " << sa_player << endl;
     int i, j;
 
-    unsigned long long hour = 0;
-    unsigned long long minute = 2;
-    unsigned long long second = 0;
     minute += hour * 60;
     second += minute * 60;
 
     board_init();
     init();
-    //initialize_param();
+    initialize_param();
     //output_param_onephase();
-    input_param_onephase((string)(argv[3]));
+    //input_param_onephase((string)(argv[3]));
     input_test_data(0);
 
     sd(second * 1000);

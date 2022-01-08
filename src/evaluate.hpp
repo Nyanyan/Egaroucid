@@ -15,7 +15,8 @@ using namespace std;
 #define max_evaluate_idx 59049
 
 //#define sc_w 6400
-#define step 100
+#define step 128
+#define step_2 64
 
 #define p31 3
 #define p32 9
@@ -348,8 +349,8 @@ inline int mid_evaluate(board *b){
     int filled = 
         count_both_arr[b->b[0]] + count_both_arr[b->b[1]] + count_both_arr[b->b[2]] + count_both_arr[b->b[3]] + 
         count_both_arr[b->b[4]] + count_both_arr[b->b[5]] + count_both_arr[b->b[6]] + count_both_arr[b->b[7]];
-    num0 = (filled + count) / 2;
-    num1 = (filled - count) / 2;
+    num0 = (filled + count) >> 1;
+    num1 = (filled - count) >> 1;
     int res = (b->p ? -1 : 1) * (
         calc_pattern(phase_idx, b) + 
         eval_sur0_sur1_arr[phase_idx][b->p][sur0][sur1] + 
@@ -358,10 +359,9 @@ inline int mid_evaluate(board *b){
         eval_num0_num1_arr[phase_idx][b->p][num0][num1]
         );
     if (res > 0)
-        res += step / 2;
+        res += step_2;
     else if (res < 0)
-        res -= step / 2;
+        res -= step_2;
     res /= step;
-    //res *= step;
     return max(-hw2, min(hw2, res));
 }
