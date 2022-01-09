@@ -10,8 +10,8 @@
 
 using namespace std;
 
-#define n_phases 10
-#define phase_n_stones 6
+#define n_phases 15
+#define phase_n_stones 4
 #define n_patterns 14
 #define n_eval (n_patterns + 4)
 #define max_surround 80
@@ -40,9 +40,9 @@ int sa_phase, sa_player;
 
 #define n_raw_params 62
 
-#define beta 0.001
+#define beta 0.002
 unsigned long long hour = 0;
-unsigned long long minute = 5;
+unsigned long long minute = 10;
 unsigned long long second = 0;
 
 double alpha[n_eval][max_evaluate_idx];
