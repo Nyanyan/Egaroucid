@@ -40,7 +40,7 @@ int sa_phase, sa_player;
 
 #define n_raw_params 62
 
-#define beta 0.00001
+#define beta 0.001
 unsigned long long hour = 0;
 unsigned long long minute = 5;
 unsigned long long second = 0;
@@ -506,9 +506,9 @@ int main(int argc, char *argv[]){
 
     board_init();
     init();
-    initialize_param();
+    //initialize_param();
     //output_param_onephase();
-    //input_param_onephase((string)(argv[3]));
+    input_param_onephase((string)(argv[3]));
     input_test_data(0);
 
     sd(second * 1000);

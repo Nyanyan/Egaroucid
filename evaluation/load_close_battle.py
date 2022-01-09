@@ -184,16 +184,16 @@ def collect_data(s):
     rv.check_pass()
     #score = 1 if rv.nums[0] > rv.nums[1] else 0 if rv.nums[0] == rv.nums[1] else -1
     result = rv.nums[0] - rv.nums[1]
-    if abs(result) == 0:
+    if abs(result) <= 2:
         with open('third_party/close.txt', 'a') as f:
             f.write(s + '\n')
 
 
 games = []
 
-for i in range(0, 1):
+for i in range(1977, 2020):
     raw_data = ''
-    with open('third_party/records4/' + digit(i, 7) + '.txt', 'r') as f:
+    with open('third_party/human/' + str(i) + '.csv', 'r', encoding='utf-8-sig') as f:
         raw_data = f.read()
     games.extend([i for i in raw_data.splitlines()])
 print(len(games))
