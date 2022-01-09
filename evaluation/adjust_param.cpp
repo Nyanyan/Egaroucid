@@ -506,9 +506,9 @@ int main(int argc, char *argv[]){
 
     board_init();
     init();
-    //initialize_param();
+    initialize_param();
     //output_param_onephase();
-    input_param_onephase((string)(argv[3]));
+    //input_param_onephase((string)(argv[3]));
     input_test_data(0);
 
     sd(second * 1000);
