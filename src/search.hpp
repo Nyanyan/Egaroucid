@@ -79,6 +79,15 @@ struct principal_variation{
     vector<int> pv;
 };
 
+struct search_result_pv{
+    int policy;
+    int value;
+    int divergence[6];
+    double concat_value;
+    int depth;
+    int nps;
+};
+
 inline void mpc_init(){
     int i, j;
     for (i = 0; i < n_phases; ++i){

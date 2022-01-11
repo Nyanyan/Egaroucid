@@ -534,7 +534,7 @@ inline search_result midsearch(board b, long long strt, int max_depth){
     return res;
 }
 
-vector<principal_variation> midsearch_pv(board b, long long strt, int max_depth){
+inline vector<principal_variation> midsearch_pv(board b, long long strt, int max_depth){
     cerr << "start pv midsearch depth " << max_depth << endl;
     vector<principal_variation> res;
     vector<board> nb;
@@ -577,13 +577,90 @@ vector<principal_variation> midsearch_pv(board b, long long strt, int max_depth)
         pv.value = g;
         pv.depth = min(hw2 - b.n, max_depth - 1) + 1;
         pv.nps = 0;
+        pv.policy = nnb.policy;
         pv.pv = create_principal_variation(&nnb, false, min(hw2 - b.n, max_depth - 1), -hw2, hw2).second;
         pv.pv.emplace_back(nnb.policy);
-        cerr << g << endl;
+        reverse(pv.pv.begin(), pv.pv.end());
+        cerr << "value: " << g << endl;
+        cerr << "principal variation: ";
         for (const int &elem: pv.pv)
             cerr << elem << " ";
         cerr << endl;
         res.emplace_back(pv);
+    }
+    return res;
+}
+
+inline void calc_divergence(board b, vector<int> pv, int divergence[6], int depth){
+    for (int i = 0; i < 6; ++i)
+        divergence[i] = 0;
+    int g, player = b.p;
+    for (const int &policy: pv){
+        b = b.move(policy);
+        vector<board> nb;
+        for (const int &cell: vacant_lst){
+            if (b.legal(cell))
+                nb.push_back(b.move(cell));
+        }
+        if (nb.size() == 0){
+            b.p = 1 - b.p;
+            for (const int &cell: vacant_lst){
+                if (b.legal(cell))
+                    nb.push_back(b.move(cell));
+            }
+            if (nb.size() == 0)
+                break;
+        }
+        for (board nnb: nb){
+            g = -mtd(&nnb, false, depth, -hw2, hw2, false, -1.0);
+            if (b.p == player){
+                if (g > 0)
+                    ++divergence[0];
+                else if (g == 0)
+                    ++divergence[1];
+                else if (g < 0)
+                    ++divergence[2];
+            } else{
+                if (g > 0)
+                    ++divergence[3];
+                else if (g == 0)
+                    ++divergence[4];
+                else if (g < 0)
+                    ++divergence[5];
+            }
+        }
+    }
+}
+
+inline double mid_evaluate_human(int value, int divergence[6]){
+    int sum_divergence = 0, i;
+    for (i = 0; i < 6; ++i)
+        sum_divergence += divergence[i];
+    double res = (double)value * 0.01 + (double)(divergence[0] - divergence[3]) / (double)sum_divergence;
+    return res;
+}
+
+inline vector<search_result_pv> midsearch_human(board b, long long strt, int max_depth, int sub_depth){
+    cerr << "start midsearch human" << endl;
+    vector<search_result_pv> res;
+    vector<principal_variation> pv_value = midsearch_pv(b, tim(), max_depth);
+    for (principal_variation pv: pv_value){
+        search_result_pv res_elem;
+        res_elem.value = pv.value;
+        res_elem.depth = pv.depth;
+        res_elem.nps = pv.nps;
+        res_elem.policy = pv.policy;
+        res_elem.value = pv.value;
+        calc_divergence(b, pv.pv, res_elem.divergence, sub_depth);
+        res_elem.concat_value = mid_evaluate_human(res_elem.value, res_elem.divergence);
+
+        cerr << "value: " << res_elem.value << " human value: " << res_elem.concat_value << " policy: " << res_elem.policy << endl;
+        cerr << "divergence cout: ";
+        for (int i = 0; i < 6; ++i)
+            cerr << res_elem.divergence[i] << " ";
+        cerr << endl;
+
+        res.emplace_back(res_elem);
     }
     return res;
 }
