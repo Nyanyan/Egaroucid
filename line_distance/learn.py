@@ -17,7 +17,7 @@ import datetime
 hw = 8
 hw2 = 64
 
-n_epochs = 10
+n_epochs = 30
 test_ratio = 0.1
 n_boards = 2
 
@@ -63,7 +63,7 @@ for _ in range(n_residual):
     x1 = Add()([x1, sc])
     x1 = LeakyReLU(alpha=0.01)(x1)
 x1 = GlobalAveragePooling2D()(x1)
-yp = Activation('tanh')(x1)
+yp = LeakyReLU(alpha=0.01)(x1)
 yp = Dense(hw2)(yp)
 yp = Activation('softmax', name='policy')(yp)
 
