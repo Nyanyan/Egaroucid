@@ -71,36 +71,7 @@ struct search_result{
     int nps;
 };
 
-struct principal_variation{
-    int policy;
-    int value;
-    int depth;
-    int nps;
-    vector<int> pv;
-};
-
-struct search_result_pv{
-    int policy;
-    int value;
-    int divergence[6];
-    double line_distance;
-    double concat_value;
-    int depth;
-    int nps;
-};
-
-inline void mpc_init(){
-    int i, j;
-    for (i = 0; i < n_phases; ++i){
-        for (j = 0; j < mpc_max_depth - mpc_min_depth + 1; ++j)
-            mpcsd[i][j] /= step;
-    }
-    for (i = 0; i < mpc_max_depth_final - mpc_min_depth_final + 1; ++i)
-        mpcsd_final[i] /= step;
-}
-
 inline void search_init(){
-    //mpc_init();
     int i;
     for (int cell = 0; cell < hw2; ++cell){
         can_be_flipped[cell] = 0b1111111110000001100000011000000110000001100000011000000111111111;

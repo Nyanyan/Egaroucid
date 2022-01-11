@@ -6,7 +6,7 @@
 #include "common.hpp"
 #include "board.hpp"
 #include "evaluate.hpp"
-#include "search.hpp"
+#include "search_human.hpp"
 #include "transpose_table.hpp"
 #if USE_MULTI_THREAD
     #include "thread_pool.hpp"
@@ -388,65 +388,6 @@ int mtd(board *b, bool skipped, int depth, int l, int u, bool use_mpc, double us
     //return nega_scout(b, skipped, depth, l, u, use_mpc, use_mpct);
 }
 
-pair<int, vector<int>> create_principal_variation(board *b, bool skipped, int depth, int alpha, int beta){
-    ++searched_nodes;
-    pair<int, vector<int>> res;
-    if (depth == 0){
-        res.first = mid_evaluate(b);
-        return res;
-    }
-    int hash = (int)(b->hash() & search_hash_mask);
-    int l, u;
-    transpose_table.get_now(b, hash, &l, &u);
-    alpha = max(alpha, l);
-    beta = min(beta, u);
-    vector<board> nb;
-    int canput = 0;
-    for (const int &cell: vacant_lst){
-        if (b->legal(cell)){
-            nb.emplace_back(b->move(cell));
-            move_ordering(&nb[canput]);
-            ++canput;
-        }
-    }
-    if (canput == 0){
-        if (skipped){
-            res.first = end_evaluate(b);
-            return res;
-        }
-        board rb;
-        for (int i = 0; i < b_idx_num; ++i)
-            rb.b[i] = b->b[i];
-        rb.p = 1 - b->p;
-        rb.n = b->n;
-        res = create_principal_variation(&rb, true, depth, -beta, -alpha);
-        res.first = -res.first;
-        return res;
-    }
-    if (canput >= 2)
-        sort(nb.begin(), nb.end());
-    int v = -inf;
-    pair<int, vector<int>> fail_low_res;
-    for (board nnb: nb){
-        res = create_principal_variation(&nnb, false, depth - 1, -beta, -alpha);
-        res.first = -res.first;
-        if (beta <= res.first){
-            res.second.emplace_back(nnb.policy);
-            return res;
-        }
-        alpha = max(alpha, res.first);
-        if (v < res.first){
-            v = res.first;
-            fail_low_res.first = res.first;
-            fail_low_res.second.clear();
-            for (const int &elem: res.second)
-                fail_low_res.second.emplace_back(elem);
-            fail_low_res.second.emplace_back(nnb.policy);
-        }
-    }
-    return fail_low_res;
-}
-
 inline search_result midsearch(board b, long long strt, int max_depth){
     vector<board> nb;
     int i;
@@ -534,121 +475,6 @@ inline search_result midsearch(board b, long long strt, int max_depth){
     return res;
 }
 
-inline vector<principal_variation> midsearch_pv(board b, long long strt, int max_depth){
-    cerr << "start pv midsearch depth " << max_depth << endl;
-    vector<principal_variation> res;
-    vector<board> nb;
-    for (const int &cell: vacant_lst){
-        if (b.legal(cell)){
-            nb.push_back(b.move(cell));
-        }
-    }
-    int canput = nb.size();
-    cerr << "canput: " << canput << endl;
-    int g;
-    searched_nodes = 0;
-    transpose_table.hash_get = 0;
-    transpose_table.hash_reg = 0;
-    bool use_mpc = max_depth >= 11 ? true : false;
-    double use_mpct = 2.0;
-    if (max_depth >= 13)
-        use_mpct = 1.7;
-    if (max_depth >= 15)
-        use_mpct = 1.5;
-    if (max_depth >= 17)
-        use_mpct = 1.3;
-    if (max_depth >= 19)
-        use_mpct = 1.1;
-    if (max_depth >= 21)
-        use_mpct = 0.8;
-    if (max_depth >= 23)
-        use_mpct = 0.6;
-    for (board nnb: nb){
-        transpose_table.init_now();
-        transpose_table.init_prev();
-        for (int depth = min(11, max(0, max_depth - 5)); depth <= min(hw2 - b.n, max_depth - 1); ++depth){
-            transpose_table.init_now();
-            g = -mtd(&nnb, false, depth, -hw2, hw2, use_mpc, use_mpct);
-            swap(transpose_table.now, transpose_table.prev);
-        }
-        principal_variation pv;
-        pv.value = g;
-        pv.depth = min(hw2 - b.n, max_depth - 1) + 1;
-        pv.nps = 0;
-        pv.policy = nnb.policy;
-        pv.pv = create_principal_variation(&nnb, false, min(hw2 - b.n, max_depth - 1), -hw2, hw2).second;
-        pv.pv.emplace_back(nnb.policy);
-        reverse(pv.pv.begin(), pv.pv.end());
-        //cerr << "value: " << g << endl;
-        cerr << "principal variation: ";
-        for (const int &elem: pv.pv)
-            cerr << elem << " ";
-        cerr << endl;
-        res.emplace_back(pv);
-    }
-    return res;
-}
-
-inline void calc_possibility(board b, double possibility[hw2]){
-    for (int i = 0; i < hw2; ++i)
-        possibility[i] = 1.0;
-}
-
-inline double calc_divergence_distance(board b, vector<int> pv, int divergence[6], int depth){
-    double res = 0.0;
-    for (int i = 0; i < 6; ++i)
-        divergence[i] = 0;
-    int g, player = b.p;
-    double possibility[hw2];
-    for (const int &policy: pv){
-        b = b.move(policy);
-        vector<board> nb;
-        for (const int &cell: vacant_lst){
-            if (b.legal(cell))
-                nb.push_back(b.move(cell));
-        }
-        if (nb.size() == 0){
-            b.p = 1 - b.p;
-            for (const int &cell: vacant_lst){
-                if (b.legal(cell))
-                    nb.push_back(b.move(cell));
-            }
-            if (nb.size() == 0)
-                break;
-        }
-        calc_possibility(b, possibility);
-        for (board nnb: nb){
-            g = -mtd(&nnb, false, depth, -hw2, hw2, false, -1.0);
-            if (b.p == player){
-                res += (double)g * possibility[nnb.policy];
-                if (g > 0)
-                    ++divergence[0];
-                else if (g == 0)
-                    ++divergence[1];
-                else if (g < 0)
-                    ++divergence[2];
-            } else{
-                res -= (double)g * possibility[nnb.policy];
-                if (g > 0)
-                    ++divergence[3];
-                else if (g == 0)
-                    ++divergence[4];
-                else if (g < 0)
-                    ++divergence[5];
-            }
-        }
-    }
-    return res;
-}
-
-inline double mid_evaluate_human(int value, int divergence[6]){
-    double res = 
-        (double)value * 0.01 + 
-        (double)(divergence[0] - divergence[3]) / (double)(divergence[0] + divergence[3]) + 
-        (double)(divergence[5] - divergence[2]) / (double)(divergence[5] + divergence[2]);
-    return res;
-}
-
 inline vector<search_result_pv> midsearch_human(board b, long long strt, int max_depth, int sub_depth){
     cerr << "start midsearch human" << endl;
     vector<search_result_pv> res;
@@ -661,7 +487,7 @@ inline vector<search_result_pv> midsearch_human(board b, long long strt, int max
         res_elem.policy = pv.policy;
         res_elem.value = pv.value;
         res_elem.line_distance = calc_divergence_distance(b, pv.pv, res_elem.divergence, sub_depth);
-        res_elem.concat_value = mid_evaluate_human(res_elem.value, res_elem.divergence);
+        res_elem.concat_value = evaluate_human(res_elem.value, res_elem.divergence);
         cerr << "value: " << res_elem.value << " human value: " << res_elem.concat_value << " policy: " << res_elem.policy << endl;
         //cerr << "divergence cout: ";
         //for (int i = 0; i < 6; ++i)

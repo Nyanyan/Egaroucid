@@ -4,7 +4,7 @@
 #include "board.hpp"
 #include "book.hpp"
 #include "evaluate.hpp"
-#include "search.hpp"
+#include "search_human.hpp"
 #include "transpose_table.hpp"
 #include "midsearch_human.hpp"
 #include "endsearch_human.hpp"

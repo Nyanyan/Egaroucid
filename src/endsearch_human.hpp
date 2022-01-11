@@ -5,7 +5,7 @@
 #include "common.hpp"
 #include "board.hpp"
 #include "evaluate.hpp"
-#include "search.hpp"
+#include "search_human.hpp"
 #include "transpose_table.hpp"
 #include "midsearch_human.hpp"
 #if USE_MULTI_THREAD
