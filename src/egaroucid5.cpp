@@ -6,8 +6,8 @@
 #include "evaluate.hpp"
 #include "search.hpp"
 #include "transpose_table.hpp"
-#include "midsearch.hpp"
-#include "endsearch.hpp"
+#include "midsearch_human.hpp"
+#include "endsearch_human.hpp"
 #include "book.hpp"
 
 inline void init(){
@@ -80,8 +80,8 @@ int main(){
         int depth, end_depth;
         //bool pre_searched = false;
         book_value book_result;
-        depth = 1;
-        end_depth = 2;
+        depth = 15;
+        end_depth = 20;
     #endif
     int ai_player;
     //cin >> ai_player;
@@ -119,6 +119,7 @@ int main(){
             input_board(&b, ai_player);
             cerr << b.p << endl;
             cerr << b.n << " " << mid_evaluate(&b) << endl;
+            midsearch_pv(b, tim(), depth);
             if (b.n == 4){
                 int policy = first_moves[myrandrange(0, 4)];
                 cerr << "BOOK " << policy << endl;

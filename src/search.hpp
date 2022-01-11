@@ -71,6 +71,14 @@ struct search_result{
     int nps;
 };
 
+struct principal_variation{
+    int policy;
+    int value;
+    int depth;
+    int nps;
+    vector<int> pv;
+};
+
 inline void mpc_init(){
     int i, j;
     for (i = 0; i < n_phases; ++i){
