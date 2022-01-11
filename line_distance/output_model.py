@@ -13,7 +13,7 @@ import subprocess
 from math import exp
 model = load_model('learned_data/model.h5')
 
-with open('learned_data/model.txt', 'w') as f:
+with open('learned_data/line_distance.txt', 'w') as f:
     i = 0
     while True:
         try:
