@@ -83,6 +83,7 @@ struct search_result_pv{
     int policy;
     int value;
     int divergence[6];
+    double line_distance;
     double concat_value;
     int depth;
     int nps;
