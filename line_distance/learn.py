@@ -70,7 +70,7 @@ yp = Activation('softmax', name='policy')(yp)
 model = Model(inputs=inputs, outputs=yp)
 model.summary()
 
-for file in trange(10):
+for file in trange(5):
     collect_data(file)
 
 n_data = len(all_labels)
@@ -86,7 +86,7 @@ train_num = int((1.0 - test_ratio) * n_data)
 train_data = all_data[0:train_num]
 train_labels = all_labels[0:train_num]
 test_data = all_data[train_num:n_data]
-test_labels = all_data[train_num:n_data]
+test_labels = all_labels[train_num:n_data]
 
 model.compile(loss='categorical_crossentropy', optimizer='adam')
 #print(model.evaluate([train_board], [train_policies, train_value]))
