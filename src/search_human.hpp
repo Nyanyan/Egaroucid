@@ -121,18 +121,18 @@ class line_distance{
                     for (k = 0; k < kernel_size; ++k){
                         for (l = 0; l < kernel_size; ++l){
                             getline(ifs, line);
-                            conv1[i][j][k][l] = stof(line);
+                            conv1[i][j][l][k] = stof(line);
                         }
                     }
                 }
             }
             for (ri = 0; ri < n_residual; ++ri){
                 for (i = 0; i < n_kernels; ++i){
-                    for (j = 0; j < n_board_input; ++j){
+                    for (j = 0; j < n_kernels; ++j){
                         for (k = 0; k < kernel_size; ++k){
                             for (l = 0; l < kernel_size; ++l){
                                 getline(ifs, line);
-                                conv_residual[ri][i][j][k][l] = stof(line);
+                                conv_residual[ri][i][j][l][k] = stof(line);
                             }
                         }
                     }

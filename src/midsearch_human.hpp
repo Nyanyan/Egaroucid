@@ -663,7 +663,6 @@ inline vector<search_result_pv> midsearch_human(board b, long long strt, int max
         //for (int i = 0; i < 6; ++i)
         //    cerr << res_elem.divergence[i] << " ";
         //cerr << endl;
-
         res.emplace_back(res_elem);
     }
     return res;
