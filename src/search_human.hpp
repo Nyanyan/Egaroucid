@@ -111,6 +111,42 @@ class line_distance{
                 exit(1);
             }
             string line;
+            int i, j, k, l, ri;
+            for (i = 0; i < n_kernels; ++i){
+                for (j = 0; j < n_board_input; ++j){
+                    for (k = 0; k < kernel_size; ++k){
+                        for (l = 0; l < kernel_size; ++l){
+                            getline(ifs, line);
+                            conv1[i][j][k][l] = stof(line);
+                        }
+                    }
+                }
+            }
+            for (ri = 0; ri < n_residual; ++ri){
+                for (i = 0; i < n_kernels; ++i){
+                    for (j = 0; j < n_board_input; ++j){
+                        for (k = 0; k < kernel_size; ++k){
+                            for (l = 0; l < kernel_size; ++l){
+                                getline(ifs, line);
+                                conv_residual[ri][i][j][k][l] = stof(line);
+                            }
+                        }
+                    }
+                }
+            }
+            for (i = 0; i < n_kernels; ++i){
+                for (j = 0; j < hw2; ++j){
+                    getline(ifs, line);
+                    dense1[j][i] = stof(line);
+                }
+            }
+            for (i = 0; i < hw2; ++i){
+                getline(ifs, line);
+                bias1[j][i] = stof(line);
+            }
+        }
+
+        inline void predict(board b, double res[hw2]){
             
         }
 
@@ -333,11 +369,6 @@ inline vector<principal_variation> midsearch_pv(board b, long long strt, int max
     return res;
 }
 
-inline void calc_possibility(board b, double possibility[hw2]){
-    for (int i = 0; i < hw2; ++i)
-        possibility[i] = 1.0;
-}
-
 inline double calc_divergence_distance(board b, vector<int> pv, int divergence[6], int depth){
     double res = 0.0;
     for (int i = 0; i < 6; ++i)
@@ -360,7 +391,7 @@ inline double calc_divergence_distance(board b, vector<int> pv, int divergence[6
             if (nb.size() == 0)
                 break;
         }
-        calc_possibility(b, possibility);
+        line_distance.predict(b, possibility);
         for (board nnb: nb){
             g = -mtd(&nnb, false, depth, -hw2, hw2, false, -1.0);
             if (b.p == player){
@@ -385,10 +416,11 @@ inline double calc_divergence_distance(board b, vector<int> pv, int divergence[6
     return res;
 }
 
-inline double evaluate_human(int value, int divergence[6]){
+inline double evaluate_human(int value, int divergence[6], double line_distance){
     double res = 
         (double)value * 0.01 + 
         (double)(divergence[0] - divergence[3]) / (double)(divergence[0] + divergence[3]) + 
-        (double)(divergence[5] - divergence[2]) / (double)(divergence[5] + divergence[2]);
+        (double)(divergence[5] - divergence[2]) / (double)(divergence[5] + divergence[2]) + 
+        line_distance;
     return res;
 }

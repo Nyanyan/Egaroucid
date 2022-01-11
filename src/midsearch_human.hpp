@@ -487,7 +487,7 @@ inline vector<search_result_pv> midsearch_human(board b, long long strt, int max
         res_elem.policy = pv.policy;
         res_elem.value = pv.value;
         res_elem.line_distance = calc_divergence_distance(b, pv.pv, res_elem.divergence, sub_depth);
-        res_elem.concat_value = evaluate_human(res_elem.value, res_elem.divergence);
+        res_elem.concat_value = evaluate_human(res_elem.value, res_elem.divergence, res_elem.line_distance);
         cerr << "value: " << res_elem.value << " human value: " << res_elem.concat_value << " policy: " << res_elem.policy << endl;
         //cerr << "divergence cout: ";
         //for (int i = 0; i < 6; ++i)
