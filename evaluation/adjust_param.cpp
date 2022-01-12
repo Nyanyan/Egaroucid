@@ -40,7 +40,7 @@ int sa_phase, sa_player;
 
 #define n_raw_params 70
 
-#define beta 0.00001
+#define beta 0.002
 unsigned long long hour = 0;
 unsigned long long minute = 10;
 unsigned long long second = 0;
@@ -201,14 +201,14 @@ void input_test_data(int strt){
             for (i = 0; i < n_raw_params; ++i)
                 iss >> test_data[nums][i];
             iss >> score;
-            for (i = 0; i < 54; ++i)
+            for (i = 0; i < 62; ++i)
                 used_idxes[pattern_nums[i]].emplace(test_data[nums][i]);
             used_idxes[16].emplace(calc_sur0_sur1(test_data[nums]));
             used_idxes[17].emplace(calc_canput0_canput1(test_data[nums]));
             used_idxes[18].emplace(calc_stab0_stab1(test_data[nums]));
             used_idxes[19].emplace(calc_num0_num1(test_data[nums]));
             test_labels[nums] = score * step;
-            for (i = 0; i < 54; ++i)
+            for (i = 0; i < 62; ++i)
                 test_memo[pattern_nums[i]][test_data[nums][i]].push_back(nums);
             test_memo[16][calc_sur0_sur1(test_data[nums])].push_back(nums);
             test_memo[17][calc_canput0_canput1(test_data[nums])].push_back(nums);

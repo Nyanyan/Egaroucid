@@ -7,7 +7,7 @@
 
 using namespace std;
 
-#define n_patterns 14
+#define n_patterns 16
 #define max_surround 80
 #define max_canput 50
 #define max_stability 29
@@ -132,11 +132,12 @@ inline void init_evaluation_calc(){
     ifstream ifs("resources/param.txt");
     if (ifs.fail()){
         cerr << "evaluation file not exist" << endl;
+        cerr << "a";
         exit(1);
     }
     string line;
     int phase_idx, player_idx, pattern_idx, pattern_elem, sur0, sur1, canput0, canput1, stab0, stab1, num0, num1;
-    const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10, 10};
+    const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10, 10, 10, 10};
     for (phase_idx = 0; phase_idx < n_phases; ++phase_idx){
         for (player_idx = 0; player_idx < 2; ++player_idx){
             cerr << "=";
@@ -300,6 +301,22 @@ inline int narrow_triangle1(int phase_idx, const board *b, int v, int w, int x, 
     return pattern_arr[phase_idx][b->p][13][reverse_board[b->b[v]] / p33 * p35 + reverse_board[b->b[w]] / p36 * p33 + pop_digit[b->b[x]][7] * p32 + pop_digit[b->b[y]][7] / p37 * p31 + pop_digit[b->b[z]][7] / p37];
 }
 
+inline int fish0(int phase_idx, const board *b, int w, int x, int y, int z){
+    return pattern_arr[phase_idx][b->p][14][b->b[w] / p36 * p38 + b->b[x] / p34 * p34 + pop_mid[b->b[y]][7][5] * p32 + pop_digit[b->b[z]][1] * p31 + pop_digit[b->b[z]][3]];
+}
+
+inline int fish1(int phase_idx, const board *b, int w, int x, int y, int z){
+    return pattern_arr[phase_idx][b->p][14][reverse_board[b->b[w]] / p36 * p38 + reverse_board[b->b[x]] / p34 * p34 + pop_mid[reverse_board[b->b[y]]][7][5] * p32 + pop_digit[b->b[z]][6] * p31 + pop_digit[b->b[z]][4]];
+}
+
+inline int kite0(int phase_idx, const board *b, int v, int w, int x, int y, int z){
+    return pattern_arr[phase_idx][b->p][15][b->b[v] / p36 * p38 + b->b[w] / p33 * p33 + pop_digit[b->b[x]][1] * p32 + pop_digit[b->b[y]][1] * p31 + pop_digit[b->b[z]][1]];
+}
+
+inline int kite1(int phase_idx, const board *b, int v, int w, int x, int y, int z){
+    return pattern_arr[phase_idx][b->p][15][reverse_board[b->b[v]] / p36 * p38 + reverse_board[b->b[w]] / p33 * p33 + pop_digit[b->b[x]][6] * p32 + pop_digit[b->b[y]][6] * p31 + pop_digit[b->b[z]][6]];
+}
+
 inline int calc_pattern(int phase_idx, const board *b){
     return 
         pattern_arr[phase_idx][b->p][0][b->b[1]] + pattern_arr[phase_idx][b->p][0][b->b[6]] + pattern_arr[phase_idx][b->p][0][b->b[9]] + pattern_arr[phase_idx][b->p][0][b->b[14]] + 
@@ -315,7 +332,9 @@ inline int calc_pattern(int phase_idx, const board *b){
         cross(phase_idx, b, 21, 20, 22) + cross(phase_idx, b, 32, 31, 33) + 
         corner9(phase_idx, b, 0, 1, 2) + corner9(phase_idx, b, 7, 6, 5) + 
         edge_2y(phase_idx, b, 1, 0) + edge_2y(phase_idx, b, 6, 7) + edge_2y(phase_idx, b, 9, 8) + edge_2y(phase_idx, b, 14, 15) + 
-        narrow_triangle0(phase_idx, b, 0, 1, 2, 3, 4) + narrow_triangle0(phase_idx, b, 7, 6, 5, 4, 3) + narrow_triangle1(phase_idx, b, 0, 1, 2, 3, 4) + narrow_triangle1(phase_idx, b, 7, 6, 5, 4, 3);
+        narrow_triangle0(phase_idx, b, 0, 1, 2, 3, 4) + narrow_triangle0(phase_idx, b, 7, 6, 5, 4, 3) + narrow_triangle1(phase_idx, b, 0, 1, 2, 3, 4) + narrow_triangle1(phase_idx, b, 7, 6, 5, 4, 3) + 
+        fish0(phase_idx, b, 0, 1, 2, 3) + fish0(phase_idx, b, 7, 6, 5, 4) + fish1(phase_idx, b, 0, 1, 2, 3) + fish1(phase_idx, b, 7, 6, 5, 4) + 
+        kite0(phase_idx, b, 0, 1, 2, 3, 4) + kite0(phase_idx, b, 7, 6, 5, 4, 3) + kite1(phase_idx, b, 0, 1, 2, 3, 4) + kite1(phase_idx, b, 7, 6, 5, 4, 3);
 }
 
 inline int end_evaluate(const board *b){
