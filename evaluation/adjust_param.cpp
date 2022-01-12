@@ -40,9 +40,9 @@ int sa_phase, sa_player;
 
 #define n_raw_params 70
 
-#define beta 0.002
+#define beta 0.0001
 unsigned long long hour = 0;
-unsigned long long minute = 10;
+unsigned long long minute = 2;
 unsigned long long second = 0;
 
 double alpha[n_eval][max_evaluate_idx];
@@ -540,7 +540,7 @@ int main(int argc, char *argv[]){
     init();
     initialize_param();
     //output_param_onephase();
-    //input_param_onephase((string)(argv[3]));
+    input_param_onephase((string)(argv[3]));
     input_test_data(0);
 
     sd(second * 1000);

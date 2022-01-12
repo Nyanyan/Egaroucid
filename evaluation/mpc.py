@@ -27,8 +27,8 @@ def calc_n_stones(board):
 evaluate = subprocess.Popen('../src/egaroucid5.out'.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
 sleep(1)
 
-min_depth = 21
-max_depth = 24
+min_depth = 3
+max_depth = 10
 
 vhs = [[[] for _ in range(max_depth - min_depth + 1)] for _ in range(10)]
 vds = [[[] for _ in range(max_depth - min_depth + 1)] for _ in range(10)]
@@ -49,7 +49,7 @@ def collect_data(num):
         return
     for _ in trange(1000):
         datum = data[randrange(0, len(data))]
-        board, player, _, _, _, _ = datum.split()
+        board, player, _ = datum.split()
         n_stones = calc_n_stones(board)
         depth = randint(min_depth, max_depth)
         board_proc = player + '\n' + str(mpcd[depth]) + '\n'

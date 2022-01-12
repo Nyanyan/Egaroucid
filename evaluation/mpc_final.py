@@ -49,7 +49,7 @@ def collect_data(num):
         return
     for data_idx in trange(len(data)):
         datum = data[data_idx]
-        board, player, _, _, _, vh = datum.split()
+        board, player, vh = datum.split()
         #board, player, _, _, _, vh = datum.split()
         n_stones = calc_n_stones(board)
         depth = 64 - n_stones
