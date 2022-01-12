@@ -98,6 +98,9 @@ struct search_result_pv{
     double concat_value;
     int depth;
     int nps;
+    bool operator<(const search_result_pv& another) const {
+        return concat_value > another.concat_value;
+    }
 };
 
 class line_distance{

@@ -12,10 +12,10 @@
 #include "board.hpp"
 #include "book.hpp"
 #include "evaluate.hpp"
-#include "search.hpp"
 #include "transpose_table.hpp"
-#include "midsearch.hpp"
-#include "endsearch.hpp"
+#include "search_human.hpp"
+#include "midsearch_human.hpp"
+#include "endsearch_human.hpp"
 #include "book.hpp"
 #include "joseki.hpp"
 #if USE_MULTI_THREAD
@@ -88,10 +88,8 @@ cell_value cell_value_search(board bd, int depth, int end_depth) {
 			res.depth = depth >= 21 ? hw2 - bd.n + 1 : final_define_value;
 		} else {
 			res.value = midsearch(bd, tim(), depth).value;
-			if (!legal1) {
-				Print << U"passed";
+			if (!legal1)
 				res.value = -res.value;
-			}
 			res.depth = depth + 1;
 		}
 	}
@@ -265,6 +263,8 @@ void Main() {
 		vacant,vacant,vacant,vacant,vacant,vacant,vacant,vacant
 	};
 	constexpr chrono::duration<int> seconds0 = chrono::seconds(0);
+	constexpr int human_hint_sub_depth = 4;
+	constexpr int human_hint_depth = 10;
 
 	future<void> future_initialize = async(launch::async, init);
 	bool initialized = false;
@@ -284,7 +284,7 @@ void Main() {
 	int cell_values[hw2];
 	int cell_depth[hw2];
 	Font cell_value_font(18);
-	Font cell_depth_font(12);
+	Font cell_depth_font(11);
 	Font coord_ui(40);
 	Font score_ui(40);
 	Font record_ui(20);
@@ -298,16 +298,15 @@ void Main() {
 	Font joseki_ui(20);
 	Font font50(50);
 	bool playing = false, thinking = false, cell_value_thinking = false, changing_book = false;
-	int depth, end_depth, ai_player, cell_value_depth, cell_value_end_depth, book_accept, show_cell_value, show_value, n_moves = 0;
+	int depth, end_depth, ai_player, cell_value_depth, cell_value_end_depth, book_accept, n_moves = 0;
 	double value;
 	String change_book_value_str = U"";
 	String change_book_value_info_str = U"修正した評価値";
 	String change_book_value_coord_str = U"";
 	int change_book_coord = -1;
 	ai_player = 0;
-	show_cell_value = 0;
-	show_value = 0;
-	int player_default = 0, hint_default = 0, value_default = 0;
+	int player_default = 0;
+	bool hint_default = true, human_hint_default = true, value_default = true;
 	book_accept = 0;
 	String record = U"";
 	vector<board> board_history;
@@ -315,10 +314,13 @@ void Main() {
 	bool finished = false, copied = false;
 	int saved = 0;
 	int input_board_state = 0, input_record_state = 0;
-	double depth_double = 12, end_depth_double = 20, cell_value_depth_double = 10, cell_value_end_depth_double = 18, book_accept_double = 2;
+	double depth_double = 12, end_depth_double = 20, cell_value_depth_double = 10, cell_value_end_depth_double = 18, book_accept_double = 0;
 	int board_start_moves, finish_moves, max_cell_value = -inf, start_moves = 0;
 	bool book_changed = false, book_changing = false, closing = false, pre_searched = false, book_learning_button = false;
 	future<void> book_import_future, book_learn_future;
+	future<vector<search_result_pv>> human_value_future;
+	int human_value_state = 0;
+	vector<search_result_pv> human_values;
 
 	ifstream ifs("resources/settings.txt");
 	if (!ifs.fail()) {
@@ -327,6 +329,8 @@ void Main() {
 		player_default = stoi(line);
 		getline(ifs, line);
 		hint_default = stoi(line);
+		getline(ifs, line);
+		human_hint_default = stoi(line);
 		getline(ifs, line);
 		value_default = stoi(line);
 		getline(ifs, line);
@@ -342,13 +346,9 @@ void Main() {
 	}
 	ifs.close();
 
-	const Font pulldown_font(15);
+	const Font pulldown_font(20);
 	const Array<String> player_items = { U"人間先手", U"人間後手", U"人間同士", U"AI同士"};
-	const Array<String> hint_items = {U"ヒントあり", U"ヒントなし"};
-	const Array<String> value_items = { U"評価値表示", U"評価値非表示"};
-	Pulldown pulldown_player{ player_items, pulldown_font, Point{145, 0}, player_default};
-	Pulldown pulldown_hint{hint_items, pulldown_font, Point{235, 0}, hint_default};
-	Pulldown pulldown_value{value_items, pulldown_font, Point{340, 0}, value_default};
+	Pulldown pulldown_player{ player_items, pulldown_font, Point{125, 0}, player_default};
 
 	Graph graph;
 	graph.sx = 550;
@@ -393,8 +393,9 @@ void Main() {
 					ofstream ofs("resources/settings.txt");
 					if (!ofs.fail()) {
 						ofs << pulldown_player.getIndex() << endl;
-						ofs << pulldown_hint.getIndex() << endl;
-						ofs << pulldown_value.getIndex() << endl;
+						ofs << hint_default << endl;
+						ofs << human_hint_default << endl;
+						ofs << value_default << endl;
 						ofs << depth << endl;
 						ofs << end_depth << endl;
 						ofs << cell_value_depth << endl;
@@ -408,8 +409,9 @@ void Main() {
 					ofstream ofs("resources/settings.txt");
 					if (!ofs.fail()) {
 						ofs << pulldown_player.getIndex() << endl;
-						ofs << pulldown_hint.getIndex() << endl;
-						ofs << pulldown_value.getIndex() << endl;
+						ofs << hint_default << endl;
+						ofs << human_hint_default << endl;
+						ofs << value_default << endl;
 						ofs << depth << endl;
 						ofs << end_depth << endl;
 						ofs << cell_value_depth << endl;
@@ -423,8 +425,9 @@ void Main() {
 				ofstream ofs("resources/settings.txt");
 				if (!ofs.fail()) {
 					ofs << pulldown_player.getIndex() << endl;
-					ofs << pulldown_hint.getIndex() << endl;
-					ofs << pulldown_value.getIndex() << endl;
+					ofs << hint_default << endl;
+					ofs << human_hint_default << endl;
+					ofs << value_default << endl;
 					ofs << depth << endl;
 					ofs << end_depth << endl;
 					ofs << cell_value_depth << endl;
@@ -459,6 +462,9 @@ void Main() {
 			}
 		}
 
+		SimpleGUI::CheckBox(hint_default, U"ヒント", Point(235, 0), 120);
+		SimpleGUI::CheckBox(human_hint_default, U"人間的ヒント", Point(235, 35), 170, hint_default);
+		SimpleGUI::CheckBox(value_default, U"評価値", Point(340, 0), 120);
 
 		cell_value_thinking = false;
 		for (int i = 0; i < hw2; ++i)
@@ -467,8 +473,8 @@ void Main() {
 		cell_value_end_depth_double = max(cell_value_end_depth_double, cell_value_depth_double);
 		SimpleGUI::Slider(U"中盤{:.0f}手読み"_fmt(depth_double), depth_double, 1, 60, Vec2(600, 5), 150, 250, !thinking && !book_learning);
 		SimpleGUI::Slider(U"終盤{:.0f}空読み"_fmt(end_depth_double), end_depth_double, 1, 60, Vec2(600, 40), 150, 250, !thinking && !book_learning);
-		SimpleGUI::Slider(U"ヒント中盤{:.0f}手読み"_fmt(cell_value_depth_double), cell_value_depth_double, 1, 60, Vec2(550, 75), 200, 250, !cell_value_thinking);
-		SimpleGUI::Slider(U"ヒント終盤{:.0f}空読み"_fmt(cell_value_end_depth_double), cell_value_end_depth_double, 1, 60, Vec2(550, 110), 200, 250, !cell_value_thinking);
+		SimpleGUI::Slider(U"ヒント中盤{:.0f}手読み"_fmt(cell_value_depth_double), cell_value_depth_double, 1, 60, Vec2(550, 75), 200, 250, !cell_value_thinking && hint_default);
+		SimpleGUI::Slider(U"ヒント終盤{:.0f}空読み"_fmt(cell_value_end_depth_double), cell_value_end_depth_double, 1, 60, Vec2(550, 110), 200, 250, !cell_value_thinking && hint_default);
 		SimpleGUI::Slider(U"book誤差{:.0f}石"_fmt(book_accept_double), book_accept_double, 0, 64, Vec2(550, 145), 200, 250);
 		depth = round(depth_double);
 		end_depth = round(end_depth_double);
@@ -799,6 +805,7 @@ void Main() {
 			input_record_state = 0;
 			start_moves = bd.n - 4;
 			pre_searched = false;
+			human_value_state = 0;
 		}
 
 		record_ui(record).draw(0, 550);
@@ -823,6 +830,7 @@ void Main() {
 					create_vacant_lst(bd, bd_arr);
 					for (int i = 0; i < hw2; ++i)
 						cell_value_state[i] = 0;
+					human_value_state = 0;
 					max_cell_value = -inf;
 				}
 				if (SimpleGUI::Button(U">", Vec2(600, 650), 50)) {
@@ -833,6 +841,7 @@ void Main() {
 					create_vacant_lst(bd, bd_arr);
 					for (int i = 0; i < hw2; ++i)
 						cell_value_state[i] = 0;
+					human_value_state = 0;
 					max_cell_value = -inf;
 				}
 			}
@@ -865,7 +874,7 @@ void Main() {
 						if ((bd.p != ai_player && ai_player != both_ai_define) || n_moves != board_history.size() - 1){
 							if (cell_value_state[coord] == 0) {
 								legals[coord].draw(Palette::Blue);
-								if (show_cell_value == 0) {
+								if (hint_default) {
 									future_cell_values[coord] = calc_value(bd, coord, cell_value_depth, cell_value_end_depth);
 									cell_value_state[coord] = 1;
 								}
@@ -881,10 +890,10 @@ void Main() {
 								}
 							}
 							else if (cell_value_state[coord] == 2) {
-								if (show_cell_value == 0) {
+								if (hint_default) {
 									Color color = Palette::White;
 									if (cell_values[coord] == max_cell_value)
-										color = Palette::Yellow;
+										color = Palette::Cyan;
 									cell_value_font(cell_values[coord]).draw(offset_x + (coord % hw) * cell_hw + 2, offset_y + (coord / hw) * cell_hw, color);
 									if (cell_depth[coord] == final_define_value)
 										cell_depth_font(cell_depth[coord], U"%").draw(offset_x + (coord % hw) * cell_hw + 2, offset_y + (coord / hw) * cell_hw + 21, color);
@@ -899,6 +908,7 @@ void Main() {
 							if (cells[coord].leftClicked() && !changing_book && !finished && n_moves == board_history.size() - 1 + board_start_moves) {
 								bd = bd.move(coord);
 								++n_moves;
+								human_value_state = 0;
 								record += coord_translate(coord);
 								String record_copy = record;
 								record_copy.replace(U"\n", U"");
@@ -956,6 +966,7 @@ void Main() {
 							graph.push(bd.n - 4, (bd.p ? -1.0 : 1.0) * (double)result.value);
 						bd = bd.move(result.policy);
 						++n_moves;
+						human_value_state = 0;
 						String record_copy = record;
 						record_copy.replace(U"\n", U"");
 						if (record_copy.size() % 40 == 0)
@@ -976,8 +987,27 @@ void Main() {
 				}
 			}
 			score_ui(U"黒 ", bd.count(black), U" ", bd.count(white), U" 白").draw(10, 640);
-			if (show_value == 0)
+			if (value_default)
 				value_ui(U"評価値: ", round(value)).draw(250, 650);
+
+			if (((bd.p != ai_player && ai_player != both_ai_define) || n_moves != board_history.size() - 1) && hint_default && human_hint_default) {
+				if (human_value_state == 0) {
+					human_value_future = async(launch::async, search_human, bd, tim(), human_hint_depth, human_hint_sub_depth);
+					human_value_state = 1;
+				} else if (human_value_state == 1 && human_value_future.wait_for(seconds0) == future_status::ready) {
+					human_values = human_value_future.get();
+					cerr << "got human value" << endl;
+					human_value_state = 2;
+				} else if (human_value_state == 2) {
+					int rank = 0;
+					Color color = Palette::Cyan;
+					for (const search_result_pv elem : human_values) {
+						cell_value_font(rank + 1).draw(offset_x + (elem.policy % hw) * cell_hw + 27, offset_y + (elem.policy / hw) * cell_hw + 25, color);
+						++rank;
+						color = Palette::White;
+					}
+				}
+			}
 		}
 
 		if (changing_book) {
@@ -1024,18 +1054,10 @@ void Main() {
 
 		joseki_ui(Unicode::FromUTF8(joseki.get(bd))).draw(145, 60);
 
-		pulldown_hint.update();
-		pulldown_hint.draw();
-		show_cell_value = pulldown_hint.getIndex();
-
 		pulldown_player.update();
 		pulldown_player.draw();
 
-		pulldown_value.update();
-		pulldown_value.draw();
-		show_value = pulldown_value.getIndex();
-
-		if (show_value == 0)
+		if (value_default)
 			graph.draw();
 		
 	}

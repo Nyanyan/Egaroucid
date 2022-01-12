@@ -665,5 +665,6 @@ inline vector<search_result_pv> search_human(board b, long long strt, int max_de
         //cerr << endl;
         res.emplace_back(res_elem);
     }
+    sort(res.begin(), res.end());
     return res;
 }
