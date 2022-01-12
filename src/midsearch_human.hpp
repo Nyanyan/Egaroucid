@@ -627,7 +627,7 @@ inline double calc_divergence_distance(board b, vector<int> pv, int divergence[6
         }
         line_distance.predict(b, possibility);
         for (board nnb: nb){
-            g = -mtd(&nnb, false, max_depth, -hw2, hw2, use_mpc, use_mpct);
+            g = -nega_alpha(&nnb, false, max_depth, -hw2, hw2);
             if (b.p == player){
                 res += (double)g * possibility[nnb.policy];
                 if (g > 0)
