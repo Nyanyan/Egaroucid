@@ -573,6 +573,9 @@ inline vector<principal_variation> search_pv(board b, long long strt, int max_de
         }
         principal_variation pv;
         pv.value = g;
+        g = book.get(&nnb);
+        if (g != -inf)
+            pv.value = -g;
         pv.depth = min(hw2 - b.n, max_depth - 1) + 1;
         pv.nps = 0;
         pv.policy = nnb.policy;
@@ -651,12 +654,12 @@ inline double calc_divergence_distance(board b, vector<int> pv, int divergence[6
 }
 
 inline double evaluate_human(int value, int divergence[6], double line_distance){
-    double res = 
-        (double)min(1, max(-1, value / 2)) + 
-        (double)(divergence[0] - divergence[3]) / (double)(divergence[0] + divergence[3]) + 
-        (double)(divergence[5] - divergence[2]) / (double)(divergence[5] + divergence[2]) + 
-        line_distance * 0.01;
-    return res;
+    double val = (double)value * 0.75;
+    double divergence1 = (double)(divergence[0] - divergence[3]) / (double)(divergence[0] + divergence[3]);
+    double divergence2 = (double)(divergence[5] - divergence[2]) / (double)(divergence[5] + divergence[2]);
+    double line_dist = line_distance * 0.01;
+    //cerr << val << " " << divergence1 << " " << divergence2 << " " << line_dist << endl;
+    return val + divergence1 + divergence2 + line_dist;
 }
 
 inline vector<search_result_pv> search_human(board b, long long strt, int max_depth, int sub_depth){

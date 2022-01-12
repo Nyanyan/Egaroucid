@@ -12,7 +12,7 @@ using namespace std;
 
 #define n_phases 15
 #define phase_n_stones 4
-#define n_patterns 14
+#define n_patterns 16
 #define n_eval (n_patterns + 4)
 #define max_surround 80
 #define max_canput 50
@@ -38,7 +38,7 @@ int sa_phase, sa_player;
 
 #define n_data 30000000
 
-#define n_raw_params 62
+#define n_raw_params 70
 
 #define beta 0.00001
 unsigned long long hour = 0;
@@ -47,8 +47,8 @@ unsigned long long second = 0;
 
 double alpha[n_eval][max_evaluate_idx];
 
-const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10, 10};
-const int eval_sizes[n_eval] = {p38, p38, p38, p35, p36, p37, p38, p310, p310, p310, p310, p39, p310, p310, max_surround * max_surround, max_canput * max_canput, max_stability * max_stability, max_stone_num * max_stone_num};
+const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10, 10, 10, 10};
+const int eval_sizes[n_eval] = {p38, p38, p38, p35, p36, p37, p38, p310, p310, p310, p310, p39, p310, p310, p310, p310, max_surround * max_surround, max_canput * max_canput, max_stability * max_stability, max_stone_num * max_stone_num};
 double eval_arr[n_phases][n_eval][max_evaluate_idx];
 int test_data[n_data / 6 + 10000][n_raw_params];
 double test_labels[n_data / 6 + 10000];
@@ -134,19 +134,19 @@ void input_param_onephase(string file){
 }
 
 inline int calc_sur0_sur1(int arr[]){
-    return arr[54] * max_surround + arr[55];
+    return arr[62] * max_surround + arr[63];
 }
 
 inline int calc_canput0_canput1(int arr[]){
-    return arr[56] * max_canput + arr[57];
+    return arr[64] * max_canput + arr[65];
 }
 
 inline int calc_stab0_stab1(int arr[]){
-    return arr[58] * max_stability + arr[59];
+    return arr[66] * max_stability + arr[67];
 }
 
 inline int calc_num0_num1(int arr[]){
-    return arr[60] * max_stone_num + arr[61];
+    return arr[68] * max_stone_num + arr[69];
 }
 
 inline double calc_score(int phase, int i);
@@ -162,7 +162,7 @@ void input_test_data(int strt){
     int phase, player, score;
     int t = 0, u = 0;
     nums = 0;
-    const int pattern_nums[54] = {
+    const int pattern_nums[62] = {
         0, 0, 0, 0,
         1, 1, 1, 1,
         2, 2, 2, 2,
@@ -176,7 +176,9 @@ void input_test_data(int strt){
         10, 10, 10, 10,
         11, 11, 11, 11,
         12, 12, 12, 12,
-        13, 13, 13, 13
+        13, 13, 13, 13,
+        14, 14, 14, 14,
+        15, 15, 15, 15
     };
     for (j = 0; j < n_eval; ++j){
         used_idxes[j].clear();
@@ -201,17 +203,17 @@ void input_test_data(int strt){
             iss >> score;
             for (i = 0; i < 54; ++i)
                 used_idxes[pattern_nums[i]].emplace(test_data[nums][i]);
-            used_idxes[14].emplace(calc_sur0_sur1(test_data[nums]));
-            used_idxes[15].emplace(calc_canput0_canput1(test_data[nums]));
-            used_idxes[16].emplace(calc_stab0_stab1(test_data[nums]));
-            used_idxes[17].emplace(calc_num0_num1(test_data[nums]));
+            used_idxes[16].emplace(calc_sur0_sur1(test_data[nums]));
+            used_idxes[17].emplace(calc_canput0_canput1(test_data[nums]));
+            used_idxes[18].emplace(calc_stab0_stab1(test_data[nums]));
+            used_idxes[19].emplace(calc_num0_num1(test_data[nums]));
             test_labels[nums] = score * step;
             for (i = 0; i < 54; ++i)
                 test_memo[pattern_nums[i]][test_data[nums][i]].push_back(nums);
-            test_memo[14][calc_sur0_sur1(test_data[nums])].push_back(nums);
-            test_memo[15][calc_canput0_canput1(test_data[nums])].push_back(nums);
-            test_memo[16][calc_stab0_stab1(test_data[nums])].push_back(nums);
-            test_memo[17][calc_num0_num1(test_data[nums])].push_back(nums);
+            test_memo[16][calc_sur0_sur1(test_data[nums])].push_back(nums);
+            test_memo[17][calc_canput0_canput1(test_data[nums])].push_back(nums);
+            test_memo[18][calc_stab0_stab1(test_data[nums])].push_back(nums);
+            test_memo[19][calc_num0_num1(test_data[nums])].push_back(nums);
             test_scores.push_back(0);
             pre_calc_scores.push_back(0);
             /*
@@ -337,10 +339,18 @@ inline double calc_score(int phase, int i){
         eval_arr[phase][13][test_data[i][51]] + 
         eval_arr[phase][13][test_data[i][52]] + 
         eval_arr[phase][13][test_data[i][53]] + 
-        eval_arr[phase][14][calc_sur0_sur1(test_data[i])] + 
-        eval_arr[phase][15][calc_canput0_canput1(test_data[i])] + 
-        eval_arr[phase][16][calc_stab0_stab1(test_data[i])] + 
-        eval_arr[phase][17][calc_num0_num1(test_data[i])];
+        eval_arr[phase][14][test_data[i][54]] + 
+        eval_arr[phase][14][test_data[i][55]] + 
+        eval_arr[phase][14][test_data[i][56]] + 
+        eval_arr[phase][14][test_data[i][57]] + 
+        eval_arr[phase][15][test_data[i][58]] + 
+        eval_arr[phase][15][test_data[i][59]] + 
+        eval_arr[phase][15][test_data[i][60]] + 
+        eval_arr[phase][15][test_data[i][61]] + 
+        eval_arr[phase][16][calc_sur0_sur1(test_data[i])] + 
+        eval_arr[phase][17][calc_canput0_canput1(test_data[i])] + 
+        eval_arr[phase][18][calc_stab0_stab1(test_data[i])] + 
+        eval_arr[phase][19][calc_num0_num1(test_data[i])];
     /*
     if (res > 0)
         res += step / 2;
@@ -416,6 +426,28 @@ inline int calc_rev_idx(int pattern_idx, int pattern_size, int idx){
         res += p32 * calc_pop(idx, 2, pattern_size);
         res += p31 * calc_pop(idx, 3, pattern_size);
         res += calc_pop(idx, 4, pattern_size);
+    } else if (pattern_idx == 14){
+        res += p39 * calc_pop(idx, 0, pattern_size);
+        res += p38 * calc_pop(idx, 2, pattern_size);
+        res += p37 * calc_pop(idx, 1, pattern_size);
+        res += p36 * calc_pop(idx, 3, pattern_size);
+        res += p35 * calc_pop(idx, 6, pattern_size);
+        res += p34 * calc_pop(idx, 8, pattern_size);
+        res += p33 * calc_pop(idx, 4, pattern_size);
+        res += p32 * calc_pop(idx, 7, pattern_size);
+        res += p31 * calc_pop(idx, 5, pattern_size);
+        res += calc_pop(idx, 9, pattern_size);
+    } else if (pattern_idx == 15){
+        res += p39 * calc_pop(idx, 0, pattern_size);
+        res += p38 * calc_pop(idx, 2, pattern_size);
+        res += p37 * calc_pop(idx, 1, pattern_size);
+        res += p36 * calc_pop(idx, 3, pattern_size);
+        res += p35 * calc_pop(idx, 7, pattern_size);
+        res += p34 * calc_pop(idx, 8, pattern_size);
+        res += p33 * calc_pop(idx, 9, pattern_size);
+        res += p32 * calc_pop(idx, 4, pattern_size);
+        res += p31 * calc_pop(idx, 5, pattern_size);
+        res += calc_pop(idx, 6, pattern_size);
     }
     return res;
 }

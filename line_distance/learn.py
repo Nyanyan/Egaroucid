@@ -23,7 +23,7 @@ n_boards = 2
 
 kernel_size = 3
 n_kernels = 32
-n_residual = 1
+n_residual = 2
 
 all_data = []
 all_labels = []
@@ -68,9 +68,11 @@ yp = Dense(hw2)(yp)
 yp = Activation('softmax', name='policy')(yp)
 
 model = Model(inputs=inputs, outputs=yp)
+
+#model = load_model('learned_data/model.h5')
 model.summary()
 
-for file in trange(10):
+for file in trange(50, 60):
     collect_data(file)
 
 n_data = len(all_labels)

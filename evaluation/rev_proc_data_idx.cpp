@@ -183,6 +183,9 @@ inline int calc_surround(const board *b, int p){
         surround_arr[p][b->b[21]] + surround_arr[p][b->b[32]];
 }
 
+// pop_digit[idx][left_just]
+// pop_mid[idx][right, right - 1][left, right_just]
+
 inline int edge_2x(int phase_idx, const board *b, int x, int y){
     return pop_digit[b->b[x]][1] * p39 + b->b[y] * p31 + pop_digit[b->b[x]][6];
 }
@@ -225,6 +228,22 @@ inline int narrow_triangle0(int phase_idx, const board *b, int v, int w, int x, 
 
 inline int narrow_triangle1(int phase_idx, const board *b, int v, int w, int x, int y, int z){
     return reverse_board[b->b[v]] / p33 * p35 + reverse_board[b->b[w]] / p36 * p33 + pop_digit[b->b[x]][7] * p32 + pop_digit[b->b[y]][7] / p37 * p31 + pop_digit[b->b[z]][7] / p37;
+}
+
+inline int fish0(int phase_idx, const board *b, int w, int x, int y, int z){
+    return b->b[w] / p36 * p38 + b->b[x] / p34 * p34 + pop_mid[b->b[y]][7][5] * p32 + pop_digit[b->b[z]][1] * p31 + pop_digit[b->b[z]][3];
+}
+
+inline int fish1(int phase_idx, const board *b, int w, int x, int y, int z){
+    return reverse_board[b->b[w]] / p36 * p38 + reverse_board[b->b[x]] / p34 * p34 + pop_mid[reverse_board[b->b[y]]][7][5] * p32 + pop_digit[b->b[z]][6] * p31 + pop_digit[b->b[z]][4];
+}
+
+inline int kite0(int phase_idx, const board *b, int v, int w, int x, int y, int z){
+    return b->b[v] / p36 * p38 + b->b[w] / p33 * p33 + pop_digit[b->b[x]][1] * p32 + pop_digit[b->b[y]][1] * p31 + pop_digit[b->b[z]][1];
+}
+
+inline int kite1(int phase_idx, const board *b, int v, int w, int x, int y, int z){
+    return reverse_board[b->b[v]] / p36 * p38 + reverse_board[b->b[w]] / p33 * p33 + pop_digit[b->b[x]][6] * p32 + pop_digit[b->b[y]][6] * p31 + pop_digit[b->b[z]][6];
 }
 
 inline int calc_stability(board *b, int p){
@@ -288,20 +307,28 @@ inline void calc_idx(int phase_idx, board *b, int idxes[]){
     idxes[51] = narrow_triangle0(phase_idx, b, 7, 6, 5, 4, 3);
     idxes[52] = narrow_triangle1(phase_idx, b, 0, 1, 2, 3, 4);
     idxes[53] = narrow_triangle1(phase_idx, b, 7, 6, 5, 4, 3);
-    idxes[54] = min(max_surround - 1, calc_surround(b, black));
-    idxes[55] = min(max_surround - 1, calc_surround(b, white));
-    idxes[56] = calc_canput(b, black);
-    idxes[57] = calc_canput(b, white);
-    idxes[58] = calc_stability(b, black);
-    idxes[59] = calc_stability(b, white);
+    idxes[54] = fish0(phase_idx, b, 0, 1, 2, 3);
+    idxes[55] = fish0(phase_idx, b, 7, 6, 5, 4);
+    idxes[56] = fish1(phase_idx, b, 0, 1, 2, 3);
+    idxes[57] = fish1(phase_idx, b, 7, 6, 5, 4);
+    idxes[58] = kite0(phase_idx, b, 0, 1, 2, 3, 4);
+    idxes[59] = kite0(phase_idx, b, 7, 6, 5, 4, 3);
+    idxes[60] = kite1(phase_idx, b, 0, 1, 2, 3, 4);
+    idxes[61] = kite1(phase_idx, b, 7, 6, 5, 4, 3);
+    idxes[62] = min(max_surround - 1, calc_surround(b, black));
+    idxes[63] = min(max_surround - 1, calc_surround(b, white));
+    idxes[64] = calc_canput(b, black);
+    idxes[65] = calc_canput(b, white);
+    idxes[66] = calc_stability(b, black);
+    idxes[67] = calc_stability(b, white);
     int count = 
         count_black_arr[b->b[0]] + count_black_arr[b->b[1]] + count_black_arr[b->b[2]] + count_black_arr[b->b[3]] + 
         count_black_arr[b->b[4]] + count_black_arr[b->b[5]] + count_black_arr[b->b[6]] + count_black_arr[b->b[7]];
     int filled = 
         count_both_arr[b->b[0]] + count_both_arr[b->b[1]] + count_both_arr[b->b[2]] + count_both_arr[b->b[3]] + 
         count_both_arr[b->b[4]] + count_both_arr[b->b[5]] + count_both_arr[b->b[6]] + count_both_arr[b->b[7]];
-    idxes[60] = (filled + count) / 2;
-    idxes[61] = (filled - count) / 2;
+    idxes[68] = (filled + count) / 2;
+    idxes[69] = (filled - count) / 2;
 }
 
 inline void convert_idx(string str){
@@ -410,10 +437,10 @@ inline void convert_idx(string str){
     iss >> score;
     b.translate_from_arr(arr, ai_player);
     //b.print();
-    int idxes[62];
+    int idxes[70];
     calc_idx(phase_idx, &b, idxes);
-    cout << idxes[60] + idxes[61] << " " << ai_player << " ";
-    for (i = 0; i < 62; ++i)
+    cout << idxes[68] + idxes[69] << " " << ai_player << " ";
+    for (i = 0; i < 70; ++i)
         cout << idxes[i] << " ";
     cout << score << endl;
 }
@@ -425,7 +452,7 @@ int main(){
     int t = 0;
 
     cerr << "=";
-    ifstream ifs("records3_2.txt");
+    ifstream ifs("records3_1.txt");
     if (ifs.fail()){
         cerr << "evaluation file not exist" << endl;
         exit(1);
