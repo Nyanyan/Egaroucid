@@ -119,7 +119,7 @@ int main(){
             input_board(&b, ai_player);
             cerr << b.p << endl;
             cerr << b.n << " " << mid_evaluate(&b) << endl;
-            //search_human(b, tim(), depth, 7);
+            search_human(b, tim(), depth, 7);
             if (b.n == 4){
                 int policy = first_moves[myrandrange(0, 4)];
                 cerr << "BOOK " << policy << endl;

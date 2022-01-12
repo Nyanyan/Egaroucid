@@ -638,7 +638,7 @@ inline double calc_divergence_distance(board b, vector<int> pv, int divergence[6
 
 inline double evaluate_human(int value, int divergence[6], double line_distance){
     double res = 
-        (double)value * 0.01 + 
+        (double)min(1, max(-1, value)) * 0.1 + 
         (double)(divergence[0] - divergence[3]) / (double)(divergence[0] + divergence[3]) + 
         (double)(divergence[5] - divergence[2]) / (double)(divergence[5] + divergence[2]) + 
         line_distance * 0.01;
