@@ -645,7 +645,7 @@ inline double evaluate_human(int value, int divergence[6], double line_distance)
     return res;
 }
 
-inline vector<search_result_pv> midsearch_human(board b, long long strt, int max_depth, int sub_depth){
+inline vector<search_result_pv> search_human(board b, long long strt, int max_depth, int sub_depth){
     cerr << "start midsearch human" << endl;
     vector<search_result_pv> res;
     vector<principal_variation> pv_value = search_pv(b, tim(), max_depth);

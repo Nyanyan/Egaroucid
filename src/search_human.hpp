@@ -28,10 +28,10 @@ constexpr int canput_bonus = 0;
 
 #define extra_stability_threshold 58
 
-#define n_kernels 16
+#define n_kernels 32
 #define n_board_input 2
 #define kernel_size 3
-#define n_residual 3
+#define n_residual 1
 #define conv_size (hw_p1 - kernel_size)
 #define conv_padding (kernel_size / 2)
 #define conv_padding2 (conv_padding * 2)
