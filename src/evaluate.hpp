@@ -132,7 +132,6 @@ inline void init_evaluation_calc(){
     ifstream ifs("resources/param.txt");
     if (ifs.fail()){
         cerr << "evaluation file not exist" << endl;
-        cerr << "a";
         exit(1);
     }
     string line;
