@@ -57,7 +57,7 @@ public:
 		}
 	}
 
-	void draw() const
+	void draw()
 	{
 		m_rect.draw();
 
@@ -82,6 +82,7 @@ public:
 			const Rect backRect{ pos, m_rect.w, (m_rect.h * m_items.size()) };
 
 			backRect.drawShadow({ 1, 1 }, 4, 1).draw();
+			bool mouse_over = m_rect.mouseOver();
 
 			for (const auto& item : m_items)
 			{
@@ -89,6 +90,7 @@ public:
 					rect.mouseOver())
 				{
 					rect.draw(Palette::Skyblue);
+					mouse_over = true;
 				}
 
 				m_font(item).draw((pos + m_padding), Palette::Black);
@@ -97,6 +99,9 @@ public:
 			}
 
 			backRect.drawFrame(1, 0, Palette::Gray);
+
+			if (!mouse_over)
+				m_isOpen = false;
 		}
 	}
 
