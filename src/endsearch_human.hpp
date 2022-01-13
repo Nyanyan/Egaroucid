@@ -886,17 +886,17 @@ inline search_result endsearch(board b, long long strt, bool pre_searched){
     bool use_mpc = max_depth >= 21 ? true : false;
     double use_mpct = 2.5;
     if (max_depth >= 23)
-        use_mpct = 1.5;
+        use_mpct = 1.7;
     if (max_depth >= 25)
-        use_mpct = 1.1;
+        use_mpct = 1.3;
     if (max_depth >= 27)
-        use_mpct = 1.0;
+        use_mpct = 1.1;
     if (max_depth >= 29)
         use_mpct = 0.9;
     if (max_depth >= 31)
-        use_mpct = 0.8;
-    if (max_depth >= 33)
         use_mpct = 0.7;
+    if (max_depth >= 33)
+        use_mpct = 0.6;
     cerr << "start final search depth " << max_depth << endl;
     alpha = -hw2;
     beta = hw2;
