@@ -65,6 +65,8 @@ int nega_alpha_ordering_final_mpc(board *b, bool skipped, int depth, int alpha, 
 }
 
 inline bool mpc_higher_final(board *b, bool skipped, int depth, int beta, double t){
+    if (b->n + mpcd[depth] >= hw2 - 5)
+        return false;
     int bound = beta + ceil(t * mpcsd_final[depth - mpc_min_depth_final]);
     if (bound > hw2)
         return false;
@@ -72,6 +74,8 @@ inline bool mpc_higher_final(board *b, bool skipped, int depth, int beta, double
 }
 
 inline bool mpc_lower_final(board *b, bool skipped, int depth, int alpha, double t){
+    if (b->n + mpcd[depth] >= hw2 - 5)
+        return false;
     int bound = alpha - floor(t * mpcsd_final[depth - mpc_min_depth_final]);
     if (bound < -hw2)
         return false;
