@@ -27,8 +27,8 @@ def calc_n_stones(board):
 evaluate = subprocess.Popen('../src/egaroucid5.out'.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
 sleep(1)
 
-min_depth = 15
-max_depth = 20
+min_depth = 21
+max_depth = 25
 
 vhs = [[[] for _ in range(max_depth - min_depth + 1)] for _ in range(15)]
 vds = [[[] for _ in range(max_depth - min_depth + 1)] for _ in range(15)]
