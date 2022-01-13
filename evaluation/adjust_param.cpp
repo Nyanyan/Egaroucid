@@ -40,9 +40,9 @@ int sa_phase, sa_player;
 
 #define n_raw_params 70
 
-#define beta 0.002
+#define beta 0.0001
 unsigned long long hour = 0;
-unsigned long long minute = 20;
+unsigned long long minute = 2;
 unsigned long long second = 0;
 
 double alpha[n_eval][max_evaluate_idx];
@@ -50,11 +50,8 @@ double alpha[n_eval][max_evaluate_idx];
 const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10, 10, 10, 10};
 const int eval_sizes[n_eval] = {p38, p38, p38, p35, p36, p37, p38, p310, p310, p310, p310, p39, p310, p310, p310, p310, max_surround * max_surround, max_canput * max_canput, max_stability * max_stability, max_stone_num * max_stone_num};
 double eval_arr[n_phases][n_eval][max_evaluate_idx];
-int additional_threshold[n_eval][n_eval][8];
-int additional_offset[n_eval][n_eval][4];
-int test_data[n_data / n_phases + 10000][n_raw_params];
-int test_pre_calc[n_data / n_phases + 10000][n_eval];
-double test_labels[n_data / n_phases + 10000];
+int test_data[n_data / n_phases][n_raw_params];
+double test_labels[n_data / n_phases];
 int nums;
 double scores;
 vector<int> test_memo[n_eval][max_evaluate_idx];
@@ -91,15 +88,29 @@ void initialize_param(){
                 eval_arr[phase_idx][pattern_idx][pattern_elem] = 0;
         }
     }
-    for (i = 0; i < n_eval; ++i){
-        for (j = 0; j < n_eval; ++j){
-            for (k = 0; k < 8; ++k)
-                additional_threshold[i][j][k] = 0;
-            for (k = 0; k < 4; ++k)
-                additional_offset[i][j][k] = 0;
+    cerr << endl;
+}
+
+void input_param(){
+    ifstream ifs("f_param.txt");
+    if (ifs.fail()){
+        cerr << "evaluation file not exist" << endl;
+        exit(1);
+    }
+    string line;
+    int t =0;
+    int phase_idx, pattern_idx, pattern_elem, dense_idx, canput, sur0, sur1, i, j, k;
+    for (phase_idx = 0; phase_idx < n_phases; ++phase_idx){
+        cerr << "=";
+        for (pattern_idx = 0; pattern_idx < n_eval; ++pattern_idx){
+            for (pattern_elem = 0; pattern_elem < eval_sizes[pattern_idx]; ++pattern_elem){
+                ++t;
+                getline(ifs, line);
+                eval_arr[phase_idx][pattern_idx][pattern_elem] = stoi(line);
+            }
         }
     }
-    cerr << endl;
+    cerr << t << endl;
 }
 
 void input_param_onephase(string file){
@@ -117,18 +128,6 @@ void input_param_onephase(string file){
             ++t;
             getline(ifs, line);
             eval_arr[sa_phase][pattern_idx][pattern_elem] = stoi(line);
-        }
-    }
-    for (i = 0; i < n_eval; ++i){
-        for (j = 0; j < n_eval; ++j){
-            for (k = 0; k < 8; ++k){
-                getline(ifs, line);
-                additional_threshold[i][j][k] = stoi(line);
-            }
-            for (k = 0; k < 4; ++k){
-                getline(ifs, line);
-                additional_offset[i][j][k] = stoi(line);
-            }
         }
     }
     cerr << t << endl;
@@ -163,7 +162,7 @@ void input_test_data(int strt){
     int phase, player, score;
     int t = 0, u = 0;
     nums = 0;
-    const int pattern_nums[66] = {
+    const int pattern_nums[62] = {
         0, 0, 0, 0,
         1, 1, 1, 1,
         2, 2, 2, 2,
@@ -179,8 +178,7 @@ void input_test_data(int strt){
         12, 12, 12, 12,
         13, 13, 13, 13,
         14, 14, 14, 14,
-        15, 15, 15, 15,
-        16, 17, 18, 19
+        15, 15, 15, 15
     };
     for (j = 0; j < n_eval; ++j){
         used_idxes[j].clear();
@@ -203,15 +201,19 @@ void input_test_data(int strt){
             for (i = 0; i < n_raw_params; ++i)
                 iss >> test_data[nums][i];
             iss >> score;
-            test_data[nums][62] = calc_sur0_sur1(test_data[nums]);
-            test_data[nums][63] = calc_canput0_canput1(test_data[nums]);
-            test_data[nums][64] = calc_stab0_stab1(test_data[nums]);
-            test_data[nums][65] = calc_num0_num1(test_data[nums]);
-            for (i = 0; i < 66; ++i)
+            for (i = 0; i < 62; ++i)
                 used_idxes[pattern_nums[i]].emplace(test_data[nums][i]);
+            used_idxes[16].emplace(calc_sur0_sur1(test_data[nums]));
+            used_idxes[17].emplace(calc_canput0_canput1(test_data[nums]));
+            used_idxes[18].emplace(calc_stab0_stab1(test_data[nums]));
+            used_idxes[19].emplace(calc_num0_num1(test_data[nums]));
             test_labels[nums] = score * step;
-            for (i = 0; i < 66; ++i)
+            for (i = 0; i < 62; ++i)
                 test_memo[pattern_nums[i]][test_data[nums][i]].push_back(nums);
+            test_memo[16][calc_sur0_sur1(test_data[nums])].push_back(nums);
+            test_memo[17][calc_canput0_canput1(test_data[nums])].push_back(nums);
+            test_memo[18][calc_stab0_stab1(test_data[nums])].push_back(nums);
+            test_memo[19][calc_num0_num1(test_data[nums])].push_back(nums);
             test_scores.push_back(0);
             pre_calc_scores.push_back(0);
             /*
@@ -236,7 +238,6 @@ void input_test_data(int strt){
     u = 0;
     for (i = 0; i < n_eval; ++i)
         u += eval_sizes[i];
-    u += n_eval * n_eval * (8 + 4);
     cerr << "n_all_param " << u << endl;
     u = 0;
     for (i = 0; i < n_eval; ++i){
@@ -266,21 +267,11 @@ void output_param(){
 }
 
 void output_param_onephase(){
-    int pattern_idx, pattern_elem, dense_idx, canput, sur0, sur1, i, j, k;
+    int pattern_idx, pattern_elem, dense_idx, canput, sur0, sur1, i, j;
     cerr << "=";
     for (pattern_idx = 0; pattern_idx < n_eval; ++pattern_idx){
         for (pattern_elem = 0; pattern_elem < eval_sizes[pattern_idx]; ++pattern_elem){
             cout << round(eval_arr[sa_phase][pattern_idx][pattern_elem]) << endl;
-        }
-    }
-    for (i = 0; i < n_eval; ++i){
-        for (j = 0; j < n_eval; ++j){
-            for (k = 0; k < 8; ++k){
-                cout << additional_threshold[i][j][k] << endl;
-            }
-            for (k = 0; k < 4; ++k){
-                cout << additional_offset[i][j][k] << endl;
-            }
         }
     }
     cerr << endl;
@@ -292,53 +283,7 @@ inline double loss(double x, int siz){
     return (double)x / (double)siz * (double)x;
 }
 
-inline double calc_score_fast(int phase, int i){
-    int res, j, k;
-    res = 0;
-    for (j = 0; j < n_eval; ++j)
-        res += test_pre_calc[i][j];
-    for (j = 0; j < n_eval; ++j){
-        for (k = 0; k < n_eval; ++k){
-            if (test_pre_calc[i][j] > additional_threshold[j][k][0] && test_pre_calc[i][k] > additional_threshold[j][k][1])
-                res += additional_offset[j][k][0];
-            if (test_pre_calc[i][j] > additional_threshold[j][k][2] && test_pre_calc[i][k] < additional_threshold[j][k][3])
-                res += additional_offset[j][k][1];
-            if (test_pre_calc[i][j] < additional_threshold[j][k][4] && test_pre_calc[i][k] > additional_threshold[j][k][5])
-                res += additional_offset[j][k][2];
-            if (test_pre_calc[i][j] < additional_threshold[j][k][6] && test_pre_calc[i][k] < additional_threshold[j][k][7])
-                res += additional_offset[j][k][3];
-        }
-    }
-    return max(-sc_w, min(sc_w, res));
-}
-
 inline double calc_score(int phase, int i){
-    int j, k, idx = 0, res = 0;
-    for (j = 0; j < n_patterns; ++j){
-        test_pre_calc[i][j] = 0;
-        for (k = 0; k < (j == 6 ? 2 : 4); ++k)
-            test_pre_calc[i][j] += eval_arr[phase][j][test_data[i][idx++]];
-    }
-    test_pre_calc[i][n_patterns] = eval_arr[phase][16][test_data[i][idx++]];
-    test_pre_calc[i][n_patterns + 1] = eval_arr[phase][17][test_data[i][idx++]];
-    test_pre_calc[i][n_patterns + 2] = eval_arr[phase][18][test_data[i][idx++]];
-    test_pre_calc[i][n_patterns + 3] = eval_arr[phase][19][test_data[i][idx++]];
-    res = 0;
-    for (j = 0; j < n_eval; ++j)
-        res += test_pre_calc[i][j];
-    for (j = 0; j < n_eval; ++j){
-        for (k = 0; k < n_eval; ++k){
-            if (test_pre_calc[i][j] > additional_threshold[j][k][0] && test_pre_calc[i][k] > additional_threshold[j][k][1])
-                res += additional_offset[j][k][0];
-            if (test_pre_calc[i][j] > additional_threshold[j][k][2] && test_pre_calc[i][k] < additional_threshold[j][k][3])
-                res += additional_offset[j][k][1];
-            if (test_pre_calc[i][j] < additional_threshold[j][k][4] && test_pre_calc[i][k] > additional_threshold[j][k][5])
-                res += additional_offset[j][k][2];
-            if (test_pre_calc[i][j] < additional_threshold[j][k][6] && test_pre_calc[i][k] < additional_threshold[j][k][7])
-                res += additional_offset[j][k][3];
-        }
-    }
-    /*
     int res = 
         eval_arr[phase][0][test_data[i][0]] + 
         eval_arr[phase][0][test_data[i][1]] + 
@@ -406,6 +351,14 @@ inline double calc_score(int phase, int i){
         eval_arr[phase][17][calc_canput0_canput1(test_data[i])] + 
         eval_arr[phase][18][calc_stab0_stab1(test_data[i])] + 
         eval_arr[phase][19][calc_num0_num1(test_data[i])];
+    /*
+    if (res > 0)
+        res += step / 2;
+    else if (res < 0)
+        res -= step / 2;
+    res /= step;
+    res = max(-64, min(64, res));
+    res *= step;
     */
     return max(-sc_w, min(sc_w, res));
 }
@@ -521,10 +474,10 @@ inline double scoring_next_step(int pattern, int idx){
     return res;
 }
 
-inline int next_step(){
-    int pattern, rev_idx, i, j, k;
+inline void next_step(){
+    int pattern, rev_idx;
     double err;
-    for (i = 0; i < nums; ++i)
+    for (int i = 0; i < nums; ++i)
         pre_calc_scores[i] = calc_score(sa_phase, i);
     for (pattern = 0; pattern < n_eval; ++pattern){
         for (const int &idx: used_idxes_vector[pattern]){
@@ -544,36 +497,6 @@ inline int next_step(){
             }
         }
     }
-    double mse = 0.0, n_mse;
-    for (i = 0; i < nums; ++i)
-        mse += (double)(pre_calc_scores[i] - test_labels[i]) / nums * (double)(pre_calc_scores[i] - test_labels[i]);
-    int idx1, idx2, idx3, f_threshold, f_offset, prediction;
-    int t = 0;
-    if (mse < 1638400.0){
-        for (i = 0; i < 10; ++i){
-            idx1 = myrandrange(0, n_eval);
-            idx2 = myrandrange(0, n_eval);
-            idx3 = myrandrange(0, 8);
-            f_threshold = additional_threshold[idx1][idx2][idx3];
-            f_offset = additional_offset[idx1][idx2][idx3 / 2];
-            additional_threshold[idx1][idx2][idx3] += myrandrange(-step, step + 1);
-            additional_offset[idx1][idx2][idx3 / 2] += myrandrange(-step, step + 1);
-            n_mse = 0.0;
-            for (j = 0; j < nums / 10; ++j){
-                k = myrandrange(0, nums);
-                prediction = calc_score_fast(sa_phase, k);
-                n_mse += (double)(prediction - test_labels[k]) / (nums / 10) * (double)(prediction - test_labels[k]);
-            }
-            if (n_mse < mse){
-                mse = n_mse;
-                ++t;
-            } else{
-                additional_threshold[idx1][idx2][idx3] = f_threshold;
-                additional_offset[idx1][idx2][idx3 / 2] = f_offset;
-            }
-        }
-    }
-    return t;
 }
 
 void sd(unsigned long long tl){
@@ -582,12 +505,12 @@ void sd(unsigned long long tl){
     int t = 0;
     for (;;){
         ++t;
-        int sa_accept = next_step();
+        next_step();
         if ((t & 0b0) == 0){
             now = tim();
             if (now - strt > tl)
                 break;
-            cerr << "\r " << t << " " << (int)((double)(now - strt) / tl * 1000) << " " << sa_accept;
+            cerr << "\r " << t << " " << (int)((double)(now - strt) / tl * 1000);
             scoring_mae();
         }
     }
@@ -617,7 +540,7 @@ int main(int argc, char *argv[]){
     init();
     initialize_param();
     //output_param_onephase();
-    //input_param_onephase((string)(argv[3]));
+    input_param_onephase((string)(argv[3]));
     input_test_data(0);
 
     sd(second * 1000);
