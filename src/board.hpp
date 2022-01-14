@@ -359,6 +359,7 @@ class board {
                 }
             }
             this->p = player;
+            this->policy = -1;
         }
 
         inline int count(int player){
