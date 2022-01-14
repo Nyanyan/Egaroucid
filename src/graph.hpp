@@ -5,6 +5,8 @@
 
 using namespace std;
 
+Color graph_color = Palette::Black;
+
 class Graph {
 	public:
 		int sx;
@@ -26,24 +28,24 @@ class Graph {
 			calc_range();
 			dy = size_y / (y_max - y_min);
 			dx = size_x / 60;
-			font(U"黒").draw(sx + 5, sy);
-			font(U"白").draw(sx + 5, sy + size_y - font_size * 1.5);
+			font(U"黒").draw(sx + 5, sy, graph_color);
+			font(U"白").draw(sx + 5, sy + size_y - font_size * 1.5, graph_color);
 			for (int y = 0; y <= y_max - y_min; y += resolution) {
-				font(y_max - y).draw(sx - font_size * 3, sy + y * dy - font_size);
+				font(y_max - y).draw(sx - font_size * 3, sy + y * dy - font_size, graph_color);
 				if (y_max - y == 0)
-					Line{sx, sy + y * dy, sx + size_x, sy + y * dy}.draw(2, Palette::White);
+					Line{sx, sy + y * dy, sx + size_x, sy + y * dy}.draw(2, graph_color);
 				else
-					Line{sx, sy + y * dy, sx + size_x, sy + y * dy}.draw(1, Palette::White);
+					Line{sx, sy + y * dy, sx + size_x, sy + y * dy}.draw(1, graph_color);
 			}
 			for (int x = 0; x <= 60; x += 10){
 				font(x).draw(sx + x * dx, sy - 2 * font_size);
-				Line{sx + x * dx, sy, sx + x * dx, sy + size_y}.draw(1, Palette::White);
+				Line{sx + x * dx, sy, sx + x * dx, sy + size_y}.draw(1, graph_color);
 			}
 			for (pair<int, int> yx : nodes)
-				Circle{sx + yx.first * dx, sy + y_max * dy - yx.second * dy, 3}.draw(Palette::White);
+				Circle{sx + yx.first * dx, sy + y_max * dy - yx.second * dy, 3}.draw(graph_color);
 			if (nodes.size() >= 2) {
 				for (int i = 0; i < (int)nodes.size() - 1; ++i) {
-					Line(sx + nodes[i].first * dx, sy + y_max * dy - nodes[i].second * dy, sx + nodes[i + 1].first * dx, sy + y_max * dy - nodes[i + 1].second * dy).draw(4, Palette::White);
+					Line(sx + nodes[i].first * dx, sy + y_max * dy - nodes[i].second * dy, sx + nodes[i + 1].first * dx, sy + y_max * dy - nodes[i + 1].second * dy).draw(4, graph_color);
 				}
 			}
 		}

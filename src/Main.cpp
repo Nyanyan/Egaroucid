@@ -265,7 +265,8 @@ void Main() {
 	Window::Resize(window_size);
 	Window::SetTitle(U"Egaroucid5");
 	System::SetTerminationTriggers(UserAction::NoAction);
-	Console.open();
+	Scene::SetBackground(Palette::White);
+	//Console.open();
 	constexpr int offset_y = 150;
 	constexpr int offset_x = 60;
 	constexpr int cell_hw = 50;
@@ -317,6 +318,7 @@ void Main() {
 	Font copy_ui(20);
 	Font joseki_ui(17);
 	Font font50(50);
+	Color font_color = Palette::Black;
 	bool playing = false, thinking = false, cell_value_thinking = false, changing_book = false;
 	int depth, end_depth, ai_player, cell_value_depth, cell_value_end_depth, book_accept, n_moves = 0;
 	double value;
@@ -399,7 +401,7 @@ void Main() {
 				future_initialize.get();
 				initialized = true;
 			}
-			font50(U"AI初期化中…").draw(0, 0);
+			font50(U"AI初期化中…").draw(0, 0, font_color);
 			continue;
 		}
 
@@ -407,7 +409,7 @@ void Main() {
 			closing = true;
 		if (closing){
 			if (book_changed) {
-				font50(U"bookが変更されました。保存しますか？").draw(0, 0);
+				font50(U"bookが変更されました。保存しますか？").draw(0, 0, font_color);
 				if (SimpleGUI::Button(U"保存する", Vec2(0, 150))) {
 					book.save();
 					ofstream ofs("resources/settings.txt");
@@ -461,7 +463,7 @@ void Main() {
 		}
 
 		if (book_changing) {
-			font50(U"book追加中…").draw(0, 0);
+			font50(U"book追加中…").draw(0, 0, font_color);
 			if (book_import_future.wait_for(seconds0) == future_status::ready) {
 				book_changing = false;
 				book_import_future.get();
@@ -477,14 +479,13 @@ void Main() {
 			continue;
 		} else if (const auto status = DragDrop::DragOver()) {
 			if (status->itemType == DragItemType::FilePaths) {
-				font50(U"ドラッグ&ドロップでbookを追加").draw(0, 0);
+				font50(U"ドラッグ&ドロップでbookを追加").draw(0, 0, font_color);
 				continue;
 			}
 		}
-
-		SimpleGUI::CheckBox(hint_default, U"ヒント", Point(250, 0), 120, !book_learning);
+		SimpleGUI::CheckBox(value_default, U"評価値", Point(250, 0), 120, !book_learning);
+		SimpleGUI::CheckBox(hint_default, U"ヒント", Point(355, 0), 120, !book_learning);
 		SimpleGUI::CheckBox(human_hint_default, U"人間的ヒント", Point(305, 35), 170, hint_default && !book_learning);
-		SimpleGUI::CheckBox(value_default, U"評価値", Point(355, 0), 120, !book_learning);
 
 		cell_value_thinking = false;
 		for (int i = 0; i < hw2; ++i)
@@ -502,12 +503,13 @@ void Main() {
 		cell_value_end_depth = round(cell_value_end_depth_double);
 		book_accept = round(book_accept_double);
 
+		Rect{offset_x, offset_y, cell_size.x * hw, cell_size.y * hw}.draw(Palette::Black);
 		for (const auto& cell : cells)
 			cell.stretched(-1).draw(Palette::Green);
 		for (int i = 0; i < hw; ++i)
-			coord_ui((char)('a' + i)).draw(offset_x + i * cell_hw + 10, offset_y - cell_hw);
+			coord_ui((char)('a' + i)).draw(offset_x + i * cell_hw + 10, offset_y - cell_hw - 5, font_color);
 		for (int i = 0; i < hw; ++i)
-			coord_ui(i + 1).draw(offset_x - cell_hw, offset_y + i * cell_hw);
+			coord_ui(i + 1).draw(offset_x - cell_hw + 2, offset_y + i * cell_hw - 5, font_color);
 		Circle(offset_x + 2 * cell_hw, offset_y + 2 * cell_hw, 5).draw(Palette::Black);
 		Circle(offset_x + 2 * cell_hw, offset_y + 6 * cell_hw, 5).draw(Palette::Black);
 		Circle(offset_x + 6 * cell_hw, offset_y + 2 * cell_hw, 5).draw(Palette::Black);
@@ -584,17 +586,17 @@ void Main() {
 			}
 		}
 		if (input_record_state == 1){
-			input_board_record_ui(U"取得失敗").draw(625, 555);
+			input_board_record_ui(U"取得失敗").draw(625, 555, font_color);
 			playing = false;
 		} else if (input_record_state == 2) {
-			input_board_record_ui(U"取得成功").draw(625, 555);
+			input_board_record_ui(U"取得成功").draw(625, 555, font_color);
 			for (int y = 0; y < hw; ++y) {
 				for (int x = 0; x < hw; ++x) {
 					int coord = proc_coord(y, x);
 					if (bd_arr[coord] == black)
-						stones[coord].draw(Palette::Black);
+						stones[coord].draw(Palette::Black, font_color);
 					else if (bd_arr[coord] == white)
-						stones[coord].draw(Palette::White);
+						stones[coord].draw(Palette::White, font_color);
 				}
 			}
 			playing = false;
@@ -643,10 +645,10 @@ void Main() {
 			}
 		}
 		if (input_board_state == 1){
-			input_board_record_ui(U"取得失敗").draw(625, 605);
+			input_board_record_ui(U"取得失敗").draw(625, 605, font_color);
 			playing = false;
 		} else if (input_board_state == 2) {
-			input_board_record_ui(U"取得成功").draw(625, 605);
+			input_board_record_ui(U"取得成功").draw(625, 605, font_color);
 			for (int i = 0; i < hw2; ++i)
 				cell_value_state[i] = 0;
 			for (int y = 0; y < hw; ++y) {
@@ -707,7 +709,7 @@ void Main() {
 		}
 
 		if (book_learning) {
-			value_ui(U"評価値: ", round(value)).draw(250, 650);
+			value_ui(U"評価値: ", round(value)).draw(250, 650, font_color);
 		}
 
 		if (SimpleGUI::Button(U"対局保存", Vec2(750, 555), 120, !book_learning)) {
@@ -773,9 +775,9 @@ void Main() {
 				saved = 2;
 		}
 		if (saved == 1) {
-			saved_ui(U"成功").draw(900, 560);
+			saved_ui(U"成功").draw(900, 560, font_color);
 		} else if (saved == 2) {
-			saved_ui(U"失敗").draw(900, 560);
+			saved_ui(U"失敗").draw(900, 560, font_color);
 		}
 
 		if (SimpleGUI::Button(U"棋譜コピー", Vec2(750, 600), 120, !book_learning)) {
@@ -785,7 +787,7 @@ void Main() {
 			copied = true;
 		}
 		if (copied) {
-			copy_ui(U"完了").draw(900, 600);
+			copy_ui(U"完了").draw(900, 600, font_color);
 		}
 		
 
@@ -832,13 +834,13 @@ void Main() {
 			pre_searched = false;
 		}
 
-		record_ui(record).draw(0, 550);
+		record_ui(record).draw(3, 550, font_color);
 
 		if (playing) {
 			if (finished && n_moves == finish_moves)
-				move_font(U"終局").draw(420, 650);
+				move_font(U"終局").draw(420, 650, font_color);
 			else
-				move_font(bd.n - 3, U"手目").draw(420, 650);
+				move_font(bd.n - 3, U"手目").draw(420, 650, font_color);
 			bool flag = false;
 			for (int i = 0; i < hw2; ++i)
 				flag |= (cell_value_state[i] == 1);
@@ -1010,9 +1012,9 @@ void Main() {
 					future_result = ai(bd, depth, end_depth, bd_arr, book_accept, &pre_searched);
 				}
 			}
-			score_ui(U"黒 ", bd.count(black), U" ", bd.count(white), U" 白").draw(10, 640);
+			score_ui(U"黒 ", bd.count(black), U" ", bd.count(white), U" 白").draw(10, 640, font_color);
 			if (value_default)
-				value_ui(U"評価値: ", round(value)).draw(250, 650);
+				value_ui(U"評価値: ", round(value)).draw(250, 650, font_color);
 
 			if (((bd.p != ai_player && ai_player != both_ai_define) || n_moves != board_history.size() - 1) && hint_default && human_hint_default) {
 				if (human_value_state == 0) {
@@ -1073,10 +1075,10 @@ void Main() {
 					change_book_value_str.pop_back();
 				change_book_value_info_str = U"修正した評価値";
 			}
-			change_book_ui(change_book_value_info_str, U"(", change_book_value_coord_str, U"): ", change_book_value_str).draw(670, 660);
+			change_book_ui(change_book_value_info_str, U"(", change_book_value_coord_str, U"): ", change_book_value_str).draw(670, 660, font_color);
 		}
 
-		joseki_ui(Unicode::FromUTF8(joseki.get(bd))).draw(145, 80);
+		joseki_ui(Unicode::FromUTF8(joseki.get(bd))).draw(145, 80, font_color);
 
 		pulldown_player.update();
 		pulldown_player.draw();
