@@ -70,14 +70,14 @@ int nega_alpha_ordering_nomemo(board *b, bool skipped, int depth, int alpha, int
 inline bool mpc_higher(board *b, bool skipped, int depth, int beta, double t){
     int bound = beta + ceil(t * mpcsd[calc_phase_idx(b)][depth - mpc_min_depth]);
     if (bound > hw2)
-        return false;
+        bound = hw2; ////return false;
     return nega_alpha_ordering_nomemo(b, skipped, mpcd[depth], bound - search_epsilon, bound, t) >= bound;
 }
 
 inline bool mpc_lower(board *b, bool skipped, int depth, int alpha, double t){
     int bound = alpha - floor(t * mpcsd[calc_phase_idx(b)][depth - mpc_min_depth]);
     if (bound < -hw2)
-        return false;
+        bound = -hw2; //return false;
     return nega_alpha_ordering_nomemo(b, skipped, mpcd[depth], bound, bound + search_epsilon, t) <= bound;
 }
 

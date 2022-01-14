@@ -69,7 +69,7 @@ inline bool mpc_higher_final(board *b, bool skipped, int depth, int beta, double
         return false;
     int bound = beta + ceil(t * mpcsd_final[depth - mpc_min_depth_final]);
     if (bound > hw2)
-        return false;
+        bound = hw2; //return false;
     return nega_alpha_ordering_final_mpc(b, skipped, mpcd[depth], bound - search_epsilon, bound, t) >= bound;
 }
 
@@ -78,7 +78,7 @@ inline bool mpc_lower_final(board *b, bool skipped, int depth, int alpha, double
         return false;
     int bound = alpha - floor(t * mpcsd_final[depth - mpc_min_depth_final]);
     if (bound < -hw2)
-        return false;
+        bound = -hw2; //return false;
     return nega_alpha_ordering_final_mpc(b, skipped, mpcd[depth], bound, bound + search_epsilon, t) <= bound;
 }
 
@@ -848,7 +848,7 @@ int mtd_final(board *b, bool skipped, int depth, int l, int u, bool use_mpc, dou
         }
         //cerr << g << endl;
     #else
-        //cerr << l << " " << g << " " << u << endl;
+        cerr << l << " " << g << " " << u << endl;
         while (u - l > 0){
             beta = max(l + search_epsilon, g);
             g = nega_alpha_ordering_final(b, skipped, depth, beta - search_epsilon, beta, true, use_mpc, use_mpct);
@@ -856,9 +856,9 @@ int mtd_final(board *b, bool skipped, int depth, int l, int u, bool use_mpc, dou
                 u = g;
             else
                 l = g;
-            //cerr << l << " " << g << " " << u << endl;
+            cerr << l << " " << g << " " << u << endl;
         }
-        //cerr << g << endl;
+        cerr << g << endl;
     #endif
     return l;
 }
