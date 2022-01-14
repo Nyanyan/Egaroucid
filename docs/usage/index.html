@@ -31,6 +31,7 @@
 <li><a href='#inout'>入出力</a></li>
 <li><a href='#book'>book</a></li>
 <li><a href='#joseki'>定石</a></li>
+<li><a href='#engine'>AI単体での使用</a></li>
 
 </ul>
 <p>&nbsp;</p>
@@ -202,9 +203,11 @@ X: モード(0:人間先手 1:人間後手 2:人間同士 3:AI同士)
 <h4 id='標準付属bookの仕様'>標準付属bookの仕様</h4>
 <p>このアプリには標準で作者が生成したbookが付属しています。このbookは以下の仕様で作られたものです。</p>
 <ul>
-<li>中盤33手読み</li>
-<li>終盤33手読み</li>
-<li>深さ25</li>
+<li>収録局面は学習データの棋譜で多数回出てきた有力進行のもの</li>
+<li>中盤21手読み</li>
+<li>終盤25手読み</li>
+<li>深さ40</li>
+<li><a href='http://infinitelyinfinite.blog.fc2.com/blog-entry-64.html'>こちら</a>に公開されているEdaxのbookを参考に微修正</li>
 <li>作者が手動で微修正</li>
 <li>容量削減のために一部自動で削除</li>
 
@@ -214,5 +217,35 @@ X: モード(0:人間先手 1:人間後手 2:人間同士 3:AI同士)
 <h3 id='定石'>定石</h3>
 <p>画面中央上に定石名が表示できる場合は表示されます。</p>
 <p>定石データはこちらのものを使っています: <a href='http://evaccaneer.livedoor.blog/archives/11101657.html' target='_blank' class='url'>http://evaccaneer.livedoor.blog/archives/11101657.html</a></p>
+<p>&nbsp;</p>
+<p><a id="engine"></a></p>
+<h3 id='ai単体での使用'>AI単体での使用</h3>
+<p>このオセロAIのコードはGPL3.0ライセンスの下公開しています。コードはライセンスの下で自由に活用してください。</p>
+<p><a href='https://github.com/Nyanyan/Egaroucid5'>GitHubレポジトリ</a>では、私が単体テストに使うために作った、<a href='https://github.com/Nyanyan/Egaroucid5/blob/main/src/egaroucid5.cpp'>AI単体で使えるコード</a>を公開しています。こちらをコンパイルすることで、AI単体を使用する実行ファイルができます。入力形式は以下です。</p>
+<pre><code>プレイヤー番号(0: 黒 1: 白)
+1行目の盤面
+2行目の盤面
+3行目の盤面
+4行目の盤面
+5行目の盤面
+6行目の盤面
+7行目の盤面
+8行目の盤面
+</code></pre>
+<p>例として縦取りした盤面は、</p>
+<pre><code>0
+........
+........
+........
+...10...
+...100..
+...1....
+........
+........
+</code></pre>
+<p>となります。</p>
+<p>出力形式は以下です。</p>
+<pre><code>次の手のy座標(0~7) 次の手のx座標(0~7) 評価値
+</code></pre>
     </body>
 </html>
