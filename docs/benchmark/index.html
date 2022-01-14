@@ -20,7 +20,7 @@
         <div id="ffotest">
             <div class="sub_title"><a href='http://radagast.se/othello/ffotest.html' target='_blank'>FFO endgame test</a></div>
             <p>FFO endgame testはオセロAIの終盤探索力の指標として広く使われるベンチマークです。</p>
-            <p>下に結果を示しますが、重要なのはdepth(探索深さ)とtime(時間)、nps(1秒あたりの探索ノード数)です。</p>
+            <p>下に結果を示しますが、重要なのはdepth(探索深さ)とtime(時間ミリ秒)、nps(1秒あたりの探索ノード数)です。</p>
             <p>なお、20手の#40以外は前向きな枝刈りであるMPCを使った結果なので、ある程度ミスがあります。その場合はWRONGと書きました。その中でも、勝ち負け引き分けさえも間違っている場合は特にresult wrongと追記されています。</p>
             <pre><div>#40 final depth: 20 time: 2917 policy: 8 value: 38 nodes: 32676731 nps: 11409473 get: 84416 reg: 568363
 #41 final depth: 22 time: 2097 policy: 31 value: 0 nodes: 10692850 nps: 5208402 get: 9307 reg: 67443
@@ -47,10 +47,24 @@
         <div id="edax">
             <div class="sub_title"><a href='https://github.com/abulmo/edax-reversi' target='_blank'>Edax</a>との対戦</div>
             <p>世界最強とも言われるオセロAI、Edaxとの対戦結果です。</p>
-            <p>初手からの対戦では正確な強さがわからないと考えたため、最終的に引き分けとなった棋譜を使って途中まで打ち、そこから対戦させました。</p>
-            <p>途中からの対戦では、その時点で勝敗または引き分けが決しているので、両者の強さが全く同じであれば勝敗の数は同じになります。勝敗の偏りを見ることで強さがわかります。</p>
+            <p>初手からの対戦では評価関数の正確な強さがわからないと考えたため、最終的に引き分けとなった(評価関数の学習に使っていない)互いに異なる大量の棋譜を使って途中まで打ち、そこから各手筋に対して双方に先手後手1回ずつ対戦させました。</p>
+            <p>途中からの対戦では、その時点で勝敗または引き分けが決しているので、両者の強さが全く同じであれば勝敗の数は同じになります。勝率の偏りを見ることで強さがわかります。</p>
+            <p>各開始手(start depth手だけ進めた盤面からの対戦)において、Egaroucidの勝率(Egaroucid win rate)(Egaroucidの勝数の和を双方の全ての勝数の和で割ったもの)が0.5を越していれば、Egaroucidが勝ち越しています。</p>
+            <p>WDLはwin-draw-loseの略で、その後に続く3つの数字が勝ち-引き分け-負けであることを意味します。</p>
             <p>bookは双方使用していません。</p>
-            <div class="sub_sub_title">レベル1(中盤1手読み/終盤2マス空き完全読み)</div>
+            <div class="sub_sub_title">レベル1(中盤1手読み/終盤2マス空き完全読み)同士</div>
+            <p>開始手は、Egaroucidの評価関数が4手ごとに別のものに切り替わるため、4手ごと-1手(1手先読みするので)となっています。</p>
+            <pre><div>start depth: 55 Egaroucid plays black WDL: 167-263-70 Egaroucid plays white WDL: 86-258-156 Egaroucid win rate: 0.5281837160751566
+start depth: 51 Egaroucid plays black WDL: 237-81-182 Egaroucid plays white WDL: 204-76-220 Egaroucid win rate: 0.5231316725978647
+start depth: 47 Egaroucid plays black WDL: 222-36-242 Egaroucid plays white WDL: 236-40-224 Egaroucid win rate: 0.49567099567099565
+start depth: 43 Egaroucid plays black WDL: 260-13-227 Egaroucid plays white WDL: 235-20-245 Egaroucid win rate: 0.5118924508790073
+start depth: 39 Egaroucid plays black WDL: 247-21-232 Egaroucid plays white WDL: 224-15-261 Egaroucid win rate: 0.48858921161825725
+start depth: 35 Egaroucid plays black WDL: 281-12-207 Egaroucid plays white WDL: 223-9-268 Egaroucid win rate: 0.5148110316649642
+start depth: 31 Egaroucid plays black WDL: 208-11-199 Egaroucid plays white WDL: 180-6-232 Egaroucid win rate: 0.47374847374847373
+            </div></pre>
+            <div class="sub_sub_title">レベル5(中盤5手読み/終盤10マス空き完全読み)同士</div>
+            <p>開始手は10手ごとです。</p>
+            <pre><div></div></pre>
         </div>
 
     </body>
