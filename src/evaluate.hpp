@@ -364,11 +364,8 @@ inline int mid_evaluate(board *b){
     int count = 
         count_black_arr[b->b[0]] + count_black_arr[b->b[1]] + count_black_arr[b->b[2]] + count_black_arr[b->b[3]] + 
         count_black_arr[b->b[4]] + count_black_arr[b->b[5]] + count_black_arr[b->b[6]] + count_black_arr[b->b[7]];
-    int filled = 
-        count_both_arr[b->b[0]] + count_both_arr[b->b[1]] + count_both_arr[b->b[2]] + count_both_arr[b->b[3]] + 
-        count_both_arr[b->b[4]] + count_both_arr[b->b[5]] + count_both_arr[b->b[6]] + count_both_arr[b->b[7]];
-    num0 = (filled + count) >> 1;
-    num1 = (filled - count) >> 1;
+    num0 = (b->n + count) / 2;
+    num1 = (b->n - count) / 2;
     int res = (b->p ? -1 : 1) * (
         calc_pattern(phase_idx, b) + 
         eval_sur0_sur1_arr[phase_idx][b->p][sur0][sur1] + 
