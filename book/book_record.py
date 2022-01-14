@@ -43,23 +43,32 @@ def rotate_board(board):
     
     return res
 
+def count_discs(board):
+    res = 0
+    for elem in board:
+        if elem != '.':
+            res += 1
+    return res
+
 data_dict = {}
+book_depth = 40
 files = glob.glob('third_party/records3/*')
 for file in tqdm(files):
     with open(file, 'r') as f:
         data = f.read().splitlines()
     for datum in data:
         board, player, score = datum.split()
-        player = int(player)
-        score = int(score)
-        board = rotate_board(board)
-        if board in data_dict:
-            data_dict[board][0] += 1
-            data_dict[board][1] += score
-        else:
-            data_dict[board] = [1, score, player]
+        if count_discs(board) <= book_depth + 4:
+            player = int(player)
+            score = int(score)
+            board = rotate_board(board)
+            if board in data_dict:
+                data_dict[board][0] += 1
+                data_dict[board][1] += score
+            else:
+                data_dict[board] = [1, score, player]
 
-use_threshold = 500
+use_threshold = 5
 n_boards = 0
 with open('learned_data/book.txt', 'w') as f:
     for board in data_dict.keys():
