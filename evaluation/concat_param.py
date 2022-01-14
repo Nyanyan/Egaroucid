@@ -6,7 +6,8 @@ data = ''
 for i in range(15):
     for j in range(2):
         try:
-            with open('learned_data/' + str(i) + '_' + str(j) + '.txt', 'r') as f:
+            with open('learned_data/' + str(i) + '.txt', 'r') as f:
+            #with open('learned_data/' + str(i) + '_' + str(j) + '.txt', 'r') as f:
                 tmp = f.read()
                 print(i, j, len(tmp.splitlines()))
                 data += tmp
