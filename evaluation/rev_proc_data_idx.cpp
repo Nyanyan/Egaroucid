@@ -36,6 +36,15 @@ using namespace std;
 #define p39m 19682
 #define p310m 59048
 
+#define p41 4
+#define p42 16
+#define p43 64
+#define p44 256
+#define p45 1024
+#define p46 4096
+#define p47 16384
+#define p48 65536
+
 int count_black_arr[n_line];
 int count_both_arr[n_line];
 int mobility_arr[2][n_line];
@@ -253,7 +262,9 @@ inline int calc_stability(board *b, int p){
 }
 
 inline int create_canput_line(int canput_arr[], int a, int b, int c, int d, int e, int f, int g, int h){
-    return (canput_arr[a] << 7) + (canput_arr[b] << 6) + (canput_arr[c] << 5) + (canput_arr[d] << 4) + (canput_arr[e] << 3) + (canput_arr[f] << 2) + (canput_arr[g] << 1) + canput_arr[h];
+    return 
+        canput_arr[a] * p47 + canput_arr[b] * p46 + canput_arr[c] * p45 + canput_arr[d] * p44 + 
+        canput_arr[e] * p43 + canput_arr[f] * p42 + canput_arr[g] * p41 + canput_arr[h];
 }
 
 inline int create_canput_line16(int canput_arr[], int a, int b, int c, int d, int e, int f, int g, int h, int i, int j, int k, int l, int m, int n, int o, int p){
@@ -350,6 +361,11 @@ inline void calc_idx(int phase_idx, board *b, int idxes[]){
         else
             canput_arr[i] = 0;
     }
+    b->p = white;
+    for (int i = 0; i < hw2; ++i){
+        if (b->legal(i))
+            canput_arr[i] += 2;
+    }
     idxes[70] = create_canput_line(canput_arr, 0, 1, 2, 3, 4, 5, 6, 7);
     idxes[71] = create_canput_line(canput_arr, 0, 8, 16, 24, 32, 40, 48, 56);
     idxes[72] = create_canput_line(canput_arr, 7, 15, 23, 31, 39, 47, 55, 63);
@@ -367,16 +383,6 @@ inline void calc_idx(int phase_idx, board *b, int idxes[]){
     idxes[84] = create_canput_line(canput_arr, 4, 12, 20, 28, 36, 44, 52, 60);
     idxes[85] = create_canput_line(canput_arr, 32, 33, 34, 35, 36, 37, 38, 39);
     /*
-    idxes[70] = create_canput_line16(canput_arr, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15);
-    idxes[70] = create_canput_line16(canput);
-    */
-    b->p = white;
-    for (int i = 0; i < hw2; ++i){
-        if (b->legal(i))
-            canput_arr[i] = 1;
-        else
-            canput_arr[i] = 0;
-    }
     idxes[86] = create_canput_line(canput_arr, 0, 1, 2, 3, 4, 5, 6, 7);
     idxes[87] = create_canput_line(canput_arr, 0, 8, 16, 24, 32, 40, 48, 56);
     idxes[88] = create_canput_line(canput_arr, 7, 15, 23, 31, 39, 47, 55, 63);
@@ -393,6 +399,8 @@ inline void calc_idx(int phase_idx, board *b, int idxes[]){
     idxes[99] = create_canput_line(canput_arr, 3, 11, 19, 27, 35, 43, 51, 59);
     idxes[100] = create_canput_line(canput_arr, 4, 12, 20, 28, 36, 44, 52, 60);
     idxes[101] = create_canput_line(canput_arr, 32, 33, 34, 35, 36, 37, 38, 39);
+    */
+    b->p = player;
 }
 
 inline void convert_idx(string str){
@@ -501,10 +509,10 @@ inline void convert_idx(string str){
     iss >> score;
     b.translate_from_arr(arr, ai_player);
     //b.print();
-    int idxes[102];
+    int idxes[86];
     calc_idx(phase_idx, &b, idxes);
     cout << idxes[68] + idxes[69] << " " << ai_player << " ";
-    for (i = 0; i < 102; ++i)
+    for (i = 0; i < 86; ++i)
         cout << idxes[i] << " ";
     cout << score << endl;
 }

@@ -1,4 +1,4 @@
-data_size = 537492 #535444 #417346
+data_size = 797588 #537492 #535444 #417346
 zeros = ''
 for _ in range(data_size):
     zeros += '0\n'

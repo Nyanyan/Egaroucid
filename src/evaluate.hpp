@@ -12,7 +12,7 @@ using namespace std;
 #define max_canput 50
 #define max_stability 29
 #define max_stone_num 65
-#define n_canput_patterns 8
+#define n_canput_patterns 4
 #define max_evaluate_idx 59049
 
 //#define sc_w 6400
@@ -39,7 +39,15 @@ using namespace std;
 #define p38m 6560
 #define p39m 19682
 #define p310m 59048
-#define p28 256
+
+#define p41 4
+#define p42 16
+#define p43 64
+#define p44 256
+#define p45 1024
+#define p46 4096
+#define p47 16384
+#define p48 65536
 
 int mobility_arr[2][n_line];
 int mobility_arr2[2][n_line * n_line];
@@ -51,7 +59,7 @@ int eval_sur0_sur1_arr[n_phases][2][max_surround][max_surround];
 int eval_canput0_canput1_arr[n_phases][2][max_canput][max_canput];
 int eval_stab0_stab1_arr[n_phases][2][max_stability][max_stability];
 int eval_num0_num1_arr[n_phases][2][max_stone_num][max_stone_num];
-int eval_canput_pattern[n_phases][2][n_canput_patterns][p28];
+int eval_canput_pattern[n_phases][2][n_canput_patterns][p48];
 
 inline void init_evaluation_base() {
     int idx, place, b, w;
@@ -174,7 +182,7 @@ inline void init_evaluation_calc(){
                 }
             }
             for (pattern_idx = 0; pattern_idx < n_canput_patterns; ++pattern_idx){
-                for (pattern_elem = 0; pattern_elem < p28; ++pattern_elem){
+                for (pattern_elem = 0; pattern_elem < p48; ++pattern_elem){
                     getline(ifs, line);
                     eval_canput_pattern[phase_idx][player_idx][pattern_idx][pattern_elem] = stoi(line);
                 }
@@ -345,8 +353,16 @@ inline int calc_pattern(int phase_idx, const board *b){
         kite0(phase_idx, b, 0, 1, 2, 3, 4) + kite0(phase_idx, b, 7, 6, 5, 4, 3) + kite1(phase_idx, b, 0, 1, 2, 3, 4) + kite1(phase_idx, b, 7, 6, 5, 4, 3);
 }
 
+/*
 inline int create_canput_line(int canput_arr[], int a, int b, int c, int d, int e, int f, int g, int h){
     return (canput_arr[a] << 7) + (canput_arr[b] << 6) + (canput_arr[c] << 5) + (canput_arr[d] << 4) + (canput_arr[e] << 3) + (canput_arr[f] << 2) + (canput_arr[g] << 1) + canput_arr[h];
+}
+*/
+
+inline int create_canput_line(int canput_arr[], int a, int b, int c, int d, int e, int f, int g, int h){
+    return 
+        canput_arr[a] * p47 + canput_arr[b] * p46 + canput_arr[c] * p45 + canput_arr[d] * p44 + 
+        canput_arr[e] * p43 + canput_arr[f] * p42 + canput_arr[g] * p41 + canput_arr[h];
 }
 
 inline int calc_canput_pattern(int phase_idx, board *b){
@@ -359,6 +375,11 @@ inline int calc_canput_pattern(int phase_idx, board *b){
             canput_arr[i] = 1;
         else
             canput_arr[i] = 0;
+    }
+    b->p = white;
+    for (i = 0; i < hw2; ++i){
+        if (b->legal(i))
+            canput_arr[i] += 2;
     }
     res = 
         eval_canput_pattern[phase_idx][player][0][create_canput_line(canput_arr, 0, 1, 2, 3, 4, 5, 6, 7)] + 
@@ -377,6 +398,7 @@ inline int calc_canput_pattern(int phase_idx, board *b){
         eval_canput_pattern[phase_idx][player][3][create_canput_line(canput_arr, 3, 11, 19, 27, 35, 43, 51, 59)] + 
         eval_canput_pattern[phase_idx][player][3][create_canput_line(canput_arr, 4, 12, 20, 28, 36, 44, 52, 60)] + 
         eval_canput_pattern[phase_idx][player][3][create_canput_line(canput_arr, 32, 33, 34, 35, 36, 37, 38, 39)];
+    /*
     b->p = white;
     for (i = 0; i < hw2; ++i){
         if (b->legal(i))
@@ -401,6 +423,7 @@ inline int calc_canput_pattern(int phase_idx, board *b){
         eval_canput_pattern[phase_idx][player][7][create_canput_line(canput_arr, 3, 11, 19, 27, 35, 43, 51, 59)] + 
         eval_canput_pattern[phase_idx][player][7][create_canput_line(canput_arr, 4, 12, 20, 28, 36, 44, 52, 60)] + 
         eval_canput_pattern[phase_idx][player][7][create_canput_line(canput_arr, 32, 33, 34, 35, 36, 37, 38, 39)];
+    */
     b->p = player;
     return res;
 }
