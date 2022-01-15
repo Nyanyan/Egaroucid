@@ -23,14 +23,14 @@
 
 
 /* smoothing */
-#define USE_MID_SMOOTH true
+#define USE_MID_SMOOTH false
 
 
 
 /* multi threading*/
 
 // multi thread
-#define USE_MULTI_THREAD true
+#define USE_MULTI_THREAD false
 
 
 

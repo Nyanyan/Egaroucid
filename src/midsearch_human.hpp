@@ -83,12 +83,8 @@ inline bool mpc_lower(board *b, bool skipped, int depth, int alpha, double t){
 
 int nega_alpha(board *b, bool skipped, int depth, int alpha, int beta){
     ++searched_nodes;
-    if (depth == 0){
-        if (b->n < hw2)
-            return mid_evaluate(b);
-        else
-            return end_evaluate(b);
-    }
+    if (depth == 0)
+        return mid_evaluate(b);
     #if USE_MID_SC
         if (stability_cut(b, &alpha, &beta))
             return alpha;
@@ -127,9 +123,6 @@ int nega_alpha(board *b, bool skipped, int depth, int alpha, int beta){
         if (b->legal(cell)){
             passed = false;
             b->move(cell, &nb);
-            //if (depth == 1)
-            //    g = (-nega_alpha(&nb, false, depth - 1, -beta, -alpha) + nv) / 2;
-            //else
             g = -nega_alpha(&nb, false, depth - 1, -beta, -alpha);
             if (beta <= g)
                 return g;
