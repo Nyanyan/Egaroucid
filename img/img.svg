@@ -36,9 +36,9 @@
      inkscape:snap-center="true"
      inkscape:snap-text-baseline="true"
      inkscape:snap-page="true"
-     inkscape:zoom="1.4142136"
-     inkscape:cx="-749.17963"
-     inkscape:cy="1287.995"
+     inkscape:zoom="2.0000001"
+     inkscape:cx="145.25"
+     inkscape:cy="1327.25"
      inkscape:window-width="2560"
      inkscape:window-height="1521"
      inkscape:window-x="-9"
@@ -209,22 +209,32 @@
      inkscape:groupmode="layer"
      id="layer1">
     <rect
-       style="fill:#249972;fill-opacity:1;fill-rule:evenodd;stroke-width:0.0559872"
-       id="rect31-6-8-0"
-       width="63.445"
-       height="63.445309"
-       x="-160.116"
-       y="309.14774"
-       inkscape:export-filename="C:\Users\yaman\Desktop\tmp\egaroucid_logo_256.png"
-       inkscape:export-xdpi="90.42205"
-       inkscape:export-ydpi="90.42205" />
-    <rect
        style="fill:#249972;fill-opacity:1;fill-rule:evenodd;stroke-width:0.0634586"
        id="rect31-6-8-0-2"
        width="71.911667"
        height="71.912018"
        x="-164.34933"
        y="304.97812"
+       inkscape:export-filename="C:\Users\yaman\Desktop\tmp\egaroucid_logo_256.png"
+       inkscape:export-xdpi="90.42205"
+       inkscape:export-ydpi="90.42205" />
+    <rect
+       style="fill:#249972;fill-opacity:1;fill-rule:evenodd;stroke-width:0.0634586"
+       id="rect31-6-8-0-2-6"
+       width="71.911667"
+       height="71.912018"
+       x="-68.883438"
+       y="307.35168"
+       inkscape:export-filename="C:\Users\yaman\Desktop\tmp\egaroucid_logo_256_2.png"
+       inkscape:export-xdpi="90.42205"
+       inkscape:export-ydpi="90.42205" />
+    <rect
+       style="fill:#249972;fill-opacity:1;fill-rule:evenodd;stroke-width:0.0559872"
+       id="rect31-6-8-0"
+       width="63.445"
+       height="63.445309"
+       x="-160.116"
+       y="309.14774"
        inkscape:export-filename="C:\Users\yaman\Desktop\tmp\egaroucid_logo_256.png"
        inkscape:export-xdpi="90.42205"
        inkscape:export-ydpi="90.42205" />
@@ -628,5 +638,174 @@
        rx="15.091578"
        ry="15.091309"
        transform="scale(-1)" />
+    <circle
+       style="fill:#000000;fill-opacity:1;stroke-width:0.13234"
+       id="path1004-5-1-1-8-5"
+       cx="22.491434"
+       cy="-332.71872"
+       inkscape:export-filename="C:\Users\yaman\Desktop\tmp\egaroucid_logo_256_2.png"
+       inkscape:export-xdpi="90.42205"
+       inkscape:export-ydpi="90.42205"
+       transform="scale(-1)"
+       r="12.5" />
+    <ellipse
+       style="fill:#ffffff;fill-opacity:1;stroke-width:0.159776"
+       id="path1004-5-1-1-8-7"
+       cx="140.0405"
+       cy="-352.51727"
+       inkscape:export-filename="C:\Users\yaman\Desktop\tmp\egaroucid_logo_256.png"
+       inkscape:export-xdpi="90.42205"
+       inkscape:export-ydpi="90.42205"
+       rx="15.091578"
+       ry="15.091309"
+       transform="scale(-1)" />
+    <path
+       id="path1166"
+       style="fill:#000000;fill-opacity:1;stroke-width:1.54203;stroke-linejoin:bevel;paint-order:markers fill stroke"
+       d="m -62.599569,332.71897 h 7.4998 a 12.499999,12.499999 0 0 1 12.5,-12.50001 v -7.50031 a 19.999999,19.999999 0 0 0 -19.9998,20.00032 z"
+       inkscape:export-filename="C:\Users\yaman\Desktop\tmp\egaroucid_logo_256_2.png"
+       inkscape:export-xdpi="90.42205"
+       inkscape:export-ydpi="90.42205" />
+    <path
+       id="path1166-1"
+       style="fill:#ffffff;fill-opacity:1;stroke-width:1.54203;stroke-linejoin:bevel;paint-order:markers fill stroke"
+       d="m -22.491435,312.71891 v 7.4998 a 12.499999,12.499999 0 0 1 12.5000103,12.5 h 7.5003097 a 19.999999,19.999999 0 0 0 -20.00032,-19.9998 z"
+       inkscape:export-filename="C:\Users\yaman\Desktop\tmp\egaroucid_logo_256_2.png"
+       inkscape:export-xdpi="90.42205"
+       inkscape:export-ydpi="90.42205" />
+    <path
+       id="path1166-1-1"
+       style="fill:#ffffff;fill-opacity:1;stroke-width:1.54203;stroke-linejoin:bevel;paint-order:markers fill stroke"
+       d="m -2.491375,352.71851 h -7.4997997 a 12.499999,12.499999 0 0 1 -12.5000003,12.50001 v 7.50031 a 19.999999,19.999999 0 0 0 19.9998,-20.00032 z"
+       inkscape:export-filename="C:\Users\yaman\Desktop\tmp\egaroucid_logo_256_2.png"
+       inkscape:export-xdpi="90.42205"
+       inkscape:export-ydpi="90.42205" />
+    <path
+       id="path1166-2"
+       style="fill:#000000;fill-opacity:1;stroke-width:1.54203;stroke-linejoin:bevel;paint-order:markers fill stroke"
+       d="m -42.599509,352.71877 v -7.4998 a 12.499999,12.499999 0 0 1 -12.50001,-12.5 h -7.50031 a 19.999999,19.999999 0 0 0 20.00032,19.9998 z"
+       inkscape:export-filename="C:\Users\yaman\Desktop\tmp\egaroucid_logo_256_2.png"
+       inkscape:export-xdpi="90.42205"
+       inkscape:export-ydpi="90.42205" />
+    <path
+       id="path1166-9"
+       style="fill:#000000;fill-opacity:1;stroke-width:1.54203;stroke-linejoin:bevel;paint-order:markers fill stroke"
+       d="m -42.599509,372.71857 v -7.4998 a 12.499999,12.499999 0 0 1 -12.50001,-12.5 h -7.50031 a 19.999999,19.999999 0 0 0 20.00032,19.9998 z"
+       inkscape:export-filename="C:\Users\yaman\Desktop\tmp\egaroucid_logo_256_2.png"
+       inkscape:export-xdpi="90.42205"
+       inkscape:export-ydpi="90.42205" />
+    <path
+       id="path1166-0"
+       style="fill:#000000;fill-opacity:1;stroke-width:1.54203;stroke-linejoin:bevel;paint-order:markers fill stroke"
+       d="m -62.599569,352.71903 h 7.4998 a 12.499999,12.499999 0 0 1 12.5,-12.50001 v -7.50031 a 19.999999,19.999999 0 0 0 -19.9998,20.00032 z"
+       inkscape:export-filename="C:\Users\yaman\Desktop\tmp\egaroucid_logo_256_2.png"
+       inkscape:export-xdpi="90.42205"
+       inkscape:export-ydpi="90.42205" />
+    <rect
+       style="fill:#ffffff;fill-opacity:1;stroke-width:1;stroke-linejoin:bevel;paint-order:markers fill stroke"
+       id="rect2175"
+       width="7.5000496"
+       height="19.9998"
+       x="-9.9914265"
+       y="332.71872"
+       inkscape:export-filename="C:\Users\yaman\Desktop\tmp\egaroucid_logo_256_2.png"
+       inkscape:export-xdpi="90.42205"
+       inkscape:export-ydpi="90.42205" />
+    <rect
+       style="fill:#ffffff;fill-opacity:1;stroke-width:1;stroke-linejoin:bevel;paint-order:markers fill stroke"
+       id="rect2286"
+       width="10.054168"
+       height="7.4997787"
+       x="-32.545601"
+       y="312.7189"
+       inkscape:export-filename="C:\Users\yaman\Desktop\tmp\egaroucid_logo_256_2.png"
+       inkscape:export-xdpi="90.42205"
+       inkscape:export-ydpi="90.42205" />
+    <rect
+       style="fill:#000000;fill-opacity:1;stroke-width:1;stroke-linejoin:bevel;paint-order:markers fill stroke"
+       id="rect2286-4"
+       width="10.054168"
+       height="7.4997787"
+       x="-42.59977"
+       y="312.7189"
+       inkscape:export-filename="C:\Users\yaman\Desktop\tmp\egaroucid_logo_256_2.png"
+       inkscape:export-xdpi="90.42205"
+       inkscape:export-ydpi="90.42205" />
+    <rect
+       style="fill:#ffffff;fill-opacity:1;stroke-width:1;stroke-linejoin:bevel;paint-order:markers fill stroke"
+       id="rect2286-1"
+       width="10.054168"
+       height="7.4997787"
+       x="-32.545341"
+       y="365.21878"
+       inkscape:export-filename="C:\Users\yaman\Desktop\tmp\egaroucid_logo_256_2.png"
+       inkscape:export-xdpi="90.42205"
+       inkscape:export-ydpi="90.42205" />
+    <rect
+       style="fill:#000000;fill-opacity:1;stroke-width:1;stroke-linejoin:bevel;paint-order:markers fill stroke"
+       id="rect2286-4-7"
+       width="10.054168"
+       height="7.4997787"
+       x="-42.59951"
+       y="365.21878"
+       inkscape:export-filename="C:\Users\yaman\Desktop\tmp\egaroucid_logo_256_2.png"
+       inkscape:export-xdpi="90.42205"
+       inkscape:export-ydpi="90.42205" />
+    <circle
+       style="fill:#ffffff;fill-opacity:1;stroke-width:0.13234"
+       id="path1004-5-1-1-8-5-0"
+       cx="42.59951"
+       cy="-352.71878"
+       inkscape:export-filename="C:\Users\yaman\Desktop\tmp\egaroucid_logo_256_2.png"
+       inkscape:export-xdpi="90.42205"
+       inkscape:export-ydpi="90.42205"
+       transform="scale(-1)"
+       r="12.5" />
+    <rect
+       style="fill:#249972;fill-opacity:1;fill-rule:evenodd;stroke-width:0.0634586"
+       id="rect31-6-8-0-2-6-6"
+       width="71.911667"
+       height="71.912018"
+       x="26.913713"
+       y="305.2663"
+       inkscape:export-filename="C:\Users\yaman\Desktop\tmp\egaroucid_logo_256_2.png"
+       inkscape:export-xdpi="90.4216"
+       inkscape:export-ydpi="90.4216" />
+    <circle
+       style="fill:#000000;fill-opacity:1;stroke-width:0.13234"
+       id="path1004-5-1-1-8-5-4"
+       cx="-72.923782"
+       cy="-331.22202"
+       inkscape:export-filename="C:\Users\yaman\Desktop\tmp\egaroucid_logo_256_2.png"
+       inkscape:export-xdpi="90.4216"
+       inkscape:export-ydpi="90.4216"
+       transform="scale(-1)"
+       r="12.5" />
+    <path
+       id="path1166-19"
+       style="fill:#000000;fill-opacity:1;stroke-width:5.82815;stroke-linejoin:bevel;paint-order:markers fill stroke"
+       d="M 199.61719 1176.2715 A 75.590547 75.590547 0 0 0 124.02734 1251.8633 A 75.590547 75.590547 0 0 0 134.18164 1289.6582 A 75.590547 75.590547 0 0 0 124.02734 1327.4531 A 75.590547 75.590547 0 0 0 199.61914 1403.043 L 237.61914 1403.043 L 237.61914 1374.6973 L 199.61914 1374.6973 A 47.244091 47.244091 0 0 1 152.375 1327.4531 L 152.37305 1327.4531 A 47.244091 47.244091 0 0 1 154.76758 1312.6836 A 75.590547 75.590547 0 0 0 199.61914 1327.4531 L 199.61914 1299.1074 A 47.244091 47.244091 0 0 1 171.31641 1289.6602 A 47.244091 47.244091 0 0 1 199.61719 1280.2109 L 199.61719 1251.8633 A 75.590547 75.590547 0 0 0 154.76758 1266.6328 A 47.244091 47.244091 0 0 1 152.375 1251.8633 L 152.37305 1251.8633 A 47.244091 47.244091 0 0 1 199.61719 1204.6191 L 237.61719 1204.6191 L 237.61719 1176.2734 L 199.61719 1176.2734 L 199.61719 1176.2715 z "
+       transform="scale(0.26458333)"
+       inkscape:export-filename="C:\Users\yaman\Desktop\tmp\egaroucid_logo_256_2.png"
+       inkscape:export-xdpi="90.4216"
+       inkscape:export-ydpi="90.4216" />
+    <path
+       id="path1166-1-4"
+       style="fill:#ffffff;fill-opacity:1;stroke-width:5.82815;stroke-linejoin:bevel;paint-order:markers fill stroke"
+       d="M 237.61719 1176.2734 L 237.61719 1204.6191 L 275.61719 1204.6191 A 47.244091 47.244091 0 0 1 322.86133 1251.8633 L 322.86133 1327.4531 L 322.86328 1327.4531 A 47.244091 47.244091 0 0 1 275.61914 1374.6973 L 237.61914 1374.6973 L 237.61914 1403.043 L 275.61914 1403.043 L 275.61914 1403.0449 A 75.590547 75.590547 0 0 0 351.20898 1327.4531 L 351.20898 1251.8633 A 75.590547 75.590547 0 0 0 275.61719 1176.2734 L 237.61719 1176.2734 z "
+       transform="scale(0.26458333)"
+       inkscape:export-filename="C:\Users\yaman\Desktop\tmp\egaroucid_logo_256_2.png"
+       inkscape:export-xdpi="90.4216"
+       inkscape:export-ydpi="90.4216" />
+    <circle
+       style="fill:#ffffff;fill-opacity:1;stroke-width:0.13234"
+       id="path1004-5-1-1-8-5-0-2"
+       cx="-52.815704"
+       cy="-351.22208"
+       inkscape:export-filename="C:\Users\yaman\Desktop\tmp\egaroucid_logo_256_2.png"
+       inkscape:export-xdpi="90.4216"
+       inkscape:export-ydpi="90.4216"
+       transform="scale(-1)"
+       r="12.5" />
   </g>
 </svg>
