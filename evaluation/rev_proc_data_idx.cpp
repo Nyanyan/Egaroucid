@@ -256,6 +256,14 @@ inline int create_canput_line(int canput_arr[], int a, int b, int c, int d, int 
     return (canput_arr[a] << 7) + (canput_arr[b] << 6) + (canput_arr[c] << 5) + (canput_arr[d] << 4) + (canput_arr[e] << 3) + (canput_arr[f] << 2) + (canput_arr[g] << 1) + canput_arr[h];
 }
 
+inline int create_canput_line16(int canput_arr[], int a, int b, int c, int d, int e, int f, int g, int h, int i, int j, int k, int l, int m, int n, int o, int p){
+    return 
+        (canput_arr[a] << 15) + (canput_arr[b] << 14) + (canput_arr[c] << 13) + (canput_arr[d] << 12) + 
+        (canput_arr[e] << 11) + (canput_arr[f] << 10) + (canput_arr[g] << 9) + (canput_arr[h] << 8) + 
+        (canput_arr[i] << 7) + (canput_arr[j] << 6) + (canput_arr[k] << 5) + (canput_arr[l] << 4) + 
+        (canput_arr[m] << 3) + (canput_arr[n] << 2) + (canput_arr[o] << 1) + canput_arr[p];
+}
+
 inline void calc_idx(int phase_idx, board *b, int idxes[]){
     idxes[0] = b->b[1];
     idxes[1] = b->b[6];
@@ -358,6 +366,10 @@ inline void calc_idx(int phase_idx, board *b, int idxes[]){
     idxes[83] = create_canput_line(canput_arr, 3, 11, 19, 27, 35, 43, 51, 59);
     idxes[84] = create_canput_line(canput_arr, 4, 12, 20, 28, 36, 44, 52, 60);
     idxes[85] = create_canput_line(canput_arr, 32, 33, 34, 35, 36, 37, 38, 39);
+    /*
+    idxes[70] = create_canput_line16(canput_arr, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15);
+    idxes[70] = create_canput_line16(canput);
+    */
     b->p = white;
     for (int i = 0; i < hw2; ++i){
         if (b->legal(i))
