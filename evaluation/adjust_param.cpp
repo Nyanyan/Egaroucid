@@ -13,7 +13,7 @@ using namespace std;
 #define n_phases 15
 #define phase_n_stones 4
 #define n_patterns 16
-#define n_eval (n_patterns + 4)
+#define n_eval (n_patterns + 4 + 8)
 #define max_surround 80
 #define max_canput 50
 #define max_stability 29
@@ -33,14 +33,16 @@ int sa_phase, sa_player;
 #define p39 19683
 #define p310 59049
 
-#define step 128
+#define p28 256
+
+#define step 256
 #define sc_w (step * hw2)
 
 #define n_data 30000000
 
-#define n_raw_params 70
+#define n_raw_params 102
 
-#define beta 0.001
+#define beta 0.002
 unsigned long long hour = 0;
 unsigned long long minute = 5;
 unsigned long long second = 0;
@@ -48,7 +50,7 @@ unsigned long long second = 0;
 double alpha[n_eval][max_evaluate_idx];
 
 const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10, 10, 10, 10};
-const int eval_sizes[n_eval] = {p38, p38, p38, p35, p36, p37, p38, p310, p310, p310, p310, p39, p310, p310, p310, p310, max_surround * max_surround, max_canput * max_canput, max_stability * max_stability, max_stone_num * max_stone_num};
+const int eval_sizes[n_eval] = {p38, p38, p38, p35, p36, p37, p38, p310, p310, p310, p310, p39, p310, p310, p310, p310, max_surround * max_surround, max_canput * max_canput, max_stability * max_stability, max_stone_num * max_stone_num, p28, p28, p28, p28, p28, p28, p28, p28};
 double eval_arr[n_phases][n_eval][max_evaluate_idx];
 int test_data[n_data / n_phases][n_raw_params];
 double test_labels[n_data / n_phases];
@@ -58,7 +60,7 @@ vector<int> test_memo[n_eval][max_evaluate_idx];
 vector<double> test_scores, pre_calc_scores;
 unordered_set<int> used_idxes[n_eval];
 vector<int> used_idxes_vector[n_eval];
-int rev_idxes[n_patterns][max_evaluate_idx];
+int rev_idxes[n_eval][max_evaluate_idx];
 
 
 inline unsigned long long tim(){
@@ -207,6 +209,8 @@ void input_test_data(int strt){
             used_idxes[17].emplace(calc_canput0_canput1(test_data[nums]));
             used_idxes[18].emplace(calc_stab0_stab1(test_data[nums]));
             used_idxes[19].emplace(calc_num0_num1(test_data[nums]));
+            for (i = 0; i < 32; ++i)
+                used_idxes[20 + i / 4].emplace(test_data[nums][70 + i]);
             test_labels[nums] = score * step;
             for (i = 0; i < 62; ++i)
                 test_memo[pattern_nums[i]][test_data[nums][i]].push_back(nums);
@@ -214,6 +218,8 @@ void input_test_data(int strt){
             test_memo[17][calc_canput0_canput1(test_data[nums])].push_back(nums);
             test_memo[18][calc_stab0_stab1(test_data[nums])].push_back(nums);
             test_memo[19][calc_num0_num1(test_data[nums])].push_back(nums);
+            for (i = 0; i < 32; ++i)
+                test_memo[20 + i / 4][test_data[nums][70 + i]].push_back(nums);
             test_scores.push_back(0);
             pre_calc_scores.push_back(0);
             /*
@@ -350,7 +356,39 @@ inline double calc_score(int phase, int i){
         eval_arr[phase][16][calc_sur0_sur1(test_data[i])] + 
         eval_arr[phase][17][calc_canput0_canput1(test_data[i])] + 
         eval_arr[phase][18][calc_stab0_stab1(test_data[i])] + 
-        eval_arr[phase][19][calc_num0_num1(test_data[i])];
+        eval_arr[phase][19][calc_num0_num1(test_data[i])] + 
+        eval_arr[phase][20][test_data[i][70]] + 
+        eval_arr[phase][20][test_data[i][71]] + 
+        eval_arr[phase][20][test_data[i][72]] + 
+        eval_arr[phase][20][test_data[i][73]] + 
+        eval_arr[phase][21][test_data[i][74]] + 
+        eval_arr[phase][21][test_data[i][75]] + 
+        eval_arr[phase][21][test_data[i][76]] + 
+        eval_arr[phase][21][test_data[i][77]] + 
+        eval_arr[phase][22][test_data[i][78]] + 
+        eval_arr[phase][22][test_data[i][79]] + 
+        eval_arr[phase][22][test_data[i][80]] + 
+        eval_arr[phase][22][test_data[i][81]] + 
+        eval_arr[phase][23][test_data[i][82]] + 
+        eval_arr[phase][23][test_data[i][83]] + 
+        eval_arr[phase][23][test_data[i][84]] + 
+        eval_arr[phase][23][test_data[i][85]] + 
+        eval_arr[phase][24][test_data[i][86]] + 
+        eval_arr[phase][24][test_data[i][87]] + 
+        eval_arr[phase][24][test_data[i][88]] + 
+        eval_arr[phase][24][test_data[i][89]] + 
+        eval_arr[phase][25][test_data[i][90]] + 
+        eval_arr[phase][25][test_data[i][91]] + 
+        eval_arr[phase][25][test_data[i][92]] + 
+        eval_arr[phase][25][test_data[i][93]] + 
+        eval_arr[phase][26][test_data[i][94]] + 
+        eval_arr[phase][26][test_data[i][95]] + 
+        eval_arr[phase][26][test_data[i][96]] + 
+        eval_arr[phase][26][test_data[i][97]] + 
+        eval_arr[phase][27][test_data[i][98]] + 
+        eval_arr[phase][27][test_data[i][99]] + 
+        eval_arr[phase][27][test_data[i][100]] + 
+        eval_arr[phase][27][test_data[i][101]];
     /*
     if (res > 0)
         res += step / 2;
@@ -448,6 +486,9 @@ inline int calc_rev_idx(int pattern_idx, int pattern_size, int idx){
         res += p32 * calc_pop(idx, 4, pattern_size);
         res += p31 * calc_pop(idx, 5, pattern_size);
         res += calc_pop(idx, 6, pattern_size);
+    } else if (pattern_idx >= n_patterns + 4){
+        for (int i = 0; i < hw; ++i)
+            res += ((idx >> i) & 1) << (hw_m1 - i);
     }
     return res;
 }
@@ -481,7 +522,7 @@ inline void next_step(){
         pre_calc_scores[i] = calc_score(sa_phase, i);
     for (pattern = 0; pattern < n_eval; ++pattern){
         for (const int &idx: used_idxes_vector[pattern]){
-            if (pattern < n_patterns){
+            if (pattern < n_patterns || n_patterns + 4 <= pattern){
                 rev_idx = rev_idxes[pattern][idx];
                 if (idx < rev_idx){
                     err = scoring_next_step(pattern, idx) + scoring_next_step(pattern, rev_idx);
@@ -521,7 +562,7 @@ void sd(unsigned long long tl){
 
 void init(){
     int i, j;
-    for (i = 0; i < n_patterns; ++i){
+    for (i = 0; i < n_eval; ++i){
         for (j = 0; j < eval_sizes[i]; ++j)
             rev_idxes[i][j] = calc_rev_idx(i, pattern_sizes[i], j);
     }
@@ -540,7 +581,7 @@ int main(int argc, char *argv[]){
     init();
     initialize_param();
     //output_param_onephase();
-    input_param_onephase((string)(argv[3]));
+    //input_param_onephase((string)(argv[3]));
     input_test_data(0);
 
     sd(second * 1000);

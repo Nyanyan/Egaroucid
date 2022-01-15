@@ -252,6 +252,10 @@ inline int calc_stability(board *b, int p){
         stability_corner_arr[p][b->b[0]] + stability_corner_arr[p][b->b[7]];
 }
 
+inline int create_canput_line(int canput_arr[], int a, int b, int c, int d, int e, int f, int g, int h){
+    return (canput_arr[a] << 7) + (canput_arr[b] << 6) + (canput_arr[c] << 5) + (canput_arr[d] << 4) + (canput_arr[e] << 3) + (canput_arr[f] << 2) + (canput_arr[g] << 1) + canput_arr[h];
+}
+
 inline void calc_idx(int phase_idx, board *b, int idxes[]){
     idxes[0] = b->b[1];
     idxes[1] = b->b[6];
@@ -329,6 +333,54 @@ inline void calc_idx(int phase_idx, board *b, int idxes[]){
         count_both_arr[b->b[4]] + count_both_arr[b->b[5]] + count_both_arr[b->b[6]] + count_both_arr[b->b[7]];
     idxes[68] = (filled + count) / 2;
     idxes[69] = (filled - count) / 2;
+    int player = b->p;
+    int canput_arr[hw2];
+    b->p = black;
+    for (int i = 0; i < hw2; ++i){
+        if (b->legal(i))
+            canput_arr[i] = 1;
+        else
+            canput_arr[i] = 0;
+    }
+    idxes[70] = create_canput_line(canput_arr, 0, 1, 2, 3, 4, 5, 6, 7);
+    idxes[71] = create_canput_line(canput_arr, 0, 8, 16, 24, 32, 40, 48, 56);
+    idxes[72] = create_canput_line(canput_arr, 7, 15, 23, 31, 39, 47, 55, 63);
+    idxes[73] = create_canput_line(canput_arr, 56, 57, 58, 59, 60, 61, 62, 63);
+    idxes[74] = create_canput_line(canput_arr, 8, 9, 10, 11, 12, 13, 14, 15);
+    idxes[75] = create_canput_line(canput_arr, 1, 9, 17, 25, 33, 41, 49, 57);
+    idxes[76] = create_canput_line(canput_arr, 6, 14, 22, 30, 38, 46, 54, 62);
+    idxes[77] = create_canput_line(canput_arr, 48, 49, 50, 51, 52, 53, 54, 55);
+    idxes[78] = create_canput_line(canput_arr, 16, 17, 18, 19, 20, 21, 22, 23);
+    idxes[79] = create_canput_line(canput_arr, 2, 10, 18, 26, 34, 42, 50, 58);
+    idxes[80] = create_canput_line(canput_arr, 5, 13, 21, 29, 37, 45, 53, 61);
+    idxes[81] = create_canput_line(canput_arr, 40, 41, 42, 43, 44, 45, 46, 47);
+    idxes[82] = create_canput_line(canput_arr, 24, 25, 26, 27, 28, 29, 30, 31);
+    idxes[83] = create_canput_line(canput_arr, 3, 11, 19, 27, 35, 43, 51, 59);
+    idxes[84] = create_canput_line(canput_arr, 4, 12, 20, 28, 36, 44, 52, 60);
+    idxes[85] = create_canput_line(canput_arr, 32, 33, 34, 35, 36, 37, 38, 39);
+    b->p = white;
+    for (int i = 0; i < hw2; ++i){
+        if (b->legal(i))
+            canput_arr[i] = 1;
+        else
+            canput_arr[i] = 0;
+    }
+    idxes[86] = create_canput_line(canput_arr, 0, 1, 2, 3, 4, 5, 6, 7);
+    idxes[87] = create_canput_line(canput_arr, 0, 8, 16, 24, 32, 40, 48, 56);
+    idxes[88] = create_canput_line(canput_arr, 7, 15, 23, 31, 39, 47, 55, 63);
+    idxes[89] = create_canput_line(canput_arr, 56, 57, 58, 59, 60, 61, 62, 63);
+    idxes[90] = create_canput_line(canput_arr, 8, 9, 10, 11, 12, 13, 14, 15);
+    idxes[91] = create_canput_line(canput_arr, 1, 9, 17, 25, 33, 41, 49, 57);
+    idxes[92] = create_canput_line(canput_arr, 6, 14, 22, 30, 38, 46, 54, 62);
+    idxes[93] = create_canput_line(canput_arr, 48, 49, 50, 51, 52, 53, 54, 55);
+    idxes[94] = create_canput_line(canput_arr, 16, 17, 18, 19, 20, 21, 22, 23);
+    idxes[95] = create_canput_line(canput_arr, 2, 10, 18, 26, 34, 42, 50, 58);
+    idxes[96] = create_canput_line(canput_arr, 5, 13, 21, 29, 37, 45, 53, 61);
+    idxes[97] = create_canput_line(canput_arr, 40, 41, 42, 43, 44, 45, 46, 47);
+    idxes[98] = create_canput_line(canput_arr, 24, 25, 26, 27, 28, 29, 30, 31);
+    idxes[99] = create_canput_line(canput_arr, 3, 11, 19, 27, 35, 43, 51, 59);
+    idxes[100] = create_canput_line(canput_arr, 4, 12, 20, 28, 36, 44, 52, 60);
+    idxes[101] = create_canput_line(canput_arr, 32, 33, 34, 35, 36, 37, 38, 39);
 }
 
 inline void convert_idx(string str){
@@ -437,10 +489,10 @@ inline void convert_idx(string str){
     iss >> score;
     b.translate_from_arr(arr, ai_player);
     //b.print();
-    int idxes[70];
+    int idxes[102];
     calc_idx(phase_idx, &b, idxes);
     cout << idxes[68] + idxes[69] << " " << ai_player << " ";
-    for (i = 0; i < 70; ++i)
+    for (i = 0; i < 102; ++i)
         cout << idxes[i] << " ";
     cout << score << endl;
 }
@@ -452,7 +504,7 @@ int main(){
     int t = 0;
 
     cerr << "=";
-    ifstream ifs("records3_1.txt");
+    ifstream ifs("records3_2.txt");
     if (ifs.fail()){
         cerr << "evaluation file not exist" << endl;
         exit(1);
