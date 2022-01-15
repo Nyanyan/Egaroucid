@@ -17,7 +17,7 @@
     </head>
     <body>
         <div class="title"><a href='../index.html'>オセロ研究支援AIアプリ Egaroucid</a> 技術資料</div>
-        <p>ここに書いた内容はかなり専門的な内容です。オセロAI初心者の方はぜひ<a href='https://note.com/nyanyan_cubetech/m/m54104c8d2f12' target='_blank'>オセロAIの教科書</a>を先にお読みください。</p>
+        <p>ここに書いた内容はかなり高度です。オセロAI初心者の方はぜひ<a href='https://note.com/nyanyan_cubetech/m/m54104c8d2f12' target='_blank'>オセロAIの教科書</a>を先にお読みください。</p>
         <div id="board">
             <div class="sub_title">ボードの実装</div>
             <p>オセロソフトのボードに関するデータ構造はビットボードが主流ですが、Egaroucidでは完全インデックス化を用いています。</p>
@@ -28,7 +28,7 @@
             <div class="sub_sub_title">アルゴリズム</div>
             <p>探索アルゴリズムにはMTD-f法を使っています。Null Window Search(NWS)は置換表つきNegaalpha法を用いています。</p>
             <p>置換表は自前実装のハッシュテーブルを使っていて、minimax値の上限と下限が両方保持されています。Egaroucidの特徴は、常に2つの置換表を保持しているところです。<br>
-            1つは通常の現在探索している深さですでに探索したノードのminimax値の上限/加減を格納しておくもの、もう1つは前回の探索(深さが少ないもの)の結果を格納するものです。<br>
+            1つは通常の現在探索している深さですでに探索したノードのminimax値の上限/下限を格納しておくもの、もう1つは前回の探索(深さが少ないもの)の結果を格納するものです。<br>
             Egaroucidでは一定よりも探索深さが深い場合、反復深化しています。そのときmove orderingに前回の探索の結果を使うためにこのようなことをしています。</p>
             <div class="sub_sub_title">枝刈り</div>
             <p>枝刈りは後ろ向きなもの(minimax値が厳密に求まる)と前向きなもの(minimax値が厳密には求まらない)があります。Egaroucidでは、後ろ向き枝刈りとしてalpha-beta枝刈りと置換表によるもの、前向きな枝刈りとしてMulti Prob Cut(MPC)を使用しています。<br>
