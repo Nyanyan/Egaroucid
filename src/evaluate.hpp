@@ -368,7 +368,8 @@ inline int create_canput_line(int canput_arr[], int a, int b, int c, int d, int 
 inline int calc_canput_pattern(int phase_idx, board *b){
     int res;
     int canput_arr[hw2];
-    int player = b->p, i;
+    int player = b->p;
+    int i;
     b->p = black;
     for (i = 0; i < hw2; ++i){
         if (b->legal(i))
@@ -381,50 +382,25 @@ inline int calc_canput_pattern(int phase_idx, board *b){
         if (b->legal(i))
             canput_arr[i] += 2;
     }
-    res = 
-        eval_canput_pattern[phase_idx][player][0][create_canput_line(canput_arr, 0, 1, 2, 3, 4, 5, 6, 7)] + 
-        eval_canput_pattern[phase_idx][player][0][create_canput_line(canput_arr, 0, 8, 16, 24, 32, 40, 48, 56)] + 
-        eval_canput_pattern[phase_idx][player][0][create_canput_line(canput_arr, 7, 15, 23, 31, 39, 47, 55, 63)] + 
-        eval_canput_pattern[phase_idx][player][0][create_canput_line(canput_arr, 56, 57, 58, 59, 60, 61, 62, 63)] + 
-        eval_canput_pattern[phase_idx][player][1][create_canput_line(canput_arr, 8, 9, 10, 11, 12, 13, 14, 15)] + 
-        eval_canput_pattern[phase_idx][player][1][create_canput_line(canput_arr, 1, 9, 17, 25, 33, 41, 49, 57)] + 
-        eval_canput_pattern[phase_idx][player][1][create_canput_line(canput_arr, 6, 14, 22, 30, 38, 46, 54, 62)] + 
-        eval_canput_pattern[phase_idx][player][1][create_canput_line(canput_arr, 48, 49, 50, 51, 52, 53, 54, 55)] + 
-        eval_canput_pattern[phase_idx][player][2][create_canput_line(canput_arr, 16, 17, 18, 19, 20, 21, 22, 23)] + 
-        eval_canput_pattern[phase_idx][player][2][create_canput_line(canput_arr, 2, 10, 18, 26, 34, 42, 50, 58)] + 
-        eval_canput_pattern[phase_idx][player][2][create_canput_line(canput_arr, 5, 13, 21, 29, 37, 45, 53, 61)] + 
-        eval_canput_pattern[phase_idx][player][2][create_canput_line(canput_arr, 40, 41, 42, 43, 44, 45, 46, 47)] + 
-        eval_canput_pattern[phase_idx][player][3][create_canput_line(canput_arr, 24, 25, 26, 27, 28, 29, 30, 31)] + 
-        eval_canput_pattern[phase_idx][player][3][create_canput_line(canput_arr, 3, 11, 19, 27, 35, 43, 51, 59)] + 
-        eval_canput_pattern[phase_idx][player][3][create_canput_line(canput_arr, 4, 12, 20, 28, 36, 44, 52, 60)] + 
-        eval_canput_pattern[phase_idx][player][3][create_canput_line(canput_arr, 32, 33, 34, 35, 36, 37, 38, 39)];
-    /*
-    b->p = white;
-    for (i = 0; i < hw2; ++i){
-        if (b->legal(i))
-            canput_arr[i] = 1;
-        else
-            canput_arr[i] = 0;
-    }
-    res += 
-        eval_canput_pattern[phase_idx][player][4][create_canput_line(canput_arr, 0, 1, 2, 3, 4, 5, 6, 7)] + 
-        eval_canput_pattern[phase_idx][player][4][create_canput_line(canput_arr, 0, 8, 16, 24, 32, 40, 48, 56)] + 
-        eval_canput_pattern[phase_idx][player][4][create_canput_line(canput_arr, 7, 15, 23, 31, 39, 47, 55, 63)] + 
-        eval_canput_pattern[phase_idx][player][4][create_canput_line(canput_arr, 56, 57, 58, 59, 60, 61, 62, 63)] + 
-        eval_canput_pattern[phase_idx][player][5][create_canput_line(canput_arr, 8, 9, 10, 11, 12, 13, 14, 15)] + 
-        eval_canput_pattern[phase_idx][player][5][create_canput_line(canput_arr, 1, 9, 17, 25, 33, 41, 49, 57)] + 
-        eval_canput_pattern[phase_idx][player][5][create_canput_line(canput_arr, 6, 14, 22, 30, 38, 46, 54, 62)] + 
-        eval_canput_pattern[phase_idx][player][5][create_canput_line(canput_arr, 48, 49, 50, 51, 52, 53, 54, 55)] + 
-        eval_canput_pattern[phase_idx][player][6][create_canput_line(canput_arr, 16, 17, 18, 19, 20, 21, 22, 23)] + 
-        eval_canput_pattern[phase_idx][player][6][create_canput_line(canput_arr, 2, 10, 18, 26, 34, 42, 50, 58)] + 
-        eval_canput_pattern[phase_idx][player][6][create_canput_line(canput_arr, 5, 13, 21, 29, 37, 45, 53, 61)] + 
-        eval_canput_pattern[phase_idx][player][6][create_canput_line(canput_arr, 40, 41, 42, 43, 44, 45, 46, 47)] + 
-        eval_canput_pattern[phase_idx][player][7][create_canput_line(canput_arr, 24, 25, 26, 27, 28, 29, 30, 31)] + 
-        eval_canput_pattern[phase_idx][player][7][create_canput_line(canput_arr, 3, 11, 19, 27, 35, 43, 51, 59)] + 
-        eval_canput_pattern[phase_idx][player][7][create_canput_line(canput_arr, 4, 12, 20, 28, 36, 44, 52, 60)] + 
-        eval_canput_pattern[phase_idx][player][7][create_canput_line(canput_arr, 32, 33, 34, 35, 36, 37, 38, 39)];
-    */
     b->p = player;
+    //b->board_canput(canput_arr);
+    res = 
+        eval_canput_pattern[phase_idx][b->p][0][create_canput_line(canput_arr, 0, 1, 2, 3, 4, 5, 6, 7)] + 
+        eval_canput_pattern[phase_idx][b->p][0][create_canput_line(canput_arr, 0, 8, 16, 24, 32, 40, 48, 56)] + 
+        eval_canput_pattern[phase_idx][b->p][0][create_canput_line(canput_arr, 7, 15, 23, 31, 39, 47, 55, 63)] + 
+        eval_canput_pattern[phase_idx][b->p][0][create_canput_line(canput_arr, 56, 57, 58, 59, 60, 61, 62, 63)] + 
+        eval_canput_pattern[phase_idx][b->p][1][create_canput_line(canput_arr, 8, 9, 10, 11, 12, 13, 14, 15)] + 
+        eval_canput_pattern[phase_idx][b->p][1][create_canput_line(canput_arr, 1, 9, 17, 25, 33, 41, 49, 57)] + 
+        eval_canput_pattern[phase_idx][b->p][1][create_canput_line(canput_arr, 6, 14, 22, 30, 38, 46, 54, 62)] + 
+        eval_canput_pattern[phase_idx][b->p][1][create_canput_line(canput_arr, 48, 49, 50, 51, 52, 53, 54, 55)] + 
+        eval_canput_pattern[phase_idx][b->p][2][create_canput_line(canput_arr, 16, 17, 18, 19, 20, 21, 22, 23)] + 
+        eval_canput_pattern[phase_idx][b->p][2][create_canput_line(canput_arr, 2, 10, 18, 26, 34, 42, 50, 58)] + 
+        eval_canput_pattern[phase_idx][b->p][2][create_canput_line(canput_arr, 5, 13, 21, 29, 37, 45, 53, 61)] + 
+        eval_canput_pattern[phase_idx][b->p][2][create_canput_line(canput_arr, 40, 41, 42, 43, 44, 45, 46, 47)] + 
+        eval_canput_pattern[phase_idx][b->p][3][create_canput_line(canput_arr, 24, 25, 26, 27, 28, 29, 30, 31)] + 
+        eval_canput_pattern[phase_idx][b->p][3][create_canput_line(canput_arr, 3, 11, 19, 27, 35, 43, 51, 59)] + 
+        eval_canput_pattern[phase_idx][b->p][3][create_canput_line(canput_arr, 4, 12, 20, 28, 36, 44, 52, 60)] + 
+        eval_canput_pattern[phase_idx][b->p][3][create_canput_line(canput_arr, 32, 33, 34, 35, 36, 37, 38, 39)];
     return res;
 }
 

@@ -38,6 +38,7 @@ uint_fast16_t pop_digit[n_line][hw];
 uint_fast16_t pop_mid[n_line][hw][hw];
 int count_black_arr[n_line];
 int count_both_arr[n_line];
+uint_fast8_t legal_bit_arr[2][n_line];
 
 const int cell_div4[hw2] = {
     1, 1, 1, 1, 2, 2, 2, 2, 
@@ -102,6 +103,8 @@ void board_init() {
     for (idx = 0; idx < n_line; ++idx) {
         b = create_one_color(idx, 0);
         w = create_one_color(idx, 1);
+        legal_bit_arr[black][idx] = 0;
+        legal_bit_arr[white][idx] = 0;
         for (place = 0; place < hw; ++place) {
             reverse_board[idx] *= 3;
             if (1 & (b >> place))
@@ -114,15 +117,17 @@ void board_init() {
         for (place = 0; place < hw; ++place) {
             move_arr[black][idx][place][0] = move_line_half(b, w, place, 0);
             move_arr[black][idx][place][1] = move_line_half(b, w, place, 1);
-            if (move_arr[black][idx][place][0] || move_arr[black][idx][place][1])
+            if (move_arr[black][idx][place][0] || move_arr[black][idx][place][1]){
                 legal_arr[black][idx][place] = true;
-            else
+                legal_bit_arr[black][idx] |= (1 << place);
+            } else
                 legal_arr[black][idx][place] = false;
             move_arr[white][idx][place][0] = move_line_half(w, b, place, 0);
             move_arr[white][idx][place][1] = move_line_half(w, b, place, 1);
-            if (move_arr[white][idx][place][0] || move_arr[white][idx][place][1])
+            if (move_arr[white][idx][place][0] || move_arr[white][idx][place][1]){
                 legal_arr[white][idx][place] = true;
-            else
+                legal_bit_arr[white][idx] |= (1 << place);
+            } else
                 legal_arr[white][idx][place] = false;
         }
         for (place = 0; place < hw; ++place) {
@@ -372,6 +377,20 @@ class board {
                 return (sum_stones + bk_score) / 2;
             else
                 return (sum_stones - bk_score) / 2;
+        }
+
+        inline void board_canput(int canput_arr[]){
+            int i, j, mobility;
+            for (i = 0; i < hw2; ++i)
+                canput_arr[i] = 0;
+            for (i = 0; i < b_idx_num; ++i){
+                mobility = legal_bit_arr[0][this->b[i]];
+                for (j = 0; j < idx_n_cell[i]; ++j)
+                    canput_arr[global_place[i][j]] |= (mobility >> j) & 1;
+                mobility = legal_bit_arr[1][this->b[i]];
+                for (j = 0; j < idx_n_cell[i]; ++j)
+                    canput_arr[global_place[i][j]] |= ((mobility >> j) & 1) << 1;
+            }
         }
 
     private:
