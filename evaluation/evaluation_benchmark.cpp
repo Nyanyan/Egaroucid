@@ -580,7 +580,7 @@ int main(int argc, char *argv[]){
 
     calc_scores();
 
-    cerr << "phase: " << sa_phase << " player: " << sa_player << " mse: " << mse() << " mae: " << mae() << endl;
+    cout << "phase: " << sa_phase << " player: " << sa_player << " mse: " << mse() << " mae: " << mae() << endl;
 
     return 0;
 }

@@ -77,9 +77,40 @@ start depth: 10 Egaroucid plays black WDL: 20-3-18 Egaroucid plays white WDL: 24
         </div>
         <div id="evaluation">
             <div class="sub_title">評価関数の精度</div>
-            <p>評価関数の精度をmse(誤差の2乗の平均値)とmae(誤差の絶対値の平均値)で示します。</p>
-            <p>評価関数は4手ごと15フェーズに分けて別のものを使っているので、フェーズごとに結果が出ます</p>
+            <p>評価関数の精度をmse(誤差の2乗の平均値)とmae(誤差の絶対値の平均値)で示します。単位はmseなら石^2、maeなら石です。</p>
+            <p>評価関数は4手ごと15フェーズに分けて別のものを使っているので、フェーズごとに結果が出ます。フェーズをxとして、フェーズxの評価関数は4x+1から4x+4手目までに使う評価関数です。</p>
             <p>注意していただきたいのは、このデータが学習データによるものであって、専用のテストデータによるものではないことです。</p>
+            <pre><div>phase: 0 player: 0 mse: 201.774 mae: 10.033
+phase: 0 player: 1 mse: 200.75 mae: 10.0187
+phase: 1 player: 0 mse: 191.423 mae: 9.8224
+phase: 1 player: 1 mse: 189.768 mae: 9.80312
+phase: 2 player: 0 mse: 180.401 mae: 9.55445
+phase: 2 player: 1 mse: 184.736 mae: 9.69958
+phase: 3 player: 0 mse: 159.255 mae: 9.06672
+phase: 3 player: 1 mse: 153.335 mae: 8.91894
+phase: 4 player: 0 mse: 115.07 mae: 7.74221
+phase: 4 player: 1 mse: 107.866 mae: 7.49267
+phase: 5 player: 0 mse: 88.6521 mae: 6.75998
+phase: 5 player: 1 mse: 82.2838 mae: 6.52524
+phase: 6 player: 0 mse: 65.1904 mae: 5.87703
+phase: 6 player: 1 mse: 59.2688 mae: 5.62868
+phase: 7 player: 0 mse: 40.9102 mae: 4.73616
+phase: 7 player: 1 mse: 36.0507 mae: 4.46188
+phase: 8 player: 0 mse: 27.6292 mae: 3.9666
+phase: 8 player: 1 mse: 26.2444 mae: 3.86087
+phase: 9 player: 0 mse: 25.7747 mae: 3.86349
+phase: 9 player: 1 mse: 26.0684 mae: 3.89617
+phase: 10 player: 0 mse: 27.8704 mae: 4.05462
+phase: 10 player: 1 mse: 28.5024 mae: 4.10018
+phase: 11 player: 0 mse: 30.4108 mae: 4.23231
+phase: 11 player: 1 mse: 30.8652 mae: 4.25151
+phase: 12 player: 0 mse: 31.0501 mae: 4.26894
+phase: 12 player: 1 mse: 30.6181 mae: 4.24786
+phase: 13 player: 0 mse: 27.1594 mae: 3.98334
+phase: 13 player: 1 mse: 25.2779 mae: 3.83864
+phase: 14 player: 0 mse: 12.5684 mae: 2.56857
+phase: 14 player: 1 mse: 9.29446 mae: 2.12169
+            </div></pre>
         </div>
     </body>
 </html>
