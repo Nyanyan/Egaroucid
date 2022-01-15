@@ -36,9 +36,9 @@
      inkscape:snap-center="true"
      inkscape:snap-text-baseline="true"
      inkscape:snap-page="true"
-     inkscape:zoom="2.0000001"
-     inkscape:cx="145.25"
-     inkscape:cy="1327.25"
+     inkscape:zoom="1.4142136"
+     inkscape:cx="1700.2382"
+     inkscape:cy="1334.664"
      inkscape:window-width="2560"
      inkscape:window-height="1521"
      inkscape:window-x="-9"
@@ -208,6 +208,16 @@
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1">
+    <rect
+       style="fill:#249972;fill-opacity:1;stroke-width:0.683199;stroke-linejoin:bevel;paint-order:markers fill stroke"
+       id="rect986"
+       width="192"
+       height="108"
+       x="365.96249"
+       y="292.60367"
+       inkscape:export-filename="C:\Users\yaman\Desktop\tmp\eyecatch.png"
+       inkscape:export-xdpi="90.4216"
+       inkscape:export-ydpi="90.4216" />
     <rect
        style="fill:#249972;fill-opacity:1;fill-rule:evenodd;stroke-width:0.0634586"
        id="rect31-6-8-0-2"
@@ -807,5 +817,77 @@
        inkscape:export-ydpi="90.4216"
        transform="scale(-1)"
        r="12.5" />
+    <rect
+       style="fill:#249972;fill-opacity:1;fill-rule:evenodd;stroke-width:0.0634586"
+       id="rect31-6-8-0-2-6-6-8"
+       width="71.911667"
+       height="71.912018"
+       x="426.00665"
+       y="310.64813"
+       inkscape:export-filename="C:\Users\yaman\Desktop\tmp\eyecatch.png"
+       inkscape:export-xdpi="90.4216"
+       inkscape:export-ydpi="90.4216" />
+    <circle
+       style="fill:#000000;fill-opacity:1;stroke-width:0.13234"
+       id="path1004-5-1-1-8-5-4-2"
+       cx="-472.01672"
+       cy="-336.60385"
+       inkscape:export-filename="C:\Users\yaman\Desktop\tmp\eyecatch.png"
+       inkscape:export-xdpi="90.4216"
+       inkscape:export-ydpi="90.4216"
+       transform="scale(-1)"
+       r="12.5" />
+    <path
+       id="path1166-19-4"
+       style="fill:#000000;fill-opacity:1;stroke-width:1.54203;stroke-linejoin:bevel;paint-order:markers fill stroke"
+       d="m 451.90831,316.60368 a 19.999999,19.999999 0 0 0 -19.99981,20.00033 19.999999,19.999999 0 0 0 2.68666,9.9999 19.999999,19.999999 0 0 0 -2.68666,9.9999 19.999999,19.999999 0 0 0 20.00033,19.99983 h 10.05416 v -7.4998 h -10.05416 a 12.499999,12.499999 0 0 1 -12.50002,-12.50003 h -5.2e-4 a 12.499999,12.499999 0 0 1 0.63355,-3.90776 19.999999,19.999999 0 0 0 11.86697,3.90776 v -7.4998 a 12.499999,12.499999 0 0 1 -7.48843,-2.49957 12.499999,12.499999 0 0 1 7.48792,-2.50013 v -7.5003 a 19.999999,19.999999 0 0 0 -11.86646,3.90776 12.499999,12.499999 0 0 1 -0.63304,-3.90776 h -5.3e-4 a 12.499999,12.499999 0 0 1 12.50001,-12.50003 h 10.05417 v -7.4998 h -10.05417 z"
+       inkscape:export-filename="C:\Users\yaman\Desktop\tmp\eyecatch.png"
+       inkscape:export-xdpi="90.4216"
+       inkscape:export-ydpi="90.4216" />
+    <path
+       id="path1166-1-4-7"
+       style="fill:#ffffff;fill-opacity:1;stroke-width:1.54203;stroke-linejoin:bevel;paint-order:markers fill stroke"
+       d="m 461.96248,316.60418 v 7.4998 h 10.05416 a 12.499999,12.499999 0 0 1 12.50002,12.50003 v 19.9998 h 5.2e-4 a 12.499999,12.499999 0 0 1 -12.50001,12.50003 h -10.05416 v 7.4998 h 10.05416 v 0 a 19.999999,19.999999 0 0 0 19.99981,-20.00033 v -19.9998 a 19.999999,19.999999 0 0 0 -20.00032,-19.99983 z"
+       inkscape:export-filename="C:\Users\yaman\Desktop\tmp\eyecatch.png"
+       inkscape:export-xdpi="90.4216"
+       inkscape:export-ydpi="90.4216" />
+    <circle
+       style="fill:#ffffff;fill-opacity:1;stroke-width:0.13234"
+       id="path1004-5-1-1-8-5-0-2-3"
+       cx="-451.90863"
+       cy="-356.60391"
+       inkscape:export-filename="C:\Users\yaman\Desktop\tmp\eyecatch.png"
+       inkscape:export-xdpi="90.4216"
+       inkscape:export-ydpi="90.4216"
+       transform="scale(-1)"
+       r="12.5" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:10.5833px;line-height:1.25;font-family:sans-serif;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       x="392.6181"
+       y="309.57327"
+       id="text1542"
+       inkscape:export-filename="C:\Users\yaman\Desktop\tmp\eyecatch.png"
+       inkscape:export-xdpi="90.4216"
+       inkscape:export-ydpi="90.4216"><tspan
+         sodipodi:role="line"
+         id="tspan1540"
+         style="stroke-width:0.264583;fill:#ffffff;fill-opacity:1"
+         x="392.6181"
+         y="309.57327">世界最強レベルオセロAI搭載</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:10.5833px;line-height:1.25;font-family:sans-serif;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       x="409.50073"
+       y="391.20041"
+       id="text4470"
+       inkscape:export-filename="C:\Users\yaman\Desktop\tmp\eyecatch.png"
+       inkscape:export-xdpi="90.4216"
+       inkscape:export-ydpi="90.4216"><tspan
+         sodipodi:role="line"
+         id="tspan4468"
+         style="stroke-width:0.264583;fill:#ffffff;fill-opacity:1"
+         x="409.50073"
+         y="391.20041">オセロ研究支援ソフト</tspan></text>
   </g>
 </svg>
