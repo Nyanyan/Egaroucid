@@ -49,9 +49,9 @@ int sa_phase, sa_player;
 
 #define n_raw_params 86
 
-#define beta 0.0001
+#define beta 0.00001
 unsigned long long hour = 0;
-unsigned long long minute = 10;
+unsigned long long minute = 2;
 unsigned long long second = 0;
 
 double alpha[n_eval][max_evaluate_idx];
