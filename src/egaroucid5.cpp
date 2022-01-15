@@ -81,7 +81,7 @@ int main(){
         //bool pre_searched = false;
         book_value book_result;
         depth = 1;
-        end_depth = 25;
+        end_depth = 2;
     #endif
     int ai_player;
     //cin >> ai_player;
