@@ -9,15 +9,11 @@ Strong Othello AI Application based on Egaroucid4, which got 1st place in the wo
 
 <a id="application_version"></a>
 
-## アプリのインストール方法
+## アプリケーション
 
-**The main application is only in Japanese.**
+特設サイトをご覧ください。
 
-まだリリースしていません
-
-リリースからダウンロードしてzipを解凍するだけにする予定
-
-
+https://www.egaroucid-app.nyanyan.dev/
 
 
 
