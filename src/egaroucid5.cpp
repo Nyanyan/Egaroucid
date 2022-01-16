@@ -4,11 +4,12 @@
 #include "board.hpp"
 #include "book.hpp"
 #include "evaluate.hpp"
-#include "search_human.hpp"
+#include "search.hpp"
 #include "transpose_table.hpp"
-#include "midsearch_human.hpp"
-#include "endsearch_human.hpp"
+#include "midsearch.hpp"
+#include "endsearch.hpp"
 #include "book.hpp"
+#include "human_value.hpp"
 
 inline void init(){
     board_init();
@@ -17,6 +18,9 @@ inline void init(){
     evaluate_init();
     #if !MPC_MODE && !EVAL_MODE && !BOOK_MODE && USE_BOOK
         book_init();
+    #endif
+    #if !MPC_MODE && !EVAL_MODE && !BOOK_MODE
+        human_value_init();
     #endif
 }
 

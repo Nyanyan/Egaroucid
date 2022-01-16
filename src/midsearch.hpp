@@ -70,25 +70,21 @@ int nega_alpha_ordering_nomemo(board *b, bool skipped, int depth, int alpha, int
 inline bool mpc_higher(board *b, bool skipped, int depth, int beta, double t){
     int bound = beta + ceil(t * mpcsd[calc_phase_idx(b)][depth - mpc_min_depth]);
     if (bound > hw2)
-        return false;
+        bound = hw2; ////return false;
     return nega_alpha_ordering_nomemo(b, skipped, mpcd[depth], bound - search_epsilon, bound, t) >= bound;
 }
 
 inline bool mpc_lower(board *b, bool skipped, int depth, int alpha, double t){
     int bound = alpha - floor(t * mpcsd[calc_phase_idx(b)][depth - mpc_min_depth]);
     if (bound < -hw2)
-        return false;
+        bound = -hw2; //return false;
     return nega_alpha_ordering_nomemo(b, skipped, mpcd[depth], bound, bound + search_epsilon, t) <= bound;
 }
 
 int nega_alpha(board *b, bool skipped, int depth, int alpha, int beta){
     ++searched_nodes;
-    if (depth == 0){
-        if (b->n < hw2)
-            return mid_evaluate(b);
-        else
-            return end_evaluate(b);
-    }
+    if (depth == 0)
+        return mid_evaluate(b);
     #if USE_MID_SC
         if (stability_cut(b, &alpha, &beta))
             return alpha;
@@ -127,9 +123,6 @@ int nega_alpha(board *b, bool skipped, int depth, int alpha, int beta){
         if (b->legal(cell)){
             passed = false;
             b->move(cell, &nb);
-            //if (depth == 1)
-            //    g = (-nega_alpha(&nb, false, depth - 1, -beta, -alpha) + nv) / 2;
-            //else
             g = -nega_alpha(&nb, false, depth - 1, -beta, -alpha);
             if (beta <= g)
                 return g;
@@ -374,7 +367,8 @@ int nega_scout(board *b, bool skipped, const int depth, int alpha, int beta, boo
 }
 
 int mtd(board *b, bool skipped, int depth, int l, int u, bool use_mpc, double use_mpct){
-    int g = mid_evaluate(b), beta;
+    int g, beta;
+    g = nega_alpha(b, skipped, 5, l, u);
     while (u - l > 0){
         beta = max(l + search_epsilon, g);
         g = nega_alpha_ordering(b, skipped, depth, beta - search_epsilon, beta, true, use_mpc, use_mpct);

@@ -65,16 +65,20 @@ int nega_alpha_ordering_final_mpc(board *b, bool skipped, int depth, int alpha, 
 }
 
 inline bool mpc_higher_final(board *b, bool skipped, int depth, int beta, double t){
+    if (b->n + mpcd[depth] >= hw2 - 5)
+        return false;
     int bound = beta + ceil(t * mpcsd_final[depth - mpc_min_depth_final]);
     if (bound > hw2)
-        return false;
+        bound = hw2; //return false;
     return nega_alpha_ordering_final_mpc(b, skipped, mpcd[depth], bound - search_epsilon, bound, t) >= bound;
 }
 
 inline bool mpc_lower_final(board *b, bool skipped, int depth, int alpha, double t){
+    if (b->n + mpcd[depth] >= hw2 - 5)
+        return false;
     int bound = alpha - floor(t * mpcsd_final[depth - mpc_min_depth_final]);
     if (bound < -hw2)
-        return false;
+        bound = -hw2; //return false;
     return nega_alpha_ordering_final_mpc(b, skipped, mpcd[depth], bound, bound + search_epsilon, t) <= bound;
 }
 
@@ -844,7 +848,7 @@ int mtd_final(board *b, bool skipped, int depth, int l, int u, bool use_mpc, dou
         }
         //cerr << g << endl;
     #else
-        //cerr << l << " " << g << " " << u << endl;
+        cerr << l << " " << g << " " << u << endl;
         while (u - l > 0){
             beta = max(l + search_epsilon, g);
             g = nega_alpha_ordering_final(b, skipped, depth, beta - search_epsilon, beta, true, use_mpc, use_mpct);
@@ -852,9 +856,9 @@ int mtd_final(board *b, bool skipped, int depth, int l, int u, bool use_mpc, dou
                 u = g;
             else
                 l = g;
-            //cerr << l << " " << g << " " << u << endl;
+            cerr << l << " " << g << " " << u << endl;
         }
-        //cerr << g << endl;
+        cerr << g << endl;
     #endif
     return l;
 }
@@ -882,17 +886,17 @@ inline search_result endsearch(board b, long long strt, bool pre_searched){
     bool use_mpc = max_depth >= 21 ? true : false;
     double use_mpct = 2.5;
     if (max_depth >= 23)
-        use_mpct = 1.5;
+        use_mpct = 1.7;
     if (max_depth >= 25)
-        use_mpct = 1.1;
+        use_mpct = 1.3;
     if (max_depth >= 27)
-        use_mpct = 1.0;
+        use_mpct = 1.1;
     if (max_depth >= 29)
         use_mpct = 0.9;
     if (max_depth >= 31)
-        use_mpct = 0.8;
-    if (max_depth >= 33)
         use_mpct = 0.7;
+    if (max_depth >= 33)
+        use_mpct = 0.6;
     cerr << "start final search depth " << max_depth << endl;
     alpha = -hw2;
     beta = hw2;
@@ -952,7 +956,7 @@ inline search_result endsearch(board b, long long strt, bool pre_searched){
     swap(transpose_table.now, transpose_table.prev);
     policy = tmp_policy;
     value = alpha;
-    cerr << "final depth: " << max_depth + 1 << " time: " << tim() - strt << " policy: " << policy << " value: " << alpha << " nodes: " << searched_nodes << " nps: " << (long long)searched_nodes * 1000 / max(1LL, tim() - final_strt) << " get: " << transpose_table.hash_get << " reg: " << transpose_table.hash_reg << endl;
+    cerr << "final depth: " << max_depth << " time: " << tim() - strt << " policy: " << policy << " value: " << alpha << " nodes: " << searched_nodes << " nps: " << (long long)searched_nodes * 1000 / max(1LL, tim() - final_strt) << " get: " << transpose_table.hash_get << " reg: " << transpose_table.hash_reg << endl;
     search_result res;
     res.policy = policy;
     res.value = value;

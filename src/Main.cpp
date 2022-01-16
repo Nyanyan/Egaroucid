@@ -13,10 +13,11 @@
 #include "book.hpp"
 #include "evaluate.hpp"
 #include "transpose_table.hpp"
-#include "search_human.hpp"
-#include "midsearch_human.hpp"
-#include "endsearch_human.hpp"
+#include "search.hpp"
+#include "midsearch.hpp"
+#include "endsearch.hpp"
 #include "book.hpp"
+#include "human_value.hpp"
 #include "joseki.hpp"
 #include "umigame.hpp"
 #if USE_MULTI_THREAD
@@ -51,6 +52,7 @@ inline void init() {
 		book_init();
 	#endif
 	joseki_init();
+	human_value_init();
 }
 
 inline void create_vacant_lst(board bd, int bd_arr[]) {
@@ -272,10 +274,12 @@ future<umigame_result> get_umigame(board b) {
 void Main() {
 	Size window_size = Size(1000, 700);
 	Window::Resize(window_size);
+	Window::SetStyle(WindowStyle::Sizable);
+	Scene::SetResizeMode(ResizeMode::Keep);
 	Window::SetTitle(U"Egaroucid5.0");
 	System::SetTerminationTriggers(UserAction::NoAction);
 	Scene::SetBackground(Palette::White);
-	//Console.open();
+	Console.open();
 	constexpr int offset_y = 150;
 	constexpr int offset_x = 60;
 	constexpr int cell_hw = 50;
@@ -383,6 +387,11 @@ void Main() {
 		book_accept_double = stof(line);
 	}
 	ifs.close();
+	depth = round(depth_double);
+	end_depth = round(end_depth_double);
+	cell_value_depth = round(cell_value_depth_double);
+	cell_value_end_depth = round(cell_value_end_depth_double);
+	book_accept = round(book_accept_double);
 
 	const Font pulldown_font(20);
 	const Array<String> player_items = { U"人間先手", U"人間後手", U"人間同士", U"AI同士"};
@@ -414,17 +423,10 @@ void Main() {
 	}
 
 	while (System::Update()) {
-		if (!initialized) {
-			if (future_initialize.wait_for(seconds0) == future_status::ready) {
-				future_initialize.get();
-				initialized = true;
-			}
-			font50(U"AI初期化中…").draw(0, 0, font_color);
-			continue;
-		}
-
-		if (System::GetUserActions() & UserAction::CloseButtonClicked && !book_learning)
+		if (System::GetUserActions() & UserAction::CloseButtonClicked) {
+			book_learning = false;
 			closing = true;
+		}
 		if (closing){
 			if (book_changed) {
 				font50(U"bookが変更されました。保存しますか？").draw(0, 0, font_color);
@@ -480,6 +482,15 @@ void Main() {
 				ofs.close();
 				System::Exit();
 			}
+			continue;
+		}
+
+		if (!initialized) {
+			if (future_initialize.wait_for(seconds0) == future_status::ready) {
+				future_initialize.get();
+				initialized = true;
+			}
+			font50(U"AI初期化中…").draw(0, 0, font_color);
 			continue;
 		}
 
@@ -964,10 +975,12 @@ void Main() {
 									legals[coord].draw(Palette::Blue);
 							}
 							if (umigame_state[coord] == 0) {
-								board moved_bd = bd.move(coord);
-								if (umigame_default && book.get(&moved_bd) != -inf) {
-									future_umigame[coord] = get_umigame(moved_bd);
-									umigame_state[coord] = 1;
+								if (hint_default) {
+									board moved_bd = bd.move(coord);
+									if (umigame_default && book.get(&moved_bd) != -inf) {
+										future_umigame[coord] = get_umigame(moved_bd);
+										umigame_state[coord] = 1;
+									}
 								}
 							}
 							else if (umigame_state[coord] == 1) {
@@ -977,7 +990,7 @@ void Main() {
 								}
 							}
 							else if (umigame_state[coord] == 2) {
-								if (umigame_default) {
+								if (hint_default) {
 									int umigame_sx = offset_x + (coord % hw) * cell_hw + 2;
 									int umigame_sy = offset_y + (coord / hw) * cell_hw + 32;
 									RectF black_rect = umigame_font(umigame_values[coord].b).region(umigame_sx, umigame_sy);
