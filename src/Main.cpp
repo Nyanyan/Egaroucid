@@ -263,7 +263,7 @@ void learn_book(board bd, int depth, int end_depth, board *bd_ptr, double *value
 void Main() {
 	Size window_size = Size(1000, 700);
 	Window::Resize(window_size);
-	Window::SetTitle(U"Egaroucid5");
+	Window::SetTitle(U"Egaroucid5.0");
 	System::SetTerminationTriggers(UserAction::NoAction);
 	Scene::SetBackground(Palette::White);
 	//Console.open();

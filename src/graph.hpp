@@ -18,6 +18,7 @@ class Graph {
 		Font font;
 	private:
 		vector<pair<int, int>> nodes;
+		vector<int> show_nodes;
 		int dx;
 		int dy;
 		int y_max;
@@ -25,6 +26,11 @@ class Graph {
 	public:
 		void draw() {
 			sort(nodes.begin(), nodes.end());
+			show_nodes.clear();
+			for (int i = 0; i < (int)nodes.size() - 1; ++i)
+				show_nodes.emplace_back(round((double)(nodes[i].second + nodes[i + 1].second) / 2.0));
+			if (nodes.size())
+				show_nodes.emplace_back(nodes[nodes.size() - 1].second);
 			calc_range();
 			dy = size_y / (y_max - y_min);
 			dx = size_x / 60;
@@ -41,11 +47,11 @@ class Graph {
 				font(x).draw(sx + x * dx, sy - 2 * font_size);
 				Line{sx + x * dx, sy, sx + x * dx, sy + size_y}.draw(1, graph_color);
 			}
-			for (pair<int, int> yx : nodes)
-				Circle{sx + yx.first * dx, sy + y_max * dy - yx.second * dy, 3}.draw(graph_color);
+			for (int i = 0; i < (int)nodes.size(); ++i)
+				Circle{sx + nodes[i].first * dx, sy + y_max * dy - show_nodes[i] * dy, 3}.draw(graph_color);
 			if (nodes.size() >= 2) {
 				for (int i = 0; i < (int)nodes.size() - 1; ++i) {
-					Line(sx + nodes[i].first * dx, sy + y_max * dy - nodes[i].second * dy, sx + nodes[i + 1].first * dx, sy + y_max * dy - nodes[i + 1].second * dy).draw(4, graph_color);
+					Line(sx + nodes[i].first * dx, sy + y_max * dy - show_nodes[i] * dy, sx + nodes[i + 1].first * dx, sy + y_max * dy - show_nodes[i + 1] * dy).draw(4, graph_color);
 				}
 			}
 		}
@@ -66,9 +72,9 @@ class Graph {
 		void calc_range() {
 			y_min = 1000;
 			y_max = -1000;
-			for (pair<int, int> yx : nodes) {
-				y_min = min(y_min, yx.second);
-				y_max = max(y_max, yx.second);
+			for (const int &val: show_nodes) {
+				y_min = min(y_min, val);
+				y_max = max(y_max, val);
 			}
 			y_min = min(y_min, 0);
 			y_max = max(y_max, 0);
