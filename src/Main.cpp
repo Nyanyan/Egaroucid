@@ -507,6 +507,7 @@ void Main() {
 		SimpleGUI::CheckBox(value_default, U"評価値", Point(250, 0), 120, !book_learning);
 		SimpleGUI::CheckBox(hint_default, U"ヒント", Point(355, 0), 120, !book_learning);
 		SimpleGUI::CheckBox(human_hint_default, U"人間的ヒント", Point(305, 35), 170, hint_default && !book_learning);
+		SimpleGUI::CheckBox(umigame_default, U"うみがめ数", Point(160, 35), 150, hint_default && !book_learning);
 
 		cell_value_thinking = false;
 		for (int i = 0; i < hw2; ++i)
@@ -987,8 +988,6 @@ void Main() {
 									white_rect.draw(Palette::White);
 									umigame_font(umigame_values[coord].w).draw(umigame_sx, umigame_sy, Palette::Green);
 								}
-								else
-									legals[coord].draw(Palette::Blue);
 							}
 							if (cells[coord].leftClicked() && !changing_book && !finished && n_moves == board_history.size() - 1 + board_start_moves) {
 								bd = bd.move(coord);
