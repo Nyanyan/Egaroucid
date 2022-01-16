@@ -594,9 +594,9 @@ void Main() {
 				for (int x = 0; x < hw; ++x) {
 					int coord = proc_coord(y, x);
 					if (bd_arr[coord] == black)
-						stones[coord].draw(Palette::Black, font_color);
+						stones[coord].draw(Palette::Black);
 					else if (bd_arr[coord] == white)
-						stones[coord].draw(Palette::White, font_color);
+						stones[coord].draw(Palette::White);
 				}
 			}
 			playing = false;
@@ -672,7 +672,7 @@ void Main() {
 				analysys_start = true;
 			} else if (future_val.wait_for(seconds0) == future_status::ready) {
 				int val = (board_history[analysys_n_moves].p ? -1 : 1) * round((double)future_val.get().value);
-				graph.push(analysys_n_moves + start_moves, val);
+				graph.push(analysys_n_moves, val);
 				++analysys_n_moves;
 				analysys_start = false;
 			}
