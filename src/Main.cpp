@@ -316,9 +316,10 @@ void Main() {
 	umigame_result umigame_values[hw2];
 	int cell_values[hw2];
 	int cell_depth[hw2];
-	Font cell_value_font(18);
-	Font human_value_font(15);
-	Font cell_depth_font(11);
+	Font cell_value_font(18, Typeface::Bold);
+	Font human_value_font(15, Typeface::Bold);
+	Font cell_depth_font(10);
+	Font umigame_font(12, Typeface::Heavy);
 	Font coord_ui(40);
 	Font score_ui(40);
 	Font record_ui(20);
@@ -952,18 +953,19 @@ void Main() {
 										color = Palette::Cyan;
 									cell_value_font(cell_values[coord]).draw(offset_x + (coord % hw) * cell_hw + 2, offset_y + (coord / hw) * cell_hw, color);
 									if (cell_depth[coord] == final_define_value)
-										cell_depth_font(cell_depth[coord], U"%").draw(offset_x + (coord % hw) * cell_hw + 2, offset_y + (coord / hw) * cell_hw + 21, color);
+										cell_depth_font(cell_depth[coord], U"%").draw(offset_x + (coord % hw) * cell_hw + 2, offset_y + (coord / hw) * cell_hw + 19, color);
 									else if (cell_depth[coord] == book_define_value)
-										cell_depth_font(U"book").draw(offset_x + (coord % hw) * cell_hw + 2, offset_y + (coord / hw) * cell_hw + 21, color);
+										cell_depth_font(U"book").draw(offset_x + (coord % hw) * cell_hw + 2, offset_y + (coord / hw) * cell_hw + 19, color);
 									else
-										cell_depth_font(cell_depth[coord], U"手").draw(offset_x + (coord % hw) * cell_hw + 2, offset_y + (coord / hw) * cell_hw + 21, color);
+										cell_depth_font(cell_depth[coord], U"手").draw(offset_x + (coord % hw) * cell_hw + 2, offset_y + (coord / hw) * cell_hw + 19, color);
 								}
 								else
 									legals[coord].draw(Palette::Blue);
 							}
 							if (umigame_state[coord] == 0) {
-								if (umigame_default) {
-									future_umigame[coord] = get_umigame(bd.move(coord));
+								board moved_bd = bd.move(coord);
+								if (umigame_default && book.get(&moved_bd) != -inf) {
+									future_umigame[coord] = get_umigame(moved_bd);
 									umigame_state[coord] = 1;
 								}
 							}
@@ -975,7 +977,15 @@ void Main() {
 							}
 							else if (umigame_state[coord] == 2) {
 								if (umigame_default) {
-									cell_depth_font(umigame_values[coord].b, U":", umigame_values[coord].w).draw(offset_x + (coord % hw) * cell_hw + 2, offset_y + (coord / hw) * cell_hw + 32, Palette::White);
+									int umigame_sx = offset_x + (coord % hw) * cell_hw + 2;
+									int umigame_sy = offset_y + (coord / hw) * cell_hw + 32;
+									RectF black_rect = umigame_font(umigame_values[coord].b).region(umigame_sx, umigame_sy);
+									black_rect.draw(Palette::Black);
+									umigame_font(umigame_values[coord].b).draw(umigame_sx, umigame_sy, Palette::Green);
+									umigame_sx += black_rect.size.x;
+									RectF white_rect = umigame_font(umigame_values[coord].w).region(umigame_sx, umigame_sy);
+									white_rect.draw(Palette::White);
+									umigame_font(umigame_values[coord].w).draw(umigame_sx, umigame_sy, Palette::Green);
 								}
 								else
 									legals[coord].draw(Palette::Blue);
