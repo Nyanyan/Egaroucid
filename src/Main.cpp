@@ -18,6 +18,7 @@
 #include "endsearch_human.hpp"
 #include "book.hpp"
 #include "joseki.hpp"
+#include "umigame.hpp"
 #if USE_MULTI_THREAD
 	#include "thread_pool.hpp"
 #endif
@@ -260,6 +261,14 @@ void learn_book(board bd, int depth, int end_depth, board *bd_ptr, double *value
 	//book_learning = false;
 }
 
+umigame_result get_umigame_p(board b) {
+	return umigame.get(&b);
+}
+
+future<umigame_result> get_umigame(board b) {
+	return async(launch::async, get_umigame_p, b);
+}
+
 void Main() {
 	Size window_size = Size(1000, 700);
 	Window::Resize(window_size);
@@ -298,13 +307,17 @@ void Main() {
 	future<search_result> future_result;
 	search_result result;
 	future<cell_value> future_cell_values[hw2];
+	future<umigame_result> future_umigame[hw2];
 	future<cell_value> future_val;
 	bool analysys_start = false;
 	int analysys_n_moves = 1000;
 	int cell_value_state[hw2];
+	int umigame_state[hw2];
+	umigame_result umigame_values[hw2];
 	int cell_values[hw2];
 	int cell_depth[hw2];
 	Font cell_value_font(18);
+	Font human_value_font(15);
 	Font cell_depth_font(11);
 	Font coord_ui(40);
 	Font score_ui(40);
@@ -328,7 +341,7 @@ void Main() {
 	int change_book_coord = -1;
 	ai_player = 0;
 	int player_default = 0;
-	bool hint_default = true, human_hint_default = true, value_default = true;
+	bool hint_default = true, human_hint_default = true, value_default = true, umigame_default = true;
 	book_accept = 0;
 	String record = U"";
 	vector<board> board_history;
@@ -355,6 +368,8 @@ void Main() {
 		human_hint_default = stoi(line);
 		getline(ifs, line);
 		value_default = stoi(line);
+		getline(ifs, line);
+		umigame_default = stoi(line);
 		getline(ifs, line);
 		depth_double = stof(line);
 		getline(ifs, line);
@@ -392,8 +407,10 @@ void Main() {
 		cells << Rect{ (offset_x + (i % hw) * cell_size.x), (offset_y + (i / hw) * cell_size.y), cell_size};
 	}
 
-	for (int i = 0; i < hw2; ++i)
+	for (int i = 0; i < hw2; ++i) {
 		cell_value_state[i] = 0;
+		umigame_state[i] = 0;
+	}
 
 	while (System::Update()) {
 		if (!initialized) {
@@ -418,6 +435,7 @@ void Main() {
 						ofs << hint_default << endl;
 						ofs << human_hint_default << endl;
 						ofs << value_default << endl;
+						ofs << umigame_default << endl;
 						ofs << depth << endl;
 						ofs << end_depth << endl;
 						ofs << cell_value_depth << endl;
@@ -434,6 +452,7 @@ void Main() {
 						ofs << hint_default << endl;
 						ofs << human_hint_default << endl;
 						ofs << value_default << endl;
+						ofs << umigame_default << endl;
 						ofs << depth << endl;
 						ofs << end_depth << endl;
 						ofs << cell_value_depth << endl;
@@ -450,6 +469,7 @@ void Main() {
 					ofs << hint_default << endl;
 					ofs << human_hint_default << endl;
 					ofs << value_default << endl;
+					ofs << umigame_default << endl;
 					ofs << depth << endl;
 					ofs << end_depth << endl;
 					ofs << cell_value_depth << endl;
@@ -649,8 +669,10 @@ void Main() {
 			playing = false;
 		} else if (input_board_state == 2) {
 			input_board_record_ui(U"取得成功").draw(625, 605, font_color);
-			for (int i = 0; i < hw2; ++i)
+			for (int i = 0; i < hw2; ++i) {
 				cell_value_state[i] = 0;
+				umigame_state[i] = 0;
+			}
 			for (int y = 0; y < hw; ++y) {
 				for (int x = 0; x < hw; ++x) {
 					int coord = proc_coord(y, x);
@@ -702,8 +724,10 @@ void Main() {
 				book_learning = false;
 				book_learning_button = false;
 				book_learn_future.get();
-				for (int i = 0; i < hw2; ++i)
+				for (int i = 0; i < hw2; ++i) {
 					cell_value_state[i] = 0;
+					umigame_state[i] = 0;
+				}
 				human_value_state = 0;
 			}
 		}
@@ -810,8 +834,10 @@ void Main() {
 				bd.translate_from_arr(bd_arr, black);
 			}
 			create_vacant_lst(bd, bd_arr);
-			for (int i = 0; i < hw2; ++i)
+			for (int i = 0; i < hw2; ++i) {
 				cell_value_state[i] = 0;
+				umigame_state[i] = 0;
+			}
 			human_value_state = 0;
 			change_book_value_str.clear();
 			changing_book = false;
@@ -854,8 +880,10 @@ void Main() {
 					bd = board_history[n_moves - board_start_moves];
 					bd.translate_to_arr(bd_arr);
 					create_vacant_lst(bd, bd_arr);
-					for (int i = 0; i < hw2; ++i)
+					for (int i = 0; i < hw2; ++i) {
 						cell_value_state[i] = 0;
+						umigame_state[i] = 0;
+					}
 					human_value_state = 0;
 					max_cell_value = -inf;
 				}
@@ -865,8 +893,10 @@ void Main() {
 					bd = board_history[n_moves - board_start_moves];
 					bd.translate_to_arr(bd_arr);
 					create_vacant_lst(bd, bd_arr);
-					for (int i = 0; i < hw2; ++i)
+					for (int i = 0; i < hw2; ++i) {
 						cell_value_state[i] = 0;
+						umigame_state[i] = 0;
+					}
 					human_value_state = 0;
 					max_cell_value = -inf;
 				}
@@ -931,6 +961,25 @@ void Main() {
 								else
 									legals[coord].draw(Palette::Blue);
 							}
+							if (umigame_state[coord] == 0) {
+								if (umigame_default) {
+									future_umigame[coord] = get_umigame(bd.move(coord));
+									umigame_state[coord] = 1;
+								}
+							}
+							else if (umigame_state[coord] == 1) {
+								if (future_umigame[coord].wait_for(seconds0) == future_status::ready) {
+									umigame_values[coord] = future_umigame[coord].get();
+									umigame_state[coord] = 2;
+								}
+							}
+							else if (umigame_state[coord] == 2) {
+								if (umigame_default) {
+									cell_depth_font(umigame_values[coord].b, U":", umigame_values[coord].w).draw(offset_x + (coord % hw) * cell_hw + 2, offset_y + (coord / hw) * cell_hw + 32, Palette::White);
+								}
+								else
+									legals[coord].draw(Palette::Blue);
+							}
 							if (cells[coord].leftClicked() && !changing_book && !finished && n_moves == board_history.size() - 1 + board_start_moves) {
 								bd = bd.move(coord);
 								++n_moves;
@@ -948,8 +997,10 @@ void Main() {
 								if (finished)
 									finish_moves = n_moves;
 								board_history.push_back(bd);
-								for (int i = 0; i < hw2; ++i)
+								for (int i = 0; i < hw2; ++i) {
 									cell_value_state[i] = 0;
+									umigame_state[i] = 0;
+								}
 								saved = 0;
 								copied = false;
 							} else if (cells[coord].rightClicked()) {
@@ -1028,7 +1079,7 @@ void Main() {
 					int rank = 0;
 					Color color = Palette::Cyan;
 					for (const search_result_pv elem : human_values) {
-						cell_value_font(rank + 1).draw(offset_x + (elem.policy % hw) * cell_hw + 27, offset_y + (elem.policy / hw) * cell_hw + 25, color);
+						human_value_font(rank + 1).draw(offset_x + (elem.policy % hw) * cell_hw + 32, offset_y + (elem.policy / hw) * cell_hw + 28, color);
 						++rank;
 						color = Palette::White;
 					}

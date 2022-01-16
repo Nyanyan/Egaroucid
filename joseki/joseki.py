@@ -17,17 +17,18 @@ for name, record in data:
         if not o.check_legal():
             o.player = 1 - o.player
             o.check_legal()
-        s = ''
-        for i in range(hw):
-            for j in range(hw):
-                if o.grid[i][j] == 0:
-                    s += '0'
-                elif o.grid[i][j] == 1:
-                    s += '1'
-                else:
-                    s += '.'
-        if not (s in joseki.keys()):
-            joseki[s] = name
+    s = ''
+    for i in range(hw):
+        for j in range(hw):
+            if o.grid[i][j] == 0:
+                s += '0'
+            elif o.grid[i][j] == 1:
+                s += '1'
+            else:
+                s += '.'
+    #if not (s in joseki.keys()):
+    #    joseki[s] = name
+    joseki[s] = name
 
 print(len(joseki))
 with open('learned_data/joseki.txt', 'w', encoding='utf-8') as f:
