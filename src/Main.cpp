@@ -285,7 +285,7 @@ void Main() {
 	};
 	constexpr chrono::duration<int> seconds0 = chrono::seconds(0);
 	constexpr int human_hint_sub_depth = 3;
-	constexpr int human_hint_depth = 8;
+	constexpr int human_hint_depth = 7;
 
 	future<void> future_initialize = async(launch::async, init);
 	bool initialized = false;

@@ -478,6 +478,12 @@ pair<int, vector<int>> create_principal_variation(board *b, bool skipped, int de
     int hash = (int)(b->hash() & search_hash_mask);
     int l, u;
     transpose_table.get_now(b, hash, &l, &u);
+    /*
+    if (l != u && depth > simple_mid_threshold){
+        res.first = inf;
+        return res;
+    }
+    */
     alpha = max(alpha, l);
     beta = min(beta, u);
     vector<board> nb;
@@ -542,28 +548,29 @@ inline vector<principal_variation> search_pv(board b, long long strt, int max_de
     searched_nodes = 0;
     transpose_table.hash_get = 0;
     transpose_table.hash_reg = 0;
-    bool use_mpc = max_depth >= 3 ? true : false;
+    bool use_mpc = max_depth >= 11 ? true : false;
     double use_mpct = 2.0;
-    if (max_depth >= 5)
-        use_mpct = 1.7;
-    if (max_depth >= 7)
-        use_mpct = 1.5;
-    if (max_depth >= 9)
-        use_mpct = 1.3;
-    if (max_depth >= 11)
-        use_mpct = 1.1;
     if (max_depth >= 13)
-        use_mpct = 0.8;
+        use_mpct = 1.7;
     if (max_depth >= 15)
+        use_mpct = 1.5;
+    if (max_depth >= 17)
+        use_mpct = 1.3;
+    if (max_depth >= 19)
+        use_mpct = 1.1;
+    if (max_depth >= 21)
+        use_mpct = 0.8;
+    if (max_depth >= 23)
         use_mpct = 0.6;
     for (board nnb: nb){
         transpose_table.init_now();
         transpose_table.init_prev();
-        for (int depth = min(5, max(0, max_depth - 5)); depth <= min(hw2 - b.n, max_depth - 1); ++depth){
-            transpose_table.init_now();
-            g = -mtd(&nnb, false, depth, -hw2, hw2, use_mpc, use_mpct);
-            swap(transpose_table.now, transpose_table.prev);
-        }
+        //for (int depth = min(7, max(0, max_depth - 5)); depth <= min(hw2 - b.n, max_depth - 1); ++depth){
+        //    swap(transpose_table.now, transpose_table.prev);
+        //    transpose_table.init_now();
+        //    g = -mtd(&nnb, false, depth, -hw2, hw2, use_mpc, use_mpct);
+        //}
+        g = -mtd(&nnb, false, min(hw2 - b.n, max_depth - 1), -hw2, hw2, use_mpc, use_mpct);
         principal_variation pv;
         pv.value = g;
         g = book.get(&nnb);
@@ -591,20 +598,6 @@ inline double calc_divergence_distance(board b, vector<int> pv, int divergence[6
         divergence[i] = 0;
     int g, player = b.p;
     double possibility[hw2];
-    bool use_mpc = max_depth >= 3 ? true : false;
-    double use_mpct = 2.0;
-    if (max_depth >= 5)
-        use_mpct = 1.7;
-    if (max_depth >= 7)
-        use_mpct = 1.5;
-    if (max_depth >= 9)
-        use_mpct = 1.3;
-    if (max_depth >= 11)
-        use_mpct = 1.1;
-    if (max_depth >= 13)
-        use_mpct = 0.8;
-    if (max_depth >= 15)
-        use_mpct = 0.6;
     for (const int &policy: pv){
         b = b.move(policy);
         vector<board> nb;
@@ -623,9 +616,9 @@ inline double calc_divergence_distance(board b, vector<int> pv, int divergence[6
         }
         line_distance.predict(b, possibility);
         for (board nnb: nb){
-            g = -nega_alpha(&nnb, false, max_depth, -hw2, hw2);
+            g = -nega_alpha(&nnb, false, max_depth, -search_epsilon, search_epsilon);
             if (b.p == player){
-                res += (double)g * possibility[nnb.policy];
+                res += (double)max(-1, min(1, g)) * possibility[nnb.policy];
                 if (g > 0)
                     ++divergence[0];
                 else if (g == 0)
@@ -633,7 +626,7 @@ inline double calc_divergence_distance(board b, vector<int> pv, int divergence[6
                 else if (g < 0)
                     ++divergence[2];
             } else{
-                res -= (double)g * possibility[nnb.policy];
+                res -= (double)max(-1, min(1, g)) * possibility[nnb.policy];
                 if (g > 0)
                     ++divergence[3];
                 else if (g == 0)
