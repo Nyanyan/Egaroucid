@@ -347,7 +347,9 @@ inline double calc_divergence_distance(board b, vector<int> pv, int divergence[6
         }
         line_distance.predict(b, possibility);
         for (board nnb: nb){
-            g = -nega_alpha(&nnb, false, max_depth, -search_epsilon, search_epsilon);
+            g = -book.get(&nnb);
+            if (g == inf)
+                g = -nega_alpha(&nnb, false, max_depth, -search_epsilon, search_epsilon);
             if (b.p == player){
                 res += (double)max(-1, min(1, g)) * possibility[nnb.policy];
                 if (g > 0)
