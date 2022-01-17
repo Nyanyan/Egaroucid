@@ -1002,7 +1002,7 @@ void Main() {
 								}
 							}
 							else if (umigame_state[coord] == 2) {
-								if (hint_default) {
+								if (hint_default && umigame_default) {
 									int umigame_sx = offset_x + (coord % hw) * cell_hw + 2;
 									int umigame_sy = offset_y + (coord / hw) * cell_hw + 32;
 									RectF black_rect = umigame_font(umigame_values[coord].b).region(umigame_sx, umigame_sy);
