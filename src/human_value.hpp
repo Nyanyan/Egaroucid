@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <iostream>
 #include <fstream>
 #include <math.h>
@@ -172,15 +172,20 @@ class line_distance{
             }
             // dense1 for policy
             for (j = 0; j < hw2; ++j){
-                res[j] = bias1[j];
-                for (i = 0; i < n_kernels; ++i)
-                    res[j] += dense1[j][i] * after_conv[i];
-                max_res = max(max_res, res[j]);
+                if (b.legal(j)){
+                    res[j] = bias1[j];
+                    for (i = 0; i < n_kernels; ++i)
+                        res[j] += dense1[j][i] * after_conv[i];
+                    max_res = max(max_res, res[j]);
+                } else
+                    res[j] = 0.0;
             }
             // softmax
             for (i = 0; i < hw2; ++i){
-                res[i] = exp(res[i] - max_res);
-                sum_softmax += res[i];
+                if (b.legal(i)){
+                    res[i] = exp(res[i] - max_res);
+                    sum_softmax += res[i];
+                }
             }
             for (i = 0; i < hw2; ++i)
                 res[i] /= sum_softmax;
