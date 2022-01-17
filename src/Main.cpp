@@ -43,16 +43,17 @@ struct cell_value {
 	int depth;
 };
 
-inline void init() {
+inline bool init() {
 	board_init();
 	search_init();
 	transpose_table_init();
-	evaluate_init();
-	#if !MPC_MODE && !EVAL_MODE && USE_BOOK
-		book_init();
-	#endif
+	if (!evaluate_init())
+		return false;
+	if (!book_init())
+		return false;
 	joseki_init();
-	human_value_init();
+	if (!human_value_init())
+		return false;
 }
 
 inline void create_vacant_lst(board bd, int bd_arr[]) {
@@ -279,7 +280,7 @@ void Main() {
 	Window::SetTitle(U"Egaroucid5.0");
 	System::SetTerminationTriggers(UserAction::NoAction);
 	Scene::SetBackground(Palette::White);
-	Console.open();
+	//Console.open();
 	constexpr int offset_y = 150;
 	constexpr int offset_x = 60;
 	constexpr int cell_hw = 50;
@@ -300,8 +301,8 @@ void Main() {
 	constexpr int human_hint_sub_depth = 4;
 	constexpr int human_hint_depth = 8;
 
-	future<void> future_initialize = async(launch::async, init);
-	bool initialized = false;
+	future<bool> future_initialize = async(launch::async, init);
+	bool initialized = false, initialize_failed = false;
 
 	Array<Rect> cells;
 	Array<Circle> stones, legals;
@@ -361,6 +362,8 @@ void Main() {
 	future<vector<search_result_pv>> human_value_future;
 	int human_value_state = 0;
 	vector<search_result_pv> human_values;
+
+	const Texture icon(U"resources/icon.png", TextureDesc::Mipped);
 
 	ifstream ifs("resources/settings.txt");
 	if (!ifs.fail()) {
@@ -486,11 +489,20 @@ void Main() {
 		}
 
 		if (!initialized) {
-			if (future_initialize.wait_for(seconds0) == future_status::ready) {
-				future_initialize.get();
-				initialized = true;
+			if (!initialize_failed) {
+				if (future_initialize.wait_for(seconds0) == future_status::ready) {
+					if (future_initialize.get())
+						initialized = true;
+					else
+						initialize_failed = true;
+				}
 			}
-			font50(U"AI初期化中…").draw(0, 0, font_color);
+			double scale = 500.0 / icon.width();
+			icon.scaled(scale).draw(500 - 250, 350 - 250);
+			if (!initialize_failed)
+				font50(U"AI初期化中…").draw(0, 0, font_color);
+			else
+				font50(U"AI初期化失敗\nresourcesフォルダを確認してください。").draw(0, 0, font_color);
 			continue;
 		}
 

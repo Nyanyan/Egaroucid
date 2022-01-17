@@ -48,11 +48,11 @@ class line_distance{
         double bias1[hw2];
     
     public:
-        inline void init(){
+        inline bool init(){
             ifstream ifs("resources/line_distance.txt");
             if (ifs.fail()){
                 cerr << "evaluation file not exist" << endl;
-                exit(1);
+                return false;
             }
             string line;
             int i, j, k, l, ri;
@@ -89,6 +89,7 @@ class line_distance{
                 bias1[i] = stof(line);
             }
             cerr << "line distance initialized" << endl;
+            return true;
         }
 
         inline void predict(board b, double res[hw2]){
@@ -199,8 +200,8 @@ class line_distance{
 
 line_distance line_distance;
 
-inline void human_value_init(){
-    line_distance.init();
+inline bool human_value_init(){
+    return line_distance.init();
 }
 
 

@@ -28,11 +28,11 @@ class book{
         book_node *book[book_hash_table_size];
 		int n_book;
     public:
-        void init(){
+        bool init(){
 			for (int i = 0; i < book_hash_table_size; ++i)
 				this->book[i] = NULL;
 			n_book = 0;
-            import_file("resources/book.txt");
+            return import_file("resources/book.txt");
         }
 
         inline bool import_file(string file){
@@ -161,7 +161,7 @@ class book{
             ofstream ofs("resources/book.txt");
             if (ofs.fail()){
                 cerr << "book file not exist" << endl;
-                exit(1);
+                return;
             }
             unordered_set<int> saved_idxes;
             for (int i = 0; i < book_hash_table_size; ++i){
@@ -270,12 +270,12 @@ class book{
             ifstream ifs("resources/book_backup.txt");
             if (ifs.fail()){
                 cerr << "book file not exist" << endl;
-                exit(1);
+                return;
             }
             ofstream ofs("resources/book.txt");
             if (ofs.fail()){
                 cerr << "book file not exist" << endl;
-                exit(1);
+                return;
             }
             int idx = 0;
             string book_line;
@@ -293,6 +293,6 @@ class book{
 
 book book;
 
-inline void book_init(){
-    book.init();
+bool book_init(){
+    return book.init();
 }

@@ -139,11 +139,11 @@ inline void init_evaluation_base() {
     }
 }
 
-inline void init_evaluation_calc(){
+inline bool init_evaluation_calc(){
     ifstream ifs("resources/param.txt");
     if (ifs.fail()){
         cerr << "evaluation file not exist" << endl;
-        exit(1);
+        return false;
     }
     string line;
     int phase_idx, player_idx, pattern_idx, pattern_elem, sur0, sur1, canput0, canput1, stab0, stab1, num0, num1;
@@ -190,14 +190,17 @@ inline void init_evaluation_calc(){
         }
     }
     cerr << endl;
+    return true;
 }
 
-inline void evaluate_init(){
+bool evaluate_init(){
     init_evaluation_base();
     #if !EVAL_MODE
-        init_evaluation_calc();
+        return init_evaluation_calc();
+    #else
+        return true;
     #endif
-    cerr << "evaluation function initialized" << endl;
+    //cerr << "evaluation function initialized" << endl;
 }
 
 inline int sfill5(int b){
