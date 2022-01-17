@@ -17,12 +17,12 @@ import datetime
 hw = 8
 hw2 = 64
 
-n_epochs = 50
+n_epochs = 500
 test_ratio = 0.1
 n_boards = 2
 
 kernel_size = 3
-n_kernels = 32
+n_kernels = 64
 n_residual = 2
 
 all_data = []
@@ -72,7 +72,7 @@ model = Model(inputs=inputs, outputs=yp)
 #model = load_model('learned_data/model.h5')
 model.summary()
 
-for file in trange(50, 60):
+for file in trange(40):
     collect_data(file)
 
 n_data = len(all_labels)

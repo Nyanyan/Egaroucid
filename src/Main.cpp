@@ -297,8 +297,8 @@ void Main() {
 		vacant,vacant,vacant,vacant,vacant,vacant,vacant,vacant
 	};
 	constexpr chrono::duration<int> seconds0 = chrono::seconds(0);
-	constexpr int human_hint_sub_depth = 3;
-	constexpr int human_hint_depth = 7;
+	constexpr int human_hint_sub_depth = 4;
+	constexpr int human_hint_depth = 8;
 
 	future<void> future_initialize = async(launch::async, init);
 	bool initialized = false;
@@ -1098,11 +1098,9 @@ void Main() {
 					cerr << "got human value" << endl;
 					human_value_state = 2;
 				} else if (human_value_state == 2) {
-					int rank = 0;
 					Color color = Palette::Cyan;
 					for (const search_result_pv elem : human_values) {
-						human_value_font(rank + 1).draw(offset_x + (elem.policy % hw) * cell_hw + 32, offset_y + (elem.policy / hw) * cell_hw + 28, color);
-						++rank;
+						human_value_font(round(elem.concat_value)).draw(offset_x + (elem.policy % hw) * cell_hw + 32, offset_y + (elem.policy / hw) * cell_hw + 28, color);
 						color = Palette::White;
 					}
 				}

@@ -10,7 +10,7 @@
 #include "transpose_table.hpp"
 #include "midsearch.hpp"
 
-#define n_kernels 32
+#define n_kernels 64
 #define n_board_input 2
 #define kernel_size 3
 #define n_residual 2
@@ -351,7 +351,7 @@ inline double calc_divergence_distance(board b, vector<int> pv, int divergence[6
             if (g == inf)
                 g = -nega_alpha(&nnb, false, max_depth, -search_epsilon, search_epsilon);
             if (b.p == player){
-                res += (double)max(-1, min(1, g)) * possibility[nnb.policy];
+                res += (double)max(-1, min(1, g)) * possibility[nnb.policy] / (double)nb.size();
                 if (g > 0)
                     ++divergence[0];
                 else if (g == 0)
@@ -359,7 +359,7 @@ inline double calc_divergence_distance(board b, vector<int> pv, int divergence[6
                 else if (g < 0)
                     ++divergence[2];
             } else{
-                res -= (double)max(-1, min(1, g)) * possibility[nnb.policy];
+                res -= (double)max(-1, min(1, g)) * possibility[nnb.policy] / (double)nb.size();
                 if (g > 0)
                     ++divergence[3];
                 else if (g == 0)
@@ -369,6 +369,7 @@ inline double calc_divergence_distance(board b, vector<int> pv, int divergence[6
             }
         }
     }
+    res /= (double)pv.size();
     return res;
 }
 
@@ -393,7 +394,7 @@ inline vector<search_result_pv> search_human(board b, long long strt, int max_de
         res_elem.policy = pv.policy;
         res_elem.value = pv.value;
         res_elem.line_distance = calc_divergence_distance(b, pv.pv, res_elem.divergence, sub_depth);
-        res_elem.concat_value = evaluate_human(res_elem.value, res_elem.divergence, res_elem.line_distance);
+        res_elem.concat_value = res_elem.line_distance * 10; //evaluate_human(res_elem.value, res_elem.divergence, res_elem.line_distance);
         cerr << "value: " << res_elem.value << " human value: " << res_elem.concat_value << " policy: " << res_elem.policy << endl;
         //cerr << "divergence cout: ";
         //for (int i = 0; i < 6; ++i)

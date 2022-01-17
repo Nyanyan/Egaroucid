@@ -200,7 +200,7 @@ for year in reversed(range(1977, 2019 + 1)):
         raw_data = f.read()
     games.extend([i for i in raw_data.splitlines()])
 '''
-for year in range(1977, 2020):
+for year in reversed(range(1977, 2020)):
     raw_data = ''
     with open('third_party/human_records/' + str(year) + '.csv', 'r', encoding='utf-8-sig') as f:
         raw_data = f.read()
