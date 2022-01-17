@@ -48,17 +48,19 @@ recordフォルダ
 
 ### 対局
 
+![play](https://raw.githubusercontent.com/Nyanyan/Egaroucid5/main/img/play.png)
+
 最初に手番を```人間先手/人間後手/人間同士/AI同士```から選びます。この項目は対局中に変更ができません。
 
 ヒント表示や評価値表示、読み手数、book誤差は対局中に変更できます。
 
 設定が完了したら```対局開始```ボタンを押すと対局が開始されます。
 
-
-
 <a id="depth"></a>
 
 ### 読み手数
+
+![depth](https://raw.githubusercontent.com/Nyanyan/Egaroucid5/main/img/depth.png)
 
 読み手数は```中盤N手読み/終盤N空読み```のスライドバーで設定できます。
 
@@ -104,6 +106,8 @@ recordフォルダ
 
 ### ヒント表示
 
+![hint](https://raw.githubusercontent.com/Nyanyan/Egaroucid5/main/img/hint.png)
+
 ヒント表示は局面に存在するすべての合法手に対して行われます。
 
 book登録局面の場合は評価値と```book```という表示がされます。bookに登録されていない局面はその場で何手か読んで、評価値と読み手数を表示します。ヒント表示の読み手数は```ヒント中盤N手読み/ヒント終盤N空読み```のスライドバーで設定できます。読み手数の内部仕様は上記と同じです。その手番にとって一番良い値となっている数字は青色の表示になります。
@@ -111,6 +115,8 @@ book登録局面の場合は評価値と```book```という表示がされます
 ```ヒント表示```にチェックされていると、以下の人間的人と表示、およびうみがめ数表示が選択できます。
 
 #### 人間的ヒント表示
+
+![human_value](https://raw.githubusercontent.com/Nyanyan/Egaroucid5/main/img/human_value.png)
 
 本アプリでは、通常の最終石差を推測する評価の他に、人間的な評価も表示できます。具体的には、以下の3点の総合評価です。
 
@@ -133,6 +139,8 @@ book登録局面の場合は評価値と```book```という表示がされます
 
 #### うみがめ数表示
 
+![umigame_value](https://raw.githubusercontent.com/Nyanyan/Egaroucid5/main/img/umigame_value.png)
+
 ```うみがめ数```にチェックすることでうみがめ数を表示できます。黒の背景は黒(先手)のうみがめ数、白の背景は白(後手)のうみがめ数です。
 
 うみがめ数についてはこちらを参照してください: http://blog.livedoor.jp/umigame_oth/archives/1075469317.html
@@ -142,6 +150,8 @@ book登録局面の場合は評価値と```book```という表示がされます
 <a id="value"></a>
 
 ### 評価値/グラフ表示
+
+![value](https://raw.githubusercontent.com/Nyanyan/Egaroucid5/main/img/value.png)
 
 ```評価値表示```モードにすると、**AIが手を選択した場合**に画面中央下に評価値が表示され、画面右の評価値グラフが更新されます。AIが手を選択した場合にしか評価値は表示されません。人間が打った手の評価値を表示したいときには```棋譜解析```ボタンを押してください。
 
@@ -159,6 +169,8 @@ book登録局面の場合は評価値と```book```という表示がされます
 
 ### 棋譜解析
 
+![analyze](https://raw.githubusercontent.com/Nyanyan/Egaroucid5/main/img/analyze.png)
+
 棋譜解析機能は```中盤N手読み/終盤N空読み```で設定された読み手数において棋譜のすべての手の評価値を算出し、グラフに描画します。
 
 
@@ -166,6 +178,8 @@ book登録局面の場合は評価値と```book```という表示がされます
 <a id="history"></a>
 
 ### 履歴
+
+![history](https://raw.githubusercontent.com/Nyanyan/Egaroucid5/main/img/history.png)
 
 対局中または対局終了後には、画面中央下に```<```と```>```のボタンが現れます。このボタンを押すことで、手を戻したり進めたりできます。ただし、表示される局面は閲覧専用で、そこから手を進めることはできません
 
@@ -176,6 +190,8 @@ book登録局面の場合は評価値と```book```という表示がされます
 <a id="inout"></a>
 
 ### 入出力
+
+![inout](https://raw.githubusercontent.com/Nyanyan/Egaroucid5/main/img/inout.png)
 
 画面左下のボタンは入出力に関係するボタンです。
 
@@ -257,6 +273,8 @@ bookに登録されている手から、book誤差の成約(この直下で詳�
 
 #### book誤差
 
+![book_error](https://raw.githubusercontent.com/Nyanyan/Egaroucid5/main/img/book_error.png)
+
 book誤差は、ある局面において複数の手がbookに登録されているときに有効になります。
 
 ある局面からbookに登録された手のうち、最大の評価値をX、book誤差をYとすると、「X-Y」までの評価値の手をランダムに選びます。
@@ -264,6 +282,8 @@ book誤差は、ある局面において複数の手がbookに登録されてい
 例えばある局面からA、B、Cという3つのbookに登録されている手が選べて、それぞれの評価値が1、-2、-10だったとします。このとき、book誤差が2以下であれば、Aのみが選ばれます。book誤差が3から10までなら、AかBが選ばれます。book誤差が11以上であれば、A、B、Cすべてのうちどれかが選ばれます。
 
 #### bookの手動による修正・追加
+
+![modify_book](https://raw.githubusercontent.com/Nyanyan/Egaroucid5/main/img/modify_book.png)
 
 修正したい局面にセットして、修正したいマスを右クリックします。これでbook修正・追加モードに入ります。
 
@@ -279,11 +299,15 @@ bookが変更された場合、アプリの閉じるボタンを押したとき�
 
 #### bookの自動学習
 
+![learn_book1](https://raw.githubusercontent.com/Nyanyan/Egaroucid5/main/img/learn_book1.png)
+
 まず、bookを生成し始めたい根となる局面に設定して```対局開始```ボタンを押します。または、人間同士の設定で対局を開始し、指定局面に設定してください。
 
 bookの学習には```中盤N手読み/終盤N空読み```で設定した先読み手数が使われます。学習開始後には再設定できませんので、ここで設定してください。この状態で```book学習```ボタンを押すとbookの自動生成が開始されます。
 
 学習を開始すると、新たにスライドバーが2つ出現します。```book深さ```のスライドバーは、bookとして保存する最大の深さを決定するものです。```book許容```は、評価値の絶対値がいくつ以下の局面をbookに保存するかを決定するものです。
+
+![learn_book2](https://raw.githubusercontent.com/Nyanyan/Egaroucid5/main/img/learn_book2.png)
 
 学習を開始すると```book学習```ボタンが```学習停止```ボタンに変わります。```学習停止```ボタンを押すといつでも学習を停止できます。
 
@@ -349,6 +373,8 @@ bookファイルは1行が1つの盤面と対応していて、各行は以下�
 <a id="joseki"></a>
 
 ### 定石
+
+![joseki](https://raw.githubusercontent.com/Nyanyan/Egaroucid5/main/img/joseki.png)
 
 画面中央上に定石名が表示できる場合は表示されます。
 
