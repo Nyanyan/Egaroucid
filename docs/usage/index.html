@@ -54,13 +54,13 @@ recordフォルダ
 <p>&nbsp;</p>
 <p><a id="battle"></a></p>
 <h3 id='対局'>対局</h3>
-<p><img src="https://raw.githubusercontent.com/Nyanyan/Egaroucid5/main/img/play.png" referrerpolicy="no-referrer" alt="play"></p>
+<p><img class='img' src="https://raw.githubusercontent.com/Nyanyan/Egaroucid5/main/img/play.png" referrerpolicy="no-referrer" alt="play"></p>
 <p>最初に手番を<code>人間先手/人間後手/人間同士/AI同士</code>から選びます。この項目は対局中に変更ができません。</p>
 <p>ヒント表示や評価値表示、読み手数、book誤差は対局中に変更できます。</p>
 <p>設定が完了したら<code>対局開始</code>ボタンを押すと対局が開始されます。</p>
 <p><a id="depth"></a></p>
 <h3 id='読み手数'>読み手数</h3>
-<p><img src="https://raw.githubusercontent.com/Nyanyan/Egaroucid5/main/img/depth.png" referrerpolicy="no-referrer" alt="depth"></p>
+<p><img class='img' src="https://raw.githubusercontent.com/Nyanyan/Egaroucid5/main/img/depth.png" referrerpolicy="no-referrer" alt="depth"></p>
 <p>読み手数は<code>中盤N手読み/終盤N空読み</code>のスライドバーで設定できます。</p>
 <p>読み手数には、中盤の読み手数と終盤に完全読みする空きマス数の2種類あります。</p>
 <h4 id='中盤読み手数'>中盤読み手数</h4>
@@ -82,12 +82,12 @@ recordフォルダ
 <p>&nbsp;</p>
 <p><a id="hint"></a></p>
 <h3 id='ヒント表示'>ヒント表示</h3>
-<p><img src="https://raw.githubusercontent.com/Nyanyan/Egaroucid5/main/img/hint.png" referrerpolicy="no-referrer" alt="hint"></p>
+<p><img class='img' src="https://raw.githubusercontent.com/Nyanyan/Egaroucid5/main/img/hint.png" referrerpolicy="no-referrer" alt="hint"></p>
 <p>ヒント表示は局面に存在するすべての合法手に対して行われます。</p>
 <p>book登録局面の場合は評価値と<code>book</code>という表示がされます。bookに登録されていない局面はその場で何手か読んで、評価値と読み手数を表示します。ヒント表示の読み手数は<code>ヒント中盤N手読み/ヒント終盤N空読み</code>のスライドバーで設定できます。読み手数の内部仕様は上記と同じです。その手番にとって一番良い値となっている数字は青色の表示になります。</p>
 <p><code>ヒント表示</code>にチェックされていると、以下の人間的人と表示、およびうみがめ数表示が選択できます。</p>
 <h4 id='人間的ヒント表示'>人間的ヒント表示</h4>
-<p><img src="https://raw.githubusercontent.com/Nyanyan/Egaroucid5/main/img/human_value.png" referrerpolicy="no-referrer" alt="human_value"></p>
+<p><img class='img' src="https://raw.githubusercontent.com/Nyanyan/Egaroucid5/main/img/human_value.png" referrerpolicy="no-referrer" alt="human_value"></p>
 <p>本アプリでは、通常の最終石差を推測する評価の他に、人間的な評価も表示できます。具体的には、以下の3点の総合評価です。</p>
 <ul>
 <li>予想最終石差</li>
@@ -115,13 +115,13 @@ recordフォルダ
 
 </ol>
 <h4 id='うみがめ数表示'>うみがめ数表示</h4>
-<p><img src="https://raw.githubusercontent.com/Nyanyan/Egaroucid5/main/img/umigame_value.png" referrerpolicy="no-referrer" alt="umigame_value"></p>
+<p><img class='img' src="https://raw.githubusercontent.com/Nyanyan/Egaroucid5/main/img/umigame_value.png" referrerpolicy="no-referrer" alt="umigame_value"></p>
 <p><code>うみがめ数</code>にチェックすることでうみがめ数を表示できます。黒の背景は黒(先手)のうみがめ数、白の背景は白(後手)のうみがめ数です。</p>
 <p>うみがめ数についてはこちらを参照してください: <a href='http://blog.livedoor.jp/umigame_oth/archives/1075469317.html' target='_blank' class='url'>http://blog.livedoor.jp/umigame_oth/archives/1075469317.html</a></p>
 <p>&nbsp;</p>
 <p><a id="value"></a></p>
 <h3 id='評価値グラフ表示'>評価値/グラフ表示</h3>
-<p><img src="https://raw.githubusercontent.com/Nyanyan/Egaroucid5/main/img/value.png" referrerpolicy="no-referrer" alt="value"></p>
+<p><img class='img' src="https://raw.githubusercontent.com/Nyanyan/Egaroucid5/main/img/value.png" referrerpolicy="no-referrer" alt="value"></p>
 <p><code>評価値表示</code>モードにすると、<strong>AIが手を選択した場合</strong>に画面中央下に評価値が表示され、画面右の評価値グラフが更新されます。AIが手を選択した場合にしか評価値は表示されません。人間が打った手の評価値を表示したいときには<code>棋譜解析</code>ボタンを押してください。</p>
 <h4 id='評価値'>評価値</h4>
 <p>画面中央下に表示される評価値はAI目線の評価値で、双方が最善手を打った場合の最終石差を表します。正の値ならAI有利、負の値ならAI不利と判断しています。</p>
@@ -130,18 +130,18 @@ recordフォルダ
 <p>&nbsp;</p>
 <p><a id="analyze"></a></p>
 <h3 id='棋譜解析'>棋譜解析</h3>
-<p><img src="https://raw.githubusercontent.com/Nyanyan/Egaroucid5/main/img/analyze.png" referrerpolicy="no-referrer" alt="analyze"></p>
+<p><img class='img' src="https://raw.githubusercontent.com/Nyanyan/Egaroucid5/main/img/analyze.png" referrerpolicy="no-referrer" alt="analyze"></p>
 <p>棋譜解析機能は<code>中盤N手読み/終盤N空読み</code>で設定された読み手数において棋譜のすべての手の評価値を算出し、グラフに描画します。</p>
 <p>&nbsp;</p>
 <p><a id="history"></a></p>
 <h3 id='履歴'>履歴</h3>
-<p><img src="https://raw.githubusercontent.com/Nyanyan/Egaroucid5/main/img/history.png" referrerpolicy="no-referrer" alt="history"></p>
+<p><img class='img' src="https://raw.githubusercontent.com/Nyanyan/Egaroucid5/main/img/history.png" referrerpolicy="no-referrer" alt="history"></p>
 <p>対局中または対局終了後には、画面中央下に<code>&lt;</code>と<code>&gt;</code>のボタンが現れます。このボタンを押すことで、手を戻したり進めたりできます。ただし、表示される局面は閲覧専用で、そこから手を進めることはできません</p>
 <p>実装が面倒なのでこういう仕様ですが、具体的な要望があったら仕様を変更するかもしれません。</p>
 <p>&nbsp;</p>
 <p><a id="inout"></a></p>
 <h3 id='入出力'>入出力</h3>
-<p><img src="https://raw.githubusercontent.com/Nyanyan/Egaroucid5/main/img/inout.png" referrerpolicy="no-referrer" alt="inout"></p>
+<p><img class='img' src="https://raw.githubusercontent.com/Nyanyan/Egaroucid5/main/img/inout.png" referrerpolicy="no-referrer" alt="inout"></p>
 <p>画面左下のボタンは入出力に関係するボタンです。</p>
 <h4 id='棋譜入力'>棋譜入力</h4>
 <p><code>棋譜入力</code>ボタンを押すと、クリップボードにある棋譜を読み込みます。棋譜はF5D6形式、またはf5d6形式に対応しています。</p>
@@ -187,12 +187,12 @@ X: モード(0:人間先手 1:人間後手 2:人間同士 3:AI同士)
 <p>つまり、bookに悪い手ばかり登録すると、AIは悪い手ばかりを打つようになるということです。bookには必ず良い手から順番に登録する必要があります。</p>
 <p>bookに登録されている手から、book誤差の成約(この直下で詳しく解説します)のもと、ランダムに手を選択します。</p>
 <h4 id='book誤差'>book誤差</h4>
-<p><img src="https://raw.githubusercontent.com/Nyanyan/Egaroucid5/main/img/book_error.png" referrerpolicy="no-referrer" alt="book_error"></p>
+<p><img class='img' src="https://raw.githubusercontent.com/Nyanyan/Egaroucid5/main/img/book_error.png" referrerpolicy="no-referrer" alt="book_error"></p>
 <p>book誤差は、ある局面において複数の手がbookに登録されているときに有効になります。</p>
 <p>ある局面からbookに登録された手のうち、最大の評価値をX、book誤差をYとすると、「X-Y」までの評価値の手をランダムに選びます。</p>
 <p>例えばある局面からA、B、Cという3つのbookに登録されている手が選べて、それぞれの評価値が1、-2、-10だったとします。このとき、book誤差が2以下であれば、Aのみが選ばれます。book誤差が3から10までなら、AかBが選ばれます。book誤差が11以上であれば、A、B、Cすべてのうちどれかが選ばれます。</p>
 <h4 id='bookの手動による修正・追加'>bookの手動による修正・追加</h4>
-<p><img src="https://raw.githubusercontent.com/Nyanyan/Egaroucid5/main/img/modify_book.png" referrerpolicy="no-referrer" alt="modify_book"></p>
+<p><img class='img' src="https://raw.githubusercontent.com/Nyanyan/Egaroucid5/main/img/modify_book.png" referrerpolicy="no-referrer" alt="modify_book"></p>
 <p>修正したい局面にセットして、修正したいマスを右クリックします。これでbook修正・追加モードに入ります。</p>
 <p>数字キーまたはテンキー(テンキーは動作未確認)とマイナス符号<code>-</code>とバックスペースキーを使って修正した評価値を入力してください。入力の確認のため、画面右下に入力した値が出ます。同じマスを再び右クリックすると新しい評価値がbookに登録されます。</p>
 <p>入力された文字列が整数に変換できなかった場合は「形式エラー」と表示されます。</p>
@@ -200,11 +200,11 @@ X: モード(0:人間先手 1:人間後手 2:人間同士 3:AI同士)
 <p>bookが変更された場合、アプリの閉じるボタンを押したときにbookを保存するか聞かれます。誤ってbookを登録したときには<code>保存しない</code>ボタンを押してください。</p>
 <p>誤ってbookを登録して保存してしまった場合は手動で戻すか、resourcesフォルダの<code>book_backup.txt</code>を<code>book.txt</code>にリネームしてください。</p>
 <h4 id='bookの自動学習'>bookの自動学習</h4>
-<p><img src="https://raw.githubusercontent.com/Nyanyan/Egaroucid5/main/img/learn_book1.png" referrerpolicy="no-referrer" alt="learn_book1"></p>
+<p><img class='img' src="https://raw.githubusercontent.com/Nyanyan/Egaroucid5/main/img/learn_book1.png" referrerpolicy="no-referrer" alt="learn_book1"></p>
 <p>まず、bookを生成し始めたい根となる局面に設定して<code>対局開始</code>ボタンを押します。または、人間同士の設定で対局を開始し、指定局面に設定してください。</p>
 <p>bookの学習には<code>中盤N手読み/終盤N空読み</code>で設定した先読み手数が使われます。学習開始後には再設定できませんので、ここで設定してください。この状態で<code>book学習</code>ボタンを押すとbookの自動生成が開始されます。</p>
 <p>学習を開始すると、新たにスライドバーが2つ出現します。<code>book深さ</code>のスライドバーは、bookとして保存する最大の深さを決定するものです。<code>book許容</code>は、評価値の絶対値がいくつ以下の局面をbookに保存するかを決定するものです。</p>
-<p><img src="https://raw.githubusercontent.com/Nyanyan/Egaroucid5/main/img/learn_book2.png" referrerpolicy="no-referrer" alt="learn_book2"></p>
+<p><img class='img' src="https://raw.githubusercontent.com/Nyanyan/Egaroucid5/main/img/learn_book2.png" referrerpolicy="no-referrer" alt="learn_book2"></p>
 <p>学習を開始すると<code>book学習</code>ボタンが<code>学習停止</code>ボタンに変わります。<code>学習停止</code>ボタンを押すといつでも学習を停止できます。</p>
 <p>bookを学習しただけでは新しいbookは保存されません。アプリの閉じるボタンを押すとbookを保存するかの確認が出るので、保存する場合は<code>保存する</code>ボタンを押してください。</p>
 <h5 id='book自動生成アルゴリズムの解説'>book自動生成アルゴリズムの解説</h5>
@@ -249,7 +249,7 @@ X: モード(0:人間先手 1:人間後手 2:人間同士 3:AI同士)
 <p>&nbsp;</p>
 <p><a id="joseki"></a></p>
 <h3 id='定石'>定石</h3>
-<p><img src="https://raw.githubusercontent.com/Nyanyan/Egaroucid5/main/img/joseki.png" referrerpolicy="no-referrer" alt="joseki"></p>
+<p><img class='img' src="https://raw.githubusercontent.com/Nyanyan/Egaroucid5/main/img/joseki.png" referrerpolicy="no-referrer" alt="joseki"></p>
 <p>画面中央上に定石名が表示できる場合は表示されます。</p>
 <p>定石データはこちらのものを使っています: <a href='http://evaccaneer.livedoor.blog/archives/11101657.html' target='_blank' class='url'>http://evaccaneer.livedoor.blog/archives/11101657.html</a></p>
 <p>&nbsp;</p>
