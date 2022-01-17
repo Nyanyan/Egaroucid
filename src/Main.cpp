@@ -987,9 +987,9 @@ void Main() {
 									legals[coord].draw(Palette::Blue);
 							}
 							if (umigame_state[coord] == 0) {
-								if (hint_default) {
+								if (hint_default && umigame_default) {
 									board moved_bd = bd.move(coord);
-									if (umigame_default && book.get(&moved_bd) != -inf) {
+									if (book.get(&moved_bd) != -inf) {
 										future_umigame[coord] = get_umigame(moved_bd);
 										umigame_state[coord] = 1;
 									}
