@@ -1,6 +1,6 @@
 from random import randint, randrange
 import subprocess
-from tqdm import trange
+from tqdm import trange, tqdm
 from time import sleep, time
 from math import exp, tanh
 from random import random
@@ -28,7 +28,9 @@ evaluate = subprocess.Popen('../src/egaroucid5.out'.split(), stdin=subprocess.PI
 sleep(1)
 
 min_depth = 3
-max_depth = 10
+max_depth = 20
+
+depth_width = max_depth - min_depth + 1
 
 vhs = [[[] for _ in range(max_depth - min_depth + 1)] for _ in range(15)]
 vds = [[[] for _ in range(max_depth - min_depth + 1)] for _ in range(15)]
@@ -53,11 +55,13 @@ def collect_data(num):
     except:
         print('cannot open')
         return
-    for _ in trange(1000):
-        datum = data[randrange(0, len(data))]
+    #for _ in trange(1000):
+    depth = min_depth
+    for tt, datum in enumerate(tqdm(data[:7500])):
+        #datum = data[randrange(0, len(data))]
         board, player, _ = datum.split()
         n_stones = calc_n_stones(board)
-        depth = randint(min_depth, max_depth)
+        depth = tt * depth_width // 7500 + min_depth #(depth - min_depth + 1) % depth_width + min_depth
         board_proc = player + '\n' + str(mpcd[depth]) + '\n'
         for i in range(hw):
             for j in range(hw):
@@ -90,7 +94,7 @@ def collect_data(num):
         vds[(n_stones - 4) // 4][depth - min_depth].append(vd)
         v0s[(n_stones - 4) // 4][depth - min_depth].append(v0)
 
-for i in range(20, 22):
+for i in range(20, 21):
     collect_data(i)
 evaluate.kill()
 
