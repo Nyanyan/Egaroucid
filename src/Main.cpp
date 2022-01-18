@@ -87,7 +87,7 @@ cell_value cell_value_search(board bd, int depth, int end_depth) {
 			res.value = -end_evaluate(&bd);
 			res.depth = final_define_value;
 		} else if (hw2 - bd.n <= end_depth) {
-			int g = midsearch_value_nomemo(bd, tim(), min(18, hw2 - bd.n)).value;
+			int g = midsearch_value_nomemo(bd, tim(), min(10, hw2 - bd.n)).value;
 			res.value = endsearch_value(bd, tim(), g).value;
 			if (!legal1) {
 				res.value = -res.value;
