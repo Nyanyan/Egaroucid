@@ -876,7 +876,12 @@ void Main() {
 				last_played.push_back(-1);
 			}
 			board_start_moves = board_history[0].n - 4;
-			finished = false;
+			bool has_legal = false;
+			for (int i = 0; i < hw2; ++i) {
+				if (bd.legal(i))
+					has_legal = true;
+			}
+			finished = !has_legal;
 			saved = 0;
 			copied = false;
 			input_board_state = 0;
