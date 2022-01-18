@@ -261,3 +261,25 @@
 #57 final depth: 30 time: 1221 policy: 33 value: -2 nodes: 2978634 nps: 2535007 get: 406 reg: 13010         WRONG
 #58 final depth: 30 time: 633 policy: 6 value: 3 nodes: 1477238 nps: 4208655 get: 146 reg: 5902             WRONG
 #59 final depth: 34 time: 84 policy: 31 value: 64 nodes: 13159 nps: 1462111 get: 26 reg: 186
+
+2022/01/18 with mpc
+#40 final depth: 20 time: 324 policy: 8 value: 38 nodes: 665991 nps: 2404299 get: 9341 reg: 141456
+#41 final depth: 22 time: 1162 policy: 31 value: -2 nodes: 2083813 nps: 1911755 get: 39069 reg: 384942      WRONG RESULT
+#42 final depth: 22 time: 1210 policy: 14 value: 2 nodes: 2855102 nps: 2469811 get: 51680 reg: 513785       WRONG
+#43 final depth: 23 time: 617 policy: 50 value: -7 nodes: 1359264 nps: 2343558 get: 22562 reg: 283287       WRONG
+#44 final depth: 23 time: 1421 policy: 11 value: -13 nodes: 2753047 nps: 2034772 get: 43567 reg: 559872     WRONG
+#45 final depth: 24 time: 3735 policy: 9 value: 6 nodes: 6864745 nps: 1950765 get: 207185 reg: 1917838
+#46 final depth: 24 time: 1874 policy: 17 value: -8 nodes: 3781811 nps: 2221980 get: 53645 reg: 685227
+#47 final depth: 25 time: 99 policy: 14 value: 1 nodes: 12813 nps: 2135500 get: 115 reg: 877                WRONG
+#48 final depth: 25 time: 910 policy: 45 value: 21 nodes: 1625987 nps: 2089957 get: 23337 reg: 312431       WRONG
+#49 final depth: 26 time: 2268 policy: 4 value: 13 nodes: 5791436 nps: 2726664 get: 95650 reg: 1137237      WRONG
+#50 final depth: 26 time: 591 policy: 59 value: 8 nodes: 676620 nps: 1762031 get: 9833 reg: 116420          WRONG
+#51 final depth: 27 time: 409 policy: 12 value: 9 nodes: 634132 nps: 2305934 get: 4800 reg: 81242           WRONG
+#52 final depth: 27 time: 1112 policy: 4 value: 3 nodes: 2623004 nps: 2646825 get: 20443 reg: 258655        WRONG RESULT
+#53 final depth: 28 time: 18041 policy: 59 value: -2 nodes: 45556598 nps: 2579794 get: 609100 reg: 9166136
+#54 final depth: 28 time: 3055 policy: 61 value: -2 nodes: 7081108 nps: 2365099 get: 77927 reg: 1095896
+#55 final depth: 29 time: 1183 policy: 46 value: 3 nodes: 1406021 nps: 2730137 get: 11475 reg: 182019       WRONG RESULT
+#56 final depth: 29 time: 242 policy: 39 value: 3 nodes: 268333 nps: 2181569 get: 1581 reg: 21869           WRONG
+#57 final depth: 30 time: 762 policy: 33 value: -1 nodes: 1801825 nps: 2537781 get: 12777 reg: 180164       WRONG
+#58 final depth: 30 time: 799 policy: 6 value: 4 nodes: 1743831 nps: 3147709 get: 13817 reg: 184006
+#59 final depth: 34 time: 83 policy: 31 value: 64 nodes: 13411 nps: 2682200 get: 39 reg: 220
