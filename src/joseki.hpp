@@ -14,11 +14,11 @@ class joseki {
 private:
 	vector<pair<board, string>> arr;
 public:
-	inline void init() {
+	bool init() {
 		ifstream ifs("resources/joseki.txt");
 		if (ifs.fail()) {
 			cerr << "joseki file not found" << endl;
-			exit(0);
+			return false;
 		}
 		string line;
 		string name;
@@ -52,6 +52,7 @@ public:
 				swap(b.b[i], b.b[8 + i]);
 			arr.push_back(make_pair(b, name));
 		}
+		return true;
 	}
 
 	inline string get(board b) {
@@ -71,6 +72,6 @@ public:
 
 joseki joseki;
 
-inline void joseki_init() {
-	joseki.init();
+bool joseki_init() {
+	return joseki.init();
 }

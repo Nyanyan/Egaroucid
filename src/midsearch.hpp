@@ -483,12 +483,41 @@ inline search_result midsearch_value(board b, long long strt, int max_depth){
         use_mpct = 0.8;
     if (max_depth >= 23)
         use_mpct = 0.6;
-    int value = mid_evaluate(&b);
-    for (int depth = min(11, max(0, max_depth - 5)); depth <= min(hw2 - b.n, max_depth); ++depth)
-        value = mtd(&b, false, depth, -hw2, hw2, use_mpc, use_mpct);
+    int value = mtd(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct);
     search_result res;
     res.policy = -1;
     res.value = value;
+    cerr << res.value << endl;
+    res.depth = max_depth;
+    res.nps = 0;
+    return res;
+}
+
+inline search_result midsearch_value_book(board b, long long strt, int max_depth){
+    bool use_mpc = max_depth >= 11 ? true : false;
+    double use_mpct = 2.0;
+    if (max_depth >= 13)
+        use_mpct = 1.7;
+    if (max_depth >= 15)
+        use_mpct = 1.5;
+    if (max_depth >= 17)
+        use_mpct = 1.3;
+    if (max_depth >= 19)
+        use_mpct = 1.1;
+    if (max_depth >= 21)
+        use_mpct = 0.8;
+    if (max_depth >= 23)
+        use_mpct = 0.6;
+    transpose_table.init_now();
+    transpose_table.init_prev();
+    int value = mtd(&b, false, max_depth - 1, -hw2, hw2, use_mpc, use_mpct);
+    swap(transpose_table.now, transpose_table.prev);
+    transpose_table.init_now();
+    value += mtd(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct);
+    search_result res;
+    res.policy = -1;
+    res.value = value / 2;
+    cerr << res.value << endl;
     res.depth = max_depth;
     res.nps = 0;
     return res;

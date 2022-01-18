@@ -987,5 +987,6 @@ inline search_result endsearch_value(board b, long long strt, int prev_value){
     res.value = mtd_final(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct, prev_value);
     res.depth = max_depth;
     res.nps = 0;
+    cerr << res.value << endl;
     return res;
 }
