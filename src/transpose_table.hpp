@@ -46,8 +46,12 @@ class transpose_table{
                 this->mtx.lock();
             #endif
             ++this->hash_reg;
-            this->table[this->now][hash].reg = true;
-            if (key->p != this->table[this->now][hash].p || !compare_key(key->b, this->table[this->now][hash].k)){
+            if (!this->table[this->now][hash].reg){
+                this->table[this->now][hash].reg = true;
+                for (int i = 0; i < hw; ++i)
+                    this->table[this->now][hash].k[i] = key->b[i];
+                this->table[this->now][hash].p = key->p;
+            } else if (key->p != this->table[this->now][hash].p || !compare_key(key->b, this->table[this->now][hash].k)){
                 for (int i = 0; i < hw; ++i)
                     this->table[this->now][hash].k[i] = key->b[i];
                 this->table[this->now][hash].p = key->p;
@@ -60,6 +64,9 @@ class transpose_table{
         }
 
         inline void get_now(board *key, const int hash, int *l, int *u){
+            #if USE_MULTI_THREAD
+                this->mtx.lock();
+            #endif
             if (this->table[this->now][hash].reg){
                 if (key->p == this->table[this->now][hash].p && compare_key(key->b, this->table[this->now][hash].k)){
 					*l = this->table[this->now][hash].l;
@@ -73,11 +80,14 @@ class transpose_table{
                 *l = -inf;
                 *u = inf;
             }
+            #if USE_MULTI_THREAD
+                this->mtx.unlock();
+            #endif
         }
 
         inline void get_prev(board *key, const int hash, int *l, int *u){
             if (this->table[this->prev][hash].reg){
-                if (key->p == this->table[this->now][hash].p && compare_key(key->b, this->table[this->prev][hash].k)){
+                if (key->p == this->table[this->prev][hash].p && compare_key(key->b, this->table[this->prev][hash].k)){
                     *l = this->table[this->prev][hash].l;
                     *u = this->table[this->prev][hash].u;
                     ++this->hash_get;

@@ -575,8 +575,8 @@ int nega_alpha_final(board *b, bool skipped, const int depth, int alpha, int bet
 }
 
 int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha, int beta, bool use_multi_thread, bool use_mpc, double mpct_in){
-    if (depth <= simple_end_threshold)
-        return nega_alpha_final(b, skipped, depth, alpha, beta);
+    //if (depth <= simple_end_threshold)
+    //    return nega_alpha_final(b, skipped, depth, alpha, beta);
     ++searched_nodes;
     #if USE_END_SC
         if (stability_cut(b, &alpha, &beta))
@@ -645,8 +645,8 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
             g = -nega_alpha_ordering_final(&nb[0], false, depth - 1, -beta, -alpha, true, use_mpc, mpct_in);
             alpha = max(alpha, g);
             if (beta <= alpha){
-                if (l < g)
-                    transpose_table.reg(b, hash, g, u);
+                if (l < alpha)
+                    transpose_table.reg(b, hash, alpha, u);
                 return alpha;
             }
             v = max(v, g);
@@ -824,7 +824,7 @@ int nega_scout_final(board *b, bool skipped, const int depth, int alpha, int bet
 
 int mtd_final(board *b, bool skipped, int depth, int l, int u, bool use_mpc, double use_mpct, int g){
     int beta;
-    g = max(l + 1, min(u, g));
+    g = max(l + search_epsilon, min(u, g));
     #if USE_MULTI_THREAD && false
         int i, start_beta;
         vector<int> result(n_threads);
@@ -848,7 +848,7 @@ int mtd_final(board *b, bool skipped, int depth, int l, int u, bool use_mpc, dou
         }
         //cerr << g << endl;
     #else
-        cerr << l << " " << g << " " << u << endl;
+        //cerr << l << " " << g << " " << u << endl;
         while (u - l > 0){
             beta = max(l + search_epsilon, g);
             g = nega_alpha_ordering_final(b, skipped, depth, beta - search_epsilon, beta, true, use_mpc, use_mpct);
@@ -856,11 +856,11 @@ int mtd_final(board *b, bool skipped, int depth, int l, int u, bool use_mpc, dou
                 u = g;
             else
                 l = g;
-            cerr << l << " " << g << " " << u << endl;
+            //cerr << l << " " << g << " " << u << endl;
         }
-        cerr << g << endl;
+        //cerr << g << endl;
     #endif
-    return l;
+    return g;
 }
 
 inline search_result endsearch(board b, long long strt, bool pre_searched){
@@ -923,7 +923,7 @@ inline search_result endsearch(board b, long long strt, bool pre_searched){
             //cerr << g << endl;
             if (alpha < g){
                 //g = -nega_scout_final(&nb[i], false, max_depth, -beta, -g, use_mpc, use_mpct);
-                g = -mtd_final(&nb[i], false, max_depth - 1, -beta, -g, use_mpc, use_mpct, -nb[i].v);
+                g = -mtd_final(&nb[i], false, max_depth - 1, -beta, -alpha, use_mpc, use_mpct, -nb[i].v);
                 if (alpha < g){
                     alpha = g;
                     tmp_policy = nb[i].policy;
@@ -962,5 +962,29 @@ inline search_result endsearch(board b, long long strt, bool pre_searched){
     res.value = value;
     res.depth = max_depth;
     res.nps = searched_nodes * 1000 / max(1LL, tim() - strt);
+    return res;
+}
+
+inline search_result endsearch_value(board b, long long strt, int prev_value){
+    int max_depth = hw2 - b.n;
+    bool use_mpc = max_depth >= 21 ? true : false;
+    double use_mpct = 2.5;
+    if (max_depth >= 23)
+        use_mpct = 1.7;
+    if (max_depth >= 25)
+        use_mpct = 1.3;
+    if (max_depth >= 27)
+        use_mpct = 1.1;
+    if (max_depth >= 29)
+        use_mpct = 0.9;
+    if (max_depth >= 31)
+        use_mpct = 0.7;
+    if (max_depth >= 33)
+        use_mpct = 0.6;
+    search_result res;
+    res.policy = -1;
+    res.value = mtd_final(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct, prev_value);
+    res.depth = max_depth;
+    res.nps = 0;
     return res;
 }

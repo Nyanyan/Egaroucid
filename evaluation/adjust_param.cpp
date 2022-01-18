@@ -49,7 +49,7 @@ int sa_phase, sa_player;
 
 #define n_raw_params 86
 
-#define beta 0.002
+#define beta 0.001
 unsigned long long hour = 0;
 unsigned long long minute = 5;
 unsigned long long second = 0;

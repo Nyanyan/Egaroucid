@@ -87,14 +87,19 @@ cell_value cell_value_search(board bd, int depth, int end_depth) {
 			res.value = -end_evaluate(&bd);
 			res.depth = final_define_value;
 		} else if (hw2 - bd.n <= end_depth) {
-			res.value = endsearch(bd, tim(), depth).value;
-			if (!legal1)
+			int g = midsearch_value_nomemo(bd, tim(), min(18, hw2 - bd.n)).value;
+			res.value = endsearch_value(bd, tim(), g).value;
+			if (!legal1) {
 				res.value = -res.value;
+				bd.p = 1 - bd.p;
+			}
 			res.depth = depth >= 21 ? hw2 - bd.n + 1 : final_define_value;
 		} else {
-			res.value = midsearch(bd, tim(), depth).value;
-			if (!legal1)
+			res.value = midsearch_value(bd, tim(), depth).value;
+			if (!legal1) {
 				res.value = -res.value;
+				bd.p = 1 - bd.p;
+			}
 			res.depth = depth + 1;
 		}
 	}
@@ -143,11 +148,13 @@ inline future<search_result> ai(board bd, int depth, int end_depth, int bd_arr[]
 	if (book_result.policy != -1)
 		return async(launch::async, book_return, bd, book_result);
 	if (bd.n >= hw2 - end_depth) {
+		/*
 		if (!*pre_searched) {
 			*pre_searched = true;
 			return async(launch::async, endsearch, bd, tim(), false);
 		}
-		return async(launch::async, endsearch, bd, tim(), true);
+		*/
+		return async(launch::async, endsearch, bd, tim(), false);
 	}
 	return async(launch::async, midsearch, bd, tim(), depth);
 }
@@ -209,7 +216,7 @@ inline int get_value(board bd, int depth, int end_depth) {
 				if (mpc_higher_final(&bd, false, depth, book_learn_accept + 1, 2.0))
 					return book_learn_accept + 1;
 			}
-			value = endsearch(bd, tim(), depth).value;
+			value = endsearch(bd, tim(), false).value;
 			if (!legal1)
 				value = -value;
 		} else {
@@ -280,7 +287,7 @@ void Main() {
 	Window::SetTitle(U"Egaroucid5.0");
 	System::SetTerminationTriggers(UserAction::NoAction);
 	Scene::SetBackground(Palette::White);
-	//Console.open();
+	Console.open();
 	constexpr int offset_y = 150;
 	constexpr int offset_x = 60;
 	constexpr int cell_hw = 50;
@@ -893,7 +900,20 @@ void Main() {
 		record_ui(record).draw(3, 550, font_color);
 
 		if (playing) {
-			if (finished && n_moves == finish_moves)
+			bool passed2 = true;
+			for (int i = 0; i < hw2; ++i) {
+				if (bd.legal(i))
+					passed2 = false;
+			}
+			if (passed2) {
+				bd.p = 1 - bd.p;
+				for (int i = 0; i < hw2; ++i) {
+					if (bd.legal(i))
+						passed2 = false;
+				}
+				bd.p = 1 - bd.p;
+			}
+			if ((finished && n_moves == finish_moves) || passed2)
 				move_font(U"終局").draw(420, 650, font_color);
 			else
 				move_font(bd.n - 3, U"手目").draw(420, 650, font_color);
@@ -945,6 +965,7 @@ void Main() {
 				}
 			}
 		} else if (playing && !book_learning) {
+			bool first_hint = true;
 			for (int y = 0; y < hw; ++y) {
 				for (int x = 0; x < hw; ++x) {
 					int coord = proc_coord(y, x);
@@ -952,13 +973,16 @@ void Main() {
 						stones[coord].draw(Palette::Black);
 					else if (bd_arr[coord] == white)
 						stones[coord].draw(Palette::White);
-					if (n_moves - start_moves >= 0) {
-						if (bd.policy == coord)
-							Circle(cell_center_x[coord % hw], cell_center_y[coord / hw], 5).draw(Palette::Red);
-					}
+					if (bd.policy == coord)
+						Circle(cell_center_x[coord % hw], cell_center_y[coord / hw], 5).draw(Palette::Red);
 					if (bd.legal(coord)) {
 						if ((bd.p != ai_player && ai_player != both_ai_define) || n_moves != board_history.size() - 1){
 							if (cell_value_state[coord] == 0) {
+								if (first_hint) {
+									first_hint = false;
+									transpose_table.init_prev();
+									transpose_table.init_now();
+								}
 								legals[coord].draw(Palette::Blue);
 								if (hint_default) {
 									future_cell_values[coord] = calc_value(bd, coord, cell_value_depth, cell_value_end_depth);
