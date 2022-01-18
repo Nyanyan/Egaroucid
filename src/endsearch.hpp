@@ -884,7 +884,7 @@ inline search_result endsearch(board b, long long strt, bool pre_searched){
     transpose_table.hash_reg = 0;
     int max_depth = hw2 - b.n;
     bool use_mpc = max_depth >= 21 ? true : false;
-    double use_mpct = 2.5;
+    double use_mpct = 2.0;
     if (max_depth >= 23)
         use_mpct = 1.7;
     if (max_depth >= 25)
@@ -968,7 +968,7 @@ inline search_result endsearch(board b, long long strt, bool pre_searched){
 inline search_result endsearch_value(board b, long long strt, int prev_value){
     int max_depth = hw2 - b.n;
     bool use_mpc = max_depth >= 21 ? true : false;
-    double use_mpct = 2.5;
+    double use_mpct = 2.0;
     if (max_depth >= 23)
         use_mpct = 1.7;
     if (max_depth >= 25)
@@ -983,6 +983,7 @@ inline search_result endsearch_value(board b, long long strt, int prev_value){
         use_mpct = 0.6;
     search_result res;
     res.policy = -1;
+    //res.value = nega_alpha_ordering_final(&b, false, max_depth, -hw2, hw2, true, use_mpc, use_mpct);
     res.value = mtd_final(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct, prev_value);
     res.depth = max_depth;
     res.nps = 0;

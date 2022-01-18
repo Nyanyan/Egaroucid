@@ -32,18 +32,24 @@ class transpose_table{
 
     public:
         inline void init_prev(){
+            #if USE_MULTI_THREAD
+                lock_guard<mutex> lock(mtx);
+            #endif
             for(int i = 0; i < search_hash_table_size; ++i)
                 this->table[this->prev][i].reg = false;
         }
 
         inline void init_now(){
+            #if USE_MULTI_THREAD
+                lock_guard<mutex> lock(mtx);
+            #endif
             for(int i = 0; i < search_hash_table_size; ++i)
                 this->table[this->now][i].reg = false;
         }
 
         inline void reg(board *key, int hash, int l, int u){
             #if USE_MULTI_THREAD
-                this->mtx.lock();
+                lock_guard<mutex> lock(mtx);
             #endif
             ++this->hash_reg;
             if (!this->table[this->now][hash].reg){
@@ -58,14 +64,11 @@ class transpose_table{
             }
             this->table[this->now][hash].l = l;
             this->table[this->now][hash].u = u;
-            #if USE_MULTI_THREAD
-                this->mtx.unlock();
-            #endif
         }
 
         inline void get_now(board *key, const int hash, int *l, int *u){
             #if USE_MULTI_THREAD
-                this->mtx.lock();
+                lock_guard<mutex> lock(mtx);
             #endif
             if (this->table[this->now][hash].reg){
                 if (key->p == this->table[this->now][hash].p && compare_key(key->b, this->table[this->now][hash].k)){
@@ -80,12 +83,12 @@ class transpose_table{
                 *l = -inf;
                 *u = inf;
             }
-            #if USE_MULTI_THREAD
-                this->mtx.unlock();
-            #endif
         }
 
         inline void get_prev(board *key, const int hash, int *l, int *u){
+            #if USE_MULTI_THREAD
+                lock_guard<mutex> lock(mtx);
+            #endif
             if (this->table[this->prev][hash].reg){
                 if (key->p == this->table[this->prev][hash].p && compare_key(key->b, this->table[this->prev][hash].k)){
                     *l = this->table[this->prev][hash].l;
