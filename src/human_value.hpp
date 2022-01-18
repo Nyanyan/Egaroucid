@@ -7,7 +7,6 @@
 #include "board.hpp"
 #include "book.hpp"
 #include "evaluate.hpp"
-#include "transpose_table.hpp"
 #include "midsearch.hpp"
 
 #define n_kernels 64
@@ -212,17 +211,6 @@ pair<int, vector<int>> create_principal_variation(board *b, bool skipped, int de
         res.first = mid_evaluate(b);
         return res;
     }
-    int hash = (int)(b->hash() & search_hash_mask);
-    int l, u;
-    transpose_table.get_now(b, hash, &l, &u);
-    /*
-    if (l != u && depth > simple_mid_threshold){
-        res.first = inf;
-        return res;
-    }
-    */
-    alpha = max(alpha, l);
-    beta = min(beta, u);
     vector<board> nb;
     int canput = 0;
     for (const int &cell: vacant_lst){
@@ -282,9 +270,6 @@ inline vector<principal_variation> search_pv(board b, long long strt, int max_de
     int canput = nb.size();
     cerr << "canput: " << canput << endl;
     int g;
-    searched_nodes = 0;
-    transpose_table.hash_get = 0;
-    transpose_table.hash_reg = 0;
     bool use_mpc = max_depth >= 11 ? true : false;
     double use_mpct = 2.0;
     if (max_depth >= 13)
@@ -300,14 +285,7 @@ inline vector<principal_variation> search_pv(board b, long long strt, int max_de
     if (max_depth >= 23)
         use_mpct = 0.6;
     for (board nnb: nb){
-        transpose_table.init_now();
-        transpose_table.init_prev();
-        //for (int depth = min(7, max(0, max_depth - 5)); depth <= min(hw2 - b.n, max_depth - 1); ++depth){
-        //    swap(transpose_table.now, transpose_table.prev);
-        //    transpose_table.init_now();
-        //    g = -mtd(&nnb, false, depth, -hw2, hw2, use_mpc, use_mpct);
-        //}
-        g = -mtd(&nnb, false, min(hw2 - b.n, max_depth - 1), -hw2, hw2, use_mpc, use_mpct);
+        g = -nega_alpha_ordering_nomemo(&nnb, false, min(hw2 - b.n, max_depth - 1), -hw2, hw2, use_mpct);
         principal_variation pv;
         pv.value = g;
         g = book.get(&nnb);

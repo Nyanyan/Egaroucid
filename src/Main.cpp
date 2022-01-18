@@ -78,7 +78,7 @@ cell_value cell_value_search(board bd, int depth, int end_depth) {
 		if (hw2 - bd.n <= end_depth) {
 			int g = midsearch_value_nomemo(bd, tim(), min(10, hw2 - bd.n)).value;
 			res.value = endsearch_value(bd, tim(), g).value;
-			res.depth = depth >= 21 ? hw2 - bd.n + 1 : final_define_value;
+			res.depth = depth >= 19 ? hw2 - bd.n + 1 : final_define_value;
 		} else {
 			res.value = midsearch_value(bd, tim(), depth).value;
 			res.depth = depth + 1;
@@ -286,8 +286,8 @@ void Main() {
 		vacant,vacant,vacant,vacant,vacant,vacant,vacant,vacant
 	};
 	constexpr chrono::duration<int> seconds0 = chrono::seconds(0);
-	constexpr int human_hint_sub_depth = 4;
-	constexpr int human_hint_depth = 8;
+	constexpr int human_hint_sub_depth = 2;
+	constexpr int human_hint_depth = 6;
 
 	future<bool> future_initialize = async(launch::async, init);
 	bool initialized = false, initialize_failed = false;
@@ -947,7 +947,6 @@ void Main() {
 			}
 		} else if (playing && !book_learning) {
 			bool first_hint = true;
-			bool calc_human_value = true;
 			for (int y = 0; y < hw; ++y) {
 				for (int x = 0; x < hw; ++x) {
 					int coord = proc_coord(y, x);
@@ -965,7 +964,6 @@ void Main() {
 									transpose_table.init_prev();
 									transpose_table.init_now();
 								}
-								calc_human_value = false;
 								legals[coord].draw(Palette::Blue);
 								if (hint_default) {
 									future_cell_values[coord] = calc_value(bd, coord, cell_value_depth, cell_value_end_depth);
@@ -974,7 +972,6 @@ void Main() {
 							}
 							else if (cell_value_state[coord] == 1) {
 								legals[coord].draw(Palette::Blue);
-								calc_human_value = false;
 								if (future_cell_values[coord].wait_for(seconds0) == future_status::ready) {
 									cell_value cell_value_result = future_cell_values[coord].get();
 									cell_values[coord] = -cell_value_result.value;
@@ -1114,7 +1111,7 @@ void Main() {
 			if (value_default)
 				value_ui(U"評価値: ", round(value)).draw(250, 650, font_color);
 
-			if (((bd.p != ai_player && ai_player != both_ai_define) || n_moves != board_history.size() - 1) && hint_default && human_hint_default && calc_human_value) {
+			if (((bd.p != ai_player && ai_player != both_ai_define) || n_moves != board_history.size() - 1) && hint_default && human_hint_default) {
 				if (human_value_state == 0) {
 					human_value_future = async(launch::async, search_human, bd, tim(), human_hint_depth, human_hint_sub_depth);
 					human_value_state = 1;
