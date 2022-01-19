@@ -259,7 +259,7 @@ pair<int, vector<int>> create_principal_variation(board *b, bool skipped, int de
 }
 
 inline vector<principal_variation> search_pv(board b, long long strt, int max_depth){
-    cerr << "start pv midsearch depth " << max_depth << endl;
+    //cerr << "start pv midsearch depth " << max_depth << endl;
     vector<principal_variation> res;
     vector<board> nb;
     for (const int &cell: vacant_lst){
@@ -268,7 +268,7 @@ inline vector<principal_variation> search_pv(board b, long long strt, int max_de
         }
     }
     int canput = nb.size();
-    cerr << "canput: " << canput << endl;
+    //cerr << "canput: " << canput << endl;
     int g;
     bool use_mpc = max_depth >= 11 ? true : false;
     double use_mpct = 2.0;
@@ -298,10 +298,10 @@ inline vector<principal_variation> search_pv(board b, long long strt, int max_de
         pv.pv.emplace_back(nnb.policy);
         reverse(pv.pv.begin(), pv.pv.end());
         //cerr << "value: " << g << endl;
-        cerr << "principal variation: ";
-        for (const int &elem: pv.pv)
-            cerr << elem << " ";
-        cerr << endl;
+        //cerr << "principal variation: ";
+        //for (const int &elem: pv.pv)
+        //    cerr << elem << " ";
+        //cerr << endl;
         res.emplace_back(pv);
     }
     return res;
@@ -367,7 +367,7 @@ inline double evaluate_human(int value, int divergence[6], double line_distance)
 }
 
 inline vector<search_result_pv> search_human(board b, long long strt, int max_depth, int sub_depth){
-    cerr << "start midsearch human" << endl;
+    //cerr << "start midsearch human" << endl;
     vector<search_result_pv> res;
     vector<principal_variation> pv_value = search_pv(b, tim(), max_depth);
     for (principal_variation pv: pv_value){
@@ -379,7 +379,7 @@ inline vector<search_result_pv> search_human(board b, long long strt, int max_de
         res_elem.value = pv.value;
         res_elem.line_distance = calc_divergence_distance(b, pv.pv, res_elem.divergence, sub_depth);
         res_elem.concat_value = res_elem.line_distance * 10; //evaluate_human(res_elem.value, res_elem.divergence, res_elem.line_distance);
-        cerr << "value: " << res_elem.value << " human value: " << res_elem.concat_value << " policy: " << res_elem.policy << endl;
+        //cerr << "value: " << res_elem.value << " human value: " << res_elem.concat_value << " policy: " << res_elem.policy << endl;
         //cerr << "divergence cout: ";
         //for (int i = 0; i < 6; ++i)
         //    cerr << res_elem.divergence[i] << " ";

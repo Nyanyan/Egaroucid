@@ -43,17 +43,23 @@ struct cell_value {
 	int depth;
 };
 
-inline bool init() {
+inline bool init(String *message) {
 	board_init();
 	search_init();
 	transpose_table_init();
+	*message = U"基本関数初期化完了　評価関数初期化中";
 	if (!evaluate_init())
 		return false;
+	*message = U"評価関数初期化完了　book初期化中";
 	if (!book_init())
 		return false;
-	joseki_init();
+	*message = U"book初期化完了　定石初期化中";
+	if (!joseki_init())
+		return false;
+	*message = U"定石初期化完了　人間的評価関数初期化中";
 	if (!human_value_init())
 		return false;
+	*message = U"人間的評価関数初期化完了";
 }
 
 inline void create_vacant_lst(board bd, int bd_arr[]) {
@@ -78,7 +84,7 @@ cell_value cell_value_search(board bd, int depth, int end_depth) {
 		if (hw2 - bd.n <= end_depth) {
 			int g = midsearch_value_nomemo(bd, tim(), min(10, hw2 - bd.n)).value;
 			res.value = endsearch_value(bd, tim(), g).value;
-			res.depth = depth >= 19 ? hw2 - bd.n + 1 : final_define_value;
+			res.depth = depth >= 21 ? hw2 - bd.n + 1 : final_define_value;
 		} else {
 			res.value = midsearch_value(bd, tim(), depth).value;
 			res.depth = depth + 1;
@@ -110,6 +116,7 @@ search_result book_return(board bd, book_value book_result) {
 	res.value = book_result.value;
 	res.depth = -1;
 	res.nps = 0;
+	cerr << "book policy " << res.policy << " value " << res.value << endl;
 	return res;
 }
 
@@ -180,36 +187,12 @@ bool operator< (const pair<int, board>& a, const pair<int, board>& b) {
 inline int get_value(board bd, int depth, int end_depth) {
 	int value = book.get(&bd);
 	if (value == -inf) {
-		bool legal1 = false, legal2 = false;
-		for (int i = 0; i < hw2; ++i)
-			legal1 |= bd.legal(i);
-		if (!legal1) {
-			bd.p = 1 - bd.p;
-			for (int i = 0; i < hw2; ++i)
-				legal2 |= bd.legal(i);
-		}
-		if (!legal1 && !legal2) {
-			return -end_evaluate(&bd);
-		} else if (hw2 - bd.n <= end_depth) {
-			if (mpc_min_depth_final <= depth && depth <= mpc_max_depth_final) {
-				if (mpc_lower_final(&bd, false, depth, -book_learn_accept - 1, 2.0))
-					return -book_learn_accept - 1;
-				if (mpc_higher_final(&bd, false, depth, book_learn_accept + 1, 2.0))
-					return book_learn_accept + 1;
-			}
-			value = endsearch(bd, tim(), false).value;
-			if (!legal1)
-				value = -value;
+		transpose_table.init_now();
+		if (hw2 - bd.n <= end_depth) {
+			int g = midsearch_value_nomemo(bd, tim(), min(10, hw2 - bd.n)).value;
+			value = endsearch_value(bd, tim(), g).value;
 		} else {
-			if (mpc_min_depth <= depth && depth <= mpc_max_depth) {
-				if (mpc_lower(&bd, false, depth, -book_learn_accept - 1, 2.0))
-					return -book_learn_accept - 1;
-				if (mpc_higher(&bd, false, depth, book_learn_accept + 1, 2.0))
-					return book_learn_accept + 1;
-			}
-			value = midsearch(bd, tim(), depth).value;
-			if (!legal1)
-				value = -value;
+			value = midsearch_value_book(bd, tim(), depth).value;
 		}
 	}
 	return value;
@@ -261,14 +244,18 @@ future<umigame_result> get_umigame(board b) {
 }
 
 void Main() {
-	Size window_size = Size(1000, 700);
+	Size window_size = Size(1000, 720);
 	Window::Resize(window_size);
 	Window::SetStyle(WindowStyle::Sizable);
 	Scene::SetResizeMode(ResizeMode::Keep);
 	Window::SetTitle(U"Egaroucid5.0");
 	System::SetTerminationTriggers(UserAction::NoAction);
 	Scene::SetBackground(Palette::White);
-	Console.open();
+	//Console.open();
+	stringstream logger_stream;
+	cerr.rdbuf(logger_stream.rdbuf());
+	string logger;
+	String logger_String;
 	constexpr int offset_y = 150;
 	constexpr int offset_x = 60;
 	constexpr int cell_hw = 50;
@@ -289,7 +276,8 @@ void Main() {
 	constexpr int human_hint_sub_depth = 2;
 	constexpr int human_hint_depth = 6;
 
-	future<bool> future_initialize = async(launch::async, init);
+	String initialize_message;
+	future<bool> future_initialize = async(launch::async, init, &initialize_message);
 	bool initialized = false, initialize_failed = false;
 
 	Array<Rect> cells;
@@ -325,6 +313,8 @@ void Main() {
 	Font copy_ui(20);
 	Font joseki_ui(17);
 	Font font50(50);
+	Font font30(30);
+	Font font15(15);
 	Color font_color = Palette::Black;
 	bool playing = false, thinking = false, cell_value_thinking = false, changing_book = false;
 	int depth, end_depth, ai_player, cell_value_depth, cell_value_end_depth, book_accept, n_moves = 0;
@@ -339,17 +329,17 @@ void Main() {
 	book_accept = 0;
 	String record = U"";
 	vector<board> board_history;
-	vector<int> last_played;
 	bool finished = false, copied = false;
 	int saved = 0;
 	int input_board_state = 0, input_record_state = 0;
-	double depth_double = 12, end_depth_double = 20, cell_value_depth_double = 10, cell_value_end_depth_double = 18, book_accept_double = 0, book_depth_double = 30, book_learn_accept_double = 10.0;
+	double depth_double = 12, end_depth_double = 20, cell_value_depth_double = 10, cell_value_end_depth_double = 18, book_accept_double = 0, book_depth_double = 40, book_learn_accept_double = 10.0;
 	int board_start_moves, finish_moves, max_cell_value = -inf, start_moves = 0;
 	bool book_changed = false, book_changing = false, closing = false, pre_searched = false, book_learning_button = false;
 	future<void> book_import_future, book_learn_future;
 	future<vector<search_result_pv>> human_value_future;
 	int human_value_state = 0;
 	vector<search_result_pv> human_values;
+	bool show_log = true;
 
 	const Texture icon(U"resources/icon.png", TextureDesc::Mipped);
 
@@ -376,6 +366,12 @@ void Main() {
 		cell_value_end_depth_double = stof(line);
 		getline(ifs, line);
 		book_accept_double = stof(line);
+		getline(ifs, line);
+		book_depth_double = stof(line);
+		getline(ifs, line);
+		book_learn_accept_double = stof(line);
+		getline(ifs, line);
+		show_log = stoi(line);
 	}
 	ifs.close();
 	depth = round(depth_double);
@@ -414,6 +410,13 @@ void Main() {
 	}
 
 	while (System::Update()) {
+		SimpleGUI::CheckBox(show_log, U"ログ表示", Point(0, 687));
+		if (getline(logger_stream, logger))
+			logger_String = Unicode::Widen(logger);
+		else
+			logger_stream.clear();
+		if (show_log)
+			font15(logger_String).draw(150, 695, font_color);
 		if (System::GetUserActions() & UserAction::CloseButtonClicked) {
 			book_learning = false;
 			closing = true;
@@ -435,6 +438,9 @@ void Main() {
 						ofs << cell_value_depth << endl;
 						ofs << cell_value_end_depth << endl;
 						ofs << book_accept << endl;
+						ofs << book_depth << endl;
+						ofs << book_learn_accept << endl;
+						ofs << show_log << endl;
 					}
 					ofs.close();
 					System::Exit();
@@ -452,6 +458,9 @@ void Main() {
 						ofs << cell_value_depth << endl;
 						ofs << cell_value_end_depth << endl;
 						ofs << book_accept << endl;
+						ofs << book_depth << endl;
+						ofs << book_learn_accept << endl;
+						ofs << show_log << endl;
 					}
 					ofs.close();
 					System::Exit();
@@ -469,6 +478,9 @@ void Main() {
 					ofs << cell_value_depth << endl;
 					ofs << cell_value_end_depth << endl;
 					ofs << book_accept << endl;
+					ofs << book_depth << endl;
+					ofs << book_learn_accept << endl;
+					ofs << show_log << endl;
 				}
 				ofs.close();
 				System::Exit();
@@ -491,6 +503,7 @@ void Main() {
 				font50(U"AI初期化中…").draw(0, 0, font_color);
 			else
 				font50(U"AI初期化失敗\nresourcesフォルダを確認してください。").draw(0, 0, font_color);
+			font30(initialize_message).draw(0, 600, font_color);
 			continue;
 		}
 
@@ -556,7 +569,6 @@ void Main() {
 			else {
 				bool flag = true;
 				String record_tmp = U"";
-				last_played.clear();
 				board_history.clear();
 				if (record_str.size() % 2 != 0) {
 					flag = false;
@@ -567,7 +579,6 @@ void Main() {
 						bd_arr[i] = first_board[i];
 					bd.translate_from_arr(bd_arr, black);
 					board_history.push_back(bd);
-					last_played.push_back(-1);
 					for (int i = 0; i < record_str.size(); i += 2) {
 						x = (int)record_str[i] - (int)'a';
 						if (x < 0 || hw <= x) {
@@ -595,7 +606,6 @@ void Main() {
 								break;
 							}
 						}
-						last_played.push_back(y * hw + x);
 						board_history.push_back(bd);
 						record_tmp += coord_translate(y * hw + x);
 						String record_copy = record_tmp;
@@ -612,7 +622,6 @@ void Main() {
 				}
 				else {
 					input_record_state = 1;
-					last_played.clear();
 					board_history.clear();
 					record.clear();
 				}
@@ -859,9 +868,7 @@ void Main() {
 			if (input_record_state != 2) {
 				record.clear();
 				board_history.clear();
-				last_played.clear();
 				board_history.push_back(bd);
-				last_played.push_back(-1);
 			}
 			board_start_moves = board_history[0].n - 4;
 			bool has_legal = false;
@@ -1024,7 +1031,7 @@ void Main() {
 									umigame_font(umigame_values[coord].w).draw(umigame_sx, umigame_sy, Palette::Green);
 								}
 							}
-							if (cells[coord].leftClicked() && !changing_book && !finished && n_moves == board_history.size() - 1 + board_start_moves) {
+							if (cells[coord].leftClicked() && !changing_book){ // && !finished && n_moves == board_history.size() - 1 + board_start_moves) {
 								bd = bd.move(coord);
 								++n_moves;
 								human_value_state = 0;
@@ -1034,12 +1041,19 @@ void Main() {
 								if (record_copy.size() % 40 == 0)
 									record += U"\n";
 								max_cell_value = -inf;
-								last_played.push_back(coord);
 								bd.translate_to_arr(bd_arr);
 								create_vacant_lst(bd, bd_arr);
 								finished = check_pass(&bd);
 								if (finished)
 									finish_moves = n_moves;
+								while (board_history.size()) {
+									if (board_history[board_history.size() - 1].n >= bd.n)
+										board_history.pop_back();
+									else
+										break;
+								}
+								while (graph.last_x() >= bd.n - 4)
+									graph.pop();
 								board_history.push_back(bd);
 								for (int i = 0; i < hw2; ++i) {
 									cell_value_state[i] = 0;
@@ -1093,7 +1107,6 @@ void Main() {
 						if (record_copy.size() % 40 == 0)
 							record += U"\n";
 						max_cell_value = -inf;
-						last_played.push_back(result.policy);
 						bd.translate_to_arr(bd_arr);
 						create_vacant_lst(bd, bd_arr);
 						finished = check_pass(&bd);
@@ -1117,7 +1130,6 @@ void Main() {
 					human_value_state = 1;
 				} else if (human_value_state == 1 && human_value_future.wait_for(seconds0) == future_status::ready) {
 					human_values = human_value_future.get();
-					cerr << "got human value" << endl;
 					human_value_state = 2;
 				} else if (human_value_state == 2) {
 					Color color = Palette::Cyan;

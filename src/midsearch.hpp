@@ -487,7 +487,7 @@ inline search_result midsearch_value(board b, long long strt, int max_depth){
     search_result res;
     res.policy = -1;
     res.value = value;
-    cerr << res.value << endl;
+    //cerr << res.value << endl;
     res.depth = max_depth;
     res.nps = 0;
     return res;
@@ -517,7 +517,7 @@ inline search_result midsearch_value_book(board b, long long strt, int max_depth
     search_result res;
     res.policy = -1;
     res.value = value / 2;
-    cerr << res.value << endl;
+    //cerr << res.value << endl;
     res.depth = max_depth;
     res.nps = 0;
     return res;
