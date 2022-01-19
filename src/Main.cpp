@@ -583,8 +583,8 @@ void Main() {
 		cell_value_end_depth_double = max(cell_value_end_depth_double, cell_value_depth_double);
 		SimpleGUI::Slider(U"中盤{:.0f}手読み"_fmt(depth_double), depth_double, 1, 60, Vec2(600, 0), 150, 250, !thinking && !book_learning);
 		SimpleGUI::Slider(U"終盤{:.0f}手読み"_fmt(end_depth_double), end_depth_double, 1, 60, Vec2(600, 35), 150, 250, !thinking && !book_learning);
-		SimpleGUI::Slider(U"ヒント中盤{:.0f}手読み"_fmt(cell_value_depth_double), cell_value_depth_double, 1, 60, Vec2(550, 70), 200, 250, !cell_value_thinking && hint_default && !book_learning);
-		SimpleGUI::Slider(U"ヒント終盤{:.0f}手読み"_fmt(cell_value_end_depth_double), cell_value_end_depth_double, 1, 60, Vec2(550, 105), 200, 250, !cell_value_thinking && hint_default && !book_learning);
+		SimpleGUI::Slider(U"ヒント中盤{:.0f}手読み"_fmt(cell_value_depth_double), cell_value_depth_double, 1, 60, Vec2(550, 70), 200, 250, hint_default && !book_learning);
+		SimpleGUI::Slider(U"ヒント終盤{:.0f}手読み"_fmt(cell_value_end_depth_double), cell_value_end_depth_double, 1, 60, Vec2(550, 105), 200, 250, hint_default && !book_learning);
 		SimpleGUI::Slider(U"book誤差{:.0f}石"_fmt(book_accept_double), book_accept_double, 0, 64, Vec2(550, 140), 200, 250, !book_learning);
 		depth = round(depth_double);
 		end_depth = round(end_depth_double);
