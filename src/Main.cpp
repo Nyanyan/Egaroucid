@@ -372,7 +372,7 @@ void Main() {
 	bool finished = false, copied = false;
 	int saved = 0;
 	int input_board_state = 0, input_record_state = 0;
-	double depth_double = 12, end_depth_double = 20, cell_value_depth_double = 10, cell_value_end_depth_double = 18, book_accept_double = 0, book_depth_double = 40, book_learn_accept_double = 10.0;
+	double depth_double = 13, end_depth_double = 20, cell_value_depth_double = 11, cell_value_end_depth_double = 18, book_accept_double = 0, book_depth_double = 40, book_learn_accept_double = 10.0;
 	int board_start_moves, finish_moves, max_cell_value = -inf, start_moves = 0;
 	bool book_changed = false, book_changing = false, closing = false, pre_searched = false, book_learning_button = false;
 	future<void> book_import_future, book_learn_future;
@@ -390,94 +390,109 @@ void Main() {
 		bool flag = true;
 		if (flag) {
 			if (!getline(ifs, line)) {
-				cerr << "setting NOT fully imported" << endl;
+				cerr << "setting NOT imported" << endl;
 				flag = false;
 			}
 			player_default = stoi(line);
 		}
 		if (flag) {
 			if (!getline(ifs, line)) {
-				cerr << "setting NOT fully imported" << endl;
+				cerr << "setting NOT imported" << endl;
 				flag = false;
 			}
 			hint_default = stoi(line);
 		}
 		if (flag) {
 			if (!getline(ifs, line)) {
-				cerr << "setting NOT fully imported" << endl;
+				cerr << "setting NOT imported" << endl;
 				flag = false;
 			}
 			human_hint_default = stoi(line);
 		}
 		if (flag) {
 			if (!getline(ifs, line)) {
-				cerr << "setting NOT fully imported" << endl;
+				cerr << "setting NOT imported" << endl;
 				flag = false;
 			}
 			value_default = stoi(line);
 		}
 		if (flag) {
 			if (!getline(ifs, line)) {
-				cerr << "setting NOT fully imported" << endl;
+				cerr << "setting NOT imported" << endl;
 				flag = false;
 			}
 			umigame_default = stoi(line);
 		}
 		if (flag) {
 			if (!getline(ifs, line)) {
-				cerr << "setting NOT fully imported" << endl;
+				cerr << "setting NOT imported" << endl;
 				flag = false;
 			}
 			depth_double = stof(line);
 		}
 		if (flag) {
 			if (!getline(ifs, line)) {
-				cerr << "setting NOT fully imported" << endl;
+				cerr << "setting NOT imported" << endl;
 				flag = false;
 			}
 			end_depth_double = stof(line);
 		}
 		if (flag) {
 			if (!getline(ifs, line)) {
-				cerr << "setting NOT fully imported" << endl;
+				cerr << "setting NOT imported" << endl;
 				flag = false;
 			}
 			cell_value_depth_double = stof(line);
 		}
 		if (flag) {
 			if (!getline(ifs, line)) {
-				cerr << "setting NOT fully imported" << endl;
+				cerr << "setting NOT imported" << endl;
 				flag = false;
 			}
 			cell_value_end_depth_double = stof(line);
 		}
 		if (flag) {
 			if (!getline(ifs, line)) {
-				cerr << "setting NOT fully imported" << endl;
+				cerr << "setting NOT imported" << endl;
 				flag = false;
 			}
 			book_accept_double = stof(line);
 		}
 		if (flag) {
 			if (!getline(ifs, line)) {
-				cerr << "setting NOT fully imported" << endl;
+				cerr << "setting NOT imported" << endl;
 				flag = false;
 			}
 			book_depth_double = stof(line);
 		}
 		if (flag) {
 			if (!getline(ifs, line)) {
-				cerr << "setting NOT fully imported" << endl;
+				cerr << "setting NOT imported" << endl;
 				flag = false;
 			}
 			book_learn_accept_double = stof(line);
 		}
 		if (flag) {
 			if (!getline(ifs, line)) {
-				cerr << "setting NOT fully imported" << endl;
+				cerr << "setting NOT imported" << endl;
 				flag = false;
 			}
 			show_log = stoi(line);
+		}
+		if (!flag) {
+			depth_double = 13;
+			end_depth_double = 20;
+			cell_value_depth_double = 11;
+			cell_value_end_depth_double = 18;
+			book_accept_double = 0;
+			book_depth_double = 40;
+			book_learn_accept_double = 10.0;
+			player_default = 0;
+			hint_default = true;
+			human_hint_default = true;
+			value_default = true;
+			umigame_default = true;
+			show_log = true;
 		}
 	}
 	ifs.close();
