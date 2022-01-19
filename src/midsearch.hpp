@@ -404,20 +404,20 @@ inline search_result midsearch(board b, long long strt, int max_depth){
     transpose_table.init_prev();
     int order_l, order_u;
     //int depth = min(hw2 - b.n - 1, max_depth - 1);
-    bool use_mpc = max_depth >= 11 ? true : false;
+    bool use_mpc = max_depth >= 13 ? true : false;
     double use_mpct = 2.0;
-    if (max_depth >= 13)
-        use_mpct = 1.7;
     if (max_depth >= 15)
-        use_mpct = 1.5;
+        use_mpct = 1.8;
     if (max_depth >= 17)
-        use_mpct = 1.3;
+        use_mpct = 1.6;
     if (max_depth >= 19)
-        use_mpct = 1.1;
+        use_mpct = 1.4;
     if (max_depth >= 21)
-        use_mpct = 0.8;
+        use_mpct = 1.2;
     if (max_depth >= 23)
-        use_mpct = 0.6;
+        use_mpct = 1.0;
+    if (max_depth >= 25)
+        use_mpct = 0.8;
     for (int depth = min(11, max(0, max_depth - 5)); depth <= min(hw2 - b.n, max_depth - 1); ++depth){
         alpha = -hw2;
         beta = hw2;
@@ -469,20 +469,20 @@ inline search_result midsearch(board b, long long strt, int max_depth){
 }
 
 inline search_result midsearch_value(board b, long long strt, int max_depth){
-    bool use_mpc = max_depth >= 11 ? true : false;
+    bool use_mpc = max_depth >= 13 ? true : false;
     double use_mpct = 2.0;
-    if (max_depth >= 13)
-        use_mpct = 1.7;
     if (max_depth >= 15)
-        use_mpct = 1.5;
+        use_mpct = 1.8;
     if (max_depth >= 17)
-        use_mpct = 1.3;
+        use_mpct = 1.6;
     if (max_depth >= 19)
-        use_mpct = 1.1;
+        use_mpct = 1.4;
     if (max_depth >= 21)
-        use_mpct = 0.8;
+        use_mpct = 1.2;
     if (max_depth >= 23)
-        use_mpct = 0.6;
+        use_mpct = 1.0;
+    if (max_depth >= 25)
+        use_mpct = 0.8;
     int value = mtd(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct);
     search_result res;
     res.policy = -1;
@@ -497,17 +497,17 @@ inline search_result midsearch_value_book(board b, long long strt, int max_depth
     bool use_mpc = max_depth >= 11 ? true : false;
     double use_mpct = 2.0;
     if (max_depth >= 13)
-        use_mpct = 1.7;
+        use_mpct = 1.8;
     if (max_depth >= 15)
-        use_mpct = 1.5;
+        use_mpct = 1.6;
     if (max_depth >= 17)
-        use_mpct = 1.3;
+        use_mpct = 1.4;
     if (max_depth >= 19)
-        use_mpct = 1.1;
+        use_mpct = 1.2;
     if (max_depth >= 21)
-        use_mpct = 0.8;
+        use_mpct = 1.0;
     if (max_depth >= 23)
-        use_mpct = 0.6;
+        use_mpct = 0.8;
     transpose_table.init_now();
     transpose_table.init_prev();
     int value = mtd(&b, false, max_depth - 1, -hw2, hw2, use_mpc, use_mpct);
