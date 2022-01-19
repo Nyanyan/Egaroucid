@@ -390,7 +390,7 @@ void Main() {
 	graph.sx = 550;
 	graph.sy = 200;
 	graph.size_x = 420;
-	graph.size_y = 300;
+	graph.size_y = 260;
 	graph.resolution = 10;
 	graph.font_size = graph_font_size;
 	graph.font = graph_font;
@@ -762,6 +762,7 @@ void Main() {
 		if (book_learning) {
 			value_ui(U"評価値: ", round(value)).draw(250, 650, font_color);
 		}
+
 		font20(U"先手:").draw(470, 515, font_color);
 		font20(U"後手:").draw(730, 515, font_color);
 		SimpleGUI::TextBox(black_player, Vec2(520, 510), 200);

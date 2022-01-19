@@ -21,6 +21,7 @@ class Graph {
 		vector<int> show_nodes;
 		int dx;
 		int dy;
+		int adj_y;
 		int y_max;
 		int y_min;
 	public:
@@ -38,24 +39,30 @@ class Graph {
 			calc_range();
 			dy = size_y / (y_max - y_min);
 			dx = size_x / 60;
+			adj_y = size_y - dy * (y_max - y_min);
 			font(U"黒").draw(sx + 5, sy, graph_color);
 			font(U"白").draw(sx + 5, sy + size_y - font_size * 1.5, graph_color);
 			for (int y = 0; y <= y_max - y_min; y += resolution) {
-				font(y_max - y).draw(sx - font_size * 3, sy + y * dy - font_size, graph_color);
+				int yy = sy + y * dy + adj_y * y / (y_max - y_min);
+				font(y_max - y).draw(sx - font_size * 3, yy - font_size, graph_color);
 				if (y_max - y == 0)
-					Line{sx, sy + y * dy, sx + size_x, sy + y * dy}.draw(2, graph_color);
+					Line{sx, yy, sx + size_x, yy}.draw(2, graph_color);
 				else
-					Line{sx, sy + y * dy, sx + size_x, sy + y * dy}.draw(1, graph_color);
+					Line{sx, yy, sx + size_x, yy}.draw(1, graph_color);
 			}
 			for (int x = 0; x <= 60; x += 10){
 				font(x).draw(sx + x * dx, sy - 2 * font_size, graph_color);
 				Line{sx + x * dx, sy, sx + x * dx, sy + size_y}.draw(1, graph_color);
 			}
-			for (int i = 0; i < (int)nodes.size(); ++i)
-				Circle{sx + nodes[i].first * dx, sy + y_max * dy - show_nodes[i] * dy, 3}.draw(graph_color);
+			for (int i = 0; i < (int)nodes.size(); ++i) {
+				int yy = sy + (y_max - show_nodes[i]) * dy + adj_y * (y_max - show_nodes[i]) / (y_max - y_min);
+				Circle{ sx + nodes[i].first * dx, yy, 3 }.draw(graph_color);
+			}
 			if (nodes.size() >= 2) {
 				for (int i = 0; i < (int)nodes.size() - 1; ++i) {
-					Line(sx + nodes[i].first * dx, sy + y_max * dy - show_nodes[i] * dy, sx + nodes[i + 1].first * dx, sy + y_max * dy - show_nodes[i + 1] * dy).draw(4, graph_color);
+					int yy1 = sy + (y_max - show_nodes[i]) * dy + adj_y * (y_max - show_nodes[i]) / (y_max - y_min);
+					int yy2 = sy + (y_max - show_nodes[i + 1]) * dy + adj_y * (y_max - show_nodes[i + 1]) / (y_max - y_min);
+					Line(sx + nodes[i].first * dx, yy1, sx + nodes[i + 1].first * dx, yy2).draw(4, graph_color);
 				}
 			}
 		}
