@@ -144,6 +144,8 @@ int nega_alpha(board *b, bool skipped, int depth, int alpha, int beta){
 }
 
 int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int beta, bool use_multi_thread, bool use_mpc, double mpct_in){
+    if (!global_searching)
+        return -inf;
     if (depth <= simple_mid_threshold)
         return nega_alpha(b, skipped, depth, alpha, beta);
     ++searched_nodes;
@@ -455,10 +457,13 @@ inline search_result midsearch(board b, long long strt, int max_depth){
             }
         }
         swap(transpose_table.now, transpose_table.prev);
-        policy = tmp_policy;
-        value = alpha;
-        res_depth = depth + 1;
-        cerr << "depth: " << depth + 1 << " time: " << tim() - strt << " policy: " << policy << " value: " << alpha << " nodes: " << searched_nodes << " nps: " << (long long)searched_nodes * 1000 / max(1LL, tim() - strt) << " get: " << transpose_table.hash_get << " reg: " << transpose_table.hash_reg << endl;
+        if (global_searching){
+            policy = tmp_policy;
+            value = alpha;
+            res_depth = depth + 1;
+            cerr << "depth: " << depth + 1 << " time: " << tim() - strt << " policy: " << policy << " value: " << alpha << " nodes: " << searched_nodes << " nps: " << (long long)searched_nodes * 1000 / max(1LL, tim() - strt) << " get: " << transpose_table.hash_get << " reg: " << transpose_table.hash_reg << endl;
+        } else 
+            break;
     }
     search_result res;
     res.policy = policy;

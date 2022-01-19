@@ -575,8 +575,10 @@ int nega_alpha_final(board *b, bool skipped, const int depth, int alpha, int bet
 }
 
 int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha, int beta, bool use_multi_thread, bool use_mpc, double mpct_in){
-    //if (depth <= simple_end_threshold)
-    //    return nega_alpha_final(b, skipped, depth, alpha, beta);
+    if (!global_searching)
+        return -inf;
+    if (depth <= simple_end_threshold)
+        return nega_alpha_final(b, skipped, depth, alpha, beta);
     ++searched_nodes;
     #if USE_END_SC
         if (stability_cut(b, &alpha, &beta))
@@ -954,9 +956,15 @@ inline search_result endsearch(board b, long long strt, bool pre_searched){
         }
     }
     swap(transpose_table.now, transpose_table.prev);
-    policy = tmp_policy;
-    value = alpha;
-    cerr << "final depth: " << max_depth << " time: " << tim() - strt << " policy: " << policy << " value: " << alpha << " nodes: " << searched_nodes << " nps: " << (long long)searched_nodes * 1000 / max(1LL, tim() - final_strt) << " get: " << transpose_table.hash_get << " reg: " << transpose_table.hash_reg << endl;
+    if (global_searching){
+        policy = tmp_policy;
+        value = alpha;
+        cerr << "final depth: " << max_depth << " time: " << tim() - strt << " policy: " << policy << " value: " << alpha << " nodes: " << searched_nodes << " nps: " << (long long)searched_nodes * 1000 / max(1LL, tim() - final_strt) << " get: " << transpose_table.hash_get << " reg: " << transpose_table.hash_reg << endl;
+    } else {
+        int idx = myrandrange(0, (int)nb.size());
+        policy = nb[idx].policy;
+        value = nb[idx].v;
+    }
     search_result res;
     res.policy = policy;
     res.value = value;
@@ -987,6 +995,6 @@ inline search_result endsearch_value(board b, long long strt, int prev_value){
     res.value = mtd_final(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct, prev_value);
     res.depth = max_depth;
     res.nps = 0;
-    cerr << res.value << endl;
+    //cerr << res.value << endl;
     return res;
 }

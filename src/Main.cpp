@@ -248,7 +248,7 @@ void Main() {
 	Window::Resize(window_size);
 	Window::SetStyle(WindowStyle::Sizable);
 	Scene::SetResizeMode(ResizeMode::Keep);
-	Window::SetTitle(U"Egaroucid5.0");
+	Window::SetTitle(U"Egaroucid5.1.0");
 	System::SetTerminationTriggers(UserAction::NoAction);
 	Scene::SetBackground(Palette::White);
 	//Console.open();
@@ -410,6 +410,7 @@ void Main() {
 	}
 
 	while (System::Update()) {
+
 		SimpleGUI::CheckBox(show_log, U"ログ表示", Point(0, 687));
 		if (getline(logger_stream, logger))
 			logger_String = Unicode::Widen(logger);
@@ -417,6 +418,8 @@ void Main() {
 			logger_stream.clear();
 		if (show_log)
 			font15(logger_String).draw(150, 695, font_color);
+
+
 		if (System::GetUserActions() & UserAction::CloseButtonClicked) {
 			book_learning = false;
 			closing = true;
@@ -953,7 +956,15 @@ void Main() {
 				}
 			}
 		} else if (playing && !book_learning) {
-			bool first_hint = true;
+			if (SimpleGUI::Button(U"読み停止", Vec2(880, 680), 120, global_searching))
+				global_searching = false;
+			bool first_hint = true, all_hint_done_flag = true;
+			for (int cell = 0; cell < hw2; ++cell) {
+				if (bd.legal(cell)) {
+					if (cell_value_state[cell] % 2 == 1)
+						all_hint_done_flag = false;
+				}
+			}
 			for (int y = 0; y < hw; ++y) {
 				for (int x = 0; x < hw; ++x) {
 					int coord = proc_coord(y, x);
@@ -965,44 +976,44 @@ void Main() {
 						Circle(cell_center_x[coord % hw], cell_center_y[coord / hw], 5).draw(Palette::Red);
 					if (bd.legal(coord)) {
 						if ((bd.p != ai_player && ai_player != both_ai_define) || n_moves != board_history.size() - 1){
-							if (cell_value_state[coord] == 0) {
-								if (first_hint) {
-									first_hint = false;
-									transpose_table.init_prev();
-									transpose_table.init_now();
+							if (hint_default) {
+								if (cell_value_state[coord] % 2 == 1 && global_searching) {
+									if (future_cell_values[coord].wait_for(seconds0) == future_status::ready) {
+										cell_value cell_value_result = future_cell_values[coord].get();
+										cell_values[coord] = -cell_value_result.value;
+										cell_depth[coord] = cell_value_result.depth;
+										++cell_value_state[coord];
+										max_cell_value = -inf;
+									}
 								}
-								legals[coord].draw(Palette::Blue);
-								if (hint_default) {
-									future_cell_values[coord] = calc_value(bd, coord, cell_value_depth, cell_value_end_depth);
-									cell_value_state[coord] = 1;
-								}
-							}
-							else if (cell_value_state[coord] == 1) {
-								legals[coord].draw(Palette::Blue);
-								if (future_cell_values[coord].wait_for(seconds0) == future_status::ready) {
-									cell_value cell_value_result = future_cell_values[coord].get();
-									cell_values[coord] = -cell_value_result.value;
-									cell_depth[coord] = cell_value_result.depth;
-									cell_value_state[coord] = 2;
-									max_cell_value = max(max_cell_value, cell_values[coord]);
-								}
-							}
-							else if (cell_value_state[coord] == 2) {
-								if (hint_default) {
-									Color color = Palette::White;
-									if (cell_values[coord] == max_cell_value)
-										color = Palette::Cyan;
-									cell_value_font(cell_values[coord]).draw(offset_x + (coord % hw) * cell_hw + 2, offset_y + (coord / hw) * cell_hw, color);
-									if (cell_depth[coord] == final_define_value)
-										cell_depth_font(cell_depth[coord], U"%").draw(offset_x + (coord % hw) * cell_hw + 2, offset_y + (coord / hw) * cell_hw + 19, color);
-									else if (cell_depth[coord] == book_define_value)
-										cell_depth_font(U"book").draw(offset_x + (coord % hw) * cell_hw + 2, offset_y + (coord / hw) * cell_hw + 19, color);
+								else if (cell_value_state[coord] % 2 == 0 && cell_value_state[coord] / 2 + 1 <= cell_value_depth) {
+									if (first_hint && all_hint_done_flag) {
+										first_hint = false;
+										transpose_table.init_prev();
+										transpose_table.init_now();
+									}
+									if (cell_value_state[coord] / 2 + 1 < cell_value_depth)
+										future_cell_values[coord] = calc_value(bd, coord, cell_value_state[coord] / 2 + 1, cell_value_state[coord] / 2 + 1);
 									else
-										cell_depth_font(cell_depth[coord], U"手").draw(offset_x + (coord % hw) * cell_hw + 2, offset_y + (coord / hw) * cell_hw + 19, color);
+										future_cell_values[coord] = calc_value(bd, coord, cell_value_state[coord] / 2 + 1, cell_value_end_depth);
+									++cell_value_state[coord];
 								}
-								else
-									legals[coord].draw(Palette::Blue);
 							}
+							if (hint_default && cell_value_state[coord] >= 2) {
+								max_cell_value = max(max_cell_value, cell_values[coord]);
+								Color color = Palette::White;
+								if (cell_values[coord] == max_cell_value && all_hint_done_flag)
+									color = Palette::Cyan;
+								cell_value_font(cell_values[coord]).draw(offset_x + (coord % hw) * cell_hw + 2, offset_y + (coord / hw) * cell_hw, color);
+								if (cell_depth[coord] == final_define_value)
+									cell_depth_font(cell_depth[coord], U"%").draw(offset_x + (coord % hw) * cell_hw + 2, offset_y + (coord / hw) * cell_hw + 19, color);
+								else if (cell_depth[coord] == book_define_value)
+									cell_depth_font(U"book").draw(offset_x + (coord % hw) * cell_hw + 2, offset_y + (coord / hw) * cell_hw + 19, color);
+								else
+									cell_depth_font(cell_depth[coord], U"手").draw(offset_x + (coord % hw) * cell_hw + 2, offset_y + (coord / hw) * cell_hw + 19, color);
+							}
+							else
+								legals[coord].draw(Palette::Blue);
 							if (umigame_state[coord] == 0) {
 								if (hint_default && umigame_default) {
 									board moved_bd = bd.move(coord);
@@ -1035,6 +1046,7 @@ void Main() {
 								bd = bd.move(coord);
 								++n_moves;
 								human_value_state = 0;
+								global_searching = true;
 								record += coord_translate(coord);
 								String record_copy = record;
 								record_copy.replace(U"\n", U"");
@@ -1102,6 +1114,7 @@ void Main() {
 						bd = bd.move(result.policy);
 						++n_moves;
 						human_value_state = 0;
+						global_searching = true;
 						String record_copy = record;
 						record_copy.replace(U"\n", U"");
 						if (record_copy.size() % 40 == 0)
@@ -1180,7 +1193,7 @@ void Main() {
 					change_book_value_str.pop_back();
 				change_book_value_info_str = U"修正した評価値";
 			}
-			change_book_ui(change_book_value_info_str, U"(", change_book_value_coord_str, U"): ", change_book_value_str).draw(670, 660, font_color);
+			change_book_ui(change_book_value_info_str, U"(", change_book_value_coord_str, U"): ", change_book_value_str).draw(670, 650, font_color);
 		}
 
 		joseki_ui(Unicode::FromUTF8(joseki.get(bd))).draw(145, 80, font_color);
