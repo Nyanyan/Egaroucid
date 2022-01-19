@@ -1113,9 +1113,13 @@ void Main() {
 								if (finished)
 									finish_moves = n_moves;
 								while (board_history.size()) {
-									if (board_history[board_history.size() - 1].n >= bd.n)
+									if (board_history[board_history.size() - 1].n >= bd.n) {
 										board_history.pop_back();
-									else
+										record.pop_back();
+										record.pop_back();
+										if (record[record.size() - 1] == U"\n"[0])
+											record.pop_back();
+									} else
 										break;
 								}
 								while (graph.last_x() >= bd.n - 4)
