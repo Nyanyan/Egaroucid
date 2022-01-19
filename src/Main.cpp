@@ -387,32 +387,98 @@ void Main() {
 	ifstream ifs("resources/settings.txt");
 	if (!ifs.fail()) {
 		string line;
-		getline(ifs, line);
-		player_default = stoi(line);
-		getline(ifs, line);
-		hint_default = stoi(line);
-		getline(ifs, line);
-		human_hint_default = stoi(line);
-		getline(ifs, line);
-		value_default = stoi(line);
-		getline(ifs, line);
-		umigame_default = stoi(line);
-		getline(ifs, line);
-		depth_double = stof(line);
-		getline(ifs, line);
-		end_depth_double = stof(line);
-		getline(ifs, line);
-		cell_value_depth_double = stof(line);
-		getline(ifs, line);
-		cell_value_end_depth_double = stof(line);
-		getline(ifs, line);
-		book_accept_double = stof(line);
-		getline(ifs, line);
-		book_depth_double = stof(line);
-		getline(ifs, line);
-		book_learn_accept_double = stof(line);
-		getline(ifs, line);
-		show_log = stoi(line);
+		bool flag = true;
+		if (flag) {
+			if (!getline(ifs, line)) {
+				cerr << "setting NOT fully imported" << endl;
+				flag = false;
+			}
+			player_default = stoi(line);
+		}
+		if (flag) {
+			if (!getline(ifs, line)) {
+				cerr << "setting NOT fully imported" << endl;
+				flag = false;
+			}
+			hint_default = stoi(line);
+		}
+		if (flag) {
+			if (!getline(ifs, line)) {
+				cerr << "setting NOT fully imported" << endl;
+				flag = false;
+			}
+			human_hint_default = stoi(line);
+		}
+		if (flag) {
+			if (!getline(ifs, line)) {
+				cerr << "setting NOT fully imported" << endl;
+				flag = false;
+			}
+			value_default = stoi(line);
+		}
+		if (flag) {
+			if (!getline(ifs, line)) {
+				cerr << "setting NOT fully imported" << endl;
+				flag = false;
+			}
+			umigame_default = stoi(line);
+		}
+		if (flag) {
+			if (!getline(ifs, line)) {
+				cerr << "setting NOT fully imported" << endl;
+				flag = false;
+			}
+			depth_double = stof(line);
+		}
+		if (flag) {
+			if (!getline(ifs, line)) {
+				cerr << "setting NOT fully imported" << endl;
+				flag = false;
+			}
+			end_depth_double = stof(line);
+		}
+		if (flag) {
+			if (!getline(ifs, line)) {
+				cerr << "setting NOT fully imported" << endl;
+				flag = false;
+			}
+			cell_value_depth_double = stof(line);
+		}
+		if (flag) {
+			if (!getline(ifs, line)) {
+				cerr << "setting NOT fully imported" << endl;
+				flag = false;
+			}
+			cell_value_end_depth_double = stof(line);
+		}
+		if (flag) {
+			if (!getline(ifs, line)) {
+				cerr << "setting NOT fully imported" << endl;
+				flag = false;
+			}
+			book_accept_double = stof(line);
+		}
+		if (flag) {
+			if (!getline(ifs, line)) {
+				cerr << "setting NOT fully imported" << endl;
+				flag = false;
+			}
+			book_depth_double = stof(line);
+		}
+		if (flag) {
+			if (!getline(ifs, line)) {
+				cerr << "setting NOT fully imported" << endl;
+				flag = false;
+			}
+			book_learn_accept_double = stof(line);
+		}
+		if (flag) {
+			if (!getline(ifs, line)) {
+				cerr << "setting NOT fully imported" << endl;
+				flag = false;
+			}
+			show_log = stoi(line);
+		}
 	}
 	ifs.close();
 	depth = round(depth_double);
@@ -420,6 +486,8 @@ void Main() {
 	cell_value_depth = round(cell_value_depth_double);
 	cell_value_end_depth = round(cell_value_end_depth_double);
 	book_accept = round(book_accept_double);
+	book_depth = round(book_depth_double);
+	book_learn_accept = round(book_learn_accept_double);
 
 	const Font pulldown_font(20);
 	const Array<String> player_items = { U"人間先手", U"人間後手", U"人間同士", U"AI同士"};
