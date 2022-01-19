@@ -862,10 +862,16 @@ void Main() {
 				ai_player = 2;
 			else
 				ai_player = both_ai_define;
-			if (ai_player == 0)
+			if (ai_player == 0 || ai_player == both_ai_define) {
 				black_player.text = U"Egaroucid";
-			else if (ai_player == 1)
+				if (white_player.text == U"Egaroucid" && ai_player != both_ai_define)
+					white_player.text = U"";
+			}
+			if (ai_player == 1 || ai_player == both_ai_define) {
 				white_player.text = U"Egaroucid";
+				if (black_player.text == U"Egaroucid" && ai_player != both_ai_define)
+					black_player.text = U"";
+			}
 			playing = true;
 			thinking = false;
 			value = 0.0;
