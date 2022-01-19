@@ -989,6 +989,7 @@ void Main() {
 						umigame_state[i] = 0;
 					}
 					human_value_state = 0;
+					global_searching = true;
 				}
 				if (SimpleGUI::Button(U">", Vec2(600, 650), 50, !book_learning)) {
 					if (n_moves - board_start_moves < board_history.size() - 1)
@@ -1001,6 +1002,7 @@ void Main() {
 						umigame_state[i] = 0;
 					}
 					human_value_state = 0;
+					global_searching = true;
 				}
 			}
 		}
