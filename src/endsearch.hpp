@@ -14,7 +14,7 @@
 
 using namespace std;
 
-int nega_alpha_ordering_final_mpc(board *b, bool skipped, int depth, int alpha, int beta, double use_mpct){
+int nega_alpha_ordering_final_nomemo(board *b, bool skipped, int depth, int alpha, int beta, bool use_mpc, double use_mpct){
     if (depth <= simple_mid_threshold)
         return nega_alpha(b, skipped, depth, alpha, beta);
     ++searched_nodes;
@@ -22,7 +22,7 @@ int nega_alpha_ordering_final_mpc(board *b, bool skipped, int depth, int alpha, 
         if (stability_cut(b, &alpha, &beta))
             return alpha;
     #endif
-    if (mpc_min_depth <= depth && depth <= mpc_max_depth){
+    if (mpc_min_depth <= depth && depth <= mpc_max_depth && use_mpc){
         if (mpc_higher(b, skipped, depth, beta, use_mpct))
             return beta;
         if (mpc_lower(b, skipped, depth, alpha, use_mpct))
@@ -33,7 +33,8 @@ int nega_alpha_ordering_final_mpc(board *b, bool skipped, int depth, int alpha, 
     for (const int &cell: vacant_lst){
         if (b->legal(cell)){
             nb.push_back(b->move(cell));
-            nb[canput].v = -canput_bonus * calc_canput_exact(&nb[canput]);
+            move_ordering(&nb[canput]);
+            //nb[canput].v = -canput_bonus * calc_canput_exact(&nb[canput]);
             #if USE_END_PO
                 if (depth <= po_max_depth && b->parity & cell_div4[cell])
                     nb[canput].v += parity_vacant_bonus;
@@ -49,13 +50,13 @@ int nega_alpha_ordering_final_mpc(board *b, bool skipped, int depth, int alpha, 
             rb.b[i] = b->b[i];
         rb.p = 1 - b->p;
         rb.n = b->n;
-        return -nega_alpha_ordering_final_mpc(&rb, true, depth, -beta, -alpha, use_mpct);
+        return -nega_alpha_ordering_final_nomemo(&rb, true, depth, -beta, -alpha, use_mpc, use_mpct);
     }
     if (canput >= 2)
         sort(nb.begin(), nb.end());
     int g, v = -inf;
     for (board &nnb: nb){
-        g = -nega_alpha_ordering_final_mpc(&nnb, false, depth - 1, -beta, -alpha, use_mpct);
+        g = -nega_alpha_ordering_final_nomemo(&nnb, false, depth - 1, -beta, -alpha, use_mpc, use_mpct);
         alpha = max(alpha, g);
         if (beta <= alpha)
             return alpha;
@@ -70,7 +71,7 @@ inline bool mpc_higher_final(board *b, bool skipped, int depth, int beta, double
     int bound = beta + ceil(t * mpcsd_final[depth - mpc_min_depth_final]);
     if (bound > hw2)
         bound = hw2; //return false;
-    return nega_alpha_ordering_final_mpc(b, skipped, mpcd[depth], bound - search_epsilon, bound, t) >= bound;
+    return nega_alpha_ordering_final_nomemo(b, skipped, mpcd[depth], bound - search_epsilon, bound, true, t) >= bound;
 }
 
 inline bool mpc_lower_final(board *b, bool skipped, int depth, int alpha, double t){
@@ -79,7 +80,7 @@ inline bool mpc_lower_final(board *b, bool skipped, int depth, int alpha, double
     int bound = alpha - floor(t * mpcsd_final[depth - mpc_min_depth_final]);
     if (bound < -hw2)
         bound = -hw2; //return false;
-    return nega_alpha_ordering_final_mpc(b, skipped, mpcd[depth], bound, bound + search_epsilon, t) <= bound;
+    return nega_alpha_ordering_final_nomemo(b, skipped, mpcd[depth], bound, bound + search_epsilon, true, t) <= bound;
 }
 
 inline int last1(board *b, bool skipped, int p0){
@@ -995,7 +996,7 @@ inline search_result endsearch_value(board b, long long strt, int prev_value){
         use_mpct = 0.8;
     search_result res;
     res.policy = -1;
-    res.value = nega_alpha_ordering_final_mpc(&b, false, max_depth, -hw2, hw2, use_mpct);
+    res.value = nega_alpha_ordering_final_nomemo(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct);
     //res.value = mtd_final(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct, prev_value, false);
     res.depth = max_depth;
     res.nps = 0;
