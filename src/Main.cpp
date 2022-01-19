@@ -545,7 +545,7 @@ void Main() {
 			if (!initialize_failed)
 				font40(U"AI初期化中…").draw(0, 0, font_color);
 			else
-				font40(U"AI初期化失敗\n繰り返す場合はresourcesフォルダを確認してください。").draw(0, 0, font_color);
+				font40(U"AI初期化失敗\n繰り返す場合はresourcesフォルダを確認してください").draw(0, 0, font_color);
 			font30(initialize_message).draw(0, 600, font_color);
 			continue;
 		}
@@ -752,7 +752,10 @@ void Main() {
 
 		if (analysys_n_moves < (int)board_history.size()){
 			SimpleGUI::Button(U"棋譜解析", Vec2(0, 50), 120, false);
-			if (!analysys_start) {
+			if (!global_searching) {
+				analysys_n_moves = 1000;
+				global_searching = true;
+			} else if (!analysys_start) {
 				board_history[analysys_n_moves].translate_to_arr(bd_arr);
 				create_vacant_lst(board_history[analysys_n_moves], bd_arr);
 				future_val = calc_value_nopolicy(board_history[analysys_n_moves], depth, end_depth);
@@ -763,7 +766,7 @@ void Main() {
 				++analysys_n_moves;
 				analysys_start = false;
 			}
-		} else if (SimpleGUI::Button(U"棋譜解析", Vec2(0, 50), 120, !thinking && !book_learning)) {
+		} else if (SimpleGUI::Button(U"棋譜解析", Vec2(0, 50), 120, !thinking && !book_learning && playing)) {
 			graph.clear();
 			n_moves = board_history[board_history.size() - 1].n - 4;
 			bd = board_history[board_history.size() - 1];
