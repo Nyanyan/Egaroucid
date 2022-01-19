@@ -99,8 +99,46 @@ inline future<cell_value> calc_value(board bd, int policy, int depth, int end_de
 	return async(launch::async, cell_value_search, nb, depth, end_depth);
 }
 
+cell_value analyze_search(board bd, int depth, int end_depth) {
+	cell_value res;
+	int value = book.get(&bd);
+	if (value != -inf) {
+		res.value = value;
+		res.depth = book_define_value;
+	} else {
+		bool has_legal = false;
+		for (int cell = 0; cell < hw2; ++cell) {
+			if (bd.legal(cell))
+				has_legal = true;
+		}
+		bool passed = !has_legal;
+		if (!has_legal) {
+			bd.p = 1 - bd.p;
+			for (int cell = 0; cell < hw2; ++cell) {
+				if (bd.legal(cell))
+					has_legal = true;
+			}
+		}
+		if (!has_legal) {
+			res.value = -end_evaluate(&bd);
+			res.depth = 0;
+		} else if (hw2 - bd.n <= end_depth) {
+			res.value = endsearch(bd, tim(), false).value;
+			if (passed)
+				res.value = -res.value;
+			res.depth = depth >= 21 ? hw2 - bd.n + 1 : final_define_value;
+		} else {
+			res.value = midsearch(bd, tim(), depth).value;
+			if (passed)
+				res.value = -res.value;
+			res.depth = depth + 1;
+		}
+	}
+	return res;
+}
+
 inline future<cell_value> calc_value_nopolicy(board bd, int depth, int end_depth) {
-	return async(launch::async, cell_value_search, bd, depth, end_depth);
+	return async(launch::async, analyze_search, bd, depth, end_depth);
 }
 
 inline int proc_coord(int y, int x) {
@@ -415,10 +453,9 @@ void Main() {
 	while (System::Update()) {
 
 		SimpleGUI::CheckBox(show_log, U"ログ表示", Point(0, 687));
-		if (getline(logger_stream, logger))
+		while (getline(logger_stream, logger))
 			logger_String = Unicode::Widen(logger);
-		else
-			logger_stream.clear();
+		logger_stream.clear();
 		if (show_log)
 			font15(logger_String).draw(150, 695, font_color);
 
@@ -601,13 +638,13 @@ void Main() {
 						}
 						if (bd.legal(y * hw + x)) {
 							bd = bd.move(y * hw + x);
-						}
-						else {
+							check_pass(&bd);
+						} else {
 							bd.p = 1 - bd.p;
 							if (bd.legal(y * hw + x)) {
 								bd = bd.move(y * hw + x);
-							}
-							else {
+								check_pass(&bd);
+							} else {
 								flag = false;
 								break;
 							}
@@ -766,9 +803,9 @@ void Main() {
 		font20(U"メモ:").draw(470, 480, font_color);
 		font20(U"先手:").draw(470, 515, font_color);
 		font20(U"後手:").draw(730, 515, font_color);
-		SimpleGUI::TextBox(play_memo, Vec2(520, 475), 460, !book_learning);
-		SimpleGUI::TextBox(black_player, Vec2(520, 510), 200, !book_learning);
-		SimpleGUI::TextBox(white_player, Vec2(780, 510), 200, !book_learning);
+		SimpleGUI::TextBox(play_memo, Vec2(520, 475), 460);
+		SimpleGUI::TextBox(black_player, Vec2(520, 510), 200);
+		SimpleGUI::TextBox(white_player, Vec2(780, 510), 200);
 		if (SimpleGUI::Button(U"対局保存", Vec2(750, 550), 120, !book_learning)) {
 			if (playing || finished) {
 				String record_copy = record;
@@ -979,16 +1016,6 @@ void Main() {
 		} else if (playing && !book_learning) {
 			if (SimpleGUI::Button(U"読み停止", Vec2(880, 680), 120, global_searching))
 				global_searching = false;
-			/*
-			bool all_hint_done_flag = true, has_legal = false;
-			for (int cell = 0; cell < hw2; ++cell) {
-				if (bd.legal(cell)) {
-					has_legal = true;
-					if (cell_value_state[cell] % 2 == 1)
-						all_hint_done_flag = false;
-				}
-			}
-			*/
 			bool has_legal = false;
 			max_cell_value = -inf;
 			for (int cell = 0; cell < hw2; ++cell) {
@@ -1007,7 +1034,7 @@ void Main() {
 						stones[coord].draw(Palette::Black);
 					else if (bd_arr[coord] == white)
 						stones[coord].draw(Palette::White);
-					if (bd.policy == coord)
+					if (bd.policy == coord && analysys_n_moves == 1000)
 						Circle(cell_center_x[coord % hw], cell_center_y[coord / hw], 5).draw(Palette::Red);
 					if (bd.legal(coord)) {
 						if ((bd.p != ai_player && ai_player != both_ai_define) || n_moves != board_history.size() - 1){
@@ -1163,7 +1190,7 @@ void Main() {
 			if (value_default)
 				value_ui(U"評価値: ", round(value)).draw(250, 650, font_color);
 
-			if (((bd.p != ai_player && ai_player != both_ai_define) || n_moves != board_history.size() - 1) && hint_default && human_hint_default) {
+			if (((bd.p != ai_player && ai_player != both_ai_define) || n_moves != board_history.size() - 1) && hint_default && human_hint_default && analysys_n_moves == 1000) {
 				if (human_value_state == 0) {
 					human_value_future = async(launch::async, search_human, bd, tim(), human_hint_depth, human_hint_sub_depth);
 					human_value_state = 1;
