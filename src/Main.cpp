@@ -1016,17 +1016,17 @@ void Main() {
 		} else if (playing && !book_learning) {
 			if (SimpleGUI::Button(U"読み停止", Vec2(880, 680), 120, global_searching))
 				global_searching = false;
-			bool has_legal = false;
 			max_cell_value = -inf;
 			for (int cell = 0; cell < hw2; ++cell) {
 				if (bd.legal(cell)) {
-					has_legal = true;
 					if (cell_value_state[cell] > 0)
 						max_cell_value = max(max_cell_value, cell_values[cell]);
 				}
 			}
-			if (!has_legal)
-				bd.p = 1 - bd.p;
+			bool has_legal = !check_pass(&bd);
+			if (!has_legal) {
+				finished = true;
+			}
 			for (int y = 0; y < hw; ++y) {
 				for (int x = 0; x < hw; ++x) {
 					int coord = proc_coord(y, x);

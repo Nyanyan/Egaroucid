@@ -961,9 +961,13 @@ inline search_result endsearch(board b, long long strt, bool pre_searched){
         value = alpha;
         cerr << "final depth: " << max_depth << " time: " << tim() - strt << " policy: " << policy << " value: " << alpha << " nodes: " << searched_nodes << " nps: " << (long long)searched_nodes * 1000 / max(1LL, tim() - final_strt) << " get: " << transpose_table.hash_get << " reg: " << transpose_table.hash_reg << endl;
     } else {
-        int idx = myrandrange(0, (int)nb.size());
-        policy = nb[idx].policy;
-        value = nb[idx].v;
+        value = -inf;
+        for (int i = 0; i < (int)nb.size(); ++i){
+            if (nb[i].v > value){
+                value = nb[i].v;
+                policy = nb[i].policy;
+            }
+        }
     }
     search_result res;
     res.policy = policy;
