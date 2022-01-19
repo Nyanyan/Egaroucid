@@ -341,7 +341,7 @@ void Main() {
 	int human_value_state = 0;
 	vector<search_result_pv> human_values;
 	bool show_log = true;
-	TextEditState black_player, white_player;
+	TextEditState black_player, white_player, play_memo;
 
 	const Texture icon(U"resources/icon.png", TextureDesc::Mipped);
 
@@ -762,9 +762,10 @@ void Main() {
 		if (book_learning) {
 			value_ui(U"評価値: ", round(value)).draw(250, 650, font_color);
 		}
-
+		font20(U"メモ:").draw(470, 480, font_color);
 		font20(U"先手:").draw(470, 515, font_color);
 		font20(U"後手:").draw(730, 515, font_color);
+		SimpleGUI::TextBox(play_memo, Vec2(520, 475), 460);
 		SimpleGUI::TextBox(black_player, Vec2(520, 510), 200);
 		SimpleGUI::TextBox(white_player, Vec2(780, 510), 200);
 		if (SimpleGUI::Button(U"対局保存", Vec2(750, 550), 120, !book_learning)) {
@@ -826,7 +827,7 @@ void Main() {
 						black_player_text = U"?";
 					if (white_player_text == U"")
 						white_player_text = U"?";
-					ofs << record_stdstr << " " << bd.count(0) << " " << bd.count(1) << " " << result << " " << black_player_text << " " << white_player_text << endl;
+					ofs << record_stdstr << " " << bd.count(0) << " " << bd.count(1) << " " << result << " " << black_player_text << " " << white_player_text << " " << play_memo.text << endl;
 					ofs.close();
 					saved = 1;
 				}
