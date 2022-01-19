@@ -367,6 +367,25 @@ class board {
             this->policy = -1;
         }
 
+        inline void translate_from_arr_fast(const int arr[], int player) {
+            int i, j;
+            for (i = 0; i < b_idx_num; ++i)
+                this->b[i] = n_line - 1;
+            this->n = hw2;
+            for (i = 0; i < hw2; ++i) {
+                for (j = 0; j < 2; ++j) {
+                    if (arr[i] == black)
+                        this->b[place_included[i][j]] -= 2 * pow3[hw_m1 - local_place[place_included[i][j]][i]];
+                    else if (arr[i] == white)
+                        this->b[place_included[i][j]] -= pow3[hw_m1 - local_place[place_included[i][j]][i]];
+                    else if (j == 0)
+                        --this->n;
+                }
+            }
+            this->p = player;
+            this->policy = -1;
+        }
+
         inline int count(int player){
             int bk_score = 0, sum_stones = 0;
             for (int i = 0; i < hw; ++i){

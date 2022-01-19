@@ -72,7 +72,7 @@ class book{
                     cerr << "book import error 2" << endl;
                     return false;
                 }
-                b.translate_from_arr(board_arr, p);
+                b.translate_from_arr_fast(board_arr, p);
                 string value_str = book_line.substr(hw2 + 3, book_line.size() - hw2 - 3);
                 try{
                     value = stoi(value_str);
