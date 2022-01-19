@@ -803,9 +803,9 @@ void Main() {
 		font20(U"メモ:").draw(470, 480, font_color);
 		font20(U"先手:").draw(470, 515, font_color);
 		font20(U"後手:").draw(730, 515, font_color);
-		SimpleGUI::TextBox(play_memo, Vec2(520, 475), 460);
-		SimpleGUI::TextBox(black_player, Vec2(520, 510), 200);
-		SimpleGUI::TextBox(white_player, Vec2(780, 510), 200);
+		SimpleGUI::TextBox(play_memo, Vec2(520, 475), 460, inf, !book_learning);
+		SimpleGUI::TextBox(black_player, Vec2(520, 510), 200, inf, !book_learning);
+		SimpleGUI::TextBox(white_player, Vec2(780, 510), 200, inf, !book_learning);
 		if (SimpleGUI::Button(U"対局保存", Vec2(750, 550), 120, !book_learning)) {
 			if (playing || finished) {
 				String record_copy = record;
