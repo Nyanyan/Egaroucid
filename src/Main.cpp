@@ -312,13 +312,14 @@ void Main() {
 	Font saved_ui(20);
 	Font copy_ui(20);
 	Font joseki_ui(17);
-	Font font50(50);
+	Font font40(40);
 	Font font30(30);
+	Font font20(20);
 	Font font15(15);
 	Color font_color = Palette::Black;
 	bool playing = false, thinking = false, cell_value_thinking = false, changing_book = false;
 	int depth, end_depth, ai_player, cell_value_depth, cell_value_end_depth, book_accept, n_moves = 0;
-	double value;
+	double value = 0.0;
 	String change_book_value_str = U"";
 	String change_book_value_info_str = U"修正した評価値";
 	String change_book_value_coord_str = U"";
@@ -340,6 +341,7 @@ void Main() {
 	int human_value_state = 0;
 	vector<search_result_pv> human_values;
 	bool show_log = true;
+	TextEditState black_player, white_player;
 
 	const Texture icon(U"resources/icon.png", TextureDesc::Mipped);
 
@@ -386,7 +388,7 @@ void Main() {
 
 	Graph graph;
 	graph.sx = 550;
-	graph.sy = 220;
+	graph.sy = 200;
 	graph.size_x = 420;
 	graph.size_y = 300;
 	graph.resolution = 10;
@@ -426,7 +428,7 @@ void Main() {
 		}
 		if (closing){
 			if (book_changed) {
-				font50(U"bookが変更されました。保存しますか？").draw(0, 0, font_color);
+				font40(U"bookが変更されました。保存しますか？").draw(0, 0, font_color);
 				if (SimpleGUI::Button(U"保存する", Vec2(0, 150))) {
 					book.save();
 					ofstream ofs("resources/settings.txt");
@@ -503,15 +505,15 @@ void Main() {
 			double scale = 500.0 / icon.width();
 			icon.scaled(scale).draw(500 - 250, 350 - 250);
 			if (!initialize_failed)
-				font50(U"AI初期化中…").draw(0, 0, font_color);
+				font40(U"AI初期化中…").draw(0, 0, font_color);
 			else
-				font50(U"AI初期化失敗\nresourcesフォルダを確認してください。").draw(0, 0, font_color);
+				font40(U"AI初期化失敗\n繰り返す場合はresourcesフォルダを確認してください。").draw(0, 0, font_color);
 			font30(initialize_message).draw(0, 600, font_color);
 			continue;
 		}
 
 		if (book_changing) {
-			font50(U"book追加中…").draw(0, 0, font_color);
+			font40(U"book追加中…").draw(0, 0, font_color);
 			if (book_import_future.wait_for(seconds0) == future_status::ready) {
 				book_changing = false;
 				book_import_future.get();
@@ -527,7 +529,7 @@ void Main() {
 			continue;
 		} else if (const auto status = DragDrop::DragOver()) {
 			if (status->itemType == DragItemType::FilePaths) {
-				font50(U"ドラッグ&ドロップでbookを追加").draw(0, 0, font_color);
+				font40(U"ドラッグ&ドロップでbookを追加").draw(0, 0, font_color);
 				continue;
 			}
 		}
@@ -542,9 +544,9 @@ void Main() {
 		end_depth_double = max(end_depth_double, depth_double);
 		cell_value_end_depth_double = max(cell_value_end_depth_double, cell_value_depth_double);
 		SimpleGUI::Slider(U"中盤{:.0f}手読み"_fmt(depth_double), depth_double, 1, 60, Vec2(600, 0), 150, 250, !thinking && !book_learning);
-		SimpleGUI::Slider(U"終盤{:.0f}空読み"_fmt(end_depth_double), end_depth_double, 1, 60, Vec2(600, 35), 150, 250, !thinking && !book_learning);
+		SimpleGUI::Slider(U"終盤{:.0f}手読み"_fmt(end_depth_double), end_depth_double, 1, 60, Vec2(600, 35), 150, 250, !thinking && !book_learning);
 		SimpleGUI::Slider(U"ヒント中盤{:.0f}手読み"_fmt(cell_value_depth_double), cell_value_depth_double, 1, 60, Vec2(550, 70), 200, 250, !cell_value_thinking && hint_default && !book_learning);
-		SimpleGUI::Slider(U"ヒント終盤{:.0f}空読み"_fmt(cell_value_end_depth_double), cell_value_end_depth_double, 1, 60, Vec2(550, 105), 200, 250, !cell_value_thinking && hint_default && !book_learning);
+		SimpleGUI::Slider(U"ヒント終盤{:.0f}手読み"_fmt(cell_value_end_depth_double), cell_value_end_depth_double, 1, 60, Vec2(550, 105), 200, 250, !cell_value_thinking && hint_default && !book_learning);
 		SimpleGUI::Slider(U"book誤差{:.0f}石"_fmt(book_accept_double), book_accept_double, 0, 64, Vec2(550, 140), 200, 250, !book_learning);
 		depth = round(depth_double);
 		end_depth = round(end_depth_double);
@@ -760,8 +762,11 @@ void Main() {
 		if (book_learning) {
 			value_ui(U"評価値: ", round(value)).draw(250, 650, font_color);
 		}
-
-		if (SimpleGUI::Button(U"対局保存", Vec2(750, 555), 120, !book_learning)) {
+		font20(U"先手:").draw(470, 515, font_color);
+		font20(U"後手:").draw(730, 515, font_color);
+		SimpleGUI::TextBox(black_player, Vec2(520, 510), 200);
+		SimpleGUI::TextBox(white_player, Vec2(780, 510), 200);
+		if (SimpleGUI::Button(U"対局保存", Vec2(750, 550), 120, !book_learning)) {
 			if (playing || finished) {
 				String record_copy = record;
 				record_copy.replace(U"\n", U"");
@@ -815,7 +820,12 @@ void Main() {
 							int_result -= hw2 - sum_stones;
 						result = to_string(int_result);
 					}
-					ofs << record_stdstr << " " << bd.count(0) << " " << bd.count(1) << " " << result << endl;
+					String black_player_text = black_player.text, white_player_text = white_player.text;
+					if (black_player_text == U"")
+						black_player_text = U"?";
+					if (white_player_text == U"")
+						white_player_text = U"?";
+					ofs << record_stdstr << " " << bd.count(0) << " " << bd.count(1) << " " << result << " " << black_player_text << " " << white_player_text << endl;
 					ofs.close();
 					saved = 1;
 				}
@@ -850,6 +860,10 @@ void Main() {
 				ai_player = 2;
 			else
 				ai_player = both_ai_define;
+			if (ai_player == 0)
+				black_player.text = U"Egaroucid";
+			else if (ai_player == 1)
+				white_player.text = U"Egaroucid";
 			playing = true;
 			thinking = false;
 			value = 0.0;
@@ -958,7 +972,7 @@ void Main() {
 		} else if (playing && !book_learning) {
 			if (SimpleGUI::Button(U"読み停止", Vec2(880, 680), 120, global_searching))
 				global_searching = false;
-			bool first_hint = true, all_hint_done_flag = true;
+			bool all_hint_done_flag = true;
 			for (int cell = 0; cell < hw2; ++cell) {
 				if (bd.legal(cell)) {
 					if (cell_value_state[cell] % 2 == 1)
@@ -987,8 +1001,8 @@ void Main() {
 									}
 								}
 								else if (cell_value_state[coord] % 2 == 0 && cell_value_state[coord] / 2 + 1 <= cell_value_depth) {
-									if (first_hint && all_hint_done_flag) {
-										first_hint = false;
+									if (all_hint_done_flag) {
+										all_hint_done_flag = false;
 										transpose_table.init_prev();
 										transpose_table.init_now();
 									}
@@ -1042,7 +1056,7 @@ void Main() {
 									umigame_font(umigame_values[coord].w).draw(umigame_sx, umigame_sy, Palette::Green);
 								}
 							}
-							if (cells[coord].leftClicked() && !changing_book){ // && !finished && n_moves == board_history.size() - 1 + board_start_moves) {
+							if (cells[coord].leftClicked() && !changing_book){ // && (ai_player == 2 || (!finished && n_moves == board_history.size() - 1 + board_start_moves))) {
 								bd = bd.move(coord);
 								++n_moves;
 								human_value_state = 0;

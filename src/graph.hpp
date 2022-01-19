@@ -48,7 +48,7 @@ class Graph {
 					Line{sx, sy + y * dy, sx + size_x, sy + y * dy}.draw(1, graph_color);
 			}
 			for (int x = 0; x <= 60; x += 10){
-				font(x).draw(sx + x * dx, sy - 2 * font_size);
+				font(x).draw(sx + x * dx, sy - 2 * font_size, graph_color);
 				Line{sx + x * dx, sy, sx + x * dx, sy + size_y}.draw(1, graph_color);
 			}
 			for (int i = 0; i < (int)nodes.size(); ++i)
