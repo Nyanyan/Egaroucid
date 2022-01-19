@@ -82,7 +82,8 @@ cell_value cell_value_search(board bd, int depth, int end_depth) {
 		res.depth = book_define_value;
 	} else {
 		if (hw2 - bd.n <= end_depth) {
-			int g = midsearch_value_nomemo(bd, tim(), min(10, hw2 - bd.n)).value;
+			//int g = midsearch_value_nomemo(bd, tim(), min(10, hw2 - bd.n)).value;
+			int g = 0;
 			res.value = endsearch_value(bd, tim(), g).value;
 			res.depth = depth >= 21 ? hw2 - bd.n + 1 : final_define_value;
 		} else {
@@ -948,7 +949,6 @@ void Main() {
 						umigame_state[i] = 0;
 					}
 					human_value_state = 0;
-					max_cell_value = -inf;
 				}
 				if (SimpleGUI::Button(U">", Vec2(600, 650), 50, !book_learning)) {
 					if (n_moves - board_start_moves < board_history.size() - 1)
@@ -961,7 +961,6 @@ void Main() {
 						umigame_state[i] = 0;
 					}
 					human_value_state = 0;
-					max_cell_value = -inf;
 				}
 			}
 		}
@@ -980,13 +979,27 @@ void Main() {
 		} else if (playing && !book_learning) {
 			if (SimpleGUI::Button(U"読み停止", Vec2(880, 680), 120, global_searching))
 				global_searching = false;
-			bool all_hint_done_flag = true;
+			/*
+			bool all_hint_done_flag = true, has_legal = false;
 			for (int cell = 0; cell < hw2; ++cell) {
 				if (bd.legal(cell)) {
+					has_legal = true;
 					if (cell_value_state[cell] % 2 == 1)
 						all_hint_done_flag = false;
 				}
 			}
+			*/
+			bool has_legal = false;
+			max_cell_value = -inf;
+			for (int cell = 0; cell < hw2; ++cell) {
+				if (bd.legal(cell)) {
+					has_legal = true;
+					if (cell_value_state[cell] > 0)
+						max_cell_value = max(max_cell_value, cell_values[cell]);
+				}
+			}
+			if (!has_legal)
+				bd.p = 1 - bd.p;
 			for (int y = 0; y < hw; ++y) {
 				for (int x = 0; x < hw; ++x) {
 					int coord = proc_coord(y, x);
@@ -1005,15 +1018,9 @@ void Main() {
 										cell_values[coord] = -cell_value_result.value;
 										cell_depth[coord] = cell_value_result.depth;
 										++cell_value_state[coord];
-										max_cell_value = -inf;
 									}
 								}
 								else if (cell_value_state[coord] % 2 == 0 && cell_value_state[coord] / 2 + 1 <= cell_value_depth) {
-									if (all_hint_done_flag) {
-										all_hint_done_flag = false;
-										transpose_table.init_prev();
-										transpose_table.init_now();
-									}
 									if (cell_value_state[coord] / 2 + 1 < cell_value_depth)
 										future_cell_values[coord] = calc_value(bd, coord, cell_value_state[coord] / 2 + 1, cell_value_state[coord] / 2 + 1);
 									else
@@ -1022,9 +1029,8 @@ void Main() {
 								}
 							}
 							if (hint_default && cell_value_state[coord] >= 2) {
-								max_cell_value = max(max_cell_value, cell_values[coord]);
 								Color color = Palette::White;
-								if (cell_values[coord] == max_cell_value && all_hint_done_flag)
+								if (cell_values[coord] == max_cell_value)
 									color = Palette::Cyan;
 								cell_value_font(cell_values[coord]).draw(offset_x + (coord % hw) * cell_hw + 2, offset_y + (coord / hw) * cell_hw, color);
 								if (cell_depth[coord] == final_define_value)
@@ -1074,7 +1080,6 @@ void Main() {
 								record_copy.replace(U"\n", U"");
 								if (record_copy.size() % 40 == 0)
 									record += U"\n";
-								max_cell_value = -inf;
 								bd.translate_to_arr(bd_arr);
 								create_vacant_lst(bd, bd_arr);
 								finished = check_pass(&bd);
@@ -1141,7 +1146,6 @@ void Main() {
 						record_copy.replace(U"\n", U"");
 						if (record_copy.size() % 40 == 0)
 							record += U"\n";
-						max_cell_value = -inf;
 						bd.translate_to_arr(bd_arr);
 						create_vacant_lst(bd, bd_arr);
 						finished = check_pass(&bd);
