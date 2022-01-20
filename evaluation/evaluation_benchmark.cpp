@@ -536,6 +536,17 @@ inline double mse(){
     return avg_score / step / step;
 }
 
+inline double me(){
+    int i, j, score;
+    double avg_score, res = 0.0;
+    avg_score = 0;
+    for (i = 0; i < nums; ++i){
+        score = pre_calc_scores[i];
+        avg_score += (test_labels[i] - (double)score) / nums;
+    }
+    return avg_score / step;
+}
+
 inline double scoring_next_step(int pattern, int idx){
     double score, res = 0.0, err;
     int data_size = nums;
@@ -581,6 +592,7 @@ int main(int argc, char *argv[]){
     calc_scores();
 
     cout << "phase: " << sa_phase << " player: " << sa_player << " mse: " << mse() << " mae: " << mae() << endl;
+    cerr << me() << endl;
 
     return 0;
 }
