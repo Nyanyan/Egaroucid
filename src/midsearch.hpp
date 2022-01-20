@@ -373,11 +373,11 @@ inline search_result midsearch(board b, long long strt, int max_depth){
     }
     cerr << endl;
     int canput = nb.size();
-    cerr << "canput: " << canput << endl;
+    //cerr << "canput: " << canput << endl;
     int res_depth;
     int policy = -1;
     int tmp_policy;
-    int alpha, beta, g, value;
+    int alpha, beta, g, value = -inf, former_value = -inf;
     searched_nodes = 0;
     transpose_table.hash_get = 0;
     transpose_table.hash_reg = 0;
@@ -439,6 +439,8 @@ inline search_result midsearch(board b, long long strt, int max_depth){
         swap(transpose_table.now, transpose_table.prev);
         if (global_searching){
             policy = tmp_policy;
+            if (value != -inf)
+                former_value = value;
             value = alpha;
             res_depth = depth + 1;
             cerr << "depth: " << depth + 1 << " time: " << tim() - strt << " policy: " << policy << " value: " << alpha << " nodes: " << searched_nodes << " nps: " << (long long)searched_nodes * 1000 / max(1LL, tim() - strt) << " get: " << transpose_table.hash_get << " reg: " << transpose_table.hash_reg << endl;
@@ -447,7 +449,7 @@ inline search_result midsearch(board b, long long strt, int max_depth){
     }
     search_result res;
     res.policy = policy;
-    res.value = value;
+    res.value = (value + former_value) / 2;
     res.depth = res_depth;
     res.nps = searched_nodes * 1000 / max(1LL, tim() - strt);
     return res;

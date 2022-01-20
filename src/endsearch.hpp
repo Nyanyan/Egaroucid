@@ -861,7 +861,7 @@ inline search_result endsearch(board b, long long strt, bool pre_searched){
     }
     cerr << endl;
     int canput = nb.size();
-    cerr << "canput: " << canput << endl;
+    //cerr << "canput: " << canput << endl;
     int policy = -1;
     int tmp_policy;
     int alpha, beta, g, value;
@@ -885,11 +885,11 @@ inline search_result endsearch(board b, long long strt, bool pre_searched){
         use_mpct = 0.7;
     alpha = -hw2;
     beta = hw2;
-    int pre_search_depth = max(1, min(21, max_depth - simple_end_threshold + simple_mid_threshold));
+    int pre_search_depth = max(1, min(19, max_depth - simple_end_threshold + simple_mid_threshold));
     cerr << "pre search depth " << pre_search_depth << endl;
     transpose_table.init_now();
     for (i = 0; i < canput; ++i){
-        nb[i].v = -mtd(&nb[i], false, pre_search_depth, -hw2, hw2, true, 0.9);
+        nb[i].v = (-mtd(&nb[i], false, pre_search_depth, -hw2, hw2, true, 0.9) + -mtd(&nb[i], false, pre_search_depth - 1, -hw2, hw2, true, 0.9)) / 2;
         cerr << "pre search depth " << pre_search_depth << " poilicy " << nb[i].policy << " value " << nb[i].v << endl;
     }
     if (canput >= 2)
