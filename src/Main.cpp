@@ -996,6 +996,12 @@ void Main() {
 				if (black_player.text == U"Egaroucid" && ai_player != both_ai_define)
 					black_player.text = U"";
 			}
+			if (ai_player == 2) {
+				if (black_player.text == U"Egaroucid")
+					black_player.text = U"";
+				if (white_player.text == U"Egaroucid")
+					white_player.text = U"";
+			}
 			playing = true;
 			thinking = false;
 			value = 0.0;
