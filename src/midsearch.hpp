@@ -335,8 +335,9 @@ int nega_scout_nomemo(board *b, bool skipped, const int depth, int alpha, int be
                 if (beta < g)
                     return g;
             }
-            if (alpha < g){
-                g = -nega_scout_nomemo(&nb[i], false, depth - 1, -beta, -g, use_mpc, mpct_in);
+            if (alpha <= g){
+                alpha = g;
+                g = -nega_scout_nomemo(&nb[i], false, depth - 1, -beta, -alpha, use_mpc, mpct_in);
                 alpha = max(alpha, g);
                 if (beta <= alpha)
                     return alpha;

@@ -793,7 +793,7 @@ int nega_scout_final_nomemo(board *b, bool skipped, const int depth, int alpha, 
             g = -nega_alpha_ordering_final_nomemo(&nb[i], false, depth - 1, -alpha - search_epsilon, -alpha, use_mpc, mpct_in);
             if (beta <= g)
                 return g;
-            if (alpha < g){
+            if (alpha <= g){
                 alpha = g;
                 g = -nega_scout_final_nomemo(&nb[i], false, depth - 1, -beta, -alpha, use_mpc, mpct_in);
                 alpha = max(alpha, g);
@@ -874,9 +874,9 @@ inline search_result endsearch(board b, long long strt, bool pre_searched){
     if (max_depth >= 23)
         use_mpct = 2.0;
     if (max_depth >= 25)
-        use_mpct = 1.6;
+        use_mpct = 1.5;
     if (max_depth >= 27)
-        use_mpct = 1.3;
+        use_mpct = 1.2;
     if (max_depth >= 29)
         use_mpct = 0.9;
     if (max_depth >= 31)
@@ -974,9 +974,9 @@ inline search_result endsearch_value(board b, long long strt){
     if (max_depth >= 23)
         use_mpct = 2.0;
     if (max_depth >= 25)
-        use_mpct = 1.6;
+        use_mpct = 1.5;
     if (max_depth >= 27)
-        use_mpct = 1.3;
+        use_mpct = 1.2;
     if (max_depth >= 29)
         use_mpct = 0.9;
     if (max_depth >= 31)

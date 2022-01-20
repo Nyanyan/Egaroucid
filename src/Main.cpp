@@ -1144,7 +1144,7 @@ void Main() {
 										cell_value cell_value_result = future_cell_values[coord].get();
 										if (global_searching) {
 											cell_depth[coord] = cell_value_result.depth;
-											if (cell_value_state[coord] == 1 || cell_depth[coord] == final_define_value)
+											if (cell_value_state[coord] == 1 || cell_depth[coord] > cell_value_depth)
 												cell_values[coord] = -cell_value_result.value;
 											else {
 												cell_values[coord] -= cell_value_result.value;
