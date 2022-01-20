@@ -6,7 +6,7 @@
 #include "evaluate.hpp"
 #include "board.hpp"
 
-#define book_hash_table_size 32768
+#define book_hash_table_size 1048576
 constexpr int book_hash_mask = book_hash_table_size - 1;
 
 struct book_node{
