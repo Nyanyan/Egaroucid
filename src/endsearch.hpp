@@ -780,7 +780,7 @@ int nega_scout_final_nomemo(board *b, bool skipped, const int depth, int alpha, 
                 if (beta <= g)
                     return g;
             }
-            if (alpha < g || i == 0){
+            if (alpha <= g || i == 0){
                 g = -nega_scout_final_nomemo(&nb[i], false, depth - 1, -beta, -g, use_mpc, mpct_in);
                 alpha = max(alpha, g);
                 if (beta <= alpha)
