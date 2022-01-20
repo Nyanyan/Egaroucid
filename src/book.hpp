@@ -50,36 +50,35 @@ class book{
             double value;
             int p;
             while (getline(ifs, book_line)){
-                if (book_line.size() < hw2 + 4){
+                if (book_line.size() < hw2 + 3){
                     cerr << "book import error 0" << endl;
                     return false;
                 }
                 for (j = 0; j < hw2; ++j){
-                    elem = book_line[j];
-                    if (elem == '0')
-                        board_arr[j] = 0;
-                    else if (elem == '1')
-                        board_arr[j] = 1;
-                    else if (elem == '.')
-                        board_arr[j] = 2;
-                    else{
+					board_arr[j] = (int)book_line[j] - (int)'0';
+                    if (board_arr[j] < 0 || board_arr[j] > 2){
                         cerr << "book import error 1" << endl;
                         return false;
                     }
                 }
-                p = (int)book_line[hw2 + 1] - (int)'0';
+                p = (int)book_line[hw2] - (int)'0';
                 if (p != 0 && p != 1){
                     cerr << "book import error 2" << endl;
                     return false;
                 }
                 b.translate_from_arr_fast(board_arr, p);
-                string value_str = book_line.substr(hw2 + 3, book_line.size() - hw2 - 3);
-                try{
-                    value = stoi(value_str);
-                } catch (const invalid_argument& err){
-                    cerr << "book import error 3" << endl;
-                    return false;
-                }
+				value = (int)book_line[hw2 + 1] - (int)'!';
+				if (value < 0 || value > hw2 * 2 / 16){
+					cerr << "book import error 3 value=" << value << " char " << book_line[hw2 + 1] << " found in line " << n_book + 1 << endl;
+					return false;
+				}
+				value *= 16;
+				value += (int)book_line[hw2 + 2] - (int)'!';
+				if (value < 0 || value > hw2 * 2){
+					cerr << "book import error 4 value=" << value << " char " << book_line[hw2 + 2] << " found in line " << n_book + 1 << endl;
+					return false;
+				}
+				value -= hw2;
                 n_book += register_symmetric_book(b, value, n_book);
             }
             cerr << "book initialized " << n_book << " boards in book" << endl;
@@ -241,18 +240,12 @@ class book{
             string res = "";
             int arr[hw2];
             b.translate_to_arr(arr);
-            for (int i = 0; i < hw2; ++i){
-                if (arr[i] == black)
-                    res += to_string(black);
-                else if (arr[i] == white)
-                    res += to_string(white);
-                else
-                    res += ".";
-            }
-            res += " ";
-            res += to_string(b.p);
-            res += " ";
-            res += to_string(value);
+            for (int i = 0; i < hw2; ++i)
+                res += (char)(arr[i] + (int)'0');
+            value = max(0, min(hw2 * 2, value + hw2));
+            res += (char)(b.p + (int)'0');
+            res += (char)((int)'!' + value / 16);
+			res += (char)((int)'!' + value % 16);
             return res;
         }
 
@@ -263,7 +256,7 @@ class book{
             b.p = p;
             return create_book_data(b, value);
         }
-
+		/*
         inline void save_book(board b, int value, int line){
             remove("resources/book_backup.txt");
             rename("resources/book.txt", "resources/book_backup.txt");
@@ -289,6 +282,7 @@ class book{
             if (line == -1)
                 ofs << create_book_data(b, value) << endl;
         }
+		*/
 };
 
 book book;
