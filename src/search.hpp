@@ -22,7 +22,7 @@ constexpr int canput_bonus = 0;
 #define mpc_max_depth_final 30
 
 #define simple_mid_threshold 3
-#define simple_end_threshold 7
+#define simple_end_threshold 9
 
 #define po_max_depth 8
 
