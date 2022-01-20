@@ -267,7 +267,7 @@ inline vector<principal_variation> search_pv(board b, long long strt, int max_de
             nb.push_back(b.move(cell));
         }
     }
-    int canput = nb.size();
+    //int canput = nb.size();
     //cerr << "canput: " << canput << endl;
     int g;
     bool use_mpc = max_depth >= 13 ? true : false;

@@ -794,7 +794,9 @@ int nega_scout_final_nomemo(board *b, bool skipped, const int depth, int alpha, 
 
 int mtd_final(board *b, bool skipped, int depth, int l, int u, bool use_mpc, double use_mpct, int g, bool use_multi_thread){
     int beta;
-    g = max(l + search_epsilon, min(u, g));
+    l /= 2;
+    u /= 2;
+    g = max(l + search_epsilon, min(u, g / 2));
     #if USE_MULTI_THREAD && false
         int i, start_beta;
         vector<int> result(n_threads);
@@ -821,7 +823,7 @@ int mtd_final(board *b, bool skipped, int depth, int l, int u, bool use_mpc, dou
         //cerr << l << " " << g << " " << u << endl;
         while (u - l > 0){
             beta = max(l + search_epsilon, g);
-            g = nega_alpha_ordering_final(b, skipped, depth, beta - search_epsilon, beta, use_multi_thread, use_mpc, use_mpct);
+            g = nega_alpha_ordering_final(b, skipped, depth, beta * 2 - search_epsilon, beta * 2, use_multi_thread, use_mpc, use_mpct) / 2;
             if (g < beta)
                 u = g;
             else
@@ -830,7 +832,7 @@ int mtd_final(board *b, bool skipped, int depth, int l, int u, bool use_mpc, dou
         }
         //cerr << g << endl;
     #endif
-    return g;
+    return g * 2;
 }
 
 inline search_result endsearch(board b, long long strt, bool pre_searched){
@@ -854,27 +856,28 @@ inline search_result endsearch(board b, long long strt, bool pre_searched){
     transpose_table.hash_reg = 0;
     int max_depth = hw2 - b.n;
     bool use_mpc = max_depth >= 21 ? true : false;
-    double use_mpct = 1.8;
+    double use_mpct = 2.5;
     if (max_depth >= 23)
-        use_mpct = 1.7;
+        use_mpct = 2.0;
     if (max_depth >= 25)
-        use_mpct = 1.6;
+        use_mpct = 1.8;
     if (max_depth >= 27)
-        use_mpct = 1.4;
+        use_mpct = 1.3;
     if (max_depth >= 29)
-        use_mpct = 1.2;
-    if (max_depth >= 31)
-        use_mpct = 1.0;
-    if (max_depth >= 33)
         use_mpct = 0.8;
-    cerr << "start final search depth " << max_depth << endl;
+    if (max_depth >= 31)
+        use_mpct = 0.7;
+    if (max_depth >= 33)
+        use_mpct = 0.6;
     alpha = -hw2;
     beta = hw2;
-    int pre_search_depth = min(18, max_depth - 1);
+    int pre_search_depth = max(1, min(21, max_depth - simple_end_threshold + simple_mid_threshold));
     cerr << "pre search depth " << pre_search_depth << endl;
     transpose_table.init_now();
-    for (i = 0; i < canput; ++i)
-        nb[i].v = -mtd(&nb[i], false, pre_search_depth, -hw2, hw2, true, 0.8);
+    for (i = 0; i < canput; ++i){
+        nb[i].v = -mtd(&nb[i], false, pre_search_depth, -hw2, hw2, true, 1.0);
+        cerr << "pre search depth " << pre_search_depth << " poilicy " << nb[i].policy << " value " << nb[i].v << endl;
+    }
     if (canput >= 2)
         sort(nb.begin(), nb.end());
     //for (i = 0; i < canput; ++i)
@@ -883,7 +886,7 @@ inline search_result endsearch(board b, long long strt, bool pre_searched){
     transpose_table.init_now();
     long long final_strt = tim();
     searched_nodes = 0;
-    cerr << "start main search" << endl;
+    cerr << "start main search depth " << max_depth << endl;
     if (nb[0].n < hw2 - 5){
         //alpha = -nega_scout_final(&nb[0], false, max_depth, -beta, -alpha, use_mpc, use_mpct);
         alpha = -mtd_final(&nb[0], false, max_depth - 1, -beta, -alpha, use_mpc, use_mpct, -nb[0].v, true);
