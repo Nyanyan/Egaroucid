@@ -82,9 +82,7 @@ cell_value cell_value_search(board bd, int depth, int end_depth) {
 		res.depth = book_define_value;
 	} else {
 		if (hw2 - bd.n <= end_depth) {
-			//int g = midsearch_value_nomemo(bd, tim(), min(10, hw2 - bd.n)).value;
-			int g = 0;
-			res.value = endsearch_value(bd, tim(), g).value;
+			res.value = endsearch_value(bd, tim()).value;
 			res.depth = depth >= 21 ? hw2 - bd.n + 1 : final_define_value;
 		} else {
 			res.value = midsearch_value(bd, tim(), depth).value;
@@ -228,8 +226,7 @@ inline int get_value(board bd, int depth, int end_depth) {
 	if (value == -inf) {
 		transpose_table.init_now();
 		if (hw2 - bd.n <= end_depth) {
-			int g = midsearch_value_nomemo(bd, tim(), min(10, hw2 - bd.n)).value;
-			value = endsearch_value(bd, tim(), g).value;
+			value = endsearch_value(bd, tim()).value;
 		} else {
 			value = midsearch_value_book(bd, tim(), depth).value;
 		}
@@ -260,7 +257,7 @@ void learn_book(board bd, int depth, int end_depth, board *bd_ptr, double *value
 					if (!book_learning)
 						return;
 					value = get_value(nb, depth, end_depth);
-					if (abs(value) <= book_learn_accept) {
+					if (abs(value) <= book_learn_accept && global_searching) {
 						nb.copy(bd_ptr);
 						*value_ptr = value;
 						book.reg(nb, value);
@@ -381,6 +378,7 @@ void Main() {
 	vector<search_result_pv> human_values;
 	bool show_log = true;
 	TextEditState black_player, white_player, play_memo;
+	bool want_back = false, want_forward = false;;
 
 	const Texture icon(U"resources/icon.png", TextureDesc::Mipped);
 
@@ -545,6 +543,7 @@ void Main() {
 
 		if (System::GetUserActions() & UserAction::CloseButtonClicked) {
 			book_learning = false;
+			global_searching = false;
 			closing = true;
 		}
 		if (closing){
@@ -1062,12 +1061,20 @@ void Main() {
 				move_font(bd.n - 3, U"手目").draw(420, 650, font_color);
 			bool flag = false;
 			for (int i = 0; i < hw2; ++i)
-				flag |= (cell_value_state[i] == 1);
+				flag |= (cell_value_state[i] % 2 == 1);
 			if (flag) {
-				SimpleGUI::Button(U"<", Vec2(550, 650), 50, false);
-				SimpleGUI::Button(U">", Vec2(600, 650), 50, false);
+				if (SimpleGUI::Button(U"<", Vec2(550, 650), 50)) {
+					global_searching = false;
+					want_back = true;
+				}
+				if (SimpleGUI::Button(U">", Vec2(600, 650), 50)) {
+					global_searching = false;
+					want_forward = true;
+				}
 			} else {
-				if (SimpleGUI::Button(U"<", Vec2(550, 650), 50, !book_learning)) {
+				if (SimpleGUI::Button(U"<", Vec2(550, 650), 50, !book_learning) || want_back) {
+					global_searching = true;
+					want_back = false;
 					if (n_moves - board_start_moves >= 1)
 						--n_moves;
 					bd = board_history[n_moves - board_start_moves];
@@ -1078,9 +1085,10 @@ void Main() {
 						umigame_state[i] = 0;
 					}
 					human_value_state = 0;
-					global_searching = true;
 				}
-				if (SimpleGUI::Button(U">", Vec2(600, 650), 50, !book_learning)) {
+				if (SimpleGUI::Button(U">", Vec2(600, 650), 50, !book_learning) || want_forward) {
+					global_searching = true;
+					want_forward = false;
 					if (n_moves - board_start_moves < board_history.size() - 1)
 						++n_moves;
 					bd = board_history[n_moves - board_start_moves];
@@ -1091,7 +1099,6 @@ void Main() {
 						umigame_state[i] = 0;
 					}
 					human_value_state = 0;
-					global_searching = true;
 				}
 			}
 		}
@@ -1118,9 +1125,8 @@ void Main() {
 				}
 			}
 			bool has_legal = !check_pass(&bd);
-			if (!has_legal) {
+			if (!has_legal)
 				finished = true;
-			}
 			for (int y = 0; y < hw; ++y) {
 				for (int x = 0; x < hw; ++x) {
 					int coord = proc_coord(y, x);
@@ -1133,11 +1139,18 @@ void Main() {
 					if (bd.legal(coord)) {
 						if ((bd.p != ai_player && ai_player != both_ai_define) || n_moves != board_history.size() - 1){
 							if (hint_default) {
-								if (cell_value_state[coord] % 2 == 1 && global_searching) {
+								if (cell_value_state[coord] % 2 == 1) {
 									if (future_cell_values[coord].wait_for(seconds0) == future_status::ready) {
 										cell_value cell_value_result = future_cell_values[coord].get();
-										cell_values[coord] = -cell_value_result.value;
-										cell_depth[coord] = cell_value_result.depth;
+										if (global_searching) {
+											cell_depth[coord] = cell_value_result.depth;
+											if (cell_value_state[coord] == 1 || cell_depth[coord] == final_define_value)
+												cell_values[coord] = -cell_value_result.value;
+											else {
+												cell_values[coord] -= cell_value_result.value;
+												cell_values[coord] /= 2;
+											}
+										}
 										++cell_value_state[coord];
 									}
 								}

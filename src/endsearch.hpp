@@ -15,6 +15,8 @@
 using namespace std;
 
 int nega_alpha_ordering_final_nomemo(board *b, bool skipped, int depth, int alpha, int beta, bool use_mpc, double use_mpct){
+    if (!global_searching)
+        return -inf;
     if (depth <= simple_mid_threshold)
         return nega_alpha(b, skipped, depth, alpha, beta);
     ++searched_nodes;
@@ -22,12 +24,14 @@ int nega_alpha_ordering_final_nomemo(board *b, bool skipped, int depth, int alph
         if (stability_cut(b, &alpha, &beta))
             return alpha;
     #endif
-    if (mpc_min_depth <= depth && depth <= mpc_max_depth && use_mpc){
-        if (mpc_higher(b, skipped, depth, beta, use_mpct))
-            return beta;
-        if (mpc_lower(b, skipped, depth, alpha, use_mpct))
-            return alpha;
-    }
+    #if USE_END_MPC
+        if (mpc_min_depth <= depth && depth <= mpc_max_depth && use_mpc){
+            if (mpc_higher(b, skipped, depth, beta, use_mpct))
+                return beta;
+            if (mpc_lower(b, skipped, depth, alpha, use_mpct))
+                return alpha;
+        }
+    #endif
     vector<board> nb;
     int canput = 0;
     for (const int &cell: vacant_lst){
@@ -77,7 +81,7 @@ inline bool mpc_higher_final(board *b, bool skipped, int depth, int beta, double
 inline bool mpc_lower_final(board *b, bool skipped, int depth, int alpha, double t){
     if (b->n + mpcd[depth] >= hw2 - 5)
         return false;
-    int bound = alpha - floor(t * mpcsd_final[depth - mpc_min_depth_final]);
+    int bound = alpha - ceil(t * mpcsd_final[depth - mpc_min_depth_final]);
     if (bound < -hw2)
         bound = -hw2; //return false;
     return nega_alpha_ordering_final_nomemo(b, skipped, mpcd[depth], bound, bound + search_epsilon, true, t) <= bound;
@@ -527,7 +531,7 @@ int nega_alpha_final(board *b, bool skipped, const int depth, int alpha, int bet
                 }
             }
             for (const int &cell: vacant_lst){
-                if (!(b->parity & cell_div4[cell]) && b->legal(cell)){
+                if ((b->parity & cell_div4[cell] == 0) && b->legal(cell)){
                     passed = false;
                     b->move(cell, &nb);
                     g = -nega_alpha_final(&nb, false, depth - 1, -beta, -alpha);
@@ -589,12 +593,18 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
     int l, u;
     transpose_table.get_now(b, hash, &l, &u);
     #if USE_END_TC
-        if (l >= beta)
-            return l;
-        if (alpha >= u)
-            return u;
         if (u == l)
             return u;
+        if (l >= beta){
+            if (u != inf)
+                return u;
+            return l;
+        }
+        if (alpha >= u){
+            if (l != -inf)
+                return l;
+            return u;
+        }
     #endif
     alpha = max(alpha, l);
     beta = min(beta, u);
@@ -739,7 +749,7 @@ int nega_scout_final_nomemo(board *b, bool skipped, const int depth, int alpha, 
     }
     if (canput >= 2)
         sort(nb.begin(), nb.end());
-    int g = alpha, v = -inf;
+    int g = alpha + 1, v = -inf;
     #if USE_MULTI_THREAD && false
         int i;
         g = -nega_scout_final(&nb[0], false, depth - 1, -beta, -alpha, use_mpc, mpct_in);
@@ -774,14 +784,18 @@ int nega_scout_final_nomemo(board *b, bool skipped, const int depth, int alpha, 
             }
         }
     #else
-        for (int i = 0; i < canput; ++i){
-            if (i > 0){
-                g = -nega_alpha_ordering_final_nomemo(&nb[i], false, depth - 1, -alpha - search_epsilon, -alpha, use_mpc, mpct_in);
-                if (beta <= g)
-                    return g;
-            }
-            if (alpha <= g || i == 0){
-                g = -nega_scout_final_nomemo(&nb[i], false, depth - 1, -beta, -g, use_mpc, mpct_in);
+        g = -nega_scout_final_nomemo(&nb[0], false, depth - 1, -beta, -alpha, use_mpc, mpct_in);
+        alpha = max(alpha, g);
+        if (beta <= alpha)
+            return alpha;
+        v = max(v, g);
+        for (int i = 1; i < canput; ++i){
+            g = -nega_alpha_ordering_final_nomemo(&nb[i], false, depth - 1, -alpha - search_epsilon, -alpha, use_mpc, mpct_in);
+            if (beta <= g)
+                return g;
+            if (alpha < g){
+                alpha = g;
+                g = -nega_scout_final_nomemo(&nb[i], false, depth - 1, -beta, -alpha, use_mpc, mpct_in);
                 alpha = max(alpha, g);
                 if (beta <= alpha)
                     return alpha;
@@ -948,7 +962,7 @@ inline search_result endsearch(board b, long long strt, bool pre_searched){
     return res;
 }
 
-inline search_result endsearch_value(board b, long long strt, int prev_value){
+inline search_result endsearch_value(board b, long long strt){
     int max_depth = hw2 - b.n;
     bool use_mpc = max_depth >= 21 ? true : false;
     double use_mpct = 2.5;
@@ -966,9 +980,24 @@ inline search_result endsearch_value(board b, long long strt, int prev_value){
         use_mpct = 0.7;
     search_result res;
     res.policy = -1;
-    //res.value = nega_alpha_ordering_final_nomemo(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct);
-    //res.value = mtd_final(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct, prev_value, false);
-    res.value = nega_scout_final_nomemo(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct);
+    if (b.n < hw2 - 5)
+        res.value = nega_scout_final_nomemo(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct);
+    else{
+        int cells[5];
+        pick_vacant(&b, cells);
+        if (b.n == hw2 - 5)
+            res.value = last5(&b, false, -hw2, hw2, cells[0], cells[1], cells[2], cells[3], cells[4]);
+        else if (b.n == hw2 - 4)
+            res.value = last4(&b, false, -hw2, hw2, cells[0], cells[1], cells[2], cells[3]);
+        else if (b.n == hw2 - 3)
+            res.value = last3(&b, false, -hw2, hw2, cells[0], cells[1], cells[2]);
+        else if (b.n == hw2 - 2)
+            res.value = last2(&b, false, -hw2, hw2, cells[0], cells[1]);
+        else if (b.n == hw2 - 1)
+            res.value = last1(&b, false, cells[0]);
+        else
+            res.value = end_evaluate(&b);
+    }
     res.depth = max_depth;
     res.nps = 0;
     //cerr << res.value << endl;
