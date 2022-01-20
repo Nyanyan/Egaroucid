@@ -8,7 +8,6 @@
 
 #define book_hash_table_size 32768
 constexpr int book_hash_mask = book_hash_table_size - 1;
-#define book_stones 64
 
 struct book_node{
     uint_fast16_t k[hw];
@@ -38,49 +37,73 @@ class book{
         inline bool import_file(string file){
             int j;
             int board_arr[hw2];
-            string book_str;
-            char elem;
-            ifstream ifs(file);
-            if (ifs.fail()){
+			FILE* fp;
+            if (fopen_s(&fp, "resources/book.txt", "r") != 0) {
                 cerr << "book file not exist" << endl;
 				return false;
             }
-            string book_line;
             board b;
             double value;
             int p;
-            while (getline(ifs, book_line)){
-                if (book_line.size() < hw2 + 3){
-                    cerr << "book import error 0" << endl;
-                    return false;
-                }
-                for (j = 0; j < hw2; ++j){
-					board_arr[j] = (int)book_line[j] - (int)'0';
+			bool flag = true;
+			char elem;
+            while (flag){
+				for (j = 0; j < hw2; ++j) {
+					if ((elem = fgetc(fp)) == EOF){
+						flag = false;
+						break;
+					}
+					board_arr[j] = (int)elem - (int)'0';
                     if (board_arr[j] < 0 || board_arr[j] > 2){
-                        cerr << "book import error 1" << endl;
+                        cerr << "book import error 1 char " << elem << " found in line " << n_book + 1 << endl;
                         return false;
                     }
                 }
-                p = (int)book_line[hw2] - (int)'0';
-                if (p != 0 && p != 1){
-                    cerr << "book import error 2" << endl;
-                    return false;
-                }
-                b.translate_from_arr_fast(board_arr, p);
-				value = (int)book_line[hw2 + 1] - (int)'!';
-				if (value < 0 || value > hw2 * 2 / 16){
-					cerr << "book import error 3 value=" << value << " char " << book_line[hw2 + 1] << " found in line " << n_book + 1 << endl;
-					return false;
+				if (flag) {
+					if ((elem = fgetc(fp)) == EOF) {
+						flag = false;
+						break;
+					}
+					p = (int)elem - (int)'0';
+					if (p != 0 && p != 1) {
+						cerr << "book import error 2" << endl;
+						return false;
+					}
+					b.translate_from_arr_fast(board_arr, p);
 				}
-				value *= 16;
-				value += (int)book_line[hw2 + 2] - (int)'!';
-				if (value < 0 || value > hw2 * 2){
-					cerr << "book import error 4 value=" << value << " char " << book_line[hw2 + 2] << " found in line " << n_book + 1 << endl;
-					return false;
+				if (flag) {
+					if ((elem = fgetc(fp)) == EOF) {
+						flag = false;
+						break;
+					}
+					value = (int)elem - (int)'!';
+					if (value < 0 || value > hw2 * 2 / 16) {
+						cerr << "book import error 3 value=" << value << " char " << elem << " found in line " << n_book + 1 << endl;
+						return false;
+					}
 				}
-				value -= hw2;
-                n_book += register_symmetric_book(b, value, n_book);
+				if (flag) {
+					if ((elem = fgetc(fp)) == EOF) {
+						flag = false;
+						break;
+					}
+					value *= 16;
+					value += (int)elem - (int)'!';
+					if (value < 0 || value > hw2 * 2) {
+						cerr << "book import error 4 value=" << value << " char " << elem << " found in line " << n_book + 1 << endl;
+						return false;
+					}
+					value -= hw2;
+					n_book += register_symmetric_book(b, value, n_book);
+				}
+				while (elem != '\n') {
+					if ((elem = fgetc(fp)) == EOF) {
+						flag = false;
+						break;
+					}
+				}
             }
+			fclose(fp);
             cerr << "book initialized " << n_book << " boards in book" << endl;
             return true;
         }
