@@ -29,9 +29,9 @@ class Graph {
 			sort(nodes.begin(), nodes.end());
 			show_nodes.clear();
 			for (int i = 0; i < (int)nodes.size() - 1; ++i) {
-				if (nodes[i].first + 1 == nodes[i + 1].first)
-					show_nodes.emplace_back(round((double)(nodes[i].second + nodes[i + 1].second) / 2.0));
-				else
+				//if (nodes[i].first + 1 == nodes[i + 1].first)
+				//	show_nodes.emplace_back(round((double)(nodes[i].second + nodes[i + 1].second) / 2.0));
+				//else
 					show_nodes.emplace_back(nodes[i].second);
 			}
 			if (nodes.size())

@@ -441,6 +441,8 @@ inline search_result midsearch(board b, long long strt, int max_depth){
             policy = tmp_policy;
             if (value != -inf)
                 former_value = value;
+            else
+                former_value = alpha;
             value = alpha;
             res_depth = depth + 1;
             cerr << "depth: " << depth + 1 << " time: " << tim() - strt << " policy: " << policy << " value: " << alpha << " nodes: " << searched_nodes << " nps: " << (long long)searched_nodes * 1000 / max(1LL, tim() - strt) << " get: " << transpose_table.hash_get << " reg: " << transpose_table.hash_reg << endl;
