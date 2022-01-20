@@ -531,7 +531,7 @@ int nega_alpha_final(board *b, bool skipped, const int depth, int alpha, int bet
                 }
             }
             for (const int &cell: vacant_lst){
-                if ((b->parity & cell_div4[cell] == 0) && b->legal(cell)){
+                if ((b->parity & cell_div4[cell]) == 0 && b->legal(cell)){
                     passed = false;
                     b->move(cell, &nb);
                     g = -nega_alpha_final(&nb, false, depth - 1, -beta, -alpha);
@@ -885,17 +885,22 @@ inline search_result endsearch(board b, long long strt, bool pre_searched){
         use_mpct = 0.7;
     alpha = -hw2;
     beta = hw2;
-    int pre_search_depth = max(1, min(19, max_depth - simple_end_threshold + simple_mid_threshold));
+    int pre_search_depth = max(1, min(21, max_depth - simple_end_threshold + simple_mid_threshold));
     cerr << "pre search depth " << pre_search_depth << endl;
     transpose_table.init_now();
     for (i = 0; i < canput; ++i){
-        nb[i].v = (-mtd(&nb[i], false, pre_search_depth, -hw2, hw2, true, 0.9) + -mtd(&nb[i], false, pre_search_depth - 1, -hw2, hw2, true, 0.9)) / 2;
+        nb[i].v = -mtd(&nb[i], false, pre_search_depth - 1, -hw2, hw2, true, 0.9);
+        cerr << "pre search depth " << pre_search_depth - 1 << " poilicy " << nb[i].policy << " value " << nb[i].v << endl;
+    }
+    swap(transpose_table.now, transpose_table.prev);
+    transpose_table.init_now();
+    for (i = 0; i < canput; ++i){
+        nb[i].v += -mtd(&nb[i], false, pre_search_depth, -hw2, hw2, true, 0.9);
+        nb[i].v /= 2;
         cerr << "pre search depth " << pre_search_depth << " poilicy " << nb[i].policy << " value " << nb[i].v << endl;
     }
     if (canput >= 2)
         sort(nb.begin(), nb.end());
-    //for (i = 0; i < canput; ++i)
-    //    cerr << nb[i].policy << " " << nb[i].v << endl;
     swap(transpose_table.now, transpose_table.prev);
     transpose_table.init_now();
     long long final_strt = tim();

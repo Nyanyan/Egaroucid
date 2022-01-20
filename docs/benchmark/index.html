@@ -23,26 +23,26 @@
             <p>FFO endgame testはオセロAIの終盤探索力の指標として広く使われるベンチマークです。</p>
             <p>下に結果を示しますが、重要なのはdepth(探索深さ)とtime(時間ミリ秒)、nps(1秒あたりの探索ノード数)です。</p>
             <p>なお、前向きな枝刈りであるMPCを使った結果なので、ある程度ミスがあります。その場合はWRONGと書きました。その中でも、勝ち負け引き分けさえも間違っている場合は特にWRONG RESULTと追記されています。</p>
-            <pre><div>#40 final depth: 20 time: 2076 policy: 8 value: 38 nodes: 22528387 nps: 11281115 get: 78889 reg: 519558
-#41 final depth: 22 time: 839 policy: 31 value: 0 nodes: 4386427 nps: 6384901 get: 5650 reg: 32744
-#42 final depth: 22 time: 1705 policy: 14 value: 2 nodes: 10472675 nps: 6529099 get: 14475 reg: 86666       WRONG
-#43 final depth: 23 time: 1021 policy: 50 value: -10 nodes: 4514828 nps: 5532877 get: 5642 reg: 34350       WRONG
-#44 final depth: 23 time: 1079 policy: 11 value: -14 nodes: 4404282 nps: 5951732 get: 6556 reg: 42739
-#45 final depth: 24 time: 6867 policy: 9 value: 4 nodes: 39414611 nps: 6467773 get: 17134 reg: 201442       WRONG
-#46 final depth: 24 time: 3054 policy: 17 value: -8 nodes: 13991795 nps: 5657822 get: 8303 reg: 108734
-#47 final depth: 25 time: 529 policy: 14 value: 0 nodes: 23199 nps: 2109000 get: 1053 reg: 5458             WRONG RESULT
-#48 final depth: 25 time: 1132 policy: 45 value: 18 nodes: 2165778 nps: 4530916 get: 1733 reg: 22368        WRONG
-#49 final depth: 26 time: 4787 policy: 4 value: 12 nodes: 26691629 nps: 7022264 get: 12424 reg: 210079      WRONG
-#50 final depth: 26 time: 4178 policy: 59 value: 6 nodes: 9400615 nps: 5908620 get: 8138 reg: 83205         WRONG
-#51 final depth: 27 time: 3004 policy: 16 value: 2 nodes: 8515089 nps: 5812347 get: 5766 reg: 77768         WRONG
-#52 final depth: 27 time: 2769 policy: 17 value: 0 nodes: 5947669 nps: 4239250 get: 6912 reg: 64612
-#53 final depth: 28 time: 27072 policy: 59 value: -2 nodes: 144796340 nps: 6472212 get: 31597 reg: 1003484
-#54 final depth: 28 time: 8319 policy: 61 value: -2 nodes: 34820413 nps: 4640246 get: 10734 reg: 219729
-#55 final depth: 29 time: 4765 policy: 46 value: 0 nodes: 6626631 nps: 3843753 get: 4616 reg: 60110
-#56 final depth: 29 time: 513 policy: 39 value: 0 nodes: 135898 nps: 2891446 get: 232 reg: 2075             WRONG RESULT
-#57 final depth: 30 time: 1816 policy: 33 value: -2 nodes: 1710851 nps: 2954837 get: 2144 reg: 19702        WRONG
-#58 final depth: 30 time: 2917 policy: 6 value: 2 nodes: 1964413 nps: 4911032 get: 3651 reg: 30024          WRONG
-#59 final depth: 34 time: 580 policy: 31 value: 62 nodes: 12830 nps: 4276666 get: 942 reg: 3656             WRONG
+            <pre><div>#40 final depth: 20 time: 2136 policy: 8 value: 38 nodes: 20849486 nps: 10847807 get: 63184 reg: 500732
+#41 final depth: 22 time: 1307 policy: 31 value: 0 nodes: 4201566 nps: 4547149 get: 5517 reg: 31203
+#42 final depth: 22 time: 1694 policy: 24 value: 0 nodes: 9920366 nps: 6698424 get: 14926 reg: 83720        WRONG RESULT
+#43 final depth: 23 time: 1111 policy: 50 value: -10 nodes: 4916106 nps: 5644208 get: 7109 reg: 37788       WRONG
+#44 final depth: 23 time: 1460 policy: 11 value: -14 nodes: 6117461 nps: 6015202 get: 10041 reg: 60383
+#45 final depth: 24 time: 5258 policy: 9 value: 6 nodes: 27789589 nps: 6978801 get: 13301 reg: 148564
+#46 final depth: 24 time: 2810 policy: 17 value: -8 nodes: 12391311 nps: 6535501 get: 7348 reg: 107531
+#47 final depth: 25 time: 747 policy: 14 value: 0 nodes: 101179 nps: 3161843 get: 2128 reg: 8923            WRONG RESULT
+#48 final depth: 25 time: 1092 policy: 45 value: 18 nodes: 898747 nps: 4858091 get: 3559 reg: 16560         WRONG
+#49 final depth: 26 time: 3068 policy: 4 value: 12 nodes: 14940711 nps: 7203814 get: 9069 reg: 124864       WRONG
+#50 final depth: 26 time: 3109 policy: 59 value: 8 nodes: 2903241 nps: 4339672 get: 8641 reg: 42516         WRONG
+#51 final depth: 27 time: 2181 policy: 12 value: 6 nodes: 4272042 nps: 4511131 get: 3498 reg: 38164
+#52 final depth: 27 time: 3246 policy: 16 value: 0 nodes: 8371498 nps: 4469566 get: 10749 reg: 82669
+#53 final depth: 28 time: 34867 policy: 59 value: 0 nodes: 162948506 nps: 6252100 get: 46866 reg: 1195238   WRONG RESULT
+#54 final depth: 28 time: 16836 policy: 50 value: -2 nodes: 82001935 nps: 5255523 get: 22739 reg: 515366
+#55 final depth: 29 time: 16051 policy: 46 value: 0 nodes: 52898108 nps: 4973964 get: 22228 reg: 339057
+#56 final depth: 29 time: 1287 policy: 39 value: 0 nodes: 1501032 nps: 5304000 get: 1459 reg: 13067         WRONG RESULT
+#57 final depth: 30 time: 735 policy: 33 value: -2 nodes: 575487 nps: 3061101 get: 740 reg: 6324            WRONG
+#58 final depth: 30 time: 2566 policy: 6 value: 2 nodes: 1911863 nps: 5525615 get: 2315 reg: 20126          WRONG
+#59 final depth: 34 time: 795 policy: 31 value: 62 nodes: 22303 nps: 3717166 get: 689 reg: 4736             WRONG
             </div></pre>
         </div>
         <div id="edax">
