@@ -270,22 +270,22 @@ inline vector<principal_variation> search_pv(board b, long long strt, int max_de
     int canput = nb.size();
     //cerr << "canput: " << canput << endl;
     int g;
-    bool use_mpc = max_depth >= 11 ? true : false;
+    bool use_mpc = max_depth >= 13 ? true : false;
     double use_mpct = 2.0;
-    if (max_depth >= 13)
-        use_mpct = 1.7;
     if (max_depth >= 15)
-        use_mpct = 1.5;
+        use_mpct = 1.8;
     if (max_depth >= 17)
-        use_mpct = 1.3;
+        use_mpct = 1.6;
     if (max_depth >= 19)
-        use_mpct = 1.1;
+        use_mpct = 1.4;
     if (max_depth >= 21)
-        use_mpct = 0.8;
+        use_mpct = 1.2;
     if (max_depth >= 23)
-        use_mpct = 0.6;
+        use_mpct = 1.0;
+    if (max_depth >= 25)
+        use_mpct = 0.8;
     for (board nnb: nb){
-        g = -nega_alpha_ordering_nomemo(&nnb, false, min(hw2 - b.n, max_depth - 1), -hw2, hw2, use_mpct);
+        g = -nega_alpha_ordering_nomemo(&nnb, false, min(hw2 - b.n, max_depth - 1), -hw2, hw2, use_mpc, use_mpct);
         principal_variation pv;
         pv.value = g;
         g = book.get(&nnb);

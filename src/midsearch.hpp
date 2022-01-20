@@ -18,7 +18,7 @@ int nega_alpha(board *b, bool skipped, int depth, int alpha, int beta);
 inline bool mpc_higher(board *b, bool skipped, int depth, int beta, double t);
 inline bool mpc_lower(board *b, bool skipped, int depth, int alpha, double t);
 
-int nega_alpha_ordering_nomemo(board *b, bool skipped, int depth, int alpha, int beta, double mpct_in){
+int nega_alpha_ordering_nomemo(board *b, bool skipped, int depth, int alpha, int beta, bool use_mpc, double mpct_in){
     if (depth <= simple_mid_threshold)
         return nega_alpha(b, skipped, depth, alpha, beta);
     ++searched_nodes;
@@ -52,13 +52,13 @@ int nega_alpha_ordering_nomemo(board *b, bool skipped, int depth, int alpha, int
             rb.b[i] = b->b[i];
         rb.p = 1 - b->p;
         rb.n = b->n;
-        return -nega_alpha_ordering_nomemo(&rb, true, depth, -beta, -alpha, mpct_in);
+        return -nega_alpha_ordering_nomemo(&rb, true, depth, -beta, -alpha, use_mpc, mpct_in);
     }
     if (canput >= 2)
         sort(nb.begin(), nb.end());
     int g, v = -inf;
     for (board &nnb: nb){
-        g = -nega_alpha_ordering_nomemo(&nnb, false, depth - 1, -beta, -alpha, mpct_in);
+        g = -nega_alpha_ordering_nomemo(&nnb, false, depth - 1, -beta, -alpha, use_mpc, mpct_in);
         if (beta <= g)
             return g;
         alpha = max(alpha, g);
@@ -71,14 +71,14 @@ inline bool mpc_higher(board *b, bool skipped, int depth, int beta, double t){
     int bound = beta + ceil(t * mpcsd[calc_phase_idx(b)][depth - mpc_min_depth]);
     if (bound > hw2)
         bound = hw2; ////return false;
-    return nega_alpha_ordering_nomemo(b, skipped, mpcd[depth], bound - search_epsilon, bound, t) >= bound;
+    return nega_alpha_ordering_nomemo(b, skipped, mpcd[depth], bound - search_epsilon, bound, true, t) >= bound;
 }
 
 inline bool mpc_lower(board *b, bool skipped, int depth, int alpha, double t){
     int bound = alpha - floor(t * mpcsd[calc_phase_idx(b)][depth - mpc_min_depth]);
     if (bound < -hw2)
         bound = -hw2; //return false;
-    return nega_alpha_ordering_nomemo(b, skipped, mpcd[depth], bound, bound + search_epsilon, t) <= bound;
+    return nega_alpha_ordering_nomemo(b, skipped, mpcd[depth], bound, bound + search_epsilon, true, t) <= bound;
 }
 
 int nega_alpha(board *b, bool skipped, int depth, int alpha, int beta){
@@ -252,7 +252,7 @@ int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int 
     return v;
 }
 
-int nega_scout(board *b, bool skipped, const int depth, int alpha, int beta, bool use_mpc, double mpct_in){
+int nega_scout_nomemo(board *b, bool skipped, const int depth, int alpha, int beta, bool use_mpc, double mpct_in){
     if (depth <= simple_mid_threshold)
         return nega_alpha(b, skipped, depth, alpha, beta);
     ++searched_nodes;
@@ -260,19 +260,6 @@ int nega_scout(board *b, bool skipped, const int depth, int alpha, int beta, boo
         if (stability_cut(b, &alpha, &beta))
             return alpha;
     #endif
-    int hash = (int)(b->hash() & search_hash_mask);
-    int l, u;
-    transpose_table.get_now(b, hash, &l, &u);
-    #if USE_MID_TC
-        if (l >= beta)
-            return l;
-        if (alpha >= u)
-            return u;
-        if (u == l)
-            return u;
-    #endif
-    alpha = max(alpha, l);
-    beta = min(beta, u);
     #if USE_MID_MPC
         if (mpc_min_depth <= depth && depth <= mpc_max_depth && use_mpc){
             if (mpc_higher(b, skipped, depth, beta, mpct_in))
@@ -286,8 +273,7 @@ int nega_scout(board *b, bool skipped, const int depth, int alpha, int beta, boo
     for (const int &cell: vacant_lst){
         if (b->legal(cell)){
             nb.emplace_back(b->move(cell));
-            move_ordering(&nb[canput]);
-            //move_ordering_eval(&(nb[canput]));
+            move_ordering_eval(&nb[canput]);
             ++canput;
         }
     }
@@ -299,20 +285,17 @@ int nega_scout(board *b, bool skipped, const int depth, int alpha, int beta, boo
             rb.b[i] = b->b[i];
         rb.p = 1 - b->p;
         rb.n = b->n;
-        return -nega_scout(&rb, true, depth, -beta, -alpha, use_mpc, mpct_in);
+        return -nega_scout_nomemo(&rb, true, depth, -beta, -alpha, use_mpc, mpct_in);
     }
     if (canput >= 2)
         sort(nb.begin(), nb.end());
     int g = alpha, v = -inf;
-    #if USE_MULTI_THREAD
+    #if USE_MULTI_THREAD && false
         int i;
-        g = -nega_scout(&nb[0], false, depth - 1, -beta, -alpha, use_mpc, mpct_in);
+        g = -nega_scout_nomemo(&nb[0], false, depth - 1, -beta, -alpha, use_mpc, mpct_in);
         alpha = max(alpha, g);
-        if (beta <= alpha){
-            if (l < g)
-                transpose_table.reg(b, hash, g, u);
+        if (beta <= alpha)
             return alpha;
-        }
         v = max(v, g);
         int first_alpha = alpha;
         vector<future<int>> future_tasks;
@@ -327,7 +310,7 @@ int nega_scout(board *b, bool skipped, const int depth, int alpha, int beta, boo
         }
         for (i = 1; i < canput; ++i){
             if (re_search[i - 1]){
-                g = -nega_scout(&nb[i], false, depth - 1, -beta, -alpha, use_mpc, mpct_in);
+                g = -nega_scout_nomemo(&nb[i], false, depth - 1, -beta, -alpha, use_mpc, mpct_in);
                 if (beta <= g){
                     if (l < g)
                         transpose_table.reg(b, hash, g, u);
@@ -338,33 +321,21 @@ int nega_scout(board *b, bool skipped, const int depth, int alpha, int beta, boo
             }
         }
     #else
-        int first_alpha = alpha;
         for (int i = 0; i < canput; ++i){
             if (i > 0){
-                g = -nega_alpha_ordering(&nb[i], false, depth - 1, -alpha - search_epsilon, -alpha, true, use_mpc, mpct_in);
-                if (beta < g){
-                    if (l < g)
-                        transpose_table.reg(b, hash, g, u);
+                g = -nega_alpha_ordering_nomemo(&nb[i], false, depth - 1, -alpha - search_epsilon, -alpha, use_mpc, mpct_in);
+                if (beta < g)
                     return g;
-                }
-                v = max(v, g);
             }
-            if (alpha <= g){
-                g = -nega_scout(&nb[i], false, depth - 1, -beta, -g, use_mpc, mpct_in);
-                if (beta <= g){
-                    if (l < g)
-                        transpose_table.reg(b, hash, g, u);
-                    return g;
-                }
+            if (alpha < g){
+                g = -nega_scout_nomemo(&nb[i], false, depth - 1, -beta, -g, use_mpc, mpct_in);
                 alpha = max(alpha, g);
+                if (beta <= alpha)
+                    return alpha;
                 v = max(v, g);
             }
         }
     #endif
-    if (v <= first_alpha)
-        transpose_table.reg(b, hash, l, v);
-    else
-        transpose_table.reg(b, hash, v, v);
     return v;
 }
 
@@ -380,7 +351,7 @@ int mtd(board *b, bool skipped, int depth, int l, int u, bool use_mpc, double us
             l = g;
     }
     return g;
-    //return nega_scout(b, skipped, depth, l, u, use_mpc, use_mpct);
+    //return nega_scout_nomemo(b, skipped, depth, l, u, use_mpc, use_mpct);
 }
 
 inline search_result midsearch(board b, long long strt, int max_depth){
@@ -489,7 +460,8 @@ inline search_result midsearch_value(board b, long long strt, int max_depth){
     if (max_depth >= 25)
         use_mpct = 0.8;
     //int value = mtd(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct);
-    int value = nega_alpha_ordering_nomemo(&b, false, max_depth, -hw2, hw2, use_mpct);
+    //int value = nega_alpha_ordering_nomemo(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct);
+    int value = nega_scout_nomemo(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct);
     search_result res;
     res.policy = -1;
     res.value = value;
@@ -500,24 +472,24 @@ inline search_result midsearch_value(board b, long long strt, int max_depth){
 }
 
 inline search_result midsearch_value_book(board b, long long strt, int max_depth){
-    bool use_mpc = max_depth >= 11 ? true : false;
+    bool use_mpc = max_depth >= 13 ? true : false;
     double use_mpct = 2.0;
-    if (max_depth >= 13)
-        use_mpct = 1.8;
     if (max_depth >= 15)
-        use_mpct = 1.6;
+        use_mpct = 1.8;
     if (max_depth >= 17)
-        use_mpct = 1.4;
+        use_mpct = 1.6;
     if (max_depth >= 19)
-        use_mpct = 1.2;
+        use_mpct = 1.4;
     if (max_depth >= 21)
-        use_mpct = 1.0;
+        use_mpct = 1.2;
     if (max_depth >= 23)
+        use_mpct = 1.0;
+    if (max_depth >= 25)
         use_mpct = 0.8;
     transpose_table.init_now();
     transpose_table.init_prev();
     int value = mtd(&b, false, max_depth - 1, -hw2, hw2, use_mpc, use_mpct);
-    //int value = nega_alpha_ordering_nomemo(&b, false, max_depth, -hw2, hw2, use_mpct);
+    //int value = nega_alpha_ordering_nomemo(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct);
     swap(transpose_table.now, transpose_table.prev);
     transpose_table.init_now();
     value += mtd(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct);
@@ -531,20 +503,22 @@ inline search_result midsearch_value_book(board b, long long strt, int max_depth
 }
 
 inline search_result midsearch_value_nomemo(board b, long long strt, int max_depth){
+    bool use_mpc = max_depth >= 13 ? true : false;
     double use_mpct = 2.0;
-    if (max_depth >= 9)
-        use_mpct = 1.7;
-    if (max_depth >= 11)
-        use_mpct = 1.5;
-    if (max_depth >= 13)
-        use_mpct = 1.3;
     if (max_depth >= 15)
-        use_mpct = 1.1;
+        use_mpct = 1.8;
     if (max_depth >= 17)
-        use_mpct = 0.8;
+        use_mpct = 1.6;
     if (max_depth >= 19)
-        use_mpct = 0.6;
-    int value = nega_alpha_ordering_nomemo(&b, false, max_depth, -hw2, hw2, use_mpct);
+        use_mpct = 1.4;
+    if (max_depth >= 21)
+        use_mpct = 1.2;
+    if (max_depth >= 23)
+        use_mpct = 1.0;
+    if (max_depth >= 25)
+        use_mpct = 0.8;
+    //int value = nega_alpha_ordering_nomemo(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct);
+    int value = nega_scout_nomemo(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct);
     search_result res;
     res.policy = -1;
     res.value = value;
