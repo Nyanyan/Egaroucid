@@ -390,13 +390,13 @@ inline search_result midsearch(board b, long long strt, int max_depth){
     if (max_depth >= 15)
         use_mpct = 1.8;
     if (max_depth >= 17)
-        use_mpct = 1.6;
+        use_mpct = 1.5;
     if (max_depth >= 19)
-        use_mpct = 1.4;
+        use_mpct = 1.3;
     if (max_depth >= 21)
-        use_mpct = 1.2;
+        use_mpct = 1.1;
     if (max_depth >= 23)
-        use_mpct = 1.0;
+        use_mpct = 0.9;
     if (max_depth >= 25)
         use_mpct = 0.8;
     for (int depth = min(11, max(0, max_depth - 5)); depth <= min(hw2 - b.n, max_depth - 1); ++depth){
@@ -463,13 +463,13 @@ inline search_result midsearch_value(board b, long long strt, int max_depth){
     if (max_depth >= 15)
         use_mpct = 1.8;
     if (max_depth >= 17)
-        use_mpct = 1.6;
+        use_mpct = 1.5;
     if (max_depth >= 19)
-        use_mpct = 1.4;
+        use_mpct = 1.3;
     if (max_depth >= 21)
-        use_mpct = 1.2;
+        use_mpct = 1.1;
     if (max_depth >= 23)
-        use_mpct = 1.0;
+        use_mpct = 0.9;
     if (max_depth >= 25)
         use_mpct = 0.8;
     //int value = mtd(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct);
@@ -490,13 +490,13 @@ inline search_result midsearch_value_book(board b, long long strt, int max_depth
     if (max_depth >= 15)
         use_mpct = 1.8;
     if (max_depth >= 17)
-        use_mpct = 1.6;
+        use_mpct = 1.5;
     if (max_depth >= 19)
-        use_mpct = 1.4;
+        use_mpct = 1.3;
     if (max_depth >= 21)
-        use_mpct = 1.2;
+        use_mpct = 1.1;
     if (max_depth >= 23)
-        use_mpct = 1.0;
+        use_mpct = 0.9;
     if (max_depth >= 25)
         use_mpct = 0.8;
     transpose_table.init_now();
