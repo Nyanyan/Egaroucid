@@ -84,8 +84,8 @@ int main(){
         int depth, end_depth;
         //bool pre_searched = false;
         book_value book_result;
-        depth = 10;
-        end_depth = 40;
+        depth = 17;
+        end_depth = 22;
     #endif
     int ai_player;
     //cin >> ai_player;
@@ -118,13 +118,11 @@ int main(){
                 print_result(policy, 0);
                 continue;
             }
-            if (b.n < book_stones){
-                book_result = book.get_random(&b, 0);
-                if (book_result.policy != -1){
-                    cerr << "BOOK " << book_result.policy << endl;
-                    print_result(book_result.policy, book_result.value);
-                    continue;
-                }
+            book_result = book.get_random(&b, 0);
+            if (book_result.policy != -1){
+                cerr << "BOOK " << book_result.policy << endl;
+                print_result(book_result.policy, book_result.value);
+                continue;
             }
             if (b.n >= hw2 - end_depth){
                 //result = endsearch(b, tim(), pre_searched);
