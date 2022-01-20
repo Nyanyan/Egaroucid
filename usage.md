@@ -34,6 +34,7 @@
 Egaroucid5.exe
 resourcesフォルダ
 	book.txt
+	book_backup.txt
 	icon.png
 	joseki.txt
 	line_distance.txt

@@ -1063,16 +1063,16 @@ void Main() {
 			for (int i = 0; i < hw2; ++i)
 				flag |= (cell_value_state[i] % 2 == 1);
 			if (flag) {
-				if (SimpleGUI::Button(U"<", Vec2(550, 650), 50)) {
+				if (SimpleGUI::Button(U"<", Vec2(550, 650), 50) || KeyLeft.down() || KeyA.down()) {
 					global_searching = false;
 					want_back = true;
 				}
-				if (SimpleGUI::Button(U">", Vec2(600, 650), 50)) {
+				if (SimpleGUI::Button(U">", Vec2(600, 650), 50) || KeyRight.down() || KeyD.down()) {
 					global_searching = false;
 					want_forward = true;
 				}
 			} else {
-				if (SimpleGUI::Button(U"<", Vec2(550, 650), 50, !book_learning) || want_back) {
+				if (SimpleGUI::Button(U"<", Vec2(550, 650), 50, !book_learning) || KeyLeft.down() || KeyA.down() || want_back) {
 					global_searching = true;
 					want_back = false;
 					if (n_moves - board_start_moves >= 1)
@@ -1086,7 +1086,7 @@ void Main() {
 					}
 					human_value_state = 0;
 				}
-				if (SimpleGUI::Button(U">", Vec2(600, 650), 50, !book_learning) || want_forward) {
+				if (SimpleGUI::Button(U">", Vec2(600, 650), 50, !book_learning) || KeyRight.down() || KeyD.down() || want_forward) {
 					global_searching = true;
 					want_forward = false;
 					if (n_moves - board_start_moves < board_history.size() - 1)
