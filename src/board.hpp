@@ -386,6 +386,21 @@ class board {
             this->policy = -1;
         }
 
+        inline void translate_from_ull_fast(const unsigned long long bk, const unsigned long long wt, int player) {
+            int i, j;
+            int arr[hw2];
+            for (i = 0; i < hw2; ++i)
+                arr[i] = vacant;
+            this->n = hw2;
+            for (i = 0; i < hw2; ++i) {
+                if (1 & (bk >> i))
+                    arr[i] = black;
+                else if (1 & (wt >> i))
+                    arr[i] = white;
+            }
+            translate_from_arr_fast(arr, player);
+        }
+
         inline int count(int player){
             int bk_score = 0, sum_stones = 0;
             for (int i = 0; i < hw; ++i){

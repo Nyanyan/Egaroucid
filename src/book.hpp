@@ -96,6 +96,80 @@ class book{
 			return true;
         }
 
+        inline bool import_edax_book(string file){
+            FILE* fp;
+            if (fopen_s(&fp, file.c_str(), "rb") != 0){
+                cerr << "can't open " << file << endl;
+                return false;
+            }
+            char elem_str[];
+            int elem_int;
+            int i;
+            if (fread(&elem_str, 4, 1, fp) < 1) {
+                cerr << "file broken" << endl;
+                fclose(fp);
+                return false;
+            }
+            if (elem_str != "EDAX"){
+                cerr << "this file is not edax's file found " << elem_str << endl;
+                fclose(fp);
+                return false;
+            }
+            if (fread(&elem_str, 4, 1, fp) < 1) {
+                cerr << "file broken" << endl;
+                fclose(fp);
+                return false;
+            }
+            if (elem_str != "BOOK"){
+                cerr << "this file is not edax's book file found " << elem_str << endl;
+                fclose(fp);
+                return false;
+            }
+            if (fread(&elem_str, 30, 1, fp) < 1) {
+                cerr << "file broken" << endl;
+                fclose(fp);
+                return false;
+            }
+            if (fread(&elem_int, 4, 1, fp) < 1) {
+                cerr << "file broken" << endl;
+                fclose(fp);
+                return false;
+            }
+            int n_boards = elem_int;
+            unsigned long long player, opponent;
+            short value;
+            board b;
+            for (i = 0; i < n_boards; ++i){
+                if (n_book % 1000 == 0)
+					cerr << "loading " << n_book << " boards" << endl;
+                if (fread(&player, 8, 1, fp) < 1) {
+                    cerr << "file broken" << endl;
+                    fclose(fp);
+                    return false;
+                }
+                if (fread(&opponent, 8, 1, fp) < 1) {
+                    cerr << "file broken" << endl;
+                    fclose(fp);
+                    return false;
+                }
+                if (fread(&elem_int, 4, 4, fp) < 4) {
+                    cerr << "file broken" << endl;
+                    fclose(fp);
+                    return false;
+                }
+                if (fread(&value, 2, 1, fp) < 1) {
+                    cerr << "file broken" << endl;
+                    fclose(fp);
+                    return false;
+                }
+                b.translate_from_ull_fast(player, opponent, black);
+                n_book += register_symmetric_book(b, (int)value, n_book);
+                b.translate_from_ull_fast(opponent, player, white);
+                n_book += register_symmetric_book(b, (int)value, n_book);
+            }
+            return true;
+        }
+
         inline bool import_file(string file){
             int j;
             int board_arr[hw2];

@@ -208,11 +208,29 @@ inline String coord_translate(int coord) {
 
 inline void import_book(string file) {
 	cerr << "book import" << endl;
-	bool result = book.import_file_bin(file);
-	if (result)
-		cerr << "book imported" << endl;
-	else
-		cerr << "book NOT fully imported" << endl;
+	bool result = false;
+	vector<string> lst;
+	auto offset = string::size_type(0);
+	while (1) {
+		auto pos = file.find(".", offset);
+		if (pos == string::npos) {
+			lst.push_back(file.substr(offset));
+			break;
+		}
+		lst.push_back(file.substr(offset, pos - offset));
+		offset = pos + 1;
+	}
+	if (lst[lst.size() - 1] == "ebok"){
+		cerr << "importing Egaroucid book" << endl;
+		result = book.import_file_bin(file);
+	} else if (lst[lst.size() - 1] == "dat") {
+		cerr << "importing Edax book" << endl;
+		result = book.import_edax_book(file);
+	}
+	//if (result)
+	//	cerr << "book imported" << endl;
+	//else
+	//	cerr << "book NOT FULLY imported" << endl;
 }
 
 bool operator< (const pair<int, board>& a, const pair<int, board>& b) {
@@ -378,7 +396,8 @@ void Main() {
 	vector<search_result_pv> human_values;
 	bool show_log = true;
 	TextEditState black_player, white_player, play_memo;
-	bool want_back = false, want_forward = false;;
+	bool want_back = false, want_forward = false;
+	int want_move = -1;
 
 	const Texture icon(U"resources/icon.png", TextureDesc::Mipped);
 
@@ -1127,6 +1146,10 @@ void Main() {
 			bool has_legal = !check_pass(&bd);
 			if (!has_legal)
 				finished = true;
+			bool calculating_background = false;
+			for (int i = 0; i < hw2; ++i)
+				calculating_background |= (cell_value_state[i] % 2 == 1);
+			calculating_background |= (human_value_state == 1);
 			for (int y = 0; y < hw; ++y) {
 				for (int x = 0; x < hw; ++x) {
 					int coord = proc_coord(y, x);
@@ -1204,7 +1227,13 @@ void Main() {
 									umigame_font(umigame_values[coord].w).draw(umigame_sx, umigame_sy, Palette::Green);
 								}
 							}
-							if (cells[coord].leftClicked() && !changing_book){ // && (ai_player == 2 || (!finished && n_moves == board_history.size() - 1 + board_start_moves))) {
+							if (cells[coord].leftClicked() && !changing_book && calculating_background) {
+								global_searching = false;
+								want_move = coord;
+							}
+							if ((cells[coord].leftClicked() && !changing_book) || want_move == coord){ // && (ai_player == 2 || (!finished && n_moves == board_history.size() - 1 + board_start_moves))) {
+								global_searching = true;
+								want_move = -1;
 								bd = bd.move(coord);
 								++n_moves;
 								human_value_state = 0;

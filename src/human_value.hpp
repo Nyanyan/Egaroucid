@@ -47,7 +47,7 @@ class line_distance{
         double bias1[hw2];
     
     public:
-        inline bool init(){
+        bool init(){
             ifstream ifs("resources/line_distance.txt");
             if (ifs.fail()){
                 cerr << "evaluation file not exist" << endl;
@@ -59,7 +59,8 @@ class line_distance{
                 for (j = 0; j < n_board_input; ++j){
                     for (k = 0; k < kernel_size; ++k){
                         for (l = 0; l < kernel_size; ++l){
-                            getline(ifs, line);
+                            if (!getline(ifs, line))
+                                return false;
                             conv1[i][j][l][k] = stof(line);
                         }
                     }
@@ -70,7 +71,8 @@ class line_distance{
                     for (j = 0; j < n_kernels; ++j){
                         for (k = 0; k < kernel_size; ++k){
                             for (l = 0; l < kernel_size; ++l){
-                                getline(ifs, line);
+                                if (!getline(ifs, line))
+                                    return false;
                                 conv_residual[ri][i][j][l][k] = stof(line);
                             }
                         }
@@ -79,12 +81,14 @@ class line_distance{
             }
             for (i = 0; i < n_kernels; ++i){
                 for (j = 0; j < hw2; ++j){
-                    getline(ifs, line);
+                    if (!getline(ifs, line))
+                        return false;
                     dense1[j][i] = stof(line);
                 }
             }
             for (i = 0; i < hw2; ++i){
-                getline(ifs, line);
+                if (!getline(ifs, line))
+                    return false;
                 bias1[i] = stof(line);
             }
             cerr << "line distance initialized" << endl;
@@ -199,7 +203,7 @@ class line_distance{
 
 line_distance line_distance;
 
-inline bool human_value_init(){
+bool human_value_init(){
     return line_distance.init();
 }
 
@@ -207,6 +211,8 @@ inline bool human_value_init(){
 pair<int, vector<int>> create_principal_variation(board *b, bool skipped, int depth, int alpha, int beta){
     ++searched_nodes;
     pair<int, vector<int>> res;
+	if (!global_searching)
+		return res;
     if (depth == 0){
         res.first = mid_evaluate(b);
         return res;
