@@ -411,7 +411,8 @@ void Main() {
 		U"各パラメータは終了時に自動で保存",
 		U"bookを変更したら終了時に保存を選択",
 		U"人間的評価値は手筋の総合評価",
-		U"うみがめ数表示はbookに依存"
+		U"うみがめ数表示はbookに依存",
+		U"←→キーまたはA、Dキーで局面を移動"
 	};
 	int tips_idx = myrandrange(0, (int)tips.size());
 
