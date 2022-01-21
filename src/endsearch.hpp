@@ -504,6 +504,8 @@ inline void pick_vacant(board *b, int cells[]){
 
 
 int nega_alpha_final(board *b, bool skipped, const int depth, int alpha, int beta){
+    if (!global_searching)
+        return -inf;
     if (depth == 5){
         int cells[5];
         pick_vacant(b, cells);
@@ -708,6 +710,8 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
 }
 
 int nega_scout_final_nomemo(board *b, bool skipped, const int depth, int alpha, int beta, bool use_mpc, double mpct_in){
+    if (!global_searching)
+        return -inf;
     if (depth <= simple_end_threshold)
         return nega_alpha_final(b, skipped, depth, alpha, beta);
     ++searched_nodes;

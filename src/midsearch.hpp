@@ -84,6 +84,8 @@ inline bool mpc_lower(board *b, bool skipped, int depth, int alpha, double t){
 }
 
 int nega_alpha(board *b, bool skipped, int depth, int alpha, int beta){
+    if (!global_searching)
+        return -inf;
     ++searched_nodes;
     if (depth == 0)
         return mid_evaluate(b);
@@ -261,6 +263,8 @@ int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int 
 }
 
 int nega_scout_nomemo(board *b, bool skipped, const int depth, int alpha, int beta, bool use_mpc, double mpct_in){
+    if (!global_searching)
+        return -inf;
     if (depth <= simple_mid_threshold)
         return nega_alpha(b, skipped, depth, alpha, beta);
     ++searched_nodes;
