@@ -3,6 +3,7 @@
 #include <fstream>
 #include <unordered_map>
 #include <unordered_set>
+#include <io.h>
 #include "evaluate.hpp"
 #include "board.hpp"
 
@@ -342,7 +343,8 @@ class book{
         }
 
         inline void save(){
-            remove("resources/book_backup.txt");
+			if (_access_s("resources/book_backup.txt", 0) == 0)
+				remove("resources/book_backup.txt");
             rename("resources/book.txt", "resources/book_backup.txt");
             ofstream ofs("resources/book.txt");
             if (ofs.fail()){
@@ -364,7 +366,8 @@ class book{
         }
 
         inline void save_bin(){
-			remove("resources/book_backup.ebok");
+			if (_access_s("resources/book_backup.ebok", 0) == 0)
+				remove("resources/book_backup.ebok");
 			rename("resources/book.ebok", "resources/book_backup.ebok");
             ofstream fout;
             fout.open("resources/book.ebok", ios::out|ios::binary|ios::trunc);

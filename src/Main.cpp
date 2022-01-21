@@ -1176,8 +1176,7 @@ void Main() {
 										}
 										++cell_value_state[coord];
 									}
-								}
-								else if (cell_value_state[coord] % 2 == 0 && cell_value_state[coord] / 2 + 1 <= cell_value_depth) {
+								} else if (cell_value_state[coord] % 2 == 0 && cell_value_state[coord] / 2 + 1 <= cell_value_depth && global_searching) {
 									if (cell_value_state[coord] / 2 + 1 < cell_value_depth)
 										future_cell_values[coord] = calc_value(bd, coord, cell_value_state[coord] / 2 + 1, cell_value_state[coord] / 2 + 1);
 									else
@@ -1227,46 +1226,48 @@ void Main() {
 									umigame_font(umigame_values[coord].w).draw(umigame_sx, umigame_sy, Palette::Green);
 								}
 							}
-							if (cells[coord].leftClicked() && !changing_book && calculating_background) {
-								global_searching = false;
-								want_move = coord;
-							}
-							if ((cells[coord].leftClicked() && !changing_book) || want_move == coord){ // && (ai_player == 2 || (!finished && n_moves == board_history.size() - 1 + board_start_moves))) {
-								global_searching = true;
-								want_move = -1;
-								bd = bd.move(coord);
-								++n_moves;
-								human_value_state = 0;
-								global_searching = true;
-								record += coord_translate(coord);
-								String record_copy = record;
-								record_copy.replace(U"\n", U"");
-								if (record_copy.size() % 40 == 0)
-									record += U"\n";
-								bd.translate_to_arr(bd_arr);
-								create_vacant_lst(bd, bd_arr);
-								finished = check_pass(&bd);
-								if (finished)
-									finish_moves = n_moves;
-								while (board_history.size()) {
-									if (board_history[board_history.size() - 1].n >= bd.n) {
-										board_history.pop_back();
-										record.pop_back();
-										record.pop_back();
-										if (record[record.size() - 1] == U"\n"[0])
+							if ((cells[coord].leftClicked() || want_move == coord) && !changing_book){
+								if (calculating_background) {
+									global_searching = false;
+									want_move = coord;
+								} else {
+									global_searching = true;
+									want_move = -1;
+									bd = bd.move(coord);
+									++n_moves;
+									human_value_state = 0;
+									global_searching = true;
+									record += coord_translate(coord);
+									String record_copy = record;
+									record_copy.replace(U"\n", U"");
+									if (record_copy.size() % 40 == 0)
+										record += U"\n";
+									bd.translate_to_arr(bd_arr);
+									create_vacant_lst(bd, bd_arr);
+									finished = check_pass(&bd);
+									if (finished)
+										finish_moves = n_moves;
+									while (board_history.size()) {
+										if (board_history[board_history.size() - 1].n >= bd.n) {
+											board_history.pop_back();
 											record.pop_back();
-									} else
-										break;
+											record.pop_back();
+											if (record[record.size() - 1] == U"\n"[0])
+												record.pop_back();
+										}
+										else
+											break;
+									}
+									while (graph.last_x() >= bd.n - 4)
+										graph.pop();
+									board_history.push_back(bd);
+									for (int i = 0; i < hw2; ++i) {
+										cell_value_state[i] = 0;
+										umigame_state[i] = 0;
+									}
+									saved = 0;
+									copied = false;
 								}
-								while (graph.last_x() >= bd.n - 4)
-									graph.pop();
-								board_history.push_back(bd);
-								for (int i = 0; i < hw2; ++i) {
-									cell_value_state[i] = 0;
-									umigame_state[i] = 0;
-								}
-								saved = 0;
-								copied = false;
 							} else if (cells[coord].rightClicked()) {
 								if (changing_book && coord == change_book_coord) {
 									if (change_book_value_str.size() == 0) {
