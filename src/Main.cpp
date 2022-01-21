@@ -226,6 +226,8 @@ inline void import_book(string file) {
 	} else if (lst[lst.size() - 1] == "dat") {
 		cerr << "importing Edax book" << endl;
 		result = book.import_edax_book(file);
+	} else {
+		cerr << "this is not a book" << endl;
 	}
 	//if (result)
 	//	cerr << "book imported" << endl;
@@ -370,6 +372,7 @@ void Main() {
 	Font font30(30);
 	Font font20(20);
 	Font font15(15);
+	Font font10(10);
 	Color font_color = Palette::Black;
 	bool playing = false, thinking = false, cell_value_thinking = false, changing_book = false;
 	int depth, end_depth, ai_player, cell_value_depth, cell_value_end_depth, book_accept, n_moves = 0;
@@ -398,6 +401,19 @@ void Main() {
 	TextEditState black_player, white_player, play_memo;
 	bool want_back = false, want_forward = false;
 	int want_move = -1;
+	vector<String> tips = {
+		U"ドラッグ&ドロップでEgaroucid/Edax形式のbookを追加",
+		U"対局開始ボタンで対局を開始",
+		U"棋譜コピーボタンでf5d6形式の棋譜をコピー",
+		U"棋譜入力ボタンでをクリップボードから入力",
+		U"局面入力ボタンでをクリップボードから入力",
+		U"対局保存はrecordsフォルダに",
+		U"各パラメータは終了時に自動で保存",
+		U"bookを変更したら終了時に保存を選択",
+		U"人間的評価値は手筋の総合評価",
+		U"うみがめ数表示はbookに依存"
+	};
+	int tips_idx = myrandrange(0, (int)tips.size());
 
 	const Texture icon(U"resources/icon.png", TextureDesc::Mipped);
 
@@ -410,91 +426,195 @@ void Main() {
 				cerr << "setting NOT imported" << endl;
 				flag = false;
 			}
-			player_default = stoi(line);
+			else {
+				try {
+					player_default = stoi(line);
+				}
+				catch (const invalid_argument& ex) {
+					cerr << "setting NOT imported" << endl;
+					flag = false;
+				}
+			}
 		}
 		if (flag) {
 			if (!getline(ifs, line)) {
 				cerr << "setting NOT imported" << endl;
 				flag = false;
 			}
-			hint_default = stoi(line);
+			else {
+				try {
+					hint_default = stoi(line);
+				}
+				catch (const invalid_argument& ex) {
+					cerr << "setting NOT imported" << endl;
+					flag = false;
+				}
+			}
 		}
 		if (flag) {
 			if (!getline(ifs, line)) {
 				cerr << "setting NOT imported" << endl;
 				flag = false;
 			}
-			human_hint_default = stoi(line);
+			else {
+				try {
+					human_hint_default = stoi(line);
+				}
+				catch (const invalid_argument& ex) {
+					cerr << "setting NOT imported" << endl;
+					flag = false;
+				}
+			}
 		}
 		if (flag) {
 			if (!getline(ifs, line)) {
 				cerr << "setting NOT imported" << endl;
 				flag = false;
 			}
-			value_default = stoi(line);
+			else {
+				try {
+					value_default = stoi(line);
+				}
+				catch (const invalid_argument& ex) {
+					cerr << "setting NOT imported" << endl;
+					flag = false;
+				}
+			}
 		}
 		if (flag) {
 			if (!getline(ifs, line)) {
 				cerr << "setting NOT imported" << endl;
 				flag = false;
 			}
-			umigame_default = stoi(line);
+			else {
+				try {
+					umigame_default = stoi(line);
+				}
+				catch (const invalid_argument& ex) {
+					cerr << "setting NOT imported" << endl;
+					flag = false;
+				}
+			}
 		}
 		if (flag) {
 			if (!getline(ifs, line)) {
 				cerr << "setting NOT imported" << endl;
 				flag = false;
 			}
-			depth_double = stof(line);
+			else {
+				try {
+					depth_double = stof(line);
+				}
+				catch (const invalid_argument& ex) {
+					cerr << "setting NOT imported" << endl;
+					flag = false;
+				}
+			}
 		}
 		if (flag) {
 			if (!getline(ifs, line)) {
 				cerr << "setting NOT imported" << endl;
 				flag = false;
 			}
-			end_depth_double = stof(line);
+			else {
+				try {
+					end_depth_double = stof(line);
+				}
+				catch (const invalid_argument& ex) {
+					cerr << "setting NOT imported" << endl;
+					flag = false;
+				}
+			}
 		}
 		if (flag) {
 			if (!getline(ifs, line)) {
 				cerr << "setting NOT imported" << endl;
 				flag = false;
 			}
-			cell_value_depth_double = stof(line);
+			else {
+				try {
+					cell_value_depth_double = stof(line);
+				}
+				catch (const invalid_argument& ex) {
+					cerr << "setting NOT imported" << endl;
+					flag = false;
+				}
+			}
 		}
 		if (flag) {
 			if (!getline(ifs, line)) {
 				cerr << "setting NOT imported" << endl;
 				flag = false;
 			}
-			cell_value_end_depth_double = stof(line);
+			else {
+				try {
+					cell_value_end_depth_double = stof(line);
+				}
+				catch (const invalid_argument& ex) {
+					cerr << "setting NOT imported" << endl;
+					flag = false;
+				}
+			}
 		}
 		if (flag) {
 			if (!getline(ifs, line)) {
 				cerr << "setting NOT imported" << endl;
 				flag = false;
 			}
-			book_accept_double = stof(line);
+			else {
+				try {
+					book_accept_double = stof(line);
+				}
+				catch (const invalid_argument& ex) {
+					cerr << "setting NOT imported" << endl;
+					flag = false;
+				}
+			}
 		}
 		if (flag) {
 			if (!getline(ifs, line)) {
 				cerr << "setting NOT imported" << endl;
 				flag = false;
 			}
-			book_depth_double = stof(line);
+			else {
+				try {
+					book_depth_double = stof(line);
+				}
+				catch (const invalid_argument& ex) {
+					cerr << "setting NOT imported" << endl;
+					flag = false;
+				}
+			}
 		}
 		if (flag) {
 			if (!getline(ifs, line)) {
 				cerr << "setting NOT imported" << endl;
 				flag = false;
 			}
-			book_learn_accept_double = stof(line);
+			else {
+				try {
+					book_learn_accept_double = stof(line);
+				}
+				catch (const invalid_argument& ex) {
+					cerr << "setting NOT imported" << endl;
+					flag = false;
+				}
+			}
 		}
 		if (flag) {
 			if (!getline(ifs, line)) {
 				cerr << "setting NOT imported" << endl;
 				flag = false;
 			}
-			show_log = stoi(line);
+			else {
+				try {
+					show_log = stoi(line);
+				}
+				catch (const invalid_argument& ex) {
+					cerr << "setting NOT imported" << endl;
+					flag = false;
+				}
+			}
 		}
 		if (!flag) {
 			depth_double = 13;
@@ -557,7 +677,7 @@ void Main() {
 			logger_String = Unicode::Widen(logger);
 		logger_stream.clear();
 		if (show_log)
-			font15(logger_String).draw(150, 695, font_color);
+			font10(logger_String).draw(150, 700, font_color);
 
 
 		if (System::GetUserActions() & UserAction::CloseButtonClicked) {
@@ -641,15 +761,22 @@ void Main() {
 						initialize_failed = true;
 				}
 			}
-			double scale = 500.0 / icon.width();
-			icon.scaled(scale).draw(500 - 250, 350 - 250);
+			double scale = 300.0 / icon.width();
+			icon.scaled(scale).draw(window_size.x / 2 - 150, window_size.y / 2 - 150);
 			if (!initialize_failed)
 				font40(U"AI初期化中…").draw(0, 0, font_color);
 			else
 				font40(U"AI初期化失敗\n繰り返す場合はresourcesフォルダを確認してください").draw(0, 0, font_color);
+			font30(U"ご存知ですか…？").draw(0, 120, font_color);
+			font30(tips[tips_idx]).draw(0, 160, font_color);
 			font30(initialize_message).draw(0, 600, font_color);
 			continue;
 		}
+
+		if (SimpleGUI::Button(U"詳しい使い方", Vec2{ 700, 680 }))
+			System::LaunchBrowser(U"https://www.egaroucid-app.nyanyan.dev/usage/");
+		if (SimpleGUI::Button(U"不具合・要望", Vec2{ 530, 680 }))
+			System::LaunchBrowser(U"https://docs.google.com/forms/d/e/1FAIpQLSd6ML1T1fc707luPEefBXuImMnlM9cQP8j-YHKiSyFoS-8rmQ/viewform?usp=sf_link");
 
 		if (book_changing) {
 			font40(U"book追加中…").draw(0, 0, font_color);
@@ -1082,16 +1209,16 @@ void Main() {
 			for (int i = 0; i < hw2; ++i)
 				flag |= (cell_value_state[i] % 2 == 1);
 			if (flag) {
-				if (SimpleGUI::Button(U"<", Vec2(550, 650), 50) || KeyLeft.down() || KeyA.down()) {
+				if (SimpleGUI::Button(U"<", Vec2(530, 640), 50) || KeyLeft.down() || KeyA.down()) {
 					global_searching = false;
 					want_back = true;
 				}
-				if (SimpleGUI::Button(U">", Vec2(600, 650), 50) || KeyRight.down() || KeyD.down()) {
+				if (SimpleGUI::Button(U">", Vec2(580, 640), 50) || KeyRight.down() || KeyD.down()) {
 					global_searching = false;
 					want_forward = true;
 				}
 			} else {
-				if (SimpleGUI::Button(U"<", Vec2(550, 650), 50, !book_learning) || KeyLeft.down() || KeyA.down() || want_back) {
+				if (SimpleGUI::Button(U"<", Vec2(530, 640), 50, !book_learning) || KeyLeft.down() || KeyA.down() || want_back) {
 					global_searching = true;
 					want_back = false;
 					if (n_moves - board_start_moves >= 1)
@@ -1105,7 +1232,7 @@ void Main() {
 					}
 					human_value_state = 0;
 				}
-				if (SimpleGUI::Button(U">", Vec2(600, 650), 50, !book_learning) || KeyRight.down() || KeyD.down() || want_forward) {
+				if (SimpleGUI::Button(U">", Vec2(580, 640), 50, !book_learning) || KeyRight.down() || KeyD.down() || want_forward) {
 					global_searching = true;
 					want_forward = false;
 					if (n_moves - board_start_moves < board_history.size() - 1)
@@ -1134,7 +1261,7 @@ void Main() {
 				}
 			}
 		} else if (playing && !book_learning) {
-			if (SimpleGUI::Button(U"読み停止", Vec2(880, 680), 120, global_searching))
+			if (SimpleGUI::Button(U"読み停止", Vec2(870, 680), 120, global_searching))
 				global_searching = false;
 			max_cell_value = -inf;
 			for (int cell = 0; cell < hw2; ++cell) {
