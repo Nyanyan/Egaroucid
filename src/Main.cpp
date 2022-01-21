@@ -208,7 +208,7 @@ inline String coord_translate(int coord) {
 
 inline void import_book(string file) {
 	cerr << "book import" << endl;
-	bool result = book.import_file(file.c_str());
+	bool result = book.import_file_bin(file);
 	if (result)
 		cerr << "book imported" << endl;
 	else
