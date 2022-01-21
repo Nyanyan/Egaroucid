@@ -550,7 +550,7 @@ void Main() {
 			if (book_changed) {
 				font40(U"bookが変更されました。保存しますか？").draw(0, 0, font_color);
 				if (SimpleGUI::Button(U"保存する", Vec2(0, 150))) {
-					book.save();
+					book.save_bin();
 					ofstream ofs("resources/settings.txt");
 					if (!ofs.fail()) {
 						ofs << pulldown_player.getIndex() << endl;

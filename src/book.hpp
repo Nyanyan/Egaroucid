@@ -3,11 +3,13 @@
 #include <fstream>
 #include <unordered_map>
 #include <unordered_set>
+#include <mutex>
 #include "evaluate.hpp"
 #include "board.hpp"
 
 #define book_hash_table_size 1048576
 constexpr int book_hash_mask = book_hash_table_size - 1;
+
 
 struct book_node{
     uint_fast16_t k[hw];
@@ -26,20 +28,80 @@ class book{
     private:
         book_node *book[book_hash_table_size];
 		int n_book;
+		mutex mtx;
     public:
         bool init(){
 			for (int i = 0; i < book_hash_table_size; ++i)
 				this->book[i] = NULL;
 			n_book = 0;
-            return import_file("resources/book.txt");
+            return import_file_bin("resources/book.ebok");
+			//return import_file("resources/book.txt");
+        }
+
+        inline bool import_file_bin(string file){
+			FILE* fp;
+            if (fopen_s(&fp, file.c_str(), "rb") != 0){
+                cerr << "can't open book.ebok" << endl;
+                return false;
+            }
+            int p, value, i;
+			unsigned char elem;
+            int arr[hw2];
+            board b;
+			for (;;) {
+				if (n_book % 1000 == 0)
+					cerr << "loading " << n_book << " boards" << endl;
+				for (i = 0; i < hw2; i += 4) {
+					if (fread(&elem, 1, 1, fp) < 1) {
+						if (i == 0) {
+							cerr << "book imported " << n_book << " boards" << endl;
+							fclose(fp);
+							return true;
+						}
+						cerr << "book NOT FULLY imported " << n_book << " boards 0 " << i << endl;
+						fclose(fp);
+						return false;
+					}
+					arr[i + 3] = elem % p31;
+					elem /= p31;
+					arr[i + 2] = elem % p31;
+					elem /= p31;
+					arr[i + 1] = elem % p31;
+					elem /= p31;
+					arr[i] = elem % p31;
+					if (elem / p31) {
+						cerr << "book NOT FULLY imported " << n_book << " boards 1" << endl;
+						fclose(fp);
+						return false;
+					}
+				}
+				if (fread(&elem, 1, 1, fp) < 1) {
+					cerr << "book NOT FULLY imported " << n_book << " boards 2" << endl;
+					fclose(fp);
+					return false;
+				}
+				value = elem % (hw2 * 2) - hw2;
+				elem /= hw2 * 2;
+				p = elem % 2;
+				if (elem / 2) {
+					cerr << "book NOT FULLY imported " << n_book << " boards 3" << endl;
+					fclose(fp);
+					return false;
+				}
+				b.translate_from_arr_fast(arr, p);
+				n_book += register_symmetric_book(b, value, n_book);
+			}
+			cerr << "book imported " << n_book << " boards" << endl;
+			fclose(fp);
+			return true;
         }
 
         inline bool import_file(string file){
             int j;
             int board_arr[hw2];
 			FILE* fp;
-            if (fopen_s(&fp, "resources/book.txt", "r") != 0) {
-                cerr << "book file not exist" << endl;
+            if (fopen_s(&fp, file.c_str(), "r") != 0) {
+                cerr << "can't open book.txt" << endl;
 				return false;
             }
             board b;
@@ -167,14 +229,14 @@ class book{
             book_node *p_node = this->book[b.hash() & book_hash_mask];
             while(p_node != NULL){
                 if(compare_key(b.b, p_node->k)){
-                    register_symmetric_book(b, value, p_node->line);
-                    //save_book(b, value, p_node->line);
+                    int result = register_symmetric_book(b, value, p_node->line);
+					cerr << "value changed " << result << endl;
                     return;
                 }
                 p_node = p_node->p_n_node;
             }
             n_book += register_symmetric_book(b, value, n_book);
-            //save_book(b, value, -1);
+			cerr << "new value registered" << endl;
         }
 
         inline void save(){
@@ -182,7 +244,7 @@ class book{
             rename("resources/book.txt", "resources/book_backup.txt");
             ofstream ofs("resources/book.txt");
             if (ofs.fail()){
-                cerr << "book file not exist" << endl;
+                cerr << "can't open book.ebok" << endl;
                 return;
             }
             unordered_set<int> saved_idxes;
@@ -197,6 +259,40 @@ class book{
                 }
             }
             cerr << "saved" << endl;
+        }
+
+        inline void save_bin(){
+			remove("resources/book_backup.ebok");
+			rename("resources/book.ebok", "resources/book_backup.ebok");
+            ofstream fout;
+            fout.open("resources/book.ebok", ios::out|ios::binary|ios::trunc);
+            if (!fout){
+                cerr << "can't open book.ebok" << endl;
+                return;
+            }
+            unordered_set<int> saved_idxes;
+            int i, j;
+            int arr[hw2];
+			unsigned char elem;
+			int t = 0;
+            for (i = 0; i < book_hash_table_size; ++i){
+                book_node *p_node = this->book[i];
+                while(p_node != NULL){
+					if (saved_idxes.find(p_node->line) == saved_idxes.end()) {
+						saved_idxes.emplace(p_node->line);
+                        create_arr(p_node->k, p_node->p, p_node->value, arr);
+						for (j = 0; j < hw2; j += 4) {
+							elem = arr[j] * p33 + arr[j + 1] * p32 + arr[j + 2] * p31 + arr[j + 3];
+							fout.write((char*)&elem, 1);
+						}
+						elem = p_node->p * hw2 * 2 + max(0, min(hw2 * 2, p_node->value + hw2));
+                        fout.write((char*)&elem, 1);
+						++t;
+					}
+                    p_node = p_node->p_n_node;
+                }
+            }
+            cerr << "saved " << t << " boards" << endl;
         }
 
     private:
@@ -219,6 +315,7 @@ class book{
         }
 
         inline bool register_book(board b, int hash, int value, int line){
+			lock_guard<mutex> lock(mtx);
             if(this->book[hash] == NULL){
                 this->book[hash] = book_node_init(b, value, line);
             } else {
@@ -279,6 +376,15 @@ class book{
             b.p = p;
             return create_book_data(b, value);
         }
+
+        inline void create_arr(uint_fast16_t key[], int p, int value, int arr[]){
+            board b;
+            for (int i = 0; i < hw; ++i)
+                b.b[i] = key[i];
+            b.p = p;
+			b.translate_to_arr(arr);
+        }
+
 		/*
         inline void save_book(board b, int value, int line){
             remove("resources/book_backup.txt");
