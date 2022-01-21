@@ -668,7 +668,7 @@ void Main() {
 			continue;
 		} else if (const auto status = DragDrop::DragOver()) {
 			if (status->itemType == DragItemType::FilePaths) {
-				font40(U"ドラッグ&ドロップでbookを追加").draw(0, 0, font_color);
+				font40(U"ドラッグ&ドロップでEgaroucid/Edax形式の\nbookを追加").draw(0, 0, font_color);
 				continue;
 			}
 		}

@@ -3,11 +3,10 @@
 #include <fstream>
 #include <unordered_map>
 #include <unordered_set>
-#include <mutex>
 #include "evaluate.hpp"
 #include "board.hpp"
 
-#define book_hash_table_size 1048576
+#define book_hash_table_size 67108864
 constexpr int book_hash_mask = book_hash_table_size - 1;
 
 
@@ -28,7 +27,6 @@ class book{
     private:
         book_node *book[book_hash_table_size];
 		int n_book;
-		mutex mtx;
     public:
         bool init(){
 			for (int i = 0; i < book_hash_table_size; ++i)
@@ -49,7 +47,7 @@ class book{
             int arr[hw2];
             board b;
 			for (;;) {
-				if (n_book % 1000 == 0)
+				if (n_book % 1024 == 0)
 					cerr << "loading " << n_book << " boards" << endl;
 				for (i = 0; i < hw2; i += 4) {
 					if (fread(&elem, 1, 1, fp) < 1) {
@@ -96,40 +94,23 @@ class book{
 			return true;
         }
 
-        inline bool import_edax_book(string file){
-            FILE* fp;
-            if (fopen_s(&fp, file.c_str(), "rb") != 0){
-                cerr << "can't open " << file << endl;
-                return false;
-            }
-            char elem_str[];
-            int elem_int;
-            int i;
-            if (fread(&elem_str, 4, 1, fp) < 1) {
-                cerr << "file broken" << endl;
-                fclose(fp);
-                return false;
-            }
-            if (elem_str != "EDAX"){
-                cerr << "this file is not edax's file found " << elem_str << endl;
-                fclose(fp);
-                return false;
-            }
-            if (fread(&elem_str, 4, 1, fp) < 1) {
-                cerr << "file broken" << endl;
-                fclose(fp);
-                return false;
-            }
-            if (elem_str != "BOOK"){
-                cerr << "this file is not edax's book file found " << elem_str << endl;
-                fclose(fp);
-                return false;
-            }
-            if (fread(&elem_str, 30, 1, fp) < 1) {
-                cerr << "file broken" << endl;
-                fclose(fp);
-                return false;
-            }
+		inline bool import_edax_book(string file) {
+			FILE* fp;
+			if (fopen_s(&fp, file.c_str(), "rb") != 0) {
+				cerr << "can't open " << file << endl;
+				return false;
+			}
+			char elem_char;
+			int elem_int;
+			short elem_short;
+			int i, j;
+			for (i = 0; i < 38; ++i){
+				if (fread(&elem_char, 1, 1, fp) < 1) {
+					cerr << "file broken" << endl;
+					fclose(fp);
+					return false;
+				}
+			}
             if (fread(&elem_int, 4, 1, fp) < 1) {
                 cerr << "file broken" << endl;
                 fclose(fp);
@@ -138,10 +119,9 @@ class book{
             int n_boards = elem_int;
             unsigned long long player, opponent;
             short value;
-            board b;
+			char link = 0, link_value, link_move;
+            board b1, b2, nb;
             for (i = 0; i < n_boards; ++i){
-                if (n_book % 1000 == 0)
-					cerr << "loading " << n_book << " boards" << endl;
                 if (fread(&player, 8, 1, fp) < 1) {
                     cerr << "file broken" << endl;
                     fclose(fp);
@@ -152,21 +132,69 @@ class book{
                     fclose(fp);
                     return false;
                 }
-                if (fread(&elem_int, 4, 4, fp) < 4) {
-                    cerr << "file broken" << endl;
-                    fclose(fp);
-                    return false;
-                }
+				for (j = 0; j < 4; ++j) {
+					if (fread(&elem_int, 4, 1, fp) < 1) {
+						cerr << "file broken" << endl;
+						fclose(fp);
+						return false;
+					}
+				}
                 if (fread(&value, 2, 1, fp) < 1) {
                     cerr << "file broken" << endl;
                     fclose(fp);
                     return false;
                 }
-                b.translate_from_ull_fast(player, opponent, black);
-                n_book += register_symmetric_book(b, (int)value, n_book);
-                b.translate_from_ull_fast(opponent, player, white);
-                n_book += register_symmetric_book(b, (int)value, n_book);
+				for (j = 0; j < 2; ++j) {
+					if (fread(&elem_short, 2, 1, fp) < 1) {
+						cerr << "file broken" << endl;
+						fclose(fp);
+						return false;
+					}
+				}
+				if (fread(&link, 1, 1, fp) < 1) {
+					cerr << "file broken" << endl;
+					fclose(fp);
+					return false;
+				}
+				if (fread(&elem_char, 1, 1, fp) < 1) {
+					cerr << "file broken" << endl;
+					fclose(fp);
+					return false;
+				}
+				b1.translate_from_ull(player, opponent, black);
+				b2.translate_from_ull(opponent, player, white);
+				n_book += register_symmetric_book(b1, (int)value, n_book);
+				if (n_book % 1024 == 0)
+					cerr << "loading " << n_book << " boards" << endl;
+				n_book += register_symmetric_book(b2, -(int)value, n_book);
+				if (n_book % 1024 == 0)
+					cerr << "loading " << n_book << " boards" << endl;
+				for (j = 0; j < (int)link + 1; ++j) {
+					if (fread(&link_value, 1, 1, fp) < 1) {
+						cerr << "file broken" << endl;
+						fclose(fp);
+						return false;
+					}
+					if (fread(&link_move, 1, 1, fp) < 1) {
+						cerr << "file broken" << endl;
+						fclose(fp);
+						return false;
+					}
+					if (link_move != hw2_p1) {
+						if (b1.legal((int)link_move)) {
+							nb = b1.move((int)link_move);
+							n_book += register_symmetric_book(nb, (int)link_value, n_book);
+							if (n_book % 1024 == 0)
+								cerr << "loading " << n_book << " boards" << endl;
+							nb = b2.move((int)link_move);
+							n_book += register_symmetric_book(nb, -(int)link_value, n_book);
+							if (n_book % 1024 == 0)
+								cerr << "loading " << n_book << " boards" << endl;
+						}
+					}
+				}
             }
+			cerr << "book imported " << n_book << " boards" << endl;
             return true;
         }
 
@@ -389,7 +417,6 @@ class book{
         }
 
         inline bool register_book(board b, int hash, int value, int line){
-			lock_guard<mutex> lock(mtx);
             if(this->book[hash] == NULL){
                 this->book[hash] = book_node_init(b, value, line);
             } else {
