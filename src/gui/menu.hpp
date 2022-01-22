@@ -12,6 +12,7 @@ constexpr Color menu_font_color = Palette::Black;
 constexpr Color radio_color = Palette::Deepskyblue;
 constexpr int menu_offset_x = 10;
 constexpr int menu_offset_y = 1;
+constexpr int menu_child_offset = 2;
 constexpr double radio_ratio = 0.2;
 
 #define button_mode 0
@@ -125,30 +126,25 @@ public:
 	}
 
 	void draw_noupdate() {
-		if (mode == button_mode)
+		if (mode == button_mode) {
 			*is_clicked_p = is_clicked;
-		if (is_clicked && mode == check_mode)
+		}
+		if (is_clicked && mode == check_mode) {
 			*is_checked = !(*is_checked);
-		if (is_active)
+		}
+		for (menu_elem& elem : children) {
+			elem.update();
+			is_active = is_active || (elem.active() && last_active());
+		}
+		if (is_active) {
 			rect.draw(menu_active_color);
-		else
+		}
+		else {
 			rect.draw(menu_select_color);
+		}
 		font(str).draw(rect.x + rect.h - menu_offset_y, rect.y + menu_offset_y, menu_font_color);
-		if (mode == check_mode) {
-			if (*is_checked) {
-				checkbox.scaled((double)(rect.h - 2 * menu_offset_y) / checkbox.width()).draw(rect.x + menu_offset_y, rect.y + menu_offset_y);
-			}
-		}
-		else if (mode == radio_mode) {
-			if (*is_checked) {
-				Circle(rect.x + rect.h / 2, rect.y + rect.h / 2, (int)(rect.h * radio_ratio)).draw(radio_color);
-			}
-		}
 		if (has_child) {
-			for (menu_elem& elem : children) {
-				elem.update();
-				is_active = is_active || (elem.active() && last_active());
-			}
+			font(U">").draw(rect.x + rect.w - menu_offset_x - menu_child_offset, rect.y + menu_offset_y, menu_font_color);
 			if (is_active) {
 				int radio_checked = -1;
 				int idx = 0;
@@ -169,6 +165,16 @@ public:
 					elem.draw_noupdate();
 					++idx;
 				}
+			}
+		}
+		if (mode == check_mode) {
+			if (*is_checked) {
+				checkbox.scaled((double)(rect.h - 2 * menu_offset_y) / checkbox.width()).draw(rect.x + menu_offset_y, rect.y + menu_offset_y);
+			}
+		}
+		else if (mode == radio_mode) {
+			if (*is_checked) {
+				Circle(rect.x + rect.h / 2, rect.y + rect.h / 2, (int)(rect.h * radio_ratio)).draw(radio_color);
 			}
 		}
 	}
