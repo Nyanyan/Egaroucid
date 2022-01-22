@@ -125,6 +125,12 @@ public:
 		is_clicked = rect.leftClicked();
 	}
 
+	void update_button() {
+		if (mode == button_mode) {
+			*is_clicked_p = is_clicked;
+		}
+	}
+
 	void draw_noupdate() {
 		if (mode == button_mode) {
 			*is_clicked_p = is_clicked;
@@ -164,6 +170,11 @@ public:
 					}
 					elem.draw_noupdate();
 					++idx;
+				}
+			}
+			else {
+				for (menu_elem& elem : children) {
+					elem.update_button();
 				}
 			}
 		}
@@ -307,6 +318,7 @@ public:
 		else {
 			for (menu_elem& elem : elems) {
 				elem.not_clicked();
+				elem.update_button();
 			}
 		}
 		if (is_open) {

@@ -169,6 +169,14 @@ inline void create_vacant_lst(board bd) {
 		sort(vacant_lst.begin(), vacant_lst.end(), cmp_vacant);
 }
 
+int find_history_idx(vector<board> history, int history_place) {
+	for (int i = 0; i < (int)history.size(); ++i){
+		if (history[i].n - 4 == history_place)
+			return i;
+	}
+	return 0;
+}
+
 void initialize_draw(future<bool> *f, bool *initializing, bool *initialize_failed, Font font) {
 	if (!(*initialize_failed)) {
 		font(U"AI初期化中").draw(50, 50, font_color);
@@ -247,8 +255,10 @@ void Main() {
 	Font font50(50);
 
 	board bd;
-	vector<board> history;
+	vector<board> history, fork_history;
+	int history_place = 0;
 	bool board_clicked[hw2];
+	bool fork_mode = false;
 
 	future<bool> initialize_future = async(launch::async, ai_init);
 	bool initializing = true, initialize_failed = false;
@@ -264,7 +274,10 @@ void Main() {
 			initialize_draw(&initialize_future,&initializing, &initialize_failed, font50);
 			if (!initializing) {
 				bd.reset();
+				bd.v = -inf;
 				history.emplace_back(bd);
+				history_place = 0;
+				fork_mode = false;
 			}
 		}
 		else {
@@ -277,24 +290,43 @@ void Main() {
 				bd.v = -inf;
 				history.clear();
 				history.emplace_back(bd);
+				fork_history.clear();
+				history_place = 0;
+				fork_mode = false;
 			}
-			if (!use_ai_flag || (human_first && bd.p == black) || (human_second && bd.p == white)) {
+			if (bd.p != vacant && (!use_ai_flag || (human_first && bd.p == black) || (human_second && bd.p == white) || fork_mode)) {
 				pair<bool, board> moved_board = move_board(bd, board_clicked);
 				if (moved_board.first) {
 					bd = moved_board.second;
-					bd.v = -inf;
-					history.emplace_back(bd);
 					bd.check_player();
+					bd.v = -inf;
+					if (fork_mode) {
+						while (fork_history.size()) {
+							if (fork_history[fork_history.size() - 1].n >= bd.n) {
+								fork_history.pop_back();
+							}
+							else {
+								break;
+							}
+						}
+						fork_history.emplace_back(bd);
+					}
+					else {
+						history.emplace_back(bd);
+					}
+					history_place = bd.n - 4;
 				}
 			}
-			else if (bd.p != vacant) {
+			else if (bd.p != vacant && history[history.size() - 1].n - 4 == history_place) {
 				if (ai_thinking) {
 					if (ai_future.wait_for(chrono::seconds(0)) == future_status::ready) {
 						search_result ai_result = ai_future.get();
+						int sgn = (bd.p ? -1 : 1);
 						bd = bd.move(ai_result.policy);
-						bd.v = ai_result.value;
-						history.emplace_back(bd);
 						bd.check_player();
+						bd.v = sgn * ai_result.value;
+						history.emplace_back(bd);
+						history_place = bd.n - 4;
 						ai_value = ai_result.value;
 						ai_thinking = false;
 					}
@@ -306,8 +338,32 @@ void Main() {
 				}
 			}
 
+			int former_history_place = history_place;
+			history_place = graph.update_place(history, fork_history, history_place);
+			if (history_place != former_history_place && !ai_thinking) {
+				if (fork_mode && history_place > fork_history[fork_history.size() - 1].n - 4) {
+					fork_history.clear();
+					bd = history[find_history_idx(history, history_place)];
+					if (history_place == history[history.size() - 1].n - 4) {
+						fork_mode = false;
+					}
+					else {
+						fork_history.emplace_back(bd);
+					}
+				}
+				else if (!fork_mode || (fork_mode && history_place <= fork_history[0].n - 4)) {
+					fork_mode = true;
+					fork_history.clear();
+					bd = history[find_history_idx(history, history_place)];
+					fork_history.emplace_back(bd);
+				}
+				else if (fork_mode) {
+					bd = fork_history[find_history_idx(fork_history, history_place)];
+				}
+			}
+
 			board_draw(board_cells, bd);
-			graph.draw(history);
+			graph.draw(history, fork_history, history_place);
 		}
 
 		menu.draw();
