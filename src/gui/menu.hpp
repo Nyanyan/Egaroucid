@@ -8,11 +8,14 @@ using namespace std;
 constexpr Color menu_color = Palette::Gainsboro;
 constexpr Color menu_active_color = Palette::Lightblue;
 constexpr Color menu_font_color = Palette::Black;
+constexpr Color radio_color = Palette::Deepskyblue;
 constexpr int menu_offset = 2;
+constexpr double radio_ratio = 0.2;
 
 #define button_mode 0
 #define bar_mode 1
 #define check_mode 2
+#define radio_mode 3
 
 class menu_elem {
 private:
@@ -20,34 +23,63 @@ private:
 	Rect rect;
 	Font font;
 	int mode;
+	bool has_child;
+	vector<menu_elem> children;
 	bool is_active;
 	int *bar_elem;
-	bool *is_clicked;
+	bool *is_clicked_p;
+	bool is_clicked;
 	bool *is_checked;
+	bool dammy_clicked;
 	Texture checkbox;
 
 public:
 	void init_button(String s, bool *c) {
+		clear();
 		mode = button_mode;
+		has_child = false;
 		str = s;
-		is_clicked = c;
-		*is_clicked = false;
+		is_clicked_p = c;
+		is_clicked = false;
+		*is_clicked_p = is_clicked;
 	}
 
 	void init_bar(String s, int *c, int d) {
+		clear();
 		mode = bar_mode;
+		has_child = false;
 		is_active = false;
 		str = s;
 		bar_elem = c;
 		*bar_elem = d;
+		is_clicked = false;
 	}
 
 	void init_check(String s, bool *c, bool d) {
+		clear();
 		mode = check_mode;
+		has_child = false;
 		is_active = false;
 		str = s;
 		is_checked = c;
 		*is_checked = d;
+		is_clicked = false;
+	}
+
+	void init_radio(String s, bool* c, bool d) {
+		clear();
+		mode = radio_mode;
+		has_child = false;
+		is_active = false;
+		str = s;
+		is_checked = c;
+		*is_checked = d;
+		is_clicked = false;
+	}
+
+	void push(menu_elem ch) {
+		has_child = true;
+		children.emplace_back(ch);
 	}
 
 	void pre_init(Font f, Texture c) {
@@ -60,11 +92,35 @@ public:
 		rect.y = y;
 		rect.w = w;
 		rect.h = h;
+		if (has_child) {
+			int height = h - menu_offset * 2, width = w - menu_offset * 2;
+			for (menu_elem& elem : children) {
+				elem.pre_init(font, checkbox);
+				RectF r = elem.size();
+				height = max(height, (int)r.h);
+				width = max(width, (int)r.w);
+			}
+			height += menu_offset * 2;
+			width += menu_offset * 2;
+			int xx = rect.x + rect.w;
+			int yy = rect.y;
+			for (menu_elem& elem : children) {
+				elem.init_inside(xx, yy, width, height);
+				yy += height;
+			}
+		}
 	}
 
-	void draw() {
+	void update() {
 		is_active = rect.mouseOver();
-		*is_clicked = rect.leftClicked();
+		is_clicked = rect.leftClicked();
+	}
+
+	void draw_noupdate() {
+		if (mode == button_mode)
+			*is_clicked_p = is_clicked;
+		if (is_clicked && (mode == check_mode || mode == radio_mode))
+			*is_checked = !(*is_checked);
 		if (is_active)
 			rect.draw(menu_active_color);
 		else
@@ -74,14 +130,46 @@ public:
 			if (*is_checked) {
 				checkbox.scaled((double)(rect.h - 2 * menu_offset) / checkbox.width()).draw(rect.x + menu_offset, rect.y + menu_offset);
 			}
-			if (*is_clicked) {
-				*is_checked = !(*is_checked);
+		}
+		else if (mode == radio_mode) {
+			if (*is_checked) {
+				Circle(rect.x + rect.h / 2, rect.y + rect.h / 2, (int)(rect.h * radio_ratio)).draw(radio_color);
+			}
+		}
+		if (has_child) {
+			for (menu_elem& elem : children) {
+				elem.update();
+				is_active = is_active || elem.active();
+			}
+			if (is_active) {
+				int radio_checked = -1;
+				int idx = 0;
+				for (menu_elem& elem : children) {
+					if (elem.menu_mode() == radio_mode && elem.clicked()) {
+						radio_checked = idx;
+						is_clicked = true;
+					}
+					++idx;
+				}
+				idx = 0;
+				for (menu_elem& elem : children) {
+					if (elem.menu_mode() == radio_mode && idx != radio_checked && radio_checked != -1) {
+						elem.set_checked(false);
+					}
+					elem.draw_noupdate();
+					++idx;
+				}
 			}
 		}
 	}
 
+	void draw() {
+		update();
+		draw_noupdate();
+	}
+
 	bool clicked() {
-		return *is_clicked;
+		return is_clicked;
 	}
 
 	bool active() {
@@ -95,8 +183,27 @@ public:
 	}
 
 	void not_clicked() {
-		*is_clicked = false;
+		is_clicked = false;
+		if (has_child) {
+			for (menu_elem& elem : children) {
+				elem.not_clicked();
+			}
+		}
 	}
+
+	void clear() {
+		has_child = false;
+		children.clear();
+	}
+
+	int menu_mode() {
+		return mode;
+	}
+
+	void set_checked(bool v) {
+		*is_checked = v;
+	}
+
 };
 
 class menu_title {
@@ -110,6 +217,7 @@ private:
 
 public:
 	void init(String s) {
+		clear();
 		str = s;
 		is_open = false;
 	}
@@ -130,11 +238,9 @@ public:
 			RectF r = elem.size();
 			height = max(height, (int)r.h);
 			width = max(width, (int)r.w);
-			cerr << r.h << " " << r.w << endl;
 		}
 		height += menu_offset * 2;
 		width += menu_offset * 2;
-		cerr << "title " << height << " " << width << endl;
 		int xx = rect.x;
 		int yy = rect.y + rect.h;
 		for (menu_elem &elem : elems) {
@@ -145,7 +251,6 @@ public:
 
 	void push(menu_elem elem) {
 		elems.emplace_back(elem);
-		cerr << "title " << elems.size() << endl;
 	}
 
 	void draw() {
@@ -157,10 +262,24 @@ public:
 			n_is_open = true;
 		}
 		if (is_open) {
-			for (menu_elem &elem : elems) {
-				elem.draw();
+			int radio_checked = -1;
+			int idx = 0;
+			for (menu_elem& elem : elems) {
+				elem.update();
+				if (elem.clicked() && elem.menu_mode() == radio_mode) {
+					radio_checked = idx;
+				}
+				++idx;
+			}
+			idx = 0;
+			for (menu_elem& elem : elems) {
+				if (elem.menu_mode() == radio_mode && idx != radio_checked && radio_checked != -1) {
+					elem.set_checked(false);
+				}
+				elem.draw_noupdate();
 				n_is_open = n_is_open || elem.active();
 				clicked = clicked || elem.clicked();
+				++idx;
 			}
 		}
 		else {
@@ -194,7 +313,6 @@ private:
 public:
 	void push(menu_title elem) {
 		menu.emplace_back(elem);
-		cerr << menu.size() << endl;
 	}
 
 	void init(int x, int y, Font f, Texture c) {
@@ -207,7 +325,6 @@ public:
 		}
 		height += menu_offset * 2;
 		width += menu_offset * 2;
-		cerr << height << " " << width << endl;
 		int xx = x;
 		int yy = y;
 		for (menu_title &elem : menu) {
@@ -224,7 +341,7 @@ public:
 		}
 	}
 
-	bool open() {
+	bool active() {
 		return is_open;
 	}
 };
