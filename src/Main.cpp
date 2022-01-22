@@ -32,6 +32,7 @@ using namespace std;
 constexpr Color font_color = Palette::Black;
 constexpr int board_sx = 50, board_sy = 70, board_cell_size = 60, board_cell_frame_width = 1;
 constexpr int stone_size = 25, legal_size = 5;
+constexpr int graph_sx = 575, graph_sy = 245, graph_width = 415, graph_height = 345, graph_resolution = 10, graph_font_size = 15;
 
 bool ai_init() {
 	board_init();
@@ -234,6 +235,15 @@ void Main() {
 	for (int cell = 0; cell < hw2; ++cell) {
 		board_cells[cell] = Rect(board_sx + (cell % hw) * board_cell_size, board_sy + (cell / hw) * board_cell_size, board_cell_size, board_cell_size);
 	}
+	Font graph_font(graph_font_size);
+	Graph graph;
+	graph.sx = graph_sx;
+	graph.sy = graph_sy;
+	graph.size_x = graph_width;
+	graph.size_y = graph_height;
+	graph.resolution = graph_resolution;
+	graph.font = graph_font;
+	graph.font_size = graph_font_size;
 	Font font50(50);
 
 	board bd;
@@ -264,14 +274,17 @@ void Main() {
 			if (start_game_flag) {
 				cerr << "reset" << endl;
 				bd.reset();
+				bd.v = -inf;
 				history.clear();
 				history.emplace_back(bd);
 			}
 			if (!use_ai_flag || (human_first && bd.p == black) || (human_second && bd.p == white)) {
 				pair<bool, board> moved_board = move_board(bd, board_clicked);
 				if (moved_board.first) {
-					history.emplace_back(moved_board.second);
 					bd = moved_board.second;
+					bd.v = -inf;
+					history.emplace_back(bd);
+					bd.check_player();
 				}
 			}
 			else if (bd.p != vacant) {
@@ -279,8 +292,9 @@ void Main() {
 					if (ai_future.wait_for(chrono::seconds(0)) == future_status::ready) {
 						search_result ai_result = ai_future.get();
 						bd = bd.move(ai_result.policy);
-						bd.check_player();
+						bd.v = ai_result.value;
 						history.emplace_back(bd);
+						bd.check_player();
 						ai_value = ai_result.value;
 						ai_thinking = false;
 					}
@@ -293,6 +307,7 @@ void Main() {
 			}
 
 			board_draw(board_cells, bd);
+			graph.draw(history);
 		}
 
 		menu.draw();
