@@ -386,7 +386,7 @@ class board {
             this->policy = -1;
         }
 
-        inline void translate_from_ull_fast(const unsigned long long bk, const unsigned long long wt, int player) {
+        inline void translate_from_ull(const unsigned long long bk, const unsigned long long wt, int player) {
             int i, j;
             int arr[hw2];
             for (i = 0; i < hw2; ++i)
@@ -398,7 +398,7 @@ class board {
                 else if (1 & (wt >> i))
                     arr[i] = white;
             }
-            translate_from_arr_fast(arr, player);
+            translate_from_arr(arr, player);
         }
 
         inline int count(int player){
@@ -425,6 +425,33 @@ class board {
                 for (j = 0; j < idx_n_cell[i]; ++j)
                     canput_arr[global_place[i][j]] |= ((mobility >> j) & 1) << 1;
             }
+        }
+
+        inline void check_player(){
+            bool has_legal = false;
+            for (int i = 0; i < hw2; ++i)
+                has_legal = has_legal || legal(i);
+            if (!has_legal){
+                p = 1 - p;
+                for (int i = 0; i < hw2; ++i)
+                    has_legal = has_legal || legal(i);
+                if (!has_legal)
+                    p = vacant;
+            }
+        }
+
+        inline void reset(){
+            constexpr int first_board[hw2] = {
+                vacant,vacant,vacant,vacant,vacant,vacant,vacant,vacant,
+                vacant,vacant,vacant,vacant,vacant,vacant,vacant,vacant,
+                vacant,vacant,vacant,vacant,vacant,vacant,vacant,vacant,
+                vacant,vacant,vacant,white,black,vacant,vacant,vacant,
+                vacant,vacant,vacant,black,white,vacant,vacant,vacant,
+                vacant,vacant,vacant,vacant,vacant,vacant,vacant,vacant,
+                vacant,vacant,vacant,vacant,vacant,vacant,vacant,vacant,
+                vacant,vacant,vacant,vacant,vacant,vacant,vacant,vacant
+            };
+            translate_from_arr(first_board, black);
         }
 
     private:

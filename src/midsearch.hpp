@@ -372,11 +372,11 @@ inline search_result midsearch(board b, long long strt, int max_depth){
     int i;
     for (const int &cell: vacant_lst){
         if (b.legal(cell)){
-            cerr << cell << " ";
+            //cerr << cell << " ";
             nb.push_back(b.move(cell));
         }
     }
-    cerr << endl;
+    //cerr << endl;
     int canput = nb.size();
     //cerr << "canput: " << canput << endl;
     int res_depth;
@@ -388,8 +388,6 @@ inline search_result midsearch(board b, long long strt, int max_depth){
     transpose_table.hash_reg = 0;
     transpose_table.init_now();
     transpose_table.init_prev();
-    //int order_l, order_u;
-    //int depth = min(hw2 - b.n - 1, max_depth - 1);
     bool use_mpc = max_depth >= 13 ? true : false;
     double use_mpct = 2.0;
     if (max_depth >= 15)
@@ -408,20 +406,8 @@ inline search_result midsearch(board b, long long strt, int max_depth){
         alpha = -hw2;
         beta = hw2;
         transpose_table.init_now();
-        for (i = 0; i < canput; ++i){
+        for (i = 0; i < canput; ++i)
             move_ordering(&nb[i]);
-            //move_ordering_eval(&nb[i]);
-            /*
-            transpose_table.get_prev(&nb[i], nb[i].hash() & search_hash_mask, &order_l, &order_u);
-            nb[i].v = -max(order_l, order_u);
-            if (order_l != -inf && order_u != -inf)
-                nb[i].v += 100000;
-            if (order_l == -inf && order_u == -inf)
-                nb[i].v = -mid_evaluate(&nb[i]);
-            else
-                nb[i].v += cache_hit;
-            */
-        }
         if (canput >= 2)
             sort(nb.begin(), nb.end());
         g = -mtd(&nb[0], false, depth, -beta, -alpha, use_mpc, use_mpct);

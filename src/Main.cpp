@@ -29,10 +29,30 @@
 
 using namespace std;
 
+constexpr Color font_color = Palette::Black;
+constexpr int board_sx = 50, board_sy = 70, board_cell_size = 60, board_cell_frame_width = 1;
+constexpr int stone_size = 25, legal_size = 5;
+
+bool ai_init() {
+	board_init();
+	search_init();
+	transpose_table_init();
+	if (!evaluate_init())
+		return false;
+	if (!book_init())
+		return false;
+	if (!joseki_init())
+		return false;
+	if (!human_value_init())
+		return false;
+	return true;
+}
+
 Menu create_menu(bool *start_game_flag,
 	bool *use_ai_flag, bool *human_first, bool *human_second, bool *both_ai,
 	bool *use_hint_flag, bool *normal_hint, bool *human_hint, bool *umigame_hint,
-	bool *use_value_flag) {
+	bool *use_value_flag,
+	bool *start_book_learn_flag) {
 	Menu menu;
 	menu_title title;
 	menu_elem menu_e, side_menu;
@@ -41,7 +61,7 @@ Menu create_menu(bool *start_game_flag,
 
 	title.init(U"対局");
 
-	menu_e.init_button(U"対局開始", start_game_flag);
+	menu_e.init_button(U"新規対局", start_game_flag);
 	title.push(menu_e);
 
 	menu.push(title);
@@ -74,8 +94,120 @@ Menu create_menu(bool *start_game_flag,
 	menu.push(title);
 
 
+
+	title.init(U"book");
+
+	menu_e.init_button(U"学習開始", start_book_learn_flag);
+	title.push(menu_e);
+
+	menu.push(title);
+
+
 	menu.init(0, 0, menu_font, checkbox);
 	return menu;
+}
+
+pair<bool, board> move_board(board b, bool board_clicked[]) {
+	board res;
+	for (int cell = 0; cell < hw2; ++cell) {
+		if (board_clicked[cell]) {
+			res = b.move(cell);
+			res.check_player();
+			return make_pair(true, res);
+		}
+	}
+	return make_pair(false, b);
+}
+
+search_result ai_return_result(search_result result) {
+	return result;
+}
+
+search_result ai_book_return(board bd, book_value book_result) {
+	search_result res;
+	res.policy = book_result.policy;
+	res.value = book_result.value;
+	res.depth = -1;
+	res.nps = 0;
+	cerr << "book policy " << res.policy << " value " << res.value << endl;
+	return res;
+}
+
+inline future<search_result> ai(board bd, int depth, int end_depth, int book_accept) {
+	constexpr int first_moves[4] = { 19, 26, 37, 44 };
+	int policy;
+	search_result result;
+	if (bd.n == 4) {
+		policy = first_moves[myrandrange(0, 4)];
+		result.policy = policy;
+		result.value = 0;
+		result.depth = 0;
+		result.nps = 0;
+		return async(launch::async, ai_return_result, result);
+	}
+	book_value book_result = book.get_random(&bd, book_accept);
+	if (book_result.policy != -1) {
+		return async(launch::async, ai_book_return, bd, book_result);
+	}
+	if (bd.n >= hw2 - end_depth) {
+		return async(launch::async, endsearch, bd, tim(), false);
+	}
+	cerr << bd.p << endl;
+	return async(launch::async, midsearch, bd, tim(), depth);
+}
+
+inline void create_vacant_lst(board bd) {
+	int bd_arr[hw2];
+	bd.translate_to_arr(bd_arr);
+	vacant_lst.clear();
+	for (int i = 0; i < hw2; ++i) {
+		if (bd_arr[i] == vacant)
+			vacant_lst.push_back(i);
+	}
+	if (bd.n < hw2_m1)
+		sort(vacant_lst.begin(), vacant_lst.end(), cmp_vacant);
+}
+
+void initialize_draw(future<bool> *f, bool *initializing, bool *initialize_failed, Font font) {
+	if (!(*initialize_failed)) {
+		font(U"AI初期化中").draw(50, 50, font_color);
+		if (f->wait_for(chrono::seconds(0)) == future_status::ready) {
+			if (f->get()) {
+				*initializing = false;
+			}
+			else {
+				*initialize_failed = true;
+			}
+		}
+	}
+	else {
+		font(U"AI初期化失敗").draw(50, 50, font_color);
+	}
+}
+
+void board_draw(Rect board_cells[], board b) {
+	for (int cell = 0; cell < hw2; ++cell) {
+		board_cells[cell].draw(Palette::Green).drawFrame(board_cell_frame_width, 0, Palette::Black);
+	}
+	Circle(board_sx + 2 * board_cell_size, board_sy + 2 * board_cell_size, 5).draw(Palette::Black);
+	Circle(board_sx + 2 * board_cell_size, board_sy + 6 * board_cell_size, 5).draw(Palette::Black);
+	Circle(board_sx + 6 * board_cell_size, board_sy + 2 * board_cell_size, 5).draw(Palette::Black);
+	Circle(board_sx + 6 * board_cell_size, board_sy + 6 * board_cell_size, 5).draw(Palette::Black);
+	int board_arr[hw2], y, x;
+	b.translate_to_arr(board_arr);
+	for (int cell = 0; cell < hw2; ++cell) {
+		x = board_sx + (cell % hw) * board_cell_size + board_cell_size / 2;
+		y = board_sy + (cell / hw) * board_cell_size + board_cell_size / 2;
+		if (board_arr[cell] == black) {
+			Circle(x, y, stone_size).draw(Palette::Black);
+		}
+		else if (board_arr[cell] == white) {
+			Circle(x, y, stone_size).draw(Palette::White);
+		}
+		else if (b.legal(cell)) {
+			Circle(x, y, legal_size).draw(Palette::Blue);
+		}
+	}
 }
 
 void Main() {
@@ -88,84 +220,82 @@ void Main() {
 	Scene::SetBackground(Palette::White);
 	Console.open();
 
-	/*
-	Menu menu;
-	menu_title title;
-	menu_elem menu_e, side_menu;
-	Font menu_font(15);
-	Texture checkbox(U"resources/icon.png", TextureDesc::Mipped);
-
-	bool start_game_flag;
-
-	title.init(U"対局");
-	menu_e.init_button(U"対局開始", &start_game_flag);
-	title.push(menu_e);
-	menu.push(title);
-
-	title.init(U"対局");
-	menu_e.init_button(U"対局開始", &start_game_flag);
-	title.push(menu_e);
-	menu.push(title);
-
-
-	bool clicked1, clicked2, clicked3, clicked4, side_menu_clicked;
-	bool radio1, radio2, radio3, radio4, radio5, radio6;
-	title.init(U"ふぁいる");
-	menu_e.init_button(U"テスト", &clicked1);
-	title.push(menu_e);
-	menu_e.init_check(U"猫になりたい", &clicked2, false);
-	title.push(menu_e);
-	menu_e.init_check(U"さいどめにゅー", &side_menu_clicked, false);
-	side_menu.init_radio(U"にゃ", &radio1, true);
-	menu_e.push(side_menu);
-	side_menu.init_radio(U"にぃ", &radio2, false);
-	menu_e.push(side_menu);
-	side_menu.init_radio(U"にゅ", &radio3, false);
-	menu_e.push(side_menu);
-	title.push(menu_e);
-	menu.push(title);
-
-	title.init(U"ねこねこ");
-	menu_e.init_button(U"わっしょい", &clicked3);
-	title.push(menu_e);
-	menu_e.init_button(U"そいや！！", &clicked4);
-	title.push(menu_e);
-	menu.push(title);
-
-	title.init(U"直ラジオだよ");
-	menu_e.init_radio(U"わ", &radio4, true);
-	title.push(menu_e);
-	menu_e.init_radio(U"を", &radio5, false);
-	title.push(menu_e);
-	menu_e.init_radio(U"ん", &radio6, false);
-	title.push(menu_e);
-	menu.push(title);
-
-	menu.init(0, 0, menu_font, checkbox);
-	*/
-
 	bool start_game_flag;
 	bool use_ai_flag = true, human_first = true, human_second = false, both_ai = false;
 	bool use_hint_flag = true, normal_hint = true, human_hint = true, umigame_hint = true;
 	bool use_value_flag = true;
+	bool start_book_learn_flag;
 	Menu menu = create_menu(&start_game_flag,
 		&use_ai_flag, &human_first, &human_second, &both_ai,
 		&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
-		&use_value_flag);
+		&use_value_flag,
+		&start_book_learn_flag);
+	Rect board_cells[hw2];
+	for (int cell = 0; cell < hw2; ++cell) {
+		board_cells[cell] = Rect(board_sx + (cell % hw) * board_cell_size, board_sy + (cell / hw) * board_cell_size, board_cell_size, board_cell_size);
+	}
+	Font font50(50);
+
+	board bd;
+	vector<board> history;
+	bool board_clicked[hw2];
+
+	future<bool> initialize_future = async(launch::async, ai_init);
+	bool initializing = true, initialize_failed = false;
+
+	future<search_result> ai_future;
+	bool ai_thinking = false;
+	int ai_value = 0;
+	int ai_depth1 = 13, ai_depth2 = 20, ai_book_accept = 0;
+
 
 	while (System::Update()) {
+		if (initializing) {
+			initialize_draw(&initialize_future,&initializing, &initialize_failed, font50);
+			if (!initializing) {
+				bd.reset();
+				history.emplace_back(bd);
+			}
+		}
+		else {
+			for (int cell = 0; cell < hw2; ++cell) {
+				board_clicked[cell] = board_cells[cell].leftClicked() && !menu.active() && bd.legal(cell);
+			}
+			if (start_game_flag) {
+				cerr << "reset" << endl;
+				bd.reset();
+				history.clear();
+				history.emplace_back(bd);
+			}
+			if (!use_ai_flag || (human_first && bd.p == black) || (human_second && bd.p == white)) {
+				pair<bool, board> moved_board = move_board(bd, board_clicked);
+				if (moved_board.first) {
+					history.emplace_back(moved_board.second);
+					bd = moved_board.second;
+				}
+			}
+			else if (bd.p != vacant) {
+				if (ai_thinking) {
+					if (ai_future.wait_for(chrono::seconds(0)) == future_status::ready) {
+						search_result ai_result = ai_future.get();
+						bd = bd.move(ai_result.policy);
+						bd.check_player();
+						history.emplace_back(bd);
+						ai_value = ai_result.value;
+						ai_thinking = false;
+					}
+				}
+				else {
+					create_vacant_lst(bd);
+					ai_future = ai(bd, ai_depth1, ai_depth2, ai_book_accept);
+					ai_thinking = true;
+				}
+			}
+
+			board_draw(board_cells, bd);
+		}
+
 		menu.draw();
-		//Print << menu.active();
-		/*
-		if (clicked1)
-			Print << U"clicked1";
-		if (clicked2)
-			Print << U"clicked2";
-		if (clicked3)
-			Print << U"clicked3";
-		if (clicked4)
-			Print << U"clicked4";
-		*/
 	}
 
 }
