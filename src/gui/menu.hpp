@@ -7,6 +7,7 @@ using namespace std;
 
 constexpr Color menu_color = Palette::Gainsboro;
 constexpr Color menu_active_color = Palette::Lightblue;
+constexpr Color menu_select_color = Palette::Lightcyan;
 constexpr Color menu_font_color = Palette::Black;
 constexpr Color radio_color = Palette::Deepskyblue;
 constexpr int menu_offset = 2;
@@ -124,7 +125,7 @@ public:
 		if (is_active)
 			rect.draw(menu_active_color);
 		else
-			rect.draw(menu_color);
+			rect.draw(menu_select_color);
 		font(str).draw(rect.x + rect.h - menu_offset, rect.y + menu_offset, menu_font_color);
 		if (mode == check_mode) {
 			if (*is_checked) {
@@ -254,8 +255,6 @@ public:
 	}
 
 	void draw() {
-		rect.draw(menu_color);
-		font(str).draw(rect.x + menu_offset, rect.y + menu_offset, menu_font_color);
 		bool n_is_open = false, clicked = false;
 		if (rect.mouseOver()) {
 			is_open = true;
@@ -287,6 +286,13 @@ public:
 				elem.not_clicked();
 			}
 		}
+		if (is_open) {
+			rect.draw(menu_select_color);
+		}
+		else {
+			rect.draw(menu_color);
+		}
+		font(str).draw(Arg::topCenter(rect.x + rect.w / 2, rect.y + menu_offset), menu_font_color);
 		is_open = n_is_open;
 		if (clicked)
 			is_open = false;
