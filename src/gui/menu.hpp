@@ -93,7 +93,7 @@ public:
 		rect.w = w;
 		rect.h = h;
 		if (has_child) {
-			int height = h - menu_offset * 2, width = w - menu_offset * 2;
+			int height = h - menu_offset * 2, width = 0;
 			for (menu_elem& elem : children) {
 				elem.pre_init(font, checkbox);
 				RectF r = elem.size();
