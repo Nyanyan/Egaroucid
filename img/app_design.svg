@@ -36,9 +36,9 @@
      inkscape:snap-bbox-edge-midpoints="true"
      inkscape:bbox-nodes="true"
      inkscape:bbox-paths="true"
-     inkscape:zoom="0.13748182"
-     inkscape:cx="3407.7232"
-     inkscape:cy="1996.6276"
+     inkscape:zoom="0.38885732"
+     inkscape:cx="1389.97"
+     inkscape:cy="2832.6585"
      inkscape:window-width="2104"
      inkscape:window-height="2071"
      inkscape:window-x="4118"
@@ -750,5 +750,22 @@
          style="stroke-width:0.264583"
          x="685.3125"
          y="144.02344">白: M</tspan></text>
+    <rect
+       style="fill:#87ceeb;stroke-width:0.499999;fill-opacity:1"
+       id="rect10405"
+       width="142.8866"
+       height="142.8866"
+       x="32.659794"
+       y="914.47418"
+       inkscape:export-filename="C:\github\egaroucid\Egaroucid5\src\resources\checked.png"
+       inkscape:export-xdpi="35.549999"
+       inkscape:export-ydpi="35.549999" />
+    <path
+       style="fill:none;stroke:#00008b;stroke-width:20;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="m 57.974062,985.93535 22.453607,34.02055 70.762881,-77.56696"
+       id="path10948"
+       inkscape:export-filename="C:\github\egaroucid\Egaroucid5\src\resources\checked.png"
+       inkscape:export-xdpi="35.549999"
+       inkscape:export-ydpi="35.549999" />
   </g>
 </svg>

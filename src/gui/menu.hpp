@@ -10,7 +10,8 @@ constexpr Color menu_active_color = Palette::Lightblue;
 constexpr Color menu_select_color = Palette::Lightcyan;
 constexpr Color menu_font_color = Palette::Black;
 constexpr Color radio_color = Palette::Deepskyblue;
-constexpr int menu_offset = 2;
+constexpr int menu_offset_x = 10;
+constexpr int menu_offset_y = 1;
 constexpr double radio_ratio = 0.2;
 
 #define button_mode 0
@@ -27,6 +28,7 @@ private:
 	bool has_child;
 	vector<menu_elem> children;
 	bool is_active;
+	bool was_active;
 	int *bar_elem;
 	bool *is_clicked_p;
 	bool is_clicked;
@@ -39,6 +41,8 @@ public:
 		clear();
 		mode = button_mode;
 		has_child = false;
+		is_active = false;
+		was_active = false;
 		str = s;
 		is_clicked_p = c;
 		is_clicked = false;
@@ -50,6 +54,7 @@ public:
 		mode = bar_mode;
 		has_child = false;
 		is_active = false;
+		was_active = false;
 		str = s;
 		bar_elem = c;
 		*bar_elem = d;
@@ -61,6 +66,7 @@ public:
 		mode = check_mode;
 		has_child = false;
 		is_active = false;
+		was_active = false;
 		str = s;
 		is_checked = c;
 		*is_checked = d;
@@ -94,15 +100,15 @@ public:
 		rect.w = w;
 		rect.h = h;
 		if (has_child) {
-			int height = h - menu_offset * 2, width = 0;
+			int height = h - menu_offset_y * 2, width = 0;
 			for (menu_elem& elem : children) {
 				elem.pre_init(font, checkbox);
 				RectF r = elem.size();
 				height = max(height, (int)r.h);
 				width = max(width, (int)r.w);
 			}
-			height += menu_offset * 2;
-			width += menu_offset * 2;
+			height += menu_offset_y * 2;
+			width += menu_offset_x * 2;
 			int xx = rect.x + rect.w;
 			int yy = rect.y;
 			for (menu_elem& elem : children) {
@@ -113,6 +119,7 @@ public:
 	}
 
 	void update() {
+		was_active = is_active;
 		is_active = rect.mouseOver();
 		is_clicked = rect.leftClicked();
 	}
@@ -120,16 +127,16 @@ public:
 	void draw_noupdate() {
 		if (mode == button_mode)
 			*is_clicked_p = is_clicked;
-		if (is_clicked && (mode == check_mode || mode == radio_mode))
+		if (is_clicked && mode == check_mode)
 			*is_checked = !(*is_checked);
 		if (is_active)
 			rect.draw(menu_active_color);
 		else
 			rect.draw(menu_select_color);
-		font(str).draw(rect.x + rect.h - menu_offset, rect.y + menu_offset, menu_font_color);
+		font(str).draw(rect.x + rect.h - menu_offset_y, rect.y + menu_offset_y, menu_font_color);
 		if (mode == check_mode) {
 			if (*is_checked) {
-				checkbox.scaled((double)(rect.h - 2 * menu_offset) / checkbox.width()).draw(rect.x + menu_offset, rect.y + menu_offset);
+				checkbox.scaled((double)(rect.h - 2 * menu_offset_y) / checkbox.width()).draw(rect.x + menu_offset_y, rect.y + menu_offset_y);
 			}
 		}
 		else if (mode == radio_mode) {
@@ -140,22 +147,24 @@ public:
 		if (has_child) {
 			for (menu_elem& elem : children) {
 				elem.update();
-				is_active = is_active || elem.active();
+				is_active = is_active || (elem.active() && last_active());
 			}
 			if (is_active) {
 				int radio_checked = -1;
 				int idx = 0;
 				for (menu_elem& elem : children) {
-					if (elem.menu_mode() == radio_mode && elem.clicked()) {
-						radio_checked = idx;
+					if (elem.clicked()) {
+						if (elem.menu_mode() == radio_mode && !elem.checked()) {
+							radio_checked = idx;
+						}
 						is_clicked = true;
 					}
 					++idx;
 				}
 				idx = 0;
 				for (menu_elem& elem : children) {
-					if (elem.menu_mode() == radio_mode && idx != radio_checked && radio_checked != -1) {
-						elem.set_checked(false);
+					if (elem.menu_mode() == radio_mode && radio_checked != -1) {
+						elem.set_checked(idx == radio_checked);
 					}
 					elem.draw_noupdate();
 					++idx;
@@ -175,6 +184,10 @@ public:
 
 	bool active() {
 		return is_active;
+	}
+
+	bool last_active() {
+		return was_active;
 	}
 
 	RectF size() {
@@ -205,6 +218,10 @@ public:
 		*is_checked = v;
 	}
 
+	bool checked() {
+		return *is_checked;
+	}
+
 };
 
 class menu_title {
@@ -233,15 +250,15 @@ public:
 		rect.y = y;
 		rect.w = w;
 		rect.h = h;
-		int height = h - menu_offset * 2, width = w - menu_offset * 2;
+		int height = h - menu_offset_y * 2, width = w - menu_offset_x * 2;
 		for (menu_elem &elem : elems) {
 			elem.pre_init(font, checkbox);
 			RectF r = elem.size();
 			height = max(height, (int)r.h);
 			width = max(width, (int)r.w);
 		}
-		height += menu_offset * 2;
-		width += menu_offset * 2;
+		height += menu_offset_y * 2;
+		width += menu_offset_x * 2;
 		int xx = rect.x;
 		int yy = rect.y + rect.h;
 		for (menu_elem &elem : elems) {
@@ -265,15 +282,15 @@ public:
 			int idx = 0;
 			for (menu_elem& elem : elems) {
 				elem.update();
-				if (elem.clicked() && elem.menu_mode() == radio_mode) {
+				if (elem.clicked() && elem.menu_mode() == radio_mode && !elem.checked()) {
 					radio_checked = idx;
 				}
 				++idx;
 			}
 			idx = 0;
 			for (menu_elem& elem : elems) {
-				if (elem.menu_mode() == radio_mode && idx != radio_checked && radio_checked != -1) {
-					elem.set_checked(false);
+				if (elem.menu_mode() == radio_mode && radio_checked != -1) {
+					elem.set_checked(idx == radio_checked);
 				}
 				elem.draw_noupdate();
 				n_is_open = n_is_open || elem.active();
@@ -292,7 +309,7 @@ public:
 		else {
 			rect.draw(menu_color);
 		}
-		font(str).draw(Arg::topCenter(rect.x + rect.w / 2, rect.y + menu_offset), menu_font_color);
+		font(str).draw(Arg::topCenter(rect.x + rect.w / 2, rect.y + menu_offset_y), menu_font_color);
 		is_open = n_is_open;
 		if (clicked)
 			is_open = false;
@@ -329,8 +346,8 @@ public:
 			height = max(height, (int)r.h);
 			width = max(width, (int)r.w);
 		}
-		height += menu_offset * 2;
-		width += menu_offset * 2;
+		height += menu_offset_y * 2;
+		width += menu_offset_x * 2;
 		int xx = x;
 		int yy = y;
 		for (menu_title &elem : menu) {
