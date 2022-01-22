@@ -5,40 +5,54 @@
 
 using namespace std;
 
-constexpr Color menu_color = Palette::Gray;
-constexpr Color menu_active_color = Palette::Skyblue;
+constexpr Color menu_color = Palette::Gainsboro;
+constexpr Color menu_active_color = Palette::Lightblue;
 constexpr Color menu_font_color = Palette::Black;
 constexpr int menu_offset = 2;
+
+#define button_mode 0
+#define bar_mode 1
+#define check_mode 2
 
 class menu_elem {
 private:
 	String str;
 	Rect rect;
 	Font font;
-	bool is_slidebar;
+	int mode;
+	bool is_active;
 	int *bar_elem;
 	bool *is_clicked;
-	bool is_active;
+	bool *is_checked;
+	Texture checkbox;
 
 public:
-	void init(String s, bool *c) {
+	void init_button(String s, bool *c) {
+		mode = button_mode;
 		str = s;
-		is_active = false;
 		is_clicked = c;
-		is_slidebar = false;
 		*is_clicked = false;
 	}
 
-	void init(String s, bool sbar, int *belem) {
-		str = s;
+	void init_bar(String s, int *c, int d) {
+		mode = bar_mode;
 		is_active = false;
-		is_slidebar = sbar;
-		bar_elem = belem;
-		*is_clicked = false;
+		str = s;
+		bar_elem = c;
+		*bar_elem = d;
 	}
 
-	void init_font(Font f) {
+	void init_check(String s, bool *c, bool d) {
+		mode = check_mode;
+		is_active = false;
+		str = s;
+		is_checked = c;
+		*is_checked = d;
+	}
+
+	void pre_init(Font f, Texture c) {
 		font = f;
+		checkbox = c;
 	}
 
 	void init_inside(int x, int y, int w, int h) {
@@ -55,7 +69,15 @@ public:
 			rect.draw(menu_active_color);
 		else
 			rect.draw(menu_color);
-		font(str).draw(rect.x + menu_offset, rect.y + menu_offset, menu_font_color);
+		font(str).draw(rect.x + rect.h - menu_offset, rect.y + menu_offset, menu_font_color);
+		if (mode == check_mode) {
+			if (*is_checked) {
+				checkbox.scaled((double)(rect.h - 2 * menu_offset) / checkbox.width()).draw(rect.x + menu_offset, rect.y + menu_offset);
+			}
+			if (*is_clicked) {
+				*is_checked = !(*is_checked);
+			}
+		}
 	}
 
 	bool clicked() {
@@ -67,7 +89,9 @@ public:
 	}
 
 	RectF size() {
-		return font(str).region(Point{ 0, 0 });
+		RectF res = font(str).region(Point{ 0, 0 });
+		res.w += res.h;
+		return res;
 	}
 
 	void not_clicked() {
@@ -82,6 +106,7 @@ private:
 	Font font;
 	bool is_open;
 	vector<menu_elem> elems;
+	Texture checkbox;
 
 public:
 	void init(String s) {
@@ -89,8 +114,9 @@ public:
 		is_open = false;
 	}
 
-	void init_font(Font f) {
+	void pre_init(Font f, Texture c) {
 		font = f;
+		checkbox = c;
 	}
 
 	void init_inside(int x, int y, int w, int h) {
@@ -100,7 +126,7 @@ public:
 		rect.h = h;
 		int height = h - menu_offset * 2, width = w - menu_offset * 2;
 		for (menu_elem &elem : elems) {
-			elem.init_font(font);
+			elem.pre_init(font, checkbox);
 			RectF r = elem.size();
 			height = max(height, (int)r.h);
 			width = max(width, (int)r.w);
@@ -171,10 +197,10 @@ public:
 		cerr << menu.size() << endl;
 	}
 
-	void init(int x, int y, Font f) {
+	void init(int x, int y, Font f, Texture c) {
 		int height = 0, width = 0;
 		for (menu_title &elem : menu) {
-			elem.init_font(f);
+			elem.pre_init(f, c);
 			RectF r = elem.size();
 			height = max(height, (int)r.h);
 			width = max(width, (int)r.w);
