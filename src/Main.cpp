@@ -288,6 +288,9 @@ void board_draw(Rect board_cells[], board b, bool use_hint_flag, bool normal_hin
 				Circle(x, y, legal_size).draw(Palette::Blue);
 			}
 		}
+		if (b.policy == cell) {
+			Circle(x, y, legal_size).draw(Palette::Red);
+		}
 
 	}
 	if (use_hint_flag) {
@@ -295,7 +298,7 @@ void board_draw(Rect board_cells[], board b, bool use_hint_flag, bool normal_hin
 		for (int i = 0; i < hw2; ++i) {
 			hint_shown[i] = false;
 		}
-		if (normal_hint) {
+		if (normal_hint && b.p != vacant) {
 			for (int cell = 0; cell < hw2; ++cell) {
 				if (b.legal(cell)) {
 					if (hint_state[cell] >= 2) {
@@ -456,8 +459,8 @@ void Main() {
 							else if (hint_future[cell].wait_for(chrono::seconds(0)) == future_status::ready) {
 								cell_value hint_result = hint_future[cell].get();
 								if (global_searching) {
-									if (hint_state[cell] == 1) {
-										hint_value[cell] = hint_result.value;
+									if (hint_state[cell] == 1 || hint_result.depth == search_final_define) {
+										hint_value[cell] = -hint_result.value;
 									}
 									else {
 										hint_value[cell] -= hint_result.value;
