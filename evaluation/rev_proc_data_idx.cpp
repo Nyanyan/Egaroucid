@@ -236,7 +236,7 @@ inline int narrow_triangle0(int phase_idx, const board *b, int v, int w, int x, 
 }
 
 inline int narrow_triangle1(int phase_idx, const board *b, int v, int w, int x, int y, int z){
-    return reverse_board[b->b[v]] / p33 * p35 + reverse_board[b->b[w]] / p36 * p33 + pop_digit[b->b[x]][7] * p32 + pop_digit[b->b[y]][7] / p37 * p31 + pop_digit[b->b[z]][7] / p37;
+    return reverse_board[b->b[v]] / p33 * p35 + reverse_board[b->b[w]] / p36 * p33 + pop_digit[b->b[x]][7] * p32 + pop_digit[b->b[y]][7] * p31 + pop_digit[b->b[z]][7];
 }
 
 inline int fish0(int phase_idx, const board *b, int w, int x, int y, int z){
