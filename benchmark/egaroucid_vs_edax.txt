@@ -235,3 +235,17 @@ start depth: 40 Egaroucid plays black WDL: 230-48-222 Egaroucid plays white WDL:
 start depth: 30 Egaroucid plays black WDL: 183-21-198 Egaroucid plays white WDL: 183-33-186 Egaroucid win rate: 0.488
 start depth: 20 Egaroucid plays black WDL: 154-12-142 Egaroucid plays white WDL: 176-22-110 Egaroucid win rate: 0.5670103092783505
 start depth: 10 Egaroucid plays black WDL: 24-2-15 Egaroucid plays white WDL: 23-1-17 Egaroucid win rate: 0.5949367088607594
+
+2022/01/24 fixed bug
+start depth: 55 Egaroucid plays black WDL: 155-276-69 Egaroucid plays white WDL: 91-282-127 Egaroucid win rate: 0.5565610859728507
+start depth: 51 Egaroucid plays black WDL: 257-82-161 Egaroucid plays white WDL: 215-80-205 Egaroucid win rate: 0.5632458233890215
+start depth: 47 Egaroucid plays black WDL: 250-40-210 Egaroucid plays white WDL: 235-31-234 Egaroucid win rate: 0.5220667384284177
+start depth: 43 Egaroucid plays black WDL: 256-23-221 Egaroucid plays white WDL: 259-15-226 Egaroucid win rate: 0.5353430353430353
+start depth: 39 Egaroucid plays black WDL: 285-13-202 Egaroucid plays white WDL: 246-24-230 Egaroucid win rate: 0.5514018691588785
+start depth: 35 Egaroucid plays black WDL: 284-10-206 Egaroucid plays white WDL: 259-10-231 Egaroucid win rate: 0.5540816326530612
+start depth: 31 Egaroucid plays black WDL: 222-8-188 Egaroucid plays white WDL: 209-6-203 Egaroucid win rate: 0.524330900243309
+start depth: 27 Egaroucid plays black WDL: 187-10-175 Egaroucid plays white WDL: 181-7-184 Egaroucid win rate: 0.5061898211829436
+start depth: 23 Egaroucid plays black WDL: 175-5-160 Egaroucid plays white WDL: 164-13-163 Egaroucid win rate: 0.5120845921450151
+start depth: 19 Egaroucid plays black WDL: 158-4-128 Egaroucid plays white WDL: 144-5-141 Egaroucid win rate: 0.5288966725043783
+start depth: 15 Egaroucid plays black WDL: 76-5-90 Egaroucid plays white WDL: 85-4-82 Egaroucid win rate: 0.48348348348348347
+start depth: 11 Egaroucid plays black WDL: 36-2-26 Egaroucid plays white WDL: 46-0-18 Egaroucid win rate: 0.6507936507936508
