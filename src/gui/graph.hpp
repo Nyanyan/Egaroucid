@@ -51,7 +51,7 @@ public:
 	}
 
 	int update_place(vector<board> nodes1, vector<board> nodes2, int place) {
-		if (Rect(sx - 40, sy, size_x + 20, size_y).leftPressed()) {
+		if (Rect(sx - 30, sy, size_x + 40, size_y).leftPressed()) {
 			int cursor_x = Cursor::Pos().x;
 			int min_err = inf;
 			for (int i = 0; i < (int)nodes1.size(); ++i) {

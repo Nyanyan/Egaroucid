@@ -173,7 +173,7 @@ cell_value hint_search(board bd, int depth, int end_depth) {
 	}
 	else if (hw2 - bd.n <= end_depth) {
 		res.value = endsearch_value(bd, tim()).value;
-		res.depth = end_depth >= 21 ? hw2 - bd.n + 1 : search_final_define;
+		res.depth = end_depth >= 21 ? hw2 - bd.n : search_final_define;
 	}
 	else {
 		res.value = midsearch_value(bd, tim(), depth).value;
@@ -280,12 +280,14 @@ void board_draw(Rect board_cells[], board b, bool use_hint_flag, bool normal_hin
 		else if (board_arr[cell] == white) {
 			Circle(x, y, stone_size).draw(Palette::White);
 		}
-		else if (b.legal(cell)) {
-			if (use_hint_flag && normal_hint && hint_state[cell] >= 2) {
-				max_cell_value = max(max_cell_value, hint_value[cell]);
-			}
-			if (!use_hint_flag || (!normal_hint && !human_hint && !umigame_hint)) {
-				Circle(x, y, legal_size).draw(Palette::Blue);
+		else if (b.p != vacant) {
+			if (b.legal(cell)) {
+				if (use_hint_flag && normal_hint && hint_state[cell] >= 2) {
+					max_cell_value = max(max_cell_value, hint_value[cell]);
+				}
+				if (!use_hint_flag || (!normal_hint && !human_hint && !umigame_hint)) {
+					Circle(x, y, legal_size).draw(Palette::Blue);
+				}
 			}
 		}
 		if (b.policy == cell) {
@@ -293,12 +295,12 @@ void board_draw(Rect board_cells[], board b, bool use_hint_flag, bool normal_hin
 		}
 
 	}
-	if (use_hint_flag) {
+	if (use_hint_flag && b.p != vacant) {
 		bool hint_shown[hw2];
 		for (int i = 0; i < hw2; ++i) {
 			hint_shown[i] = false;
 		}
-		if (normal_hint && b.p != vacant) {
+		if (normal_hint) {
 			for (int cell = 0; cell < hw2; ++cell) {
 				if (b.legal(cell)) {
 					if (hint_state[cell] >= 2) {
@@ -331,13 +333,35 @@ void board_draw(Rect board_cells[], board b, bool use_hint_flag, bool normal_hin
 	}
 }
 
+void reset_hint(int hint_state[], future<cell_value> hint_future[]) {
+	global_searching = false;
+	for (int i = 0; i < hw2; ++i) {
+		if (hint_state[i] % 2 == 1) {
+			hint_future[i].get();
+		}
+		hint_state[i] = hint_not_calculated_define;
+	}
+	global_searching = true;
+}
+
+void reset_ai(bool *ai_thinking, future<search_result> *ai_future) {
+	global_searching = false;
+	ai_future->get();
+	global_searching = true;
+	*ai_thinking = false;
+}
+
+bool not_finished(board bd) {
+	return bd.p == 0 || bd.p == 1;
+}
+
 void Main() {
 	Size window_size = Size(1000, 720);
 	Window::Resize(window_size);
 	Window::SetStyle(WindowStyle::Sizable);
 	Scene::SetResizeMode(ResizeMode::Keep);
 	Window::SetTitle(U"Egaroucid5.2.0");
-	//System::SetTerminationTriggers(UserAction::NoAction);
+	System::SetTerminationTriggers(UserAction::NoAction);
 	Scene::SetBackground(Palette::White);
 	Console.open();
 
@@ -385,8 +409,15 @@ void Main() {
 	int ai_depth1 = 13, ai_depth2 = 20, ai_book_accept = 0;
 	int hint_depth1 = 11, hint_depth2 = 18;
 
-
 	while (System::Update()) {
+		if (System::GetUserActions() & UserAction::CloseButtonClicked) {
+			cerr << "a";
+			reset_hint(hint_state, hint_future);
+			cerr << "b";
+			reset_ai(&ai_thinking, &ai_future);
+			cerr << "c";
+			System::Exit();
+		}
 		if (initializing) {
 			initialize_draw(&initialize_future,&initializing, &initialize_failed, font50);
 			if (!initializing) {
@@ -415,11 +446,9 @@ void Main() {
 				fork_history.clear();
 				history_place = 0;
 				fork_mode = false;
-				for (int i = 0; i < hw2; ++i) {
-					hint_state[i] = hint_not_calculated_define;
-				}
+				reset_hint(hint_state, hint_future);
 			}
-			if (bd.p != vacant && (!use_ai_flag || (human_first && bd.p == black) || (human_second && bd.p == white) || fork_mode)) {
+			if (not_finished(bd) && (!use_ai_flag || (human_first && bd.p == black) || (human_second && bd.p == white) || fork_mode)) {
 				pair<bool, board> moved_board = move_board(bd, board_clicked);
 				if (moved_board.first) {
 					bd = moved_board.second;
@@ -440,11 +469,9 @@ void Main() {
 						history.emplace_back(bd);
 					}
 					history_place = bd.n - 4;
-					for (int i = 0; i < hw2; ++i) {
-						hint_state[i] = hint_not_calculated_define;
-					}
+					reset_hint(hint_state, hint_future);
 				}
-				if (use_hint_flag && normal_hint) {
+				if (not_finished(bd) && use_hint_flag && normal_hint) {
 					for (int cell = 0; cell < hw2; ++cell) {
 						if (bd.legal(cell) && hint_state[cell] < hint_depth1 * 2) {
 							if (hint_state[cell] % 2 == 0) {
@@ -468,13 +495,18 @@ void Main() {
 									}
 									hint_depth[cell] = hint_result.depth;
 								}
-								++hint_state[cell];
+								if (hint_result.depth == search_final_define || hint_result.depth == search_book_define) {
+									hint_state[cell] = hint_depth1 * 2;
+								}
+								else {
+									++hint_state[cell];
+								}
 							}
 						}
 					}
 				}
 			}
-			else if (bd.p != vacant && history[history.size() - 1].n - 4 == history_place) {
+			else if (not_finished(bd) && history[history.size() - 1].n - 4 == history_place) {
 				if (ai_thinking) {
 					if (ai_future.wait_for(chrono::seconds(0)) == future_status::ready) {
 						search_result ai_result = ai_future.get();
@@ -486,9 +518,7 @@ void Main() {
 						history_place = bd.n - 4;
 						ai_value = ai_result.value;
 						ai_thinking = false;
-						for (int i = 0; i < hw2; ++i) {
-							hint_state[i] = hint_not_calculated_define;
-						}
+						reset_hint(hint_state, hint_future);
 					}
 				}
 				else {
@@ -501,10 +531,15 @@ void Main() {
 
 			int former_history_place = history_place;
 			history_place = graph.update_place(history, fork_history, history_place);
-			if (history_place != former_history_place && !ai_thinking) {
+			if (history_place != former_history_place) {
+				if (ai_thinking) {
+					reset_ai(&ai_thinking, &ai_future);
+				}
 				if (fork_mode && history_place > fork_history[fork_history.size() - 1].n - 4) {
 					fork_history.clear();
 					bd = history[find_history_idx(history, history_place)];
+					create_vacant_lst(bd);
+					reset_hint(hint_state, hint_future);
 					if (history_place == history[history.size() - 1].n - 4) {
 						fork_mode = false;
 					}
@@ -517,9 +552,13 @@ void Main() {
 					fork_history.clear();
 					bd = history[find_history_idx(history, history_place)];
 					fork_history.emplace_back(bd);
+					create_vacant_lst(bd);
+					reset_hint(hint_state, hint_future);
 				}
 				else if (fork_mode) {
 					bd = fork_history[find_history_idx(fork_history, history_place)];
+					create_vacant_lst(bd);
+					reset_hint(hint_state, hint_future);
 				}
 			}
 

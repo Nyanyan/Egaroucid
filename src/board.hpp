@@ -191,7 +191,6 @@ class board {
         int v;
         int n;
         int parity;
-        //int move_log[4][2];
 
     public:
         bool operator<(const board& another) const {
@@ -253,6 +252,8 @@ class board {
         }
 
         inline bool legal(int g_place) {
+            if (this->p < 0 || 1 < this->p)
+                return false;
             bool res = 
                 legal_arr[this->p][this->b[place_included[g_place][0]]][local_place[place_included[g_place][0]][g_place]] || 
                 legal_arr[this->p][this->b[place_included[g_place][1]]][local_place[place_included[g_place][1]][g_place]] || 
