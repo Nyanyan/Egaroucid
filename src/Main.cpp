@@ -29,10 +29,19 @@
 
 using namespace std;
 
+#define search_final_define 100
+#define search_book_define -1
+#define hint_not_calculated_define 0
+
 constexpr Color font_color = Palette::Black;
 constexpr int board_sx = 50, board_sy = 70, board_cell_size = 60, board_cell_frame_width = 1;
 constexpr int stone_size = 25, legal_size = 5;
 constexpr int graph_sx = 575, graph_sy = 245, graph_width = 415, graph_height = 345, graph_resolution = 10, graph_font_size = 15;
+
+struct cell_value {
+	int value;
+	int depth;
+};
 
 bool ai_init() {
 	board_init();
@@ -150,11 +159,68 @@ inline future<search_result> ai(board bd, int depth, int end_depth, int book_acc
 	if (book_result.policy != -1) {
 		return async(launch::async, ai_book_return, bd, book_result);
 	}
-	if (bd.n >= hw2 - end_depth) {
+	else if (bd.n >= hw2 - end_depth) {
 		return async(launch::async, endsearch, bd, tim(), false);
 	}
-	cerr << bd.p << endl;
 	return async(launch::async, midsearch, bd, tim(), depth);
+}
+
+cell_value hint_search(board bd, int depth, int end_depth) {
+	cell_value res;
+	res.value = book.get(&bd);
+	if (res.value != -inf) {
+		res.depth = search_book_define;
+	}
+	else if (hw2 - bd.n <= end_depth) {
+		res.value = endsearch_value(bd, tim()).value;
+		res.depth = end_depth >= 21 ? hw2 - bd.n + 1 : search_final_define;
+	}
+	else {
+		res.value = midsearch_value(bd, tim(), depth).value;
+		res.depth = depth;
+	}
+	return res;
+}
+
+cell_value analyze_search(board bd, int depth, int end_depth) {
+	cell_value res;
+	int value = book.get(&bd);
+	if (value != -inf) {
+		res.value = value;
+		res.depth = search_book_define;
+	}
+	else {
+		bool has_legal = false;
+		for (int cell = 0; cell < hw2; ++cell) {
+			if (bd.legal(cell))
+				has_legal = true;
+		}
+		bool passed = !has_legal;
+		if (!has_legal) {
+			bd.p = 1 - bd.p;
+			for (int cell = 0; cell < hw2; ++cell) {
+				if (bd.legal(cell))
+					has_legal = true;
+			}
+		}
+		if (!has_legal) {
+			res.value = -end_evaluate(&bd);
+			res.depth = 0;
+		}
+		else if (hw2 - bd.n <= end_depth) {
+			res.value = endsearch(bd, tim(), false).value;
+			if (passed)
+				res.value = -res.value;
+			res.depth = depth >= 21 ? hw2 - bd.n + 1 : search_final_define;
+		}
+		else {
+			res.value = midsearch(bd, tim(), depth).value;
+			if (passed)
+				res.value = -res.value;
+			res.depth = depth + 1;
+		}
+	}
+	return res;
 }
 
 inline void create_vacant_lst(board bd) {
@@ -194,7 +260,8 @@ void initialize_draw(future<bool> *f, bool *initializing, bool *initialize_faile
 	}
 }
 
-void board_draw(Rect board_cells[], board b) {
+void board_draw(Rect board_cells[], board b, bool use_hint_flag, bool normal_hint, bool human_hint, bool umigame_hint,
+	const int hint_state[], const int hint_value[], const int hint_depth[], Font normal_font, Font normal_depth_font) {
 	for (int cell = 0; cell < hw2; ++cell) {
 		board_cells[cell].draw(Palette::Green).drawFrame(board_cell_frame_width, 0, Palette::Black);
 	}
@@ -202,11 +269,11 @@ void board_draw(Rect board_cells[], board b) {
 	Circle(board_sx + 2 * board_cell_size, board_sy + 6 * board_cell_size, 5).draw(Palette::Black);
 	Circle(board_sx + 6 * board_cell_size, board_sy + 2 * board_cell_size, 5).draw(Palette::Black);
 	Circle(board_sx + 6 * board_cell_size, board_sy + 6 * board_cell_size, 5).draw(Palette::Black);
-	int board_arr[hw2], y, x;
+	int board_arr[hw2], max_cell_value = -inf;
 	b.translate_to_arr(board_arr);
 	for (int cell = 0; cell < hw2; ++cell) {
-		x = board_sx + (cell % hw) * board_cell_size + board_cell_size / 2;
-		y = board_sy + (cell / hw) * board_cell_size + board_cell_size / 2;
+		int x = board_sx + (cell % hw) * board_cell_size + board_cell_size / 2;
+		int y = board_sy + (cell / hw) * board_cell_size + board_cell_size / 2;
 		if (board_arr[cell] == black) {
 			Circle(x, y, stone_size).draw(Palette::Black);
 		}
@@ -214,7 +281,49 @@ void board_draw(Rect board_cells[], board b) {
 			Circle(x, y, stone_size).draw(Palette::White);
 		}
 		else if (b.legal(cell)) {
-			Circle(x, y, legal_size).draw(Palette::Blue);
+			if (use_hint_flag && normal_hint && hint_state[cell] >= 2) {
+				max_cell_value = max(max_cell_value, hint_value[cell]);
+			}
+			if (!use_hint_flag || (!normal_hint && !human_hint && !umigame_hint)) {
+				Circle(x, y, legal_size).draw(Palette::Blue);
+			}
+		}
+
+	}
+	if (use_hint_flag) {
+		bool hint_shown[hw2];
+		for (int i = 0; i < hw2; ++i) {
+			hint_shown[i] = false;
+		}
+		if (normal_hint) {
+			for (int cell = 0; cell < hw2; ++cell) {
+				if (b.legal(cell)) {
+					if (hint_state[cell] >= 2) {
+						Color color = Palette::White;
+						if (hint_value[cell] == max_cell_value)
+							color = Palette::Cyan;
+						int x = board_sx + (cell % hw) * board_cell_size + 3;
+						int y = board_sy + (cell / hw) * board_cell_size + 3;
+						normal_font(hint_value[cell]).draw(x, y, color);
+						y += 19;
+						if (hint_depth[cell] == search_book_define) {
+							normal_depth_font(U"book").draw(x, y, color);
+						}
+						else if (hint_depth[cell] == search_final_define) {
+							normal_depth_font(U"100%").draw(x, y, color);
+						}
+						else {
+							normal_depth_font(hint_depth[cell], U"手").draw(x, y, color);
+						}
+						hint_shown[cell] = true;
+					}
+					else {
+						int x = board_sx + (cell % hw) * board_cell_size + board_cell_size / 2;
+						int y = board_sy + (cell / hw) * board_cell_size + board_cell_size / 2;
+						Circle(x, y, legal_size).draw(Palette::Blue);
+					}
+				}
+			}
 		}
 	}
 }
@@ -253,12 +362,16 @@ void Main() {
 	graph.font = graph_font;
 	graph.font_size = graph_font_size;
 	Font font50(50);
+	Font normal_hint_font(18);
+	Font normal_hint_depth_font(10);
 
 	board bd;
+	bool board_clicked[hw2];
 	vector<board> history, fork_history;
 	int history_place = 0;
-	bool board_clicked[hw2];
 	bool fork_mode = false;
+	int hint_value[hw2], hint_state[hw2], hint_depth[hw2];
+	future<cell_value> hint_future[hw2];
 
 	future<bool> initialize_future = async(launch::async, ai_init);
 	bool initializing = true, initialize_failed = false;
@@ -267,6 +380,7 @@ void Main() {
 	bool ai_thinking = false;
 	int ai_value = 0;
 	int ai_depth1 = 13, ai_depth2 = 20, ai_book_accept = 0;
+	int hint_depth1 = 11, hint_depth2 = 18;
 
 
 	while (System::Update()) {
@@ -278,6 +392,9 @@ void Main() {
 				history.emplace_back(bd);
 				history_place = 0;
 				fork_mode = false;
+				for (int i = 0; i < hw2; ++i) {
+					hint_state[i] = hint_not_calculated_define;
+				}
 			}
 		}
 		else {
@@ -293,6 +410,9 @@ void Main() {
 				fork_history.clear();
 				history_place = 0;
 				fork_mode = false;
+				for (int i = 0; i < hw2; ++i) {
+					hint_state[i] = hint_not_calculated_define;
+				}
 			}
 			if (bd.p != vacant && (!use_ai_flag || (human_first && bd.p == black) || (human_second && bd.p == white) || fork_mode)) {
 				pair<bool, board> moved_board = move_board(bd, board_clicked);
@@ -315,6 +435,36 @@ void Main() {
 						history.emplace_back(bd);
 					}
 					history_place = bd.n - 4;
+					for (int i = 0; i < hw2; ++i) {
+						hint_state[i] = hint_not_calculated_define;
+					}
+				}
+				if (use_hint_flag && normal_hint) {
+					for (int cell = 0; cell < hw2; ++cell) {
+						if (bd.legal(cell) && hint_state[cell] < hint_depth1 * 2) {
+							if (hint_state[cell] % 2 == 0) {
+								if (hint_state[cell] == hint_depth1 * 2 - 2) {
+									hint_future[cell] = async(launch::async, hint_search, bd.move(cell), hint_depth1, hint_depth2);
+								}
+								else {
+									hint_future[cell] = async(launch::async, hint_search, bd.move(cell), hint_state[cell] / 2 + 1, hint_state[cell] / 2 + 1);
+								}
+								++hint_state[cell];
+							}
+							else if (hint_future[cell].wait_for(chrono::seconds(0)) == future_status::ready) {
+								cell_value hint_result = hint_future[cell].get();
+								if (hint_state[cell] == 1) {
+									hint_value[cell] = hint_result.value;
+								}
+								else {
+									hint_value[cell] -= hint_result.value;
+									hint_value[cell] /= 2;
+								}
+								hint_depth[cell] = hint_result.depth;
+								++hint_state[cell];
+							}
+						}
+					}
 				}
 			}
 			else if (bd.p != vacant && history[history.size() - 1].n - 4 == history_place) {
@@ -329,6 +479,9 @@ void Main() {
 						history_place = bd.n - 4;
 						ai_value = ai_result.value;
 						ai_thinking = false;
+						for (int i = 0; i < hw2; ++i) {
+							hint_state[i] = hint_not_calculated_define;
+						}
 					}
 				}
 				else {
@@ -362,7 +515,8 @@ void Main() {
 				}
 			}
 
-			board_draw(board_cells, bd);
+			board_draw(board_cells, bd, use_hint_flag, normal_hint, human_hint, umigame_hint,
+				hint_state, hint_value, hint_depth, normal_hint_font, normal_hint_depth_font);
 			graph.draw(history, fork_history, history_place);
 		}
 
