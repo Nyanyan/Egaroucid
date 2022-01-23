@@ -587,7 +587,7 @@ int main(int argc, char *argv[]){
     board_init();
     init();
     input_param_onephase((string)(argv[3]));
-    input_test_data(0);
+    input_test_data(1000000);
 
     calc_scores();
 
