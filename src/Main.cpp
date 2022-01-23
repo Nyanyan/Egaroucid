@@ -400,6 +400,8 @@ void Main() {
 		else {
 			for (int cell = 0; cell < hw2; ++cell) {
 				board_clicked[cell] = board_cells[cell].leftClicked() && !menu.active() && bd.legal(cell);
+				if (board_clicked[cell])
+					global_searching = false;
 			}
 			if (start_game_flag) {
 				cerr << "reset" << endl;
@@ -453,14 +455,16 @@ void Main() {
 							}
 							else if (hint_future[cell].wait_for(chrono::seconds(0)) == future_status::ready) {
 								cell_value hint_result = hint_future[cell].get();
-								if (hint_state[cell] == 1) {
-									hint_value[cell] = hint_result.value;
+								if (global_searching) {
+									if (hint_state[cell] == 1) {
+										hint_value[cell] = hint_result.value;
+									}
+									else {
+										hint_value[cell] -= hint_result.value;
+										hint_value[cell] /= 2;
+									}
+									hint_depth[cell] = hint_result.depth;
 								}
-								else {
-									hint_value[cell] -= hint_result.value;
-									hint_value[cell] /= 2;
-								}
-								hint_depth[cell] = hint_result.depth;
 								++hint_state[cell];
 							}
 						}
@@ -485,6 +489,7 @@ void Main() {
 					}
 				}
 				else {
+					global_searching = true;
 					create_vacant_lst(bd);
 					ai_future = ai(bd, ai_depth1, ai_depth2, ai_book_accept);
 					ai_thinking = true;
