@@ -1,5 +1,6 @@
 from tqdm import trange
 import subprocess
+import glob
 
 hw = 8
 hw2 = 64
@@ -190,18 +191,22 @@ def collect_data(s):
 
 
 games = []
-
+'''
 for i in range(1977, 2020):
     raw_data = ''
     with open('third_party/human/' + str(i) + '.csv', 'r', encoding='utf-8-sig') as f:
         raw_data = f.read()
     games.extend([i for i in raw_data.splitlines()])
+'''
+with open('third_party/quest.txt', 'r') as f:
+    raw_data = f.read()
+games.extend([i.replace('-', '') for i in raw_data.splitlines()])
 print(len(games))
 games = list(set(games))
 dict_data = {}
 idx = 0
 for i in trange(len(games)):
-    if len(games[i]) == 0:
+    if len(games[i]) < 120:
         continue
     collect_data(games[i])
     idx += 1

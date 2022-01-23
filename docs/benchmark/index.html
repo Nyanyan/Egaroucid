@@ -43,38 +43,41 @@
 #57 final depth: 30 time: 727 policy: 33 value: -2 nodes: 762847 nps: 4261715 get: 709 reg: 4824            WRONG
 #58 final depth: 30 time: 2562 policy: 6 value: 2 nodes: 2352625 nps: 7398191 get: 2206 reg: 14482          WRONG
 #59 final depth: 34 time: 814 policy: 31 value: 62 nodes: 22410 nps: 3201428 get: 689 reg: 4736             WRONG
-            </div></pre>
+</div></pre>
         </div>
         <div id="edax">
-            <div class="sub_title"><a href='https://github.com/abulmo/edax-reversi' target='_blank'>Edax</a>との対戦</div>
-            <p>世界最強とも言われるオセロAI、Edaxとの対戦結果です。</p>
-            <p>初手からの対戦では評価関数の正確な強さがわからないと考えたため、最終的に引き分けとなった(評価関数の学習に使っていない)互いに異なる大量の棋譜を使って途中まで打ち、そこから各手筋に対して双方に先手後手1回ずつ対戦させました。</p>
-            <p>途中からの対戦では、その時点で勝敗または引き分けが決しているので、両者の強さが全く同じであれば勝敗の数は同じになります。勝率の偏りを見ることで強さがわかります。</p>
+            <div class="sub_title"><a href='https://github.com/abulmo/edax-reversi' target='_blank'>Edax4.4</a>との対戦</div>
+            <p>世界最強とも言われるオセロAI、Edax4.4との対戦結果です。</p>
+            <p>初手からの対戦では評価関数の正確な強さがわからないと考えたため、評価関数の学習に使っていない棋譜のうち、最終的に引き分け、または2石差となったものを使って途中まで打ち、そこから各手筋に対して双方に先手後手1回ずつ対戦させました。</p>
+            <p>途中からの対戦では、その時点で勝敗または引き分けが決しているので、両者の強さが全く同じであれば勝敗の数は同じになります。つまり、勝率の偏りを見ることで強さがわかります。</p>
             <p>各開始手(start depth手だけ進めた盤面からの対戦)において、Egaroucidの勝率(Egaroucid win rate)(Egaroucidの勝数の和を双方の全ての勝数の和で割ったもの)が0.5を越していれば、Egaroucidが勝ち越しています。</p>
             <p>WDLはwin-draw-loseの略で、その後に続く3つの数字が勝ち-引き分け-負けであることを意味します。</p>
             <p>bookは双方使用していません。</p>
             <div class="sub_sub_title">レベル1(中盤1手読み/終盤2マス空き完全読み)同士</div>
             <p>開始手は、Egaroucidの評価関数が4手ごとに別のものに切り替わるため、4手ごと-1手(1手先読みするので)となっています。</p>
-            <pre><div>start depth: 55 Egaroucid plays black WDL: 160-273-67 Egaroucid plays white WDL: 86-294-120 Egaroucid win rate: 0.5681293302540416
-start depth: 51 Egaroucid plays black WDL: 250-81-169 Egaroucid plays white WDL: 209-91-200 Egaroucid win rate: 0.5543478260869565
-start depth: 47 Egaroucid plays black WDL: 255-31-214 Egaroucid plays white WDL: 234-33-233 Egaroucid win rate: 0.5224358974358975
-start depth: 43 Egaroucid plays black WDL: 266-17-217 Egaroucid plays white WDL: 248-18-234 Egaroucid win rate: 0.5326424870466321
-start depth: 39 Egaroucid plays black WDL: 281-19-200 Egaroucid plays white WDL: 248-19-233 Egaroucid win rate: 0.5498960498960499
-start depth: 35 Egaroucid plays black WDL: 274-15-211 Egaroucid plays white WDL: 266-16-218 Egaroucid win rate: 0.5572755417956656
-start depth: 31 Egaroucid plays black WDL: 226-7-185 Egaroucid plays white WDL: 227-10-181 Egaroucid win rate: 0.5531135531135531
-start depth: 27 Egaroucid plays black WDL: 186-8-178 Egaroucid plays white WDL: 184-24-164 Egaroucid win rate: 0.5196629213483146
-start depth: 23 Egaroucid plays black WDL: 200-6-134 Egaroucid plays white WDL: 159-12-169 Egaroucid win rate: 0.5422960725075529
-start depth: 19 Egaroucid plays black WDL: 147-2-141 Egaroucid plays white WDL: 136-7-147 Egaroucid win rate: 0.4956217162872154
-start depth: 15 Egaroucid plays black WDL: 81-2-88 Egaroucid plays white WDL: 91-3-77 Egaroucid win rate: 0.5103857566765578
-start depth: 11 Egaroucid plays black WDL: 36-3-25 Egaroucid plays white WDL: 38-0-26 Egaroucid win rate: 0.592
-            </div></pre>
+            <pre><div>start depth: 55 Egaroucid plays black WDL: 227-112-161 Egaroucid plays white WDL: 182-112-206 Egaroucid win rate: 0.5270618556701031
+start depth: 51 Egaroucid plays black WDL: 217-72-211 Egaroucid plays white WDL: 210-70-220 Egaroucid win rate: 0.4976689976689977
+start depth: 47 Egaroucid plays black WDL: 257-24-219 Egaroucid plays white WDL: 231-32-237 Egaroucid win rate: 0.5169491525423728
+start depth: 43 Egaroucid plays black WDL: 259-13-228 Egaroucid plays white WDL: 236-23-241 Egaroucid win rate: 0.5134854771784232
+start depth: 39 Egaroucid plays black WDL: 261-19-220 Egaroucid plays white WDL: 257-19-224 Egaroucid win rate: 0.5384615384615384
+start depth: 35 Egaroucid plays black WDL: 257-16-227 Egaroucid plays white WDL: 248-17-235 Egaroucid win rate: 0.5222337125129266
+start depth: 31 Egaroucid plays black WDL: 250-7-243 Egaroucid plays white WDL: 251-16-233 Egaroucid win rate: 0.5127942681678608
+start depth: 27 Egaroucid plays black WDL: 233-15-252 Egaroucid plays white WDL: 254-21-225 Egaroucid win rate: 0.5051867219917012
+start depth: 23 Egaroucid plays black WDL: 250-10-240 Egaroucid plays white WDL: 258-14-228 Egaroucid win rate: 0.5204918032786885
+start depth: 19 Egaroucid plays black WDL: 242-8-250 Egaroucid plays white WDL: 261-15-224 Egaroucid win rate: 0.5148413510747185
+start depth: 15 Egaroucid plays black WDL: 260-12-228 Egaroucid plays white WDL: 285-7-208 Egaroucid win rate: 0.5555555555555556
+start depth: 11 Egaroucid plays black WDL: 272-14-214 Egaroucid plays white WDL: 297-13-190 Egaroucid win rate: 0.5847893114080165
+start depth: 7 Egaroucid plays black WDL: 196-17-216 Egaroucid plays white WDL: 239-9-181 Egaroucid win rate: 0.5228365384615384
+</div></pre>
             <div class="sub_sub_title">レベル5(中盤5手読み/終盤10マス空き完全読み)同士</div>
-            <p>開始手は10手ごとです。</p>
-            <pre><div>start depth: 40 Egaroucid plays black WDL: 230-48-222 Egaroucid plays white WDL: 249-46-205 Egaroucid win rate: 0.5286975717439294
-start depth: 30 Egaroucid plays black WDL: 183-21-198 Egaroucid plays white WDL: 183-33-186 Egaroucid win rate: 0.488
-start depth: 20 Egaroucid plays black WDL: 154-12-142 Egaroucid plays white WDL: 176-22-110 Egaroucid win rate: 0.5670103092783505
-start depth: 10 Egaroucid plays black WDL: 24-2-15 Egaroucid plays white WDL: 23-1-17 Egaroucid win rate: 0.5949367088607594
-            </div></pre>
+            <p>開始手は10手ごとです(0手から開始すると意味がないので0手開始のはずのところのみ5手開始にしました)。</p>
+            <pre><div>start depth: 40 Egaroucid plays black WDL: 264-39-197 Egaroucid plays white WDL: 216-42-242 Egaroucid win rate: 0.5223068552774756
+start depth: 30 Egaroucid plays black WDL: 269-22-209 Egaroucid plays white WDL: 245-28-227 Egaroucid win rate: 0.5410526315789473
+start depth: 20 Egaroucid plays black WDL: 270-17-213 Egaroucid plays white WDL: 243-27-230 Egaroucid win rate: 0.5366108786610879
+start depth: 10 Egaroucid plays black WDL: 271-14-215 Egaroucid plays white WDL: 265-34-201 Egaroucid win rate: 0.5630252100840336
+start depth: 5 Egaroucid plays black WDL: 64-11-61 Egaroucid plays white WDL: 72-5-59 Egaroucid win rate: 0.53125
+</div></pre>
+            <p>有意な差と言えるか微妙なところだと個人的には思っていますが、一応概ねEgaroucidがEdaxに勝ち越しています。特にレベル5にすると、2%から6%EgaroucidはEdaxに勝ち越しています。</p>
         </div>
         <div id="evaluation">
             <div class="sub_title">評価関数の精度</div>

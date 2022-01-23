@@ -388,7 +388,7 @@ class board {
         }
 
         inline void translate_from_ull(const unsigned long long bk, const unsigned long long wt, int player) {
-            int i, j;
+            int i;
             int arr[hw2];
             for (i = 0; i < hw2; ++i)
                 arr[i] = vacant;
