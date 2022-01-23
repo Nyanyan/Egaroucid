@@ -345,10 +345,12 @@ void reset_hint(int hint_state[], future<cell_value> hint_future[]) {
 }
 
 void reset_ai(bool *ai_thinking, future<search_result> *ai_future) {
-	global_searching = false;
-	ai_future->get();
-	global_searching = true;
-	*ai_thinking = false;
+	if (*ai_thinking) {
+		global_searching = false;
+		ai_future->get();
+		global_searching = true;
+		*ai_thinking = false;
+	}
 }
 
 bool not_finished(board bd) {
@@ -411,11 +413,8 @@ void Main() {
 
 	while (System::Update()) {
 		if (System::GetUserActions() & UserAction::CloseButtonClicked) {
-			cerr << "a";
 			reset_hint(hint_state, hint_future);
-			cerr << "b";
 			reset_ai(&ai_thinking, &ai_future);
-			cerr << "c";
 			System::Exit();
 		}
 		if (initializing) {
