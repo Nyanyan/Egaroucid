@@ -87,6 +87,9 @@ int main(){
         depth = 17;
         end_depth = 40;
     #endif
+    #if USE_MULTI_THREAD
+        thread_pool.resize(16);
+    #endif
     int ai_player;
     //cin >> ai_player;
     //cin >> depth;

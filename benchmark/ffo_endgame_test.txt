@@ -472,7 +472,7 @@
 #48 final depth: 25 time: 34684 policy: 45 value: 28 nodes: 0 nps: 0 get: 530464 reg: 6266401
 #49 final depth: 26 time: 67635 policy: 4 value: 16 nodes: 0 nps: 0 get: 919407 reg: 7728687
 
-2022/01/24 without tt_prev lock
+2022/01/24 without tt_prev lock without mpc
 #40 final depth: 20 time: 1073 policy: 8 value: 38
 #41 final depth: 22 time: 3030 policy: 31 value: 0
 #42 final depth: 22 time: 2978 policy: 14 value: 6
@@ -483,3 +483,41 @@
 #47 final depth: 25 time: 4060 policy: 14 value: 4
 #48 final depth: 25 time: 28235 policy: 45 value: 28
 #49 final depth: 26 time: 63960 policy: 4 value: 16
+
+2022/01/24 update tt lock without mpc
+#40 final depth: 20 time: 1056 policy: 8 value: 38
+#41 final depth: 22 time: 3018 policy: 31 value: 0
+#42 final depth: 22 time: 2967 policy: 14 value: 6
+#43 final depth: 23 time: 7989 policy: 50 value: -12
+#44 final depth: 23 time: 2509 policy: 11 value: -14
+#45 final depth: 24 time: 24171 policy: 9 value: 6
+#46 final depth: 24 time: 6360 policy: 17 value: -8
+#47 final depth: 25 time: 3986 policy: 14 value: 4
+#48 final depth: 25 time: 28347 policy: 45 value: 28
+#49 final depth: 26 time: 65957 policy: 4 value: 16
+#50 final depth: 26 time: 161586 policy: 59 value: 10
+#51 final depth: 27 time: 62073 policy: 16 value: 6
+#52 final depth: 27 time: 42285 policy: 16 value: 0
+#53 final depth: 28 time: 598296 policy: 59 value: -2
+
+2022/01/24 with mpc
+#40 final depth: 20 time: 1077 policy: 8 value: 38
+#41 final depth: 22 time: 2675 policy: 31 value: 0
+#42 final depth: 22 time: 3115 policy: 24 value: 0      WRONG RESULT
+#43 final depth: 23 time: 1883 policy: 50 value: -12
+#44 final depth: 23 time: 1564 policy: 11 value: -14
+#45 final depth: 24 time: 6357 policy: 9 value: 6
+#46 final depth: 24 time: 2832 policy: 17 value: -8
+#47 final depth: 25 time: 521 policy: 14 value: 0       WRONG
+#48 final depth: 25 time: 1067 policy: 45 value: 18     WRONG
+#49 final depth: 26 time: 2089 policy: 4 value: 12      WRONG
+#50 final depth: 26 time: 3840 policy: 59 value: 6      WRONG
+#51 final depth: 27 time: 6925 policy: 16 value: 4
+#52 final depth: 27 time: 7422 policy: 4 value: 2       WRONG RESULT
+#53 final depth: 28 time: 44741 policy: 59 value: 0     WRONG RESULT
+#54 final depth: 28 time: 42292 policy: 50 value: -2
+#55 final depth: 29 time: 61827 policy: 46 value: 0
+#56 final depth: 29 time: 4762 policy: 39 value: 0      WRONG RESULT
+#57 final depth: 30 time: 8138 policy: 33 value: -6     WRONG
+#58 final depth: 30 time: 9855 policy: 6 value: 4
+#59 final depth: 34 time: 778 policy: 31 value: 60      WRONG

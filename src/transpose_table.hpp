@@ -9,12 +9,45 @@
 #define search_hash_table_size 1048576
 constexpr int search_hash_mask = search_hash_table_size - 1;
 
-struct search_node{
-    bool reg;
-    uint_fast16_t k[hw];
-    int p;
-    int l;
-    int u;
+class search_node{
+    public:
+        bool reg;
+        uint_fast16_t k[hw];
+        int p;
+        int l;
+        int u;
+    #if USE_MULTI_THREAD
+        private:
+            mutex mtx;
+    #endif
+    public:
+        inline void register_value(uint_fast16_t key[], int pp, int ll, int uu){
+            #if USE_MULTI_THREAD
+                lock_guard<mutex> lock(mtx);
+            #endif
+            reg = true;
+            for (int i = 0; i < hw; ++i)
+                k[i] = key[i];
+            p = pp;
+            l = ll;
+            u = uu;
+        }
+
+        inline void register_value(int ll, int uu){
+            #if USE_MULTI_THREAD
+                lock_guard<mutex> lock(mtx);
+            #endif
+            l = ll;
+            u = uu;
+        }
+
+        inline void get(int *ll, int *uu){
+            #if USE_MULTI_THREAD
+                lock_guard<mutex> lock(mtx);
+            #endif
+            *ll = l;
+            *uu = u;
+        }
 };
 
 class transpose_table{
@@ -52,28 +85,21 @@ class transpose_table{
                 lock_guard<mutex> lock(mtx);
             #endif
             //++this->hash_reg;
-            if (!this->table[this->now][hash].reg){
-                this->table[this->now][hash].reg = true;
-                for (int i = 0; i < hw; ++i)
-                    this->table[this->now][hash].k[i] = key->b[i];
-                this->table[this->now][hash].p = key->p;
-            } else if (key->p != this->table[this->now][hash].p || !compare_key(key->b, this->table[this->now][hash].k)){
-                for (int i = 0; i < hw; ++i)
-                    this->table[this->now][hash].k[i] = key->b[i];
-                this->table[this->now][hash].p = key->p;
-            }
-            this->table[this->now][hash].l = l;
-            this->table[this->now][hash].u = u;
+            if (!this->table[this->now][hash].reg)
+                this->table[this->now][hash].register_value(key->b, key->p, l, u);
+            else if (key->p != this->table[this->now][hash].p || !compare_key(key->b, this->table[this->now][hash].k))
+                this->table[this->now][hash].register_value(key->b, key->p, l, u);
+            else
+                this->table[this->now][hash].register_value(l, u);
         }
 
         inline void get_now(board *key, const int hash, int *l, int *u){
-            #if USE_MULTI_THREAD
-                lock_guard<mutex> lock(mtx);
-            #endif
+            //#if USE_MULTI_THREAD
+            //    lock_guard<mutex> lock(mtx);
+            //#endif
             if (this->table[this->now][hash].reg){
                 if (key->p == this->table[this->now][hash].p && compare_key(key->b, this->table[this->now][hash].k)){
-					*l = this->table[this->now][hash].l;
-					*u = this->table[this->now][hash].u;
+					this->table[this->now][hash].get(l, u);
                     //++this->hash_get;
                 } else{
                     *l = -inf;
@@ -91,8 +117,7 @@ class transpose_table{
             //#endif
             if (this->table[this->prev][hash].reg){
                 if (key->p == this->table[this->prev][hash].p && compare_key(key->b, this->table[this->prev][hash].k)){
-                    *l = this->table[this->prev][hash].l;
-                    *u = this->table[this->prev][hash].u;
+                    this->table[this->prev][hash].get(l, u);
                     //++this->hash_get;
                 } else{
                     *l = -inf;
