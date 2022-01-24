@@ -878,15 +878,15 @@ inline search_result endsearch(board b, long long strt, bool pre_searched){
     if (max_depth >= 23)
         use_mpct = 2.0;
     if (max_depth >= 25)
-        use_mpct = 1.5;
+        use_mpct = 1.8;
     if (max_depth >= 27)
-        use_mpct = 1.2;
+        use_mpct = 1.5;
     if (max_depth >= 29)
-        use_mpct = 0.9;
+        use_mpct = 1.2;
     if (max_depth >= 31)
-        use_mpct = 0.8;
+        use_mpct = 1.0;
     if (max_depth >= 33)
-        use_mpct = 0.7;
+        use_mpct = 0.8;
     alpha = -hw2;
     beta = hw2;
     int pre_search_depth = max(1, min(21, max_depth - simple_end_threshold + simple_mid_threshold));
@@ -978,15 +978,15 @@ inline search_result endsearch_value(board b, long long strt){
     if (max_depth >= 23)
         use_mpct = 2.0;
     if (max_depth >= 25)
-        use_mpct = 1.5;
+        use_mpct = 1.8;
     if (max_depth >= 27)
-        use_mpct = 1.2;
+        use_mpct = 1.5;
     if (max_depth >= 29)
-        use_mpct = 0.9;
+        use_mpct = 1.2;
     if (max_depth >= 31)
-        use_mpct = 0.8;
+        use_mpct = 1.0;
     if (max_depth >= 33)
-        use_mpct = 0.7;
+        use_mpct = 0.8;
     search_result res;
     res.policy = -1;
     if (b.n < hw2 - 5)

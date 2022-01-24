@@ -392,3 +392,36 @@
 #44 final depth: 23 time: 2203 policy: 11 value: -14 nodes: 22716565 nps: 11850059 get: 5514 reg: 28276
 #45 final depth: 24 time: 4961 policy: 9 value: 6 nodes: 55347232 nps: 13016752 get: 7085 reg: 35879
 
+2022/01/24 new evaluation function
+#40 final depth: 20 time: 2243 policy: 8 value: 38 nodes: 23647348 nps: 11217907 get: 22226 reg: 107427
+#41 final depth: 22 time: 1386 policy: 31 value: 0 nodes: 6253121 nps: 5446969 get: 3781 reg: 12566
+#42 final depth: 22 time: 1860 policy: 24 value: 0 nodes: 13237632 nps: 8196676 get: 8682 reg: 34608        WRONG RESULT
+#43 final depth: 23 time: 873 policy: 50 value: -10 nodes: 5342794 nps: 7632562 get: 3626 reg: 10934        WRONG
+#44 final depth: 23 time: 1160 policy: 11 value: -14 nodes: 5570794 nps: 6810261 get: 5939 reg: 17003
+#45 final depth: 24 time: 4465 policy: 9 value: 6 nodes: 34288407 nps: 10253710 get: 6985 reg: 43572
+#46 final depth: 24 time: 2638 policy: 17 value: -8 nodes: 14850415 nps: 7686550 get: 6570 reg: 39500
+#47 final depth: 25 time: 518 policy: 14 value: 0 nodes: 21132 nps: 2113200 get: 2970 reg: 4772             WRONG RESULT
+#48 final depth: 25 time: 973 policy: 45 value: 18 nodes: 1067417 nps: 5156603 get: 5197 reg: 10504         WRONG
+#49 final depth: 26 time: 2380 policy: 4 value: 12 nodes: 16421805 nps: 9220553 get: 3602 reg: 34181        WRONG
+#50 final depth: 26 time: 2840 policy: 59 value: 6 nodes: 12927004 nps: 9604014 get: 6669 reg: 27792        WRONG
+#51 final depth: 27 time: 4529 policy: 16 value: 4 nodes: 23021828 nps: 6425293 get: 3845 reg: 44805        WRONG
+#52 final depth: 27 time: 4104 policy: 4 value: 2 nodes: 16659543 nps: 5560595 get: 10363 reg: 57734        WRONG RESULT
+#53 final depth: 28 time: 44133 policy: 59 value: -2 nodes: 313780926 nps: 8241127 get: 33981 reg: 595549
+#54 final depth: 28 time: 25792 policy: 50 value: -2 nodes: 171236343 nps: 6827877 get: 13620 reg: 256987
+#55 final depth: 29 time: 30640 policy: 46 value: 0 nodes: 201165581 nps: 7667247 get: 26967 reg: 349664
+#56 final depth: 29 time: 1496 policy: 39 value: 0 nodes: 3528823 nps: 5282669 get: 1382 reg: 9278          WRONG RESULT
+#57 final depth: 30 time: 2454 policy: 33 value: -4 nodes: 10082316 nps: 4746853 get: 1200 reg: 21842       WRONG
+#58 final depth: 30 time: 3365 policy: 6 value: 4 nodes: 10392952 nps: 5845304 get: 3716 reg: 24320
+#59 final depth: 34 time: 617 policy: 31 value: 60 nodes: 64668 nps: 2811652 get: 653 reg: 2864             WRONG
+
+2022/01/24 without mpc
+#40 final depth: 20 time: 2277 policy: 8 value: 38 nodes: 23632562 nps: 11048416 get: 22269 reg: 107399
+#41 final depth: 22 time: 4108 policy: 31 value: 0 nodes: 47761516 nps: 12344666 get: 59865 reg: 382095
+#42 final depth: 22 time: 3286 policy: 14 value: 6 nodes: 38510049 nps: 12642826 get: 92827 reg: 298941
+#43 final depth: 23 time: 15994 policy: 50 value: -12 nodes: 172435069 nps: 10901192 get: 201414 reg: 1901361
+#44 final depth: 23 time: 3479 policy: 11 value: -14 nodes: 39211075 nps: 12342170 get: 164771 reg: 551024
+#45 final depth: 24 time: 79170 policy: 9 value: 6 nodes: 954025460 nps: 12222164 get: 779510 reg: 6149556
+#46 final depth: 24 time: 19694 policy: 17 value: -8 nodes: 237207252 nps: 12499064 get: 182498 reg: 2124142
+#47 final depth: 25 time: 9899 policy: 14 value: 4 nodes: 122984230 nps: 13080645 get: 123701 reg: 837862
+#48 final depth: 25 time: 62614 policy: 45 value: 28 nodes: 854491719 nps: 13818677 get: 878040 reg: 9573574
+#49 final depth: 26 time: 171518 policy: 4 value: 16 nodes: 2402654523 nps: 14058503 get: 1483102 reg: 14234270

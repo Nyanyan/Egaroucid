@@ -41,8 +41,7 @@ int nega_alpha_ordering_nomemo(board *b, bool skipped, int depth, int alpha, int
     for (const int &cell: vacant_lst){
         if (b->legal(cell)){
             nb.emplace_back(b->move(cell));
-            //move_ordering(&(nb[canput]));
-            move_ordering_eval(&(nb[canput]));
+            move_ordering(&nb[canput]);
             ++canput;
         }
     }

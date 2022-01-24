@@ -28,7 +28,7 @@ evaluate = subprocess.Popen('../src/egaroucid5.out'.split(), stdin=subprocess.PI
 sleep(1)
 
 min_depth = 3
-max_depth = 20
+max_depth = 25
 
 depth_width = max_depth - min_depth + 1
 
@@ -57,11 +57,12 @@ def collect_data(num):
         return
     #for _ in trange(1000):
     depth = min_depth
-    for tt, datum in enumerate(tqdm(data[:7500])):
+    max_num = 12000
+    for tt, datum in enumerate(tqdm(data[:max_num])):
         #datum = data[randrange(0, len(data))]
         board, player, _ = datum.split()
         n_stones = calc_n_stones(board)
-        depth = tt * depth_width // 7500 + min_depth #(depth - min_depth + 1) % depth_width + min_depth
+        depth = tt * depth_width // max_num + min_depth #(depth - min_depth + 1) % depth_width + min_depth
         board_proc = player + '\n' + str(mpcd[depth]) + '\n'
         for i in range(hw):
             for j in range(hw):
