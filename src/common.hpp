@@ -25,7 +25,7 @@ inline int myrandrange(int s, int e){
 }
 
 inline int calc_phase_idx(const board *b){
-    return (b->n - 4) / phase_n_stones;
+    return min(n_phases - 1, (b->n - 4) / phase_n_stones);
 }
 
 bool global_searching = true;
