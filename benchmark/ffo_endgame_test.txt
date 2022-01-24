@@ -425,3 +425,15 @@
 #47 final depth: 25 time: 9899 policy: 14 value: 4 nodes: 122984230 nps: 13080645 get: 123701 reg: 837862
 #48 final depth: 25 time: 62614 policy: 45 value: 28 nodes: 854491719 nps: 13818677 get: 878040 reg: 9573574
 #49 final depth: 26 time: 171518 policy: 4 value: 16 nodes: 2402654523 nps: 14058503 get: 1483102 reg: 14234270
+
+2022/01/24 update move ordering without mpc
+#40 final depth: 20 time: 1595 policy: 8 value: 38 nodes: 16452924 nps: 11284584 get: 20768 reg: 91325
+#41 final depth: 22 time: 3442 policy: 31 value: 0 nodes: 37414827 nps: 11666612 get: 51494 reg: 307685
+#42 final depth: 22 time: 3681 policy: 14 value: 6 nodes: 44405901 nps: 12942553 get: 78413 reg: 284685
+#43 final depth: 23 time: 10391 policy: 50 value: -12 nodes: 113301883 nps: 11093888 get: 142843 reg: 1363620
+#44 final depth: 23 time: 2857 policy: 11 value: -14 nodes: 28151642 nps: 11009637 get: 91844 reg: 365085
+#45 final depth: 24 time: 34562 policy: 9 value: 6 nodes: 406429755 nps: 12155090 get: 489929 reg: 3485212
+#46 final depth: 24 time: 8093 policy: 17 value: -8 nodes: 90485161 nps: 12302537 get: 82897 reg: 973683
+#47 final depth: 25 time: 4507 policy: 14 value: 4 nodes: 50007881 nps: 12467684 get: 60833 reg: 407392
+#48 final depth: 25 time: 35211 policy: 45 value: 28 nodes: 382801029 nps: 11117917 get: 535140 reg: 6269640
+#49 final depth: 26 time: 82982 policy: 4 value: 16 nodes: 1116679129 nps: 13559500 get: 909575 reg: 7727418

@@ -14,7 +14,7 @@ using namespace std;
 constexpr int cache_hit = 100;
 constexpr int cache_both = 100;
 constexpr int parity_vacant_bonus = 10;
-constexpr int canput_bonus = 0;
+constexpr int canput_bonus = 4;
 
 #define mpc_min_depth 3
 #define mpc_max_depth 25
@@ -158,15 +158,15 @@ inline unsigned long long calc_extra_stability_ull(board *b){
 }
 
 inline bool stability_cut(board *b, int *alpha, int *beta){
-    if (b->n >= extra_stability_threshold){
-        int ps, os;
-        calc_extra_stability(b, b->p, calc_extra_stability_ull(b), &ps, &os);
-        *alpha = max(*alpha, (2 * (calc_stability(b, b->p) + ps) - hw2));
-        *beta = min(*beta, (hw2 - 2 * (calc_stability(b, 1 - b->p) + os)));
-    } else{
-        *alpha = max(*alpha, (2 * calc_stability(b, b->p) - hw2));
-        *beta = min(*beta, (hw2 - 2 * calc_stability(b, 1 - b->p)));
-    }
+    //if (b->n >= extra_stability_threshold){
+    //    int ps, os;
+    //    calc_extra_stability(b, b->p, calc_extra_stability_ull(b), &ps, &os);
+    //    *alpha = max(*alpha, (2 * (calc_stability(b, b->p) + ps) - hw2));
+    //    *beta = min(*beta, (hw2 - 2 * (calc_stability(b, 1 - b->p) + os)));
+    //} else{
+    *alpha = max(*alpha, (2 * calc_stability(b, b->p) - hw2));
+    *beta = min(*beta, (hw2 - 2 * calc_stability(b, 1 - b->p)));
+    //}
     return *alpha >= *beta;
 }
 

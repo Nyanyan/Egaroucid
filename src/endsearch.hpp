@@ -624,7 +624,7 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
         if (b->legal(cell)){
             nb.emplace_back(b->move(cell));
             move_ordering(&nb[canput]);
-            //nb[canput].v = -canput_bonus * calc_canput_exact(&nb[canput]);
+            nb[canput].v -= canput_bonus * calc_canput_exact(&nb[canput]);
             #if USE_END_PO
                 if (depth <= po_max_depth && b->parity & cell_div4[cell])
                     nb[canput].v += parity_vacant_bonus;
