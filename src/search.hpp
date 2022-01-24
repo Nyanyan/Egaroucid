@@ -7,6 +7,9 @@
 #include "board.hpp"
 #include "evaluate.hpp"
 #include "transpose_table.hpp"
+#if USE_MULTI_THREAD
+    #include <mutex>
+#endif
 
 using namespace std;
 
@@ -71,7 +74,24 @@ const int mpcd[38] = {0, 1, 0, 1, 2, 3, 2, 3, 4, 3, 4, 3, 4, 5, 4, 5, 6, 5, 6, 7
 #endif
 unsigned long long can_be_flipped[hw2];
 
-unsigned long long searched_nodes;
+class search_statistics{
+    public:
+        unsigned long long searched_nodes;
+    #if USE_MULTI_THREAD
+        private:
+            mutex mtx;
+    #endif
+    public:
+        inline void nodes_increment(){
+            #if STATISTICS_MODE
+                #if USE_MULTI_THREAD
+                    lock_guard<mutex> lock(mtx);
+                #endif
+                ++searched_nodes;
+            #endif
+        }
+};
+search_statistics search_statistics;
 vector<int> vacant_lst;
 
 struct search_result{

@@ -19,7 +19,7 @@ int nega_alpha_ordering_final_nomemo(board *b, bool skipped, int depth, int alph
         return -inf;
     if (depth <= simple_mid_threshold)
         return nega_alpha(b, skipped, depth, alpha, beta);
-    ++searched_nodes;
+    search_statistics.nodes_increment();
     #if USE_END_SC
         if (stability_cut(b, &alpha, &beta))
             return alpha;
@@ -88,7 +88,7 @@ inline bool mpc_lower_final(board *b, bool skipped, int depth, int alpha, double
 }
 
 inline int last1(board *b, bool skipped, int p0){
-    ++searched_nodes;
+    search_statistics.nodes_increment();
     int before_score = (b->p ? -1 : 1) * (
         count_black_arr[b->b[0]] + count_black_arr[b->b[1]] + count_black_arr[b->b[2]] + count_black_arr[b->b[3]] + 
         count_black_arr[b->b[4]] + count_black_arr[b->b[5]] + count_black_arr[b->b[6]] + count_black_arr[b->b[7]]);
@@ -112,7 +112,7 @@ inline int last1(board *b, bool skipped, int p0){
 }
 
 inline int last2(board *b, bool skipped, int alpha, int beta, int p0, int p1){
-    ++searched_nodes;
+    search_statistics.nodes_increment();
     #if USE_END_PO
         int p0_parity = (b->parity & cell_div4[p0]);
         int p1_parity = (b->parity & cell_div4[p1]);
@@ -154,7 +154,7 @@ inline int last2(board *b, bool skipped, int alpha, int beta, int p0, int p1){
 }
 
 inline int last3(board *b, bool skipped, int alpha, int beta, int p0, int p1, int p2){
-    ++searched_nodes;
+    search_statistics.nodes_increment();
     #if USE_END_PO
         int p0_parity = (b->parity & cell_div4[p0]);
         int p1_parity = (b->parity & cell_div4[p1]);
@@ -219,7 +219,7 @@ inline int last3(board *b, bool skipped, int alpha, int beta, int p0, int p1, in
 }
 
 inline int last4(board *b, bool skipped, int alpha, int beta, int p0, int p1, int p2, int p3){
-    ++searched_nodes;
+    search_statistics.nodes_increment();
     #if USE_END_PO
         int p0_parity = (b->parity & cell_div4[p0]);
         int p1_parity = (b->parity & cell_div4[p1]);
@@ -327,7 +327,7 @@ inline int last4(board *b, bool skipped, int alpha, int beta, int p0, int p1, in
 }
 
 inline int last5(board *b, bool skipped, int alpha, int beta, int p0, int p1, int p2, int p3, int p4){
-    ++searched_nodes;
+    search_statistics.nodes_increment();
     #if USE_END_SC
         if (stability_cut(b, &alpha, &beta))
             return alpha;
@@ -511,7 +511,7 @@ int nega_alpha_final(board *b, bool skipped, const int depth, int alpha, int bet
         pick_vacant(b, cells);
         return last5(b, skipped, alpha, beta, cells[0], cells[1], cells[2], cells[3], cells[4]);
     }
-    ++searched_nodes;
+    search_statistics.nodes_increment();
     #if USE_END_SC
         if (stability_cut(b, &alpha, &beta))
             return alpha;
@@ -586,7 +586,7 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
         return -inf;
     if (depth <= simple_end_threshold)
         return nega_alpha_final(b, skipped, depth, alpha, beta);
-    ++searched_nodes;
+    search_statistics.nodes_increment();
     #if USE_END_SC
         if (stability_cut(b, &alpha, &beta))
             return alpha;
@@ -678,6 +678,38 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
                     transpose_table.reg(b, hash, alpha, u);
                 return alpha;
             }
+            /*
+            int done_tasks = 1;
+            while (done_tasks < canput){
+                for (i = done_tasks; i < canput; ++i){
+                    if (thread_pool.n_idle() == 0)
+                        break;
+                    future_tasks.emplace_back(thread_pool.push(bind(&nega_alpha_ordering_final, &nb[i], false, depth - 1, -beta, -alpha, false, use_mpc, mpct_in)));
+                }
+                for (i = done_tasks - 1; i < (int)future_tasks.size(); ++i){
+                    g = -future_tasks[i].get();
+                    alpha = max(alpha, g);
+                    v = max(v, g);
+                }
+                if (beta <= alpha){
+                    if (l < alpha)
+                        transpose_table.reg(b, hash, alpha, u);
+                    return alpha;
+                }
+                done_tasks = (int)future_tasks.size() + 1;
+                if (done_tasks < canput){
+                    g = -nega_alpha_ordering_final(&nb[done_tasks], false, depth - 1, -beta, -alpha, false, use_mpc, mpct_in);
+                    alpha = max(alpha, g);
+                    if (beta <= alpha){
+                        if (l < alpha)
+                            transpose_table.reg(b, hash, alpha, u);
+                        return alpha;
+                    }
+                    v = max(v, g);
+                    ++done_tasks;
+                }
+            }
+            */
         } else{
             for (int i = 0; i < canput; ++i){
                 g = -nega_alpha_ordering_final(&nb[i], false, depth - 1, -beta, -alpha, false, use_mpc, mpct_in);
@@ -714,7 +746,7 @@ int nega_scout_final_nomemo(board *b, bool skipped, const int depth, int alpha, 
         return -inf;
     if (depth <= simple_end_threshold)
         return nega_alpha_final(b, skipped, depth, alpha, beta);
-    ++searched_nodes;
+    search_statistics.nodes_increment();
     #if USE_END_SC
         if (stability_cut(b, &alpha, &beta))
             return alpha;
@@ -869,7 +901,7 @@ inline search_result endsearch(board b, long long strt, bool pre_searched){
     int policy = -1;
     int tmp_policy;
     int alpha, beta, g, value;
-    searched_nodes = 0;
+    search_statistics.searched_nodes = 0;
     transpose_table.hash_get = 0;
     transpose_table.hash_reg = 0;
     int max_depth = hw2 - b.n;
@@ -908,7 +940,7 @@ inline search_result endsearch(board b, long long strt, bool pre_searched){
     swap(transpose_table.now, transpose_table.prev);
     transpose_table.init_now();
     long long final_strt = tim();
-    searched_nodes = 0;
+    search_statistics.searched_nodes = 0;
     cerr << "start main search depth " << max_depth << endl;
     if (nb[0].n < hw2 - 5){
         //alpha = -nega_scout_final(&nb[0], false, max_depth, -beta, -alpha, use_mpc, use_mpct);
@@ -953,7 +985,11 @@ inline search_result endsearch(board b, long long strt, bool pre_searched){
     if (global_searching){
         policy = tmp_policy;
         value = alpha;
-        cerr << "final depth: " << max_depth << " time: " << tim() - strt << " policy: " << policy << " value: " << alpha << " nodes: " << searched_nodes << " nps: " << (long long)searched_nodes * 1000 / max(1LL, tim() - final_strt) << " get: " << transpose_table.hash_get << " reg: " << transpose_table.hash_reg << endl;
+        #if STATISTICS_MODE
+            cerr << "final depth: " << max_depth << " time: " << tim() - strt << " policy: " << policy << " value: " << alpha << " nodes: " << search_statistics.searched_nodes << " nps: " << (long long)search_statistics.searched_nodes * 1000 / max(1LL, tim() - final_strt) << " get: " << transpose_table.hash_get << " reg: " << transpose_table.hash_reg << endl;
+        #else
+            cerr << "final depth: " << max_depth << " time: " << tim() - strt << " policy: " << policy << " value: " << alpha << endl;
+        #endif
     } else {
         value = -inf;
         for (int i = 0; i < (int)nb.size(); ++i){
@@ -967,7 +1003,7 @@ inline search_result endsearch(board b, long long strt, bool pre_searched){
     res.policy = policy;
     res.value = value;
     res.depth = max_depth;
-    res.nps = searched_nodes * 1000 / max(1LL, tim() - strt);
+    res.nps = search_statistics.searched_nodes * 1000 / max(1LL, tim() - strt);
     return res;
 }
 

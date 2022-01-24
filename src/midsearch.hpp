@@ -23,7 +23,7 @@ int nega_alpha_ordering_nomemo(board *b, bool skipped, int depth, int alpha, int
         return -inf;
     if (depth <= simple_mid_threshold)
         return nega_alpha(b, skipped, depth, alpha, beta);
-    ++searched_nodes;
+    search_statistics.nodes_increment();
     #if USE_MID_SC
         if (stability_cut(b, &alpha, &beta))
             return alpha;
@@ -85,7 +85,7 @@ inline bool mpc_lower(board *b, bool skipped, int depth, int alpha, double t){
 int nega_alpha(board *b, bool skipped, int depth, int alpha, int beta){
     if (!global_searching)
         return -inf;
-    ++searched_nodes;
+    search_statistics.nodes_increment();
     if (depth == 0)
         return mid_evaluate(b);
     #if USE_MID_SC
@@ -151,7 +151,7 @@ int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int 
         return -inf;
     if (depth <= simple_mid_threshold)
         return nega_alpha(b, skipped, depth, alpha, beta);
-    ++searched_nodes;
+    search_statistics.nodes_increment();
     #if USE_MID_SC
         if (stability_cut(b, &alpha, &beta))
             return alpha;
@@ -266,7 +266,7 @@ int nega_scout_nomemo(board *b, bool skipped, const int depth, int alpha, int be
         return -inf;
     if (depth <= simple_mid_threshold)
         return nega_alpha(b, skipped, depth, alpha, beta);
-    ++searched_nodes;
+    search_statistics.nodes_increment();
     #if USE_MID_SC
         if (stability_cut(b, &alpha, &beta))
             return alpha;
@@ -382,7 +382,7 @@ inline search_result midsearch(board b, long long strt, int max_depth){
     int policy = -1;
     int tmp_policy;
     int alpha, beta, g, value = -inf, former_value = -inf;
-    searched_nodes = 0;
+    search_statistics.searched_nodes = 0;
     transpose_table.hash_get = 0;
     transpose_table.hash_reg = 0;
     transpose_table.init_now();
@@ -435,7 +435,7 @@ inline search_result midsearch(board b, long long strt, int max_depth){
                 former_value = alpha;
             value = alpha;
             res_depth = depth + 1;
-            cerr << "depth: " << depth + 1 << " time: " << tim() - strt << " policy: " << policy << " value: " << alpha << " nodes: " << searched_nodes << " nps: " << (long long)searched_nodes * 1000 / max(1LL, tim() - strt) << " get: " << transpose_table.hash_get << " reg: " << transpose_table.hash_reg << endl;
+            cerr << "depth: " << depth + 1 << " time: " << tim() - strt << " policy: " << policy << " value: " << alpha << " nodes: " << search_statistics.searched_nodes << " nps: " << (long long)search_statistics.searched_nodes * 1000 / max(1LL, tim() - strt) << " get: " << transpose_table.hash_get << " reg: " << transpose_table.hash_reg << endl;
         } else 
             break;
     }
@@ -443,7 +443,7 @@ inline search_result midsearch(board b, long long strt, int max_depth){
     res.policy = policy;
     res.value = (value + former_value) / 2;
     res.depth = res_depth;
-    res.nps = searched_nodes * 1000 / max(1LL, tim() - strt);
+    res.nps = search_statistics.searched_nodes * 1000 / max(1LL, tim() - strt);
     return res;
 }
 

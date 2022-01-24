@@ -51,7 +51,7 @@ class transpose_table{
             #if USE_MULTI_THREAD
                 lock_guard<mutex> lock(mtx);
             #endif
-            ++this->hash_reg;
+            //++this->hash_reg;
             if (!this->table[this->now][hash].reg){
                 this->table[this->now][hash].reg = true;
                 for (int i = 0; i < hw; ++i)
@@ -74,7 +74,7 @@ class transpose_table{
                 if (key->p == this->table[this->now][hash].p && compare_key(key->b, this->table[this->now][hash].k)){
 					*l = this->table[this->now][hash].l;
 					*u = this->table[this->now][hash].u;
-                    ++this->hash_get;
+                    //++this->hash_get;
                 } else{
                     *l = -inf;
                     *u = inf;
@@ -86,14 +86,14 @@ class transpose_table{
         }
 
         inline void get_prev(board *key, const int hash, int *l, int *u){
-            #if USE_MULTI_THREAD
-                lock_guard<mutex> lock(mtx);
-            #endif
+            //#if USE_MULTI_THREAD
+            //    lock_guard<mutex> lock(mtx);
+            //#endif
             if (this->table[this->prev][hash].reg){
                 if (key->p == this->table[this->prev][hash].p && compare_key(key->b, this->table[this->prev][hash].k)){
                     *l = this->table[this->prev][hash].l;
                     *u = this->table[this->prev][hash].u;
-                    ++this->hash_get;
+                    //++this->hash_get;
                 } else{
                     *l = -inf;
                     *u = inf;

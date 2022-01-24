@@ -459,3 +459,27 @@
 #57 final depth: 30 time: 7652 policy: 33 value: -6 nodes: 47751351 nps: 6495898 get: 3358 reg: 100948      WRONG
 #58 final depth: 30 time: 9748 policy: 6 value: 4 nodes: 64233121 nps: 7782059 get: 7089 reg: 114718
 #59 final depth: 34 time: 712 policy: 31 value: 60 nodes: 1286506 nps: 8142443 get: 750 reg: 4548           WRONG
+
+2022/01/24 without mpc no nodes statistics
+#40 final depth: 20 time: 1095 policy: 8 value: 38 nodes: 0 nps: 0 get: 20770 reg: 91443
+#41 final depth: 22 time: 3183 policy: 31 value: 0 nodes: 0 nps: 0 get: 51396 reg: 307077
+#42 final depth: 22 time: 3025 policy: 14 value: 6 nodes: 0 nps: 0 get: 78431 reg: 284670
+#43 final depth: 23 time: 8816 policy: 50 value: -12 nodes: 0 nps: 0 get: 142645 reg: 1363384
+#44 final depth: 23 time: 2659 policy: 11 value: -14 nodes: 0 nps: 0 get: 91935 reg: 364976
+#45 final depth: 24 time: 25568 policy: 9 value: 6 nodes: 0 nps: 0 get: 488269 reg: 3484738
+#46 final depth: 24 time: 6923 policy: 17 value: -8 nodes: 0 nps: 0 get: 81109 reg: 975810
+#47 final depth: 25 time: 4155 policy: 14 value: 4 nodes: 0 nps: 0 get: 60908 reg: 407496
+#48 final depth: 25 time: 34684 policy: 45 value: 28 nodes: 0 nps: 0 get: 530464 reg: 6266401
+#49 final depth: 26 time: 67635 policy: 4 value: 16 nodes: 0 nps: 0 get: 919407 reg: 7728687
+
+2022/01/24 without tt_prev lock
+#40 final depth: 20 time: 1073 policy: 8 value: 38
+#41 final depth: 22 time: 3030 policy: 31 value: 0
+#42 final depth: 22 time: 2978 policy: 14 value: 6
+#43 final depth: 23 time: 8040 policy: 50 value: -12
+#44 final depth: 23 time: 2538 policy: 11 value: -14
+#45 final depth: 24 time: 24019 policy: 9 value: 6
+#46 final depth: 24 time: 6273 policy: 17 value: -8
+#47 final depth: 25 time: 4060 policy: 14 value: 4
+#48 final depth: 25 time: 28235 policy: 45 value: 28
+#49 final depth: 26 time: 63960 policy: 4 value: 16
