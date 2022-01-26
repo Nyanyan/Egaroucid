@@ -35,7 +35,7 @@ using namespace std;
 #define hint_not_calculated_define 0
 
 #define left_left 20
-#define left_center 235
+#define left_center 255
 #define left_right 490
 #define right_left 510
 #define right_center 745
@@ -74,7 +74,10 @@ bool lang_initialize(string file) {
 	return language.init(file);
 }
 
-Menu create_menu(bool *start_game_flag,
+Menu create_menu(Texture checkbox,
+	bool *dammy,
+	bool *entry_mode, bool *professional_mode,
+	bool *start_game_flag,
 	bool *use_ai_flag, bool *human_first, bool *human_second, bool *both_ai,
 	bool *use_hint_flag, bool *normal_hint, bool *human_hint, bool *umigame_hint,
 	bool *use_value_flag,
@@ -83,7 +86,17 @@ Menu create_menu(bool *start_game_flag,
 	menu_title title;
 	menu_elem menu_e, side_menu;
 	Font menu_font(15);
-	Texture checkbox(U"resources/img/checked.png", TextureDesc::Mipped);
+
+	title.init(language.get("display", "display"));
+
+	menu_e.init_button(language.get("display", "mode", "mode"), dammy);
+	side_menu.init_radio(language.get("display", "mode", "entry_mode"), entry_mode, *entry_mode);
+	menu_e.push(side_menu);
+	side_menu.init_radio(language.get("display", "mode", "professional_mode"), professional_mode, *professional_mode);
+	menu_e.push(side_menu);
+	title.push(menu_e);
+
+	menu.push(title);
 
 	title.init(language.get("play", "game"));
 
@@ -106,10 +119,12 @@ Menu create_menu(bool *start_game_flag,
 	menu_e.init_check(language.get("settings", "hint", "hint"), use_hint_flag, *use_hint_flag);
 	side_menu.init_check(language.get("settings", "hint", "stone_value"), normal_hint, *normal_hint);
 	menu_e.push(side_menu);
-	side_menu.init_check(language.get("settings", "hint", "human_value"), human_hint, *human_hint);
-	menu_e.push(side_menu);
-	side_menu.init_check(language.get("settings", "hint", "umigame_value"), umigame_hint, *umigame_hint);
-	menu_e.push(side_menu);
+	if (*professional_mode) {
+		side_menu.init_check(language.get("settings", "hint", "human_value"), human_hint, *human_hint);
+		menu_e.push(side_menu);
+		side_menu.init_check(language.get("settings", "hint", "umigame_value"), umigame_hint, *umigame_hint);
+		menu_e.push(side_menu);
+	}
 	title.push(menu_e);
 
 	menu_e.init_check(language.get("settings", "value"), use_value_flag, *use_value_flag);
@@ -118,13 +133,14 @@ Menu create_menu(bool *start_game_flag,
 	menu.push(title);
 
 
+	if (*professional_mode) {
+		title.init(language.get("book", "book"));
 
-	title.init(language.get("book", "book"));
+		menu_e.init_button(language.get("book", "learn"), start_book_learn_flag);
+		title.push(menu_e);
 
-	menu_e.init_button(language.get("book", "learn"), start_book_learn_flag);
-	title.push(menu_e);
-
-	menu.push(title);
+		menu.push(title);
+	}
 
 	menu.init(0, 0, menu_font, checkbox);
 	return menu;
@@ -256,10 +272,10 @@ int find_history_idx(vector<board> history, int history_place) {
 	return 0;
 }
 
-void initialize_draw(future<bool> *f, bool *initializing, bool *initialize_failed, Font font, Font small_font, Texture icon, Texture logo) {
+void initialize_draw(future<bool> *f, bool *initializing, bool *initialize_failed, Font font, Font small_font, Texture icon, Texture logo, bool texture_loaded) {
 	icon.scaled((double)(left_right - left_left) / icon.width()).draw(left_left, y_center - (left_right - left_left) / 2);
-	logo.scaled((double)(left_right - left_left) * 0.75 / logo.width()).draw(right_left, y_center - 30);
-	if (!(*initialize_failed)) {
+	logo.scaled((double)(left_right - left_left) * 0.8 / logo.width()).draw(right_left, y_center - 30);
+	if (!(*initialize_failed) && texture_loaded) {
 		font(language.get("loading", "loading")).draw(right_left, y_center + font.fontSize(), font_color);
 		if (f->wait_for(chrono::seconds(0)) == future_status::ready) {
 			if (f->get()) {
@@ -277,8 +293,8 @@ void initialize_draw(future<bool> *f, bool *initializing, bool *initialize_faile
 
 void lang_initialize_failed_draw(Font font, Font small_font, Texture icon, Texture logo) {
 	icon.scaled((double)(left_right - left_left) / icon.width()).draw(left_left, y_center - (left_right - left_left) / 2);
-	logo.scaled((double)(left_right - left_left) * 0.75 / logo.width()).draw(right_left, y_center - 30);
-	small_font(U"言語パックを読み込めませんでした\nresourcesフォルダを確認してください").draw(right_left, y_center + font.fontSize(), font_color);
+	logo.scaled((double)(left_right - left_left) * 0.8 / logo.width()).draw(right_left, y_center - 30);
+	small_font(U"言語パックを読み込めませんでした\nresourcesフォルダを確認してください").draw(right_left, y_center + font.fontSize() * 3 / 2, font_color);
 	small_font(U"Failed to load language pack\nPlease check the resources directory").draw(right_left, y_center + font.fontSize() * 3, font_color);
 }
 
@@ -391,13 +407,22 @@ void Main() {
 	Scene::SetBackground(green);
 	Console.open();
 
+	bool dammy;
+	constexpr int mode_size = 2;
+	bool show_mode[mode_size] = {true, false};
+	int int_mode = 0;
 	bool start_game_flag;
 	bool use_ai_flag = true, human_first = true, human_second = false, both_ai = false;
 	bool use_hint_flag = true, normal_hint = true, human_hint = true, umigame_hint = true;
 	bool use_value_flag = true;
 	bool start_book_learn_flag;
+	bool texture_loaded = true;
 	Texture icon(U"resources/img/icon.png", TextureDesc::Mipped);
 	Texture logo(U"resources/img/logo.png", TextureDesc::Mipped);
+	Texture checkbox(U"resources/img/checked.png", TextureDesc::Mipped);
+	if (icon.isEmpty() || logo.isEmpty() || checkbox.isEmpty()) {
+		texture_loaded = false;
+	}
 	Rect board_cells[hw2];
 	for (int cell = 0; cell < hw2; ++cell) {
 		board_cells[cell] = Rect(board_sx + (cell % hw) * board_cell_size, board_sy + (cell / hw) * board_cell_size, board_cell_size, board_cell_size);
@@ -457,15 +482,31 @@ void Main() {
 				}
 			}
 			else if (lang_initialized == 1) {
-				menu = create_menu(&start_game_flag,
+				menu = create_menu(checkbox, &dammy,
+					&show_mode[0], &show_mode[1],
+					&start_game_flag,
+					&use_ai_flag, &human_first, &human_second, &both_ai,
+					&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
+					&use_value_flag,
+					&start_book_learn_flag);
+				lang_initialized = 2;
+			}
+			else if (lang_initialized == 2) {
+				if (!show_mode[int_mode]) {
+					for (int i = 0; i < mode_size; ++i) {
+						if (show_mode[i]) {
+							int_mode = i;
+						}
+					}
+					menu = create_menu(checkbox, &dammy,
+						&show_mode[0], &show_mode[1],
+						&start_game_flag,
 						&use_ai_flag, &human_first, &human_second, &both_ai,
 						&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
 						&use_value_flag,
 						&start_book_learn_flag);
-				lang_initialized = 2;
-			}
-			else if (lang_initialized == 2) {
-				initialize_draw(&initialize_future, &initializing, &initialize_failed, font50, font20, icon, logo);
+				}
+				initialize_draw(&initialize_future, &initializing, &initialize_failed, font50, font20, icon, logo, texture_loaded);
 				if (!initializing) {
 					bd.reset();
 					bd.v = -inf;
@@ -482,6 +523,20 @@ void Main() {
 			}
 		}
 		else {
+			if (!show_mode[int_mode]) {
+				for (int i = 0; i < mode_size; ++i) {
+					if (show_mode[i]) {
+						int_mode = i;
+					}
+				}
+				menu = create_menu(checkbox, &dammy,
+					&show_mode[0], &show_mode[1],
+					&start_game_flag,
+					&use_ai_flag, &human_first, &human_second, &both_ai,
+					&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
+					&use_value_flag,
+					&start_book_learn_flag);
+			}
 			for (int cell = 0; cell < hw2; ++cell) {
 				board_clicked[cell] = board_cells[cell].leftClicked() && !menu.active() && bd.legal(cell);
 				if (board_clicked[cell])
