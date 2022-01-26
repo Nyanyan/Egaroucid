@@ -24,11 +24,11 @@ def calc_n_stones(board):
         res += int(elem != '.')
     return res
 
-evaluate = subprocess.Popen('../src/egaroucid5.out'.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+evaluate = subprocess.Popen('../src/egaroucid5_2.out'.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
 sleep(1)
 
-min_depth = 9
-max_depth = 30
+min_depth = 7
+max_depth = 40
 
 vhs = [[] for _ in range(max_depth - min_depth + 1)]
 vds = [[] for _ in range(max_depth - min_depth + 1)]
@@ -36,7 +36,13 @@ v0s = [[] for _ in range(max_depth - min_depth + 1)]
 
 vh_vd = []
 
-mpcd = [0, 1, 0, 1, 2, 3, 2, 3, 4, 3, 4, 3, 4, 5, 4, 5, 6, 5, 6, 7, 6, 7, 6, 7, 8, 7, 8, 9, 8, 9, 8, 9, 10, 9, 10, 11, 10, 11]
+mpcd = [
+    0, 1, 0, 1, 2, 3, 2, 3, 4, 3, 
+    4, 3, 4, 5, 4, 5, 6, 5, 6, 7, 
+    6, 7, 6, 7, 8, 7, 8, 9, 8, 9, 
+    8, 9, 10, 9, 10, 11, 10, 11, 10, 11,
+    12
+]
 
 
 def collect_data(num):

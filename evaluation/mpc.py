@@ -63,7 +63,7 @@ def collect_data(num):
         board, player, _ = datum.split()
         n_stones = calc_n_stones(board)
         depth = tt * depth_width // max_num + min_depth #(depth - min_depth + 1) % depth_width + min_depth
-        if depth >= calc_stones(board):
+        if depth >= 64 - calc_stones(board):
             continue
         board_proc = player + '\n' + str(mpcd[depth]) + '\n'
         for i in range(hw):

@@ -422,7 +422,11 @@ inline search_result midsearch(board b, long long strt, int max_depth, bool use_
                 former_value = alpha;
             value = alpha;
             res_depth = depth;
-            cerr << "depth: " << depth << " time: " << tim() - strt << " policy: " << policy << " value: " << alpha << " nodes: " << search_statistics.searched_nodes << " nps: " << (long long)search_statistics.searched_nodes * 1000 / max(1LL, tim() - strt) << " get: " << transpose_table.hash_get << " reg: " << transpose_table.hash_reg << endl;
+            #if STATISTICS_MODE
+                cerr << "depth: " << depth << " time: " << tim() - strt << " policy: " << policy << " value: " << alpha << " nodes: " << search_statistics.searched_nodes << " nps: " << (long long)search_statistics.searched_nodes * 1000 / max(1LL, tim() - strt) << " get: " << transpose_table.hash_get << " reg: " << transpose_table.hash_reg << endl;
+            #else
+                cerr << "depth: " << depth << " time: " << tim() - strt << " policy: " << policy << " value: " << alpha << endl;
+            #endif
         } else 
             break;
     }
@@ -434,21 +438,7 @@ inline search_result midsearch(board b, long long strt, int max_depth, bool use_
     return res;
 }
 
-inline search_result midsearch_value(board b, long long strt, int max_depth){
-    bool use_mpc = max_depth >= 13 ? true : false;
-    double use_mpct = 2.0;
-    if (max_depth >= 15)
-        use_mpct = 1.8;
-    if (max_depth >= 17)
-        use_mpct = 1.5;
-    if (max_depth >= 19)
-        use_mpct = 1.3;
-    if (max_depth >= 21)
-        use_mpct = 1.1;
-    if (max_depth >= 23)
-        use_mpct = 0.9;
-    if (max_depth >= 25)
-        use_mpct = 0.8;
+inline search_result midsearch_value(board b, long long strt, int max_depth, bool use_mpc, double use_mpct){
     //int value = mtd(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct);
     //int value = nega_alpha_ordering_nomemo(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct);
     int value = nega_scout_nomemo(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct);
@@ -461,21 +451,7 @@ inline search_result midsearch_value(board b, long long strt, int max_depth){
     return res;
 }
 
-inline search_result midsearch_value_book(board b, long long strt, int max_depth){
-    bool use_mpc = max_depth >= 13 ? true : false;
-    double use_mpct = 2.0;
-    if (max_depth >= 15)
-        use_mpct = 1.8;
-    if (max_depth >= 17)
-        use_mpct = 1.5;
-    if (max_depth >= 19)
-        use_mpct = 1.3;
-    if (max_depth >= 21)
-        use_mpct = 1.1;
-    if (max_depth >= 23)
-        use_mpct = 0.9;
-    if (max_depth >= 25)
-        use_mpct = 0.8;
+inline search_result midsearch_value_book(board b, long long strt, int max_depth, bool use_mpc, double use_mpct){
     transpose_table.init_now();
     transpose_table.init_prev();
     int value = mtd(&b, false, max_depth - 1, -hw2, hw2, use_mpc, use_mpct);
@@ -492,21 +468,7 @@ inline search_result midsearch_value_book(board b, long long strt, int max_depth
     return res;
 }
 
-inline search_result midsearch_value_nomemo(board b, long long strt, int max_depth){
-    bool use_mpc = max_depth >= 13 ? true : false;
-    double use_mpct = 2.0;
-    if (max_depth >= 15)
-        use_mpct = 1.8;
-    if (max_depth >= 17)
-        use_mpct = 1.6;
-    if (max_depth >= 19)
-        use_mpct = 1.4;
-    if (max_depth >= 21)
-        use_mpct = 1.2;
-    if (max_depth >= 23)
-        use_mpct = 1.0;
-    if (max_depth >= 25)
-        use_mpct = 0.8;
+inline search_result midsearch_value_nomemo(board b, long long strt, int max_depth, bool use_mpc, double use_mpct){
     //int value = nega_alpha_ordering_nomemo(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct);
     int value = nega_scout_nomemo(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct);
     search_result res;

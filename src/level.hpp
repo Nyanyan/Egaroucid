@@ -4,7 +4,7 @@
 using namespace std;
 
 void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, double *mpct){
-    constexpr double mpct_73 = 0.61;
+    constexpr double mpct_80 = 0.81;
     constexpr double mpct_87 = 1.13;
     constexpr double mpct_95 = 1.64;
     constexpr double mpct_98 = 2.05;
@@ -82,7 +82,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         *depth2 = 24;
         if (n_moves < 36){
             *use_mpc = true;
-            *mpct = mpct_73;
+            *mpct = mpct_80;
         } else if (n_moves < 39){
             *use_mpc = true;
             *mpct = mpct_98;
@@ -96,7 +96,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         *depth2 = 24;
         if (n_moves < 36){
             *use_mpc = true;
-            *mpct = mpct_73;
+            *mpct = mpct_80;
         } else if (n_moves < 39){
             *use_mpc = true;
             *mpct = mpct_98;
@@ -110,7 +110,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         *depth2 = 27;
         if (n_moves < 33){
             *use_mpc = true;
-            *mpct = mpct_73;
+            *mpct = mpct_80;
         } else if (n_moves < 36){
             *use_mpc = true;
             *mpct = mpct_87;
@@ -127,7 +127,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         *depth2 = 27;
         if (n_moves < 33){
             *use_mpc = true;
-            *mpct = mpct_73;
+            *mpct = mpct_80;
         } else if (n_moves < 36){
             *use_mpc = true;
             *mpct = mpct_87;
@@ -144,7 +144,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         *depth2 = 27;
         if (n_moves < 33){
             *use_mpc = true;
-            *mpct = mpct_73;
+            *mpct = mpct_80;
         } else if (n_moves < 36){
             *use_mpc = true;
             *mpct = mpct_87;
@@ -161,7 +161,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         *depth2 = 27;
         if (n_moves < 33){
             *use_mpc = true;
-            *mpct = mpct_73;
+            *mpct = mpct_80;
         } else if (n_moves < 36){
             *use_mpc = true;
             *mpct = mpct_87;
@@ -178,7 +178,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         *depth2 = 27;
         if (n_moves < 33){
             *use_mpc = true;
-            *mpct = mpct_73;
+            *mpct = mpct_80;
         } else if (n_moves < 36){
             *use_mpc = true;
             *mpct = mpct_87;
@@ -195,7 +195,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         *depth2 = 27;
         if (n_moves < 33){
             *use_mpc = true;
-            *mpct = mpct_73;
+            *mpct = mpct_80;
         } else if (n_moves < 36){
             *use_mpc = true;
             *mpct = mpct_87;
@@ -212,7 +212,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         *depth2 = 30;
         if (n_moves < 30){
             *use_mpc = true;
-            *mpct = mpct_73;
+            *mpct = mpct_80;
         } else if (n_moves < 33){
             *use_mpc = true;
             *mpct = mpct_87;
@@ -229,7 +229,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         *depth2 = 30;
         if (n_moves < 30){
             *use_mpc = true;
-            *mpct = mpct_73;
+            *mpct = mpct_80;
         } else if (n_moves < 33){
             *use_mpc = true;
             *mpct = mpct_87;
@@ -246,7 +246,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         *depth2 = 30;
         if (n_moves < 30){
             *use_mpc = true;
-            *mpct = mpct_73;
+            *mpct = mpct_80;
         } else if (n_moves < 33){
             *use_mpc = true;
             *mpct = mpct_87;
@@ -263,7 +263,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         *depth2 = 33;
         if (n_moves < 30){
             *use_mpc = true;
-            *mpct = mpct_73;
+            *mpct = mpct_80;
         } else if (n_moves < 33){
             *use_mpc = true;
             *mpct = mpct_95;
@@ -280,7 +280,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         *depth2 = 33;
         if (n_moves < 30){
             *use_mpc = true;
-            *mpct = mpct_73;
+            *mpct = mpct_80;
         } else if (n_moves < 33){
             *use_mpc = true;
             *mpct = mpct_95;
@@ -297,7 +297,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         *depth2 = 33;
         if (n_moves < 30){
             *use_mpc = true;
-            *mpct = mpct_73;
+            *mpct = mpct_80;
         } else if (n_moves < 33){
             *use_mpc = true;
             *mpct = mpct_95;
@@ -314,7 +314,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         *depth2 = 33;
         if (n_moves < 27){
             *use_mpc = true;
-            *mpct = mpct_73;
+            *mpct = mpct_80;
         } else if (n_moves < 30){
             *use_mpc = true;
             *mpct = mpct_87;
@@ -331,7 +331,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         *depth2 = 33;
         if (n_moves < 27){
             *use_mpc = true;
-            *mpct = mpct_73;
+            *mpct = mpct_80;
         } else if (n_moves < 30){
             *use_mpc = true;
             *mpct = mpct_87;
@@ -348,7 +348,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         *depth2 = 33;
         if (n_moves < 27){
             *use_mpc = true;
-            *mpct = mpct_73;
+            *mpct = mpct_80;
         } else if (n_moves < 30){
             *use_mpc = true;
             *mpct = mpct_87;
@@ -365,7 +365,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         *depth2 = 36;
         if (n_moves < 27){
             *use_mpc = true;
-            *mpct = mpct_73;
+            *mpct = mpct_80;
         } else if (n_moves < 30){
             *use_mpc = true;
             *mpct = mpct_95;
@@ -382,7 +382,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         *depth2 = 36;
         if (n_moves < 27){
             *use_mpc = true;
-            *mpct = mpct_73;
+            *mpct = mpct_80;
         } else if (n_moves < 30){
             *use_mpc = true;
             *mpct = mpct_95;
@@ -399,7 +399,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         *depth2 = 36;
         if (n_moves < 24){
             *use_mpc = true;
-            *mpct = mpct_73;
+            *mpct = mpct_80;
         } else if (n_moves < 27){
             *use_mpc = true;
             *mpct = mpct_87;
@@ -416,7 +416,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         *depth2 = 36;
         if (n_moves < 24){
             *use_mpc = true;
-            *mpct = mpct_73;
+            *mpct = mpct_80;
         } else if (n_moves < 27){
             *use_mpc = true;
             *mpct = mpct_87;
@@ -433,7 +433,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         *depth2 = 39;
         if (n_moves < 24){
             *use_mpc = true;
-            *mpct = mpct_73;
+            *mpct = mpct_80;
         } else if (n_moves < 27){
             *use_mpc = true;
             *mpct = mpct_95;
@@ -450,7 +450,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         *depth2 = 39;
         if (n_moves < 24){
             *use_mpc = true;
-            *mpct = mpct_73;
+            *mpct = mpct_80;
         } else if (n_moves < 27){
             *use_mpc = true;
             *mpct = mpct_95;
@@ -467,7 +467,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         *depth2 = 39;
         if (n_moves < 21){
             *use_mpc = true;
-            *mpct = mpct_73;
+            *mpct = mpct_80;
         } else if (n_moves < 24){
             *use_mpc = true;
             *mpct = mpct_87;
@@ -487,7 +487,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         *depth2 = 39;
         if (n_moves < 21){
             *use_mpc = true;
-            *mpct = mpct_73;
+            *mpct = mpct_80;
         } else if (n_moves < 24){
             *use_mpc = true;
             *mpct = mpct_87;
@@ -507,7 +507,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         *depth2 = 45;
         if (n_moves < 18){
             *use_mpc = true;
-            *mpct = mpct_73;
+            *mpct = mpct_80;
         } else if (n_moves < 21){
             *use_mpc = true;
             *mpct = mpct_87;
@@ -530,7 +530,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         *depth2 = 46;
         if (n_moves < 17){
             *use_mpc = true;
-            *mpct = mpct_73;
+            *mpct = mpct_80;
         } else if (n_moves < 20){
             *use_mpc = true;
             *mpct = mpct_87;
@@ -553,7 +553,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         *depth2 = 47;
         if (n_moves < 16){
             *use_mpc = true;
-            *mpct = mpct_73;
+            *mpct = mpct_80;
         } else if (n_moves < 19){
             *use_mpc = true;
             *mpct = mpct_87;
@@ -576,7 +576,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         *depth2 = 48;
         if (n_moves < 15){
             *use_mpc = true;
-            *mpct = mpct_73;
+            *mpct = mpct_80;
         } else if (n_moves < 18){
             *use_mpc = true;
             *mpct = mpct_87;
@@ -599,7 +599,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         *depth2 = 49;
         if (n_moves < 14){
             *use_mpc = true;
-            *mpct = mpct_73;
+            *mpct = mpct_80;
         } else if (n_moves < 17){
             *use_mpc = true;
             *mpct = mpct_87;
@@ -622,7 +622,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         *depth2 = 50;
         if (n_moves < 13){
             *use_mpc = true;
-            *mpct = mpct_73;
+            *mpct = mpct_80;
         } else if (n_moves < 16){
             *use_mpc = true;
             *mpct = mpct_87;
@@ -645,7 +645,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         *depth2 = 51;
         if (n_moves < 12){
             *use_mpc = true;
-            *mpct = mpct_73;
+            *mpct = mpct_80;
         } else if (n_moves < 15){
             *use_mpc = true;
             *mpct = mpct_87;
@@ -668,7 +668,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         *depth2 = 52;
         if (n_moves < 11){
             *use_mpc = true;
-            *mpct = mpct_73;
+            *mpct = mpct_80;
         } else if (n_moves < 14){
             *use_mpc = true;
             *mpct = mpct_87;
@@ -691,7 +691,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         *depth2 = 53;
         if (n_moves < 10){
             *use_mpc = true;
-            *mpct = mpct_73;
+            *mpct = mpct_80;
         } else if (n_moves < 13){
             *use_mpc = true;
             *mpct = mpct_87;
@@ -714,7 +714,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         *depth2 = 54;
         if (n_moves < 9){
             *use_mpc = true;
-            *mpct = mpct_73;
+            *mpct = mpct_80;
         } else if (n_moves < 12){
             *use_mpc = true;
             *mpct = mpct_87;
@@ -737,7 +737,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         *depth2 = 55;
         if (n_moves < 8){
             *use_mpc = true;
-            *mpct = mpct_73;
+            *mpct = mpct_80;
         } else if (n_moves < 11){
             *use_mpc = true;
             *mpct = mpct_87;
@@ -760,7 +760,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         *depth2 = 56;
         if (n_moves < 7){
             *use_mpc = true;
-            *mpct = mpct_73;
+            *mpct = mpct_80;
         } else if (n_moves < 10){
             *use_mpc = true;
             *mpct = mpct_87;
@@ -783,7 +783,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         *depth2 = 57;
         if (n_moves < 6){
             *use_mpc = true;
-            *mpct = mpct_73;
+            *mpct = mpct_80;
         } else if (n_moves < 9){
             *use_mpc = true;
             *mpct = mpct_87;
@@ -806,7 +806,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         *depth2 = 58;
         if (n_moves < 5){
             *use_mpc = true;
-            *mpct = mpct_73;
+            *mpct = mpct_80;
         } else if (n_moves < 8){
             *use_mpc = true;
             *mpct = mpct_87;
@@ -829,7 +829,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         *depth2 = 59;
         if (n_moves < 4){
             *use_mpc = true;
-            *mpct = mpct_73;
+            *mpct = mpct_80;
         } else if (n_moves < 7){
             *use_mpc = true;
             *mpct = mpct_87;
@@ -852,7 +852,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         *depth2 = 60;
         if (n_moves < 3){
             *use_mpc = true;
-            *mpct = mpct_73;
+            *mpct = mpct_80;
         } else if (n_moves < 6){
             *use_mpc = true;
             *mpct = mpct_87;
@@ -875,7 +875,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         *depth2 = 60;
         if (n_moves < 2){
             *use_mpc = true;
-            *mpct = mpct_73;
+            *mpct = mpct_80;
         } else if (n_moves < 5){
             *use_mpc = true;
             *mpct = mpct_87;
@@ -898,7 +898,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         *depth2 = 60;
         if (n_moves < 1){
             *use_mpc = true;
-            *mpct = mpct_73;
+            *mpct = mpct_80;
         } else if (n_moves < 4){
             *use_mpc = true;
             *mpct = mpct_87;
