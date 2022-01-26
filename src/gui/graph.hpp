@@ -5,7 +5,7 @@
 
 using namespace std;
 
-constexpr Color graph_color = Palette::Black;
+constexpr Color graph_color = Palette::White;
 constexpr Color graph_fork_color = Palette::Purple;
 constexpr Color graph_place_color = Palette::Darkblue;
 

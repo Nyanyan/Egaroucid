@@ -70,8 +70,8 @@ bool ai_init() {
 	return true;
 }
 
-bool lang_initialize() {
-	return language.init();
+bool lang_initialize(string file) {
+	return language.init(file);
 }
 
 Menu create_menu(bool *start_game_flag,
@@ -125,7 +125,6 @@ Menu create_menu(bool *start_game_flag,
 	title.push(menu_e);
 
 	menu.push(title);
-
 
 	menu.init(0, 0, menu_font, checkbox);
 	return menu;
@@ -259,9 +258,9 @@ int find_history_idx(vector<board> history, int history_place) {
 
 void initialize_draw(future<bool> *f, bool *initializing, bool *initialize_failed, Font font, Font small_font, Texture icon, Texture logo) {
 	icon.scaled((double)(left_right - left_left) / icon.width()).draw(left_left, y_center - (left_right - left_left) / 2);
-	logo.scaled((double)(left_right - left_left) / logo.width() * 0.75).draw(right_left, y_center - 30);
+	logo.scaled((double)(left_right - left_left) * 0.75 / logo.width()).draw(right_left, y_center - 30);
 	if (!(*initialize_failed)) {
-		font(U"起動中...").draw(right_left, y_center + font.fontSize(), font_color);
+		font(language.get("loading", "loading")).draw(right_left, y_center + font.fontSize(), font_color);
 		if (f->wait_for(chrono::seconds(0)) == future_status::ready) {
 			if (f->get()) {
 				*initializing = false;
@@ -272,14 +271,15 @@ void initialize_draw(future<bool> *f, bool *initializing, bool *initialize_faile
 		}
 	}
 	else {
-		small_font(U"起動失敗\nresourcesフォルダを確認してください").draw(right_left, y_center + font.fontSize(), font_color);
+		small_font(language.get("loading", "load_failed")).draw(right_left, y_center + font.fontSize(), font_color);
 	}
 }
 
 void lang_initialize_failed_draw(Font font, Font small_font, Texture icon, Texture logo) {
 	icon.scaled((double)(left_right - left_left) / icon.width()).draw(left_left, y_center - (left_right - left_left) / 2);
-	logo.scaled((double)(left_right - left_left) / logo.width() * 0.75).draw(right_left, y_center - 30);
+	logo.scaled((double)(left_right - left_left) * 0.75 / logo.width()).draw(right_left, y_center - 30);
 	small_font(U"言語パックを読み込めませんでした\nresourcesフォルダを確認してください").draw(right_left, y_center + font.fontSize(), font_color);
+	small_font(U"Failed to load language pack\nPlease check the resources directory").draw(right_left, y_center + font.fontSize() * 3, font_color);
 }
 
 void board_draw(Rect board_cells[], board b, bool use_hint_flag, bool normal_hint, bool human_hint, bool umigame_hint,
@@ -428,7 +428,8 @@ void Main() {
 	bool initializing = true, initialize_failed = false;
 
 	int lang_initialized = 0;
-	future<bool> lang_initialize_future = async(launch::async, lang_initialize);
+	string lang_file = "resources/languages/japanese.json";
+	future<bool> lang_initialize_future = async(launch::async, lang_initialize, lang_file);
 
 	Menu menu;
 
