@@ -24,11 +24,11 @@ def calc_n_stones(board):
         res += int(elem != '.')
     return res
 
-evaluate = subprocess.Popen('../src/egaroucid5.out'.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+evaluate = subprocess.Popen('../src/egaroucid5_2.out'.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
 sleep(1)
 
 min_depth = 3
-max_depth = 25
+max_depth = 30
 
 depth_width = max_depth - min_depth + 1
 
@@ -57,12 +57,14 @@ def collect_data(num):
         return
     #for _ in trange(1000):
     depth = min_depth
-    max_num = 12000
+    max_num = 15000
     for tt, datum in enumerate(tqdm(data[:max_num])):
         #datum = data[randrange(0, len(data))]
         board, player, _ = datum.split()
         n_stones = calc_n_stones(board)
         depth = tt * depth_width // max_num + min_depth #(depth - min_depth + 1) % depth_width + min_depth
+        if depth >= calc_stones(board):
+            continue
         board_proc = player + '\n' + str(mpcd[depth]) + '\n'
         for i in range(hw):
             for j in range(hw):
@@ -154,10 +156,18 @@ print(f_score)
 
 vh_vd = [[[vhs[i][j][k] - f(vds[i][j][k]) for k in range(len(vhs[i][j]))] for j in range(len(vhs[i]))] for i in range(len(vhs))]
 vh_v0 = [[[vhs[i][j][k] - f(v0s[i][j][k]) for k in range(len(vhs[i][j]))] for j in range(len(vhs[i]))] for i in range(len(vhs))]
-sd = [[round(statistics.stdev(vh_vd[i][j]), 3) for j in range(len(vh_vd[i]))] for i in range(len(vh_vd))]
-sd0 = [[round(statistics.stdev(vh_v0[i][j])) for j in range(len(vh_v0[i]))] for i in range(len(vh_v0))]
+sd = []
+for i in range(len(vh_vd)):
+    sd.append([])
+    for j in range(len(vh_vd[i])):
+        if len(vh_vd[i][j]):
+            sd[i].append(round(statistics.stdev(vh_vd[i][j]), 3))
+        else:
+            sd[i].append(0.0)
+#sd = [[round(statistics.stdev(vh_vd[i][j]), 3) for j in range(len(vh_vd[i]))] for i in range(len(vh_vd))]
+#sd0 = [[round(statistics.stdev(vh_v0[i][j])) for j in range(len(vh_v0[i]))] for i in range(len(vh_v0))]
 for each_sd in sd:
     print(str(each_sd).replace('[', '{').replace(']', '}') + ',')
-print('')
-for each_sd in sd0:
-    print(str(each_sd).replace('[', '{').replace(']', '}') + ',')
+#print('')
+#for each_sd in sd0:
+#    print(str(each_sd).replace('[', '{').replace(']', '}') + ',')

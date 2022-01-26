@@ -6,9 +6,8 @@
 #include "evaluate.hpp"
 #include "search.hpp"
 #include "transpose_table.hpp"
-#include "midsearch.hpp"
-#include "endsearch.hpp"
 #include "book.hpp"
+#include "ai.hpp"
 #include "human_value.hpp"
 
 inline void init(){
@@ -80,12 +79,7 @@ int main(){
     board b;
     #if !MPC_MODE && !EVAL_MODE
         search_result result;
-        const int first_moves[4] = {19, 26, 37, 44};
-        int depth, end_depth;
-        //bool pre_searched = false;
-        book_value book_result;
-        depth = 17;
-        end_depth = 40;
+        int level = 27, book_error = 0;
     #endif
     #if USE_MULTI_THREAD
         thread_pool.resize(16);
@@ -103,7 +97,7 @@ int main(){
             transpose_table.init_now();
             transpose_table.init_prev();
             bool use_mpc = max_depth >= 11 ? true : false;
-            double use_mpct = 1.7;
+            double use_mpct = 1.0;
             cout << mtd(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct) << endl;
         #elif EVAL_MODE
             cin >> ai_player;
@@ -115,24 +109,7 @@ int main(){
             cerr << b.p << endl;
             cerr << b.n << " " << mid_evaluate(&b) << endl;
             //search_human(b, tim(), depth, 7);
-            if (b.n == 4){
-                int policy = first_moves[myrandrange(0, 4)];
-                cerr << "BOOK " << policy << endl;
-                print_result(policy, 0);
-                continue;
-            }
-            book_result = book.get_random(&b, 0);
-            if (book_result.policy != -1){
-                cerr << "BOOK " << book_result.policy << endl;
-                print_result(book_result.policy, book_result.value);
-                continue;
-            }
-            if (b.n >= hw2 - end_depth){
-                //result = endsearch(b, tim(), pre_searched);
-                result = endsearch(b, tim(), false);
-                //pre_searched = true;
-            } else
-                result = midsearch(b, tim(), depth);
+            result = ai(b, level, book_error);
             print_result(result);
         #endif
     }

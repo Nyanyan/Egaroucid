@@ -8,6 +8,7 @@
 #include "evaluate.hpp"
 #include "search.hpp"
 #include "transpose_table.hpp"
+#include "level.hpp"
 #if USE_MULTI_THREAD
     #include "thread_pool.hpp"
 #endif
@@ -366,7 +367,7 @@ int mtd(board *b, bool skipped, int depth, int l, int u, bool use_mpc, double us
     //return nega_scout_nomemo(b, skipped, depth, l, u, use_mpc, use_mpct);
 }
 
-inline search_result midsearch(board b, long long strt, int max_depth){
+inline search_result midsearch(board b, long long strt, int max_depth, bool use_mpc, double use_mpct){
     vector<board> nb;
     int i;
     for (const int &cell: vacant_lst){
@@ -387,21 +388,7 @@ inline search_result midsearch(board b, long long strt, int max_depth){
     transpose_table.hash_reg = 0;
     transpose_table.init_now();
     transpose_table.init_prev();
-    bool use_mpc = max_depth >= 13 ? true : false;
-    double use_mpct = 2.0;
-    if (max_depth >= 15)
-        use_mpct = 1.8;
-    if (max_depth >= 17)
-        use_mpct = 1.5;
-    if (max_depth >= 19)
-        use_mpct = 1.3;
-    if (max_depth >= 21)
-        use_mpct = 1.1;
-    if (max_depth >= 23)
-        use_mpct = 0.9;
-    if (max_depth >= 25)
-        use_mpct = 0.8;
-    for (int depth = min(11, max(0, max_depth - 5)); depth <= min(hw2 - b.n, max_depth - 1); ++depth){
+    for (int depth = min(16, max(0, max_depth - 5)); depth <= min(hw2 - b.n, max_depth); ++depth){
         alpha = -hw2;
         beta = hw2;
         transpose_table.init_now();
@@ -434,8 +421,8 @@ inline search_result midsearch(board b, long long strt, int max_depth){
             else
                 former_value = alpha;
             value = alpha;
-            res_depth = depth + 1;
-            cerr << "depth: " << depth + 1 << " time: " << tim() - strt << " policy: " << policy << " value: " << alpha << " nodes: " << search_statistics.searched_nodes << " nps: " << (long long)search_statistics.searched_nodes * 1000 / max(1LL, tim() - strt) << " get: " << transpose_table.hash_get << " reg: " << transpose_table.hash_reg << endl;
+            res_depth = depth;
+            cerr << "depth: " << depth << " time: " << tim() - strt << " policy: " << policy << " value: " << alpha << " nodes: " << search_statistics.searched_nodes << " nps: " << (long long)search_statistics.searched_nodes * 1000 / max(1LL, tim() - strt) << " get: " << transpose_table.hash_get << " reg: " << transpose_table.hash_reg << endl;
         } else 
             break;
     }
