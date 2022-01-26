@@ -30,8 +30,6 @@ private:
 public:
 	void draw(vector<board> nodes1, vector<board> nodes2, int place) {
 		calc_range(nodes1, nodes2);
-		font(U"黒").draw(sx + 5, sy, graph_color);
-		font(U"白").draw(sx + 5, sy + size_y - font_size * 1.5, graph_color);
 		for (int y = 0; y <= y_max - y_min; y += resolution) {
 			int yy = sy + y * dy + adj_y * y / (y_max - y_min);
 			font(y_max - y).draw(sx - font(y_max - y).region(Point{ 0, 0 }).w - 12, yy - font(y_max - y).region(Point{ 0, 0 }).h / 2, graph_color);
@@ -48,6 +46,8 @@ public:
 		draw_graph(nodes2, graph_fork_color, true);
 		int place_x = sx + place * dx + place * adj_x / 60;
 		Line(place_x, sy, place_x, sy + size_y).draw(3, graph_place_color);
+		Circle(sx, sy, 10).draw(Palette::Black);
+		Circle(sx, sy + size_y, 10).draw(Palette::White);
 	}
 
 	int update_place(vector<board> nodes1, vector<board> nodes2, int place) {

@@ -115,8 +115,10 @@ Menu create_menu(Texture checkbox,
 	title.push(menu_e);
 
 	menu_e.init_check(language.get("settings", "hint", "hint"), use_hint_flag, *use_hint_flag);
-	if (entry_mode) {
+	if (*entry_mode) {
 		*normal_hint = true;
+		*human_hint = false;
+		*umigame_hint = false;
 	}
 	else if (*professional_mode) {
 		side_menu.init_check(language.get("settings", "hint", "stone_value"), normal_hint, *normal_hint);
@@ -125,10 +127,6 @@ Menu create_menu(Texture checkbox,
 		menu_e.push(side_menu);
 		side_menu.init_check(language.get("settings", "hint", "umigame_value"), umigame_hint, *umigame_hint);
 		menu_e.push(side_menu);
-	}
-	else {
-		*human_hint = false;
-		*umigame_hint = false;
 	}
 	title.push(menu_e);
 
