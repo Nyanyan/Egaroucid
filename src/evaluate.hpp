@@ -356,12 +356,6 @@ inline int calc_pattern(int phase_idx, const board *b){
         kite0(phase_idx, b, 0, 1, 2, 3, 4) + kite0(phase_idx, b, 7, 6, 5, 4, 3) + kite1(phase_idx, b, 0, 1, 2, 3, 4) + kite1(phase_idx, b, 7, 6, 5, 4, 3);
 }
 
-/*
-inline int create_canput_line(int canput_arr[], int a, int b, int c, int d, int e, int f, int g, int h){
-    return (canput_arr[a] << 7) + (canput_arr[b] << 6) + (canput_arr[c] << 5) + (canput_arr[d] << 4) + (canput_arr[e] << 3) + (canput_arr[f] << 2) + (canput_arr[g] << 1) + canput_arr[h];
-}
-*/
-
 inline int create_canput_line(int canput_arr[], int a, int b, int c, int d, int e, int f, int g, int h){
     return 
         canput_arr[a] * p47 + canput_arr[b] * p46 + canput_arr[c] * p45 + canput_arr[d] * p44 + 

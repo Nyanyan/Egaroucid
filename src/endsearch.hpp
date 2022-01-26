@@ -505,18 +505,18 @@ inline void pick_vacant(board *b, int cells[]){
 
 
 int nega_alpha_final(board *b, bool skipped, const int depth, int alpha, int beta){
-    //if (!global_searching)
-    //    return -inf;
+    if (!global_searching)
+        return -inf;
     if (depth == 5){
         int cells[5];
         pick_vacant(b, cells);
         return last5(b, skipped, alpha, beta, cells[0], cells[1], cells[2], cells[3], cells[4]);
     }
     search_statistics.nodes_increment();
-    //#if USE_END_SC
-    //    if (stability_cut(b, &alpha, &beta))
-    //        return alpha;
-    //#endif
+    #if USE_END_SC
+        if (stability_cut(b, &alpha, &beta))
+            return alpha;
+    #endif
     board nb;
     bool passed = true;
     int g, v = -inf;
@@ -598,16 +598,10 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
     #if USE_END_TC
         if (u == l)
             return u;
-        if (l >= beta){
-            if (u != inf)
-                return u;
+        if (l >= beta)
             return l;
-        }
-        if (alpha >= u){
-            if (l != -inf)
-                return l;
+        if (alpha >= u)
             return u;
-        }
     #endif
     alpha = max(alpha, l);
     beta = min(beta, u);
@@ -642,14 +636,6 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
         rb.p = 1 - b->p;
         rb.n = b->n;
         int res = -nega_alpha_ordering_final(&rb, true, depth, -beta, -alpha, use_multi_thread, use_mpc, mpct_in);
-        /*
-        if (res >= beta)
-            transpose_table.reg(b, hash, res, u);
-        else if (res <= alpha)
-            transpose_table.reg(b, hash, l, res);
-        else
-            transpose_table.reg(b, hash, res, res);
-        */
         return res;
     }
     if (canput >= 2)
@@ -712,8 +698,8 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
             }
             */
         } else{
-            for (int i = 0; i < canput; ++i){
-                g = -nega_alpha_ordering_final(&nb[i], false, depth - 1, -beta, -alpha, false, use_mpc, mpct_in);
+            for (board &nnb: nb){
+                g = -nega_alpha_ordering_final(&nnb, false, depth - 1, -beta, -alpha, false, use_mpc, mpct_in);
                 alpha = max(alpha, g);
                 if (beta <= alpha){
                     if (l < alpha)
@@ -871,7 +857,7 @@ int mtd_final(board *b, bool skipped, int depth, int l, int u, bool use_mpc, dou
         }
         //cerr << g << endl;
     #else
-        //cerr << l << " " << g << " " << u << endl;
+        cerr << l << " " << g << " " << u << endl;
         while (u - l > 0){
             beta = max(l + search_epsilon, g);
             g = nega_alpha_ordering_final(b, skipped, depth, beta * 2 - search_epsilon, beta * 2, use_multi_thread, use_mpc, use_mpct) / 2;
@@ -879,9 +865,9 @@ int mtd_final(board *b, bool skipped, int depth, int l, int u, bool use_mpc, dou
                 u = g;
             else
                 l = g;
-            //cerr << l << " " << g << " " << u << endl;
+            cerr << l << " " << g << " " << u << endl;
         }
-        //cerr << g << endl;
+        cerr << g << endl;
     #endif
     return g * 2;
 }
@@ -929,19 +915,19 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
     cerr << "pre search depth " << pre_search_depth << " time " << tim() - strt << " policy " << nb[0].policy << " value " << nb[0].v << endl;
     if (nb[0].n < hw2 - 5){
         //alpha = -nega_scout_final(&nb[0], false, max_depth, -beta, -alpha, use_mpc, use_mpct);
-        alpha = -mtd_final(&nb[0], false, max_depth - 1, -beta, -alpha, use_mpc, use_mpct, -nb[0].v, true);
-        tmp_policy = nb[0].policy;
-        for (i = 1; i < canput; ++i){
-            g = -nega_alpha_ordering_final(&nb[i], false, max_depth - 1, -alpha - search_epsilon, -alpha, true, use_mpc, use_mpct);
+        //alpha = -mtd_final(&nb[0], false, max_depth - 1, -beta, -alpha, use_mpc, use_mpct, -nb[0].v, true);
+        //tmp_policy = nb[0].policy;
+        for (i = 0; i < canput; ++i){
+            //g = -nega_alpha_ordering_final(&nb[i], false, max_depth - 1, -alpha - search_epsilon, -alpha, true, use_mpc, use_mpct);
             //cerr << g << endl;
-            if (alpha < g){
-                //g = -nega_scout_final(&nb[i], false, max_depth, -beta, -g, use_mpc, use_mpct);
-                g = -mtd_final(&nb[i], false, max_depth - 1, -beta, -alpha, use_mpc, use_mpct, -nb[i].v, true);
-                if (alpha < g){
-                    alpha = g;
-                    tmp_policy = nb[i].policy;
-                }
+            //if (alpha < g){
+            //g = -nega_scout_final(&nb[i], false, max_depth, -beta, -g, use_mpc, use_mpct);
+            g = -mtd_final(&nb[i], false, max_depth - 1, -beta, -alpha, use_mpc, use_mpct, -nb[i].v, true);
+            if (alpha < g || i == 0){
+                alpha = g;
+                tmp_policy = nb[i].policy;
             }
+            //}
         }
     } else{
         int cells[5];

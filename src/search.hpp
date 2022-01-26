@@ -16,7 +16,8 @@ using namespace std;
 #define search_epsilon 1
 constexpr int cache_hit = 100;
 constexpr int cache_both = 100;
-constexpr int parity_vacant_bonus = 10;
+constexpr int cache_now = 100;
+constexpr int parity_vacant_bonus = 5;
 constexpr int canput_bonus = 4;
 
 #define mpc_min_depth 3
@@ -139,15 +140,24 @@ int cmp_vacant(int p, int q){
 
 inline void move_ordering(board *b){
     int l, u;
-    transpose_table.get_prev(b, b->hash() & search_hash_mask, &l, &u);
+    transpose_table.get_now(b, b->hash() & search_hash_mask, &l, &u);
     if (u != inf && l != -inf)
-        b->v = -(u + l) / 2 + cache_hit + cache_both;
+        b->v = -(u + l) / 2 + cache_hit + cache_both + cache_now;
     else if (u != inf)
-        b->v = -mid_evaluate(b) + cache_hit;
+        b->v = -u + cache_hit + cache_now;
     else if (l != -inf)
-        b->v = -mid_evaluate(b) + cache_hit;
-    else
-        b->v = -mid_evaluate(b);
+        b->v = -l + cache_hit + cache_now;
+    else{
+        transpose_table.get_prev(b, b->hash() & search_hash_mask, &l, &u);
+        if (u != inf && l != -inf)
+            b->v = -(u + l) / 2 + cache_hit + cache_both;
+        else if (u != inf)
+            b->v = -u + cache_hit;
+        else if (l != -inf)
+            b->v = -l + cache_hit;
+        else
+            b->v = -mid_evaluate(b);
+    }
 }
 
 inline void move_ordering_eval(board *b){

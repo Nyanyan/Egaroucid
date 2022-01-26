@@ -163,16 +163,10 @@ int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int 
     #if USE_MID_TC
         if (u == l)
             return u;
-        if (l >= beta){
-            if (u != inf)
-                return u;
+        if (l >= beta)
             return l;
-        }
-        if (alpha >= u){
-            if (l != -inf)
-                return l;
+        if (alpha >= u)
             return u;
-        }
     #endif
     alpha = max(alpha, l);
     beta = min(beta, u);
