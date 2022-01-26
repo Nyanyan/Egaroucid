@@ -33,10 +33,20 @@ using namespace std;
 #define search_book_define -1
 #define hint_not_calculated_define 0
 
-constexpr Color font_color = Palette::Black;
-constexpr int board_sx = 50, board_sy = 70, board_cell_size = 60, board_cell_frame_width = 1;
+#define left_left 20
+#define left_center 235
+#define left_right 490
+#define right_left 510
+#define right_center 745
+#define right_right 980
+#define y_center 360
+
+constexpr Color font_color = Palette::White;
+constexpr int board_size = 480;
+constexpr int board_sx = left_left, board_sy = y_center - board_size / 2, board_cell_size = board_size / hw, board_cell_frame_width = 2, board_frame_width = 7;
 constexpr int stone_size = 25, legal_size = 5;
 constexpr int graph_sx = 575, graph_sy = 245, graph_width = 415, graph_height = 345, graph_resolution = 10, graph_font_size = 15;
+constexpr Color green = Color(36, 153, 114, 100);
 
 struct cell_value {
 	int value;
@@ -55,6 +65,7 @@ bool ai_init() {
 		return false;
 	if (!human_value_init())
 		return false;
+	thread_pool.resize(16);
 	return true;
 }
 
@@ -243,9 +254,11 @@ int find_history_idx(vector<board> history, int history_place) {
 	return 0;
 }
 
-void initialize_draw(future<bool> *f, bool *initializing, bool *initialize_failed, Font font) {
+void initialize_draw(future<bool> *f, bool *initializing, bool *initialize_failed, Font font, Texture icon, Texture logo) {
 	if (!(*initialize_failed)) {
-		font(U"AI初期化中").draw(50, 50, font_color);
+		icon.scaled((double)(left_right - left_left) / icon.width()).draw(left_left, y_center - (left_right - left_left) / 2);
+		logo.scaled((double)(left_right - left_left) / logo.width() * 0.7).draw(right_left, y_center - 30);
+		font(U"起動中...").draw(right_left, y_center + font.fontSize(), font_color);
 		if (f->wait_for(chrono::seconds(0)) == future_status::ready) {
 			if (f->get()) {
 				*initializing = false;
@@ -262,13 +275,15 @@ void initialize_draw(future<bool> *f, bool *initializing, bool *initialize_faile
 
 void board_draw(Rect board_cells[], board b, bool use_hint_flag, bool normal_hint, bool human_hint, bool umigame_hint,
 	const int hint_state[], const int hint_value[], const int hint_depth[], Font normal_font, Font normal_depth_font) {
-	for (int cell = 0; cell < hw2; ++cell) {
-		board_cells[cell].draw(Palette::Green).drawFrame(board_cell_frame_width, 0, Palette::Black);
+	for (int i = 0; i < hw_m1; ++i) {
+		Line(board_sx + board_cell_size * (i + 1), board_sy, board_sx + board_cell_size * (i + 1), board_sy + board_cell_size * hw).draw(board_cell_frame_width, Palette::Black);
+		Line(board_sx, board_sy + board_cell_size * (i + 1), board_sx + board_cell_size * hw, board_sy + board_cell_size * (i + 1)).draw(board_cell_frame_width, Palette::Black);
 	}
 	Circle(board_sx + 2 * board_cell_size, board_sy + 2 * board_cell_size, 5).draw(Palette::Black);
 	Circle(board_sx + 2 * board_cell_size, board_sy + 6 * board_cell_size, 5).draw(Palette::Black);
 	Circle(board_sx + 6 * board_cell_size, board_sy + 2 * board_cell_size, 5).draw(Palette::Black);
 	Circle(board_sx + 6 * board_cell_size, board_sy + 6 * board_cell_size, 5).draw(Palette::Black);
+	RoundRect(board_sx, board_sy, board_cell_size * hw, board_cell_size * hw, 20).draw(green).drawFrame(0, board_frame_width, Palette::White);
 	int board_arr[hw2], max_cell_value = -inf;
 	b.translate_to_arr(board_arr);
 	for (int cell = 0; cell < hw2; ++cell) {
@@ -362,9 +377,9 @@ void Main() {
 	Window::Resize(window_size);
 	Window::SetStyle(WindowStyle::Sizable);
 	Scene::SetResizeMode(ResizeMode::Keep);
-	Window::SetTitle(U"Egaroucid5.2.0");
+	Window::SetTitle(U"Egaroucid5.3.0");
 	System::SetTerminationTriggers(UserAction::NoAction);
-	Scene::SetBackground(Palette::White);
+	Scene::SetBackground(green);
 	Console.open();
 
 	bool start_game_flag;
@@ -372,6 +387,8 @@ void Main() {
 	bool use_hint_flag = true, normal_hint = true, human_hint = true, umigame_hint = true;
 	bool use_value_flag = true;
 	bool start_book_learn_flag;
+	Texture icon(U"resources/img/icon.png", TextureDesc::Mipped);
+	Texture logo(U"resources/img/logo.png", TextureDesc::Mipped);
 	Menu menu = create_menu(&start_game_flag,
 		&use_ai_flag, &human_first, &human_second, &both_ai,
 		&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
@@ -418,7 +435,7 @@ void Main() {
 			System::Exit();
 		}
 		if (initializing) {
-			initialize_draw(&initialize_future,&initializing, &initialize_failed, font50);
+			initialize_draw(&initialize_future,&initializing, &initialize_failed, font50, icon, logo);
 			if (!initializing) {
 				bd.reset();
 				bd.v = -inf;
