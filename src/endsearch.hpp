@@ -677,20 +677,22 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
     int g, v = -inf;
     #if USE_MULTI_THREAD
         if (use_multi_thread){
-            int i;
-            g = -nega_alpha_ordering_final(&nb[0], false, depth - 1, -beta, -alpha, true, use_mpc, mpct_in);
-            alpha = max(alpha, g);
-            if (beta <= alpha){
-                if (l < alpha)
-                    transpose_table.reg(b, hash, alpha, u);
-                return alpha;
+            int i, first_threshold = canput / 4;
+            for (i = 0; i <= first_threshold; ++i){
+                g = -nega_alpha_ordering_final(&nb[i], false, depth - 1, -beta, -alpha, true, use_mpc, mpct_in);
+                alpha = max(alpha, g);
+                if (beta <= alpha){
+                    if (l < alpha)
+                        transpose_table.reg(b, hash, alpha, u);
+                    return alpha;
+                }
+                v = max(v, g);
             }
-            v = max(v, g);
             vector<future<int>> future_tasks;
-            for (i = 1; i < canput; ++i)
+            for (i = first_threshold + 1; i < canput; ++i)
                 future_tasks.emplace_back(thread_pool.push(bind(&nega_alpha_ordering_final, &nb[i], false, depth - 1, -beta, -alpha, false, use_mpc, mpct_in)));
-            for (i = 1; i < canput; ++i){
-                g = -future_tasks[i - 1].get();
+            for (i = first_threshold + 1; i < canput; ++i){
+                g = -future_tasks[i - first_threshold - 1].get();
                 alpha = max(alpha, g);
                 v = max(v, g);
             }
