@@ -87,13 +87,11 @@ Menu create_menu(Texture checkbox,
 	menu_elem menu_e, side_menu;
 	Font menu_font(15);
 
-	title.init(language.get("display", "display"));
+	title.init(language.get("mode", "mode"));
 
-	menu_e.init_button(language.get("display", "mode", "mode"), dammy);
-	side_menu.init_radio(language.get("display", "mode", "entry_mode"), entry_mode, *entry_mode);
-	menu_e.push(side_menu);
-	side_menu.init_radio(language.get("display", "mode", "professional_mode"), professional_mode, *professional_mode);
-	menu_e.push(side_menu);
+	menu_e.init_radio(language.get("mode", "entry_mode"), entry_mode, *entry_mode);
+	title.push(menu_e);
+	menu_e.init_radio(language.get("mode", "professional_mode"), professional_mode, *professional_mode);
 	title.push(menu_e);
 
 	menu.push(title);
@@ -117,13 +115,20 @@ Menu create_menu(Texture checkbox,
 	title.push(menu_e);
 
 	menu_e.init_check(language.get("settings", "hint", "hint"), use_hint_flag, *use_hint_flag);
-	side_menu.init_check(language.get("settings", "hint", "stone_value"), normal_hint, *normal_hint);
-	menu_e.push(side_menu);
-	if (*professional_mode) {
+	if (entry_mode) {
+		*normal_hint = true;
+	}
+	else if (*professional_mode) {
+		side_menu.init_check(language.get("settings", "hint", "stone_value"), normal_hint, *normal_hint);
+		menu_e.push(side_menu);
 		side_menu.init_check(language.get("settings", "hint", "human_value"), human_hint, *human_hint);
 		menu_e.push(side_menu);
 		side_menu.init_check(language.get("settings", "hint", "umigame_value"), umigame_hint, *umigame_hint);
 		menu_e.push(side_menu);
+	}
+	else {
+		*human_hint = false;
+		*umigame_hint = false;
 	}
 	title.push(menu_e);
 
@@ -299,7 +304,8 @@ void lang_initialize_failed_draw(Font font, Font small_font, Texture icon, Textu
 }
 
 void board_draw(Rect board_cells[], board b, bool use_hint_flag, bool normal_hint, bool human_hint, bool umigame_hint,
-	const int hint_state[], const int hint_value[], const int hint_depth[], Font normal_font, Font normal_depth_font) {
+	const int hint_state[], const int hint_value[], const int hint_depth[], Font normal_font, Font normal_depth_font, Font big_font,
+	int int_mode) {
 	for (int i = 0; i < hw_m1; ++i) {
 		Line(board_sx + board_cell_size * (i + 1), board_sy, board_sx + board_cell_size * (i + 1), board_sy + board_cell_size * hw).draw(board_cell_frame_width, Palette::Black);
 		Line(board_sx, board_sy + board_cell_size * (i + 1), board_sx + board_cell_size * hw, board_sy + board_cell_size * (i + 1)).draw(board_cell_frame_width, Palette::Black);
@@ -326,7 +332,7 @@ void board_draw(Rect board_cells[], board b, bool use_hint_flag, bool normal_hin
 					max_cell_value = max(max_cell_value, hint_value[cell]);
 				}
 				if (!use_hint_flag || (!normal_hint && !human_hint && !umigame_hint)) {
-					Circle(x, y, legal_size).draw(Palette::Blue);
+					Circle(x, y, legal_size).draw(Palette::Cyan);
 				}
 			}
 		}
@@ -347,25 +353,32 @@ void board_draw(Rect board_cells[], board b, bool use_hint_flag, bool normal_hin
 						Color color = Palette::White;
 						if (hint_value[cell] == max_cell_value)
 							color = Palette::Cyan;
-						int x = board_sx + (cell % hw) * board_cell_size + 3;
-						int y = board_sy + (cell / hw) * board_cell_size + 3;
-						normal_font(hint_value[cell]).draw(x, y, color);
-						y += 19;
-						if (hint_depth[cell] == search_book_define) {
-							normal_depth_font(U"book").draw(x, y, color);
+						if (int_mode == 0) {
+							int x = board_sx + (cell % hw) * board_cell_size + board_cell_size / 2;
+							int y = board_sy + (cell / hw) * board_cell_size + board_cell_size / 2;
+							big_font(hint_value[cell]).draw(Arg::center = Vec2{ x, y }, color);
 						}
-						else if (hint_depth[cell] == search_final_define) {
-							normal_depth_font(U"100%").draw(x, y, color);
-						}
-						else {
-							normal_depth_font(hint_depth[cell], U"手").draw(x, y, color);
+						else if (int_mode == 1) {
+							int x = board_sx + (cell % hw) * board_cell_size + 3;
+							int y = board_sy + (cell / hw) * board_cell_size + 3;
+							normal_font(hint_value[cell]).draw(x, y, color);
+							y += 19;
+							if (hint_depth[cell] == search_book_define) {
+								normal_depth_font(U"book").draw(x, y, color);
+							}
+							else if (hint_depth[cell] == search_final_define) {
+								normal_depth_font(U"100%").draw(x, y, color);
+							}
+							else {
+								normal_depth_font(hint_depth[cell], U"手").draw(x, y, color);
+							}
 						}
 						hint_shown[cell] = true;
 					}
 					else {
 						int x = board_sx + (cell % hw) * board_cell_size + board_cell_size / 2;
 						int y = board_sy + (cell / hw) * board_cell_size + board_cell_size / 2;
-						Circle(x, y, legal_size).draw(Palette::Blue);
+						Circle(x, y, legal_size).draw(Palette::Cyan);
 					}
 				}
 			}
@@ -437,6 +450,7 @@ void Main() {
 	graph.font = graph_font;
 	graph.font_size = graph_font_size;
 	Font font50(50);
+	Font font30(30);
 	Font font20(20);
 	Font normal_hint_font(18);
 	Font normal_hint_depth_font(10);
@@ -461,8 +475,8 @@ void Main() {
 	future<search_result> ai_future;
 	bool ai_thinking = false;
 	int ai_value = 0;
-	int ai_depth1 = 13, ai_depth2 = 20, ai_book_accept = 0;
-	int hint_depth1 = 11, hint_depth2 = 18;
+	int ai_depth1 = 13, ai_depth2 = 20, ai_book_accept = 4;
+	int hint_depth1 = 8, hint_depth2 = 18;
 
 	while (System::Update()) {
 		if (System::GetUserActions() & UserAction::CloseButtonClicked) {
@@ -668,7 +682,8 @@ void Main() {
 			}
 
 			board_draw(board_cells, bd, use_hint_flag, normal_hint, human_hint, umigame_hint,
-				hint_state, hint_value, hint_depth, normal_hint_font, normal_hint_depth_font);
+				hint_state, hint_value, hint_depth, normal_hint_font, normal_hint_depth_font, font30,
+				int_mode);
 			graph.draw(history, fork_history, history_place);
 		}
 

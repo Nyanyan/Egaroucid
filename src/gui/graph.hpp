@@ -44,8 +44,8 @@ public:
 			font(x).draw(sx + x * dx + adj_x * x / 60 - font(x).region(Point{0, 0}).w, sy - 2 * font_size, graph_color);
 			Line{ sx + x * dx + adj_x * x / 60, sy, sx + x * dx + adj_x * x / 60, sy + size_y }.draw(1, graph_color);
 		}
-		draw_graph(nodes1, graph_color);
-		draw_graph(nodes2, graph_fork_color);
+		draw_graph(nodes1, graph_color, false);
+		draw_graph(nodes2, graph_fork_color, true);
 		int place_x = sx + place * dx + place * adj_x / 60;
 		Line(place_x, sy, place_x, sy + size_y).draw(3, graph_place_color);
 	}
@@ -98,13 +98,13 @@ private:
 		adj_x = size_x - dx * 60;
 	}
 
-	void draw_graph(vector<board> nodes, Color color) {
+	void draw_graph(vector<board> nodes, Color color, bool show_not_calculated) {
 		for (const board& b : nodes) {
 			if (b.v != -inf) {
 				int yy = sy + (y_max - b.v) * dy + adj_y * (y_max - b.v) / (y_max - y_min);
 				Circle{ sx + (b.n - 4) * dx + (b.n - 4) * adj_x / 60, yy, 4 }.draw(color);
 			}
-			else {
+			else if (show_not_calculated) {
 				int yy = sy + y_max * dy + adj_y * y_max / (y_max - y_min);
 				Circle{ sx + (b.n - 4) * dx + (b.n - 4) * adj_x / 60, yy, 4 }.draw(color);
 			}
