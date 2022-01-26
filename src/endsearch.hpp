@@ -88,7 +88,7 @@ inline bool mpc_lower_final(board *b, bool skipped, int depth, int alpha, double
     return nega_alpha_ordering_final_nomemo(b, skipped, mpcd[depth], bound, bound + search_epsilon, true, t) <= bound;
 }
 
-inline int last1(board *b, bool skipped, int p0){
+inline int last1(board *b, int p0){
     search_statistics.nodes_increment();
     int before_score = (b->p ? -1 : 1) * (
         count_black_arr[b->b[0]] + count_black_arr[b->b[1]] + count_black_arr[b->b[2]] + count_black_arr[b->b[3]] + 
@@ -100,19 +100,23 @@ inline int last1(board *b, bool skipped, int p0){
     if (place_included[p0][3] != -1)
         score += (move_arr[b->p][b->b[place_included[p0][3]]][local_place[place_included[p0][3]][p0]][0] + move_arr[b->p][b->b[place_included[p0][3]]][local_place[place_included[p0][3]][p0]][1]) * 2;
     if (score == before_score + 1){
-        if (skipped)
-            return end_evaluate(b);
-        board rb;
-        for (int i = 0; i < b_idx_num; ++i)
-            rb.b[i] = b->b[i];
-        rb.p = 1 - b->p;
-        rb.n = b->n;
-        return -last1(&rb, true, p0);
+        score = before_score - 1 - (
+            move_arr[1 - b->p][b->b[place_included[p0][0]]][local_place[place_included[p0][0]][p0]][0] + move_arr[1 - b->p][b->b[place_included[p0][0]]][local_place[place_included[p0][0]][p0]][1] + 
+            move_arr[1 - b->p][b->b[place_included[p0][1]]][local_place[place_included[p0][1]][p0]][0] + move_arr[1 - b->p][b->b[place_included[p0][1]]][local_place[place_included[p0][1]][p0]][1] + 
+            move_arr[1 - b->p][b->b[place_included[p0][2]]][local_place[place_included[p0][2]][p0]][0] + move_arr[1 - b->p][b->b[place_included[p0][2]]][local_place[place_included[p0][2]][p0]][1]) * 2;
+        if (place_included[p0][3] != -1)
+            score += (move_arr[1 - b->p][b->b[place_included[p0][3]]][local_place[place_included[p0][3]][p0]][0] + move_arr[1 - b->p][b->b[place_included[p0][3]]][local_place[place_included[p0][3]][p0]][1]) * 2;
+        if (score == before_score - 1){
+            if (before_score > 0)
+                score = before_score + 1;
+            else
+                score = before_score - 1;
+        }
     }
     return score;
 }
 
-inline int last2(board *b, bool skipped, int alpha, int beta, int p0, int p1){
+inline int last2(board *b, int alpha, int beta, int p0, int p1){
     search_statistics.nodes_increment();
     #if USE_END_PO
         int p0_parity = (b->parity & cell_div4[p0]);
@@ -121,35 +125,48 @@ inline int last2(board *b, bool skipped, int alpha, int beta, int p0, int p1){
             swap(p0, p1);
     #endif
     board nb;
-    bool passed = true;
     int v = -inf, g;
     if (b->legal(p0)){
-        passed = false;
         b->move(p0, &nb);
-        g = -last1(&nb, false, p1);
+        g = -last1(&nb, p1);
         alpha = max(alpha, g);
         if (beta <= alpha)
             return alpha;
         v = max(v, g);
     }
     if (b->legal(p1)){
-        passed = false;
         b->move(p1, &nb);
-        g = -last1(&nb, false, p0);
+        g = -last1(&nb, p0);
         alpha = max(alpha, g);
         if (beta <= alpha)
             return alpha;
         v = max(v, g);
     }
-    if (passed){
-        if (skipped)
-            return end_evaluate(b);
-        board rb;
-        for (int i = 0; i < b_idx_num; ++i)
-            rb.b[i] = b->b[i];
-        rb.p = 1 - b->p;
-        rb.n = b->n;
-        return -last2(&rb, true, -beta, -alpha, p0, p1);
+    if (v == -inf){
+        b->p = 1 - b->p;
+        if (b->legal(p0)){
+            b->move(p0, &nb);
+            g = last1(&nb, p1);
+            alpha = max(alpha, g);
+            if (beta <= alpha){
+                b->p = 1 - b->p;
+                return alpha;
+            }
+            v = max(v, g);
+        }
+        if (b->legal(p1)){
+            b->move(p1, &nb);
+            g = last1(&nb, p0);
+            alpha = max(alpha, g);
+            if (beta <= alpha){
+                b->p = 1 - b->p;
+                return alpha;
+            }
+            v = max(v, g);
+        }
+        b->p = 1 - b->p;
+        if (v == -inf)
+            v = end_evaluate(b);
     }
     return v;
 }
@@ -177,109 +194,108 @@ inline int last3(board *b, bool skipped, int alpha, int beta, int p0, int p1, in
         }
     #endif
     board nb;
-    bool passed = true;
     int v = -inf, g;
     if (b->legal(p0)){
-        passed = false;
         b->move(p0, &nb);
-        g = -last2(&nb, false, -beta, -alpha, p1, p2);
+        g = -last2(&nb, -beta, -alpha, p1, p2);
         alpha = max(alpha, g);
         if (beta <= alpha)
             return alpha;
         v = max(v, g);
     }
     if (b->legal(p1)){
-        passed = false;
         b->move(p1, &nb);
-        g = -last2(&nb, false, -beta, -alpha, p0, p2);
+        g = -last2(&nb, -beta, -alpha, p0, p2);
         alpha = max(alpha, g);
         if (beta <= alpha)
             return alpha;
         v = max(v, g);
     }
     if (b->legal(p2)){
-        passed = false;
         b->move(p2, &nb);
-        g = -last2(&nb, false, -beta, -alpha, p0, p1);
+        g = -last2(&nb, -beta, -alpha, p0, p1);
         alpha = max(alpha, g);
         if (beta <= alpha)
             return alpha;
         v = max(v, g);
     }
-    if (passed){
+    if (v == -inf){
         if (skipped)
-            return end_evaluate(b);
-        board rb;
-        for (int i = 0; i < b_idx_num; ++i)
-            rb.b[i] = b->b[i];
-        rb.p = 1 - b->p;
-        rb.n = b->n;
-        return -last3(&rb, true, -beta, -alpha, p0, p1, p2);
+            v = end_evaluate(b);
+        else{
+            b->p = 1 - b->p;
+            v = -last3(b, true, -beta, -alpha, p0, p1, p2);
+            b->p = 1 - b->p;
+        }
     }
     return v;
 }
 
 inline int last4(board *b, bool skipped, int alpha, int beta, int p0, int p1, int p2, int p3){
     search_statistics.nodes_increment();
+    #if USE_END_SC
+        if (stability_cut(b, &alpha, &beta))
+            return alpha;
+    #endif
     #if USE_END_PO
-        int p0_parity = (b->parity & cell_div4[p0]);
-        int p1_parity = (b->parity & cell_div4[p1]);
-        int p2_parity = (b->parity & cell_div4[p2]);
-        int p3_parity = (b->parity & cell_div4[p3]);
-        if (p0_parity == 0 && p1_parity && p2_parity && p3_parity){
-            int tmp = p0;
-            p0 = p1;
-            p1 = p2;
-            p2 = p3;
-            p3 = tmp;
-        } else if (p0_parity && p1_parity == 0 && p2_parity && p3_parity){
-            int tmp = p1;
-            p1 = p2;
-            p2 = p3;
-            p3 = tmp;
-        } else if (p0_parity && p1_parity && p2_parity == 0 && p3_parity){
-            swap(p2, p3);
-        } else if (p0_parity == 0 && p1_parity == 0 && p2_parity && p3_parity){
-            swap(p0, p2);
-            swap(p1, p3);
-        } else if (p0_parity == 0 && p1_parity && p2_parity == 0 && p3_parity){
-            int tmp = p0;
-            p0 = p1;
-            p1 = p3;
-            p3 = p2;
-            p2 = tmp;
-        } else if (p0_parity == 0 && p1_parity && p2_parity && p3_parity == 0){
-            int tmp = p0;
-            p0 = p1;
-            p1 = p2;
-            p2 = tmp;
-        } else if (p0_parity && p1_parity == 0 && p2_parity == 0 && p3_parity){
-            int tmp = p1;
-            p1 = p3;
-            p3 = p2;
-            p2 = tmp;
-        } else if (p0_parity && p1_parity == 0 && p2_parity && p3_parity == 0){
-            swap(p1, p2);
-        } else if (p0_parity == 0 && p1_parity == 0 && p2_parity == 0 && p3_parity){
-            int tmp = p0;
-            p0 = p3;
-            p3 = p2;
-            p2 = p1;
-            p1 = tmp;
-        } else if (p0_parity == 0 && p1_parity == 0 && p2_parity && p3_parity == 0){
-            int tmp = p0;
-            p0 = p2;
-            p2 = p1;
-            p1 = tmp;
-        } else if (p0_parity == 0 && p1_parity && p2_parity == 0 && p3_parity == 0){
-            swap(p0, p1);
+        if (!skipped){
+            int p0_parity = (b->parity & cell_div4[p0]);
+            int p1_parity = (b->parity & cell_div4[p1]);
+            int p2_parity = (b->parity & cell_div4[p2]);
+            int p3_parity = (b->parity & cell_div4[p3]);
+            if (p0_parity == 0 && p1_parity && p2_parity && p3_parity){
+                int tmp = p0;
+                p0 = p1;
+                p1 = p2;
+                p2 = p3;
+                p3 = tmp;
+            } else if (p0_parity && p1_parity == 0 && p2_parity && p3_parity){
+                int tmp = p1;
+                p1 = p2;
+                p2 = p3;
+                p3 = tmp;
+            } else if (p0_parity && p1_parity && p2_parity == 0 && p3_parity){
+                swap(p2, p3);
+            } else if (p0_parity == 0 && p1_parity == 0 && p2_parity && p3_parity){
+                swap(p0, p2);
+                swap(p1, p3);
+            } else if (p0_parity == 0 && p1_parity && p2_parity == 0 && p3_parity){
+                int tmp = p0;
+                p0 = p1;
+                p1 = p3;
+                p3 = p2;
+                p2 = tmp;
+            } else if (p0_parity == 0 && p1_parity && p2_parity && p3_parity == 0){
+                int tmp = p0;
+                p0 = p1;
+                p1 = p2;
+                p2 = tmp;
+            } else if (p0_parity && p1_parity == 0 && p2_parity == 0 && p3_parity){
+                int tmp = p1;
+                p1 = p3;
+                p3 = p2;
+                p2 = tmp;
+            } else if (p0_parity && p1_parity == 0 && p2_parity && p3_parity == 0){
+                swap(p1, p2);
+            } else if (p0_parity == 0 && p1_parity == 0 && p2_parity == 0 && p3_parity){
+                int tmp = p0;
+                p0 = p3;
+                p3 = p2;
+                p2 = p1;
+                p1 = tmp;
+            } else if (p0_parity == 0 && p1_parity == 0 && p2_parity && p3_parity == 0){
+                int tmp = p0;
+                p0 = p2;
+                p2 = p1;
+                p1 = tmp;
+            } else if (p0_parity == 0 && p1_parity && p2_parity == 0 && p3_parity == 0){
+                swap(p0, p1);
+            }
         }
     #endif
     board nb;
-    bool passed = true;
     int v = -inf, g;
     if (b->legal(p0)){
-        passed = false;
         b->move(p0, &nb);
         g = -last3(&nb, false, -beta, -alpha, p1, p2, p3);
         alpha = max(alpha, g);
@@ -288,7 +304,6 @@ inline int last4(board *b, bool skipped, int alpha, int beta, int p0, int p1, in
         v = max(v, g);
     }
     if (b->legal(p1)){
-        passed = false;
         b->move(p1, &nb);
         g = -last3(&nb, false, -beta, -alpha, p0, p2, p3);
         alpha = max(alpha, g);
@@ -297,7 +312,6 @@ inline int last4(board *b, bool skipped, int alpha, int beta, int p0, int p1, in
         v = max(v, g);
     }
     if (b->legal(p2)){
-        passed = false;
         b->move(p2, &nb);
         g = -last3(&nb, false, -beta, -alpha, p0, p1, p3);
         alpha = max(alpha, g);
@@ -306,7 +320,6 @@ inline int last4(board *b, bool skipped, int alpha, int beta, int p0, int p1, in
         v = max(v, g);
     }
     if (b->legal(p3)){
-        passed = false;
         b->move(p3, &nb);
         g = -last3(&nb, false, -beta, -alpha, p0, p1, p2);
         alpha = max(alpha, g);
@@ -314,15 +327,14 @@ inline int last4(board *b, bool skipped, int alpha, int beta, int p0, int p1, in
             return alpha;
         v = max(v, g);
     }
-    if (passed){
+    if (v == -inf){
         if (skipped)
-            return end_evaluate(b);
-        board rb;
-        for (int i = 0; i < b_idx_num; ++i)
-            rb.b[i] = b->b[i];
-        rb.p = 1 - b->p;
-        rb.n = b->n;
-        return -last4(&rb, true, -beta, -alpha, p0, p1, p2, p3);
+            v = end_evaluate(b);
+        else{
+            b->p = 1 - b->p;
+            v = -last4(b, true, -beta, -alpha, p0, p1, p2, p3);
+            b->p = 1 - b->p;
+        }
     }
     return v;
 }
@@ -334,110 +346,140 @@ inline int last5(board *b, bool skipped, int alpha, int beta, int p0, int p1, in
             return alpha;
     #endif
     #if USE_END_PO
-        int p0_parity = (b->parity & cell_div4[p0]);
-        int p1_parity = (b->parity & cell_div4[p1]);
-        int p2_parity = (b->parity & cell_div4[p2]);
-        int p3_parity = (b->parity & cell_div4[p3]);
-        int p4_parity = (b->parity & cell_div4[p4]);
         board nb;
-        bool passed = true;
         int v = -inf, g;
-        if (p0_parity && b->legal(p0)){
-            passed = false;
-            b->move(p0, &nb);
-            g = -last4(&nb, false, -beta, -alpha, p1, p2, p3, p4);
-            alpha = max(alpha, g);
-            if (beta <= alpha)
-                return alpha;
-            v = max(v, g);
-        }
-        if (p1_parity && b->legal(p1)){
-            passed = false;
-            b->move(p1, &nb);
-            g = -last4(&nb, false, -beta, -alpha, p0, p2, p3, p4);
-            alpha = max(alpha, g);
-            if (beta <= alpha)
-                return alpha;
-            v = max(v, g);
-        }
-        if (p2_parity && b->legal(p2)){
-            passed = false;
-            b->move(p2, &nb);
-            g = -last4(&nb, false, -beta, -alpha, p0, p1, p3, p4);
-            alpha = max(alpha, g);
-            if (beta <= alpha)
-                return alpha;
-            v = max(v, g);
-        }
-        if (p3_parity && b->legal(p3)){
-            passed = false;
-            b->move(p3, &nb);
-            g = -last4(&nb, false, -beta, -alpha, p0, p1, p2, p4);
-            alpha = max(alpha, g);
-            if (beta <= alpha)
-                return alpha;
-            v = max(v, g);
-        }
-        if (p4_parity && b->legal(p4)){
-            passed = false;
-            b->move(p4, &nb);
-            g = -last4(&nb, false, -beta, -alpha, p0, p1, p2, p3);
-            alpha = max(alpha, g);
-            if (beta <= alpha)
-                return alpha;
-            v = max(v, g);
-        }
-        if (p0_parity == 0 && b->legal(p0)){
-            passed = false;
-            b->move(p0, &nb);
-            g = -last4(&nb, false, -beta, -alpha, p1, p2, p3, p4);
-            alpha = max(alpha, g);
-            if (beta <= alpha)
-                return alpha;
-            v = max(v, g);
-        }
-        if (p1_parity == 0 && b->legal(p1)){
-            passed = false;
-            b->move(p1, &nb);
-            g = -last4(&nb, false, -beta, -alpha, p0, p2, p3, p4);
-            alpha = max(alpha, g);
-            if (beta <= alpha)
-                return alpha;
-            v = max(v, g);
-        }
-        if (p2_parity == 0 && b->legal(p2)){
-            passed = false;
-            b->move(p2, &nb);
-            g = -last4(&nb, false, -beta, -alpha, p0, p1, p3, p4);
-            alpha = max(alpha, g);
-            if (beta <= alpha)
-                return alpha;
-            v = max(v, g);
-        }
-        if (p3_parity == 0 && b->legal(p3)){
-            passed = false;
-            b->move(p3, &nb);
-            g = -last4(&nb, false, -beta, -alpha, p0, p1, p2, p4);
-            alpha = max(alpha, g);
-            if (beta <= alpha)
-                return alpha;
-            v = max(v, g);
-        }
-        if (p4_parity == 0 && b->legal(p4)){
-            passed = false;
-            b->move(p4, &nb);
-            g = -last4(&nb, false, -beta, -alpha, p0, p1, p2, p3);
-            alpha = max(alpha, g);
-            if (beta <= alpha)
-                return alpha;
-            v = max(v, g);
+        if (!skipped){
+            int p0_parity = (b->parity & cell_div4[p0]);
+            int p1_parity = (b->parity & cell_div4[p1]);
+            int p2_parity = (b->parity & cell_div4[p2]);
+            int p3_parity = (b->parity & cell_div4[p3]);
+            int p4_parity = (b->parity & cell_div4[p4]);
+            if (p0_parity && b->legal(p0)){
+                b->move(p0, &nb);
+                g = -last4(&nb, false, -beta, -alpha, p1, p2, p3, p4);
+                alpha = max(alpha, g);
+                if (beta <= alpha)
+                    return alpha;
+                v = max(v, g);
+            }
+            if (p1_parity && b->legal(p1)){
+                b->move(p1, &nb);
+                g = -last4(&nb, false, -beta, -alpha, p0, p2, p3, p4);
+                alpha = max(alpha, g);
+                if (beta <= alpha)
+                    return alpha;
+                v = max(v, g);
+            }
+            if (p2_parity && b->legal(p2)){
+                b->move(p2, &nb);
+                g = -last4(&nb, false, -beta, -alpha, p0, p1, p3, p4);
+                alpha = max(alpha, g);
+                if (beta <= alpha)
+                    return alpha;
+                v = max(v, g);
+            }
+            if (p3_parity && b->legal(p3)){
+                b->move(p3, &nb);
+                g = -last4(&nb, false, -beta, -alpha, p0, p1, p2, p4);
+                alpha = max(alpha, g);
+                if (beta <= alpha)
+                    return alpha;
+                v = max(v, g);
+            }
+            if (p4_parity && b->legal(p4)){
+                b->move(p4, &nb);
+                g = -last4(&nb, false, -beta, -alpha, p0, p1, p2, p3);
+                alpha = max(alpha, g);
+                if (beta <= alpha)
+                    return alpha;
+                v = max(v, g);
+            }
+            if (p0_parity == 0 && b->legal(p0)){
+                b->move(p0, &nb);
+                g = -last4(&nb, false, -beta, -alpha, p1, p2, p3, p4);
+                alpha = max(alpha, g);
+                if (beta <= alpha)
+                    return alpha;
+                v = max(v, g);
+            }
+            if (p1_parity == 0 && b->legal(p1)){
+                b->move(p1, &nb);
+                g = -last4(&nb, false, -beta, -alpha, p0, p2, p3, p4);
+                alpha = max(alpha, g);
+                if (beta <= alpha)
+                    return alpha;
+                v = max(v, g);
+            }
+            if (p2_parity == 0 && b->legal(p2)){
+                b->move(p2, &nb);
+                g = -last4(&nb, false, -beta, -alpha, p0, p1, p3, p4);
+                alpha = max(alpha, g);
+                if (beta <= alpha)
+                    return alpha;
+                v = max(v, g);
+            }
+            if (p3_parity == 0 && b->legal(p3)){
+                b->move(p3, &nb);
+                g = -last4(&nb, false, -beta, -alpha, p0, p1, p2, p4);
+                alpha = max(alpha, g);
+                if (beta <= alpha)
+                    return alpha;
+                v = max(v, g);
+            }
+            if (p4_parity == 0 && b->legal(p4)){
+                b->move(p4, &nb);
+                g = -last4(&nb, false, -beta, -alpha, p0, p1, p2, p3);
+                alpha = max(alpha, g);
+                if (beta <= alpha)
+                    return alpha;
+                v = max(v, g);
+            }
+        } else{
+            if (b->legal(p0)){
+                b->move(p0, &nb);
+                g = -last4(&nb, false, -beta, -alpha, p1, p2, p3, p4);
+                alpha = max(alpha, g);
+                if (beta <= alpha)
+                    return alpha;
+                v = max(v, g);
+            }
+            if (b->legal(p1)){
+                b->move(p1, &nb);
+                g = -last4(&nb, false, -beta, -alpha, p0, p2, p3, p4);
+                alpha = max(alpha, g);
+                if (beta <= alpha)
+                    return alpha;
+                v = max(v, g);
+            }
+            if (b->legal(p2)){
+                b->move(p2, &nb);
+                g = -last4(&nb, false, -beta, -alpha, p0, p1, p3, p4);
+                alpha = max(alpha, g);
+                if (beta <= alpha)
+                    return alpha;
+                v = max(v, g);
+            }
+            if (b->legal(p3)){
+                b->move(p3, &nb);
+                g = -last4(&nb, false, -beta, -alpha, p0, p1, p2, p4);
+                alpha = max(alpha, g);
+                if (beta <= alpha)
+                    return alpha;
+                v = max(v, g);
+            }
+            if (b->legal(p4)){
+                b->move(p4, &nb);
+                g = -last4(&nb, false, -beta, -alpha, p0, p1, p2, p3);
+                alpha = max(alpha, g);
+                if (beta <= alpha)
+                    return alpha;
+                v = max(v, g);
+            }
         }
     #else
         board nb;
-        bool passed = true;
         int v = -inf, g;
         if (b->legal(p0)){
-            passed = false;
             b->move(p0, &nb);
             g = -last4(&nb, false, -beta, -alpha, p1, p2, p3, p4);
             alpha = max(alpha, g);
@@ -446,7 +488,6 @@ inline int last5(board *b, bool skipped, int alpha, int beta, int p0, int p1, in
             v = max(v, g);
         }
         if (b->legal(p1)){
-            passed = false;
             b->move(p1, &nb);
             g = -last4(&nb, false, -beta, -alpha, p0, p2, p3, p4);
             alpha = max(alpha, g);
@@ -455,7 +496,6 @@ inline int last5(board *b, bool skipped, int alpha, int beta, int p0, int p1, in
             v = max(v, g);
         }
         if (b->legal(p2)){
-            passed = false;
             b->move(p2, &nb);
             g = -last4(&nb, false, -beta, -alpha, p0, p1, p3, p4);
             alpha = max(alpha, g);
@@ -464,7 +504,6 @@ inline int last5(board *b, bool skipped, int alpha, int beta, int p0, int p1, in
             v = max(v, g);
         }
         if (b->legal(p3)){
-            passed = false;
             b->move(p3, &nb);
             g = -last4(&nb, false, -beta, -alpha, p0, p1, p2, p4);
             alpha = max(alpha, g);
@@ -473,7 +512,6 @@ inline int last5(board *b, bool skipped, int alpha, int beta, int p0, int p1, in
             v = max(v, g);
         }
         if (b->legal(p4)){
-            passed = false;
             b->move(p4, &nb);
             g = -last4(&nb, false, -beta, -alpha, p0, p1, p2, p3);
             alpha = max(alpha, g);
@@ -482,15 +520,14 @@ inline int last5(board *b, bool skipped, int alpha, int beta, int p0, int p1, in
             v = max(v, g);
         }
     #endif
-    if (passed){
+    if (v == -inf){
         if (skipped)
-            return end_evaluate(b);
-        board rb;
-        for (int i = 0; i < b_idx_num; ++i)
-            rb.b[i] = b->b[i];
-        rb.p = 1 - b->p;
-        rb.n = b->n;
-        return -last5(&rb, true, -beta, -alpha, p0, p1, p2, p3, p4);
+            v = end_evaluate(b);
+        else{
+            b->p = 1 - b->p;
+            v = -last5(b, true, -beta, -alpha, p0, p1, p2, p3, p4);
+            b->p = 1 - b->p;
+        }
     }
     return v;
 }
@@ -630,12 +667,9 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
     if (canput == 0){
         if (skipped)
             return end_evaluate(b);
-        board rb;
-        for (int i = 0; i < b_idx_num; ++i)
-            rb.b[i] = b->b[i];
-        rb.p = 1 - b->p;
-        rb.n = b->n;
-        int res = -nega_alpha_ordering_final(&rb, true, depth, -beta, -alpha, use_multi_thread, use_mpc, mpct_in);
+        b->p = 1 - b->p;
+        int res = -nega_alpha_ordering_final(b, true, depth, -beta, -alpha, use_multi_thread, use_mpc, mpct_in);
+        b->p = 1 - b->p;
         return res;
     }
     if (canput >= 2)
@@ -896,7 +930,7 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
     beta = hw2;
     int pre_search_depth = max(1, min(30, max_depth - simple_end_threshold + simple_mid_threshold + 3));
     cerr << "pre search depth " << pre_search_depth << endl;
-    double pre_search_mpcd = 0.6;
+    double pre_search_mpcd = 0.8;
     transpose_table.init_now();
     for (i = 0; i < canput; ++i)
         nb[i].v = -mtd(&nb[i], false, pre_search_depth - 1, -hw2, hw2, true, pre_search_mpcd);
@@ -940,9 +974,9 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
             else if (nb[i].n == hw2 - 3)
                 g = -last3(&nb[i], false, -beta, -alpha, cells[0], cells[1], cells[2]);
             else if (nb[i].n == hw2 - 2)
-                g = -last2(&nb[i], false, -beta, -alpha, cells[0], cells[1]);
+                g = -last2(&nb[i], -beta, -alpha, cells[0], cells[1]);
             else if (nb[i].n == hw2 - 1)
-                g = -last1(&nb[i], false, cells[0]);
+                g = -last1(&nb[i], cells[0]);
             else
                 g = -end_evaluate(&nb[i]);
             cerr << g << endl;
@@ -994,9 +1028,9 @@ inline search_result endsearch_value(board b, long long strt, bool use_mpc, doub
         else if (b.n == hw2 - 3)
             res.value = last3(&b, false, -hw2, hw2, cells[0], cells[1], cells[2]);
         else if (b.n == hw2 - 2)
-            res.value = last2(&b, false, -hw2, hw2, cells[0], cells[1]);
+            res.value = last2(&b, -hw2, hw2, cells[0], cells[1]);
         else if (b.n == hw2 - 1)
-            res.value = last1(&b, false, cells[0]);
+            res.value = last1(&b, cells[0]);
         else
             res.value = end_evaluate(&b);
     }
