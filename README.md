@@ -51,6 +51,9 @@ https://github.com/Nyanyan/Egaroucid4
 
 * CTPL thread pool library
   * https://github.com/vit-vit/CTPL
+* RapidJSON
+  * https://rapidjson.org/
+
 
 
 
