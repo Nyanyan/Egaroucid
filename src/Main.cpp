@@ -26,6 +26,7 @@
 #include "gui/pulldown.hpp"
 #include "gui/graph.hpp"
 #include "gui/menu.hpp"
+#include "gui/language.hpp"
 
 using namespace std;
 
@@ -69,6 +70,10 @@ bool ai_init() {
 	return true;
 }
 
+bool lang_initialize() {
+	return language.init();
+}
+
 Menu create_menu(bool *start_game_flag,
 	bool *use_ai_flag, bool *human_first, bool *human_second, bool *both_ai,
 	bool *use_hint_flag, bool *normal_hint, bool *human_hint, bool *umigame_hint,
@@ -80,45 +85,43 @@ Menu create_menu(bool *start_game_flag,
 	Font menu_font(15);
 	Texture checkbox(U"resources/img/checked.png", TextureDesc::Mipped);
 
-	title.init(U"対局");
+	title.init(language.get("play", "game"));
 
-	menu_e.init_button(U"新規対局", start_game_flag);
+	menu_e.init_button(language.get("play", "new_game"), start_game_flag);
+	title.push(menu_e);
+
+	menu.push(title);
+
+	title.init(language.get("settings", "settings"));
+
+	menu_e.init_check(language.get("settings", "ai_play", "ai_play"), use_ai_flag, *use_ai_flag);
+	side_menu.init_radio(language.get("settings", "ai_play", "human_first"), human_first, *human_first);
+	menu_e.push(side_menu);
+	side_menu.init_radio(language.get("settings", "ai_play", "human_second"), human_second, *human_second);
+	menu_e.push(side_menu);
+	side_menu.init_radio(language.get("settings", "ai_play", "both_ai"), both_ai, *both_ai);
+	menu_e.push(side_menu);
+	title.push(menu_e);
+
+	menu_e.init_check(language.get("settings", "hint", "hint"), use_hint_flag, *use_hint_flag);
+	side_menu.init_check(language.get("settings", "hint", "stone_value"), normal_hint, *normal_hint);
+	menu_e.push(side_menu);
+	side_menu.init_check(language.get("settings", "hint", "human_value"), human_hint, *human_hint);
+	menu_e.push(side_menu);
+	side_menu.init_check(language.get("settings", "hint", "umigame_value"), umigame_hint, *umigame_hint);
+	menu_e.push(side_menu);
+	title.push(menu_e);
+
+	menu_e.init_check(language.get("settings", "value"), use_value_flag, *use_value_flag);
 	title.push(menu_e);
 
 	menu.push(title);
 
 
 
-	title.init(U"設定");
+	title.init(language.get("book", "book"));
 
-	menu_e.init_check(U"AIが着手", use_ai_flag, *use_ai_flag);
-	side_menu.init_radio(U"人間先手", human_first, *human_first);
-	menu_e.push(side_menu);
-	side_menu.init_radio(U"人間後手", human_second, *human_second);
-	menu_e.push(side_menu);
-	side_menu.init_radio(U"AI同士", both_ai, *both_ai);
-	menu_e.push(side_menu);
-	title.push(menu_e);
-
-	menu_e.init_check(U"ヒント表示", use_hint_flag, *use_hint_flag);
-	side_menu.init_check(U"石差評価", normal_hint, *normal_hint);
-	menu_e.push(side_menu);
-	side_menu.init_check(U"人間的評価", human_hint, *human_hint);
-	menu_e.push(side_menu);
-	side_menu.init_check(U"うみがめ数", umigame_hint, *umigame_hint);
-	menu_e.push(side_menu);
-	title.push(menu_e);
-
-	menu_e.init_check(U"評価値表示", use_value_flag, *use_value_flag);
-	title.push(menu_e);
-
-	menu.push(title);
-
-
-
-	title.init(U"book");
-
-	menu_e.init_button(U"学習開始", start_book_learn_flag);
+	menu_e.init_button(language.get("book", "learn"), start_book_learn_flag);
 	title.push(menu_e);
 
 	menu.push(title);
@@ -254,10 +257,10 @@ int find_history_idx(vector<board> history, int history_place) {
 	return 0;
 }
 
-void initialize_draw(future<bool> *f, bool *initializing, bool *initialize_failed, Font font, Texture icon, Texture logo) {
+void initialize_draw(future<bool> *f, bool *initializing, bool *initialize_failed, Font font, Font small_font, Texture icon, Texture logo) {
+	icon.scaled((double)(left_right - left_left) / icon.width()).draw(left_left, y_center - (left_right - left_left) / 2);
+	logo.scaled((double)(left_right - left_left) / logo.width() * 0.75).draw(right_left, y_center - 30);
 	if (!(*initialize_failed)) {
-		icon.scaled((double)(left_right - left_left) / icon.width()).draw(left_left, y_center - (left_right - left_left) / 2);
-		logo.scaled((double)(left_right - left_left) / logo.width() * 0.7).draw(right_left, y_center - 30);
 		font(U"起動中...").draw(right_left, y_center + font.fontSize(), font_color);
 		if (f->wait_for(chrono::seconds(0)) == future_status::ready) {
 			if (f->get()) {
@@ -269,8 +272,14 @@ void initialize_draw(future<bool> *f, bool *initializing, bool *initialize_faile
 		}
 	}
 	else {
-		font(U"AI初期化失敗").draw(50, 50, font_color);
+		small_font(U"起動失敗\nresourcesフォルダを確認してください").draw(right_left, y_center + font.fontSize(), font_color);
 	}
+}
+
+void lang_initialize_failed_draw(Font font, Font small_font, Texture icon, Texture logo) {
+	icon.scaled((double)(left_right - left_left) / icon.width()).draw(left_left, y_center - (left_right - left_left) / 2);
+	logo.scaled((double)(left_right - left_left) / logo.width() * 0.75).draw(right_left, y_center - 30);
+	small_font(U"言語パックを読み込めませんでした\nresourcesフォルダを確認してください").draw(right_left, y_center + font.fontSize(), font_color);
 }
 
 void board_draw(Rect board_cells[], board b, bool use_hint_flag, bool normal_hint, bool human_hint, bool umigame_hint,
@@ -389,11 +398,6 @@ void Main() {
 	bool start_book_learn_flag;
 	Texture icon(U"resources/img/icon.png", TextureDesc::Mipped);
 	Texture logo(U"resources/img/logo.png", TextureDesc::Mipped);
-	Menu menu = create_menu(&start_game_flag,
-		&use_ai_flag, &human_first, &human_second, &both_ai,
-		&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
-		&use_value_flag,
-		&start_book_learn_flag);
 	Rect board_cells[hw2];
 	for (int cell = 0; cell < hw2; ++cell) {
 		board_cells[cell] = Rect(board_sx + (cell % hw) * board_cell_size, board_sy + (cell / hw) * board_cell_size, board_cell_size, board_cell_size);
@@ -408,6 +412,7 @@ void Main() {
 	graph.font = graph_font;
 	graph.font_size = graph_font_size;
 	Font font50(50);
+	Font font20(20);
 	Font normal_hint_font(18);
 	Font normal_hint_depth_font(10);
 
@@ -422,6 +427,11 @@ void Main() {
 	future<bool> initialize_future = async(launch::async, ai_init);
 	bool initializing = true, initialize_failed = false;
 
+	int lang_initialized = 0;
+	future<bool> lang_initialize_future = async(launch::async, lang_initialize);
+
+	Menu menu;
+
 	future<search_result> ai_future;
 	bool ai_thinking = false;
 	int ai_value = 0;
@@ -435,16 +445,39 @@ void Main() {
 			System::Exit();
 		}
 		if (initializing) {
-			initialize_draw(&initialize_future,&initializing, &initialize_failed, font50, icon, logo);
-			if (!initializing) {
-				bd.reset();
-				bd.v = -inf;
-				history.emplace_back(bd);
-				history_place = 0;
-				fork_mode = false;
-				for (int i = 0; i < hw2; ++i) {
-					hint_state[i] = hint_not_calculated_define;
+			if (lang_initialized == 0) {
+				if (lang_initialize_future.wait_for(chrono::seconds(0)) == future_status::ready) {
+					if (lang_initialize_future.get()) {
+						lang_initialized = 1;
+					}
+					else {
+						lang_initialized = 3;
+					}
 				}
+			}
+			else if (lang_initialized == 1) {
+				menu = create_menu(&start_game_flag,
+						&use_ai_flag, &human_first, &human_second, &both_ai,
+						&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
+						&use_value_flag,
+						&start_book_learn_flag);
+				lang_initialized = 2;
+			}
+			else if (lang_initialized == 2) {
+				initialize_draw(&initialize_future, &initializing, &initialize_failed, font50, font20, icon, logo);
+				if (!initializing) {
+					bd.reset();
+					bd.v = -inf;
+					history.emplace_back(bd);
+					history_place = 0;
+					fork_mode = false;
+					for (int i = 0; i < hw2; ++i) {
+						hint_state[i] = hint_not_calculated_define;
+					}
+				}
+			}
+			else {
+				lang_initialize_failed_draw(font50, font20, icon, logo);
 			}
 		}
 		else {
