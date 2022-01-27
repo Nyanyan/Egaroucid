@@ -37,24 +37,25 @@ int nega_alpha_ordering_nomemo(board *b, bool skipped, int depth, int alpha, int
                 return alpha;
         }
     #endif
+    unsigned long long legal = b->mobility_ull();
+    if (legal == 0){
+        if (skipped)
+            return end_evaluate(b);
+        b->p = 1 - b->p;
+        int res = -nega_alpha_ordering_nomemo(b, true, depth, -beta, -alpha, use_mpc, mpct_in);
+        b->p = 1 - b->p;
+        return res;
+    }
     vector<board> nb;
+    mobility mob;
     int canput = 0;
     for (const int &cell: vacant_lst){
-        if (b->legal(cell)){
-            nb.emplace_back(b->move(cell));
+        if (1 & (legal >> cell)){
+            calc_flip(&mob, b, cell);
+            nb.emplace_back(b->move_copy(&mob));
             move_ordering(&nb[canput]);
             ++canput;
         }
-    }
-    if (canput == 0){
-        if (skipped)
-            return end_evaluate(b);
-        board rb;
-        for (int i = 0; i < b_idx_num; ++i)
-            rb.b[i] = b->b[i];
-        rb.p = 1 - b->p;
-        rb.n = b->n;
-        return -nega_alpha_ordering_nomemo(&rb, true, depth, -beta, -alpha, use_mpc, mpct_in);
     }
     if (canput >= 2)
         sort(nb.begin(), nb.end());
@@ -70,14 +71,14 @@ int nega_alpha_ordering_nomemo(board *b, bool skipped, int depth, int alpha, int
 }
 
 inline bool mpc_higher(board *b, bool skipped, int depth, int beta, double t){
-    int bound = beta + ceil(t * mpcsd[calc_phase_idx(b)][depth - mpc_min_depth]);
+    int bound = beta + ceil(t * mpcsd[b->phase()][depth - mpc_min_depth]);
     if (bound > hw2)
-        bound = hw2; ////return false;
+        bound = hw2; //return false;
     return nega_alpha_ordering_nomemo(b, skipped, mpcd[depth], bound - search_epsilon, bound, true, t) >= bound;
 }
 
 inline bool mpc_lower(board *b, bool skipped, int depth, int alpha, double t){
-    int bound = alpha - ceil(t * mpcsd[calc_phase_idx(b)][depth - mpc_min_depth]);
+    int bound = alpha - ceil(t * mpcsd[b->phase()][depth - mpc_min_depth]);
     if (bound < -hw2)
         bound = -hw2; //return false;
     return nega_alpha_ordering_nomemo(b, skipped, mpcd[depth], bound, bound + search_epsilon, true, t) <= bound;
@@ -93,56 +94,28 @@ int nega_alpha(board *b, bool skipped, int depth, int alpha, int beta){
         if (stability_cut(b, &alpha, &beta))
             return alpha;
     #endif
-    board nb;
-    bool passed = true;
     int g, v = -inf;
-    #if USE_MID_SMOOTH
-        if (depth == 1){
-            int nv = mid_evaluate(b);
-            for (const int &cell: vacant_lst){
-                if (b->legal(cell)){
-                    passed = false;
-                    b->move(cell, &nb);
-                    g = (-nega_alpha(&nb, false, depth - 1, -beta, -alpha) + nv) / 2;
-                    if (beta <= g)
-                        return g;
-                    alpha = max(alpha, g);
-                    v = max(v, g);
-                }
-            }
-            if (passed){
-                if (skipped)
-                    return end_evaluate(b);
-                board rb;
-                for (int i = 0; i < b_idx_num; ++i)
-                    rb.b[i] = b->b[i];
-                rb.p = 1 - b->p;
-                rb.n = b->n;
-                return -nega_alpha(&rb, true, depth, -beta, -alpha);
-            }
-            return v;
-        }
-    #endif
+    unsigned long long legal = b->mobility_ull();
+    if (legal == 0){
+        if (skipped)
+            return end_evaluate(b);
+        b->p = 1 - b->p;
+        int res = -nega_alpha(b, true, depth, -beta, -alpha);
+        b->p = 1 - b->p;
+        return res;
+    }
+    mobility mob;
     for (const int &cell: vacant_lst){
-        if (b->legal(cell)){
-            passed = false;
-            b->move(cell, &nb);
-            g = -nega_alpha(&nb, false, depth - 1, -beta, -alpha);
+        if (1 & (legal >> cell)){
+            calc_flip(&mob, b, cell);
+            b->move(&mob);
+            g = -nega_alpha(b, false, depth - 1, -beta, -alpha);
+            b->undo(&mob);
             alpha = max(alpha, g);
             if (beta <= alpha)
                 return alpha;
             v = max(v, g);
         }
-    }
-    if (passed){
-        if (skipped)
-            return end_evaluate(b);
-        board rb;
-        for (int i = 0; i < b_idx_num; ++i)
-            rb.b[i] = b->b[i];
-        rb.p = 1 - b->p;
-        rb.n = b->n;
-        return -nega_alpha(&rb, true, depth, -beta, -alpha);
     }
     return v;
 }
@@ -178,25 +151,26 @@ int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int 
                 return alpha;
         }
     #endif
+    unsigned long long legal = b->mobility_ull();
+    if (legal == 0){
+        if (skipped)
+            return end_evaluate(b);
+        b->p = 1 - b->p;
+        int res = -nega_alpha_ordering(b, true, depth, -beta, -alpha, use_multi_thread, use_mpc, mpct_in);
+        b->p = 1 - b->p;
+        return res;
+    }
     vector<board> nb;
+    mobility mob;
     int canput = 0;
     for (const int &cell: vacant_lst){
-        if (b->legal(cell)){
-            nb.emplace_back(b->move(cell));
+        if (1 & (legal >> cell)){
+            calc_flip(&mob, b, cell);
+            nb.emplace_back(b->move_copy(&mob));
             move_ordering(&nb[canput]);
             //move_ordering_eval(&(nb[canput]));
             ++canput;
         }
-    }
-    if (canput == 0){
-        if (skipped)
-            return end_evaluate(b);
-        board rb;
-        for (int i = 0; i < b_idx_num; ++i)
-            rb.b[i] = b->b[i];
-        rb.p = 1 - b->p;
-        rb.n = b->n;
-        return -nega_alpha_ordering(&rb, true, depth, -beta, -alpha, use_multi_thread, use_mpc, mpct_in);
     }
     if (canput >= 2)
         sort(nb.begin(), nb.end());
@@ -274,24 +248,26 @@ int nega_scout_nomemo(board *b, bool skipped, const int depth, int alpha, int be
                 return alpha;
         }
     #endif
-    vector<board> nb;
-    int canput = 0;
-    for (const int &cell: vacant_lst){
-        if (b->legal(cell)){
-            nb.emplace_back(b->move(cell));
-            move_ordering_eval(&nb[canput]);
-            ++canput;
-        }
-    }
-    if (canput == 0){
+    unsigned long long legal = b->mobility_ull();
+    if (legal == 0){
         if (skipped)
             return end_evaluate(b);
-        board rb;
-        for (int i = 0; i < b_idx_num; ++i)
-            rb.b[i] = b->b[i];
-        rb.p = 1 - b->p;
-        rb.n = b->n;
-        return -nega_scout_nomemo(&rb, true, depth, -beta, -alpha, use_mpc, mpct_in);
+        b->p = 1 - b->p;
+        int res = -nega_scout_nomemo(b, true, depth, -beta, -alpha, use_mpc, mpct_in);
+        b->p = 1 - b->p;
+        return res;
+    }
+    vector<board> nb;
+    mobility mob;
+    int canput = 0;
+    for (const int &cell: vacant_lst){
+        if (1 & (legal >> cell)){
+            calc_flip(&mob, b, cell);
+            nb.emplace_back(b->move_copy(&mob));
+            move_ordering(&nb[canput]);
+            //move_ordering_eval(&(nb[canput]));
+            ++canput;
+        }
     }
     if (canput >= 2)
         sort(nb.begin(), nb.end());
@@ -362,17 +338,18 @@ int mtd(board *b, bool skipped, int depth, int l, int u, bool use_mpc, double us
 }
 
 inline search_result midsearch(board b, long long strt, int max_depth, bool use_mpc, double use_mpct){
-    vector<board> nb;
+    vector<pair<int, board>> nb;
+    mobility mob;
     int i;
+    unsigned long long legal = b.mobility_ull();
     for (const int &cell: vacant_lst){
-        if (b.legal(cell)){
-            //cerr << cell << " ";
-            nb.push_back(b.move(cell));
+        if (1 & (legal >> cell)){
+            calc_flip(&mob, &b, cell);
+            nb.emplace_back(make_pair(cell, b.move_copy(&mob)));
         }
     }
-    //cerr << endl;
     int canput = nb.size();
-    //cerr << "canput: " << canput << endl;
+    cerr << "canput: " << canput << endl;
     int res_depth;
     int policy = -1;
     int tmp_policy;
@@ -387,24 +364,24 @@ inline search_result midsearch(board b, long long strt, int max_depth, bool use_
         beta = hw2;
         transpose_table.init_now();
         for (i = 0; i < canput; ++i)
-            move_ordering(&nb[i]);
+            move_ordering(&nb[i].second);
         if (canput >= 2)
-            sort(nb.begin(), nb.end());
-        g = -mtd(&nb[0], false, depth, -beta, -alpha, use_mpc, use_mpct);
-        transpose_table.reg(&nb[0], (int)(nb[0].hash() & search_hash_mask), -g, -g);
+            sort(nb.begin(), nb.end(), move_ordering_sort);
+        g = -mtd(&nb[0].second, false, depth, -beta, -alpha, use_mpc, use_mpct);
+        transpose_table.reg(&nb[0].second, (int)(nb[0].second.hash() & search_hash_mask), -g, -g);
         alpha = max(alpha, g);
-        tmp_policy = nb[0].policy;
+        tmp_policy = nb[0].first;
         for (i = 1; i < canput; ++i){
-            g = -nega_alpha_ordering(&nb[i], false, depth, -alpha - search_epsilon, -alpha, true, use_mpc, use_mpct);
+            g = -nega_alpha_ordering(&nb[i].second, false, depth, -alpha - search_epsilon, -alpha, true, use_mpc, use_mpct);
             if (alpha < g){
-                g = -mtd(&nb[i], false, depth, -beta, -g, use_mpc, use_mpct);
-                transpose_table.reg(&nb[i], (int)(nb[i].hash() & search_hash_mask), -g, -g);
+                g = -mtd(&nb[i].second, false, depth, -beta, -g, use_mpc, use_mpct);
+                transpose_table.reg(&nb[i].second, (int)(nb[i].second.hash() & search_hash_mask), -g, -g);
                 if (alpha < g){
                     alpha = g;
-                    tmp_policy = nb[i].policy;
+                    tmp_policy = nb[i].first;
                 }
             } else{
-                transpose_table.reg(&nb[i], (int)(nb[i].hash() & search_hash_mask), -inf, -g);
+                transpose_table.reg(&nb[i].second, (int)(nb[i].second.hash() & search_hash_mask), -inf, -g);
             }
         }
         swap(transpose_table.now, transpose_table.prev);

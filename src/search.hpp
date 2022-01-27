@@ -30,8 +30,6 @@ constexpr int canput_bonus = 4;
 
 #define po_max_depth 8
 
-#define extra_stability_threshold 58
-
 const int cell_weight[hw2] = {
     10, 3, 9, 7, 7, 9, 3, 10, 
     3, 2, 4, 5, 5, 4, 2, 3, 
@@ -108,32 +106,6 @@ struct search_result{
     int nps;
 };
 
-inline void search_init(){
-    int i;
-    for (int cell = 0; cell < hw2; ++cell){
-        can_be_flipped[cell] = 0b1111111110000001100000011000000110000001100000011000000111111111;
-        for (i = 0; i < hw; ++i){
-            if (global_place[place_included[cell][0]][i] != -1)
-                can_be_flipped[cell] |= 1ULL << global_place[place_included[cell][0]][i];
-        }
-        for (i = 0; i < hw; ++i){
-            if (global_place[place_included[cell][1]][i] != -1)
-                can_be_flipped[cell] |= 1ULL << global_place[place_included[cell][1]][i];
-        }
-        for (i = 0; i < hw; ++i){
-            if (global_place[place_included[cell][2]][i] != -1)
-                can_be_flipped[cell] |= 1ULL << global_place[place_included[cell][2]][i];
-        }
-        if (place_included[cell][3] != -1){
-            for (i = 0; i < hw; ++i){
-                if (global_place[place_included[cell][3]][i] != -1)
-                    can_be_flipped[cell] |= 1ULL << global_place[place_included[cell][3]][i];
-            }
-        }
-    }
-    cerr << "search initialized" << endl;
-}
-
 int cmp_vacant(int p, int q){
     return cell_weight[p] > cell_weight[q];
 }
@@ -164,51 +136,19 @@ inline void move_ordering_eval(board *b){
     b->v = -mid_evaluate(b);
 }
 
-inline void calc_extra_stability(board *b, int p, unsigned long long extra_stability, int *pres, int *ores){
-    *pres = 0;
-    *ores = 0;
-    int y, x;
-    extra_stability >>= hw;
-    for (y = 1; y < hw_m1; ++y){
-        extra_stability >>= 1;
-        for (x = 1; x < hw_m1; ++x){
-            if ((extra_stability & 1) == 0){
-                if (pop_digit[b->b[y]][x] == p)
-                    ++*pres;
-                else if (pop_digit[b->b[y]][x] == 1 - p)
-                    ++*ores;
-            }
-            extra_stability >>= 1;
-        }
-        extra_stability >>= 1;
-    }
-}
-
-inline unsigned long long calc_extra_stability_ull(board *b){
-    unsigned long long extra_stability = 0b1111111110000001100000011000000110000001100000011000000111111111;
-    for (const int &cell: vacant_lst){
-        if (pop_digit[b->b[cell / hw]][cell % hw] == vacant)
-            extra_stability |= can_be_flipped[cell];
-    }
-    return extra_stability;
-}
-
 inline bool stability_cut(board *b, int *alpha, int *beta){
-    //if (b->n >= extra_stability_threshold){
-    //    int ps, os;
-    //    calc_extra_stability(b, b->p, calc_extra_stability_ull(b), &ps, &os);
-    //    *alpha = max(*alpha, (2 * (calc_stability(b, b->p) + ps) - hw2));
-    //    *beta = min(*beta, (hw2 - 2 * (calc_stability(b, 1 - b->p) + os)));
-    //} else{
-    *alpha = max(*alpha, (2 * calc_stability(b, b->p) - hw2));
-    *beta = min(*beta, (hw2 - 2 * calc_stability(b, 1 - b->p)));
-    //}
+    int b_arr[hw2], stab[2];
+    b->translate_to_arr(b_arr);
+    calc_stability(b, b_arr, &stab[0], &stab[1]);
+    *alpha = max(*alpha, 2 * stab[b->p] - hw2);
+    *beta = min(*beta, hw2 - 2 * stab[1 - b->p]);
     return *alpha >= *beta;
 }
 
 inline int calc_canput_exact(board *b){
-    int res = 0;
-    for (const int &cell: vacant_lst)
-        res += b->legal(cell);
-    return res;
+    return pop_count_ull(b->mobility_ull());
+}
+
+bool move_ordering_sort(pair<int, board> &a, pair<int, board> &b){
+    return a.second.v > b.second.v;
 }

@@ -12,7 +12,8 @@ constexpr int search_hash_mask = search_hash_table_size - 1;
 class search_node{
     public:
         bool reg;
-        uint_fast16_t k[hw];
+        unsigned long long b;
+        unsigned long long w;
         int p;
         int l;
         int u;
@@ -21,14 +22,14 @@ class search_node{
             mutex mtx;
     #endif
     public:
-        inline void register_value(uint_fast16_t key[], int pp, int ll, int uu){
+        inline void register_value(board *bd, int ll, int uu){
             #if USE_MULTI_THREAD
                 lock_guard<mutex> lock(mtx);
             #endif
             reg = true;
-            for (int i = 0; i < hw; ++i)
-                k[i] = key[i];
-            p = pp;
+            b = bd->b;
+            w = bd->w;
+            p = bd->p;
             l = ll;
             u = uu;
         }
@@ -81,14 +82,14 @@ class transpose_table{
         }
 
         inline void reg(board *key, int hash, int l, int u){
-            #if USE_MULTI_THREAD
-                lock_guard<mutex> lock(mtx);
-            #endif
+            //#if USE_MULTI_THREAD
+            //    lock_guard<mutex> lock(mtx);
+            //#endif
             //++this->hash_reg;
             if (!this->table[this->now][hash].reg)
-                this->table[this->now][hash].register_value(key->b, key->p, l, u);
-            else if (key->p != this->table[this->now][hash].p || !compare_key(key->b, this->table[this->now][hash].k))
-                this->table[this->now][hash].register_value(key->b, key->p, l, u);
+                this->table[this->now][hash].register_value(key, l, u);
+            else if (!compare_key(key, &this->table[this->now][hash]))
+                this->table[this->now][hash].register_value(key, l, u);
             else
                 this->table[this->now][hash].register_value(l, u);
         }
@@ -98,7 +99,7 @@ class transpose_table{
             //    lock_guard<mutex> lock(mtx);
             //#endif
             if (this->table[this->now][hash].reg){
-                if (key->p == this->table[this->now][hash].p && compare_key(key->b, this->table[this->now][hash].k)){
+                if (compare_key(key, &this->table[this->now][hash])){
 					this->table[this->now][hash].get(l, u);
                     //++this->hash_get;
                 } else{
@@ -116,7 +117,7 @@ class transpose_table{
             //    lock_guard<mutex> lock(mtx);
             //#endif
             if (this->table[this->prev][hash].reg){
-                if (key->p == this->table[this->prev][hash].p && compare_key(key->b, this->table[this->prev][hash].k)){
+                if (compare_key(key, &this->table[this->prev][hash])){
                     this->table[this->prev][hash].get(l, u);
                     //++this->hash_get;
                 } else{
@@ -130,10 +131,8 @@ class transpose_table{
         }
     
     private:
-        inline bool compare_key(uint_fast16_t b[], uint_fast16_t k[]){
-            return 
-                b[0] == k[0] && b[1] == k[1] && b[2] == k[2] && b[3] == k[3] && 
-                b[4] == k[4] && b[5] == k[5] && b[6] == k[6] && b[7] == k[7];
+        inline bool compare_key(board *a, search_node *b){
+            return a->p == b->p && a->b == b->b && a->w == b->w;
         }
 };
 

@@ -12,11 +12,11 @@ constexpr int book_hash_mask = book_hash_table_size - 1;
 
 
 struct book_node{
-    uint_fast16_t k[hw];
-    int p;
+    unsigned long long player;
+    unsigned long long oppenent;
     int value;
-    book_node* p_n_node;
     int line;
+    book_node* p_n_node;
 };
 
 struct book_value{
@@ -121,7 +121,8 @@ class book{
             unsigned long long player, opponent;
             short value;
 			char link = 0, link_value, link_move;
-            board b1, b2, nb;
+            board b;
+            mobility mob;
             for (i = 0; i < n_boards; ++i){
                 if (fread(&player, 8, 1, fp) < 1) {
                     cerr << "file broken" << endl;
@@ -162,12 +163,7 @@ class book{
 					fclose(fp);
 					return false;
 				}
-				b1.translate_from_ull(player, opponent, black);
-				b2.translate_from_ull(opponent, player, white);
-				n_book += register_symmetric_book(b1, (int)value, n_book);
-				if (n_book % 1024 == 0)
-					cerr << "loading " << n_book << " boards" << endl;
-				n_book += register_symmetric_book(b2, -(int)value, n_book);
+				n_book += register_symmetric_book(b, (int)value, n_book);
 				if (n_book % 1024 == 0)
 					cerr << "loading " << n_book << " boards" << endl;
 				for (j = 0; j < (int)link + 1; ++j) {
@@ -182,16 +178,12 @@ class book{
 						return false;
 					}
 					if (link_move != hw2_p1) {
-						if (b1.legal((int)link_move)) {
-							nb = b1.move((int)link_move);
-							n_book += register_symmetric_book(nb, (int)link_value, n_book);
-							if (n_book % 1024 == 0)
-								cerr << "loading " << n_book << " boards" << endl;
-							nb = b2.move((int)link_move);
-							n_book += register_symmetric_book(nb, -(int)link_value, n_book);
-							if (n_book % 1024 == 0)
-								cerr << "loading " << n_book << " boards" << endl;
-						}
+                        mob.calc_flip(player, opponent, (int)link_move);
+                        b.move(&mob);
+                        n_book += register_symmetric_book(b, -(int)link_value, n_book);
+                        b.undo(&mob);
+                        if (n_book % 1024 == 0)
+                            cerr << "loading " << n_book << " boards" << endl;
 					}
 				}
             }
@@ -274,14 +266,14 @@ class book{
         }
 
         inline void reg(board b, int value){
-            n_book += register_symmetric_book(b, (b.p ? -1 : 1) * value, n_book);
+            n_book += register_symmetric_book(b, value, n_book);
         }
 
         inline int get(board *b){
             book_node *p_node = this->book[b->hash() & book_hash_mask];
             while(p_node != NULL){
-                if(compare_key(b->b, p_node->k)){
-                    return (b->p ? -1 : 1) * p_node->value;
+                if(compare_key(b, p_node)){
+                    return p_node->value;
                 }
                 p_node = p_node->p_n_node;
             }
@@ -298,10 +290,10 @@ class book{
                     b->move(coord, &nb);
                     book_node *p_node = this->book[nb.hash() & book_hash_mask];
                     while(p_node != NULL){
-                        if(compare_key(nb.b, p_node->k)){
+                        if(compare_key(&nb, p_node)){
                             policies.push_back(coord);
-                            values.push_back((b->p ? -1 : 1) * p_node->value);
-                            max_value = max(max_value, (b->p ? -1 : 1) * p_node->value);
+                            values.push_back(p_node->value);
+                            max_value = max(max_value, p_node->value);
                             break;
                         }
                         p_node = p_node->p_n_node;
@@ -327,11 +319,9 @@ class book{
         }
 
         inline void change(board b, int value){
-            if (b.p)
-                value = -value;
             book_node *p_node = this->book[b.hash() & book_hash_mask];
             while(p_node != NULL){
-                if(compare_key(b.b, p_node->k)){
+                if(compare_key(&b, p_node)){
                     int result = register_symmetric_book(b, value, p_node->line);
 					cerr << "value changed " << result << endl;
                     return;
@@ -401,10 +391,10 @@ class book{
         }
 
     private:
-        inline bool compare_key(const uint_fast16_t a[], const uint_fast16_t b[]){
-            return
-                a[0] == b[0] && a[1] == b[1] && a[2] == b[2] && a[3] == b[3] && 
-                a[4] == b[4] && a[5] == b[5] && a[6] == b[6] && a[7] == b[7];
+        inline bool compare_key(const board *a, const book_node *b){
+            if (b->p == black)
+                return a->b == b->player && a->w == b->opponent;
+            return a->w == b->player && a->b == b->opponent;
         }
 
         inline book_node* book_node_init(board b, int value, int line){

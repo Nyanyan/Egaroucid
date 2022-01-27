@@ -19,12 +19,6 @@ using namespace std;
 #define p196 47045881ULL
 #define p197 893871739ULL
 
-#ifdef _MSC_VER
-	#define	mirror_v(x)	_byteswap_uint64(x)
-#else
-	#define	mirror_v(x)	__builtin_bswap64(x)
-#endif
-
 const int cell_div4[hw2] = {
     1, 1, 1, 1, 2, 2, 2, 2, 
     1, 1, 1, 1, 2, 2, 2, 2, 
@@ -383,3 +377,10 @@ class board {
             *full_d9 = l9 & r9 & (e9[2] | (l9 >> 36) | (r9 << 36));
         }
 };
+
+inline void calc_flip(mobility *mob, board *b, const int policy){
+    if (b->p == black)
+        mob->calc_flip(b->b, b->w, policy);
+    else
+        mob->calc_flip(b->w, b->b, policy);
+}

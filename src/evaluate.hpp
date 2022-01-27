@@ -235,10 +235,10 @@ inline unsigned long long calc_surround_part(const unsigned long long player, co
 
 inline int calc_surround(const unsigned long long player, const unsigned long long empties){
     return pop_count_ull(empties & (
-        calc_surround_part(player & 0b0111111001111110011111100111111001111110011111100111111001111110, 1) | 
-        calc_surround_part(player & 0b0000000011111111111111111111111111111111111111111111111100000000, hw) | 
-        calc_surround_part(player & 0b0000000001111110011111100111111001111110011111100111111000000000, hw_m1) | 
-        calc_surround_part(player & 0b0000000001111110011111100111111001111110011111100111111000000000, hw_p1)
+        calc_surround_part(player & 0b0111111001111110011111100111111001111110011111100111111001111110ULL, 1) | 
+        calc_surround_part(player & 0b0000000011111111111111111111111111111111111111111111111100000000ULL, hw) | 
+        calc_surround_part(player & 0b0000000001111110011111100111111001111110011111100111111000000000ULL, hw_m1) | 
+        calc_surround_part(player & 0b0000000001111110011111100111111001111110011111100111111000000000ULL, hw_p1)
     ));
 }
 
@@ -247,12 +247,11 @@ inline int join_pattern(const int b_arr[], const int p0, const int p1, const int
 }
 
 inline void calc_stability(board *b, const int b_arr[], int *stab0, int *stab1){
-    cerr << "a" << endl;
     unsigned long long full_h, full_v, full_d7, full_d9;
     unsigned long long all_stability = 0, black_stability = 0, white_stability = 0, n_stability;
     unsigned long long h, v, d7, d9;
-    const unsigned long long black_mask = b->b & 0b0000000001111110011111100111111001111110011111100111111000000000;
-    const unsigned long long white_mask = b->w & 0b0000000001111110011111100111111001111110011111100111111000000000;
+    const unsigned long long black_mask = b->b & 0b0000000001111110011111100111111001111110011111100111111000000000ULL;
+    const unsigned long long white_mask = b->w & 0b0000000001111110011111100111111001111110011111100111111000000000ULL;
     int edge;
     edge = join_pattern(b_arr, 0, 1, 2, 3, 4, 5, 6, 7);
     all_stability |= stability_edge_arr[edge][0] << 56;
@@ -385,7 +384,7 @@ inline int mid_evaluate(board *b){
     calc_stability(b, b_arr, &stab0, &stab1);
     num0 = pop_count_ull(b->b);
     num1 = pop_count_ull(b->w);
-    cerr << sur0 << " " << sur1 << " " << canput0 << " " << canput1 << " " << stab0 << " " << stab1 << " " << num0 << " " << num1 << endl;
+    //cerr << sur0 << " " << sur1 << " " << canput0 << " " << canput1 << " " << stab0 << " " << stab1 << " " << num0 << " " << num1 << endl;
     int res = (b->p ? -1 : 1) * (
         calc_pattern(phase_idx, b, b_arr) + 
         eval_sur0_sur1_arr[phase_idx][b->p][sur0][sur1] + 
