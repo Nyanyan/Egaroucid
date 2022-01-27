@@ -61,9 +61,64 @@ int eval_stab0_stab1_arr[n_phases][2][max_stability][max_stability];
 int eval_num0_num1_arr[n_phases][2][max_stone_num][max_stone_num];
 int eval_canput_pattern[n_phases][2][n_canput_patterns][p48];
 
+string create_line(int idx){
+    string res = "";
+    for (int i = 0; i < hw; ++i){
+        if (pop_digit[idx][i] == black)
+            res += "X";
+        else if (pop_digit[idx][i] == white)
+            res += "O";
+        else
+            res += ".";
+    }
+    return res;
+}
+
+void calc_stability_line(int idx, bool stab[]){
+    int n_idx, i, j;
+    for (i = 0; i < hw; ++i){
+        if (pop_digit[idx][i] == vacant){
+            n_idx = put_arr[black][idx][i];
+            for (j = 1; j <= move_arr[black][idx][i][0]; ++j)
+                n_idx = flip_arr[black][n_idx][i - j];
+            for (j = 1; j <= move_arr[black][idx][i][1]; ++j)
+                n_idx = flip_arr[black][n_idx][i + j];
+            //cerr << create_line(idx) << " " << create_line(n_idx) << endl;
+            calc_stability_line(n_idx, stab);
+            for (j = 0; j < hw; ++j){
+                if (pop_digit[idx][j] != pop_digit[n_idx][j] || pop_digit[idx][j] == vacant)
+                    stab[j] = false;
+            }
+        }
+        if (pop_digit[idx][i] == vacant){
+            n_idx = put_arr[white][idx][i];
+            for (j = 1; j <= move_arr[white][idx][i][0]; ++j)
+                n_idx = flip_arr[white][n_idx][i - j];
+            for (j = 1; j <= move_arr[white][idx][i][1]; ++j)
+                n_idx = flip_arr[white][n_idx][i + j];
+            //cerr << create_line(idx) << " " << create_line(n_idx) << endl;
+            calc_stability_line(n_idx, stab);
+            for (j = 0; j < hw; ++j){
+                if (pop_digit[idx][j] != pop_digit[n_idx][j] || pop_digit[idx][j] == vacant)
+                    stab[j] = false;
+            }
+        }
+    }
+}
+
 inline void init_evaluation_base() {
     int idx, place, b, w;
-    bool full_black, full_white;
+    bool stab[hw];
+    /*
+    for (place = 0; place < hw; ++place)
+        stab[place] = true;
+    calc_stability_line(513, stab);
+    cerr << create_line(513) << " ";
+    for (place = 0; place < hw; ++place)
+        cerr << stab[place];
+    cerr << endl;
+    exit(0);
+    */
     for (idx = 0; idx < n_line; ++idx) {
         b = create_one_color(idx, 0);
         w = create_one_color(idx, 1);
@@ -99,43 +154,25 @@ inline void init_evaluation_base() {
             if (legal_arr[white][idx][place])
                 ++mobility_arr[white][idx];
         }
-        if (count_both_arr[idx] == hw){
-            stability_edge_arr[black][idx] = (count_black_arr[idx] + hw) / 2;
-            stability_edge_arr[white][idx] += hw - stability_edge_arr[black][idx];
-        } else{
-            full_black = true;
-            full_white = true;
-            for (place = 0; place < hw; ++place){
-                full_black &= 1 & (b >> place);
-                full_white &= 1 & (w >> place);
-                stability_edge_arr[black][idx] += full_black;
-                stability_edge_arr[white][idx] += full_white;
-            }
-            full_black = true;
-            full_white = true;
-            for (place = hw_m1; place >= 0; --place){
-                full_black &= 1 & (b >> place);
-                full_white &= 1 & (w >> place);
-                stability_edge_arr[black][idx] += full_black;
-                stability_edge_arr[white][idx] += full_white;
-            }
-            if (1 & b){
-                --stability_edge_arr[black][idx];
-                ++stability_corner_arr[black][idx];
-            }
-            if (1 & (b >> hw_m1)){
-                --stability_edge_arr[black][idx];
-                ++stability_corner_arr[black][idx];
-            }
-            if (1 & w){
-                --stability_edge_arr[white][idx];
-                ++stability_corner_arr[white][idx];
-            }
-            if (1 & (w >> hw_m1)){
-                --stability_edge_arr[white][idx];
-                ++stability_corner_arr[white][idx];
-            }
+        for (place = 0; place < hw; ++place)
+            stab[place] = true;
+        calc_stability_line(idx, stab);
+        stability_edge_arr[black][idx] = 0;
+        stability_edge_arr[white][idx] = 0;
+        for (place = 0; place < hw; ++place){
+            if (stab[place] && pop_digit[idx][place] == black)
+                ++stability_edge_arr[black][idx];
+            if (stab[place] && pop_digit[idx][place] == white)
+                ++stability_edge_arr[white][idx];
         }
+        stability_corner_arr[black][idx] = (1 & b) + (1 & (b >> hw_m1));
+        stability_corner_arr[white][idx] = (1 & w) + (1 & (w >> hw_m1));
+        /*
+        cerr << create_line(idx) << " ";
+        for (place = 0; place < hw; ++place)
+            cerr << stab[place];
+        cerr << " " << stability_edge_arr[black][idx] << " " << stability_edge_arr[white][idx] << " " << idx << endl;
+        */
     }
 }
 

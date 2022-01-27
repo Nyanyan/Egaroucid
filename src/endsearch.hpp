@@ -116,9 +116,9 @@ inline int last1(board *b, int p0){
     return score;
 }
 
-inline int last2(board *b, int alpha, int beta, int p0, int p1){
+inline int last2(board *b, bool skipped, int alpha, int beta, int p0, int p1){
     search_statistics.nodes_increment();
-    #if USE_END_PO
+    #if USE_END_PO & false
         int p0_parity = (b->parity & cell_div4[p0]);
         int p1_parity = (b->parity & cell_div4[p1]);
         if (!p0_parity && p1_parity)
@@ -143,30 +143,13 @@ inline int last2(board *b, int alpha, int beta, int p0, int p1){
         v = max(v, g);
     }
     if (v == -inf){
-        b->p = 1 - b->p;
-        if (b->legal(p0)){
-            b->move(p0, &nb);
-            g = last1(&nb, p1);
-            alpha = max(alpha, g);
-            if (beta <= alpha){
-                b->p = 1 - b->p;
-                return alpha;
-            }
-            v = max(v, g);
-        }
-        if (b->legal(p1)){
-            b->move(p1, &nb);
-            g = last1(&nb, p0);
-            alpha = max(alpha, g);
-            if (beta <= alpha){
-                b->p = 1 - b->p;
-                return alpha;
-            }
-            v = max(v, g);
-        }
-        b->p = 1 - b->p;
-        if (v == -inf)
+        if (skipped)
             v = end_evaluate(b);
+        else{
+            b->p = 1 - b->p;
+            v = -last2(b, true, -beta, -alpha, p0, p1);
+            b->p = 1 - b->p;
+        }
     }
     return v;
 }
@@ -197,7 +180,7 @@ inline int last3(board *b, bool skipped, int alpha, int beta, int p0, int p1, in
     int v = -inf, g;
     if (b->legal(p0)){
         b->move(p0, &nb);
-        g = -last2(&nb, -beta, -alpha, p1, p2);
+        g = -last2(&nb, false, -beta, -alpha, p1, p2);
         alpha = max(alpha, g);
         if (beta <= alpha)
             return alpha;
@@ -205,7 +188,7 @@ inline int last3(board *b, bool skipped, int alpha, int beta, int p0, int p1, in
     }
     if (b->legal(p1)){
         b->move(p1, &nb);
-        g = -last2(&nb, -beta, -alpha, p0, p2);
+        g = -last2(&nb, false, -beta, -alpha, p0, p2);
         alpha = max(alpha, g);
         if (beta <= alpha)
             return alpha;
@@ -213,7 +196,7 @@ inline int last3(board *b, bool skipped, int alpha, int beta, int p0, int p1, in
     }
     if (b->legal(p2)){
         b->move(p2, &nb);
-        g = -last2(&nb, -beta, -alpha, p0, p1);
+        g = -last2(&nb, false, -beta, -alpha, p0, p1);
         alpha = max(alpha, g);
         if (beta <= alpha)
             return alpha;
@@ -869,42 +852,18 @@ int mtd_final(board *b, bool skipped, int depth, int l, int u, bool use_mpc, dou
     int beta;
     l /= 2;
     u /= 2;
-    g = max(l + search_epsilon, min(u, g / 2));
-    #if USE_MULTI_THREAD && false
-        int i, start_beta;
-        vector<int> result(n_threads);
-        //cerr << l << " " << g << " " << u << endl;
-        while (u - l > 0){
-            vector<future<int>> future_tasks;
-            start_beta = max(l + search_epsilon, g - (int)n_threads / 2);
-            for (i = 0; i < (int)n_threads; ++i)
-                future_tasks.emplace_back(thread_pool.push(bind(&nega_alpha_ordering_final, b, skipped, depth, start_beta + i - search_epsilon, start_beta + i, true, use_mpc, use_mpct)));
-            for (i = 0; i < (int)n_threads; ++i)
-                result[i] = future_tasks[i].get();
-            while (u - l > 0){
-                beta = max(l + search_epsilon, g);
-                g = result[beta - start_beta];
-                if (g < beta)
-                    u = g;
-                else
-                    l = g;
-                //cerr << l << " " << g << " " << u << endl;
-            }
-        }
-        //cerr << g << endl;
-    #else
+    g = max(l, min(u, g / 2));
+    cerr << l << " " << g << " " << u << endl;
+    while (u - l > 0){
+        beta = max(l + search_epsilon, g);
+        g = nega_alpha_ordering_final(b, skipped, depth, beta * 2 - search_epsilon, beta * 2, use_multi_thread, use_mpc, use_mpct) / 2;
+        if (g < beta)
+            u = g;
+        else
+            l = g;
         cerr << l << " " << g << " " << u << endl;
-        while (u - l > 0){
-            beta = max(l + search_epsilon, g);
-            g = nega_alpha_ordering_final(b, skipped, depth, beta * 2 - search_epsilon, beta * 2, use_multi_thread, use_mpc, use_mpct) / 2;
-            if (g < beta)
-                u = g;
-            else
-                l = g;
-            cerr << l << " " << g << " " << u << endl;
-        }
-        cerr << g << endl;
-    #endif
+    }
+    cerr << g << endl;
     return g * 2;
 }
 
@@ -928,7 +887,7 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
     transpose_table.hash_get = 0;
     transpose_table.hash_reg = 0;
     int max_depth = hw2 - b.n;
-    alpha = -hw2;
+    alpha = -hw2 - 1;
     beta = hw2;
     int pre_search_depth = max(1, min(30, max_depth - simple_end_threshold + simple_mid_threshold + 3));
     cerr << "pre search depth " << pre_search_depth << endl;
@@ -959,7 +918,7 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
             //if (alpha < g){
             //g = -nega_scout_final(&nb[i], false, max_depth, -beta, -g, use_mpc, use_mpct);
             g = -mtd_final(&nb[i], false, max_depth - 1, -beta, -alpha, use_mpc, use_mpct, -nb[i].v, true);
-            if (alpha < g || i == 0){
+            if (alpha < g){
                 alpha = g;
                 tmp_policy = nb[i].policy;
             }
@@ -976,7 +935,7 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
             else if (nb[i].n == hw2 - 3)
                 g = -last3(&nb[i], false, -beta, -alpha, cells[0], cells[1], cells[2]);
             else if (nb[i].n == hw2 - 2)
-                g = -last2(&nb[i], -beta, -alpha, cells[0], cells[1]);
+                g = -last2(&nb[i], false, -beta, -alpha, cells[0], cells[1]);
             else if (nb[i].n == hw2 - 1)
                 g = -last1(&nb[i], cells[0]);
             else
@@ -1030,7 +989,7 @@ inline search_result endsearch_value(board b, long long strt, bool use_mpc, doub
         else if (b.n == hw2 - 3)
             res.value = last3(&b, false, -hw2, hw2, cells[0], cells[1], cells[2]);
         else if (b.n == hw2 - 2)
-            res.value = last2(&b, -hw2, hw2, cells[0], cells[1]);
+            res.value = last2(&b, false, -hw2, hw2, cells[0], cells[1]);
         else if (b.n == hw2 - 1)
             res.value = last1(&b, cells[0]);
         else

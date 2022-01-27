@@ -521,3 +521,5 @@
 #57 final depth: 30 time: 8138 policy: 33 value: -6     WRONG
 #58 final depth: 30 time: 9855 policy: 6 value: 4
 #59 final depth: 34 time: 778 policy: 31 value: 60      WRONG
+
+2022/01/27 update endgame without mpc
