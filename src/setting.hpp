@@ -9,7 +9,7 @@
 
 // stability cut
 #define USE_MID_SC  false
-#define USE_END_SC  false
+#define USE_END_SC  true
 
 // transpose table cut
 #define USE_MID_TC true
@@ -26,7 +26,7 @@
 /* multi threading*/
 
 // multi thread
-#define USE_MULTI_THREAD false
+#define USE_MULTI_THREAD true
 
 
 
@@ -47,7 +47,7 @@
 /** other **/
 
 // nodes statistics
-#define STATISTICS_MODE true
+#define STATISTICS_MODE false
 
 // MPC calculation mode
 #define MPC_MODE false
