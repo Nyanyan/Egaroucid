@@ -32,7 +32,12 @@ int main(){
         mob = b.mobility_ull();
         for (int i = 0; i < hw2; ++i){
             if (1 & (mob >> i)){
-                m.calc_flip(b.b, b.w, i);
+                calc_flip(&m, &b, i);
+                for (int i = hw2_m1; i >= 0; --i){
+                    cerr << (1 & (m.flip >> i));
+                    if (i % hw == 0)
+                        cerr << endl;
+                }
                 b.move(&m);
                 cerr << i << endl;
                 b.print();

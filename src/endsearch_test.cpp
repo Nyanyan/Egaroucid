@@ -38,7 +38,7 @@ int main(){
         input_board(&b, ai_player);
         b.print();
         search_result res = endsearch(b, tim(), false, 0.0);
-        cerr << res.policy << " " << res.value << endl;
+        cerr << hw2_m1 - res.policy << " " << res.value << endl;
     }
     return 0;
 }

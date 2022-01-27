@@ -98,12 +98,14 @@ inline int last1(board *b, int p0){
         legal = b->mobility_ull();
         if (legal == 0)
             score = -end_evaluate(b);
-        else
-            score = hw2 - 2 * (b->raw_count() + pop_count_ull(legal) + 1);
+        else{
+            calc_flip(&mob, b, p0);
+            score = hw2 - 2 * (b->raw_count() + pop_count_ull(mob.flip) + 1);
+        }
         b->p = 1 - b->p;
     } else{
         calc_flip(&mob, b, p0);
-        score = 2 * (b->raw_count() + pop_count_ull(legal) + 1) - hw2;
+        score = 2 * (b->raw_count() + pop_count_ull(mob.flip) + 1) - hw2;
     }
     return score;
 }
@@ -665,8 +667,8 @@ int nega_alpha_final(board *b, bool skipped, const int depth, int alpha, int bet
 int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha, int beta, bool use_multi_thread, bool use_mpc, double mpct_in){
     if (!global_searching)
         return -inf;
-    //if (depth <= simple_end_threshold)
-    //    return nega_alpha_final(b, skipped, depth, alpha, beta);
+    if (depth <= simple_end_threshold)
+        return nega_alpha_final(b, skipped, depth, alpha, beta);
     search_statistics.nodes_increment();
     #if USE_END_SC
         if (stability_cut(b, &alpha, &beta))
