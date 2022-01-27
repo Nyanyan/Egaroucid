@@ -57,9 +57,9 @@ inline int trans(const int pt, const int k) {
 inline int move_line_half(const int p, const int o, const int place, const int k) {
     int mask;
     int res = 0;
-    int pt = 1 << (hw - 1 - place);
+    int pt = 1 << (hw_m1 - place);
     if (pt & p || pt & o)
-        return res;
+        return 0;
     mask = trans(pt, k);
     while (mask && (mask & o)) {
         ++res;
@@ -68,6 +68,28 @@ inline int move_line_half(const int p, const int o, const int place, const int k
             return res;
     }
     return 0;
+}
+
+unsigned long long get_mobility(const unsigned long long P, const unsigned long long O){
+    unsigned long long moves, mO, flip1, pre1, flip8, pre8;
+    __m128i	PP, mOO, MM, flip, pre;
+    mO = O & 0x7e7e7e7e7e7e7e7eULL;
+    PP  = _mm_set_epi64x(mirror_v(P), P);
+    mOO = _mm_set_epi64x(mirror_v(mO), mO);
+    flip = _mm_and_si128(mOO, _mm_slli_epi64(PP, 7));				            flip1  = mO & (P << 1);		    flip8  = O & (P << 8);
+    flip = _mm_or_si128(flip, _mm_and_si128(mOO, _mm_slli_epi64(flip, 7)));		flip1 |= mO & (flip1 << 1);	    flip8 |= O & (flip8 << 8);
+    pre  = _mm_and_si128(mOO, _mm_slli_epi64(mOO, 7));				            pre1   = mO & (mO << 1);	    pre8   = O & (O << 8);
+    flip = _mm_or_si128(flip, _mm_and_si128(pre, _mm_slli_epi64(flip, 14)));	flip1 |= pre1 & (flip1 << 2);	flip8 |= pre8 & (flip8 << 16);
+    flip = _mm_or_si128(flip, _mm_and_si128(pre, _mm_slli_epi64(flip, 14)));	flip1 |= pre1 & (flip1 << 2);	flip8 |= pre8 & (flip8 << 16);
+    MM = _mm_slli_epi64(flip, 7);							                    moves = flip1 << 1;		        moves |= flip8 << 8;
+    flip = _mm_and_si128(mOO, _mm_slli_epi64(PP, 9));				            flip1  = mO & (P >> 1);		    flip8  = O & (P >> 8);
+    flip = _mm_or_si128(flip, _mm_and_si128(mOO, _mm_slli_epi64(flip, 9)));		flip1 |= mO & (flip1 >> 1);	    flip8 |= O & (flip8 >> 8);
+    pre = _mm_and_si128(mOO, _mm_slli_epi64(mOO, 9));				            pre1 >>= 1;			            pre8 >>= 8;
+    flip = _mm_or_si128(flip, _mm_and_si128(pre, _mm_slli_epi64(flip, 18)));	flip1 |= pre1 & (flip1 >> 2);	flip8 |= pre8 & (flip8 >> 16);
+    flip = _mm_or_si128(flip, _mm_and_si128(pre, _mm_slli_epi64(flip, 18)));	flip1 |= pre1 & (flip1 >> 2);	flip8 |= pre8 & (flip8 >> 16);
+    MM = _mm_or_si128(MM, _mm_slli_epi64(flip, 9));					            moves |= flip1 >> 1;		    moves |= flip8 >> 8;
+    moves |= _mm_cvtsi128_si64(MM) | mirror_v(_mm_cvtsi128_si64(_mm_unpackhi_epi64(MM, MM)));
+    return moves & ~(P|O);
 }
 
 class board {
@@ -208,17 +230,13 @@ class board {
         }
 
         inline void translate_to_arr(int res[]) {
-            int i, j, coord = 0;
-            for (i = 0; i < hw; ++i) {
-                for (j = 0; j < hw; ++j){
-                    if (1 & (b >> coord))
-                        res[coord] = black;
-                    else if (1 & (w >> coord))
-                        res[coord] = white;
-                    else
-                        res[coord] = vacant;
-                    ++coord;
-                }
+            for (int i = 0; i < hw2; ++i){
+                if (1 & (b >> i))
+                    res[hw2_m1 - i] = black;
+                else if (1 & (w >> i))
+                    res[hw2_m1 - i] = white;
+                else
+                    res[hw2_m1 - i] = vacant;
             }
         }
 
@@ -269,17 +287,36 @@ class board {
             return (player ? -1 : 1) * black_score;
         }
 
-        inline void board_canput(int canput_arr[]){
-            int i;
-            const unsigned long long mobility_black = get_mobility(b, w);
-            const unsigned long long mobility_white = get_mobility(w, b);
-            for (i = 0; i < hw2; ++i){
+        inline int count(){
+            return count(p);
+        }
+
+        inline void count(int *bk, int *wt){
+            int b_score = pop_count_ull(b);
+            int w_score = pop_count_ull(w);
+            int vacant_score = hw2 - b_score - w_score;
+            *bk = b_score - w_score;
+            if (*bk > 0)
+                *bk += vacant_score;
+            else if (*bk < 0)
+                *bk -= vacant_score;
+            *wt = -*bk;
+        }
+
+        inline void board_canput(int canput_arr[], const unsigned long long mobility_black, const unsigned long long mobility_white){
+            for (int i = 0; i < hw2; ++i){
                 canput_arr[i] = 0;
                 if (1 & (mobility_black >> i))
                     ++canput_arr[i];
                 if (1 & (mobility_white >> i))
                     canput_arr[i] += 2;
             }
+        }
+
+        inline void board_canput(int canput_arr[]){
+            const unsigned long long mobility_black = get_mobility(b, w);
+            const unsigned long long mobility_white = get_mobility(w, b);
+            board_canput(canput_arr, mobility_black, mobility_white);
         }
 
         inline void check_player(){
@@ -309,30 +346,8 @@ class board {
         inline int phase(){
             return min(n_phases - 1, (n - 4) / phase_n_stones);
         }
-
+    
     private:
-        unsigned long long get_mobility(const unsigned long long P, const unsigned long long O){
-            unsigned long long moves, mO, flip1, pre1, flip8, pre8;
-            __m128i	PP, mOO, MM, flip, pre;
-            mO = O & 0x7e7e7e7e7e7e7e7eULL;
-            PP  = _mm_set_epi64x(mirror_v(P), P);
-            mOO = _mm_set_epi64x(mirror_v(mO), mO);
-            flip = _mm_and_si128(mOO, _mm_slli_epi64(PP, 7));				            flip1  = mO & (P << 1);		    flip8  = O & (P << 8);
-            flip = _mm_or_si128(flip, _mm_and_si128(mOO, _mm_slli_epi64(flip, 7)));		flip1 |= mO & (flip1 << 1);	    flip8 |= O & (flip8 << 8);
-            pre  = _mm_and_si128(mOO, _mm_slli_epi64(mOO, 7));				            pre1   = mO & (mO << 1);	    pre8   = O & (O << 8);
-            flip = _mm_or_si128(flip, _mm_and_si128(pre, _mm_slli_epi64(flip, 14)));	flip1 |= pre1 & (flip1 << 2);	flip8 |= pre8 & (flip8 << 16);
-            flip = _mm_or_si128(flip, _mm_and_si128(pre, _mm_slli_epi64(flip, 14)));	flip1 |= pre1 & (flip1 << 2);	flip8 |= pre8 & (flip8 << 16);
-            MM = _mm_slli_epi64(flip, 7);							                    moves = flip1 << 1;		        moves |= flip8 << 8;
-            flip = _mm_and_si128(mOO, _mm_slli_epi64(PP, 9));				            flip1  = mO & (P >> 1);		    flip8  = O & (P >> 8);
-            flip = _mm_or_si128(flip, _mm_and_si128(mOO, _mm_slli_epi64(flip, 9)));		flip1 |= mO & (flip1 >> 1);	    flip8 |= O & (flip8 >> 8);
-            pre = _mm_and_si128(mOO, _mm_slli_epi64(mOO, 9));				            pre1 >>= 1;			            pre8 >>= 8;
-            flip = _mm_or_si128(flip, _mm_and_si128(pre, _mm_slli_epi64(flip, 18)));	flip1 |= pre1 & (flip1 >> 2);	flip8 |= pre8 & (flip8 >> 16);
-            flip = _mm_or_si128(flip, _mm_and_si128(pre, _mm_slli_epi64(flip, 18)));	flip1 |= pre1 & (flip1 >> 2);	flip8 |= pre8 & (flip8 >> 16);
-            MM = _mm_or_si128(MM, _mm_slli_epi64(flip, 9));					            moves |= flip1 >> 1;		    moves |= flip8 >> 8;
-            moves |= _mm_cvtsi128_si64(MM) | mirror_v(_mm_cvtsi128_si64(_mm_unpackhi_epi64(MM, MM)));
-            return moves & ~(P|O);
-        }
-
         unsigned long long full_stability_h(unsigned long long full){
             full &= full >> 1;
             full &= full >> 2;

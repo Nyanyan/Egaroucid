@@ -9,6 +9,7 @@ using namespace std;
 #define n_phases 15
 #define phase_n_stones 4
 
+#define n_line 6561
 #define hw 8
 #define hw_m1 7
 #define hw_p1 9
