@@ -23,7 +23,7 @@ inline void input_board(board *b, int ai_player){
     }
     b->translate_from_arr(arr, ai_player);
     if (vacant_lst.size() >= 2)
-        sort(vacant_lst.begin(), vacant_lst.end());
+        sort(vacant_lst.begin(), vacant_lst.end(), cmp_vacant);
 }
 
 int main(){

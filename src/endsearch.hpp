@@ -96,20 +96,14 @@ inline int last1(board *b, int p0){
     if (legal == 0){
         b->p = 1 - b->p;
         legal = b->mobility_ull();
-        if (legal != 0){
-            score = end_evaluate(b);
-        } else{
-            calc_flip(&mob, b, p0);
-            b->move(&mob);
-            score = -b->count();
-            b->undo(&mob);
-        } 
+        if (legal == 0)
+            score = -end_evaluate(b);
+        else
+            score = hw2 - 2 * (b->raw_count() + pop_count_ull(legal) + 1);
         b->p = 1 - b->p;
     } else{
         calc_flip(&mob, b, p0);
-        b->move(&mob);
-        score = b->count();
-        b->undo(&mob);
+        score = 2 * (b->raw_count() + pop_count_ull(legal) + 1) - hw2;
     }
     return score;
 }
@@ -819,8 +813,8 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
 int nega_scout_final_nomemo(board *b, bool skipped, const int depth, int alpha, int beta, bool use_mpc, double mpct_in){
     if (!global_searching)
         return -inf;
-    //if (depth <= simple_end_threshold)
-    //    return nega_alpha_final(b, skipped, depth, alpha, beta);
+    if (depth <= simple_end_threshold)
+        return nega_alpha_final(b, skipped, depth, alpha, beta);
     search_statistics.nodes_increment();
     #if USE_END_SC
         if (stability_cut(b, &alpha, &beta))
@@ -923,7 +917,7 @@ int mtd_final(board *b, bool skipped, int depth, int l, int u, bool use_mpc, dou
     l /= 2;
     u /= 2;
     g = max(l, min(u, g / 2));
-    cerr << l << " " << g << " " << u << endl;
+    //cerr << l << " " << g << " " << u << endl;
     while (u - l > 0){
         beta = max(l + search_epsilon, g);
         g = nega_alpha_ordering_final(b, skipped, depth, beta * 2 - search_epsilon, beta * 2, use_multi_thread, use_mpc, use_mpct) / 2;
@@ -931,9 +925,9 @@ int mtd_final(board *b, bool skipped, int depth, int l, int u, bool use_mpc, dou
             u = g;
         else
             l = g;
-        cerr << l << " " << g << " " << u << endl;
+        //cerr << l << " " << g << " " << u << endl;
     }
-    cerr << g << endl;
+    //cerr << g << endl;
     return g * 2;
 }
 
@@ -983,7 +977,9 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
     cerr << "pre search depth " << pre_search_depth << " time " << tim() - strt << " policy " << nb[0].first << " value " << nb[0].second.v << endl;
     if (nb[0].second.n < hw2 - 5){
         for (i = 0; i < canput; ++i){
+            //g = -nega_alpha_ordering_final(&nb[i].second, false, max_depth - 1, -beta, -alpha, true, use_mpc, use_mpct);
             g = -mtd_final(&nb[i].second, false, max_depth - 1, -beta, -alpha, use_mpc, use_mpct, -nb[i].second.v, true);
+            cerr << nb[i].first << " " << g << endl;
             if (alpha < g){
                 alpha = g;
                 tmp_policy = nb[i].first;

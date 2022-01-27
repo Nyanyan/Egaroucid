@@ -287,16 +287,10 @@ class board {
             return count(p);
         }
 
-        inline void count(int *bk, int *wt){
-            int b_score = pop_count_ull(b);
-            int w_score = pop_count_ull(w);
-            int vacant_score = hw2 - b_score - w_score;
-            *bk = b_score - w_score;
-            if (*bk > 0)
-                *bk += vacant_score;
-            else if (*bk < 0)
-                *bk -= vacant_score;
-            *wt = -*bk;
+        inline int raw_count(){
+            if (p == black)
+                return pop_count_ull(b);
+            return pop_count_ull(w);
         }
 
         inline void board_canput(int canput_arr[], const unsigned long long mobility_black, const unsigned long long mobility_white){

@@ -9,7 +9,7 @@
 
 // stability cut
 #define USE_MID_SC  false
-#define USE_END_SC  true
+#define USE_END_SC  false
 
 // transpose table cut
 #define USE_MID_TC true
