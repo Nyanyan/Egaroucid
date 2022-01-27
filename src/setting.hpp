@@ -47,7 +47,7 @@
 /** other **/
 
 // nodes statistics
-#define STATISTICS_MODE false
+#define STATISTICS_MODE true
 
 // MPC calculation mode
 #define MPC_MODE false

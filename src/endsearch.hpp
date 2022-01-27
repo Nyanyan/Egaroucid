@@ -33,11 +33,22 @@ int nega_alpha_ordering_final_nomemo(board *b, bool skipped, int depth, int alph
                 return alpha;
         }
     #endif
+    unsigned long long legal = b->mobility_ull();
+    if (legal == 0){
+        if (skipped)
+            return end_evaluate(b);
+        b->p = 1 - b->p;
+        int res = -nega_alpha_ordering_final_nomemo(b, true, depth, -beta, -alpha, use_mpc, use_mpct);
+        b->p = 1 - b->p;
+        return res;
+    }
     vector<board> nb;
+    mobility mob;
     int canput = 0;
     for (const int &cell: vacant_lst){
-        if (b->legal(cell)){
-            nb.push_back(b->move(cell));
+        if (1 & (legal >> cell)){
+            calc_flip(&mob, b, cell);
+            nb.emplace_back(b->move_copy(&mob));
             move_ordering(&nb[canput]);
             //nb[canput].v = -canput_bonus * calc_canput_exact(&nb[canput]);
             #if USE_END_PO
@@ -46,16 +57,6 @@ int nega_alpha_ordering_final_nomemo(board *b, bool skipped, int depth, int alph
             #endif
             ++canput;
         }
-    }
-    if (canput == 0){
-        if (skipped)
-            return end_evaluate(b);
-        board rb;
-        for (int i = 0; i < b_idx_num; ++i)
-            rb.b[i] = b->b[i];
-        rb.p = 1 - b->p;
-        rb.n = b->n;
-        return -nega_alpha_ordering_final_nomemo(&rb, true, depth, -beta, -alpha, use_mpc, use_mpct);
     }
     if (canput >= 2)
         sort(nb.begin(), nb.end());
@@ -89,29 +90,26 @@ inline bool mpc_lower_final(board *b, bool skipped, int depth, int alpha, double
 }
 
 inline int last1(board *b, int p0){
-    search_statistics.nodes_increment();
-    int before_score = (b->p ? -1 : 1) * (
-        count_black_arr[b->b[0]] + count_black_arr[b->b[1]] + count_black_arr[b->b[2]] + count_black_arr[b->b[3]] + 
-        count_black_arr[b->b[4]] + count_black_arr[b->b[5]] + count_black_arr[b->b[6]] + count_black_arr[b->b[7]]);
-    int score = before_score + 1 + (
-        move_arr[b->p][b->b[place_included[p0][0]]][local_place[place_included[p0][0]][p0]][0] + move_arr[b->p][b->b[place_included[p0][0]]][local_place[place_included[p0][0]][p0]][1] + 
-        move_arr[b->p][b->b[place_included[p0][1]]][local_place[place_included[p0][1]][p0]][0] + move_arr[b->p][b->b[place_included[p0][1]]][local_place[place_included[p0][1]][p0]][1] + 
-        move_arr[b->p][b->b[place_included[p0][2]]][local_place[place_included[p0][2]][p0]][0] + move_arr[b->p][b->b[place_included[p0][2]]][local_place[place_included[p0][2]][p0]][1]) * 2;
-    if (place_included[p0][3] != -1)
-        score += (move_arr[b->p][b->b[place_included[p0][3]]][local_place[place_included[p0][3]][p0]][0] + move_arr[b->p][b->b[place_included[p0][3]]][local_place[place_included[p0][3]][p0]][1]) * 2;
-    if (score == before_score + 1){
-        score = before_score - 1 - (
-            move_arr[1 - b->p][b->b[place_included[p0][0]]][local_place[place_included[p0][0]][p0]][0] + move_arr[1 - b->p][b->b[place_included[p0][0]]][local_place[place_included[p0][0]][p0]][1] + 
-            move_arr[1 - b->p][b->b[place_included[p0][1]]][local_place[place_included[p0][1]][p0]][0] + move_arr[1 - b->p][b->b[place_included[p0][1]]][local_place[place_included[p0][1]][p0]][1] + 
-            move_arr[1 - b->p][b->b[place_included[p0][2]]][local_place[place_included[p0][2]][p0]][0] + move_arr[1 - b->p][b->b[place_included[p0][2]]][local_place[place_included[p0][2]][p0]][1]) * 2;
-        if (place_included[p0][3] != -1)
-            score += (move_arr[1 - b->p][b->b[place_included[p0][3]]][local_place[place_included[p0][3]][p0]][0] + move_arr[1 - b->p][b->b[place_included[p0][3]]][local_place[place_included[p0][3]][p0]][1]) * 2;
-        if (score == before_score - 1){
-            if (before_score > 0)
-                score = before_score + 1;
-            else
-                score = before_score - 1;
-        }
+    unsigned long long legal = b->mobility_ull();
+    mobility mob;
+    int score;
+    if (legal == 0){
+        b->p = 1 - b->p;
+        legal = b->mobility_ull();
+        if (legal != 0){
+            score = end_evaluate(b);
+        } else{
+            calc_flip(&mob, b, p0);
+            b->move(&mob);
+            score = -b->count();
+            b->undo(&mob);
+        } 
+        b->p = 1 - b->p;
+    } else{
+        calc_flip(&mob, b, p0);
+        b->move(&mob);
+        score = b->count();
+        b->undo(&mob);
     }
     return score;
 }
@@ -124,25 +122,9 @@ inline int last2(board *b, bool skipped, int alpha, int beta, int p0, int p1){
         if (!p0_parity && p1_parity)
             swap(p0, p1);
     #endif
-    board nb;
+    unsigned long long legal = b->mobility_ull();
     int v = -inf, g;
-    if (b->legal(p0)){
-        b->move(p0, &nb);
-        g = -last1(&nb, p1);
-        alpha = max(alpha, g);
-        if (beta <= alpha)
-            return alpha;
-        v = max(v, g);
-    }
-    if (b->legal(p1)){
-        b->move(p1, &nb);
-        g = -last1(&nb, p0);
-        alpha = max(alpha, g);
-        if (beta <= alpha)
-            return alpha;
-        v = max(v, g);
-    }
-    if (v == -inf){
+    if (legal == 0){
         if (skipped)
             v = end_evaluate(b);
         else{
@@ -150,6 +132,28 @@ inline int last2(board *b, bool skipped, int alpha, int beta, int p0, int p1){
             v = -last2(b, true, -beta, -alpha, p0, p1);
             b->p = 1 - b->p;
         }
+        return v;
+    }
+    mobility mob;
+    if (1 & (legal >> p0)){
+        calc_flip(&mob, b, p0);
+        b->move(&mob);
+        g = -last1(b, p1);
+        b->undo(&mob);
+        alpha = max(alpha, g);
+        if (beta <= alpha)
+            return alpha;
+        v = max(v, g);
+    }
+    if (1 & (legal >> p1)){
+        calc_flip(&mob, b, p1);
+        b->move(&mob);
+        g = -last1(b, p0);
+        b->undo(&mob);
+        alpha = max(alpha, g);
+        if (beta <= alpha)
+            return alpha;
+        v = max(v, g);
     }
     return v;
 }
@@ -176,33 +180,9 @@ inline int last3(board *b, bool skipped, int alpha, int beta, int p0, int p1, in
             swap(p0, p1);
         }
     #endif
-    board nb;
+    unsigned long long legal = b->mobility_ull();
     int v = -inf, g;
-    if (b->legal(p0)){
-        b->move(p0, &nb);
-        g = -last2(&nb, false, -beta, -alpha, p1, p2);
-        alpha = max(alpha, g);
-        if (beta <= alpha)
-            return alpha;
-        v = max(v, g);
-    }
-    if (b->legal(p1)){
-        b->move(p1, &nb);
-        g = -last2(&nb, false, -beta, -alpha, p0, p2);
-        alpha = max(alpha, g);
-        if (beta <= alpha)
-            return alpha;
-        v = max(v, g);
-    }
-    if (b->legal(p2)){
-        b->move(p2, &nb);
-        g = -last2(&nb, false, -beta, -alpha, p0, p1);
-        alpha = max(alpha, g);
-        if (beta <= alpha)
-            return alpha;
-        v = max(v, g);
-    }
-    if (v == -inf){
+    if (legal == 0){
         if (skipped)
             v = end_evaluate(b);
         else{
@@ -210,6 +190,38 @@ inline int last3(board *b, bool skipped, int alpha, int beta, int p0, int p1, in
             v = -last3(b, true, -beta, -alpha, p0, p1, p2);
             b->p = 1 - b->p;
         }
+        return v;
+    }
+    mobility mob;
+    if (1 & (legal >> p0)){
+        calc_flip(&mob, b, p0);
+        b->move(&mob);
+        g = -last2(b, false, -beta, -alpha, p1, p2);
+        b->undo(&mob);
+        alpha = max(alpha, g);
+        if (beta <= alpha)
+            return alpha;
+        v = max(v, g);
+    }
+    if (1 & (legal >> p1)){
+        calc_flip(&mob, b, p1);
+        b->move(&mob);
+        g = -last2(b, false, -beta, -alpha, p0, p2);
+        b->undo(&mob);
+        alpha = max(alpha, g);
+        if (beta <= alpha)
+            return alpha;
+        v = max(v, g);
+    }
+    if (1 & (legal >> p2)){
+        calc_flip(&mob, b, p2);
+        b->move(&mob);
+        g = -last2(b, false, -beta, -alpha, p0, p1);
+        b->undo(&mob);
+        alpha = max(alpha, g);
+        if (beta <= alpha)
+            return alpha;
+        v = max(v, g);
     }
     return v;
 }
@@ -276,41 +288,9 @@ inline int last4(board *b, bool skipped, int alpha, int beta, int p0, int p1, in
             }
         }
     #endif
-    board nb;
+    unsigned long long legal = b->mobility_ull();
     int v = -inf, g;
-    if (b->legal(p0)){
-        b->move(p0, &nb);
-        g = -last3(&nb, false, -beta, -alpha, p1, p2, p3);
-        alpha = max(alpha, g);
-        if (beta <= alpha)
-            return alpha;
-        v = max(v, g);
-    }
-    if (b->legal(p1)){
-        b->move(p1, &nb);
-        g = -last3(&nb, false, -beta, -alpha, p0, p2, p3);
-        alpha = max(alpha, g);
-        if (beta <= alpha)
-            return alpha;
-        v = max(v, g);
-    }
-    if (b->legal(p2)){
-        b->move(p2, &nb);
-        g = -last3(&nb, false, -beta, -alpha, p0, p1, p3);
-        alpha = max(alpha, g);
-        if (beta <= alpha)
-            return alpha;
-        v = max(v, g);
-    }
-    if (b->legal(p3)){
-        b->move(p3, &nb);
-        g = -last3(&nb, false, -beta, -alpha, p0, p1, p2);
-        alpha = max(alpha, g);
-        if (beta <= alpha)
-            return alpha;
-        v = max(v, g);
-    }
-    if (v == -inf){
+    if (legal == 0){
         if (skipped)
             v = end_evaluate(b);
         else{
@@ -318,6 +298,48 @@ inline int last4(board *b, bool skipped, int alpha, int beta, int p0, int p1, in
             v = -last4(b, true, -beta, -alpha, p0, p1, p2, p3);
             b->p = 1 - b->p;
         }
+        return v;
+    }
+    mobility mob;
+    if (1 & (legal >> p0)){
+        calc_flip(&mob, b, p0);
+        b->move(&mob);
+        g = -last3(b, false, -beta, -alpha, p1, p2, p3);
+        b->undo(&mob);
+        alpha = max(alpha, g);
+        if (beta <= alpha)
+            return alpha;
+        v = max(v, g);
+    }
+    if (1 & (legal >> p1)){
+        calc_flip(&mob, b, p1);
+        b->move(&mob);
+        g = -last3(b, false, -beta, -alpha, p0, p2, p3);
+        b->undo(&mob);
+        alpha = max(alpha, g);
+        if (beta <= alpha)
+            return alpha;
+        v = max(v, g);
+    }
+    if (1 & (legal >> p2)){
+        calc_flip(&mob, b, p2);
+        b->move(&mob);
+        g = -last3(b, false, -beta, -alpha, p0, p1, p3);
+        b->undo(&mob);
+        alpha = max(alpha, g);
+        if (beta <= alpha)
+            return alpha;
+        v = max(v, g);
+    }
+    if (1 & (legal >> p3)){
+        calc_flip(&mob, b, p3);
+        b->move(&mob);
+        g = -last3(b, false, -beta, -alpha, p0, p1, p2);
+        b->undo(&mob);
+        alpha = max(alpha, g);
+        if (beta <= alpha)
+            return alpha;
+        v = max(v, g);
     }
     return v;
 }
@@ -328,182 +350,9 @@ inline int last5(board *b, bool skipped, int alpha, int beta, int p0, int p1, in
         if (stability_cut(b, &alpha, &beta))
             return alpha;
     #endif
-    #if USE_END_PO
-        board nb;
-        int v = -inf, g;
-        if (!skipped){
-            int p0_parity = (b->parity & cell_div4[p0]);
-            int p1_parity = (b->parity & cell_div4[p1]);
-            int p2_parity = (b->parity & cell_div4[p2]);
-            int p3_parity = (b->parity & cell_div4[p3]);
-            int p4_parity = (b->parity & cell_div4[p4]);
-            if (p0_parity && b->legal(p0)){
-                b->move(p0, &nb);
-                g = -last4(&nb, false, -beta, -alpha, p1, p2, p3, p4);
-                alpha = max(alpha, g);
-                if (beta <= alpha)
-                    return alpha;
-                v = max(v, g);
-            }
-            if (p1_parity && b->legal(p1)){
-                b->move(p1, &nb);
-                g = -last4(&nb, false, -beta, -alpha, p0, p2, p3, p4);
-                alpha = max(alpha, g);
-                if (beta <= alpha)
-                    return alpha;
-                v = max(v, g);
-            }
-            if (p2_parity && b->legal(p2)){
-                b->move(p2, &nb);
-                g = -last4(&nb, false, -beta, -alpha, p0, p1, p3, p4);
-                alpha = max(alpha, g);
-                if (beta <= alpha)
-                    return alpha;
-                v = max(v, g);
-            }
-            if (p3_parity && b->legal(p3)){
-                b->move(p3, &nb);
-                g = -last4(&nb, false, -beta, -alpha, p0, p1, p2, p4);
-                alpha = max(alpha, g);
-                if (beta <= alpha)
-                    return alpha;
-                v = max(v, g);
-            }
-            if (p4_parity && b->legal(p4)){
-                b->move(p4, &nb);
-                g = -last4(&nb, false, -beta, -alpha, p0, p1, p2, p3);
-                alpha = max(alpha, g);
-                if (beta <= alpha)
-                    return alpha;
-                v = max(v, g);
-            }
-            if (p0_parity == 0 && b->legal(p0)){
-                b->move(p0, &nb);
-                g = -last4(&nb, false, -beta, -alpha, p1, p2, p3, p4);
-                alpha = max(alpha, g);
-                if (beta <= alpha)
-                    return alpha;
-                v = max(v, g);
-            }
-            if (p1_parity == 0 && b->legal(p1)){
-                b->move(p1, &nb);
-                g = -last4(&nb, false, -beta, -alpha, p0, p2, p3, p4);
-                alpha = max(alpha, g);
-                if (beta <= alpha)
-                    return alpha;
-                v = max(v, g);
-            }
-            if (p2_parity == 0 && b->legal(p2)){
-                b->move(p2, &nb);
-                g = -last4(&nb, false, -beta, -alpha, p0, p1, p3, p4);
-                alpha = max(alpha, g);
-                if (beta <= alpha)
-                    return alpha;
-                v = max(v, g);
-            }
-            if (p3_parity == 0 && b->legal(p3)){
-                b->move(p3, &nb);
-                g = -last4(&nb, false, -beta, -alpha, p0, p1, p2, p4);
-                alpha = max(alpha, g);
-                if (beta <= alpha)
-                    return alpha;
-                v = max(v, g);
-            }
-            if (p4_parity == 0 && b->legal(p4)){
-                b->move(p4, &nb);
-                g = -last4(&nb, false, -beta, -alpha, p0, p1, p2, p3);
-                alpha = max(alpha, g);
-                if (beta <= alpha)
-                    return alpha;
-                v = max(v, g);
-            }
-        } else{
-            if (b->legal(p0)){
-                b->move(p0, &nb);
-                g = -last4(&nb, false, -beta, -alpha, p1, p2, p3, p4);
-                alpha = max(alpha, g);
-                if (beta <= alpha)
-                    return alpha;
-                v = max(v, g);
-            }
-            if (b->legal(p1)){
-                b->move(p1, &nb);
-                g = -last4(&nb, false, -beta, -alpha, p0, p2, p3, p4);
-                alpha = max(alpha, g);
-                if (beta <= alpha)
-                    return alpha;
-                v = max(v, g);
-            }
-            if (b->legal(p2)){
-                b->move(p2, &nb);
-                g = -last4(&nb, false, -beta, -alpha, p0, p1, p3, p4);
-                alpha = max(alpha, g);
-                if (beta <= alpha)
-                    return alpha;
-                v = max(v, g);
-            }
-            if (b->legal(p3)){
-                b->move(p3, &nb);
-                g = -last4(&nb, false, -beta, -alpha, p0, p1, p2, p4);
-                alpha = max(alpha, g);
-                if (beta <= alpha)
-                    return alpha;
-                v = max(v, g);
-            }
-            if (b->legal(p4)){
-                b->move(p4, &nb);
-                g = -last4(&nb, false, -beta, -alpha, p0, p1, p2, p3);
-                alpha = max(alpha, g);
-                if (beta <= alpha)
-                    return alpha;
-                v = max(v, g);
-            }
-        }
-    #else
-        board nb;
-        int v = -inf, g;
-        if (b->legal(p0)){
-            b->move(p0, &nb);
-            g = -last4(&nb, false, -beta, -alpha, p1, p2, p3, p4);
-            alpha = max(alpha, g);
-            if (beta <= alpha)
-                return alpha;
-            v = max(v, g);
-        }
-        if (b->legal(p1)){
-            b->move(p1, &nb);
-            g = -last4(&nb, false, -beta, -alpha, p0, p2, p3, p4);
-            alpha = max(alpha, g);
-            if (beta <= alpha)
-                return alpha;
-            v = max(v, g);
-        }
-        if (b->legal(p2)){
-            b->move(p2, &nb);
-            g = -last4(&nb, false, -beta, -alpha, p0, p1, p3, p4);
-            alpha = max(alpha, g);
-            if (beta <= alpha)
-                return alpha;
-            v = max(v, g);
-        }
-        if (b->legal(p3)){
-            b->move(p3, &nb);
-            g = -last4(&nb, false, -beta, -alpha, p0, p1, p2, p4);
-            alpha = max(alpha, g);
-            if (beta <= alpha)
-                return alpha;
-            v = max(v, g);
-        }
-        if (b->legal(p4)){
-            b->move(p4, &nb);
-            g = -last4(&nb, false, -beta, -alpha, p0, p1, p2, p3);
-            alpha = max(alpha, g);
-            if (beta <= alpha)
-                return alpha;
-            v = max(v, g);
-        }
-    #endif
-    if (v == -inf){
+    unsigned long long legal = b->mobility_ull();
+    int v = -inf, g;
+    if (legal == 0){
         if (skipped)
             v = end_evaluate(b);
         else{
@@ -511,14 +360,228 @@ inline int last5(board *b, bool skipped, int alpha, int beta, int p0, int p1, in
             v = -last5(b, true, -beta, -alpha, p0, p1, p2, p3, p4);
             b->p = 1 - b->p;
         }
+        return v;
     }
+    mobility mob;
+    #if USE_END_PO
+        if (!skipped){
+            int p0_parity = (b->parity & cell_div4[p0]);
+            int p1_parity = (b->parity & cell_div4[p1]);
+            int p2_parity = (b->parity & cell_div4[p2]);
+            int p3_parity = (b->parity & cell_div4[p3]);
+            int p4_parity = (b->parity & cell_div4[p4]);
+            if (p0_parity && (1 & (legal >> p0))){
+                calc_flip(&mob, b, p0);
+                b->move(&mob);
+                g = -last4(b, false, -beta, -alpha, p1, p2, p3, p4);
+                b->undo(&mob);
+                alpha = max(alpha, g);
+                if (beta <= alpha)
+                    return alpha;
+                v = max(v, g);
+            }
+            if (p1_parity && (1 & (legal >> p1))){
+                calc_flip(&mob, b, p1);
+                b->move(&mob);
+                g = -last4(b, false, -beta, -alpha, p0, p2, p3, p4);
+                b->undo(&mob);
+                alpha = max(alpha, g);
+                if (beta <= alpha)
+                    return alpha;
+                v = max(v, g);
+            }
+            if (p2_parity && (1 & (legal >> p2))){
+                calc_flip(&mob, b, p2);
+                b->move(&mob);
+                g = -last4(b, false, -beta, -alpha, p0, p1, p3, p4);
+                b->undo(&mob);
+                alpha = max(alpha, g);
+                if (beta <= alpha)
+                    return alpha;
+                v = max(v, g);
+            }
+            if (p3_parity && (1 & (legal >> p3))){
+                calc_flip(&mob, b, p3);
+                b->move(&mob);
+                g = -last4(b, false, -beta, -alpha, p0, p1, p2, p4);
+                b->undo(&mob);
+                alpha = max(alpha, g);
+                if (beta <= alpha)
+                    return alpha;
+                v = max(v, g);
+            }
+            if (p4_parity && (1 & (legal >> p4))){
+                calc_flip(&mob, b, p4);
+                b->move(&mob);
+                g = -last4(b, false, -beta, -alpha, p0, p1, p2, p3);
+                b->undo(&mob);
+                alpha = max(alpha, g);
+                if (beta <= alpha)
+                    return alpha;
+                v = max(v, g);
+            }
+            if (p0_parity == 0 && (1 & (legal >> p0))){
+                calc_flip(&mob, b, p0);
+                b->move(&mob);
+                g = -last4(b, false, -beta, -alpha, p1, p2, p3, p4);
+                b->undo(&mob);
+                alpha = max(alpha, g);
+                if (beta <= alpha)
+                    return alpha;
+                v = max(v, g);
+            }
+            if (p1_parity == 0 && (1 & (legal >> p1))){
+                calc_flip(&mob, b, p1);
+                b->move(&mob);
+                g = -last4(b, false, -beta, -alpha, p0, p2, p3, p4);
+                b->undo(&mob);
+                alpha = max(alpha, g);
+                if (beta <= alpha)
+                    return alpha;
+                v = max(v, g);
+            }
+            if (p2_parity == 0 && (1 & (legal >> p2))){
+                calc_flip(&mob, b, p2);
+                b->move(&mob);
+                g = -last4(b, false, -beta, -alpha, p0, p1, p3, p4);
+                b->undo(&mob);
+                alpha = max(alpha, g);
+                if (beta <= alpha)
+                    return alpha;
+                v = max(v, g);
+            }
+            if (p3_parity == 0 && (1 & (legal >> p3))){
+                calc_flip(&mob, b, p3);
+                b->move(&mob);
+                g = -last4(b, false, -beta, -alpha, p0, p1, p2, p4);
+                b->undo(&mob);
+                alpha = max(alpha, g);
+                if (beta <= alpha)
+                    return alpha;
+                v = max(v, g);
+            }
+            if (p4_parity == 0 && (1 & (legal >> p4))){
+                calc_flip(&mob, b, p4);
+                b->move(&mob);
+                g = -last4(b, false, -beta, -alpha, p0, p1, p2, p3);
+                b->undo(&mob);
+                alpha = max(alpha, g);
+                if (beta <= alpha)
+                    return alpha;
+                v = max(v, g);
+            }
+        } else{
+            if (1 & (legal >> p0)){
+                calc_flip(&mob, b, p0);
+                b->move(&mob);
+                g = -last4(b, false, -beta, -alpha, p1, p2, p3, p4);
+                b->undo(&mob);
+                alpha = max(alpha, g);
+                if (beta <= alpha)
+                    return alpha;
+                v = max(v, g);
+            }
+            if (1 & (legal >> p1)){
+                calc_flip(&mob, b, p1);
+                b->move(&mob);
+                g = -last4(b, false, -beta, -alpha, p0, p2, p3, p4);
+                b->undo(&mob);
+                alpha = max(alpha, g);
+                if (beta <= alpha)
+                    return alpha;
+                v = max(v, g);
+            }
+            if (1 & (legal >> p2)){
+                calc_flip(&mob, b, p2);
+                b->move(&mob);
+                g = -last4(b, false, -beta, -alpha, p0, p1, p3, p4);
+                b->undo(&mob);
+                alpha = max(alpha, g);
+                if (beta <= alpha)
+                    return alpha;
+                v = max(v, g);
+            }
+            if (1 & (legal >> p3)){
+                calc_flip(&mob, b, p3);
+                b->move(&mob);
+                g = -last4(b, false, -beta, -alpha, p0, p1, p2, p4);
+                b->undo(&mob);
+                alpha = max(alpha, g);
+                if (beta <= alpha)
+                    return alpha;
+                v = max(v, g);
+            }
+            if (1 & (legal >> p4)){
+                calc_flip(&mob, b, p4);
+                b->move(&mob);
+                g = -last4(b, false, -beta, -alpha, p0, p1, p2, p3);
+                b->undo(&mob);
+                alpha = max(alpha, g);
+                if (beta <= alpha)
+                    return alpha;
+                v = max(v, g);
+            }
+        }
+    #else
+        if (1 & (legal >> p0)){
+            calc_flip(&mob, b, p0);
+            b->move(&mob);
+            g = -last4(b, false, -beta, -alpha, p1, p2, p3, p4);
+            b->undo(&mob);
+            alpha = max(alpha, g);
+            if (beta <= alpha)
+                return alpha;
+            v = max(v, g);
+        }
+        if (1 & (legal >> p1)){
+            calc_flip(&mob, b, p1);
+            b->move(&mob);
+            g = -last4(b, false, -beta, -alpha, p0, p2, p3, p4);
+            b->undo(&mob);
+            alpha = max(alpha, g);
+            if (beta <= alpha)
+                return alpha;
+            v = max(v, g);
+        }
+        if (1 & (legal >> p2)){
+            calc_flip(&mob, b, p2);
+            b->move(&mob);
+            g = -last4(b, false, -beta, -alpha, p0, p1, p3, p4);
+            b->undo(&mob);
+            alpha = max(alpha, g);
+            if (beta <= alpha)
+                return alpha;
+            v = max(v, g);
+        }
+        if (1 & (legal >> p3)){
+            calc_flip(&mob, b, p3);
+            b->move(&mob);
+            g = -last4(b, false, -beta, -alpha, p0, p1, p2, p4);
+            b->undo(&mob);
+            alpha = max(alpha, g);
+            if (beta <= alpha)
+                return alpha;
+            v = max(v, g);
+        }
+        if (1 & (legal >> p4)){
+            calc_flip(&mob, b, p4);
+            b->move(&mob);
+            g = -last4(b, false, -beta, -alpha, p0, p1, p2, p3);
+            b->undo(&mob);
+            alpha = max(alpha, g);
+            if (beta <= alpha)
+                return alpha;
+            v = max(v, g);
+        }
+    #endif
     return v;
 }
 
 inline void pick_vacant(board *b, int cells[]){
     int idx = 0;
+    unsigned long long empties = ~(b->b | b->w);
     for (const int &cell: vacant_lst){
-        if (pop_digit[b->b[cell / hw]][cell % hw] == vacant)
+        if (1 & (empties >> cell))
             cells[idx++] = cell;
     }
 }
@@ -537,16 +600,25 @@ int nega_alpha_final(board *b, bool skipped, const int depth, int alpha, int bet
         if (stability_cut(b, &alpha, &beta))
             return alpha;
     #endif
-    board nb;
-    bool passed = true;
+    unsigned long long legal = b->mobility_ull();
+    if (legal == 0){
+        if (skipped)
+            return end_evaluate(b);
+        b->p = 1 - b->p;
+        int res = -nega_alpha_final(b, true, depth, -beta, -alpha);
+        b->p = 1 - b->p;
+        return res;
+    }
     int g, v = -inf;
+    mobility mob;
     #if USE_END_PO
         if (0 < b->parity && b->parity < 15){
             for (const int &cell: vacant_lst){
-                if ((b->parity & cell_div4[cell]) && b->legal(cell)){
-                    passed = false;
-                    b->move(cell, &nb);
-                    g = -nega_alpha_final(&nb, false, depth - 1, -beta, -alpha);
+                if ((b->parity & cell_div4[cell]) && (1 & (legal >> cell))){
+                    calc_flip(&mob, b, cell);
+                    b->move(&mob);
+                    g = -nega_alpha_final(b, false, depth - 1, -beta, -alpha);
+                    b->undo(&mob);
                     alpha = max(alpha, g);
                     if (beta <= alpha)
                         return alpha;
@@ -554,10 +626,11 @@ int nega_alpha_final(board *b, bool skipped, const int depth, int alpha, int bet
                 }
             }
             for (const int &cell: vacant_lst){
-                if ((b->parity & cell_div4[cell]) == 0 && b->legal(cell)){
-                    passed = false;
-                    b->move(cell, &nb);
-                    g = -nega_alpha_final(&nb, false, depth - 1, -beta, -alpha);
+                if ((b->parity & cell_div4[cell]) == 0 && (1 & (legal >> cell))){
+                    calc_flip(&mob, b, cell);
+                    b->move(&mob);
+                    g = -nega_alpha_final(b, false, depth - 1, -beta, -alpha);
+                    b->undo(&mob);
                     alpha = max(alpha, g);
                     if (beta <= alpha)
                         return alpha;
@@ -566,10 +639,11 @@ int nega_alpha_final(board *b, bool skipped, const int depth, int alpha, int bet
             }
         } else{
             for (const int &cell: vacant_lst){
-                if (b->legal(cell)){
-                    passed = false;
-                    b->move(cell, &nb);
-                    g = -nega_alpha_final(&nb, false, depth - 1, -beta, -alpha);
+                if (1 & (legal >> cell)){
+                    calc_flip(&mob, b, cell);
+                    b->move(&mob);
+                    g = -nega_alpha_final(b, false, depth - 1, -beta, -alpha);
+                    b->undo(&mob);
                     alpha = max(alpha, g);
                     if (beta <= alpha)
                         return alpha;
@@ -579,10 +653,11 @@ int nega_alpha_final(board *b, bool skipped, const int depth, int alpha, int bet
         }
     #else
         for (const int &cell: vacant_lst){
-            if (b->legal(cell)){
-                passed = false;
-                b->move(cell, &nb);
-                g = -nega_alpha_final(&nb, false, depth - 1, -beta, -alpha);
+            if (1 & (legal >> cell)){
+                calc_flip(&mob, b, cell);
+                b->move(&mob);
+                g = -nega_alpha_final(b, false, depth - 1, -beta, -alpha);
+                b->undo(&mob);
                 alpha = max(alpha, g);
                 if (beta <= alpha)
                     return alpha;
@@ -590,23 +665,14 @@ int nega_alpha_final(board *b, bool skipped, const int depth, int alpha, int bet
             }
         }
     #endif
-    if (passed){
-        if (skipped)
-            return end_evaluate(b);
-        for (int i = 0; i < b_idx_num; ++i)
-            nb.b[i] = b->b[i];
-        nb.p = 1 - b->p;
-        nb.n = b->n;
-        return -nega_alpha_final(&nb, true, depth, -beta, -alpha);
-    }
     return v;
 }
 
 int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha, int beta, bool use_multi_thread, bool use_mpc, double mpct_in){
     if (!global_searching)
         return -inf;
-    if (depth <= simple_end_threshold)
-        return nega_alpha_final(b, skipped, depth, alpha, beta);
+    //if (depth <= simple_end_threshold)
+    //    return nega_alpha_final(b, skipped, depth, alpha, beta);
     search_statistics.nodes_increment();
     #if USE_END_SC
         if (stability_cut(b, &alpha, &beta))
@@ -633,11 +699,22 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
                 return alpha;
         }
     #endif
+    unsigned long long legal = b->mobility_ull();
+    if (legal == 0){
+        if (skipped)
+            return end_evaluate(b);
+        b->p = 1 - b->p;
+        int res = -nega_alpha_ordering_final(b, true, depth, -beta, -alpha, use_multi_thread, use_mpc, mpct_in);
+        b->p = 1 - b->p;
+        return res;
+    }
     vector<board> nb;
+    mobility mob;
     int canput = 0;
     for (const int &cell: vacant_lst){
-        if (b->legal(cell)){
-            nb.emplace_back(b->move(cell));
+        if (1 & (legal >> cell)){
+            calc_flip(&mob, b, cell);
+            nb.emplace_back(b->move_copy(&mob));
             move_ordering(&nb[canput]);
             nb[canput].v -= canput_bonus * calc_canput_exact(&nb[canput]);
             #if USE_END_PO
@@ -646,14 +723,6 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
             #endif
             ++canput;
         }
-    }
-    if (canput == 0){
-        if (skipped)
-            return end_evaluate(b);
-        b->p = 1 - b->p;
-        int res = -nega_alpha_ordering_final(b, true, depth, -beta, -alpha, use_multi_thread, use_mpc, mpct_in);
-        b->p = 1 - b->p;
-        return res;
     }
     if (canput >= 2)
         sort(nb.begin(), nb.end());
@@ -750,8 +819,8 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
 int nega_scout_final_nomemo(board *b, bool skipped, const int depth, int alpha, int beta, bool use_mpc, double mpct_in){
     if (!global_searching)
         return -inf;
-    if (depth <= simple_end_threshold)
-        return nega_alpha_final(b, skipped, depth, alpha, beta);
+    //if (depth <= simple_end_threshold)
+    //    return nega_alpha_final(b, skipped, depth, alpha, beta);
     search_statistics.nodes_increment();
     #if USE_END_SC
         if (stability_cut(b, &alpha, &beta))
@@ -765,11 +834,22 @@ int nega_scout_final_nomemo(board *b, bool skipped, const int depth, int alpha, 
                 return alpha;
         }
     #endif
+    unsigned long long legal = b->mobility_ull();
+    if (legal == 0){
+        if (skipped)
+            return end_evaluate(b);
+        b->p = 1 - b->p;
+        int res = -nega_scout_final_nomemo(b, true, depth, -beta, -alpha, use_mpc, mpct_in);
+        b->p = 1 - b->p;
+        return res;
+    }
     vector<board> nb;
+    mobility mob;
     int canput = 0;
     for (const int &cell: vacant_lst){
-        if (b->legal(cell)){
-            nb.push_back(b->move(cell));
+        if (1 & (legal >> cell)){
+            calc_flip(&mob, b, cell);
+            nb.emplace_back(b->move_copy(&mob));
             move_ordering_eval(&nb[canput]);
             //nb[canput].v -= canput_bonus * calc_canput_exact(&nb[canput]);
             #if USE_END_PO
@@ -778,16 +858,6 @@ int nega_scout_final_nomemo(board *b, bool skipped, const int depth, int alpha, 
             #endif
             ++canput;
         }
-    }
-    if (canput == 0){
-        if (skipped)
-            return end_evaluate(b);
-        board rb;
-        for (int i = 0; i < b_idx_num; ++i)
-            rb.b[i] = b->b[i];
-        rb.p = 1 - b->p;
-        rb.n = b->n;
-        return -nega_scout_final_nomemo(&rb, true, depth, -beta, -alpha, use_mpc, mpct_in);
     }
     if (canput >= 2)
         sort(nb.begin(), nb.end());
@@ -868,16 +938,19 @@ int mtd_final(board *b, bool skipped, int depth, int l, int u, bool use_mpc, dou
 }
 
 inline search_result endsearch(board b, long long strt, bool use_mpc, double use_mpct){
-    vector<board> nb;
+    unsigned long long legal = b.mobility_ull();
+    vector<pair<int, board>> nb;
+    mobility mob;
     vector<int> prev_vals;
     int i;
     for (const int &cell: vacant_lst){
-        if (b.legal(cell)){
-            cerr << cell << " ";
-            nb.push_back(b.move(cell));
+        if (1 & (legal >> cell)){
+            calc_flip(&mob, &b, cell);
+            nb.emplace_back(make_pair(cell, b.move_copy(&mob)));
+            //cerr << cell << " ";
         }
     }
-    cerr << endl;
+    //cerr << endl;
     int canput = nb.size();
     //cerr << "canput: " << canput << endl;
     int policy = -1;
@@ -894,12 +967,12 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
     double pre_search_mpcd = 0.8;
     transpose_table.init_now();
     for (i = 0; i < canput; ++i)
-        nb[i].v = -mtd(&nb[i], false, pre_search_depth - 1, -hw2, hw2, true, pre_search_mpcd);
+        nb[i].second.v = -mtd(&nb[i].second, false, pre_search_depth - 1, -hw2, hw2, true, pre_search_mpcd);
     swap(transpose_table.now, transpose_table.prev);
     transpose_table.init_now();
     for (i = 0; i < canput; ++i){
-        nb[i].v += -mtd(&nb[i], false, pre_search_depth, -hw2, hw2, true, pre_search_mpcd);
-        nb[i].v /= 2;
+        nb[i].second.v += -mtd(&nb[i].second, false, pre_search_depth, -hw2, hw2, true, pre_search_mpcd);
+        nb[i].second.v /= 2;
     }
     swap(transpose_table.now, transpose_table.prev);
     if (canput >= 2)
@@ -907,43 +980,34 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
     transpose_table.init_now();
     long long final_strt = tim();
     search_statistics.searched_nodes = 0;
-    cerr << "pre search depth " << pre_search_depth << " time " << tim() - strt << " policy " << nb[0].policy << " value " << nb[0].v << endl;
-    if (nb[0].n < hw2 - 5){
-        //alpha = -nega_scout_final(&nb[0], false, max_depth, -beta, -alpha, use_mpc, use_mpct);
-        //alpha = -mtd_final(&nb[0], false, max_depth - 1, -beta, -alpha, use_mpc, use_mpct, -nb[0].v, true);
-        //tmp_policy = nb[0].policy;
+    cerr << "pre search depth " << pre_search_depth << " time " << tim() - strt << " policy " << nb[0].first << " value " << nb[0].second.v << endl;
+    if (nb[0].second.n < hw2 - 5){
         for (i = 0; i < canput; ++i){
-            //g = -nega_alpha_ordering_final(&nb[i], false, max_depth - 1, -alpha - search_epsilon, -alpha, true, use_mpc, use_mpct);
-            //cerr << g << endl;
-            //if (alpha < g){
-            //g = -nega_scout_final(&nb[i], false, max_depth, -beta, -g, use_mpc, use_mpct);
-            g = -mtd_final(&nb[i], false, max_depth - 1, -beta, -alpha, use_mpc, use_mpct, -nb[i].v, true);
+            g = -mtd_final(&nb[i].second, false, max_depth - 1, -beta, -alpha, use_mpc, use_mpct, -nb[i].second.v, true);
             if (alpha < g){
                 alpha = g;
-                tmp_policy = nb[i].policy;
+                tmp_policy = nb[i].first;
             }
-            //}
         }
     } else{
         int cells[5];
         for (i = 0; i < canput; ++i){
-            pick_vacant(&nb[i], cells);
-            if (nb[i].n == hw2 - 5)
-                g = -last5(&nb[i], false, -beta, -alpha, cells[0], cells[1], cells[2], cells[3], cells[4]);
-            else if (nb[i].n == hw2 - 4)
-                g = -last4(&nb[i], false, -beta, -alpha, cells[0], cells[1], cells[2], cells[3]);
-            else if (nb[i].n == hw2 - 3)
-                g = -last3(&nb[i], false, -beta, -alpha, cells[0], cells[1], cells[2]);
-            else if (nb[i].n == hw2 - 2)
-                g = -last2(&nb[i], false, -beta, -alpha, cells[0], cells[1]);
-            else if (nb[i].n == hw2 - 1)
-                g = -last1(&nb[i], cells[0]);
+            pick_vacant(&nb[i].second, cells);
+            if (nb[i].second.n == hw2 - 5)
+                g = -last5(&nb[i].second, false, -beta, -alpha, cells[0], cells[1], cells[2], cells[3], cells[4]);
+            else if (nb[i].second.n == hw2 - 4)
+                g = -last4(&nb[i].second, false, -beta, -alpha, cells[0], cells[1], cells[2], cells[3]);
+            else if (nb[i].second.n == hw2 - 3)
+                g = -last3(&nb[i].second, false, -beta, -alpha, cells[0], cells[1], cells[2]);
+            else if (nb[i].second.n == hw2 - 2)
+                g = -last2(&nb[i].second, false, -beta, -alpha, cells[0], cells[1]);
+            else if (nb[i].second.n == hw2 - 1)
+                g = -last1(&nb[i].second, cells[0]);
             else
-                g = -end_evaluate(&nb[i]);
-            cerr << g << endl;
+                g = -end_evaluate(&nb[i].second);
             if (alpha < g || i == 0){
                 alpha = g;
-                tmp_policy = nb[i].policy;
+                tmp_policy = nb[i].first;
             }
         }
     }
@@ -959,9 +1023,9 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
     } else {
         value = -inf;
         for (int i = 0; i < (int)nb.size(); ++i){
-            if (nb[i].v > value){
-                value = nb[i].v;
-                policy = nb[i].policy;
+            if (nb[i].second.v > value){
+                value = nb[i].second.v;
+                policy = nb[i].first;
             }
         }
     }

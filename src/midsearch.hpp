@@ -349,7 +349,7 @@ inline search_result midsearch(board b, long long strt, int max_depth, bool use_
         }
     }
     int canput = nb.size();
-    cerr << "canput: " << canput << endl;
+    //cerr << "canput: " << canput << endl;
     int res_depth;
     int policy = -1;
     int tmp_policy;
