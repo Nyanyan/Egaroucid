@@ -170,9 +170,11 @@ class board {
             return res;
         }
 
-        inline unsigned long long full_stability(){
+        inline void full_stability(unsigned long long *h, unsigned long long *v, unsigned long long *d7, unsigned long long *d9){
             const unsigned long long stones = (b | w);
-            return full_stability_h(stones) & full_stability_v(stones) & full_stability_d(stones);
+            *h = full_stability_h(stones);
+            *v = full_stability_v(stones);
+            full_stability_d(stones, d7, d9);
         }
 
         inline void move(const mobility *mob) {
@@ -348,21 +350,21 @@ class board {
         }
     
     private:
-        unsigned long long full_stability_h(unsigned long long full){
+        inline unsigned long long full_stability_h(unsigned long long full){
             full &= full >> 1;
             full &= full >> 2;
             full &= full >> 4;
             return (full & 0x0101010101010101) * 0xff;
         }
 
-        unsigned long long full_stability_v(unsigned long long full){
+        inline unsigned long long full_stability_v(unsigned long long full){
             full &= (full >> 8) | (full << 56);	// ror 8
             full &= (full >> 16) | (full << 48);	// ror 16
             full &= (full >> 32) | (full << 32);	// ror 32
             return full;
         }
 
-        unsigned long long full_stability_d(unsigned long long full){
+        inline void full_stability_d(unsigned long long full, unsigned long long *full_d7, unsigned long long *full_d9){
             static const unsigned long long edge = 0xff818181818181ff;
             static const unsigned long long e7[] = {
                 0xffff030303030303, 0xc0c0c0c0c0c0ffff, 0xffffffff0f0f0f0f, 0xf0f0f0f0ffffffff };
@@ -373,12 +375,11 @@ class board {
             l7 &= edge | (l7 >> 7);		r7 &= edge | (r7 << 7);
             l7 &= e7[0] | (l7 >> 14);	r7 &= e7[1] | (r7 << 14);
             l7 &= e7[2] | (l7 >> 28);	r7 &= e7[3] | (r7 << 28);
-            const unsigned long long full_d7 = l7 & r7;
+            *full_d7 = l7 & r7;
 
             l9 = r9 = full;
             l9 &= edge | (l9 >> 9);		r9 &= edge | (r9 << 9);
             l9 &= e9[0] | (l9 >> 18);	r9 &= e9[1] | (r9 << 18);
-            const unsigned long long full_d9 = l9 & r9 & (e9[2] | (l9 >> 36) | (r9 << 36));
-            return full_d7 & full_d9;
+            *full_d9 = l9 & r9 & (e9[2] | (l9 >> 36) | (r9 << 36));
         }
 };

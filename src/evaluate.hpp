@@ -49,7 +49,7 @@ using namespace std;
 #define p48 65536
 
 uint_fast16_t pow3[11];
-unsigned long long stability_edge_arr[2][n_line][2];
+unsigned long long stability_edge_arr[n_line][2];
 int pattern_arr[n_phases][2][n_patterns][max_evaluate_idx];
 int eval_sur0_sur1_arr[n_phases][2][max_surround][max_surround];
 int eval_canput0_canput1_arr[n_phases][2][max_canput][max_canput];
@@ -142,18 +142,12 @@ inline void init_evaluation_base() {
         for (place = 0; place < hw; ++place)
             stab[place] = true;
         calc_stability_line(b, w, stab);
-        stability_edge_arr[black][idx][0] = 0;
-        stability_edge_arr[black][idx][1] = 0;
-        stability_edge_arr[white][idx][0] = 0;
-        stability_edge_arr[white][idx][1] = 0;
+        stability_edge_arr[idx][0] = 0;
+        stability_edge_arr[idx][1] = 0;
         for (place = 0; place < hw; ++place){
-            if (stab[place] && ((b >> place) & 1)){
-                stability_edge_arr[black][idx][0] |= 1ULL << place;
-                stability_edge_arr[black][idx][1] |= 1ULL << (place * hw);
-            }
-            if (stab[place] && ((w >> place) & 1)){
-                stability_edge_arr[white][idx][0] |= 1ULL << place;
-                stability_edge_arr[white][idx][1] |= 1ULL << (place * hw);
+            if (stab[place]){
+                stability_edge_arr[idx][0] |= 1ULL << place;
+                stability_edge_arr[idx][1] |= 1ULL << (place * hw);
             }
         }
         /*
@@ -248,9 +242,51 @@ inline int calc_surround(const unsigned long long player, const unsigned long lo
     ));
 }
 
-inline void calc_stability(board *b, int *stab0, int *stab1){
-    *stab0 = 0;
-    *stab1 = 0;
+inline int join_pattern(const int b_arr[], const int p0, const int p1, const int p2, const int p3, const int p4, const int p5, const int p6, const int p7){
+    return b_arr[p0] * p37 + b_arr[p1] * p36 + b_arr[p2] * p35 + b_arr[p3] * p34 + b_arr[p4] * p33 + b_arr[p5] * p32 + b_arr[p6] * p31 + b_arr[p7];
+}
+
+inline void calc_stability(board *b, const int b_arr[], int *stab0, int *stab1){
+    cerr << "a" << endl;
+    unsigned long long full_h, full_v, full_d7, full_d9;
+    unsigned long long all_stability = 0, black_stability = 0, white_stability = 0, n_stability;
+    unsigned long long h, v, d7, d9;
+    const unsigned long long black_mask = b->b & 0b0000000001111110011111100111111001111110011111100111111000000000;
+    const unsigned long long white_mask = b->w & 0b0000000001111110011111100111111001111110011111100111111000000000;
+    int edge;
+    edge = join_pattern(b_arr, 0, 1, 2, 3, 4, 5, 6, 7);
+    all_stability |= stability_edge_arr[edge][0] << 56;
+    edge = join_pattern(b_arr, 56, 57, 58, 59, 60, 61, 62, 63);
+    all_stability |= stability_edge_arr[edge][0];
+    edge = join_pattern(b_arr, 0, 8, 16, 24, 32, 40, 48, 56);
+    all_stability |= stability_edge_arr[edge][1] << 7;
+    edge = join_pattern(b_arr, 7, 15, 23, 31, 39, 47, 55, 63);
+    all_stability |= stability_edge_arr[edge][1];
+    b->full_stability(&full_h, &full_v, &full_d7, &full_d9);
+    all_stability |= (full_h & full_v & full_d7 & full_d9);
+
+    n_stability = all_stability & b->b;
+    while (n_stability & ~black_stability){
+        black_stability |= n_stability;
+        h = (black_stability >> 1) | (black_stability << 1) | full_h;
+        v = (black_stability >> hw) | (black_stability << hw) | full_v;
+        d7 = (black_stability >> hw_m1) | (black_stability << hw_m1) | full_d7;
+        d9 = (black_stability >> hw_p1) | (black_stability << hw_p1) | full_d9;
+        n_stability |= h & v & d7 & d9 & black_mask;
+    }
+
+    n_stability = all_stability & b->w;
+    while (n_stability & ~white_stability){
+        white_stability |= n_stability;
+        h = (white_stability >> 1) | (white_stability << 1) | full_h;
+        v = (white_stability >> hw) | (white_stability << hw) | full_v;
+        d7 = (white_stability >> hw_m1) | (white_stability << hw_m1) | full_d7;
+        d9 = (white_stability >> hw_p1) | (white_stability << hw_p1) | full_d9;
+        n_stability |= h & v & d7 & d9 & white_mask;
+    }
+
+    *stab0 = pop_count_ull(black_stability);
+    *stab1 = pop_count_ull(white_stability);
 }
 
 inline int pick_pattern(const int phase_idx, const int p, const int pattern_idx, const int b_arr[], const int p0, const int p1, const int p2, const int p3, const int p4){
@@ -277,9 +313,7 @@ inline int pick_pattern(const int phase_idx, const int p, const int pattern_idx,
     return pattern_arr[phase_idx][p][pattern_idx][b_arr[p0] * p39 + b_arr[p1] * p38 + b_arr[p2] * p37 + b_arr[p3] * p36 + b_arr[p4] * p35 + b_arr[p5] * p34 + b_arr[p6] * p33 + b_arr[p7] * p32 + b_arr[p8] * p31 + b_arr[p9]];
 }
 
-inline int calc_pattern(const int phase_idx, board *b){
-    int b_arr[hw2];
-    b->translate_to_arr(b_arr);
+inline int calc_pattern(const int phase_idx, board *b, const int b_arr[]){
     return 
         pick_pattern(phase_idx, b->p, 0, b_arr, 8, 9, 10, 11, 12, 13, 14, 15) + pick_pattern(phase_idx, b->p, 0, b_arr, 1, 9, 17, 25, 33, 41, 49, 57) + pick_pattern(phase_idx, b->p, 0, b_arr, 48, 49, 50, 51, 52, 53, 54, 55) + pick_pattern(phase_idx, b->p, 0, b_arr, 6, 14, 22, 30, 38, 46, 54, 62) + 
         pick_pattern(phase_idx, b->p, 1, b_arr, 16, 17, 18, 19, 20, 21, 22, 23) + pick_pattern(phase_idx, b->p, 1, b_arr, 2, 10, 18, 26, 34, 42, 50, 58) + pick_pattern(phase_idx, b->p, 1, b_arr, 40, 41, 42, 43, 44, 45, 46, 47) + pick_pattern(phase_idx, b->p, 1, b_arr, 5, 13, 21, 29, 37, 45, 53, 61) + 
@@ -336,6 +370,8 @@ inline int end_evaluate(board *b){
 inline int mid_evaluate(board *b){
     int phase_idx, sur0, sur1, canput0, canput1, stab0, stab1, num0, num1;
     unsigned long long black_mobility, white_mobility, empties;
+    int b_arr[hw2];
+    b->translate_to_arr(b_arr);
     black_mobility = get_mobility(b->b, b->w);
     white_mobility = get_mobility(b->w, b->b);
     empties = ~(b->b | b->w);
@@ -346,12 +382,12 @@ inline int mid_evaluate(board *b){
     phase_idx = b->phase();
     sur0 = min(max_surround - 1, calc_surround(b->b, empties));
     sur1 = min(max_surround - 1, calc_surround(b->w, empties));
-    calc_stability(b, &stab0, &stab1);
+    calc_stability(b, b_arr, &stab0, &stab1);
     num0 = pop_count_ull(b->b);
     num1 = pop_count_ull(b->w);
     cerr << sur0 << " " << sur1 << " " << canput0 << " " << canput1 << " " << stab0 << " " << stab1 << " " << num0 << " " << num1 << endl;
     int res = (b->p ? -1 : 1) * (
-        calc_pattern(phase_idx, b) + 
+        calc_pattern(phase_idx, b, b_arr) + 
         eval_sur0_sur1_arr[phase_idx][b->p][sur0][sur1] + 
         eval_canput0_canput1_arr[phase_idx][b->p][canput0][canput1] + 
         eval_stab0_stab1_arr[phase_idx][b->p][stab0][stab1] + 
