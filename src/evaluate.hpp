@@ -235,71 +235,23 @@ bool evaluate_init(){
     //cerr << "evaluation function initialized" << endl;
 }
 
-inline int calc_surround(unsigned long long player, unsigned long long stones){
-    return 0;
+inline unsigned long long calc_surround_part(const unsigned long long player, const int dr){
+    return (player << dr | player >> dr);
+}
+
+inline int calc_surround(const unsigned long long player, const unsigned long long empties){
+    return pop_count_ull(empties & (
+        calc_surround_part(player & 0b0111111001111110011111100111111001111110011111100111111001111110, 1) | 
+        calc_surround_part(player & 0b0000000011111111111111111111111111111111111111111111111100000000, hw) | 
+        calc_surround_part(player & 0b0000000001111110011111100111111001111110011111100111111000000000, hw_m1) | 
+        calc_surround_part(player & 0b0000000001111110011111100111111001111110011111100111111000000000, hw_p1)
+    ));
 }
 
 inline void calc_stability(board *b, int *stab0, int *stab1){
     *stab0 = 0;
     *stab1 = 0;
 }
-/*
-inline int edge_2x(int phase_idx, const board *b, int x, int y){
-    return pattern_arr[phase_idx][b->p][7][pop_digit[b->b[x]][1] * p39 + b->b[y] * p31 + pop_digit[b->b[x]][6]];
-}
-
-inline int triangle0(int phase_idx, const board *b, int w, int x, int y, int z){
-    return pattern_arr[phase_idx][b->p][8][b->b[w] / p34 * p36 + b->b[x] / p35 * p33 + b->b[y] / p36 * p31 + b->b[z] / p37];
-}
-
-inline int triangle1(int phase_idx, const board *b, int w, int x, int y, int z){
-    return pattern_arr[phase_idx][b->p][8][reverse_board[b->b[w]] / p34 * p36 + reverse_board[b->b[x]] / p35 * p33 + reverse_board[b->b[y]] / p36 * p31 + reverse_board[b->b[z]] / p37];
-}
-
-inline int edge_block(int phase_idx, const board *b, int x, int y){
-    return pattern_arr[phase_idx][b->p][9][pop_digit[b->b[x]][0] * p39 + pop_mid[b->b[x]][6][2] * p35 + pop_digit[b->b[x]][7] * p34 + pop_mid[b->b[y]][6][2]];
-}
-
-inline int cross(int phase_idx, const board *b, int x, int y, int z){
-    return 
-        pattern_arr[phase_idx][b->p][10][b->b[x] / p34 * p36 + b->b[y] / p35 * p33 + b->b[z] / p35] + 
-        pattern_arr[phase_idx][b->p][10][reverse_board[b->b[x]] / p34 * p36 + pop_mid[reverse_board[b->b[y]]][7][4] * p33 + pop_mid[reverse_board[b->b[z]]][7][4]];
-}
-
-inline int corner9(int phase_idx, const board *b, int x, int y, int z){
-    return 
-        pattern_arr[phase_idx][b->p][11][b->b[x] / p35 * p36 + b->b[y] / p35 * p33 + b->b[z] / p35] + 
-        pattern_arr[phase_idx][b->p][11][reverse_board[b->b[x]] / p35 * p36 + reverse_board[b->b[y]] / p35 * p33 + reverse_board[b->b[z]] / p35];
-}
-
-inline int edge_2y(int phase_idx, const board *b, int x, int y){
-    return pattern_arr[phase_idx][b->p][12][pop_digit[b->b[x]][2] * p39 + b->b[y] * p31 + pop_digit[b->b[x]][5]];
-}
-
-inline int narrow_triangle0(int phase_idx, const board *b, int v, int w, int x, int y, int z){
-    return pattern_arr[phase_idx][b->p][13][b->b[v] / p33 * p35 + b->b[w] / p36 * p33 + b->b[x] / p37 * p32 + b->b[y] / p37 * p31 + b->b[z] / p37];
-}
-
-inline int narrow_triangle1(int phase_idx, const board *b, int v, int w, int x, int y, int z){
-    return pattern_arr[phase_idx][b->p][13][reverse_board[b->b[v]] / p33 * p35 + reverse_board[b->b[w]] / p36 * p33 + pop_digit[b->b[x]][7] * p32 + pop_digit[b->b[y]][7] * p31 + pop_digit[b->b[z]][7]];
-}
-
-inline int fish0(int phase_idx, const board *b, int w, int x, int y, int z){
-    return pattern_arr[phase_idx][b->p][14][b->b[w] / p36 * p38 + b->b[x] / p34 * p34 + pop_mid[b->b[y]][7][5] * p32 + pop_digit[b->b[z]][1] * p31 + pop_digit[b->b[z]][3]];
-}
-
-inline int fish1(int phase_idx, const board *b, int w, int x, int y, int z){
-    return pattern_arr[phase_idx][b->p][14][reverse_board[b->b[w]] / p36 * p38 + reverse_board[b->b[x]] / p34 * p34 + pop_mid[reverse_board[b->b[y]]][7][5] * p32 + pop_digit[b->b[z]][6] * p31 + pop_digit[b->b[z]][4]];
-}
-
-inline int kite0(int phase_idx, const board *b, int v, int w, int x, int y, int z){
-    return pattern_arr[phase_idx][b->p][15][b->b[v] / p36 * p38 + b->b[w] / p33 * p33 + pop_digit[b->b[x]][1] * p32 + pop_digit[b->b[y]][1] * p31 + pop_digit[b->b[z]][1]];
-}
-
-inline int kite1(int phase_idx, const board *b, int v, int w, int x, int y, int z){
-    return pattern_arr[phase_idx][b->p][15][reverse_board[b->b[v]] / p36 * p38 + reverse_board[b->b[w]] / p33 * p33 + pop_digit[b->b[x]][6] * p32 + pop_digit[b->b[y]][6] * p31 + pop_digit[b->b[z]][6]];
-}
-*/
 
 inline int pick_pattern(const int phase_idx, const int p, const int pattern_idx, const int b_arr[], const int p0, const int p1, const int p2, const int p3, const int p4){
     return pattern_arr[phase_idx][p][pattern_idx][b_arr[p0] * p34 + b_arr[p1] * p33 + b_arr[p2] * p32 + b_arr[p3] * p31 + b_arr[p4]];
@@ -383,17 +335,17 @@ inline int end_evaluate(board *b){
 
 inline int mid_evaluate(board *b){
     int phase_idx, sur0, sur1, canput0, canput1, stab0, stab1, num0, num1;
-    unsigned long long black_mobility, white_mobility, stones;
+    unsigned long long black_mobility, white_mobility, empties;
     black_mobility = get_mobility(b->b, b->w);
     white_mobility = get_mobility(b->w, b->b);
-    stones = b->b | b->w;
+    empties = ~(b->b | b->w);
     canput0 = min(max_canput - 1, pop_count_ull(black_mobility));
     canput1 = min(max_canput - 1, pop_count_ull(white_mobility));
     if (canput0 == 0 && canput1 == 0)
         return end_evaluate(b);
     phase_idx = b->phase();
-    sur0 = min(max_surround - 1, calc_surround(b->b, stones));
-    sur1 = min(max_surround - 1, calc_surround(b->w, stones));
+    sur0 = min(max_surround - 1, calc_surround(b->b, empties));
+    sur1 = min(max_surround - 1, calc_surround(b->w, empties));
     calc_stability(b, &stab0, &stab1);
     num0 = pop_count_ull(b->b);
     num1 = pop_count_ull(b->w);
