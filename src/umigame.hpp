@@ -35,9 +35,12 @@ class umigame{
 			board nb;
 			int val, max_val = -inf;
 			vector<board> boards;
+			unsigned long long legal = b->mobility_ull();
+			mobility mob;
 			for (int i = 0; i < hw2; ++i){
-				if (b->legal(i)) {
-					b->move(i, &nb);
+				if (1 & (legal >> i)) {
+					calc_flip(&mob, b, i);
+					nb = b->move_copy(&mob);
 					val = -book.get(&nb);
 					if (val != inf && val >= max_val) {
 						if (val > max_val) {

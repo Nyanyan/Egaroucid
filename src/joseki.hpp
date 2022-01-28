@@ -36,20 +36,12 @@ public:
 			}
 			b.translate_from_arr(board_arr, black);
 			name = line.substr(65, line.size());
-			int tmp[b_idx_num];
 			arr.push_back(make_pair(b, name));
-			for (i = 0; i < 8; ++i)
-				swap(b.b[i], b.b[8 + i]);
+			b.white_mirror();
 			arr.push_back(make_pair(b, name));
-			for (i = 0; i < 16; ++i)
-				tmp[i] = b.b[i];
-			for (i = 0; i < 8; ++i)
-				b.b[i] = reverse_board[tmp[7 - i]];
-			for (i = 0; i < 8; ++i)
-				b.b[8 + i] = reverse_board[tmp[15 - i]];
+			b.black_mirror();
 			arr.push_back(make_pair(b, name));
-			for (i = 0; i < 8; ++i)
-				swap(b.b[i], b.b[8 + i]);
+			b.white_mirror();
 			arr.push_back(make_pair(b, name));
 		}
 		return true;
@@ -59,10 +51,7 @@ public:
 		int i, j;
 		bool flag;
 		for (i = 0; i < (int)arr.size(); ++i) {
-			flag = true;
-			for (j = 0; j < hw; ++j)
-				flag &= (b.b[j] == arr[i].first.b[j]);
-			if (flag)
+			if (arr[i].first.b == b.b && arr[i].first.w == b.w)
 				return arr[i].second;
 		}
 		return "";
