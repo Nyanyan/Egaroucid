@@ -423,7 +423,7 @@ class book{
                 return;
             }
             unordered_set<int> saved_idxes;
-            int i, j;
+            int i;
 			unsigned char elem;
             fout.write((char*)&n_book, 4);
 			int t = 0;
