@@ -8,9 +8,9 @@
 using namespace std;
 
 #define n_patterns 16
-#define max_surround 80
+#define max_surround 100
 #define max_canput 50
-#define max_stability 29
+#define max_stability 65
 #define max_stone_num 65
 #define n_canput_patterns 4
 #define max_evaluate_idx 59049
