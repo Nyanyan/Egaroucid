@@ -522,4 +522,7 @@
 #58 final depth: 30 time: 9855 policy: 6 value: 4
 #59 final depth: 34 time: 778 policy: 31 value: 60      WRONG
 
-2022/01/27 update endgame without mpc
+2022/01/28 use bitboard without mpc without updating evaluation function
+#40 final depth: 20 time: 870 policy: 55 value: 38
+#41 final depth: 22 time: 1710 policy: 32 value: 0
+#42 

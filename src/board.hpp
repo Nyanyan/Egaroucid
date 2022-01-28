@@ -19,6 +19,8 @@ using namespace std;
 #define p196 47045881ULL
 #define p197 893871739ULL
 
+unsigned long long hash_rand[2][hw2];
+
 const int cell_div4[hw2] = {
     1, 1, 1, 1, 2, 2, 2, 2, 
     1, 1, 1, 1, 2, 2, 2, 2, 
@@ -139,6 +141,16 @@ class board {
                 ((w >> 40) * p194) ^ 
                 ((w >> 48) * p195) ^ 
                 ((w >> 56) * p196);
+            /*
+            unsigned long long res = 0;
+            for (int i = 0; i < hw2; ++i){
+                if (1 & (b >> i))
+                    res ^= hash_rand[0][i];
+                if (1 & (w >> i))
+                    res ^= hash_rand[1][i];
+            }
+            return res;
+            */
         }
 
         inline void print() {
@@ -169,6 +181,12 @@ class board {
             *h = full_stability_h(stones);
             *v = full_stability_v(stones);
             full_stability_d(stones, d7, d9);
+            /*
+           *h = full_lines(stones, 1);
+           *v = full_lines(stones, hw);
+           *d7 = full_lines(stones, hw_m1);
+           *d9 = full_lines(stones, hw_p1);
+            */
         }
 
         inline void move(const mobility *mob) {
@@ -346,9 +364,9 @@ class board {
         }
 
         inline unsigned long long full_stability_v(unsigned long long full){
-            full &= (full >> 8) | (full << 56);	// ror 8
-            full &= (full >> 16) | (full << 48);	// ror 16
-            full &= (full >> 32) | (full << 32);	// ror 32
+            full &= (full >> 8) | (full << 56);
+            full &= (full >> 16) | (full << 48);
+            full &= (full >> 32) | (full << 32);
             return full;
         }
 
@@ -370,6 +388,17 @@ class board {
             l9 &= e9[0] | (l9 >> 18);	r9 &= e9[1] | (r9 << 18);
             *full_d9 = l9 & r9 & (e9[2] | (l9 >> 36) | (r9 << 36));
         }
+        /*
+        inline unsigned long long full_lines(const unsigned long long stones, const int dir){
+            const unsigned long long edge = stones & 0b1111111110000001100000011000000110000001100000011000000111111111ULL;
+            unsigned long long full = (stones & (((stones >> dir) & (stones << dir)) | edge));
+            full &= (((full >> dir) & (full << dir)) | edge);
+            full &= (((full >> dir) & (full << dir)) | edge);
+            full &= (((full >> dir) & (full << dir)) | edge);
+            full &= (((full >> dir) & (full << dir)) | edge);
+            return ((full >> dir) & (full << dir));
+        }
+        */
 };
 
 inline void calc_flip(mobility *mob, board *b, const int policy){
@@ -377,4 +406,11 @@ inline void calc_flip(mobility *mob, board *b, const int policy){
         mob->calc_flip(b->b, b->w, policy);
     else
         mob->calc_flip(b->w, b->b, policy);
+}
+
+inline void board_init(){
+    for (int i = 0; i < hw2; ++i){
+        hash_rand[0][i] = myrand_ull();
+        hash_rand[1][i] = myrand_ull();
+    }
 }

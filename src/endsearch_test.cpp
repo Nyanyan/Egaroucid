@@ -27,9 +27,13 @@ inline void input_board(board *b, int ai_player){
 }
 
 int main(){
+    board_init();
     evaluate_init();
     transpose_table_init();
-    thread_pool.resize(16);
+    #if USE_MULTI_THREAD
+        thread_pool.resize(16);
+        cerr << "thread pool initialized" << endl;
+    #endif
     board b;
     mobility m;
     unsigned long long mob;

@@ -17,15 +17,15 @@ class search_node{
         int p;
         int l;
         int u;
-    #if USE_MULTI_THREAD
-        private:
-            mutex mtx;
-    #endif
+    //#if USE_MULTI_THREAD
+    //    private:
+    //        mutex mtx;
+    //#endif
     public:
-        inline void register_value(board *bd, int ll, int uu){
-            #if USE_MULTI_THREAD
-                lock_guard<mutex> lock(mtx);
-            #endif
+        inline void register_value(board *bd, const int ll, const int uu){
+            //#if USE_MULTI_THREAD
+            //    lock_guard<mutex> lock(mtx);
+            //#endif
             reg = true;
             b = bd->b;
             w = bd->w;
@@ -34,18 +34,18 @@ class search_node{
             u = uu;
         }
 
-        inline void register_value(int ll, int uu){
-            #if USE_MULTI_THREAD
-                lock_guard<mutex> lock(mtx);
-            #endif
+        inline void register_value(const int ll, const int uu){
+            //#if USE_MULTI_THREAD
+            //    lock_guard<mutex> lock(mtx);
+            //#endif
             l = ll;
             u = uu;
         }
 
         inline void get(int *ll, int *uu){
-            #if USE_MULTI_THREAD
-                lock_guard<mutex> lock(mtx);
-            #endif
+            //#if USE_MULTI_THREAD
+            //    lock_guard<mutex> lock(mtx);
+            //#endif
             *ll = l;
             *uu = u;
         }
@@ -82,9 +82,9 @@ class transpose_table{
         }
 
         inline void reg(board *key, int hash, int l, int u){
-            //#if USE_MULTI_THREAD
-            //    lock_guard<mutex> lock(mtx);
-            //#endif
+            #if USE_MULTI_THREAD
+                lock_guard<mutex> lock(mtx);
+            #endif
             //++this->hash_reg;
             if (!this->table[this->now][hash].reg)
                 this->table[this->now][hash].register_value(key, l, u);
@@ -95,9 +95,9 @@ class transpose_table{
         }
 
         inline void get_now(board *key, const int hash, int *l, int *u){
-            //#if USE_MULTI_THREAD
-            //    lock_guard<mutex> lock(mtx);
-            //#endif
+            #if USE_MULTI_THREAD
+                lock_guard<mutex> lock(mtx);
+            #endif
             if (this->table[this->now][hash].reg){
                 if (compare_key(key, &this->table[this->now][hash])){
 					this->table[this->now][hash].get(l, u);
@@ -113,9 +113,9 @@ class transpose_table{
         }
 
         inline void get_prev(board *key, const int hash, int *l, int *u){
-            //#if USE_MULTI_THREAD
-            //    lock_guard<mutex> lock(mtx);
-            //#endif
+            #if USE_MULTI_THREAD
+                lock_guard<mutex> lock(mtx);
+            #endif
             if (this->table[this->prev][hash].reg){
                 if (compare_key(key, &this->table[this->prev][hash])){
                     this->table[this->prev][hash].get(l, u);

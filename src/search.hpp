@@ -112,7 +112,8 @@ int cmp_vacant(int p, int q){
 
 inline void move_ordering(board *b){
     int l, u;
-    transpose_table.get_now(b, b->hash() & search_hash_mask, &l, &u);
+    int hash = (int)(b->hash() & search_hash_mask);
+    transpose_table.get_now(b, hash, &l, &u);
     if (u != inf && l != -inf)
         b->v = -(u + l) / 2 + cache_hit + cache_both + cache_now;
     else if (u != inf)
@@ -120,7 +121,7 @@ inline void move_ordering(board *b){
     else if (l != -inf)
         b->v = -l + cache_hit + cache_now;
     else{
-        transpose_table.get_prev(b, b->hash() & search_hash_mask, &l, &u);
+        transpose_table.get_prev(b, hash, &l, &u);
         if (u != inf && l != -inf)
             b->v = -(u + l) / 2 + cache_hit + cache_both;
         else if (u != inf)
