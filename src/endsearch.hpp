@@ -923,7 +923,7 @@ int mtd_final(board *b, bool skipped, int depth, int l, int u, bool use_mpc, dou
     l /= 2;
     u /= 2;
     g = max(l, min(u, g / 2));
-    cerr << l << " " << g << " " << u << endl;
+    //cerr << l << " " << g << " " << u << endl;
     while (u - l > 0){
         beta = max(l + search_epsilon, g);
         g = nega_alpha_ordering_final(b, skipped, depth, beta * 2 - search_epsilon, beta * 2, use_multi_thread, use_mpc, use_mpct) / 2;
@@ -931,9 +931,9 @@ int mtd_final(board *b, bool skipped, int depth, int l, int u, bool use_mpc, dou
             u = g;
         else
             l = g;
-        cerr << l << " " << g << " " << u << endl;
+        //cerr << l << " " << g << " " << u << endl;
     }
-    cerr << g << endl;
+    //cerr << g << endl;
     return g * 2;
 }
 
@@ -984,7 +984,7 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
     if (nb[0].second.n < hw2 - 5){
         for (i = 0; i < canput; ++i){
             g = -mtd_final(&nb[i].second, false, max_depth - 1, -beta, -alpha, use_mpc, use_mpct, -nb[i].second.v, true);
-            cerr << "result " << nb[i].first << " " << g << " " << nb[i].second.v << endl;
+            //cerr << "result " << nb[i].first << " " << g << " " << nb[i].second.v << endl;
             if (alpha < g){
                 alpha = g;
                 tmp_policy = nb[i].first;

@@ -71,48 +71,37 @@ string create_line(int b, int w){
 }
 
 void probably_move_line(int p, int o, int place, int *np, int *no){
-    int i, j, flip;
+    int i, j;
     *np = p | (1 << place);
-    *no = o;
-    for (i = place - 1; i >= 0; --i){
-        if (1 & (p >> i)){
-            flip = 0;
-            for (j = place - 1; j > i; --j)
-                flip |= 1 << j;
-            *np ^= flip;
-            break;
-        } else if ((1 & (o >> i)) == 0)
-            break;
+    for (i = place - 1; i >= 0 && (1 & (o >> i)); --i);
+    if (1 & (p >> i)){
+        for (j = place - 1; j > i; --j)
+            *np ^= 1 << j;
     }
-    for (i = place + 1; i < hw; ++i){
-        if (1 & (p >> i)){
-            flip = 0;
-            for (j = place + 1; j < i; ++j)
-                flip |= 1 << j;
-            *np ^= flip;
-            break;
-        } else if ((1 & (o >> i)) == 0)
-            break;
+    for (i = place + 1; i < hw && (1 & (o >> i)); ++i);
+    if (1 & (p >> i)){
+        for (j = place + 1; j < i; ++j)
+            *np ^= 1 << j;
     }
-    *no &= ~(*np);
+    *no = o & ~(*np);
 }
 
-void calc_stability_line(int b, int w, bool stab[]){
+void calc_stability_line(int b, int w, bool stab[], int ob, int ow){
     int i, j, nb, nw;
+    bool flag = true;
     for (i = 0; i < hw; ++i){
         if ((1 & (b >> i)) == 0 && (1 & (w >> i)) == 0){
+            flag = false;
             probably_move_line(b, w, i, &nb, &nw);
-            for (j = 0; j < hw; ++j){
-                if ((1 & (b >> j)) != (1 & (nb >> j)) || (1 & (w >> j)) != (1 & (nw >> j)))
-                    stab[j] = false;
-            }
-            calc_stability_line(nb, nw, stab);
+            calc_stability_line(nb, nw, stab, ob, ow);
             probably_move_line(w, b, i, &nw, &nb);
-            for (j = 0; j < hw; ++j){
-                if ((1 & (b >> j)) != (1 & (nb >> j)) || (1 & (w >> j)) != (1 & (nw >> j)))
-                    stab[j] = false;
-            }
-            calc_stability_line(nb, nw, stab);
+            calc_stability_line(nb, nw, stab, ob, ow);
+        }
+    }
+    if (flag){
+        for (j = 0; j < hw; ++j){
+            if ((1 & (b >> j)) != (1 & (nb >> j)) || (1 & (w >> j)) != (1 & (nw >> j)))
+                stab[j] = false;
         }
     }
 }
@@ -140,7 +129,7 @@ inline void init_evaluation_base() {
         w = create_one_color(idx, 1);
         for (place = 0; place < hw; ++place)
             stab[place] = true;
-        calc_stability_line(b, w, stab);
+        calc_stability_line(b, w, stab, b, w);
         stability_edge_arr[idx][0] = 0;
         stability_edge_arr[idx][1] = 0;
         for (place = 0; place < hw; ++place){
@@ -247,26 +236,25 @@ inline int join_pattern(const int b_arr[], const int p0, const int p1, const int
 
 inline void calc_stability(board *b, const int b_arr[], int *stab0, int *stab1){
     unsigned long long full_h, full_v, full_d7, full_d9;
-    unsigned long long all_stability = 0, black_stability = 0, white_stability = 0, n_stability;
+    unsigned long long edge_stability = 0, black_stability = 0, white_stability = 0, n_stability;
     unsigned long long h, v, d7, d9;
     const unsigned long long black_mask = b->b & 0b0000000001111110011111100111111001111110011111100111111000000000ULL;
     const unsigned long long white_mask = b->w & 0b0000000001111110011111100111111001111110011111100111111000000000ULL;
     int edge;
     edge = join_pattern(b_arr, 0, 1, 2, 3, 4, 5, 6, 7);
-    all_stability |= stability_edge_arr[edge][0] << 56;
+    edge_stability |= stability_edge_arr[edge][0] << 56;
     edge = join_pattern(b_arr, 56, 57, 58, 59, 60, 61, 62, 63);
-    all_stability |= stability_edge_arr[edge][0];
+    edge_stability |= stability_edge_arr[edge][0];
     edge = join_pattern(b_arr, 0, 8, 16, 24, 32, 40, 48, 56);
-    all_stability |= stability_edge_arr[edge][1] << 7;
+    edge_stability |= stability_edge_arr[edge][1] << 7;
     edge = join_pattern(b_arr, 7, 15, 23, 31, 39, 47, 55, 63);
-    all_stability |= stability_edge_arr[edge][1];
+    edge_stability |= stability_edge_arr[edge][1];
     b->full_stability(&full_h, &full_v, &full_d7, &full_d9);
-    all_stability |= (full_h & full_v & full_d7 & full_d9);
     
-    black_stability = all_stability & b->b;
-    white_stability = all_stability & b->w;
-    /*
-    n_stability = all_stability & b->b;
+    //black_stability = all_stability & b->b;
+    //white_stability = all_stability & b->w;
+    
+    n_stability = (edge_stability & b->b) | (full_h & full_v & full_d7 & full_d9 & black_mask);
     while (n_stability & ~black_stability){
         black_stability |= n_stability;
         h = (black_stability >> 1) | (black_stability << 1) | full_h;
@@ -276,7 +264,7 @@ inline void calc_stability(board *b, const int b_arr[], int *stab0, int *stab1){
         n_stability = h & v & d7 & d9 & black_mask;
     }
 
-    n_stability = all_stability & b->w;
+    n_stability = (edge_stability & b->w) | (full_h & full_v & full_d7 & full_d9 & white_mask);
     while (n_stability & ~white_stability){
         white_stability |= n_stability;
         h = (white_stability >> 1) | (white_stability << 1) | full_h;
@@ -285,7 +273,7 @@ inline void calc_stability(board *b, const int b_arr[], int *stab0, int *stab1){
         d9 = (white_stability >> hw_p1) | (white_stability << hw_p1) | full_d9;
         n_stability = h & v & d7 & d9 & white_mask;
     }
-    */
+
     /*
     for (int i = hw2_m1; i >= 0; --i){
         if (1 & (b->b >> i))

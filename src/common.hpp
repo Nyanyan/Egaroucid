@@ -41,6 +41,7 @@ inline unsigned long long myrand_ull(){
     return (unsigned long long)(myrandom() * 18446744073709551615ULL);
 }
 
+/*
 inline int pop_count_ull(unsigned long long x){
     unsigned long long a = x & 0b0101010101010101010101010101010101010101010101010101010101010101ULL;
     unsigned long long b = x & 0b1010101010101010101010101010101010101010101010101010101010101010ULL;
@@ -60,6 +61,15 @@ inline int pop_count_ull(unsigned long long x){
     a = x & 0b0000000000000000000000000000000011111111111111111111111111111111ULL;
     b = x & 0b1111111111111111111111111111111100000000000000000000000000000000ULL;
     return (int)(a + (b >> 32));
+}
+*/
+
+inline int pop_count_ull(unsigned long long x){
+    x = x - ((x >> 1) & 0x5555555555555555ULL);
+	x = (x & 0x3333333333333333ULL) + ((x >> 2) & 0x3333333333333333ULL);
+	x = (x + (x >> 4)) & 0x0F0F0F0F0F0F0F0FULL;
+	x = (x * 0x0101010101010101ULL) >> 56;
+    return (int)x;
 }
 
 inline unsigned long long mirror_v(unsigned long long x){
