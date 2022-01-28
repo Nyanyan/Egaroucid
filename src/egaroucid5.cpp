@@ -12,7 +12,6 @@
 
 inline void init(){
     board_init();
-    search_init();
     transpose_table_init();
     evaluate_init();
     #if !MPC_MODE && !EVAL_MODE && !BOOK_MODE && USE_BOOK
@@ -25,40 +24,20 @@ inline void init(){
 
 inline void input_board(board *b, int ai_player){
     int i, j;
-    unsigned long long bk = 0, wt = 0;
     char elem;
-    b->p = ai_player;
-    b->n = 0;
-    b->parity = 0;
+    int arr[hw2];
     vacant_lst.clear();
-    for (i = 0; i < hw; ++i){
-        string raw_board;
-        cin >> raw_board;
-        cin.ignore();
-        cerr << raw_board << endl;
-        for (j = 0; j < hw; ++j){
-            elem = raw_board[j];
-            if (elem != '.'){
-                bk |= (unsigned long long)(elem == '0') << (i * hw + j);
-                wt |= (unsigned long long)(elem == '1') << (i * hw + j);
-                ++b->n;
-            } else{
-                vacant_lst.push_back(i * hw + j);
-                b->parity ^= cell_div4[i * hw + j];
-            }
-        }
+    for (i = 0; i < hw2; ++i){
+        cin >> elem;
+        if (elem == '.'){
+            arr[i] = vacant;
+            vacant_lst.emplace_back(hw2_m1 - i);
+        } else
+            arr[i] = (int)elem - (int)'0';
     }
-    if (b->n < hw2_m1)
+    b->translate_from_arr(arr, ai_player);
+    if (vacant_lst.size() >= 2)
         sort(vacant_lst.begin(), vacant_lst.end(), cmp_vacant);
-    for (i = 0; i < b_idx_num; ++i){
-        b->b[i] = n_line - 1;
-        for (j = 0; j < idx_n_cell[i]; ++j){
-            if (1 & (bk >> global_place[i][j]))
-                b->b[i] -= pow3[hw_m1 - j] * 2;
-            else if (1 & (wt >> global_place[i][j]))
-                b->b[i] -= pow3[hw_m1 - j];
-        }
-    }
 }
 
 inline double calc_result_value(int v){
@@ -67,11 +46,11 @@ inline double calc_result_value(int v){
 }
 
 inline void print_result(int policy, int value){
-    cout << policy / hw << " " << policy % hw << " " << calc_result_value(value) << endl;
+    cout << (hw_m1 - policy / hw) << " " << (hw_m1 - policy % hw) << " " << calc_result_value(value) << endl;
 }
 
 inline void print_result(search_result result){
-    cout << result.policy / hw << " " << result.policy % hw << " " << calc_result_value(result.value) << endl;
+    cout << (hw_m1 - result.policy / hw) << " " << (hw_m1 - result.policy % hw) << " " << calc_result_value(result.value) << endl;
 }
 
 int main(){
@@ -79,7 +58,7 @@ int main(){
     board b;
     #if !MPC_MODE && !EVAL_MODE
         search_result result;
-        int level = 30, book_error = 0;
+        int level = 1, book_error = 0;
     #endif
     #if USE_MULTI_THREAD
         thread_pool.resize(16);

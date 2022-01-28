@@ -94,6 +94,23 @@ inline unsigned long long mirror_v(unsigned long long x){
 }
 
 inline unsigned long long white_line(unsigned long long x){
-    unsigned long long res = x;
+    unsigned long long res = 0;
+    int i, j;
+    for (i = 0; i < hw; ++i){
+        for (j = 0; j < hw; ++j){
+            res |= (1 & (x >> (i * hw + j))) << (j * hw + i);
+        }
+    }
+    return res;
+}
+
+inline unsigned long long black_line(unsigned long long x){
+    unsigned long long res = 0;
+    int i, j;
+    for (i = 0; i < hw; ++i){
+        for (j = 0; j < hw; ++j){
+            res |= (1 & (x >> (i * hw + j))) << ((hw_m1 - j) * hw + hw_m1 - i);
+        }
+    }
     return res;
 }

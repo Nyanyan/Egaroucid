@@ -175,8 +175,9 @@ class line_distance{
                 after_conv[i] = leaky_relu(after_conv[i] / hw2);
             }
             // dense1 for policy
+            unsigned long long legal = b.mobility_ull();
             for (j = 0; j < hw2; ++j){
-                if (b.legal(j)){
+                if (1 & (legal >> (hw2_m1 - j))){
                     res[j] = bias1[j];
                     for (i = 0; i < n_kernels; ++i)
                         res[j] += dense1[j][i] * after_conv[i];
@@ -186,7 +187,7 @@ class line_distance{
             }
             // softmax
             for (i = 0; i < hw2; ++i){
-                if (b.legal(i)){
+                if (1 & (legal >> (hw2_m1 - i))){
                     res[i] = exp(res[i] - max_res);
                     sum_softmax += res[i];
                 }
@@ -217,12 +218,15 @@ pair<int, vector<int>> create_principal_variation(board *b, bool skipped, int de
         res.first = mid_evaluate(b);
         return res;
     }
-    vector<board> nb;
+    vector<pair<int, board>> nb;
+    unsigned long long legal = b->mobility_ull();
+    mobility mob;
     int canput = 0;
     for (const int &cell: vacant_lst){
-        if (b->legal(cell)){
-            nb.emplace_back(b->move(cell));
-            move_ordering(&nb[canput]);
+        if (1 & (legal >> cell)){
+            calc_flip(&mob, b, cell);
+            nb.emplace_back(make_pair(cell, b->move_copy(&mob)));
+            move_ordering(&nb[canput].second);
             ++canput;
         }
     }
@@ -231,24 +235,21 @@ pair<int, vector<int>> create_principal_variation(board *b, bool skipped, int de
             res.first = end_evaluate(b);
             return res;
         }
-        board rb;
-        for (int i = 0; i < b_idx_num; ++i)
-            rb.b[i] = b->b[i];
-        rb.p = 1 - b->p;
-        rb.n = b->n;
-        res = create_principal_variation(&rb, true, depth, -beta, -alpha);
+        b->p = 1 - b->p;
+        res = create_principal_variation(b, true, depth, -beta, -alpha);
+        b->p = 1 - b->p;
         res.first = -res.first;
         return res;
     }
     if (canput >= 2)
-        sort(nb.begin(), nb.end());
+        sort(nb.begin(), nb.end(), move_ordering_sort);
     int v = -inf;
     pair<int, vector<int>> fail_low_res;
-    for (board nnb: nb){
-        res = create_principal_variation(&nnb, false, depth - 1, -beta, -alpha);
+    for (pair<int, board> nnb: nb){
+        res = create_principal_variation(&nnb.second, false, depth - 1, -beta, -alpha);
         res.first = -res.first;
         if (beta <= res.first){
-            res.second.emplace_back(nnb.policy);
+            res.second.emplace_back(nnb.first);
             return res;
         }
         alpha = max(alpha, res.first);
@@ -258,7 +259,7 @@ pair<int, vector<int>> create_principal_variation(board *b, bool skipped, int de
             fail_low_res.second.clear();
             for (const int &elem: res.second)
                 fail_low_res.second.emplace_back(elem);
-            fail_low_res.second.emplace_back(nnb.policy);
+            fail_low_res.second.emplace_back(nnb.first);
         }
     }
     return fail_low_res;
@@ -267,10 +268,13 @@ pair<int, vector<int>> create_principal_variation(board *b, bool skipped, int de
 inline vector<principal_variation> search_pv(board b, long long strt, int max_depth){
     //cerr << "start pv midsearch depth " << max_depth << endl;
     vector<principal_variation> res;
-    vector<board> nb;
+    vector<pair<int, board>> nb;
+    unsigned long long legal = b.mobility_ull();
+    mobility mob;
     for (const int &cell: vacant_lst){
-        if (b.legal(cell)){
-            nb.push_back(b.move(cell));
+        if (1 & (legal >> cell)){
+            calc_flip(&mob, &b, cell);
+            nb.push_back(make_pair(cell, b.move_copy(&mob)));
         }
     }
     //int canput = nb.size();
@@ -290,18 +294,18 @@ inline vector<principal_variation> search_pv(board b, long long strt, int max_de
         use_mpct = 1.0;
     if (max_depth >= 25)
         use_mpct = 0.8;
-    for (board nnb: nb){
-        g = -nega_alpha_ordering_nomemo(&nnb, false, min(hw2 - b.n, max_depth - 1), -hw2, hw2, use_mpc, use_mpct);
+    for (pair<int, board> nnb: nb){
+        g = -nega_alpha_ordering_nomemo(&nnb.second, false, min(hw2 - b.n, max_depth - 1), -hw2, hw2, use_mpc, use_mpct);
         principal_variation pv;
         pv.value = g;
-        g = book.get(&nnb);
+        g = book.get(&nnb.second);
         if (g != -inf)
             pv.value = -g;
         pv.depth = min(hw2 - b.n, max_depth - 1) + 1;
         pv.nps = 0;
-        pv.policy = nnb.policy;
-        pv.pv = create_principal_variation(&nnb, false, min(hw2 - b.n, max_depth - 1), -hw2, hw2).second;
-        pv.pv.emplace_back(nnb.policy);
+        pv.policy = nnb.first;
+        pv.pv = create_principal_variation(&nnb.second, false, min(hw2 - b.n, max_depth - 1), -hw2, hw2).second;
+        pv.pv.emplace_back(nnb.first);
         reverse(pv.pv.begin(), pv.pv.end());
         //cerr << "value: " << g << endl;
         //cerr << "principal variation: ";
@@ -319,18 +323,26 @@ inline double calc_divergence_distance(board b, vector<int> pv, int divergence[6
         divergence[i] = 0;
     int g, player = b.p;
     double possibility[hw2];
+    mobility mob;
     for (const int &policy: pv){
-        b = b.move(policy);
+        calc_flip(&mob, &b, policy);
+        b.move(&mob);
         vector<board> nb;
+        unsigned long long legal = b.mobility_ull();
         for (const int &cell: vacant_lst){
-            if (b.legal(cell))
-                nb.push_back(b.move(cell));
+            if (1 & (legal >> cell)){
+                calc_flip(&mob, &b, cell);
+                nb.push_back(b.move_copy(&mob));
+            }
         }
         if (nb.size() == 0){
             b.p = 1 - b.p;
+            legal = b.mobility_ull();
             for (const int &cell: vacant_lst){
-                if (b.legal(cell))
-                    nb.push_back(b.move(cell));
+                if (1 & (legal >> cell)){
+                    calc_flip(&mob, &b, cell);
+                    nb.push_back(b.move_copy(&mob));
+                }
             }
             if (nb.size() == 0)
                 break;
@@ -341,7 +353,7 @@ inline double calc_divergence_distance(board b, vector<int> pv, int divergence[6
             if (g == inf)
                 g = -nega_alpha(&nnb, false, max_depth, -search_epsilon, search_epsilon);
             if (b.p == player){
-                res += (double)max(-1, min(1, g)) * possibility[nnb.policy] / (double)nb.size();
+                res += (double)max(-1, min(1, g)) * possibility[hw2_m1 - nnb.policy] / (double)nb.size();
                 if (g > 0)
                     ++divergence[0];
                 else if (g == 0)
@@ -349,7 +361,7 @@ inline double calc_divergence_distance(board b, vector<int> pv, int divergence[6
                 else if (g < 0)
                     ++divergence[2];
             } else{
-                res -= (double)max(-1, min(1, g)) * possibility[nnb.policy] / (double)nb.size();
+                res -= (double)max(-1, min(1, g)) * possibility[hw2_m1 - nnb.policy] / (double)nb.size();
                 if (g > 0)
                     ++divergence[3];
                 else if (g == 0)

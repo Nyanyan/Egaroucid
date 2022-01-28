@@ -13,7 +13,7 @@ constexpr int book_hash_mask = book_hash_table_size - 1;
 
 struct book_node{
     unsigned long long player;
-    unsigned long long oppenent;
+    unsigned long long opponent;
     int value;
     int line;
     book_node* p_n_node;
@@ -87,7 +87,7 @@ class book{
 					fclose(fp);
 					return false;
 				}
-				b.translate_from_arr_fast(arr, p);
+				b.translate_from_arr(arr, p);
 				n_book += register_symmetric_book(b, value, n_book);
 			}
 			cerr << "book imported " << n_book << " boards" << endl;
@@ -226,7 +226,7 @@ class book{
 						cerr << "book import error 2" << endl;
 						return false;
 					}
-					b.translate_from_arr_fast(board_arr, p);
+					b.translate_from_arr(board_arr, p);
 				}
 				if (flag) {
 					if ((elem = fgetc(fp)) == EOF) {
@@ -285,9 +285,12 @@ class book{
             vector<int> values;
             board nb;
             int max_value = -inf;
+            unsigned long long legal = b->mobility_ull();
+            mobility mob;
             for (int coord = 0; coord < hw2; ++coord){
-                if (b->legal(coord)){
-                    b->move(coord, &nb);
+                if (1 & (legal >> coord)){
+                    calc_flip(&mob, b, coord);
+                    nb = b->move_copy(&mob);
                     book_node *p_node = this->book[nb.hash() & book_hash_mask];
                     while(p_node != NULL){
                         if(compare_key(&nb, p_node)){
@@ -331,7 +334,7 @@ class book{
             n_book += register_symmetric_book(b, value, n_book);
 			cerr << "new value registered" << endl;
         }
-
+        /*
         inline void save(){
 			if (_access_s("resources/book_backup.txt", 0) == 0)
 				remove("resources/book_backup.txt");
@@ -354,7 +357,8 @@ class book{
             }
             cerr << "saved" << endl;
         }
-
+        */
+        /*
         inline void save_bin(){
 			if (_access_s("resources/book_backup.ebok", 0) == 0)
 				remove("resources/book_backup.ebok");
@@ -375,7 +379,7 @@ class book{
                 while(p_node != NULL){
 					if (saved_idxes.find(p_node->line) == saved_idxes.end()) {
 						saved_idxes.emplace(p_node->line);
-                        create_arr(p_node->k, p_node->p, p_node->value, arr);
+                        create_arr(p_node, arr, black);
 						for (j = 0; j < hw2; j += 4) {
 							elem = arr[j] * p33 + arr[j + 1] * p32 + arr[j + 2] * p31 + arr[j + 3];
 							fout.write((char*)&elem, 1);
@@ -389,10 +393,11 @@ class book{
             }
             cerr << "saved " << t << " boards" << endl;
         }
+        */
 
     private:
         inline bool compare_key(const board *a, const book_node *b){
-            if (b->p == black)
+            if (a->p == black)
                 return a->b == b->player && a->w == b->opponent;
             return a->w == b->player && a->b == b->opponent;
         }
@@ -400,9 +405,13 @@ class book{
         inline book_node* book_node_init(board b, int value, int line){
             book_node* p_node = NULL;
             p_node = (book_node*)malloc(sizeof(book_node));
-            for (int i = 0; i < hw; ++i)
-                p_node->k[i] = b.b[i];
-            p_node->p = b.p;
+            if (b.p == black){
+                p_node->player = b.b;
+                p_node->opponent = b.w;
+            } else{
+                p_node->player = b.w;
+                p_node->opponent = b.b;
+            }
             p_node->value = value;
             p_node->line = line;
             p_node->p_n_node = NULL;
@@ -417,7 +426,7 @@ class book{
                 book_node *p_pre_node = NULL;
                 p_pre_node = p_node;
                 while(p_node != NULL){
-                    if(p_node->p == b.p && compare_key(b.b, p_node->k)){
+                    if(compare_key(&b, p_node)){
                         p_node->value = value;
                         return false;
                     }
@@ -430,26 +439,18 @@ class book{
         }
 
         inline int register_symmetric_book(board b, int value, int line){
-            int i, res = 1;
-            int tmp[b_idx_num];
+            int res = 1;
 			if (!register_book(b, b.hash() & book_hash_mask, value, line))
 				res = 0;
-            for (i = 0; i < 8; ++i)
-                swap(b.b[i], b.b[8 + i]);
+            b.white_mirror();
             register_book(b, b.hash() & book_hash_mask, value, line);
-            for (i = 0; i < 16; ++i)
-                tmp[i] = b.b[i];
-            for (i = 0; i < 8; ++i)
-                b.b[i] = reverse_board[tmp[7 - i]];
-            for (i = 0; i < 8; ++i)
-                b.b[8 + i] = reverse_board[tmp[15 - i]];
+            b.black_mirror();
             register_book(b, b.hash() & book_hash_mask, value, line);
-            for (i = 0; i < 8; ++i)
-                swap(b.b[i], b.b[8 + i]);
+            b.white_mirror();
             register_book(b, b.hash() & book_hash_mask, value, line);
 			return res;
         }
-
+        /*
         inline string create_book_data(board b, int value){
             string res = "";
             int arr[hw2];
@@ -463,19 +464,25 @@ class book{
             return res;
         }
 
-        inline string create_book_data(uint_fast16_t key[], int p, int value){
+        inline string create_book_data(book_node *node, int p, int value){
             board b;
             for (int i = 0; i < hw; ++i)
                 b.b[i] = key[i];
             b.p = p;
             return create_book_data(b, value);
         }
+        */
 
-        inline void create_arr(uint_fast16_t key[], int p, int value, int arr[]){
+        inline void create_arr(book_node *node, int arr[], int p){
             board b;
-            for (int i = 0; i < hw; ++i)
-                b.b[i] = key[i];
             b.p = p;
+            if (p == black){
+                b.b = node->player;
+                b.w = node->opponent;
+            } else{
+                b.w = node->player;
+                b.b = node->opponent;
+            }
 			b.translate_to_arr(arr);
         }
 

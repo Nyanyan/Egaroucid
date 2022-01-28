@@ -153,8 +153,17 @@ class board {
             */
         }
 
+        inline void white_mirror(){
+            b = white_line(b);
+            w = white_line(w);
+        }
+
+        inline void black_mirror(){
+            b = black_line(b);
+            w = black_line(w);
+        }
+
         inline void print() {
-            int i;
             for (int i = hw2_m1; i >= 0; --i){
                 if (1 & (b >> i))
                     cerr << "X ";
