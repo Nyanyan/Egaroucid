@@ -5,6 +5,11 @@
 #include "endsearch.hpp"
 #include "book.hpp"
 
+struct cell_value {
+	int value;
+	int depth;
+};
+
 search_result ai(board b, int level, int book_error){
     search_result res;
     book_value book_result = book.get_random(&b, book_error);
