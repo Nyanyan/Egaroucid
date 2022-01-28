@@ -153,10 +153,11 @@ inline bool init_evaluation_calc(){
     }
     string line;
     int phase_idx, player_idx, pattern_idx, pattern_elem, sur0, sur1, canput0, canput1, stab0, stab1, num0, num1;
-    const int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10, 10, 10, 10};
+    constexpr int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10, 10, 10, 10};
+    constexpr int n_models = n_phases * 2;
     for (phase_idx = 0; phase_idx < n_phases; ++phase_idx){
         for (player_idx = 0; player_idx < 2; ++player_idx){
-            //cerr << "=";
+            cerr << "loading " << ((phase_idx * 2 + player_idx) * 100 / n_models) << "%" << endl;
             for (pattern_idx = 0; pattern_idx < n_patterns; ++pattern_idx){
                 for (pattern_elem = 0; pattern_elem < pow3[pattern_sizes[pattern_idx]]; ++pattern_elem){
                     getline(ifs, line);

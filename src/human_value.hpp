@@ -209,7 +209,7 @@ bool human_value_init(){
 }
 
 
-pair<int, vector<int>> create_principal_variation(board *b, bool skipped, int depth, int alpha, int beta){
+pair<int, vector<int>> create_principal_variation(board *b, bool skipped, int depth, int alpha, int beta, bool use_mpc, double mpct_in){
     search_statistics.nodes_increment();
     pair<int, vector<int>> res;
 	if (!global_searching)
@@ -218,6 +218,18 @@ pair<int, vector<int>> create_principal_variation(board *b, bool skipped, int de
         res.first = mid_evaluate(b);
         return res;
     }
+    #if USE_HUMAN_MPC
+        if (mpc_min_depth <= depth && depth <= mpc_max_depth && use_mpc){
+            if (mpc_higher(b, skipped, depth, beta, mpct_in)){
+                res.first = beta;
+                return res;
+            }
+            if (mpc_lower(b, skipped, depth, alpha, mpct_in)){
+                res.first = alpha;
+                return res;
+            }
+        }
+    #endif
     vector<pair<int, board>> nb;
     unsigned long long legal = b->mobility_ull();
     mobility mob;
@@ -236,7 +248,7 @@ pair<int, vector<int>> create_principal_variation(board *b, bool skipped, int de
             return res;
         }
         b->p = 1 - b->p;
-        res = create_principal_variation(b, true, depth, -beta, -alpha);
+        res = create_principal_variation(b, true, depth, -beta, -alpha, use_mpc, mpct_in);
         b->p = 1 - b->p;
         res.first = -res.first;
         return res;
@@ -246,7 +258,7 @@ pair<int, vector<int>> create_principal_variation(board *b, bool skipped, int de
     int v = -inf;
     pair<int, vector<int>> fail_low_res;
     for (pair<int, board> nnb: nb){
-        res = create_principal_variation(&nnb.second, false, depth - 1, -beta, -alpha);
+        res = create_principal_variation(&nnb.second, false, depth - 1, -beta, -alpha, use_mpc, mpct_in);
         res.first = -res.first;
         if (beta <= res.first){
             res.second.emplace_back(nnb.first);
@@ -280,19 +292,19 @@ inline vector<principal_variation> search_pv(board b, long long strt, int max_de
     //int canput = nb.size();
     //cerr << "canput: " << canput << endl;
     int g;
-    bool use_mpc = max_depth >= 13 ? true : false;
+    bool use_mpc = max_depth >= 6 ? true : false;
     double use_mpct = 2.0;
-    if (max_depth >= 15)
+    if (max_depth >= 8)
         use_mpct = 1.8;
-    if (max_depth >= 17)
+    if (max_depth >= 10)
         use_mpct = 1.6;
-    if (max_depth >= 19)
+    if (max_depth >= 12)
         use_mpct = 1.4;
-    if (max_depth >= 21)
+    if (max_depth >= 14)
         use_mpct = 1.2;
-    if (max_depth >= 23)
+    if (max_depth >= 16)
         use_mpct = 1.0;
-    if (max_depth >= 25)
+    if (max_depth >= 18)
         use_mpct = 0.8;
     for (pair<int, board> nnb: nb){
         g = -nega_alpha_ordering_nomemo(&nnb.second, false, min(hw2 - b.n, max_depth - 1), -hw2, hw2, use_mpc, use_mpct);
@@ -304,7 +316,7 @@ inline vector<principal_variation> search_pv(board b, long long strt, int max_de
         pv.depth = min(hw2 - b.n, max_depth - 1) + 1;
         pv.nps = 0;
         pv.policy = nnb.first;
-        pv.pv = create_principal_variation(&nnb.second, false, min(hw2 - b.n, max_depth - 1), -hw2, hw2).second;
+        pv.pv = create_principal_variation(&nnb.second, false, min(hw2 - b.n, max_depth - 1), -hw2, hw2, use_mpc, use_mpct).second;
         pv.pv.emplace_back(nnb.first);
         reverse(pv.pv.begin(), pv.pv.end());
         //cerr << "value: " << g << endl;

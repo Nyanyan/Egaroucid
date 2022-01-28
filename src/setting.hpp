@@ -6,6 +6,7 @@
 // multi prob cut
 #define USE_MID_MPC true
 #define USE_END_MPC true
+#define USE_HUMAN_MPC true
 
 // stability cut
 #define USE_MID_SC  false
@@ -26,7 +27,7 @@
 /* multi threading*/
 
 // multi thread
-#define USE_MULTI_THREAD true
+#define USE_MULTI_THREAD false
 
 
 
@@ -35,7 +36,7 @@
 
 
 /** book **/
-#define USE_BOOK false
+#define USE_BOOK true
 
 
 
