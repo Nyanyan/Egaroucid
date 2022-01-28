@@ -215,12 +215,6 @@ class board {
             *h = full_stability_h(stones);
             *v = full_stability_v(stones);
             full_stability_d(stones, d7, d9);
-            /*
-           *h = full_lines(stones, 1);
-           *v = full_lines(stones, hw);
-           *d7 = full_lines(stones, hw_m1);
-           *d9 = full_lines(stones, hw_p1);
-            */
         }
 
         inline void move(const mobility *mob) {
@@ -422,17 +416,6 @@ class board {
             l9 &= e9[0] | (l9 >> 18);	r9 &= e9[1] | (r9 << 18);
             *full_d9 = l9 & r9 & (e9[2] | (l9 >> 36) | (r9 << 36));
         }
-        /*
-        inline unsigned long long full_lines(const unsigned long long stones, const int dir){
-            const unsigned long long edge = stones & 0b1111111110000001100000011000000110000001100000011000000111111111ULL;
-            unsigned long long full = (stones & (((stones >> dir) & (stones << dir)) | edge));
-            full &= (((full >> dir) & (full << dir)) | edge);
-            full &= (((full >> dir) & (full << dir)) | edge);
-            full &= (((full >> dir) & (full << dir)) | edge);
-            full &= (((full >> dir) & (full << dir)) | edge);
-            return ((full >> dir) & (full << dir));
-        }
-        */
 };
 
 inline void calc_flip(mobility *mob, board *b, const int policy){
