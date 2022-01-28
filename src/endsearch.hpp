@@ -50,8 +50,8 @@ int nega_alpha_ordering_final_nomemo(board *b, bool skipped, int depth, int alph
             calc_flip(&mob, b, cell);
             nb.emplace_back(b->move_copy(&mob));
             move_ordering(&nb[canput]);
-            //nb[canput].v = -canput_bonus * calc_canput_exact(&nb[canput]);
-            #if USE_END_PO
+            //nb[canput].v -= canput_bonus * calc_canput_exact(&nb[canput]);
+            #if USE_END_PO && false
                 if (depth <= po_max_depth && b->parity & cell_div4[cell])
                     nb[canput].v += parity_vacant_bonus;
             #endif
@@ -705,7 +705,7 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
             nb.emplace_back(b->move_copy(&mob));
             move_ordering(&nb[canput]);
             nb[canput].v -= canput_bonus * calc_canput_exact(&nb[canput]);
-            #if USE_END_PO
+            #if USE_END_PO && false
                 if (depth <= po_max_depth && (b->parity & cell_div4[cell]))
                     nb[canput].v += parity_vacant_bonus;
             #endif

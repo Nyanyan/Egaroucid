@@ -18,7 +18,7 @@ constexpr int cache_hit = 100;
 constexpr int cache_both = 100;
 constexpr int cache_now = 100;
 constexpr int parity_vacant_bonus = 5;
-constexpr int canput_bonus = 4;
+constexpr int canput_bonus = 10;
 
 #define mpc_min_depth 3
 #define mpc_max_depth 30
@@ -26,9 +26,9 @@ constexpr int canput_bonus = 4;
 #define mpc_max_depth_final 40
 
 #define simple_mid_threshold 3
-#define simple_end_threshold 9
+#define simple_end_threshold 8
 
-#define po_max_depth 8
+#define po_max_depth 15
 
 const int cell_weight[hw2] = {
     10, 3, 9, 7, 7, 9, 3, 10, 

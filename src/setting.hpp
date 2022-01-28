@@ -36,7 +36,7 @@
 
 
 /** book **/
-#define USE_BOOK true
+#define USE_BOOK false
 
 
 
@@ -48,7 +48,7 @@
 /** other **/
 
 // nodes statistics
-#define STATISTICS_MODE false
+#define STATISTICS_MODE true
 
 // MPC calculation mode
 #define MPC_MODE false
