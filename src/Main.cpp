@@ -9,6 +9,8 @@
 #include <queue>
 #include "setting.hpp"
 #include "common.hpp"
+#include "level.hpp"
+#include "mobility.hpp"
 #include "board.hpp"
 #include "book.hpp"
 #include "evaluate.hpp"
@@ -16,13 +18,11 @@
 #include "search.hpp"
 #include "midsearch.hpp"
 #include "endsearch.hpp"
-#include "book.hpp"
+#include "ai.hpp"
 #include "human_value.hpp"
 #include "joseki.hpp"
 #include "umigame.hpp"
-#if USE_MULTI_THREAD
-	#include "thread_pool.hpp"
-#endif
+#include "thread_pool.hpp"
 #include "gui/pulldown.hpp"
 #include "gui/graph.hpp"
 #include "gui/menu.hpp"
@@ -56,7 +56,6 @@ struct cell_value {
 
 bool ai_init() {
 	board_init();
-	search_init();
 	transpose_table_init();
 	if (!evaluate_init())
 		return false;
@@ -66,7 +65,8 @@ bool ai_init() {
 		return false;
 	if (!human_value_init())
 		return false;
-	thread_pool.resize(16);
+	thread_pool.resize(1);
+	book.import_edax_book("C:/Users/yaman/Desktop/tmp/edax/data/bigbook.dat");
 	return true;
 }
 
@@ -76,11 +76,12 @@ bool lang_initialize(string file) {
 
 Menu create_menu(Texture checkbox,
 	bool *dammy,
-	bool *entry_mode, bool *professional_mode,
+	bool *entry_mode, bool *professional_mode, bool *serious_game,
 	bool *start_game_flag,
 	bool *use_ai_flag, bool *human_first, bool *human_second, bool *both_ai,
 	bool *use_hint_flag, bool *normal_hint, bool *human_hint, bool *umigame_hint,
 	bool *use_value_flag,
+	int *ai_level, int *hint_level, int *book_error,
 	bool *start_book_learn_flag) {
 	Menu menu;
 	menu_title title;
@@ -92,6 +93,8 @@ Menu create_menu(Texture checkbox,
 	menu_e.init_radio(language.get("mode", "entry_mode"), entry_mode, *entry_mode);
 	title.push(menu_e);
 	menu_e.init_radio(language.get("mode", "professional_mode"), professional_mode, *professional_mode);
+	title.push(menu_e);
+	menu_e.init_radio(language.get("mode", "serious_game"), serious_game, *serious_game);
 	title.push(menu_e);
 
 	menu.push(title);
@@ -114,7 +117,9 @@ Menu create_menu(Texture checkbox,
 	menu_e.push(side_menu);
 	title.push(menu_e);
 
-	menu_e.init_check(language.get("settings", "hint", "hint"), use_hint_flag, *use_hint_flag);
+	if (!(*serious_game)) {
+		menu_e.init_check(language.get("settings", "hint", "hint"), use_hint_flag, *use_hint_flag);
+	}
 	if (*entry_mode) {
 		*normal_hint = true;
 		*human_hint = false;
@@ -128,10 +133,26 @@ Menu create_menu(Texture checkbox,
 		side_menu.init_check(language.get("settings", "hint", "umigame_value"), umigame_hint, *umigame_hint);
 		menu_e.push(side_menu);
 	}
-	title.push(menu_e);
+	else if (*serious_game) {
+		*use_hint_flag = false;
+	}
+	if (!(*serious_game)) {
+		title.push(menu_e);
+	}
 
 	menu_e.init_check(language.get("settings", "value"), use_value_flag, *use_value_flag);
 	title.push(menu_e);
+
+	if (*entry_mode) {
+		menu_e.init_button(language.get("level", "level"), dammy);
+		side_menu.init_bar(language.get("level", "ai_level"), ai_level, *ai_level);
+	}
+	else if (*professional_mode) {
+
+	}
+	else if (*serious_game) {
+		*book_error = 0;
+	}
 
 	menu.push(title);
 
@@ -150,107 +171,61 @@ Menu create_menu(Texture checkbox,
 }
 
 pair<bool, board> move_board(board b, bool board_clicked[]) {
-	board res;
+	mobility mob;
 	for (int cell = 0; cell < hw2; ++cell) {
 		if (board_clicked[cell]) {
-			res = b.move(cell);
-			res.check_player();
-			return make_pair(true, res);
+			calc_flip(&mob, &b, cell);
+			b.move(&mob);
+			b.check_player();
+			return make_pair(true, b);
 		}
 	}
 	return make_pair(false, b);
 }
 
-search_result ai_return_result(search_result result) {
-	return result;
-}
-
-search_result ai_book_return(board bd, book_value book_result) {
-	search_result res;
-	res.policy = book_result.policy;
-	res.value = book_result.value;
-	res.depth = -1;
-	res.nps = 0;
-	cerr << "book policy " << res.policy << " value " << res.value << endl;
-	return res;
-}
-
-inline future<search_result> ai(board bd, int depth, int end_depth, int book_accept) {
-	constexpr int first_moves[4] = { 19, 26, 37, 44 };
-	int policy;
-	search_result result;
-	if (bd.n == 4) {
-		policy = first_moves[myrandrange(0, 4)];
-		result.policy = policy;
-		result.value = 0;
-		result.depth = 0;
-		result.nps = 0;
-		return async(launch::async, ai_return_result, result);
-	}
-	book_value book_result = book.get_random(&bd, book_accept);
-	if (book_result.policy != -1) {
-		return async(launch::async, ai_book_return, bd, book_result);
-	}
-	else if (bd.n >= hw2 - end_depth) {
-		return async(launch::async, endsearch, bd, tim(), false);
-	}
-	return async(launch::async, midsearch, bd, tim(), depth);
-}
-
-cell_value hint_search(board bd, int depth, int end_depth) {
+cell_value hint_search(board b, int level, int policy) {
 	cell_value res;
-	res.value = book.get(&bd);
+	mobility mob;
+	int depth, end_depth;
+	bool use_mpc;
+	double mpct;
+	calc_flip(&mob, &b, policy);
+	b.move(&mob);
+	get_level(level, b.n - 4, &depth, &end_depth, &use_mpc, &mpct);
+	res.value = book.get(&b);
 	if (res.value != -inf) {
 		res.depth = search_book_define;
 	}
-	else if (hw2 - bd.n <= end_depth) {
-		res.value = endsearch_value(bd, tim()).value;
-		res.depth = end_depth >= 21 ? hw2 - bd.n : search_final_define;
+	else if (hw2 - b.n <= end_depth) {
+		res.value = endsearch_value(b, tim(), use_mpc, mpct).value;
+		res.depth = use_mpc ? hw2 - b.n : search_final_define;
 	}
 	else {
-		res.value = midsearch_value(bd, tim(), depth).value;
+		res.value = midsearch_value(b, tim(), depth, use_mpc, mpct).value;
 		res.depth = depth;
 	}
 	return res;
 }
 
-cell_value analyze_search(board bd, int depth, int end_depth) {
+cell_value analyze_search(board b, int level) {
 	cell_value res;
-	int value = book.get(&bd);
-	if (value != -inf) {
-		res.value = value;
-		res.depth = search_book_define;
-	}
-	else {
-		bool has_legal = false;
-		for (int cell = 0; cell < hw2; ++cell) {
-			if (bd.legal(cell))
-				has_legal = true;
-		}
-		bool passed = !has_legal;
-		if (!has_legal) {
-			bd.p = 1 - bd.p;
-			for (int cell = 0; cell < hw2; ++cell) {
-				if (bd.legal(cell))
-					has_legal = true;
-			}
-		}
-		if (!has_legal) {
-			res.value = -end_evaluate(&bd);
-			res.depth = 0;
-		}
-		else if (hw2 - bd.n <= end_depth) {
-			res.value = endsearch(bd, tim(), false).value;
-			if (passed)
-				res.value = -res.value;
-			res.depth = depth >= 21 ? hw2 - bd.n + 1 : search_final_define;
+	search_result res_search = ai(b, level, 0);
+	res.value = res_search.value;
+	int depth, end_depth;
+	bool use_mpc;
+	double mpct;
+	get_level(level, b.n - 4, &depth, &end_depth, &use_mpc, &mpct);
+	res.depth = depth;
+	if (hw2 - b.n - 1 <= end_depth) {
+		if (use_mpc) {
+			res.depth = hw2 - b.n;
 		}
 		else {
-			res.value = midsearch(bd, tim(), depth).value;
-			if (passed)
-				res.value = -res.value;
-			res.depth = depth + 1;
+			res.depth = search_final_define;
 		}
+	}
+	else if (res_search.depth == -1) {
+		res.depth = search_book_define;
 	}
 	return res;
 }
@@ -314,6 +289,8 @@ void board_draw(Rect board_cells[], board b, bool use_hint_flag, bool normal_hin
 	Circle(board_sx + 6 * board_cell_size, board_sy + 6 * board_cell_size, 5).draw(Palette::Black);
 	RoundRect(board_sx, board_sy, board_cell_size * hw, board_cell_size * hw, 20).draw(green).drawFrame(0, board_frame_width, Palette::White);
 	int board_arr[hw2], max_cell_value = -inf;
+	mobility mob;
+	unsigned long long legal = b.mobility_ull();
 	b.translate_to_arr(board_arr);
 	for (int cell = 0; cell < hw2; ++cell) {
 		int x = board_sx + (cell % hw) * board_cell_size + board_cell_size / 2;
@@ -325,7 +302,7 @@ void board_draw(Rect board_cells[], board b, bool use_hint_flag, bool normal_hin
 			Circle(x, y, stone_size).draw(Palette::White);
 		}
 		else if (b.p != vacant) {
-			if (b.legal(cell)) {
+			if (1 & (legal >> cell)) {
 				if (use_hint_flag && normal_hint && hint_state[cell] >= 2) {
 					max_cell_value = max(max_cell_value, hint_value[cell]);
 				}
@@ -334,11 +311,8 @@ void board_draw(Rect board_cells[], board b, bool use_hint_flag, bool normal_hin
 				}
 			}
 		}
-		if (b.policy == cell) {
-			Circle(x, y, legal_size).draw(Palette::Red);
-		}
-
 	}
+	Circle(board_sx + (hw_m1 - b.policy % hw) * board_cell_size + board_cell_size / 2, board_sy + (hw_m1 - b.policy / hw) * board_cell_size + board_cell_size / 2, legal_size).draw(Palette::Red);
 	if (use_hint_flag && b.p != vacant) {
 		bool hint_shown[hw2];
 		for (int i = 0; i < hw2; ++i) {
@@ -346,19 +320,19 @@ void board_draw(Rect board_cells[], board b, bool use_hint_flag, bool normal_hin
 		}
 		if (normal_hint) {
 			for (int cell = 0; cell < hw2; ++cell) {
-				if (b.legal(cell)) {
+				if (1 & (legal >> cell)) {
 					if (hint_state[cell] >= 2) {
 						Color color = Palette::White;
 						if (hint_value[cell] == max_cell_value)
 							color = Palette::Cyan;
 						if (int_mode == 0) {
-							int x = board_sx + (cell % hw) * board_cell_size + board_cell_size / 2;
-							int y = board_sy + (cell / hw) * board_cell_size + board_cell_size / 2;
+							int x = board_sx + (hw_m1 - cell % hw) * board_cell_size + board_cell_size / 2;
+							int y = board_sy + (hw_m1 - cell / hw) * board_cell_size + board_cell_size / 2;
 							big_font(hint_value[cell]).draw(Arg::center = Vec2{ x, y }, color);
 						}
 						else if (int_mode == 1) {
-							int x = board_sx + (cell % hw) * board_cell_size + 3;
-							int y = board_sy + (cell / hw) * board_cell_size + 3;
+							int x = board_sx + (hw_m1 - cell % hw) * board_cell_size + 3;
+							int y = board_sy + (hw_m1 - cell / hw) * board_cell_size + 3;
 							normal_font(hint_value[cell]).draw(x, y, color);
 							y += 19;
 							if (hint_depth[cell] == search_book_define) {
@@ -368,14 +342,14 @@ void board_draw(Rect board_cells[], board b, bool use_hint_flag, bool normal_hin
 								normal_depth_font(U"100%").draw(x, y, color);
 							}
 							else {
-								normal_depth_font(hint_depth[cell], U"手").draw(x, y, color);
+								normal_depth_font(language.get("common", "level"), hint_depth[cell]).draw(x, y, color);
 							}
 						}
 						hint_shown[cell] = true;
 					}
 					else {
-						int x = board_sx + (cell % hw) * board_cell_size + board_cell_size / 2;
-						int y = board_sy + (cell / hw) * board_cell_size + board_cell_size / 2;
+						int x = board_sx + (hw_m1 - cell % hw) * board_cell_size + board_cell_size / 2;
+						int y = board_sy + (hw_m1 - cell / hw) * board_cell_size + board_cell_size / 2;
 						Circle(x, y, legal_size).draw(Palette::Cyan);
 					}
 				}
@@ -419,8 +393,8 @@ void Main() {
 	Console.open();
 
 	bool dammy;
-	constexpr int mode_size = 2;
-	bool show_mode[mode_size] = {true, false};
+	constexpr int mode_size = 3;
+	bool show_mode[mode_size] = {true, false, false};
 	int int_mode = 0;
 	bool start_game_flag;
 	bool use_ai_flag = true, human_first = true, human_second = false, both_ai = false;
@@ -436,7 +410,7 @@ void Main() {
 	}
 	Rect board_cells[hw2];
 	for (int cell = 0; cell < hw2; ++cell) {
-		board_cells[cell] = Rect(board_sx + (cell % hw) * board_cell_size, board_sy + (cell / hw) * board_cell_size, board_cell_size, board_cell_size);
+		board_cells[cell] = Rect(board_sx + (hw_m1 - cell % hw) * board_cell_size, board_sy + (hw_m1 - cell / hw) * board_cell_size, board_cell_size, board_cell_size);
 	}
 	Font graph_font(graph_font_size);
 	Graph graph;
@@ -473,8 +447,7 @@ void Main() {
 	future<search_result> ai_future;
 	bool ai_thinking = false;
 	int ai_value = 0;
-	int ai_depth1 = 13, ai_depth2 = 20, ai_book_accept = 4;
-	int hint_depth1 = 8, hint_depth2 = 18;
+	int ai_level = 25, ai_book_accept = 4, hint_level = 9;
 
 	while (System::Update()) {
 		if (System::GetUserActions() & UserAction::CloseButtonClicked) {
@@ -495,11 +468,12 @@ void Main() {
 			}
 			else if (lang_initialized == 1) {
 				menu = create_menu(checkbox, &dammy,
-					&show_mode[0], &show_mode[1],
+					&show_mode[0], &show_mode[1], &show_mode[2],
 					&start_game_flag,
 					&use_ai_flag, &human_first, &human_second, &both_ai,
 					&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
 					&use_value_flag,
+					&ai_level, &hint_level, &ai_book_accept,
 					&start_book_learn_flag);
 				lang_initialized = 2;
 			}
@@ -511,11 +485,12 @@ void Main() {
 						}
 					}
 					menu = create_menu(checkbox, &dammy,
-						&show_mode[0], &show_mode[1],
+						&show_mode[0], &show_mode[1], &show_mode[2],
 						&start_game_flag,
 						&use_ai_flag, &human_first, &human_second, &both_ai,
 						&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
 						&use_value_flag,
+						&ai_level, &hint_level, &ai_book_accept,
 						&start_book_learn_flag);
 				}
 				initialize_draw(&initialize_future, &initializing, &initialize_failed, font50, font20, icon, logo, texture_loaded);
@@ -542,15 +517,17 @@ void Main() {
 					}
 				}
 				menu = create_menu(checkbox, &dammy,
-					&show_mode[0], &show_mode[1],
+					&show_mode[0], &show_mode[1], &show_mode[2],
 					&start_game_flag,
 					&use_ai_flag, &human_first, &human_second, &both_ai,
 					&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
 					&use_value_flag,
+					&ai_level, &hint_level, &ai_book_accept,
 					&start_book_learn_flag);
 			}
+			unsigned long long legal = bd.mobility_ull();
 			for (int cell = 0; cell < hw2; ++cell) {
-				board_clicked[cell] = board_cells[cell].leftClicked() && !menu.active() && bd.legal(cell);
+				board_clicked[cell] = board_cells[cell].leftClicked() && !menu.active() && (1 & (legal >> cell)) && (!use_ai_flag || (human_first && bd.p == black) || (human_second && bd.p == white) || fork_mode);
 				if (board_clicked[cell])
 					global_searching = false;
 			}
@@ -590,13 +567,13 @@ void Main() {
 				}
 				if (not_finished(bd) && use_hint_flag && normal_hint) {
 					for (int cell = 0; cell < hw2; ++cell) {
-						if (bd.legal(cell) && hint_state[cell] < hint_depth1 * 2) {
+						if ((1 & (legal >> cell)) && hint_state[cell] < hint_level * 2) {
 							if (hint_state[cell] % 2 == 0) {
-								if (hint_state[cell] == hint_depth1 * 2 - 2) {
-									hint_future[cell] = async(launch::async, hint_search, bd.move(cell), hint_depth1, hint_depth2);
+								if (hint_state[cell] == hint_level * 2 - 2) {
+									hint_future[cell] = async(launch::async, hint_search, bd, hint_level, cell);
 								}
 								else {
-									hint_future[cell] = async(launch::async, hint_search, bd.move(cell), hint_state[cell] / 2 + 1, hint_state[cell] / 2 + 1);
+									hint_future[cell] = async(launch::async, hint_search, bd, hint_state[cell] / 2, cell);
 								}
 								++hint_state[cell];
 							}
@@ -613,7 +590,7 @@ void Main() {
 									hint_depth[cell] = hint_result.depth;
 								}
 								if (hint_result.depth == search_final_define || hint_result.depth == search_book_define) {
-									hint_state[cell] = hint_depth1 * 2;
+									hint_state[cell] = hint_level * 2;
 								}
 								else {
 									++hint_state[cell];
@@ -628,7 +605,9 @@ void Main() {
 					if (ai_future.wait_for(chrono::seconds(0)) == future_status::ready) {
 						search_result ai_result = ai_future.get();
 						int sgn = (bd.p ? -1 : 1);
-						bd = bd.move(ai_result.policy);
+						mobility mob;
+						calc_flip(&mob, &bd, ai_result.policy);
+						bd.move(&mob);
 						bd.check_player();
 						bd.v = sgn * ai_result.value;
 						history.emplace_back(bd);
@@ -641,7 +620,7 @@ void Main() {
 				else {
 					global_searching = true;
 					create_vacant_lst(bd);
-					ai_future = ai(bd, ai_depth1, ai_depth2, ai_book_accept);
+					ai_future = async(launch::async, ai, bd, ai_level, ai_book_accept);
 					ai_thinking = true;
 				}
 			}
