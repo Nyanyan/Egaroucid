@@ -70,7 +70,7 @@ string create_line(int b, int w){
     return res;
 }
 
-void probably_move_line(int p, int o, int place, int *np, int *no){
+inline void probably_move_line(int p, int o, int place, int *np, int *no){
     int i, j;
     *np = p | (1 << place);
     for (i = place - 1; i >= 0 && (1 & (o >> i)); --i);
@@ -86,29 +86,23 @@ void probably_move_line(int p, int o, int place, int *np, int *no){
     *no = o & ~(*np);
 }
 
-void calc_stability_line(int b, int w, bool stab[], int ob, int ow){
-    int i, j, nb, nw;
-    bool flag = true;
+int calc_stability_line(int b, int w, int ob, int ow){
+    int i, nb, nw, res = 0b11111111;
+    res &= b & ob;
+    res &= w & ow;
     for (i = 0; i < hw; ++i){
         if ((1 & (b >> i)) == 0 && (1 & (w >> i)) == 0){
-            flag = false;
             probably_move_line(b, w, i, &nb, &nw);
-            calc_stability_line(nb, nw, stab, ob, ow);
+            res &= calc_stability_line(nb, nw, ob, ow);
             probably_move_line(w, b, i, &nw, &nb);
-            calc_stability_line(nb, nw, stab, ob, ow);
+            res &= calc_stability_line(nb, nw, ob, ow);
         }
     }
-    if (flag){
-        for (j = 0; j < hw; ++j){
-            if ((1 & (b >> j)) != (1 & (nb >> j)) || (1 & (w >> j)) != (1 & (nw >> j)))
-                stab[j] = false;
-        }
-    }
+    return res;
 }
 
 inline void init_evaluation_base() {
-    int idx, place, b, w;
-    bool stab[hw];
+    int idx, place, b, w, stab;
     pow3[0] = 1;
     for (idx = 1; idx < 11; ++idx)
         pow3[idx] = pow3[idx- 1] * 3;
@@ -127,13 +121,11 @@ inline void init_evaluation_base() {
     for (idx = 0; idx < n_line; ++idx) {
         b = create_one_color(idx, 0);
         w = create_one_color(idx, 1);
-        for (place = 0; place < hw; ++place)
-            stab[place] = true;
-        calc_stability_line(b, w, stab, b, w);
+        stab = calc_stability_line(b, w, b, w);
         stability_edge_arr[idx][0] = 0;
         stability_edge_arr[idx][1] = 0;
         for (place = 0; place < hw; ++place){
-            if (stab[place]){
+            if (1 & (stab >> place)){
                 stability_edge_arr[idx][0] |= 1ULL << place;
                 stability_edge_arr[idx][1] |= 1ULL << (place * hw);
             }

@@ -1,40 +1,25 @@
 #pragma once
 #include <iostream>
+#include "mobility.hpp"
 
 using namespace std;
 
-#define hw 8
-#define hw_m1 7
-#define hw_p1 9
-#define hw2 64
-#define hw22 128
-#define hw2_m1 63
-#define hw2_mhw 56
-#define hw2_p1 65
-#define b_idx_num 38
-#define n_line 6561
-#define black 0
-#define white 1
-#define vacant 2
+#define p171 17ULL
+#define p172 289ULL
+#define p173 4913ULL
+#define p174 83521ULL
+#define p175 1419857ULL
+#define p176 24137569ULL
+#define p177 410338673ULL
+#define p191 19ULL
+#define p192 361ULL
+#define p193 6859ULL
+#define p194 130321ULL
+#define p195 2476099ULL
+#define p196 47045881ULL
+#define p197 893871739ULL
 
-const int idx_n_cell[b_idx_num] = {8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 3, 4, 5, 6, 7, 8, 7, 6, 5, 4, 3, 3, 4, 5, 6, 7, 8, 7, 6, 5, 4, 3};
-const int move_offset[b_idx_num] = {1, 1, 1, 1, 1, 1, 1, 1, 8, 8, 8, 8, 8, 8, 8, 8, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7};
-const int global_place[b_idx_num][hw] = {
-    {0, 1, 2, 3, 4, 5, 6, 7},{8, 9, 10, 11, 12, 13, 14, 15},{16, 17, 18, 19, 20, 21, 22, 23},{24, 25, 26, 27, 28, 29, 30, 31},{32, 33, 34, 35, 36, 37, 38, 39},{40, 41, 42, 43, 44, 45, 46, 47},{48, 49, 50, 51, 52, 53, 54, 55},{56, 57, 58, 59, 60, 61, 62, 63},
-    {0, 8, 16, 24, 32, 40, 48, 56},{1, 9, 17, 25, 33, 41, 49, 57},{2, 10, 18, 26, 34, 42, 50, 58},{3, 11, 19, 27, 35, 43, 51, 59},{4, 12, 20, 28, 36, 44, 52, 60},{5, 13, 21, 29, 37, 45, 53, 61},{6, 14, 22, 30, 38, 46, 54, 62},{7, 15, 23, 31, 39, 47, 55, 63},
-    {5, 14, 23, -1, -1, -1, -1, -1},{4, 13, 22, 31, -1, -1, -1, -1},{3, 12, 21, 30, 39, -1, -1, -1},{2, 11, 20, 29, 38, 47, -1, -1},{1, 10, 19, 28, 37, 46, 55, -1},{0, 9, 18, 27, 36, 45, 54, 63},{8, 17, 26, 35, 44, 53, 62, -1},{16, 25, 34, 43, 52, 61, -1, -1},{24, 33, 42, 51, 60, -1, -1, -1},{32, 41, 50, 59, -1, -1, -1, -1},{40, 49, 58, -1, -1, -1, -1, -1},
-    {2, 9, 16, -1, -1, -1, -1, -1},{3, 10, 17, 24, -1, -1, -1, -1},{4, 11, 18, 25, 32, -1, -1, -1},{5, 12, 19, 26, 33, 40, -1, -1},{6, 13, 20, 27, 34, 41, 48, -1},{7, 14, 21, 28, 35, 42, 49, 56},{15, 22, 29, 36, 43, 50, 57, -1},{23, 30, 37, 44, 51, 58, -1, -1},{31, 38, 45, 52, 59, -1, -1, -1},{39, 46, 53, 60, -1, -1, -1, -1},{47, 54, 61, -1, -1, -1, -1, -1}
-};
-uint_fast16_t move_arr[2][n_line][hw][2];
-bool legal_arr[2][n_line][hw];
-uint_fast16_t flip_arr[2][n_line][hw];
-uint_fast16_t put_arr[2][n_line][hw];
-int_fast8_t local_place[b_idx_num][hw2];
-int_fast8_t place_included[hw2][4];
-uint_fast16_t reverse_board[n_line];
-uint_fast16_t pow3[11];
-uint_fast16_t pop_digit[n_line][hw];
-uint_fast16_t pop_mid[n_line][hw][hw];
+unsigned long long hash_rand[2][hw2];
 
 const int cell_div4[hw2] = {
     1, 1, 1, 1, 2, 2, 2, 2, 
@@ -68,9 +53,9 @@ inline int trans(const int pt, const int k) {
 inline int move_line_half(const int p, const int o, const int place, const int k) {
     int mask;
     int res = 0;
-    int pt = 1 << (hw - 1 - place);
+    int pt = 1 << (hw_m1 - place);
     if (pt & p || pt & o)
-        return res;
+        return 0;
     mask = trans(pt, k);
     while (mask && (mask & o)) {
         ++res;
@@ -81,88 +66,32 @@ inline int move_line_half(const int p, const int o, const int place, const int k
     return 0;
 }
 
-void board_init() {
-    int idx, b, w, place, i, j, k, l_place, inc_idx;
-    pow3[0] = 1;
-    for (idx = 1; idx < 11; ++idx)
-        pow3[idx] = pow3[idx - 1] * 3;
-    for (i = 0; i < n_line; ++i){
-        for (j = 0; j < hw; ++j)
-            pop_digit[i][j] = (i / pow3[hw_m1 - j]) % 3;
-    }
-    for (i = 0; i < n_line; ++i){
-        for (j = 0; j < hw; ++j){
-            for (k = 0; k < hw; ++k)
-                pop_mid[i][j][k] = (i - i / pow3[j] * pow3[j]) / pow3[k];
-        }
-    }
-    for (idx = 0; idx < n_line; ++idx) {
-        b = create_one_color(idx, 0);
-        w = create_one_color(idx, 1);
-        for (place = 0; place < hw; ++place) {
-            reverse_board[idx] *= 3;
-            if (1 & (b >> place))
-                reverse_board[idx] += 0;
-            else if (1 & (w >> place)) 
-                reverse_board[idx] += 1;
-            else
-                reverse_board[idx] += 2;
-        }
-        for (place = 0; place < hw; ++place) {
-            move_arr[black][idx][place][0] = move_line_half(b, w, place, 0);
-            move_arr[black][idx][place][1] = move_line_half(b, w, place, 1);
-            if (move_arr[black][idx][place][0] || move_arr[black][idx][place][1])
-                legal_arr[black][idx][place] = true;
-            else
-                legal_arr[black][idx][place] = false;
-            move_arr[white][idx][place][0] = move_line_half(w, b, place, 0);
-            move_arr[white][idx][place][1] = move_line_half(w, b, place, 1);
-            if (move_arr[white][idx][place][0] || move_arr[white][idx][place][1])
-                legal_arr[white][idx][place] = true;
-            else
-                legal_arr[white][idx][place] = false;
-        }
-        for (place = 0; place < hw; ++place) {
-            flip_arr[black][idx][place] = idx;
-            flip_arr[white][idx][place] = idx;
-            put_arr[black][idx][place] = idx;
-            put_arr[white][idx][place] = idx;
-            if (b & (1 << (hw - 1 - place)))
-                flip_arr[white][idx][place] += pow3[hw_m1 - place];
-            else if (w & (1 << (hw - 1 - place)))
-                flip_arr[black][idx][place] -= pow3[hw_m1 - place];
-            else{
-                put_arr[black][idx][place] -= pow3[hw_m1 - place] * 2;
-                put_arr[white][idx][place] -= pow3[hw_m1 - place];
-            }
-        }
-    }
-    for (place = 0; place < hw2; ++place){
-        inc_idx = 0;
-        for (idx = 0; idx < b_idx_num; ++idx){
-            for (l_place = 0; l_place < hw; ++l_place){
-                if (global_place[idx][l_place] == place)
-                    place_included[place][inc_idx++] = idx;
-            }
-        }
-        if (inc_idx == 3)
-            place_included[place][inc_idx] = -1;
-    }
-    for (idx = 0; idx < b_idx_num; ++idx){
-        for (place = 0; place < hw2; ++place){
-            local_place[idx][place] = -1;
-            for (l_place = 0; l_place < hw; ++l_place){
-                if (global_place[idx][l_place] == place)
-                    local_place[idx][place] = l_place;
-            }
-        }
-    }
-    cerr << "board initialized" << endl;
+unsigned long long get_mobility(const unsigned long long P, const unsigned long long O){
+    unsigned long long moves, mO, flip1, pre1, flip8, pre8;
+    __m128i	PP, mOO, MM, flip, pre;
+    mO = O & 0x7e7e7e7e7e7e7e7eULL;
+    PP  = _mm_set_epi64x(mirror_v(P), P);
+    mOO = _mm_set_epi64x(mirror_v(mO), mO);
+    flip = _mm_and_si128(mOO, _mm_slli_epi64(PP, 7));				            flip1  = mO & (P << 1);		    flip8  = O & (P << 8);
+    flip = _mm_or_si128(flip, _mm_and_si128(mOO, _mm_slli_epi64(flip, 7)));		flip1 |= mO & (flip1 << 1);	    flip8 |= O & (flip8 << 8);
+    pre  = _mm_and_si128(mOO, _mm_slli_epi64(mOO, 7));				            pre1   = mO & (mO << 1);	    pre8   = O & (O << 8);
+    flip = _mm_or_si128(flip, _mm_and_si128(pre, _mm_slli_epi64(flip, 14)));	flip1 |= pre1 & (flip1 << 2);	flip8 |= pre8 & (flip8 << 16);
+    flip = _mm_or_si128(flip, _mm_and_si128(pre, _mm_slli_epi64(flip, 14)));	flip1 |= pre1 & (flip1 << 2);	flip8 |= pre8 & (flip8 << 16);
+    MM = _mm_slli_epi64(flip, 7);							                    moves = flip1 << 1;		        moves |= flip8 << 8;
+    flip = _mm_and_si128(mOO, _mm_slli_epi64(PP, 9));				            flip1  = mO & (P >> 1);		    flip8  = O & (P >> 8);
+    flip = _mm_or_si128(flip, _mm_and_si128(mOO, _mm_slli_epi64(flip, 9)));		flip1 |= mO & (flip1 >> 1);	    flip8 |= O & (flip8 >> 8);
+    pre = _mm_and_si128(mOO, _mm_slli_epi64(mOO, 9));				            pre1 >>= 1;			            pre8 >>= 8;
+    flip = _mm_or_si128(flip, _mm_and_si128(pre, _mm_slli_epi64(flip, 18)));	flip1 |= pre1 & (flip1 >> 2);	flip8 |= pre8 & (flip8 >> 16);
+    flip = _mm_or_si128(flip, _mm_and_si128(pre, _mm_slli_epi64(flip, 18)));	flip1 |= pre1 & (flip1 >> 2);	flip8 |= pre8 & (flip8 >> 16);
+    MM = _mm_or_si128(MM, _mm_slli_epi64(flip, 9));					            moves |= flip1 >> 1;		    moves |= flip8 >> 8;
+    moves |= _mm_cvtsi128_si64(MM) | mirror_v(_mm_cvtsi128_si64(_mm_unpackhi_epi64(MM, MM)));
+    return moves & ~(P|O);
 }
 
 class board {
     public:
-        uint_fast16_t b[b_idx_num];
+        unsigned long long b;
+        unsigned long long w;
         int p;
         int policy;
         int v;
@@ -174,132 +103,314 @@ class board {
             return v > another.v;
         }
 
-        unsigned long long hash(){
+        inline board copy(){
+            board res;
+            res.b = b;
+            res.w = w;
+            res.p = p;
+            res.policy = policy;
+            res.v = v;
+            res.n = n;
+            res.parity = parity;
+            return res;
+        }
+
+        void copy(board *res){
+            res->b = b;
+            res->w = w;
+            res->p = p;
+            res->policy = policy;
+            res->v = v;
+            res->n = n;
+            res->parity = parity;
+        }
+
+        inline unsigned long long hash(){
             return
-                this->p + 
-                this->b[0] + 
-                this->b[1] * 17 + 
-                this->b[2] * 289 + 
-                this->b[3] * 4913 + 
-                this->b[4] * 83521 + 
-                this->b[5] * 1419857 + 
-                this->b[6] * 24137549 + 
-                this->b[7] * 410338673;
+                (b * 3) ^ ((b >> 8) * 7) ^ 
+                ((b >> 16) * p171) ^ 
+                ((b >> 24) * p172) ^ 
+                ((b >> 32) * p173) ^ 
+                ((b >> 40) * p174) ^ 
+                ((b >> 48) * p175) ^ 
+                ((b >> 56) * p176) ^ 
+                (w * 5) ^ ((w >> 8) * 11) ^ 
+                ((w >> 16) * p191) ^ 
+                ((w >> 24) * p192) ^ 
+                ((w >> 32) * p193) ^ 
+                ((w >> 40) * p194) ^ 
+                ((w >> 48) * p195) ^ 
+                ((w >> 56) * p196);
+            /*
+            unsigned long long res = 0;
+            for (int i = 0; i < hw2; ++i){
+                if (1 & (b >> i))
+                    res ^= hash_rand[0][i];
+                if (1 & (w >> i))
+                    res ^= hash_rand[1][i];
+            }
+            return res;
+            */
         }
 
         inline void print() {
-            int i, j, tmp;
-            string res;
-            for (i = 0; i < hw; ++i) {
-                tmp = this->b[i];
-                res = "";
-                for (j = 0; j < hw; ++j) {
-                    if (tmp % 3 == 0)
-                        res = "X " + res;
-                    else if (tmp % 3 == 1)
-                        res = "O " + res;
-                    else
-                        res = ". " + res;
-                    tmp /= 3;
-                }
-                cerr << res << endl;
+            int i;
+            for (int i = hw2_m1; i >= 0; --i){
+                if (1 & (b >> i))
+                    cerr << "X ";
+                else if (1 & (w >> i))
+                    cerr << "O ";
+                else
+                    cerr << ". ";
+                if (i % hw == 0)
+                    cerr << endl;
             }
-            cerr << endl;
         }
 
-        inline bool legal(int g_place) {
-            bool res = 
-                legal_arr[this->p][this->b[place_included[g_place][0]]][local_place[place_included[g_place][0]][g_place]] || 
-                legal_arr[this->p][this->b[place_included[g_place][1]]][local_place[place_included[g_place][1]][g_place]] || 
-                legal_arr[this->p][this->b[place_included[g_place][2]]][local_place[place_included[g_place][2]][g_place]];
-            if (place_included[g_place][3] != -1)
-                res |= legal_arr[this->p][this->b[place_included[g_place][3]]][local_place[place_included[g_place][3]][g_place]];
+        inline unsigned long long mobility_ull(){
+            unsigned long long res;
+            if (p == black)
+                res = get_mobility(b, w);
+            else
+                res = get_mobility(w, b);
             return res;
         }
 
-        inline board move(const int g_place) {
+        inline void full_stability(unsigned long long *h, unsigned long long *v, unsigned long long *d7, unsigned long long *d9){
+            const unsigned long long stones = (b | w);
+            *h = full_stability_h(stones);
+            *v = full_stability_v(stones);
+            full_stability_d(stones, d7, d9);
+            /*
+           *h = full_lines(stones, 1);
+           *v = full_lines(stones, hw);
+           *d7 = full_lines(stones, hw_m1);
+           *d9 = full_lines(stones, hw_p1);
+            */
+        }
+
+        inline void move(const mobility *mob) {
+            if (p == black){
+                b ^= mob->flip;
+                w &= ~b;
+                b |= 1ULL << mob->pos;
+            } else{
+                w ^= mob->flip;
+                b &= ~w;
+                w |= 1ULL << mob->pos;
+            }
+            p = 1 - p;
+            ++n;
+            policy = mob->pos;
+            parity ^= cell_div4[mob->pos];
+        }
+
+        inline void move_copy(const mobility *mob, board *res) {
+            if (p == black){
+                res->b = b ^ mob->flip;
+                res->w = w & (~res->b);
+                res->b |= 1ULL << mob->pos;
+            } else{
+                res->w = w ^ mob->flip;
+                res->b = b & (~res->w);
+                res->w |= 1ULL << mob->pos;
+            }
+            res->p = 1 - p;
+            res->n = n + 1;
+            res->policy = mob->pos;
+            res->parity = parity ^ cell_div4[mob->pos];
+        }
+
+        inline board move_copy(const mobility *mob) {
             board res;
-            for (int i = 0; i < b_idx_num; ++i)
-                res.b[i] = this->b[i];
-            move_p(&res, g_place, 0);
-            move_p(&res, g_place, 1);
-            move_p(&res, g_place, 2);
-            if (place_included[g_place][3] != -1)
-                move_p(&res, g_place, 3);
-            res.b[place_included[g_place][0]] = put_arr[this->p][res.b[place_included[g_place][0]]][local_place[place_included[g_place][0]][g_place]];
-            res.b[place_included[g_place][1]] = put_arr[this->p][res.b[place_included[g_place][1]]][local_place[place_included[g_place][1]][g_place]];
-            res.b[place_included[g_place][2]] = put_arr[this->p][res.b[place_included[g_place][2]]][local_place[place_included[g_place][2]][g_place]];
-            if (place_included[g_place][3] != -1)
-                res.b[place_included[g_place][3]] = put_arr[this->p][res.b[place_included[g_place][3]]][local_place[place_included[g_place][3]][g_place]];
-            res.p = 1 - this->p;
-            res.n = this->n + 1;
-            res.policy = g_place;
-            res.parity = this->parity ^ cell_div4[g_place];
+            move_copy(mob, &res);
             return res;
         }
 
-        inline void move(const int g_place, board *res) {
-            for (int i = 0; i < b_idx_num; ++i)
-                res->b[i] = this->b[i];
-            move_p(res, g_place, 0);
-            move_p(res, g_place, 1);
-            move_p(res, g_place, 2);
-            if (place_included[g_place][3] != -1)
-                move_p(res, g_place, 3);
-            res->b[place_included[g_place][0]] = put_arr[this->p][res->b[place_included[g_place][0]]][local_place[place_included[g_place][0]][g_place]];
-            res->b[place_included[g_place][1]] = put_arr[this->p][res->b[place_included[g_place][1]]][local_place[place_included[g_place][1]][g_place]];
-            res->b[place_included[g_place][2]] = put_arr[this->p][res->b[place_included[g_place][2]]][local_place[place_included[g_place][2]][g_place]];
-            if (place_included[g_place][3] != -1)
-                res->b[place_included[g_place][3]] = put_arr[this->p][res->b[place_included[g_place][3]]][local_place[place_included[g_place][3]][g_place]];
-            res->p = 1 - this->p;
-            res->n = this->n + 1;
-            res->policy = g_place;
-            res->parity = this->parity ^ cell_div4[g_place];
+        inline void undo(const mobility *mob){
+            p = 1 - p;
+            --n;
+            policy = -1;
+            parity ^= cell_div4[mob->pos];
+            if (p == black){
+                b &= ~(1ULL << mob->pos);
+                b ^= mob->flip;
+                w |= mob->flip;
+            } else{
+                w &= ~(1ULL << mob->pos);
+                w ^= mob->flip;
+                b |= mob->flip;
+            }
         }
 
         inline void translate_to_arr(int res[]) {
-            int i, j;
-            for (i = 0; i < hw; ++i) {
-                for (j = 0; j < hw; ++j)
-                    res[i * hw + j] = pop_digit[this->b[i]][j];
+            for (int i = 0; i < hw2; ++i){
+                if (1 & (b >> i))
+                    res[hw2_m1 - i] = black;
+                else if (1 & (w >> i))
+                    res[hw2_m1 - i] = white;
+                else
+                    res[hw2_m1 - i] = vacant;
             }
         }
 
         inline void translate_from_arr(const int arr[], int player) {
-            int i, j;
-            for (i = 0; i < b_idx_num; ++i)
-                this->b[i] = n_line - 1;
-            this->n = hw2;
+            int i;
+            b = 0;
+            w = 0;
+            n = hw2;
+            parity = 0;
             for (i = 0; i < hw2; ++i) {
-                for (j = 0; j < 4; ++j) {
-                    if (place_included[i][j] == -1)
-                        continue;
-                    if (arr[i] == black)
-                        this->b[place_included[i][j]] -= 2 * pow3[hw_m1 - local_place[place_included[i][j]][i]];
-                    else if (arr[i] == white)
-                        this->b[place_included[i][j]] -= pow3[hw_m1 - local_place[place_included[i][j]][i]];
-                    else if (j == 0)
-                        --this->n;
+                if (arr[hw2_m1 - i] == black)
+                    b |= 1ULL << i;
+                else if (arr[hw2_m1 - i] == white)
+                    w |= 1ULL << i;
+                else{
+                    --n;
+                    parity ^= cell_div4[i];
                 }
             }
-            this->p = player;
+            p = player;
+            policy = -1;
         }
 
+        inline void translate_from_ull(const unsigned long long bk, const unsigned long long wt, int player) {
+            if (bk & wt)
+                cerr << "both on same square" << endl;
+            b = bk;
+            w = wt;
+            n = hw2;
+            parity = 0;
+            for (int i = 0; i < hw2; ++i) {
+                if ((1 & (bk >> i)) == 0 && (1 & (wt >> i)) == 0){
+                    --n;
+                    parity ^= cell_div4[i];
+                }
+            }
+            p = player;
+            policy = -1;
+        }
+
+        inline int count(int player){
+            int b_score = pop_count_ull(b), w_score = pop_count_ull(w);
+            int black_score = b_score - w_score, vacant_score = hw2 - b_score - w_score;
+            if (black_score > 0)
+                black_score += vacant_score;
+            else if (black_score < 0)
+                black_score -= vacant_score;
+            return (player ? -1 : 1) * black_score;
+        }
+
+        inline int count(){
+            return count(p);
+        }
+
+        inline int raw_count(){
+            if (p == black)
+                return pop_count_ull(b);
+            return pop_count_ull(w);
+        }
+
+        inline void board_canput(int canput_arr[], const unsigned long long mobility_black, const unsigned long long mobility_white){
+            for (int i = 0; i < hw2; ++i){
+                canput_arr[i] = 0;
+                if (1 & (mobility_black >> i))
+                    ++canput_arr[i];
+                if (1 & (mobility_white >> i))
+                    canput_arr[i] += 2;
+            }
+        }
+
+        inline void board_canput(int canput_arr[]){
+            const unsigned long long mobility_black = get_mobility(b, w);
+            const unsigned long long mobility_white = get_mobility(w, b);
+            board_canput(canput_arr, mobility_black, mobility_white);
+        }
+
+        inline void check_player(){
+            bool has_legal = (mobility_ull() != 0);
+            if (!has_legal){
+                p = 1 - p;
+                has_legal = (mobility_ull() != 0);
+                if (!has_legal)
+                    p = vacant;
+            }
+        }
+
+        inline void reset(){
+            constexpr int first_board[hw2] = {
+                vacant,vacant,vacant,vacant,vacant,vacant,vacant,vacant,
+                vacant,vacant,vacant,vacant,vacant,vacant,vacant,vacant,
+                vacant,vacant,vacant,vacant,vacant,vacant,vacant,vacant,
+                vacant,vacant,vacant,white,black,vacant,vacant,vacant,
+                vacant,vacant,vacant,black,white,vacant,vacant,vacant,
+                vacant,vacant,vacant,vacant,vacant,vacant,vacant,vacant,
+                vacant,vacant,vacant,vacant,vacant,vacant,vacant,vacant,
+                vacant,vacant,vacant,vacant,vacant,vacant,vacant,vacant
+            };
+            translate_from_arr(first_board, black);
+        }
+
+        inline int phase(){
+            return min(n_phases - 1, (n - 4) / phase_n_stones);
+        }
+    
     private:
-        inline void flip(board *res, int g_place) {
-            res->b[place_included[g_place][0]] = flip_arr[this->p][res->b[place_included[g_place][0]]][local_place[place_included[g_place][0]][g_place]];
-            res->b[place_included[g_place][1]] = flip_arr[this->p][res->b[place_included[g_place][1]]][local_place[place_included[g_place][1]][g_place]];
-            res->b[place_included[g_place][2]] = flip_arr[this->p][res->b[place_included[g_place][2]]][local_place[place_included[g_place][2]][g_place]];
-            if (place_included[g_place][3] != -1)
-                res->b[place_included[g_place][3]] = flip_arr[this->p][res->b[place_included[g_place][3]]][local_place[place_included[g_place][3]][g_place]];
+        inline unsigned long long full_stability_h(unsigned long long full){
+            full &= full >> 1;
+            full &= full >> 2;
+            full &= full >> 4;
+            return (full & 0x0101010101010101) * 0xff;
         }
 
-        inline void move_p(board *res, int g_place, int i) {
-            int j, place = local_place[place_included[g_place][i]][g_place];
-            for (j = 1; j <= move_arr[this->p][this->b[place_included[g_place][i]]][place][0]; ++j)
-                flip(res, g_place - move_offset[place_included[g_place][i]] * j);
-            for (j = 1; j <= move_arr[this->p][this->b[place_included[g_place][i]]][place][1]; ++j)
-                flip(res, g_place + move_offset[place_included[g_place][i]] * j);
+        inline unsigned long long full_stability_v(unsigned long long full){
+            full &= (full >> 8) | (full << 56);
+            full &= (full >> 16) | (full << 48);
+            full &= (full >> 32) | (full << 32);
+            return full;
         }
 
+        inline void full_stability_d(unsigned long long full, unsigned long long *full_d7, unsigned long long *full_d9){
+            static const unsigned long long edge = 0xff818181818181ff;
+            static const unsigned long long e7[] = {
+                0xffff030303030303, 0xc0c0c0c0c0c0ffff, 0xffffffff0f0f0f0f, 0xf0f0f0f0ffffffff };
+            static const unsigned long long e9[] = {
+                0xffffc0c0c0c0c0c0, 0x030303030303ffff, 0x0f0f0f0ff0f0f0f0 };
+            unsigned long long l7, r7, l9, r9;
+            l7 = r7 = full;
+            l7 &= edge | (l7 >> 7);		r7 &= edge | (r7 << 7);
+            l7 &= e7[0] | (l7 >> 14);	r7 &= e7[1] | (r7 << 14);
+            l7 &= e7[2] | (l7 >> 28);	r7 &= e7[3] | (r7 << 28);
+            *full_d7 = l7 & r7;
+
+            l9 = r9 = full;
+            l9 &= edge | (l9 >> 9);		r9 &= edge | (r9 << 9);
+            l9 &= e9[0] | (l9 >> 18);	r9 &= e9[1] | (r9 << 18);
+            *full_d9 = l9 & r9 & (e9[2] | (l9 >> 36) | (r9 << 36));
+        }
+        /*
+        inline unsigned long long full_lines(const unsigned long long stones, const int dir){
+            const unsigned long long edge = stones & 0b1111111110000001100000011000000110000001100000011000000111111111ULL;
+            unsigned long long full = (stones & (((stones >> dir) & (stones << dir)) | edge));
+            full &= (((full >> dir) & (full << dir)) | edge);
+            full &= (((full >> dir) & (full << dir)) | edge);
+            full &= (((full >> dir) & (full << dir)) | edge);
+            full &= (((full >> dir) & (full << dir)) | edge);
+            return ((full >> dir) & (full << dir));
+        }
+        */
 };
+
+inline void calc_flip(mobility *mob, board *b, const int policy){
+    if (b->p == black)
+        mob->calc_flip(b->b, b->w, policy);
+    else
+        mob->calc_flip(b->w, b->b, policy);
+}
+
+inline void board_init(){
+    for (int i = 0; i < hw2; ++i){
+        hash_rand[0][i] = myrand_ull();
+        hash_rand[1][i] = myrand_ull();
+    }
+}

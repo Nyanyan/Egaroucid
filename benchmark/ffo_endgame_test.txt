@@ -522,7 +522,12 @@
 #58 final depth: 30 time: 9855 policy: 6 value: 4
 #59 final depth: 34 time: 778 policy: 31 value: 60      WRONG
 
-2022/01/28 use bitboard without mpc without updating evaluation function
-#40 final depth: 20 time: 870 policy: 55 value: 38
-#41 final depth: 22 time: 1710 policy: 32 value: 0
-#42 
+2022/01/28 use bitboard without mpc without updating evaluation function single thread
+#40 final depth: 20 time: 2364 policy: 55 value: 38
+#41 final depth: 22 time: 2725 policy: 32 value: 0
+#42 final depth: 22 time: 4228 policy: 49 value: 6
+#43 final depth: 23 time: 5106 policy: 13 value: -12
+#44 final depth: 23 time: 4176 policy: 52 value: -14
+#45 final depth: 24 time: 48215 policy: 54 value: 6
+#46 final depth: 24 time: 15892 policy: 46 value: -8
+#47 final depth: 25 time: 4647 policy: 49 value: 4
