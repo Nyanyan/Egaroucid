@@ -85,8 +85,8 @@ int main(){
         #else
             cin >> ai_player;
             input_board(&b, ai_player);
-            cerr << b.p << endl;
-            cerr << b.n << " " << mid_evaluate(&b) << endl;
+            //cerr << b.p << endl;
+            //cerr << b.n << " " << mid_evaluate(&b) << endl;
             //search_human(b, tim(), depth, 7);
             result = ai(b, level, book_error);
             print_result(result);

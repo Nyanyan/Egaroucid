@@ -39,7 +39,7 @@ public:
 			arr.push_back(make_pair(b, name));
 			b.white_mirror();
 			arr.push_back(make_pair(b, name));
-			b.black_mirror();
+			b.vertical_mirror();
 			arr.push_back(make_pair(b, name));
 			b.white_mirror();
 			arr.push_back(make_pair(b, name));

@@ -183,6 +183,11 @@ class board {
             w = black_line(w);
         }
 
+        inline void vertical_mirror(){
+            b = mirror_v(b);
+            w = mirror_v(w);
+        }
+
         inline void print() {
             for (int i = hw2_m1; i >= 0; --i){
                 if (1 & (b >> i))
@@ -357,11 +362,11 @@ class board {
         }
 
         inline void check_player(){
-            bool has_legal = (mobility_ull() != 0);
-            if (!has_legal){
+            bool passed = (mobility_ull() == 0);
+            if (passed){
                 p = 1 - p;
-                has_legal = (mobility_ull() != 0);
-                if (!has_legal)
+                passed = (mobility_ull() == 0);
+                if (passed)
                     p = vacant;
             }
         }
