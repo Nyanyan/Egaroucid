@@ -87,7 +87,7 @@ class book{
 					fclose(fp);
 					return false;
 				}
-				b.translate_from_arr(arr, p);
+				b.translate_from_arr(arr, black);
 				n_book += register_symmetric_book(b, value, n_book);
 			}
 			cerr << "book imported " << n_book << " boards" << endl;
@@ -124,6 +124,8 @@ class book{
             board b;
             mobility mob;
             for (i = 0; i < n_boards; ++i){
+                if (i % 1024 == 0)
+                    cerr << "loading " << (i * 100 / n_boards) << "%" << endl;
                 if (fread(&player, 8, 1, fp) < 1) {
                     cerr << "file broken" << endl;
                     fclose(fp);
@@ -163,9 +165,8 @@ class book{
 					fclose(fp);
 					return false;
 				}
+                b.translate_from_ull(player, opponent, black);
 				n_book += register_symmetric_book(b, (int)value, n_book);
-				if (n_book % 1024 == 0)
-					cerr << "loading " << n_book << " boards" << endl;
 				for (j = 0; j < (int)link + 1; ++j) {
 					if (fread(&link_value, 1, 1, fp) < 1) {
 						cerr << "file broken" << endl;
@@ -182,8 +183,6 @@ class book{
                         b.move(&mob);
                         n_book += register_symmetric_book(b, -(int)link_value, n_book);
                         b.undo(&mob);
-                        if (n_book % 1024 == 0)
-                            cerr << "loading " << n_book << " boards" << endl;
 					}
 				}
             }
@@ -270,7 +269,7 @@ class book{
         }
 
         inline int get(board *b){
-            book_node *p_node = this->book[b->hash() & book_hash_mask];
+            book_node *p_node = this->book[b->hash_player() & book_hash_mask];
             while(p_node != NULL){
                 if(compare_key(b, p_node)){
                     return p_node->value;
@@ -291,7 +290,7 @@ class book{
                 if (1 & (legal >> coord)){
                     calc_flip(&mob, b, coord);
                     nb = b->move_copy(&mob);
-                    book_node *p_node = this->book[nb.hash() & book_hash_mask];
+                    book_node *p_node = this->book[nb.hash_player() & book_hash_mask];
                     while(p_node != NULL){
                         if(compare_key(&nb, p_node)){
                             policies.push_back(coord);
@@ -322,7 +321,7 @@ class book{
         }
 
         inline void change(board b, int value){
-            book_node *p_node = this->book[b.hash() & book_hash_mask];
+            book_node *p_node = this->book[b.hash_player() & book_hash_mask];
             while(p_node != NULL){
                 if(compare_key(&b, p_node)){
                     int result = register_symmetric_book(b, value, p_node->line);
@@ -440,14 +439,15 @@ class book{
 
         inline int register_symmetric_book(board b, int value, int line){
             int res = 1;
-			if (!register_book(b, b.hash() & book_hash_mask, value, line))
+            int hash = b.hash_player() & book_hash_mask;
+			if (!register_book(b, hash, value, line))
 				res = 0;
             b.white_mirror();
-            register_book(b, b.hash() & book_hash_mask, value, line);
+            register_book(b, hash, value, line);
             b.black_mirror();
-            register_book(b, b.hash() & book_hash_mask, value, line);
+            register_book(b, hash, value, line);
             b.white_mirror();
-            register_book(b, b.hash() & book_hash_mask, value, line);
+            register_book(b, hash, value, line);
 			return res;
         }
         /*

@@ -23,7 +23,7 @@ inline void init(){
 }
 
 inline void input_board(board *b, int ai_player){
-    int i, j;
+    int i;
     char elem;
     int arr[hw2];
     vacant_lst.clear();
@@ -58,7 +58,7 @@ int main(){
     board b;
     #if !MPC_MODE && !EVAL_MODE
         search_result result;
-        int level = 1, book_error = 0;
+        int level = 5, book_error = 0;
     #endif
     #if USE_MULTI_THREAD
         thread_pool.resize(16);

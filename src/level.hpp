@@ -1032,12 +1032,12 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         *depth2 = 60;
         *use_mpc = false;
         *mpct = 0.0;
+        break;
     default:
         *depth1 = 0;
         *depth2 = 0;
         *use_mpc = false;
         *mpct = 0.0;
-        break;
         break;
     }
 }

@@ -153,6 +153,26 @@ class board {
             */
         }
 
+        inline unsigned long long hash_player(){
+            if (p == black)
+                return hash();
+            return
+                (w * 3) ^ ((w >> 8) * 7) ^ 
+                ((w >> 16) * p171) ^ 
+                ((w >> 24) * p172) ^ 
+                ((w >> 32) * p173) ^ 
+                ((w >> 40) * p174) ^ 
+                ((w >> 48) * p175) ^ 
+                ((w >> 56) * p176) ^ 
+                (b * 5) ^ ((b >> 8) * 11) ^ 
+                ((b >> 16) * p191) ^ 
+                ((b >> 24) * p192) ^ 
+                ((b >> 32) * p193) ^ 
+                ((b >> 40) * p194) ^ 
+                ((b >> 48) * p195) ^ 
+                ((b >> 56) * p196);
+        }
+
         inline void white_mirror(){
             b = white_line(b);
             w = white_line(w);

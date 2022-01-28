@@ -531,3 +531,12 @@
 #45 final depth: 24 time: 48215 policy: 54 value: 6
 #46 final depth: 24 time: 15892 policy: 46 value: -8
 #47 final depth: 25 time: 4647 policy: 49 value: 4
+
+2022/01/28 updated evaluation function without mpc 16 threads laptop
+#40 final depth: 20 time: 1715 policy: 55 value: 38
+#41 final depth: 22 time: 3241 policy: 32 value: 0
+#42 final depth: 22 time: 3982 policy: 49 value: 6
+#43 final depth: 23 time: 5091 policy: 13 value: -12
+#44 final depth: 23 time: 3409 policy: 52 value: -14
+#45 final depth: 24 time: 35175 policy: 54 value: 6
+#46 final depth: 24 time: 7390 policy: 46 value: -8
