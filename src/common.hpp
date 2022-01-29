@@ -165,41 +165,60 @@ inline unsigned long long split_v_line(int x, int c){
     */
 }
 
-inline int join_d7_line(unsigned long long x, int c){
-    int res = 1 & (x >> c);
-    res |= (1 & (x >> (hw_m1 + c))) << 1;
-    res |= (1 & (x >> (2 * hw_m1 + c))) << 2;
-    res |= (1 & (x >> (3 * hw_m1 + c))) << 3;
-    res |= (1 & (x >> (4 * hw_m1 + c))) << 4;
-    res |= (1 & (x >> (5 * hw_m1 + c))) << 5;
-    res |= (1 & (x >> (6 * hw_m1 + c))) << 6;
-    res |= (1 & (x >> (7 * hw_m1 + c))) << 7;
+inline int join_d7_line(unsigned long long x, int t){
+    /*
+    x = x & (0b1000000100000010000001000000100000010000001000000100000010000001ULL << t);
+    unsigned long long a = x & 0b0111111100000001111111000000011111110000000111111100000001111111ULL;
+    unsigned long long b = x & 0b1000000011111110000000111111100000001111111000000011111110000000ULL;
+    unsigned long long c;
+    x = a | (b >> 6);
+    cerr << x << endl;
+    a = x & 0b1111111100000000000000111111111111110000000000000011111111111111ULL;
+    b = x & 0b0000000011111111111111000000000000001111111111111100000000000000ULL;
+    x = a | (b >> 12);
+    cerr << x << endl;
+    a = x & 0b0000000000000000000000000000000000001111111111111111111111111111ULL;
+    b = x & 0b0000000011111111111111111111111111110000000000000000000000000000ULL;
+    c = x & 0b1111111100000000000000000000000000000000000000000000000000000000ULL;
+    x = a | (b >> 24) | (c >> 48);
+    cerr << x << endl;
+    return (int)(x >> t);
+    */
+    int res = 1 & (x >> t);
+    res |= 0b10 & (x >> (6 + t));
+    res |= 0b100 & (x >> (12 + t));
+    res |= 0b1000 & (x >> (18 + t));
+    res |= 0b10000 & (x >> (24 + t));
+    res |= 0b100000 & (x >> (30 + t));
+    res |= 0b1000000 & (x >> (36 + t));
+    res |= 0b10000000 & (x >> (42 + t));
     return res;
+    
 }
 
 inline unsigned long long split_d7_line(int x, int c){
     unsigned long long res = (1ULL & x) << c;
-    res |= (1ULL & (x >> 1)) << (hw_m1 + c);
-    res |= (1ULL & (x >> 2)) << (2 * hw_m1 + c);
-    res |= (1ULL & (x >> 3)) << (3 * hw_m1 + c);
-    res |= (1ULL & (x >> 4)) << (4 * hw_m1 + c);
-    res |= (1ULL & (x >> 5)) << (5 * hw_m1 + c);
-    res |= (1ULL & (x >> 6)) << (6 * hw_m1 + c);
-    res |= (1ULL & (x >> 7)) << (7 * hw_m1 + c);
+    res |= (0b10ULL & x) << (6 + c);
+    res |= (0b100ULL & x) << (12 + c);
+    res |= (0b1000ULL & x) << (18 + c);
+    res |= (0b10000ULL & x) << (24 + c);
+    res |= (0b100000ULL & x) << (30 + c);
+    res |= (0b1000000ULL & x) << (36 + c);
+    res |= (0b10000000ULL & x) << (42 + c);
     return res;
 }
 
-inline int join_d9_line(unsigned long long x, int c){
+inline int join_d9_line(unsigned long long x, int t){
     int res = 0;
-    if (c >= 0)
-        res |= 1 & (x >> c);
-    res |= (1 & (x >> (hw_p1 + c))) << 1;
-    res |= (1 & (x >> (2 * hw_p1 + c))) << 2;
-    res |= (1 & (x >> (3 * hw_p1 + c))) << 3;
-    res |= (1 & (x >> (4 * hw_p1 + c))) << 4;
-    res |= (1 & (x >> (5 * hw_p1 + c))) << 5;
-    res |= (1 & (x >> (6 * hw_p1 + c))) << 6;
-    res |= (1 & (x >> (7 * hw_p1 + c))) << 7;
+    if (t >= 0)
+        res |= 1 & (x >> t);
+    res |= 0b10 & (x >> (8 + t));
+    res |= 0b100 & (x >> (16 + t));
+    res |= 0b1000 & (x >> (24 + t));
+    res |= 0b10000 & (x >> (32 + t));
+    res |= 0b100000 & (x >> (40 + t));
+    res |= 0b1000000 & (x >> (48 + t));
+    res |= 0b10000000 & (x >> (56 + t));
     return res;
 }
 
@@ -207,12 +226,12 @@ inline unsigned long long split_d9_line(int x, int c){
     unsigned long long res = 0;
     if (c >= 0)
         res |= (1ULL & x) << c;
-    res |= (1ULL & (x >> 1)) << (hw_p1 + c);
-    res |= (1ULL & (x >> 2)) << (2 * hw_p1 + c);
-    res |= (1ULL & (x >> 3)) << (3 * hw_p1 + c);
-    res |= (1ULL & (x >> 4)) << (4 * hw_p1 + c);
-    res |= (1ULL & (x >> 5)) << (5 * hw_p1 + c);
-    res |= (1ULL & (x >> 6)) << (6 * hw_p1 + c);
-    res |= (1ULL & (x >> 7)) << (7 * hw_p1 + c);
+    res |= (0b10ULL & x) << (8 + c);
+    res |= (0b100ULL & x) << (16 + c);
+    res |= (0b1000ULL & x) << (24 + c);
+    res |= (0b10000ULL & x) << (32 + c);
+    res |= (0b100000ULL & x) << (40 + c);
+    res |= (0b1000000ULL & x) << (48 + c);
+    res |= (0b10000000ULL & x) << (56 + c);
     return res;
 }
