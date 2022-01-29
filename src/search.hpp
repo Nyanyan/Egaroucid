@@ -119,9 +119,8 @@ inline void move_ordering_eval(board *b){
 }
 
 inline bool stability_cut(board *b, int *alpha, int *beta){
-    int b_arr[hw2], stab[2];
-    b->translate_to_arr(b_arr);
-    calc_stability(b, b_arr, &stab[0], &stab[1]);
+    int stab[2];
+    calc_stability(b, &stab[0], &stab[1]);
     *alpha = max(*alpha, 2 * stab[b->p] - hw2);
     *beta = min(*beta, hw2 - 2 * stab[1 - b->p]);
     return *alpha >= *beta;
