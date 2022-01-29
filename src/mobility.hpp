@@ -267,7 +267,17 @@ class mobility{
             p = join_v_line(player, u);
             o = join_v_line(opponent, u);
             flip |= split_v_line(flip_pre_calc[p][o][t], u);
-
+            /*
+            for (int i = hw_m1; i >= 0; --i){
+                if (1 & (p >> i))
+                    cerr << '0';
+                else if (1 & (o >> i))
+                    cerr << '1';
+                else
+                    cerr << '.';
+            }
+            cerr << endl;
+            */
             t = place / hw;
             u = place % hw + t;
             p = join_d7_line(player, u) & d7_mask[place];

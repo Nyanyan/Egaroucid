@@ -116,18 +116,18 @@ inline unsigned long long black_line(unsigned long long x){
 }
 
 inline int join_v_line(unsigned long long x, int c){
-    /*
+    x = x & (0b0000000100000001000000010000000100000001000000010000000100000001ULL << c);
     unsigned long long a = x & 0b0000000011111111000000001111111100000000111111110000000011111111ULL;
     unsigned long long b = x & 0b1111111100000000111111110000000011111111000000001111111100000000ULL;
-    x = a | (b >> (n - 1));
+    x = a | (b >> 7);
     a = x & 0b0000000000000000111111111111111100000000000000001111111111111111ULL;
     b = x & 0b1111111111111111000000000000000011111111111111110000000000000000ULL;
-    x = a | (b >> (2 * (n - 1)));
+    x = a | (b >> 14);
     a = x & 0b0000000000000000000000000000000011111111111111111111111111111111ULL;
     b = x & 0b1111111111111111111111111111111100000000000000000000000000000000ULL;
-    x = a | (b >> (4 * (n - 1)));
-    return (int)(x >> (hw_m1 - c));
-    */
+    x = a | (b >> 28);
+    return (int)(x >> c);
+    /*
     int res = 1 & (x >> c);
     res |= (1 & (x >> (hw + c))) << 1;
     res |= (1 & (x >> (2 * hw + c))) << 2;
@@ -137,9 +137,22 @@ inline int join_v_line(unsigned long long x, int c){
     res |= (1 & (x >> (6 * hw + c))) << 6;
     res |= (1 & (x >> (7 * hw + c))) << 7;
     return res;
+    */
 }
 
 inline unsigned long long split_v_line(int x, int c){
+    unsigned long long res = 0;
+    unsigned long long a = x & 0b00001111;
+    unsigned long long b = x & 0b11110000;
+    res = a | (b << 28);
+    a = res & 0b0011001100110011001100110011001100110011001100110011001100110011ULL;
+    b = res & 0b1100110011001100110011001100110011001100110011001100110011001100ULL;
+    res = a | (b << 14);
+    a = res & 0b0101010101010101010101010101010101010101010101010101010101010101ULL;
+    b = res & 0b1010101010101010101010101010101010101010101010101010101010101010ULL;
+    res = a | (b << 7);
+    return res << c;
+    /*
     unsigned long long res = (1ULL & x) << c;
     res |= (1ULL & (x >> 1)) << (hw + c);
     res |= (1ULL & (x >> 2)) << (2 * hw + c);
@@ -149,6 +162,7 @@ inline unsigned long long split_v_line(int x, int c){
     res |= (1ULL & (x >> 6)) << (6 * hw + c);
     res |= (1ULL & (x >> 7)) << (7 * hw + c);
     return res;
+    */
 }
 
 inline int join_d7_line(unsigned long long x, int c){
