@@ -78,25 +78,6 @@ const int mpcd[41] = {
     };
 #endif
 unsigned long long can_be_flipped[hw2];
-
-class search_statistics{
-    public:
-        unsigned long long searched_nodes;
-    #if USE_MULTI_THREAD
-        private:
-            mutex mtx;
-    #endif
-    public:
-        inline void nodes_increment(){
-            #if STATISTICS_MODE
-                #if USE_MULTI_THREAD
-                    lock_guard<mutex> lock(mtx);
-                #endif
-                ++searched_nodes;
-            #endif
-        }
-};
-search_statistics search_statistics;
 vector<int> vacant_lst;
 
 struct search_result{
