@@ -114,3 +114,91 @@ inline unsigned long long black_line(unsigned long long x){
     }
     return res;
 }
+
+inline int join_v_line(unsigned long long x, int c){
+    /*
+    unsigned long long a = x & 0b0000000011111111000000001111111100000000111111110000000011111111ULL;
+    unsigned long long b = x & 0b1111111100000000111111110000000011111111000000001111111100000000ULL;
+    x = a | (b >> (n - 1));
+    a = x & 0b0000000000000000111111111111111100000000000000001111111111111111ULL;
+    b = x & 0b1111111111111111000000000000000011111111111111110000000000000000ULL;
+    x = a | (b >> (2 * (n - 1)));
+    a = x & 0b0000000000000000000000000000000011111111111111111111111111111111ULL;
+    b = x & 0b1111111111111111111111111111111100000000000000000000000000000000ULL;
+    x = a | (b >> (4 * (n - 1)));
+    return (int)(x >> (hw_m1 - c));
+    */
+    int res = 1 & (x >> c);
+    res |= (1 & (x >> (hw + c))) << 1;
+    res |= (1 & (x >> (2 * hw + c))) << 2;
+    res |= (1 & (x >> (3 * hw + c))) << 3;
+    res |= (1 & (x >> (4 * hw + c))) << 4;
+    res |= (1 & (x >> (5 * hw + c))) << 5;
+    res |= (1 & (x >> (6 * hw + c))) << 6;
+    res |= (1 & (x >> (7 * hw + c))) << 7;
+    return res;
+}
+
+inline unsigned long long split_v_line(int x, int c){
+    unsigned long long res = (1ULL & x) << c;
+    res |= (1ULL & (x >> 1)) << (hw + c);
+    res |= (1ULL & (x >> 2)) << (2 * hw + c);
+    res |= (1ULL & (x >> 3)) << (3 * hw + c);
+    res |= (1ULL & (x >> 4)) << (4 * hw + c);
+    res |= (1ULL & (x >> 5)) << (5 * hw + c);
+    res |= (1ULL & (x >> 6)) << (6 * hw + c);
+    res |= (1ULL & (x >> 7)) << (7 * hw + c);
+    return res;
+}
+
+inline int join_d7_line(unsigned long long x, int c){
+    int res = 1 & (x >> c);
+    res |= (1 & (x >> (hw_m1 + c))) << 1;
+    res |= (1 & (x >> (2 * hw_m1 + c))) << 2;
+    res |= (1 & (x >> (3 * hw_m1 + c))) << 3;
+    res |= (1 & (x >> (4 * hw_m1 + c))) << 4;
+    res |= (1 & (x >> (5 * hw_m1 + c))) << 5;
+    res |= (1 & (x >> (6 * hw_m1 + c))) << 6;
+    res |= (1 & (x >> (7 * hw_m1 + c))) << 7;
+    return res;
+}
+
+inline unsigned long long split_d7_line(int x, int c){
+    unsigned long long res = (1ULL & x) << c;
+    res |= (1ULL & (x >> 1)) << (hw_m1 + c);
+    res |= (1ULL & (x >> 2)) << (2 * hw_m1 + c);
+    res |= (1ULL & (x >> 3)) << (3 * hw_m1 + c);
+    res |= (1ULL & (x >> 4)) << (4 * hw_m1 + c);
+    res |= (1ULL & (x >> 5)) << (5 * hw_m1 + c);
+    res |= (1ULL & (x >> 6)) << (6 * hw_m1 + c);
+    res |= (1ULL & (x >> 7)) << (7 * hw_m1 + c);
+    return res;
+}
+
+inline int join_d9_line(unsigned long long x, int c){
+    int res = 0;
+    if (c >= 0)
+        res |= 1 & (x >> c);
+    res |= (1 & (x >> (hw_p1 + c))) << 1;
+    res |= (1 & (x >> (2 * hw_p1 + c))) << 2;
+    res |= (1 & (x >> (3 * hw_p1 + c))) << 3;
+    res |= (1 & (x >> (4 * hw_p1 + c))) << 4;
+    res |= (1 & (x >> (5 * hw_p1 + c))) << 5;
+    res |= (1 & (x >> (6 * hw_p1 + c))) << 6;
+    res |= (1 & (x >> (7 * hw_p1 + c))) << 7;
+    return res;
+}
+
+inline unsigned long long split_d9_line(int x, int c){
+    unsigned long long res = 0;
+    if (c >= 0)
+        res |= (1ULL & x) << c;
+    res |= (1ULL & (x >> 1)) << (hw_p1 + c);
+    res |= (1ULL & (x >> 2)) << (2 * hw_p1 + c);
+    res |= (1ULL & (x >> 3)) << (3 * hw_p1 + c);
+    res |= (1ULL & (x >> 4)) << (4 * hw_p1 + c);
+    res |= (1ULL & (x >> 5)) << (5 * hw_p1 + c);
+    res |= (1ULL & (x >> 6)) << (6 * hw_p1 + c);
+    res |= (1ULL & (x >> 7)) << (7 * hw_p1 + c);
+    return res;
+}

@@ -21,6 +21,7 @@ inline void input_board(board *b, int ai_player){
 }
 
 int main(){
+    mobility_init();
     board b;
     mobility m;
     unsigned long long mob;

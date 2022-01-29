@@ -11,6 +11,7 @@
 #include "human_value.hpp"
 
 inline void init(){
+    mobility_init();
     board_init();
     transpose_table_init();
     evaluate_init();
