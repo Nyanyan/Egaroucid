@@ -8,7 +8,7 @@
 #include "transpose_table.hpp"
 #include "book.hpp"
 #include "ai.hpp"
-#include "human_value.hpp"
+//#include "human_value.hpp"
 
 inline void init(){
     mobility_init();
@@ -19,7 +19,7 @@ inline void init(){
         book_init();
     #endif
     #if !MPC_MODE && !EVAL_MODE && !BOOK_MODE
-        human_value_init();
+        //human_value_init();
     #endif
 }
 

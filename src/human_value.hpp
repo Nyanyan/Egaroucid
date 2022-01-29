@@ -210,7 +210,6 @@ bool human_value_init(){
 
 
 pair<int, vector<int>> create_principal_variation(board *b, bool skipped, int depth, int alpha, int beta, bool use_mpc, double mpct_in){
-    search_statistics.nodes_increment();
     pair<int, vector<int>> res;
 	if (!global_searching)
 		return res;

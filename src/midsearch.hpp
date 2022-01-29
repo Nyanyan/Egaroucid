@@ -187,12 +187,17 @@ int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int 
             }
             v = max(v, g);
             vector<future<int>> future_tasks;
-            for (i = 1; i < canput; ++i)
-                future_tasks.emplace_back(thread_pool.push(bind(&nega_alpha_ordering, &nb[i], false, depth - 1, -beta, -alpha, false, use_mpc, mpct_in, n_nodes)));
+            int n_n_nodes[50];
+            for (i = 1; i < canput; ++i){
+                //n_n_nodes.emplace_back(0);
+                n_n_nodes[i - 1] = 0;
+                future_tasks.emplace_back(thread_pool.push(bind(&nega_alpha_ordering, &nb[i], false, depth - 1, -beta, -alpha, false, use_mpc, mpct_in, &(n_n_nodes[i - 1]))));
+            }
             for (i = 1; i < canput; ++i){
                 g = -future_tasks[i - 1].get();
                 alpha = max(alpha, g);
                 v = max(v, g);
+                *n_nodes += n_n_nodes[i - 1];
             }
             if (beta <= alpha){
                 if (l < alpha)
@@ -354,7 +359,7 @@ inline search_result midsearch(board b, long long strt, int max_depth, bool use_
     }
     int canput = nb.size();
     //cerr << "canput: " << canput << endl;
-    int res_depth;
+    int res_depth = -1;
     int policy = -1;
     int tmp_policy;
     int alpha, beta, g, value = -inf, former_value = -inf;
