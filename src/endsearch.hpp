@@ -1071,7 +1071,7 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
     beta = hw2;
     int pre_search_depth = max(1, min(20, max_depth - simple_end_threshold + simple_mid_threshold + 3));
     cerr << "pre search depth " << pre_search_depth << endl;
-    double pre_search_mpcd = 0.8;
+    double pre_search_mpcd = 0.6;
     transpose_table.init_now();
     for (i = 0; i < canput; ++i)
         nb[i].second.v = -mtd(&nb[i].second, false, pre_search_depth - 1, -hw2, hw2, true, pre_search_mpcd, &searched_nodes);

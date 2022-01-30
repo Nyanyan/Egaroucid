@@ -597,3 +597,11 @@
 #41 final depth: 22 time: 2826 policy: 32 value: 0 nodes: 45214160 nps: 17899509
 #42 final depth: 22 time: 3551 policy: 49 value: 6 nodes: 69175637 nps: 21064444
 #43 final depth: 23 time: 8360 policy: 13 value: -12 nodes: 132746711 nps: 16256026
+#44 final depth: 23 time: 4674 policy: 52 value: -14 nodes: 73856876 nps: 17136166
+
+2022/01/31 update presearch mpc
+#40 final depth: 20 time: 1194 policy: 55 value: 38 nodes: 27568936 nps: 24769933
+#41 final depth: 22 time: 2773 policy: 32 value: 0 nodes: 48558282 nps: 18931104
+#42 final depth: 22 time: 3222 policy: 49 value: 6 nodes: 62996315 nps: 20880449
+#43 final depth: 23 time: 9127 policy: 13 value: -12 nodes: 133292364 nps: 14808617
+#44 final depth: 23 time: 4581 policy: 52 value: -14 nodes: 74708071 nps: 17229721
