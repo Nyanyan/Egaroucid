@@ -91,9 +91,9 @@ int cmp_vacant(int p, int q){
     return cell_weight[p] > cell_weight[q];
 }
 
-inline void move_ordering(board *b){
+inline int move_ordering(board *b, const int hash, const int policy){
+    /*
     int l, u;
-    int hash = (int)(b->hash() & search_hash_mask);
     transpose_table.get_now(b, hash, &l, &u);
     if (u != inf && l != -inf)
         b->v = -(u + l) / 2 + cache_hit + cache_both + cache_now;
@@ -112,6 +112,8 @@ inline void move_ordering(board *b){
         else
             b->v = -mid_evaluate(b);
     }
+    */
+    return transpose_table.child_get_prev(b, hash, policy);
 }
 
 inline void move_ordering_eval(board *b){
@@ -132,4 +134,8 @@ inline int calc_canput_exact(board *b){
 
 bool move_ordering_sort(pair<int, board> &a, pair<int, board> &b){
     return a.second.v > b.second.v;
+}
+
+bool move_ordering_sort_int_int(pair<int, int> &a, pair<int, int> &b){
+    return a.second > b.second;
 }

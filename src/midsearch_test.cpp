@@ -8,7 +8,7 @@
 #include "midsearch.hpp"
 
 inline void input_board(board *b, int ai_player){
-    int i, j;
+    int i;
     char elem;
     int arr[hw2];
     vacant_lst.clear();
@@ -30,16 +30,16 @@ int main(){
     board_init();
     evaluate_init();
     transpose_table_init();
-    thread_pool.resize(8);
+    #if USE_MULTI_THREAD
+        thread_pool.resize(8);
+    #endif
     board b;
-    mobility m;
-    unsigned long long mob;
     int ai_player;
     while (true){
         cin >> ai_player;
         input_board(&b, ai_player);
         b.print();
-        search_result res = midsearch(b, tim(), 20, false, 0.0);
+        search_result res = midsearch(b, tim(), 10, false, 0.0);
         cerr << res.policy << " " << res.value << endl;
     }
     return 0;
