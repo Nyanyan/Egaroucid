@@ -18,29 +18,7 @@ constexpr unsigned char d7_mask[hw2] = {
     0b01111111, 0b11111111, 0b11111110, 0b11111100, 0b11111000, 0b11110000, 0b11100000, 0b11000000,
     0b11111111, 0b11111110, 0b11111100, 0b11111000, 0b11110000, 0b11100000, 0b11000000, 0b10000000
 };
-/*
-constexpr int d9_mask[hw2] = {
-    0b11111111, 0b11111110, 0b11111100, 0b11111000, 0b11110000, 0b11100000, 0b11000000, 0b10000000,
-    0b01111111, 0b11111111, 0b11111110, 0b11111100, 0b11111000, 0b11110000, 0b11100000, 0b11000000,
-    0b00111111, 0b01111111, 0b11111111, 0b11111110, 0b11111100, 0b11111000, 0b11110000, 0b11100000,
-    0b00011111, 0b00111111, 0b01111111, 0b11111111, 0b11111110, 0b11111100, 0b11111000, 0b11110000,
-    0b00001111, 0b00011111, 0b00111111, 0b01111111, 0b11111111, 0b11111110, 0b11111100, 0b11111000,
-    0b00000111, 0b00001111, 0b00011111, 0b00111111, 0b01111111, 0b11111111, 0b11111110, 0b11111100,
-    0b00000011, 0b00000111, 0b00001111, 0b00011111, 0b00111111, 0b01111111, 0b11111111, 0b11111110,
-    0b00000001, 0b00000011, 0b00000111, 0b00001111, 0b00011111, 0b00111111, 0b01111111, 0b11111111
-};
 
-constexpr int d7_mask[hw2] = {
-    0b10000000, 0b11000000, 0b11100000, 0b11110000, 0b11111000, 0b11111100, 0b11111110, 0b11111111,
-    0b11000000, 0b11100000, 0b11110000, 0b11111000, 0b11111100, 0b11111110, 0b11111111, 0b01111111,
-    0b11100000, 0b11110000, 0b11111000, 0b11111100, 0b11111110, 0b11111111, 0b01111111, 0b00111111,
-    0b11110000, 0b11111000, 0b11111100, 0b11111110, 0b11111111, 0b01111111, 0b00111111, 0b00011111,
-    0b11111000, 0b11111100, 0b11111110, 0b11111111, 0b01111111, 0b00111111, 0b00011111, 0b00001111,
-    0b11111100, 0b11111110, 0b11111111, 0b01111111, 0b00111111, 0b00011111, 0b00001111, 0b00000111,
-    0b11111110, 0b11111111, 0b01111111, 0b00111111, 0b00011111, 0b00001111, 0b00000111, 0b00000011,
-    0b11111111, 0b01111111, 0b00111111, 0b00011111, 0b00001111, 0b00000111, 0b00000011, 0b00000001
-};
-*/
 constexpr unsigned char d9_mask[hw2] = {
     0b11111111, 0b01111111, 0b00111111, 0b00011111, 0b00001111, 0b00000111, 0b00000011, 0b00000001,
     0b11111110, 0b11111111, 0b01111111, 0b00111111, 0b00011111, 0b00001111, 0b00000111, 0b00000011,
@@ -51,6 +29,10 @@ constexpr unsigned char d9_mask[hw2] = {
     0b11000000, 0b11100000, 0b11110000, 0b11111000, 0b11111100, 0b11111110, 0b11111111, 0b01111111,
     0b10000000, 0b11000000, 0b11100000, 0b11110000, 0b11111000, 0b11111100, 0b11111110, 0b11111111
 };
+
+unsigned long long line_to_board_v[n_8bit][hw];
+unsigned long long line_to_board_d7[n_8bit][hw * 2];
+unsigned long long line_to_board_d9[n_8bit][hw * 2];
 
 
 class mobility{
@@ -251,8 +233,7 @@ class mobility{
             pos = place;
         }
 
-        inline void calc_flip_fast(const unsigned long long player, const unsigned long long opponent, const int place){
-            unsigned long long h;
+        inline void calc_flip(const unsigned long long player, const unsigned long long opponent, const int place){
             int t, u, p, o;
             flip = 0;
             pos = place;
@@ -261,23 +242,22 @@ class mobility{
             u = place % hw;
             p = (player >> (hw * t)) & 0b11111111;
             o = (opponent >> (hw * t)) & 0b11111111;
-            h = flip_pre_calc[p][o][u];
-            flip |= h << (hw * t);
+            flip |= (unsigned long long)flip_pre_calc[p][o][u] << (hw * t);
 
             p = join_v_line(player, u);
             o = join_v_line(opponent, u);
-            flip |= split_v_line(flip_pre_calc[p][o][t], u);
+            flip |= line_to_board_v[flip_pre_calc[p][o][t]][u];
 
             t = place / hw;
             u = place % hw + t;
             p = join_d7_line(player, u) & d7_mask[place];
             o = join_d7_line(opponent, u) & d7_mask[place];
-            flip |= split_d7_line(flip_pre_calc[p][o][t] & d7_mask[place], u);
+            flip |= line_to_board_d7[flip_pre_calc[p][o][t] & d7_mask[place]][u];
 
             u -= t * 2;
             p = join_d9_line(player, u) & d9_mask[place];
             o = join_d9_line(opponent, u) & d9_mask[place];
-            flip |= split_d9_line(flip_pre_calc[p][o][t] & d9_mask[place], u);
+            flip |= line_to_board_d9[flip_pre_calc[p][o][t] & d9_mask[place]][u + hw];
             /*
             for (int i = hw_m1; i >= 0; --i){
                 if (1 & ((d9_mask[place]) >> i))
@@ -306,7 +286,7 @@ class mobility{
             */
         }
 
-        inline void calc_flip(const unsigned long long player, const unsigned long long opponent, const int place){
+        inline void calc_flip_hybrid(const unsigned long long player, const unsigned long long opponent, const int place){
             unsigned long long wh, put, m1, m2, m3, m4, m5, m6;
             unsigned long long h;
             int t, u, p, o;
@@ -463,6 +443,7 @@ class mobility{
 void mobility_init(){
     int player, opponent, place;
     int wh, put, m1, m2, m3, m4, m5, m6;
+    int idx, t;
     for (player = 0; player < n_8bit; ++player){
         for (opponent = 0; opponent < n_8bit; ++opponent){
             for (place = 0; place < hw; ++place){
@@ -514,26 +495,16 @@ void mobility_init(){
                                 flip_pre_calc[player][opponent][place] |= m1 | m2 | m3 | m4 | m5 | m6;
                         }
                     }
-                    /*
-                    for (int i = 0; i < hw; ++i){
-                        if (1 & (player >> i))
-                            cerr << '0';
-                        else if (1 & (opponent >> i))
-                            cerr << '1';
-                        else
-                            cerr << '.';
-                    }
-                    cerr << " " << place << " ";
-                    for (int i = 0; i < hw; ++i){
-                        if (1 & (flip_pre_calc[player][opponent][place] >> i))
-                            cerr << '1';
-                        else
-                            cerr << '.';
-                    }
-                    cerr << endl;
-                    */
                 }
             }
         }
+    }
+    for (idx = 0; idx < n_8bit; ++idx){
+        for (t = 0; t < hw; ++t)
+            line_to_board_v[idx][t] = split_v_line((unsigned char)idx, t);
+        for (t = 0; t < hw * 2; ++t)
+            line_to_board_d7[idx][t] = split_d7_line((unsigned char)idx, t);
+        for (t = -hw; t < hw; ++t)
+            line_to_board_d9[idx][t + hw] = split_d9_line((unsigned char)idx, t);
     }
 }
