@@ -551,6 +551,10 @@
 #46 final depth: 24 time: 5814 policy: 46 value: -8
 #47 final depth: 25 time: 5264 policy: 49 value: 4
 
-2022/01/29 flip fast without mpc laptop
-#40 final depth: 20 time: 1520 policy: 55 value: 38 nodes: 47647270 nps: 34058091
-#41 
+2022/01/29 flip fast without mpc laptop single thread
+#40 final depth: 20 time: 1715 policy: 55 value: 38 nodes: 26572842 nps: 16332416
+#41 final depth: 22 time: 4135 policy: 32 value: 0 nodes: 57369161 nps: 14228462
+#42 final depth: 22 time: 5621 policy: 49 value: 6 nodes: 81853818 nps: 14799099
+#43 final depth: 23 time: 10431 policy: 13 value: -12 nodes: 120475951 nps: 11667242
+#44 final depth: 23 time: 3571 policy: 52 value: -14 nodes: 43389017 nps: 12627769
+

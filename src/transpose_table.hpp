@@ -6,7 +6,7 @@
     #include <mutex>
 #endif
 
-#define search_hash_table_size 1048576
+#define search_hash_table_size 4194304 //1048576
 constexpr int search_hash_mask = search_hash_table_size - 1;
 
 class search_node{

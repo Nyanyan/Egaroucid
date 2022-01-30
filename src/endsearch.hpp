@@ -705,8 +705,11 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
         if (1 & (legal >> cell)){
             calc_flip(&mob, b, cell);
             nb.emplace_back(b->move_copy(&mob));
-            move_ordering(&nb[canput]);
-            nb[canput].v -= canput_bonus * calc_canput_exact(&nb[canput]);
+            if (depth >= 18){
+                move_ordering(&nb[canput]);
+                nb[canput].v -= canput_bonus * calc_canput_exact(&nb[canput]);
+            } else
+                nb[canput].v = -canput_bonus * calc_canput_exact(&nb[canput]);
             #if USE_END_PO && false
                 if (depth <= po_max_depth && (b->parity & cell_div4[cell]))
                     nb[canput].v += parity_vacant_bonus;
@@ -991,9 +994,10 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
     swap(transpose_table.now, transpose_table.prev);
     if (canput >= 2)
         sort(nb.begin(), nb.end(), move_ordering_sort);
-    cerr << "pre search depth " << pre_search_depth << " time " << tim() - strt << " policy " << nb[0].first << " value " << nb[0].second.v << endl;
+    cerr << "pre search depth " << pre_search_depth << " time " << tim() - strt << " policy " << nb[0].first << " value " << nb[0].second.v << " nodes " << searched_nodes << " nps " << (long long)searched_nodes * 1000 / max(1LL, tim() - strt) << endl;
     transpose_table.init_now();
     long long final_strt = tim();
+    searched_nodes = 0;
     if (nb[0].second.n < hw2 - 5){
         for (i = 0; i < canput; ++i){
             g = -mtd_final(&nb[i].second, false, max_depth - 1, -beta, -alpha, use_mpc, use_mpct, -nb[i].second.v, true, &searched_nodes);
