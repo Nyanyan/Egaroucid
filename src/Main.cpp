@@ -19,7 +19,7 @@
 #include "midsearch.hpp"
 #include "endsearch.hpp"
 #include "ai.hpp"
-#include "human_value.hpp"
+//#include "human_value.hpp"
 #include "joseki.hpp"
 #include "umigame.hpp"
 #include "thread_pool.hpp"
@@ -55,6 +55,7 @@ struct cell_value {
 };
 
 bool ai_init() {
+	mobility_init();
 	board_init();
 	transpose_table_init();
 	if (!evaluate_init())
@@ -63,10 +64,9 @@ bool ai_init() {
 		return false;
 	if (!joseki_init())
 		return false;
-	if (!human_value_init())
-		return false;
-	thread_pool.resize(1);
-	book.import_edax_book("C:/Users/yaman/Desktop/tmp/edax/data/bigbook.dat");
+	//if (!human_value_init())
+	//	return false;
+	thread_pool.resize(16);
 	return true;
 }
 
@@ -197,11 +197,14 @@ cell_value hint_search(board b, int level, int policy) {
 		res.depth = search_book_define;
 	}
 	else if (hw2 - b.n <= end_depth) {
-		res.value = endsearch_value(b, tim(), use_mpc, mpct).value;
+		res.value = -endsearch_value(b, tim(), use_mpc, mpct).value;
 		res.depth = use_mpc ? hw2 - b.n : search_final_define;
 	}
 	else {
-		res.value = midsearch_value(b, tim(), depth, use_mpc, mpct).value;
+		cerr << depth << endl;
+		b.print();
+		res.value = -midsearch_value(b, tim(), depth, use_mpc, mpct).value;
+		cerr << -res.value << " " << global_searching << endl;
 		res.depth = depth;
 	}
 	return res;
@@ -236,7 +239,7 @@ inline void create_vacant_lst(board bd) {
 	vacant_lst.clear();
 	for (int i = 0; i < hw2; ++i) {
 		if (bd_arr[i] == vacant)
-			vacant_lst.push_back(i);
+			vacant_lst.push_back(hw2_m1 - i);
 	}
 	if (bd.n < hw2_m1)
 		sort(vacant_lst.begin(), vacant_lst.end(), cmp_vacant);
@@ -301,18 +304,18 @@ void board_draw(Rect board_cells[], board b, bool use_hint_flag, bool normal_hin
 		else if (board_arr[cell] == white) {
 			Circle(x, y, stone_size).draw(Palette::White);
 		}
-		else if (b.p != vacant) {
-			if (1 & (legal >> cell)) {
-				if (use_hint_flag && normal_hint && hint_state[cell] >= 2) {
-					max_cell_value = max(max_cell_value, hint_value[cell]);
-				}
-				if (!use_hint_flag || (!normal_hint && !human_hint && !umigame_hint)) {
-					Circle(x, y, legal_size).draw(Palette::Cyan);
-				}
+		if (1 & (legal >> cell)) {
+			if (use_hint_flag && normal_hint && hint_state[cell] >= 2) {
+				max_cell_value = max(max_cell_value, hint_value[cell]);
+			}
+			if (!use_hint_flag || (!normal_hint && !human_hint && !umigame_hint)) {
+				Circle(x, y, legal_size).draw(Palette::Cyan);
 			}
 		}
 	}
-	Circle(board_sx + (hw_m1 - b.policy % hw) * board_cell_size + board_cell_size / 2, board_sy + (hw_m1 - b.policy / hw) * board_cell_size + board_cell_size / 2, legal_size).draw(Palette::Red);
+	if (b.policy != -1) {
+		Circle(board_sx + (hw_m1 - b.policy % hw) * board_cell_size + board_cell_size / 2, board_sy + (hw_m1 - b.policy / hw) * board_cell_size + board_cell_size / 2, legal_size).draw(Palette::Red);
+	}
 	if (use_hint_flag && b.p != vacant) {
 		bool hint_shown[hw2];
 		for (int i = 0; i < hw2; ++i) {
@@ -447,7 +450,7 @@ void Main() {
 	future<search_result> ai_future;
 	bool ai_thinking = false;
 	int ai_value = 0;
-	int ai_level = 25, ai_book_accept = 4, hint_level = 9;
+	int ai_level = 25, ai_book_accept = 0, hint_level = 9;
 
 	while (System::Update()) {
 		if (System::GetUserActions() & UserAction::CloseButtonClicked) {
@@ -581,10 +584,10 @@ void Main() {
 								cell_value hint_result = hint_future[cell].get();
 								if (global_searching) {
 									if (hint_state[cell] == 1 || hint_result.depth == search_final_define) {
-										hint_value[cell] = -hint_result.value;
+										hint_value[cell] = hint_result.value;
 									}
 									else {
-										hint_value[cell] -= hint_result.value;
+										hint_value[cell] += hint_result.value;
 										hint_value[cell] /= 2;
 									}
 									hint_depth[cell] = hint_result.depth;
