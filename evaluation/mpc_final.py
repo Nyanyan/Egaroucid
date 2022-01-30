@@ -24,7 +24,7 @@ def calc_n_stones(board):
         res += int(elem != '.')
     return res
 
-evaluate = subprocess.Popen('../src/egaroucid5_2.out'.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+evaluate = subprocess.Popen('../src/egaroucid5.out'.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
 sleep(1)
 
 min_depth = 7
@@ -53,7 +53,8 @@ def collect_data(num):
     except:
         print('cannot open')
         return
-    for data_idx in trange(len(data)):
+    use_data = 10000
+    for data_idx in trange(use_data):
         datum = data[data_idx]
         board, player, vh = datum.split()
         #board, player, _, _, _, vh = datum.split()

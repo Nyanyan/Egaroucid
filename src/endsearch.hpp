@@ -1048,7 +1048,7 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
     int max_depth = hw2 - b.n;
     alpha = -hw2 - 1;
     beta = hw2;
-    int pre_search_depth = max(1, min(30, max_depth - simple_end_threshold + simple_mid_threshold + 3));
+    int pre_search_depth = max(1, min(20, max_depth - simple_end_threshold + simple_mid_threshold + 3));
     cerr << "pre search depth " << pre_search_depth << endl;
     double pre_search_mpcd = 0.8;
     transpose_table.init_now();
@@ -1102,7 +1102,7 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
     if (global_searching){
         policy = tmp_policy;
         value = alpha;
-        cerr << "final depth: " << max_depth << " time: " << tim() - strt << " policy: " << policy << " value: " << alpha << " nodes: " << searched_nodes << " nps: " << (long long)searched_nodes * 1000 / max(1LL, tim() - final_strt) << endl;
+        cerr << "final depth: " << max_depth - 1 << " time: " << tim() - strt << " policy: " << policy << " value: " << alpha << " nodes: " << searched_nodes << " nps: " << (long long)searched_nodes * 1000 / max(1LL, tim() - final_strt) << endl;
     } else {
         value = -inf;
         for (int i = 0; i < (int)nb.size(); ++i){

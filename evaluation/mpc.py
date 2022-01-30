@@ -24,11 +24,11 @@ def calc_n_stones(board):
         res += int(elem != '.')
     return res
 
-evaluate = subprocess.Popen('../src/egaroucid5_2.out'.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+evaluate = subprocess.Popen('../src/egaroucid5.out'.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
 sleep(1)
 
 min_depth = 3
-max_depth = 30
+max_depth = 20
 
 depth_width = max_depth - min_depth + 1
 
@@ -57,7 +57,7 @@ def collect_data(num):
         return
     #for _ in trange(1000):
     depth = min_depth
-    max_num = 15000
+    max_num = 7500
     for tt, datum in enumerate(tqdm(data[:max_num])):
         #datum = data[randrange(0, len(data))]
         board, player, _ = datum.split()

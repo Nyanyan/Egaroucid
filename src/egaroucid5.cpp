@@ -59,7 +59,7 @@ int main(){
     board b;
     #if !MPC_MODE && !EVAL_MODE
         search_result result;
-        int level = 10, book_error = 0;
+        int level = 21, book_error = 0;
     #endif
     #if USE_MULTI_THREAD
         thread_pool.resize(16);
@@ -78,7 +78,8 @@ int main(){
             transpose_table.init_prev();
             bool use_mpc = max_depth >= 11 ? true : false;
             double use_mpct = 1.0;
-            cout << mtd(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct) << endl;
+            int searched_nodes = 0;
+            cout << mtd(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct, &searched_nodes) << endl;
         #elif EVAL_MODE
             cin >> ai_player;
             input_board(&b, ai_player);

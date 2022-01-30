@@ -14,9 +14,9 @@ using namespace std;
 #define phase_n_stones 4
 #define n_patterns 16
 #define n_eval (n_patterns + 4 + 4)
-#define max_surround 80
+#define max_surround 100
 #define max_canput 50
-#define max_stability 29
+#define max_stability 65
 #define max_stone_num 65
 #define max_evaluate_idx 65536 //59049
 
@@ -69,8 +69,9 @@ unordered_set<int> used_idxes[n_eval];
 vector<int> used_idxes_vector[n_eval];
 int rev_idxes[n_eval][max_evaluate_idx];
 int pow4[8];
+int pow3[11];
 
-
+/*
 inline unsigned long long tim(){
     return chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now().time_since_epoch()).count();
 }
@@ -88,6 +89,7 @@ inline double myrandom(){
 inline int myrandrange(int s, int e){
     return s + (int)(myrandom() * (e - s));
 }
+*/
 
 void initialize_param(){
     int phase_idx, pattern_idx, pattern_elem, dense_idx, canput, sur0, sur1, i, j, k;
@@ -569,6 +571,9 @@ void init(){
     pow4[0] = 1;
     for (i = 1; i < 8; ++i)
         pow4[i] = pow4[i - 1] * 4;
+    pow3[0] = 1;
+    for (i = 1; i < 11; ++i)
+        pow3[i] = pow3[i - 1] * 3;
     for (i = 0; i < n_eval; ++i){
         for (j = 0; j < eval_sizes[i]; ++j)
             rev_idxes[i][j] = calc_rev_idx(i, pattern_sizes[i], j);
