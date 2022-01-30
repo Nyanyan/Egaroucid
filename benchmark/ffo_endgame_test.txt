@@ -558,3 +558,16 @@
 #43 final depth: 23 time: 10431 policy: 13 value: -12 nodes: 120475951 nps: 11667242
 #44 final depth: 23 time: 3571 policy: 52 value: -14 nodes: 43389017 nps: 12627769
 
+2022/01/30 update transpose table multi thread laptop
+#40 final depth: 20 time: 1067 policy: 55 value: 38 nodes: 22423828 nps: 22673233
+#41 final depth: 22 time: 4087 policy: 32 value: 0 nodes: 63882422 nps: 15990593
+#42 final depth: 22 time: 5313 policy: 49 value: 6 nodes: 87281271 nps: 16679012
+#43 final depth: 23 time: 8442 policy: 13 value: -12 nodes: 101454597 nps: 12156074
+
+2022/01/30 multi thread laptop
+#40 final depth: 20 time: 1099 policy: 55 value: 38 nodes: 25793405 nps: 25563334
+#41 final depth: 22 time: 2867 policy: 32 value: 0 nodes: 48458959 nps: 17481586
+#42 final depth: 22 time: 3249 policy: 49 value: 6 nodes: 62964984 nps: 19881586
+#43 final depth: 23 time: 8591 policy: 13 value: -12 nodes: 133505497 nps: 15725029
+#44 final depth: 23 time: 4949 policy: 52 value: -14 nodes: 77398742 nps: 16087869
+#45 final depth: 24 time: 88285 policy: 54 value: 6 nodes: 1375280913 nps: 15627659

@@ -27,6 +27,7 @@ constexpr int canput_bonus = 10;
 
 #define simple_mid_threshold 3
 #define simple_end_threshold 6
+#define simple_end_threshold2 15
 
 #define po_max_depth 15
 
@@ -125,7 +126,7 @@ inline int move_ordering(board *b, const int hash, const int policy){
         } else
             v += cache_hit;
     } else
-        v += cache_hit + cache_both;
+        v += cache_hit;
     return v;
 }
 
