@@ -41,8 +41,8 @@ class mobility{
         unsigned long long flip;
     
     public:
-        /*
-        inline void calc_flip_slow(const unsigned long long player, const unsigned long long opponent, const int place){
+        
+        inline void calc_flip(const unsigned long long player, const unsigned long long opponent, const int place){
             unsigned long long wh, put, m1, m2, m3, m4, m5, m6, rev;
             put = 1ULL << place;
             rev = 0;
@@ -233,8 +233,7 @@ class mobility{
             flip = rev;
             pos = place;
         }
-        */
-
+        /*
         inline void calc_flip(const unsigned long long player, const unsigned long long opponent, const int place){
             int t, u, p, o;
             flip = 0;
@@ -262,8 +261,8 @@ class mobility{
             flip |= line_to_board_d9[flip_pre_calc[p][o][t] & d9_mask[place]][u + hw];
         }
 
-        /*
-        inline void calc_flip_hybrid(const unsigned long long player, const unsigned long long opponent, const int place){
+        
+        inline void calc_flip(const unsigned long long player, const unsigned long long opponent, const int place){
             unsigned long long wh, put, m1, m2, m3, m4, m5, m6;
             unsigned long long h;
             int t, u, p, o;

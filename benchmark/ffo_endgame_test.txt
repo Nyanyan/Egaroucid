@@ -571,3 +571,12 @@
 #43 final depth: 23 time: 8591 policy: 13 value: -12 nodes: 133505497 nps: 15725029
 #44 final depth: 23 time: 4949 policy: 52 value: -14 nodes: 77398742 nps: 16087869
 #45 final depth: 24 time: 88285 policy: 54 value: 6 nodes: 1375280913 nps: 15627659
+
+2022/01/30 updated flipping and evaluation alg laptop
+#40 final depth: 19 time: 1393 policy: 55 value: 38 nodes: 27571197 nps: 21062793
+#41 final depth: 21 time: 3321 policy: 32 value: 0 nodes: 45236972 nps: 15262136
+#42 final depth: 21 time: 4111 policy: 49 value: 6 nodes: 69176317 nps: 18033450
+
+2022/01/30 use new instead of vector
+#40 final depth: 19 time: 1260 policy: 55 value: 38 nodes: 27577414 nps: 23450181
+final depth: 19 time: 1244 policy: 55 value: 38 nodes: 27576776 nps: 23732165

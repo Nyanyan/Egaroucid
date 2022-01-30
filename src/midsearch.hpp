@@ -160,15 +160,17 @@ int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int 
         b->p = 1 - b->p;
         return res;
     }
-    vector<pair<int, int>> policies;
+    const int canput = pop_count_ull(legal);
+    pair<int, int> *policies = new pair<int, int>[canput];
     mobility mob;
+    int idx = 0;
     for (const int &cell: vacant_lst){
-        if (1 & (legal >> cell))
-            policies.emplace_back(make_pair(cell, move_ordering(b, hash, cell)));
+        if (1 & (legal >> cell)){
+            policies[idx++] = make_pair(cell, move_ordering(b, hash, cell));
+        }
     }
-    int canput = (int)policies.size();
     if (canput >= 2)
-        sort(policies.begin(), policies.end(), move_ordering_sort_int_int);
+        sort(policies, policies + canput, move_ordering_sort_int_int);
     int first_alpha = alpha, g, v = -inf;
     #if USE_MULTI_THREAD
         if (use_multi_thread){
@@ -181,6 +183,7 @@ int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int 
             if (beta <= alpha){
                 if (l < alpha)
                     transpose_table.reg(b, hash, alpha, u);
+                delete[] policies;
                 return alpha;
             }
             v = max(v, g);
@@ -203,11 +206,13 @@ int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int 
             if (beta <= alpha){
                 if (l < alpha)
                     transpose_table.reg(b, hash, alpha, u);
+                delete[] policies;
                 return alpha;
             }
+            delete[] policies;
         } else{
-            for (int i = 0; i < canput; ++i){
-                calc_flip(&mob, b, policies[i].first);
+            for (idx = 0; idx < canput; ++idx){
+                calc_flip(&mob, b, policies[idx].first);
                 b->move(&mob);
                 g = -nega_alpha_ordering(b, false, depth - 1, -beta, -alpha, false, use_mpc, mpct_in, n_nodes);
                 b->undo(&mob);
@@ -215,26 +220,30 @@ int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int 
                 if (beta <= alpha){
                     if (l < g)
                         transpose_table.reg(b, hash, g, u);
+                    delete[] policies;
                     return alpha;
                 }
                 v = max(v, g);
             }
+            delete[] policies;
         }
     #else
-        for (pair<int, int> &policy: policies){
-            calc_flip(&mob, b, policy.first);
+        for (idx = 0; idx < canput; ++idx){
+            calc_flip(&mob, b, policies[idx].first);
             b->move(&mob);
             g = -nega_alpha_ordering(b, false, depth - 1, -beta, -alpha, false, use_mpc, mpct_in, n_nodes);
             b->undo(&mob);
-            transpose_table.child_reg(b, hash, policy.first, g);
+            transpose_table.child_reg(b, hash, policies[idx].first, g);
             alpha = max(alpha, g);
             if (beta <= alpha){
                 if (l < alpha)
                     transpose_table.reg(b, hash, alpha, u);
+                delete[] policies;
                 return alpha;
             }
             v = max(v, g);
         }
+        delete[] policies;
     #endif
     if (v <= first_alpha)
         transpose_table.reg(b, hash, l, v);
