@@ -41,7 +41,7 @@ class mobility{
         unsigned long long flip;
     
     public:
-        
+        /*
         inline void calc_flip(const unsigned long long player, const unsigned long long opponent, const int place){
             unsigned long long wh, put, m1, m2, m3, m4, m5, m6, rev;
             put = 1ULL << place;
@@ -233,6 +233,7 @@ class mobility{
             flip = rev;
             pos = place;
         }
+        */
         /*
         inline void calc_flip(const unsigned long long player, const unsigned long long opponent, const int place){
             int t, u, p, o;
@@ -260,11 +261,10 @@ class mobility{
             o = join_d9_line(opponent, u) & d9_mask[place];
             flip |= line_to_board_d9[flip_pre_calc[p][o][t] & d9_mask[place]][u + hw];
         }
-
+        */
         
         inline void calc_flip(const unsigned long long player, const unsigned long long opponent, const int place){
             unsigned long long wh, put, m1, m2, m3, m4, m5, m6;
-            unsigned long long h;
             int t, u, p, o;
             put = 1ULL << place;
             flip = 0;
@@ -274,8 +274,12 @@ class mobility{
             u = place % hw;
             p = (player >> (hw * t)) & 0b11111111;
             o = (opponent >> (hw * t)) & 0b11111111;
-            h = flip_pre_calc[p][o][u];
-            flip |= h << (hw * t);
+            flip |= (unsigned long long)flip_pre_calc[p][o][u] << (hw * t);
+
+            p = join_v_line(player, u);
+            o = join_v_line(opponent, u);
+            flip |= line_to_board_v[flip_pre_calc[p][o][t]][u];
+            /*
 
             wh = opponent & 0b0000000011111111111111111111111111111111111111111111111100000000ULL;
             m1 = put >> hw;
@@ -322,7 +326,7 @@ class mobility{
                         flip |= m1 | m2 | m3 | m4 | m5 | m6;
                 }
             }
-
+            */
             wh = opponent & 0b0000000001111110011111100111111001111110011111100111111000000000ULL;
             m1 = put >> (hw - 1);
             if( (m1 & wh) != 0 ) {
@@ -414,7 +418,7 @@ class mobility{
                 }
             }
         }
-        */
+        
 };
 
 void mobility_init(){

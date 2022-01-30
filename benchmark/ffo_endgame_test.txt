@@ -578,5 +578,22 @@
 #42 final depth: 21 time: 4111 policy: 49 value: 6 nodes: 69176317 nps: 18033450
 
 2022/01/30 use new instead of vector
-#40 final depth: 19 time: 1260 policy: 55 value: 38 nodes: 27577414 nps: 23450181
-final depth: 19 time: 1244 policy: 55 value: 38 nodes: 27576776 nps: 23732165
+#40 final depth: 20 time: 1299 policy: 55 value: 38 nodes: 27574889 nps: 22639481
+#41 final depth: 22 time: 2958 policy: 32 value: 0 nodes: 45209343 nps: 17137734
+#42 final depth: 22 time: 3668 policy: 49 value: 6 nodes: 69164910 nps: 20294867
+
+2022/01/31 hybrid flipping
+#40 final depth: 20 time: 1208 policy: 55 value: 38 nodes: 27571727 nps: 24443020
+#41 final depth: 22 time: 2786 policy: 32 value: 0 nodes: 45226227 nps: 18177743
+#42 final depth: 22 time: 3581 policy: 49 value: 6 nodes: 69200564 nps: 20830994
+
+2022/01/31 full array flipping
+#40 final depth: 20 time: 1273 policy: 55 value: 38 nodes: 27581856 nps: 23081051
+#41 final depth: 22 time: 3017 policy: 32 value: 0 nodes: 45239356 nps: 16981740
+#42 final depth: 22 time: 3680 policy: 49 value: 6 nodes: 69216727 nps: 20256577
+
+2022/01/31 updated hybrid flipping
+#40 final depth: 20 time: 1198 policy: 55 value: 38 nodes: 27570580 nps: 24638588
+#41 final depth: 22 time: 2826 policy: 32 value: 0 nodes: 45214160 nps: 17899509
+#42 final depth: 22 time: 3551 policy: 49 value: 6 nodes: 69175637 nps: 21064444
+#43 final depth: 23 time: 8360 policy: 13 value: -12 nodes: 132746711 nps: 16256026
