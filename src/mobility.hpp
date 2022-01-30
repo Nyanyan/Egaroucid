@@ -6,9 +6,9 @@ using namespace std;
 
 #define n_8bit 256
 
-int flip_pre_calc[n_8bit][n_8bit][hw];
+unsigned char flip_pre_calc[n_8bit][n_8bit][hw];
 
-constexpr int d7_mask[hw2] = {
+constexpr unsigned char d7_mask[hw2] = {
     0b00000001, 0b00000011, 0b00000111, 0b00001111, 0b00011111, 0b00111111, 0b01111111, 0b11111111,
     0b00000011, 0b00000111, 0b00001111, 0b00011111, 0b00111111, 0b01111111, 0b11111111, 0b11111110,
     0b00000111, 0b00001111, 0b00011111, 0b00111111, 0b01111111, 0b11111111, 0b11111110, 0b11111100,
@@ -41,7 +41,7 @@ constexpr int d7_mask[hw2] = {
     0b11111111, 0b01111111, 0b00111111, 0b00011111, 0b00001111, 0b00000111, 0b00000011, 0b00000001
 };
 */
-constexpr int d9_mask[hw2] = {
+constexpr unsigned char d9_mask[hw2] = {
     0b11111111, 0b01111111, 0b00111111, 0b00011111, 0b00001111, 0b00000111, 0b00000011, 0b00000001,
     0b11111110, 0b11111111, 0b01111111, 0b00111111, 0b00011111, 0b00001111, 0b00000111, 0b00000011,
     0b11111100, 0b11111110, 0b11111111, 0b01111111, 0b00111111, 0b00011111, 0b00001111, 0b00000111,
@@ -272,6 +272,7 @@ class mobility{
             u = place % hw + t;
             p = join_d7_line(player, u) & d7_mask[place];
             o = join_d7_line(opponent, u) & d7_mask[place];
+            flip |= split_d7_line(flip_pre_calc[p][o][t] & d7_mask[place], u);
 
             u -= t * 2;
             p = join_d9_line(player, u) & d9_mask[place];

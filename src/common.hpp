@@ -129,7 +129,7 @@ inline int join_v_line(unsigned long long x, int c){
     return (int)(x >> c);
 }
 
-inline unsigned long long split_v_line(int x, int c){
+inline unsigned long long split_v_line(unsigned char x, int c){
     unsigned long long res = 0;
     unsigned long long a = x & 0b00001111;
     unsigned long long b = x & 0b11110000;
@@ -159,7 +159,7 @@ inline int join_d7_line(unsigned long long x, const int t){
     return (int)(x >> (t >= 7 ? (t - 6) : t));
 }
 
-inline unsigned long long split_d7_line(int x, int t){
+inline unsigned long long split_d7_line(unsigned char x, int t){
     unsigned long long a = x & 0b00001111;
     unsigned long long b = x & 0b11110000;
     unsigned long long res = a | (b << 24);
@@ -189,7 +189,7 @@ inline int join_d9_line(unsigned long long x, int t){
     return (int)x;
 }
 
-inline unsigned long long split_d9_line(int x, int t){
+inline unsigned long long split_d9_line(unsigned char x, int t){
     unsigned long long a = x & 0b00001111;
     unsigned long long b = x & 0b11110000;
     unsigned long long res = a | (b << 32);
