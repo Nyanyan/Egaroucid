@@ -298,8 +298,9 @@ int nega_scout_nomemo(board *b, bool skipped, const int depth, int alpha, int be
             g = -nega_alpha_ordering_nomemo(&nb[i], false, depth - 1, -alpha - search_epsilon, -alpha, use_mpc, mpct_in, n_nodes);
             if (beta < g)
                 return g;
+            v = max(v, g);
         }
-        if (alpha <= g){
+        if (alpha <= g || i == 0){
             alpha = g;
             g = -nega_scout_nomemo(&nb[i], false, depth - 1, -beta, -alpha, use_mpc, mpct_in, n_nodes);
             alpha = max(alpha, g);
