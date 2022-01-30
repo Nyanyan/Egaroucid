@@ -45,11 +45,12 @@ int nega_alpha_ordering_final_nomemo(board *b, bool skipped, int depth, int alph
     vector<board> nb;
     mobility mob;
     int canput = 0;
+    int hash = b->hash() & search_hash_mask;
     for (const int &cell: vacant_lst){
         if (1 & (legal >> cell)){
             calc_flip(&mob, b, cell);
             nb.emplace_back(b->move_copy(&mob));
-            move_ordering(&nb[canput]);
+            nb[canput].v = move_ordering(b, hash, cell);
             //nb[canput].v -= canput_bonus * calc_canput_exact(&nb[canput]);
             #if USE_END_PO && false
                 if (depth <= po_max_depth && b->parity & cell_div4[cell])
@@ -668,8 +669,8 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
         if (stability_cut(b, &alpha, &beta))
             return alpha;
     #endif
+    int hash = b->hash() & search_hash_mask;
     #if USE_END_TC
-        int hash = (int)(b->hash() & search_hash_mask);
         int l, u;
         transpose_table.get_now(b, hash, &l, &u);
         if (u == l)
@@ -706,7 +707,7 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
             calc_flip(&mob, b, cell);
             nb.emplace_back(b->move_copy(&mob));
             if (depth >= 18){
-                move_ordering(&nb[canput]);
+                nb[canput].v = move_ordering(b, hash, cell);
                 nb[canput].v -= canput_bonus * calc_canput_exact(&nb[canput]);
             } else
                 nb[canput].v = -canput_bonus * calc_canput_exact(&nb[canput]);

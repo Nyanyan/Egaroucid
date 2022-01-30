@@ -130,9 +130,9 @@ int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int 
         if (stability_cut(b, &alpha, &beta))
             return alpha;
     #endif
-    int hash = (int)(b->hash() & search_hash_mask);
+    int hash = b->hash() & search_hash_mask;
     int l, u;
-    transpose_table.get_now(b, b->hash() & search_hash_mask, &l, &u);
+    transpose_table.get_now(b, hash, &l, &u);
     #if USE_MID_TC
         if (u == l)
             return u;
@@ -349,17 +349,16 @@ int mtd(board *b, bool skipped, int depth, int l, int u, bool use_mpc, double us
 }
 
 inline search_result midsearch(board b, long long strt, int max_depth, bool use_mpc, double use_mpct){
-    vector<pair<int, board>> nb;
+    vector<pair<int, int>> policies;
     mobility mob;
     int i;
+    int hash = b.hash() & search_hash_mask;
     unsigned long long legal = b.mobility_ull();
     for (const int &cell: vacant_lst){
-        if (1 & (legal >> cell)){
-            calc_flip(&mob, &b, cell);
-            nb.emplace_back(make_pair(cell, b.move_copy(&mob)));
-        }
+        if (1 & (legal >> cell))
+            policies.emplace_back(make_pair(cell, move_ordering(&b, hash, cell)));
     }
-    int canput = nb.size();
+    int canput = (int)policies.size();
     //cerr << "canput: " << canput << endl;
     int res_depth = -1;
     int policy = -1;
@@ -370,30 +369,30 @@ inline search_result midsearch(board b, long long strt, int max_depth, bool use_
     transpose_table.hash_reg = 0;
     transpose_table.init_now();
     transpose_table.init_prev();
-    int hash = b.hash() & search_hash_mask;
     for (int depth = min(16, max(0, max_depth - 5)); depth <= min(hw2 - b.n, max_depth); ++depth){
         alpha = -hw2;
         beta = hw2;
         transpose_table.init_now();
         for (i = 0; i < canput; ++i)
-            nb[i].second.v = move_ordering(&b, hash, nb[i].first);
+            policies[i].second = move_ordering(&b, hash, policies[i].first);
         if (canput >= 2)
-            sort(nb.begin(), nb.end(), move_ordering_sort);
-        g = -mtd(&nb[0].second, false, depth, -beta, -alpha, use_mpc, use_mpct, &searched_nodes);
-        transpose_table.reg(&nb[0].second, (int)(nb[0].second.hash() & search_hash_mask), -g, -g);
+            sort(policies.begin(), policies.end(), move_ordering_sort_int_int);
+        calc_flip(&mob, &b, policies[0].first);
+        b.move(&mob);
+        g = -mtd(&b, false, depth, -beta, -alpha, use_mpc, use_mpct, &searched_nodes);
+        b.undo(&mob);
+        transpose_table.child_reg(&b, hash, policies[0].first, g);
         alpha = max(alpha, g);
-        tmp_policy = nb[0].first;
+        tmp_policy = policies[0].first;
         for (i = 1; i < canput; ++i){
-            g = -nega_alpha_ordering(&nb[i].second, false, depth, -alpha - search_epsilon, -alpha, true, use_mpc, use_mpct, &searched_nodes);
+            calc_flip(&mob, &b, policies[i].first);
+            b.move(&mob);
+            g = -mtd(&b, false, depth, -beta, -g, use_mpc, use_mpct, &searched_nodes);
+            b.undo(&mob);
+            transpose_table.child_reg(&b, hash, policies[i].first, g);
             if (alpha < g){
-                g = -mtd(&nb[i].second, false, depth, -beta, -g, use_mpc, use_mpct, &searched_nodes);
-                transpose_table.reg(&nb[i].second, (int)(nb[i].second.hash() & search_hash_mask), -g, -g);
-                if (alpha < g){
-                    alpha = g;
-                    tmp_policy = nb[i].first;
-                }
-            } else{
-                transpose_table.reg(&nb[i].second, (int)(nb[i].second.hash() & search_hash_mask), -inf, -g);
+                alpha = g;
+                tmp_policy = policies[i].first;
             }
         }
         swap(transpose_table.now, transpose_table.prev);

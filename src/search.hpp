@@ -113,7 +113,20 @@ inline int move_ordering(board *b, const int hash, const int policy){
             b->v = -mid_evaluate(b);
     }
     */
-    return transpose_table.child_get_prev(b, hash, policy);
+    int v = transpose_table.child_get_now(b, hash, policy);
+    if (v == -child_inf){
+        v = transpose_table.child_get_prev(b, hash, policy);
+        if (v == -child_inf){
+            mobility mob;
+            calc_flip(&mob, b, policy);
+            b->move(&mob);
+            v = -mid_evaluate(b);
+            b->undo(&mob);
+        } else
+            v += cache_hit;
+    } else
+        v += cache_hit + cache_both;
+    return v;
 }
 
 inline void move_ordering_eval(board *b){

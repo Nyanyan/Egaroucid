@@ -6,8 +6,9 @@
     #include <mutex>
 #endif
 
-#define search_hash_table_size 2097152 //1048576
+#define search_hash_table_size 1048576
 constexpr int search_hash_mask = search_hash_table_size - 1;
+#define child_inf 100
 
 class search_node{
     public:
@@ -17,7 +18,7 @@ class search_node{
         int p;
         int l;
         int u;
-        int child[hw2];
+        char child[hw2];
     //#if USE_MULTI_THREAD
     //    private:
     //        mutex mtx;
@@ -34,7 +35,7 @@ class search_node{
             l = ll;
             u = uu;
             for (int i = 0; i < hw2; ++i)
-                child[i] = -inf;
+                child[i] = -child_inf;
         }
 
         inline void register_value(const int ll, const int uu){
@@ -62,15 +63,15 @@ class search_node{
             w = bd->w;
             p = bd->p;
             for (int i = 0; i < hw2; ++i)
-                child[i] = -inf;
-            child[policy] = v;
+                child[i] = -child_inf;
+            child[policy] = max(-child_inf, v);
         }
 
         inline void register_child_value(const int policy, const int v){
             //#if USE_MULTI_THREAD
             //    lock_guard<mutex> lock(mtx);
             //#endif
-            child[policy] = v;
+            child[policy] = max(-child_inf, v);
         }
 
         inline int child_get(const int policy){
@@ -183,7 +184,20 @@ class transpose_table{
                     //++this->hash_get;
                 }
             }
-            return -inf;
+            return -child_inf;
+        }
+
+        inline int child_get_now(board *key, const int hash, const int policy){
+            #if USE_MULTI_THREAD
+                lock_guard<mutex> lock(mtx);
+            #endif
+            if (this->table[this->now][hash].reg){
+                if (compare_key(key, &this->table[this->now][hash])){
+                    return this->table[this->now][hash].child_get(policy);
+                    //++this->hash_get;
+                }
+            }
+            return -child_inf;
         }
     
     private:

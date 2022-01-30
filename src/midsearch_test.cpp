@@ -22,7 +22,7 @@ inline void input_board(board *b, int ai_player){
     }
     b->translate_from_arr(arr, ai_player);
     if (vacant_lst.size() >= 2)
-        sort(vacant_lst.begin(), vacant_lst.end());
+        sort(vacant_lst.begin(), vacant_lst.end()); // , cmp_vacant
 }
 
 int main(){
@@ -39,7 +39,7 @@ int main(){
         cin >> ai_player;
         input_board(&b, ai_player);
         b.print();
-        search_result res = midsearch(b, tim(), 10, false, 0.0);
+        search_result res = midsearch(b, tim(), 15, false, 0.0);
         cerr << res.policy << " " << res.value << endl;
     }
     return 0;
