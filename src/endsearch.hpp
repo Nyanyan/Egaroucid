@@ -736,7 +736,7 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
                 v = max(v, g);
             }
             vector<future<int>> future_tasks;
-            int n_n_nodes[50];
+            vector<int> n_n_nodes;
             /*
             for (i = first_threshold; i < canput; ++i){
                 n_n_nodes[i - first_threshold] = 0;
@@ -756,6 +756,8 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
             */
             int done_tasks = first_threshold;
             int next_done_tasks = -1;
+            for (i = 0; i < canput; ++i)
+                n_n_nodes.emplace_back(0);
             while (done_tasks < canput){
                 future_tasks.clear();
                 next_done_tasks = -1;
