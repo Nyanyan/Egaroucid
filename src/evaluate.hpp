@@ -311,7 +311,7 @@ inline void calc_stability(board *b, int *stab0, int *stab1){
 }
 
 inline int pop_digit(unsigned long long x, int place){
-    return 1 & (x >> place);
+    return 1 & (x >> (hw_m1 - place));
 }
 /*
 inline int pick_pattern(const int phase_idx, const int p, const int pattern_idx, const int b_arr[], const int p0, const int p1, const int p2, const int p3, const int p4){
@@ -359,27 +359,27 @@ inline int calc_pattern(const int phase_idx, board *b, const int b_arr[]){
 }
 */
 inline int pick_pattern(const int phase_idx, const int p, const int pattern_idx, const unsigned long long bk, const unsigned long long wt, const int p0, const int p1, const int p2, const int p3, const int p4){
-    return pattern_arr[phase_idx][p][pattern_idx][(pop_digit(wt, p0) * 2 + pop_digit(bk, p0)) * p34 +(pop_digit(wt, p1) * 2 + pop_digit(bk, p1)) * p33 + (pop_digit(wt, p2) * 2 + pop_digit(bk, p2)) * p32 + (pop_digit(wt, p3) * 2 + pop_digit(bk, p3)) * p31 + (pop_digit(wt, p4) * 2 + pop_digit(bk, p4))];
+    return pattern_arr[phase_idx][p][pattern_idx][(2 - pop_digit(wt, p0) - pop_digit(bk, p0) * 2) * p34 +(2 - pop_digit(wt, p1) - pop_digit(bk, p1) * 2) * p33 + (2 - pop_digit(wt, p2) - pop_digit(bk, p2) * 2) * p32 + (2 - pop_digit(wt, p3) - pop_digit(bk, p3) * 2) * p31 + (2 - pop_digit(wt, p4) - pop_digit(bk, p4) * 2)];
 }
 
 inline int pick_pattern(const int phase_idx, const int p, const int pattern_idx, const unsigned long long bk, const unsigned long long wt, const int p0, const int p1, const int p2, const int p3, const int p4, const int p5){
-    return pattern_arr[phase_idx][p][pattern_idx][(pop_digit(wt, p0) * 2 + pop_digit(bk, p0)) * p35 + (pop_digit(wt, p1) * 2 + pop_digit(bk, p1)) * p34 + (pop_digit(wt, p2) * 2 + pop_digit(bk, p2)) * p33 + (pop_digit(wt, p3) * 2 + pop_digit(bk, p3)) * p32 + (pop_digit(wt, p4) * 2 + pop_digit(bk, p4)) * p31 + (pop_digit(wt, p5) * 2 + pop_digit(bk, p5))];
+    return pattern_arr[phase_idx][p][pattern_idx][(2 - pop_digit(wt, p0) - pop_digit(bk, p0) * 2) * p35 + (2 - pop_digit(wt, p1) - pop_digit(bk, p1) * 2) * p34 + (2 - pop_digit(wt, p2) - pop_digit(bk, p2) * 2) * p33 + (2 - pop_digit(wt, p3) - pop_digit(bk, p3) * 2) * p32 + (2 - pop_digit(wt, p4) - pop_digit(bk, p4) * 2) * p31 + (2 - pop_digit(wt, p5) - pop_digit(bk, p5) * 2)];
 }
 
 inline int pick_pattern(const int phase_idx, const int p, const int pattern_idx, const unsigned long long bk, const unsigned long long wt, const int p0, const int p1, const int p2, const int p3, const int p4, const int p5, const int p6){
-    return pattern_arr[phase_idx][p][pattern_idx][(pop_digit(wt, p0) * 2 + pop_digit(bk, p0)) * p36 + (pop_digit(wt, p1) * 2 + pop_digit(bk, p1)) * p35 + (pop_digit(wt, p2) * 2 + pop_digit(bk, p2)) * p34 + (pop_digit(wt, p3) * 2 + pop_digit(bk, p3)) * p33 + (pop_digit(wt, p4) * 2 + pop_digit(bk, p4)) * p32 + (pop_digit(wt, p5) * 2 + pop_digit(bk, p5)) * p31 + (pop_digit(wt, p6) * 2 + pop_digit(bk, p6))];
+    return pattern_arr[phase_idx][p][pattern_idx][(2 - pop_digit(wt, p0) - pop_digit(bk, p0) * 2) * p36 + (2 - pop_digit(wt, p1) - pop_digit(bk, p1) * 2) * p35 + (2 - pop_digit(wt, p2) - pop_digit(bk, p2) * 2) * p34 + (2 - pop_digit(wt, p3) - pop_digit(bk, p3) * 2) * p33 + (2 - pop_digit(wt, p4) - pop_digit(bk, p4) * 2) * p32 + (2 - pop_digit(wt, p5) - pop_digit(bk, p5) * 2) * p31 + (2 - pop_digit(wt, p6) - pop_digit(bk, p6) * 2)];
 }
 
 inline int pick_pattern(const int phase_idx, const int p, const int pattern_idx, const unsigned long long bk, const unsigned long long wt, const int p0, const int p1, const int p2, const int p3, const int p4, const int p5, const int p6, const int p7){
-    return pattern_arr[phase_idx][p][pattern_idx][(pop_digit(wt, p0) * 2 + pop_digit(bk, p0)) * p37 + (pop_digit(wt, p1) * 2 + pop_digit(bk, p1)) * p36 + (pop_digit(wt, p2) * 2 + pop_digit(bk, p2)) * p35 + (pop_digit(wt, p3) * 2 + pop_digit(bk, p3)) * p34 + (pop_digit(wt, p4) * 2 + pop_digit(bk, p4)) * p33 + (pop_digit(wt, p5) * 2 + pop_digit(bk, p5)) * p32 + (pop_digit(wt, p6) * 2 + pop_digit(bk, p6)) * p31 + (pop_digit(wt, p7) * 2 + pop_digit(bk, p7))];
+    return pattern_arr[phase_idx][p][pattern_idx][(2 - pop_digit(wt, p0) - pop_digit(bk, p0) * 2) * p37 + (2 - pop_digit(wt, p1) - pop_digit(bk, p1) * 2) * p36 + (2 - pop_digit(wt, p2) - pop_digit(bk, p2) * 2) * p35 + (2 - pop_digit(wt, p3) - pop_digit(bk, p3) * 2) * p34 + (2 - pop_digit(wt, p4) - pop_digit(bk, p4) * 2) * p33 + (2 - pop_digit(wt, p5) - pop_digit(bk, p5) * 2) * p32 + (2 - pop_digit(wt, p6) - pop_digit(bk, p6) * 2) * p31 + (2 - pop_digit(wt, p7) - pop_digit(bk, p7) * 2)];
 }
 
 inline int pick_pattern(const int phase_idx, const int p, const int pattern_idx, const unsigned long long bk, const unsigned long long wt, const int p0, const int p1, const int p2, const int p3, const int p4, const int p5, const int p6, const int p7, const int p8){
-    return pattern_arr[phase_idx][p][pattern_idx][(pop_digit(wt, p0) * 2 + pop_digit(bk, p0)) * p38 + (pop_digit(wt, p1) * 2 + pop_digit(bk, p1)) * p37 + (pop_digit(wt, p2) * 2 + pop_digit(bk, p2)) * p36 + (pop_digit(wt, p3) * 2 + pop_digit(bk, p3)) * p35 + (pop_digit(wt, p4) * 2 + pop_digit(bk, p4)) * p34 + (pop_digit(wt, p5) * 2 + pop_digit(bk, p5)) * p33 + (pop_digit(wt, p6) * 2 + pop_digit(bk, p6)) * p32 + (pop_digit(wt, p7) * 2 + pop_digit(bk, p7)) * p31 + (pop_digit(wt, p8) * 2 + pop_digit(bk, p8))];
+    return pattern_arr[phase_idx][p][pattern_idx][(2 - pop_digit(wt, p0) - pop_digit(bk, p0) * 2) * p38 + (2 - pop_digit(wt, p1) - pop_digit(bk, p1) * 2) * p37 + (2 - pop_digit(wt, p2) - pop_digit(bk, p2) * 2) * p36 + (2 - pop_digit(wt, p3) - pop_digit(bk, p3) * 2) * p35 + (2 - pop_digit(wt, p4) - pop_digit(bk, p4) * 2) * p34 + (2 - pop_digit(wt, p5) - pop_digit(bk, p5) * 2) * p33 + (2 - pop_digit(wt, p6) - pop_digit(bk, p6) * 2) * p32 + (2 - pop_digit(wt, p7) - pop_digit(bk, p7) * 2) * p31 + (2 - pop_digit(wt, p8) - pop_digit(bk, p8) * 2)];
 }
 
 inline int pick_pattern(const int phase_idx, const int p, const int pattern_idx, const unsigned long long bk, const unsigned long long wt, const int p0, const int p1, const int p2, const int p3, const int p4, const int p5, const int p6, const int p7, const int p8, const int p9){
-    return pattern_arr[phase_idx][p][pattern_idx][(pop_digit(wt, p0) * 2 + pop_digit(bk, p0)) * p39 + (pop_digit(wt, p1) * 2 + pop_digit(bk, p1)) * p38 + (pop_digit(wt, p2) * 2 + pop_digit(bk, p2)) * p37 + (pop_digit(wt, p3) * 2 + pop_digit(bk, p3)) * p36 + (pop_digit(wt, p4) * 2 + pop_digit(bk, p4)) * p35 + (pop_digit(wt, p5) * 2 + pop_digit(bk, p5)) * p34 + (pop_digit(wt, p6) * 2 + pop_digit(bk, p6)) * p33 + (pop_digit(wt, p7) * 2 + pop_digit(bk, p7)) * p32 + (pop_digit(wt, p8) * 2 + pop_digit(bk, p8)) * p31 + (pop_digit(wt, p9) * 2 + pop_digit(bk, p9))];
+    return pattern_arr[phase_idx][p][pattern_idx][(2 - pop_digit(wt, p0) - pop_digit(bk, p0) * 2) * p39 + (2 - pop_digit(wt, p1) - pop_digit(bk, p1) * 2) * p38 + (2 - pop_digit(wt, p2) - pop_digit(bk, p2) * 2) * p37 + (2 - pop_digit(wt, p3) - pop_digit(bk, p3) * 2) * p36 + (2 - pop_digit(wt, p4) - pop_digit(bk, p4) * 2) * p35 + (2 - pop_digit(wt, p5) - pop_digit(bk, p5) * 2) * p34 + (2 - pop_digit(wt, p6) - pop_digit(bk, p6) * 2) * p33 + (2 - pop_digit(wt, p7) - pop_digit(bk, p7) * 2) * p32 + (2 - pop_digit(wt, p8) - pop_digit(bk, p8) * 2) * p31 + (2 * pop_digit(wt, p9) - pop_digit(bk, p9) * 2)];
 }
 
 inline int calc_pattern(const int phase_idx, board *b, const unsigned long long bk, const unsigned long long wt){

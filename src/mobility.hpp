@@ -41,6 +41,7 @@ class mobility{
         unsigned long long flip;
     
     public:
+        /*
         inline void calc_flip_slow(const unsigned long long player, const unsigned long long opponent, const int place){
             unsigned long long wh, put, m1, m2, m3, m4, m5, m6, rev;
             put = 1ULL << place;
@@ -232,6 +233,7 @@ class mobility{
             flip = rev;
             pos = place;
         }
+        */
 
         inline void calc_flip(const unsigned long long player, const unsigned long long opponent, const int place){
             int t, u, p, o;
@@ -258,34 +260,9 @@ class mobility{
             p = join_d9_line(player, u) & d9_mask[place];
             o = join_d9_line(opponent, u) & d9_mask[place];
             flip |= line_to_board_d9[flip_pre_calc[p][o][t] & d9_mask[place]][u + hw];
-            /*
-            for (int i = hw_m1; i >= 0; --i){
-                if (1 & ((d9_mask[place]) >> i))
-                    cerr << '1';
-                else
-                    cerr << '.';
-            }
-            cerr << endl;
-            cerr << t << " " << u << endl;
-            for (int i = hw_m1; i >= 0; --i){
-                if (1 & (p >> i))
-                    cerr << '0';
-                else if (1 & (o >> i))
-                    cerr << '1';
-                else
-                    cerr << '.';
-            }
-            cerr << " " << place << " ";
-            for (int i = hw_m1; i >= 0; --i){
-                if (1 & ((flip_pre_calc[p][o][t]) >> i))
-                    cerr << '1';
-                else
-                    cerr << '.';
-            }
-            cerr << endl;
-            */
         }
 
+        /*
         inline void calc_flip_hybrid(const unsigned long long player, const unsigned long long opponent, const int place){
             unsigned long long wh, put, m1, m2, m3, m4, m5, m6;
             unsigned long long h;
@@ -438,6 +415,7 @@ class mobility{
                 }
             }
         }
+        */
 };
 
 void mobility_init(){
