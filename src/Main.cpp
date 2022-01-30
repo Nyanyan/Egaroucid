@@ -201,10 +201,7 @@ cell_value hint_search(board b, int level, int policy) {
 		res.depth = use_mpc ? hw2 - b.n : search_final_define;
 	}
 	else {
-		cerr << depth << endl;
-		b.print();
 		res.value = -midsearch_value(b, tim(), depth, use_mpc, mpct).value;
-		cerr << -res.value << " " << global_searching << endl;
 		res.depth = depth;
 	}
 	return res;
@@ -450,7 +447,7 @@ void Main() {
 	future<search_result> ai_future;
 	bool ai_thinking = false;
 	int ai_value = 0;
-	int ai_level = 25, ai_book_accept = 0, hint_level = 9;
+	int ai_level = 21, ai_book_accept = 4, hint_level = 9;
 
 	while (System::Update()) {
 		if (System::GetUserActions() & UserAction::CloseButtonClicked) {
