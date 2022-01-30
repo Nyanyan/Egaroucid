@@ -53,7 +53,7 @@ class book{
                 return false;
             }
 			for (i = 0; i < n_boards; ++i) {
-				if (i % 1024 == 0)
+				if (i % 32768 == 0)
 					cerr << "loading book " << (i * 100 / n_boards) << "%" << endl;
 				if (fread(&p, 8, 1, fp) < 1) {
 					cerr << "book NOT FULLY imported " << n_book << " boards code 1" << endl;
@@ -97,7 +97,7 @@ class book{
             int arr[hw2];
             board b;
 			for (;;) {
-				if (n_book % 1024 == 0)
+				if (n_book % 32768 == 0)
 					cerr << "loading " << n_book << " boards" << endl;
 				for (i = 0; i < hw2; i += 4) {
 					if (fread(&elem, 1, 1, fp) < 1) {
@@ -174,7 +174,7 @@ class book{
             board b;
             mobility mob;
             for (i = 0; i < n_boards; ++i){
-                if (i % 1024 == 0)
+                if (i % 32768 == 0)
                     cerr << "loading edax book " << (i * 100 / n_boards) << "%" << endl;
                 if (fread(&player, 8, 1, fp) < 1) {
                     cerr << "file broken" << endl;
@@ -423,12 +423,12 @@ class book{
                 return;
             }
             unordered_set<int> saved_idxes;
-            int i;
+            unsigned long long i;
 			unsigned char elem;
             fout.write((char*)&n_book, 4);
 			int t = 0;
             for (i = 0; i < book_hash_table_size; ++i){
-                if (i % 1024 == 0)
+                if (i % 1048576 == 0)
                     cerr << "saving book " << (i * 100 / book_hash_table_size) << "%" << endl;
                 book_node *p_node = this->book[i];
                 while(p_node != NULL){

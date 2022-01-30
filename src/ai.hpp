@@ -8,9 +8,8 @@
 search_result ai(board b, int level, int book_error){
     search_result res;
     book_value book_result = book.get_random(&b, book_error);
-    cerr << book_result.policy << " " << book_result.policy << endl;
     if (book_result.policy != -1){
-        cerr << "BOOK " << book_result.policy << endl;
+        cerr << "BOOK " << book_result.policy << " " << book_result.value << endl;
         res.policy = book_result.policy;
         res.value = book_result.value;
         res.depth = -1;

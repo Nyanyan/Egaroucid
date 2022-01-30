@@ -56,10 +56,11 @@ inline void print_result(search_result result){
 
 int main(){
     init();
+    book.save_bin();
     board b;
     #if !MPC_MODE && !EVAL_MODE
         search_result result;
-        int level = 60, book_error = 0;
+        int level = 10, book_error = 0;
     #endif
     #if USE_MULTI_THREAD
         thread_pool.resize(16);
@@ -90,6 +91,7 @@ int main(){
             //cerr << b.p << endl;
             //cerr << b.n << " " << mid_evaluate(&b) << endl;
             //search_human(b, tim(), depth, 7);
+            cerr << midsearch_value(b, tim(), 5, false, 0.0).value << endl;
             result = ai(b, level, book_error);
             print_result(result);
         #endif

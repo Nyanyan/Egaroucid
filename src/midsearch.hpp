@@ -253,11 +253,11 @@ int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int 
 }
 
 int nega_scout_nomemo(board *b, bool skipped, const int depth, int alpha, int beta, bool use_mpc, double mpct_in, int *n_nodes){
+    ++(*n_nodes);
     if (!global_searching)
         return -inf;
     if (depth <= simple_mid_threshold)
         return nega_alpha(b, skipped, depth, alpha, beta, n_nodes);
-    ++(*n_nodes);
     #if USE_MID_SC
         if (stability_cut(b, &alpha, &beta))
             return alpha;
@@ -279,75 +279,35 @@ int nega_scout_nomemo(board *b, bool skipped, const int depth, int alpha, int be
         b->p = 1 - b->p;
         return res;
     }
-    vector<pair<int, int>> policies;
+    vector<board> nb;
     mobility mob;
-    int hash = b->hash() & search_hash_mask;
+    int canput = 0;
     for (const int &cell: vacant_lst){
-        if (1 & (legal >> cell))
-            policies.emplace_back(make_pair(cell, move_ordering(b, hash, cell)));
+        if (1 & (legal >> cell)){
+            calc_flip(&mob, b, cell);
+            nb.emplace_back(b->move_copy(&mob));
+            move_ordering_eval(&(nb[canput]));
+            ++canput;
+        }
     }
-    int canput = (int)policies.size();
     if (canput >= 2)
-        sort(policies.begin(), policies.end(), move_ordering_sort_int_int);
+        sort(nb.begin(), nb.end());
     int g = alpha, v = -inf;
-    #if USE_MULTI_THREAD && false
-        int i;
-        g = -nega_scout_nomemo(&nb[0], false, depth - 1, -beta, -alpha, use_mpc, mpct_in);
-        alpha = max(alpha, g);
-        if (beta <= alpha)
-            return alpha;
-        v = max(v, g);
-        int first_alpha = alpha;
-        vector<future<int>> future_tasks;
-        vector<bool> re_search;
-        vector<int> n_n_nodes;
-        for (i = 1; i < canput; ++i){
-            n_n_nodes.emplace_back(0);
-            future_tasks.emplace_back(thread_pool.push(bind(&nega_alpha_ordering, &nb[i], false, depth - 1, -alpha - search_epsilon, -alpha, false, use_mpc, mpct_in, &n_n_nodes[i])));
+    for (int i = 0; i < canput; ++i){
+        if (i > 0){
+            g = -nega_alpha_ordering_nomemo(&nb[i], false, depth - 1, -alpha - search_epsilon, -alpha, use_mpc, mpct_in, n_nodes);
+            if (beta < g)
+                return g;
         }
-        for (i = 1; i < canput; ++i){
-            g = -future_tasks[i - 1].get();
+        if (alpha <= g){
+            alpha = g;
+            g = -nega_scout_nomemo(&nb[i], false, depth - 1, -beta, -alpha, use_mpc, mpct_in, n_nodes);
             alpha = max(alpha, g);
+            if (beta <= alpha)
+                return alpha;
             v = max(v, g);
-            re_search.emplace_back(first_alpha < g);
-            *n_nodes += n_n_nodes[i - 1];
         }
-        for (i = 1; i < canput; ++i){
-            if (re_search[i - 1]){
-                g = -nega_scout_nomemo(&nb[i], false, depth - 1, -beta, -alpha, use_mpc, mpct_in, n_nodes);
-                if (beta <= g){
-                    if (l < g)
-                        transpose_table.reg(b, hash, g, u);
-                    return g;
-                }
-                alpha = max(alpha, g);
-                v = max(v, g);
-            }
-        }
-    #else
-        for (int i = 0; i < canput; ++i){
-            calc_flip(&mob, b, policies[i].first);
-            b->move(&mob);
-            if (i > 0){
-                g = -nega_alpha_ordering_nomemo(b, false, depth - 1, -alpha - search_epsilon, -alpha, use_mpc, mpct_in, n_nodes);
-                if (beta < g){
-                    b->undo(&mob);
-                    return g;
-                }
-            }
-            if (alpha <= g){
-                alpha = g;
-                g = -nega_scout_nomemo(b, false, depth - 1, -beta, -alpha, use_mpc, mpct_in, n_nodes);
-                alpha = max(alpha, g);
-                if (beta <= alpha){
-                    b->undo(&mob);
-                    return alpha;
-                }
-                v = max(v, g);
-            }
-            b->undo(&mob);
-        }
-    #endif
+    }
     return v;
 }
 
