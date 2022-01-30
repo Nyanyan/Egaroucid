@@ -225,9 +225,11 @@ inline int calc_surround(const unsigned long long player, const unsigned long lo
     ));
 }
 
+/*
 inline int join_pattern(const int b_arr[], const int p0, const int p1, const int p2, const int p3, const int p4, const int p5, const int p6, const int p7){
     return b_arr[p0] * p37 + b_arr[p1] * p36 + b_arr[p2] * p35 + b_arr[p3] * p34 + b_arr[p4] * p33 + b_arr[p5] * p32 + b_arr[p6] * p31 + b_arr[p7];
 }
+*/
 
 inline void calc_stability(board *b, int *stab0, int *stab1){
     unsigned long long full_h, full_v, full_d7, full_d9;
@@ -311,7 +313,7 @@ inline void calc_stability(board *b, int *stab0, int *stab1){
 inline int pop_digit(unsigned long long x, int place){
     return 1 & (x >> place);
 }
-
+/*
 inline int pick_pattern(const int phase_idx, const int p, const int pattern_idx, const int b_arr[], const int p0, const int p1, const int p2, const int p3, const int p4){
     return pattern_arr[phase_idx][p][pattern_idx][b_arr[p0] * p34 + b_arr[p1] * p33 + b_arr[p2] * p32 + b_arr[p3] * p31 + b_arr[p4]];
 }
@@ -355,7 +357,7 @@ inline int calc_pattern(const int phase_idx, board *b, const int b_arr[]){
         pick_pattern(phase_idx, b->p, 14, b_arr, 0, 1, 8, 9, 10, 11, 17, 18, 25, 27) + pick_pattern(phase_idx, b->p, 14, b_arr, 7, 6, 15, 14, 13, 12, 22, 21, 30, 28) + pick_pattern(phase_idx, b->p, 14, b_arr, 56, 57, 48, 49, 50, 51, 41, 42, 33, 35) + pick_pattern(phase_idx, b->p, 14, b_arr, 63, 62, 55, 54, 53, 52, 46, 45, 38, 36) + 
         pick_pattern(phase_idx, b->p, 15, b_arr, 0, 1, 8, 9, 10, 11, 12, 17, 25, 33) + pick_pattern(phase_idx, b->p, 15, b_arr, 7, 6, 15, 14, 13, 12, 11, 22, 30, 38) + pick_pattern(phase_idx, b->p, 15, b_arr, 56, 57, 48, 49, 50, 51, 52, 41, 33, 25) + pick_pattern(phase_idx, b->p, 15, b_arr, 63, 62, 55, 54, 53, 52, 51, 46, 38, 30);
 }
-
+*/
 inline int pick_pattern(const int phase_idx, const int p, const int pattern_idx, const unsigned long long bk, const unsigned long long wt, const int p0, const int p1, const int p2, const int p3, const int p4){
     return pattern_arr[phase_idx][p][pattern_idx][(pop_digit(wt, p0) * 2 + pop_digit(bk, p0)) * p34 +(pop_digit(wt, p1) * 2 + pop_digit(bk, p1)) * p33 + (pop_digit(wt, p2) * 2 + pop_digit(bk, p2)) * p32 + (pop_digit(wt, p3) * 2 + pop_digit(bk, p3)) * p31 + (pop_digit(wt, p4) * 2 + pop_digit(bk, p4))];
 }
@@ -400,11 +402,13 @@ inline int calc_pattern(const int phase_idx, board *b, const unsigned long long 
         pick_pattern(phase_idx, b->p, 15, bk, wt, 0, 1, 8, 9, 10, 11, 12, 17, 25, 33) + pick_pattern(phase_idx, b->p, 15, bk, wt, 7, 6, 15, 14, 13, 12, 11, 22, 30, 38) + pick_pattern(phase_idx, b->p, 15, bk, wt, 56, 57, 48, 49, 50, 51, 52, 41, 33, 25) + pick_pattern(phase_idx, b->p, 15, bk, wt, 63, 62, 55, 54, 53, 52, 51, 46, 38, 30);
 }
 
+/*
 inline int create_canput_line(const int canput_arr[], const int a, const int b, const int c, const int d, const int e, const int f, const int g, const int h){
     return 
         canput_arr[a] * p47 + canput_arr[b] * p46 + canput_arr[c] * p45 + canput_arr[d] * p44 + 
         canput_arr[e] * p43 + canput_arr[f] * p42 + canput_arr[g] * p41 + canput_arr[h];
 }
+*/
 
 inline int create_canput_line(unsigned long long bk, unsigned long long wt, const int a, const int b, const int c, const int d, const int e, const int f, const int g, const int h){
     return 
