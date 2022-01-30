@@ -272,7 +272,6 @@ class mobility{
             u = place % hw + t;
             p = join_d7_line(player, u) & d7_mask[place];
             o = join_d7_line(opponent, u) & d7_mask[place];
-            flip |= split_d7_line(flip_pre_calc[p][o][t] & d7_mask[place], u);
 
             u -= t * 2;
             p = join_d9_line(player, u) & d9_mask[place];
@@ -321,9 +320,51 @@ class mobility{
             h = flip_pre_calc[p][o][u];
             flip |= h << (hw * t);
 
-            p = join_v_line(player, u);
-            o = join_v_line(opponent, u);
-            flip |= split_v_line(flip_pre_calc[p][o][t], u);
+            wh = opponent & 0b0000000011111111111111111111111111111111111111111111111100000000ULL;
+            m1 = put >> hw;
+            if( (m1 & wh) != 0 ) {
+                if( ((m2 = m1 >> hw) & wh) == 0  ) {
+                    if( (m2 & player) != 0 )
+                        flip |= m1;
+                } else if( ((m3 = m2 >> hw) & wh) == 0 ) {
+                    if( (m3 & player) != 0 )
+                        flip |= m1 | m2;
+                } else if( ((m4 = m3 >> hw) & wh) == 0 ) {
+                    if( (m4 & player) != 0 )
+                        flip |= m1 | m2 | m3;
+                } else if( ((m5 = m4 >> hw) & wh) == 0 ) {
+                    if( (m5 & player) != 0 )
+                        flip |= m1 | m2 | m3 | m4;
+                } else if( ((m6 = m5 >> hw) & wh) == 0 ) {
+                    if( (m6 & player) != 0 )
+                        flip |= m1 | m2 | m3 | m4 | m5;
+                } else {
+                    if( ((m6 >> hw) & player) != 0 )
+                        flip |= m1 | m2 | m3 | m4 | m5 | m6;
+                }
+            }
+            m1 = put << hw;
+            if( (m1 & wh) != 0 ) {
+                if( ((m2 = m1 << hw) & wh) == 0  ) {
+                    if( (m2 & player) != 0 )
+                        flip |= m1;
+                } else if( ((m3 = m2 << hw) & wh) == 0 ) {
+                    if( (m3 & player) != 0 )
+                        flip |= m1 | m2;
+                } else if( ((m4 = m3 << hw) & wh) == 0 ) {
+                    if( (m4 & player) != 0 )
+                        flip |= m1 | m2 | m3;
+                } else if( ((m5 = m4 << hw) & wh) == 0 ) {
+                    if( (m5 & player) != 0 )
+                        flip |= m1 | m2 | m3 | m4;
+                } else if( ((m6 = m5 << hw) & wh) == 0 ) {
+                    if( (m6 & player) != 0 )
+                        flip |= m1 | m2 | m3 | m4 | m5;
+                } else {
+                    if( ((m6 << hw) & player) != 0 )
+                        flip |= m1 | m2 | m3 | m4 | m5 | m6;
+                }
+            }
 
             wh = opponent & 0b0000000001111110011111100111111001111110011111100111111000000000ULL;
             m1 = put >> (hw - 1);
