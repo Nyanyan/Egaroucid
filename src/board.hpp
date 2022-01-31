@@ -126,6 +126,17 @@ class board {
         }
 
         inline unsigned long long hash(){
+            /*
+            return
+                (b * 3) ^ 
+                ((b >> 16) * p171) ^ 
+                ((b >> 32) * p173) ^ 
+                ((b >> 48) * p175) ^ 
+                (w * 5) ^ 
+                ((w >> 16) * p191) ^ 
+                ((w >> 32) * p193) ^ 
+                ((w >> 48) * p195);
+            */
             return
                 (b * 3) ^ ((b >> 8) * 7) ^ 
                 ((b >> 16) * p171) ^ 
@@ -141,6 +152,7 @@ class board {
                 ((w >> 40) * p194) ^ 
                 ((w >> 48) * p195) ^ 
                 ((w >> 56) * p196);
+            
             /*
             unsigned long long res = 0;
             for (int i = 0; i < hw2; ++i){
@@ -156,6 +168,17 @@ class board {
         inline unsigned long long hash_player(){
             if (p == black)
                 return hash();
+            /*
+            return
+                (w * 3) ^ 
+                ((w >> 16) * p171) ^ 
+                ((w >> 32) * p173) ^ 
+                ((w >> 48) * p175) ^ 
+                (b * 5) ^ 
+                ((b >> 16) * p191) ^ 
+                ((b >> 32) * p193) ^ 
+                ((b >> 48) * p195);
+            */
             return
                 (w * 3) ^ ((w >> 8) * 7) ^ 
                 ((w >> 16) * p171) ^ 

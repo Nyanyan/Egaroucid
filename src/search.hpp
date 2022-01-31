@@ -31,6 +31,8 @@ constexpr int canput_bonus = 10;
 
 #define po_max_depth 15
 
+#define enhanced_mtd_weight 2
+
 const int cell_weight[hw2] = {
     10, 3, 9, 7, 7, 9, 3, 10, 
     3, 2, 4, 5, 5, 4, 2, 3, 
@@ -86,6 +88,18 @@ struct search_result{
     int value;
     int depth;
     int nps;
+};
+
+struct enhanced_mtd{
+    int policy;
+    int error;
+    int l;
+    int u;
+    board b;
+};
+
+bool operator< (const enhanced_mtd &elem1, const enhanced_mtd &elem2){
+    return elem1.b.v + elem1.error * enhanced_mtd_weight < elem2.b.v + elem2.error * enhanced_mtd_weight;
 };
 
 int cmp_vacant(int p, int q){

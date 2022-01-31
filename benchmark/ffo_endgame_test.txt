@@ -640,3 +640,17 @@
 #42 final depth: 22 time: 2847 policy: 49 value: 6 nodes: 81837863 nps: 31176328
 #43 final depth: 23 time: 7044 policy: 13 value: -12 nodes: 176781980 nps: 25598317
 #44 final depth: 23 time: 4505 policy: 52 value: -14 nodes: 89427286 nps: 21076428
+
+2022/01/31 use enhanced mtd single thread
+#40 final depth: 20 time: 1430 policy: 55 value: 38 nodes: 27828364 nps: 20955093
+#41 final depth: 22 time: 2496 policy: 32 value: 0 nodes: 42608362 nps: 18263335
+#42 final depth: 22 time: 3757 policy: 49 value: 6 nodes: 70563121 nps: 19655465
+#43 final depth: 23 time: 10745 policy: 41 value: -12 nodes: 181418181 nps: 17079474
+#44 final depth: 23 time: 3813 policy: 6 value: -14 nodes: 58883641 nps: 16302226
+multi thread
+#40 final depth: 20 time: 853 policy: 55 value: 38 nodes: 27164891 nps: 36709312
+#41 final depth: 22 time: 2252 policy: 32 value: 0 nodes: 51374332 nps: 25220585
+#42 final depth: 22 time: 2213 policy: 49 value: 6 nodes: 62530851 nps: 30833752
+#43 final depth: 23 time: 7787 policy: 41 value: -12 nodes: 212208624 nps: 27674572
+#44 final depth: 23 time: 3730 policy: 6 value: -14 nodes: 98961377 nps: 28363822
+#45 final depth: 24 time: 45884 policy: 54 value: 6 nodes: 1250577531 nps: 27500935

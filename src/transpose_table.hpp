@@ -18,7 +18,7 @@ class search_node{
         int p;
         int l;
         int u;
-        int child[hw2];
+        char child[hw2];
     //#if USE_MULTI_THREAD
     //    private:
     //        mutex mtx;

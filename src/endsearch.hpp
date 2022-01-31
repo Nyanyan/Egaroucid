@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <functional>
+#include <queue>
 #include "setting.hpp"
 #include "common.hpp"
 #include "board.hpp"
@@ -1056,13 +1057,13 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
     int canput = nb.size();
     //cerr << "canput: " << canput << endl;
     int policy = -1;
-    int tmp_policy;
+    int tmp_policy = -1;
     int alpha, beta, g, value;
     int searched_nodes = 0;
     transpose_table.hash_get = 0;
     transpose_table.hash_reg = 0;
     int max_depth = hw2 - b.n;
-    alpha = -hw2 - 1;
+    alpha = -hw2;
     beta = hw2;
     int pre_search_depth = max(1, min(20, max_depth - simple_end_threshold + simple_mid_threshold + 3));
     cerr << "pre search depth " << pre_search_depth << endl;
@@ -1084,14 +1085,52 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
     long long final_strt = tim();
     searched_nodes = 0;
     if (nb[0].second.n < hw2 - 5){
+        priority_queue<enhanced_mtd> que;
+        for (i = 0; i < canput; ++i){
+            enhanced_mtd elem;
+            elem.policy = nb[i].first;
+            elem.error = 0;
+            elem.l = alpha;
+            elem.u = beta;
+            elem.b = nb[i].second;
+            elem.b.v = elem.b.v / 2 * 2;
+            que.push(elem);
+        }
+        int threshold;
+        while (que.size()){
+            enhanced_mtd elem = que.top();
+            que.pop();
+            elem.l = max(elem.l, alpha);
+            elem.u = min(elem.u, beta);
+            if (elem.l >= elem.u)
+                continue;
+            threshold = max(elem.l + 1, elem.b.v);
+            g = -nega_alpha_ordering_final(&elem.b, false, max_depth - 1, -threshold, -threshold + search_epsilon, true, use_mpc, use_mpct, &searched_nodes);
+            cerr << "result " << que.size() << " " << elem.policy << " " << g << "  " << alpha << " " << beta << endl;
+            if (g < threshold)
+                elem.u = g;
+            else
+                elem.l = g;
+            elem.error += g - elem.b.v;
+            elem.b.v = g;
+            if (elem.l == elem.u){
+                if (alpha < g || tmp_policy == -1){
+                    alpha = g;
+                    tmp_policy = elem.policy;
+                }
+            } else
+                que.push(elem);
+        }
+        /*
         for (i = 0; i < canput; ++i){
             g = -mtd_final(&nb[i].second, false, max_depth - 1, -beta, -alpha, use_mpc, use_mpct, -nb[i].second.v, true, &searched_nodes);
-            cerr << "result " << nb[i].first << " " << g << " " << nb[i].second.v << endl;
+            //cerr << "result " << nb[i].first << " " << g << " " << nb[i].second.v << endl;
             if (alpha < g || i == 0){
                 alpha = g;
                 tmp_policy = nb[i].first;
             }
         }
+        */
     } else{
         int cells[5];
         for (i = 0; i < canput; ++i){
