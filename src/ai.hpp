@@ -19,8 +19,8 @@ search_result ai(board b, int level, int book_error){
     int depth1, depth2;
     bool use_mpc;
     double mpct;
-    get_level(level, b.n - 4, &depth1, &depth2, &use_mpc, &mpct);
-    cerr << "level status " << level << " " << hw2 - b.n << " " << depth1 << " " << depth2 << " " << use_mpc << " " << mpct << endl;
+    get_level(level, b.n - 3, &depth1, &depth2, &use_mpc, &mpct);
+    cerr << "level status " << level << " " << b.n - 3 << " " << depth1 << " " << depth2 << " " << use_mpc << " " << mpct << endl;
     if (b.n >= hw2 - depth2 - 1)
         res = endsearch(b, tim(), use_mpc, mpct);
     else
