@@ -92,7 +92,13 @@ inline unsigned long long mirror_v(unsigned long long x){
     b = x & 0b1111111111111111111111111111111100000000000000000000000000000000ULL;
     return (a << 32) | (b >> 32);
 }
-
+/*
+#ifdef _MSC_VER
+	#define	mirror_v(x)	_byteswap_uint64(x)
+#else
+	#define	mirror_v(x)	__builtin_bswap64(x)
+#endif
+*/
 inline unsigned long long white_line(unsigned long long x){
     unsigned long long res = 0;
     int i, j;

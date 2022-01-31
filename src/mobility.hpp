@@ -1,5 +1,6 @@
 #pragma once
 #include <iostream>
+#include "setting.hpp"
 #include "common.hpp"
 
 using namespace std;
@@ -41,384 +42,383 @@ class mobility{
         unsigned long long flip;
     
     public:
-        /*
-        inline void calc_flip(const unsigned long long player, const unsigned long long opponent, const int place){
-            unsigned long long wh, put, m1, m2, m3, m4, m5, m6, rev;
-            put = 1ULL << place;
-            rev = 0;
+        #if FLIP_CALC_MODE == 0
+            inline void calc_flip(const unsigned long long player, const unsigned long long opponent, const int place){
+                unsigned long long wh, put, m1, m2, m3, m4, m5, m6, rev;
+                put = 1ULL << place;
+                rev = 0;
 
-            wh = opponent & 0b0111111001111110011111100111111001111110011111100111111001111110ULL;
-            m1 = put >> 1;
-            if( (m1 & wh) != 0 ) {
-                if( ((m2 = m1 >> 1) & wh) == 0  ) {
-                    if( (m2 & player) != 0 )
-                        rev |= m1;
-                } else if( ((m3 = m2 >> 1) & wh) == 0 ) {
-                    if( (m3 & player) != 0 )
-                        rev |= m1 | m2;
-                } else if( ((m4 = m3 >> 1) & wh) == 0 ) {
-                    if( (m4 & player) != 0 )
-                        rev |= m1 | m2 | m3;
-                } else if( ((m5 = m4 >> 1) & wh) == 0 ) {
-                    if( (m5 & player) != 0 )
-                        rev |= m1 | m2 | m3 | m4;
-                } else if( ((m6 = m5 >> 1) & wh) == 0 ) {
-                    if( (m6 & player) != 0 )
-                        rev |= m1 | m2 | m3 | m4 | m5;
-                } else {
-                    if( ((m6 >> 1) & player) != 0 )
-                        rev |= m1 | m2 | m3 | m4 | m5 | m6;
+                wh = opponent & 0b0111111001111110011111100111111001111110011111100111111001111110ULL;
+                m1 = put >> 1;
+                if( (m1 & wh) != 0 ) {
+                    if( ((m2 = m1 >> 1) & wh) == 0  ) {
+                        if( (m2 & player) != 0 )
+                            rev |= m1;
+                    } else if( ((m3 = m2 >> 1) & wh) == 0 ) {
+                        if( (m3 & player) != 0 )
+                            rev |= m1 | m2;
+                    } else if( ((m4 = m3 >> 1) & wh) == 0 ) {
+                        if( (m4 & player) != 0 )
+                            rev |= m1 | m2 | m3;
+                    } else if( ((m5 = m4 >> 1) & wh) == 0 ) {
+                        if( (m5 & player) != 0 )
+                            rev |= m1 | m2 | m3 | m4;
+                    } else if( ((m6 = m5 >> 1) & wh) == 0 ) {
+                        if( (m6 & player) != 0 )
+                            rev |= m1 | m2 | m3 | m4 | m5;
+                    } else {
+                        if( ((m6 >> 1) & player) != 0 )
+                            rev |= m1 | m2 | m3 | m4 | m5 | m6;
+                    }
                 }
-            }
-            m1 = put << 1;
-            if( (m1 & wh) != 0 ) {
-                if( ((m2 = m1 << 1) & wh) == 0  ) {
-                    if( (m2 & player) != 0 )
-                        rev |= m1;
-                } else if( ((m3 = m2 << 1) & wh) == 0 ) {
-                    if( (m3 & player) != 0 )
-                        rev |= m1 | m2;
-                } else if( ((m4 = m3 << 1) & wh) == 0 ) {
-                    if( (m4 & player) != 0 )
-                        rev |= m1 | m2 | m3;
-                } else if( ((m5 = m4 << 1) & wh) == 0 ) {
-                    if( (m5 & player) != 0 )
-                        rev |= m1 | m2 | m3 | m4;
-                } else if( ((m6 = m5 << 1) & wh) == 0 ) {
-                    if( (m6 & player) != 0 )
-                        rev |= m1 | m2 | m3 | m4 | m5;
-                } else {
-                    if( ((m6 << 1) & player) != 0 )
-                        rev |= m1 | m2 | m3 | m4 | m5 | m6;
+                m1 = put << 1;
+                if( (m1 & wh) != 0 ) {
+                    if( ((m2 = m1 << 1) & wh) == 0  ) {
+                        if( (m2 & player) != 0 )
+                            rev |= m1;
+                    } else if( ((m3 = m2 << 1) & wh) == 0 ) {
+                        if( (m3 & player) != 0 )
+                            rev |= m1 | m2;
+                    } else if( ((m4 = m3 << 1) & wh) == 0 ) {
+                        if( (m4 & player) != 0 )
+                            rev |= m1 | m2 | m3;
+                    } else if( ((m5 = m4 << 1) & wh) == 0 ) {
+                        if( (m5 & player) != 0 )
+                            rev |= m1 | m2 | m3 | m4;
+                    } else if( ((m6 = m5 << 1) & wh) == 0 ) {
+                        if( (m6 & player) != 0 )
+                            rev |= m1 | m2 | m3 | m4 | m5;
+                    } else {
+                        if( ((m6 << 1) & player) != 0 )
+                            rev |= m1 | m2 | m3 | m4 | m5 | m6;
+                    }
                 }
-            }
 
-            wh = opponent & 0b0000000011111111111111111111111111111111111111111111111100000000ULL;
-            m1 = put >> hw;
-            if( (m1 & wh) != 0 ) {
-                if( ((m2 = m1 >> hw) & wh) == 0  ) {
-                    if( (m2 & player) != 0 )
-                        rev |= m1;
-                } else if( ((m3 = m2 >> hw) & wh) == 0 ) {
-                    if( (m3 & player) != 0 )
-                        rev |= m1 | m2;
-                } else if( ((m4 = m3 >> hw) & wh) == 0 ) {
-                    if( (m4 & player) != 0 )
-                        rev |= m1 | m2 | m3;
-                } else if( ((m5 = m4 >> hw) & wh) == 0 ) {
-                    if( (m5 & player) != 0 )
-                        rev |= m1 | m2 | m3 | m4;
-                } else if( ((m6 = m5 >> hw) & wh) == 0 ) {
-                    if( (m6 & player) != 0 )
-                        rev |= m1 | m2 | m3 | m4 | m5;
-                } else {
-                    if( ((m6 >> hw) & player) != 0 )
-                        rev |= m1 | m2 | m3 | m4 | m5 | m6;
+                wh = opponent & 0b0000000011111111111111111111111111111111111111111111111100000000ULL;
+                m1 = put >> hw;
+                if( (m1 & wh) != 0 ) {
+                    if( ((m2 = m1 >> hw) & wh) == 0  ) {
+                        if( (m2 & player) != 0 )
+                            rev |= m1;
+                    } else if( ((m3 = m2 >> hw) & wh) == 0 ) {
+                        if( (m3 & player) != 0 )
+                            rev |= m1 | m2;
+                    } else if( ((m4 = m3 >> hw) & wh) == 0 ) {
+                        if( (m4 & player) != 0 )
+                            rev |= m1 | m2 | m3;
+                    } else if( ((m5 = m4 >> hw) & wh) == 0 ) {
+                        if( (m5 & player) != 0 )
+                            rev |= m1 | m2 | m3 | m4;
+                    } else if( ((m6 = m5 >> hw) & wh) == 0 ) {
+                        if( (m6 & player) != 0 )
+                            rev |= m1 | m2 | m3 | m4 | m5;
+                    } else {
+                        if( ((m6 >> hw) & player) != 0 )
+                            rev |= m1 | m2 | m3 | m4 | m5 | m6;
+                    }
                 }
-            }
-            m1 = put << hw;
-            if( (m1 & wh) != 0 ) {
-                if( ((m2 = m1 << hw) & wh) == 0  ) {
-                    if( (m2 & player) != 0 )
-                        rev |= m1;
-                } else if( ((m3 = m2 << hw) & wh) == 0 ) {
-                    if( (m3 & player) != 0 )
-                        rev |= m1 | m2;
-                } else if( ((m4 = m3 << hw) & wh) == 0 ) {
-                    if( (m4 & player) != 0 )
-                        rev |= m1 | m2 | m3;
-                } else if( ((m5 = m4 << hw) & wh) == 0 ) {
-                    if( (m5 & player) != 0 )
-                        rev |= m1 | m2 | m3 | m4;
-                } else if( ((m6 = m5 << hw) & wh) == 0 ) {
-                    if( (m6 & player) != 0 )
-                        rev |= m1 | m2 | m3 | m4 | m5;
-                } else {
-                    if( ((m6 << hw) & player) != 0 )
-                        rev |= m1 | m2 | m3 | m4 | m5 | m6;
+                m1 = put << hw;
+                if( (m1 & wh) != 0 ) {
+                    if( ((m2 = m1 << hw) & wh) == 0  ) {
+                        if( (m2 & player) != 0 )
+                            rev |= m1;
+                    } else if( ((m3 = m2 << hw) & wh) == 0 ) {
+                        if( (m3 & player) != 0 )
+                            rev |= m1 | m2;
+                    } else if( ((m4 = m3 << hw) & wh) == 0 ) {
+                        if( (m4 & player) != 0 )
+                            rev |= m1 | m2 | m3;
+                    } else if( ((m5 = m4 << hw) & wh) == 0 ) {
+                        if( (m5 & player) != 0 )
+                            rev |= m1 | m2 | m3 | m4;
+                    } else if( ((m6 = m5 << hw) & wh) == 0 ) {
+                        if( (m6 & player) != 0 )
+                            rev |= m1 | m2 | m3 | m4 | m5;
+                    } else {
+                        if( ((m6 << hw) & player) != 0 )
+                            rev |= m1 | m2 | m3 | m4 | m5 | m6;
+                    }
                 }
-            }
 
-            wh = opponent & 0b0000000001111110011111100111111001111110011111100111111000000000ULL;
-            m1 = put >> (hw - 1);
-            if( (m1 & wh) != 0 ) {
-                if( ((m2 = m1 >> (hw - 1)) & wh) == 0  ) {
-                    if( (m2 & player) != 0 )
-                        rev |= m1;
-                } else if( ((m3 = m2 >> (hw - 1)) & wh) == 0 ) {
-                    if( (m3 & player) != 0 )
-                        rev |= m1 | m2;
-                } else if( ((m4 = m3 >> (hw - 1)) & wh) == 0 ) {
-                    if( (m4 & player) != 0 )
-                        rev |= m1 | m2 | m3;
-                } else if( ((m5 = m4 >> (hw - 1)) & wh) == 0 ) {
-                    if( (m5 & player) != 0 )
-                        rev |= m1 | m2 | m3 | m4;
-                } else if( ((m6 = m5 >> (hw - 1)) & wh) == 0 ) {
-                    if( (m6 & player) != 0 )
-                        rev |= m1 | m2 | m3 | m4 | m5;
-                } else {
-                    if( ((m6 >> (hw - 1)) & player) != 0 )
-                        rev |= m1 | m2 | m3 | m4 | m5 | m6;
+                wh = opponent & 0b0000000001111110011111100111111001111110011111100111111000000000ULL;
+                m1 = put >> (hw - 1);
+                if( (m1 & wh) != 0 ) {
+                    if( ((m2 = m1 >> (hw - 1)) & wh) == 0  ) {
+                        if( (m2 & player) != 0 )
+                            rev |= m1;
+                    } else if( ((m3 = m2 >> (hw - 1)) & wh) == 0 ) {
+                        if( (m3 & player) != 0 )
+                            rev |= m1 | m2;
+                    } else if( ((m4 = m3 >> (hw - 1)) & wh) == 0 ) {
+                        if( (m4 & player) != 0 )
+                            rev |= m1 | m2 | m3;
+                    } else if( ((m5 = m4 >> (hw - 1)) & wh) == 0 ) {
+                        if( (m5 & player) != 0 )
+                            rev |= m1 | m2 | m3 | m4;
+                    } else if( ((m6 = m5 >> (hw - 1)) & wh) == 0 ) {
+                        if( (m6 & player) != 0 )
+                            rev |= m1 | m2 | m3 | m4 | m5;
+                    } else {
+                        if( ((m6 >> (hw - 1)) & player) != 0 )
+                            rev |= m1 | m2 | m3 | m4 | m5 | m6;
+                    }
                 }
-            }
-            m1 = put << (hw - 1);
-            if( (m1 & wh) != 0 ) {
-                if( ((m2 = m1 << (hw - 1)) & wh) == 0  ) {
-                    if( (m2 & player) != 0 )
-                        rev |= m1;
-                } else if( ((m3 = m2 << (hw - 1)) & wh) == 0 ) {
-                    if( (m3 & player) != 0 )
-                        rev |= m1 | m2;
-                } else if( ((m4 = m3 << (hw - 1)) & wh) == 0 ) {
-                    if( (m4 & player) != 0 )
-                        rev |= m1 | m2 | m3;
-                } else if( ((m5 = m4 << (hw - 1)) & wh) == 0 ) {
-                    if( (m5 & player) != 0 )
-                        rev |= m1 | m2 | m3 | m4;
-                } else if( ((m6 = m5 << (hw - 1)) & wh) == 0 ) {
-                    if( (m6 & player) != 0 )
-                        rev |= m1 | m2 | m3 | m4 | m5;
-                } else {
-                    if( ((m6 << (hw - 1)) & player) != 0 )
-                        rev |= m1 | m2 | m3 | m4 | m5 | m6;
+                m1 = put << (hw - 1);
+                if( (m1 & wh) != 0 ) {
+                    if( ((m2 = m1 << (hw - 1)) & wh) == 0  ) {
+                        if( (m2 & player) != 0 )
+                            rev |= m1;
+                    } else if( ((m3 = m2 << (hw - 1)) & wh) == 0 ) {
+                        if( (m3 & player) != 0 )
+                            rev |= m1 | m2;
+                    } else if( ((m4 = m3 << (hw - 1)) & wh) == 0 ) {
+                        if( (m4 & player) != 0 )
+                            rev |= m1 | m2 | m3;
+                    } else if( ((m5 = m4 << (hw - 1)) & wh) == 0 ) {
+                        if( (m5 & player) != 0 )
+                            rev |= m1 | m2 | m3 | m4;
+                    } else if( ((m6 = m5 << (hw - 1)) & wh) == 0 ) {
+                        if( (m6 & player) != 0 )
+                            rev |= m1 | m2 | m3 | m4 | m5;
+                    } else {
+                        if( ((m6 << (hw - 1)) & player) != 0 )
+                            rev |= m1 | m2 | m3 | m4 | m5 | m6;
+                    }
                 }
-            }
 
-            m1 = put >> (hw + 1);
-            if( (m1 & wh) != 0 ) {
-                if( ((m2 = m1 >> (hw + 1)) & wh) == 0  ) {
-                    if( (m2 & player) != 0 )
-                        rev |= m1;
-                } else if( ((m3 = m2 >> (hw + 1)) & wh) == 0 ) {
-                    if( (m3 & player) != 0 )
-                        rev |= m1 | m2;
-                } else if( ((m4 = m3 >> (hw + 1)) & wh) == 0 ) {
-                    if( (m4 & player) != 0 )
-                        rev |= m1 | m2 | m3;
-                } else if( ((m5 = m4 >> (hw + 1)) & wh) == 0 ) {
-                    if( (m5 & player) != 0 )
-                        rev |= m1 | m2 | m3 | m4;
-                } else if( ((m6 = m5 >> (hw + 1)) & wh) == 0 ) {
-                    if( (m6 & player) != 0 )
-                        rev |= m1 | m2 | m3 | m4 | m5;
-                } else {
-                    if( ((m6 >> (hw + 1)) & player) != 0 )
-                        rev |= m1 | m2 | m3 | m4 | m5 | m6;
+                m1 = put >> (hw + 1);
+                if( (m1 & wh) != 0 ) {
+                    if( ((m2 = m1 >> (hw + 1)) & wh) == 0  ) {
+                        if( (m2 & player) != 0 )
+                            rev |= m1;
+                    } else if( ((m3 = m2 >> (hw + 1)) & wh) == 0 ) {
+                        if( (m3 & player) != 0 )
+                            rev |= m1 | m2;
+                    } else if( ((m4 = m3 >> (hw + 1)) & wh) == 0 ) {
+                        if( (m4 & player) != 0 )
+                            rev |= m1 | m2 | m3;
+                    } else if( ((m5 = m4 >> (hw + 1)) & wh) == 0 ) {
+                        if( (m5 & player) != 0 )
+                            rev |= m1 | m2 | m3 | m4;
+                    } else if( ((m6 = m5 >> (hw + 1)) & wh) == 0 ) {
+                        if( (m6 & player) != 0 )
+                            rev |= m1 | m2 | m3 | m4 | m5;
+                    } else {
+                        if( ((m6 >> (hw + 1)) & player) != 0 )
+                            rev |= m1 | m2 | m3 | m4 | m5 | m6;
+                    }
                 }
-            }
-            m1 = put << (hw + 1);
-            if( (m1 & wh) != 0 ) {
-                if( ((m2 = m1 << (hw + 1)) & wh) == 0  ) {
-                    if( (m2 & player) != 0 )
-                        rev |= m1;
-                } else if( ((m3 = m2 << (hw + 1)) & wh) == 0 ) {
-                    if( (m3 & player) != 0 )
-                        rev |= m1 | m2;
-                } else if( ((m4 = m3 << (hw + 1)) & wh) == 0 ) {
-                    if( (m4 & player) != 0 )
-                        rev |= m1 | m2 | m3;
-                } else if( ((m5 = m4 << (hw + 1)) & wh) == 0 ) {
-                    if( (m5 & player) != 0 )
-                        rev |= m1 | m2 | m3 | m4;
-                } else if( ((m6 = m5 << (hw + 1)) & wh) == 0 ) {
-                    if( (m6 & player) != 0 )
-                        rev |= m1 | m2 | m3 | m4 | m5;
-                } else {
-                    if( ((m6 << (hw + 1)) & player) != 0 )
-                        rev |= m1 | m2 | m3 | m4 | m5 | m6;
+                m1 = put << (hw + 1);
+                if( (m1 & wh) != 0 ) {
+                    if( ((m2 = m1 << (hw + 1)) & wh) == 0  ) {
+                        if( (m2 & player) != 0 )
+                            rev |= m1;
+                    } else if( ((m3 = m2 << (hw + 1)) & wh) == 0 ) {
+                        if( (m3 & player) != 0 )
+                            rev |= m1 | m2;
+                    } else if( ((m4 = m3 << (hw + 1)) & wh) == 0 ) {
+                        if( (m4 & player) != 0 )
+                            rev |= m1 | m2 | m3;
+                    } else if( ((m5 = m4 << (hw + 1)) & wh) == 0 ) {
+                        if( (m5 & player) != 0 )
+                            rev |= m1 | m2 | m3 | m4;
+                    } else if( ((m6 = m5 << (hw + 1)) & wh) == 0 ) {
+                        if( (m6 & player) != 0 )
+                            rev |= m1 | m2 | m3 | m4 | m5;
+                    } else {
+                        if( ((m6 << (hw + 1)) & player) != 0 )
+                            rev |= m1 | m2 | m3 | m4 | m5 | m6;
+                    }
                 }
+
+                flip = rev;
+                pos = place;
             }
+            
+        #elif FLIP_CALC_MODE == 1
+            inline void calc_flip(const unsigned long long player, const unsigned long long opponent, const int place){
+                int t, u, p, o;
+                flip = 0;
+                pos = place;
 
-            flip = rev;
-            pos = place;
-        }
-        */
-        /*
-        inline void calc_flip(const unsigned long long player, const unsigned long long opponent, const int place){
-            int t, u, p, o;
-            flip = 0;
-            pos = place;
+                t = place / hw;
+                u = place % hw;
+                p = (player >> (hw * t)) & 0b11111111;
+                o = (opponent >> (hw * t)) & 0b11111111;
+                flip |= (unsigned long long)flip_pre_calc[p][o][u] << (hw * t);
 
-            t = place / hw;
-            u = place % hw;
-            p = (player >> (hw * t)) & 0b11111111;
-            o = (opponent >> (hw * t)) & 0b11111111;
-            flip |= (unsigned long long)flip_pre_calc[p][o][u] << (hw * t);
+                p = join_v_line(player, u);
+                o = join_v_line(opponent, u);
+                flip |= line_to_board_v[flip_pre_calc[p][o][t]][u];
 
-            p = join_v_line(player, u);
-            o = join_v_line(opponent, u);
-            flip |= line_to_board_v[flip_pre_calc[p][o][t]][u];
+                t = place / hw;
+                u = place % hw + t;
+                p = join_d7_line(player, u) & d7_mask[place];
+                o = join_d7_line(opponent, u) & d7_mask[place];
+                flip |= line_to_board_d7[flip_pre_calc[p][o][t] & d7_mask[place]][u];
 
-            t = place / hw;
-            u = place % hw + t;
-            p = join_d7_line(player, u) & d7_mask[place];
-            o = join_d7_line(opponent, u) & d7_mask[place];
-            flip |= line_to_board_d7[flip_pre_calc[p][o][t] & d7_mask[place]][u];
-
-            u -= t * 2;
-            p = join_d9_line(player, u) & d9_mask[place];
-            o = join_d9_line(opponent, u) & d9_mask[place];
-            flip |= line_to_board_d9[flip_pre_calc[p][o][t] & d9_mask[place]][u + hw];
-        }
-        */
+                u -= t * 2;
+                p = join_d9_line(player, u) & d9_mask[place];
+                o = join_d9_line(opponent, u) & d9_mask[place];
+                flip |= line_to_board_d9[flip_pre_calc[p][o][t] & d9_mask[place]][u + hw];
+            }
         
-        inline void calc_flip(const unsigned long long player, const unsigned long long opponent, const int place){
-            unsigned long long wh, put, m1, m2, m3, m4, m5, m6;
-            int t, u, p, o;
-            put = 1ULL << place;
-            flip = 0;
-            pos = place;
+        #elif FLIP_CALC_MODE == 2
+            inline void calc_flip(const unsigned long long player, const unsigned long long opponent, const int place){
+                unsigned long long wh, put, m1, m2, m3, m4, m5, m6;
+                int t, u, p, o;
+                put = 1ULL << place;
+                flip = 0;
+                pos = place;
 
-            t = place / hw;
-            u = place % hw;
-            p = (player >> (hw * t)) & 0b11111111;
-            o = (opponent >> (hw * t)) & 0b11111111;
-            flip |= (unsigned long long)flip_pre_calc[p][o][u] << (hw * t);
+                t = place / hw;
+                u = place % hw;
+                p = (player >> (hw * t)) & 0b11111111;
+                o = (opponent >> (hw * t)) & 0b11111111;
+                flip |= (unsigned long long)flip_pre_calc[p][o][u] << (hw * t);
 
-            p = join_v_line(player, u);
-            o = join_v_line(opponent, u);
-            flip |= line_to_board_v[flip_pre_calc[p][o][t]][u];
-            /*
+                p = join_v_line(player, u);
+                o = join_v_line(opponent, u);
+                flip |= line_to_board_v[flip_pre_calc[p][o][t]][u];
+                /*
+                wh = opponent & 0b0000000011111111111111111111111111111111111111111111111100000000ULL;
+                m1 = put >> hw;
+                if( (m1 & wh) != 0 ) {
+                    if( ((m2 = m1 >> hw) & wh) == 0  ) {
+                        if( (m2 & player) != 0 )
+                            flip |= m1;
+                    } else if( ((m3 = m2 >> hw) & wh) == 0 ) {
+                        if( (m3 & player) != 0 )
+                            flip |= m1 | m2;
+                    } else if( ((m4 = m3 >> hw) & wh) == 0 ) {
+                        if( (m4 & player) != 0 )
+                            flip |= m1 | m2 | m3;
+                    } else if( ((m5 = m4 >> hw) & wh) == 0 ) {
+                        if( (m5 & player) != 0 )
+                            flip |= m1 | m2 | m3 | m4;
+                    } else if( ((m6 = m5 >> hw) & wh) == 0 ) {
+                        if( (m6 & player) != 0 )
+                            flip |= m1 | m2 | m3 | m4 | m5;
+                    } else {
+                        if( ((m6 >> hw) & player) != 0 )
+                            flip |= m1 | m2 | m3 | m4 | m5 | m6;
+                    }
+                }
+                m1 = put << hw;
+                if( (m1 & wh) != 0 ) {
+                    if( ((m2 = m1 << hw) & wh) == 0  ) {
+                        if( (m2 & player) != 0 )
+                            flip |= m1;
+                    } else if( ((m3 = m2 << hw) & wh) == 0 ) {
+                        if( (m3 & player) != 0 )
+                            flip |= m1 | m2;
+                    } else if( ((m4 = m3 << hw) & wh) == 0 ) {
+                        if( (m4 & player) != 0 )
+                            flip |= m1 | m2 | m3;
+                    } else if( ((m5 = m4 << hw) & wh) == 0 ) {
+                        if( (m5 & player) != 0 )
+                            flip |= m1 | m2 | m3 | m4;
+                    } else if( ((m6 = m5 << hw) & wh) == 0 ) {
+                        if( (m6 & player) != 0 )
+                            flip |= m1 | m2 | m3 | m4 | m5;
+                    } else {
+                        if( ((m6 << hw) & player) != 0 )
+                            flip |= m1 | m2 | m3 | m4 | m5 | m6;
+                    }
+                }
+                */
+                wh = opponent & 0b0000000001111110011111100111111001111110011111100111111000000000ULL;
+                m1 = put >> (hw - 1);
+                if( (m1 & wh) != 0 ) {
+                    if( ((m2 = m1 >> (hw - 1)) & wh) == 0  ) {
+                        if( (m2 & player) != 0 )
+                            flip |= m1;
+                    } else if( ((m3 = m2 >> (hw - 1)) & wh) == 0 ) {
+                        if( (m3 & player) != 0 )
+                            flip |= m1 | m2;
+                    } else if( ((m4 = m3 >> (hw - 1)) & wh) == 0 ) {
+                        if( (m4 & player) != 0 )
+                            flip |= m1 | m2 | m3;
+                    } else if( ((m5 = m4 >> (hw - 1)) & wh) == 0 ) {
+                        if( (m5 & player) != 0 )
+                            flip |= m1 | m2 | m3 | m4;
+                    } else if( ((m6 = m5 >> (hw - 1)) & wh) == 0 ) {
+                        if( (m6 & player) != 0 )
+                            flip |= m1 | m2 | m3 | m4 | m5;
+                    } else {
+                        if( ((m6 >> (hw - 1)) & player) != 0 )
+                            flip |= m1 | m2 | m3 | m4 | m5 | m6;
+                    }
+                }
+                m1 = put << (hw - 1);
+                if( (m1 & wh) != 0 ) {
+                    if( ((m2 = m1 << (hw - 1)) & wh) == 0  ) {
+                        if( (m2 & player) != 0 )
+                            flip |= m1;
+                    } else if( ((m3 = m2 << (hw - 1)) & wh) == 0 ) {
+                        if( (m3 & player) != 0 )
+                            flip |= m1 | m2;
+                    } else if( ((m4 = m3 << (hw - 1)) & wh) == 0 ) {
+                        if( (m4 & player) != 0 )
+                            flip |= m1 | m2 | m3;
+                    } else if( ((m5 = m4 << (hw - 1)) & wh) == 0 ) {
+                        if( (m5 & player) != 0 )
+                            flip |= m1 | m2 | m3 | m4;
+                    } else if( ((m6 = m5 << (hw - 1)) & wh) == 0 ) {
+                        if( (m6 & player) != 0 )
+                            flip |= m1 | m2 | m3 | m4 | m5;
+                    } else {
+                        if( ((m6 << (hw - 1)) & player) != 0 )
+                            flip |= m1 | m2 | m3 | m4 | m5 | m6;
+                    }
+                }
 
-            wh = opponent & 0b0000000011111111111111111111111111111111111111111111111100000000ULL;
-            m1 = put >> hw;
-            if( (m1 & wh) != 0 ) {
-                if( ((m2 = m1 >> hw) & wh) == 0  ) {
-                    if( (m2 & player) != 0 )
-                        flip |= m1;
-                } else if( ((m3 = m2 >> hw) & wh) == 0 ) {
-                    if( (m3 & player) != 0 )
-                        flip |= m1 | m2;
-                } else if( ((m4 = m3 >> hw) & wh) == 0 ) {
-                    if( (m4 & player) != 0 )
-                        flip |= m1 | m2 | m3;
-                } else if( ((m5 = m4 >> hw) & wh) == 0 ) {
-                    if( (m5 & player) != 0 )
-                        flip |= m1 | m2 | m3 | m4;
-                } else if( ((m6 = m5 >> hw) & wh) == 0 ) {
-                    if( (m6 & player) != 0 )
-                        flip |= m1 | m2 | m3 | m4 | m5;
-                } else {
-                    if( ((m6 >> hw) & player) != 0 )
-                        flip |= m1 | m2 | m3 | m4 | m5 | m6;
+                m1 = put >> (hw + 1);
+                if( (m1 & wh) != 0 ) {
+                    if( ((m2 = m1 >> (hw + 1)) & wh) == 0  ) {
+                        if( (m2 & player) != 0 )
+                            flip |= m1;
+                    } else if( ((m3 = m2 >> (hw + 1)) & wh) == 0 ) {
+                        if( (m3 & player) != 0 )
+                            flip |= m1 | m2;
+                    } else if( ((m4 = m3 >> (hw + 1)) & wh) == 0 ) {
+                        if( (m4 & player) != 0 )
+                            flip |= m1 | m2 | m3;
+                    } else if( ((m5 = m4 >> (hw + 1)) & wh) == 0 ) {
+                        if( (m5 & player) != 0 )
+                            flip |= m1 | m2 | m3 | m4;
+                    } else if( ((m6 = m5 >> (hw + 1)) & wh) == 0 ) {
+                        if( (m6 & player) != 0 )
+                            flip |= m1 | m2 | m3 | m4 | m5;
+                    } else {
+                        if( ((m6 >> (hw + 1)) & player) != 0 )
+                            flip |= m1 | m2 | m3 | m4 | m5 | m6;
+                    }
+                }
+                m1 = put << (hw + 1);
+                if( (m1 & wh) != 0 ) {
+                    if( ((m2 = m1 << (hw + 1)) & wh) == 0  ) {
+                        if( (m2 & player) != 0 )
+                            flip |= m1;
+                    } else if( ((m3 = m2 << (hw + 1)) & wh) == 0 ) {
+                        if( (m3 & player) != 0 )
+                            flip |= m1 | m2;
+                    } else if( ((m4 = m3 << (hw + 1)) & wh) == 0 ) {
+                        if( (m4 & player) != 0 )
+                            flip |= m1 | m2 | m3;
+                    } else if( ((m5 = m4 << (hw + 1)) & wh) == 0 ) {
+                        if( (m5 & player) != 0 )
+                            flip |= m1 | m2 | m3 | m4;
+                    } else if( ((m6 = m5 << (hw + 1)) & wh) == 0 ) {
+                        if( (m6 & player) != 0 )
+                            flip |= m1 | m2 | m3 | m4 | m5;
+                    } else {
+                        if( ((m6 << (hw + 1)) & player) != 0 )
+                            flip |= m1 | m2 | m3 | m4 | m5 | m6;
+                    }
                 }
             }
-            m1 = put << hw;
-            if( (m1 & wh) != 0 ) {
-                if( ((m2 = m1 << hw) & wh) == 0  ) {
-                    if( (m2 & player) != 0 )
-                        flip |= m1;
-                } else if( ((m3 = m2 << hw) & wh) == 0 ) {
-                    if( (m3 & player) != 0 )
-                        flip |= m1 | m2;
-                } else if( ((m4 = m3 << hw) & wh) == 0 ) {
-                    if( (m4 & player) != 0 )
-                        flip |= m1 | m2 | m3;
-                } else if( ((m5 = m4 << hw) & wh) == 0 ) {
-                    if( (m5 & player) != 0 )
-                        flip |= m1 | m2 | m3 | m4;
-                } else if( ((m6 = m5 << hw) & wh) == 0 ) {
-                    if( (m6 & player) != 0 )
-                        flip |= m1 | m2 | m3 | m4 | m5;
-                } else {
-                    if( ((m6 << hw) & player) != 0 )
-                        flip |= m1 | m2 | m3 | m4 | m5 | m6;
-                }
-            }
-            */
-            wh = opponent & 0b0000000001111110011111100111111001111110011111100111111000000000ULL;
-            m1 = put >> (hw - 1);
-            if( (m1 & wh) != 0 ) {
-                if( ((m2 = m1 >> (hw - 1)) & wh) == 0  ) {
-                    if( (m2 & player) != 0 )
-                        flip |= m1;
-                } else if( ((m3 = m2 >> (hw - 1)) & wh) == 0 ) {
-                    if( (m3 & player) != 0 )
-                        flip |= m1 | m2;
-                } else if( ((m4 = m3 >> (hw - 1)) & wh) == 0 ) {
-                    if( (m4 & player) != 0 )
-                        flip |= m1 | m2 | m3;
-                } else if( ((m5 = m4 >> (hw - 1)) & wh) == 0 ) {
-                    if( (m5 & player) != 0 )
-                        flip |= m1 | m2 | m3 | m4;
-                } else if( ((m6 = m5 >> (hw - 1)) & wh) == 0 ) {
-                    if( (m6 & player) != 0 )
-                        flip |= m1 | m2 | m3 | m4 | m5;
-                } else {
-                    if( ((m6 >> (hw - 1)) & player) != 0 )
-                        flip |= m1 | m2 | m3 | m4 | m5 | m6;
-                }
-            }
-            m1 = put << (hw - 1);
-            if( (m1 & wh) != 0 ) {
-                if( ((m2 = m1 << (hw - 1)) & wh) == 0  ) {
-                    if( (m2 & player) != 0 )
-                        flip |= m1;
-                } else if( ((m3 = m2 << (hw - 1)) & wh) == 0 ) {
-                    if( (m3 & player) != 0 )
-                        flip |= m1 | m2;
-                } else if( ((m4 = m3 << (hw - 1)) & wh) == 0 ) {
-                    if( (m4 & player) != 0 )
-                        flip |= m1 | m2 | m3;
-                } else if( ((m5 = m4 << (hw - 1)) & wh) == 0 ) {
-                    if( (m5 & player) != 0 )
-                        flip |= m1 | m2 | m3 | m4;
-                } else if( ((m6 = m5 << (hw - 1)) & wh) == 0 ) {
-                    if( (m6 & player) != 0 )
-                        flip |= m1 | m2 | m3 | m4 | m5;
-                } else {
-                    if( ((m6 << (hw - 1)) & player) != 0 )
-                        flip |= m1 | m2 | m3 | m4 | m5 | m6;
-                }
-            }
-
-            m1 = put >> (hw + 1);
-            if( (m1 & wh) != 0 ) {
-                if( ((m2 = m1 >> (hw + 1)) & wh) == 0  ) {
-                    if( (m2 & player) != 0 )
-                        flip |= m1;
-                } else if( ((m3 = m2 >> (hw + 1)) & wh) == 0 ) {
-                    if( (m3 & player) != 0 )
-                        flip |= m1 | m2;
-                } else if( ((m4 = m3 >> (hw + 1)) & wh) == 0 ) {
-                    if( (m4 & player) != 0 )
-                        flip |= m1 | m2 | m3;
-                } else if( ((m5 = m4 >> (hw + 1)) & wh) == 0 ) {
-                    if( (m5 & player) != 0 )
-                        flip |= m1 | m2 | m3 | m4;
-                } else if( ((m6 = m5 >> (hw + 1)) & wh) == 0 ) {
-                    if( (m6 & player) != 0 )
-                        flip |= m1 | m2 | m3 | m4 | m5;
-                } else {
-                    if( ((m6 >> (hw + 1)) & player) != 0 )
-                        flip |= m1 | m2 | m3 | m4 | m5 | m6;
-                }
-            }
-            m1 = put << (hw + 1);
-            if( (m1 & wh) != 0 ) {
-                if( ((m2 = m1 << (hw + 1)) & wh) == 0  ) {
-                    if( (m2 & player) != 0 )
-                        flip |= m1;
-                } else if( ((m3 = m2 << (hw + 1)) & wh) == 0 ) {
-                    if( (m3 & player) != 0 )
-                        flip |= m1 | m2;
-                } else if( ((m4 = m3 << (hw + 1)) & wh) == 0 ) {
-                    if( (m4 & player) != 0 )
-                        flip |= m1 | m2 | m3;
-                } else if( ((m5 = m4 << (hw + 1)) & wh) == 0 ) {
-                    if( (m5 & player) != 0 )
-                        flip |= m1 | m2 | m3 | m4;
-                } else if( ((m6 = m5 << (hw + 1)) & wh) == 0 ) {
-                    if( (m6 & player) != 0 )
-                        flip |= m1 | m2 | m3 | m4 | m5;
-                } else {
-                    if( ((m6 << (hw + 1)) & player) != 0 )
-                        flip |= m1 | m2 | m3 | m4 | m5 | m6;
-                }
-            }
-        }
-        
+        #endif
 };
 
 void mobility_init(){

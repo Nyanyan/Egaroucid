@@ -47,6 +47,9 @@
 
 /** other **/
 
+// flip calculating
+#define FLIP_CALC_MODE 2
+
 // nodes statistics
 #define STATISTICS_MODE true
 
