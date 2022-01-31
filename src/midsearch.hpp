@@ -358,7 +358,7 @@ inline search_result midsearch(board b, long long strt, int max_depth, bool use_
             sort(nb.begin(), nb.end());
         for (i = 0; i < canput; ++i){
             nbd = nb[i];
-            g = -mtd(&nbd, false, depth, -beta, -g, use_mpc, use_mpct, &searched_nodes);
+            g = -mtd(&nbd, false, depth, -beta, -alpha, use_mpc, use_mpct, &searched_nodes);
             transpose_table.child_reg(&b, hash, nb[i].policy, g);
             if (alpha < g || i == 0){
                 alpha = g;

@@ -30,7 +30,7 @@ using namespace std;
 
 #define simple_mid_threshold 3
 #define simple_end_threshold 7
-#define simple_end_threshold2 13
+#define simple_end_threshold2 15
 
 #define po_max_depth 15
 
