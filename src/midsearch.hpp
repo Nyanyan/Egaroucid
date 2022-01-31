@@ -182,28 +182,21 @@ int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int 
     #if USE_MULTI_THREAD
         if (use_multi_thread){
             int i;
-            calc_flip(&mob, b, policies[0].first);
-            b->move(&mob);
-            g = -nega_alpha_ordering(b, false, depth - 1, -beta, -alpha, true, use_mpc, mpct_in, n_nodes);
-            b->undo(&mob);
+            g = -nega_alpha_ordering(&nb[0], false, depth - 1, -beta, -alpha, true, use_mpc, mpct_in, n_nodes);
             alpha = max(alpha, g);
             if (beta <= alpha){
                 if (l < alpha)
                     transpose_table.reg(b, hash, alpha, u);
-                delete[] policies;
+                delete[] nb;
                 return alpha;
             }
             v = max(v, g);
             vector<future<int>> future_tasks;
-            vector<board> nb;
             vector<int> n_n_nodes;
-            for (i = 1; i < canput; ++i){
-                n_n_nodes.emplace_back(0);
-                calc_flip(&mob, b, policies[i].first);
-                nb.emplace_back(b->move_copy(&mob));
-            }
             for (i = 1; i < canput; ++i)
-                future_tasks.emplace_back(thread_pool.push(bind(&nega_alpha_ordering, &nb[i - 1], false, depth - 1, -beta, -alpha, false, use_mpc, mpct_in, &(n_n_nodes[i - 1]))));
+                n_n_nodes.emplace_back(0);
+            for (i = 1; i < canput; ++i)
+                future_tasks.emplace_back(thread_pool.push(bind(&nega_alpha_ordering, &nb[i], false, depth - 1, -beta, -alpha, false, use_mpc, mpct_in, &(n_n_nodes[i - 1]))));
             for (i = 1; i < canput; ++i){
                 g = -future_tasks[i - 1].get();
                 alpha = max(alpha, g);
@@ -213,26 +206,23 @@ int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int 
             if (beta <= alpha){
                 if (l < alpha)
                     transpose_table.reg(b, hash, alpha, u);
-                delete[] policies;
+                delete[] nb;
                 return alpha;
             }
-            delete[] policies;
+            delete[] nb;
         } else{
             for (idx = 0; idx < canput; ++idx){
-                calc_flip(&mob, b, policies[idx].first);
-                b->move(&mob);
-                g = -nega_alpha_ordering(b, false, depth - 1, -beta, -alpha, false, use_mpc, mpct_in, n_nodes);
-                b->undo(&mob);
+                g = -nega_alpha_ordering(&nb[idx], false, depth - 1, -beta, -alpha, false, use_mpc, mpct_in, n_nodes);
                 alpha = max(alpha, g);
                 if (beta <= alpha){
                     if (l < g)
                         transpose_table.reg(b, hash, g, u);
-                    delete[] policies;
+                    delete[] nb;
                     return alpha;
                 }
                 v = max(v, g);
             }
-            delete[] policies;
+            delete[] nb;
         }
     #else
         for (idx = 0; idx < canput; ++idx){

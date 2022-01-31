@@ -819,31 +819,24 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
             int i;
             const int first_threshold = canput / 6 + 1;
             for (i = 0; i < first_threshold; ++i){
-                calc_flip(&mob, b, policies[i].first);
-                b->move(&mob);
-                g = -nega_alpha_ordering_final(b, false, depth - 1, -beta, -alpha, true, use_mpc, mpct_in, n_nodes);
-                b->undo(&mob);
+                g = -nega_alpha_ordering_final(&nb[i], false, depth - 1, -beta, -alpha, true, use_mpc, mpct_in, n_nodes);
                 alpha = max(alpha, g);
                 if (beta <= alpha){
                     #if USE_END_TC
                         if (l < alpha)
                             transpose_table.reg(b, hash, alpha, u);
                     #endif
-                    delete[] policies;
+                    delete[] nb;
                     return alpha;
                 }
                 v = max(v, g);
             }
-            board *n_boards = new board[canput - first_threshold];
-            future<int> *future_tasks = new future<int>[canput - first_threshold];
+            vector<future<int>> future_tasks;
             int *n_n_nodes = new int[canput - first_threshold];
             int done_tasks = first_threshold;
             int next_done_tasks;
-            for (i = first_threshold; i < canput; ++i){
+            for (i = first_threshold; i < canput; ++i)
                 n_n_nodes[i - first_threshold] = 0;
-                calc_flip(&mob, b, policies[i].first);
-                n_boards[i - first_threshold] = b->move_copy(&mob);
-            }
             while (done_tasks < canput){
                 next_done_tasks = canput;
                 for (i = done_tasks; i < canput; ++i){
@@ -851,7 +844,7 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
                         next_done_tasks = i;
                         break;
                     }
-                    future_tasks[i - first_threshold] = thread_pool.push(bind(&nega_alpha_ordering_final, &n_boards[i - first_threshold], false, depth - 1, -beta, -alpha, false, use_mpc, mpct_in, &n_n_nodes[i - first_threshold]));
+                    future_tasks.emplace_back(thread_pool.push(bind(&nega_alpha_ordering_final, &nb[i], false, depth - 1, -beta, -alpha, false, use_mpc, mpct_in, &n_n_nodes[i - first_threshold])));
                 }
                 for (i = done_tasks; i < next_done_tasks; ++i){
                     g = -future_tasks[i - first_threshold].get();
@@ -864,24 +857,20 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
                         if (l < alpha)
                             transpose_table.reg(b, hash, alpha, u);
                     #endif
-                    delete[] policies;
-                    delete[] n_boards;
-                    delete[] future_tasks;
+                    delete[] nb;
                     delete[] n_n_nodes;
                     return alpha;
                 }
                 done_tasks = next_done_tasks;
                 if (done_tasks < canput){
-                    g = -nega_alpha_ordering_final(&n_boards[done_tasks - first_threshold], false, depth - 1, -beta, -alpha, false, use_mpc, mpct_in, n_nodes);
+                    g = -nega_alpha_ordering_final(&nb[done_tasks], false, depth - 1, -beta, -alpha, false, use_mpc, mpct_in, n_nodes);
                     alpha = max(alpha, g);
                     if (beta <= alpha){
                         #if USE_END_TC
                             if (l < alpha)
                                 transpose_table.reg(b, hash, alpha, u);
                         #endif
-                        delete[] policies;
-                        delete[] n_boards;
-                        delete[] future_tasks;
+                        delete[] nb;
                         delete[] n_n_nodes;
                         return alpha;
                     }
@@ -889,28 +878,23 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
                     ++done_tasks;
                 }
             }
-            delete[] policies;
-            delete[] n_boards;
-            delete[] future_tasks;
+            delete[] nb;
             delete[] n_n_nodes;
         } else{
             for (idx = 0; idx < canput; ++idx){
-                calc_flip(&mob, b, policies[idx].first);
-                b->move(&mob);
-                g = -nega_alpha_ordering_final(b, false, depth - 1, -beta, -alpha, false, use_mpc, mpct_in, n_nodes);
-                b->undo(&mob);
+                g = -nega_alpha_ordering_final(&nb[idx], false, depth - 1, -beta, -alpha, false, use_mpc, mpct_in, n_nodes);
                 alpha = max(alpha, g);
                 if (beta <= alpha){
                     #if USE_END_TC
                         if (l < alpha)
                             transpose_table.reg(b, hash, alpha, u);
                     #endif
-                    delete[] policies;
+                    delete[] nb;
                     return alpha;
                 }
                 v = max(v, g);
             }
-            delete[] policies;
+            delete[] nb;
         }
     #else
         for (idx = 0; idx < canput; ++idx){
@@ -1125,7 +1109,7 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
                 continue;
             threshold = max(elem.l + 1, elem.b.v);
             g = -nega_alpha_ordering_final(&elem.b, false, max_depth - 1, -threshold, -threshold + search_epsilon, true, use_mpc, use_mpct, &searched_nodes);
-            cerr << "result " << que.size() << " " << elem.policy << "  " << g << "  " << elem.l << " " << elem.u << endl;
+            cerr << "result " << que.size() << " " << elem.policy << "  " << g << " " << threshold << "  " << elem.l << " " << elem.u << endl;
             if (g < threshold)
                 elem.u = g;
             else

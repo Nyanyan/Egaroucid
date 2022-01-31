@@ -675,3 +675,10 @@ update move ordering
 #42 final depth: 22 time: 2907 policy: 49 value: 6 nodes: 45150073 nps: 16660543
 #43 final depth: 23 time: 15074 policy: 41 value: -12 nodes: 210920347 nps: 14112160
 #44 final depth: 23 time: 4058 policy: 6 value: -14 nodes: 51861643 nps: 13460068
+multi thread
+#40 final depth: 20 time: 775 policy: 55 value: 38 nodes: 25973254 nps: 39175345
+#41 final depth: 22 time: 1591 policy: 32 value: 0 nodes: 27422192 nps: 19714012
+#42 final depth: 22 time: 1875 policy: 49 value: 6 nodes: 46547181 nps: 27673710
+#43 final depth: 23 time: 9461 policy: 41 value: -12 nodes: 240088175 nps: 25697118
+#44 final depth: 23 time: 3116 policy: 6 value: -14 nodes: 65552079 nps: 22776955
+#45 final depth: 24 time: 56289 policy: 54 value: 6 nodes: 1388356700 nps: 24845768
