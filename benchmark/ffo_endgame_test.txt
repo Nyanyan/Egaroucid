@@ -662,3 +662,9 @@ update
 #43 final depth: 23 time: 7709 policy: 41 value: -12 nodes: 212399079 nps: 27991444
 #44 final depth: 23 time: 3772 policy: 6 value: -14 nodes: 98947854 nps: 27982990
 
+2022/01/31 update last1 single thread
+#40 final depth: 20 time: 1512 policy: 55 value: 38 nodes: 27828811 nps: 19778828
+#41 final depth: 22 time: 2672 policy: 32 value: 0 nodes: 42609466 nps: 17105365
+#42 final depth: 22 time: 3799 policy: 49 value: 6 nodes: 69479562 nps: 19161489
+#43 final depth: 23 time: 10612 policy: 41 value: -12 nodes: 180556685 nps: 17179513
+#44 final depth: 23 time: 3958 policy: 6 value: -14 nodes: 60639514 nps: 16127530

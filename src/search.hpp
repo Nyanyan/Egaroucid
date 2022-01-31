@@ -14,11 +14,14 @@
 using namespace std;
 
 #define search_epsilon 1
-constexpr int cache_hit = 100;
-constexpr int cache_both = 100;
-constexpr int cache_now = 100;
-constexpr int parity_vacant_bonus = 5;
-constexpr int canput_bonus = 10;
+#define cache_hit 100
+#define cache_now 100
+#define parity_vacant_bonus 5
+#define canput_bonus 10
+#define w_former_search 10
+#define w_stability 5
+#define w_evaluate 10
+#define w_surround 5
 
 #define mpc_min_depth 3
 #define mpc_max_depth 20
@@ -106,21 +109,28 @@ int cmp_vacant(int p, int q){
     return cell_weight[p] > cell_weight[q];
 }
 
-inline int move_ordering(board *b, const int hash, const int policy){
-    int v = transpose_table.child_get_now(b, hash, policy);
-    if (v == -child_inf){
-        v = transpose_table.child_get_prev(b, hash, policy);
-        if (v == -child_inf){
-            mobility mob;
-            calc_flip(&mob, b, policy);
-            b->move(&mob);
-            v = -mid_evaluate(b);
-            b->undo(&mob);
-        } else
+inline int move_ordering(board *b, board *nb, const int hash, const int policy, const int b_val){
+    int v = transpose_table.child_get_now(b, hash, policy) * w_former_search;
+    if (v == -child_inf * w_former_search){
+        v = transpose_table.child_get_prev(b, hash, policy) * w_former_search;
+        if (v == -child_inf * w_former_search)
+            v = 0;
+        else
             v += cache_hit;
     } else
-        v += cache_hit + cache_both;
-    //v += cell_weight[policy];
+        v += cache_hit + cache_now;
+    v += cell_weight[policy];
+    v += (-mid_evaluate(nb) - b_val) * w_evaluate;
+    int stab0, stab1;
+    calc_stability_fast(nb, &stab0, &stab1);
+    unsigned long long n_empties = ~(nb->b | nb->w);
+    if (b->p == black){
+        v += (stab0 - stab1) * w_stability;
+        v += (calc_surround(nb->w, n_empties) - calc_surround(nb->b, n_empties)) * w_surround;
+    } else{
+        v += (stab1 - stab0) * w_stability;
+        v += (calc_surround(nb->b, n_empties) - calc_surround(nb->w, n_empties)) * w_surround;
+    }
     return v;
 }
 

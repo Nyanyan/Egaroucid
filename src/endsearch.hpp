@@ -47,11 +47,12 @@ int nega_alpha_ordering_final_nomemo(board *b, bool skipped, int depth, int alph
     mobility mob;
     int canput = 0;
     int hash = b->hash() & search_hash_mask;
+    int b_val = mid_evaluate(b);
     for (const int &cell: vacant_lst){
         if (1 & (legal >> cell)){
             calc_flip(&mob, b, cell);
             nb.emplace_back(b->move_copy(&mob));
-            nb[canput].v = move_ordering(b, hash, cell);
+            nb[canput].v = move_ordering(b, &nb[canput], hash, cell, b_val);
             //nb[canput].v -= canput_bonus * calc_canput_exact(&nb[canput]);
             #if USE_END_PO && false
                 if (depth <= po_max_depth && b->parity & cell_div4[cell])
@@ -798,16 +799,20 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
         return res;
     }
     const int canput = pop_count_ull(legal);
-    pair<int, int> *policies = new pair<int, int>[canput];
+    board *nb = new board[canput];
     mobility mob;
     int idx = 0;
+    int b_val = mid_evaluate(b);
     for (const int &cell: vacant_lst){
         if (1 & (legal >> cell)){
-            policies[idx++] = make_pair(cell, move_ordering(b, hash, cell));
+            calc_flip(&mob, b, cell);
+            b->move_copy(&mob, &nb[idx]);
+            nb[idx].v = move_ordering(b, &nb[idx], hash, cell, b_val);
+            ++idx;
         }
     }
     if (canput >= 2)
-        sort(policies, policies + canput, move_ordering_sort_int_int);
+        sort(nb, nb + canput);
     int g, v = -inf;
     #if USE_MULTI_THREAD
         if (use_multi_thread){
@@ -909,22 +914,20 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
         }
     #else
         for (idx = 0; idx < canput; ++idx){
-            calc_flip(&mob, b, policies[idx].first);
-            b->move(&mob);
-            g = -nega_alpha_ordering_final(b, false, depth - 1, -beta, -alpha, false, use_mpc, mpct_in, n_nodes);
-            b->undo(&mob);
+            g = -nega_alpha_ordering_final(&nb[idx], false, depth - 1, -beta, -alpha, false, use_mpc, mpct_in, n_nodes);
+            //transpose_table.child_reg(b, hash, nb[idx].policy, g);
             alpha = max(alpha, g);
             if (beta <= alpha){
                 #if USE_END_TC
                     if (l < alpha)
                         transpose_table.reg(b, hash, alpha, u);
                 #endif
-                delete[] policies;
+                delete[] nb;
                 return alpha;
             }
             v = max(v, g);
         }
-        delete[] policies;
+        delete[] nb;
     #endif
     #if USE_END_TC
         if (v <= alpha)

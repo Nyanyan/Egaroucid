@@ -362,6 +362,25 @@ inline void calc_stability(board *b, int *stab0, int *stab1){
     *stab1 = pop_count_ull(white_stability);
 }
 
+inline void calc_stability_fast(board *b, int *stab0, int *stab1){
+    unsigned long long edge_stability = 0;
+    int bk, wt;
+    bk = b->b & 0b11111111;
+    wt = b->w & 0b11111111;
+    edge_stability |= stability_edge_arr[bk][wt][0] << 56;
+    bk = (b->b >> 56) & 0b11111111;
+    wt = (b->w >> 56) & 0b11111111;
+    edge_stability |= stability_edge_arr[bk][wt][0];
+    bk = join_v_line(b->b, 0);
+    wt = join_v_line(b->w, 0);
+    edge_stability |= stability_edge_arr[bk][wt][1] << 7;
+    bk = join_v_line(b->b, 7);
+    wt = join_v_line(b->w, 7);
+    edge_stability |= stability_edge_arr[bk][wt][1];
+    *stab0 = pop_count_ull(edge_stability & b->b);
+    *stab1 = pop_count_ull(edge_stability & b->w);
+}
+
 inline int pop_digit(unsigned long long x, int place){
     return 1 & (x >> place);
 }
