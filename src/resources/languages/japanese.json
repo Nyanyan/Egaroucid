@@ -1,0 +1,51 @@
+{
+    "lang_name": "日本語",
+    "common": {
+        "black": "黒",
+        "white": "白",
+        "level": "レベル"
+    },
+    "loading": {
+        "loading": "起動中...",
+        "load_failed": "起動失敗\nresourcesフォルダを確認してください"
+    },
+    "mode": {
+        "mode": "モード",
+        "entry_mode": "初級者向け",
+        "professional_mode": "上級者向け",
+        "serious_game": "真剣勝負"
+    },
+    "play": {
+        "game": "対局",
+        "new_game": "新規対局"
+    },
+    "settings": {
+        "settings": "設定",
+        "ai_play": {
+            "ai_play":  "AIが着手",
+            "human_first": "人間先手",
+            "human_second": "人間後手",
+            "both_ai": "AI同士"
+        },
+        "hint": {
+            "hint": "ヒント",
+            "stone_value": "石差評価",
+            "human_value": "人間的評価",
+            "umigame_value": "うみがめ数"
+        },
+        "value": "評価値"
+    },
+    "level": {
+        "level": "レベル",
+        "ai_level": "AIレベル",
+        "hint_level": "ヒントレベル"
+    },
+    "book": {
+        "book": "定石",
+        "learn": "学習"
+    },
+    "button": {
+        "start_game": "対局開始",
+        "how_to_use": "使い方"
+    }
+}

@@ -27,6 +27,7 @@
 #include "gui/graph.hpp"
 #include "gui/menu.hpp"
 #include "gui/language.hpp"
+#include "gui/button.hpp"
 
 using namespace std;
 
@@ -42,12 +43,22 @@ using namespace std;
 #define right_right 980
 #define y_center 360
 
-constexpr Color font_color = Palette::White;
+constexpr Color font_color = Palette::White;;
 constexpr int board_size = 480;
 constexpr int board_sx = left_left, board_sy = y_center - board_size / 2, board_cell_size = board_size / hw, board_cell_frame_width = 2, board_frame_width = 7;
 constexpr int stone_size = 25, legal_size = 5;
 constexpr int graph_sx = 575, graph_sy = 245, graph_width = 415, graph_height = 345, graph_resolution = 10, graph_font_size = 15;
 constexpr Color green = Color(36, 153, 114, 100);
+constexpr int start_game_how_to_use_width = 200, start_game_how_to_use_height = 50;
+constexpr int start_game_button_x = right_center - start_game_how_to_use_width / 2,
+	start_game_button_y = y_center - start_game_how_to_use_height - 10,
+	start_game_button_w = start_game_how_to_use_width,
+	start_game_button_h = start_game_how_to_use_height;
+constexpr int how_to_use_button_x = right_center - start_game_how_to_use_width / 2,
+	how_to_use_button_y = y_center + start_game_how_to_use_height + 10,
+	how_to_use_button_w = start_game_how_to_use_width,
+	how_to_use_button_h = start_game_how_to_use_height;
+constexpr Color button_color = Palette::White, button_font_color = Palette::Black;
 
 struct cell_value {
 	int value;
@@ -306,7 +317,9 @@ void board_draw(Rect board_cells[], board b, bool use_hint_flag, bool normal_hin
 				max_cell_value = max(max_cell_value, hint_value[cell]);
 			}
 			if (!use_hint_flag || (!normal_hint && !human_hint && !umigame_hint)) {
-				Circle(x, y, legal_size).draw(Palette::Cyan);
+				int xx = board_sx + (hw_m1 - cell % hw) * board_cell_size + board_cell_size / 2;
+				int yy = board_sy + (hw_m1 - cell / hw) * board_cell_size + board_cell_size / 2;
+				Circle(xx, yy, legal_size).draw(Palette::Cyan);
 			}
 		}
 	}
@@ -449,6 +462,10 @@ void Main() {
 	int ai_value = 0;
 	int ai_level = 21, ai_book_accept = 4, hint_level = 9;
 
+	bool before_start_game = true;
+	Button start_game_button;
+	Button how_to_use_button;
+
 	while (System::Update()) {
 		if (System::GetUserActions() & UserAction::CloseButtonClicked) {
 			reset_hint(hint_state, hint_future);
@@ -475,6 +492,8 @@ void Main() {
 					&use_value_flag,
 					&ai_level, &hint_level, &ai_book_accept,
 					&start_book_learn_flag);
+				start_game_button.init(start_game_button_x, start_game_button_y, start_game_button_w, start_game_button_h, language.get("button", "start_game"), font30, button_color, button_font_color);
+				how_to_use_button.init(how_to_use_button_x, how_to_use_button_y, how_to_use_button_w, how_to_use_button_h, language.get("button", "how_to_use"), font30, button_color, button_font_color);
 				lang_initialized = 2;
 			}
 			else if (lang_initialized == 2) {
@@ -525,12 +544,6 @@ void Main() {
 					&ai_level, &hint_level, &ai_book_accept,
 					&start_book_learn_flag);
 			}
-			unsigned long long legal = bd.mobility_ull();
-			for (int cell = 0; cell < hw2; ++cell) {
-				board_clicked[cell] = board_cells[cell].leftClicked() && !menu.active() && (1 & (legal >> cell)) && (!use_ai_flag || (human_first && bd.p == black) || (human_second && bd.p == white) || fork_mode);
-				if (board_clicked[cell])
-					global_searching = false;
-			}
 			if (start_game_flag) {
 				cerr << "reset" << endl;
 				bd.reset();
@@ -540,91 +553,99 @@ void Main() {
 				fork_history.clear();
 				history_place = 0;
 				fork_mode = false;
+				before_start_game = true;
 				reset_hint(hint_state, hint_future);
 			}
-			if (not_finished(bd) && (!use_ai_flag || (human_first && bd.p == black) || (human_second && bd.p == white) || fork_mode)) {
-				pair<bool, board> moved_board = move_board(bd, board_clicked);
-				if (moved_board.first) {
-					bd = moved_board.second;
-					bd.check_player();
-					bd.v = -inf;
-					if (fork_mode) {
-						while (fork_history.size()) {
-							if (fork_history[fork_history.size() - 1].n >= bd.n) {
-								fork_history.pop_back();
-							}
-							else {
-								break;
-							}
-						}
-						fork_history.emplace_back(bd);
-					}
-					else {
-						history.emplace_back(bd);
-					}
-					history_place = bd.n - 4;
-					reset_hint(hint_state, hint_future);
+			if (!before_start_game) {
+				unsigned long long legal = bd.mobility_ull();
+				for (int cell = 0; cell < hw2; ++cell) {
+					board_clicked[cell] = board_cells[cell].leftClicked() && !menu.active() && (1 & (legal >> cell)) && (!use_ai_flag || (human_first && bd.p == black) || (human_second && bd.p == white) || fork_mode);
+					if (board_clicked[cell])
+						global_searching = false;
 				}
-				if (not_finished(bd) && use_hint_flag && normal_hint) {
-					for (int cell = 0; cell < hw2; ++cell) {
-						if ((1 & (legal >> cell)) && hint_state[cell] < hint_level * 2) {
-							if (hint_state[cell] % 2 == 0) {
-								if (hint_state[cell] == hint_level * 2 - 2) {
-									hint_future[cell] = async(launch::async, hint_search, bd, hint_level, cell);
-								}
-								else {
-									hint_future[cell] = async(launch::async, hint_search, bd, hint_state[cell] / 2, cell);
-								}
-								++hint_state[cell];
-							}
-							else if (hint_future[cell].wait_for(chrono::seconds(0)) == future_status::ready) {
-								cell_value hint_result = hint_future[cell].get();
-								if (global_searching) {
-									if (hint_state[cell] == 1 || hint_result.depth == search_final_define) {
-										hint_value[cell] = hint_result.value;
-									}
-									else {
-										hint_value[cell] += hint_result.value;
-										hint_value[cell] /= 2;
-									}
-									hint_depth[cell] = hint_result.depth;
-								}
-								if (hint_result.depth == search_final_define || hint_result.depth == search_book_define) {
-									hint_state[cell] = hint_level * 2;
-								}
-								else {
-									++hint_state[cell];
-								}
-							}
-						}
-					}
-				}
-			}
-			else if (not_finished(bd) && history[history.size() - 1].n - 4 == history_place) {
-				if (ai_thinking) {
-					if (ai_future.wait_for(chrono::seconds(0)) == future_status::ready) {
-						search_result ai_result = ai_future.get();
-						int sgn = (bd.p ? -1 : 1);
-						mobility mob;
-						calc_flip(&mob, &bd, ai_result.policy);
-						bd.move(&mob);
+				if (not_finished(bd) && (!use_ai_flag || (human_first && bd.p == black) || (human_second && bd.p == white) || fork_mode)) {
+					pair<bool, board> moved_board = move_board(bd, board_clicked);
+					if (moved_board.first) {
+						bd = moved_board.second;
 						bd.check_player();
-						bd.v = sgn * ai_result.value;
-						history.emplace_back(bd);
+						bd.v = -inf;
+						if (fork_mode) {
+							while (fork_history.size()) {
+								if (fork_history[fork_history.size() - 1].n >= bd.n) {
+									fork_history.pop_back();
+								}
+								else {
+									break;
+								}
+							}
+							fork_history.emplace_back(bd);
+						}
+						else {
+							history.emplace_back(bd);
+						}
 						history_place = bd.n - 4;
-						ai_value = ai_result.value;
-						ai_thinking = false;
 						reset_hint(hint_state, hint_future);
 					}
+					if (not_finished(bd) && use_hint_flag && normal_hint) {
+						for (int cell = 0; cell < hw2; ++cell) {
+							if ((1 & (legal >> cell)) && hint_state[cell] < hint_level * 2) {
+								if (hint_state[cell] % 2 == 0) {
+									if (hint_state[cell] == hint_level * 2 - 2) {
+										hint_future[cell] = async(launch::async, hint_search, bd, hint_level, cell);
+									}
+									else {
+										hint_future[cell] = async(launch::async, hint_search, bd, hint_state[cell] / 2, cell);
+									}
+									++hint_state[cell];
+								}
+								else if (hint_future[cell].wait_for(chrono::seconds(0)) == future_status::ready) {
+									cell_value hint_result = hint_future[cell].get();
+									if (global_searching) {
+										if (hint_state[cell] == 1 || hint_result.depth == search_final_define) {
+											hint_value[cell] = hint_result.value;
+										}
+										else {
+											hint_value[cell] += hint_result.value;
+											hint_value[cell] /= 2;
+										}
+										hint_depth[cell] = hint_result.depth;
+									}
+									if (hint_result.depth == search_final_define || hint_result.depth == search_book_define) {
+										hint_state[cell] = hint_level * 2;
+									}
+									else {
+										++hint_state[cell];
+									}
+								}
+							}
+						}
+					}
 				}
-				else {
-					global_searching = true;
-					create_vacant_lst(bd);
-					ai_future = async(launch::async, ai, bd, ai_level, ai_book_accept);
-					ai_thinking = true;
+				else if (not_finished(bd) && history[history.size() - 1].n - 4 == history_place) {
+					if (ai_thinking) {
+						if (ai_future.wait_for(chrono::seconds(0)) == future_status::ready) {
+							search_result ai_result = ai_future.get();
+							int sgn = (bd.p ? -1 : 1);
+							mobility mob;
+							calc_flip(&mob, &bd, ai_result.policy);
+							bd.move(&mob);
+							bd.check_player();
+							bd.v = sgn * ai_result.value;
+							history.emplace_back(bd);
+							history_place = bd.n - 4;
+							ai_value = ai_result.value;
+							ai_thinking = false;
+							reset_hint(hint_state, hint_future);
+						}
+					}
+					else {
+						global_searching = true;
+						create_vacant_lst(bd);
+						ai_future = async(launch::async, ai, bd, ai_level, ai_book_accept);
+						ai_thinking = true;
+					}
 				}
 			}
-
 			int former_history_place = history_place;
 			history_place = graph.update_place(history, fork_history, history_place);
 			if (history_place != former_history_place) {
@@ -661,7 +682,19 @@ void Main() {
 			board_draw(board_cells, bd, use_hint_flag, normal_hint, human_hint, umigame_hint,
 				hint_state, hint_value, hint_depth, normal_hint_font, normal_hint_depth_font, font30,
 				int_mode);
-			graph.draw(history, fork_history, history_place);
+			if (!before_start_game) {
+				graph.draw(history, fork_history, history_place);
+			}
+			else {
+				start_game_button.draw();
+				how_to_use_button.draw();
+				if (start_game_button.clicked()) {
+					before_start_game = false;
+				}
+				if (how_to_use_button.clicked()) {
+					System::LaunchBrowser(U"https://www.egaroucid-app.nyanyan.dev/usage/");
+				}
+			}
 		}
 
 		menu.draw();

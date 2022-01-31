@@ -1,0 +1,35 @@
+{
+    "lang_name": "English",
+    "common": {
+        "black": "Black",
+        "white": "White"
+    },
+    "loading": {
+        "loading": "Loading...",
+        "load_failed": "Failed Loading\nPlease check the resources directory"
+    },
+    "play": {
+        "game": "Game",
+        "new_game": "New Game"
+    },
+    "settings": {
+        "settings": "Settings",
+        "ai_play":{
+            "ai_play":  "Use AI",
+            "human_first": "You Plays First",
+            "human_second": "You Plays Second",
+            "both_ai": "AI vs AI"
+        },
+        "hint": {
+            "hint": "Hints",
+            "stone_value": "Stone Difference",
+            "human_value": "Human Sense Value",
+            "umigame_value": "Umigame's Value"
+        },
+        "value": "Evaluation Value"
+    },
+    "book": {
+        "book": "Book",
+        "learn": "Learn"
+    }
+}
