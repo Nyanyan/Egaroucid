@@ -443,6 +443,7 @@ class book{
                     p_node = p_node->p_n_node;
                 }
             }
+            fout.close();
             cerr << "saved " << t << " boards" << endl;
         }
         

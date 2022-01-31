@@ -50,12 +50,12 @@ using namespace std;
 
 uint_fast16_t pow3[11];
 unsigned long long stability_edge_arr[n_8bit][n_8bit][2];
-int pattern_arr[n_phases][2][n_patterns][max_evaluate_idx];
-int eval_sur0_sur1_arr[n_phases][2][max_surround][max_surround];
-int eval_canput0_canput1_arr[n_phases][2][max_canput][max_canput];
-int eval_stab0_stab1_arr[n_phases][2][max_stability][max_stability];
-int eval_num0_num1_arr[n_phases][2][max_stone_num][max_stone_num];
-int eval_canput_pattern[n_phases][2][n_canput_patterns][p48];
+short pattern_arr[n_phases][2][n_patterns][max_evaluate_idx];
+short eval_sur0_sur1_arr[n_phases][2][max_surround][max_surround];
+short eval_canput0_canput1_arr[n_phases][2][max_canput][max_canput];
+short eval_stab0_stab1_arr[n_phases][2][max_stability][max_stability];
+short eval_num0_num1_arr[n_phases][2][max_stone_num][max_stone_num];
+short eval_canput_pattern[n_phases][2][n_canput_patterns][p48];
 
 string create_line(int b, int w){
     string res = "";
@@ -147,6 +147,7 @@ inline void init_evaluation_base() {
     }
 }
 
+/*
 inline bool init_evaluation_calc(){
     ifstream ifs("resources/param.txt");
     if (ifs.fail()){
@@ -195,6 +196,57 @@ inline bool init_evaluation_calc(){
                     getline(ifs, line);
                     eval_canput_pattern[phase_idx][player_idx][pattern_idx][pattern_elem] = stoi(line);
                 }
+            }
+        }
+    }
+    cerr << "evaluation function initialized" << endl;
+    return true;
+}
+*/
+
+inline bool init_evaluation_calc(){
+    FILE* fp;
+    if (fopen_s(&fp, "resources/eval.egev", "rb") != 0){
+        cerr << "can't open eval.egev" << endl;
+        return false;
+    }
+    int phase_idx, player_idx, pattern_idx;
+    constexpr int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10, 10, 10, 10};
+    constexpr int n_models = n_phases * 2;
+    for (phase_idx = 0; phase_idx < n_phases; ++phase_idx){
+        for (player_idx = 0; player_idx < 2; ++player_idx){
+            cerr << "loading evaluation parameter " << ((phase_idx * 2 + player_idx) * 100 / n_models) << "%" << endl;
+            for (pattern_idx = 0; pattern_idx < n_patterns; ++pattern_idx){
+                if (fread(pattern_arr[phase_idx][player_idx][pattern_idx], 2, pow3[pattern_sizes[pattern_idx]], fp) < pow3[pattern_sizes[pattern_idx]]){
+                    cerr << "eval.egev broken" << endl;
+                    fclose(fp);
+                    return false;
+                }
+            }
+            if (fread(eval_sur0_sur1_arr[phase_idx][player_idx], 2, max_surround * max_surround, fp) < max_surround * max_surround){
+                cerr << "eval.egev broken" << endl;
+                fclose(fp);
+                return false;
+            }
+            if (fread(eval_canput0_canput1_arr[phase_idx][player_idx], 2, max_canput * max_canput, fp) < max_canput * max_canput){
+                cerr << "eval.egev broken" << endl;
+                fclose(fp);
+                return false;
+            }
+            if (fread(eval_stab0_stab1_arr[phase_idx][player_idx], 2, max_stability * max_stability, fp) < max_stability * max_stability){
+                cerr << "eval.egev broken" << endl;
+                fclose(fp);
+                return false;
+            }
+            if (fread(eval_num0_num1_arr[phase_idx][player_idx], 2, max_stone_num * max_stone_num, fp) < max_stone_num * max_stone_num){
+                cerr << "eval.egev broken" << endl;
+                fclose(fp);
+                return false;
+            }
+            if (fread(eval_canput_pattern[phase_idx][player_idx], 2, n_canput_patterns * p48, fp) < n_canput_patterns * p48){
+                cerr << "eval.egev broken" << endl;
+                fclose(fp);
+                return false;
             }
         }
     }
