@@ -253,11 +253,11 @@ int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int 
 }
 
 int nega_scout_nomemo(board *b, bool skipped, const int depth, int alpha, int beta, bool use_mpc, double mpct_in, int *n_nodes){
-    ++(*n_nodes);
     if (!global_searching)
         return -inf;
     if (depth <= simple_mid_threshold)
         return nega_alpha(b, skipped, depth, alpha, beta, n_nodes);
+    ++(*n_nodes);
     #if USE_MID_SC
         if (stability_cut(b, &alpha, &beta))
             return alpha;

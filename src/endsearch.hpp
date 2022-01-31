@@ -574,7 +574,6 @@ inline void pick_vacant(board *b, int cells[]){
 
 
 int nega_alpha_final(board *b, bool skipped, const int depth, int alpha, int beta, int *n_nodes){
-    ++(*n_nodes);
     if (!global_searching)
         return -inf;
     if (depth == 5){
@@ -582,6 +581,7 @@ int nega_alpha_final(board *b, bool skipped, const int depth, int alpha, int bet
         pick_vacant(b, cells);
         return last5(b, skipped, alpha, beta, cells[0], cells[1], cells[2], cells[3], cells[4], n_nodes);
     }
+    ++(*n_nodes);
     #if USE_END_SC
         if (stability_cut(b, &alpha, &beta))
             return alpha;
@@ -655,12 +655,12 @@ int nega_alpha_final(board *b, bool skipped, const int depth, int alpha, int bet
 }
 
 int nega_alpha_ordering_simple_final(board *b, bool skipped, const int depth, int alpha, int beta, bool use_mpc, double mpct_in, int *n_nodes){
-    ++(*n_nodes);
     if (!global_searching)
         return -inf;
     if (depth <= simple_end_threshold)
         return nega_alpha_final(b, skipped, depth, alpha, beta, n_nodes);
-    #if USE_END_SC
+    ++(*n_nodes);
+    #if USE_END_SC && false
         if (stability_cut(b, &alpha, &beta))
             return alpha;
     #endif
@@ -737,7 +737,6 @@ int nega_alpha_ordering_simple_final(board *b, bool skipped, const int depth, in
 }
 
 int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha, int beta, bool use_multi_thread, bool use_mpc, double mpct_in, int *n_nodes){
-    ++(*n_nodes);
     if (!global_searching)
         return -inf;
     /*
@@ -746,7 +745,8 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
     */
     if (depth <= simple_end_threshold2)
         return nega_alpha_ordering_simple_final(b, skipped, depth, alpha, beta, use_mpc, mpct_in, n_nodes);
-    #if USE_END_SC
+    ++(*n_nodes);
+    #if USE_END_SC && false
         if (stability_cut(b, &alpha, &beta))
             return alpha;
     #endif
@@ -919,11 +919,11 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
 }
 
 int nega_scout_final_nomemo(board *b, bool skipped, const int depth, int alpha, int beta, bool use_mpc, double mpct_in, int *n_nodes){
-    ++(*n_nodes);
     if (!global_searching)
         return -inf;
     if (depth <= simple_end_threshold)
         return nega_alpha_final(b, skipped, depth, alpha, beta, n_nodes);
+    ++(*n_nodes);
     #if USE_END_SC
         if (stability_cut(b, &alpha, &beta))
             return alpha;
@@ -1086,7 +1086,7 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
     if (nb[0].second.n < hw2 - 5){
         for (i = 0; i < canput; ++i){
             g = -mtd_final(&nb[i].second, false, max_depth - 1, -beta, -alpha, use_mpc, use_mpct, -nb[i].second.v, true, &searched_nodes);
-            //cerr << "result " << nb[i].first << " " << g << " " << nb[i].second.v << endl;
+            cerr << "result " << nb[i].first << " " << g << " " << nb[i].second.v << endl;
             if (alpha < g || i == 0){
                 alpha = g;
                 tmp_policy = nb[i].first;

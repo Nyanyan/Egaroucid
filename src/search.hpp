@@ -93,27 +93,6 @@ int cmp_vacant(int p, int q){
 }
 
 inline int move_ordering(board *b, const int hash, const int policy){
-    /*
-    int l, u;
-    transpose_table.get_now(b, hash, &l, &u);
-    if (u != inf && l != -inf)
-        b->v = -(u + l) / 2 + cache_hit + cache_both + cache_now;
-    else if (u != inf)
-        b->v = -u + cache_hit + cache_now;
-    else if (l != -inf)
-        b->v = -l + cache_hit + cache_now;
-    else{
-        transpose_table.get_prev(b, hash, &l, &u);
-        if (u != inf && l != -inf)
-            b->v = -(u + l) / 2 + cache_hit + cache_both;
-        else if (u != inf)
-            b->v = -u + cache_hit;
-        else if (l != -inf)
-            b->v = -l + cache_hit;
-        else
-            b->v = -mid_evaluate(b);
-    }
-    */
     int v = transpose_table.child_get_now(b, hash, policy);
     if (v == -child_inf){
         v = transpose_table.child_get_prev(b, hash, policy);
@@ -126,7 +105,7 @@ inline int move_ordering(board *b, const int hash, const int policy){
         } else
             v += cache_hit;
     } else
-        v += cache_hit;
+        v += cache_hit + cache_both;
     return v;
 }
 
