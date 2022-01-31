@@ -92,24 +92,20 @@ inline bool mpc_lower_final(board *b, bool skipped, int depth, int alpha, double
 
 inline int last1(board *b, int p0, int *n_nodes){
     ++(*n_nodes);
-    unsigned long long legal = b->mobility_ull();
     mobility mob;
+    calc_flip(&mob, b, p0);
     int score;
-    if (legal == 0){
+    if (mob.flip == 0){
         ++(*n_nodes);
         b->p = 1 - b->p;
-        legal = b->mobility_ull();
-        if (legal == 0)
-            score = -end_evaluate(b);
-        else{
-            calc_flip(&mob, b, p0);
-            score = hw2 - 2 * (b->raw_count() + pop_count_ull(mob.flip) + 1);
-        }
-        b->p = 1 - b->p;
-    } else{
         calc_flip(&mob, b, p0);
+        if (mob.flip == 0)
+            score = -end_evaluate(b);
+        else
+            score = hw2 - 2 * (b->raw_count() + pop_count_ull(mob.flip) + 1);
+        b->p = 1 - b->p;
+    } else
         score = 2 * (b->raw_count() + pop_count_ull(mob.flip) + 1) - hw2;
-    }
     return score;
 }
 

@@ -605,3 +605,11 @@
 #42 final depth: 22 time: 3222 policy: 49 value: 6 nodes: 62996315 nps: 20880449
 #43 final depth: 23 time: 9127 policy: 13 value: -12 nodes: 133292364 nps: 14808617
 #44 final depth: 23 time: 4581 policy: 52 value: -14 nodes: 74708071 nps: 17229721
+
+2022/01/31 update last1
+#40 final depth: 20 time: 1141 policy: 55 value: 38 nodes: 27567712 nps: 26007275
+#41 final depth: 22 time: 2751 policy: 32 value: 0 nodes: 48551287 nps: 19144829
+#42 final depth: 22 time: 3004 policy: 49 value: 6 nodes: 62941028 nps: 22422881
+#43 final depth: 23 time: 8998 policy: 13 value: -12 nodes: 133486930 nps: 15059446
+#44 final depth: 23 time: 4287 policy: 52 value: -14 nodes: 74690759 nps: 18419422
+
