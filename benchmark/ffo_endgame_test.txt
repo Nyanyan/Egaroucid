@@ -613,3 +613,17 @@
 #43 final depth: 23 time: 8998 policy: 13 value: -12 nodes: 133486930 nps: 15059446
 #44 final depth: 23 time: 4287 policy: 52 value: -14 nodes: 74690759 nps: 18419422
 
+2022/01/31 update last1 & last2 & last3
+#40 final depth: 20 time: 1101 policy: 55 value: 38 nodes: 27554801 nps: 27067584
+#41 final depth: 22 time: 2670 policy: 32 value: 0 nodes: 48570343 nps: 19719993
+#42 final depth: 22 time: 2876 policy: 49 value: 6 nodes: 62962920 nps: 23458614
+#43 final depth: 23 time: 9217 policy: 13 value: -12 nodes: 133628273 nps: 14736245
+#44 final depth: 23 time: 4250 policy: 52 value: -14 nodes: 74674646 nps: 18622106
+
+2022/01/31 update last1 & last2
+#40 final depth: 20 time: 1093 policy: 55 value: 38 nodes: 27568708 nps: 27268751
+#41 final depth: 22 time: 2604 policy: 32 value: 0 nodes: 48551437 nps: 20187707
+#42 final depth: 22 time: 2843 policy: 49 value: 6 nodes: 62940063 nps: 23715170
+#43 final depth: 23 time: 7962 policy: 13 value: -12 nodes: 133079460 nps: 16983085
+#44 final depth: 23 time: 4197 policy: 52 value: -14 nodes: 74695401 nps: 18833938
+

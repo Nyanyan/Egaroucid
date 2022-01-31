@@ -117,21 +117,10 @@ inline int last2(board *b, bool skipped, int alpha, int beta, int p0, int p1, in
         if (!p0_parity && p1_parity)
             swap(p0, p1);
     #endif
-    unsigned long long legal = b->mobility_ull();
     int v = -inf, g;
-    if (legal == 0){
-        if (skipped)
-            v = end_evaluate(b);
-        else{
-            b->p = 1 - b->p;
-            v = -last2(b, true, -beta, -alpha, p0, p1, n_nodes);
-            b->p = 1 - b->p;
-        }
-        return v;
-    }
     mobility mob;
-    if (1 & (legal >> p0)){
-        calc_flip(&mob, b, p0);
+    calc_flip(&mob, b, p0);
+    if (mob.flip){
         b->move(&mob);
         g = -last1(b, p1, n_nodes);
         b->undo(&mob);
@@ -140,8 +129,8 @@ inline int last2(board *b, bool skipped, int alpha, int beta, int p0, int p1, in
             return alpha;
         v = max(v, g);
     }
-    if (1 & (legal >> p1)){
-        calc_flip(&mob, b, p1);
+    calc_flip(&mob, b, p1);
+    if (mob.flip){
         b->move(&mob);
         g = -last1(b, p0, n_nodes);
         b->undo(&mob);
@@ -149,6 +138,16 @@ inline int last2(board *b, bool skipped, int alpha, int beta, int p0, int p1, in
         if (beta <= alpha)
             return alpha;
         v = max(v, g);
+    }
+    if (v == -inf){
+        if (skipped)
+            v = end_evaluate(b);
+        else{
+            b->p = 1 - b->p;
+            v = -last2(b, true, -beta, -alpha, p0, p1, n_nodes);
+            b->p = 1 - b->p;
+        }
+        return v;
     }
     return v;
 }
