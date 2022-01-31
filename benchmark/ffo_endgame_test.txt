@@ -627,3 +627,10 @@
 #43 final depth: 23 time: 7962 policy: 13 value: -12 nodes: 133079460 nps: 16983085
 #44 final depth: 23 time: 4197 policy: 52 value: -14 nodes: 74695401 nps: 18833938
 
+2022/01/31 update nega_alpha_simple_final
+#40 final depth: 20 time: 1070 policy: 55 value: 38 nodes: 27577400 nps: 27799798
+#41 final depth: 22 time: 2611 policy: 32 value: 0 nodes: 48539093 nps: 20216198
+#42 final depth: 22 time: 2932 policy: 49 value: 6 nodes: 62920355 nps: 23158025
+#43 final depth: 23 time: 7945 policy: 13 value: -12 nodes: 133380497 nps: 17058510
+#44 final depth: 23 time: 4220 policy: 52 value: -14 nodes: 74675062 nps: 18743740
+

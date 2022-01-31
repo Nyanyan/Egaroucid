@@ -701,7 +701,7 @@ int nega_alpha_ordering_simple_final(board *b, bool skipped, const int depth, in
     for (const int &cell: vacant_lst){
         if (1 & (legal >> cell)){
             calc_flip(&mob, b, cell);
-            nb[idx] = b->move_copy(&mob);
+            b->move_copy(&mob, &nb[idx]);
             nb[idx].v = -canput_bonus * calc_canput_exact(&nb[idx]);
             #if USE_END_PO
                 if (depth <= po_max_depth && (b->parity & cell_div4[cell]))
