@@ -30,11 +30,12 @@ using namespace std;
 
 #define simple_mid_threshold 3
 #define simple_end_threshold 7
-#define simple_end_threshold2 15
+#define simple_end_threshold2 13
 
 #define po_max_depth 15
 
-#define enhanced_mtd_weight 2
+#define enhanced_mtd_error_weight 2
+#define enhanced_mtd_value_weight 1
 
 const int cell_weight[hw2] = {
     18,  4,  16, 12, 12, 16,  4, 18,
@@ -102,7 +103,7 @@ struct enhanced_mtd{
 };
 
 bool operator< (const enhanced_mtd &elem1, const enhanced_mtd &elem2){
-    return elem1.b.v + elem1.error * enhanced_mtd_weight < elem2.b.v + elem2.error * enhanced_mtd_weight;
+    return elem1.b.v * enhanced_mtd_value_weight + elem1.error * enhanced_mtd_error_weight < elem2.b.v * enhanced_mtd_value_weight + elem2.error * enhanced_mtd_error_weight;
 };
 
 int cmp_vacant(int p, int q){
