@@ -91,22 +91,38 @@ inline bool mpc_lower_final(board *b, bool skipped, int depth, int alpha, double
     return nega_alpha_ordering_final_nomemo(b, skipped, mpcd[depth], bound, bound + search_epsilon, true, t, n_nodes) <= bound;
 }
 
-inline int last1(board *b, int p0, int *n_nodes){
+inline int last1(board *b, int alpha, int beta, int p0, int *n_nodes){
     ++(*n_nodes);
-    mobility mob;
-    calc_flip(&mob, b, p0);
-    int score;
-    if (mob.flip == 0){
+    int score = hw2 - 2 * b->count_opponent();
+    int n_flip;
+    if (b->p == black)
+        n_flip = count_last_flip(b->b, b->w, p0);
+    else
+        n_flip = count_last_flip(b->w, b->b, p0);
+    if (n_flip == 0){
         ++(*n_nodes);
-        b->p = 1 - b->p;
-        calc_flip(&mob, b, p0);
-        if (mob.flip == 0)
-            score = -end_evaluate(b);
-        else
-            score = hw2 - 2 * (b->raw_count() + pop_count_ull(mob.flip) + 1);
-        b->p = 1 - b->p;
+        if (score <= 0){
+            score -= 2;
+            if (score >= alpha){
+                if (b->p == white)
+                    n_flip = count_last_flip(b->b, b->w, p0);
+                else
+                    n_flip = count_last_flip(b->w, b->b, p0);
+                score -= 2 * n_flip;
+            }
+        } else{
+            if (score >= alpha){
+                if (b->p == white)
+                    n_flip = count_last_flip(b->b, b->w, p0);
+                else
+                    n_flip = count_last_flip(b->w, b->b, p0);
+                if (n_flip)
+                    score -= 2 * n_flip + 2;
+            }
+        }
+        
     } else
-        score = 2 * (b->raw_count() + pop_count_ull(mob.flip) + 1) - hw2;
+        score += 2 * n_flip;
     return score;
 }
 
@@ -123,7 +139,7 @@ inline int last2(board *b, bool skipped, int alpha, int beta, int p0, int p1, in
     calc_flip(&mob, b, p0);
     if (mob.flip){
         b->move(&mob);
-        g = -last1(b, p1, n_nodes);
+        g = -last1(b, -beta, -alpha, p1, n_nodes);
         b->undo(&mob);
         alpha = max(alpha, g);
         if (beta <= alpha)
@@ -133,7 +149,7 @@ inline int last2(board *b, bool skipped, int alpha, int beta, int p0, int p1, in
     calc_flip(&mob, b, p1);
     if (mob.flip){
         b->move(&mob);
-        g = -last1(b, p0, n_nodes);
+        g = -last1(b, -beta, -alpha, p0, n_nodes);
         b->undo(&mob);
         alpha = max(alpha, g);
         if (beta <= alpha)
@@ -1086,8 +1102,8 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
     searched_nodes = 0;
     if (nb[0].second.n < hw2 - 5){
         priority_queue<enhanced_mtd> que;
+        enhanced_mtd elem;
         for (i = 0; i < canput; ++i){
-            enhanced_mtd elem;
             elem.policy = nb[i].first;
             elem.error = 0;
             elem.l = alpha;
@@ -1098,7 +1114,7 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
         }
         int threshold;
         while (que.size()){
-            enhanced_mtd elem = que.top();
+            elem = que.top();
             que.pop();
             elem.l = max(elem.l, alpha);
             elem.u = min(elem.u, beta);
@@ -1106,7 +1122,7 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
                 continue;
             threshold = max(elem.l + 1, elem.b.v);
             g = -nega_alpha_ordering_final(&elem.b, false, max_depth - 1, -threshold, -threshold + search_epsilon, true, use_mpc, use_mpct, &searched_nodes);
-            cerr << "result " << que.size() << " " << elem.policy << " " << g << "  " << alpha << " " << beta << endl;
+            cerr << "result " << que.size() << " " << elem.policy << "  " << g << "  " << elem.l << " " << elem.u << endl;
             if (g < threshold)
                 elem.u = g;
             else
@@ -1114,12 +1130,11 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
             elem.error += g - elem.b.v;
             elem.b.v = g;
             if (elem.l == elem.u){
-                if (alpha < g || tmp_policy == -1){
-                    alpha = g;
+                if (alpha < g || tmp_policy == -1)
                     tmp_policy = elem.policy;
-                }
             } else
                 que.push(elem);
+            alpha = max(alpha, elem.l);
         }
         /*
         for (i = 0; i < canput; ++i){
@@ -1144,7 +1159,7 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
             else if (nb[i].second.n == hw2 - 2)
                 g = -last2(&nb[i].second, false, -beta, -alpha, cells[0], cells[1], &searched_nodes);
             else if (nb[i].second.n == hw2 - 1)
-                g = -last1(&nb[i].second, cells[0], &searched_nodes);
+                g = -last1(&nb[i].second, -beta, -alpha, cells[0], &searched_nodes);
             else
                 g = -end_evaluate(&nb[i].second);
             if (alpha < g || i == 0){
@@ -1194,7 +1209,7 @@ inline search_result endsearch_value(board b, long long strt, bool use_mpc, doub
         else if (b.n == hw2 - 2)
             res.value = last2(&b, false, -hw2, hw2, cells[0], cells[1], &searched_nodes);
         else if (b.n == hw2 - 1)
-            res.value = last1(&b, cells[0], &searched_nodes);
+            res.value = last1(&b, -hw2, hw2, cells[0], &searched_nodes);
         else
             res.value = end_evaluate(&b);
     }

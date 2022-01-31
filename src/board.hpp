@@ -356,6 +356,18 @@ class board {
             return count(p);
         }
 
+        inline int count_player(){
+            if (p == black)
+                return pop_count_ull(b);
+            return pop_count_ull(w);
+        }
+
+        inline int count_opponent(){
+            if (p == white)
+                return pop_count_ull(b);
+            return pop_count_ull(w);
+        }
+
         inline int raw_count(){
             if (p == black)
                 return pop_count_ull(b);

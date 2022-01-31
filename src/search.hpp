@@ -34,14 +34,14 @@ constexpr int canput_bonus = 10;
 #define enhanced_mtd_weight 2
 
 const int cell_weight[hw2] = {
-    10, 3, 9, 7, 7, 9, 3, 10, 
-    3, 2, 4, 5, 5, 4, 2, 3, 
-    9, 4, 8, 6, 6, 8, 4, 9, 
-    7, 5, 6, 0, 0, 6, 5, 7, 
-    7, 5, 6, 0, 0, 6, 5, 7, 
-    9, 4, 8, 6, 6, 8, 4, 9, 
-    3, 2, 4, 5, 5, 4, 2, 3, 
-    10, 3, 9, 7, 7, 9, 3, 10
+    18,  4,  16, 12, 12, 16,  4, 18,
+     4,  2,   6,  8,  8,  6,  2,  4,
+    16,  6,  14, 10, 10, 14,  6, 16,
+    12,  8,  10,  0,  0, 10,  8, 12,
+    12,  8,  10,  0,  0, 10,  8, 12,
+    16,  6,  14, 10, 10, 14,  6, 16,
+     4,  2,   6,  8,  8,  6,  2,  4,
+    18,  4,  16, 12, 12, 16,  4, 18
 };
 
 const int mpcd[41] = {
@@ -120,6 +120,7 @@ inline int move_ordering(board *b, const int hash, const int policy){
             v += cache_hit;
     } else
         v += cache_hit + cache_both;
+    //v += cell_weight[policy];
     return v;
 }
 

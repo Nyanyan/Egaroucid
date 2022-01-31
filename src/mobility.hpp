@@ -8,6 +8,7 @@ using namespace std;
 #define n_8bit 256
 
 unsigned char flip_pre_calc[n_8bit][n_8bit][hw];
+unsigned char n_flip_pre_calc[n_8bit][n_8bit][hw];
 
 constexpr unsigned char d7_mask[hw2] = {
     0b00000001, 0b00000011, 0b00000111, 0b00001111, 0b00011111, 0b00111111, 0b01111111, 0b11111111,
@@ -421,14 +422,42 @@ class mobility{
         #endif
 };
 
+inline int count_last_flip(unsigned long long player, unsigned long long opponent, const int place){
+    int t, u, p, o;
+    int res = 0;
+
+    t = place / hw;
+    u = place % hw;
+    p = (player >> (hw * t)) & 0b11111111;
+    o = (opponent >> (hw * t)) & 0b11111111;
+    res += n_flip_pre_calc[p][o][u];
+
+    p = join_v_line(player, u);
+    o = join_v_line(opponent, u);
+    res += n_flip_pre_calc[p][o][t];
+
+    t = place / hw;
+    u = place % hw + t;
+    p = join_d7_line(player, u) & d7_mask[place];
+    o = join_d7_line(opponent, u) & d7_mask[place];
+    res += n_flip_pre_calc[p][o][t];
+
+    u -= t * 2;
+    p = join_d9_line(player, u) & d9_mask[place];
+    o = join_d9_line(opponent, u) & d9_mask[place];
+    res += n_flip_pre_calc[p][o][t];
+    return res;
+}
+
 void mobility_init(){
     int player, opponent, place;
     int wh, put, m1, m2, m3, m4, m5, m6;
-    int idx, t;
+    int idx, t, i;
     for (player = 0; player < n_8bit; ++player){
         for (opponent = 0; opponent < n_8bit; ++opponent){
             for (place = 0; place < hw; ++place){
                 flip_pre_calc[player][opponent][place] = 0;
+                n_flip_pre_calc[player][opponent][place] = 0;
                 if ((1 & (player >> place)) == 0 && (1 & (opponent >> place)) == 0 && (player & opponent) == 0){
                     put = 1 << place;
                     wh = opponent & 0b01111110;
@@ -476,6 +505,9 @@ void mobility_init(){
                                 flip_pre_calc[player][opponent][place] |= m1 | m2 | m3 | m4 | m5 | m6;
                         }
                     }
+                    n_flip_pre_calc[player][opponent][place] = 0;
+                    for (i = 1; i < hw_m1; ++i)
+                        n_flip_pre_calc[player][opponent][place] += 1 & (flip_pre_calc[player][opponent][place] >> i);
                 }
             }
         }

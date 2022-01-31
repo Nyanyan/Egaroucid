@@ -654,3 +654,11 @@ multi thread
 #43 final depth: 23 time: 7787 policy: 41 value: -12 nodes: 212208624 nps: 27674572
 #44 final depth: 23 time: 3730 policy: 6 value: -14 nodes: 98961377 nps: 28363822
 #45 final depth: 24 time: 45884 policy: 54 value: 6 nodes: 1250577531 nps: 27500935
+
+update
+#40 final depth: 20 time: 830 policy: 55 value: 38 nodes: 27160550 nps: 37828064
+#41 final depth: 22 time: 2263 policy: 32 value: 0 nodes: 51362356 nps: 24945291
+#42 final depth: 22 time: 2253 policy: 49 value: 6 nodes: 62554551 nps: 30336833
+#43 final depth: 23 time: 7709 policy: 41 value: -12 nodes: 212399079 nps: 27991444
+#44 final depth: 23 time: 3772 policy: 6 value: -14 nodes: 98947854 nps: 27982990
+
