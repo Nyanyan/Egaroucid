@@ -216,7 +216,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         } else if (n_moves < 33){
             *use_mpc = true;
             *mpct = mpct_87;
-        } else if (n_moves < 39){
+        } else if (n_moves < 36){
             *use_mpc = true;
             *mpct = mpct_98;
         } else{
@@ -233,7 +233,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         } else if (n_moves < 33){
             *use_mpc = true;
             *mpct = mpct_87;
-        } else if (n_moves < 39){
+        } else if (n_moves < 36){
             *use_mpc = true;
             *mpct = mpct_98;
         } else{
@@ -250,7 +250,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         } else if (n_moves < 33){
             *use_mpc = true;
             *mpct = mpct_87;
-        } else if (n_moves < 39){
+        } else if (n_moves < 36){
             *use_mpc = true;
             *mpct = mpct_98;
         } else{
@@ -267,7 +267,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         } else if (n_moves < 33){
             *use_mpc = true;
             *mpct = mpct_95;
-        } else if (n_moves < 39){
+        } else if (n_moves < 36){
             *use_mpc = true;
             *mpct = mpct_99;
         } else{
@@ -284,7 +284,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         } else if (n_moves < 33){
             *use_mpc = true;
             *mpct = mpct_95;
-        } else if (n_moves < 39){
+        } else if (n_moves < 36){
             *use_mpc = true;
             *mpct = mpct_99;
         } else{
@@ -301,7 +301,7 @@ void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, 
         } else if (n_moves < 33){
             *use_mpc = true;
             *mpct = mpct_95;
-        } else if (n_moves < 39){
+        } else if (n_moves < 36){
             *use_mpc = true;
             *mpct = mpct_99;
         } else{
