@@ -633,3 +633,10 @@
 #42 final depth: 22 time: 2932 policy: 49 value: 6 nodes: 62920355 nps: 23158025
 #43 final depth: 23 time: 7945 policy: 13 value: -12 nodes: 133380497 nps: 17058510
 #44 final depth: 23 time: 4220 policy: 52 value: -14 nodes: 74675062 nps: 18743740
+
+2022/01/31 adjust simple threshold
+#40 final depth: 20 time: 989 policy: 55 value: 38 nodes: 34974367 nps: 40293049
+#41 final depth: 22 time: 2494 policy: 32 value: 0 nodes: 59799877 nps: 26297219
+#42 final depth: 22 time: 2847 policy: 49 value: 6 nodes: 81837863 nps: 31176328
+#43 final depth: 23 time: 7044 policy: 13 value: -12 nodes: 176781980 nps: 25598317
+#44 final depth: 23 time: 4505 policy: 52 value: -14 nodes: 89427286 nps: 21076428

@@ -212,10 +212,10 @@ inline bool init_evaluation_calc(){
     }
     int phase_idx, player_idx, pattern_idx;
     constexpr int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10, 10, 10, 10};
-    constexpr int n_models = n_phases * 2;
+    //constexpr int n_models = n_phases * 2;
     for (phase_idx = 0; phase_idx < n_phases; ++phase_idx){
         for (player_idx = 0; player_idx < 2; ++player_idx){
-            cerr << "loading evaluation parameter " << ((phase_idx * 2 + player_idx) * 100 / n_models) << "%" << endl;
+            //cerr << "loading evaluation parameter " << ((phase_idx * 2 + player_idx) * 100 / n_models) << "%" << endl;
             for (pattern_idx = 0; pattern_idx < n_patterns; ++pattern_idx){
                 if (fread(pattern_arr[phase_idx][player_idx][pattern_idx], 2, pow3[pattern_sizes[pattern_idx]], fp) < pow3[pattern_sizes[pattern_idx]]){
                     cerr << "eval.egev broken" << endl;
