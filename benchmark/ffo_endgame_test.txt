@@ -690,3 +690,35 @@ multi thread
 #43 final depth: 23 time: 7069 policy: 41 value: -12 nodes: 212553773 nps: 30565684
 #44 final depth: 23 time: 2930 policy: 6 value: -14 nodes: 75898382 nps: 27955205
 #45 final depth: 24 time: 49507 policy: 54 value: 6 nodes: 1371477191 nps: 27930619
+
+2022/02/01 update move ordering
+#40 final depth: 20 time: 870 policy: 55 value: 38 nodes: 25577513 nps: 33260745
+#41 final depth: 22 time: 1611 policy: 32 value: 0 nodes: 33828550 nps: 23475746
+#42 final depth: 22 time: 2928 policy: 49 value: 6 nodes: 77942643 nps: 28250323
+#43 final depth: 23 time: 4899 policy: 41 value: -12 nodes: 144256713 nps: 30153995
+#44 final depth: 23 time: 2353 policy: 6 value: -14 nodes: 55607904 nps: 26058061
+#45 final depth: 24 time: 39356 policy: 54 value: 6 nodes: 1127064493 nps: 28966678
+
+2022/02/01 simpleth2 = 14
+#40 final depth: 20 time: 832 policy: 55 value: 38 nodes: 23393725 nps: 32046198
+#41 final depth: 22 time: 1432 policy: 32 value: 0 nodes: 27324510 nps: 21668921
+#42 final depth: 22 time: 2757 policy: 49 value: 6 nodes: 70562114 nps: 27402762
+#43 final depth: 23 time: 5132 policy: 41 value: -12 nodes: 139532331 nps: 27834097
+#44 final depth: 23 time: 2195 policy: 6 value: -14 nodes: 51240067 nps: 25918091
+#45 final depth: 24 time: 37986 policy: 54 value: 6 nodes: 1061299665 nps: 28273427
+
+2022/02/01 simpleth2 = 13
+#40 final depth: 20 time: 788 policy: 55 value: 38 nodes: 23104083 nps: 33630397
+#41 final depth: 22 time: 1384 policy: 32 value: 0 nodes: 25387155 nps: 20946497
+#42 final depth: 22 time: 2678 policy: 49 value: 6 nodes: 67530691 nps: 26893943
+#43 final depth: 23 time: 4947 policy: 41 value: -12 nodes: 135407452 nps: 28040474
+#44 final depth: 23 time: 2094 policy: 6 value: -14 nodes: 44278498 nps: 23947267
+#45 final depth: 24 time: 39097 policy: 54 value: 6 nodes: 1035371313 nps: 26780769
+
+2022/02/01 update enhanced mtd weight
+#40 final depth: 20 time: 904 policy: 61 value: 38 nodes: 26414085 nps: 32812527
+#41 final depth: 22 time: 1344 policy: 32 value: 0 nodes: 25391922 nps: 21500357
+#42 final depth: 22 time: 2647 policy: 49 value: 6 nodes: 66702449 nps: 26885307
+#43 final depth: 23 time: 5156 policy: 41 value: -12 nodes: 135516443 nps: 27006066
+#44 final depth: 23 time: 1676 policy: 6 value: -14 nodes: 33350268 nps: 23321865
+#45 final depth: 24 time: 35235 policy: 54 value: 6 nodes: 963125808 nps: 27670463

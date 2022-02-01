@@ -1105,7 +1105,7 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
             elem.u = min(elem.u, beta);
             if (elem.l >= elem.u)
                 continue;
-            threshold = max(elem.l + 1, elem.b.v);
+            threshold = max(elem.l + 2, elem.b.v);
             g = -nega_alpha_ordering_final(&elem.b, false, max_depth - 1, -threshold, -threshold + search_epsilon, true, use_mpc, use_mpct, &searched_nodes);
             cerr << "result " << que.size() << " " << elem.policy << "  " << g << " " << threshold << "  " << elem.l << " " << elem.u << endl;
             if (g < threshold)

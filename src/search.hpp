@@ -31,11 +31,11 @@ using namespace std;
 
 #define simple_mid_threshold 3
 #define simple_end_threshold 7
-#define simple_end_threshold2 15
+#define simple_end_threshold2 13
 
 #define po_max_depth 15
 
-#define enhanced_mtd_error_weight 2
+#define enhanced_mtd_error_weight 1
 #define enhanced_mtd_value_weight 1
 
 const int cell_weight[hw2] = {
