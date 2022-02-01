@@ -30,7 +30,7 @@ int main(){
         cin >> ai_player;
         input_board(&b, ai_player);
         b.print();
-        
+        /*
         for (int i = 23; i < 24; ++i){
             cerr << i << endl;
             calc_flip(&m, &b, i);
@@ -39,7 +39,7 @@ int main(){
             b.print();
         }
         return 0;
-        
+        */
         mob = b.mobility_ull();
         for (int i = 0; i < hw2; ++i){
             if (1 & (mob >> i)){

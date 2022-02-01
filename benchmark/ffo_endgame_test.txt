@@ -682,3 +682,8 @@ multi thread
 #43 final depth: 23 time: 9461 policy: 41 value: -12 nodes: 240088175 nps: 25697118
 #44 final depth: 23 time: 3116 policy: 6 value: -14 nodes: 65552079 nps: 22776955
 #45 final depth: 24 time: 56289 policy: 54 value: 6 nodes: 1388356700 nps: 24845768
+
+2022/02/01 update flip
+#40 final depth: 20 time: 753 policy: 55 value: 38 nodes: 26074617 nps: 40614668
+#41 final depth: 22 time: 2011 policy: 32 value: 2 nodes: 42432847 nps: 23162034
+#42 final depth: 22 time: 2365 policy: 49 value: 6 nodes: 64937318 nps: 29801430
