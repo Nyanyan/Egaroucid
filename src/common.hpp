@@ -123,6 +123,7 @@ inline unsigned long long black_line(unsigned long long x){
 
 inline int join_v_line(unsigned long long x, int c){
     x = (x >> c) & 0b0000000100000001000000010000000100000001000000010000000100000001ULL;
+    /*
     unsigned long long a = x & 0b0000000000000001000000000000000100000000000000010000000000000001ULL;
     unsigned long long b = x & 0b0000000100000000000000010000000000000001000000000000000100000000ULL;
     x = a | (b >> 7);
@@ -133,6 +134,8 @@ inline int join_v_line(unsigned long long x, int c){
     b = x & 0b0000000000000000000000000000111100000000000000000000000000000000ULL;
     x = a | (b >> 28);
     return (int)x;
+    */
+    return (x * 0b0000000100000010000001000000100000010000001000000100000010000000ULL) >> 56;
 }
 
 inline unsigned long long split_v_line(unsigned char x, int c){
@@ -150,6 +153,11 @@ inline unsigned long long split_v_line(unsigned char x, int c){
 }
 
 inline int join_d7_line(unsigned long long x, const int t){
+    if (t > 7)
+        x = (x >> (t - 7)) & 0b0000000100000010000001000000100000010000001000000100000010000000ULL;
+    else
+        x = (x << (7 - t)) & 0b0000000100000010000001000000100000010000001000000100000010000000ULL;
+    /*
     x = (x >> t) & 0b1000000100000010000001000000100000010000001000000100000010000001ULL;
     unsigned long long a = x & 0b0000000100000000000001000000000000010000000000000100000000000001ULL;
     unsigned long long b = x & 0b1000000000000010000000000000100000000000001000000000000010000000ULL;
@@ -163,9 +171,20 @@ inline int join_d7_line(unsigned long long x, const int t){
     c = x & 0b0000001100000000000000000000000000000000000000000000000000000000ULL;
     x = a | (b >> 24) | (c >> 48);
     return (int)x;
+    */
+    return (x * 0b0000000100000001000000010000000100000001000000010000000100000001ULL) >> 56;
 }
 
 inline unsigned long long split_d7_line(unsigned char x, int t){
+    unsigned char c = x & 0b01010101;
+    unsigned char d = x & 0b10101010;
+    x = (c << 1) | (d >> 1);
+    c = x & 0b00110011;
+    d = x & 0b11001100;
+    x = (c << 2) | (d >> 2);
+    c = x & 0b00001111;
+    d = x & 0b11110000;
+    x = (c << 4) | (d >> 4);
     unsigned long long a = x & 0b00001111;
     unsigned long long b = x & 0b11110000;
     unsigned long long res = a | (b << 24);
@@ -183,6 +202,8 @@ inline int join_d9_line(unsigned long long x, int t){
         x >>= t;
     else if (t < 0)
         x <<= (-t);
+    x &= 0b1000000001000000001000000001000000001000000001000000001000000001ULL;
+    /*
     unsigned long long a = x & 0b0000000001000000000000000001000000000000000001000000000000000001ULL;
     unsigned long long b = x & 0b1000000000000000001000000000000000001000000000000000001000000000ULL;
     x = a | (b >> 8);
@@ -193,6 +214,8 @@ inline int join_d9_line(unsigned long long x, int t){
     b = x & 0b0000000000000000000000001111000000000000000000000000000000000000ULL;
     x = a | (b >> 32);
     return (int)x;
+    */
+    return (x * 0b0000000100000001000000010000000100000001000000010000000100000001ULL) >> 56;
 }
 
 inline unsigned long long split_d9_line(unsigned char x, int t){

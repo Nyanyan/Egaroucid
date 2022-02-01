@@ -9,7 +9,7 @@ using namespace std;
 
 unsigned char flip_pre_calc[n_8bit][n_8bit][hw];
 unsigned char n_flip_pre_calc[n_8bit][n_8bit][hw];
-
+/*
 constexpr unsigned char d7_mask[hw2] = {
     0b00000001, 0b00000011, 0b00000111, 0b00001111, 0b00011111, 0b00111111, 0b01111111, 0b11111111,
     0b00000011, 0b00000111, 0b00001111, 0b00011111, 0b00111111, 0b01111111, 0b11111111, 0b11111110,
@@ -19,6 +19,17 @@ constexpr unsigned char d7_mask[hw2] = {
     0b00111111, 0b01111111, 0b11111111, 0b11111110, 0b11111100, 0b11111000, 0b11110000, 0b11100000,
     0b01111111, 0b11111111, 0b11111110, 0b11111100, 0b11111000, 0b11110000, 0b11100000, 0b11000000,
     0b11111111, 0b11111110, 0b11111100, 0b11111000, 0b11110000, 0b11100000, 0b11000000, 0b10000000
+};
+*/
+constexpr unsigned char d7_mask[hw2] = {
+    0b10000000, 0b11000000, 0b11100000, 0b11110000, 0b11111000, 0b11111100, 0b11111110, 0b11111111,
+    0b11000000, 0b11100000, 0b11110000, 0b11111000, 0b11111100, 0b11111110, 0b11111111, 0b01111111,
+    0b11100000, 0b11110000, 0b11111000, 0b11111100, 0b11111110, 0b11111111, 0b01111111, 0b00111111,
+    0b11110000, 0b11111000, 0b11111100, 0b11111110, 0b11111111, 0b01111111, 0b00111111, 0b00011111,
+    0b11111000, 0b11111100, 0b11111110, 0b11111111, 0b01111111, 0b00111111, 0b00011111, 0b00001111,
+    0b11111100, 0b11111110, 0b11111111, 0b01111111, 0b00111111, 0b00011111, 0b00001111, 0b00000111,
+    0b11111110, 0b11111111, 0b01111111, 0b00111111, 0b00011111, 0b00001111, 0b00000111, 0b00000011,
+    0b11111111, 0b01111111, 0b00111111, 0b00011111, 0b00001111, 0b00000111, 0b00000011, 0b00000001
 };
 
 constexpr unsigned char d9_mask[hw2] = {
@@ -254,14 +265,18 @@ class mobility{
 
                 t = place / hw;
                 u = place % hw + t;
-                p = join_d7_line(player, u) & d7_mask[place];
-                o = join_d7_line(opponent, u) & d7_mask[place];
-                flip |= line_to_board_d7[flip_pre_calc[p][o][t] & d7_mask[place]][u];
+                if (u >= 2 && u <= 12){
+                    p = join_d7_line(player, u) & d7_mask[place];
+                    o = join_d7_line(opponent, u) & d7_mask[place];
+                    flip |= line_to_board_d7[flip_pre_calc[p][o][hw_m1 - t] & d7_mask[place]][u];
+                }
 
                 u -= t * 2;
-                p = join_d9_line(player, u) & d9_mask[place];
-                o = join_d9_line(opponent, u) & d9_mask[place];
-                flip |= line_to_board_d9[flip_pre_calc[p][o][t] & d9_mask[place]][u + hw];
+                if (u >= -5 && u <= 5){
+                    p = join_d9_line(player, u) & d9_mask[place];
+                    o = join_d9_line(opponent, u) & d9_mask[place];
+                    flip |= line_to_board_d9[flip_pre_calc[p][o][t] & d9_mask[place]][u + hw];
+                }
             }
         
         #elif FLIP_CALC_MODE == 2
