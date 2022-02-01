@@ -23,6 +23,7 @@ using namespace std;
 #define w_evaluate 10
 #define w_surround 5
 #define w_mobility 30
+#define w_parity 10
 
 #define mpc_min_depth 3
 #define mpc_max_depth 20
@@ -145,6 +146,8 @@ inline int move_ordering(board *b, board *nb, const int hash, const int policy){
         v += (calc_surround(nb->b, n_empties) - calc_surround(nb->w, n_empties)) * w_surround;
     }
     v -= pop_count_ull(nb->mobility_ull()) * w_mobility;
+    if (b->parity & cell_div4[policy])
+        v += w_parity;
     return v;
 }
 

@@ -754,3 +754,19 @@ multi thread
 #44 final depth: 23 time: 1619 policy: 6 value: -14 nodes: 46096532 nps: 33186848
 #45 final depth: 24 time: 26247 policy: 54 value: 6 nodes: 1357207156 nps: 52592697
 #46 final depth: 24 time: 4972 policy: 46 value: -8 nodes: 225397166 nps: 49450892
+
+2022/02/01 use parity in move ordering weight=10
+#40 final depth: 20 time: 620 policy: 55 value: 38 nodes: 29422601 nps: 56800388
+#41 final depth: 22 time: 1310 policy: 32 value: 0 nodes: 43552017 nps: 41517652
+#42 final depth: 22 time: 2041 policy: 49 value: 6 nodes: 104104164 nps: 55969980
+#43 final depth: 23 time: 4737 policy: 41 value: -12 nodes: 190336742 nps: 41260945
+#44 final depth: 23 time: 1495 policy: 6 value: -14 nodes: 44577635 nps: 35690660
+#45 final depth: 24 time: 24627 policy: 54 value: 6 nodes: 1385293620 nps: 57316960
+#46 final depth: 24 time: 5715 policy: 46 value: -8 nodes: 255669967 nps: 48166911
+weight=25
+#40 final depth: 20 time: 664 policy: 55 value: 38 nodes: 29599998 nps: 53046591
+#41 final depth: 22 time: 1244 policy: 32 value: 0 nodes: 46277036 nps: 44284244
+#42 final depth: 22 time: 1867 policy: 49 value: 6 nodes: 93419372 nps: 55147208
+#43 final depth: 23 time: 6131 policy: 41 value: -12 nodes: 195104775 nps: 32571748
+#44 final depth: 23 time: 2072 policy: 6 value: -14 nodes: 69859067 nps: 37987529
+#45 final depth: 24 time: 32351 policy: 54 value: 6 nodes: 1342884616 nps: 42100655
