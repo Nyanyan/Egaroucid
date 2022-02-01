@@ -19,7 +19,7 @@
 #include "midsearch.hpp"
 #include "endsearch.hpp"
 #include "ai.hpp"
-//#include "human_value.hpp"
+#include "human_value.hpp"
 #include "joseki.hpp"
 #include "umigame.hpp"
 #include "thread_pool.hpp"
@@ -41,6 +41,7 @@ using namespace std;
 #define right_left 510
 #define right_center 745
 #define right_right 980
+#define x_center 500
 #define y_center 360
 
 constexpr Color font_color = Palette::White;;
@@ -53,12 +54,16 @@ constexpr int start_game_how_to_use_width = 200, start_game_how_to_use_height = 
 constexpr int start_game_button_x = right_center - start_game_how_to_use_width / 2,
 	start_game_button_y = y_center - start_game_how_to_use_height - 10,
 	start_game_button_w = start_game_how_to_use_width,
-	start_game_button_h = start_game_how_to_use_height;
+	start_game_button_h = start_game_how_to_use_height,
+	start_game_button_r = 10;
 constexpr int how_to_use_button_x = right_center - start_game_how_to_use_width / 2,
 	how_to_use_button_y = y_center + start_game_how_to_use_height + 10,
 	how_to_use_button_w = start_game_how_to_use_width,
-	how_to_use_button_h = start_game_how_to_use_height;
+	how_to_use_button_h = start_game_how_to_use_height,
+	how_to_use_button_r = 10;
 constexpr Color button_color = Palette::White, button_font_color = Palette::Black;
+constexpr int popup_width = 500, popup_height = 300, popup_r = 20, popup_circle_r = 30;
+constexpr Color popup_color = Palette::White, popup_font_color = Palette::Black;
 
 struct cell_value {
 	int value;
@@ -288,8 +293,10 @@ void lang_initialize_failed_draw(Font font, Font small_font, Texture icon, Textu
 }
 
 void board_draw(Rect board_cells[], board b, bool use_hint_flag, bool normal_hint, bool human_hint, bool umigame_hint,
-	const int hint_state[], const int hint_value[], const int hint_depth[], Font normal_font, Font normal_depth_font, Font big_font,
-	int int_mode) {
+	const int hint_state[], const int hint_value[], const int hint_depth[], Font normal_font, Font small_font, Font big_font, Font mini_font,
+	int int_mode, bool before_start_game,
+	const int umigame_state[], const umigame_result umigame_value[],
+	const int human_value_state, const int human_value[]) {
 	for (int i = 0; i < hw_m1; ++i) {
 		Line(board_sx + board_cell_size * (i + 1), board_sy, board_sx + board_cell_size * (i + 1), board_sy + board_cell_size * hw).draw(board_cell_frame_width, Palette::Black);
 		Line(board_sx, board_sy + board_cell_size * (i + 1), board_sx + board_cell_size * hw, board_sy + board_cell_size * (i + 1)).draw(board_cell_frame_width, Palette::Black);
@@ -316,7 +323,7 @@ void board_draw(Rect board_cells[], board b, bool use_hint_flag, bool normal_hin
 			if (use_hint_flag && normal_hint && hint_state[cell] >= 2) {
 				max_cell_value = max(max_cell_value, hint_value[cell]);
 			}
-			if (!use_hint_flag || (!normal_hint && !human_hint && !umigame_hint)) {
+			if (!before_start_game && (!use_hint_flag || (!normal_hint && !human_hint && !umigame_hint))) {
 				int xx = board_sx + (hw_m1 - cell % hw) * board_cell_size + board_cell_size / 2;
 				int yy = board_sy + (hw_m1 - cell / hw) * board_cell_size + board_cell_size / 2;
 				Circle(xx, yy, legal_size).draw(Palette::Cyan);
@@ -326,7 +333,7 @@ void board_draw(Rect board_cells[], board b, bool use_hint_flag, bool normal_hin
 	if (b.policy != -1) {
 		Circle(board_sx + (hw_m1 - b.policy % hw) * board_cell_size + board_cell_size / 2, board_sy + (hw_m1 - b.policy / hw) * board_cell_size + board_cell_size / 2, legal_size).draw(Palette::Red);
 	}
-	if (use_hint_flag && b.p != vacant) {
+	if (use_hint_flag && b.p != vacant && !before_start_game) {
 		bool hint_shown[hw2];
 		for (int i = 0; i < hw2; ++i) {
 			hint_shown[i] = false;
@@ -349,13 +356,13 @@ void board_draw(Rect board_cells[], board b, bool use_hint_flag, bool normal_hin
 							normal_font(hint_value[cell]).draw(x, y, color);
 							y += 19;
 							if (hint_depth[cell] == search_book_define) {
-								normal_depth_font(U"book").draw(x, y, color);
+								small_font(U"book").draw(x, y, color);
 							}
 							else if (hint_depth[cell] == search_final_define) {
-								normal_depth_font(U"100%").draw(x, y, color);
+								small_font(U"100%").draw(x, y, color);
 							}
 							else {
-								normal_depth_font(language.get("common", "level"), hint_depth[cell]).draw(x, y, color);
+								small_font(language.get("common", "level"), hint_depth[cell]).draw(x, y, color);
 							}
 						}
 						hint_shown[cell] = true;
@@ -368,7 +375,88 @@ void board_draw(Rect board_cells[], board b, bool use_hint_flag, bool normal_hin
 				}
 			}
 		}
+		if (umigame_hint) {
+			for (int cell = 0; cell < hw2; ++cell) {
+				if (1 & (legal >> cell)) {
+					if (umigame_state[cell] == 2) {
+						int umigame_sx = board_sx + (hw_m1 - cell % hw) * board_cell_size + 2;
+						int umigame_sy = board_sy + (hw_m1 - cell / hw) * board_cell_size + 38;
+						RectF black_rect = mini_font(umigame_value[cell].b).region(umigame_sx, umigame_sy);
+						mini_font(umigame_value[cell].b).draw(umigame_sx, umigame_sy, Palette::Black);
+						umigame_sx += black_rect.size.x;
+						mini_font(umigame_value[cell].w).draw(umigame_sx, umigame_sy, Palette::White);
+					}
+				}
+			}
+		}
+		if (human_hint) {
+			if (human_value_state == 2) {
+				int max_human_value = -inf;
+				for (int cell = 0; cell < hw2; ++cell) {
+					if (1 & (legal >> cell)) {
+						max_human_value = max(max_human_value, human_value[cell]);
+					}
+				}
+				for (int cell = 0; cell < hw2; ++cell) {
+					if (1 & (legal >> cell)) {
+						Color color = Palette::White;
+						if (human_value[cell] == max_human_value)
+							color = Palette::Cyan;
+						int x = board_sx + (hw_m1 - cell % hw + 1) * board_cell_size - 3;
+						int y = board_sy + (hw_m1 - cell / hw) * board_cell_size + 3;
+						mini_font(human_value[cell]).draw(Arg::topRight(x, y), color);
+					}
+				}
+			}
+		}
 	}
+}
+
+bool show_popup(board b, bool use_ai_flag, bool human_first, bool human_second, bool both_ai, Font big_font, Font small_font) {
+	RoundRect(x_center - popup_width / 2, y_center - popup_height / 2, popup_width, popup_height, popup_r).draw(popup_color);
+	int black_stones = pop_count_ull(b.b);
+	int white_stones = pop_count_ull(b.w);
+	if (use_ai_flag && human_first) {
+		if (black_stones > white_stones) {
+			big_font(language.get("result", "you_win")).draw(Arg::bottomCenter(x_center, y_center - 60), popup_font_color);
+		}
+		else if (black_stones < white_stones) {
+			big_font(language.get("result", "AI_win")).draw(Arg::bottomCenter(x_center, y_center - 60), popup_font_color);
+		}
+		else {
+			big_font(language.get("result", "draw")).draw(Arg::bottomCenter(x_center, y_center - 60), popup_font_color);
+		}
+	}
+	else if (use_ai_flag && human_second) {
+		if (black_stones < white_stones) {
+			big_font(language.get("result", "you_win")).draw(Arg::bottomCenter(x_center, y_center - 60), popup_font_color);
+		}
+		else if (black_stones > white_stones) {
+			big_font(language.get("result", "AI_win")).draw(Arg::bottomCenter(x_center, y_center - 60), popup_font_color);
+		}
+		else {
+			big_font(language.get("result", "draw")).draw(Arg::bottomCenter(x_center, y_center - 60), popup_font_color);
+		}
+	}
+	else {
+		if (black_stones > white_stones) {
+			big_font(language.get("result", "black_win")).draw(Arg::bottomCenter(x_center, y_center - 60), popup_font_color);
+		}
+		else if (black_stones < white_stones) {
+			big_font(language.get("result", "white_win")).draw(Arg::bottomCenter(x_center, y_center - 60), popup_font_color);
+		}
+		else {
+			big_font(language.get("result", "draw")).draw(Arg::bottomCenter(x_center, y_center - 60), popup_font_color);
+		}
+	}
+	Circle(x_center - popup_width / 3, y_center, popup_circle_r).draw(Palette::Black);
+	small_font(black_stones).draw(Arg::rightCenter(x_center - popup_width / 3 + popup_circle_r * 2 + 20, y_center), popup_font_color);
+	Circle(x_center + popup_width / 3, y_center, popup_circle_r).draw(Palette::White).drawFrame(2, Palette::Black);
+	small_font(white_stones).draw(Arg::leftCenter(x_center + popup_width / 3 - popup_circle_r * 2 - 20, y_center), popup_font_color);
+	FrameButton button;
+	button.init(x_center - 100, y_center + 60, 200, 50, 10, 2, language.get("button", "close"), small_font, button_color, button_font_color, button_font_color);
+	button.draw();
+	return !button.clicked();
 }
 
 void reset_hint(int hint_state[], future<cell_value> hint_future[]) {
@@ -379,6 +467,26 @@ void reset_hint(int hint_state[], future<cell_value> hint_future[]) {
 		}
 		hint_state[i] = hint_not_calculated_define;
 	}
+	global_searching = true;
+}
+
+void reset_umigame(int umigame_state[], future<umigame_result> umigame_future[]) {
+	global_searching = false;
+	for (int i = 0; i < hw2; ++i) {
+		if (umigame_state[i] == 1) {
+			umigame_future[i].get();
+		}
+		umigame_state[i] = hint_not_calculated_define;
+	}
+	global_searching = true;
+}
+
+void reset_human_value(int *human_value_state, future<void>* human_value_future) {
+	global_searching = false;
+	if (*human_value_state == 1) {
+		human_value_future->get();
+	}
+	*human_value_state = 0;
 	global_searching = true;
 }
 
@@ -393,6 +501,18 @@ void reset_ai(bool *ai_thinking, future<search_result> *ai_future) {
 
 bool not_finished(board bd) {
 	return bd.p == 0 || bd.p == 1;
+}
+
+umigame_result get_umigame_p(board b) {
+	return umigame.get(&b);
+}
+
+future<umigame_result> get_umigame(board b) {
+	return async(launch::async, get_umigame_p, b);
+}
+
+future<void> get_human_value(board b, int depth, double a, int res[]) {
+	return async(launch::async, calc_all_human_value, b, depth, a, res);
 }
 
 void Main() {
@@ -437,16 +557,35 @@ void Main() {
 	Font font50(50);
 	Font font30(30);
 	Font font20(20);
-	Font normal_hint_font(18);
-	Font normal_hint_depth_font(10);
+	Font font15(15);
+	Font normal_hint_font(18, Typeface::Bold);
+	Font mini_hint_font(14, Typeface::Heavy);
+	Font small_hint_font(10, Typeface::Bold);
 
 	board bd;
 	bool board_clicked[hw2];
 	vector<board> history, fork_history;
 	int history_place = 0;
 	bool fork_mode = false;
+
 	int hint_value[hw2], hint_state[hw2], hint_depth[hw2];
 	future<cell_value> hint_future[hw2];
+	for (int i = 0; i < hw2; ++i) {
+		hint_state[i] = 0;
+	}
+
+	int umigame_state[hw2];
+	umigame_result umigame_value[hw2];
+	future<umigame_result> umigame_future[hw2];
+	for (int i = 0; i < hw2; ++i) {
+		umigame_state[i] = 0;
+	}
+
+	int human_value_state = 0;
+	int human_value[hw2];
+	double human_value_a = 0.5;
+	int human_value_depth = 5;
+	future<void> human_value_future;
 
 	future<bool> initialize_future = async(launch::async, ai_init);
 	bool initializing = true, initialize_failed = false;
@@ -460,15 +599,20 @@ void Main() {
 	future<search_result> ai_future;
 	bool ai_thinking = false;
 	int ai_value = 0;
-	int ai_level = 21, ai_book_accept = 4, hint_level = 9;
+	int ai_level = 21, ai_book_accept = 8, hint_level = 9;
 
 	bool before_start_game = true;
 	Button start_game_button;
 	Button how_to_use_button;
 
+	bool show_popup_flag = true;
+	int showing_popup = 0;
+
 	while (System::Update()) {
 		if (System::GetUserActions() & UserAction::CloseButtonClicked) {
 			reset_hint(hint_state, hint_future);
+			reset_umigame(umigame_state, umigame_future);
+			reset_human_value(&human_value_state, &human_value_future);
 			reset_ai(&ai_thinking, &ai_future);
 			System::Exit();
 		}
@@ -492,8 +636,8 @@ void Main() {
 					&use_value_flag,
 					&ai_level, &hint_level, &ai_book_accept,
 					&start_book_learn_flag);
-				start_game_button.init(start_game_button_x, start_game_button_y, start_game_button_w, start_game_button_h, language.get("button", "start_game"), font30, button_color, button_font_color);
-				how_to_use_button.init(how_to_use_button_x, how_to_use_button_y, how_to_use_button_w, how_to_use_button_h, language.get("button", "how_to_use"), font30, button_color, button_font_color);
+				start_game_button.init(start_game_button_x, start_game_button_y, start_game_button_w, start_game_button_h, start_game_button_r, language.get("button", "start_game"), font30, button_color, button_font_color);
+				how_to_use_button.init(how_to_use_button_x, how_to_use_button_y, how_to_use_button_w, how_to_use_button_h, how_to_use_button_r, language.get("button", "how_to_use"), font30, button_color, button_font_color);
 				lang_initialized = 2;
 			}
 			else if (lang_initialized == 2) {
@@ -554,7 +698,11 @@ void Main() {
 				history_place = 0;
 				fork_mode = false;
 				before_start_game = true;
+				showing_popup = false;
+				show_popup_flag = true;
 				reset_hint(hint_state, hint_future);
+				reset_umigame(umigame_state, umigame_future);
+				reset_human_value(&human_value_state, &human_value_future);
 			}
 			if (!before_start_game) {
 				unsigned long long legal = bd.mobility_ull();
@@ -585,37 +733,77 @@ void Main() {
 						}
 						history_place = bd.n - 4;
 						reset_hint(hint_state, hint_future);
+						reset_umigame(umigame_state, umigame_future);
+						reset_human_value(&human_value_state, &human_value_future);
 					}
-					if (not_finished(bd) && use_hint_flag && normal_hint) {
-						for (int cell = 0; cell < hw2; ++cell) {
-							if ((1 & (legal >> cell)) && hint_state[cell] < hint_level * 2) {
-								if (hint_state[cell] % 2 == 0) {
-									if (hint_state[cell] == hint_level * 2 - 2) {
-										hint_future[cell] = async(launch::async, hint_search, bd, hint_level, cell);
-									}
-									else {
-										hint_future[cell] = async(launch::async, hint_search, bd, hint_state[cell] / 2, cell);
-									}
-									++hint_state[cell];
-								}
-								else if (hint_future[cell].wait_for(chrono::seconds(0)) == future_status::ready) {
-									cell_value hint_result = hint_future[cell].get();
-									if (global_searching) {
-										if (hint_state[cell] == 1 || hint_result.depth == search_final_define) {
-											hint_value[cell] = hint_result.value;
+					if (not_finished(bd) && use_hint_flag) {
+						if (normal_hint){
+							for (int cell = 0; cell < hw2; ++cell) {
+								if ((1 & (legal >> cell)) && hint_state[cell] < hint_level * 2) {
+									if (hint_state[cell] % 2 == 0) {
+										if (hint_state[cell] == hint_level * 2 - 2) {
+											hint_future[cell] = async(launch::async, hint_search, bd, hint_level, cell);
 										}
 										else {
-											hint_value[cell] += hint_result.value;
-											hint_value[cell] /= 2;
+											hint_future[cell] = async(launch::async, hint_search, bd, hint_state[cell] / 2, cell);
 										}
-										hint_depth[cell] = hint_result.depth;
-									}
-									if (hint_result.depth == search_final_define || hint_result.depth == search_book_define) {
-										hint_state[cell] = hint_level * 2;
-									}
-									else {
 										++hint_state[cell];
 									}
+									else if (hint_future[cell].wait_for(chrono::seconds(0)) == future_status::ready) {
+										cell_value hint_result = hint_future[cell].get();
+										if (global_searching) {
+											if (hint_state[cell] == 1 || hint_result.depth == search_final_define) {
+												hint_value[cell] = hint_result.value;
+											}
+											else {
+												hint_value[cell] += hint_result.value;
+												hint_value[cell] /= 2;
+											}
+											hint_depth[cell] = hint_result.depth;
+										}
+										if (hint_result.depth == search_final_define || hint_result.depth == search_book_define) {
+											hint_state[cell] = hint_level * 2;
+										}
+										else {
+											++hint_state[cell];
+										}
+									}
+								}
+							}
+						}
+						if (umigame_hint) {
+							for (int cell = 0; cell < hw2; ++cell) {
+								if ((1 & (legal >> cell))) {
+									if (umigame_state[cell] == 0) {
+										mobility m;
+										calc_flip(&m, &bd, cell);
+										board moved_b = bd.move_copy(&m);
+										if (book.get(&moved_b) != -inf) {
+											umigame_future[cell] = get_umigame(moved_b);
+											umigame_state[cell] = 1;
+										}
+										else {
+											umigame_state[cell] = 3;
+										}
+									}
+									else if (umigame_state[cell] == 1) {
+										if (umigame_future[cell].wait_for(chrono::seconds(0)) == future_status::ready) {
+											umigame_value[cell] = umigame_future[cell].get();
+											umigame_state[cell] = 2;
+										}
+									}
+								}
+							}
+						}
+						if (human_hint) {
+							if (human_value_state == 0) {
+								human_value_future = get_human_value(bd, human_value_depth, human_value_a, human_value);
+								human_value_state = 1;
+							}
+							else if (human_value_state == 1) {
+								if (human_value_future.wait_for(chrono::seconds(0)) == future_status::ready) {
+									human_value_future.get();
+									human_value_state = 2;
 								}
 							}
 						}
@@ -636,6 +824,8 @@ void Main() {
 							ai_value = ai_result.value;
 							ai_thinking = false;
 							reset_hint(hint_state, hint_future);
+							reset_umigame(umigame_state, umigame_future);
+							reset_human_value(&human_value_state, &human_value_future);
 						}
 					}
 					else {
@@ -647,43 +837,57 @@ void Main() {
 				}
 			}
 			int former_history_place = history_place;
-			history_place = graph.update_place(history, fork_history, history_place);
-			if (history_place != former_history_place) {
-				if (ai_thinking) {
-					reset_ai(&ai_thinking, &ai_future);
-				}
-				if (fork_mode && history_place > fork_history[fork_history.size() - 1].n - 4) {
-					fork_history.clear();
-					bd = history[find_history_idx(history, history_place)];
-					create_vacant_lst(bd);
-					reset_hint(hint_state, hint_future);
-					if (history_place == history[history.size() - 1].n - 4) {
-						fork_mode = false;
+			if (showing_popup == 0 && !ai_thinking) {
+				history_place = graph.update_place(history, fork_history, history_place);
+				if (history_place != former_history_place) {
+					if (ai_thinking) {
+						reset_ai(&ai_thinking, &ai_future);
 					}
-					else {
+					if (fork_mode && history_place > fork_history[fork_history.size() - 1].n - 4) {
+						fork_history.clear();
+						bd = history[find_history_idx(history, history_place)];
+						create_vacant_lst(bd);
+						reset_hint(hint_state, hint_future);
+						reset_umigame(umigame_state, umigame_future);
+						reset_human_value(&human_value_state, &human_value_future);
+						if (history_place == history[history.size() - 1].n - 4) {
+							fork_mode = false;
+						}
+						else {
+							fork_history.emplace_back(bd);
+						}
+					}
+					else if (!fork_mode || (fork_mode && history_place <= fork_history[0].n - 4)) {
+						fork_mode = true;
+						fork_history.clear();
+						bd = history[find_history_idx(history, history_place)];
 						fork_history.emplace_back(bd);
+						create_vacant_lst(bd);
+						reset_hint(hint_state, hint_future);
+						reset_umigame(umigame_state, umigame_future);
+						reset_human_value(&human_value_state, &human_value_future);
 					}
-				}
-				else if (!fork_mode || (fork_mode && history_place <= fork_history[0].n - 4)) {
-					fork_mode = true;
-					fork_history.clear();
-					bd = history[find_history_idx(history, history_place)];
-					fork_history.emplace_back(bd);
-					create_vacant_lst(bd);
-					reset_hint(hint_state, hint_future);
-				}
-				else if (fork_mode) {
-					bd = fork_history[find_history_idx(fork_history, history_place)];
-					create_vacant_lst(bd);
-					reset_hint(hint_state, hint_future);
+					else if (fork_mode) {
+						bd = fork_history[find_history_idx(fork_history, history_place)];
+						create_vacant_lst(bd);
+						reset_hint(hint_state, hint_future);
+						reset_umigame(umigame_state, umigame_future);
+						reset_human_value(&human_value_state, &human_value_future);
+					}
 				}
 			}
-
+			showing_popup = max(0, showing_popup - 1);
 			board_draw(board_cells, bd, use_hint_flag, normal_hint, human_hint, umigame_hint,
-				hint_state, hint_value, hint_depth, normal_hint_font, normal_hint_depth_font, font30,
-				int_mode);
+				hint_state, hint_value, hint_depth, normal_hint_font, small_hint_font, font30, mini_hint_font,
+				int_mode, before_start_game,
+				umigame_state, umigame_value,
+				human_value_state, human_value);
 			if (!before_start_game) {
 				graph.draw(history, fork_history, history_place);
+				if (bd.p == vacant && !fork_mode && show_popup_flag) {
+					show_popup_flag = show_popup(bd, use_ai_flag, human_first, human_second, both_ai, font50, font30);
+					showing_popup = 10;
+				}
 			}
 			else {
 				start_game_button.draw();

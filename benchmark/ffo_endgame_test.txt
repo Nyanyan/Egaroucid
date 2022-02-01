@@ -795,3 +795,12 @@ normal flip
 #43 final depth: 23 time: 4924 policy: 41 value: -12 nodes: 170821853 nps: 35528671
 #44 final depth: 23 time: 1476 policy: 6 value: -14 nodes: 57879950 nps: 46378165
 #45 final depth: 24 time: 31611 policy: 54 value: 6 nodes: 1526906415 nps: 48998986
+
+2022/02/01 use end mtd
+#40 final depth: 20 time: 658 policy: 55 value: 38 nodes: 31746617 nps: 57721121
+#41 final depth: 22 time: 1212 policy: 32 value: 0 nodes: 43867081 nps: 42383653
+#42 final depth: 22 time: 2319 policy: 49 value: 6 nodes: 119059799 nps: 56641198
+#43 final depth: 23 time: 5577 policy: 13 value: -12 nodes: 147863762 nps: 27175843
+#44 final depth: 23 time: 1813 policy: 52 value: -14 nodes: 38707711 nps: 24576324
+#45 final depth: 24 time: 27837 policy: 54 value: 6 nodes: 1454672733 nps: 53212595
+#46 final depth: 24 time: 6963 policy: 46 value: -8 nodes: 327026342 nps: 50011674

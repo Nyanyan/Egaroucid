@@ -32,6 +32,8 @@ class umigame{
 		int search(board *b, int depth, int player){
 			if (depth == 0)
 				return 1;
+			if (!global_searching)
+				return 0;
 			board nb;
 			int val, max_val = -inf;
 			vector<board> boards;
@@ -41,8 +43,8 @@ class umigame{
 				if (1 & (legal >> i)) {
 					calc_flip(&mob, b, i);
 					nb = b->move_copy(&mob);
-					val = -book.get(&nb);
-					if (val != inf && val >= max_val) {
+					val = book.get(&nb);
+					if (val != -inf && val >= max_val) {
 						if (val > max_val) {
 							boards.clear();
 							max_val = val;

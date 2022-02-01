@@ -1015,7 +1015,7 @@ int mtd_final(board *b, bool skipped, int depth, int l, int u, bool use_mpc, dou
     l /= 2;
     u /= 2;
     g = max(l, min(u, g / 2));
-    cerr << l * 2 << " " << g * 2 << " " << u * 2 << endl;
+    //cerr << l * 2 << " " << g * 2 << " " << u * 2 << endl;
     while (u - l > 0){
         beta = max(l + search_epsilon, g);
         g = nega_alpha_ordering_final(b, skipped, depth, beta * 2 - search_epsilon, beta * 2, use_mpc, use_mpct, n_nodes) / 2;
@@ -1023,9 +1023,9 @@ int mtd_final(board *b, bool skipped, int depth, int l, int u, bool use_mpc, dou
             u = g;
         else
             l = g;
-        cerr << l * 2 << " " << g * 2 << " " << u * 2 << endl;
+        //cerr << l * 2 << " " << g * 2 << " " << u * 2 << endl;
     }
-    cerr << g * 2 << endl;
+    //cerr << g * 2 << endl;
     return g * 2;
 }
 
@@ -1074,6 +1074,7 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
     long long final_strt = tim();
     searched_nodes = 0;
     if (nb[0].second.n < hw2 - 5){
+        /*
         priority_queue<enhanced_mtd> que;
         enhanced_mtd elem;
         for (i = 0; i < canput; ++i){
@@ -1111,17 +1112,17 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
                 que.push(elem);
             //alpha = max(alpha, elem.l);
         }
-        /*
+        */
         for (i = 0; i < canput; ++i){
             g = -mtd_final(&nb[i].second, false, max_depth - 1, -beta, -alpha, use_mpc, use_mpct, -nb[i].second.v, &searched_nodes);
             //g = -nega_scout_final(&nb[i].second, false, max_depth - 1, -beta, -alpha, use_mpc, use_mpct, true, &searched_nodes);
-            cerr << "result " << nb[i].first << " " << g << " " << nb[i].second.v << endl;
+            cerr << "policy " << nb[i].first << " value " << g << " expected " << nb[i].second.v << endl;
             if (alpha < g || i == 0){
                 alpha = g;
                 tmp_policy = nb[i].first;
             }
         }
-        */
+        
     } else{
         int cells[5];
         for (i = 0; i < canput; ++i){
