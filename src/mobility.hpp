@@ -2,9 +2,7 @@
 #include <iostream>
 #include "setting.hpp"
 #include "common.hpp"
-#if FLIP_CALC_MODE == 2
-    #include "flip.hpp"
-#endif
+#include "flip.hpp"
 
 using namespace std;
 
@@ -271,14 +269,14 @@ class mobility{
                 if (u >= 2 && u <= 12){
                     p = join_d7_line(player, u) & d7_mask[place];
                     o = join_d7_line(opponent, u) & d7_mask[place];
-                    flip |= line_to_board_d7[flip_pre_calc[p][o][hw_m1 - t] & d7_mask[place]][u];
+                    flip |= line_to_board_d7[flip_pre_calc[p][o][hw_m1 - t]][u];
                 }
 
                 u -= t * 2;
                 if (u >= -5 && u <= 5){
                     p = join_d9_line(player, u) & d9_mask[place];
                     o = join_d9_line(opponent, u) & d9_mask[place];
-                    flip |= line_to_board_d9[flip_pre_calc[p][o][t] & d9_mask[place]][u + hw];
+                    flip |= line_to_board_d9[flip_pre_calc[p][o][t]][u + hw];
                 }
             }
         #elif FLIP_CALC_MODE == 2
@@ -310,14 +308,14 @@ class mobility{
                         cerr << (1 & (o >> i));
                     cerr << endl << endl;
                     */
-                    flip |= line_to_board_d7[flip_pre_calc[p][o][hw_m1 - t] & d7_mask[place]][u];
+                    flip |= line_to_board_d7[flip_pre_calc[p][o][hw_m1 - t]][u];
                 }
 
                 u -= t * 2;
                 if (u >= -5 && u <= 5){
                     p = join_d9_line(player, u) & d9_mask[place];
                     o = join_d9_line(opponent, u) & d9_mask[place];
-                    flip |= line_to_board_d9[flip_pre_calc[p][o][t] & d9_mask[place]][u + hw];
+                    flip |= line_to_board_d9[flip_pre_calc[p][o][t]][u + hw];
                 }
             }
         #endif

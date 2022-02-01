@@ -770,3 +770,20 @@ weight=25
 #43 final depth: 23 time: 6131 policy: 41 value: -12 nodes: 195104775 nps: 32571748
 #44 final depth: 23 time: 2072 policy: 6 value: -14 nodes: 69859067 nps: 37987529
 #45 final depth: 24 time: 32351 policy: 54 value: 6 nodes: 1342884616 nps: 42100655
+
+2022/02/01 update flip for each move
+#40 final depth: 20 time: 653 policy: 55 value: 38 nodes: 30136700 nps: 54893806
+#41 final depth: 22 time: 1180 policy: 32 value: 0 nodes: 43859386 nps: 43947280
+#42 final depth: 22 time: 2190 policy: 49 value: 6 nodes: 105693340 nps: 52873106
+#43 final depth: 23 time: 6249 policy: 41 value: -12 nodes: 185720093 nps: 30282095
+#44 final depth: 23 time: 1481 policy: 6 value: -14 nodes: 44485497 nps: 35559949
+#45 final depth: 24 time: 24581 policy: 54 value: 6 nodes: 1360423406 nps: 56353233
+#46 final depth: 24 time: 5672 policy: 46 value: -8 nodes: 256962346 nps: 48676329
+normal flip
+#40 final depth: 20 time: 632 policy: 55 value: 38 nodes: 29443644 nps: 55870292
+#41 final depth: 22 time: 1199 policy: 32 value: 0 nodes: 43783457 nps: 43009289
+#42 final depth: 22 time: 2681 policy: 49 value: 6 nodes: 93176396 nps: 37255656
+#43 final depth: 23 time: 6394 policy: 41 value: -12 nodes: 185419016 nps: 29686041
+#44 final depth: 23 time: 1542 policy: 6 value: -14 nodes: 45064935 nps: 34217870
+#45 final depth: 24 time: 22993 policy: 54 value: 6 nodes: 1336580241 nps: 59358717
+#46 final depth: 24 time: 5648 policy: 46 value: -8 nodes: 258815250 nps: 49496127
