@@ -264,8 +264,7 @@ class mobility{
                 o = join_v_line(opponent, u);
                 flip |= line_to_board_v[flip_pre_calc[p][o][t]][u];
 
-                t = place / hw;
-                u = place % hw + t;
+                u += t;
                 if (u >= 2 && u <= 12){
                     p = join_d7_line(player, u) & d7_mask[place];
                     o = join_d7_line(opponent, u) & d7_mask[place];
