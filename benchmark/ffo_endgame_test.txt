@@ -787,3 +787,11 @@ normal flip
 #44 final depth: 23 time: 1542 policy: 6 value: -14 nodes: 45064935 nps: 34217870
 #45 final depth: 24 time: 22993 policy: 54 value: 6 nodes: 1336580241 nps: 59358717
 #46 final depth: 24 time: 5648 policy: 46 value: -8 nodes: 258815250 nps: 49496127
+
+2022/02/01 update simple threshold1=8
+#40 final depth: 20 time: 625 policy: 55 value: 38 nodes: 28479621 nps: 56172822
+#41 final depth: 22 time: 1171 policy: 32 value: 0 nodes: 63193328 nps: 63447116
+#42 final depth: 22 time: 2488 policy: 49 value: 6 nodes: 120038638 nps: 52009808
+#43 final depth: 23 time: 4924 policy: 41 value: -12 nodes: 170821853 nps: 35528671
+#44 final depth: 23 time: 1476 policy: 6 value: -14 nodes: 57879950 nps: 46378165
+#45 final depth: 24 time: 31611 policy: 54 value: 6 nodes: 1526906415 nps: 48998986
