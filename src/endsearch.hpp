@@ -47,12 +47,11 @@ int nega_alpha_ordering_final_nomemo(board *b, bool skipped, int depth, int alph
     mobility mob;
     int canput = 0;
     int hash = b->hash() & search_hash_mask;
-    int b_val = mid_evaluate(b);
     for (const int &cell: vacant_lst){
         if (1 & (legal >> cell)){
             calc_flip(&mob, b, cell);
             nb.emplace_back(b->move_copy(&mob));
-            nb[canput].v = move_ordering(b, &nb[canput], hash, cell, b_val);
+            nb[canput].v = move_ordering(b, &nb[canput], hash, cell);
             //nb[canput].v -= canput_bonus * calc_canput_exact(&nb[canput]);
             #if USE_END_PO && false
                 if (depth <= po_max_depth && b->parity & cell_div4[cell])
@@ -802,12 +801,11 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
     board *nb = new board[canput];
     mobility mob;
     int idx = 0;
-    int b_val = mid_evaluate(b);
     for (const int &cell: vacant_lst){
         if (1 & (legal >> cell)){
             calc_flip(&mob, b, cell);
             b->move_copy(&mob, &nb[idx]);
-            nb[idx].v = move_ordering(b, &nb[idx], hash, cell, b_val);
+            nb[idx].v = move_ordering(b, &nb[idx], hash, cell);
             ++idx;
         }
     }

@@ -14,14 +14,15 @@
 using namespace std;
 
 #define search_epsilon 1
-#define cache_hit 100
-#define cache_now 100
+#define cache_hit 10000
+#define cache_now 10000
 #define parity_vacant_bonus 5
 #define canput_bonus 10
-#define w_former_search 10
+#define w_former_search 20
 #define w_stability 5
 #define w_evaluate 10
 #define w_surround 5
+#define w_mobility 30
 
 #define mpc_min_depth 3
 #define mpc_max_depth 20
@@ -110,7 +111,9 @@ int cmp_vacant(int p, int q){
     return cell_weight[p] > cell_weight[q];
 }
 
-inline int move_ordering(board *b, board *nb, const int hash, const int policy, const int b_val){
+//int nega_alpha(board *b, bool skipped, int depth, int alpha, int beta, int *n_nodes);
+
+inline int move_ordering(board *b, board *nb, const int hash, const int policy){
     int v = transpose_table.child_get_now(b, hash, policy) * w_former_search;
     if (v == -child_inf * w_former_search){
         v = transpose_table.child_get_prev(b, hash, policy) * w_former_search;
@@ -121,7 +124,9 @@ inline int move_ordering(board *b, board *nb, const int hash, const int policy, 
     } else
         v += cache_hit + cache_now;
     v += cell_weight[policy];
-    v += (-mid_evaluate(nb) - b_val) * w_evaluate;
+    v += -mid_evaluate(nb) * w_evaluate;
+    //int n_nodes = 0;
+    //v += -nega_alpha(nb, false, 2, -hw2, hw2, &n_nodes);
     int stab0, stab1;
     calc_stability_fast(nb, &stab0, &stab1);
     unsigned long long n_empties = ~(nb->b | nb->w);
@@ -132,6 +137,7 @@ inline int move_ordering(board *b, board *nb, const int hash, const int policy, 
         v += (stab1 - stab0) * w_stability;
         v += (calc_surround(nb->b, n_empties) - calc_surround(nb->w, n_empties)) * w_surround;
     }
+    v -= pop_count_ull(nb->mobility_ull()) * w_mobility;
     return v;
 }
 

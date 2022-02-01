@@ -684,6 +684,9 @@ multi thread
 #45 final depth: 24 time: 56289 policy: 54 value: 6 nodes: 1388356700 nps: 24845768
 
 2022/02/01 update flip
-#40 final depth: 20 time: 753 policy: 55 value: 38 nodes: 26074617 nps: 40614668
-#41 final depth: 22 time: 2011 policy: 32 value: 2 nodes: 42432847 nps: 23162034
-#42 final depth: 22 time: 2365 policy: 49 value: 6 nodes: 64937318 nps: 29801430
+#40 final depth: 20 time: 729 policy: 55 value: 38 nodes: 25759252 nps: 41749192
+#41 final depth: 22 time: 1491 policy: 32 value: 0 nodes: 33903233 nps: 25723242
+#42 final depth: 22 time: 1870 policy: 49 value: 6 nodes: 54330484 nps: 32053382
+#43 final depth: 23 time: 7069 policy: 41 value: -12 nodes: 212553773 nps: 30565684
+#44 final depth: 23 time: 2930 policy: 6 value: -14 nodes: 75898382 nps: 27955205
+#45 final depth: 24 time: 49507 policy: 54 value: 6 nodes: 1371477191 nps: 27930619

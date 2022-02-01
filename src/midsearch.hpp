@@ -51,12 +51,11 @@ int nega_alpha_ordering_nomemo(board *b, bool skipped, int depth, int alpha, int
     mobility mob;
     int idx = 0;
     int hash = b->hash() & search_hash_mask;
-    int b_val = mid_evaluate(b);
     for (const int &cell: vacant_lst){
         if (1 & (legal >> cell)){
             calc_flip(&mob, b, cell);
             b->move_copy(&mob, &nb[idx]);
-            nb[idx].v = move_ordering(b, &nb[idx], hash, cell, b_val);
+            nb[idx].v = move_ordering(b, &nb[idx], hash, cell);
             ++idx;
         }
     }
@@ -167,12 +166,11 @@ int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int 
     board *nb = new board[canput];
     mobility mob;
     int idx = 0;
-    int b_val = mid_evaluate(b);
     for (const int &cell: vacant_lst){
         if (1 & (legal >> cell)){
             calc_flip(&mob, b, cell);
             b->move_copy(&mob, &nb[idx]);
-            nb[idx].v = move_ordering(b, &nb[idx], hash, cell, b_val);
+            nb[idx].v = move_ordering(b, &nb[idx], hash, cell);
             ++idx;
         }
     }
@@ -328,12 +326,11 @@ inline search_result midsearch(board b, long long strt, int max_depth, bool use_
     int i = 0;
     int hash = b.hash() & search_hash_mask;
     unsigned long long legal = b.mobility_ull();
-    int b_val = mid_evaluate(&b);
     for (const int &cell: vacant_lst){
         if (1 & (legal >> cell)){
             calc_flip(&mob, &b, cell);
             nb.emplace_back(b.move_copy(&mob));
-            nb[i].v = move_ordering(&b, &nb[i], hash, cell, b_val);
+            nb[i].v = move_ordering(&b, &nb[i], hash, cell);
             ++i;
         }
     }
@@ -353,7 +350,7 @@ inline search_result midsearch(board b, long long strt, int max_depth, bool use_
         beta = hw2;
         transpose_table.init_now();
         for (i = 0; i < canput; ++i)
-            nb[i].v = move_ordering(&b, &nb[i], hash, nb[i].policy, b_val);
+            nb[i].v = move_ordering(&b, &nb[i], hash, nb[i].policy);
         if (canput >= 2)
             sort(nb.begin(), nb.end());
         for (i = 0; i < canput; ++i){
