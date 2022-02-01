@@ -35,7 +35,7 @@ using namespace std;
 
 #define po_max_depth 15
 
-#define enhanced_mtd_error_weight 1
+#define enhanced_mtd_error_weight 4
 #define enhanced_mtd_value_weight 1
 
 const int cell_weight[hw2] = {

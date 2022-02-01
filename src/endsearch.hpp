@@ -16,7 +16,7 @@
 
 using namespace std;
 
-int nega_alpha_ordering_final_nomemo(board *b, bool skipped, int depth, int alpha, int beta, bool use_mpc, double use_mpct, int *n_nodes){
+int nega_alpha_ordering_final_nomemo(board *b, bool skipped, int depth, int alpha, int beta, bool use_mpc, double use_mpct, unsigned long long *n_nodes){
     ++(*n_nodes);
     if (!global_searching)
         return -inf;
@@ -73,7 +73,7 @@ int nega_alpha_ordering_final_nomemo(board *b, bool skipped, int depth, int alph
     return v;
 }
 
-inline bool mpc_higher_final(board *b, bool skipped, int depth, int beta, double t, int *n_nodes){
+inline bool mpc_higher_final(board *b, bool skipped, int depth, int beta, double t, unsigned long long *n_nodes){
     if (b->n + mpcd[depth] >= hw2 - 5)
         return false;
     int bound = beta + ceil(t * mpcsd_final[depth - mpc_min_depth_final]);
@@ -82,7 +82,7 @@ inline bool mpc_higher_final(board *b, bool skipped, int depth, int beta, double
     return nega_alpha_ordering_final_nomemo(b, skipped, mpcd[depth], bound - search_epsilon, bound, true, t, n_nodes) >= bound;
 }
 
-inline bool mpc_lower_final(board *b, bool skipped, int depth, int alpha, double t, int *n_nodes){
+inline bool mpc_lower_final(board *b, bool skipped, int depth, int alpha, double t, unsigned long long *n_nodes){
     if (b->n + mpcd[depth] >= hw2 - 5)
         return false;
     int bound = alpha - ceil(t * mpcsd_final[depth - mpc_min_depth_final]);
@@ -91,7 +91,7 @@ inline bool mpc_lower_final(board *b, bool skipped, int depth, int alpha, double
     return nega_alpha_ordering_final_nomemo(b, skipped, mpcd[depth], bound, bound + search_epsilon, true, t, n_nodes) <= bound;
 }
 
-inline int last1(board *b, int alpha, int beta, int p0, int *n_nodes){
+inline int last1(board *b, int alpha, int beta, int p0, unsigned long long *n_nodes){
     ++(*n_nodes);
     int score = hw2 - 2 * b->count_opponent();
     int n_flip;
@@ -126,7 +126,7 @@ inline int last1(board *b, int alpha, int beta, int p0, int *n_nodes){
     return score;
 }
 
-inline int last2(board *b, bool skipped, int alpha, int beta, int p0, int p1, int *n_nodes){
+inline int last2(board *b, bool skipped, int alpha, int beta, int p0, int p1, unsigned long long *n_nodes){
     ++(*n_nodes);
     #if USE_END_PO & false
         int p0_parity = (b->parity & cell_div4[p0]);
@@ -169,7 +169,7 @@ inline int last2(board *b, bool skipped, int alpha, int beta, int p0, int p1, in
     return v;
 }
 
-inline int last3(board *b, bool skipped, int alpha, int beta, int p0, int p1, int p2, int *n_nodes){
+inline int last3(board *b, bool skipped, int alpha, int beta, int p0, int p1, int p2, unsigned long long *n_nodes){
     ++(*n_nodes);
     #if USE_END_PO
         int p0_parity = (b->parity & cell_div4[p0]);
@@ -237,7 +237,7 @@ inline int last3(board *b, bool skipped, int alpha, int beta, int p0, int p1, in
     return v;
 }
 
-inline int last4(board *b, bool skipped, int alpha, int beta, int p0, int p1, int p2, int p3, int *n_nodes){
+inline int last4(board *b, bool skipped, int alpha, int beta, int p0, int p1, int p2, int p3, unsigned long long *n_nodes){
     ++(*n_nodes);
     #if USE_END_PO
         if (!skipped){
@@ -351,7 +351,7 @@ inline int last4(board *b, bool skipped, int alpha, int beta, int p0, int p1, in
     return v;
 }
 
-inline int last5(board *b, bool skipped, int alpha, int beta, int p0, int p1, int p2, int p3, int p4, int *n_nodes){
+inline int last5(board *b, bool skipped, int alpha, int beta, int p0, int p1, int p2, int p3, int p4, unsigned long long *n_nodes){
     ++(*n_nodes);
     unsigned long long legal = b->mobility_ull();
     int v = -inf, g;
@@ -590,7 +590,7 @@ inline void pick_vacant(board *b, int cells[]){
 }
 
 
-int nega_alpha_final(board *b, bool skipped, const int depth, int alpha, int beta, int *n_nodes){
+int nega_alpha_final(board *b, bool skipped, const int depth, int alpha, int beta, unsigned long long *n_nodes){
     if (!global_searching)
         return -inf;
     if (depth == 5){
@@ -671,7 +671,7 @@ int nega_alpha_final(board *b, bool skipped, const int depth, int alpha, int bet
     return v;
 }
 
-int nega_alpha_ordering_simple_final(board *b, bool skipped, const int depth, int alpha, int beta, bool use_mpc, double mpct_in, int *n_nodes){
+int nega_alpha_ordering_simple_final(board *b, bool skipped, const int depth, int alpha, int beta, bool use_mpc, double mpct_in, unsigned long long *n_nodes){
     if (!global_searching)
         return -inf;
     if (depth <= simple_end_threshold)
@@ -753,7 +753,7 @@ int nega_alpha_ordering_simple_final(board *b, bool skipped, const int depth, in
     return v;
 }
 
-int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha, int beta, bool use_multi_thread, bool use_mpc, double mpct_in, int *n_nodes){
+int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha, int beta, bool use_multi_thread, bool use_mpc, double mpct_in, unsigned long long *n_nodes){
     if (!global_searching)
         return -inf;
     /*
@@ -830,7 +830,7 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
                 v = max(v, g);
             }
             vector<future<int>> future_tasks;
-            int *n_n_nodes = new int[canput - first_threshold];
+            unsigned long long *n_n_nodes = new unsigned long long[canput - first_threshold];
             int done_tasks = first_threshold;
             int next_done_tasks;
             for (i = first_threshold; i < canput; ++i)
@@ -920,7 +920,7 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
     return v;
 }
 
-int nega_scout_final_nomemo(board *b, bool skipped, const int depth, int alpha, int beta, bool use_mpc, double mpct_in, int *n_nodes){
+int nega_scout_final_nomemo(board *b, bool skipped, const int depth, int alpha, int beta, bool use_mpc, double mpct_in, unsigned long long *n_nodes){
     if (!global_searching)
         return -inf;
     if (depth <= simple_end_threshold)
@@ -1022,12 +1022,12 @@ int nega_scout_final_nomemo(board *b, bool skipped, const int depth, int alpha, 
     return v;
 }
 
-int mtd_final(board *b, bool skipped, int depth, int l, int u, bool use_mpc, double use_mpct, int g, bool use_multi_thread, int *n_nodes){
+int mtd_final(board *b, bool skipped, int depth, int l, int u, bool use_mpc, double use_mpct, int g, bool use_multi_thread, unsigned long long *n_nodes){
     int beta;
     l /= 2;
     u /= 2;
     g = max(l, min(u, g / 2));
-    //cerr << l << " " << g << " " << u << endl;
+    cerr << l * 2 << " " << g * 2 << " " << u * 2 << endl;
     while (u - l > 0){
         beta = max(l + search_epsilon, g);
         g = nega_alpha_ordering_final(b, skipped, depth, beta * 2 - search_epsilon, beta * 2, use_multi_thread, use_mpc, use_mpct, n_nodes) / 2;
@@ -1035,9 +1035,9 @@ int mtd_final(board *b, bool skipped, int depth, int l, int u, bool use_mpc, dou
             u = g;
         else
             l = g;
-        //cerr << l << " " << g << " " << u << endl;
+        cerr << l * 2 << " " << g * 2 << " " << u * 2 << endl;
     }
-    //cerr << g << endl;
+    cerr << g * 2 << endl;
     return g * 2;
 }
 
@@ -1060,7 +1060,7 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
     int policy = -1;
     int tmp_policy = -1;
     int alpha, beta, g, value;
-    int searched_nodes = 0;
+    unsigned long long searched_nodes = 0;
     transpose_table.hash_get = 0;
     transpose_table.hash_reg = 0;
     int max_depth = hw2 - b.n;
@@ -1081,7 +1081,7 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
     swap(transpose_table.now, transpose_table.prev);
     if (canput >= 2)
         sort(nb.begin(), nb.end(), move_ordering_sort);
-    cerr << "pre search depth " << pre_search_depth << " time " << tim() - strt << " policy " << nb[0].first << " value " << nb[0].second.v << " nodes " << searched_nodes << " nps " << (long long)searched_nodes * 1000 / max(1LL, tim() - strt) << endl;
+    cerr << "pre search depth " << pre_search_depth << " time " << tim() - strt << " policy " << nb[0].first << " value " << nb[0].second.v << " nodes " << searched_nodes << " nps " << searched_nodes * 1000 / max(1LL, tim() - strt) << endl;
     transpose_table.init_now();
     long long final_strt = tim();
     searched_nodes = 0;
@@ -1106,20 +1106,22 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
             if (elem.l >= elem.u)
                 continue;
             threshold = max(elem.l + 2, elem.b.v);
-            g = -nega_alpha_ordering_final(&elem.b, false, max_depth - 1, -threshold, -threshold + search_epsilon, true, use_mpc, use_mpct, &searched_nodes);
-            cerr << "result " << que.size() << " " << elem.policy << "  " << g << " " << threshold << "  " << elem.l << " " << elem.u << endl;
+            g = -nega_alpha_ordering_final(&elem.b, false, max_depth - 1, -threshold, -threshold + search_epsilon, true, use_mpc, use_mpct, &searched_nodes) / 2 * 2;
+            cerr << "result " << que.size() << " " << elem.policy << "  " << g << " " << threshold << " " << elem.b.v << "  " << elem.l << " " << elem.u << endl;
             if (g < threshold)
                 elem.u = g;
             else
                 elem.l = g;
-            elem.error += g - elem.b.v;
+            elem.error += g - threshold;
             elem.b.v = g;
             if (elem.l == elem.u){
-                if (alpha < g || tmp_policy == -1)
+                if (alpha < g || tmp_policy == -1){
                     tmp_policy = elem.policy;
+                    alpha = g;
+                }
             } else
                 que.push(elem);
-            alpha = max(alpha, elem.l);
+            //alpha = max(alpha, elem.l);
         }
         /*
         for (i = 0; i < canput; ++i){
@@ -1177,7 +1179,7 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
 
 inline search_result endsearch_value(board b, long long strt, bool use_mpc, double use_mpct){
     int max_depth = hw2 - b.n;
-    int searched_nodes = 0;
+    unsigned long long searched_nodes = 0;
     search_result res;
     res.policy = -1;
     if (b.n < hw2 - 5)
