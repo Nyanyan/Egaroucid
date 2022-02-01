@@ -35,9 +35,6 @@ using namespace std;
 
 #define po_max_depth 15
 
-#define enhanced_mtd_error_weight 4
-#define enhanced_mtd_value_weight 1
-
 const int cell_weight[hw2] = {
     18,  4,  16, 12, 12, 16,  4, 18,
      4,  2,   6,  8,  8,  6,  2,  4,
@@ -103,8 +100,16 @@ struct enhanced_mtd{
     board b;
 };
 
+inline int enhanced_mtd_cost(const enhanced_mtd &elem){
+    int res = 0;
+    res += max(elem.error, elem.error * 4);
+    res += elem.b.v;
+    return res;
+}
+
 bool operator< (const enhanced_mtd &elem1, const enhanced_mtd &elem2){
-    return elem1.b.v * enhanced_mtd_value_weight + elem1.error * enhanced_mtd_error_weight < elem2.b.v * enhanced_mtd_value_weight + elem2.error * enhanced_mtd_error_weight;
+    return enhanced_mtd_cost(elem1) < enhanced_mtd_cost(elem2);
+    //return elem1.b.v * enhanced_mtd_value_weight + elem1.error * enhanced_mtd_error_weight < elem2.b.v * enhanced_mtd_value_weight + elem2.error * enhanced_mtd_error_weight;
 };
 
 int cmp_vacant(int p, int q){

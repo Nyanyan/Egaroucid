@@ -62,7 +62,8 @@ int main(){
         int level = 60, book_error = 0;
     #endif
     #if USE_MULTI_THREAD
-        thread_pool.resize(16);
+        thread_pool.resize(32);
+        cerr << "use " << thread_pool.size() << " threads" << endl;
     #endif
     int ai_player;
     //cin >> ai_player;

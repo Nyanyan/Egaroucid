@@ -722,3 +722,11 @@ multi thread
 #43 final depth: 23 time: 5156 policy: 41 value: -12 nodes: 135516443 nps: 27006066
 #44 final depth: 23 time: 1676 policy: 6 value: -14 nodes: 33350268 nps: 23321865
 #45 final depth: 24 time: 35235 policy: 54 value: 6 nodes: 963125808 nps: 27670463
+
+2022/02/01 update YBWC
+#40 final depth: 20 time: 611 policy: 55 value: 38 nodes: 29029273 nps: 57597763
+#41 final depth: 22 time: 1176 policy: 32 value: 0 nodes: 46007133 nps: 46471851
+#42 final depth: 22 time: 2246 policy: 49 value: 6 nodes: 107085959 nps: 51757350
+#43 final depth: 23 time: 6118 policy: 41 value: -12 nodes: 165187867 nps: 27545083
+#44 final depth: 23 time: 1604 policy: 6 value: -14 nodes: 45988960 nps: 33470858
+#45 final depth: 24 time: 25712 policy: 54 value: 6 nodes: 1332464902 nps: 52760439
