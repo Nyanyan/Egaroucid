@@ -723,10 +723,34 @@ multi thread
 #44 final depth: 23 time: 1676 policy: 6 value: -14 nodes: 33350268 nps: 23321865
 #45 final depth: 24 time: 35235 policy: 54 value: 6 nodes: 963125808 nps: 27670463
 
-2022/02/01 update YBWC
+2022/02/01 update YBWC 32 threads
 #40 final depth: 20 time: 611 policy: 55 value: 38 nodes: 29029273 nps: 57597763
 #41 final depth: 22 time: 1176 policy: 32 value: 0 nodes: 46007133 nps: 46471851
 #42 final depth: 22 time: 2246 policy: 49 value: 6 nodes: 107085959 nps: 51757350
 #43 final depth: 23 time: 6118 policy: 41 value: -12 nodes: 165187867 nps: 27545083
 #44 final depth: 23 time: 1604 policy: 6 value: -14 nodes: 45988960 nps: 33470858
 #45 final depth: 24 time: 25712 policy: 54 value: 6 nodes: 1332464902 nps: 52760439
+
+2022/02/01 simple endth1 = 8
+#40 final depth: 20 time: 597 policy: 55 value: 38 nodes: 29257521 nps: 60449423
+#41 final depth: 22 time: 1289 policy: 32 value: 0 nodes: 66971518 nps: 60064141
+#42 final depth: 22 time: 1886 policy: 49 value: 6 nodes: 108651601 nps: 63169535
+#43 final depth: 23 time: 3385 policy: 41 value: -12 nodes: 161110222 nps: 49817632
+#44 final depth: 23 time: 1516 policy: 6 value: -14 nodes: 59912255 nps: 47249412
+#45 final depth: 24 time: 30272 policy: 54 value: 6 nodes: 1535902195 nps: 51519595
+
+2022/02/01 not use mobility in move ordering
+#40 final depth: 20 time: 645 policy: 55 value: 38 nodes: 30987777 nps: 58138418
+#41 final depth: 22 time: 1025 policy: 32 value: 0 nodes: 29804351 nps: 35651137
+#42 final depth: 22 time: 1336 policy: 49 value: 6 nodes: 59450491 nps: 51921826
+#43 final depth: 23 time: 8880 policy: 41 value: -12 nodes: 301967875 nps: 34467283
+#44 final depth: 23 time: 2456 policy: 6 value: -14 nodes: 81192708 nps: 36705564
+
+2022/02/01 update first_threshold
+#40 final depth: 20 time: 628 policy: 55 value: 38 nodes: 29255463 nps: 55618750
+#41 final depth: 22 time: 1300 policy: 32 value: 0 nodes: 47335300 nps: 42491292
+#42 final depth: 22 time: 2509 policy: 49 value: 6 nodes: 96839164 nps: 41903575
+#43 final depth: 23 time: 6577 policy: 41 value: -12 nodes: 162744313 nps: 25216038
+#44 final depth: 23 time: 1619 policy: 6 value: -14 nodes: 46096532 nps: 33186848
+#45 final depth: 24 time: 26247 policy: 54 value: 6 nodes: 1357207156 nps: 52592697
+#46 final depth: 24 time: 4972 policy: 46 value: -8 nodes: 225397166 nps: 49450892

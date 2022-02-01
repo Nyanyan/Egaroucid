@@ -814,7 +814,7 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
     int g, v = -inf;
     #if USE_MULTI_THREAD
         int i;
-        const int first_threshold = canput / 6 + 1;
+        const int first_threshold = canput / end_first_threshold_div + 1;
         for (i = 0; i < first_threshold; ++i){
             g = -nega_alpha_ordering_final(&nb[i], false, depth - 1, -beta, -alpha, use_mpc, mpct_in, n_nodes);
             alpha = max(alpha, g);
@@ -876,44 +876,8 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
                 ++done_tasks;
             }
         }
-        /*
-        for (i = done_tasks; i < canput; ++i)
-            future_tasks.emplace_back(thread_pool.push(bind(&nega_alpha_ordering_final, &nb[i], false, depth - 1, -beta, -alpha, false, use_mpc, mpct_in, &n_n_nodes[i - first_threshold])));
-        for (i = done_tasks; i < canput; ++i){
-            g = -future_tasks[i - first_threshold].get();
-            alpha = max(alpha, g);
-            v = max(v, g);
-            *n_nodes += n_n_nodes[i - first_threshold];
-        }
-        if (beta <= alpha){
-            #if USE_END_TC
-                if (l < alpha)
-                    transpose_table.reg(b, hash, alpha, u);
-            #endif
-            delete[] nb;
-            delete[] n_n_nodes;
-            return alpha;
-        */
         delete[] nb;
         delete[] n_n_nodes;
-        /*
-        } else{
-            for (idx = 0; idx < canput; ++idx){
-                g = -nega_alpha_ordering_final(&nb[idx], false, depth - 1, -beta, -alpha, false, use_mpc, mpct_in, n_nodes);
-                alpha = max(alpha, g);
-                if (beta <= alpha){
-                    #if USE_END_TC
-                        if (l < alpha)
-                            transpose_table.reg(b, hash, alpha, u);
-                    #endif
-                    delete[] nb;
-                    return alpha;
-                }
-                v = max(v, g);
-            }
-            delete[] nb;
-        }
-        */
     #else
         for (idx = 0; idx < canput; ++idx){
             g = -nega_alpha_ordering_final(&nb[idx], false, depth - 1, -beta, -alpha, use_mpc, mpct_in, n_nodes);
