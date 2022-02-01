@@ -457,14 +457,14 @@ inline int count_last_flip(unsigned long long player, unsigned long long opponen
     if (u >= 2 && u <= 12){
         p = join_d7_line(player, u) & d7_mask[place];
         o = join_d7_line(opponent, u) & d7_mask[place];
-        res += n_flip_pre_calc[p][o][hw_m1 - t];
+        res += pop_count_uchar(flip_pre_calc[p][o][hw_m1 - t] & d7_mask[place]);
     }
 
     u -= t * 2;
     if (u >= -5 && u <= 5){
         p = join_d9_line(player, u) & d9_mask[place];
         o = join_d9_line(opponent, u) & d9_mask[place];
-        res += n_flip_pre_calc[p][o][t];
+        res += pop_count_uchar(flip_pre_calc[p][o][t] & d9_mask[place]);
     }
     return res;
 }

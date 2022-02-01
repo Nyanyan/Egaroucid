@@ -72,6 +72,12 @@ inline int pop_count_ull(unsigned long long x){
     return (int)x;
 }
 
+inline int pop_count_uchar(unsigned char x){
+    x = (x & 0b01010101) + ((x & 0b10101010) >> 1);
+    x = (x & 0b00110011) + ((x & 0b11001100) >> 2);
+    return (x & 0b00001111) + ((x & 11110000) >> 4);
+}
+
 inline unsigned long long mirror_v(unsigned long long x){
     unsigned long long a = x & 0b0101010101010101010101010101010101010101010101010101010101010101ULL;
     unsigned long long b = x & 0b1010101010101010101010101010101010101010101010101010101010101010ULL;
