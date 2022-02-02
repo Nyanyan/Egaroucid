@@ -23,6 +23,7 @@
 #include "joseki.hpp"
 #include "umigame.hpp"
 #include "thread_pool.hpp"
+#include "gui/gui_common.hpp"
 #include "gui/pulldown.hpp"
 #include "gui/graph.hpp"
 #include "gui/menu.hpp"
@@ -93,12 +94,13 @@ bool lang_initialize(string file) {
 Menu create_menu(Texture checkbox,
 	bool *dammy,
 	bool *entry_mode, bool *professional_mode, bool *serious_game,
-	bool *start_game_flag,
+	bool *start_game_flag, bool *analyze_flag,
 	bool *use_ai_flag, bool *human_first, bool *human_second, bool *both_ai,
 	bool *use_hint_flag, bool *normal_hint, bool *human_hint, bool *umigame_hint,
 	bool *use_value_flag,
 	int *ai_level, int *hint_level, int *book_error,
-	bool *start_book_learn_flag) {
+	bool *start_book_learn_flag,
+	bool *output_record_flag, bool *input_record_flag, bool *input_board_flag) {
 	Menu menu;
 	menu_title title;
 	menu_elem menu_e, side_menu;
@@ -119,6 +121,8 @@ Menu create_menu(Texture checkbox,
 
 	menu_e.init_button(language.get("play", "new_game"), start_game_flag);
 	title.push(menu_e);
+	menu_e.init_button(language.get("play", "analyze"), analyze_flag);
+	title.push(menu_e);
 
 	menu.push(title);
 
@@ -136,21 +140,13 @@ Menu create_menu(Texture checkbox,
 	if (!(*serious_game)) {
 		menu_e.init_check(language.get("settings", "hint", "hint"), use_hint_flag, *use_hint_flag);
 	}
-	if (*entry_mode) {
-		*normal_hint = true;
-		*human_hint = false;
-		*umigame_hint = false;
-	}
-	else if (*professional_mode) {
+	if (*professional_mode) {
 		side_menu.init_check(language.get("settings", "hint", "stone_value"), normal_hint, *normal_hint);
 		menu_e.push(side_menu);
 		side_menu.init_check(language.get("settings", "hint", "human_value"), human_hint, *human_hint);
 		menu_e.push(side_menu);
 		side_menu.init_check(language.get("settings", "hint", "umigame_value"), umigame_hint, *umigame_hint);
 		menu_e.push(side_menu);
-	}
-	else if (*serious_game) {
-		*use_hint_flag = false;
 	}
 	if (!(*serious_game)) {
 		title.push(menu_e);
@@ -177,6 +173,18 @@ Menu create_menu(Texture checkbox,
 		title.init(language.get("book", "book"));
 
 		menu_e.init_button(language.get("book", "learn"), start_book_learn_flag);
+		title.push(menu_e);
+
+		menu.push(title);
+
+
+		title.init(language.get("in_out", "in_out"));
+
+		menu_e.init_button(language.get("in_out", "output_record"), output_record_flag);
+		title.push(menu_e);
+		menu_e.init_button(language.get("in_out", "input_record"), input_record_flag);
+		title.push(menu_e);
+		menu_e.init_button(language.get("in_out", "input_board"), input_board_flag);
 		title.push(menu_e);
 
 		menu.push(title);
@@ -258,9 +266,9 @@ inline void create_vacant_lst(board bd) {
 		sort(vacant_lst.begin(), vacant_lst.end(), cmp_vacant);
 }
 
-int find_history_idx(vector<board> history, int history_place) {
+int find_history_idx(vector<history_elem> history, int history_place) {
 	for (int i = 0; i < (int)history.size(); ++i){
-		if (history[i].n - 4 == history_place)
+		if (history[i].b.n - 4 == history_place)
 			return i;
 	}
 	return 0;
@@ -292,9 +300,9 @@ void lang_initialize_failed_draw(Font font, Font small_font, Texture icon, Textu
 	small_font(U"Failed to load language pack\nPlease check the resources directory").draw(right_left, y_center + font.fontSize() * 3, font_color);
 }
 
-void board_draw(Rect board_cells[], board b, bool use_hint_flag, bool normal_hint, bool human_hint, bool umigame_hint,
+void board_draw(Rect board_cells[], board b, int int_mode, bool use_hint_flag, bool normal_hint, bool human_hint, bool umigame_hint,
 	const int hint_state[], const int hint_value[], const int hint_depth[], Font normal_font, Font small_font, Font big_font, Font mini_font,
-	int int_mode, bool before_start_game,
+	bool before_start_game,
 	const int umigame_state[], const umigame_result umigame_value[],
 	const int human_value_state, const int human_value[]) {
 	for (int i = 0; i < hw_m1; ++i) {
@@ -375,7 +383,7 @@ void board_draw(Rect board_cells[], board b, bool use_hint_flag, bool normal_hin
 				}
 			}
 		}
-		if (umigame_hint) {
+		if (umigame_hint && int_mode == 1) {
 			for (int cell = 0; cell < hw2; ++cell) {
 				if (1 & (legal >> cell)) {
 					if (umigame_state[cell] == 2) {
@@ -389,7 +397,7 @@ void board_draw(Rect board_cells[], board b, bool use_hint_flag, bool normal_hin
 				}
 			}
 		}
-		if (human_hint) {
+		if (human_hint && int_mode == 1) {
 			if (human_value_state == 2) {
 				int max_human_value = -inf;
 				for (int cell = 0; cell < hw2; ++cell) {
@@ -598,6 +606,57 @@ void export_setting(int int_mode, int ai_level, int ai_book_accept, int hint_lev
 	}
 }
 
+String str_record(int policy) {
+	return Unicode::Widen(string({ (char)('a' + hw_m1 - policy % hw), (char)('1' + hw_m1 - policy / hw) }));
+}
+
+bool import_record(String record, vector<history_elem>* n_history) {
+	board h_bd;
+	bool flag = true;
+	String record_tmp = U"";
+	if (record.size() % 2 != 0) {
+		flag = false;
+	}
+	else {
+		int y, x;
+		unsigned long long legal;
+		mobility mob;
+		h_bd.reset();
+		h_bd.v = -inf;
+		n_history->emplace_back(history_elem(h_bd, U""));
+		for (int i = 0; i < record.size(); i += 2) {
+			x = (int)record[i] - (int)'a';
+			if (x < 0 || hw <= x) {
+				x = (int)record[i] - (int)'A';
+				if (x < 0 || hw <= x) {
+					flag = false;
+					break;
+				}
+			}
+			y = (int)record[i + 1] - (int)'1';
+			if (y < 0 || hw <= y) {
+				flag = false;
+				break;
+			}
+			y = hw_m1 - y;
+			x = hw_m1 - x;
+			legal = h_bd.mobility_ull();
+			if (1 & (legal >> (y * hw + x))) {
+				calc_flip(&mob, &h_bd, y * hw + x);
+				h_bd.move(&mob);
+				h_bd.check_player();
+			}
+			else {
+				flag = false;
+				break;
+			}
+			h_bd.v = -inf;
+			n_history->emplace_back(history_elem(h_bd, n_history->at(n_history->size() - 1).record + str_record(y * hw + x)));
+		}
+	}
+	return flag;
+}
+
 void Main() {
 	Size window_size = Size(1000, 720);
 	Window::Resize(window_size);
@@ -612,11 +671,12 @@ void Main() {
 	constexpr int mode_size = 3;
 	bool show_mode[mode_size] = {true, false, false};
 	int int_mode = 0;
-	bool start_game_flag;
+	bool start_game_flag = false, analyze_flag = false;
 	bool use_ai_flag = true, human_first = true, human_second = false, both_ai = false;
 	bool use_hint_flag = true, normal_hint = true, human_hint = true, umigame_hint = true;
 	bool use_value_flag = true;
-	bool start_book_learn_flag;
+	bool start_book_learn_flag = false;
+	bool output_record_flag = false, input_record_flag = false, input_board_flag = false;
 	bool texture_loaded = true;
 	Texture icon(U"resources/img/icon.png", TextureDesc::Mipped);
 	Texture logo(U"resources/img/logo.png", TextureDesc::Mipped);
@@ -647,7 +707,7 @@ void Main() {
 
 	board bd;
 	bool board_clicked[hw2];
-	vector<board> history, fork_history;
+	vector<history_elem> history, fork_history;
 	int history_place = 0;
 	bool fork_mode = false;
 
@@ -691,6 +751,9 @@ void Main() {
 	bool show_popup_flag = true;
 	int showing_popup = 0;
 
+	bool analyzing = false;
+	int analyze_idx = 0;
+
 	int use_ai_mode;
 	if (!import_setting(&int_mode, &ai_level, &ai_book_accept, &hint_level,
 		&use_ai_flag, &use_ai_mode,
@@ -718,6 +781,7 @@ void Main() {
 
 
 	while (System::Update()) {
+		/*** terminate ***/
 		if (System::GetUserActions() & UserAction::CloseButtonClicked) {
 			reset_hint(hint_state, hint_future);
 			reset_umigame(umigame_state, umigame_future);
@@ -738,6 +802,9 @@ void Main() {
 				use_hint_flag, normal_hint, human_hint, umigame_hint);
 			System::Exit();
 		}
+		/*** terminate ***/
+
+		/*** initialize ***/
 		if (initializing) {
 			if (lang_initialized == 0) {
 				if (lang_initialize_future.wait_for(chrono::seconds(0)) == future_status::ready) {
@@ -752,12 +819,13 @@ void Main() {
 			else if (lang_initialized == 1) {
 				menu = create_menu(checkbox, &dammy,
 					&show_mode[0], &show_mode[1], &show_mode[2],
-					&start_game_flag,
+					&start_game_flag,&analyze_flag,
 					&use_ai_flag, &human_first, &human_second, &both_ai,
 					&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
 					&use_value_flag,
 					&ai_level, &hint_level, &ai_book_accept,
-					&start_book_learn_flag);
+					&start_book_learn_flag,
+					&output_record_flag, &input_record_flag, &input_board_flag);
 				start_game_button.init(start_game_button_x, start_game_button_y, start_game_button_w, start_game_button_h, start_game_button_r, language.get("button", "start_game"), font30, button_color, button_font_color);
 				how_to_use_button.init(how_to_use_button_x, how_to_use_button_y, how_to_use_button_w, how_to_use_button_h, how_to_use_button_r, language.get("button", "how_to_use"), font30, button_color, button_font_color);
 				lang_initialized = 2;
@@ -771,18 +839,19 @@ void Main() {
 					}
 					menu = create_menu(checkbox, &dammy,
 						&show_mode[0], &show_mode[1], &show_mode[2],
-						&start_game_flag,
+						&start_game_flag, &analyze_flag,
 						&use_ai_flag, &human_first, &human_second, &both_ai,
 						&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
 						&use_value_flag,
 						&ai_level, &hint_level, &ai_book_accept,
-						&start_book_learn_flag);
+						&start_book_learn_flag,
+						&output_record_flag, &input_record_flag, &input_board_flag);
 				}
 				initialize_draw(&initialize_future, &initializing, &initialize_failed, font50, font20, icon, logo, texture_loaded);
 				if (!initializing) {
 					bd.reset();
 					bd.v = -inf;
-					history.emplace_back(bd);
+					history.emplace_back(history_elem(bd, U""));
 					history_place = 0;
 					fork_mode = false;
 					for (int i = 0; i < hw2; ++i) {
@@ -794,7 +863,11 @@ void Main() {
 				lang_initialize_failed_draw(font50, font20, icon, logo);
 			}
 		}
+		/*** initialize ***/
+
+		/*** initialized ***/
 		else {
+			/**** when mode changed **/
 			if (!show_mode[int_mode]) {
 				for (int i = 0; i < mode_size; ++i) {
 					if (show_mode[i]) {
@@ -803,19 +876,23 @@ void Main() {
 				}
 				menu = create_menu(checkbox, &dammy,
 					&show_mode[0], &show_mode[1], &show_mode[2],
-					&start_game_flag,
+					&start_game_flag, &analyze_flag,
 					&use_ai_flag, &human_first, &human_second, &both_ai,
 					&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
 					&use_value_flag,
 					&ai_level, &hint_level, &ai_book_accept,
-					&start_book_learn_flag);
+					&start_book_learn_flag,
+					&output_record_flag, &input_record_flag, &input_board_flag);
 			}
+			/**** when mode changed **/
+
+			/*** menu buttons ***/
 			if (start_game_flag) {
 				cerr << "reset" << endl;
 				bd.reset();
 				bd.v = -inf;
 				history.clear();
-				history.emplace_back(bd);
+				history.emplace_back(history_elem(bd, U""));
 				fork_history.clear();
 				history_place = 0;
 				fork_mode = false;
@@ -826,6 +903,51 @@ void Main() {
 				reset_umigame(umigame_state, umigame_future);
 				reset_human_value(&human_value_state, &human_value_future);
 			}
+			else if (analyze_flag) {
+				analyzing = true;
+				analyze_idx = 0;
+			}
+			else if (output_record_flag) {
+				if (fork_mode) {
+					Clipboard::SetText(fork_history[fork_history.size() - 1].record);
+				}
+				else {
+					Clipboard::SetText(history[history.size() - 1].record);
+				}
+				cerr << "copied record" << endl;
+			}
+			else if (input_record_flag) {
+				String record;
+				if (Clipboard::GetText(record)) {
+					vector<history_elem> n_history;
+					if (import_record(record, &n_history)) {
+						history.clear();
+						fork_history.clear();
+						for (history_elem elem : n_history) {
+							history.emplace_back(elem);
+						}
+						bd = history[history.size() - 1].b;
+						history_place = history.size() - 1;
+						fork_mode = false;
+						before_start_game = true;
+						showing_popup = false;
+						show_popup_flag = true;
+						reset_hint(hint_state, hint_future);
+						reset_umigame(umigame_state, umigame_future);
+						reset_human_value(&human_value_state, &human_value_future);
+					}
+				}
+			}
+			else if (input_board_flag) {
+
+			}
+			/*** menu buttons ***/
+
+			if (analyzing) {
+				if (fork_mode) {
+
+				}
+			}
 			if (!before_start_game) {
 				unsigned long long legal = bd.mobility_ull();
 				for (int cell = 0; cell < hw2; ++cell) {
@@ -834,6 +956,7 @@ void Main() {
 						global_searching = false;
 				}
 				if (not_finished(bd) && (!use_ai_flag || (human_first && bd.p == black) || (human_second && bd.p == white) || fork_mode)) {
+					/*** human moves ***/
 					pair<bool, board> moved_board = move_board(bd, board_clicked);
 					if (moved_board.first) {
 						bd = moved_board.second;
@@ -841,23 +964,26 @@ void Main() {
 						bd.v = -inf;
 						if (fork_mode) {
 							while (fork_history.size()) {
-								if (fork_history[fork_history.size() - 1].n >= bd.n) {
+								if (fork_history[fork_history.size() - 1].b.n >= bd.n) {
 									fork_history.pop_back();
 								}
 								else {
 									break;
 								}
 							}
-							fork_history.emplace_back(bd);
+							fork_history.emplace_back(history_elem(bd, fork_history[fork_history.size() - 1].record + str_record(bd.policy)));
 						}
 						else {
-							history.emplace_back(bd);
+							history.emplace_back(history_elem(bd, history[history.size() - 1].record + str_record(bd.policy)));
 						}
 						history_place = bd.n - 4;
 						reset_hint(hint_state, hint_future);
 						reset_umigame(umigame_state, umigame_future);
 						reset_human_value(&human_value_state, &human_value_future);
 					}
+					/*** human moves ***/
+
+					/*** hints ***/
 					if (not_finished(bd) && use_hint_flag) {
 						if (normal_hint){
 							for (int cell = 0; cell < hw2; ++cell) {
@@ -930,8 +1056,10 @@ void Main() {
 							}
 						}
 					}
+					/*** hints ***/
 				}
-				else if (not_finished(bd) && history[history.size() - 1].n - 4 == history_place) {
+				/*** ai plays ***/
+				else if (not_finished(bd) && history[history.size() - 1].b.n - 4 == history_place) {
 					if (ai_thinking) {
 						if (ai_future.wait_for(chrono::seconds(0)) == future_status::ready) {
 							search_result ai_result = ai_future.get();
@@ -941,7 +1069,7 @@ void Main() {
 							bd.move(&mob);
 							bd.check_player();
 							bd.v = sgn * ai_result.value;
-							history.emplace_back(bd);
+							history.emplace_back(history_elem(bd, history[history.size() - 1].record + str_record(bd.policy)));
 							history_place = bd.n - 4;
 							ai_value = ai_result.value;
 							ai_thinking = false;
@@ -957,6 +1085,7 @@ void Main() {
 						ai_thinking = true;
 					}
 				}
+				/*** ai plays ***/
 			}
 			int former_history_place = history_place;
 			if (showing_popup == 0 && !ai_thinking) {
@@ -965,32 +1094,32 @@ void Main() {
 					if (ai_thinking) {
 						reset_ai(&ai_thinking, &ai_future);
 					}
-					if (fork_mode && history_place > fork_history[fork_history.size() - 1].n - 4) {
+					if (fork_mode && history_place > fork_history[fork_history.size() - 1].b.n - 4) {
 						fork_history.clear();
-						bd = history[find_history_idx(history, history_place)];
+						bd = history[find_history_idx(history, history_place)].b;
 						create_vacant_lst(bd);
 						reset_hint(hint_state, hint_future);
 						reset_umigame(umigame_state, umigame_future);
 						reset_human_value(&human_value_state, &human_value_future);
-						if (history_place == history[history.size() - 1].n - 4) {
+						if (history_place == history[history.size() - 1].b.n - 4) {
 							fork_mode = false;
 						}
 						else {
-							fork_history.emplace_back(bd);
+							fork_history.emplace_back(history_elem(bd, history[history.size() - 1].record + str_record(bd.policy)));
 						}
 					}
-					else if (!fork_mode || (fork_mode && history_place <= fork_history[0].n - 4)) {
+					else if (!fork_mode || (fork_mode && history_place <= fork_history[0].b.n - 4)) {
 						fork_mode = true;
 						fork_history.clear();
-						bd = history[find_history_idx(history, history_place)];
-						fork_history.emplace_back(bd);
+						bd = history[find_history_idx(history, history_place)].b;
+						fork_history.emplace_back(history_elem(bd, history[history.size() - 1].record + str_record(bd.policy)));
 						create_vacant_lst(bd);
 						reset_hint(hint_state, hint_future);
 						reset_umigame(umigame_state, umigame_future);
 						reset_human_value(&human_value_state, &human_value_future);
 					}
 					else if (fork_mode) {
-						bd = fork_history[find_history_idx(fork_history, history_place)];
+						bd = fork_history[find_history_idx(fork_history, history_place)].b;
 						create_vacant_lst(bd);
 						reset_hint(hint_state, hint_future);
 						reset_umigame(umigame_state, umigame_future);
@@ -999,9 +1128,9 @@ void Main() {
 				}
 			}
 			showing_popup = max(0, showing_popup - 1);
-			board_draw(board_cells, bd, use_hint_flag, normal_hint, human_hint, umigame_hint,
+			board_draw(board_cells, bd, int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
 				hint_state, hint_value, hint_depth, normal_hint_font, small_hint_font, font30, mini_hint_font,
-				int_mode, before_start_game,
+				before_start_game,
 				umigame_state, umigame_value,
 				human_value_state, human_value);
 			if (!before_start_game) {
@@ -1015,15 +1144,16 @@ void Main() {
 				start_game_button.draw();
 				how_to_use_button.draw();
 				if (start_game_button.clicked()) {
+					cerr << "start game!" << endl;
 					before_start_game = false;
 				}
 				if (how_to_use_button.clicked()) {
 					System::LaunchBrowser(U"https://www.egaroucid-app.nyanyan.dev/usage/");
 				}
 			}
+			menu.draw();
 		}
-
-		menu.draw();
+		/*** initialized ***/
 	}
 
 }

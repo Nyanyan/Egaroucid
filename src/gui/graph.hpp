@@ -2,6 +2,7 @@
 #include <Siv3D.hpp> // OpenSiv3D v0.6.3
 #include <vector>
 #include "../board.hpp"
+#include "gui_common.hpp"
 
 using namespace std;
 
@@ -28,7 +29,7 @@ private:
 	int adj_x;
 
 public:
-	void draw(vector<board> nodes1, vector<board> nodes2, int place) {
+	void draw(vector<history_elem> nodes1, vector<history_elem> nodes2, int place) {
 		calc_range(nodes1, nodes2);
 		for (int y = 0; y <= y_max - y_min; y += resolution) {
 			int yy = sy + y * dy + adj_y * y / (y_max - y_min);
@@ -50,22 +51,22 @@ public:
 		Circle(sx, sy + size_y, 10).draw(Palette::White);
 	}
 
-	int update_place(vector<board> nodes1, vector<board> nodes2, int place) {
+	int update_place(vector<history_elem> nodes1, vector<history_elem> nodes2, int place) {
 		if (Rect(sx - 30, sy, size_x + 40, size_y).leftPressed()) {
 			int cursor_x = Cursor::Pos().x;
 			int min_err = inf;
 			for (int i = 0; i < (int)nodes1.size(); ++i) {
-				int x = sx + (nodes1[i].n - 4) * dx + (nodes1[i].n - 4) * adj_x / 60;
+				int x = sx + (nodes1[i].b.n - 4) * dx + (nodes1[i].b.n - 4) * adj_x / 60;
 				if (abs(x - cursor_x) < min_err) {
 					min_err = abs(x - cursor_x);
-					place = nodes1[i].n - 4;
+					place = nodes1[i].b.n - 4;
 				}
 			}
 			for (int i = 0; i < (int)nodes2.size(); ++i) {
-				int x = sx + (nodes2[i].n - 4) * dx + (nodes2[i].n - 4) * adj_x / 60;
+				int x = sx + (nodes2[i].b.n - 4) * dx + (nodes2[i].b.n - 4) * adj_x / 60;
 				if (abs(x - cursor_x) < min_err) {
 					min_err = abs(x - cursor_x);
-					place = nodes2[i].n - 4;
+					place = nodes2[i].b.n - 4;
 				}
 			}
 		}
@@ -73,19 +74,19 @@ public:
 	}
 
 private:
-	void calc_range(vector<board> nodes1, vector<board> nodes2) {
+	void calc_range(vector<history_elem> nodes1, vector<history_elem> nodes2) {
 		y_min = 1000;
 		y_max = -1000;
-		for (const board& b : nodes1) {
-			if (b.v != -inf) {
-				y_min = min(y_min, b.v);
-				y_max = max(y_max, b.v);
+		for (const history_elem& b : nodes1) {
+			if (b.b.v != -inf) {
+				y_min = min(y_min, b.b.v);
+				y_max = max(y_max, b.b.v);
 			}
 		}
-		for (const board& b : nodes2) {
-			if (b.v != -inf) {
-				y_min = min(y_min, b.v);
-				y_max = max(y_max, b.v);
+		for (const history_elem& b : nodes2) {
+			if (b.b.v != -inf) {
+				y_min = min(y_min, b.b.v);
+				y_max = max(y_max, b.b.v);
 			}
 		}
 		y_min = min(y_min, 0);
@@ -98,38 +99,38 @@ private:
 		adj_x = size_x - dx * 60;
 	}
 
-	void draw_graph(vector<board> nodes, Color color, bool show_not_calculated) {
-		for (const board& b : nodes) {
-			if (b.v != -inf) {
-				int yy = sy + (y_max - b.v) * dy + adj_y * (y_max - b.v) / (y_max - y_min);
-				Circle{ sx + (b.n - 4) * dx + (b.n - 4) * adj_x / 60, yy, 4 }.draw(color);
+	void draw_graph(vector<history_elem> nodes, Color color, bool show_not_calculated) {
+		for (const history_elem& b : nodes) {
+			if (b.b.v != -inf) {
+				int yy = sy + (y_max - b.b.v) * dy + adj_y * (y_max - b.b.v) / (y_max - y_min);
+				Circle{ sx + (b.b.n - 4) * dx + (b.b.n - 4) * adj_x / 60, yy, 4 }.draw(color);
 			}
 			else if (show_not_calculated) {
 				int yy = sy + y_max * dy + adj_y * y_max / (y_max - y_min);
-				Circle{ sx + (b.n - 4) * dx + (b.n - 4) * adj_x / 60, yy, 4 }.draw(color);
+				Circle{ sx + (b.b.n - 4) * dx + (b.b.n - 4) * adj_x / 60, yy, 4 }.draw(color);
 			}
 		}
 		int idx1 = 0, idx2 = 0;
 		while (idx2 < (int)nodes.size()) {
 			while (idx1 < (int)nodes.size()) {
-				if (nodes[idx1].v != -inf)
+				if (nodes[idx1].b.v != -inf)
 					break;
 				++idx1;
 			}
 			if (idx1 >= (int)nodes.size())
 				break;
-			int xx1 = sx + (nodes[idx1].n - 4) * dx + (nodes[idx1].n - 4) * adj_x / 60;
-			int yy1 = sy + (y_max - nodes[idx1].v) * dy + adj_y * (y_max - nodes[idx1].v) / (y_max - y_min);
+			int xx1 = sx + (nodes[idx1].b.n - 4) * dx + (nodes[idx1].b.n - 4) * adj_x / 60;
+			int yy1 = sy + (y_max - nodes[idx1].b.v) * dy + adj_y * (y_max - nodes[idx1].b.v) / (y_max - y_min);
 			idx2 = idx1 + 1;
 			while (idx2 < (int)nodes.size()) {
-				if (nodes[idx2].v != -inf)
+				if (nodes[idx2].b.v != -inf)
 					break;
 				++idx2;
 			}
 			if (idx2 >= (int)nodes.size())
 				break;
-			int xx2 = sx + (nodes[idx2].n - 4) * dx + (nodes[idx2].n - 4) * adj_x / 60;
-			int yy2 = sy + (y_max - nodes[idx2].v) * dy + adj_y * (y_max - nodes[idx2].v) / (y_max - y_min);
+			int xx2 = sx + (nodes[idx2].b.n - 4) * dx + (nodes[idx2].b.n - 4) * adj_x / 60;
+			int yy2 = sy + (y_max - nodes[idx2].b.v) * dy + adj_y * (y_max - nodes[idx2].b.v) / (y_max - y_min);
 			Line(xx1, yy1, xx2, yy2).draw(4, color);
 			idx1 = idx2;
 		}
