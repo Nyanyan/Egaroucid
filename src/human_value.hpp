@@ -57,7 +57,7 @@ void calc_all_human_value(board b, int depth, double a, int res[]) {
 			double_res[cell] = -calc_human_value(&b, depth, false, a);
 			b.undo(&mob);
 			max_res = max(max_res, double_res[cell]);
-			cerr << cell << " " << double_res[cell] << endl;
+			//cerr << cell << " " << double_res[cell] << endl;
 		}
 	}
 	for (cell = 0; cell < hw2; ++cell) {

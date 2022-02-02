@@ -515,6 +515,89 @@ future<void> get_human_value(board b, int depth, double a, int res[]) {
 	return async(launch::async, calc_all_human_value, b, depth, a, res);
 }
 
+int import_int(ifstream* ifs) {
+	string line;
+	if (!getline(*ifs, line)) {
+		cerr << "setting NOT imported" << endl;
+		return -inf;
+	}
+	try {
+		return stoi(line);
+	}
+	catch (const invalid_argument& ex) {
+		cerr << "setting NOT imported" << endl;
+		return -inf;
+	}
+}
+
+bool import_setting(int *int_mode, int *ai_level, int *ai_book_accept, int *hint_level,
+	bool *use_ai_flag, int *use_ai_mode,
+	bool *use_hint_flag, bool *normal_hint, bool *human_hint, bool *umigame_hint) {
+	ifstream ifs("resources/settings.txt");
+	if (ifs.fail()) {
+		return false;
+	}
+	*int_mode = import_int(&ifs);
+	if (*int_mode == -inf) {
+		return false;
+	}
+	*ai_level = import_int(&ifs);
+	if (*ai_level == -inf) {
+		return false;
+	}
+	*ai_book_accept = import_int(&ifs);
+	if (*ai_book_accept == -inf) {
+		return false;
+	}
+	*hint_level = import_int(&ifs);
+	if (*hint_level == -inf) {
+		return false;
+	}
+	*use_ai_flag = import_int(&ifs);
+	if (*use_ai_flag == -inf) {
+		return false;
+	}
+	*use_ai_mode = import_int(&ifs);
+	if (*use_ai_mode == -inf) {
+		return false;
+	}
+	*use_hint_flag = import_int(&ifs);
+	if (*use_hint_flag == -inf) {
+		return false;
+	}
+	*normal_hint = import_int(&ifs);
+	if (*normal_hint == -inf) {
+		return false;
+	}
+	*human_hint = import_int(&ifs);
+	if (*human_hint == -inf) {
+		return false;
+	}
+	*umigame_hint = import_int(&ifs);
+	if (*umigame_hint == -inf) {
+		return false;
+	}
+	return true;
+}
+
+void export_setting(int int_mode, int ai_level, int ai_book_accept, int hint_level,
+	bool use_ai_flag, int use_ai_mode,
+	bool use_hint_flag, bool normal_hint, bool human_hint, bool umigame_hint) {
+	ofstream ofs("resources/settings.txt");
+	if (!ofs.fail()) {
+		ofs << int_mode << endl;
+		ofs << ai_level << endl;
+		ofs << ai_book_accept << endl;
+		ofs << hint_level << endl;
+		ofs << use_ai_flag << endl;
+		ofs << use_ai_mode << endl;
+		ofs << use_hint_flag << endl;
+		ofs << normal_hint << endl;
+		ofs << human_hint << endl;
+		ofs << umigame_hint << endl;
+	}
+}
+
 void Main() {
 	Size window_size = Size(1000, 720);
 	Window::Resize(window_size);
@@ -599,7 +682,7 @@ void Main() {
 	future<search_result> ai_future;
 	bool ai_thinking = false;
 	int ai_value = 0;
-	int ai_level = 21, ai_book_accept = 8, hint_level = 9;
+	int ai_level = 21, ai_book_accept = 4, hint_level = 9;
 
 	bool before_start_game = true;
 	Button start_game_button;
@@ -608,12 +691,51 @@ void Main() {
 	bool show_popup_flag = true;
 	int showing_popup = 0;
 
+	int use_ai_mode;
+	if (!import_setting(&int_mode, &ai_level, &ai_book_accept, &hint_level,
+		&use_ai_flag, &use_ai_mode,
+		&use_hint_flag, &normal_hint, &human_hint, &umigame_hint)) {
+		cerr << "use default setting" << endl;
+		int_mode = 0;
+		ai_level = 15;
+		ai_book_accept = 2;
+		hint_level = 9;
+		use_ai_flag = true;
+		use_ai_mode = 0;
+		use_hint_flag = true;
+		normal_hint = true;
+		human_hint = false;
+		umigame_hint = false;
+	}
+	for (int i = 0; i < mode_size; ++i) {
+		if (i == int_mode) {
+			show_mode[i] = true;
+		}
+		else {
+			show_mode[i] = false;
+		}
+	}
+
+
 	while (System::Update()) {
 		if (System::GetUserActions() & UserAction::CloseButtonClicked) {
 			reset_hint(hint_state, hint_future);
 			reset_umigame(umigame_state, umigame_future);
 			reset_human_value(&human_value_state, &human_value_future);
 			reset_ai(&ai_thinking, &ai_future);
+			use_ai_mode = 0;
+			if (human_first) {
+				use_ai_mode = 0;
+			}
+			else if (human_second) {
+				use_ai_mode = 1;
+			}
+			else if (both_ai) {
+				use_ai_mode = 2;
+			}
+			export_setting(int_mode, ai_level, ai_book_accept, hint_level,
+				use_ai_flag, use_ai_mode,
+				use_hint_flag, normal_hint, human_hint, umigame_hint);
 			System::Exit();
 		}
 		if (initializing) {
