@@ -645,6 +645,12 @@ bool import_record(String record, vector<history_elem>* n_history) {
 				calc_flip(&mob, &h_bd, y * hw + x);
 				h_bd.move(&mob);
 				h_bd.check_player();
+				if (h_bd.p == vacant) {
+					if (i != record.size() - 1) {
+						flag = false;
+						break;
+					}
+				}
 			}
 			else {
 				flag = false;
@@ -1134,7 +1140,9 @@ void Main() {
 				umigame_state, umigame_value,
 				human_value_state, human_value);
 			if (!before_start_game) {
-				graph.draw(history, fork_history, history_place);
+				if (use_value_flag) {
+					graph.draw(history, fork_history, history_place);
+				}
 				if (bd.p == vacant && !fork_mode && show_popup_flag) {
 					show_popup_flag = show_popup(bd, use_ai_flag, human_first, human_second, both_ai, font50, font30);
 					showing_popup = 10;
