@@ -837,7 +837,7 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
         int done_tasks = first_threshold;
         for (i = first_threshold; i < canput; ++i)
             n_n_nodes[i - first_threshold] = 0;
-        int next_done_tasks;
+        int next_done_tasks, additional_done_tasks;
         while (done_tasks < canput){
             next_done_tasks = canput;
             future_tasks.clear();
@@ -847,6 +847,13 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
                     break;
                 }
                 future_tasks.emplace_back(thread_pool.push(bind(&nega_alpha_ordering_final, &nb[i], false, depth - 1, -beta, -alpha, use_mpc, mpct_in, &n_n_nodes[i - first_threshold])));
+            }
+            additional_done_tasks = 0;
+            if (next_done_tasks < canput){
+                g = -nega_alpha_ordering_final(&nb[next_done_tasks], false, depth - 1, -beta, -alpha,  use_mpc, mpct_in, n_nodes);
+                alpha = max(alpha, g);
+                v = max(v, g);
+                additional_done_tasks = 1;
             }
             for (i = done_tasks; i < next_done_tasks; ++i){
                 g = -future_tasks[i - done_tasks].get();
@@ -863,22 +870,7 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
                 delete[] n_n_nodes;
                 return alpha;
             }
-            done_tasks = next_done_tasks;
-            if (done_tasks < canput){
-                g = -nega_alpha_ordering_final(&nb[done_tasks], false, depth - 1, -beta, -alpha,  use_mpc, mpct_in, n_nodes);
-                alpha = max(alpha, g);
-                if (beta <= alpha){
-                    #if USE_END_TC
-                        if (l < alpha)
-                            transpose_table.reg(b, hash, alpha, u);
-                    #endif
-                    delete[] nb;
-                    delete[] n_n_nodes;
-                    return alpha;
-                }
-                v = max(v, g);
-                ++done_tasks;
-            }
+            done_tasks = next_done_tasks + additional_done_tasks;
         }
         delete[] nb;
         delete[] n_n_nodes;
