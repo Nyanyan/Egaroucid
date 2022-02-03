@@ -46,10 +46,10 @@ using namespace std;
 #define y_center 360
 
 constexpr Color font_color = Palette::White;;
-constexpr int board_size = 480;
-constexpr int board_sx = left_left, board_sy = y_center - board_size / 2, board_cell_size = board_size / hw, board_cell_frame_width = 2, board_frame_width = 7;
+constexpr int board_size = 480, board_coord_size = 30;
+constexpr int board_sx = left_left + board_coord_size, board_sy = y_center - board_size / 2, board_cell_size = board_size / hw, board_cell_frame_width = 2, board_frame_width = 7;
 constexpr int stone_size = 25, legal_size = 5;
-constexpr int graph_sx = 575, graph_sy = 245, graph_width = 415, graph_height = 345, graph_resolution = 10, graph_font_size = 15;
+constexpr int graph_sx = 585, graph_sy = 245, graph_width = 400, graph_height = 345, graph_resolution = 10, graph_font_size = 15;
 constexpr Color green = Color(36, 153, 114, 100);
 constexpr int start_game_how_to_use_width = 200, start_game_how_to_use_height = 50;
 constexpr int start_game_button_x = right_center - start_game_how_to_use_width / 2,
@@ -221,11 +221,11 @@ cell_value hint_search(board b, int level, int policy) {
 		res.depth = search_book_define;
 	}
 	else if (hw2 - b.n <= end_depth) {
-		res.value = -endsearch_value(b, tim(), use_mpc, mpct).value;
+		res.value = -endsearch_value_nomemo(b, tim(), use_mpc, mpct).value;
 		res.depth = use_mpc ? hw2 - b.n : search_final_define;
 	}
 	else {
-		res.value = -midsearch_value(b, tim(), depth, use_mpc, mpct).value;
+		res.value = -midsearch_value_nomemo(b, tim(), depth, use_mpc, mpct).value;
 		res.depth = depth;
 	}
 	return res;
@@ -233,23 +233,21 @@ cell_value hint_search(board b, int level, int policy) {
 
 cell_value analyze_search(board b, int level) {
 	cell_value res;
-	search_result res_search = ai(b, level, 0);
-	res.value = res_search.value;
 	int depth, end_depth;
 	bool use_mpc;
 	double mpct;
 	get_level(level, b.n - 4, &depth, &end_depth, &use_mpc, &mpct);
-	res.depth = depth;
-	if (hw2 - b.n - 1 <= end_depth) {
-		if (use_mpc) {
-			res.depth = hw2 - b.n;
-		}
-		else {
-			res.depth = search_final_define;
-		}
-	}
-	else if (res_search.depth == -1) {
+	res.value = book.get(&b) * (b.p ? 1 : -1);
+	if (abs(res.value) != inf) {
 		res.depth = search_book_define;
+	}
+	else if (hw2 - b.n <= end_depth) {
+		res.value = endsearch_value_memo(b, tim(), use_mpc, mpct).value * (b.p ? -1 : 1);
+		res.depth = use_mpc ? hw2 - b.n : search_final_define;
+	}
+	else {
+		res.value = midsearch_value_memo(b, tim(), depth, use_mpc, mpct).value * (b.p ? -1 : 1);
+		res.depth = depth;
 	}
 	return res;
 }
@@ -301,10 +299,15 @@ void lang_initialize_failed_draw(Font font, Font small_font, Texture icon, Textu
 }
 
 void board_draw(Rect board_cells[], board b, int int_mode, bool use_hint_flag, bool normal_hint, bool human_hint, bool umigame_hint,
-	const int hint_state[], const int hint_value[], const int hint_depth[], Font normal_font, Font small_font, Font big_font, Font mini_font,
+	const int hint_state[], const int hint_value[], const int hint_depth[], Font normal_font, Font small_font, Font big_font, Font mini_font, Font coord_font, 
 	bool before_start_game,
 	const int umigame_state[], const umigame_result umigame_value[],
 	const int human_value_state, const int human_value[]) {
+	String coord_x = U"abcdefgh";
+	for (int i = 0; i < hw; ++i) {
+		coord_font(i + 1).draw(Arg::center(board_sx - board_coord_size, board_sy + board_cell_size * i + board_cell_size / 2), font_color);
+		coord_font(coord_x[i]).draw(Arg::center(board_sx + board_cell_size * i + board_cell_size / 2, board_sy - board_coord_size), font_color);
+	}
 	for (int i = 0; i < hw_m1; ++i) {
 		Line(board_sx + board_cell_size * (i + 1), board_sy, board_sx + board_cell_size * (i + 1), board_sy + board_cell_size * hw).draw(board_cell_frame_width, Palette::Black);
 		Line(board_sx, board_sy + board_cell_size * (i + 1), board_sx + board_cell_size * hw, board_sy + board_cell_size * (i + 1)).draw(board_cell_frame_width, Palette::Black);
@@ -703,6 +706,7 @@ void Main() {
 	graph.resolution = graph_resolution;
 	graph.font = graph_font;
 	graph.font_size = graph_font_size;
+	Font board_coord_font(board_coord_size);
 	Font font50(50);
 	Font font30(30);
 	Font font20(20);
@@ -759,6 +763,8 @@ void Main() {
 
 	bool analyzing = false;
 	int analyze_idx = 0;
+	future<cell_value> analyze_future;
+	bool analyze_state = false;
 
 	int use_ai_mode;
 	if (!import_setting(&int_mode, &ai_level, &ai_book_accept, &hint_level,
@@ -911,7 +917,11 @@ void Main() {
 			}
 			else if (analyze_flag) {
 				analyzing = true;
+				analyze_state = false;
 				analyze_idx = 0;
+				reset_hint(hint_state, hint_future);
+				reset_umigame(umigame_state, umigame_future);
+				reset_human_value(&human_value_state, &human_value_future);
 			}
 			else if (output_record_flag) {
 				if (fork_mode) {
@@ -949,17 +959,61 @@ void Main() {
 			}
 			/*** menu buttons ***/
 
+			/*** analyzing ***/
 			if (analyzing) {
 				if (fork_mode) {
-
+					if (analyze_idx == (int)fork_history.size()) {
+						analyzing = false;
+					}
+					else {
+						bd = fork_history[analyze_idx].b;
+						history_place = fork_history[analyze_idx].b.n - 4;
+						if (!analyze_state) {
+							create_vacant_lst(bd);
+							analyze_future = async(launch::async, analyze_search, fork_history[analyze_idx].b, ai_level);
+							analyze_state = true;
+						}
+						else if (analyze_future.wait_for(chrono::seconds(0)) == future_status::ready) {
+							fork_history[analyze_idx].b.v = analyze_future.get().value;
+							analyze_state = false;
+							++analyze_idx;
+						}
+					}
+				}
+				else {
+					if (analyze_idx == (int)history.size()) {
+						analyzing = false;
+					}
+					else {
+						bd = history[analyze_idx].b;
+						history_place = history[analyze_idx].b.n - 4;
+						if (!analyze_state) {
+							create_vacant_lst(bd);
+							analyze_future = async(launch::async, analyze_search, history[analyze_idx].b, ai_level);
+							analyze_state = true;
+						}
+						else if (analyze_future.wait_for(chrono::seconds(0)) == future_status::ready) {
+							history[analyze_idx].b.v = analyze_future.get().value;
+							analyze_state = false;
+							++analyze_idx;
+						}
+					}
 				}
 			}
+			/*** analyzing ***/
+
 			if (!before_start_game) {
 				unsigned long long legal = bd.mobility_ull();
 				for (int cell = 0; cell < hw2; ++cell) {
-					board_clicked[cell] = board_cells[cell].leftClicked() && !menu.active() && (1 & (legal >> cell)) && (!use_ai_flag || (human_first && bd.p == black) || (human_second && bd.p == white) || fork_mode);
-					if (board_clicked[cell])
-						global_searching = false;
+					board_clicked[cell] = false;
+				}
+				if (!menu.active() && !analyzing && ((!use_ai_flag || (human_first && bd.p == black) || (human_second && bd.p == white) || fork_mode))) {
+					for (int cell = 0; cell < hw2; ++cell) {
+						board_clicked[cell] = board_cells[cell].leftClicked() && (1 & (legal >> cell));
+						if (board_clicked[cell]) {
+							global_searching = false;
+						}
+					}
 				}
 				if (not_finished(bd) && (!use_ai_flag || (human_first && bd.p == black) || (human_second && bd.p == white) || fork_mode)) {
 					/*** human moves ***/
@@ -982,6 +1036,7 @@ void Main() {
 						else {
 							history.emplace_back(history_elem(bd, history[history.size() - 1].record + str_record(bd.policy)));
 						}
+						create_vacant_lst(bd);
 						history_place = bd.n - 4;
 						reset_hint(hint_state, hint_future);
 						reset_umigame(umigame_state, umigame_future);
@@ -990,7 +1045,7 @@ void Main() {
 					/*** human moves ***/
 
 					/*** hints ***/
-					if (not_finished(bd) && use_hint_flag) {
+					if (not_finished(bd) && use_hint_flag && !analyzing) {
 						if (normal_hint){
 							for (int cell = 0; cell < hw2; ++cell) {
 								if ((1 & (legal >> cell)) && hint_state[cell] < hint_level * 2) {
@@ -1135,7 +1190,7 @@ void Main() {
 			}
 			showing_popup = max(0, showing_popup - 1);
 			board_draw(board_cells, bd, int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
-				hint_state, hint_value, hint_depth, normal_hint_font, small_hint_font, font30, mini_hint_font,
+				hint_state, hint_value, hint_depth, normal_hint_font, small_hint_font, font30, mini_hint_font, board_coord_font,
 				before_start_game,
 				umigame_state, umigame_value,
 				human_value_state, human_value);

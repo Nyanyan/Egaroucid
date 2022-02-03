@@ -402,43 +402,35 @@ inline search_result midsearch(board b, long long strt, int max_depth, bool use_
     return res;
 }
 
-inline search_result midsearch_value(board b, long long strt, int max_depth, bool use_mpc, double use_mpct){
-    unsigned long long searched_nodes = 0;
-    int value = nega_scout_nomemo(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct, &searched_nodes);
-    search_result res;
-    res.policy = -1;
-    res.value = value;
-    //cerr << res.value << endl;
-    res.depth = max_depth;
-    res.nps = searched_nodes * 1000 / max(1LL, tim() - strt);
-    return res;
-}
-
-inline search_result midsearch_value_book(board b, long long strt, int max_depth, bool use_mpc, double use_mpct){
-    transpose_table.init_now();
-    transpose_table.init_prev();
-    unsigned long long searched_nodes = 0;
-    int value = mtd(&b, false, max_depth - 1, -hw2, hw2, use_mpc, use_mpct, &searched_nodes);
-    //int value = nega_alpha_ordering_nomemo(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct);
-    swap(transpose_table.now, transpose_table.prev);
-    transpose_table.init_now();
-    value += mtd(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct, &searched_nodes);
-    search_result res;
-    res.policy = -1;
-    res.value = value / 2;
-    //cerr << res.value << endl;
-    res.depth = max_depth;
-    res.nps = searched_nodes * 1000 / max(1LL, tim() - strt);
-    return res;
-}
-
 inline search_result midsearch_value_nomemo(board b, long long strt, int max_depth, bool use_mpc, double use_mpct){
-    //int value = nega_alpha_ordering_nomemo(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct);
     unsigned long long searched_nodes = 0;
     int value = nega_scout_nomemo(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct, &searched_nodes);
     search_result res;
     res.policy = -1;
     res.value = value;
+    //cerr << res.value << endl;
+    res.depth = max_depth;
+    res.nps = searched_nodes * 1000 / max(1LL, tim() - strt);
+    return res;
+}
+
+inline search_result midsearch_value_memo(board b, long long strt, int max_depth, bool use_mpc, double use_mpct){
+    unsigned long long searched_nodes = 0;
+    int value = -inf, former_value = -inf, g;
+    for (int depth = min(16, max(0, max_depth - 5)); depth <= min(hw2 - b.n, max_depth); ++depth){
+        transpose_table.init_now();
+        g = mtd(&b, false, depth, -hw2, hw2, use_mpc, use_mpct, &searched_nodes);
+        former_value = value;
+        value = g;
+        swap(transpose_table.now, transpose_table.prev);
+        cerr << "midsearch depth " << depth << " value " << g << " nodes " << searched_nodes << " time " << tim() - strt << " nps " << searched_nodes * 1000 / max(1LL, tim() - strt) << endl;
+    }
+    if (former_value != -inf)
+        value = (value + former_value) / 2;
+    search_result res;
+    res.policy = -1;
+    res.value = value;
+    //cerr << res.value << endl;
     res.depth = max_depth;
     res.nps = searched_nodes * 1000 / max(1LL, tim() - strt);
     return res;
