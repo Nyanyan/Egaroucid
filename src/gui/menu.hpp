@@ -333,6 +333,11 @@ public:
 			is_open = false;
 	}
 
+	void draw_title() {
+		rect.draw(menu_color);
+		font(str).draw(Arg::topCenter(rect.x + rect.w / 2, rect.y + menu_offset_y), menu_font_color);
+	}
+
 	RectF size() {
 		return font(str).region(Point{ 0, 0 });
 	}
@@ -379,6 +384,13 @@ public:
 		for (menu_title &elem : menu) {
 			elem.draw();
 			is_open = is_open || elem.open();
+		}
+	}
+
+	void draw_title() {
+		is_open = false;
+		for (menu_title& elem : menu) {
+			elem.draw_title();
 		}
 	}
 

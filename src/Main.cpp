@@ -64,7 +64,7 @@ constexpr int how_to_use_button_x = right_center - start_game_how_to_use_width /
 	how_to_use_button_r = 10;
 constexpr Color button_color = Palette::White, button_font_color = Palette::Black;
 constexpr int popup_width = 500, popup_height = 300, popup_r = 20, popup_circle_r = 30;
-constexpr Color popup_color = Palette::White, popup_font_color = Palette::Black, popup_frame_color = Palette::Black;
+constexpr Color popup_color = Palette::White, popup_font_color = Palette::Black, popup_frame_color = Palette::Black, textbox_active_color = Palette::Lightcyan;
 constexpr int popup_output_width = 800, popup_output_height = 600;
 
 struct cell_value {
@@ -516,6 +516,74 @@ bool show_popup(board b, bool use_ai_flag, bool human_first, bool human_second, 
 	return button.clicked();
 }
 
+int output_game_popup(Font big_font, Font mid_font, Font small_font, String* black_player, String* white_player, String* game_memo, bool active_cells[]) {
+	constexpr int sx = x_center - popup_output_width / 2;
+	constexpr int sy = y_center - popup_output_height / 2;
+	constexpr int player_area_width = popup_output_width / 2 - 60;
+	constexpr int memo_area_width = popup_output_width - 80;
+	constexpr int textbox_height = 40;
+	RoundRect(sx, sy, popup_output_width, popup_output_height, popup_r).draw(popup_color);
+
+	big_font(language.get("save_game", "save_game")).draw(Arg::center(x_center, sy + 40), popup_font_color);
+	mid_font(language.get("save_game", "player_name")).draw(Arg::center(x_center, sy + 90), popup_font_color);
+	Circle(x_center - player_area_width - 25, sy + 120 + 20, 16).draw(Palette::Black);
+	Circle(x_center + player_area_width + 25, sy + 120 + 20, 16).draw(Palette::White).drawFrame(2, Palette::Black);
+	Rect black_area{ x_center - player_area_width, sy + 120, player_area_width, textbox_height };
+	Rect white_area{ x_center, sy + 120, player_area_width, textbox_height };
+	mid_font(language.get("save_game", "memo")).draw(Arg::center(x_center, sy + 190), popup_font_color);
+	Rect memo_area{ x_center - memo_area_width / 2, sy + 220, memo_area_width, textbox_height * 6 };
+	const String editingText = TextInput::GetEditingText();
+	if (black_area.leftClicked() || active_cells[0]) {
+		black_area.draw(textbox_active_color).drawFrame(2, popup_frame_color);
+		TextInput::UpdateText(*black_player);
+		small_font(*black_player + U'|' + editingText).draw(black_area.stretched(-4), popup_font_color);
+		active_cells[0] = true;
+		active_cells[1] = false;
+		active_cells[2] = false;
+	}
+	else {
+		black_area.draw(popup_color).drawFrame(2, popup_frame_color);
+		small_font(*black_player).draw(black_area.stretched(-4), popup_font_color);
+	}
+	if (white_area.leftClicked() || active_cells[1]) {
+		white_area.draw(textbox_active_color).drawFrame(2, popup_frame_color);
+		TextInput::UpdateText(*white_player);
+		small_font(*white_player + U'|' + editingText).draw(white_area.stretched(-4), popup_font_color);
+		active_cells[0] = false;
+		active_cells[1] = true;
+		active_cells[2] = false;
+	}
+	else {
+		white_area.draw(popup_color).drawFrame(2, popup_frame_color);
+		small_font(*white_player).draw(white_area.stretched(-4), popup_font_color);
+	}
+	if (memo_area.leftClicked() || active_cells[2]) {
+		memo_area.draw(textbox_active_color).drawFrame(2, popup_frame_color);
+		TextInput::UpdateText(*game_memo);
+		small_font(*game_memo + U'|' + editingText).draw(memo_area.stretched(-4), popup_font_color);
+		active_cells[0] = false;
+		active_cells[1] = false;
+		active_cells[2] = true;
+	}
+	else {
+		memo_area.draw(popup_color).drawFrame(2, popup_frame_color);
+		small_font(*game_memo).draw(memo_area.stretched(-4), popup_font_color);
+	}
+	FrameButton close_button;
+	close_button.init(x_center - 350, sy + 500, 250, 50, 10, 2, language.get("button", "not_save_game"), mid_font, button_color, button_font_color, button_font_color);
+	close_button.draw();
+	FrameButton save_button;
+	save_button.init(x_center + 100, sy + 500, 250, 50, 10, 2, language.get("button", "save_game"), mid_font, button_color, button_font_color, button_font_color);
+	save_button.draw();
+	if (save_button.clicked()) {
+		return 1;
+	}
+	else if (close_button.clicked()) {
+		return 2;
+	}
+	return 0;
+}
+
 void reset_hint(int hint_state[], future<cell_value> hint_future[]) {
 	global_searching = false;
 	for (int i = 0; i < hw2; ++i) {
@@ -777,33 +845,6 @@ pair<bool, board> import_board(String board_str) {
 	return make_pair(flag, bd);
 }
 
-int output_game_popup(Font big_font, Font small_font, String *black_player, String *white_player, String *game_memo) {
-	constexpr int sx = x_center - popup_output_width / 2;
-	constexpr int sy = y_center - popup_output_height / 2;
-	constexpr int player_area_width = popup_output_width / 2 - 30;
-	RoundRect(sx, sy, popup_output_width, popup_output_height, popup_r).draw(popup_color);
-
-	Rect black_area{ sx + 30, sy + 10, player_area_width, 30 };
-	TextInput::UpdateText(*black_player);
-	const String editingText = TextInput::GetEditingText();
-	black_area.draw(popup_color).drawFrame(2, popup_frame_color);
-	small_font(*black_player + U'|' + editingText).draw(black_area.stretched(-20), popup_font_color);
-
-	FrameButton close_button;
-	close_button.init(x_center - 250, y_center + 60, 200, 50, 10, 2, language.get("button", "not_save_game"), small_font, button_color, button_font_color, button_font_color);
-	close_button.draw();
-	FrameButton save_button;
-	save_button.init(x_center + 250, y_center + 60, 200, 50, 10, 2, language.get("button", "save_game"), small_font, button_color, button_font_color, button_font_color);
-	save_button.draw();
-	if (save_button.clicked()) {
-		return 1;
-	}
-	else if (close_button.clicked()) {
-		return 2;
-	}
-	return 0;
-}
-
 bool output_game(history_elem hist, int ai_level, bool use_ai_flag, int use_ai_mode, String black_player, String white_player, String game_memo) {
 	__time64_t now;
 	tm newtime;
@@ -928,6 +969,7 @@ void Main() {
 	graph.font_size = graph_font_size;
 	Font board_coord_font(board_coord_size);
 	Font font50(50);
+	Font font40(40);
 	Font font30(30);
 	Font font20(20);
 	Font font15(15);
@@ -987,6 +1029,7 @@ void Main() {
 
 	bool outputting_game = false;
 	String black_player = U"", white_player = U"", game_memo = U"";
+	bool output_active[3] = { false, false, false };
 
 	bool main_window_active = true;
 
@@ -1464,7 +1507,7 @@ void Main() {
 
 			/*** output game ***/
 			if (outputting_game) {
-				int output_state = output_game_popup(font50, font30, &black_player, &white_player, &game_memo);
+				int output_state = output_game_popup(font40, font30, font20, &black_player, &white_player, &game_memo, output_active);
 				if (output_state == 1) {
 					if (fork_mode) {
 						output_game(fork_history[find_history_idx(fork_history, history_place)], ai_level, use_ai_flag, use_ai_mode, black_player, white_player, game_memo);
@@ -1473,9 +1516,11 @@ void Main() {
 						output_game(history[find_history_idx(history, history_place)], ai_level, use_ai_flag, use_ai_mode, black_player, white_player, game_memo);
 					}
 					outputting_game = false;
+					main_window_active = true;
 				}
 				else if (output_state == 2) {
 					outputting_game = false;
+					main_window_active = true;
 				}
 			}
 			/*** output game ***/
@@ -1514,7 +1559,33 @@ void Main() {
 				}
 				cerr << "record copied" << endl;
 			}
-			else if (output_game_flag) {
+			else if (output_game_flag && !before_start_game && main_window_active) {
+				if (use_ai_flag) {
+					if (both_ai) {
+						black_player = U"Egaroucid";
+						white_player = U"Egaroucid";
+					}
+					else if (human_first) {
+						if (black_player == U"Egaroucid") {
+							black_player = U"";
+						}
+						white_player = U"Egaroucid";
+					}
+					else if (human_second) {
+						if (white_player == U"Egaroucid") {
+							white_player = U"";
+						}
+						black_player = U"Egaroucid";
+					}
+				}
+				else {
+					if (black_player == U"Egaroucid") {
+						black_player = U"";
+					}
+					if (white_player == U"Egaroucid") {
+						white_player = U"";
+					}
+				}
 				outputting_game = true;
 				main_window_active = false;
 			}
