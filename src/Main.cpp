@@ -330,6 +330,12 @@ void lang_initialize_failed_draw(Font font, Font small_font, Texture icon, Textu
 	small_font(U"Failed to load language pack\nPlease check the resources directory").draw(right_left, y_center + font.fontSize() * 3, font_color);
 }
 
+void closing_draw(Font font, Font small_font, Texture icon, Texture logo, bool texture_loaded) {
+	icon.scaled((double)(left_right - left_left) / icon.width()).draw(left_left, y_center - (left_right - left_left) / 2);
+	logo.scaled((double)(left_right - left_left) * 0.8 / logo.width()).draw(right_left, y_center - 30);
+	font(language.get("closing")).draw(right_left, y_center + font.fontSize(), font_color);
+}
+
 void board_draw(Rect board_cells[], board b, int int_mode, bool use_hint_flag, bool normal_hint, bool human_hint, bool umigame_hint,
 	const int hint_state[], const int hint_value[], const int hint_depth[], Font normal_font, Font small_font, Font big_font, Font mini_font, Font coord_font, 
 	bool before_start_game,
@@ -712,6 +718,27 @@ bool import_record(String record, vector<history_elem>* n_history) {
 	return flag;
 }
 
+bool close_app(int hint_state[], future<cell_value> hint_future[],
+	int umigame_state[], future<umigame_result> umigame_future[],
+	int* human_value_state, future<void>* human_value_future,
+	bool* ai_thinking, future<search_result>* ai_future,
+	int int_mode, int ai_level, int ai_book_accept, int hint_level,
+	bool use_ai_flag, int use_ai_mode,
+	bool use_hint_flag, bool normal_hint, bool human_hint, bool umigame_hint,
+	bool show_end_popup,
+	int n_thread_idx) {
+	reset_hint(hint_state, hint_future);
+	reset_umigame(umigame_state, umigame_future);
+	reset_human_value(human_value_state, human_value_future);
+	reset_ai(ai_thinking, ai_future);
+	export_setting(int_mode, ai_level, ai_book_accept, hint_level,
+		use_ai_flag, use_ai_mode,
+		use_hint_flag, normal_hint, human_hint, umigame_hint,
+		show_end_popup,
+		n_thread_idx);
+	return true;
+}
+
 void Main() {
 	Size window_size = Size(1000, 720);
 	Window::Resize(window_size);
@@ -816,6 +843,11 @@ void Main() {
 	future<cell_value> analyze_future;
 	bool analyze_state = false;
 
+	int starting_game = 0;
+
+	bool closing = false;
+	future<bool> closing_future;
+
 	int use_ai_mode;
 	if (!import_setting(&int_mode, &ai_level, &ai_book_accept, &hint_level,
 		&use_ai_flag, &use_ai_mode,
@@ -857,10 +889,7 @@ void Main() {
 	while (System::Update()) {
 		/*** terminate ***/
 		if (System::GetUserActions() & UserAction::CloseButtonClicked) {
-			reset_hint(hint_state, hint_future);
-			reset_umigame(umigame_state, umigame_future);
-			reset_human_value(&human_value_state, &human_value_future);
-			reset_ai(&ai_thinking, &ai_future);
+			closing = true;
 			use_ai_mode = 0;
 			if (human_first) {
 				use_ai_mode = 0;
@@ -871,12 +900,22 @@ void Main() {
 			else if (both_ai) {
 				use_ai_mode = 2;
 			}
-			export_setting(int_mode, ai_level, ai_book_accept, hint_level,
+			closing_future = async(launch::async, close_app, hint_state, hint_future,
+				umigame_state, umigame_future,
+				&human_value_state, &human_value_future,
+				&ai_thinking, &ai_future,
+				int_mode, ai_level, ai_book_accept, hint_level,
 				use_ai_flag, use_ai_mode,
 				use_hint_flag, normal_hint, human_hint, umigame_hint,
 				show_end_popup,
 				n_thread_idx);
-			System::Exit();
+		}
+		if (closing) {
+			if (closing_future.wait_for(chrono::seconds(0)) == future_status::ready){
+				closing_future.get();
+				System::Exit();
+			}
+			closing_draw(font50, font20, icon, logo, texture_loaded);
 		}
 		/*** terminate ***/
 
@@ -1242,7 +1281,7 @@ void Main() {
 				/*** ai plays ***/
 			}
 			int former_history_place = history_place;
-			if (showing_popup == 0 && !ai_thinking) {
+			if (showing_popup == 0 && !ai_thinking && starting_game == 0) {
 				history_place = graph.update_place(history, fork_history, history_place);
 				if (history_place != former_history_place) {
 					if (ai_thinking) {
@@ -1274,6 +1313,7 @@ void Main() {
 				}
 			}
 			showing_popup = max(0, showing_popup - 1);
+			starting_game = max(0, starting_game - 1);
 			board_draw(board_cells, bd, int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
 				hint_state, hint_value, hint_depth, normal_hint_font, small_hint_font, font30, mini_hint_font, board_coord_font,
 				before_start_game,
@@ -1294,6 +1334,13 @@ void Main() {
 				if (start_game_button.clicked()) {
 					cerr << "start game!" << endl;
 					before_start_game = false;
+					starting_game = 10;
+					if (history.size()) {
+						history_place = history[history.size() - 1].b.n - 4;
+					}
+					else {
+						history_place = 0;
+					}
 				}
 				if (how_to_use_button.clicked()) {
 					System::LaunchBrowser(U"https://www.egaroucid-app.nyanyan.dev/usage/");

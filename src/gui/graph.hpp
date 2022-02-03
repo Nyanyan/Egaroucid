@@ -7,8 +7,8 @@
 using namespace std;
 
 constexpr Color graph_color = Palette::White;
-constexpr Color graph_fork_color = Palette::Purple;
-constexpr Color graph_place_color = Palette::Darkblue;
+constexpr Color graph_fork_color = Palette::Black;
+constexpr Color graph_place_color = Palette::Black;
 
 class Graph {
 public:
@@ -43,7 +43,7 @@ public:
 			font(x).draw(sx + x * dx + adj_x * x / 60 - font(x).region(Point{0, 0}).w, sy - 2 * font_size, graph_color);
 			Line{ sx + x * dx + adj_x * x / 60, sy, sx + x * dx + adj_x * x / 60, sy + size_y }.draw(1, graph_color);
 		}
-		draw_graph(nodes1, graph_color, false);
+		draw_graph(nodes1, graph_color, true);
 		draw_graph(nodes2, graph_fork_color, true);
 		int place_x = sx + place * dx + place * adj_x / 60;
 		Line(place_x, sy, place_x, sy + size_y).draw(3, graph_place_color);
