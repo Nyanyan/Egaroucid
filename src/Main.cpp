@@ -49,7 +49,7 @@ constexpr Color font_color = Palette::White;;
 constexpr int board_size = 480, board_coord_size = 30;
 constexpr int board_sx = left_left + board_coord_size, board_sy = y_center - board_size / 2, board_cell_size = board_size / hw, board_cell_frame_width = 2, board_frame_width = 7;
 constexpr int stone_size = 25, legal_size = 5;
-constexpr int graph_sx = 585, graph_sy = 245, graph_width = 400, graph_height = 345, graph_resolution = 10, graph_font_size = 15;
+constexpr int graph_sx = 585, graph_sy = 330, graph_width = 400, graph_height = 345, graph_resolution = 10, graph_font_size = 15;
 constexpr Color green = Color(36, 153, 114, 100);
 constexpr int start_game_how_to_use_width = 200, start_game_how_to_use_height = 50;
 constexpr int start_game_button_x = right_center - start_game_how_to_use_width / 2,
@@ -66,6 +66,7 @@ constexpr Color button_color = Palette::White, button_font_color = Palette::Blac
 constexpr int popup_width = 500, popup_height = 300, popup_r = 20, popup_circle_r = 30;
 constexpr Color popup_color = Palette::White, popup_font_color = Palette::Black, popup_frame_color = Palette::Black, textbox_active_color = Palette::Lightcyan;
 constexpr int popup_output_width = 800, popup_output_height = 600;
+constexpr int info_sx = 585, info_sy = 50;
 
 struct cell_value {
 	int value;
@@ -913,6 +914,25 @@ bool close_app(int hint_state[], future<cell_value> hint_future[],
 	return true;
 }
 
+void info_draw(board bd, string joseki_name, int ai_level, int hint_level, Font mid_font) {
+	if (bd.p == black) {
+		mid_font(language.get("info", "black")).draw(info_sx, info_sy);
+	}
+	else if (bd.p == white) {
+		mid_font(language.get("info", "white")).draw(info_sx, info_sy);
+	}
+	else if (bd.p == vacant) {
+		mid_font(language.get("info", "game_end")).draw(info_sx, info_sy);
+	}
+	mid_font(language.get("info", "joseki_name") + U": " + Unicode::FromUTF8(joseki_name)).draw(info_sx, info_sy + 40);
+	Circle(info_sx + 20, info_sy + 105, 12).draw(Palette::Black);
+	Circle(info_sx + 20, info_sy + 135, 12).draw(Palette::White);
+	mid_font(pop_count_ull(bd.b)).draw(Arg::leftCenter(info_sx + 40, info_sy + 105));
+	mid_font(pop_count_ull(bd.w)).draw(Arg::leftCenter(info_sx + 40, info_sy + 135));
+	mid_font(language.get("info", "ai") + U": " + language.get("common", "level") + Format(ai_level)).draw(info_sx, info_sy + 155);
+	mid_font(language.get("info", "hint") + U": " + language.get("common", "level") + Format(hint_level)).draw(info_sx, info_sy + 185);
+}
+
 void Main() {
 	Size window_size = Size(1000, 720);
 	Window::Resize(window_size);
@@ -1032,6 +1052,8 @@ void Main() {
 	bool output_active[3] = { false, false, false };
 
 	bool main_window_active = true;
+
+	string joseki_name = "";
 
 	int use_ai_mode;
 	string lang_name;
@@ -1171,6 +1193,7 @@ void Main() {
 					}
 					human_value_state = hint_not_calculated_define;
 					thread_pool.resize(n_threads_num[n_thread_idx]);
+					main_window_active = false;
 				}
 			}
 			else {
@@ -1424,8 +1447,19 @@ void Main() {
 			}
 
 			/*** graph interaction ***/
-			int former_history_place = history_place;
 			if (main_window_active && !ai_thinking) {
+				int former_history_place = history_place;
+				if (KeyLeft.down() || KeyA.down()) {
+					history_place = max(0, history_place - 1);
+				}
+				else if (KeyRight.down() || KeyD.down()) {
+					if (fork_mode) {
+						history_place = min((int)fork_history.size() - 1, history_place + 1);
+					}
+					else {
+						history_place = min((int)history.size() - 1, history_place + 1);
+					}
+				}
 				history_place = graph.update_place(history, fork_history, history_place);
 				if (history_place != former_history_place) {
 					if (ai_thinking) {
@@ -1465,6 +1499,19 @@ void Main() {
 				umigame_state, umigame_value,
 				human_value_state, human_value);
 			/*** board draw ***/
+
+			/*** joseki ***/
+			string new_joseki = joseki.get(bd);
+			if (new_joseki != "") {
+				joseki_name = new_joseki;
+			}
+			/*** joseki ***/
+
+			/*** info draw ***/
+			if (main_window_active) {
+				info_draw(bd, joseki_name, ai_level, hint_level, font30);
+			}
+			/*** info draw ***/
 
 			/*** before and after game ***/
 			if (!before_start_game) {
