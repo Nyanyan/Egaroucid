@@ -102,7 +102,8 @@ Menu create_menu(Texture checkbox,
 	bool *start_book_learn_flag,
 	bool *output_record_flag, bool *input_record_flag, bool *input_board_flag,
 	bool *show_end_popup,
-	bool *thread1, bool* thread2, bool* thread4, bool* thread8, bool* thread16, bool* thread32, bool* thread64, bool* thread128) {
+	bool *thread1, bool* thread2, bool* thread4, bool* thread8, bool* thread16, bool* thread32, bool* thread64, bool* thread128,
+	bool lang_acts[], vector<string> lang_name_vector) {
 	Menu menu;
 	menu_title title;
 	menu_elem menu_e, side_menu;
@@ -221,6 +222,20 @@ Menu create_menu(Texture checkbox,
 		menu.push(title);
 
 	}
+
+	title.init(language.get("display", "display"));
+
+	menu_e.init_check(language.get("display", "end_popup"), show_end_popup, *show_end_popup);
+	title.push(menu_e);
+
+	menu.push(title);
+
+	title.init(U"Language");
+	for (int i = 0; i < (int)lang_name_vector.size(); ++i) {
+		menu_e.init_radio(language_name.get(lang_name_vector[i]), &lang_acts[i], lang_acts[i]);
+		title.push(menu_e);
+	}
+	menu.push(title);
 
 	menu.init(0, 0, menu_font, checkbox);
 	return menu;
@@ -781,6 +796,17 @@ void Main() {
 	bool n_threads[8] = {false, false, true, false, false, false, false, false};
 	int n_threads_num[8] = {1, 2, 4, 8, 16, 32, 64, 128};
 	int n_thread_idx = 2;
+	bool language_acts[100];
+	language_acts[0] = true;
+	for (int i = 1; i < 100; ++i) {
+		language_acts[i] = false;
+	}
+	vector<string> language_names;
+	ifstream ifs("resources/languages/languages.txt");
+	string lang_line;
+	while (getline(ifs, lang_line)) {
+		language_names.emplace_back(lang_line);
+	}
 	Texture icon(U"resources/img/icon.png", TextureDesc::Mipped);
 	Texture logo(U"resources/img/logo.png", TextureDesc::Mipped);
 	Texture checkbox(U"resources/img/checked.png", TextureDesc::Mipped);
@@ -883,28 +909,22 @@ void Main() {
 		umigame_hint = false;
 		show_end_popup = true;
 		n_thread_idx = 2;
-		lang_name = "japanese";
+		lang_name = language_names[0];
 	}
 	for (int i = 0; i < mode_size; ++i) {
-		if (i == int_mode) {
-			show_mode[i] = true;
-		}
-		else {
-			show_mode[i] = false;
-		}
+		show_mode[i] = i == int_mode;
 	}
 	for (int i = 0; i < 8; ++i) {
-		if (i == n_thread_idx) {
-			n_threads[i] = true;
-		}
-		else {
-			n_threads[i] = false;
-		}
+		n_threads[i] = i == n_thread_idx;
+	}
+	for (int i = 0; i < (int)language_names.size(); ++i) {
+		language_acts[i] = lang_name == language_names[i];
 	}
 
 	int lang_initialized = 0;
 	string lang_file = "resources/languages/" + lang_name + ".json";
 	future<bool> lang_initialize_future = async(launch::async, lang_initialize, lang_file);
+	language_name.init();
 
 
 	while (System::Update()) {
@@ -965,7 +985,8 @@ void Main() {
 					&start_book_learn_flag,
 					&output_record_flag, &input_record_flag, &input_board_flag,
 					&show_end_popup,
-					&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7]);
+					&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
+					language_acts, language_names);
 				start_game_button.init(start_game_button_x, start_game_button_y, start_game_button_w, start_game_button_h, start_game_button_r, language.get("button", "start_game"), font30, button_color, button_font_color);
 				how_to_use_button.init(how_to_use_button_x, how_to_use_button_y, how_to_use_button_w, how_to_use_button_h, how_to_use_button_r, language.get("button", "how_to_use"), font30, button_color, button_font_color);
 				lang_initialized = 2;
@@ -987,7 +1008,8 @@ void Main() {
 						&start_book_learn_flag,
 						&output_record_flag, &input_record_flag, &input_board_flag,
 						&show_end_popup,
-						&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7]);
+						&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
+						language_acts, language_names);
 				}
 				initialize_draw(&initialize_future, &initializing, &initialize_failed, font50, font20, icon, logo, texture_loaded);
 				if (!initializing) {
@@ -1031,7 +1053,8 @@ void Main() {
 					&start_book_learn_flag,
 					&output_record_flag, &input_record_flag, &input_board_flag,
 					&show_end_popup,
-					&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7]);
+					&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
+					language_acts, language_names);
 			}
 			/**** when mode changed **/
 
@@ -1106,6 +1129,14 @@ void Main() {
 				thread_pool.resize(n_threads_num[n_thread_idx]);
 			}
 			/*** thread ***/
+
+			/*** language ***/
+			for (int i = 0; i < (int)language_names.size(); ++i) {
+				if (language_acts[i] && language_names[i] != lang_name) {
+					lang_name = language_names[i];
+				}
+			}
+			/*** language ***/
 
 			/*** analyzing ***/
 			if (analyzing) {

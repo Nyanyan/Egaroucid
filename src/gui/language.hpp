@@ -10,17 +10,14 @@ using namespace std;
 class language {
 private:
 	JSON lang;
-	bool ready;
 
 public:
-	bool is_ready() {
-		return ready;
-	}
 
 	bool init(string file) {
+		lang.clear();
 		lang = JSON::Load(Unicode::Widen(file));
 		if (not lang) {
-			cerr << "can't open language.json" << endl;
+			cerr << "can't open `language_name`.json" << endl;
 			return false;
 		}
 		return true;
@@ -52,3 +49,27 @@ public:
 };
 
 language language;
+
+class language_name {
+private:
+	JSON lang;
+
+public:
+	bool init() {
+		lang = JSON::Load(U"resources/languages/languages.json");
+		if (not lang) {
+			cerr << "can't open languages.json" << endl;
+			return false;
+		}
+		return true;
+	}
+
+	String get(string v0) {
+		String v0s = Unicode::Widen(v0);
+		if (lang[v0s].getType() != JSONValueType::String)
+			return U"?";
+		return lang[v0s].getString();
+	}
+};
+
+language_name language_name;
