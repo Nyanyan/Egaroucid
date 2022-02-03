@@ -579,11 +579,21 @@ int import_int(ifstream* ifs) {
 	}
 }
 
+string import_str(ifstream* ifs) {
+	string line;
+	if (!getline(*ifs, line)) {
+		cerr << "setting NOT imported" << endl;
+		return "undefined";
+	}
+	return line;
+}
+
 bool import_setting(int *int_mode, int *ai_level, int *ai_book_accept, int *hint_level,
 	bool *use_ai_flag, int *use_ai_mode,
 	bool *use_hint_flag, bool *normal_hint, bool *human_hint, bool *umigame_hint,
 	bool *show_end_popup,
-	int *n_thread_idx) {
+	int *n_thread_idx,
+	string *lang_name) {
 	ifstream ifs("resources/settings.txt");
 	if (ifs.fail()) {
 		return false;
@@ -636,6 +646,10 @@ bool import_setting(int *int_mode, int *ai_level, int *ai_book_accept, int *hint
 	if (*n_thread_idx == -inf) {
 		return false;
 	}
+	*lang_name = import_str(&ifs);
+	if (*lang_name == "undefined") {
+		return false;
+	}
 	return true;
 }
 
@@ -643,7 +657,8 @@ void export_setting(int int_mode, int ai_level, int ai_book_accept, int hint_lev
 	bool use_ai_flag, int use_ai_mode,
 	bool use_hint_flag, bool normal_hint, bool human_hint, bool umigame_hint,
 	bool show_end_popup,
-	int n_thread_idx) {
+	int n_thread_idx,
+	string lang_name) {
 	ofstream ofs("resources/settings.txt");
 	if (!ofs.fail()) {
 		ofs << int_mode << endl;
@@ -658,6 +673,7 @@ void export_setting(int int_mode, int ai_level, int ai_book_accept, int hint_lev
 		ofs << umigame_hint << endl;
 		ofs << show_end_popup << endl;
 		ofs << n_thread_idx << endl;
+		ofs << lang_name << endl;
 	}
 }
 
@@ -726,7 +742,8 @@ bool close_app(int hint_state[], future<cell_value> hint_future[],
 	bool use_ai_flag, int use_ai_mode,
 	bool use_hint_flag, bool normal_hint, bool human_hint, bool umigame_hint,
 	bool show_end_popup,
-	int n_thread_idx) {
+	int n_thread_idx,
+	string lang_name) {
 	reset_hint(hint_state, hint_future);
 	reset_umigame(umigame_state, umigame_future);
 	reset_human_value(human_value_state, human_value_future);
@@ -735,7 +752,8 @@ bool close_app(int hint_state[], future<cell_value> hint_future[],
 		use_ai_flag, use_ai_mode,
 		use_hint_flag, normal_hint, human_hint, umigame_hint,
 		show_end_popup,
-		n_thread_idx);
+		n_thread_idx,
+		lang_name);
 	return true;
 }
 
@@ -819,10 +837,6 @@ void Main() {
 	future<bool> initialize_future = async(launch::async, ai_init);
 	bool initializing = true, initialize_failed = false;
 
-	int lang_initialized = 0;
-	string lang_file = "resources/languages/japanese.json";
-	future<bool> lang_initialize_future = async(launch::async, lang_initialize, lang_file);
-
 	Menu menu;
 
 	future<search_result> ai_future;
@@ -849,11 +863,13 @@ void Main() {
 	future<bool> closing_future;
 
 	int use_ai_mode;
+	string lang_name;
 	if (!import_setting(&int_mode, &ai_level, &ai_book_accept, &hint_level,
 		&use_ai_flag, &use_ai_mode,
 		&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
 		&show_end_popup,
-		&n_thread_idx)) {
+		&n_thread_idx,
+		&lang_name)) {
 		cerr << "use default setting" << endl;
 		int_mode = 0;
 		ai_level = 15;
@@ -867,6 +883,7 @@ void Main() {
 		umigame_hint = false;
 		show_end_popup = true;
 		n_thread_idx = 2;
+		lang_name = "japanese";
 	}
 	for (int i = 0; i < mode_size; ++i) {
 		if (i == int_mode) {
@@ -884,6 +901,10 @@ void Main() {
 			n_threads[i] = false;
 		}
 	}
+
+	int lang_initialized = 0;
+	string lang_file = "resources/languages/" + lang_name + ".json";
+	future<bool> lang_initialize_future = async(launch::async, lang_initialize, lang_file);
 
 
 	while (System::Update()) {
@@ -908,14 +929,16 @@ void Main() {
 				use_ai_flag, use_ai_mode,
 				use_hint_flag, normal_hint, human_hint, umigame_hint,
 				show_end_popup,
-				n_thread_idx);
+				n_thread_idx,
+				lang_name);
 		}
 		if (closing) {
+			closing_draw(font50, font20, icon, logo, texture_loaded);
 			if (closing_future.wait_for(chrono::seconds(0)) == future_status::ready){
 				closing_future.get();
 				System::Exit();
 			}
-			closing_draw(font50, font20, icon, logo, texture_loaded);
+			continue;
 		}
 		/*** terminate ***/
 
