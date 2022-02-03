@@ -73,6 +73,14 @@ public:
 		return place;
 	}
 
+	bool clicked() {
+		return Rect(sx - 30, sy, size_x + 40, size_y).leftClicked();
+	}
+
+	bool pressed() {
+		return Rect(sx - 30, sy, size_x + 40, size_y).leftPressed();
+	}
+
 private:
 	void calc_range(vector<history_elem> nodes1, vector<history_elem> nodes2) {
 		y_min = 1000;

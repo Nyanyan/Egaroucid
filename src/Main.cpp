@@ -64,7 +64,8 @@ constexpr int how_to_use_button_x = right_center - start_game_how_to_use_width /
 	how_to_use_button_r = 10;
 constexpr Color button_color = Palette::White, button_font_color = Palette::Black;
 constexpr int popup_width = 500, popup_height = 300, popup_r = 20, popup_circle_r = 30;
-constexpr Color popup_color = Palette::White, popup_font_color = Palette::Black;
+constexpr Color popup_color = Palette::White, popup_font_color = Palette::Black, popup_frame_color = Palette::Black;
+constexpr int popup_output_width = 800, popup_output_height = 600;
 
 struct cell_value {
 	int value;
@@ -512,7 +513,7 @@ bool show_popup(board b, bool use_ai_flag, bool human_first, bool human_second, 
 	FrameButton button;
 	button.init(x_center - 100, y_center + 60, 200, 50, 10, 2, language.get("button", "close"), small_font, button_color, button_font_color, button_font_color);
 	button.draw();
-	return !button.clicked();
+	return button.clicked();
 }
 
 void reset_hint(int hint_state[], future<cell_value> hint_future[]) {
@@ -692,6 +693,7 @@ bool import_record(String record, vector<history_elem>* n_history) {
 	board h_bd;
 	bool flag = true;
 	String record_tmp = U"";
+	record = record.replace(U"\r", U"").replace(U"\n", U"");
 	if (record.size() % 2 != 0) {
 		flag = false;
 	}
@@ -724,7 +726,7 @@ bool import_record(String record, vector<history_elem>* n_history) {
 				h_bd.move(&mob);
 				h_bd.check_player();
 				if (h_bd.p == vacant) {
-					if (i != record.size() - 1) {
+					if (i != record.size() - 2) {
 						flag = false;
 						break;
 					}
@@ -773,6 +775,78 @@ pair<bool, board> import_board(String board_str) {
 		bd.translate_from_arr(bd_arr, player);
 	}
 	return make_pair(flag, bd);
+}
+
+int output_game_popup(Font big_font, Font small_font, String *black_player, String *white_player, String *game_memo) {
+	constexpr int sx = x_center - popup_output_width / 2;
+	constexpr int sy = y_center - popup_output_height / 2;
+	constexpr int player_area_width = popup_output_width / 2 - 30;
+	RoundRect(sx, sy, popup_output_width, popup_output_height, popup_r).draw(popup_color);
+
+	Rect black_area{ sx + 30, sy + 10, player_area_width, 30 };
+	TextInput::UpdateText(*black_player);
+	const String editingText = TextInput::GetEditingText();
+	black_area.draw(popup_color).drawFrame(2, popup_frame_color);
+	small_font(*black_player + U'|' + editingText).draw(black_area.stretched(-20), popup_font_color);
+
+	FrameButton close_button;
+	close_button.init(x_center - 250, y_center + 60, 200, 50, 10, 2, language.get("button", "not_save_game"), small_font, button_color, button_font_color, button_font_color);
+	close_button.draw();
+	FrameButton save_button;
+	save_button.init(x_center + 250, y_center + 60, 200, 50, 10, 2, language.get("button", "save_game"), small_font, button_color, button_font_color, button_font_color);
+	save_button.draw();
+	if (save_button.clicked()) {
+		return 1;
+	}
+	else if (close_button.clicked()) {
+		return 2;
+	}
+	return 0;
+}
+
+bool output_game(history_elem hist, int ai_level, bool use_ai_flag, int use_ai_mode, String black_player, String white_player, String game_memo) {
+	__time64_t now;
+	tm newtime;
+	_time64(&now);
+	errno_t err = localtime_s(&newtime, &now);
+	ostringstream sout;
+	string year = to_string(newtime.tm_year + 1900);
+	sout << setfill('0') << setw(2) << newtime.tm_mon + 1;
+	string month = sout.str();
+	sout.str("");
+	sout.clear(stringstream::goodbit);
+	sout << setfill('0') << setw(2) << newtime.tm_mday;
+	string day = sout.str();
+	sout.str("");
+	sout.clear(stringstream::goodbit);
+	sout << setfill('0') << setw(2) << newtime.tm_hour;
+	string hour = sout.str();
+	sout.str("");
+	sout.clear(stringstream::goodbit);
+	sout << setfill('0') << setw(2) << newtime.tm_min;
+	string minute = sout.str();
+	sout.str("");
+	sout.clear(stringstream::goodbit);
+	sout << setfill('0') << setw(2) << newtime.tm_sec;
+	string second = sout.str();
+	string info = year + "_" + month + "_" + day + "_" + hour + "_" + minute + "_" + second;
+	ofstream ofs("records/" + info + ".txt");
+	if (ofs.fail()) {
+		return false;
+	}
+	string result = "?";
+	if (hist.b.p == vacant) {
+		result = to_string(hist.b.count(black));
+	}
+	ofs << hist.record.narrow() << endl;
+	ofs << result << endl;
+	ofs << info << endl;
+	ofs << ai_level << endl;
+	ofs << use_ai_flag << endl;
+	ofs << use_ai_mode << endl;
+	ofs << black_player.narrow() << endl;
+	ofs << white_player.narrow() << endl;
+	ofs << game_memo.narrow() << endl;
 }
 
 bool close_app(int hint_state[], future<cell_value> hint_future[],
@@ -901,7 +975,6 @@ void Main() {
 	Button how_to_use_button;
 
 	bool show_popup_flag = true;
-	int showing_popup = 0;
 	bool show_end_popup = true;
 
 	bool analyzing = false;
@@ -909,10 +982,13 @@ void Main() {
 	future<cell_value> analyze_future;
 	bool analyze_state = false;
 
-	int starting_game = 0;
-
 	bool closing = false;
 	future<bool> closing_future;
+
+	bool outputting_game = false;
+	String black_player = U"", white_player = U"", game_memo = U"";
+
+	bool main_window_active = true;
 
 	int use_ai_mode;
 	string lang_name;
@@ -1108,6 +1184,7 @@ void Main() {
 				if (fork_mode) {
 					if (analyze_idx == (int)fork_history.size()) {
 						analyzing = false;
+						main_window_active = true;
 					}
 					else {
 						bd = fork_history[analyze_idx].b;
@@ -1127,6 +1204,7 @@ void Main() {
 				else {
 					if (analyze_idx == (int)history.size()) {
 						analyzing = false;
+						main_window_active = true;
 					}
 					else {
 						bd = history[analyze_idx].b;
@@ -1151,12 +1229,9 @@ void Main() {
 				for (int cell = 0; cell < hw2; ++cell) {
 					board_clicked[cell] = false;
 				}
-				if (!menu.active() && !analyzing && ((!use_ai_flag || (human_first && bd.p == black) || (human_second && bd.p == white)) || history_place != history[history.size() - 1].b.n - 4)) {
+				if (!menu.active() && main_window_active && ((!use_ai_flag || (human_first && bd.p == black) || (human_second && bd.p == white)) || history_place != history[history.size() - 1].b.n - 4)) {
 					for (int cell = 0; cell < hw2; ++cell) {
 						board_clicked[cell] = board_cells[cell].leftClicked() && (1 & (legal >> cell));
-						if (board_clicked[cell]) {
-							global_searching = false;
-						}
 					}
 				}
 				if (not_finished(bd) && (!use_ai_flag || (human_first && bd.p == black) || (human_second && bd.p == white) || history_place != history[history.size() - 1].b.n - 4)) {
@@ -1201,17 +1276,19 @@ void Main() {
 							for (int cell = 0; cell < hw2; ++cell) {
 								if ((1 & (legal >> cell)) && hint_state[cell] < hint_level * 2) {
 									if (hint_state[cell] % 2 == 0) {
-										if (hint_state[cell] == hint_level * 2 - 2) {
-											hint_future[cell] = async(launch::async, hint_search, bd, hint_level, cell);
+										if (global_searching) {
+											if (hint_state[cell] == hint_level * 2 - 2) {
+												hint_future[cell] = async(launch::async, hint_search, bd, hint_level, cell);
+											}
+											else {
+												hint_future[cell] = async(launch::async, hint_search, bd, hint_state[cell] / 2, cell);
+											}
+											++hint_state[cell];
 										}
-										else {
-											hint_future[cell] = async(launch::async, hint_search, bd, hint_state[cell] / 2, cell);
-										}
-										++hint_state[cell];
 									}
 									else if (hint_future[cell].wait_for(chrono::seconds(0)) == future_status::ready) {
 										cell_value hint_result = hint_future[cell].get();
-										if (global_searching) {
+										if (global_searching && abs(hint_result.value) != inf) {
 											if (hint_state[cell] == 1 || hint_result.depth == search_final_define) {
 												hint_value[cell] = hint_result.value;
 											}
@@ -1220,12 +1297,15 @@ void Main() {
 												hint_value[cell] /= 2;
 											}
 											hint_depth[cell] = hint_result.depth;
-										}
-										if (hint_result.depth == search_final_define || hint_result.depth == search_book_define) {
-											hint_state[cell] = hint_level * 2;
+											if (hint_result.depth == search_final_define || hint_result.depth == search_book_define) {
+												hint_state[cell] = hint_level * 2;
+											}
+											else {
+												++hint_state[cell];
+											}
 										}
 										else {
-											++hint_state[cell];
+											--hint_state[cell];
 										}
 									}
 								}
@@ -1302,7 +1382,7 @@ void Main() {
 
 			/*** graph interaction ***/
 			int former_history_place = history_place;
-			if (showing_popup == 0 && !ai_thinking && starting_game == 0) {
+			if (main_window_active && !ai_thinking) {
 				history_place = graph.update_place(history, fork_history, history_place);
 				if (history_place != former_history_place) {
 					if (ai_thinking) {
@@ -1335,9 +1415,6 @@ void Main() {
 			}
 			/*** graph interaction ***/
 
-			showing_popup = max(0, showing_popup - 1);
-			starting_game = max(0, starting_game - 1);
-
 			/*** board draw ***/
 			board_draw(board_cells, bd, int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
 				hint_state, hint_value, hint_depth, normal_hint_font, small_hint_font, font30, mini_hint_font, board_coord_font,
@@ -1352,29 +1429,56 @@ void Main() {
 					graph.draw(history, fork_history, history_place);
 				}
 				if (bd.p == vacant && !fork_mode && show_popup_flag && show_end_popup) {
-					show_popup_flag = show_popup(bd, use_ai_flag, human_first, human_second, both_ai, font50, font30);
-					showing_popup = 10;
+					show_popup_flag = !show_popup(bd, use_ai_flag, human_first, human_second, both_ai, font50, font30);
+					main_window_active = !show_popup_flag;
+					if (main_window_active) {
+						global_searching = true;
+						System::Sleep(100);
+					}
 				}
 			}
 			else {
 				start_game_button.draw();
 				how_to_use_button.draw();
+				main_window_active = false;
 				if (start_game_button.clicked()) {
 					cerr << "start game!" << endl;
 					before_start_game = false;
-					starting_game = 10;
+					main_window_active = true;
 					if (history.size()) {
 						history_place = history[history.size() - 1].b.n - 4;
 					}
 					else {
 						history_place = 0;
 					}
+					if (main_window_active) {
+						global_searching = true;
+						System::Sleep(100);
+					}
 				}
-				if (how_to_use_button.clicked()) {
+				else if (how_to_use_button.clicked()) {
 					System::LaunchBrowser(U"https://www.egaroucid-app.nyanyan.dev/usage/");
 				}
 			}
 			/*** before and after game ***/
+
+			/*** output game ***/
+			if (outputting_game) {
+				int output_state = output_game_popup(font50, font30, &black_player, &white_player, &game_memo);
+				if (output_state == 1) {
+					if (fork_mode) {
+						output_game(fork_history[find_history_idx(fork_history, history_place)], ai_level, use_ai_flag, use_ai_mode, black_player, white_player, game_memo);
+					}
+					else {
+						output_game(history[find_history_idx(history, history_place)], ai_level, use_ai_flag, use_ai_mode, black_player, white_player, game_memo);
+					}
+					outputting_game = false;
+				}
+				else if (output_state == 2) {
+					outputting_game = false;
+				}
+			}
+			/*** output game ***/
 
 			/*** menu buttons ***/
 			if (start_game_flag) {
@@ -1387,7 +1491,6 @@ void Main() {
 				history_place = 0;
 				fork_mode = false;
 				before_start_game = true;
-				showing_popup = false;
 				show_popup_flag = true;
 				reset_hint(hint_state, hint_future);
 				reset_umigame(umigame_state, umigame_future);
@@ -1395,6 +1498,7 @@ void Main() {
 			}
 			else if (analyze_flag) {
 				analyzing = true;
+				main_window_active = false;
 				analyze_state = false;
 				analyze_idx = 0;
 				reset_hint(hint_state, hint_future);
@@ -1411,7 +1515,8 @@ void Main() {
 				cerr << "record copied" << endl;
 			}
 			else if (output_game_flag) {
-
+				outputting_game = true;
+				main_window_active = false;
 			}
 			else if (input_record_flag) {
 				String record;
@@ -1427,11 +1532,11 @@ void Main() {
 						history_place = bd.n - 4;
 						fork_mode = false;
 						before_start_game = true;
-						showing_popup = false;
 						show_popup_flag = true;
 						reset_hint(hint_state, hint_future);
 						reset_umigame(umigame_state, umigame_future);
 						reset_human_value(&human_value_state, &human_value_future);
+						create_vacant_lst(bd);
 					}
 				}
 			}
@@ -1448,11 +1553,11 @@ void Main() {
 						history_place = bd.n - 4;
 						fork_mode = false;
 						before_start_game = true;
-						showing_popup = false;
 						show_popup_flag = true;
 						reset_hint(hint_state, hint_future);
 						reset_umigame(umigame_state, umigame_future);
 						reset_human_value(&human_value_state, &human_value_future);
+						create_vacant_lst(bd);
 					}
 				}
 			}
