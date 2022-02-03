@@ -69,7 +69,7 @@ void calc_all_human_value(board b, int depth, double a, int res[]) {
 	for (cell = 0; cell < hw2; ++cell) {
 		if (1 & (legal >> cell)) {
 			double_res[cell] /= sum_res;
-			res[cell] = max(99, double_res[cell] * 100);
+			res[cell] = min(99, (int)(double_res[cell] * 100));
 		}
 	}
 }
