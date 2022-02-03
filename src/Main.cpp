@@ -100,7 +100,9 @@ Menu create_menu(Texture checkbox,
 	bool *use_value_flag,
 	int *ai_level, int *hint_level, int *book_error,
 	bool *start_book_learn_flag,
-	bool *output_record_flag, bool *input_record_flag, bool *input_board_flag) {
+	bool *output_record_flag, bool *input_record_flag, bool *input_board_flag,
+	bool *show_end_popup,
+	bool *thread1, bool* thread2, bool* thread4, bool* thread8, bool* thread16, bool* thread32, bool* thread64, bool* thread128) {
 	Menu menu;
 	menu_title title;
 	menu_elem menu_e, side_menu;
@@ -139,21 +141,40 @@ Menu create_menu(Texture checkbox,
 
 	if (!(*serious_game)) {
 		menu_e.init_check(language.get("settings", "hint", "hint"), use_hint_flag, *use_hint_flag);
-	}
-	if (*professional_mode) {
-		side_menu.init_check(language.get("settings", "hint", "stone_value"), normal_hint, *normal_hint);
-		menu_e.push(side_menu);
-		side_menu.init_check(language.get("settings", "hint", "human_value"), human_hint, *human_hint);
-		menu_e.push(side_menu);
-		side_menu.init_check(language.get("settings", "hint", "umigame_value"), umigame_hint, *umigame_hint);
-		menu_e.push(side_menu);
-	}
-	if (!(*serious_game)) {
+		if (*professional_mode) {
+			side_menu.init_check(language.get("settings", "hint", "stone_value"), normal_hint, *normal_hint);
+			menu_e.push(side_menu);
+			side_menu.init_check(language.get("settings", "hint", "human_value"), human_hint, *human_hint);
+			menu_e.push(side_menu);
+			side_menu.init_check(language.get("settings", "hint", "umigame_value"), umigame_hint, *umigame_hint);
+			menu_e.push(side_menu);
+		}
 		title.push(menu_e);
 	}
 
-	menu_e.init_check(language.get("settings", "value"), use_value_flag, *use_value_flag);
+	menu_e.init_check(language.get("settings", "graph"), use_value_flag, *use_value_flag);
 	title.push(menu_e);
+
+	if (!(*entry_mode)) {
+		menu_e.init_button(language.get("settings", "thread", "thread"), dammy);
+		side_menu.init_radio(language.get("settings", "thread", "1"), thread1, *thread1);
+		menu_e.push(side_menu);
+		side_menu.init_radio(language.get("settings", "thread", "2"), thread2, *thread2);
+		menu_e.push(side_menu);
+		side_menu.init_radio(language.get("settings", "thread", "4"), thread4, *thread4);
+		menu_e.push(side_menu);
+		side_menu.init_radio(language.get("settings", "thread", "8"), thread8, *thread8);
+		menu_e.push(side_menu);
+		side_menu.init_radio(language.get("settings", "thread", "16"), thread16, *thread16);
+		menu_e.push(side_menu);
+		side_menu.init_radio(language.get("settings", "thread", "32"), thread32, *thread32);
+		menu_e.push(side_menu);
+		side_menu.init_radio(language.get("settings", "thread", "64"), thread64, *thread64);
+		menu_e.push(side_menu);
+		side_menu.init_radio(language.get("settings", "thread", "128"), thread128, *thread128);
+		menu_e.push(side_menu);
+		title.push(menu_e);
+	}
 
 	if (*entry_mode) {
 		menu_e.init_button(language.get("level", "level"), dammy);
@@ -178,6 +199,7 @@ Menu create_menu(Texture checkbox,
 		menu.push(title);
 
 
+
 		title.init(language.get("in_out", "in_out"));
 
 		menu_e.init_button(language.get("in_out", "output_record"), output_record_flag);
@@ -188,6 +210,16 @@ Menu create_menu(Texture checkbox,
 		title.push(menu_e);
 
 		menu.push(title);
+
+
+
+		title.init(language.get("display", "display"));
+
+		menu_e.init_check(language.get("display", "end_popup"), show_end_popup, *show_end_popup);
+		title.push(menu_e);
+
+		menu.push(title);
+
 	}
 
 	menu.init(0, 0, menu_font, checkbox);
@@ -543,7 +575,9 @@ int import_int(ifstream* ifs) {
 
 bool import_setting(int *int_mode, int *ai_level, int *ai_book_accept, int *hint_level,
 	bool *use_ai_flag, int *use_ai_mode,
-	bool *use_hint_flag, bool *normal_hint, bool *human_hint, bool *umigame_hint) {
+	bool *use_hint_flag, bool *normal_hint, bool *human_hint, bool *umigame_hint,
+	bool *show_end_popup,
+	int *n_thread_idx) {
 	ifstream ifs("resources/settings.txt");
 	if (ifs.fail()) {
 		return false;
@@ -588,12 +622,22 @@ bool import_setting(int *int_mode, int *ai_level, int *ai_book_accept, int *hint
 	if (*umigame_hint == -inf) {
 		return false;
 	}
+	*show_end_popup = import_int(&ifs);
+	if (*show_end_popup == -inf) {
+		return false;
+	}
+	*n_thread_idx = import_int(&ifs);
+	if (*n_thread_idx == -inf) {
+		return false;
+	}
 	return true;
 }
 
 void export_setting(int int_mode, int ai_level, int ai_book_accept, int hint_level,
 	bool use_ai_flag, int use_ai_mode,
-	bool use_hint_flag, bool normal_hint, bool human_hint, bool umigame_hint) {
+	bool use_hint_flag, bool normal_hint, bool human_hint, bool umigame_hint,
+	bool show_end_popup,
+	int n_thread_idx) {
 	ofstream ofs("resources/settings.txt");
 	if (!ofs.fail()) {
 		ofs << int_mode << endl;
@@ -606,6 +650,8 @@ void export_setting(int int_mode, int ai_level, int ai_book_accept, int hint_lev
 		ofs << normal_hint << endl;
 		ofs << human_hint << endl;
 		ofs << umigame_hint << endl;
+		ofs << show_end_popup << endl;
+		ofs << n_thread_idx << endl;
 	}
 }
 
@@ -687,6 +733,9 @@ void Main() {
 	bool start_book_learn_flag = false;
 	bool output_record_flag = false, input_record_flag = false, input_board_flag = false;
 	bool texture_loaded = true;
+	bool n_threads[8] = {false, false, true, false, false, false, false, false};
+	int n_threads_num[8] = {1, 2, 4, 8, 16, 32, 64, 128};
+	int n_thread_idx = 2;
 	Texture icon(U"resources/img/icon.png", TextureDesc::Mipped);
 	Texture logo(U"resources/img/logo.png", TextureDesc::Mipped);
 	Texture checkbox(U"resources/img/checked.png", TextureDesc::Mipped);
@@ -760,6 +809,7 @@ void Main() {
 
 	bool show_popup_flag = true;
 	int showing_popup = 0;
+	bool show_end_popup = true;
 
 	bool analyzing = false;
 	int analyze_idx = 0;
@@ -769,7 +819,9 @@ void Main() {
 	int use_ai_mode;
 	if (!import_setting(&int_mode, &ai_level, &ai_book_accept, &hint_level,
 		&use_ai_flag, &use_ai_mode,
-		&use_hint_flag, &normal_hint, &human_hint, &umigame_hint)) {
+		&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
+		&show_end_popup,
+		&n_thread_idx)) {
 		cerr << "use default setting" << endl;
 		int_mode = 0;
 		ai_level = 15;
@@ -781,6 +833,8 @@ void Main() {
 		normal_hint = true;
 		human_hint = false;
 		umigame_hint = false;
+		show_end_popup = true;
+		n_thread_idx = 2;
 	}
 	for (int i = 0; i < mode_size; ++i) {
 		if (i == int_mode) {
@@ -788,6 +842,14 @@ void Main() {
 		}
 		else {
 			show_mode[i] = false;
+		}
+	}
+	for (int i = 0; i < 8; ++i) {
+		if (i == n_thread_idx) {
+			n_threads[i] = true;
+		}
+		else {
+			n_threads[i] = false;
 		}
 	}
 
@@ -811,7 +873,9 @@ void Main() {
 			}
 			export_setting(int_mode, ai_level, ai_book_accept, hint_level,
 				use_ai_flag, use_ai_mode,
-				use_hint_flag, normal_hint, human_hint, umigame_hint);
+				use_hint_flag, normal_hint, human_hint, umigame_hint,
+				show_end_popup,
+				n_thread_idx);
 			System::Exit();
 		}
 		/*** terminate ***/
@@ -837,7 +901,9 @@ void Main() {
 					&use_value_flag,
 					&ai_level, &hint_level, &ai_book_accept,
 					&start_book_learn_flag,
-					&output_record_flag, &input_record_flag, &input_board_flag);
+					&output_record_flag, &input_record_flag, &input_board_flag,
+					&show_end_popup,
+					&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7]);
 				start_game_button.init(start_game_button_x, start_game_button_y, start_game_button_w, start_game_button_h, start_game_button_r, language.get("button", "start_game"), font30, button_color, button_font_color);
 				how_to_use_button.init(how_to_use_button_x, how_to_use_button_y, how_to_use_button_w, how_to_use_button_h, how_to_use_button_r, language.get("button", "how_to_use"), font30, button_color, button_font_color);
 				lang_initialized = 2;
@@ -857,7 +923,9 @@ void Main() {
 						&use_value_flag,
 						&ai_level, &hint_level, &ai_book_accept,
 						&start_book_learn_flag,
-						&output_record_flag, &input_record_flag, &input_board_flag);
+						&output_record_flag, &input_record_flag, &input_board_flag,
+						&show_end_popup,
+						&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7]);
 				}
 				initialize_draw(&initialize_future, &initializing, &initialize_failed, font50, font20, icon, logo, texture_loaded);
 				if (!initializing) {
@@ -869,6 +937,11 @@ void Main() {
 					for (int i = 0; i < hw2; ++i) {
 						hint_state[i] = hint_not_calculated_define;
 					}
+					for (int i = 0; i < hw2; ++i) {
+						umigame_state[i] = hint_not_calculated_define;
+					}
+					human_value_state = hint_not_calculated_define;
+					thread_pool.resize(n_threads_num[n_thread_idx]);
 				}
 			}
 			else {
@@ -894,7 +967,9 @@ void Main() {
 					&use_value_flag,
 					&ai_level, &hint_level, &ai_book_accept,
 					&start_book_learn_flag,
-					&output_record_flag, &input_record_flag, &input_board_flag);
+					&output_record_flag, &input_record_flag, &input_board_flag,
+					&show_end_popup,
+					&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7]);
 			}
 			/**** when mode changed **/
 
@@ -959,6 +1034,17 @@ void Main() {
 			}
 			/*** menu buttons ***/
 
+			/*** thread ***/
+			if (!n_threads[n_thread_idx]) {
+				for (int i = 0; i < 8; ++i) {
+					if (n_threads[i]) {
+						n_thread_idx = i;
+					}
+				}
+				thread_pool.resize(n_threads_num[n_thread_idx]);
+			}
+			/*** thread ***/
+
 			/*** analyzing ***/
 			if (analyzing) {
 				if (fork_mode) {
@@ -1007,7 +1093,7 @@ void Main() {
 				for (int cell = 0; cell < hw2; ++cell) {
 					board_clicked[cell] = false;
 				}
-				if (!menu.active() && !analyzing && ((!use_ai_flag || (human_first && bd.p == black) || (human_second && bd.p == white) || fork_mode))) {
+				if (!menu.active() && !analyzing && ((!use_ai_flag || (human_first && bd.p == black) || (human_second && bd.p == white)) || history_place != history[history.size() - 1].b.n - 4)) {
 					for (int cell = 0; cell < hw2; ++cell) {
 						board_clicked[cell] = board_cells[cell].leftClicked() && (1 & (legal >> cell));
 						if (board_clicked[cell]) {
@@ -1015,14 +1101,15 @@ void Main() {
 						}
 					}
 				}
-				if (not_finished(bd) && (!use_ai_flag || (human_first && bd.p == black) || (human_second && bd.p == white) || fork_mode)) {
+				if (not_finished(bd) && (!use_ai_flag || (human_first && bd.p == black) || (human_second && bd.p == white) || history_place != history[history.size() - 1].b.n - 4)) {
 					/*** human moves ***/
 					pair<bool, board> moved_board = move_board(bd, board_clicked);
 					if (moved_board.first) {
+						bool next_fork_mode = (!fork_mode && history_place != history[history.size() - 1].b.n - 4);
 						bd = moved_board.second;
 						bd.check_player();
 						bd.v = -inf;
-						if (fork_mode) {
+						if (fork_mode || next_fork_mode) {
 							while (fork_history.size()) {
 								if (fork_history[fork_history.size() - 1].b.n >= bd.n) {
 									fork_history.pop_back();
@@ -1031,7 +1118,13 @@ void Main() {
 									break;
 								}
 							}
-							fork_history.emplace_back(history_elem(bd, fork_history[fork_history.size() - 1].record + str_record(bd.policy)));
+							if (!next_fork_mode) {
+								fork_history.emplace_back(history_elem(bd, fork_history[fork_history.size() - 1].record + str_record(bd.policy)));
+							}
+							else {
+								fork_history.emplace_back(history_elem(bd, history[history_place].record + str_record(bd.policy)));
+								fork_mode = true;
+							}
 						}
 						else {
 							history.emplace_back(history_elem(bd, history[history.size() - 1].record + str_record(bd.policy)));
@@ -1155,31 +1248,23 @@ void Main() {
 					if (ai_thinking) {
 						reset_ai(&ai_thinking, &ai_future);
 					}
-					if (fork_mode && history_place > fork_history[fork_history.size() - 1].b.n - 4) {
-						fork_history.clear();
-						bd = history[find_history_idx(history, history_place)].b;
-						create_vacant_lst(bd);
-						reset_hint(hint_state, hint_future);
-						reset_umigame(umigame_state, umigame_future);
-						reset_human_value(&human_value_state, &human_value_future);
-						if (history_place == history[history.size() - 1].b.n - 4) {
+					if (fork_history.size()) {
+						if (history_place > fork_history[fork_history.size() - 1].b.n - 4) {
+							history_place = fork_history[fork_history.size() - 1].b.n - 4;
+						}
+						if (history_place < fork_history[0].b.n - 4) {
 							fork_mode = false;
 						}
-						else {
-							fork_history.emplace_back(history_elem(bd, history[history.size() - 1].record + str_record(bd.policy)));
-						}
 					}
-					else if (!fork_mode || (fork_mode && history_place <= fork_history[0].b.n - 4)) {
-						fork_mode = true;
-						fork_history.clear();
+					if (!fork_mode) {
 						bd = history[find_history_idx(history, history_place)].b;
-						fork_history.emplace_back(history_elem(bd, history[history.size() - 1].record + str_record(bd.policy)));
 						create_vacant_lst(bd);
+						fork_history.clear();
 						reset_hint(hint_state, hint_future);
 						reset_umigame(umigame_state, umigame_future);
 						reset_human_value(&human_value_state, &human_value_future);
 					}
-					else if (fork_mode) {
+					else {
 						bd = fork_history[find_history_idx(fork_history, history_place)].b;
 						create_vacant_lst(bd);
 						reset_hint(hint_state, hint_future);
@@ -1198,7 +1283,7 @@ void Main() {
 				if (use_value_flag) {
 					graph.draw(history, fork_history, history_place);
 				}
-				if (bd.p == vacant && !fork_mode && show_popup_flag) {
+				if (bd.p == vacant && !fork_mode && show_popup_flag && show_end_popup) {
 					show_popup_flag = show_popup(bd, use_ai_flag, human_first, human_second, both_ai, font50, font30);
 					showing_popup = 10;
 				}
