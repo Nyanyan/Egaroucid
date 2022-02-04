@@ -1086,3 +1086,14 @@ normal flip
     final depth: 25 time: 3295 policy: 49 value: 4 nodes: 157102643 nps: 48117195
 #48 pre search mpct 0.5 time 136 policy 41 value 10 nodes 366392 nps 2655014
     final depth: 25 time: 20748 policy: 18 value: 28 nodes: 962284986 nps: 46687932
+
+2022/02/05 use negascout
+#40 final depth: 20 time: 690 policy: 55 value: 38 nodes: 21677228 nps: 50178768
+#41 final depth: 22 time: 3100 policy: 40 value: 2 nodes: 84305916 nps: 30304067
+#42 final depth: 22 time: 3318 policy: 49 value: 6 nodes: 100213859 nps: 32109535
+#43 final depth: 23 time: 3060 policy: 41 value: -12 nodes: 94639679 nps: 34351970
+#44 final depth: 23 time: 1358 policy: 52 value: -14 nodes: 28078493 nps: 33667257
+#45 final depth: 24 time: 24651 policy: 54 value: 6 nodes: 1191432972 nps: 52070843
+#46 final depth: 24 time: 7461 policy: 46 value: -8 nodes: 326517908 nps: 47218786
+#47 final depth: 25 time: 2987 policy: 49 value: 4 nodes: 122090086 nps: 45018468
+#48 final depth: 25 time: 31564 policy: 18 value: 28 nodes: 1547848687 nps: 50576679
