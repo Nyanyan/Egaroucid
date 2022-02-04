@@ -1048,8 +1048,8 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
     long long final_strt = tim();
     searched_nodes = 0;
     if (nb[0].second.n < hw2 - 5){
-        double pre_search_max_mpct = use_mpc ? min(use_mpct - 0.2, 0.7) : 0.7;
-        for (double pre_search_mpct = 0.2; pre_search_mpct < pre_search_max_mpct; pre_search_mpct += 0.4){
+        double pre_search_max_mpct = use_mpc ? min(use_mpct, 0.7) : 0.8;
+        for (double pre_search_mpct = 0.3; pre_search_mpct < pre_search_max_mpct; pre_search_mpct += 0.4){
             alpha = -hw2;
             beta = hw2;
             for (i = 0; i < canput; ++i){
