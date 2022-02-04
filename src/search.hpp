@@ -17,6 +17,7 @@ using namespace std;
 #define cache_hit 10000
 #define cache_now 10000
 #define cache_both 1000
+#define cache_low 100
 #define parity_vacant_bonus 5
 #define canput_bonus 10
 #define w_former_search 20
@@ -89,6 +90,7 @@ const int mpcd[41] = {
 #endif
 unsigned long long can_be_flipped[hw2];
 vector<int> vacant_lst;
+bool search_completed = false;
 
 struct search_result{
     int policy;

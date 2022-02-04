@@ -696,10 +696,16 @@ int nega_alpha_ordering_simple_final(board *b, bool skipped, const int depth, in
     #endif
     #if USE_END_MPC
         if (mpc_min_depth_final <= depth && depth <= mpc_max_depth_final && use_mpc){
-            if (mpc_higher_final(b, skipped, depth, beta, mpct_in, n_nodes))
+            if (mpc_higher_final(b, skipped, depth, beta, mpct_in, n_nodes)){
+                if (l < beta)
+                    transpose_table.reg(b, hash, beta, u);
                 return beta;
-            if (mpc_lower_final(b, skipped, depth, alpha, mpct_in, n_nodes))
+            }
+            if (mpc_lower_final(b, skipped, depth, alpha, mpct_in, n_nodes)){
+                if (alpha < u)
+                    transpose_table.reg(b, hash, l, alpha);
                 return alpha;
+            }
         }
     #endif
     unsigned long long legal = b->mobility_ull();
@@ -782,10 +788,16 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
     #endif
     #if USE_END_MPC
         if (mpc_min_depth_final <= depth && depth <= mpc_max_depth_final && use_mpc){
-            if (mpc_higher_final(b, skipped, depth, beta, mpct_in, n_nodes))
+            if (mpc_higher_final(b, skipped, depth, beta, mpct_in, n_nodes)){
+                if (l < beta)
+                    transpose_table.reg(b, hash, beta, u);
                 return beta;
-            if (mpc_lower_final(b, skipped, depth, alpha, mpct_in, n_nodes))
+            }
+            if (mpc_lower_final(b, skipped, depth, alpha, mpct_in, n_nodes)){
+                if (alpha < u)
+                    transpose_table.reg(b, hash, l, alpha);
                 return alpha;
+            }
         }
     #endif
     unsigned long long legal = b->mobility_ull();
@@ -1034,7 +1046,6 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
         }
     }
     int canput = nb.size();
-    transpose_table.init_now();
     if (canput >= 2)
         sort(nb.begin(), nb.end(), move_ordering_sort);
     int policy = -1;
@@ -1044,47 +1055,54 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
     transpose_table.hash_get = 0;
     transpose_table.hash_reg = 0;
     int max_depth = hw2 - b.n;
-    transpose_table.init_now();
     long long final_strt = tim();
     searched_nodes = 0;
     if (nb[0].second.n < hw2 - 5){
         int l, u;
-        transpose_table.get_prev(&b, b.hash() & search_hash_mask, &l, &u);
+        if (search_completed)
+            transpose_table.get_now(&b, b.hash() & search_hash_mask, &l, &u);
+        else{
+            swap(transpose_table.now, transpose_table.prev);
+            transpose_table.init_now();
+            transpose_table.get_prev(&b, b.hash() & search_hash_mask, &l, &u);
+        }
         bool pre_searched = l != -inf || u != inf;
         if (pre_searched){
             for (i = 0; i < canput; ++i){
-                transpose_table.get_prev(&nb[i].second, nb[i].second.hash() & search_hash_mask, &l, &u);
-                if (u != inf)
-                    nb[i].second.v = -u;
-                else if (l != -inf)
-                    nb[i].second.v = max(-hw2, -l - 2);
+                if (search_completed)
+                    transpose_table.get_now(&nb[i].second, nb[i].second.hash() & search_hash_mask, &l, &u);
+                else
+                    transpose_table.get_prev(&nb[i].second, nb[i].second.hash() & search_hash_mask, &l, &u);
+                if (l != -inf)
+                    nb[i].second.v = -l / 2 * 2;
+                else if (u != inf)
+                    nb[i].second.v = -u / 2 * 2;
                 else
                     nb[i].second.v = -hw2;
+                //cerr << nb[i].first << " " << nb[i].second.v << endl;
             }
-            transpose_table.init_now();
             if (canput >= 2)
                 sort(nb.begin(), nb.end(), move_ordering_sort);
             cerr << "pre searched policy " << nb[0].first << " value " << nb[0].second.v << " nodes " << searched_nodes << " nps " << searched_nodes * 1000 / max(1LL, tim() - strt) << endl;
         } else{
-            double pre_search_max_mpct = use_mpc ? min(use_mpct, 0.9) : 0.9;
-            for (double pre_search_mpct = 0.4; pre_search_mpct < pre_search_max_mpct; pre_search_mpct += 0.4){
-                alpha = -hw2;
-                beta = hw2;
-                for (i = 0; i < canput; ++i){
-                    nb[i].second.v = -mtd_final(&nb[i].second, false, max_depth - 1, -beta, min(hw2, -alpha + 4), true, pre_search_mpct, -nb[i].second.v, &searched_nodes);
-                    alpha = max(alpha, nb[i].second.v);
-                }
-                swap(transpose_table.now, transpose_table.prev);
-                transpose_table.init_now();
-                if (canput >= 2)
-                    sort(nb.begin(), nb.end(), move_ordering_sort);
-                cerr << "pre search mpct " << pre_search_mpct << " time " << tim() - strt << " policy " << nb[0].first << " value " << nb[0].second.v << " nodes " << searched_nodes << " nps " << searched_nodes * 1000 / max(1LL, tim() - strt) << endl;
+            double pre_search_mpct = 0.5;
+            alpha = -hw2;
+            beta = hw2;
+            for (i = 0; i < canput; ++i){
+                nb[i].second.v = -mtd_final(&nb[i].second, false, max_depth - 1, -beta, min(hw2, -alpha + 4), true, pre_search_mpct, -nb[i].second.v, &searched_nodes);
+                alpha = max(alpha, nb[i].second.v);
             }
+            swap(transpose_table.now, transpose_table.prev);
+            transpose_table.init_now();
+            if (canput >= 2)
+                sort(nb.begin(), nb.end(), move_ordering_sort);
+            cerr << "pre search mpct " << pre_search_mpct << " time " << tim() - strt << " policy " << nb[0].first << " value " << nb[0].second.v << " nodes " << searched_nodes << " nps " << searched_nodes * 1000 / max(1LL, tim() - strt) << endl;
         }
-        final_strt = tim();
-        searched_nodes = 0;
         alpha = -hw2;
         beta = hw2;
+        final_strt = tim();
+        searched_nodes = 0;
+        /*
         priority_queue<enhanced_mtd> que;
         enhanced_mtd elem;
         for (i = 0; i < canput; ++i){
@@ -1114,27 +1132,30 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
             elem.b.v = g;
             if (elem.l == elem.u){
                 if (alpha < g || tmp_policy == -1){
+                    transpose_table.reg(&elem.b, elem.b.hash() & search_hash_mask, -g, -g);
                     tmp_policy = elem.policy;
                     alpha = g;
                 }
             } else
                 que.push(elem);
         }
-        /*
+        */
         for (i = 0; i < canput; ++i){
             if (i == 0)
                 g = -mtd_final(&nb[i].second, false, max_depth - 1, -beta, -alpha, use_mpc, use_mpct, -nb[i].second.v, &searched_nodes);
             else
                 g = -mtd_final(&nb[i].second, false, max_depth - 1, -beta, -alpha, use_mpc, use_mpct, -alpha, &searched_nodes);
-            //cerr << "policy " << nb[i].first << " value " << g << " expected " << nb[i].second.v << endl;
+            cerr << "policy " << nb[i].first << " value " << g << " expected " << nb[i].second.v << " alpha " << alpha << endl;
             if (alpha < g || i == 0){
                 alpha = g;
                 tmp_policy = nb[i].first;
             }
         }
-        */
+        
     } else{
         int cells[5];
+        alpha = -hw2;
+        beta = hw2;
         for (i = 0; i < canput; ++i){
             pick_vacant(&nb[i].second, cells);
             if (nb[i].second.n == hw2 - 5)
@@ -1174,7 +1195,7 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
     res.value = value;
     res.depth = max_depth;
     res.nps = searched_nodes * 1000 / max(1LL, tim() - strt);
-    swap(transpose_table.now, transpose_table.prev);
+    search_completed = !use_mpc;
     return res;
 }
 

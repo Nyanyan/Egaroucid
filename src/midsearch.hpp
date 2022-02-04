@@ -147,10 +147,16 @@ int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int 
     beta = min(beta, u);
     #if USE_MID_MPC
         if (mpc_min_depth <= depth && depth <= mpc_max_depth && use_mpc){
-            if (mpc_higher(b, skipped, depth, beta, mpct_in, n_nodes))
+            if (mpc_higher(b, skipped, depth, beta, mpct_in, n_nodes)){
+                if (l < beta)
+                    transpose_table.reg(b, hash, beta, u);
                 return beta;
-            if (mpc_lower(b, skipped, depth, alpha, mpct_in, n_nodes))
+            }
+            if (mpc_lower(b, skipped, depth, alpha, mpct_in, n_nodes)){
+                if (alpha < u)
+                    transpose_table.reg(b, hash, l, alpha);
                 return alpha;
+            }
         }
     #endif
     unsigned long long legal = b->mobility_ull();
@@ -391,6 +397,8 @@ inline search_result midsearch(board b, long long strt, int max_depth, bool use_
     res.value = (value + former_value) / 2;
     res.depth = res_depth;
     res.nps = searched_nodes * 1000 / max(1LL, tim() - strt);
+    transpose_table.init_now();
+    transpose_table.init_prev();
     return res;
 }
 
