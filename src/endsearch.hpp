@@ -1066,8 +1066,8 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
                 sort(nb.begin(), nb.end(), move_ordering_sort);
             cerr << "pre searched policy " << nb[0].first << " value " << nb[0].second.v << " nodes " << searched_nodes << " nps " << searched_nodes * 1000 / max(1LL, tim() - strt) << endl;
         } else{
-            double pre_search_max_mpct = use_mpc ? min(use_mpct, 0.7) : 0.8;
-            for (double pre_search_mpct = 0.3; pre_search_mpct < pre_search_max_mpct; pre_search_mpct += 0.4){
+            double pre_search_max_mpct = use_mpc ? min(use_mpct, 0.9) : 0.9;
+            for (double pre_search_mpct = 0.4; pre_search_mpct < pre_search_max_mpct; pre_search_mpct += 0.4){
                 alpha = -hw2;
                 beta = hw2;
                 for (i = 0; i < canput; ++i){
