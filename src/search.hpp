@@ -105,15 +105,19 @@ struct enhanced_mtd{
     board b;
 };
 
-inline int enhanced_mtd_cost(const enhanced_mtd &elem){
-    int res = 0;
-    res += max(elem.error, elem.error * 4);
-    res += elem.b.v;
-    return res;
-}
-
 bool operator< (const enhanced_mtd &elem1, const enhanced_mtd &elem2){
-    return enhanced_mtd_cost(elem1) < enhanced_mtd_cost(elem2);
+    if (elem1.b.v == elem2.b.v){
+        if (elem1.error < 0 && elem2.error >= 0)
+            return true;
+        if (elem2.error < 0 && elem1.error >= 0)
+            return false;
+        if (elem1.error < 0 && elem2.error < 0)
+            return elem1.error < elem2.error;
+        if (elem1.error > 0 && elem2.error > 0)
+            return elem1.error > elem2.error;
+        return false;
+    }
+    return elem1.b.v < elem2.b.v;
 };
 
 int cmp_vacant(int p, int q){

@@ -1004,3 +1004,23 @@ normal flip
     final depth: 25 time: 2543 policy: 49 value: 4 nodes: 117802039 nps: 47007996
 #48 pre search mpct 0.7 time 473 policy 25 value 10 nodes 2067040 nps 4360843
     final depth: 25 time: 19340 policy: 18 value: 28 nodes: 839909372 nps: 44519737
+
+2022/02/04 use qmtd
+#40 pre search mpct 0.7 time 67 policy 55 value 30 nodes 215909 nps 3222522
+    final depth: 20 time: 476 policy: 55 value: 38 nodes: 22838386 nps: 55839574
+#41 pre search mpct 0.7 time 120 policy 2 value 0 nodes 510195 nps 4216487
+    final depth: 22 time: 767 policy: 32 value: 0 nodes: 29612032 nps: 45768210
+#42 pre search mpct 0.7 time 104 policy 21 value 2 nodes 249005 nps 2394278
+    final depth: 22 time: 1108 policy: 49 value: 6 nodes: 49351287 nps: 49203675
+#43 pre search mpct 0.7 time 63 policy 13 value -6 nodes 268148 nps 4189812
+    final depth: 23 time: 2352 policy: 13 value: -12 nodes: 99239193 nps: 43373773
+#44 pre search mpct 0.7 time 198 policy 52 value -10 nodes 1139338 nps 5754232
+    final depth: 23 time: 882 policy: 52 value: -14 nodes: 24323581 nps: 35508877
+#45 pre search mpct 0.7 time 690 policy 49 value 0 nodes 4120052 nps 5962448
+    final depth: 24 time: 19399 policy: 54 value: 6 nodes: 901424402 nps: 48183900
+#46 pre search mpct 0.7 time 177 policy 14 value -10 nodes 777297 nps 4391508
+    final depth: 24 time: 5569 policy: 46 value: -8 nodes: 280035481 nps: 51925733
+#47 pre search mpct 0.7 time 21 policy 49 value 0 nodes 6418 nps 291727
+    final depth: 25 time: 4066 policy: 49 value: 4 nodes: 170987957 nps: 42271435
+#48 pre search mpct 0.7 time 453 policy 25 value 10 nodes 2081413 nps 4584610
+    final depth: 25 time: 17668 policy: 18 value: 28 nodes: 857923000 nps: 49835782
