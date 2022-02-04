@@ -1049,7 +1049,7 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
     long long final_strt = tim();
     searched_nodes = 0;
     if (nb[0].second.n < hw2 - 5){
-        double pre_search_max_mpct = use_mpc ? (use_mpct - 0.2) : 1.1;
+        double pre_search_max_mpct = use_mpc ? (use_mpct - 0.2) : 0.7;
         for (double pre_search_mpct = 0.2; pre_search_mpct < pre_search_max_mpct; pre_search_mpct += 0.4){
             alpha = -hw2;
             beta = hw2;
@@ -1072,8 +1072,7 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
                 g = -mtd_final(&nb[i].second, false, max_depth - 1, -beta, -alpha, use_mpc, use_mpct, -nb[i].second.v, &searched_nodes);
             else
                 g = -mtd_final(&nb[i].second, false, max_depth - 1, -beta, -alpha, use_mpc, use_mpct, -alpha, &searched_nodes);
-            //g = -nega_scout_final(&nb[i].second, false, max_depth - 1, -beta, -alpha, use_mpc, use_mpct, true, &searched_nodes);
-            cerr << "policy " << nb[i].first << " value " << g << " expected " << nb[i].second.v << endl;
+            //cerr << "policy " << nb[i].first << " value " << g << " expected " << nb[i].second.v << endl;
             if (alpha < g || i == 0){
                 alpha = g;
                 tmp_policy = nb[i].first;

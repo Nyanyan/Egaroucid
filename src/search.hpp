@@ -125,9 +125,10 @@ inline int move_ordering(board *b, board *nb, const int hash, const int policy){
     int v = transpose_table.child_get_now(b, hash, policy) * w_former_search;
     if (v == -child_inf * w_former_search){
         v = transpose_table.child_get_prev(b, hash, policy) * w_former_search;
-        if (v == -child_inf * w_former_search)
+        if (v == -child_inf * w_former_search){
+            //v = -mid_evaluate(nb) * w_former_search;
             v = 0;
-        else
+        }else
             v += cache_hit;
     } else
         v += cache_hit + cache_now;
