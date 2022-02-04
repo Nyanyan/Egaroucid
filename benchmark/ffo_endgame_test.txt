@@ -984,3 +984,23 @@ normal flip
     final depth: 25 time: 2671 policy: 49 value: 4 nodes: 125949378 nps: 47889497
 #48 pre search mpct 0.7 time 464 policy 25 value 10 nodes 2092049 nps 4499030
     final depth: 25 time: 19446 policy: 18 value: 28 nodes: 859191299 nps: 45268245
+
+2022/02/04 update cache
+#40 pre search mpct 0.7 time 68 policy 55 value 30 nodes 215663 nps 3125550
+    final depth: 20 time: 484 policy: 55 value: 38 nodes: 22764622 nps: 54722649
+#41 pre search mpct 0.7 time 117 policy 2 value 0 nodes 505722 nps 4322410
+    final depth: 22 time: 842 policy: 32 value: 0 nodes: 31988579 nps: 44122177
+#42 pre search mpct 0.7 time 76 policy 21 value 2 nodes 267343 nps 3427474
+    final depth: 22 time: 1302 policy: 49 value: 6 nodes: 59317214 nps: 48461776
+#43 pre search mpct 0.7 time 67 policy 13 value -6 nodes 265140 nps 3957313
+    final depth: 23 time: 2241 policy: 13 value: -12 nodes: 91692745 nps: 42176975
+#44 pre search mpct 0.7 time 212 policy 52 value -10 nodes 1109956 nps 5211061
+    final depth: 23 time: 821 policy: 52 value: -14 nodes: 21834285 nps: 35852684
+#45 pre search mpct 0.7 time 695 policy 49 value 0 nodes 4023859 nps 5781406
+    final depth: 24 time: 24073 policy: 54 value: 6 nodes: 1137279502 nps: 48647425
+#46 pre search mpct 0.7 time 200 policy 14 value -10 nodes 783923 nps 3900114
+    final depth: 24 time: 5336 policy: 46 value: -8 nodes: 251404051 nps: 48949386
+#47 pre search mpct 0.7 time 37 policy 49 value 0 nodes 6418 nps 168894
+    final depth: 25 time: 2543 policy: 49 value: 4 nodes: 117802039 nps: 47007996
+#48 pre search mpct 0.7 time 473 policy 25 value 10 nodes 2067040 nps 4360843
+    final depth: 25 time: 19340 policy: 18 value: 28 nodes: 839909372 nps: 44519737

@@ -16,7 +16,7 @@ using namespace std;
 #define search_epsilon 1
 #define cache_hit 10000
 #define cache_now 10000
-#define cache_low 100
+#define cache_both 1000
 #define parity_vacant_bonus 5
 #define canput_bonus 10
 #define w_former_search 20
@@ -142,15 +142,19 @@ inline int move_ordering(board *b, board *nb, const int hash, const int policy){
         transpose_table.get_prev(nb, child_hash, &l, &u);
         if (l == -inf && u == inf){
             v = 0;
-        } else if (l != -inf){
-            v = -l * w_former_search + cache_hit + cache_low;
-        } else if (u != -inf){
+        } else if (l != -inf && u != inf){
+            v = -(l + u) / 2 + cache_hit + cache_both;
+        } else if (u != inf){
             v = -u * w_former_search + cache_hit;
+        } else if (l != -inf){
+            v = -l * w_former_search + cache_hit;
         }
-    } else if (l != -inf){
-        v = -l * w_former_search + cache_hit + cache_now + cache_low;
-    } else if (u != -inf){
+    } else if (l != -inf && u != inf){
+        v = -(l + u) / 2 + cache_hit + cache_both + cache_now;
+    } else if (u != inf){
         v = -u * w_former_search + cache_hit + cache_now;
+    } else if (l != -inf){
+        v = -l * w_former_search + cache_hit + cache_now;
     }
     v += cell_weight[policy];
     v += -mid_evaluate(nb) * w_evaluate;
