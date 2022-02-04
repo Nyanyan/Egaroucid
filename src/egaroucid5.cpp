@@ -77,9 +77,9 @@ int main(){
             input_board(&b, ai_player);
             transpose_table.init_now();
             transpose_table.init_prev();
-            bool use_mpc = max_depth >= 11 ? true : false;
+            bool use_mpc = true; //max_depth >= 11 ? true : false;
             double use_mpct = 1.0;
-            int searched_nodes = 0;
+            unsigned long long searched_nodes = 0;
             cout << mtd(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct, &searched_nodes) << endl;
         #elif EVAL_MODE
             cin >> ai_player;
