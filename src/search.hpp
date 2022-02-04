@@ -16,6 +16,7 @@ using namespace std;
 #define search_epsilon 1
 #define cache_hit 10000
 #define cache_now 10000
+#define cache_low 100
 #define parity_vacant_bonus 5
 #define canput_bonus 10
 #define w_former_search 20
@@ -122,6 +123,7 @@ int cmp_vacant(int p, int q){
 //int nega_alpha(board *b, bool skipped, int depth, int alpha, int beta, int *n_nodes);
 
 inline int move_ordering(board *b, board *nb, const int hash, const int policy){
+    /*
     int v = transpose_table.child_get_now(b, hash, policy) * w_former_search;
     if (v == -child_inf * w_former_search){
         v = transpose_table.child_get_prev(b, hash, policy) * w_former_search;
@@ -132,6 +134,24 @@ inline int move_ordering(board *b, board *nb, const int hash, const int policy){
             v += cache_hit;
     } else
         v += cache_hit + cache_now;
+    */
+    int v = 0;
+    int l, u, child_hash = nb->hash() & search_hash_mask;
+    transpose_table.get_now(nb, child_hash, &l, &u);
+    if (l == -inf && u == inf){
+        transpose_table.get_prev(nb, child_hash, &l, &u);
+        if (l == -inf && u == inf){
+            v = 0;
+        } else if (l != -inf){
+            v = -l * w_former_search + cache_hit + cache_low;
+        } else if (u != -inf){
+            v = -u * w_former_search + cache_hit;
+        }
+    } else if (l != -inf){
+        v = -l * w_former_search + cache_hit + cache_now + cache_low;
+    } else if (u != -inf){
+        v = -u * w_former_search + cache_hit + cache_now;
+    }
     v += cell_weight[policy];
     v += -mid_evaluate(nb) * w_evaluate;
     //int n_nodes = 0;

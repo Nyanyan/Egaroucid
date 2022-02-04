@@ -236,7 +236,6 @@ int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int 
     #else
         for (idx = 0; idx < canput; ++idx){
             g = -nega_alpha_ordering(&nb[idx], false, depth - 1, -beta, -alpha, use_mpc, mpct_in, n_nodes);
-            transpose_table.child_reg(b, hash, nb[idx].policy, g);
             alpha = max(alpha, g);
             if (beta <= alpha){
                 if (l < alpha)
@@ -367,11 +366,12 @@ inline search_result midsearch(board b, long long strt, int max_depth, bool use_
         for (i = 0; i < canput; ++i){
             nbd = nb[i];
             g = -mtd(&nbd, false, depth, -beta, -alpha, use_mpc, use_mpct, &searched_nodes);
-            transpose_table.child_reg(&b, hash, nb[i].policy, g);
             if (alpha < g || i == 0){
+                transpose_table.reg(&nb[i], nb[i].hash() & search_hash_mask, g, g);
                 alpha = g;
                 tmp_policy = nb[i].policy;
-            }
+            } else
+                transpose_table.reg(&nb[i], nb[i].hash() & search_hash_mask, -inf, g);
         }
         swap(transpose_table.now, transpose_table.prev);
         if (global_searching){

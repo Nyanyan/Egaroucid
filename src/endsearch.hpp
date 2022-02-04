@@ -877,7 +877,6 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
     #else
         for (idx = 0; idx < canput; ++idx){
             g = -nega_alpha_ordering_final(&nb[idx], false, depth - 1, -beta, -alpha, use_mpc, mpct_in, n_nodes);
-            //transpose_table.child_reg(b, hash, nb[idx].policy, g);
             alpha = max(alpha, g);
             if (beta <= alpha){
                 #if USE_END_TC
