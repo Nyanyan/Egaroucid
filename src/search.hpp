@@ -107,15 +107,15 @@ struct enhanced_mtd{
 
 bool operator< (const enhanced_mtd &elem1, const enhanced_mtd &elem2){
     if (elem1.b.v == elem2.b.v){
-        if (elem1.error < 0 && elem2.error >= 0)
+        if (elem1.error < 0 && elem2.error > 0)
             return true;
-        if (elem2.error < 0 && elem1.error >= 0)
+        if (elem2.error < 0 && elem1.error > 0)
             return false;
         if (elem1.error < 0 && elem2.error < 0)
             return elem1.error < elem2.error;
         if (elem1.error > 0 && elem2.error > 0)
             return elem1.error > elem2.error;
-        return false;
+        return elem2.error == 0;
     }
     return elem1.b.v < elem2.b.v;
 };
