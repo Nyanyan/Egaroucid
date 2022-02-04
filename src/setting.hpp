@@ -27,7 +27,7 @@
 /* multi threading*/
 
 // multi thread
-#define USE_MULTI_THREAD true
+#define USE_MULTI_THREAD false
 
 
 
@@ -54,7 +54,7 @@
 #define STATISTICS_MODE true
 
 // MPC calculation mode
-#define MPC_MODE false
+#define MPC_MODE true
 
 // creatring evaluation data mode
 #define EVAL_MODE false

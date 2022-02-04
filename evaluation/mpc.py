@@ -27,8 +27,8 @@ def calc_n_stones(board):
 evaluate = subprocess.Popen('../src/egaroucid5.out'.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
 sleep(1)
 
-min_depth = 3
-max_depth = 20
+min_depth = 2
+max_depth = 30
 
 depth_width = max_depth - min_depth + 1
 
@@ -63,7 +63,7 @@ def collect_data(num):
         return
     #for _ in trange(1000):
     depth = min_depth
-    max_num = 7500
+    max_num = 10000
     for tt, datum in enumerate(tqdm(data[:max_num])):
         #datum = data[randrange(0, len(data))]
         board, player, _ = datum.split()
@@ -89,6 +89,7 @@ def collect_data(num):
         evaluate.stdin.write(board_proc.encode('utf-8'))
         evaluate.stdin.flush()
         vh = float(evaluate.stdout.readline().decode().strip())
+        '''
         board_proc = player + '\n' + str(0) + '\n'
         for i in range(hw):
             for j in range(hw):
@@ -98,10 +99,11 @@ def collect_data(num):
         evaluate.stdin.write(board_proc.encode('utf-8'))
         evaluate.stdin.flush()
         v0 = float(evaluate.stdout.readline().decode().strip())
+        '''
         #print(score)
         vhs[(n_stones - 4) // 4][depth - min_depth].append(vh)
         vds[(n_stones - 4) // 4][depth - min_depth].append(vd)
-        v0s[(n_stones - 4) // 4][depth - min_depth].append(v0)
+        #v0s[(n_stones - 4) // 4][depth - min_depth].append(v0)
 
 for i in range(20, 21):
     collect_data(i)
@@ -161,7 +163,7 @@ print(f_score)
 '''
 
 vh_vd = [[[vhs[i][j][k] - f(vds[i][j][k]) for k in range(len(vhs[i][j]))] for j in range(len(vhs[i]))] for i in range(len(vhs))]
-vh_v0 = [[[vhs[i][j][k] - f(v0s[i][j][k]) for k in range(len(vhs[i][j]))] for j in range(len(vhs[i]))] for i in range(len(vhs))]
+#vh_v0 = [[[vhs[i][j][k] - f(v0s[i][j][k]) for k in range(len(vhs[i][j]))] for j in range(len(vhs[i]))] for i in range(len(vhs))]
 sd = []
 for i in range(len(vh_vd)):
     sd.append([])
