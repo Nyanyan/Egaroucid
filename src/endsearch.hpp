@@ -1384,12 +1384,12 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
                 sort(nb.begin(), nb.end(), move_ordering_sort);
             swap(transpose_table.now, transpose_table.prev);
             transpose_table.init_now();
-            constexpr double pre_search_mpct = 0.5;
+            constexpr double pre_search_mpct = 0.35;
             alpha = -hw2;
             beta = hw2;
             for (i = 0; i < canput; ++i){
                 //nb[i].second.v = -mtd_final(&nb[i].second, false, max_depth - 1, -beta, min(hw2, -alpha + 6), true, pre_search_mpct, -nb[i].second.v, &searched_nodes);
-                nb[i].second.v = -nega_scout_final(&nb[i].second, false, max_depth - 1, -beta, min(hw2, -alpha + 6), true, pre_search_mpct, &searched_nodes);
+                nb[i].second.v = -nega_scout_final(&nb[i].second, false, max_depth - 1, -beta, min(hw2, -alpha + 6), true, pre_search_mpct, &searched_nodes) / 2 * 2;
                 alpha = max(alpha, nb[i].second.v);
             }
             if (canput >= 2)
@@ -1404,7 +1404,7 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
         searched_nodes = 0;
         for (i = 0; i < canput; ++i){
             if (use_mpc)
-                g = -nega_scout_final(&nb[i].second, false, max_depth - 1, -beta, -alpha, use_mpc, use_mpct, &searched_nodes);
+                g = -nega_scout_final(&nb[i].second, false, max_depth - 1, -beta, -alpha, use_mpc, use_mpct, &searched_nodes) / 2 * 2;
             else
                 g = -mtd_final(&nb[i].second, false, max_depth - 1, -beta, -alpha, use_mpc, use_mpct, -nb[i].second.v, &searched_nodes);
             cerr << "policy " << nb[i].first << " value " << g << " expected " << nb[i].second.v << " alpha " << alpha << " nps: " << (long long)searched_nodes * 1000 / max(1LL, tim() - final_strt) << endl;

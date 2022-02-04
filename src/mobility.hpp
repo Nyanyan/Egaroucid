@@ -298,8 +298,8 @@ class mobility{
                 u += t;
                 //cerr << "u=" << u << endl;
                 if (u >= 2 && u <= 12){
-                    p = join_d7_line_fast[u](player);
-                    o = join_d7_line_fast[u](opponent);
+                    p = join_d7_line_fast[u - 2](player);
+                    o = join_d7_line_fast[u - 2](opponent);
                     /*
                     for (int i = hw_m1; i >= 0; --i)
                         cerr << (1 & (p >> i));
@@ -313,8 +313,8 @@ class mobility{
 
                 u -= t * 2;
                 if (u >= -5 && u <= 5){
-                    p = join_d9_line(player, u) & d9_mask[place];
-                    o = join_d9_line(opponent, u) & d9_mask[place];
+                    p = join_d9_line_fast[u + 5](player);
+                    o = join_d9_line_fast[u + 5](opponent);
                     flip |= line_to_board_d9[flip_pre_calc[p][o][t]][u + hw];
                 }
             }

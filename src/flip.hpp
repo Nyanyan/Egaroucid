@@ -72,14 +72,6 @@ inline unsigned long long split_d9_line(unsigned char x, int t){
     return res >> (-t);
 }
 
-inline int join_d7_line_0(const unsigned long long x){
-    return 0;
-}
-
-inline int join_d7_line_1(const unsigned long long x){
-    return 0;
-}
-
 inline int join_d7_line_2(const unsigned long long x){
     return ((x & 0b00000000'00000000'00000000'00000000'00000000'00000001'00000010'00000100ULL) * 
                 0b00100000'00100000'00100000'00000000'00000000'00000000'00000000'00000000ULL) >> 56;
@@ -135,17 +127,69 @@ inline int join_d7_line_12(const unsigned long long x){
             0b00000000'00000000'00000000'00000000'00000000'00000001'00000001'00000001ULL) >> 61;
 }
 
-inline int join_d7_line_13(const unsigned long long x){
-    return 0;
-}
-
-inline int join_d7_line_14(const unsigned long long x){
-    return 0;
-}
-
 int (*join_d7_line_fast[])(const unsigned long long) = {
-    join_d7_line_0, join_d7_line_1, join_d7_line_2, join_d7_line_3, 
-    join_d7_line_4, join_d7_line_5, join_d7_line_6, join_d7_line_7,
-    join_d7_line_8, join_d7_line_9, join_d7_line_10, join_d7_line_11,
-    join_d7_line_12, join_d7_line_13, join_d7_line_14
+    join_d7_line_2, join_d7_line_3, join_d7_line_4, join_d7_line_5, 
+    join_d7_line_6, join_d7_line_7, join_d7_line_8, join_d7_line_9, 
+    join_d7_line_10, join_d7_line_11, join_d7_line_12, 
+};
+
+inline int join_d9_line_m5(const unsigned long long x){
+    return ((x & 0b00000100'00000010'00000001'00000000'00000000'00000000'00000000'00000000ULL) * 
+            0b00000000'00000000'00000000'00000000'00000000'00100000'00100000'00100000ULL) >> 56;
+}
+
+inline int join_d9_line_m4(const unsigned long long x){
+    return ((x & 0b00001000'00000100'00000010'00000001'00000000'00000000'00000000'00000000ULL) * 
+            0b00000000'00000000'00000000'00000000'00010000'00010000'00010000'00010000ULL) >> 56;
+}
+
+inline int join_d9_line_m3(const unsigned long long x){
+    return ((x & 0b00010000'00001000'00000100'00000010'00000001'00000000'00000000'00000000ULL) * 
+            0b00000000'00000000'00000000'00001000'00001000'00001000'00001000'00001000ULL) >> 56;
+}
+
+inline int join_d9_line_m2(const unsigned long long x){
+    return ((x & 0b00100000'00010000'00001000'00000100'00000010'00000001'00000000'00000000ULL) * 
+            0b00000000'00000000'00000100'00000100'00000100'00000100'00000100'00000100ULL) >> 56;
+}
+
+inline int join_d9_line_m1(const unsigned long long x){
+    return ((x & 0b01000000'00100000'00010000'00001000'00000100'00000010'00000001'00000000ULL) * 
+            0b00000000'00000010'00000010'00000010'00000010'00000010'00000010'00000010ULL) >> 56;
+}
+
+inline int join_d9_line_0(const unsigned long long x){
+    return ((x & 0b10000000'01000000'00100000'00010000'00001000'00000100'00000010'00000001ULL) * 
+            0b00000001'00000001'00000001'00000001'00000001'00000001'00000001'00000001ULL) >> 56;
+}
+
+inline int join_d9_line_1(const unsigned long long x){
+    return ((x & 0b0000000'10000000'01000000'00100000'00010000'00001000'00000100'00000010ULL) * 
+            0b00000000'10000000'10000000'10000000'10000000'10000000'10000000'10000000ULL) >> 56;
+}
+
+inline int join_d9_line_2(const unsigned long long x){
+    return ((x & 0b0000000'0000000'10000000'01000000'00100000'00010000'00001000'00000100ULL) * 
+            0b00000000'01000000'01000000'01000000'01000000'01000000'01000000'00000000ULL) >> 56;
+}
+
+inline int join_d9_line_3(const unsigned long long x){
+    return ((x & 0b0000000'0000000'0000000'10000000'01000000'00100000'00010000'00001000ULL) * 
+            0b00000000'00100000'00100000'00100000'00100000'00100000'00000000'00000000ULL) >> 56;
+}
+
+inline int join_d9_line_4(const unsigned long long x){
+    return ((x & 0b0000000'0000000'0000000'0000000'10000000'01000000'00100000'00010000ULL) * 
+            0b00000000'00010000'00010000'00010000'00010000'00000000'00000000'00000000ULL) >> 56;
+}
+
+inline int join_d9_line_5(const unsigned long long x){
+    return ((x & 0b0000000'0000000'0000000'0000000'0000000'10000000'01000000'00100000ULL) * 
+            0b00000000'00001000'00001000'00001000'00000000'00000000'00000000'00000000ULL) >> 56;
+}
+
+int (*join_d9_line_fast[])(const unsigned long long) = {
+    join_d9_line_m5, join_d9_line_m4, join_d9_line_m3, join_d9_line_m2, 
+    join_d9_line_m1, join_d9_line_0, join_d9_line_1, join_d9_line_2, 
+    join_d9_line_3, join_d9_line_4, join_d9_line_5 
 };
