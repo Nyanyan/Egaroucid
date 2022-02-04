@@ -34,7 +34,9 @@ using namespace std;
 
 #define simple_mid_threshold 2
 #define simple_end_threshold 7
+#define simple_end_mpc_threshold 5
 #define simple_end_threshold2 13
+#define end_mpc_depth_threshold 5
 
 #define po_max_depth 15
 

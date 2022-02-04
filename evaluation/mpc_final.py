@@ -28,7 +28,7 @@ evaluate = subprocess.Popen('../src/egaroucid5.out'.split(), stdin=subprocess.PI
 sleep(1)
 
 min_depth = 7
-max_depth = 40
+max_depth = 20
 
 vhs = [[] for _ in range(max_depth - min_depth + 1)]
 vds = [[] for _ in range(max_depth - min_depth + 1)]
@@ -60,8 +60,9 @@ def collect_data(num):
         #board, player, _, _, _, vh = datum.split()
         n_stones = calc_n_stones(board)
         depth = 64 - n_stones
+        #print(depth)
         if min_depth <= depth <= max_depth:
-            board_proc = player + '\n' + str(mpcd[depth]) + '\n'
+            board_proc = player + '\n' # + str(mpcd[depth]) + '\n'
             for i in range(hw):
                 for j in range(hw):
                     board_proc += board[i * hw + j]
