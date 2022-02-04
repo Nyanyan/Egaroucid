@@ -30,9 +30,9 @@ using namespace std;
 #define mpc_min_depth 3
 #define mpc_max_depth 20
 #define mpc_min_depth_final 7
-#define mpc_max_depth_final 40
+#define mpc_max_depth_final 25
 
-#define simple_mid_threshold 3
+#define simple_mid_threshold 2
 #define simple_end_threshold 7
 #define simple_end_threshold2 13
 
@@ -85,7 +85,7 @@ const int mpcd[41] = {
         {3.976, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
     };
     double mpcsd_final[mpc_max_depth_final - mpc_min_depth_final + 1] = {
-        4.111, 3.997, 5.001, 4.541, 5.02, 5.027, 5.072, 5.149, 4.641, 4.831, 4.834, 4.347, 4.598, 4.566, 4.327, 4.436, 4.635, 4.596, 4.549, 4.105, 4.33, 4.313, 3.985, 4.081, 5.519, 5.91, 6.884, 7.496, 8.139, 8.701, 9.28, 9.822, 10.397, 11.113
+        4.111, 3.997, 5.001, 4.541, 5.02, 5.027, 5.072, 5.149, 4.641, 4.831, 4.834, 4.347, 4.598, 4.566, 4.327, 4.436, 4.635, 4.596, 4.549//, 4.105, 4.33, 4.313, 3.985, 4.081, 5.519, 5.91, 6.884, 7.496, 8.139, 8.701, 9.28, 9.822, 10.397, 11.113
     };
 #endif
 unsigned long long can_be_flipped[hw2];

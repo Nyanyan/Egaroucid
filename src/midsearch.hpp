@@ -399,6 +399,7 @@ inline search_result midsearch(board b, long long strt, int max_depth, bool use_
     res.nps = searched_nodes * 1000 / max(1LL, tim() - strt);
     transpose_table.init_now();
     transpose_table.init_prev();
+    search_completed = false;
     return res;
 }
 
