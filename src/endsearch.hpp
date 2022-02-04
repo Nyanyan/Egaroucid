@@ -1232,49 +1232,8 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
         beta = hw2;
         final_strt = tim();
         searched_nodes = 0;
-        /*
-        priority_queue<enhanced_mtd> que;
-        enhanced_mtd elem;
         for (i = 0; i < canput; ++i){
-            elem.policy = nb[i].first;
-            elem.error = 0;
-            elem.l = alpha;
-            elem.u = beta;
-            elem.b = nb[i].second;
-            que.push(elem);
-        }
-        int threshold;
-        while (que.size()){
-            elem = que.top();
-            que.pop();
-            elem.l = max(elem.l, alpha);
-            elem.u = min(elem.u, beta);
-            if (elem.l >= elem.u)
-                continue;
-            threshold = max(elem.l + 2, elem.b.v);
-            g = -nega_alpha_ordering_final(&elem.b, false, max_depth - 1, -threshold, -threshold + 2, use_mpc, use_mpct, &searched_nodes) / 2 * 2;
-            //cerr << "result " << que.size() << " " << elem.policy << "  " << elem.b.v << " " << elem.error << "  " << g << " " << threshold << "  " << elem.l << " " << elem.u << endl;
-            if (g < threshold)
-                elem.u = g;
-            else
-                elem.l = g;
-            elem.error += g - threshold;
-            elem.b.v = g;
-            if (elem.l == elem.u){
-                if (alpha < g || tmp_policy == -1){
-                    transpose_table.reg(&elem.b, elem.b.hash() & search_hash_mask, -g, -g);
-                    tmp_policy = elem.policy;
-                    alpha = g;
-                }
-            } else
-                que.push(elem);
-        }
-        */
-        for (i = 0; i < canput; ++i){
-            //if (i == 0)
             g = -mtd_final(&nb[i].second, false, max_depth - 1, -beta, -alpha, use_mpc, use_mpct, -nb[i].second.v, &searched_nodes);
-            //else
-            //    g = -mtd_final(&nb[i].second, false, max_depth - 1, -beta, -alpha, use_mpc, use_mpct, -alpha, &searched_nodes);
             cerr << "policy " << nb[i].first << " value " << g << " expected " << nb[i].second.v << " alpha " << alpha << " nps: " << (long long)searched_nodes * 1000 / max(1LL, tim() - final_strt) << endl;
             if (alpha < g || i == 0){
                 alpha = g;
