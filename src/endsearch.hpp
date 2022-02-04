@@ -1031,12 +1031,13 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
         if (1 & (legal >> cell)){
             calc_flip(&mob, &b, cell);
             nb.emplace_back(make_pair(cell, b.move_copy(&mob)));
-            //cerr << cell << " ";
+            nb[nb.size() - 1].second.v = -mid_evaluate(&nb[nb.size() - 1].second);
         }
     }
-    //cerr << endl;
     int canput = nb.size();
-    //cerr << "canput: " << canput << endl;
+    transpose_table.init_now();
+    if (canput >= 2)
+        sort(nb.begin(), nb.end(), move_ordering_sort);
     int policy = -1;
     int tmp_policy = -1;
     int alpha, beta, g, value;
@@ -1044,69 +1045,33 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
     transpose_table.hash_get = 0;
     transpose_table.hash_reg = 0;
     int max_depth = hw2 - b.n;
-    alpha = -hw2;
-    beta = hw2;
-    int pre_search_depth = max(1, min(20, max_depth - simple_end_threshold + simple_mid_threshold + 3));
-    cerr << "pre search depth " << pre_search_depth << endl;
-    double pre_search_mpcd = 0.6;
-    transpose_table.init_now();
-    for (i = 0; i < canput; ++i)
-        nb[i].second.v = -mtd(&nb[i].second, false, pre_search_depth - 1, -hw2, hw2, true, pre_search_mpcd, &searched_nodes);
-    swap(transpose_table.now, transpose_table.prev);
-    transpose_table.init_now();
-    for (i = 0; i < canput; ++i){
-        nb[i].second.v += -mtd(&nb[i].second, false, pre_search_depth, -hw2, hw2, true, pre_search_mpcd, &searched_nodes);
-        nb[i].second.v /= 2;
-    }
-    swap(transpose_table.now, transpose_table.prev);
-    if (canput >= 2)
-        sort(nb.begin(), nb.end(), move_ordering_sort);
-    cerr << "pre search depth " << pre_search_depth << " time " << tim() - strt << " policy " << nb[0].first << " value " << nb[0].second.v << " nodes " << searched_nodes << " nps " << searched_nodes * 1000 / max(1LL, tim() - strt) << endl;
     transpose_table.init_now();
     long long final_strt = tim();
     searched_nodes = 0;
     if (nb[0].second.n < hw2 - 5){
-        /*
-        priority_queue<enhanced_mtd> que;
-        enhanced_mtd elem;
-        for (i = 0; i < canput; ++i){
-            elem.policy = nb[i].first;
-            elem.error = 0;
-            elem.l = alpha;
-            elem.u = beta;
-            elem.b = nb[i].second;
-            elem.b.v = elem.b.v / 2 * 2;
-            que.push(elem);
+        double pre_search_max_mpct = use_mpc ? (use_mpct - 0.2) : 1.1;
+        for (double pre_search_mpct = 0.2; pre_search_mpct < pre_search_max_mpct; pre_search_mpct += 0.4){
+            alpha = -hw2;
+            beta = hw2;
+            for (i = 0; i < canput; ++i){
+                nb[i].second.v = -mtd_final(&nb[i].second, false, max_depth - 1, -beta, min(hw2, -alpha + 4), true, pre_search_mpct, -nb[i].second.v, &searched_nodes);
+                alpha = max(alpha, nb[i].second.v);
+            }
+            swap(transpose_table.now, transpose_table.prev);
+            transpose_table.init_now();
+            if (canput >= 2)
+                sort(nb.begin(), nb.end(), move_ordering_sort);
+            cerr << "pre search mpct " << pre_search_mpct << " time " << tim() - strt << " policy " << nb[0].first << " value " << nb[0].second.v << " nodes " << searched_nodes << " nps " << searched_nodes * 1000 / max(1LL, tim() - strt) << endl;
         }
-        int threshold;
-        while (que.size()){
-            elem = que.top();
-            que.pop();
-            elem.l = max(elem.l, alpha);
-            elem.u = min(elem.u, beta);
-            if (elem.l >= elem.u)
-                continue;
-            threshold = max(elem.l + 2, elem.b.v);
-            g = -nega_alpha_ordering_final(&elem.b, false, max_depth - 1, -threshold, -threshold + search_epsilon, use_mpc, use_mpct, &searched_nodes) / 2 * 2;
-            cerr << "result " << que.size() << " " << elem.policy << "  " << g << " " << threshold << " " << elem.b.v << "  " << elem.l << " " << elem.u << endl;
-            if (g < threshold)
-                elem.u = g;
+        final_strt = tim();
+        searched_nodes = 0;
+        alpha = -hw2;
+        beta = hw2;
+        for (i = 0; i < canput; ++i){
+            if (i == 0)
+                g = -mtd_final(&nb[i].second, false, max_depth - 1, -beta, -alpha, use_mpc, use_mpct, -nb[i].second.v, &searched_nodes);
             else
-                elem.l = g;
-            elem.error += g - threshold;
-            elem.b.v = g;
-            if (elem.l == elem.u){
-                if (alpha < g || tmp_policy == -1){
-                    tmp_policy = elem.policy;
-                    alpha = g;
-                }
-            } else
-                que.push(elem);
-            //alpha = max(alpha, elem.l);
-        }
-        */
-        for (i = 0; i < canput; ++i){
-            g = -mtd_final(&nb[i].second, false, max_depth - 1, -beta, -alpha, use_mpc, use_mpct, -nb[i].second.v, &searched_nodes);
+                g = -mtd_final(&nb[i].second, false, max_depth - 1, -beta, -alpha, use_mpc, use_mpct, -alpha, &searched_nodes);
             //g = -nega_scout_final(&nb[i].second, false, max_depth - 1, -beta, -alpha, use_mpc, use_mpct, true, &searched_nodes);
             cerr << "policy " << nb[i].first << " value " << g << " expected " << nb[i].second.v << endl;
             if (alpha < g || i == 0){
