@@ -19,6 +19,16 @@ using namespace std;
 inline bool mpc_higher_final2(board *b, bool skipped, int depth, int beta, double t, unsigned long long *n_nodes);
 inline bool mpc_lower_final2(board *b, bool skipped, int depth, int alpha, double t, unsigned long long *n_nodes);
 
+inline bool mpc_higher_final(board *b, bool skipped, int depth, int beta, double t, unsigned long long *n_nodes){
+    int bound = beta + ceil(t * mpcsd_final[depth - mpc_min_depth_final]);
+    return mid_evaluate(b) >= bound;
+}
+
+inline bool mpc_lower_final(board *b, bool skipped, int depth, int alpha, double t, unsigned long long *n_nodes){
+    int bound = alpha - ceil(t * mpcsd_final[depth - mpc_min_depth_final]);
+    return mid_evaluate(b) <= bound;
+}
+
 int nega_alpha_final_nomemo(board *b, bool skipped, int depth, int alpha, int beta, bool use_mpc, double use_mpct, unsigned long long *n_nodes){
     if (!global_searching)
         return -inf;
@@ -30,10 +40,10 @@ int nega_alpha_final_nomemo(board *b, bool skipped, int depth, int alpha, int be
             return alpha;
     #endif
     #if USE_END_MPC
-        if (mpc_min_depth <= depth && depth <= mpc_max_depth && use_mpc){
-            if (mpc_higher_final2(b, skipped, depth, beta, use_mpct, n_nodes))
+        if (mpc_min_depth_final <= depth && depth <= mpc_max_depth_final && use_mpc){
+            if (mpc_higher_final(b, skipped, depth, beta, use_mpct, n_nodes))
                 return beta;
-            if (mpc_lower_final2(b, skipped, depth, alpha, use_mpct, n_nodes))
+            if (mpc_lower_final(b, skipped, depth, alpha, use_mpct, n_nodes))
                 return alpha;
         }
     #endif
@@ -74,10 +84,10 @@ int nega_alpha_ordering_final_nomemo(board *b, bool skipped, int depth, int alph
             return alpha;
     #endif
     #if USE_END_MPC
-        if (mpc_min_depth <= depth && depth <= mpc_max_depth && use_mpc){
-            if (mpc_higher_final2(b, skipped, depth, beta, use_mpct, n_nodes))
+        if (mpc_min_depth_final <= depth && depth <= mpc_max_depth_final && use_mpc){
+            if (mpc_higher_final(b, skipped, depth, beta, use_mpct, n_nodes))
                 return beta;
-            if (mpc_lower_final2(b, skipped, depth, alpha, use_mpct, n_nodes))
+            if (mpc_lower_final(b, skipped, depth, alpha, use_mpct, n_nodes))
                 return alpha;
         }
     #endif
@@ -185,33 +195,6 @@ inline bool mpc_lower_final2(board *b, bool skipped, int depth, int alpha, doubl
     if (bound < -hw2)
         bound = -hw2; //return false;
     return nega_alpha_ordering_final_nomemo(b, skipped, mpcd[depth], bound, bound + search_epsilon, true, t, n_nodes) <= bound;
-}
-
-
-inline bool mpc_higher_final(board *b, bool skipped, int depth, int beta, double t, unsigned long long *n_nodes){
-    /*
-    if (b->n + mpcd[depth] >= hw2 - end_mpc_depth_threshold)
-        return false;
-    int bound = beta + ceil(t * mpcsd_final[depth - mpc_min_depth_final]);
-    if (bound > hw2)
-        bound = hw2; //return false;
-    return nega_alpha_ordering_final_nomemo(b, skipped, mpcd[depth], bound - search_epsilon, bound, true, t, n_nodes) >= bound;
-    */
-    int bound = beta + ceil(t * mpcsd_final[depth - mpc_min_depth_final]);
-    return mid_evaluate(b) >= bound;
-}
-
-inline bool mpc_lower_final(board *b, bool skipped, int depth, int alpha, double t, unsigned long long *n_nodes){
-    /*
-    if (b->n + mpcd[depth] >= hw2 - end_mpc_depth_threshold)
-        return false;
-    int bound = alpha - ceil(t * mpcsd_final[depth - mpc_min_depth_final]);
-    if (bound < -hw2)
-        bound = -hw2; //return false;
-    return nega_alpha_ordering_final_nomemo(b, skipped, mpcd[depth], bound, bound + search_epsilon, true, t, n_nodes) <= bound;
-    */
-    int bound = alpha - ceil(t * mpcsd_final[depth - mpc_min_depth_final]);
-    return mid_evaluate(b) <= bound;
 }
 
 inline int last1(board *b, int alpha, int beta, int p0, unsigned long long *n_nodes){

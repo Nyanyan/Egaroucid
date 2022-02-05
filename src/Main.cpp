@@ -260,6 +260,7 @@ cell_value hint_search(board b, int level, int policy) {
 		res.depth = search_book_define;
 	}
 	else if (hw2 - b.n <= end_depth) {
+		cerr << end_depth << " " << use_mpc << " " << mpct << endl;
 		res.value = -endsearch_value_nomemo(b, tim(), use_mpc, mpct).value;
 		res.depth = use_mpc ? hw2 - b.n : search_final_define;
 	}
@@ -1379,7 +1380,7 @@ void Main() {
 											}
 											hint_depth[cell] = hint_result.depth;
 											if (hint_result.depth == search_final_define || hint_result.depth == search_book_define) {
-												hint_state[cell] = hint_level * 2;
+												hint_state[cell] = hint_level * 2 + 2;
 											}
 											else {
 												++hint_state[cell];
@@ -1602,6 +1603,7 @@ void Main() {
 				reset_hint(hint_state, hint_future);
 				reset_umigame(umigame_state, umigame_future);
 				reset_human_value(&human_value_state, &human_value_future);
+				reset_ai(&ai_thinking, &ai_future);
 			}
 			else if (analyze_flag) {
 				analyzing = true;
@@ -1611,6 +1613,7 @@ void Main() {
 				reset_hint(hint_state, hint_future);
 				reset_umigame(umigame_state, umigame_future);
 				reset_human_value(&human_value_state, &human_value_future);
+				reset_ai(&ai_thinking, &ai_future);
 			}
 			else if (output_record_flag) {
 				if (fork_mode) {
@@ -1669,6 +1672,7 @@ void Main() {
 						reset_hint(hint_state, hint_future);
 						reset_umigame(umigame_state, umigame_future);
 						reset_human_value(&human_value_state, &human_value_future);
+						reset_ai(&ai_thinking, &ai_future);
 						create_vacant_lst(bd);
 					}
 				}
@@ -1690,6 +1694,7 @@ void Main() {
 						reset_hint(hint_state, hint_future);
 						reset_umigame(umigame_state, umigame_future);
 						reset_human_value(&human_value_state, &human_value_future);
+						reset_ai(&ai_thinking, &ai_future);
 						create_vacant_lst(bd);
 					}
 				}
