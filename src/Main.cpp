@@ -1380,7 +1380,7 @@ void Main() {
 									if (hint_state == 0) {
 										hint_legal = bd.mobility_ull();
 									}
-									else if (hint_state == min(9 * 2, hint_level / 2 * 2)) {
+									else if (hint_state == hint_level / 2 * 2) {
 										unsigned long long n_hint_legal = 0;
 										vector<pair<int, int>> legals;
 										for (int cell = 0; cell < hw2; ++cell) {
