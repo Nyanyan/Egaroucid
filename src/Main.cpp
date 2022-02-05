@@ -49,7 +49,7 @@ constexpr Color font_color = Palette::White;;
 constexpr int board_size = 480, board_coord_size = 30;
 constexpr int board_sx = left_left + board_coord_size, board_sy = y_center - board_size / 2, board_cell_size = board_size / hw, board_cell_frame_width = 2, board_frame_width = 7;
 constexpr int stone_size = 25, legal_size = 5;
-constexpr int graph_sx = 585, graph_sy = 330, graph_width = 400, graph_height = 345, graph_resolution = 10, graph_font_size = 15;
+constexpr int graph_sx = 585, graph_sy = 330, graph_width = 400, graph_height = 345, graph_resolution = 8, graph_font_size = 15;
 constexpr Color green = Color(36, 153, 114, 100);
 constexpr int start_game_how_to_use_width = 200, start_game_how_to_use_height = 50;
 constexpr int start_game_button_x = right_center - start_game_how_to_use_width / 2,
@@ -75,7 +75,6 @@ struct cell_value {
 
 bool ai_init() {
 	mobility_init();
-	board_init();
 	transpose_table_init();
 	if (!evaluate_init())
 		return false;
@@ -85,7 +84,6 @@ bool ai_init() {
 		return false;
 	//if (!human_value_init())
 	//	return false;
-	thread_pool.resize(16);
 	return true;
 }
 
@@ -1087,6 +1085,21 @@ void Main() {
 	for (int i = 0; i < (int)language_names.size(); ++i) {
 		language_acts[i] = lang_name == language_names[i];
 	}
+	if (use_ai_mode == 0) {
+		human_first = true;
+		human_second = false;
+		both_ai = false;
+	}
+	else if (use_ai_mode == 1) {
+		human_first = false;
+		human_second = true;
+		both_ai = false;
+	}
+	else if (use_ai_mode == 2) {
+		human_first = false;
+		human_second = false;
+		both_ai = true;
+	}
 
 	int lang_initialized = 0;
 	string lang_file = "resources/languages/" + lang_name + ".json";
@@ -1234,6 +1247,7 @@ void Main() {
 					}
 				}
 				thread_pool.resize(n_threads_num[n_thread_idx]);
+				cerr << "threads resized to " << n_threads_num[n_thread_idx] << " completed " << thread_pool.size() << endl;
 			}
 			/*** thread ***/
 
@@ -1257,8 +1271,14 @@ void Main() {
 						history_place = fork_history[analyze_idx].b.n - 4;
 						if (!analyze_state) {
 							create_vacant_lst(bd);
-							analyze_future = async(launch::async, analyze_search, fork_history[analyze_idx].b, ai_level);
-							analyze_state = true;
+							if (fork_history[analyze_idx].b.p != vacant) {
+								analyze_future = async(launch::async, analyze_search, fork_history[analyze_idx].b, ai_level);
+								analyze_state = true;
+							}
+							else {
+								fork_history[analyze_idx].b.v = end_evaluate(&fork_history[analyze_idx].b);
+								++analyze_idx;
+							}
 						}
 						else if (analyze_future.wait_for(chrono::seconds(0)) == future_status::ready) {
 							fork_history[analyze_idx].b.v = analyze_future.get().value;
@@ -1340,15 +1360,10 @@ void Main() {
 					if (not_finished(bd) && use_hint_flag && !analyzing) {
 						if (normal_hint){
 							for (int cell = 0; cell < hw2; ++cell) {
-								if ((1 & (legal >> cell)) && hint_state[cell] < hint_level * 2) {
+								if ((1 & (legal >> cell)) && hint_state[cell] <= hint_level * 2 + 1) {
 									if (hint_state[cell] % 2 == 0) {
 										if (global_searching) {
-											if (hint_state[cell] == hint_level * 2 - 2) {
-												hint_future[cell] = async(launch::async, hint_search, bd, hint_level, cell);
-											}
-											else {
-												hint_future[cell] = async(launch::async, hint_search, bd, hint_state[cell] / 2, cell);
-											}
+											hint_future[cell] = async(launch::async, hint_search, bd, hint_state[cell] / 2, cell);
 											++hint_state[cell];
 										}
 									}
