@@ -1398,10 +1398,12 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
             transpose_table.init_now();
             vector<double> pre_search_mpcts;
             pre_search_mpcts.emplace_back(0.35);
-            if (use_mpct > 1.0)
+            if (use_mpct > 1.0 || !use_mpc)
                 pre_search_mpcts.emplace_back(0.5);
-            if (use_mpct > 2.0)
-                pre_search_mpcts.emplace_back(0.7);
+            if (use_mpct > 1.6 || !use_mpc)
+                pre_search_mpcts.emplace_back(0.9);
+            if (use_mpct > 2.0 || !use_mpc)
+                pre_search_mpcts.emplace_back(1.2);
             for (double pre_search_mpct: pre_search_mpcts){
                 alpha = -hw2;
                 beta = hw2;
@@ -1515,10 +1517,12 @@ inline search_result endsearch_value_memo(board b, long long strt, bool use_mpc,
     transpose_table.init_now();
     vector<double> pre_search_mpcts;
     pre_search_mpcts.emplace_back(0.35);
-    if (use_mpct > 1.0)
+    if (use_mpct > 1.0 || !use_mpc)
         pre_search_mpcts.emplace_back(0.5);
-    if (use_mpct > 2.0)
-        pre_search_mpcts.emplace_back(0.7);
+    if (use_mpct > 1.6 || !use_mpc)
+        pre_search_mpcts.emplace_back(0.9);
+    if (use_mpct > 2.0 || !use_mpc)
+        pre_search_mpcts.emplace_back(1.2);
     for (double pre_search_mpct: pre_search_mpcts){
         pre_calc_value = -nega_scout_final(&b, false, max_depth, -hw2, hw2, true, pre_search_mpct, &searched_nodes) / 2 * 2;
         cerr << "endsearch presearch mpct " << pre_search_mpct << " value " << pre_calc_value << " nodes " << searched_nodes << " time " << tim() - strt << " nps " << searched_nodes * 1000 / max(1LL, tim() - strt) << endl;
