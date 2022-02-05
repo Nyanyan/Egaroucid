@@ -32,8 +32,6 @@
 
 using namespace std;
 
-#define search_final_define 100
-#define search_book_define -1
 #define hint_not_calculated_define 0
 
 #define left_left 20
@@ -97,6 +95,7 @@ Menu create_menu(Texture checkbox,
 	bool *start_game_flag, bool *analyze_flag,
 	bool *use_ai_flag, bool *human_first, bool *human_second, bool *both_ai,
 	bool *use_hint_flag, bool *normal_hint, bool *human_hint, bool *umigame_hint,
+	bool *hint_num1, bool* hint_num2, bool* hint_num4, bool* hint_num8, bool* hint_num16, bool* hint_numall,
 	bool *use_value_flag,
 	int *ai_level, int *hint_level, int *book_error,
 	bool *start_book_learn_flag,
@@ -106,7 +105,7 @@ Menu create_menu(Texture checkbox,
 	bool lang_acts[], vector<string> lang_name_vector) {
 	Menu menu;
 	menu_title title;
-	menu_elem menu_e, side_menu;
+	menu_elem menu_e, side_menu, side_side_menu;
 	Font menu_font(15);
 
 	title.init(language.get("mode", "mode"));
@@ -144,7 +143,20 @@ Menu create_menu(Texture checkbox,
 		menu_e.init_check(language.get("settings", "hint", "hint"), use_hint_flag, *use_hint_flag);
 		if (*professional_mode) {
 			side_menu.init_check(language.get("settings", "hint", "stone_value"), normal_hint, *normal_hint);
+			side_side_menu.init_radio(U"1" + language.get("settings", "hint", "show_number"), hint_num1, *hint_num1);
+			side_menu.push(side_side_menu);
+			side_side_menu.init_radio(U"2" + language.get("settings", "hint", "show_number"), hint_num2, *hint_num2);
+			side_menu.push(side_side_menu);
+			side_side_menu.init_radio(U"4" + language.get("settings", "hint", "show_number"), hint_num4, *hint_num4);
+			side_menu.push(side_side_menu);
+			side_side_menu.init_radio(U"8" + language.get("settings", "hint", "show_number"), hint_num8, *hint_num8);
+			side_menu.push(side_side_menu);
+			side_side_menu.init_radio(U"16" + language.get("settings", "hint", "show_number"), hint_num16, *hint_num16);
+			side_menu.push(side_side_menu);
+			side_side_menu.init_radio(language.get("settings", "hint", "show_all"), hint_numall, *hint_numall);
+			side_menu.push(side_side_menu);
 			menu_e.push(side_menu);
+			
 			side_menu.init_check(language.get("settings", "hint", "human_value"), human_hint, *human_hint);
 			menu_e.push(side_menu);
 			side_menu.init_check(language.get("settings", "hint", "umigame_value"), umigame_hint, *umigame_hint);
@@ -158,21 +170,21 @@ Menu create_menu(Texture checkbox,
 
 	if (!(*entry_mode)) {
 		menu_e.init_button(language.get("settings", "thread", "thread"), dammy);
-		side_menu.init_radio(language.get("settings", "thread", "1"), thread1, *thread1);
+		side_menu.init_radio(U"1", thread1, *thread1);
 		menu_e.push(side_menu);
-		side_menu.init_radio(language.get("settings", "thread", "2"), thread2, *thread2);
+		side_menu.init_radio(U"2", thread2, *thread2);
 		menu_e.push(side_menu);
-		side_menu.init_radio(language.get("settings", "thread", "4"), thread4, *thread4);
+		side_menu.init_radio(U"4", thread4, *thread4);
 		menu_e.push(side_menu);
-		side_menu.init_radio(language.get("settings", "thread", "8"), thread8, *thread8);
+		side_menu.init_radio(U"8", thread8, *thread8);
 		menu_e.push(side_menu);
-		side_menu.init_radio(language.get("settings", "thread", "16"), thread16, *thread16);
+		side_menu.init_radio(U"16", thread16, *thread16);
 		menu_e.push(side_menu);
-		side_menu.init_radio(language.get("settings", "thread", "32"), thread32, *thread32);
+		side_menu.init_radio(U"32", thread32, *thread32);
 		menu_e.push(side_menu);
-		side_menu.init_radio(language.get("settings", "thread", "64"), thread64, *thread64);
+		side_menu.init_radio(U"64", thread64, *thread64);
 		menu_e.push(side_menu);
-		side_menu.init_radio(language.get("settings", "thread", "128"), thread128, *thread128);
+		side_menu.init_radio(U"128", thread128, *thread128);
 		menu_e.push(side_menu);
 		title.push(menu_e);
 	}
@@ -246,31 +258,6 @@ pair<bool, board> move_board(board b, bool board_clicked[]) {
 	return make_pair(false, b);
 }
 
-cell_value hint_search(board b, int level, int policy) {
-	cell_value res;
-	mobility mob;
-	int depth, end_depth;
-	bool use_mpc;
-	double mpct;
-	calc_flip(&mob, &b, policy);
-	b.move(&mob);
-	get_level(level, b.n - 4, &depth, &end_depth, &use_mpc, &mpct);
-	res.value = book.get(&b);
-	if (res.value != -inf) {
-		res.depth = search_book_define;
-	}
-	else if (hw2 - b.n <= end_depth) {
-		cerr << end_depth << " " << use_mpc << " " << mpct << endl;
-		res.value = -endsearch_value_nomemo(b, tim(), use_mpc, mpct).value;
-		res.depth = use_mpc ? hw2 - b.n : search_final_define;
-	}
-	else {
-		res.value = -midsearch_value_nomemo(b, tim(), depth, use_mpc, mpct).value;
-		res.depth = depth;
-	}
-	return res;
-}
-
 cell_value analyze_search(board b, int level) {
 	cell_value res;
 	int depth, end_depth;
@@ -282,11 +269,11 @@ cell_value analyze_search(board b, int level) {
 		res.depth = search_book_define;
 	}
 	else if (hw2 - b.n <= end_depth) {
-		res.value = endsearch_value_memo(b, tim(), use_mpc, mpct).value * (b.p ? -1 : 1);
+		res.value = endsearch_value_analyze_memo(b, tim(), use_mpc, mpct).value * (b.p ? -1 : 1);
 		res.depth = use_mpc ? hw2 - b.n : search_final_define;
 	}
 	else {
-		res.value = midsearch_value_memo(b, tim(), depth, use_mpc, mpct).value * (b.p ? -1 : 1);
+		res.value = midsearch_value_analyze_memo(b, tim(), depth, use_mpc, mpct).value * (b.p ? -1 : 1);
 		res.depth = depth;
 	}
 	return res;
@@ -345,7 +332,7 @@ void closing_draw(Font font, Font small_font, Texture icon, Texture logo, bool t
 }
 
 void board_draw(Rect board_cells[], board b, int int_mode, bool use_hint_flag, bool normal_hint, bool human_hint, bool umigame_hint,
-	const int hint_state[], const int hint_value[], const int hint_depth[], Font normal_font, Font small_font, Font big_font, Font mini_font, Font coord_font, 
+	const int hint_state, const unsigned long long hint_legal, const int hint_value[], const int hint_depth[], Font normal_font, Font small_font, Font big_font, Font mini_font, Font coord_font, 
 	bool before_start_game,
 	const int umigame_state[], const umigame_result umigame_value[],
 	const int human_value_state, const int human_value[]) {
@@ -377,7 +364,7 @@ void board_draw(Rect board_cells[], board b, int int_mode, bool use_hint_flag, b
 			Circle(x, y, stone_size).draw(Palette::White);
 		}
 		if (1 & (legal >> cell)) {
-			if (use_hint_flag && normal_hint && hint_state[cell] >= 2) {
+			if (use_hint_flag && normal_hint && hint_state >= 2) {
 				max_cell_value = max(max_cell_value, hint_value[cell]);
 			}
 			if (!before_start_game && (!use_hint_flag || (!normal_hint && !human_hint && !umigame_hint))) {
@@ -396,9 +383,9 @@ void board_draw(Rect board_cells[], board b, int int_mode, bool use_hint_flag, b
 			hint_shown[i] = false;
 		}
 		if (normal_hint) {
-			for (int cell = 0; cell < hw2; ++cell) {
-				if (1 & (legal >> cell)) {
-					if (hint_state[cell] >= 2) {
+			if (hint_state >= 2) {
+				for (int cell = 0; cell < hw2; ++cell) {
+					if (1 & (hint_legal >> cell)) {
 						Color color = Palette::White;
 						if (hint_value[cell] == max_cell_value)
 							color = Palette::Cyan;
@@ -424,7 +411,7 @@ void board_draw(Rect board_cells[], board b, int int_mode, bool use_hint_flag, b
 						}
 						hint_shown[cell] = true;
 					}
-					else {
+					else if (1 & (legal >> cell)) {
 						int x = board_sx + (hw_m1 - cell % hw) * board_cell_size + board_cell_size / 2;
 						int y = board_sy + (hw_m1 - cell / hw) * board_cell_size + board_cell_size / 2;
 						Circle(x, y, legal_size).draw(Palette::Cyan);
@@ -584,13 +571,13 @@ int output_game_popup(Font big_font, Font mid_font, Font small_font, String* bla
 	return 0;
 }
 
-void reset_hint(int hint_state[], future<cell_value> hint_future[]) {
+void reset_hint(int *hint_state, future<void> *hint_future){
 	global_searching = false;
 	for (int i = 0; i < hw2; ++i) {
-		if (hint_state[i] % 2 == 1) {
-			hint_future[i].get();
+		if (*hint_state % 2 == 1) {
+			hint_future->get();
 		}
-		hint_state[i] = hint_not_calculated_define;
+		*hint_state = hint_not_calculated_define;
 	}
 	global_searching = true;
 }
@@ -669,6 +656,7 @@ bool import_setting(int *int_mode, int *ai_level, int *ai_book_accept, int *hint
 	bool *use_hint_flag, bool *normal_hint, bool *human_hint, bool *umigame_hint,
 	bool *show_end_popup,
 	int *n_thread_idx,
+	int *hint_num,
 	string *lang_name) {
 	ifstream ifs("resources/settings.txt");
 	if (ifs.fail()) {
@@ -722,6 +710,10 @@ bool import_setting(int *int_mode, int *ai_level, int *ai_book_accept, int *hint
 	if (*n_thread_idx == -inf) {
 		return false;
 	}
+	*hint_num = import_int(&ifs);
+	if (*hint_num == -inf) {
+		return false;
+	}
 	*lang_name = import_str(&ifs);
 	if (*lang_name == "undefined") {
 		return false;
@@ -734,6 +726,7 @@ void export_setting(int int_mode, int ai_level, int ai_book_accept, int hint_lev
 	bool use_hint_flag, bool normal_hint, bool human_hint, bool umigame_hint,
 	bool show_end_popup,
 	int n_thread_idx,
+	int hint_num,
 	string lang_name) {
 	ofstream ofs("resources/settings.txt");
 	if (!ofs.fail()) {
@@ -749,6 +742,7 @@ void export_setting(int int_mode, int ai_level, int ai_book_accept, int hint_lev
 		ofs << umigame_hint << endl;
 		ofs << show_end_popup << endl;
 		ofs << n_thread_idx << endl;
+		ofs << hint_num << endl;
 		ofs << lang_name << endl;
 	}
 }
@@ -890,7 +884,7 @@ bool output_game(history_elem hist, int ai_level, bool use_ai_flag, int use_ai_m
 	ofs << game_memo.narrow() << endl;
 }
 
-bool close_app(int hint_state[], future<cell_value> hint_future[],
+bool close_app(int *hint_state, future<void> *hint_future,
 	int umigame_state[], future<umigame_result> umigame_future[],
 	int* human_value_state, future<void>* human_value_future,
 	bool* ai_thinking, future<search_result>* ai_future,
@@ -899,6 +893,7 @@ bool close_app(int hint_state[], future<cell_value> hint_future[],
 	bool use_hint_flag, bool normal_hint, bool human_hint, bool umigame_hint,
 	bool show_end_popup,
 	int n_thread_idx,
+	int hint_num,
 	string lang_name) {
 	reset_hint(hint_state, hint_future);
 	reset_umigame(umigame_state, umigame_future);
@@ -909,6 +904,7 @@ bool close_app(int hint_state[], future<cell_value> hint_future[],
 		use_hint_flag, normal_hint, human_hint, umigame_hint,
 		show_end_popup,
 		n_thread_idx,
+		hint_num,
 		lang_name);
 	return true;
 }
@@ -1002,11 +998,14 @@ void Main() {
 	int history_place = 0;
 	bool fork_mode = false;
 
-	int hint_value[hw2], hint_state[hw2], hint_depth[hw2];
-	future<cell_value> hint_future[hw2];
-	for (int i = 0; i < hw2; ++i) {
-		hint_state[i] = 0;
-	}
+	int hint_value[hw2], hint_depth[hw2];
+	int hint_calc_value[hw2], hint_calc_depth[hw2];
+	unsigned long long hint_legal = 0;
+	future<void>  hint_future;
+	int hint_state = 0;
+	bool hint_nums[6] = { false, false, false, false, false, true };
+	constexpr int hint_actual_nums[6] = {1, 2, 4, 8, 16, hw2};
+	int hint_num = 5;
 
 	int umigame_state[hw2];
 	umigame_result umigame_value[hw2];
@@ -1061,6 +1060,7 @@ void Main() {
 		&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
 		&show_end_popup,
 		&n_thread_idx,
+		&hint_num,
 		&lang_name)) {
 		cerr << "use default setting" << endl;
 		int_mode = 0;
@@ -1101,6 +1101,9 @@ void Main() {
 		human_second = false;
 		both_ai = true;
 	}
+	for (int i = 0; i < 6; ++i) {
+		hint_nums[i] = i == hint_num;
+	}
 
 	int lang_initialized = 0;
 	string lang_file = "resources/languages/" + lang_name + ".json";
@@ -1122,7 +1125,7 @@ void Main() {
 			else if (both_ai) {
 				use_ai_mode = 2;
 			}
-			closing_future = async(launch::async, close_app, hint_state, hint_future,
+			closing_future = async(launch::async, close_app, &hint_state, &hint_future,
 				umigame_state, umigame_future,
 				&human_value_state, &human_value_future,
 				&ai_thinking, &ai_future,
@@ -1131,6 +1134,7 @@ void Main() {
 				use_hint_flag, normal_hint, human_hint, umigame_hint,
 				show_end_popup,
 				n_thread_idx,
+				hint_num,
 				lang_name);
 		}
 		if (closing) {
@@ -1161,6 +1165,7 @@ void Main() {
 					&start_game_flag,&analyze_flag,
 					&use_ai_flag, &human_first, &human_second, &both_ai,
 					&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
+					&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
 					&use_value_flag,
 					&ai_level, &hint_level, &ai_book_accept,
 					&start_book_learn_flag,
@@ -1184,6 +1189,7 @@ void Main() {
 						&start_game_flag, &analyze_flag,
 						&use_ai_flag, &human_first, &human_second, &both_ai,
 						&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
+						&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
 						&use_value_flag,
 						&ai_level, &hint_level, &ai_book_accept,
 						&start_book_learn_flag,
@@ -1199,9 +1205,7 @@ void Main() {
 					history.emplace_back(history_elem(bd, U""));
 					history_place = 0;
 					fork_mode = false;
-					for (int i = 0; i < hw2; ++i) {
-						hint_state[i] = hint_not_calculated_define;
-					}
+					hint_state = hint_not_calculated_define;
 					for (int i = 0; i < hw2; ++i) {
 						umigame_state[i] = hint_not_calculated_define;
 					}
@@ -1230,6 +1234,7 @@ void Main() {
 					&start_game_flag, &analyze_flag,
 					&use_ai_flag, &human_first, &human_second, &both_ai,
 					&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
+					&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
 					&use_value_flag,
 					&ai_level, &hint_level, &ai_book_accept,
 					&start_book_learn_flag,
@@ -1259,6 +1264,16 @@ void Main() {
 				}
 			}
 			/*** language ***/
+
+			/*** hint show num ***/
+			if (!hint_nums[hint_num]) {
+				for (int i = 0; i < 6; ++i) {
+					if (hint_nums[i]) {
+						hint_num = i;
+					}
+				}
+			}
+			/*** hint show num ***/
 
 			/*** analyzing ***/
 			if (analyzing) {
@@ -1351,7 +1366,7 @@ void Main() {
 						}
 						create_vacant_lst(bd);
 						history_place = bd.n - 4;
-						reset_hint(hint_state, hint_future);
+						reset_hint(&hint_state, &hint_future);
 						reset_umigame(umigame_state, umigame_future);
 						reset_human_value(&human_value_state, &human_value_future);
 					}
@@ -1359,37 +1374,63 @@ void Main() {
 
 					/*** hints ***/
 					if (not_finished(bd) && use_hint_flag && !analyzing) {
-						if (normal_hint){
-							for (int cell = 0; cell < hw2; ++cell) {
-								if ((1 & (legal >> cell)) && hint_state[cell] <= hint_level * 2 + 1) {
-									if (hint_state[cell] % 2 == 0) {
-										if (global_searching) {
-											hint_future[cell] = async(launch::async, hint_search, bd, hint_state[cell] / 2, cell);
-											++hint_state[cell];
-										}
+						if (normal_hint && hint_state <= hint_level * 2 + 1){
+							if (hint_state % 2 == 0) {
+								if (global_searching) {
+									if (hint_state == 0) {
+										hint_legal = bd.mobility_ull();
 									}
-									else if (hint_future[cell].wait_for(chrono::seconds(0)) == future_status::ready) {
-										cell_value hint_result = hint_future[cell].get();
-										if (global_searching && abs(hint_result.value) != inf) {
-											if (hint_state[cell] == 1 || hint_result.depth == search_final_define) {
-												hint_value[cell] = hint_result.value;
+									else if (hint_state == min(9 * 2, hint_level / 2 * 2)) {
+										unsigned long long n_hint_legal = 0;
+										vector<pair<int, int>> legals;
+										for (int cell = 0; cell < hw2; ++cell) {
+											if (1 & (hint_legal >> cell)) {
+												legals.emplace_back(make_pair(-hint_value[cell], cell));
 											}
-											else {
-												hint_value[cell] += hint_result.value;
+										}
+										sort(legals.begin(), legals.end());
+										for (int i = 0; i < min((int)legals.size(), hint_actual_nums[hint_num]); ++i) {
+											n_hint_legal |= 1ULL << legals[i].second;
+										}
+										for (int i = 0; i < (int)legals.size(); ++i) {
+											if (hint_depth[legals[i].second] == search_book_define) {
+												n_hint_legal |= 1ULL << legals[i].second;
+											}
+										}
+										hint_legal = n_hint_legal;
+									}
+									hint_future = async(launch::async, ai_hint, bd, hint_state / 2, hint_calc_value, hint_calc_depth, hint_legal);
+									++hint_state;
+								}
+							}
+							else if (hint_future.wait_for(chrono::seconds(0)) == future_status::ready) {
+								hint_future.get();
+								if (global_searching) {
+									bool all_complete_searched = true;
+									for (int cell = 0; cell < hw2; ++cell) {
+										if (1 & (hint_legal >> cell)) {
+											if (hint_state > 2) {
+												hint_value[cell] += hint_calc_value[cell];
 												hint_value[cell] /= 2;
 											}
-											hint_depth[cell] = hint_result.depth;
-											if (hint_result.depth == search_final_define || hint_result.depth == search_book_define) {
-												hint_state[cell] = hint_level * 2 + 2;
-											}
 											else {
-												++hint_state[cell];
+												hint_value[cell] = hint_calc_value[cell];
 											}
-										}
-										else {
-											--hint_state[cell];
+											hint_depth[cell] = hint_calc_depth[cell];
+											if (hint_depth[cell] != search_final_define && hint_depth[cell] != search_book_define) {
+												all_complete_searched = false;
+											}
 										}
 									}
+									if (all_complete_searched) {
+										hint_state = hint_level * 2 + 2;
+									}
+									else {
+										++hint_state;
+									}
+								}
+								else {
+									--hint_state;
 								}
 							}
 						}
@@ -1447,7 +1488,7 @@ void Main() {
 							history_place = bd.n - 4;
 							ai_value = ai_result.value;
 							ai_thinking = false;
-							reset_hint(hint_state, hint_future);
+							reset_hint(&hint_state, &hint_future);
 							reset_umigame(umigame_state, umigame_future);
 							reset_human_value(&human_value_state, &human_value_future);
 						}
@@ -1493,14 +1534,14 @@ void Main() {
 						bd = history[find_history_idx(history, history_place)].b;
 						create_vacant_lst(bd);
 						fork_history.clear();
-						reset_hint(hint_state, hint_future);
+						reset_hint(&hint_state, &hint_future);
 						reset_umigame(umigame_state, umigame_future);
 						reset_human_value(&human_value_state, &human_value_future);
 					}
 					else {
 						bd = fork_history[find_history_idx(fork_history, history_place)].b;
 						create_vacant_lst(bd);
-						reset_hint(hint_state, hint_future);
+						reset_hint(&hint_state, &hint_future);
 						reset_umigame(umigame_state, umigame_future);
 						reset_human_value(&human_value_state, &human_value_future);
 					}
@@ -1510,7 +1551,7 @@ void Main() {
 
 			/*** board draw ***/
 			board_draw(board_cells, bd, int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
-				hint_state, hint_value, hint_depth, normal_hint_font, small_hint_font, font30, mini_hint_font, board_coord_font,
+				hint_state, hint_legal, hint_value, hint_depth, normal_hint_font, small_hint_font, font30, mini_hint_font, board_coord_font,
 				before_start_game,
 				umigame_state, umigame_value,
 				human_value_state, human_value);
@@ -1600,7 +1641,7 @@ void Main() {
 				fork_mode = false;
 				before_start_game = true;
 				show_popup_flag = true;
-				reset_hint(hint_state, hint_future);
+				reset_hint(&hint_state, &hint_future);
 				reset_umigame(umigame_state, umigame_future);
 				reset_human_value(&human_value_state, &human_value_future);
 				reset_ai(&ai_thinking, &ai_future);
@@ -1610,7 +1651,7 @@ void Main() {
 				main_window_active = false;
 				analyze_state = false;
 				analyze_idx = 0;
-				reset_hint(hint_state, hint_future);
+				reset_hint(&hint_state, &hint_future);
 				reset_umigame(umigame_state, umigame_future);
 				reset_human_value(&human_value_state, &human_value_future);
 				reset_ai(&ai_thinking, &ai_future);
@@ -1669,7 +1710,7 @@ void Main() {
 						fork_mode = false;
 						before_start_game = true;
 						show_popup_flag = true;
-						reset_hint(hint_state, hint_future);
+						reset_hint(&hint_state, &hint_future);
 						reset_umigame(umigame_state, umigame_future);
 						reset_human_value(&human_value_state, &human_value_future);
 						reset_ai(&ai_thinking, &ai_future);
@@ -1691,7 +1732,7 @@ void Main() {
 						fork_mode = false;
 						before_start_game = true;
 						show_popup_flag = true;
-						reset_hint(hint_state, hint_future);
+						reset_hint(&hint_state, &hint_future);
 						reset_umigame(umigame_state, umigame_future);
 						reset_human_value(&human_value_state, &human_value_future);
 						reset_ai(&ai_thinking, &ai_future);
