@@ -27,8 +27,8 @@ def calc_n_stones(board):
 evaluate = subprocess.Popen('../src/egaroucid5.out'.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
 sleep(1)
 
-min_depth = 7
-max_depth = 20
+min_depth = 5
+max_depth = 40
 
 vhs = [[] for _ in range(max_depth - min_depth + 1)]
 vds = [[] for _ in range(max_depth - min_depth + 1)]
@@ -40,8 +40,8 @@ mpcd = [
     0, 1, 0, 1, 2, 3, 2, 3, 4, 3, 
     4, 3, 4, 5, 4, 5, 6, 5, 6, 7, 
     6, 7, 6, 7, 8, 7, 8, 9, 8, 9, 
-    10, 9, 10, 11, 12, 11, 12, 13, 14, 13,
-    14
+    0, 1, 0, 1, 0, 1, 0, 1, 0, 1,
+    0
 ]
 
 
@@ -71,7 +71,10 @@ def collect_data(num):
             evaluate.stdin.write(board_proc.encode('utf-8'))
             evaluate.stdin.flush()
             vd = float(evaluate.stdout.readline().decode().strip())
+            if player == '1':
+                vd = -vd
             vh = float(vh)
+            '''
             if player == '1':
                 vh = -vh
             #vh *= 100
@@ -84,10 +87,11 @@ def collect_data(num):
             evaluate.stdin.write(board_proc.encode('utf-8'))
             evaluate.stdin.flush()
             v0 = float(evaluate.stdout.readline().decode().strip())
+            '''
             #print(score)
             vhs[depth - min_depth].append(vh)
             vds[depth - min_depth].append(vd)
-            v0s[depth - min_depth].append(v0)
+            #v0s[depth - min_depth].append(v0)
 
 for i in range(5, 6):
     collect_data(i)
@@ -127,11 +131,12 @@ f_score = scoring()
 print(f_score)
 
 vh_vd = [[vhs[j][k] - f(vds[j][k]) for k in range(len(vhs[j]))] for j in range(len(vhs))]
-vh_v0 = [[vhs[j][k] - f(v0s[j][k]) for k in range(len(vhs[j]))] for j in range(len(vhs))]
+#vh_v0 = [[vhs[j][k] - f(v0s[j][k]) for k in range(len(vhs[j]))] for j in range(len(vhs))]
 sd = [round(statistics.stdev(vh_vd[j]), 3) for j in range(len(vh_vd))]
-sd0 = [round(statistics.stdev(vh_v0[j])) for j in range(len(vh_vd))]
+#sd0 = [round(statistics.stdev(vh_v0[j])) for j in range(len(vh_vd))]
 print(sd)
-print(sd0)
+#print(sd0)
+exit()
 
 tl = 10.0
 strt = time()

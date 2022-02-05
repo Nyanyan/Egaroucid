@@ -423,7 +423,9 @@ inline int pick_pattern(const int phase_idx, const int p, const int pattern_idx,
     return pattern_arr[phase_idx][p][pattern_idx][b_arr[p0] * p39 + b_arr[p1] * p38 + b_arr[p2] * p37 + b_arr[p3] * p36 + b_arr[p4] * p35 + b_arr[p5] * p34 + b_arr[p6] * p33 + b_arr[p7] * p32 + b_arr[p8] * p31 + b_arr[p9]];
 }
 
-inline int calc_pattern(const int phase_idx, board *b, const int b_arr[]){
+inline int calc_pattern(const int phase_idx, board *b){
+    int b_arr[hw2];
+    b->translate_to_arr(b_arr);
     return 
         pick_pattern(phase_idx, b->p, 0, b_arr, 8, 9, 10, 11, 12, 13, 14, 15) + pick_pattern(phase_idx, b->p, 0, b_arr, 1, 9, 17, 25, 33, 41, 49, 57) + pick_pattern(phase_idx, b->p, 0, b_arr, 48, 49, 50, 51, 52, 53, 54, 55) + pick_pattern(phase_idx, b->p, 0, b_arr, 6, 14, 22, 30, 38, 46, 54, 62) + 
         pick_pattern(phase_idx, b->p, 1, b_arr, 16, 17, 18, 19, 20, 21, 22, 23) + pick_pattern(phase_idx, b->p, 1, b_arr, 2, 10, 18, 26, 34, 42, 50, 58) + pick_pattern(phase_idx, b->p, 1, b_arr, 40, 41, 42, 43, 44, 45, 46, 47) + pick_pattern(phase_idx, b->p, 1, b_arr, 5, 13, 21, 29, 37, 45, 53, 61) + 
@@ -633,8 +635,6 @@ inline int end_evaluate(board *b){
 inline int mid_evaluate(board *b){
     int phase_idx, sur0, sur1, canput0, canput1, stab0, stab1, num0, num1;
     unsigned long long black_mobility, white_mobility, empties;
-    int b_arr[hw2];
-    b->translate_to_arr(b_arr);
     black_mobility = get_mobility(b->b, b->w);
     white_mobility = get_mobility(b->w, b->b);
     empties = ~(b->b | b->w);
@@ -650,7 +650,7 @@ inline int mid_evaluate(board *b){
     num1 = pop_count_ull(b->w);
     //cerr << sur0 << " " << sur1 << " " << canput0 << " " << canput1 << " " << stab0 << " " << stab1 << " " << num0 << " " << num1 << endl;
     int res = (b->p ? -1 : 1) * (
-        calc_pattern(phase_idx, b, b_arr) + 
+        calc_pattern(phase_idx, b) + 
         eval_sur0_sur1_arr[phase_idx][b->p][sur0][sur1] + 
         eval_canput0_canput1_arr[phase_idx][b->p][canput0][canput1] + 
         eval_stab0_stab1_arr[phase_idx][b->p][stab0][stab1] + 

@@ -93,13 +93,14 @@ int nega_alpha_ordering_final_nomemo(board *b, bool skipped, int depth, int alph
     const int canput = pop_count_ull(legal);
     board *nb = new board[canput];
     mobility mob;
-    int hash = b->hash() & search_hash_mask;
+    //int hash = b->hash() & search_hash_mask;
     int idx = 0;
     for (const int &cell: vacant_lst){
         if (1 & (legal >> cell)){
             calc_flip(&mob, b, cell);
             b->move_copy(&mob, &nb[idx]);
-            nb[idx].v = move_ordering(b, &nb[idx], hash, cell);
+            nb[idx].v = -canput_bonus * calc_canput_exact(&nb[idx]);
+            //nb[idx].v = move_ordering(b, &nb[idx], hash, cell);
             #if USE_END_PO
                 if (depth <= po_max_depth && b->parity & cell_div4[cell])
                     nb[idx].v += parity_vacant_bonus;
@@ -186,22 +187,31 @@ inline bool mpc_lower_final2(board *b, bool skipped, int depth, int alpha, doubl
     return nega_alpha_ordering_final_nomemo(b, skipped, mpcd[depth], bound, bound + search_epsilon, true, t, n_nodes) <= bound;
 }
 
+
 inline bool mpc_higher_final(board *b, bool skipped, int depth, int beta, double t, unsigned long long *n_nodes){
+    /*
     if (b->n + mpcd[depth] >= hw2 - end_mpc_depth_threshold)
         return false;
     int bound = beta + ceil(t * mpcsd_final[depth - mpc_min_depth_final]);
     if (bound > hw2)
         bound = hw2; //return false;
     return nega_alpha_ordering_final_nomemo(b, skipped, mpcd[depth], bound - search_epsilon, bound, true, t, n_nodes) >= bound;
+    */
+    int bound = beta + ceil(t * mpcsd_final[depth - mpc_min_depth_final]);
+    return mid_evaluate(b) >= bound;
 }
 
 inline bool mpc_lower_final(board *b, bool skipped, int depth, int alpha, double t, unsigned long long *n_nodes){
+    /*
     if (b->n + mpcd[depth] >= hw2 - end_mpc_depth_threshold)
         return false;
     int bound = alpha - ceil(t * mpcsd_final[depth - mpc_min_depth_final]);
     if (bound < -hw2)
         bound = -hw2; //return false;
     return nega_alpha_ordering_final_nomemo(b, skipped, mpcd[depth], bound, bound + search_epsilon, true, t, n_nodes) <= bound;
+    */
+    int bound = alpha - ceil(t * mpcsd_final[depth - mpc_min_depth_final]);
+    return mid_evaluate(b) <= bound;
 }
 
 inline int last1(board *b, int alpha, int beta, int p0, unsigned long long *n_nodes){

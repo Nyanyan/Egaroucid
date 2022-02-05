@@ -72,14 +72,15 @@ int main(){
         #if MPC_MODE
             cin >> ai_player;
             int max_depth;
-            cin >> max_depth;
+            //cin >> max_depth;
             input_board(&b, ai_player);
             transpose_table.init_now();
             transpose_table.init_prev();
             bool use_mpc = true; //max_depth >= 11 ? true : false;
             double use_mpct = 1.0;
             unsigned long long searched_nodes = 0;
-            cout << mtd(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct, &searched_nodes) << endl;
+            //cout << mtd(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct, &searched_nodes) << endl;
+            cout << mid_evaluate(&b) << endl;
             /*
             double use_mpct = 0.3;
             max_depth = hw2 - b.n;
