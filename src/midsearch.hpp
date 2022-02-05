@@ -571,6 +571,19 @@ inline search_result midsearch_value_nomemo(board b, long long strt, int max_dep
 
 inline search_result midsearch_value_memo(board b, long long strt, int max_depth, bool use_mpc, double use_mpct){
     unsigned long long searched_nodes = 0;
+    int value = mtd(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct, &searched_nodes);
+    //cerr << "midsearch depth " << max_depth << " value " << value << " nodes " << searched_nodes << " time " << tim() - strt << " nps " << searched_nodes * 1000 / max(1LL, tim() - strt) << endl;
+    search_result res;
+    res.policy = -1;
+    res.value = value;
+    res.depth = max_depth;
+    res.nps = searched_nodes * 1000 / max(1LL, tim() - strt);
+    return res;
+}
+
+
+inline search_result midsearch_value_analyze_memo(board b, long long strt, int max_depth, bool use_mpc, double use_mpct){
+    unsigned long long searched_nodes = 0;
     int value = -inf, former_value = -inf, g;
     for (int depth = min(16, max(0, max_depth - 5)); depth <= min(hw2 - b.n, max_depth); ++depth){
         transpose_table.init_now();

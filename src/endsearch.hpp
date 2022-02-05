@@ -1493,7 +1493,40 @@ inline search_result endsearch_value_nomemo(board b, long long strt, bool use_mp
     return res;
 }
 
-inline search_result endsearch_value_memo(board b, long long strt, bool use_mpc, double use_mpct){
+inline search_result endsearch_value_memo(board b, long long strt, bool use_mpc, double use_mpct, int pre_calc_value){
+    int max_depth = hw2 - b.n;
+    unsigned long long searched_nodes = 0;
+    search_result res;
+    res.policy = -1;
+    if (b.n < hw2 - 5){
+        if (use_mpct)
+            res.value = nega_scout_final(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct, &searched_nodes);
+        else
+            res.value = mtd_final(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct, pre_calc_value, &searched_nodes);
+    } else{
+        int cells[5];
+        pick_vacant(&b, cells);
+        if (b.n == hw2 - 5)
+            res.value = last5(&b, false, -hw2, hw2, cells[0], cells[1], cells[2], cells[3], cells[4], &searched_nodes);
+        else if (b.n == hw2 - 4)
+            res.value = last4(&b, false, -hw2, hw2, cells[0], cells[1], cells[2], cells[3], &searched_nodes);
+        else if (b.n == hw2 - 3)
+            res.value = last3(&b, false, -hw2, hw2, cells[0], cells[1], cells[2], &searched_nodes);
+        else if (b.n == hw2 - 2)
+            res.value = last2(&b, false, -hw2, hw2, cells[0], cells[1], &searched_nodes);
+        else if (b.n == hw2 - 1)
+            res.value = last1(&b, -hw2, hw2, cells[0], &searched_nodes);
+        else
+            res.value = end_evaluate(&b);
+    }
+    //cerr << "endsearch depth " << max_depth << " value " << res.value << " nodes " << searched_nodes << " time " << tim() - strt << " nps " << searched_nodes * 1000 / max(1LL, tim() - strt) << endl;
+    res.depth = max_depth;
+    res.nps = searched_nodes * 1000 / max(1LL, tim() - strt);
+    //cerr << res.value << endl;
+    return res;
+}
+
+inline search_result endsearch_value_analyze_memo(board b, long long strt, bool use_mpc, double use_mpct){
     int max_depth = hw2 - b.n;
     unsigned long long searched_nodes = 0;
     int pre_calc_value;
