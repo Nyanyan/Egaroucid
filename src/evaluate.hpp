@@ -204,6 +204,15 @@ inline bool init_evaluation_calc(){
 }
 */
 
+inline int convert_canput_line(int idx){
+    int res = 0;
+    for (int i = 0; i < hw * 2; i += 2)
+        res |= (1 & (idx >> i)) << (i / 2);
+    for (int i = 1; i < hw * 2; i += 2)
+        res |= (1 & (idx >> i)) << ((i / 2) + hw);
+    return res;
+}
+
 inline bool init_evaluation_calc(){
     FILE* fp;
     if (fopen_s(&fp, "resources/eval.egev", "rb") != 0){
@@ -213,6 +222,7 @@ inline bool init_evaluation_calc(){
     int phase_idx, player_idx, pattern_idx;
     constexpr int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10, 10, 10, 10};
     //constexpr int n_models = n_phases * 2;
+    short tmp_eval_canput_pattern[n_canput_patterns][p48];
     for (phase_idx = 0; phase_idx < n_phases; ++phase_idx){
         for (player_idx = 0; player_idx < 2; ++player_idx){
             //cerr << "loading evaluation parameter " << ((phase_idx * 2 + player_idx) * 100 / n_models) << "%" << endl;
@@ -243,10 +253,14 @@ inline bool init_evaluation_calc(){
                 fclose(fp);
                 return false;
             }
-            if (fread(eval_canput_pattern[phase_idx][player_idx], 2, n_canput_patterns * p48, fp) < n_canput_patterns * p48){
+            if (fread(tmp_eval_canput_pattern, 2, n_canput_patterns * p48, fp) < n_canput_patterns * p48){
                 cerr << "eval.egev broken" << endl;
                 fclose(fp);
                 return false;
+            }
+            for (int i = 0; i < n_canput_patterns; ++i){
+                for (int j = 0; j < p48; ++j)
+                    eval_canput_pattern[phase_idx][player_idx][i][convert_canput_line(j)] = tmp_eval_canput_pattern[i][j];
             }
         }
     }
@@ -531,7 +545,7 @@ inline int create_canput_line(const int canput_arr[], const int a, const int b, 
         canput_arr[e] * p43 + canput_arr[f] * p42 + canput_arr[g] * p41 + canput_arr[h];
 }
 */
-
+/*
 inline int create_canput_line(unsigned long long bk, unsigned long long wt, const int a, const int b, const int c, const int d, const int e, const int f, const int g, const int h){
     return 
         (pop_digit(wt, a) * 2 + pop_digit(bk, a)) * p47 + 
@@ -542,6 +556,14 @@ inline int create_canput_line(unsigned long long bk, unsigned long long wt, cons
         (pop_digit(wt, f) * 2 + pop_digit(bk, f)) * p42 + 
         (pop_digit(wt, g) * 2 + pop_digit(bk, g)) * p41 + 
         (pop_digit(wt, h) * 2 + pop_digit(bk, h));
+}
+*/
+inline int create_canput_line_h(unsigned long long b, unsigned long long w, int t){
+    return (((w >> (hw * t)) & 0b11111111) << hw) | ((b >> (hw * t)) & 0b11111111);
+}
+
+inline int create_canput_line_v(unsigned long long b, unsigned long long w, int t){
+    return (join_v_line(w, t) << hw) | join_v_line(b, t);
 }
 
 inline int calc_canput_pattern(const int phase_idx, board *b, const unsigned long long black_mobility, const unsigned long long white_mobility){
@@ -566,6 +588,7 @@ inline int calc_canput_pattern(const int phase_idx, board *b, const unsigned lon
         eval_canput_pattern[phase_idx][b->p][3][create_canput_line(canput_arr, 4, 12, 20, 28, 36, 44, 52, 60)] + 
         eval_canput_pattern[phase_idx][b->p][3][create_canput_line(canput_arr, 32, 33, 34, 35, 36, 37, 38, 39)];
     */
+    /*
     return
         eval_canput_pattern[phase_idx][b->p][0][create_canput_line(black_mobility, white_mobility, 0, 1, 2, 3, 4, 5, 6, 7)] + 
         eval_canput_pattern[phase_idx][b->p][0][create_canput_line(black_mobility, white_mobility, 0, 8, 16, 24, 32, 40, 48, 56)] + 
@@ -583,6 +606,24 @@ inline int calc_canput_pattern(const int phase_idx, board *b, const unsigned lon
         eval_canput_pattern[phase_idx][b->p][3][create_canput_line(black_mobility, white_mobility, 3, 11, 19, 27, 35, 43, 51, 59)] + 
         eval_canput_pattern[phase_idx][b->p][3][create_canput_line(black_mobility, white_mobility, 4, 12, 20, 28, 36, 44, 52, 60)] + 
         eval_canput_pattern[phase_idx][b->p][3][create_canput_line(black_mobility, white_mobility, 32, 33, 34, 35, 36, 37, 38, 39)];
+    */
+    return 
+        eval_canput_pattern[phase_idx][b->p][0][create_canput_line_h(black_mobility, white_mobility, 0)] + 
+        eval_canput_pattern[phase_idx][b->p][0][create_canput_line_h(black_mobility, white_mobility, 7)] + 
+        eval_canput_pattern[phase_idx][b->p][0][create_canput_line_v(black_mobility, white_mobility, 0)] + 
+        eval_canput_pattern[phase_idx][b->p][0][create_canput_line_v(black_mobility, white_mobility, 7)] + 
+        eval_canput_pattern[phase_idx][b->p][1][create_canput_line_h(black_mobility, white_mobility, 1)] + 
+        eval_canput_pattern[phase_idx][b->p][1][create_canput_line_h(black_mobility, white_mobility, 6)] + 
+        eval_canput_pattern[phase_idx][b->p][1][create_canput_line_v(black_mobility, white_mobility, 1)] + 
+        eval_canput_pattern[phase_idx][b->p][1][create_canput_line_v(black_mobility, white_mobility, 6)] + 
+        eval_canput_pattern[phase_idx][b->p][2][create_canput_line_h(black_mobility, white_mobility, 2)] + 
+        eval_canput_pattern[phase_idx][b->p][2][create_canput_line_h(black_mobility, white_mobility, 5)] + 
+        eval_canput_pattern[phase_idx][b->p][2][create_canput_line_v(black_mobility, white_mobility, 2)] + 
+        eval_canput_pattern[phase_idx][b->p][2][create_canput_line_v(black_mobility, white_mobility, 5)] + 
+        eval_canput_pattern[phase_idx][b->p][3][create_canput_line_h(black_mobility, white_mobility, 3)] + 
+        eval_canput_pattern[phase_idx][b->p][3][create_canput_line_h(black_mobility, white_mobility, 4)] + 
+        eval_canput_pattern[phase_idx][b->p][3][create_canput_line_v(black_mobility, white_mobility, 3)] + 
+        eval_canput_pattern[phase_idx][b->p][3][create_canput_line_v(black_mobility, white_mobility, 4)];
 }
 
 inline int end_evaluate(board *b){

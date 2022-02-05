@@ -1108,3 +1108,14 @@ normal flip
 #46 final depth: 24 time: 5309 policy: 46 value: -8 nodes: 247460732 nps: 47966802
 #47 final depth: 25 time: 1921 policy: 49 value: 4 nodes: 84703949 nps: 45127303
 #48 final depth: 25 time: 20534 policy: 18 value: 28 nodes: 643289372 nps: 31614378
+
+2022/02/05
+#40 final depth: 20 time: 502 policy: 55 value: 38 nodes: 25148660 nps: 52612259
+#41 final depth: 22 time: 643 policy: 32 value: 0 nodes: 26913951 nps: 46644629
+#42 final depth: 22 time: 1274 policy: 49 value: 6 nodes: 62697991 nps: 51140286
+#43 final depth: 23 time: 2776 policy: 13 value: -12 nodes: 118844737 nps: 43358167
+#44 final depth: 23 time: 866 policy: 52 value: -14 nodes: 22821007 nps: 31608042
+#45 final depth: 24 time: 15089 policy: 54 value: 6 nodes: 826986414 nps: 55524802
+#46 final depth: 24 time: 4931 policy: 46 value: -8 nodes: 248871957 nps: 51837524
+#47 final depth: 25 time: 1846 policy: 49 value: 4 nodes: 83264731 nps: 46181215
+#48 final depth: 25 time: 14028 policy: 18 value: 28 nodes: 671642795 nps: 48403199
