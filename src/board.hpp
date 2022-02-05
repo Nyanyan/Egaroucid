@@ -20,8 +20,6 @@ using namespace std;
 #define p196 47045881ULL
 #define p197 893871739ULL
 
-unsigned long long hash_rand[2][hw2];
-
 const int cell_div4[hw2] = {
     1, 1, 1, 1, 2, 2, 2, 2, 
     1, 1, 1, 1, 2, 2, 2, 2, 
@@ -460,11 +458,4 @@ inline void calc_flip(mobility *mob, board *b, const int policy){
         mob->calc_flip(b->b, b->w, policy);
     else
         mob->calc_flip(b->w, b->b, policy);
-}
-
-inline void board_init(){
-    for (int i = 0; i < hw2; ++i){
-        hash_rand[0][i] = myrand_ull();
-        hash_rand[1][i] = myrand_ull();
-    }
 }

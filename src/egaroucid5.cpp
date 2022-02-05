@@ -12,7 +12,6 @@
 
 inline void init(){
     mobility_init();
-    board_init();
     transpose_table_init();
     evaluate_init();
     #if !MPC_MODE && !EVAL_MODE && !BOOK_MODE && USE_BOOK

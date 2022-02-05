@@ -44,9 +44,6 @@ class search_node{
         }
 
         inline void get(int *ll, int *uu){
-            #if USE_MULTI_THREAD
-                lock_guard<mutex> lock(mtx);
-            #endif
             *ll = l;
             *uu = u;
         }
@@ -61,31 +58,19 @@ class transpose_table{
     
     private:
         search_node table[2][search_hash_table_size];
-        #if USE_MULTI_THREAD && false
-            mutex mtx;
-        #endif
 
     public:
         inline void init_prev(){
-            #if USE_MULTI_THREAD && false
-                lock_guard<mutex> lock(mtx);
-            #endif
             for(int i = 0; i < search_hash_table_size; ++i)
                 this->table[this->prev][i].reg = false;
         }
 
         inline void init_now(){
-            #if USE_MULTI_THREAD && false
-                lock_guard<mutex> lock(mtx);
-            #endif
             for(int i = 0; i < search_hash_table_size; ++i)
                 this->table[this->now][i].reg = false;
         }
 
         inline void reg(board *key, int hash, int l, int u){
-            #if USE_MULTI_THREAD && false
-                lock_guard<mutex> lock(mtx);
-            #endif
             //++this->hash_reg;
             if (!this->table[this->now][hash].reg)
                 this->table[this->now][hash].register_value(key, l, u);
@@ -96,9 +81,6 @@ class transpose_table{
         }
 
         inline void get_now(board *key, const int hash, int *l, int *u){
-            #if USE_MULTI_THREAD && false
-                lock_guard<mutex> lock(mtx);
-            #endif
             if (this->table[this->now][hash].reg){
                 if (compare_key(key, &this->table[this->now][hash])){
 					this->table[this->now][hash].get(l, u);
@@ -114,9 +96,6 @@ class transpose_table{
         }
 
         inline void get_prev(board *key, const int hash, int *l, int *u){
-            #if USE_MULTI_THREAD && false
-                lock_guard<mutex> lock(mtx);
-            #endif
             if (this->table[this->prev][hash].reg){
                 if (compare_key(key, &this->table[this->prev][hash])){
                     this->table[this->prev][hash].get(l, u);

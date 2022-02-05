@@ -8,20 +8,6 @@ using namespace std;
 
 #define n_8bit 256
 
-unsigned char flip_pre_calc[n_8bit][n_8bit][hw];
-unsigned char n_flip_pre_calc[n_8bit][n_8bit][hw];
-/*
-constexpr unsigned char d7_mask[hw2] = {
-    0b00000001, 0b00000011, 0b00000111, 0b00001111, 0b00011111, 0b00111111, 0b01111111, 0b11111111,
-    0b00000011, 0b00000111, 0b00001111, 0b00011111, 0b00111111, 0b01111111, 0b11111111, 0b11111110,
-    0b00000111, 0b00001111, 0b00011111, 0b00111111, 0b01111111, 0b11111111, 0b11111110, 0b11111100,
-    0b00001111, 0b00011111, 0b00111111, 0b01111111, 0b11111111, 0b11111110, 0b11111100, 0b11111000,
-    0b00011111, 0b00111111, 0b01111111, 0b11111111, 0b11111110, 0b11111100, 0b11111000, 0b11110000,
-    0b00111111, 0b01111111, 0b11111111, 0b11111110, 0b11111100, 0b11111000, 0b11110000, 0b11100000,
-    0b01111111, 0b11111111, 0b11111110, 0b11111100, 0b11111000, 0b11110000, 0b11100000, 0b11000000,
-    0b11111111, 0b11111110, 0b11111100, 0b11111000, 0b11110000, 0b11100000, 0b11000000, 0b10000000
-};
-*/
 constexpr unsigned char d7_mask[hw2] = {
     0b10000000, 0b11000000, 0b11100000, 0b11110000, 0b11111000, 0b11111100, 0b11111110, 0b11111111,
     0b11000000, 0b11100000, 0b11110000, 0b11111000, 0b11111100, 0b11111110, 0b11111111, 0b01111111,
@@ -44,10 +30,11 @@ constexpr unsigned char d9_mask[hw2] = {
     0b10000000, 0b11000000, 0b11100000, 0b11110000, 0b11111000, 0b11111100, 0b11111110, 0b11111111
 };
 
+unsigned char flip_pre_calc[n_8bit][n_8bit][hw];
+unsigned char n_flip_pre_calc[n_8bit][n_8bit][hw];
 unsigned long long line_to_board_v[n_8bit][hw];
 unsigned long long line_to_board_d7[n_8bit][hw * 2];
 unsigned long long line_to_board_d9[n_8bit][hw * 2];
-//int pop_count_char[n_8bit];
 
 
 class mobility{
@@ -423,11 +410,4 @@ void mobility_init(){
         for (t = -hw; t < hw; ++t)
             line_to_board_d9[idx][t + hw] = split_d9_line((unsigned char)idx, t);
     }
-    /*
-    for (idx = 0; idx < n_8bit; ++idx){
-        pop_count_char[idx] = 0;
-        for (i = 0; i < 8; ++i)
-            pop_count_char[idx] += 1 & (idx >> i);
-    }
-    */
 }
