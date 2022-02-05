@@ -35,7 +35,7 @@ int ai_value_nomemo(board b, int level){
     int res;
     get_level(level, b.n - 3, &depth1, &depth2, &use_mpc, &mpct);
     cerr << "level status " << level << " " << b.n - 3 << " " << depth1 << " " << depth2 << " " << use_mpc << " " << mpct << endl;
-    if (b.n >= hw2 - depth2 - 1)
+    if (b.n >= hw2 - depth2)
         res = endsearch_value_nomemo(b, tim(), use_mpc, mpct).value;
     else
         res = midsearch_value_nomemo(b, tim(), depth1 + 1, use_mpc, mpct).value;
@@ -49,7 +49,7 @@ int ai_value_memo(board b, int level){
     int res;
     get_level(level, b.n - 3, &depth1, &depth2, &use_mpc, &mpct);
     cerr << "level status " << level << " " << b.n - 3 << " " << depth1 << " " << depth2 << " " << use_mpc << " " << mpct << endl;
-    if (b.n >= hw2 - depth2 - 1)
+    if (b.n >= hw2 - depth2)
         res = endsearch_value_memo(b, tim(), use_mpc, mpct).value;
     else
         res = midsearch_value_memo(b, tim(), depth1 + 1, use_mpc, mpct).value;
