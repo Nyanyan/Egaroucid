@@ -1041,8 +1041,10 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
 int nega_scout_final(board *b, bool skipped, const int depth, int alpha, int beta, bool use_mpc, double mpct_in, unsigned long long *n_nodes){
     if (!global_searching)
         return -inf;
-    if (depth <= simple_end_threshold2)
-        return nega_alpha_ordering_simple_final(b, skipped, depth, alpha, beta, use_mpc, mpct_in, n_nodes);
+    //if (depth <= simple_end_threshold2)
+    //    return nega_alpha_ordering_simple_final(b, skipped, depth, alpha, beta, use_mpc, mpct_in, n_nodes);
+    if (depth <= simple_end_threshold)
+        return nega_alpha_final(b, skipped, depth, alpha, beta, n_nodes);
     ++(*n_nodes);
     #if USE_END_SC && false
         if (stability_cut(b, &alpha, &beta))
@@ -1308,7 +1310,7 @@ int nega_scout_final_nomemo(board *b, bool skipped, const int depth, int alpha, 
             g = -nega_alpha_ordering_final_nomemo(&nb[i], false, depth - 1, -alpha - search_epsilon, -alpha, use_mpc, mpct_in, n_nodes);
             if (beta <= g)
                 return g;
-            if (alpha <= g){
+            if (alpha < g){
                 alpha = g;
                 g = -nega_scout_final_nomemo(&nb[i], false, depth - 1, -beta, -alpha, use_mpc, mpct_in, n_nodes);
                 alpha = max(alpha, g);
@@ -1384,19 +1386,26 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
                 sort(nb.begin(), nb.end(), move_ordering_sort);
             swap(transpose_table.now, transpose_table.prev);
             transpose_table.init_now();
-            constexpr double pre_search_mpct = 0.35;
-            alpha = -hw2;
-            beta = hw2;
-            for (i = 0; i < canput; ++i){
-                //nb[i].second.v = -mtd_final(&nb[i].second, false, max_depth - 1, -beta, min(hw2, -alpha + 6), true, pre_search_mpct, -nb[i].second.v, &searched_nodes);
-                nb[i].second.v = -nega_scout_final(&nb[i].second, false, max_depth - 1, -beta, min(hw2, -alpha + 6), true, pre_search_mpct, &searched_nodes) / 2 * 2;
-                alpha = max(alpha, nb[i].second.v);
+            vector<double> pre_search_mpcts;
+            pre_search_mpcts.emplace_back(0.35);
+            if (use_mpct > 1.0)
+                pre_search_mpcts.emplace_back(0.5);
+            if (use_mpct > 2.0)
+                pre_search_mpcts.emplace_back(0.7);
+            for (double pre_search_mpct: pre_search_mpcts){
+                alpha = -hw2;
+                beta = hw2;
+                for (i = 0; i < canput; ++i){
+                    //nb[i].second.v = -mtd_final(&nb[i].second, false, max_depth - 1, -beta, min(hw2, -alpha + 6), true, pre_search_mpct, -nb[i].second.v, &searched_nodes);
+                    nb[i].second.v = -nega_scout_final(&nb[i].second, false, max_depth - 1, -beta, min(hw2, -alpha + 6), true, pre_search_mpct, &searched_nodes) / 2 * 2;
+                    alpha = max(alpha, nb[i].second.v);
+                }
+                if (canput >= 2)
+                    sort(nb.begin(), nb.end(), move_ordering_sort);
+                swap(transpose_table.now, transpose_table.prev);
+                transpose_table.init_now();
+                cerr << "pre search mpct " << pre_search_mpct << " time " << tim() - strt << " policy " << nb[0].first << " value " << nb[0].second.v << " nodes " << searched_nodes << " nps " << searched_nodes * 1000 / max(1LL, tim() - strt) << endl;
             }
-            if (canput >= 2)
-                sort(nb.begin(), nb.end(), move_ordering_sort);
-            swap(transpose_table.now, transpose_table.prev);
-            transpose_table.init_now();
-            cerr << "pre search mpct " << pre_search_mpct << " time " << tim() - strt << " policy " << nb[0].first << " value " << nb[0].second.v << " nodes " << searched_nodes << " nps " << searched_nodes * 1000 / max(1LL, tim() - strt) << endl;
         }
         alpha = -hw2;
         beta = hw2;
@@ -1493,22 +1502,28 @@ inline search_result endsearch_value_memo(board b, long long strt, bool use_mpc,
     int max_depth = hw2 - b.n;
     unsigned long long searched_nodes = 0;
     int pre_calc_value;
-    int pre_search_depth = max(1, min(20, max_depth - simple_end_threshold + simple_mid_threshold + 3));
     transpose_table.init_now();
-    pre_calc_value = mtd(&b, false, pre_search_depth - 1, -hw2, hw2, true, 0.6, &searched_nodes);
-    swap(transpose_table.now, transpose_table.prev);
-    transpose_table.init_now();
-    pre_calc_value += mtd(&b, false, pre_search_depth, -hw2, hw2, true, 0.6, &searched_nodes);
-    pre_calc_value /= 2;
-    cerr << "endsearch presearch depth " << pre_search_depth << " value " << pre_calc_value << " nodes " << searched_nodes << " time " << tim() - strt << " nps " << searched_nodes * 1000 / max(1LL, tim() - strt) << endl;
-    swap(transpose_table.now, transpose_table.prev);
-    transpose_table.init_now();
-    searched_nodes = 0;
+    vector<double> pre_search_mpcts;
+    pre_search_mpcts.emplace_back(0.35);
+    if (use_mpct > 1.0)
+        pre_search_mpcts.emplace_back(0.5);
+    if (use_mpct > 2.0)
+        pre_search_mpcts.emplace_back(0.7);
+    for (double pre_search_mpct: pre_search_mpcts){
+        pre_calc_value = -nega_scout_final(&b, false, max_depth, -hw2, hw2, true, pre_search_mpct, &searched_nodes) / 2 * 2;
+        cerr << "endsearch presearch mpct " << pre_search_mpct << " value " << pre_calc_value << " nodes " << searched_nodes << " time " << tim() - strt << " nps " << searched_nodes * 1000 / max(1LL, tim() - strt) << endl;
+        swap(transpose_table.now, transpose_table.prev);
+        transpose_table.init_now();
+        searched_nodes = 0;
+    }
     search_result res;
     res.policy = -1;
-    if (b.n < hw2 - 5)
-        res.value = mtd_final(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct, pre_calc_value, &searched_nodes);
-    else{
+    if (b.n < hw2 - 5){
+        if (use_mpct)
+            res.value = nega_scout_final(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct, &searched_nodes);
+        else
+            res.value = mtd_final(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct, pre_calc_value, &searched_nodes);
+    } else{
         int cells[5];
         pick_vacant(&b, cells);
         if (b.n == hw2 - 5)
