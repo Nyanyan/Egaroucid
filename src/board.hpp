@@ -199,16 +199,22 @@ class board {
         inline void white_mirror(){
             b = white_line(b);
             w = white_line(w);
+            if (policy != -1)
+                policy = (policy % hw) * hw + (policy / hw);
         }
 
         inline void black_mirror(){
             b = black_line(b);
             w = black_line(w);
+            if (policy != -1)
+                policy = (hw_m1 - policy % hw) * hw + (hw_m1 - policy / hw);
         }
 
         inline void vertical_mirror(){
             b = mirror_v(b);
             w = mirror_v(w);
+            if (policy != -1)
+                policy = (hw_m1 - policy / hw) * hw + (hw_m1 - policy % hw);
         }
 
         inline void print() {

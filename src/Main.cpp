@@ -102,6 +102,7 @@ Menu create_menu(Texture checkbox,
 	bool *output_record_flag, bool *output_game_flag, bool *input_record_flag, bool *input_board_flag,
 	bool *show_end_popup,
 	bool *thread1, bool* thread2, bool* thread4, bool* thread8, bool* thread16, bool* thread32, bool* thread64, bool* thread128,
+	bool *stop_read_flag, bool *resume_read_flag, bool *vertical_convert, bool *white_line_convert, bool *black_line_convert, 
 	bool lang_acts[], vector<string> lang_name_vector) {
 	Menu menu;
 	menu_title title;
@@ -220,6 +221,29 @@ Menu create_menu(Texture checkbox,
 
 	menu_e.init_check(language.get("display", "end_popup"), show_end_popup, *show_end_popup);
 	title.push(menu_e);
+
+	menu.push(title);
+
+
+
+	title.init(language.get("operation", "operation"));
+
+	menu_e.init_button(language.get("operation", "stop_read"), stop_read_flag);
+	title.push(menu_e);
+	menu_e.init_button(language.get("operation", "resume_read"), resume_read_flag);
+	title.push(menu_e);
+
+	menu_e.init_button(language.get("operation", "convert", "convert"), dammy);
+	side_menu.init_button(language.get("operation", "convert", "vertical"), vertical_convert);
+	menu_e.push(side_menu);
+	side_menu.init_button(language.get("operation", "convert", "black_line"), black_line_convert);
+	menu_e.push(side_menu);
+	side_menu.init_button(language.get("operation", "convert", "white_line"), white_line_convert);
+	menu_e.push(side_menu);
+
+	title.push(menu_e);
+
+
 
 	menu.push(title);
 
@@ -952,6 +976,7 @@ void Main() {
 	bool n_threads[8] = {false, false, true, false, false, false, false, false};
 	int n_threads_num[8] = {1, 2, 4, 8, 16, 32, 64, 128};
 	int n_thread_idx = 2;
+	bool stop_read_flag = false, resume_read_flag = false, vertical_convert = false, white_line_convert = false, black_line_convert = false;
 	bool language_acts[100];
 	language_acts[0] = true;
 	for (int i = 1; i < 100; ++i) {
@@ -1075,6 +1100,7 @@ void Main() {
 		umigame_hint = false;
 		show_end_popup = true;
 		n_thread_idx = 2;
+		hint_num = 5;
 		lang_name = language_names[0];
 	}
 	for (int i = 0; i < mode_size; ++i) {
@@ -1173,6 +1199,7 @@ void Main() {
 					&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag,
 					&show_end_popup,
 					&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
+					&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert,
 					language_acts, language_names);
 				start_game_button.init(start_game_button_x, start_game_button_y, start_game_button_w, start_game_button_h, start_game_button_r, language.get("button", "start_game"), font30, button_color, button_font_color);
 				how_to_use_button.init(how_to_use_button_x, how_to_use_button_y, how_to_use_button_w, how_to_use_button_h, how_to_use_button_r, language.get("button", "how_to_use"), font30, button_color, button_font_color);
@@ -1197,6 +1224,7 @@ void Main() {
 						&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag,
 						&show_end_popup,
 						&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
+						&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert,
 						language_acts, language_names);
 				}
 				initialize_draw(&initialize_future, &initializing, &initialize_failed, font50, font20, icon, logo, texture_loaded);
@@ -1242,6 +1270,7 @@ void Main() {
 					&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag,
 					&show_end_popup,
 					&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
+					&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert,
 					language_acts, language_names);
 			}
 			/**** when mode changed **/
@@ -1438,9 +1467,6 @@ void Main() {
 										++hint_state;
 									}
 								}
-								else {
-									--hint_state;
-								}
 							}
 						}
 						if (show_mode[1] && umigame_hint) {
@@ -1504,8 +1530,7 @@ void Main() {
 							create_vacant_lst(bd);
 						}
 					}
-					else {
-						global_searching = true;
+					else if (global_searching) {
 						create_vacant_lst(bd);
 						ai_future = async(launch::async, ai, bd, ai_level, show_mode[2] ? 0 : ai_book_accept);
 						ai_thinking = true;
@@ -1543,20 +1568,20 @@ void Main() {
 					}
 					if (!fork_mode) {
 						bd = history[find_history_idx(history, history_place)].b;
-						create_vacant_lst(bd);
 						fork_history.clear();
 						reset_hint(&hint_state, &hint_future);
 						reset_umigame(umigame_state, umigame_future);
 						reset_human_value(&human_value_state, &human_value_future);
 						reset_analyze(&analyzing, &analyze_future);
+						create_vacant_lst(bd);
 					}
 					else {
 						bd = fork_history[find_history_idx(fork_history, history_place)].b;
-						create_vacant_lst(bd);
 						reset_hint(&hint_state, &hint_future);
 						reset_umigame(umigame_state, umigame_future);
 						reset_human_value(&human_value_state, &human_value_future);
 						reset_analyze(&analyzing, &analyze_future);
+						create_vacant_lst(bd);
 					}
 				}
 			}
@@ -1732,6 +1757,7 @@ void Main() {
 						reset_ai(&ai_thinking, &ai_future);
 						reset_analyze(&analyzing, &analyze_future);
 						create_vacant_lst(bd);
+						before_start_game = false;
 					}
 				}
 			}
@@ -1755,8 +1781,101 @@ void Main() {
 						reset_ai(&ai_thinking, &ai_future);
 						reset_analyze(&analyzing, &analyze_future);
 						create_vacant_lst(bd);
+						before_start_game = false;
 					}
 				}
+			}
+			else if (stop_read_flag) {
+				cerr << "stop calculating" << endl;
+				reset_hint(&hint_state, &hint_future);
+				reset_umigame(umigame_state, umigame_future);
+				reset_human_value(&human_value_state, &human_value_future);
+				reset_ai(&ai_thinking, &ai_future);
+				reset_analyze(&analyzing, &analyze_future);
+				create_vacant_lst(bd);
+				hint_state = inf;
+				for (int i = 0; i < hw2; ++i) {
+					umigame_state[i] = inf;
+				}
+				human_value_state = inf;
+				global_searching = false;
+			}
+			else if (resume_read_flag) {
+				cerr << "resume calculating" << endl;
+				create_vacant_lst(bd);
+				global_searching = true;
+			}
+			else if (vertical_convert && !analyzing) {
+				bd.vertical_mirror();
+				String record = U"";
+				for (history_elem &elem : history) {
+					elem.b.vertical_mirror();
+					if (elem.b.policy != -1) {
+						record += str_record(elem.b.policy);
+						elem.record = record;
+					}
+				}
+				record = U"";
+				for (history_elem &elem : fork_history) {
+					elem.b.vertical_mirror();
+					if (elem.b.policy != -1) {
+						record += str_record(elem.b.policy);
+						elem.record = record;
+					}
+				}
+				reset_hint(&hint_state, &hint_future);
+				reset_umigame(umigame_state, umigame_future);
+				reset_human_value(&human_value_state, &human_value_future);
+				reset_ai(&ai_thinking, &ai_future);
+				create_vacant_lst(bd);
+			}
+			else if (black_line_convert && !analyzing) {
+				bd.black_mirror();
+				String record = U"";
+				for (history_elem &elem : history) {
+					elem.b.black_mirror();
+					if (elem.b.policy != -1) {
+						record += str_record(elem.b.policy);
+						elem.record = record;
+					}
+				}
+				record = U"";
+				for (history_elem &elem : fork_history) {
+					elem.b.black_mirror();
+					if (elem.b.policy != -1) {
+						record += str_record(elem.b.policy);
+						elem.record = record;
+					}
+				}
+				reset_hint(&hint_state, &hint_future);
+				reset_umigame(umigame_state, umigame_future);
+				reset_human_value(&human_value_state, &human_value_future);
+				reset_ai(&ai_thinking, &ai_future);
+				create_vacant_lst(bd);
+			}
+			else if (white_line_convert && !analyzing) {
+				bd.white_mirror();
+				String record = U"";
+				for (history_elem &elem : history) {
+					elem.b.white_mirror();
+					if (elem.b.policy != -1) {
+						record += str_record(elem.b.policy);
+						elem.record = record;
+					}
+				}
+				record = U"";
+				for (history_elem &elem : fork_history) {
+					elem.b.white_mirror();
+					if (elem.b.policy != -1) {
+						record += str_record(elem.b.policy);
+						elem.record = record;
+					}
+				}
+				reset_hint(&hint_state, &hint_future);
+				reset_umigame(umigame_state, umigame_future);
+				reset_human_value(&human_value_state, &human_value_future);
+				reset_ai(&ai_thinking, &ai_future);
+				create_vacant_lst(bd);
 			}
 			/*** menu buttons ***/
 
