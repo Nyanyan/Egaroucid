@@ -24,7 +24,6 @@
 #include "umigame.hpp"
 #include "thread_pool.hpp"
 #include "gui/gui_common.hpp"
-#include "gui/pulldown.hpp"
 #include "gui/graph.hpp"
 #include "gui/menu.hpp"
 #include "gui/language.hpp"
@@ -100,7 +99,7 @@ Menu create_menu(Texture checkbox,
 	int *ai_level, int *hint_level, int *book_error,
 	bool *start_book_learn_flag, bool *stop_book_learn_flag, int *book_depth, int *book_learn_accept, bool *import_book_flag,
 	bool *output_record_flag, bool *output_game_flag, bool *input_record_flag, bool *input_board_flag,
-	bool *show_end_popup,
+	bool *show_end_popup, bool *show_log,
 	bool *thread1, bool* thread2, bool* thread4, bool* thread8, bool* thread16, bool* thread32, bool* thread64, bool* thread128,
 	bool *stop_read_flag, bool *resume_read_flag, bool *vertical_convert, bool *white_line_convert, bool *black_line_convert, 
 	bool lang_acts[], vector<string> lang_name_vector) {
@@ -225,6 +224,8 @@ Menu create_menu(Texture checkbox,
 	title.init(language.get("display", "display"));
 
 	menu_e.init_check(language.get("display", "end_popup"), show_end_popup, *show_end_popup);
+	title.push(menu_e);
+	menu_e.init_check(language.get("display", "log"), show_log, *show_log);
 	title.push(menu_e);
 
 	menu.push(title);
@@ -723,6 +724,7 @@ bool import_setting(int *int_mode, int *ai_level, int *ai_book_accept, int *hint
 	int *n_thread_idx,
 	int *hint_num,
 	int *book_depth, int *book_learn_accept,
+	bool *show_log,
 	string *lang_name) {
 	ifstream ifs("resources/settings.txt");
 	if (ifs.fail()) {
@@ -788,6 +790,10 @@ bool import_setting(int *int_mode, int *ai_level, int *ai_book_accept, int *hint
 	if (*book_learn_accept == -inf) {
 		return false;
 	}
+	*show_log = import_int(&ifs);
+	if (*show_log == -inf) {
+		return false;
+	}
 	*lang_name = import_str(&ifs);
 	if (*lang_name == "undefined") {
 		return false;
@@ -802,6 +808,7 @@ void export_setting(int int_mode, int ai_level, int ai_book_accept, int hint_lev
 	int n_thread_idx,
 	int hint_num,
 	int book_depth, int book_learn_accept,
+	bool show_log,
 	string lang_name) {
 	ofstream ofs("resources/settings.txt");
 	if (!ofs.fail()) {
@@ -820,6 +827,7 @@ void export_setting(int int_mode, int ai_level, int ai_book_accept, int hint_lev
 		ofs << hint_num << endl;
 		ofs << book_depth << endl;
 		ofs << book_learn_accept << endl;
+		ofs << show_log << endl;
 		ofs << lang_name << endl;
 	}
 }
@@ -973,6 +981,7 @@ bool close_app(int* hint_state, future<bool>* hint_future,
 	int n_thread_idx,
 	int hint_num,
 	int book_depth, int book_learn_accept,
+	bool show_log,
 	bool *book_learning, future<void>* book_learn_future, bool book_changed,
 	string lang_name) {
 	reset_hint(hint_state, hint_future);
@@ -987,6 +996,7 @@ bool close_app(int* hint_state, future<bool>* hint_future,
 		n_thread_idx,
 		hint_num,
 		book_depth, book_learn_accept,
+		show_log,
 		lang_name);
 	if (*book_learning) {
 		*book_learning = false;
@@ -1156,7 +1166,11 @@ void Main() {
 	Window::SetTitle(U"Egaroucid5.3.0");
 	System::SetTerminationTriggers(UserAction::NoAction);
 	Scene::SetBackground(green);
-	Console.open();
+	//Console.open();
+	stringstream logger_stream;
+	cerr.rdbuf(logger_stream.rdbuf());
+	string logger;
+	String logger_String;
 
 	bool dammy;
 	constexpr int mode_size = 3;
@@ -1284,6 +1298,8 @@ void Main() {
 	int importing_book = 0;
 	future<bool> import_book_future;
 
+	bool show_log = true;
+
 	bool main_window_active = true;
 
 	string joseki_name = "";
@@ -1297,6 +1313,7 @@ void Main() {
 		&n_thread_idx,
 		&hint_num,
 		&book_depth, &book_learn_accept,
+		&show_log,
 		&lang_name)) {
 		cerr << "use default setting" << endl;
 		int_mode = 0;
@@ -1314,6 +1331,7 @@ void Main() {
 		hint_num = 5;
 		book_depth = 30;
 		book_learn_accept = 6;
+		show_log = true;
 		lang_name = language_names[0];
 	}
 	for (int i = 0; i < mode_size; ++i) {
@@ -1351,6 +1369,13 @@ void Main() {
 
 
 	while (System::Update()) {
+		/*** log ***/
+		while (getline(logger_stream, logger))
+			logger_String = Unicode::Widen(logger);
+		logger_stream.clear();
+		if (show_log)
+			font15(logger_String).draw(Arg::bottomLeft(5, 720), font_color);
+		/*** log ***/
 		/*** terminate ***/
 		if (System::GetUserActions() & UserAction::CloseButtonClicked) {
 			closing = true;
@@ -1376,6 +1401,7 @@ void Main() {
 				n_thread_idx,
 				hint_num,
 				book_depth, book_learn_accept,
+				show_log,
 				&book_learning, &book_learn_future, book_changed,
 				lang_name);
 		}
@@ -1412,7 +1438,7 @@ void Main() {
 					&ai_level, &hint_level, &ai_book_accept,
 					&start_book_learn_flag, &stop_book_learn_flag, &book_depth, &book_learn_accept, &import_book_flag,
 					&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag,
-					&show_end_popup,
+					&show_end_popup, &show_log,
 					&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
 					&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert,
 					language_acts, language_names);
@@ -1437,7 +1463,7 @@ void Main() {
 						&ai_level, &hint_level, &ai_book_accept,
 						&start_book_learn_flag, &stop_book_learn_flag, &book_depth, &book_learn_accept, &import_book_flag,
 						&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag,
-						&show_end_popup,
+						&show_end_popup, &show_log,
 						&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
 						&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert,
 						language_acts, language_names);
@@ -1504,7 +1530,7 @@ void Main() {
 					&ai_level, &hint_level, &ai_book_accept,
 					&start_book_learn_flag, &stop_book_learn_flag, &book_depth, &book_learn_accept, &import_book_flag,
 					&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag,
-					&show_end_popup,
+					&show_end_popup, &show_log,
 					&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
 					&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert,
 					language_acts, language_names);
@@ -1540,7 +1566,7 @@ void Main() {
 						&ai_level, &hint_level, &ai_book_accept,
 						&start_book_learn_flag, &stop_book_learn_flag, &book_depth, &book_learn_accept, &import_book_flag,
 						&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag,
-						&show_end_popup,
+						&show_end_popup, &show_log,
 						&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
 						&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert,
 						language_acts, language_names);
