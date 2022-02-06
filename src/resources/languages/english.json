@@ -22,7 +22,7 @@
         },
         "hint": {
             "hint": "Hints",
-            "stone_value": "Stone Difference",
+            "stone_value": "Disc Difference",
             "human_value": "Human Sense Value",
             "umigame_value": "Umigame's Value"
         },
