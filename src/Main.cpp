@@ -98,7 +98,7 @@ Menu create_menu(Texture checkbox,
 	bool *hint_num1, bool* hint_num2, bool* hint_num4, bool* hint_num8, bool* hint_num16, bool* hint_numall,
 	bool *use_value_flag,
 	int *ai_level, int *hint_level, int *book_error,
-	bool *start_book_learn_flag, bool *stop_book_learn_flag,
+	bool *start_book_learn_flag, bool *stop_book_learn_flag, int *book_depth, int *book_learn_accept,
 	bool *output_record_flag, bool *output_game_flag, bool *input_record_flag, bool *input_board_flag,
 	bool *show_end_popup,
 	bool *thread1, bool* thread2, bool* thread4, bool* thread8, bool* thread16, bool* thread32, bool* thread64, bool* thread128,
@@ -236,7 +236,12 @@ Menu create_menu(Texture checkbox,
 		title.push(menu_e);
 		menu_e.init_button(language.get("book", "stop_learn"), stop_book_learn_flag);
 		title.push(menu_e);
-
+		menu_e.init_button(language.get("book", "settings"), dammy);
+		side_menu.init_bar(language.get("book", "depth"), book_depth, *book_depth, 0, 60);
+		menu_e.push(side_menu);
+		side_menu.init_bar(language.get("book", "accept"), book_learn_accept, *book_learn_accept, 0, 64);
+		menu_e.push(side_menu);
+		title.push(menu_e);
 		menu.push(title);
 
 
@@ -712,6 +717,7 @@ bool import_setting(int *int_mode, int *ai_level, int *ai_book_accept, int *hint
 	bool *show_end_popup,
 	int *n_thread_idx,
 	int *hint_num,
+	int *book_depth, int *book_learn_accept,
 	string *lang_name) {
 	ifstream ifs("resources/settings.txt");
 	if (ifs.fail()) {
@@ -769,6 +775,14 @@ bool import_setting(int *int_mode, int *ai_level, int *ai_book_accept, int *hint
 	if (*hint_num == -inf) {
 		return false;
 	}
+	*book_depth = import_int(&ifs);
+	if (*book_depth == -inf) {
+		return false;
+	}
+	*book_learn_accept = import_int(&ifs);
+	if (*book_learn_accept == -inf) {
+		return false;
+	}
 	*lang_name = import_str(&ifs);
 	if (*lang_name == "undefined") {
 		return false;
@@ -782,6 +796,7 @@ void export_setting(int int_mode, int ai_level, int ai_book_accept, int hint_lev
 	bool show_end_popup,
 	int n_thread_idx,
 	int hint_num,
+	int book_depth, int book_learn_accept,
 	string lang_name) {
 	ofstream ofs("resources/settings.txt");
 	if (!ofs.fail()) {
@@ -798,6 +813,8 @@ void export_setting(int int_mode, int ai_level, int ai_book_accept, int hint_lev
 		ofs << show_end_popup << endl;
 		ofs << n_thread_idx << endl;
 		ofs << hint_num << endl;
+		ofs << book_depth << endl;
+		ofs << book_learn_accept << endl;
 		ofs << lang_name << endl;
 	}
 }
@@ -950,7 +967,8 @@ bool close_app(int* hint_state, future<bool>* hint_future,
 	bool show_end_popup,
 	int n_thread_idx,
 	int hint_num,
-	bool *book_learning, future<void>* book_learn_future,
+	int book_depth, int book_learn_accept,
+	bool *book_learning, future<void>* book_learn_future, bool book_changed,
 	string lang_name) {
 	reset_hint(hint_state, hint_future);
 	reset_umigame(umigame_state, umigame_future);
@@ -963,12 +981,17 @@ bool close_app(int* hint_state, future<bool>* hint_future,
 		show_end_popup,
 		n_thread_idx,
 		hint_num,
+		book_depth, book_learn_accept,
 		lang_name);
 	if (*book_learning) {
 		*book_learning = false;
+		global_searching = false;
 		book_learn_future->get();
+		global_searching = true;
 	}
-	book.save_bin();
+	if (book_changed) {
+		book.save_bin();
+	}
 	return true;
 }
 
@@ -1026,10 +1049,10 @@ void learn_book(board bd, int level, int depth, int book_learn_accept, board* bd
 						return;
 					}
 					value = book.get(&nb);
-					if (value == -inf) {
+					if (abs(value) == inf) {
 						value = -ai_book(nb, level, book_learn_accept);
 					}
-					if (value != inf) {
+					if (abs(value) != inf) {
 						nb.copy(bd_ptr);
 						*value_ptr = value;
 						book.reg(nb, value);
@@ -1169,7 +1192,8 @@ void Main() {
 
 	future<void> book_learn_future;
 	bool book_learning = false, book_start_learn = false;
-	int book_learn_accept = 4, book_depth = 40;
+	int book_learn_accept = 4, book_depth = 30;
+	bool book_changed = false;
 
 	bool main_window_active = true;
 
@@ -1183,6 +1207,7 @@ void Main() {
 		&show_end_popup,
 		&n_thread_idx,
 		&hint_num,
+		&book_depth, &book_learn_accept,
 		&lang_name)) {
 		cerr << "use default setting" << endl;
 		int_mode = 0;
@@ -1198,6 +1223,8 @@ void Main() {
 		show_end_popup = true;
 		n_thread_idx = 2;
 		hint_num = 5;
+		book_depth = 30;
+		book_learn_accept = 6;
 		lang_name = language_names[0];
 	}
 	for (int i = 0; i < mode_size; ++i) {
@@ -1259,7 +1286,8 @@ void Main() {
 				show_end_popup,
 				n_thread_idx,
 				hint_num,
-				&book_learning, &book_learn_future,
+				book_depth, book_learn_accept,
+				&book_learning, &book_learn_future, book_changed,
 				lang_name);
 		}
 		if (closing) {
@@ -1293,7 +1321,7 @@ void Main() {
 					&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
 					&use_value_flag,
 					&ai_level, &hint_level, &ai_book_accept,
-					&start_book_learn_flag, &stop_book_learn_flag,
+					&start_book_learn_flag, &stop_book_learn_flag, &book_depth, &book_learn_accept,
 					&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag,
 					&show_end_popup,
 					&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
@@ -1318,7 +1346,7 @@ void Main() {
 						&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
 						&use_value_flag,
 						&ai_level, &hint_level, &ai_book_accept,
-						&start_book_learn_flag, &stop_book_learn_flag,
+						&start_book_learn_flag, &stop_book_learn_flag, &book_depth, &book_learn_accept,
 						&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag,
 						&show_end_popup,
 						&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
@@ -1364,7 +1392,7 @@ void Main() {
 					&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
 					&use_value_flag,
 					&ai_level, &hint_level, &ai_book_accept,
-					&start_book_learn_flag, &stop_book_learn_flag,
+					&start_book_learn_flag, &stop_book_learn_flag, &book_depth, &book_learn_accept,
 					&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag,
 					&show_end_popup,
 					&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
@@ -1400,7 +1428,7 @@ void Main() {
 						&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
 						&use_value_flag,
 						&ai_level, &hint_level, &ai_book_accept,
-						&start_book_learn_flag, &stop_book_learn_flag,
+						&start_book_learn_flag, &stop_book_learn_flag, &book_depth, &book_learn_accept,
 						&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag,
 						&show_end_popup,
 						&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
@@ -2024,12 +2052,15 @@ void Main() {
 			else if (start_book_learn_flag && !before_start_game && !book_learning) {
 				book_learning = true;
 				book_start_learn = true;
+				book_changed = true;
 				book_learn_future = async(launch::async, learn_book, bd, ai_level, book_depth, book_learn_accept, &bd, &bd_value, &book_learning);
 			}
 			else if (stop_book_learn_flag) {
 				if (book_learning) {
 					book_learning = false;
+					global_searching = false;
 					book_learn_future.get();
+					global_searching = true;
 				}
 				book_start_learn = false;
 			}

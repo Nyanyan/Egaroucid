@@ -108,7 +108,7 @@ bool ai_hint(board b, int level, int max_level, int res[], int info[], unsigned 
 }
 
 int ai_book(board b, int max_level, int book_learn_accept){
-    int value = 0;
+    int value = 0, v;
     int depth1, depth2;
     bool use_mpc;
     double mpct;
@@ -119,10 +119,13 @@ int ai_book(board b, int max_level, int book_learn_accept){
         if (abs(value) >= book_learn_accept * 2)
             return -inf;
         transpose_table.init_now();
+        v = ai_value_memo(b, level, value);
+        if (abs(v) == inf)
+            return -inf;
         if (level == min(16, max(0, max_level - 5)))
-            value = ai_value_memo(b, level, value);
+            value = v;
         else{
-            value += ai_value_memo(b, level, value);
+            value += v;
             value /= 2;
         }
         swap(transpose_table.now, transpose_table.prev);
