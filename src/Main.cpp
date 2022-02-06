@@ -1380,7 +1380,7 @@ void Main() {
 									if (hint_state == 0) {
 										hint_legal = bd.mobility_ull();
 									}
-									else if (hint_state == hint_level / 2 * 2) {
+									else if (hint_state == hint_level / 2 * 2 || hint_state == hint_level * 2 / 3 * 2) {
 										unsigned long long n_hint_legal = 0;
 										vector<pair<int, int>> legals;
 										for (int cell = 0; cell < hw2; ++cell) {
@@ -1389,8 +1389,15 @@ void Main() {
 											}
 										}
 										sort(legals.begin(), legals.end());
-										for (int i = 0; i < min((int)legals.size(), hint_actual_nums[hint_num]); ++i) {
-											n_hint_legal |= 1ULL << legals[i].second;
+										if (hint_state == hint_level * 2 / 3 * 2) {
+											for (int i = 0; i < min((int)legals.size(), hint_actual_nums[hint_num]); ++i) {
+												n_hint_legal |= 1ULL << legals[i].second;
+											}
+										}
+										else {
+											for (int i = 0; i < min((int)legals.size(), hint_actual_nums[hint_num] * 3 / 2); ++i) {
+												n_hint_legal |= 1ULL << legals[i].second;
+											}
 										}
 										for (int i = 0; i < (int)legals.size(); ++i) {
 											if (hint_depth[legals[i].second] == search_book_define) {
@@ -1409,16 +1416,16 @@ void Main() {
 									bool all_complete_searched = true;
 									for (int cell = 0; cell < hw2; ++cell) {
 										if (1 & (hint_legal >> cell)) {
-											if (hint_state > 2) {
+											hint_depth[cell] = hint_calc_depth[cell];
+											if (hint_depth[cell] != search_final_define && hint_depth[cell] != search_book_define) {
+												all_complete_searched = false;
+											}
+											if (hint_state > 2 && hint_depth[cell] != search_final_define) {
 												hint_value[cell] += hint_calc_value[cell];
 												hint_value[cell] /= 2;
 											}
 											else {
 												hint_value[cell] = hint_calc_value[cell];
-											}
-											hint_depth[cell] = hint_calc_depth[cell];
-											if (hint_depth[cell] != search_final_define && hint_depth[cell] != search_book_define) {
-												all_complete_searched = false;
 											}
 										}
 									}
