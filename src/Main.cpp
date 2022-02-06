@@ -131,7 +131,7 @@ Menu create_menu(Texture checkbox,
 
 	title.init(language.get("settings", "settings"));
 
-	if (*entry_mode || *serious_game) {
+	if (*entry_mode) {
 		menu_e.init_button(language.get("ai_settings", "ai_settings"), dammy);
 		side_menu.init_bar(language.get("ai_settings", "ai_level"), ai_level, *ai_level, 0, 30);
 		menu_e.push(side_menu);
@@ -146,6 +146,12 @@ Menu create_menu(Texture checkbox,
 		side_menu.init_bar(language.get("ai_settings", "hint_level"), hint_level, *hint_level, 0, 60);
 		menu_e.push(side_menu);
 		side_menu.init_bar(language.get("ai_settings", "book_error"), book_error, *book_error, 0, 64);
+		menu_e.push(side_menu);
+		title.push(menu_e);
+	}
+	else if (*serious_game) {
+		menu_e.init_button(language.get("ai_settings", "ai_settings"), dammy);
+		side_menu.init_bar(language.get("ai_settings", "ai_level"), ai_level, *ai_level, 0, 30);
 		menu_e.push(side_menu);
 		title.push(menu_e);
 	}
@@ -212,6 +218,17 @@ Menu create_menu(Texture checkbox,
 	menu.push(title);
 
 
+
+	title.init(language.get("display", "display"));
+
+	menu_e.init_check(language.get("display", "end_popup"), show_end_popup, *show_end_popup);
+	title.push(menu_e);
+
+	menu.push(title);
+
+
+
+
 	if (*professional_mode) {
 		title.init(language.get("book", "book"));
 
@@ -235,13 +252,6 @@ Menu create_menu(Texture checkbox,
 
 		menu.push(title);
 	}
-
-	title.init(language.get("display", "display"));
-
-	menu_e.init_check(language.get("display", "end_popup"), show_end_popup, *show_end_popup);
-	title.push(menu_e);
-
-	menu.push(title);
 
 
 
@@ -1061,7 +1071,7 @@ void Main() {
 
 	int human_value_state = 0;
 	int human_value[hw2];
-	double human_value_a = 0.5;
+	double human_value_a = 1.0;
 	int human_value_depth = 5;
 	future<void> human_value_future;
 
