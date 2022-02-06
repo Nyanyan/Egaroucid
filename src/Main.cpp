@@ -189,17 +189,6 @@ Menu create_menu(Texture checkbox,
 		title.push(menu_e);
 	}
 
-	if (*entry_mode) {
-		menu_e.init_button(language.get("level", "level"), dammy);
-		side_menu.init_bar(language.get("level", "ai_level"), ai_level, *ai_level);
-	}
-	else if (*professional_mode) {
-
-	}
-	else if (*serious_game) {
-		*book_error = 0;
-	}
-
 	menu.push(title);
 
 
@@ -611,6 +600,15 @@ void reset_ai(bool *ai_thinking, future<search_result> *ai_future) {
 	}
 }
 
+void reset_analyze(bool* analyzing, future<cell_value>* analyze_future) {
+	if (*analyzing) {
+		global_searching = false;
+		analyze_future->get();
+		global_searching = true;
+		*analyzing = false;
+	}
+}
+
 bool not_finished(board bd) {
 	return bd.p == 0 || bd.p == 1;
 }
@@ -884,10 +882,11 @@ bool output_game(history_elem hist, int ai_level, bool use_ai_flag, int use_ai_m
 	ofs << game_memo.narrow() << endl;
 }
 
-bool close_app(int *hint_state, future<void> *hint_future,
+bool close_app(int* hint_state, future<void>* hint_future,
 	int umigame_state[], future<umigame_result> umigame_future[],
 	int* human_value_state, future<void>* human_value_future,
 	bool* ai_thinking, future<search_result>* ai_future,
+	bool* analyzing, future<cell_value>* analyze_future,
 	int int_mode, int ai_level, int ai_book_accept, int hint_level,
 	bool use_ai_flag, int use_ai_mode,
 	bool use_hint_flag, bool normal_hint, bool human_hint, bool umigame_hint,
@@ -899,6 +898,7 @@ bool close_app(int *hint_state, future<void> *hint_future,
 	reset_umigame(umigame_state, umigame_future);
 	reset_human_value(human_value_state, human_value_future);
 	reset_ai(ai_thinking, ai_future);
+	reset_analyze(analyzing, analyze_future);
 	export_setting(int_mode, ai_level, ai_book_accept, hint_level,
 		use_ai_flag, use_ai_mode,
 		use_hint_flag, normal_hint, human_hint, umigame_hint,
@@ -1129,6 +1129,7 @@ void Main() {
 				umigame_state, umigame_future,
 				&human_value_state, &human_value_future,
 				&ai_thinking, &ai_future,
+				&analyzing, &analyze_future,
 				int_mode, ai_level, ai_book_accept, hint_level,
 				use_ai_flag, use_ai_mode,
 				use_hint_flag, normal_hint, human_hint, umigame_hint,
@@ -1369,6 +1370,7 @@ void Main() {
 						reset_hint(&hint_state, &hint_future);
 						reset_umigame(umigame_state, umigame_future);
 						reset_human_value(&human_value_state, &human_value_future);
+						reset_analyze(&analyzing, &analyze_future);
 					}
 					/*** human moves ***/
 
@@ -1498,12 +1500,13 @@ void Main() {
 							reset_hint(&hint_state, &hint_future);
 							reset_umigame(umigame_state, umigame_future);
 							reset_human_value(&human_value_state, &human_value_future);
+							reset_analyze(&analyzing, &analyze_future);
 						}
 					}
 					else {
 						global_searching = true;
 						create_vacant_lst(bd);
-						ai_future = async(launch::async, ai, bd, ai_level, ai_book_accept);
+						ai_future = async(launch::async, ai, bd, ai_level, show_mode[2] ? 0 : ai_book_accept);
 						ai_thinking = true;
 					}
 				}
@@ -1544,6 +1547,7 @@ void Main() {
 						reset_hint(&hint_state, &hint_future);
 						reset_umigame(umigame_state, umigame_future);
 						reset_human_value(&human_value_state, &human_value_future);
+						reset_analyze(&analyzing, &analyze_future);
 					}
 					else {
 						bd = fork_history[find_history_idx(fork_history, history_place)].b;
@@ -1551,6 +1555,7 @@ void Main() {
 						reset_hint(&hint_state, &hint_future);
 						reset_umigame(umigame_state, umigame_future);
 						reset_human_value(&human_value_state, &human_value_future);
+						reset_analyze(&analyzing, &analyze_future);
 					}
 				}
 			}
@@ -1572,8 +1577,8 @@ void Main() {
 			/*** joseki ***/
 
 			/*** info draw ***/
-			if (main_window_active) {
-				info_draw(bd, joseki_name, ai_level, hint_level, font30);
+			if (main_window_active || analyzing) {
+				info_draw(bd, joseki_name, ai_level, hint_level, font20);
 			}
 			/*** info draw ***/
 
@@ -1652,16 +1657,19 @@ void Main() {
 				reset_umigame(umigame_state, umigame_future);
 				reset_human_value(&human_value_state, &human_value_future);
 				reset_ai(&ai_thinking, &ai_future);
+				reset_analyze(&analyzing, &analyze_future);
 			}
 			else if (analyze_flag) {
-				analyzing = true;
-				main_window_active = false;
-				analyze_state = false;
-				analyze_idx = 0;
 				reset_hint(&hint_state, &hint_future);
 				reset_umigame(umigame_state, umigame_future);
 				reset_human_value(&human_value_state, &human_value_future);
 				reset_ai(&ai_thinking, &ai_future);
+				reset_analyze(&analyzing, &analyze_future);
+				analyzing = true;
+				main_window_active = false;
+				analyze_state = false;
+				analyze_idx = 0;
+				before_start_game = false;
 			}
 			else if (output_record_flag) {
 				if (fork_mode) {
@@ -1721,6 +1729,7 @@ void Main() {
 						reset_umigame(umigame_state, umigame_future);
 						reset_human_value(&human_value_state, &human_value_future);
 						reset_ai(&ai_thinking, &ai_future);
+						reset_analyze(&analyzing, &analyze_future);
 						create_vacant_lst(bd);
 					}
 				}
@@ -1743,6 +1752,7 @@ void Main() {
 						reset_umigame(umigame_state, umigame_future);
 						reset_human_value(&human_value_state, &human_value_future);
 						reset_ai(&ai_thinking, &ai_future);
+						reset_analyze(&analyzing, &analyze_future);
 						create_vacant_lst(bd);
 					}
 				}
