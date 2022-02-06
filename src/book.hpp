@@ -379,7 +379,7 @@ class book{
             while(p_node != NULL){
                 if(compare_key(&b, p_node)){
                     int result = register_symmetric_book(b, value, p_node->line);
-					cerr << "value changed " << result << endl;
+					cerr << "value changed to " << value << " result " << result << endl;
                     return;
                 }
                 p_node = p_node->p_n_node;

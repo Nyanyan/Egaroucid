@@ -1067,6 +1067,10 @@ void learn_book(board bd, int level, int depth, int book_learn_accept, board* bd
 	*book_learning = false;
 }
 
+void show_change_book(int change_book_cell, String changed_book_value_str, Font font) {
+	font(language.get("book", "changed_value") + U"(" + str_record(change_book_cell) + U"): " + changed_book_value_str).draw(left_left, 650, font_color);
+}
+
 void Main() {
 	Size window_size = Size(1000, 720);
 	Window::Resize(window_size);
@@ -1194,6 +1198,10 @@ void Main() {
 	bool book_learning = false, book_start_learn = false;
 	int book_learn_accept = 4, book_depth = 30;
 	bool book_changed = false;
+
+	bool changing_book = false;
+	int change_book_cell = -1;
+	String changed_book_value_str;
 
 	bool main_window_active = true;
 
@@ -1658,6 +1666,101 @@ void Main() {
 						}
 					}
 					/*** hints ***/
+
+					/*** change book ***/
+					if (show_mode[1]) {
+						unsigned long long legal = bd.mobility_ull();
+						for (int cell = 0; cell < hw2; ++cell) {
+							if (1 & (legal >> cell)) {
+								if (board_cells[cell].rightClicked()) {
+									if (changing_book && cell == change_book_cell) {
+										if (changed_book_value_str.size() == 0) {
+											changing_book = false;
+										}
+										else {
+											int changed_book_value = ParseOr<int>(changed_book_value_str, -1000);
+											if (changed_book_value != -1000) {
+												mobility m;
+												calc_flip(&m, &bd, cell);
+												book.change(bd.move_copy(&m), changed_book_value);
+												changed_book_value_str.clear();
+												book_changed = true;
+												changing_book = false;
+												hint_state = 0;
+											}
+										}
+									}
+									else {
+										changing_book = true;
+										change_book_cell = cell;
+									}
+								}
+							}
+						}
+						if (changing_book) {
+							if (Key0.down() || KeyNum0.down()) {
+								if (ParseOr<int>(changed_book_value_str + U"0", -1000) != -1000) {
+									changed_book_value_str += U"0";
+								}
+							}
+							else if (Key1.down() || KeyNum1.down()) {
+								if (ParseOr<int>(changed_book_value_str + U"1", -1000) != -1000) {
+									changed_book_value_str += U"1";
+								}
+							}
+							else if (Key2.down() || KeyNum2.down()) {
+								if (ParseOr<int>(changed_book_value_str + U"2", -1000) != -1000) {
+									changed_book_value_str += U"2";
+								}
+							}
+							else if (Key3.down() || KeyNum3.down()) {
+								if (ParseOr<int>(changed_book_value_str + U"3", -1000) != -1000) {
+									changed_book_value_str += U"3";
+								}
+							}
+							else if (Key4.down() || KeyNum4.down()) {
+								if (ParseOr<int>(changed_book_value_str + U"4", -1000) != -1000) {
+									changed_book_value_str += U"4";
+								}
+							}
+							else if (Key5.down() || KeyNum5.down()) {
+								if (ParseOr<int>(changed_book_value_str + U"5", -1000) != -1000) {
+									changed_book_value_str += U"5";
+								}
+							}
+							else if (Key6.down() || KeyNum6.down()) {
+								if (ParseOr<int>(changed_book_value_str + U"6", -1000) != -1000) {
+									changed_book_value_str += U"6";
+								}
+							}
+							else if (Key7.down() || KeyNum7.down()) {
+								if (ParseOr<int>(changed_book_value_str + U"7", -1000) != -1000) {
+									changed_book_value_str += U"7";
+								}
+							}
+							else if (Key8.down() || KeyNum8.down()) {
+								if (ParseOr<int>(changed_book_value_str + U"8", -1000) != -1000) {
+									changed_book_value_str += U"8";
+								}
+							}
+							else if (Key9.down() || KeyNum9.down()) {
+								if (ParseOr<int>(changed_book_value_str + U"9", -1000) != -1000) {
+									changed_book_value_str += U"9";
+								}
+							}
+							else if (KeyMinus.down()) {
+								if (changed_book_value_str.size() == 0) {
+									changed_book_value_str += U"-";
+								}
+							}
+							else if (KeyBackspace.down()) {
+								if (changed_book_value_str.size())
+									changed_book_value_str.pop_back();
+							}
+							show_change_book(change_book_cell, changed_book_value_str, font20);
+						}
+					}
+					/*** change book ***/
 				}
 				/*** ai plays ***/
 				else if (not_finished(bd) && history[history.size() - 1].b.n - 4 == history_place && !book_learning) {
@@ -1849,6 +1952,7 @@ void Main() {
 				fork_mode = false;
 				before_start_game = true;
 				show_popup_flag = true;
+				joseki_name.clear();
 				reset_hint(&hint_state, &hint_future);
 				reset_umigame(umigame_state, umigame_future);
 				reset_human_value(&human_value_state, &human_value_future);
@@ -1923,6 +2027,7 @@ void Main() {
 						fork_mode = false;
 						before_start_game = true;
 						show_popup_flag = true;
+						joseki_name.clear();
 						reset_hint(&hint_state, &hint_future);
 						reset_umigame(umigame_state, umigame_future);
 						reset_human_value(&human_value_state, &human_value_future);
@@ -1947,6 +2052,7 @@ void Main() {
 						fork_mode = false;
 						before_start_game = true;
 						show_popup_flag = true;
+						joseki_name.clear();
 						reset_hint(&hint_state, &hint_future);
 						reset_umigame(umigame_state, umigame_future);
 						reset_human_value(&human_value_state, &human_value_future);

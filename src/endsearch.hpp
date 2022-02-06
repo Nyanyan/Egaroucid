@@ -1550,7 +1550,7 @@ inline search_result endsearch_value_analyze_memo(board b, long long strt, bool 
     res.policy = -1;
     if (b.n < hw2 - 5){
         if (use_mpct)
-            res.value = nega_scout_final(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct, &searched_nodes);
+            res.value = nega_scout_final(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct, &searched_nodes) / 2 * 2;
         else
             res.value = mtd_final(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct, pre_calc_value, &searched_nodes);
     } else{
