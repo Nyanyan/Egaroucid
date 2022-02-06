@@ -131,6 +131,25 @@ Menu create_menu(Texture checkbox,
 
 	title.init(language.get("settings", "settings"));
 
+	if (*entry_mode || *serious_game) {
+		menu_e.init_button(language.get("ai_settings", "ai_settings"), dammy);
+		side_menu.init_bar(language.get("ai_settings", "ai_level"), ai_level, *ai_level, 0, 30);
+		menu_e.push(side_menu);
+		side_menu.init_bar(language.get("ai_settings", "hint_level"), hint_level, *hint_level, 0, 15);
+		menu_e.push(side_menu);
+		title.push(menu_e);
+	}
+	else if (*professional_mode) {
+		menu_e.init_button(language.get("ai_settings", "ai_settings"), dammy);
+		side_menu.init_bar(language.get("ai_settings", "ai_level"), ai_level, *ai_level, 0, 60);
+		menu_e.push(side_menu);
+		side_menu.init_bar(language.get("ai_settings", "hint_level"), hint_level, *hint_level, 0, 60);
+		menu_e.push(side_menu);
+		side_menu.init_bar(language.get("ai_settings", "book_error"), book_error, *book_error, 0, 64);
+		menu_e.push(side_menu);
+		title.push(menu_e);
+	}
+
 	menu_e.init_check(language.get("settings", "ai_play", "ai_play"), use_ai_flag, *use_ai_flag);
 	side_menu.init_radio(language.get("settings", "ai_play", "human_first"), human_first, *human_first);
 	menu_e.push(side_menu);
@@ -378,7 +397,7 @@ void board_draw(Rect board_cells[], board b, int int_mode, bool use_hint_flag, b
 			Circle(x, y, stone_size).draw(Palette::White);
 		}
 		if (1 & (legal >> cell)) {
-			if (use_hint_flag && normal_hint && hint_state >= 2) {
+			if (use_hint_flag && normal_hint && hint_state >= 2 && (1 & (hint_legal >> cell))) {
 				max_cell_value = max(max_cell_value, hint_value[cell]);
 			}
 			if (!before_start_game && (!use_hint_flag || (!normal_hint && !human_hint && !umigame_hint))) {
@@ -585,7 +604,7 @@ int output_game_popup(Font big_font, Font mid_font, Font small_font, String* bla
 	return 0;
 }
 
-void reset_hint(int *hint_state, future<void> *hint_future){
+void reset_hint(int *hint_state, future<bool> *hint_future){
 	global_searching = false;
 	for (int i = 0; i < hw2; ++i) {
 		if (*hint_state % 2 == 1) {
@@ -907,7 +926,7 @@ bool output_game(history_elem hist, int ai_level, bool use_ai_flag, int use_ai_m
 	ofs << game_memo.narrow() << endl;
 }
 
-bool close_app(int* hint_state, future<void>* hint_future,
+bool close_app(int* hint_state, future<bool>* hint_future,
 	int umigame_state[], future<umigame_result> umigame_future[],
 	int* human_value_state, future<void>* human_value_future,
 	bool* ai_thinking, future<search_result>* ai_future,
@@ -1027,7 +1046,7 @@ void Main() {
 	int hint_value[hw2], hint_depth[hw2];
 	int hint_calc_value[hw2], hint_calc_depth[hw2];
 	unsigned long long hint_legal = 0;
-	future<void>  hint_future;
+	future<bool>  hint_future;
 	int hint_state = 0;
 	bool hint_nums[6] = { false, false, false, false, false, true };
 	constexpr int hint_actual_nums[6] = {1, 2, 4, 8, 16, hw2};
@@ -1092,7 +1111,7 @@ void Main() {
 		int_mode = 0;
 		ai_level = 15;
 		ai_book_accept = 2;
-		hint_level = 9;
+		hint_level = 7;
 		use_ai_flag = true;
 		use_ai_mode = 0;
 		use_hint_flag = true;
@@ -1432,7 +1451,7 @@ void Main() {
 									if (hint_state == 0) {
 										hint_legal = bd.mobility_ull();
 									}
-									else if (show_mode[1] && (hint_state == hint_level / 2 * 2 || hint_state == hint_level * 2 / 3 * 2)) {
+									else if (show_mode[1] && (hint_state == hint_level / 3 * 2 || hint_state == hint_level * 2 / 3 * 2)) {
 										unsigned long long n_hint_legal = 0;
 										vector<pair<int, int>> legals;
 										for (int cell = 0; cell < hw2; ++cell) {
@@ -1447,7 +1466,7 @@ void Main() {
 											}
 										}
 										else {
-											for (int i = 0; i < min((int)legals.size(), hint_actual_nums[hint_num] * 3 / 2); ++i) {
+											for (int i = 0; i < min((int)legals.size(), (hint_actual_nums[hint_num] * 3 / 2 + 1)); ++i) {
 												n_hint_legal |= 1ULL << legals[i].second;
 											}
 										}
@@ -1458,35 +1477,40 @@ void Main() {
 										}
 										hint_legal = n_hint_legal;
 									}
-									hint_future = async(launch::async, ai_hint, bd, hint_state / 2, hint_calc_value, hint_calc_depth, hint_legal);
+									hint_future = async(launch::async, ai_hint, bd, hint_state / 2, hint_level, hint_calc_value, hint_calc_depth, hint_legal);
 									++hint_state;
 								}
 							}
 							else if (hint_future.wait_for(chrono::seconds(0)) == future_status::ready) {
-								hint_future.get();
-								if (global_searching) {
-									bool all_complete_searched = true;
-									for (int cell = 0; cell < hw2; ++cell) {
-										if (1 & (hint_legal >> cell)) {
-											hint_depth[cell] = hint_calc_depth[cell];
-											if (hint_depth[cell] != search_final_define && hint_depth[cell] != search_book_define) {
-												all_complete_searched = false;
-											}
-											if (hint_state > 2 && hint_depth[cell] != search_final_define) {
-												hint_value[cell] += hint_calc_value[cell];
-												hint_value[cell] /= 2;
-											}
-											else {
-												hint_value[cell] = hint_calc_value[cell];
+								bool hint_calclated = hint_future.get();
+								if (hint_calclated) {
+									if (global_searching) {
+										bool all_complete_searched = true;
+										for (int cell = 0; cell < hw2; ++cell) {
+											if (1 & (hint_legal >> cell)) {
+												hint_depth[cell] = hint_calc_depth[cell];
+												if (hint_depth[cell] != search_final_define && hint_depth[cell] != search_book_define) {
+													all_complete_searched = false;
+												}
+												if (hint_state > 2 && hint_depth[cell] != search_final_define) {
+													hint_value[cell] += hint_calc_value[cell];
+													hint_value[cell] /= 2;
+												}
+												else {
+													hint_value[cell] = hint_calc_value[cell];
+												}
 											}
 										}
+										if (all_complete_searched) {
+											hint_state = hint_level * 2 + 2;
+										}
+										else {
+											++hint_state;
+										}
 									}
-									if (all_complete_searched) {
-										hint_state = hint_level * 2 + 2;
-									}
-									else {
-										++hint_state;
-									}
+								}
+								else {
+									++hint_state;
 								}
 							}
 						}

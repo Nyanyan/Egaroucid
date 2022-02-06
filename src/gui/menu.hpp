@@ -10,15 +10,21 @@ constexpr Color menu_active_color = Palette::Lightblue;
 constexpr Color menu_select_color = Palette::Lightcyan;
 constexpr Color menu_font_color = Palette::Black;
 constexpr Color radio_color = Palette::Deepskyblue;
+constexpr Color bar_color = Palette::Lightskyblue;
+constexpr Color bar_circle_color = Palette::Deepskyblue;
 constexpr int menu_offset_x = 10;
 constexpr int menu_offset_y = 1;
 constexpr int menu_child_offset = 2;
+constexpr int bar_additional_offset = 20;
 constexpr double radio_ratio = 0.2;
 
 #define button_mode 0
 #define bar_mode 1
 #define check_mode 2
 #define radio_mode 3
+#define bar_size 200
+#define bar_height 14
+#define bar_radius 8
 
 class menu_elem {
 private:
@@ -36,6 +42,13 @@ private:
 	bool *is_checked;
 	bool dammy_clicked;
 	Texture checkbox;
+	int min_elem;
+	int max_elem;
+	int bar_value_offset;
+	Circle bar_circle;
+	Rect bar_rect;
+	int bar_sx;
+	int bar_center_y;
 
 public:
 	void init_button(String s, bool *c) {
@@ -50,7 +63,7 @@ public:
 		*is_clicked_p = is_clicked;
 	}
 
-	void init_bar(String s, int *c, int d) {
+	void init_bar(String s, int *c, int d, int mn, int mx) {
 		clear();
 		mode = bar_mode;
 		has_child = false;
@@ -59,6 +72,8 @@ public:
 		str = s;
 		bar_elem = c;
 		*bar_elem = d;
+		min_elem = mn;
+		max_elem = mx;
 		is_clicked = false;
 	}
 
@@ -93,6 +108,7 @@ public:
 	void pre_init(Font f, Texture c) {
 		font = f;
 		checkbox = c;
+		bar_value_offset = font(U"88").region(Point{ 0, 0 }).w;
 	}
 
 	void init_inside(int x, int y, int w, int h) {
@@ -117,12 +133,38 @@ public:
 				yy += height;
 			}
 		}
+		if (mode == bar_mode) {
+			bar_sx = rect.x + rect.w - bar_size - bar_additional_offset;
+			bar_center_y = rect.y + rect.h / 2;
+			bar_rect.x = bar_sx;
+			bar_rect.y = bar_center_y - bar_height / 2;
+			bar_rect.w = bar_size;
+			bar_rect.h = bar_height;
+			bar_circle.x = bar_sx + bar_size * (*bar_elem - min_elem + 5) / (max_elem - min_elem + 10);
+			bar_circle.y = bar_center_y;
+			bar_circle.r = bar_radius;
+		}
 	}
 
 	void update() {
 		was_active = is_active;
 		is_active = rect.mouseOver();
+		for (menu_elem& elem : children) {
+			elem.update();
+			is_active = is_active || (elem.active() && last_active());
+		}
 		is_clicked = rect.leftClicked();
+		if (mode == bar_mode && bar_rect.leftPressed()) {
+			int min_error = inf;
+			int cursor_x = Cursor::Pos().x;
+			for (int i = min_elem; i <= max_elem; ++i) {
+				int x = bar_sx + bar_size * (i - min_elem + 5) / (max_elem - min_elem + 10);
+				if (abs(cursor_x - x) < min_error) {
+					min_error = abs(cursor_x - x);
+					*bar_elem = i;
+				}
+			}
+		}
 	}
 
 	void update_button() {
@@ -138,10 +180,6 @@ public:
 		if (is_clicked && mode == check_mode) {
 			*is_checked = !(*is_checked);
 		}
-		for (menu_elem& elem : children) {
-			elem.update();
-			is_active = is_active || (elem.active() && last_active());
-		}
 		if (is_active) {
 			rect.draw(menu_active_color);
 		}
@@ -149,6 +187,12 @@ public:
 			rect.draw(menu_select_color);
 		}
 		font(str).draw(rect.x + rect.h - menu_offset_y, rect.y + menu_offset_y, menu_font_color);
+		if (mode == bar_mode) {
+			font(*bar_elem).draw(bar_sx - menu_offset_x - menu_child_offset - bar_value_offset, rect.y + menu_offset_y, menu_font_color);
+			bar_rect.draw(bar_color);
+			bar_circle.x = bar_sx + bar_size * (*bar_elem - min_elem + 5) / (max_elem - min_elem + 10);
+			bar_circle.draw(bar_circle_color);
+		}
 		if (has_child) {
 			font(U">").draw(rect.x + rect.w - menu_offset_x - menu_child_offset, rect.y + menu_offset_y, menu_font_color);
 			if (is_active) {
@@ -210,6 +254,9 @@ public:
 	RectF size() {
 		RectF res = font(str).region(Point{ 0, 0 });
 		res.w += res.h;
+		if (mode == bar_mode) {
+			res.w += bar_size + bar_value_offset + bar_additional_offset;
+		}
 		return res;
 	}
 
@@ -329,8 +376,8 @@ public:
 		}
 		font(str).draw(Arg::topCenter(rect.x + rect.w / 2, rect.y + menu_offset_y), menu_font_color);
 		is_open = n_is_open;
-		if (clicked)
-			is_open = false;
+		//if (clicked)
+		//	is_open = false;
 	}
 
 	void draw_title() {

@@ -60,7 +60,7 @@ int ai_value_memo(board b, int level, int pre_calc_value){
     return res;
 }
 
-void ai_hint(board b, int level, int res[], int info[], unsigned long long legal){
+bool ai_hint(board b, int level, int max_level, int res[], int info[], unsigned long long legal){
     mobility mob;
     board nb;
     future<int> val_future[hw2];
@@ -70,6 +70,9 @@ void ai_hint(board b, int level, int res[], int info[], unsigned long long legal
     bool use_mpc;
     double mpct;
     get_level(level, b.n - 4, &depth1, &depth2, &use_mpc, &mpct);
+    if (b.n >= hw2 - depth2 && level != max_level)
+        return false;
+    cerr << "level status " << level << " " << b.n - 3 << " " << depth1 << " " << depth2 << " " << use_mpc << " " << mpct << endl;
     transpose_table.init_now();
     for (int i = 0; i < hw2; ++i){
         if (1 & (legal >> i)){
@@ -101,4 +104,5 @@ void ai_hint(board b, int level, int res[], int info[], unsigned long long legal
                 res[i] = -val_future[i].get();
         }
     }
+    return true;
 }
