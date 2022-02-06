@@ -98,7 +98,7 @@ Menu create_menu(Texture checkbox,
 	bool *hint_num1, bool* hint_num2, bool* hint_num4, bool* hint_num8, bool* hint_num16, bool* hint_numall,
 	bool *use_value_flag,
 	int *ai_level, int *hint_level, int *book_error,
-	bool *start_book_learn_flag, bool *stop_book_learn_flag, int *book_depth, int *book_learn_accept,
+	bool *start_book_learn_flag, bool *stop_book_learn_flag, int *book_depth, int *book_learn_accept, bool *import_book_flag,
 	bool *output_record_flag, bool *output_game_flag, bool *input_record_flag, bool *input_board_flag,
 	bool *show_end_popup,
 	bool *thread1, bool* thread2, bool* thread4, bool* thread8, bool* thread16, bool* thread32, bool* thread64, bool* thread128,
@@ -132,6 +132,8 @@ Menu create_menu(Texture checkbox,
 	title.init(language.get("settings", "settings"));
 
 	if (*entry_mode) {
+		*ai_level = min(*ai_level, 30);
+		*hint_level = min(*hint_level, 15);
 		menu_e.init_button(language.get("ai_settings", "ai_settings"), dammy);
 		side_menu.init_bar(language.get("ai_settings", "ai_level"), ai_level, *ai_level, 0, 30);
 		menu_e.push(side_menu);
@@ -150,6 +152,7 @@ Menu create_menu(Texture checkbox,
 		title.push(menu_e);
 	}
 	else if (*serious_game) {
+		*ai_level = min(*ai_level, 30);
 		menu_e.init_button(language.get("ai_settings", "ai_settings"), dammy);
 		side_menu.init_bar(language.get("ai_settings", "ai_level"), ai_level, *ai_level, 0, 30);
 		menu_e.push(side_menu);
@@ -241,6 +244,8 @@ Menu create_menu(Texture checkbox,
 		menu_e.push(side_menu);
 		side_menu.init_bar(language.get("book", "accept"), book_learn_accept, *book_learn_accept, 0, 64);
 		menu_e.push(side_menu);
+		title.push(menu_e);
+		menu_e.init_button(language.get("book", "import"), import_book_flag);
 		title.push(menu_e);
 		menu.push(title);
 
@@ -1071,6 +1076,78 @@ void show_change_book(int change_book_cell, String changed_book_value_str, Font 
 	font(language.get("book", "changed_value") + U"(" + str_record(change_book_cell) + U"): " + changed_book_value_str).draw(left_left, 650, font_color);
 }
 
+bool import_book_p(string file) {
+	cerr << "book import" << endl;
+	bool result = false;
+	vector<string> lst;
+	auto offset = string::size_type(0);
+	while (1) {
+		auto pos = file.find(".", offset);
+		if (pos == string::npos) {
+			lst.push_back(file.substr(offset));
+			break;
+		}
+		lst.push_back(file.substr(offset, pos - offset));
+		offset = pos + 1;
+	}
+	if (lst[lst.size() - 1] == "egbk") {
+		cerr << "importing Egaroucid book" << endl;
+		result = book.import_file_bin(file);
+	}
+	else if (lst[lst.size() - 1] == "dat") {
+		cerr << "importing Edax book" << endl;
+		result = book.import_edax_book(file);
+	}
+	else {
+		cerr << "this is not a book" << endl;
+	}
+	return result;
+}
+
+int import_book(future<bool>* import_book_future, Font font, Texture icon, Texture logo) {
+	icon.scaled((double)(left_right - left_left) / icon.width()).draw(left_left, y_center - (left_right - left_left) / 2);
+	logo.scaled((double)(left_right - left_left) * 0.8 / logo.width()).draw(right_left, y_center - 30);
+	font(language.get("book", "import_explanation")).draw(right_left, y_center + font.fontSize() * 2, font_color);
+	Button break_button;
+	break_button.init(x_center - 125, 600, 250, 50, 10, language.get("book", "back"), font, button_color, button_font_color);
+	break_button.draw();
+	if (break_button.clicked()) {
+		return 0;
+	}
+	if (DragDrop::HasNewFilePaths()) {
+		for (const auto& dropped : DragDrop::GetDroppedFilePaths()) {
+			*import_book_future = async(launch::async, import_book_p, dropped.path.narrow());
+			return 2;
+		}
+	}
+	return 1;
+}
+
+int import_book_failed(future<bool>* import_book_future, Font font, Texture icon, Texture logo) {
+	icon.scaled((double)(left_right - left_left) / icon.width()).draw(left_left, y_center - (left_right - left_left) / 2);
+	logo.scaled((double)(left_right - left_left) * 0.8 / logo.width()).draw(right_left, y_center - 30);
+	font(language.get("book", "import_failed")).draw(right_left, y_center + font.fontSize() * 2, font_color);
+	Button break_button;
+	break_button.init(x_center - 125, 600, 250, 50, 10, language.get("book", "back"), font, button_color, button_font_color);
+	break_button.draw();
+	if (break_button.clicked()) {
+		return 0;
+	}
+	if (DragDrop::HasNewFilePaths()) {
+		for (const auto& dropped : DragDrop::GetDroppedFilePaths()) {
+			*import_book_future = async(launch::async, import_book_p, dropped.path.narrow());
+			return 2;
+		}
+	}
+	return 3;
+}
+
+void import_loading_book(Font font, Texture icon, Texture logo) {
+	icon.scaled((double)(left_right - left_left) / icon.width()).draw(left_left, y_center - (left_right - left_left) / 2);
+	logo.scaled((double)(left_right - left_left) * 0.8 / logo.width()).draw(right_left, y_center - 30);
+	font(language.get("book", "loading")).draw(right_left, y_center + font.fontSize(), font_color);
+}
+
 void Main() {
 	Size window_size = Size(1000, 720);
 	Window::Resize(window_size);
@@ -1203,6 +1280,10 @@ void Main() {
 	int change_book_cell = -1;
 	String changed_book_value_str;
 
+	bool import_book_flag = false;
+	int importing_book = 0;
+	future<bool> import_book_future;
+
 	bool main_window_active = true;
 
 	string joseki_name = "";
@@ -1329,7 +1410,7 @@ void Main() {
 					&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
 					&use_value_flag,
 					&ai_level, &hint_level, &ai_book_accept,
-					&start_book_learn_flag, &stop_book_learn_flag, &book_depth, &book_learn_accept,
+					&start_book_learn_flag, &stop_book_learn_flag, &book_depth, &book_learn_accept, &import_book_flag,
 					&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag,
 					&show_end_popup,
 					&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
@@ -1354,7 +1435,7 @@ void Main() {
 						&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
 						&use_value_flag,
 						&ai_level, &hint_level, &ai_book_accept,
-						&start_book_learn_flag, &stop_book_learn_flag, &book_depth, &book_learn_accept,
+						&start_book_learn_flag, &stop_book_learn_flag, &book_depth, &book_learn_accept, &import_book_flag,
 						&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag,
 						&show_end_popup,
 						&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
@@ -1383,6 +1464,27 @@ void Main() {
 		}
 		/*** initialize ***/
 
+		/*** book importing ***/
+		else if (importing_book == 1) {
+			importing_book = import_book(&import_book_future, font30, icon, logo);
+		}
+		else if (importing_book == 2) {
+			import_loading_book(font50, icon, logo);
+			if (import_book_future.wait_for(chrono::seconds(0)) == future_status::ready) {
+				if (import_book_future.get()) {
+					importing_book = 0;
+					book_changed = true;
+				}
+				else {
+					importing_book = 3;
+				}
+			}
+		}
+		else if (importing_book == 3) {
+			importing_book = import_book_failed(&import_book_future, font30, icon, logo);
+		}
+		/*** book importing ***/
+
 		/*** initialized ***/
 		else {
 			/**** when mode changed **/
@@ -1400,7 +1502,7 @@ void Main() {
 					&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
 					&use_value_flag,
 					&ai_level, &hint_level, &ai_book_accept,
-					&start_book_learn_flag, &stop_book_learn_flag, &book_depth, &book_learn_accept,
+					&start_book_learn_flag, &stop_book_learn_flag, &book_depth, &book_learn_accept, &import_book_flag,
 					&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag,
 					&show_end_popup,
 					&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
@@ -1436,7 +1538,7 @@ void Main() {
 						&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
 						&use_value_flag,
 						&ai_level, &hint_level, &ai_book_accept,
-						&start_book_learn_flag, &stop_book_learn_flag, &book_depth, &book_learn_accept,
+						&start_book_learn_flag, &stop_book_learn_flag, &book_depth, &book_learn_accept, &import_book_flag,
 						&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag,
 						&show_end_popup,
 						&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
@@ -2169,6 +2271,9 @@ void Main() {
 					global_searching = true;
 				}
 				book_start_learn = false;
+			}
+			else if (import_book_flag) {
+				importing_book = 1;
 			}
 			/*** menu buttons ***/
 
