@@ -196,7 +196,7 @@ Menu create_menu(Texture checkbox,
 	if (*professional_mode) {
 		title.init(language.get("book", "book"));
 
-		menu_e.init_button(language.get("book", "learn"), start_book_learn_flag);
+		menu_e.init_button(language.get("book", "start_learn"), start_book_learn_flag);
 		title.push(menu_e);
 
 		menu.push(title);
@@ -233,15 +233,16 @@ Menu create_menu(Texture checkbox,
 	menu_e.init_button(language.get("operation", "resume_read"), resume_read_flag);
 	title.push(menu_e);
 
-	menu_e.init_button(language.get("operation", "convert", "convert"), dammy);
-	side_menu.init_button(language.get("operation", "convert", "vertical"), vertical_convert);
-	menu_e.push(side_menu);
-	side_menu.init_button(language.get("operation", "convert", "black_line"), black_line_convert);
-	menu_e.push(side_menu);
-	side_menu.init_button(language.get("operation", "convert", "white_line"), white_line_convert);
-	menu_e.push(side_menu);
-
-	title.push(menu_e);
+	if (*professional_mode) {
+		menu_e.init_button(language.get("operation", "convert", "convert"), dammy);
+		side_menu.init_button(language.get("operation", "convert", "vertical"), vertical_convert);
+		menu_e.push(side_menu);
+		side_menu.init_button(language.get("operation", "convert", "black_line"), black_line_convert);
+		menu_e.push(side_menu);
+		side_menu.init_button(language.get("operation", "convert", "white_line"), white_line_convert);
+		menu_e.push(side_menu);
+		title.push(menu_e);
+	}
 
 
 
@@ -1291,7 +1292,27 @@ void Main() {
 			for (int i = 0; i < (int)language_names.size(); ++i) {
 				if (language_acts[i] && language_names[i] != lang_name) {
 					lang_name = language_names[i];
+					string lang_file = "resources/languages/" + lang_name + ".json";
+					lang_initialize(lang_file);
+					cerr << "lang " << language.get("lang_name").narrow() << endl;
+					menu = create_menu(checkbox, &dammy,
+						&show_mode[0], &show_mode[1], &show_mode[2],
+						&start_game_flag, &analyze_flag,
+						&use_ai_flag, &human_first, &human_second, &both_ai,
+						&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
+						&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
+						&use_value_flag,
+						&ai_level, &hint_level, &ai_book_accept,
+						&start_book_learn_flag,
+						&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag,
+						&show_end_popup,
+						&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
+						&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert,
+						language_acts, language_names);
+					start_game_button.init(start_game_button_x, start_game_button_y, start_game_button_w, start_game_button_h, start_game_button_r, language.get("button", "start_game"), font30, button_color, button_font_color);
+					how_to_use_button.init(how_to_use_button_x, how_to_use_button_y, how_to_use_button_w, how_to_use_button_h, how_to_use_button_r, language.get("button", "how_to_use"), font30, button_color, button_font_color);
 				}
+
 			}
 			/*** language ***/
 
