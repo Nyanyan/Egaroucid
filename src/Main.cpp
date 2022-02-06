@@ -1338,7 +1338,7 @@ void Main() {
 					}
 				}
 				if (not_finished(bd) && (!use_ai_flag || (human_first && bd.p == black) || (human_second && bd.p == white) || history_place != history[history.size() - 1].b.n - 4)) {
-					/*** human moves ***/
+					/*** human plays ***/
 					pair<bool, board> moved_board = move_board(bd, board_clicked);
 					if (moved_board.first) {
 						bool next_fork_mode = (!fork_mode && history_place != history[history.size() - 1].b.n - 4);
@@ -1365,14 +1365,14 @@ void Main() {
 						else {
 							history.emplace_back(history_elem(bd, history[history.size() - 1].record + str_record(bd.policy)));
 						}
-						create_vacant_lst(bd);
 						history_place = bd.n - 4;
 						reset_hint(&hint_state, &hint_future);
 						reset_umigame(umigame_state, umigame_future);
 						reset_human_value(&human_value_state, &human_value_future);
 						reset_analyze(&analyzing, &analyze_future);
+						create_vacant_lst(bd);
 					}
-					/*** human moves ***/
+					/*** human plays ***/
 
 					/*** hints ***/
 					if (not_finished(bd) && use_hint_flag && !analyzing) {
@@ -1382,7 +1382,7 @@ void Main() {
 									if (hint_state == 0) {
 										hint_legal = bd.mobility_ull();
 									}
-									else if (hint_state == hint_level / 2 * 2 || hint_state == hint_level * 2 / 3 * 2) {
+									else if (show_mode[1] && (hint_state == hint_level / 2 * 2 || hint_state == hint_level * 2 / 3 * 2)) {
 										unsigned long long n_hint_legal = 0;
 										vector<pair<int, int>> legals;
 										for (int cell = 0; cell < hw2; ++cell) {
@@ -1443,7 +1443,7 @@ void Main() {
 								}
 							}
 						}
-						if (umigame_hint) {
+						if (show_mode[1] && umigame_hint) {
 							for (int cell = 0; cell < hw2; ++cell) {
 								if ((1 & (legal >> cell))) {
 									if (umigame_state[cell] == 0) {
@@ -1467,7 +1467,7 @@ void Main() {
 								}
 							}
 						}
-						if (human_hint) {
+						if (show_mode[1] && human_hint) {
 							if (human_value_state == 0) {
 								human_value_future = get_human_value(bd, human_value_depth, human_value_a, human_value);
 								human_value_state = 1;
@@ -1501,6 +1501,7 @@ void Main() {
 							reset_umigame(umigame_state, umigame_future);
 							reset_human_value(&human_value_state, &human_value_future);
 							reset_analyze(&analyzing, &analyze_future);
+							create_vacant_lst(bd);
 						}
 					}
 					else {
