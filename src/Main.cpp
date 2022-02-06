@@ -98,7 +98,7 @@ Menu create_menu(Texture checkbox,
 	bool *hint_num1, bool* hint_num2, bool* hint_num4, bool* hint_num8, bool* hint_num16, bool* hint_numall,
 	bool *use_value_flag,
 	int *ai_level, int *hint_level, int *book_error,
-	bool *start_book_learn_flag,
+	bool *start_book_learn_flag, bool *stop_book_learn_flag,
 	bool *output_record_flag, bool *output_game_flag, bool *input_record_flag, bool *input_board_flag,
 	bool *show_end_popup,
 	bool *thread1, bool* thread2, bool* thread4, bool* thread8, bool* thread16, bool* thread32, bool* thread64, bool* thread128,
@@ -233,6 +233,8 @@ Menu create_menu(Texture checkbox,
 		title.init(language.get("book", "book"));
 
 		menu_e.init_button(language.get("book", "start_learn"), start_book_learn_flag);
+		title.push(menu_e);
+		menu_e.init_button(language.get("book", "stop_learn"), stop_book_learn_flag);
 		title.push(menu_e);
 
 		menu.push(title);
@@ -378,7 +380,8 @@ void board_draw(Rect board_cells[], board b, int int_mode, bool use_hint_flag, b
 	const int hint_state, const unsigned long long hint_legal, const int hint_value[], const int hint_depth[], Font normal_font, Font small_font, Font big_font, Font mini_font, Font coord_font, 
 	bool before_start_game,
 	const int umigame_state[], const umigame_result umigame_value[],
-	const int human_value_state, const int human_value[]) {
+	const int human_value_state, const int human_value[],
+	int book_start_learn) {
 	String coord_x = U"abcdefgh";
 	for (int i = 0; i < hw; ++i) {
 		coord_font(i + 1).draw(Arg::center(board_sx - board_coord_size, board_sy + board_cell_size * i + board_cell_size / 2), font_color);
@@ -420,7 +423,7 @@ void board_draw(Rect board_cells[], board b, int int_mode, bool use_hint_flag, b
 	if (b.policy != -1) {
 		Circle(board_sx + (hw_m1 - b.policy % hw) * board_cell_size + board_cell_size / 2, board_sy + (hw_m1 - b.policy / hw) * board_cell_size + board_cell_size / 2, legal_size).draw(Palette::Red);
 	}
-	if (use_hint_flag && b.p != vacant && !before_start_game) {
+	if (use_hint_flag && b.p != vacant && !before_start_game && !book_start_learn && (b.mobility_ull() | hint_legal) == b.mobility_ull()) {
 		bool hint_shown[hw2];
 		for (int i = 0; i < hw2; ++i) {
 			hint_shown[i] = false;
@@ -947,6 +950,7 @@ bool close_app(int* hint_state, future<bool>* hint_future,
 	bool show_end_popup,
 	int n_thread_idx,
 	int hint_num,
+	bool *book_learning, future<void>* book_learn_future,
 	string lang_name) {
 	reset_hint(hint_state, hint_future);
 	reset_umigame(umigame_state, umigame_future);
@@ -960,6 +964,11 @@ bool close_app(int* hint_state, future<bool>* hint_future,
 		n_thread_idx,
 		hint_num,
 		lang_name);
+	if (*book_learning) {
+		*book_learning = false;
+		book_learn_future->get();
+	}
+	book.save_bin();
 	return true;
 }
 
@@ -982,6 +991,59 @@ void info_draw(board bd, string joseki_name, int ai_level, int hint_level, Font 
 	mid_font(language.get("info", "hint") + U": " + language.get("common", "level") + Format(hint_level)).draw(info_sx, info_sy + 185);
 }
 
+void learn_book(board bd, int level, int depth, int book_learn_accept, board* bd_ptr, int* value_ptr, bool* book_learning) {
+	cerr << "start learning book" << endl;
+	priority_queue<pair<int, board>> que;
+	int value = book.get(&bd);
+	if (value == -inf) {
+		value = -ai_book(bd, level, book_learn_accept);
+		if (value == inf) {
+			*book_learning = false;
+			return;
+		}
+	}
+	bd.copy(bd_ptr);
+	*value_ptr = (bd.p ? -1 : 1) * value;
+	book.reg(bd, value);
+	que.push(make_pair(-abs(value), bd));
+	pair<int, board> popped;
+	int weight, i, j;
+	unsigned long long legal;
+	board b, nb;
+	mobility mob;
+	while (!que.empty()) {
+		popped = que.top();
+		que.pop();
+		weight = -popped.first;
+		b = popped.second;
+		if (b.n - 4 <= depth) {
+			legal = b.mobility_ull();
+			for (i = 0; i < hw2; ++i) {
+				if (1 & (legal >> i)) {
+					calc_flip(&mob, &b, i);
+					b.move_copy(&mob, &nb);
+					if (!(*book_learning)) {
+						return;
+					}
+					value = book.get(&nb);
+					if (value == -inf) {
+						value = -ai_book(nb, level, book_learn_accept);
+					}
+					if (value != inf) {
+						nb.copy(bd_ptr);
+						*value_ptr = value;
+						book.reg(nb, value);
+						if (abs(value) <= book_learn_accept && global_searching && nb.n - 4 <= depth) {
+							que.push(make_pair(-(weight + abs(value)), nb));
+						}
+					}
+				}
+			}
+		}
+	}
+	*book_learning = false;
+}
+
 void Main() {
 	Size window_size = Size(1000, 720);
 	Window::Resize(window_size);
@@ -1000,7 +1062,7 @@ void Main() {
 	bool use_ai_flag = true, human_first = true, human_second = false, both_ai = false;
 	bool use_hint_flag = true, normal_hint = true, human_hint = true, umigame_hint = true;
 	bool use_value_flag = true;
-	bool start_book_learn_flag = false;
+	bool start_book_learn_flag = false, stop_book_learn_flag = false;
 	bool output_record_flag = false, output_game_flag = false, input_record_flag = false, input_board_flag = false;
 	bool texture_loaded = true;
 	bool n_threads[8] = {false, false, true, false, false, false, false, false};
@@ -1052,6 +1114,7 @@ void Main() {
 	vector<history_elem> history, fork_history;
 	int history_place = 0;
 	bool fork_mode = false;
+	int bd_value = 0;
 
 	int hint_value[hw2], hint_depth[hw2];
 	int hint_calc_value[hw2], hint_calc_depth[hw2];
@@ -1103,6 +1166,10 @@ void Main() {
 	bool outputting_game = false;
 	String black_player = U"", white_player = U"", game_memo = U"";
 	bool output_active[3] = { false, false, false };
+
+	future<void> book_learn_future;
+	bool book_learning = false, book_start_learn = false;
+	int book_learn_accept = 4, book_depth = 40;
 
 	bool main_window_active = true;
 
@@ -1192,6 +1259,7 @@ void Main() {
 				show_end_popup,
 				n_thread_idx,
 				hint_num,
+				&book_learning, &book_learn_future,
 				lang_name);
 		}
 		if (closing) {
@@ -1225,7 +1293,7 @@ void Main() {
 					&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
 					&use_value_flag,
 					&ai_level, &hint_level, &ai_book_accept,
-					&start_book_learn_flag,
+					&start_book_learn_flag, &stop_book_learn_flag,
 					&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag,
 					&show_end_popup,
 					&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
@@ -1250,7 +1318,7 @@ void Main() {
 						&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
 						&use_value_flag,
 						&ai_level, &hint_level, &ai_book_accept,
-						&start_book_learn_flag,
+						&start_book_learn_flag, &stop_book_learn_flag,
 						&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag,
 						&show_end_popup,
 						&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
@@ -1296,7 +1364,7 @@ void Main() {
 					&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
 					&use_value_flag,
 					&ai_level, &hint_level, &ai_book_accept,
-					&start_book_learn_flag,
+					&start_book_learn_flag, &stop_book_learn_flag,
 					&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag,
 					&show_end_popup,
 					&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
@@ -1321,7 +1389,7 @@ void Main() {
 			for (int i = 0; i < (int)language_names.size(); ++i) {
 				if (language_acts[i] && language_names[i] != lang_name) {
 					lang_name = language_names[i];
-					string lang_file = "resources/languages/" + lang_name + ".json";
+					lang_file = "resources/languages/" + lang_name + ".json";
 					lang_initialize(lang_file);
 					cerr << "lang " << language.get("lang_name").narrow() << endl;
 					menu = create_menu(checkbox, &dammy,
@@ -1332,7 +1400,7 @@ void Main() {
 						&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
 						&use_value_flag,
 						&ai_level, &hint_level, &ai_book_accept,
-						&start_book_learn_flag,
+						&start_book_learn_flag, &stop_book_learn_flag,
 						&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag,
 						&show_end_popup,
 						&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
@@ -1564,7 +1632,7 @@ void Main() {
 					/*** hints ***/
 				}
 				/*** ai plays ***/
-				else if (not_finished(bd) && history[history.size() - 1].b.n - 4 == history_place) {
+				else if (not_finished(bd) && history[history.size() - 1].b.n - 4 == history_place && !book_learning) {
 					if (ai_thinking) {
 						if (ai_future.wait_for(chrono::seconds(0)) == future_status::ready) {
 							search_result ai_result = ai_future.get();
@@ -1647,7 +1715,8 @@ void Main() {
 				hint_state, hint_legal, hint_value, hint_depth, normal_hint_font, small_hint_font, font30, mini_hint_font, board_coord_font,
 				before_start_game,
 				umigame_state, umigame_value,
-				human_value_state, human_value);
+				human_value_state, human_value,
+				book_start_learn);
 			/*** board draw ***/
 
 			/*** joseki ***/
@@ -1691,6 +1760,7 @@ void Main() {
 					else {
 						history_place = 0;
 					}
+					create_vacant_lst(bd);
 					if (main_window_active) {
 						global_searching = true;
 						System::Sleep(100);
@@ -1722,8 +1792,25 @@ void Main() {
 			}
 			/*** output game ***/
 
+			/*** book learn ***/
+			if (book_start_learn && !book_learning) {
+				book_start_learn = false;
+				book_learn_future.get();
+			}
+			/*** book learn ***/
+
+			/*** ai stop calculating ***/
+			if (ai_thinking && (!use_ai_flag || (human_first && bd.p == black) || (human_second && bd.p == white))) {
+				reset_hint(&hint_state, &hint_future);
+				reset_umigame(umigame_state, umigame_future);
+				reset_human_value(&human_value_state, &human_value_future);
+				reset_ai(&ai_thinking, &ai_future);
+				reset_analyze(&analyzing, &analyze_future);
+			}
+			/*** ai stop calculating ***/
+
 			/*** menu buttons ***/
-			if (start_game_flag) {
+			if (start_game_flag && !book_learning) {
 				cerr << "reset" << endl;
 				bd.reset();
 				bd.v = -inf;
@@ -1739,20 +1826,22 @@ void Main() {
 				reset_human_value(&human_value_state, &human_value_future);
 				reset_ai(&ai_thinking, &ai_future);
 				reset_analyze(&analyzing, &analyze_future);
+				create_vacant_lst(bd);
 			}
-			else if (analyze_flag) {
+			else if (analyze_flag && !book_learning) {
 				reset_hint(&hint_state, &hint_future);
 				reset_umigame(umigame_state, umigame_future);
 				reset_human_value(&human_value_state, &human_value_future);
 				reset_ai(&ai_thinking, &ai_future);
 				reset_analyze(&analyzing, &analyze_future);
+				create_vacant_lst(bd);
 				analyzing = true;
 				main_window_active = false;
 				analyze_state = false;
 				analyze_idx = 0;
 				before_start_game = false;
 			}
-			else if (output_record_flag) {
+			else if (output_record_flag && !book_learning) {
 				if (fork_mode) {
 					Clipboard::SetText(fork_history[fork_history.size() - 1].record);
 				}
@@ -1761,7 +1850,7 @@ void Main() {
 				}
 				cerr << "record copied" << endl;
 			}
-			else if (output_game_flag && !before_start_game && main_window_active) {
+			else if (output_game_flag && !before_start_game && main_window_active && !book_learning) {
 				if (use_ai_flag) {
 					if (both_ai) {
 						black_player = U"Egaroucid";
@@ -1791,7 +1880,7 @@ void Main() {
 				outputting_game = true;
 				main_window_active = false;
 			}
-			else if (input_record_flag) {
+			else if (input_record_flag && !book_learning) {
 				String record;
 				if (Clipboard::GetText(record)) {
 					vector<history_elem> n_history;
@@ -1816,7 +1905,7 @@ void Main() {
 					}
 				}
 			}
-			else if (input_board_flag) {
+			else if (input_board_flag && !book_learning) {
 				String board_str;
 				if (Clipboard::GetText(board_str)) {
 					pair<bool, board> imported = import_board(board_str);
@@ -1860,7 +1949,7 @@ void Main() {
 				create_vacant_lst(bd);
 				global_searching = true;
 			}
-			else if (vertical_convert && !analyzing) {
+			else if (vertical_convert && !analyzing && !book_learning) {
 				bd.vertical_mirror();
 				String record = U"";
 				for (history_elem &elem : history) {
@@ -1884,7 +1973,7 @@ void Main() {
 				reset_ai(&ai_thinking, &ai_future);
 				create_vacant_lst(bd);
 			}
-			else if (black_line_convert && !analyzing) {
+			else if (black_line_convert && !analyzing && !book_learning) {
 				bd.black_mirror();
 				String record = U"";
 				for (history_elem &elem : history) {
@@ -1908,7 +1997,7 @@ void Main() {
 				reset_ai(&ai_thinking, &ai_future);
 				create_vacant_lst(bd);
 			}
-			else if (white_line_convert && !analyzing) {
+			else if (white_line_convert && !analyzing && !book_learning) {
 				bd.white_mirror();
 				String record = U"";
 				for (history_elem &elem : history) {
@@ -1931,6 +2020,18 @@ void Main() {
 				reset_human_value(&human_value_state, &human_value_future);
 				reset_ai(&ai_thinking, &ai_future);
 				create_vacant_lst(bd);
+			}
+			else if (start_book_learn_flag && !before_start_game && !book_learning) {
+				book_learning = true;
+				book_start_learn = true;
+				book_learn_future = async(launch::async, learn_book, bd, ai_level, book_depth, book_learn_accept, &bd, &bd_value, &book_learning);
+			}
+			else if (stop_book_learn_flag) {
+				if (book_learning) {
+					book_learning = false;
+					book_learn_future.get();
+				}
+				book_start_learn = false;
 			}
 			/*** menu buttons ***/
 

@@ -72,7 +72,7 @@ bool ai_hint(board b, int level, int max_level, int res[], int info[], unsigned 
     get_level(level, b.n - 4, &depth1, &depth2, &use_mpc, &mpct);
     if (b.n >= hw2 - depth2 && level != max_level)
         return false;
-    cerr << "level status " << level << " " << b.n - 3 << " " << depth1 << " " << depth2 << " " << use_mpc << " " << mpct << endl;
+    //cerr << "level status " << level << " " << b.n - 3 << " " << depth1 << " " << depth2 << " " << use_mpc << " " << mpct << endl;
     transpose_table.init_now();
     for (int i = 0; i < hw2; ++i){
         if (1 & (legal >> i)){
@@ -105,4 +105,28 @@ bool ai_hint(board b, int level, int max_level, int res[], int info[], unsigned 
         }
     }
     return true;
+}
+
+int ai_book(board b, int max_level, int book_learn_accept){
+    int value = 0;
+    int depth1, depth2;
+    bool use_mpc;
+    double mpct;
+    for (int level = min(16, max(0, max_level - 5)); level <= max_level; ++level){
+        get_level(level, b.n - 4, &depth1, &depth2, &use_mpc, &mpct);
+        if (b.n >= hw2 - depth2 && level != max_level)
+            continue;
+        if (abs(value) >= book_learn_accept * 2)
+            return -inf;
+        transpose_table.init_now();
+        if (level == min(16, max(0, max_level - 5)))
+            value = ai_value_memo(b, level, value);
+        else{
+            value += ai_value_memo(b, level, value);
+            value /= 2;
+        }
+        swap(transpose_table.now, transpose_table.prev);
+    }
+    cerr << "searched level " << max_level << " value " << value << endl;
+    return value;
 }
