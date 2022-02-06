@@ -2289,7 +2289,7 @@ void Main() {
 				book_changed = true;
 				book_learn_future = async(launch::async, learn_book, bd, ai_level, book_depth, book_learn_accept, &bd, &bd_value, &book_learning);
 			}
-			else if (stop_book_learn_flag) {
+			else if (stop_book_learn_flag || (book_learning && !show_mode[1])) {
 				if (book_learning) {
 					book_learning = false;
 					global_searching = false;
@@ -2298,7 +2298,7 @@ void Main() {
 				}
 				book_start_learn = false;
 			}
-			else if (import_book_flag) {
+			else if (import_book_flag && !book_learning) {
 				importing_book = 1;
 			}
 			/*** menu buttons ***/
