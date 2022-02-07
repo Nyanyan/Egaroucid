@@ -29,6 +29,16 @@ inline bool mpc_lower_final(board *b, bool skipped, int depth, int alpha, double
     return mid_evaluate(b) <= bound;
 }
 
+inline bool mpc_higher_final(board *b, bool skipped, int depth, int beta, double t, int val){
+    int bound = beta + ceil(t * mpcsd_final[depth - mpc_min_depth_final]);
+    return val >= bound;
+}
+
+inline bool mpc_lower_final(board *b, bool skipped, int depth, int alpha, double t, int val){
+    int bound = alpha - ceil(t * mpcsd_final[depth - mpc_min_depth_final]);
+    return val <= bound;
+}
+
 int nega_alpha_final_nomemo(board *b, bool skipped, int depth, int alpha, int beta, bool use_mpc, double use_mpct, unsigned long long *n_nodes, const vector<int> &vacant_lst){
     if (!global_searching)
         return -inf;
@@ -899,20 +909,6 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
         alpha = max(alpha, l);
         beta = min(beta, u);
     #endif
-    #if USE_END_MPC
-        if (mpc_min_depth_final <= depth && depth <= mpc_max_depth_final && use_mpc){
-            if (mpc_higher_final(b, skipped, depth, beta, mpct_in, n_nodes)){
-                if (l < beta)
-                    transpose_table.reg(b, hash, beta, u);
-                return beta;
-            }
-            if (mpc_lower_final(b, skipped, depth, alpha, mpct_in, n_nodes)){
-                if (alpha < u)
-                    transpose_table.reg(b, hash, l, alpha);
-                return alpha;
-            }
-        }
-    #endif
     unsigned long long legal = b->mobility_ull();
     if (legal == 0){
         if (skipped)
@@ -946,12 +942,23 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
     }
     if (canput >= 2)
         sort(nb, nb + canput);
-    int g, v = -inf;
+    int g, v = -inf, n_val;
     #if USE_MULTI_THREAD
         int i;
         const int first_threshold = canput / end_first_threshold_div + 1;
         for (i = 0; i < first_threshold; ++i){
-            g = -nega_alpha_ordering_final(&nb[i], false, depth - 1, -beta, -alpha, use_mpc, mpct_in, n_nodes, vacant_lst);
+            g = -inf;
+            #if USE_END_MPC
+                if (mpc_min_depth_final <= depth - 1 && depth - 1 <= mpc_max_depth_final && use_mpc){
+                    n_val = -mid_evaluate(&nb[i]);
+                    if (mpc_higher_final(&nb[i], false, depth - 1, beta, mpct_in, n_val))
+                        g = beta;
+                    if (mpc_lower_final(&nb[i], false, depth - 1, alpha, mpct_in, n_val))
+                        g = alpha;
+                }
+            #endif
+            if (g == -inf)
+                g = -nega_alpha_ordering_final(&nb[i], false, depth - 1, -beta, -alpha, use_mpc, mpct_in, n_nodes, vacant_lst);
             alpha = max(alpha, g);
             if (beta <= alpha){
                 #if USE_END_TC
@@ -980,13 +987,40 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
                     if (thread_pool.n_idle() == 0)
                         break;
                     if (!task_done[i] && task_doing[i] == -1){
-                        task_doing[i] = (int)future_tasks.size();
-                        future_tasks.emplace_back(thread_pool.push(bind(&nega_alpha_ordering_final, &nb[i + first_threshold], false, depth - 1, -beta, -alpha, use_mpc, mpct_in, &n_n_nodes[i], vacant_lst)));
+                        g = -inf;
+                        #if USE_END_MPC
+                            if (mpc_min_depth_final <= depth - 1 && depth - 1 <= mpc_max_depth_final && use_mpc){
+                                n_val = -mid_evaluate(&nb[i + first_threshold]);
+                                if (mpc_higher_final(&nb[i + first_threshold], false, depth - 1, beta, mpct_in, n_val))
+                                    g = beta;
+                                if (mpc_lower_final(&nb[i + first_threshold], false, depth - 1, alpha, mpct_in, n_val))
+                                    g = alpha;
+                            }
+                        #endif
+                        if (g == -inf){
+                            task_doing[i] = (int)future_tasks.size();
+                            future_tasks.emplace_back(thread_pool.push(bind(&nega_alpha_ordering_final, &nb[i + first_threshold], false, depth - 1, -beta, -alpha, use_mpc, mpct_in, &n_n_nodes[i], vacant_lst)));
+                        } else{
+                            alpha = max(alpha, g);
+                            v = max(v, g);
+                            task_done[i] = true;
+                        }
                     }
                 }
                 for (i = 0; i < n_parallel_tasks; ++i){
                     if (!task_done[i] && task_doing[i] == -1){
-                        g = -nega_alpha_ordering_final(&nb[i + first_threshold], false, depth - 1, -beta, -alpha,  use_mpc, mpct_in, n_nodes, vacant_lst);
+                        g = -inf;
+                        #if USE_END_MPC
+                            if (mpc_min_depth_final <= depth - 1 && depth - 1 <= mpc_max_depth_final && use_mpc){
+                                n_val = -mid_evaluate(&nb[i + first_threshold]);
+                                if (mpc_higher_final(&nb[i + first_threshold], false, depth - 1, beta, mpct_in, n_val))
+                                    g = beta;
+                                if (mpc_lower_final(&nb[i + first_threshold], false, depth - 1, alpha, mpct_in, n_val))
+                                    g = alpha;
+                            }
+                        #endif
+                        if (g == -inf)
+                            g = -nega_alpha_ordering_final(&nb[i + first_threshold], false, depth - 1, -beta, -alpha,  use_mpc, mpct_in, n_nodes, vacant_lst);
                         task_done[i] = true;
                         alpha = max(alpha, g);
                         v = max(v, g);
