@@ -963,48 +963,71 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
             }
             v = max(v, g);
         }
+        const int n_parallel_tasks = canput - first_threshold;
         vector<future<int>> future_tasks;
-        unsigned long long *n_n_nodes = new unsigned long long[canput - first_threshold];
-        int done_tasks = first_threshold;
-        for (i = first_threshold; i < canput; ++i)
-            n_n_nodes[i - first_threshold] = 0;
-        int next_done_tasks, additional_done_tasks;
-        while (done_tasks < canput){
-            next_done_tasks = canput;
-            future_tasks.clear();
-            for (i = done_tasks; i < canput; ++i){
-                if (thread_pool.n_idle() == 0){
-                    next_done_tasks = i;
-                    break;
+        unsigned long long *n_n_nodes = new unsigned long long[n_parallel_tasks];
+        int *task_doing = new int[n_parallel_tasks];
+        bool *task_done = new bool[n_parallel_tasks];
+        bool all_done = false, doing_done;
+        for (i = 0; i < n_parallel_tasks; ++i){
+            n_n_nodes[i] = 0;
+            task_doing[i] = -1;
+            task_done[i] = false;
+        }
+        while (!all_done){
+            if (alpha < beta){
+                for (i = 0; i < n_parallel_tasks; ++i){
+                    if (thread_pool.n_idle() == 0)
+                        break;
+                    if (!task_done[i] && task_doing[i] == -1){
+                        task_doing[i] = (int)future_tasks.size();
+                        future_tasks.emplace_back(thread_pool.push(bind(&nega_alpha_ordering_final, &nb[i + first_threshold], false, depth - 1, -beta, -alpha, use_mpc, mpct_in, &n_n_nodes[i], vacant_lst)));
+                    }
                 }
-                future_tasks.emplace_back(thread_pool.push(bind(&nega_alpha_ordering_final, &nb[i], false, depth - 1, -beta, -alpha, use_mpc, mpct_in, &n_n_nodes[i - first_threshold], vacant_lst)));
+                for (i = 0; i < n_parallel_tasks; ++i){
+                    if (!task_done[i] && task_doing[i] == -1){
+                        g = -nega_alpha_ordering_final(&nb[i + first_threshold], false, depth - 1, -beta, -alpha,  use_mpc, mpct_in, n_nodes, vacant_lst);
+                        task_done[i] = true;
+                        alpha = max(alpha, g);
+                        v = max(v, g);
+                    }
+                }
             }
-            additional_done_tasks = 0;
-            if (next_done_tasks < canput){
-                g = -nega_alpha_ordering_final(&nb[next_done_tasks], false, depth - 1, -beta, -alpha,  use_mpc, mpct_in, n_nodes, vacant_lst);
-                alpha = max(alpha, g);
-                v = max(v, g);
-                additional_done_tasks = 1;
+            for (i = 0; i < n_parallel_tasks; ++i){
+                if (!task_done[i] && task_doing[i] != -1){
+                    //if (future_tasks[task_doing[i]].wait_for(chrono::seconds(0)) == future_status::ready){
+                    g = -future_tasks[task_doing[i]].get();
+                    task_done[i] = true;
+                    alpha = max(alpha, g);
+                    v = max(v, g);
+                    *n_nodes += n_n_nodes[i];
+                    //}
+                }
             }
-            for (i = done_tasks; i < next_done_tasks; ++i){
-                g = -future_tasks[i - done_tasks].get();
-                alpha = max(alpha, g);
-                v = max(v, g);
-                *n_nodes += n_n_nodes[i - first_threshold];
+            all_done = true;
+            doing_done = true;
+            for (i = 0; i < n_parallel_tasks; ++i){
+                all_done &= task_done[i];
+                doing_done &= task_done[i] || task_doing[i] == -1;
             }
-            if (beta <= alpha){
-                #if USE_END_TC
-                    if (l < alpha)
-                        transpose_table.reg(b, hash, alpha, u);
-                #endif
-                delete[] nb;
-                delete[] n_n_nodes;
-                return alpha;
+            if (doing_done){
+                if (beta <= alpha){
+                    #if USE_END_TC
+                        if (l < alpha)
+                            transpose_table.reg(b, hash, alpha, u);
+                    #endif
+                    delete[] nb;
+                    delete[] n_n_nodes;
+                    delete[] task_doing;
+                    delete[] task_done;
+                    return alpha;
+                }
             }
-            done_tasks = next_done_tasks + additional_done_tasks;
         }
         delete[] nb;
         delete[] n_n_nodes;
+        delete[] task_doing;
+        delete[] task_done;
     #else
         for (idx = 0; idx < canput; ++idx){
             g = -nega_alpha_ordering_final(&nb[idx], false, depth - 1, -beta, -alpha, use_mpc, mpct_in, n_nodes, vacant_lst);
