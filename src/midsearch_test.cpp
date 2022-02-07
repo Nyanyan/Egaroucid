@@ -7,11 +7,11 @@
 #include "evaluate.hpp"
 #include "midsearch.hpp"
 
-inline void input_board(board *b, int ai_player){
+inline vector<int> input_board(board *b, int ai_player){
     int i;
     char elem;
     int arr[hw2];
-    vacant_lst.clear();
+    vector<int> vacant_lst;
     for (i = 0; i < hw2; ++i){
         cin >> elem;
         if (elem == '.'){
@@ -22,12 +22,12 @@ inline void input_board(board *b, int ai_player){
     }
     b->translate_from_arr(arr, ai_player);
     if (vacant_lst.size() >= 2)
-        sort(vacant_lst.begin(), vacant_lst.end()); // , cmp_vacant
+        sort(vacant_lst.begin(), vacant_lst.end(), cmp_vacant);
+    return vacant_lst;
 }
 
 int main(){
     mobility_init();
-    board_init();
     evaluate_init();
     transpose_table_init();
     #if USE_MULTI_THREAD
@@ -37,9 +37,9 @@ int main(){
     int ai_player;
     while (true){
         cin >> ai_player;
-        input_board(&b, ai_player);
+        vector<int> vacant_lst = input_board(&b, ai_player);
         b.print();
-        search_result res = midsearch(b, tim(), 15, false, 0.0);
+        search_result res = midsearch(b, tim(), 15, false, 0.0, vacant_lst);
         cerr << res.policy << " " << res.value << endl;
     }
     return 0;

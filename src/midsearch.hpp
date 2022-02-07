@@ -15,15 +15,15 @@
 
 using namespace std;
 
-int nega_alpha(board *b, bool skipped, int depth, int alpha, int beta, unsigned long long *n_nodes);
-inline bool mpc_higher(board *b, bool skipped, int depth, int beta, double t, unsigned long long *n_nodes);
-inline bool mpc_lower(board *b, bool skipped, int depth, int alpha, double t, unsigned long long *n_nodes);
+int nega_alpha(board *b, bool skipped, int depth, int alpha, int beta, unsigned long long *n_nodes, const vector<int> &vacant_lst);
+inline bool mpc_higher(board *b, bool skipped, int depth, int beta, double t, unsigned long long *n_nodes, const vector<int> &vacant_lst);
+inline bool mpc_lower(board *b, bool skipped, int depth, int alpha, double t, unsigned long long *n_nodes, const vector<int> &vacant_lst);
 
-int nega_alpha_ordering_nomemo(board *b, bool skipped, int depth, int alpha, int beta, bool use_mpc, double mpct_in, unsigned long long *n_nodes){
+int nega_alpha_ordering_nomemo(board *b, bool skipped, int depth, int alpha, int beta, bool use_mpc, double mpct_in, unsigned long long *n_nodes, const vector<int> &vacant_lst){
     if (!global_searching)
         return -inf;
     if (depth <= simple_mid_threshold)
-        return nega_alpha(b, skipped, depth, alpha, beta, n_nodes);
+        return nega_alpha(b, skipped, depth, alpha, beta, n_nodes, vacant_lst);
     ++(*n_nodes);
     #if USE_MID_SC
         if (stability_cut(b, &alpha, &beta))
@@ -31,9 +31,9 @@ int nega_alpha_ordering_nomemo(board *b, bool skipped, int depth, int alpha, int
     #endif
     #if USE_MID_MPC
         if (mpc_min_depth <= depth && depth <= mpc_max_depth){
-            if (mpc_higher(b, skipped, depth, beta, mpct_in, n_nodes))
+            if (mpc_higher(b, skipped, depth, beta, mpct_in, n_nodes, vacant_lst))
                 return beta;
-            if (mpc_lower(b, skipped, depth, alpha, mpct_in, n_nodes))
+            if (mpc_lower(b, skipped, depth, alpha, mpct_in, n_nodes, vacant_lst))
                 return alpha;
         }
     #endif
@@ -42,7 +42,7 @@ int nega_alpha_ordering_nomemo(board *b, bool skipped, int depth, int alpha, int
         if (skipped)
             return end_evaluate(b);
         b->p = 1 - b->p;
-        int res = -nega_alpha_ordering_nomemo(b, true, depth, -beta, -alpha, use_mpc, mpct_in, n_nodes);
+        int res = -nega_alpha_ordering_nomemo(b, true, depth, -beta, -alpha, use_mpc, mpct_in, n_nodes, vacant_lst);
         b->p = 1 - b->p;
         return res;
     }
@@ -63,7 +63,7 @@ int nega_alpha_ordering_nomemo(board *b, bool skipped, int depth, int alpha, int
         sort(nb, nb + canput);
     int g, v = -inf;
     for (idx = 0; idx < canput; ++idx){
-        g = -nega_alpha_ordering_nomemo(&nb[idx], false, depth - 1, -beta, -alpha, use_mpc, mpct_in, n_nodes);
+        g = -nega_alpha_ordering_nomemo(&nb[idx], false, depth - 1, -beta, -alpha, use_mpc, mpct_in, n_nodes, vacant_lst);
         if (beta <= g)
             return g;
         alpha = max(alpha, g);
@@ -72,21 +72,21 @@ int nega_alpha_ordering_nomemo(board *b, bool skipped, int depth, int alpha, int
     return v;
 }
 
-inline bool mpc_higher(board *b, bool skipped, int depth, int beta, double t, unsigned long long *n_nodes){
+inline bool mpc_higher(board *b, bool skipped, int depth, int beta, double t, unsigned long long *n_nodes, const vector<int> &vacant_lst){
     int bound = beta + ceil(t * mpcsd[b->phase()][depth - mpc_min_depth]);
     if (bound > hw2)
         bound = hw2; //return false;
-    return nega_alpha_ordering_nomemo(b, skipped, mpcd[depth], bound - search_epsilon, bound, true, t, n_nodes) >= bound;
+    return nega_alpha_ordering_nomemo(b, skipped, mpcd[depth], bound - search_epsilon, bound, true, t, n_nodes, vacant_lst) >= bound;
 }
 
-inline bool mpc_lower(board *b, bool skipped, int depth, int alpha, double t, unsigned long long *n_nodes){
+inline bool mpc_lower(board *b, bool skipped, int depth, int alpha, double t, unsigned long long *n_nodes, const vector<int> &vacant_lst){
     int bound = alpha - ceil(t * mpcsd[b->phase()][depth - mpc_min_depth]);
     if (bound < -hw2)
         bound = -hw2; //return false;
-    return nega_alpha_ordering_nomemo(b, skipped, mpcd[depth], bound, bound + search_epsilon, true, t, n_nodes) <= bound;
+    return nega_alpha_ordering_nomemo(b, skipped, mpcd[depth], bound, bound + search_epsilon, true, t, n_nodes, vacant_lst) <= bound;
 }
 
-int nega_alpha(board *b, bool skipped, int depth, int alpha, int beta, unsigned long long *n_nodes){
+int nega_alpha(board *b, bool skipped, int depth, int alpha, int beta, unsigned long long *n_nodes, const vector<int> &vacant_lst){
     if (!global_searching)
         return -inf;
     ++(*n_nodes);
@@ -102,7 +102,7 @@ int nega_alpha(board *b, bool skipped, int depth, int alpha, int beta, unsigned 
         if (skipped)
             return end_evaluate(b);
         b->p = 1 - b->p;
-        int res = -nega_alpha(b, true, depth, -beta, -alpha, n_nodes);
+        int res = -nega_alpha(b, true, depth, -beta, -alpha, n_nodes, vacant_lst);
         b->p = 1 - b->p;
         return res;
     }
@@ -111,7 +111,7 @@ int nega_alpha(board *b, bool skipped, int depth, int alpha, int beta, unsigned 
         if (1 & (legal >> cell)){
             calc_flip(&mob, b, cell);
             b->move(&mob);
-            g = -nega_alpha(b, false, depth - 1, -beta, -alpha, n_nodes);
+            g = -nega_alpha(b, false, depth - 1, -beta, -alpha, n_nodes, vacant_lst);
             b->undo(&mob);
             alpha = max(alpha, g);
             if (beta <= alpha)
@@ -122,11 +122,11 @@ int nega_alpha(board *b, bool skipped, int depth, int alpha, int beta, unsigned 
     return v;
 }
 
-int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int beta, bool use_mpc, double mpct_in, unsigned long long *n_nodes){
+int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int beta, bool use_mpc, double mpct_in, unsigned long long *n_nodes, const vector<int> &vacant_lst){
     if (!global_searching)
         return -inf;
     if (depth <= simple_mid_threshold)
-        return nega_alpha(b, skipped, depth, alpha, beta, n_nodes);
+        return nega_alpha(b, skipped, depth, alpha, beta, n_nodes, vacant_lst);
     ++(*n_nodes);
     #if USE_MID_SC
         if (stability_cut(b, &alpha, &beta))
@@ -147,12 +147,12 @@ int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int 
     beta = min(beta, u);
     #if USE_MID_MPC
         if (mpc_min_depth <= depth && depth <= mpc_max_depth && use_mpc){
-            if (mpc_higher(b, skipped, depth, beta, mpct_in, n_nodes)){
+            if (mpc_higher(b, skipped, depth, beta, mpct_in, n_nodes, vacant_lst)){
                 if (l < beta)
                     transpose_table.reg(b, hash, beta, u);
                 return beta;
             }
-            if (mpc_lower(b, skipped, depth, alpha, mpct_in, n_nodes)){
+            if (mpc_lower(b, skipped, depth, alpha, mpct_in, n_nodes, vacant_lst)){
                 if (alpha < u)
                     transpose_table.reg(b, hash, l, alpha);
                 return alpha;
@@ -164,7 +164,7 @@ int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int 
         if (skipped)
             return end_evaluate(b);
         b->p = 1 - b->p;
-        int res = -nega_alpha_ordering(b, true, depth, -beta, -alpha, use_mpc, mpct_in, n_nodes);
+        int res = -nega_alpha_ordering(b, true, depth, -beta, -alpha, use_mpc, mpct_in, n_nodes, vacant_lst);
         b->p = 1 - b->p;
         return res;
     }
@@ -187,7 +187,7 @@ int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int 
         int i;
         const int first_threshold = canput / mid_first_threshold_div + 1;
         for (i = 0; i < first_threshold; ++i){
-            g = -nega_alpha_ordering(&nb[i], false, depth - 1, -beta, -alpha, use_mpc, mpct_in, n_nodes);
+            g = -nega_alpha_ordering(&nb[i], false, depth - 1, -beta, -alpha, use_mpc, mpct_in, n_nodes, vacant_lst);
             alpha = max(alpha, g);
             if (beta <= alpha){
                 if (l < alpha)
@@ -211,11 +211,11 @@ int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int 
                     next_done_tasks = i;
                     break;
                 }
-                future_tasks.emplace_back(thread_pool.push(bind(&nega_alpha_ordering, &nb[i], false, depth - 1, -beta, -alpha, use_mpc, mpct_in, &n_n_nodes[i - first_threshold])));
+                future_tasks.emplace_back(thread_pool.push(bind(&nega_alpha_ordering, &nb[i], false, depth - 1, -beta, -alpha, use_mpc, mpct_in, &n_n_nodes[i - first_threshold], vacant_lst)));
             }
             additional_done_tasks = 0;
             if (next_done_tasks < canput){
-                g = -nega_alpha_ordering(&nb[next_done_tasks], false, depth - 1, -beta, -alpha,  use_mpc, mpct_in, n_nodes);
+                g = -nega_alpha_ordering(&nb[next_done_tasks], false, depth - 1, -beta, -alpha,  use_mpc, mpct_in, n_nodes, vacant_lst);
                 alpha = max(alpha, g);
                 v = max(v, g);
                 additional_done_tasks = 1;
@@ -241,7 +241,7 @@ int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int 
         delete[] n_n_nodes;
     #else
         for (idx = 0; idx < canput; ++idx){
-            g = -nega_alpha_ordering(&nb[idx], false, depth - 1, -beta, -alpha, use_mpc, mpct_in, n_nodes);
+            g = -nega_alpha_ordering(&nb[idx], false, depth - 1, -beta, -alpha, use_mpc, mpct_in, n_nodes, vacant_lst);
             alpha = max(alpha, g);
             if (beta <= alpha){
                 if (l < alpha)
@@ -260,11 +260,11 @@ int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int 
     return v;
 }
 
-int nega_scout(board *b, bool skipped, const int depth, int alpha, int beta, bool use_mpc, double mpct_in, unsigned long long *n_nodes){
+int nega_scout(board *b, bool skipped, const int depth, int alpha, int beta, bool use_mpc, double mpct_in, unsigned long long *n_nodes, const vector<int> &vacant_lst){
     if (!global_searching)
         return -inf;
     if (depth <= simple_mid_threshold)
-        return nega_alpha(b, skipped, depth, alpha, beta, n_nodes);
+        return nega_alpha(b, skipped, depth, alpha, beta, n_nodes, vacant_lst);
     ++(*n_nodes);
     #if USE_MID_SC
         if (stability_cut(b, &alpha, &beta))
@@ -285,12 +285,12 @@ int nega_scout(board *b, bool skipped, const int depth, int alpha, int beta, boo
     beta = min(beta, u);
     #if USE_MID_MPC
         if (mpc_min_depth <= depth && depth <= mpc_max_depth && use_mpc){
-            if (mpc_higher(b, skipped, depth, beta, mpct_in, n_nodes)){
+            if (mpc_higher(b, skipped, depth, beta, mpct_in, n_nodes, vacant_lst)){
                 if (l < beta)
                     transpose_table.reg(b, hash, beta, u);
                 return beta;
             }
-            if (mpc_lower(b, skipped, depth, alpha, mpct_in, n_nodes)){
+            if (mpc_lower(b, skipped, depth, alpha, mpct_in, n_nodes, vacant_lst)){
                 if (alpha < u)
                     transpose_table.reg(b, hash, l, alpha);
                 return alpha;
@@ -302,7 +302,7 @@ int nega_scout(board *b, bool skipped, const int depth, int alpha, int beta, boo
         if (skipped)
             return end_evaluate(b);
         b->p = 1 - b->p;
-        int res = -nega_scout(b, true, depth, -beta, -alpha, use_mpc, mpct_in, n_nodes);
+        int res = -nega_scout(b, true, depth, -beta, -alpha, use_mpc, mpct_in, n_nodes, vacant_lst);
         b->p = 1 - b->p;
         return res;
     }
@@ -325,7 +325,7 @@ int nega_scout(board *b, bool skipped, const int depth, int alpha, int beta, boo
         int i;
         const int first_threshold = canput / mid_first_threshold_div + 1;
         for (i = 0; i < first_threshold; ++i){
-            g = -nega_scout(&nb[i], false, depth - 1, -beta, -alpha, use_mpc, mpct_in, n_nodes);
+            g = -nega_scout(&nb[i], false, depth - 1, -beta, -alpha, use_mpc, mpct_in, n_nodes, vacant_lst);
             alpha = max(alpha, g);
             if (beta <= alpha){
                 if (l < alpha)
@@ -353,11 +353,11 @@ int nega_scout(board *b, bool skipped, const int depth, int alpha, int beta, boo
                     next_done_tasks = i;
                     break;
                 }
-                future_tasks.emplace_back(thread_pool.push(bind(&nega_alpha_ordering, &nb[i], false, depth - 1, -alpha - search_epsilon, -alpha, use_mpc, mpct_in, &n_n_nodes[i - first_threshold])));
+                future_tasks.emplace_back(thread_pool.push(bind(&nega_alpha_ordering, &nb[i], false, depth - 1, -alpha - search_epsilon, -alpha, use_mpc, mpct_in, &n_n_nodes[i - first_threshold], vacant_lst)));
             }
             additional_done_tasks = 0;
             if (next_done_tasks < canput){
-                g = -nega_alpha_ordering(&nb[next_done_tasks], false, depth - 1, -alpha - search_epsilon, -alpha,  use_mpc, mpct_in, n_nodes);
+                g = -nega_alpha_ordering(&nb[next_done_tasks], false, depth - 1, -alpha - search_epsilon, -alpha,  use_mpc, mpct_in, n_nodes, vacant_lst);
                 if (before_alpha < g)
                     re_search[next_done_tasks - first_threshold] = true;
                 alpha = max(alpha, g);
@@ -384,7 +384,7 @@ int nega_scout(board *b, bool skipped, const int depth, int alpha, int beta, boo
             }
             for (i = done_tasks; i < next_done_tasks + additional_done_tasks; ++i){
                 if (re_search[i - first_threshold]){
-                    g = -nega_scout(&nb[i], false, depth - 1, -beta, -alpha,  use_mpc, mpct_in, n_nodes);
+                    g = -nega_scout(&nb[i], false, depth - 1, -beta, -alpha,  use_mpc, mpct_in, n_nodes, vacant_lst);
                     alpha = max(alpha, g);
                     v = max(v, g);
                 }
@@ -396,7 +396,7 @@ int nega_scout(board *b, bool skipped, const int depth, int alpha, int beta, boo
         delete[] re_search;
     #else
         for (idx = 0; idx < canput; ++idx){
-            g = -nega_alpha_ordering(&nb[idx], false, depth - 1, -beta, -alpha, use_mpc, mpct_in, n_nodes);
+            g = -nega_alpha_ordering(&nb[idx], false, depth - 1, -beta, -alpha, use_mpc, mpct_in, n_nodes, vacant_lst);
             alpha = max(alpha, g);
             if (beta <= alpha){
                 if (l < alpha)
@@ -415,11 +415,11 @@ int nega_scout(board *b, bool skipped, const int depth, int alpha, int beta, boo
     return v;
 }
 
-int nega_scout_nomemo(board *b, bool skipped, const int depth, int alpha, int beta, bool use_mpc, double mpct_in, unsigned long long *n_nodes){
+int nega_scout_nomemo(board *b, bool skipped, const int depth, int alpha, int beta, bool use_mpc, double mpct_in, unsigned long long *n_nodes, const vector<int> &vacant_lst){
     if (!global_searching)
         return -inf;
     if (depth <= simple_mid_threshold)
-        return nega_alpha(b, skipped, depth, alpha, beta, n_nodes);
+        return nega_alpha(b, skipped, depth, alpha, beta, n_nodes, vacant_lst);
     ++(*n_nodes);
     #if USE_MID_SC
         if (stability_cut(b, &alpha, &beta))
@@ -427,9 +427,9 @@ int nega_scout_nomemo(board *b, bool skipped, const int depth, int alpha, int be
     #endif
     #if USE_MID_MPC
         if (mpc_min_depth <= depth && depth <= mpc_max_depth && use_mpc){
-            if (mpc_higher(b, skipped, depth, beta, mpct_in, n_nodes))
+            if (mpc_higher(b, skipped, depth, beta, mpct_in, n_nodes, vacant_lst))
                 return beta;
-            if (mpc_lower(b, skipped, depth, alpha, mpct_in, n_nodes))
+            if (mpc_lower(b, skipped, depth, alpha, mpct_in, n_nodes, vacant_lst))
                 return alpha;
         }
     #endif
@@ -438,7 +438,7 @@ int nega_scout_nomemo(board *b, bool skipped, const int depth, int alpha, int be
         if (skipped)
             return end_evaluate(b);
         b->p = 1 - b->p;
-        int res = -nega_scout_nomemo(b, true, depth, -beta, -alpha, use_mpc, mpct_in, n_nodes);
+        int res = -nega_scout_nomemo(b, true, depth, -beta, -alpha, use_mpc, mpct_in, n_nodes, vacant_lst);
         b->p = 1 - b->p;
         return res;
     }
@@ -458,14 +458,14 @@ int nega_scout_nomemo(board *b, bool skipped, const int depth, int alpha, int be
     int g = alpha, v = -inf;
     for (int i = 0; i < canput; ++i){
         if (i > 0){
-            g = -nega_alpha_ordering_nomemo(&nb[i], false, depth - 1, -alpha - search_epsilon, -alpha, use_mpc, mpct_in, n_nodes);
+            g = -nega_alpha_ordering_nomemo(&nb[i], false, depth - 1, -alpha - search_epsilon, -alpha, use_mpc, mpct_in, n_nodes, vacant_lst);
             if (beta < g)
                 return g;
             v = max(v, g);
         }
         if (alpha <= g || i == 0){
             alpha = g;
-            g = -nega_scout_nomemo(&nb[i], false, depth - 1, -beta, -alpha, use_mpc, mpct_in, n_nodes);
+            g = -nega_scout_nomemo(&nb[i], false, depth - 1, -beta, -alpha, use_mpc, mpct_in, n_nodes, vacant_lst);
             alpha = max(alpha, g);
             if (beta <= alpha)
                 return alpha;
@@ -475,12 +475,12 @@ int nega_scout_nomemo(board *b, bool skipped, const int depth, int alpha, int be
     return v;
 }
 
-int mtd(board *b, bool skipped, int depth, int l, int u, bool use_mpc, double use_mpct, unsigned long long *n_nodes){
+int mtd(board *b, bool skipped, int depth, int l, int u, bool use_mpc, double use_mpct, unsigned long long *n_nodes, const vector<int> &vacant_lst){
     int g, beta;
-    g = nega_alpha(b, skipped, 5, l, u, n_nodes);
+    g = nega_alpha(b, skipped, 5, l, u, n_nodes, vacant_lst);
     while (u - l > 0){
         beta = max(l + search_epsilon, g);
-        g = nega_alpha_ordering(b, skipped, depth, beta - search_epsilon, beta, use_mpc, use_mpct, n_nodes);
+        g = nega_alpha_ordering(b, skipped, depth, beta - search_epsilon, beta, use_mpc, use_mpct, n_nodes, vacant_lst);
         if (g < beta)
             u = g;
         else
@@ -490,7 +490,7 @@ int mtd(board *b, bool skipped, int depth, int l, int u, bool use_mpc, double us
     //return nega_scout_nomemo(b, skipped, depth, l, u, use_mpc, use_mpct);
 }
 
-inline search_result midsearch(board b, long long strt, int max_depth, bool use_mpc, double use_mpct){
+inline search_result midsearch(board b, long long strt, int max_depth, bool use_mpc, double use_mpct, const vector<int> vacant_lst){
     vector<pair<int, board>> nb;
     mobility mob;
     int i = 0;
@@ -525,7 +525,7 @@ inline search_result midsearch(board b, long long strt, int max_depth, bool use_
             //if (use_mpc)
             //    g = -nega_scout(&nb[i].second, false, depth, -beta, -alpha, use_mpc, use_mpct, &searched_nodes);
             //else
-            g = -mtd(&nb[i].second, false, depth, -beta, -alpha, use_mpc, use_mpct, &searched_nodes);
+            g = -mtd(&nb[i].second, false, depth, -beta, -alpha, use_mpc, use_mpct, &searched_nodes, vacant_lst);
             if (alpha < g || i == 0){
                 transpose_table.reg(&nb[i].second, nb[i].second.hash() & search_hash_mask, g, g);
                 alpha = g;
@@ -557,9 +557,9 @@ inline search_result midsearch(board b, long long strt, int max_depth, bool use_
     return res;
 }
 
-inline search_result midsearch_value_nomemo(board b, long long strt, int max_depth, bool use_mpc, double use_mpct){
+inline search_result midsearch_value_nomemo(board b, long long strt, int max_depth, bool use_mpc, double use_mpct, const vector<int> vacant_lst){
     unsigned long long searched_nodes = 0;
-    int value = nega_scout_nomemo(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct, &searched_nodes);
+    int value = nega_scout_nomemo(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct, &searched_nodes, vacant_lst);
     search_result res;
     res.policy = -1;
     res.value = value;
@@ -569,9 +569,9 @@ inline search_result midsearch_value_nomemo(board b, long long strt, int max_dep
     return res;
 }
 
-inline search_result midsearch_value_memo(board b, long long strt, int max_depth, bool use_mpc, double use_mpct){
+inline search_result midsearch_value_memo(board b, long long strt, int max_depth, bool use_mpc, double use_mpct, const vector<int> vacant_lst){
     unsigned long long searched_nodes = 0;
-    int value = mtd(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct, &searched_nodes);
+    int value = mtd(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct, &searched_nodes, vacant_lst);
     //cerr << "midsearch depth " << max_depth << " value " << value << " nodes " << searched_nodes << " time " << tim() - strt << " nps " << searched_nodes * 1000 / max(1LL, tim() - strt) << endl;
     search_result res;
     res.policy = -1;
@@ -582,7 +582,7 @@ inline search_result midsearch_value_memo(board b, long long strt, int max_depth
 }
 
 
-inline search_result midsearch_value_analyze_memo(board b, long long strt, int max_depth, bool use_mpc, double use_mpct){
+inline search_result midsearch_value_analyze_memo(board b, long long strt, int max_depth, bool use_mpc, double use_mpct, const vector<int> vacant_lst){
     unsigned long long searched_nodes = 0;
     int value = -inf, former_value = -inf, g;
     for (int depth = min(16, max(0, max_depth - 5)); depth <= min(hw2 - b.n, max_depth); ++depth){
@@ -590,7 +590,7 @@ inline search_result midsearch_value_analyze_memo(board b, long long strt, int m
         //if (use_mpc)
         //    g = nega_scout(&b, false, depth, -hw2, hw2, use_mpc, use_mpct, &searched_nodes);
         //else
-        g = mtd(&b, false, depth, -hw2, hw2, use_mpc, use_mpct, &searched_nodes);
+        g = mtd(&b, false, depth, -hw2, hw2, use_mpc, use_mpct, &searched_nodes, vacant_lst);
         former_value = value;
         value = g;
         swap(transpose_table.now, transpose_table.prev);

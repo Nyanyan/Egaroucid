@@ -91,7 +91,6 @@ const int mpcd[41] = {
     };
 #endif
 unsigned long long can_be_flipped[hw2];
-vector<int> vacant_lst;
 bool search_completed = false;
 
 struct search_result{
