@@ -46,6 +46,19 @@ public:
 			return U"?";
 		return lang[v0s][v1s][v2s].getString();
 	}
+
+	String get_random(string v0, string v1) {
+		String v0s = Unicode::Widen(v0);
+		String v1s = Unicode::Widen(v1);
+		if (lang[v0s][v1s].getType() != JSONValueType::Array)
+			return U"?";
+		vector<String> arr;
+		for (const auto& elem : lang[v0s][v1s].arrayView()){
+			arr.emplace_back(elem.getString());
+		}
+		int idx = myrandrange(0, (int)arr.size());
+		return arr[idx];
+	}
 };
 
 language language;

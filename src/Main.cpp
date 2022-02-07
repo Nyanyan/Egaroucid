@@ -365,11 +365,13 @@ int find_history_idx(vector<history_elem> history, int history_place) {
 	return 0;
 }
 
-void initialize_draw(future<bool> *f, bool *initializing, bool *initialize_failed, Font font, Font small_font, Texture icon, Texture logo, bool texture_loaded) {
+void initialize_draw(future<bool> *f, bool *initializing, bool *initialize_failed, Font font, Font small_font, Texture icon, Texture logo, bool texture_loaded, String tips) {
 	icon.scaled((double)(left_right - left_left) / icon.width()).draw(left_left, y_center - (left_right - left_left) / 2);
 	logo.scaled((double)(left_right - left_left) * 0.8 / logo.width()).draw(right_left, y_center - 30);
 	if (!(*initialize_failed) && texture_loaded) {
 		font(language.get("loading", "loading")).draw(right_left, y_center + font.fontSize(), font_color);
+		small_font(language.get("tips", "do_you_know")).draw(right_left, y_center + font.fontSize() + 70, font_color);
+		small_font(tips).draw(right_left, y_center + font.fontSize() + 100, font_color);
 		if (f->wait_for(chrono::seconds(0)) == future_status::ready) {
 			if (f->get()) {
 				*initializing = false;
@@ -1311,6 +1313,8 @@ void Main() {
 
 	string joseki_name = "";
 
+	String tips;
+
 	int use_ai_mode;
 	string lang_name;
 	if (!import_setting(&int_mode, &ai_level, &ai_book_accept, &hint_level,
@@ -1459,6 +1463,7 @@ void Main() {
 					language_acts, language_names);
 				start_game_button.init(start_game_button_x, start_game_button_y, start_game_button_w, start_game_button_h, start_game_button_r, language.get("button", "start_game"), font50, button_color, button_font_color);
 				how_to_use_button.init(how_to_use_button_x, how_to_use_button_y, how_to_use_button_w, how_to_use_button_h, how_to_use_button_r, language.get("button", "how_to_use"), font50, button_color, button_font_color);
+				tips = language.get_random("tips", "tips");
 				lang_initialized = 2;
 			}
 			else if (lang_initialized == 2) {
@@ -1483,7 +1488,7 @@ void Main() {
 						&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert,
 						language_acts, language_names);
 				}
-				initialize_draw(&initialize_future, &initializing, &initialize_failed, font50, font20, icon, logo, texture_loaded);
+				initialize_draw(&initialize_future, &initializing, &initialize_failed, font50, font20, icon, logo, texture_loaded, tips);
 				if (!initializing) {
 					bd.reset();
 					bd.v = -inf;
