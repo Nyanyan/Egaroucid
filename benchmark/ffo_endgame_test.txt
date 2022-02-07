@@ -1119,3 +1119,19 @@ normal flip
 #46 final depth: 24 time: 4931 policy: 46 value: -8 nodes: 248871957 nps: 51837524
 #47 final depth: 25 time: 1846 policy: 49 value: 4 nodes: 83264731 nps: 46181215
 #48 final depth: 25 time: 14028 policy: 18 value: 28 nodes: 671642795 nps: 48403199
+
+2022/02/08 update evaluation function
+#40 final depth: 20 time: 604 policy: 55 value: 38 nodes: 22103268 nps: 48793086
+#41 final depth: 22 time: 965 policy: 32 value: 0 nodes: 26619375 nps: 42455143
+#42 final depth: 22 time: 1794 policy: 49 value: 6 nodes: 81602929 nps: 48922619
+#43 final depth: 23 time: 2932 policy: 13 value: -12 nodes: 114255337 nps: 41158262
+#44 final depth: 23 time: 1123 policy: 52 value: -14 nodes: 23296206 nps: 34615462
+#45 final depth: 24 time: 17982 policy: 54 value: 6 nodes: 771856890 nps: 45537279
+#46 final depth: 24 time: 3837 policy: 46 value: -8 nodes: 162739938 nps: 47949304
+#47 final depth: 25 time: 3724 policy: 49 value: 4 nodes: 161217138 nps: 46974690
+#48 final depth: 25 time: 15833 policy: 18 value: 28 nodes: 676038538 nps: 44295540
+#49 final depth: 26 time: 22719 policy: 59 value: 16 nodes: 1219672580 nps: 55950850
+#50 final depth: 26 time: 57370 policy: 4 value: 10 nodes: 2769235225 nps: 48745559
+#51 final depth: 27 time: 24357 policy: 51 value: 6 nodes: 1096254611 nps: 46035972
+#52 final depth: 27 time: 21110 policy: 47 value: 0 nodes: 905296319 nps: 44672900
+#53 final depth: 28 time: 366889 policy: 4 value: -2 nodes: 15759866579 nps: 44452592
