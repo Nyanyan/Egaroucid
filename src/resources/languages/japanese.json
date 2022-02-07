@@ -12,8 +12,8 @@
     "closing": "終了中...",
     "mode": {
         "mode": "モード",
-        "entry_mode": "初級者向け",
-        "professional_mode": "上級者向け",
+        "entry_mode": "シンプル",
+        "professional_mode": "研究",
         "serious_game": "真剣勝負"
     },
     "play": {
@@ -23,21 +23,13 @@
     },
     "settings": {
         "settings": "設定",
-        "ai_play": {
-            "ai_play":  "AIが着手",
+        "play": {
+            "play":  "着手",
             "human_first": "人間先手",
             "human_second": "人間後手",
-            "both_ai": "AI同士"
+            "both_ai": "AI同士",
+            "both_human": "人間同士"
         },
-        "hint": {
-            "hint": "ヒント",
-            "stone_value": "石差評価",
-            "show_number": "個",
-            "show_all": "全部",
-            "human_value": "人間的評価",
-            "umigame_value": "うみがめ数"
-        },
-        "graph": "グラフ",
         "thread": {
             "thread": "スレッド数"
         }
@@ -71,6 +63,15 @@
     },
     "display": {
         "display": "表示",
+        "hint": {
+            "hint": "ヒント",
+            "stone_value": "石差評価",
+            "show_number": "個",
+            "show_all": "全部",
+            "human_value": "人間的評価",
+            "umigame_value": "うみがめ数"
+        },
+        "graph": "グラフ",
         "end_popup": "終了時ポップアップ",
         "log": "ログ"
     },
@@ -111,5 +112,22 @@
         "joseki_name": "定石名",
         "ai": "AI",
         "hint": "ヒント"
+    },
+    "tips": {
+        "do_you_know": "ご存知ですか？",
+        "tips": [
+            "研究モードではマスを右クリックでbookを変更",
+            "Edax形式のbookもそのまま追加可能",
+            "ドラッグ、←→キーまたはA、Dキーで局面を移動",
+            "対局はrecordsフォルダに保存可能",
+            "bookや設定は終了時に自動保存",
+            "盤面入力は様々な形式に対応",
+            "クリップボードから棋譜や局面を入力",
+            "人間的評価値は手筋の総合評価",
+            "うみがめ数表示はbookに依存",
+            "終了時ポップアップは非表示も可能",
+            "AIのレベルを上げすぎると計算時間が爆発",
+            "読み停止ボタンで計算を強制終了"
+        ]
     }
 }
