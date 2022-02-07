@@ -6,9 +6,11 @@
 
 using namespace std;
 
-constexpr Color graph_color = Palette::White;
+constexpr Color graph_color = Color(51, 51, 51);
+constexpr Color graph_history_color = Palette::White;
 constexpr Color graph_fork_color = Palette::Black;
-constexpr Color graph_place_color = Palette::Black;
+constexpr Color graph_place_color = Palette::White;
+constexpr double graph_transparency = 0.5;
 
 class Graph {
 public:
@@ -43,16 +45,19 @@ public:
 			font(x).draw(sx + x * dx + adj_x * x / 60 - font(x).region(Point{0, 0}).w, sy - 2 * font_size, graph_color);
 			Line{ sx + x * dx + adj_x * x / 60, sy, sx + x * dx + adj_x * x / 60, sy + size_y }.draw(1, graph_color);
 		}
-		draw_graph(nodes1, graph_color, true);
+		draw_graph(nodes1, graph_history_color, true);
 		draw_graph(nodes2, graph_fork_color, true);
 		int place_x = sx + place * dx + place * adj_x / 60;
-		Line(place_x, sy, place_x, sy + size_y).draw(3, graph_place_color);
 		Circle(sx, sy, 10).draw(Palette::Black);
 		Circle(sx, sy + size_y, 10).draw(Palette::White);
+		Line(place_x, sy, place_x, sy + size_y).draw(3, graph_place_color);
+		RoundRect(place_x - 9, sy + size_y, 18, 10, 3).draw(graph_place_color);
+		Line(place_x - 6, sy + size_y + 3, place_x - 6, sy + size_y + 7).draw(2, graph_color);
+		Line(place_x + 6, sy + size_y + 3, place_x + 6, sy + size_y + 7).draw(2, graph_color);
 	}
 
 	int update_place(vector<history_elem> nodes1, vector<history_elem> nodes2, int place) {
-		if (Rect(sx - 30, sy, size_x + 40, size_y).leftPressed()) {
+		if (Rect(sx - 30, sy, size_x + 40, size_y + 10).leftPressed()) {
 			int cursor_x = Cursor::Pos().x;
 			int min_err = inf;
 			for (int i = 0; i < (int)nodes1.size(); ++i) {
@@ -111,11 +116,11 @@ private:
 		for (const history_elem& b : nodes) {
 			if (b.b.v != -inf) {
 				int yy = sy + (y_max - b.b.v) * dy + adj_y * (y_max - b.b.v) / (y_max - y_min);
-				Circle{ sx + (b.b.n - 4) * dx + (b.b.n - 4) * adj_x / 60, yy, 4 }.draw(color);
+				Circle{ sx + (b.b.n - 4) * dx + (b.b.n - 4) * adj_x / 60, yy, 3 }.draw(color);
 			}
 			else if (show_not_calculated) {
 				int yy = sy + y_max * dy + adj_y * y_max / (y_max - y_min);
-				Circle{ sx + (b.b.n - 4) * dx + (b.b.n - 4) * adj_x / 60, yy, 4 }.draw(color);
+				Circle{ sx + (b.b.n - 4) * dx + (b.b.n - 4) * adj_x / 60, yy, 3 }.draw(color);
 			}
 		}
 		int idx1 = 0, idx2 = 0;
@@ -139,7 +144,7 @@ private:
 				break;
 			int xx2 = sx + (nodes[idx2].b.n - 4) * dx + (nodes[idx2].b.n - 4) * adj_x / 60;
 			int yy2 = sy + (y_max - nodes[idx2].b.v) * dy + adj_y * (y_max - nodes[idx2].b.v) / (y_max - y_min);
-			Line(xx1, yy1, xx2, yy2).draw(4, color);
+			Line(xx1, yy1, xx2, yy2).draw(2, ColorF(color, graph_transparency));
 			idx1 = idx2;
 		}
 	}

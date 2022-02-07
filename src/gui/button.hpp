@@ -29,6 +29,11 @@ public:
 		font(str).drawAt(rect.x + rect.w / 2, rect.y + rect.h / 2, font_color);
 	}
 
+	void draw(double transparency) {
+		rect.draw(ColorF(button_color, transparency));
+		font(str).drawAt(rect.x + rect.w / 2, rect.y + rect.h / 2, ColorF(font_color, transparency));
+	}
+
 	bool clicked() {
 		return rect.leftClicked();
 	}
@@ -61,6 +66,11 @@ public:
 	void draw() {
 		rect.draw(button_color).drawFrame(frame_width, frame_color);
 		font(str).drawAt(rect.x + rect.w / 2, rect.y + rect.h / 2, font_color);
+	}
+
+	void draw(double transparency) {
+		rect.draw(ColorF(button_color, transparency)).drawFrame(frame_width, ColorF(frame_color, transparency));
+		font(str).drawAt(rect.x + rect.w / 2, rect.y + rect.h / 2, ColorF(font_color, transparency));
 	}
 
 	bool clicked() {

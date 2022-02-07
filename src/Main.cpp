@@ -43,10 +43,10 @@ using namespace std;
 #define y_center 360
 
 constexpr Color font_color = Palette::White;;
-constexpr int board_size = 480, board_coord_size = 30;
+constexpr int board_size = 480, board_coord_size = 20;
 constexpr int board_sx = left_left + board_coord_size, board_sy = y_center - board_size / 2, board_cell_size = board_size / hw, board_cell_frame_width = 2, board_frame_width = 7;
 constexpr int stone_size = 25, legal_size = 5;
-constexpr int graph_sx = 585, graph_sy = 330, graph_width = 400, graph_height = 345, graph_resolution = 8, graph_font_size = 15;
+constexpr int graph_sx = 585, graph_sy = y_center - 175, graph_width = 400, graph_height = 350, graph_resolution = 8, graph_font_size = 15;
 constexpr Color green = Color(36, 153, 114, 100);
 constexpr int start_game_how_to_use_width = 400, start_game_how_to_use_height = 100;
 constexpr int start_game_button_x = x_center - start_game_how_to_use_width / 2,
@@ -64,6 +64,7 @@ constexpr int popup_width = 500, popup_height = 300, popup_r = 20, popup_circle_
 constexpr Color popup_color = Palette::White, popup_font_color = Palette::Black, popup_frame_color = Palette::Black, textbox_active_color = Palette::Lightcyan;
 constexpr int popup_output_width = 800, popup_output_height = 600;
 constexpr int info_sx = 585, info_sy = 50;
+constexpr double popup_fade_time = 500.0;
 
 struct cell_value {
 	int value;
@@ -92,7 +93,7 @@ Menu create_menu(Texture checkbox,
 	bool *dammy,
 	bool *entry_mode, bool *professional_mode, bool *serious_game,
 	bool *start_game_flag, bool *analyze_flag,
-	bool *use_ai_flag, bool *human_first, bool *human_second, bool *both_ai,
+	bool *human_first, bool *human_second, bool *both_ai, bool *both_human,
 	bool *use_hint_flag, bool *normal_hint, bool *human_hint, bool *umigame_hint,
 	bool *hint_num1, bool* hint_num2, bool* hint_num4, bool* hint_num8, bool* hint_num16, bool* hint_numall,
 	bool *use_value_flag,
@@ -157,7 +158,7 @@ Menu create_menu(Texture checkbox,
 		menu_e.push(side_menu);
 		title.push(menu_e);
 	}
-
+	/*
 	menu_e.init_check(language.get("settings", "ai_play", "ai_play"), use_ai_flag, *use_ai_flag);
 	side_menu.init_radio(language.get("settings", "ai_play", "human_first"), human_first, *human_first);
 	menu_e.push(side_menu);
@@ -165,35 +166,16 @@ Menu create_menu(Texture checkbox,
 	menu_e.push(side_menu);
 	side_menu.init_radio(language.get("settings", "ai_play", "both_ai"), both_ai, *both_ai);
 	menu_e.push(side_menu);
-	title.push(menu_e);
-
-	if (!(*serious_game)) {
-		menu_e.init_check(language.get("settings", "hint", "hint"), use_hint_flag, *use_hint_flag);
-		if (*professional_mode) {
-			side_menu.init_check(language.get("settings", "hint", "stone_value"), normal_hint, *normal_hint);
-			side_side_menu.init_radio(U"1" + language.get("settings", "hint", "show_number"), hint_num1, *hint_num1);
-			side_menu.push(side_side_menu);
-			side_side_menu.init_radio(U"2" + language.get("settings", "hint", "show_number"), hint_num2, *hint_num2);
-			side_menu.push(side_side_menu);
-			side_side_menu.init_radio(U"4" + language.get("settings", "hint", "show_number"), hint_num4, *hint_num4);
-			side_menu.push(side_side_menu);
-			side_side_menu.init_radio(U"8" + language.get("settings", "hint", "show_number"), hint_num8, *hint_num8);
-			side_menu.push(side_side_menu);
-			side_side_menu.init_radio(U"16" + language.get("settings", "hint", "show_number"), hint_num16, *hint_num16);
-			side_menu.push(side_side_menu);
-			side_side_menu.init_radio(language.get("settings", "hint", "show_all"), hint_numall, *hint_numall);
-			side_menu.push(side_side_menu);
-			menu_e.push(side_menu);
-			
-			side_menu.init_check(language.get("settings", "hint", "human_value"), human_hint, *human_hint);
-			menu_e.push(side_menu);
-			side_menu.init_check(language.get("settings", "hint", "umigame_value"), umigame_hint, *umigame_hint);
-			menu_e.push(side_menu);
-		}
-		title.push(menu_e);
-	}
-
-	menu_e.init_check(language.get("settings", "graph"), use_value_flag, *use_value_flag);
+	*/
+	menu_e.init_button(language.get("settings", "ai_play", "ai_play"), dammy);
+	side_menu.init_radio(language.get("settings", "ai_play", "human_first"), human_first, *human_first);
+	menu_e.push(side_menu);
+	side_menu.init_radio(language.get("settings", "ai_play", "human_second"), human_second, *human_second);
+	menu_e.push(side_menu);
+	side_menu.init_radio(language.get("settings", "ai_play", "both_ai"), both_ai, *both_ai);
+	menu_e.push(side_menu);
+	side_menu.init_radio(language.get("settings", "ai_play", "both_human"), both_human, *both_human);
+	menu_e.push(side_menu);
 	title.push(menu_e);
 
 	if (!(*entry_mode)) {
@@ -222,6 +204,35 @@ Menu create_menu(Texture checkbox,
 
 
 	title.init(language.get("display", "display"));
+
+	if (!(*serious_game)) {
+		menu_e.init_check(language.get("display", "hint", "hint"), use_hint_flag, *use_hint_flag);
+		if (*professional_mode) {
+			side_menu.init_check(language.get("display", "hint", "stone_value"), normal_hint, *normal_hint);
+			side_side_menu.init_radio(U"1" + language.get("display", "hint", "show_number"), hint_num1, *hint_num1);
+			side_menu.push(side_side_menu);
+			side_side_menu.init_radio(U"2" + language.get("display", "hint", "show_number"), hint_num2, *hint_num2);
+			side_menu.push(side_side_menu);
+			side_side_menu.init_radio(U"4" + language.get("display", "hint", "show_number"), hint_num4, *hint_num4);
+			side_menu.push(side_side_menu);
+			side_side_menu.init_radio(U"8" + language.get("display", "hint", "show_number"), hint_num8, *hint_num8);
+			side_menu.push(side_side_menu);
+			side_side_menu.init_radio(U"16" + language.get("display", "hint", "show_number"), hint_num16, *hint_num16);
+			side_menu.push(side_side_menu);
+			side_side_menu.init_radio(language.get("display", "hint", "show_all"), hint_numall, *hint_numall);
+			side_menu.push(side_side_menu);
+			menu_e.push(side_menu);
+
+			side_menu.init_check(language.get("display", "hint", "human_value"), human_hint, *human_hint);
+			menu_e.push(side_menu);
+			side_menu.init_check(language.get("display", "hint", "umigame_value"), umigame_hint, *umigame_hint);
+			menu_e.push(side_menu);
+		}
+		title.push(menu_e);
+	}
+
+	menu_e.init_check(language.get("display", "graph"), use_value_flag, *use_value_flag);
+	title.push(menu_e);
 
 	menu_e.init_check(language.get("display", "end_popup"), show_end_popup, *show_end_popup);
 	title.push(menu_e);
@@ -332,18 +343,24 @@ cell_value analyze_search(board b, int level) {
 	int depth, end_depth;
 	bool use_mpc;
 	double mpct;
-	get_level(level, b.n - 4, &depth, &end_depth, &use_mpc, &mpct);
-	res.value = book.get(&b) * (b.p ? 1 : -1);
-	if (abs(res.value) != inf) {
-		res.depth = search_book_define;
-	}
-	else if (hw2 - b.n <= end_depth) {
-		res.value = endsearch_value_analyze_memo(b, tim(), use_mpc, mpct, create_vacant_lst(b)).value * (b.p ? -1 : 1);
-		res.depth = use_mpc ? hw2 - b.n : search_final_define;
+	if (b.p == vacant) {
+		res.depth = 0;
+		res.value = b.count(black);
 	}
 	else {
-		res.value = midsearch_value_analyze_memo(b, tim(), depth, use_mpc, mpct, create_vacant_lst(b)).value * (b.p ? -1 : 1);
-		res.depth = depth;
+		get_level(level, b.n - 4, &depth, &end_depth, &use_mpc, &mpct);
+		res.value = book.get(&b) * (b.p ? 1 : -1);
+		if (abs(res.value) != inf) {
+			res.depth = search_book_define;
+		}
+		else if (hw2 - b.n <= end_depth) {
+			res.value = endsearch_value_analyze_memo(b, tim(), use_mpc, mpct, create_vacant_lst(b)).value * (b.p ? -1 : 1);
+			res.depth = use_mpc ? hw2 - b.n : search_final_define;
+		}
+		else {
+			res.value = midsearch_value_analyze_memo(b, tim(), depth, use_mpc, mpct, create_vacant_lst(b)).value * (b.p ? -1 : 1);
+			res.depth = depth;
+		}
 	}
 	return res;
 }
@@ -396,8 +413,8 @@ void board_draw(Rect board_cells[], board b, int int_mode, bool use_hint_flag, b
 	int book_start_learn) {
 	String coord_x = U"abcdefgh";
 	for (int i = 0; i < hw; ++i) {
-		coord_font(i + 1).draw(Arg::center(board_sx - board_coord_size, board_sy + board_cell_size * i + board_cell_size / 2), font_color);
-		coord_font(coord_x[i]).draw(Arg::center(board_sx + board_cell_size * i + board_cell_size / 2, board_sy - board_coord_size), font_color);
+		coord_font(i + 1).draw(Arg::center(board_sx - board_coord_size, board_sy + board_cell_size * i + board_cell_size / 2), Color(51, 51, 51));
+		coord_font(coord_x[i]).draw(Arg::center(board_sx + board_cell_size * i + board_cell_size / 2, board_sy - board_coord_size), Color(51, 51, 51));
 	}
 	for (int i = 0; i < hw_m1; ++i) {
 		Line(board_sx + board_cell_size * (i + 1), board_sy, board_sx + board_cell_size * (i + 1), board_sy + board_cell_size * hw).draw(board_cell_frame_width, Color(51, 51, 51));
@@ -514,50 +531,51 @@ void board_draw(Rect board_cells[], board b, int int_mode, bool use_hint_flag, b
 	}
 }
 
-bool show_popup(board b, bool use_ai_flag, bool human_first, bool human_second, bool both_ai, Font big_font, Font small_font) {
-	RoundRect(x_center - popup_width / 2, y_center - popup_height / 2, popup_width, popup_height, popup_r).draw(popup_color);
+bool show_popup(board b, bool use_ai_flag, bool human_first, bool human_second, bool both_ai, Font big_font, Font small_font, long long strt) {
+	double transparency = min(1.0, (double)(tim() - strt) / popup_fade_time);
+	RoundRect(x_center - popup_width / 2, y_center - popup_height / 2, popup_width, popup_height, popup_r).draw(ColorF(popup_color, transparency));
 	int black_stones = pop_count_ull(b.b);
 	int white_stones = pop_count_ull(b.w);
 	if (use_ai_flag && human_first) {
 		if (black_stones > white_stones) {
-			big_font(language.get("result", "you_win")).draw(Arg::bottomCenter(x_center, y_center - 60), popup_font_color);
+			big_font(language.get("result", "you_win")).draw(Arg::bottomCenter(x_center, y_center - 60), ColorF(popup_font_color, transparency));
 		}
 		else if (black_stones < white_stones) {
-			big_font(language.get("result", "AI_win")).draw(Arg::bottomCenter(x_center, y_center - 60), popup_font_color);
+			big_font(language.get("result", "AI_win")).draw(Arg::bottomCenter(x_center, y_center - 60), ColorF(popup_font_color, transparency));
 		}
 		else {
-			big_font(language.get("result", "draw")).draw(Arg::bottomCenter(x_center, y_center - 60), popup_font_color);
+			big_font(language.get("result", "draw")).draw(Arg::bottomCenter(x_center, y_center - 60), ColorF(popup_font_color, transparency));
 		}
 	}
 	else if (use_ai_flag && human_second) {
 		if (black_stones < white_stones) {
-			big_font(language.get("result", "you_win")).draw(Arg::bottomCenter(x_center, y_center - 60), popup_font_color);
+			big_font(language.get("result", "you_win")).draw(Arg::bottomCenter(x_center, y_center - 60), ColorF(popup_font_color, transparency));
 		}
 		else if (black_stones > white_stones) {
-			big_font(language.get("result", "AI_win")).draw(Arg::bottomCenter(x_center, y_center - 60), popup_font_color);
+			big_font(language.get("result", "AI_win")).draw(Arg::bottomCenter(x_center, y_center - 60), ColorF(popup_font_color, transparency));
 		}
 		else {
-			big_font(language.get("result", "draw")).draw(Arg::bottomCenter(x_center, y_center - 60), popup_font_color);
+			big_font(language.get("result", "draw")).draw(Arg::bottomCenter(x_center, y_center - 60), ColorF(popup_font_color, transparency));
 		}
 	}
 	else {
 		if (black_stones > white_stones) {
-			big_font(language.get("result", "black_win")).draw(Arg::bottomCenter(x_center, y_center - 60), popup_font_color);
+			big_font(language.get("result", "black_win")).draw(Arg::bottomCenter(x_center, y_center - 60), ColorF(popup_font_color, transparency));
 		}
 		else if (black_stones < white_stones) {
-			big_font(language.get("result", "white_win")).draw(Arg::bottomCenter(x_center, y_center - 60), popup_font_color);
+			big_font(language.get("result", "white_win")).draw(Arg::bottomCenter(x_center, y_center - 60), ColorF(popup_font_color, transparency));
 		}
 		else {
-			big_font(language.get("result", "draw")).draw(Arg::bottomCenter(x_center, y_center - 60), popup_font_color);
+			big_font(language.get("result", "draw")).draw(Arg::bottomCenter(x_center, y_center - 60), ColorF(popup_font_color, transparency));
 		}
 	}
-	Circle(x_center - popup_width / 3, y_center, popup_circle_r).draw(Palette::Black);
-	small_font(black_stones).draw(Arg::rightCenter(x_center - popup_width / 3 + popup_circle_r * 2 + 20, y_center), popup_font_color);
-	Circle(x_center + popup_width / 3, y_center, popup_circle_r).draw(Palette::White).drawFrame(2, Palette::Black);
-	small_font(white_stones).draw(Arg::leftCenter(x_center + popup_width / 3 - popup_circle_r * 2 - 20, y_center), popup_font_color);
+	Circle(x_center - popup_width / 3, y_center, popup_circle_r).draw(ColorF(Palette::Black, transparency));
+	small_font(black_stones).draw(Arg::rightCenter(x_center - popup_width / 3 + popup_circle_r * 2 + 20, y_center), ColorF(popup_font_color, transparency));
+	Circle(x_center + popup_width / 3, y_center, popup_circle_r).draw(ColorF(Palette::White, transparency)).drawFrame(2, ColorF(Palette::Black, transparency));
+	small_font(white_stones).draw(Arg::leftCenter(x_center + popup_width / 3 - popup_circle_r * 2 - 20, y_center), ColorF(popup_font_color, transparency));
 	FrameButton button;
 	button.init(x_center - 100, y_center + 60, 200, 50, 10, 2, language.get("button", "close"), small_font, button_color, button_font_color, button_font_color);
-	button.draw();
+	button.draw(transparency);
 	return button.clicked();
 }
 
@@ -719,7 +737,7 @@ string import_str(ifstream* ifs) {
 }
 
 bool import_setting(int *int_mode, int *ai_level, int *ai_book_accept, int *hint_level,
-	bool *use_ai_flag, int *use_ai_mode,
+	int *use_ai_mode,
 	bool *use_hint_flag, bool *normal_hint, bool *human_hint, bool *umigame_hint,
 	bool *show_end_popup,
 	int *n_thread_idx,
@@ -745,10 +763,6 @@ bool import_setting(int *int_mode, int *ai_level, int *ai_book_accept, int *hint
 	}
 	*hint_level = import_int(&ifs);
 	if (*hint_level == -inf) {
-		return false;
-	}
-	*use_ai_flag = import_int(&ifs);
-	if (*use_ai_flag == -inf) {
 		return false;
 	}
 	*use_ai_mode = import_int(&ifs);
@@ -803,7 +817,7 @@ bool import_setting(int *int_mode, int *ai_level, int *ai_book_accept, int *hint
 }
 
 void export_setting(int int_mode, int ai_level, int ai_book_accept, int hint_level,
-	bool use_ai_flag, int use_ai_mode,
+	int use_ai_mode,
 	bool use_hint_flag, bool normal_hint, bool human_hint, bool umigame_hint,
 	bool show_end_popup,
 	int n_thread_idx,
@@ -817,7 +831,6 @@ void export_setting(int int_mode, int ai_level, int ai_book_accept, int hint_lev
 		ofs << ai_level << endl;
 		ofs << ai_book_accept << endl;
 		ofs << hint_level << endl;
-		ofs << use_ai_flag << endl;
 		ofs << use_ai_mode << endl;
 		ofs << use_hint_flag << endl;
 		ofs << normal_hint << endl;
@@ -925,7 +938,7 @@ pair<bool, board> import_board(String board_str) {
 	return make_pair(flag, bd);
 }
 
-bool output_game(history_elem hist, int ai_level, bool use_ai_flag, int use_ai_mode, String black_player, String white_player, String game_memo) {
+bool output_game(history_elem hist, int ai_level, int use_ai_mode, String black_player, String white_player, String game_memo) {
 	__time64_t now;
 	tm newtime;
 	_time64(&now);
@@ -963,7 +976,6 @@ bool output_game(history_elem hist, int ai_level, bool use_ai_flag, int use_ai_m
 	ofs << result << endl;
 	ofs << info << endl;
 	ofs << ai_level << endl;
-	ofs << use_ai_flag << endl;
 	ofs << use_ai_mode << endl;
 	ofs << black_player.narrow() << endl;
 	ofs << white_player.narrow() << endl;
@@ -976,7 +988,7 @@ bool close_app(int* hint_state, future<bool>* hint_future,
 	bool* ai_thinking, future<search_result>* ai_future,
 	bool* analyzing, future<cell_value>* analyze_future,
 	int int_mode, int ai_level, int ai_book_accept, int hint_level,
-	bool use_ai_flag, int use_ai_mode,
+	int use_ai_mode,
 	bool use_hint_flag, bool normal_hint, bool human_hint, bool umigame_hint,
 	bool show_end_popup,
 	int n_thread_idx,
@@ -991,7 +1003,7 @@ bool close_app(int* hint_state, future<bool>* hint_future,
 	reset_ai(ai_thinking, ai_future);
 	reset_analyze(analyzing, analyze_future);
 	export_setting(int_mode, ai_level, ai_book_accept, hint_level,
-		use_ai_flag, use_ai_mode,
+		use_ai_mode,
 		use_hint_flag, normal_hint, human_hint, umigame_hint,
 		show_end_popup,
 		n_thread_idx,
@@ -1022,12 +1034,13 @@ void info_draw(board bd, string joseki_name, int ai_level, int hint_level, Font 
 		mid_font(language.get("info", "game_end")).draw(info_sx, info_sy);
 	}
 	mid_font(language.get("info", "joseki_name") + U": " + Unicode::FromUTF8(joseki_name)).draw(info_sx, info_sy + 40);
-	Circle(info_sx + 20, info_sy + 105, 12).draw(Palette::Black);
-	Circle(info_sx + 20, info_sy + 135, 12).draw(Palette::White);
-	mid_font(pop_count_ull(bd.b)).draw(Arg::leftCenter(info_sx + 40, info_sy + 105));
-	mid_font(pop_count_ull(bd.w)).draw(Arg::leftCenter(info_sx + 40, info_sy + 135));
-	mid_font(language.get("info", "ai") + U": " + language.get("common", "level") + Format(ai_level)).draw(info_sx, info_sy + 155);
-	mid_font(language.get("info", "hint") + U": " + language.get("common", "level") + Format(hint_level)).draw(info_sx, info_sy + 185);
+	int stone_info_cy = board_sy + board_size + 30;
+	Circle(board_sx + 20, stone_info_cy, 12).draw(Palette::Black);
+	Circle(board_sx + board_size - 20, stone_info_cy, 12).draw(Palette::White);
+	mid_font(pop_count_ull(bd.b)).draw(Arg::leftCenter(board_sx + 20 + 20, stone_info_cy));
+	mid_font(pop_count_ull(bd.w)).draw(Arg::rightCenter(board_sx + board_size - 20 - 20, stone_info_cy));
+	//mid_font(language.get("info", "ai") + U": " + language.get("common", "level") + Format(ai_level)).draw(info_sx, info_sy + 155);
+	//mid_font(language.get("info", "hint") + U": " + language.get("common", "level") + Format(hint_level)).draw(info_sx, info_sy + 185);
 }
 
 void learn_book(board bd, int level, int depth, int book_learn_accept, board* bd_ptr, int* value_ptr, bool* book_learning) {
@@ -1178,7 +1191,7 @@ void Main() {
 	bool show_mode[mode_size] = {true, false, false};
 	int int_mode = 0;
 	bool start_game_flag = false, analyze_flag = false;
-	bool use_ai_flag = true, human_first = true, human_second = false, both_ai = false;
+	bool human_first = true, human_second = false, both_ai = false, both_human = false;
 	bool use_hint_flag = true, normal_hint = true, human_hint = true, umigame_hint = true;
 	bool use_value_flag = true;
 	bool start_book_learn_flag = false, stop_book_learn_flag = false;
@@ -1273,6 +1286,7 @@ void Main() {
 
 	bool show_popup_flag = true;
 	bool show_end_popup = true;
+	long long popup_start_time = 0;
 
 	bool analyzing = false;
 	int analyze_idx = 0;
@@ -1308,7 +1322,7 @@ void Main() {
 	int use_ai_mode;
 	string lang_name;
 	if (!import_setting(&int_mode, &ai_level, &ai_book_accept, &hint_level,
-		&use_ai_flag, &use_ai_mode,
+		&use_ai_mode,
 		&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
 		&show_end_popup,
 		&n_thread_idx,
@@ -1321,7 +1335,6 @@ void Main() {
 		ai_level = 15;
 		ai_book_accept = 2;
 		hint_level = 7;
-		use_ai_flag = true;
 		use_ai_mode = 0;
 		use_hint_flag = true;
 		normal_hint = true;
@@ -1348,16 +1361,25 @@ void Main() {
 		human_first = true;
 		human_second = false;
 		both_ai = false;
+		both_human = false;
 	}
 	else if (use_ai_mode == 1) {
 		human_first = false;
 		human_second = true;
 		both_ai = false;
+		both_human = false;
 	}
 	else if (use_ai_mode == 2) {
 		human_first = false;
 		human_second = false;
 		both_ai = true;
+		both_human = false;
+	}
+	else if (use_ai_mode == 3) {
+		human_first = false;
+		human_second = false;
+		both_ai = false;
+		both_human = true;
 	}
 	for (int i = 0; i < 6; ++i) {
 		hint_nums[i] = i == hint_num;
@@ -1396,7 +1418,7 @@ void Main() {
 				&ai_thinking, &ai_future,
 				&analyzing, &analyze_future,
 				int_mode, ai_level, ai_book_accept, hint_level,
-				use_ai_flag, use_ai_mode,
+				use_ai_mode,
 				use_hint_flag, normal_hint, human_hint, umigame_hint,
 				show_end_popup,
 				n_thread_idx,
@@ -1432,7 +1454,7 @@ void Main() {
 				menu = create_menu(checkbox, &dammy,
 					&show_mode[0], &show_mode[1], &show_mode[2],
 					&start_game_flag,&analyze_flag,
-					&use_ai_flag, &human_first, &human_second, &both_ai,
+					&human_first, &human_second, &both_ai, &both_human,
 					&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
 					&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
 					&use_value_flag,
@@ -1457,7 +1479,7 @@ void Main() {
 					menu = create_menu(checkbox, &dammy,
 						&show_mode[0], &show_mode[1], &show_mode[2],
 						&start_game_flag, &analyze_flag,
-						&use_ai_flag, &human_first, &human_second, &both_ai,
+						&human_first, &human_second, &both_ai, &both_human,
 						&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
 						&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
 						&use_value_flag,
@@ -1524,7 +1546,7 @@ void Main() {
 				menu = create_menu(checkbox, &dammy,
 					&show_mode[0], &show_mode[1], &show_mode[2],
 					&start_game_flag, &analyze_flag,
-					&use_ai_flag, &human_first, &human_second, &both_ai,
+					&human_first, &human_second, &both_ai, &both_human,
 					&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
 					&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
 					&use_value_flag,
@@ -1560,7 +1582,7 @@ void Main() {
 					menu = create_menu(checkbox, &dammy,
 						&show_mode[0], &show_mode[1], &show_mode[2],
 						&start_game_flag, &analyze_flag,
-						&use_ai_flag, &human_first, &human_second, &both_ai,
+						&human_first, &human_second, &both_ai, &both_human,
 						&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
 						&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
 						&use_value_flag,
@@ -1599,14 +1621,8 @@ void Main() {
 						bd = fork_history[analyze_idx].b;
 						history_place = fork_history[analyze_idx].b.n - 4;
 						if (!analyze_state) {
-							if (fork_history[analyze_idx].b.p != vacant) {
-								analyze_future = async(launch::async, analyze_search, fork_history[analyze_idx].b, ai_level);
-								analyze_state = true;
-							}
-							else {
-								fork_history[analyze_idx].b.v = end_evaluate(&fork_history[analyze_idx].b);
-								++analyze_idx;
-							}
+							analyze_future = async(launch::async, analyze_search, fork_history[analyze_idx].b, ai_level);
+							analyze_state = true;
 						}
 						else if (analyze_future.wait_for(chrono::seconds(0)) == future_status::ready) {
 							fork_history[analyze_idx].b.v = analyze_future.get().value;
@@ -1642,12 +1658,12 @@ void Main() {
 				for (int cell = 0; cell < hw2; ++cell) {
 					board_clicked[cell] = false;
 				}
-				if (!menu.active() && main_window_active && ((!use_ai_flag || (human_first && bd.p == black) || (human_second && bd.p == white)) || history_place != history[history.size() - 1].b.n - 4)) {
+				if (!menu.active() && main_window_active && ((both_human || (human_first && bd.p == black) || (human_second && bd.p == white)) || history_place != history[history.size() - 1].b.n - 4)) {
 					for (int cell = 0; cell < hw2; ++cell) {
 						board_clicked[cell] = board_cells[cell].leftClicked() && (1 & (legal >> cell));
 					}
 				}
-				if (not_finished(bd) && (!use_ai_flag || (human_first && bd.p == black) || (human_second && bd.p == white) || history_place != history[history.size() - 1].b.n - 4)) {
+				if (not_finished(bd) && (both_human || (human_first && bd.p == black) || (human_second && bd.p == white) || history_place != history[history.size() - 1].b.n - 4)) {
 					/*** human plays ***/
 					pair<bool, board> moved_board = move_board(bd, board_clicked);
 					if (moved_board.first) {
@@ -1898,6 +1914,9 @@ void Main() {
 							calc_flip(&mob, &bd, ai_result.policy);
 							bd.move(&mob);
 							bd.check_player();
+							if (bd.p == vacant) {
+								popup_start_time = tim();
+							}
 							bd.v = sgn * ai_result.value;
 							history.emplace_back(history_elem(bd, history[history.size() - 1].record + str_record(bd.policy)));
 							history_place = bd.n - 4;
@@ -1991,7 +2010,7 @@ void Main() {
 					graph.draw(history, fork_history, history_place);
 				}
 				if (bd.p == vacant && !fork_mode && show_popup_flag && show_end_popup) {
-					show_popup_flag = !show_popup(bd, use_ai_flag, human_first, human_second, both_ai, font50, font30);
+					show_popup_flag = !show_popup(bd, !both_human, human_first, human_second, both_ai, font50, font30, popup_start_time);
 					main_window_active = !show_popup_flag;
 					if (main_window_active) {
 						global_searching = true;
@@ -2029,10 +2048,10 @@ void Main() {
 				int output_state = output_game_popup(font40, font30, font20, &black_player, &white_player, &game_memo, output_active);
 				if (output_state == 1) {
 					if (fork_mode) {
-						output_game(fork_history[find_history_idx(fork_history, history_place)], ai_level, use_ai_flag, use_ai_mode, black_player, white_player, game_memo);
+						output_game(fork_history[find_history_idx(fork_history, history_place)], ai_level, use_ai_mode, black_player, white_player, game_memo);
 					}
 					else {
-						output_game(history[find_history_idx(history, history_place)], ai_level, use_ai_flag, use_ai_mode, black_player, white_player, game_memo);
+						output_game(history[find_history_idx(history, history_place)], ai_level, use_ai_mode, black_player, white_player, game_memo);
 					}
 					outputting_game = false;
 					main_window_active = true;
@@ -2052,7 +2071,7 @@ void Main() {
 			/*** book learn ***/
 
 			/*** ai stop calculating ***/
-			if (ai_thinking && (!use_ai_flag || (human_first && bd.p == black) || (human_second && bd.p == white))) {
+			if (ai_thinking && (both_human || (human_first && bd.p == black) || (human_second && bd.p == white))) {
 				reset_hint(&hint_state, &hint_future);
 				reset_umigame(umigame_state, umigame_future);
 				reset_human_value(&human_value_state, &human_value_future);
@@ -2102,7 +2121,7 @@ void Main() {
 				cerr << "record copied" << endl;
 			}
 			else if (output_game_flag && !before_start_game && main_window_active && !book_learning) {
-				if (use_ai_flag) {
+				if (!both_human) {
 					if (both_ai) {
 						black_player = U"Egaroucid";
 						white_player = U"Egaroucid";
