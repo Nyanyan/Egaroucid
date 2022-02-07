@@ -106,8 +106,8 @@
         "memo": "Memo"
     },
     "info": {
-        "black": "Black Plays",
-        "white": "White Plays",
+        "black": "Black Turn",
+        "white": "White Turn",
         "game_end": "Game End",
         "joseki_name": "Joseki Name",
         "ai": "AI",
