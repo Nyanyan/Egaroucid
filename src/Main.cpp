@@ -48,14 +48,14 @@ constexpr int board_sx = left_left + board_coord_size, board_sy = y_center - boa
 constexpr int stone_size = 25, legal_size = 5;
 constexpr int graph_sx = 585, graph_sy = 330, graph_width = 400, graph_height = 345, graph_resolution = 8, graph_font_size = 15;
 constexpr Color green = Color(36, 153, 114, 100);
-constexpr int start_game_how_to_use_width = 200, start_game_how_to_use_height = 50;
-constexpr int start_game_button_x = right_center - start_game_how_to_use_width / 2,
-	start_game_button_y = y_center - start_game_how_to_use_height - 10,
+constexpr int start_game_how_to_use_width = 400, start_game_how_to_use_height = 100;
+constexpr int start_game_button_x = x_center - start_game_how_to_use_width / 2,
+	start_game_button_y = y_center - start_game_how_to_use_height - 40,
 	start_game_button_w = start_game_how_to_use_width,
 	start_game_button_h = start_game_how_to_use_height,
 	start_game_button_r = 10;
-constexpr int how_to_use_button_x = right_center - start_game_how_to_use_width / 2,
-	how_to_use_button_y = y_center + start_game_how_to_use_height + 10,
+constexpr int how_to_use_button_x = x_center - start_game_how_to_use_width / 2,
+	how_to_use_button_y = y_center + 40,
 	how_to_use_button_w = start_game_how_to_use_width,
 	how_to_use_button_h = start_game_how_to_use_height,
 	how_to_use_button_r = 10;
@@ -400,14 +400,14 @@ void board_draw(Rect board_cells[], board b, int int_mode, bool use_hint_flag, b
 		coord_font(coord_x[i]).draw(Arg::center(board_sx + board_cell_size * i + board_cell_size / 2, board_sy - board_coord_size), font_color);
 	}
 	for (int i = 0; i < hw_m1; ++i) {
-		Line(board_sx + board_cell_size * (i + 1), board_sy, board_sx + board_cell_size * (i + 1), board_sy + board_cell_size * hw).draw(board_cell_frame_width, Palette::Black);
-		Line(board_sx, board_sy + board_cell_size * (i + 1), board_sx + board_cell_size * hw, board_sy + board_cell_size * (i + 1)).draw(board_cell_frame_width, Palette::Black);
+		Line(board_sx + board_cell_size * (i + 1), board_sy, board_sx + board_cell_size * (i + 1), board_sy + board_cell_size * hw).draw(board_cell_frame_width, Color(51, 51, 51));
+		Line(board_sx, board_sy + board_cell_size * (i + 1), board_sx + board_cell_size * hw, board_sy + board_cell_size * (i + 1)).draw(board_cell_frame_width, Color(51, 51, 51));
 	}
-	Circle(board_sx + 2 * board_cell_size, board_sy + 2 * board_cell_size, 5).draw(Palette::Black);
-	Circle(board_sx + 2 * board_cell_size, board_sy + 6 * board_cell_size, 5).draw(Palette::Black);
-	Circle(board_sx + 6 * board_cell_size, board_sy + 2 * board_cell_size, 5).draw(Palette::Black);
-	Circle(board_sx + 6 * board_cell_size, board_sy + 6 * board_cell_size, 5).draw(Palette::Black);
-	RoundRect(board_sx, board_sy, board_cell_size * hw, board_cell_size * hw, 20).draw(green).drawFrame(0, board_frame_width, Palette::White);
+	Circle(board_sx + 2 * board_cell_size, board_sy + 2 * board_cell_size, 5).draw(Color(51, 51, 51));
+	Circle(board_sx + 2 * board_cell_size, board_sy + 6 * board_cell_size, 5).draw(Color(51, 51, 51));
+	Circle(board_sx + 6 * board_cell_size, board_sy + 2 * board_cell_size, 5).draw(Color(51, 51, 51));
+	Circle(board_sx + 6 * board_cell_size, board_sy + 6 * board_cell_size, 5).draw(Color(51, 51, 51));
+	RoundRect(board_sx, board_sy, board_cell_size * hw, board_cell_size * hw, 20).draw(ColorF(0, 0, 0, 0)).drawFrame(0, board_frame_width, Palette::White);
 	int board_arr[hw2], max_cell_value = -inf;
 	mobility mob;
 	unsigned long long legal = b.mobility_ull();
@@ -1164,7 +1164,7 @@ void Main() {
 	Window::Resize(window_size);
 	Window::SetStyle(WindowStyle::Sizable);
 	Scene::SetResizeMode(ResizeMode::Keep);
-	Window::SetTitle(U"Egaroucid5.3.0");
+	Window::SetTitle(U"Egaroucid5.3.1");
 	System::SetTerminationTriggers(UserAction::NoAction);
 	Scene::SetBackground(green);
 	//Console.open();
@@ -1443,8 +1443,8 @@ void Main() {
 					&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
 					&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert,
 					language_acts, language_names);
-				start_game_button.init(start_game_button_x, start_game_button_y, start_game_button_w, start_game_button_h, start_game_button_r, language.get("button", "start_game"), font30, button_color, button_font_color);
-				how_to_use_button.init(how_to_use_button_x, how_to_use_button_y, how_to_use_button_w, how_to_use_button_h, how_to_use_button_r, language.get("button", "how_to_use"), font30, button_color, button_font_color);
+				start_game_button.init(start_game_button_x, start_game_button_y, start_game_button_w, start_game_button_h, start_game_button_r, language.get("button", "start_game"), font50, button_color, button_font_color);
+				how_to_use_button.init(how_to_use_button_x, how_to_use_button_y, how_to_use_button_w, how_to_use_button_h, how_to_use_button_r, language.get("button", "how_to_use"), font50, button_color, button_font_color);
 				lang_initialized = 2;
 			}
 			else if (lang_initialized == 2) {
