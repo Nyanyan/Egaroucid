@@ -60,7 +60,7 @@ int main(){
     vector<int> vacant_lst;
     #if !MPC_MODE && !EVAL_MODE
         search_result result;
-        int level = 5, book_error = 0;
+        int level = 60, book_error = 0;
     #endif
     #if USE_MULTI_THREAD
         thread_pool.resize(8);
@@ -75,13 +75,13 @@ int main(){
             cin >> ai_player;
             int max_depth;
             //cin >> max_depth;
-            input_board(&b, ai_player);
+            vacant_lst = input_board(&b, ai_player);
             transpose_table.init_now();
             transpose_table.init_prev();
             bool use_mpc = true; //max_depth >= 11 ? true : false;
             double use_mpct = 1.0;
             unsigned long long searched_nodes = 0;
-            //cout << mtd(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct, &searched_nodes) << endl;
+            //cout << mtd(&b, false, max_depth, -hw2, hw2, use_mpc, use_mpct, &searched_nodes, vacant_lst) << endl;
             cout << mid_evaluate(&b) << endl;
             /*
             double use_mpct = 0.3;

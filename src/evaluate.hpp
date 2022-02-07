@@ -215,7 +215,7 @@ inline int convert_canput_line(int idx){
 
 inline bool init_evaluation_calc(){
     FILE* fp;
-    if (fopen_s(&fp, "resources/eval.egev", "rb") != 0){
+    if (fopen_s(&fp, "C:/github/egaroucid/Egaroucid5/src/resources/eval.egev", "rb") != 0){
         cerr << "can't open eval.egev" << endl;
         return false;
     }
