@@ -1034,8 +1034,6 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
 int nega_scout_final(board *b, bool skipped, const int depth, int alpha, int beta, bool use_mpc, double mpct_in, unsigned long long *n_nodes, const vector<int> &vacant_lst){
     if (!global_searching)
         return -inf;
-    //if (depth <= simple_end_threshold2)
-    //    return nega_alpha_ordering_simple_final(b, skipped, depth, alpha, beta, use_mpc, mpct_in, n_nodes);
     if (depth <= simple_end_threshold)
         return nega_alpha_final(b, skipped, depth, alpha, beta, n_nodes, vacant_lst);
     ++(*n_nodes);
@@ -1075,7 +1073,7 @@ int nega_scout_final(board *b, bool skipped, const int depth, int alpha, int bet
         if (skipped)
             return end_evaluate(b);
         b->p = 1 - b->p;
-        int res = -nega_alpha_ordering_final(b, true, depth, -beta, -alpha, use_mpc, mpct_in, n_nodes, vacant_lst);
+        int res = -nega_scout_final(b, true, depth, -beta, -alpha, use_mpc, mpct_in, n_nodes, vacant_lst);
         b->p = 1 - b->p;
         #if USE_END_TC
             if (res >= beta){
@@ -1139,13 +1137,13 @@ int nega_scout_final(board *b, bool skipped, const int depth, int alpha, int bet
                     next_done_tasks = i;
                     break;
                 }
-                future_tasks.emplace_back(thread_pool.push(bind(&nega_alpha_ordering_final, &nb[i], false, depth - 1, -alpha - search_epsilon, -alpha, use_mpc, mpct_in, &n_n_nodes[i - first_threshold], vacant_lst)));
+                future_tasks.emplace_back(thread_pool.push(bind(&nega_alpha_ordering_final, &nb[i], false, depth - 1, -before_alpha - search_epsilon, -before_alpha, use_mpc, mpct_in, &n_n_nodes[i - first_threshold], vacant_lst)));
             }
             additional_done_tasks = 0;
             if (next_done_tasks < canput){
-                g = -nega_alpha_ordering_final(&nb[next_done_tasks], false, depth - 1, -alpha - search_epsilon, -alpha,  use_mpc, mpct_in, n_nodes, vacant_lst);
+                g = -nega_alpha_ordering_final(&nb[next_done_tasks], false, depth - 1, -before_alpha - search_epsilon, -before_alpha,  use_mpc, mpct_in, n_nodes, vacant_lst);
                 if (before_alpha < g)
-                    re_search[next_done_tasks] = true;
+                    re_search[next_done_tasks - first_threshold] = true;
                 alpha = max(alpha, g);
                 v = max(v, g);
                 additional_done_tasks = 1;
@@ -1349,6 +1347,14 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
         }
     }
     int canput = nb.size();
+    if (canput == 0){
+        search_result empty_res;
+        empty_res.policy = -1;
+        empty_res.value = -100;
+        empty_res.depth = -1;
+        empty_res.nps = -1;
+        return empty_res;
+    }
     if (canput >= 2)
         sort(nb.begin(), nb.end(), move_ordering_sort);
     int policy = -1;

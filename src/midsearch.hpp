@@ -505,7 +505,6 @@ inline search_result midsearch(board b, long long strt, int max_depth, bool use_
         }
     }
     int canput = (int)nb.size();
-    //cerr << "canput: " << canput << endl;
     int res_depth = -1;
     int policy = -1;
     int tmp_policy;

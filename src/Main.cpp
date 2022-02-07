@@ -158,23 +158,15 @@ Menu create_menu(Texture checkbox,
 		menu_e.push(side_menu);
 		title.push(menu_e);
 	}
-	/*
-	menu_e.init_check(language.get("settings", "ai_play", "ai_play"), use_ai_flag, *use_ai_flag);
-	side_menu.init_radio(language.get("settings", "ai_play", "human_first"), human_first, *human_first);
+
+	menu_e.init_button(language.get("settings", "play", "play"), dammy);
+	side_menu.init_radio(language.get("settings", "play", "human_first"), human_first, *human_first);
 	menu_e.push(side_menu);
-	side_menu.init_radio(language.get("settings", "ai_play", "human_second"), human_second, *human_second);
+	side_menu.init_radio(language.get("settings", "play", "human_second"), human_second, *human_second);
 	menu_e.push(side_menu);
-	side_menu.init_radio(language.get("settings", "ai_play", "both_ai"), both_ai, *both_ai);
+	side_menu.init_radio(language.get("settings", "play", "both_ai"), both_ai, *both_ai);
 	menu_e.push(side_menu);
-	*/
-	menu_e.init_button(language.get("settings", "ai_play", "ai_play"), dammy);
-	side_menu.init_radio(language.get("settings", "ai_play", "human_first"), human_first, *human_first);
-	menu_e.push(side_menu);
-	side_menu.init_radio(language.get("settings", "ai_play", "human_second"), human_second, *human_second);
-	menu_e.push(side_menu);
-	side_menu.init_radio(language.get("settings", "ai_play", "both_ai"), both_ai, *both_ai);
-	menu_e.push(side_menu);
-	side_menu.init_radio(language.get("settings", "ai_play", "both_human"), both_human, *both_human);
+	side_menu.init_radio(language.get("settings", "play", "both_human"), both_human, *both_human);
 	menu_e.push(side_menu);
 	title.push(menu_e);
 
@@ -1992,16 +1984,30 @@ void Main() {
 			/*** board draw ***/
 
 			/*** joseki ***/
-			string new_joseki = joseki.get(bd);
-			if (new_joseki != "") {
-				joseki_name = new_joseki;
+			if (fork_mode) {
+				string new_joseki;
+				joseki_name.clear();
+				for (int i = 0; i <= history_place; ++i) {
+					new_joseki = joseki.get(fork_history[i].b);
+					if (new_joseki != "") {
+						joseki_name = new_joseki;
+					}
+				}
+			}
+			else {
+				string new_joseki;
+				joseki_name.clear();
+				for (int i = 0; i <= history_place; ++i) {
+					new_joseki = joseki.get(history[i].b);
+					if (new_joseki != "") {
+						joseki_name = new_joseki;
+					}
+				}
 			}
 			/*** joseki ***/
 
 			/*** info draw ***/
-			if (main_window_active || analyzing) {
-				info_draw(bd, joseki_name, ai_level, hint_level, font20);
-			}
+			info_draw(bd, joseki_name, ai_level, hint_level, font20);
 			/*** info draw ***/
 
 			/*** before and after game ***/
