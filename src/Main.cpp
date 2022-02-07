@@ -314,6 +314,19 @@ pair<bool, board> move_board(board b, bool board_clicked[]) {
 	return make_pair(false, b);
 }
 
+inline vector<int> create_vacant_lst(board bd) {
+	int bd_arr[hw2];
+	bd.translate_to_arr(bd_arr);
+	vector<int> vacant_lst;
+	for (int i = 0; i < hw2; ++i) {
+		if (bd_arr[i] == vacant)
+			vacant_lst.push_back(hw2_m1 - i);
+	}
+	if (bd.n < hw2_m1)
+		sort(vacant_lst.begin(), vacant_lst.end(), cmp_vacant);
+	return vacant_lst;
+}
+
 cell_value analyze_search(board b, int level) {
 	cell_value res;
 	int depth, end_depth;
@@ -325,26 +338,14 @@ cell_value analyze_search(board b, int level) {
 		res.depth = search_book_define;
 	}
 	else if (hw2 - b.n <= end_depth) {
-		res.value = endsearch_value_analyze_memo(b, tim(), use_mpc, mpct).value * (b.p ? -1 : 1);
+		res.value = endsearch_value_analyze_memo(b, tim(), use_mpc, mpct, create_vacant_lst(b)).value * (b.p ? -1 : 1);
 		res.depth = use_mpc ? hw2 - b.n : search_final_define;
 	}
 	else {
-		res.value = midsearch_value_analyze_memo(b, tim(), depth, use_mpc, mpct).value * (b.p ? -1 : 1);
+		res.value = midsearch_value_analyze_memo(b, tim(), depth, use_mpc, mpct, create_vacant_lst(b)).value * (b.p ? -1 : 1);
 		res.depth = depth;
 	}
 	return res;
-}
-
-inline void create_vacant_lst(board bd) {
-	int bd_arr[hw2];
-	bd.translate_to_arr(bd_arr);
-	vacant_lst.clear();
-	for (int i = 0; i < hw2; ++i) {
-		if (bd_arr[i] == vacant)
-			vacant_lst.push_back(hw2_m1 - i);
-	}
-	if (bd.n < hw2_m1)
-		sort(vacant_lst.begin(), vacant_lst.end(), cmp_vacant);
 }
 
 int find_history_idx(vector<history_elem> history, int history_place) {
@@ -1034,7 +1035,7 @@ void learn_book(board bd, int level, int depth, int book_learn_accept, board* bd
 	priority_queue<pair<int, board>> que;
 	int value = book.get(&bd);
 	if (value == -inf) {
-		value = -ai_book(bd, level, book_learn_accept);
+		value = -ai_book(bd, level, book_learn_accept, create_vacant_lst(bd));
 		if (value == inf) {
 			*book_learning = false;
 			return;
@@ -1065,7 +1066,7 @@ void learn_book(board bd, int level, int depth, int book_learn_accept, board* bd
 					}
 					value = book.get(&nb);
 					if (abs(value) == inf) {
-						value = -ai_book(nb, level, book_learn_accept);
+						value = -ai_book(nb, level, book_learn_accept, create_vacant_lst(nb));
 					}
 					if (abs(value) != inf) {
 						nb.copy(bd_ptr);
@@ -1598,7 +1599,6 @@ void Main() {
 						bd = fork_history[analyze_idx].b;
 						history_place = fork_history[analyze_idx].b.n - 4;
 						if (!analyze_state) {
-							create_vacant_lst(bd);
 							if (fork_history[analyze_idx].b.p != vacant) {
 								analyze_future = async(launch::async, analyze_search, fork_history[analyze_idx].b, ai_level);
 								analyze_state = true;
@@ -1624,7 +1624,6 @@ void Main() {
 						bd = history[analyze_idx].b;
 						history_place = history[analyze_idx].b.n - 4;
 						if (!analyze_state) {
-							create_vacant_lst(bd);
 							analyze_future = async(launch::async, analyze_search, history[analyze_idx].b, ai_level);
 							analyze_state = true;
 						}
@@ -1681,7 +1680,6 @@ void Main() {
 						reset_umigame(umigame_state, umigame_future);
 						reset_human_value(&human_value_state, &human_value_future);
 						reset_analyze(&analyzing, &analyze_future);
-						create_vacant_lst(bd);
 					}
 					/*** human plays ***/
 
@@ -1719,7 +1717,7 @@ void Main() {
 										}
 										hint_legal = n_hint_legal;
 									}
-									hint_future = async(launch::async, ai_hint, bd, hint_state / 2, hint_level, hint_calc_value, hint_calc_depth, hint_legal);
+									hint_future = async(launch::async, ai_hint, bd, hint_state / 2, hint_level, hint_calc_value, hint_calc_depth, hint_legal, create_vacant_lst(bd));
 									++hint_state;
 								}
 							}
@@ -1909,12 +1907,10 @@ void Main() {
 							reset_umigame(umigame_state, umigame_future);
 							reset_human_value(&human_value_state, &human_value_future);
 							reset_analyze(&analyzing, &analyze_future);
-							create_vacant_lst(bd);
 						}
 					}
 					else if (global_searching) {
-						create_vacant_lst(bd);
-						ai_future = async(launch::async, ai, bd, ai_level, show_mode[2] ? 0 : ai_book_accept);
+						ai_future = async(launch::async, ai, bd, ai_level, show_mode[2] ? 0 : ai_book_accept, create_vacant_lst(bd));
 						ai_thinking = true;
 					}
 				}
@@ -1955,7 +1951,6 @@ void Main() {
 						reset_umigame(umigame_state, umigame_future);
 						reset_human_value(&human_value_state, &human_value_future);
 						reset_analyze(&analyzing, &analyze_future);
-						create_vacant_lst(bd);
 					}
 					else {
 						bd = fork_history[find_history_idx(fork_history, history_place)].b;
@@ -1963,7 +1958,6 @@ void Main() {
 						reset_umigame(umigame_state, umigame_future);
 						reset_human_value(&human_value_state, &human_value_future);
 						reset_analyze(&analyzing, &analyze_future);
-						create_vacant_lst(bd);
 					}
 				}
 			}
@@ -2019,7 +2013,6 @@ void Main() {
 					else {
 						history_place = 0;
 					}
-					create_vacant_lst(bd);
 					if (main_window_active) {
 						global_searching = true;
 						System::Sleep(100);
@@ -2086,7 +2079,6 @@ void Main() {
 				reset_human_value(&human_value_state, &human_value_future);
 				reset_ai(&ai_thinking, &ai_future);
 				reset_analyze(&analyzing, &analyze_future);
-				create_vacant_lst(bd);
 			}
 			else if (analyze_flag && !book_learning) {
 				reset_hint(&hint_state, &hint_future);
@@ -2094,7 +2086,6 @@ void Main() {
 				reset_human_value(&human_value_state, &human_value_future);
 				reset_ai(&ai_thinking, &ai_future);
 				reset_analyze(&analyzing, &analyze_future);
-				create_vacant_lst(bd);
 				analyzing = true;
 				main_window_active = false;
 				analyze_state = false;
@@ -2161,7 +2152,6 @@ void Main() {
 						reset_human_value(&human_value_state, &human_value_future);
 						reset_ai(&ai_thinking, &ai_future);
 						reset_analyze(&analyzing, &analyze_future);
-						create_vacant_lst(bd);
 						before_start_game = false;
 					}
 				}
@@ -2186,7 +2176,6 @@ void Main() {
 						reset_human_value(&human_value_state, &human_value_future);
 						reset_ai(&ai_thinking, &ai_future);
 						reset_analyze(&analyzing, &analyze_future);
-						create_vacant_lst(bd);
 						before_start_game = false;
 					}
 				}
@@ -2198,7 +2187,6 @@ void Main() {
 				reset_human_value(&human_value_state, &human_value_future);
 				reset_ai(&ai_thinking, &ai_future);
 				reset_analyze(&analyzing, &analyze_future);
-				create_vacant_lst(bd);
 				hint_state = inf;
 				for (int i = 0; i < hw2; ++i) {
 					umigame_state[i] = inf;
@@ -2208,7 +2196,6 @@ void Main() {
 			}
 			else if (resume_read_flag) {
 				cerr << "resume calculating" << endl;
-				create_vacant_lst(bd);
 				global_searching = true;
 			}
 			else if (vertical_convert && !analyzing && !book_learning) {
@@ -2233,7 +2220,6 @@ void Main() {
 				reset_umigame(umigame_state, umigame_future);
 				reset_human_value(&human_value_state, &human_value_future);
 				reset_ai(&ai_thinking, &ai_future);
-				create_vacant_lst(bd);
 			}
 			else if (black_line_convert && !analyzing && !book_learning) {
 				bd.black_mirror();
@@ -2257,7 +2243,6 @@ void Main() {
 				reset_umigame(umigame_state, umigame_future);
 				reset_human_value(&human_value_state, &human_value_future);
 				reset_ai(&ai_thinking, &ai_future);
-				create_vacant_lst(bd);
 			}
 			else if (white_line_convert && !analyzing && !book_learning) {
 				bd.white_mirror();
@@ -2281,7 +2266,6 @@ void Main() {
 				reset_umigame(umigame_state, umigame_future);
 				reset_human_value(&human_value_state, &human_value_future);
 				reset_ai(&ai_thinking, &ai_future);
-				create_vacant_lst(bd);
 			}
 			else if (start_book_learn_flag && !before_start_game && !book_learning) {
 				book_learning = true;
