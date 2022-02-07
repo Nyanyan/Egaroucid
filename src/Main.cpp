@@ -899,6 +899,7 @@ bool import_record(String record, vector<history_elem>* n_history) {
 }
 
 pair<bool, board> import_board(String board_str) {
+	board_str = board_str.replace(U"\r", U"").replace(U"\n", U"");
 	bool flag = true;
 	int player = -1;
 	int bd_arr[hw2];
