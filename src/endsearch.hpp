@@ -1398,7 +1398,7 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
                 beta = hw2;
                 for (i = 0; i < canput; ++i){
                     //nb[i].second.v = -mtd_final(&nb[i].second, false, max_depth - 1, -beta, min(hw2, -alpha + 6), true, pre_search_mpct, -nb[i].second.v, &searched_nodes);
-                    nb[i].second.v = -nega_scout_final(&nb[i].second, false, max_depth - 1, -beta, min(hw2, -alpha + 6), true, pre_search_mpct, &searched_nodes, vacant_lst) / 2 * 2;
+                    nb[i].second.v = -nega_scout_final(&nb[i].second, false, max_depth - 1, -beta, min(hw2, -alpha + 8), true, pre_search_mpct, &searched_nodes, vacant_lst) / 2 * 2;
                     alpha = max(alpha, nb[i].second.v);
                 }
                 if (canput >= 2)
