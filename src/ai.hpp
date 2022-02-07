@@ -18,17 +18,29 @@ search_result ai(board b, int level, int book_error, const vector<int> vacant_ls
         res.value = book_result.value;
         res.depth = -1;
         res.nps = 0;
-        return res;
     }
-    int depth1, depth2;
-    bool use_mpc;
-    double mpct;
-    get_level(level, b.n - 4, &depth1, &depth2, &use_mpc, &mpct);
-    cerr << "level status " << level << " " << b.n - 3 << " " << depth1 << " " << depth2 << " " << use_mpc << " " << mpct << endl;
-    if (b.n >= hw2 - depth2)
-        res = endsearch(b, tim(), use_mpc, mpct, vacant_lst);
-    else
-        res = midsearch(b, tim(), depth1, use_mpc, mpct, vacant_lst);
+    else if (level == 0){
+        unsigned long long legal = b.mobility_ull();
+        vector<int> move_lst;
+        for (const int &cell: vacant_lst){
+            if (1 & (legal >> cell))
+                move_lst.emplace_back(cell);
+        }
+        res.policy = move_lst[myrandrange(0, (int)move_lst.size())];
+        res.value = mid_evaluate(&b);
+        res.depth = 0;
+        res.nps = 0;
+    } else{
+        int depth1, depth2;
+        bool use_mpc;
+        double mpct;
+        get_level(level, b.n - 4, &depth1, &depth2, &use_mpc, &mpct);
+        cerr << "level status " << level << " " << b.n - 4 << " " << depth1 << " " << depth2 << " " << use_mpc << " " << mpct << endl;
+        if (b.n >= hw2 - depth2)
+            res = endsearch(b, tim(), use_mpc, mpct, vacant_lst);
+        else
+            res = midsearch(b, tim(), depth1, use_mpc, mpct, vacant_lst);
+    }
     return res;
 }
 
@@ -42,7 +54,7 @@ int ai_value_nomemo(board b, int level, vector<int> vacant_lst){
     if (b.n >= hw2 - depth2)
         res = endsearch_value_nomemo(b, tim(), use_mpc, mpct, vacant_lst).value;
     else
-        res = midsearch_value_nomemo(b, tim(), depth1 + 1, use_mpc, mpct, vacant_lst).value;
+        res = midsearch_value_nomemo(b, tim(), depth1, use_mpc, mpct, vacant_lst).value;
     return res;
 }
 
@@ -56,7 +68,7 @@ int ai_value_memo(board b, int level, int pre_calc_value, vector<int> vacant_lst
     if (b.n >= hw2 - depth2)
         res = endsearch_value_memo(b, tim(), use_mpc, mpct, pre_calc_value, vacant_lst).value;
     else
-        res = midsearch_value_memo(b, tim(), depth1 + 1, use_mpc, mpct, vacant_lst).value;
+        res = midsearch_value_memo(b, tim(), depth1, use_mpc, mpct, vacant_lst).value;
     return res;
 }
 

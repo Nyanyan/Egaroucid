@@ -512,7 +512,7 @@ inline search_result midsearch(board b, long long strt, int max_depth, bool use_
     unsigned long long searched_nodes = 0;
     transpose_table.init_now();
     transpose_table.init_prev();
-    for (int depth = min(16, max(0, max_depth - 5)); depth <= min(hw2 - b.n, max_depth); ++depth){
+    for (int depth = min(16, max(0, max_depth - 5)); depth <= min(hw2 - b.n, max_depth - 1); ++depth){
         alpha = -hw2;
         beta = hw2;
         transpose_table.init_now();
@@ -541,7 +541,7 @@ inline search_result midsearch(board b, long long strt, int max_depth, bool use_
                 former_value = alpha;
             value = alpha;
             res_depth = depth;
-            cerr << "depth: " << depth << " time: " << tim() - strt << " policy: " << policy << " value: " << alpha << " nodes: " << searched_nodes << " nps: " << (long long)searched_nodes * 1000 / max(1LL, tim() - strt) << endl;
+            cerr << "depth: " << depth + 1 << " time: " << tim() - strt << " policy: " << policy << " value: " << alpha << " nodes: " << searched_nodes << " nps: " << (long long)searched_nodes * 1000 / max(1LL, tim() - strt) << endl;
         } else 
             break;
     }
