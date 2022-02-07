@@ -22,11 +22,11 @@ inline void init(){
     #endif
 }
 
-inline void input_board(board *b, int ai_player){
+inline vector<int> input_board(board *b, int ai_player){
     int i;
     char elem;
     int arr[hw2];
-    vacant_lst.clear();
+    vector<int> vacant_lst;
     for (i = 0; i < hw2; ++i){
         cin >> elem;
         if (elem == '.'){
@@ -38,6 +38,7 @@ inline void input_board(board *b, int ai_player){
     b->translate_from_arr(arr, ai_player);
     if (vacant_lst.size() >= 2)
         sort(vacant_lst.begin(), vacant_lst.end(), cmp_vacant);
+    return vacant_lst;
 }
 
 inline double calc_result_value(int v){
@@ -56,6 +57,7 @@ inline void print_result(search_result result){
 int main(){
     init();
     board b;
+    vector<int> vacant_lst;
     #if !MPC_MODE && !EVAL_MODE
         search_result result;
         int level = 21, book_error = 0;
@@ -95,11 +97,11 @@ int main(){
             cout << calc_canput(&b, ai_player) << " " << calc_surround(&b, black) << " " << calc_surround(&b, white) << endl;
         #else
             cin >> ai_player;
-            input_board(&b, ai_player);
+            vacant_lst = input_board(&b, ai_player);
             //cerr << b.p << endl;
             //cerr << b.n << " " << mid_evaluate(&b) << endl;
             //search_human(b, tim(), depth, 7);
-            result = ai(b, level, book_error);
+            result = ai(b, level, book_error, vacant_lst);
             print_result(result);
         #endif
     }

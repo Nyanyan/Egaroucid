@@ -9,7 +9,7 @@
 #define search_final_define 100
 #define search_book_define -1
 
-search_result ai(board b, int level, int book_error){
+search_result ai(board b, int level, int book_error, const vector<int> vacant_lst){
     search_result res;
     book_value book_result = book.get_random(&b, book_error);
     if (book_result.policy != -1){
@@ -26,13 +26,13 @@ search_result ai(board b, int level, int book_error){
     get_level(level, b.n - 4, &depth1, &depth2, &use_mpc, &mpct);
     cerr << "level status " << level << " " << b.n - 3 << " " << depth1 << " " << depth2 << " " << use_mpc << " " << mpct << endl;
     if (b.n >= hw2 - depth2)
-        res = endsearch(b, tim(), use_mpc, mpct);
+        res = endsearch(b, tim(), use_mpc, mpct, vacant_lst);
     else
-        res = midsearch(b, tim(), depth1, use_mpc, mpct);
+        res = midsearch(b, tim(), depth1, use_mpc, mpct, vacant_lst);
     return res;
 }
 
-int ai_value_nomemo(board b, int level){
+int ai_value_nomemo(board b, int level, vector<int> vacant_lst){
     int depth1, depth2;
     bool use_mpc;
     double mpct;
@@ -40,13 +40,13 @@ int ai_value_nomemo(board b, int level){
     get_level(level, b.n - 3, &depth1, &depth2, &use_mpc, &mpct);
     //cerr << "level status " << level << " " << b.n - 3 << " " << depth1 << " " << depth2 << " " << use_mpc << " " << mpct << endl;
     if (b.n >= hw2 - depth2)
-        res = endsearch_value_nomemo(b, tim(), use_mpc, mpct).value;
+        res = endsearch_value_nomemo(b, tim(), use_mpc, mpct, vacant_lst).value;
     else
-        res = midsearch_value_nomemo(b, tim(), depth1 + 1, use_mpc, mpct).value;
+        res = midsearch_value_nomemo(b, tim(), depth1 + 1, use_mpc, mpct, vacant_lst).value;
     return res;
 }
 
-int ai_value_memo(board b, int level, int pre_calc_value){
+int ai_value_memo(board b, int level, int pre_calc_value, vector<int> vacant_lst){
     int depth1, depth2;
     bool use_mpc;
     double mpct;
@@ -54,13 +54,13 @@ int ai_value_memo(board b, int level, int pre_calc_value){
     get_level(level, b.n - 3, &depth1, &depth2, &use_mpc, &mpct);
     //cerr << "level status " << level << " " << b.n - 3 << " " << depth1 << " " << depth2 << " " << use_mpc << " " << mpct << endl;
     if (b.n >= hw2 - depth2)
-        res = endsearch_value_memo(b, tim(), use_mpc, mpct, pre_calc_value).value;
+        res = endsearch_value_memo(b, tim(), use_mpc, mpct, pre_calc_value, vacant_lst).value;
     else
-        res = midsearch_value_memo(b, tim(), depth1 + 1, use_mpc, mpct).value;
+        res = midsearch_value_memo(b, tim(), depth1 + 1, use_mpc, mpct, vacant_lst).value;
     return res;
 }
 
-bool ai_hint(board b, int level, int max_level, int res[], int info[], unsigned long long legal){
+bool ai_hint(board b, int level, int max_level, int res[], int info[], unsigned long long legal, vector<int> vacant_lst){
     mobility mob;
     board nb;
     future<int> val_future[hw2];
@@ -78,7 +78,7 @@ bool ai_hint(board b, int level, int max_level, int res[], int info[], unsigned 
         if (1 & (legal >> i)){
             calc_flip(&mob, &b, i);
             b.move_copy(&mob, &nb);
-            pre_calc_values[i] = -mtd(&nb, false, depth1 / 2, -hw2, hw2, true, 0.35, &searched_nodes);
+            pre_calc_values[i] = -mtd(&nb, false, depth1 / 2, -hw2, hw2, true, 0.35, &searched_nodes, vacant_lst);
         }
     }
     swap(transpose_table.now, transpose_table.prev);
@@ -89,7 +89,7 @@ bool ai_hint(board b, int level, int max_level, int res[], int info[], unsigned 
             b.move_copy(&mob, &nb);
             res[i] = book.get(&nb);
             if (res[i] == -inf){
-                val_future[i] = async(launch::async, ai_value_memo, nb, level, pre_calc_values[i]);
+                val_future[i] = async(launch::async, ai_value_memo, nb, level, pre_calc_values[i], vacant_lst);
                 if (b.n >= hw2 - depth2 && !use_mpc)
                     info[i] = search_final_define;
                 else
@@ -107,7 +107,7 @@ bool ai_hint(board b, int level, int max_level, int res[], int info[], unsigned 
     return true;
 }
 
-int ai_book(board b, int max_level, int book_learn_accept){
+int ai_book(board b, int max_level, int book_learn_accept, vector<int> vacant_lst){
     int value = 0, v;
     int depth1, depth2;
     bool use_mpc;
@@ -119,7 +119,7 @@ int ai_book(board b, int max_level, int book_learn_accept){
         if (abs(value) >= book_learn_accept * 2)
             return -inf;
         transpose_table.init_now();
-        v = ai_value_memo(b, level, value);
+        v = ai_value_memo(b, level, value, vacant_lst);
         if (abs(v) == inf)
             return -inf;
         if (level == min(16, max(0, max_level - 5)))

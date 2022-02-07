@@ -76,7 +76,7 @@ def ai():
         for j in range(hw):
             grid_str += '0' if o.grid[i][j] == 0 else '1' if o.grid[i][j] == 1 else '.'
         grid_str += '\n'
-    #print(grid_str)
+    print(grid_str)
     ai_exe.stdin.write(grid_str.encode('utf-8'))
     ai_exe.stdin.flush()
     y, x, val = [float(elem) for elem in ai_exe.stdout.readline().decode().split()]
