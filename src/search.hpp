@@ -22,10 +22,10 @@ using namespace std;
 #define canput_bonus 10
 #define w_former_search 20
 #define w_stability 5
-#define w_evaluate 10
 #define w_surround 5
+#define w_evaluate 10
 #define w_mobility 30
-#define w_parity 10
+#define w_parity 5
 
 #define mpc_min_depth 2
 #define mpc_max_depth 30
@@ -131,45 +131,49 @@ int cmp_vacant(int p, int q){
 
 inline int move_ordering(board *b, board *nb, const int hash, const int policy, int value){
     int v = 0;
-    int l, u, child_hash = nb->hash() & search_hash_mask;
-    transpose_table.get_now(nb, child_hash, &l, &u);
-    if (l == -inf && u == inf){
-        transpose_table.get_prev(nb, child_hash, &l, &u);
+    if ((b->p == 0 && nb->w == 0) || (b->p == 1 && nb->b == 0))
+        v = inf;
+    else{
+        int l, u, child_hash = nb->hash() & search_hash_mask;
+        transpose_table.get_now(nb, child_hash, &l, &u);
         if (l == -inf && u == inf){
-            v = 0;
+            transpose_table.get_prev(nb, child_hash, &l, &u);
+            if (l == -inf && u == inf){
+                v = 0;
+            } else if (l != -inf && u != inf){
+                v = -(l + u) / 2 + cache_hit + cache_both;
+            } else if (u != inf){
+                v = -u * w_former_search + cache_hit;
+            } else if (l != -inf){
+                v = -l * w_former_search + cache_hit;
+            }
         } else if (l != -inf && u != inf){
-            v = -(l + u) / 2 + cache_hit + cache_both;
+            v = -(l + u) / 2 + cache_hit + cache_both + cache_now;
         } else if (u != inf){
-            v = -u * w_former_search + cache_hit;
+            v = -u * w_former_search + cache_hit + cache_now;
         } else if (l != -inf){
-            v = -l * w_former_search + cache_hit;
+            v = -l * w_former_search + cache_hit + cache_now;
         }
-    } else if (l != -inf && u != inf){
-        v = -(l + u) / 2 + cache_hit + cache_both + cache_now;
-    } else if (u != inf){
-        v = -u * w_former_search + cache_hit + cache_now;
-    } else if (l != -inf){
-        v = -l * w_former_search + cache_hit + cache_now;
+        v += cell_weight[policy];
+        v += value * w_evaluate;
+        //int n_nodes = 0;
+        //v += -nega_alpha(nb, false, 2, -hw2, hw2, &n_nodes);
+        //int stab0, stab1;
+        //calc_stability_fast(nb, &stab0, &stab1);
+        /*
+        unsigned long long n_empties = ~(nb->b | nb->w);
+        if (b->p == black){
+            //v += (stab0 - stab1) * w_stability;
+            v += (calc_surround(nb->w, n_empties) - calc_surround(nb->b, n_empties)) * w_surround;
+        } else{
+            //v += (stab1 - stab0) * w_stability;
+            v += (calc_surround(nb->b, n_empties) - calc_surround(nb->w, n_empties)) * w_surround;
+        }
+        */
+        v -= pop_count_ull(nb->mobility_ull()) * w_mobility;
+        if (b->parity & cell_div4[policy])
+            v += w_parity;
     }
-    v += cell_weight[policy];
-    v += value * w_evaluate;
-    //int n_nodes = 0;
-    //v += -nega_alpha(nb, false, 2, -hw2, hw2, &n_nodes);
-    //int stab0, stab1;
-    //calc_stability_fast(nb, &stab0, &stab1);
-    /*
-    unsigned long long n_empties = ~(nb->b | nb->w);
-    if (b->p == black){
-        //v += (stab0 - stab1) * w_stability;
-        v += (calc_surround(nb->w, n_empties) - calc_surround(nb->b, n_empties)) * w_surround;
-    } else{
-        //v += (stab1 - stab0) * w_stability;
-        v += (calc_surround(nb->b, n_empties) - calc_surround(nb->w, n_empties)) * w_surround;
-    }
-    */
-    v -= pop_count_ull(nb->mobility_ull()) * w_mobility;
-    if (b->parity & cell_div4[policy])
-        v += w_parity;
     return v;
 }
 
