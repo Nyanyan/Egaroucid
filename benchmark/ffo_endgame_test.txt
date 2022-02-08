@@ -1241,3 +1241,15 @@ normal flip
 #47 final depth: 25 time: 2068 policy: 49 value: 4 nodes: 93052981 nps: 47866759
 #48 final depth: 25 time: 12185 policy: 18 value: 28 nodes: 471514300 nps: 39234007
 #49 final depth: 26 time: 15814 policy: 59 value: 16 nodes: 647575284 nps: 41862776
+
+2022/02/09 use midsearch in presearch
+#40 final depth: 20 time: 531 policy: 55 value: 38 nodes: 22597345 nps: 50780550
+#41 final depth: 22 time: 843 policy: 32 value: 0 nodes: 31585077 nps: 42057359
+#42 final depth: 22 time: 1385 policy: 49 value: 6 nodes: 66075099 nps: 50866127
+#43 final depth: 23 time: 1484 policy: 13 value: -12 nodes: 59727573 nps: 42632100
+#44 final depth: 23 time: 1183 policy: 52 value: -14 nodes: 42346326 nps: 38566781
+#45 final depth: 24 time: 14672 policy: 54 value: 6 nodes: 695578806 nps: 48553595
+#46 final depth: 24 time: 4500 policy: 46 value: -8 nodes: 209357236 nps: 48699054
+#47 final depth: 25 time: 2722 policy: 49 value: 4 nodes: 134231727 nps: 49789216
+#48 final depth: 25 time: 19369 policy: 18 value: 28 nodes: 931012013 nps: 48624432
+#49 final depth: 26 time: 13808 policy: 59 value: 16 nodes: 775666336 nps: 56958902
