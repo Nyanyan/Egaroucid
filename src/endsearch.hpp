@@ -1012,9 +1012,7 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
                 }
                 for (i = 0; i < n_parallel_tasks; ++i){
                     if (!task_done[i] && task_doing[i] == -1){
-                        g = -inf;
-                        if (g == -inf)
-                            g = -nega_alpha_ordering_final(&nb[i + first_threshold], false, depth - 1, -beta, -alpha,  use_mpc, mpct_in, n_nodes, vacant_lst);
+                        g = -nega_alpha_ordering_final(&nb[i + first_threshold], false, depth - 1, -beta, -alpha,  use_mpc, mpct_in, n_nodes, vacant_lst);
                         task_done[i] = true;
                         alpha = max(alpha, g);
                         v = max(v, g);
@@ -1449,7 +1447,7 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
             cerr << "already completely searched policy " << nb[0].first << " value " << nb[0].second.v << endl;
         }
         */
-        if (!search_completed || nb[0].second.v == -hw2 - 1){
+        if (true || !search_completed || nb[0].second.v == -hw2 - 1){
             if (canput >= 2)
                 sort(nb.begin(), nb.end(), move_ordering_sort);
             swap(transpose_table.now, transpose_table.prev);
