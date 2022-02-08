@@ -1394,7 +1394,7 @@ int mtd_final(board *b, bool skipped, int depth, int l, int u, bool use_mpc, dou
     //cerr << l * 2 << " " << g * 2 << " " << u * 2 << endl;
     while (u - l > 0){
         beta = max(l + search_epsilon, g);
-        g = nega_alpha_ordering_final(b, skipped, depth, beta * 2 - search_epsilon, beta * 2, use_mpc, use_mpct, n_nodes, vacant_lst) / 2;
+        g = nega_alpha_ordering_final(b, skipped, depth, beta * 2 - 2, beta * 2, use_mpc, use_mpct, n_nodes, vacant_lst) / 2;
         if (g < beta)
             u = g;
         else
