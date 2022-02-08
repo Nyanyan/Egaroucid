@@ -19,22 +19,22 @@ using namespace std;
 inline bool mpc_higher_final2(board *b, bool skipped, int depth, int beta, double t, unsigned long long *n_nodes, const vector<int> &vacant_lst);
 inline bool mpc_lower_final2(board *b, bool skipped, int depth, int alpha, double t, unsigned long long *n_nodes, const vector<int> &vacant_lst);
 
-inline bool mpc_higher_final(board *b, bool skipped, int depth, int beta, double t, unsigned long long *n_nodes){
+inline bool mpc_higher_final(board *b, int depth, int beta, double t, unsigned long long *n_nodes){
     int bound = beta + ceil(t * mpcsd_final[depth - mpc_min_depth_final]);
     return mid_evaluate(b) >= bound;
 }
 
-inline bool mpc_lower_final(board *b, bool skipped, int depth, int alpha, double t, unsigned long long *n_nodes){
+inline bool mpc_lower_final(board *b, int depth, int alpha, double t, unsigned long long *n_nodes){
     int bound = alpha - ceil(t * mpcsd_final[depth - mpc_min_depth_final]);
     return mid_evaluate(b) <= bound;
 }
 
-inline bool mpc_higher_final(board *b, bool skipped, int depth, int beta, double t, int val){
+inline bool mpc_higher_final(board *b, int depth, int beta, double t, int val){
     int bound = beta + ceil(t * mpcsd_final[depth - mpc_min_depth_final]);
     return val >= bound;
 }
 
-inline bool mpc_lower_final(board *b, bool skipped, int depth, int alpha, double t, int val){
+inline bool mpc_lower_final(board *b, int depth, int alpha, double t, int val){
     int bound = alpha - ceil(t * mpcsd_final[depth - mpc_min_depth_final]);
     return val <= bound;
 }
@@ -52,9 +52,9 @@ int nega_alpha_final_nomemo(board *b, bool skipped, int depth, int alpha, int be
     #endif
     #if USE_END_MPC
         if (mpc_min_depth_final <= depth && depth <= mpc_max_depth_final && use_mpc){
-            if (mpc_higher_final(b, skipped, depth, beta, use_mpct, n_nodes))
+            if (mpc_higher_final(b, depth, beta, use_mpct, n_nodes))
                 return beta;
-            if (mpc_lower_final(b, skipped, depth, alpha, use_mpct, n_nodes))
+            if (mpc_lower_final(b, depth, alpha, use_mpct, n_nodes))
                 return alpha;
         }
     #endif
@@ -97,9 +97,9 @@ int nega_alpha_ordering_final_nomemo(board *b, bool skipped, int depth, int alph
     #endif
     #if USE_END_MPC
         if (mpc_min_depth_final <= depth && depth <= mpc_max_depth_final && use_mpc){
-            if (mpc_higher_final(b, skipped, depth, beta, use_mpct, n_nodes))
+            if (mpc_higher_final(b, depth, beta, use_mpct, n_nodes))
                 return beta;
-            if (mpc_lower_final(b, skipped, depth, alpha, use_mpct, n_nodes))
+            if (mpc_lower_final(b, depth, alpha, use_mpct, n_nodes))
                 return alpha;
         }
     #endif
@@ -816,12 +816,12 @@ int nega_alpha_ordering_simple_final(board *b, bool skipped, const int depth, in
     #endif
     #if USE_END_MPC
         if (mpc_min_depth_final <= depth && depth <= mpc_max_depth_final && use_mpc){
-            if (mpc_higher_final(b, skipped, depth, beta, mpct_in, n_nodes)){
+            if (mpc_higher_final(b, depth, beta, mpct_in, n_nodes)){
                 if (l < beta)
                     transpose_table.reg(b, hash, beta, u);
                 return beta;
             }
-            if (mpc_lower_final(b, skipped, depth, alpha, mpct_in, n_nodes)){
+            if (mpc_lower_final(b, depth, alpha, mpct_in, n_nodes)){
                 if (alpha < u)
                     transpose_table.reg(b, hash, l, alpha);
                 return alpha;
@@ -944,14 +944,14 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
             #if USE_END_MPC
                 if (mpc_min_depth_final <= depth - 1 && depth - 1 <= mpc_max_depth_final && use_mpc){
                     n_val = -mid_evaluate(&nb[idx]);
-                    if (mpc_higher_final(&nb[idx], false, depth - 1, beta, mpct_in, n_val)){
+                    if (mpc_higher_final(&nb[idx], depth - 1, beta, mpct_in, n_val)){
                         #if USE_END_TC
                             if (l < beta)
                                 transpose_table.reg(b, hash, beta, u);
                         #endif
                         delete[] nb;
                         return beta;
-                    } else if (!mpc_lower_final(&nb[idx], false, depth - 1, alpha, mpct_in, n_val)){
+                    } else if (!mpc_lower_final(&nb[idx], depth - 1, alpha, mpct_in, n_val)){
                         nb[idx].v = move_ordering(b, &nb[idx], hash, cell, n_val);
                         ++idx;
                     }
@@ -1140,14 +1140,14 @@ int nega_scout_final(board *b, bool skipped, const int depth, int alpha, int bet
             #if USE_END_MPC
                 if (mpc_min_depth_final <= depth - 1 && depth - 1 <= mpc_max_depth_final && use_mpc){
                     n_val = -mid_evaluate(&nb[idx]);
-                    if (mpc_higher_final(&nb[idx], false, depth - 1, beta, mpct_in, n_val)){
+                    if (mpc_higher_final(&nb[idx], depth - 1, beta, mpct_in, n_val)){
                         #if USE_END_TC
                             if (l < beta)
                                 transpose_table.reg(b, hash, beta, u);
                         #endif
                         delete[] nb;
                         return beta;
-                    } else if (!mpc_lower_final(&nb[idx], false, depth - 1, alpha, mpct_in, n_val)){
+                    } else if (!mpc_lower_final(&nb[idx], depth - 1, alpha, mpct_in, n_val)){
                         nb[idx].v = move_ordering(b, &nb[idx], hash, cell, n_val);
                         ++idx;
                     }
@@ -1296,9 +1296,9 @@ int nega_scout_final_nomemo(board *b, bool skipped, const int depth, int alpha, 
     #endif
     #if USE_END_MPC
         if (mpc_min_depth_final <= depth && depth <= mpc_max_depth_final && use_mpc){
-            if (mpc_higher_final(b, skipped, depth, beta, mpct_in, n_nodes))
+            if (mpc_higher_final(b, depth, beta, mpct_in, n_nodes))
                 return beta;
-            if (mpc_lower_final(b, skipped, depth, alpha, mpct_in, n_nodes))
+            if (mpc_lower_final(b, depth, alpha, mpct_in, n_nodes))
                 return alpha;
         }
     #endif
