@@ -25,9 +25,10 @@ int nega_alpha_ordering_nomemo(board *b, bool skipped, int depth, int alpha, int
     if (depth <= simple_mid_threshold)
         return nega_alpha(b, skipped, depth, alpha, beta, n_nodes, vacant_lst);
     ++(*n_nodes);
-    #if USE_MID_SC
-        if (stability_cut(b, &alpha, &beta))
-            return alpha;
+    #if USE_END_SC
+        int stab_res = stability_cut(b, &alpha, &beta);
+        if (stab_res != -inf)
+            return stab_res;
     #endif
     #if USE_MID_MPC
         if (mpc_min_depth <= depth && depth <= mpc_max_depth){
@@ -92,9 +93,10 @@ int nega_alpha(board *b, bool skipped, int depth, int alpha, int beta, unsigned 
     ++(*n_nodes);
     if (depth == 0)
         return mid_evaluate(b);
-    #if USE_MID_SC
-        if (stability_cut(b, &alpha, &beta))
-            return alpha;
+    #if USE_END_SC
+        int stab_res = stability_cut(b, &alpha, &beta);
+        if (stab_res != -inf)
+            return stab_res;
     #endif
     int g, v = -inf;
     unsigned long long legal = b->mobility_ull();
@@ -128,9 +130,10 @@ int nega_alpha_ordering(board *b, bool skipped, const int depth, int alpha, int 
     if (depth <= simple_mid_threshold)
         return nega_alpha(b, skipped, depth, alpha, beta, n_nodes, vacant_lst);
     ++(*n_nodes);
-    #if USE_MID_SC
-        if (stability_cut(b, &alpha, &beta))
-            return alpha;
+    #if USE_END_SC
+        int stab_res = stability_cut(b, &alpha, &beta);
+        if (stab_res != -inf)
+            return stab_res;
     #endif
     int hash = b->hash() & search_hash_mask;
     int l, u;
@@ -266,9 +269,10 @@ int nega_scout(board *b, bool skipped, const int depth, int alpha, int beta, boo
     if (depth <= simple_mid_threshold)
         return nega_alpha(b, skipped, depth, alpha, beta, n_nodes, vacant_lst);
     ++(*n_nodes);
-    #if USE_MID_SC
-        if (stability_cut(b, &alpha, &beta))
-            return alpha;
+    #if USE_END_SC
+        int stab_res = stability_cut(b, &alpha, &beta);
+        if (stab_res != -inf)
+            return stab_res;
     #endif
     int hash = b->hash() & search_hash_mask;
     int l, u;
@@ -421,9 +425,10 @@ int nega_scout_nomemo(board *b, bool skipped, const int depth, int alpha, int be
     if (depth <= simple_mid_threshold)
         return nega_alpha(b, skipped, depth, alpha, beta, n_nodes, vacant_lst);
     ++(*n_nodes);
-    #if USE_MID_SC
-        if (stability_cut(b, &alpha, &beta))
-            return alpha;
+    #if USE_END_SC
+        int stab_res = stability_cut(b, &alpha, &beta);
+        if (stab_res != -inf)
+            return stab_res;
     #endif
     #if USE_MID_MPC
         if (mpc_min_depth <= depth && depth <= mpc_max_depth && use_mpc){

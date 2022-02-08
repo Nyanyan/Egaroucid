@@ -183,12 +183,20 @@ inline void move_ordering_eval(board *b){
     b->v = -mid_evaluate(b);
 }
 
-inline bool stability_cut(board *b, int *alpha, int *beta){
+inline int stability_cut(board *b, int *alpha, int *beta){
     int stab[2];
     calc_stability(b, &stab[0], &stab[1]);
-    *alpha = max(*alpha, 2 * stab[b->p] - hw2);
-    *beta = min(*beta, hw2 - 2 * stab[1 - b->p]);
-    return *alpha >= *beta;
+    int n_alpha = 2 * stab[b->p] - hw2;
+    int n_beta = hw2 - 2 * stab[1 - b->p];
+    if (*beta <= n_alpha)
+        return n_alpha;
+    if (n_beta <= *alpha)
+        return n_beta;
+    if (n_beta <= n_alpha)
+        return n_alpha;
+    *alpha = max(*alpha, n_alpha);
+    *beta = min(*beta, n_beta);
+    return -inf;
 }
 
 inline int calc_canput_exact(board *b){

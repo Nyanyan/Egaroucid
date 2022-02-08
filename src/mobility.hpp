@@ -283,18 +283,9 @@ class mobility{
                 flip |= line_to_board_v[flip_pre_calc[p][o][t]][u];
 
                 u += t;
-                //cerr << "u=" << u << endl;
                 if (u >= 2 && u <= 12){
                     p = join_d7_line_fast[u - 2](player);
                     o = join_d7_line_fast[u - 2](opponent);
-                    /*
-                    for (int i = hw_m1; i >= 0; --i)
-                        cerr << (1 & (p >> i));
-                    cerr << endl;
-                    for (int i = hw_m1; i >= 0; --i)
-                        cerr << (1 & (o >> i));
-                    cerr << endl << endl;
-                    */
                     flip |= line_to_board_d7[flip_pre_calc[p][o][hw_m1 - t]][u];
                 }
 
