@@ -1432,6 +1432,7 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
     long long final_strt = tim();
     searched_nodes = 0;
     if (nb[0].second.n < hw2 - 5){
+        /*
         if (search_completed){
             int l, u;
             for (i = 0; i < canput; ++i){
@@ -1447,6 +1448,7 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
                 sort(nb.begin(), nb.end(), move_ordering_sort);
             cerr << "already completely searched policy " << nb[0].first << " value " << nb[0].second.v << endl;
         }
+        */
         if (!search_completed || nb[0].second.v == -hw2 - 1){
             if (canput >= 2)
                 sort(nb.begin(), nb.end(), move_ordering_sort);
@@ -1479,12 +1481,14 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
         beta = hw2;
         final_strt = tim();
         searched_nodes = 0;
+        unsigned long long pre_nodes;
         for (i = 0; i < canput; ++i){
+            pre_nodes = searched_nodes;
             if (use_mpc)
                 g = -nega_scout_final(&nb[i].second, false, max_depth - 1, -beta, -alpha, use_mpc, use_mpct, &searched_nodes, vacant_lst) / 2 * 2;
             else
                 g = -mtd_final(&nb[i].second, false, max_depth - 1, -beta, -alpha, use_mpc, use_mpct, -nb[i].second.v, &searched_nodes, vacant_lst);
-            cerr << "policy " << nb[i].first << " value " << g << " expected " << nb[i].second.v << " alpha " << alpha << " nps: " << (long long)searched_nodes * 1000 / max(1LL, tim() - final_strt) << endl;
+            cerr << "policy " << nb[i].first << " value " << g << " expected " << nb[i].second.v << " alpha " << alpha << " nodes " << searched_nodes - pre_nodes << " nps: " << (long long)searched_nodes * 1000 / max(1LL, tim() - final_strt) << endl;
             if (alpha < g || i == 0){
                 alpha = g;
                 tmp_policy = nb[i].first;
