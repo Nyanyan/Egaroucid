@@ -129,19 +129,7 @@ int cmp_vacant(int p, int q){
 
 //int nega_alpha(board *b, bool skipped, int depth, int alpha, int beta, int *n_nodes);
 
-inline int move_ordering(board *b, board *nb, const int hash, const int policy){
-    /*
-    int v = transpose_table.child_get_now(b, hash, policy) * w_former_search;
-    if (v == -child_inf * w_former_search){
-        v = transpose_table.child_get_prev(b, hash, policy) * w_former_search;
-        if (v == -child_inf * w_former_search){
-            //v = -mid_evaluate(nb) * w_former_search;
-            v = 0;
-        }else
-            v += cache_hit;
-    } else
-        v += cache_hit + cache_now;
-    */
+inline int move_ordering(board *b, board *nb, const int hash, const int policy, int value){
     int v = 0;
     int l, u, child_hash = nb->hash() & search_hash_mask;
     transpose_table.get_now(nb, child_hash, &l, &u);
@@ -164,7 +152,7 @@ inline int move_ordering(board *b, board *nb, const int hash, const int policy){
         v = -l * w_former_search + cache_hit + cache_now;
     }
     v += cell_weight[policy];
-    v += -mid_evaluate(nb) * w_evaluate;
+    v += value * w_evaluate;
     //int n_nodes = 0;
     //v += -nega_alpha(nb, false, 2, -hw2, hw2, &n_nodes);
     int stab0, stab1;
@@ -181,6 +169,10 @@ inline int move_ordering(board *b, board *nb, const int hash, const int policy){
     if (b->parity & cell_div4[policy])
         v += w_parity;
     return v;
+}
+
+inline int move_ordering(board *b, board *nb, const int hash, const int policy){
+    return move_ordering(b, nb, hash, policy, -mid_evaluate(nb));
 }
 
 inline void move_ordering_eval(board *b){

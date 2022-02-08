@@ -947,7 +947,7 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
                         delete[] nb;
                         return beta;
                     } else if (!mpc_lower_final(&nb[idx], false, depth - 1, alpha, mpct_in, n_val)){
-                        nb[idx].v = move_ordering(b, &nb[idx], hash, cell);
+                        nb[idx].v = move_ordering(b, &nb[idx], hash, cell, n_val);
                         ++idx;
                     }
                 } else{
@@ -1144,7 +1144,7 @@ int nega_scout_final(board *b, bool skipped, const int depth, int alpha, int bet
                         delete[] nb;
                         return beta;
                     } else if (!mpc_lower_final(&nb[idx], false, depth - 1, alpha, mpct_in, n_val)){
-                        nb[idx].v = move_ordering(b, &nb[idx], hash, cell);
+                        nb[idx].v = move_ordering(b, &nb[idx], hash, cell, n_val);
                         ++idx;
                     }
                 } else{
