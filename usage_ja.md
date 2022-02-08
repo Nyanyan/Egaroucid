@@ -33,13 +33,19 @@
 ```
 Egaroucid5.exe
 resourcesフォルダ
-	book.txt
-	book_backup.txt
-	icon.png
+	book.egbk
+	eval.egev
 	joseki.txt
-	line_distance.txt
-	param.txt
 	settings.txt
+	imgフォルダ
+		checked.png
+		icon.png
+		logo.png
+	languagesフォルダ
+		english.json
+		japanese.json
+		languages.json
+		languages.txt
 recordフォルダ
 ```
 
