@@ -60,7 +60,7 @@ int main(){
     vector<int> vacant_lst;
     #if !MPC_MODE && !EVAL_MODE
         search_result result;
-        int level = 21, book_error = 0;
+        int level = 60, book_error = 0;
     #endif
     #if USE_MULTI_THREAD
         thread_pool.resize(8);

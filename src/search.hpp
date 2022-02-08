@@ -155,14 +155,14 @@ inline int move_ordering(board *b, board *nb, const int hash, const int policy, 
     v += value * w_evaluate;
     //int n_nodes = 0;
     //v += -nega_alpha(nb, false, 2, -hw2, hw2, &n_nodes);
-    int stab0, stab1;
-    calc_stability_fast(nb, &stab0, &stab1);
+    //int stab0, stab1;
+    //calc_stability_fast(nb, &stab0, &stab1);
     unsigned long long n_empties = ~(nb->b | nb->w);
     if (b->p == black){
-        v += (stab0 - stab1) * w_stability;
+        //v += (stab0 - stab1) * w_stability;
         v += (calc_surround(nb->w, n_empties) - calc_surround(nb->b, n_empties)) * w_surround;
     } else{
-        v += (stab1 - stab0) * w_stability;
+        //v += (stab1 - stab0) * w_stability;
         v += (calc_surround(nb->b, n_empties) - calc_surround(nb->w, n_empties)) * w_surround;
     }
     v -= pop_count_ull(nb->mobility_ull()) * w_mobility;
