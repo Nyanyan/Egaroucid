@@ -1106,20 +1106,6 @@ int nega_scout_final(board *b, bool skipped, const int depth, int alpha, int bet
         alpha = max(alpha, l);
         beta = min(beta, u);
     #endif
-    #if USE_END_MPC
-        if (mpc_min_depth_final <= depth && depth <= mpc_max_depth_final && use_mpc){
-            if (mpc_higher_final(b, skipped, depth, beta, mpct_in, n_nodes)){
-                if (l < beta)
-                    transpose_table.reg(b, hash, beta, u);
-                return beta;
-            }
-            if (mpc_lower_final(b, skipped, depth, alpha, mpct_in, n_nodes)){
-                if (alpha < u)
-                    transpose_table.reg(b, hash, l, alpha);
-                return alpha;
-            }
-        }
-    #endif
     unsigned long long legal = b->mobility_ull();
     if (legal == 0){
         if (skipped)
@@ -1139,17 +1125,46 @@ int nega_scout_final(board *b, bool skipped, const int depth, int alpha, int bet
         #endif
         return res;
     }
-    const int canput = pop_count_ull(legal);
-    board *nb = new board[canput];
+    const int canput_all = pop_count_ull(legal);
+    board *nb = new board[canput_all];
     mobility mob;
-    int idx = 0;
+    int idx = 0, n_val;
     for (const int &cell: vacant_lst){
         if (1 & (legal >> cell)){
             calc_flip(&mob, b, cell);
             b->move_copy(&mob, &nb[idx]);
-            nb[idx].v = move_ordering(b, &nb[idx], hash, cell);
-            ++idx;
+            #if USE_END_MPC
+                if (mpc_min_depth_final <= depth - 1 && depth - 1 <= mpc_max_depth_final && use_mpc){
+                    n_val = -mid_evaluate(&nb[idx]);
+                    if (mpc_higher_final(&nb[idx], false, depth - 1, beta, mpct_in, n_val)){
+                        #if USE_END_TC
+                            if (l < beta)
+                                transpose_table.reg(b, hash, beta, u);
+                        #endif
+                        delete[] nb;
+                        return beta;
+                    } else if (!mpc_lower_final(&nb[idx], false, depth - 1, alpha, mpct_in, n_val)){
+                        nb[idx].v = move_ordering(b, &nb[idx], hash, cell);
+                        ++idx;
+                    }
+                } else{
+                    nb[idx].v = move_ordering(b, &nb[idx], hash, cell);
+                    ++idx;
+                }
+            #else
+                nb[idx].v = move_ordering(b, &nb[idx], hash, cell);
+                ++idx;
+            #endif
         }
+    }
+    const int canput = idx;
+    if (canput == 0){
+        #if USE_END_TC
+            if (alpha < u)
+                transpose_table.reg(b, hash, l, alpha);
+        #endif
+        delete[] nb;
+        return alpha;
     }
     if (canput >= 2)
         sort(nb, nb + canput);

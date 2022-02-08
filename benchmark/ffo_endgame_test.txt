@@ -1162,3 +1162,17 @@ normal flip
 #56 final depth: 29 time: 533 policy: 24 value: 0 nodes: 4954172 nps: 13175989
 #57 final depth: 30 time: 740 policy: 30 value: 2 nodes: 11053780 nps: 18767028
 #58 final depth: 30 time: 1226 policy: 57 value: 4 nodes: 23352082 nps: 20962371
+
+2022/02/08 level 21 update negascout
+#47 final depth: 25 time: 722 policy: 49 value: 6 nodes: 15856612 nps: 29528141
+#48 final depth: 25 time: 1907 policy: 18 value: 24 nodes: 54972041 nps: 34991751
+#49 final depth: 26 time: 5571 policy: 59 value: 16 nodes: 195622890 nps: 39108934
+#50 final depth: 26 time: 1781 policy: 4 value: 10 nodes: 48831078 nps: 35461930
+#51 final depth: 27 time: 2538 policy: 51 value: 6 nodes: 61770683 nps: 30190949
+#52 final depth: 27 time: 2604 policy: 59 value: 2 nodes: 48077185 nps: 27614695
+#53 final depth: 28 time: 1328 policy: 4 value: 0 nodes: 27668051 nps: 23708698
+#54 final depth: 28 time: 1006 policy: 50 value: 2 nodes: 19232735 nps: 22260109
+#55 final depth: 29 time: 5307 policy: 17 value: 0 nodes: 119456450 nps: 24418734
+#56 final depth: 29 time: 536 policy: 24 value: 0 nodes: 6105344 nps: 15456567
+#57 final depth: 30 time: 2593 policy: 30 value: 2 nodes: 70040543 nps: 28587976
+#58 final depth: 30 time: 952 policy: 57 value: 4 nodes: 17889684 nps: 20874777
