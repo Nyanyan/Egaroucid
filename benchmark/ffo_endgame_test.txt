@@ -1253,3 +1253,15 @@ normal flip
 #47 final depth: 25 time: 2722 policy: 49 value: 4 nodes: 134231727 nps: 49789216
 #48 final depth: 25 time: 19369 policy: 18 value: 28 nodes: 931012013 nps: 48624432
 #49 final depth: 26 time: 13808 policy: 59 value: 16 nodes: 775666336 nps: 56958902
+
+2022/02/09 update evaluation function without updating mpc
+#40 final depth: 20 time: 509 policy: 55 value: 38 nodes: 20446043 nps: 48565422
+#41 final depth: 22 time: 768 policy: 32 value: 0 nodes: 22025466 nps: 38641168
+#42 final depth: 22 time: 1455 policy: 49 value: 6 nodes: 55130641 nps: 45751569
+#43 final depth: 23 time: 2713 policy: 41 value: -12 nodes: 100217829 nps: 42108331
+#44 final depth: 23 time: 960 policy: 52 value: -14 nodes: 18558072 nps: 29087887
+#45 final depth: 24 time: 15372 policy: 54 value: 6 nodes: 725297739 nps: 49817826
+#46 final depth: 24 time: 3801 policy: 46 value: -8 nodes: 123628660 nps: 38501606
+#47 final depth: 25 time: 2196 policy: 49 value: 4 nodes: 76378275 nps: 37569244
+#48 final depth: 25 time: 14455 policy: 18 value: 28 nodes: 525122522 nps: 36737268
+#49 final depth: 26 time: 21473 policy: 59 value: 16 nodes: 988473547 nps: 46858191
