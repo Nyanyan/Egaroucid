@@ -1203,3 +1203,16 @@ normal flip
 #48 final depth: 25 time: 15199 policy: 18 value: 28 nodes: 611702222 nps: 41120074
 #49 final depth: 26 time: 14600 policy: 59 value: 16 nodes: 779870545 nps: 55566123
 #50 final depth: 26 time: 47095 policy: 4 value: 10 nodes: 2438916235 nps: 52220714
+
+2022/02/08 level 60 not use stability & surround in move ordering
+#40 final depth: 20 time: 597 policy: 55 value: 38 nodes: 21870144 nps: 47751406
+#41 final depth: 22 time: 996 policy: 32 value: 0 nodes: 32572698 nps: 44376972
+#42 final depth: 22 time: 1863 policy: 49 value: 6 nodes: 89444155 nps: 51110945
+#43 final depth: 23 time: 2621 policy: 13 value: -12 nodes: 105399245 nps: 43285110
+#44 final depth: 23 time: 1008 policy: 52 value: -14 nodes: 26753130 nps: 38383256
+#45 final depth: 24 time: 13259 policy: 54 value: 6 nodes: 657470988 nps: 52589264
+#46 final depth: 24 time: 3717 policy: 46 value: -8 nodes: 159913829 nps: 48166815
+#47 final depth: 25 time: 1779 policy: 49 value: 4 nodes: 69951545 nps: 44133466
+#48 final depth: 25 time: 12897 policy: 18 value: 28 nodes: 676278725 nps: 54154286
+#49 final depth: 26 time: 13535 policy: 59 value: 16 nodes: 759891175 nps: 58475657
+#50 final depth: 26 time: 55751 policy: 4 value: 10 nodes: 2915952371 nps: 52630719
