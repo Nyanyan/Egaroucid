@@ -203,10 +203,6 @@ inline int stability_cut(board *b, int *alpha, int *beta){
     return -inf;
 }
 
-inline int calc_canput_exact(board *b){
-    return pop_count_ull(b->mobility_ull());
-}
-
 bool move_ordering_sort(pair<int, board> &a, pair<int, board> &b){
     return a.second.v > b.second.v;
 }
