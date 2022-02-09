@@ -1061,19 +1061,14 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
                     if (n_searching){
                         if (alpha < -ybwc_res.value){
                             alpha = -ybwc_res.value;
-                            n_searching = false;
+                            if (beta <= alpha)
+                                n_searching = false;
                         }
                         v = max(v, -ybwc_res.value);
                     }
                     *n_nodes += ybwc_res.n_nodes;
                     //}
                 }
-            }
-            all_done = true;
-            //doing_done = true;
-            for (i = 0; i < n_parallel_tasks; ++i){
-                all_done &= task_done[i];
-                //doing_done &= task_done[i] || task_doing[i] == -1;
             }
             //if (doing_done){
             if (beta <= alpha){
@@ -1087,6 +1082,12 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
                 return alpha;
             }
             //}
+            all_done = true;
+            //doing_done = true;
+            for (i = 0; i < n_parallel_tasks; ++i){
+                all_done &= task_done[i];
+                //doing_done &= task_done[i] || task_doing[i] == -1;
+            }
         }
         delete[] nb;
         delete[] task_doing;
