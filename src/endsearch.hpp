@@ -827,14 +827,14 @@ int nega_alpha_ordering_simple_final(board *b, bool skipped, const int depth, in
         if (mpc_min_depth_final <= depth && depth <= mpc_max_depth_final && use_mpc){
             if (mpc_higher_final(b, depth, beta, mpct_in, n_nodes)){
                 #if USE_END_TC
-                    if (l < beta)
+                    if (*searching && l < beta)
                         transpose_table.reg(b, hash, beta, u);
                 #endif
                 return beta;
             }
             if (mpc_lower_final(b, depth, alpha, mpct_in, n_nodes)){
                 #if USE_END_TC
-                    if (alpha < u)
+                    if (*searching && alpha < u)
                         transpose_table.reg(b, hash, l, alpha);
                 #endif
                 return alpha;
@@ -849,14 +849,16 @@ int nega_alpha_ordering_simple_final(board *b, bool skipped, const int depth, in
         int res = -nega_alpha_ordering_simple_final(b, true, depth, -beta, -alpha, use_mpc, mpct_in, n_nodes, vacant_lst, searching);
         b->p = 1 - b->p;
         #if USE_END_TC
-            if (res >= beta){
-                if (l < alpha)
-                    transpose_table.reg(b, hash, res, u);
-            } else if (res <= alpha){
-                if (res < u)
-                    transpose_table.reg(b, hash, l, res);
-            } else
-                transpose_table.reg(b, hash, res, res);
+            if (*searching){
+                if (res >= beta){
+                    if (l < alpha)
+                        transpose_table.reg(b, hash, res, u);
+                } else if (res <= alpha){
+                    if (res < u)
+                        transpose_table.reg(b, hash, l, res);
+                } else
+                    transpose_table.reg(b, hash, res, res);
+            }
         #endif
         return res;
     }
@@ -884,7 +886,7 @@ int nega_alpha_ordering_simple_final(board *b, bool skipped, const int depth, in
         alpha = max(alpha, g);
         if (beta <= alpha){
             #if USE_END_TC
-                if (l < alpha)
+                if (*searching && l < alpha)
                     transpose_table.reg(b, hash, alpha, u);
             #endif
             delete[] nb;
@@ -894,11 +896,13 @@ int nega_alpha_ordering_simple_final(board *b, bool skipped, const int depth, in
     }
     delete[] nb;
     #if USE_END_TC
-        if (v <= alpha){
-            if (v < u)
-                transpose_table.reg(b, hash, l, v);
-        } else
-            transpose_table.reg(b, hash, v, v);
+        if (*searching){
+            if (v <= alpha){
+                if (v < u)
+                    transpose_table.reg(b, hash, l, v);
+            } else
+                transpose_table.reg(b, hash, v, v);
+        }
     #endif
     return v;
 }
@@ -946,14 +950,16 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
         int res = -nega_alpha_ordering_final(b, true, depth, -beta, -alpha, use_mpc, mpct_in, n_nodes, vacant_lst, searching);
         b->p = 1 - b->p;
         #if USE_END_TC
-            if (res >= beta){
-                if (l < alpha)
-                    transpose_table.reg(b, hash, res, u);
-            } else if (res <= alpha){
-                if (res < u)
-                    transpose_table.reg(b, hash, l, res);
-            } else
-                transpose_table.reg(b, hash, res, res);
+            if (*searching){
+                if (res >= beta){
+                    if (l < alpha)
+                        transpose_table.reg(b, hash, res, u);
+                } else if (res <= alpha){
+                    if (res < u)
+                        transpose_table.reg(b, hash, l, res);
+                } else
+                    transpose_table.reg(b, hash, res, res);
+            }
         #endif
         return res;
     }
@@ -970,7 +976,7 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
                     n_val = -mid_evaluate(&nb[idx]);
                     if (mpc_higher_final(&nb[idx], depth - 1, beta, mpct_in, n_val)){
                         #if USE_END_TC
-                            if (l < beta)
+                            if (*searching && l < beta)
                                 transpose_table.reg(b, hash, beta, u);
                         #endif
                         delete[] nb;
@@ -1010,7 +1016,7 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
             alpha = max(alpha, g);
             if (beta <= alpha){
                 #if USE_END_TC
-                    if (l < alpha)
+                    if (*searching && l < alpha)
                         transpose_table.reg(b, hash, alpha, u);
                 #endif
                 delete[] nb;
@@ -1061,8 +1067,8 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
                     if (n_searching){
                         if (alpha < -ybwc_res.value){
                             alpha = -ybwc_res.value;
-                            //if (beta <= alpha)
-                            //    n_searching = false;
+                            if (beta <= alpha)
+                                n_searching = false;
                         }
                         v = max(v, -ybwc_res.value);
                     }
@@ -1073,7 +1079,7 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
             //if (doing_done){
             if (beta <= alpha){
                 #if USE_END_TC
-                    if (l < alpha)
+                    if (*searching && l < alpha)
                         transpose_table.reg(b, hash, alpha, u);
                 #endif
                 delete[] nb;
@@ -1109,11 +1115,13 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
         delete[] nb;
     #endif
     #if USE_END_TC
-        if (v <= alpha){
-            if (v < u)
-                transpose_table.reg(b, hash, l, v);
-        } else
-            transpose_table.reg(b, hash, v, v);
+        if (*searching){
+            if (v <= alpha){
+                if (v < u)
+                    transpose_table.reg(b, hash, l, v);
+            } else
+                transpose_table.reg(b, hash, v, v);
+        }
     #endif
     return v;
 }
