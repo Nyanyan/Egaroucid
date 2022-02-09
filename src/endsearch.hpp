@@ -1061,8 +1061,8 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
                     if (n_searching){
                         if (alpha < -ybwc_res.value){
                             alpha = -ybwc_res.value;
-                            if (beta <= alpha)
-                                n_searching = false;
+                            //if (beta <= alpha)
+                            //    n_searching = false;
                         }
                         v = max(v, -ybwc_res.value);
                     }
@@ -1267,8 +1267,8 @@ int nega_scout_final(board *b, bool skipped, const int depth, int alpha, int bet
                         if (before_alpha < -ybwc_res.value){
                             alpha = max(alpha, -ybwc_res.value);
                             re_search[i] = true;
-                            if (beta <= alpha)
-                                n_searching = true;
+                            //if (beta <= alpha)
+                            //    n_searching = true;
                         }
                         v = max(v, -ybwc_res.value);
                     }
