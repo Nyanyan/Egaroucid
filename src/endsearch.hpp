@@ -1528,8 +1528,6 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
                 pre_search_mpcts.emplace_back(1.0);
             if (use_mpct > 2.0 || !use_mpc)
                 pre_search_mpcts.emplace_back(1.5);
-            //if (!use_mpc)
-            //    pre_search_mpcts.emplace_back(1.7);
             for (double pre_search_mpct: pre_search_mpcts){
                 alpha = -hw2;
                 beta = hw2;
