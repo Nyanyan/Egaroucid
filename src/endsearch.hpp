@@ -793,6 +793,11 @@ int nega_alpha_final(board *b, bool skipped, const int depth, int alpha, int bet
 int nega_alpha_ordering_simple_final(board *b, bool skipped, const int depth, int alpha, int beta, bool use_mpc, double mpct_in, unsigned long long *n_nodes, const vector<int> &vacant_lst){
     if (!global_searching)
         return -inf;
+    //if (depth == 5){
+    //    int cells[5];
+    //    pick_vacant(b, cells, vacant_lst);
+    //    return last5(b, skipped, alpha, beta, cells[0], cells[1], cells[2], cells[3], cells[4], n_nodes);
+    //}
     if (depth <= simple_end_threshold)
         return nega_alpha_final(b, skipped, depth, alpha, beta, n_nodes, vacant_lst);
     ++(*n_nodes);
@@ -1471,8 +1476,6 @@ inline search_result endsearch(board b, long long strt, bool use_mpc, double use
             transpose_table.init_now();
             vector<double> pre_search_mpcts;
             pre_search_mpcts.emplace_back(0.5);
-            //if (use_mpct > 1.0 || !use_mpc)
-            //    pre_search_mpcts.emplace_back(0.5);
             if (use_mpct > 1.6 || !use_mpc)
                 pre_search_mpcts.emplace_back(1.0);
             if (use_mpct > 2.0 || !use_mpc)

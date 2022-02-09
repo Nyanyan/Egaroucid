@@ -33,7 +33,7 @@ using namespace std;
 #define mpc_max_depth_final 40
 
 #define simple_mid_threshold 2
-#define simple_end_threshold 6
+#define simple_end_threshold 7
 #define simple_end_threshold2 11
 #define simple_end_mpc_threshold 5
 #define end_mpc_depth_threshold 5

@@ -77,6 +77,24 @@ Compile ```egaroucid5.cpp```
 $ g++ egaroucid5.cpp -O3 -fexcess-precision=fast -funroll-loops -flto -mtune=native -lpthread -Wall -o egaroucid5.out
 ```
 
+If you don't have boost library, compilation will finish with some errors. Then please 1. install boost libraries or 2. use STL version of thread pool.
+
+If you want to use STL thread pool, Please edit thread_pool.hpp like:
+
+```
+// from https://github.com/vit-vit/CTPL
+#include "CTPL/ctpl.h"
+// #include "CTPL/ctpl_stl.h" // Please use this if you don't have boost
+```
+
+to
+
+```
+// from https://github.com/vit-vit/CTPL
+// #include "CTPL/ctpl.h"
+#include "CTPL/ctpl_stl.h" // Please use this if you don't have boost
+```
+
 Execute ```main.py```
 
 ```
