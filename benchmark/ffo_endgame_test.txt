@@ -1325,3 +1325,15 @@ normal flip
 #47 final depth: 25 time: 1354 policy: 49 value: 4 nodes: 42358045 nps: 35565109
 #48 final depth: 25 time: 12618 policy: 18 value: 28 nodes: 462627487 nps: 37066540
 #49 final depth: 26 time: 17171 policy: 59 value: 16 nodes: 622766291 nps: 36970394
+
+2022/02/09 former evaluation function simple_end_threshold2 = 11 simple_end_threshold = 6
+#40 final depth: 20 time: 480 policy: 55 value: 38 nodes: 14574523 nps: 42001507
+#41 final depth: 22 time: 835 policy: 32 value: 0 nodes: 22989332 nps: 34159482
+#42 final depth: 22 time: 1210 policy: 49 value: 6 nodes: 37127218 nps: 37884916
+#43 final depth: 23 time: 2676 policy: 13 value: -12 nodes: 77032226 nps: 31099001
+#44 final depth: 23 time: 814 policy: 52 value: -14 nodes: 13362318 nps: 24339377
+#45 final depth: 24 time: 19217 policy: 54 value: 6 nodes: 524068697 nps: 28444892
+#46 final depth: 24 time: 3849 policy: 46 value: -8 nodes: 148175665 nps: 41692646
+#47 final depth: 25 time: 1626 policy: 49 value: 4 nodes: 52453811 nps: 35039285
+#48 final depth: 25 time: 18148 policy: 18 value: 28 nodes: 501893249 nps: 27912421
+#49 final depth: 26 time: 16750 policy: 59 value: 16 nodes: 443388901 nps: 27052403
