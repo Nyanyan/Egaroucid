@@ -1337,3 +1337,16 @@ normal flip
 #47 final depth: 25 time: 1626 policy: 49 value: 4 nodes: 52453811 nps: 35039285
 #48 final depth: 25 time: 18148 policy: 18 value: 28 nodes: 501893249 nps: 27912421
 #49 final depth: 26 time: 16750 policy: 59 value: 16 nodes: 443388901 nps: 27052403
+
+2022/02/09 use boost simple_end_threshold = 7
+#40 final depth: 20 time: 466 policy: 55 value: 38 nodes: 20859040 nps: 63594634
+#41 final depth: 22 time: 653 policy: 32 value: 0 nodes: 21811557 nps: 45065200
+#42 final depth: 22 time: 1069 policy: 49 value: 6 nodes: 46089229 nps: 54737801
+#43 final depth: 23 time: 2392 policy: 13 value: -12 nodes: 110065722 nps: 50512033
+#44 final depth: 23 time: 755 policy: 52 value: -14 nodes: 16536249 nps: 33138775
+#45 final depth: 24 time: 11579 policy: 54 value: 6 nodes: 687486443 nps: 63786086
+#46 final depth: 24 time: 3306 policy: 46 value: -8 nodes: 155555944 nps: 51186556
+#47 final depth: 25 time: 1603 policy: 49 value: 4 nodes: 69040210 nps: 46119044
+#48 final depth: 25 time: 11027 policy: 18 value: 28 nodes: 549071386 nps: 50587008
+#49 final depth: 26 time: 9594 policy: 59 value: 16 nodes: 573464021 nps: 61702606
+#50 final depth: 26 time: 62013 policy: 4 value: 10 nodes: 3207844569 nps: 52037384

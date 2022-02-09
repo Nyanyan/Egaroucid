@@ -1188,7 +1188,7 @@ int nega_scout_final(board *b, bool skipped, const int depth, int alpha, int bet
     if (canput >= 2)
         sort(nb, nb + canput);
     int g, v = -inf;
-    #if USE_MULTI_THREAD && false
+    #if USE_MULTI_THREAD
         int i;
         const int first_threshold = canput / end_first_threshold_div + 1;
         for (i = 0; i < first_threshold; ++i){
