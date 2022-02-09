@@ -2,6 +2,7 @@
 #include "setting.hpp"
 #include "common.hpp"
 #include "board.hpp"
+#include <atomic>
 #if USE_MULTI_THREAD
     #include <mutex>
 #endif
@@ -12,19 +13,19 @@ constexpr int search_hash_mask = search_hash_table_size - 1;
 
 class search_node{
     public:
-        bool reg;
-        unsigned long long b;
-        unsigned long long w;
-        int p;
-        int l;
-        int u;
-    #if USE_MULTI_THREAD
+        atomic<bool> reg;
+        atomic<unsigned long long> b;
+        atomic<unsigned long long> w;
+        atomic<int> p;
+        atomic<int> l;
+        atomic<int> u;
+    #if USE_MULTI_THREAD && false
         private:
             mutex mtx;
     #endif
     public:
         inline void register_value(board *bd, const int ll, const int uu){
-            #if USE_MULTI_THREAD
+            #if USE_MULTI_THREAD && false
                 lock_guard<mutex> lock(mtx);
             #endif
             reg = true;
@@ -36,7 +37,7 @@ class search_node{
         }
 
         inline void register_value(const int ll, const int uu){
-            #if USE_MULTI_THREAD
+            #if USE_MULTI_THREAD && false
                 lock_guard<mutex> lock(mtx);
             #endif
             l = ll;

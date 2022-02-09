@@ -810,8 +810,8 @@ int nega_alpha_ordering_simple_final(board *b, bool skipped, const int depth, in
         if (stab_res != -inf)
             return stab_res;
     #endif
-    int hash = b->hash() & search_hash_mask;
     #if USE_END_TC
+        int hash = b->hash() & search_hash_mask;
         int l, u;
         transpose_table.get_now(b, hash, &l, &u);
         if (u == l)
@@ -826,13 +826,17 @@ int nega_alpha_ordering_simple_final(board *b, bool skipped, const int depth, in
     #if USE_END_MPC
         if (mpc_min_depth_final <= depth && depth <= mpc_max_depth_final && use_mpc){
             if (mpc_higher_final(b, depth, beta, mpct_in, n_nodes)){
-                if (l < beta)
-                    transpose_table.reg(b, hash, beta, u);
+                #if USE_END_TC
+                    if (l < beta)
+                        transpose_table.reg(b, hash, beta, u);
+                #endif
                 return beta;
             }
             if (mpc_lower_final(b, depth, alpha, mpct_in, n_nodes)){
-                if (alpha < u)
-                    transpose_table.reg(b, hash, l, alpha);
+                #if USE_END_TC
+                    if (alpha < u)
+                        transpose_table.reg(b, hash, l, alpha);
+                #endif
                 return alpha;
             }
         }

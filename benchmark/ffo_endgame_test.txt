@@ -1376,3 +1376,28 @@ normal flip
 #48 final depth: 25 time: 13038 policy: 18 value: 28 nodes: 690428758 nps: 53931319
 #49 final depth: 26 time: 10709 policy: 59 value: 16 nodes: 648003311 nps: 62882417
 #50 final depth: 26 time: 43266 policy: 4 value: 10 nodes: 2141812910 nps: 50156029
+
+2022/02/09 use atomic in tt simple_end_threshold = 7
+#40 final depth: 20 time: 487 policy: 55 value: 38 nodes: 18920600 nps: 63491946
+#41 final depth: 22 time: 712 policy: 32 value: 0 nodes: 21933639 nps: 46667317
+#42 final depth: 22 time: 969 policy: 49 value: 6 nodes: 40576459 nps: 57311382
+#43 final depth: 23 time: 2228 policy: 13 value: -12 nodes: 95902278 nps: 49897126
+#44 final depth: 23 time: 882 policy: 52 value: -14 nodes: 22377051 nps: 38514717
+#45 final depth: 24 time: 11507 policy: 54 value: 6 nodes: 600286746 nps: 56017800
+#46 final depth: 24 time: 3069 policy: 46 value: -8 nodes: 135796735 nps: 55654399
+#47 final depth: 25 time: 2393 policy: 49 value: -2 nodes: 116018162 nps: 51840108
+#48 final depth: 25 time: 13829 policy: 18 value: 28 nodes: 675802861 nps: 49882112
+#49 final depth: 26 time: 10536 policy: 59 value: 16 nodes: 659820075 nps: 65614565
+
+2022/02/09 use atomic in tt simple_end_threshold = 6
+#40 final depth: 20 time: 462 policy: 55 value: 38 nodes: 14774747 nps: 52392719
+#41 final depth: 22 time: 690 policy: 32 value: 0 nodes: 19307275 nps: 38308085
+#42 final depth: 22 time: 1079 policy: 49 value: 6 nodes: 34525657 nps: 42466982
+#43 final depth: 23 time: 3126 policy: 41 value: -12 nodes: 102974074 nps: 35581919
+#44 final depth: 23 time: 788 policy: 52 value: -14 nodes: 16446764 nps: 32311913
+#45 final depth: 24 time: 11890 policy: 54 value: 6 nodes: 535062132 nps: 49273610
+#46 final depth: 24 time: 2893 policy: 46 value: -8 nodes: 114047639 nps: 49200879
+#47 final depth: 25 time: 1617 policy: 49 value: 4 nodes: 60471865 nps: 41504368
+#48 final depth: 25 time: 16440 policy: 18 value: 28 nodes: 788970032 nps: 48780142
+#49 final depth: 26 time: 11749 policy: 59 value: 16 nodes: 562590244 nps: 50715788
+#50 final depth: 26 time: 48786 policy: 4 value: 10 nodes: 1540812662 nps: 31964415
