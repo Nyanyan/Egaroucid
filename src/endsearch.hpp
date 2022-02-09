@@ -19,24 +19,22 @@ using namespace std;
 inline bool mpc_higher_final2(board *b, bool skipped, int depth, int beta, double t, unsigned long long *n_nodes, const vector<int> &vacant_lst);
 inline bool mpc_lower_final2(board *b, bool skipped, int depth, int alpha, double t, unsigned long long *n_nodes, const vector<int> &vacant_lst);
 
-inline bool mpc_higher_final(board *b, int depth, int beta, double t, unsigned long long *n_nodes){
-    int bound = beta + ceil(t * mpcsd_final[depth - mpc_min_depth_final]);
-    return mid_evaluate(b) >= bound;
-}
-
-inline bool mpc_lower_final(board *b, int depth, int alpha, double t, unsigned long long *n_nodes){
-    int bound = alpha - ceil(t * mpcsd_final[depth - mpc_min_depth_final]);
-    return mid_evaluate(b) <= bound;
-}
-
 inline bool mpc_higher_final(board *b, int depth, int beta, double t, int val){
-    int bound = beta + ceil(t * mpcsd_final[depth - mpc_min_depth_final]);
+    int bound = beta + ceil(t * mpcsd_final[(depth - mpc_min_depth_final) / 5][(val + hw2) / 6]);
     return val >= bound;
 }
 
 inline bool mpc_lower_final(board *b, int depth, int alpha, double t, int val){
-    int bound = alpha - ceil(t * mpcsd_final[depth - mpc_min_depth_final]);
+    int bound = alpha - ceil(t * mpcsd_final[(depth - mpc_min_depth_final) / 5][(val + hw2) / 6]);
     return val <= bound;
+}
+
+inline bool mpc_higher_final(board *b, int depth, int beta, double t, unsigned long long *n_nodes){
+    return mpc_higher_final(b, depth, beta, t, mid_evaluate(b));
+}
+
+inline bool mpc_lower_final(board *b, int depth, int alpha, double t, unsigned long long *n_nodes){
+    return mpc_lower_final(b, depth, alpha, t, mid_evaluate(b));
 }
 
 int nega_alpha_final_nomemo(board *b, bool skipped, int depth, int alpha, int beta, bool use_mpc, double use_mpct, unsigned long long *n_nodes, const vector<int> &vacant_lst){
