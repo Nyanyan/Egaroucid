@@ -1437,3 +1437,15 @@ normal flip
 #56 final depth: 29 time: 157 policy: 24 value: 2 nodes: 1852313 nps: 18159931
 #57 final depth: 30 time: 726 policy: 23 value: -4 nodes: 16858710 nps: 25856917
 #58 final depth: 30 time: 295 policy: 57 value: 4 nodes: 6915232 nps: 26803224
+
+2022/02/09 pre search mpct 1.7
+#40 final depth: 20 time: 406 policy: 55 value: 38 nodes: 17392323 nps: 63015663
+#41 final depth: 22 time: 922 policy: 32 value: 0 nodes: 31481828 nps: 47555631
+#42 final depth: 22 time: 1258 policy: 49 value: 6 nodes: 56820811 nps: 57336842
+#43 final depth: 23 time: 1963 policy: 41 value: -12 nodes: 79272798 nps: 47242430
+#44 final depth: 23 time: 902 policy: 52 value: -14 nodes: 20114254 nps: 35982565
+#45 final depth: 24 time: 17440 policy: 54 value: 6 nodes: 966411376 nps: 58669947
+#46 final depth: 24 time: 4931 policy: 46 value: -8 nodes: 247578994 nps: 57217239
+#47 final depth: 25 time: 4565 policy: 49 value: 4 nodes: 227445298 nps: 53566956
+#48 final depth: 25 time: 11157 policy: 18 value: 28 nodes: 463081081 nps: 43242233
+#49 final depth: 26 time: 23285 policy: 59 value: 16 nodes: 1373045635 nps: 63455293
