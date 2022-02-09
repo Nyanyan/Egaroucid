@@ -108,6 +108,11 @@ struct enhanced_mtd{
     board b;
 };
 
+struct ybwc_result{
+    int value;
+    unsigned long long n_nodes;
+};
+
 bool operator< (const enhanced_mtd &elem1, const enhanced_mtd &elem2){
     if (elem1.b.v == elem2.b.v){
         if (elem1.error < 0 && elem2.error > 0)

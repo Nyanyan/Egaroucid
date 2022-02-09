@@ -890,14 +890,9 @@ int nega_alpha_ordering_simple_final(board *b, bool skipped, const int depth, in
     return v;
 }
 
-struct ybwc_result{
-    int value;
-    unsigned long long n_nodes;
-};
-
 int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha, int beta, bool use_mpc, double mpct_in, unsigned long long *n_nodes, const vector<int> &vacant_lst);
 
-ybwc_result ybwc(board b, bool skipped, const int depth, int alpha, int beta, bool use_mpc, double mpct_in, const vector<int> vacant_lst){
+ybwc_result ybwc_final(board b, bool skipped, const int depth, int alpha, int beta, bool use_mpc, double mpct_in, const vector<int> vacant_lst){
     ybwc_result res;
     res.n_nodes = 0;
     res.value = nega_alpha_ordering_final(&b, skipped, depth, alpha, beta, use_mpc, mpct_in, &res.n_nodes, vacant_lst);
@@ -1028,7 +1023,7 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
                     if (!task_done[i] && task_doing[i] == -1){
                         task_doing[i] = (int)future_tasks.size();
                         ++n_task_doing;
-                        future_tasks.emplace_back(thread_pool.push(bind(&ybwc, nb[i + first_threshold], false, depth - 1, -beta, -alpha, use_mpc, mpct_in, n_vacant_lst)));
+                        future_tasks.emplace_back(thread_pool.push(bind(&ybwc_final, nb[i + first_threshold], false, depth - 1, -beta, -alpha, use_mpc, mpct_in, n_vacant_lst)));
                     }
                 }
                 for (i = 0; i < n_parallel_tasks; ++i){
