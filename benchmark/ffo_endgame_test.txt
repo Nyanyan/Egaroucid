@@ -1265,3 +1265,63 @@ normal flip
 #47 final depth: 25 time: 2196 policy: 49 value: 4 nodes: 76378275 nps: 37569244
 #48 final depth: 25 time: 14455 policy: 18 value: 28 nodes: 525122522 nps: 36737268
 #49 final depth: 26 time: 21473 policy: 59 value: 16 nodes: 988473547 nps: 46858191
+
+2022/02/09 simple_end_threshold2 = 11
+#40 final depth: 20 time: 481 policy: 55 value: 38 nodes: 19758630 nps: 49520375
+#41 final depth: 22 time: 701 policy: 32 value: 0 nodes: 18042343 nps: 35586475
+#42 final depth: 22 time: 1312 policy: 49 value: 6 nodes: 44188889 nps: 42530210
+#43 final depth: 23 time: 2670 policy: 41 value: -12 nodes: 92942046 nps: 38904163
+#44 final depth: 23 time: 769 policy: 52 value: -14 nodes: 12264839 nps: 26206920
+#45 final depth: 24 time: 20820 policy: 54 value: 6 nodes: 648531816 nps: 32182007
+#46 final depth: 24 time: 3178 policy: 46 value: -8 nodes: 100862996 nps: 38497326
+#47 final depth: 25 time: 2877 policy: 49 value: 4 nodes: 104002133 nps: 38519308
+#48 final depth: 25 time: 12712 policy: 18 value: 28 nodes: 442894309 nps: 35298821
+#49 final depth: 26 time: 23531 policy: 59 value: 16 nodes: 799215678 nps: 34450436
+
+2022/02/09 update evaluation function simple_end_threshold2 = 11
+#40 final depth: 20 time: 455 policy: 55 value: 38 nodes: 19694150 nps: 52239124
+#41 final depth: 22 time: 659 policy: 32 value: 0 nodes: 18884764 nps: 36177708
+#42 final depth: 22 time: 1340 policy: 49 value: 6 nodes: 51794726 nps: 45876639
+#43 final depth: 23 time: 2773 policy: 13 value: -12 nodes: 98352427 nps: 39658236
+#44 final depth: 23 time: 814 policy: 6 value: -14 nodes: 17170267 nps: 30771087
+#45 final depth: 24 time: 14565 policy: 54 value: 6 nodes: 588067557 nps: 43696504
+#46 final depth: 24 time: 3072 policy: 46 value: -8 nodes: 113303940 nps: 44276647
+#47 final depth: 25 time: 2273 policy: 49 value: 4 nodes: 88249797 nps: 42083832
+#48 final depth: 25 time: 11038 policy: 18 value: 28 nodes: 438061460 nps: 40259301
+#49 final depth: 26 time: 16664 policy: 59 value: 16 nodes: 793633465 nps: 48689169
+
+2022/02/09 update evaluation function simple_end_threshold2 = 13
+#40 final depth: 20 time: 554 policy: 55 value: 38 nodes: 20245550 nps: 50237096
+#41 final depth: 22 time: 730 policy: 32 value: 0 nodes: 22863874 nps: 39625431
+#42 final depth: 22 time: 1384 policy: 49 value: 6 nodes: 57896041 nps: 49399352
+#43 final depth: 23 time: 2544 policy: 13 value: -12 nodes: 101647529 nps: 46119568
+#44 final depth: 23 time: 808 policy: 6 value: -14 nodes: 21092614 nps: 36303982
+#45 final depth: 24 time: 12709 policy: 54 value: 6 nodes: 567266239 nps: 49975001
+#46 final depth: 24 time: 3167 policy: 46 value: -8 nodes: 125264960 nps: 47180775
+#47 final depth: 25 time: 2412 policy: 49 value: 4 nodes: 104651160 nps: 47246573
+#48 final depth: 25 time: 15831 policy: 18 value: 28 nodes: 789718591 nps: 50377557
+#49 final depth: 26 time: 15361 policy: 59 value: 16 nodes: 865389668 nps: 57924341
+
+2022/02/09 update evaluation function simple_end_threshold2 = 12
+#40 final depth: 20 time: 532 policy: 55 value: 38 nodes: 20462385 nps: 50775148
+#41 final depth: 22 time: 660 policy: 32 value: 0 nodes: 20524398 nps: 39853200
+#42 final depth: 22 time: 1307 policy: 49 value: 6 nodes: 52301888 nps: 47289229
+#43 final depth: 23 time: 2603 policy: 13 value: -12 nodes: 98743734 nps: 43176097
+#44 final depth: 23 time: 775 policy: 6 value: -14 nodes: 19701504 nps: 35498205
+#45 final depth: 24 time: 16202 policy: 54 value: 6 nodes: 521864358 nps: 34793276
+#46 final depth: 24 time: 2846 policy: 46 value: -8 nodes: 114344683 nps: 48969885
+#47 final depth: 25 time: 2909 policy: 49 value: 4 nodes: 123744047 nps: 45360721
+#48 final depth: 25 time: 13125 policy: 18 value: 28 nodes: 489145892 nps: 37704917
+#49 final depth: 26 time: 21510 policy: 59 value: 16 nodes: 827329637 nps: 39135744
+
+2022/02/09 update evaluation function simple_end_threshold2 = 11 simple_end_threshold = 6
+#40 final depth: 20 time: 440 policy: 55 value: 38 nodes: 15005760 nps: 43621395
+#41 final depth: 22 time: 673 policy: 32 value: 0 nodes: 15537447 nps: 29150932
+#42 final depth: 22 time: 1246 policy: 49 value: 6 nodes: 40344151 nps: 38423000
+#43 final depth: 23 time: 3186 policy: 41 value: -12 nodes: 92378358 nps: 31539214
+#44 final depth: 23 time: 764 policy: 52 value: -14 nodes: 12305879 nps: 23802473
+#45 final depth: 24 time: 15575 policy: 54 value: 6 nodes: 393831116 nps: 26941518
+#46 final depth: 24 time: 3135 policy: 46 value: -8 nodes: 97930219 nps: 36432373
+#47 final depth: 25 time: 1354 policy: 49 value: 4 nodes: 42358045 nps: 35565109
+#48 final depth: 25 time: 12618 policy: 18 value: 28 nodes: 462627487 nps: 37066540
+#49 final depth: 26 time: 17171 policy: 59 value: 16 nodes: 622766291 nps: 36970394
