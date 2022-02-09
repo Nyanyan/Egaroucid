@@ -1,7 +1,8 @@
 #pragma once
 #include <iostream>
 #include <functional>
-#include <queue>
+//#include <queue>
+#include <atomic>
 #include "setting.hpp"
 #include "common.hpp"
 #include "board.hpp"
