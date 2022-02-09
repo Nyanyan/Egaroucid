@@ -890,6 +890,20 @@ int nega_alpha_ordering_simple_final(board *b, bool skipped, const int depth, in
     return v;
 }
 
+struct ybwc_result{
+    int value;
+    unsigned long long n_nodes;
+};
+
+int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha, int beta, bool use_mpc, double mpct_in, unsigned long long *n_nodes, const vector<int> &vacant_lst);
+
+ybwc_result ybwc(board b, bool skipped, const int depth, int alpha, int beta, bool use_mpc, double mpct_in, const vector<int> vacant_lst){
+    ybwc_result res;
+    res.n_nodes = 0;
+    res.value = nega_alpha_ordering_final(&b, skipped, depth, alpha, beta, use_mpc, mpct_in, &res.n_nodes, vacant_lst);
+    return res;
+}
+
 int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha, int beta, bool use_mpc, double mpct_in, unsigned long long *n_nodes, const vector<int> &vacant_lst){
     if (!global_searching)
         return -inf;
@@ -995,28 +1009,31 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
             v = max(v, g);
         }
         const int n_parallel_tasks = canput - first_threshold;
-        vector<future<int>> future_tasks;
-        unsigned long long *n_n_nodes = new unsigned long long[n_parallel_tasks];
+        ybwc_result ybwc_res;
+        vector<int> n_vacant_lst;
+        for (const int &cell: vacant_lst)
+            n_vacant_lst.emplace_back(cell);
+        int n_task_doing = 0;
+        vector<future<ybwc_result>> future_tasks;
         int *task_doing = new int[n_parallel_tasks];
         bool *task_done = new bool[n_parallel_tasks];
         bool all_done = false, doing_done;
         for (i = 0; i < n_parallel_tasks; ++i){
-            n_n_nodes[i] = 0;
             task_doing[i] = -1;
             task_done[i] = false;
         }
         while (!all_done){
             if (alpha < beta){
-                for (i = 0; i < n_parallel_tasks; ++i){
-                    if (thread_pool.n_idle() == 0)
-                        break;
+                for (i = 0; i < n_parallel_tasks && thread_pool.n_idle() > 0 && n_task_doing < n_parallel_tasks - 1; ++i){
                     if (!task_done[i] && task_doing[i] == -1){
                         task_doing[i] = (int)future_tasks.size();
-                        future_tasks.emplace_back(thread_pool.push(bind(&nega_alpha_ordering_final, &nb[i + first_threshold], false, depth - 1, -beta, -alpha, use_mpc, mpct_in, &n_n_nodes[i], vacant_lst)));
+                        ++n_task_doing;
+                        future_tasks.emplace_back(thread_pool.push(bind(&ybwc, nb[i + first_threshold], false, depth - 1, -beta, -alpha, use_mpc, mpct_in, n_vacant_lst)));
                     }
                 }
                 for (i = 0; i < n_parallel_tasks; ++i){
                     if (!task_done[i] && task_doing[i] == -1){
+                        ++n_task_doing;
                         g = -nega_alpha_ordering_final(&nb[i + first_threshold], false, depth - 1, -beta, -alpha,  use_mpc, mpct_in, n_nodes, vacant_lst);
                         task_done[i] = true;
                         alpha = max(alpha, g);
@@ -1028,11 +1045,11 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
             for (i = 0; i < n_parallel_tasks; ++i){
                 if (!task_done[i] && task_doing[i] != -1){
                     //if (future_tasks[task_doing[i]].wait_for(chrono::seconds(0)) == future_status::ready){
-                    g = -future_tasks[task_doing[i]].get();
+                    ybwc_res = future_tasks[task_doing[i]].get();
                     task_done[i] = true;
-                    alpha = max(alpha, g);
-                    v = max(v, g);
-                    *n_nodes += n_n_nodes[i];
+                    alpha = max(alpha, -ybwc_res.value);
+                    v = max(v, -ybwc_res.value);
+                    *n_nodes += ybwc_res.n_nodes;
                     //}
                 }
             }
@@ -1049,7 +1066,6 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
                             transpose_table.reg(b, hash, alpha, u);
                     #endif
                     delete[] nb;
-                    delete[] n_n_nodes;
                     delete[] task_doing;
                     delete[] task_done;
                     return alpha;
@@ -1057,7 +1073,6 @@ int nega_alpha_ordering_final(board *b, bool skipped, const int depth, int alpha
             }
         }
         delete[] nb;
-        delete[] n_n_nodes;
         delete[] task_doing;
         delete[] task_done;
     #else
@@ -1173,7 +1188,7 @@ int nega_scout_final(board *b, bool skipped, const int depth, int alpha, int bet
     if (canput >= 2)
         sort(nb, nb + canput);
     int g, v = -inf;
-    #if USE_MULTI_THREAD
+    #if USE_MULTI_THREAD && false
         int i;
         const int first_threshold = canput / end_first_threshold_div + 1;
         for (i = 0; i < first_threshold; ++i){
