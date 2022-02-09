@@ -12,7 +12,9 @@
 
 using namespace std;
 
-#define W_BEST_MOVE 1000000
+#define W_BEST1_MOVE 1000000000
+#define W_BEST2_MOVE 100000000
+#define W_BEST3_MOVE 10000000
 #define W_CACHE_HIT 10000
 #define W_CACHE_NOW 10000
 #define W_FORMER_SEARCH 30
@@ -96,7 +98,6 @@ struct Search{
     Board board;
     Parent_transpose_table *parent_transpose_table;
     Child_transpose_table *child_transpose_table;
-    int depth;
     bool skipped;
     bool use_mpc;
     double mpct;
@@ -118,19 +119,20 @@ int cmp_vacant(int p, int q){
     return cell_weight[p] > cell_weight[q];
 }
 
-inline void move_evaluate(Search *search, Mobility *mob, const int prev_value, const int now_value, const int best_move){
+inline void move_evaluate(Search *search, Mobility *mob,  const int best_moves[]){
     mob->value = 0;
-    if (mob->pos == best_move)
-        mob->value = W_BEST_MOVE;
+    if (mob->pos == best_moves[0])
+        mob->value = W_BEST1_MOVE;
+    else if (mob->pos == best_moves[1])
+        mob->value = W_BEST2_MOVE;
+    else if (mob->pos == best_moves[2])
+        mob->value = W_BEST3_MOVE;
     else{
-        if (prev_value != TRANSPOSE_TABLE_UNDEFINED)
-            mob->value += prev_value * W_FORMER_SEARCH + W_CACHE_HIT;
-        if (now_value != TRANSPOSE_TABLE_UNDEFINED)
-            mob->value += now_value * W_NOW_SEARCH + W_CACHE_NOW;
         mob->value += cell_weight[mob->pos];
         if (search->board.parity & cell_div4[mob->pos])
             mob->value += W_PARITY;
         search->board.move(mob);
+            mob->value += -mid_evaluate(&search->board) * W_EVALUATE;
             int stab0, stab1;
             calc_stability_fast(&search->board, &stab0, &stab1);
             if (search->board.p == BLACK)
@@ -149,29 +151,12 @@ bool cmp_move_ordering(Mobility &a, Mobility &b){
 inline void move_ordering(Search *search, vector<Mobility> &move_list){
     if (move_list.size() < 2)
         return;
-    int now_values[HW2], prev_values[HW2];
-    int now_best_move, prev_best_move;
+    int best_moves[N_BEST_MOVES];
     int hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
-    int now_reg = search->child_transpose_table->get_now(&search->board, hash_code, now_values, &now_best_move);
-    int prev_reg = search->child_transpose_table->get_prev(&search->board, hash_code, prev_values, &prev_best_move);
-    int best_move = TRANSPOSE_TABLE_UNDEFINED;
-    if (now_reg)
-        best_move = now_best_move;
-    else if (prev_reg)
-        best_move = prev_best_move;
-    if (now_reg && prev_reg){
-        for (Mobility &mob: move_list)
-            move_evaluate(search, &mob, prev_values[mob.pos], now_values[mob.pos], best_move);
-    } else if (!now_reg && prev_reg){
-        for (Mobility &mob: move_list)
-            move_evaluate(search, &mob, prev_values[mob.pos], TRANSPOSE_TABLE_UNDEFINED, best_move);
-    } else if (now_reg && !prev_reg){
-        for (Mobility &mob: move_list)
-            move_evaluate(search, &mob, TRANSPOSE_TABLE_UNDEFINED, now_values[mob.pos], best_move);
-    } else{
-        for (Mobility &mob: move_list)
-            move_evaluate(search, &mob, TRANSPOSE_TABLE_UNDEFINED, TRANSPOSE_TABLE_UNDEFINED, best_move);
-    }
+    if (!search->child_transpose_table->get_now(&search->board, hash_code, best_moves))
+        search->child_transpose_table->get_prev(&search->board, hash_code, best_moves);
+    for (Mobility &mob: move_list)
+        move_evaluate(search, &mob, best_moves);
     sort(move_list.begin(), move_list.end(), cmp_move_ordering);
 }
 
