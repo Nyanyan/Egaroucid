@@ -1363,3 +1363,16 @@ normal flip
 #48 final depth: 25 time: 15786 policy: 18 value: 28 nodes: 941775729 nps: 60603328
 #49 final depth: 26 time: 11991 policy: 59 value: 16 nodes: 772261310 nps: 66557037
 #50 final depth: 26 time: 40133 policy: 4 value: 10 nodes: 2125421397 nps: 53729243
+
+2022/02/09 update ybwc
+#40 final depth: 20 time: 434 policy: 55 value: 38 nodes: 18969055 nps: 64084645
+#41 final depth: 22 time: 675 policy: 32 value: 0 nodes: 21364133 nps: 45359093
+#42 final depth: 22 time: 891 policy: 49 value: 6 nodes: 39617766 nps: 58692986
+#43 final depth: 23 time: 2317 policy: 13 value: -12 nodes: 95248967 nps: 46736490
+#44 final depth: 23 time: 837 policy: 52 value: -14 nodes: 21917699 nps: 37659276
+#45 final depth: 24 time: 13364 policy: 54 value: 6 nodes: 804791033 nps: 63877373
+#46 final depth: 24 time: 2936 policy: 46 value: -8 nodes: 130696655 nps: 55710424
+#47 final depth: 25 time: 1489 policy: 49 value: 4 nodes: 68901887 nps: 50001369
+#48 final depth: 25 time: 13038 policy: 18 value: 28 nodes: 690428758 nps: 53931319
+#49 final depth: 26 time: 10709 policy: 59 value: 16 nodes: 648003311 nps: 62882417
+#50 final depth: 26 time: 43266 policy: 4 value: 10 nodes: 2141812910 nps: 50156029
