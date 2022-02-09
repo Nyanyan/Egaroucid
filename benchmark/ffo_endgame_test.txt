@@ -1350,3 +1350,16 @@ normal flip
 #48 final depth: 25 time: 11027 policy: 18 value: 28 nodes: 549071386 nps: 50587008
 #49 final depth: 26 time: 9594 policy: 59 value: 16 nodes: 573464021 nps: 61702606
 #50 final depth: 26 time: 62013 policy: 4 value: 10 nodes: 3207844569 nps: 52037384
+
+2022/02/09 update move ordering
+#40 final depth: 20 time: 475 policy: 55 value: 38 nodes: 18981766 nps: 58048214
+#41 final depth: 22 time: 741 policy: 32 value: 0 nodes: 22476736 nps: 44863744
+#42 final depth: 22 time: 1021 policy: 49 value: 6 nodes: 45841552 nps: 57807757
+#43 final depth: 23 time: 2299 policy: 13 value: -12 nodes: 93637097 nps: 46632020
+#44 final depth: 23 time: 875 policy: 52 value: -14 nodes: 22161106 nps: 36093006
+#45 final depth: 24 time: 10123 policy: 54 value: 6 nodes: 604939850 nps: 64928608
+#46 final depth: 24 time: 2984 policy: 46 value: -8 nodes: 137281802 nps: 56798428
+#47 final depth: 25 time: 1465 policy: 49 value: 4 nodes: 64823899 nps: 48484591
+#48 final depth: 25 time: 15786 policy: 18 value: 28 nodes: 941775729 nps: 60603328
+#49 final depth: 26 time: 11991 policy: 59 value: 16 nodes: 772261310 nps: 66557037
+#50 final depth: 26 time: 40133 policy: 4 value: 10 nodes: 2125421397 nps: 53729243

@@ -20,12 +20,12 @@ using namespace std;
 #define cache_high 10000
 #define parity_vacant_bonus 5
 #define canput_bonus 10
-#define w_former_search 20
+#define w_former_search 30
 #define w_stability 5
-#define w_surround 5
+//#define w_surround 5
 #define w_evaluate 10
-#define w_mobility 30
-#define w_parity 5
+#define w_mobility 60
+#define w_parity 4
 
 #define mpc_min_depth 2
 #define mpc_max_depth 30
