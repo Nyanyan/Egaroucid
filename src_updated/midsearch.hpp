@@ -31,7 +31,7 @@ int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth){
             return stab_res;
     #endif
     #if USE_MID_MPC
-        if (MID_MPC_MIN_DEPTH <= depth && depth <= MID_MPC_MAX_DEPTH){
+        if (MID_MPC_MIN_DEPTH <= depth && depth <= MID_MPC_MAX_DEPTH && search->use_mpc){
             if (mpc_higher(search, beta, depth))
                 return beta;
             if (mpc_lower(search, alpha, depth))
@@ -144,16 +144,16 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth){
         beta = min(beta, u);
     #endif
     #if USE_MID_MPC
-        if (MID_MPC_MIN_DEPTH <= depth && depth <= MID_MPC_MAX_DEPTH){
+        if (MID_MPC_MIN_DEPTH <= depth && depth <= MID_MPC_MAX_DEPTH && search->use_mpc){
             if (mpc_higher(search, beta, depth)){
-                #if USE_MID_MPC
+                #if USE_MID_TC
                     if (l < beta)
                         search->parent_transpose_table->reg(&search->board, hash_code, beta, u);
                 #endif
                 return beta;
             }
             if (mpc_lower(search, alpha, depth)){
-                #if USE_MID_MPC
+                #if USE_MID_TC
                     if (alpha < u)
                         search->parent_transpose_table->reg(&search->board, hash_code, l, alpha);
                 #endif
@@ -268,10 +268,12 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth){
         delete[] nb;
     #endif
     */
-    if (v <= alpha)
-        search->parent_transpose_table->reg(&search->board, hash_code, l, v);
-    else
-        search->parent_transpose_table->reg(&search->board, hash_code, v, v);
+    #if USE_MID_TC
+        if (v <= alpha)
+            search->parent_transpose_table->reg(&search->board, hash_code, l, v);
+        else
+            search->parent_transpose_table->reg(&search->board, hash_code, v, v);
+    #endif
     return v;
 }
 
@@ -299,16 +301,16 @@ int nega_scout(Search *search, int alpha, int beta, int depth){
         beta = min(beta, u);
     #endif
     #if USE_MID_MPC
-        if (MID_MPC_MIN_DEPTH <= depth && depth <= MID_MPC_MAX_DEPTH){
+        if (MID_MPC_MIN_DEPTH <= depth && depth <= MID_MPC_MAX_DEPTH && search->use_mpc){
             if (mpc_higher(search, beta, depth)){
-                #if USE_MID_MPC
+                #if USE_MID_TC
                     if (l < beta)
                         search->parent_transpose_table->reg(&search->board, hash_code, beta, u);
                 #endif
                 return beta;
             }
             if (mpc_lower(search, alpha, depth)){
-                #if USE_MID_MPC
+                #if USE_MID_TC
                     if (alpha < u)
                         search->parent_transpose_table->reg(&search->board, hash_code, l, alpha);
                 #endif
@@ -456,10 +458,12 @@ int nega_scout(Search *search, int alpha, int beta, int depth){
         delete[] nb;
     #endif
     */
-    if (v <= alpha)
-        search->parent_transpose_table->reg(&search->board, hash_code, l, v);
-    else
-        search->parent_transpose_table->reg(&search->board, hash_code, v, v);
+    #if USE_MID_TC
+        if (v <= alpha)
+            search->parent_transpose_table->reg(&search->board, hash_code, l, v);
+        else
+            search->parent_transpose_table->reg(&search->board, hash_code, v, v);
+    #endif
     return v;
 }
 
