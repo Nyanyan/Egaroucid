@@ -7,59 +7,59 @@
 
 using namespace std;
 
-#define n_patterns 16
-#define max_surround 100
-#define max_canput 50
-#define max_stability 65
-#define max_stone_num 65
-#define n_canput_patterns 4
-#define max_evaluate_idx 59049
+#define N_PATTERNS 16
+#define MAX_SURROUND 100
+#define MAX_CANPUT 50
+#define MAX_STABILITY 65
+#define MAX_STONE_NUM 65
+#define N_CANPUT_PATTERNS 4
+#define MAX_EVALUATE_IDX 59049
 
-#define step 256
-#define step_2 128
+#define STEP 256
+#define STEP_2 128
 
-#define p31 3
-#define p32 9
-#define p33 27
-#define p34 81
-#define p35 243
-#define p36 729
-#define p37 2187
-#define p38 6561
-#define p39 19683
-#define p310 59049
-#define p31m 2
-#define p32m 8
-#define p33m 26
-#define p34m 80
-#define p35m 242
-#define p36m 728
-#define p37m 2186
-#define p38m 6560
-#define p39m 19682
-#define p310m 59048
+#define P31 3
+#define P32 9
+#define P33 27
+#define P34 81
+#define P35 243
+#define P36 729
+#define P37 2187
+#define P38 6561
+#define P39 19683
+#define P310 59049
+#define P31m 2
+#define P32m 8
+#define P33m 26
+#define P34m 80
+#define P35m 242
+#define P36m 728
+#define P37m 2186
+#define P38m 6560
+#define P39m 19682
+#define P310m 59048
 
-#define p41 4
-#define p42 16
-#define p43 64
-#define p44 256
-#define p45 1024
-#define p46 4096
-#define p47 16384
-#define p48 65536
+#define P41 4
+#define P42 16
+#define P43 64
+#define P44 256
+#define P45 1024
+#define P46 4096
+#define P47 16384
+#define P48 65536
 
 uint_fast16_t pow3[11];
-unsigned long long stability_edge_arr[n_8bit][n_8bit][2];
-short pattern_arr[n_phases][2][n_patterns][max_evaluate_idx];
-short eval_sur0_sur1_arr[n_phases][2][max_surround][max_surround];
-short eval_canput0_canput1_arr[n_phases][2][max_canput][max_canput];
-short eval_stab0_stab1_arr[n_phases][2][max_stability][max_stability];
-short eval_num0_num1_arr[n_phases][2][max_stone_num][max_stone_num];
-short eval_canput_pattern[n_phases][2][n_canput_patterns][p48];
+unsigned long long stability_edge_arr[N_8BIT][N_8BIT][2];
+short pattern_arr[N_PHASES][2][N_PATTERNS][MAX_EVALUATE_IDX];
+short eval_sur0_sur1_arr[N_PHASES][2][MAX_SURROUND][MAX_SURROUND];
+short eval_canput0_canput1_arr[N_PHASES][2][MAX_CANPUT][MAX_CANPUT];
+short eval_stab0_stab1_arr[N_PHASES][2][MAX_STABILITY][MAX_STABILITY];
+short eval_num0_num1_arr[N_PHASES][2][MAX_STONE_NUM][MAX_STONE_NUM];
+short eval_canput_pattern[N_PHASES][2][N_CANPUT_PATTERNS][P48];
 
 string create_line(int b, int w){
     string res = "";
-    for (int i = 0; i < hw; ++i){
+    for (int i = 0; i < HW; ++i){
         if ((b >> i) & 1)
             res += "X";
         else if ((w >> i) & 1)
@@ -78,7 +78,7 @@ inline void probably_move_line(int p, int o, int place, int *np, int *no){
         for (j = place - 1; j > i; --j)
             *np ^= 1 << j;
     }
-    for (i = place + 1; i < hw && (1 & (o >> i)); ++i);
+    for (i = place + 1; i < HW && (1 & (o >> i)); ++i);
     if (1 & (p >> i)){
         for (j = place + 1; j < i; ++j)
             *np ^= 1 << j;
@@ -90,7 +90,7 @@ int calc_stability_line(int b, int w, int ob, int ow){
     int i, nb, nw, res = 0b11111111;
     res &= b & ob;
     res &= w & ow;
-    for (i = 0; i < hw; ++i){
+    for (i = 0; i < HW; ++i){
         if ((1 & (b >> i)) == 0 && (1 & (w >> i)) == 0){
             probably_move_line(b, w, i, &nb, &nw);
             res &= calc_stability_line(nb, nw, ob, ow);
@@ -107,109 +107,40 @@ inline void init_evaluation_base() {
     for (idx = 1; idx < 11; ++idx)
         pow3[idx] = pow3[idx- 1] * 3;
     /*
-    for (place = 0; place < hw; ++place)
+    for (place = 0; place < HW; ++place)
         stab[place] = true;
     b = create_one_color(712, 0);
     w = create_one_color(712, 1);
     cerr << create_line(b, w) << " ";
     calc_stability_line(b, w, stab);
-    for (place = 0; place < hw; ++place)
+    for (place = 0; place < HW; ++place)
         cerr << stab[place];
     cerr << endl;
     exit(0);
     */
-    for (b = 0; b < n_8bit; ++b) {
-        for (w = b; w < n_8bit; ++w){
+    for (b = 0; b < N_8BIT; ++b) {
+        for (w = b; w < N_8BIT; ++w){
             stab = calc_stability_line(b, w, b, w);
             stability_edge_arr[b][w][0] = 0;
             stability_edge_arr[b][w][1] = 0;
-            for (place = 0; place < hw; ++place){
+            for (place = 0; place < HW; ++place){
                 if (1 & (stab >> place)){
                     stability_edge_arr[b][w][0] |= 1ULL << place;
-                    stability_edge_arr[b][w][1] |= 1ULL << (place * hw);
+                    stability_edge_arr[b][w][1] |= 1ULL << (place * HW);
                 }
             }
             stability_edge_arr[w][b][0] = stability_edge_arr[b][w][0];
             stability_edge_arr[w][b][1] = stability_edge_arr[b][w][1];
-            /*
-            cerr << create_line(b, w) << " ";
-            for (place = 0; place < hw; ++place)
-                cerr << stab[place];
-            cerr << " ";
-            for (place = 0; place < hw; ++place)
-                cerr << (1 & (stability_edge_arr[black][idx][0] >> place));
-            cerr << " ";
-            for (place = 0; place < hw; ++place)
-                cerr << (1 & (stability_edge_arr[white][idx][0] >> place));
-            cerr << endl;
-            */
         }
     }
 }
-
-/*
-inline bool init_evaluation_calc(){
-    ifstream ifs("resources/param.txt");
-    if (ifs.fail()){
-        cerr << "evaluation file not exist" << endl;
-        return false;
-    }
-    string line;
-    int phase_idx, player_idx, pattern_idx, pattern_elem, sur0, sur1, canput0, canput1, stab0, stab1, num0, num1;
-    constexpr int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10, 10, 10, 10};
-    constexpr int n_models = n_phases * 2;
-    for (phase_idx = 0; phase_idx < n_phases; ++phase_idx){
-        for (player_idx = 0; player_idx < 2; ++player_idx){
-            cerr << "loading " << ((phase_idx * 2 + player_idx) * 100 / n_models) << "%" << endl;
-            for (pattern_idx = 0; pattern_idx < n_patterns; ++pattern_idx){
-                for (pattern_elem = 0; pattern_elem < pow3[pattern_sizes[pattern_idx]]; ++pattern_elem){
-                    getline(ifs, line);
-                    pattern_arr[phase_idx][player_idx][pattern_idx][pattern_elem] = stoi(line);
-                }
-            }
-            for (sur0 = 0; sur0 < max_surround; ++sur0){
-                for (sur1 = 0; sur1 < max_surround; ++sur1){
-                    getline(ifs, line);
-                    eval_sur0_sur1_arr[phase_idx][player_idx][sur0][sur1] = stoi(line);
-                }
-            }
-            for (canput0 = 0; canput0 < max_canput; ++canput0){
-                for (canput1 = 0; canput1 < max_canput; ++canput1){
-                    getline(ifs, line);
-                    eval_canput0_canput1_arr[phase_idx][player_idx][canput0][canput1] = stoi(line);
-                }
-            }
-            for (stab0 = 0; stab0 < max_stability; ++stab0){
-                for (stab1 = 0; stab1 < max_stability; ++stab1){
-                    getline(ifs, line);
-                    eval_stab0_stab1_arr[phase_idx][player_idx][stab0][stab1] = stoi(line);
-                }
-            }
-            for (num0 = 0; num0 < max_stone_num; ++num0){
-                for (num1 = 0; num1 < max_stone_num; ++num1){
-                    getline(ifs, line);
-                    eval_num0_num1_arr[phase_idx][player_idx][num0][num1] = stoi(line);
-                }
-            }
-            for (pattern_idx = 0; pattern_idx < n_canput_patterns; ++pattern_idx){
-                for (pattern_elem = 0; pattern_elem < p48; ++pattern_elem){
-                    getline(ifs, line);
-                    eval_canput_pattern[phase_idx][player_idx][pattern_idx][pattern_elem] = stoi(line);
-                }
-            }
-        }
-    }
-    cerr << "evaluation function initialized" << endl;
-    return true;
-}
-*/
 
 inline int convert_canput_line(int idx){
     int res = 0;
-    for (int i = 0; i < hw * 2; i += 2)
+    for (int i = 0; i < HW * 2; i += 2)
         res |= (1 & (idx >> i)) << (i / 2);
-    for (int i = 1; i < hw * 2; i += 2)
-        res |= (1 & (idx >> i)) << ((i / 2) + hw);
+    for (int i = 1; i < HW * 2; i += 2)
+        res |= (1 & (idx >> i)) << ((i / 2) + HW);
     return res;
 }
 
@@ -220,46 +151,46 @@ inline bool init_evaluation_calc(){
         return false;
     }
     int phase_idx, player_idx, pattern_idx;
-    constexpr int pattern_sizes[n_patterns] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10, 10, 10, 10};
-    //constexpr int n_models = n_phases * 2;
-    short tmp_eval_canput_pattern[n_canput_patterns][p48];
-    for (phase_idx = 0; phase_idx < n_phases; ++phase_idx){
+    constexpr int pattern_sizes[N_PATTERNS] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10, 10, 10, 10};
+    //constexpr int n_models = N_PHASES * 2;
+    short tmp_eval_canput_pattern[N_CANPUT_PATTERNS][P48];
+    for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
         for (player_idx = 0; player_idx < 2; ++player_idx){
             //cerr << "loading evaluation parameter " << ((phase_idx * 2 + player_idx) * 100 / n_models) << "%" << endl;
-            for (pattern_idx = 0; pattern_idx < n_patterns; ++pattern_idx){
+            for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx){
                 if (fread(pattern_arr[phase_idx][player_idx][pattern_idx], 2, pow3[pattern_sizes[pattern_idx]], fp) < pow3[pattern_sizes[pattern_idx]]){
                     cerr << "eval.egev broken" << endl;
                     fclose(fp);
                     return false;
                 }
             }
-            if (fread(eval_sur0_sur1_arr[phase_idx][player_idx], 2, max_surround * max_surround, fp) < max_surround * max_surround){
+            if (fread(eval_sur0_sur1_arr[phase_idx][player_idx], 2, MAX_SURROUND * MAX_SURROUND, fp) < MAX_SURROUND * MAX_SURROUND){
                 cerr << "eval.egev broken" << endl;
                 fclose(fp);
                 return false;
             }
-            if (fread(eval_canput0_canput1_arr[phase_idx][player_idx], 2, max_canput * max_canput, fp) < max_canput * max_canput){
+            if (fread(eval_canput0_canput1_arr[phase_idx][player_idx], 2, MAX_CANPUT * MAX_CANPUT, fp) < MAX_CANPUT * MAX_CANPUT){
                 cerr << "eval.egev broken" << endl;
                 fclose(fp);
                 return false;
             }
-            if (fread(eval_stab0_stab1_arr[phase_idx][player_idx], 2, max_stability * max_stability, fp) < max_stability * max_stability){
+            if (fread(eval_stab0_stab1_arr[phase_idx][player_idx], 2, MAX_STABILITY * MAX_STABILITY, fp) < MAX_STABILITY * MAX_STABILITY){
                 cerr << "eval.egev broken" << endl;
                 fclose(fp);
                 return false;
             }
-            if (fread(eval_num0_num1_arr[phase_idx][player_idx], 2, max_stone_num * max_stone_num, fp) < max_stone_num * max_stone_num){
+            if (fread(eval_num0_num1_arr[phase_idx][player_idx], 2, MAX_STONE_NUM * MAX_STONE_NUM, fp) < MAX_STONE_NUM * MAX_STONE_NUM){
                 cerr << "eval.egev broken" << endl;
                 fclose(fp);
                 return false;
             }
-            if (fread(tmp_eval_canput_pattern, 2, n_canput_patterns * p48, fp) < n_canput_patterns * p48){
+            if (fread(tmp_eval_canput_pattern, 2, N_CANPUT_PATTERNS * P48, fp) < N_CANPUT_PATTERNS * P48){
                 cerr << "eval.egev broken" << endl;
                 fclose(fp);
                 return false;
             }
-            for (int i = 0; i < n_canput_patterns; ++i){
-                for (int j = 0; j < p48; ++j)
+            for (int i = 0; i < N_CANPUT_PATTERNS; ++i){
+                for (int j = 0; j < P48; ++j)
                     eval_canput_pattern[phase_idx][player_idx][i][convert_canput_line(j)] = tmp_eval_canput_pattern[i][j];
             }
         }
@@ -285,19 +216,13 @@ inline unsigned long long calc_surround_part(const unsigned long long player, co
 inline int calc_surround(const unsigned long long player, const unsigned long long empties){
     return pop_count_ull(empties & (
         calc_surround_part(player & 0b0111111001111110011111100111111001111110011111100111111001111110ULL, 1) | 
-        calc_surround_part(player & 0b0000000011111111111111111111111111111111111111111111111100000000ULL, hw) | 
-        calc_surround_part(player & 0b0000000001111110011111100111111001111110011111100111111000000000ULL, hw_m1) | 
-        calc_surround_part(player & 0b0000000001111110011111100111111001111110011111100111111000000000ULL, hw_p1)
+        calc_surround_part(player & 0b0000000011111111111111111111111111111111111111111111111100000000ULL, HW) | 
+        calc_surround_part(player & 0b0000000001111110011111100111111001111110011111100111111000000000ULL, HW_M1) | 
+        calc_surround_part(player & 0b0000000001111110011111100111111001111110011111100111111000000000ULL, HW_P1)
     ));
 }
 
-/*
-inline int join_pattern(const int b_arr[], const int p0, const int p1, const int p2, const int p3, const int p4, const int p5, const int p6, const int p7){
-    return b_arr[p0] * p37 + b_arr[p1] * p36 + b_arr[p2] * p35 + b_arr[p3] * p34 + b_arr[p4] * p33 + b_arr[p5] * p32 + b_arr[p6] * p31 + b_arr[p7];
-}
-*/
-
-inline void calc_stability(board *b, int *stab0, int *stab1){
+inline void calc_stability(Board *b, int *stab0, int *stab1){
     unsigned long long full_h, full_v, full_d7, full_d9;
     unsigned long long edge_stability = 0, black_stability = 0, white_stability = 0, n_stability;
     unsigned long long h, v, d7, d9;
@@ -317,17 +242,14 @@ inline void calc_stability(board *b, int *stab0, int *stab1){
     wt = join_v_line(b->w, 7);
     edge_stability |= stability_edge_arr[bk][wt][1];
     b->full_stability(&full_h, &full_v, &full_d7, &full_d9);
-    
-    //black_stability = all_stability & b->b;
-    //white_stability = all_stability & b->w;
-    
+
     n_stability = (edge_stability & b->b) | (full_h & full_v & full_d7 & full_d9 & black_mask);
     while (n_stability & ~black_stability){
         black_stability |= n_stability;
         h = (black_stability >> 1) | (black_stability << 1) | full_h;
-        v = (black_stability >> hw) | (black_stability << hw) | full_v;
-        d7 = (black_stability >> hw_m1) | (black_stability << hw_m1) | full_d7;
-        d9 = (black_stability >> hw_p1) | (black_stability << hw_p1) | full_d9;
+        v = (black_stability >> HW) | (black_stability << HW) | full_v;
+        d7 = (black_stability >> HW_M1) | (black_stability << HW_M1) | full_d7;
+        d9 = (black_stability >> HW_P1) | (black_stability << HW_P1) | full_d9;
         n_stability = h & v & d7 & d9 & black_mask;
     }
 
@@ -335,48 +257,17 @@ inline void calc_stability(board *b, int *stab0, int *stab1){
     while (n_stability & ~white_stability){
         white_stability |= n_stability;
         h = (white_stability >> 1) | (white_stability << 1) | full_h;
-        v = (white_stability >> hw) | (white_stability << hw) | full_v;
-        d7 = (white_stability >> hw_m1) | (white_stability << hw_m1) | full_d7;
-        d9 = (white_stability >> hw_p1) | (white_stability << hw_p1) | full_d9;
+        v = (white_stability >> HW) | (white_stability << HW) | full_v;
+        d7 = (white_stability >> HW_M1) | (white_stability << HW_M1) | full_d7;
+        d9 = (white_stability >> HW_P1) | (white_stability << HW_P1) | full_d9;
         n_stability = h & v & d7 & d9 & white_mask;
     }
 
-    /*
-    for (int i = hw2_m1; i >= 0; --i){
-        if (1 & (b->b >> i))
-            cerr << '0';
-        else if (1 & (b->w >> i))
-            cerr << '1';
-        else
-            cerr << '.';
-        if (i % hw == 0)
-            cerr << endl;
-    }
-    cerr << endl;
-    for (int i = hw2_m1; i >= 0; --i){
-        if (1 & (black_stability >> i))
-            cerr << '0';
-        else
-            cerr << '.';
-        if (i % hw == 0)
-            cerr << endl;
-    }
-    cerr << endl;
-    for (int i = hw2_m1; i >= 0; --i){
-        if (1 & (white_stability >> i))
-            cerr << '1';
-        else
-            cerr << '.';
-        if (i % hw == 0)
-            cerr << endl;
-    }
-    cerr << endl;
-    */
     *stab0 = pop_count_ull(black_stability);
     *stab1 = pop_count_ull(white_stability);
 }
 
-inline void calc_stability_fast(board *b, int *stab0, int *stab1){
+inline void calc_stability_fast(Board *b, int *stab0, int *stab1){
     unsigned long long edge_stability = 0;
     int bk, wt;
     bk = b->b & 0b11111111;
@@ -399,32 +290,32 @@ inline int pop_digit(unsigned long long x, int place){
     return 1 & (x >> place);
 }
 
-inline int pick_pattern(const int phase_idx, const int p, const int pattern_idx, const int b_arr[], const int p0, const int p1, const int p2, const int p3, const int p4){
-    return pattern_arr[phase_idx][p][pattern_idx][b_arr[p0] * p34 + b_arr[p1] * p33 + b_arr[p2] * p32 + b_arr[p3] * p31 + b_arr[p4]];
+inline int pick_pattern(const int phase_idx, const int p, const int pattern_idx, const int b_arr[], const int p0, const int p1, const int p2, const int P3, const int P4){
+    return pattern_arr[phase_idx][p][pattern_idx][b_arr[p0] * P34 + b_arr[p1] * P33 + b_arr[p2] * P32 + b_arr[P3] * P31 + b_arr[P4]];
 }
 
-inline int pick_pattern(const int phase_idx, const int p, const int pattern_idx, const int b_arr[], const int p0, const int p1, const int p2, const int p3, const int p4, const int p5){
-    return pattern_arr[phase_idx][p][pattern_idx][b_arr[p0] * p35 + b_arr[p1] * p34 + b_arr[p2] * p33 + b_arr[p3] * p32 + b_arr[p4] * p31 + b_arr[p5]];
+inline int pick_pattern(const int phase_idx, const int p, const int pattern_idx, const int b_arr[], const int p0, const int p1, const int p2, const int P3, const int P4, const int p5){
+    return pattern_arr[phase_idx][p][pattern_idx][b_arr[p0] * P35 + b_arr[p1] * P34 + b_arr[p2] * P33 + b_arr[P3] * P32 + b_arr[P4] * P31 + b_arr[p5]];
 }
 
-inline int pick_pattern(const int phase_idx, const int p, const int pattern_idx, const int b_arr[], const int p0, const int p1, const int p2, const int p3, const int p4, const int p5, const int p6){
-    return pattern_arr[phase_idx][p][pattern_idx][b_arr[p0] * p36 + b_arr[p1] * p35 + b_arr[p2] * p34 + b_arr[p3] * p33 + b_arr[p4] * p32 + b_arr[p5] * p31 + b_arr[p6]];
+inline int pick_pattern(const int phase_idx, const int p, const int pattern_idx, const int b_arr[], const int p0, const int p1, const int p2, const int P3, const int P4, const int p5, const int p6){
+    return pattern_arr[phase_idx][p][pattern_idx][b_arr[p0] * P36 + b_arr[p1] * P35 + b_arr[p2] * P34 + b_arr[P3] * P33 + b_arr[P4] * P32 + b_arr[p5] * P31 + b_arr[p6]];
 }
 
-inline int pick_pattern(const int phase_idx, const int p, const int pattern_idx, const int b_arr[], const int p0, const int p1, const int p2, const int p3, const int p4, const int p5, const int p6, const int p7){
-    return pattern_arr[phase_idx][p][pattern_idx][b_arr[p0] * p37 + b_arr[p1] * p36 + b_arr[p2] * p35 + b_arr[p3] * p34 + b_arr[p4] * p33 + b_arr[p5] * p32 + b_arr[p6] * p31 + b_arr[p7]];
+inline int pick_pattern(const int phase_idx, const int p, const int pattern_idx, const int b_arr[], const int p0, const int p1, const int p2, const int P3, const int P4, const int p5, const int p6, const int p7){
+    return pattern_arr[phase_idx][p][pattern_idx][b_arr[p0] * P37 + b_arr[p1] * P36 + b_arr[p2] * P35 + b_arr[P3] * P34 + b_arr[P4] * P33 + b_arr[p5] * P32 + b_arr[p6] * P31 + b_arr[p7]];
 }
 
-inline int pick_pattern(const int phase_idx, const int p, const int pattern_idx, const int b_arr[], const int p0, const int p1, const int p2, const int p3, const int p4, const int p5, const int p6, const int p7, const int p8){
-    return pattern_arr[phase_idx][p][pattern_idx][b_arr[p0] * p38 + b_arr[p1] * p37 + b_arr[p2] * p36 + b_arr[p3] * p35 + b_arr[p4] * p34 + b_arr[p5] * p33 + b_arr[p6] * p32 + b_arr[p7] * p31 + b_arr[p8]];
+inline int pick_pattern(const int phase_idx, const int p, const int pattern_idx, const int b_arr[], const int p0, const int p1, const int p2, const int P3, const int P4, const int p5, const int p6, const int p7, const int p8){
+    return pattern_arr[phase_idx][p][pattern_idx][b_arr[p0] * P38 + b_arr[p1] * P37 + b_arr[p2] * P36 + b_arr[P3] * P35 + b_arr[P4] * P34 + b_arr[p5] * P33 + b_arr[p6] * P32 + b_arr[p7] * P31 + b_arr[p8]];
 }
 
-inline int pick_pattern(const int phase_idx, const int p, const int pattern_idx, const int b_arr[], const int p0, const int p1, const int p2, const int p3, const int p4, const int p5, const int p6, const int p7, const int p8, const int p9){
-    return pattern_arr[phase_idx][p][pattern_idx][b_arr[p0] * p39 + b_arr[p1] * p38 + b_arr[p2] * p37 + b_arr[p3] * p36 + b_arr[p4] * p35 + b_arr[p5] * p34 + b_arr[p6] * p33 + b_arr[p7] * p32 + b_arr[p8] * p31 + b_arr[p9]];
+inline int pick_pattern(const int phase_idx, const int p, const int pattern_idx, const int b_arr[], const int p0, const int p1, const int p2, const int P3, const int P4, const int p5, const int p6, const int p7, const int p8, const int p9){
+    return pattern_arr[phase_idx][p][pattern_idx][b_arr[p0] * P39 + b_arr[p1] * P38 + b_arr[p2] * P37 + b_arr[P3] * P36 + b_arr[P4] * P35 + b_arr[p5] * P34 + b_arr[p6] * P33 + b_arr[p7] * P32 + b_arr[p8] * P31 + b_arr[p9]];
 }
 
-inline int calc_pattern(const int phase_idx, board *b){
-    int b_arr[hw2];
+inline int calc_pattern(const int phase_idx, Board *b){
+    int b_arr[HW2];
     b->translate_to_arr(b_arr);
     return 
         pick_pattern(phase_idx, b->p, 0, b_arr, 8, 9, 10, 11, 12, 13, 14, 15) + pick_pattern(phase_idx, b->p, 0, b_arr, 1, 9, 17, 25, 33, 41, 49, 57) + pick_pattern(phase_idx, b->p, 0, b_arr, 48, 49, 50, 51, 52, 53, 54, 55) + pick_pattern(phase_idx, b->p, 0, b_arr, 6, 14, 22, 30, 38, 46, 54, 62) + 
@@ -445,77 +336,77 @@ inline int calc_pattern(const int phase_idx, board *b){
         pick_pattern(phase_idx, b->p, 15, b_arr, 0, 1, 8, 9, 10, 11, 12, 17, 25, 33) + pick_pattern(phase_idx, b->p, 15, b_arr, 7, 6, 15, 14, 13, 12, 11, 22, 30, 38) + pick_pattern(phase_idx, b->p, 15, b_arr, 56, 57, 48, 49, 50, 51, 52, 41, 33, 25) + pick_pattern(phase_idx, b->p, 15, b_arr, 63, 62, 55, 54, 53, 52, 51, 46, 38, 30);
 }
 /*
-inline int pick_pattern(const int phase_idx, const int p, const int pattern_idx, const unsigned long long bk, const unsigned long long wt, const int p0, const int p1, const int p2, const int p3, const int p4){
+inline int pick_pattern(const int phase_idx, const int p, const int pattern_idx, const unsigned long long bk, const unsigned long long wt, const int p0, const int p1, const int p2, const int P3, const int P4){
     return pattern_arr[phase_idx][p][pattern_idx][
-        (2 - pop_digit(wt, p0) - pop_digit(bk, p0) * 2) * p34 + 
-        (2 - pop_digit(wt, p1) - pop_digit(bk, p1) * 2) * p33 + 
-        (2 - pop_digit(wt, p2) - pop_digit(bk, p2) * 2) * p32 + 
-        (2 - pop_digit(wt, p3) - pop_digit(bk, p3) * 2) * p31 + 
-        (2 - pop_digit(wt, p4) - pop_digit(bk, p4) * 2)
+        (2 - pop_digit(wt, p0) - pop_digit(bk, p0) * 2) * P34 + 
+        (2 - pop_digit(wt, p1) - pop_digit(bk, p1) * 2) * P33 + 
+        (2 - pop_digit(wt, p2) - pop_digit(bk, p2) * 2) * P32 + 
+        (2 - pop_digit(wt, P3) - pop_digit(bk, P3) * 2) * P31 + 
+        (2 - pop_digit(wt, P4) - pop_digit(bk, P4) * 2)
         ];
 }
 
-inline int pick_pattern(const int phase_idx, const int p, const int pattern_idx, const unsigned long long bk, const unsigned long long wt, const int p0, const int p1, const int p2, const int p3, const int p4, const int p5){
+inline int pick_pattern(const int phase_idx, const int p, const int pattern_idx, const unsigned long long bk, const unsigned long long wt, const int p0, const int p1, const int p2, const int P3, const int P4, const int p5){
     return pattern_arr[phase_idx][p][pattern_idx][
-        (2 - pop_digit(wt, p0) - pop_digit(bk, p0) * 2) * p35 + 
-        (2 - pop_digit(wt, p1) - pop_digit(bk, p1) * 2) * p34 + 
-        (2 - pop_digit(wt, p2) - pop_digit(bk, p2) * 2) * p33 + 
-        (2 - pop_digit(wt, p3) - pop_digit(bk, p3) * 2) * p32 + 
-        (2 - pop_digit(wt, p4) - pop_digit(bk, p4) * 2) * p31 + 
+        (2 - pop_digit(wt, p0) - pop_digit(bk, p0) * 2) * P35 + 
+        (2 - pop_digit(wt, p1) - pop_digit(bk, p1) * 2) * P34 + 
+        (2 - pop_digit(wt, p2) - pop_digit(bk, p2) * 2) * P33 + 
+        (2 - pop_digit(wt, P3) - pop_digit(bk, P3) * 2) * P32 + 
+        (2 - pop_digit(wt, P4) - pop_digit(bk, P4) * 2) * P31 + 
         (2 - pop_digit(wt, p5) - pop_digit(bk, p5) * 2)
         ];
 }
 
-inline int pick_pattern(const int phase_idx, const int p, const int pattern_idx, const unsigned long long bk, const unsigned long long wt, const int p0, const int p1, const int p2, const int p3, const int p4, const int p5, const int p6){
+inline int pick_pattern(const int phase_idx, const int p, const int pattern_idx, const unsigned long long bk, const unsigned long long wt, const int p0, const int p1, const int p2, const int P3, const int P4, const int p5, const int p6){
     return pattern_arr[phase_idx][p][pattern_idx][
-        (2 - pop_digit(wt, p0) - pop_digit(bk, p0) * 2) * p36 + 
-        (2 - pop_digit(wt, p1) - pop_digit(bk, p1) * 2) * p35 + 
-        (2 - pop_digit(wt, p2) - pop_digit(bk, p2) * 2) * p34 + 
-        (2 - pop_digit(wt, p3) - pop_digit(bk, p3) * 2) * p33 + 
-        (2 - pop_digit(wt, p4) - pop_digit(bk, p4) * 2) * p32 + 
-        (2 - pop_digit(wt, p5) - pop_digit(bk, p5) * 2) * p31 + 
+        (2 - pop_digit(wt, p0) - pop_digit(bk, p0) * 2) * P36 + 
+        (2 - pop_digit(wt, p1) - pop_digit(bk, p1) * 2) * P35 + 
+        (2 - pop_digit(wt, p2) - pop_digit(bk, p2) * 2) * P34 + 
+        (2 - pop_digit(wt, P3) - pop_digit(bk, P3) * 2) * P33 + 
+        (2 - pop_digit(wt, P4) - pop_digit(bk, P4) * 2) * P32 + 
+        (2 - pop_digit(wt, p5) - pop_digit(bk, p5) * 2) * P31 + 
         (2 - pop_digit(wt, p6) - pop_digit(bk, p6) * 2)
         ];
 }
 
-inline int pick_pattern(const int phase_idx, const int p, const int pattern_idx, const unsigned long long bk, const unsigned long long wt, const int p0, const int p1, const int p2, const int p3, const int p4, const int p5, const int p6, const int p7){
+inline int pick_pattern(const int phase_idx, const int p, const int pattern_idx, const unsigned long long bk, const unsigned long long wt, const int p0, const int p1, const int p2, const int P3, const int P4, const int p5, const int p6, const int p7){
     return pattern_arr[phase_idx][p][pattern_idx][
-        (2 - pop_digit(wt, p0) - pop_digit(bk, p0) * 2) * p37 + 
-        (2 - pop_digit(wt, p1) - pop_digit(bk, p1) * 2) * p36 + 
-        (2 - pop_digit(wt, p2) - pop_digit(bk, p2) * 2) * p35 + 
-        (2 - pop_digit(wt, p3) - pop_digit(bk, p3) * 2) * p34 + 
-        (2 - pop_digit(wt, p4) - pop_digit(bk, p4) * 2) * p33 + 
-        (2 - pop_digit(wt, p5) - pop_digit(bk, p5) * 2) * p32 + 
-        (2 - pop_digit(wt, p6) - pop_digit(bk, p6) * 2) * p31 + 
+        (2 - pop_digit(wt, p0) - pop_digit(bk, p0) * 2) * P37 + 
+        (2 - pop_digit(wt, p1) - pop_digit(bk, p1) * 2) * P36 + 
+        (2 - pop_digit(wt, p2) - pop_digit(bk, p2) * 2) * P35 + 
+        (2 - pop_digit(wt, P3) - pop_digit(bk, P3) * 2) * P34 + 
+        (2 - pop_digit(wt, P4) - pop_digit(bk, P4) * 2) * P33 + 
+        (2 - pop_digit(wt, p5) - pop_digit(bk, p5) * 2) * P32 + 
+        (2 - pop_digit(wt, p6) - pop_digit(bk, p6) * 2) * P31 + 
         (2 - pop_digit(wt, p7) - pop_digit(bk, p7) * 2)
         ];
 }
 
-inline int pick_pattern(const int phase_idx, const int p, const int pattern_idx, const unsigned long long bk, const unsigned long long wt, const int p0, const int p1, const int p2, const int p3, const int p4, const int p5, const int p6, const int p7, const int p8){
+inline int pick_pattern(const int phase_idx, const int p, const int pattern_idx, const unsigned long long bk, const unsigned long long wt, const int p0, const int p1, const int p2, const int P3, const int P4, const int p5, const int p6, const int p7, const int p8){
     return pattern_arr[phase_idx][p][pattern_idx][
-        (2 - pop_digit(wt, p0) - pop_digit(bk, p0) * 2) * p38 + 
-        (2 - pop_digit(wt, p1) - pop_digit(bk, p1) * 2) * p37 + 
-        (2 - pop_digit(wt, p2) - pop_digit(bk, p2) * 2) * p36 + 
-        (2 - pop_digit(wt, p3) - pop_digit(bk, p3) * 2) * p35 + 
-        (2 - pop_digit(wt, p4) - pop_digit(bk, p4) * 2) * p34 + 
-        (2 - pop_digit(wt, p5) - pop_digit(bk, p5) * 2) * p33 + 
-        (2 - pop_digit(wt, p6) - pop_digit(bk, p6) * 2) * p32 + 
-        (2 - pop_digit(wt, p7) - pop_digit(bk, p7) * 2) * p31 + 
+        (2 - pop_digit(wt, p0) - pop_digit(bk, p0) * 2) * P38 + 
+        (2 - pop_digit(wt, p1) - pop_digit(bk, p1) * 2) * P37 + 
+        (2 - pop_digit(wt, p2) - pop_digit(bk, p2) * 2) * P36 + 
+        (2 - pop_digit(wt, P3) - pop_digit(bk, P3) * 2) * P35 + 
+        (2 - pop_digit(wt, P4) - pop_digit(bk, P4) * 2) * P34 + 
+        (2 - pop_digit(wt, p5) - pop_digit(bk, p5) * 2) * P33 + 
+        (2 - pop_digit(wt, p6) - pop_digit(bk, p6) * 2) * P32 + 
+        (2 - pop_digit(wt, p7) - pop_digit(bk, p7) * 2) * P31 + 
         (2 - pop_digit(wt, p8) - pop_digit(bk, p8) * 2)
         ];
 }
 
-inline int pick_pattern(const int phase_idx, const int p, const int pattern_idx, const unsigned long long bk, const unsigned long long wt, const int p0, const int p1, const int p2, const int p3, const int p4, const int p5, const int p6, const int p7, const int p8, const int p9){
+inline int pick_pattern(const int phase_idx, const int p, const int pattern_idx, const unsigned long long bk, const unsigned long long wt, const int p0, const int p1, const int p2, const int P3, const int P4, const int p5, const int p6, const int p7, const int p8, const int p9){
     return pattern_arr[phase_idx][p][pattern_idx][
-        (2 - pop_digit(wt, p0) - pop_digit(bk, p0) * 2) * p39 + 
-        (2 - pop_digit(wt, p1) - pop_digit(bk, p1) * 2) * p38 + 
-        (2 - pop_digit(wt, p2) - pop_digit(bk, p2) * 2) * p37 + 
-        (2 - pop_digit(wt, p3) - pop_digit(bk, p3) * 2) * p36 + 
-        (2 - pop_digit(wt, p4) - pop_digit(bk, p4) * 2) * p35 + 
-        (2 - pop_digit(wt, p5) - pop_digit(bk, p5) * 2) * p34 + 
-        (2 - pop_digit(wt, p6) - pop_digit(bk, p6) * 2) * p33 + 
-        (2 - pop_digit(wt, p7) - pop_digit(bk, p7) * 2) * p32 + 
-        (2 - pop_digit(wt, p8) - pop_digit(bk, p8) * 2) * p31 + 
+        (2 - pop_digit(wt, p0) - pop_digit(bk, p0) * 2) * P39 + 
+        (2 - pop_digit(wt, p1) - pop_digit(bk, p1) * 2) * P38 + 
+        (2 - pop_digit(wt, p2) - pop_digit(bk, p2) * 2) * P37 + 
+        (2 - pop_digit(wt, P3) - pop_digit(bk, P3) * 2) * P36 + 
+        (2 - pop_digit(wt, P4) - pop_digit(bk, P4) * 2) * P35 + 
+        (2 - pop_digit(wt, p5) - pop_digit(bk, p5) * 2) * P34 + 
+        (2 - pop_digit(wt, p6) - pop_digit(bk, p6) * 2) * P33 + 
+        (2 - pop_digit(wt, p7) - pop_digit(bk, p7) * 2) * P32 + 
+        (2 - pop_digit(wt, p8) - pop_digit(bk, p8) * 2) * P31 + 
         (2 - pop_digit(wt, p9) - pop_digit(bk, p9) * 2)
         ];
 }
@@ -543,34 +434,34 @@ inline int calc_pattern(const int phase_idx, board *b){
 /*
 inline int create_canput_line(const int canput_arr[], const int a, const int b, const int c, const int d, const int e, const int f, const int g, const int h){
     return 
-        canput_arr[a] * p47 + canput_arr[b] * p46 + canput_arr[c] * p45 + canput_arr[d] * p44 + 
-        canput_arr[e] * p43 + canput_arr[f] * p42 + canput_arr[g] * p41 + canput_arr[h];
+        canput_arr[a] * P47 + canput_arr[b] * P46 + canput_arr[c] * P45 + canput_arr[d] * P44 + 
+        canput_arr[e] * P43 + canput_arr[f] * P42 + canput_arr[g] * P41 + canput_arr[h];
 }
 */
 /*
 inline int create_canput_line(unsigned long long bk, unsigned long long wt, const int a, const int b, const int c, const int d, const int e, const int f, const int g, const int h){
     return 
-        (pop_digit(wt, a) * 2 + pop_digit(bk, a)) * p47 + 
-        (pop_digit(wt, b) * 2 + pop_digit(bk, b)) * p46 + 
-        (pop_digit(wt, c) * 2 + pop_digit(bk, c)) * p45 + 
-        (pop_digit(wt, d) * 2 + pop_digit(bk, d)) * p44 + 
-        (pop_digit(wt, e) * 2 + pop_digit(bk, e)) * p43 + 
-        (pop_digit(wt, f) * 2 + pop_digit(bk, f)) * p42 + 
-        (pop_digit(wt, g) * 2 + pop_digit(bk, g)) * p41 + 
+        (pop_digit(wt, a) * 2 + pop_digit(bk, a)) * P47 + 
+        (pop_digit(wt, b) * 2 + pop_digit(bk, b)) * P46 + 
+        (pop_digit(wt, c) * 2 + pop_digit(bk, c)) * P45 + 
+        (pop_digit(wt, d) * 2 + pop_digit(bk, d)) * P44 + 
+        (pop_digit(wt, e) * 2 + pop_digit(bk, e)) * P43 + 
+        (pop_digit(wt, f) * 2 + pop_digit(bk, f)) * P42 + 
+        (pop_digit(wt, g) * 2 + pop_digit(bk, g)) * P41 + 
         (pop_digit(wt, h) * 2 + pop_digit(bk, h));
 }
 */
 inline int create_canput_line_h(unsigned long long b, unsigned long long w, int t){
-    return (((w >> (hw * t)) & 0b11111111) << hw) | ((b >> (hw * t)) & 0b11111111);
+    return (((w >> (HW * t)) & 0b11111111) << HW) | ((b >> (HW * t)) & 0b11111111);
 }
 
 inline int create_canput_line_v(unsigned long long b, unsigned long long w, int t){
-    return (join_v_line(w, t) << hw) | join_v_line(b, t);
+    return (join_v_line(w, t) << HW) | join_v_line(b, t);
 }
 
-inline int calc_canput_pattern(const int phase_idx, board *b, const unsigned long long black_mobility, const unsigned long long white_mobility){
+inline int calc_canput_pattern(const int phase_idx, Board *b, const unsigned long long black_mobility, const unsigned long long white_mobility){
     /*
-    int canput_arr[hw2];
+    int canput_arr[HW2];
     b->board_canput(canput_arr, black_mobility, white_mobility);
     return
         eval_canput_pattern[phase_idx][b->p][0][create_canput_line(canput_arr, 0, 1, 2, 3, 4, 5, 6, 7)] + 
@@ -628,23 +519,23 @@ inline int calc_canput_pattern(const int phase_idx, board *b, const unsigned lon
         eval_canput_pattern[phase_idx][b->p][3][create_canput_line_v(black_mobility, white_mobility, 4)];
 }
 
-inline int end_evaluate(board *b){
-    return b->count();
+inline int end_evaluate(Board *b){
+    return b->score();
 }
 
-inline int mid_evaluate(board *b){
+inline int mid_evaluate(Board *b){
     int phase_idx, sur0, sur1, canput0, canput1, stab0, stab1, num0, num1;
     unsigned long long black_mobility, white_mobility, empties;
     black_mobility = get_mobility(b->b, b->w);
     white_mobility = get_mobility(b->w, b->b);
     empties = ~(b->b | b->w);
-    canput0 = min(max_canput - 1, pop_count_ull(black_mobility));
-    canput1 = min(max_canput - 1, pop_count_ull(white_mobility));
+    canput0 = min(MAX_CANPUT - 1, pop_count_ull(black_mobility));
+    canput1 = min(MAX_CANPUT - 1, pop_count_ull(white_mobility));
     if (canput0 == 0 && canput1 == 0)
         return end_evaluate(b);
     phase_idx = b->phase();
-    sur0 = min(max_surround - 1, calc_surround(b->b, empties));
-    sur1 = min(max_surround - 1, calc_surround(b->w, empties));
+    sur0 = min(MAX_SURROUND - 1, calc_surround(b->b, empties));
+    sur1 = min(MAX_SURROUND - 1, calc_surround(b->w, empties));
     calc_stability(b, &stab0, &stab1);
     num0 = pop_count_ull(b->b);
     num1 = pop_count_ull(b->w);
@@ -658,9 +549,9 @@ inline int mid_evaluate(board *b){
         calc_canput_pattern(phase_idx, b, black_mobility, white_mobility)
         );
     if (res > 0)
-        res += step_2;
+        res += STEP_2;
     else if (res < 0)
-        res -= step_2;
-    res /= step;
-    return max(-hw2, min(hw2, res));
+        res -= STEP_2;
+    res /= STEP;
+    return max(-HW2, min(HW2, res));
 }

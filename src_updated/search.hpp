@@ -1,50 +1,43 @@
 #pragma once
 #include <iostream>
 #include <fstream>
+#include <algorithm>
+#include <vector>
 #include <math.h>
 #include "setting.hpp"
 #include "common.hpp"
 #include "board.hpp"
 #include "evaluate.hpp"
 #include "transpose_table.hpp"
-#if USE_MULTI_THREAD
-    #include <mutex>
-#endif
 
 using namespace std;
 
-#define search_epsilon 1
-#define cache_hit 10000
-#define cache_now 10000
-#define cache_both 2000
-#define cache_high 10000
-#define parity_vacant_bonus 5
-#define canput_bonus 10
-#define w_former_search 30
-#define w_stability 5
-//#define w_surround 5
-#define w_evaluate 10
-#define w_mobility 60
-#define w_parity 4
+#define W_BEST_MOVE 1000000
+#define W_CACHE_HIT 10000
+#define W_CACHE_NOW 10000
+#define W_FORMER_SEARCH 30
+#define W_NOW_SEARCH 30
+#define W_STABILITY 5
+#define W_EVALUATE 10
+#define W_MOBILITY 60
+#define W_PARITY 4
 
-#define mpc_min_depth 2
-#define mpc_max_depth 30
-#define mpc_min_depth_final 5
-#define mpc_max_depth_final 40
-#define n_end_mpc_div 22
+#define MID_MPC_MIN_DEPTH 2
+#define MID_MPC_MAX_DEPTH 30
+#define END_MPC_MIN_DEPTH 5
+#define END_MPC_MAX_DEPTH 40
+#define N_END_MPC_SCORE_DIV 22
 
-#define simple_mid_threshold 2
-#define simple_end_threshold 7
-#define simple_end_threshold2 11
-#define simple_end_mpc_threshold 5
-#define end_mpc_depth_threshold 5
+#define MID_FAST_DEPTH 2
+#define END_FAST_DEPTH 7
+#define END_FAST_DEPTH2 11
 
-#define po_max_depth 15
+#define MID_PV_SPLIT_DIV 5
+#define END_PV_SPLIT_DIV 6
 
-#define mid_first_threshold_div 5
-#define end_first_threshold_div 6
+#define SCORE_UNDEFINED -INF
 
-const int cell_weight[hw2] = {
+constexpr int cell_weight[HW2] = {
     18,  4,  16, 12, 12, 16,  4, 18,
      4,  2,   6,  8,  8,  6,  2,  4,
     16,  6,  14, 10, 10, 14,  6, 16,
@@ -55,151 +48,138 @@ const int cell_weight[hw2] = {
     18,  4,  16, 12, 12, 16,  4, 18
 };
 
-const int mpcd[41] = {
+constexpr int mpcd[41] = {
     0, 1, 0, 1, 2, 3, 2, 3, 4, 3, 
     4, 3, 4, 5, 4, 5, 6, 5, 6, 7, 
     6, 7, 6, 7, 8, 7, 8, 9, 8, 9, 
     10, 9, 10, 11, 12, 11, 12, 13, 14, 13,
     14
 };
-#if USE_MID_SMOOTH
-    double mpcsd[n_phases][mpc_max_depth - mpc_min_depth + 1]={
 
-    };
-    double mpcsd_final[mpc_max_depth_final - mpc_min_depth_final + 1] = {
+constexpr double mpcsd[N_PHASES][MID_MPC_MAX_DEPTH - MID_MPC_MIN_DEPTH + 1]={
+    {0.722, 0.776, 0.624, 0.852, 0.659, 0.751, 0.859, 0.444, 0.588, 0.442, 0.511, 0.587, 0.511, 0.464, 0.442, 0.444, 0.511, 0.482, 0.442, 0.576, 0.523, 0.588, 0.761, 0.509, 0.923, 1.083, 1.781, 1.586, 1.553},
+    {1.414, 2.386, 1.042, 1.146, 0.565, 0.78, 0.721, 0.851, 0.806, 1.122, 0.83, 0.945, 1.215, 1.233, 0.794, 1.24, 0.908, 0.794, 1.042, 0.9, 1.218, 1.327, 1.412, 1.367, 1.864, 1.442, 1.56, 1.349, 1.599},      
+    {2.81, 2.239, 2.359, 1.099, 0.806, 1.191, 0.751, 1.436, 0.833, 1.381, 0.737, 0.945, 1.049, 1.139, 1.018, 1.572, 1.116, 1.285, 1.283, 1.484, 1.504, 1.391, 1.398, 1.173, 1.165, 2.111, 1.442, 1.482, 2.315}, 
+    {2.953, 1.248, 1.749, 1.278, 1.424, 1.316, 1.329, 1.098, 1.327, 1.341, 0.795, 0.899, 1.122, 1.445, 1.024, 1.043, 1.135, 1.316, 1.504, 1.275, 1.579, 1.063, 1.139, 1.359, 1.234, 1.435, 1.588, 1.153, 1.557},
+    {3.569, 1.756, 1.373, 1.488, 1.56, 1.412, 1.071, 1.465, 1.122, 1.435, 1.518, 1.439, 1.25, 1.64, 1.465, 1.268, 1.503, 1.16, 1.373, 1.16, 1.472, 1.56, 1.341, 1.599, 1.579, 1.841, 1.622, 1.294, 1.367},      
+    {3.895, 1.849, 1.276, 1.558, 1.285, 1.702, 1.348, 1.606, 1.398, 1.816, 1.599, 1.262, 1.412, 1.539, 1.496, 1.308, 1.233, 1.239, 1.226, 1.285, 1.382, 1.351, 1.504, 1.317, 1.209, 1.239, 1.993, 2.521, 2.018},
+    {3.217, 2.226, 1.461, 1.628, 1.319, 1.511, 1.348, 1.285, 1.424, 1.285, 0.821, 1.103, 1.527, 1.732, 1.376, 1.469, 1.173, 1.222, 1.244, 1.316, 1.503, 1.53, 1.341, 1.348, 1.976, 1.926, 2.514, 1.72, 2.345},
+    {2.919, 1.877, 1.207, 1.654, 1.933, 1.389, 1.476, 1.628, 1.398, 1.389, 1.526, 1.248, 1.073, 1.689, 1.279, 1.398, 0.955, 1.399, 1.341, 1.429, 1.494, 1.435, 1.627, 1.624, 1.53, 2.126, 2.197, 1.609, 1.775},
+    {2.7, 2.305, 1.532, 1.53, 1.956, 2.067, 1.633, 1.622, 1.504, 1.916, 1.442, 1.285, 1.474, 1.473, 1.501, 1.444, 1.579, 1.432, 1.412, 1.666, 1.595, 1.706, 1.663, 1.967, 1.382, 0.983, 0.0, 0.0, 0.0},
+    {2.658, 2.668, 1.408, 2.146, 1.574, 1.496, 1.583, 1.719, 1.373, 1.618, 1.245, 1.318, 1.341, 1.294, 1.381, 1.327, 1.268, 1.41, 1.341, 1.65, 2.575, 2.563, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+    {2.748, 4.344, 1.954, 1.345, 1.702, 1.395, 1.523, 1.956, 1.408, 1.75, 1.435, 1.501, 1.55, 1.758, 1.349, 2.086, 0.996, 0.548, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+    {3.618, 2.622, 2.75, 1.654, 1.778, 1.806, 1.527, 1.984, 1.589, 2.021, 1.998, 1.543, 1.663, 1.506, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+    {2.093, 2.808, 2.408, 2.16, 1.761, 1.789, 1.711, 2.415, 3.268, 3.521, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+    {3.796, 4.198, 3.46, 3.451, 2.685, 2.098, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+    {3.615, 2.16, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
+};
+constexpr double mpcsd_final[(END_MPC_MAX_DEPTH - END_MPC_MIN_DEPTH + 1) / 5 + 1][N_END_MPC_SCORE_DIV] = {
+    {1.773, 1.329, 1.291, 7.219, 5.044, 4.877, 4.308, 4.915, 5.259, 4.754, 4.649, 4.728, 5.507, 5.474, 5.044, 5.303, 5.683, 5.925, 3.926, 5.68, 2.248, 0.855},
+    {2.828, 2.427, 65, 4.082, 5.502, 5.295, 4.797, 5.159, 5.722, 5.302, 5.157, 5.191, 5.89, 5.608, 5.969, 6.36, 7.059, 7.376, 6.191, 4.154, 3.708, 0.949},
+    {4.031, 2.927, 4.19, 4.692, 5.618, 4.551, 5.14, 5.726, 5.38, 5.203, 4.554, 5.012, 5.877, 5.618, 5.569, 6.331, 5.918, 7.134, 5.54, 5.293, 4.6, 2.138},
+    {3.215, 4.907, 5.873, 1.764, 7.288, 5.369, 4.929, 4.906, 5.414, 4.755, 4.416, 4.671, 5.298, 5.503, 5.772, 7.518, 6.814, 7.033, 8.864, 7.011, 6.708, 7.537},
+    {2.302, 10.066, 5.438, 6.175, 7.09, 4.706, 5.258, 5.326, 5.187, 4.653, 4.483, 4.786, 5.436, 5.486, 6.221, 6.902, 6.664, 7.9, 6.676, 4.994, 6.87, 8.649},
+    {65, 65, 6.362, 9.234, 9.938, 9.28, 7.778, 6.484, 6.446, 6.008, 5.736, 6.038, 7.209, 7.377, 7.951, 9.204, 9.273, 11.793, 6.918, 6.848, 6.908, 65},
+    {65, 65, 2.646, 3.202, 6.132, 10.728, 10.236, 8.911, 8.484, 7.891, 7.157, 7.888, 9.821, 10.713, 10.098, 10.021, 11.709, 9.681, 10.881, 7.7, 1.0, 65},
+    {65, 65, 65, 2.887, 65, 8.706, 6.452, 10.436, 11.052, 8.855, 8.671, 8.67, 9.599, 12.627, 12.814, 9.541, 6.834, 16.688, 13.503, 65, 65, 65}
+};
+unsigned long long can_be_flipped[HW2];
 
-    };
-#else
-    constexpr double mpcsd[n_phases][mpc_max_depth - mpc_min_depth + 1]={
-        {0.722, 0.776, 0.624, 0.852, 0.659, 0.751, 0.859, 0.444, 0.588, 0.442, 0.511, 0.587, 0.511, 0.464, 0.442, 0.444, 0.511, 0.482, 0.442, 0.576, 0.523, 0.588, 0.761, 0.509, 0.923, 1.083, 1.781, 1.586, 1.553},
-        {1.414, 2.386, 1.042, 1.146, 0.565, 0.78, 0.721, 0.851, 0.806, 1.122, 0.83, 0.945, 1.215, 1.233, 0.794, 1.24, 0.908, 0.794, 1.042, 0.9, 1.218, 1.327, 1.412, 1.367, 1.864, 1.442, 1.56, 1.349, 1.599},      
-        {2.81, 2.239, 2.359, 1.099, 0.806, 1.191, 0.751, 1.436, 0.833, 1.381, 0.737, 0.945, 1.049, 1.139, 1.018, 1.572, 1.116, 1.285, 1.283, 1.484, 1.504, 1.391, 1.398, 1.173, 1.165, 2.111, 1.442, 1.482, 2.315}, 
-        {2.953, 1.248, 1.749, 1.278, 1.424, 1.316, 1.329, 1.098, 1.327, 1.341, 0.795, 0.899, 1.122, 1.445, 1.024, 1.043, 1.135, 1.316, 1.504, 1.275, 1.579, 1.063, 1.139, 1.359, 1.234, 1.435, 1.588, 1.153, 1.557},
-        {3.569, 1.756, 1.373, 1.488, 1.56, 1.412, 1.071, 1.465, 1.122, 1.435, 1.518, 1.439, 1.25, 1.64, 1.465, 1.268, 1.503, 1.16, 1.373, 1.16, 1.472, 1.56, 1.341, 1.599, 1.579, 1.841, 1.622, 1.294, 1.367},      
-        {3.895, 1.849, 1.276, 1.558, 1.285, 1.702, 1.348, 1.606, 1.398, 1.816, 1.599, 1.262, 1.412, 1.539, 1.496, 1.308, 1.233, 1.239, 1.226, 1.285, 1.382, 1.351, 1.504, 1.317, 1.209, 1.239, 1.993, 2.521, 2.018},
-        {3.217, 2.226, 1.461, 1.628, 1.319, 1.511, 1.348, 1.285, 1.424, 1.285, 0.821, 1.103, 1.527, 1.732, 1.376, 1.469, 1.173, 1.222, 1.244, 1.316, 1.503, 1.53, 1.341, 1.348, 1.976, 1.926, 2.514, 1.72, 2.345},
-        {2.919, 1.877, 1.207, 1.654, 1.933, 1.389, 1.476, 1.628, 1.398, 1.389, 1.526, 1.248, 1.073, 1.689, 1.279, 1.398, 0.955, 1.399, 1.341, 1.429, 1.494, 1.435, 1.627, 1.624, 1.53, 2.126, 2.197, 1.609, 1.775},
-        {2.7, 2.305, 1.532, 1.53, 1.956, 2.067, 1.633, 1.622, 1.504, 1.916, 1.442, 1.285, 1.474, 1.473, 1.501, 1.444, 1.579, 1.432, 1.412, 1.666, 1.595, 1.706, 1.663, 1.967, 1.382, 0.983, 0.0, 0.0, 0.0},
-        {2.658, 2.668, 1.408, 2.146, 1.574, 1.496, 1.583, 1.719, 1.373, 1.618, 1.245, 1.318, 1.341, 1.294, 1.381, 1.327, 1.268, 1.41, 1.341, 1.65, 2.575, 2.563, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
-        {2.748, 4.344, 1.954, 1.345, 1.702, 1.395, 1.523, 1.956, 1.408, 1.75, 1.435, 1.501, 1.55, 1.758, 1.349, 2.086, 0.996, 0.548, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
-        {3.618, 2.622, 2.75, 1.654, 1.778, 1.806, 1.527, 1.984, 1.589, 2.021, 1.998, 1.543, 1.663, 1.506, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
-        {2.093, 2.808, 2.408, 2.16, 1.761, 1.789, 1.711, 2.415, 3.268, 3.521, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
-        {3.796, 4.198, 3.46, 3.451, 2.685, 2.098, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
-        {3.615, 2.16, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
-    };
-    constexpr double mpcsd_final[(mpc_max_depth_final - mpc_min_depth_final + 1) / 5 + 1][n_end_mpc_div] = {
-        {1.773, 1.329, 1.291, 7.219, 5.044, 4.877, 4.308, 4.915, 5.259, 4.754, 4.649, 4.728, 5.507, 5.474, 5.044, 5.303, 5.683, 5.925, 3.926, 5.68, 2.248, 0.855},
-        {2.828, 2.427, 65, 4.082, 5.502, 5.295, 4.797, 5.159, 5.722, 5.302, 5.157, 5.191, 5.89, 5.608, 5.969, 6.36, 7.059, 7.376, 6.191, 4.154, 3.708, 0.949},
-        {4.031, 2.927, 4.19, 4.692, 5.618, 4.551, 5.14, 5.726, 5.38, 5.203, 4.554, 5.012, 5.877, 5.618, 5.569, 6.331, 5.918, 7.134, 5.54, 5.293, 4.6, 2.138},
-        {3.215, 4.907, 5.873, 1.764, 7.288, 5.369, 4.929, 4.906, 5.414, 4.755, 4.416, 4.671, 5.298, 5.503, 5.772, 7.518, 6.814, 7.033, 8.864, 7.011, 6.708, 7.537},
-        {2.302, 10.066, 5.438, 6.175, 7.09, 4.706, 5.258, 5.326, 5.187, 4.653, 4.483, 4.786, 5.436, 5.486, 6.221, 6.902, 6.664, 7.9, 6.676, 4.994, 6.87, 8.649},
-        {65, 65, 6.362, 9.234, 9.938, 9.28, 7.778, 6.484, 6.446, 6.008, 5.736, 6.038, 7.209, 7.377, 7.951, 9.204, 9.273, 11.793, 6.918, 6.848, 6.908, 65},
-        {65, 65, 2.646, 3.202, 6.132, 10.728, 10.236, 8.911, 8.484, 7.891, 7.157, 7.888, 9.821, 10.713, 10.098, 10.021, 11.709, 9.681, 10.881, 7.7, 1.0, 65},
-        {65, 65, 65, 2.887, 65, 8.706, 6.452, 10.436, 11.052, 8.855, 8.671, 8.67, 9.599, 12.627, 12.814, 9.541, 6.834, 16.688, 13.503, 65, 65, 65}
-    };
-#endif
-unsigned long long can_be_flipped[hw2];
-bool search_completed = false;
-
-struct search_result{
+struct Search_result{
     int policy;
     int value;
     int depth;
     int nps;
 };
 
-struct enhanced_mtd{
-    int policy;
-    int error;
-    int l;
-    int u;
-    board b;
-};
-
-struct ybwc_result{
-    int value;
+struct Search{
+    Board board;
+    Parent_transpose_table *parent_transpose_table;
+    Child_transpose_table *child_transpose_table;
+    int depth;
+    bool skipped;
+    bool use_mpc;
+    double mpct;
+    vector<int> vacant_list;
     unsigned long long n_nodes;
-};
 
-bool operator< (const enhanced_mtd &elem1, const enhanced_mtd &elem2){
-    if (elem1.b.v == elem2.b.v){
-        if (elem1.error < 0 && elem2.error > 0)
-            return true;
-        if (elem2.error < 0 && elem1.error > 0)
-            return false;
-        if (elem1.error < 0 && elem2.error < 0)
-            return elem1.error < elem2.error;
-        if (elem1.error > 0 && elem2.error > 0)
-            return elem1.error > elem2.error;
-        return elem2.error == 0;
+    inline void pass(){
+        board.p = 1 - board.p;
+        skipped = true;
     }
-    return elem1.b.v < elem2.b.v;
+
+    inline void undo_pass(){
+        board.p = 1 - board.p;
+        skipped = false;
+    }
 };
 
 int cmp_vacant(int p, int q){
     return cell_weight[p] > cell_weight[q];
 }
 
-//int nega_alpha(board *b, bool skipped, int depth, int alpha, int beta, int *n_nodes);
-
-inline int move_ordering(board *b, board *nb, const int hash, const int policy, int value){
-    int v = 0;
-    if ((b->p == 0 && nb->w == 0) || (b->p == 1 && nb->b == 0))
-        v = inf;
+inline void move_evaluate(Search *search, Mobility *mob, const int prev_value, const int now_value, const int best_move){
+    mob->value = 0;
+    if (mob->pos == best_move)
+        mob->value = W_BEST_MOVE;
     else{
-        int l, u, child_hash = nb->hash() & search_hash_mask;
-        transpose_table.get_now(nb, child_hash, &l, &u);
-        if (l == -inf && u == inf){
-            transpose_table.get_prev(nb, child_hash, &l, &u);
-            if (l == -inf && u == inf){
-                v = 0;
-            } else if (l != -inf && u != inf){
-                v = -(l + u) * w_former_search / 2 + cache_hit + cache_both;
-            } else if (u != inf){
-                v = -u * w_former_search + cache_hit + cache_high;
-            } else if (l != -inf){
-                v = -l * w_former_search + cache_hit;
-            }
-        } else if (l != -inf && u != inf){
-            v = -(l + u) * w_former_search / 2 + cache_hit + cache_both + cache_now;
-        } else if (u != inf){
-            v = -u * w_former_search + cache_hit + cache_high + cache_now;
-        } else if (l != -inf){
-            v = -l * w_former_search + cache_hit + cache_now;
-        }
-        v += cell_weight[policy];
-        v += value * w_evaluate;
-        //int n_nodes = 0;
-        //v += -nega_alpha(nb, false, 2, -hw2, hw2, &n_nodes);
-        int stab0, stab1;
-        calc_stability_fast(nb, &stab0, &stab1);
-        if (b->p == black){
-            v += stab0 * w_stability;
-            //v += calc_surround(nb->w, ~(nb->b | nb->w)) * w_surround;
-        } else{
-            v += stab1 * w_stability;
-            //v += calc_surround(nb->b, ~(nb->b | nb->w)) * w_surround;
-        }
-        v -= pop_count_ull(nb->mobility_ull()) * w_mobility;
-        if (b->parity & cell_div4[policy])
-            v += w_parity;
+        if (prev_value != TRANSPOSE_TABLE_UNDEFINED)
+            mob->value += prev_value * W_FORMER_SEARCH + W_CACHE_HIT;
+        if (now_value != TRANSPOSE_TABLE_UNDEFINED)
+            mob->value += now_value * W_NOW_SEARCH + W_CACHE_NOW;
+        mob->value += cell_weight[mob->pos];
+        if (search->board.parity & cell_div4[mob->pos])
+            mob->value += W_PARITY;
+        search->board.move(mob);
+            int stab0, stab1;
+            calc_stability_fast(&search->board, &stab0, &stab1);
+            if (search->board.p == BLACK)
+                mob->value += stab0 * W_STABILITY;
+            else
+                mob->value += stab1 * W_STABILITY;
+            mob->value -= pop_count_ull(search->board.mobility_ull()) * W_MOBILITY;
+        search->board.undo(mob);
     }
-    return v;
 }
 
-inline int move_ordering(board *b, board *nb, const int hash, const int policy){
-    return move_ordering(b, nb, hash, policy, -mid_evaluate(nb));
+bool cmp_move_ordering(Mobility &a, Mobility &b){
+    return a.value > b.value;
 }
 
-inline void move_ordering_eval(board *b){
-    b->v = -mid_evaluate(b);
+inline void move_ordering(Search *search, vector<Mobility> &move_list){
+    if (move_list.size() < 2)
+        return;
+    int now_values[HW2], prev_values[HW2];
+    int now_best_move, prev_best_move;
+    int hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
+    int now_reg = search->child_transpose_table->get_now(&search->board, hash_code, now_values, &now_best_move);
+    int prev_reg = search->child_transpose_table->get_prev(&search->board, hash_code, prev_values, &prev_best_move);
+    int best_move = TRANSPOSE_TABLE_UNDEFINED;
+    if (now_reg)
+        best_move = now_best_move;
+    else if (prev_reg)
+        best_move = prev_best_move;
+    if (now_reg && prev_reg){
+        for (Mobility &mob: move_list)
+            move_evaluate(search, &mob, prev_values[mob.pos], now_values[mob.pos], best_move);
+    } else if (!now_reg && prev_reg){
+        for (Mobility &mob: move_list)
+            move_evaluate(search, &mob, prev_values[mob.pos], TRANSPOSE_TABLE_UNDEFINED, best_move);
+    } else if (now_reg && !prev_reg){
+        for (Mobility &mob: move_list)
+            move_evaluate(search, &mob, TRANSPOSE_TABLE_UNDEFINED, now_values[mob.pos], best_move);
+    } else{
+        for (Mobility &mob: move_list)
+            move_evaluate(search, &mob, TRANSPOSE_TABLE_UNDEFINED, TRANSPOSE_TABLE_UNDEFINED, best_move);
+    }
+    sort(move_list.begin(), move_list.end(), cmp_move_ordering);
 }
 
-inline int stability_cut(board *b, int *alpha, int *beta){
+inline int stability_cut(Search *search, int *alpha, int *beta){
     int stab[2];
-    calc_stability(b, &stab[0], &stab[1]);
-    int n_alpha = 2 * stab[b->p] - hw2;
-    int n_beta = hw2 - 2 * stab[1 - b->p];
+    calc_stability(&search->board, &stab[0], &stab[1]);
+    int n_alpha = 2 * stab[search->board.p] - HW2;
+    int n_beta = HW2 - 2 * stab[1 - search->board.p];
     if (*beta <= n_alpha)
         return n_alpha;
     if (n_beta <= *alpha)
@@ -208,13 +188,5 @@ inline int stability_cut(board *b, int *alpha, int *beta){
         return n_alpha;
     *alpha = max(*alpha, n_alpha);
     *beta = min(*beta, n_beta);
-    return -inf;
-}
-
-bool move_ordering_sort(pair<int, board> &a, pair<int, board> &b){
-    return a.second.v > b.second.v;
-}
-
-bool move_ordering_sort_int_int(pair<int, int> &a, pair<int, int> &b){
-    return a.second > b.second;
+    return SCORE_UNDEFINED;
 }

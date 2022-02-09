@@ -11,12 +11,12 @@
 constexpr int book_hash_mask = book_hash_table_size - 1;
 
 
-struct book_node{
+struct Node_book{
     unsigned long long player;
     unsigned long long opponent;
     int value;
     int line;
-    book_node* p_n_node;
+    Node_book* p_n_node;
 };
 
 struct book_value{
@@ -24,9 +24,9 @@ struct book_value{
     int value;
 };
 
-class book{
+class Book{
     private:
-        book_node *book[book_hash_table_size];
+        Node_book *book[book_hash_table_size];
 		int n_book;
     public:
         bool init(){
@@ -323,7 +323,7 @@ class book{
         }
 
         inline int get(board *b){
-            book_node *p_node = this->book[b->hash_player() & book_hash_mask];
+            Node_book *p_node = this->book[b->hash_player() & book_hash_mask];
             while(p_node != NULL){
                 if(compare_key(b, p_node)){
                     return p_node->value;
@@ -344,7 +344,7 @@ class book{
                 if (1 & (legal >> coord)){
                     calc_flip(&mob, b, coord);
                     nb = b->move_copy(&mob);
-                    book_node *p_node = this->book[nb.hash_player() & book_hash_mask];
+                    Node_book *p_node = this->book[nb.hash_player() & book_hash_mask];
                     while(p_node != NULL){
                         if(compare_key(&nb, p_node)){
                             policies.push_back(coord);
@@ -375,7 +375,7 @@ class book{
         }
 
         inline void change(board b, int value){
-            book_node *p_node = this->book[b.hash_player() & book_hash_mask];
+            Node_book *p_node = this->book[b.hash_player() & book_hash_mask];
             while(p_node != NULL){
                 if(compare_key(&b, p_node)){
                     int result = register_symmetric_book(b, value, p_node->line);
@@ -399,7 +399,7 @@ class book{
             }
             unordered_set<int> saved_idxes;
             for (int i = 0; i < book_hash_table_size; ++i){
-                book_node *p_node = this->book[i];
+                Node_book *p_node = this->book[i];
                 while(p_node != NULL){
 					if (saved_idxes.find(p_node->line) == saved_idxes.end()) {
 						saved_idxes.emplace(p_node->line);
@@ -430,7 +430,7 @@ class book{
             for (i = 0; i < book_hash_table_size; ++i){
                 if (i % 1048576 == 0)
                     cerr << "saving book " << (i * 100 / book_hash_table_size) << "%" << endl;
-                book_node *p_node = this->book[i];
+                Node_book *p_node = this->book[i];
                 while(p_node != NULL){
 					if (saved_idxes.find(p_node->line) == saved_idxes.end()) {
 						saved_idxes.emplace(p_node->line);
@@ -449,15 +449,15 @@ class book{
         
 
     private:
-        inline bool compare_key(const board *a, const book_node *b){
+        inline bool compare_key(const board *a, const Node_book *b){
             if (a->p == black)
                 return a->b == b->player && a->w == b->opponent;
             return a->w == b->player && a->b == b->opponent;
         }
 
-        inline book_node* book_node_init(board b, int value, int line){
-            book_node* p_node = NULL;
-            p_node = (book_node*)malloc(sizeof(book_node));
+        inline Node_book* Node_book_init(board b, int value, int line){
+            Node_book* p_node = NULL;
+            p_node = (Node_book*)malloc(sizeof(Node_book));
             if (b.p == black){
                 p_node->player = b.b;
                 p_node->opponent = b.w;
@@ -473,10 +473,10 @@ class book{
 
         inline bool register_book(board b, int hash, int value, int line){
             if(this->book[hash] == NULL){
-                this->book[hash] = book_node_init(b, value, line);
+                this->book[hash] = Node_book_init(b, value, line);
             } else {
-                book_node *p_node = this->book[hash];
-                book_node *p_pre_node = NULL;
+                Node_book *p_node = this->book[hash];
+                Node_book *p_pre_node = NULL;
                 p_pre_node = p_node;
                 while(p_node != NULL){
                     if(compare_key(&b, p_node)){
@@ -486,7 +486,7 @@ class book{
                     p_pre_node = p_node;
                     p_node = p_node->p_n_node;
                 }
-                p_pre_node->p_n_node = book_node_init(b, value, line);
+                p_pre_node->p_n_node = Node_book_init(b, value, line);
             }
 			return true;
         }
@@ -517,7 +517,7 @@ class book{
             return res;
         }
 
-        inline string create_book_data(book_node *node, int p, int value){
+        inline string create_book_data(Node_book *node, int p, int value){
             board b;
             for (int i = 0; i < hw; ++i)
                 b.b[i] = key[i];
@@ -526,7 +526,7 @@ class book{
         }
         */
 
-        inline void create_arr(book_node *node, int arr[], int p){
+        inline void create_arr(Node_book *node, int arr[], int p){
             board b;
             b.p = p;
             if (p == black){
@@ -568,7 +568,7 @@ class book{
 		*/
 };
 
-book book;
+Book book;
 
 bool book_init(){
     return book.init();

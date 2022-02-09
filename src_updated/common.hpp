@@ -5,22 +5,21 @@
 
 using namespace std;
 
-#define inf 100000000
-#define n_phases 15
-#define phase_n_stones 4
+#define INF 100000000
+#define N_PHASES 15
+#define PHASE_N_STONES 4
 
-#define n_line 6561
-#define hw 8
-#define hw_m1 7
-#define hw_p1 9
-#define hw2 64
-#define hw22 128
-#define hw2_m1 63
-#define hw2_mhw 56
-#define hw2_p1 65
-#define black 0
-#define white 1
-#define vacant 2
+#define HW 8
+#define HW_M1 7
+#define HW_P1 9
+#define HW2 64
+#define HW22 128
+#define HW2_M1 63
+#define HW2_MHW 56
+#define HW2_P1 65
+#define BLACK 0
+#define WHITE 1
+#define VACANT 2
 
 inline long long tim(){
     return chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now().time_since_epoch()).count();
@@ -108,9 +107,9 @@ inline unsigned long long mirror_v(unsigned long long x){
 inline unsigned long long white_line(unsigned long long x){
     unsigned long long res = 0;
     int i, j;
-    for (i = 0; i < hw; ++i){
-        for (j = 0; j < hw; ++j){
-            res |= (1 & (x >> (i * hw + j))) << (j * hw + i);
+    for (i = 0; i < HW; ++i){
+        for (j = 0; j < HW; ++j){
+            res |= (1 & (x >> (i * HW + j))) << (j * HW + i);
         }
     }
     return res;
@@ -119,9 +118,9 @@ inline unsigned long long white_line(unsigned long long x){
 inline unsigned long long black_line(unsigned long long x){
     unsigned long long res = 0;
     int i, j;
-    for (i = 0; i < hw; ++i){
-        for (j = 0; j < hw; ++j){
-            res |= (1 & (x >> (i * hw + j))) << ((hw_m1 - j) * hw + hw_m1 - i);
+    for (i = 0; i < HW; ++i){
+        for (j = 0; j < HW; ++j){
+            res |= (1 & (x >> (i * HW + j))) << ((HW_M1 - j) * HW + HW_M1 - i);
         }
     }
     return res;
