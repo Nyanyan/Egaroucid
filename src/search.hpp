@@ -16,7 +16,7 @@ using namespace std;
 #define search_epsilon 1
 #define cache_hit 10000
 #define cache_now 10000
-#define cache_both 1000
+#define cache_both 2000
 #define cache_high 10000
 #define parity_vacant_bonus 5
 #define canput_bonus 10
@@ -146,14 +146,14 @@ inline int move_ordering(board *b, board *nb, const int hash, const int policy, 
             if (l == -inf && u == inf){
                 v = 0;
             } else if (l != -inf && u != inf){
-                v = -(l + u) / 2 * w_former_search + cache_hit + cache_both;
+                v = -(l + u) * w_former_search / 2 + cache_hit + cache_both;
             } else if (u != inf){
                 v = -u * w_former_search + cache_hit + cache_high;
             } else if (l != -inf){
                 v = -l * w_former_search + cache_hit;
             }
         } else if (l != -inf && u != inf){
-            v = -(l + u) / 2 * w_former_search + cache_hit + cache_both + cache_now;
+            v = -(l + u) * w_former_search / 2 + cache_hit + cache_both + cache_now;
         } else if (u != inf){
             v = -u * w_former_search + cache_hit + cache_high + cache_now;
         } else if (l != -inf){
