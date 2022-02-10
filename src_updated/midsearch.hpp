@@ -448,8 +448,8 @@ inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mp
                 pre_search_mpcts.emplace_back(1.0);
             if (search.mpct > 2.0 || !search.use_mpc)
                 pre_search_mpcts.emplace_back(1.5);
-            if (!search.use_mpc)
-                pre_search_mpcts.emplace_back(2.0);
+            //if (!search.use_mpc)
+            //    pre_search_mpcts.emplace_back(2.0);
             search.use_mpc = true;
             for (double pre_search_mpct: pre_search_mpcts){
                 alpha = -HW2;

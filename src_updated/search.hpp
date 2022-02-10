@@ -19,7 +19,7 @@ using namespace std;
 #define W_STABILITY 10
 #define W_EVALUATE 5
 #define W_MOBILITY 5
-#define W_PARITY 4
+#define W_PARITY 2
 #define W_END_MOBILITY 10
 #define W_END_STABILITY 10
 #define W_END_PARITY 5
