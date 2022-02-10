@@ -43,7 +43,7 @@ int main(){
         cin >> ai_player;
         vector<int> vacant_lst = input_board(&b, ai_player);
         b.print();
-        Search_result res = midsearch(b, 10, false, 1.0, vacant_lst);
+        Search_result res = midsearch(b, 21, true, 0.65, vacant_lst);
         cerr << res.policy << " " << res.value << endl;
     }
     return 0;
