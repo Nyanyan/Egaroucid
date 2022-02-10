@@ -408,14 +408,14 @@ int nega_alpha_end(Search *search, int alpha, int beta){
         if (END_MPC_MIN_DEPTH <= depth && depth <= END_MPC_MAX_DEPTH && search->use_mpc){
             int val = mid_evaluate(&search->board);
             if (mpc_end_higher(search, beta, depth, val)){
-                #if USE_END_TC
+                #if USE_END_TC && false
                     if (l < beta)
                         parent_transpose_table.reg(&search->board, hash_code, beta, u);
                 #endif
                 return beta;
             }
             if (mpc_end_lower(search, alpha, depth, val)){
-                #if USE_END_TC
+                #if USE_END_TC && false
                     if (alpha < u)
                         parent_transpose_table.reg(&search->board, hash_code, l, alpha);
                 #endif
@@ -434,7 +434,6 @@ int nega_alpha_end(Search *search, int alpha, int beta){
         return v;
     }
     search->skipped = false;
-    const int canput = pop_count_ull(legal);
     vector<Mobility> move_list;
     for (const int &cell: search->vacant_list){
         if (1 & (legal >> cell))
@@ -491,14 +490,14 @@ int nega_scout_end(Search *search, int alpha, int beta){
         if (END_MPC_MIN_DEPTH <= depth && depth <= END_MPC_MAX_DEPTH && search->use_mpc){
             int val = mid_evaluate(&search->board);
             if (mpc_end_higher(search, beta, depth, val)){
-                #if USE_END_TC
+                #if USE_END_TC && false
                     if (l < beta)
                         parent_transpose_table.reg(&search->board, hash_code, beta, u);
                 #endif
                 return beta;
             }
             if (mpc_end_lower(search, alpha, depth, val)){
-                #if USE_END_TC
+                #if USE_END_TC && false
                     if (alpha < u)
                         parent_transpose_table.reg(&search->board, hash_code, l, alpha);
                 #endif
@@ -517,7 +516,6 @@ int nega_scout_end(Search *search, int alpha, int beta){
         return v;
     }
     search->skipped = false;
-    const int canput = pop_count_ull(legal);
     vector<Mobility> move_list;
     for (const int &cell: search->vacant_list){
         if (1 & (legal >> cell))

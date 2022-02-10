@@ -74,8 +74,7 @@ class Child_transpose_table{
         }
 
         inline void ready_next_search(){
-            now = 1 - now;
-            prev = 1 - prev;
+            swap(now, prev);
             init_now();
         }
 
@@ -115,6 +114,9 @@ class Child_transpose_table{
                     return true;
                 }
             }
+            best_moves[0] = TRANSPOSE_TABLE_UNDEFINED;
+            best_moves[1] = TRANSPOSE_TABLE_UNDEFINED;
+            best_moves[2] = TRANSPOSE_TABLE_UNDEFINED;
             return false;
         }
 
@@ -125,6 +127,9 @@ class Child_transpose_table{
                     return true;
                 }
             }
+            best_moves[0] = TRANSPOSE_TABLE_UNDEFINED;
+            best_moves[1] = TRANSPOSE_TABLE_UNDEFINED;
+            best_moves[2] = TRANSPOSE_TABLE_UNDEFINED;
             return false;
         }
 

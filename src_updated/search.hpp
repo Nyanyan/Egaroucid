@@ -169,8 +169,8 @@ inline void move_evaluate_fast_first(Search *search, Mobility *mob,  const int b
     else if (mob->pos == best_moves[2])
         mob->value = W_BEST3_MOVE;
     else{
-    if (search->board.parity & cell_div4[mob->pos])
-        mob->value += W_END_PARITY;
+        if (search->board.parity & cell_div4[mob->pos])
+            mob->value += W_END_PARITY;
         search->board.move(mob);
             /*
             int stab0, stab1;
