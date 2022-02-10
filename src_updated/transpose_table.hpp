@@ -198,7 +198,7 @@ class Parent_transpose_table{
             }
         }
 
-        inline void get_now(Board *board, const int hash, int *l, int *u){
+        inline void get(Board *board, const int hash, int *l, int *u){
             if (table[hash].reg){
                 if (compare_key(board, &table[hash])){
 					table[hash].get(l, u);

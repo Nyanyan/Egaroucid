@@ -137,6 +137,7 @@ inline int last3(Search *search, int alpha, int beta, int p0, int p1, int p2){
         }
         return v;
     }
+    search->skipped = false;
     Mobility mob;
     if (1 & (legal >> p0)){
         calc_flip(&mob, &search->board, p0);
@@ -241,6 +242,7 @@ inline int last4(Search *search, int alpha, int beta, int p0, int p1, int p2, in
         }
         return v;
     }
+    search->skipped = false;
     Mobility mob;
     if (1 & (legal >> p0)){
         calc_flip(&mob, &search->board, p0);
@@ -319,6 +321,7 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta){
         search->undo_pass();
         return v;
     }
+    search->skipped = false;
     Mobility mob;
     #if USE_END_PO
         if (0 < search->board.parity && search->board.parity < 15){
@@ -432,6 +435,7 @@ int nega_alpha_end(Search *search, int alpha, int beta){
         search->undo_pass();
         return v;
     }
+    search->skipped = false;
     const int canput = pop_count_ull(legal);
     vector<Mobility> move_list;
     for (const int &cell: search->vacant_list){

@@ -8,7 +8,7 @@
 #include "evaluate.hpp"
 #include "search.hpp"
 #include "transpose_table.hpp"
-//#include "endsearch.hpp"
+#include "endsearch.hpp"
 #if USE_MULTI_THREAD
     #include "thread_pool.hpp"
     #include "ybwc.hpp"
@@ -105,6 +105,7 @@ int nega_alpha(Search *search, int alpha, int beta, int depth){
         alpha = max(alpha, v);
         return v;
     }
+    search->skipped = false;
     Mobility mob;
     for (const int &cell: search->vacant_list){
         if (1 & (legal >> cell)){
@@ -175,6 +176,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth){
         search->undo_pass();
         return v;
     }
+    search->skipped = false;
     const int canput = pop_count_ull(legal);
     vector<Mobility> move_list;
     for (const int &cell: search->vacant_list){
@@ -232,8 +234,8 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth){
 int nega_scout(Search *search, int alpha, int beta, int depth){
     if (!global_searching)
         return -INF;
-    //if (depth >= HW2 - search->board.n && depth <= MID_TO_END_DEPTH)
-    //    return nega_alpha_end(search, alpha, beta);
+    if (depth >= HW2 - search->board.n && depth <= MID_TO_END_DEPTH)
+        return nega_alpha_end(search, alpha, beta);
     if (depth <= MID_FAST_DEPTH)
         return nega_alpha(search, alpha, beta, depth);
     ++(search->n_nodes);
@@ -283,6 +285,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth){
         search->undo_pass();
         return v;
     }
+    search->skipped = false;
     const int canput = pop_count_ull(legal);
     vector<Mobility> move_list;
     for (const int &cell: search->vacant_list){

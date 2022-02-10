@@ -95,23 +95,25 @@ struct Search_result{
     int nps;
 };
 
-struct Search{
-    Board board;
-    bool skipped;
-    bool use_mpc;
-    double mpct;
-    vector<int> vacant_list;
-    unsigned long long n_nodes;
+class Search{
+    public:
+        Board board;
+        bool skipped;
+        bool use_mpc;
+        double mpct;
+        vector<int> vacant_list;
+        unsigned long long n_nodes;
 
-    inline void pass(){
-        board.p = 1 - board.p;
-        skipped = true;
-    }
+    public:
+        inline void pass(){
+            board.p = 1 - board.p;
+            skipped = true;
+        }
 
-    inline void undo_pass(){
-        board.p = 1 - board.p;
-        skipped = false;
-    }
+        inline void undo_pass(){
+            board.p = 1 - board.p;
+            skipped = false;
+        }
 };
 
 int cmp_vacant(int p, int q){
