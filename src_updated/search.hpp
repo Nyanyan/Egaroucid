@@ -19,8 +19,9 @@ using namespace std;
 #define W_CELL_WEIGHT 1
 //#define W_STABILITY 10
 #define W_EVALUATE 40
-#define W_MOBILITY 20
-#define W_PARITY 2
+#define W_MOBILITY 40
+#define W_PARITY 8
+//#define W_END_CELL_WEIGHT 1
 #define W_END_MOBILITY 20
 //#define W_END_STABILITY 10
 #define W_END_PARITY 10
@@ -33,7 +34,7 @@ using namespace std;
 
 #define MID_FAST_DEPTH 3
 #define END_FAST_DEPTH 7
-#define MID_TO_END_DEPTH 18
+#define MID_TO_END_DEPTH 15
 
 #define SCORE_UNDEFINED -INF
 
@@ -169,6 +170,7 @@ inline void move_evaluate_fast_first(Search *search, Mobility *mob,  const int b
     else if (mob->pos == best_moves[2])
         mob->value = W_BEST3_MOVE;
     else{
+        //mob->value += cell_weight[mob->pos] * W_END_CELL_WEIGHT;
         if (search->board.parity & cell_div4[mob->pos])
             mob->value += W_END_PARITY;
         search->board.move(mob);
