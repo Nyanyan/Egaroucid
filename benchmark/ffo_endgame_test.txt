@@ -1487,3 +1487,9 @@ normal flip
 2022/02/11 src_updated
 negascout-negascout
 #40 endsearch time 2268 mpct 0 policy 55 value 38 nodes 32166836 nps 14176657
+with best move
+endsearch time 2418 mpct 0 policy 55 value 38 nodes 36932859 nps 15261511
+not use stability in both mid & end search
+endsearch time 2424 mpct 0 policy 55 value 38 nodes 36290377 nps 14965103
+mid_to_end=18
+endsearch time 2090 mpct 0 policy 55 value 38 nodes 32280175 nps 15437673

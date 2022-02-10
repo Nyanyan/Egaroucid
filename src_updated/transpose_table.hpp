@@ -37,26 +37,17 @@ class Node_child_transpose_table{
             p = board->p;
             if (best_value < value){
                 best_value = value;
-                int tmp = best_moves[1];
-                best_moves[2] = tmp;
-                tmp = best_moves[0];
-                best_moves[1] = tmp;
+                best_moves[2] = best_moves[1].load();
+                best_moves[1] = best_moves[0].load();
                 best_moves[0] = policy;
-            } else{
-                if (best_moves[1] == TRANSPOSE_TABLE_UNDEFINED)
-                    best_moves[1] = policy;
-                else if (best_moves[2] == TRANSPOSE_TABLE_UNDEFINED)
-                    best_moves[2] = policy;
             }
         }
 
         inline void register_value(const int policy, const int value){
             if (best_value < value){
                 best_value = value;
-                int tmp = best_moves[1];
-                best_moves[2] = tmp;
-                tmp = best_moves[0];
-                best_moves[1] = tmp;
+                best_moves[2] = best_moves[1].load();
+                best_moves[1] = best_moves[0].load();
                 best_moves[0] = policy;
             }
         }

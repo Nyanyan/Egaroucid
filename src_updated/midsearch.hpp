@@ -371,17 +371,11 @@ int mtd(Search *search, int l, int u, int g, int depth, bool is_end_search){
     return g;
 }
 
-int mtd_end(Search *search, int l, int u, int depth, bool is_end_search){
-    int g, beta, ll, uu;
+int mtd_end(Search *search, int l, int u, int g, int depth, bool is_end_search){
+    int beta;
     l /= 2;
     u /= 2;
-    parent_transpose_table.get(&search->board, search->board.hash() & TRANSPOSE_TABLE_MASK, &ll, &uu);
-    if (ll != -INF)
-        g = ll / 2;
-    else if (uu != INF)
-        g = uu / 2;
-    else
-        g = nega_alpha(search, l, u, 5) / 2;
+    g = max(l, min(u, g / 2));
     while (u > l){
         beta = max(l + 1, g);
         g = nega_alpha_ordering(search, beta * 2 - 2, beta * 2, depth, is_end_search) / 2;
@@ -403,6 +397,7 @@ inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mp
     search.mpct = mpct;
     search.vacant_list = vacant_lst;
     search.n_nodes = 0;
+    unsigned long long f_n_nodes = 0;
     unsigned long long legal = b.mobility_ull();
     const int canput = pop_count_ull(legal);
     vector<Mobility> move_list;
@@ -452,6 +447,7 @@ inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mp
             //    pre_search_mpcts.emplace_back(2.0);
             search.use_mpc = true;
             for (double pre_search_mpct: pre_search_mpcts){
+                f_n_nodes = search.n_nodes;
                 alpha = -HW2;
                 beta = HW2;
                 search.mpct = pre_search_mpct;
@@ -470,7 +466,7 @@ inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mp
                         res.policy = mob.pos;
                     }
                 }
-                cerr << "endsearch time " << tim() - strt << " mpct " << search.mpct << " policy " << res.policy << " value " << alpha << " nodes " << search.n_nodes << " nps " << search.n_nodes * 1000 / max(1LL, tim() - strt) << endl;
+                cerr << "endsearch time " << tim() - strt << " mpct " << search.mpct << " policy " << res.policy << " value " << alpha << " nodes " << search.n_nodes - f_n_nodes << " nps " << search.n_nodes * 1000 / max(1LL, tim() - strt) << endl;
             }
             alpha = -HW2;
             beta = HW2;
@@ -481,7 +477,9 @@ inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mp
             move_ordering_value(move_list);
             bool first_search = true;
             for (Mobility &mob: move_list){
+                f_n_nodes = search.n_nodes;
                 search.board.move(&mob);
+                    /*
                     if (first_search)
                         g = -nega_scout(&search, -beta, -alpha, depth - 1, true);
                     else{
@@ -489,9 +487,10 @@ inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mp
                         if (alpha < g)
                             g = -nega_scout(&search, -beta, -g, depth - 1, true);
                     }
-                    //g = -mtd(&search, -beta, -alpha, -mob.value, depth - 1, true);
+                    */
+                    g = -mtd_end(&search, -beta, -alpha, -mob.value, depth - 1, true);
                 search.board.undo(&mob);
-                cerr << "policy " << mob.pos << " value " << g << " expected " << mob.value << " time " << tim() - strt << " nodes " << search.n_nodes << " nps " << search.n_nodes * 1000 / max(1LL, tim() - strt) << endl;
+                cerr << "policy " << mob.pos << " value " << g << " expected " << mob.value << " time " << tim() - strt << " nodes " << search.n_nodes - f_n_nodes << " nps " << search.n_nodes * 1000 / max(1LL, tim() - strt) << endl;
                 mob.value = g;
                 if (alpha < g){
                     child_transpose_table.reg(&search.board, hash_code, mob.pos, g);

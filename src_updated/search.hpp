@@ -16,8 +16,8 @@ using namespace std;
 #define W_BEST1_MOVE 900000000
 #define W_BEST2_MOVE 800000000
 #define W_BEST3_MOVE 700000000
-#define W_CELL_WEIGHT 2
-#define W_STABILITY 10
+#define W_CELL_WEIGHT 1
+//#define W_STABILITY 10
 #define W_EVALUATE 40
 #define W_MOBILITY 20
 #define W_PARITY 2
@@ -33,7 +33,7 @@ using namespace std;
 
 #define MID_FAST_DEPTH 3
 #define END_FAST_DEPTH 7
-#define MID_TO_END_DEPTH 11
+#define MID_TO_END_DEPTH 18
 
 #define SCORE_UNDEFINED -INF
 
@@ -135,12 +135,14 @@ inline void move_evaluate(Search *search, Mobility *mob,  const int best_moves[]
             mob->value += W_PARITY;
         search->board.move(mob);
             mob->value += -mid_evaluate(&search->board) * W_EVALUATE;
+            /*
             int stab0, stab1;
             calc_stability_fast(&search->board, &stab0, &stab1);
             if (search->board.p == BLACK)
                 mob->value += stab1 * W_STABILITY;
             else
                 mob->value += stab0 * W_STABILITY;
+            */
             mob->value -= pop_count_ull(search->board.mobility_ull()) * W_MOBILITY;
         search->board.undo(mob);
     }
