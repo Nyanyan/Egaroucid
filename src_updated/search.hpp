@@ -16,15 +16,12 @@ using namespace std;
 #define W_BEST1_MOVE 1000000000
 #define W_BEST2_MOVE 100000000
 #define W_BEST3_MOVE 10000000
-#define W_CACHE_HIT 10000
-#define W_CACHE_NOW 10000
-#define W_FORMER_SEARCH 30
-#define W_NOW_SEARCH 30
-#define W_STABILITY 5
-#define W_EVALUATE 10
-#define W_MOBILITY 60
+#define W_STABILITY 10
+#define W_EVALUATE 5
+#define W_MOBILITY 5
 #define W_PARITY 4
 #define W_END_MOBILITY 10
+#define W_END_STABILITY 10
 #define W_END_PARITY 5
 
 #define MID_MPC_MIN_DEPTH 2
@@ -34,8 +31,8 @@ using namespace std;
 #define N_END_MPC_SCORE_DIV 22
 
 #define MID_FAST_DEPTH 3
-#define END_FAST_DEPTH 7
-#define MID_TO_END_DEPTH 11
+#define END_FAST_DEPTH 6
+#define MID_TO_END_DEPTH 15
 
 #define SCORE_UNDEFINED -INF
 
@@ -140,9 +137,9 @@ inline void move_evaluate(Search *search, Mobility *mob,  const int best_moves[]
             int stab0, stab1;
             calc_stability_fast(&search->board, &stab0, &stab1);
             if (search->board.p == BLACK)
-                mob->value += stab0 * W_STABILITY;
-            else
                 mob->value += stab1 * W_STABILITY;
+            else
+                mob->value += stab0 * W_STABILITY;
             mob->value -= pop_count_ull(search->board.mobility_ull()) * W_MOBILITY;
         search->board.undo(mob);
     }
@@ -172,6 +169,14 @@ inline void move_evaluate_fast_first(Search *search, Mobility *mob,  const int b
         if (search->board.parity & cell_div4[mob->pos])
             mob->value += W_END_PARITY;
         search->board.move(mob);
+            /*
+            int stab0, stab1;
+            calc_stability_fast(&search->board, &stab0, &stab1);
+            if (search->board.p == BLACK)
+                mob->value += stab1 * W_END_STABILITY;
+            else
+                mob->value += stab0 * W_END_STABILITY;
+            */
             mob->value -= pop_count_ull(search->board.mobility_ull()) * W_END_MOBILITY;
         search->board.undo(mob);
     }
@@ -186,6 +191,12 @@ inline void move_ordering_fast_first(Search *search, vector<Mobility> &move_list
         child_transpose_table.get_prev(&search->board, hash_code, best_moves);
     for (Mobility &mob: move_list)
         move_evaluate_fast_first(search, &mob, best_moves);
+    sort(move_list.begin(), move_list.end(), cmp_move_ordering);
+}
+
+inline void move_ordering_value(vector<Mobility> &move_list){
+    if (move_list.size() < 2)
+        return;
     sort(move_list.begin(), move_list.end(), cmp_move_ordering);
 }
 
