@@ -31,10 +31,8 @@ int main(){
     cerr << "start!" << endl;
     mobility_init();
     evaluate_init();
-    Parent_transpose_table *parent_transpose_table = (Parent_transpose_table*)malloc(sizeof(Parent_transpose_table));
-    Child_transpose_table *child_transpose_table = (Child_transpose_table*)malloc(sizeof(Child_transpose_table));
-    parent_transpose_table->init();
-    child_transpose_table->init();
+    parent_transpose_table.init();
+    child_transpose_table.init();
     cerr << "initialized" << endl;
     #if USE_MULTI_THREAD
         thread_pool.resize(8);
@@ -45,7 +43,7 @@ int main(){
         cin >> ai_player;
         vector<int> vacant_lst = input_board(&b, ai_player);
         b.print();
-        Search_result res = midsearch(b, 10, false, 1.0, vacant_lst, parent_transpose_table, child_transpose_table);
+        Search_result res = midsearch(b, 10, false, 1.0, vacant_lst);
         cerr << res.policy << " " << res.value << endl;
     }
     return 0;

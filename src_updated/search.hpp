@@ -94,8 +94,6 @@ struct Search_result{
 
 struct Search{
     Board board;
-    Parent_transpose_table *parent_transpose_table;
-    Child_transpose_table *child_transpose_table;
     bool skipped;
     bool use_mpc;
     double mpct;
@@ -151,8 +149,8 @@ inline void move_ordering(Search *search, vector<Mobility> &move_list){
         return;
     int best_moves[N_BEST_MOVES];
     int hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
-    if (!search->child_transpose_table->get_now(&search->board, hash_code, best_moves))
-        search->child_transpose_table->get_prev(&search->board, hash_code, best_moves);
+    if (!child_transpose_table.get_now(&search->board, hash_code, best_moves))
+        child_transpose_table.get_prev(&search->board, hash_code, best_moves);
     for (Mobility &mob: move_list)
         move_evaluate(search, &mob, best_moves);
     sort(move_list.begin(), move_list.end(), cmp_move_ordering);

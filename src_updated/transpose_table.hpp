@@ -254,3 +254,6 @@ class Parent_transpose_table{
             return a->p == b->p && a->b == b->b && a->w == b->w;
         }
 };
+
+Parent_transpose_table parent_transpose_table;
+Child_transpose_table child_transpose_table;
