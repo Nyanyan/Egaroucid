@@ -1,8 +1,8 @@
 #pragma once
+#include <atomic>
 #include "setting.hpp"
 #include "common.hpp"
 #include "board.hpp"
-#include <atomic>
 
 #define TRANSPOSE_TABLE_SIZE 1048576
 #define TRANSPOSE_TABLE_MASK 1048575
@@ -78,7 +78,8 @@ class Child_transpose_table{
         }
 
         inline void ready_next_search(){
-            swap(now, prev);
+            now = 1 - now;
+            prev = 1 - prev;
             init_now();
         }
 
@@ -92,13 +93,23 @@ class Child_transpose_table{
                 table[now][i].init();
         }
 
+        inline int now_idx(){
+            return now;
+        }
+
+        inline int prev_idx(){
+            return prev;
+        }
+
         inline void reg(const Board *board, const int hash, const int policy, const int value){
-            if (!table[now][hash].reg)
-                table[now][hash].register_value(board, policy, value);
-            else if (!compare_key(board, &table[now][hash]))
-                table[now][hash].register_value(board, policy, value);
-            else
-                table[now][hash].register_value(policy, value);
+            if (global_searching){
+                if (!table[now][hash].reg)
+                    table[now][hash].register_value(board, policy, value);
+                else if (!compare_key(board, &table[now][hash]))
+                    table[now][hash].register_value(board, policy, value);
+                else
+                    table[now][hash].register_value(policy, value);
+            }
         }
 
         inline bool get_now(Board *board, const int hash, int best_moves[]){
@@ -171,6 +182,7 @@ class Parent_transpose_table{
         int prev;
         int now;
         Node_parent_transpose_table table[2][TRANSPOSE_TABLE_SIZE];
+        
 
     public:
         inline void init(){
@@ -181,7 +193,8 @@ class Parent_transpose_table{
         }
 
         inline void ready_next_search(){
-            swap(now, prev);
+            now = 1 - now;
+            prev = 1 - prev;
             init_now();
         }
 
@@ -195,13 +208,23 @@ class Parent_transpose_table{
                 table[now][i].init();
         }
 
+        inline int now_idx(){
+            return now;
+        }
+
+        inline int prev_idx(){
+            return prev;
+        }
+
         inline void reg(const Board *board, const int hash, const int l, const int u){
-            if (!table[now][hash].reg)
-                table[now][hash].register_value(board, l, u);
-            else if (!compare_key(board, &table[now][hash]))
-                table[now][hash].register_value(board, l, u);
-            else
-                table[now][hash].register_value(l, u);
+            if (global_searching){
+                if (!table[now][hash].reg)
+                    table[now][hash].register_value(board, l, u);
+                else if (!compare_key(board, &table[now][hash]))
+                    table[now][hash].register_value(board, l, u);
+                else
+                    table[now][hash].register_value(l, u);
+            }
         }
 
         inline void get_now(Board *board, const int hash, int *l, int *u){

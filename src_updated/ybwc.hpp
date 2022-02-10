@@ -32,8 +32,7 @@ inline bool ybwc_split(Search *search, int alpha, int beta, const int depth, int
             copy_search.skipped = search->skipped;
             copy_search.use_mpc = search->use_mpc;
             copy_search.mpct = search->mpct;
-            for (const int &elem: search->vacant_list)
-                copy_search.vacant_list.emplace_back(elem);
+            copy_search.vacant_list = search->vacant_list;
             copy_search.n_nodes = 0;
             thread_pool.push(ybwc_do_task, search, &copy_search, alpha, beta, depth, policy, state, value);
             return true;

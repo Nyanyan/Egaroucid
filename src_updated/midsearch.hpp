@@ -356,8 +356,10 @@ inline Search_result midsearch(Board b, int max_depth, bool use_mpc, double mpct
     for (int depth = min(16, max(0, max_depth - 5)); depth <= max_depth - 1; ++depth){
         alpha = -HW2;
         beta = HW2;
+        cerr << parent_transpose_table->now_idx() << " ";
         search.parent_transpose_table->ready_next_search();
         search.child_transpose_table->ready_next_search();
+        cerr << parent_transpose_table->now_idx() << endl;
         for (const Mobility &mob: move_list){
             search.board.move(&mob);
                 g = -mtd(&search, -beta, -alpha, depth);
