@@ -1499,3 +1499,15 @@ endsearch time 1782 mpct 0 policy 55 value 38 nodes 25818410 nps 14480319
 endsearch time 1788 mpct 0 policy 55 value 38 nodes 25616538 nps 14326922
 param, adjustment
 endsearch time 1775 mpct 0 policy 55 value 38 nodes 25120083 nps 14144190
+
+2022/02/11 NODES ARE ALL NODES PRESEARCH INCLUDED
+#40 endsearch time 1023 mpct 0 policy 55 value 38 nodes 26334031 nps 25716827
+#41 endsearch time 1536 mpct 0 policy 32 value 0 nodes 40240302 nps 26181068
+#42 endsearch time 2134 mpct 0 policy 49 value 6 nodes 69419412 nps 32514947
+#43 endsearch time 3891 mpct 0 policy 13 value -12 nodes 143213346 nps 36796851
+#44 endsearch time 1565 mpct 0 policy 52 value -14 nodes 34100256 nps 21775386
+#45 endsearch time 29801 mpct 0 policy 54 value 6 nodes 1171030303 nps 39293681
+#46 endsearch time 5246 mpct 0 policy 46 value -8 nodes 192047026 nps 36608277
+#47 endsearch time 3213 mpct 0 policy 49 value 4 nodes 123869258 nps 38540528
+#48 endsearch time 21693 mpct 0 policy 18 value 28 nodes 867131386 nps 39972866
+#49 endsearch time 19611 mpct 0 policy 59 value 16 nodes 1043845691 nps 53227560

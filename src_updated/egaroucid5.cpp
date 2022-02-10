@@ -45,7 +45,7 @@ int main(){
         cin >> ai_player;
         vector<int> vacant_lst = input_board(&b, ai_player);
         b.print();
-        Search_result res = tree_search(b, 30, false, 0.0, vacant_lst);
+        Search_result res = tree_search(b, 60, false, 0.0, vacant_lst);
         cerr << res.policy << " " << res.value << endl;
     }
     return 0;
