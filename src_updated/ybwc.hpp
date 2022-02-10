@@ -13,7 +13,7 @@
 
 int nega_alpha_ordering(Search *search, int alpha, int beta, int depth);
 
-inline pair<int, unsigned long long> ybwc_do_task(Search search, int alpha, int beta, int depth, int policy){
+inline pair<int, unsigned long long> ybwc_do_task(int id, Search search, int alpha, int beta, int depth, int policy){
     int hash_code = search.board.hash() & TRANSPOSE_TABLE_MASK;
     int g = -nega_alpha_ordering(&search, alpha, beta, depth);
     child_transpose_table.reg(&search.board, hash_code, policy, g);
@@ -28,10 +28,9 @@ inline bool ybwc_split(Search *search, int alpha, int beta, const int depth, int
             copy_search.skipped = search->skipped;
             copy_search.use_mpc = search->use_mpc;
             copy_search.mpct = search->mpct;
-            for (const int elem: search->vacant_list)
-                copy_search.vacant_list.emplace_back(elem);
+            copy_search.vacant_list = search->vacant_list;
             copy_search.n_nodes = 0;
-            parallel_tasks.emplace_back(thread_pool.push(bind(&ybwc_do_task, copy_search, alpha, beta, depth, policy)));
+            parallel_tasks.emplace_back(thread_pool.push(ybwc_do_task, copy_search, alpha, beta, depth, policy));
             return true;
         }
     }
