@@ -171,14 +171,6 @@ inline void move_evaluate_fast_first(Search *search, Mobility *mob,  const int b
         if (search->board.parity & cell_div4[mob->pos])
             mob->value += W_END_PARITY;
         search->board.move(mob);
-            /*
-            int stab0, stab1;
-            calc_stability_fast(&search->board, &stab0, &stab1);
-            if (search->board.p == BLACK)
-                mob->value += stab0 * W_STABILITY;
-            else
-                mob->value += stab1 * W_STABILITY;
-            */
             mob->value -= pop_count_ull(search->board.mobility_ull()) * W_END_MOBILITY;
         search->board.undo(mob);
     }

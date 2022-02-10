@@ -162,14 +162,14 @@ class Board {
                 ((b >> 56) * P196);
         }
 
-        inline void WHITE_mirror(){
+        inline void white_mirror(){
             b = white_line(b);
             w = white_line(w);
             if (policy != -1)
                 policy = (policy % HW) * HW + (policy / HW);
         }
 
-        inline void BLACK_mirror(){
+        inline void black_mirror(){
             b = black_line(b);
             w = black_line(w);
             if (policy != -1)
@@ -316,12 +316,12 @@ class Board {
 
         inline int score(int player){
             int b_score = pop_count_ull(b), w_score = pop_count_ull(w);
-            int BLACK_score = b_score - w_score, VACANT_score = HW2 - b_score - w_score;
-            if (BLACK_score > 0)
-                BLACK_score += VACANT_score;
-            else if (BLACK_score < 0)
-                BLACK_score -= VACANT_score;
-            return (player ? -1 : 1) * BLACK_score;
+            int black_score = b_score - w_score, vacant_score = HW2 - b_score - w_score;
+            if (black_score > 0)
+                black_score += vacant_score;
+            else if (black_score < 0)
+                black_score -= vacant_score;
+            return (player ? -1 : 1) * black_score;
         }
 
         inline int score(){

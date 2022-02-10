@@ -6,7 +6,9 @@
 #include "board.hpp"
 #include "evaluate.hpp"
 #include "midsearch.hpp"
-#include "thread_pool.hpp"
+#if USE_MULTI_THREAD
+    #include "thread_pool.hpp"
+#endif
 
 inline vector<int> input_board(Board *b, int ai_player){
     int i;
@@ -43,7 +45,7 @@ int main(){
         cin >> ai_player;
         vector<int> vacant_lst = input_board(&b, ai_player);
         b.print();
-        Search_result res = tree_search(b, 20, false, 0.0, vacant_lst);
+        Search_result res = tree_search(b, 30, false, 0.0, vacant_lst);
         cerr << res.policy << " " << res.value << endl;
     }
     return 0;

@@ -306,7 +306,7 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta){
     ++search->n_nodes;
     #if USE_END_SC
         int stab_res = stability_cut(search, &alpha, &beta);
-        if (stab_res != -INF)
+        if (stab_res != SCORE_UNDEFINED)
             return stab_res;
     #endif
     unsigned long long legal = search->board.mobility_ull();
@@ -380,17 +380,19 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta){
 int nega_alpha_end(Search *search, int alpha, int beta){
     if (!global_searching)
         return SCORE_UNDEFINED;
-    if (search->board.n >= END_FAST_DEPTH1)
-        return nega_alpha_end_fast(search, alpha, beta);
+    //if (search->board.n >= END_FAST_DEPTH1)
+    //    return nega_alpha_end_fast(search, alpha, beta);
+    if (search->board.n == HW2)
+        return end_evaluate(&search->board);
     ++search->n_nodes;
     #if USE_END_SC && false
-        int stab_res = stability_cut(b, &alpha, &beta);
-        if (stab_res != -INF)
+        int stab_res = stability_cut(search, &alpha, &beta);
+        if (stab_res != SCORE_UNDEFINED)
             return stab_res;
     #endif
     #if USE_END_TC
         int l, u, hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
-        parent_transpose_table.get_now(&search->board, hash_code, &l, &u);
+        parent_transpose_table.get(&search->board, hash_code, &l, &u);
         if (u == l)
             return u;
         if (l >= beta)
@@ -401,7 +403,7 @@ int nega_alpha_end(Search *search, int alpha, int beta){
         beta = min(beta, u);
     #endif
     int depth = HW2 - search->board.n;
-    #if USE_MID_MPC
+    #if USE_END_MPC
         if (END_MPC_MIN_DEPTH <= depth && depth <= END_MPC_MAX_DEPTH && search->use_mpc){
             int val = mid_evaluate(&search->board);
             if (mpc_end_higher(search, beta, depth, val)){

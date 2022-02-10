@@ -179,69 +179,29 @@ class Node_parent_transpose_table{
 
 class Parent_transpose_table{
     private:
-        int prev;
-        int now;
-        Node_parent_transpose_table table[2][TRANSPOSE_TABLE_SIZE];
-        
+        Node_parent_transpose_table table[TRANSPOSE_TABLE_SIZE];
 
     public:
         inline void init(){
-            now = 0;
-            prev = 1;
-            init_now();
-            init_prev();
-        }
-
-        inline void ready_next_search(){
-            now = 1 - now;
-            prev = 1 - prev;
-            init_now();
-        }
-
-        inline void init_prev(){
             for(int i = 0; i < TRANSPOSE_TABLE_SIZE; ++i)
-                table[prev][i].init();
-        }
-
-        inline void init_now(){
-            for(int i = 0; i < TRANSPOSE_TABLE_SIZE; ++i)
-                table[now][i].init();
-        }
-
-        inline int now_idx(){
-            return now;
-        }
-
-        inline int prev_idx(){
-            return prev;
+                table[i].init();
         }
 
         inline void reg(const Board *board, const int hash, const int l, const int u){
             if (global_searching){
-                if (!table[now][hash].reg)
-                    table[now][hash].register_value(board, l, u);
-                else if (!compare_key(board, &table[now][hash]))
-                    table[now][hash].register_value(board, l, u);
+                if (!table[hash].reg)
+                    table[hash].register_value(board, l, u);
+                else if (!compare_key(board, &table[hash]))
+                    table[hash].register_value(board, l, u);
                 else
-                    table[now][hash].register_value(l, u);
+                    table[hash].register_value(l, u);
             }
         }
 
         inline void get_now(Board *board, const int hash, int *l, int *u){
-            if (table[now][hash].reg){
-                if (compare_key(board, &table[now][hash])){
-					table[now][hash].get(l, u);
-                    return;
-                }
-            }
-            *l = -INF;
-            *u = INF;
-        }
-
-        inline void get_prev(Board *board, const int hash, int *l, int *u){
-            if (table[prev][hash].reg){
-                if (compare_key(board, &table[prev][hash])){
-					table[prev][hash].get(l, u);
+            if (table[hash].reg){
+                if (compare_key(board, &table[hash])){
+					table[hash].get(l, u);
                     return;
                 }
             }
