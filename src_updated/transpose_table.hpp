@@ -42,6 +42,11 @@ class Node_child_transpose_table{
                 tmp = best_moves[0];
                 best_moves[1] = tmp;
                 best_moves[0] = policy;
+            } else{
+                if (best_moves[1] == TRANSPOSE_TABLE_UNDEFINED)
+                    best_moves[1] = policy;
+                else if (best_moves[2] == TRANSPOSE_TABLE_UNDEFINED)
+                    best_moves[2] = policy;
             }
         }
 

@@ -1483,3 +1483,7 @@ normal flip
 #57 final depth: 30 time: 314750 policy: 23 value: -10 nodes: 15228294988 nps: 48513050
 #58 final depth: 30 time: 169548 policy: 57 value: 4 nodes: 8565197547 nps: 50713150
 #59 final depth: 34 time: 832 policy: 1 value: 64 nodes: 161 nps: 12384
+
+2022/02/11 src_updated
+negascout-negascout
+#40 endsearch time 2268 mpct 0 policy 55 value 38 nodes 32166836 nps 14176657

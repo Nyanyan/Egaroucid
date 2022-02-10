@@ -13,16 +13,17 @@
 
 using namespace std;
 
-#define W_BEST1_MOVE 1000000000
-#define W_BEST2_MOVE 100000000
-#define W_BEST3_MOVE 10000000
+#define W_BEST1_MOVE 900000000
+#define W_BEST2_MOVE 800000000
+#define W_BEST3_MOVE 700000000
+#define W_CELL_WEIGHT 2
 #define W_STABILITY 10
-#define W_EVALUATE 5
-#define W_MOBILITY 5
+#define W_EVALUATE 40
+#define W_MOBILITY 20
 #define W_PARITY 2
-#define W_END_MOBILITY 10
-#define W_END_STABILITY 10
-#define W_END_PARITY 5
+#define W_END_MOBILITY 20
+//#define W_END_STABILITY 10
+#define W_END_PARITY 10
 
 #define MID_MPC_MIN_DEPTH 2
 #define MID_MPC_MAX_DEPTH 30
@@ -31,8 +32,8 @@ using namespace std;
 #define N_END_MPC_SCORE_DIV 22
 
 #define MID_FAST_DEPTH 3
-#define END_FAST_DEPTH 6
-#define MID_TO_END_DEPTH 15
+#define END_FAST_DEPTH 7
+#define MID_TO_END_DEPTH 11
 
 #define SCORE_UNDEFINED -INF
 
@@ -129,7 +130,7 @@ inline void move_evaluate(Search *search, Mobility *mob,  const int best_moves[]
     else if (mob->pos == best_moves[2])
         mob->value = W_BEST3_MOVE;
     else{
-        mob->value += cell_weight[mob->pos];
+        mob->value += cell_weight[mob->pos] * W_CELL_WEIGHT;
         if (search->board.parity & cell_div4[mob->pos])
             mob->value += W_PARITY;
         search->board.move(mob);
@@ -166,8 +167,8 @@ inline void move_evaluate_fast_first(Search *search, Mobility *mob,  const int b
     else if (mob->pos == best_moves[2])
         mob->value = W_BEST3_MOVE;
     else{
-        if (search->board.parity & cell_div4[mob->pos])
-            mob->value += W_END_PARITY;
+    if (search->board.parity & cell_div4[mob->pos])
+        mob->value += W_END_PARITY;
         search->board.move(mob);
             /*
             int stab0, stab1;

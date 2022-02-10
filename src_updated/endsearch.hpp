@@ -461,3 +461,92 @@ int nega_alpha_end(Search *search, int alpha, int beta){
     #endif
     return v;
 }
+
+int nega_scout_end(Search *search, int alpha, int beta){
+    if (!global_searching)
+        return -INF;
+    if (search->board.n >= HW2 - END_FAST_DEPTH)
+        return nega_alpha_end_fast(search, alpha, beta);
+    ++(search->n_nodes);
+    #if USE_END_SC
+        int stab_res = stability_cut(search, &alpha, &beta);
+        if (stab_res != SCORE_UNDEFINED)
+            return stab_res;
+    #endif
+    int hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
+    #if USE_END_TC
+        int l, u;
+        parent_transpose_table.get(&search->board, hash_code, &l, &u);
+        if (u == l)
+            return u;
+        if (l >= beta)
+            return l;
+        if (alpha >= u)
+            return u;
+        alpha = max(alpha, l);
+        beta = min(beta, u);
+    #endif
+    int depth = HW2 - search->board.n;
+    #if USE_END_MPC
+        if (END_MPC_MIN_DEPTH <= depth && depth <= END_MPC_MAX_DEPTH && search->use_mpc){
+            int val = mid_evaluate(&search->board);
+            if (mpc_end_higher(search, beta, depth, val)){
+                #if USE_END_TC
+                    if (l < beta)
+                        parent_transpose_table.reg(&search->board, hash_code, beta, u);
+                #endif
+                return beta;
+            }
+            if (mpc_end_lower(search, alpha, depth, val)){
+                #if USE_END_TC
+                    if (alpha < u)
+                        parent_transpose_table.reg(&search->board, hash_code, l, alpha);
+                #endif
+                return alpha;
+            }
+        }
+    #endif
+    unsigned long long legal = search->board.mobility_ull();
+    int g, v = -INF;
+    if (legal == 0){
+        if (search->skipped)
+            return end_evaluate(&search->board);
+        search->pass();
+            v = -nega_scout_end(search, -beta, -alpha);
+        search->undo_pass();
+        return v;
+    }
+    search->skipped = false;
+    const int canput = pop_count_ull(legal);
+    vector<Mobility> move_list;
+    for (const int &cell: search->vacant_list){
+        if (1 & (legal >> cell))
+            move_list.emplace_back(calc_flip(&search->board, cell));
+    }
+    move_ordering_fast_first(search, move_list);
+    for (const Mobility &mob: move_list){
+        search->board.move(&mob);
+            if (v == -INF)
+                g = -nega_scout_end(search, -beta, -alpha);
+            else{
+                g = -nega_alpha_end(search, -alpha - 1, -alpha);
+                if (alpha < g)
+                    g = -nega_scout_end(search, -beta, -g);
+            }
+        search->board.undo(&mob);
+        child_transpose_table.reg(&search->board, hash_code, mob.pos, g);
+        alpha = max(alpha, g);
+        v = max(v, g);
+        if (beta <= alpha)
+            break;
+    }
+    #if USE_END_TC
+        if (beta <= v)
+            parent_transpose_table.reg(&search->board, hash_code, v, u);
+        else if (v <= alpha)
+            parent_transpose_table.reg(&search->board, hash_code, l, v);
+        else
+            parent_transpose_table.reg(&search->board, hash_code, v, v);
+    #endif
+    return v;
+}
