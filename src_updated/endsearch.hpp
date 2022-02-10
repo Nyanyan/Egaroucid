@@ -26,18 +26,18 @@ inline bool mpc_end_lower(Search *search, int alpha, int depth, int val){
 
 inline int last1(Search *search, int alpha, int beta, int p0){
     ++search->n_nodes;
-    int score = hw2 - 2 * search->board.count_opponent();
+    int score = HW2 - 2 * search->board.count_opponent();
     int n_flip;
-    if (b->p == black)
+    if (search->board.p == BLACK)
         n_flip = count_last_flip(search->board.b, search->board.w, p0);
     else
         n_flip = count_last_flip(search->board.w, search->board.b, p0);
     if (n_flip == 0){
-        ++(*n_nodes);
+        ++search->n_nodes;
         if (score <= 0){
             score -= 2;
             if (score >= alpha){
-                if (search->board.p == white)
+                if (search->board.p == WHITE)
                     n_flip = count_last_flip(search->board.b, search->board.w, p0);
                 else
                     n_flip = count_last_flip(search->board.w, search->board.b, p0);
@@ -45,7 +45,7 @@ inline int last1(Search *search, int alpha, int beta, int p0){
             }
         } else{
             if (score >= alpha){
-                if (b->p == white)
+                if (search->board.p == WHITE)
                     n_flip = count_last_flip(search->board.b, search->board.w, p0);
                 else
                     n_flip = count_last_flip(search->board.w, search->board.b, p0);
@@ -62,8 +62,8 @@ inline int last1(Search *search, int alpha, int beta, int p0){
 inline int last2(Search *search, int alpha, int beta, int p0, int p1){
     ++search->n_nodes;
     #if USE_END_PO & false
-        int p0_parity = (b->parity & cell_div4[p0]);
-        int p1_parity = (b->parity & cell_div4[p1]);
+        int p0_parity = (search->board.parity & cell_div4[p0]);
+        int p1_parity = (search->board.parity & cell_div4[p1]);
         if (!p0_parity && p1_parity)
             swap(p0, p1);
     #endif
@@ -125,7 +125,7 @@ inline int last3(Search *search, int alpha, int beta, int p0, int p1, int p2){
             }
         }
     #endif
-    unsigned long long legal = b->mobility_ull();
+    unsigned long long legal = search->board.mobility_ull();
     int v = -INF, g;
     if (legal == 0){
         if (search->skipped)
@@ -229,7 +229,7 @@ inline int last4(Search *search, int alpha, int beta, int p0, int p1, int p2, in
             }
         }
     #endif
-    unsigned long long legal = b->mobility_ull();
+    unsigned long long legal = search->board.mobility_ull();
     int v = -INF, g;
     if (legal == 0){
         if (search->skipped)
@@ -285,10 +285,10 @@ inline int last4(Search *search, int alpha, int beta, int p0, int p1, int p2, in
     return v;
 }
 
-inline void pick_vacant(Board *b, int cells[], const vector<int> &vacant_lst){
+inline void pick_vacant(Board *b, int cells[], const vector<int> &vacant_list){
     int idx = 0;
     unsigned long long empties = ~(b->b | b->w);
-    for (const int &cell: vacant_lst){
+    for (const int &cell: vacant_list){
         if (1 & (empties >> cell))
             cells[idx++] = cell;
     }
@@ -300,29 +300,29 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta){
         return SCORE_UNDEFINED;
     if (search->board.n == 60){
         int cells[4];
-        pick_vacant(&search->board, cells, search->vacant_lst);
+        pick_vacant(&search->board, cells, search->vacant_list);
         return last4(search, alpha, beta, cells[0], cells[1], cells[2], cells[3]);
     }
     ++search->n_nodes;
     #if USE_END_SC
-        int stab_res = stability_cut(b, &alpha, &beta);
-        if (stab_res != -inf)
+        int stab_res = stability_cut(search, &alpha, &beta);
+        if (stab_res != -INF)
             return stab_res;
     #endif
-    unsigned long long legal = b->mobility_ull();
+    unsigned long long legal = search->board.mobility_ull();
     int g, v = -INF;
     if (legal == 0){
         if (search->skipped)
             return end_evaluate(&search->board);
         search->pass();
-            v = -nega_alpha_final(search, -beta, -alpha);
+            v = -nega_alpha_end_fast(search, -beta, -alpha);
         search->undo_pass();
         return v;
     }
     Mobility mob;
     #if USE_END_PO
         if (0 < search->board.parity && search->board.parity < 15){
-            for (const int &cell: search->vacant_lst){
+            for (const int &cell: search->vacant_list){
                 if ((search->board.parity & cell_div4[cell]) && (1 & (legal >> cell))){
                     calc_flip(&mob, &search->board, cell);
                     search->board.move(&mob);
@@ -334,7 +334,7 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta){
                     v = max(v, g);
                 }
             }
-            for (const int &cell: search->vacant_lst){
+            for (const int &cell: search->vacant_list){
                 if ((search->board.parity & cell_div4[cell]) == 0 && (1 & (legal >> cell))){
                     calc_flip(&mob, &search->board, cell);
                     search->board.move(&mob);
@@ -347,7 +347,7 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta){
                 }
             }
         } else{
-            for (const int &cell: search->vacant_lst){
+            for (const int &cell: search->vacant_list){
                 if (1 & (legal >> cell)){
                     calc_flip(&mob, &search->board, cell);
                     search->board.move(&mob);
@@ -361,7 +361,7 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta){
             }
         }
     #else
-        for (const int &cell: search->vacant_lst){
+        for (const int &cell: search->vacant_list){
             if (1 & (legal >> cell)){
                 calc_flip(&mob, &search->board, cell);
                 search->board.move(&mob);
@@ -380,12 +380,12 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta){
 int nega_alpha_end(Search *search, int alpha, int beta){
     if (!global_searching)
         return SCORE_UNDEFINED;
-    if (search->board->n >= END_FAST_DEPTH1)
+    if (search->board.n >= END_FAST_DEPTH1)
         return nega_alpha_end_fast(search, alpha, beta);
     ++search->n_nodes;
     #if USE_END_SC && false
         int stab_res = stability_cut(b, &alpha, &beta);
-        if (stab_res != -inf)
+        if (stab_res != -INF)
             return stab_res;
     #endif
     #if USE_END_TC
@@ -420,13 +420,13 @@ int nega_alpha_end(Search *search, int alpha, int beta){
             }
         }
     #endif
-    unsigned long long legal = b->mobility_ull();
+    unsigned long long legal = search->board.mobility_ull();
     int g, v = -INF;
     if (legal == 0){
         if (search->skipped)
             return end_evaluate(&search->board);
         search->pass();
-            v = -nega_alpha_ordering_simple_final(search, -beta, -alpha);
+            v = -nega_alpha_end(search, -beta, -alpha);
         search->undo_pass();
         return v;
     }

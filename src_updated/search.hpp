@@ -36,6 +36,7 @@ using namespace std;
 #define MID_FAST_DEPTH 2
 #define END_FAST_DEPTH1 7
 #define END_FAST_DEPTH2 11
+#define MID_TO_END_DEPTH 15
 
 #define SCORE_UNDEFINED -INF
 
