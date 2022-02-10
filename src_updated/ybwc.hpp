@@ -9,7 +9,7 @@
 
 #define YBWC_SPLIT_DIV 6
 #define YBWC_SPLIT_MIN_DEPTH 5
-#define YBWC_MAX_SPLIT_COUNT 5
+#define YBWC_MAX_SPLIT_COUNT 1000
 
 int nega_alpha_ordering(Search *search, int alpha, int beta, int depth);
 

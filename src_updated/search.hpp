@@ -33,10 +33,9 @@ using namespace std;
 #define END_MPC_MAX_DEPTH 40
 #define N_END_MPC_SCORE_DIV 22
 
-#define MID_FAST_DEPTH 2
-#define END_FAST_DEPTH1 7
-#define END_FAST_DEPTH2 11
-#define MID_TO_END_DEPTH 15
+#define MID_FAST_DEPTH 3
+#define END_FAST_DEPTH 7
+#define MID_TO_END_DEPTH 11
 
 #define SCORE_UNDEFINED -INF
 
