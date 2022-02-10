@@ -6,6 +6,7 @@
 #include "board.hpp"
 #include "evaluate.hpp"
 #include "midsearch.hpp"
+#include "thread_pool.hpp"
 
 inline vector<int> input_board(Board *b, int ai_player){
     int i;

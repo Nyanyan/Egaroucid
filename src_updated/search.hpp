@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <vector>
 #include <math.h>
+#include <atomic>
 #include "setting.hpp"
 #include "common.hpp"
 #include "board.hpp"
@@ -33,9 +34,6 @@ using namespace std;
 #define MID_FAST_DEPTH 2
 #define END_FAST_DEPTH 7
 #define END_FAST_DEPTH2 11
-
-#define MID_PV_SPLIT_DIV 5
-#define END_PV_SPLIT_DIV 6
 
 #define SCORE_UNDEFINED -INF
 
@@ -102,7 +100,7 @@ struct Search{
     bool use_mpc;
     double mpct;
     vector<int> vacant_list;
-    unsigned long long n_nodes;
+    atomic<unsigned long long> *n_nodes;
 
     inline void pass(){
         board.p = 1 - board.p;

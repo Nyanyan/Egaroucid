@@ -145,7 +145,6 @@ class Node_parent_transpose_table{
         }
 
         inline void register_value(const Board *board, const int l, const int u){
-            init();
             reg = true;
             b = board->b;
             w = board->w;
@@ -155,8 +154,10 @@ class Node_parent_transpose_table{
         }
 
         inline void register_value(const int l, const int u){
-            lower = l;
-            upper = u;
+            if (lower < l)
+                lower = l;
+            if (u < upper)
+                upper = u;
         }
 
         inline void get(int *l, int *u){
