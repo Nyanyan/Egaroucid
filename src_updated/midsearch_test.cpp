@@ -46,7 +46,7 @@ int main(){
         cin >> ai_player;
         vector<int> vacant_lst = input_board(&b, ai_player);
         b.print();
-        Search_result res = midsearch(b, 15, true, 1.0, vacant_lst, &parent_transpose_table, &child_transpose_table);
+        Search_result res = midsearch(b, 10, false, 1.0, vacant_lst, &parent_transpose_table, &child_transpose_table);
         cerr << res.policy << " " << res.value << endl;
     }
     return 0;

@@ -11,6 +11,7 @@
 #include "level.hpp"
 #if USE_MULTI_THREAD
     #include "thread_pool.hpp"
+    #include "ybwc.hpp"
 #endif
 
 using namespace std;
@@ -24,7 +25,7 @@ int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth){
         return -SCORE_UNDEFINED;
     if (depth <= MID_FAST_DEPTH)
         return nega_alpha(search, alpha, beta, depth);
-    ++(*search->n_nodes);
+    search->n_nodes.store(search->n_nodes.load() + 1);
     #if USE_MID_SC
         int stab_res = stability_cut(search, &alpha, &beta);
         if (stab_res != SCORE_UNDEFINED)
@@ -85,7 +86,7 @@ inline bool mpc_lower(Search *search, int alpha, int depth){
 int nega_alpha(Search *search, int alpha, int beta, int depth){
     if (!global_searching)
         return SCORE_UNDEFINED;
-    ++(*search->n_nodes);
+    search->n_nodes.store(search->n_nodes.load() + 1);
     if (depth == 0)
         return mid_evaluate(&search->board);
     #if USE_MID_SC
@@ -125,7 +126,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth){
         return SCORE_UNDEFINED;
     if (depth <= MID_FAST_DEPTH)
         return nega_alpha(search, alpha, beta, depth);
-    ++(*search->n_nodes);
+    search->n_nodes.store(search->n_nodes.load() + 1);
     #if USE_MID_SC
         int stab_res = stability_cut(search, &alpha, &beta);
         if (stab_res != SCORE_UNDEFINED)
@@ -178,23 +179,48 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth){
             move_list.emplace_back(calc_flip(&search->board, cell));
     }
     move_ordering(search, move_list);
-    for (const Mobility &mob: move_list){
-        search->board.move(&mob);
-            g = -nega_alpha(search, -beta, -alpha, depth - 1);
-        search->board.undo(&mob);
-        search->child_transpose_table->reg(&search->board, hash_code, mob.pos, g);
-        alpha = max(alpha, g);
-        if (beta <= alpha){
-            #if USE_MID_TC
-                if (l < alpha)
-                    search->parent_transpose_table->reg(&search->board, hash_code, alpha, u);
-            #endif
-            return alpha;
+    #if USE_MULTI_THREAD
+        int pv_idx = 0, split_count = 0;
+        atomic<int> state;
+        vector<int> values(1);
+        state = 0;
+        for (const Mobility &mob: move_list){
+            search->board.move(&mob);
+                if (ybwc_split(search, -beta, -alpha, depth - 1, mob.pos, pv_idx, canput, split_count, &state, &values[split_count])){
+                    search->board.undo(&mob);
+                    int n_value;
+                    values.emplace_back(n_value);
+                    ++split_count;
+                } else{
+                    g = -nega_alpha_ordering(search, -beta, -alpha, depth - 1);
+                    search->board.undo(&mob);
+                    search->child_transpose_table->reg(&search->board, hash_code, mob.pos, g);
+                    alpha = max(alpha, g);
+                    v = max(v, g);
+                    if (beta <= alpha)
+                        break;
+                }
+            ++pv_idx;
         }
+        g = ybwc_wait(&state, split_count, values);
+        alpha = max(alpha, g);
         v = max(v, g);
-    }
+    #else
+        for (const Mobility &mob: move_list){
+                search->board.move(&mob);
+                    g = -nega_alpha_ordering(search, -beta, -alpha, depth - 1);
+                search->board.undo(&mob);
+                search->child_transpose_table->reg(&search->board, hash_code, mob.pos, g);
+                alpha = max(alpha, g);
+                v = max(v, g);
+                if (beta <= alpha)
+                    return alpha;
+        }
+    #endif
     #if USE_MID_TC
-        if (v <= alpha)
+        if (beta <= v)
+            search->parent_transpose_table->reg(&search->board, hash_code, v, u);
+        else if (v <= alpha)
             search->parent_transpose_table->reg(&search->board, hash_code, l, v);
         else
             search->parent_transpose_table->reg(&search->board, hash_code, v, v);
@@ -207,7 +233,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth){
         return -INF;
     if (depth <= MID_FAST_DEPTH)
         return nega_alpha(search, alpha, beta, depth);
-    ++(*search->n_nodes);
+    search->n_nodes.store(search->n_nodes.load() + 1);
     #if USE_MID_SC
         int stab_res = stability_cut(search, &alpha, &beta);
         if (stab_res != SCORE_UNDEFINED)
@@ -308,8 +334,6 @@ int mtd(Search *search, int l, int u, int depth){
 inline Search_result midsearch(Board b, int max_depth, bool use_mpc, double mpct, const vector<int> vacant_lst, Parent_transpose_table *parent_transpose_table, Child_transpose_table *child_transpose_table){
     long long strt = tim();
     int hash_code = b.hash() & TRANSPOSE_TABLE_MASK;
-    atomic<unsigned long long> n_nodes;
-    n_nodes = 0;
     Search search;
     search.board = b;
     search.parent_transpose_table = parent_transpose_table;
@@ -318,7 +342,7 @@ inline Search_result midsearch(Board b, int max_depth, bool use_mpc, double mpct
     search.use_mpc = use_mpc;
     search.mpct = mpct;
     search.vacant_list = vacant_lst;
-    search.n_nodes = &n_nodes;
+    search.n_nodes = 0;
     unsigned long long legal = b.mobility_ull();
     vector<Mobility> move_list;
     for (const int &cell: search.vacant_list){
@@ -346,10 +370,10 @@ inline Search_result midsearch(Board b, int max_depth, bool use_mpc, double mpct
         }
         if (depth == max_depth - 2)
             former_alpha = alpha;
-        cerr << "midsearch time " << tim() - strt << " depth " << depth + 1 << " policy " << res.policy << " value " << alpha << " nodes " << n_nodes << " nps " << n_nodes * 1000 / max(1LL, tim() - strt) << endl;
+        cerr << "midsearch time " << tim() - strt << " depth " << depth + 1 << " policy " << res.policy << " value " << alpha << " nodes " << search.n_nodes << " nps " << search.n_nodes * 1000 / max(1LL, tim() - strt) << endl;
     }
     res.depth = max_depth;
-    res.nps = n_nodes * 1000 / max(1LL, tim() - strt);
+    res.nps = search.n_nodes * 1000 / max(1LL, tim() - strt);
     if (former_alpha != -INF)
         res.value = (former_alpha + alpha) / 2;
     else
@@ -359,8 +383,6 @@ inline Search_result midsearch(Board b, int max_depth, bool use_mpc, double mpct
 
 inline Search_result midsearch_value(Board b, int max_depth, bool use_mpc, double mpct, const vector<int> vacant_lst, Parent_transpose_table *parent_transpose_table, Child_transpose_table *child_transpose_table){
     long long strt = tim();
-    atomic<unsigned long long> n_nodes;
-    n_nodes = 0;
     Search search;
     search.board = b;
     search.parent_transpose_table = parent_transpose_table;
@@ -369,7 +391,7 @@ inline Search_result midsearch_value(Board b, int max_depth, bool use_mpc, doubl
     search.use_mpc = use_mpc;
     search.mpct = mpct;
     search.vacant_list = vacant_lst;
-    search.n_nodes = &n_nodes;
+    search.n_nodes = 0;
     int g, former_g = -INF;
     for (int depth = min(16, max(0, max_depth - 5)); depth <= max_depth - 1; ++depth){
         search.parent_transpose_table->ready_next_search();
@@ -380,7 +402,7 @@ inline Search_result midsearch_value(Board b, int max_depth, bool use_mpc, doubl
     }
     Search_result res;
     res.depth = max_depth;
-    res.nps = n_nodes * 1000 / max(1LL, tim() - strt);
+    res.nps = search.n_nodes * 1000 / max(1LL, tim() - strt);
     if (former_g != -INF)
         res.value = (former_g + g) / 2;
     else

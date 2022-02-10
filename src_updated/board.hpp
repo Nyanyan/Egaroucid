@@ -80,7 +80,7 @@ class Board {
             return res;
         }
 
-        void copy(Board *res){
+        inline void copy(Board *res){
             res->b = b;
             res->w = w;
             res->p = p;
