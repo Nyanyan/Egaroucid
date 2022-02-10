@@ -1484,6 +1484,9 @@ normal flip
 #58 final depth: 30 time: 169548 policy: 57 value: 4 nodes: 8565197547 nps: 50713150
 #59 final depth: 34 time: 832 policy: 1 value: 64 nodes: 161 nps: 12384
 
+
+NEW VERSION
+
 2022/02/11 src_updated
 negascout-negascout
 #40 endsearch time 2268 mpct 0 policy 55 value 38 nodes 32166836 nps 14176657
@@ -1511,3 +1514,11 @@ endsearch time 1775 mpct 0 policy 55 value 38 nodes 25120083 nps 14144190
 #47 endsearch time 3213 mpct 0 policy 49 value 4 nodes 123869258 nps 38540528
 #48 endsearch time 21693 mpct 0 policy 18 value 28 nodes 867131386 nps 39972866
 #49 endsearch time 19611 mpct 0 policy 59 value 16 nodes 1043845691 nps 53227560
+
+2022/02/11 negascout
+#40 endsearch time 1120 mpct 0 policy 55 value 38 nodes 26247759 nps 23414593
+#41 endsearch time 1840 mpct 0 policy 32 value 0 nodes 41094994 nps 22322104
+#42 endsearch time 2176 mpct 0 policy 49 value 6 nodes 64142392 nps 29463661
+#43 endsearch time 4136 mpct 0 policy 13 value -12 nodes 141528182 nps 34210341
+#44 endsearch time 1725 mpct 0 policy 52 value -14 nodes 32471295 nps 18823939
+#45 endsearch time 33117 mpct 0 policy 54 value 6 nodes 1433914531 nps 43298442
