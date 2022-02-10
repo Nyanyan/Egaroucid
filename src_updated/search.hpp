@@ -22,9 +22,10 @@ using namespace std;
 #define W_MOBILITY 40
 #define W_PARITY 8
 //#define W_END_CELL_WEIGHT 1
+//#define W_END_EVALUATE 5
 #define W_END_MOBILITY 20
 //#define W_END_STABILITY 10
-#define W_END_PARITY 10
+#define W_END_PARITY 5
 
 #define MID_MPC_MIN_DEPTH 2
 #define MID_MPC_MAX_DEPTH 30
@@ -174,6 +175,7 @@ inline void move_evaluate_fast_first(Search *search, Mobility *mob,  const int b
         if (search->board.parity & cell_div4[mob->pos])
             mob->value += W_END_PARITY;
         search->board.move(mob);
+            //mob->value += -mid_evaluate(&search->board) * W_END_EVALUATE;
             /*
             int stab0, stab1;
             calc_stability_fast(&search->board, &stab0, &stab1);

@@ -10,6 +10,7 @@
 #include "transpose_table.hpp"
 #if USE_MULTI_THREAD
     #include "thread_pool.hpp"
+    #include "ybwc.hpp"
 #endif
 
 using namespace std;
@@ -440,16 +441,43 @@ int nega_alpha_end(Search *search, int alpha, int beta){
             move_list.emplace_back(calc_flip(&search->board, cell));
     }
     move_ordering_fast_first(search, move_list);
-    for (const Mobility &mob: move_list){
-        search->board.move(&mob);
-            g = -nega_alpha_end(search, -beta, -alpha);
-        search->board.undo(&mob);
-        child_transpose_table.reg(&search->board, hash_code, mob.pos, g);
-        alpha = max(alpha, g);
-        v = max(v, g);
-        if (beta <= alpha)
-            break;
-    }
+    #if USE_MULTI_THREAD && false
+        const int canput = pop_count_ull(legal);
+        int pv_idx = 0, split_count = 0;
+        vector<future<pair<int, unsigned long long>>> parallel_tasks;
+        for (const Mobility &mob: move_list){
+            search->board.move(&mob);
+                if (ybwc_split_end(search, -beta, -alpha, mob.pos, pv_idx, canput, split_count, parallel_tasks)){
+                    search->board.undo(&mob);
+                    ++split_count;
+                } else{
+                    g = -nega_alpha_end(search, -beta, -alpha);
+                    search->board.undo(&mob);
+                    child_transpose_table.reg(&search->board, hash_code, mob.pos, g);
+                    alpha = max(alpha, g);
+                    v = max(v, g);
+                    if (beta <= alpha)
+                        break;
+                }
+            ++pv_idx;
+        }
+        if (split_count){
+            g = ybwc_wait(search, parallel_tasks);
+            alpha = max(alpha, g);
+            v = max(v, g);
+        }
+    #else
+        for (const Mobility &mob: move_list){
+            search->board.move(&mob);
+                g = -nega_alpha_end(search, -beta, -alpha);
+            search->board.undo(&mob);
+            child_transpose_table.reg(&search->board, hash_code, mob.pos, g);
+            alpha = max(alpha, g);
+            v = max(v, g);
+            if (beta <= alpha)
+                break;
+        }
+    #endif
     #if USE_END_TC
         if (beta <= v)
             parent_transpose_table.reg(&search->board, hash_code, v, u);

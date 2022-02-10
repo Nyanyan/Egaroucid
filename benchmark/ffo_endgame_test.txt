@@ -1497,3 +1497,5 @@ fixed undefined bug
 endsearch time 1782 mpct 0 policy 55 value 38 nodes 25818410 nps 14480319
 #define END_FAST_DEPTH 7 #define MID_TO_END_DEPTH 15
 endsearch time 1788 mpct 0 policy 55 value 38 nodes 25616538 nps 14326922
+param, adjustment
+endsearch time 1775 mpct 0 policy 55 value 38 nodes 25120083 nps 14144190
