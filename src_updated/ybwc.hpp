@@ -9,22 +9,18 @@
 
 #define YBWC_SPLIT_DIV 6
 #define YBWC_SPLIT_MIN_DEPTH 5
-#define YBWC_MAX_SPLIT_COUNT 3
+#define YBWC_MAX_SPLIT_COUNT 5
 
 int nega_alpha_ordering(Search *search, int alpha, int beta, int depth);
 
-inline void ybwc_do_task(int id, Search *former_search, Search *search, int alpha, int beta, int depth, int policy, atomic<int> *state, atomic<int> *value){
-    int hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
-    int g = -nega_alpha_ordering(search, alpha, beta, depth);
-    child_transpose_table.reg(&search->board, hash_code, policy, g);
-    state->store(state->load() + 1);
-    former_search->n_nodes.store(former_search->n_nodes.load() + search->n_nodes);
-    cerr << g << endl;
-    if (value->load() < g)
-        value->store(g);
+inline pair<int, unsigned long long> ybwc_do_task(Search search, int alpha, int beta, int depth, int policy){
+    int hash_code = search.board.hash() & TRANSPOSE_TABLE_MASK;
+    int g = -nega_alpha_ordering(&search, alpha, beta, depth);
+    child_transpose_table.reg(&search.board, hash_code, policy, g);
+    return make_pair(g, search.n_nodes);
 }
 
-inline bool ybwc_split(Search *search, int alpha, int beta, const int depth, int policy, const int pv_idx, const int canput, const int split_count, atomic<int> *state, atomic<int> *value){
+inline bool ybwc_split(Search *search, int alpha, int beta, const int depth, int policy, const int pv_idx, const int canput, const int split_count, vector<future<pair<int, unsigned long long>>> &parallel_tasks){
     if (pv_idx > canput / YBWC_SPLIT_DIV && pv_idx < canput - 1 && depth >= YBWC_SPLIT_MIN_DEPTH && split_count < YBWC_MAX_SPLIT_COUNT){
         if (thread_pool.n_idle()){
             Search copy_search;
@@ -32,15 +28,23 @@ inline bool ybwc_split(Search *search, int alpha, int beta, const int depth, int
             copy_search.skipped = search->skipped;
             copy_search.use_mpc = search->use_mpc;
             copy_search.mpct = search->mpct;
-            copy_search.vacant_list = search->vacant_list;
+            for (const int elem: search->vacant_list)
+                copy_search.vacant_list.emplace_back(elem);
             copy_search.n_nodes = 0;
-            thread_pool.push(ybwc_do_task, search, &copy_search, alpha, beta, depth, policy, state, value);
+            parallel_tasks.emplace_back(thread_pool.push(bind(&ybwc_do_task, copy_search, alpha, beta, depth, policy)));
             return true;
         }
     }
     return false;
 }
 
-inline void ybwc_wait(atomic<int> *state, const int split_count){
-    while (state->load() < split_count);
+inline int ybwc_wait(Search *search, vector<future<pair<int, unsigned long long>>> &parallel_tasks){
+    int g = -INF;
+    pair<int, unsigned long long> got_task;
+    for (future<pair<int, unsigned long long>> &task: parallel_tasks){
+        got_task = task.get();
+        g = max(g, got_task.first);
+        search->n_nodes += got_task.second;
+    }
+    return g;
 }

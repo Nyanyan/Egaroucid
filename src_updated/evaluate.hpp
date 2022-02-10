@@ -48,7 +48,7 @@ using namespace std;
 #define P47 16384
 #define P48 65536
 
-uint_fast16_t pow3[11];
+int pow3[11];
 unsigned long long stability_edge_arr[N_8BIT][N_8BIT][2];
 short pattern_arr[N_PHASES][2][N_PATTERNS][MAX_EVALUATE_IDX];
 short eval_sur0_sur1_arr[N_PHASES][2][MAX_SURROUND][MAX_SURROUND];

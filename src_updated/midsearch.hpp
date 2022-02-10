@@ -25,7 +25,7 @@ int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth){
         return -SCORE_UNDEFINED;
     if (depth <= MID_FAST_DEPTH)
         return nega_alpha(search, alpha, beta, depth);
-    search->n_nodes.store(search->n_nodes.load() + 1);
+    ++(search->n_nodes);
     #if USE_MID_SC
         int stab_res = stability_cut(search, &alpha, &beta);
         if (stab_res != SCORE_UNDEFINED)
@@ -86,7 +86,7 @@ inline bool mpc_lower(Search *search, int alpha, int depth){
 int nega_alpha(Search *search, int alpha, int beta, int depth){
     if (!global_searching)
         return SCORE_UNDEFINED;
-    search->n_nodes.store(search->n_nodes.load() + 1);
+    ++(search->n_nodes);
     if (depth == 0)
         return mid_evaluate(&search->board);
     #if USE_MID_SC
@@ -126,7 +126,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth){
         return SCORE_UNDEFINED;
     if (depth <= MID_FAST_DEPTH)
         return nega_alpha(search, alpha, beta, depth);
-    search->n_nodes.store(search->n_nodes.load() + 1);
+    ++(search->n_nodes);
     #if USE_MID_SC
         int stab_res = stability_cut(search, &alpha, &beta);
         if (stab_res != SCORE_UNDEFINED)
@@ -181,12 +181,10 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth){
     move_ordering(search, move_list);
     #if USE_MULTI_THREAD
         int pv_idx = 0, split_count = 0;
-        atomic<int> state;
-        atomic<int> parallel_value(-INF);
-        state = 0;
+        vector<future<pair<int, unsigned long long>>> parallel_tasks;
         for (const Mobility &mob: move_list){
             search->board.move(&mob);
-                if (ybwc_split(search, -beta, -alpha, depth - 1, mob.pos, pv_idx, canput, split_count, &state, &parallel_value)){
+                if (ybwc_split(search, -beta, -alpha, depth - 1, mob.pos, pv_idx, canput, split_count, parallel_tasks)){
                     search->board.undo(&mob);
                     ++split_count;
                 } else{
@@ -201,10 +199,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth){
             ++pv_idx;
         }
         if (split_count){
-            cerr << "waiting" << endl;
-            ybwc_wait(&state, split_count);
-            g = parallel_value.load();
-            cerr << g << endl;
+            g = ybwc_wait(search, parallel_tasks);
             alpha = max(alpha, g);
             v = max(v, g);
         }
@@ -236,7 +231,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth){
         return -INF;
     if (depth <= MID_FAST_DEPTH)
         return nega_alpha(search, alpha, beta, depth);
-    search->n_nodes.store(search->n_nodes.load() + 1);
+    ++(search->n_nodes);
     #if USE_MID_SC
         int stab_res = stability_cut(search, &alpha, &beta);
         if (stab_res != SCORE_UNDEFINED)

@@ -98,7 +98,7 @@ struct Search{
     bool use_mpc;
     double mpct;
     vector<int> vacant_list;
-    atomic<unsigned long long> n_nodes;
+    unsigned long long n_nodes;
 
     inline void pass(){
         board.p = 1 - board.p;
