@@ -9,8 +9,8 @@
 #include "thread_pool.hpp"
 
 #define YBWC_SPLIT_DIV 5
-#define YBWC_MID_SPLIT_MIN_DEPTH 5
-#define YBWC_END_SPLIT_MIN_DEPTH 10
+#define YBWC_MID_SPLIT_MIN_DEPTH 6
+#define YBWC_END_SPLIT_MIN_DEPTH 6
 #define YBWC_MAX_SPLIT_COUNT 3
 
 int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool is_end_search);

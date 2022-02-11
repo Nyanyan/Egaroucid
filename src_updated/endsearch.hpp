@@ -384,8 +384,10 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta){
 int nega_alpha_end(Search *search, int alpha, int beta){
     if (!global_searching)
         return SCORE_UNDEFINED;
-    if (search->board.n >= HW2 - END_FAST_DEPTH)
+    if (search->board.n >= HW2 - END_FAST_DEPTH){
+        cout_log();
         return nega_alpha_end_fast(search, alpha, beta);
+    }
     ++search->n_nodes;
     #if USE_END_SC
         int stab_res = stability_cut(search, &alpha, &beta);
@@ -447,7 +449,7 @@ int nega_alpha_end(Search *search, int alpha, int beta){
         vector<future<pair<int, unsigned long long>>> parallel_tasks;
         for (const Mobility &mob: move_list){
             search->board.move(&mob);
-                if (ybwc_split_end(search, -beta, -alpha, mob.pos, pv_idx, canput, split_count, parallel_tasks)){
+                if (ybwc_split_end(search, -beta, -alpha, mob.pos, pv_idx++, canput, split_count, parallel_tasks)){
                     search->board.undo(&mob);
                     ++split_count;
                 } else{
@@ -461,7 +463,6 @@ int nega_alpha_end(Search *search, int alpha, int beta){
                     if (beta <= alpha)
                         break;
                 }
-            ++pv_idx;
         }
         if (split_count){
             g = ybwc_wait(search, parallel_tasks);
