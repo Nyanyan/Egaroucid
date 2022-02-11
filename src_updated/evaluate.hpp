@@ -411,7 +411,7 @@ inline int pick_pattern(const int phase_idx, const int p, const int pattern_idx,
         ];
 }
 
-inline int calc_pattern(const int phase_idx, board *b){
+inline int calc_pattern(const int phase_idx, Board *b){
     return 
         pick_pattern(phase_idx, b->p, 0, b->b, b->w, 8, 9, 10, 11, 12, 13, 14, 15) + pick_pattern(phase_idx, b->p, 0, b->b, b->w, 1, 9, 17, 25, 33, 41, 49, 57) + pick_pattern(phase_idx, b->p, 0, b->b, b->w, 48, 49, 50, 51, 52, 53, 54, 55) + pick_pattern(phase_idx, b->p, 0, b->b, b->w, 6, 14, 22, 30, 38, 46, 54, 62) + 
         pick_pattern(phase_idx, b->p, 1, b->b, b->w, 16, 17, 18, 19, 20, 21, 22, 23) + pick_pattern(phase_idx, b->p, 1, b->b, b->w, 2, 10, 18, 26, 34, 42, 50, 58) + pick_pattern(phase_idx, b->p, 1, b->b, b->w, 40, 41, 42, 43, 44, 45, 46, 47) + pick_pattern(phase_idx, b->p, 1, b->b, b->w, 5, 13, 21, 29, 37, 45, 53, 61) + 
@@ -431,26 +431,7 @@ inline int calc_pattern(const int phase_idx, board *b){
         pick_pattern(phase_idx, b->p, 15, b->b, b->w, 0, 1, 8, 9, 10, 11, 12, 17, 25, 33) + pick_pattern(phase_idx, b->p, 15, b->b, b->w, 7, 6, 15, 14, 13, 12, 11, 22, 30, 38) + pick_pattern(phase_idx, b->p, 15, b->b, b->w, 56, 57, 48, 49, 50, 51, 52, 41, 33, 25) + pick_pattern(phase_idx, b->p, 15, b->b, b->w, 63, 62, 55, 54, 53, 52, 51, 46, 38, 30);
 }
 */
-/*
-inline int create_canput_line(const int canput_arr[], const int a, const int b, const int c, const int d, const int e, const int f, const int g, const int h){
-    return 
-        canput_arr[a] * P47 + canput_arr[b] * P46 + canput_arr[c] * P45 + canput_arr[d] * P44 + 
-        canput_arr[e] * P43 + canput_arr[f] * P42 + canput_arr[g] * P41 + canput_arr[h];
-}
-*/
-/*
-inline int create_canput_line(unsigned long long bk, unsigned long long wt, const int a, const int b, const int c, const int d, const int e, const int f, const int g, const int h){
-    return 
-        (pop_digit(wt, a) * 2 + pop_digit(bk, a)) * P47 + 
-        (pop_digit(wt, b) * 2 + pop_digit(bk, b)) * P46 + 
-        (pop_digit(wt, c) * 2 + pop_digit(bk, c)) * P45 + 
-        (pop_digit(wt, d) * 2 + pop_digit(bk, d)) * P44 + 
-        (pop_digit(wt, e) * 2 + pop_digit(bk, e)) * P43 + 
-        (pop_digit(wt, f) * 2 + pop_digit(bk, f)) * P42 + 
-        (pop_digit(wt, g) * 2 + pop_digit(bk, g)) * P41 + 
-        (pop_digit(wt, h) * 2 + pop_digit(bk, h));
-}
-*/
+
 inline int create_canput_line_h(unsigned long long b, unsigned long long w, int t){
     return (((w >> (HW * t)) & 0b11111111) << HW) | ((b >> (HW * t)) & 0b11111111);
 }
@@ -460,46 +441,6 @@ inline int create_canput_line_v(unsigned long long b, unsigned long long w, int 
 }
 
 inline int calc_canput_pattern(const int phase_idx, Board *b, const unsigned long long black_mobility, const unsigned long long white_mobility){
-    /*
-    int canput_arr[HW2];
-    b->board_canput(canput_arr, black_mobility, white_mobility);
-    return
-        eval_canput_pattern[phase_idx][b->p][0][create_canput_line(canput_arr, 0, 1, 2, 3, 4, 5, 6, 7)] + 
-        eval_canput_pattern[phase_idx][b->p][0][create_canput_line(canput_arr, 0, 8, 16, 24, 32, 40, 48, 56)] + 
-        eval_canput_pattern[phase_idx][b->p][0][create_canput_line(canput_arr, 7, 15, 23, 31, 39, 47, 55, 63)] + 
-        eval_canput_pattern[phase_idx][b->p][0][create_canput_line(canput_arr, 56, 57, 58, 59, 60, 61, 62, 63)] + 
-        eval_canput_pattern[phase_idx][b->p][1][create_canput_line(canput_arr, 8, 9, 10, 11, 12, 13, 14, 15)] + 
-        eval_canput_pattern[phase_idx][b->p][1][create_canput_line(canput_arr, 1, 9, 17, 25, 33, 41, 49, 57)] + 
-        eval_canput_pattern[phase_idx][b->p][1][create_canput_line(canput_arr, 6, 14, 22, 30, 38, 46, 54, 62)] + 
-        eval_canput_pattern[phase_idx][b->p][1][create_canput_line(canput_arr, 48, 49, 50, 51, 52, 53, 54, 55)] + 
-        eval_canput_pattern[phase_idx][b->p][2][create_canput_line(canput_arr, 16, 17, 18, 19, 20, 21, 22, 23)] + 
-        eval_canput_pattern[phase_idx][b->p][2][create_canput_line(canput_arr, 2, 10, 18, 26, 34, 42, 50, 58)] + 
-        eval_canput_pattern[phase_idx][b->p][2][create_canput_line(canput_arr, 5, 13, 21, 29, 37, 45, 53, 61)] + 
-        eval_canput_pattern[phase_idx][b->p][2][create_canput_line(canput_arr, 40, 41, 42, 43, 44, 45, 46, 47)] + 
-        eval_canput_pattern[phase_idx][b->p][3][create_canput_line(canput_arr, 24, 25, 26, 27, 28, 29, 30, 31)] + 
-        eval_canput_pattern[phase_idx][b->p][3][create_canput_line(canput_arr, 3, 11, 19, 27, 35, 43, 51, 59)] + 
-        eval_canput_pattern[phase_idx][b->p][3][create_canput_line(canput_arr, 4, 12, 20, 28, 36, 44, 52, 60)] + 
-        eval_canput_pattern[phase_idx][b->p][3][create_canput_line(canput_arr, 32, 33, 34, 35, 36, 37, 38, 39)];
-    */
-    /*
-    return
-        eval_canput_pattern[phase_idx][b->p][0][create_canput_line(black_mobility, white_mobility, 0, 1, 2, 3, 4, 5, 6, 7)] + 
-        eval_canput_pattern[phase_idx][b->p][0][create_canput_line(black_mobility, white_mobility, 0, 8, 16, 24, 32, 40, 48, 56)] + 
-        eval_canput_pattern[phase_idx][b->p][0][create_canput_line(black_mobility, white_mobility, 7, 15, 23, 31, 39, 47, 55, 63)] + 
-        eval_canput_pattern[phase_idx][b->p][0][create_canput_line(black_mobility, white_mobility, 56, 57, 58, 59, 60, 61, 62, 63)] + 
-        eval_canput_pattern[phase_idx][b->p][1][create_canput_line(black_mobility, white_mobility, 8, 9, 10, 11, 12, 13, 14, 15)] + 
-        eval_canput_pattern[phase_idx][b->p][1][create_canput_line(black_mobility, white_mobility, 1, 9, 17, 25, 33, 41, 49, 57)] + 
-        eval_canput_pattern[phase_idx][b->p][1][create_canput_line(black_mobility, white_mobility, 6, 14, 22, 30, 38, 46, 54, 62)] + 
-        eval_canput_pattern[phase_idx][b->p][1][create_canput_line(black_mobility, white_mobility, 48, 49, 50, 51, 52, 53, 54, 55)] + 
-        eval_canput_pattern[phase_idx][b->p][2][create_canput_line(black_mobility, white_mobility, 16, 17, 18, 19, 20, 21, 22, 23)] + 
-        eval_canput_pattern[phase_idx][b->p][2][create_canput_line(black_mobility, white_mobility, 2, 10, 18, 26, 34, 42, 50, 58)] + 
-        eval_canput_pattern[phase_idx][b->p][2][create_canput_line(black_mobility, white_mobility, 5, 13, 21, 29, 37, 45, 53, 61)] + 
-        eval_canput_pattern[phase_idx][b->p][2][create_canput_line(black_mobility, white_mobility, 40, 41, 42, 43, 44, 45, 46, 47)] + 
-        eval_canput_pattern[phase_idx][b->p][3][create_canput_line(black_mobility, white_mobility, 24, 25, 26, 27, 28, 29, 30, 31)] + 
-        eval_canput_pattern[phase_idx][b->p][3][create_canput_line(black_mobility, white_mobility, 3, 11, 19, 27, 35, 43, 51, 59)] + 
-        eval_canput_pattern[phase_idx][b->p][3][create_canput_line(black_mobility, white_mobility, 4, 12, 20, 28, 36, 44, 52, 60)] + 
-        eval_canput_pattern[phase_idx][b->p][3][create_canput_line(black_mobility, white_mobility, 32, 33, 34, 35, 36, 37, 38, 39)];
-    */
     return 
         eval_canput_pattern[phase_idx][b->p][0][create_canput_line_h(black_mobility, white_mobility, 0)] + 
         eval_canput_pattern[phase_idx][b->p][0][create_canput_line_h(black_mobility, white_mobility, 7)] + 

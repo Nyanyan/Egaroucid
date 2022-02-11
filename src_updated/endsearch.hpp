@@ -384,10 +384,8 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta){
 int nega_alpha_end(Search *search, int alpha, int beta){
     if (!global_searching)
         return SCORE_UNDEFINED;
-    if (search->board.n >= HW2 - END_FAST_DEPTH){
-        //cout_log();
+    if (search->board.n >= HW2 - END_FAST_DEPTH)
         return nega_alpha_end_fast(search, alpha, beta);
-    }
     ++search->n_nodes;
     #if USE_END_SC
         int stab_res = stability_cut(search, &alpha, &beta);

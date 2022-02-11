@@ -15,6 +15,7 @@
 
 int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool is_end_search);
 int nega_alpha_end(Search *search, int alpha, int beta);
+int mtd(Search *search, int l, int u, int g, int depth, bool is_end_search);
 
 inline bool mpc_higher(Search *search, int beta, int depth);
 inline bool mpc_lower(Search *search, int alpha, int depth);
@@ -99,4 +100,10 @@ inline int ybwc_wait(Search *search, vector<future<pair<int, unsigned long long>
         search->n_nodes += got_task.second;
     }
     return g;
+}
+
+inline pair<int, unsigned long long> parallel_mtd(int id, Search search, int alpha, int beta, int expected_value, int depth, bool is_end_search){
+    search.n_nodes = 0;
+    int g = -mtd(&search, alpha, beta, expected_value, depth, is_end_search);
+    return make_pair(g, search.n_nodes);
 }
