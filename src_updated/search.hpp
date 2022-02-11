@@ -18,12 +18,14 @@ using namespace std;
 #define W_BEST3_MOVE 700000000
 #define W_CELL_WEIGHT 1
 //#define W_STABILITY 10
-#define W_EVALUATE 40
+#define W_EVALUATE 30
 #define W_MOBILITY 40
+#define W_SURROUND 40
 #define W_PARITY 8
 //#define W_END_CELL_WEIGHT 1
 //#define W_END_EVALUATE 5
 #define W_END_MOBILITY 20
+#define W_END_SURROUND 10
 //#define W_END_STABILITY 10
 #define W_END_PARITY 5
 
@@ -137,6 +139,10 @@ inline void move_evaluate(Search *search, Mobility *mob,  const int best_moves[]
             mob->value += W_PARITY;
         search->board.move(mob);
             mob->value += -mid_evaluate(&search->board) * W_EVALUATE;
+            if (search->board.p == BLACK)
+                mob->value += calc_surround(search->board.b, ~(search->board.b | search->board.w)) * W_SURROUND;
+            else
+                mob->value += calc_surround(search->board.w, ~(search->board.b | search->board.w)) * W_SURROUND;
             /*
             int stab0, stab1;
             calc_stability_fast(&search->board, &stab0, &stab1);
@@ -176,6 +182,10 @@ inline void move_evaluate_fast_first(Search *search, Mobility *mob,  const int b
             mob->value += W_END_PARITY;
         search->board.move(mob);
             //mob->value += -mid_evaluate(&search->board) * W_END_EVALUATE;
+            if (search->board.p == BLACK)
+                mob->value += calc_surround(search->board.b, ~(search->board.b | search->board.w)) * W_END_SURROUND;
+            else
+                mob->value += calc_surround(search->board.w, ~(search->board.b | search->board.w)) * W_END_SURROUND;
             /*
             int stab0, stab1;
             calc_stability_fast(&search->board, &stab0, &stab1);

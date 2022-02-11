@@ -441,7 +441,7 @@ int nega_alpha_end(Search *search, int alpha, int beta){
             move_list.emplace_back(calc_flip(&search->board, cell));
     }
     move_ordering_fast_first(search, move_list);
-    #if USE_MULTI_THREAD && false
+    #if USE_MULTI_THREAD
         const int canput = pop_count_ull(legal);
         int pv_idx = 0, split_count = 0;
         vector<future<pair<int, unsigned long long>>> parallel_tasks;

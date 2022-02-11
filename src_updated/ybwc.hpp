@@ -9,7 +9,8 @@
 #include "thread_pool.hpp"
 
 #define YBWC_SPLIT_DIV 6
-#define YBWC_SPLIT_MIN_DEPTH 5
+#define YBWC_MID_SPLIT_MIN_DEPTH 5
+#define YBWC_END_SPLIT_MIN_DEPTH 10
 #define YBWC_MAX_SPLIT_COUNT 1000
 
 int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool is_end_search);
@@ -23,7 +24,7 @@ inline pair<int, unsigned long long> ybwc_do_task(int id, Search search, int alp
 }
 
 inline bool ybwc_split(Search *search, int alpha, int beta, const int depth, bool is_end_search, int policy, const int pv_idx, const int canput, const int split_count, vector<future<pair<int, unsigned long long>>> &parallel_tasks){
-    if (pv_idx > canput / YBWC_SPLIT_DIV && pv_idx < canput - 1 && depth >= YBWC_SPLIT_MIN_DEPTH && split_count < YBWC_MAX_SPLIT_COUNT){
+    if (pv_idx > canput / YBWC_SPLIT_DIV && pv_idx < canput - 1 && depth >= YBWC_MID_SPLIT_MIN_DEPTH && split_count < YBWC_MAX_SPLIT_COUNT){
         if (thread_pool.n_idle()){
             Search copy_search;
             search->board.copy(&copy_search.board);
@@ -47,7 +48,7 @@ inline pair<int, unsigned long long> ybwc_do_task_end(int id, Search search, int
 }
 
 inline bool ybwc_split_end(Search *search, int alpha, int beta, int policy, const int pv_idx, const int canput, const int split_count, vector<future<pair<int, unsigned long long>>> &parallel_tasks){
-    if (pv_idx > canput / YBWC_SPLIT_DIV && pv_idx < canput - 1 && HW2 - search->board.n >= YBWC_SPLIT_MIN_DEPTH && split_count < YBWC_MAX_SPLIT_COUNT){
+    if (pv_idx > canput / YBWC_SPLIT_DIV && pv_idx < canput - 1 && HW2 - search->board.n >= YBWC_END_SPLIT_MIN_DEPTH && split_count < YBWC_MAX_SPLIT_COUNT){
         if (thread_pool.n_idle()){
             Search copy_search;
             search->board.copy(&copy_search.board);

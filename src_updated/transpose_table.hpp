@@ -23,24 +23,17 @@ class Node_child_transpose_table{
     public:
         inline void init(){
             reg = false;
-            best_moves[0] = TRANSPOSE_TABLE_UNDEFINED;
-            best_moves[1] = TRANSPOSE_TABLE_UNDEFINED;
-            best_moves[2] = TRANSPOSE_TABLE_UNDEFINED;
-            best_value = -INF;
         }
 
         inline void register_value(const Board *board, const int policy, const int value){
-            init();
             reg = true;
             b = board->b;
             w = board->w;
             p = board->p;
-            if (best_value < value){
-                best_value = value;
-                best_moves[2] = best_moves[1].load();
-                best_moves[1] = best_moves[0].load();
-                best_moves[0] = policy;
-            }
+            best_moves[0] = policy;
+            best_moves[1] = TRANSPOSE_TABLE_UNDEFINED;
+            best_moves[2] = TRANSPOSE_TABLE_UNDEFINED;
+            best_value = value;
         }
 
         inline void register_value(const int policy, const int value){
@@ -53,9 +46,9 @@ class Node_child_transpose_table{
         }
 
         inline void get(int b[]){
-            b[0] = best_moves[0];
-            b[1] = best_moves[1];
-            b[2] = best_moves[2];
+            b[0] = best_moves[0].load();
+            b[1] = best_moves[1].load();
+            b[2] = best_moves[2].load();
         }
 };
 
@@ -64,6 +57,7 @@ class Child_transpose_table{
         int prev;
         int now;
         Node_child_transpose_table table[2][TRANSPOSE_TABLE_SIZE];
+        atomic<int> n_reg;
 
     public:
         inline void init(){
@@ -98,11 +92,13 @@ class Child_transpose_table{
 
         inline void reg(const Board *board, const int hash, const int policy, const int value){
             if (global_searching){
-                if (!table[now][hash].reg)
+                if (!table[now][hash].reg){
                     table[now][hash].register_value(board, policy, value);
-                else if (!compare_key(board, &table[now][hash]))
+                    //++n_reg;
+                } else if (!compare_key(board, &table[now][hash])){
                     table[now][hash].register_value(board, policy, value);
-                else
+                    //++n_reg;
+                } else
                     table[now][hash].register_value(policy, value);
             }
         }
@@ -133,6 +129,10 @@ class Child_transpose_table{
             return false;
         }
 
+        inline int get_n_reg(){
+            return n_reg.load();
+        }
+
     private:
         inline bool compare_key(const Board *a, Node_child_transpose_table *b){
             return a->p == b->p && a->b == b->b && a->w == b->w;
@@ -152,8 +152,6 @@ class Node_parent_transpose_table{
     public:
         inline void init(){
             reg = false;
-            lower = -INF;
-            upper = INF;
         }
 
         inline void register_value(const Board *board, const int l, const int u){
