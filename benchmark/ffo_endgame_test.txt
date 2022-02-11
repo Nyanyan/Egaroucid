@@ -1529,3 +1529,29 @@ endsearch time 1775 mpct 0 policy 55 value 38 nodes 25120083 nps 14144190
 #42 endsearch time 1839 mpct 0 policy 49 value 6 nodes 82282614 nps 44694521
 #43 endsearch time 3372 mpct 0 policy 13 value -12 nodes 130834383 nps 38788729
 #44 endsearch time 1508 mpct 0 policy 52 value -14 nodes 45154803 nps 29923660
+
+2022/02/11 mtd
+#40 endsearch time 618 mpct 0 policy 55 value 38 nodes 23482696 nps 37936504
+#41 endsearch time 931 mpct 0 policy 32 value 0 nodes 28273141 nps 30335988
+#42 endsearch time 1488 mpct 0 policy 49 value 6 nodes 59011402 nps 39631566
+#43 endsearch time 3208 mpct 0 policy 13 value -12 nodes 111299625 nps 34683585
+#44 endsearch time 1141 mpct 0 policy 52 value -14 nodes 22079838 nps 19334359
+#45 endsearch time 23157 mpct 0 policy 54 value 6 nodes 874193659 nps 37750730
+#46 endsearch time 3808 mpct 0 policy 46 value -8 nodes 121949223 nps 32024480
+#47 endsearch time 2476 mpct 0 policy 49 value 4 nodes 78210110 nps 31587281
+#48 endsearch time 21580 mpct 0 policy 18 value 28 nodes 728779174 nps 33771046
+#49 endsearch time 15747 mpct 0 policy 59 value 16 nodes 778810001 nps 49457674
+
+2022/02/11 negascout
+#40 endsearch time 645 mpct 0 policy 55 value 38 nodes 23676061 nps 36650249
+#41 endsearch time 1197 mpct 0 policy 32 value 0 nodes 28915666 nps 24136616
+#42 endsearch time 1504 mpct 0 policy 49 value 6 nodes 55575196 nps 36927040
+#43 endsearch time 3754 mpct 0 policy 13 value -12 nodes 107705657 nps 28683264
+
+2022/02/11 mtd END_FAST_DEPTH 6
+#40 endsearch time 674 mpct 0 policy 55 value 38 nodes 18037662 nps 26722462
+#41 endsearch time 1166 mpct 0 policy 32 value 0 nodes 22325186 nps 19130407
+#42 endsearch time 1971 mpct 0 policy 49 value 6 nodes 45427284 nps 23036148
+#43 endsearch time 6446 mpct 0 policy 41 value -12 nodes 103692390 nps 16083820
+#44 endsearch time 1151 mpct 0 policy 52 value -14 nodes 17926630 nps 15561310
+#45 endsearch time 22132 mpct 0 policy 54 value 6 nodes 668271788 nps 30193457

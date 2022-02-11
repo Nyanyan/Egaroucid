@@ -451,7 +451,6 @@ inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mp
             //    pre_search_mpcts.emplace_back(2.0);
             search.use_mpc = true;
             for (double pre_search_mpct: pre_search_mpcts){
-                strt2 = tim();
                 f_n_nodes = search.n_nodes;
                 alpha = -HW2;
                 beta = HW2;
@@ -460,6 +459,7 @@ inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mp
                 child_transpose_table.ready_next_search();
                 //move_ordering(&search, move_list);
                 move_ordering_value(move_list);
+                strt2 = tim();
                 for (Mobility &mob: move_list){
                     search.board.move(&mob);
                         g = -nega_scout(&search, -beta, min(HW2, -alpha + 6), depth - 1, true);
@@ -482,11 +482,12 @@ inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mp
             parent_transpose_table.init();
             child_transpose_table.ready_next_search();
             move_ordering_value(move_list);
-            bool first_search = true;
+            //bool first_search = true;
             for (Mobility &mob: move_list){
                 strt2 = tim();
                 f_n_nodes = search.n_nodes;
                 search.board.move(&mob);
+                    /*
                     if (first_search)
                         g = -nega_scout(&search, -beta, -alpha, depth - 1, true);
                     else{
@@ -494,7 +495,8 @@ inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mp
                         if (alpha < g)
                             g = -nega_scout(&search, -beta, -g, depth - 1, true);
                     }
-                    //g = -mtd_end(&search, -beta, -alpha, -mob.value, depth - 1, true);
+                    */
+                    g = -mtd_end(&search, -beta, -alpha, -mob.value, depth - 1, true);
                 search.board.undo(&mob);
                 cerr << "main searching time " << tim() - strt2 << " policy " << mob.pos << " value " << g << " expected " << mob.value << " nodes " << search.n_nodes - f_n_nodes << " nps " << (search.n_nodes - f_n_nodes) * 1000 / max(1LL, tim() - strt2) << endl;
                 mob.value = g;
@@ -503,7 +505,7 @@ inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mp
                     alpha = g;
                     res.policy = mob.pos;
                 }
-                first_search = false;
+                //first_search = false;
             }
             cerr << "endsearch time " << tim() - strt << " mpct " << search.mpct << " policy " << res.policy << " value " << alpha << " nodes " << search.n_nodes << " nps " << search.n_nodes * 1000 / max(1LL, tim() - strt) << endl;
         }
