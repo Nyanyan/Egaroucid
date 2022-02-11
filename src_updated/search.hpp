@@ -20,7 +20,7 @@ using namespace std;
 //#define W_STABILITY 10
 #define W_EVALUATE 30
 #define W_MOBILITY 40
-#define W_SURROUND 40
+#define W_SURROUND 30
 #define W_PARITY 8
 //#define W_END_CELL_WEIGHT 1
 //#define W_END_EVALUATE 5
