@@ -121,11 +121,21 @@ int nega_alpha(Search *search, int alpha, int beta, int depth){
     return v;
 }
 
+#include <mutex>
+std::mutex cout_guard;
+
+void cout_log(){
+    std::lock_guard<std::mutex> lk(cout_guard);
+    cout << tim() << " " << thread_pool.n_idle() << endl;
+}
+
 int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool is_end_search){
     if (!global_searching)
         return SCORE_UNDEFINED;
-    if (is_end_search && depth <= MID_TO_END_DEPTH)
+    if (is_end_search && depth <= MID_TO_END_DEPTH){
+        cout_log();
         return nega_alpha_end(search, alpha, beta);
+    }
     if (depth <= MID_FAST_DEPTH)
         return nega_alpha(search, alpha, beta, depth);
     ++(search->n_nodes);
