@@ -34,14 +34,14 @@ inline vector<int> input_board(Board *b, int ai_player){
 
 int main(){
     cerr << "start!" << endl;
+    #if USE_MULTI_THREAD
+        thread_pool.resize(8);
+    #endif
     mobility_init();
     evaluate_init();
     parent_transpose_table.init();
     child_transpose_table.init();
     cerr << "initialized" << endl;
-    #if USE_MULTI_THREAD
-        thread_pool.resize(8);
-    #endif
     Board b;
     int ai_player;
     while (true){
