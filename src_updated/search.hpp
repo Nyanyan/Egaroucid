@@ -24,9 +24,9 @@ using namespace std;
 #define W_PARITY 8
 //#define W_END_CELL_WEIGHT 1
 //#define W_END_EVALUATE 5
-#define W_END_MOBILITY 16
+#define W_END_MOBILITY 32
 #define W_END_SURROUND 8
-//#define W_END_STABILITY 10
+#define W_END_STABILITY 64
 #define W_END_PARITY 4
 
 #define MID_MPC_MIN_DEPTH 2
@@ -36,7 +36,7 @@ using namespace std;
 #define N_END_MPC_SCORE_DIV 22
 
 #define MID_FAST_DEPTH 3
-#define END_FAST_DEPTH 6
+#define END_FAST_DEPTH 7
 #define MID_TO_END_DEPTH 11
 
 #define SCORE_UNDEFINED -INF
@@ -186,14 +186,12 @@ inline void move_evaluate_fast_first(Search *search, Mobility *mob,  const int b
                 mob->value += calc_surround(search->board.b, ~(search->board.b | search->board.w)) * W_END_SURROUND;
             else
                 mob->value += calc_surround(search->board.w, ~(search->board.b | search->board.w)) * W_END_SURROUND;
-            /*
             int stab0, stab1;
             calc_stability_fast(&search->board, &stab0, &stab1);
             if (search->board.p == BLACK)
                 mob->value += stab1 * W_END_STABILITY;
             else
                 mob->value += stab0 * W_END_STABILITY;
-            */
             mob->value -= pop_count_ull(search->board.mobility_ull()) * W_END_MOBILITY;
         search->board.undo(mob);
     }
