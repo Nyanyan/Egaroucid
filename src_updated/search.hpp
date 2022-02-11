@@ -18,16 +18,16 @@ using namespace std;
 #define W_BEST3_MOVE 700000000
 #define W_CELL_WEIGHT 1
 //#define W_STABILITY 10
-#define W_EVALUATE 30
-#define W_MOBILITY 40
-#define W_SURROUND 30
+#define W_EVALUATE 32
+#define W_MOBILITY 64
+#define W_SURROUND 32
 #define W_PARITY 8
 //#define W_END_CELL_WEIGHT 1
 //#define W_END_EVALUATE 5
-#define W_END_MOBILITY 20
-#define W_END_SURROUND 10
+#define W_END_MOBILITY 16
+#define W_END_SURROUND 8
 //#define W_END_STABILITY 10
-#define W_END_PARITY 5
+#define W_END_PARITY 4
 
 #define MID_MPC_MIN_DEPTH 2
 #define MID_MPC_MAX_DEPTH 30
@@ -36,8 +36,8 @@ using namespace std;
 #define N_END_MPC_SCORE_DIV 22
 
 #define MID_FAST_DEPTH 3
-#define END_FAST_DEPTH 7
-#define MID_TO_END_DEPTH 15
+#define END_FAST_DEPTH 6
+#define MID_TO_END_DEPTH 11
 
 #define SCORE_UNDEFINED -INF
 

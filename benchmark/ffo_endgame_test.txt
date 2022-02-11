@@ -1522,3 +1522,10 @@ endsearch time 1775 mpct 0 policy 55 value 38 nodes 25120083 nps 14144190
 #43 endsearch time 4136 mpct 0 policy 13 value -12 nodes 141528182 nps 34210341
 #44 endsearch time 1725 mpct 0 policy 52 value -14 nodes 32471295 nps 18823939
 #45 endsearch time 33117 mpct 0 policy 54 value 6 nodes 1433914531 nps 43298442
+
+2022/02/11 negascout updated
+#40 endsearch time 637 mpct 0 policy 55 value 38 nodes 26503997 nps 41607530
+#41 endsearch time 1502 mpct 0 policy 32 value 0 nodes 53910953 nps 35868897
+#42 endsearch time 1839 mpct 0 policy 49 value 6 nodes 82282614 nps 44694521
+#43 endsearch time 3372 mpct 0 policy 13 value -12 nodes 130834383 nps 38788729
+#44 endsearch time 1508 mpct 0 policy 52 value -14 nodes 45154803 nps 29923660

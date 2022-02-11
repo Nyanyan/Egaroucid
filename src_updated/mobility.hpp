@@ -32,7 +32,7 @@ constexpr unsigned char d9_mask[HW2] = {
 
 unsigned char flip_pre_calc[N_8BIT][N_8BIT][HW];
 unsigned char n_flip_pre_calc[N_8BIT][N_8BIT][HW];
-unsigned long long line_to_board_v[N_8BIT][HW];
+unsigned long long line_to_board_v[N_8BIT];
 unsigned long long line_to_board_d7[N_8BIT][HW * 2];
 unsigned long long line_to_board_d9[N_8BIT][HW * 2];
 
@@ -251,7 +251,7 @@ class Mobility{
 
                 p = join_v_line(player, u);
                 o = join_v_line(opponent, u);
-                flip |= line_to_board_v[flip_pre_calc[p][o][t]][u];
+                flip |= line_to_board_v[flip_pre_calc[p][o][t]] << u;
 
                 u += t;
                 if (u >= 2 && u <= 12){
@@ -281,7 +281,7 @@ class Mobility{
 
                 p = join_v_line(player, u);
                 o = join_v_line(opponent, u);
-                flip |= line_to_board_v[flip_pre_calc[p][o][t]][u];
+                flip |= line_to_board_v[flip_pre_calc[p][o][t]] << u;
 
                 u += t;
                 if (u >= 2 && u <= 12){
@@ -395,8 +395,7 @@ void mobility_init(){
         }
     }
     for (idx = 0; idx < N_8BIT; ++idx){
-        for (t = 0; t < HW; ++t)
-            line_to_board_v[idx][t] = split_v_line((unsigned char)idx, t);
+        line_to_board_v[idx] = split_v_line((unsigned char)idx, 0);
         for (t = 0; t < HW * 2; ++t)
             line_to_board_d7[idx][t] = split_d7_line((unsigned char)idx, t);
         for (t = -HW; t < HW; ++t)

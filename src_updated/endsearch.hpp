@@ -15,13 +15,13 @@
 
 using namespace std;
 
-inline bool mpc_end_higher(Search *search, int beta, int depth, int val){
-    int bound = beta + ceil(search->mpct * mpcsd_final[(depth - END_MPC_MIN_DEPTH) / 5][(val + HW2) / 6]);
+inline bool mpc_end_higher(Search *search, int beta, int val){
+    int bound = beta + ceil(search->mpct * mpcsd_final[(HW2 - search->board.n - END_MPC_MIN_DEPTH) / 5][(val + HW2) / 6]);
     return val >= bound;
 }
 
-inline bool mpc_end_lower(Search *search, int alpha, int depth, int val){
-    int bound = alpha - ceil(search->mpct * mpcsd_final[(depth - END_MPC_MIN_DEPTH) / 5][(val + HW2) / 6]);
+inline bool mpc_end_lower(Search *search, int alpha, int val){
+    int bound = alpha - ceil(search->mpct * mpcsd_final[(HW2 - search->board.n - END_MPC_MIN_DEPTH) / 5][(val + HW2) / 6]);
     return val <= bound;
 }
 
@@ -404,18 +404,18 @@ int nega_alpha_end(Search *search, int alpha, int beta){
         alpha = max(alpha, l);
         beta = min(beta, u);
     #endif
-    int depth = HW2 - search->board.n;
     #if USE_END_MPC
+        int depth = HW2 - search->board.n;
         if (END_MPC_MIN_DEPTH <= depth && depth <= END_MPC_MAX_DEPTH && search->use_mpc){
             int val = mid_evaluate(&search->board);
-            if (mpc_end_higher(search, beta, depth, val)){
+            if (mpc_end_higher(search, beta, val)){
                 #if USE_END_TC && false
                     if (l < beta)
                         parent_transpose_table.reg(&search->board, hash_code, beta, u);
                 #endif
                 return beta;
             }
-            if (mpc_end_lower(search, alpha, depth, val)){
+            if (mpc_end_lower(search, alpha, val)){
                 #if USE_END_TC && false
                     if (alpha < u)
                         parent_transpose_table.reg(&search->board, hash_code, l, alpha);
@@ -453,9 +453,11 @@ int nega_alpha_end(Search *search, int alpha, int beta){
                 } else{
                     g = -nega_alpha_end(search, -beta, -alpha);
                     search->board.undo(&mob);
-                    child_transpose_table.reg(&search->board, hash_code, mob.pos, g);
                     alpha = max(alpha, g);
-                    v = max(v, g);
+                    if (v < g){
+                        v = g;
+                        child_transpose_table.reg(&search->board, hash_code, mob.pos, g);
+                    }
                     if (beta <= alpha)
                         break;
                 }
@@ -471,9 +473,11 @@ int nega_alpha_end(Search *search, int alpha, int beta){
             search->board.move(&mob);
                 g = -nega_alpha_end(search, -beta, -alpha);
             search->board.undo(&mob);
-            child_transpose_table.reg(&search->board, hash_code, mob.pos, g);
             alpha = max(alpha, g);
-            v = max(v, g);
+            if (v < g){
+                v = g;
+                child_transpose_table.reg(&search->board, hash_code, mob.pos, g);
+            }
             if (beta <= alpha)
                 break;
         }
@@ -513,18 +517,18 @@ int nega_scout_end(Search *search, int alpha, int beta){
         alpha = max(alpha, l);
         beta = min(beta, u);
     #endif
-    int depth = HW2 - search->board.n;
     #if USE_END_MPC
+        int depth = HW2 - search->board.n;
         if (END_MPC_MIN_DEPTH <= depth && depth <= END_MPC_MAX_DEPTH && search->use_mpc){
             int val = mid_evaluate(&search->board);
-            if (mpc_end_higher(search, beta, depth, val)){
+            if (mpc_end_higher(search, beta, val)){
                 #if USE_END_TC && false
                     if (l < beta)
                         parent_transpose_table.reg(&search->board, hash_code, beta, u);
                 #endif
                 return beta;
             }
-            if (mpc_end_lower(search, alpha, depth, val)){
+            if (mpc_end_lower(search, alpha, val)){
                 #if USE_END_TC && false
                     if (alpha < u)
                         parent_transpose_table.reg(&search->board, hash_code, l, alpha);
@@ -560,9 +564,11 @@ int nega_scout_end(Search *search, int alpha, int beta){
                     g = -nega_scout_end(search, -beta, -g);
             }
         search->board.undo(&mob);
-        child_transpose_table.reg(&search->board, hash_code, mob.pos, g);
         alpha = max(alpha, g);
-        v = max(v, g);
+        if (v < g){
+            v = g;
+            child_transpose_table.reg(&search->board, hash_code, mob.pos, g);
+        }
         if (beta <= alpha)
             break;
     }
