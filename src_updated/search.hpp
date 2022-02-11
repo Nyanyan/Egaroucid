@@ -230,12 +230,3 @@ inline int stability_cut(Search *search, int *alpha, int *beta){
     *beta = min(*beta, n_beta);
     return SCORE_UNDEFINED;
 }
-
-#include <mutex>
-#include "thread_pool.hpp"
-mutex cout_guard;
-
-void cout_log(){
-    lock_guard<mutex> lk(cout_guard);
-    cout << tim() << " " << thread_pool.n_idle() << endl;
-}

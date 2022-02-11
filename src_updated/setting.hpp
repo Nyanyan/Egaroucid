@@ -61,3 +61,6 @@
 
 // book mode
 #define BOOK_MODE false
+
+// logging
+#define USE_LOG true

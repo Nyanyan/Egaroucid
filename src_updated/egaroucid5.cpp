@@ -9,6 +9,9 @@
 #if USE_MULTI_THREAD
     #include "thread_pool.hpp"
 #endif
+#if USE_LOG
+    #include "log.hpp"
+#endif
 
 inline vector<int> input_board(Board *b, int ai_player){
     int i;
@@ -45,8 +48,14 @@ int main(){
         cin >> ai_player;
         vector<int> vacant_lst = input_board(&b, ai_player);
         b.print();
+        #if USE_LOG
+            set_timer();
+        #endif
         Search_result res = tree_search(b, 60, false, 0.0, vacant_lst);
         cerr << res.policy << " " << res.value << endl;
+        #if USE_LOG
+            return 0;
+        #endif
     }
     return 0;
 }

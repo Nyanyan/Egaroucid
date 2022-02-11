@@ -385,7 +385,7 @@ int nega_alpha_end(Search *search, int alpha, int beta){
     if (!global_searching)
         return SCORE_UNDEFINED;
     if (search->board.n >= HW2 - END_FAST_DEPTH){
-        cout_log();
+        //cout_log();
         return nega_alpha_end_fast(search, alpha, beta);
     }
     ++search->n_nodes;

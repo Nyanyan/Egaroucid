@@ -31,6 +31,7 @@ inline pair<int, unsigned long long> ybwc_do_task(int id, Search search, int alp
 inline bool ybwc_split(Search *search, int alpha, int beta, const int depth, bool is_end_search, int policy, const int pv_idx, const int canput, const int split_count, vector<future<pair<int, unsigned long long>>> &parallel_tasks){
     if (pv_idx > canput / YBWC_SPLIT_DIV /* && pv_idx < canput - 1 */ && depth >= YBWC_MID_SPLIT_MIN_DEPTH /* && split_count < YBWC_MAX_SPLIT_COUNT */ ){
         if (thread_pool.n_idle()){
+            /*
             if (search->use_mpc && is_end_search && END_MPC_MIN_DEPTH <= depth && depth <= END_MPC_MAX_DEPTH){
                 int val = mid_evaluate(&search->board);
                 if (mpc_end_lower(search, alpha, val))
@@ -38,6 +39,7 @@ inline bool ybwc_split(Search *search, int alpha, int beta, const int depth, boo
                 if (mpc_end_higher(search, beta, val))
                     return false;
             }
+            */
             Search copy_search;
             search->board.copy(&copy_search.board);
             copy_search.skipped = search->skipped;
@@ -62,6 +64,7 @@ inline pair<int, unsigned long long> ybwc_do_task_end(int id, Search search, int
 inline bool ybwc_split_end(Search *search, int alpha, int beta, int policy, const int pv_idx, const int canput, const int split_count, vector<future<pair<int, unsigned long long>>> &parallel_tasks){
     if (pv_idx > canput / YBWC_SPLIT_DIV /* && pv_idx < canput - 1 */ && HW2 - search->board.n >= YBWC_END_SPLIT_MIN_DEPTH /* && split_count < YBWC_MAX_SPLIT_COUNT */ ){
         if (thread_pool.n_idle()){
+            /*
             if (search->use_mpc){
                 int depth = HW2 - search->board.n;
                 if (END_MPC_MIN_DEPTH <= depth && depth <= END_MPC_MAX_DEPTH){
@@ -72,6 +75,7 @@ inline bool ybwc_split_end(Search *search, int alpha, int beta, int policy, cons
                         return false;
                 }
             }
+            */
             Search copy_search;
             search->board.copy(&copy_search.board);
             copy_search.skipped = search->skipped;
