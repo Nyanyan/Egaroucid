@@ -64,3 +64,6 @@
 
 // logging
 #define USE_LOG true
+
+// boost library
+#define USE_BOOST false

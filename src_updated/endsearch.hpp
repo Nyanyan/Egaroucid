@@ -435,14 +435,15 @@ int nega_alpha_end(Search *search, int alpha, int beta){
         return v;
     }
     search->skipped = false;
-    vector<Mobility> move_list;
+    const int canput = pop_count_ull(legal);
+    vector<Mobility> move_list(canput);
+    int idx = 0;
     for (const int &cell: search->vacant_list){
         if (1 & (legal >> cell))
-            move_list.emplace_back(calc_flip(&search->board, cell));
+            calc_flip(&move_list[idx++], &search->board, cell);
     }
     move_ordering_fast_first(search, move_list);
     #if USE_MULTI_THREAD
-        const int canput = pop_count_ull(legal);
         int pv_idx = 0, split_count = 0;
         vector<future<pair<int, unsigned long long>>> parallel_tasks;
         for (const Mobility &mob: move_list){
@@ -547,10 +548,12 @@ int nega_scout_end(Search *search, int alpha, int beta){
         return v;
     }
     search->skipped = false;
-    vector<Mobility> move_list;
+    const int canput = pop_count_ull(legal);
+    vector<Mobility> move_list(canput);
+    int idx = 0;
     for (const int &cell: search->vacant_list){
         if (1 & (legal >> cell))
-            move_list.emplace_back(calc_flip(&search->board, cell));
+            calc_flip(&move_list[idx++], &search->board, cell);
     }
     move_ordering_fast_first(search, move_list);
     for (const Mobility &mob: move_list){

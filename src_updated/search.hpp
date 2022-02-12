@@ -168,6 +168,18 @@ inline void move_ordering(Search *search, vector<Mobility> &move_list){
     sort(move_list.begin(), move_list.end(), cmp_move_ordering);
 }
 
+inline void move_ordering(Search *search, Mobility move_list[], const int canput){
+    if (canput < 2)
+        return;
+    int best_moves[N_BEST_MOVES];
+    int hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
+    if (!child_transpose_table.get_now(&search->board, hash_code, best_moves))
+        child_transpose_table.get_prev(&search->board, hash_code, best_moves);
+    for (int i = 0; i < canput; ++i)
+        move_evaluate(search, &move_list[i], best_moves);
+    sort(move_list, move_list + canput, cmp_move_ordering);
+}
+
 inline void move_evaluate_fast_first(Search *search, Mobility *mob,  const int best_moves[]){
     mob->value = 0;
     if (mob->pos == best_moves[0])
