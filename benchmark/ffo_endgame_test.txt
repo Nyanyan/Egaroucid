@@ -1631,3 +1631,18 @@ endsearch time 1775 mpct 0 policy 55 value 38 nodes 25120083 nps 14144190
 #47 endsearch overall time 2502 search time 2487 mpct 0 policy 49 value 4 nodes 97383975 nps 39157207
 #48 endsearch overall time 25843 search time 25827 mpct 0 policy 18 value 28 nodes 781444241 nps 30256872
 
+2022/02/12 YBWC_OFFSET = 2
+#40 endsearch overall time 394 search time 381 mpct 0 policy 55 value 38 nodes 20946447 nps 54977551
+#41 endsearch overall time 727 search time 711 mpct 0 policy 32 value 0 nodes 25569770 nps 35963108
+#42 endsearch overall time 1488 search time 1472 mpct 0 policy 49 value 6 nodes 57452163 nps 39030002
+#43 endsearch overall time 2437 search time 2424 mpct 0 policy 41 value -12 nodes 90966966 nps 37527626
+#44 endsearch overall time 1002 search time 988 mpct 0 policy 52 value -14 nodes 31303645 nps 31683851
+#45 endsearch overall time 13063 search time 13050 mpct 0 policy 54 value 6 nodes 642987908 nps 49271104
+
+2022/02/12 YBWC_OFFSET = 4
+#40 endsearch overall time 425 search time 412 mpct 0 policy 55 value 38 nodes 20696116 nps 50233291
+#41 endsearch overall time 734 search time 719 mpct 0 policy 32 value 0 nodes 26126070 nps 36336675
+#42 endsearch overall time 1464 search time 1450 mpct 0 policy 49 value 6 nodes 58975739 nps 40672923
+#43 endsearch overall time 2159 search time 2146 mpct 0 policy 41 value -12 nodes 86609399 nps 40358527
+#44 endsearch overall time 1058 search time 1043 mpct 0 policy 52 value -14 nodes 33635961 nps 32249243
+#45 endsearch overall time 17416 search time 17402 mpct 0 policy 54 value 6 nodes 647087824 nps 37184681
