@@ -456,9 +456,9 @@ inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mp
             vector<double> pre_search_mpcts;
             pre_search_mpcts.emplace_back(0.5);
             if (search.mpct > 1.6 || !search.use_mpc)
-                pre_search_mpcts.emplace_back(1.0);
-            if (search.mpct > 2.0 || !search.use_mpc)
-                pre_search_mpcts.emplace_back(1.5);
+                pre_search_mpcts.emplace_back(1.2);
+            //if (search.mpct > 2.0 || !search.use_mpc)
+            //    pre_search_mpcts.emplace_back(1.7);
             //if (!search.use_mpc)
             //    pre_search_mpcts.emplace_back(2.0);
             pre_search_mpcts.emplace_back(USE_DEFAULT_MPC);
@@ -486,7 +486,8 @@ inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mp
                     strt2 = tim();
                     f_n_nodes2 = search.n_nodes;
                     search.board.move(&mob);
-                        if (false && pv_idx > (int)move_list.size() / PARALLEL_SPLIT_DIV && thread_pool.n_idle()){
+                    #if USE_MULTI_THREAD
+                        if (pv_idx > (int)move_list.size() / PARALLEL_SPLIT_DIV && thread_pool.n_idle()){
                             if (pre_search_mpct == USE_DEFAULT_MPC){
                                 if (search.use_mpc)
                                     parallel_tasks.emplace_back(make_pair(&mob, thread_pool.push(parallel_negascout, search, -beta, -alpha, depth - 1, true)));
@@ -515,6 +516,26 @@ inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mp
                                 res.policy = mob.pos;
                             }
                         }
+                    #else
+                        if (pre_search_mpct == USE_DEFAULT_MPC){
+                            if (search.use_mpc)
+                                g = -nega_scout(&search, -beta, -alpha, depth - 1, true);
+                            else
+                                g = -mtd(&search, -beta, -alpha, -mob.value, depth - 1, true);
+                        } else
+                            g = -nega_scout(&search, -beta, min(HW2, -alpha + PRESEARCH_OFFSET), depth - 1, true);
+                        if (pre_search_mpct == USE_DEFAULT_MPC)
+                            cerr << "main searching time " << tim() - strt2 << " time from start " << tim() - strt << " policy " << mob.pos << " value " << g << " expected " << mob.value << " nodes " << search.n_nodes - f_n_nodes2 << " nps " << (search.n_nodes - f_n_nodes2) * 1000 / max(1LL, tim() - strt2) << endl;
+                        #if USE_LOG
+                            cout_div();
+                        #endif
+                        search.board.undo(&mob);
+                        mob.value = g;
+                        if (alpha < g){
+                            alpha = g;
+                            res.policy = mob.pos;
+                        }
+                    #endif
                     ++pv_idx;
                 }
                 for (pair<Mobility*, future<pair<int, unsigned long long>>> &parallel_task: parallel_tasks){

@@ -125,7 +125,7 @@ bool cmp_move_ordering(Mobility &a, Mobility &b){
     return a.value > b.value;
 }
 
-inline void move_evaluate(Search *search, Mobility *mob,  const int best_moves[]){
+inline void move_evaluate(Search *search, Mobility *mob, const int best_moves[]){
     mob->value = 0;
     if (mob->pos == best_moves[0])
         mob->value = W_BEST1_MOVE;
@@ -180,7 +180,7 @@ inline void move_ordering(Search *search, Mobility move_list[], const int canput
     sort(move_list, move_list + canput, cmp_move_ordering);
 }
 
-inline void move_evaluate_fast_first(Search *search, Mobility *mob,  const int best_moves[]){
+inline void move_evaluate_fast_first(Search *search, Mobility *mob, const int best_moves[]){
     mob->value = 0;
     if (mob->pos == best_moves[0])
         mob->value = W_BEST1_MOVE;
@@ -218,6 +218,30 @@ inline void move_ordering_fast_first(Search *search, vector<Mobility> &move_list
         child_transpose_table.get_prev(&search->board, hash_code, best_moves);
     for (Mobility &mob: move_list)
         move_evaluate_fast_first(search, &mob, best_moves);
+    sort(move_list.begin(), move_list.end(), cmp_move_ordering);
+}
+
+inline void move_evaluate_fast_first_fast(Search *search, Mobility *mob, const int best_moves[]){
+    mob->value = 0;
+    if (mob->pos == best_moves[0])
+        mob->value = W_BEST1_MOVE;
+    else if (mob->pos == best_moves[1])
+        mob->value = W_BEST2_MOVE;
+    else if (mob->pos == best_moves[2])
+        mob->value = W_BEST3_MOVE;
+    else if (search->board.parity & cell_div4[mob->pos])
+            mob->value += W_END_PARITY;
+}
+
+inline void move_ordering_fast_first_fast(Search *search, vector<Mobility> &move_list){
+    if (move_list.size() < 2)
+        return;
+    int best_moves[N_BEST_MOVES];
+    int hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
+    if (!child_transpose_table.get_now(&search->board, hash_code, best_moves))
+        child_transpose_table.get_prev(&search->board, hash_code, best_moves);
+    for (Mobility &mob: move_list)
+        move_evaluate_fast_first_fast(search, &mob, best_moves);
     sort(move_list.begin(), move_list.end(), cmp_move_ordering);
 }
 

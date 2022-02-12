@@ -27,7 +27,7 @@
 /* multi threading*/
 
 // multi thread
-#define USE_MULTI_THREAD true
+#define USE_MULTI_THREAD false
 
 
 
@@ -49,6 +49,9 @@
 
 // flip calculating
 #define FLIP_CALC_MODE 1
+
+// mobility calculating
+#define MOBILITY_CALC_MODE 0
 
 // nodes statistics
 #define STATISTICS_MODE true

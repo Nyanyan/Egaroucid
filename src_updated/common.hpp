@@ -1,6 +1,11 @@
 #pragma once
 #include <chrono>
 #include <random>
+#ifdef _MSC_VER
+    #include <intrin.h>
+#else
+    #include <x86intrin.h>
+#endif
 #include "setting.hpp"
 
 using namespace std;
@@ -76,7 +81,7 @@ inline int pop_count_uchar(unsigned char x){
     x = (x & 0b00110011) + ((x & 0b11001100) >> 2);
     return (x & 0b00001111) + ((x & 11110000) >> 4);
 }
-
+/*
 inline unsigned long long mirror_v(unsigned long long x){
     unsigned long long a = x & 0b0101010101010101010101010101010101010101010101010101010101010101ULL;
     unsigned long long b = x & 0b1010101010101010101010101010101010101010101010101010101010101010ULL;
@@ -97,13 +102,15 @@ inline unsigned long long mirror_v(unsigned long long x){
     b = x & 0b1111111111111111111111111111111100000000000000000000000000000000ULL;
     return (a << 32) | (b >> 32);
 }
-/*
+*/
+
 #ifdef _MSC_VER
 	#define	mirror_v(x)	_byteswap_uint64(x)
 #else
 	#define	mirror_v(x)	__builtin_bswap64(x)
 #endif
-*/
+
+/*
 inline unsigned long long white_line(unsigned long long x){
     unsigned long long res = 0;
     int i, j;
@@ -113,6 +120,18 @@ inline unsigned long long white_line(unsigned long long x){
         }
     }
     return res;
+}
+*/
+
+inline unsigned long long white_line(unsigned long long x){
+    unsigned long long t;
+	t = (x ^ (x >> 7)) & 0x00aa00aa00aa00aaULL;
+	x = x ^ t ^ (t << 7);
+	t = (x ^ (x >> 14)) & 0x0000cccc0000ccccULL;
+	x = x ^ t ^ (t << 14);
+	t = (x ^ (x >> 28)) & 0x00000000f0f0f0f0ULL;
+	x = x ^ t ^ (t << 28);
+	return x;
 }
 
 inline unsigned long long black_line(unsigned long long x){
