@@ -128,11 +128,11 @@ int nega_alpha(Search *search, int alpha, int beta, int depth){
     return v;
 }
 
-int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool is_end_search){
-    if (!global_searching)
+int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool is_end_search, const bool *searching){
+    if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
     if (is_end_search && depth <= MID_TO_END_DEPTH)
-        return nega_alpha_end(search, alpha, beta);
+        return nega_alpha_end(search, alpha, beta, searching);
     if (depth <= MID_FAST_DEPTH)
         return nega_alpha(search, alpha, beta, depth);
     ++(search->n_nodes);
@@ -196,7 +196,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool is_
         if (search->skipped)
             return end_evaluate(&search->board);
         search->pass();
-            v = -nega_alpha_ordering(search, -beta, -alpha, depth, is_end_search);
+            v = -nega_alpha_ordering(search, -beta, -alpha, depth, is_end_search, searching);
         search->undo_pass();
         return v;
     }
@@ -212,13 +212,16 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool is_
     #if USE_MULTI_THREAD
         int pv_idx = 0, split_count = 0;
         vector<future<pair<int, unsigned long long>>> parallel_tasks;
+        bool n_searching = true;
         for (const Mobility &mob: move_list){
+            if (!(*searching))
+                break;
             search->board.move(&mob);
-                if (ybwc_split(search, -beta, -alpha, depth - 1, is_end_search, mob.pos, pv_idx++, canput, split_count, parallel_tasks)){
+                if (ybwc_split(search, -beta, -alpha, depth - 1, is_end_search, &n_searching, mob.pos, pv_idx++, canput, split_count, parallel_tasks)){
                     search->board.undo(&mob);
                     ++split_count;
                 } else{
-                    g = -nega_alpha_ordering(search, -beta, -alpha, depth - 1, is_end_search);
+                    g = -nega_alpha_ordering(search, -beta, -alpha, depth - 1, is_end_search, searching);
                     search->board.undo(&mob);
                     alpha = max(alpha, g);
                     if (v < g){
@@ -230,14 +233,19 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool is_
                 }
         }
         if (split_count){
-            g = ybwc_wait(search, parallel_tasks);
-            alpha = max(alpha, g);
-            v = max(v, g);
+            if (beta <= alpha || !(*searching)){
+                n_searching = false;
+                ybwc_wait(search, parallel_tasks);
+            } else{
+                g = ybwc_wait(search, parallel_tasks);
+                alpha = max(alpha, g);
+                v = max(v, g);
+            }
         }
     #else
         for (const Mobility &mob: move_list){
             search->board.move(&mob);
-                g = -nega_alpha_ordering(search, -beta, -alpha, depth - 1, is_end_search);
+                g = -nega_alpha_ordering(search, -beta, -alpha, depth - 1, is_end_search, searching);
             search->board.undo(&mob);
             alpha = max(alpha, g);
             if (v < g){
@@ -340,12 +348,13 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool is_end_searc
             calc_flip(&move_list[idx++], &search->board, cell);
     }
     move_ordering(search, move_list);
+    bool searching = true;
     for (const Mobility &mob: move_list){
         search->board.move(&mob);
             if (v == -INF)
                 g = -nega_scout(search, -beta, -alpha, depth - 1, is_end_search);
             else{
-                g = -nega_alpha_ordering(search, -alpha - 1, -alpha, depth - 1, is_end_search);
+                g = -nega_alpha_ordering(search, -alpha - 1, -alpha, depth - 1, is_end_search, &searching);
                 if (alpha < g)
                     g = -nega_scout(search, -beta, -g, depth - 1, is_end_search);
             }
@@ -372,10 +381,11 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool is_end_searc
 
 int mtd(Search *search, int l, int u, int g, int depth, bool is_end_search){
     int beta;
+    bool searching = true;
     g = max(l, min(u, g));
     while (u > l){
         beta = max(l + 1, g);
-        g = nega_alpha_ordering(search, beta - 1, beta, depth, is_end_search);
+        g = nega_alpha_ordering(search, beta - 1, beta, depth, is_end_search, &searching);
         if (g < beta)
             u = g;
         else
@@ -487,7 +497,7 @@ inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mp
                     f_n_nodes2 = search.n_nodes;
                     search.board.move(&mob);
                     #if USE_MULTI_THREAD
-                        if (pv_idx > (int)move_list.size() / PARALLEL_SPLIT_DIV && thread_pool.n_idle()){
+                        if (false && pv_idx > (int)move_list.size() / PARALLEL_SPLIT_DIV && thread_pool.n_idle()){
                             if (pre_search_mpct == USE_DEFAULT_MPC){
                                 if (search.use_mpc)
                                     parallel_tasks.emplace_back(make_pair(&mob, thread_pool.push(parallel_negascout, search, -beta, -alpha, depth - 1, true)));

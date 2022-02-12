@@ -28,7 +28,7 @@ using namespace std;
 //#define W_END_CELL_WEIGHT 1
 //#define W_END_EVALUATE 5
 #define W_END_MOBILITY 30
-#define W_END_SURROUND 8
+#define W_END_SURROUND 10
 //#define W_END_STABILITY 5
 #define W_END_PARITY 10
 

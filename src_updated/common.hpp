@@ -110,7 +110,6 @@ inline unsigned long long mirror_v(unsigned long long x){
 	#define	mirror_v(x)	__builtin_bswap64(x)
 #endif
 
-/*
 inline unsigned long long white_line(unsigned long long x){
     unsigned long long res = 0;
     int i, j;
@@ -121,8 +120,8 @@ inline unsigned long long white_line(unsigned long long x){
     }
     return res;
 }
-*/
 
+/*
 inline unsigned long long white_line(unsigned long long x){
     unsigned long long t;
 	t = (x ^ (x >> 7)) & 0x00aa00aa00aa00aaULL;
@@ -133,6 +132,7 @@ inline unsigned long long white_line(unsigned long long x){
 	x = x ^ t ^ (t << 28);
 	return x;
 }
+*/
 
 inline unsigned long long black_line(unsigned long long x){
     unsigned long long res = 0;

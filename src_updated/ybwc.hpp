@@ -13,8 +13,8 @@
 #define YBWC_END_SPLIT_MIN_DEPTH 6
 #define YBWC_MAX_SPLIT_COUNT 3
 
-int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool is_end_search);
-int nega_alpha_end(Search *search, int alpha, int beta);
+int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool is_end_search, const bool *searching);
+int nega_alpha_end(Search *search, int alpha, int beta, const bool *searching);
 int mtd(Search *search, int l, int u, int g, int depth, bool is_end_search);
 int nega_scout(Search *search, int alpha, int beta, int depth, bool is_end_search);
 
@@ -23,14 +23,14 @@ inline bool mpc_lower(Search *search, int alpha, int depth);
 inline bool mpc_end_higher(Search *search, int beta, int val);
 inline bool mpc_end_lower(Search *search, int alpha, int val);
 
-inline pair<int, unsigned long long> ybwc_do_task(Search search, int alpha, int beta, int depth, bool is_end_search, int policy){
+inline pair<int, unsigned long long> ybwc_do_task(Search search, int alpha, int beta, int depth, bool is_end_search, const bool *searching, int policy){
     int hash_code = search.board.hash() & TRANSPOSE_TABLE_MASK;
-    int g = -nega_alpha_ordering(&search, alpha, beta, depth, is_end_search);
+    int g = -nega_alpha_ordering(&search, alpha, beta, depth, is_end_search, searching);
     child_transpose_table.reg(&search.board, hash_code, policy, g);
     return make_pair(g, search.n_nodes);
 }
 
-inline bool ybwc_split(Search *search, int alpha, int beta, const int depth, bool is_end_search, int policy, const int pv_idx, const int canput, const int split_count, vector<future<pair<int, unsigned long long>>> &parallel_tasks){
+inline bool ybwc_split(Search *search, int alpha, int beta, const int depth, bool is_end_search, const bool *searching, int policy, const int pv_idx, const int canput, const int split_count, vector<future<pair<int, unsigned long long>>> &parallel_tasks){
     if (pv_idx > canput / YBWC_SPLIT_DIV /* && pv_idx < canput - 1 */ && depth >= YBWC_MID_SPLIT_MIN_DEPTH /* && split_count < YBWC_MAX_SPLIT_COUNT */ ){
         if (thread_pool.n_idle()){
             if (search->use_mpc && is_end_search && END_MPC_MIN_DEPTH <= depth && depth <= END_MPC_MAX_DEPTH){
@@ -47,21 +47,21 @@ inline bool ybwc_split(Search *search, int alpha, int beta, const int depth, boo
             copy_search.mpct = search->mpct;
             copy_search.vacant_list = search->vacant_list;
             copy_search.n_nodes = 0;
-            parallel_tasks.emplace_back(thread_pool.push(bind(&ybwc_do_task, copy_search, alpha, beta, depth, is_end_search, policy)));
+            parallel_tasks.emplace_back(thread_pool.push(bind(&ybwc_do_task, copy_search, alpha, beta, depth, is_end_search, searching, policy)));
             return true;
         }
     }
     return false;
 }
 
-inline pair<int, unsigned long long> ybwc_do_task_end(Search search, int alpha, int beta, int policy){
+inline pair<int, unsigned long long> ybwc_do_task_end(Search search, int alpha, int beta, const bool *searching, int policy){
     int hash_code = search.board.hash() & TRANSPOSE_TABLE_MASK;
-    int g = -nega_alpha_end(&search, alpha, beta);
+    int g = -nega_alpha_end(&search, alpha, beta, searching);
     child_transpose_table.reg(&search.board, hash_code, policy, g);
     return make_pair(g, search.n_nodes);
 }
 
-inline bool ybwc_split_end(Search *search, int alpha, int beta, int policy, const int pv_idx, const int canput, const int split_count, vector<future<pair<int, unsigned long long>>> &parallel_tasks){
+inline bool ybwc_split_end(Search *search, int alpha, int beta, const bool *searching, int policy, const int pv_idx, const int canput, const int split_count, vector<future<pair<int, unsigned long long>>> &parallel_tasks){
     if (pv_idx > canput / YBWC_SPLIT_DIV /* && pv_idx < canput - 1 */ && HW2 - search->board.n >= YBWC_END_SPLIT_MIN_DEPTH /* && split_count < YBWC_MAX_SPLIT_COUNT */ ){
         if (thread_pool.n_idle()){
             if (search->use_mpc){
@@ -80,7 +80,7 @@ inline bool ybwc_split_end(Search *search, int alpha, int beta, int policy, cons
             copy_search.mpct = search->mpct;
             copy_search.vacant_list = search->vacant_list;
             copy_search.n_nodes = 0;
-            parallel_tasks.emplace_back(thread_pool.push(bind(&ybwc_do_task_end, copy_search, alpha, beta, policy)));
+            parallel_tasks.emplace_back(thread_pool.push(bind(&ybwc_do_task_end, copy_search, alpha, beta, searching, policy)));
             return true;
         }
     }
