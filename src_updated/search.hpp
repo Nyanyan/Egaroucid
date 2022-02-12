@@ -16,18 +16,21 @@ using namespace std;
 #define W_BEST1_MOVE 900000000
 #define W_BEST2_MOVE 800000000
 #define W_BEST3_MOVE 700000000
+#define W_CACHE_HIT 1000000
+#define W_CACHE_HIGH 10000
+#define W_CACHE_VALUE 64
 #define W_CELL_WEIGHT 1
-#define W_STABILITY 16
-#define W_EVALUATE 64
-#define W_MOBILITY 128
-#define W_SURROUND 32
-#define W_PARITY 8
+#define W_EVALUATE 10
+#define W_MOBILITY 60
+#define W_STABILITY 5
+#define W_SURROUND 5
+#define W_PARITY 4
 //#define W_END_CELL_WEIGHT 1
 //#define W_END_EVALUATE 5
-#define W_END_MOBILITY 32
+#define W_END_MOBILITY 30
 #define W_END_SURROUND 8
-#define W_END_STABILITY 64
-#define W_END_PARITY 4
+//#define W_END_STABILITY 5
+#define W_END_PARITY 10
 
 #define MID_MPC_MIN_DEPTH 2
 #define MID_MPC_MAX_DEPTH 30
@@ -138,19 +141,23 @@ inline void move_evaluate(Search *search, Mobility *mob, const int best_moves[])
         if (search->board.parity & cell_div4[mob->pos])
             mob->value += W_PARITY;
         search->board.move(mob);
+            int l, u;
+            parent_transpose_table.get_prev(&search->board, search->board.hash() & TRANSPOSE_TABLE_MASK, &l, &u);
+            if (u != INF)
+                mob->value += W_CACHE_HIT + W_CACHE_HIGH - u * W_CACHE_VALUE;
+            else if (l != -INF)
+                mob->value += W_CACHE_HIT - l * W_CACHE_VALUE;
             mob->value += -mid_evaluate(&search->board) * W_EVALUATE;
             if (search->board.p == BLACK)
                 mob->value += calc_surround(search->board.b, ~(search->board.b | search->board.w)) * W_SURROUND;
             else
                 mob->value += calc_surround(search->board.w, ~(search->board.b | search->board.w)) * W_SURROUND;
-            
             int stab0, stab1;
             calc_stability_fast(&search->board, &stab0, &stab1);
             if (search->board.p == BLACK)
                 mob->value += stab1 * W_STABILITY;
             else
                 mob->value += stab0 * W_STABILITY;
-            
             mob->value -= pop_count_ull(search->board.mobility_ull()) * W_MOBILITY;
         search->board.undo(mob);
     }
@@ -161,23 +168,10 @@ inline void move_ordering(Search *search, vector<Mobility> &move_list){
         return;
     int best_moves[N_BEST_MOVES];
     int hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
-    if (!child_transpose_table.get_now(&search->board, hash_code, best_moves))
-        child_transpose_table.get_prev(&search->board, hash_code, best_moves);
+    child_transpose_table.get_prev(&search->board, hash_code, best_moves);
     for (Mobility &mob: move_list)
         move_evaluate(search, &mob, best_moves);
     sort(move_list.begin(), move_list.end(), cmp_move_ordering);
-}
-
-inline void move_ordering(Search *search, Mobility move_list[], const int canput){
-    if (canput < 2)
-        return;
-    int best_moves[N_BEST_MOVES];
-    int hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
-    if (!child_transpose_table.get_now(&search->board, hash_code, best_moves))
-        child_transpose_table.get_prev(&search->board, hash_code, best_moves);
-    for (int i = 0; i < canput; ++i)
-        move_evaluate(search, &move_list[i], best_moves);
-    sort(move_list, move_list + canput, cmp_move_ordering);
 }
 
 inline void move_evaluate_fast_first(Search *search, Mobility *mob, const int best_moves[]){
@@ -198,12 +192,14 @@ inline void move_evaluate_fast_first(Search *search, Mobility *mob, const int be
                 mob->value += calc_surround(search->board.b, ~(search->board.b | search->board.w)) * W_END_SURROUND;
             else
                 mob->value += calc_surround(search->board.w, ~(search->board.b | search->board.w)) * W_END_SURROUND;
+            /*
             int stab0, stab1;
             calc_stability_fast(&search->board, &stab0, &stab1);
             if (search->board.p == BLACK)
                 mob->value += stab1 * W_END_STABILITY;
             else
                 mob->value += stab0 * W_END_STABILITY;
+            */
             mob->value -= pop_count_ull(search->board.mobility_ull()) * W_END_MOBILITY;
         search->board.undo(mob);
     }
@@ -214,8 +210,7 @@ inline void move_ordering_fast_first(Search *search, vector<Mobility> &move_list
         return;
     int best_moves[N_BEST_MOVES];
     int hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
-    if (!child_transpose_table.get_now(&search->board, hash_code, best_moves))
-        child_transpose_table.get_prev(&search->board, hash_code, best_moves);
+    child_transpose_table.get_prev(&search->board, hash_code, best_moves);
     for (Mobility &mob: move_list)
         move_evaluate_fast_first(search, &mob, best_moves);
     sort(move_list.begin(), move_list.end(), cmp_move_ordering);

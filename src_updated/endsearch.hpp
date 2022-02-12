@@ -397,7 +397,7 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta){
     #endif
     #if USE_END_TC
         int l, u, hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
-        parent_transpose_table.get(&search->board, hash_code, &l, &u);
+        parent_transpose_table.get_now(&search->board, hash_code, &l, &u);
         if (u == l)
             return u;
         if (l >= beta)
@@ -479,7 +479,7 @@ int nega_alpha_end(Search *search, int alpha, int beta){
     #endif
     #if USE_END_TC
         int l, u, hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
-        parent_transpose_table.get(&search->board, hash_code, &l, &u);
+        parent_transpose_table.get_now(&search->board, hash_code, &l, &u);
         if (u == l)
             return u;
         if (l >= beta)
@@ -592,7 +592,7 @@ int nega_scout_end(Search *search, int alpha, int beta){
     int hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
     #if USE_END_TC
         int l, u;
-        parent_transpose_table.get(&search->board, hash_code, &l, &u);
+        parent_transpose_table.get_now(&search->board, hash_code, &l, &u);
         if (u == l)
             return u;
         if (l >= beta)

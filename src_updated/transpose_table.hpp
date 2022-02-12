@@ -218,52 +218,95 @@ class Node_parent_transpose_table{
 };
 
 #if USE_MULTI_THREAD
-    void parent_init_p(int id, Node_parent_transpose_table table[], const int s, const int e){
+    void parent_init_p(int id, Node_parent_transpose_table table[2][TRANSPOSE_TABLE_SIZE], const int idx, const int s, const int e){
         for(int i = s; i < e; ++i)
-            table[i].init();
+            table[idx][i].init();
     }
 #endif
 
 class Parent_transpose_table{
     private:
-        Node_parent_transpose_table table[TRANSPOSE_TABLE_SIZE];
+        int prev;
+        int now;
+        Node_parent_transpose_table table[2][TRANSPOSE_TABLE_SIZE];
 
     public:
+        inline void init(){
+            now = 0;
+            prev = 1;
+            init_now();
+            init_prev();
+        }
+
+        inline void ready_next_search(){
+            swap(now, prev);
+            init_now();
+        }
+
         #if USE_MULTI_THREAD
-            inline void init(){
+            inline void init_now(){
                 const int thread_size = thread_pool.size();
                 const int delta = ceil((double)TRANSPOSE_TABLE_SIZE / thread_size);
                 int s = 0;
                 vector<future<void>> init_future;
                 for (int i = 0; i < thread_size; ++i){
-                    init_future.emplace_back(thread_pool.push(parent_init_p, table, s, min(TRANSPOSE_TABLE_SIZE, s + delta)));
+                    init_future.emplace_back(thread_pool.push(parent_init_p, table, now, s, min(TRANSPOSE_TABLE_SIZE, s + delta)));
+                    s += delta;
+                }
+                for (int i = 0; i < thread_size; ++i)
+                    init_future[i].get();
+            }
+
+            inline void init_prev(){
+                const int thread_size = thread_pool.size();
+                const int delta = ceil((double)TRANSPOSE_TABLE_SIZE / thread_size);
+                int s = 0;
+                vector<future<void>> init_future;
+                for (int i = 0; i < thread_size; ++i){
+                    init_future.emplace_back(thread_pool.push(parent_init_p, table, prev, s, min(TRANSPOSE_TABLE_SIZE, s + delta)));
                     s += delta;
                 }
                 for (int i = 0; i < thread_size; ++i)
                     init_future[i].get();
             }
         #else
-            inline void init(){
+            inline void init_now(){
                 for(int i = 0; i < TRANSPOSE_TABLE_SIZE; ++i)
-                    table[i].init();
+                    table[now][i].init();
+            }
+
+            inline void init_prev(){
+                for(int i = 0; i < TRANSPOSE_TABLE_SIZE; ++i)
+                    table[prev][i].init();
             }
         #endif
 
         inline void reg(const Board *board, const int hash, const int l, const int u){
             if (global_searching){
-                if (!table[hash].reg)
-                    table[hash].register_value(board, l, u);
-                else if (!compare_key(board, &table[hash]))
-                    table[hash].register_value(board, l, u);
+                if (!table[now][hash].reg)
+                    table[now][hash].register_value(board, l, u);
+                else if (!compare_key(board, &table[now][hash]))
+                    table[now][hash].register_value(board, l, u);
                 else
-                    table[hash].register_value(l, u);
+                    table[now][hash].register_value(l, u);
             }
         }
 
-        inline void get(Board *board, const int hash, int *l, int *u) const{
-            if (table[hash].reg){
-                if (compare_key(board, &table[hash])){
-					table[hash].get(l, u);
+        inline void get_now(Board *board, const int hash, int *l, int *u) const{
+            if (table[now][hash].reg){
+                if (compare_key(board, &table[now][hash])){
+					table[now][hash].get(l, u);
+                    return;
+                }
+            }
+            *l = -INF;
+            *u = INF;
+        }
+
+        inline void get_prev(Board *board, const int hash, int *l, int *u) const{
+            if (table[prev][hash].reg){
+                if (compare_key(board, &table[prev][hash])){
+					table[prev][hash].get(l, u);
                     return;
                 }
             }

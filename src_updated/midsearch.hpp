@@ -144,7 +144,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool is_
     int hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
     #if USE_MID_TC
         int l, u;
-        parent_transpose_table.get(&search->board, hash_code, &l, &u);
+        parent_transpose_table.get_now(&search->board, hash_code, &l, &u);
         if (u == l)
             return u;
         if (l >= beta)
@@ -275,7 +275,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool is_end_searc
     int hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
     #if USE_MID_TC
         int l, u;
-        parent_transpose_table.get(&search->board, hash_code, &l, &u);
+        parent_transpose_table.get_now(&search->board, hash_code, &l, &u);
         if (u == l)
             return u;
         if (l >= beta)
@@ -429,7 +429,7 @@ inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mp
         for (int depth = min(16, max(0, max_depth - 5)); depth <= max_depth; ++depth){
             alpha = -HW2;
             beta = HW2;
-            parent_transpose_table.init();
+            parent_transpose_table.ready_next_search();
             child_transpose_table.ready_next_search();
             move_ordering(&search, move_list);
             //move_ordering_value(move_list);
@@ -476,7 +476,7 @@ inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mp
                     search.use_mpc = true;
                     search.mpct = pre_search_mpct;
                 }
-                parent_transpose_table.init();
+                parent_transpose_table.ready_next_search();
                 child_transpose_table.ready_next_search();
                 move_ordering_value(move_list);
                 pv_idx = 0;
