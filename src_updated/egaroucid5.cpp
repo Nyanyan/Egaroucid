@@ -53,6 +53,7 @@ int main(){
         #if USE_LOG
             return 0;
         #endif
+        return 0;
     }
     return 0;
 }

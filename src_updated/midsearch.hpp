@@ -434,7 +434,7 @@ inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mp
         }
     }
     Search_result res;
-    int alpha, beta, g, former_alpha = -INF;
+    int alpha = -HW2, beta = HW2, g, former_alpha = -INF;
     if (b.n + max_depth < HW2){
         for (int depth = min(16, max(0, max_depth - 5)); depth <= max_depth; ++depth){
             alpha = -HW2;

@@ -66,7 +66,7 @@
 #define BOOK_MODE false
 
 // logging
-#define USE_LOG true
+#define USE_LOG false
 
 // boost library
 #define USE_BOOST false
