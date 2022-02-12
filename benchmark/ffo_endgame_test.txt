@@ -1607,3 +1607,27 @@ endsearch time 1775 mpct 0 policy 55 value 38 nodes 25120083 nps 14144190
 #43 endsearch overall time 3089 search time 3068 mpct 0 policy 13 value -12 nodes 100958589 nps 32906971
 #44 endsearch overall time 1434 search time 1412 mpct 0 policy 52 value -14 nodes 32024074 nps 22679939
 #45 endsearch overall time 19606 search time 19588 mpct 0 policy 54 value 6 nodes 854038798 nps 43600102
+
+2022/02/12 vs
+#40 endsearch overall time 384 search time 372 mpct 0 policy 55 value 38 nodes 20545862 nps 55230811
+#41 endsearch overall time 660 search time 648 mpct 0 policy 32 value 0 nodes 23717811 nps 36601560
+#42 endsearch overall time 1417 search time 1402 mpct 0 policy 49 value 6 nodes 56346224 nps 40189888
+#43 endsearch overall time 2124 search time 2110 mpct 0 policy 41 value -12 nodes 86126845 nps 40818409
+#44 endsearch overall time 1007 search time 992 mpct 0 policy 52 value -14 nodes 32793541 nps 33058005
+#45 endsearch overall time 14547 search time 14533 mpct 0 policy 54 value 6 nodes 673173026 nps 46320307
+#46 endsearch overall time 4876 search time 4862 mpct 0 policy 46 value -8 nodes 204800703 nps 42122727
+#47 endsearch overall time 2560 search time 2545 mpct 0 policy 49 value 4 nodes 99660847 nps 39159468
+#48 endsearch overall time 17499 search time 17485 mpct 0 policy 18 value 28 nodes 695991342 nps 39805052
+#49 endsearch overall time 17221 search time 17206 mpct 0 policy 59 value 16 nodes 910113043 nps 52895097
+
+2022/02/12 vs first parallel
+#40 endsearch overall time 349 search time 335 mpct 0 policy 55 value 38 nodes 20465921 nps 61092301
+#41 endsearch overall time 666 search time 651 mpct 0 policy 32 value 0 nodes 22135659 nps 34002548
+#42 endsearch overall time 1244 search time 1228 mpct 0 policy 49 value 6 nodes 50648707 nps 41244875
+#43 endsearch overall time 2224 search time 2210 mpct 0 policy 41 value -12 nodes 86078610 nps 38949597
+#44 endsearch overall time 925 search time 909 mpct 0 policy 52 value -14 nodes 31677135 nps 34848333
+#45 endsearch overall time 20695 search time 20677 mpct 0 policy 54 value 6 nodes 808077386 nps 39080978
+#46 endsearch overall time 7027 search time 7013 mpct 0 policy 46 value -8 nodes 242472891 nps 34574774
+#47 endsearch overall time 2502 search time 2487 mpct 0 policy 49 value 4 nodes 97383975 nps 39157207
+#48 endsearch overall time 25843 search time 25827 mpct 0 policy 18 value 28 nodes 781444241 nps 30256872
+
