@@ -51,7 +51,7 @@ class Node_child_transpose_table{
             }
         }
 
-        inline void get(int b[]){
+        inline void get(int b[]) const{
             b[0] = best_moves[0].load();
             b[1] = best_moves[1].load();
             b[2] = best_moves[2].load();
@@ -123,11 +123,11 @@ class Child_transpose_table{
             }
         #endif
 
-        inline int now_idx(){
+        inline int now_idx() const{
             return now;
         }
 
-        inline int prev_idx(){
+        inline int prev_idx() const{
             return prev;
         }
 
@@ -144,7 +144,7 @@ class Child_transpose_table{
             }
         }
 
-        inline bool get_now(Board *board, const int hash, int best_moves[]){
+        inline bool get_now(Board *board, const int hash, int best_moves[]) const{
             if (table[now][hash].reg){
                 if (compare_key(board, &table[now][hash])){
 					table[now][hash].get(best_moves);
@@ -157,7 +157,7 @@ class Child_transpose_table{
             return false;
         }
 
-        inline bool get_prev(Board *board, const int hash, int best_moves[]){
+        inline bool get_prev(Board *board, const int hash, int best_moves[]) const{
             if (table[prev][hash].reg){
                 if (compare_key(board, &table[prev][hash])){
 					table[prev][hash].get(best_moves);
@@ -170,12 +170,12 @@ class Child_transpose_table{
             return false;
         }
 
-        inline int get_n_reg(){
+        inline int get_n_reg() const{
             return n_reg.load();
         }
 
     private:
-        inline bool compare_key(const Board *a, Node_child_transpose_table *b){
+        inline bool compare_key(const Board *a, const Node_child_transpose_table *b) const{
             return a->p == b->p && a->b == b->b && a->w == b->w;
         }
 };
@@ -211,7 +211,7 @@ class Node_parent_transpose_table{
                 upper = u;
         }
 
-        inline void get(int *l, int *u){
+        inline void get(int *l, int *u) const{
             *l = lower;
             *u = upper;
         }
@@ -260,7 +260,7 @@ class Parent_transpose_table{
             }
         }
 
-        inline void get(Board *board, const int hash, int *l, int *u){
+        inline void get(Board *board, const int hash, int *l, int *u) const{
             if (table[hash].reg){
                 if (compare_key(board, &table[hash])){
 					table[hash].get(l, u);
@@ -272,7 +272,7 @@ class Parent_transpose_table{
         }
 
     private:
-        inline bool compare_key(const Board *a, Node_parent_transpose_table *b){
+        inline bool compare_key(const Board *a, const Node_parent_transpose_table *b) const{
             return a->p == b->p && a->b == b->b && a->w == b->w;
         }
 };
