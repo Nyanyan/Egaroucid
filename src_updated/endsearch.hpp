@@ -562,7 +562,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, const bool *searching){
     #else
         for (const Mobility &mob: move_list){
             search->board.move(&mob);
-                g = -nega_alpha_end(search, -beta, -alpha);
+                g = -nega_alpha_end(search, -beta, -alpha, searching);
             search->board.undo(&mob);
             alpha = max(alpha, g);
             if (v < g){

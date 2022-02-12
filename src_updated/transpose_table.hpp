@@ -93,7 +93,7 @@ class Child_transpose_table{
                 vector<future<void>> init_future;
                 for (int i = 0; i < thread_size; ++i){
                     init_future.emplace_back(thread_pool.push(child_init_p, table, prev, s, min(TRANSPOSE_TABLE_SIZE, s + delta)));
-                    s += delta;
+                    s = min(TRANSPOSE_TABLE_SIZE - 1, s + delta);
                 }
                 for (int i = 0; i < thread_size; ++i)
                     init_future[i].get();
@@ -106,7 +106,7 @@ class Child_transpose_table{
                 vector<future<void>> init_future;
                 for (int i = 0; i < thread_size; ++i){
                     init_future.emplace_back(thread_pool.push(child_init_p, table, now, s, min(TRANSPOSE_TABLE_SIZE, s + delta)));
-                    s += delta;
+                    s = min(TRANSPOSE_TABLE_SIZE - 1, s + delta);
                 }
                 for (int i = 0; i < thread_size; ++i)
                     init_future[i].get();
@@ -251,7 +251,7 @@ class Parent_transpose_table{
                 vector<future<void>> init_future;
                 for (int i = 0; i < thread_size; ++i){
                     init_future.emplace_back(thread_pool.push(parent_init_p, table, now, s, min(TRANSPOSE_TABLE_SIZE, s + delta)));
-                    s += delta;
+                    s = min(TRANSPOSE_TABLE_SIZE - 1, s + delta);
                 }
                 for (int i = 0; i < thread_size; ++i)
                     init_future[i].get();
@@ -264,7 +264,7 @@ class Parent_transpose_table{
                 vector<future<void>> init_future;
                 for (int i = 0; i < thread_size; ++i){
                     init_future.emplace_back(thread_pool.push(parent_init_p, table, prev, s, min(TRANSPOSE_TABLE_SIZE, s + delta)));
-                    s += delta;
+                    s = min(TRANSPOSE_TABLE_SIZE - 1, s + delta);
                 }
                 for (int i = 0; i < thread_size; ++i)
                     init_future[i].get();

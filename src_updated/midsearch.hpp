@@ -466,9 +466,9 @@ inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mp
             vector<double> pre_search_mpcts;
             pre_search_mpcts.emplace_back(0.5);
             if (search.mpct > 1.6 || !search.use_mpc)
-                pre_search_mpcts.emplace_back(1.2);
-            //if (search.mpct > 2.0 || !search.use_mpc)
-            //    pre_search_mpcts.emplace_back(1.7);
+                pre_search_mpcts.emplace_back(1.0);
+            if (search.mpct > 2.0 || !search.use_mpc)
+                pre_search_mpcts.emplace_back(1.5);
             //if (!search.use_mpc)
             //    pre_search_mpcts.emplace_back(2.0);
             pre_search_mpcts.emplace_back(USE_DEFAULT_MPC);
@@ -497,14 +497,14 @@ inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mp
                     f_n_nodes2 = search.n_nodes;
                     search.board.move(&mob);
                     #if USE_MULTI_THREAD
-                        if (false && pv_idx > (int)move_list.size() / PARALLEL_SPLIT_DIV && thread_pool.n_idle()){
+                        if (pre_search_mpct != USE_DEFAULT_MPC && pv_idx > 0 /* mob.value < move_list[0].value - 4 */ && thread_pool.n_idle()){
                             if (pre_search_mpct == USE_DEFAULT_MPC){
                                 if (search.use_mpc)
                                     parallel_tasks.emplace_back(make_pair(&mob, thread_pool.push(parallel_negascout, search, -beta, -alpha, depth - 1, true)));
                                 else
                                     parallel_tasks.emplace_back(make_pair(&mob, thread_pool.push(parallel_mtd, search, -beta, -alpha, -mob.value, depth - 1, true)));
                             } else
-                                parallel_tasks.emplace_back(make_pair(&mob, thread_pool.push(parallel_negascout, search, -beta, min(HW2, -alpha + PRESEARCH_OFFSET), depth - 1, true)));
+                                parallel_tasks.emplace_back(make_pair(&mob, thread_pool.push(parallel_negascout, search, -HW2, min(HW2, -alpha + PRESEARCH_OFFSET), depth - 1, true)));
                             search.board.undo(&mob);
                         } else{
                             if (pre_search_mpct == USE_DEFAULT_MPC){

@@ -1591,3 +1591,19 @@ endsearch time 1775 mpct 0 policy 55 value 38 nodes 25120083 nps 14144190
 #47 endsearch overall time 2587 search time 2565 mpct 0 policy 49 value 4 nodes 77221734 nps 30105939
 #48 endsearch overall time 21432 search time 21414 mpct 0 policy 18 value 28 nodes 791973622 nps 36983918
 #49 endsearch overall time 29764 search time 29742 mpct 0 policy 59 value 16 nodes 1308477933 nps 43994281
+
+2022/02/12 efficient YBWC no first parallel
+#40 endsearch overall time 500 search time 479 mpct 0 policy 55 value 38 nodes 21000471 nps 43842319
+#41 endsearch overall time 1369 search time 1345 mpct 0 policy 32 value 0 nodes 43354044 nps 32233489
+#42 endsearch overall time 2415 search time 2389 mpct 0 policy 49 value 6 nodes 95668240 nps 40045307
+#43 endsearch overall time 3245 search time 3223 mpct 0 policy 13 value -12 nodes 120752684 nps 37465927
+#44 endsearch overall time 2318 search time 2294 mpct 0 policy 52 value -14 nodes 66949376 nps 29184557
+#45 endsearch overall time 23717 search time 23698 mpct 0 policy 54 value 6 nodes 981388835 nps 41412306
+
+2022/02/12 SPLIT_DIV = 5
+#40 endsearch overall time 593 search time 571 mpct 0 policy 55 value 38 nodes 20733690 nps 36311190
+#41 endsearch overall time 1252 search time 1232 mpct 0 policy 32 value 0 nodes 33759219 nps 27401963
+#42 endsearch overall time 1916 search time 1898 mpct 0 policy 49 value 6 nodes 64039864 nps 33740708
+#43 endsearch overall time 3089 search time 3068 mpct 0 policy 13 value -12 nodes 100958589 nps 32906971
+#44 endsearch overall time 1434 search time 1412 mpct 0 policy 52 value -14 nodes 32024074 nps 22679939
+#45 endsearch overall time 19606 search time 19588 mpct 0 policy 54 value 6 nodes 854038798 nps 43600102
