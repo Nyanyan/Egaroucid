@@ -9,9 +9,6 @@
 #if USE_MULTI_THREAD
     #include "thread_pool.hpp"
 #endif
-#if USE_LOG
-    #include "log.hpp"
-#endif
 
 inline vector<int> input_board(Board *b, int ai_player){
     int i;

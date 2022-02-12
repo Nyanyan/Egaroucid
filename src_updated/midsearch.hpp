@@ -13,6 +13,9 @@
     #include "thread_pool.hpp"
     #include "ybwc.hpp"
 #endif
+#if USE_LOG
+    #include "log.hpp"
+#endif
 
 using namespace std;
 
@@ -498,7 +501,10 @@ inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mp
                             } else
                                 g = -nega_scout(&search, -beta, min(HW2, -alpha + PRESEARCH_OFFSET), depth - 1, true);
                             if (pre_search_mpct == USE_DEFAULT_MPC)
-                                cerr << "main searching time " << tim() - strt2 << " policy " << mob.pos << " value " << g << " expected " << mob.value << " nodes " << search.n_nodes - f_n_nodes2 << " nps " << (search.n_nodes - f_n_nodes2) * 1000 / max(1LL, tim() - strt2) << endl;
+                                cerr << "main searching time " << tim() - strt2 << " time from start " << tim() - strt << " policy " << mob.pos << " value " << g << " expected " << mob.value << " nodes " << search.n_nodes - f_n_nodes2 << " nps " << (search.n_nodes - f_n_nodes2) * 1000 / max(1LL, tim() - strt2) << endl;
+                            #if USE_LOG
+                                cout_div();
+                            #endif
                             search.board.undo(&mob);
                             mob.value = g;
                             if (alpha < g){
@@ -519,7 +525,10 @@ inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mp
                         res.policy = parallel_task.first->pos;
                     }
                 }
-                cerr << "endsearch time " << tim() - strt3 << " mpct " << search.mpct << " policy " << res.policy << " value " << alpha << " nodes " << search.n_nodes - f_n_nodes << " nps " << (search.n_nodes - f_n_nodes) * 1000 / max(1LL, tim() - strt3) << endl;
+                #if USE_LOG
+                    cout_div2();
+                #endif
+                cerr << "endsearch time " << tim() - strt3 << " time from start " << tim() - strt << " mpct " << search.mpct << " policy " << res.policy << " value " << alpha << " nodes " << search.n_nodes - f_n_nodes << " nps " << (search.n_nodes - f_n_nodes) * 1000 / max(1LL, tim() - strt3) << endl;
                 sum_time += tim() - strt3;
             }
             cerr << "endsearch overall time " << tim() - strt << " search time " << sum_time << " mpct " << search.mpct << " policy " << res.policy << " value " << alpha << " nodes " << search.n_nodes << " nps " << search.n_nodes * 1000 / max(1LL, sum_time) << endl;

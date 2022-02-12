@@ -16,6 +16,16 @@ void cout_log(){
     cout << tim() - global_strt_counting << " " << thread_pool.n_idle() << endl;
 }
 
+void cout_div(){
+    lock_guard<mutex> lk(cout_guard);
+    cout << tim() - global_strt_counting << " " << -1 << endl;
+}
+
+void cout_div2(){
+    lock_guard<mutex> lk(cout_guard);
+    cout << tim() - global_strt_counting << " " << -2 << endl;
+}
+
 void CALLBACK timerProc(UINT uTimerID,UINT uMsg,DWORD_PTR dwUser,DWORD_PTR dw1,DWORD_PTR dw2) {
 	cout_log();
 }

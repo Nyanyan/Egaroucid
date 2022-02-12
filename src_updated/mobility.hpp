@@ -8,7 +8,7 @@ using namespace std;
 
 #define N_8BIT 256
 
-constexpr unsigned char d7_mask[HW2] = {
+constexpr uint_fast8_t d7_mask[HW2] = {
     0b10000000, 0b11000000, 0b11100000, 0b11110000, 0b11111000, 0b11111100, 0b11111110, 0b11111111,
     0b11000000, 0b11100000, 0b11110000, 0b11111000, 0b11111100, 0b11111110, 0b11111111, 0b01111111,
     0b11100000, 0b11110000, 0b11111000, 0b11111100, 0b11111110, 0b11111111, 0b01111111, 0b00111111,
@@ -19,7 +19,7 @@ constexpr unsigned char d7_mask[HW2] = {
     0b11111111, 0b01111111, 0b00111111, 0b00011111, 0b00001111, 0b00000111, 0b00000011, 0b00000001
 };
 
-constexpr unsigned char d9_mask[HW2] = {
+constexpr uint_fast8_t d9_mask[HW2] = {
     0b11111111, 0b01111111, 0b00111111, 0b00011111, 0b00001111, 0b00000111, 0b00000011, 0b00000001,
     0b11111110, 0b11111111, 0b01111111, 0b00111111, 0b00011111, 0b00001111, 0b00000111, 0b00000011,
     0b11111100, 0b11111110, 0b11111111, 0b01111111, 0b00111111, 0b00011111, 0b00001111, 0b00000111,
@@ -30,8 +30,8 @@ constexpr unsigned char d9_mask[HW2] = {
     0b10000000, 0b11000000, 0b11100000, 0b11110000, 0b11111000, 0b11111100, 0b11111110, 0b11111111
 };
 
-unsigned char flip_pre_calc[N_8BIT][N_8BIT][HW];
-unsigned char n_flip_pre_calc[N_8BIT][N_8BIT][HW];
+uint_fast8_t flip_pre_calc[N_8BIT][N_8BIT][HW];
+uint_fast8_t n_flip_pre_calc[N_8BIT][N_8BIT][HW];
 unsigned long long line_to_board_v[N_8BIT];
 unsigned long long line_to_board_d7[N_8BIT][HW * 2];
 unsigned long long line_to_board_d9[N_8BIT][HW * 2];
@@ -395,10 +395,10 @@ void mobility_init(){
         }
     }
     for (idx = 0; idx < N_8BIT; ++idx){
-        line_to_board_v[idx] = split_v_line((unsigned char)idx, 0);
+        line_to_board_v[idx] = split_v_line((uint_fast8_t)idx, 0);
         for (t = 0; t < HW * 2; ++t)
-            line_to_board_d7[idx][t] = split_d7_line((unsigned char)idx, t);
+            line_to_board_d7[idx][t] = split_d7_line((uint_fast8_t)idx, t);
         for (t = -HW; t < HW; ++t)
-            line_to_board_d9[idx][t + HW] = split_d9_line((unsigned char)idx, t);
+            line_to_board_d9[idx][t + HW] = split_d9_line((uint_fast8_t)idx, t);
     }
 }
