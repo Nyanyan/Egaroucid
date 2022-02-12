@@ -398,6 +398,7 @@ int mtd_end(Search *search, int l, int u, int g, int depth, bool is_end_search){
 
 inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mpct, const vector<int> vacant_lst){
     long long strt = tim();
+    long long sum_time = 0;
     int hash_code = b.hash() & TRANSPOSE_TABLE_MASK;
     Search search;
     search.board = b;
@@ -406,7 +407,7 @@ inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mp
     search.mpct = mpct;
     search.vacant_list = vacant_lst;
     search.n_nodes = 0;
-    unsigned long long f_n_nodes = 0;
+    unsigned long long f_n_nodes, f_n_nodes2;
     long long strt2, strt3;
     unsigned long long legal = b.mobility_ull();
     vector<Mobility> move_list;
@@ -459,7 +460,6 @@ inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mp
             vector<pair<Mobility*, future<pair<int, unsigned long long>>>> parallel_tasks;
             pair<int, unsigned long long> task_result;
             for (double pre_search_mpct: pre_search_mpcts){
-                strt3 = tim();
                 f_n_nodes = search.n_nodes;
                 alpha = -HW2;
                 beta = HW2;
@@ -475,10 +475,12 @@ inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mp
                 move_ordering_value(move_list);
                 pv_idx = 0;
                 parallel_tasks.clear();
+                strt3 = tim();
                 for (Mobility &mob: move_list){
                     strt2 = tim();
+                    f_n_nodes2 = search.n_nodes;
                     search.board.move(&mob);
-                        if (pv_idx > (int)move_list.size() / PARALLEL_SPLIT_DIV && thread_pool.n_idle()){
+                        if (false && pv_idx > (int)move_list.size() / PARALLEL_SPLIT_DIV && thread_pool.n_idle()){
                             if (pre_search_mpct == USE_DEFAULT_MPC){
                                 if (search.use_mpc)
                                     parallel_tasks.emplace_back(make_pair(&mob, thread_pool.push(parallel_negascout, search, -beta, -alpha, depth - 1, true)));
@@ -496,7 +498,7 @@ inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mp
                             } else
                                 g = -nega_scout(&search, -beta, min(HW2, -alpha + PRESEARCH_OFFSET), depth - 1, true);
                             if (pre_search_mpct == USE_DEFAULT_MPC)
-                                cerr << "main searching time " << tim() - strt2 << " policy " << mob.pos << " value " << g << " expected " << mob.value << " nodes " << search.n_nodes - f_n_nodes << " nps " << (search.n_nodes - f_n_nodes) * 1000 / max(1LL, tim() - strt2) << endl;
+                                cerr << "main searching time " << tim() - strt2 << " policy " << mob.pos << " value " << g << " expected " << mob.value << " nodes " << search.n_nodes - f_n_nodes2 << " nps " << (search.n_nodes - f_n_nodes2) * 1000 / max(1LL, tim() - strt2) << endl;
                             search.board.undo(&mob);
                             mob.value = g;
                             if (alpha < g){
@@ -517,9 +519,10 @@ inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mp
                         res.policy = parallel_task.first->pos;
                     }
                 }
-                cerr << "endsearch time " << tim() - strt3 << " mpct " << search.mpct << " policy " << res.policy << " value " << alpha << " nodes " << search.n_nodes - f_n_nodes << " nps " << (search.n_nodes - f_n_nodes) * 1000 / max(1LL, tim() - strt2) << endl;
+                cerr << "endsearch time " << tim() - strt3 << " mpct " << search.mpct << " policy " << res.policy << " value " << alpha << " nodes " << search.n_nodes - f_n_nodes << " nps " << (search.n_nodes - f_n_nodes) * 1000 / max(1LL, tim() - strt3) << endl;
+                sum_time += tim() - strt3;
             }
-            cerr << "endsearch overall time " << tim() - strt << " mpct " << search.mpct << " policy " << res.policy << " value " << alpha << " nodes " << search.n_nodes << " nps " << search.n_nodes * 1000 / max(1LL, tim() - strt) << endl;
+            cerr << "endsearch overall time " << tim() - strt << " search time " << sum_time << " mpct " << search.mpct << " policy " << res.policy << " value " << alpha << " nodes " << search.n_nodes << " nps " << search.n_nodes * 1000 / max(1LL, sum_time) << endl;
         }
     }
     res.depth = max_depth;
