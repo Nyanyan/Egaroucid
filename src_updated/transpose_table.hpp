@@ -196,23 +196,23 @@ class Node_parent_transpose_table{
         }
 
         inline void register_value(const Board *board, const int l, const int u){
-            b = board->b;
-            w = board->w;
-            p = board->p;
-            lower = l;
-            upper = u;
+            b.store(board->b);
+            w.store(board->w);
+            p.store(board->p);
+            lower.store(l);
+            upper.store(u);
         }
 
         inline void register_value(const int l, const int u){
-            if (lower < l)
-                lower = l;
-            if (u < upper)
-                upper = u;
+            if (lower.load(memory_order_relaxed) < l)
+                lower.store(l);
+            if (u < upper.load(memory_order_relaxed))
+                upper.store(u);
         }
 
         inline void get(int *l, int *u) const{
-            *l = lower;
-            *u = upper;
+            *l = lower.load(memory_order_relaxed);
+            *u = upper.load(memory_order_relaxed);
         }
 };
 
