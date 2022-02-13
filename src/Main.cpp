@@ -90,7 +90,7 @@ bool lang_initialize(string file) {
 }
 
 Menu create_menu(Texture checkbox,
-	bool *dammy,
+	bool *dummy,
 	bool *entry_mode, bool *professional_mode, bool *serious_game,
 	bool *start_game_flag, bool *analyze_flag,
 	bool *human_first, bool *human_second, bool *both_ai, bool *both_human,
@@ -134,7 +134,7 @@ Menu create_menu(Texture checkbox,
 	if (*entry_mode) {
 		*ai_level = min(*ai_level, 30);
 		*hint_level = min(*hint_level, 15);
-		menu_e.init_button(language.get("ai_settings", "ai_settings"), dammy);
+		menu_e.init_button(language.get("ai_settings", "ai_settings"), dummy);
 		side_menu.init_bar(language.get("ai_settings", "ai_level"), ai_level, *ai_level, 0, 30);
 		menu_e.push(side_menu);
 		side_menu.init_bar(language.get("ai_settings", "hint_level"), hint_level, *hint_level, 0, 15);
@@ -142,7 +142,7 @@ Menu create_menu(Texture checkbox,
 		title.push(menu_e);
 	}
 	else if (*professional_mode) {
-		menu_e.init_button(language.get("ai_settings", "ai_settings"), dammy);
+		menu_e.init_button(language.get("ai_settings", "ai_settings"), dummy);
 		side_menu.init_bar(language.get("ai_settings", "ai_level"), ai_level, *ai_level, 0, 60);
 		menu_e.push(side_menu);
 		side_menu.init_bar(language.get("ai_settings", "hint_level"), hint_level, *hint_level, 0, 60);
@@ -153,13 +153,13 @@ Menu create_menu(Texture checkbox,
 	}
 	else if (*serious_game) {
 		*ai_level = min(*ai_level, 30);
-		menu_e.init_button(language.get("ai_settings", "ai_settings"), dammy);
+		menu_e.init_button(language.get("ai_settings", "ai_settings"), dummy);
 		side_menu.init_bar(language.get("ai_settings", "ai_level"), ai_level, *ai_level, 0, 30);
 		menu_e.push(side_menu);
 		title.push(menu_e);
 	}
 
-	menu_e.init_button(language.get("settings", "play", "play"), dammy);
+	menu_e.init_button(language.get("settings", "play", "play"), dummy);
 	side_menu.init_radio(language.get("settings", "play", "human_first"), human_first, *human_first);
 	menu_e.push(side_menu);
 	side_menu.init_radio(language.get("settings", "play", "human_second"), human_second, *human_second);
@@ -171,7 +171,7 @@ Menu create_menu(Texture checkbox,
 	title.push(menu_e);
 
 	if (!(*entry_mode)) {
-		menu_e.init_button(language.get("settings", "thread", "thread"), dammy);
+		menu_e.init_button(language.get("settings", "thread", "thread"), dummy);
 		side_menu.init_radio(U"1", thread1, *thread1);
 		menu_e.push(side_menu);
 		side_menu.init_radio(U"2", thread2, *thread2);
@@ -243,7 +243,7 @@ Menu create_menu(Texture checkbox,
 		title.push(menu_e);
 		menu_e.init_button(language.get("book", "stop_learn"), stop_book_learn_flag);
 		title.push(menu_e);
-		menu_e.init_button(language.get("book", "settings"), dammy);
+		menu_e.init_button(language.get("book", "settings"), dummy);
 		side_menu.init_bar(language.get("book", "depth"), book_depth, *book_depth, 0, 60);
 		menu_e.push(side_menu);
 		side_menu.init_bar(language.get("book", "accept"), book_learn_accept, *book_learn_accept, 0, 64);
@@ -279,7 +279,7 @@ Menu create_menu(Texture checkbox,
 	title.push(menu_e);
 
 	if (*professional_mode) {
-		menu_e.init_button(language.get("operation", "convert", "convert"), dammy);
+		menu_e.init_button(language.get("operation", "convert", "convert"), dummy);
 		side_menu.init_button(language.get("operation", "convert", "vertical"), vertical_convert);
 		menu_e.push(side_menu);
 		side_menu.init_button(language.get("operation", "convert", "black_line"), black_line_convert);
@@ -1172,7 +1172,7 @@ void Main() {
 	Window::Resize(window_size);
 	Window::SetStyle(WindowStyle::Sizable);
 	Scene::SetResizeMode(ResizeMode::Keep);
-	Window::SetTitle(U"Egaroucid5.3.2");
+	Window::SetTitle(U"Egaroucid5.3.3");
 	System::SetTerminationTriggers(UserAction::NoAction);
 	Scene::SetBackground(green);
 	//Console.open();
@@ -1181,7 +1181,7 @@ void Main() {
 	string logger;
 	String logger_String;
 
-	bool dammy;
+	bool dummy;
 	constexpr int mode_size = 3;
 	bool show_mode[mode_size] = {true, false, false};
 	int int_mode = 0;
@@ -1448,7 +1448,7 @@ void Main() {
 				}
 			}
 			else if (lang_initialized == 1) {
-				menu = create_menu(checkbox, &dammy,
+				menu = create_menu(checkbox, &dummy,
 					&show_mode[0], &show_mode[1], &show_mode[2],
 					&start_game_flag,&analyze_flag,
 					&human_first, &human_second, &both_ai, &both_human,
@@ -1474,7 +1474,7 @@ void Main() {
 							int_mode = i;
 						}
 					}
-					menu = create_menu(checkbox, &dammy,
+					menu = create_menu(checkbox, &dummy,
 						&show_mode[0], &show_mode[1], &show_mode[2],
 						&start_game_flag, &analyze_flag,
 						&human_first, &human_second, &both_ai, &both_human,
@@ -1541,7 +1541,7 @@ void Main() {
 						int_mode = i;
 					}
 				}
-				menu = create_menu(checkbox, &dammy,
+				menu = create_menu(checkbox, &dummy,
 					&show_mode[0], &show_mode[1], &show_mode[2],
 					&start_game_flag, &analyze_flag,
 					&human_first, &human_second, &both_ai, &both_human,
@@ -1577,7 +1577,7 @@ void Main() {
 					lang_file = "resources/languages/" + lang_name + ".json";
 					lang_initialize(lang_file);
 					cerr << "lang " << language.get("lang_name").narrow() << endl;
-					menu = create_menu(checkbox, &dammy,
+					menu = create_menu(checkbox, &dummy,
 						&show_mode[0], &show_mode[1], &show_mode[2],
 						&start_game_flag, &analyze_flag,
 						&human_first, &human_second, &both_ai, &both_human,
@@ -2253,10 +2253,10 @@ void Main() {
 				reset_ai(&ai_thinking, &ai_future);
 			}
 			else if (black_line_convert && !analyzing && !book_learning) {
-				bd.black_mirror();
+				bd.white_mirror(); // because the board is vertical mirrored
 				String record = U"";
 				for (history_elem &elem : history) {
-					elem.b.black_mirror();
+					elem.b.white_mirror(); // because the board is vertical mirrored
 					if (elem.b.policy != -1) {
 						record += str_record(elem.b.policy);
 						elem.record = record;
@@ -2264,7 +2264,7 @@ void Main() {
 				}
 				record = U"";
 				for (history_elem &elem : fork_history) {
-					elem.b.black_mirror();
+					elem.b.white_mirror(); // because the board is vertical mirrored
 					if (elem.b.policy != -1) {
 						record += str_record(elem.b.policy);
 						elem.record = record;
@@ -2276,10 +2276,10 @@ void Main() {
 				reset_ai(&ai_thinking, &ai_future);
 			}
 			else if (white_line_convert && !analyzing && !book_learning) {
-				bd.white_mirror();
+				bd.black_mirror(); // because the board is vertical mirrored
 				String record = U"";
 				for (history_elem &elem : history) {
-					elem.b.white_mirror();
+					elem.b.black_mirror(); // because the board is vertical mirrored
 					if (elem.b.policy != -1) {
 						record += str_record(elem.b.policy);
 						elem.record = record;
@@ -2287,7 +2287,7 @@ void Main() {
 				}
 				record = U"";
 				for (history_elem &elem : fork_history) {
-					elem.b.white_mirror();
+					elem.b.black_mirror(); // because the board is vertical mirrored
 					if (elem.b.policy != -1) {
 						record += str_record(elem.b.policy);
 						elem.record = record;
