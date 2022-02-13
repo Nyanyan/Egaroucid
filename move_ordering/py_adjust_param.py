@@ -13,7 +13,7 @@ with open(phase + '_' + player + '.txt', 'w') as f:
     f.write(data)
 exit()
 '''
-cmd = 'adjust_param.out ' + s_n_moves + ' ' + e_n_moves + ' learned_data/' + s_n_moves + ' ' + e_n_moves + '.txt'
+cmd = 'adjust_param.out ' + s_n_moves + ' ' + e_n_moves + ' learned_data/' + s_n_moves + '_' + e_n_moves + '.txt'
 print(cmd)
 p = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
 param = p.stdout.read().decode().replace('\r\n', '\n')

@@ -19,13 +19,13 @@ inline long long tim(){
 #define step 4096
 #define sc_w 4096
 
-#define n_data 5000000
+#define n_data 6600000
 
 #define n_raw_params 38
 
-#define beta 0.003
+#define beta 0.004
 unsigned long long hour = 0;
-unsigned long long minute = 15;
+unsigned long long minute = 10;
 unsigned long long second = 0;
 
 double alpha[n_patterns][max_evaluate_idx];
@@ -33,8 +33,8 @@ double alpha[n_patterns][max_evaluate_idx];
 const int pattern_sizes[n_patterns] = {8, 8, 8, 8, 3, 4, 5, 6, 7, 8};
 const int eval_sizes[n_patterns] = {65536, 65536, 65536, 65536, 64, 256, 1024, 4096, 16384, 65536};
 double eval_arr[n_patterns][max_evaluate_idx];
-int test_data[n_data][n_raw_params];
-double test_labels[n_data];
+int test_data[n_data / 5][n_raw_params];
+double test_labels[n_data / 5];
 int nums;
 double scores;
 vector<int> test_memo[n_patterns][max_evaluate_idx];
@@ -104,23 +104,27 @@ void input_test_data(int strt, int s_n_moves, int e_n_moves){
     test_scores.clear();
     for (i = 0; i < strt; ++i)
         getline(ifs, line);
+    int n_moves;
     while (getline(ifs, line) && t < n_data){
         ++t;
         if ((t & 0b1111111111111111) == 0b1111111111111111)
             cerr << '\r' << t;
         istringstream iss(line);
-        ++u;
-        for (i = 0; i < n_raw_params; ++i)
-            iss >> test_data[nums][i];
-        iss >> score;
-        for (i = 0; i < n_raw_params; ++i)
-            used_idxes[pattern_nums[i]].emplace(test_data[nums][i]);
-        test_labels[nums] = score * step;
-        for (i = 0; i < n_raw_params; ++i)
-            test_memo[pattern_nums[i]][test_data[nums][i]].push_back(nums);
-        test_scores.push_back(0);
-        pre_calc_scores.push_back(0);
-        ++nums;
+        iss >> n_moves;
+        if (s_n_moves <= n_moves && n_moves < e_n_moves){
+            ++u;
+            for (i = 0; i < n_raw_params; ++i)
+                iss >> test_data[nums][i];
+            iss >> score;
+            for (i = 0; i < n_raw_params; ++i)
+                used_idxes[pattern_nums[i]].emplace(test_data[nums][i]);
+            test_labels[nums] = score * step;
+            for (i = 0; i < n_raw_params; ++i)
+                test_memo[pattern_nums[i]][test_data[nums][i]].push_back(nums);
+            test_scores.push_back(0);
+            pre_calc_scores.push_back(0);
+            ++nums;
+        }
     }
     cerr << '\r' << t << endl;
     cerr << "loaded data" << endl;
