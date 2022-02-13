@@ -48,7 +48,7 @@
 /** other **/
 
 // flip calculating
-#define FLIP_CALC_MODE 1
+#define FLIP_CALC_MODE 2
 
 // mobility calculating
 #define MOBILITY_CALC_MODE 0

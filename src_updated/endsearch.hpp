@@ -288,10 +288,10 @@ inline int last4(Search *search, int alpha, int beta, int p0, int p1, int p2, in
     return v;
 }
 
-inline void pick_vacant(Board *b, int cells[], const vector<int> &vacant_list){
+inline void pick_vacant(Search *search, int cells[]){
     int idx = 0;
-    unsigned long long empties = ~(b->b | b->w);
-    for (const int &cell: vacant_list){
+    unsigned long long empties = ~(search->board.b | search->board.w);
+    for (const int &cell: search->vacant_list){
         if (1 & (empties >> cell))
             cells[idx++] = cell;
     }
@@ -302,7 +302,7 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta){
         return SCORE_UNDEFINED;
     if (search->board.n == 60){
         int cells[4];
-        pick_vacant(&search->board, cells, search->vacant_list);
+        pick_vacant(search, cells);
         return last4(search, alpha, beta, cells[0], cells[1], cells[2], cells[3]);
     }
     ++search->n_nodes;
@@ -573,7 +573,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, const bool *searching){
         if (split_count){
             if (beta <= alpha || !(*searching)){
                 n_searching = false;
-                //ybwc_wait_strict(search, parallel_tasks);
+                ybwc_wait_strict(search, parallel_tasks);
             } else{
                 g = ybwc_wait_strict(search, parallel_tasks);
                 alpha = max(alpha, g);

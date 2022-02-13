@@ -254,7 +254,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool is_
         if (split_count){
             if (beta <= alpha || !(*searching)){
                 n_searching = false;
-                //ybwc_wait_strict(search, parallel_tasks);
+                ybwc_wait_strict(search, parallel_tasks);
             } else{
                 g = ybwc_wait_strict(search, parallel_tasks);
                 alpha = max(alpha, g);
