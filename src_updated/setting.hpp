@@ -27,7 +27,7 @@
 /* multi threading*/
 
 // multi thread
-#define USE_MULTI_THREAD false
+#define USE_MULTI_THREAD true
 
 // parallel early getting
 // 0: none 1: use tt contains bug 2: use early getting contains bug
@@ -76,4 +76,4 @@
 #define USE_BOOST false
 
 // adjust move ordering
-#define MOVE_ORDERING_ADJUST true
+#define MOVE_ORDERING_ADJUST false

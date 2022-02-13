@@ -227,12 +227,14 @@ inline void move_evaluate(Search *search, Mobility *mob, const int best_moves[],
                 mob->value += calc_surround(search->board.b, ~(search->board.b | search->board.w)) * W_SURROUND;
             else
                 mob->value += calc_surround(search->board.w, ~(search->board.b | search->board.w)) * W_SURROUND;
+            /*
             int stab0, stab1;
             calc_stability_fast(&search->board, &stab0, &stab1);
             if (search->board.p == BLACK)
                 mob->value += stab1 * W_STABILITY;
             else
                 mob->value += stab0 * W_STABILITY;
+            */
             mob->value -= pop_count_ull(search->board.mobility_ull()) * W_MOBILITY;
         search->board.undo(mob);
     }
@@ -297,12 +299,14 @@ inline void move_evaluate_fast_first(Search *search, Mobility *mob, const int be
                 mob->value += calc_surround(search->board.b, ~(search->board.b | search->board.w)) * W_END_SURROUND;
             else
                 mob->value += calc_surround(search->board.w, ~(search->board.b | search->board.w)) * W_END_SURROUND;
+            /*
             int stab0, stab1;
             calc_stability_fast(&search->board, &stab0, &stab1);
             if (search->board.p == BLACK)
                 mob->value += stab1 * W_END_STABILITY;
             else
                 mob->value += stab0 * W_END_STABILITY;
+            */
             mob->value -= pop_count_ull(search->board.mobility_ull()) * W_END_MOBILITY;
         search->board.undo(mob);
     }

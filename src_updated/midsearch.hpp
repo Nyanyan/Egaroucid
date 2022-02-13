@@ -495,8 +495,8 @@ inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mp
                 pre_search_mpcts.emplace_back(1.0);
             if (search.mpct > 2.0 || !search.use_mpc)
                 pre_search_mpcts.emplace_back(1.5);
-            if (!search.use_mpc)
-                pre_search_mpcts.emplace_back(2.0);
+            //if (!search.use_mpc)
+            //    pre_search_mpcts.emplace_back(2.0);
             pre_search_mpcts.emplace_back(USE_DEFAULT_MPC);
             int pv_idx;
             vector<pair<Mobility*, future<pair<int, unsigned long long>>>> parallel_tasks;
