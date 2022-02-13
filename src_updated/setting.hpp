@@ -69,4 +69,4 @@
 #define USE_LOG true
 
 // boost library
-#define USE_BOOST false
+#define USE_BOOST true

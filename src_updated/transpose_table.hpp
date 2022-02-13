@@ -1,5 +1,4 @@
 #pragma once
-#include <atomic>
 #include "setting.hpp"
 #include "common.hpp"
 #include "board.hpp"
@@ -9,6 +8,13 @@
     #include <future>
     #include <vector>
 #endif
+#if USE_BOOST
+    #include <boost/atomic/atomic.hpp>
+#else
+    #include <atomic>
+#endif
+
+using namespace std;
 
 #define TRANSPOSE_TABLE_SIZE 1048576
 #define TRANSPOSE_TABLE_MASK 1048575
@@ -19,7 +25,6 @@
 
 class Node_child_transpose_table{
     public:
-        atomic<bool> reg;
         atomic<unsigned long long> b;
         atomic<unsigned long long> w;
         atomic<int> p;
@@ -28,33 +33,34 @@ class Node_child_transpose_table{
 
     public:
         inline void init(){
-            reg = false;
+            b.store(0, memory_order_relaxed);
+            w.store(0, memory_order_relaxed);
+            p.store(-1, memory_order_relaxed);
         }
 
         inline void register_value(const Board *board, const int policy, const int value){
-            reg = true;
-            b = board->b;
-            w = board->w;
-            p = board->p;
-            best_moves[0] = policy;
-            best_moves[1] = TRANSPOSE_TABLE_UNDEFINED;
-            best_moves[2] = TRANSPOSE_TABLE_UNDEFINED;
-            best_value = value;
+            b.store(board->b);
+            w.store(board->w);
+            p.store(board->p);
+            best_moves[0].store(policy);
+            best_moves[1].store(TRANSPOSE_TABLE_UNDEFINED);
+            best_moves[2].store(TRANSPOSE_TABLE_UNDEFINED);
+            best_value.store(value);
         }
 
         inline void register_value(const int policy, const int value){
-            if (best_value < value){
-                best_value = value;
-                best_moves[2] = best_moves[1].load();
-                best_moves[1] = best_moves[0].load();
-                best_moves[0] = policy;
+            if (best_value.load(memory_order_relaxed) < value){
+                best_value.store(value);
+                best_moves[2].store(best_moves[1].load(memory_order_relaxed));
+                best_moves[1].store(best_moves[0].load(memory_order_relaxed));
+                best_moves[0].store(policy);
             }
         }
 
         inline void get(int b[]) const{
-            b[0] = best_moves[0].load();
-            b[1] = best_moves[1].load();
-            b[2] = best_moves[2].load();
+            b[0] = best_moves[0].load(memory_order_relaxed);
+            b[1] = best_moves[1].load(memory_order_relaxed);
+            b[2] = best_moves[2].load(memory_order_relaxed);
         }
 };
 
@@ -133,10 +139,7 @@ class Child_transpose_table{
 
         inline void reg(const Board *board, const int hash, const int policy, const int value){
             if (global_searching){
-                if (!table[now][hash].reg){
-                    table[now][hash].register_value(board, policy, value);
-                    //++n_reg;
-                } else if (!compare_key(board, &table[now][hash])){
+                if (!compare_key(board, &table[now][hash])){
                     table[now][hash].register_value(board, policy, value);
                     //++n_reg;
                 } else
@@ -145,11 +148,9 @@ class Child_transpose_table{
         }
 
         inline bool get_now(Board *board, const int hash, int best_moves[]) const{
-            if (table[now][hash].reg){
-                if (compare_key(board, &table[now][hash])){
-					table[now][hash].get(best_moves);
-                    return true;
-                }
+            if (compare_key(board, &table[now][hash])){
+                table[now][hash].get(best_moves);
+                return true;
             }
             best_moves[0] = TRANSPOSE_TABLE_UNDEFINED;
             best_moves[1] = TRANSPOSE_TABLE_UNDEFINED;
@@ -158,11 +159,9 @@ class Child_transpose_table{
         }
 
         inline bool get_prev(Board *board, const int hash, int best_moves[]) const{
-            if (table[prev][hash].reg){
-                if (compare_key(board, &table[prev][hash])){
-					table[prev][hash].get(best_moves);
-                    return true;
-                }
+            if (compare_key(board, &table[prev][hash])){
+                table[prev][hash].get(best_moves);
+                return true;
             }
             best_moves[0] = TRANSPOSE_TABLE_UNDEFINED;
             best_moves[1] = TRANSPOSE_TABLE_UNDEFINED;
@@ -176,14 +175,13 @@ class Child_transpose_table{
 
     private:
         inline bool compare_key(const Board *a, const Node_child_transpose_table *b) const{
-            return a->p == b->p && a->b == b->b && a->w == b->w;
+            return a->p == b->p.load(memory_order_relaxed) && a->b == b->b.load(memory_order_relaxed) && a->w == b->w.load(memory_order_relaxed);
         }
 };
 
 
 class Node_parent_transpose_table{
     public:
-        atomic<bool> reg;
         atomic<unsigned long long> b;
         atomic<unsigned long long> w;
         atomic<int> p;
@@ -192,11 +190,12 @@ class Node_parent_transpose_table{
 
     public:
         inline void init(){
-            reg = false;
+            b.store(0, memory_order_relaxed);
+            w.store(0, memory_order_relaxed);
+            p.store(-1, memory_order_relaxed);
         }
 
         inline void register_value(const Board *board, const int l, const int u){
-            reg = true;
             b = board->b;
             w = board->w;
             p = board->p;
@@ -283,9 +282,7 @@ class Parent_transpose_table{
 
         inline void reg(const Board *board, const int hash, const int l, const int u){
             if (global_searching){
-                if (!table[now][hash].reg)
-                    table[now][hash].register_value(board, l, u);
-                else if (!compare_key(board, &table[now][hash]))
+                if (!compare_key(board, &table[now][hash]))
                     table[now][hash].register_value(board, l, u);
                 else
                     table[now][hash].register_value(l, u);
@@ -293,22 +290,18 @@ class Parent_transpose_table{
         }
 
         inline void get_now(Board *board, const int hash, int *l, int *u) const{
-            if (table[now][hash].reg){
-                if (compare_key(board, &table[now][hash])){
-					table[now][hash].get(l, u);
-                    return;
-                }
+            if (compare_key(board, &table[now][hash])){
+                table[now][hash].get(l, u);
+                return;
             }
             *l = -INF;
             *u = INF;
         }
 
         inline void get_prev(Board *board, const int hash, int *l, int *u) const{
-            if (table[prev][hash].reg){
-                if (compare_key(board, &table[prev][hash])){
-					table[prev][hash].get(l, u);
-                    return;
-                }
+            if (compare_key(board, &table[prev][hash])){
+                table[prev][hash].get(l, u);
+                return;
             }
             *l = -INF;
             *u = INF;
@@ -316,7 +309,7 @@ class Parent_transpose_table{
 
     private:
         inline bool compare_key(const Board *a, const Node_parent_transpose_table *b) const{
-            return a->p == b->p && a->b == b->b && a->w == b->w;
+            return a->p == b->p.load(memory_order_relaxed) && a->b == b->b.load(memory_order_relaxed) && a->w == b->w.load(memory_order_relaxed);
         }
 };
 
