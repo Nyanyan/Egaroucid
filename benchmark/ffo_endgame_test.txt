@@ -1748,8 +1748,9 @@ endsearch time 1775 mpct 0 policy 55 value 38 nodes 25120083 nps 14144190
 #51 endsearch overall time 28098 search time 28080 mpct 0 policy 51 value 6 nodes 818905286 nps 29163293
 #52 endsearch overall time 36540 search time 36523 mpct 0 policy 47 value 0 nodes 1127399362 nps 30868202
 #53 endsearch overall time 421804 search time 421787 mpct 0 policy 4 value -2 nodes 14603994738 nps 34624098
+#54 endsearch overall time 782975 search time 782958 mpct 0 policy 13 value -2 nodes 21059212193 nps 26896988
 
-2022/02/13 vs
+2022/02/13 vs adjust move ordering with a lot of testcases
 #40 endsearch overall time 525 search time 512 mpct 0 policy 55 value 38 nodes 23572434 nps 46039910
 #41 endsearch overall time 695 search time 680 mpct 0 policy 32 value 0 nodes 21793542 nps 32049326
 #42 endsearch overall time 1566 search time 1551 mpct 0 policy 49 value 6 nodes 56932685 nps 36707082
