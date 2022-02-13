@@ -10,6 +10,7 @@
 #include "board.hpp"
 #include "evaluate.hpp"
 #include "transpose_table.hpp"
+#include "midsearch.hpp"
 
 using namespace std;
 
@@ -205,6 +206,8 @@ bool cmp_move_ordering(Mobility &a, Mobility &b){
     return a.value > b.value;
 }
 
+//int nega_alpha(Search *search, int alpha, int beta, int depth);
+
 inline void move_evaluate(Search *search, Mobility *mob, const int best_moves[], const int weight_idx){
     mob->value = 0;
     if (mob->pos == best_moves[0])
@@ -225,6 +228,7 @@ inline void move_evaluate(Search *search, Mobility *mob, const int best_moves[],
             else if (l != -INF)
                 mob->value += W_CACHE_HIT - l * W_CACHE_VALUE[weight_idx];
             mob->value += -mid_evaluate(&search->board) * W_EVALUATE[weight_idx];
+            //mob->value += -nega_alpha(search, -HW2, HW2, 1) * W_EVALUATE[weight_idx];
             if (search->board.p == BLACK)
                 mob->value += calc_surround(search->board.b, ~(search->board.b | search->board.w)) * W_SURROUND[weight_idx];
             else

@@ -619,7 +619,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, const bool *searching){
     }
     move_ordering_fast_first(search, move_list);
     #if USE_MULTI_THREAD
-        int best_moves[N_BEST_MOVES] = {TRANSPOSE_TABLE_UNDEFINED, TRANSPOSE_TABLE_UNDEFINED, TRANSPOSE_TABLE_UNDEFINED};
+        //int best_moves[N_BEST_MOVES] = {TRANSPOSE_TABLE_UNDEFINED, TRANSPOSE_TABLE_UNDEFINED, TRANSPOSE_TABLE_UNDEFINED};
         int pv_idx = 0, split_count = 0;
         bool n_searching = true;
         vector<future<pair<int, unsigned long long>>> parallel_tasks;
@@ -650,8 +650,8 @@ int nega_alpha_end(Search *search, int alpha, int beta, const bool *searching){
                     alpha = max(alpha, g);
                     if (v < g){
                         v = g;
-                        update_best_move(best_moves, mob.pos);
-                        //child_transpose_table.reg(&search->board, hash_code, mob.pos, g);
+                        //update_best_move(best_moves, mob.pos);
+                        child_transpose_table.reg(&search->board, hash_code, mob.pos, g);
                     }
                     #if MULTI_THREAD_EARLY_GETTING_MODE == 2
                         if (split_count && beta > alpha && *searching){
@@ -665,7 +665,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, const bool *searching){
                 }
             }
         }
-        child_transpose_table.reg(&search->board, hash_code, best_moves, g);
+        //child_transpose_table.reg(&search->board, hash_code, best_moves, g);
         if (split_count){
             if (beta <= alpha || !(*searching)){
                 n_searching = false;
