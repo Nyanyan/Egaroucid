@@ -30,8 +30,8 @@
 #define USE_MULTI_THREAD true
 
 // parallel early getting
-// 0: none 1: use tt contains bug 2: use early getting
-#define MULTI_THREAD_EARLY_GETTING_MODE 2
+// 0: none 1: use tt contains bug 2: use early getting contains bug
+#define MULTI_THREAD_EARLY_GETTING_MODE 0
 
 
 
