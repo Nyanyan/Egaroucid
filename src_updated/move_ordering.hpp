@@ -6,6 +6,7 @@
 #include "search.hpp"
 #include "mobility.hpp"
 #include "transpose_table.hpp"
+#include "midsearch.hpp"
 
 #define N_MOVE_ORDERING_PATTERNS 10
 #define MAX_MOVE_ORDERING_EVALUATE_IDX 65536
@@ -28,9 +29,9 @@
 
 #define W_CACHE_HIT 1000000
 #define W_CACHE_HIGH 10000
+#define W_WIPEOUT 1000000000
 
 #define N_MID_WEIGHT 21 - MID_TO_END_DEPTH + 1
-
 constexpr int W_CACHE_VALUE[N_MID_WEIGHT] = {74, 74, 74, 74, 74, 74, 74, 74, 74, 74};
 constexpr int W_CELL_WEIGHT[N_MID_WEIGHT] = {1, 1, 1, 1, 4, 5, 5, 5, 5, 5};
 constexpr int W_EVALUATE[N_MID_WEIGHT] = {5, 5, 5, 10, 18, 20, 20, 22, 20, 20};
@@ -183,6 +184,7 @@ inline int move_evaluate(Board *board, Mobility *mob, int move_ordering_phase){
         move_ordering_pattern_arr[move_ordering_phase][9][pick_pattern(p, o, mob->flip, 7, 14, 21, 28, 35, 42, 49, 56)];
 }
 */
+/*
 inline void move_evaluate_simple(Search *search, Mobility *mob, const int best_moves[], const int weight_idx){
     mob->value = 0;
     if (mob->pos == best_moves[0])
@@ -203,6 +205,41 @@ inline void move_evaluate_simple(Search *search, Mobility *mob, const int best_m
             else if (l != -INF)
                 mob->value += W_CACHE_HIT - l * W_CACHE_VALUE[weight_idx];
             mob->value += -mid_evaluate(&search->board) * W_EVALUATE[weight_idx];
+            if (search->board.p == BLACK)
+                mob->value += calc_surround(search->board.b, ~(search->board.b | search->board.w)) * W_SURROUND[weight_idx];
+            else
+                mob->value += calc_surround(search->board.w, ~(search->board.b | search->board.w)) * W_SURROUND[weight_idx];
+            mob->value -= pop_count_ull(search->board.mobility_ull()) * W_MOBILITY[weight_idx];
+        search->board.undo(mob);
+    }
+}
+*/
+
+//int nega_alpha(Search *search, int alpha, int beta, int depth);
+
+inline void move_evaluate_simple(Search *search, Mobility *mob, const int best_moves[], const int weight_idx){
+    mob->value = 0;
+    if (mob->pos == best_moves[0])
+        mob->value = W_BEST1_MOVE;
+    else if (mob->pos == best_moves[1])
+        mob->value = W_BEST2_MOVE;
+    else if (mob->pos == best_moves[2])
+        mob->value = W_BEST3_MOVE;
+    else{
+        mob->value += cell_weight[mob->pos] * W_CELL_WEIGHT[weight_idx];
+        if (search->board.parity & cell_div4[mob->pos])
+            mob->value += W_PARITY[weight_idx];
+        search->board.move(mob);
+            if (search->board.b == 0 || search->board.w == 0)
+                mob->value += W_WIPEOUT;
+            int l, u;
+            parent_transpose_table.get_prev(&search->board, search->board.hash() & TRANSPOSE_TABLE_MASK, &l, &u);
+            if (u != INF)
+                mob->value += W_CACHE_HIT + W_CACHE_HIGH - u * W_CACHE_VALUE[weight_idx];
+            else if (l != -INF)
+                mob->value += W_CACHE_HIT - l * W_CACHE_VALUE[weight_idx];
+            mob->value += -mid_evaluate(&search->board) * W_EVALUATE[weight_idx];
+            //mob->value += -nega_alpha(search, -HW2, HW2, 3) * W_EVALUATE[weight_idx];
             if (search->board.p == BLACK)
                 mob->value += calc_surround(search->board.b, ~(search->board.b | search->board.w)) * W_SURROUND[weight_idx];
             else
