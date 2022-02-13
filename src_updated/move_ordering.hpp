@@ -55,7 +55,7 @@ inline bool move_ordering_init(){
     const size_t eval_sizes[N_MOVE_ORDERING_PATTERNS] = {65536, 65536, 65536, 65536, 64, 256, 1024, 4096, 16384, 65536};
     for (phase_idx = 0; phase_idx < N_MOVE_ORDERING_PHASE; ++phase_idx){
         for (pattern_idx = 0; pattern_idx < N_MOVE_ORDERING_PATTERNS; ++pattern_idx){
-            if (fread(move_ordering_pattern_arr[phase_idx][move_ordering_phase][pattern_idx], 2, eval_sizes[pattern_idx], fp) < eval_sizes[pattern_idx]){
+            if (fread(move_ordering_pattern_arr[phase_idx][pattern_idx], 2, eval_sizes[pattern_idx], fp) < eval_sizes[pattern_idx]){
                 cerr << "move_ordering.egmo broken" << endl;
                 fclose(fp);
                 return false;
@@ -244,6 +244,37 @@ inline void move_ordering(Search *search, vector<Mobility> &move_list){
     }
     sort(move_list.begin(), move_list.end(), cmp_move_ordering);
 }
+
+/*
+inline void move_ordering(Search *search, vector<Mobility> &move_list){
+    if (move_list.size() < 2)
+        return;
+    int best_moves[N_BEST_MOVES];
+    int hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
+    child_transpose_table.get_prev(&search->board, hash_code, best_moves);
+    const int weight_idx = HW2 - search->board.n <= 20 ? depth - MID_TO_END_DEPTH + 1 : 0;
+    for (Mobility &mob: move_list)
+        move_evaluate_simple(search, &mob, best_moves, weight_idx);
+    sort(move_list.begin(), move_list.end(), cmp_move_ordering);
+}
+*/
+/*
+inline void move_ordering(Search *search, vector<Mobility> &move_list){
+    if (move_list.size() < 2)
+        return;
+    int best_moves[N_BEST_MOVES];
+    int hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
+    child_transpose_table.get_prev(&search->board, hash_code, best_moves);
+    const int depth = HW2 - search->board.n;
+    const int weight_idx = depth <= 20 ? depth - MID_TO_END_DEPTH + 1 : 0;
+    int move_ordering_phase = (search->board.n - 4) / MOVE_ORDERING_PHASE_DIV;
+    for (Mobility &mob: move_list){
+        move_evaluate_simple(search, &mob, best_moves, weight_idx);
+        mob.value += move_evaluate(&search->board, &mob, move_ordering_phase) / 64;
+    }
+    sort(move_list.begin(), move_list.end(), cmp_move_ordering);
+}
+*/
 
 inline void move_evaluate_fast_first(Search *search, Mobility *mob, const int best_moves[]){
     mob->value = 0;

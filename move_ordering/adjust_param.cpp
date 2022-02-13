@@ -19,7 +19,7 @@ inline long long tim(){
 #define step 4096
 #define sc_w 4096
 
-#define n_data 6600000
+#define n_data 12000000
 
 #define n_raw_params 38
 
@@ -116,6 +116,8 @@ void input_test_data(int strt, int s_n_moves, int e_n_moves){
             for (i = 0; i < n_raw_params; ++i)
                 iss >> test_data[nums][i];
             iss >> score;
+            if (score == 0)
+                score = -1;
             for (i = 0; i < n_raw_params; ++i)
                 used_idxes[pattern_nums[i]].emplace(test_data[nums][i]);
             test_labels[nums] = score * step;

@@ -10,7 +10,7 @@ for i in range(0, 60, delta):
     try:
         with open('learned_data/' + str(i) + '_' + str(i + delta) + '.txt', 'r') as f:
             tmp = f.read()
-            print(, len(tmp.splitlines()))
+            print(i, len(tmp.splitlines()))
             data += tmp
     except:
         print(i, 'add 0')

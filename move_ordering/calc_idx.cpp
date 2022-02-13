@@ -149,7 +149,7 @@ void solve(string line){
 }
 
 #define start_file 0
-#define n_files 60
+#define n_files 107
 
 int main(){
     int t = 0;
