@@ -13,49 +13,52 @@
 
 using namespace std;
 
+#define MID_MPC_MIN_DEPTH 2
+#define MID_MPC_MAX_DEPTH 30
+#define END_MPC_MIN_DEPTH 5
+#define END_MPC_MAX_DEPTH 40
+#define N_END_MPC_SCORE_DIV 22
+
+#define MID_FAST_DEPTH 3
+#define END_FAST_DEPTH 7
+#define END_FAST_DEPTH1 6
+#define END_FAST_DEPTH2 8
+#define MID_TO_END_DEPTH 12
+
+#define SCORE_UNDEFINED -INF
+
+#define N_MID_WEIGHT 21 - MID_TO_END_DEPTH + 1
+
 #if MOVE_ORDERING_ADJUST
-    int W_BEST1_MOVE;
-    int W_BEST2_MOVE;
-    int W_BEST3_MOVE;
-    int W_CACHE_HIT;
-    int W_CACHE_HIGH;
-    int W_CACHE_VALUE;
-    int W_CELL_WEIGHT;
-    int W_EVALUATE1;
-    int W_EVALUATE2;
-    int EVALUATE_SWITCH_DEPTH;
-    int W_MOBILITY;
-    int W_STABILITY;
-    int W_SURROUND;
-    int W_PARITY;
-    int W_END_CELL_WEIGHT;
-    int W_END_EVALUATE;
-    int W_END_MOBILITY;
-    int W_END_SURROUND;
-    int W_END_STABILITY;
-    int W_END_PARITY;
+    #define W_BEST1_MOVE 900000000
+    #define W_BEST2_MOVE 800000000
+    #define W_BEST3_MOVE 700000000
+    #define W_CACHE_HIT 1000000
+    #define W_CACHE_HIGH 10000
+    int W_CACHE_VALUE[N_MID_WEIGHT];
+    int W_CELL_WEIGHT[N_MID_WEIGHT];
+    int W_EVALUATE[N_MID_WEIGHT];
+    int W_MOBILITY[N_MID_WEIGHT];
+    int W_SURROUND[N_MID_WEIGHT];
+    int W_PARITY[N_MID_WEIGHT];
+    #define W_END_MOBILITY 29
+    #define W_END_SURROUND 10
+    #define W_END_PARITY 13
 
     void move_ordering_init(){
-        cin >> W_BEST1_MOVE;
-        cin >> W_BEST2_MOVE;
-        cin >> W_BEST3_MOVE;
-        cin >> W_CACHE_HIT;
-        cin >> W_CACHE_HIGH;
-        cin >> W_CACHE_VALUE;
-        cin >> W_CELL_WEIGHT;
-        cin >> W_EVALUATE1;
-        cin >> W_EVALUATE2;
-        cin >> EVALUATE_SWITCH_DEPTH;
-        cin >> W_MOBILITY;
-        cin >> W_STABILITY;
-        cin >> W_SURROUND;
-        cin >> W_PARITY;
-        cin >> W_END_CELL_WEIGHT;
-        cin >> W_END_EVALUATE;
-        cin >> W_END_MOBILITY;
-        cin >> W_END_SURROUND;
-        cin >> W_END_STABILITY;
-        cin >> W_END_PARITY;
+        int i;
+        for (i = 0; i < N_MID_WEIGHT; ++i)
+            cin >> W_CACHE_VALUE[i];
+        for (i = 0; i < N_MID_WEIGHT; ++i)
+            cin >> W_CELL_WEIGHT[i];
+        for (i = 0; i < N_MID_WEIGHT; ++i)
+            cin >> W_EVALUATE[i];
+        for (i = 0; i < N_MID_WEIGHT; ++i)
+            cin >> W_MOBILITY[i];
+        for (i = 0; i < N_MID_WEIGHT; ++i)
+            cin >> W_SURROUND[i];
+        for (i = 0; i < N_MID_WEIGHT; ++i)
+            cin >> W_PARITY[i];
     }
 #else
     /*
@@ -87,9 +90,7 @@ using namespace std;
     #define W_CACHE_HIGH 10000
     #define W_CACHE_VALUE 70
     #define W_CELL_WEIGHT 3
-    #define W_EVALUATE1 10
-    #define W_EVALUATE2 20
-    #define EVALUATE_SWITCH_DEPTH 16
+    #define W_EVALUATE 20
     #define W_MOBILITY 61
     //#define W_STABILITY 1
     #define W_SURROUND 6
@@ -101,20 +102,6 @@ using namespace std;
     //#define W_END_STABILITY 5
     #define W_END_PARITY 13
 #endif
-
-#define MID_MPC_MIN_DEPTH 2
-#define MID_MPC_MAX_DEPTH 30
-#define END_MPC_MIN_DEPTH 5
-#define END_MPC_MAX_DEPTH 40
-#define N_END_MPC_SCORE_DIV 22
-
-#define MID_FAST_DEPTH 3
-#define END_FAST_DEPTH 7
-#define END_FAST_DEPTH1 6
-#define END_FAST_DEPTH2 8
-#define MID_TO_END_DEPTH 12
-
-#define SCORE_UNDEFINED -INF
 
 constexpr int cell_weight[HW2] = {
     18,  4,  16, 12, 12, 16,  4, 18,
@@ -200,8 +187,9 @@ bool cmp_move_ordering(Mobility &a, Mobility &b){
     return a.value > b.value;
 }
 
-inline void move_evaluate(Search *search, Mobility *mob, const int best_moves[], const int depth){
+inline void move_evaluate(Search *search, Mobility *mob, const int best_moves[], const int weight_idx){
     mob->value = 0;
+    /*
     if (mob->pos == best_moves[0])
         mob->value = W_BEST1_MOVE;
     else if (mob->pos == best_moves[1])
@@ -209,24 +197,22 @@ inline void move_evaluate(Search *search, Mobility *mob, const int best_moves[],
     else if (mob->pos == best_moves[2])
         mob->value = W_BEST3_MOVE;
     else{
-        mob->value += cell_weight[mob->pos] * W_CELL_WEIGHT;
+    */
+        mob->value += cell_weight[mob->pos] * W_CELL_WEIGHT[weight_idx];
         if (search->board.parity & cell_div4[mob->pos])
-            mob->value += W_PARITY;
+            mob->value += W_PARITY[weight_idx];
         search->board.move(mob);
             int l, u;
             parent_transpose_table.get_prev(&search->board, search->board.hash() & TRANSPOSE_TABLE_MASK, &l, &u);
             if (u != INF)
-                mob->value += W_CACHE_HIT + W_CACHE_HIGH - u * W_CACHE_VALUE;
+                mob->value += W_CACHE_HIT + W_CACHE_HIGH - u * W_CACHE_VALUE[weight_idx];
             else if (l != -INF)
-                mob->value += W_CACHE_HIT - l * W_CACHE_VALUE;
-            if (depth < EVALUATE_SWITCH_DEPTH)
-                mob->value += -mid_evaluate(&search->board) * W_EVALUATE1;
-            else
-                mob->value += -mid_evaluate(&search->board) * W_EVALUATE2;
+                mob->value += W_CACHE_HIT - l * W_CACHE_VALUE[weight_idx];
+            mob->value += -mid_evaluate(&search->board) * W_EVALUATE[weight_idx];
             if (search->board.p == BLACK)
-                mob->value += calc_surround(search->board.b, ~(search->board.b | search->board.w)) * W_SURROUND;
+                mob->value += calc_surround(search->board.b, ~(search->board.b | search->board.w)) * W_SURROUND[weight_idx];
             else
-                mob->value += calc_surround(search->board.w, ~(search->board.b | search->board.w)) * W_SURROUND;
+                mob->value += calc_surround(search->board.w, ~(search->board.b | search->board.w)) * W_SURROUND[weight_idx];
             /*
             int stab0, stab1;
             calc_stability_fast(&search->board, &stab0, &stab1);
@@ -235,9 +221,9 @@ inline void move_evaluate(Search *search, Mobility *mob, const int best_moves[],
             else
                 mob->value += stab0 * W_STABILITY;
             */
-            mob->value -= pop_count_ull(search->board.mobility_ull()) * W_MOBILITY;
+            mob->value -= pop_count_ull(search->board.mobility_ull()) * W_MOBILITY[weight_idx];
         search->board.undo(mob);
-    }
+    //}
 }
 
 inline void move_ordering(Search *search, vector<Mobility> &move_list, const int depth){
@@ -246,8 +232,9 @@ inline void move_ordering(Search *search, vector<Mobility> &move_list, const int
     int best_moves[N_BEST_MOVES];
     int hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
     child_transpose_table.get_prev(&search->board, hash_code, best_moves);
+    const int weight_idx = depth <= 20 ? depth - MID_TO_END_DEPTH + 1 : 0;
     for (Mobility &mob: move_list)
-        move_evaluate(search, &mob, best_moves, depth);
+        move_evaluate(search, &mob, best_moves, weight_idx);
     sort(move_list.begin(), move_list.end(), cmp_move_ordering);
 }
 /*

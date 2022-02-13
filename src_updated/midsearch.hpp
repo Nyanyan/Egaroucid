@@ -495,8 +495,8 @@ inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mp
                 pre_search_mpcts.emplace_back(1.0);
             if (search.mpct > 2.0 || !search.use_mpc)
                 pre_search_mpcts.emplace_back(1.5);
-            //if (!search.use_mpc)
-            //    pre_search_mpcts.emplace_back(2.0);
+            if (!search.use_mpc)
+                pre_search_mpcts.emplace_back(2.0);
             pre_search_mpcts.emplace_back(USE_DEFAULT_MPC);
             int pv_idx;
             vector<pair<Mobility*, future<pair<int, unsigned long long>>>> parallel_tasks;
@@ -588,10 +588,10 @@ inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mp
                 #if USE_LOG
                     cout_div2();
                 #endif
-                cerr << "endsearch time " << tim() - strt3 << " time from start " << tim() - strt << " mpct " << search.mpct << " policy " << res.policy << " value " << alpha << " nodes " << search.n_nodes - f_n_nodes << " nps " << (search.n_nodes - f_n_nodes) * 1000 / max(1LL, tim() - strt3) << endl;
+                cerr << "endsearch " << depth << " time " << tim() - strt3 << " time from start " << tim() - strt << " mpct " << search.mpct << " policy " << res.policy << " value " << alpha << " nodes " << search.n_nodes - f_n_nodes << " nps " << (search.n_nodes - f_n_nodes) * 1000 / max(1LL, tim() - strt3) << endl;
                 sum_time += tim() - strt3;
             }
-            cerr << "endsearch overall time " << tim() - strt << " search time " << sum_time << " mpct " << search.mpct << " policy " << res.policy << " value " << alpha << " nodes " << search.n_nodes << " nps " << search.n_nodes * 1000 / max(1LL, sum_time) << endl;
+            cerr << "endsearch depth " << depth << " overall time " << tim() - strt << " search time " << sum_time << " mpct " << search.mpct << " policy " << res.policy << " value " << alpha << " nodes " << search.n_nodes << " nps " << search.n_nodes * 1000 / max(1LL, sum_time) << endl;
         }
     }
     res.depth = max_depth;

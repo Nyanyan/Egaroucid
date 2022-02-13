@@ -10,35 +10,34 @@ def digit(n, r):
         n = '0' + n
     return n
 
-param = [900000000, 800000000, 700000000, 1000000, 10000, 70, 4, 10, 16, -3, 68, 1, 15, 6, 1, 5, 58, 16, 5, 16]
+N_MID_WEIGHT = 10
+
+param = [
+    [70 for _ in range(N_MID_WEIGHT)],
+    [1 for _ in range(N_MID_WEIGHT)],
+    [20 for _ in range(N_MID_WEIGHT)],
+    [61 for _ in range(N_MID_WEIGHT)],
+    [7 for _ in range(N_MID_WEIGHT)],
+    [4 for _ in range(N_MID_WEIGHT)]
+]
 
 names = [
-    'W_BEST1_MOVE',
-    'W_BEST2_MOVE',
-    'W_BEST3_MOVE',
-    'W_CACHE_HIT',
-    'W_CACHE_HIGH',
     'W_CACHE_VALUE',
     'W_CELL_WEIGHT',
-    'W_EVALUATE1',
-    'W_EVALUATE2',
-    'EVALUATE_SWITCH_DEPTH',
+    'W_EVALUATE',
     'W_MOBILITY',
-    'W_STABILITY',
     'W_SURROUND',
-    'W_PARITY',
-    'W_END_CELL_WEIGHT',
-    'W_END_EVALUATE',
-    'W_END_MOBILITY',
-    'W_END_SURROUND',
-    'W_END_STABILITY',
-    'W_END_PARITY'
+    'W_PARITY'
 ]
 
 def print_params():
     for i in range(len(param)):
-        print('#define ' + names[i] + ' ' + str(param[i]))
-    print(param)
+        print(names[i] + '[N_MID_WEIGHT] = {', end='')
+        for j in range(len(param[i]) - 1):
+            print(str(param[i][j]) + ', ', end='')
+        print(str(param[i][len(param[i]) - 1]) + '};')
+    for p in param:
+        print(p, ',')
 
 print_params()
 
@@ -48,7 +47,10 @@ test_strt = 0
 test_end = 19
 
 def test():
-    param_in = '\n'.join([str(elem) for elem in param]) + '\n'
+    param_in = ''
+    for p in param:
+        for elem in p:
+            param_in += str(elem) + '\n'
     res = []
     for i in trange(test_strt, test_end + 1):
         with open('testcases/20/' + digit(i, 7) + '.txt', 'r') as f:
@@ -79,12 +81,13 @@ def scoring(n_nodes):
 score = 1.0
 
 for num in range(20):
-    idx = randrange(5, len(param))
-    f_param = param[idx]
+    idx1 = randrange(0, len(param))
+    idx2 = randrange(0, N_MID_WEIGHT)
+    f_param = param[idx1][idx2]
     pls = 0
     while pls == 0:
         pls = randint(-20, 20)
-    param[idx] += pls
+    param[idx1][idx2] += pls
     n_nodes = test()
     #print(n_nodes)
     print('avg nodes', sum(n_nodes) / len(n_nodes))
@@ -94,7 +97,7 @@ for num in range(20):
         first_n_nodes = [elem for elem in n_nodes]
         print_params()
     else:
-        param[idx] = f_param
+        param[idx1][idx2] = f_param
 
 print_params()
 
