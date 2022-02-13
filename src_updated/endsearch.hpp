@@ -7,6 +7,7 @@
 #include "board.hpp"
 #include "evaluate.hpp"
 #include "search.hpp"
+#include "move_ordering.hpp"
 #include "transpose_table.hpp"
 #if USE_MULTI_THREAD
     #include "thread_pool.hpp"

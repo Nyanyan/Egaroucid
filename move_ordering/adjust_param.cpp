@@ -25,7 +25,7 @@ inline long long tim(){
 
 #define beta 0.003
 unsigned long long hour = 0;
-unsigned long long minute = 10;
+unsigned long long minute = 15;
 unsigned long long second = 0;
 
 double alpha[n_patterns][max_evaluate_idx];
@@ -315,7 +315,7 @@ int main(int argc, char *argv[]){
     init();
     initialize_param();
     //output_param();
-    //input_param((string)(argv[1]));
+    input_param((string)(argv[1]));
     input_test_data(0);
 
     sd(second * 1000);

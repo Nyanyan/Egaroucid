@@ -169,53 +169,50 @@ def collect_data(num, s):
     while True:
         if idx >= len(s):
             return
-        if idx >= (60 - 11) * 2:
-            break
         if rv.check_pass() and rv.check_pass():
             break
         x = ord(s[idx]) - ord('a')
         y = int(s[idx + 1]) - 1
         idx += 2
-        if idx >= 30 * 2:
-            yxs = []
-            for yy in range(hw):
-                for xx in range(hw):
-                    if rv.grid[yy][xx] == 2 and (yy != y or xx != x):
-                        yxs.append([yy, xx])
-            if yxs:
-                yy, xx = yxs[randrange(len(yxs))]
-                rv2 = deepcopy(rv)
-                rv2.move(yy, xx)
-                grid_str = ''
-                for i in range(hw):
-                    for j in range(hw):
-                        if rv2.grid[i][j] == -1 or rv2.grid[i][j] == 2: # vacant
-                            grid_str += '2'
-                        elif rv2.grid[i][j] == 1 - rv.player:           # opponent
-                            grid_str += '1'
-                        elif rv2.grid[i][j] == rv.grid[i][j]:           # not flipped own stone
-                            grid_str += '0'
-                        else:                                           # flipped stone
-                            grid_str += '3'
-                grid_str += ' 0'
-                grids.append(grid_str)
-                
-                rv2 = deepcopy(rv)
-                rv2.move(y, x)
-                grid_str = ''
-                for i in range(hw):
-                    for j in range(hw):
-                        if rv2.grid[i][j] == -1 or rv2.grid[i][j] == 2: # vacant
-                            grid_str += '2'
-                        elif rv2.grid[i][j] == 1 - rv.player:           # opponent
-                            grid_str += '1'
-                        elif rv2.grid[i][j] == rv.grid[i][j]:           # not flipped own stone
-                            grid_str += '0'
-                        else:                                           # flipped stone
-                            grid_str += '3'
-                grid_str += ' 1'
-                grids.append(grid_str)
-        
+        yxs = []
+        for yy in range(hw):
+            for xx in range(hw):
+                if rv.grid[yy][xx] == 2 and (yy != y or xx != x):
+                    yxs.append([yy, xx])
+        if yxs:
+            yy, xx = yxs[randrange(len(yxs))]
+            rv2 = deepcopy(rv)
+            rv2.move(yy, xx)
+            grid_str = digit(idx // 2, 2) + ' '
+            for i in range(hw):
+                for j in range(hw):
+                    if rv2.grid[i][j] == -1 or rv2.grid[i][j] == 2: # vacant
+                        grid_str += '2'
+                    elif rv2.grid[i][j] == 1 - rv.player:           # opponent
+                        grid_str += '1'
+                    elif rv2.grid[i][j] == rv.grid[i][j]:           # not flipped own stone
+                        grid_str += '0'
+                    else:                                           # flipped stone
+                        grid_str += '3'
+            grid_str += ' 0'
+            grids.append(grid_str)
+            
+            rv2 = deepcopy(rv)
+            rv2.move(y, x)
+            grid_str = digit(idx // 2, 2) + ' '
+            for i in range(hw):
+                for j in range(hw):
+                    if rv2.grid[i][j] == -1 or rv2.grid[i][j] == 2: # vacant
+                        grid_str += '2'
+                    elif rv2.grid[i][j] == 1 - rv.player:           # opponent
+                        grid_str += '1'
+                    elif rv2.grid[i][j] == rv.grid[i][j]:           # not flipped own stone
+                        grid_str += '0'
+                    else:                                           # flipped stone
+                        grid_str += '3'
+            grid_str += ' 1'
+            grids.append(grid_str)
+    
         if rv.move(y, x):
             print('error')
             exit()

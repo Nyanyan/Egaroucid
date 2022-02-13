@@ -144,3 +144,7 @@ inline unsigned long long black_line(unsigned long long x){
     }
     return res;
 }
+
+inline int pop_digit(unsigned long long x, int place){
+    return 1 & (x >> place);
+}

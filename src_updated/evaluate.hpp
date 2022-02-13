@@ -286,9 +286,6 @@ inline void calc_stability_fast(Board *b, int *stab0, int *stab1){
     *stab1 = pop_count_ull(edge_stability & b->w);
 }
 
-inline int pop_digit(unsigned long long x, int place){
-    return 1 & (x >> place);
-}
 /*
 inline int pick_pattern(const int phase_idx, const int p, const int pattern_idx, const int b_arr[], const int p0, const int p1, const int p2, const int P3, const int P4){
     return pattern_arr[phase_idx][p][pattern_idx][b_arr[p0] * P34 + b_arr[p1] * P33 + b_arr[p2] * P32 + b_arr[P3] * P31 + b_arr[P4]];
