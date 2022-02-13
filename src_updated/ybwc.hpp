@@ -24,55 +24,74 @@ inline bool mpc_lower(Search *search, int alpha, int depth);
 inline bool mpc_end_higher(Search *search, int beta, int val);
 inline bool mpc_end_lower(Search *search, int alpha, int val);
 
-inline pair<int, unsigned long long> ybwc_do_task(Search search, int alpha, int beta, int depth, bool is_end_search, const bool *searching, int policy){
-    int hash_code = search.board.hash() & TRANSPOSE_TABLE_MASK;
-    int g = -nega_alpha_ordering(&search, alpha, beta, depth, is_end_search, searching);
+inline pair<int, unsigned long long> ybwc_do_task(Search search, const Mobility mobility, int alpha, int beta, int depth, bool is_end_search, const bool *searching, int policy){
+    search.board.move(&mobility);
+        int g = -nega_alpha_ordering(&search, alpha, beta, depth, is_end_search, searching);
     if (*searching){
-        child_transpose_table.reg(&search.board, hash_code, policy, g);
+        search.board.undo(&mobility);
+        child_transpose_table.reg(&search.board, search.board.hash() & TRANSPOSE_TABLE_MASK, policy, g);
         return make_pair(g, search.n_nodes);
     }
     return make_pair(SCORE_UNDEFINED, search.n_nodes);
 }
 
-inline bool ybwc_split(Search *search, int alpha, int beta, const int depth, bool is_end_search, const bool *searching, int policy, const int pv_idx, const int canput, const int split_count, vector<future<pair<int, unsigned long long>>> &parallel_tasks){
+inline bool ybwc_split(Search *search, const Mobility *mob, int alpha, int beta, const int depth, bool is_end_search, const bool *searching, int policy, const int pv_idx, const int canput, const int split_count, vector<future<pair<int, unsigned long long>>> &parallel_tasks){
     if (pv_idx > 0 /* pv_idx > canput / YBWC_SPLIT_DIV */ /* && pv_idx < canput - 1 */ && depth >= YBWC_MID_SPLIT_MIN_DEPTH /* && split_count < YBWC_MAX_SPLIT_COUNT */ ){
         if (thread_pool.n_idle()){
-            if (mid_evaluate(&search->board) <= alpha - YBWC_PC_OFFSET)
+            bool return_false = false;
+            search->board.move(mob);
+                if (mid_evaluate(&search->board) <= alpha - YBWC_PC_OFFSET)
+                    return_false = true;
+            search->board.undo(mob);
+            if (return_false)
                 return false;
             Search copy_search;
+            Mobility copy_mobility;
             search->board.copy(&copy_search.board);
             copy_search.skipped = search->skipped;
             copy_search.use_mpc = search->use_mpc;
             copy_search.mpct = search->mpct;
             copy_search.vacant_list = search->vacant_list;
             copy_search.n_nodes = 0;
-            parallel_tasks.emplace_back(thread_pool.push(bind(&ybwc_do_task, copy_search, alpha, beta, depth, is_end_search, searching, policy)));
+            mob->copy(&copy_mobility);
+            parallel_tasks.emplace_back(thread_pool.push(bind(&ybwc_do_task, copy_search, copy_mobility, alpha, beta, depth, is_end_search, searching, policy)));
             return true;
         }
     }
     return false;
 }
 
-inline pair<int, unsigned long long> ybwc_do_task_end(Search search, int alpha, int beta, const bool *searching, int policy){
-    int hash_code = search.board.hash() & TRANSPOSE_TABLE_MASK;
-    int g = -nega_alpha_end(&search, alpha, beta, searching);
-    child_transpose_table.reg(&search.board, hash_code, policy, g);
-    return make_pair(g, search.n_nodes);
+inline pair<int, unsigned long long> ybwc_do_task_end(Search search, const Mobility mobility, int alpha, int beta, const bool *searching, int policy){
+    search.board.move(&mobility);
+        int g = -nega_alpha_end(&search, alpha, beta, searching);
+    if (*searching){
+        search.board.undo(&mobility);
+        child_transpose_table.reg(&search.board, search.board.hash() & TRANSPOSE_TABLE_MASK, policy, g);
+        return make_pair(g, search.n_nodes);
+    }
+    return make_pair(SCORE_UNDEFINED, search.n_nodes);
 }
 
-inline bool ybwc_split_end(Search *search, int alpha, int beta, const bool *searching, int policy, const int pv_idx, const int canput, const int split_count, vector<future<pair<int, unsigned long long>>> &parallel_tasks){
-    if (pv_idx > 0 /* pv_idx > canput / YBWC_SPLIT_DIV */ /* && pv_idx < canput - 1 */ && HW2 - search->board.n >= YBWC_END_SPLIT_MIN_DEPTH /* && split_count < YBWC_MAX_SPLIT_COUNT */ ){
+inline bool ybwc_split_end(Search *search, const Mobility *mob, int alpha, int beta, const bool *searching, int policy, const int pv_idx, const int canput, const int split_count, vector<future<pair<int, unsigned long long>>> &parallel_tasks){
+    if (pv_idx > 0 /* pv_idx > canput / YBWC_SPLIT_DIV */ /* && pv_idx < canput - 1 */ && HW2 - search->board.n >= YBWC_MID_SPLIT_MIN_DEPTH /* && split_count < YBWC_MAX_SPLIT_COUNT */ ){
         if (thread_pool.n_idle()){
-            if (mid_evaluate(&search->board) <= alpha - YBWC_PC_OFFSET)
+            bool return_false = false;
+            search->board.move(mob);
+                if (mid_evaluate(&search->board) <= alpha - YBWC_PC_OFFSET)
+                    return_false = true;
+            search->board.undo(mob);
+            if (return_false)
                 return false;
             Search copy_search;
+            Mobility copy_mobility;
             search->board.copy(&copy_search.board);
             copy_search.skipped = search->skipped;
             copy_search.use_mpc = search->use_mpc;
             copy_search.mpct = search->mpct;
             copy_search.vacant_list = search->vacant_list;
             copy_search.n_nodes = 0;
-            parallel_tasks.emplace_back(thread_pool.push(bind(&ybwc_do_task_end, copy_search, alpha, beta, searching, policy)));
+            mob->copy(&copy_mobility);
+            parallel_tasks.emplace_back(thread_pool.push(bind(&ybwc_do_task_end, copy_search, copy_mobility, alpha, beta, searching, policy)));
             return true;
         }
     }
@@ -99,12 +118,19 @@ inline int ybwc_wait_strict(Search *search, vector<future<pair<int, unsigned lon
     int g = -INF;
     pair<int, unsigned long long> got_task;
     for (future<pair<int, unsigned long long>> &task: parallel_tasks){
-        if (task.valid()){
+        #if MULTI_THREAD_EARLY_GETTING_MODE == 2
+            if (task.valid()){
+                got_task = task.get();
+                if (got_task.first != SCORE_UNDEFINED)
+                    g = max(g, got_task.first);
+                search->n_nodes += got_task.second;
+            }
+        #else
             got_task = task.get();
             if (got_task.first != SCORE_UNDEFINED)
                 g = max(g, got_task.first);
             search->n_nodes += got_task.second;
-        }
+        #endif
     }
     return g;
 }

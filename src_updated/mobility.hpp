@@ -44,6 +44,12 @@ class Mobility{
         int value;
     
     public:
+        inline void copy(Mobility *mob) const{
+            mob->pos = pos;
+            mob->flip = flip;
+            mob->value = value;
+        }
+
         #if FLIP_CALC_MODE == 0
             inline void calc_flip(const unsigned long long player, const unsigned long long opponent, const int place){
                 unsigned long long wh, put, m1, m2, m3, m4, m5, m6, rev;

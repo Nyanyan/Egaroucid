@@ -533,42 +533,47 @@ int nega_alpha_end(Search *search, int alpha, int beta, const bool *searching){
         int pv_idx = 0, split_count = 0;
         bool n_searching = true;
         vector<future<pair<int, unsigned long long>>> parallel_tasks;
-        //int parallel_value;
+        #if MULTI_THREAD_EARLY_GETTING_MODE == 1
+            int parallel_value;
+        #endif
         for (const Mobility &mob: move_list){
             if (!(*searching))
                 break;
-            /*
-            parallel_value = child_transpose_table.get_best_value(&search->board, hash_code);
-            if (parallel_value != TRANSPOSE_TABLE_UNDEFINED && parallel_value > alpha){
-                alpha = parallel_value;
-                v = parallel_value;
-                if (beta <= alpha)
-                    break;
-            }
-            */
-            search->board.move(&mob);
-                if (ybwc_split_end(search, -beta, -alpha, &n_searching, mob.pos, pv_idx++, canput, split_count, parallel_tasks)){
-                    search->board.undo(&mob);
-                    ++split_count;
-                } else{
+            #if MULTI_THREAD_EARLY_GETTING_MODE == 1
+                if (split_count){
+                    parallel_value = child_transpose_table.get_best_value(&search->board, hash_code);
+                    if (parallel_value != TRANSPOSE_TABLE_UNDEFINED && parallel_value > alpha){
+                        alpha = parallel_value;
+                        v = parallel_value;
+                        if (beta <= alpha)
+                            break;
+                    }
+                }
+            #endif
+            if (ybwc_split_end(search, &mob, -beta, -alpha, &n_searching, mob.pos, pv_idx++, canput, split_count, parallel_tasks)){
+                ++split_count;
+            } else{
+                search->board.move(&mob);
                     g = -nega_alpha_end(search, -beta, -alpha, searching);
-                    search->board.undo(&mob);
-                    if (*searching){
-                        alpha = max(alpha, g);
-                        if (v < g){
-                            v = g;
-                            //update_best_move(best_moves, mob.pos);
-                            child_transpose_table.reg(&search->board, hash_code, mob.pos, g);
-                        }
+                search->board.undo(&mob);
+                if (*searching){
+                    alpha = max(alpha, g);
+                    if (v < g){
+                        v = g;
+                        //update_best_move(best_moves, mob.pos);
+                        child_transpose_table.reg(&search->board, hash_code, mob.pos, g);
+                    }
+                    #if MULTI_THREAD_EARLY_GETTING_MODE == 2
                         if (split_count && beta > alpha && *searching){
                             g = ybwc_wait(search, parallel_tasks);
                             alpha = max(alpha, g);
                             v = max(v, g);
                         }
-                        if (beta <= alpha)
-                            break;
-                    }
+                    #endif
+                    if (beta <= alpha)
+                        break;
                 }
+            }
         }
         if (split_count){
             if (beta <= alpha || !(*searching)){
