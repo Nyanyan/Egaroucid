@@ -1693,3 +1693,9 @@ endsearch time 1775 mpct 0 policy 55 value 38 nodes 25120083 nps 14144190
 #47 endsearch overall time 2668 search time 2655 mpct 0 policy 49 value 4 nodes 95946844 nps 36138170
 #48 endsearch overall time 20671 search time 20658 mpct 0 policy 18 value 28 nodes 665269546 nps 32203966
 #49 endsearch overall time 18640 search time 18626 mpct 0 policy 59 value 16 nodes 653464995 nps 35083485
+
+2022/02/13 vs simple_end_th=6 no early getting
+#40 endsearch overall time 504 search time 489 mpct 0 policy 55 value 38 nodes 15487404 nps 31671582
+#41 endsearch overall time 787 search time 773 mpct 0 policy 32 value 0 nodes 21541147 nps 27866943
+#42 endsearch overall time 1573 search time 1559 mpct 0 policy 49 value 6 nodes 42797303 nps 27451765
+#43 endsearch overall time 3268 search time 3254 mpct 0 policy 41 value -12 nodes 85286298 nps 26209679

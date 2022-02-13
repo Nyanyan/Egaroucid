@@ -39,7 +39,7 @@ using namespace std;
 #define N_END_MPC_SCORE_DIV 22
 
 #define MID_FAST_DEPTH 3
-#define END_FAST_DEPTH 7
+#define END_FAST_DEPTH 6
 #define MID_TO_END_DEPTH 11
 
 #define SCORE_UNDEFINED -INF
