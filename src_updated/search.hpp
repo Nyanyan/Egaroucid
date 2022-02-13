@@ -18,12 +18,12 @@ using namespace std;
 #define W_BEST3_MOVE 700000000
 #define W_CACHE_HIT 1000000
 #define W_CACHE_HIGH 10000
-#define W_CACHE_VALUE 64
+#define W_CACHE_VALUE 70
 #define W_CELL_WEIGHT 1
 #define W_EVALUATE 10
-#define W_MOBILITY 60
-#define W_STABILITY 5
-#define W_SURROUND 5
+#define W_MOBILITY 61
+//#define W_STABILITY 5
+#define W_SURROUND 7
 #define W_PARITY 4
 //#define W_END_CELL_WEIGHT 1
 //#define W_END_EVALUATE 5
@@ -152,12 +152,14 @@ inline void move_evaluate(Search *search, Mobility *mob, const int best_moves[])
                 mob->value += calc_surround(search->board.b, ~(search->board.b | search->board.w)) * W_SURROUND;
             else
                 mob->value += calc_surround(search->board.w, ~(search->board.b | search->board.w)) * W_SURROUND;
+            /*
             int stab0, stab1;
             calc_stability_fast(&search->board, &stab0, &stab1);
             if (search->board.p == BLACK)
                 mob->value += stab1 * W_STABILITY;
             else
                 mob->value += stab0 * W_STABILITY;
+            */
             mob->value -= pop_count_ull(search->board.mobility_ull()) * W_MOBILITY;
         search->board.undo(mob);
     }

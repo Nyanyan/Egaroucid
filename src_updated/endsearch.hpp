@@ -543,7 +543,9 @@ int nega_alpha_end(Search *search, int alpha, int beta, const bool *searching){
                     alpha = max(alpha, g);
                     if (v < g){
                         v = g;
-                        child_transpose_table.reg(&search->board, hash_code, mob.pos, g);
+                        #if USE_END_TC
+                            child_transpose_table.reg(&search->board, hash_code, mob.pos, g);
+                        #endif
                     }
                     if (beta <= alpha)
                         break;
