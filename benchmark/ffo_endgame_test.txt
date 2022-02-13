@@ -1699,3 +1699,23 @@ endsearch time 1775 mpct 0 policy 55 value 38 nodes 25120083 nps 14144190
 #41 endsearch overall time 787 search time 773 mpct 0 policy 32 value 0 nodes 21541147 nps 27866943
 #42 endsearch overall time 1573 search time 1559 mpct 0 policy 49 value 6 nodes 42797303 nps 27451765
 #43 endsearch overall time 3268 search time 3254 mpct 0 policy 41 value -12 nodes 85286298 nps 26209679
+
+2022/02/13 update
+#40 endsearch overall time 545 search time 529 mpct 0 policy 55 value 38 nodes 17475256 nps 33034510
+#41 endsearch overall time 873 search time 859 mpct 0 policy 32 value 0 nodes 20456368 nps 23814165
+#42 endsearch overall time 1700 search time 1683 mpct 0 policy 49 value 6 nodes 42706899 nps 25375459
+#43 endsearch overall time 5569 search time 5554 mpct 0 policy 41 value -12 nodes 82512895 nps 14856480
+#44 endsearch overall time 1157 search time 1140 mpct 0 policy 52 value -14 nodes 24403293 nps 21406397
+#45 endsearch overall time 21721 search time 21706 mpct 0 policy 54 value 6 nodes 499463916 nps 23010407
+
+2022/02/13 vs same
+#40 endsearch overall time 389 search time 375 mpct 0 policy 55 value 38 nodes 15389536 nps 41038762
+#41 endsearch overall time 799 search time 785 mpct 0 policy 32 value 0 nodes 20372219 nps 25951871
+#42 endsearch overall time 1462 search time 1447 mpct 0 policy 49 value 6 nodes 43260614 nps 29896761
+#43 endsearch overall time 4812 search time 4796 mpct 0 policy 41 value -12 nodes 82975339 nps 17300946
+#44 endsearch overall time 934 search time 920 mpct 0 policy 52 value -14 nodes 24351407 nps 26468920
+#45 endsearch overall time 15437 search time 15423 mpct 0 policy 54 value 6 nodes 510728586 nps 33114736
+#46 endsearch overall time 5574 search time 5561 mpct 0 policy 46 value -8 nodes 210944963 nps 37932919
+#47 endsearch overall time 2747 search time 2735 mpct 0 policy 49 value 4 nodes 82018121 nps 29988344
+#48 endsearch overall time 21287 search time 21275 mpct 0 policy 18 value 28 nodes 826444898 nps 38845823
+#49 endsearch overall time 12517 search time 12504 mpct 0 policy 59 value 16 nodes 525409012 nps 42019274

@@ -39,7 +39,8 @@ using namespace std;
 #define N_END_MPC_SCORE_DIV 22
 
 #define MID_FAST_DEPTH 3
-#define END_FAST_DEPTH 6
+#define END_FAST_DEPTH1 6
+#define END_FAST_DEPTH2 8
 #define MID_TO_END_DEPTH 12
 
 #define SCORE_UNDEFINED -INF
@@ -287,7 +288,7 @@ inline void move_evaluate_fast_first_fast(Search *search, Mobility *mob, const i
     else if (mob->pos == best_moves[2])
         mob->value = W_BEST3_MOVE;
     else if (search->board.parity & cell_div4[mob->pos])
-            mob->value += W_END_PARITY;
+        mob->value += W_END_PARITY;
 }
 
 inline void move_ordering_fast_first_fast(Search *search, vector<Mobility> &move_list){
