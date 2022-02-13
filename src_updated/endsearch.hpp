@@ -477,8 +477,9 @@ int nega_alpha_end(Search *search, int alpha, int beta, const bool *searching){
         if (stab_res != SCORE_UNDEFINED)
             return stab_res;
     #endif
+    int hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
     #if USE_END_TC
-        int l, u, hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
+        int l, u;
         parent_transpose_table.get_now(&search->board, hash_code, &l, &u);
         if (u == l)
             return u;

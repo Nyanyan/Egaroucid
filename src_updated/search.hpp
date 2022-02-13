@@ -39,8 +39,8 @@ using namespace std;
 #define N_END_MPC_SCORE_DIV 22
 
 #define MID_FAST_DEPTH 3
-#define END_FAST_DEPTH 7
-#define MID_TO_END_DEPTH 11
+#define END_FAST_DEPTH 6
+#define MID_TO_END_DEPTH 12
 
 #define SCORE_UNDEFINED -INF
 
@@ -175,7 +175,37 @@ inline void move_ordering(Search *search, vector<Mobility> &move_list){
         move_evaluate(search, &mob, best_moves);
     sort(move_list.begin(), move_list.end(), cmp_move_ordering);
 }
-
+/*
+inline void move_ordering(Search *search, vector<Mobility> &move_list){
+    if (move_list.size() < 2)
+        return;
+    int best_moves[N_BEST_MOVES];
+    int hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
+    child_transpose_table.get_prev(&search->board, hash_code, best_moves);
+    int idx = 0, max_value = -INF, max_idx = -1;
+    for (Mobility &mob: move_list){
+        move_evaluate(search, &mob, best_moves);
+        if (mob.value > max_value){
+            max_value = mob.value;
+            max_idx = idx;
+        }
+        ++idx;
+    }
+    if (max_idx > 0){
+        Mobility tmp;
+        tmp.flip = move_list[0].flip;
+        tmp.pos = move_list[0].pos;
+        tmp.value = move_list[0].value;
+        move_list[0].flip = move_list[max_idx].flip;
+        move_list[0].pos = move_list[max_idx].pos;
+        move_list[0].value = move_list[max_idx].value;
+        move_list[max_idx].flip = tmp.flip;
+        move_list[max_idx].pos = tmp.pos;
+        move_list[max_idx].value = tmp.value;
+    }
+    //sort(move_list.begin(), move_list.end(), cmp_move_ordering);
+}
+*/
 inline void move_evaluate_fast_first(Search *search, Mobility *mob, const int best_moves[]){
     mob->value = 0;
     if (mob->pos == best_moves[0])
@@ -217,7 +247,37 @@ inline void move_ordering_fast_first(Search *search, vector<Mobility> &move_list
         move_evaluate_fast_first(search, &mob, best_moves);
     sort(move_list.begin(), move_list.end(), cmp_move_ordering);
 }
-
+/*
+inline void move_ordering_fast_first(Search *search, vector<Mobility> &move_list){
+    if (move_list.size() < 2)
+        return;
+    int best_moves[N_BEST_MOVES];
+    int hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
+    child_transpose_table.get_prev(&search->board, hash_code, best_moves);
+    int idx = 0, max_value = -INF, max_idx = -1;
+    for (Mobility &mob: move_list){
+        move_evaluate_fast_first(search, &mob, best_moves);
+        if (mob.value > max_value){
+            max_value = mob.value;
+            max_idx = idx;
+        }
+        ++idx;
+    }
+    if (max_idx > 0){
+        Mobility tmp;
+        tmp.flip = move_list[0].flip;
+        tmp.pos = move_list[0].pos;
+        tmp.value = move_list[0].value;
+        move_list[0].flip = move_list[max_idx].flip;
+        move_list[0].pos = move_list[max_idx].pos;
+        move_list[0].value = move_list[max_idx].value;
+        move_list[max_idx].flip = tmp.flip;
+        move_list[max_idx].pos = tmp.pos;
+        move_list[max_idx].value = tmp.value;
+    }
+    //sort(move_list.begin(), move_list.end(), cmp_move_ordering);
+}
+*/
 inline void move_evaluate_fast_first_fast(Search *search, Mobility *mob, const int best_moves[]){
     mob->value = 0;
     if (mob->pos == best_moves[0])

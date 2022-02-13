@@ -156,23 +156,19 @@ class Child_transpose_table{
         }
 
         inline void reg(const Board *board, const int hash, const int policy, const int value){
-            if (global_searching){
-                if (!compare_key(board, &table[now][hash])){
-                    table[now][hash].register_value(board, policy, value);
-                    //++n_reg;
-                } else
-                    table[now][hash].register_value(policy, value);
-            }
+            if (!compare_key(board, &table[now][hash])){
+                table[now][hash].register_value(board, policy, value);
+                //++n_reg;
+            } else
+                table[now][hash].register_value(policy, value);
         }
 
         inline void reg(const Board *board, const int hash, const int policies[], const int value){
-            if (global_searching){
-                if (!compare_key(board, &table[now][hash])){
-                    table[now][hash].register_value(board, policies, value);
-                    //++n_reg;
-                } else
-                    table[now][hash].register_value(policies, value);
-            }
+            if (!compare_key(board, &table[now][hash])){
+                table[now][hash].register_value(board, policies, value);
+                //++n_reg;
+            } else
+                table[now][hash].register_value(policies, value);
         }
 
         inline bool get_now(Board *board, const int hash, int best_moves[]) const{
@@ -315,12 +311,10 @@ class Parent_transpose_table{
         #endif
 
         inline void reg(const Board *board, const int hash, const int l, const int u){
-            if (global_searching){
-                if (!compare_key(board, &table[now][hash]))
-                    table[now][hash].register_value(board, l, u);
-                else
-                    table[now][hash].register_value(l, u);
-            }
+            if (!compare_key(board, &table[now][hash]))
+                table[now][hash].register_value(board, l, u);
+            else
+                table[now][hash].register_value(l, u);
         }
 
         inline void get_now(Board *board, const int hash, int *l, int *u) const{
