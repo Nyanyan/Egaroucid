@@ -20,7 +20,9 @@ using namespace std;
 #define W_CACHE_HIGH 10000
 #define W_CACHE_VALUE 70
 #define W_CELL_WEIGHT 1
-#define W_EVALUATE 10
+#define W_EVALUATE1 10
+#define W_EVALUATE2 20
+#define EVALUATE_SWITCH_DEPTH 16
 #define W_MOBILITY 61
 //#define W_STABILITY 5
 #define W_SURROUND 7
@@ -39,6 +41,7 @@ using namespace std;
 #define N_END_MPC_SCORE_DIV 22
 
 #define MID_FAST_DEPTH 3
+#define END_FAST_DEPTH 7
 #define END_FAST_DEPTH1 6
 #define END_FAST_DEPTH2 8
 #define MID_TO_END_DEPTH 12
@@ -129,7 +132,7 @@ bool cmp_move_ordering(Mobility &a, Mobility &b){
     return a.value > b.value;
 }
 
-inline void move_evaluate(Search *search, Mobility *mob, const int best_moves[]){
+inline void move_evaluate(Search *search, Mobility *mob, const int best_moves[], const int depth){
     mob->value = 0;
     if (mob->pos == best_moves[0])
         mob->value = W_BEST1_MOVE;
@@ -148,7 +151,10 @@ inline void move_evaluate(Search *search, Mobility *mob, const int best_moves[])
                 mob->value += W_CACHE_HIT + W_CACHE_HIGH - u * W_CACHE_VALUE;
             else if (l != -INF)
                 mob->value += W_CACHE_HIT - l * W_CACHE_VALUE;
-            mob->value += -mid_evaluate(&search->board) * W_EVALUATE;
+            if (depth < EVALUATE_SWITCH_DEPTH)
+                mob->value += -mid_evaluate(&search->board) * W_EVALUATE1;
+            else
+                mob->value += -mid_evaluate(&search->board) * W_EVALUATE2;
             if (search->board.p == BLACK)
                 mob->value += calc_surround(search->board.b, ~(search->board.b | search->board.w)) * W_SURROUND;
             else
@@ -166,14 +172,14 @@ inline void move_evaluate(Search *search, Mobility *mob, const int best_moves[])
     }
 }
 
-inline void move_ordering(Search *search, vector<Mobility> &move_list){
+inline void move_ordering(Search *search, vector<Mobility> &move_list, const int depth){
     if (move_list.size() < 2)
         return;
     int best_moves[N_BEST_MOVES];
     int hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
     child_transpose_table.get_prev(&search->board, hash_code, best_moves);
     for (Mobility &mob: move_list)
-        move_evaluate(search, &mob, best_moves);
+        move_evaluate(search, &mob, best_moves, depth);
     sort(move_list.begin(), move_list.end(), cmp_move_ordering);
 }
 /*

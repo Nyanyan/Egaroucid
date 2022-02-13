@@ -63,7 +63,7 @@ int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth){
         if (1 & (legal >> cell))
             move_list.emplace_back(calc_flip(&search->board, cell));
     }
-    move_ordering(search, move_list);
+    move_ordering(search, move_list, depth);
     for (const Mobility &mob: move_list){
         search->board.move(&mob);
             g = -nega_alpha_ordering_nomemo(search, -beta, -alpha, depth);
@@ -209,7 +209,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool is_
         if (1 & (legal >> cell))
             calc_flip(&move_list[idx++], &search->board, cell);
     }
-    move_ordering(search, move_list);
+    move_ordering(search, move_list, depth);
     int best_moves[N_BEST_MOVES] = {TRANSPOSE_TABLE_UNDEFINED, TRANSPOSE_TABLE_UNDEFINED, TRANSPOSE_TABLE_UNDEFINED};
     #if USE_MULTI_THREAD
         int pv_idx = 0, split_count = 0;
@@ -373,7 +373,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool is_end_searc
         if (1 & (legal >> cell))
             calc_flip(&move_list[idx++], &search->board, cell);
     }
-    move_ordering(search, move_list);
+    move_ordering(search, move_list, depth);
     bool searching = true;
     for (const Mobility &mob: move_list){
         search->board.move(&mob);
@@ -467,7 +467,7 @@ inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mp
             beta = HW2;
             parent_transpose_table.ready_next_search();
             child_transpose_table.ready_next_search();
-            move_ordering(&search, move_list);
+            move_ordering(&search, move_list, max_depth);
             //move_ordering_value(move_list);
             for (Mobility &mob: move_list){
                 search.board.move(&mob);

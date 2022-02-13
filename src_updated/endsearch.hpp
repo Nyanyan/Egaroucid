@@ -556,8 +556,10 @@ int nega_alpha_end_single(Search *search, int alpha, int beta, const bool *searc
 int nega_alpha_end(Search *search, int alpha, int beta, const bool *searching){
     if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
-    if (search->board.n >= HW2 - END_FAST_DEPTH2)
-        return nega_alpha_end_single(search, alpha, beta, searching);
+    if (search->board.n >= HW2 - END_FAST_DEPTH)
+        return nega_alpha_end_fast(search, alpha, beta);
+    //if (search->board.n >= HW2 - END_FAST_DEPTH2)
+    //    return nega_alpha_end_single(search, alpha, beta, searching);
     ++search->n_nodes;
     #if USE_END_SC
         int stab_res = stability_cut(search, &alpha, &beta);
@@ -702,10 +704,12 @@ int nega_alpha_end(Search *search, int alpha, int beta, const bool *searching){
 int nega_scout_end(Search *search, int alpha, int beta){
     if (!global_searching)
         return -INF;
-    if (search->board.n >= HW2 - END_FAST_DEPTH2){
-        bool searching = true;
-        return nega_alpha_end_single(search, alpha, beta, &searching);
-    }
+    if (search->board.n >= HW2 - END_FAST_DEPTH)
+        return nega_alpha_end_fast(search, alpha, beta);
+    //if (search->board.n >= HW2 - END_FAST_DEPTH2){
+    //    bool searching = true;
+    //    return nega_alpha_end_single(search, alpha, beta, &searching);
+    //}
     ++(search->n_nodes);
     #if USE_END_SC
         int stab_res = stability_cut(search, &alpha, &beta);
