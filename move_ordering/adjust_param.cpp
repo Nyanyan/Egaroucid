@@ -73,7 +73,7 @@ void input_param(string file){
     cerr << t << endl;
 }
 
-void input_test_data(int strt){
+void input_test_data(int strt, int s_n_moves, int e_n_moves){
     int i, j, k;
     ifstream ifs("big_data.txt");
     if (ifs.fail()){
@@ -315,8 +315,8 @@ int main(int argc, char *argv[]){
     init();
     initialize_param();
     //output_param();
-    input_param((string)(argv[1]));
-    input_test_data(0);
+    //input_param((string)(argv[3]));
+    input_test_data(0, atoi(argv[1]), atoi(argv[2]));
 
     sd(second * 1000);
 

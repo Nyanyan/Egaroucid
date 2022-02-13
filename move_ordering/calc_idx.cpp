@@ -78,7 +78,9 @@ inline int pick_pattern(unsigned long long p, unsigned long long o, unsigned lon
         ((pop_digit(f, p7) * 3 + pop_digit(o, p7) * 2 + pop_digit(p, p7)) * p47);
 }
 
-inline void calc_idx(unsigned long long p, unsigned long long o, unsigned long long v, unsigned long long f, char res){
+inline void calc_idx(unsigned long long p, unsigned long long o, unsigned long long v, unsigned long long f, char res, int n_moves){
+    cout << n_moves << " ";
+
     cout << pick_pattern(p, o, v, f, 0, 1, 2, 3, 4, 5, 6, 7) << " ";
     cout << pick_pattern(p, o, v, f, 0, 8, 16, 24, 32, 40, 48, 56) << " ";
     cout << pick_pattern(p, o, v, f, 7, 15, 23, 31, 39, 47, 55, 63) << " ";
@@ -131,18 +133,19 @@ inline void calc_idx(unsigned long long p, unsigned long long o, unsigned long l
 
 void solve(string line){
     unsigned long long p = 0, o = 0, v = 0, f = 0;
+    int n_moves = (line[0] - '0') * 10 + (line[1] - '0');
     for (int i = 0; i < 64; ++i){
-        if (line[i] == '0')
+        if (line[3 + i] == '0')
             p |= 1ULL << i;
-        else if (line[i] == '1')
+        else if (line[3 + i] == '1')
             o |= 1ULL << i;
-        else if (line[i] == '2')
+        else if (line[3 + i] == '2')
             v |= 1ULL << i;
-        else if (line[i] == '3')
+        else if (line[3 + i] == '3')
             f |= 1ULL << i;
     }
-    char ans = line[65];
-    calc_idx(p, o, v, f, ans);
+    char ans = line[68];
+    calc_idx(p, o, v, f, ans, n_moves);
 }
 
 #define start_file 0
