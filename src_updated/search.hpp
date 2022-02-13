@@ -13,26 +13,94 @@
 
 using namespace std;
 
-#define W_BEST1_MOVE 900000000
-#define W_BEST2_MOVE 800000000
-#define W_BEST3_MOVE 700000000
-#define W_CACHE_HIT 1000000
-#define W_CACHE_HIGH 10000
-#define W_CACHE_VALUE 70
-#define W_CELL_WEIGHT 1
-#define W_EVALUATE1 10
-#define W_EVALUATE2 20
-#define EVALUATE_SWITCH_DEPTH 16
-#define W_MOBILITY 61
-//#define W_STABILITY 5
-#define W_SURROUND 7
-#define W_PARITY 4
-//#define W_END_CELL_WEIGHT 1
-//#define W_END_EVALUATE 5
-#define W_END_MOBILITY 30
-#define W_END_SURROUND 10
-//#define W_END_STABILITY 5
-#define W_END_PARITY 10
+#if MOVE_ORDERING_ADJUST
+    int W_BEST1_MOVE;
+    int W_BEST2_MOVE;
+    int W_BEST3_MOVE;
+    int W_CACHE_HIT;
+    int W_CACHE_HIGH;
+    int W_CACHE_VALUE;
+    int W_CELL_WEIGHT;
+    int W_EVALUATE1;
+    int W_EVALUATE2;
+    int EVALUATE_SWITCH_DEPTH;
+    int W_MOBILITY;
+    int W_STABILITY;
+    int W_SURROUND;
+    int W_PARITY;
+    int W_END_CELL_WEIGHT;
+    int W_END_EVALUATE;
+    int W_END_MOBILITY;
+    int W_END_SURROUND;
+    int W_END_STABILITY;
+    int W_END_PARITY;
+
+    void move_ordering_init(){
+        cin >> W_BEST1_MOVE;
+        cin >> W_BEST2_MOVE;
+        cin >> W_BEST3_MOVE;
+        cin >> W_CACHE_HIT;
+        cin >> W_CACHE_HIGH;
+        cin >> W_CACHE_VALUE;
+        cin >> W_CELL_WEIGHT;
+        cin >> W_EVALUATE1;
+        cin >> W_EVALUATE2;
+        cin >> EVALUATE_SWITCH_DEPTH;
+        cin >> W_MOBILITY;
+        cin >> W_STABILITY;
+        cin >> W_SURROUND;
+        cin >> W_PARITY;
+        cin >> W_END_CELL_WEIGHT;
+        cin >> W_END_EVALUATE;
+        cin >> W_END_MOBILITY;
+        cin >> W_END_SURROUND;
+        cin >> W_END_STABILITY;
+        cin >> W_END_PARITY;
+    }
+#else
+    /*
+    #define W_BEST1_MOVE 900000000
+    #define W_BEST2_MOVE 800000000
+    #define W_BEST3_MOVE 700000000
+    #define W_CACHE_HIT 1000000
+    #define W_CACHE_HIGH 10000
+    #define W_CACHE_VALUE 70
+    #define W_CELL_WEIGHT 1
+    #define W_EVALUATE1 10
+    #define W_EVALUATE2 20
+    #define EVALUATE_SWITCH_DEPTH 16
+    #define W_MOBILITY 61
+    //#define W_STABILITY 5
+    #define W_SURROUND 7
+    #define W_PARITY 4
+    //#define W_END_CELL_WEIGHT 1
+    //#define W_END_EVALUATE 5
+    #define W_END_MOBILITY 30
+    #define W_END_SURROUND 10
+    //#define W_END_STABILITY 5
+    #define W_END_PARITY 10
+    */
+    #define W_BEST1_MOVE 900000000
+    #define W_BEST2_MOVE 800000000
+    #define W_BEST3_MOVE 700000000
+    #define W_CACHE_HIT 1000000
+    #define W_CACHE_HIGH 10000
+    #define W_CACHE_VALUE 70
+    #define W_CELL_WEIGHT 3
+    #define W_EVALUATE1 10
+    #define W_EVALUATE2 20
+    #define EVALUATE_SWITCH_DEPTH 16
+    #define W_MOBILITY 61
+    //#define W_STABILITY 1
+    #define W_SURROUND 6
+    #define W_PARITY 4
+    //#define W_END_CELL_WEIGHT 1
+    //#define W_END_EVALUATE 5
+    #define W_END_MOBILITY 29
+    #define W_END_SURROUND 10
+    //#define W_END_STABILITY 5
+    #define W_END_PARITY 13
+#endif
 
 #define MID_MPC_MIN_DEPTH 2
 #define MID_MPC_MAX_DEPTH 30
@@ -159,14 +227,12 @@ inline void move_evaluate(Search *search, Mobility *mob, const int best_moves[],
                 mob->value += calc_surround(search->board.b, ~(search->board.b | search->board.w)) * W_SURROUND;
             else
                 mob->value += calc_surround(search->board.w, ~(search->board.b | search->board.w)) * W_SURROUND;
-            /*
             int stab0, stab1;
             calc_stability_fast(&search->board, &stab0, &stab1);
             if (search->board.p == BLACK)
                 mob->value += stab1 * W_STABILITY;
             else
                 mob->value += stab0 * W_STABILITY;
-            */
             mob->value -= pop_count_ull(search->board.mobility_ull()) * W_MOBILITY;
         search->board.undo(mob);
     }
@@ -231,14 +297,12 @@ inline void move_evaluate_fast_first(Search *search, Mobility *mob, const int be
                 mob->value += calc_surround(search->board.b, ~(search->board.b | search->board.w)) * W_END_SURROUND;
             else
                 mob->value += calc_surround(search->board.w, ~(search->board.b | search->board.w)) * W_END_SURROUND;
-            /*
             int stab0, stab1;
             calc_stability_fast(&search->board, &stab0, &stab1);
             if (search->board.p == BLACK)
                 mob->value += stab1 * W_END_STABILITY;
             else
                 mob->value += stab0 * W_END_STABILITY;
-            */
             mob->value -= pop_count_ull(search->board.mobility_ull()) * W_END_MOBILITY;
         search->board.undo(mob);
     }

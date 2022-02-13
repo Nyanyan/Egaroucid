@@ -210,8 +210,8 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool is_
             calc_flip(&move_list[idx++], &search->board, cell);
     }
     move_ordering(search, move_list, depth);
-    int best_moves[N_BEST_MOVES] = {TRANSPOSE_TABLE_UNDEFINED, TRANSPOSE_TABLE_UNDEFINED, TRANSPOSE_TABLE_UNDEFINED};
     #if USE_MULTI_THREAD
+        int best_moves[N_BEST_MOVES] = {TRANSPOSE_TABLE_UNDEFINED, TRANSPOSE_TABLE_UNDEFINED, TRANSPOSE_TABLE_UNDEFINED};
         int pv_idx = 0, split_count = 0;
         vector<future<pair<int, unsigned long long>>> parallel_tasks;
         bool n_searching = true;
@@ -495,8 +495,8 @@ inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mp
                 pre_search_mpcts.emplace_back(1.0);
             if (search.mpct > 2.0 || !search.use_mpc)
                 pre_search_mpcts.emplace_back(1.5);
-            //if (!search.use_mpc)
-            //    pre_search_mpcts.emplace_back(2.0);
+            if (!search.use_mpc)
+                pre_search_mpcts.emplace_back(2.0);
             pre_search_mpcts.emplace_back(USE_DEFAULT_MPC);
             int pv_idx;
             vector<pair<Mobility*, future<pair<int, unsigned long long>>>> parallel_tasks;
@@ -601,5 +601,8 @@ inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mp
     else
         res.value = alpha;
     //cerr << child_transpose_table.get_n_reg() << endl;
+    #if MOVE_ORDERING_ADJUST
+        cout << search.n_nodes << endl;
+    #endif
     return res;
 }

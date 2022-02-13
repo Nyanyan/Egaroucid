@@ -42,6 +42,9 @@ int main(){
     Board b;
     int ai_player;
     while (true){
+        #if MOVE_ORDERING_ADJUST
+            move_ordering_init();
+        #endif
         cin >> ai_player;
         vector<int> vacant_lst = input_board(&b, ai_player);
         b.print();
@@ -53,7 +56,7 @@ int main(){
         #if USE_LOG
             return 0;
         #endif
-        return 0;
+        //return 0;
     }
     return 0;
 }

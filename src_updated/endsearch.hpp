@@ -517,7 +517,7 @@ int nega_alpha_end_single(Search *search, int alpha, int beta, const bool *searc
         if (search->skipped)
             return end_evaluate(&search->board);
         search->pass();
-            v = -nega_alpha_end(search, -beta, -alpha, searching);
+            v = -nega_alpha_end_single(search, -beta, -alpha, searching);
         search->undo_pass();
         return v;
     }
@@ -532,7 +532,7 @@ int nega_alpha_end_single(Search *search, int alpha, int beta, const bool *searc
     move_ordering_fast_first(search, move_list);
     for (const Mobility &mob: move_list){
         search->board.move(&mob);
-            g = -nega_alpha_end(search, -beta, -alpha, searching);
+            g = -nega_alpha_end_single(search, -beta, -alpha, searching);
         search->board.undo(&mob);
         alpha = max(alpha, g);
         if (v < g){
@@ -618,8 +618,8 @@ int nega_alpha_end(Search *search, int alpha, int beta, const bool *searching){
             calc_flip(&move_list[idx++], &search->board, cell);
     }
     move_ordering_fast_first(search, move_list);
-    int best_moves[N_BEST_MOVES] = {TRANSPOSE_TABLE_UNDEFINED, TRANSPOSE_TABLE_UNDEFINED, TRANSPOSE_TABLE_UNDEFINED};
     #if USE_MULTI_THREAD
+        int best_moves[N_BEST_MOVES] = {TRANSPOSE_TABLE_UNDEFINED, TRANSPOSE_TABLE_UNDEFINED, TRANSPOSE_TABLE_UNDEFINED};
         int pv_idx = 0, split_count = 0;
         bool n_searching = true;
         vector<future<pair<int, unsigned long long>>> parallel_tasks;
