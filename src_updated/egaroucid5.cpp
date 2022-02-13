@@ -36,7 +36,7 @@ int main(){
     #endif
     mobility_init();
     evaluate_init();
-    move_ordering_init();
+    //move_ordering_init();
     parent_transpose_table.init();
     child_transpose_table.init();
     cerr << "initialized" << endl;

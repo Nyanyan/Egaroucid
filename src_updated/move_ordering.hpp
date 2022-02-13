@@ -42,8 +42,8 @@ constexpr int W_PARITY[N_MID_WEIGHT] = {4, 4, 4, 4, 4, 4, 4, 4, 4, 4};
 #define W_END_SURROUND 10
 #define W_END_PARITY 13
 
+/*
 short move_ordering_pattern_arr[N_MOVE_ORDERING_PHASE][N_MOVE_ORDERING_PATTERNS][MAX_MOVE_ORDERING_EVALUATE_IDX];
-
 
 inline bool move_ordering_init(){
     FILE* fp;
@@ -182,7 +182,7 @@ inline int move_evaluate(Board *board, Mobility *mob, int move_ordering_phase){
         move_ordering_pattern_arr[move_ordering_phase][9][pick_pattern(p, o, mob->flip, 0, 9, 18, 27, 36, 45, 54, 63)] + 
         move_ordering_pattern_arr[move_ordering_phase][9][pick_pattern(p, o, mob->flip, 7, 14, 21, 28, 35, 42, 49, 56)];
 }
-
+*/
 inline void move_evaluate_simple(Search *search, Mobility *mob, const int best_moves[], const int weight_idx){
     mob->value = 0;
     if (mob->pos == best_moves[0])
