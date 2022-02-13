@@ -83,10 +83,28 @@ inline int ybwc_wait(Search *search, vector<future<pair<int, unsigned long long>
     int g = -INF;
     pair<int, unsigned long long> got_task;
     for (future<pair<int, unsigned long long>> &task: parallel_tasks){
-        got_task = task.get();
-        if (got_task.first != SCORE_UNDEFINED)
-            g = max(g, got_task.first);
-        search->n_nodes += got_task.second;
+        if (task.valid()){
+            if (task.wait_for(chrono::seconds(0)) == future_status::ready){
+                got_task = task.get();
+                if (got_task.first != SCORE_UNDEFINED)
+                    g = max(g, got_task.first);
+                search->n_nodes += got_task.second;
+            }
+        }
+    }
+    return g;
+}
+
+inline int ybwc_wait_strict(Search *search, vector<future<pair<int, unsigned long long>>> &parallel_tasks){
+    int g = -INF;
+    pair<int, unsigned long long> got_task;
+    for (future<pair<int, unsigned long long>> &task: parallel_tasks){
+        if (task.valid()){
+            got_task = task.get();
+            if (got_task.first != SCORE_UNDEFINED)
+                g = max(g, got_task.first);
+            search->n_nodes += got_task.second;
+        }
     }
     return g;
 }

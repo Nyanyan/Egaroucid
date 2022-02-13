@@ -214,10 +214,11 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool is_
         int pv_idx = 0, split_count = 0;
         vector<future<pair<int, unsigned long long>>> parallel_tasks;
         bool n_searching = true;
-        int parallel_value;
+        //int parallel_value;
         for (const Mobility &mob: move_list){
             if (!(*searching))
                 break;
+            /*
             parallel_value = child_transpose_table.get_best_value(&search->board, hash_code);
             if (parallel_value != TRANSPOSE_TABLE_UNDEFINED && parallel_value > alpha){
                 alpha = parallel_value;
@@ -225,6 +226,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool is_
                 if (beta <= alpha)
                     break;
             }
+            */
             search->board.move(&mob);
                 if (ybwc_split(search, -beta, -alpha, depth - 1, is_end_search, &n_searching, mob.pos, pv_idx++, canput, split_count, parallel_tasks)){
                     search->board.undo(&mob);
@@ -239,6 +241,11 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool is_
                             //update_best_move(best_moves, mob.pos);
                             child_transpose_table.reg(&search->board, hash_code, mob.pos, g);
                         }
+                        if (split_count && beta > alpha && *searching){
+                            g = ybwc_wait(search, parallel_tasks);
+                            alpha = max(alpha, g);
+                            v = max(v, g);
+                        }
                         if (beta <= alpha)
                             break;
                     }
@@ -247,9 +254,9 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool is_
         if (split_count){
             if (beta <= alpha || !(*searching)){
                 n_searching = false;
-                ybwc_wait(search, parallel_tasks);
+                //ybwc_wait_strict(search, parallel_tasks);
             } else{
-                g = ybwc_wait(search, parallel_tasks);
+                g = ybwc_wait_strict(search, parallel_tasks);
                 alpha = max(alpha, g);
                 v = max(v, g);
             }
@@ -477,8 +484,7 @@ inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mp
         } else{
             int depth = HW2 - b.n;
             vector<double> pre_search_mpcts;
-            if (depth >= 23)
-                pre_search_mpcts.emplace_back(0.5);
+            pre_search_mpcts.emplace_back(0.5);
             if (search.mpct > 1.6 || !search.use_mpc)
                 pre_search_mpcts.emplace_back(1.0);
             if (search.mpct > 2.0 || !search.use_mpc)
