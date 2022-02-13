@@ -263,3 +263,9 @@ inline int stability_cut(Search *search, int *alpha, int *beta){
     *beta = min(*beta, n_beta);
     return SCORE_UNDEFINED;
 }
+
+inline void update_best_move(int best_moves[], int policy){
+    best_moves[2] = best_moves[1];
+    best_moves[1] = best_moves[0];
+    best_moves[0] = policy;
+}

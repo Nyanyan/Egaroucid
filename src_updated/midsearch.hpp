@@ -209,13 +209,22 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool is_
             calc_flip(&move_list[idx++], &search->board, cell);
     }
     move_ordering(search, move_list);
+    //int best_moves[N_BEST_MOVES] = {TRANSPOSE_TABLE_UNDEFINED, TRANSPOSE_TABLE_UNDEFINED, TRANSPOSE_TABLE_UNDEFINED};
     #if USE_MULTI_THREAD
         int pv_idx = 0, split_count = 0;
         vector<future<pair<int, unsigned long long>>> parallel_tasks;
         bool n_searching = true;
+        int parallel_value;
         for (const Mobility &mob: move_list){
             if (!(*searching))
                 break;
+            parallel_value = child_transpose_table.get_best_value(&search->board, hash_code);
+            if (parallel_value != TRANSPOSE_TABLE_UNDEFINED && parallel_value > alpha){
+                alpha = parallel_value;
+                v = parallel_value;
+                if (beta <= alpha)
+                    break;
+            }
             search->board.move(&mob);
                 if (ybwc_split(search, -beta, -alpha, depth - 1, is_end_search, &n_searching, mob.pos, pv_idx++, canput, split_count, parallel_tasks)){
                     search->board.undo(&mob);
@@ -223,13 +232,16 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool is_
                 } else{
                     g = -nega_alpha_ordering(search, -beta, -alpha, depth - 1, is_end_search, searching);
                     search->board.undo(&mob);
-                    alpha = max(alpha, g);
-                    if (v < g){
-                        v = g;
-                        child_transpose_table.reg(&search->board, hash_code, mob.pos, g);
+                    if (*searching){
+                        alpha = max(alpha, g);
+                        if (v < g){
+                            v = g;
+                            //update_best_move(best_moves, mob.pos);
+                            child_transpose_table.reg(&search->board, hash_code, mob.pos, g);
+                        }
+                        if (beta <= alpha)
+                            break;
                     }
-                    if (beta <= alpha)
-                        break;
                 }
         }
         if (split_count){
@@ -242,6 +254,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool is_
                 v = max(v, g);
             }
         }
+        //child_transpose_table.reg(&search->board, hash_code, best_moves, g);
     #else
         for (const Mobility &mob: move_list){
             search->board.move(&mob);
@@ -464,7 +477,8 @@ inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mp
         } else{
             int depth = HW2 - b.n;
             vector<double> pre_search_mpcts;
-            pre_search_mpcts.emplace_back(0.5);
+            if (depth >= 23)
+                pre_search_mpcts.emplace_back(0.5);
             if (search.mpct > 1.6 || !search.use_mpc)
                 pre_search_mpcts.emplace_back(1.0);
             if (search.mpct > 2.0 || !search.use_mpc)

@@ -27,8 +27,11 @@ inline bool mpc_end_lower(Search *search, int alpha, int val);
 inline pair<int, unsigned long long> ybwc_do_task(Search search, int alpha, int beta, int depth, bool is_end_search, const bool *searching, int policy){
     int hash_code = search.board.hash() & TRANSPOSE_TABLE_MASK;
     int g = -nega_alpha_ordering(&search, alpha, beta, depth, is_end_search, searching);
-    child_transpose_table.reg(&search.board, hash_code, policy, g);
-    return make_pair(g, search.n_nodes);
+    if (*searching){
+        child_transpose_table.reg(&search.board, hash_code, policy, g);
+        return make_pair(g, search.n_nodes);
+    }
+    return make_pair(SCORE_UNDEFINED, search.n_nodes);
 }
 
 inline bool ybwc_split(Search *search, int alpha, int beta, const int depth, bool is_end_search, const bool *searching, int policy, const int pv_idx, const int canput, const int split_count, vector<future<pair<int, unsigned long long>>> &parallel_tasks){
@@ -81,7 +84,8 @@ inline int ybwc_wait(Search *search, vector<future<pair<int, unsigned long long>
     pair<int, unsigned long long> got_task;
     for (future<pair<int, unsigned long long>> &task: parallel_tasks){
         got_task = task.get();
-        g = max(g, got_task.first);
+        if (got_task.first != SCORE_UNDEFINED)
+            g = max(g, got_task.first);
         search->n_nodes += got_task.second;
     }
     return g;

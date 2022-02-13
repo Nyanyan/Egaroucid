@@ -36,6 +36,7 @@ class Node_child_transpose_table{
             b.store(0, memory_order_relaxed);
             w.store(0, memory_order_relaxed);
             p.store(-1, memory_order_relaxed);
+            best_value.store(-INF, memory_order_relaxed);
         }
 
         inline void register_value(const Board *board, const int policy, const int value){
@@ -55,6 +56,23 @@ class Node_child_transpose_table{
                 best_moves[1].store(best_moves[0].load(memory_order_relaxed));
                 best_moves[0].store(policy);
             }
+        }
+
+        inline void register_value(const Board *board, const int policies[], const int value){
+            b.store(board->b);
+            w.store(board->w);
+            p.store(board->p);
+            best_value.store(value);
+            best_moves[0].store(policies[0]);
+            best_moves[1].store(policies[1]);
+            best_moves[2].store(policies[2]);
+        }
+
+        inline void register_value(const int policies[], const int value){
+            best_value.store(value);
+            best_moves[0].store(policies[0]);
+            best_moves[1].store(policies[1]);
+            best_moves[2].store(policies[2]);
         }
 
         inline void get(int b[]) const{
@@ -147,6 +165,16 @@ class Child_transpose_table{
             }
         }
 
+        inline void reg(const Board *board, const int hash, const int policies[], const int value){
+            if (global_searching){
+                if (!compare_key(board, &table[now][hash])){
+                    table[now][hash].register_value(board, policies, value);
+                    //++n_reg;
+                } else
+                    table[now][hash].register_value(policies, value);
+            }
+        }
+
         inline bool get_now(Board *board, const int hash, int best_moves[]) const{
             if (compare_key(board, &table[now][hash])){
                 table[now][hash].get(best_moves);
@@ -167,6 +195,12 @@ class Child_transpose_table{
             best_moves[1] = TRANSPOSE_TABLE_UNDEFINED;
             best_moves[2] = TRANSPOSE_TABLE_UNDEFINED;
             return false;
+        }
+
+        inline int get_best_value(Board *board, const int hash){
+            if (compare_key(board, &table[now][hash]))
+                return table[now][hash].best_value.load(memory_order_relaxed);
+            return TRANSPOSE_TABLE_UNDEFINED;
         }
 
         inline int get_n_reg() const{
