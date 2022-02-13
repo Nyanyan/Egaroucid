@@ -83,6 +83,7 @@ using namespace std;
     //#define W_END_STABILITY 5
     #define W_END_PARITY 10
     */
+    /*
     #define W_BEST1_MOVE 900000000
     #define W_BEST2_MOVE 800000000
     #define W_BEST3_MOVE 700000000
@@ -100,6 +101,23 @@ using namespace std;
     #define W_END_MOBILITY 29
     #define W_END_SURROUND 10
     //#define W_END_STABILITY 5
+    #define W_END_PARITY 13
+    */
+    constexpr int W_CACHE_VALUE[N_MID_WEIGHT] = {74, 74, 74, 74, 74, 74, 74, 74, 74, 74};
+    constexpr int W_CELL_WEIGHT[N_MID_WEIGHT] = {1, 1, 1, 1, 4, 5, 5, 5, 5, 5};
+    constexpr int W_EVALUATE[N_MID_WEIGHT] = {5, 5, 5, 10, 18, 20, 20, 22, 20, 20};
+    constexpr int W_MOBILITY[N_MID_WEIGHT] = {61, 61, 59, 61, 61, 60, 63, 61, 61, 61};
+    constexpr int W_SURROUND[N_MID_WEIGHT] = {5, 5, 4, 2, 11, 12, 2, 5, 5, 5};
+    constexpr int W_PARITY[N_MID_WEIGHT] = {4, 4, 4, 4, 4, 4, 4, 4, 4, 4};
+    
+    #define W_BEST1_MOVE 900000000
+    #define W_BEST2_MOVE 800000000
+    #define W_BEST3_MOVE 700000000
+    #define W_CACHE_HIT 1000000
+    #define W_CACHE_HIGH 10000
+
+    #define W_END_MOBILITY 29
+    #define W_END_SURROUND 10
     #define W_END_PARITY 13
 #endif
 
@@ -189,7 +207,6 @@ bool cmp_move_ordering(Mobility &a, Mobility &b){
 
 inline void move_evaluate(Search *search, Mobility *mob, const int best_moves[], const int weight_idx){
     mob->value = 0;
-    /*
     if (mob->pos == best_moves[0])
         mob->value = W_BEST1_MOVE;
     else if (mob->pos == best_moves[1])
@@ -197,7 +214,6 @@ inline void move_evaluate(Search *search, Mobility *mob, const int best_moves[],
     else if (mob->pos == best_moves[2])
         mob->value = W_BEST3_MOVE;
     else{
-    */
         mob->value += cell_weight[mob->pos] * W_CELL_WEIGHT[weight_idx];
         if (search->board.parity & cell_div4[mob->pos])
             mob->value += W_PARITY[weight_idx];
@@ -223,7 +239,7 @@ inline void move_evaluate(Search *search, Mobility *mob, const int best_moves[],
             */
             mob->value -= pop_count_ull(search->board.mobility_ull()) * W_MOBILITY[weight_idx];
         search->board.undo(mob);
-    //}
+    }
 }
 
 inline void move_ordering(Search *search, vector<Mobility> &move_list, const int depth){

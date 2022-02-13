@@ -13,12 +13,12 @@ def digit(n, r):
 N_MID_WEIGHT = 10
 
 param = [
-    [70 for _ in range(N_MID_WEIGHT)],
-    [1 for _ in range(N_MID_WEIGHT)],
-    [20 for _ in range(N_MID_WEIGHT)],
-    [61 for _ in range(N_MID_WEIGHT)],
-    [7 for _ in range(N_MID_WEIGHT)],
-    [4 for _ in range(N_MID_WEIGHT)]
+[70, 70, 77, 70, 70, 74, 70, 70, 70, 70] ,
+[1, 1, 1, 1, 4, 5, 5, 5, 5, 5] ,
+[0, 0, 5, 10, 18, 20, 20, 22, 20, 20] ,
+[61, 61, 59, 61, 61, 60, 63, 61, 61, 61] ,
+[5, 5, 4, 2, 11, 12, 2, 7, 7, 7] ,
+[4, 4, 4, 4, 4, 7, 4, 4, 4, 4]
 ]
 
 names = [
@@ -32,7 +32,7 @@ names = [
 
 def print_params():
     for i in range(len(param)):
-        print(names[i] + '[N_MID_WEIGHT] = {', end='')
+        print('constexpr int ' + names[i] + '[N_MID_WEIGHT] = {', end='')
         for j in range(len(param[i]) - 1):
             print(str(param[i][j]) + ', ', end='')
         print(str(param[i][len(param[i]) - 1]) + '};')
@@ -43,8 +43,8 @@ print_params()
 
 egaroucid = subprocess.Popen('egaroucid5.out'.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
 
-test_strt = 0
-test_end = 19
+test_strt = 100
+test_end = 149
 
 def test():
     param_in = ''
@@ -53,7 +53,7 @@ def test():
             param_in += str(elem) + '\n'
     res = []
     for i in trange(test_strt, test_end + 1):
-        with open('testcases/20/' + digit(i, 7) + '.txt', 'r') as f:
+        with open('testcases/18/' + digit(i, 7) + '.txt', 'r') as f:
             board = f.read()
         #print(param_in + board)
         strt = time()
@@ -82,11 +82,11 @@ score = 1.0
 
 for num in range(20):
     idx1 = randrange(0, len(param))
-    idx2 = randrange(0, N_MID_WEIGHT)
+    idx2 = randrange(1, N_MID_WEIGHT - 2)
     f_param = param[idx1][idx2]
     pls = 0
     while pls == 0:
-        pls = randint(-20, 20)
+        pls = randint(-5, 5)
     param[idx1][idx2] += pls
     n_nodes = test()
     #print(n_nodes)
