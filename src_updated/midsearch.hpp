@@ -2,6 +2,7 @@
 #include <iostream>
 #include <algorithm>
 #include <vector>
+#include <future>
 #include "setting.hpp"
 #include "common.hpp"
 #include "board.hpp"
@@ -209,7 +210,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool is_
             calc_flip(&move_list[idx++], &search->board, cell);
     }
     move_ordering(search, move_list);
-    //int best_moves[N_BEST_MOVES] = {TRANSPOSE_TABLE_UNDEFINED, TRANSPOSE_TABLE_UNDEFINED, TRANSPOSE_TABLE_UNDEFINED};
+    int best_moves[N_BEST_MOVES] = {TRANSPOSE_TABLE_UNDEFINED, TRANSPOSE_TABLE_UNDEFINED, TRANSPOSE_TABLE_UNDEFINED};
     #if USE_MULTI_THREAD
         int pv_idx = 0, split_count = 0;
         vector<future<pair<int, unsigned long long>>> parallel_tasks;
@@ -241,8 +242,8 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool is_
                     alpha = max(alpha, g);
                     if (v < g){
                         v = g;
-                        //update_best_move(best_moves, mob.pos);
-                        child_transpose_table.reg(&search->board, hash_code, mob.pos, g);
+                        update_best_move(best_moves, mob.pos);
+                        //child_transpose_table.reg(&search->board, hash_code, mob.pos, g);
                     }
                     #if MULTI_THREAD_EARLY_GETTING_MODE == 2
                         if (split_count && beta > alpha && *searching){
@@ -256,6 +257,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool is_
                 }
             }
         }
+        child_transpose_table.reg(&search->board, hash_code, best_moves, g);
         if (split_count){
             if (beta <= alpha || !(*searching)){
                 n_searching = false;
@@ -266,7 +268,6 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool is_
                 v = max(v, g);
             }
         }
-        //child_transpose_table.reg(&search->board, hash_code, best_moves, g);
     #else
         for (const Mobility &mob: move_list){
             search->board.move(&mob);
