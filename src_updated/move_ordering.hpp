@@ -203,7 +203,6 @@ inline void move_evaluate_simple(Search *search, Mobility *mob, const int best_m
             else if (l != -INF)
                 mob->value += W_CACHE_HIT - l * W_CACHE_VALUE[weight_idx];
             mob->value += -mid_evaluate(&search->board) * W_EVALUATE[weight_idx];
-            //mob->value += -nega_alpha(search, -HW2, HW2, 1) * W_EVALUATE[weight_idx];
             if (search->board.p == BLACK)
                 mob->value += calc_surround(search->board.b, ~(search->board.b | search->board.w)) * W_SURROUND[weight_idx];
             else
@@ -224,7 +223,7 @@ inline void move_evaluate_simple(Search *search, Mobility *mob, const int best_m
 bool cmp_move_ordering(Mobility &a, Mobility &b){
     return a.value > b.value;
 }
-
+/*
 inline void move_ordering(Search *search, vector<Mobility> &move_list){
     if (move_list.size() < 2)
         return;
@@ -244,20 +243,20 @@ inline void move_ordering(Search *search, vector<Mobility> &move_list){
     }
     sort(move_list.begin(), move_list.end(), cmp_move_ordering);
 }
+*/
 
-/*
 inline void move_ordering(Search *search, vector<Mobility> &move_list){
     if (move_list.size() < 2)
         return;
     int best_moves[N_BEST_MOVES];
     int hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
     child_transpose_table.get_prev(&search->board, hash_code, best_moves);
-    const int weight_idx = HW2 - search->board.n <= 20 ? depth - MID_TO_END_DEPTH + 1 : 0;
+    const int weight_idx = HW2 - search->board.n <= 20 ? HW2 - search->board.n - MID_TO_END_DEPTH + 1 : 0;
     for (Mobility &mob: move_list)
         move_evaluate_simple(search, &mob, best_moves, weight_idx);
     sort(move_list.begin(), move_list.end(), cmp_move_ordering);
 }
-*/
+
 /*
 inline void move_ordering(Search *search, vector<Mobility> &move_list){
     if (move_list.size() < 2)
@@ -270,7 +269,7 @@ inline void move_ordering(Search *search, vector<Mobility> &move_list){
     int move_ordering_phase = (search->board.n - 4) / MOVE_ORDERING_PHASE_DIV;
     for (Mobility &mob: move_list){
         move_evaluate_simple(search, &mob, best_moves, weight_idx);
-        mob.value += move_evaluate(&search->board, &mob, move_ordering_phase) / 64;
+        mob.value += move_evaluate(&search->board, &mob, move_ordering_phase) / 32;
     }
     sort(move_list.begin(), move_list.end(), cmp_move_ordering);
 }
