@@ -46,7 +46,7 @@ constexpr Color font_color = Palette::White;;
 constexpr int board_size = 480, board_coord_size = 20;
 constexpr int board_sx = left_left + board_coord_size, board_sy = y_center - board_size / 2, board_cell_size = board_size / hw, board_cell_frame_width = 2, board_frame_width = 7;
 constexpr int stone_size = 25, legal_size = 5;
-constexpr int graph_sx = 585, graph_sy = y_center - 175, graph_width = 400, graph_height = 350, graph_resolution = 8, graph_font_size = 15;
+constexpr int graph_sx = 585, graph_sy = 230, graph_width = 400, graph_height = 350, graph_resolution = 8, graph_font_size = 15;
 constexpr Color green = Color(36, 153, 114, 100);
 constexpr int start_game_how_to_use_width = 400, start_game_how_to_use_height = 100;
 constexpr int start_game_button_x = x_center - start_game_how_to_use_width / 2,
@@ -1029,6 +1029,9 @@ void info_draw(board bd, string joseki_name, int ai_level, int hint_level, Font 
 		mid_font(language.get("info", "game_end")).draw(info_sx, info_sy);
 	}
 	mid_font(language.get("info", "joseki_name") + U": " + Unicode::FromUTF8(joseki_name)).draw(info_sx, info_sy + 40);
+	if (bd.p != vacant) {
+		mid_font(Format(pop_count_ull(bd.b) + pop_count_ull(bd.w) - 3) + language.get("info", "moves")).draw(info_sx, info_sy + 80);
+	}
 	int stone_info_cy = board_sy + board_size + 30;
 	Circle(board_sx + 20, stone_info_cy, 12).draw(Palette::Black);
 	Circle(board_sx + board_size - 20, stone_info_cy, 12).draw(Palette::White);
