@@ -17,12 +17,12 @@
 using namespace std;
 
 inline bool mpc_end_higher(Search *search, int beta, int val){
-    int bound = beta + ceil(search->mpct * mpcsd_final[(HW2 - search->board.n - END_MPC_MIN_DEPTH) / 5][(val + HW2) / 6]);
+    int bound = beta + ceil(search->mpct * mpcsd_final[(HW2 - search->board.n - END_MPC_MIN_DEPTH) / 5][abs(val) / 6]);
     return val >= bound;
 }
 
 inline bool mpc_end_lower(Search *search, int alpha, int val){
-    int bound = alpha - ceil(search->mpct * mpcsd_final[(HW2 - search->board.n - END_MPC_MIN_DEPTH) / 5][(val + HW2) / 6]);
+    int bound = alpha - ceil(search->mpct * mpcsd_final[(HW2 - search->board.n - END_MPC_MIN_DEPTH) / 5][abs(val) / 6]);
     return val <= bound;
 }
 

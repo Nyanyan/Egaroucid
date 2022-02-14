@@ -1,6 +1,6 @@
 from random import randint, randrange
 import subprocess
-from tqdm import trange
+from tqdm import trange, tqdm
 from time import sleep, time
 from math import exp, tanh
 from random import random
@@ -30,8 +30,8 @@ sleep(1)
 min_depth = 5
 max_depth = 40
 
-vhs = [[[] for _ in range(22)] for _ in range((max_depth - min_depth + 1) // 5 + 1)]
-vds = [[[] for _ in range(22)] for _ in range((max_depth - min_depth + 1) // 5 + 1)]
+vhs = [[[] for _ in range(11)] for _ in range((max_depth - min_depth + 1) // 5 + 1)]
+vds = [[[] for _ in range(11)] for _ in range((max_depth - min_depth + 1) // 5 + 1)]
 #v0s = [[] for _ in range(max_depth - min_depth + 1)]
 
 vh_vd = []
@@ -53,9 +53,10 @@ def collect_data(num):
     except:
         print('cannot open')
         return
-    use_data = 10000
-    for data_idx in trange(use_data):
-        datum = data[data_idx]
+    #use_data = 10000
+    #for data_idx in trange(use_data):
+    #    datum = data[data_idx]
+    for datum in tqdm(data):
         board, player, vh = datum.split()
         #board, player, _, _, _, vh = datum.split()
         n_stones = calc_n_stones(board)
@@ -89,11 +90,11 @@ def collect_data(num):
             v0 = float(evaluate.stdout.readline().decode().strip())
             '''
             #print(score)
-            vhs[(depth - min_depth) // 5][int(vd + 64) // 6].append(vh)
-            vds[(depth - min_depth) // 5][int(vd + 64) // 6].append(vd)
+            vhs[(depth - min_depth) // 5][int(abs(vd)) // 6].append(vh)
+            vds[(depth - min_depth) // 5][int(abs(vd)) // 6].append(vd)
             #v0s[depth - min_depth].append(v0)
 
-for i in range(5, 15):
+for i in range(5, 7):
     collect_data(i)
 evaluate.kill()
 
