@@ -170,8 +170,8 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool is_
         return SCORE_UNDEFINED;
     if (is_end_search && depth <= MID_TO_END_DEPTH)
         return nega_alpha_end(search, alpha, beta, searching);
-    //if (!is_end_search && depth <= MID_FAST_DEPTH)
-    //    return nega_alpha(search, alpha, beta, depth);
+    if (!is_end_search && depth <= MID_FAST_DEPTH)
+        return nega_alpha(search, alpha, beta, depth);
     if (depth == 1)
         return nega_alpha_eval1(search, alpha, beta);
     ++(search->n_nodes);
@@ -229,27 +229,12 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool is_
     }
     move_ordering(search, move_list, depth, alpha, beta, is_end_search);
     #if USE_MULTI_THREAD
-        //int best_moves[N_BEST_MOVES] = {TRANSPOSE_TABLE_UNDEFINED, TRANSPOSE_TABLE_UNDEFINED, TRANSPOSE_TABLE_UNDEFINED};
         int pv_idx = 0, split_count = 0;
         vector<future<pair<int, unsigned long long>>> parallel_tasks;
         bool n_searching = true;
-        #if MULTI_THREAD_EARLY_GETTING_MODE == 1
-            int parallel_value;
-        #endif
         for (const Mobility &mob: move_list){
             if (!(*searching))
                 break;
-            #if MULTI_THREAD_EARLY_GETTING_MODE == 1
-                if (split_count){
-                    parallel_value = child_transpose_table.get_best_value(&search->board, hash_code);
-                    if (parallel_value != TRANSPOSE_TABLE_UNDEFINED && parallel_value > alpha){
-                        alpha = parallel_value;
-                        v = parallel_value;
-                        if (beta <= alpha)
-                            break;
-                    }
-                }
-            #endif
             if (ybwc_split(search, &mob, -beta, -alpha, depth - 1, is_end_search, &n_searching, mob.pos, pv_idx++, canput, split_count, parallel_tasks)){
                 ++split_count;
             } else{
@@ -260,22 +245,13 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool is_
                     alpha = max(alpha, g);
                     if (v < g){
                         v = g;
-                        //update_best_move(best_moves, mob.pos);
                         child_transpose_table.reg(search->tt_child_idx, &search->board, hash_code, mob.pos, g);
                     }
-                    #if MULTI_THREAD_EARLY_GETTING_MODE == 2
-                        if (split_count && beta > alpha && *searching){
-                            g = ybwc_wait(search, parallel_tasks);
-                            alpha = max(alpha, g);
-                            v = max(v, g);
-                        }
-                    #endif
                     if (beta <= alpha)
                         break;
                 }
             }
         }
-        //child_transpose_table.reg(&search->board, hash_code, best_moves, g);
         if (split_count){
             if (beta <= alpha || !(*searching)){
                 n_searching = false;
@@ -475,7 +451,7 @@ inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mp
                 search.board.undo(&mob);
                 //mob.value = g;
                 if (alpha < g){
-                    child_transpose_table.reg(&search.board, hash_code, mob.pos, g);
+                    child_transpose_table.reg(search.tt_child_idx, &search.board, hash_code, mob.pos, g);
                     alpha = g;
                     res.policy = mob.pos;
                 }
@@ -536,12 +512,13 @@ inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mp
                             search.board.undo(&mob);
                         } else{
                             if (pre_search_mpct == USE_DEFAULT_MPC){
-                                if (search.use_mpc)
-                                    g = -nega_scout(&search, -beta, -alpha, depth - 1, true);
-                                else
+                                //if (search.use_mpc)
+                                //    g = -nega_scout(&search, -beta, -alpha, depth - 1, true);
+                                //else
                                     g = -mtd(&search, -beta, -alpha, -mob.value, depth - 1, true);
                             } else
-                                g = -nega_scout(&search, -beta, min(HW2, -alpha + PRESEARCH_OFFSET), depth - 1, true);
+                                g = -mtd(&search, -beta, min(HW2, -alpha + PRESEARCH_OFFSET), -mob.value, depth - 1, true);
+                                //g = -nega_scout(&search, -beta, min(HW2, -alpha + PRESEARCH_OFFSET), depth - 1, true);
                             if (pre_search_mpct == USE_DEFAULT_MPC)
                                 cerr << "main searching time " << tim() - strt2 << " time from start " << tim() - strt << " policy " << mob.pos << " value " << g << " expected " << mob.value << " nodes " << search.n_nodes - f_n_nodes2 << " nps " << (search.n_nodes - f_n_nodes2) * 1000 / max(1LL, tim() - strt2) << endl;
                             #if USE_LOG

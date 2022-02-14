@@ -1785,11 +1785,12 @@ endsearch time 1775 mpct 0 policy 55 value 38 nodes 25120083 nps 14144190
 #52 endsearch depth 27 overall time 44648 search time 44633 mpct 0 policy 47 value 0 nodes 1389857144 nps 31139675
 
 2022/02/14 update move ordering with additional pre search
-#40 endsearch depth 20 overall time 495 search time 481 mpct 0 policy 55 value 42 nodes 21414821 nps 44521457
-#41 endsearch depth 22 overall time 992 search time 977 mpct 0 policy 32 value 0 nodes 23403535 nps 23954488
-#42 endsearch depth 22 overall time 2007 search time 1992 mpct 0 policy 49 value 6 nodes 57062400 nps 28645783
-#43 endsearch depth 23 overall time 3082 search time 3068 mpct 0 policy 41 value -12 nodes 93527457 nps 30484829
-#44 endsearch depth 23 overall time 1125 search time 1111 mpct 0 policy 52 value -14 nodes 24078514 nps 21672829
+#40 endsearch depth 20 overall time 494 search time 478 mpct 0 policy 55 value 38 nodes 21444995 nps 44864006
+#41 endsearch depth 22 overall time 865 search time 849 mpct 0 policy 32 value 0 nodes 23418476 nps 27583599
+#42 endsearch depth 22 overall time 1959 search time 1947 mpct 0 policy 49 value 6 nodes 57648798 nps 29609038
+#43 endsearch depth 23 overall time 2967 search time 2951 mpct 0 policy 41 value -12 nodes 92841744 nps 31461112
+#44 endsearch depth 23 overall time 1141 search time 1125 mpct 0 policy 52 value -14 nodes 24061291 nps 21387814
+#45 endsearch depth 24 overall time 25869 search time 25852 mpct 0 policy 54 value 6 nodes 1137685224 nps 44007628
 
 former version copy
 2022/02/10 re-design final mpc

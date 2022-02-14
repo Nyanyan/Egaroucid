@@ -295,7 +295,7 @@ inline void move_ordering(Search *search, vector<Mobility> &move_list, int depth
     bool pre_searched = child_transpose_table.get_now(&search->board, hash_code, best_moves);
     if (!pre_searched)
         pre_searched = child_transpose_table.get_prev(&search->board, hash_code, best_moves);
-    if (!pre_searched && (!search->use_mpc || search->mpct > 2.0)){
+    if (!pre_searched && (!search->use_mpc || search->mpct > 0.5)){
         bool use_mpc = search->use_mpc;
         double mpct = search->mpct;
         search->use_mpc = true;
