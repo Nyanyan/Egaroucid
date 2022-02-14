@@ -20,7 +20,7 @@ using namespace std;
 #define END_MPC_MAX_DEPTH 40
 #define N_END_MPC_SCORE_DIV 22
 
-#define MID_FAST_DEPTH 3
+#define MID_FAST_DEPTH 2
 #define END_FAST_DEPTH 7
 #define END_FAST_DEPTH1 6
 #define END_FAST_DEPTH2 8

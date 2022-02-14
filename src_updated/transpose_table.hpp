@@ -317,6 +317,13 @@ class Parent_transpose_table{
                 table[now][hash].register_value(l, u);
         }
 
+        inline void reg_prev(const Board *board, const int hash, const int l, const int u){
+            if (!compare_key(board, &table[prev][hash]))
+                table[prev][hash].register_value(board, l, u);
+            else
+                table[prev][hash].register_value(l, u);
+        }
+
         inline void get_now(Board *board, const int hash, int *l, int *u) const{
             if (compare_key(board, &table[now][hash])){
                 table[now][hash].get(l, u);
