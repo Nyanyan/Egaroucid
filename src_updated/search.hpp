@@ -91,6 +91,8 @@ class Search{
         double mpct;
         vector<int> vacant_list;
         unsigned long long n_nodes;
+        int tt_parent_idx;
+        int tt_child_idx;
 
     public:
         inline void pass(){

@@ -163,6 +163,14 @@ class Child_transpose_table{
                 table[now][hash].register_value(policy, value);
         }
 
+        inline void reg(const int idx, const Board *board, const int hash, const int policy, const int value){
+            if (!compare_key(board, &table[idx][hash])){
+                table[idx][hash].register_value(board, policy, value);
+                //++n_reg;
+            } else
+                table[idx][hash].register_value(policy, value);
+        }
+
         inline void reg(const Board *board, const int hash, const int policies[], const int value){
             if (!compare_key(board, &table[now][hash])){
                 table[now][hash].register_value(board, policies, value);
@@ -185,6 +193,17 @@ class Child_transpose_table{
         inline bool get_prev(Board *board, const int hash, int best_moves[]) const{
             if (compare_key(board, &table[prev][hash])){
                 table[prev][hash].get(best_moves);
+                return true;
+            }
+            best_moves[0] = TRANSPOSE_TABLE_UNDEFINED;
+            best_moves[1] = TRANSPOSE_TABLE_UNDEFINED;
+            best_moves[2] = TRANSPOSE_TABLE_UNDEFINED;
+            return false;
+        }
+
+        inline bool get(const int idx, Board *board, const int hash, int best_moves[]) const{
+            if (compare_key(board, &table[idx][hash])){
+                table[idx][hash].get(best_moves);
                 return true;
             }
             best_moves[0] = TRANSPOSE_TABLE_UNDEFINED;
@@ -317,6 +336,13 @@ class Parent_transpose_table{
                 table[now][hash].register_value(l, u);
         }
 
+        inline void reg(const int idx, const Board *board, const int hash, const int l, const int u){
+            if (!compare_key(board, &table[idx][hash]))
+                table[idx][hash].register_value(board, l, u);
+            else
+                table[idx][hash].register_value(l, u);
+        }
+
         inline void reg_prev(const Board *board, const int hash, const int l, const int u){
             if (!compare_key(board, &table[prev][hash]))
                 table[prev][hash].register_value(board, l, u);
@@ -340,6 +366,23 @@ class Parent_transpose_table{
             }
             *l = -INF;
             *u = INF;
+        }
+
+        inline void get(const int idx, Board *board, const int hash, int *l, int *u) const{
+            if (compare_key(board, &table[idx][hash])){
+                table[idx][hash].get(l, u);
+                return;
+            }
+            *l = -INF;
+            *u = INF;
+        }
+
+        inline int now_idx() const{
+            return now;
+        }
+
+        inline int prev_idx() const{
+            return prev;
         }
 
     private:

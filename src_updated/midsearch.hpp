@@ -66,7 +66,7 @@ int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth){
         if (1 & (legal >> cell))
             calc_flip(&move_list[idx++], &search->board, cell);
     }
-    move_ordering(search, move_list, depth, alpha);
+    move_ordering(search, move_list, depth, alpha, beta, false);
     for (const Mobility &mob: move_list){
         search->board.move(&mob);
             g = -nega_alpha_ordering_nomemo(search, -beta, -alpha, depth - 1);
@@ -183,7 +183,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool is_
     int hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
     #if USE_MID_TC
         int l, u;
-        parent_transpose_table.get_now(&search->board, hash_code, &l, &u);
+        parent_transpose_table.get(search->tt_parent_idx, &search->board, hash_code, &l, &u);
         if (u == l)
             return u;
         if (l >= beta)
@@ -196,36 +196,16 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool is_
     #if USE_MID_MPC
         if (search->use_mpc){
             if (!is_end_search && MID_MPC_MIN_DEPTH <= depth && depth <= MID_MPC_MAX_DEPTH){
-                if (mpc_higher(search, beta, depth)){
-                    #if USE_MID_TC && false
-                        if (l < beta)
-                            parent_transpose_table.reg(&search->board, hash_code, beta, u);
-                    #endif
+                if (mpc_higher(search, beta, depth))
                     return beta;
-                }
-                if (mpc_lower(search, alpha, depth)){
-                    #if USE_MID_TC && false
-                        if (alpha < u)
-                            parent_transpose_table.reg(&search->board, hash_code, l, alpha);
-                    #endif
+                if (mpc_lower(search, alpha, depth))
                     return alpha;
-                }
             } else if (is_end_search && END_MPC_MIN_DEPTH <= depth && depth <= END_MPC_MAX_DEPTH){
                 int val = mid_evaluate(&search->board);
-                if (mpc_end_higher(search, beta, val)){
-                    #if USE_MID_TC && false
-                        if (l < beta)
-                            parent_transpose_table.reg(&search->board, hash_code, beta, u);
-                    #endif
+                if (mpc_end_higher(search, beta, val))
                     return beta;
-                }
-                if (mpc_end_lower(search, alpha, val)){
-                    #if USE_MID_TC && false
-                        if (alpha < u)
-                            parent_transpose_table.reg(&search->board, hash_code, l, alpha);
-                    #endif
+                if (mpc_end_lower(search, alpha, val))
                     return alpha;
-                }
             }
         }
     #endif
@@ -247,7 +227,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool is_
         if (1 & (legal >> cell))
             calc_flip(&move_list[idx++], &search->board, cell);
     }
-    move_ordering(search, move_list, depth, alpha);
+    move_ordering(search, move_list, depth, alpha, beta, is_end_search);
     #if USE_MULTI_THREAD
         //int best_moves[N_BEST_MOVES] = {TRANSPOSE_TABLE_UNDEFINED, TRANSPOSE_TABLE_UNDEFINED, TRANSPOSE_TABLE_UNDEFINED};
         int pv_idx = 0, split_count = 0;
@@ -281,7 +261,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool is_
                     if (v < g){
                         v = g;
                         //update_best_move(best_moves, mob.pos);
-                        child_transpose_table.reg(&search->board, hash_code, mob.pos, g);
+                        child_transpose_table.reg(search->tt_child_idx, &search->board, hash_code, mob.pos, g);
                     }
                     #if MULTI_THREAD_EARLY_GETTING_MODE == 2
                         if (split_count && beta > alpha && *searching){
@@ -314,7 +294,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool is_
             alpha = max(alpha, g);
             if (v < g){
                 v = g;
-                child_transpose_table.reg(&search->board, hash_code, mob.pos, g);
+                child_transpose_table.reg(search->tt_child_idx, &search->board, hash_code, mob.pos, g);
             }
             if (beta <= alpha)
                 break;
@@ -322,11 +302,11 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool is_
     #endif
     #if USE_MID_TC
         if (beta <= v)
-            parent_transpose_table.reg(&search->board, hash_code, v, u);
+            parent_transpose_table.reg(search->tt_parent_idx, &search->board, hash_code, v, u);
         else if (v <= alpha)
-            parent_transpose_table.reg(&search->board, hash_code, l, v);
+            parent_transpose_table.reg(search->tt_parent_idx, &search->board, hash_code, l, v);
         else
-            parent_transpose_table.reg(&search->board, hash_code, v, v);
+            parent_transpose_table.reg(search->tt_parent_idx, &search->board, hash_code, v, v);
     #endif
     return v;
 }
@@ -347,7 +327,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool is_end_searc
     int hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
     #if USE_MID_TC
         int l, u;
-        parent_transpose_table.get_now(&search->board, hash_code, &l, &u);
+        parent_transpose_table.get(search->tt_parent_idx, &search->board, hash_code, &l, &u);
         if (u == l)
             return u;
         if (l >= beta)
@@ -360,36 +340,16 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool is_end_searc
     #if USE_MID_MPC
         if (search->use_mpc){
             if (!is_end_search && MID_MPC_MIN_DEPTH <= depth && depth <= MID_MPC_MAX_DEPTH){
-                if (mpc_higher(search, beta, depth)){
-                    #if USE_MID_TC && false
-                        if (l < beta)
-                            parent_transpose_table.reg(&search->board, hash_code, beta, u);
-                    #endif
+                if (mpc_higher(search, beta, depth))
                     return beta;
-                }
-                if (mpc_lower(search, alpha, depth)){
-                    #if USE_MID_TC && false
-                        if (alpha < u)
-                            parent_transpose_table.reg(&search->board, hash_code, l, alpha);
-                    #endif
+                if (mpc_lower(search, alpha, depth))
                     return alpha;
-                }
             } else if (is_end_search && END_MPC_MIN_DEPTH <= depth && depth <= END_MPC_MAX_DEPTH){
                 int val = mid_evaluate(&search->board);
-                if (mpc_end_higher(search, beta, val)){
-                    #if USE_MID_TC && false
-                        if (l < beta)
-                            parent_transpose_table.reg(&search->board, hash_code, beta, u);
-                    #endif
+                if (mpc_end_higher(search, beta, val))
                     return beta;
-                }
-                if (mpc_end_lower(search, alpha, val)){
-                    #if USE_MID_TC && false
-                        if (alpha < u)
-                            parent_transpose_table.reg(&search->board, hash_code, l, alpha);
-                    #endif
+                if (mpc_end_lower(search, alpha, val))
                     return alpha;
-                }
             }
         }
     #endif
@@ -411,7 +371,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool is_end_searc
         if (1 & (legal >> cell))
             calc_flip(&move_list[idx++], &search->board, cell);
     }
-    move_ordering(search, move_list, depth, alpha);
+    move_ordering(search, move_list, depth, alpha, beta, is_end_search);
     bool searching = true;
     for (const Mobility &mob: move_list){
         search->board.move(&mob);
@@ -426,18 +386,18 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool is_end_searc
         alpha = max(alpha, g);
         if (v < g){
             v = g;
-            child_transpose_table.reg(&search->board, hash_code, mob.pos, g);
+            child_transpose_table.reg(search->tt_child_idx, &search->board, hash_code, mob.pos, g);
         }
         if (beta <= alpha)
             break;
     }
     #if USE_MID_TC
         if (beta <= v)
-            parent_transpose_table.reg(&search->board, hash_code, v, u);
+            parent_transpose_table.reg(search->tt_parent_idx, &search->board, hash_code, v, u);
         else if (v <= alpha)
-            parent_transpose_table.reg(&search->board, hash_code, l, v);
+            parent_transpose_table.reg(search->tt_parent_idx, &search->board, hash_code, l, v);
         else
-            parent_transpose_table.reg(&search->board, hash_code, v, v);
+            parent_transpose_table.reg(search->tt_parent_idx, &search->board, hash_code, v, v);
     #endif
     return v;
 }
@@ -505,7 +465,9 @@ inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mp
             beta = HW2;
             parent_transpose_table.ready_next_search();
             child_transpose_table.ready_next_search();
-            move_ordering(&search, move_list, depth, alpha);
+            search.tt_parent_idx = parent_transpose_table.now_idx();
+            search.tt_child_idx = child_transpose_table.now_idx();
+            move_ordering(&search, move_list, depth, alpha, beta, false);
             //move_ordering_value(move_list);
             for (Mobility &mob: move_list){
                 search.board.move(&mob);
@@ -552,6 +514,8 @@ inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mp
                 }
                 parent_transpose_table.ready_next_search();
                 child_transpose_table.ready_next_search();
+                search.tt_parent_idx = parent_transpose_table.now_idx();
+                search.tt_child_idx = child_transpose_table.now_idx();
                 move_ordering_value(move_list);
                 pv_idx = 0;
                 parallel_tasks.clear();

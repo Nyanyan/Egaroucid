@@ -29,7 +29,7 @@ inline pair<int, unsigned long long> ybwc_do_task(Search search, const Mobility 
         int g = -nega_alpha_ordering(&search, alpha, beta, depth, is_end_search, searching);
     if (*searching){
         search.board.undo(&mobility);
-        child_transpose_table.reg(&search.board, search.board.hash() & TRANSPOSE_TABLE_MASK, policy, g);
+        child_transpose_table.reg(search.tt_child_idx, &search.board, search.board.hash() & TRANSPOSE_TABLE_MASK, policy, g);
         return make_pair(g, search.n_nodes);
     }
     return make_pair(SCORE_UNDEFINED, search.n_nodes);
@@ -53,6 +53,8 @@ inline bool ybwc_split(Search *search, const Mobility *mob, int alpha, int beta,
             copy_search.mpct = search->mpct;
             copy_search.vacant_list = search->vacant_list;
             copy_search.n_nodes = 0;
+            copy_search.tt_parent_idx = search->tt_parent_idx;
+            copy_search.tt_child_idx = search->tt_child_idx;
             mob->copy(&copy_mobility);
             parallel_tasks.emplace_back(thread_pool.push(bind(&ybwc_do_task, copy_search, copy_mobility, alpha, beta, depth, is_end_search, searching, policy)));
             return true;
@@ -66,7 +68,7 @@ inline pair<int, unsigned long long> ybwc_do_task_end(Search search, const Mobil
         int g = -nega_alpha_end(&search, alpha, beta, searching);
     if (*searching){
         search.board.undo(&mobility);
-        child_transpose_table.reg(&search.board, search.board.hash() & TRANSPOSE_TABLE_MASK, policy, g);
+        child_transpose_table.reg(search.tt_child_idx, &search.board, search.board.hash() & TRANSPOSE_TABLE_MASK, policy, g);
         return make_pair(g, search.n_nodes);
     }
     return make_pair(SCORE_UNDEFINED, search.n_nodes);
@@ -90,6 +92,8 @@ inline bool ybwc_split_end(Search *search, const Mobility *mob, int alpha, int b
             copy_search.mpct = search->mpct;
             copy_search.vacant_list = search->vacant_list;
             copy_search.n_nodes = 0;
+            copy_search.tt_parent_idx = search->tt_parent_idx;
+            copy_search.tt_child_idx = search->tt_child_idx;
             mob->copy(&copy_mobility);
             parallel_tasks.emplace_back(thread_pool.push(bind(&ybwc_do_task_end, copy_search, copy_mobility, alpha, beta, searching, policy)));
             return true;
