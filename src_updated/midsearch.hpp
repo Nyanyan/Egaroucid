@@ -29,7 +29,7 @@ int nega_alpha(Search *search, int alpha, int beta, int depth);
 inline bool mpc_higher(Search *search, int beta, int depth);
 inline bool mpc_lower(Search *search, int alpha, int depth);
 
-int nega_alpha_ordering_prev(Search *search, int alpha, int beta, int depth){
+int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth){
     if (!global_searching)
         return SCORE_UNDEFINED;
     if (depth <= MID_FAST_DEPTH)
@@ -39,19 +39,6 @@ int nega_alpha_ordering_prev(Search *search, int alpha, int beta, int depth){
         int stab_res = stability_cut(search, &alpha, &beta);
         if (stab_res != SCORE_UNDEFINED)
             return stab_res;
-    #endif
-    #if USE_MID_TC
-        int hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
-        int l, u;
-        parent_transpose_table.get_now(&search->board, hash_code, &l, &u);
-        if (u == l)
-            return u;
-        if (l >= beta)
-            return l;
-        if (alpha >= u)
-            return u;
-        alpha = max(alpha, l);
-        beta = min(beta, u);
     #endif
     #if USE_MID_MPC
         if (MID_MPC_MIN_DEPTH <= depth && depth <= MID_MPC_MAX_DEPTH && search->use_mpc){
@@ -67,7 +54,7 @@ int nega_alpha_ordering_prev(Search *search, int alpha, int beta, int depth){
         if (search->skipped)
             return end_evaluate(&search->board);
         search->pass();
-            v = -nega_alpha_ordering_prev(search, -beta, -alpha, depth);
+            v = -nega_alpha_ordering_nomemo(search, -beta, -alpha, depth);
         search->undo_pass();
         return v;
     }
@@ -82,21 +69,13 @@ int nega_alpha_ordering_prev(Search *search, int alpha, int beta, int depth){
     move_ordering(search, move_list, depth, alpha);
     for (const Mobility &mob: move_list){
         search->board.move(&mob);
-            g = -nega_alpha_ordering_prev(search, -beta, -alpha, depth - 1);
+            g = -nega_alpha_ordering_nomemo(search, -beta, -alpha, depth - 1);
         search->board.undo(&mob);
         alpha = max(alpha, g);
         v = max(v, g);
         if (beta <= alpha)
             break;
     }
-    #if USE_MID_TC
-        if (beta <= v)
-            parent_transpose_table.reg_prev(&search->board, hash_code, v, u);
-        else if (v <= alpha)
-            parent_transpose_table.reg_prev(&search->board, hash_code, l, v);
-        else
-            parent_transpose_table.reg_prev(&search->board, hash_code, v, v);
-    #endif
     return v;
 }
 
@@ -104,14 +83,14 @@ inline bool mpc_higher(Search *search, int beta, int depth){
     int bound = beta + ceil(search->mpct * mpcsd[search->board.phase()][depth - MID_MPC_MIN_DEPTH]);
     if (bound > HW2)
         bound = HW2; //return false;
-    return nega_alpha_ordering_prev(search, bound - 1, bound, mpcd[depth]) >= bound;
+    return nega_alpha_ordering_nomemo(search, bound - 1, bound, mpcd[depth]) >= bound;
 }
 
 inline bool mpc_lower(Search *search, int alpha, int depth){
     int bound = alpha - ceil(search->mpct * mpcsd[search->board.phase()][depth - MID_MPC_MIN_DEPTH]);
     if (bound < -HW2)
         bound = -HW2; //return false;
-    return nega_alpha_ordering_prev(search, bound, bound + 1, mpcd[depth]) <= bound;
+    return nega_alpha_ordering_nomemo(search, bound, bound + 1, mpcd[depth]) <= bound;
 }
 
 int nega_alpha_eval1(Search *search, int alpha, int beta){
@@ -191,8 +170,10 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool is_
         return SCORE_UNDEFINED;
     if (is_end_search && depth <= MID_TO_END_DEPTH)
         return nega_alpha_end(search, alpha, beta, searching);
-    if (depth <= MID_FAST_DEPTH)
-        return nega_alpha(search, alpha, beta, depth);
+    //if (!is_end_search && depth <= MID_FAST_DEPTH)
+    //    return nega_alpha(search, alpha, beta, depth);
+    if (depth == 1)
+        return nega_alpha_eval1(search, alpha, beta);
     ++(search->n_nodes);
     #if USE_MID_SC
         int stab_res = stability_cut(search, &alpha, &beta);
@@ -353,8 +334,8 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool is_
 int nega_scout(Search *search, int alpha, int beta, int depth, bool is_end_search){
     if (!global_searching)
         return -INF;
-    //if (is_end_search && depth <= MID_TO_END_DEPTH)
-    //    return nega_scout_end(search, alpha, beta);
+    if (is_end_search && depth <= MID_TO_END_DEPTH)
+        return nega_scout_end(search, alpha, beta);
     if (!is_end_search && depth <= MID_FAST_DEPTH)
         return nega_alpha(search, alpha, beta, depth);
     ++(search->n_nodes);
@@ -506,8 +487,8 @@ inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mp
     search.mpct = mpct;
     search.vacant_list = vacant_lst;
     search.n_nodes = 0;
-    unsigned long long f_n_nodes2;
-    long long strt2;
+    unsigned long long f_n_nodes, f_n_nodes2;
+    long long strt2, strt3;
     unsigned long long legal = b.mobility_ull();
     vector<Mobility> move_list;
     for (const int &cell: search.vacant_list){
@@ -542,83 +523,114 @@ inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mp
             cerr << "midsearch time " << tim() - strt << " depth " << depth << " policy " << res.policy << " value " << alpha << " nodes " << search.n_nodes << " nps " << search.n_nodes * 1000 / max(1LL, tim() - strt) << endl;
         }
     } else{
-        int depth = HW2 - b.n;
-        int pv_idx;
-        vector<pair<Mobility*, future<pair<int, unsigned long long>>>> parallel_tasks;
-        pair<int, unsigned long long> task_result;
-        alpha = -HW2;
-        beta = HW2;
-        parent_transpose_table.init();
-        child_transpose_table.init();
-        move_ordering(&search, move_list, depth, alpha);
-        pv_idx = 0;
-        for (Mobility &mob: move_list){
-            strt2 = tim();
-            f_n_nodes2 = search.n_nodes;
-            search.board.move(&mob);
-            #if USE_MULTI_THREAD && false
-                if (false && pv_idx > 0 /* mob.value < move_list[0].value - 4 */ && thread_pool.n_idle()){
-                    if (pre_search_mpct == USE_DEFAULT_MPC){
-                        if (search.use_mpc)
-                            parallel_tasks.emplace_back(make_pair(&mob, thread_pool.push(parallel_negascout, search, -beta, -alpha, depth - 1, true)));
-                        else
-                            parallel_tasks.emplace_back(make_pair(&mob, thread_pool.push(parallel_mtd, search, -beta, -alpha, -mob.value, depth - 1, true)));
-                    } else
-                        parallel_tasks.emplace_back(make_pair(&mob, thread_pool.push(parallel_negascout, search, -HW2, min(HW2, -alpha + PRESEARCH_OFFSET), depth - 1, true)));
-                    search.board.undo(&mob);
+        if (b.n >= 60 && false){
+
+        } else{
+            int depth = HW2 - b.n;
+            vector<double> pre_search_mpcts;
+            pre_search_mpcts.emplace_back(0.5);
+            if (search.mpct > 1.6 || !search.use_mpc)
+                pre_search_mpcts.emplace_back(1.0);
+            if (search.mpct > 2.0 || !search.use_mpc)
+                pre_search_mpcts.emplace_back(1.5);
+            //if (!search.use_mpc)
+            //    pre_search_mpcts.emplace_back(2.0);
+            pre_search_mpcts.emplace_back(USE_DEFAULT_MPC);
+            int pv_idx;
+            vector<pair<Mobility*, future<pair<int, unsigned long long>>>> parallel_tasks;
+            pair<int, unsigned long long> task_result;
+            for (double pre_search_mpct: pre_search_mpcts){
+                f_n_nodes = search.n_nodes;
+                alpha = -HW2;
+                beta = HW2;
+                if (pre_search_mpct == USE_DEFAULT_MPC){
+                    search.use_mpc = use_mpc;
+                    search.mpct = mpct;
                 } else{
-                    if (pre_search_mpct == USE_DEFAULT_MPC){
-                        if (search.use_mpc)
-                            g = -nega_scout(&search, -beta, -alpha, depth - 1, true);
-                        else
-                            g = -mtd(&search, -beta, -alpha, -mob.value, depth - 1, true);
-                    } else
-                        g = -nega_scout(&search, -beta, min(HW2, -alpha + PRESEARCH_OFFSET), depth - 1, true);
-                    if (pre_search_mpct == USE_DEFAULT_MPC)
-                        cerr << "main searching time " << tim() - strt2 << " time from start " << tim() - strt << " policy " << mob.pos << " value " << g << " expected " << mob.value << " nodes " << search.n_nodes - f_n_nodes2 << " nps " << (search.n_nodes - f_n_nodes2) * 1000 / max(1LL, tim() - strt2) << endl;
-                    #if USE_LOG
-                        cout_div();
+                    search.use_mpc = true;
+                    search.mpct = pre_search_mpct;
+                }
+                parent_transpose_table.ready_next_search();
+                child_transpose_table.ready_next_search();
+                move_ordering_value(move_list);
+                pv_idx = 0;
+                parallel_tasks.clear();
+                strt3 = tim();
+                for (Mobility &mob: move_list){
+                    strt2 = tim();
+                    f_n_nodes2 = search.n_nodes;
+                    search.board.move(&mob);
+                    #if USE_MULTI_THREAD
+                        if (pre_search_mpct != USE_DEFAULT_MPC && pv_idx > 0 /* mob.value < move_list[0].value - 4 */ && thread_pool.n_idle()){
+                            if (pre_search_mpct == USE_DEFAULT_MPC){
+                                if (search.use_mpc)
+                                    parallel_tasks.emplace_back(make_pair(&mob, thread_pool.push(parallel_negascout, search, -beta, -alpha, depth - 1, true)));
+                                else
+                                    parallel_tasks.emplace_back(make_pair(&mob, thread_pool.push(parallel_mtd, search, -beta, -alpha, -mob.value, depth - 1, true)));
+                            } else
+                                parallel_tasks.emplace_back(make_pair(&mob, thread_pool.push(parallel_negascout, search, -HW2, min(HW2, -alpha + PRESEARCH_OFFSET), depth - 1, true)));
+                            search.board.undo(&mob);
+                        } else{
+                            if (pre_search_mpct == USE_DEFAULT_MPC){
+                                if (search.use_mpc)
+                                    g = -nega_scout(&search, -beta, -alpha, depth - 1, true);
+                                else
+                                    g = -mtd(&search, -beta, -alpha, -mob.value, depth - 1, true);
+                            } else
+                                g = -nega_scout(&search, -beta, min(HW2, -alpha + PRESEARCH_OFFSET), depth - 1, true);
+                            if (pre_search_mpct == USE_DEFAULT_MPC)
+                                cerr << "main searching time " << tim() - strt2 << " time from start " << tim() - strt << " policy " << mob.pos << " value " << g << " expected " << mob.value << " nodes " << search.n_nodes - f_n_nodes2 << " nps " << (search.n_nodes - f_n_nodes2) * 1000 / max(1LL, tim() - strt2) << endl;
+                            #if USE_LOG
+                                cout_div();
+                            #endif
+                            search.board.undo(&mob);
+                            mob.value = g;
+                            if (alpha < g){
+                                alpha = g;
+                                res.policy = mob.pos;
+                            }
+                        }
+                    #else
+                        if (pre_search_mpct == USE_DEFAULT_MPC){
+                            if (search.use_mpc)
+                                g = -nega_scout(&search, -beta, -alpha, depth - 1, true);
+                            else
+                                g = -mtd(&search, -beta, -alpha, -mob.value, depth - 1, true);
+                        } else
+                            g = -nega_scout(&search, -beta, min(HW2, -alpha + PRESEARCH_OFFSET), depth - 1, true);
+                        if (pre_search_mpct == USE_DEFAULT_MPC)
+                            cerr << "main searching time " << tim() - strt2 << " time from start " << tim() - strt << " policy " << mob.pos << " value " << g << " expected " << mob.value << " nodes " << search.n_nodes - f_n_nodes2 << " nps " << (search.n_nodes - f_n_nodes2) * 1000 / max(1LL, tim() - strt2) << endl;
+                        #if USE_LOG
+                            cout_div();
+                        #endif
+                        search.board.undo(&mob);
+                        mob.value = g;
+                        if (alpha < g){
+                            alpha = g;
+                            res.policy = mob.pos;
+                        }
                     #endif
-                    search.board.undo(&mob);
-                    mob.value = g;
-                    if (alpha < g){
-                        alpha = g;
-                        res.policy = mob.pos;
+                    ++pv_idx;
+                }
+                for (pair<Mobility*, future<pair<int, unsigned long long>>> &parallel_task: parallel_tasks){
+                    task_result = parallel_task.second.get();
+                    if (pre_search_mpct == USE_DEFAULT_MPC)
+                        cerr << "main parallel searching policy " << parallel_task.first->pos << " value " << task_result.first << " expected " << parallel_task.first->value << " nodes " << task_result.second << endl;
+                    parallel_task.first->value = task_result.first;
+                    search.n_nodes += task_result.second;
+                    if (alpha < task_result.first){
+                        alpha = task_result.first;
+                        res.policy = parallel_task.first->pos;
                     }
                 }
-            #else
-                //if (pv_idx == 0 || search.use_mpc)
-                g = -nega_scout(&search, -beta, -alpha, depth - 1, true);
-                //else
-                //    g = -mtd(&search, -beta, -alpha, -mob.value, depth - 1, true);
-                cerr << "main searching time " << tim() - strt2 << " time from start " << tim() - strt << " policy " << mob.pos << " value " << g << " move value " << mob.value << " nodes " << search.n_nodes - f_n_nodes2 << " nps " << (search.n_nodes - f_n_nodes2) * 1000 / max(1LL, tim() - strt2) << endl;
                 #if USE_LOG
-                    cout_div();
+                    cout_div2();
                 #endif
-                search.board.undo(&mob);
-                mob.value = g;
-                if (alpha < g){
-                    alpha = g;
-                    res.policy = mob.pos;
-                }
-            #endif
-            ++pv_idx;
-            for (pair<Mobility*, future<pair<int, unsigned long long>>> &parallel_task: parallel_tasks){
-                task_result = parallel_task.second.get();
-                cerr << "main parallel searching policy " << parallel_task.first->pos << " value " << task_result.first << " move value " << parallel_task.first->value << " nodes " << task_result.second << endl;
-                parallel_task.first->value = task_result.first;
-                search.n_nodes += task_result.second;
-                if (alpha < task_result.first){
-                    alpha = task_result.first;
-                    res.policy = parallel_task.first->pos;
-                }
+                cerr << "endsearch depth " << depth << " time " << tim() - strt3 << " time from start " << tim() - strt << " mpct " << search.mpct << " policy " << res.policy << " value " << alpha << " nodes " << search.n_nodes - f_n_nodes << " nps " << (search.n_nodes - f_n_nodes) * 1000 / max(1LL, tim() - strt3) << endl;
+                sum_time += tim() - strt3;
             }
-            #if USE_LOG
-                cout_div2();
-            #endif
-            sum_time += tim() - strt2;
+            cerr << "endsearch depth " << depth << " overall time " << tim() - strt << " search time " << sum_time << " mpct " << search.mpct << " policy " << res.policy << " value " << alpha << " nodes " << search.n_nodes << " nps " << search.n_nodes * 1000 / max(1LL, sum_time) << endl;
         }
-        cerr << "endsearch depth " << depth << " overall time " << tim() - strt << " search time " << sum_time << " mpct " << search.mpct << " policy " << res.policy << " value " << alpha << " nodes " << search.n_nodes << " nps " << search.n_nodes * 1000 / max(1LL, sum_time) << endl;
     }
     res.depth = max_depth;
     res.nps = search.n_nodes * 1000 / max(1LL, tim() - strt);

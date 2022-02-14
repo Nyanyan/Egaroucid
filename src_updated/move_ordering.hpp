@@ -227,7 +227,7 @@ inline void move_evaluate_simple(Search *search, Mobility *mob, const int best_m
 */
 
 int nega_alpha(Search *search, int alpha, int beta, int depth);
-int nega_alpha_ordering_prev(Search *search, int alpha, int beta, int depth);
+int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth);
 
 inline void move_evaluate_simple(Search *search, Mobility *mob, const int best_moves[], const int sort_depth, int alpha){
     mob->value = 0;
@@ -249,19 +249,13 @@ inline void move_evaluate_simple(Search *search, Mobility *mob, const int best_m
                 mob->value += (calc_surround(search->board.b, empties) - calc_surround(search->board.w, empties)) * W_SURROUND;
             else
                 mob->value += (calc_surround(search->board.w, empties) - calc_surround(search->board.b, empties)) * W_SURROUND;
-            /*
-            int stab0, stab1;
-            calc_stability_fast(&search->board, &stab0, &stab1);
-            if (search->board.p == BLACK)
-                mob->value += stab1 * W_STABILITY;
-            else
-                mob->value += stab0 * W_STABILITY;
-            */
             mob->value -= pop_count_ull(search->board.mobility_ull()) * W_MOBILITY;
+            /*
             int l, u;
             parent_transpose_table.get_prev(&search->board, search->board.hash() & TRANSPOSE_TABLE_MASK, &l, &u);
             if (u != INF || l != -INF)
                 mob->value += W_CACHE_HIT;
+            */
             int val;
             if (sort_depth <= 0){
                 val = (HW2 - mid_evaluate(&search->board)) >> 2;
@@ -271,7 +265,7 @@ inline void move_evaluate_simple(Search *search, Mobility *mob, const int best_m
             } else{
                 bool use_mpc = search->use_mpc;
                 search->use_mpc = false;
-                val = (HW2 - nega_alpha_ordering_prev(search, -HW2, alpha, sort_depth)) >> 1;
+                val = (HW2 - nega_alpha_ordering_nomemo(search, -HW2, -alpha, sort_depth)) >> 1;
                 search->use_mpc = use_mpc;
             }
             mob->value += val * W_VALUE;
@@ -309,12 +303,16 @@ inline void move_ordering(Search *search, vector<Mobility> &move_list, int depth
         return;
     int best_moves[N_BEST_MOVES];
     int hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
-    child_transpose_table.get_now(&search->board, hash_code, best_moves);
-    int l, u;
-    parent_transpose_table.get_prev(&search->board, search->board.hash() & TRANSPOSE_TABLE_MASK, &l, &u);
+    if (!child_transpose_table.get_now(&search->board, hash_code, best_moves))
+        child_transpose_table.get_prev(&search->board, hash_code, best_moves);
+    int sort_depth = 0;
+    /*
     int sort_depth = move_ordering_depth[depth];
+    int l, u;
+    parent_transpose_table.get_now(&search->board, search->board.hash() & TRANSPOSE_TABLE_MASK, &l, &u);
     if (u < alpha)
         sort_depth -= 2;
+    */
     int sort_alpha = max(-HW2, alpha - MOVE_ORDERING_VALUE_OFFSET);
     for (Mobility &mob: move_list)
         move_evaluate_simple(search, &mob, best_moves, sort_depth, sort_alpha);
