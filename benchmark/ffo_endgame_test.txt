@@ -1792,6 +1792,20 @@ endsearch time 1775 mpct 0 policy 55 value 38 nodes 25120083 nps 14144190
 #44 endsearch depth 23 overall time 1141 search time 1125 mpct 0 policy 52 value -14 nodes 24061291 nps 21387814
 #45 endsearch depth 24 overall time 25869 search time 25852 mpct 0 policy 54 value 6 nodes 1137685224 nps 44007628
 
+2022/02/14 no endsearch ybwc
+#40 endsearch depth 20 overall time 427 search time 414 mpct 0 policy 55 value 38 nodes 23425126 nps 56582429
+#41 endsearch depth 22 overall time 762 search time 746 mpct 0 policy 32 value 0 nodes 29314753 nps 39295915
+#42 endsearch depth 22 overall time 1600 search time 1585 mpct 0 policy 49 value 6 nodes 69634341 nps 43933338
+#43 endsearch depth 23 overall time 2454 search time 2435 mpct 0 policy 13 value -12 nodes 86066165 nps 35345447
+#44 endsearch depth 23 overall time 892 search time 877 mpct 0 policy 52 value -14 nodes 23966731 nps 27328085
+#45 endsearch depth 24 overall time 22338 search time 22324 mpct 0 policy 54 value 6 nodes 1222590041 nps 54765724
+#46 endsearch depth 24 overall time 4095 search time 4081 mpct 0 policy 46 value -8 nodes 173730713 nps 42570623
+#47 endsearch depth 25 overall time 3225 search time 3210 mpct 0 policy 49 value 4 nodes 123642722 nps 38517981
+#48 endsearch depth 25 overall time 21151 search time 21135 mpct 0 policy 18 value 28 nodes 839990267 nps 39744039
+#49 endsearch depth 26 overall time 24095 search time 24081 mpct 0 policy 59 value 16 nodes 1330004798 nps 55230463
+#50 endsearch depth 26 overall time 62311 search time 62297 mpct 0 policy 4 value 10 nodes 2853661510 nps 45807366
+#51 endsearch depth 27 overall time 40030 search time 40015 mpct 0 policy 47 value 6 nodes 1691205969 nps 42264300
+
 former version copy
 2022/02/10 re-design final mpc
 #40 final depth: 20 time: 413 policy: 55 value: 38 nodes: 19965752 nps: 61244638

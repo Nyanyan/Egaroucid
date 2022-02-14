@@ -34,16 +34,16 @@
 #define W_VALUE 20
 //#define W_CELL_WEIGHT 1
 //#define W_EVALUATE 20
-#define W_MOBILITY 15
-#define W_SURROUND 10
+#define W_MOBILITY 16
+#define W_SURROUND 8
 #define W_PARITY 4
 //#define W_STABILITY 20
 
-#define MOVE_ORDERING_VALUE_OFFSET 8
+#define MOVE_ORDERING_VALUE_OFFSET 6
 
 #define W_END_MOBILITY 29
 #define W_END_SURROUND 10
-#define W_END_PARITY 13
+#define W_END_PARITY 14
 
 constexpr int move_ordering_depth[60] = {
     0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 
@@ -295,7 +295,7 @@ inline void move_ordering(Search *search, vector<Mobility> &move_list, int depth
     bool pre_searched = child_transpose_table.get_now(&search->board, hash_code, best_moves);
     if (!pre_searched)
         pre_searched = child_transpose_table.get_prev(&search->board, hash_code, best_moves);
-    if (!pre_searched && (!search->use_mpc || search->mpct > 0.5)){
+    if (false && !pre_searched && (!search->use_mpc || search->mpct > 0.5)){
         bool use_mpc = search->use_mpc;
         double mpct = search->mpct;
         search->use_mpc = true;
@@ -308,18 +308,18 @@ inline void move_ordering(Search *search, vector<Mobility> &move_list, int depth
         else if (!use_mpc)
             search->mpct = 1.5;
         */
-        //int tt_parent = search->tt_parent_idx;
-        //int tt_child = search->tt_child_idx;
+        int tt_parent = search->tt_parent_idx;
+        int tt_child = search->tt_child_idx;
         search->tt_parent_idx = parent_transpose_table.prev_idx();
         search->tt_child_idx = child_transpose_table.prev_idx();
             nega_scout(search, max(-HW2, alpha - MOVE_ORDERING_VALUE_OFFSET), min(HW2, beta + MOVE_ORDERING_VALUE_OFFSET), depth, is_end_search);
             //cerr << alpha << " " << nega_scout(search, alpha, HW2, depth, is_end_search) << " ";
         search->use_mpc = use_mpc;
         search->mpct = mpct;
-        //search->tt_parent_idx = tt_parent;
-        //search->tt_child_idx = tt_child;
-        search->tt_parent_idx = parent_transpose_table.now_idx();
-        search->tt_child_idx = child_transpose_table.now_idx();
+        search->tt_parent_idx = tt_parent;
+        search->tt_child_idx = tt_child;
+        //search->tt_parent_idx = parent_transpose_table.now_idx();
+        //search->tt_child_idx = child_transpose_table.now_idx();
         child_transpose_table.get_prev(&search->board, hash_code, best_moves);
     }
     for (Mobility &mob: move_list)
