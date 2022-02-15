@@ -3,7 +3,7 @@ Strong Othello AI Application.
 
 Light version of this othello AI got 1st place in the world ([CodinGame Othello](https://www.codingame.com/multiplayer/bot-programming/othello-1/leaderboard))
 
-**You can use the [application in Japanese or English](#application_version) or use Python [tkinter version](#tkinter_version)**
+**You can use the [application in Japanese or English](https://www.egaroucid-app.nyanyan.dev/) or use Python [tkinter version](#tkinter_version)**
 
 **You can [play light version of this AI on the Web in Japanese](https://www.egaroucid.nyanyan.dev/).**
 
