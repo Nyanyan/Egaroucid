@@ -332,8 +332,6 @@ bool ai_hint(Board b, int level, int max_level, int res[], int info[], const int
             if (1 & (legal >> i)){
                 if (res[i] == -INF){
                     res[i] = -val_future[i].get();
-                    if (res[i] == INF)
-                        cerr << res[i] << " " << i << endl;
                 }
             }
         }
