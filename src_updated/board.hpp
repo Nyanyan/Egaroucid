@@ -176,17 +176,6 @@ class Board {
         inline unsigned long long hash_player(){
             if (p == BLACK)
                 return hash();
-            /*
-            return
-                (w * 3) ^ 
-                ((w >> 16) * P171) ^ 
-                ((w >> 32) * P173) ^ 
-                ((w >> 48) * P175) ^ 
-                (b * 5) ^ 
-                ((b >> 16) * P191) ^ 
-                ((b >> 32) * P193) ^ 
-                ((b >> 48) * P195);
-            */
             return
                 (w * 3) ^ ((w >> 8) * 7) ^ 
                 ((w >> 16) * P171) ^ 

@@ -45,7 +45,8 @@ inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mp
             //move_ordering_value(move_list);
             for (Mobility &mob: move_list){
                 search.board.move(&mob);
-                    g = -mtd(&search, -beta, -alpha, -mob.value, depth - 1, false);
+                    //g = -mtd(&search, -beta, -alpha, -mob.value, depth - 1, false);
+                    g = -nega_scout(&search, -beta, -alpha, depth - 1, false);
                 search.board.undo(&mob);
                 //mob.value = g;
                 if (alpha < g){
@@ -196,7 +197,8 @@ inline int tree_search_value(Board b, int max_depth, bool use_mpc, double mpct, 
             child_transpose_table.ready_next_search();
             search.tt_parent_idx = parent_transpose_table.now_idx();
             search.tt_child_idx = child_transpose_table.now_idx();
-            g = mtd(&search, -HW2, HW2, g, depth, false);
+            //g = mtd(&search, -HW2, HW2, g, depth, false);
+            g = nega_scout(&search, -HW2, HW2, depth, false);
             if (depth == max_depth - 1)
                 f_res = g;
             else if (depth == max_depth)
@@ -243,6 +245,29 @@ inline int tree_search_value(Board b, int max_depth, bool use_mpc, double mpct, 
     return res;
 }
 
+int tree_search_value_no_id(Board b, int depth, bool use_mpc, double mpct, const vector<int> vacant_lst, int pre_searched_value){
+    int res;
+    Search search;
+    search.board = b;
+    search.skipped = false;
+    search.use_mpc = use_mpc;
+    search.mpct = mpct;
+    search.vacant_list = vacant_lst;
+    search.n_nodes = 0;
+    search.tt_parent_idx = parent_transpose_table.now_idx();
+    search.tt_child_idx = child_transpose_table.now_idx();
+    if (b.n + depth < HW2){
+        res = nega_scout(&search, -HW2, HW2, depth, false);
+        //res = mtd(&search, -HW2, HW2, pre_searched_value, depth, false);
+    } else{
+        if (search.use_mpc)
+            res = nega_scout(&search, -HW2, HW2, depth, true) / 2 * 2;
+        else
+            res = mtd(&search, -HW2, HW2, pre_searched_value, depth, true);
+    }
+    return res;
+}
+
 Search_result ai(Board b, int level, int book_error, const vector<int> vacant_lst){
     Search_result res;
     Book_value book_result = book.get_random(&b, book_error);
@@ -275,7 +300,7 @@ Search_result ai(Board b, int level, int book_error, const vector<int> vacant_ls
     return res;
 }
 
-bool ai_hint(Board b, int level, int max_level, int res[], int info[], unsigned long long legal, vector<int> vacant_lst){
+bool ai_hint(Board b, int level, int max_level, int res[], int info[], const int pre_searched_values[], unsigned long long legal, vector<int> vacant_lst){
     Mobility mob;
     Board nb;
     future<int> val_future[HW2];
@@ -283,29 +308,47 @@ bool ai_hint(Board b, int level, int max_level, int res[], int info[], unsigned 
     bool use_mpc, is_mid_search;
     double mpct;
     get_level(level, b.n - 4, &is_mid_search, &depth, &use_mpc, &mpct);
-    if (!is_mid_search && level != max_level)
+    if (!is_mid_search && level != max_level && !use_mpc)
         return false;
-    parent_transpose_table.ready_next_search();
-    child_transpose_table.ready_next_search();
-    for (int i = 0; i < HW2; ++i){
-        if (1 & (legal >> i)){
-            calc_flip(&mob, &b, i);
-            b.move_copy(&mob, &nb);
-            res[i] = book.get(&nb);
-            if (res[i] == -INF){
-                val_future[i] = async(launch::async, tree_search_value, nb, depth - 1, use_mpc, mpct, vacant_lst, false);
-                if (!is_mid_search && !use_mpc)
-                    info[i] = SEARCH_FINAL;
-                else
-                    info[i] = level;
-            } else
-                info[i] = SEARCH_BOOK;
+    if (depth - 1 >= 0){
+        parent_transpose_table.ready_next_search();
+        child_transpose_table.ready_next_search();
+        for (int i = 0; i < HW2; ++i){
+            if (1 & (legal >> i)){
+                calc_flip(&mob, &b, i);
+                b.move_copy(&mob, &nb);
+                res[i] = book.get(&nb);
+                if (res[i] == -INF){
+                    val_future[i] = async(launch::async, tree_search_value_no_id, nb, depth - 1, use_mpc, mpct, vacant_lst, -pre_searched_values[i]);
+                    if (!is_mid_search && !use_mpc)
+                        info[i] = SEARCH_FINAL;
+                    else
+                        info[i] = level;
+                } else
+                    info[i] = SEARCH_BOOK;
+            }
         }
-    }
-    for (int i = 0; i < HW2; ++i){
-        if (1 & (legal >> i)){
-            if (res[i] == -INF)
-                res[i] = -val_future[i].get();
+        for (int i = 0; i < HW2; ++i){
+            if (1 & (legal >> i)){
+                if (res[i] == -INF){
+                    res[i] = -val_future[i].get();
+                    if (res[i] == INF)
+                        cerr << res[i] << " " << i << endl;
+                }
+            }
+        }
+    } else{
+        for (int i = 0; i < HW2; ++i){
+            if (1 & (legal >> i)){
+                calc_flip(&mob, &b, i);
+                b.move_copy(&mob, &nb);
+                res[i] = book.get(&nb);
+                if (res[i] == -INF){
+                    res[i] = -mid_evaluate(&nb);
+                    info[i] = level;
+                } else
+                    info[i] = SEARCH_BOOK;
+            }
         }
     }
     return true;

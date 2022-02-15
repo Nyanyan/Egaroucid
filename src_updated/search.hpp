@@ -2,15 +2,11 @@
 #include <iostream>
 #include <fstream>
 #include <algorithm>
-#include <vector>
-#include <math.h>
-#include <atomic>
 #include "setting.hpp"
 #include "common.hpp"
 #include "board.hpp"
 #include "evaluate.hpp"
 #include "transpose_table.hpp"
-#include "midsearch.hpp"
 
 using namespace std;
 

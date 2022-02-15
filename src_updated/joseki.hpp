@@ -12,7 +12,7 @@ using namespace std;
 
 class joseki {
 private:
-	vector<pair<board, string>> arr;
+	vector<pair<Board, string>> arr;
 public:
 	bool init() {
 		ifstream ifs("resources/joseki.txt");

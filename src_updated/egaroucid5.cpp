@@ -8,6 +8,8 @@
 #include "level.hpp"
 #include "book.hpp"
 #include "ai.hpp"
+#include "umigame.hpp"
+#include "human_value.hpp"
 #if USE_MULTI_THREAD
     #include "thread_pool.hpp"
 #endif
@@ -53,7 +55,7 @@ int main(){
     cerr << "initialized" << endl;
     Board b;
     int ai_player;
-    const int level = 27;
+    const int level = 21;
     const int book_error = 0;
     while (true){
         #if MOVE_ORDERING_ADJUST

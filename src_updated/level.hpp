@@ -28,7 +28,7 @@ struct Level{
 };
 
 constexpr Level level_definition[N_LEVEL] = {
-    {0, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC},
+    {0, NOMPC, 0, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC},
     {1, NOMPC, 2, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC},
     {2, NOMPC, 4, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC},
     {3, NOMPC, 6, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC},
@@ -159,4 +159,10 @@ bool get_level_use_mpc(int level, int n_moves){
             return level_status.complete4_mpct != NOMPC;
         }
     }
+}
+
+void get_level_depth(int level, int *mid_depth, int *end_depth){
+    level = max(0, min(60, level));
+    *mid_depth = level_definition[level].mid_lookahead;
+    *end_depth = level_definition[level].complete0;
 }
