@@ -8,6 +8,6 @@
 #/src/resources
 #img
 /release
-src_updated/log.txt
-src_updated/testcases
+src/log.txt
+src/testcases
 /move_ordering/*.txt

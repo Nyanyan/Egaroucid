@@ -1,9 +1,9 @@
-#pragma once
+﻿#pragma once
 #include <iostream>
 
 using namespace std;
 
-struct history_elem {
-	board b;
+struct History_elem {
+	Board b;
 	String record;
 };

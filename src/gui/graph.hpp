@@ -31,7 +31,7 @@ private:
 	int adj_x;
 
 public:
-	void draw(vector<history_elem> nodes1, vector<history_elem> nodes2, int place) {
+	void draw(vector<History_elem> nodes1, vector<History_elem> nodes2, int place) {
 		calc_range(nodes1, nodes2);
 		for (int y = 0; y <= y_max - y_min; y += resolution) {
 			int yy = sy + y * dy + adj_y * y / (y_max - y_min);
@@ -56,10 +56,10 @@ public:
 		Line(place_x + 6, sy + size_y + 3, place_x + 6, sy + size_y + 7).draw(2, graph_color);
 	}
 
-	int update_place(vector<history_elem> nodes1, vector<history_elem> nodes2, int place) {
+	int update_place(vector<History_elem> nodes1, vector<History_elem> nodes2, int place) {
 		if (Rect(sx - 30, sy, size_x + 40, size_y + 10).leftPressed()) {
 			int cursor_x = Cursor::Pos().x;
-			int min_err = inf;
+			int min_err = INF;
 			for (int i = 0; i < (int)nodes1.size(); ++i) {
 				int x = sx + (nodes1[i].b.n - 4) * dx + (nodes1[i].b.n - 4) * adj_x / 60;
 				if (abs(x - cursor_x) < min_err) {
@@ -87,17 +87,17 @@ public:
 	}
 
 private:
-	void calc_range(vector<history_elem> nodes1, vector<history_elem> nodes2) {
+	void calc_range(vector<History_elem> nodes1, vector<History_elem> nodes2) {
 		y_min = 1000;
 		y_max = -1000;
-		for (const history_elem& b : nodes1) {
-			if (b.b.v != -inf) {
+		for (const History_elem& b : nodes1) {
+			if (b.b.v != -INF) {
 				y_min = min(y_min, b.b.v);
 				y_max = max(y_max, b.b.v);
 			}
 		}
-		for (const history_elem& b : nodes2) {
-			if (b.b.v != -inf) {
+		for (const History_elem& b : nodes2) {
+			if (b.b.v != -INF) {
 				y_min = min(y_min, b.b.v);
 				y_max = max(y_max, b.b.v);
 			}
@@ -112,9 +112,9 @@ private:
 		adj_x = size_x - dx * 60;
 	}
 
-	void draw_graph(vector<history_elem> nodes, Color color, bool show_not_calculated) {
-		for (const history_elem& b : nodes) {
-			if (b.b.v != -inf) {
+	void draw_graph(vector<History_elem> nodes, Color color, bool show_not_calculated) {
+		for (const History_elem& b : nodes) {
+			if (b.b.v != -INF) {
 				int yy = sy + (y_max - b.b.v) * dy + adj_y * (y_max - b.b.v) / (y_max - y_min);
 				Circle{ sx + (b.b.n - 4) * dx + (b.b.n - 4) * adj_x / 60, yy, 3 }.draw(color);
 			}
@@ -126,7 +126,7 @@ private:
 		int idx1 = 0, idx2 = 0;
 		while (idx2 < (int)nodes.size()) {
 			while (idx1 < (int)nodes.size()) {
-				if (nodes[idx1].b.v != -inf)
+				if (nodes[idx1].b.v != -INF)
 					break;
 				++idx1;
 			}
@@ -136,7 +136,7 @@ private:
 			int yy1 = sy + (y_max - nodes[idx1].b.v) * dy + adj_y * (y_max - nodes[idx1].b.v) / (y_max - y_min);
 			idx2 = idx1 + 1;
 			while (idx2 < (int)nodes.size()) {
-				if (nodes[idx2].b.v != -inf)
+				if (nodes[idx2].b.v != -INF)
 					break;
 				++idx2;
 			}

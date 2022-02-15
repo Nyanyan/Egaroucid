@@ -155,7 +155,7 @@ public:
 		}
 		is_clicked = rect.leftClicked();
 		if (mode == bar_mode && bar_rect.leftPressed()) {
-			int min_error = inf;
+			int min_error = INF;
 			int cursor_x = Cursor::Pos().x;
 			for (int i = min_elem; i <= max_elem; ++i) {
 				int x = bar_sx + bar_size * (i - min_elem + 5) / (max_elem - min_elem + 10);

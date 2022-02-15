@@ -1,26 +1,30 @@
 #pragma once
 #include <iostream>
-#include <emmintrin.h>
+#ifdef _MSC_VER
+    #include <intrin.h>
+#else
+    #include <x86intrin.h>
+#endif
 #include "mobility.hpp"
 
 using namespace std;
 
-#define p171 17ULL
-#define p172 289ULL
-#define p173 4913ULL
-#define p174 83521ULL
-#define p175 1419857ULL
-#define p176 24137569ULL
-#define p177 410338673ULL
-#define p191 19ULL
-#define p192 361ULL
-#define p193 6859ULL
-#define p194 130321ULL
-#define p195 2476099ULL
-#define p196 47045881ULL
-#define p197 893871739ULL
+#define P171 17ULL
+#define P172 289ULL
+#define P173 4913ULL
+#define P174 83521ULL
+#define P175 1419857ULL
+#define P176 24137569ULL
+#define P177 410338673ULL
+#define P191 19ULL
+#define P192 361ULL
+#define P193 6859ULL
+#define P194 130321ULL
+#define P195 2476099ULL
+#define P196 47045881ULL
+#define P197 893871739ULL
 
-const int cell_div4[hw2] = {
+constexpr int cell_div4[HW2] = {
     1, 1, 1, 1, 2, 2, 2, 2, 
     1, 1, 1, 1, 2, 2, 2, 2, 
     1, 1, 1, 1, 2, 2, 2, 2, 
@@ -31,63 +35,67 @@ const int cell_div4[hw2] = {
     4, 4, 4, 4, 8, 8, 8, 8
 };
 
-inline int create_one_color(int idx, const int k) {
-    int res = 0;
-    for (int i = 0; i < hw; ++i) {
-        if (idx % 3 == k) {
-            res |= 1 << i;
-        }
-        idx /= 3;
+#if MOBILITY_CALC_MODE == 0
+    inline unsigned long long get_mobility(const unsigned long long P, const unsigned long long O){
+        unsigned long long moves, mO, flip1, pre1, flip8, pre8;
+        __m128i	PP, mOO, MM, flip, pre;
+        mO = O & 0x7e7e7e7e7e7e7e7eULL;
+        PP  = _mm_set_epi64x(mirror_v(P), P);
+        mOO = _mm_set_epi64x(mirror_v(mO), mO);
+        flip = _mm_and_si128(mOO, _mm_slli_epi64(PP, 7));				            flip1  = mO & (P << 1);		    flip8  = O & (P << 8);
+        flip = _mm_or_si128(flip, _mm_and_si128(mOO, _mm_slli_epi64(flip, 7)));		flip1 |= mO & (flip1 << 1);	    flip8 |= O & (flip8 << 8);
+        pre  = _mm_and_si128(mOO, _mm_slli_epi64(mOO, 7));				            pre1   = mO & (mO << 1);	    pre8   = O & (O << 8);
+        flip = _mm_or_si128(flip, _mm_and_si128(pre, _mm_slli_epi64(flip, 14)));	flip1 |= pre1 & (flip1 << 2);	flip8 |= pre8 & (flip8 << 16);
+        flip = _mm_or_si128(flip, _mm_and_si128(pre, _mm_slli_epi64(flip, 14)));	flip1 |= pre1 & (flip1 << 2);	flip8 |= pre8 & (flip8 << 16);
+        MM = _mm_slli_epi64(flip, 7);							                    moves = flip1 << 1;		        moves |= flip8 << 8;
+        flip = _mm_and_si128(mOO, _mm_slli_epi64(PP, 9));				            flip1  = mO & (P >> 1);		    flip8  = O & (P >> 8);
+        flip = _mm_or_si128(flip, _mm_and_si128(mOO, _mm_slli_epi64(flip, 9)));		flip1 |= mO & (flip1 >> 1);	    flip8 |= O & (flip8 >> 8);
+        pre = _mm_and_si128(mOO, _mm_slli_epi64(mOO, 9));				            pre1 >>= 1;			            pre8 >>= 8;
+        flip = _mm_or_si128(flip, _mm_and_si128(pre, _mm_slli_epi64(flip, 18)));	flip1 |= pre1 & (flip1 >> 2);	flip8 |= pre8 & (flip8 >> 16);
+        flip = _mm_or_si128(flip, _mm_and_si128(pre, _mm_slli_epi64(flip, 18)));	flip1 |= pre1 & (flip1 >> 2);	flip8 |= pre8 & (flip8 >> 16);
+        MM = _mm_or_si128(MM, _mm_slli_epi64(flip, 9));					            moves |= flip1 >> 1;		    moves |= flip8 >> 8;
+        moves |= _mm_cvtsi128_si64(MM) | mirror_v(_mm_cvtsi128_si64(_mm_unpackhi_epi64(MM, MM)));
+        return moves & ~(P|O);
     }
-    return res;
-}
-
-inline int trans(const int pt, const int k) {
-    if (k == 0)
-        return pt << 1;
-    else
-        return pt >> 1;
-}
-
-inline int move_line_half(const int p, const int o, const int place, const int k) {
-    int mask;
-    int res = 0;
-    int pt = 1 << (hw_m1 - place);
-    if (pt & p || pt & o)
-        return 0;
-    mask = trans(pt, k);
-    while (mask && (mask & o)) {
-        ++res;
-        mask = trans(mask, k);
-        if (mask & p)
-            return res;
+#elif MOBILITY_CALC_MODE == 1
+    inline unsigned long long get_mobility(const unsigned long long P, const unsigned long long O){
+        unsigned long long res, pp, oo;
+        res = ((P << 1) + O) & 0b1111111011111110111111101111111011111110111111101111111011111110ULL;
+        pp = mirror_v(P);
+        oo = mirror_v(O);
+        res |= mirror_v((pp << 1) + oo)& 0b0111111101111111011111110111111101111111011111110111111101111111ULL;
+        /*
+        pp = white_line(P);
+        oo = white_line(O);
+        res |= white_line((pp << 1) + oo) & 0b1111111111111111111111111111111111111111111111111111111100000000ULL;
+        pp = mirror_v(pp);
+        oo = mirror_v(oo);
+        res |= white_line(mirror_v((pp << 1) + oo)) & 0b0000000011111111111111111111111111111111111111111111111111111111ULL;
+        */
+        unsigned long long mO, flip8, pre8;
+        __m128i	PP, mOO, MM, flip, pre;
+        mO = O & 0x7e7e7e7e7e7e7e7eULL;
+        PP  = _mm_set_epi64x(mirror_v(P), P);
+        mOO = _mm_set_epi64x(mirror_v(mO), mO);
+        flip = _mm_and_si128(mOO, _mm_slli_epi64(PP, 7));				            flip8  = O & (P << 8);
+        flip = _mm_or_si128(flip, _mm_and_si128(mOO, _mm_slli_epi64(flip, 7)));		flip8 |= O & (flip8 << 8);
+        pre  = _mm_and_si128(mOO, _mm_slli_epi64(mOO, 7));				            pre8   = O & (O << 8);
+        flip = _mm_or_si128(flip, _mm_and_si128(pre, _mm_slli_epi64(flip, 14)));	flip8 |= pre8 & (flip8 << 16);
+        flip = _mm_or_si128(flip, _mm_and_si128(pre, _mm_slli_epi64(flip, 14)));	flip8 |= pre8 & (flip8 << 16);
+        MM = _mm_slli_epi64(flip, 7);							                    res |= flip8 << 8;
+        flip = _mm_and_si128(mOO, _mm_slli_epi64(PP, 9));				            flip8  = O & (P >> 8);
+        flip = _mm_or_si128(flip, _mm_and_si128(mOO, _mm_slli_epi64(flip, 9)));		flip8 |= O & (flip8 >> 8);
+        pre = _mm_and_si128(mOO, _mm_slli_epi64(mOO, 9));				            pre8 >>= 8;
+        flip = _mm_or_si128(flip, _mm_and_si128(pre, _mm_slli_epi64(flip, 18)));	flip8 |= pre8 & (flip8 >> 16);
+        flip = _mm_or_si128(flip, _mm_and_si128(pre, _mm_slli_epi64(flip, 18)));	flip8 |= pre8 & (flip8 >> 16);
+        MM = _mm_or_si128(MM, _mm_slli_epi64(flip, 9));					            res |= flip8 >> 8;
+        res |= _mm_cvtsi128_si64(MM) | mirror_v(_mm_cvtsi128_si64(_mm_unpackhi_epi64(MM, MM)));
+        return res & ~(P | O);
     }
-    return 0;
-}
+#elif MOBILITY_CALC_MODE == 2
+#endif
 
-unsigned long long get_mobility(const unsigned long long P, const unsigned long long O){
-    unsigned long long moves, mO, flip1, pre1, flip8, pre8;
-    __m128i	PP, mOO, MM, flip, pre;
-    mO = O & 0x7e7e7e7e7e7e7e7eULL;
-    PP  = _mm_set_epi64x(mirror_v(P), P);
-    mOO = _mm_set_epi64x(mirror_v(mO), mO);
-    flip = _mm_and_si128(mOO, _mm_slli_epi64(PP, 7));				            flip1  = mO & (P << 1);		    flip8  = O & (P << 8);
-    flip = _mm_or_si128(flip, _mm_and_si128(mOO, _mm_slli_epi64(flip, 7)));		flip1 |= mO & (flip1 << 1);	    flip8 |= O & (flip8 << 8);
-    pre  = _mm_and_si128(mOO, _mm_slli_epi64(mOO, 7));				            pre1   = mO & (mO << 1);	    pre8   = O & (O << 8);
-    flip = _mm_or_si128(flip, _mm_and_si128(pre, _mm_slli_epi64(flip, 14)));	flip1 |= pre1 & (flip1 << 2);	flip8 |= pre8 & (flip8 << 16);
-    flip = _mm_or_si128(flip, _mm_and_si128(pre, _mm_slli_epi64(flip, 14)));	flip1 |= pre1 & (flip1 << 2);	flip8 |= pre8 & (flip8 << 16);
-    MM = _mm_slli_epi64(flip, 7);							                    moves = flip1 << 1;		        moves |= flip8 << 8;
-    flip = _mm_and_si128(mOO, _mm_slli_epi64(PP, 9));				            flip1  = mO & (P >> 1);		    flip8  = O & (P >> 8);
-    flip = _mm_or_si128(flip, _mm_and_si128(mOO, _mm_slli_epi64(flip, 9)));		flip1 |= mO & (flip1 >> 1);	    flip8 |= O & (flip8 >> 8);
-    pre = _mm_and_si128(mOO, _mm_slli_epi64(mOO, 9));				            pre1 >>= 1;			            pre8 >>= 8;
-    flip = _mm_or_si128(flip, _mm_and_si128(pre, _mm_slli_epi64(flip, 18)));	flip1 |= pre1 & (flip1 >> 2);	flip8 |= pre8 & (flip8 >> 16);
-    flip = _mm_or_si128(flip, _mm_and_si128(pre, _mm_slli_epi64(flip, 18)));	flip1 |= pre1 & (flip1 >> 2);	flip8 |= pre8 & (flip8 >> 16);
-    MM = _mm_or_si128(MM, _mm_slli_epi64(flip, 9));					            moves |= flip1 >> 1;		    moves |= flip8 >> 8;
-    moves |= _mm_cvtsi128_si64(MM) | mirror_v(_mm_cvtsi128_si64(_mm_unpackhi_epi64(MM, MM)));
-    return moves & ~(P|O);
-}
-
-class board {
+class Board {
     public:
         unsigned long long b;
         unsigned long long w;
@@ -98,12 +106,12 @@ class board {
         int parity;
 
     public:
-        bool operator<(const board& another) const {
+        bool operator<(const Board& another) const {
             return v > another.v;
         }
 
-        inline board copy(){
-            board res;
+        inline Board copy(){
+            Board res;
             res.b = b;
             res.w = w;
             res.p = p;
@@ -114,7 +122,7 @@ class board {
             return res;
         }
 
-        void copy(board *res){
+        inline void copy(Board *res){
             res->b = b;
             res->w = w;
             res->p = p;
@@ -128,34 +136,34 @@ class board {
             /*
             return
                 (b * 3) ^ 
-                ((b >> 16) * p171) ^ 
-                ((b >> 32) * p173) ^ 
-                ((b >> 48) * p175) ^ 
+                ((b >> 16) * P171) ^ 
+                ((b >> 32) * P173) ^ 
+                ((b >> 48) * P175) ^ 
                 (w * 5) ^ 
-                ((w >> 16) * p191) ^ 
-                ((w >> 32) * p193) ^ 
-                ((w >> 48) * p195);
+                ((w >> 16) * P191) ^ 
+                ((w >> 32) * P193) ^ 
+                ((w >> 48) * P195);
             */
             return
                 p ^ 
                 (b * 3) ^ ((b >> 8) * 7) ^ 
-                ((b >> 16) * p171) ^ 
-                ((b >> 24) * p172) ^ 
-                ((b >> 32) * p173) ^ 
-                ((b >> 40) * p174) ^ 
-                ((b >> 48) * p175) ^ 
-                ((b >> 56) * p176) ^ 
+                ((b >> 16) * P171) ^ 
+                ((b >> 24) * P172) ^ 
+                ((b >> 32) * P173) ^ 
+                ((b >> 40) * P174) ^ 
+                ((b >> 48) * P175) ^ 
+                ((b >> 56) * P176) ^ 
                 (w * 5) ^ ((w >> 8) * 11) ^ 
-                ((w >> 16) * p191) ^ 
-                ((w >> 24) * p192) ^ 
-                ((w >> 32) * p193) ^ 
-                ((w >> 40) * p194) ^ 
-                ((w >> 48) * p195) ^ 
-                ((w >> 56) * p196);
+                ((w >> 16) * P191) ^ 
+                ((w >> 24) * P192) ^ 
+                ((w >> 32) * P193) ^ 
+                ((w >> 40) * P194) ^ 
+                ((w >> 48) * P195) ^ 
+                ((w >> 56) * P196);
             
             /*
             unsigned long long res = 0;
-            for (int i = 0; i < hw2; ++i){
+            for (int i = 0; i < HW2; ++i){
                 if (1 & (b >> i))
                     res ^= hash_rand[0][i];
                 if (1 & (w >> i))
@@ -166,73 +174,62 @@ class board {
         }
 
         inline unsigned long long hash_player(){
-            if (p == black)
+            if (p == BLACK)
                 return hash();
-            /*
-            return
-                (w * 3) ^ 
-                ((w >> 16) * p171) ^ 
-                ((w >> 32) * p173) ^ 
-                ((w >> 48) * p175) ^ 
-                (b * 5) ^ 
-                ((b >> 16) * p191) ^ 
-                ((b >> 32) * p193) ^ 
-                ((b >> 48) * p195);
-            */
             return
                 (w * 3) ^ ((w >> 8) * 7) ^ 
-                ((w >> 16) * p171) ^ 
-                ((w >> 24) * p172) ^ 
-                ((w >> 32) * p173) ^ 
-                ((w >> 40) * p174) ^ 
-                ((w >> 48) * p175) ^ 
-                ((w >> 56) * p176) ^ 
+                ((w >> 16) * P171) ^ 
+                ((w >> 24) * P172) ^ 
+                ((w >> 32) * P173) ^ 
+                ((w >> 40) * P174) ^ 
+                ((w >> 48) * P175) ^ 
+                ((w >> 56) * P176) ^ 
                 (b * 5) ^ ((b >> 8) * 11) ^ 
-                ((b >> 16) * p191) ^ 
-                ((b >> 24) * p192) ^ 
-                ((b >> 32) * p193) ^ 
-                ((b >> 40) * p194) ^ 
-                ((b >> 48) * p195) ^ 
-                ((b >> 56) * p196);
+                ((b >> 16) * P191) ^ 
+                ((b >> 24) * P192) ^ 
+                ((b >> 32) * P193) ^ 
+                ((b >> 40) * P194) ^ 
+                ((b >> 48) * P195) ^ 
+                ((b >> 56) * P196);
         }
 
         inline void white_mirror(){
             b = white_line(b);
             w = white_line(w);
             if (policy != -1)
-                policy = (policy % hw) * hw + (policy / hw);
+                policy = (policy % HW) * HW + (policy / HW);
         }
 
         inline void black_mirror(){
             b = black_line(b);
             w = black_line(w);
             if (policy != -1)
-                policy = (hw_m1 - policy % hw) * hw + (hw_m1 - policy / hw);
+                policy = (HW_M1 - policy % HW) * HW + (HW_M1 - policy / HW);
         }
 
         inline void vertical_mirror(){
             b = mirror_v(b);
             w = mirror_v(w);
             if (policy != -1)
-                policy = (hw_m1 - policy / hw) * hw + (hw_m1 - policy % hw);
+                policy = (HW_M1 - policy / HW) * HW + (HW_M1 - policy % HW);
         }
 
         inline void print() {
-            for (int i = hw2_m1; i >= 0; --i){
+            for (int i = HW2_M1; i >= 0; --i){
                 if (1 & (b >> i))
                     cerr << "X ";
                 else if (1 & (w >> i))
                     cerr << "O ";
                 else
                     cerr << ". ";
-                if (i % hw == 0)
+                if (i % HW == 0)
                     cerr << endl;
             }
         }
 
         inline unsigned long long mobility_ull(){
             unsigned long long res;
-            if (p == black)
+            if (p == BLACK)
                 res = get_mobility(b, w);
             else
                 res = get_mobility(w, b);
@@ -246,8 +243,8 @@ class board {
             full_stability_d(stones, d7, d9);
         }
 
-        inline void move(const mobility *mob) {
-            if (p == black){
+        inline void move(const Mobility *mob) {
+            if (p == BLACK){
                 b ^= mob->flip;
                 w &= ~b;
                 b |= 1ULL << mob->pos;
@@ -262,8 +259,8 @@ class board {
             parity ^= cell_div4[mob->pos];
         }
 
-        inline void move_copy(const mobility *mob, board *res) {
-            if (p == black){
+        inline void move_copy(const Mobility *mob, Board *res) {
+            if (p == BLACK){
                 res->b = b ^ mob->flip;
                 res->w = w & (~res->b);
                 res->b |= 1ULL << mob->pos;
@@ -278,18 +275,18 @@ class board {
             res->parity = parity ^ cell_div4[mob->pos];
         }
 
-        inline board move_copy(const mobility *mob) {
-            board res;
+        inline Board move_copy(const Mobility *mob) {
+            Board res;
             move_copy(mob, &res);
             return res;
         }
 
-        inline void undo(const mobility *mob){
+        inline void undo(const Mobility *mob){
             p = 1 - p;
             --n;
             policy = -1;
             parity ^= cell_div4[mob->pos];
-            if (p == black){
+            if (p == BLACK){
                 b &= ~(1ULL << mob->pos);
                 b ^= mob->flip;
                 w |= mob->flip;
@@ -301,13 +298,13 @@ class board {
         }
 
         inline void translate_to_arr(int res[]) {
-            for (int i = 0; i < hw2; ++i){
+            for (int i = 0; i < HW2; ++i){
                 if (1 & (b >> i))
-                    res[hw2_m1 - i] = black;
+                    res[HW2_M1 - i] = BLACK;
                 else if (1 & (w >> i))
-                    res[hw2_m1 - i] = white;
+                    res[HW2_M1 - i] = WHITE;
                 else
-                    res[hw2_m1 - i] = vacant;
+                    res[HW2_M1 - i] = VACANT;
             }
         }
 
@@ -315,12 +312,12 @@ class board {
             int i;
             b = 0;
             w = 0;
-            n = hw2;
+            n = HW2;
             parity = 0;
-            for (i = 0; i < hw2; ++i) {
-                if (arr[hw2_m1 - i] == black)
+            for (i = 0; i < HW2; ++i) {
+                if (arr[HW2_M1 - i] == BLACK)
                     b |= 1ULL << i;
-                else if (arr[hw2_m1 - i] == white)
+                else if (arr[HW2_M1 - i] == WHITE)
                     w |= 1ULL << i;
                 else{
                     --n;
@@ -336,9 +333,9 @@ class board {
                 cerr << "both on same square" << endl;
             b = bk;
             w = wt;
-            n = hw2;
+            n = HW2;
             parity = 0;
-            for (int i = 0; i < hw2; ++i) {
+            for (int i = 0; i < HW2; ++i) {
                 if ((1 & (bk >> i)) == 0 && (1 & (wt >> i)) == 0){
                     --n;
                     parity ^= cell_div4[i];
@@ -348,9 +345,9 @@ class board {
             policy = -1;
         }
 
-        inline int count(int player){
+        inline int score(int player){
             int b_score = pop_count_ull(b), w_score = pop_count_ull(w);
-            int black_score = b_score - w_score, vacant_score = hw2 - b_score - w_score;
+            int black_score = b_score - w_score, vacant_score = HW2 - b_score - w_score;
             if (black_score > 0)
                 black_score += vacant_score;
             else if (black_score < 0)
@@ -358,42 +355,42 @@ class board {
             return (player ? -1 : 1) * black_score;
         }
 
-        inline int count(){
-            return count(p);
+        inline int score(){
+            return score(p);
         }
 
         inline int count_player(){
-            if (p == black)
+            if (p == BLACK)
                 return pop_count_ull(b);
             return pop_count_ull(w);
         }
 
         inline int count_opponent(){
-            if (p == white)
+            if (p == WHITE)
                 return pop_count_ull(b);
             return pop_count_ull(w);
         }
 
         inline int raw_count(){
-            if (p == black)
+            if (p == BLACK)
                 return pop_count_ull(b);
             return pop_count_ull(w);
         }
 
-        inline void board_canput(int canput_arr[], const unsigned long long mobility_black, const unsigned long long mobility_white){
-            for (int i = 0; i < hw2; ++i){
+        inline void board_canput(int canput_arr[], const unsigned long long mobility_BLACK, const unsigned long long mobility_WHITE){
+            for (int i = 0; i < HW2; ++i){
                 canput_arr[i] = 0;
-                if (1 & (mobility_black >> i))
+                if (1 & (mobility_BLACK >> i))
                     ++canput_arr[i];
-                if (1 & (mobility_white >> i))
+                if (1 & (mobility_WHITE >> i))
                     canput_arr[i] += 2;
             }
         }
 
         inline void board_canput(int canput_arr[]){
-            const unsigned long long mobility_black = get_mobility(b, w);
-            const unsigned long long mobility_white = get_mobility(w, b);
-            board_canput(canput_arr, mobility_black, mobility_white);
+            const unsigned long long mobility_BLACK = get_mobility(b, w);
+            const unsigned long long mobility_WHITE = get_mobility(w, b);
+            board_canput(canput_arr, mobility_BLACK, mobility_WHITE);
         }
 
         inline void check_player(){
@@ -402,26 +399,26 @@ class board {
                 p = 1 - p;
                 passed = (mobility_ull() == 0);
                 if (passed)
-                    p = vacant;
+                    p = VACANT;
             }
         }
 
         inline void reset(){
-            constexpr int first_board[hw2] = {
-                vacant,vacant,vacant,vacant,vacant,vacant,vacant,vacant,
-                vacant,vacant,vacant,vacant,vacant,vacant,vacant,vacant,
-                vacant,vacant,vacant,vacant,vacant,vacant,vacant,vacant,
-                vacant,vacant,vacant,white,black,vacant,vacant,vacant,
-                vacant,vacant,vacant,black,white,vacant,vacant,vacant,
-                vacant,vacant,vacant,vacant,vacant,vacant,vacant,vacant,
-                vacant,vacant,vacant,vacant,vacant,vacant,vacant,vacant,
-                vacant,vacant,vacant,vacant,vacant,vacant,vacant,vacant
+            constexpr int first_board[HW2] = {
+                VACANT,VACANT,VACANT,VACANT,VACANT,VACANT,VACANT,VACANT,
+                VACANT,VACANT,VACANT,VACANT,VACANT,VACANT,VACANT,VACANT,
+                VACANT,VACANT,VACANT,VACANT,VACANT,VACANT,VACANT,VACANT,
+                VACANT,VACANT,VACANT,WHITE,BLACK,VACANT,VACANT,VACANT,
+                VACANT,VACANT,VACANT,BLACK,WHITE,VACANT,VACANT,VACANT,
+                VACANT,VACANT,VACANT,VACANT,VACANT,VACANT,VACANT,VACANT,
+                VACANT,VACANT,VACANT,VACANT,VACANT,VACANT,VACANT,VACANT,
+                VACANT,VACANT,VACANT,VACANT,VACANT,VACANT,VACANT,VACANT
             };
-            translate_from_arr(first_board, black);
+            translate_from_arr(first_board, BLACK);
         }
 
         inline int phase(){
-            return min(n_phases - 1, (n - 4) / phase_n_stones);
+            return min(N_PHASES - 1, (n - 4) / PHASE_N_STONES);
         }
     
     private:
@@ -459,9 +456,18 @@ class board {
         }
 };
 
-inline void calc_flip(mobility *mob, board *b, const int policy){
-    if (b->p == black)
+inline void calc_flip(Mobility *mob, Board *b, const int policy){
+    if (b->p == BLACK)
         mob->calc_flip(b->b, b->w, policy);
     else
         mob->calc_flip(b->w, b->b, policy);
+}
+
+inline Mobility calc_flip(Board *b, const int policy){
+    Mobility mob;
+    if (b->p == BLACK)
+        mob.calc_flip(b->b, b->w, policy);
+    else
+        mob.calc_flip(b->w, b->b, policy);
+    return mob;
 }
