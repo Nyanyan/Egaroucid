@@ -1101,7 +1101,7 @@ void learn_book(Board bd, int level, int depth, int book_learn_accept, Board* bd
 							book.reg(nb, value);
 						}
 						if (-value <= book_learn_accept && global_searching && nb.n - 3 < depth) {
-							que.push(make_pair(value, nb));
+							que.push(make_pair(value - nb.n, nb));
 						}
 					}
 				}
