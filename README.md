@@ -11,11 +11,9 @@ Light version of this othello AI got 1st place in the world ([CodinGame Othello]
 
 <a id="application_version"></a>
 
-## アプリケーション
+## Application
 
-特設サイトをご覧ください。
-
-https://www.egaroucid-app.nyanyan.dev/
+Please see: https://www.egaroucid-app.nyanyan.dev/
 
 
 
@@ -53,6 +51,9 @@ https://github.com/Nyanyan/Egaroucid4
 
 * CTPL thread pool library
   * https://github.com/vit-vit/CTPL
+* Boost
+  * https://www.boost.org/
+
 
 
 
@@ -79,20 +80,18 @@ $ g++ egaroucid5.cpp -O3 -fexcess-precision=fast -funroll-loops -flto -mtune=nat
 
 If you don't have boost library, compilation will finish with some errors. Then please 1. install boost libraries or 2. use STL version of thread pool.
 
-If you want to use STL thread pool, Please edit thread_pool.hpp like:
+If you want to use STL thread pool, Please edit ```setting.hpp``` like:
 
 ```
-// from https://github.com/vit-vit/CTPL
-#include "CTPL/ctpl.h"
-// #include "CTPL/ctpl_stl.h" // Please use this if you don't have boost
+// boost library
+#define USE_BOOST true
 ```
 
 to
 
 ```
-// from https://github.com/vit-vit/CTPL
-// #include "CTPL/ctpl.h"
-#include "CTPL/ctpl_stl.h" // Please use this if you don't have boost
+// boost library
+#define USE_BOOST false
 ```
 
 Execute ```main.py```
