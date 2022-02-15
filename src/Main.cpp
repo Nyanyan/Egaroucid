@@ -1187,7 +1187,7 @@ void Main() {
 	Window::Resize(window_size);
 	Window::SetStyle(WindowStyle::Sizable);
 	Scene::SetResizeMode(ResizeMode::Keep);
-	Window::SetTitle(U"Egaroucid5.3.4");
+	Window::SetTitle(U"Egaroucid5.4.0");
 	System::SetTerminationTriggers(UserAction::NoAction);
 	Scene::SetBackground(green);
 	//Console.open();
@@ -1414,7 +1414,7 @@ void Main() {
 		/*** terminate ***/
 		if (System::GetUserActions() & UserAction::CloseButtonClicked) {
 			closing = true;
-			use_ai_mode = 0;
+			use_ai_mode = 3;
 			if (human_first) {
 				use_ai_mode = 0;
 			}

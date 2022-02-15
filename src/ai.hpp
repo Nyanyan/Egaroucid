@@ -364,6 +364,8 @@ int ai_book(Board b, int level, int book_learn_accept, vector<int> vacant_lst){
     g = tree_search_value(b, depth, use_mpc, mpct, vacant_lst, true);
     if (abs(g) == INF)
         return -INF;
+    if (abs(g) > book_learn_accept)
+        return -INF;
     get_level(level, b.n - 4, &is_mid_search, &depth, &use_mpc, &mpct);
     res = tree_search_value(b, depth, use_mpc, mpct, vacant_lst, true);
     if (abs(res) == INF)
