@@ -54,7 +54,7 @@ int main(){
     int depth;
     bool use_mpc, is_mid_search;
     double mpct;
-    const int level = 25;
+    const int level = 27;
     while (true){
         #if MOVE_ORDERING_ADJUST
             move_ordering_init();
