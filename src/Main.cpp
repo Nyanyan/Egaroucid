@@ -332,20 +332,20 @@ inline vector<int> create_vacant_lst(board bd) {
 
 cell_value analyze_search(board b, int level) {
 	cell_value res;
-	int depth, end_depth;
-	bool use_mpc;
+	int depth;
+	bool use_mpc, is_mid_search;
 	double mpct;
 	if (b.p == vacant) {
 		res.depth = 0;
 		res.value = b.count(black);
 	}
 	else {
-		get_level(level, b.n - 4, &depth, &end_depth, &use_mpc, &mpct);
+		get_level(level, b.n - 4, &is_mid_search, &depth, &use_mpc, &mpct);
 		res.value = book.get(&b) * (b.p ? 1 : -1);
 		if (abs(res.value) != inf) {
 			res.depth = search_book_define;
 		}
-		else if (hw2 - b.n <= end_depth) {
+		else if (!is_mid_search) {
 			res.value = endsearch_value_analyze_memo(b, tim(), use_mpc, mpct, create_vacant_lst(b)).value * (b.p ? -1 : 1);
 			res.depth = use_mpc ? hw2 - b.n : search_final_define;
 		}
@@ -1622,6 +1622,7 @@ void Main() {
 						bd = fork_history[analyze_idx].b;
 						history_place = fork_history[analyze_idx].b.n - 4;
 						if (!analyze_state) {
+							fork_history[analyze_idx].b.v = -inf;
 							analyze_future = async(launch::async, analyze_search, fork_history[analyze_idx].b, ai_level);
 							analyze_state = true;
 						}
@@ -1641,6 +1642,7 @@ void Main() {
 						bd = history[analyze_idx].b;
 						history_place = history[analyze_idx].b.n - 4;
 						if (!analyze_state) {
+							history_place = history[analyze_idx].b.v = -inf;
 							analyze_future = async(launch::async, analyze_search, history[analyze_idx].b, ai_level);
 							analyze_state = true;
 						}
@@ -2128,10 +2130,10 @@ void Main() {
 			}
 			else if (output_record_flag && !book_learning) {
 				if (fork_mode) {
-					Clipboard::SetText(fork_history[fork_history.size() - 1].record);
+					Clipboard::SetText(fork_history[find_history_idx(fork_history, history_place)].record);
 				}
 				else {
-					Clipboard::SetText(history[history.size() - 1].record);
+					Clipboard::SetText(history[find_history_idx(history, history_place)].record);
 				}
 				cerr << "record copied" << endl;
 			}
@@ -2187,6 +2189,7 @@ void Main() {
 						reset_ai(&ai_thinking, &ai_future);
 						reset_analyze(&analyzing, &analyze_future);
 						before_start_game = false;
+						main_window_active = true;
 					}
 				}
 			}
@@ -2211,6 +2214,7 @@ void Main() {
 						reset_ai(&ai_thinking, &ai_future);
 						reset_analyze(&analyzing, &analyze_future);
 						before_start_game = false;
+						main_window_active = true;
 					}
 				}
 			}

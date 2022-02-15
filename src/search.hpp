@@ -41,7 +41,7 @@ using namespace std;
 
 #define po_max_depth 15
 
-#define mid_first_threshold_div 5
+#define mid_first_threshold_div 8
 #define end_first_threshold_div 6
 
 const int cell_weight[hw2] = {

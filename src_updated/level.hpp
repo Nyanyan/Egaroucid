@@ -3,1052 +3,160 @@
 
 using namespace std;
 
-void get_level(int level, int n_moves, int *depth1, int *depth2, bool *use_mpc, double *mpct){
-    constexpr double mpct_73 = 0.61;
-    constexpr double mpct_87 = 1.13;
-    constexpr double mpct_95 = 1.64;
-    constexpr double mpct_98 = 2.05;
-    constexpr double mpct_99 = 2.33;
-    switch (level)
-    {
-    case 0:
-        *depth1 = 0;
-        *depth2 = 0;
+#define N_LEVEL 61
+#define N_MOVES 60
+#define MPC_88 1.18
+#define MPC_90 1.29
+#define MPC_95 1.64
+#define MPC_98 2.05
+#define NOMPC 10000.0
+#define NODEPTH 100
+
+struct Level{
+    int mid_lookahead;
+    double mid_mpct;
+    int complete0;
+    double complete0_mpct;
+    int complete1;
+    double complete1_mpct;
+    int complete2;
+    double complete2_mpct;
+    int complete3;
+    double complete3_mpct;
+    int complete4;
+    double complete4_mpct;
+};
+
+constexpr Level level_definition[N_LEVEL] = {
+    {0, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC},
+    {1, NOMPC, 2, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC},
+    {2, NOMPC, 4, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC},
+    {3, NOMPC, 6, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC},
+    {4, NOMPC, 8, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC},
+
+    {5, NOMPC, 10, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC},
+    {6, NOMPC, 12, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC},
+    {7, NOMPC, 14, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC},
+    {8, NOMPC, 16, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC},
+    {9, NOMPC, 18, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC},
+
+    {10, MPC_88, 20, MPC_95, 18, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC},
+    {11, MPC_88, 20, MPC_95, 18, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC},
+    {12, MPC_88, 20, MPC_98, 18, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC},
+    {13, MPC_88, 20, MPC_98, 18, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC},
+    {14, MPC_88, 22, MPC_95, 20, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC},
+
+    {15, MPC_88, 22, MPC_95, 20, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC},
+    {16, MPC_88, 22, MPC_98, 20, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC},
+    {17, MPC_88, 22, MPC_98, 20, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC},
+    {18, MPC_88, 24, MPC_95, 22, MPC_98, 20, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC},
+    {19, MPC_88, 24, MPC_95, 22, MPC_98, 20, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC},
+
+    {20, MPC_88, 26, MPC_90, 24, MPC_95, 22, MPC_98, 20, NOMPC, NODEPTH, NOMPC},
+    {21, MPC_88, 26, MPC_90, 24, MPC_95, 22, MPC_98, 20, NOMPC, NODEPTH, NOMPC},
+    {22, MPC_88, 28, MPC_90, 26, MPC_95, 24, MPC_98, 22, NOMPC, NODEPTH, NOMPC},
+    {23, MPC_88, 28, MPC_90, 26, MPC_95, 24, MPC_98, 22, NOMPC, NODEPTH, NOMPC},
+    {24, MPC_88, 30, MPC_88, 28, MPC_90, 26, MPC_95, 24, MPC_98, 22, NOMPC},
+    
+    {25, MPC_88, 30, MPC_90, 28, MPC_95, 26, MPC_98, 24, NOMPC, NODEPTH, NOMPC},
+    {26, MPC_88, 32, MPC_88, 30, MPC_90, 28, MPC_95, 26, MPC_98, 24, NOMPC},
+    {27, MPC_88, 32, MPC_90, 29, MPC_95, 26, MPC_95, 24, NOMPC, NODEPTH, NOMPC},
+    {28, MPC_88, 34, MPC_88, 32, MPC_90, 29, MPC_95, 26, MPC_95, 24, NOMPC},
+    {29, MPC_88, 34, MPC_95, 31, MPC_98, 28, MPC_95, 26, NOMPC, NODEPTH, NOMPC},
+
+    {30, MPC_88, 36, MPC_88, 34, MPC_90, 31, MPC_95, 28, MPC_98, 26, NOMPC},
+    {31, MPC_88, 36, MPC_95, 34, MPC_98, 30, MPC_98, 26, NOMPC, NODEPTH, NOMPC},
+    {32, MPC_88, 38, MPC_88, 36, MPC_95, 34, MPC_98, 30, MPC_98, 26, NOMPC},
+    {33, MPC_88, 38, MPC_90, 36, MPC_95, 32, MPC_98, 28, NOMPC, NODEPTH, NOMPC},
+    {34, MPC_88, 40, MPC_88, 38, MPC_90, 36, MPC_95, 32, MPC_98, 28, NOMPC},
+
+    {35, MPC_88, 40, MPC_90, 36, MPC_95, 32, MPC_98, 28, NOMPC, NODEPTH, NOMPC},
+    {36, MPC_88, 42, MPC_88, 40, MPC_90, 36, MPC_95, 32, MPC_98, 28, NOMPC},
+    {37, MPC_88, 42, MPC_90, 38, MPC_95, 34, MPC_98, 30, NOMPC, NODEPTH, NOMPC},
+    {38, MPC_88, 44, MPC_88, 42, MPC_90, 38, MPC_95, 34, MPC_98, 30, NOMPC},
+    {39, MPC_88, 44, MPC_90, 40, MPC_95, 35, MPC_98, 30, NOMPC, NODEPTH, NOMPC},
+
+    {40, MPC_88, 46, MPC_88, 44, MPC_90, 40, MPC_95, 35, MPC_98, 30, NOMPC},
+    {41, MPC_88, 46, MPC_90, 41, MPC_95, 36, MPC_98, 31, NOMPC, NODEPTH, NOMPC},
+    {42, MPC_88, 48, MPC_88, 46, MPC_90, 41, MPC_95, 36, MPC_98, 31, NOMPC},
+    {43, MPC_88, 48, MPC_90, 43, MPC_95, 38, MPC_98, 33, NOMPC, NODEPTH, NOMPC},
+    {44, MPC_88, 50, MPC_88, 48, MPC_90, 43, MPC_95, 38, MPC_98, 33, NOMPC},
+
+    {45, MPC_88, 52, MPC_88, 50, MPC_90, 45, MPC_95, 40, MPC_98, 35, NOMPC},
+    {46, MPC_88, 54, MPC_88, 50, MPC_90, 45, MPC_95, 40, MPC_98, 35, NOMPC},
+    {47, MPC_88, 56, MPC_88, 52, MPC_90, 47, MPC_95, 42, MPC_98, 37, NOMPC},
+    {48, MPC_88, 58, MPC_88, 54, MPC_90, 49, MPC_95, 44, MPC_98, 39, NOMPC},
+    {49, MPC_88, 60, MPC_88, 56, MPC_90, 51, MPC_95, 46, MPC_98, 41, NOMPC},
+
+    {50, MPC_88, 60, MPC_88, 58, MPC_90, 53, MPC_95, 48, MPC_98, 43, NOMPC},
+    {51, MPC_88, 60, MPC_90, 55, MPC_95, 50, MPC_98, 45, NOMPC, NODEPTH, NOMPC},
+    {52, MPC_88, 60, MPC_90, 57, MPC_95, 52, MPC_98, 47, NOMPC, NODEPTH, NOMPC},
+    {53, MPC_88, 60, MPC_90, 59, MPC_95, 54, MPC_98, 49, NOMPC, NODEPTH, NOMPC},
+    {54, MPC_88, 60, MPC_95, 56, MPC_98, 51, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC},
+    
+    {55, MPC_88, 60, MPC_95, 58, MPC_98, 53, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC},
+    {56, MPC_88, 60, MPC_98, 55, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC},
+    {57, MPC_88, 60, MPC_98, 57, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC},
+    {58, MPC_88, 60, MPC_98, 58, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC},
+    {59, MPC_88, 60, MPC_98, 59, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC},
+
+    {60, MPC_88, 60, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC}
+};
+
+void get_level(int level, int n_moves, bool *is_mid_search, int *depth, bool *use_mpc, double *mpct){
+    if (level <= 0){
+        *is_mid_search = true;
+        *depth = 0;
         *use_mpc = false;
-        *mpct = 0.0;
-        break;
-    case 1:
-        *depth1 = 1;
-        *depth2 = 2;
-        *use_mpc = false;
-        *mpct = 0.0;
-        break;
-    case 2:
-        *depth1 = 2;
-        *depth2 = 4;
-        *use_mpc = false;
-        *mpct = 0.0;
-        break;
-    case 3:
-        *depth1 = 3;
-        *depth2 = 6;
-        *use_mpc = false;
-        *mpct = 0.0;
-        break;
-    case 4:
-        *depth1 = 4;
-        *depth2 = 8;
-        *use_mpc = false;
-        *mpct = 0.0;
-        break;
-    case 5:
-        *depth1 = 5;
-        *depth2 = 10;
-        *use_mpc = false;
-        *mpct = 0.0;
-        break;
-    case 6:
-        *depth1 = 6;
-        *depth2 = 12;
-        *use_mpc = false;
-        *mpct = 0.0;
-        break;
-    case 7:
-        *depth1 = 7;
-        *depth2 = 14;
-        *use_mpc = false;
-        *mpct = 0.0;
-        break;
-    case 8:
-        *depth1 = 8;
-        *depth2 = 16;
-        *use_mpc = false;
-        *mpct = 0.0;
-        break;
-    case 9:
-        *depth1 = 9;
-        *depth2 = 18;
-        *use_mpc = false;
-        *mpct = 0.0;
-        break;
-    case 10:
-        *depth1 = 10;
-        *depth2 = 20;
-        *use_mpc = false;
-        *mpct = 0.0;
-        break;
-    case 11:
-        *depth1 = 11;
-        *depth2 = 24;
-        if (n_moves < 36){
-            *use_mpc = true;
-            *mpct = mpct_73;
-        } else if (n_moves < 39){
-            *use_mpc = true;
-            *mpct = mpct_98;
+        *mpct = NOMPC;
+        return;
+    } else if (level > 60)
+        level = 60;
+    Level level_status = level_definition[level];
+    int n_empties = 60 - n_moves;
+    if (n_empties > level_status.complete0){
+        *is_mid_search = true;
+        *depth = level_status.mid_lookahead;
+        *use_mpc = level_status.mid_mpct != NOMPC;
+        *mpct = level_status.mid_mpct;
+    } else {
+        *is_mid_search = false;
+        *depth = n_empties;
+        if (n_empties > level_status.complete1){
+            *use_mpc = level_status.complete0_mpct != NOMPC;
+            *mpct = level_status.complete0_mpct;
+        } else if (n_empties > level_status.complete2){
+            *use_mpc = level_status.complete1_mpct != NOMPC;
+            *mpct = level_status.complete1_mpct;
+        } else if (n_empties > level_status.complete3){
+            *use_mpc = level_status.complete2_mpct != NOMPC;
+            *mpct = level_status.complete2_mpct;
+        } else if (n_empties > level_status.complete4){
+            *use_mpc = level_status.complete3_mpct != NOMPC;
+            *mpct = level_status.complete3_mpct;
         } else{
-            *use_mpc = false;
-            *mpct = 0.0;
+            *use_mpc = level_status.complete4_mpct != NOMPC;
+            *mpct = level_status.complete4_mpct;
         }
-        break;
-    case 12:
-        *depth1 = 12;
-        *depth2 = 24;
-        if (n_moves < 36){
-            *use_mpc = true;
-            *mpct = mpct_73;
-        } else if (n_moves < 39){
-            *use_mpc = true;
-            *mpct = mpct_98;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 13:
-        *depth1 = 13;
-        *depth2 = 27;
-        if (n_moves < 33){
-            *use_mpc = true;
-            *mpct = mpct_73;
-        } else if (n_moves < 36){
-            *use_mpc = true;
-            *mpct = mpct_87;
-        } else if (n_moves < 39){
-            *use_mpc = true;
-            *mpct = mpct_98;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 14:
-        *depth1 = 14;
-        *depth2 = 27;
-        if (n_moves < 33){
-            *use_mpc = true;
-            *mpct = mpct_73;
-        } else if (n_moves < 36){
-            *use_mpc = true;
-            *mpct = mpct_87;
-        } else if (n_moves < 39){
-            *use_mpc = true;
-            *mpct = mpct_98;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 15:
-        *depth1 = 15;
-        *depth2 = 27;
-        if (n_moves < 33){
-            *use_mpc = true;
-            *mpct = mpct_73;
-        } else if (n_moves < 36){
-            *use_mpc = true;
-            *mpct = mpct_87;
-        } else if (n_moves < 39){
-            *use_mpc = true;
-            *mpct = mpct_98;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 16:
-        *depth1 = 16;
-        *depth2 = 27;
-        if (n_moves < 33){
-            *use_mpc = true;
-            *mpct = mpct_73;
-        } else if (n_moves < 36){
-            *use_mpc = true;
-            *mpct = mpct_87;
-        } else if (n_moves < 39){
-            *use_mpc = true;
-            *mpct = mpct_98;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 17:
-        *depth1 = 17;
-        *depth2 = 27;
-        if (n_moves < 33){
-            *use_mpc = true;
-            *mpct = mpct_73;
-        } else if (n_moves < 36){
-            *use_mpc = true;
-            *mpct = mpct_87;
-        } else if (n_moves < 39){
-            *use_mpc = true;
-            *mpct = mpct_98;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 18:
-        *depth1 = 18;
-        *depth2 = 27;
-        if (n_moves < 33){
-            *use_mpc = true;
-            *mpct = mpct_73;
-        } else if (n_moves < 36){
-            *use_mpc = true;
-            *mpct = mpct_87;
-        } else if (n_moves < 39){
-            *use_mpc = true;
-            *mpct = mpct_98;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 19:
-        *depth1 = 19;
-        *depth2 = 30;
-        if (n_moves < 30){
-            *use_mpc = true;
-            *mpct = mpct_73;
-        } else if (n_moves < 33){
-            *use_mpc = true;
-            *mpct = mpct_87;
-        } else if (n_moves < 36){
-            *use_mpc = true;
-            *mpct = mpct_98;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 20:
-        *depth1 = 20;
-        *depth2 = 30;
-        if (n_moves < 30){
-            *use_mpc = true;
-            *mpct = mpct_73;
-        } else if (n_moves < 33){
-            *use_mpc = true;
-            *mpct = mpct_87;
-        } else if (n_moves < 36){
-            *use_mpc = true;
-            *mpct = mpct_98;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 21:
-        *depth1 = 21;
-        *depth2 = 30;
-        if (n_moves < 30){
-            *use_mpc = true;
-            *mpct = mpct_73;
-        } else if (n_moves < 33){
-            *use_mpc = true;
-            *mpct = mpct_87;
-        } else if (n_moves < 36){
-            *use_mpc = true;
-            *mpct = mpct_98;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 22:
-        *depth1 = 22;
-        *depth2 = 33;
-        if (n_moves < 30){
-            *use_mpc = true;
-            *mpct = mpct_73;
-        } else if (n_moves < 33){
-            *use_mpc = true;
-            *mpct = mpct_95;
-        } else if (n_moves < 36){
-            *use_mpc = true;
-            *mpct = mpct_99;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 23:
-        *depth1 = 23;
-        *depth2 = 33;
-        if (n_moves < 30){
-            *use_mpc = true;
-            *mpct = mpct_73;
-        } else if (n_moves < 33){
-            *use_mpc = true;
-            *mpct = mpct_95;
-        } else if (n_moves < 36){
-            *use_mpc = true;
-            *mpct = mpct_99;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 24:
-        *depth1 = 24;
-        *depth2 = 33;
-        if (n_moves < 30){
-            *use_mpc = true;
-            *mpct = mpct_73;
-        } else if (n_moves < 33){
-            *use_mpc = true;
-            *mpct = mpct_95;
-        } else if (n_moves < 36){
-            *use_mpc = true;
-            *mpct = mpct_99;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 25:
-        *depth1 = 25;
-        *depth2 = 33;
-        if (n_moves < 27){
-            *use_mpc = true;
-            *mpct = mpct_73;
-        } else if (n_moves < 30){
-            *use_mpc = true;
-            *mpct = mpct_87;
-        } else if (n_moves < 33){
-            *use_mpc = true;
-            *mpct = mpct_98;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 26:
-        *depth1 = 26;
-        *depth2 = 33;
-        if (n_moves < 27){
-            *use_mpc = true;
-            *mpct = mpct_73;
-        } else if (n_moves < 30){
-            *use_mpc = true;
-            *mpct = mpct_87;
-        } else if (n_moves < 33){
-            *use_mpc = true;
-            *mpct = mpct_98;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 27:
-        *depth1 = 27;
-        *depth2 = 33;
-        if (n_moves < 27){
-            *use_mpc = true;
-            *mpct = mpct_73;
-        } else if (n_moves < 30){
-            *use_mpc = true;
-            *mpct = mpct_87;
-        } else if (n_moves < 33){
-            *use_mpc = true;
-            *mpct = mpct_98;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 28:
-        *depth1 = 28;
-        *depth2 = 36;
-        if (n_moves < 27){
-            *use_mpc = true;
-            *mpct = mpct_73;
-        } else if (n_moves < 30){
-            *use_mpc = true;
-            *mpct = mpct_95;
-        } else if (n_moves < 33){
-            *use_mpc = true;
-            *mpct = mpct_99;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 29:
-        *depth1 = 29;
-        *depth2 = 36;
-        if (n_moves < 27){
-            *use_mpc = true;
-            *mpct = mpct_73;
-        } else if (n_moves < 30){
-            *use_mpc = true;
-            *mpct = mpct_95;
-        } else if (n_moves < 33){
-            *use_mpc = true;
-            *mpct = mpct_99;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 30:
-        *depth1 = 30;
-        *depth2 = 36;
-        if (n_moves < 24){
-            *use_mpc = true;
-            *mpct = mpct_73;
-        } else if (n_moves < 27){
-            *use_mpc = true;
-            *mpct = mpct_87;
-        } else if (n_moves < 30){
-            *use_mpc = true;
-            *mpct = mpct_98;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 31:
-        *depth1 = 31;
-        *depth2 = 36;
-        if (n_moves < 24){
-            *use_mpc = true;
-            *mpct = mpct_73;
-        } else if (n_moves < 27){
-            *use_mpc = true;
-            *mpct = mpct_87;
-        } else if (n_moves < 30){
-            *use_mpc = true;
-            *mpct = mpct_98;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 32:
-        *depth1 = 32;
-        *depth2 = 39;
-        if (n_moves < 24){
-            *use_mpc = true;
-            *mpct = mpct_73;
-        } else if (n_moves < 27){
-            *use_mpc = true;
-            *mpct = mpct_95;
-        } else if (n_moves < 30){
-            *use_mpc = true;
-            *mpct = mpct_99;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 33:
-        *depth1 = 33;
-        *depth2 = 39;
-        if (n_moves < 24){
-            *use_mpc = true;
-            *mpct = mpct_73;
-        } else if (n_moves < 27){
-            *use_mpc = true;
-            *mpct = mpct_95;
-        } else if (n_moves < 30){
-            *use_mpc = true;
-            *mpct = mpct_99;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 34:
-        *depth1 = 34;
-        *depth2 = 39;
-        if (n_moves < 21){
-            *use_mpc = true;
-            *mpct = mpct_73;
-        } else if (n_moves < 24){
-            *use_mpc = true;
-            *mpct = mpct_87;
-        } else if (n_moves < 27){
-            *use_mpc = true;
-            *mpct = mpct_98;
-        } else if (n_moves < 30){
-            *use_mpc = true;
-            *mpct = mpct_99;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 35:
-        *depth1 = 35;
-        *depth2 = 39;
-        if (n_moves < 21){
-            *use_mpc = true;
-            *mpct = mpct_73;
-        } else if (n_moves < 24){
-            *use_mpc = true;
-            *mpct = mpct_87;
-        } else if (n_moves < 27){
-            *use_mpc = true;
-            *mpct = mpct_98;
-        } else if (n_moves < 30){
-            *use_mpc = true;
-            *mpct = mpct_99;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 36:
-        *depth1 = 36;
-        *depth2 = 45;
-        if (n_moves < 18){
-            *use_mpc = true;
-            *mpct = mpct_73;
-        } else if (n_moves < 21){
-            *use_mpc = true;
-            *mpct = mpct_87;
-        } else if (n_moves < 24){
-            *use_mpc = true;
-            *mpct = mpct_95;
-        } else if (n_moves < 27){
-            *use_mpc = true;
-            *mpct = mpct_98;
-        } else if (n_moves < 30){
-            *use_mpc = true;
-            *mpct = mpct_99;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 37:
-        *depth1 = 37;
-        *depth2 = 46;
-        if (n_moves < 17){
-            *use_mpc = true;
-            *mpct = mpct_73;
-        } else if (n_moves < 20){
-            *use_mpc = true;
-            *mpct = mpct_87;
-        } else if (n_moves < 23){
-            *use_mpc = true;
-            *mpct = mpct_95;
-        } else if (n_moves < 26){
-            *use_mpc = true;
-            *mpct = mpct_98;
-        } else if (n_moves < 29){
-            *use_mpc = true;
-            *mpct = mpct_99;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 38:
-        *depth1 = 38;
-        *depth2 = 47;
-        if (n_moves < 16){
-            *use_mpc = true;
-            *mpct = mpct_73;
-        } else if (n_moves < 19){
-            *use_mpc = true;
-            *mpct = mpct_87;
-        } else if (n_moves < 22){
-            *use_mpc = true;
-            *mpct = mpct_95;
-        } else if (n_moves < 25){
-            *use_mpc = true;
-            *mpct = mpct_98;
-        } else if (n_moves < 28){
-            *use_mpc = true;
-            *mpct = mpct_99;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 39:
-        *depth1 = 39;
-        *depth2 = 48;
-        if (n_moves < 15){
-            *use_mpc = true;
-            *mpct = mpct_73;
-        } else if (n_moves < 18){
-            *use_mpc = true;
-            *mpct = mpct_87;
-        } else if (n_moves < 21){
-            *use_mpc = true;
-            *mpct = mpct_95;
-        } else if (n_moves < 24){
-            *use_mpc = true;
-            *mpct = mpct_98;
-        } else if (n_moves < 27){
-            *use_mpc = true;
-            *mpct = mpct_99;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 40:
-        *depth1 = 40;
-        *depth2 = 49;
-        if (n_moves < 14){
-            *use_mpc = true;
-            *mpct = mpct_73;
-        } else if (n_moves < 17){
-            *use_mpc = true;
-            *mpct = mpct_87;
-        } else if (n_moves < 20){
-            *use_mpc = true;
-            *mpct = mpct_95;
-        } else if (n_moves < 23){
-            *use_mpc = true;
-            *mpct = mpct_98;
-        } else if (n_moves < 26){
-            *use_mpc = true;
-            *mpct = mpct_99;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 41:
-        *depth1 = 41;
-        *depth2 = 50;
-        if (n_moves < 13){
-            *use_mpc = true;
-            *mpct = mpct_73;
-        } else if (n_moves < 16){
-            *use_mpc = true;
-            *mpct = mpct_87;
-        } else if (n_moves < 19){
-            *use_mpc = true;
-            *mpct = mpct_95;
-        } else if (n_moves < 22){
-            *use_mpc = true;
-            *mpct = mpct_98;
-        } else if (n_moves < 25){
-            *use_mpc = true;
-            *mpct = mpct_99;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 42:
-        *depth1 = 42;
-        *depth2 = 51;
-        if (n_moves < 12){
-            *use_mpc = true;
-            *mpct = mpct_73;
-        } else if (n_moves < 15){
-            *use_mpc = true;
-            *mpct = mpct_87;
-        } else if (n_moves < 18){
-            *use_mpc = true;
-            *mpct = mpct_95;
-        } else if (n_moves < 21){
-            *use_mpc = true;
-            *mpct = mpct_98;
-        } else if (n_moves < 24){
-            *use_mpc = true;
-            *mpct = mpct_99;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 43:
-        *depth1 = 43;
-        *depth2 = 52;
-        if (n_moves < 11){
-            *use_mpc = true;
-            *mpct = mpct_73;
-        } else if (n_moves < 14){
-            *use_mpc = true;
-            *mpct = mpct_87;
-        } else if (n_moves < 17){
-            *use_mpc = true;
-            *mpct = mpct_95;
-        } else if (n_moves < 20){
-            *use_mpc = true;
-            *mpct = mpct_98;
-        } else if (n_moves < 23){
-            *use_mpc = true;
-            *mpct = mpct_99;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 44:
-        *depth1 = 44;
-        *depth2 = 53;
-        if (n_moves < 10){
-            *use_mpc = true;
-            *mpct = mpct_73;
-        } else if (n_moves < 13){
-            *use_mpc = true;
-            *mpct = mpct_87;
-        } else if (n_moves < 16){
-            *use_mpc = true;
-            *mpct = mpct_95;
-        } else if (n_moves < 19){
-            *use_mpc = true;
-            *mpct = mpct_98;
-        } else if (n_moves < 22){
-            *use_mpc = true;
-            *mpct = mpct_99;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 45:
-        *depth1 = 45;
-        *depth2 = 54;
-        if (n_moves < 9){
-            *use_mpc = true;
-            *mpct = mpct_73;
-        } else if (n_moves < 12){
-            *use_mpc = true;
-            *mpct = mpct_87;
-        } else if (n_moves < 15){
-            *use_mpc = true;
-            *mpct = mpct_95;
-        } else if (n_moves < 18){
-            *use_mpc = true;
-            *mpct = mpct_98;
-        } else if (n_moves < 21){
-            *use_mpc = true;
-            *mpct = mpct_99;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 46:
-        *depth1 = 46;
-        *depth2 = 55;
-        if (n_moves < 8){
-            *use_mpc = true;
-            *mpct = mpct_73;
-        } else if (n_moves < 11){
-            *use_mpc = true;
-            *mpct = mpct_87;
-        } else if (n_moves < 14){
-            *use_mpc = true;
-            *mpct = mpct_95;
-        } else if (n_moves < 17){
-            *use_mpc = true;
-            *mpct = mpct_98;
-        } else if (n_moves < 20){
-            *use_mpc = true;
-            *mpct = mpct_99;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 47:
-        *depth1 = 47;
-        *depth2 = 56;
-        if (n_moves < 7){
-            *use_mpc = true;
-            *mpct = mpct_73;
-        } else if (n_moves < 10){
-            *use_mpc = true;
-            *mpct = mpct_87;
-        } else if (n_moves < 13){
-            *use_mpc = true;
-            *mpct = mpct_95;
-        } else if (n_moves < 16){
-            *use_mpc = true;
-            *mpct = mpct_98;
-        } else if (n_moves < 19){
-            *use_mpc = true;
-            *mpct = mpct_99;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 48:
-        *depth1 = 48;
-        *depth2 = 57;
-        if (n_moves < 6){
-            *use_mpc = true;
-            *mpct = mpct_73;
-        } else if (n_moves < 9){
-            *use_mpc = true;
-            *mpct = mpct_87;
-        } else if (n_moves < 12){
-            *use_mpc = true;
-            *mpct = mpct_95;
-        } else if (n_moves < 15){
-            *use_mpc = true;
-            *mpct = mpct_98;
-        } else if (n_moves < 18){
-            *use_mpc = true;
-            *mpct = mpct_99;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 49:
-        *depth1 = 49;
-        *depth2 = 58;
-        if (n_moves < 5){
-            *use_mpc = true;
-            *mpct = mpct_73;
-        } else if (n_moves < 8){
-            *use_mpc = true;
-            *mpct = mpct_87;
-        } else if (n_moves < 11){
-            *use_mpc = true;
-            *mpct = mpct_95;
-        } else if (n_moves < 14){
-            *use_mpc = true;
-            *mpct = mpct_98;
-        } else if (n_moves < 17){
-            *use_mpc = true;
-            *mpct = mpct_99;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 50:
-        *depth1 = 50;
-        *depth2 = 59;
-        if (n_moves < 4){
-            *use_mpc = true;
-            *mpct = mpct_73;
-        } else if (n_moves < 7){
-            *use_mpc = true;
-            *mpct = mpct_87;
-        } else if (n_moves < 10){
-            *use_mpc = true;
-            *mpct = mpct_95;
-        } else if (n_moves < 13){
-            *use_mpc = true;
-            *mpct = mpct_98;
-        } else if (n_moves < 16){
-            *use_mpc = true;
-            *mpct = mpct_99;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 51:
-        *depth1 = -1;
-        *depth2 = 60;
-        if (n_moves < 3){
-            *use_mpc = true;
-            *mpct = mpct_73;
-        } else if (n_moves < 6){
-            *use_mpc = true;
-            *mpct = mpct_87;
-        } else if (n_moves < 9){
-            *use_mpc = true;
-            *mpct = mpct_95;
-        } else if (n_moves < 12){
-            *use_mpc = true;
-            *mpct = mpct_98;
-        } else if (n_moves < 15){
-            *use_mpc = true;
-            *mpct = mpct_99;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 52:
-        *depth1 = -1;
-        *depth2 = 60;
-        if (n_moves < 2){
-            *use_mpc = true;
-            *mpct = mpct_73;
-        } else if (n_moves < 5){
-            *use_mpc = true;
-            *mpct = mpct_87;
-        } else if (n_moves < 8){
-            *use_mpc = true;
-            *mpct = mpct_95;
-        } else if (n_moves < 11){
-            *use_mpc = true;
-            *mpct = mpct_98;
-        } else if (n_moves < 14){
-            *use_mpc = true;
-            *mpct = mpct_99;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 53:
-        *depth1 = -1;
-        *depth2 = 60;
-        if (n_moves < 1){
-            *use_mpc = true;
-            *mpct = mpct_73;
-        } else if (n_moves < 4){
-            *use_mpc = true;
-            *mpct = mpct_87;
-        } else if (n_moves < 7){
-            *use_mpc = true;
-            *mpct = mpct_95;
-        } else if (n_moves < 10){
-            *use_mpc = true;
-            *mpct = mpct_98;
-        } else if (n_moves < 13){
-            *use_mpc = true;
-            *mpct = mpct_99;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 54:
-        *depth1 = -1;
-        *depth2 = 60;
-        if (n_moves < 3){
-            *use_mpc = true;
-            *mpct = mpct_87;
-        } else if (n_moves < 6){
-            *use_mpc = true;
-            *mpct = mpct_95;
-        } else if (n_moves < 9){
-            *use_mpc = true;
-            *mpct = mpct_98;
-        } else if (n_moves < 12){
-            *use_mpc = true;
-            *mpct = mpct_99;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 55:
-        *depth1 = -1;
-        *depth2 = 60;
-        if (n_moves < 2){
-            *use_mpc = true;
-            *mpct = mpct_87;
-        } else if (n_moves < 5){
-            *use_mpc = true;
-            *mpct = mpct_95;
-        } else if (n_moves < 8){
-            *use_mpc = true;
-            *mpct = mpct_98;
-        } else if (n_moves < 11){
-            *use_mpc = true;
-            *mpct = mpct_99;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 56:
-        *depth1 = -1;
-        *depth2 = 60;
-        if (n_moves < 1){
-            *use_mpc = true;
-            *mpct = mpct_87;
-        } else if (n_moves < 4){
-            *use_mpc = true;
-            *mpct = mpct_95;
-        } else if (n_moves < 7){
-            *use_mpc = true;
-            *mpct = mpct_98;
-        } else if (n_moves < 10){
-            *use_mpc = true;
-            *mpct = mpct_99;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 57:
-        *depth1 = -1;
-        *depth2 = 60;
-        if (n_moves < 3){
-            *use_mpc = true;
-            *mpct = mpct_95;
-        } else if (n_moves < 6){
-            *use_mpc = true;
-            *mpct = mpct_98;
-        } else if (n_moves < 9){
-            *use_mpc = true;
-            *mpct = mpct_99;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 58:
-        *depth1 = -1;
-        *depth2 = 60;
-        if (n_moves < 2){
-            *use_mpc = true;
-            *mpct = mpct_95;
-        } else if (n_moves < 5){
-            *use_mpc = true;
-            *mpct = mpct_98;
-        } else if (n_moves < 8){
-            *use_mpc = true;
-            *mpct = mpct_99;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 59:
-        *depth1 = -1;
-        *depth2 = 60;
-        if (n_moves < 1){
-            *use_mpc = true;
-            *mpct = mpct_95;
-        } else if (n_moves < 4){
-            *use_mpc = true;
-            *mpct = mpct_98;
-        } else if (n_moves < 7){
-            *use_mpc = true;
-            *mpct = mpct_99;
-        } else{
-            *use_mpc = false;
-            *mpct = 0.0;
-        }
-        break;
-    case 60:
-        *depth1 = -1;
-        *depth2 = 60;
-        *use_mpc = false;
-        *mpct = 0.0;
-        break;
-    default:
-        *depth1 = 0;
-        *depth2 = 0;
-        *use_mpc = false;
-        *mpct = 0.0;
-        break;
     }
 }
 
-void get_level(int level, int n_moves, int *depth1, int *depth2){
-    bool dammy1;
-    double dammy2;
-    get_level(level, n_moves, depth1, depth2, &dammy1, &dammy2);
-}
-
-void get_level(int level, int n_moves, bool *use_mpc, double *mpct){
-    int dammy1, dammy2;
-    get_level(level, n_moves, &dammy1, &dammy2, use_mpc, mpct);
+bool get_level_use_mpc(int level, int n_moves){
+    Level level_status = level_definition[level];
+    int n_empties = 60 - n_moves;
+    if (n_empties < level_status.complete0){
+        return level_status.mid_mpct != NOMPC;
+    } else {
+        if (n_empties > level_status.complete1){
+            return level_status.complete0_mpct != NOMPC;
+        } else if (n_empties > level_status.complete2){
+            return level_status.complete1_mpct != NOMPC;
+        } else if (n_empties > level_status.complete3){
+            return level_status.complete2_mpct != NOMPC;
+        } else if (n_empties > level_status.complete4){
+            return level_status.complete3_mpct != NOMPC;
+        } else{
+            return level_status.complete4_mpct != NOMPC;
+        }
+    }
 }

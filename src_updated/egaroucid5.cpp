@@ -6,6 +6,7 @@
 #include "board.hpp"
 #include "evaluate.hpp"
 #include "midsearch.hpp"
+#include "level.hpp"
 #if USE_MULTI_THREAD
     #include "thread_pool.hpp"
 #endif
@@ -29,6 +30,14 @@ inline vector<int> input_board(Board *b, int ai_player){
     return vacant_lst;
 }
 
+inline void print_result(int policy, int value){
+    cout << (HW_M1 - policy / HW) << " " << (HW_M1 - policy % HW) << " " << value << endl;
+}
+
+inline void print_result(Search_result result){
+    cout << (HW_M1 - result.policy / HW) << " " << (HW_M1 - result.policy % HW) << " " << result.value << endl;
+}
+
 int main(){
     cerr << "start!" << endl;
     #if USE_MULTI_THREAD
@@ -42,6 +51,10 @@ int main(){
     cerr << "initialized" << endl;
     Board b;
     int ai_player;
+    int depth;
+    bool use_mpc, is_mid_search;
+    double mpct;
+    const int level = 25;
     while (true){
         #if MOVE_ORDERING_ADJUST
             move_ordering_init();
@@ -52,8 +65,9 @@ int main(){
         #if USE_LOG
             set_timer();
         #endif
-        Search_result res = tree_search(b, 60, false, 0.0, vacant_lst);
-        cerr << res.policy << " " << res.value << endl;
+        get_level(level, b.n - 4, &is_mid_search, &depth, &use_mpc, &mpct);
+        Search_result res = tree_search(b, depth, use_mpc, mpct, vacant_lst);
+        print_result(res);
         #if USE_LOG
             return 0;
         #endif
