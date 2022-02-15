@@ -409,7 +409,7 @@ void board_draw(Rect board_cells[], Board b, int int_mode, bool use_hint_flag, b
 	bool before_start_game,
 	const int umigame_state[], const umigame_result umigame_value[],
 	const int human_value_state, const int human_value[],
-	int book_start_learn) {
+	bool book_start_learn) {
 	String coord_x = U"abcdefgh";
 	for (int i = 0; i < HW; ++i) {
 		coord_font(i + 1).draw(Arg::center(board_sx - board_coord_size, board_sy + board_cell_size * i + board_cell_size / 2), Color(51, 51, 51));
@@ -441,7 +441,7 @@ void board_draw(Rect board_cells[], Board b, int int_mode, bool use_hint_flag, b
 			if (use_hint_flag && normal_hint && hint_state >= 2 && (1 & (hint_legal >> cell))) {
 				max_cell_value = max(max_cell_value, hint_value[cell]);
 			}
-			if (!before_start_game && (!use_hint_flag || (!normal_hint && !human_hint && !umigame_hint))) {
+			if (!before_start_game && !book_start_learn && (!use_hint_flag || (!normal_hint && !human_hint && !umigame_hint))) {
 				int xx = board_sx + (HW_M1 - cell % HW) * board_cell_size + board_cell_size / 2;
 				int yy = board_sy + (HW_M1 - cell / HW) * board_cell_size + board_cell_size / 2;
 				Circle(xx, yy, legal_size).draw(Palette::Cyan);
@@ -1073,12 +1073,13 @@ void learn_book(Board bd, int level, int depth, int book_learn_accept, Board* bd
 	unsigned long long legal;
 	Board b, nb;
 	Mobility mob;
+	bool reg_value;
 	while (!que.empty()) {
 		popped = que.top();
 		que.pop();
 		weight = -popped.first;
 		b = popped.second;
-		if (b.n - 4 <= depth) {
+		if (b.n - 3 < depth) {
 			legal = b.mobility_ull();
 			for (i = 0; i < HW2; ++i) {
 				if (1 & (legal >> i)) {
@@ -1088,14 +1089,17 @@ void learn_book(Board bd, int level, int depth, int book_learn_accept, Board* bd
 						return;
 					}
 					value = book.get(&nb);
+					reg_value = abs(value) == INF;
 					if (abs(value) == INF) {
 						value = -ai_book(nb, level, book_learn_accept, create_vacant_lst(nb));
 					}
 					if (abs(value) != INF) {
-						nb.copy(bd_ptr);
-						*value_ptr = value;
-						book.reg(nb, value);
-						if (abs(value) <= book_learn_accept && global_searching && nb.n - 4 <= depth) {
+						if (reg_value) {
+							nb.copy(bd_ptr);
+							*value_ptr = value;
+							book.reg(nb, value);
+						}
+						if (abs(value) <= book_learn_accept && global_searching && nb.n - 3 < depth) {
 							que.push(make_pair(-(weight + abs(value)), nb));
 						}
 					}
@@ -1104,6 +1108,7 @@ void learn_book(Board bd, int level, int depth, int book_learn_accept, Board* bd
 		}
 	}
 	*book_learning = false;
+	cerr << "book learning finished" << endl;
 }
 
 void show_change_book(int change_book_cell, String changed_book_value_str, Font font) {
@@ -1676,7 +1681,7 @@ void Main() {
 				for (int cell = 0; cell < HW2; ++cell) {
 					board_clicked[cell] = false;
 				}
-				if (!menu.active() && main_window_active && ((both_human || (human_first && bd.p == BLACK) || (human_second && bd.p == WHITE)) || history_place != history[history.size() - 1].b.n - 4)) {
+				if (!menu.active() && !book_learning && main_window_active && ((both_human || (human_first && bd.p == BLACK) || (human_second && bd.p == WHITE)) || history_place != history[history.size() - 1].b.n - 4)) {
 					for (int cell = 0; cell < HW2; ++cell) {
 						board_clicked[cell] = board_cells[cell].leftClicked() && (1 & (legal >> cell));
 					}
