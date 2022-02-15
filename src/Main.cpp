@@ -1414,7 +1414,7 @@ void Main() {
 		/*** terminate ***/
 		if (System::GetUserActions() & UserAction::CloseButtonClicked) {
 			closing = true;
-			use_ai_mode = 3;
+			use_ai_mode = 0;
 			if (human_first) {
 				use_ai_mode = 0;
 			}
@@ -1423,6 +1423,9 @@ void Main() {
 			}
 			else if (both_ai) {
 				use_ai_mode = 2;
+			}
+			else if (both_human) {
+				use_ai_mode = 3;
 			}
 			closing_future = async(launch::async, close_app, &hint_state, &hint_future,
 				umigame_state, umigame_future,
