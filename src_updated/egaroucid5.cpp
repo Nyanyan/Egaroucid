@@ -5,8 +5,9 @@
 #include "mobility.hpp"
 #include "board.hpp"
 #include "evaluate.hpp"
-#include "midsearch.hpp"
 #include "level.hpp"
+#include "book.hpp"
+#include "ai.hpp"
 #if USE_MULTI_THREAD
     #include "thread_pool.hpp"
 #endif
@@ -45,16 +46,15 @@ int main(){
     #endif
     mobility_init();
     evaluate_init();
+    book_init();
     //move_ordering_init();
     parent_transpose_table.init();
     child_transpose_table.init();
     cerr << "initialized" << endl;
     Board b;
     int ai_player;
-    int depth;
-    bool use_mpc, is_mid_search;
-    double mpct;
     const int level = 27;
+    const int book_error = 0;
     while (true){
         #if MOVE_ORDERING_ADJUST
             move_ordering_init();
@@ -65,8 +65,7 @@ int main(){
         #if USE_LOG
             set_timer();
         #endif
-        get_level(level, b.n - 4, &is_mid_search, &depth, &use_mpc, &mpct);
-        Search_result res = tree_search(b, depth, use_mpc, mpct, vacant_lst);
+        Search_result res = ai(b, level, book_error, vacant_lst);
         print_result(res);
         #if USE_LOG
             return 0;
