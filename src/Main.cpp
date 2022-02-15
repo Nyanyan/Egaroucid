@@ -99,7 +99,7 @@ Menu create_menu(Texture checkbox,
 	bool* hint_num1, bool* hint_num2, bool* hint_num4, bool* hint_num8, bool* hint_num16, bool* hint_numall,
 	bool* use_value_flag,
 	int* ai_level, int* hint_level, int* book_error,
-	bool* start_book_learn_flag, bool* stop_book_learn_flag, int* book_depth, int* book_learn_accept, bool* import_book_flag,
+	bool* start_book_learn_flag, bool* stop_book_learn_flag, bool* modify_book, int* book_depth, int* book_learn_accept, bool* import_book_flag,
 	bool* output_record_flag, bool* output_game_flag, bool* input_record_flag, bool* input_board_flag,
 	bool* show_end_popup, bool* show_log,
 	bool* thread1, bool* thread2, bool* thread4, bool* thread8, bool* thread16, bool* thread32, bool* thread64, bool* thread128,
@@ -243,6 +243,8 @@ Menu create_menu(Texture checkbox,
 		menu_e.init_button(language.get("book", "start_learn"), start_book_learn_flag);
 		title.push(menu_e);
 		menu_e.init_button(language.get("book", "stop_learn"), stop_book_learn_flag);
+		title.push(menu_e);
+		menu_e.init_button(language.get("book", "auto_modification"), modify_book);
 		title.push(menu_e);
 		menu_e.init_button(language.get("book", "settings"), dummy);
 		side_menu.init_bar(language.get("book", "depth"), book_depth, *book_depth, 0, 60);
@@ -1077,7 +1079,6 @@ void learn_book(Board bd, int level, int depth, int book_learn_accept, Board* bd
 	while (!que.empty()) {
 		popped = que.top();
 		que.pop();
-		weight = -popped.first;
 		b = popped.second;
 		if (b.n - 3 < depth) {
 			legal = b.mobility_ull();
@@ -1099,8 +1100,8 @@ void learn_book(Board bd, int level, int depth, int book_learn_accept, Board* bd
 							*value_ptr = value;
 							book.reg(nb, value);
 						}
-						if (abs(value) <= book_learn_accept && global_searching && nb.n - 3 < depth) {
-							que.push(make_pair(-(weight + abs(value)), nb));
+						if (-value <= book_learn_accept && global_searching && nb.n - 3 < depth) {
+							que.push(make_pair(value, nb));
 						}
 					}
 				}
@@ -1209,7 +1210,7 @@ void Main() {
 	bool human_first = true, human_second = false, both_ai = false, both_human = false;
 	bool use_hint_flag = true, normal_hint = true, human_hint = true, umigame_hint = true;
 	bool use_value_flag = true;
-	bool start_book_learn_flag = false, stop_book_learn_flag = false;
+	bool start_book_learn_flag = false, stop_book_learn_flag = false, book_modify = false;
 	bool output_record_flag = false, output_game_flag = false, input_record_flag = false, input_board_flag = false;
 	bool texture_loaded = true;
 	bool n_threads[8] = { false, false, true, false, false, false, false, false };
@@ -1319,6 +1320,9 @@ void Main() {
 	bool book_learning = false, book_start_learn = false;
 	int book_learn_accept = 4, book_depth = 30;
 	bool book_changed = false;
+
+	future<int> modify_book_future;
+	bool book_modifying = false;
 
 	bool changing_book = false;
 	int change_book_cell = -1;
@@ -1479,7 +1483,7 @@ void Main() {
 					&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
 					&use_value_flag,
 					&ai_level, &hint_level, &ai_book_accept,
-					&start_book_learn_flag, &stop_book_learn_flag, &book_depth, &book_learn_accept, &import_book_flag,
+					&start_book_learn_flag, &stop_book_learn_flag, &book_modify, &book_depth, &book_learn_accept, &import_book_flag,
 					&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag,
 					&show_end_popup, &show_log,
 					&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
@@ -1505,7 +1509,7 @@ void Main() {
 						&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
 						&use_value_flag,
 						&ai_level, &hint_level, &ai_book_accept,
-						&start_book_learn_flag, &stop_book_learn_flag, &book_depth, &book_learn_accept, &import_book_flag,
+						&start_book_learn_flag, &stop_book_learn_flag, &book_modify, &book_depth, &book_learn_accept, &import_book_flag,
 						&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag,
 						&show_end_popup, &show_log,
 						&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
@@ -1572,7 +1576,7 @@ void Main() {
 					&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
 					&use_value_flag,
 					&ai_level, &hint_level, &ai_book_accept,
-					&start_book_learn_flag, &stop_book_learn_flag, &book_depth, &book_learn_accept, &import_book_flag,
+					&start_book_learn_flag, &stop_book_learn_flag, &book_modify, &book_depth, &book_learn_accept, &import_book_flag,
 					&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag,
 					&show_end_popup, &show_log,
 					&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
@@ -1608,7 +1612,7 @@ void Main() {
 						&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
 						&use_value_flag,
 						&ai_level, &hint_level, &ai_book_accept,
-						&start_book_learn_flag, &stop_book_learn_flag, &book_depth, &book_learn_accept, &import_book_flag,
+						&start_book_learn_flag, &stop_book_learn_flag, &book_modify, &book_depth, &book_learn_accept, &import_book_flag,
 						&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag,
 						&show_end_popup, &show_log,
 						&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
@@ -1681,7 +1685,7 @@ void Main() {
 				for (int cell = 0; cell < HW2; ++cell) {
 					board_clicked[cell] = false;
 				}
-				if (!menu.active() && !book_learning && main_window_active && ((both_human || (human_first && bd.p == BLACK) || (human_second && bd.p == WHITE)) || history_place != history[history.size() - 1].b.n - 4)) {
+				if (!menu.active() && !book_learning && !book_modifying && main_window_active && ((both_human || (human_first && bd.p == BLACK) || (human_second && bd.p == WHITE)) || history_place != history[history.size() - 1].b.n - 4)) {
 					for (int cell = 0; cell < HW2; ++cell) {
 						board_clicked[cell] = board_cells[cell].leftClicked() && (1 & (legal >> cell));
 					}
@@ -1931,7 +1935,7 @@ void Main() {
 					/*** change book ***/
 				}
 				/*** ai plays ***/
-				else if (not_finished(bd) && history[history.size() - 1].b.n - 4 == history_place && !book_learning) {
+				else if (not_finished(bd) && history[history.size() - 1].b.n - 4 == history_place && !book_learning && !book_modifying) {
 					if (ai_thinking) {
 						if (ai_future.wait_for(chrono::seconds(0)) == future_status::ready) {
 							Search_result ai_result = ai_future.get();
@@ -1963,7 +1967,7 @@ void Main() {
 			}
 
 			/*** graph interaction ***/
-			if (main_window_active && !ai_thinking && !book_learning) {
+			if (main_window_active && !ai_thinking && !book_learning && !book_modifying) {
 				int former_history_place = history_place;
 				if (KeyLeft.down() || KeyA.down()) {
 					history_place = max(0, history_place - 1);
@@ -2104,11 +2108,21 @@ void Main() {
 			/*** output game ***/
 
 			/*** book learn ***/
-			if (book_start_learn && !book_learning) {
+			if (book_start_learn && !book_learning && !book_modifying) {
 				book_start_learn = false;
 				book_learn_future.get();
 			}
 			/*** book learn ***/
+
+			/*** book modification ***/
+			if (book_modifying) {
+				if (modify_book_future.wait_for(chrono::seconds(0)) == future_status::ready) {
+					modify_book_future.get();
+					book_modifying = false;
+					cerr << "modifying book done" << endl;
+				}
+			}
+			/*** book modification ***/
 
 			/*** ai stop calculating ***/
 			if (ai_thinking && (both_human || (human_first && bd.p == BLACK) || (human_second && bd.p == WHITE))) {
@@ -2121,7 +2135,7 @@ void Main() {
 			/*** ai stop calculating ***/
 
 			/*** menu buttons ***/
-			if (start_game_flag && !book_learning) {
+			if (start_game_flag && !book_learning && !book_modifying) {
 				cerr << "reset" << endl;
 				bd.reset();
 				bd.v = -INF;
@@ -2139,7 +2153,7 @@ void Main() {
 				reset_ai(&ai_thinking, &ai_future);
 				reset_analyze(&analyzing, &analyze_future);
 			}
-			else if (analyze_flag && !book_learning) {
+			else if (analyze_flag && !book_learning && !book_modifying) {
 				reset_hint(&hint_state, &hint_future);
 				reset_umigame(umigame_state, umigame_future);
 				reset_human_value(&human_value_state, &human_value_future);
@@ -2160,7 +2174,7 @@ void Main() {
 				}
 				cerr << "record copied" << endl;
 			}
-			else if (output_game_flag && !before_start_game && main_window_active && !book_learning) {
+			else if (output_game_flag && !before_start_game && main_window_active && !book_learning && !book_modifying) {
 				if (!both_human) {
 					if (both_ai) {
 						black_player = U"Egaroucid";
@@ -2190,7 +2204,7 @@ void Main() {
 				outputting_game = true;
 				main_window_active = false;
 			}
-			else if (input_record_flag && !book_learning) {
+			else if (input_record_flag && !book_learning && !book_modifying) {
 				String record;
 				if (Clipboard::GetText(record)) {
 					vector<History_elem> n_history;
@@ -2216,7 +2230,7 @@ void Main() {
 					}
 				}
 			}
-			else if (input_board_flag && !book_learning) {
+			else if (input_board_flag && !book_learning && !book_modifying) {
 				String board_str;
 				if (Clipboard::GetText(board_str)) {
 					pair<bool, Board> imported = import_board(board_str);
@@ -2259,7 +2273,7 @@ void Main() {
 				cerr << "resume calculating" << endl;
 				global_searching = true;
 			}
-			else if (vertical_convert && !analyzing && !book_learning) {
+			else if (vertical_convert && !analyzing && !book_learning && !book_modifying) {
 				bd.vertical_mirror();
 				String record = U"";
 				for (History_elem& elem : history) {
@@ -2282,7 +2296,7 @@ void Main() {
 				reset_human_value(&human_value_state, &human_value_future);
 				reset_ai(&ai_thinking, &ai_future);
 			}
-			else if (black_line_convert && !analyzing && !book_learning) {
+			else if (black_line_convert && !analyzing && !book_learning && !book_modifying) {
 				bd.white_mirror(); // because the Board is vertical mirrored
 				String record = U"";
 				for (History_elem& elem : history) {
@@ -2305,7 +2319,7 @@ void Main() {
 				reset_human_value(&human_value_state, &human_value_future);
 				reset_ai(&ai_thinking, &ai_future);
 			}
-			else if (white_line_convert && !analyzing && !book_learning) {
+			else if (white_line_convert && !analyzing && !book_learning && !book_modifying) {
 				bd.black_mirror(); // because the Board is vertical mirrored
 				String record = U"";
 				for (History_elem& elem : history) {
@@ -2328,7 +2342,7 @@ void Main() {
 				reset_human_value(&human_value_state, &human_value_future);
 				reset_ai(&ai_thinking, &ai_future);
 			}
-			else if (start_book_learn_flag && !before_start_game && !book_learning) {
+			else if (start_book_learn_flag && !before_start_game && !book_learning && !book_modifying) {
 				book_learning = true;
 				book_start_learn = true;
 				book_changed = true;
@@ -2343,8 +2357,16 @@ void Main() {
 				}
 				book_start_learn = false;
 			}
-			else if (import_book_flag && !book_learning) {
+			else if (import_book_flag && !book_learning && !book_modifying) {
 				importing_book = 1;
+			}
+			else if (book_modify && !book_learning && !book_modifying) {
+				cerr << "modifying book..." << endl;
+				book_modifying = true;
+				book_changed = true;
+				Board first_board;
+				first_board.reset();
+				modify_book_future = async(launch::async, modify_book, first_board);
 			}
 			/*** menu buttons ***/
 

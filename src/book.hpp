@@ -573,3 +573,29 @@ Book book;
 bool book_init(){
     return book.init();
 }
+
+int modify_book(Board b){
+    unsigned long long legal = b.mobility_ull();
+    Mobility mob;
+    bool has_child = false;
+    int v = INF;
+    int vbook = book.get(&b);
+    for (int cell = 0; cell < HW2; ++cell){
+        if (1 & (legal >> cell)){
+            calc_flip(&mob, &b, cell);
+            b.move(&mob);
+                if (book.get(&b) != -INF){
+                    has_child = true;
+                    v = min(v, -modify_book(b));
+                }
+            b.undo(&mob);
+        }
+    }
+    if (!has_child)
+        return vbook;
+    if (v != vbook)
+        book.change(b, v);
+    cerr << vbook << " " << v << endl;
+    b.print();
+    return v;
+}
