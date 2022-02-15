@@ -1958,7 +1958,7 @@ void Main() {
 			}
 
 			/*** graph interaction ***/
-			if (main_window_active && !ai_thinking) {
+			if (main_window_active && !ai_thinking && !book_learning) {
 				int former_history_place = history_place;
 				if (KeyLeft.down() || KeyA.down()) {
 					history_place = max(0, history_place - 1);
