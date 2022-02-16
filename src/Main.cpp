@@ -74,6 +74,7 @@ struct Cell_value {
 };
 
 bool ai_init() {
+	board_init();
 	mobility_init();
 	parent_transpose_table.init();
 	child_transpose_table.init();
@@ -1071,6 +1072,7 @@ void learn_book(Board bd, int level, int depth, int book_learn_accept, Board* bd
 	book.reg(bd, value);
 	que.push(make_pair(-abs(value), bd));
 	pair<int, Board> popped;
+	vector<pair<int, Board>> children;
 	int weight, i, j;
 	unsigned long long legal;
 	Board b, nb;
@@ -1081,6 +1083,7 @@ void learn_book(Board bd, int level, int depth, int book_learn_accept, Board* bd
 		que.pop();
 		b = popped.second;
 		if (b.n - 3 < depth) {
+			children.clear();
 			legal = b.mobility_ull();
 			for (i = 0; i < HW2; ++i) {
 				if (1 & (legal >> i)) {
@@ -1092,7 +1095,7 @@ void learn_book(Board bd, int level, int depth, int book_learn_accept, Board* bd
 					value = book.get(&nb);
 					reg_value = abs(value) == INF;
 					if (abs(value) == INF) {
-						value = -ai_book(nb, level, book_learn_accept, create_vacant_lst(nb));
+						value = ai_book(nb, level, book_learn_accept, create_vacant_lst(nb));
 					}
 					if (abs(value) != INF) {
 						if (reg_value) {
@@ -1101,10 +1104,14 @@ void learn_book(Board bd, int level, int depth, int book_learn_accept, Board* bd
 							book.reg(nb, value);
 						}
 						if (-value <= book_learn_accept && global_searching && nb.n - 3 < depth) {
-							que.push(make_pair(value - nb.n, nb));
+							children.emplace_back(make_pair(-value, nb));
 						}
 					}
 				}
+			}
+			sort(children.begin(), children.end());
+			for (i = 0; i < (int)children.size(); ++i) {
+				que.push(make_pair((children[i].first - children[children.size() - 1].first) * (children[i].first - children[children.size() - 1].first) - b.n, children[i].second));
 			}
 		}
 	}
@@ -2361,12 +2368,12 @@ void Main() {
 				importing_book = 1;
 			}
 			else if (book_modify && !book_learning && !book_modifying) {
-				cerr << "modifying book..." << endl;
-				book_modifying = true;
-				book_changed = true;
-				Board first_board;
-				first_board.reset();
-				modify_book_future = async(launch::async, modify_book, first_board);
+				if (book.get(&bd) != -INF) {
+					cerr << "modifying book..." << endl;
+					book_modifying = true;
+					book_changed = true;
+					modify_book_future = async(launch::async, modify_book, bd);
+				}
 			}
 			/*** menu buttons ***/
 

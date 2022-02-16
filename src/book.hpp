@@ -28,11 +28,13 @@ class Book{
     private:
         Node_book *book[BOOK_HASH_TABLE_SIZE];
 		int n_book;
+        int n_hash_conflict;
     public:
         bool init(){
 			for (int i = 0; i < BOOK_HASH_TABLE_SIZE; ++i)
 				this->book[i] = NULL;
 			n_book = 0;
+            n_hash_conflict = 0;
             return import_file_bin("resources/book.egbk");
 			//return import_file("resources/book.txt");
         }
@@ -81,7 +83,7 @@ class Book{
                 b.w = o;
 				n_book += register_symmetric_book(b, value, n_book);
 			}
-			cerr << "book imported " << n_book << " boards" << endl;
+			cerr << "book imported " << n_book << " boards hash conflict " << n_hash_conflict << endl;
 			fclose(fp);
 			return true;
         }
@@ -238,7 +240,7 @@ class Book{
 					}
 				}
             }
-			cerr << "book imported " << n_book << " boards" << endl;
+			cerr << "book imported " << n_book << " boards hash conflict " << n_hash_conflict << endl;
             return true;
         }
 
@@ -375,17 +377,8 @@ class Book{
         }
 
         inline void change(Board b, int value){
-            Node_book *p_node = this->book[b.hash_player() & BOOK_HASH_MASK];
-            while(p_node != NULL){
-                if(compare_key(&b, p_node)){
-                    int result = register_symmetric_book(b, value, p_node->line);
-					cerr << "value changed to " << value << " result " << result << endl;
-                    return;
-                }
-                p_node = p_node->p_n_node;
-            }
             n_book += register_symmetric_book(b, value, n_book);
-			cerr << "new value registered" << endl;
+			cerr << "book changed" << endl;
         }
         /*
         inline void save(){
@@ -478,6 +471,7 @@ class Book{
                 Node_book *p_node = this->book[hash];
                 Node_book *p_pre_node = NULL;
                 p_pre_node = p_node;
+                int delta_conflict = 0;
                 while(p_node != NULL){
                     if(compare_key(&b, p_node)){
                         p_node->value = value;
@@ -485,7 +479,9 @@ class Book{
                     }
                     p_pre_node = p_node;
                     p_node = p_node->p_n_node;
+                    ++delta_conflict;
                 }
+                n_hash_conflict += delta_conflict;
                 p_pre_node->p_n_node = Node_book_init(b, value, line);
             }
 			return true;
@@ -578,7 +574,7 @@ int modify_book(Board b){
     unsigned long long legal = b.mobility_ull();
     Mobility mob;
     bool has_child = false;
-    int v = INF;
+    int v = -INF;
     int vbook = book.get(&b);
     for (int cell = 0; cell < HW2; ++cell){
         if (1 & (legal >> cell)){
@@ -586,16 +582,14 @@ int modify_book(Board b){
             b.move(&mob);
                 if (book.get(&b) != -INF){
                     has_child = true;
-                    v = min(v, -modify_book(b));
+                    v = max(v, modify_book(b));
                 }
             b.undo(&mob);
         }
     }
     if (!has_child)
         return vbook;
-    if (v != vbook)
-        book.change(b, v);
-    cerr << vbook << " " << v << endl;
-    b.print();
-    return v;
+    if (-v != vbook)
+        book.change(b, -v);
+    return -v;
 }

@@ -25,6 +25,7 @@ using namespace std;
 #define BLACK 0
 #define WHITE 1
 #define VACANT 2
+#define N_8BIT 256
 
 inline long long tim(){
     return chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now().time_since_epoch()).count();

@@ -359,13 +359,13 @@ int ai_book(Board b, int level, int book_learn_accept, vector<int> vacant_lst){
     double mpct;
     int res, g;
     get_level(cut_level, b.n - 4, &is_mid_search, &depth, &use_mpc, &mpct);
-    g = tree_search_value(b, depth, use_mpc, mpct, vacant_lst, true);
+    g = -tree_search_value(b, depth, use_mpc, mpct, vacant_lst, true);
     if (abs(g) == INF)
         return -INF;
-    if (-g > book_learn_accept + 2)
+    if (g < -book_learn_accept - 2)
         return -INF;
     get_level(level, b.n - 4, &is_mid_search, &depth, &use_mpc, &mpct);
-    res = tree_search_value(b, depth, use_mpc, mpct, vacant_lst, true);
+    res = -tree_search_value(b, depth, use_mpc, mpct, vacant_lst, true);
     if (abs(res) == INF)
         return -INF;
     return res;

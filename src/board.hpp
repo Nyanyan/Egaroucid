@@ -9,21 +9,6 @@
 
 using namespace std;
 
-#define P171 17ULL
-#define P172 289ULL
-#define P173 4913ULL
-#define P174 83521ULL
-#define P175 1419857ULL
-#define P176 24137569ULL
-#define P177 410338673ULL
-#define P191 19ULL
-#define P192 361ULL
-#define P193 6859ULL
-#define P194 130321ULL
-#define P195 2476099ULL
-#define P196 47045881ULL
-#define P197 893871739ULL
-
 constexpr int cell_div4[HW2] = {
     1, 1, 1, 1, 2, 2, 2, 2, 
     1, 1, 1, 1, 2, 2, 2, 2, 
@@ -34,6 +19,9 @@ constexpr int cell_div4[HW2] = {
     4, 4, 4, 4, 8, 8, 8, 8, 
     4, 4, 4, 4, 8, 8, 8, 8
 };
+
+unsigned long long hash_rand_black[4][65536];
+unsigned long long hash_rand_white[4][65536];
 
 #if MOBILITY_CALC_MODE == 0
     inline unsigned long long get_mobility(const unsigned long long P, const unsigned long long O){
@@ -132,18 +120,17 @@ class Board {
             res->parity = parity;
         }
 
-        inline unsigned long long hash(){
+        inline unsigned int hash(){
+            return p ^ 
+                hash_rand_black[0][0b1111111111111111 & b] ^ 
+                hash_rand_black[1][0b1111111111111111 & (b >> 16)] ^ 
+                hash_rand_black[2][0b1111111111111111 & (b >> 32)] ^ 
+                hash_rand_black[3][0b1111111111111111 & (b >> 48)] ^ 
+                hash_rand_white[0][0b1111111111111111 & w] ^ 
+                hash_rand_white[1][0b1111111111111111 & (w >> 16)] ^ 
+                hash_rand_white[2][0b1111111111111111 & (w >> 32)] ^ 
+                hash_rand_white[3][0b1111111111111111 & (w >> 48)];
             /*
-            return
-                (b * 3) ^ 
-                ((b >> 16) * P171) ^ 
-                ((b >> 32) * P173) ^ 
-                ((b >> 48) * P175) ^ 
-                (w * 5) ^ 
-                ((w >> 16) * P191) ^ 
-                ((w >> 32) * P193) ^ 
-                ((w >> 48) * P195);
-            */
             return
                 p ^ 
                 (b * 3) ^ ((b >> 8) * 7) ^ 
@@ -160,7 +147,7 @@ class Board {
                 ((w >> 40) * P194) ^ 
                 ((w >> 48) * P195) ^ 
                 ((w >> 56) * P196);
-            
+            */
             /*
             unsigned long long res = 0;
             for (int i = 0; i < HW2; ++i){
@@ -173,9 +160,19 @@ class Board {
             */
         }
 
-        inline unsigned long long hash_player(){
+        inline unsigned int hash_player(){
             if (p == BLACK)
                 return hash();
+            return 
+                hash_rand_black[0][0b1111111111111111 & w] ^ 
+                hash_rand_black[1][0b1111111111111111 & (w >> 16)] ^ 
+                hash_rand_black[2][0b1111111111111111 & (w >> 32)] ^ 
+                hash_rand_black[3][0b1111111111111111 & (w >> 48)] ^ 
+                hash_rand_white[0][0b1111111111111111 & b] ^ 
+                hash_rand_white[1][0b1111111111111111 & (b >> 16)] ^ 
+                hash_rand_white[2][0b1111111111111111 & (b >> 32)] ^ 
+                hash_rand_white[3][0b1111111111111111 & (b >> 48)];
+            /*
             return
                 (w * 3) ^ ((w >> 8) * 7) ^ 
                 ((w >> 16) * P171) ^ 
@@ -191,6 +188,7 @@ class Board {
                 ((b >> 40) * P194) ^ 
                 ((b >> 48) * P195) ^ 
                 ((b >> 56) * P196);
+            */
         }
 
         inline void white_mirror(){
@@ -455,6 +453,17 @@ class Board {
             *full_d9 = l9 & r9 & (e9[2] | (l9 >> 36) | (r9 << 36));
         }
 };
+
+void board_init(){
+    int i, j;
+    for (i = 0; i < 4; ++i){
+        for (j = 0; j < 65536; ++j){
+            hash_rand_black[i][j] = mirror_v(myrand_ull());
+            hash_rand_white[i][j] = mirror_v(myrand_ull());
+        }
+    }
+    cerr << "board initialized" << endl;
+}
 
 inline void calc_flip(Mobility *mob, Board *b, const int policy){
     if (b->p == BLACK)

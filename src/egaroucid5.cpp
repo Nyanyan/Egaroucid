@@ -46,6 +46,7 @@ int main(){
     #if USE_MULTI_THREAD
         thread_pool.resize(8);
     #endif
+    board_init();
     mobility_init();
     evaluate_init();
     book_init();
