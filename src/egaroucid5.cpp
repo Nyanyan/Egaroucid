@@ -49,31 +49,50 @@ int main(){
     board_init();
     mobility_init();
     evaluate_init();
-    book_init();
+    #if USE_BOOK
+        book_init();
+    #endif
     //move_ordering_init();
     parent_transpose_table.init();
     child_transpose_table.init();
     cerr << "initialized" << endl;
     Board b;
     int ai_player;
-    const int level = 21;
+    const int level = 60;
     const int book_error = 0;
-    while (true){
-        #if MOVE_ORDERING_ADJUST
-            move_ordering_init();
-        #endif
-        cin >> ai_player;
-        vector<int> vacant_lst = input_board(&b, ai_player);
-        b.print();
-        #if USE_LOG
-            set_timer();
-        #endif
-        Search_result res = ai(b, level, book_error, vacant_lst);
-        print_result(res);
-        #if USE_LOG
-            return 0;
-        #endif
-        //return 0;
-    }
+    #if MPC_MODE
+        int depth;
+        Search search;
+        while (true){
+            cin >> ai_player;
+            search.vacant_list = input_board(&search.board, ai_player);
+            cin >> depth;
+            search.n_nodes = 0;
+            search.skipped = false;
+            search.tt_child_idx = 0;
+            search.tt_parent_idx = 0;
+            search.use_mpc = false;
+            search.mpct = 10000.0;
+            cout << nega_alpha_ordering_nomemo(&search, -HW2, HW2, depth) << endl;
+        }
+    #else
+        while (true){
+            #if MOVE_ORDERING_ADJUST
+                move_ordering_init();
+            #endif
+            cin >> ai_player;
+            vector<int> vacant_lst = input_board(&b, ai_player);
+            b.print();
+            #if USE_LOG
+                set_timer();
+            #endif
+            Search_result res = ai(b, level, book_error, vacant_lst);
+            print_result(res);
+            #if USE_LOG
+                return 0;
+            #endif
+            //return 0;
+        }
+    #endif
     return 0;
 }

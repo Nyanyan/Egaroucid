@@ -199,10 +199,9 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool is_
                 if (mpc_lower(search, alpha, depth))
                     return alpha;
             } else if (is_end_search && END_MPC_MIN_DEPTH <= depth && depth <= END_MPC_MAX_DEPTH){
-                int val = mid_evaluate(&search->board);
-                if (mpc_end_higher(search, beta, val))
+                if (mpc_end_higher(search, beta))
                     return beta;
-                if (mpc_end_lower(search, alpha, val))
+                if (mpc_end_lower(search, alpha))
                     return alpha;
             }
         }
@@ -319,10 +318,9 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool is_end_searc
                 if (mpc_lower(search, alpha, depth))
                     return alpha;
             } else if (is_end_search && END_MPC_MIN_DEPTH <= depth && depth <= END_MPC_MAX_DEPTH){
-                int val = mid_evaluate(&search->board);
-                if (mpc_end_higher(search, beta, val))
+                if (mpc_end_higher(search, beta))
                     return beta;
-                if (mpc_end_lower(search, alpha, val))
+                if (mpc_end_lower(search, alpha))
                     return alpha;
             }
         }

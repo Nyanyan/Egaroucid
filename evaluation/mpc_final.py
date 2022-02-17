@@ -30,18 +30,18 @@ sleep(1)
 min_depth = 5
 max_depth = 40
 
-vhs = [[[] for _ in range(11)] for _ in range((max_depth - min_depth + 1) // 5 + 1)]
-vds = [[[] for _ in range(11)] for _ in range((max_depth - min_depth + 1) // 5 + 1)]
+vhs = [[] for _ in range(max_depth - min_depth + 1)]
+vds = [[] for _ in range(max_depth - min_depth + 1)]
 #v0s = [[] for _ in range(max_depth - min_depth + 1)]
 
 vh_vd = []
 
 mpcd = [
-    0, 1, 0, 1, 2, 3, 2, 3, 4, 3, 
-    4, 3, 4, 5, 4, 5, 6, 5, 6, 7, 
-    6, 7, 6, 7, 8, 7, 8, 9, 8, 9, 
-    0, 1, 0, 1, 0, 1, 0, 1, 0, 1,
-    0
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+    1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 
+    3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 
+    6, 6, 6, 6, 7, 7, 7, 7, 8, 8, 
+    8
 ]
 
 
@@ -56,7 +56,7 @@ def collect_data(num):
     #use_data = 10000
     #for data_idx in trange(use_data):
     #    datum = data[data_idx]
-    for datum in tqdm(data):
+    for datum in tqdm(data[:10000]):
         board, player, vh = datum.split()
         #board, player, _, _, _, vh = datum.split()
         n_stones = calc_n_stones(board)
@@ -69,6 +69,7 @@ def collect_data(num):
                     board_proc += board[i * hw + j]
                 board_proc += '\n'
             #print(board_proc)
+            board_proc += str(mpcd[depth]) + '\n'
             evaluate.stdin.write(board_proc.encode('utf-8'))
             evaluate.stdin.flush()
             vd = float(evaluate.stdout.readline().decode().strip())
@@ -90,11 +91,12 @@ def collect_data(num):
             v0 = float(evaluate.stdout.readline().decode().strip())
             '''
             #print(score)
-            vhs[(depth - min_depth) // 5][int(abs(vd)) // 6].append(vh)
-            vds[(depth - min_depth) // 5][int(abs(vd)) // 6].append(vd)
+            #print(vd, vh, depth, mpcd[depth])
+            vhs[depth - min_depth].append(vh)
+            vds[depth - min_depth].append(vd)
             #v0s[depth - min_depth].append(v0)
 
-for i in range(5, 7):
+for i in range(5, 6):
     collect_data(i)
 evaluate.kill()
 
@@ -131,13 +133,14 @@ def scoring():
 #f_score = scoring()
 #print(f_score)
 
-vh_vd = [[[vhs[j][k][l] - f(vds[j][k][l]) for l in range(len(vhs[j][k]))] for k in range(len(vhs[j]))] for j in range(len(vhs))]
+vh_vd = [[vhs[j][k] - f(vds[j][k]) for k in range(len(vhs[j]))] for j in range(len(vhs))]
 #vh_v0 = [[vhs[j][k] - f(v0s[j][k]) for k in range(len(vhs[j]))] for j in range(len(vhs))]
-sd = [[round(statistics.stdev(vh_vd[j][k]), 3) if len(vh_vd[j][k]) >= 3 else 65 for k in range(len(vh_vd[j]))] for j in range(len(vh_vd))]
+sd = [round(statistics.stdev(vh_vd[j]), 3) if len(vh_vd[j]) >= 3 else 65 for j in range(len(vh_vd))]
+print(sd)
 #sd0 = [round(statistics.stdev(vh_v0[j])) for j in range(len(vh_vd))]
 #print(sd)
-for each_sd in sd:
-    print(str(each_sd).replace('[', '{').replace(']', '}') + ',')
+#for each_sd in sd:
+#    print(str(each_sd).replace('[', '{').replace(']', '}') + ',')
 #print(sd0)
 exit()
 
