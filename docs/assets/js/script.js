@@ -1,18 +1,14 @@
-const lang_lst = ['ja', 'en']
-const len_lang = 2;
+window.onload = function() {
+    //Language
+    var language = (window.navigator.languages && window.navigator.languages[0]) ||
+    window.navigator.language ||
+    window.navigator.userLanguage ||
+    window.navigator.browserLanguage;
 
-function reset_lang(){
-    for (let i = 0; i < len_lang; ++i){
-        document.getElementById(lang_lst[i]).hidden = true;
-    }
-}
+    console.log(language);
 
-function ja(){
-    reset_lang();
-    document.getElementById('ja').hidden = false;
-}
-
-function en(){
-    reset_lang();
-    document.getElementById('en').hidden = false;
+    if (language == 'ja')
+        window.location.href = "./ja";
+    else
+        window.location.href = "./en";
 }
