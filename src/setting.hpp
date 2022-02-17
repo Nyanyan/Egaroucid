@@ -40,7 +40,7 @@
 
 
 /** book **/
-#define USE_BOOK false
+#define USE_BOOK true
 
 
 
