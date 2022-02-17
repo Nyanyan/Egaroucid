@@ -635,10 +635,10 @@ int output_game_popup(Font big_font, Font mid_font, Font small_font, String* bla
 		small_font(*game_memo).draw(memo_area.stretched(-4), popup_font_color);
 	}
 	FrameButton close_button;
-	close_button.init(x_center - 350, sy + 500, 250, 50, 10, 2, language.get("button", "not_save_game"), mid_font, button_color, button_font_color, button_font_color);
+	close_button.init(x_center - 375, sy + 500, 350, 50, 10, 2, language.get("button", "not_save_game"), mid_font, button_color, button_font_color, button_font_color);
 	close_button.draw();
 	FrameButton save_button;
-	save_button.init(x_center + 100, sy + 500, 250, 50, 10, 2, language.get("button", "save_game"), mid_font, button_color, button_font_color, button_font_color);
+	save_button.init(x_center + 25, sy + 500, 350, 50, 10, 2, language.get("button", "save_game"), mid_font, button_color, button_font_color, button_font_color);
 	save_button.draw();
 	if (save_button.clicked()) {
 		return 1;
