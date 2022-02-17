@@ -56,7 +56,7 @@ You can also download manuals in [markdown format](./../usage/en/index.md) or [P
 
 ## Technologies
 
-[Here](./../benchmark/) you can see technologies used in this AI.
+[Here](./../technology/) you can see technologies used in this AI.
 
 
 
