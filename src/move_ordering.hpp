@@ -45,6 +45,8 @@
 #define W_END_SURROUND 10
 #define W_END_PARITY 14
 
+#define ALL_NODE_OFFSET 4
+
 constexpr int move_ordering_depth[60] = {
     0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 
     2, 2, 2, 2, 3, 3, 3, 3, 3, 4, 
@@ -295,7 +297,7 @@ inline void move_ordering(Search *search, vector<Mobility> &move_list, int depth
     bool pre_searched = child_transpose_table.get_now(&search->board, hash_code, best_moves);
     if (!pre_searched)
         pre_searched = child_transpose_table.get_prev(&search->board, hash_code, best_moves);
-    if (!pre_searched && (!search->use_mpc || search->mpct > 0.5)){
+    if (!pre_searched && depth >= 4/* && mid_evaluate(&search->board) >= alpha - ALL_NODE_OFFSET */){
         bool use_mpc = search->use_mpc;
         double mpct = search->mpct;
         search->use_mpc = true;
@@ -304,7 +306,7 @@ inline void move_ordering(Search *search, vector<Mobility> &move_list, int depth
         int tt_child = search->tt_child_idx;
         search->tt_parent_idx = parent_transpose_table.prev_idx();
         search->tt_child_idx = child_transpose_table.prev_idx();
-            nega_scout(search, max(-HW2, alpha - MOVE_ORDERING_VALUE_OFFSET), min(HW2, beta + MOVE_ORDERING_VALUE_OFFSET), depth, is_end_search);
+            nega_scout(search, max(-HW2, alpha - MOVE_ORDERING_VALUE_OFFSET), min(HW2, beta + MOVE_ORDERING_VALUE_OFFSET), depth / 2, false);
             //cerr << alpha << " " << nega_scout(search, alpha, HW2, depth, is_end_search) << " ";
         search->use_mpc = use_mpc;
         search->mpct = mpct;

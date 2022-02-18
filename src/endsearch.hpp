@@ -21,7 +21,7 @@ int nega_alpha_eval1(Search *search, int alpha, int beta);
 
 inline bool mpc_end_higher(Search *search, int beta){
     const int depth = HW2 - search->board.n;
-    int bound = beta + ceil(search->mpct * mpcsd_final[depth]);
+    int bound = beta + ceil(search->mpct * mpcsd_final[depth - END_MPC_MIN_DEPTH]);
     bool res;
     if (mpcd_final[depth] == 0)
         res = mid_evaluate(&search->board) >= bound;
@@ -37,7 +37,7 @@ inline bool mpc_end_higher(Search *search, int beta){
 
 inline bool mpc_end_lower(Search *search, int alpha){
     const int depth = HW2 - search->board.n;
-    int bound = alpha - ceil(search->mpct * mpcsd_final[depth]);
+    int bound = alpha - ceil(search->mpct * mpcsd_final[depth - END_MPC_MIN_DEPTH]);
     bool res;
     if (mpcd_final[depth] == 0)
         res = mid_evaluate(&search->board) <= bound;
