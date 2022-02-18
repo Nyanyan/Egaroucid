@@ -34,8 +34,8 @@ inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mp
     Search_result res;
     int alpha = -HW2, beta = HW2, g, former_alpha = -INF;
     if (b.n + max_depth < HW2){
-        for (int depth = min(18, max(0, max_depth - 5)); depth <= max_depth; ++depth){
-            alpha = -HW2;
+        for (int depth = min(18, max(1, max_depth - 5)); depth <= max_depth; ++depth){
+            alpha = -HW2 - 1;
             beta = HW2;
             parent_transpose_table.ready_next_search();
             child_transpose_table.ready_next_search();
@@ -59,7 +59,8 @@ inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mp
                 former_alpha = alpha;
             cerr << "midsearch time " << tim() - strt << " depth " << depth << " policy " << res.policy << " value " << alpha << " nodes " << search.n_nodes << " nps " << search.n_nodes * 1000 / max(1LL, tim() - strt) << endl;
         }
-        alpha = (alpha + former_alpha) / 2;
+        if (former_alpha != -INF)
+            alpha = (alpha + former_alpha) / 2;
     } else{
         int depth = HW2 - b.n;
         vector<double> pre_search_mpcts;
