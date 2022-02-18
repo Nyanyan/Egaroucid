@@ -65,7 +65,14 @@ start depth: 50 Egaroucid plays black WDL: 171-29-200 Egaroucid plays white WDL:
 start depth: 20 Egaroucid plays black WDL: 152-12-136 Egaroucid plays white WDL: 159-18-123 Egaroucid win rate: 0.5456140350877193
 start depth: 30 Egaroucid plays black WDL: 163-23-114 Egaroucid plays white WDL: 143-21-136 Egaroucid win rate: 0.5503597122302158
 start depth: 40 Egaroucid plays black WDL: 155-14-131 Egaroucid plays white WDL: 144-26-130 Egaroucid win rate: 0.5339285714285714</pre></div>
+### レベル15同士
 
+両者中盤15手読みです。実験条件一致のため、前向きな枝刈りに使う確証(Selectivity)を両者73%に揃えました。本来Egaroucidは88%です。
+
+EgaroucidはEdaxより終盤読み切りタイミングが早いため、評価関数の強さを計測するという目的のもと、Edaxが終盤読み切りを始める直前まで両者に打たせてその局面から必勝読みして勝敗を決定しました。
+
+<div style="font-size:60%"><pre>start depth: 10 Egaroucid plays black WDL: 63-11-26 Egaroucid plays white WDL: 52-11-37 Egaroucid win rate: 0.6460674157303371
+start depth: 20 Egaroucid plays black WDL: 52-9-39 Egaroucid plays white WDL: 49-7-44 Egaroucid win rate: 0.5489130434782609</pre></div>
 
 
 ## 評価関数の精度

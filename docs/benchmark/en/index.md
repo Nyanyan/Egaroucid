@@ -70,7 +70,14 @@ Lookahead depth is 5, complete search depth is 10
 start depth: 20 Egaroucid plays black WDL: 152-12-136 Egaroucid plays white WDL: 159-18-123 Egaroucid win rate: 0.5456140350877193
 start depth: 30 Egaroucid plays black WDL: 163-23-114 Egaroucid plays white WDL: 143-21-136 Egaroucid win rate: 0.5503597122302158
 start depth: 40 Egaroucid plays black WDL: 155-14-131 Egaroucid plays white WDL: 144-26-130 Egaroucid win rate: 0.5339285714285714</pre></div>
+### Level 15
 
+Lookahead depth is 15. Selectivity is 73% (Egaroucid's original selectivity is 88%, but this time, to align the conditions, Egaroucid uses 73% selectivity)
+
+Edax do complete search earlier than Egaroucid and the purpose of this experiment is the strength of the evaluation function. So Edax and Egaroucid plays until 32 moves, which is the last move of Edax's midgame search, then do WDL search to see which will win.
+
+<div style="font-size:60%"><pre>start depth: 10 Egaroucid plays black WDL: 63-11-26 Egaroucid plays white WDL: 52-11-37 Egaroucid win rate: 0.6460674157303371
+start depth: 20 Egaroucid plays black WDL: 52-9-39 Egaroucid plays white WDL: 49-7-44 Egaroucid win rate: 0.5489130434782609</pre></div>
 
 ## Accuracy of evaluation function
 
