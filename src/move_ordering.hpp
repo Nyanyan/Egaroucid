@@ -328,7 +328,7 @@ inline void move_ordering(Search *search, vector<Mobility> &move_list, int depth
     }
     */
     int eval_alpha = -min(HW2, beta + MOVE_ORDERING_VALUE_OFFSET);
-    int eval_depth = depth / 10;
+    int eval_depth = depth / 8;
     for (Mobility &mob: move_list)
         move_evaluate(search, &mob, best_moves, eval_alpha, eval_depth);
     sort(move_list.begin(), move_list.end(), cmp_move_ordering);

@@ -75,7 +75,7 @@ inline pair<int, unsigned long long> ybwc_do_task_end(Search search, const Mobil
 }
 
 inline bool ybwc_split_end(Search *search, const Mobility *mob, int alpha, int beta, const bool *searching, int policy, const int pv_idx, const int canput, const int split_count, vector<future<pair<int, unsigned long long>>> &parallel_tasks){
-    if (pv_idx > 0 /* pv_idx > canput / YBWC_SPLIT_DIV */ /* && pv_idx < canput - 1 */ && HW2 - search->board.n >= YBWC_MID_SPLIT_MIN_DEPTH /* && split_count < YBWC_MAX_SPLIT_COUNT */ ){
+    if (pv_idx > 0 /* pv_idx > canput / YBWC_SPLIT_DIV */ /* && pv_idx < canput - 1 */ && HW2 - search->board.n >= YBWC_END_SPLIT_MIN_DEPTH /* && split_count < YBWC_MAX_SPLIT_COUNT */ ){
         if (thread_pool.n_idle()){
             bool return_false = false;
             search->board.move(mob);

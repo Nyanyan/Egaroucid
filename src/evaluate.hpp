@@ -286,7 +286,7 @@ inline void calc_stability_fast(Board *b, int *stab0, int *stab1){
     *stab1 = pop_count_ull(edge_stability & b->w);
 }
 
-/*
+
 inline int pick_pattern(const int phase_idx, const int p, const int pattern_idx, const int b_arr[], const int p0, const int p1, const int p2, const int P3, const int P4){
     return pattern_arr[phase_idx][p][pattern_idx][b_arr[p0] * P34 + b_arr[p1] * P33 + b_arr[p2] * P32 + b_arr[P3] * P31 + b_arr[P4]];
 }
@@ -332,7 +332,7 @@ inline int calc_pattern(const int phase_idx, Board *b){
         pick_pattern(phase_idx, b->p, 14, b_arr, 0, 1, 8, 9, 10, 11, 17, 18, 25, 27) + pick_pattern(phase_idx, b->p, 14, b_arr, 7, 6, 15, 14, 13, 12, 22, 21, 30, 28) + pick_pattern(phase_idx, b->p, 14, b_arr, 56, 57, 48, 49, 50, 51, 41, 42, 33, 35) + pick_pattern(phase_idx, b->p, 14, b_arr, 63, 62, 55, 54, 53, 52, 46, 45, 38, 36) + 
         pick_pattern(phase_idx, b->p, 15, b_arr, 0, 1, 8, 9, 10, 11, 12, 17, 25, 33) + pick_pattern(phase_idx, b->p, 15, b_arr, 7, 6, 15, 14, 13, 12, 11, 22, 30, 38) + pick_pattern(phase_idx, b->p, 15, b_arr, 56, 57, 48, 49, 50, 51, 52, 41, 33, 25) + pick_pattern(phase_idx, b->p, 15, b_arr, 63, 62, 55, 54, 53, 52, 51, 46, 38, 30);
 }
-*/
+/*
 inline int pick_pattern(const int phase_idx, const int p, const int pattern_idx, const unsigned long long bk, const unsigned long long wt, const int p0, const int p1, const int p2, const int P3, const int P4){
     return pattern_arr[phase_idx][p][pattern_idx][
         (2 - pop_digit(wt, p0) - pop_digit(bk, p0) * 2) * P34 + 
@@ -427,7 +427,7 @@ inline int calc_pattern(const int phase_idx, Board *b){
         pick_pattern(phase_idx, b->p, 14, b->b, b->w, 0, 1, 8, 9, 10, 11, 17, 18, 25, 27) + pick_pattern(phase_idx, b->p, 14, b->b, b->w, 7, 6, 15, 14, 13, 12, 22, 21, 30, 28) + pick_pattern(phase_idx, b->p, 14, b->b, b->w, 56, 57, 48, 49, 50, 51, 41, 42, 33, 35) + pick_pattern(phase_idx, b->p, 14, b->b, b->w, 63, 62, 55, 54, 53, 52, 46, 45, 38, 36) + 
         pick_pattern(phase_idx, b->p, 15, b->b, b->w, 0, 1, 8, 9, 10, 11, 12, 17, 25, 33) + pick_pattern(phase_idx, b->p, 15, b->b, b->w, 7, 6, 15, 14, 13, 12, 11, 22, 30, 38) + pick_pattern(phase_idx, b->p, 15, b->b, b->w, 56, 57, 48, 49, 50, 51, 52, 41, 33, 25) + pick_pattern(phase_idx, b->p, 15, b->b, b->w, 63, 62, 55, 54, 53, 52, 51, 46, 38, 30);
 }
-
+*/
 
 inline int create_canput_line_h(unsigned long long b, unsigned long long w, int t){
     return (((w >> (HW * t)) & 0b11111111) << HW) | ((b >> (HW * t)) & 0b11111111);
