@@ -14,7 +14,7 @@ I did complete searches for this test and got the time to solve it and number of
 * nodes: number of nodes visited
 * nps: node per second
 
-### Core i7-1165G7、8 threads
+### Core i7-1165G7, 8 threads
 
 <div style="font-size:60%"><pre>#40 endsearch depth 20 overall time 454 search time 437 mpct 10000 policy 55 value 38 nodes 21883562 nps 50076800
 #41 endsearch depth 22 overall time 826 search time 809 mpct 10000 policy 32 value 0 nodes 20718255 nps 25609709
