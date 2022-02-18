@@ -31,7 +31,7 @@
 //#define W_CACHE_HIGH 10000
 #define W_WIPEOUT 1000000000
 
-#define W_VALUE 5
+#define W_VALUE 6
 //#define W_CELL_WEIGHT 1
 //#define W_EVALUATE 20
 #define W_MOBILITY 16
