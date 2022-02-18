@@ -1,4 +1,4 @@
-## How to use Egaroucid
+# How to use [Othello research support AI app Egaroucid](https://www.egaroucid-app.nyanyan.dev/)
 
 [日本語](https://www.egaroucid-app.nyanyan.dev/usage/ja/)
 

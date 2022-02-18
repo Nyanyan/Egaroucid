@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <link rel="shortcut icon" type="image/x-icon" href="../img/favicon.ico">
+        <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no">
+        <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+        <script id="twitter-wjs" src="https://platform.twitter.com/widgets.js"></script>
+        <link rel="stylesheet" href="assets/css/style.css">
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:site" content="@takuto_yamana" />
+        <meta property="og:url" content="https://www.egaroucid.nyanyan.dev" />
+        <meta property="og:title" content="オセロ研究支援AIアプリ Egaroucid 使い方" />
+        <meta property="og:description" content="世界最強クラスのオセロAI搭載のオセロ研究支援アプリ" />
+        <meta property="og:image" content="https://raw.githubusercontent.com/Nyanyan/Egaroucid5/main/img/eyecatch.png" />
+        <title>オセロ研究支援AIアプリ Egaroucid</title>
+    </head>
+    <body>
+        <div class="title"><a href='../'>オセロ研究支援AIアプリ Egaroucid</a> 各種ベンチマーク</div>
+        <a href="https://twitter.com/share?ref_src=twsrc%5Etfw" class="twitter-share-button" data-text="最強AI搭載オセロ研究支援ソフト" data-url="https://www.egaroucid-app.nyanyan.dev/" data-hashtags="egaroucid" data-related="takuto_yamana,Nyanyan_Cube" data-show-count="false">Tweet</a><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+        <div id="ffotest">
+            <div class="sub_title"><a href='http://radagast.se/othello/ffotest.html' target='_blank'>FFO endgame test</a></div>
+            <p>FFO endgame testはオセロAIの終盤探索力の指標として広く使われるベンチマークです。</p>
+            <p>下に結果を示しますが、重要なのはdepth(探索深さ)とtime(時間ミリ秒)です。</p>
+            <p>CPUはCore i7-1165G7です。</p>
+<pre><div>#40 final depth: 20 time: 413 policy: 55 value: 38 nodes: 19965752 nps: 61244638
+#41 final depth: 22 time: 719 policy: 32 value: 0 nodes: 25661623 nps: 46404381
+#42 final depth: 22 time: 1104 policy: 49 value: 6 nodes: 55134525 nps: 56031021
+#43 final depth: 23 time: 2720 policy: 41 value: -12 nodes: 116728619 nps: 45419696
+#44 final depth: 23 time: 974 policy: 52 value: -14 nodes: 27272592 nps: 35145092
+#45 final depth: 24 time: 15033 policy: 54 value: 6 nodes: 575801182 nps: 39601181
+#46 final depth: 24 time: 6057 policy: 46 value: -8 nodes: 265797939 nps: 45630547
+#47 final depth: 25 time: 1880 policy: 49 value: 4 nodes: 89746095 nps: 51726855
+#48 final depth: 25 time: 12322 policy: 18 value: 28 nodes: 629935952 nps: 52129754
+#49 final depth: 26 time: 15388 policy: 59 value: 16 nodes: 918491384 nps: 62035079
+#50 final depth: 26 time: 45955 policy: 4 value: 10 nodes: 2283017171 nps: 50547251
+#51 final depth: 27 time: 48077 policy: 51 value: 6 nodes: 1926033731 nps: 40443351
+#52 final depth: 27 time: 38066 policy: 47 value: 0 nodes: 1795452435 nps: 48065868
+#53 final depth: 28 time: 668989 policy: 4 value: -2 nodes: 29600449949 nps: 44885074
+#54 final depth: 28 time: 602397 policy: 13 value: -2 nodes: 26682884558 nps: 44538950
+#55 final depth: 29 time: 1511092 policy: 51 value: 0 nodes: 62615944726 nps: 42107462
+#56 final depth: 29 time: 125173 policy: 24 value: 2 nodes: 5167929250 nps: 41841176
+#57 final depth: 30 time: 314750 policy: 23 value: -10 nodes: 15228294988 nps: 48513050
+#58 final depth: 30 time: 169548 policy: 57 value: 4 nodes: 8565197547 nps: 50713150
+#59 final depth: 34 time: 832 policy: 1 value: 64 nodes: 161 nps: 12384
+</div></pre>
+        </div>
+        <div id="edax">
+            <div class="sub_title"><a href='https://github.com/abulmo/edax-reversi' target='_blank'>Edax4.4</a>との対戦</div>
+            <p>世界最強とも言われるオセロAI、Edax4.4との対戦結果です。</p>
+            <p>初手からの対戦では評価関数の正確な強さがわからないと考えたため、評価関数の学習に使っていない棋譜のうち、最終的に引き分け、または2石差となったものを使って途中まで打ち、そこから各手筋に対して双方に先手後手1回ずつ対戦させました。</p>
+            <p>途中からの対戦では、その時点で勝敗または引き分けが決しているので、両者の強さが全く同じであれば勝敗の数は同じになります。つまり、勝率の偏りを見ることで強さがわかります。</p>
+            <p>各開始手(start depth手だけ進めた盤面からの対戦)において、Egaroucidの勝率(Egaroucid win rate)(Egaroucidの勝数の和を双方の全ての勝数の和で割ったもの)が0.5を越していれば、Egaroucidが勝ち越しています。</p>
+            <p>WDLはwin-draw-loseの略で、その後に続く3つの数字が勝ち-引き分け-負けであることを意味します。</p>
+            <p>bookは双方使用していません。</p>
+            <div class="sub_sub_title">レベル1(中盤1手読み/終盤2マス空き完全読み)同士</div>
+            <p>開始手は、Egaroucidの評価関数が4手ごとに別のものに切り替わるため、4手ごと-1手(1手先読みするので)となっています。</p>
+            <pre><div>start depth: 55 Egaroucid plays black WDL: 227-112-161 Egaroucid plays white WDL: 182-112-206 Egaroucid win rate: 0.5270618556701031
+start depth: 51 Egaroucid plays black WDL: 217-72-211 Egaroucid plays white WDL: 210-70-220 Egaroucid win rate: 0.4976689976689977
+start depth: 47 Egaroucid plays black WDL: 257-24-219 Egaroucid plays white WDL: 231-32-237 Egaroucid win rate: 0.5169491525423728
+start depth: 43 Egaroucid plays black WDL: 259-13-228 Egaroucid plays white WDL: 236-23-241 Egaroucid win rate: 0.5134854771784232
+start depth: 39 Egaroucid plays black WDL: 261-19-220 Egaroucid plays white WDL: 257-19-224 Egaroucid win rate: 0.5384615384615384
+start depth: 35 Egaroucid plays black WDL: 257-16-227 Egaroucid plays white WDL: 248-17-235 Egaroucid win rate: 0.5222337125129266
+start depth: 31 Egaroucid plays black WDL: 250-7-243 Egaroucid plays white WDL: 251-16-233 Egaroucid win rate: 0.5127942681678608
+start depth: 27 Egaroucid plays black WDL: 233-15-252 Egaroucid plays white WDL: 254-21-225 Egaroucid win rate: 0.5051867219917012
+start depth: 23 Egaroucid plays black WDL: 250-10-240 Egaroucid plays white WDL: 258-14-228 Egaroucid win rate: 0.5204918032786885
+start depth: 19 Egaroucid plays black WDL: 242-8-250 Egaroucid plays white WDL: 261-15-224 Egaroucid win rate: 0.5148413510747185
+start depth: 15 Egaroucid plays black WDL: 260-12-228 Egaroucid plays white WDL: 285-7-208 Egaroucid win rate: 0.5555555555555556
+start depth: 11 Egaroucid plays black WDL: 272-14-214 Egaroucid plays white WDL: 297-13-190 Egaroucid win rate: 0.5847893114080165
+start depth: 7 Egaroucid plays black WDL: 196-17-216 Egaroucid plays white WDL: 239-9-181 Egaroucid win rate: 0.5228365384615384
+</div></pre>
+            <div class="sub_sub_title">レベル5(中盤5手読み/終盤10マス空き完全読み)同士</div>
+            <p>開始手は10手ごとです(0手から開始すると意味がないので0手開始のはずのところのみ5手開始にしました)。</p>
+            <pre><div>start depth: 40 Egaroucid plays black WDL: 264-39-197 Egaroucid plays white WDL: 216-42-242 Egaroucid win rate: 0.5223068552774756
+start depth: 30 Egaroucid plays black WDL: 269-22-209 Egaroucid plays white WDL: 245-28-227 Egaroucid win rate: 0.5410526315789473
+start depth: 20 Egaroucid plays black WDL: 270-17-213 Egaroucid plays white WDL: 243-27-230 Egaroucid win rate: 0.5366108786610879
+start depth: 10 Egaroucid plays black WDL: 271-14-215 Egaroucid plays white WDL: 265-34-201 Egaroucid win rate: 0.5630252100840336
+start depth: 5 Egaroucid plays black WDL: 64-11-61 Egaroucid plays white WDL: 72-5-59 Egaroucid win rate: 0.53125
+</div></pre>
+            <p>有意な差と言えるか微妙なところだと個人的には思っていますが、一応概ねEgaroucidがEdaxに勝ち越しています。特にレベル5にすると、2%から6%EgaroucidはEdaxに勝ち越しています。</p>
+        </div>
+        <div id="evaluation">
+            <div class="sub_title">評価関数の精度</div>
+            <p>評価関数の精度をmse(誤差の2乗の平均値)とmae(誤差の絶対値の平均値)で示します。単位はmseなら石^2、maeなら石です。</p>
+            <p>評価関数は4手ごと15フェーズに分けて別のものを使っているので、フェーズごとに結果が出ます。フェーズをxとして、フェーズxの評価関数は4x+1から4x+4手目までに使う評価関数です。</p>
+            <p>注意していただきたいのは、この数字が学習データによるものであって、専用のテストデータによるものではないことです。</p>
+            <pre><div>phase: 0 player: 0 mse: 204.536 mae: 10.3476
+phase: 0 player: 1 mse: 203.146 mae: 10.3204
+phase: 1 player: 0 mse: 196.78 mae: 10.1709
+phase: 1 player: 1 mse: 196.255 mae: 10.1742
+phase: 2 player: 0 mse: 192.547 mae: 10.0634
+phase: 2 player: 1 mse: 182.538 mae: 9.87519
+phase: 3 player: 0 mse: 162.882 mae: 9.36355
+phase: 3 player: 1 mse: 157.141 mae: 9.21538
+phase: 4 player: 0 mse: 125.173 mae: 8.22972
+phase: 4 player: 1 mse: 118.039 mae: 7.99023
+phase: 5 player: 0 mse: 97.4087 mae: 7.2354
+phase: 5 player: 1 mse: 90.5803 mae: 6.98354
+phase: 6 player: 0 mse: 71.5154 mae: 6.2496
+phase: 6 player: 1 mse: 64.7488 mae: 5.96423
+phase: 7 player: 0 mse: 43.3918 mae: 4.91676
+phase: 7 player: 1 mse: 38.2241 mae: 4.62651
+phase: 8 player: 0 mse: 28.1983 mae: 4.0198
+phase: 8 player: 1 mse: 26.5312 mae: 3.89356
+phase: 9 player: 0 mse: 25.6988 mae: 3.87145
+phase: 9 player: 1 mse: 26.0156 mae: 3.90124
+phase: 10 player: 0 mse: 27.7355 mae: 4.05666
+phase: 10 player: 1 mse: 28.3581 mae: 4.10278
+phase: 11 player: 0 mse: 29.9408 mae: 4.20492
+phase: 11 player: 1 mse: 30.4728 mae: 4.23503
+phase: 12 player: 0 mse: 30.8934 mae: 4.25957
+phase: 12 player: 1 mse: 30.4286 mae: 4.22854
+phase: 13 player: 0 mse: 27.3356 mae: 4.00484
+phase: 13 player: 1 mse: 25.3566 mae: 3.84762
+phase: 14 player: 0 mse: 12.2732 mae: 2.53471
+phase: 14 player: 1 mse: 9.10853 mae: 2.09107
+</div></pre>
+        </div>
+    </body>
+</html>

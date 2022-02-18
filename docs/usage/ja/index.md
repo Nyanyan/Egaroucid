@@ -1,4 +1,4 @@
-## アプリの使い方
+# [オセロ研究支援AIアプリ Egaroucid](https://www.egaroucid-app.nyanyan.dev/) 使い方
 
 [English](https://www.egaroucid-app.nyanyan.dev/usage/en/)
 
