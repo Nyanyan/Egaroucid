@@ -300,14 +300,6 @@ inline void move_ordering(Search *search, vector<Mobility> &move_list, int depth
         double mpct = search->mpct;
         search->use_mpc = true;
         search->mpct = 0.5;
-        /*
-        if (use_mpc && mpct <= 1.0)
-            search->mpct = 0.5;
-        else if (use_mpc && mpct <= 1.5)
-            search->mpct = 1.0;
-        else if (!use_mpc)
-            search->mpct = 1.5;
-        */
         int tt_parent = search->tt_parent_idx;
         int tt_child = search->tt_child_idx;
         search->tt_parent_idx = parent_transpose_table.prev_idx();

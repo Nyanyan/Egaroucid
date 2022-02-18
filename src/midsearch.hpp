@@ -31,14 +31,24 @@ inline bool mpc_higher(Search *search, int beta, int depth){
     int bound = beta + ceil(search->mpct * mpcsd[search->board.phase()][depth - MID_MPC_MIN_DEPTH]);
     if (bound > HW2)
         bound = HW2; //return false;
-    return nega_alpha_ordering_nomemo(search, bound - 1, bound, mpcd[depth]) >= bound;
+    bool res;
+    //double mpct = search->mpct;
+    //search->mpct = MPC_MPCT;
+    res = nega_alpha_ordering_nomemo(search, bound - 1, bound, mpcd[depth]) >= bound;
+    //search->mpct = mpct;
+    return res;
 }
 
 inline bool mpc_lower(Search *search, int alpha, int depth){
     int bound = alpha - ceil(search->mpct * mpcsd[search->board.phase()][depth - MID_MPC_MIN_DEPTH]);
     if (bound < -HW2)
         bound = -HW2; //return false;
-    return nega_alpha_ordering_nomemo(search, bound, bound + 1, mpcd[depth]) <= bound;
+    bool res;
+    //double mpct = search->mpct;
+    //search->mpct = MPC_MPCT;
+    res = nega_alpha_ordering_nomemo(search, bound, bound + 1, mpcd[depth]) <= bound;
+    //search->mpct = mpct;
+    return res;
 }
 
 int nega_alpha_eval1(Search *search, int alpha, int beta){

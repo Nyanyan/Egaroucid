@@ -38,10 +38,10 @@ vh_vd = []
 
 mpcd = [
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-    1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 
-    3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 
-    6, 6, 6, 6, 7, 7, 7, 7, 8, 8, 
-    8
+    1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 
+    4, 4, 4, 5, 5, 5, 5, 6, 6, 6, 
+    6, 7, 7, 7, 7, 8, 8, 8, 8, 9, 
+    9
 ]
 
 
@@ -69,7 +69,7 @@ def collect_data(num):
                     board_proc += board[i * hw + j]
                 board_proc += '\n'
             #print(board_proc)
-            board_proc += str(mpcd[depth]) + '\n'
+            board_proc += str(mpcd[depth]) + '\n1\n1.0\n'
             evaluate.stdin.write(board_proc.encode('utf-8'))
             evaluate.stdin.flush()
             vd = float(evaluate.stdout.readline().decode().strip())

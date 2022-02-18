@@ -16,7 +16,7 @@
 
 using namespace std;
 
-int nega_alpha_mpc(Search *search, int alpha, int beta, int depth);
+int nega_alpha_end_nomemo(Search *search, int alpha, int beta, int depth);
 int nega_alpha_eval1(Search *search, int alpha, int beta);
 
 inline bool mpc_end_higher(Search *search, int beta){
@@ -29,7 +29,7 @@ inline bool mpc_end_higher(Search *search, int beta){
         res = nega_alpha_eval1(search, bound - 1, bound) >= bound;
     else{
         search->use_mpc = false;
-            res = nega_alpha_mpc(search, bound - 1, bound, mpcd_final[depth]) >= bound;
+            res = nega_alpha_end_nomemo(search, bound - 1, bound, mpcd_final[depth]) >= bound;
         search->use_mpc = true;
     }
     return res;
@@ -45,13 +45,13 @@ inline bool mpc_end_lower(Search *search, int alpha){
         res = nega_alpha_eval1(search, bound, bound + 1) <= bound;
     else{
         search->use_mpc = false;
-            res = nega_alpha_mpc(search, bound, bound + 1, mpcd_final[depth]) <= bound;
+            res = nega_alpha_end_nomemo(search, bound, bound + 1, mpcd_final[depth]) <= bound;
         search->use_mpc = true;
     }
     return res;
 }
 
-int nega_alpha_mpc(Search *search, int alpha, int beta, int depth){
+int nega_alpha_end_nomemo(Search *search, int alpha, int beta, int depth){
     if (!global_searching)
         return SCORE_UNDEFINED;
     //if (depth <= MID_FAST_DEPTH)
@@ -64,6 +64,7 @@ int nega_alpha_mpc(Search *search, int alpha, int beta, int depth){
         if (stab_res != SCORE_UNDEFINED)
             return stab_res;
     #endif
+    /*
     #if USE_END_MPC
         if (MID_MPC_MIN_DEPTH <= depth && depth <= MID_MPC_MAX_DEPTH && search->use_mpc){
             if (mpc_higher(search, beta, depth))
@@ -72,13 +73,14 @@ int nega_alpha_mpc(Search *search, int alpha, int beta, int depth){
                 return alpha;
         }
     #endif
+    */
     unsigned long long legal = search->board.mobility_ull();
     int g, v = -INF;
     if (legal == 0){
         if (search->skipped)
             return end_evaluate(&search->board);
         search->pass();
-            v = -nega_alpha_mpc(search, -beta, -alpha, depth);
+            v = -nega_alpha_end_nomemo(search, -beta, -alpha, depth);
         search->undo_pass();
         return v;
     }
@@ -93,7 +95,7 @@ int nega_alpha_mpc(Search *search, int alpha, int beta, int depth){
     move_ordering(search, move_list, depth, alpha, beta, false);
     for (const Mobility &mob: move_list){
         search->board.move(&mob);
-            g = -nega_alpha_mpc(search, -beta, -alpha, depth - 1);
+            g = -nega_alpha_end_nomemo(search, -beta, -alpha, depth - 1);
         search->board.undo(&mob);
         alpha = max(alpha, g);
         v = max(v, g);

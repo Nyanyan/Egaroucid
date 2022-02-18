@@ -58,7 +58,7 @@ int main(){
     cerr << "initialized" << endl;
     Board b;
     int ai_player;
-    const int level = 15;
+    const int level = 21;
     const int book_error = 0;
     #if MPC_MODE
         int depth;
@@ -71,8 +71,8 @@ int main(){
             search.skipped = false;
             search.tt_child_idx = 0;
             search.tt_parent_idx = 0;
-            search.use_mpc = false;
-            search.mpct = 10000.0;
+            cin >> search.use_mpc;
+            cin >> search.mpct;
             cout << nega_alpha_ordering_nomemo(&search, -HW2, HW2, depth) << endl;
         }
     #else
