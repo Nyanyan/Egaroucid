@@ -17,46 +17,47 @@
 using namespace std;
 
 int nega_alpha_mpc(Search *search, int alpha, int beta, int depth);
+int nega_alpha_eval1(Search *search, int alpha, int beta);
 
 inline bool mpc_end_higher(Search *search, int beta){
     const int depth = HW2 - search->board.n;
     int bound = beta + ceil(search->mpct * mpcsd_final[depth]);
-    search->use_mpc = false;
-    bool res = nega_alpha_mpc(search, bound - 1, bound, mpcd_final[depth]) >= bound;
-    search->use_mpc = true;
+    bool res;
+    if (mpcd_final[depth] == 0)
+        res = mid_evaluate(&search->board) >= bound;
+    else if (mpcd_final[depth] == 1)
+        res = nega_alpha_eval1(search, bound - 1, bound) >= bound;
+    else{
+        search->use_mpc = false;
+            res = nega_alpha_mpc(search, bound - 1, bound, mpcd_final[depth]) >= bound;
+        search->use_mpc = true;
+    }
     return res;
 }
 
 inline bool mpc_end_lower(Search *search, int alpha){
     const int depth = HW2 - search->board.n;
     int bound = alpha - ceil(search->mpct * mpcsd_final[depth]);
-    search->use_mpc = false;
-    bool res = nega_alpha_mpc(search, bound, bound + 1, mpcd_final[depth]) <= bound;
-    search->use_mpc = true;
+    bool res;
+    if (mpcd_final[depth] == 0)
+        res = mid_evaluate(&search->board) <= bound;
+    else if (mpcd_final[depth] == 1)
+        res = nega_alpha_eval1(search, bound, bound + 1) <= bound;
+    else{
+        search->use_mpc = false;
+            res = nega_alpha_mpc(search, bound, bound + 1, mpcd_final[depth]) <= bound;
+        search->use_mpc = true;
+    }
     return res;
 }
-/*
-inline bool mpc_end_higher(Search *search, int beta, int val){
-    return false;
-    //int bound = beta + ceil(search->mpct * mpcsd_final[(HW2 - search->board.n - END_MPC_MIN_DEPTH) / 5][abs(val) / 6]);
-    //return val >= bound;
-}
-
-inline bool mpc_end_lower(Search *search, int alpha, int val){
-    return false;
-    //int bound = alpha - ceil(search->mpct * mpcsd_final[(HW2 - search->board.n - END_MPC_MIN_DEPTH) / 5][abs(val) / 6]);
-    //return val <= bound;
-}
-*/
-
-inline bool mpc_higher(Search *search, int beta, int depth);
-inline bool mpc_lower(Search *search, int alpha, int depth);
 
 int nega_alpha_mpc(Search *search, int alpha, int beta, int depth){
     if (!global_searching)
         return SCORE_UNDEFINED;
-    if (depth <= MID_FAST_DEPTH)
-        return nega_alpha(search, alpha, beta, depth);
+    //if (depth <= MID_FAST_DEPTH)
+    //    return nega_alpha(search, alpha, beta, depth);
+    if (depth == 1)
+        return nega_alpha_eval1(search, alpha, beta);
     ++(search->n_nodes);
     #if USE_END_SC
         int stab_res = stability_cut(search, &alpha, &beta);
@@ -64,7 +65,7 @@ int nega_alpha_mpc(Search *search, int alpha, int beta, int depth){
             return stab_res;
     #endif
     #if USE_END_MPC
-        if (END_MPC_MIN_DEPTH <= depth && depth <= END_MPC_MAX_DEPTH && search->use_mpc){
+        if (MID_MPC_MIN_DEPTH <= depth && depth <= MID_MPC_MAX_DEPTH && search->use_mpc){
             if (mpc_higher(search, beta, depth))
                 return beta;
             if (mpc_lower(search, alpha, depth))

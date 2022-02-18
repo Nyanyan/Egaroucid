@@ -25,59 +25,7 @@ using namespace std;
 #define PRESEARCH_OFFSET 6
 #define PARALLEL_SPLIT_DIV 6
 
-int nega_alpha(Search *search, int alpha, int beta, int depth);
-inline bool mpc_higher(Search *search, int beta, int depth);
-inline bool mpc_lower(Search *search, int alpha, int depth);
-
-int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth){
-    if (!global_searching)
-        return SCORE_UNDEFINED;
-    if (depth <= MID_FAST_DEPTH)
-        return nega_alpha(search, alpha, beta, depth);
-    ++(search->n_nodes);
-    #if USE_MID_SC
-        int stab_res = stability_cut(search, &alpha, &beta);
-        if (stab_res != SCORE_UNDEFINED)
-            return stab_res;
-    #endif
-    #if USE_MID_MPC
-        if (MID_MPC_MIN_DEPTH <= depth && depth <= MID_MPC_MAX_DEPTH && search->use_mpc){
-            if (mpc_higher(search, beta, depth))
-                return beta;
-            if (mpc_lower(search, alpha, depth))
-                return alpha;
-        }
-    #endif
-    unsigned long long legal = search->board.mobility_ull();
-    int g, v = -INF;
-    if (legal == 0){
-        if (search->skipped)
-            return end_evaluate(&search->board);
-        search->pass();
-            v = -nega_alpha_ordering_nomemo(search, -beta, -alpha, depth);
-        search->undo_pass();
-        return v;
-    }
-    search->skipped = false;
-    const int canput = pop_count_ull(legal);
-    vector<Mobility> move_list(canput);
-    int idx = 0;
-    for (const int &cell: search->vacant_list){
-        if (1 & (legal >> cell))
-            calc_flip(&move_list[idx++], &search->board, cell);
-    }
-    move_ordering(search, move_list, depth, alpha, beta, false);
-    for (const Mobility &mob: move_list){
-        search->board.move(&mob);
-            g = -nega_alpha_ordering_nomemo(search, -beta, -alpha, depth - 1);
-        search->board.undo(&mob);
-        alpha = max(alpha, g);
-        v = max(v, g);
-        if (beta <= alpha)
-            break;
-    }
-    return v;
-}
+int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth);
 
 inline bool mpc_higher(Search *search, int beta, int depth){
     int bound = beta + ceil(search->mpct * mpcsd[search->board.phase()][depth - MID_MPC_MIN_DEPTH]);
@@ -165,13 +113,69 @@ int nega_alpha(Search *search, int alpha, int beta, int depth){
     return v;
 }
 
+int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth){
+    if (!global_searching)
+        return SCORE_UNDEFINED;
+    //if (depth <= MID_FAST_DEPTH)
+    //    return nega_alpha(search, alpha, beta, depth);
+    if (depth == 1)
+        return nega_alpha_eval1(search, alpha, beta);
+    if (depth == 0)
+        return mid_evaluate(&search->board);
+    ++(search->n_nodes);
+    #if USE_MID_SC
+        int stab_res = stability_cut(search, &alpha, &beta);
+        if (stab_res != SCORE_UNDEFINED)
+            return stab_res;
+    #endif
+    #if USE_MID_MPC
+        if (MID_MPC_MIN_DEPTH <= depth && depth <= MID_MPC_MAX_DEPTH && search->use_mpc){
+            if (mpc_higher(search, beta, depth))
+                return beta;
+            if (mpc_lower(search, alpha, depth))
+                return alpha;
+        }
+    #endif
+    unsigned long long legal = search->board.mobility_ull();
+    int g, v = -INF;
+    if (legal == 0){
+        if (search->skipped)
+            return end_evaluate(&search->board);
+        search->pass();
+            v = -nega_alpha_ordering_nomemo(search, -beta, -alpha, depth);
+        search->undo_pass();
+        return v;
+    }
+    search->skipped = false;
+    const int canput = pop_count_ull(legal);
+    vector<Mobility> move_list(canput);
+    int idx = 0;
+    for (const int &cell: search->vacant_list){
+        if (1 & (legal >> cell))
+            calc_flip(&move_list[idx++], &search->board, cell);
+    }
+    move_ordering(search, move_list, depth, alpha, beta, false);
+    for (const Mobility &mob: move_list){
+        search->board.move(&mob);
+            g = -nega_alpha_ordering_nomemo(search, -beta, -alpha, depth - 1);
+        search->board.undo(&mob);
+        alpha = max(alpha, g);
+        v = max(v, g);
+        if (beta <= alpha)
+            break;
+    }
+    return v;
+}
+
 int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool is_end_search, const bool *searching){
     if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
     if (is_end_search && depth <= MID_TO_END_DEPTH)
         return nega_alpha_end(search, alpha, beta, searching);
-    if (!is_end_search && depth <= MID_FAST_DEPTH)
-        return nega_alpha(search, alpha, beta, depth);
+    //if (!is_end_search && depth <= MID_FAST_DEPTH)
+    //    return nega_alpha(search, alpha, beta, depth);
+    if (!is_end_search && depth == 1)
+        return nega_alpha_eval1(search, alpha, beta);
     ++(search->n_nodes);
     #if USE_MID_SC
         int stab_res = stability_cut(search, &alpha, &beta);
@@ -289,8 +293,10 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool is_end_searc
         return -INF;
     if (is_end_search && depth <= MID_TO_END_DEPTH)
         return nega_scout_end(search, alpha, beta);
-    if (!is_end_search && depth <= MID_FAST_DEPTH)
-        return nega_alpha(search, alpha, beta, depth);
+    //if (!is_end_search && depth <= MID_FAST_DEPTH)
+    //    return nega_alpha(search, alpha, beta, depth);
+    if (!is_end_search && depth == 1)
+        return nega_alpha_eval1(search, alpha, beta);
     ++(search->n_nodes);
     #if USE_MID_SC
         int stab_res = stability_cut(search, &alpha, &beta);
