@@ -120,7 +120,7 @@ class Board {
             res->parity = parity;
         }
 
-        inline unsigned int hash(){
+        inline unsigned long long hash(){
             return p ^ 
                 hash_rand_black[0][0b1111111111111111 & b] ^ 
                 hash_rand_black[1][0b1111111111111111 & (b >> 16)] ^ 
@@ -160,7 +160,7 @@ class Board {
             */
         }
 
-        inline unsigned int hash_player(){
+        inline unsigned long long hash_player(){
             if (p == BLACK)
                 return hash();
             return 

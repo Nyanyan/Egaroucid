@@ -36,6 +36,8 @@ inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mp
     }
     Search_result res;
     int alpha = -HW2, beta = HW2, g, former_alpha = -INF;
+    parent_transpose_table.init();
+    child_transpose_table.init();
     if (b.n + max_depth < HW2){
         for (int depth = min(18, max(1, max_depth - 5)); depth <= max_depth; ++depth){
             alpha = -HW2 - 1;
@@ -204,6 +206,8 @@ inline int tree_search_value(Board b, int max_depth, bool use_mpc, double mpct, 
     search.vacant_list = vacant_lst;
     search.n_nodes = 0;
     int g = 0;
+    parent_transpose_table.init();
+    child_transpose_table.init();
     if (b.n + max_depth < HW2){
         for (int depth = min(18, max(0, max_depth - 5)); depth <= max_depth; ++depth){
             parent_transpose_table.ready_next_search();
