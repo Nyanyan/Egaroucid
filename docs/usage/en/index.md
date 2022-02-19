@@ -2,7 +2,7 @@
 
 [日本語](https://www.egaroucid-app.nyanyan.dev/usage/ja/)
 
-If you have some requests, please let me know through my Twitter ([@Nyanyan_Cube](https://twitter.com/Nyanyan_Cube) or [@takuto_yamana](https://twitter.com/takuto_yamana)), GitHub issue, or pull requests.
+If you have some requests, please let me know through my Twitter ([@Nyanyan_Cube](https://twitter.com/Nyanyan_Cube) or [@takuto_yamana](https://twitter.com/takuto_yamana)), [GitHub](https://github.com/Nyanyan/Egaroucid5) issue, or pull requests.
 
 
 
