@@ -18,8 +18,6 @@ using namespace std;
 
 #define MID_FAST_DEPTH 1
 #define END_FAST_DEPTH 7
-#define END_FAST_DEPTH1 6
-#define END_FAST_DEPTH2 8
 #define MID_TO_END_DEPTH 12
 
 #define SCORE_UNDEFINED -INF

@@ -520,6 +520,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, const bool *searching){
             calc_flip(&move_list[idx++], &search->board, cell);
     }
     move_ordering_fast_first(search, move_list);
+    int best_move = -1;
     #if USE_MULTI_THREAD && false
         int pv_idx = 0, split_count = 0;
         bool n_searching = true;
@@ -537,7 +538,8 @@ int nega_alpha_end(Search *search, int alpha, int beta, const bool *searching){
                     alpha = max(alpha, g);
                     if (v < g){
                         v = g;
-                        child_transpose_table.reg(search->tt_child_idx, &search->board, hash_code, mob.pos, g);
+                        best_move = mob.pos;
+                        //child_transpose_table.reg(search->tt_child_idx, &search->board, hash_code, mob.pos, g);
                     }
                     if (beta <= alpha)
                         break;
@@ -562,12 +564,14 @@ int nega_alpha_end(Search *search, int alpha, int beta, const bool *searching){
             alpha = max(alpha, g);
             if (v < g){
                 v = g;
-                child_transpose_table.reg(search->tt_child_idx, &search->board, hash_code, mob.pos, g);
+                best_move = mob.pos;
+                //child_transpose_table.reg(search->tt_child_idx, &search->board, hash_code, mob.pos, g);
             }
             if (beta <= alpha)
                 break;
         }
     #endif
+    child_transpose_table.reg(search->tt_child_idx, &search->board, hash_code, best_move, v);
     #if USE_END_TC
         if (beta <= v)
             parent_transpose_table.reg(search->tt_parent_idx, &search->board, hash_code, v, u);
@@ -632,6 +636,7 @@ int nega_scout_end(Search *search, int alpha, int beta){
     }
     move_ordering_fast_first(search, move_list);
     bool searching = true;
+    int best_move = -1;
     for (const Mobility &mob: move_list){
         search->board.move(&mob);
             if (v == -INF)
@@ -645,11 +650,13 @@ int nega_scout_end(Search *search, int alpha, int beta){
         alpha = max(alpha, g);
         if (v < g){
             v = g;
-            child_transpose_table.reg(search->tt_child_idx, &search->board, hash_code, mob.pos, g);
+            best_move = mob.pos;
+            //child_transpose_table.reg(search->tt_child_idx, &search->board, hash_code, mob.pos, g);
         }
         if (beta <= alpha)
             break;
     }
+    child_transpose_table.reg(search->tt_child_idx, &search->board, hash_code, best_move, v);
     #if USE_END_TC
         if (beta <= v)
             parent_transpose_table.reg(search->tt_parent_idx, &search->board, hash_code, v, u);

@@ -337,14 +337,14 @@ inline vector<int> create_vacant_lst(Board bd) {
 
 Cell_value analyze_search(Board b, int level) {
 	Cell_value res;
-	int depth;
-	bool use_mpc, is_mid_search;
-	double mpct;
 	if (b.p == VACANT) {
 		res.depth = 0;
 		res.value = b.score(BLACK);
 	}
 	else {
+		int depth;
+		bool use_mpc, is_mid_search;
+		double mpct;
 		get_level(level, b.n - 4, &is_mid_search, &depth, &use_mpc, &mpct);
 		res.value = book.get(&b) * (b.p ? 1 : -1);
 		if (abs(res.value) != INF) {

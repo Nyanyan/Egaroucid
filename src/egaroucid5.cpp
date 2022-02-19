@@ -87,10 +87,10 @@ int main(){
                 set_timer();
             #endif
             Search_result res = ai(b, level, book_error, vacant_lst);
-            print_result(res);
             #if USE_LOG
                 return 0;
             #endif
+            print_result(res);
             //return 0;
         }
     #endif
