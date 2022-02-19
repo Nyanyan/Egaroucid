@@ -1,6 +1,6 @@
 # How to use [Othello research support AI app Egaroucid](https://www.egaroucid-app.nyanyan.dev/)
 
-[日本語](https://www.egaroucid-app.nyanyan.dev/usage/ja/)
+<a href="https://twitter.com/share?ref_src=twsrc%5Etfw" class="twitter-share-button" data-text="Othello research support AI app Egaroucid" data-url="https://www.egaroucid-app.nyanyan.dev/" data-hashtags="egaroucid" data-related="takuto_yamana,Nyanyan_Cube" data-show-count="false">Tweet</a><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script> <a href=./../ja/>日本語</a>
 
 If you have some requests, please let me know through my Twitter ([@Nyanyan_Cube](https://twitter.com/Nyanyan_Cube) or [@takuto_yamana](https://twitter.com/takuto_yamana)), [GitHub](https://github.com/Nyanyan/Egaroucid5) issue, or pull requests.
 

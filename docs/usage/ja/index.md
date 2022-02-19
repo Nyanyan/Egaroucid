@@ -1,6 +1,6 @@
 # [オセロ研究支援AIアプリ Egaroucid](https://www.egaroucid-app.nyanyan.dev/) 使い方
 
-[English](https://www.egaroucid-app.nyanyan.dev/usage/en/)
+<a href="https://twitter.com/share?ref_src=twsrc%5Etfw" class="twitter-share-button" data-text="最強レベルAI搭載オセロ研究支援ソフト" data-url="https://www.egaroucid-app.nyanyan.dev/" data-hashtags="egaroucid" data-related="takuto_yamana,Nyanyan_Cube" data-show-count="false">Tweet</a><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script> <a href=./../en/>English</a>
 
 このアプリケーションの仕様について、不便なところや「この機能がほしい！」といった要望を募集しています。作者のTwitter([@Nyanyan_Cube](https://twitter.com/Nyanyan_Cube)または[@takuto_yamana](https://twitter.com/takuto_yamana))または[GitHub](https://github.com/Nyanyan/Egaroucid5)のissueやpull requestなどから要望をお送りください。
 
@@ -61,7 +61,7 @@ recordsフォルダ
 
 先読みは複数のレベルで定義されます。レベルごとに中盤の読み手数および読み切りタイミング、読みの確証が決められています。これらの値は以下の画像のように決まっています。
 
-
+![lookahead](https://raw.githubusercontent.com/Nyanyan/Egaroucid5/main/img/lookahead_ja.png)
 
 なお、レベルを上げると現代のコンピュータでは現実的な時間に計算が終わらなくなります。そのため、シンプルモードと真剣勝負モードではレベル上限を30にしています。
 
