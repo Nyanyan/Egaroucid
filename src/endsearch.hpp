@@ -23,14 +23,18 @@ inline bool mpc_end_higher(Search *search, int beta){
     const int depth = HW2 - search->board.n;
     int bound = beta + ceil(search->mpct * mpcsd_final[depth - END_MPC_MIN_DEPTH]);
     bool res;
-    if (mpcd_final[depth] == 0)
-        res = mid_evaluate(&search->board) >= bound;
-    else if (mpcd_final[depth] == 1)
-        res = nega_alpha_eval1(search, bound - 1, bound) >= bound;
-    else{
-        search->use_mpc = false;
-            res = nega_alpha_end_nomemo(search, bound - 1, bound, mpcd_final[depth]) >= bound;
-        search->use_mpc = true;
+    switch(mpcd_final[depth]){
+        case 0:
+            res = mid_evaluate(&search->board) >= bound;
+            break;
+        case 1:
+            res = nega_alpha_eval1(search, bound - 1, bound) >= bound;
+            break;
+        default:
+            search->use_mpc = false;
+                res = nega_alpha_end_nomemo(search, bound - 1, bound, mpcd_final[depth]) >= bound;
+            search->use_mpc = true;
+            break;
     }
     return res;
 }
@@ -39,14 +43,18 @@ inline bool mpc_end_lower(Search *search, int alpha){
     const int depth = HW2 - search->board.n;
     int bound = alpha - ceil(search->mpct * mpcsd_final[depth - END_MPC_MIN_DEPTH]);
     bool res;
-    if (mpcd_final[depth] == 0)
-        res = mid_evaluate(&search->board) <= bound;
-    else if (mpcd_final[depth] == 1)
-        res = nega_alpha_eval1(search, bound, bound + 1) <= bound;
-    else{
-        search->use_mpc = false;
-            res = nega_alpha_end_nomemo(search, bound, bound + 1, mpcd_final[depth]) <= bound;
-        search->use_mpc = true;
+    switch(mpcd_final[depth]){
+        case 0:
+            res = mid_evaluate(&search->board) <= bound;
+            break;
+        case 1:
+            res = nega_alpha_eval1(search, bound, bound + 1) <= bound;
+            break;
+        default:
+            search->use_mpc = false;
+                res = nega_alpha_end_nomemo(search, bound, bound + 1, mpcd_final[depth]) <= bound;
+            search->use_mpc = true;
+            break;
     }
     return res;
 }

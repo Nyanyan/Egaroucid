@@ -34,7 +34,7 @@
 #define W_VALUE 6
 //#define W_CELL_WEIGHT 1
 //#define W_EVALUATE 20
-#define W_MOBILITY 16
+#define W_MOBILITY 14
 #define W_SURROUND 8
 #define W_PARITY 4
 //#define W_STABILITY 20
@@ -232,7 +232,7 @@ int nega_alpha(Search *search, int alpha, int beta, int depth);
 int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth);
 int nega_scout(Search *search, int alpha, int beta, int depth, bool is_end_search);
 
-inline void move_evaluate(Search *search, Mobility *mob, const int best_moves[], const int alpha, const int depth){
+inline void move_evaluate(Search *search, Mobility *mob, const int best_moves[], const int alpha, const int beta, const int depth){
     mob->value = 0;
     if (mob->pos == best_moves[0])
         mob->value = W_BEST1_MOVE;
@@ -247,27 +247,33 @@ inline void move_evaluate(Search *search, Mobility *mob, const int best_moves[],
         search->board.move(mob);
             if (search->board.b == 0 || search->board.w == 0)
                 mob->value += W_WIPEOUT;
-            unsigned long long empties = ~(search->board.b | search->board.w);
-            if (search->board.p == BLACK)
-                mob->value += (calc_surround(search->board.b, empties) - calc_surround(search->board.w, empties)) * W_SURROUND;
-            else
-                mob->value += (calc_surround(search->board.w, empties) - calc_surround(search->board.b, empties)) * W_SURROUND;
-            mob->value -= pop_count_ull(search->board.mobility_ull()) * W_MOBILITY;
-            /*
-            int l, u;
-            parent_transpose_table.get_prev(&search->board, search->board.hash() & TRANSPOSE_TABLE_MASK, &l, &u);
-            if (u != INF || l != -INF)
-                mob->value += W_CACHE_HIT;
-            */
-            if (depth == 0)
-                mob->value += (HW2 - mid_evaluate(&search->board)) * W_VALUE;
-            else if (depth == 1)
-                mob->value += (HW2 - nega_alpha_eval1(search, alpha, min(HW2, alpha + 2 * MOVE_ORDERING_VALUE_OFFSET))) * W_VALUE;
             else{
-                bool use_mpc = search->use_mpc;
-                search->use_mpc = false;
-                    mob->value += (HW2 - nega_alpha_ordering_nomemo(search, alpha, min(HW2, alpha + 2 * MOVE_ORDERING_VALUE_OFFSET), depth)) * W_VALUE;
-                search->use_mpc = use_mpc;
+                unsigned long long empties = ~(search->board.b | search->board.w);
+                if (search->board.p == BLACK)
+                    mob->value += (calc_surround(search->board.b, empties) - calc_surround(search->board.w, empties)) * W_SURROUND;
+                else
+                    mob->value += (calc_surround(search->board.w, empties) - calc_surround(search->board.b, empties)) * W_SURROUND;
+                mob->value -= pop_count_ull(search->board.mobility_ull()) * W_MOBILITY;
+                /*
+                int l, u;
+                parent_transpose_table.get_prev(&search->board, search->board.hash() & TRANSPOSE_TABLE_MASK, &l, &u);
+                if (u != INF || l != -INF)
+                    mob->value += W_CACHE_HIT;
+                */
+                switch(depth){
+                    case 0:
+                        mob->value += (HW2 - mid_evaluate(&search->board)) * W_VALUE;
+                        break;
+                    case 1:
+                        mob->value += (HW2 - nega_alpha_eval1(search, alpha, beta)) * W_VALUE;
+                        break;
+                    default:
+                        bool use_mpc = search->use_mpc;
+                        search->use_mpc = false;
+                            mob->value += (HW2 - nega_alpha_ordering_nomemo(search, alpha, beta, depth)) * W_VALUE;
+                        search->use_mpc = use_mpc;
+                        break;
+                }
             }
         search->board.undo(mob);
     }
@@ -328,9 +334,10 @@ inline void move_ordering(Search *search, vector<Mobility> &move_list, int depth
     }
     */
     int eval_alpha = -min(HW2, beta + MOVE_ORDERING_VALUE_OFFSET);
+    int eval_beta = -max(-HW2, alpha - MOVE_ORDERING_VALUE_OFFSET);
     int eval_depth = depth / 8;
     for (Mobility &mob: move_list)
-        move_evaluate(search, &mob, best_moves, eval_alpha, eval_depth);
+        move_evaluate(search, &mob, best_moves, eval_alpha, eval_beta, eval_depth);
     sort(move_list.begin(), move_list.end(), cmp_move_ordering);
 }
 

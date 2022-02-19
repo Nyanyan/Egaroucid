@@ -21,10 +21,7 @@
 
 using namespace std;
 
-#define USE_DEFAULT_MPC -1.0
-#define PRESEARCH_OFFSET 6
-#define PARALLEL_SPLIT_DIV 6
-
+int nega_alpha_eval1(Search *search, int alpha, int beta);
 int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth);
 
 inline bool mpc_higher(Search *search, int beta, int depth){
@@ -32,10 +29,17 @@ inline bool mpc_higher(Search *search, int beta, int depth){
     if (bound > HW2)
         bound = HW2; //return false;
     bool res;
-    //double mpct = search->mpct;
-    //search->mpct = MPC_MPCT;
-    res = nega_alpha_ordering_nomemo(search, bound - 1, bound, mpcd[depth]) >= bound;
-    //search->mpct = mpct;
+    switch(mpcd[depth]){
+        case 0:
+            res = mid_evaluate(&search->board) >= bound;
+            break;
+        case 1:
+            res = nega_alpha_eval1(search, bound - 1, bound) >= bound;
+            break;
+        default:
+            res = nega_alpha_ordering_nomemo(search, bound - 1, bound, mpcd[depth]) >= bound;
+            break;
+    }
     return res;
 }
 
@@ -44,10 +48,17 @@ inline bool mpc_lower(Search *search, int alpha, int depth){
     if (bound < -HW2)
         bound = -HW2; //return false;
     bool res;
-    //double mpct = search->mpct;
-    //search->mpct = MPC_MPCT;
-    res = nega_alpha_ordering_nomemo(search, bound, bound + 1, mpcd[depth]) <= bound;
-    //search->mpct = mpct;
+    switch(mpcd[depth]){
+        case 0:
+            res = mid_evaluate(&search->board) <= bound;
+            break;
+        case 1:
+            res = nega_alpha_eval1(search, bound, bound + 1) <= bound;
+            break;
+        default:
+            res = nega_alpha_ordering_nomemo(search, bound, bound + 1, mpcd[depth]) <= bound;
+            break;
+    }
     return res;
 }
 

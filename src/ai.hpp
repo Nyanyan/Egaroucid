@@ -9,6 +9,9 @@
 #define SEARCH_FINAL 100
 #define SEARCH_BOOK -1
 #define BOOK_CUT_THRESHOLD_DIV 2
+#define USE_DEFAULT_MPC -1.0
+#define PRESEARCH_OFFSET 6
+#define PARALLEL_SPLIT_DIV 6
 
 inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mpct, const vector<int> vacant_lst){
     long long strt = tim();
@@ -118,7 +121,7 @@ inline Search_result tree_search(Board b, int max_depth, bool use_mpc, double mp
                             g = -mtd(&search, -beta, min(HW2, -alpha + PRESEARCH_OFFSET), -mob.value, depth - 1, true);
                             //g = -nega_scout(&search, -beta, min(HW2, -alpha + PRESEARCH_OFFSET), depth - 1, true);
                         if (pre_search_mpct == USE_DEFAULT_MPC)
-                            cerr << "main searching time " << tim() - strt2 << " time from start " << tim() - strt << " policy " << mob.pos << " value " << g << " expected " << mob.value << " nodes " << search.n_nodes - f_n_nodes2 << " nps " << (search.n_nodes - f_n_nodes2) * 1000 / max(1LL, tim() - strt2) << endl;
+                            cerr << "main searching time " << tim() - strt2 << " time from start " << tim() - strt << " mpct " << search.mpct << " policy " << mob.pos << " value " << g << " expected " << mob.value << " nodes " << search.n_nodes - f_n_nodes2 << " nps " << (search.n_nodes - f_n_nodes2) * 1000 / max(1LL, tim() - strt2) << endl;
                         #if USE_LOG
                             cout_div();
                         #endif
