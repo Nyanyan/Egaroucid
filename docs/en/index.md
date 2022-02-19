@@ -60,6 +60,30 @@ You can also download manuals in [markdown format](./../usage/en/index.md) or [P
 
 
 
+## Acknowledgments
+
+I would like to thank these people for great contributions.
+
+### UI Design
+
+Kaneko Eizo
+
+### User Test
+
+okojoMK
+
+Takada Seigo
+
+madaranuko
+
+Nagano Yasushi
+
+trineutron
+
+Kuruton
+
+
+
 ## Creator
 
 Takuto Yamana / Nyanyan
