@@ -26,9 +26,13 @@ The light version got the first place in the world ([CodinGame Othello](https://
 
 ## Download
 
-Coming soon...
+[Here](https://github.com/Nyanyan/Egaroucid5/releases) you can download.
 
-Scheduled release is 20, February, 2022.
+Please select the OS, then click to download. Mac OS X and Linux versions will be released later.
+
+Unzip the zip to anywhere, then click ```Egaroucid5.exe``` to execute.
+
+![download](./../img/download.png)
 
 
 
@@ -44,7 +48,7 @@ You can also download manuals in [markdown format](./../usage/en/index.md) or [P
 
 [Here](https://www.egaroucid.nyanyan.dev/) in Japanese you can play against the light version which got the first place in the world.
 
-![世界1位バージョン](./../img/egaroucid_light.png)
+![egaroucid light](./../img/egaroucid_light.png)
 
 
 
