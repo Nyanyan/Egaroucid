@@ -3,9 +3,9 @@
 
 int main(){
     uint64_t x;
-    cin >> x;
+    x = 376240289238932486;
     bit_print_board(x);
-    bit_print_board(white_line_mirror(x));
-    bit_print_board(black_line_mirror(x));
+    bit_print_board(rotate_90(x));
+    bit_print_board(rotate_270(x));
     return 0;
 }
