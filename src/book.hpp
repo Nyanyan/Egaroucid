@@ -220,7 +220,8 @@ class Book{
                 b.p = BLACK;
                 b.b = player;
                 b.w = opponent;
-				n_book += register_symmetric_book(b, (int)value, n_book);
+                b.n = pop_count_ull(player) + pop_count_ull(opponent);
+				n_book += register_symmetric_book(b, -(int)value, n_book);
 				for (j = 0; j < (int)link + 1; ++j) {
 					if (fread(&link_value, 1, 1, fp) < 1) {
 						cerr << "file broken" << endl;
@@ -232,10 +233,18 @@ class Book{
 						fclose(fp);
 						return false;
 					}
-					if (link_move != HW2_P1) {
+					if (link_move < HW2) {
                         calc_flip(&mob, &b, (int)link_move);
+                        if (mob.flip == 0ULL){
+                            cerr << "error! illegal move" << endl;
+                            return false;
+                        }
+                        if (b.n == 4 + 3){
+                            cerr << (int)link_move << endl;
+                            b.print();
+                        }
                         b.move(&mob);
-                        n_book += register_symmetric_book(b, -(int)link_value, n_book);
+                            n_book += register_symmetric_book(b, (int)link_value, n_book);
                         b.undo(&mob);
 					}
 				}
@@ -493,10 +502,18 @@ class Book{
 				res = 0;
             b.white_mirror();
             register_book(b, b.hash_player() & BOOK_HASH_MASK, value, line);
-            b.vertical_mirror();
+            b.black_mirror();
             register_book(b, b.hash_player() & BOOK_HASH_MASK, value, line);
             b.white_mirror();
             register_book(b, b.hash_player() & BOOK_HASH_MASK, value, line);
+            b.b = horizontal_mirror(b.b);
+            b.w = horizontal_mirror(b.w);
+            register_book(b, b.hash_player() & BOOK_HASH_MASK, value, line);
+            b.white_mirror();
+            register_book(b, b.hash_player() & BOOK_HASH_MASK, value, line);
+            b.black_mirror();
+            register_book(b, b.hash_player() & BOOK_HASH_MASK, value, line);
+            b.white_mirror();
 			return res;
         }
         /*

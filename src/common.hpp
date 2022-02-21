@@ -82,7 +82,7 @@ inline int pop_count_uchar(unsigned char x){
     x = (x & 0b00110011) + ((x & 0b11001100) >> 2);
     return (x & 0b00001111) + ((x & 11110000) >> 4);
 }
-
+/*
 inline unsigned long long mirror_v(unsigned long long x){
     unsigned long long a = x & 0b0101010101010101010101010101010101010101010101010101010101010101ULL;
     unsigned long long b = x & 0b1010101010101010101010101010101010101010101010101010101010101010ULL;
@@ -103,35 +103,37 @@ inline unsigned long long mirror_v(unsigned long long x){
     b = x & 0b1111111111111111111111111111111100000000000000000000000000000000ULL;
     return (a << 32) | (b >> 32);
 }
+*/
 
-/*
 #ifdef _MSC_VER
 	#define	mirror_v(x)	_byteswap_uint64(x)
 #else
 	#define	mirror_v(x)	__builtin_bswap64(x)
 #endif
-*/
+
 
 inline unsigned long long white_line(unsigned long long x){
-    unsigned long long res = 0;
-    int i, j;
-    for (i = 0; i < HW; ++i){
-        for (j = 0; j < HW; ++j){
-            res |= (1 & (x >> (i * HW + j))) << (j * HW + i);
-        }
-    }
-    return res;
+    unsigned long long a = (x ^ (x >> 7)) & 0x00AA00AA00AA00AAULL;
+    x = x ^ a ^ (a << 7);
+    a = (x ^ (x >> 14)) & 0x0000CCCC0000CCCCULL;
+    x = x ^ a ^ (a << 14);
+    a = (x ^ (x >> 28)) & 0x00000000F0F0F0F0ULL;
+    return x = x ^ a ^ (a << 28);
 }
 
 inline unsigned long long black_line(unsigned long long x){
-    unsigned long long res = 0;
-    int i, j;
-    for (i = 0; i < HW; ++i){
-        for (j = 0; j < HW; ++j){
-            res |= (1 & (x >> (i * HW + j))) << ((HW_M1 - j) * HW + HW_M1 - i);
-        }
-    }
-    return res;
+    unsigned long long a = (x ^ (x >> 9)) & 0x0055005500550055ULL;
+    x = x ^ a ^ (a << 9);
+    a = (x ^ (x >> 18)) & 0x0000333300003333ULL;
+    x = x ^ a ^ (a << 18);
+    a = (x ^ (x >> 36)) & 0x000000000F0F0F0FULL;
+    return x = x ^ a ^ (a << 36);
+}
+
+inline uint64_t horizontal_mirror(uint64_t x){
+    x = ((x >> 1) & 0x5555555555555555ULL) | ((x << 1) & 0xAAAAAAAAAAAAAAAAULL);
+    x = ((x >> 2) & 0x3333333333333333ULL) | ((x << 2) & 0xCCCCCCCCCCCCCCCCULL);
+    return ((x >> 4) & 0x0F0F0F0F0F0F0F0FULL) | ((x << 4) & 0xF0F0F0F0F0F0F0F0ULL);
 }
 
 inline int pop_digit(unsigned long long x, int place){
