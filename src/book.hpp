@@ -220,7 +220,6 @@ class Book{
                 b.p = BLACK;
                 b.b = player;
                 b.w = opponent;
-                b.n = pop_count_ull(player) + pop_count_ull(opponent);
 				n_book += register_symmetric_book(b, -(int)value, n_book);
 				for (j = 0; j < (int)link + 1; ++j) {
 					if (fread(&link_value, 1, 1, fp) < 1) {
@@ -238,10 +237,6 @@ class Book{
                         if (mob.flip == 0ULL){
                             cerr << "error! illegal move" << endl;
                             return false;
-                        }
-                        if (b.n == 4 + 3){
-                            cerr << (int)link_move << endl;
-                            b.print();
                         }
                         b.move(&mob);
                             n_book += register_symmetric_book(b, (int)link_value, n_book);
