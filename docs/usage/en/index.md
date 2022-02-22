@@ -73,7 +73,9 @@ You have to be careful when raising the level, because some high levels are too 
 
 Evaluation values are shown in each legal cells.
 
-If the board is in your book, ```book``` will be shown. If not, the AI will search at the ```Hint Level``` and show the the level or ```100%``` when exact search is done. The best moves are shown in blue letters.
+If the board is in your book, ```book``` will be shown. If not, the AI will search at the ```Hint Level``` and show the the level or ```100%``` when exact search is done. 
+
+The best moves are shown in blue letters. Best moves and values sometimes mismatch, but this is not a bug. Best moves seems to be more accurate than values.
 
 #### Human Sense Values
 
