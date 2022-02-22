@@ -1082,7 +1082,7 @@ void learn_book(Board bd, int level, int depth, int book_learn_accept, Board* bd
 		popped = que.top();
 		que.pop();
 		b = popped.second;
-		if (b.n - 3 < depth) {
+		if (b.n - 4 < depth) {
 			children.clear();
 			legal = b.mobility_ull();
 			for (i = 0; i < HW2; ++i) {
@@ -1103,7 +1103,7 @@ void learn_book(Board bd, int level, int depth, int book_learn_accept, Board* bd
 							*value_ptr = value;
 							book.reg(nb, value);
 						}
-						if (-value <= book_learn_accept && global_searching && nb.n - 3 < depth) {
+						if (-value <= book_learn_accept && global_searching && nb.n - 4 < depth) {
 							children.emplace_back(make_pair(-value, nb));
 						}
 					}
@@ -1954,6 +1954,7 @@ void Main() {
 							if (bd.p == VACANT) {
 								popup_start_time = tim();
 							}
+							history[history.size() - 1].b.v = sgn * ai_result.value;
 							bd.v = sgn * ai_result.value;
 							history.emplace_back(History_elem(bd, history[history.size() - 1].record + str_record(bd.policy)));
 							history_place = bd.n - 4;
