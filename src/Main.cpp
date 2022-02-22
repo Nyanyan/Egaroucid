@@ -408,7 +408,7 @@ void closing_draw(Font font, Font small_font, Texture icon, Texture logo, bool t
 }
 
 void board_draw(Rect board_cells[], Board b, int int_mode, bool use_hint_flag, bool normal_hint, bool human_hint, bool umigame_hint,
-	const int hint_state, const unsigned long long hint_legal, const int hint_value[], const int hint_depth[], Font normal_font, Font small_font, Font big_font, Font mini_font, Font coord_font,
+	const int hint_state, const unsigned long long hint_legal, const int hint_value[], const int hint_depth[], const bool hint_best_moves[], Font normal_font, Font small_font, Font big_font, Font mini_font, Font coord_font,
 	bool before_start_game,
 	const int umigame_state[], const umigame_result umigame_value[],
 	const int human_value_state, const int human_value[],
@@ -427,7 +427,7 @@ void board_draw(Rect board_cells[], Board b, int int_mode, bool use_hint_flag, b
 	Circle(board_sx + 6 * board_cell_size, board_sy + 2 * board_cell_size, 5).draw(Color(51, 51, 51));
 	Circle(board_sx + 6 * board_cell_size, board_sy + 6 * board_cell_size, 5).draw(Color(51, 51, 51));
 	RoundRect(board_sx, board_sy, board_cell_size * HW, board_cell_size * HW, 20).draw(ColorF(0, 0, 0, 0)).drawFrame(0, board_frame_width, Palette::White);
-	int board_arr[HW2], max_cell_value = -INF;
+	int board_arr[HW2];
 	Mobility mob;
 	unsigned long long legal = b.mobility_ull();
 	b.translate_to_arr(board_arr);
@@ -441,9 +441,6 @@ void board_draw(Rect board_cells[], Board b, int int_mode, bool use_hint_flag, b
 			Circle(x, y, stone_size).draw(Palette::White);
 		}
 		if (1 & (legal >> cell)) {
-			if (use_hint_flag && normal_hint && hint_state >= 2 && (1 & (hint_legal >> cell))) {
-				max_cell_value = max(max_cell_value, hint_value[cell]);
-			}
 			if (!before_start_game && !book_start_learn && (!use_hint_flag || (!normal_hint && !human_hint && !umigame_hint))) {
 				int xx = board_sx + (HW_M1 - cell % HW) * board_cell_size + board_cell_size / 2;
 				int yy = board_sy + (HW_M1 - cell / HW) * board_cell_size + board_cell_size / 2;
@@ -464,7 +461,7 @@ void board_draw(Rect board_cells[], Board b, int int_mode, bool use_hint_flag, b
 				for (int cell = 0; cell < HW2; ++cell) {
 					if (1 & (hint_legal >> cell)) {
 						Color color = Palette::White;
-						if (hint_value[cell] == max_cell_value)
+						if (hint_best_moves[cell])
 							color = Palette::Cyan;
 						if (int_mode == 0) {
 							int x = board_sx + (HW_M1 - cell % HW) * board_cell_size + board_cell_size / 2;
@@ -1295,6 +1292,7 @@ void Main() {
 
 	int hint_value[HW2], hint_depth[HW2];
 	int hint_calc_value[HW2], hint_calc_depth[HW2];
+	bool hint_best_moves[HW2];
 	unsigned long long hint_legal = 0;
 	future<bool>  hint_future;
 	int hint_state = 0;
@@ -1792,7 +1790,7 @@ void Main() {
 										}
 										hint_legal = n_hint_legal;
 									}
-									hint_future = async(launch::async, ai_hint, bd, hint_state / 2, hint_level, hint_calc_value, hint_calc_depth, hint_value, hint_legal, create_vacant_lst(bd));
+									hint_future = async(launch::async, ai_hint, bd, hint_state / 2, hint_level, hint_calc_value, hint_calc_depth, hint_best_moves, hint_value, hint_legal, create_vacant_lst(bd));
 									++hint_state;
 								}
 							}
@@ -2044,7 +2042,7 @@ void Main() {
 
 			/*** Board draw ***/
 			board_draw(board_cells, bd, int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
-				hint_state, hint_legal, hint_value, hint_depth, normal_hint_font, small_hint_font, font30, mini_hint_font, board_coord_font,
+				hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, normal_hint_font, small_hint_font, font30, mini_hint_font, board_coord_font,
 				before_start_game,
 				umigame_state, umigame_value,
 				human_value_state, human_value,
