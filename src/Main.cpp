@@ -547,11 +547,12 @@ void board_draw(Rect board_cells[], Board b, int int_mode, bool use_hint_flag, b
 	}
 }
 
-bool show_popup(Board b, bool use_ai_flag, bool human_first, bool human_second, bool both_ai, Font big_font, Font small_font, long long strt) {
+bool show_popup(Board b, bool use_ai_flag, bool human_first, bool human_second, bool both_ai, int ai_level, Font big_font, Font small_font, long long strt) {
 	double transparency = min(1.0, (double)(tim() - strt) / popup_fade_time);
 	RoundRect(x_center - popup_width / 2, y_center - popup_height / 2, popup_width, popup_height, popup_r).draw(ColorF(popup_color, transparency));
 	int black_stones = pop_count_ull(b.b);
 	int white_stones = pop_count_ull(b.w);
+	String result_str;
 	if (use_ai_flag && human_first) {
 		if (black_stones > white_stones) {
 			big_font(language.get("result", "you_win")).draw(Arg::bottomCenter(x_center, y_center - 60), ColorF(popup_font_color, transparency));
@@ -589,10 +590,43 @@ bool show_popup(Board b, bool use_ai_flag, bool human_first, bool human_second, 
 	small_font(black_stones).draw(Arg::rightCenter(x_center - popup_width / 3 + popup_circle_r * 2 + 20, y_center), ColorF(popup_font_color, transparency));
 	Circle(x_center + popup_width / 3, y_center, popup_circle_r).draw(ColorF(Palette::White, transparency)).drawFrame(2, ColorF(Palette::Black, transparency));
 	small_font(white_stones).draw(Arg::leftCenter(x_center + popup_width / 3 - popup_circle_r * 2 - 20, y_center), ColorF(popup_font_color, transparency));
-	FrameButton button;
-	button.init(x_center - 100, y_center + 60, 200, 50, 10, 2, language.get("button", "close"), small_font, button_color, button_font_color, button_font_color);
-	button.draw(transparency);
-	return button.clicked();
+	FrameButton close_button;
+	close_button.init(x_center - 225, y_center + 60, 200, 50, 10, 2, language.get("button", "close"), small_font, button_color, button_font_color, button_font_color);
+	close_button.draw(transparency);
+	FrameButton tweet_button;
+	tweet_button.init(x_center + 25, y_center + 60, 200, 50, 10, 2, language.get("button", "tweet"), small_font, button_color, button_font_color, button_font_color);
+	tweet_button.draw(transparency);
+	if (tweet_button.clicked()) {
+		String tweet_result;
+		if (use_ai_flag && human_first) {
+			if (black_stones > white_stones) {
+				tweet_result = language.get("result", "tweet_you_win_0") + language.get("common", "othello_ai") + U" Egaroucid " + language.get("common", "level") + U" " + Format(ai_level) + language.get("result", "tweet_you_win_1");
+			}
+			else if (black_stones < white_stones) {
+				tweet_result = language.get("result", "tweet_AI_win_0") + language.get("common", "othello_ai") + U" Egaroucid " + language.get("common", "level") + U" " + Format(ai_level) + language.get("result", "tweet_AI_win_1");
+			}
+			else {
+				tweet_result = language.get("result", "tweet_draw_0") + language.get("common", "othello_ai") + U" Egaroucid " + language.get("common", "level") + U" " + Format(ai_level) + language.get("result", "tweet_draw_1");
+			}
+		}
+		else if (use_ai_flag && human_second) {
+			if (black_stones < white_stones) {
+				tweet_result = language.get("result", "tweet_you_win_0") + language.get("common", "othello_ai") + U" Egaroucid " + language.get("common", "level") + U" " + Format(ai_level) + language.get("result", "tweet_you_win_1");
+			}
+			else if (black_stones > white_stones) {
+				tweet_result = language.get("result", "tweet_AI_win_0") + language.get("common", "othello_ai") + U" Egaroucid " + language.get("common", "level") + U" " + Format(ai_level) + language.get("result", "tweet_AI_win_1");
+			}
+			else {
+				tweet_result = language.get("result", "tweet_draw_0") + language.get("common", "othello_ai") + U" Egaroucid " + language.get("common", "level") + U" " + Format(ai_level) + language.get("result", "tweet_draw_1");
+			}
+		}
+		else {
+			tweet_result = language.get("common", "othello_ai") + U" Egaroucid";
+		}
+		tweet_result += U" #egaroucid https://www.egaroucid-app.nyanyan.dev/";
+		Twitter::OpenTweetWindow(tweet_result);
+	}
+	return close_button.clicked();
 }
 
 int output_game_popup(Font big_font, Font mid_font, Font small_font, String* black_player, String* white_player, String* game_memo, bool active_cells[]) {
@@ -2096,7 +2130,7 @@ void Main() {
 					graph.draw(history, fork_history, history_place);
 				}
 				if (bd.p == VACANT && !fork_mode && show_popup_flag && show_end_popup) {
-					show_popup_flag = !show_popup(bd, !both_human, human_first, human_second, both_ai, font50, font30, popup_start_time);
+					show_popup_flag = !show_popup(bd, !both_human, human_first, human_second, both_ai, ai_level, font50, font30, popup_start_time);
 					main_window_active = !show_popup_flag;
 					if (main_window_active) {
 						global_searching = true;
