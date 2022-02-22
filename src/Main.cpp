@@ -2301,7 +2301,7 @@ void Main() {
 				cerr << "resume calculating" << endl;
 				global_searching = true;
 			}
-			else if (vertical_convert && !analyzing && !book_learning && !book_modifying) {
+			else if (vertical_convert && !analyzing && !book_learning && !book_modifying && !ai_thinking) {
 				bd.vertical_mirror();
 				String record = U"";
 				for (History_elem& elem : history) {
@@ -2324,7 +2324,7 @@ void Main() {
 				reset_human_value(&human_value_state, &human_value_future);
 				reset_ai(&ai_thinking, &ai_future);
 			}
-			else if (black_line_convert && !analyzing && !book_learning && !book_modifying) {
+			else if (black_line_convert && !analyzing && !book_learning && !book_modifying && !ai_thinking) {
 				bd.white_mirror(); // because the Board is vertical mirrored
 				String record = U"";
 				for (History_elem& elem : history) {
@@ -2347,7 +2347,7 @@ void Main() {
 				reset_human_value(&human_value_state, &human_value_future);
 				reset_ai(&ai_thinking, &ai_future);
 			}
-			else if (white_line_convert && !analyzing && !book_learning && !book_modifying) {
+			else if (white_line_convert && !analyzing && !book_learning && !book_modifying && !ai_thinking) {
 				bd.black_mirror(); // because the Board is vertical mirrored
 				String record = U"";
 				for (History_elem& elem : history) {

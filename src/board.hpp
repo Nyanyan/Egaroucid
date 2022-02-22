@@ -206,8 +206,8 @@ class Board {
         }
 
         inline void vertical_mirror(){
-            b = mirror_v(b);
-            w = mirror_v(w);
+            b = rotate_180(b);
+            w = rotate_180(w);
             if (policy != -1)
                 policy = (HW_M1 - policy / HW) * HW + (HW_M1 - policy % HW);
         }
