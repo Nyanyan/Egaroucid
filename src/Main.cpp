@@ -408,7 +408,7 @@ void closing_draw(Font font, Font small_font, Texture icon, Texture logo, bool t
 }
 
 void board_draw(Rect board_cells[], Board b, int int_mode, bool use_hint_flag, bool normal_hint, bool human_hint, bool umigame_hint,
-	const int hint_state, const unsigned long long hint_legal, const int hint_value[], const int hint_depth[], const bool hint_best_moves[], Font normal_font, Font small_font, Font big_font, Font mini_font, Font coord_font,
+	const int hint_state, const unsigned long long hint_legal, const int hint_value[], const int hint_depth[], const bool hint_best_moves[], const int hint_show_num, Font normal_font, Font small_font, Font big_font, Font mini_font, Font coord_font,
 	bool before_start_game,
 	const int umigame_state[], const umigame_result umigame_value[],
 	const int human_value_state, const int human_value[],
@@ -458,37 +458,54 @@ void board_draw(Rect board_cells[], Board b, int int_mode, bool use_hint_flag, b
 		}
 		if (normal_hint) {
 			if (hint_state >= 2) {
+				vector<pair<int, int>> show_cells;
+				unsigned long long all_legal = b.mobility_ull();
 				for (int cell = 0; cell < HW2; ++cell) {
-					if (1 & (hint_legal >> cell)) {
+					if (1 & (all_legal >> cell)) {
+						if (1 & (hint_legal >> cell) && (hint_best_moves[cell] || hint_depth[cell] == SEARCH_BOOK)) {
+							show_cells.emplace_back(make_pair(-INF, cell));
+						}
+						else {
+							show_cells.emplace_back(make_pair(-hint_value[cell], cell));
+						}
+					}
+				}
+				sort(show_cells.begin(), show_cells.end());
+				int n_shown = 0, last_value = -INF;
+				for (pair<int, int> elem : show_cells) {
+					if (last_value > hint_value[elem.second] && n_shown >= hint_show_num) {
+						int x = board_sx + (HW_M1 - elem.second % HW) * board_cell_size + board_cell_size / 2;
+						int y = board_sy + (HW_M1 - elem.second / HW) * board_cell_size + board_cell_size / 2;
+						Circle(x, y, legal_size).draw(Palette::Cyan);
+					}
+					else {
 						Color color = Palette::White;
-						if (hint_best_moves[cell])
+						if (hint_best_moves[elem.second]) {
 							color = Palette::Cyan;
+						}
 						if (int_mode == 0) {
-							int x = board_sx + (HW_M1 - cell % HW) * board_cell_size + board_cell_size / 2;
-							int y = board_sy + (HW_M1 - cell / HW) * board_cell_size + board_cell_size / 2;
-							big_font(hint_value[cell]).draw(Arg::center = Vec2{ x, y }, color);
+							int x = board_sx + (HW_M1 - elem.second % HW) * board_cell_size + board_cell_size / 2;
+							int y = board_sy + (HW_M1 - elem.second / HW) * board_cell_size + board_cell_size / 2;
+							big_font(hint_value[elem.second]).draw(Arg::center = Vec2{ x, y }, color);
 						}
 						else if (int_mode == 1) {
-							int x = board_sx + (HW_M1 - cell % HW) * board_cell_size + 3;
-							int y = board_sy + (HW_M1 - cell / HW) * board_cell_size + 3;
-							normal_font(hint_value[cell]).draw(x, y, color);
+							int x = board_sx + (HW_M1 - elem.second % HW) * board_cell_size + 3;
+							int y = board_sy + (HW_M1 - elem.second / HW) * board_cell_size + 3;
+							normal_font(hint_value[elem.second]).draw(x, y, color);
 							y += 19;
-							if (hint_depth[cell] == SEARCH_BOOK) {
+							if (hint_depth[elem.second] == SEARCH_BOOK) {
 								small_font(U"book").draw(x, y, color);
 							}
-							else if (hint_depth[cell] == SEARCH_FINAL) {
+							else if (hint_depth[elem.second] == SEARCH_FINAL) {
 								small_font(U"100%").draw(x, y, color);
 							}
 							else {
-								small_font(language.get("common", "level"), hint_depth[cell]).draw(x, y, color);
+								small_font(language.get("common", "level"), hint_depth[elem.second]).draw(x, y, color);
 							}
 						}
-						hint_shown[cell] = true;
-					}
-					else if (1 & (legal >> cell)) {
-						int x = board_sx + (HW_M1 - cell % HW) * board_cell_size + board_cell_size / 2;
-						int y = board_sy + (HW_M1 - cell / HW) * board_cell_size + board_cell_size / 2;
-						Circle(x, y, legal_size).draw(Palette::Cyan);
+						hint_shown[elem.second] = true;
+						last_value = hint_value[elem.second];
+						++n_shown;
 					}
 				}
 			}
@@ -1764,7 +1781,7 @@ void Main() {
 											hint_value[cell] = 0;
 										}
 									}
-									else if (show_mode[1] && (hint_state == hint_level / 3 * 2 || hint_state == hint_level * 2 / 3 * 2)) {
+									else if (show_mode[1] && hint_state == hint_level * 2 / 3 * 2) {
 										unsigned long long n_hint_legal = 0;
 										vector<pair<int, int>> legals;
 										for (int cell = 0; cell < HW2; ++cell) {
@@ -1773,15 +1790,8 @@ void Main() {
 											}
 										}
 										sort(legals.begin(), legals.end());
-										if (hint_state == hint_level * 2 / 3 * 2) {
-											for (int i = 0; i < min((int)legals.size(), hint_actual_nums[hint_num]); ++i) {
-												n_hint_legal |= 1ULL << legals[i].second;
-											}
-										}
-										else {
-											for (int i = 0; i < min((int)legals.size(), (hint_actual_nums[hint_num] * 3 / 2 + 1)); ++i) {
-												n_hint_legal |= 1ULL << legals[i].second;
-											}
+										for (int i = 0; i < min((int)legals.size(), max(hint_actual_nums[hint_num] + 4, hint_actual_nums[hint_num] * 3 / 2 + 1)); ++i) {
+											n_hint_legal |= 1ULL << legals[i].second;
 										}
 										for (int i = 0; i < (int)legals.size(); ++i) {
 											if (hint_depth[legals[i].second] == SEARCH_BOOK) {
@@ -1798,6 +1808,7 @@ void Main() {
 								bool hint_calclated = hint_future.get();
 								if (hint_calclated) {
 									if (global_searching) {
+										unsigned long long all_legal = bd.mobility_ull();
 										bool all_complete_searched = true;
 										for (int cell = 0; cell < HW2; ++cell) {
 											if (1 & (hint_legal >> cell)) {
@@ -1812,6 +1823,9 @@ void Main() {
 												else {
 													hint_value[cell] = hint_calc_value[cell];
 												}
+											}
+											else if (1 & (all_legal >> cell)) {
+												hint_value[cell] = -INF;
 											}
 										}
 										if (all_complete_searched) {
@@ -2042,7 +2056,7 @@ void Main() {
 
 			/*** Board draw ***/
 			board_draw(board_cells, bd, int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
-				hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, normal_hint_font, small_hint_font, font30, mini_hint_font, board_coord_font,
+				hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, hint_actual_nums[hint_num], normal_hint_font, small_hint_font, font30, mini_hint_font, board_coord_font,
 				before_start_game,
 				umigame_state, umigame_value,
 				human_value_state, human_value,
