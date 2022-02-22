@@ -598,6 +598,28 @@ int output_game_popup(Font big_font, Font mid_font, Font small_font, String* bla
 	mid_font(language.get("save_game", "memo")).draw(Arg::center(x_center, sy + 190), popup_font_color);
 	Rect memo_area{ x_center - memo_area_width / 2, sy + 220, memo_area_width, textbox_height * 6 };
 	const String editingText = TextInput::GetEditingText();
+	bool tab_inputted = false;
+	if (active_cells[0]) {
+		tab_inputted = (*black_player).narrow().find('\t') != string::npos;
+	}
+	else if (active_cells[1]) {
+		tab_inputted = (*white_player).narrow().find('\t') != string::npos;
+	}
+	else if (active_cells[2]) {
+		tab_inputted = (*game_memo).narrow().find('\t') != string::npos;
+	}
+	if (tab_inputted) {
+		for (int i = 0; i < 3; ++i) {
+			if (active_cells[i]) {
+				active_cells[i] = false;
+				active_cells[(i + 1) % 3] = true;
+				break;
+			}
+		}
+		*black_player = (*black_player).replaced(U"\t", U"");
+		*white_player = (*white_player).replaced(U"\t", U"");
+		*game_memo = (*game_memo).replaced(U"\t", U"");
+	}
 	if (black_area.leftClicked() || active_cells[0]) {
 		black_area.draw(textbox_active_color).drawFrame(2, popup_frame_color);
 		TextInput::UpdateText(*black_player);
@@ -1200,7 +1222,7 @@ void Main() {
 	Window::Resize(window_size);
 	Window::SetStyle(WindowStyle::Sizable);
 	Scene::SetResizeMode(ResizeMode::Keep);
-	Window::SetTitle(U"Egaroucid5.4.0");
+	Window::SetTitle(U"Egaroucid5.4.1");
 	System::SetTerminationTriggers(UserAction::NoAction);
 	Scene::SetBackground(green);
 	//Console.open();
