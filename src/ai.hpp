@@ -317,7 +317,7 @@ Search_result ai(Board b, int level, int book_error, const vector<int> vacant_ls
     return res;
 }
 
-bool ai_hint(Board b, int level, int max_level, int res[], int info[], const int pre_searched_values[], unsigned long long legal, vector<int> vacant_lst){
+bool ai_hint(Board b, int level, int max_level, int res[], int info[], bool best_moves[], const int pre_searched_values[], unsigned long long legal, vector<int> vacant_lst){
     Mobility mob;
     Board nb;
     future<int> val_future[HW2];
@@ -365,6 +365,15 @@ bool ai_hint(Board b, int level, int max_level, int res[], int info[], const int
                     info[i] = SEARCH_BOOK;
             }
         }
+    }
+    int best_score = -INF;
+    for (int i = 0; i < HW2; ++i){
+        if (1 & (legal >> i))
+            best_score = max(best_score, res[i]);
+    }
+    for (int i = 0; i < HW2; ++i){
+        if (1 & (legal >> i))
+            best_moves[i] = (res[i] == best_score);
     }
     return true;
 }
