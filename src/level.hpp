@@ -166,3 +166,17 @@ void get_level_depth(int level, int *mid_depth, int *end_depth){
     *mid_depth = level_definition[level].mid_lookahead;
     *end_depth = level_definition[level].complete0;
 }
+
+bool get_level_midsearch(int level, int n_moves){
+    if (level <= 0){
+        return true;
+    } else if (level > 60)
+        level = 60;
+    Level level_status = level_definition[level];
+    int n_empties = 60 - n_moves;
+    if (n_empties > level_status.complete0){
+        return true;
+    } else {
+        return false;
+    }
+}

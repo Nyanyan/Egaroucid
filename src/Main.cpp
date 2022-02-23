@@ -1920,6 +1920,7 @@ void Main() {
 							else if (hint_future.wait_for(chrono::seconds(0)) == future_status::ready) {
 								bool hint_calclated = hint_future.get();
 								if (hint_calclated) {
+									bool is_mid_search = get_level_midsearch(hint_state / 2, bd.n - 4);
 									if (global_searching) {
 										unsigned long long all_legal = bd.mobility_ull();
 										bool all_complete_searched = true;
@@ -1929,7 +1930,7 @@ void Main() {
 												if (hint_depth[cell] != SEARCH_FINAL && hint_depth[cell] != SEARCH_BOOK) {
 													all_complete_searched = false;
 												}
-												if (hint_state > 2 && hint_depth[cell] != SEARCH_FINAL) {
+												if (hint_state > 2 && hint_depth[cell] != SEARCH_FINAL && is_mid_search) {
 													hint_value[cell] += hint_calc_value[cell];
 													hint_value[cell] /= 2;
 												}
