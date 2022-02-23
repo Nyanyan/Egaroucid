@@ -2153,7 +2153,7 @@ void Main() {
 			else if (human_second || both_ai) {
 				start_game_button.draw();
 				main_window_active = false;
-				if (start_game_button.clicked()) {
+				if (!menu.active() && start_game_button.clicked()) {
 					cerr << "start game!" << endl;
 					before_start_game = false;
 					main_window_active = true;
