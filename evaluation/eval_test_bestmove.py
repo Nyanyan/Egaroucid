@@ -9,22 +9,20 @@ evaluate = subprocess.Popen('../src/egaroucid5.out'.split(), stdin=subprocess.PI
 with open('eval_test_data_bestmove.txt', 'r') as f:
     all_data = f.read().splitlines()
 
-n_data = 1000
+n_data = 10000
 
 data = sample(all_data, n_data)
 
 n_error = 0
 weighted_n_error = 0
 
-for datum in data:
+for datum in tqdm(data):
     board = datum[:64]
     best_move = int(datum[64:])
     std_in = board + '\n'
     evaluate.stdin.write(std_in.encode('utf-8'))
     evaluate.stdin.flush()
     received_move = int(evaluate.stdout.readline())
-    if best_move != received_move:
-        print(best_move, received_move)
     if best_move != received_move:
         n_error += 1
         weighted_n_error += 1

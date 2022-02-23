@@ -107,7 +107,8 @@ inline bool import_edax_book(string file) {
         }
         if (best_score != value)
             cerr << best_score << " " << value << endl;
-        output_board(player, opponent, best_move);
+        if (0 <= best_move && best_move < 64)
+            output_board(player, opponent, best_move);
     }
     return true;
 }
