@@ -676,6 +676,11 @@ int output_game_popup(Font big_font, Font mid_font, Font small_font, String* bla
 	if (black_area.leftClicked() || active_cells[0]) {
 		black_area.draw(textbox_active_color).drawFrame(2, popup_frame_color);
 		TextInput::UpdateText(*black_player);
+		if (KeyControl.pressed() && KeyV.down()) {
+			String clip_text;
+			Clipboard::GetText(clip_text);
+			*black_player += clip_text;
+		}
 		small_font(*black_player + U'|' + editingText).draw(black_area.stretched(-4), popup_font_color);
 		active_cells[0] = true;
 		active_cells[1] = false;
@@ -688,6 +693,11 @@ int output_game_popup(Font big_font, Font mid_font, Font small_font, String* bla
 	if (white_area.leftClicked() || active_cells[1]) {
 		white_area.draw(textbox_active_color).drawFrame(2, popup_frame_color);
 		TextInput::UpdateText(*white_player);
+		if (KeyControl.pressed() && KeyV.down()) {
+			String clip_text;
+			Clipboard::GetText(clip_text);
+			*white_player += clip_text;
+		}
 		small_font(*white_player + U'|' + editingText).draw(white_area.stretched(-4), popup_font_color);
 		active_cells[0] = false;
 		active_cells[1] = true;
@@ -704,6 +714,11 @@ int output_game_popup(Font big_font, Font mid_font, Font small_font, String* bla
 		active_cells[0] = false;
 		active_cells[1] = false;
 		active_cells[2] = true;
+		if (KeyControl.pressed() && KeyV.down()) {
+			String clip_text;
+			Clipboard::GetText(clip_text);
+			*game_memo += clip_text;
+		}
 	}
 	else {
 		memo_area.draw(popup_color).drawFrame(2, popup_frame_color);
