@@ -1651,6 +1651,12 @@ void Main() {
 						int_mode = i;
 					}
 				}
+				if (int_mode != 1 && fork_mode) {
+					fork_mode = false;
+					fork_history.clear();
+					history_place = min(history_place, (int)history.size() - 1);
+					bd = history[find_history_idx(history, history_place)].b;
+				}
 				menu = create_menu(checkbox, &dummy,
 					&show_mode[0], &show_mode[1], &show_mode[2],
 					&start_game_flag, &analyze_flag,
@@ -1769,7 +1775,7 @@ void Main() {
 				for (int cell = 0; cell < HW2; ++cell) {
 					board_clicked[cell] = false;
 				}
-				if (!menu.active() && !book_learning && !book_modifying && main_window_active && ((both_human || (human_first && bd.p == BLACK) || (human_second && bd.p == WHITE)) || history_place != history[history.size() - 1].b.n - 4)) {
+				if (!menu.active() && !book_learning && !book_modifying && main_window_active && ((both_human || (human_first && bd.p == BLACK) || (human_second && bd.p == WHITE)) || (history_place != history[history.size() - 1].b.n - 4 && show_mode[1]))) {
 					for (int cell = 0; cell < HW2; ++cell) {
 						board_clicked[cell] = board_cells[cell].leftClicked() && (1 & (legal >> cell));
 					}
