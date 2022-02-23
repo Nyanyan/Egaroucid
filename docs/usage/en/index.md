@@ -30,6 +30,8 @@ If you have some requests, please let me know through my Twitter ([@Nyanyan_Cube
 
 ### Directory
 
+Mode: All
+
 Check if the all things are in these directories before you start the application.
 
 ```
@@ -59,6 +61,8 @@ Execute ```Egaroucid5.exe``` to start the application.
 
 ### Lookahead
 
+Mode: All
+
 Lookahead depth is defined by the "Levels". These levels are defined as this image.
 
 ![lookahead](https://raw.githubusercontent.com/Nyanyan/Egaroucid5/main/img/lookahead_en.png)
@@ -71,6 +75,8 @@ You have to be careful when raising the level, because some high levels are too 
 
 ### Evaluation Values
 
+Mode: Study, Simple
+
 Evaluation values are shown in each legal cells.
 
 If the board is in your book, ```book``` will be shown. If not, the AI will search at the ```Hint Level``` and show the the level or ```100%``` when exact search is done. 
@@ -78,6 +84,8 @@ If the board is in your book, ```book``` will be shown. If not, the AI will sear
 The best moves are shown in blue letters. Best moves and values sometimes mismatch, but this is not a bug. Best moves seems to be more accurate than values.
 
 #### Human Sense Values
+
+Mode: Study
 
 This application has another evaluation values. Human Sense Values are defined as putting together these values:
 
@@ -96,6 +104,8 @@ Human Sense Values are calculated as:
 
 #### Umigame's values
 
+Mode: Study
+
 Umigame's values are the numbers of the bifurcations of the best moves to memorize in your book.
 
 You can see this value with checking ```Umigame's value```.
@@ -110,6 +120,8 @@ Umigame's values are announced here in Japanese: http://blog.livedoor.jp/umigame
 
 ### Analyze
 
+Mode: All
+
 Clicking ```Analyze``` button, the evaluation values are re-calculated and plotted on the graph in ```AI Level```.
 
 
@@ -117,6 +129,8 @@ Clicking ```Analyze``` button, the evaluation values are re-calculated and plott
 <a id="history"></a>
 
 ### History
+
+Mode: Study
 
 You can move across the boards with dragging the graph or pushing right/left or A/D keys. You can play another line with putting a stone.
 
@@ -128,11 +142,15 @@ You can move across the boards with dragging the graph or pushing right/left or 
 
 #### Inporting a Record
 
+Mode: Study
+
 You can add a record in your clipboard. The record must be written in F5D6 or f5d6 format.
 
 If importing succeed, you can see the board in your app.
 
 #### Inporting a Board
+
+Mode: Study
 
 You can add a board in your clipboard. The board must be written in one line with these characters.
 
@@ -151,6 +169,8 @@ The sample input is:
 If importing succeed, you can see the board in your app.
 
 #### Save Game
+
+Mode: Study
 
 You can save the game with clicking ```Save Game``` button. You can add white/black player names and memo.
 
@@ -188,6 +208,8 @@ If the game is not finished, the score will be ```?```.
 
 #### Copy Record
 
+Mode: Study
+
 You can copy the record of the board shown with clicking ```Copy Record``` button.
 
 
@@ -198,9 +220,13 @@ You can copy the record of the board shown with clicking ```Copy Record``` butto
 
 #### How Book is used
 
+Mode: All
+
 If AI found at least one move of the legal moves, the AI do not search and put a stone from registered moves. That means that if you register bad moves only in your book, the AI will put on bad squares. You must register better moves first.
 
 #### Book Error
+
+Mode: All
 
 When some legal moves from a board are registered in your book with different evaluation values, AI puts a disc with book error.
 
@@ -210,6 +236,8 @@ If the registered moves are +1, -2, -10 respectively and book error is 0, to 2, 
 
 #### Modifying and Register a Value to Book manually
 
+Mode: Study
+
 Set any board and right click the legal cell. You can now set a new value with keys number keys, ten keys, and ```-``` key. You see what you typed on lower left of the app.
 
 If you right click a legal cell by mistake, do nothing and click the cell again. You can escape.
@@ -217,6 +245,8 @@ If you right click a legal cell by mistake, do nothing and click the cell again.
 When closing the app, the book is automatically saved.
 
 #### Register Values to Book Automatically
+
+Mode: Study
 
 First, you have to set a board which will be the root of a book.
 
@@ -243,11 +273,15 @@ The algorithm uses priority queue.
 
 #### Import (Join) a Book
 
+Mode: Study
+
 Any book created with this application or created by Edax can be imported on this app.
 
 Press ```Import``` button in the ```Book``` tab, then you can import it with drag-and-drop.
 
 #### Modify the book automatically
+
+Mode: Study
 
 Set any board as the root of the modification, then press ```Auto Modification``` to modify the values after the board.
 
@@ -271,6 +305,8 @@ I got a permission to use Zebra's book.
 <a id="joseki"></a>
 
 ### Joseki
+
+Mode: All
 
 Josekis are shown in Japanese. If you created a Joseki data, then I'm very pleased if you send me to pack it in the downloaded zip file.
 
