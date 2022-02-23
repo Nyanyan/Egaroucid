@@ -144,7 +144,7 @@ You can move across the boards with dragging the graph or pushing right/left or 
 
 Mode: Study
 
-You can add a record in your clipboard. The record must be written in F5D6 or f5d6 format.
+You can add a record. The record must be written in F5D6 or f5d6 format.
 
 If importing succeed, you can see the board in your app.
 
@@ -152,7 +152,7 @@ If importing succeed, you can see the board in your app.
 
 Mode: Study
 
-You can add a board in your clipboard. The board must be written in one line with these characters.
+You can add a board. The board must be written in one line with these characters.
 
 * Black Stones: ```0/B/b/X/x/*```
 * White Stones: ```1/W/w/O/o```
