@@ -75,6 +75,39 @@ int main(){
             cin >> search.mpct;
             cout << nega_alpha_ordering_nomemo(&search, -HW2, HW2, depth) << endl;
         }
+    #elif EVAL_TEST_MODE
+        int depth;
+        int best_move;
+        unsigned long long legal;
+        int score, best_score;
+        Search search;
+        Mobility mob;
+        while (true){
+            //cin >> depth;
+            search.vacant_list = input_board(&search.board, BLACK);
+            search.n_nodes = 0;
+            search.skipped = false;
+            search.tt_child_idx = 0;
+            search.tt_parent_idx = 0;
+            search.use_mpc = false;
+            search.mpct = 1000000.0;
+            best_move = -1;
+            legal = search.board.mobility_ull();
+            best_score = -INF;
+            for (const int &cell: search.vacant_list){
+                if (1 & (legal >> cell)){
+                    calc_flip(&mob, &search.board, cell);
+                    search.board.move(&mob);
+                        score = -mid_evaluate(&search.board);
+                    search.board.undo(&mob);
+                    if (score > best_score){
+                        best_score = score;
+                        best_move = cell;
+                    }
+                }
+            }
+            cout << HW2_M1 - best_move << endl;
+        }
     #else
         while (true){
             #if MOVE_ORDERING_ADJUST

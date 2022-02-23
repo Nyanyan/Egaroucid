@@ -61,7 +61,10 @@
 #define STATISTICS_MODE true
 
 // MPC calculation mode
-#define MPC_MODE true
+#define MPC_MODE false
+
+// evaluation test mode
+#define EVAL_TEST_MODE true
 
 // creatring evaluation data mode
 #define EVAL_MODE false
