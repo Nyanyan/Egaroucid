@@ -730,7 +730,7 @@ int import_record_popup(Font big_font, Font mid_font, Font small_font, String* r
 	constexpr int textbox_height = 40;
 	RoundRect(sx, sy, popup_import_width, popup_import_height, popup_r).draw(popup_color);
 	big_font(language.get("in_out", "input_record")).draw(Arg::center(x_center, sy + 40), popup_font_color);
-	Rect text_area{ sx + 10, sy + 100, popup_import_width - 50, 200};
+	Rect text_area{ sx + 25, sy + 100, popup_import_width - 50, 200};
 	text_area.draw(textbox_active_color).drawFrame(2, popup_frame_color);
 	TextInput::UpdateText(*record);
 	if (KeyControl.pressed() && KeyV.down()) {
@@ -739,6 +739,36 @@ int import_record_popup(Font big_font, Font mid_font, Font small_font, String* r
 		*record += clip_text;
 	}
 	small_font(*record + U'|').draw(text_area.stretched(-4), popup_font_color);
+	FrameButton close_button;
+	close_button.init(x_center - 225, sy + 350, 200, 50, 10, 2, language.get("button", "close"), mid_font, button_color, button_font_color, button_font_color);
+	close_button.draw();
+	FrameButton import_button;
+	import_button.init(x_center + 25, sy + 350, 200, 50, 10, 2, language.get("button", "import"), mid_font, button_color, button_font_color, button_font_color);
+	import_button.draw();
+	if (import_button.clicked()) {
+		return 1;
+	}
+	else if (close_button.clicked()) {
+		return 2;
+	}
+	return 0;
+}
+
+int import_board_popup(Font big_font, Font mid_font, Font small_font, String* text) {
+	constexpr int sx = x_center - popup_import_width / 2;
+	constexpr int sy = y_center - popup_import_height / 2;
+	constexpr int textbox_height = 40;
+	RoundRect(sx, sy, popup_import_width, popup_import_height, popup_r).draw(popup_color);
+	big_font(language.get("in_out", "input_board")).draw(Arg::center(x_center, sy + 40), popup_font_color);
+	Rect text_area{ sx + 25, sy + 100, popup_import_width - 50, 200 };
+	text_area.draw(textbox_active_color).drawFrame(2, popup_frame_color);
+	TextInput::UpdateText(*text);
+	if (KeyControl.pressed() && KeyV.down()) {
+		String clip_text;
+		Clipboard::GetText(clip_text);
+		*text += clip_text;
+	}
+	small_font(*text + U'|').draw(text_area.stretched(-4), popup_font_color);
 	FrameButton close_button;
 	close_button.init(x_center - 225, sy + 350, 200, 50, 10, 2, language.get("button", "close"), mid_font, button_color, button_font_color, button_font_color);
 	close_button.draw();
@@ -1455,6 +1485,9 @@ void Main() {
 
 	bool inputting_record = false;
 	String imported_record;
+
+	bool inputting_board = false;
+	String imported_board;
 
 	int use_ai_mode;
 	string lang_name;
@@ -2265,9 +2298,9 @@ void Main() {
 						reset_analyze(&analyzing, &analyze_future);
 						before_start_game = false;
 						main_window_active = true;
+						inputting_record = false;
+						System::Sleep(100);
 					}
-					inputting_record = false;
-					System::Sleep(100);
 				}
 				else if (state == 2) {
 					main_window_active = true;
@@ -2275,6 +2308,40 @@ void Main() {
 				}
 			}
 			/*** importing record ***/
+
+			/*** importing board ***/
+			if (inputting_board) {
+				int state = import_board_popup(font40, font30, font20, &imported_board);
+				if (state == 1) {
+					pair<bool, Board> imported = import_board(imported_board);
+					if (imported.first) {
+						bd = imported.second;
+						bd.v = -INF;
+						history.clear();
+						fork_history.clear();
+						history.emplace_back(bd);
+						history_place = bd.n - 4;
+						fork_mode = false;
+						before_start_game = true;
+						show_popup_flag = true;
+						joseki_name.clear();
+						reset_hint(&hint_state, &hint_future);
+						reset_umigame(umigame_state, umigame_future);
+						reset_human_value(&human_value_state, &human_value_future);
+						reset_ai(&ai_thinking, &ai_future);
+						reset_analyze(&analyzing, &analyze_future);
+						before_start_game = false;
+						main_window_active = true;
+						inputting_board = false;
+						System::Sleep(100);
+					}
+				}
+				else if (state == 2) {
+					main_window_active = true;
+					inputting_board = false;
+				}
+			}
+			/*** importing board ***/
 
 			/*** book learn ***/
 			if (book_start_learn && !book_learning && !book_modifying) {
@@ -2343,7 +2410,7 @@ void Main() {
 				}
 				cerr << "record copied" << endl;
 			}
-			else if (output_game_flag && !before_start_game && main_window_active && !book_learning && !book_modifying) {
+			else if (output_game_flag && !before_start_game && main_window_active && !book_learning && !book_modifying && !inputting_record && !inputting_board) {
 				if (!both_human) {
 					if (both_ai) {
 						black_player = U"Egaroucid";
@@ -2373,35 +2440,15 @@ void Main() {
 				outputting_game = true;
 				main_window_active = false;
 			}
-			else if (input_record_flag && !book_learning && !book_modifying && !outputting_game) {
+			else if (input_record_flag && !book_learning && !book_modifying && !outputting_game && !inputting_board) {
 				inputting_record = true;
 				main_window_active = false;
 				imported_record.clear();
 			}
-			else if (input_board_flag && !book_learning && !book_modifying) {
-				String board_str;
-				if (Clipboard::GetText(board_str)) {
-					pair<bool, Board> imported = import_board(board_str);
-					if (imported.first) {
-						bd = imported.second;
-						bd.v = -INF;
-						history.clear();
-						fork_history.clear();
-						history.emplace_back(bd);
-						history_place = bd.n - 4;
-						fork_mode = false;
-						before_start_game = true;
-						show_popup_flag = true;
-						joseki_name.clear();
-						reset_hint(&hint_state, &hint_future);
-						reset_umigame(umigame_state, umigame_future);
-						reset_human_value(&human_value_state, &human_value_future);
-						reset_ai(&ai_thinking, &ai_future);
-						reset_analyze(&analyzing, &analyze_future);
-						before_start_game = false;
-						main_window_active = true;
-					}
-				}
+			else if (input_board_flag && !book_learning && !book_modifying && !outputting_game && !inputting_record) {
+				inputting_board = true;
+				main_window_active = false;
+				imported_board.clear();
 			}
 			else if (stop_read_flag) {
 				cerr << "stop calculating" << endl;
