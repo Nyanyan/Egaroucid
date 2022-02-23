@@ -3,7 +3,7 @@ import subprocess
 from tqdm import tqdm, trange
 import matplotlib.pyplot as plt
 
-evaluate = subprocess.Popen('../src/egaroucid5.out'.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+evaluate = subprocess.Popen('../src/1move_bestmove.out'.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
 
 
 with open('eval_test_data_bestmove.txt', 'r') as f:
