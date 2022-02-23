@@ -3,7 +3,8 @@
     "common": {
         "black": "Black",
         "white": "White",
-        "level": "Level"
+        "level": "Level",
+        "othello_ai": "Othello AI"
     },
     "loading": {
         "loading": "Loading...",
@@ -44,12 +45,13 @@
         "book": "Book",
         "start_learn": "Start Learning",
         "stop_learn": "Stop Learning",
+        "auto_modification": "Auto Modification",
         "settings": "Book Settings",
         "depth": "Depth",
-        "accept": "Disc Difference Acception",
+        "accept": "Acceptance",
         "changed_value": "Modified Value",
         "import": "Import",
-        "import_explanation": "Import Egaroucid/Edax book by drag-and-drop",
+        "import_explanation": "Import Egaroucid/Edax book\nby drag-and-drop",
         "import_failed": "Import Failed",
         "back": "Back",
         "loading": "Importing..."
@@ -90,15 +92,23 @@
         "start_game": "Start Game",
         "how_to_use": "Usage",
         "close": "Close",
+        "tweet": "Tweet",
         "save_game": "Save This Game",
-        "not_save_game": "Close Without Saving"
+        "not_save_game": "Close Without Saving",
+        "import": "Import"
     },
     "result": {
         "you_win": "You Won!",
         "AI_win": "AI Won!",
         "draw": "Draw!",
         "black_win": "Black Won!",
-        "white_win": "White Won!"
+        "white_win": "White Won!",
+        "tweet_you_win_0": "I won against ",
+        "tweet_you_win_1": "!",
+        "tweet_AI_win_0": "I lose against ",
+        "tweet_AI_win_1": "...",
+        "tweet_draw_0": "I had a draw with ",
+        "tweet_draw_1": "!"
     },
     "save_game": {
         "save_game": "Save This Game",
@@ -109,9 +119,19 @@
         "black": "Black Turn",
         "white": "White Turn",
         "game_end": "Game End",
-        "joseki_name": "Joseki Name",
+        "joseki_name": "Joseki",
         "ai": "AI",
-        "hint": "Hint"
+        "hint": "Hint",
+        "moves": "moves",
+        "lookahead_0": "Lookahead: ",
+        "lookahead_1": "moves",
+        "complete_0": "Complete: ",
+        "complete_1": "empties"
+    },
+    "help": {
+        "help": "Help",
+        "how_to_use": "Usage",
+        "bug_report": "Report a Bug"
     },
     "tips": {
         "do_you_know": "Do You Know?",
@@ -122,7 +142,7 @@
             "You can save games in records directory",
             "Book & settings are \nautomatically saved in closing",
             "You can import various formatted boards",
-            "You can import records or boards from clipboard",
+            "You can import records or boards",
             "Human sense values are comprehensive evaluation",
             "Umigame values depend on your book",
             "You can hide pop-up when game ends",

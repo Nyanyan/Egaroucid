@@ -3,7 +3,8 @@
     "common": {
         "black": "黒",
         "white": "白",
-        "level": "レベル"
+        "level": "レベル",
+        "othello_ai": "オセロAI"
     },
     "loading": {
         "loading": "起動中...",
@@ -44,6 +45,7 @@
         "book": "定石",
         "start_learn": "学習開始",
         "stop_learn": "学習停止",
+        "auto_modification": "自動修正",
         "settings": "bookの設定",
         "depth": "深さ",
         "accept": "許容石差",
@@ -90,15 +92,23 @@
         "start_game": "対局開始",
         "how_to_use": "使い方",
         "close": "閉じる",
+        "tweet": "Tweet",
         "save_game": "対局を保存",
-        "not_save_game": "保存せず閉じる"
+        "not_save_game": "保存せず閉じる",
+        "import": "取り込む"
     },
     "result": {
         "you_win": "あなたの勝ち！",
         "AI_win": "AIの勝ち！",
         "draw": "引き分け！",
         "black_win": "黒の勝ち！",
-        "white_win": "白の勝ち！"
+        "white_win": "白の勝ち！",
+        "tweet_you_win_0": "",
+        "tweet_you_win_1": "に勝ちました！",
+        "tweet_AI_win_0": "",
+        "tweet_AI_win_1": "に負けました…",
+        "tweet_draw_0": "",
+        "tweet_draw_1": "と引き分けました！"
     },
     "save_game": {
         "save_game": "対局保存",
@@ -109,9 +119,19 @@
         "black": "黒番",
         "white": "白番",
         "game_end": "終局",
-        "joseki_name": "定石名",
+        "joseki_name": "定石",
         "ai": "AI",
-        "hint": "ヒント"
+        "hint": "ヒント",
+        "moves": "手目",
+        "lookahead_0": "",
+        "lookahead_1": "手読み",
+        "complete_0": "",
+        "complete_1": "手読み切り"
+    },
+    "help": {
+        "help": "ヘルプ",
+        "how_to_use": "使い方",
+        "bug_report": "バグレポート"
     },
     "tips": {
         "do_you_know": "ご存知ですか？",
@@ -122,7 +142,7 @@
             "対局はrecordsフォルダに保存可能",
             "bookや設定は終了時に自動保存",
             "盤面入力は様々な形式に対応",
-            "クリップボードから棋譜や局面を入力",
+            "棋譜や局面を入力可能",
             "人間的評価値は手筋の総合評価",
             "うみがめ数表示はbookに依存",
             "終了時ポップアップは非表示も可能",
