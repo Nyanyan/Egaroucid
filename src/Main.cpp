@@ -50,17 +50,12 @@ constexpr int board_sx = left_left + board_coord_size, board_sy = y_center - boa
 constexpr int stone_size = 25, legal_size = 5;
 constexpr int graph_sx = 585, graph_sy = 230, graph_width = 400, graph_height = 350, graph_resolution = 8, graph_font_size = 15;
 constexpr Color green = Color(36, 153, 114, 100);
-constexpr int start_game_how_to_use_width = 400, start_game_how_to_use_height = 100;
-constexpr int start_game_button_x = x_center - start_game_how_to_use_width / 2,
-start_game_button_y = y_center - start_game_how_to_use_height - 40,
+constexpr int start_game_how_to_use_width = 120, start_game_how_to_use_height = 30;
+constexpr int start_game_button_x = 20,
+start_game_button_y = 50,
 start_game_button_w = start_game_how_to_use_width,
 start_game_button_h = start_game_how_to_use_height,
-start_game_button_r = 10;
-constexpr int how_to_use_button_x = x_center - start_game_how_to_use_width / 2,
-how_to_use_button_y = y_center + 40,
-how_to_use_button_w = start_game_how_to_use_width,
-how_to_use_button_h = start_game_how_to_use_height,
-how_to_use_button_r = 10;
+start_game_button_r = 5;
 constexpr Color button_color = Palette::White, button_font_color = Palette::Black;
 constexpr int popup_width = 500, popup_height = 300, popup_r = 20, popup_circle_r = 30;
 constexpr Color popup_color = Palette::White, popup_font_color = Palette::Black, popup_frame_color = Palette::Black, textbox_active_color = Palette::Lightcyan;
@@ -105,6 +100,7 @@ Menu create_menu(Texture checkbox,
 	bool* show_end_popup, bool* show_log,
 	bool* thread1, bool* thread2, bool* thread4, bool* thread8, bool* thread16, bool* thread32, bool* thread64, bool* thread128,
 	bool* stop_read_flag, bool* resume_read_flag, bool* vertical_convert, bool* white_line_convert, bool* black_line_convert,
+	bool* usage_flag, bool* bug_report_flag,
 	bool lang_acts[], vector<string> lang_name_vector) {
 	Menu menu;
 	menu_title title;
@@ -293,9 +289,17 @@ Menu create_menu(Texture checkbox,
 		title.push(menu_e);
 	}
 
-
-
 	menu.push(title);
+
+
+
+	title.init(language.get("help", "help"));
+	menu_e.init_button(language.get("help", "how_to_use"), usage_flag);
+	title.push(menu_e);
+	menu_e.init_button(language.get("help", "bug_report"), bug_report_flag);
+	title.push(menu_e);
+	menu.push(title);
+
 
 	title.init(U"Language");
 	for (int i = 0; i < (int)lang_name_vector.size(); ++i) {
@@ -1294,6 +1298,7 @@ void Main() {
 	int n_threads_num[8] = { 1, 2, 4, 8, 16, 32, 64, 128 };
 	int n_thread_idx = 2;
 	bool stop_read_flag = false, resume_read_flag = false, vertical_convert = false, white_line_convert = false, black_line_convert = false;
+	bool usage_flag = false, bug_report_flag = false;
 	bool language_acts[100];
 	language_acts[0] = true;
 	for (int i = 1; i < 100; ++i) {
@@ -1376,7 +1381,6 @@ void Main() {
 
 	bool before_start_game = true;
 	Button start_game_button;
-	Button how_to_use_button;
 
 	bool show_popup_flag = true;
 	bool show_end_popup = true;
@@ -1566,9 +1570,9 @@ void Main() {
 					&show_end_popup, &show_log,
 					&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
 					&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert,
+					&usage_flag, &bug_report_flag,
 					language_acts, language_names);
-				start_game_button.init(start_game_button_x, start_game_button_y, start_game_button_w, start_game_button_h, start_game_button_r, language.get("button", "start_game"), font50, button_color, button_font_color);
-				how_to_use_button.init(how_to_use_button_x, how_to_use_button_y, how_to_use_button_w, how_to_use_button_h, how_to_use_button_r, language.get("button", "how_to_use"), font50, button_color, button_font_color);
+				start_game_button.init(start_game_button_x, start_game_button_y, start_game_button_w, start_game_button_h, start_game_button_r, language.get("button", "start_game"), font15, button_color, button_font_color);
 				tips = language.get_random("tips", "tips");
 				lang_initialized = 2;
 			}
@@ -1592,6 +1596,7 @@ void Main() {
 						&show_end_popup, &show_log,
 						&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
 						&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert,
+						&usage_flag, &bug_report_flag,
 						language_acts, language_names);
 				}
 				initialize_draw(&initialize_future, &initializing, &initialize_failed, font50, font20, icon, logo, texture_loaded, tips);
@@ -1659,6 +1664,7 @@ void Main() {
 					&show_end_popup, &show_log,
 					&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
 					&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert,
+					&usage_flag, &bug_report_flag,
 					language_acts, language_names);
 			}
 			/**** when mode changed **/
@@ -1695,9 +1701,9 @@ void Main() {
 						&show_end_popup, &show_log,
 						&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
 						&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert,
+						&usage_flag, &bug_report_flag,
 						language_acts, language_names);
-					start_game_button.init(start_game_button_x, start_game_button_y, start_game_button_w, start_game_button_h, start_game_button_r, language.get("button", "start_game"), font30, button_color, button_font_color);
-					how_to_use_button.init(how_to_use_button_x, how_to_use_button_y, how_to_use_button_w, how_to_use_button_h, how_to_use_button_r, language.get("button", "how_to_use"), font30, button_color, button_font_color);
+					start_game_button.init(start_game_button_x, start_game_button_y, start_game_button_w, start_game_button_h, start_game_button_r, language.get("button", "start_game"), font15, button_color, button_font_color);
 				}
 
 			}
@@ -2138,9 +2144,8 @@ void Main() {
 					}
 				}
 			}
-			else {
+			else if (human_second || both_ai) {
 				start_game_button.draw();
-				how_to_use_button.draw();
 				main_window_active = false;
 				if (start_game_button.clicked()) {
 					cerr << "start game!" << endl;
@@ -2157,8 +2162,20 @@ void Main() {
 						System::Sleep(100);
 					}
 				}
-				else if (how_to_use_button.clicked()) {
-					System::LaunchBrowser(U"https://www.egaroucid-app.nyanyan.dev/usage/");
+			}
+			else {
+				cerr << "start game!" << endl;
+				before_start_game = false;
+				main_window_active = true;
+				if (history.size()) {
+					history_place = history[history.size() - 1].b.n - 4;
+				}
+				else {
+					history_place = 0;
+				}
+				if (main_window_active) {
+					global_searching = true;
+					System::Sleep(100);
 				}
 			}
 			/*** before and after game ***/
@@ -2443,6 +2460,12 @@ void Main() {
 					book_changed = true;
 					modify_book_future = async(launch::async, modify_book, bd);
 				}
+			}
+			else if (usage_flag) {
+				System::LaunchBrowser(U"https://www.egaroucid-app.nyanyan.dev/usage/");
+			}
+			else if (bug_report_flag) {
+				System::LaunchBrowser(U"https://docs.google.com/forms/d/e/1FAIpQLSd6ML1T1fc707luPEefBXuImMnlM9cQP8j-YHKiSyFoS-8rmQ/viewform?usp=sf_link");
 			}
 			/*** menu buttons ***/
 
