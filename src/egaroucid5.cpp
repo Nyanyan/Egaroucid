@@ -58,7 +58,7 @@ int main(){
     cerr << "initialized" << endl;
     Board b;
     int ai_player;
-    const int level = 21;
+    const int level = 24;
     const int book_error = 0;
     #if MPC_MODE
         int depth;
