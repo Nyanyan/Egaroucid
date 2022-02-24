@@ -26,5 +26,6 @@ for datum in tqdm(data):
     if best_move != received_move:
         n_error += 1
         weighted_n_error += 1
+evaluate.kill()
 
 print(n_error, weighted_n_error, ' ', n_error / n_data, weighted_n_error / n_data)

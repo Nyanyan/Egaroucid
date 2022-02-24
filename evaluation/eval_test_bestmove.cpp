@@ -107,13 +107,13 @@ inline bool import_edax_book(string file) {
         }
         if (best_score != value)
             cerr << best_score << " " << value << endl;
-        if (0 <= best_move && best_move < 64)
+        if (0 <= best_move && best_move < 64 && abs(value) < 5)
             output_board(player, opponent, best_move);
     }
     return true;
 }
 
 int main(){
-    import_edax_book("third_party/okojo_book.dat");
+    import_edax_book("third_party/book.dat");
     return 0;
 }
