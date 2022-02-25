@@ -229,20 +229,20 @@ class Flip{
 
                 p = join_v_line(player, u);
                 o = join_v_line(opponent, u);
-                flip |= line_to_board_v[flip_pre_calc[p][o][t]] << u;
+                flip |= split_v_lines[flip_pre_calc[p][o][t]] << u;
 
                 u += t;
                 if (u >= 2 && u <= 12){
                     p = join_d7_line(player, u) & d7_mask[place];
                     o = join_d7_line(opponent, u) & d7_mask[place];
-                    flip |= line_to_board_d7[flip_pre_calc[p][o][HW_M1 - t]][u];
+                    flip |= split_d7_lines[flip_pre_calc[p][o][HW_M1 - t]][u - 2];
                 }
 
                 u -= t * 2;
                 if (u >= -5 && u <= 5){
                     p = join_d9_line(player, u) & d9_mask[place];
                     o = join_d9_line(opponent, u) & d9_mask[place];
-                    flip |= line_to_board_d9[flip_pre_calc[p][o][t]][u + HW];
+                    flip |= split_d9_lines[flip_pre_calc[p][o][t]][u + 5];
                 }
             }
         #elif FLIP_CALC_MODE == 2
