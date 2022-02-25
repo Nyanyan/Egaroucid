@@ -92,9 +92,9 @@ inline uint64_t black_line_mirror(uint64_t x){
 
 #if USE_FAST_VERTICAL_MIRROR
     #ifdef _MSC_VER
-        #define	mirror_v(x)	_byteswap_uint64(x)
+        #define	vertical_mirror(x)	_byteswap_uint64(x)
     #else
-        #define	mirror_v(x)	__builtin_bswap64(x)
+        #define	vertical_mirror(x)	__builtin_bswap64(x)
     #endif
 #else
     inline uint64_t vertical_mirror(uint64_t x){
@@ -197,11 +197,11 @@ inline uint64_t unrotate_135(uint64_t x){
 }
 
 inline uint64_t rotate_315(uint64_t x){
-    return rotate_45(rotate_270(x));
+    return rotate_135(rotate_180(x));
 }
 
 inline uint64_t unrotate_315(uint64_t x){
-    return rotate_90(unrotate_45(x));
+    return rotate_180(unrotate_135(x));
 }
 
 constexpr uint8_t d7_mask[HW2] = {
