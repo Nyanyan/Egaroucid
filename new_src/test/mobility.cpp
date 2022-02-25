@@ -13,6 +13,8 @@ int main(){
     strt = tim();
     for (uint32_t i = 0; i < 10000000; ++i)
         mobility = calc_mobility(p, o);
+    bit_print_board(mobility);
+    cerr << (mobility == get_mobility(p, o)) << endl;
     cerr << tim() - strt << endl;
 
     strt = tim();
