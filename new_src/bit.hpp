@@ -179,11 +179,21 @@ inline uint64_t unrotate_225(uint64_t x){
 }
 
 inline uint64_t rotate_135(uint64_t x){
-    return rotate_45(rotate_90(x));
+    uint64_t a = (x ^ (x >> 8)) & 0x00AA00AA00AA00AAULL;
+    x = x ^ a ^ (a << 8);
+    a = (x ^ (x >> 16)) & 0x0000336600003366ULL;
+    x = x ^ a ^ (a << 16);
+    a = (x ^ (x >> 32)) & 0x00000000C3870F1EULL;
+    return x ^ a ^ (a << 32);
 }
 
 inline uint64_t unrotate_135(uint64_t x){
-    return rotate_270(unrotate_45(x));
+    uint64_t a = (x ^ (x >> 32)) & 0x00000000C3870F1EULL;
+    x = x ^ a ^ (a << 32);
+    a = (x ^ (x >> 16)) & 0x0000336600003366ULL;
+    x = x ^ a ^ (a << 16);
+    a = (x ^ (x >> 8)) & 0x00AA00AA00AA00AAULL;
+    return x ^ a ^ (a << 8);
 }
 
 inline uint64_t rotate_315(uint64_t x){
