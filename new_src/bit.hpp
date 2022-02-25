@@ -60,12 +60,18 @@ void print_board(uint64_t p, uint64_t o){
     }
 }
 
-inline uint32_t pop_count(uint64_t x){
+inline uint32_t pop_count_ull(uint64_t x){
     x = x - ((x >> 1) & 0x5555555555555555ULL);
 	x = (x & 0x3333333333333333ULL) + ((x >> 2) & 0x3333333333333333ULL);
 	x = (x + (x >> 4)) & 0x0F0F0F0F0F0F0F0FULL;
 	x = (x * 0x0101010101010101ULL) >> 56;
     return (uint32_t)x;
+}
+
+inline int pop_count_uchar(unsigned char x){
+    x = (x & 0b01010101) + ((x & 0b10101010) >> 1);
+    x = (x & 0b00110011) + ((x & 0b11001100) >> 2);
+    return (x & 0b00001111) + ((x & 11110000) >> 4);
 }
 
 inline uint32_t pop_digit(uint64_t x, int place){
@@ -418,12 +424,14 @@ uint8_t (*join_d9_lines[])(const uint64_t) = {
     join_d9_line_3, join_d9_line_4, join_d9_line_5 
 };
 
+uint64_t split_v_lines[N_8BIT];
 uint64_t split_d7_lines[N_8BIT][N_DIAG_LINE];
 uint64_t split_d9_lines[N_8BIT][N_DIAG_LINE];
 
-void line_to_board_init(){
-    int i, t;
+void bit_init(){
+    uint32_t i, t;
     for (i = 0; i < N_8BIT; ++i){
+        split_v_lines[i] = split_v_line(i, 0);
         for (t = 0; t < N_DIAG_LINE; ++t){
             split_d7_lines[i][t] = split_d7_line(i, t + 2);
             split_d9_lines[i][t] = split_d9_line(i, t - 5);

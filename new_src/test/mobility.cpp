@@ -31,7 +31,7 @@ inline unsigned long long get_mobility(const unsigned long long P, const unsigne
 }
 
 int main(){
-    line_to_board_init();
+    bit_init();
     uint64_t p, o;
     uint8_t player;
     //cin >> player;
