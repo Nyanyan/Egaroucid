@@ -60,26 +60,30 @@
 
 #elif MOBILITY_MODE == 1
 
-    inline uint64_t calc_mobility_left(uint64_t p, uint64_t o){
+    inline uint64_t calc_some_mobility(uint64_t p, uint64_t o){
         uint64_t p1 = (p & 0x7F7F7F7F7F7F7F7FULL) << 1;
-        return ~(p1 | o) & (p1 + (o & 0x7F7F7F7F7F7F7F7FULL));
+        uint64_t res = ~(p1 | o) & (p1 + (o & 0x7F7F7F7F7F7F7F7FULL));
+        p = horizontal_mirror(p);
+        o = horizontal_mirror(o);
+        p1 = (p & 0x7F7F7F7F7F7F7F7FULL) << 1;
+        return res | horizontal_mirror(~(p1 | o) & (p1 + (o & 0x7F7F7F7F7F7F7F7FULL)));
     }
 
-    inline uint64_t calc_mobility_diagleft(uint64_t p, uint64_t o){
+    inline uint64_t calc_some_mobility_diag(uint64_t p, uint64_t o){
         uint64_t p1 = (p & 0x5F6F777B7D7E7F3FULL) << 1;
-        return ~(p1 | o) & (p1 + (o & 0x5F6F777B7D7E7F3FULL));
+        uint64_t res = ~(p1 | o) & (p1 + (o & 0x5F6F777B7D7E7F3FULL));
+        p = horizontal_mirror(p);
+        o = horizontal_mirror(o);
+        p1 = (p & 0x7D7B776F5F3F7F7EULL) << 1;
+        return res | horizontal_mirror(~(p1 | o) & (p1 + (o & 0x7D7B776F5F3F7F7EULL)));
     }
 
     inline uint64_t calc_mobility(uint64_t p, uint64_t o){
         uint64_t res = 
-            calc_mobility_left(p, o) | 
-            horizontal_mirror(calc_mobility_left(horizontal_mirror(p), horizontal_mirror(o))) | 
-            black_line_mirror(calc_mobility_left(black_line_mirror(p), black_line_mirror(o))) | 
-            white_line_mirror(calc_mobility_left(white_line_mirror(p), white_line_mirror(o))) | 
-            unrotate_45(calc_mobility_diagleft(rotate_45(p), rotate_45(o))) | 
-            unrotate_135(calc_mobility_diagleft(rotate_135(p), rotate_135(o))) | 
-            unrotate_225(calc_mobility_diagleft(rotate_225(p), rotate_225(o))) | 
-            unrotate_315(calc_mobility_diagleft(rotate_315(p), rotate_315(o)));
+            calc_some_mobility(p, o) | 
+            black_line_mirror(calc_some_mobility(black_line_mirror(p), black_line_mirror(o))) | 
+            unrotate_45(calc_some_mobility_diag(rotate_45(p), rotate_45(o))) | 
+            unrotate_135(calc_some_mobility_diag(rotate_135(p), rotate_135(o)));
         return res & ~(p | o);
     }
 
@@ -114,10 +118,10 @@
         res |= black_line_mirror(_mm_cvtsi128_si64(flip)) | white_line_mirror(_mm_cvtsi128_si64(_mm_unpackhi_epi64(flip, flip)));
 
         res |= 
-            unrotate_45(calc_mobility_diagleft(rotate_45(p), rotate_45(o))) | 
-            unrotate_135(calc_mobility_diagleft(rotate_135(p), rotate_135(o))) | 
-            unrotate_225(calc_mobility_diagleft(rotate_225(p), rotate_225(o))) | 
-            unrotate_315(calc_mobility_diagleft(rotate_315(p), rotate_315(o)));
+            unrotate_45(calc_some_mobility_diagleft(rotate_45(p), rotate_45(o))) | 
+            unrotate_135(calc_some_mobility_diagleft(rotate_135(p), rotate_135(o))) | 
+            unrotate_225(calc_some_mobility_diagleft(rotate_225(p), rotate_225(o))) | 
+            unrotate_315(calc_some_mobility_diagleft(rotate_315(p), rotate_315(o)));
         return res & ~(p | o);
     }
 

@@ -21,6 +21,7 @@ int main(){
     for (uint32_t i = 0; i < 10000000; ++i)
         mobility = get_mobility(p, o);
     cerr << tim() - strt << endl;
-    
+    bit_print_board(mobility);
+
     return 0;
 }
