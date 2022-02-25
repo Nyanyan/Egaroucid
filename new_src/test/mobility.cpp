@@ -9,15 +9,16 @@ int main(){
     input_board(&p, &o);
     cerr << endl;
     print_board(p, o);
-    cerr << endl;
-    p = rotate_45(p);
-    o = rotate_45(o);
-    print_board(p, o);
-    return 0;
-    uint64_t strt = tim();
-    //for (uint32_t i = 0; i < 1000000; ++i)
-    uint64_t mobility = calc_mobility(p, o);
-    bit_print_board(mobility);
+    uint64_t strt, mobility;
+    strt = tim();
+    for (uint32_t i = 0; i < 1000000; ++i)
+        mobility = calc_mobility(p, o);
     cerr << tim() - strt << endl;
+
+    strt = tim();
+    for (uint32_t i = 0; i < 1000000; ++i)
+        mobility = get_mobility(p, o);
+    cerr << tim() - strt << endl;
+    
     return 0;
 }
