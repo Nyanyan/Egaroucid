@@ -5,19 +5,19 @@
 using namespace std;
 
 inline void bit_print_reverse(uint64_t x){
-    for (int i = 0; i < HW2; ++i)
+    for (uint32_t i = 0; i < HW2; ++i)
         cerr << (1 & (x >> i));
     cerr << endl;
 }
 
 inline void bit_print(uint64_t x){
-    for (int i = 0; i < HW2; ++i)
+    for (uint32_t i = 0; i < HW2; ++i)
         cerr << (1 & (x >> (HW2_M1 - i)));
     cerr << endl;
 }
 
 inline void bit_print_board_reverse(uint64_t x){
-    for (int i = 0; i < HW2; ++i){
+    for (uint32_t i = 0; i < HW2; ++i){
         cerr << (1 & (x >> i));
         if (i % HW == HW_M1)
             cerr << endl;
@@ -26,7 +26,7 @@ inline void bit_print_board_reverse(uint64_t x){
 }
 
 inline void bit_print_board(uint64_t x){
-    for (int i = 0; i < HW2; ++i){
+    for (uint32_t i = 0; i < HW2; ++i){
         cerr << (1 & (x >> (HW2_M1 - i)));
         if (i % HW == HW_M1)
             cerr << endl;
@@ -34,16 +34,42 @@ inline void bit_print_board(uint64_t x){
     cerr << endl;
 }
 
-inline int pop_count(uint64_t x){
+void input_board(uint64_t *p, uint64_t *o){
+    char elem;
+    *p = 0ULL;
+    *o = 0ULL;
+    for (int i = 0; i < HW2; ++i){
+        cin >> elem;
+        if (elem == '0')
+            *p |= 1ULL << (HW2_M1 - i);
+        else if (elem == '1')
+            *o |= 1ULL << (HW2_M1 - i);
+    }
+}
+
+void print_board(uint64_t p, uint64_t o){
+    for (int i = 0; i < HW2; ++i){
+        if (1 & (p >> (HW2_M1 - i)))
+            cerr << '0';
+        else if (1 & (o >> (HW2_M1 - i)))
+            cerr << '1';
+        else
+            cerr << '.';
+        if (i % HW == HW_M1)
+            cerr << endl;
+    }
+}
+
+inline uint32_t pop_count(uint64_t x){
     x = x - ((x >> 1) & 0x5555555555555555ULL);
 	x = (x & 0x3333333333333333ULL) + ((x >> 2) & 0x3333333333333333ULL);
 	x = (x + (x >> 4)) & 0x0F0F0F0F0F0F0F0FULL;
 	x = (x * 0x0101010101010101ULL) >> 56;
-    return (int)x;
+    return (uint32_t)x;
 }
 
-inline int pop_digit(uint64_t x, int place){
-    return (int)(1ULL & (x >> place));
+inline uint32_t pop_digit(uint64_t x, int place){
+    return (uint32_t)(1ULL & (x >> place));
 }
 
 inline uint64_t white_line_mirror(uint64_t x){
@@ -93,6 +119,16 @@ inline uint64_t rotate_180(uint64_t x){
     x = ((x & 0x00FF00FF00FF00FFULL) << 8) | ((x & 0xFF00FF00FF00FF00ULL) >> 8);
     x = ((x & 0x0000FFFF0000FFFFULL) << 16) | ((x & 0xFFFF0000FFFF0000ULL) >> 16);
     return ((x & 0x00000000FFFFFFFFULL) << 32) | ((x & 0xFFFFFFFF00000000ULL) >> 32);
+}
+
+// rotate 45 degrees counter clockwise
+inline uint64_t rotate_45(uint64_t x){
+    uint64_t a = (x ^ (x >> 8)) & 0x0055005500550055ULL;
+    x = x ^ a ^ (a << 8);
+    a = (x ^ (x >> 16)) & 0x0000CC660000CC66ULL;
+    x = x ^ a ^ (a << 16);
+    a = (x ^ (x >> 32)) & 0x00000000C3E1F078ULL;
+    return x ^ a ^ (a << 32);
 }
 
 constexpr uint8_t d7_mask[HW2] = {
