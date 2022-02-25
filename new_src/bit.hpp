@@ -90,11 +90,19 @@ inline uint64_t black_line_mirror(uint64_t x){
     return x = x ^ a ^ (a << 36);
 }
 
-inline uint64_t vertical_mirror(uint64_t x){
-    x = ((x >> 8) & 0x00FF00FF00FF00FFULL) | ((x << 8) & 0xFF00FF00FF00FF00ULL);
-    x = ((x >> 16) & 0x0000FFFF0000FFFFULL) | ((x << 16) & 0xFFFF0000FFFF0000ULL);
-    return ((x >> 32) & 0x00000000FFFFFFFFULL) | ((x << 32) & 0xFFFFFFFF00000000ULL);
-}
+#if USE_FAST_VERTICAL_MIRROR
+    #ifdef _MSC_VER
+        #define	mirror_v(x)	_byteswap_uint64(x)
+    #else
+        #define	mirror_v(x)	__builtin_bswap64(x)
+    #endif
+#else
+    inline uint64_t vertical_mirror(uint64_t x){
+        x = ((x >> 8) & 0x00FF00FF00FF00FFULL) | ((x << 8) & 0xFF00FF00FF00FF00ULL);
+        x = ((x >> 16) & 0x0000FFFF0000FFFFULL) | ((x << 16) & 0xFFFF0000FFFF0000ULL);
+        return ((x >> 32) & 0x00000000FFFFFFFFULL) | ((x << 32) & 0xFFFFFFFF00000000ULL);
+    }
+#endif
 
 inline uint64_t horizontal_mirror(uint64_t x){
     x = ((x >> 1) & 0x5555555555555555ULL) | ((x << 1) & 0xAAAAAAAAAAAAAAAAULL);

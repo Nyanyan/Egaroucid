@@ -3,7 +3,7 @@
 #include "bit.hpp"
 #include "setting.hpp"
 
-#if MOBILITY_MODE == 0
+#if MOBILITY_MODE == 0 // slow & contains bugs
 
 inline uint8_t calc_mobility_line(uint8_t p, uint8_t o){
     uint8_t p1 = p << 1;
@@ -55,11 +55,6 @@ inline uint64_t calc_mobility(uint64_t p, uint64_t o){
 
 #elif MOBILITY_MODE == 1
 
-inline uint8_t calc_mobility_line(uint8_t p, uint8_t o){
-    uint8_t p1 = p << 1;
-    return ~(p1 | o) & (p1 + o);
-}
-
 inline uint64_t calc_mobility_left(uint64_t p, uint64_t o){
     uint64_t p1 = (p & 0x7F7F7F7F7F7F7F7FULL) << 1;
     return ~(p1 | o) & (p1 + (o & 0x7F7F7F7F7F7F7F7FULL));
@@ -71,7 +66,8 @@ inline uint64_t calc_mobility_diagleft(uint64_t p, uint64_t o){
 }
 
 inline uint64_t calc_mobility(uint64_t p, uint64_t o){
-    uint64_t res = calc_mobility_left(p, o) | 
+    uint64_t res = 
+        calc_mobility_left(p, o) | 
         horizontal_mirror(calc_mobility_left(horizontal_mirror(p), horizontal_mirror(o))) | 
         black_line_mirror(calc_mobility_left(black_line_mirror(p), black_line_mirror(o))) | 
         white_line_mirror(calc_mobility_left(white_line_mirror(p), white_line_mirror(o))) | 

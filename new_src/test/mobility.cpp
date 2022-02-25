@@ -11,12 +11,12 @@ int main(){
     print_board(p, o);
     uint64_t strt, mobility;
     strt = tim();
-    for (uint32_t i = 0; i < 1000000; ++i)
+    for (uint32_t i = 0; i < 10000000; ++i)
         mobility = calc_mobility(p, o);
     cerr << tim() - strt << endl;
 
     strt = tim();
-    for (uint32_t i = 0; i < 1000000; ++i)
+    for (uint32_t i = 0; i < 10000000; ++i)
         mobility = get_mobility(p, o);
     cerr << tim() - strt << endl;
     
