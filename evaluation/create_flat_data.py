@@ -1,4 +1,4 @@
-from tqdm import trange
+from tqdm import trange, tqdm
 
 def digit(n, r):
     n = str(n)
@@ -10,7 +10,7 @@ def digit(n, r):
 nums = [0 for _ in range(16)]
 
 max_nums = 65000
-for file_idx in trange(438):
+for file_idx in tqdm(list(reversed(range(438)))):
     with open('data/records3/' + digit(file_idx, 7) + '.txt', 'r') as f:
         data = f.read().splitlines()
     for datum in data:
@@ -21,3 +21,4 @@ for file_idx in trange(438):
             with open('data/records5/0000000.txt', 'a') as f:
                 f.write(datum + '\n')
             nums[score_idx] += 1
+print(nums)
