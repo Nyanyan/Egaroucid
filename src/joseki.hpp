@@ -10,7 +10,7 @@ using namespace std;
 
 
 
-class joseki {
+class Joseki {
 private:
 	vector<pair<Board, string>> arr;
 public:
@@ -22,19 +22,19 @@ public:
 		}
 		string line;
 		string name;
-		int board_arr[hw2];
+		int board_arr[HW2];
 		int i;
-		board b;
+		Board b;
 		while (getline(ifs, line)) {
-			for (i = 0; i < hw2; ++i) {
+			for (i = 0; i < HW2; ++i) {
 				if (line[i] == '0')
-					board_arr[i] = black;
+					board_arr[i] = BLACK;
 				else if (line[i] == '1')
-					board_arr[i] = white;
+					board_arr[i] = WHITE;
 				else
-					board_arr[i] = vacant;
+					board_arr[i] = VACANT;
 			}
-			b.translate_from_arr(board_arr, black);
+			b.translate_from_arr(board_arr, BLACK);
 			name = line.substr(65, line.size());
 			arr.push_back(make_pair(b, name));
 			b.white_mirror();
@@ -47,7 +47,7 @@ public:
 		return true;
 	}
 
-	inline string get(board b) {
+	inline string get(Board b) {
 		int i, j;
 		bool flag;
 		for (i = 0; i < (int)arr.size(); ++i) {
@@ -59,7 +59,7 @@ public:
 
 };
 
-joseki joseki;
+Joseki joseki;
 
 bool joseki_init() {
 	return joseki.init();
