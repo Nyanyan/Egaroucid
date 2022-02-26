@@ -7,16 +7,16 @@ def digit(n, r):
         n = '0' + n
     return n
 
-nums = [0 for _ in range(16)]
+nums = [0 for _ in range(129)]
 
-max_nums = 31000
+max_nums = 6000
 for file_idx in tqdm(list(reversed(range(438)))):
     with open('data/records3/' + digit(file_idx, 7) + '.txt', 'r') as f:
         data = f.read().splitlines()
     for datum in data:
         board, player, value = datum.split()
         value = int(value)
-        score_idx = min(15, (value + 64) // 8)
+        score_idx = value + 64
         if nums[score_idx] < max_nums:
             with open('data/records5/0000000.txt', 'a') as f:
                 f.write(datum + '\n')
