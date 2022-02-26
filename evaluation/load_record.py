@@ -172,7 +172,7 @@ def collect_data(num, s):
         x = ord(s[idx]) - ord('a')
         y = int(s[idx + 1]) - 1
         idx += 2
-        if turn < 64:
+        if turn >= 20:
             grid_str = ''
             for i in range(hw):
                 for j in range(hw):
@@ -193,6 +193,10 @@ def collect_data(num, s):
     rv.check_pass()
     #score = 1 if rv.nums[0] > rv.nums[1] else 0 if rv.nums[0] == rv.nums[1] else -1
     result = rv.nums[0] - rv.nums[1]
+    if result > 0:
+        result += 64 - sum(rv.nums)
+    elif result < 0:
+        result -= 64 - sum(rv.nums)
     score = 1 if result > 0 else -1 if result < 0 else 0
     with open('data/' + digit(num, 7) + '.txt', 'a') as f:
         for grid in grids:
@@ -210,7 +214,7 @@ for year in reversed(range(1977, 2019 + 1)):
 '''
 for i in range(0, 1):
     raw_data = ''
-    with open('third_party/records4/' + digit(i, 7) + '.txt', 'r') as f:
+    with open('third_party/records6/' + digit(i, 7) + '.txt', 'r') as f:
         raw_data = f.read()
     games.extend([i for i in raw_data.splitlines()])
 print(len(games))

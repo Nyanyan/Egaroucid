@@ -51,8 +51,8 @@ int sa_phase, sa_player;
 
 #define beta 0.003
 unsigned long long hour = 0;
-unsigned long long minute = 10;
-unsigned long long second = 0;
+unsigned long long minute = 0;
+unsigned long long second = 30;
 
 double alpha[n_eval][max_evaluate_idx];
 
