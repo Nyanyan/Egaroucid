@@ -307,18 +307,14 @@ inline void convert_idx(string str){
             }
         }
     }
-    for (i = 0; i < b_idx_num; ++i){
-        b.b[i] = n_line - 1;
-        for (j = 0; j < idx_n_cell[i]; ++j){
-            if (1 & (bk >> global_place[i][j]))
-                b.b[i] -= pow3[hw_m1 - j] * 2;
-            else if (1 & (wt >> global_place[i][j]))
-                b.b[i] -= pow3[hw_m1 - j];
-        }
-    }
+    b.b = bk;
+    b.w = wt;
+    int ai_player, score;
+    ai_player = (str[65] == '0' ? 0 : 1);
+    score = stoi(str.substr(67));
     //b.print();
     int idxes[86];
-    calc_idx(phase_idx, &b, idxes);
+    calc_idx(0, &b, idxes);
     cout << idxes[68] + idxes[69] << " " << ai_player << " ";
     for (i = 0; i < 86; ++i)
         cout << idxes[i] << " ";
@@ -326,7 +322,7 @@ inline void convert_idx(string str){
 }
 
 #define start_file 0
-#define n_files 122
+#define n_files 1
 
 int main(){
     board_init();

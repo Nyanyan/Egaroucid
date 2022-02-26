@@ -9,7 +9,7 @@ def digit(n, r):
 
 nums = [0 for _ in range(16)]
 
-max_nums = 65000
+max_nums = 31000
 for file_idx in tqdm(list(reversed(range(438)))):
     with open('data/records3/' + digit(file_idx, 7) + '.txt', 'r') as f:
         data = f.read().splitlines()
