@@ -40,10 +40,18 @@ class Book{
 
         inline bool import_file_bin(string file){
 			FILE* fp;
-            if (fopen_s(&fp, file.c_str(), "rb") != 0){
-                cerr << "can't open book.egbk" << endl;
-                return false;
+            #ifdef _WIN64
+			if (fopen_s(&fp, file.c_str(), "rb") != 0) {
+				cerr << "can't open " << file << endl;
+				return false;
+			}
+            #else
+            fp = fopen(file.c_str(), "rb");
+            if (fp == NULL){
+                cerr << "can't open " << file << endl;
+				return false;
             }
+            #endif
             Board b;
             int n_boards, i, value;
             unsigned long long p, o;
@@ -147,11 +155,19 @@ class Book{
         */
 
 		inline bool import_edax_book(string file) {
-			FILE* fp;
+            FILE* fp;
+            #ifdef _WIN64
 			if (fopen_s(&fp, file.c_str(), "rb") != 0) {
 				cerr << "can't open " << file << endl;
 				return false;
 			}
+            #else
+            fp = fopen(file.c_str(), "rb");
+            if (fp == NULL){
+                cerr << "can't open " << file << endl;
+				return false;
+            }
+            #endif
 			char elem_char;
 			int elem_int;
 			short elem_short;

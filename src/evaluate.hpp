@@ -146,10 +146,18 @@ inline int convert_canput_line(int idx){
 
 inline bool init_evaluation_calc(){
     FILE* fp;
+    #ifdef _WIN64
     if (fopen_s(&fp, "resources/eval.egev", "rb") != 0){
         cerr << "can't open eval.egev" << endl;
         return false;
     }
+    #else
+    fp = fopen("resources/eval.egev", "rb");
+    if (fp == NULL){
+        cerr << "can't open eval.egev" << endl;
+        return false;
+    }
+    #endif
     int phase_idx, player_idx, pattern_idx;
     constexpr int pattern_sizes[N_PATTERNS] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10, 10, 10, 10};
     //constexpr int n_models = N_PHASES * 2;

@@ -1,10 +1,13 @@
-﻿#include <Siv3D.hpp> // OpenSiv3D v0.6.3
+﻿#define PAL_STDCPP_COMPAT
+
+#include <Siv3D.hpp> // OpenSiv3D v0.6.3
 #include <vector>
 #include <thread>
 #include <future>
 #include <chrono>
 #include <fstream>
 #include <sstream>
+#include <iomanip> 
 #include <time.h>
 #include <queue>
 #include <algorithm>
@@ -1016,7 +1019,8 @@ bool import_record(String record, vector<History_elem>* n_history) {
 		Mobility mob;
 		h_bd.reset();
 		h_bd.v = -INF;
-		n_history->emplace_back(History_elem(h_bd, U""));
+		History_elem hist_tmp = { h_bd, U"" };
+		n_history->emplace_back(hist_tmp);
 		for (int i = 0; i < record.size(); i += 2) {
 			x = (int)record[i] - (int)'a';
 			if (x < 0 || HW <= x) {
@@ -1050,7 +1054,8 @@ bool import_record(String record, vector<History_elem>* n_history) {
 				break;
 			}
 			h_bd.v = -INF;
-			n_history->emplace_back(History_elem(h_bd, n_history->at(n_history->size() - 1).record + str_record(y * HW + x)));
+			History_elem hist_tmp = { h_bd, n_history->at(n_history->size() - 1).record + str_record(y * HW + x) };
+			n_history->emplace_back(hist_tmp);
 		}
 	}
 	return flag;
@@ -1091,11 +1096,22 @@ pair<bool, Board> import_board(String board_str) {
 	return make_pair(flag, bd);
 }
 
+#ifdef _WIN64
+int get_localtime(tm *a, time_t *b) {
+	return localtime_s(a, b);
+}
+#else
+int get_localtime(tm* a, time_t* b) {
+	a = localtime(b);
+	return 0;
+}
+#endif
+
 bool output_game(History_elem hist, int ai_level, int use_ai_mode, String black_player, String white_player, String game_memo) {
-	__time64_t now;
+	time_t now;
 	tm newtime;
-	_time64(&now);
-	errno_t err = localtime_s(&newtime, &now);
+	time(&now);
+	int err = get_localtime(&newtime, &now);
 	ostringstream sout;
 	string year = to_string(newtime.tm_year + 1900);
 	sout << setfill('0') << setw(2) << newtime.tm_mon + 1;
@@ -1133,6 +1149,7 @@ bool output_game(History_elem hist, int ai_level, int use_ai_mode, String black_
 	ofs << black_player.narrow() << endl;
 	ofs << white_player.narrow() << endl;
 	ofs << game_memo.narrow() << endl;
+	return true;
 }
 
 bool close_app(int* hint_state, future<bool>* hint_future,
@@ -1685,7 +1702,8 @@ void Main() {
 				if (!initializing) {
 					bd.reset();
 					bd.v = -INF;
-					history.emplace_back(History_elem(bd, U""));
+					History_elem hist_tmp = { bd, U"" };
+					history.emplace_back(hist_tmp);
 					history_place = 0;
 					fork_mode = false;
 					hint_state = hint_not_calculated_define;
@@ -1880,15 +1898,18 @@ void Main() {
 								}
 							}
 							if (!next_fork_mode) {
-								fork_history.emplace_back(History_elem(bd, fork_history[fork_history.size() - 1].record + str_record(bd.policy)));
+								History_elem hist_tmp = { bd, fork_history[fork_history.size() - 1].record + str_record(bd.policy) };
+								fork_history.emplace_back(hist_tmp);
 							}
 							else {
-								fork_history.emplace_back(History_elem(bd, history[find_history_idx(history, history_place)].record + str_record(bd.policy)));
+								History_elem hist_tmp = { bd, history[find_history_idx(history, history_place)].record + str_record(bd.policy) };
+								fork_history.emplace_back(hist_tmp);
 								fork_mode = true;
 							}
 						}
 						else {
-							history.emplace_back(History_elem(bd, history[history.size() - 1].record + str_record(bd.policy)));
+							History_elem hist_tmp = { bd, history[history.size() - 1].record + str_record(bd.policy) };
+							history.emplace_back(hist_tmp);
 						}
 						history_place = bd.n - 4;
 						reset_hint(&hint_state, &hint_future);
@@ -2119,7 +2140,8 @@ void Main() {
 							}
 							history[history.size() - 1].b.v = sgn * ai_result.value;
 							bd.v = sgn * ai_result.value;
-							history.emplace_back(History_elem(bd, history[history.size() - 1].record + str_record(bd.policy)));
+							History_elem hist_tmp = { bd, history[history.size() - 1].record + str_record(bd.policy) };
+							history.emplace_back(hist_tmp);
 							history_place = bd.n - 4;
 							ai_value = ai_result.value;
 							ai_thinking = false;
@@ -2274,10 +2296,20 @@ void Main() {
 				int output_state = output_game_popup(font40, font30, font20, &black_player, &white_player, &game_memo, output_active);
 				if (output_state == 1) {
 					if (fork_mode) {
-						output_game(fork_history[find_history_idx(fork_history, history_place)], ai_level, use_ai_mode, black_player, white_player, game_memo);
+						if (output_game(fork_history[find_history_idx(fork_history, history_place)], ai_level, use_ai_mode, black_player, white_player, game_memo)) {
+							cerr << "game saved" << endl;
+						}
+						else {
+							cerr << "game save FAILED" << endl;
+						}
 					}
 					else {
-						output_game(history[find_history_idx(history, history_place)], ai_level, use_ai_mode, black_player, white_player, game_memo);
+						if (output_game(history[find_history_idx(history, history_place)], ai_level, use_ai_mode, black_player, white_player, game_memo)) {
+							cerr << "game saved" << endl;
+						}
+						else {
+							cerr << "game save FAILED" << endl;
+						}
 					}
 					outputting_game = false;
 					main_window_active = true;
@@ -2335,7 +2367,8 @@ void Main() {
 						bd.v = -INF;
 						history.clear();
 						fork_history.clear();
-						history.emplace_back(bd);
+						History_elem hist_tmp = { bd, U"" };
+						history.emplace_back(hist_tmp);
 						history_place = bd.n - 4;
 						fork_mode = false;
 						before_start_game = true;
@@ -2392,7 +2425,8 @@ void Main() {
 				bd.reset();
 				bd.v = -INF;
 				history.clear();
-				history.emplace_back(History_elem(bd, U""));
+				History_elem hist_tmp = { bd, U"" };
+				history.emplace_back(hist_tmp);
 				fork_history.clear();
 				history_place = 0;
 				fork_mode = false;
