@@ -3,7 +3,6 @@
 #include <fstream>
 #include <unordered_map>
 #include <unordered_set>
-#include <io.h>
 #include "evaluate.hpp"
 #include "board.hpp"
 
@@ -410,8 +409,8 @@ class Book{
         */
         
         inline void save_bin(){
-			if (_access_s("resources/book_backup.egbk", 0) == 0)
-				remove("resources/book_backup.egbk");
+			if (remove("resources/book_backup.egbk") == -1)
+                cerr << "cannot delete book_backup.egbk" << endl;
 			rename("resources/book.egbk", "resources/book_backup.egbk");
             ofstream fout;
             fout.open("resources/book.egbk", ios::out|ios::binary|ios::trunc);
