@@ -601,7 +601,7 @@ bool show_popup(Board b, bool use_ai_flag, bool human_first, bool human_second, 
 	FrameButton tweet_button;
 	tweet_button.init(x_center + 25, y_center + 60, 200, 50, 10, 2, language.get("button", "tweet"), small_font, button_color, button_font_color, button_font_color);
 	tweet_button.draw(transparency);
-	if (tweet_button.clicked()) {
+	if (transparency == 1.0 && tweet_button.clicked()) {
 		String tweet_result;
 		if (use_ai_flag && human_first) {
 			if (black_stones > white_stones) {
@@ -631,7 +631,7 @@ bool show_popup(Board b, bool use_ai_flag, bool human_first, bool human_second, 
 		tweet_result += U" #egaroucid https://www.egaroucid-app.nyanyan.dev/";
 		Twitter::OpenTweetWindow(tweet_result);
 	}
-	return close_button.clicked();
+	return (transparency == 1.0) && close_button.clicked();
 }
 
 int output_game_popup(Font big_font, Font mid_font, Font small_font, String* black_player, String* white_player, String* game_memo, bool active_cells[]) {
