@@ -12,7 +12,7 @@ else:
     hour = '0'
     minute = '10'
     second = '0'
-    beta = '0.003'
+    beta = '0.001'
 '''
 with open(phase + '_' + player + '.txt', 'r') as f:
     data = f.read().replace('\n\n', '\n')

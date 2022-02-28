@@ -70,6 +70,8 @@ vector<int> used_idxes_vector[n_eval];
 int rev_idxes[n_eval][max_evaluate_idx];
 int pow4[8];
 int pow3[11];
+int n_data_score[129];
+int n_data_idx[n_eval][max_evaluate_idx][129];
 double bias[129];
 
 /*
@@ -201,11 +203,18 @@ void input_test_data(int strt){
             test_memo[j][k].clear();
     }
     test_scores.clear();
-    int n_data_score[129];
+    for (i = 0; i < n_eval; ++i){
+        for (j = 0; j < max_evaluate_idx; ++j){
+            for (k = 0; k < 129; ++k)
+                n_data_idx[i][j][k] = 0;
+        }
+    }
+    cerr << "a";
     for(i = 0; i < 129; ++i)
         n_data_score[i] = 0;
     for (i = 0; i < strt; ++i)
         getline(ifs, line);
+    int sur, canput, stab, num;
     while (getline(ifs, line) && t < n_data){
         ++t;
         if ((t & 0b1111111111111111) == 0b1111111111111111)
@@ -221,24 +230,36 @@ void input_test_data(int strt){
             iss >> score;
             for (i = 0; i < 62; ++i)
                 used_idxes[pattern_nums[i]].emplace(test_data[nums][i]);
-            used_idxes[16].emplace(calc_sur0_sur1(test_data[nums]));
-            used_idxes[17].emplace(calc_canput0_canput1(test_data[nums]));
-            used_idxes[18].emplace(calc_stab0_stab1(test_data[nums]));
-            used_idxes[19].emplace(calc_num0_num1(test_data[nums]));
+            sur = calc_sur0_sur1(test_data[nums]);
+            canput = calc_canput0_canput1(test_data[nums]);
+            stab = calc_stab0_stab1(test_data[nums]);
+            num = calc_num0_num1(test_data[nums]);
+            used_idxes[16].emplace(sur);
+            used_idxes[17].emplace(canput);
+            used_idxes[18].emplace(stab);
+            used_idxes[19].emplace(num);
             for (i = 0; i < 16; ++i)
                 used_idxes[20 + i / 4].emplace(test_data[nums][70 + i]);
             test_labels[nums] = score * step;
             for (i = 0; i < 62; ++i)
                 test_memo[pattern_nums[i]][test_data[nums][i]].push_back(nums);
-            test_memo[16][calc_sur0_sur1(test_data[nums])].push_back(nums);
-            test_memo[17][calc_canput0_canput1(test_data[nums])].push_back(nums);
-            test_memo[18][calc_stab0_stab1(test_data[nums])].push_back(nums);
-            test_memo[19][calc_num0_num1(test_data[nums])].push_back(nums);
+            test_memo[16][sur].push_back(nums);
+            test_memo[17][canput].push_back(nums);
+            test_memo[18][stab].push_back(nums);
+            test_memo[19][num].push_back(nums);
             for (i = 0; i < 16; ++i)
                 test_memo[20 + i / 4][test_data[nums][70 + i]].push_back(nums);
             test_scores.push_back(0);
             pre_calc_scores.push_back(0);
             ++n_data_score[score + 64];
+            for (i = 0; i < 62; ++i)
+                ++n_data_idx[pattern_nums[i]][test_data[nums][i]][score + 64];
+            ++n_data_idx[16][sur][score + 64];
+            ++n_data_idx[17][canput][score + 64];
+            ++n_data_idx[18][stab][score + 64];
+            ++n_data_idx[19][num][score + 64];
+            for (i = 0; i < 16; ++i)
+                ++n_data_idx[20 + i / 4][test_data[nums][70 + i]][score + 64];
             /*
             if (nums == 0){
                 for (i = 0; i < n_raw_params; ++i)
@@ -255,6 +276,7 @@ void input_test_data(int strt){
         for (auto elem: used_idxes[i])
             used_idxes_vector[i].push_back(elem);
     }
+    ifs.close();
 
     cerr << "n_data " << u << endl;
 
@@ -267,12 +289,6 @@ void input_test_data(int strt){
         u += (int)used_idxes[i].size();
     }
     cerr << "used_param " << u << endl;
-    
-    for (i = 0; i < n_eval; ++i){
-        for (const int &used_idx: used_idxes_vector[i]){
-            alpha[i][used_idx] = beta / max(50, (int)test_memo[i][used_idx].size());
-        }
-    }
 
     int zero_score_n_data = n_data_score[64];
     int wipeout_n_data = zero_score_n_data / 2;
@@ -288,7 +304,16 @@ void input_test_data(int strt){
         //cerr << modified_n_data << " " << bias[i] << endl;
     }
 
-    ifs.close();
+    double n_weighted_data;
+    for (i = 0; i < n_eval; ++i){
+        for (const int &used_idx: used_idxes_vector[i]){
+            n_weighted_data = 0.0;
+            for (j = 0; j < 129; ++j)
+                n_weighted_data += bias[j] * (double)n_data_idx[i][used_idx][j];
+            alpha[i][used_idx] = beta / max(50.0, n_weighted_data);
+        }
+    }
+    
 }
 
 void output_param(){
