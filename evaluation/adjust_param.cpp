@@ -602,17 +602,21 @@ void init(){
 int main(int argc, char *argv[]){
     sa_phase = atoi(argv[1]);
     sa_player = atoi(argv[2]);
-    cerr << sa_phase << " " << sa_player << endl;
+    hour = atoi(argv[3]);
+    minute = atoi(argv[4]);
+    second = atoi(argv[5]);
     int i, j;
 
     minute += hour * 60;
     second += minute * 60;
 
+    cerr << sa_phase << " " << sa_player << " " << second << endl;
+
     board_init();
     init();
     initialize_param();
     //output_param_onephase();
-    //input_param_onephase((string)(argv[3]));
+    //input_param_onephase((string)(argv[6]));
     input_test_data(0);
 
     sd(second * 1000);

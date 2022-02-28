@@ -214,7 +214,7 @@ for year in reversed(range(1977, 2019 + 1)):
 '''
 for i in range(0, 1):
     raw_data = ''
-    with open('third_party/records8/' + digit(i, 7) + '.txt', 'r') as f:
+    with open('third_party/records9/' + digit(i, 7) + '.txt', 'r') as f:
         raw_data = f.read()
     games.extend([i for i in raw_data.splitlines()])
 print(len(games))
