@@ -23,8 +23,8 @@ int main(){
     short max_elem = -10000, min_elem = 10000;
 
     for (int i = 0; i < n_data; ++i){
-        if (i % 32768 == 0)
-            cerr << (i * 100 / n_data) << "%" << endl;
+        if (i % 65536 == 0)
+            cerr << '\r' << (i * 100 / n_data) << "%";
         getline(ifs, line);
         elem = stoi(line);
         max_elem = max(max_elem, elem);
