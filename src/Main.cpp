@@ -1363,6 +1363,9 @@ void import_loading_book(Font font, Texture icon, Texture logo) {
 }
 
 void Main() {
+	#ifndef _WIN64
+	SIV3D_SET(EngineOption::Renderer::OpenGLES);
+	#endif
 	Size window_size = Size(1000, 720);
 	Window::Resize(window_size);
 	Window::SetStyle(WindowStyle::Sizable);
