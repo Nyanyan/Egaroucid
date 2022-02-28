@@ -242,7 +242,7 @@ void input_test_data(char* file){
     }
 
     for (i = 0; i < 129; i += 2)
-        cerr << i - hw2 << " " << score_diversity[i] << endl;
+        cout << i - hw2 << " " << score_diversity[i] << endl;
 
     ifs.close();
 }
