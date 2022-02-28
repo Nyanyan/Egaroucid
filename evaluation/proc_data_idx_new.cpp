@@ -322,7 +322,7 @@ inline void convert_idx(string str){
 }
 
 #define start_file 0
-#define n_files 123
+#define n_files 46
 
 int main(){
     board_init();
@@ -335,7 +335,7 @@ int main(){
         ostringstream sout;
         sout << setfill('0') << setw(7) << i;
         string file_name = sout.str();
-        ifstream ifs("data/records5/" + file_name + ".txt");
+        ifstream ifs("data/records7/" + file_name + ".txt");
         if (ifs.fail()){
             cerr << "evaluation file not exist" << endl;
             exit(1);

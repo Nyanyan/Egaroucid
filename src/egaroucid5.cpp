@@ -119,6 +119,7 @@ int main(){
             #if USE_LOG
                 set_timer();
             #endif
+            cerr << "value " << mid_evaluate(&b) << endl;
             Search_result res = ai(b, level, book_error, vacant_lst);
             #if USE_LOG
                 return 0;
