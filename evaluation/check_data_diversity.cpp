@@ -165,12 +165,12 @@ inline int calc_num0_num1(int arr[]){
 
 inline double calc_score(int phase, int i);
 
-void input_test_data(int strt){
+void input_test_data(char* file){
     int score_diversity[129];
     for (int i = 0; i < 129; ++i)
         score_diversity[i] = 0;
     int i, j, k;
-    ifstream ifs("big_data.txt");
+    ifstream ifs(file);
     if (ifs.fail()){
         cerr << "evaluation file not exist" << endl;
         exit(1);
@@ -203,8 +203,6 @@ void input_test_data(int strt){
             test_memo[j][k].clear();
     }
     test_scores.clear();
-    for (i = 0; i < strt; ++i)
-        getline(ifs, line);
     while (getline(ifs, line) && t < n_data){
         ++t;
         if ((t & 0b1111111111111111) == 0b1111111111111111)
@@ -578,9 +576,6 @@ void init(){
 }
 
 int main(int argc, char *argv[]){
-    sa_phase = atoi(argv[1]);
-    sa_player = atoi(argv[2]);
-    cerr << sa_phase << " " << sa_player << endl;
     int i, j;
 
     minute += hour * 60;
@@ -591,11 +586,7 @@ int main(int argc, char *argv[]){
     //initialize_param();
     //output_param_onephase();
     //input_param_onephase((string)(argv[3]));
-    input_test_data(0);
-
-    sd(second * 1000);
-
-    output_param_onephase();
+    input_test_data(argv[1]);
 
     return 0;
 }

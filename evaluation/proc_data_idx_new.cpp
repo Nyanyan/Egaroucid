@@ -321,21 +321,21 @@ inline void convert_idx(string str){
     cout << score << endl;
 }
 
-#define start_file 0
-#define n_files 46
-
-int main(){
+int main(int argc, char *argv[]){
     board_init();
     init_evaluation_base();
 
     int t = 0;
+
+    int start_file = atoi(argv[2]);
+    int n_files = atoi(argv[3]);
 
     for (int i = start_file; i < n_files; ++i){
         cerr << "=";
         ostringstream sout;
         sout << setfill('0') << setw(7) << i;
         string file_name = sout.str();
-        ifstream ifs("data/records7/" + file_name + ".txt");
+        ifstream ifs("data/" + string(argv[1]) + "/" + file_name + ".txt");
         if (ifs.fail()){
             cerr << "evaluation file not exist" << endl;
             exit(1);
