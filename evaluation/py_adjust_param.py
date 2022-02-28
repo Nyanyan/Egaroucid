@@ -3,9 +3,14 @@ import sys
 
 phase = str(sys.argv[1])
 player = str(sys.argv[2])
-hour = str(sys.argv[3])
-minute = str(sys.argv[4])
-second = str(sys.argv[5])
+if len(sys.argv) > 3:
+    hour = str(sys.argv[3])
+    minute = str(sys.argv[4])
+    second = str(sys.argv[5])
+else:
+    hour = '0'
+    minute = '10'
+    second = '0'
 '''
 with open(phase + '_' + player + '.txt', 'r') as f:
     data = f.read().replace('\n\n', '\n')
