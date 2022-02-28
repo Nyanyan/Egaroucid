@@ -13,13 +13,7 @@ else:
     minute = '10'
     second = '0'
     beta = '0.002'
-'''
-with open(phase + '_' + player + '.txt', 'r') as f:
-    data = f.read().replace('\n\n', '\n')
-with open(phase + '_' + player + '.txt', 'w') as f:
-    f.write(data)
-exit()
-'''
+
 cmd = 'adjust_param.out ' + phase + ' ' + player + ' ' + hour + ' ' + minute + ' ' + second + ' ' + beta + ' learned_data/' + phase + '_' + player + '.txt'
 print(cmd)
 p = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
