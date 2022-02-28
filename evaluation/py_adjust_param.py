@@ -10,9 +10,9 @@ if len(sys.argv) > 3:
     beta = str(sys.argv[6])
 else:
     hour = '0'
-    minute = '10'
+    minute = '5'
     second = '0'
-    beta = '0.001'
+    beta = '0.002'
 '''
 with open(phase + '_' + player + '.txt', 'r') as f:
     data = f.read().replace('\n\n', '\n')

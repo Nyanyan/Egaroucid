@@ -2059,12 +2059,13 @@ endsearch time 1775 mpct 0 policy 55 value 38 nodes 25120083 nps 14144190
 #52 endsearch depth 27 overall time 27322 search time 27303 mpct 10000 policy 47 value 0 nodes 866235349 nps 31726746
 #53 endsearch depth 28 overall time 230561 search time 230535 mpct 10000 policy 4 value -2 nodes 7676307775 nps 33297797
 
-2022/02/28 i9 11900k
+2022/02/28 i9 11900k before
 #40 endsearch depth 20 overall time 345 search time 320 mpct 10000 policy 55 value 38 nodes 21649990 nps 67656218
 #41 endsearch depth 22 overall time 615 search time 590 mpct 10000 policy 32 value 0 nodes 28530297 nps 48356435
 #42 endsearch depth 22 overall time 1017 search time 993 mpct 10000 policy 49 value 6 nodes 64089896 nps 64541687
 #43 endsearch depth 23 overall time 1684 search time 1661 mpct 10000 policy 41 value -12 nodes 101748737 nps 61257517
 #44 endsearch depth 23 overall time 716 search time 691 mpct 10000 policy 52 value -14 nodes 25316740 nps 36637829
+#45 endsearch depth 24 overall time 11768 search time 11736 mpct 10000 policy 54 value 6 nodes 809027029 nps 68935500
 
 2022/02/28 new evaluation function with weighted data
 #40 endsearch depth 20 overall time 344 search time 319 mpct 10000 policy 55 value 38 nodes 21540298 nps 67524445
@@ -2080,6 +2081,20 @@ endsearch time 1775 mpct 0 policy 55 value 38 nodes 25120083 nps 14144190
 #43 endsearch depth 23 overall time 1963 search time 1937 mpct 10000 policy 13 value -12 nodes 117623299 nps 60724470
 #44 endsearch depth 23 overall time 791 search time 767 mpct 10000 policy 52 value -14 nodes 28735472 nps 37464761
 #45 endsearch depth 24 overall time 8026 search time 7999 mpct 10000 policy 54 value 6 nodes 619332856 nps 77426285
+
+2022/03/01 before noid
+#40 endsearch depth 20 overall time 492 search time 477 mpct 10000 policy 55 value 38 nodes 27530292 nps 57715496
+#41 endsearch depth 22 overall time 994 search time 980 mpct 10000 policy 32 value 0 nodes 42014662 nps 42872104
+#42 endsearch depth 22 overall time 1470 search time 1456 mpct 10000 policy 49 value 6 nodes 75149874 nps 51613924
+#43 endsearch depth 23 overall time 2049 search time 2036 mpct 10000 policy 13 value -12 nodes 111167200 nps 54600785
+#44 endsearch depth 23 overall time 1955 search time 1941 mpct 10000 policy 52 value -14 nodes 66581722 nps 34302793
+
+2022/03/01 after noid
+#40 endsearch depth 20 overall time 540 search time 526 mpct 10000 policy 55 value 38 nodes 29999182 nps 57032665
+#41 endsearch depth 22 overall time 1095 search time 1080 mpct 10000 policy 32 value 0 nodes 47706510 nps 44172694
+#42 endsearch depth 22 overall time 1871 search time 1858 mpct 10000 policy 49 value 6 nodes 101851899 nps 54818029
+#43 endsearch depth 23 overall time 2446 search time 2432 mpct 10000 policy 13 value -12 nodes 131306914 nps 53991329
+#44 endsearch depth 23 overall time 2138 search time 2124 mpct 10000 policy 52 value -14 nodes 75819381 nps 35696507
 
 former version copy
 2022/02/17 update end mpc

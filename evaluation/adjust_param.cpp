@@ -300,7 +300,7 @@ void input_test_data(int strt){
             modified_n_data = wipeout_n_data + (zero_score_n_data - wipeout_n_data) * i / 64;
         else
             modified_n_data = zero_score_n_data - (zero_score_n_data - wipeout_n_data) * (i - 64) / 64;
-        bias[i] = (double)modified_n_data / n_data_score[i];
+        bias[i] = 1.0; //(double)modified_n_data / n_data_score[i];
         //cerr << modified_n_data << " " << bias[i] << endl;
     }
 
