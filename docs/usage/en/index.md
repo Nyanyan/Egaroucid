@@ -160,6 +160,8 @@ You can add a board. The board must be written in one line with these characters
 
 The color to play must be put in the 65th character.
 
+You can add space anywhere and therefore Edax's board inputting format can be used.
+
 The sample input is:
 
 ```
