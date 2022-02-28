@@ -49,7 +49,7 @@ int sa_phase, sa_player;
 
 #define n_raw_params 86
 
-#define beta 0.003
+double beta = 0.003;
 unsigned long long hour = 0;
 unsigned long long minute = 3;
 unsigned long long second = 0;
@@ -70,6 +70,7 @@ vector<int> used_idxes_vector[n_eval];
 int rev_idxes[n_eval][max_evaluate_idx];
 int pow4[8];
 int pow3[11];
+double bias[129];
 
 /*
 inline unsigned long long tim(){
@@ -200,6 +201,9 @@ void input_test_data(int strt){
             test_memo[j][k].clear();
     }
     test_scores.clear();
+    int n_data_score[129];
+    for(i = 0; i < 129; ++i)
+        n_data_score[i] = 0;
     for (i = 0; i < strt; ++i)
         getline(ifs, line);
     while (getline(ifs, line) && t < n_data){
@@ -234,6 +238,7 @@ void input_test_data(int strt){
                 test_memo[20 + i / 4][test_data[nums][70 + i]].push_back(nums);
             test_scores.push_back(0);
             pre_calc_scores.push_back(0);
+            ++n_data_score[score + 64];
             /*
             if (nums == 0){
                 for (i = 0; i < n_raw_params; ++i)
@@ -264,8 +269,23 @@ void input_test_data(int strt){
     cerr << "used_param " << u << endl;
     
     for (i = 0; i < n_eval; ++i){
-        for (const int &used_idx: used_idxes_vector[i])
+        for (const int &used_idx: used_idxes_vector[i]){
             alpha[i][used_idx] = beta / max(50, (int)test_memo[i][used_idx].size());
+        }
+    }
+
+    int zero_score_n_data = n_data_score[64];
+    int wipeout_n_data = zero_score_n_data / 2;
+    int modified_n_data;
+    for (int i = 0; i < 129; ++i){
+        if (n_data_score[i] == 0)
+            continue;
+        if (i <= 64)
+            modified_n_data = wipeout_n_data + (zero_score_n_data - wipeout_n_data) * i / 64;
+        else
+            modified_n_data = zero_score_n_data - (zero_score_n_data - wipeout_n_data) * (i - 64) / 64;
+        bias[i] = (double)modified_n_data / n_data_score[i];
+        //cerr << modified_n_data << " " << bias[i] << endl;
     }
 
     ifs.close();
@@ -534,7 +554,7 @@ inline double scoring_next_step(int pattern, int idx){
     int data_size = nums;
     for (const int &i: test_memo[pattern][idx]){
         score = pre_calc_scores[i];
-        err = test_labels[i] - score;
+        err = (test_labels[i] - score) * bias[(int)test_labels[i] / step + 64];
         res += err;
     }
     return res;
@@ -605,12 +625,13 @@ int main(int argc, char *argv[]){
     hour = atoi(argv[3]);
     minute = atoi(argv[4]);
     second = atoi(argv[5]);
+    beta = atof(argv[6]);
     int i, j;
 
     minute += hour * 60;
     second += minute * 60;
 
-    cerr << sa_phase << " " << sa_player << " " << second << endl;
+    cerr << sa_phase << " " << sa_player << " " << second << " " << beta << endl;
 
     board_init();
     init();
