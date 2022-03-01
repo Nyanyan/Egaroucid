@@ -36,6 +36,29 @@ I did complete searches for this test and got the time to solve it and number of
 #57 endsearch depth 30 overall time 390517 search time 390501 mpct 10000 policy 23 value -10 nodes 11861268107 nps 30374488
 #58 endsearch depth 30 overall time 185752 search time 185737 mpct 10000 policy 57 value 4 nodes 6519574712 nps 35101109
 #59 endsearch depth 34 overall time 4047 search time 4031 mpct 10000 policy 1 value 64 nodes 58477674 nps 14506989</pre></div>
+### Core i9-11900K, 16 threads
+
+<div style="font-size:60%"><pre>#40 endsearch depth 20 overall time 329 search time 305 mpct 10000 policy 55 value 38 nodes 21899271 nps 71800888
+#41 endsearch depth 22 overall time 571 search time 547 mpct 10000 policy 32 value 0 nodes 29195205 nps 53373318
+#42 endsearch depth 22 overall time 675 search time 651 mpct 10000 policy 49 value 6 nodes 38560430 nps 59232611
+#43 endsearch depth 23 overall time 1359 search time 1335 mpct 10000 policy 41 value -12 nodes 103808885 nps 77759464
+#44 endsearch depth 23 overall time 708 search time 684 mpct 10000 policy 52 value -14 nodes 29233404 nps 42738894
+#45 endsearch depth 24 overall time 7027 search time 7000 mpct 10000 policy 54 value 6 nodes 740350828 nps 105764404
+#46 endsearch depth 24 overall time 2009 search time 1981 mpct 10000 policy 46 value -8 nodes 125044941 nps 63122130
+#47 endsearch depth 25 overall time 770 search time 744 mpct 10000 policy 49 value 4 nodes 45921608 nps 61722591
+#48 endsearch depth 25 overall time 10347 search time 10317 mpct 10000 policy 18 value 28 nodes 1144183176 nps 110902701
+#49 endsearch depth 26 overall time 7885 search time 7856 mpct 10000 policy 59 value 16 nodes 887698342 nps 112996224
+#50 endsearch depth 26 overall time 30077 search time 30048 mpct 10000 policy 4 value 10 nodes 2678797208 nps 89150599
+#51 endsearch depth 27 overall time 12585 search time 12558 mpct 10000 policy 51 value 6 nodes 960039193 nps 76448414
+#52 endsearch depth 27 overall time 13495 search time 13466 mpct 10000 policy 47 value 0 nodes 1000193465 nps 74275468
+#53 endsearch depth 28 overall time 119188 search time 119159 mpct 10000 policy 4 value -2 nodes 12209490563 nps 102463855
+#54 endsearch depth 28 overall time 135965 search time 135940 mpct 10000 policy 13 value -2 nodes 13338877012 nps 98123267
+#55 endsearch depth 29 overall time 778209 search time 778178 mpct 10000 policy 17 value 0 nodes 76506263895 nps 98314606
+#56 endsearch depth 29 overall time 35400 search time 35372 mpct 10000 policy 24 value 2 nodes 2258792760 nps 63858214
+#57 endsearch depth 30 overall time 142756 search time 142731 mpct 10000 policy 23 value -10 nodes 12676954794 nps 88817109
+#58 endsearch depth 30 overall time 50923 search time 50893 mpct 10000 policy 57 value 4 nodes 4423383484 nps 86915361
+#59 endsearch depth 34 overall time 1614 search time 1583 mpct 10000 policy 3 value 64 nodes 94965014 nps 59990533</pre></div>
+
 
 
 ## Play against Edax4.4
