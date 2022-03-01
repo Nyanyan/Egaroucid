@@ -56,6 +56,7 @@ short eval_canput0_canput1_arr[N_PHASES][2][MAX_CANPUT][MAX_CANPUT];
 short eval_stab0_stab1_arr[N_PHASES][2][MAX_STABILITY][MAX_STABILITY];
 short eval_num0_num1_arr[N_PHASES][2][MAX_STONE_NUM][MAX_STONE_NUM];
 short eval_canput_pattern[N_PHASES][2][N_CANPUT_PATTERNS][P48];
+short tmp_eval_canput_pattern[N_CANPUT_PATTERNS][P48];
 
 string create_line(int b, int w){
     string res = "";
@@ -161,7 +162,6 @@ inline bool init_evaluation_calc(){
     int phase_idx, player_idx, pattern_idx;
     constexpr int pattern_sizes[N_PATTERNS] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10, 10, 10, 10};
     //constexpr int n_models = N_PHASES * 2;
-    short tmp_eval_canput_pattern[N_CANPUT_PATTERNS][P48];
     for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
         for (player_idx = 0; player_idx < 2; ++player_idx){
             //cerr << "loading evaluation parameter " << ((phase_idx * 2 + player_idx) * 100 / n_models) << "%" << endl;

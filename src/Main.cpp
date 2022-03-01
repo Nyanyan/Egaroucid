@@ -965,6 +965,9 @@ bool import_setting(int* int_mode, int* ai_level, int* ai_book_accept, int* hint
 		return false;
 	}
 	*lang_name = import_str(&ifs);
+	while (lang_name->back() == '\n' || lang_name->back() == '\r') {
+		lang_name->pop_back();
+	}
 	if (*lang_name == "undefined") {
 		return false;
 	}
@@ -1062,7 +1065,7 @@ bool import_record(String record, vector<History_elem>* n_history) {
 }
 
 pair<bool, Board> import_board(String board_str) {
-	board_str = board_str.replace(U"\r", U"").replace(U"\n", U"");
+	board_str = board_str.replace(U"\r", U"").replace(U"\n", U"").replace(U" ", U"");
 	bool flag = true;
 	int player = -1;
 	int bd_arr[HW2];
@@ -1363,9 +1366,9 @@ void import_loading_book(Font font, Texture icon, Texture logo) {
 }
 
 void Main() {
-	#ifndef _WIN64
-	SIV3D_SET(EngineOption::Renderer::OpenGLES);
-	#endif
+	//#ifndef _WIN64
+	//SIV3D_SET(EngineOption::Renderer::OpenGLES);
+	//#endif
 	Size window_size = Size(1000, 720);
 	Window::Resize(window_size);
 	Window::SetStyle(WindowStyle::Sizable);
@@ -1404,6 +1407,9 @@ void Main() {
 	ifstream ifs("resources/languages/languages.txt");
 	string lang_line;
 	while (getline(ifs, lang_line)) {
+		while (lang_line.back() == '\n' || lang_line.back() == '\r') {
+			lang_line.pop_back();
+		}
 		language_names.emplace_back(lang_line);
 	}
 	Texture icon(U"resources/img/icon.png", TextureDesc::Mipped);
