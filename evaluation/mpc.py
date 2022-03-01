@@ -24,11 +24,11 @@ def calc_n_stones(board):
         res += int(elem != '.')
     return res
 
-evaluate = subprocess.Popen('../src/egaroucid5.out'.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+evaluate = subprocess.Popen('../src/mpc.out'.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
 sleep(1)
 
 min_depth = 2
-max_depth = 30
+max_depth = 25
 
 depth_width = max_depth - min_depth + 1
 
@@ -42,8 +42,8 @@ mpcd = [
     0, 1, 0, 1, 2, 3, 2, 3, 4, 3, 
     4, 3, 4, 5, 4, 5, 6, 5, 6, 7, 
     6, 7, 6, 7, 8, 7, 8, 9, 8, 9, 
-    6, 7, 6, 7, 6, 7, 6, 7, 6, 7, 
-    6
+    10, 9, 10, 11, 12, 11, 12, 13, 14, 13, 
+    14
 ]
 
 def calc_stones(board):
@@ -56,14 +56,14 @@ def calc_stones(board):
 def collect_data(num):
     global vhs, vds, vh_vd
     try:
-        with open('data/records3/' + digit(num, 7) + '.txt', 'r') as f:
+        with open('data/records4/' + digit(num, 7) + '.txt', 'r') as f:
             data = list(f.read().splitlines())
     except:
         print('cannot open')
         return
     #for _ in trange(1000):
     depth = min_depth
-    max_num = 10000
+    max_num = 13000
     for tt, datum in enumerate(tqdm(data[:max_num])):
         #datum = data[randrange(0, len(data))]
         board, player, _ = datum.split()
@@ -71,39 +71,29 @@ def collect_data(num):
         depth = tt * depth_width // max_num + min_depth #(depth - min_depth + 1) % depth_width + min_depth
         if depth >= 64 - calc_stones(board):
             continue
-        board_proc = player + '\n' + str(mpcd[depth]) + '\n'
+        board_proc = player + '\n'
         for i in range(hw):
             for j in range(hw):
                 board_proc += board[i * hw + j]
             board_proc += '\n'
+        board_proc += str(mpcd[depth]) + '\n1\n1.18\n'
         #print(board_proc)
         evaluate.stdin.write(board_proc.encode('utf-8'))
         evaluate.stdin.flush()
         vd = float(evaluate.stdout.readline().decode().strip())
-        board_proc = player + '\n' + str(depth) + '\n'
+        board_proc = player + '\n'
         for i in range(hw):
             for j in range(hw):
                 board_proc += board[i * hw + j]
             board_proc += '\n'
-        #print(board_proc)
+        board_proc += str(depth) + '\n1\n1.18\n'
+        print(board_proc)
         evaluate.stdin.write(board_proc.encode('utf-8'))
         evaluate.stdin.flush()
         vh = float(evaluate.stdout.readline().decode().strip())
-        '''
-        board_proc = player + '\n' + str(0) + '\n'
-        for i in range(hw):
-            for j in range(hw):
-                board_proc += board[i * hw + j]
-            board_proc += '\n'
-        #print(board_proc)
-        evaluate.stdin.write(board_proc.encode('utf-8'))
-        evaluate.stdin.flush()
-        v0 = float(evaluate.stdout.readline().decode().strip())
-        '''
         #print(score)
         vhs[(n_stones - 4) // 4][depth - min_depth].append(vh)
         vds[(n_stones - 4) // 4][depth - min_depth].append(vd)
-        #v0s[(n_stones - 4) // 4][depth - min_depth].append(v0)
 
 for i in range(20, 21):
     collect_data(i)
@@ -172,10 +162,5 @@ for i in range(len(vh_vd)):
             sd[i].append(round(statistics.stdev(vh_vd[i][j]), 3))
         else:
             sd[i].append(0.0)
-#sd = [[round(statistics.stdev(vh_vd[i][j]), 3) for j in range(len(vh_vd[i]))] for i in range(len(vh_vd))]
-#sd0 = [[round(statistics.stdev(vh_v0[i][j])) for j in range(len(vh_v0[i]))] for i in range(len(vh_v0))]
 for each_sd in sd:
     print(str(each_sd).replace('[', '{').replace(']', '}') + ',')
-#print('')
-#for each_sd in sd0:
-#    print(str(each_sd).replace('[', '{').replace(']', '}') + ',')

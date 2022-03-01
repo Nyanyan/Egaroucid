@@ -58,10 +58,11 @@ int main(){
     cerr << "initialized" << endl;
     Board b;
     int ai_player;
-    const int level = 10;
+    const int level = 21;
     const int book_error = 0;
     #if MPC_MODE
         int depth;
+        bool is_searching = true;
         Search search;
         while (true){
             cin >> ai_player;
@@ -73,7 +74,9 @@ int main(){
             search.tt_parent_idx = 0;
             cin >> search.use_mpc;
             cin >> search.mpct;
-            cout << nega_alpha_ordering_nomemo(&search, -HW2, HW2, depth) << endl;
+            parent_transpose_table.ready_next_search();
+            child_transpose_table.ready_next_search();
+            cout << nega_alpha_ordering(&search, -HW2, HW2, depth, false, &is_searching) << endl;
         }
     #elif EVAL_TEST_MODE
         int depth;
