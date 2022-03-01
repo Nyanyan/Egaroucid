@@ -44,7 +44,7 @@ inline void print_result(Search_result result){
 int main(){
     cerr << "start!" << endl;
     #if USE_MULTI_THREAD
-        thread_pool.resize(8);
+        thread_pool.resize(16);
     #endif
     board_init();
     mobility_init();
