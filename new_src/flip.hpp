@@ -352,8 +352,7 @@ class Flip{
 
 void flip_init(){
     int player, opponent, place;
-    int wh, put, m1, m2, m3, m4, m5, m6;
-    int idx, i;
+    int wh, put, m1, m2, m3, m4, m5, m6, i;
     for (player = 0; player < N_8BIT; ++player){
         for (opponent = 0; opponent < N_8BIT; ++opponent){
             for (place = 0; place < HW; ++place){

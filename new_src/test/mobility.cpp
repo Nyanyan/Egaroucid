@@ -30,33 +30,46 @@ inline unsigned long long get_mobility(const unsigned long long P, const unsigne
     return moves & ~(P|O);
 }
 
+#define N_TESTCASES 10000000
+
+uint64_t testcases[N_TESTCASES][2];
+uint64_t test_results[N_TESTCASES][2];
+
 int main(){
     bit_init();
-    uint64_t p, o;
     uint8_t player;
     //cin >> player;
     //input_board(&p, &o);
     //cerr << endl;
     //print_board(p, o);
-    uint64_t strt, mobility;
+    uint64_t strt;
+    for (uint32_t i = 0; i < N_TESTCASES; ++i){
+        testcases[i][0] = myrand_ull();
+        testcases[i][1] = myrand_ull() & (~testcases[i][0]);
+    }
+    cerr << "start!" << endl;
     strt = tim();
-    for (uint32_t i = 0; i < 1000000000; ++i){
-        p = myrand_ull();
-        o = myrand_ull() & (~p);
-        mobility = calc_mobility(p, o);
+    for (volatile uint32_t t = 0; t < 10; ++t){
+        for (volatile uint32_t i = 0; i < N_TESTCASES; ++i){
+            test_results[i][0] = calc_mobility(testcases[i][0], testcases[i][1]);
+        }
     }
     //bit_print_board(mobility);
     //cerr << (mobility == get_mobility(p, o)) << endl;
     cerr << tim() - strt << endl;
 
     strt = tim();
-    for (uint32_t i = 0; i < 1000000000; ++i){
-        p = myrand_ull();
-        o = myrand_ull() & (~p);
-        mobility = get_mobility(p, o);
+    for (volatile uint32_t t = 0; t < 10; ++t){
+        for (volatile uint32_t i = 0; i < N_TESTCASES; ++i){
+            test_results[i][1] = get_mobility(testcases[i][0], testcases[i][1]);
+        }
     }
     cerr << tim() - strt << endl;
     //bit_print_board(mobility);
+    for (uint32_t i = 0; i < N_TESTCASES; ++i){
+        if (test_results[i][0] != test_results[i][1])
+            cerr << "a";
+    }
 
     return 0;
 }
