@@ -11,27 +11,24 @@
 inline uint64_t calc_some_mobility(uint64_t p, uint64_t o){
     uint64_t p1 = (p & 0x7F7F7F7F7F7F7F7FULL) << 1;
     uint64_t res = ~(p1 | o) & (p1 + (o & 0x7F7F7F7F7F7F7F7FULL));
-    p = horizontal_mirror(p);
     o = horizontal_mirror(o);
-    p1 = (p & 0x7F7F7F7F7F7F7F7FULL) << 1;
+    p1 = (horizontal_mirror(p) & 0x7F7F7F7F7F7F7F7FULL) << 1;
     return res | horizontal_mirror(~(p1 | o) & (p1 + (o & 0x7F7F7F7F7F7F7F7FULL)));
 }
 
 inline uint64_t calc_some_mobility_diag9(uint64_t p, uint64_t o){
     uint64_t p1 = (p & 0x5F6F777B7D7E7F3FULL) << 1;
     uint64_t res = ~(p1 | o) & (p1 + (o & 0x5F6F777B7D7E7F3FULL));
-    p = horizontal_mirror(p);
     o = horizontal_mirror(o);
-    p1 = (p & 0x7D7B776F5F3F7F7EULL) << 1;
+    p1 = (horizontal_mirror(p) & 0x7D7B776F5F3F7F7EULL) << 1;
     return res | horizontal_mirror(~(p1 | o) & (p1 + (o & 0x7D7B776F5F3F7F7EULL)));
 }
 
 inline uint64_t calc_some_mobility_diag7(uint64_t p, uint64_t o){
     uint64_t p1 = (p & 0x7D7B776F5F3F7F7EULL) << 1;
     uint64_t res = ~(p1 | o) & (p1 + (o & 0x7D7B776F5F3F7F7EULL));
-    p = horizontal_mirror(p);
     o = horizontal_mirror(o);
-    p1 = (p & 0x5F6F777B7D7E7F3FULL) << 1;
+    p1 = (horizontal_mirror(p) & 0x5F6F777B7D7E7F3FULL) << 1;
     return res | horizontal_mirror(~(p1 | o) & (p1 + (o & 0x5F6F777B7D7E7F3FULL)));
 }
 
