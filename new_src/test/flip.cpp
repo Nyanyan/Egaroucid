@@ -29,7 +29,7 @@ int main(){
     strt = tim();
     uint32_t i, j;
     Flip flip;
-    for (i = 0; i < 1000000; ++i){
+    for (i = 0; i < 10000000; ++i){
         p = myrand_ull();
         o = myrand_ull() & (~p);
         mobility = calc_mobility(p, o);
