@@ -15,3 +15,5 @@ src/testcases
 legacy
 new_src/test/*.exe
 new_src/test/*.out
+new_src/*.out
+new_src/*.exe
