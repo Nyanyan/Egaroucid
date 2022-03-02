@@ -251,7 +251,7 @@ inline uint64_t split_v_line(uint8_t x, int c){
     return res << c;
 }
 
-inline uint8_t join_d7_line(uint64_t x, const int t){
+inline uint_fast8_t join_d7_line(uint64_t x, const int t){
     x = (x >> t) & 0b0000000000000010000001000000100000010000001000000100000010000001ULL;
     return (x * 0b1000000010000000100000001000000010000000100000001000000010000000ULL) >> 56;
 }
@@ -278,7 +278,7 @@ inline uint64_t split_d7_line(uint8_t x, int t){
     return res << t;
 }
 
-inline uint8_t join_d9_line(uint64_t x, int t){
+inline uint_fast8_t join_d9_line(uint64_t x, int t){
     if (t > 0)
         x >>= t;
     else if (t < 0)
@@ -302,123 +302,123 @@ inline uint64_t split_d9_line(uint8_t x, int t){
     return res >> (-t);
 }
 
-inline uint8_t join_d7_line_2(const uint64_t x){
+inline uint_fast8_t join_d7_line_2(const uint64_t x){
     return ((x & 0b00000000'00000000'00000000'00000000'00000000'00000001'00000010'00000100ULL) * 
                 0b00100000'00100000'00100000'00000000'00000000'00000000'00000000'00000000ULL) >> 56;
 }
 
-inline uint8_t join_d7_line_3(const uint64_t x){
+inline uint_fast8_t join_d7_line_3(const uint64_t x){
     return ((x & 0b00000000'00000000'00000000'00000000'00000001'00000010'00000100'00001000ULL) * 
                 0b00010000'00010000'00010000'00010000'00000000'00000000'00000000'00000000ULL) >> 56;
 }
 
-inline uint8_t join_d7_line_4(const uint64_t x){
+inline uint_fast8_t join_d7_line_4(const uint64_t x){
     return ((x & 0b00000000'00000000'00000000'00000001'00000010'00000100'00001000'00010000ULL) * 
             0b00001000'00001000'00001000'00001000'00001000'00000000'00000000'00000000ULL) >> 56;
 }
 
-inline uint8_t join_d7_line_5(const uint64_t x){
+inline uint_fast8_t join_d7_line_5(const uint64_t x){
     return ((x & 0b00000000'00000000'00000001'00000010'00000100'00001000'00010000'00100000ULL) * 
             0b00000100'00000100'00000100'00000100'00000100'00000100'00000000'00000000ULL) >> 56;
 }
 
-inline uint8_t join_d7_line_6(const uint64_t x){
+inline uint_fast8_t join_d7_line_6(const uint64_t x){
     return ((x & 0b00000000'00000001'00000010'00000100'00001000'00010000'00100000'01000000ULL) * 
             0b00000010'00000010'00000010'00000010'00000010'00000010'00000010'00000000ULL) >> 56;
 }
 
-inline uint8_t join_d7_line_7(const uint64_t x){
+inline uint_fast8_t join_d7_line_7(const uint64_t x){
     return ((x & 0b00000001'00000010'00000100'00001000'00010000'00100000'01000000'10000000ULL) * 
             0b00000001'00000001'00000001'00000001'00000001'00000001'00000001'00000001ULL) >> 56;
 }
 
-inline uint8_t join_d7_line_8(const uint64_t x){
+inline uint_fast8_t join_d7_line_8(const uint64_t x){
     return ((x & 0b00000010'00000100'00001000'00010000'00100000'01000000'10000000'00000000ULL) * 
             0b00000000'00000001'00000001'00000001'00000001'00000001'00000001'00000001ULL) >> 57;
 }
 
-inline uint8_t join_d7_line_9(const uint64_t x){
+inline uint_fast8_t join_d7_line_9(const uint64_t x){
     return ((x & 0b00000100'00001000'00010000'00100000'01000000'10000000'00000000'00000000ULL) * 
             0b00000000'00000000'00000001'00000001'00000001'00000001'00000001'00000001ULL) >> 58;
 }
 
-inline uint8_t join_d7_line_10(const uint64_t x){
+inline uint_fast8_t join_d7_line_10(const uint64_t x){
     return ((x & 0b00001000'00010000'00100000'01000000'10000000'00000000'00000000'00000000ULL) * 
             0b00000000'00000000'00000000'00000001'00000001'00000001'00000001'00000001ULL) >> 59;
 }
 
-inline uint8_t join_d7_line_11(const uint64_t x){
+inline uint_fast8_t join_d7_line_11(const uint64_t x){
     return ((x & 0b00010000'00100000'01000000'10000000'00000000'00000000'00000000'00000000ULL) * 
             0b00000000'00000000'00000000'00000000'00000001'00000001'00000001'00000001ULL) >> 60;
 }
 
-inline uint8_t join_d7_line_12(const uint64_t x){
+inline uint_fast8_t join_d7_line_12(const uint64_t x){
     return ((x & 0b00100000'01000000'10000000'00000000'00000000'00000000'00000000'00000000ULL) * 
             0b00000000'00000000'00000000'00000000'00000000'00000001'00000001'00000001ULL) >> 61;
 }
 
-uint8_t (*join_d7_lines[])(const uint64_t) = {
+uint_fast8_t (*join_d7_lines[])(const uint64_t) = {
     join_d7_line_2, join_d7_line_3, join_d7_line_4, join_d7_line_5, 
     join_d7_line_6, join_d7_line_7, join_d7_line_8, join_d7_line_9, 
     join_d7_line_10, join_d7_line_11, join_d7_line_12, 
 };
 
-inline uint8_t join_d9_line_m5(const uint64_t x){
+inline uint_fast8_t join_d9_line_m5(const uint64_t x){
     return ((x & 0b00000100'00000010'00000001'00000000'00000000'00000000'00000000'00000000ULL) * 
             0b00000000'00000000'00000000'00000000'00000000'00100000'00100000'00100000ULL) >> 56;
 }
 
-inline uint8_t join_d9_line_m4(const uint64_t x){
+inline uint_fast8_t join_d9_line_m4(const uint64_t x){
     return ((x & 0b00001000'00000100'00000010'00000001'00000000'00000000'00000000'00000000ULL) * 
             0b00000000'00000000'00000000'00000000'00010000'00010000'00010000'00010000ULL) >> 56;
 }
 
-inline uint8_t join_d9_line_m3(const uint64_t x){
+inline uint_fast8_t join_d9_line_m3(const uint64_t x){
     return ((x & 0b00010000'00001000'00000100'00000010'00000001'00000000'00000000'00000000ULL) * 
             0b00000000'00000000'00000000'00001000'00001000'00001000'00001000'00001000ULL) >> 56;
 }
 
-inline uint8_t join_d9_line_m2(const uint64_t x){
+inline uint_fast8_t join_d9_line_m2(const uint64_t x){
     return ((x & 0b00100000'00010000'00001000'00000100'00000010'00000001'00000000'00000000ULL) * 
             0b00000000'00000000'00000100'00000100'00000100'00000100'00000100'00000100ULL) >> 56;
 }
 
-inline uint8_t join_d9_line_m1(const uint64_t x){
+inline uint_fast8_t join_d9_line_m1(const uint64_t x){
     return ((x & 0b01000000'00100000'00010000'00001000'00000100'00000010'00000001'00000000ULL) * 
             0b00000000'00000010'00000010'00000010'00000010'00000010'00000010'00000010ULL) >> 56;
 }
 
-inline uint8_t join_d9_line_0(const uint64_t x){
+inline uint_fast8_t join_d9_line_0(const uint64_t x){
     return ((x & 0b10000000'01000000'00100000'00010000'00001000'00000100'00000010'00000001ULL) * 
             0b00000001'00000001'00000001'00000001'00000001'00000001'00000001'00000001ULL) >> 56;
 }
 
-inline uint8_t join_d9_line_1(const uint64_t x){
+inline uint_fast8_t join_d9_line_1(const uint64_t x){
     return ((x & 0b0000000'10000000'01000000'00100000'00010000'00001000'00000100'00000010ULL) * 
             0b00000000'10000000'10000000'10000000'10000000'10000000'10000000'10000000ULL) >> 56;
 }
 
-inline uint8_t join_d9_line_2(const uint64_t x){
+inline uint_fast8_t join_d9_line_2(const uint64_t x){
     return ((x & 0b0000000'0000000'10000000'01000000'00100000'00010000'00001000'00000100ULL) * 
             0b00000000'01000000'01000000'01000000'01000000'01000000'01000000'00000000ULL) >> 56;
 }
 
-inline uint8_t join_d9_line_3(const uint64_t x){
+inline uint_fast8_t join_d9_line_3(const uint64_t x){
     return ((x & 0b0000000'0000000'0000000'10000000'01000000'00100000'00010000'00001000ULL) * 
             0b00000000'00100000'00100000'00100000'00100000'00100000'00000000'00000000ULL) >> 56;
 }
 
-inline uint8_t join_d9_line_4(const uint64_t x){
+inline uint_fast8_t join_d9_line_4(const uint64_t x){
     return ((x & 0b0000000'0000000'0000000'0000000'10000000'01000000'00100000'00010000ULL) * 
             0b00000000'00010000'00010000'00010000'00010000'00000000'00000000'00000000ULL) >> 56;
 }
 
-inline uint8_t join_d9_line_5(const uint64_t x){
+inline uint_fast8_t join_d9_line_5(const uint64_t x){
     return ((x & 0b0000000'0000000'0000000'0000000'0000000'10000000'01000000'00100000ULL) * 
             0b00000000'00001000'00001000'00001000'00000000'00000000'00000000'00000000ULL) >> 56;
 }
 
-uint8_t (*join_d9_lines[])(const uint64_t) = {
+uint_fast8_t (*join_d9_lines[])(const uint64_t) = {
     join_d9_line_m5, join_d9_line_m4, join_d9_line_m3, join_d9_line_m2, 
     join_d9_line_m1, join_d9_line_0, join_d9_line_1, join_d9_line_2, 
     join_d9_line_3, join_d9_line_4, join_d9_line_5 
