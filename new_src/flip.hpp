@@ -11,9 +11,9 @@ uint8_t n_flip_pre_calc[N_8BIT][N_8BIT][HW];
 
 class Flip{
     public:
-        int pos;
-        unsigned long long flip;
-        int value;
+        uint_fast8_t pos;
+        uint64_t flip;
+        int32_t value;
     
     public:
         inline void copy(Flip *mob) const{
@@ -23,8 +23,8 @@ class Flip{
         }
 
         #if FLIP_CALC_MODE == 0
-            inline void calc_flip(const unsigned long long player, const unsigned long long opponent, const int place){
-                unsigned long long wh, put, m1, m2, m3, m4, m5, m6, rev;
+            inline void calc_flip(const uint64_t player, const uint64_t opponent, const uint_fast8_t place){
+                uint64_t wh, put, m1, m2, m3, m4, m5, m6, rev;
                 put = 1ULL << place;
                 rev = 0;
 
@@ -216,8 +216,9 @@ class Flip{
             }
             
         #elif FLIP_CALC_MODE == 1
-            inline void calc_flip(const unsigned long long player, const unsigned long long opponent, const int place){
-                int t, u, p, o;
+            inline void calc_flip(const uint64_t player, const uint64_t opponent, const uint_fast8_t place){
+                int_fast8_t t, u;
+                uint8_t p, o;
                 flip = 0;
                 pos = place;
 
@@ -225,7 +226,7 @@ class Flip{
                 u = place % HW;
                 p = (player >> (HW * t)) & 0b11111111;
                 o = (opponent >> (HW * t)) & 0b11111111;
-                flip |= (unsigned long long)flip_pre_calc[p][o][u] << (HW * t);
+                flip |= (uint64_t)flip_pre_calc[p][o][u] << (HW * t);
 
                 p = join_v_line(player, u);
                 o = join_v_line(opponent, u);
@@ -246,8 +247,9 @@ class Flip{
                 }
             }
         #elif FLIP_CALC_MODE == 2
-            inline void calc_flip(const unsigned long long player, const unsigned long long opponent, const int place){
-                int t, u, p, o;
+            inline void calc_flip(const uint64_t player, const uint64_t opponent, const uint_fast8_t place){
+                int_fast8_t t, u;
+                uint8_t p, o;
                 flip = 0;
                 pos = place;
 
@@ -255,7 +257,7 @@ class Flip{
                 u = place % HW;
                 p = (player >> (HW * t)) & 0b11111111;
                 o = (opponent >> (HW * t)) & 0b11111111;
-                flip |= (unsigned long long)flip_pre_calc[p][o][u] << (HW * t);
+                flip |= (uint64_t)flip_pre_calc[p][o][u] << (HW * t);
 
                 p = join_v_line(player, u);
                 o = join_v_line(opponent, u);
@@ -280,9 +282,10 @@ class Flip{
 
 #if LAST_FLIP_CALC_MODE == 0
 
-    inline int count_last_flip(unsigned long long player, unsigned long long opponent, const int place){
-        int t, u, p, o;
-        int res = 0;
+    inline int_fast8_t count_last_flip(uint64_t player, uint64_t opponent, const uint_fast8_t place){
+        int_fast8_t t, u;
+        uint8_t p, o;
+        int_fast8_t res = 0;
 
         t = place / HW;
         u = place % HW;
@@ -313,9 +316,10 @@ class Flip{
 
 #elif LAST_FLIP_CALC_MODE == 1
 
-    inline int count_last_flip(unsigned long long player, unsigned long long opponent, const int place){
-        int t, u, p, o;
-        int res = 0;
+    inline int_fast8_t count_last_flip(uint64_t player, uint64_t opponent, const uint_fast8_t place){
+        int_fast8_t t, u;
+        uint8_t p, o;
+        int_fast8_t res = 0;
 
         t = place / HW;
         u = place % HW;
