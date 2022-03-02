@@ -30,9 +30,26 @@ The light version got the first place in the world ([CodinGame Othello](https://
 
 Please select the OS, then click to download.
 
-Unzip the zip to anywhere, then click ```Egaroucid5.exe``` to execute.
+Unzip the zip to anywhere, then click ```Egaroucid5.exe``` to execute. For MacOS users, please see below.
 
 ![download](./../img/download.png)
+
+
+
+### How to open in MacOS
+
+Now, version 5.4.1, has a trouble in opening this application.
+
+To open it, please
+
+```
+cd path/to/Egaroucid
+chmod Egaroucid.app/Contents/MacOS/Egaroucid
+```
+
+Then please execute ```Egaroucid.app/Contents/MacOS/Egaroucid```.
+
+Now fixing this oproblem.
 
 
 

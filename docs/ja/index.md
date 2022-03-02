@@ -30,9 +30,28 @@ Egaroucidは世界最強クラスのオセロAIを搭載したオセロ研究・
 
 以下の画像のように、自分のOSに合ったものをクリックしてダウンロードしてください。
 
-zipファイルを任意の場所に解凍し、中の```Egaroucid5.exe```をダブルクリックするなどして実行してください。
+zipファイルを任意の場所に解凍し、中の```Egaroucid5.exe```をダブルクリックするなどして実行してください。MacOSについては以下の方法でバージョン5.4.1現在は起動できます。
 
 ![ダウンロード](./../img/download.png)
+
+
+
+### MacOS版の起動方法
+
+MacOS版は不具合で起動方法が特殊です。
+
+まずアプリに実行権限をつけます
+
+```
+cd [Egaroucidのzipを展開したディレクトリ]
+chmod Egaroucid.app/Contents/MacOS/Egaroucid
+```
+
+そして、```Egaroucid.app/Contents/MacOS/Egaroucid```を直接実行すると起動できます。
+
+現在原因究明中です。
+
+
 
 
 
