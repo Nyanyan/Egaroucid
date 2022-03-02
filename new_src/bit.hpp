@@ -1,6 +1,11 @@
 #pragma once
 #include "common.hpp"
 #include <iostream>
+#ifdef _MSC_VER
+    #include <intrin.h>
+#else
+    #include <x86intrin.h>
+#endif
 
 using namespace std;
 
@@ -96,6 +101,27 @@ inline uint64_t black_line_mirror(uint64_t x){
     return x = x ^ a ^ (a << 36);
 }
 
+inline void black_line_mirror_double(uint64_t xin, uint64_t yin, uint64_t *x, uint64_t *y){
+    __m128i	xy = _mm_set_epi64x(xin, yin);
+    __m128i a = _mm_srli_epi64(xy, 9);
+    a ^= xy;
+    a &= _mm_set1_epi64x(0x0055005500550055ULL);
+    xy = xy ^ a ^ _mm_slli_epi64(a, 9);
+
+    a = _mm_srli_epi64(xy, 18);
+    a ^= xy;
+    a &= _mm_set1_epi64x(0x0000333300003333ULL);
+    xy = xy ^ a ^ _mm_slli_epi64(a, 18);
+
+    a = _mm_srli_epi64(xy, 36);
+    a ^= xy;
+    a &= _mm_set1_epi64x(0x000000000F0F0F0FULL);
+    xy = xy ^ a ^ _mm_slli_epi64(a, 36);
+
+    *y = _mm_cvtsi128_si64(xy);
+    *x = _mm_cvtsi128_si64(_mm_unpackhi_epi64(xy, xy));
+}
+
 #if USE_FAST_VERTICAL_MIRROR
     #ifdef _MSC_VER
         #define	vertical_mirror(x)	_byteswap_uint64(x)
@@ -114,6 +140,27 @@ inline uint64_t horizontal_mirror(uint64_t x){
     x = ((x >> 1) & 0x5555555555555555ULL) | ((x << 1) & 0xAAAAAAAAAAAAAAAAULL);
     x = ((x >> 2) & 0x3333333333333333ULL) | ((x << 2) & 0xCCCCCCCCCCCCCCCCULL);
     return ((x >> 4) & 0x0F0F0F0F0F0F0F0FULL) | ((x << 4) & 0xF0F0F0F0F0F0F0F0ULL);
+}
+
+inline void horizontal_mirror_double(uint64_t *x, uint64_t *y){
+    __m128i	xy = _mm_set_epi64x(*x, *y);
+    xy = (_mm_srli_epi64(xy, 1) & _mm_set1_epi64x(0x5555555555555555ULL)) | 
+        (_mm_slli_epi64(xy, 1) & _mm_set1_epi64x(0xAAAAAAAAAAAAAAAAULL));
+    xy = (_mm_srli_epi64(xy, 2) & _mm_set1_epi64x(0x3333333333333333ULL)) | 
+        (_mm_slli_epi64(xy, 2) & _mm_set1_epi64x(0xCCCCCCCCCCCCCCCCULL));
+    xy = (_mm_srli_epi64(xy, 4) & _mm_set1_epi64x(0x0F0F0F0F0F0F0F0FULL)) | 
+        (_mm_slli_epi64(xy, 4) & _mm_set1_epi64x(0xF0F0F0F0F0F0F0F0ULL));
+    *y = _mm_cvtsi128_si64(xy);
+    *x = _mm_cvtsi128_si64(_mm_unpackhi_epi64(xy, xy));
+}
+
+inline void horizontal_mirror_m128(__m128i *xy){
+    *xy = (_mm_srli_epi64(*xy, 1) & _mm_set1_epi64x(0x5555555555555555ULL)) | 
+        (_mm_slli_epi64(*xy, 1) & _mm_set1_epi64x(0xAAAAAAAAAAAAAAAAULL));
+    *xy = (_mm_srli_epi64(*xy, 2) & _mm_set1_epi64x(0x3333333333333333ULL)) | 
+        (_mm_slli_epi64(*xy, 2) & _mm_set1_epi64x(0xCCCCCCCCCCCCCCCCULL));
+    *xy = (_mm_srli_epi64(*xy, 4) & _mm_set1_epi64x(0x0F0F0F0F0F0F0F0FULL)) | 
+        (_mm_slli_epi64(*xy, 4) & _mm_set1_epi64x(0xF0F0F0F0F0F0F0F0ULL));
 }
 
 // direction is couner clockwise
