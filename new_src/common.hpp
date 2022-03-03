@@ -14,6 +14,13 @@ using namespace std;
 #define N_DIAG_LINE 11
 #define N_DIAG_LINE_M1 10
 
+#define BLACK 0
+#define WHITE 1
+#define VACANT 2
+
+#define N_PHASES 30
+#define PHASE_N_STONES 2
+
 inline uint64_t tim(){
     return chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now().time_since_epoch()).count();
 }
