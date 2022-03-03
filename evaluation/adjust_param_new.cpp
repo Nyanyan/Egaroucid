@@ -148,7 +148,7 @@ inline double calc_score(int phase, int i);
 
 void input_test_data(int strt){
     int i, j, k;
-    ifstream ifs("big_data.txt");
+    ifstream ifs("big_data_new_4.txt");
     if (ifs.fail()){
         cerr << "evaluation file not exist" << endl;
         exit(1);
@@ -529,14 +529,10 @@ inline int calc_rev_idx(int pattern_idx, int pattern_size, int idx){
         res += p31 * calc_pop(idx, 5, pattern_size);
         res += calc_pop(idx, 6, pattern_size);
     } else if (pattern_idx >= n_patterns + 4){
-        res += p47 * calc_pop4(idx, 7, 8);
-        res += p46 * calc_pop4(idx, 6, 8);
-        res += p45 * calc_pop4(idx, 5, 8);
-        res += p44 * calc_pop4(idx, 4, 8);
-        res += p43 * calc_pop4(idx, 3, 8);
-        res += p42 * calc_pop4(idx, 2, 8);
-        res += p41 * calc_pop4(idx, 1, 8);
-        res += calc_pop4(idx, 0, 8);
+        for (int i = 0; i < 8; ++i){
+            res |= (1 & (idx >> i)) << (HW_M1 - i);
+            res |= (1 & (idx >> (HW + i))) << (HW + HW_M1 - i);
+        }
     }
     return res;
 }

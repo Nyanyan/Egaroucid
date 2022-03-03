@@ -308,6 +308,8 @@ inline void convert_idx(string str){
         b.opponent = bk;
     }
     score = stoi(str.substr(67));
+    if (ai_player == 1)
+        score = -score;
     //b.print();
     int idxes[86];
     calc_idx(0, &b, idxes);
