@@ -45,7 +45,7 @@ int sa_phase, sa_player;
 #define step 256
 #define sc_w (step * HW2)
 
-#define n_data 30000000
+#define n_data 50000000
 
 #define n_raw_params 86
 
@@ -148,7 +148,7 @@ inline double calc_score(int phase, int i);
 
 void input_test_data(int strt){
     int i, j, k;
-    ifstream ifs("big_data_new_4.txt");
+    ifstream ifs("big_data.txt");
     if (ifs.fail()){
         cerr << "evaluation file not exist" << endl;
         exit(1);

@@ -81,8 +81,8 @@ inline uint64_t calc_mobility(uint64_t p, uint64_t o){
 }
 */
 
-inline unsigned long long calc_legal(const unsigned long long P, const unsigned long long O){
-    unsigned long long moves, mO, flip1, pre1, flip8, pre8;
+inline uint64_t calc_legal(const uint64_t P, const uint64_t O){
+    uint64_t moves, mO, flip1, pre1, flip8, pre8;
     __m128i    PP, mOO, MM, flip, pre;
     mO = O & 0x7e7e7e7e7e7e7e7eULL;
     PP  = _mm_set_epi64x(vertical_mirror(P), P);

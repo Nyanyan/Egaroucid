@@ -70,7 +70,7 @@ inline int pop_count_ull(uint64_t x){
     x = (x & 0x3333333333333333ULL) + ((x >> 2) & 0x3333333333333333ULL);
     x = (x + (x >> 4)) & 0x0F0F0F0F0F0F0F0FULL;
     x = (x * 0x0101010101010101ULL) >> 56;
-    return (uint32_t)x;
+    return x;
 }
 
 inline int pop_count_uchar(unsigned char x){
