@@ -120,15 +120,6 @@ inline void init_evaluation_base() {
     }
 }
 
-inline int convert_canput_line(int idx){
-    int res = 0;
-    for (int i = 0; i < HW * 2; i += 2)
-        res |= (1 & (idx >> i)) << (i / 2);
-    for (int i = 1; i < HW * 2; i += 2)
-        res |= (1 & (idx >> i)) << ((i / 2) + HW);
-    return res;
-}
-
 inline bool init_evaluation_calc(){
     FILE* fp;
     #ifdef _WIN64
