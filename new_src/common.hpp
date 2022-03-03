@@ -23,6 +23,8 @@ using namespace std;
 #define N_PHASES 30
 #define PHASE_N_STONES 2
 
+#define INF 100000000
+
 inline uint64_t tim(){
     return chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now().time_since_epoch()).count();
 }
