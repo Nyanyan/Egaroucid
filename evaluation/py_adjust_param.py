@@ -12,7 +12,7 @@ else:
     hour = '0'
     minute = '10'
     second = '0'
-    beta = '0.002'
+    beta = '0.004'
 
 cmd = 'adjust_param.out ' + phase + ' ' + player + ' ' + hour + ' ' + minute + ' ' + second + ' ' + beta + ' learned_data/' + phase + '_' + player + '.txt'
 print(cmd)
