@@ -185,6 +185,17 @@ class Board {
             opponent |= flip->flip;
         }
 
+        inline void translate_to_arr_player(uint_fast8_t res[]) {
+            for (int i = 0; i < HW2; ++i){
+                if (1 & (player >> i))
+                    res[HW2_M1 - i] = 0;
+                else if (1 & (opponent >> i))
+                    res[HW2_M1 - i] = 1;
+                else
+                    res[HW2_M1 - i] = 2;
+            }
+        }
+
         inline void translate_to_arr(int res[]) {
             if (p == BLACK){
                 for (int i = 0; i < HW2; ++i){

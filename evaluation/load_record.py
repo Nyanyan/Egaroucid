@@ -212,7 +212,7 @@ for year in reversed(range(1977, 2019 + 1)):
         raw_data = f.read()
     games.extend([i for i in raw_data.splitlines()])
 '''
-for i in range(3, 4):
+for i in range(4, 5):
     raw_data = ''
     with open('third_party/records9/' + digit(i, 7) + '.txt', 'r') as f:
         raw_data = f.read()
@@ -223,7 +223,7 @@ idx = 0
 for i in trange(len(games)):
     if len(games[i]) == 0:
         continue
-    collect_data(35 + idx // 1000, games[i])
+    collect_data(62 + idx // 1000, games[i])
     idx += 1
 print(idx)
 

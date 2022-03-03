@@ -65,11 +65,11 @@ void print_board(uint64_t p, uint64_t o){
     }
 }
 
-inline uint32_t pop_count_ull(uint64_t x){
+inline int pop_count_ull(uint64_t x){
     x = x - ((x >> 1) & 0x5555555555555555ULL);
-	x = (x & 0x3333333333333333ULL) + ((x >> 2) & 0x3333333333333333ULL);
-	x = (x + (x >> 4)) & 0x0F0F0F0F0F0F0F0FULL;
-	x = (x * 0x0101010101010101ULL) >> 56;
+    x = (x & 0x3333333333333333ULL) + ((x >> 2) & 0x3333333333333333ULL);
+    x = (x + (x >> 4)) & 0x0F0F0F0F0F0F0F0FULL;
+    x = (x * 0x0101010101010101ULL) >> 56;
     return (uint32_t)x;
 }
 
