@@ -80,7 +80,7 @@ inline int pop_count_ull(unsigned long long x){
 inline int pop_count_uchar(unsigned char x){
     x = (x & 0b01010101) + ((x & 0b10101010) >> 1);
     x = (x & 0b00110011) + ((x & 0b11001100) >> 2);
-    return (x & 0b00001111) + ((x & 11110000) >> 4);
+    return (x & 0b00001111) + ((x & 0b11110000) >> 4);
 }
 /*
 inline unsigned long long mirror_v(unsigned long long x){
