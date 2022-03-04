@@ -279,8 +279,8 @@ inline uint_fast8_t first_bit(uint64_t *x){
     return pop_count_ull((*x & (-(*x))) - 1);
 }
 
-inline uint_fast8_t next_bit(uint64_t *x, uint_fast8_t bit){
-    *x ^= 1ULL << bit;
+inline uint_fast8_t next_bit(uint64_t *x){
+    *x &= *x - 1;
     return pop_count_ull((*x & (-(*x))) - 1);
 }
 

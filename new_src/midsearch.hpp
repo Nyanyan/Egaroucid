@@ -77,7 +77,7 @@ int nega_alpha_eval1(Search *search, int alpha, int beta){
     }
     search->skipped = false;
     Flip flip;
-    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal, cell)){
+    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
         calc_flip(&flip, &search->board, cell);
         search->board.move(&flip);
             ++(search->n_nodes);
@@ -117,7 +117,7 @@ int nega_alpha(Search *search, int alpha, int beta, int depth){
     }
     search->skipped = false;
     Flip flip;
-    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal, cell)){
+    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
         calc_flip(&flip, &search->board, cell);
         search->board.move(&flip);
             g = -nega_alpha(search, -beta, -alpha, depth - 1);
@@ -167,7 +167,7 @@ int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth){
     const int canput = pop_count_ull(legal);
     vector<Flip> move_list(canput);
     int idx = 0;
-    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal, cell))
+    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
         calc_flip(&move_list[idx++], &search->board, cell);
     move_ordering(search, move_list, depth, alpha, beta, false);
     for (const Mobility &mob: move_list){
