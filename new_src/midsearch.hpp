@@ -9,7 +9,7 @@
 #include "evaluate.hpp"
 #include "search.hpp"
 #include "transpose_table.hpp"
-#include "endsearch.hpp"
+//#include "endsearch.hpp"
 #include "move_ordering.hpp"
 #if USE_MULTI_THREAD
     #include "thread_pool.hpp"
