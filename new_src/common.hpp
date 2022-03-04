@@ -40,5 +40,5 @@ inline int32_t myrandrange(int32_t s, int32_t e){
 }
 
 inline uint64_t myrand_ull(){
-    return (uint64_t)(myrandom() * 18446744073709551615ULL);
+    return (uint64_t)raw_myrandom();
 }

@@ -73,10 +73,16 @@ inline int pop_count_ull(uint64_t x){
     return x;
 }
 
-inline int pop_count_uchar(unsigned char x){
+inline int pop_count_uint(uint32_t x){
+    x = (x & 0x55555555) + ((x & 0xAAAAAAAA) >> 1);
+    x = (x & 0x33333333) + ((x & 0xCCCCCCCC) >> 2);
+    return (x & 0x0F0F0F0F) + ((x & 0xF0F0F0F0) >> 4);
+}
+
+inline int pop_count_uchar(uint8_t x){
     x = (x & 0b01010101) + ((x & 0b10101010) >> 1);
     x = (x & 0b00110011) + ((x & 0b11001100) >> 2);
-    return (x & 0b00001111) + ((x & 11110000) >> 4);
+    return (x & 0b00001111) + ((x & 0b11110000) >> 4);
 }
 
 inline uint32_t pop_digit(uint64_t x, int place){

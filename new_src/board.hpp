@@ -17,8 +17,8 @@ constexpr uint_fast8_t cell_div4[HW2] = {
     4, 4, 4, 4, 8, 8, 8, 8
 };
 
-uint64_t hash_rand_player[4][65536];
-uint64_t hash_rand_opponent[4][65536];
+uint32_t hash_rand_player[4][65536];
+uint32_t hash_rand_opponent[4][65536];
 
 class Board {
     public:
@@ -380,8 +380,12 @@ void board_init(){
     int i, j;
     for (i = 0; i < 4; ++i){
         for (j = 0; j < 65536; ++j){
-            hash_rand_player[i][j] = rotate_180(myrand_ull());
-            hash_rand_opponent[i][j] = rotate_180(myrand_ull());
+            hash_rand_player[i][j] = 0;
+            while (pop_count_uint(hash_rand_player[i][j]) < 8)
+                hash_rand_player[i][j] = (uint32_t)(rotate_180(myrand_ull()) >> 32);
+            hash_rand_opponent[i][j] = 0;
+            while (pop_count_uint(hash_rand_opponent[i][j]) < 8)
+                hash_rand_opponent[i][j] = (uint32_t)(rotate_180(myrand_ull()) >> 32);
         }
     }
     cerr << "board initialized" << endl;
