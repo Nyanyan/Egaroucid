@@ -128,6 +128,7 @@ class Child_transpose_table{
                 for(int i = 0; i < TRANSPOSE_TABLE_SIZE; ++i){
                     if (table[prev][i] != NULL){
                         table[prev][i]->init();
+                        table[prev][i] = NULL;
                     }
                 }
             }
@@ -136,6 +137,7 @@ class Child_transpose_table{
                 for(int i = 0; i < TRANSPOSE_TABLE_SIZE; ++i){
                     if (table[now][i] != NULL){
                         table[now][i]->init();
+                        table[now][i] = NULL;
                     }
                 }
             }
@@ -284,8 +286,10 @@ class Parent_transpose_table{
         #else
             inline void init(){
                 for(int i = 0; i < TRANSPOSE_TABLE_SIZE; ++i){
-                    if (table[i] != NULL)
+                    if (table[i] != NULL){
                         table[i]->init();
+                        table[i] = NULL;
+                    }
                 }
             }
         #endif
