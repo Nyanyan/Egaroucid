@@ -66,7 +66,7 @@ int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped){
     ++(search->n_nodes);
     int g, v = -INF;
     uint64_t legal = search->board.get_legal();
-    if (legal == 0){
+    if (legal == 0ULL){
         if (skipped)
             return end_evaluate(&search->board);
         search->board.pass();
@@ -105,7 +105,7 @@ int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped){
     #endif
     int g, v = -INF;
     uint64_t legal = search->board.get_legal();
-    if (legal == 0){
+    if (legal == 0ULL){
         if (skipped)
             return end_evaluate(&search->board);
         search->board.pass();
@@ -153,7 +153,7 @@ int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, b
     #endif
     uint64_t legal = search->board.get_legal();
     int g, v = -INF;
-    if (legal == 0){
+    if (legal == 0ULL){
         if (skipped)
             return end_evaluate(&search->board);
         search->board.pass();
@@ -226,7 +226,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
     #endif
     uint64_t legal = search->board.get_legal();
     int g, v = -INF;
-    if (legal == 0){
+    if (legal == 0ULL){
         if (skipped)
             return end_evaluate(&search->board);
         search->board.pass();
@@ -350,7 +350,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, boo
     #endif
     uint64_t legal = search->board.get_legal();
     int g, v = -INF;
-    if (legal == 0){
+    if (legal == 0ULL){
         if (skipped)
             return end_evaluate(&search->board);
         search->board.pass();
