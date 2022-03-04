@@ -9,3 +9,6 @@
 
 // multi thread
 #define USE_MULTI_THREAD false
+
+// MPC
+#define USE_MID_MPC true
