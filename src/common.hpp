@@ -43,7 +43,7 @@ inline int myrandrange(int s, int e){
 }
 
 inline unsigned long long myrand_ull(){
-    return (unsigned long long)(myrandom() * 18446744073709551615ULL);
+    return raw_myrandom();
 }
 
 /*
