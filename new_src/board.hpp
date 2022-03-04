@@ -57,16 +57,16 @@ class Board {
             res->parity = parity;
         }
 
-        inline uint64_t hash(){
+        inline uint32_t hash(){
             return 
-                hash_rand_player[0][0b1111111111111111 & player] ^ 
-                hash_rand_player[1][0b1111111111111111 & (player >> 16)] ^ 
-                hash_rand_player[2][0b1111111111111111 & (player >> 32)] ^ 
-                hash_rand_player[3][0b1111111111111111 & (player >> 48)] ^ 
-                hash_rand_opponent[0][0b1111111111111111 & opponent] ^ 
-                hash_rand_opponent[1][0b1111111111111111 & (opponent >> 16)] ^ 
-                hash_rand_opponent[2][0b1111111111111111 & (opponent >> 32)] ^ 
-                hash_rand_opponent[3][0b1111111111111111 & (opponent >> 48)];
+                hash_rand_player[0][0xFFFF & player] ^ 
+                hash_rand_player[1][0xFFFF & (player >> 16)] ^ 
+                hash_rand_player[2][0xFFFF & (player >> 32)] ^ 
+                hash_rand_player[3][0xFFFF & (player >> 48)] ^ 
+                hash_rand_opponent[0][0xFFFF & opponent] ^ 
+                hash_rand_opponent[1][0xFFFF & (opponent >> 16)] ^ 
+                hash_rand_opponent[2][0xFFFF & (opponent >> 32)] ^ 
+                hash_rand_opponent[3][0xFFFF & (opponent >> 48)];
         }
 
         inline void board_white_line_mirror(){
@@ -382,10 +382,10 @@ void board_init(){
         for (j = 0; j < 65536; ++j){
             hash_rand_player[i][j] = 0;
             while (pop_count_uint(hash_rand_player[i][j]) < 8)
-                hash_rand_player[i][j] = (uint32_t)(rotate_180(myrand_ull()) >> 32);
+                hash_rand_player[i][j] = myrand_uint(); //(uint32_t)(rotate_180(myrand_ull()) >> 32);
             hash_rand_opponent[i][j] = 0;
             while (pop_count_uint(hash_rand_opponent[i][j]) < 8)
-                hash_rand_opponent[i][j] = (uint32_t)(rotate_180(myrand_ull()) >> 32);
+                hash_rand_opponent[i][j] = myrand_uint(); //(uint32_t)(rotate_180(myrand_ull()) >> 32);
         }
     }
     cerr << "board initialized" << endl;
