@@ -39,6 +39,11 @@ inline int32_t myrandrange(int32_t s, int32_t e){
     return s +(int)((e - s) * myrandom());
 }
 
-inline uint64_t myrand_ull(){
+inline uint64_t myrand_uint(){
     return (uint64_t)raw_myrandom();
+}
+
+
+inline uint64_t myrand_ull(){
+    return ((uint64_t)raw_myrandom() << 32) | (uint64_t)raw_myrandom();
 }
