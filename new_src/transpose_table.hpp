@@ -161,6 +161,18 @@ class Child_transpose_table{
             }
         }
 
+        inline void reg(const int idx, const Board *board, const uint32_t hash, const int policy, const int value){
+            if (table[idx][hash] != NULL){
+                if (table[idx][hash]->compare(board))
+                    table[idx][hash]->register_value(policy, value);
+                else
+                    table[idx][hash]->register_value(board, policy, value);
+            } else{
+                table[idx][hash] = (Node_child_transpose_table*)malloc(sizeof(Node_child_transpose_table));
+                table[idx][hash]->register_value(board, policy, value);
+            }
+        }
+
         inline int get_now(Board *board, const uint32_t hash) const{
             if (table[now][hash] != NULL){
                 if (table[now][hash]->compare(board)){
@@ -238,6 +250,11 @@ class Parent_transpose_table{
         Node_parent_transpose_table *table[TRANSPOSE_TABLE_SIZE];
 
     public:
+        inline void first_init(){
+            for(int i = 0; i < TRANSPOSE_TABLE_SIZE; ++i)
+                table[i] = NULL;
+        }
+
         #if USE_MULTI_THREAD
             inline void init_now(){
                 const int thread_size = thread_pool.size();
