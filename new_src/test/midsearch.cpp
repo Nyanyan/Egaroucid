@@ -58,7 +58,7 @@ int main(){
         cerr << "0 move " << mid_evaluate(&search.board) << endl;
         //cerr << nega_alpha_eval1(&search, -HW2, HW2, false) << endl;
         bool searching = true;
-        cerr << nega_alpha_ordering(&search, -HW2, HW2, 13, false, false, &searching) << endl;
+        cerr << nega_alpha_ordering(&search, -HW2, HW2, 10, false, false, &searching) << endl;
         cerr << search.n_nodes << endl;
     }
 
