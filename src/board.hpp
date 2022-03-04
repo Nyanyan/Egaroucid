@@ -458,8 +458,12 @@ void board_init(){
     int i, j;
     for (i = 0; i < 4; ++i){
         for (j = 0; j < 65536; ++j){
-            hash_rand_black[i][j] = mirror_v(myrand_ull());
-            hash_rand_white[i][j] = mirror_v(myrand_ull());
+            hash_rand_black[i][j] = 0;
+            while (pop_count_ull(hash_rand_black[i][j]) < 16)
+                hash_rand_black[i][j] = mirror_v(myrand_ull());
+            hash_rand_white[i][j] = 0;
+            while (pop_count_ull(hash_rand_white[i][j]) < 16)
+                hash_rand_white[i][j] = mirror_v(myrand_ull());
         }
     }
     cerr << "board initialized" << endl;
