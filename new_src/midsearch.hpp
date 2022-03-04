@@ -65,7 +65,7 @@ inline bool mpc_lower(Search *search, int alpha, int depth){
 int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped){
     ++(search->n_nodes);
     int g, v = -INF;
-    uint64_t legal = search->board.mobility_ull();
+    uint64_t legal = search->board.get_legal();
     if (legal == 0){
         if (skipped)
             return end_evaluate(&search->board);
@@ -75,7 +75,6 @@ int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped){
         alpha = max(alpha, v);
         return v;
     }
-    search->skipped = false;
     Flip flip;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
         calc_flip(&flip, &search->board, cell);
@@ -97,15 +96,15 @@ int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped){
     ++(search->n_nodes);
     if (depth == 0)
         return mid_evaluate(&search->board);
-    //if (depth == 1)
-    //    return nega_alpha_eval1(search, alpha, beta);
+    if (depth == 1)
+        return nega_alpha_eval1(search, alpha, beta, false);
     #if USE_MID_SC
         int stab_res = stability_cut(search, &alpha, &beta);
         if (stab_res != SCORE_UNDEFINED)
             return stab_res;
     #endif
     int g, v = -INF;
-    uint64_t legal = search->board.mobility_ull();
+    uint64_t legal = search->board.get_legal();
     if (legal == 0){
         if (skipped)
             return end_evaluate(&search->board);
@@ -115,7 +114,6 @@ int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped){
         alpha = max(alpha, v);
         return v;
     }
-    search->skipped = false;
     Flip flip;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
         calc_flip(&flip, &search->board, cell);
@@ -136,7 +134,7 @@ int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, b
     //if (depth <= MID_FAST_DEPTH)
     //    return nega_alpha(search, alpha, beta, depth);
     if (depth == 1)
-        return nega_alpha_eval1(search, alpha, beta);
+        return nega_alpha_eval1(search, alpha, beta, skipped);
     if (depth == 0)
         return mid_evaluate(&search->board);
     ++(search->n_nodes);
@@ -153,7 +151,7 @@ int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, b
                 return alpha;
         }
     #endif
-    uint64_t legal = search->board.mobility_ull();
+    uint64_t legal = search->board.get_legal();
     int g, v = -INF;
     if (legal == 0){
         if (skipped)
@@ -189,7 +187,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
     //if (!is_end_search && depth <= MID_FAST_DEPTH)
     //    return nega_alpha(search, alpha, beta, depth);
     if (!is_end_search && depth == 1)
-        return nega_alpha_eval1(search, alpha, beta);
+        return nega_alpha_eval1(search, alpha, beta, false);
     if (!is_end_search && depth == 0)
         return mid_evaluate(&search->board);
     ++(search->n_nodes);
@@ -226,7 +224,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
             }
         }
     #endif
-    uint64_t legal = search->board.mobility_ull();
+    uint64_t legal = search->board.get_legal();
     int g, v = -INF;
     if (legal == 0){
         if (skipped)
@@ -236,7 +234,6 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
         search->board.pass();
         return v;
     }
-    search->skipped = false;
     const int canput = pop_count_ull(legal);
     vector<Flip> move_list(canput);
     int idx = 0;
@@ -251,7 +248,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
         for (const Mobility &mob: move_list){
             if (!(*searching))
                 break;
-            if (ybwc_split(search, &mob, -beta, -alpha, depth - 1, is_end_search, &n_searching, mob.pos, pv_idx++, canput, split_count, parallel_tasks)){
+            if (ybwc_split(search, &mob, -beta, -alpha, depth - 1, is_end_search, &n_searching, flip.pos, pv_idx++, canput, split_count, parallel_tasks)){
                 ++split_count;
             } else{
                 search->board.move(&mob);
@@ -261,8 +258,8 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
                     alpha = max(alpha, g);
                     if (v < g){
                         v = g;
-                        best_move = mob.pos;
-                        //child_transpose_table.reg(search->tt_child_idx, &search->board, hash_code, mob.pos, g);
+                        best_move = flip.pos;
+                        //child_transpose_table.reg(search->tt_child_idx, &search->board, hash_code, flip.pos, g);
                     }
                     if (beta <= alpha)
                         break;
@@ -287,8 +284,8 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
             alpha = max(alpha, g);
             if (v < g){
                 v = g;
-                best_move = mob.pos;
-                //child_transpose_table.reg(search->tt_child_idx, &search->board, hash_code, mob.pos, g);
+                best_move = flip.pos;
+                //child_transpose_table.reg(search->tt_child_idx, &search->board, hash_code, flip.pos, g);
             }
             if (beta <= alpha)
                 break;
@@ -314,7 +311,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, boo
     //if (!is_end_search && depth <= MID_FAST_DEPTH)
     //    return nega_alpha(search, alpha, beta, depth);
     if (!is_end_search && depth == 1)
-        return nega_alpha_eval1(search, alpha, beta);
+        return nega_alpha_eval1(search, alpha, beta, false);
     if (!is_end_search && depth == 0)
         return mid_evaluate(&search->board);
     ++(search->n_nodes);
@@ -351,7 +348,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, boo
             }
         }
     #endif
-    uint64_t legal = search->board.mobility_ull();
+    uint64_t legal = search->board.get_legal();
     int g, v = -INF;
     if (legal == 0){
         if (skipped)
@@ -361,9 +358,8 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, boo
         search->board.pass();
         return v;
     }
-    search->skipped = false;
     const int canput = pop_count_ull(legal);
-    vvector<Flip> move_list(canput);
+    vector<Flip> move_list(canput);
     int idx = 0;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
         calc_flip(&move_list[idx++], &search->board, cell);
@@ -383,8 +379,8 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, boo
         alpha = max(alpha, g);
         if (v < g){
             v = g;
-            //child_transpose_table.reg(search->tt_child_idx, &search->board, hash_code, mob.pos, g);
-            best_move = mob.pos;
+            //child_transpose_table.reg(search->tt_child_idx, &search->board, hash_code, flip.pos, g);
+            best_move = flip.pos;
         }
         if (beta <= alpha)
             break;

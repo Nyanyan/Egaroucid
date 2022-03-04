@@ -182,7 +182,7 @@ class Child_transpose_table{
             return TRANSPOSE_TABLE_UNDEFINED;
         }
 
-        inline bool get_prev(Board *board, const uint32_t hash, int best_moves[]) const{
+        inline int get_prev(Board *board, const uint32_t hash) const{
             if (table[prev][hash] != NULL){
                 if (table[prev][hash]->compare(board)){
                     return table[prev][hash]->get();

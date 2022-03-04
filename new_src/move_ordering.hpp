@@ -44,10 +44,10 @@ constexpr int move_ordering_depth[60] = {
     6, 6, 6, 6, 6, 6, 6, 6, 6, 6
 };
 
-int nega_alpha_eval1(Search *search, int alpha, int beta);
-int nega_alpha(Search *search, int alpha, int beta, int depth);
-int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth);
-int nega_scout(Search *search, int alpha, int beta, int depth, bool is_end_search);
+int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped);
+int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped);
+int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, bool skipped);
+int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, bool is_end_search);
 
 inline void move_evaluate(Search *search, Flip *flip, const int best_move, const int alpha, const int beta, const int depth){
     flip->value = 0;
@@ -69,12 +69,12 @@ inline void move_evaluate(Search *search, Flip *flip, const int best_move, const
                         flip->value += (HW2 - mid_evaluate(&search->board)) * W_VALUE;
                         break;
                     case 1:
-                        flip->value += (HW2 - nega_alpha_eval1(search, alpha, beta)) * W_VALUE;
+                        flip->value += (HW2 - nega_alpha_eval1(search, alpha, beta, false)) * W_VALUE;
                         break;
                     default:
                         bool use_mpc = search->use_mpc;
                         search->use_mpc = false;
-                            flip->value += (HW2 - nega_alpha_ordering_nomemo(search, alpha, beta, depth)) * W_VALUE;
+                            flip->value += (HW2 - nega_alpha_ordering_nomemo(search, alpha, beta, depth, false)) * W_VALUE;
                         search->use_mpc = use_mpc;
                         break;
                 }
