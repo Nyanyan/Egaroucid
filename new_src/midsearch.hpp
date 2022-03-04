@@ -76,19 +76,17 @@ int nega_alpha_eval1(Search *search, int alpha, int beta){
         return v;
     }
     search->skipped = false;
-    Mobility mob;
-    for (const int &cell: search->vacant_list){
-        if (1 & (legal >> cell)){
-            calc_flip(&mob, &search->board, cell);
-            search->board.move(&mob);
-                ++(search->n_nodes);
-                g = -mid_evaluate(&search->board);
-            search->board.undo(&mob);
-            alpha = max(alpha, g);
-            v = max(v, g);
-            if (beta <= alpha)
-                break;
-        }
+    Flip flip;
+    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal, cell)){
+        calc_flip(&flip, &search->board, cell);
+        search->board.move(&flip);
+            ++(search->n_nodes);
+            g = -mid_evaluate(&search->board);
+        search->board.undo(&flip);
+        alpha = max(alpha, g);
+        v = max(v, g);
+        if (beta <= alpha)
+            break;
     }
     return v;
 }
@@ -118,18 +116,16 @@ int nega_alpha(Search *search, int alpha, int beta, int depth){
         return v;
     }
     search->skipped = false;
-    Mobility mob;
-    for (const int &cell: search->vacant_list){
-        if (1 & (legal >> cell)){
-            calc_flip(&mob, &search->board, cell);
-            search->board.move(&mob);
-                g = -nega_alpha(search, -beta, -alpha, depth - 1);
-            search->board.undo(&mob);
-            alpha = max(alpha, g);
-            v = max(v, g);
-            if (beta <= alpha)
-                break;
-        }
+    Flip flip;
+    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal, cell)){
+        calc_flip(&flip, &search->board, cell);
+        search->board.move(&flip);
+            g = -nega_alpha(search, -beta, -alpha, depth - 1);
+        search->board.undo(&flip);
+        alpha = max(alpha, g);
+        v = max(v, g);
+        if (beta <= alpha)
+            break;
     }
     return v;
 }
@@ -169,12 +165,10 @@ int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth){
     }
     search->skipped = false;
     const int canput = pop_count_ull(legal);
-    vector<Mobility> move_list(canput);
+    vector<Flip> move_list(canput);
     int idx = 0;
-    for (const int &cell: search->vacant_list){
-        if (1 & (legal >> cell))
-            calc_flip(&move_list[idx++], &search->board, cell);
-    }
+    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal, cell))
+        calc_flip(&move_list[idx++], &search->board, cell);
     move_ordering(search, move_list, depth, alpha, beta, false);
     for (const Mobility &mob: move_list){
         search->board.move(&mob);

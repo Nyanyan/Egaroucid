@@ -275,6 +275,15 @@ inline uint64_t unrotate_315(uint64_t x){
     return rotate_180(unrotate_135(x));
 }
 
+inline uint_fast8_t first_bit(uint64_t *x){
+    return pop_count_ull((*x & (-(*x))) - 1);
+}
+
+inline uint_fast8_t next_bit(uint64_t *x, uint_fast8_t bit){
+    *x ^= 1ULL << bit;
+    return pop_count_ull((*x & (-(*x))) - 1);
+}
+
 constexpr uint8_t d7_mask[HW2] = {
     0b10000000, 0b11000000, 0b11100000, 0b11110000, 0b11111000, 0b11111100, 0b11111110, 0b11111111,
     0b11000000, 0b11100000, 0b11110000, 0b11111000, 0b11111100, 0b11111110, 0b11111111, 0b01111111,

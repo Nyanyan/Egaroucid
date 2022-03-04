@@ -7,5 +7,8 @@ int main(){
     bit_print_board(x);
     bit_print_board(rotate_90(x));
     bit_print_board(rotate_270(x));
+    bit_print_board(x);
+    for (uint_fast8_t cell = first_bit(&x); x; cell = next_bit(&x, cell))
+        cerr << (int)cell << endl;
     return 0;
 }

@@ -39,6 +39,7 @@ using namespace std;
 #define P39m 19682
 #define P310m 59048
 
+#define P40 1
 #define P41 4
 #define P42 16
 #define P43 64
