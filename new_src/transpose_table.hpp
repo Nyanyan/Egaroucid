@@ -2,7 +2,7 @@
 #include "setting.hpp"
 #include "common.hpp"
 #include "board.hpp"
-#if USE_MULTI_THREAD
+#if USE_MULTI_THREAD && false
     #include "thread_pool.hpp"
     #include <math.h>
     #include <future>
@@ -61,7 +61,7 @@ class Node_child_transpose_table{
         //}
 };
 
-#if USE_MULTI_THREAD
+#if USE_MULTI_THREAD && false
     void child_init_p(int id, Node_child_transpose_table table[2][TRANSPOSE_TABLE_SIZE], const int idx, const int s, const int e){
         for(int i = s; i < e; ++i)
             table[idx][i].init();
@@ -97,7 +97,7 @@ class Child_transpose_table{
             init_now();
         }
 
-        #if USE_MULTI_THREAD
+        #if USE_MULTI_THREAD && false
             inline void init_prev(){
                 const int thread_size = thread_pool.size();
                 const int delta = ceil((double)TRANSPOSE_TABLE_SIZE / thread_size);
@@ -240,7 +240,7 @@ class Node_parent_transpose_table{
         }
 };
 
-#if USE_MULTI_THREAD
+#if USE_MULTI_THREAD && false
     void parent_init_p(int id, Node_parent_transpose_table table[2][TRANSPOSE_TABLE_SIZE], const int idx, const int s, const int e){
         for(int i = s; i < e; ++i)
             table[idx][i].init();
@@ -257,7 +257,7 @@ class Parent_transpose_table{
                 table[i] = NULL;
         }
 
-        #if USE_MULTI_THREAD
+        #if USE_MULTI_THREAD && false
             inline void init_now(){
                 const int thread_size = thread_pool.size();
                 const int delta = ceil((double)TRANSPOSE_TABLE_SIZE / thread_size);

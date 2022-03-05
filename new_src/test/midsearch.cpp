@@ -59,7 +59,7 @@ int main(){
         //cerr << nega_alpha_eval1(&search, -HW2, HW2, false) << endl;
         bool searching = true;
         uint64_t strt = tim();
-        cerr << nega_alpha_ordering(&search, -HW2, HW2, 20, false, true, &searching) << endl;
+        cerr << nega_scout(&search, -HW2, HW2, 20, false, true) << endl;
         cerr << search.n_nodes << " " << (tim() - strt) << " " << search.n_nodes * 1000 / (tim() - strt) << endl;
     }
 

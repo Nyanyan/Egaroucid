@@ -245,21 +245,20 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
         int pv_idx = 0, split_count = 0;
         vector<future<pair<int, uint64_t>>> parallel_tasks;
         bool n_searching = true;
-        for (const Mobility &mob: move_list){
+        for (const Flip &flip: move_list){
             if (!(*searching))
                 break;
-            if (ybwc_split(search, &mob, -beta, -alpha, depth - 1, is_end_search, &n_searching, flip.pos, pv_idx++, canput, split_count, parallel_tasks)){
+            if (ybwc_split(search, &flip, -beta, -alpha, depth - 1, false, is_end_search, &n_searching, flip.pos, pv_idx++, canput, split_count, parallel_tasks)){
                 ++split_count;
             } else{
-                search->board.move(&mob);
-                    g = -nega_alpha_ordering(search, -beta, -alpha, depth - 1, is_end_search, searching);
-                search->board.undo(&mob);
+                search->board.move(&flip);
+                    g = -nega_alpha_ordering(search, -beta, -alpha, depth - 1, false, is_end_search, searching);
+                search->board.undo(&flip);
                 if (*searching){
                     alpha = max(alpha, g);
                     if (v < g){
                         v = g;
                         best_move = flip.pos;
-                        //child_transpose_table.reg(search->tt_child_idx, &search->board, hash_code, flip.pos, g);
                     }
                     if (beta <= alpha)
                         break;
@@ -269,9 +268,9 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
         if (split_count){
             if (beta <= alpha || !(*searching)){
                 n_searching = false;
-                ybwc_wait_strict(search, parallel_tasks);
+                ybwc_wait_all(search, parallel_tasks);
             } else{
-                g = ybwc_wait_strict(search, parallel_tasks);
+                g = ybwc_wait_all(search, parallel_tasks);
                 alpha = max(alpha, g);
                 v = max(v, g);
             }
@@ -398,13 +397,13 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, boo
 }
 
 
-int mtd(Search *search, int l, int u, int g, int depth, bool is_end_search){
+int mtd(Search *search, int l, int u, int g, int depth, bool skipped, bool is_end_search){
     int beta;
     bool searching = true;
     g = max(l, min(u, g));
     while (u > l){
         beta = max(l + 1, g);
-        g = nega_alpha_ordering(search, beta - 1, beta, depth, false, is_end_search, &searching);
+        g = nega_alpha_ordering(search, beta - 1, beta, depth, skipped, is_end_search, &searching);
         if (g < beta)
             u = g;
         else
