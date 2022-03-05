@@ -484,7 +484,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, const bool
         calc_flip(&move_list[idx++], &search->board, cell);
     move_ordering_fast_first(search, move_list);
     int best_move = -1;
-    #if USE_MULTI_THREAD
+    #if USE_MULTI_THREAD && false
         int pv_idx = 0, split_count = 0;
         bool n_searching = true;
         vector<future<pair<int, uint64_t>>> parallel_tasks;
