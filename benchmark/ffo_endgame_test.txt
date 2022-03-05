@@ -2184,6 +2184,19 @@ endsearch time 1775 mpct 0 policy 55 value 38 nodes 25120083 nps 14144190
 #49 depth 26 value 16 policy e1 nodes 481015393 whole time 5838 search time 5827 nps 82549406
 22.627 sec
 
+2022/03/05 update presearch
+#40 depth 20 value 38 policy a2 nodes 15781417 whole time 145 search time 139 nps 113535374
+#41 depth 22 value 0 policy h4 nodes 20962662 whole time 319 search time 311 nps 67404057
+#42 depth 22 value 6 policy g2 nodes 31840456 whole time 427 search time 419 nps 75991541
+#43 depth 23 value -12 policy g3 nodes 84660519 whole time 1158 search time 1151 nps 73553882
+#44 depth 23 value -14 policy b8 nodes 39745866 whole time 643 search time 635 nps 62591914
+#45 depth 24 value 8 policy b2 nodes 323407756 whole time 3503 search time 3486 nps 92773309
+#46 depth 24 value -8 policy b3 nodes 76862257 whole time 1112 search time 1097 nps 70065867
+#47 depth 25 value 4 policy g2 nodes 41013198 whole time 701 search time 687 nps 59698978
+#48 depth 25 value 28 policy f6 nodes 1012964930 whole time 7787 search time 7772 nps 130335168
+#49 depth 26 value 16 policy e1 nodes 537035003 whole time 6103 search time 6087 nps 88226548
+21.898 sec
+
 2022/03/05 copy new_src
 #40 depth 20 value 38 policy a2 nodes 16554327 whole time 162 search time 155 nps 106802109
 #41 depth 22 value 0 policy h3 nodes 25557399 whole time 401 search time 393 nps 65031549

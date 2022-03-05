@@ -68,11 +68,21 @@ int main(){
 
         parent_transpose_table.init();
         uint64_t strt = tim(), strt2 = tim(), search_time = 0ULL;
-        search.mpct = 1.3;
+        search.mpct = 1.0;
         search.use_mpc = true;
         g = nega_scout(&search, -HW2, HW2, depth, false, true) / 2 * 2;
-        cerr << "[-64,64] " << g << " " << idx_to_coord(child_transpose_table.get(&search.board, search.board.hash() & TRANSPOSE_TABLE_MASK)) << endl;
+        cerr << "presearch t=" << search.mpct << " [-64,64] " << g << " " << idx_to_coord(child_transpose_table.get(&search.board, search.board.hash() & TRANSPOSE_TABLE_MASK)) << endl;
         search_time += tim() - strt2;
+
+        if (depth >= 24){
+            parent_transpose_table.init();
+            strt2 = tim();
+            search.mpct = 1.5;
+            search.use_mpc = true;
+            g = nega_scout(&search, g - 3, g + 3, depth, false, true) / 2 * 2;
+            cerr << "presearch t=" << search.mpct << " [" << g - 3 << "," << g + 3 << "] " << g << " " << idx_to_coord(child_transpose_table.get(&search.board, search.board.hash() & TRANSPOSE_TABLE_MASK)) << endl;
+            search_time += tim() - strt2;
+        }
 
         parent_transpose_table.init();
         strt2 = tim();
