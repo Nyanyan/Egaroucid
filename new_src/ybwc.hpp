@@ -10,9 +10,9 @@
 
 //#define YBWC_SPLIT_DIV 7
 #define YBWC_MID_SPLIT_MIN_DEPTH 6
-#define YBWC_END_SPLIT_MIN_DEPTH 6
+//#define YBWC_END_SPLIT_MIN_DEPTH 6
 //#define YBWC_MAX_SPLIT_COUNT 3
-#define YBWC_PC_OFFSET 3
+//#define YBWC_PC_OFFSET 3
 
 int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool skipped, bool is_end_search, const bool *searching);
 int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, const bool *searching);
@@ -32,16 +32,14 @@ inline pair<int, uint64_t> ybwc_do_task(Search search, int alpha, int beta, int 
 }
 
 inline bool ybwc_split(Search *search, const Flip *flip, int alpha, int beta, const int depth, bool skipped, bool is_end_search, const bool *searching, int policy, const int pv_idx, const int canput, const int split_count, vector<future<pair<int, uint64_t>>> &parallel_tasks){
-    if (pv_idx > 0 /* pv_idx > canput / YBWC_SPLIT_DIV */ /* && pv_idx < canput - 1 */ && depth >= YBWC_MID_SPLIT_MIN_DEPTH /* && split_count < YBWC_MAX_SPLIT_COUNT */ ){
+    if (pv_idx > 0 && 
+        /* pv_idx > canput / YBWC_SPLIT_DIV && */ 
+        /* pv_idx < canput - 1 && */ 
+        depth >= YBWC_MID_SPLIT_MIN_DEPTH /*&&*/
+        /* split_count < YBWC_MAX_SPLIT_COUNT */ ){
         if (thread_pool.n_idle()){
             Search copy_search;
             search->board.move(flip);
-                /*
-                if (mid_evaluate(&search->board) <= alpha - YBWC_PC_OFFSET){
-                    search->board.undo(flip);
-                    return false;
-                }
-                */
                 bool use_mpc = search->use_mpc;
                 double mpct = search->mpct;
                 search->use_mpc = true;
@@ -59,36 +57,6 @@ inline bool ybwc_split(Search *search, const Flip *flip, int alpha, int beta, co
             copy_search.mpct = search->mpct;
             copy_search.n_nodes = 0;
             parallel_tasks.emplace_back(thread_pool.push(bind(&ybwc_do_task, copy_search, alpha, beta, depth, skipped, is_end_search, searching, policy)));
-            return true;
-        }
-    }
-    return false;
-}
-
-inline pair<int, uint64_t> ybwc_do_task_end(Search search, int alpha, int beta, bool skipped, const bool *searching, int policy){
-    int g = -nega_alpha_end(&search, alpha, beta, skipped, searching);
-    if (*searching)
-        return make_pair(g, search.n_nodes);
-    return make_pair(SCORE_UNDEFINED, search.n_nodes);
-}
-
-inline bool ybwc_split_end(Search *search, const Flip *flip, int alpha, int beta, bool skipped, const bool *searching, int policy, const int pv_idx, const int canput, const int split_count, vector<future<pair<int, uint64_t>>> &parallel_tasks){
-    if (pv_idx > 0 /* pv_idx > canput / YBWC_SPLIT_DIV */ /* && pv_idx < canput - 1 */ && HW2 - search->board.n >= YBWC_END_SPLIT_MIN_DEPTH /* && split_count < YBWC_MAX_SPLIT_COUNT */ ){
-        if (thread_pool.n_idle()){
-            Search copy_search;
-            search->board.move(flip);
-                /*
-                if (mid_evaluate(&search->board) <= alpha - YBWC_PC_OFFSET){
-                    search->board.undo(flip);
-                    return false;
-                }
-                */
-                search->board.copy(&copy_search.board);
-            search->board.undo(flip);
-            copy_search.use_mpc = search->use_mpc;
-            copy_search.mpct = search->mpct;
-            copy_search.n_nodes = 0;
-            parallel_tasks.emplace_back(thread_pool.push(bind(&ybwc_do_task_end, copy_search, alpha, beta, skipped, searching, policy)));
             return true;
         }
     }
