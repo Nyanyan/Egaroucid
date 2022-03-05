@@ -15,7 +15,8 @@
 
 inline Search_result tree_search(Board board, int depth, bool use_mpc, double mpct){
     Search search;
-    int g, alpha, beta;
+    int g, alpha, beta, policy;
+    pair<int, int> result;
     depth = min(HW2 - board.n, depth);
     bool is_end_search = (HW2 - board.n == depth);
     search.board = board;
@@ -27,10 +28,12 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
     uint64_t strt = tim(), strt2 = tim(), search_time = 0ULL;
     search.mpct = 1.0;
     search.use_mpc = true;
-    g = nega_scout(&search, -HW2, HW2, depth, false, is_end_search);
+    result = first_nega_scout(&search, -HW2, HW2, depth, false, is_end_search);
+    g = result.first;
+    policy = result.second;
     if (is_end_search)
         g = g / 2 * 2;
-    cerr << "presearch t=" << search.mpct << " [-64,64] " << g << " " << idx_to_coord(child_transpose_table.get(&search.board, search.board.hash() & TRANSPOSE_TABLE_MASK)) << endl;
+    cerr << "presearch t=" << search.mpct << " [-64,64] " << g << " " << idx_to_coord(policy) << endl;
     search_time += tim() - strt2;
 
     if (depth >= 24 && 1.5 < mpct){
@@ -40,10 +43,12 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
         search.use_mpc = true;
         alpha = max(-HW2, g - 3);
         beta = min(HW2, g + 3);
-        g = nega_scout(&search, alpha, beta, depth, false, is_end_search);
+        result = first_nega_scout(&search, alpha, beta, depth, false, is_end_search);
+        g = result.first;
+        policy = result.second;
         if (is_end_search)
             g = g / 2 * 2;
-        cerr << "presearch t=" << search.mpct << " [" << alpha << "," << beta << "] " << g << " " << idx_to_coord(child_transpose_table.get(&search.board, search.board.hash() & TRANSPOSE_TABLE_MASK)) << endl;
+        cerr << "presearch t=" << search.mpct << " [" << alpha << "," << beta << "] " << g << " " << idx_to_coord(policy) << endl;
         search_time += tim() - strt2;
 
         if (depth >= 28 && 1.8 < mpct){
@@ -53,10 +58,10 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
             search.use_mpc = true;
             alpha = max(-HW2, g - 1);
             beta = min(HW2, g + 1);
-            g = nega_scout(&search, alpha, beta, depth, false, is_end_search);
-            if (is_end_search)
-                g = g / 2 * 2;
-            cerr << "presearch t=" << search.mpct << " [" << alpha << "," << beta << "] " << g << " " << idx_to_coord(child_transpose_table.get(&search.board, search.board.hash() & TRANSPOSE_TABLE_MASK)) << endl;
+            result = first_nega_scout(&search, alpha, beta, depth, false, is_end_search);
+            g = result.first;
+            policy = result.second;
+            cerr << "presearch t=" << search.mpct << " [" << alpha << "," << beta << "] " << g << " " << idx_to_coord(policy) << endl;
             search_time += tim() - strt2;
         }
     }
@@ -70,8 +75,10 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
         beta = min(HW2, g + 1);
         search.use_mpc = use_mpc;
         search.mpct = mpct;
-        g = nega_scout(&search, alpha, beta, depth, false, is_end_search);
-        cerr << "[" << alpha << "," << beta << "] " << g << " " << idx_to_coord(child_transpose_table.get(&search.board, search.board.hash() & TRANSPOSE_TABLE_MASK)) << endl;
+        result = first_nega_scout(&search, alpha, beta, depth, false, is_end_search);
+        g = result.first;
+        policy = result.second;
+        cerr << "[" << alpha << "," << beta << "] " << g << " " << idx_to_coord(policy) << endl;
         if (alpha == -HW2 && g == -HW2)
             break;
         if (beta == HW2 && g == HW2)
@@ -79,13 +86,13 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
     }
     search_time += tim() - strt2;
     
-    cerr << "depth " << depth << " value " << g << " policy " << idx_to_coord(child_transpose_table.get(&search.board, search.board.hash() & TRANSPOSE_TABLE_MASK)) << " nodes " << search.n_nodes << " whole time " << (tim() - strt) << " search time " << search_time << " nps " << search.n_nodes * 1000 / max(1ULL, search_time) << endl;
+    cerr << "depth " << depth << " value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " whole time " << (tim() - strt) << " search time " << search_time << " nps " << search.n_nodes * 1000 / max(1ULL, search_time) << endl;
 
     Search_result res;
     res.depth = depth;
     res.nodes = search.n_nodes;
     res.nps = search.n_nodes * 1000 / max(1ULL, search_time);
-    res.policy = child_transpose_table.get(&search.board, search.board.hash() & TRANSPOSE_TABLE_MASK);
+    res.policy = policy;
     res.value = g;
     return res;
 }

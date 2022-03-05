@@ -13,7 +13,7 @@ int main(){
     parent_transpose_table.first_init();
     child_transpose_table.first_init();
     thread_pool.resize(16);
-    constexpr int level = 21;
+    constexpr int level = 1;
     constexpr int book_error = 0;
     Board board;
     Search_result result;
