@@ -12,8 +12,10 @@ int main(){
     book_init();
     parent_transpose_table.first_init();
     child_transpose_table.first_init();
-    thread_pool.resize(16);
-    constexpr int level = 1;
+    #if USE_MULTI_THREAD
+        thread_pool.resize(16);
+    #endif
+    constexpr int level = 5;
     constexpr int book_error = 0;
     Board board;
     Search_result result;
