@@ -63,17 +63,17 @@ int main(){
         search.tt_child_idx = child_transpose_table.now_idx();
         search.mpct = 1.3;
         search.use_mpc = true;
-        g = nega_scout(&search, -HW2, HW2, depth, false, true);
-        cerr << g << endl;
+        g = nega_scout(&search, -HW2, HW2, depth, false, true) / 2 * 2;
+        cerr << "[-64,64] " << g << endl;
 
         parent_transpose_table.init();
         child_transpose_table.ready_next_search();
+        search.tt_child_idx = child_transpose_table.now_idx();
         alpha = -INF;
         beta = -INF;
         while (g <= alpha || beta <= g){
             alpha = g - 1;
             beta = g + 1;
-            search.tt_child_idx = child_transpose_table.now_idx();
             search.use_mpc = false;
             g = nega_scout(&search, alpha, beta, depth, false, true);
             cerr << "[" << alpha << "," << beta << "] " << g << endl;

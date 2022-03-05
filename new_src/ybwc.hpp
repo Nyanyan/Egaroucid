@@ -42,6 +42,17 @@ inline bool ybwc_split(Search *search, const Flip *flip, int alpha, int beta, co
                     return false;
                 }
                 */
+                bool use_mpc = search->use_mpc;
+                double mpct = search->mpct;
+                search->use_mpc = true;
+                search->mpct = 1.0;
+                    bool not_split = mpc_lower(search, alpha, depth);
+                search->use_mpc = use_mpc;
+                search->mpct = mpct;
+                if (not_split){
+                    search->board.undo(flip);
+                    return false;
+                }
                 search->board.copy(&copy_search.board);
             search->board.undo(flip);
             copy_search.use_mpc = search->use_mpc;
