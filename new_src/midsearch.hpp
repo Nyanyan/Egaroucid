@@ -295,19 +295,21 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
 int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, bool is_end_search){
     if (!global_searching)
         return -INF;
-    //if (is_end_search && depth <= MID_TO_END_DEPTH)
-    //    return nega_scout_end(search, alpha, beta);
     //if (!is_end_search && depth <= MID_FAST_DEPTH)
     //    return nega_alpha(search, alpha, beta, depth);
     if (!is_end_search && depth == 1)
         return nega_alpha_eval1(search, alpha, beta, false);
-    if (!is_end_search && depth == 0)
-        return mid_evaluate(&search->board);
     ++(search->n_nodes);
     #if USE_MID_SC
         int stab_res = stability_cut(search, &alpha, &beta);
         if (stab_res != SCORE_UNDEFINED)
             return stab_res;
+    #elif USE_END_SC
+        if (is_end_search){
+            int stab_res = stability_cut(search, &alpha, &beta);
+            if (stab_res != SCORE_UNDEFINED)
+                return stab_res;
+        }
     #endif
     uint32_t hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
     #if USE_MID_TC

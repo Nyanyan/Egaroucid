@@ -7,9 +7,6 @@
 #define FLIP_CALC_MODE 1
 #define LAST_FLIP_CALC_MODE 0
 
-// MPC
-#define USE_MID_MPC true
-
 // transpose table cut
 #define USE_MID_TC true
 #define USE_END_TC true
@@ -19,7 +16,7 @@
 
 // stability cut
 #define USE_MID_SC false
-#define USE_END_SC true
+#define USE_END_SC false
 
 // parallel search
 #define USE_MULTI_THREAD true
