@@ -1,4 +1,5 @@
 #include <iostream>
+#include <string>
 #include "./../midsearch.hpp"
 
 using namespace std;
@@ -38,6 +39,13 @@ Board input_board(){
     return res;
 }
 
+string idx_to_coord(int idx){
+    int y = HW_M1 - idx / HW;
+    int x = HW_M1 - idx % HW;
+    const string x_coord = "abcdefgh";
+    return x_coord[x] + to_string(y + 1);
+}
+
 int main(){
     bit_init();
     flip_init();
@@ -64,7 +72,7 @@ int main(){
         search.mpct = 1.3;
         search.use_mpc = true;
         g = nega_scout(&search, -HW2, HW2, depth, false, true) / 2 * 2;
-        cerr << "[-64,64] " << g << endl;
+        cerr << "[-64,64] " << g << " " << idx_to_coord(child_transpose_table.get_now(&search.board, search.board.hash() & TRANSPOSE_TABLE_MASK)) << endl;
 
         parent_transpose_table.init();
         child_transpose_table.ready_next_search();
@@ -76,7 +84,7 @@ int main(){
             beta = g + 1;
             search.use_mpc = false;
             g = nega_scout(&search, alpha, beta, depth, false, true);
-            cerr << "[" << alpha << "," << beta << "] " << g << endl;
+            cerr << "[" << alpha << "," << beta << "] " << g << " " << idx_to_coord(child_transpose_table.get_now(&search.board, search.board.hash() & TRANSPOSE_TABLE_MASK)) << endl;
         }
         cerr << search.n_nodes << " " << (tim() - strt) << " " << search.n_nodes * 1000 / (tim() - strt) << endl;
     }
