@@ -199,7 +199,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
     uint32_t hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
     #if USE_MID_TC
         int l, u;
-        parent_transpose_table.get(search->tt_parent_idx, &search->board, hash_code, &l, &u);
+        parent_transpose_table.get(&search->board, hash_code, &l, &u);
         if (u == l)
             return u;
         if (l >= beta)
@@ -294,11 +294,11 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
     child_transpose_table.reg(search->tt_child_idx, &search->board, hash_code, best_move, v);
     #if USE_MID_TC
         if (beta <= v)
-            parent_transpose_table.reg(search->tt_parent_idx, &search->board, hash_code, v, u);
+            parent_transpose_table.reg(&search->board, hash_code, v, u);
         else if (v <= alpha)
-            parent_transpose_table.reg(search->tt_parent_idx, &search->board, hash_code, l, v);
+            parent_transpose_table.reg(&search->board, hash_code, l, v);
         else
-            parent_transpose_table.reg(search->tt_parent_idx, &search->board, hash_code, v, v);
+            parent_transpose_table.reg(&search->board, hash_code, v, v);
     #endif
     return v;
 }
@@ -323,7 +323,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, boo
     uint32_t hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
     #if USE_MID_TC
         int l, u;
-        parent_transpose_table.get(search->tt_parent_idx, &search->board, hash_code, &l, &u);
+        parent_transpose_table.get(&search->board, hash_code, &l, &u);
         if (u == l)
             return u;
         if (l >= beta)
@@ -388,11 +388,11 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, boo
     child_transpose_table.reg(search->tt_child_idx, &search->board, hash_code, best_move, v);
     #if USE_MID_TC
         if (beta <= v)
-            parent_transpose_table.reg(search->tt_parent_idx, &search->board, hash_code, v, u);
+            parent_transpose_table.reg(&search->board, hash_code, v, u);
         else if (v <= alpha)
-            parent_transpose_table.reg(search->tt_parent_idx, &search->board, hash_code, l, v);
+            parent_transpose_table.reg(&search->board, hash_code, l, v);
         else
-            parent_transpose_table.reg(search->tt_parent_idx, &search->board, hash_code, v, v);
+            parent_transpose_table.reg(&search->board, hash_code, v, v);
     #endif
     return v;
 }

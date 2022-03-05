@@ -1,11 +1,11 @@
 #pragma once
-#include "common.hpp"
 #include <iostream>
 #ifdef _MSC_VER
     #include <intrin.h>
 #else
     #include <x86intrin.h>
 #endif
+#include "common.hpp"
 
 using namespace std;
 
@@ -282,6 +282,36 @@ inline uint_fast8_t first_bit(uint64_t *x){
 inline uint_fast8_t next_bit(uint64_t *x){
     *x &= *x - 1;
     return pop_count_ull((*x & (-(*x))) - 1);
+}
+
+inline uint_fast8_t next_odd_bit(uint64_t *x, uint_fast8_t parity){
+    *x &= *x - 1;
+    uint_fast8_t res = pop_count_ull((*x & (-(*x))) - 1);
+    while (*x && (parity & cell_div4[res]) == 0)
+        res = next_odd_bit(x, parity);
+    return res;
+}
+
+inline uint_fast8_t first_odd_bit(uint64_t *x, uint_fast8_t parity){
+    uint_fast8_t res = pop_count_ull((*x & (-(*x))) - 1);
+    while (*x && (parity & cell_div4[res]) == 0)
+        res = next_odd_bit(x, parity);
+    return res;
+}
+
+inline uint_fast8_t next_even_bit(uint64_t *x, uint_fast8_t parity){
+    *x &= *x - 1;
+    uint_fast8_t res = pop_count_ull((*x & (-(*x))) - 1);
+    while (*x && (parity & cell_div4[res]))
+        res = next_even_bit(x, parity);
+    return res;
+}
+
+inline uint_fast8_t first_even_bit(uint64_t *x, uint_fast8_t parity){
+    uint_fast8_t res = pop_count_ull((*x & (-(*x))) - 1);
+    while (*x && (parity & cell_div4[res]))
+        res = next_even_bit(x, parity);
+    return res;
 }
 
 constexpr uint8_t d7_mask[HW2] = {

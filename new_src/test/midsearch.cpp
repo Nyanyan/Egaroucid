@@ -52,7 +52,7 @@ int main(){
         child_transpose_table.ready_next_search();
         search.board = input_board();
         search.mpct = 2.0;
-        search.use_mpc = true;
+        search.use_mpc = false;
         search.n_nodes = 0;
         search.tt_child_idx = child_transpose_table.now_idx();
         cerr << "0 move " << mid_evaluate(&search.board) << endl;

@@ -52,7 +52,7 @@ class Node_child_transpose_table{
             return best_move.load();
         }
 
-        inline bool compare(const Board *a){
+        inline bool compare(const Board *a) const{
             return a->player == player.load(memory_order_relaxed) && a->opponent == opponent.load(memory_order_relaxed);
         }
 
@@ -235,7 +235,7 @@ class Node_parent_transpose_table{
             *u = upper.load(memory_order_relaxed);
         }
 
-        inline bool compare(const Board *a){
+        inline bool compare(const Board *a) const{
             return a->player == player.load(memory_order_relaxed) && a->opponent == opponent.load(memory_order_relaxed);
         }
 };
