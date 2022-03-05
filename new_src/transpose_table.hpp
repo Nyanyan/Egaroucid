@@ -2,12 +2,6 @@
 #include "setting.hpp"
 #include "common.hpp"
 #include "board.hpp"
-#if USE_MULTI_THREAD && false
-    #include "thread_pool.hpp"
-    #include <math.h>
-    #include <future>
-    #include <vector>
-#endif
 #include <atomic>
 
 using namespace std;
@@ -61,13 +55,6 @@ class Node_child_transpose_table{
         //}
 };
 
-#if USE_MULTI_THREAD && false
-    void child_init_p(int id, Node_child_transpose_table table[2][TRANSPOSE_TABLE_SIZE], const int idx, const int s, const int e){
-        for(int i = s; i < e; ++i)
-            table[idx][i].init();
-    }
-#endif
-
 class Child_transpose_table{
     private:
         int prev;
@@ -97,51 +84,23 @@ class Child_transpose_table{
             init_now();
         }
 
-        #if USE_MULTI_THREAD && false
-            inline void init_prev(){
-                const int thread_size = thread_pool.size();
-                const int delta = ceil((double)TRANSPOSE_TABLE_SIZE / thread_size);
-                int s = 0;
-                vector<future<void>> init_future;
-                for (int i = 0; i < thread_size; ++i){
-                    init_future.emplace_back(thread_pool.push(child_init_p, table, prev, s, min(TRANSPOSE_TABLE_SIZE, s + delta)));
-                    s = min(TRANSPOSE_TABLE_SIZE - 1, s + delta);
+        inline void init_prev(){
+            for(int i = 0; i < TRANSPOSE_TABLE_SIZE; ++i){
+                if (table[prev][i] != NULL){
+                    table[prev][i]->init();
+                    table[prev][i] = NULL;
                 }
-                for (int i = 0; i < thread_size; ++i)
-                    init_future[i].get();
             }
+        }
 
-            inline void init_now(){
-                const int thread_size = thread_pool.size();
-                const int delta = ceil((double)TRANSPOSE_TABLE_SIZE / thread_size);
-                int s = 0;
-                vector<future<void>> init_future;
-                for (int i = 0; i < thread_size; ++i){
-                    init_future.emplace_back(thread_pool.push(child_init_p, table, now, s, min(TRANSPOSE_TABLE_SIZE, s + delta)));
-                    s = min(TRANSPOSE_TABLE_SIZE - 1, s + delta);
-                }
-                for (int i = 0; i < thread_size; ++i)
-                    init_future[i].get();
-            }
-        #else
-            inline void init_prev(){
-                for(int i = 0; i < TRANSPOSE_TABLE_SIZE; ++i){
-                    if (table[prev][i] != NULL){
-                        table[prev][i]->init();
-                        table[prev][i] = NULL;
-                    }
+        inline void init_now(){
+            for(int i = 0; i < TRANSPOSE_TABLE_SIZE; ++i){
+                if (table[now][i] != NULL){
+                    table[now][i]->init();
+                    table[now][i] = NULL;
                 }
             }
-
-            inline void init_now(){
-                for(int i = 0; i < TRANSPOSE_TABLE_SIZE; ++i){
-                    if (table[now][i] != NULL){
-                        table[now][i]->init();
-                        table[now][i] = NULL;
-                    }
-                }
-            }
-        #endif
+        }
 
         inline int now_idx() const{
             return now;
@@ -240,13 +199,6 @@ class Node_parent_transpose_table{
         }
 };
 
-#if USE_MULTI_THREAD && false
-    void parent_init_p(int id, Node_parent_transpose_table table[2][TRANSPOSE_TABLE_SIZE], const int idx, const int s, const int e){
-        for(int i = s; i < e; ++i)
-            table[idx][i].init();
-    }
-#endif
-
 class Parent_transpose_table{
     private:
         Node_parent_transpose_table *table[TRANSPOSE_TABLE_SIZE];
@@ -257,42 +209,14 @@ class Parent_transpose_table{
                 table[i] = NULL;
         }
 
-        #if USE_MULTI_THREAD && false
-            inline void init_now(){
-                const int thread_size = thread_pool.size();
-                const int delta = ceil((double)TRANSPOSE_TABLE_SIZE / thread_size);
-                int s = 0;
-                vector<future<void>> init_future;
-                for (int i = 0; i < thread_size; ++i){
-                    init_future.emplace_back(thread_pool.push(parent_init_p, table, now, s, min(TRANSPOSE_TABLE_SIZE, s + delta)));
-                    s = min(TRANSPOSE_TABLE_SIZE - 1, s + delta);
-                }
-                for (int i = 0; i < thread_size; ++i)
-                    init_future[i].get();
-            }
-
-            inline void init_prev(){
-                const int thread_size = thread_pool.size();
-                const int delta = ceil((double)TRANSPOSE_TABLE_SIZE / thread_size);
-                int s = 0;
-                vector<future<void>> init_future;
-                for (int i = 0; i < thread_size; ++i){
-                    init_future.emplace_back(thread_pool.push(parent_init_p, table, prev, s, min(TRANSPOSE_TABLE_SIZE, s + delta)));
-                    s = min(TRANSPOSE_TABLE_SIZE - 1, s + delta);
-                }
-                for (int i = 0; i < thread_size; ++i)
-                    init_future[i].get();
-            }
-        #else
-            inline void init(){
-                for(int i = 0; i < TRANSPOSE_TABLE_SIZE; ++i){
-                    if (table[i] != NULL){
-                        table[i]->init();
-                        table[i] = NULL;
-                    }
+        inline void init(){
+            for(int i = 0; i < TRANSPOSE_TABLE_SIZE; ++i){
+                if (table[i] != NULL){
+                    table[i]->init();
+                    table[i] = NULL;
                 }
             }
-        #endif
+        }
 
         inline void reg(const Board *board, const uint32_t hash, const int l, const int u){
             if (table[hash] != NULL){
