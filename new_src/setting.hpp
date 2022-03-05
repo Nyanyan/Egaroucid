@@ -22,4 +22,4 @@
 #define USE_END_SC true
 
 // parallel search
-#define USE_MULTI_THREAD true
+#define USE_MULTI_THREAD false

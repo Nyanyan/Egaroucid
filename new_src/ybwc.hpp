@@ -34,11 +34,8 @@ inline pair<int, uint64_t> ybwc_do_task(Search search, int alpha, int beta, int 
 inline bool ybwc_split(Search *search, const Flip *flip, int alpha, int beta, const int depth, bool skipped, bool is_end_search, const bool *searching, int policy, const int pv_idx, const int canput, const int split_count, vector<future<pair<int, uint64_t>>> &parallel_tasks){
     if (pv_idx > 0 /* pv_idx > canput / YBWC_SPLIT_DIV */ /* && pv_idx < canput - 1 */ && depth >= YBWC_MID_SPLIT_MIN_DEPTH /* && split_count < YBWC_MAX_SPLIT_COUNT */ ){
         if (thread_pool.n_idle()){
-            bool return_false = false;
             search->board.move(flip);
-                if (mid_evaluate(&search->board) <= alpha - YBWC_PC_OFFSET)
-                    return_false = true;
-                if (return_false){
+                if (mid_evaluate(&search->board) <= alpha - YBWC_PC_OFFSET){
                     search->board.undo(flip);
                     return false;
                 }
@@ -66,11 +63,8 @@ inline pair<int, uint64_t> ybwc_do_task_end(Search search, int alpha, int beta, 
 inline bool ybwc_split_end(Search *search, const Flip *flip, int alpha, int beta, bool skipped, const bool *searching, int policy, const int pv_idx, const int canput, const int split_count, vector<future<pair<int, uint64_t>>> &parallel_tasks){
     if (pv_idx > 0 /* pv_idx > canput / YBWC_SPLIT_DIV */ /* && pv_idx < canput - 1 */ && HW2 - search->board.n >= YBWC_END_SPLIT_MIN_DEPTH /* && split_count < YBWC_MAX_SPLIT_COUNT */ ){
         if (thread_pool.n_idle()){
-            bool return_false = false;
             search->board.move(flip);
-                if (mid_evaluate(&search->board) <= alpha - YBWC_PC_OFFSET)
-                    return_false = true;
-                if (return_false){
+                if (mid_evaluate(&search->board) <= alpha - YBWC_PC_OFFSET){
                     search->board.undo(flip);
                     return false;
                 }
@@ -92,14 +86,14 @@ inline int ybwc_wait_all(Search *search, vector<future<pair<int, uint64_t>>> &pa
     int g = -INF;
     pair<int, uint64_t> got_task;
     for (future<pair<int, uint64_t>> &task: parallel_tasks){
-        if (task.valid()){
-            //if (task.wait_for(chrono::seconds(0)) == future_status::ready){
-            got_task = task.get();
-            if (got_task.first != SCORE_UNDEFINED)
-                g = max(g, got_task.first);
-            search->n_nodes += got_task.second;
-            //}
-        }
+        //if (task.valid()){
+        //if (task.wait_for(chrono::seconds(0)) == future_status::ready){
+        got_task = task.get();
+        if (got_task.first != SCORE_UNDEFINED)
+            g = max(g, got_task.first);
+        search->n_nodes += got_task.second;
+        //}
+        //}
     }
     return g;
 }

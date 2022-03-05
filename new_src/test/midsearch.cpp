@@ -46,20 +46,31 @@ int main(){
     parent_transpose_table.first_init();
     child_transpose_table.first_init();
     Search search;
+    int pre_search_value;
+    int depth;
 
     while (true){
-        parent_transpose_table.init();
-        child_transpose_table.ready_next_search();
         search.board = input_board();
-        search.mpct = 2.0;
-        search.use_mpc = false;
         search.n_nodes = 0;
-        search.tt_child_idx = child_transpose_table.now_idx();
         cerr << "0 move " << mid_evaluate(&search.board) << endl;
         //cerr << nega_alpha_eval1(&search, -HW2, HW2, false) << endl;
-        bool searching = true;
         uint64_t strt = tim();
-        cerr << nega_scout(&search, -HW2, HW2, 20, false, true) << endl;
+
+        depth = HW2 - search.board.n;
+
+        parent_transpose_table.init();
+        child_transpose_table.ready_next_search();
+        search.tt_child_idx = child_transpose_table.now_idx();
+        search.mpct = 1.3;
+        search.use_mpc = true;
+        pre_search_value = nega_scout(&search, -HW2, HW2, depth, false, true);
+        cerr << pre_search_value << endl;
+
+        parent_transpose_table.init();
+        child_transpose_table.ready_next_search();
+        search.tt_child_idx = child_transpose_table.now_idx();
+        search.use_mpc = false;
+        cerr << nega_scout(&search, pre_search_value - 1, pre_search_value + 1, depth, false, true) << endl;
         cerr << search.n_nodes << " " << (tim() - strt) << " " << search.n_nodes * 1000 / (tim() - strt) << endl;
     }
 
