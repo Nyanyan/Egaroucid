@@ -45,6 +45,7 @@ int main(){
     evaluate_init();
     parent_transpose_table.first_init();
     child_transpose_table.first_init();
+    thread_pool.resize(16);
     Search search;
     int pre_search_value;
     int depth;

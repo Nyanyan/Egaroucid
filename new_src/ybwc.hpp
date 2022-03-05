@@ -34,12 +34,14 @@ inline pair<int, uint64_t> ybwc_do_task(Search search, int alpha, int beta, int 
 inline bool ybwc_split(Search *search, const Flip *flip, int alpha, int beta, const int depth, bool skipped, bool is_end_search, const bool *searching, int policy, const int pv_idx, const int canput, const int split_count, vector<future<pair<int, uint64_t>>> &parallel_tasks){
     if (pv_idx > 0 /* pv_idx > canput / YBWC_SPLIT_DIV */ /* && pv_idx < canput - 1 */ && depth >= YBWC_MID_SPLIT_MIN_DEPTH /* && split_count < YBWC_MAX_SPLIT_COUNT */ ){
         if (thread_pool.n_idle()){
+            Search copy_search;
             search->board.move(flip);
+                /*
                 if (mid_evaluate(&search->board) <= alpha - YBWC_PC_OFFSET){
                     search->board.undo(flip);
                     return false;
                 }
-                Search copy_search;
+                */
                 search->board.copy(&copy_search.board);
             search->board.undo(flip);
             copy_search.use_mpc = search->use_mpc;
@@ -63,12 +65,14 @@ inline pair<int, uint64_t> ybwc_do_task_end(Search search, int alpha, int beta, 
 inline bool ybwc_split_end(Search *search, const Flip *flip, int alpha, int beta, bool skipped, const bool *searching, int policy, const int pv_idx, const int canput, const int split_count, vector<future<pair<int, uint64_t>>> &parallel_tasks){
     if (pv_idx > 0 /* pv_idx > canput / YBWC_SPLIT_DIV */ /* && pv_idx < canput - 1 */ && HW2 - search->board.n >= YBWC_END_SPLIT_MIN_DEPTH /* && split_count < YBWC_MAX_SPLIT_COUNT */ ){
         if (thread_pool.n_idle()){
+            Search copy_search;
             search->board.move(flip);
+                /*
                 if (mid_evaluate(&search->board) <= alpha - YBWC_PC_OFFSET){
                     search->board.undo(flip);
                     return false;
                 }
-                Search copy_search;
+                */
                 search->board.copy(&copy_search.board);
             search->board.undo(flip);
             copy_search.use_mpc = search->use_mpc;

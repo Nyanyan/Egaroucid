@@ -484,25 +484,24 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, const bool
         calc_flip(&move_list[idx++], &search->board, cell);
     move_ordering_fast_first(search, move_list);
     int best_move = -1;
-    #if USE_MULTI_THREAD && false
+    #if USE_MULTI_THREAD
         int pv_idx = 0, split_count = 0;
         bool n_searching = true;
         vector<future<pair<int, uint64_t>>> parallel_tasks;
-        for (const Mobility &mob: move_list){
+        for (const Flip &flip: move_list){
             if (!(*searching))
                 break;
-            if (ybwc_split_end(search, &mob, -beta, -alpha, &n_searching, flip.pos, pv_idx++, canput, split_count, parallel_tasks)){
+            if (ybwc_split_end(search, &flip, -beta, -alpha, false, &n_searching, flip.pos, pv_idx++, canput, split_count, parallel_tasks)){
                 ++split_count;
             } else{
-                search->board.move(&mob);
-                    g = -nega_alpha_end(search, -beta, -alpha, searching);
-                search->board.undo(&mob);
+                search->board.move(&flip);
+                    g = -nega_alpha_end(search, -beta, -alpha, false, searching);
+                search->board.undo(&flip);
                 if (*searching){
                     alpha = max(alpha, g);
                     if (v < g){
                         v = g;
                         best_move = flip.pos;
-                        //child_transpose_table.reg(search->tt_child_idx, &search->board, hash_code, flip.pos, g);
                     }
                     if (beta <= alpha)
                         break;
@@ -512,9 +511,9 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, const bool
         if (split_count){
             if (beta <= alpha || !(*searching)){
                 n_searching = false;
-                ybwc_wait_strict(search, parallel_tasks);
+                ybwc_wait_all(search, parallel_tasks);
             } else{
-                g = ybwc_wait_strict(search, parallel_tasks);
+                g = ybwc_wait_all(search, parallel_tasks);
                 alpha = max(alpha, g);
                 v = max(v, g);
             }

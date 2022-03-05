@@ -22,4 +22,8 @@
 #define USE_END_SC true
 
 // parallel search
-#define USE_MULTI_THREAD false
+#define USE_MULTI_THREAD true
+
+// prob cut
+#define USE_MID_MPC true
+#define USE_END_MPC true
