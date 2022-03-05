@@ -17,7 +17,7 @@ using namespace std;
 #define MPC_MPCT 1.0
 
 #define MID_FAST_DEPTH 1
-#define END_FAST_DEPTH 7
+#define END_FAST_DEPTH 6
 #define MID_TO_END_DEPTH 12
 
 #define SCORE_UNDEFINED -INF

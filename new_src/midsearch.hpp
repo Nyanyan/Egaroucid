@@ -9,7 +9,7 @@
 #include "evaluate.hpp"
 #include "search.hpp"
 #include "transpose_table.hpp"
-//#include "endsearch.hpp"
+#include "endsearch.hpp"
 #include "move_ordering.hpp"
 #if USE_MULTI_THREAD
     #include "thread_pool.hpp"
@@ -131,8 +131,8 @@ int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped){
 int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, bool skipped){
     if (!global_searching)
         return SCORE_UNDEFINED;
-    //if (depth <= MID_FAST_DEPTH)
-    //    return nega_alpha(search, alpha, beta, depth);
+    if (depth <= MID_FAST_DEPTH)
+        return nega_alpha(search, alpha, beta, depth, skipped);
     if (depth == 1)
         return nega_alpha_eval1(search, alpha, beta, skipped);
     if (depth == 0)
@@ -182,10 +182,10 @@ int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, b
 int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool skipped, bool is_end_search, const bool *searching){
     if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
-    //if (is_end_search && depth <= MID_TO_END_DEPTH)
-    //    return nega_alpha_end(search, alpha, beta, searching);
-    //if (!is_end_search && depth <= MID_FAST_DEPTH)
-    //    return nega_alpha(search, alpha, beta, depth);
+    if (is_end_search && depth <= MID_TO_END_DEPTH)
+        return nega_alpha_end(search, alpha, beta, skipped, searching);
+    if (!is_end_search && depth <= MID_FAST_DEPTH)
+        return nega_alpha(search, alpha, beta, depth, skipped);
     if (!is_end_search && depth == 1)
         return nega_alpha_eval1(search, alpha, beta, false);
     if (!is_end_search && depth == 0)

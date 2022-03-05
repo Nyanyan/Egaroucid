@@ -51,15 +51,16 @@ int main(){
         parent_transpose_table.init();
         child_transpose_table.ready_next_search();
         search.board = input_board();
-        search.mpct = 10000.0;
-        search.use_mpc = false;
+        search.mpct = 2.0;
+        search.use_mpc = true;
         search.n_nodes = 0;
         search.tt_child_idx = child_transpose_table.now_idx();
         cerr << "0 move " << mid_evaluate(&search.board) << endl;
         //cerr << nega_alpha_eval1(&search, -HW2, HW2, false) << endl;
         bool searching = true;
-        cerr << nega_alpha_ordering(&search, -HW2, HW2, 10, false, false, &searching) << endl;
-        cerr << search.n_nodes << endl;
+        uint64_t strt = tim();
+        cerr << nega_alpha_ordering(&search, -HW2, HW2, 20, false, true, &searching) << endl;
+        cerr << search.n_nodes << " " << (tim() - strt) << " " << search.n_nodes * 1000 / (tim() - strt) << endl;
     }
 
     return 0;
