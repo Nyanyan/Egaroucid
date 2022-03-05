@@ -284,13 +284,13 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
             if (v < g){
                 v = g;
                 best_move = flip.pos;
-                //child_transpose_table.reg(search->tt_child_idx, &search->board, hash_code, flip.pos, g);
+                //child_transpose_table.reg(&search->board, hash_code, flip.pos, g);
             }
             if (beta <= alpha)
                 break;
         }
     #endif
-    child_transpose_table.reg(search->tt_child_idx, &search->board, hash_code, best_move, v);
+    child_transpose_table.reg(&search->board, hash_code, best_move, v);
     #if USE_MID_TC
         if (beta <= v)
             parent_transpose_table.reg(&search->board, hash_code, v, u);
@@ -378,13 +378,13 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, boo
         alpha = max(alpha, g);
         if (v < g){
             v = g;
-            //child_transpose_table.reg(search->tt_child_idx, &search->board, hash_code, flip.pos, g);
+            //child_transpose_table.reg(&search->board, hash_code, flip.pos, g);
             best_move = flip.pos;
         }
         if (beta <= alpha)
             break;
     }
-    child_transpose_table.reg(search->tt_child_idx, &search->board, hash_code, best_move, v);
+    child_transpose_table.reg(&search->board, hash_code, best_move, v);
     #if USE_MID_TC
         if (beta <= v)
             parent_transpose_table.reg(&search->board, hash_code, v, u);

@@ -67,16 +67,13 @@ int main(){
         depth = HW2 - search.board.n;
 
         parent_transpose_table.init();
-        child_transpose_table.ready_next_search();
-        search.tt_child_idx = child_transpose_table.now_idx();
+        child_transpose_table.init();
         search.mpct = 1.3;
         search.use_mpc = true;
         g = nega_scout(&search, -HW2, HW2, depth, false, true) / 2 * 2;
-        cerr << "[-64,64] " << g << " " << idx_to_coord(child_transpose_table.get_now(&search.board, search.board.hash() & TRANSPOSE_TABLE_MASK)) << endl;
+        cerr << "[-64,64] " << g << " " << idx_to_coord(child_transpose_table.get(&search.board, search.board.hash() & TRANSPOSE_TABLE_MASK)) << endl;
 
         parent_transpose_table.init();
-        child_transpose_table.ready_next_search();
-        search.tt_child_idx = child_transpose_table.now_idx();
         alpha = -INF;
         beta = -INF;
         while (g <= alpha || beta <= g){
@@ -84,7 +81,7 @@ int main(){
             beta = g + 1;
             search.use_mpc = false;
             g = nega_scout(&search, alpha, beta, depth, false, true);
-            cerr << "[" << alpha << "," << beta << "] " << g << " " << idx_to_coord(child_transpose_table.get_now(&search.board, search.board.hash() & TRANSPOSE_TABLE_MASK)) << endl;
+            cerr << "[" << alpha << "," << beta << "] " << g << " " << idx_to_coord(child_transpose_table.get(&search.board, search.board.hash() & TRANSPOSE_TABLE_MASK)) << endl;
         }
         cerr << search.n_nodes << " " << (tim() - strt) << " " << search.n_nodes * 1000 / (tim() - strt) << endl;
     }

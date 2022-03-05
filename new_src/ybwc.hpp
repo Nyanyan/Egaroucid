@@ -58,7 +58,6 @@ inline bool ybwc_split(Search *search, const Flip *flip, int alpha, int beta, co
             copy_search.use_mpc = search->use_mpc;
             copy_search.mpct = search->mpct;
             copy_search.n_nodes = 0;
-            copy_search.tt_child_idx = search->tt_child_idx;
             parallel_tasks.emplace_back(thread_pool.push(bind(&ybwc_do_task, copy_search, alpha, beta, depth, skipped, is_end_search, searching, policy)));
             return true;
         }
@@ -89,7 +88,6 @@ inline bool ybwc_split_end(Search *search, const Flip *flip, int alpha, int beta
             copy_search.use_mpc = search->use_mpc;
             copy_search.mpct = search->mpct;
             copy_search.n_nodes = 0;
-            copy_search.tt_child_idx = search->tt_child_idx;
             parallel_tasks.emplace_back(thread_pool.push(bind(&ybwc_do_task_end, copy_search, alpha, beta, skipped, searching, policy)));
             return true;
         }

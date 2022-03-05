@@ -86,7 +86,6 @@ struct Search{
     bool use_mpc;
     double mpct;
     uint64_t n_nodes;
-    int tt_child_idx;
 };
 
 inline int stability_cut(Search *search, int *alpha, int *beta){

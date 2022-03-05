@@ -103,7 +103,7 @@ int calc_stability_line(int b, int w, int ob, int ow){
 }
 
 inline void init_evaluation_base() {
-    int idx, place, b, w, stab;
+    int place, b, w, stab;
     for (b = 0; b < N_8BIT; ++b) {
         for (w = b; w < N_8BIT; ++w){
             stab = calc_stability_line(b, w, b, w);

@@ -92,9 +92,7 @@ inline void move_ordering(Search *search, vector<Flip> &move_list, int depth, in
     if (move_list.size() < 2)
         return;
     uint32_t hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
-    int best_move = child_transpose_table.get_now(&search->board, hash_code);
-    if (best_move == TRANSPOSE_TABLE_UNDEFINED)
-        best_move = child_transpose_table.get_prev(&search->board, hash_code);
+    int best_move = child_transpose_table.get(&search->board, hash_code);
     int eval_alpha = -min(HW2, beta + MOVE_ORDERING_VALUE_OFFSET);
     int eval_beta = -max(-HW2, alpha - MOVE_ORDERING_VALUE_OFFSET);
     int eval_depth = depth / 8;
@@ -123,9 +121,7 @@ inline void move_ordering_fast_first(Search *search, vector<Flip> &move_list){
     if (move_list.size() < 2)
         return;
     uint32_t hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
-    int best_move = child_transpose_table.get_now(&search->board, hash_code);
-    if (best_move == TRANSPOSE_TABLE_UNDEFINED)
-        best_move = child_transpose_table.get_prev(&search->board, hash_code);
+    int best_move = child_transpose_table.get(&search->board, hash_code);
     for (Flip &mob: move_list)
         move_evaluate_fast_first(search, &mob, best_move);
     sort(move_list.begin(), move_list.end(), cmp_move_ordering);

@@ -57,103 +57,42 @@ class Node_child_transpose_table{
 
 class Child_transpose_table{
     private:
-        int prev;
-        int now;
-        Node_child_transpose_table *table[2][TRANSPOSE_TABLE_SIZE];
-        atomic<int> n_reg;
+        Node_child_transpose_table *table[TRANSPOSE_TABLE_SIZE];
 
     public:
         inline void first_init(){
-            now = 0;
-            prev = 1;
-            for(int i = 0; i < TRANSPOSE_TABLE_SIZE; ++i){
-                table[prev][i] = NULL;
-                table[now][i] = NULL;
-            }
+            for(int i = 0; i < TRANSPOSE_TABLE_SIZE; ++i)
+                table[i] = NULL;
         }
 
         inline void init(){
-            now = 0;
-            prev = 1;
-            init_now();
-            init_prev();
-        }
-
-        inline void ready_next_search(){
-            swap(now, prev);
-            init_now();
-        }
-
-        inline void init_prev(){
             for(int i = 0; i < TRANSPOSE_TABLE_SIZE; ++i){
-                if (table[prev][i] != NULL){
-                    table[prev][i]->init();
-                    table[prev][i] = NULL;
+                if (table[i] != NULL){
+                    table[i]->init();
+                    table[i] = NULL;
                 }
             }
-        }
-
-        inline void init_now(){
-            for(int i = 0; i < TRANSPOSE_TABLE_SIZE; ++i){
-                if (table[now][i] != NULL){
-                    table[now][i]->init();
-                    table[now][i] = NULL;
-                }
-            }
-        }
-
-        inline int now_idx() const{
-            return now;
-        }
-
-        inline int prev_idx() const{
-            return prev;
         }
 
         inline void reg(const Board *board, const uint32_t hash, const int policy, const int value){
-            if (table[now][hash] != NULL){
-                if (table[now][hash]->compare(board))
-                    table[now][hash]->register_value(policy, value);
+            if (table[hash] != NULL){
+                if (table[hash]->compare(board))
+                    table[hash]->register_value(policy, value);
                 else
-                    table[now][hash]->register_value(board, policy, value);
+                    table[hash]->register_value(board, policy, value);
             } else{
-                table[now][hash] = (Node_child_transpose_table*)malloc(sizeof(Node_child_transpose_table));
-                table[now][hash]->register_value(board, policy, value);
+                table[hash] = (Node_child_transpose_table*)malloc(sizeof(Node_child_transpose_table));
+                table[hash]->register_value(board, policy, value);
             }
         }
 
-        inline void reg(const int idx, const Board *board, const uint32_t hash, const int policy, const int value){
-            if (table[idx][hash] != NULL){
-                if (table[idx][hash]->compare(board))
-                    table[idx][hash]->register_value(policy, value);
-                else
-                    table[idx][hash]->register_value(board, policy, value);
-            } else{
-                table[idx][hash] = (Node_child_transpose_table*)malloc(sizeof(Node_child_transpose_table));
-                table[idx][hash]->register_value(board, policy, value);
-            }
-        }
-
-        inline int get_now(Board *board, const uint32_t hash) const{
-            if (table[now][hash] != NULL){
-                if (table[now][hash]->compare(board)){
-                    return table[now][hash]->get();
+        inline int get(Board *board, const uint32_t hash) const{
+            if (table[hash] != NULL){
+                if (table[hash]->compare(board)){
+                    return table[hash]->get();
                 }
             }
             return TRANSPOSE_TABLE_UNDEFINED;
-        }
-
-        inline int get_prev(Board *board, const uint32_t hash) const{
-            if (table[prev][hash] != NULL){
-                if (table[prev][hash]->compare(board)){
-                    return table[prev][hash]->get();
-                }
-            }
-            return TRANSPOSE_TABLE_UNDEFINED;
-        }
-
-        inline int get_n_reg() const{
-            return n_reg.load();
         }
 };
 

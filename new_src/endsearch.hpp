@@ -532,7 +532,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, const bool
                 break;
         }
     #endif
-    child_transpose_table.reg(search->tt_child_idx, &search->board, hash_code, best_move, v);
+    child_transpose_table.reg(&search->board, hash_code, best_move, v);
     #if USE_END_TC
         if (beta <= v)
             parent_transpose_table.reg(&search->board, hash_code, v, u);
@@ -613,7 +613,7 @@ int nega_scout_end(Search *search, int alpha, int beta, bool skipped){
         if (beta <= alpha)
             break;
     }
-    child_transpose_table.reg(search->tt_child_idx, &search->board, hash_code, best_move, v);
+    child_transpose_table.reg(&search->board, hash_code, best_move, v);
     #if USE_END_TC
         if (beta <= v)
             parent_transpose_table.reg(&search->board, hash_code, v, u);
