@@ -1,0 +1,397 @@
+﻿#pragma once
+#include <iostream>
+#include <fstream>
+#include <unordered_map>
+#include <unordered_set>
+#include "evaluate.hpp"
+#include "board.hpp"
+
+#define BOOK_HASH_TABLE_SIZE 67108864
+#define BOOK_HASH_MASK 67108863
+
+
+struct Node_book{
+    uint64_t player;
+    uint64_t opponent;
+    int value;
+    int line;
+    Node_book* p_n_node;
+};
+
+struct Book_value{
+    int policy;
+    int value;
+};
+
+class Book{
+    private:
+        Node_book *book[BOOK_HASH_TABLE_SIZE];
+        int n_book;
+        int n_hash_conflict;
+    public:
+        bool init(){
+            for (int i = 0; i < BOOK_HASH_TABLE_SIZE; ++i)
+                this->book[i] = NULL;
+            n_book = 0;
+            n_hash_conflict = 0;
+            return import_file_bin("resources/book.egbk");
+        }
+
+        inline bool import_file_bin(string file){
+            FILE* fp;
+            #ifdef _WIN64
+                if (fopen_s(&fp, file.c_str(), "rb") != 0) {
+                    cerr << "can't open " << file << endl;
+                    return false;
+                }
+            #else
+                fp = fopen(file.c_str(), "rb");
+                if (fp == NULL){
+                    cerr << "can't open " << file << endl;
+                    return false;
+                }
+            #endif
+            Board b;
+            int n_boards, i, value;
+            uint64_t p, o;
+            unsigned char elem;
+            if (fread(&n_boards, 4, 1, fp) < 1){
+                cerr << "book NOT FULLY imported " << n_book << " boards code 0" << endl;
+                fclose(fp);
+                return false;
+            }
+            for (i = 0; i < n_boards; ++i) {
+                if (i % 32768 == 0)
+                    cerr << "loading book " << (i * 100 / n_boards) << "%" << endl;
+                if (fread(&p, 8, 1, fp) < 1) {
+                    cerr << "book NOT FULLY imported " << n_book << " boards code 1" << endl;
+                    fclose(fp);
+                    return false;
+                }
+                if (fread(&o, 8, 1, fp) < 1) {
+                    cerr << "book NOT FULLY imported " << n_book << " boards code 2" << endl;
+                    fclose(fp);
+                    return false;
+                }
+                if (fread(&elem, 1, 1, fp) < 1) {
+                    cerr << "book NOT FULLY imported " << n_book << " boards code 3" << endl;
+                    fclose(fp);
+                    return false;
+                }
+                value = elem - HW2;
+                if (value < -HW2 || HW2 < value) {
+                    cerr << "book NOT FULLY imported " << n_book << " boards code 4 got value " << value << endl;
+                    fclose(fp);
+                    return false;
+                }
+                b.p = BLACK;
+                b.player = p;
+                b.opponent = o;
+                n_book += register_symmetric_book(b, value, n_book);
+            }
+            cerr << "book imported " << n_book << " boards hash conflict " << n_hash_conflict << endl;
+            fclose(fp);
+            return true;
+        }
+        
+        inline bool import_edax_book(string file) {
+            FILE* fp;
+            #ifdef _WIN64
+                if (fopen_s(&fp, file.c_str(), "rb") != 0) {
+                    cerr << "can't open " << file << endl;
+                    return false;
+                }
+            #else
+                fp = fopen(file.c_str(), "rb");
+                if (fp == NULL){
+                    cerr << "can't open " << file << endl;
+                    return false;
+                }
+            #endif
+            char elem_char;
+            int elem_int;
+            short elem_short;
+            int i, j;
+            for (i = 0; i < 38; ++i){
+                if (fread(&elem_char, 1, 1, fp) < 1) {
+                    cerr << "file broken" << endl;
+                    fclose(fp);
+                    return false;
+                }
+            }
+            if (fread(&elem_int, 4, 1, fp) < 1) {
+                cerr << "file broken" << endl;
+                fclose(fp);
+                return false;
+            }
+            int n_boards = elem_int;
+            uint64_t player, opponent;
+            short value;
+            char link = 0, link_value, link_move;
+            Board b;
+            Flip flip;
+            for (i = 0; i < n_boards; ++i){
+                if (i % 32768 == 0)
+                    cerr << "loading edax book " << (i * 100 / n_boards) << "%" << endl;
+                if (fread(&player, 8, 1, fp) < 1) {
+                    cerr << "file broken" << endl;
+                    fclose(fp);
+                    return false;
+                }
+                if (fread(&opponent, 8, 1, fp) < 1) {
+                    cerr << "file broken" << endl;
+                    fclose(fp);
+                    return false;
+                }
+                for (j = 0; j < 4; ++j) {
+                    if (fread(&elem_int, 4, 1, fp) < 1) {
+                        cerr << "file broken" << endl;
+                        fclose(fp);
+                        return false;
+                    }
+                }
+                if (fread(&value, 2, 1, fp) < 1) {
+                    cerr << "file broken" << endl;
+                    fclose(fp);
+                    return false;
+                }
+                for (j = 0; j < 2; ++j) {
+                    if (fread(&elem_short, 2, 1, fp) < 1) {
+                        cerr << "file broken" << endl;
+                        fclose(fp);
+                        return false;
+                    }
+                }
+                if (fread(&link, 1, 1, fp) < 1) {
+                    cerr << "file broken" << endl;
+                    fclose(fp);
+                    return false;
+                }
+                if (fread(&elem_char, 1, 1, fp) < 1) {
+                    cerr << "file broken" << endl;
+                    fclose(fp);
+                    return false;
+                }
+                b.p = BLACK;
+                b.player = player;
+                b.opponent = opponent;
+                n_book += register_symmetric_book(b, -(int)value, n_book);
+                for (j = 0; j < (int)link + 1; ++j) {
+                    if (fread(&link_value, 1, 1, fp) < 1) {
+                        cerr << "file broken" << endl;
+                        fclose(fp);
+                        return false;
+                    }
+                    if (fread(&link_move, 1, 1, fp) < 1) {
+                        cerr << "file broken" << endl;
+                        fclose(fp);
+                        return false;
+                    }
+                    if (link_move < HW2) {
+                        calc_flip(&flip, &b, (int)link_move);
+                        if (flip.flip == 0ULL){
+                            cerr << "error! illegal move" << endl;
+                            return false;
+                        }
+                        b.move(&flip);
+                            n_book += register_symmetric_book(b, (int)link_value, n_book);
+                        b.undo(&flip);
+                    }
+                }
+            }
+            cerr << "book imported " << n_book << " boards hash conflict " << n_hash_conflict << endl;
+            return true;
+        }
+
+        inline void reg(Board b, int value){
+            n_book += register_symmetric_book(b, value, n_book);
+        }
+
+        inline int get(Board *b){
+            Node_book *p_node = this->book[b->hash() & BOOK_HASH_MASK];
+            while(p_node != NULL){
+                if(compare_key(b, p_node)){
+                    return p_node->value;
+                }
+                p_node = p_node->p_n_node;
+            }
+            return -INF;
+        }
+
+        inline Book_value get_random(Board *b, int accept_value){
+            vector<int> policies;
+            vector<int> values;
+            Board nb;
+            int max_value = -INF;
+            uint64_t legal = b->get_legal();
+            Flip flip;
+            for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+                calc_flip(&flip, b, cell);
+                nb = b->move_copy(&flip);
+                Node_book *p_node = this->book[nb.hash() & BOOK_HASH_MASK];
+                while(p_node != NULL){
+                    if(compare_key(&nb, p_node)){
+                        policies.push_back(cell);
+                        values.push_back(p_node->value);
+                        max_value = max(max_value, p_node->value);
+                        break;
+                    }
+                    p_node = p_node->p_n_node;
+                }
+            }
+            Book_value res;
+            if (policies.size() == 0){
+                res.policy = -1;
+                res.value = -INF;
+                return res;
+            }
+            int idx;
+            while (true){
+                idx = myrandrange(0, (int)policies.size());
+                if (values[idx] >= max_value - accept_value){
+                    res.policy = policies[idx];
+                    res.value = values[idx];
+                    break;
+                }
+            }
+            return res;
+        }
+
+        inline void change(Board b, int value){
+            n_book += register_symmetric_book(b, value, n_book);
+            cerr << "book changed" << endl;
+        }
+
+        inline void save_bin(){
+            if (remove("resources/book_backup.egbk") == -1)
+                cerr << "cannot delete book_backup.egbk" << endl;
+            rename("resources/book.egbk", "resources/book_backup.egbk");
+            ofstream fout;
+            fout.open("resources/book.egbk", ios::out|ios::binary|ios::trunc);
+            if (!fout){
+                cerr << "can't open book.egbk" << endl;
+                return;
+            }
+            unordered_set<int> saved_idxes;
+            uint64_t i;
+            unsigned char elem;
+            fout.write((char*)&n_book, 4);
+            int t = 0;
+            for (i = 0; i < BOOK_HASH_TABLE_SIZE; ++i){
+                if (i % 1048576 == 0)
+                    cerr << "saving book " << (i * 100 / BOOK_HASH_TABLE_SIZE) << "%" << endl;
+                Node_book *p_node = this->book[i];
+                while(p_node != NULL){
+                    if (saved_idxes.find(p_node->line) == saved_idxes.end()) {
+                        saved_idxes.emplace(p_node->line);
+                        fout.write((char*)&p_node->player, 8);
+                        fout.write((char*)&p_node->opponent, 8);
+                        elem = max(0, min(HW2 * 2, p_node->value + HW2));
+                        fout.write((char*)&elem, 1);
+                        ++t;
+                    }
+                    p_node = p_node->p_n_node;
+                }
+            }
+            fout.close();
+            cerr << "saved " << t << " boards" << endl;
+        }
+        
+
+    private:
+        inline bool compare_key(const Board *a, const Node_book *b){
+            return a->player == b->player && a->opponent == b->opponent;
+        }
+
+        inline Node_book* Node_book_init(Board b, int value, int line){
+            Node_book* p_node = NULL;
+            p_node = (Node_book*)malloc(sizeof(Node_book));
+            p_node->player = b.player;
+            p_node->opponent = b.opponent;
+            p_node->value = value;
+            p_node->line = line;
+            p_node->p_n_node = NULL;
+            return p_node;
+        }
+
+        inline bool register_book(Board b, int hash, int value, int line){
+            if(this->book[hash] == NULL){
+                this->book[hash] = Node_book_init(b, value, line);
+            } else {
+                Node_book *p_node = this->book[hash];
+                Node_book *p_pre_node = NULL;
+                p_pre_node = p_node;
+                int delta_conflict = 0;
+                while(p_node != NULL){
+                    if(compare_key(&b, p_node)){
+                        p_node->value = value;
+                        return false;
+                    }
+                    p_pre_node = p_node;
+                    p_node = p_node->p_n_node;
+                    ++delta_conflict;
+                }
+                n_hash_conflict += delta_conflict;
+                p_pre_node->p_n_node = Node_book_init(b, value, line);
+            }
+            return true;
+        }
+
+        inline int register_symmetric_book(Board b, int value, int line){
+            int res = 1;
+            if (!register_book(b, b.hash() & BOOK_HASH_MASK, value, line))
+                res = 0;
+            b.board_white_line_mirror();
+            register_book(b, b.hash() & BOOK_HASH_MASK, value, line);
+            b.board_black_line_mirror();
+            register_book(b, b.hash() & BOOK_HASH_MASK, value, line);
+            b.board_white_line_mirror();
+            register_book(b, b.hash() & BOOK_HASH_MASK, value, line);
+            b.board_horizontal_mirror();
+            register_book(b, b.hash() & BOOK_HASH_MASK, value, line);
+            b.board_white_line_mirror();
+            register_book(b, b.hash() & BOOK_HASH_MASK, value, line);
+            b.board_black_line_mirror();
+            register_book(b, b.hash() & BOOK_HASH_MASK, value, line);
+            //b.board_white_line_mirror();
+            return res;
+        }
+
+        inline void create_arr(Node_book *node, int arr[], int p){
+            Board b;
+            b.p = p;
+            b.player = node->player;
+            b.opponent = node->opponent;
+            b.translate_to_arr(arr);
+        }
+};
+
+Book book;
+
+bool book_init(){
+    return book.init();
+}
+
+int modify_book(Board b){
+    uint64_t legal = b.get_legal();
+    Flip flip;
+    bool has_child = false;
+    int v = -INF;
+    int vbook = book.get(&b);
+    for (int cell = 0; cell < HW2; ++cell){
+        if (1 & (legal >> cell)){
+            calc_flip(&flip, &b, cell);
+            b.move(&flip);
+                if (book.get(&b) != -INF){
+                    has_child = true;
+                    v = max(v, modify_book(b));
+                }
+            b.undo(&flip);
+        }
+    }
+    if (!has_child)
+        return vbook;
+    if (-v != vbook)
+        book.change(b, -v);
+    return -v;
+}

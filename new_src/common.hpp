@@ -2,6 +2,7 @@
 #include <iostream>
 #include <chrono>
 #include <random>
+#include <string>
 
 using namespace std;
 

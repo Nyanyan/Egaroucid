@@ -144,7 +144,7 @@ class Board {
 
         inline void move_copy(const Flip *flip, Board *res) {
             res->opponent = player ^ flip->flip;
-            res->player = opponent & (~res->player);
+            res->player = opponent & (~res->opponent);
             res->opponent |= 1ULL << flip->pos;
             res->p = 1 - p;
             res->n = n + 1;
