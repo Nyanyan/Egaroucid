@@ -62,28 +62,36 @@ int main(){
         search.n_nodes = 0;
         cerr << "0 move " << mid_evaluate(&search.board) << endl;
         //cerr << nega_alpha_eval1(&search, -HW2, HW2, false) << endl;
-        uint64_t strt = tim();
 
         depth = HW2 - search.board.n;
 
         parent_transpose_table.init();
         child_transpose_table.init();
+        uint64_t strt = tim(), strt2 = tim(), search_time = 0ULL;
         search.mpct = 1.3;
         search.use_mpc = true;
         g = nega_scout(&search, -HW2, HW2, depth, false, true) / 2 * 2;
         cerr << "[-64,64] " << g << " " << idx_to_coord(child_transpose_table.get(&search.board, search.board.hash() & TRANSPOSE_TABLE_MASK)) << endl;
+        search_time += tim() - strt2;
 
         parent_transpose_table.init();
+        strt2 = tim();
         alpha = -INF;
         beta = -INF;
         while (g <= alpha || beta <= g){
-            alpha = g - 1;
-            beta = g + 1;
+            alpha = max(-HW2, g - 1);
+            beta = min(HW2, g + 1);
             search.use_mpc = false;
             g = nega_scout(&search, alpha, beta, depth, false, true);
             cerr << "[" << alpha << "," << beta << "] " << g << " " << idx_to_coord(child_transpose_table.get(&search.board, search.board.hash() & TRANSPOSE_TABLE_MASK)) << endl;
+            if (alpha == -HW2 && g == -HW2)
+                break;
+            if (beta == HW2 && g == HW2)
+                break;
         }
-        cerr << search.n_nodes << " " << (tim() - strt) << " " << search.n_nodes * 1000 / (tim() - strt) << endl;
+        search_time += tim() - strt2;
+
+        cerr << "depth " << depth << " value " << g << " policy " << idx_to_coord(child_transpose_table.get(&search.board, search.board.hash() & TRANSPOSE_TABLE_MASK)) << " nodes " << search.n_nodes << " whole time " << (tim() - strt) << " search time " << search_time << " nps " << search.n_nodes * 1000 / max(1ULL, search_time) << endl;
     }
 
     return 0;
