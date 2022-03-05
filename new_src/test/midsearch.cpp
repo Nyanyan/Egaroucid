@@ -64,9 +64,9 @@ int main(){
         //cerr << nega_alpha_eval1(&search, -HW2, HW2, false) << endl;
 
         depth = HW2 - search.board.n;
+        child_transpose_table.init();
 
         parent_transpose_table.init();
-        child_transpose_table.init();
         uint64_t strt = tim(), strt2 = tim(), search_time = 0ULL;
         search.mpct = 1.3;
         search.use_mpc = true;

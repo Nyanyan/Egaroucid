@@ -2158,11 +2158,18 @@ endsearch time 1775 mpct 0 policy 55 value 38 nodes 25120083 nps 14144190
 #58 depth 30 value 4 policy g1 nodes 2148503265 whole time 29132 search time 29118 nps 73786086
 #59 depth 34 value 64 policy g8 nodes 13523202 whole time 158 search time 150 nps 90154680
 
-2022/03/05 update ybwc with all node check
-#40 depth 20 value 38 policy a2 nodes 16735348 whole time 155 search time 148 nps 113076675
-#41 depth 22 value 0 policy h3 nodes 27531613 whole time 453 search time 446 nps 61730073
-#42 depth 22 value 6 policy g2 nodes 35337736 whole time 528 search time 520 nps 67957184
-#43 depth 23 value -12 policy g3 nodes 99269508 whole time 1425 search time 1417 nps 70056110
+2022/03/05 update move ordering
+#40 depth 20 value 38 policy a2 nodes 16454466 whole time 160 search time 152 nps 108253065
+#41 depth 22 value 0 policy h3 nodes 25496888 whole time 380 search time 373 nps 68356268
+#42 depth 22 value 6 policy g2 nodes 40846589 whole time 550 search time 542 nps 75362710
+#43 depth 23 value -12 policy g3 nodes 85863839 whole time 1304 search time 1296 nps 66252962
+#44 depth 23 value -14 policy b8 nodes 44540234 whole time 759 search time 751 nps 59307901
+#45 depth 24 value 6 policy b2 nodes 404834174 whole time 4322 search time 4314 nps 93841950
+#46 depth 24 value -8 policy b3 nodes 94426149 whole time 1186 search time 1177 nps 80226124
+#47 depth 25 value 4 policy g2 nodes 46611430 whole time 757 search time 749 nps 62231548
+#48 depth 25 value 28 policy f6 nodes 1101453530 whole time 8850 search time 8842 nps 124570632
+#49 depth 26 value 16 policy e1 nodes 651222935 whole time 7266 search time 7253 nps 89786699
+#50 depth 26 value 10 policy d8 nodes 1653999615 whole time 22038 search time 22029 nps 75082827
 
 2022/03/05 copy new_src
 #40 depth 20 value 38 policy a2 nodes 16554327 whole time 162 search time 155 nps 106802109
