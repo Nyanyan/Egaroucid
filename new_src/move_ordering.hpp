@@ -20,7 +20,7 @@
 #define W_WIPEOUT 1000000000
 
 #define W_VALUE 6
-//#define W_CELL_WEIGHT 1
+#define W_CELL_WEIGHT 1
 //#define W_EVALUATE 20
 #define W_MOBILITY 14
 #define W_SURROUND 8
@@ -30,8 +30,9 @@
 #define MOVE_ORDERING_VALUE_OFFSET 4
 
 #define W_END_MOBILITY 29
-#define W_END_SURROUND 10
+//#define W_END_SURROUND 10
 #define W_END_PARITY 14
+//#define W_END_EVALUATE 2
 
 #define ALL_NODE_OFFSET 4
 
@@ -54,7 +55,7 @@ inline void move_evaluate(Search *search, Flip *flip, const int best_move, const
     if (flip->pos == best_move)
         flip->value = W_BEST_MOVE;
     else{
-        //flip->value += cell_weight[flip->pos] * W_CELL_WEIGHT;
+        flip->value += cell_weight[flip->pos] * W_CELL_WEIGHT;
         if (search->board.parity & cell_div4[flip->pos])
             flip->value += W_PARITY;
         search->board.move(flip);
@@ -94,27 +95,6 @@ inline void move_ordering(Search *search, vector<Flip> &move_list, int depth, in
     int best_move = child_transpose_table.get_now(&search->board, hash_code);
     if (best_move == TRANSPOSE_TABLE_UNDEFINED)
         best_move = child_transpose_table.get_prev(&search->board, hash_code);
-    /*
-    if (!pre_searched && depth >= 4){
-        bool use_mpc = search->use_mpc;
-        double mpct = search->mpct;
-        search->use_mpc = true;
-        search->mpct = 0.5;
-        int tt_parent = search->tt_parent_idx;
-        int tt_child = search->tt_child_idx;
-        search->tt_parent_idx = parent_transpose_table.prev_idx();
-        search->tt_child_idx = child_transpose_table.prev_idx();
-            nega_scout(search, max(-HW2, alpha - MOVE_ORDERING_VALUE_OFFSET), min(HW2, beta + MOVE_ORDERING_VALUE_OFFSET), depth / 2, false);
-            //cerr << alpha << " " << nega_scout(search, alpha, HW2, depth, is_end_search) << " ";
-        search->use_mpc = use_mpc;
-        search->mpct = mpct;
-        search->tt_parent_idx = tt_parent;
-        search->tt_child_idx = tt_child;
-        //search->tt_parent_idx = parent_transpose_table.now_idx();
-        //search->tt_child_idx = child_transpose_table.now_idx();
-        child_transpose_table.get_prev(&search->board, hash_code, best_moves);
-    }
-    */
     int eval_alpha = -min(HW2, beta + MOVE_ORDERING_VALUE_OFFSET);
     int eval_beta = -max(-HW2, alpha - MOVE_ORDERING_VALUE_OFFSET);
     int eval_depth = depth / 8;
@@ -133,7 +113,7 @@ inline void move_evaluate_fast_first(Search *search, Flip *flip, const int best_
             flip->value += W_END_PARITY;
         search->board.move(flip);
             //flip->value += -mid_evaluate(&search->board) * W_END_EVALUATE;
-            flip->value += calc_surround(search->board.player, ~(search->board.player | search->board.opponent)) * W_END_SURROUND;
+            //flip->value += calc_surround(search->board.player, ~(search->board.player | search->board.opponent)) * W_END_SURROUND;
             flip->value -= pop_count_ull(search->board.get_legal()) * W_END_MOBILITY;
         search->board.undo(flip);
     }
