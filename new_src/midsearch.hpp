@@ -94,8 +94,6 @@ int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped){
     if (!global_searching)
         return SCORE_UNDEFINED;
     ++(search->n_nodes);
-    if (depth == 0)
-        return mid_evaluate(&search->board);
     if (depth == 1)
         return nega_alpha_eval1(search, alpha, beta, false);
     #if USE_MID_SC
@@ -133,10 +131,6 @@ int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, b
         return SCORE_UNDEFINED;
     if (depth <= MID_FAST_DEPTH)
         return nega_alpha(search, alpha, beta, depth, skipped);
-    if (depth == 1)
-        return nega_alpha_eval1(search, alpha, beta, skipped);
-    if (depth == 0)
-        return mid_evaluate(&search->board);
     ++(search->n_nodes);
     #if USE_MID_SC
         int stab_res = stability_cut(search, &alpha, &beta);
@@ -186,10 +180,6 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
         return nega_alpha_end(search, alpha, beta, skipped, searching);
     if (!is_end_search && depth <= MID_FAST_DEPTH)
         return nega_alpha(search, alpha, beta, depth, skipped);
-    if (!is_end_search && depth == 1)
-        return nega_alpha_eval1(search, alpha, beta, false);
-    if (!is_end_search && depth == 0)
-        return mid_evaluate(&search->board);
     ++(search->n_nodes);
     #if USE_MID_SC
         int stab_res = stability_cut(search, &alpha, &beta);
