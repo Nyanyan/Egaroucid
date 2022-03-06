@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include "./../midsearch.hpp"
+#include "./../util.hpp"
 
 using namespace std;
 

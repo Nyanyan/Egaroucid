@@ -24,7 +24,7 @@ def calc_n_stones(board):
         res += int(elem != '.')
     return res
 
-evaluate = subprocess.Popen('../src/egaroucid5.out'.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+evaluate = subprocess.Popen('../new_src/test/a.exe'.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
 sleep(1)
 
 min_depth = 5
@@ -45,10 +45,10 @@ mpcd = [
 ]
 
 
-def collect_data(num):
+def collect_data(directory, num):
     global vhs, vds, vh_vd
     try:
-        with open('data/records3/' + digit(num, 7) + '.txt', 'r') as f:
+        with open('data/' + directory + '/' + digit(num, 7) + '.txt', 'r') as f:
             data = list(f.read().splitlines())
     except:
         print('cannot open')
@@ -69,7 +69,7 @@ def collect_data(num):
                     board_proc += board[i * hw + j]
                 board_proc += '\n'
             #print(board_proc)
-            board_proc += str(mpcd[depth]) + '\n1\n1.0\n'
+            board_proc += str(mpcd[depth]) + '\n1\n1.18\n'
             evaluate.stdin.write(board_proc.encode('utf-8'))
             evaluate.stdin.flush()
             vd = float(evaluate.stdout.readline().decode().strip())
@@ -96,8 +96,8 @@ def collect_data(num):
             vds[depth - min_depth].append(vd)
             #v0s[depth - min_depth].append(v0)
 
-for i in range(5, 6):
-    collect_data(i)
+collect_data('records4', 5)
+collect_data('records9', 5)
 evaluate.kill()
 
 start_temp = 1000.0

@@ -24,7 +24,7 @@ def calc_n_stones(board):
         res += int(elem != '.')
     return res
 
-evaluate = subprocess.Popen('../src/mpc.out'.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+evaluate = subprocess.Popen('../new_src/test/a.exe'.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
 sleep(1)
 
 min_depth = 2
@@ -32,9 +32,8 @@ max_depth = 25
 
 depth_width = max_depth - min_depth + 1
 
-vhs = [[[] for _ in range(max_depth - min_depth + 1)] for _ in range(15)]
-vds = [[[] for _ in range(max_depth - min_depth + 1)] for _ in range(15)]
-v0s = [[[] for _ in range(max_depth - min_depth + 1)] for _ in range(15)]
+vhs = [[[] for _ in range(max_depth - min_depth + 1)] for _ in range(30)]
+vds = [[[] for _ in range(max_depth - min_depth + 1)] for _ in range(30)]
 
 vh_vd = []
 
@@ -56,14 +55,14 @@ def calc_stones(board):
 def collect_data(num):
     global vhs, vds, vh_vd
     try:
-        with open('data/records4/' + digit(num, 7) + '.txt', 'r') as f:
+        with open('data/records3/' + digit(num, 7) + '.txt', 'r') as f:
             data = list(f.read().splitlines())
     except:
         print('cannot open')
         return
     #for _ in trange(1000):
     depth = min_depth
-    max_num = 13000
+    max_num = 15000
     for tt, datum in enumerate(tqdm(data[:max_num])):
         #datum = data[randrange(0, len(data))]
         board, player, _ = datum.split()
@@ -87,13 +86,13 @@ def collect_data(num):
                 board_proc += board[i * hw + j]
             board_proc += '\n'
         board_proc += str(depth) + '\n1\n1.18\n'
-        print(board_proc)
+        #print(board_proc)
         evaluate.stdin.write(board_proc.encode('utf-8'))
         evaluate.stdin.flush()
         vh = float(evaluate.stdout.readline().decode().strip())
         #print(score)
-        vhs[(n_stones - 4) // 4][depth - min_depth].append(vh)
-        vds[(n_stones - 4) // 4][depth - min_depth].append(vd)
+        vhs[(n_stones - 4) // 2][depth - min_depth].append(vh)
+        vds[(n_stones - 4) // 2][depth - min_depth].append(vd)
 
 for i in range(20, 21):
     collect_data(i)

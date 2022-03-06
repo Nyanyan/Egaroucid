@@ -1,5 +1,4 @@
 #include <iostream>
-#include <string>
 #include "./../ai.hpp"
 
 using namespace std;

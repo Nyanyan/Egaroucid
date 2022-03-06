@@ -7,6 +7,7 @@
 /evaluation/*.txt
 /evaluation/*.dat
 /evaluation/eval_testcases
+/evaluation/resources
 #/src/resources
 #img
 /release

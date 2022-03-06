@@ -70,8 +70,8 @@ inline int ybwc_wait_all(Search *search, vector<future<pair<int, uint64_t>>> &pa
         //if (task.valid()){
         //if (task.wait_for(chrono::seconds(0)) == future_status::ready){
         got_task = task.get();
-        if (got_task.first != SCORE_UNDEFINED)
-            g = max(g, got_task.first);
+        //if (got_task.first != SCORE_UNDEFINED)
+        g = max(g, got_task.first);
         search->n_nodes += got_task.second;
         //}
         //}

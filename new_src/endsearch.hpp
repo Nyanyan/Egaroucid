@@ -31,9 +31,10 @@ inline bool mpc_end_higher(Search *search, int beta){
             res = nega_alpha_eval1(search, bound - 1, bound, false) >= bound;
             break;
         default:
-            search->use_mpc = false;
+            double mpct = search->mpct;
+            search->mpct = 1.18;
                 res = nega_alpha_end_nomemo(search, bound - 1, bound, mpcd_final[depth], false) >= bound;
-            search->use_mpc = true;
+            search->mpct = mpct;
             break;
     }
     return res;
@@ -51,9 +52,10 @@ inline bool mpc_end_lower(Search *search, int alpha){
             res = nega_alpha_eval1(search, bound, bound + 1, false) <= bound;
             break;
         default:
-            search->use_mpc = false;
+            double mpct = search->mpct;
+            search->mpct = 1.18;
                 res = nega_alpha_end_nomemo(search, bound, bound + 1, mpcd_final[depth], false) <= bound;
-            search->use_mpc = true;
+            search->mpct = mpct;
             break;
     }
     return res;
