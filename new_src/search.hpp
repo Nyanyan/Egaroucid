@@ -16,8 +16,8 @@ using namespace std;
 #define END_MPC_MAX_DEPTH 40
 #define MPC_MPCT 1.0
 
-#define MID_FAST_DEPTH 1
-#define END_FAST_DEPTH 6
+#define MID_FAST_DEPTH 3
+#define END_FAST_DEPTH 7
 #define MID_TO_END_DEPTH 12
 
 #define SCORE_UNDEFINED -INF

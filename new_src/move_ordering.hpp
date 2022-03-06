@@ -53,13 +53,13 @@ inline void move_evaluate(Search *search, Flip *flip, const int best_move, const
                         flip->value += ((HW2 - mid_evaluate(&search->board)) >> 1) * W_VALUE;
                         break;
                     case 1:
-                        flip->value += ((HW2 - nega_alpha_eval1(search, alpha, beta, false)) >> 1) * W_VALUE;
+                        flip->value += ((HW2 - nega_alpha_eval1(search, alpha, beta, false))) * W_VALUE;
                         break;
                     default:
-                        bool use_mpc = search->use_mpc;
-                        search->use_mpc = false;
-                            flip->value += (HW2 - nega_alpha_ordering_nomemo(search, alpha, beta, depth, false)) * W_VALUE;
-                        search->use_mpc = use_mpc;
+                        //bool use_mpc = search->use_mpc;
+                        //search->use_mpc = false;
+                        flip->value += (HW2 - nega_alpha(search, alpha, beta, depth, false)) * W_VALUE;
+                        //search->use_mpc = use_mpc;
                         break;
                 }
             }

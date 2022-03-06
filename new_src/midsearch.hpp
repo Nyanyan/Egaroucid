@@ -22,6 +22,7 @@
 using namespace std;
 
 int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped);
+int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped);
 int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, bool skipped);
 
 inline bool mpc_higher(Search *search, int beta, int depth){
@@ -37,10 +38,14 @@ inline bool mpc_higher(Search *search, int beta, int depth){
             res = nega_alpha_eval1(search, bound - 1, bound, false) >= bound;
             break;
         default:
-            double mpct = search->mpct;
-            search->mpct = 1.18;
-                res = nega_alpha_ordering_nomemo(search, bound - 1, bound, mpcd[depth], false) >= bound;
-            search->mpct = mpct;
+            if (mpcd[depth] <= MID_FAST_DEPTH)
+                res = nega_alpha(search, bound - 1, bound, mpcd[depth], false) >= bound;
+            else{
+                double mpct = search->mpct;
+                search->mpct = 1.18;
+                    res = nega_alpha_ordering_nomemo(search, bound - 1, bound, mpcd[depth], false) >= bound;
+                search->mpct = mpct;
+            }
             break;
     }
     return res;
@@ -59,10 +64,14 @@ inline bool mpc_lower(Search *search, int alpha, int depth){
             res = nega_alpha_eval1(search, bound, bound + 1, false) <= bound;
             break;
         default:
-            double mpct = search->mpct;
-            search->mpct = 1.18;
-                res = nega_alpha_ordering_nomemo(search, bound, bound + 1, mpcd[depth], false) <= bound;
-            search->mpct = mpct;
+            if (mpcd[depth] <= MID_FAST_DEPTH)
+                res = nega_alpha(search, bound, bound + 1, mpcd[depth], false) <= bound;
+            else{
+                double mpct = search->mpct;
+                search->mpct = 1.18;
+                    res = nega_alpha_ordering_nomemo(search, bound, bound + 1, mpcd[depth], false) <= bound;
+                search->mpct = mpct;
+            }
             break;
     }
     return res;

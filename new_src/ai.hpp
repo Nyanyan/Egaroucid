@@ -40,7 +40,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
         cerr << "presearch t=" << search.mpct << " [-64,64] " << g << " " << idx_to_coord(policy) << endl;
         search_time += tim() - strt2;
 
-        if (depth >= 24 && 1.5 < mpct){
+        if (depth >= 22 && 1.5 < mpct){
             parent_transpose_table.init();
             strt2 = tim();
             search.mpct = 1.5;
@@ -55,7 +55,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
             cerr << "presearch t=" << search.mpct << " [" << alpha << "," << beta << "] " << g << " " << idx_to_coord(policy) << endl;
             search_time += tim() - strt2;
 
-            if (depth >= 28 && 1.8 < mpct){
+            if (depth >= 25 && 1.8 < mpct){
                 parent_transpose_table.init();
                 strt2 = tim();
                 search.mpct = 1.8;

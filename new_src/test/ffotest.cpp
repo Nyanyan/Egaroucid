@@ -34,7 +34,7 @@ int main(){
         cerr << "presearch t=" << search.mpct << " [-64,64] " << g << " " << idx_to_coord(child_transpose_table.get(&search.board, search.board.hash() & TRANSPOSE_TABLE_MASK)) << endl;
         search_time += tim() - strt2;
 
-        if (depth >= 24){
+        if (depth >= 22){
             parent_transpose_table.init();
             strt2 = tim();
             search.mpct = 1.5;
@@ -45,7 +45,7 @@ int main(){
             cerr << "presearch t=" << search.mpct << " [" << alpha << "," << beta << "] " << g << " " << idx_to_coord(child_transpose_table.get(&search.board, search.board.hash() & TRANSPOSE_TABLE_MASK)) << endl;
             search_time += tim() - strt2;
 
-            if (depth >= 28){
+            if (depth >= 25){
                 parent_transpose_table.init();
                 strt2 = tim();
                 search.mpct = 1.8;
