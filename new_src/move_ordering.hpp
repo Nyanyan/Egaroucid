@@ -33,6 +33,11 @@ int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped);
 int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal);
 int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search);
 
+inline void move_sort_top(vector<Flip> &move_list, int best_idx){
+    if (best_idx != 0)
+        swap(move_list[best_idx], move_list[0]);
+}
+
 inline void move_evaluate(Search *search, Flip *flip, const int best_move, const int alpha, const int beta, const int depth){
     flip->value = 0;
     if (flip->pos == best_move)
@@ -77,6 +82,29 @@ inline void move_ordering(Search *search, vector<Flip> &move_list, int depth, in
         return;
     uint32_t hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
     int best_move = child_transpose_table.get(&search->board, hash_code);
+    /*
+    int best_score = -INF, best_idx = 0, idx = 0;
+    if (best_move == TRANSPOSE_TABLE_UNDEFINED){
+        int eval_alpha = -min(HW2, beta + MOVE_ORDERING_VALUE_OFFSET);
+        int eval_beta = -max(-HW2, alpha - MOVE_ORDERING_VALUE_OFFSET);
+        int eval_depth = depth / 8;
+        for (Flip &flip: move_list){
+            move_evaluate(search, &flip, best_move, eval_alpha, eval_beta, eval_depth);
+            if (flip.value > best_score){
+                best_score = flip.value;
+                best_idx = idx;
+            }
+            ++idx;
+        }
+    } else{
+        for (Flip &flip: move_list){
+            if (flip.pos == best_move)
+                best_idx = idx;
+            ++idx;
+        }
+    }
+    move_sort_top(move_list, best_idx);
+    */
     int eval_alpha = -min(HW2, beta + MOVE_ORDERING_VALUE_OFFSET);
     int eval_beta = -max(-HW2, alpha - MOVE_ORDERING_VALUE_OFFSET);
     int eval_depth = depth / 8;
@@ -104,6 +132,26 @@ inline void move_ordering_fast_first(Search *search, vector<Flip> &move_list){
         return;
     uint32_t hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
     int best_move = child_transpose_table.get(&search->board, hash_code);
+    /*
+    int best_idx = 0, best_score = -INF, idx = 0;
+    if (best_move == TRANSPOSE_TABLE_UNDEFINED){
+        for (Flip &flip: move_list){
+            move_evaluate_fast_first(search, &flip, best_move);
+            if (flip.value > best_score){
+                best_score = flip.value;
+                best_idx = idx;
+            }
+            ++idx;
+        }
+    } else{
+        for (Flip &flip: move_list){
+            if (flip.pos == best_move)
+                best_idx = idx;
+            ++idx;
+        }
+    }
+    move_sort_top(move_list, best_idx);
+    */
     for (Flip &flip: move_list)
         move_evaluate_fast_first(search, &flip, best_move);
     sort(move_list.begin(), move_list.end(), cmp_move_ordering);

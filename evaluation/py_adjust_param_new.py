@@ -11,7 +11,7 @@ else:
     hour = '0'
     minute = '10'
     second = '0'
-    beta = '0.004'
+    beta = '0.005'
 #additional_params = ' big_data_new_4.dat big_data_new_6.dat big_data_new_7.dat big_data_new_8.dat big_data_new_9.dat big_data_new_10.dat'
 additional_params = ' big_data.dat'
 
