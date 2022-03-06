@@ -2,6 +2,7 @@
 #include <fstream>
 #include <sstream>
 #include <iomanip>
+#include <fstream>
 #include "new_util/board.hpp"
 
 using namespace std;
@@ -281,7 +282,7 @@ inline void calc_idx(int phase_idx, Board *b, int idxes[]){
     idxes[85] = create_canput_line_v(player_mobility, opponent_mobility, 4);
 }
 
-inline void convert_idx(string str){
+inline void convert_idx(string str, ofstream *fout){
     int i, j;
     unsigned long long bk = 0, wt = 0;
     char elem;
@@ -313,10 +314,18 @@ inline void convert_idx(string str){
     //b.print();
     int idxes[86];
     calc_idx(0, &b, idxes);
+    /*
     cout << idxes[68] + idxes[69] << " " << ai_player << " ";
     for (i = 0; i < 86; ++i)
         cout << idxes[i] << " ";
     cout << score << endl;
+    */
+    int n_stones = idxes[68] + idxes[69];
+    fout->write((char*)&n_stones, 4);
+    fout->write((char*)&ai_player, 4);
+    for (i = 0; i < 86; ++i)
+        fout->write((char*)&idxes[i], 4);
+    fout->write((char*)&score, 4);
 }
 
 int main(int argc, char *argv[]){
@@ -328,6 +337,13 @@ int main(int argc, char *argv[]){
     int start_file = atoi(argv[2]);
     int n_files = atoi(argv[3]);
 
+    ofstream fout;
+    fout.open(argv[4], ios::out|ios::binary|ios::trunc);
+    if (!fout){
+        cerr << "can't open" << endl;
+        return 1;
+    }
+
     for (int i = start_file; i < n_files; ++i){
         cerr << "=";
         ostringstream sout;
@@ -336,12 +352,12 @@ int main(int argc, char *argv[]){
         ifstream ifs("data/" + string(argv[1]) + "/" + file_name + ".txt");
         if (ifs.fail()){
             cerr << "evaluation file not exist" << endl;
-            exit(1);
+            return 1;
         }
         string line;
         while (getline(ifs, line)){
             ++t;
-            convert_idx(line);
+            convert_idx(line, &fout);
         }
         if (i % 20 == 19)
             cerr << endl;

@@ -5,6 +5,7 @@
 */learned_data
 */legacy
 /evaluation/*.txt
+/evaluation/*.dat
 /evaluation/eval_testcases
 #/src/resources
 #img

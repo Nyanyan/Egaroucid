@@ -146,14 +146,16 @@ inline int calc_num0_num1(int arr[]){
 
 inline double calc_score(int phase, int i);
 
-void input_test_data(int strt){
+void input_test_data(int argc, char *argv[]){
     int i, j, k;
+    /*
     ifstream ifs("big_data.txt");
     if (ifs.fail()){
         cerr << "evaluation file not exist" << endl;
         exit(1);
     }
     string line;
+    */
     int phase, player, score;
     int t = 0, u = 0;
     nums = 0;
@@ -187,65 +189,69 @@ void input_test_data(int strt){
                 n_data_idx[i][j][k] = 0;
         }
     }
-    cerr << "a";
     for(i = 0; i < 129; ++i)
         n_data_score[i] = 0;
-    for (i = 0; i < strt; ++i)
-        getline(ifs, line);
     int sur, canput, stab, num;
-    while (getline(ifs, line) && t < n_data){
-        ++t;
-        if ((t & 0b1111111111111111) == 0b1111111111111111)
-            cerr << '\r' << t;
-        istringstream iss(line);
-        iss >> phase;
-        phase = (phase - 4) / phase_n_stones;
-        iss >> player;
-        if (phase == sa_phase){
-            ++u;
-            for (i = 0; i < n_raw_params; ++i)
-                iss >> test_data[nums][i];
-            iss >> score;
-            for (i = 0; i < 62; ++i)
-                used_idxes[pattern_nums[i]].emplace(test_data[nums][i]);
-            sur = calc_sur0_sur1(test_data[nums]);
-            canput = calc_canput0_canput1(test_data[nums]);
-            stab = calc_stab0_stab1(test_data[nums]);
-            num = calc_num0_num1(test_data[nums]);
-            used_idxes[16].emplace(sur);
-            used_idxes[17].emplace(canput);
-            used_idxes[18].emplace(stab);
-            used_idxes[19].emplace(num);
-            for (i = 0; i < 16; ++i)
-                used_idxes[20 + i / 4].emplace(test_data[nums][70 + i]);
-            test_labels[nums] = score * step;
-            for (i = 0; i < 62; ++i)
-                test_memo[pattern_nums[i]][test_data[nums][i]].push_back(nums);
-            test_memo[16][sur].push_back(nums);
-            test_memo[17][canput].push_back(nums);
-            test_memo[18][stab].push_back(nums);
-            test_memo[19][num].push_back(nums);
-            for (i = 0; i < 16; ++i)
-                test_memo[20 + i / 4][test_data[nums][70 + i]].push_back(nums);
-            test_scores.push_back(0);
-            pre_calc_scores.push_back(0);
-            ++n_data_score[score + 64];
-            for (i = 0; i < 62; ++i)
-                ++n_data_idx[pattern_nums[i]][test_data[nums][i]][score + 64];
-            ++n_data_idx[16][sur][score + 64];
-            ++n_data_idx[17][canput][score + 64];
-            ++n_data_idx[18][stab][score + 64];
-            ++n_data_idx[19][num][score + 64];
-            for (i = 0; i < 16; ++i)
-                ++n_data_idx[20 + i / 4][test_data[nums][70 + i]][score + 64];
-            /*
-            if (nums == 0){
-                for (i = 0; i < n_raw_params; ++i)
-                    cerr << test_data[nums][i] << " ";
-                cerr << score << " " << calc_score(sa_phase, nums) << endl;
+    FILE* fp;
+    for (int file_idx = 7; file_idx < argc; ++file_idx){
+        cerr << argv[file_idx] << endl;
+        if (fopen_s(&fp, argv[file_idx], "rb") != 0) {
+            cerr << "can't open " << argv[file_idx] << endl;
+            continue;
+        }
+        while (t < n_data){
+            ++t;
+            if ((t & 0b1111111111111111) == 0b1111111111111111)
+                cerr << '\r' << t;
+            if (fread(&phase, 4, 1, fp) < 1)
+                break;
+            phase = (phase - 4) / phase_n_stones;
+            fread(&player, 4, 1, fp);
+            fread(test_data[nums], 4, n_raw_params, fp);
+            fread(&score, 4, 1, fp);
+            if (phase == sa_phase){
+                ++u;
+                for (i = 0; i < 62; ++i)
+                    used_idxes[pattern_nums[i]].emplace(test_data[nums][i]);
+                sur = calc_sur0_sur1(test_data[nums]);
+                canput = calc_canput0_canput1(test_data[nums]);
+                stab = calc_stab0_stab1(test_data[nums]);
+                num = calc_num0_num1(test_data[nums]);
+                used_idxes[16].emplace(sur);
+                used_idxes[17].emplace(canput);
+                used_idxes[18].emplace(stab);
+                used_idxes[19].emplace(num);
+                for (i = 0; i < 16; ++i)
+                    used_idxes[20 + i / 4].emplace(test_data[nums][70 + i]);
+                test_labels[nums] = score * step;
+                for (i = 0; i < 62; ++i)
+                    test_memo[pattern_nums[i]][test_data[nums][i]].push_back(nums);
+                test_memo[16][sur].push_back(nums);
+                test_memo[17][canput].push_back(nums);
+                test_memo[18][stab].push_back(nums);
+                test_memo[19][num].push_back(nums);
+                for (i = 0; i < 16; ++i)
+                    test_memo[20 + i / 4][test_data[nums][70 + i]].push_back(nums);
+                test_scores.push_back(0);
+                pre_calc_scores.push_back(0);
+                ++n_data_score[score + 64];
+                for (i = 0; i < 62; ++i)
+                    ++n_data_idx[pattern_nums[i]][test_data[nums][i]][score + 64];
+                ++n_data_idx[16][sur][score + 64];
+                ++n_data_idx[17][canput][score + 64];
+                ++n_data_idx[18][stab][score + 64];
+                ++n_data_idx[19][num][score + 64];
+                for (i = 0; i < 16; ++i)
+                    ++n_data_idx[20 + i / 4][test_data[nums][70 + i]][score + 64];
+                /*
+                if (nums == 0){
+                    for (i = 0; i < n_raw_params; ++i)
+                        cerr << test_data[nums][i] << " ";
+                    cerr << score << " " << calc_score(sa_phase, nums) << endl;
+                }
+                */
+                ++nums;
             }
-            */
-            ++nums;
         }
     }
     cerr << '\r' << t << endl;
@@ -254,7 +260,6 @@ void input_test_data(int strt){
         for (auto elem: used_idxes[i])
             used_idxes_vector[i].push_back(elem);
     }
-    ifs.close();
 
     cerr << "n_data " << u << endl;
 
@@ -636,7 +641,7 @@ int main(int argc, char *argv[]){
     initialize_param();
     //output_param_onephase();
     input_param_onephase((string)(argv[6]));
-    input_test_data(0);
+    input_test_data(argc, argv);
 
     sd(second * 1000);
 
