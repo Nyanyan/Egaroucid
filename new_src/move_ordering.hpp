@@ -20,7 +20,7 @@
 #define W_VALUE 8
 #define W_CELL_WEIGHT 1
 #define W_MOBILITY 16
-#define W_SURROUND 8
+//#define W_SURROUND 8
 #define W_PARITY 4
 
 #define MOVE_ORDERING_VALUE_OFFSET 10
@@ -45,8 +45,8 @@ inline void move_evaluate(Search *search, Flip *flip, const int best_move, const
             if (search->board.player == 0)
                 flip->value += W_WIPEOUT;
             else{
-                uint64_t empties = ~(search->board.player | search->board.opponent);
-                flip->value += (calc_surround(search->board.player, empties) - calc_surround(search->board.opponent, empties)) * W_SURROUND;
+                //uint64_t empties = ~(search->board.player | search->board.opponent);
+                //flip->value += (calc_surround(search->board.player, empties) - calc_surround(search->board.opponent, empties)) * W_SURROUND;
                 flip->n_legal = search->board.get_legal();
                 flip->value -= pop_count_ull(flip->n_legal) * W_MOBILITY;
                 switch(depth){
