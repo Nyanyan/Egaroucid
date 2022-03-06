@@ -32,7 +32,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
         parent_transpose_table.init();
         search.mpct = 1.0;
         search.use_mpc = true;
-        result = first_nega_scout(&search, -HW2, HW2, depth, false, LEGAL_UNDEFINED, is_end_search);
+        result = first_nega_scout(&search, -HW2, HW2, depth, false, is_end_search);
         g = result.first;
         policy = result.second;
         if (is_end_search)
@@ -47,7 +47,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
             search.use_mpc = true;
             alpha = max(-HW2, g - 3);
             beta = min(HW2, g + 3);
-            result = first_nega_scout(&search, alpha, beta, depth, false, LEGAL_UNDEFINED, is_end_search);
+            result = first_nega_scout(&search, alpha, beta, depth, false, is_end_search);
             g = result.first;
             policy = result.second;
             if (is_end_search)
@@ -62,7 +62,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
                 search.use_mpc = true;
                 alpha = max(-HW2, g - 1);
                 beta = min(HW2, g + 1);
-                result = first_nega_scout(&search, alpha, beta, depth, false, LEGAL_UNDEFINED, is_end_search);
+                result = first_nega_scout(&search, alpha, beta, depth, false, is_end_search);
                 g = result.first;
                 policy = result.second;
                 cerr << "presearch t=" << search.mpct << " [" << alpha << "," << beta << "] " << g << " " << idx_to_coord(policy) << endl;
