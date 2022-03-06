@@ -45,7 +45,7 @@ inline void move_evaluate(Search *search, Flip *flip, const int best_move, const
             if (search->board.player == 0)
                 flip->value += W_WIPEOUT;
             else{
-                unsigned long long empties = ~(search->board.player | search->board.opponent);
+                uint64_t empties = ~(search->board.player | search->board.opponent);
                 flip->value += (calc_surround(search->board.player, empties) - calc_surround(search->board.opponent, empties)) * W_SURROUND;
                 flip->n_legal = search->board.get_legal();
                 flip->value -= pop_count_ull(flip->n_legal) * W_MOBILITY;
