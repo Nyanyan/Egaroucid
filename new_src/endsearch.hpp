@@ -537,11 +537,11 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
     if (best_move != f_best_move)
         child_transpose_table.reg(&search->board, hash_code, best_move);
     #if USE_END_TC
-        if (beta <= v)
+        if (beta <= v && l < v)
             parent_transpose_table.reg(&search->board, hash_code, v, u);
-        else if (v <= alpha)
+        else if (v <= alpha && v < u)
             parent_transpose_table.reg(&search->board, hash_code, l, v);
-        else
+        else if (alpha < v && v < beta)
             parent_transpose_table.reg(&search->board, hash_code, v, v);
     #endif
     return v;
