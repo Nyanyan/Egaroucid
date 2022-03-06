@@ -14,24 +14,23 @@
 //#define YBWC_MAX_SPLIT_COUNT 3
 //#define YBWC_PC_OFFSET 3
 
-int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool skipped, bool is_end_search, const bool *searching);
-int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, const bool *searching);
-int mtd(Search *search, int l, int u, int g, int depth, bool skipped, bool is_end_search);
-int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, bool is_end_search);
+int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
+int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t legal, const bool *searching);
+int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search);
 
-inline bool mpc_higher(Search *search, int beta, int depth);
-inline bool mpc_lower(Search *search, int alpha, int depth);
-inline bool mpc_end_higher(Search *search, int beta, int val);
-inline bool mpc_end_lower(Search *search, int alpha, int val);
+inline bool mpc_higher(Search *search, int beta, int depth, uint64_t legal);
+inline bool mpc_lower(Search *search, int alpha, int depth, uint64_t legal);
+inline bool mpc_end_higher(Search *search, int beta, int val, uint64_t legal);
+inline bool mpc_end_lower(Search *search, int alpha, int val, uint64_t legal);
 
-inline pair<int, uint64_t> ybwc_do_task(Search search, int alpha, int beta, int depth, bool skipped, bool is_end_search, const bool *searching, int policy){
-    int g = -nega_alpha_ordering(&search, alpha, beta, depth, skipped, is_end_search, searching);
+inline pair<int, uint64_t> ybwc_do_task(Search search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching, int policy){
+    int g = -nega_alpha_ordering(&search, alpha, beta, depth, skipped, legal, is_end_search, searching);
     if (*searching)
         return make_pair(g, search.n_nodes);
     return make_pair(SCORE_UNDEFINED, search.n_nodes);
 }
 
-inline bool ybwc_split(Search *search, const Flip *flip, int alpha, int beta, const int depth, bool skipped, bool is_end_search, const bool *searching, int policy, const int pv_idx, const int canput, const int split_count, vector<future<pair<int, uint64_t>>> &parallel_tasks){
+inline bool ybwc_split(Search *search, const Flip *flip, int alpha, int beta, const int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching, int policy, const int pv_idx, const int canput, const int split_count, vector<future<pair<int, uint64_t>>> &parallel_tasks){
     if (pv_idx > 0 && 
         /* pv_idx > canput / YBWC_SPLIT_DIV && */ 
         /* pv_idx < canput - 1 && */ 
@@ -44,7 +43,7 @@ inline bool ybwc_split(Search *search, const Flip *flip, int alpha, int beta, co
                 double mpct = search->mpct;
                 search->use_mpc = true;
                 search->mpct = 1.0;
-                    bool not_split = mpc_lower(search, alpha, depth);
+                    bool not_split = mpc_lower(search, alpha, depth, legal);
                 search->use_mpc = use_mpc;
                 search->mpct = mpct;
                 if (not_split){
@@ -56,7 +55,7 @@ inline bool ybwc_split(Search *search, const Flip *flip, int alpha, int beta, co
             copy_search.use_mpc = search->use_mpc;
             copy_search.mpct = search->mpct;
             copy_search.n_nodes = 0;
-            parallel_tasks.emplace_back(thread_pool.push(bind(&ybwc_do_task, copy_search, alpha, beta, depth, skipped, is_end_search, searching, policy)));
+            parallel_tasks.emplace_back(thread_pool.push(bind(&ybwc_do_task, copy_search, alpha, beta, depth, skipped, legal, is_end_search, searching, policy)));
             return true;
         }
     }
@@ -77,16 +76,4 @@ inline int ybwc_wait_all(Search *search, vector<future<pair<int, uint64_t>>> &pa
         //}
     }
     return g;
-}
-
-inline pair<int, uint64_t> parallel_mtd(int id, Search search, int alpha, int beta, int expected_value, int depth, bool skipped, bool is_end_search){
-    search.n_nodes = 0;
-    int g = -mtd(&search, alpha, beta, expected_value, depth, skipped, is_end_search);
-    return make_pair(g, search.n_nodes);
-}
-
-inline pair<int, uint64_t> parallel_negascout(int id, Search search, int alpha, int beta, int depth, bool skipped, bool is_end_search){
-    search.n_nodes = 0;
-    int g = -nega_scout(&search, alpha, beta, depth, skipped, is_end_search);
-    return make_pair(g, search.n_nodes);
 }

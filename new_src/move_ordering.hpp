@@ -30,8 +30,8 @@
 
 int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped);
 int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped);
-int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, bool skipped);
-int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, bool is_end_search);
+int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal);
+int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search);
 
 inline void move_evaluate(Search *search, Flip *flip, const int best_move, const int alpha, const int beta, const int depth){
     flip->value = 0;
@@ -47,7 +47,8 @@ inline void move_evaluate(Search *search, Flip *flip, const int best_move, const
             else{
                 unsigned long long empties = ~(search->board.player | search->board.opponent);
                 flip->value += (calc_surround(search->board.player, empties) - calc_surround(search->board.opponent, empties)) * W_SURROUND;
-                flip->value -= pop_count_ull(search->board.get_legal()) * W_MOBILITY;
+                flip->n_legal = search->board.get_legal();
+                flip->value -= pop_count_ull(flip->n_legal) * W_MOBILITY;
                 switch(depth){
                     case 0:
                         flip->value += ((HW2 - mid_evaluate(&search->board)) >> 1) * W_VALUE;
@@ -92,7 +93,8 @@ inline void move_evaluate_fast_first(Search *search, Flip *flip, const int best_
         if (search->board.parity & cell_div4[flip->pos])
             flip->value += W_END_PARITY;
         search->board.move(flip);
-            flip->value -= pop_count_ull(search->board.get_legal()) * W_END_MOBILITY;
+            flip->n_legal = search->board.get_legal();
+            flip->value -= pop_count_ull(flip->n_legal) * W_END_MOBILITY;
         search->board.undo(flip);
     }
 }

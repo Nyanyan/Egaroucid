@@ -16,10 +16,11 @@
 
 using namespace std;
 
-int nega_alpha_end_nomemo(Search *search, int alpha, int beta, int depth, bool skipped);
 int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped);
+int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped);
+int nega_alpha_end_nomemo(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal);
 
-inline bool mpc_end_higher(Search *search, int beta){
+inline bool mpc_end_higher(Search *search, int beta, uint64_t legal){
     const int depth = HW2 - search->board.n;
     int bound = beta + ceil(search->mpct * mpcsd_final[depth - END_MPC_MIN_DEPTH]);
     bool res;
@@ -36,7 +37,7 @@ inline bool mpc_end_higher(Search *search, int beta){
             else{
                 double mpct = search->mpct;
                 search->mpct = 1.18;
-                    res = nega_alpha_end_nomemo(search, bound - 1, bound, mpcd_final[depth], false) >= bound;
+                    res = nega_alpha_end_nomemo(search, bound - 1, bound, mpcd_final[depth], false, legal) >= bound;
                 search->mpct = mpct;
             }
             break;
@@ -44,7 +45,7 @@ inline bool mpc_end_higher(Search *search, int beta){
     return res;
 }
 
-inline bool mpc_end_lower(Search *search, int alpha){
+inline bool mpc_end_lower(Search *search, int alpha, uint64_t legal){
     const int depth = HW2 - search->board.n;
     int bound = alpha - ceil(search->mpct * mpcsd_final[depth - END_MPC_MIN_DEPTH]);
     bool res;
@@ -61,7 +62,7 @@ inline bool mpc_end_lower(Search *search, int alpha){
             else{
                 double mpct = search->mpct;
                 search->mpct = 1.18;
-                    res = nega_alpha_end_nomemo(search, bound, bound + 1, mpcd_final[depth], false) <= bound;
+                    res = nega_alpha_end_nomemo(search, bound, bound + 1, mpcd_final[depth], false, legal) <= bound;
                 search->mpct = mpct;
             }
             break;
@@ -69,7 +70,7 @@ inline bool mpc_end_lower(Search *search, int alpha){
     return res;
 }
 
-int nega_alpha_end_nomemo(Search *search, int alpha, int beta, int depth, bool skipped){
+int nega_alpha_end_nomemo(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal){
     if (!global_searching)
         return SCORE_UNDEFINED;
     if (depth <= MID_FAST_DEPTH)
@@ -82,13 +83,14 @@ int nega_alpha_end_nomemo(Search *search, int alpha, int beta, int depth, bool s
         if (stab_res != SCORE_UNDEFINED)
             return stab_res;
     #endif
-    uint64_t legal = search->board.get_legal();
+    if (legal == LEGAL_UNDEFINED)
+        legal = search->board.get_legal();
     int g, v = -INF;
     if (legal == 0ULL){
         if (skipped)
             return end_evaluate(&search->board);
         search->board.pass();
-            v = -nega_alpha_end_nomemo(search, -beta, -alpha, depth, true);
+            v = -nega_alpha_end_nomemo(search, -beta, -alpha, depth, true, LEGAL_UNDEFINED);
         search->board.pass();
         return v;
     }
@@ -100,7 +102,7 @@ int nega_alpha_end_nomemo(Search *search, int alpha, int beta, int depth, bool s
     move_ordering(search, move_list, depth, alpha, beta, false);
     for (const Flip &flip: move_list){
         search->board.move(&flip);
-            g = -nega_alpha_end_nomemo(search, -beta, -alpha, depth - 1, false);
+            g = -nega_alpha_end_nomemo(search, -beta, -alpha, depth - 1, false, flip.n_legal);
         search->board.undo(&flip);
         alpha = max(alpha, g);
         v = max(v, g);
@@ -444,7 +446,7 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped){
     return v;
 }
 
-int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, const bool *searching){
+int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t legal, const bool *searching){
     if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
     if (search->board.n >= HW2 - END_FAST_DEPTH)
@@ -471,19 +473,20 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, const bool
     #if USE_END_MPC
         int depth = HW2 - search->board.n;
         if (END_MPC_MIN_DEPTH <= depth && depth <= END_MPC_MAX_DEPTH && search->use_mpc){
-            if (mpc_end_higher(search, beta))
+            if (mpc_end_higher(search, beta, legal))
                 return beta;
-            if (mpc_end_lower(search, alpha))
+            if (mpc_end_lower(search, alpha, legal))
                 return alpha;
         }
     #endif
-    uint64_t legal = search->board.get_legal();
+    if (legal == LEGAL_UNDEFINED)
+        legal = search->board.get_legal();
     int g, v = -INF;
     if (legal == 0ULL){
         if (skipped)
             return end_evaluate(&search->board);
         search->board.pass();
-            v = -nega_alpha_end(search, -beta, -alpha, true, searching);
+            v = -nega_alpha_end(search, -beta, -alpha, true, LEGAL_UNDEFINED, searching);
         search->board.pass();
         return v;
     }
@@ -496,7 +499,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, const bool
     int best_move = -1;
     for (const Flip &flip: move_list){
         search->board.move(&flip);
-            g = -nega_alpha_end(search, -beta, -alpha, false, searching);
+            g = -nega_alpha_end(search, -beta, -alpha, false, flip.n_legal, searching);
         search->board.undo(&flip);
         alpha = max(alpha, g);
         if (v < g){

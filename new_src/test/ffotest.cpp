@@ -30,7 +30,7 @@ int main(){
         uint64_t strt = tim(), strt2 = tim(), search_time = 0ULL;
         search.mpct = 1.0;
         search.use_mpc = true;
-        g = nega_scout(&search, -HW2, HW2, depth, false, true) / 2 * 2;
+        g = nega_scout(&search, -HW2, HW2, depth, false, LEGAL_UNDEFINED, true) / 2 * 2;
         cerr << "presearch t=" << search.mpct << " [-64,64] " << g << " " << idx_to_coord(child_transpose_table.get(&search.board, search.board.hash() & TRANSPOSE_TABLE_MASK)) << endl;
         search_time += tim() - strt2;
 
@@ -41,7 +41,7 @@ int main(){
             search.use_mpc = true;
             alpha = max(-HW2, g - 3);
             beta = min(HW2, g + 3);
-            g = nega_scout(&search, alpha, beta, depth, false, true) / 2 * 2;
+            g = nega_scout(&search, alpha, beta, depth, false, LEGAL_UNDEFINED, true) / 2 * 2;
             cerr << "presearch t=" << search.mpct << " [" << alpha << "," << beta << "] " << g << " " << idx_to_coord(child_transpose_table.get(&search.board, search.board.hash() & TRANSPOSE_TABLE_MASK)) << endl;
             search_time += tim() - strt2;
 
@@ -52,7 +52,7 @@ int main(){
                 search.use_mpc = true;
                 alpha = max(-HW2, g - 1);
                 beta = min(HW2, g + 1);
-                g = nega_scout(&search, alpha, beta, depth, false, true) / 2 * 2;
+                g = nega_scout(&search, alpha, beta, depth, false, LEGAL_UNDEFINED, true) / 2 * 2;
                 cerr << "presearch t=" << search.mpct << " [" << alpha << "," << beta << "] " << g << " " << idx_to_coord(child_transpose_table.get(&search.board, search.board.hash() & TRANSPOSE_TABLE_MASK)) << endl;
                 search_time += tim() - strt2;
             }
@@ -66,7 +66,7 @@ int main(){
             alpha = max(-HW2, g - 1);
             beta = min(HW2, g + 1);
             search.use_mpc = false;
-            g = nega_scout(&search, alpha, beta, depth, false, true);
+            g = nega_scout(&search, alpha, beta, depth, false, LEGAL_UNDEFINED, true);
             cerr << "[" << alpha << "," << beta << "] " << g << " " << idx_to_coord(child_transpose_table.get(&search.board, search.board.hash() & TRANSPOSE_TABLE_MASK)) << endl;
             if (alpha == -HW2 && g == -HW2)
                 break;

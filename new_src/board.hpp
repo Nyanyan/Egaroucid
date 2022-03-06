@@ -6,6 +6,8 @@
 
 using namespace std;
 
+#define LEGAL_UNDEFINED 0x0000001818000000ULL
+
 uint32_t hash_rand_player[4][65536];
 uint32_t hash_rand_opponent[4][65536];
 
@@ -14,23 +16,15 @@ class Board {
         uint64_t player;
         uint64_t opponent;
         uint_fast8_t p;
-        uint_fast8_t policy;
-        int32_t v;
         uint_fast8_t n;
         uint_fast8_t parity;
 
     public:
-        bool operator<(const Board& another) const {
-            return v > another.v;
-        }
-
         inline Board copy(){
             Board res;
             res.player = player;
             res.opponent = opponent;
             res.p = p;
-            res.policy = policy;
-            res.v = v;
             res.n = n;
             res.parity = parity;
             return res;
@@ -40,8 +34,6 @@ class Board {
             res->player = player;
             res->opponent = opponent;
             res->p = p;
-            res->policy = policy;
-            res->v = v;
             res->n = n;
             res->parity = parity;
         }
@@ -61,50 +53,36 @@ class Board {
         inline void board_white_line_mirror(){
             player = white_line_mirror(player);
             opponent = white_line_mirror(opponent);
-            if (policy != -1)
-                policy = (policy % HW) * HW + (policy / HW);
         }
 
         inline void board_black_line_mirror(){
             player = black_line_mirror(player);
             opponent = black_line_mirror(opponent);
-            if (policy != -1)
-                policy = (HW_M1 - policy % HW) * HW + (HW_M1 - policy / HW);
         }
 
         inline void board_vertical_mirror(){
             player = vertical_mirror(player);
             opponent = vertical_mirror(opponent);
-            if (policy != -1)
-                policy = (HW_M1 - policy / HW) * HW + (policy % HW);
         }
 
         inline void board_horizontal_mirror(){
             player = horizontal_mirror(player);
             opponent = horizontal_mirror(opponent);
-            if (policy != -1)
-                policy = (policy / HW) * HW + (HW_M1 - policy % HW);
         }
 
         inline void board_rotate_90(){
             player = rotate_90(player);
             opponent = rotate_90(opponent);
-            if (policy != -1)
-                policy = (HW_M1 - policy % HW) * HW + (policy / HW);
         }
 
         inline void board_rotate_270(){
             player = rotate_270(player);
             opponent = rotate_270(opponent);
-            if (policy != -1)
-                policy = (policy % HW) * HW + HW_M1 - (policy / HW);
         }
 
         inline void board_rotate_180(){
             player = rotate_180(player);
             opponent = rotate_180(opponent);
-            if (policy != -1)
-                policy = (HW_M1 - policy / HW) * HW + (HW_M1 - policy % HW);
         }
 
         inline void print() {
@@ -138,7 +116,6 @@ class Board {
             swap(player, opponent);
             p = 1 - p;
             ++n;
-            policy = flip->pos;
             parity ^= cell_div4[flip->pos];
         }
 
@@ -148,7 +125,6 @@ class Board {
             res->opponent |= 1ULL << flip->pos;
             res->p = 1 - p;
             res->n = n + 1;
-            res->policy = flip->pos;
             res->parity = parity ^ cell_div4[flip->pos];
         }
 
@@ -166,7 +142,6 @@ class Board {
         inline void undo(const Flip *flip){
             p = 1 - p;
             --n;
-            policy = -1;
             parity ^= cell_div4[flip->pos];
             swap(player, opponent);
             player &= ~(1ULL << flip->pos);
@@ -237,7 +212,6 @@ class Board {
                 }
             }
             p = player;
-            policy = -1;
         }
 
         inline void translate_from_ull(const uint64_t pl, const uint64_t op, int player) {
@@ -254,7 +228,6 @@ class Board {
                 }
             }
             p = player;
-            policy = -1;
         }
 
         inline int score_player(){
@@ -382,10 +355,12 @@ void board_init(){
 
 inline void calc_flip(Flip *flip, Board *b, const int policy){
     flip->calc_flip(b->player, b->opponent, policy);
+    flip->n_legal = LEGAL_UNDEFINED;
 }
 
 inline Flip calc_flip(Board *b, const int policy){
     Flip flip;
     flip.calc_flip(b->player, b->opponent, policy);
+    flip.n_legal = LEGAL_UNDEFINED;
     return flip;
 }

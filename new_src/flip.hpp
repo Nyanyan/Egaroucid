@@ -14,6 +14,7 @@ class Flip{
         uint_fast8_t pos;
         uint64_t flip;
         int32_t value;
+        uint64_t n_legal;
     
     public:
         inline void copy(Flip *mob) const{
