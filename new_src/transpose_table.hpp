@@ -143,10 +143,8 @@ class Node_parent_transpose_table{
         }
 
         inline void register_value(const int l, const int u){
-            if (lower.load(memory_order_relaxed) < l)
-                lower.store(l);
-            if (u < upper.load(memory_order_relaxed))
-                upper.store(u);
+            lower.store(l);
+            upper.store(u);
         }
 
         inline void get(int *l, int *u) const{

@@ -471,8 +471,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
         beta = min(beta, u);
     #endif
     #if USE_END_MPC
-        int depth = HW2 - search->board.n;
-        if (END_MPC_MIN_DEPTH <= depth && depth <= END_MPC_MAX_DEPTH && search->use_mpc){
+        if (END_MPC_MIN_DEPTH <= HW2 - search->board.n && HW2 - search->board.n <= END_MPC_MAX_DEPTH && search->use_mpc){
             if (mpc_end_higher(search, beta, legal))
                 return beta;
             if (mpc_end_lower(search, alpha, legal))
@@ -490,24 +489,36 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
         search->board.pass();
         return v;
     }
-    const int canput = pop_count_ull(legal);
-    vector<Flip> move_list(canput);
-    int idx = 0;
-    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
-        calc_flip(&move_list[idx++], &search->board, cell);
-    move_ordering_fast_first(search, move_list);
-    int best_move = -1;
-    for (const Flip &flip: move_list){
+    int best_move = child_transpose_table.get(&search->board, hash_code);
+    if (best_move != TRANSPOSE_TABLE_UNDEFINED){
+        Flip flip;
+        calc_flip(&flip, &search->board, best_move);
         search->board.move(&flip);
-            g = -nega_alpha_end(search, -beta, -alpha, false, flip.n_legal, searching);
+            g = -nega_alpha_end(search, -beta, -alpha, false, LEGAL_UNDEFINED, searching);
         search->board.undo(&flip);
         alpha = max(alpha, g);
-        if (v < g){
-            v = g;
-            best_move = flip.pos;
+        v = max(v, g);
+        legal ^= 1ULL << best_move;
+    }
+    if (alpha < beta){
+        const int canput = pop_count_ull(legal);
+        vector<Flip> move_list(canput);
+        int idx = 0;
+        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
+            calc_flip(&move_list[idx++], &search->board, cell);
+        move_ordering_fast_first(search, move_list);
+        for (const Flip &flip: move_list){
+            search->board.move(&flip);
+                g = -nega_alpha_end(search, -beta, -alpha, false, flip.n_legal, searching);
+            search->board.undo(&flip);
+            alpha = max(alpha, g);
+            if (v < g){
+                v = g;
+                best_move = flip.pos;
+            }
+            if (beta <= alpha)
+                break;
         }
-        if (beta <= alpha)
-            break;
     }
     child_transpose_table.reg(&search->board, hash_code, best_move, v);
     #if USE_END_TC

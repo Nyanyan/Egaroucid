@@ -246,61 +246,75 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
         search->board.pass();
         return v;
     }
-    const int canput = pop_count_ull(legal);
-    vector<Flip> move_list(canput);
-    int idx = 0;
-    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
-        calc_flip(&move_list[idx++], &search->board, cell);
-    move_ordering(search, move_list, depth, alpha, beta, is_end_search);
-    int best_move = -1;
-    #if USE_MULTI_THREAD
-        int pv_idx = 0, split_count = 0;
-        vector<future<pair<int, uint64_t>>> parallel_tasks;
-        bool n_searching = true;
-        for (const Flip &flip: move_list){
-            if (!(*searching))
-                break;
-            if (ybwc_split(search, &flip, -beta, -alpha, depth - 1, false, flip.n_legal, is_end_search, &n_searching, flip.pos, pv_idx++, canput, split_count, parallel_tasks)){
-                ++split_count;
-            } else{
-                search->board.move(&flip);
-                    g = -nega_alpha_ordering(search, -beta, -alpha, depth - 1, false, flip.n_legal, is_end_search, searching);
-                search->board.undo(&flip);
-                if (*searching){
-                    alpha = max(alpha, g);
-                    if (v < g){
-                        v = g;
-                        best_move = flip.pos;
+    int best_move = child_transpose_table.get(&search->board, hash_code);
+    if (best_move != TRANSPOSE_TABLE_UNDEFINED){
+        Flip flip;
+        calc_flip(&flip, &search->board, best_move);
+        search->board.move(&flip);
+            g = -nega_alpha_ordering(search, -beta, -alpha, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
+        search->board.undo(&flip);
+        alpha = max(alpha, g);
+        v = max(v, g);
+        legal ^= 1ULL << best_move;
+    }
+    if (alpha < beta){
+        const int canput = pop_count_ull(legal);
+        vector<Flip> move_list(canput);
+        int idx = 0;
+        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
+            calc_flip(&move_list[idx++], &search->board, cell);
+        move_ordering(search, move_list, depth, alpha, beta, is_end_search);
+        #if USE_MULTI_THREAD
+            int pv_idx = 0, split_count = 0;
+            if (best_move != TRANSPOSE_TABLE_UNDEFINED)
+                pv_idx = 1;
+            vector<future<pair<int, uint64_t>>> parallel_tasks;
+            bool n_searching = true;
+            for (const Flip &flip: move_list){
+                if (!(*searching))
+                    break;
+                if (ybwc_split(search, &flip, -beta, -alpha, depth - 1, false, flip.n_legal, is_end_search, &n_searching, flip.pos, pv_idx++, canput, split_count, parallel_tasks)){
+                    ++split_count;
+                } else{
+                    search->board.move(&flip);
+                        g = -nega_alpha_ordering(search, -beta, -alpha, depth - 1, false, flip.n_legal, is_end_search, searching);
+                    search->board.undo(&flip);
+                    if (*searching){
+                        alpha = max(alpha, g);
+                        if (v < g){
+                            v = g;
+                            best_move = flip.pos;
+                        }
+                        if (beta <= alpha)
+                            break;
                     }
-                    if (beta <= alpha)
-                        break;
                 }
             }
-        }
-        if (split_count){
-            if (beta <= alpha || !(*searching)){
-                n_searching = false;
-                ybwc_wait_all(search, parallel_tasks);
-            } else{
-                g = ybwc_wait_all(search, parallel_tasks);
+            if (split_count){
+                if (beta <= alpha || !(*searching)){
+                    n_searching = false;
+                    ybwc_wait_all(search, parallel_tasks);
+                } else{
+                    g = ybwc_wait_all(search, parallel_tasks);
+                    alpha = max(alpha, g);
+                    v = max(v, g);
+                }
+            }
+        #else
+            for (const Flip &flip: move_list){
+                search->board.move(&flip);
+                    g = -nega_alpha_ordering(search, -beta, -alpha, depth - 1, false, is_end_search, searching);
+                search->board.undo(&flip);
                 alpha = max(alpha, g);
-                v = max(v, g);
+                if (v < g){
+                    v = g;
+                    best_move = flip.pos;
+                }
+                if (beta <= alpha)
+                    break;
             }
-        }
-    #else
-        for (const Flip &flip: move_list){
-            search->board.move(&flip);
-                g = -nega_alpha_ordering(search, -beta, -alpha, depth - 1, false, is_end_search, searching);
-            search->board.undo(&flip);
-            alpha = max(alpha, g);
-            if (v < g){
-                v = g;
-                best_move = flip.pos;
-            }
-            if (beta <= alpha)
-                break;
-        }
-    #endif
+        #endif
+    }
     child_transpose_table.reg(&search->board, hash_code, best_move, v);
     #if USE_MID_TC
         if (beta <= v)

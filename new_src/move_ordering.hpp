@@ -38,6 +38,10 @@ inline void move_sort_top(vector<Flip> &move_list, int best_idx){
         swap(move_list[best_idx], move_list[0]);
 }
 
+bool cmp_move_ordering(Flip &a, Flip &b){
+    return a.value > b.value;
+}
+
 inline void move_evaluate(Search *search, Flip *flip, const int best_move, const int alpha, const int beta, const int depth){
     flip->value = 0;
     if (flip->pos == best_move)
@@ -73,15 +77,41 @@ inline void move_evaluate(Search *search, Flip *flip, const int best_move, const
     }
 }
 
-bool cmp_move_ordering(Flip &a, Flip &b){
-    return a.value > b.value;
+inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int beta, const int depth){
+    flip->value = cell_weight[flip->pos] * W_CELL_WEIGHT;
+    if (search->board.parity & cell_div4[flip->pos])
+        flip->value += W_PARITY;
+    search->board.move(flip);
+        if (search->board.player == 0)
+            flip->value += W_WIPEOUT;
+        else{
+            //uint64_t empties = ~(search->board.player | search->board.opponent);
+            //flip->value += (calc_surround(search->board.player, empties) - calc_surround(search->board.opponent, empties)) * W_SURROUND;
+            flip->n_legal = search->board.get_legal();
+            flip->value -= pop_count_ull(flip->n_legal) * W_MOBILITY;
+            switch(depth){
+                case 0:
+                    flip->value += ((HW2 - mid_evaluate(&search->board)) >> 1) * W_VALUE;
+                    break;
+                case 1:
+                    flip->value += ((HW2 - nega_alpha_eval1(search, alpha, beta, false))) * W_VALUE;
+                    break;
+                default:
+                    //bool use_mpc = search->use_mpc;
+                    //search->use_mpc = false;
+                    flip->value += (HW2 - nega_alpha(search, alpha, beta, depth, false)) * W_VALUE;
+                    //search->use_mpc = use_mpc;
+                    break;
+            }
+        }
+    search->board.undo(flip);
 }
 
 inline void move_ordering(Search *search, vector<Flip> &move_list, int depth, int alpha, int beta, bool is_end_search){
     if (move_list.size() < 2)
         return;
-    uint32_t hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
-    int best_move = child_transpose_table.get(&search->board, hash_code);
+    //uint32_t hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
+    //int best_move = child_transpose_table.get(&search->board, hash_code);
     /*
     int best_score = -INF, best_idx = 0, idx = 0;
     if (best_move == TRANSPOSE_TABLE_UNDEFINED){
@@ -109,7 +139,7 @@ inline void move_ordering(Search *search, vector<Flip> &move_list, int depth, in
     int eval_beta = -max(-HW2, alpha - MOVE_ORDERING_VALUE_OFFSET);
     int eval_depth = depth / 8;
     for (Flip &flip: move_list)
-        move_evaluate(search, &flip, best_move, eval_alpha, eval_beta, eval_depth);
+        move_evaluate(search, &flip, eval_alpha, eval_beta, eval_depth);
     sort(move_list.begin(), move_list.end(), cmp_move_ordering);
 }
 
@@ -127,11 +157,21 @@ inline void move_evaluate_fast_first(Search *search, Flip *flip, const int best_
     }
 }
 
+inline void move_evaluate_fast_first(Search *search, Flip *flip){
+    flip->value = 0;
+    if (search->board.parity & cell_div4[flip->pos])
+        flip->value += W_END_PARITY;
+    search->board.move(flip);
+        flip->n_legal = search->board.get_legal();
+        flip->value -= pop_count_ull(flip->n_legal) * W_END_MOBILITY;
+    search->board.undo(flip);
+}
+
 inline void move_ordering_fast_first(Search *search, vector<Flip> &move_list){
     if (move_list.size() < 2)
         return;
-    uint32_t hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
-    int best_move = child_transpose_table.get(&search->board, hash_code);
+    //uint32_t hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
+    //int best_move = child_transpose_table.get(&search->board, hash_code);
     /*
     int best_idx = 0, best_score = -INF, idx = 0;
     if (best_move == TRANSPOSE_TABLE_UNDEFINED){
@@ -153,7 +193,7 @@ inline void move_ordering_fast_first(Search *search, vector<Flip> &move_list){
     move_sort_top(move_list, best_idx);
     */
     for (Flip &flip: move_list)
-        move_evaluate_fast_first(search, &flip, best_move);
+        move_evaluate_fast_first(search, &flip);
     sort(move_list.begin(), move_list.end(), cmp_move_ordering);
 }
 
