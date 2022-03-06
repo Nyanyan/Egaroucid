@@ -20,7 +20,6 @@ class Node_child_transpose_table{
         atomic<unsigned long long> player;
         atomic<unsigned long long> opponent;
         atomic<int> best_move;
-        atomic<int> best_value;
         //atomic<Node_child_transpose_table*> p_n_node;
 
     public:
@@ -29,17 +28,13 @@ class Node_child_transpose_table{
             free(this);
         }
 
-        inline void register_value(const int policy, const int value){
-            if (best_value.load(memory_order_relaxed) < value){
-                best_value.store(value);
-                best_move.store(policy);
-            }
+        inline void register_value(const int policy){
+            best_move.store(policy);
         }
 
-        inline void register_value(const Board *board, const int policy, const int value){
+        inline void register_value(const Board *board, const int policy){
             player.store(board->player);
             opponent.store(board->opponent);
-            best_value.store(value);
             best_move.store(policy);
         }
 
@@ -98,15 +93,15 @@ class Child_transpose_table{
             }
         #endif
 
-        inline void reg(const Board *board, const uint32_t hash, const int policy, const int value){
+        inline void reg(const Board *board, const uint32_t hash, const int policy){
             if (table[hash] != NULL){
                 if (table[hash]->compare(board))
-                    table[hash]->register_value(policy, value);
+                    table[hash]->register_value(policy);
                 else
-                    table[hash]->register_value(board, policy, value);
+                    table[hash]->register_value(board, policy);
             } else{
                 table[hash] = (Node_child_transpose_table*)malloc(sizeof(Node_child_transpose_table));
-                table[hash]->register_value(board, policy, value);
+                table[hash]->register_value(board, policy);
             }
         }
 
