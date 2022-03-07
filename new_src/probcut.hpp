@@ -7,10 +7,6 @@
 
 using namespace std;
 
-constexpr double mpc_params[7] = {
-    0.12506284069441298, 0.003146851320878552, -3.129294209685033, 0.01836594544092185, 0.42200995669259966, -1.828870503078114, 5.687890822032203
-};
-
 constexpr int mpcd[61] = {
     0, 1, 0, 1, 2, 3, 2, 3, 2, 3, 
     4, 3, 4, 3, 4, 5, 4, 5, 6, 5, 
@@ -21,10 +17,8 @@ constexpr int mpcd[61] = {
     16
 };
 
-inline double probcut_sigma(int n_stones, int depth){
-    double x = mpc_params[0] * (double)n_stones + mpc_params[1] * depth + mpc_params[2];
-    //cerr << mpc_params[3] * x * x * x + mpc_params[4] * x * x + mpc_params[5] * x + mpc_params[6] << endl;
-    return mpc_params[3] * x * x * x + mpc_params[4] * x * x + mpc_params[5] * x + mpc_params[6];
+inline double probcut_sigma(int n_stones){
+    return 1.0 + 0.05 * n_stones;
 }
 
 int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped);
@@ -32,7 +26,7 @@ int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped);
 int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal);
 
 inline bool mpc_higher(Search *search, int beta, int depth, uint64_t legal){
-    int bound = beta + ceil(search->mpct * probcut_sigma(search->board.n, depth));
+    int bound = beta + ceil(search->mpct * probcut_sigma(search->board.n));
     if (bound > HW2)
         bound = HW2; //return false;
     bool res;
@@ -60,7 +54,7 @@ inline bool mpc_higher(Search *search, int beta, int depth, uint64_t legal){
 }
 
 inline bool mpc_lower(Search *search, int alpha, int depth, uint64_t legal){
-    int bound = alpha - ceil(search->mpct * probcut_sigma(search->board.n, depth));
+    int bound = alpha - ceil(search->mpct * probcut_sigma(search->board.n));
     if (bound < -HW2)
         bound = -HW2; //return false;
     bool res;

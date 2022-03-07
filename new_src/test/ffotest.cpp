@@ -32,8 +32,16 @@ int main(){
         uint64_t strt = tim(), strt2 = tim(), search_time = 0ULL;
         search.mpct = 1.0;
         search.use_mpc = true;
+        g = nega_scout(&search, -HW2, HW2, depth / 2, false, LEGAL_UNDEFINED, false);
+        cerr << "presearch d=" << depth / 2 << " t=" << search.mpct << " [-64,64] " << g << " " << idx_to_coord(child_transpose_table.get(&search.board, search.board.hash() & TRANSPOSE_TABLE_MASK)) << endl;
+        search_time += tim() - strt2;
+
+        parent_transpose_table.init();
+        strt2 = tim();
+        search.mpct = 1.0;
+        search.use_mpc = true;
         g = nega_scout(&search, -HW2, HW2, depth, false, LEGAL_UNDEFINED, true) / 2 * 2;
-        cerr << "presearch t=" << search.mpct << " [-64,64] " << g << " " << idx_to_coord(child_transpose_table.get(&search.board, search.board.hash() & TRANSPOSE_TABLE_MASK)) << endl;
+        cerr << "presearch d=" << depth << " t=" << search.mpct << " [-64,64] " << g << " " << idx_to_coord(child_transpose_table.get(&search.board, search.board.hash() & TRANSPOSE_TABLE_MASK)) << endl;
         search_time += tim() - strt2;
 
         if (depth >= 22){
@@ -44,10 +52,10 @@ int main(){
             alpha = max(-HW2, g - 3);
             beta = min(HW2, g + 3);
             g = nega_scout(&search, alpha, beta, depth, false, LEGAL_UNDEFINED, true) / 2 * 2;
-            cerr << "presearch t=" << search.mpct << " [" << alpha << "," << beta << "] " << g << " " << idx_to_coord(child_transpose_table.get(&search.board, search.board.hash() & TRANSPOSE_TABLE_MASK)) << endl;
+            cerr << "presearch d=" << depth << " t=" << search.mpct << " [" << alpha << "," << beta << "] " << g << " " << idx_to_coord(child_transpose_table.get(&search.board, search.board.hash() & TRANSPOSE_TABLE_MASK)) << endl;
             search_time += tim() - strt2;
 
-            if (depth >= 25){
+            if (depth >= 24){
                 parent_transpose_table.init();
                 strt2 = tim();
                 search.mpct = 2.0;
@@ -55,7 +63,7 @@ int main(){
                 alpha = max(-HW2, g - 1);
                 beta = min(HW2, g + 1);
                 g = nega_scout(&search, alpha, beta, depth, false, LEGAL_UNDEFINED, true) / 2 * 2;
-                cerr << "presearch t=" << search.mpct << " [" << alpha << "," << beta << "] " << g << " " << idx_to_coord(child_transpose_table.get(&search.board, search.board.hash() & TRANSPOSE_TABLE_MASK)) << endl;
+                cerr << "presearch d=" << depth << " t=" << search.mpct << " [" << alpha << "," << beta << "] " << g << " " << idx_to_coord(child_transpose_table.get(&search.board, search.board.hash() & TRANSPOSE_TABLE_MASK)) << endl;
                 search_time += tim() - strt2;
             }
         }

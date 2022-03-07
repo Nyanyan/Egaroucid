@@ -1,67 +1,61 @@
 import matplotlib.pyplot as plt
 from random import randrange, random
 
-min_depth = 2
-max_depth = 20
-
-n_phases = 15
-n_scores = 17
-
-def calc_phase(x):
-    return (x - 4) // 4
-
-def calc_score(x):
-    return (x + 64) // 8
-
-depth_width = max_depth - min_depth + 1
-
 vhs = [[[] for _ in range(65)] for _ in range(65)]
 vds = [[[] for _ in range(65)] for _ in range(65)]
 
 sd = [[-1 for _ in range(65)] for _ in range(65)]
 
-with open('sigma_calculation.txt', 'r') as f:
+with open('sigma_calculation_stones_depth_15_vh.txt', 'r') as f:
     for i in range(65):
         for j in range(65):
             sd[i][j] = float(f.readline())
             #if i <= 20:
             #    sd[i][j] = 1000000.0
 
+params = [
+    0.12540371630624436, 0.042967909228542545, -4.4119385232059605, 0.03045617597596307, 0.03078555144050721, 0.18196487462695699, 2.2515818894708874
+]
+
+def f(n_stones, depth):
+    #x = params[0] * n_stones + params[1] * depth + params[2]
+    #return params[3] * x * x * x + params[4] * x * x + params[5] * x + params[6]
+    return 1.0 + 0.05 * n_stones
+
 plot_y = [0.0 for _ in range(65)]
+plot_pred = [0.0 for _ in range(65)]
 nums = [0 for _ in range(65)]
 for i in range(65):
     for j in range(65):
         if sd[i][j] != 1000000.0:
             plot_y[i] += sd[i][j]
             nums[i] += 1
+        plot_pred[i] += f(i, j)
 for i in range(65):
     if nums[i]:
         plot_y[i] /= nums[i]
+    plot_pred[i] /= 65
 plt.title('n_stones')
 plt.plot(range(65), plot_y)
+plt.plot(range(65), plot_pred)
 plt.show()
 
 plot_y = [0.0 for _ in range(65)]
 nums = [0 for _ in range(65)]
-for i in range(65):
-    for j in range(65):
+for j in range(65):
+    for i in range(65):
         if sd[i][j] != 1000000.0:
             plot_y[j] += sd[i][j]
             nums[j] += 1
+        plot_pred[j] += f(i, j)
 for i in range(65):
     if nums[i]:
         plot_y[i] /= nums[i]
+    plot_pred[i] /= 65
 plt.title('depth')
 plt.plot(range(65), plot_y)
+plt.plot(range(65), plot_pred)
 plt.show()
-
-params = [
-    0.12506284069441298, 0.003146851320878552, -3.129294209685033, 0.01836594544092185, 0.42200995669259966, -1.828870503078114, 5.687890822032203
-]
-
-def f(n_stones, depth):
-    x = params[0] * n_stones + params[1] * depth + params[2]
-    return params[3] * x * x * x + params[4] * x * x + params[5] * x + params[6]
 
 def scoring():
     res = 0

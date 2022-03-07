@@ -28,7 +28,7 @@ evaluate = subprocess.Popen('../new_src/test/a.exe'.split(), stdin=subprocess.PI
 sleep(1)
 
 min_depth = 2
-max_depth = 30
+max_depth = 15
 
 n_phases = 15
 n_scores = 17
@@ -76,7 +76,7 @@ def collect_data(num):
         if player == 1:
             score = -score
         n_stones = calc_n_stones(board)
-        depth = tt * depth_width // max_num + min_depth #(depth - min_depth + 1) % depth_width + min_depth
+        depth = (max_num - tt) * depth_width // max_num + min_depth #(depth - min_depth + 1) % depth_width + min_depth
         if depth >= 64 - calc_stones(board):
             continue
         board_proc = str(player) + '\n'
@@ -84,23 +84,24 @@ def collect_data(num):
             for j in range(hw):
                 board_proc += board[i * hw + j]
             board_proc += '\n'
-        '''
-        board_proc1 = board_proc + '0\n0\n1.18\n'
-        evaluate.stdin.write(board_proc1.encode('utf-8'))
-        evaluate.stdin.flush()
-        v0 = int(evaluate.stdout.readline().decode().strip())
-        '''
+        
         board_proc2 = board_proc + str(mpcd[depth]) + '\n0\n1.18\n'
         #print(board_proc)
         evaluate.stdin.write(board_proc2.encode('utf-8'))
         evaluate.stdin.flush()
         vd = float(evaluate.stdout.readline().decode().strip())
-        vh = float(score)
+        
+        board_proc3 = board_proc + str(depth) + '\n1\n1.0\n'
+        #print(board_proc)
+        evaluate.stdin.write(board_proc3.encode('utf-8'))
+        evaluate.stdin.flush()
+        vh = float(evaluate.stdout.readline().decode().strip())
+        
         #print(score)
         vhs[n_stones][depth].append(vh)
         vds[n_stones][depth].append(vd)
 
-for i in range(20, 23):
+for i in range(20, 21):
     collect_data(i)
 evaluate.kill()
 

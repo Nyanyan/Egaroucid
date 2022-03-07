@@ -35,7 +35,7 @@ inline bool ybwc_split(Search *search, const Flip *flip, int alpha, int beta, co
             Search copy_search;
             search->board.move(flip);
                 if (pv_idx == 0){
-                    int bound = alpha + ceil(probcut_sigma(search->board.n, depth));
+                    int bound = alpha + ceil(0.2 * probcut_sigma(search->board.n));
                     if (bound > HW2){
                         search->board.undo(flip);
                         return false;
