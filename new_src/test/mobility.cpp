@@ -37,7 +37,7 @@ uint64_t test_results[N_TESTCASES][2];
 
 int main(){
     bit_init();
-    uint8_t player;
+    //uint8_t player;
     //cin >> player;
     //input_board(&p, &o);
     //cerr << endl;
@@ -51,7 +51,7 @@ int main(){
     strt = tim();
     for (volatile uint32_t t = 0; t < 10; ++t){
         for (volatile uint32_t i = 0; i < N_TESTCASES; ++i){
-            test_results[i][0] = calc_mobility(testcases[i][0], testcases[i][1]);
+            test_results[i][0] = calc_legal(testcases[i][0], testcases[i][1]);
         }
     }
     //bit_print_board(mobility);

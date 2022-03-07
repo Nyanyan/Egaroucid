@@ -3,7 +3,6 @@
 #include "bit.hpp"
 #include "setting.hpp"
 
-/*
 inline uint64_t calc_some_mobility(uint64_t p, uint64_t o){
     uint64_t p1 = (p & 0x7F7F7F7F7F7F7F7FULL) << 1;
     uint64_t res = ~(p1 | o) & (p1 + (o & 0x7F7F7F7F7F7F7F7FULL));
@@ -11,7 +10,7 @@ inline uint64_t calc_some_mobility(uint64_t p, uint64_t o){
     p1 = (p & 0x7F7F7F7F7F7F7F7FULL) << 1;
     return res | horizontal_mirror(~(p1 | o) & (p1 + (o & 0x7F7F7F7F7F7F7F7FULL)));
 }
-
+/*
 inline uint64_t calc_some_mobility_hv(uint64_t ph, uint64_t oh){
     uint64_t pv, ov;
     black_line_mirror_double(ph, oh, &pv, &ov);
@@ -33,7 +32,7 @@ inline uint64_t calc_some_mobility_hv(uint64_t ph, uint64_t oh){
     return black_line_mirror(_mm_cvtsi128_si64(res1)) | _mm_cvtsi128_si64(_mm_unpackhi_epi64(res1, res1));
 }
 */
-/*
+
 inline uint64_t calc_some_mobility_hv(uint64_t ph, uint64_t oh){
     uint64_t pv, ov, phr, ohr, pvr, ovr;
     black_line_mirror_double(ph, oh, &pv, &ov);
@@ -47,15 +46,15 @@ inline uint64_t calc_some_mobility_hv(uint64_t ph, uint64_t oh){
     res = ~(p1 | o) & (_mm256_add_epi64(p1, o & mask));
     
     uint64_t a, b;
-    a = _mm256_extract_epi64(res, 2);
-    b = _mm256_extract_epi64(res, 3);
+    a = _mm256_extract_epi64(res, 1);
+    b = _mm256_extract_epi64(res, 0);
     horizontal_mirror_double(&a, &b);
-    a |= _mm256_extract_epi64(res, 0);
-    b |= _mm256_extract_epi64(res, 1);
+    a |= _mm256_extract_epi64(res, 3);
+    b |= _mm256_extract_epi64(res, 2);
     return a | black_line_mirror(b);
 }
-*/
-/*
+
+
 inline uint64_t calc_some_mobility_diag9(uint64_t p, uint64_t o){
     uint64_t p1 = (p & 0x5F6F777B7D7E7F3FULL) << 1;
     uint64_t res = ~(p1 | o) & (p1 + (o & 0x5F6F777B7D7E7F3FULL));
@@ -72,15 +71,15 @@ inline uint64_t calc_some_mobility_diag7(uint64_t p, uint64_t o){
     return res | horizontal_mirror(~(p1 | o) & (p1 + (o & 0x5F6F777B7D7E7F3FULL)));
 }
 
-inline uint64_t calc_mobility(uint64_t p, uint64_t o){
+inline uint64_t calc_legal(uint64_t p, uint64_t o){
     uint64_t res = 
         calc_some_mobility_hv(p, o) | 
         unrotate_45(calc_some_mobility_diag9(rotate_45(p), rotate_45(o))) | 
         unrotate_135(calc_some_mobility_diag7(rotate_135(p), rotate_135(o)));
     return res & ~(p | o);
 }
-*/
 
+/*
 inline uint64_t calc_legal(const uint64_t P, const uint64_t O){
     uint64_t moves, mO, flip1, pre1, flip8, pre8;
     __m128i    PP, mOO, MM, flip, pre;
@@ -102,3 +101,4 @@ inline uint64_t calc_legal(const uint64_t P, const uint64_t O){
     moves |= _mm_cvtsi128_si64(MM) | vertical_mirror(_mm_cvtsi128_si64(_mm_unpackhi_epi64(MM, MM)));
     return moves & ~(P|O);
 }
+*/
