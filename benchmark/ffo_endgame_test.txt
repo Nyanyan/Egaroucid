@@ -2579,7 +2579,6 @@ endsearch time 1775 mpct 0 policy 55 value 38 nodes 25120083 nps 14144190
 #49 depth 26 value 16 policy e1 nodes 915103286 whole time 5206 search time 5176 nps 176797389
 19.952 sec
 
-
 2022/03/08
 #40 depth 20 value 38 policy a2 nodes 25188770 whole time 162 search time 147 nps 171352176
 #41 depth 22 value 0 policy h4 nodes 36593761 whole time 386 search time 361 nps 101367759
@@ -2602,6 +2601,19 @@ endsearch time 1775 mpct 0 policy 55 value 38 nodes 25120083 nps 14144190
 #58 depth 30 value 4 policy g1 nodes 4644698425 whole time 35300 search time 35269 nps 131693510
 #59 depth 34 value 64 policy g8 nodes 181443 whole time 65 search time 35 nps 5184085
 802.986 sec
+
+2022/03/08 new evaluatio0n function with cut data
+#40 depth 20 value 38 policy a2 nodes 29002154 whole time 163 search time 148 nps 195960500
+#41 depth 22 value 0 policy h4 nodes 39654520 whole time 404 search time 381 nps 104080104
+#42 depth 22 value 6 policy g2 nodes 62590526 whole time 410 search time 388 nps 161315788
+#43 depth 23 value -12 policy c7 nodes 163710079 whole time 985 search time 963 nps 170000082
+#44 depth 23 value -14 policy d2 nodes 139725970 whole time 968 search time 947 nps 147545902
+#45 depth 24 value 6 policy b2 nodes 860722102 whole time 4151 search time 4121 nps 208862436
+#46 depth 24 value -8 policy b3 nodes 180982065 whole time 1318 search time 1288 nps 140514025
+#47 depth 25 value 4 policy g2 nodes 110888401 whole time 695 search time 666 nps 166499100
+#48 depth 25 value 28 policy f6 nodes 1030714518 whole time 5356 search time 5327 nps 193488740
+#49 depth 26 value 16 policy e1 nodes 986723921 whole time 5466 search time 5437 nps 181483156
+19.916 sec
 
 
 
