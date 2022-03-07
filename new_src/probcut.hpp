@@ -20,20 +20,6 @@ constexpr int mpcd[61] = {
     14, 13, 14, 13, 14, 15, 14, 15, 16, 15,
     16
 };
-/*
-inline double probcut_phase(Board *b){
-    return (double)(b->n - 4) / 4.0;
-}
-
-inline double probcut_score(int score){
-    return (double)(score + HW2) / 8.0;
-}
-
-inline double probcut_sigma(Board *b, int depth){
-    double x = mpc_params[0] * (double)depth + mpc_params[1] * probcut_phase(b) + mpc_params[2] * probcut_score(mid_evaluate(b));
-    return mpc_params[3] * x * x + mpc_params[4] * x + mpc_params[5];
-}
-*/
 
 inline double probcut_sigma(int n_stones, int depth){
     double x = mpc_params[0] * (double)n_stones + mpc_params[1] * depth + mpc_params[2];

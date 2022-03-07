@@ -212,7 +212,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
             for (const Flip &flip: move_list){
                 if (!(*searching))
                     break;
-                if (ybwc_split(search, &flip, -beta, -alpha, depth - 1, false, flip.n_legal, is_end_search, &n_searching, flip.pos, pv_idx++, canput, split_count, parallel_tasks)){
+                if (ybwc_split(search, &flip, -beta, -alpha, depth - 1, flip.n_legal, is_end_search, &n_searching, flip.pos, pv_idx++, canput, split_count, parallel_tasks)){
                     ++split_count;
                 } else{
                     search->board.move(&flip);

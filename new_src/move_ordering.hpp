@@ -68,10 +68,14 @@ inline void move_evaluate(Search *search, Flip *flip, const int best_move, const
                         flip->value += (HW2 - nega_alpha_eval1(search, alpha, beta, false)) * W_VALUE;
                         break;
                     default:
-                        //bool use_mpc = search->use_mpc;
-                        //search->use_mpc = false;
-                        flip->value += (HW2 - nega_alpha(search, alpha, beta, depth, false)) * W_VALUE;
-                        //search->use_mpc = use_mpc;
+                        if (depth <= MID_FAST_DEPTH)
+                            flip->value += (HW2 - nega_alpha(search, alpha, beta, depth, false)) * W_VALUE;
+                        else{
+                            bool use_mpc = search->use_mpc;
+                            search->use_mpc = false;
+                                flip->value += (HW2 - nega_alpha_ordering_nomemo(search, alpha, beta, depth, false, flip->n_legal)) * W_VALUE;
+                            search->use_mpc = use_mpc;
+                        }
                         break;
                 }
             }
@@ -99,10 +103,14 @@ inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int
                     flip->value += ((HW2 - nega_alpha_eval1(search, alpha, beta, false))) * W_VALUE;
                     break;
                 default:
-                    //bool use_mpc = search->use_mpc;
-                    //search->use_mpc = false;
-                    flip->value += (HW2 - nega_alpha(search, alpha, beta, depth, false)) * W_VALUE;
-                    //search->use_mpc = use_mpc;
+                    if (depth <= MID_FAST_DEPTH)
+                        flip->value += (HW2 - nega_alpha(search, alpha, beta, depth, false)) * W_VALUE;
+                    else{
+                        bool use_mpc = search->use_mpc;
+                        search->use_mpc = false;
+                            flip->value += (HW2 - nega_alpha_ordering_nomemo(search, alpha, beta, depth, false, flip->n_legal)) * W_VALUE;
+                        search->use_mpc = use_mpc;
+                    }
                     break;
             }
         }
