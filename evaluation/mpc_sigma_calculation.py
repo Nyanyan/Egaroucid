@@ -28,7 +28,7 @@ evaluate = subprocess.Popen('../new_src/test/a.exe'.split(), stdin=subprocess.PI
 sleep(1)
 
 min_depth = 2
-max_depth = 25
+max_depth = 30
 
 n_phases = 15
 n_scores = 17
@@ -41,11 +41,13 @@ vds = [[[] for _ in range(65)] for _ in range(65)]
 vh_vd = []
 
 mpcd = [
-    0, 1, 0, 1, 2, 3, 2, 3, 4, 3, 
-    4, 3, 4, 5, 4, 5, 6, 5, 6, 7, 
-    6, 7, 6, 7, 8, 7, 8, 9, 8, 9, 
-    10, 9, 10, 11, 12, 11, 12, 13, 14, 13, 
-    14
+    0, 1, 0, 1, 2, 3, 2, 3, 2, 3, 
+    4, 3, 4, 3, 4, 5, 4, 5, 6, 5, 
+    6, 5, 6, 7, 6, 7, 8, 7, 8, 7, 
+    8, 9, 8, 9, 10, 9, 10, 9, 10, 11, 
+    10, 11, 12, 11, 12, 11, 12, 13, 12, 13, 
+    14, 13, 14, 13, 14, 15, 14, 15, 16, 15,
+    16
 ]
 
 def calc_stones(board):
