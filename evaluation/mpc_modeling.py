@@ -35,6 +35,7 @@ for i in range(65):
 for i in range(depth_width):
     if nums[i]:
         plot_y[i] /= nums[i]
+plt.title('n_stones')
 plt.plot(range(65), plot_y)
 plt.show()
 
@@ -48,6 +49,7 @@ for i in range(65):
 for i in range(depth_width):
     if nums[i]:
         plot_y[i] /= nums[i]
+plt.title('depth')
 plt.plot(range(65), plot_y)
 plt.show()
 
@@ -71,7 +73,8 @@ def scoring():
 
 score = scoring()
 print(score)
-
+if(input('continue?: ') != 'yes'):
+    exit()
 while True:
     idx = randrange(0, 6)
     f_param = params[idx]

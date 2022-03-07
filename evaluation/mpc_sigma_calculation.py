@@ -28,7 +28,7 @@ evaluate = subprocess.Popen('../new_src/test/a.exe'.split(), stdin=subprocess.PI
 sleep(1)
 
 min_depth = 2
-max_depth = 20
+max_depth = 25
 
 n_phases = 15
 n_scores = 17
