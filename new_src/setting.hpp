@@ -26,7 +26,7 @@
 #define USE_END_MPC true
 
 // legal calculation
-#define LEGAL_CALCULATION_MODE 3
+#define LEGAL_CALCULATION_MODE 5
 
 // pop_count
 #define USE_BUILTIN_POPCOUNT false
