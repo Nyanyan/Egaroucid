@@ -2442,7 +2442,18 @@ endsearch time 1775 mpct 0 policy 55 value 38 nodes 25120083 nps 14144190
 #49 depth 26 value 16 policy e1 nodes 710013331 whole time 4917 search time 4891 nps 145167313
 17.772 sec
 
-
+2022/03/07 haswell
+#40 depth 20 value 38 policy a2 nodes 24785804 whole time 149 search time 141 nps 175785843
+#41 depth 22 value 0 policy h4 nodes 31206693 whole time 312 search time 297 nps 105073040
+#42 depth 22 value 6 policy g2 nodes 36867834 whole time 355 search time 339 nps 108754672
+#43 depth 23 value -12 policy c7 nodes 151086837 whole time 1075 search time 1061 nps 142400411
+#44 depth 23 value -14 policy d2 nodes 23414172 whole time 436 search time 423 nps 55352652
+#45 depth 24 value 6 policy b2 nodes 610862717 whole time 3437 search time 3421 nps 178562618
+#46 depth 24 value -8 policy b3 nodes 126802837 whole time 1032 search time 1019 nps 124438505
+#47 depth 25 value 4 policy g2 nodes 48882536 whole time 556 search time 532 nps 91884466
+#48 depth 25 value 28 policy f6 nodes 850546043 whole time 5059 search time 5037 nps 168859647
+#49 depth 26 value 16 policy e1 nodes 643484526 whole time 4467 search time 4442 nps 144863693
+16.878 sec
 
 
 /***** copy *****/

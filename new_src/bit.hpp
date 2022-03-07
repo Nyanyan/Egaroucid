@@ -172,6 +172,20 @@ inline void horizontal_mirror_double(uint64_t xin, uint64_t yin, uint64_t *x, ui
     *x = _mm_cvtsi128_si64(_mm_unpackhi_epi64(xy, xy));
 }
 
+inline void horizontal_mirror_quad(uint64_t win, uint64_t xin, uint64_t yin, uint64_t zin, uint64_t *w, uint64_t *x, uint64_t *y, uint64_t *z){
+    __m256i	xy = _mm256_set_epi64x(win, xin, yin, zin);
+    xy = (_mm256_srli_epi64(xy, 1) & _mm256_set1_epi64x(0x5555555555555555ULL)) | 
+        (_mm256_slli_epi64(xy, 1) & _mm256_set1_epi64x(0xAAAAAAAAAAAAAAAAULL));
+    xy = (_mm256_srli_epi64(xy, 2) & _mm256_set1_epi64x(0x3333333333333333ULL)) | 
+        (_mm256_slli_epi64(xy, 2) & _mm256_set1_epi64x(0xCCCCCCCCCCCCCCCCULL));
+    xy = (_mm256_srli_epi64(xy, 4) & _mm256_set1_epi64x(0x0F0F0F0F0F0F0F0FULL)) | 
+        (_mm256_slli_epi64(xy, 4) & _mm256_set1_epi64x(0xF0F0F0F0F0F0F0F0ULL));
+    *w = _mm256_extract_epi64(xy, 3);
+    *x = _mm256_extract_epi64(xy, 2);
+    *y = _mm256_extract_epi64(xy, 1);
+    *z = _mm256_extract_epi64(xy, 0);
+}
+
 inline void horizontal_mirror_m128(__m128i *xy){
     *xy = (_mm_srli_epi64(*xy, 1) & _mm_set1_epi64x(0x5555555555555555ULL)) | 
         (_mm_slli_epi64(*xy, 1) & _mm_set1_epi64x(0xAAAAAAAAAAAAAAAAULL));
