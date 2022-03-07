@@ -2580,6 +2580,30 @@ endsearch time 1775 mpct 0 policy 55 value 38 nodes 25120083 nps 14144190
 19.952 sec
 
 
+2022/03/08
+#40 depth 20 value 38 policy a2 nodes 25188770 whole time 162 search time 147 nps 171352176
+#41 depth 22 value 0 policy h4 nodes 36593761 whole time 386 search time 361 nps 101367759
+#42 depth 22 value 6 policy g2 nodes 59143540 whole time 474 search time 452 nps 130848539
+#43 depth 23 value -12 policy c7 nodes 165780326 whole time 1001 search time 979 nps 169336390
+#44 depth 23 value -14 policy d2 nodes 111078144 whole time 868 search time 844 nps 131609175
+#45 depth 24 value 6 policy b2 nodes 877247976 whole time 4553 search time 4522 nps 193995571
+#46 depth 24 value -8 policy b3 nodes 214147776 whole time 1405 search time 1374 nps 155857187
+#47 depth 25 value 4 policy g2 nodes 127204434 whole time 763 search time 733 nps 173539473
+#48 depth 25 value 28 policy f6 nodes 1210846603 whole time 6051 search time 6022 nps 201070508
+#49 depth 26 value 16 policy e1 nodes 1153486506 whole time 6365 search time 6335 nps 182081532
+#50 depth 26 value 10 policy d8 nodes 2730176932 whole time 14136 search time 14107 nps 193533489
+#51 depth 27 value 6 policy a3 nodes 1667579531 whole time 11580 search time 11548 nps 144404185
+#52 depth 27 value 0 policy a3 nodes 851547781 whole time 6472 search time 6440 nps 132227916
+#53 depth 28 value -2 policy d8 nodes 8742517152 whole time 56885 search time 56836 nps 153820063
+#54 depth 28 value -2 policy c7 nodes 12040332465 whole time 69910 search time 69864 nps 172339580
+#55 depth 29 value 2 policy g6 nodes 47567066472 whole time 334641 search time 334518 nps 142195835
+#56 depth 29 value 2 policy h5 nodes 3840332010 whole time 30869 search time 30837 nps 124536498
+#57 depth 30 value -10 policy a6 nodes 36693123343 whole time 221100 search time 221060 nps 165987167
+#58 depth 30 value 4 policy g1 nodes 4644698425 whole time 35300 search time 35269 nps 131693510
+#59 depth 34 value 64 policy g8 nodes 181443 whole time 65 search time 35 nps 5184085
+802.986 sec
+
+
 
 
 
