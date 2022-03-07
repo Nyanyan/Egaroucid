@@ -337,14 +337,14 @@ class Flip{
         if (u >= 2 && u <= 12){
             p = join_d7_lines[u - 2](player);
             o = join_d7_lines[u - 2](opponent);
-            res += pop_count(flip_pre_calc[p][o][HW_M1 - t] & d7_mask[place]);
+            res += pop_count_uchar(flip_pre_calc[p][o][HW_M1 - t] & d7_mask[place]);
         }
 
         u -= t * 2;
         if (u >= -5 && u <= 5){
             p = join_d9_lines[u + 5](player);
             o = join_d9_lines[u + 5](opponent);
-            res += pop_count(flip_pre_calc[p][o][t] & d9_mask[place]);
+            res += pop_count_uchar(flip_pre_calc[p][o][t] & d9_mask[place]);
         }
         return res;
     }
