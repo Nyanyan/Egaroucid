@@ -334,6 +334,31 @@ inline uint64_t unrotate_135(uint64_t x){
     return x ^ a ^ (a << 8);
 }
 
+inline uint64_t unrotate_45_135(uint64_t x, uint64_t y){
+    __m128i xy = _mm_set_epi64x(x, y);
+    __m128i a = _mm_and_si128(_mm_xor_si128(xy, _mm_srli_epi64(xy, 32)), _mm_set_epi64x(0x00000000C3E1F078ULL, 0x00000000C3870F1EULL));
+    xy = _mm_xor_si128(_mm_xor_si128(xy, a), _mm_slli_epi64(a, 32));
+    a = _mm_and_si128(_mm_xor_si128(xy, _mm_srli_epi64(xy, 16)), _mm_set_epi64x(0x0000CC660000CC66ULL, 0x0000336600003366ULL));
+    xy = _mm_xor_si128(_mm_xor_si128(xy, a), _mm_slli_epi64(a, 16));
+    a = _mm_and_si128(_mm_xor_si128(xy, _mm_srli_epi64(xy, 8)), _mm_set_epi64x(0x0055005500550055ULL, 0x00AA00AA00AA00AAULL));
+    xy = _mm_xor_si128(_mm_xor_si128(xy, a), _mm_slli_epi64(a, 8));
+    return _mm_cvtsi128_si64(xy) | _mm_cvtsi128_si64(_mm_unpackhi_epi64(xy, xy));
+}
+
+inline void rotate_45_double_135_double(uint64_t x_in, uint64_t y_in, uint64_t *w, uint64_t *x, uint64_t *y, uint64_t *z){
+    __m256i xy = _mm256_set_epi64x(x_in, y_in, x_in, y_in);
+    __m256i a = _mm256_and_si256(_mm256_xor_si256(xy, _mm256_srli_epi64(xy, 8)), _mm256_set_epi64x(0x0055005500550055ULL, 0x0055005500550055ULL, 0x00AA00AA00AA00AAULL, 0x00AA00AA00AA00AAULL));
+    xy = _mm256_xor_si256(_mm256_xor_si256(xy, a), _mm256_slli_epi64(a, 8));
+    a = _mm256_and_si256(_mm256_xor_si256(xy, _mm256_srli_epi64(xy, 16)), _mm256_set_epi64x(0x0000CC660000CC66ULL, 0x0000CC660000CC66ULL, 0x0000336600003366ULL, 0x0000336600003366ULL));
+    xy = _mm256_xor_si256(_mm256_xor_si256(xy, a), _mm256_slli_epi64(a, 16));
+    a = _mm256_and_si256(_mm256_xor_si256(xy, _mm256_srli_epi64(xy, 32)), _mm256_set_epi64x(0x00000000C3E1F078ULL, 0x00000000C3E1F078ULL, 0x00000000C3870F1EULL, 0x00000000C3870F1EULL));
+    xy = _mm256_xor_si256(_mm256_xor_si256(xy, a), _mm256_slli_epi64(a, 32));
+    *w = _mm256_extract_epi64(xy, 3);
+    *x = _mm256_extract_epi64(xy, 2);
+    *y = _mm256_extract_epi64(xy, 1);
+    *z = _mm256_extract_epi64(xy, 0);
+}
+
 inline uint64_t rotate_315(uint64_t x){
     return rotate_135(rotate_180(x));
 }

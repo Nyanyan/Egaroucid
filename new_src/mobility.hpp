@@ -87,8 +87,7 @@ inline uint64_t calc_some_mobility(uint64_t p, uint64_t o){
 
     inline uint64_t calc_some_mobility_diag(uint64_t p, uint64_t o){
         uint64_t p45, o45, p135, o135, p45r, o45r, p135r, o135r;
-        rotate_45_double(p, o, &p45, &o45);
-        rotate_135_double(p, o, &p135, &o135);
+        rotate_45_double_135_double(p, o, &p45, &o45, &p135, &o135);
         horizontal_mirror_quad(p45, o45, p135, o135, &p45r, &o45r, &p135r, &o135r);
         __m256i mask = _mm256_set_epi64x(0x5F6F777B7D7E7F3FULL, 0x7D7B776F5F3F7F7EULL, 0x7D7B776F5F3F7F7EULL, 0x5F6F777B7D7E7F3FULL);
         __m256i p1 = _mm256_and_si256(_mm256_set_epi64x(p45, p135, p45r, p135r), mask);
@@ -101,7 +100,7 @@ inline uint64_t calc_some_mobility(uint64_t p, uint64_t o){
         horizontal_mirror_double(&a, &b);
         a |= _mm256_extract_epi64(res, 3);
         b |= _mm256_extract_epi64(res, 2);
-        return unrotate_45(a) | unrotate_135(b);
+        return unrotate_45_135(a, b);
     }
 
     inline uint64_t calc_legal(uint64_t p, uint64_t o){
