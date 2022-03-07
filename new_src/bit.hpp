@@ -117,20 +117,17 @@ inline uint64_t black_line_mirror(uint64_t x){
 
 inline void black_line_mirror_double(uint64_t xin, uint64_t yin, uint64_t *x, uint64_t *y){
     __m128i	xy = _mm_set_epi64x(xin, yin);
-    __m128i a = _mm_srli_epi64(xy, 9);
-    a ^= xy;
-    a &= _mm_set1_epi64x(0x0055005500550055ULL);
-    xy = xy ^ a ^ _mm_slli_epi64(a, 9);
+    __m128i a = _mm_xor_si128(xy, _mm_srli_epi64(xy, 9));
+    a = _mm_and_si128(a, _mm_set1_epi64x(0x0055005500550055ULL));
+    xy = _mm_xor_si128(_mm_xor_si128(xy, a),  _mm_slli_epi64(a, 9));
 
-    a = _mm_srli_epi64(xy, 18);
-    a ^= xy;
-    a &= _mm_set1_epi64x(0x0000333300003333ULL);
-    xy = xy ^ a ^ _mm_slli_epi64(a, 18);
-
-    a = _mm_srli_epi64(xy, 36);
-    a ^= xy;
-    a &= _mm_set1_epi64x(0x000000000F0F0F0FULL);
-    xy = xy ^ a ^ _mm_slli_epi64(a, 36);
+    a = _mm_xor_si128(xy, _mm_srli_epi64(xy, 18));
+    a = _mm_and_si128(a, _mm_set1_epi64x(0x0000333300003333ULL));
+    xy = _mm_xor_si128(_mm_xor_si128(xy, a),  _mm_slli_epi64(a, 18));
+    
+    a = _mm_xor_si128(xy, _mm_srli_epi64(xy, 36));
+    a = _mm_and_si128(a, _mm_set1_epi64x(0x000000000F0F0F0FULL));
+    xy = _mm_xor_si128(_mm_xor_si128(xy, a),  _mm_slli_epi64(a, 36));
 
     *y = _mm_cvtsi128_si64(xy);
     *x = _mm_cvtsi128_si64(_mm_unpackhi_epi64(xy, xy));
@@ -158,49 +155,49 @@ inline uint64_t horizontal_mirror(uint64_t x){
 
 inline void horizontal_mirror_double(uint64_t *x, uint64_t *y){
     __m128i	xy = _mm_set_epi64x(*x, *y);
-    xy = (_mm_srli_epi64(xy, 1) & _mm_set1_epi64x(0x5555555555555555ULL)) | 
-        (_mm_slli_epi64(xy, 1) & _mm_set1_epi64x(0xAAAAAAAAAAAAAAAAULL));
-    xy = (_mm_srli_epi64(xy, 2) & _mm_set1_epi64x(0x3333333333333333ULL)) | 
-        (_mm_slli_epi64(xy, 2) & _mm_set1_epi64x(0xCCCCCCCCCCCCCCCCULL));
-    xy = (_mm_srli_epi64(xy, 4) & _mm_set1_epi64x(0x0F0F0F0F0F0F0F0FULL)) | 
-        (_mm_slli_epi64(xy, 4) & _mm_set1_epi64x(0xF0F0F0F0F0F0F0F0ULL));
+    xy = _mm_or_si128(
+        _mm_and_si128(_mm_srli_epi64(xy, 1), _mm_set1_epi64x(0x5555555555555555ULL)),
+        _mm_and_si128(_mm_slli_epi64(xy, 1), _mm_set1_epi64x(0xAAAAAAAAAAAAAAAAULL)));
+    xy = _mm_or_si128(
+        _mm_and_si128(_mm_srli_epi64(xy, 2), _mm_set1_epi64x(0x3333333333333333ULL)), 
+        _mm_and_si128(_mm_slli_epi64(xy, 2), _mm_set1_epi64x(0xCCCCCCCCCCCCCCCCULL)));
+    xy = _mm_or_si128(
+        _mm_and_si128(_mm_srli_epi64(xy, 4), _mm_set1_epi64x(0x0F0F0F0F0F0F0F0FULL)), 
+        _mm_and_si128(_mm_slli_epi64(xy, 4), _mm_set1_epi64x(0xF0F0F0F0F0F0F0F0ULL)));
     *y = _mm_cvtsi128_si64(xy);
     *x = _mm_cvtsi128_si64(_mm_unpackhi_epi64(xy, xy));
 }
 
 inline void horizontal_mirror_double(uint64_t xin, uint64_t yin, uint64_t *x, uint64_t *y){
     __m128i	xy = _mm_set_epi64x(xin, yin);
-    xy = (_mm_srli_epi64(xy, 1) & _mm_set1_epi64x(0x5555555555555555ULL)) | 
-        (_mm_slli_epi64(xy, 1) & _mm_set1_epi64x(0xAAAAAAAAAAAAAAAAULL));
-    xy = (_mm_srli_epi64(xy, 2) & _mm_set1_epi64x(0x3333333333333333ULL)) | 
-        (_mm_slli_epi64(xy, 2) & _mm_set1_epi64x(0xCCCCCCCCCCCCCCCCULL));
-    xy = (_mm_srli_epi64(xy, 4) & _mm_set1_epi64x(0x0F0F0F0F0F0F0F0FULL)) | 
-        (_mm_slli_epi64(xy, 4) & _mm_set1_epi64x(0xF0F0F0F0F0F0F0F0ULL));
+    xy = _mm_or_si128(
+        _mm_and_si128(_mm_srli_epi64(xy, 1), _mm_set1_epi64x(0x5555555555555555ULL)),
+        _mm_and_si128(_mm_slli_epi64(xy, 1), _mm_set1_epi64x(0xAAAAAAAAAAAAAAAAULL)));
+    xy = _mm_or_si128(
+        _mm_and_si128(_mm_srli_epi64(xy, 2), _mm_set1_epi64x(0x3333333333333333ULL)), 
+        _mm_and_si128(_mm_slli_epi64(xy, 2), _mm_set1_epi64x(0xCCCCCCCCCCCCCCCCULL)));
+    xy = _mm_or_si128(
+        _mm_and_si128(_mm_srli_epi64(xy, 4), _mm_set1_epi64x(0x0F0F0F0F0F0F0F0FULL)), 
+        _mm_and_si128(_mm_slli_epi64(xy, 4), _mm_set1_epi64x(0xF0F0F0F0F0F0F0F0ULL)));
     *y = _mm_cvtsi128_si64(xy);
     *x = _mm_cvtsi128_si64(_mm_unpackhi_epi64(xy, xy));
 }
 
 inline void horizontal_mirror_quad(uint64_t win, uint64_t xin, uint64_t yin, uint64_t zin, uint64_t *w, uint64_t *x, uint64_t *y, uint64_t *z){
     __m256i	xy = _mm256_set_epi64x(win, xin, yin, zin);
-    xy = (_mm256_srli_epi64(xy, 1) & _mm256_set1_epi64x(0x5555555555555555ULL)) | 
-        (_mm256_slli_epi64(xy, 1) & _mm256_set1_epi64x(0xAAAAAAAAAAAAAAAAULL));
-    xy = (_mm256_srli_epi64(xy, 2) & _mm256_set1_epi64x(0x3333333333333333ULL)) | 
-        (_mm256_slli_epi64(xy, 2) & _mm256_set1_epi64x(0xCCCCCCCCCCCCCCCCULL));
-    xy = (_mm256_srli_epi64(xy, 4) & _mm256_set1_epi64x(0x0F0F0F0F0F0F0F0FULL)) | 
-        (_mm256_slli_epi64(xy, 4) & _mm256_set1_epi64x(0xF0F0F0F0F0F0F0F0ULL));
+    xy = _mm256_or_si256(
+        _mm256_and_si256(_mm256_srli_epi64(xy, 1), _mm256_set1_epi64x(0x5555555555555555ULL)), 
+        _mm256_and_si256(_mm256_slli_epi64(xy, 1), _mm256_set1_epi64x(0xAAAAAAAAAAAAAAAAULL)));
+    xy = _mm256_or_si256(
+        _mm256_and_si256(_mm256_srli_epi64(xy, 2), _mm256_set1_epi64x(0x3333333333333333ULL)), 
+        _mm256_and_si256(_mm256_slli_epi64(xy, 2), _mm256_set1_epi64x(0xCCCCCCCCCCCCCCCCULL)));
+    xy = _mm256_or_si256(
+        _mm256_and_si256(_mm256_srli_epi64(xy, 4), _mm256_set1_epi64x(0x0F0F0F0F0F0F0F0FULL)),
+        _mm256_and_si256(_mm256_slli_epi64(xy, 4), _mm256_set1_epi64x(0xF0F0F0F0F0F0F0F0ULL)));
     *w = _mm256_extract_epi64(xy, 3);
     *x = _mm256_extract_epi64(xy, 2);
     *y = _mm256_extract_epi64(xy, 1);
     *z = _mm256_extract_epi64(xy, 0);
-}
-
-inline void horizontal_mirror_m128(__m128i *xy){
-    *xy = (_mm_srli_epi64(*xy, 1) & _mm_set1_epi64x(0x5555555555555555ULL)) | 
-        (_mm_slli_epi64(*xy, 1) & _mm_set1_epi64x(0xAAAAAAAAAAAAAAAAULL));
-    *xy = (_mm_srli_epi64(*xy, 2) & _mm_set1_epi64x(0x3333333333333333ULL)) | 
-        (_mm_slli_epi64(*xy, 2) & _mm_set1_epi64x(0xCCCCCCCCCCCCCCCCULL));
-    *xy = (_mm_srli_epi64(*xy, 4) & _mm_set1_epi64x(0x0F0F0F0F0F0F0F0FULL)) | 
-        (_mm_slli_epi64(*xy, 4) & _mm_set1_epi64x(0xF0F0F0F0F0F0F0F0ULL));
 }
 
 // direction is couner clockwise
@@ -297,25 +294,35 @@ inline uint64_t unrotate_315(uint64_t x){
     return rotate_180(unrotate_135(x));
 }
 
+#if USE_MINUS_NTZ
+    inline uint_fast8_t ntz(uint64_t *x){
+        return pop_count_ull((*x & (-(*x))) - 1);
+    }
+#else
+    inline uint_fast8_t ntz(uint64_t *x){
+        return pop_count_ull((*x & (~(*x) + 1)) - 1);
+    }
+#endif
+
 inline uint_fast8_t first_bit(uint64_t *x){
-    return pop_count_ull((*x & (-(*x))) - 1);
+    return ntz(x);
 }
 
 inline uint_fast8_t next_bit(uint64_t *x){
     *x &= *x - 1;
-    return pop_count_ull((*x & (-(*x))) - 1);
+    return ntz(x);
 }
 
 inline uint_fast8_t next_odd_bit(uint64_t *x, uint_fast8_t parity){
     *x &= *x - 1;
-    uint_fast8_t res = pop_count_ull((*x & (-(*x))) - 1);
+    uint_fast8_t res = ntz(x);
     while (*x && (parity & cell_div4[res]) == 0)
         res = next_odd_bit(x, parity);
     return res;
 }
 
 inline uint_fast8_t first_odd_bit(uint64_t *x, uint_fast8_t parity){
-    uint_fast8_t res = pop_count_ull((*x & (-(*x))) - 1);
+    uint_fast8_t res = ntz(x);
     while (*x && (parity & cell_div4[res]) == 0)
         res = next_odd_bit(x, parity);
     return res;
@@ -323,14 +330,14 @@ inline uint_fast8_t first_odd_bit(uint64_t *x, uint_fast8_t parity){
 
 inline uint_fast8_t next_even_bit(uint64_t *x, uint_fast8_t parity){
     *x &= *x - 1;
-    uint_fast8_t res = pop_count_ull((*x & (-(*x))) - 1);
+    uint_fast8_t res = ntz(x);
     while (*x && (parity & cell_div4[res]))
         res = next_even_bit(x, parity);
     return res;
 }
 
 inline uint_fast8_t first_even_bit(uint64_t *x, uint_fast8_t parity){
-    uint_fast8_t res = pop_count_ull((*x & (-(*x))) - 1);
+    uint_fast8_t res = ntz(x);
     while (*x && (parity & cell_div4[res]))
         res = next_even_bit(x, parity);
     return res;

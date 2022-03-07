@@ -29,4 +29,7 @@
 #define LEGAL_CALCULATION_MODE 2
 
 // pop_count
-#define USE_BUILTIN_POPCOUNT true
+#define USE_BUILTIN_POPCOUNT false
+
+// NTZ
+#define USE_MINUS_NTZ false
