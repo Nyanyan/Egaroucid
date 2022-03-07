@@ -65,25 +65,33 @@ void print_board(uint64_t p, uint64_t o){
     }
 }
 
-inline int pop_count_ull(uint64_t x){
-    x = x - ((x >> 1) & 0x5555555555555555ULL);
-    x = (x & 0x3333333333333333ULL) + ((x >> 2) & 0x3333333333333333ULL);
-    x = (x + (x >> 4)) & 0x0F0F0F0F0F0F0F0FULL;
-    x = (x * 0x0101010101010101ULL) >> 56;
-    return x;
-}
+#if USE_BUILTIN_POPCOUNT
+    #define	pop_count_ull(x) __builtin_popcountll(x)
+    #define pop_count_uint(x) __builtin_popcount(x)
+    #define pop_count_uchar(x) __builtin_popcount(x)
+#else
 
-inline int pop_count_uint(uint32_t x){
-    x = (x & 0x55555555) + ((x & 0xAAAAAAAA) >> 1);
-    x = (x & 0x33333333) + ((x & 0xCCCCCCCC) >> 2);
-    return (x & 0x0F0F0F0F) + ((x & 0xF0F0F0F0) >> 4);
-}
+    inline int pop_count_ull(uint64_t x){
+        x = x - ((x >> 1) & 0x5555555555555555ULL);
+        x = (x & 0x3333333333333333ULL) + ((x >> 2) & 0x3333333333333333ULL);
+        x = (x + (x >> 4)) & 0x0F0F0F0F0F0F0F0FULL;
+        x = (x * 0x0101010101010101ULL) >> 56;
+        return x;
+    }
 
-inline int pop_count_uchar(uint8_t x){
-    x = (x & 0b01010101) + ((x & 0b10101010) >> 1);
-    x = (x & 0b00110011) + ((x & 0b11001100) >> 2);
-    return (x & 0b00001111) + ((x & 0b11110000) >> 4);
-}
+    inline int pop_count_uint(uint32_t x){
+        x = (x & 0x55555555) + ((x & 0xAAAAAAAA) >> 1);
+        x = (x & 0x33333333) + ((x & 0xCCCCCCCC) >> 2);
+        return (x & 0x0F0F0F0F) + ((x & 0xF0F0F0F0) >> 4);
+    }
+
+    inline int pop_count_uchar(uint8_t x){
+        x = (x & 0b01010101) + ((x & 0b10101010) >> 1);
+        x = (x & 0b00110011) + ((x & 0b11001100) >> 2);
+        return (x & 0b00001111) + ((x & 0b11110000) >> 4);
+    }
+
+#endif
 
 inline uint32_t pop_digit(uint64_t x, int place){
     return (uint32_t)(1ULL & (x >> place));

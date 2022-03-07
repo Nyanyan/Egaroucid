@@ -2455,8 +2455,66 @@ endsearch time 1775 mpct 0 policy 55 value 38 nodes 25120083 nps 14144190
 #49 depth 26 value 16 policy e1 nodes 643484526 whole time 4467 search time 4442 nps 144863693
 16.878 sec
 
+2022/03/07 haswell builtin-popcount
+#40 depth 20 value 38 policy a2 nodes 24589901 whole time 145 search time 138 nps 178187688
+#41 depth 22 value 0 policy h4 nodes 31252833 whole time 298 search time 281 nps 111220046
+#42 depth 22 value 6 policy g2 nodes 37057463 whole time 339 search time 324 nps 114374885
+#43 depth 23 value -12 policy c7 nodes 153392212 whole time 1026 search time 1011 nps 151723256
+#44 depth 23 value -14 policy d2 nodes 23087268 whole time 413 search time 398 nps 58008211
+#45 depth 24 value 6 policy b2 nodes 601555167 whole time 3156 search time 3141 nps 191517085
+#46 depth 24 value -8 policy b3 nodes 127737758 whole time 980 search time 964 nps 132508047
+#47 depth 25 value 4 policy g2 nodes 49100929 whole time 512 search time 489 nps 100410897
+#48 depth 25 value 28 policy f6 nodes 851408308 whole time 4792 search time 4770 nps 178492307
+#49 depth 26 value 16 policy e1 nodes 641583652 whole time 4158 search time 4134 nps 155196819
+15.819 sec
+
+2022/03/07 haswell builtin-popcount
+#40 depth 20 value 38 policy a2 nodes 24632439 whole time 169 search time 161 nps 152996515
+#41 depth 22 value 0 policy h4 nodes 31247926 whole time 312 search time 297 nps 105211872
+#42 depth 22 value 6 policy g2 nodes 37042398 whole time 335 search time 321 nps 115396878
+#43 depth 23 value -12 policy c7 nodes 149792583 whole time 1009 search time 994 nps 150696763
+#44 depth 23 value -14 policy d2 nodes 47763413 whole time 568 search time 553 nps 86371452
+#45 depth 24 value 6 policy b2 nodes 585367659 whole time 3069 search time 3055 nps 191609708
+#46 depth 24 value -8 policy b3 nodes 123699735 whole time 1000 search time 985 nps 125583487
+#47 depth 25 value 4 policy g2 nodes 49724633 whole time 524 search time 503 nps 98856129
+#48 depth 25 value 28 policy f6 nodes 857555783 whole time 4812 search time 4790 nps 179030434
+#49 depth 26 value 16 policy e1 nodes 753906939 whole time 4638 search time 4614 nps 163395522
+#50 depth 26 value 10 policy d8 nodes 2721575943 whole time 14934 search time 14912 nps 182509116
+#51 depth 27 value 6 policy a3 nodes 579361510 whole time 4693 search time 4669 nps 124086851
+#52 depth 27 value 0 policy a3 nodes 762480674 whole time 6044 search time 6019 nps 126678962
+#53 depth 28 value -2 policy d8 nodes 7373348768 whole time 49576 search time 49481 nps 149013737
+#54 depth 28 value -2 policy c7 nodes 8800321075 whole time 54338 search time 54283 nps 162119283
+#55 depth 29 value 2 policy e2 nodes 31217669988 whole time 231341 search time 231230 nps 135007005
+#56 depth 29 value 2 policy h5 nodes 3231494694 whole time 27463 search time 27433 nps 117795891
+#57 depth 30 value -10 policy a6 nodes 15358676672 whole time 96690 search time 96667 nps 158882314
+#58 depth 30 value 4 policy g1 nodes 3131230988 whole time 27197 search time 27170 nps 115245895
+#59 depth 34 value 64 policy g8 nodes 941916 whole time 168 search time 147 nps 6407591
+528.88 sec
 
 /***** copy *****/
+
+2022/03/07 haswell builtin-popcount
+#40 depth 20 value 38 policy a2 nodes 24632439 whole time 169 search time 161 nps 152996515
+#41 depth 22 value 0 policy h4 nodes 31247926 whole time 312 search time 297 nps 105211872
+#42 depth 22 value 6 policy g2 nodes 37042398 whole time 335 search time 321 nps 115396878
+#43 depth 23 value -12 policy c7 nodes 149792583 whole time 1009 search time 994 nps 150696763
+#44 depth 23 value -14 policy d2 nodes 47763413 whole time 568 search time 553 nps 86371452
+#45 depth 24 value 6 policy b2 nodes 585367659 whole time 3069 search time 3055 nps 191609708
+#46 depth 24 value -8 policy b3 nodes 123699735 whole time 1000 search time 985 nps 125583487
+#47 depth 25 value 4 policy g2 nodes 49724633 whole time 524 search time 503 nps 98856129
+#48 depth 25 value 28 policy f6 nodes 857555783 whole time 4812 search time 4790 nps 179030434
+#49 depth 26 value 16 policy e1 nodes 753906939 whole time 4638 search time 4614 nps 163395522
+#50 depth 26 value 10 policy d8 nodes 2721575943 whole time 14934 search time 14912 nps 182509116
+#51 depth 27 value 6 policy a3 nodes 579361510 whole time 4693 search time 4669 nps 124086851
+#52 depth 27 value 0 policy a3 nodes 762480674 whole time 6044 search time 6019 nps 126678962
+#53 depth 28 value -2 policy d8 nodes 7373348768 whole time 49576 search time 49481 nps 149013737
+#54 depth 28 value -2 policy c7 nodes 8800321075 whole time 54338 search time 54283 nps 162119283
+#55 depth 29 value 2 policy e2 nodes 31217669988 whole time 231341 search time 231230 nps 135007005
+#56 depth 29 value 2 policy h5 nodes 3231494694 whole time 27463 search time 27433 nps 117795891
+#57 depth 30 value -10 policy a6 nodes 15358676672 whole time 96690 search time 96667 nps 158882314
+#58 depth 30 value 4 policy g1 nodes 3131230988 whole time 27197 search time 27170 nps 115245895
+#59 depth 34 value 64 policy g8 nodes 941916 whole time 168 search time 147 nps 6407591
+528.88 sec
 
 2022/03/07
 #40 depth 20 value 38 policy a2 nodes 24144900 whole time 161 search time 155 nps 155773548

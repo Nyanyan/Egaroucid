@@ -27,3 +27,6 @@
 
 // legal calculation
 #define LEGAL_CALCULATION_MODE 2
+
+// pop_count
+#define USE_BUILTIN_POPCOUNT true
