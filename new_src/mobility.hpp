@@ -14,7 +14,7 @@ inline uint64_t calc_some_mobility(uint64_t p, uint64_t o){
 
 #if LEGAL_CALCULATION_MODE < 2
     #if LEGAL_CALCULATION_MODE == 0
-    
+
         inline uint64_t calc_some_mobility_hv(uint64_t ph, uint64_t oh){
             uint64_t pv, ov;
             black_line_mirror_double(ph, oh, &pv, &ov);
@@ -41,15 +41,13 @@ inline uint64_t calc_some_mobility(uint64_t p, uint64_t o){
         inline uint64_t calc_some_mobility_hv(uint64_t ph, uint64_t oh){
             uint64_t pv, ov, phr, ohr, pvr, ovr;
             black_line_mirror_double(ph, oh, &pv, &ov);
-            //horizontal_mirror_double(ph, oh, &phr, &ohr);
-            //horizontal_mirror_double(pv, ov, &pvr, &ovr);
             horizontal_mirror_quad(ph, oh, pv, ov, &phr, &ohr, &pvr, &ovr);
             __m256i p1, o, res, mask;
             mask = _mm256_set1_epi64x(0x7F7F7F7F7F7F7F7FULL);
-            p1 = _mm256_set_epi64x(ph, pv, phr, pvr) & mask;
+            p1 = _mm256_and_si256(_mm256_set_epi64x(ph, pv, phr, pvr), mask);
             p1 = _mm256_slli_epi64(p1, 1);
             o = _mm256_set_epi64x(oh, ov, ohr, ovr);
-            res = ~(p1 | o) & (_mm256_add_epi64(p1, o & mask));
+            res = _mm256_and_si256(~_mm256_or_si256(p1, o), _mm256_add_epi64(p1, o & mask));
             
             uint64_t a, b;
             a = _mm256_extract_epi64(res, 1);
