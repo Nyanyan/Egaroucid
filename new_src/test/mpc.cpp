@@ -15,7 +15,7 @@ int main(){
         thread_pool.resize(16);
     #endif
     int depth;
-    bool searching = true;
+    //bool searching = true;
     Search search;
     while (true){
         search.board = input_board();
@@ -25,7 +25,7 @@ int main(){
         cin >> search.mpct;
         child_transpose_table.init();
         parent_transpose_table.init();
-        cout << nega_scout(&search, -HW2, HW2, depth, false, false) << endl;
+        cout << nega_scout(&search, -HW2, HW2, depth, false, LEGAL_UNDEFINED, false) << endl;
         //cout << nega_alpha_ordering(&search, -HW2, HW2, depth, false, false, &searching) << endl;
         //cout << nega_alpha(&search, -HW2, HW2, depth, false) << endl;
         //cout << nega_alpha(&search, -HW2, HW2, depth, false) << endl;

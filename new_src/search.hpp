@@ -37,8 +37,8 @@ constexpr int mpcd[41] = {
     0, 1, 0, 1, 2, 3, 2, 3, 4, 3, 
     4, 3, 4, 5, 4, 5, 6, 5, 6, 7, 
     6, 7, 6, 7, 8, 7, 8, 9, 8, 9, 
-    10, 9, 10, 11, 12, 11, 12, 13, 14, 13, 
-    14
+    10, 9, 10, 11, 12, 11, 12, 11, 12, 13, 
+    12
 };
 
 constexpr double mpcsd[N_PHASES][MID_MPC_MAX_DEPTH - MID_MPC_MIN_DEPTH + 1]={
@@ -75,11 +75,11 @@ constexpr double mpcsd[N_PHASES][MID_MPC_MAX_DEPTH - MID_MPC_MIN_DEPTH + 1]={
 };
 
 constexpr int mpcd_final[41] = {
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-    1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 
-    4, 4, 4, 5, 5, 5, 5, 6, 6, 6, 
-    6, 7, 7, 7, 7, 8, 8, 8, 8, 9, 
-    9
+    0, 1, 0, 1, 2, 3, 2, 3, 2, 3, 
+    4, 3, 4, 3, 4, 5, 4, 5, 6, 5, 
+    6, 5, 6, 7, 6, 7, 8, 7, 8, 7, 
+    8, 9, 8, 9, 10, 9, 10, 9, 10, 11, 
+    10
 };
 
 constexpr double mpcsd_final[END_MPC_MAX_DEPTH - END_MPC_MIN_DEPTH + 1] = {

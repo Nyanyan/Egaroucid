@@ -22,14 +22,14 @@
 #define USE_MULTI_THREAD true
 
 // prob cut
-#define USE_MID_MPC true
-#define USE_END_MPC true
+#define USE_MID_MPC false
+#define USE_END_MPC false
 
 // legal calculation
 #define LEGAL_CALCULATION_MODE 5
 
 // pop_count
-#define USE_BUILTIN_POPCOUNT false
+#define USE_BUILTIN_POPCOUNT true
 
 // NTZ
 #define USE_MINUS_NTZ false
