@@ -28,7 +28,7 @@ evaluate = subprocess.Popen('../new_src/test/a.exe'.split(), stdin=subprocess.PI
 sleep(1)
 
 min_depth = 2
-max_depth = 30
+max_depth = 20
 
 n_phases = 15
 n_scores = 17
@@ -71,7 +71,7 @@ def collect_data(num):
         return
     #for _ in trange(1000):
     depth = min_depth
-    max_num = 15000
+    max_num = 10000
     for tt, datum in enumerate(tqdm(data[:max_num])):
         #datum = data[randrange(0, len(data))]
         board, player, score = datum.split()
@@ -102,7 +102,7 @@ def collect_data(num):
         vhs[calc_score(v0)][calc_phase(n_stones)][depth - min_depth].append(vh)
         vds[calc_score(v0)][calc_phase(n_stones)][depth - min_depth].append(vd)
 
-for i in range(20, 21):
+for i in range(20, 23):
     collect_data(i)
 evaluate.kill()
 
@@ -119,7 +119,7 @@ for i in range(len(vh_vd)):
                 sd[i][j].append(1000000.0)
 
 with open('sigma_calculation.txt', 'w') as f:
-    for a in vh_vd:
+    for a in sd:
         for b in a:
             for c in b:
                 f.write(str(c) + '\n')
