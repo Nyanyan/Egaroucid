@@ -15,54 +15,65 @@ def calc_score(x):
 
 depth_width = max_depth - min_depth + 1
 
-vhs = [[[[] for _ in range(depth_width)] for _ in range(n_phases)] for _ in range(n_scores)]
-vds = [[[[] for _ in range(depth_width)] for _ in range(n_phases)] for _ in range(n_scores)]
+vhs = [[[] for _ in range(65)] for _ in range(65)]
+vds = [[[] for _ in range(65)] for _ in range(65)]
 
-sd = [[[-1 for _ in range(depth_width)] for _ in range(n_phases)] for _ in range(n_scores)]
+sd = [[-1 for _ in range(65)] for _ in range(65)]
 
 with open('sigma_calculation.txt', 'r') as f:
-    for i in range(n_scores):
-        for j in range(n_phases):
-            for k in range(depth_width):
-                sd[i][j][k] = float(f.readline())
+    for i in range(65):
+        for j in range(65):
+            sd[i][j] = float(f.readline())
 
-plot_y = [0.0 for _ in range(depth_width)]
-nums = [0 for _ in range(depth_width)]
-for i in range(n_scores):
-    for j in range(n_phases):
-        for k in range(depth_width):
-            if sd[i][j][k] != 1000000.0:
-                plot_y[k] += sd[i][j][k]
-                nums[k] += 1
+plot_y = [0.0 for _ in range(65)]
+nums = [0 for _ in range(65)]
+for i in range(65):
+    for j in range(65):
+        if sd[i][j] != 1000000.0:
+            plot_y[i] += sd[i][j]
+            nums[i] += 1
 for i in range(depth_width):
-    plot_y[i] /= nums[i]
-plt.plot(range(min_depth, max_depth + 1), plot_y)
+    if nums[i]:
+        plot_y[i] /= nums[i]
+plt.plot(range(65), plot_y)
+plt.show()
+
+plot_y = [0.0 for _ in range(65)]
+nums = [0 for _ in range(65)]
+for i in range(65):
+    for j in range(65):
+        if sd[i][j] != 1000000.0:
+            plot_y[j] += sd[i][j]
+            nums[j] += 1
+for i in range(depth_width):
+    if nums[i]:
+        plot_y[i] /= nums[i]
+plt.plot(range(65), plot_y)
 plt.show()
 
 params = [
-    -0.011837141023154252, -0.9743210424032124, 0.022783708785363954, 0.1130461583478094, 1.9194406441955931, 11.830295022819863
+    1.0 for _ in range(5)
 ]
 
-def f(depth, phase, score):
-    x = params[0] * depth + params[1] * phase + params[2] * score
-    return params[3] * x * x + params[4] * x + params[5]
+def f(n_stones, depth):
+    x = params[0] * n_stones + params[1] * depth
+    return params[2] * x * x + params[3] * x + params[4]
 
 def scoring():
     res = 0
-    for i in range(n_scores):
-        for j in range(n_phases):
-            for k in range(depth_width):
-                ans = sd[i][j][k]
-                if ans != 1000000.0:
-                    pred = f(k + min_depth, j, i)
-                    res += (pred - ans) ** 2
+    for i in range(65):
+        for j in range(65):
+            ans = sd[i][j]
+            if ans != 1000000.0:
+                pred = f(i, j)
+                res += (pred - ans) ** 2
     return res
 
 score = scoring()
 print(score)
 
 while True:
-    idx = randrange(0, 6)
+    idx = randrange(0, 5)
     f_param = params[idx]
     params[idx] += random() - 0.5
     n_score = scoring()

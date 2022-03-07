@@ -33,16 +33,10 @@ max_depth = 20
 n_phases = 15
 n_scores = 17
 
-def calc_phase(x):
-    return (x - 4) // 4
-
-def calc_score(x):
-    return (x + 64) // 8
-
 depth_width = max_depth - min_depth + 1
 
-vhs = [[[[] for _ in range(depth_width)] for _ in range(n_phases)] for _ in range(n_scores)]
-vds = [[[[] for _ in range(depth_width)] for _ in range(n_phases)] for _ in range(n_scores)]
+vhs = [[[] for _ in range(65)] for _ in range(65)]
+vds = [[[] for _ in range(65)] for _ in range(65)]
 
 vh_vd = []
 
@@ -88,10 +82,12 @@ def collect_data(num):
             for j in range(hw):
                 board_proc += board[i * hw + j]
             board_proc += '\n'
+        '''
         board_proc1 = board_proc + '0\n0\n1.18\n'
         evaluate.stdin.write(board_proc1.encode('utf-8'))
         evaluate.stdin.flush()
         v0 = int(evaluate.stdout.readline().decode().strip())
+        '''
         board_proc2 = board_proc + str(mpcd[depth]) + '\n0\n1.18\n'
         #print(board_proc)
         evaluate.stdin.write(board_proc2.encode('utf-8'))
@@ -99,27 +95,24 @@ def collect_data(num):
         vd = float(evaluate.stdout.readline().decode().strip())
         vh = float(score)
         #print(score)
-        vhs[calc_score(v0)][calc_phase(n_stones)][depth - min_depth].append(vh)
-        vds[calc_score(v0)][calc_phase(n_stones)][depth - min_depth].append(vd)
+        vhs[n_stones][depth].append(vh)
+        vds[n_stones][depth].append(vd)
 
 for i in range(20, 23):
     collect_data(i)
 evaluate.kill()
 
-vh_vd = [[[[vhs[i][j][k][l] - vds[i][j][k][l] for l in range(len(vhs[i][j][k]))] for k in range(len(vhs[i][j]))] for j in range(len(vhs[i]))] for i in range(len(vhs))]
+vh_vd = [[[vhs[i][j][k] - vds[i][j][k] for k in range(len(vhs[i][j]))] for j in range(len(vhs[i]))] for i in range(len(vhs))]
 sd = []
 for i in range(len(vh_vd)):
     sd.append([])
     for j in range(len(vh_vd[i])):
-        sd[i].append([])
-        for k in range(len(vh_vd[i][j])):
-            if len(vh_vd[i][j][k]) > 1:
-                sd[i][j].append(round(statistics.stdev(vh_vd[i][j][k]), 4))
-            else:
-                sd[i][j].append(1000000.0)
+        if len(vh_vd[i][j]) > 1:
+            sd[i].append(round(statistics.stdev(vh_vd[i][j]), 4))
+        else:
+            sd[i].append(1000000.0)
 
 with open('sigma_calculation.txt', 'w') as f:
     for a in sd:
         for b in a:
-            for c in b:
-                f.write(str(c) + '\n')
+            f.write(str(b) + '\n')

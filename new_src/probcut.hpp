@@ -7,8 +7,8 @@
 
 using namespace std;
 
-constexpr double mpc_params[6] = {
-    -0.011837141023154252, -0.9743210424032124, 0.022783708785363954, 0.1130461583478094, 1.9194406441955931, 11.830295022819863
+constexpr double mpc_params[5] = {
+    -0.3576904081984609, -0.06858900290491077, 0.060336356272113645, 1.8267350505877626, 17.637073129901182
 };
 
 constexpr int mpcd[61] = {
@@ -20,7 +20,7 @@ constexpr int mpcd[61] = {
     14, 13, 14, 13, 14, 15, 14, 15, 16, 15,
     16
 };
-
+/*
 inline double probcut_phase(Board *b){
     return (double)(b->n - 4) / 4.0;
 }
@@ -33,13 +33,19 @@ inline double probcut_sigma(Board *b, int depth){
     double x = mpc_params[0] * (double)depth + mpc_params[1] * probcut_phase(b) + mpc_params[2] * probcut_score(mid_evaluate(b));
     return mpc_params[3] * x * x + mpc_params[4] * x + mpc_params[5];
 }
+*/
+
+inline double probcut_sigma(int n_stones, int depth){
+    double x = mpc_params[0] * (double)n_stones + mpc_params[1] * depth;
+    return mpc_params[2] * x * x + mpc_params[3] * x + mpc_params[4];
+}
 
 int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped);
 int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped);
 int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal);
 
 inline bool mpc_higher(Search *search, int beta, int depth, uint64_t legal){
-    int bound = beta + ceil(search->mpct * probcut_sigma(&search->board, depth));
+    int bound = beta + ceil(search->mpct * probcut_sigma(search->board.n, depth));
     if (bound > HW2)
         bound = HW2; //return false;
     bool res;
@@ -67,7 +73,7 @@ inline bool mpc_higher(Search *search, int beta, int depth, uint64_t legal){
 }
 
 inline bool mpc_lower(Search *search, int alpha, int depth, uint64_t legal){
-    int bound = alpha - ceil(search->mpct * probcut_sigma(&search->board, depth));
+    int bound = alpha - ceil(search->mpct * probcut_sigma(search->board.n, depth));
     if (bound < -HW2)
         bound = -HW2; //return false;
     bool res;

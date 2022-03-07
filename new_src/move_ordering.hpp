@@ -7,6 +7,7 @@
 #include "flip.hpp"
 #include "transpose_table.hpp"
 #include "midsearch.hpp"
+#include "probcut.hpp"
 
 #define N_MOVE_ORDERING_PATTERNS 10
 #define MAX_MOVE_ORDERING_EVALUATE_IDX 65536
@@ -111,31 +112,6 @@ inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int
 inline void move_ordering(Search *search, vector<Flip> &move_list, int depth, int alpha, int beta, bool is_end_search){
     if (move_list.size() < 2)
         return;
-    //uint32_t hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
-    //int best_move = child_transpose_table.get(&search->board, hash_code);
-    /*
-    int best_score = -INF, best_idx = 0, idx = 0;
-    if (best_move == TRANSPOSE_TABLE_UNDEFINED){
-        int eval_alpha = -min(HW2, beta + MOVE_ORDERING_VALUE_OFFSET);
-        int eval_beta = -max(-HW2, alpha - MOVE_ORDERING_VALUE_OFFSET);
-        int eval_depth = depth / 8;
-        for (Flip &flip: move_list){
-            move_evaluate(search, &flip, best_move, eval_alpha, eval_beta, eval_depth);
-            if (flip.value > best_score){
-                best_score = flip.value;
-                best_idx = idx;
-            }
-            ++idx;
-        }
-    } else{
-        for (Flip &flip: move_list){
-            if (flip.pos == best_move)
-                best_idx = idx;
-            ++idx;
-        }
-    }
-    move_sort_top(move_list, best_idx);
-    */
     int eval_alpha = -min(HW2, beta + MOVE_ORDERING_VALUE_OFFSET);
     int eval_beta = -max(-HW2, alpha - MOVE_ORDERING_VALUE_OFFSET);
     int eval_depth = depth / 8;
@@ -171,28 +147,6 @@ inline void move_evaluate_fast_first(Search *search, Flip *flip){
 inline void move_ordering_fast_first(Search *search, vector<Flip> &move_list){
     if (move_list.size() < 2)
         return;
-    //uint32_t hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
-    //int best_move = child_transpose_table.get(&search->board, hash_code);
-    /*
-    int best_idx = 0, best_score = -INF, idx = 0;
-    if (best_move == TRANSPOSE_TABLE_UNDEFINED){
-        for (Flip &flip: move_list){
-            move_evaluate_fast_first(search, &flip, best_move);
-            if (flip.value > best_score){
-                best_score = flip.value;
-                best_idx = idx;
-            }
-            ++idx;
-        }
-    } else{
-        for (Flip &flip: move_list){
-            if (flip.pos == best_move)
-                best_idx = idx;
-            ++idx;
-        }
-    }
-    move_sort_top(move_list, best_idx);
-    */
     for (Flip &flip: move_list)
         move_evaluate_fast_first(search, &flip);
     sort(move_list.begin(), move_list.end(), cmp_move_ordering);

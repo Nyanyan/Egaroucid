@@ -242,7 +242,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
         #else
             for (const Flip &flip: move_list){
                 search->board.move(&flip);
-                    g = -nega_alpha_ordering(search, -beta, -alpha, depth - 1, false, is_end_search, searching);
+                    g = -nega_alpha_ordering(search, -beta, -alpha, depth - 1, false, flip.n_legal, is_end_search, searching);
                 search->board.undo(&flip);
                 alpha = max(alpha, g);
                 if (v < g){
