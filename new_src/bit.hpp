@@ -250,6 +250,18 @@ inline uint64_t rotate_45(uint64_t x){
     return x ^ a ^ (a << 32);
 }
 
+inline void rotate_45_double(uint64_t *x, uint64_t *y){
+    __m128i xy = _mm_set_epi64x(*x, *y);
+    __m128i a = _mm_and_si128(_mm_xor_si128(xy, _mm_srli_epi64(xy, 8)), _mm_set1_epi64x(0x0055005500550055ULL));
+    xy = _mm_xor_si128(_mm_xor_si128(xy, a), _mm_slli_epi64(a, 8));
+    a = _mm_and_si128(_mm_xor_si128(xy, _mm_srli_epi64(xy, 16)), _mm_set1_epi64x(0x0000CC660000CC66ULL));
+    xy = _mm_xor_si128(_mm_xor_si128(xy, a), _mm_slli_epi64(a, 16));
+    a = _mm_and_si128(_mm_xor_si128(xy, _mm_srli_epi64(xy, 32)), _mm_set1_epi64x(0x00000000C3E1F078ULL));
+    xy = _mm_xor_si128(_mm_xor_si128(xy, a), _mm_slli_epi64(a, 32));
+    *y = _mm_cvtsi128_si64(xy);
+    *x = _mm_cvtsi128_si64(_mm_unpackhi_epi64(xy, xy));
+}
+
 // unrotate 45 degrees counter clockwise
 inline uint64_t unrotate_45(uint64_t x){
     uint64_t a = (x ^ (x >> 32)) & 0x00000000C3E1F078ULL;
@@ -275,6 +287,18 @@ inline uint64_t rotate_135(uint64_t x){
     x = x ^ a ^ (a << 16);
     a = (x ^ (x >> 32)) & 0x00000000C3870F1EULL;
     return x ^ a ^ (a << 32);
+}
+
+inline void rotate_135_double(uint64_t *x, uint64_t *y){
+    __m128i xy = _mm_set_epi64x(*x, *y);
+    __m128i a = _mm_and_si128(_mm_xor_si128(xy, _mm_srli_epi64(xy, 8)), _mm_set1_epi64x(0x00AA00AA00AA00AAULL));
+    xy = _mm_xor_si128(_mm_xor_si128(xy, a), _mm_slli_epi64(a, 8));
+    a = _mm_and_si128(_mm_xor_si128(xy, _mm_srli_epi64(xy, 16)), _mm_set1_epi64x(0x0000336600003366ULL));
+    xy = _mm_xor_si128(_mm_xor_si128(xy, a), _mm_slli_epi64(a, 16));
+    a = _mm_and_si128(_mm_xor_si128(xy, _mm_srli_epi64(xy, 32)), _mm_set1_epi64x(0x00000000C3870F1EULL));
+    xy = _mm_xor_si128(_mm_xor_si128(xy, a), _mm_slli_epi64(a, 32));
+    *y = _mm_cvtsi128_si64(xy);
+    *x = _mm_cvtsi128_si64(_mm_unpackhi_epi64(xy, xy));
 }
 
 inline uint64_t unrotate_135(uint64_t x){

@@ -61,26 +61,34 @@ inline uint64_t calc_some_mobility(uint64_t p, uint64_t o){
     #endif
 
     inline uint64_t calc_some_mobility_diag9(uint64_t p, uint64_t o){
-        uint64_t p1 = (p & 0x5F6F777B7D7E7F3FULL) << 1;
-        uint64_t res = ~(p1 | o) & (p1 + (o & 0x5F6F777B7D7E7F3FULL));
-        horizontal_mirror_double(&p, &o);
-        p1 = (p & 0x7D7B776F5F3F7F7EULL) << 1;
-        return res | horizontal_mirror(~(p1 | o) & (p1 + (o & 0x7D7B776F5F3F7F7EULL)));
+        rotate_45_double(&p, &o);
+        uint64_t p_r, o_r;
+        horizontal_mirror_double(p, o, &p_r, &o_r);
+        __m128i mask = _mm_set_epi64x(0x5F6F777B7D7E7F3FULL, 0x7D7B776F5F3F7F7EULL);
+        __m128i p1 = _mm_and_si128(_mm_set_epi64x(p, p_r), mask);
+        p1 = _mm_slli_epi64(p1, 1);
+        __m128i oo = _mm_set_epi64x(o, o_r);
+        __m128i res = _mm_and_si128(~_mm_or_si128(p1, oo), _mm_add_epi64(p1, oo & mask));
+        return unrotate_45(horizontal_mirror(_mm_cvtsi128_si64(res)) | _mm_cvtsi128_si64(_mm_unpackhi_epi64(res, res)));
     }
 
     inline uint64_t calc_some_mobility_diag7(uint64_t p, uint64_t o){
-        uint64_t p1 = (p & 0x7D7B776F5F3F7F7EULL) << 1;
-        uint64_t res = ~(p1 | o) & (p1 + (o & 0x7D7B776F5F3F7F7EULL));
-        horizontal_mirror_double(&p, &o);
-        p1 = (p & 0x5F6F777B7D7E7F3FULL) << 1;
-        return res | horizontal_mirror(~(p1 | o) & (p1 + (o & 0x5F6F777B7D7E7F3FULL)));
+        rotate_135_double(&p, &o);
+        uint64_t p_r, o_r;
+        horizontal_mirror_double(p, o, &p_r, &o_r);
+        __m128i mask = _mm_set_epi64x(0x7D7B776F5F3F7F7EULL, 0x5F6F777B7D7E7F3FULL);
+        __m128i p1 = _mm_and_si128(_mm_set_epi64x(p, p_r), mask);
+        p1 = _mm_slli_epi64(p1, 1);
+        __m128i oo = _mm_set_epi64x(o, o_r);
+        __m128i res = _mm_and_si128(~_mm_or_si128(p1, oo), _mm_add_epi64(p1, oo & mask));
+        return unrotate_135(horizontal_mirror(_mm_cvtsi128_si64(res)) | _mm_cvtsi128_si64(_mm_unpackhi_epi64(res, res)));
     }
 
     inline uint64_t calc_legal(uint64_t p, uint64_t o){
         uint64_t res = 
             calc_some_mobility_hv(p, o) | 
-            unrotate_45(calc_some_mobility_diag9(rotate_45(p), rotate_45(o))) | 
-            unrotate_135(calc_some_mobility_diag7(rotate_135(p), rotate_135(o)));
+            calc_some_mobility_diag9(p, o) | 
+            calc_some_mobility_diag7(p, o);
         return res & ~(p | o);
     }
 
