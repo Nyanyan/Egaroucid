@@ -177,11 +177,7 @@ inline bool init_evaluation_calc(){
 
 bool evaluate_init(){
     init_evaluation_base();
-    #if !EVAL_MODE
-        return init_evaluation_calc();
-    #else
-        return true;
-    #endif
+    return init_evaluation_calc();
 }
 
 inline uint64_t calc_surround_part(const uint64_t player, const int dr){

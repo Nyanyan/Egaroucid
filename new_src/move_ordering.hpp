@@ -18,6 +18,7 @@
 #define W_WIPEOUT 1000000000
 
 #define W_VALUE 8
+#define W_VALUE_SHALLOW 4
 #define W_CELL_WEIGHT 1
 #define W_MOBILITY 16
 //#define W_SURROUND 8
@@ -60,10 +61,10 @@ inline void move_evaluate(Search *search, Flip *flip, const int best_move, const
                 flip->value -= pop_count_ull(flip->n_legal) * W_MOBILITY;
                 switch(depth){
                     case 0:
-                        flip->value += ((HW2 - mid_evaluate(&search->board)) >> 1) * W_VALUE;
+                        flip->value += (HW2 - mid_evaluate(&search->board)) * W_VALUE_SHALLOW;
                         break;
                     case 1:
-                        flip->value += ((HW2 - nega_alpha_eval1(search, alpha, beta, false))) * W_VALUE;
+                        flip->value += (HW2 - nega_alpha_eval1(search, alpha, beta, false)) * W_VALUE;
                         break;
                     default:
                         //bool use_mpc = search->use_mpc;
