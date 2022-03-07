@@ -2553,7 +2553,31 @@ endsearch time 1775 mpct 0 policy 55 value 38 nodes 25120083 nps 14144190
 #49 depth 26 value 16 policy e1 nodes 955866121 whole time 5872 search time 5841 nps 163647683
 21.613 sec
 
+2022/03/08 use same mpc in mpc
+#40 depth 20 value 38 policy a2 nodes 25514559 whole time 164 search time 147 nps 173568428
+#41 depth 22 value 0 policy h4 nodes 33809649 whole time 388 search time 366 nps 92376090
+#42 depth 22 value 6 policy g2 nodes 54551288 whole time 417 search time 397 nps 137408785
+#43 depth 23 value -12 policy c7 nodes 198116656 whole time 1143 search time 1121 nps 176732074
+#44 depth 23 value -14 policy d2 nodes 103960372 whole time 896 search time 876 nps 118676223
+#45 depth 24 value 6 policy b2 nodes 841757484 whole time 4433 search time 4403 nps 191178170
+#46 depth 24 value -8 policy b3 nodes 214612522 whole time 1443 search time 1414 nps 151776889
+#47 depth 25 value 4 policy g2 nodes 159217200 whole time 923 search time 894 nps 178095302
+#48 depth 25 value 28 policy f6 nodes 1073596717 whole time 5449 search time 5420 nps 198080575
+#49 depth 26 value 16 policy e1 nodes 897390036 whole time 5258 search time 5228 nps 171650733
+20.514 sec
 
+2022/03/08 mid-fast-depth == 2
+#40 depth 20 value 38 policy a2 nodes 25412871 whole time 163 search time 148 nps 171708587
+#41 depth 22 value 0 policy h4 nodes 35688089 whole time 372 search time 349 nps 102258134
+#42 depth 22 value 6 policy g2 nodes 65789566 whole time 445 search time 423 nps 155530888
+#43 depth 23 value -12 policy c7 nodes 164271197 whole time 991 search time 970 nps 169351749
+#44 depth 23 value -14 policy d2 nodes 92778636 whole time 794 search time 772 nps 120179580
+#45 depth 24 value 6 policy b2 nodes 861669153 whole time 4508 search time 4480 nps 192336864
+#46 depth 24 value -8 policy b3 nodes 213492509 whole time 1385 search time 1356 nps 157442853
+#47 depth 25 value 4 policy g2 nodes 140051061 whole time 853 search time 825 nps 169758861
+#48 depth 25 value 28 policy f6 nodes 1007573620 whole time 5235 search time 5206 nps 193540841
+#49 depth 26 value 16 policy e1 nodes 915103286 whole time 5206 search time 5176 nps 176797389
+19.952 sec
 
 
 
