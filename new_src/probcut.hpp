@@ -7,8 +7,8 @@
 
 using namespace std;
 
-constexpr double mpc_params[5] = {
-    -0.3576904081984609, -0.06858900290491077, 0.060336356272113645, 1.8267350505877626, 17.637073129901182
+constexpr double mpc_params[6] = {
+    -0.2876840081941344, 0.007799353401354736, 6.17021982437165, 0.08237850767122812, 0.885064311796676, 6.460572929289731
 };
 
 constexpr int mpcd[61] = {
@@ -36,8 +36,8 @@ inline double probcut_sigma(Board *b, int depth){
 */
 
 inline double probcut_sigma(int n_stones, int depth){
-    double x = mpc_params[0] * (double)n_stones + mpc_params[1] * depth;
-    return mpc_params[2] * x * x + mpc_params[3] * x + mpc_params[4];
+    double x = mpc_params[0] * (double)n_stones + mpc_params[1] * depth + mpc_params[2];
+    return mpc_params[3] * x * x + mpc_params[4] * x + mpc_params[5];
 }
 
 int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped);

@@ -50,7 +50,7 @@ int main(){
             if (depth >= 25){
                 parent_transpose_table.init();
                 strt2 = tim();
-                search.mpct = 1.8;
+                search.mpct = 2.0;
                 search.use_mpc = true;
                 alpha = max(-HW2, g - 1);
                 beta = min(HW2, g + 1);

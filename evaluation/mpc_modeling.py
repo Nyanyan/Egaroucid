@@ -52,12 +52,12 @@ plt.plot(range(65), plot_y)
 plt.show()
 
 params = [
-    1.0 for _ in range(5)
+    -0.2876840081941344, 0.007799353401354736, 6.17021982437165, 0.08237850767122812, 0.885064311796676, 6.460572929289731
 ]
 
 def f(n_stones, depth):
-    x = params[0] * n_stones + params[1] * depth
-    return params[2] * x * x + params[3] * x + params[4]
+    x = params[0] * n_stones + params[1] * depth + params[2]
+    return params[3] * x * x + params[4] * x + params[5]
 
 def scoring():
     res = 0
@@ -73,7 +73,7 @@ score = scoring()
 print(score)
 
 while True:
-    idx = randrange(0, 5)
+    idx = randrange(0, 6)
     f_param = params[idx]
     params[idx] += random() - 0.5
     n_score = scoring()
