@@ -8,6 +8,7 @@
 #include "evaluate.hpp"
 #include "search.hpp"
 #include "move_ordering.hpp"
+#include "probcut.hpp"
 #include "transpose_table.hpp"
 #if USE_MULTI_THREAD
     #include "thread_pool.hpp"
@@ -15,60 +16,6 @@
 #endif
 
 using namespace std;
-
-int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped);
-int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped);
-int nega_alpha_end_nomemo(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal);
-
-inline bool mpc_end_higher(Search *search, int beta, uint64_t legal){
-    const int depth = HW2 - search->board.n;
-    int bound = beta + ceil(search->mpct * mpcsd_final[depth - END_MPC_MIN_DEPTH]);
-    bool res;
-    switch(mpcd_final[depth]){
-        case 0:
-            res = mid_evaluate(&search->board) >= bound;
-            break;
-        case 1:
-            res = nega_alpha_eval1(search, bound - 1, bound, false) >= bound;
-            break;
-        default:
-            if (mpcd_final[depth] <= MID_FAST_DEPTH)
-                res = nega_alpha(search, bound - 1, bound, mpcd_final[depth], false) >= bound;
-            else{
-                double mpct = search->mpct;
-                search->mpct = 1.18;
-                    res = nega_alpha_end_nomemo(search, bound - 1, bound, mpcd_final[depth], false, legal) >= bound;
-                search->mpct = mpct;
-            }
-            break;
-    }
-    return res;
-}
-
-inline bool mpc_end_lower(Search *search, int alpha, uint64_t legal){
-    const int depth = HW2 - search->board.n;
-    int bound = alpha - ceil(search->mpct * mpcsd_final[depth - END_MPC_MIN_DEPTH]);
-    bool res;
-    switch(mpcd_final[depth]){
-        case 0:
-            res = mid_evaluate(&search->board) <= bound;
-            break;
-        case 1:
-            res = nega_alpha_eval1(search, bound, bound + 1, false) <= bound;
-            break;
-        default:
-            if (mpcd_final[depth] <= MID_FAST_DEPTH)
-                res = nega_alpha(search, bound, bound + 1, mpcd_final[depth], false) <= bound;
-            else{
-                double mpct = search->mpct;
-                search->mpct = 1.18;
-                    res = nega_alpha_end_nomemo(search, bound, bound + 1, mpcd_final[depth], false, legal) <= bound;
-                search->mpct = mpct;
-            }
-            break;
-    }
-    return res;
-}
 
 int nega_alpha_end_nomemo(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal){
     if (!global_searching)
@@ -484,10 +431,11 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
         beta = min(beta, u);
     #endif
     #if USE_END_MPC
-        if (END_MPC_MIN_DEPTH <= HW2 - search->board.n && HW2 - search->board.n <= END_MPC_MAX_DEPTH && search->use_mpc){
-            if (mpc_end_higher(search, beta, legal))
+        int depth = HW2 - search->board.n;
+        if (search->use_mpc){
+            if (mpc_higher(search, beta, depth, legal))
                 return beta;
-            if (mpc_end_lower(search, alpha, legal))
+            if (mpc_lower(search, alpha, depth, legal))
                 return alpha;
         }
     #endif

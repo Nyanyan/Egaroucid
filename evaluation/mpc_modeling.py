@@ -39,7 +39,9 @@ for i in range(depth_width):
 plt.plot(range(min_depth, max_depth + 1), plot_y)
 plt.show()
 
-params = [-0.01162423449752914, -0.9699640862387829, 0.032504124127035405, 0.11349651033096486, 1.8997087721680037, 11.634261529155676]
+params = [
+    -0.011837141023154252, -0.9743210424032124, 0.022783708785363954, 0.1130461583478094, 1.9194406441955931, 11.830295022819863
+]
 
 def f(depth, phase, score):
     x = params[0] * depth + params[1] * phase + params[2] * score
@@ -52,14 +54,13 @@ def scoring():
             for k in range(depth_width):
                 ans = sd[i][j][k]
                 if ans != 1000000.0:
-                    pred = f(k, j, i)
-                    print(ans, pred)
+                    pred = f(k + min_depth, j, i)
                     res += (pred - ans) ** 2
     return res
 
 score = scoring()
 print(score)
-exit()
+
 while True:
     idx = randrange(0, 6)
     f_param = params[idx]

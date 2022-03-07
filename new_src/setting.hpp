@@ -22,8 +22,8 @@
 #define USE_MULTI_THREAD true
 
 // prob cut
-#define USE_MID_MPC false
-#define USE_END_MPC false
+#define USE_MID_MPC true
+#define USE_END_MPC true
 
 // legal calculation
 #define LEGAL_CALCULATION_MODE 5
