@@ -21,6 +21,13 @@ int main(){
 
     while (true){
         search.board = input_board();
+        /*
+        cerr << search.board.player << endl;
+        cerr << search.board.opponent << endl;
+        cerr << (int)search.board.n << endl;
+        cerr << (int)search.board.p << endl;
+        cerr << (int)search.board.parity << endl;
+        */
         search.n_nodes = 0;
         cerr << "0 move " << mid_evaluate(&search.board) << endl;
         //cerr << nega_alpha_eval1(&search, -HW2, HW2, false) << endl;
