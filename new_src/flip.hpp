@@ -239,7 +239,7 @@ class Flip{
                     p = join_d7_line(player, u) & d7_mask[place];
                     o = join_d7_line(opponent, u) & d7_mask[place];
                     //flip |= split_d7_line(flip_pre_calc[p][o][t], u);
-                    flip |= split_d7_lines[flip_pre_calc[p][o][t]][u - 2];
+                    flip |= split_d7_lines[flip_pre_calc[p][o][t]] << u;
                 }
 
                 u -= t * 2;
@@ -247,7 +247,10 @@ class Flip{
                     p = join_d9_line(player, u) & d9_mask[place];
                     o = join_d9_line(opponent, u) & d9_mask[place];
                     //flip |= split_d9_line(flip_pre_calc[p][o][t], u);
-                    flip |= split_d9_lines[flip_pre_calc[p][o][t]][u + 5];
+                    if (u > 0)
+                        flip |= split_d9_lines[flip_pre_calc[p][o][t]] << u;
+                    else
+                        flip |= split_d9_lines[flip_pre_calc[p][o][t]] >> (-u);
                 }
             }
         #elif FLIP_CALC_MODE == 2

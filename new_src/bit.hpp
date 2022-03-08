@@ -617,16 +617,14 @@ uint_fast8_t (*join_d9_lines[])(const uint64_t) = {
 };
 
 uint64_t split_v_lines[N_8BIT];
-uint64_t split_d7_lines[N_8BIT][N_DIAG_LINE];
-uint64_t split_d9_lines[N_8BIT][N_DIAG_LINE];
+uint64_t split_d7_lines[N_8BIT];
+uint64_t split_d9_lines[N_8BIT];
 
 void bit_init(){
     uint32_t i, t;
     for (i = 0; i < N_8BIT; ++i){
         split_v_lines[i] = split_v_line(i, 0);
-        for (t = 0; t < N_DIAG_LINE; ++t){
-            split_d7_lines[i][t] = split_d7_line(i, t + 2);
-            split_d9_lines[i][t] = split_d9_line(i, t - 5);
-        }
+        split_d7_lines[i] = split_d7_line(i, 0);
+        split_d9_lines[i] = split_d9_line(i, 0);
     }
 }
