@@ -4,7 +4,7 @@ egaroucid = subprocess.Popen('a.exe'.split(), stdin=subprocess.PIPE, stdout=subp
 
 res_str = ''
 tim = 0
-for i in range(40, 50):
+for i in range(40, 60):
     print('#', i)
     with open('./../../benchmark/ffotest/' + str(i) + '.txt', 'r') as f:
         s = f.read()
