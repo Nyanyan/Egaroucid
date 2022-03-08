@@ -38,7 +38,7 @@ int main(){
 
         parent_transpose_table.init();
         strt2 = tim();
-        search.mpct = 1.5;
+        search.mpct = 1.0;
         search.use_mpc = true;
         g = nega_scout(&search, -HW2, HW2, depth, false, LEGAL_UNDEFINED, true) / 2 * 2;
         cerr << "presearch d=" << depth << " t=" << search.mpct << " [-64,64] " << g << " " << idx_to_coord(child_transpose_table.get(&search.board, search.board.hash() & TRANSPOSE_TABLE_MASK)) << endl;
@@ -47,7 +47,7 @@ int main(){
         if (depth >= 22){
             parent_transpose_table.init();
             strt2 = tim();
-            search.mpct = 2.0;
+            search.mpct = 1.5;
             search.use_mpc = true;
             alpha = max(-HW2, g - 3);
             beta = min(HW2, g + 3);
@@ -58,7 +58,7 @@ int main(){
             if (depth >= 24){
                 parent_transpose_table.init();
                 strt2 = tim();
-                search.mpct = 2.2;
+                search.mpct = 2.0;
                 search.use_mpc = true;
                 alpha = max(-HW2, g - 1);
                 beta = min(HW2, g + 1);
