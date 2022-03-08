@@ -2664,7 +2664,18 @@ endsearch time 1775 mpct 0 policy 55 value 38 nodes 25120083 nps 14144190
 #59 depth 34 value 64 policy g8 nodes 16786 whole time 38 search time 9 nps 1865111
 758.76 sec
 
-
+2022/03/08 pdep & pext
+#40 depth 20 value 38 policy a2 nodes 25792184 whole time 156 search time 142 nps 181635098
+#41 depth 22 value 2 policy h4 nodes 43046933 whole time 390 search time 368 nps 116975361
+#42 depth 22 value 6 policy g2 nodes 66719644 whole time 374 search time 350 nps 190627554
+#43 depth 23 value -12 policy g3 nodes 153812699 whole time 885 search time 862 nps 178437005
+#44 depth 23 value -14 policy d2 nodes 75034274 whole time 633 search time 608 nps 123411634
+#45 depth 24 value 6 policy b2 nodes 707172692 whole time 3237 search time 3205 nps 220646705
+#46 depth 24 value -8 policy b3 nodes 185529675 whole time 1272 search time 1240 nps 149620705
+#47 depth 25 value 4 policy g2 nodes 144298615 whole time 916 search time 887 nps 162681640
+#48 depth 25 value 26 policy f6 nodes 947949976 whole time 4660 search time 4630 nps 204740815
+#49 depth 26 value 16 policy e1 nodes 1038465021 whole time 5447 search time 5412 nps 191881932
+17.97 sec
 
 
 
