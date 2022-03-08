@@ -84,7 +84,7 @@ constexpr double probcut_sigmas[N_PHASES][N_PHASES] = {
     {22.8473, 22.4288, 21.9542, 20.9354, 19.488, 19.9023, 19.0902, 17.6398, 16.6756, 15.5798, 14.3816, 13.052, 11.9425, 10.3949, 8.96476, 7.68867, 6.64324, 6.19754, 6.22637, 6.14952, 6.34197, 6.22981, 6.27665, 6.56142, 6.64282, 6.29119, 6.06663, 5.53151, 4.60409, 3.02369}
 };
 
-#define W_PROBCUT_SIGMA 0.6
+#define W_PROBCUT_SIGMA 0.7
 
 inline double probcut_sigma(int n_stones, int depth){
     int x1 = min(N_PHASES - 1, (n_stones + depth - 4) / PHASE_N_STONES);

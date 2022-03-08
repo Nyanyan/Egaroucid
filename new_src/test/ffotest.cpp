@@ -28,10 +28,9 @@ int main(){
         depth = HW2 - search.board.n;
         child_transpose_table.init();
 
-        uint64_t strt, strt2, search_time = 0ULL;
+        uint64_t strt = tim(), strt2, search_time = 0ULL;
 
         parent_transpose_table.init();
-        strt = tim();
         strt2 = tim();
         search.mpct = 0.8;
         search.use_mpc = true;
