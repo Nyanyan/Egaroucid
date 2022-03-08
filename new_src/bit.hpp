@@ -465,12 +465,30 @@ inline uint8_t join_h_line(uint64_t x, int t){
     return (x >> (HW * t)) & 0b11111111U;
 }
 
+inline void join_h_line_double(uint64_t player, uint64_t opponent, int_fast8_t t, uint_fast8_t *p, uint_fast8_t *o){
+    __m128i po = _mm_set_epi64x(player, opponent);
+    po = _mm_srli_epi64(po, HW * t);
+    po = _mm_and_si128(po, _mm_set1_epi64x(0b11111111ULL));
+    *o = _mm_cvtsi128_si64(po);
+    *p = _mm_cvtsi128_si64(_mm_unpackhi_epi64(po, po));
+}
+
 inline uint64_t split_h_line(uint8_t x, int t){
     return (uint64_t)x << (HW * t);
 }
 
 inline uint8_t join_v_line(uint64_t x, int t){
     return _pext_u64(x >> t, 0x0101010101010101ULL);
+}
+
+inline void join_v_line_double(uint64_t player, uint64_t opponent, int_fast8_t t, uint_fast8_t *p, uint_fast8_t *o){
+    __m128i po = _mm_set_epi64x(player, opponent);
+    po = _mm_srli_epi64(po, t);
+    po = _mm_and_si128(po, _mm_set1_epi64x(0x0101010101010101ULL));
+    po = _mm_mullo_epi64(po, _mm_set1_epi64x(0x0102040810204080ULL));
+    po = _mm_srli_epi64(po, 56);
+    *o = _mm_cvtsi128_si64(po);
+    *p = _mm_cvtsi128_si64(_mm_unpackhi_epi64(po, po));
 }
 
 inline uint64_t split_v_line(uint8_t x, int t){
@@ -621,7 +639,7 @@ uint64_t split_d7_lines[N_8BIT];
 uint64_t split_d9_lines[N_8BIT];
 
 void bit_init(){
-    uint32_t i, t;
+    uint32_t i;
     for (i = 0; i < N_8BIT; ++i){
         split_v_lines[i] = split_v_line(i, 0);
         split_d7_lines[i] = split_d7_line(i, 0);

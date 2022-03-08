@@ -219,7 +219,7 @@ class Flip{
         #elif FLIP_CALC_MODE == 1
             inline void calc_flip(const uint64_t player, const uint64_t opponent, const uint_fast8_t place){
                 int_fast8_t t, u;
-                uint8_t p, o;
+                uint_fast8_t p, o;
                 flip = 0;
                 pos = place;
 
@@ -227,10 +227,12 @@ class Flip{
                 u = place % HW;
                 p = join_h_line(player, t);
                 o = join_h_line(opponent, t);
+                //join_h_line_double(player, opponent, t, &p, &o);
                 flip |= split_h_line((uint64_t)flip_pre_calc[p][o][u], t);
 
                 p = join_v_line(player, u);
                 o = join_v_line(opponent, u);
+                //join_v_line_double(player, opponent, u, &p, &o);
                 //flip |= split_v_line(flip_pre_calc[p][o][t], u);
                 flip |= split_v_lines[flip_pre_calc[p][o][t]] << u;
 
