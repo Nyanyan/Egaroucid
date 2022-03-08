@@ -6,8 +6,8 @@
 
 using namespace std;
 
-uint8_t flip_pre_calc[N_8BIT][N_8BIT][HW];
-uint8_t n_flip_pre_calc[N_8BIT][N_8BIT][HW];
+uint_fast8_t flip_pre_calc[N_8BIT][N_8BIT][HW];
+uint_fast8_t n_flip_pre_calc[N_8BIT][N_8BIT][HW];
 
 class Flip{
     public:
@@ -352,8 +352,8 @@ class Flip{
 #endif
 
 void flip_init(){
-    int player, opponent, place;
-    int wh, put, m1, m2, m3, m4, m5, m6, i;
+    uint_fast16_t player, opponent, place;
+    uint_fast8_t wh, put, m1, m2, m3, m4, m5, m6, i;
     for (player = 0; player < N_8BIT; ++player){
         for (opponent = 0; opponent < N_8BIT; ++opponent){
             for (place = 0; place < HW; ++place){

@@ -111,8 +111,8 @@ class Board {
 
         inline void move(const Flip *flip) {
             player ^= flip->flip;
-            opponent &= ~player;
-            player |= 1ULL << flip->pos;
+            opponent ^= flip->flip;
+            player ^= 1ULL << flip->pos;
             swap(player, opponent);
             p = 1 - p;
             ++n;
@@ -121,8 +121,8 @@ class Board {
 
         inline void move_copy(const Flip *flip, Board *res) {
             res->opponent = player ^ flip->flip;
-            res->player = opponent & (~res->opponent);
-            res->opponent |= 1ULL << flip->pos;
+            res->player = opponent ^ flip->flip;
+            res->opponent ^= 1ULL << flip->pos;
             res->p = 1 - p;
             res->n = n + 1;
             res->parity = parity ^ cell_div4[flip->pos];
@@ -144,9 +144,9 @@ class Board {
             --n;
             parity ^= cell_div4[flip->pos];
             swap(player, opponent);
-            player &= ~(1ULL << flip->pos);
+            player ^= 1ULL << flip->pos;
             player ^= flip->flip;
-            opponent |= flip->flip;
+            opponent ^= flip->flip;
         }
 
         inline void translate_to_arr_player(uint_fast8_t res[]) {

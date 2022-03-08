@@ -219,6 +219,12 @@ inline uint64_t rotate_180(uint64_t x){
     return ((x & 0x00000000FFFFFFFFULL) << 32) | ((x & 0xFFFFFFFF00000000ULL) >> 32);
 }
 
+inline uint8_t rotate_180_uchar(uint8_t x){
+    x = ((x & 0x55U) << 1) | ((x & 0xAAU) >> 1);
+    x = ((x & 0x33U) << 2) | ((x & 0xCCU) >> 2);
+    return ((x & 0x0FU) << 4) | ((x & 0xF0U) >> 4);
+}
+
 // rotate 45 degrees counter clockwise
 /*
       8  7  6  5  4  3  2  1
