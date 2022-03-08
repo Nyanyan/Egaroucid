@@ -26,7 +26,7 @@ inline pair<int, uint64_t> ybwc_do_task(Search search, int alpha, int beta, int 
 }
 
 inline bool ybwc_split(Search *search, const Flip *flip, int alpha, int beta, const int depth, uint64_t legal, bool is_end_search, const bool *searching, int policy, const int pv_idx, const int canput, const int split_count, vector<future<pair<int, uint64_t>>> &parallel_tasks){
-    if (//pv_idx > 0 && 
+    if (pv_idx > 0 && 
         /* pv_idx > canput / YBWC_SPLIT_DIV && */ 
         /* pv_idx < canput - 1 && */ 
         depth >= YBWC_MID_SPLIT_MIN_DEPTH /*&&*/
@@ -34,8 +34,9 @@ inline bool ybwc_split(Search *search, const Flip *flip, int alpha, int beta, co
         if (thread_pool.n_idle()){
             Search copy_search;
             search->board.move(flip);
+                /*
                 if (pv_idx == 0){
-                    int bound = alpha + ceil(0.2 * probcut_sigma(search->board.n));
+                    int bound = alpha - ceil(0.5 * probcut_sigma(search->board.n));
                     if (bound > HW2){
                         search->board.undo(flip);
                         return false;
@@ -52,10 +53,10 @@ inline bool ybwc_split(Search *search, const Flip *flip, int alpha, int beta, co
                             if (mpcd[depth] <= MID_FAST_DEPTH)
                                 not_split = nega_alpha(search, bound, bound + 1, mpcd[depth], false) <= bound;
                             else{
-                                bool use_mpc = search->use_mpc;
-                                search->use_mpc = false;
+                                //bool use_mpc = search->use_mpc;
+                                //search->use_mpc = false;
                                     not_split = nega_alpha_ordering_nomemo(search, bound, bound + 1, mpcd[depth], false, legal) <= bound;
-                                search->use_mpc = use_mpc;
+                                //search->use_mpc = use_mpc;
                             }
                             break;
                     }
@@ -64,6 +65,7 @@ inline bool ybwc_split(Search *search, const Flip *flip, int alpha, int beta, co
                         return false;
                     }
                 }
+                */
                 search->board.copy(&copy_search.board);
             search->board.undo(flip);
             copy_search.use_mpc = search->use_mpc;
