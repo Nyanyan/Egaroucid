@@ -28,8 +28,11 @@ int main(){
         depth = HW2 - search.board.n;
         child_transpose_table.init();
 
+        uint64_t strt, strt2, search_time = 0ULL;
+
         parent_transpose_table.init();
-        uint64_t strt = tim(), strt2 = tim(), search_time = 0ULL;
+        strt = tim();
+        strt2 = tim();
         search.mpct = 0.8;
         search.use_mpc = true;
         g = nega_scout(&search, -HW2, HW2, depth / 2, false, LEGAL_UNDEFINED, false);
@@ -71,13 +74,13 @@ int main(){
         cerr << search.n_nodes * 1000 / search_time << endl;
 
         parent_transpose_table.init();
+        search.use_mpc = false;
         strt2 = tim();
         alpha = -INF;
         beta = -INF;
         while (g <= alpha || beta <= g){
             alpha = max(-HW2, g - 1);
             beta = min(HW2, g + 1);
-            search.use_mpc = false;
             g = nega_scout(&search, alpha, beta, depth, false, LEGAL_UNDEFINED, true);
             cerr << "[" << alpha << "," << beta << "] " << g << " " << idx_to_coord(child_transpose_table.get(&search.board, search.board.hash() & TRANSPOSE_TABLE_MASK)) << endl;
             if (alpha == -HW2 && g == -HW2)

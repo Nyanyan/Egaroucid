@@ -461,8 +461,16 @@ constexpr uint8_t d9_mask[HW2] = {
     0b10000000, 0b11000000, 0b11100000, 0b11110000, 0b11111000, 0b11111100, 0b11111110, 0b11111111
 };
 
+inline uint8_t join_h_line(uint64_t x, int t){
+    return (x >> (HW * t)) & 0b11111111U;
+}
+
+inline uint64_t split_h_line(uint8_t x, int t){
+    return (uint64_t)x << (HW * t);
+}
+
 inline uint8_t join_v_line(uint64_t x, int t){
-    return _pext_u64(x >> t, 0b0000000100000001000000010000000100000001000000010000000100000001ULL);
+    return _pext_u64(x >> t, 0x0101010101010101ULL);
 }
 
 inline uint64_t split_v_line(uint8_t x, int t){
@@ -470,19 +478,20 @@ inline uint64_t split_v_line(uint8_t x, int t){
 }
 
 inline uint_fast8_t join_d7_line(uint64_t x, const int t){
-    return _pext_u64(x >> t, 0b0000000000000010000001000000100000010000001000000100000010000001ULL);
+    return _pext_u64(x >> t, 0x0002040810204081ULL);
 }
 
 inline uint64_t split_d7_line(uint8_t x, int t){
-    return _pdep_u64((uint64_t)x, 0b0000000000000010000001000000100000010000001000000100000010000001ULL) << t;
+    return _pdep_u64((uint64_t)x, 0x0002040810204081ULL) << t;
 }
 
 inline uint_fast8_t join_d9_line(uint64_t x, int t){
-    return _pext_u64(t > 0 ? x >> t : x << (-t), 0b1000000001000000001000000001000000001000000001000000001000000001ULL);
+    return _pext_u64(t > 0 ? x >> t : x << (-t), 0x8040201008040201ULL);
 }
 
 inline uint64_t split_d9_line(uint8_t x, int t){
-    return t > 0 ? _pdep_u64((uint64_t)x, 0x8040201008040201ULL) << t : _pdep_u64((uint64_t)x, 0x8040201008040201ULL) >> (-t);
+    uint64_t res = _pdep_u64((uint64_t)x, 0x8040201008040201ULL);
+    return t > 0 ? res << t : res >> (-t);
 }
 
 inline uint_fast8_t join_d7_line_2(const uint64_t x){

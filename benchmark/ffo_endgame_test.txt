@@ -2678,7 +2678,7 @@ endsearch time 1775 mpct 0 policy 55 value 38 nodes 25120083 nps 14144190
 17.97 sec
 
 
-2022/03/08 update mpc & join-split
+2022/03/08 update mpc & join-split contains bug
 #40 depth 20 value 38 policy a2 nodes 29556303 whole time 157 search time 142 nps 208142978
 #41 depth 22 value 2 policy h4 nodes 48705822 whole time 356 search time 334 nps 145825814
 #42 depth 22 value 6 policy g2 nodes 72499059 whole time 372 search time 350 nps 207140168
@@ -2701,7 +2701,18 @@ endsearch time 1775 mpct 0 policy 55 value 38 nodes 25120083 nps 14144190
 #59 depth 34 value 64 policy g8 nodes 16790 whole time 35 search time 6 nps 2798333
 698.057 sec
 
-
+2022/03/08 fixed bug
+#40 depth 20 value 38 policy a2 nodes 30793975 whole time 166 search time 152 nps 202591940
+#41 depth 22 value 0 policy h4 nodes 31455422 whole time 272 search time 250 nps 125821688
+#42 depth 22 value 6 policy g2 nodes 56980220 whole time 331 search time 308 nps 185000714
+#43 depth 23 value -12 policy c7 nodes 160610367 whole time 902 search time 880 nps 182511780
+#44 depth 23 value -14 policy d2 nodes 73810023 whole time 555 search time 532 nps 138740644
+#45 depth 24 value 6 policy b2 nodes 715953586 whole time 3282 search time 3250 nps 220293411
+#46 depth 24 value -8 policy b3 nodes 221638959 whole time 1244 search time 1216 nps 182268880
+#47 depth 25 value 4 policy g2 nodes 133794419 whole time 725 search time 696 nps 192233360
+#48 depth 25 value 28 policy f6 nodes 1156959216 whole time 5248 search time 5218 nps 221724648
+#49 depth 26 value 16 policy e1 nodes 931896215 whole time 4477 search time 4446 nps 209603287
+17.202 sec
 
 
 

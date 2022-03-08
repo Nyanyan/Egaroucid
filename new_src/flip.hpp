@@ -225,9 +225,9 @@ class Flip{
 
                 t = place / HW;
                 u = place % HW;
-                p = (player >> (HW * t)) & 0b11111111;
-                o = (opponent >> (HW * t)) & 0b11111111;
-                flip |= (uint64_t)flip_pre_calc[p][o][u] << (HW * t);
+                p = join_h_line(player, t);
+                o = join_h_line(opponent, t);
+                flip |= split_h_line((uint64_t)flip_pre_calc[p][o][u], t);
 
                 p = join_v_line(player, u);
                 o = join_v_line(opponent, u);
@@ -290,8 +290,8 @@ class Flip{
 
         t = place / HW;
         u = place % HW;
-        p = (player >> (HW * t)) & 0b11111111;
-        o = (opponent >> (HW * t)) & 0b11111111;
+        p = join_h_line(player, t);
+        o = join_h_line(opponent, t);
         res += n_flip_pre_calc[p][o][u];
 
         p = join_v_line(player, u);
@@ -303,7 +303,7 @@ class Flip{
         if (u >= 2 && u <= 12){
             p = join_d7_line(player, u) & d7_mask[place];
             o = join_d7_line(opponent, u) & d7_mask[place];
-            res += pop_count_uchar(flip_pre_calc[p][o][HW_M1 - t] & d7_mask[place]);
+            res += pop_count_uchar(flip_pre_calc[p][o][t] & d7_mask[place]);
         }
 
         u -= t * 2;
