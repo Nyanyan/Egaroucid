@@ -389,6 +389,147 @@ inline uint64_t unrotate_315(uint64_t x){
     }
 #endif
 
+uint_fast8_t nlz_table[64];
+
+inline void nlz_init(){
+    uint64_t hash = 0x03F566ED27179461ULL;
+    for (int i = 0; i < 64; i++){
+        nlz_table[hash >> 58] = i;
+        hash <<= 1;
+    }
+}
+
+inline uint_fast8_t nlz(uint64_t x){
+    if (x == 0ULL)
+        return 64;
+    uint64_t y = x & (-x);
+    int i = (int)((y * 0x03F566ED27179461ULL) >> 58);
+    return nlz_table[i];
+}
+
+
+/*
+Original code: https://github.com/primenumber/issen/blob/72f450256878094ffe90b75f8674599e6869c238/src/move_generator.cpp
+modified by me
+*/
+struct u64_4 {
+    __m256i data;
+    u64_4() = default;
+    u64_4(uint64_t val)
+        : data(_mm256_set1_epi64x(val)) {}
+    u64_4(uint64_t w, uint64_t x, uint64_t y, uint64_t z)
+        : data(_mm256_set_epi64x(w, x, y, z)) {}
+    u64_4(__m256i data) : data(data) {}
+    operator __m256i() { return data; }
+};
+
+inline u64_4 operator>>(const u64_4 lhs, const size_t n) {
+    return _mm256_srli_epi64(lhs.data, n);
+}
+
+inline u64_4 operator>>(const u64_4 lhs, const u64_4 n) {
+    return _mm256_srlv_epi64(lhs.data, n.data);
+}
+
+inline u64_4 operator<<(const u64_4 lhs, const size_t n) {
+    return _mm256_slli_epi64(lhs.data, n);
+}
+
+inline u64_4 operator&(const u64_4 lhs, const u64_4 rhs) {
+    return _mm256_and_si256(lhs.data, rhs.data);
+}
+
+inline u64_4 operator|(const u64_4 lhs, const u64_4 rhs) {
+    return _mm256_or_si256(lhs.data, rhs.data);
+}
+
+inline u64_4 operator+(const u64_4 lhs, const u64_4 rhs) {
+    return _mm256_add_epi64(lhs.data, rhs.data);
+}
+
+inline u64_4 operator+(const u64_4 lhs, const uint64_t rhs) {
+    __m256i r64 = _mm256_set1_epi64x(rhs);
+    return _mm256_add_epi64(lhs.data, r64);
+}
+
+inline u64_4 operator-(const u64_4 lhs, const u64_4 rhs) {
+    return _mm256_sub_epi64(lhs.data, rhs.data);
+}
+
+inline u64_4 operator-(const u64_4 lhs) {
+    return _mm256_sub_epi64(_mm256_setzero_si256(), lhs.data);
+}
+
+inline u64_4 andnot(const u64_4 lhs, const u64_4 rhs) {
+    return _mm256_andnot_si256(lhs.data, rhs.data);
+}
+
+inline u64_4 operator~(const u64_4 lhs) {
+    return _mm256_andnot_si256(lhs.data, _mm256_set1_epi8(0xFF));
+}
+
+inline u64_4 nonzero(const u64_4 lhs) {
+    return _mm256_cmpeq_epi64(lhs.data, _mm256_setzero_si256()) + u64_4(1);
+}
+/*
+end of modification
+*/
+
+inline u64_4 pop_count_ull_quad(u64_4 x){
+    u64_4 mask1(0x5555555555555555ULL);
+    u64_4 mask2(0xAAAAAAAAAAAAAAAAULL);
+    x = (x & mask1) + ((x & mask2) >> 1);
+    mask1 = {0x3333333333333333ULL, 0x3333333333333333ULL, 0x3333333333333333ULL, 0x3333333333333333ULL};
+    mask2 = {0xCCCCCCCCCCCCCCCCULL, 0xCCCCCCCCCCCCCCCCULL, 0xCCCCCCCCCCCCCCCCULL, 0xCCCCCCCCCCCCCCCCULL};
+    x = (x & mask1) + ((x & mask2) >> 2);
+    mask1 = {0x0F0F0F0F0F0F0F0FULL, 0x0F0F0F0F0F0F0F0FULL, 0x0F0F0F0F0F0F0F0FULL, 0x0F0F0F0F0F0F0F0FULL};
+    mask2 = {0xF0F0F0F0F0F0F0F0ULL, 0xF0F0F0F0F0F0F0F0ULL, 0xF0F0F0F0F0F0F0F0ULL, 0xF0F0F0F0F0F0F0F0ULL};
+    x = (x & mask1) + ((x & mask2) >> 4);
+    mask1 = {0x00FF00FF00FF00FFULL, 0x00FF00FF00FF00FFULL, 0x00FF00FF00FF00FFULL, 0x00FF00FF00FF00FFULL};
+    mask2 = {0xFF00FF00FF00FF00ULL, 0xFF00FF00FF00FF00ULL, 0xFF00FF00FF00FF00ULL, 0xFF00FF00FF00FF00ULL};
+    x = (x & mask1) + ((x & mask2) >> 8);
+    mask1 = {0x0000FFFF0000FFFFULL, 0x0000FFFF0000FFFFULL, 0x0000FFFF0000FFFFULL, 0x0000FFFF0000FFFFULL};
+    mask2 = {0xFFFF0000FFFF0000ULL, 0xFFFF0000FFFF0000ULL, 0xFFFF0000FFFF0000ULL, 0xFFFF0000FFFF0000ULL};
+    x = (x & mask1) + ((x & mask2) >> 16);
+    mask1 = {0x00000000FFFFFFFFULL, 0x00000000FFFFFFFFULL, 0x00000000FFFFFFFFULL, 0x00000000FFFFFFFFULL};
+    mask2 = {0xFFFFFFFF00000000ULL, 0xFFFFFFFF00000000ULL, 0xFFFFFFFF00000000ULL, 0xFFFFFFFF00000000ULL};
+    x = (x & mask1) + ((x & mask2) >> 32);
+    return x;
+}
+
+/*
+Original code: https://github.com/primenumber/issen/blob/72f450256878094ffe90b75f8674599e6869c238/src/move_generator.cpp
+modified by me
+*/
+inline u64_4 nlz_quad(u64_4 x){
+    x = x | (x >> 1);
+    x = x | (x >> 2);
+    x = x | (x >> 4);
+    x = x | (x >> 8);
+    x = x | (x >> 16);
+    return pop_count_ull_quad(~x);
+}
+
+inline u64_4 upper_bit(u64_4 p) {
+    __m256i flip_vertical_shuffle_table = _mm256_set_epi8(
+        24, 25, 26, 27, 28, 29, 30, 31,
+        16, 17, 18, 19, 20, 21, 22, 23,
+        8, 9, 10, 11, 12, 13, 14, 15,
+        0, 1, 2, 3, 4, 5, 6, 7
+    );
+    p = p | (p >> 1);
+    p = p | (p >> 2);
+    p = p | (p >> 4);
+    p = andnot(p >> 1, p);
+    p.data = _mm256_shuffle_epi8(p.data, flip_vertical_shuffle_table);
+    p = p & -p;
+    return _mm256_shuffle_epi8(p.data, flip_vertical_shuffle_table);
+}
+/*
+end of modification
+*/
+
+
 inline uint_fast8_t first_bit(uint64_t *x){
     return ntz(x);
 }
@@ -645,4 +786,5 @@ void bit_init(){
         split_d7_lines[i] = split_d7_line(i, 0);
         split_d9_lines[i] = split_d9_line(i, 0);
     }
+    nlz_init();
 }
