@@ -96,8 +96,14 @@ constexpr double w_probcut_sigma[61] = {
 
 #define W_PROBCUT_SIGMA_ALL 0.6
 
+constexpr double probcut_params[6] = {
+    -0.07031610493351925, 0.01717533262592774, -0.05250678267568876, -0.1657322534420116, -0.6809669972066976, 1.184848169859761
+};
+
 inline double probcut_sigma(int n_stones, int depth){
-    return 1.0 + 0.05 * n_stones;
+    double t = probcut_params[0] * n_stones + probcut_params[1] * (depth - mpcd[depth]);
+    return probcut_params[2] * t * t * t + probcut_params[3] * t * t + probcut_params[4] * t + probcut_params[5];
+    //return 1.0 + 0.05 * n_stones;
     //int x1 = min(N_PHASES - 1, (n_stones + depth - 4) / PHASE_N_STONES);
     //int x2 = min(N_PHASES - 1, (n_stones + mpcd[depth] - 4) / PHASE_N_STONES);
     //return probcut_sigmas[x1][x2] * sqrt(w_probcut_sigma[x1] * w_probcut_sigma[x2]); // * W_PROBCUT_SIGMA_ALL;
