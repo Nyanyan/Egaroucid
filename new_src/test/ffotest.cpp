@@ -18,6 +18,7 @@ int main(){
     #endif
     Search search;
     int depth, alpha, beta, g;
+    pair<int, int> result;
 
     while (true){
         search.board = input_board();
@@ -41,16 +42,18 @@ int main(){
         strt2 = tim();
         search.mpct = 0.8;
         search.use_mpc = true;
-        g = nega_scout(&search, -HW2, HW2, depth / 2, false, LEGAL_UNDEFINED, false);
-        cerr << "presearch d=" << depth / 2 << " t=" << search.mpct << " [-64,64] " << g << " " << idx_to_coord(child_transpose_table.get(&search.board, search.board.hash() & TRANSPOSE_TABLE_MASK)) << endl;
+        result = first_nega_scout(&search, -HW2, HW2, depth / 2, false, false);
+        g = result.first;
+        cerr << "presearch d=" << depth / 2 << " t=" << search.mpct << " [-64,64] " << g << " " << idx_to_coord(result.second) << endl;
         search_time += tim() - strt2;
 
         parent_transpose_table.init();
         strt2 = tim();
         search.mpct = 1.0;
         search.use_mpc = true;
-        g = nega_scout(&search, -HW2, HW2, depth, false, LEGAL_UNDEFINED, true) / 2 * 2;
-        cerr << "presearch d=" << depth << " t=" << search.mpct << " [-64,64] " << g << " " << idx_to_coord(child_transpose_table.get(&search.board, search.board.hash() & TRANSPOSE_TABLE_MASK)) << endl;
+        result = first_nega_scout(&search, -HW2, HW2, depth, false, true);
+        g = result.first / 2 * 2;
+        cerr << "presearch d=" << depth << " t=" << search.mpct << " [-64,64] " << g << " " << idx_to_coord(result.second) << endl;
         search_time += tim() - strt2;
 
         if (depth >= 22){
@@ -60,8 +63,9 @@ int main(){
             search.use_mpc = true;
             alpha = max(-HW2, g - 3);
             beta = min(HW2, g + 3);
-            g = nega_scout(&search, alpha, beta, depth, false, LEGAL_UNDEFINED, true) / 2 * 2;
-            cerr << "presearch d=" << depth << " t=" << search.mpct << " [" << alpha << "," << beta << "] " << g << " " << idx_to_coord(child_transpose_table.get(&search.board, search.board.hash() & TRANSPOSE_TABLE_MASK)) << endl;
+            result = first_nega_scout(&search, alpha, beta, depth, false, true);
+            g = result.first / 2 * 2;
+            cerr << "presearch d=" << depth << " t=" << search.mpct << " [" << alpha << "," << beta << "] " << g << " " << idx_to_coord(result.second) << endl;
             search_time += tim() - strt2;
 
             if (depth >= 24){
@@ -71,8 +75,9 @@ int main(){
                 search.use_mpc = true;
                 alpha = max(-HW2, g - 1);
                 beta = min(HW2, g + 1);
-                g = nega_scout(&search, alpha, beta, depth, false, LEGAL_UNDEFINED, true) / 2 * 2;
-                cerr << "presearch d=" << depth << " t=" << search.mpct << " [" << alpha << "," << beta << "] " << g << " " << idx_to_coord(child_transpose_table.get(&search.board, search.board.hash() & TRANSPOSE_TABLE_MASK)) << endl;
+                result = first_nega_scout(&search, alpha, beta, depth, false, true);
+                g = result.first / 2 * 2;
+                cerr << "presearch d=" << depth << " t=" << search.mpct << " [" << alpha << "," << beta << "] " << g << " " << idx_to_coord(result.second) << endl;
                 search_time += tim() - strt2;
             }
         }
@@ -87,8 +92,9 @@ int main(){
         while (g <= alpha || beta <= g){
             alpha = max(-HW2, g - 1);
             beta = min(HW2, g + 1);
-            g = nega_scout(&search, alpha, beta, depth, false, LEGAL_UNDEFINED, true);
-            cerr << "[" << alpha << "," << beta << "] " << g << " " << idx_to_coord(child_transpose_table.get(&search.board, search.board.hash() & TRANSPOSE_TABLE_MASK)) << endl;
+            result = first_nega_scout(&search, alpha, beta, depth, false, true);
+            g = result.first;
+            cerr << "[" << alpha << "," << beta << "] " << g << " " << idx_to_coord(result.second) << endl;
             if (alpha == -HW2 && g == -HW2)
                 break;
             if (beta == HW2 && g == HW2)
@@ -96,8 +102,8 @@ int main(){
         }
         search_time += tim() - strt2;
 
-        cerr << "depth " << depth << " value " << g << " policy " << idx_to_coord(child_transpose_table.get(&search.board, search.board.hash() & TRANSPOSE_TABLE_MASK)) << " nodes " << search.n_nodes << " whole time " << (tim() - strt) << " search time " << search_time << " nps " << search.n_nodes * 1000 / max(1ULL, search_time) << endl;
-        cout << "depth " << depth << " value " << g << " policy " << idx_to_coord(child_transpose_table.get(&search.board, search.board.hash() & TRANSPOSE_TABLE_MASK)) << " nodes " << search.n_nodes << " whole time " << (tim() - strt) << " search time " << search_time << " nps " << search.n_nodes * 1000 / max(1ULL, search_time) << endl;
+        cerr << "depth " << depth << " value " << g << " policy " << idx_to_coord(result.second) << " nodes " << search.n_nodes << " whole time " << (tim() - strt) << " search time " << search_time << " nps " << search.n_nodes * 1000 / max(1ULL, search_time) << endl;
+        cout << "depth " << depth << " value " << g << " policy " << idx_to_coord(result.second) << " nodes " << search.n_nodes << " whole time " << (tim() - strt) << " search time " << search_time << " nps " << search.n_nodes * 1000 / max(1ULL, search_time) << endl;
     }
 
     return 0;
