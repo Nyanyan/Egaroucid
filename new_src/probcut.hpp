@@ -97,9 +97,27 @@ constexpr double w_probcut_sigma[61] = {
 #define W_PROBCUT_SIGMA_ALL 0.6
 
 constexpr double probcut_params[6] = {
-    -0.07031610493351925, 0.01717533262592774, -0.05250678267568876, -0.1657322534420116, -0.6809669972066976, 1.184848169859761
+    -0.07924286622429888, 0.016903451472509934, -0.05294261414319046, -0.254443804366251, -0.8506676921018298, 1.0213552153297525
 };
 
+#define probcut_a 1.0
+#define probcut_b 1.0
+#define probcut_c -0.00020659502380101502
+#define probcut_d 1.0
+#define probcut_e 0.0009267675947151024
+#define probcut_f 0.005052069671870356
+#define probcut_g 0.005296754774008973
+#define probcut_h -0.02475530199891439
+#define probcut_i -0.15336937222601288
+#define probcut_j 2.228141910059413
+
+inline double probcut_sigma(int x, int y){
+    double res = probcut_c * x * y * y;
+    res += probcut_e * x * x + probcut_f * x * y + probcut_g * y * y;
+    res += probcut_h * x + probcut_i * y + probcut_j;
+    return res;
+}
+/*
 inline double probcut_sigma(int n_stones, int depth){
     double t = probcut_params[0] * n_stones + probcut_params[1] * (depth - mpcd[depth]);
     return probcut_params[2] * t * t * t + probcut_params[3] * t * t + probcut_params[4] * t + probcut_params[5];
@@ -110,7 +128,7 @@ inline double probcut_sigma(int n_stones, int depth){
     //return probcut_sigmas[x1][x2] * W_PROBCUT_SIGMA_ALL;
     //return probcut_sigmas[x1][x2] * exp(-0.0075 * (x1 + x2));
 }
-
+*/
 int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped);
 int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped);
 int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal);

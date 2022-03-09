@@ -1,6 +1,9 @@
 from cProfile import label
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 from random import random, randrange
+import numpy as np
+from scipy.optimize import curve_fit
 
 MID_MPC_MIN_DEPTH = 2
 MID_MPC_MAX_DEPTH = 25
@@ -47,60 +50,46 @@ mpcd = [
     14
 ]
 
-ys = [[] for _ in range(60)]
-xs = [[] for _ in range(60)]
+xs = []
+ys = []
+zs = []
 
 for phase in range(N_PHASES):
     for depth in range(MID_MPC_MIN_DEPTH, MID_MPC_MAX_DEPTH + 1):
         if sd[phase][depth - MID_MPC_MIN_DEPTH] != 0.0:
             probcut_depth = mpcd[depth]
-            ys[depth - probcut_depth].append(sd[phase][depth - MID_MPC_MIN_DEPTH])
-            xs[depth - probcut_depth].append(phase * 2 + 4)
+            xs.append(phase * 2 + 4 + 1)
+            ys.append(depth - mpcd[depth])
+            zs.append(sd[phase][depth - MID_MPC_MIN_DEPTH])
 
-probcut_params = [
-    -0.07031610493351925, 0.01717533262592774, -0.05250678267568876, -0.1657322534420116, -0.6809669972066976, 1.184848169859761
+probcut_params_before = [
+    1.0 for _ in range(10)
 ]
 
-def f(x, d_dis):
-    t = probcut_params[0] * x + probcut_params[1] * d_dis
-    return probcut_params[2] * t * t * t + probcut_params[3] * t * t + probcut_params[4] * t + probcut_params[5]
-
-for depth_dis in range(2, 20, 2):
-    plt.clf()
-    plt.scatter(xs[depth_dis], ys[depth_dis], label=depth_dis)
-    plt.plot(xs[depth_dis], [f(elem, depth_dis) for elem in xs[depth_dis]], label='pred')
-    plt.legend()
-    plt.ylim([0.0, 10.0])
-    plt.show()
-
-def scoring():
-    res = 0.0
-    for d_dis in range(60):
-        for x, y in zip(xs[d_dis], ys[d_dis]):
-            pred = f(x, d_dis)
-            res += (pred - y) ** 2
+def f(xy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g, probcut_h, probcut_i, probcut_j):
+    x, y = xy
+    res = probcut_a * x * x * x + probcut_b * x * x * y + probcut_c * x * y * y + probcut_d * y * y * y
+    res += probcut_e * x * x + probcut_f * x * y + probcut_g * y * y
+    res += probcut_h * x + probcut_i * y + probcut_j
     return res
 
-def mae():
-    res = 0.0
-    t = 0
-    for d_dis in range(60):
-        for x, y in zip(xs[d_dis], ys[d_dis]):
-            pred = f(x, d_dis)
-            res += abs(pred - y)
-            t += 1
-    return res / t
 
-score = scoring()
-print(score)
+def plot_fit_result(params):
+    fig = plt.figure()
+    ax = Axes3D(fig)
+    ax.plot(xs, ys, zs, ms=3, marker="o",linestyle='None')
+    mx, my = np.meshgrid(range(60), range(30))
+    ax.plot_wireframe(mx, my, f((mx, my), *params), rstride=10, cstride=10)
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+    plt.show()
 
-while True:
-    idx = randrange(0, 6)
-    f_param = probcut_params[idx]
-    probcut_params[idx] += random() - 0.5
-    n_score = scoring()
-    if n_score < score:
-        score = n_score
-        print(score, mae(), probcut_params)
-    else:
-        probcut_params[idx] = f_param
+#plot_fit_result(*probcut_params_before)
+
+popt, pcov = curve_fit(f, (xs, ys), zs, np.array(probcut_params_before))
+print([float(elem) for elem in popt])
+for i in range(len(popt)):
+    print('#define probcut_' + chr(ord('a') + i), popt[i])
+perr = np.sqrt(np.diag(pcov))
+plot_fit_result(popt)
