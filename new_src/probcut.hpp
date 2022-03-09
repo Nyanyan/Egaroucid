@@ -100,19 +100,19 @@ constexpr double probcut_params[6] = {
     -0.07924286622429888, 0.016903451472509934, -0.05294261414319046, -0.254443804366251, -0.8506676921018298, 1.0213552153297525
 };
 
-#define probcut_a 1.0
-#define probcut_b 1.0
-#define probcut_c -0.00020659502380101502
-#define probcut_d 1.0
-#define probcut_e 0.0009267675947151024
-#define probcut_f 0.005052069671870356
-#define probcut_g 0.005296754774008973
-#define probcut_h -0.02475530199891439
-#define probcut_i -0.15336937222601288
-#define probcut_j 2.228141910059413
+#define probcut_a 0.0001075802799025416
+#define probcut_b 0.00025181631602000376
+#define probcut_c -2.8350375561148056e-05
+#define probcut_d 0.0005100624040597079
+#define probcut_e -0.010150457547919656
+#define probcut_f -0.009803910452852005
+#define probcut_g -0.012251813045764948
+#define probcut_h 0.29898682383748876
+#define probcut_i 0.1179020675344451
+#define probcut_j -0.3632247442453185
 
 inline double probcut_sigma(int x, int y){
-    double res = probcut_c * x * y * y;
+    double res = probcut_a * x * x * x + probcut_b * x * x * y + probcut_c * x * y * y + probcut_d * y * y * y;
     res += probcut_e * x * x + probcut_f * x * y + probcut_g * y * y;
     res += probcut_h * x + probcut_i * y + probcut_j;
     return res;
