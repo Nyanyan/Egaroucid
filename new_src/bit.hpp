@@ -389,24 +389,6 @@ inline uint64_t unrotate_315(uint64_t x){
     }
 #endif
 
-uint_fast8_t nlz_table[64];
-
-inline void nlz_init(){
-    uint64_t hash = 0x03F566ED27179461ULL;
-    for (int i = 0; i < 64; i++){
-        nlz_table[hash >> 58] = i;
-        hash <<= 1;
-    }
-}
-
-inline uint_fast8_t nlz(uint64_t x){
-    if (x == 0ULL)
-        return 64;
-    uint64_t y = x & (-x);
-    int i = (int)((y * 0x03F566ED27179461ULL) >> 58);
-    return nlz_table[i];
-}
-
 
 /*
 Original code: https://github.com/primenumber/issen/blob/72f450256878094ffe90b75f8674599e6869c238/src/move_generator.cpp
@@ -510,13 +492,18 @@ inline u64_4 nlz_quad(u64_4 x){
     return pop_count_ull_quad(~x);
 }
 
-inline u64_4 upper_bit(u64_4 p) {
-    __m256i flip_vertical_shuffle_table = _mm256_set_epi8(
+__m256i flip_vertical_shuffle_table;
+
+inline void upper_bit_init(){
+    flip_vertical_shuffle_table = _mm256_set_epi8(
         24, 25, 26, 27, 28, 29, 30, 31,
         16, 17, 18, 19, 20, 21, 22, 23,
         8, 9, 10, 11, 12, 13, 14, 15,
         0, 1, 2, 3, 4, 5, 6, 7
     );
+}
+
+inline u64_4 upper_bit(u64_4 p) {
     p = p | (p >> 1);
     p = p | (p >> 2);
     p = p | (p >> 4);
@@ -786,5 +773,5 @@ void bit_init(){
         split_d7_lines[i] = split_d7_line(i, 0);
         split_d9_lines[i] = split_d9_line(i, 0);
     }
-    nlz_init();
+    upper_bit_init();
 }
