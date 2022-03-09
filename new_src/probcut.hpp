@@ -100,19 +100,19 @@ constexpr double probcut_params[6] = {
     -0.07924286622429888, 0.016903451472509934, -0.05294261414319046, -0.254443804366251, -0.8506676921018298, 1.0213552153297525
 };
 
-#define probcut_a 6.447148962594218e-05
-#define probcut_b -0.0027588814967193166
-#define probcut_c -0.28054705552975234
-#define probcut_d 12.096608517554683
-#define probcut_e -0.003090816439868975
-#define probcut_f 0.5619527392728816
-#define probcut_g -19.920180449039748
-#define probcut_h -0.09596560170509759
-#define probcut_i 8.467683946110688
-#define probcut_j -0.022745778208480893
+#define probcut_a 0.0001075802799025416
+#define probcut_b 0.00025181631602000376
+#define probcut_c -2.8350375561148056e-05
+#define probcut_d 0.0005100624040597079
+#define probcut_e -0.010150457547919656
+#define probcut_f -0.009803910452852005
+#define probcut_g -0.012251813045764948
+#define probcut_h 0.29898682383748876
+#define probcut_i 0.1179020675344451
+#define probcut_j -0.3632247442453185
 
-inline double probcut_sigma(int x, int depth){
-    double y = (double)(depth - mpcd[depth]) / depth;
+inline double probcut_sigma(int x, int y){
+    y -= mpcd[y];
     double res = probcut_a * x * x * x + probcut_b * x * x * y + probcut_c * x * y * y + probcut_d * y * y * y;
     res += probcut_e * x * x + probcut_f * x * y + probcut_g * y * y;
     res += probcut_h * x + probcut_i * y + probcut_j;
