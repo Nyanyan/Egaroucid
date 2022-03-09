@@ -94,7 +94,7 @@ constexpr double w_probcut_sigma[61] = {
     0.40
 };
 
-#define W_PROBCUT_SIGMA_ALL 0.72
+#define W_PROBCUT_SIGMA_ALL 0.6
 
 inline double probcut_sigma(int n_stones, int depth){
     int x1 = min(N_PHASES - 1, (n_stones + depth - 4) / PHASE_N_STONES);
