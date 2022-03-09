@@ -59,7 +59,7 @@ for phase in range(N_PHASES):
         if sd[phase][depth - MID_MPC_MIN_DEPTH] != 0.0:
             probcut_depth = mpcd[depth]
             xs.append(phase * 2 + 4 + 1)
-            ys.append(depth - mpcd[depth])
+            ys.append((depth - mpcd[depth]))
             zs.append(sd[phase][depth - MID_MPC_MIN_DEPTH])
 
 probcut_params_before = [
@@ -78,7 +78,7 @@ def plot_fit_result(params):
     fig = plt.figure()
     ax = Axes3D(fig)
     ax.plot(xs, ys, zs, ms=3, marker="o",linestyle='None')
-    mx, my = np.meshgrid(range(60), range(30))
+    mx, my = np.meshgrid(range(60), [elem / 100 for elem in range(100)])
     ax.plot_wireframe(mx, my, f((mx, my), *params), rstride=10, cstride=10)
     ax.set_xlabel('X')
     ax.set_ylabel('Y')

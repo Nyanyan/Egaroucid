@@ -3091,6 +3091,28 @@ done
 #59 depth 34 value 64 policy g8 nodes 25597 whole time 37 search time 6 nps 4266166
 901.111 sec
 
+2022/03/10 use depth ratio
+#40 depth 20 value 38 policy a2 nodes 29899036 whole time 173 search time 158 nps 189234405
+#41 depth 22 value 0 policy h4 nodes 43135021 whole time 306 search time 283 nps 152420568
+#42 depth 22 value 6 policy g2 nodes 60682804 whole time 364 search time 341 nps 177955436
+#43 depth 23 value -12 policy c7 nodes 173650583 whole time 857 search time 837 nps 207467841
+#44 depth 23 value -14 policy d2 nodes 57333259 whole time 482 search time 461 nps 124367156
+#45 depth 24 value 6 policy b2 nodes 831654492 whole time 3325 search time 3293 nps 252552229
+#46 depth 24 value -8 policy b3 nodes 202678692 whole time 1087 search time 1056 nps 191930579
+#47 depth 25 value 4 policy g2 nodes 135058970 whole time 670 search time 642 nps 210372227
+#48 depth 25 value 28 policy f6 nodes 997897866 whole time 4446 search time 4417 nps 225922088
+#49 depth 26 value 16 policy e1 nodes 918473208 whole time 4128 search time 4096 nps 224236623
+#50 depth 26 value 10 policy d8 nodes 2786694969 whole time 12348 search time 12319 nps 226211134
+#51 depth 27 value 6 policy a3 nodes 890786049 whole time 5469 search time 5436 nps 163867926
+#52 depth 27 value 0 policy a3 nodes 903986333 whole time 5154 search time 5120 nps 176559830
+#53 depth 28 value -2 policy d8 nodes 9209706057 whole time 49669 search time 49502 nps 186047150
+#54 depth 28 value -2 policy c7 nodes 16337187357 whole time 77957 search time 77870 nps 209800787
+#55 depth 29 value 0 policy b7 nodes 101329631059 whole time 569891 search time 569611 nps 177892686
+#56 depth 29 value 2 policy h5 nodes 3629216560 whole time 24813 search time 24771 nps 146510700
+#57 depth 30 value -10 policy a6 nodes 22287527053 whole time 112807 search time 112768 nps 197640527
+#58 depth 30 value 4 policy g1 nodes 4433448964 whole time 27982 search time 27943 nps 158660450
+#59 depth 34 value 64 policy g8 nodes 25603 whole time 37 search time 7 nps 3657571
+901.965 sec
 
 
 
