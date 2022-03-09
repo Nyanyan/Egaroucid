@@ -17,7 +17,7 @@ constexpr int mpcd[61] = {
     16
 };
 */
-/*
+
 constexpr int mpcd[61] = {
     0, 1, 0, 1, 0, 1, 2, 1, 2, 1, 
     2, 3, 2, 3, 2, 3, 4, 3, 4, 3, 
@@ -27,8 +27,8 @@ constexpr int mpcd[61] = {
     10, 11, 10, 11, 10, 11, 12, 11, 12, 11,
     12
 };
-*/
 
+/*
 constexpr int mpcd[61] = {
     0, 1, 0, 1, 0, 1, 2, 1, 2, 1, 
     2, 1, 2, 3, 2, 3, 2, 3, 4, 3, 
@@ -38,7 +38,7 @@ constexpr int mpcd[61] = {
     8, 9, 8, 9, 10, 9, 10, 9, 10, 9,
     10
 };
-
+*/
 /*
 constexpr int mpcd[61] = {
     0, 1, 0, 1, 0, 1, 0, 1, 2, 1, 
@@ -94,7 +94,7 @@ constexpr double w_probcut_sigma[61] = {
     0.40
 };
 
-#define W_PROBCUT_SIGMA_ALL 0.6
+#define W_PROBCUT_SIGMA_ALL 0.7
 
 inline double probcut_sigma(int n_stones, int depth){
     int x1 = min(N_PHASES - 1, (n_stones + depth - 4) / PHASE_N_STONES);
