@@ -57,7 +57,7 @@ int main(){
         cerr << "presearch d=" << depth << " t=" << search.mpct << " [-64,64] " << g << " " << idx_to_coord(result.second) << endl;
         search_time += tim() - strt2;
 
-        if (depth >= 22){
+        if (false && depth >= 22){
             parent_transpose_table.init();
             strt2 = tim();
             search.mpct = 1.7;

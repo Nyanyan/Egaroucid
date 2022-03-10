@@ -382,6 +382,32 @@ class Flip{
         return res;
     }
 
+#elif LAST_FLIP_CALC_MODE == 2
+
+    inline int_fast8_t count_last_flip(uint64_t player, uint64_t opponent, const uint_fast8_t place){
+        /*
+        Original code: https://github.com/primenumber/issen/blob/72f450256878094ffe90b75f8674599e6869c238/src/move_generator.cpp
+        modified by me
+        */
+        u64_4 p(player);
+        u64_4 o(opponent);
+        u64_4 flipped, om, outflank;
+        u64_4 mask(0xFFFFFFFFFFFFFFFFULL, 0x7E7E7E7E7E7E7E7EULL, 0x7E7E7E7E7E7E7E7EULL, 0x7E7E7E7E7E7E7E7EULL);
+        om = o & mask;
+        mask = {0x0080808080808080ULL, 0x7F00000000000000ULL, 0x0102040810204000ULL, 0x0040201008040201ULL};
+        mask = mask >> (HW2_M1 - place);
+        outflank = upper_bit(andnot(om, mask)) & p;
+        flipped = ((-outflank) << 1) & mask;
+        mask = {0x0101010101010100ULL, 0x00000000000000FELL, 0x0002040810204080ULL, 0x8040201008040200ULL};
+        mask = mask << place;
+        outflank = mask & ((om | ~mask) + 1) & player;
+        flipped = flipped | ((outflank - nonzero(outflank)) & mask);
+        /*
+        end of modification
+        */
+        return pop_count_ull(_mm256_extract_epi64(flipped.data, 3) | _mm256_extract_epi64(flipped.data, 2) | _mm256_extract_epi64(flipped.data, 1) | _mm256_extract_epi64(flipped.data, 0));
+    }
+
 #endif
 
 void flip_init(){

@@ -6,7 +6,7 @@ res_str = ''
 tim = 0
 stim = 0
 nodes = 0
-for i in range(40, 60):
+for i in range(40, 50):
     print('#', i)
     with open('./../../benchmark/ffotest/' + str(i) + '.txt', 'r') as f:
         s = f.read()

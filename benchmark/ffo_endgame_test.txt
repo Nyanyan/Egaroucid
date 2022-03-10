@@ -3233,6 +3233,66 @@ done
 158525025748 nodes
 178894892.70596468 nps
 
+2022/03/10 former probcut
+#40 depth 20 value 38 policy a2 nodes 25902949 whole time 154 search time 138 nps 187702528
+#41 depth 22 value 0 policy h4 nodes 34007349 whole time 315 search time 293 nps 116066037
+#42 depth 22 value 6 policy g2 nodes 63193858 whole time 361 search time 338 nps 186964076
+#43 depth 23 value -12 policy c7 nodes 175396051 whole time 864 search time 841 nps 208556541
+#44 depth 23 value -14 policy d2 nodes 104350604 whole time 680 search time 656 nps 159071042
+#45 depth 24 value 6 policy b2 nodes 902724243 whole time 3419 search time 3389 nps 266368912
+#46 depth 24 value -8 policy b3 nodes 220344018 whole time 1189 search time 1159 nps 190115632
+#47 depth 25 value 4 policy g2 nodes 117818925 whole time 697 search time 667 nps 176640067
+#48 depth 25 value 28 policy f6 nodes 979032246 whole time 4319 search time 4290 nps 228212644
+#49 depth 26 value 16 policy e1 nodes 867310841 whole time 3755 search time 3725 nps 232835125
+15.753 sec
+15.496 sec search
+3490081084 nodes
+225224644.0371709 nps
+
+2022/03/10 probcut sigma always return 0, update presearch
+#40 depth 20 value 38 policy a2 nodes 25964242 whole time 158 search time 144 nps 180307236
+#41 depth 22 value 0 policy h4 nodes 33530534 whole time 270 search time 254 nps 132009976
+#42 depth 22 value 6 policy g2 nodes 64313008 whole time 339 search time 324 nps 198496938
+#43 depth 23 value -12 policy c7 nodes 170561727 whole time 825 search time 810 nps 210570033
+#44 depth 23 value -14 policy d2 nodes 71806266 whole time 494 search time 478 nps 150222313
+#45 depth 24 value 6 policy b2 nodes 875326106 whole time 3242 search time 3228 nps 271166699
+#46 depth 24 value -8 policy b3 nodes 255579419 whole time 1266 search time 1250 nps 204463535
+#47 depth 25 value 4 policy g2 nodes 128865597 whole time 680 search time 663 nps 194367416
+#48 depth 25 value 28 policy f6 nodes 971486802 whole time 4263 search time 4247 nps 228746598
+#49 depth 26 value 16 policy e1 nodes 828262926 whole time 3434 search time 3419 nps 242252976
+#50 depth 26 value 10 policy d8 nodes 2765087807 whole time 12318 search time 12303 nps 224749069
+#51 depth 27 value 6 policy a3 nodes 912952401 whole time 5272 search time 5256 nps 173697184
+#52 depth 27 value 0 policy a3 nodes 1001221162 whole time 5655 search time 5638 nps 177584455
+#53 depth 28 value -2 policy d8 nodes 9053138030 whole time 46320 search time 46303 nps 195519470
+#54 depth 28 value -2 policy c7 nodes 13107106565 whole time 62314 search time 62299 nps 210390320
+#55 depth 29 value 0 policy b7 nodes 50749565485 whole time 285130 search time 285116 nps 177996203
+#56 depth 29 value 2 policy h5 nodes 4130096068 whole time 27289 search time 27274 nps 151429789
+#57 depth 30 value -10 policy a6 nodes 29064686103 whole time 146446 search time 146431 nps 198487247
+#58 depth 30 value 4 policy g1 nodes 4651200765 whole time 29353 search time 29339 nps 158533036
+#59 depth 34 value 64 policy g8 nodes 20713 whole time 22 search time 7 nps 2959000
+635.09 sec
+634.783 sec search
+118860771726 nodes
+187246305.78638682 nps
+
+2022/03/10 optimize last flip
+#40 depth 20 value 38 policy a2 nodes 27561209 whole time 159 search time 144 nps 191397284
+#41 depth 22 value 0 policy h4 nodes 43197161 whole time 296 search time 281 nps 153726551
+#42 depth 22 value 6 policy g2 nodes 63542870 whole time 336 search time 321 nps 197952866
+#43 depth 23 value -12 policy c7 nodes 67932478 whole time 430 search time 414 nps 164088111
+#44 depth 23 value -14 policy d2 nodes 85929032 whole time 567 search time 549 nps 156519183
+#45 depth 24 value 6 policy b2 nodes 906358720 whole time 3297 search time 3282 nps 276160487
+#46 depth 24 value -8 policy b3 nodes 264917535 whole time 1324 search time 1308 nps 202536341
+#47 depth 25 value 4 policy g2 nodes 142599500 whole time 723 search time 709 nps 201127644
+#48 depth 25 value 28 policy f6 nodes 981748136 whole time 4251 search time 4236 nps 231763016
+#49 depth 26 value 16 policy e1 nodes 938355140 whole time 3846 search time 3833 nps 244809585
+15.229 sec
+15.077 sec search
+3522141781 nodes
+233610252.76911852 nps
+
+
+
 
 
 
