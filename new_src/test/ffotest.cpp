@@ -39,6 +39,7 @@ int main(){
         uint64_t strt, strt2, search_time = 0ULL;
 
         parent_transpose_table.init();
+        cerr << "start!" << endl;
         strt = tim();
         strt2 = tim();
         search.mpct = 0.6;
