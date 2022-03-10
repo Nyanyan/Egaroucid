@@ -3469,6 +3469,22 @@ done
 170618443409 nodes
 179880110.5405098 nps
 
+2022/03/10 update sigma model
+#40 depth 20 value 38 policy a2 nodes 25719773 whole time 120 search time 112 nps 229640830
+#41 depth 22 value 0 policy h4 nodes 33120444 whole time 180 search time 172 nps 192560720
+#42 depth 22 value 6 policy g2 nodes 48664118 whole time 213 search time 204 nps 238549598
+#43 depth 23 value -12 policy c7 nodes 221223630 whole time 1033 search time 1025 nps 215827931
+#44 depth 23 value -14 policy d2 nodes 72384850 whole time 425 search time 416 nps 174002043
+#45 depth 24 value 6 policy b2 nodes 792764944 whole time 3056 search time 3039 nps 260863752
+#46 depth 24 value -8 policy b3 nodes 330677307 whole time 1588 search time 1572 nps 210354520
+#47 depth 25 value 4 policy g2 nodes 163130821 whole time 846 search time 830 nps 196543157
+#48 depth 25 value 28 policy f6 nodes 808629237 whole time 3563 search time 3548 nps 227911284
+#49 depth 26 value 16 policy e1 nodes 587801298 whole time 3049 search time 3021 nps 194571763
+14.073 sec
+13.939 sec search
+3084116422 nodes
+221258083.21974316 nps
+
 
 
 
