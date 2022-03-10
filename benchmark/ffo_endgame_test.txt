@@ -3647,7 +3647,7 @@ same
 2819148539 nodes
 223741947.53968254 nps
 
-2022/03/10 update transpose table with linked list
+2022/03/10 update transpose table with linked list with bug
 #40 depth 20 value 38 policy a2 nodes 24878830 whole time 126 search time 118 nps 210837542
 #41 depth 22 value 0 policy h4 nodes 26624683 whole time 172 search time 164 nps 162345628
 #42 depth 22 value 6 policy g2 nodes 56928999 whole time 253 search time 246 nps 231418695
@@ -3663,7 +3663,22 @@ same
 3486829961 nodes
 216802211.09245786 nps
 
-
+2022/03/10 fixed tt bug
+#40 depth 20 value 38 policy a2 nodes 24738887 whole time 135 search time 117 nps 211443478
+#41 depth 22 value 0 policy h4 nodes 31095501 whole time 187 search time 177 nps 175680796
+#42 depth 22 value 6 policy g2 nodes 53440045 whole time 238 search time 230 nps 232348021
+#43 depth 23 value -12 policy c7 nodes 143962042 whole time 758 search time 749 nps 192205663
+#44 depth 23 value -14 policy d2 nodes 41176680 whole time 327 search time 308 nps 133690519
+#45 depth 24 value 6 policy b2 nodes 681476011 whole time 2899 search time 2865 nps 237862482
+#46 depth 24 value -8 policy b3 nodes 207174794 whole time 1115 search time 1081 nps 191651058
+#47 depth 25 value 4 policy g2 nodes 69184114 whole time 494 search time 459 nps 150727917
+#48 depth 25 value 28 policy f6 nodes 815038171 whole time 3974 search time 3943 nps 206705090
+#49 depth 26 value 16 policy e1 nodes 645077674 whole time 3215 search time 3173 nps 203302134
+13.342 sec
+13.102 sec search
+22.756964445114136 sec total
+2712363919 nodes
+207019074.87406504 nps
 
 
 
