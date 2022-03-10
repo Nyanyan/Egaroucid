@@ -27,8 +27,8 @@ def calc_n_stones(board):
 evaluate = subprocess.Popen('../new_src/test/a.exe'.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
 sleep(1)
 
-min_depth = 2
-max_depth = 33
+min_depth = 0
+max_depth = 28
 
 depth_width = max_depth - min_depth + 1
 
@@ -39,23 +39,27 @@ def calc_stones(board):
             res += 1
     return res
 
-def collect_data(num):
+def collect_data(directory, num):
     global vhs, vds, vh_vd
     try:
-        with open('data/records3/' + digit(num, 7) + '.txt', 'r') as f:
+        with open('data/' + directory + '/' + digit(num, 7) + '.txt', 'r') as f:
             data = list(f.read().splitlines())
     except:
         print('cannot open')
         return
     #for _ in trange(1000):
     depth = min_depth
-    max_num = 15000
-    for datum in tqdm(data[:max_num]):
+    max_num = 5000
+    print(len(data))
+    for _ in tqdm(range(max_num)):
+        datum = data[randrange(0, len(data))]
         #datum = data[randrange(0, len(data))]
         board, player, score = datum.split()
         score = float(score)
         if player == '1':
             score = -score
+        if abs(score) == 64.0 and random() > 0.15:
+            continue
         n_stones = calc_n_stones(board)
         if n_stones >= 60:
             continue
@@ -94,6 +98,7 @@ def collect_data(num):
         with open('sigma_data.txt', 'a') as f:
             f.write(str(n_stones) + ' ' + str(depth1) + ' ' + str(v1) + ' ' + str(depth2) + ' ' + str(v2) + '\n')
 
-for i in range(20, 435):
-    collect_data(i)
+for i in range(21, 173):
+    collect_data('records9', i)
+    collect_data('records3', i)
 evaluate.kill()
