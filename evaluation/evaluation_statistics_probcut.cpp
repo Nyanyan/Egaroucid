@@ -327,7 +327,7 @@ int main(int argc, char *argv[]){
     double sds[n_phases], n_sds[n_phases][n_phases];
     calc_sd(sds);
 
-    calc_comb_sd(sds, n_sds);
+    //calc_comb_sd(sds, n_sds);
 
     return 0;
 }

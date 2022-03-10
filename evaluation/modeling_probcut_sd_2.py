@@ -81,6 +81,51 @@ mpcd = [
     14
 ]
 
+raw_sd_phase = '''0 23.3572
+1 22.8332
+2 22.2566
+3 21.071
+4 19.4776
+5 19.9251
+6 19.0532
+7 17.5385
+8 16.5502
+9 15.4362
+10 14.2226
+11 12.8758
+12 11.7495
+13 10.1726
+14 8.70606
+15 7.38541
+16 6.28977
+17 5.81705
+18 5.84776
+19 5.76587
+20 5.9707
+21 5.85142
+22 5.90126
+23 6.2033
+24 6.28933
+25 5.91673
+26 5.67738
+27 5.10159
+28 4.07754
+29 2.13807
+'''
+sd_phase = [[float(elem) for elem in line.split()] for line in raw_sd_phase.splitlines()]
+sdavg_xs = []
+sdavg_ys = []
+sdavg_zs = []
+for phase1, sd1 in sd_phase:
+    for phase2, sd2 in sd_phase:
+        #if phase1 < phase2:
+        x1 = phase1 * 2 + 5
+        x2 = phase2 * 2 + 5
+        z = (sd1 + sd2) / 2
+        sdavg_xs.append(x1)
+        sdavg_ys.append(x2)
+        sdavg_zs.append(z)
+
 xs = []
 ys = []
 zs = []
@@ -120,9 +165,10 @@ def f(xy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, prob
 def plot_fit_result(params):
     fig = plt.figure()
     ax = Axes3D(fig)
-    ax.plot(xs, ys, zs, ms=3, marker="o",linestyle='None')
-    ax.plot(sdxs, sdys, sdzs, ms=3, marker="o",linestyle='None')
-    mx, my = np.meshgrid(range(60), range(60))
+    #ax.plot(xs, ys, zs, ms=3, marker="o",linestyle='None')
+    #ax.plot(sdxs, sdys, sdzs, ms=3, marker="o",linestyle='None')
+    ax.plot(sdavg_xs, sdavg_ys, sdavg_zs, ms=3, marker="o",linestyle='None')
+    mx, my = np.meshgrid(range(64), range(64))
     ax.plot_wireframe(mx, my, f((mx, my), *params), rstride=10, cstride=10)
     ax.set_xlabel('depth1')
     ax.set_ylabel('depth2')
@@ -131,7 +177,7 @@ def plot_fit_result(params):
 
 #plot_fit_result(*probcut_params_before)
 
-popt, pcov = curve_fit(f, (xs, ys), zs, np.array(probcut_params_before))
+popt, pcov = curve_fit(f, (sdavg_xs, sdavg_ys), sdavg_zs, np.array(probcut_params_before))
 print([float(elem) for elem in popt])
 for i in range(len(popt)):
     print('#define probcut_' + chr(ord('a') + i), popt[i])
