@@ -3631,6 +3631,38 @@ done
 2894667906 nodes
 224010826.96177062 nps
 
+same
+#40 depth 20 value 38 policy a2 nodes 24756903 whole time 123 search time 115 nps 215277417
+#41 depth 22 value 0 policy h4 nodes 30993059 whole time 177 search time 170 nps 182312111
+#42 depth 22 value 6 policy g2 nodes 51399268 whole time 214 search time 207 nps 248305642
+#43 depth 23 value -12 policy c7 nodes 173316002 whole time 849 search time 842 nps 205838482
+#44 depth 23 value -14 policy d2 nodes 32636039 whole time 259 search time 251 nps 130024059
+#45 depth 24 value 6 policy b2 nodes 682902845 whole time 2650 search time 2635 nps 259166165
+#46 depth 24 value -8 policy b3 nodes 209564096 whole time 1041 search time 1026 nps 204253504
+#47 depth 25 value 4 policy g2 nodes 75690869 whole time 457 search time 443 nps 170859749
+#48 depth 25 value 28 policy f6 nodes 734756135 whole time 3383 search time 3369 nps 218093242
+#49 depth 26 value 16 policy e1 nodes 803133323 whole time 3567 search time 3542 nps 226745715
+12.72 sec
+12.6 sec search
+2819148539 nodes
+223741947.53968254 nps
+
+2022/03/10 update transpose table with linked list
+#40 depth 20 value 38 policy a2 nodes 24878830 whole time 126 search time 118 nps 210837542
+#41 depth 22 value 0 policy h4 nodes 26624683 whole time 172 search time 164 nps 162345628
+#42 depth 22 value 6 policy g2 nodes 56928999 whole time 253 search time 246 nps 231418695
+#43 depth 23 value -12 policy c7 nodes 161678176 whole time 817 search time 809 nps 199849414
+#44 depth 23 value -14 policy d2 nodes 110668986 whole time 722 search time 713 nps 155215969
+#45 depth 24 value 6 policy b2 nodes 797892095 whole time 3198 search time 3182 nps 250751758
+#46 depth 24 value -8 policy b3 nodes 183519059 whole time 1057 search time 1042 nps 176121937
+#47 depth 25 value 4 policy g2 nodes 137389289 whole time 774 search time 759 nps 181013555
+#48 depth 25 value 28 policy f6 nodes 1080202486 whole time 5000 search time 4986 nps 216647109
+#49 depth 26 value 16 policy e1 nodes 907047358 whole time 4086 search time 4064 nps 223190786
+16.205 sec
+16.083 sec search
+3486829961 nodes
+216802211.09245786 nps
+
 
 
 

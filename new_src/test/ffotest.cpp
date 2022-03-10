@@ -90,6 +90,7 @@ int main(){
 
         parent_transpose_table.init();
         search.use_mpc = false;
+        search.mpct = 100.0;
         strt2 = tim();
         alpha = -INF;
         beta = -INF;

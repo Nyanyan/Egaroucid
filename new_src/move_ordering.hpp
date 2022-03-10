@@ -119,7 +119,7 @@ inline void move_evaluate_fast_first(Search *search, Flip *flip, const int best_
         search->board.undo(flip);
     }
 }
-*/
+
 inline void move_evaluate_fast_first(Search *search, Flip *flip){
     flip->value = 0;
     if (search->board.parity & cell_div4[flip->pos])
@@ -129,7 +129,7 @@ inline void move_evaluate_fast_first(Search *search, Flip *flip){
         flip->value -= pop_count_ull(flip->n_legal) * W_END_MOBILITY;
     search->board.undo(flip);
 }
-
+*/
 inline void move_ordering_fast_first(Search *search, vector<Flip> &move_list){
     if (move_list.size() < 2)
         return;
