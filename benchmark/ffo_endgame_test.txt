@@ -3526,7 +3526,46 @@ done
 156974260835 nodes
 172115049.63647068 nps
 
+2022/03/10 mpct=0
+#40 depth 20 value 38 policy a2 nodes 25605579 whole time 122 search time 113 nps 226598044
+#41 depth 22 value 0 policy h4 nodes 33289020 whole time 201 search time 191 nps 174288062
+#42 depth 22 value 6 policy g2 nodes 53602845 whole time 232 search time 225 nps 238234866
+#43 depth 23 value -12 policy c7 nodes 214855198 whole time 1007 search time 998 nps 215285769
+#44 depth 23 value -14 policy d2 nodes 43308251 whole time 306 search time 297 nps 145819026
+#45 depth 24 value 6 policy b2 nodes 876099222 whole time 3357 search time 3342 nps 262148181
+#46 depth 24 value -8 policy b3 nodes 320567832 whole time 1506 search time 1493 nps 214713886
+#47 depth 25 value 4 policy g2 nodes 145387030 whole time 758 search time 742 nps 195939393
+#48 depth 25 value 28 policy f6 nodes 722708403 whole time 3336 search time 3322 nps 217552198
+#49 depth 26 value 16 policy e1 nodes 753147358 whole time 3170 search time 3155 nps 238715485
+13.995 sec
+13.878 sec search
+3188570738 nodes
+229757222.79867417 nps
 
+#40 depth 20 value 38 policy a2 nodes 26200356 whole time 123 search time 115 nps 227829182
+#41 depth 22 value 0 policy h4 nodes 32843473 whole time 183 search time 174 nps 188755591
+#42 depth 22 value 6 policy g2 nodes 56059379 whole time 236 search time 227 nps 246957616
+#43 depth 23 value -12 policy c7 nodes 214722010 whole time 985 search time 976 nps 220002059
+#44 depth 23 value -14 policy d2 nodes 37493708 whole time 288 search time 279 nps 134386050
+#45 depth 24 value 6 policy b2 nodes 738105947 whole time 2818 search time 2802 nps 263421108
+#46 depth 24 value -8 policy b3 nodes 336660092 whole time 1549 search time 1534 nps 219465509
+#47 depth 25 value 4 policy g2 nodes 141671378 whole time 740 search time 725 nps 195408797
+#48 depth 25 value 28 policy f6 nodes 818840787 whole time 3598 search time 3583 nps 228534967
+#49 depth 26 value 16 policy e1 nodes 711863850 whole time 2995 search time 2980 nps 238880486
+#50 depth 26 value 10 policy d8 nodes 2702158829 whole time 11623 search time 11608 nps 232784185
+#51 depth 27 value 6 policy a3 nodes 1600043429 whole time 9144 search time 9129 nps 175270394
+#52 depth 27 value 0 policy a3 nodes 1110778001 whole time 5923 search time 5908 nps 188012525
+#53 depth 28 value -2 policy d8 nodes 8815177261 whole time 45061 search time 45046 nps 195692786
+#54 depth 28 value -2 policy c7 nodes 21662528581 whole time 103740 search time 103724 nps 208847793
+#55 depth 29 value 0 policy b7 nodes 96260109933 whole time 546503 search time 546487 nps 176143458
+#56 depth 29 value 2 policy h5 nodes 4157482748 whole time 26059 search time 26045 nps 159626905
+#57 depth 30 value -10 policy a6 nodes 26134889673 whole time 128214 search time 128199 nps 203861884
+#58 depth 30 value 4 policy g1 nodes 4644436979 whole time 26779 search time 26763 nps 173539475
+#59 depth 34 value 64 policy g8 nodes 20352 whole time 20 search time 5 nps 4070400
+916.581 sec
+916.309 sec search
+170202086766 nodes
+185747479.03381938 nps
 
 
 
