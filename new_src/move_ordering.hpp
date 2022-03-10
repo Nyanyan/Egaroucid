@@ -58,22 +58,24 @@ inline void move_evaluate(Search *search, Flip *flip, const int best_move, const
             else{
                 //uint64_t empties = ~(search->board.player | search->board.opponent);
                 //flip->value += (calc_surround(search->board.player, empties) - calc_surround(search->board.opponent, empties)) * W_SURROUND;
-                flip->n_legal = search->board.get_legal();
-                flip->value -= pop_count_ull(flip->n_legal) * W_MOBILITY;
+                if (search->board.n >= 44){
+                    flip->n_legal = search->board.get_legal();
+                    flip->value += -pop_count_ull(flip->n_legal) * W_MOBILITY;
+                }
                 switch(depth){
                     case 0:
-                        flip->value += (HW2 - mid_evaluate(&search->board)) * W_VALUE_SHALLOW;
+                        flip->value += -mid_evaluate(&search->board) * W_VALUE_SHALLOW;
                         break;
                     case 1:
-                        flip->value += (HW2 - nega_alpha_eval1(search, alpha, beta, false)) * W_VALUE;
+                        flip->value += -nega_alpha_eval1(search, alpha, beta, false) * W_VALUE;
                         break;
                     default:
                         if (depth <= MID_FAST_DEPTH)
-                            flip->value += (HW2 - nega_alpha(search, alpha, beta, depth, false)) * W_VALUE;
+                            flip->value += -nega_alpha(search, alpha, beta, depth, false) * W_VALUE;
                         else{
                             bool use_mpc = search->use_mpc;
                             search->use_mpc = false;
-                                flip->value += (HW2 - nega_alpha_ordering_nomemo(search, alpha, beta, depth, false, flip->n_legal)) * W_VALUE;
+                                flip->value += -nega_alpha_ordering_nomemo(search, alpha, beta, depth, false, flip->n_legal) * W_VALUE;
                             search->use_mpc = use_mpc;
                         }
                         break;
@@ -94,7 +96,7 @@ inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int
             //uint64_t empties = ~(search->board.player | search->board.opponent);
             //flip->value += (calc_surround(search->board.player, empties) - calc_surround(search->board.opponent, empties)) * W_SURROUND;
             flip->n_legal = search->board.get_legal();
-            flip->value -= pop_count_ull(flip->n_legal) * W_MOBILITY;
+            flip->value += -pop_count_ull(flip->n_legal) * W_MOBILITY;
             switch(depth){
                 case 0:
                     flip->value += ((HW2 - mid_evaluate(&search->board)) >> 1) * W_VALUE;
