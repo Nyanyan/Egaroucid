@@ -3371,6 +3371,38 @@ done
 3478315367 nodes
 235674189.7825056 nps
 
+2022/03/10 update presearch
+#40 depth 20 value 38 policy a2 nodes 25685372 whole time 122 search time 114 nps 225310280
+#41 depth 22 value 0 policy h4 nodes 34950019 whole time 186 search time 178 nps 196348421
+#42 depth 22 value 6 policy g2 nodes 54202483 whole time 224 search time 217 nps 249781027
+#43 depth 23 value -12 policy c7 nodes 215593381 whole time 966 search time 958 nps 225045282
+#44 depth 23 value -14 policy d2 nodes 34138578 whole time 257 search time 249 nps 137102722
+#45 depth 24 value 6 policy b2 nodes 880271689 whole time 3257 search time 3242 nps 271521187
+#46 depth 24 value -8 policy b3 nodes 296115665 whole time 1404 search time 1388 nps 213339816
+#47 depth 25 value 4 policy g2 nodes 166252193 whole time 848 search time 832 nps 199822347
+#48 depth 25 value 28 policy f6 nodes 860564216 whole time 3736 search time 3721 nps 231272296
+#49 depth 26 value 16 policy e1 nodes 797057812 whole time 3611 search time 3584 nps 222393362
+14.611 sec
+14.483 sec search
+3364831408 nodes
+232329725.05696332 nps
+
+2022/03/10 use probcut_weight_all
+#40 depth 20 value 38 policy a2 nodes 26020315 whole time 121 search time 113 nps 230268274
+#41 depth 22 value 0 policy h4 nodes 32434774 whole time 178 search time 170 nps 190792788
+#42 depth 22 value 6 policy g2 nodes 53941984 whole time 225 search time 216 nps 249731407
+#43 depth 23 value -12 policy c7 nodes 218535196 whole time 986 search time 978 nps 223451120
+#44 depth 23 value -14 policy d2 nodes 31581804 whole time 255 search time 247 nps 127861554
+#45 depth 24 value 6 policy b2 nodes 723256322 whole time 2729 search time 2714 nps 266490907
+#46 depth 24 value -8 policy b3 nodes 313531418 whole time 1495 search time 1481 nps 211702510
+#47 depth 25 value 4 policy g2 nodes 176937913 whole time 888 search time 873 nps 202678021
+#48 depth 25 value 28 policy f6 nodes 817932407 whole time 3548 search time 3533 nps 231512144
+#49 depth 26 value 16 policy e1 nodes 886038652 whole time 3823 search time 3798 nps 233290850
+14.248 sec
+14.123 sec search
+3280210785 nodes
+232260198.61219287 nps
+
 
 /***** copy *****/
 

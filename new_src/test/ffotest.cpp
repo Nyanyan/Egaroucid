@@ -43,9 +43,9 @@ int main(){
         strt2 = tim();
         search.mpct = 0.6;
         search.use_mpc = true;
-        result = first_nega_scout(&search, -HW2, HW2, depth / 2, false, false);
+        result = first_nega_scout(&search, -HW2, HW2, depth / 3, false, false);
         g = result.first;
-        cerr << "presearch d=" << depth / 2 << " t=" << search.mpct << " [-64,64] " << g << " " << idx_to_coord(result.second) << endl;
+        cerr << "presearch d=" << depth / 3 << " t=" << search.mpct << " [-64,64] " << g << " " << idx_to_coord(result.second) << endl;
         search_time += tim() - strt2;
 
         if (depth >= 24){

@@ -124,7 +124,7 @@ constexpr double mpcsd[N_PHASES][MID_MPC_MAX_DEPTH - MID_MPC_MIN_DEPTH + 1]={
     {3.615, 2.16, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
 };
 */
-#define W_PROBCUT_SIGMA_ALL 0.6
+#define W_PROBCUT_SIGMA_ALL 0.9
 
 constexpr double probcut_params[6] = {
     -0.07924286622429888, 0.016903451472509934, -0.05294261414319046, -0.254443804366251, -0.8506676921018298, 1.0213552153297525
@@ -147,7 +147,7 @@ inline double probcut_sigma(int x, int y){
     double res = probcut_a * x * x * x + probcut_b * x * x * y + probcut_c * x * y * y + probcut_d * y * y * y;
     res += probcut_e * x * x + probcut_f * x * y + probcut_g * y * y;
     res += probcut_h * x + probcut_i * y + probcut_j;
-    return res;
+    return res * W_PROBCUT_SIGMA_ALL;
     
     //return mpcsd[(x - 4) / 4][y - MID_MPC_MIN_DEPTH];
     //return 0;
