@@ -48,38 +48,40 @@ int main(){
         cerr << "presearch d=" << depth / 2 << " t=" << search.mpct << " [-64,64] " << g << " " << idx_to_coord(result.second) << endl;
         search_time += tim() - strt2;
 
-        parent_transpose_table.init();
-        strt2 = tim();
-        search.mpct = 1.2;
-        search.use_mpc = true;
-        result = first_nega_scout(&search, -HW2, HW2, depth, false, true);
-        g = result.first;
-        cerr << "presearch d=" << depth << " t=" << search.mpct << " [-64,64] " << g << " " << idx_to_coord(result.second) << endl;
-        search_time += tim() - strt2;
-
-        if (false && depth >= 22){
+        if (depth >= 24){
             parent_transpose_table.init();
             strt2 = tim();
-            search.mpct = 1.7;
+            search.mpct = 1.2;
             search.use_mpc = true;
-            alpha = max(-HW2, g - 3);
-            beta = min(HW2, g + 3);
-            result = first_nega_scout(&search, alpha, beta, depth, false, true);
+            result = first_nega_scout(&search, -HW2, HW2, depth, false, true);
             g = result.first;
-            cerr << "presearch d=" << depth << " t=" << search.mpct << " [" << alpha << "," << beta << "] " << g << " " << idx_to_coord(result.second) << endl;
+            cerr << "presearch d=" << depth << " t=" << search.mpct << " [-64,64] " << g << " " << idx_to_coord(result.second) << endl;
             search_time += tim() - strt2;
 
-            if (depth >= 24){
+            if (depth >= 26){
                 parent_transpose_table.init();
                 strt2 = tim();
-                search.mpct = 2.3;
+                search.mpct = 1.7;
                 search.use_mpc = true;
-                alpha = max(-HW2, g - 2);
-                beta = min(HW2, g + 2);
+                alpha = max(-HW2, g - 3);
+                beta = min(HW2, g + 3);
                 result = first_nega_scout(&search, alpha, beta, depth, false, true);
                 g = result.first;
                 cerr << "presearch d=" << depth << " t=" << search.mpct << " [" << alpha << "," << beta << "] " << g << " " << idx_to_coord(result.second) << endl;
                 search_time += tim() - strt2;
+
+                if (depth >= 28){
+                    parent_transpose_table.init();
+                    strt2 = tim();
+                    search.mpct = 2.3;
+                    search.use_mpc = true;
+                    alpha = max(-HW2, g - 2);
+                    beta = min(HW2, g + 2);
+                    result = first_nega_scout(&search, alpha, beta, depth, false, true);
+                    g = result.first;
+                    cerr << "presearch d=" << depth << " t=" << search.mpct << " [" << alpha << "," << beta << "] " << g << " " << idx_to_coord(result.second) << endl;
+                    search_time += tim() - strt2;
+                }
             }
         }
 

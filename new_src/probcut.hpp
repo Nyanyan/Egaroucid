@@ -28,7 +28,7 @@ constexpr int mpcd[61] = {
     12
 };
 */
-/*
+
 constexpr int mpcd[61] = {
     0, 1, 0, 1, 0, 1, 2, 1, 2, 1, 
     2, 1, 2, 3, 2, 3, 2, 3, 4, 3, 
@@ -38,7 +38,7 @@ constexpr int mpcd[61] = {
     8, 9, 8, 9, 10, 9, 10, 9, 10, 9,
     10
 };
-*/
+
 /*
 constexpr int mpcd[61] = {
     0, 1, 0, 1, 0, 1, 0, 1, 2, 1, 
@@ -94,6 +94,7 @@ constexpr double w_probcut_sigma[61] = {
     0.40
 };
 */
+/*
 constexpr int mpcd[41] = {
     0, 1, 0, 1, 2, 3, 2, 3, 4, 3, 
     4, 3, 4, 5, 4, 5, 6, 5, 6, 7, 
@@ -122,7 +123,7 @@ constexpr double mpcsd[N_PHASES][MID_MPC_MAX_DEPTH - MID_MPC_MIN_DEPTH + 1]={
     {3.796, 4.198, 3.46, 3.451, 2.685, 2.098, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
     {3.615, 2.16, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
 };
-
+*/
 #define W_PROBCUT_SIGMA_ALL 0.6
 
 constexpr double probcut_params[6] = {
@@ -141,14 +142,15 @@ constexpr double probcut_params[6] = {
 #define probcut_j -0.3632247442453185
 
 inline double probcut_sigma(int x, int y){
-    /*
+    
     y -= mpcd[y];
     double res = probcut_a * x * x * x + probcut_b * x * x * y + probcut_c * x * y * y + probcut_d * y * y * y;
     res += probcut_e * x * x + probcut_f * x * y + probcut_g * y * y;
     res += probcut_h * x + probcut_i * y + probcut_j;
     return res;
-    */
-    return 0; //mpcsd[(x - 4) / 4][y - MID_MPC_MIN_DEPTH];
+    
+    //return mpcsd[(x - 4) / 4][y - MID_MPC_MIN_DEPTH];
+    //return 0;
 }
 /*
 inline double probcut_sigma(int n_stones, int depth){
@@ -169,7 +171,7 @@ int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, b
 inline bool mpc_higher(Search *search, int beta, int depth, uint64_t legal){
     if (depth <= 8)
         return false;
-    int bound = beta + ceil(search->mpct * probcut_sigma(search->board.n, depth));
+    int bound = beta + round(search->mpct * probcut_sigma(search->board.n, depth));
     if (bound > HW2)
         bound = HW2; //return false;
     bool res;
@@ -199,7 +201,7 @@ inline bool mpc_higher(Search *search, int beta, int depth, uint64_t legal){
 inline bool mpc_lower(Search *search, int alpha, int depth, uint64_t legal){
     if (depth <= 8)
         return false;
-    int bound = alpha - ceil(search->mpct * probcut_sigma(search->board.n, depth));
+    int bound = alpha - round(search->mpct * probcut_sigma(search->board.n, depth));
     if (bound < -HW2)
         bound = -HW2; //return false;
     bool res;

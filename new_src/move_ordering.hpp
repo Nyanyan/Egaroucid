@@ -58,10 +58,10 @@ inline void move_evaluate(Search *search, Flip *flip, const int best_move, const
             else{
                 //uint64_t empties = ~(search->board.player | search->board.opponent);
                 //flip->value += (calc_surround(search->board.player, empties) - calc_surround(search->board.opponent, empties)) * W_SURROUND;
-                if (search->board.n >= 44){
-                    flip->n_legal = search->board.get_legal();
-                    flip->value += -pop_count_ull(flip->n_legal) * W_MOBILITY;
-                }
+                //if (search->board.n >= 44){
+                flip->n_legal = search->board.get_legal();
+                flip->value += -pop_count_ull(flip->n_legal) * W_MOBILITY;
+                //}
                 switch(depth){
                     case 0:
                         flip->value += -mid_evaluate(&search->board) * W_VALUE_SHALLOW;
