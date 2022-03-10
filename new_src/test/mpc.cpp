@@ -25,6 +25,8 @@ int main(){
         cin >> search.mpct;
         child_transpose_table.init();
         parent_transpose_table.init();
+        nega_scout(&search, -HW2, HW2, depth / 2, false, LEGAL_UNDEFINED, false);
+        parent_transpose_table.init();
         cout << nega_scout(&search, -HW2, HW2, depth, false, LEGAL_UNDEFINED, false) << endl;
         //cout << nega_alpha_ordering(&search, -HW2, HW2, depth, false, false, &searching) << endl;
         //cout << nega_alpha(&search, -HW2, HW2, depth, false) << endl;
