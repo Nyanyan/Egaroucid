@@ -199,12 +199,12 @@ inline void calc_stability(Board *b, int *stab0, int *stab1){
     uint64_t h, v, d7, d9;
     const uint64_t player_mask = b->player & 0b0000000001111110011111100111111001111110011111100111111000000000ULL;
     const uint64_t opponent_mask = b->opponent & 0b0000000001111110011111100111111001111110011111100111111000000000ULL;
-    int pl, op;
-    pl = b->player & 0b11111111;
-    op = b->opponent & 0b11111111;
+    uint8_t pl, op;
+    pl = b->player & 0b11111111U;
+    op = b->opponent & 0b11111111U;
     edge_stability |= stability_edge_arr[pl][op][0] << 56;
-    pl = (b->player >> 56) & 0b11111111;
-    op = (b->opponent >> 56) & 0b11111111;
+    pl = (b->player >> 56) & 0b11111111U;
+    op = (b->opponent >> 56) & 0b11111111U;
     edge_stability |= stability_edge_arr[pl][op][0];
     pl = join_v_line(b->player, 0);
     op = join_v_line(b->opponent, 0);
@@ -238,14 +238,14 @@ inline void calc_stability(Board *b, int *stab0, int *stab1){
     *stab1 = pop_count_ull(opponent_stability);
 }
 
-inline void calc_stability_fast(Board *b, int *stab0, int *stab1){
+inline void calc_stability_edge(Board *b, int *stab0, int *stab1){
     uint64_t edge_stability = 0;
-    int pl, op;
-    pl = b->player & 0b11111111;
-    op = b->opponent & 0b11111111;
+    uint8_t pl, op;
+    pl = b->player & 0b11111111U;
+    op = b->opponent & 0b11111111U;
     edge_stability |= stability_edge_arr[pl][op][0] << 56;
-    pl = (b->player >> 56) & 0b11111111;
-    op = (b->opponent >> 56) & 0b11111111;
+    pl = (b->player >> 56) & 0b11111111U;
+    op = (b->opponent >> 56) & 0b11111111U;
     edge_stability |= stability_edge_arr[pl][op][0];
     pl = join_v_line(b->player, 0);
     op = join_v_line(b->opponent, 0);
@@ -255,6 +255,24 @@ inline void calc_stability_fast(Board *b, int *stab0, int *stab1){
     edge_stability |= stability_edge_arr[pl][op][1];
     *stab0 = pop_count_ull(edge_stability & b->player);
     *stab1 = pop_count_ull(edge_stability & b->opponent);
+}
+
+inline int calc_stability_edge_player(uint64_t player, uint64_t opponent){
+    uint64_t edge_stability = 0;
+    uint8_t pl, op;
+    pl = player & 0b11111111U;
+    op = opponent & 0b11111111U;
+    edge_stability |= stability_edge_arr[pl][op][0] << 56;
+    pl = (player >> 56) & 0b11111111U;
+    op = (opponent >> 56) & 0b11111111U;
+    edge_stability |= stability_edge_arr[pl][op][0];
+    pl = join_v_line(player, 0);
+    op = join_v_line(opponent, 0);
+    edge_stability |= stability_edge_arr[pl][op][1] << 7;
+    pl = join_v_line(player, 7);
+    op = join_v_line(opponent, 7);
+    edge_stability |= stability_edge_arr[pl][op][1];
+    return pop_count_ull(edge_stability & player);
 }
 
 

@@ -11,6 +11,10 @@ using namespace std;
 uint32_t hash_rand_player[4][65536];
 uint32_t hash_rand_opponent[4][65536];
 
+inline uint64_t full_stability_h(uint64_t full);
+inline uint64_t full_stability_v(uint64_t full);
+inline void full_stability_d(uint64_t full, uint64_t *full_d7, uint64_t *full_d9);
+
 class Board {
     public:
         uint64_t player;
@@ -302,41 +306,47 @@ class Board {
         inline int phase(){
             return min(N_PHASES - 1, (n - 4) / PHASE_N_STONES);
         }
-    
-    private:
-        inline uint64_t full_stability_h(uint64_t full){
-            full &= full >> 1;
-            full &= full >> 2;
-            full &= full >> 4;
-            return (full & 0x0101010101010101) * 0xff;
-        }
-
-        inline uint64_t full_stability_v(uint64_t full){
-            full &= (full >> 8) | (full << 56);
-            full &= (full >> 16) | (full << 48);
-            full &= (full >> 32) | (full << 32);
-            return full;
-        }
-
-        inline void full_stability_d(uint64_t full, uint64_t *full_d7, uint64_t *full_d9){
-            static const uint64_t edge = 0xFF818181818181FF;
-            static const uint64_t e7[4] = {
-                0xFFFF030303030303, 0xC0C0C0C0C0C0FFFF, 0xFFFFFFFF0F0F0F0F, 0xF0F0F0F0FFFFFFFF};
-            static const uint64_t e9[3] = {
-                0xFFFFC0C0C0C0C0C0, 0x030303030303FFFF, 0x0F0F0F0FF0F0F0F0};
-            uint64_t l7, r7, l9, r9;
-            l7 = r7 = full;
-            l7 &= edge | (l7 >> 7);		r7 &= edge | (r7 << 7);
-            l7 &= e7[0] | (l7 >> 14);	r7 &= e7[1] | (r7 << 14);
-            l7 &= e7[2] | (l7 >> 28);	r7 &= e7[3] | (r7 << 28);
-            *full_d7 = l7 & r7;
-
-            l9 = r9 = full;
-            l9 &= edge | (l9 >> 9);		r9 &= edge | (r9 << 9);
-            l9 &= e9[0] | (l9 >> 18);	r9 &= e9[1] | (r9 << 18);
-            *full_d9 = l9 & r9 & (e9[2] | (l9 >> 36) | (r9 << 36));
-        }
 };
+
+inline uint64_t full_stability_h(uint64_t full){
+    full &= full >> 1;
+    full &= full >> 2;
+    full &= full >> 4;
+    return (full & 0x0101010101010101) * 0xff;
+}
+
+inline uint64_t full_stability_v(uint64_t full){
+    full &= (full >> 8) | (full << 56);
+    full &= (full >> 16) | (full << 48);
+    full &= (full >> 32) | (full << 32);
+    return full;
+}
+
+inline void full_stability_d(uint64_t full, uint64_t *full_d7, uint64_t *full_d9){
+    static const uint64_t edge = 0xFF818181818181FF;
+    static const uint64_t e7[4] = {
+        0xFFFF030303030303, 0xC0C0C0C0C0C0FFFF, 0xFFFFFFFF0F0F0F0F, 0xF0F0F0F0FFFFFFFF};
+    static const uint64_t e9[3] = {
+        0xFFFFC0C0C0C0C0C0, 0x030303030303FFFF, 0x0F0F0F0FF0F0F0F0};
+    uint64_t l7, r7, l9, r9;
+    l7 = r7 = full;
+    l7 &= edge | (l7 >> 7);		r7 &= edge | (r7 << 7);
+    l7 &= e7[0] | (l7 >> 14);	r7 &= e7[1] | (r7 << 14);
+    l7 &= e7[2] | (l7 >> 28);	r7 &= e7[3] | (r7 << 28);
+    *full_d7 = l7 & r7;
+
+    l9 = r9 = full;
+    l9 &= edge | (l9 >> 9);		r9 &= edge | (r9 << 9);
+    l9 &= e9[0] | (l9 >> 18);	r9 &= e9[1] | (r9 << 18);
+    *full_d9 = l9 & r9 & (e9[2] | (l9 >> 36) | (r9 << 36));
+}
+
+inline void full_stability(uint64_t player, uint64_t opponent, uint64_t *h, uint64_t *v, uint64_t *d7, uint64_t *d9){
+    const uint64_t stones = (player | opponent);
+    *h = full_stability_h(stones);
+    *v = full_stability_v(stones);
+    full_stability_d(stones, d7, d9);
+}
 
 void board_init(){
     int i, j;
