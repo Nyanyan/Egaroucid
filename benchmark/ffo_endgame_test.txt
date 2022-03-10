@@ -3567,6 +3567,22 @@ done
 170202086766 nodes
 185747479.03381938 nps
 
+2022/03/10 use former model
+40 depth 20 value 38 policy a2 nodes 25787111 whole time 125 search time 117 nps 220402658
+#41 depth 22 value 0 policy h4 nodes 33619612 whole time 206 search time 197 nps 170657928
+#42 depth 22 value 6 policy g2 nodes 63487377 whole time 263 search time 256 nps 247997566
+#43 depth 23 value -12 policy c7 nodes 218637079 whole time 1013 search time 1005 nps 217549332
+#44 depth 23 value -14 policy d2 nodes 42834984 whole time 305 search time 296 nps 144712783
+#45 depth 24 value 6 policy b2 nodes 830523272 whole time 3012 search time 2998 nps 277025774
+#46 depth 24 value -8 policy b3 nodes 313303884 whole time 1428 search time 1411 nps 222043858
+#47 depth 25 value 4 policy g2 nodes 170408447 whole time 820 search time 805 nps 211687511
+#48 depth 25 value 28 policy f6 nodes 838982260 whole time 3617 search time 3602 nps 232921227
+#49 depth 26 value 16 policy e1 nodes 722374764 whole time 2854 search time 2838 nps 254536562
+13.643 sec
+13.525 sec search
+3259958790 nodes
+241032073.1977819 nps
+
 
 
 
