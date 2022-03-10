@@ -58,7 +58,7 @@ for phase in range(N_PHASES):
     for depth in range(MID_MPC_MIN_DEPTH, MID_MPC_MAX_DEPTH + 1):
         if sd[phase][depth - MID_MPC_MIN_DEPTH] != 0.0:
             probcut_depth = mpcd[depth]
-            xs.append(phase * 2 + 4 + 1)
+            xs.append(phase * 2 + 5)
             ys.append((depth - mpcd[depth]))
             zs.append(sd[phase][depth - MID_MPC_MIN_DEPTH])
 
