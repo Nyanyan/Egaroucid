@@ -149,9 +149,9 @@ inline double probcut_sigma(int n_stones, int depth){
     res += probcut_e * x * x + probcut_f * x * y + probcut_g * y * y;
     res += probcut_h * x + probcut_i * y + probcut_j;
     */
-    double res = probcut_a * x * x * x + probcut_d * y * y * y;
-    res += probcut_e * x * x + probcut_g * y * y;
-    res += probcut_h * x + probcut_i * y + probcut_j;
+    double res = probcut_a * x * x * x + probcut_a * y * y * y;
+    res += probcut_e * x * x + probcut_e * y * y;
+    res += probcut_h * x + probcut_h * y + probcut_j;
     return res;
     
     //return mpcsd[(x - 4) / 4][y - MID_MPC_MIN_DEPTH];
