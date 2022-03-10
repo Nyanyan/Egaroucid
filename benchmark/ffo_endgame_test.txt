@@ -3615,7 +3615,21 @@ done
 3310278179 nodes
 234904781.36531365 nps
 
-
+2022/03/10 update move ordering
+#40 depth 20 value 38 policy a2 nodes 24902316 whole time 123 search time 116 nps 214675137
+#41 depth 22 value 0 policy h4 nodes 30924922 whole time 179 search time 172 nps 179796058
+#42 depth 22 value 6 policy g2 nodes 48917711 whole time 208 search time 199 nps 245817643
+#43 depth 23 value -12 policy c7 nodes 144430175 whole time 702 search time 694 nps 208112644
+#44 depth 23 value -14 policy d2 nodes 42909584 whole time 305 search time 299 nps 143510314
+#45 depth 24 value 6 policy b2 nodes 707856815 whole time 2702 search time 2687 nps 263437593
+#46 depth 24 value -8 policy b3 nodes 211544286 whole time 1049 search time 1034 nps 204588284
+#47 depth 25 value 4 policy g2 nodes 60034768 whole time 410 search time 395 nps 151986754
+#48 depth 25 value 28 policy f6 nodes 1065731744 whole time 4611 search time 4596 nps 231882450
+#49 depth 26 value 16 policy e1 nodes 557415585 whole time 2754 search time 2730 nps 204181532
+13.043 sec
+12.922 sec search
+2894667906 nodes
+224010826.96177062 nps
 
 
 
