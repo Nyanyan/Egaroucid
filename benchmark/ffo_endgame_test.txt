@@ -3291,6 +3291,22 @@ done
 3522141781 nodes
 233610252.76911852 nps
 
+2022/03/10 mid fast = 3
+#40 depth 20 value 38 policy a2 nodes 28232282 whole time 162 search time 146 nps 193371794
+#41 depth 22 value 0 policy h4 nodes 34081504 whole time 277 search time 260 nps 131082707
+#42 depth 22 value 6 policy g2 nodes 67803009 whole time 346 search time 331 nps 204842927
+#43 depth 23 value -12 policy c7 nodes 171811259 whole time 785 search time 770 nps 223131505
+#44 depth 23 value -14 policy d2 nodes 53361374 whole time 422 search time 408 nps 130787681
+#45 depth 24 value 6 policy b2 nodes 834769987 whole time 3081 search time 3065 nps 272355623
+#46 depth 24 value -8 policy b3 nodes 264783477 whole time 1276 search time 1259 nps 210312531
+#47 depth 25 value 4 policy g2 nodes 128069063 whole time 671 search time 656 nps 195227230
+#48 depth 25 value 28 policy f6 nodes 967224419 whole time 4086 search time 4071 nps 237588901
+#49 depth 26 value 16 policy e1 nodes 943012153 whole time 3801 search time 3784 nps 249210399
+14.907 sec
+14.75 sec search
+3493148527 nodes
+236823628.94915253 nps
+
 
 
 
