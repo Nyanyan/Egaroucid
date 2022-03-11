@@ -22,15 +22,15 @@ for datum in raw_data:
     y_score.append(pred)
     z_error.append(ans - pred)
 
-probcut_params_before = [
+score_modify_params_before = [
     1.0 for _ in range(10)
 ]
 
-def f(xy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g, probcut_h, probcut_i, probcut_j):
+def f(xy, score_modify_a, score_modify_b, score_modify_c, score_modify_d, score_modify_e, score_modify_f, score_modify_g, score_modify_h, score_modify_i, score_modify_j):
     x, y = xy
-    res = probcut_a * x * x * x + probcut_b * x * x * y + probcut_c * x * y * y + probcut_d * y * y * y
-    res += probcut_e * x * x + probcut_f * x * y + probcut_g * y * y
-    res += probcut_h * x + probcut_i * y + probcut_j
+    res = score_modify_a * x * x * x + score_modify_b * x * x * y + score_modify_c * x * y * y + score_modify_d * y * y * y
+    res += score_modify_e * x * x + score_modify_f * x * y + score_modify_g * y * y
+    res += score_modify_h * x + score_modify_i * y + score_modify_j
     return res
 
 def plot_fit_result(params):
@@ -44,11 +44,11 @@ def plot_fit_result(params):
     ax.set_zlabel('error')
     plt.show()
 
-#plot_fit_result(*probcut_params_before)
+#plot_fit_result(*score_modify_params_before)
 
-popt, pcov = curve_fit(f, (x_phase, y_score), z_error, np.array(probcut_params_before))
+popt, pcov = curve_fit(f, (x_phase, y_score), z_error, np.array(score_modify_params_before))
 print([float(elem) for elem in popt])
 for i in range(len(popt)):
-    print('#define probcut_' + chr(ord('a') + i), popt[i])
+    print('#define score_modify_' + chr(ord('a') + i), popt[i])
 perr = np.sqrt(np.diag(pcov))
 plot_fit_result(popt)
