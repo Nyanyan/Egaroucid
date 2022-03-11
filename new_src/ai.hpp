@@ -77,24 +77,29 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
         parent_transpose_table.init();
         search.use_mpc = use_mpc;
         search.mpct = mpct;
-        alpha = -INF;
-        beta = -INF;
-        while (g <= alpha || beta <= g){
-            if (g % 2){
-                alpha = max(-HW2, g - 2);
-                beta = min(HW2, g + 2);
-            } else{
-                alpha = max(-HW2, g - 1);
-                beta = min(HW2, g + 1);
+        if (!use_mpc){
+            alpha = -INF;
+            beta = -INF;
+            while (g <= alpha || beta <= g){
+                if (g % 2){
+                    alpha = max(-HW2, g - 2);
+                    beta = min(HW2, g + 2);
+                } else{
+                    alpha = max(-HW2, g - 1);
+                    beta = min(HW2, g + 1);
+                }
+                result = first_nega_scout(&search, alpha, beta, depth, false, true);
+                g = result.first;
+                if (show_log)
+                    cerr << "mainsearch d=" << depth << " t=" << search.mpct << " [" << alpha << "," << beta << "] " << g << " " << idx_to_coord(result.second) << endl;
+                if (alpha == -HW2 && g == -HW2)
+                    break;
+                if (beta == HW2 && g == HW2)
+                    break;
             }
-            result = first_nega_scout(&search, alpha, beta, depth, false, true);
+        } else{
+            result = first_nega_scout(&search, -HW, HW, depth, false, true);
             g = result.first;
-            if (show_log)
-                cerr << "mainsearch d=" << depth << " t=" << search.mpct << " [" << alpha << "," << beta << "] " << g << " " << idx_to_coord(result.second) << endl;
-            if (alpha == -HW2 && g == -HW2)
-                break;
-            if (beta == HW2 && g == HW2)
-                break;
         }
         
         if (show_log)
@@ -115,7 +120,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
                 g = (g + result.first) / 2;
             policy = result.second;
             if (show_log)
-                cerr << "midsearch time " << tim() - strt << " depth " << depth << " value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
+                cerr << "midsearch time " << tim() - strt << " depth " << search_depth << " value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
         }
     }
     Search_result res;

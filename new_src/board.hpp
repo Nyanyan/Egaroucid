@@ -195,13 +195,13 @@ class Board {
             }
         }
 
-        inline void translate_from_arr(const int arr[], int player) {
+        inline void translate_from_arr(const int arr[], int player_idx) {
             int i;
             player = 0;
             opponent = 0;
             n = HW2;
             parity = 0;
-            if (player == BLACK){
+            if (player_idx == BLACK){
                 for (i = 0; i < HW2; ++i) {
                     if (arr[HW2_M1 - i] == BLACK)
                         player |= 1ULL << i;
