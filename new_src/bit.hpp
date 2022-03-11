@@ -552,30 +552,25 @@ inline void rotate_45_double_135_double(uint64_t x_in, uint64_t y_in, uint64_t *
     *z = _mm256_extract_epi64(xy, 0);
 }
 */
-/*
-inline uint64_t rotate_45(uint64_t x){
-    uint64_t a = (x ^ (x >> 8)) & 0x0055005500550055ULL;
+
+inline u64_4 rotate_45_45_135_135(u64_4 x){
+    u64_4 a = (x ^ (x >> 8)) & (u64_4){0x0055005500550055ULL, 0x0055005500550055ULL, 0x00AA00AA00AA00AAULL, 0x00AA00AA00AA00AAULL};
     x = x ^ a ^ (a << 8);
-    a = (x ^ (x >> 16)) & 0x0000CC660000CC66ULL;
+    a = (x ^ (x >> 16)) & (u64_4){0x0000CC660000CC66ULL, 0x0000CC660000CC66ULL, 0x0000336600003366ULL, 0x0000336600003366ULL};
     x = x ^ a ^ (a << 16);
-    a = (x ^ (x >> 32)) & 0x00000000C3E1F078ULL;
-    return x ^ a ^ (a << 32);
-}
-inline uint64_t rotate_135(uint64_t x){
-    uint64_t a = (x ^ (x >> 8)) & 0x00AA00AA00AA00AAULL;
-    x = x ^ a ^ (a << 8);
-    a = (x ^ (x >> 16)) & 0x0000336600003366ULL;
-    x = x ^ a ^ (a << 16);
-    a = (x ^ (x >> 32)) & 0x00000000C3870F1EULL;
+    a = (x ^ (x >> 32)) & (u64_4){0x00000000C3E1F078ULL, 0x00000000C3E1F078ULL, 0x00000000C3870F1EULL, 0x00000000C3870F1EULL};
     return x ^ a ^ (a << 32);
 }
 
-inline u64_4 rotate_diag4(uint64_t x, uint64_t y){
-    u64_4 xyxy(x, y, x, y);
-    u64_4 a()
-    xyxy ^ (xyxy >> 8)
+inline u64_4 unrotate_45_45_135_135(u64_4 x){
+    u64_4 a = (x ^ (x >> 32)) & (u64_4){0x00000000C3E1F078ULL, 0x00000000C3E1F078ULL, 0x00000000C3870F1EULL, 0x00000000C3870F1EULL};
+    x = x ^ a ^ (a << 32);
+    a = (x ^ (x >> 16)) & (u64_4){0x0000CC660000CC66ULL, 0x0000CC660000CC66ULL, 0x0000336600003366ULL, 0x0000336600003366ULL};
+    x = x ^ a ^ (a << 16);
+    a = (x ^ (x >> 8)) & (u64_4){0x0055005500550055ULL, 0x0055005500550055ULL, 0x00AA00AA00AA00AAULL, 0x00AA00AA00AA00AAULL};
+    return x ^ a ^ (a << 8);
 }
-*/
+
 
 
 inline uint64_t rotate_315(uint64_t x){

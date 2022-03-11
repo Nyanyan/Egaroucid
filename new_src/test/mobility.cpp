@@ -33,6 +33,8 @@ uint64_t test_results[N_TESTCASES][2];
 
 int main(){
     bit_init();
+
+    /*
     uint8_t player;
     uint64_t p, o;
     cin >> player;
@@ -41,12 +43,14 @@ int main(){
     print_board(p, o);
     bit_print_board(calc_legal(p, o));
     return 0;
+    */
 
     uint64_t strt;
     for (uint32_t i = 0; i < N_TESTCASES; ++i){
         testcases[i][0] = myrand_ull();
         testcases[i][1] = myrand_ull() & (~testcases[i][0]);
     }
+
     cerr << "start!" << endl;
     strt = tim();
     for (volatile uint32_t t = 0; t < 10; ++t){
@@ -70,6 +74,8 @@ int main(){
         if (test_results[i][0] != test_results[i][1])
             cerr << "a";
     }
+    cerr << "finished" << endl;
+
 
     return 0;
 }
