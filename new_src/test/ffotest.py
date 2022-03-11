@@ -1,5 +1,9 @@
 import subprocess
 from time import time
+import sys
+
+strt_idx = int(sys.argv[1])
+end_idx = int(sys.argv[2])
 
 egaroucid = subprocess.Popen('a.exe'.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
@@ -8,7 +12,7 @@ tim = 0
 stim = 0
 nodes = 0
 strt = time()
-for i in range(40, 60):
+for i in range(strt_idx, end_idx):
     print('#', i)
     with open('./../../benchmark/ffotest/' + str(i) + '.txt', 'r') as f:
         s = f.read()

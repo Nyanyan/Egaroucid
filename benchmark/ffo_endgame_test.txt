@@ -3925,6 +3925,22 @@ same
 3371553978 nodes
 233616545.03880265 nps
 
+2022/03/11 haswell
+#40 depth 20 value 38 policy a2 nodes 27450571 whole time 148 search time 140 nps 196075507
+#41 depth 22 value 0 policy h4 nodes 40946140 whole time 251 search time 243 nps 168502633
+#42 depth 22 value 6 policy g2 nodes 45234747 whole time 214 search time 206 nps 219586150
+#43 depth 23 value -12 policy c7 nodes 169707107 whole time 841 search time 833 nps 203730020
+#44 depth 23 value -14 policy d2 nodes 37752698 whole time 299 search time 291 nps 129734357
+#45 depth 24 value 6 policy b2 nodes 774999529 whole time 3010 search time 2995 nps 258764450
+#46 depth 24 value -8 policy b3 nodes 158336987 whole time 862 search time 846 nps 187159559
+#47 depth 25 value 4 policy g2 nodes 86233728 whole time 540 search time 526 nps 163942448
+#48 depth 25 value 28 policy f6 nodes 937096984 whole time 4234 search time 4220 nps 222060896
+#49 depth 26 value 16 policy e1 nodes 977289824 whole time 4008 search time 3986 nps 245180588
+14.407 sec
+14.286 sec search
+18.072497367858887 sec total
+3255048315 nodes
+227848825.07349855 nps
 
 
 
