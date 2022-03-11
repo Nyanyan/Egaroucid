@@ -3804,6 +3804,33 @@ same
 162452669721 nodes
 173852155.56114423 nps
 
+2022/03/11 nosurround
+#40 depth 20 value 38 policy a2 nodes 26987011 whole time 130 search time 122 nps 221205008
+#41 depth 22 value 0 policy h4 nodes 29341648 whole time 183 search time 175 nps 167666560
+#42 depth 22 value 6 policy g2 nodes 47110748 whole time 212 search time 204 nps 230935039
+#43 depth 23 value -12 policy c7 nodes 170277798 whole time 826 search time 819 nps 207909399
+#44 depth 23 value -14 policy d2 nodes 42983948 whole time 333 search time 325 nps 132258301
+#45 depth 24 value 6 policy b2 nodes 868355100 whole time 3382 search time 3367 nps 257901722
+#46 depth 24 value -8 policy b3 nodes 240392032 whole time 1226 search time 1210 nps 198671100
+#47 depth 25 value 4 policy g2 nodes 82428420 whole time 591 search time 575 nps 143353773
+#48 depth 25 value 28 policy f6 nodes 697698464 whole time 3276 search time 3261 nps 213952304
+#49 depth 26 value 16 policy e1 nodes 913755893 whole time 3782 search time 3761 nps 242955568
+#50 depth 26 value 10 policy d8 nodes 2641556279 whole time 11882 search time 11860 nps 222728185
+#51 depth 27 value 6 policy a3 nodes 1066696869 whole time 6541 search time 6518 nps 163654014
+#52 depth 27 value 0 policy a3 nodes 968167964 whole time 5745 search time 5723 nps 169171407
+#53 depth 28 value -2 policy d8 nodes 8496735026 whole time 47832 search time 47803 nps 177744807
+#54 depth 28 value -2 policy c7 nodes 19396181161 whole time 96218 search time 96186 nps 201652851
+#55 depth 29 value 0 policy b7 nodes 82591772277 whole time 527532 search time 527503 nps 156571189
+#56 depth 29 value 2 policy h5 nodes 3619438350 whole time 26460 search time 26429 nps 136949500
+#57 depth 30 value -10 policy a6 nodes 15874799665 whole time 90760 search time 90730 nps 174967482
+#58 depth 30 value 4 policy g1 nodes 4595002280 whole time 30041 search time 30009 nps 153120806
+#59 depth 34 value 64 policy g8 nodes 23065 whole time 40 search time 10 nps 2306500
+856.992 sec
+856.59 sec search
+913.8706014156342 sec total
+142369703998 nodes
+166205190.34543946 nps
+
 
 /***** copy *****/
 
