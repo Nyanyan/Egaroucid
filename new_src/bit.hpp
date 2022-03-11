@@ -75,75 +75,6 @@ void print_board(uint64_t p, uint64_t o){
 Original code: https://github.com/primenumber/issen/blob/72f450256878094ffe90b75f8674599e6869c238/src/move_generator.cpp
 modified by Nyanyan
 */
-/*
-struct u64_2 {
-    __m128i data;
-    u64_2() = default;
-    u64_2(uint64_t val)
-        : data(_mm_set1_epi64x(val)) {}
-    u64_2(uint64_t x, uint64_t y)
-        : data(_mm_set_epi64x(x, y)) {}
-    u64_2(__m128i data) : data(data) {}
-    //operator __m128i() { return data; }
-};
-
-inline u64_2 operator>>(const u64_2 lhs, const size_t n) {
-    return _mm_srli_epi64(lhs.data, n);
-}
-
-inline u64_2 operator>>(const u64_2 lhs, const u64_2 n) {
-    return _mm_srlv_epi64(lhs.data, n.data);
-}
-
-inline u64_2 operator<<(const u64_2 lhs, const size_t n) {
-    return _mm_slli_epi64(lhs.data, n);
-}
-
-inline u64_2 operator<<(const u64_2 lhs, const u64_2 n) {
-    return _mm_sllv_epi64(lhs.data, n.data);
-}
-
-inline u64_2 operator&(const u64_2 lhs, const u64_2 rhs) {
-    return _mm_and_si128(lhs.data, rhs.data);
-}
-
-inline u64_2 operator|(const u64_2 lhs, const u64_2 rhs) {
-    return _mm_or_si128(lhs.data, rhs.data);
-}
-
-inline u64_2 operator^(const u64_2 lhs, const u64_2 rhs) {
-    return _mm_xor_si128(lhs.data, rhs.data);
-}
-
-inline u64_2 operator+(const u64_2 lhs, const u64_2 rhs) {
-    return _mm_add_epi64(lhs.data, rhs.data);
-}
-
-inline u64_2 operator+(const u64_2 lhs, const uint64_t rhs) {
-    __m128i r64 = _mm_set1_epi64x(rhs);
-    return _mm_add_epi64(lhs.data, r64);
-}
-
-inline u64_2 operator-(const u64_2 lhs, const u64_2 rhs) {
-    return _mm_sub_epi64(lhs.data, rhs.data);
-}
-
-inline u64_2 operator-(const u64_2 lhs) {
-    return _mm_sub_epi64(_mm_setzero_si128(), lhs.data);
-}
-
-inline u64_2 andnot(const u64_2 lhs, const u64_2 rhs) {
-    return _mm_andnot_si128(lhs.data, rhs.data);
-}
-
-inline u64_2 operator~(const u64_2 lhs) {
-    return _mm_andnot_si128(lhs.data, _mm_set1_epi8(0xFF));
-}
-
-inline u64_2 nonzero(const u64_2 lhs) {
-    return _mm_cmpeq_epi64(lhs.data, _mm_setzero_si128()) + u64_2(1);
-}
-*/
 struct u64_4 {
     __m256i data;
     u64_4() = default;
@@ -273,7 +204,7 @@ inline u64_4 black_line_mirror(u64_4 x){
     a = (x ^ (x >> 18)) & 0x0000333300003333ULL;
     x = x ^ a ^ (a << 18);
     a = (x ^ (x >> 36)) & 0x000000000F0F0F0FULL;
-    return x = x ^ a ^ (a << 36);
+    return x ^ a ^ (a << 36);
 }
 
 inline u64_4 black_line_mirror_3_4(u64_4 x){
@@ -282,7 +213,7 @@ inline u64_4 black_line_mirror_3_4(u64_4 x){
     a = (x ^ (x >> 18)) & (u64_4){0ULL, 0ULL, 0x0000333300003333ULL, 0x0000333300003333ULL};
     x = x ^ a ^ (a << 18);
     a = (x ^ (x >> 36)) & (u64_4){0ULL, 0ULL, 0x000000000F0F0F0FULL, 0x000000000F0F0F0FULL};
-    return x = x ^ a ^ (a << 36);
+    return x ^ a ^ (a << 36);
 }
 
 /*
