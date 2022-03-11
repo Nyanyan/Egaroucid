@@ -194,6 +194,15 @@ inline double probcut_sigma(int n_stones, int depth1, int depth2){
     //return mpcsd[(x - 4) / 4][y - MID_MPC_MIN_DEPTH];
     //return 0;
 }
+
+inline double probcut_sigma_depth0(int n_stones, int depth1){
+    double w = n_stones;
+    double x = depth1;
+    double res = probcut_b * w * w * x + probcut_c * w * x * x + probcut_d * x * x * x;
+    res += probcut_e * w * w + probcut_f * w * x + probcut_g * x * x;
+    res += probcut_h * w + probcut_i * x + probcut_j;
+    return res;
+}
 /*
 inline double probcut_sigma(int n_stones, int depth){
     double t = probcut_params[0] * n_stones + probcut_params[1] * (depth - mpcd[depth]);
@@ -210,62 +219,70 @@ int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped);
 int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped);
 int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal);
 
-inline bool mpc_higher(Search *search, int beta, int depth, uint64_t legal){
+inline bool mpc_higher(Search *search, int beta, int depth, uint64_t legal, int score_eval){
     if (depth <= 8)
         return false;
-    int bound = beta + ceil(search->mpct * probcut_sigma(search->board.n, depth, mpcd[depth]));
-    if (bound > HW2)
-        bound = HW2; //return false;
-    bool res;
-    switch(mpcd[depth]){
-        case 0:
-            res = mid_evaluate(&search->board) >= bound;
-            break;
-        case 1:
-            res = nega_alpha_eval1(search, bound - 1, bound, false) >= bound;
-            break;
-        default:
-            if (mpcd[depth] <= MID_FAST_DEPTH)
-                res = nega_alpha(search, bound - 1, bound, mpcd[depth], false) >= bound;
-            else{
-                //double mpct = search->mpct;
-                //search->mpct = 1.18;
-                //search->use_mpc = false;
-                    res = nega_alpha_ordering_nomemo(search, bound - 1, bound, mpcd[depth], false, legal) >= bound;
-                //search->use_mpc = true;
-                //search->mpct = mpct;
-            }
-            break;
+    //int score_eval = mid_evaluate(&search->board);
+    int eval_bound = beta - search->mpct * probcut_sigma(search->board.n, depth, 0) - 0.5;
+    bool res = false;
+    if (score_eval >= eval_bound){
+        int bound = beta + round(search->mpct * probcut_sigma(search->board.n, depth, mpcd[depth]));
+        if (bound > HW2)
+            bound = HW2; //return false;
+        switch(mpcd[depth]){
+            case 0:
+                res = mid_evaluate(&search->board) >= bound;
+                break;
+            case 1:
+                res = nega_alpha_eval1(search, bound - 1, bound, false) >= bound;
+                break;
+            default:
+                if (mpcd[depth] <= MID_FAST_DEPTH)
+                    res = nega_alpha(search, bound - 1, bound, mpcd[depth], false) >= bound;
+                else{
+                    //double mpct = search->mpct;
+                    //search->mpct = 1.18;
+                    //search->use_mpc = false;
+                        res = nega_alpha_ordering_nomemo(search, bound - 1, bound, mpcd[depth], false, legal) >= bound;
+                    //search->use_mpc = true;
+                    //search->mpct = mpct;
+                }
+                break;
+        }
     }
     return res;
 }
 
-inline bool mpc_lower(Search *search, int alpha, int depth, uint64_t legal){
+inline bool mpc_lower(Search *search, int alpha, int depth, uint64_t legal, int score_eval){
     if (depth <= 8)
         return false;
-    int bound = alpha - ceil(search->mpct * probcut_sigma(search->board.n, depth, mpcd[depth]));
-    if (bound < -HW2)
-        bound = -HW2; //return false;
-    bool res;
-    switch(mpcd[depth]){
-        case 0:
-            res = mid_evaluate(&search->board) <= bound;
-            break;
-        case 1:
-            res = nega_alpha_eval1(search, bound, bound + 1, false) <= bound;
-            break;
-        default:
-            if (mpcd[depth] <= MID_FAST_DEPTH)
-                res = nega_alpha(search, bound, bound + 1, mpcd[depth], false) <= bound;
-            else{
-                //double mpct = search->mpct;
-                //search->mpct = 1.18;
-                //search->use_mpc = false;
-                    res = nega_alpha_ordering_nomemo(search, bound, bound + 1, mpcd[depth], false, legal) <= bound;
-                //search->use_mpc = true;
-                //search->mpct = mpct;
-            }
-            break;
+    //int score_eval = mid_evaluate(&search->board);
+    int eval_bound = alpha + search->mpct * probcut_sigma(search->board.n, depth, 0) + 0.5;
+    bool res = false;
+    if (score_eval <= eval_bound){
+        int bound = alpha - ceil(search->mpct * probcut_sigma(search->board.n, depth, mpcd[depth]));
+        if (bound < -HW2)
+            bound = -HW2; //return false;
+        switch(mpcd[depth]){
+            case 0:
+                res = mid_evaluate(&search->board) <= bound;
+                break;
+            case 1:
+                res = nega_alpha_eval1(search, bound, bound + 1, false) <= bound;
+                break;
+            default:
+                if (mpcd[depth] <= MID_FAST_DEPTH)
+                    res = nega_alpha(search, bound, bound + 1, mpcd[depth], false) <= bound;
+                else{
+                    //double mpct = search->mpct;
+                    //search->mpct = 1.18;
+                    //search->use_mpc = false;
+                        res = nega_alpha_ordering_nomemo(search, bound, bound + 1, mpcd[depth], false, legal) <= bound;
+                    //search->use_mpc = true;
+                    //search->mpct = mpct;
+                }
+                break;
+        }
     }
     return res;
 }

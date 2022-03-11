@@ -22,7 +22,7 @@
 #define W_VALUE_SHALLOW 8
 #define W_STABILITY 4
 #define W_MOBILITY 16
-#define W_SURROUND 4
+//#define W_SURROUND 4
 #define W_PARITY1 2
 #define W_PARITY2 4
 #define W_PARITY3 8
