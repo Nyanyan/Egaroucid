@@ -3831,6 +3831,30 @@ same
 142369703998 nodes
 166205190.34543946 nps
 
+2022/03/11 score modifiacation
+#40 depth 20 value 38 policy a2 nodes 23870962 whole time 114 search time 107 nps 223093102
+#41 depth 22 value 0 policy h4 nodes 31332693 whole time 183 search time 175 nps 179043960
+#42 depth 22 value 6 policy g2 nodes 50651725 whole time 225 search time 218 nps 232347362
+#43 depth 23 value -12 policy c7 nodes 181674954 whole time 878 search time 870 nps 208821786
+#44 depth 23 value -14 policy d2 nodes 37403872 whole time 301 search time 293 nps 127658266
+#45 depth 24 value 6 policy b2 nodes 827792879 whole time 3173 search time 3158 nps 262125674
+#46 depth 24 value -8 policy b3 nodes 205150360 whole time 1097 search time 1083 nps 189427848
+#47 depth 25 value 4 policy g2 nodes 98528684 whole time 575 search time 560 nps 175944078
+#48 depth 25 value 28 policy f6 nodes 792579892 whole time 3683 search time 3668 nps 216079577
+#49 depth 26 value 16 policy e1 nodes 833598159 whole time 3492 search time 3469 nps 240299267
+13.721 sec
+13.601 sec search
+17.32319664955139 sec total
+3082584180 nodes
+226643936.47525916 nps
+
+
+
+
+
+
+
+
 
 /***** copy *****/
 

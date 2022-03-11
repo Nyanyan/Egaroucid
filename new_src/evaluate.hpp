@@ -371,7 +371,7 @@ inline int score_modification(int phase, int estimated_score){
     double res = score_modify_a * x * x * x + score_modify_b * x * x * y + score_modify_c * x * y * y + score_modify_d * y * y * y;
     res += score_modify_e * x * x + score_modify_f * x * y + score_modify_g * y * y;
     res += score_modify_h * x + score_modify_i * y + score_modify_j;
-    return max(-HW2, min(HW2, (int)round(y - res)));
+    return max(-HW2, min(HW2, (int)round(y + res)));
 }
 
 inline int mid_evaluate(Board *b){

@@ -62,10 +62,12 @@ int nega_alpha_end_nomemo(Search *search, int alpha, int beta, int depth, bool s
 inline int last1(Search *search, int alpha, int beta, int p0){
     ++search->n_nodes;
     int score = HW2 - 2 * search->board.count_opponent();
-    int n_flip;
-    n_flip = count_last_flip(search->board.player, search->board.opponent, p0);
+    int n_flip = count_last_flip(search->board.player, search->board.opponent, p0);
     if (n_flip == 0){
         ++search->n_nodes;
+        n_flip = count_last_flip(search->board.opponent, search->board.player, p0);
+        score -= 2 * n_flip + 2;
+        /*
         if (score <= 0){
             score -= 2;
             if (score >= alpha){
@@ -79,7 +81,7 @@ inline int last1(Search *search, int alpha, int beta, int p0){
                     score -= 2 * n_flip + 2;
             }
         }
-        
+        */
     } else
         score += 2 * n_flip;
     return score;
