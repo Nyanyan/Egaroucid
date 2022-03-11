@@ -67,21 +67,6 @@ inline int last1(Search *search, int alpha, int beta, int p0){
         ++search->n_nodes;
         n_flip = count_last_flip(search->board.opponent, search->board.player, p0);
         score -= 2 * n_flip + 2;
-        /*
-        if (score <= 0){
-            score -= 2;
-            if (score >= alpha){
-                n_flip = count_last_flip(search->board.opponent, search->board.player, p0);
-                score -= 2 * n_flip;
-            }
-        } else{
-            if (score >= alpha){
-                n_flip = count_last_flip(search->board.opponent, search->board.player, p0);
-                if (n_flip)
-                    score -= 2 * n_flip + 2;
-            }
-        }
-        */
     } else
         score += 2 * n_flip;
     return score;
