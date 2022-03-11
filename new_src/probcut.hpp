@@ -223,7 +223,7 @@ inline bool mpc_higher(Search *search, int beta, int depth, uint64_t legal, int 
     if (depth <= 8)
         return false;
     //int score_eval = mid_evaluate(&search->board);
-    int eval_error = search->mpct * probcut_sigma(search->board.n, depth, 0);
+    int eval_error = search->mpct * probcut_sigma_depth0(search->board.n, depth);
     bool res = false;
     if (score_eval >= beta - eval_error){
         int bound = beta + floor(search->mpct * probcut_sigma(search->board.n, depth, mpcd[depth]));
@@ -257,7 +257,7 @@ inline bool mpc_lower(Search *search, int alpha, int depth, uint64_t legal, int 
     if (depth <= 8)
         return false;
     //int score_eval = mid_evaluate(&search->board);
-    int eval_error = search->mpct * probcut_sigma(search->board.n, depth, 0);
+    int eval_error = search->mpct * probcut_sigma_depth0(search->board.n, depth);
     bool res = false;
     if (score_eval <= alpha + eval_error){
         int bound = alpha - floor(search->mpct * probcut_sigma(search->board.n, depth, mpcd[depth]));
