@@ -98,7 +98,7 @@ def collect_data(directory, num):
         with open('sigma_data.txt', 'a') as f:
             f.write(str(n_stones) + ' ' + str(depth1) + ' ' + str(v1) + ' ' + str(depth2) + ' ' + str(v2) + '\n')
 
-for i in range(21, 173):
-    collect_data('records9', i)
+for i in range(26, 173):
     collect_data('records3', i)
+    collect_data('records9', i)
 evaluate.kill()

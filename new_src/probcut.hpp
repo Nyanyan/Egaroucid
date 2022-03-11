@@ -129,7 +129,7 @@ constexpr double mpcsd[N_PHASES][MID_MPC_MAX_DEPTH - MID_MPC_MIN_DEPTH + 1]={
 constexpr double probcut_params[6] = {
     -0.07924286622429888, 0.016903451472509934, -0.05294261414319046, -0.254443804366251, -0.8506676921018298, 1.0213552153297525
 };
-
+/*
 #define probcut_a 0.0001075802799025416
 #define probcut_b 0.00025181631602000376
 #define probcut_c -2.8350375561148056e-05
@@ -140,7 +140,7 @@ constexpr double probcut_params[6] = {
 #define probcut_h 0.29898682383748876
 #define probcut_i 0.1179020675344451
 #define probcut_j -0.3632247442453185
-
+*/
 /*
 #define probcut_a 4.351338661867654e-05
 #define probcut_b -2.192690473634684e-12
@@ -153,13 +153,27 @@ constexpr double probcut_params[6] = {
 #define probcut_i -0.2645161570178731
 #define probcut_j 27.106346105598853
 */
-inline double probcut_sigma(int n_stones, int depth){
+
+#define probcut_a 5.4541259274222235e-05
+#define probcut_b 0.0001632368875162654
+#define probcut_c 0.00015335124078963476
+#define probcut_d -0.0001967053176508893
+#define probcut_e -0.0076470458911749575
+#define probcut_f -0.012227622950627284
+#define probcut_g 0.009618458845586403
+#define probcut_h 0.3551438315343388
+#define probcut_i -0.099495732478085
+#define probcut_j 0.682571187269726
+
+inline double probcut_sigma(int n_stones, int depth1, int depth2){
+    /*
     double x = n_stones;
-    double y = depth - mpcd[depth];
+    double y = depth1 - depth2;
     double res = probcut_a * x * x * x + probcut_b * x * x * y + probcut_c * x * y * y + probcut_d * y * y * y;
     res += probcut_e * x * x + probcut_f * x * y + probcut_g * y * y;
     res += probcut_h * x + probcut_i * y + probcut_j;
     return res;
+    */
     /*
     double x = n_stones + depth;
     double y = n_stones + mpcd[depth];
@@ -168,6 +182,15 @@ inline double probcut_sigma(int n_stones, int depth){
     res += probcut_h * x + probcut_h * y + probcut_j;
     return res;
     */
+    
+    double w = n_stones;
+    double x = depth1;
+    double y = depth2;
+    double res = probcut_b * w * w * (x + y) + probcut_c * w * (x * x + y * y) + probcut_d * (x * x * x + y * y * y);
+    res += probcut_e * w * w + probcut_f * w * (x + y) + probcut_g * (x * x + y * y);
+    res += probcut_h * w + probcut_i * (x + y) + probcut_j;
+    return res;
+    
     //return mpcsd[(x - 4) / 4][y - MID_MPC_MIN_DEPTH];
     //return 0;
 }
@@ -190,7 +213,7 @@ int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, b
 inline bool mpc_higher(Search *search, int beta, int depth, uint64_t legal){
     if (depth <= 8)
         return false;
-    int bound = beta + round(search->mpct * probcut_sigma(search->board.n, depth));
+    int bound = beta + ceil(search->mpct * probcut_sigma(search->board.n, depth, mpcd[depth]));
     if (bound > HW2)
         bound = HW2; //return false;
     bool res;
@@ -220,7 +243,7 @@ inline bool mpc_higher(Search *search, int beta, int depth, uint64_t legal){
 inline bool mpc_lower(Search *search, int alpha, int depth, uint64_t legal){
     if (depth <= 8)
         return false;
-    int bound = alpha - round(search->mpct * probcut_sigma(search->board.n, depth));
+    int bound = alpha - ceil(search->mpct * probcut_sigma(search->board.n, depth, mpcd[depth]));
     if (bound < -HW2)
         bound = -HW2; //return false;
     bool res;

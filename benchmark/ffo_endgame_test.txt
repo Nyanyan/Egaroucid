@@ -3723,7 +3723,39 @@ same
 150889106804 nodes
 165251439.9532137 nps
 
+2022/03/11 new probcut
+#40 depth 20 value 38 policy a2 nodes 24953330 whole time 142 search time 124 nps 201236532
+#41 depth 22 value 0 policy h4 nodes 30287598 whole time 180 search time 172 nps 176090686
+#42 depth 22 value 6 policy g2 nodes 51573742 whole time 238 search time 223 nps 231272385
+#43 depth 23 value -12 policy c7 nodes 144098270 whole time 826 search time 808 nps 178339443
+#44 depth 23 value -14 policy d2 nodes 38620630 whole time 315 search time 298 nps 129599429
+#45 depth 24 value 6 policy b2 nodes 719515630 whole time 2804 search time 2779 nps 258911705
+#46 depth 24 value -8 policy b3 nodes 197602702 whole time 1042 search time 1008 nps 196034426
+#47 depth 25 value 4 policy g2 nodes 115913448 whole time 722 search time 687 nps 168724087
+#48 depth 25 value 28 policy f6 nodes 759984846 whole time 3696 search time 3660 nps 207646132
+#49 depth 26 value 16 policy e1 nodes 886585445 whole time 4001 search time 3946 nps 224679534
+13.966 sec
+13.705 sec search
+17.30525255203247 sec total
+2969135641 nodes
+216646161.3279825 nps
 
+2022/03/11 reduce param, use ceil
+#40 depth 20 value 38 policy a2 nodes 25326865 whole time 135 search time 117 nps 216468931
+#41 depth 22 value 0 policy h4 nodes 30468489 whole time 202 search time 183 nps 166494475
+#42 depth 22 value 6 policy g2 nodes 50967033 whole time 234 search time 217 nps 234871119
+#43 depth 23 value -12 policy c7 nodes 143650436 whole time 762 search time 751 nps 191278876
+#44 depth 23 value -14 policy d2 nodes 39983760 whole time 312 search time 293 nps 136463344
+#45 depth 24 value 6 policy b2 nodes 720100827 whole time 2825 search time 2794 nps 257731147
+#46 depth 24 value -8 policy b3 nodes 212163093 whole time 1099 search time 1066 nps 199027291
+#47 depth 25 value 4 policy g2 nodes 130489646 whole time 773 search time 738 nps 176815238
+#48 depth 25 value 26 policy f6 nodes 691630672 whole time 3286 search time 3260 nps 212156647
+#49 depth 26 value 16 policy e1 nodes 697079743 whole time 2955 search time 2899 nps 240455240
+12.583 sec
+12.318 sec search
+15.792871236801147 sec total
+2741860564 nodes
+222589751.90777725 nps
 
 
 
