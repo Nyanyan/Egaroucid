@@ -27,10 +27,10 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
     g = -INF;
 
     uint64_t strt = tim(), strt2, search_time = 0ULL;
-    if (depth >= 10 && 1.0 < mpct){
+    if (depth >= 15 && 1.2 < mpct){
         strt2 = tim();
         parent_transpose_table.init();
-        search.mpct = 1.0;
+        search.mpct = 1.2;
         search.use_mpc = true;
         result = first_nega_scout(&search, -HW2, HW2, depth, false, is_end_search);
         g = result.first;
@@ -40,10 +40,10 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
         cerr << "presearch t=" << search.mpct << " [-64,64] " << g << " " << idx_to_coord(policy) << endl;
         search_time += tim() - strt2;
 
-        if (depth >= 22 && 1.5 < mpct){
+        if (depth >= 24 && 1.7 < mpct){
             parent_transpose_table.init();
             strt2 = tim();
-            search.mpct = 1.5;
+            search.mpct = 1.7;
             search.use_mpc = true;
             alpha = max(-HW2, g - 3);
             beta = min(HW2, g + 3);
@@ -55,10 +55,10 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
             cerr << "presearch t=" << search.mpct << " [" << alpha << "," << beta << "] " << g << " " << idx_to_coord(policy) << endl;
             search_time += tim() - strt2;
 
-            if (depth >= 25 && 1.8 < mpct){
+            if (depth >= 26 && 2.3 < mpct){
                 parent_transpose_table.init();
                 strt2 = tim();
-                search.mpct = 1.8;
+                search.mpct = 2.3;
                 search.use_mpc = true;
                 alpha = max(-HW2, g - 1);
                 beta = min(HW2, g + 1);
@@ -80,15 +80,20 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
             alpha = -HW2;
             beta = HW2;
         } else{
-            alpha = max(-HW2, g - 1);
-            beta = min(HW2, g + 1);
+            if (is_end_search && g % 2){
+                alpha = max(-HW2, g - 2);
+                beta = min(HW2, g + 2);
+            } else{
+                alpha = max(-HW2, g - 1);
+                beta = min(HW2, g + 1);
+            }
         }
         search.use_mpc = use_mpc;
         search.mpct = mpct;
         result = first_nega_scout(&search, alpha, beta, depth, false, is_end_search);
         g = result.first;
         policy = result.second;
-        cerr << "[" << alpha << "," << beta << "] " << g << " " << idx_to_coord(policy) << endl;
+        cerr << "mainsearch d=" << depth << " t=" << search.mpct << " [" << alpha << "," << beta << "] " << g << " " << idx_to_coord(policy) << endl;
         if (alpha == -HW2 && g == -HW2)
             break;
         if (beta == HW2 && g == HW2)
