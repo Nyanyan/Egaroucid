@@ -71,11 +71,12 @@ struct Child_mini_transpose_table{
 };
 
 #if USE_MULTI_THREAD
-    void init_child_transpose_table(int id, Node_child_transpose_table *table[], int s, int e){
+    void init_child_transpose_table(int id, Child_mini_transpose_table *table, int s, int e){
+        lock_guard<mutex> lock(table->mtx);
         for(int i = s; i < e; ++i){
-            if (table[i] != NULL){
-                table[i]->init();
-                table[i] = NULL;
+            if (table->table[i] != NULL){
+                table->table[i]->init();
+                table->table[i] = NULL;
             }
         }
     }
@@ -98,7 +99,7 @@ class Child_transpose_table{
             inline void init(){
                 vector<future<void>> tasks;
                 for(int i = 0; i < TRANSPOSE_TABLE_DIVISION; ++i){
-                    tasks.emplace_back(thread_pool.push(init_child_transpose_table, table[i].table, 0, TRANSPOSE_MINI_TABLE_SIZE));
+                    tasks.emplace_back(thread_pool.push(init_child_transpose_table, &table[i], 0, TRANSPOSE_MINI_TABLE_SIZE));
                 }
                 for (future<void> &task: tasks)
                     task.get();
@@ -208,11 +209,12 @@ struct Parent_mini_transpose_table{
 };
 
 #if USE_MULTI_THREAD
-    void init_parent_transpose_table(int id, Node_parent_transpose_table *table[], int s, int e){
+    void init_parent_transpose_table(int id, Parent_mini_transpose_table *table, int s, int e){
+        lock_guard<mutex> lock(table->mtx);
         for(int i = s; i < e; ++i){
-            if (table[i] != NULL){
-                table[i]->init();
-                table[i] = NULL;
+            if (table->table[i] != NULL){
+                table->table[i]->init();
+                table->table[i] = NULL;
             }
         }
     }
@@ -236,7 +238,7 @@ class Parent_transpose_table{
             inline void init(){
                 vector<future<void>> tasks;
                 for(int i = 0; i < TRANSPOSE_TABLE_DIVISION; ++i){
-                    tasks.emplace_back(thread_pool.push(init_parent_transpose_table, table[i].table, 0, TRANSPOSE_MINI_TABLE_SIZE));
+                    tasks.emplace_back(thread_pool.push(init_parent_transpose_table, &table[i], 0, TRANSPOSE_MINI_TABLE_SIZE));
                 }
                 for (future<void> &task: tasks)
                     task.get();

@@ -140,20 +140,9 @@ inline int tree_search_noid(Board board, int depth, bool use_mpc, double mpct){
     bool is_end_search = (HW2 - board.n == depth);
     search.board = board;
     search.n_nodes = 0ULL;
-    if (is_end_search){
-        parent_transpose_table.init();
-        search.use_mpc = false;
-        search.mpct = 100.0;
-        result = first_nega_scout(&search, -HW2, HW2, depth, false, true);
-        g = result.first;
-    } else{
-        search.use_mpc = use_mpc;
-        search.mpct = mpct;
-        g = -INF;
-        parent_transpose_table.init();
-        result = first_nega_scout(&search, -HW2, HW2, depth, false, false);
-        g = result.first;
-    }
+    search.use_mpc = use_mpc;
+    search.mpct = mpct;
+    g = nega_scout(&search, -HW2, HW2, depth, false, LEGAL_UNDEFINED, is_end_search);
     return g;
 }
 
