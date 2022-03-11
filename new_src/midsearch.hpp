@@ -22,7 +22,7 @@
 
 using namespace std;
 
-int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped){
+inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped){
     ++(search->n_nodes);
     int g, v = -INF;
     uint64_t legal = search->board.get_legal();
@@ -54,7 +54,7 @@ int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped){
         return SCORE_UNDEFINED;
     ++(search->n_nodes);
     if (depth == 1)
-        return nega_alpha_eval1(search, alpha, beta, false);
+        return nega_alpha_eval1(search, alpha, beta, skipped);
     if (depth == 0)
         return mid_evaluate(&search->board);
     #if USE_MID_SC
@@ -195,7 +195,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
             g = -nega_alpha_ordering(search, -beta, -alpha, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
         search->board.undo(&flip);
         alpha = max(alpha, g);
-        v = max(v, g);
+        v = g;
         legal ^= 1ULL << best_move;
     }
     if (alpha < beta){
@@ -272,10 +272,12 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
 int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search){
     if (!global_searching)
         return -INF;
-    if (is_end_search && depth == 0)
-        return end_evaluate(&search->board);
-    if (!is_end_search && depth == 1)
-        return nega_alpha_eval1(search, alpha, beta, false);
+    if (is_end_search && depth <= MID_TO_END_DEPTH){
+        bool n_searching = true;
+        return nega_alpha_end(search, alpha, beta, skipped, legal, &n_searching);
+    }
+    if (!is_end_search && depth <= MID_FAST_DEPTH)
+        return nega_alpha(search, alpha, beta, depth, skipped);
     if (!is_end_search && depth == 0)
         return mid_evaluate(&search->board);
     ++(search->n_nodes);

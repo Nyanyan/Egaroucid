@@ -208,11 +208,14 @@ inline u64_4 black_line_mirror(u64_4 x){
 }
 
 inline u64_4 black_line_mirror_3_4(u64_4 x){
-    u64_4 a = (x ^ (x >> 9)) & (u64_4){0ULL, 0ULL, 0x0055005500550055ULL, 0x0055005500550055ULL};
+    u64_4 mask(0ULL, 0ULL, 0x0055005500550055ULL, 0x0055005500550055ULL);
+    u64_4 a = (x ^ (x >> 9)) & mask;
     x = x ^ a ^ (a << 9);
-    a = (x ^ (x >> 18)) & (u64_4){0ULL, 0ULL, 0x0000333300003333ULL, 0x0000333300003333ULL};
+    mask = {0ULL, 0ULL, 0x0000333300003333ULL, 0x0000333300003333ULL};
+    a = (x ^ (x >> 18)) & mask;
     x = x ^ a ^ (a << 18);
-    a = (x ^ (x >> 36)) & (u64_4){0ULL, 0ULL, 0x000000000F0F0F0FULL, 0x000000000F0F0F0FULL};
+    mask = {0ULL, 0ULL, 0x000000000F0F0F0FULL, 0x000000000F0F0F0FULL};
+    a = (x ^ (x >> 36)) & mask;
     return x ^ a ^ (a << 36);
 }
 
@@ -262,11 +265,14 @@ inline u64_4 horizontal_mirror(u64_4 x){
 }
 
 inline u64_4 horizontal_mirror_1_3(u64_4 x){
-    u64_4 a = (x ^ (x >> 1)) & (u64_4){0ULL, 0x5555555555555555ULL, 0ULL, 0x5555555555555555ULL};
+    u64_4 mask(0ULL, 0x5555555555555555ULL, 0ULL, 0x5555555555555555ULL);
+    u64_4 a = (x ^ (x >> 1)) & mask;
     x = x ^ a ^ (a << 1);
-    a = (x ^ (x >> 2)) & (u64_4){0ULL, 0x3333333333333333ULL, 0ULL, 0x3333333333333333ULL};
+    mask = {0ULL, 0x3333333333333333ULL, 0ULL, 0x3333333333333333ULL};
+    a = (x ^ (x >> 2)) & mask;
     x = x ^ a ^ (a << 2);
-    a = (x ^ (x >> 4)) & (u64_4){0ULL, 0x0F0F0F0F0F0F0F0FULL, 0ULL, 0x0F0F0F0F0F0F0F0FULL};
+    mask = {0ULL, 0x0F0F0F0F0F0F0F0FULL, 0ULL, 0x0F0F0F0F0F0F0F0FULL};
+    a = (x ^ (x >> 4)) & mask;
     return x ^ a ^ (a << 4);
 }
 
@@ -485,20 +491,26 @@ inline void rotate_45_double_135_double(uint64_t x_in, uint64_t y_in, uint64_t *
 */
 
 inline u64_4 rotate_45_45_135_135(u64_4 x){
-    u64_4 a = (x ^ (x >> 8)) & (u64_4){0x0055005500550055ULL, 0x0055005500550055ULL, 0x00AA00AA00AA00AAULL, 0x00AA00AA00AA00AAULL};
+    u64_4 mask(0x0055005500550055ULL, 0x0055005500550055ULL, 0x00AA00AA00AA00AAULL, 0x00AA00AA00AA00AAULL);
+    u64_4 a = (x ^ (x >> 8)) & mask;
     x = x ^ a ^ (a << 8);
-    a = (x ^ (x >> 16)) & (u64_4){0x0000CC660000CC66ULL, 0x0000CC660000CC66ULL, 0x0000336600003366ULL, 0x0000336600003366ULL};
+    mask = {0x0000CC660000CC66ULL, 0x0000CC660000CC66ULL, 0x0000336600003366ULL, 0x0000336600003366ULL};
+    a = (x ^ (x >> 16)) & mask;
     x = x ^ a ^ (a << 16);
-    a = (x ^ (x >> 32)) & (u64_4){0x00000000C3E1F078ULL, 0x00000000C3E1F078ULL, 0x00000000C3870F1EULL, 0x00000000C3870F1EULL};
+    mask = {0x00000000C3E1F078ULL, 0x00000000C3E1F078ULL, 0x00000000C3870F1EULL, 0x00000000C3870F1EULL};
+    a = (x ^ (x >> 32)) & mask;
     return x ^ a ^ (a << 32);
 }
 
 inline u64_4 unrotate_45_45_135_135(u64_4 x){
-    u64_4 a = (x ^ (x >> 32)) & (u64_4){0x00000000C3E1F078ULL, 0x00000000C3E1F078ULL, 0x00000000C3870F1EULL, 0x00000000C3870F1EULL};
+    u64_4 mask(0x00000000C3E1F078ULL, 0x00000000C3E1F078ULL, 0x00000000C3870F1EULL, 0x00000000C3870F1EULL);
+    u64_4 a = (x ^ (x >> 32)) & mask;
     x = x ^ a ^ (a << 32);
-    a = (x ^ (x >> 16)) & (u64_4){0x0000CC660000CC66ULL, 0x0000CC660000CC66ULL, 0x0000336600003366ULL, 0x0000336600003366ULL};
+    mask = {0x0000CC660000CC66ULL, 0x0000CC660000CC66ULL, 0x0000336600003366ULL, 0x0000336600003366ULL};
+    a = (x ^ (x >> 16)) & mask;
     x = x ^ a ^ (a << 16);
-    a = (x ^ (x >> 8)) & (u64_4){0x0055005500550055ULL, 0x0055005500550055ULL, 0x00AA00AA00AA00AAULL, 0x00AA00AA00AA00AAULL};
+    mask = {0x0055005500550055ULL, 0x0055005500550055ULL, 0x00AA00AA00AA00AAULL, 0x00AA00AA00AA00AAULL};
+    a = (x ^ (x >> 8)) & mask;
     return x ^ a ^ (a << 8);
 }
 

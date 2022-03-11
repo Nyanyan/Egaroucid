@@ -106,6 +106,15 @@ class Board {
             return calc_legal(player, opponent);
         }
 
+        inline bool check_player(){
+            bool passed = (get_legal() == 0);
+            if (passed){
+                p = 1 - p;
+                passed = (get_legal() == 0);
+            }
+            return passed;
+        }
+
         inline void full_stability(uint64_t *h, uint64_t *v, uint64_t *d7, uint64_t *d9){
             const uint64_t stones = (player | opponent);
             *h = full_stability_h(stones);
