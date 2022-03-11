@@ -3908,6 +3908,23 @@ same
 3251082546 nodes
 229094675.92135862 nps
 
+2022/03/11
+#40 depth 20 value 38 policy a2 nodes 27213561 whole time 145 search time 137 nps 198639131
+#41 depth 22 value 0 policy h4 nodes 40840300 whole time 250 search time 242 nps 168761570
+#42 depth 22 value 6 policy g2 nodes 47502681 whole time 222 search time 214 nps 221975144
+#43 depth 23 value -12 policy c7 nodes 160469642 whole time 792 search time 784 nps 204680665
+#44 depth 23 value -14 policy d2 nodes 48460205 whole time 353 search time 346 nps 140058395
+#45 depth 24 value 6 policy b2 nodes 796527979 whole time 3029 search time 3015 nps 264188384
+#46 depth 24 value -8 policy b3 nodes 189543966 whole time 963 search time 947 nps 200152023
+#47 depth 25 value 4 policy g2 nodes 85650114 whole time 530 search time 515 nps 166310900
+#48 depth 25 value 28 policy f6 nodes 945968861 whole time 4161 search time 4145 nps 228219266
+#49 depth 26 value 16 policy e1 nodes 1029376669 whole time 4108 search time 4087 nps 251866080
+14.553 sec
+14.432 sec search
+18.297117710113525 sec total
+3371553978 nodes
+233616545.03880265 nps
+
 
 
 

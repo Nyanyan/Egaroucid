@@ -1,33 +1,29 @@
 #include <iostream>
 #include "./../mobility.hpp"
 
-
-#ifdef _MSC_VER
-	#define	mirror_v(x)	_byteswap_uint64(x)
-#else
-	#define	mirror_v(x)	__builtin_bswap64(x)
-#endif
-
-inline unsigned long long get_mobility(const unsigned long long P, const unsigned long long O){
-    unsigned long long moves, mO, flip1, pre1, flip8, pre8;
-    __m128i	PP, mOO, MM, flip, pre;
-    mO = O & 0x7e7e7e7e7e7e7e7eULL;
-    PP  = _mm_set_epi64x(mirror_v(P), P);
-    mOO = _mm_set_epi64x(mirror_v(mO), mO);
-    flip = _mm_and_si128(mOO, _mm_slli_epi64(PP, 7));				            flip1  = mO & (P << 1);		    flip8  = O & (P << 8);
-    flip = _mm_or_si128(flip, _mm_and_si128(mOO, _mm_slli_epi64(flip, 7)));		flip1 |= mO & (flip1 << 1);	    flip8 |= O & (flip8 << 8);
-    pre  = _mm_and_si128(mOO, _mm_slli_epi64(mOO, 7));				            pre1   = mO & (mO << 1);	    pre8   = O & (O << 8);
-    flip = _mm_or_si128(flip, _mm_and_si128(pre, _mm_slli_epi64(flip, 14)));	flip1 |= pre1 & (flip1 << 2);	flip8 |= pre8 & (flip8 << 16);
-    flip = _mm_or_si128(flip, _mm_and_si128(pre, _mm_slli_epi64(flip, 14)));	flip1 |= pre1 & (flip1 << 2);	flip8 |= pre8 & (flip8 << 16);
-    MM = _mm_slli_epi64(flip, 7);							                    moves = flip1 << 1;		        moves |= flip8 << 8;
-    flip = _mm_and_si128(mOO, _mm_slli_epi64(PP, 9));				            flip1  = mO & (P >> 1);		    flip8  = O & (P >> 8);
-    flip = _mm_or_si128(flip, _mm_and_si128(mOO, _mm_slli_epi64(flip, 9)));		flip1 |= mO & (flip1 >> 1);	    flip8 |= O & (flip8 >> 8);
-    pre = _mm_and_si128(mOO, _mm_slli_epi64(mOO, 9));				            pre1 >>= 1;			            pre8 >>= 8;
-    flip = _mm_or_si128(flip, _mm_and_si128(pre, _mm_slli_epi64(flip, 18)));	flip1 |= pre1 & (flip1 >> 2);	flip8 |= pre8 & (flip8 >> 16);
-    flip = _mm_or_si128(flip, _mm_and_si128(pre, _mm_slli_epi64(flip, 18)));	flip1 |= pre1 & (flip1 >> 2);	flip8 |= pre8 & (flip8 >> 16);
-    MM = _mm_or_si128(MM, _mm_slli_epi64(flip, 9));					            moves |= flip1 >> 1;		    moves |= flip8 >> 8;
-    moves |= _mm_cvtsi128_si64(MM) | mirror_v(_mm_cvtsi128_si64(_mm_unpackhi_epi64(MM, MM)));
-    return moves & ~(P|O);
+uint64_t get_mobility(const uint64_t P, const uint64_t O){
+    __m256i	PP, mOO, MM, flip_l, flip_r, pre_l, pre_r, shift2;
+    __m128i	M;
+    const __m256i shift1897 = _mm256_set_epi64x(7, 9, 8, 1);
+    const __m256i mflipH = _mm256_set_epi64x(0x7E7E7E7E7E7E7E7E, 0x7E7E7E7E7E7E7E7E, -1, 0x7E7E7E7E7E7E7E7E);
+    PP = _mm256_broadcastq_epi64(_mm_cvtsi64_si128(P));
+    mOO = _mm256_and_si256(_mm256_broadcastq_epi64(_mm_cvtsi64_si128(O)), mflipH);
+    flip_l = _mm256_and_si256(mOO, _mm256_sllv_epi64(PP, shift1897));
+    flip_r = _mm256_and_si256(mOO, _mm256_srlv_epi64(PP, shift1897));
+    flip_l = _mm256_or_si256(flip_l, _mm256_and_si256(mOO, _mm256_sllv_epi64(flip_l, shift1897)));
+    flip_r = _mm256_or_si256(flip_r, _mm256_and_si256(mOO, _mm256_srlv_epi64(flip_r, shift1897)));
+    pre_l = _mm256_and_si256(mOO, _mm256_sllv_epi64(mOO, shift1897));
+    pre_r = _mm256_srlv_epi64(pre_l, shift1897);
+    shift2 = _mm256_add_epi64(shift1897, shift1897);
+    flip_l = _mm256_or_si256(flip_l, _mm256_and_si256(pre_l, _mm256_sllv_epi64(flip_l, shift2)));
+    flip_r = _mm256_or_si256(flip_r, _mm256_and_si256(pre_r, _mm256_srlv_epi64(flip_r, shift2)));
+    flip_l = _mm256_or_si256(flip_l, _mm256_and_si256(pre_l, _mm256_sllv_epi64(flip_l, shift2)));
+    flip_r = _mm256_or_si256(flip_r, _mm256_and_si256(pre_r, _mm256_srlv_epi64(flip_r, shift2)));
+    MM = _mm256_sllv_epi64(flip_l, shift1897);
+    MM = _mm256_or_si256(MM, _mm256_srlv_epi64(flip_r, shift1897));
+    M = _mm_or_si128(_mm256_castsi256_si128(MM), _mm256_extracti128_si256(MM, 1));
+    M = _mm_or_si128(M, _mm_unpackhi_epi64(M, M));
+    return _mm_cvtsi128_si64(M) & ~(P | O);
 }
 
 #define N_TESTCASES 10000000
@@ -37,11 +33,15 @@ uint64_t test_results[N_TESTCASES][2];
 
 int main(){
     bit_init();
-    //uint8_t player;
-    //cin >> player;
-    //input_board(&p, &o);
-    //cerr << endl;
-    //print_board(p, o);
+    uint8_t player;
+    uint64_t p, o;
+    cin >> player;
+    input_board(&p, &o);
+    cerr << endl;
+    print_board(p, o);
+    bit_print_board(calc_legal(p, o));
+    return 0;
+
     uint64_t strt;
     for (uint32_t i = 0; i < N_TESTCASES; ++i){
         testcases[i][0] = myrand_ull();

@@ -71,6 +71,152 @@ void print_board(uint64_t p, uint64_t o){
     }
 }
 
+/*
+Original code: https://github.com/primenumber/issen/blob/72f450256878094ffe90b75f8674599e6869c238/src/move_generator.cpp
+modified by Nyanyan
+*/
+/*
+struct u64_2 {
+    __m128i data;
+    u64_2() = default;
+    u64_2(uint64_t val)
+        : data(_mm_set1_epi64x(val)) {}
+    u64_2(uint64_t x, uint64_t y)
+        : data(_mm_set_epi64x(x, y)) {}
+    u64_2(__m128i data) : data(data) {}
+    //operator __m128i() { return data; }
+};
+
+inline u64_2 operator>>(const u64_2 lhs, const size_t n) {
+    return _mm_srli_epi64(lhs.data, n);
+}
+
+inline u64_2 operator>>(const u64_2 lhs, const u64_2 n) {
+    return _mm_srlv_epi64(lhs.data, n.data);
+}
+
+inline u64_2 operator<<(const u64_2 lhs, const size_t n) {
+    return _mm_slli_epi64(lhs.data, n);
+}
+
+inline u64_2 operator<<(const u64_2 lhs, const u64_2 n) {
+    return _mm_sllv_epi64(lhs.data, n.data);
+}
+
+inline u64_2 operator&(const u64_2 lhs, const u64_2 rhs) {
+    return _mm_and_si128(lhs.data, rhs.data);
+}
+
+inline u64_2 operator|(const u64_2 lhs, const u64_2 rhs) {
+    return _mm_or_si128(lhs.data, rhs.data);
+}
+
+inline u64_2 operator^(const u64_2 lhs, const u64_2 rhs) {
+    return _mm_xor_si128(lhs.data, rhs.data);
+}
+
+inline u64_2 operator+(const u64_2 lhs, const u64_2 rhs) {
+    return _mm_add_epi64(lhs.data, rhs.data);
+}
+
+inline u64_2 operator+(const u64_2 lhs, const uint64_t rhs) {
+    __m128i r64 = _mm_set1_epi64x(rhs);
+    return _mm_add_epi64(lhs.data, r64);
+}
+
+inline u64_2 operator-(const u64_2 lhs, const u64_2 rhs) {
+    return _mm_sub_epi64(lhs.data, rhs.data);
+}
+
+inline u64_2 operator-(const u64_2 lhs) {
+    return _mm_sub_epi64(_mm_setzero_si128(), lhs.data);
+}
+
+inline u64_2 andnot(const u64_2 lhs, const u64_2 rhs) {
+    return _mm_andnot_si128(lhs.data, rhs.data);
+}
+
+inline u64_2 operator~(const u64_2 lhs) {
+    return _mm_andnot_si128(lhs.data, _mm_set1_epi8(0xFF));
+}
+
+inline u64_2 nonzero(const u64_2 lhs) {
+    return _mm_cmpeq_epi64(lhs.data, _mm_setzero_si128()) + u64_2(1);
+}
+*/
+struct u64_4 {
+    __m256i data;
+    u64_4() = default;
+    u64_4(uint64_t val)
+        : data(_mm256_set1_epi64x(val)) {}
+    u64_4(uint64_t w, uint64_t x, uint64_t y, uint64_t z)
+        : data(_mm256_set_epi64x(w, x, y, z)) {}
+    //u64_4(u64_2 x, u64_2 y)
+    //    : data(_mm256_setr_epi64x(_mm_cvtsi128_si64(y.data), _mm_cvtsi128_si64(_mm_unpackhi_epi64(y.data, y.data)), _mm_cvtsi128_si64(x.data), _mm_cvtsi128_si64(_mm_unpackhi_epi64(x.data, x.data)))) {}
+    u64_4(__m256i data) : data(data) {}
+    operator __m256i() { return data; }
+};
+
+inline u64_4 operator>>(const u64_4 lhs, const size_t n) {
+    return _mm256_srli_epi64(lhs.data, n);
+}
+
+inline u64_4 operator>>(const u64_4 lhs, const u64_4 n) {
+    return _mm256_srlv_epi64(lhs.data, n.data);
+}
+
+inline u64_4 operator<<(const u64_4 lhs, const size_t n) {
+    return _mm256_slli_epi64(lhs.data, n);
+}
+
+inline u64_4 operator<<(const u64_4 lhs, const u64_4 n) {
+    return _mm256_sllv_epi64(lhs.data, n.data);
+}
+
+inline u64_4 operator&(const u64_4 lhs, const u64_4 rhs) {
+    return _mm256_and_si256(lhs.data, rhs.data);
+}
+
+inline u64_4 operator|(const u64_4 lhs, const u64_4 rhs) {
+    return _mm256_or_si256(lhs.data, rhs.data);
+}
+
+inline u64_4 operator^(const u64_4 lhs, const u64_4 rhs) {
+    return _mm256_xor_si256(lhs.data, rhs.data);
+}
+
+inline u64_4 operator+(const u64_4 lhs, const u64_4 rhs) {
+    return _mm256_add_epi64(lhs.data, rhs.data);
+}
+
+inline u64_4 operator+(const u64_4 lhs, const uint64_t rhs) {
+    __m256i r64 = _mm256_set1_epi64x(rhs);
+    return _mm256_add_epi64(lhs.data, r64);
+}
+
+inline u64_4 operator-(const u64_4 lhs, const u64_4 rhs) {
+    return _mm256_sub_epi64(lhs.data, rhs.data);
+}
+
+inline u64_4 operator-(const u64_4 lhs) {
+    return _mm256_sub_epi64(_mm256_setzero_si256(), lhs.data);
+}
+
+inline u64_4 andnot(const u64_4 lhs, const u64_4 rhs) {
+    return _mm256_andnot_si256(lhs.data, rhs.data);
+}
+
+inline u64_4 operator~(const u64_4 lhs) {
+    return _mm256_andnot_si256(lhs.data, _mm256_set1_epi8(0xFF));
+}
+
+inline u64_4 nonzero(const u64_4 lhs) {
+    return _mm256_cmpeq_epi64(lhs.data, _mm256_setzero_si256()) + u64_4(1);
+}
+/*
+end of modification
+*/
+
 #if USE_BUILTIN_POPCOUNT
     #define	pop_count_ull(x) __builtin_popcountll(x)
     #define pop_count_uint(x) __builtin_popcount(x)
@@ -121,6 +267,25 @@ inline uint64_t black_line_mirror(uint64_t x){
     return x = x ^ a ^ (a << 36);
 }
 
+inline u64_4 black_line_mirror(u64_4 x){
+    u64_4 a = (x ^ (x >> 9)) & 0x0055005500550055ULL;
+    x = x ^ a ^ (a << 9);
+    a = (x ^ (x >> 18)) & 0x0000333300003333ULL;
+    x = x ^ a ^ (a << 18);
+    a = (x ^ (x >> 36)) & 0x000000000F0F0F0FULL;
+    return x = x ^ a ^ (a << 36);
+}
+
+inline u64_4 black_line_mirror_3_4(u64_4 x){
+    u64_4 a = (x ^ (x >> 9)) & (u64_4){0ULL, 0ULL, 0x0055005500550055ULL, 0x0055005500550055ULL};
+    x = x ^ a ^ (a << 9);
+    a = (x ^ (x >> 18)) & (u64_4){0ULL, 0ULL, 0x0000333300003333ULL, 0x0000333300003333ULL};
+    x = x ^ a ^ (a << 18);
+    a = (x ^ (x >> 36)) & (u64_4){0ULL, 0ULL, 0x000000000F0F0F0FULL, 0x000000000F0F0F0FULL};
+    return x = x ^ a ^ (a << 36);
+}
+
+/*
 inline void black_line_mirror_double(uint64_t xin, uint64_t yin, uint64_t *x, uint64_t *y){
     __m128i	xy = _mm_set_epi64x(xin, yin);
     __m128i a = _mm_xor_si128(xy, _mm_srli_epi64(xy, 9));
@@ -138,7 +303,7 @@ inline void black_line_mirror_double(uint64_t xin, uint64_t yin, uint64_t *x, ui
     *y = _mm_cvtsi128_si64(xy);
     *x = _mm_cvtsi128_si64(_mm_unpackhi_epi64(xy, xy));
 }
-
+*/
 #if USE_FAST_VERTICAL_MIRROR
     #ifdef _MSC_VER
         #define	vertical_mirror(x)	_byteswap_uint64(x)
@@ -159,6 +324,22 @@ inline uint64_t horizontal_mirror(uint64_t x){
     return ((x >> 4) & 0x0F0F0F0F0F0F0F0FULL) | ((x << 4) & 0xF0F0F0F0F0F0F0F0ULL);
 }
 
+inline u64_4 horizontal_mirror(u64_4 x){
+    x = ((x >> 1) & 0x5555555555555555ULL) | ((x << 1) & 0xAAAAAAAAAAAAAAAAULL);
+    x = ((x >> 2) & 0x3333333333333333ULL) | ((x << 2) & 0xCCCCCCCCCCCCCCCCULL);
+    return ((x >> 4) & 0x0F0F0F0F0F0F0F0FULL) | ((x << 4) & 0xF0F0F0F0F0F0F0F0ULL);
+}
+
+inline u64_4 horizontal_mirror_1_3(u64_4 x){
+    u64_4 a = (x ^ (x >> 1)) & (u64_4){0ULL, 0x5555555555555555ULL, 0ULL, 0x5555555555555555ULL};
+    x = x ^ a ^ (a << 1);
+    a = (x ^ (x >> 2)) & (u64_4){0ULL, 0x3333333333333333ULL, 0ULL, 0x3333333333333333ULL};
+    x = x ^ a ^ (a << 2);
+    a = (x ^ (x >> 4)) & (u64_4){0ULL, 0x0F0F0F0F0F0F0F0FULL, 0ULL, 0x0F0F0F0F0F0F0F0FULL};
+    return x ^ a ^ (a << 4);
+}
+
+/*
 inline void horizontal_mirror_double(uint64_t *x, uint64_t *y){
     __m128i	xy = _mm_set_epi64x(*x, *y);
     xy = _mm_or_si128(
@@ -205,7 +386,7 @@ inline void horizontal_mirror_quad(uint64_t win, uint64_t xin, uint64_t yin, uin
     *y = _mm256_extract_epi64(xy, 1);
     *z = _mm256_extract_epi64(xy, 0);
 }
-
+*/
 // direction is couner clockwise
 inline uint64_t rotate_90(uint64_t x){
     return vertical_mirror(white_line_mirror(x));
@@ -261,7 +442,7 @@ inline uint64_t rotate_45(uint64_t x){
     a = (x ^ (x >> 32)) & 0x00000000C3E1F078ULL;
     return x ^ a ^ (a << 32);
 }
-
+/*
 inline void rotate_45_double(uint64_t *x, uint64_t *y){
     __m128i xy = _mm_set_epi64x(*x, *y);
     __m128i a = _mm_and_si128(_mm_xor_si128(xy, _mm_srli_epi64(xy, 8)), _mm_set1_epi64x(0x0055005500550055ULL));
@@ -285,7 +466,7 @@ inline void rotate_45_double(uint64_t x_in, uint64_t y_in, uint64_t *x, uint64_t
     *y = _mm_cvtsi128_si64(xy);
     *x = _mm_cvtsi128_si64(_mm_unpackhi_epi64(xy, xy));
 }
-
+*/
 // unrotate 45 degrees counter clockwise
 inline uint64_t unrotate_45(uint64_t x){
     uint64_t a = (x ^ (x >> 32)) & 0x00000000C3E1F078ULL;
@@ -312,7 +493,7 @@ inline uint64_t rotate_135(uint64_t x){
     a = (x ^ (x >> 32)) & 0x00000000C3870F1EULL;
     return x ^ a ^ (a << 32);
 }
-
+/*
 inline void rotate_135_double(uint64_t *x, uint64_t *y){
     __m128i xy = _mm_set_epi64x(*x, *y);
     __m128i a = _mm_and_si128(_mm_xor_si128(xy, _mm_srli_epi64(xy, 8)), _mm_set1_epi64x(0x00AA00AA00AA00AAULL));
@@ -336,7 +517,7 @@ inline void rotate_135_double(uint64_t x_in, uint64_t y_in, uint64_t *x, uint64_
     *y = _mm_cvtsi128_si64(xy);
     *x = _mm_cvtsi128_si64(_mm_unpackhi_epi64(xy, xy));
 }
-
+*/
 inline uint64_t unrotate_135(uint64_t x){
     uint64_t a = (x ^ (x >> 32)) & 0x00000000C3870F1EULL;
     x = x ^ a ^ (a << 32);
@@ -345,7 +526,7 @@ inline uint64_t unrotate_135(uint64_t x){
     a = (x ^ (x >> 8)) & 0x00AA00AA00AA00AAULL;
     return x ^ a ^ (a << 8);
 }
-
+/*
 inline uint64_t unrotate_45_135(uint64_t x, uint64_t y){
     __m128i xy = _mm_set_epi64x(x, y);
     __m128i a = _mm_and_si128(_mm_xor_si128(xy, _mm_srli_epi64(xy, 32)), _mm_set_epi64x(0x00000000C3E1F078ULL, 0x00000000C3870F1EULL));
@@ -370,6 +551,32 @@ inline void rotate_45_double_135_double(uint64_t x_in, uint64_t y_in, uint64_t *
     *y = _mm256_extract_epi64(xy, 1);
     *z = _mm256_extract_epi64(xy, 0);
 }
+*/
+/*
+inline uint64_t rotate_45(uint64_t x){
+    uint64_t a = (x ^ (x >> 8)) & 0x0055005500550055ULL;
+    x = x ^ a ^ (a << 8);
+    a = (x ^ (x >> 16)) & 0x0000CC660000CC66ULL;
+    x = x ^ a ^ (a << 16);
+    a = (x ^ (x >> 32)) & 0x00000000C3E1F078ULL;
+    return x ^ a ^ (a << 32);
+}
+inline uint64_t rotate_135(uint64_t x){
+    uint64_t a = (x ^ (x >> 8)) & 0x00AA00AA00AA00AAULL;
+    x = x ^ a ^ (a << 8);
+    a = (x ^ (x >> 16)) & 0x0000336600003366ULL;
+    x = x ^ a ^ (a << 16);
+    a = (x ^ (x >> 32)) & 0x00000000C3870F1EULL;
+    return x ^ a ^ (a << 32);
+}
+
+inline u64_4 rotate_diag4(uint64_t x, uint64_t y){
+    u64_4 xyxy(x, y, x, y);
+    u64_4 a()
+    xyxy ^ (xyxy >> 8)
+}
+*/
+
 
 inline uint64_t rotate_315(uint64_t x){
     return rotate_135(rotate_180(x));
@@ -388,74 +595,6 @@ inline uint64_t unrotate_315(uint64_t x){
         return pop_count_ull((*x & (~(*x) + 1)) - 1);
     }
 #endif
-
-
-/*
-Original code: https://github.com/primenumber/issen/blob/72f450256878094ffe90b75f8674599e6869c238/src/move_generator.cpp
-modified by me
-*/
-struct u64_4 {
-    __m256i data;
-    u64_4() = default;
-    u64_4(uint64_t val)
-        : data(_mm256_set1_epi64x(val)) {}
-    u64_4(uint64_t w, uint64_t x, uint64_t y, uint64_t z)
-        : data(_mm256_set_epi64x(w, x, y, z)) {}
-    u64_4(__m256i data) : data(data) {}
-    operator __m256i() { return data; }
-};
-
-inline u64_4 operator>>(const u64_4 lhs, const size_t n) {
-    return _mm256_srli_epi64(lhs.data, n);
-}
-
-inline u64_4 operator>>(const u64_4 lhs, const u64_4 n) {
-    return _mm256_srlv_epi64(lhs.data, n.data);
-}
-
-inline u64_4 operator<<(const u64_4 lhs, const size_t n) {
-    return _mm256_slli_epi64(lhs.data, n);
-}
-
-inline u64_4 operator&(const u64_4 lhs, const u64_4 rhs) {
-    return _mm256_and_si256(lhs.data, rhs.data);
-}
-
-inline u64_4 operator|(const u64_4 lhs, const u64_4 rhs) {
-    return _mm256_or_si256(lhs.data, rhs.data);
-}
-
-inline u64_4 operator+(const u64_4 lhs, const u64_4 rhs) {
-    return _mm256_add_epi64(lhs.data, rhs.data);
-}
-
-inline u64_4 operator+(const u64_4 lhs, const uint64_t rhs) {
-    __m256i r64 = _mm256_set1_epi64x(rhs);
-    return _mm256_add_epi64(lhs.data, r64);
-}
-
-inline u64_4 operator-(const u64_4 lhs, const u64_4 rhs) {
-    return _mm256_sub_epi64(lhs.data, rhs.data);
-}
-
-inline u64_4 operator-(const u64_4 lhs) {
-    return _mm256_sub_epi64(_mm256_setzero_si256(), lhs.data);
-}
-
-inline u64_4 andnot(const u64_4 lhs, const u64_4 rhs) {
-    return _mm256_andnot_si256(lhs.data, rhs.data);
-}
-
-inline u64_4 operator~(const u64_4 lhs) {
-    return _mm256_andnot_si256(lhs.data, _mm256_set1_epi8(0xFF));
-}
-
-inline u64_4 nonzero(const u64_4 lhs) {
-    return _mm256_cmpeq_epi64(lhs.data, _mm256_setzero_si256()) + u64_4(1);
-}
-/*
-end of modification
-*/
 
 inline u64_4 pop_count_ull_quad(u64_4 x){
     u64_4 mask1(0x5555555555555555ULL);
@@ -481,7 +620,7 @@ inline u64_4 pop_count_ull_quad(u64_4 x){
 
 /*
 Original code: https://github.com/primenumber/issen/blob/72f450256878094ffe90b75f8674599e6869c238/src/move_generator.cpp
-modified by me
+modified by Nyanyan
 */
 inline u64_4 nlz_quad(u64_4 x){
     x = x | (x >> 1);

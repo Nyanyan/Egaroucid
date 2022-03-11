@@ -290,7 +290,7 @@ class Flip{
             inline void calc_flip(const uint64_t player, const uint64_t opponent, const uint_fast8_t place){
                 /*
                 Original code: https://github.com/primenumber/issen/blob/72f450256878094ffe90b75f8674599e6869c238/src/move_generator.cpp
-                modified by me
+                modified by Nyanyan
                 */
                 pos = place;
                 u64_4 p(player);
@@ -387,7 +387,7 @@ class Flip{
     inline int_fast8_t count_last_flip(uint64_t player, uint64_t opponent, const uint_fast8_t place){
         /*
         Original code: https://github.com/primenumber/issen/blob/72f450256878094ffe90b75f8674599e6869c238/src/move_generator.cpp
-        modified by me
+        modified by Nyanyan
         */
         u64_4 p(player);
         u64_4 o(opponent);

@@ -240,4 +240,28 @@ inline uint64_t calc_some_mobility(uint64_t p, uint64_t o){
         return _mm_cvtsi128_si64(M) & ~(P | O);
     }
 
+#elif LEGAL_CALCULATION_MODE == 6
+    inline uint64_t calc_mobility_hv(uint64_t p, uint64_t o){
+        u64_4 p_o_pb_ob(p, o, p, o);
+        p_o_pb_ob = black_line_mirror_3_4(p_o_pb_ob);
+        u64_4 pr_or_pbr_obr = horizontal_mirror(p_o_pb_ob);
+        u64_4 p1, oo;
+        p1.data = _mm256_unpackhi_epi64(pr_or_pbr_obr, p_o_pb_ob); // p, pr, pb, pbr
+        oo.data = _mm256_unpacklo_epi64(pr_or_pbr_obr, p_o_pb_ob); //o, or, ob, obr
+
+        p1 = (p1 & 0x7F7F7F7F7F7F7F7FULL) << 1;
+        oo = oo & 0x7F7F7F7F7F7F7F7FULL;
+        u64_4 legal = (~(p1 | oo)) & (p1 + oo);
+
+        legal = horizontal_mirror_1_3(legal); // p, p, pb, pb
+        legal = black_line_mirror_3_4(legal); // p, p, p, p
+
+        return _mm256_extract_epi64(legal.data, 3) | _mm256_extract_epi64(legal.data, 2) | _mm256_extract_epi64(legal.data, 1) | _mm256_extract_epi64(legal.data, 0);
+    }
+
+    inline uint64_t calc_legal(uint64_t p, uint64_t o){
+        return
+            (calc_mobility_hv(p, o)// | 
+            /*calc_some_mobility_diag(p, o)*/) & ~(p | o);
+    }
 #endif
