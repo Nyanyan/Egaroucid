@@ -47,7 +47,7 @@ int main(){
 
     while (true){
         board = input_board();
-        cerr << mid_evaluate(&board) << endl;
+        cout << mid_evaluate(&board) << endl;
     }
 
     return 0;
