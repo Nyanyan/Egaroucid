@@ -189,10 +189,7 @@ inline double probcut_sigma(int n_stones, int depth1, int depth2){
     double res = probcut_b * w * w * (x + y) + probcut_c * w * (x * x + y * y) + probcut_d * (x * x * x + y * y * y);
     res += probcut_e * w * w + probcut_f * w * (x + y) + probcut_g * (x * x + y * y);
     res += probcut_h * w + probcut_i * (x + y) + probcut_j;
-    return min(7.0, res);
-    
-    //return mpcsd[(x - 4) / 4][y - MID_MPC_MIN_DEPTH];
-    //return 0;
+    return res;
 }
 
 inline double probcut_sigma_depth0(int n_stones, int depth1){
@@ -220,8 +217,8 @@ int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped);
 int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal);
 
 inline bool mpc_higher(Search *search, int beta, int depth, uint64_t legal, int score_eval){
-    if (depth <= 8)
-        return false;
+    //if (depth <= 8)
+    //    return false;
     //int score_eval = mid_evaluate(&search->board);
     int eval_error = search->mpct * probcut_sigma_depth0(search->board.n, depth);
     bool res = false;
@@ -254,8 +251,8 @@ inline bool mpc_higher(Search *search, int beta, int depth, uint64_t legal, int 
 }
 
 inline bool mpc_lower(Search *search, int alpha, int depth, uint64_t legal, int score_eval){
-    if (depth <= 8)
-        return false;
+    //if (depth <= 8)
+    //    return false;
     //int score_eval = mid_evaluate(&search->board);
     int eval_error = search->mpct * probcut_sigma_depth0(search->board.n, depth);
     bool res = false;

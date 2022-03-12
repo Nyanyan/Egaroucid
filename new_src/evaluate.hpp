@@ -399,7 +399,7 @@ inline int mid_evaluate(Board *b){
         eval_num0_num1_arr[phase_idx][num0][num1] + 
         calc_canput_pattern(phase_idx, b, player_mobility, opponent_mobility);
     //return score_modification(phase_idx, res);
-    cerr << res << endl;
+    //cerr << res << endl;
     if (res > 0)
         res += STEP_2;
     else if (res < 0)

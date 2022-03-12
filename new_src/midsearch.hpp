@@ -123,7 +123,7 @@ int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, b
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
         calc_flip(&move_list[idx++], &search->board, cell);
     move_ordering(search, move_list, depth, alpha, beta, false);
-    //int best_move = -1;
+    int best_move = -1;
     for (const Flip &flip: move_list){
         search->board.move(&flip);
             g = -nega_alpha_ordering_nomemo(search, -beta, -alpha, depth - 1, false, flip.n_legal);
@@ -131,12 +131,12 @@ int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, b
         alpha = max(alpha, g);
         if (v < g){
             v = g;
-            //best_move = flip.pos;
+            best_move = flip.pos;
         }
         if (beta <= alpha)
             break;
     }
-    //child_transpose_table.reg(&search->board, search->board.hash() & TRANSPOSE_TABLE_MASK, best_move, v);
+    child_transpose_table.reg(&search->board, search->board.hash() & TRANSPOSE_TABLE_MASK, best_move);
     return v;
 }
 
@@ -325,6 +325,18 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
         search->board.pass();
         return v;
     }
+    int best_move = child_transpose_table.get(&search->board, hash_code);
+    int f_best_move = best_move;
+    if (best_move != TRANSPOSE_TABLE_UNDEFINED){
+        Flip flip;
+        calc_flip(&flip, &search->board, best_move);
+        search->board.move(&flip);
+            g = -nega_scout(search, -beta, -alpha, depth - 1, false, LEGAL_UNDEFINED, is_end_search);
+        search->board.undo(&flip);
+        alpha = max(alpha, g);
+        v = g;
+        legal ^= 1ULL << best_move;
+    }
     const int canput = pop_count_ull(legal);
     vector<Flip> move_list(canput);
     int idx = 0;
@@ -332,7 +344,6 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
         calc_flip(&move_list[idx++], &search->board, cell);
     move_ordering(search, move_list, depth, alpha, beta, is_end_search);
     bool searching = true;
-    int best_move = -1;
     for (const Flip &flip: move_list){
         search->board.move(&flip);
             if (v == -INF)
@@ -351,7 +362,8 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
         if (beta <= alpha)
             break;
     }
-    child_transpose_table.reg(&search->board, hash_code, best_move);
+    if (best_move != f_best_move)
+        child_transpose_table.reg(&search->board, hash_code, best_move);
     #if USE_END_TC
         if (beta <= v && l < v)
             parent_transpose_table.reg(&search->board, hash_code, v, u);
@@ -381,6 +393,18 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
         }
         return res;
     }
+    int best_move = child_transpose_table.get(&search->board, hash_code);
+    int f_best_move = best_move;
+    if (best_move != TRANSPOSE_TABLE_UNDEFINED){
+        Flip flip;
+        calc_flip(&flip, &search->board, best_move);
+        search->board.move(&flip);
+            g = -nega_scout(search, -beta, -alpha, depth - 1, false, LEGAL_UNDEFINED, is_end_search);
+        search->board.undo(&flip);
+        alpha = max(alpha, g);
+        v = g;
+        legal ^= 1ULL << best_move;
+    }
     const int canput = pop_count_ull(legal);
     vector<Flip> move_list(canput);
     int idx = 0;
@@ -388,7 +412,6 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
         calc_flip(&move_list[idx++], &search->board, cell);
     move_ordering(search, move_list, depth, alpha, beta, is_end_search);
     bool searching = true;
-    int best_move = -1;
     for (const Flip &flip: move_list){
         search->board.move(&flip);
             if (v == -INF)
@@ -407,6 +430,7 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
         if (beta <= alpha)
             break;
     }
-    child_transpose_table.reg(&search->board, hash_code, best_move);
+    if (best_move != f_best_move)
+        child_transpose_table.reg(&search->board, hash_code, best_move);
     return make_pair(v, best_move);
 }
