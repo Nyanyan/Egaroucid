@@ -2123,8 +2123,8 @@ void Main() {
 							if (bd.check_player()) {
 								popup_start_time = tim();
 							}
-							history[history.size() - 1].v = sgn * ai_result.value;
 							int v = sgn * ai_result.value;
+							history[history.size() - 1].v = v;
 							History_elem hist_tmp = { bd, v, flip.pos, history[history.size() - 1].record + str_record(flip.pos) };
 							history.emplace_back(hist_tmp);
 							history_place = bd.n - 4;

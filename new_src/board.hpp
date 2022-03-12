@@ -109,7 +109,7 @@ class Board {
         inline bool check_player(){
             bool passed = (get_legal() == 0);
             if (passed){
-                p = 1 - p;
+                pass();
                 passed = (get_legal() == 0);
             }
             return passed;

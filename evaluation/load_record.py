@@ -204,16 +204,24 @@ def collect_data(num, s):
 
 
 games = []
-
-for i in range(0, 56):
+'''
+for i in range(0, 1):
     raw_data = ''
-    with open('third_party/records3/' + digit(i, 7) + '.txt', 'r') as f:
+    with open('third_party/records2/' + digit(i, 7) + '.txt', 'r') as f:
         raw_data = f.read()
     games.extend([i for i in raw_data.splitlines()])
+'''
+for i in range(1977, 2020):
+    raw_data = ''
+    with open('third_party/records1/' + str(i) + '.csv', 'r', encoding='utf-8-sig') as f:
+        raw_data = f.read()
+    games.extend([i for i in raw_data.splitlines()])
+
 print(len(games))
 dict_data = {}
 idx = 0
 for i in trange(len(games)):
+    #games[i] = games[i].replace('-', '')
     if len(games[i]) == 0:
         continue
     collect_data(idx // 1000, games[i])
