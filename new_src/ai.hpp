@@ -111,7 +111,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
         search.use_mpc = use_mpc;
         search.mpct = mpct;
         g = -INF;
-        for (int search_depth = min(23, max(0, depth - 5)); search_depth <= depth; ++search_depth){
+        for (int search_depth = min(23, max(1, depth - 5)); search_depth <= depth; ++search_depth){
             parent_transpose_table.init();
             result = first_nega_scout(&search, -HW2, HW2, search_depth, false, false);
             if (g == -INF)
