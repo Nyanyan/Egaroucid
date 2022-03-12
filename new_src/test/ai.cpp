@@ -14,7 +14,7 @@ int main(){
     #if USE_MULTI_THREAD
         thread_pool.resize(16);
     #endif
-    constexpr int level = 21;
+    constexpr int level = 25;
     constexpr int book_error = 0;
     Board board;
     Search_result result;

@@ -36,7 +36,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
         if (show_log)
             cerr << "presearch d=" << depth / 2 << " t=" << search.mpct << " [-64,64] " << g << " " << idx_to_coord(result.second) << endl;
 
-        if (depth >= 24){
+        if (depth >= 24 && 1.2 < mpct){
             parent_transpose_table.init();
             search.mpct = 1.2;
             //search.mpct = 0.0;
@@ -46,7 +46,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
             if (show_log)
                 cerr << "presearch d=" << depth << " t=" << search.mpct << " [-64,64] " << g << " " << idx_to_coord(result.second) << endl;
 
-            if (depth >= 26){
+            if (depth >= 26 && 1.7 < mpct){
                 parent_transpose_table.init();
                 search.mpct = 1.7;
                 search.use_mpc = true;
@@ -57,7 +57,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
                 if (show_log)
                     cerr << "presearch d=" << depth << " t=" << search.mpct << " [" << alpha << "," << beta << "] " << g << " " << idx_to_coord(result.second) << endl;
 
-                if (depth >= 28){
+                if (depth >= 28 && 2.3 < mpct){
                     parent_transpose_table.init();
                     search.mpct = 2.3;
                     search.use_mpc = true;
@@ -111,17 +111,22 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
         search.use_mpc = use_mpc;
         search.mpct = mpct;
         g = -INF;
-        for (int search_depth = min(23, max(1, depth - 5)); search_depth <= depth; ++search_depth){
+        if (depth - 1 >= 1){
             parent_transpose_table.init();
-            result = first_nega_scout(&search, -HW2, HW2, search_depth, false, false);
-            if (g == -INF)
-                g = result.first;
-            else
-                g = (g + result.first) / 2;
-            policy = result.second;
+            result = first_nega_scout(&search, -HW2, HW2, depth - 1, false, false);
+            g = result.first;
             if (show_log)
-                cerr << "midsearch time " << tim() - strt << " depth " << search_depth << " value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
+                cerr << "presearch time " << tim() - strt << " depth " << depth - 1 << " value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
         }
+        parent_transpose_table.init();
+        result = first_nega_scout(&search, -HW2, HW2, depth, false, false);
+        if (g == -INF)
+            g = result.first;
+        else
+            g = (g + result.first) / 2;
+        policy = result.second;
+        if (show_log)
+            cerr << "midsearch time " << tim() - strt << " depth " << depth << " value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
     }
     Search_result res;
     res.depth = depth;
@@ -155,8 +160,7 @@ Search_result ai(Board b, int level, int book_error){
         res.value = book_result.value;
         res.depth = SEARCH_BOOK;
         res.nps = 0;
-    }
-    else if (level == 0){
+    } else if (level == 0){
         uint64_t legal = b.get_legal();
         vector<int> move_lst;
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
