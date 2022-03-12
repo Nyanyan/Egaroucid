@@ -408,3 +408,11 @@ start depth: 40 Egaroucid plays black WDL: 161-9-130 Egaroucid plays white WDL: 
 start depth: 50 Egaroucid plays black WDL: 119-22-159 Egaroucid plays white WDL: 154-23-123 Egaroucid win rate: 0.4918918918918919
 level 5
 start depth: 40 Egaroucid plays black WDL: 150-21-129 Egaroucid plays white WDL: 140-16-144 Egaroucid win rate: 0.5150976909413855
+
+2022/03/13 new evaluation function with fixed bug
+level 1
+start depth: 10 Egaroucid plays black WDL: 156-6-138 Egaroucid plays white WDL: 173-8-119 Egaroucid win rate: 0.5614334470989761
+start depth: 20 Egaroucid plays black WDL: 172-5-123 Egaroucid plays white WDL: 177-5-118 Egaroucid win rate: 0.5915254237288136
+start depth: 30 Egaroucid plays black WDL: 157-4-139 Egaroucid plays white WDL: 144-9-147 Egaroucid win rate: 0.5127768313458262
+start depth: 40 Egaroucid plays black WDL: 168-8-124 Egaroucid plays white WDL: 152-10-138 Egaroucid win rate: 0.5498281786941581
+start depth: 50 Egaroucid plays black WDL: 127-35-138 Egaroucid plays white WDL: 156-27-117 Egaroucid win rate: 0.5260223048327137

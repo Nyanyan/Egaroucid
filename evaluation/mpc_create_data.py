@@ -70,7 +70,7 @@ def collect_data(directory, num):
             for j in range(hw):
                 board_proc += board[i * hw + j]
             board_proc += '\n'
-        board_proc += str(depth1) + '\n1\n0.8\n'
+        board_proc += str(depth1) + '\n1\n1.0\n'
         #print(board_proc)
         if depth1 == 64 - n_stones:
             v1 = score
@@ -87,7 +87,7 @@ def collect_data(directory, num):
             for j in range(hw):
                 board_proc += board[i * hw + j]
             board_proc += '\n'
-        board_proc += str(depth2) + '\n1\n0.8\n'
+        board_proc += str(depth2) + '\n1\n1.0\n'
         #print(board_proc)
         if depth2 == 64 - n_stones:
             v2 = score
@@ -98,7 +98,7 @@ def collect_data(directory, num):
         with open('sigma_data.txt', 'a') as f:
             f.write(str(n_stones) + ' ' + str(depth1) + ' ' + str(v1) + ' ' + str(depth2) + ' ' + str(v2) + '\n')
 
-for i in range(26, 173):
+for i in range(20, 173):
     collect_data('records3', i)
     collect_data('records9', i)
 evaluate.kill()
