@@ -337,30 +337,32 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
         v = g;
         legal ^= 1ULL << best_move;
     }
-    const int canput = pop_count_ull(legal);
-    vector<Flip> move_list(canput);
-    int idx = 0;
-    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
-        calc_flip(&move_list[idx++], &search->board, cell);
-    move_ordering(search, move_list, depth, alpha, beta, is_end_search);
-    bool searching = true;
-    for (const Flip &flip: move_list){
-        search->board.move(&flip);
-            if (v == -INF)
-                g = -nega_scout(search, -beta, -alpha, depth - 1, false, flip.n_legal, is_end_search);
-            else{
-                g = -nega_alpha_ordering(search, -alpha - 1, -alpha, depth - 1, false, flip.n_legal, is_end_search, &searching);
-                if (alpha < g)
-                    g = -nega_scout(search, -beta, -g, depth - 1, false, flip.n_legal, is_end_search);
+    if (alpha < beta){
+        const int canput = pop_count_ull(legal);
+        vector<Flip> move_list(canput);
+        int idx = 0;
+        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
+            calc_flip(&move_list[idx++], &search->board, cell);
+        move_ordering(search, move_list, depth, alpha, beta, is_end_search);
+        bool searching = true;
+        for (const Flip &flip: move_list){
+            search->board.move(&flip);
+                if (v == -INF)
+                    g = -nega_scout(search, -beta, -alpha, depth - 1, false, flip.n_legal, is_end_search);
+                else{
+                    g = -nega_alpha_ordering(search, -alpha - 1, -alpha, depth - 1, false, flip.n_legal, is_end_search, &searching);
+                    if (alpha < g)
+                        g = -nega_scout(search, -beta, -g, depth - 1, false, flip.n_legal, is_end_search);
+                }
+            search->board.undo(&flip);
+            alpha = max(alpha, g);
+            if (v < g){
+                v = g;
+                best_move = flip.pos;
             }
-        search->board.undo(&flip);
-        alpha = max(alpha, g);
-        if (v < g){
-            v = g;
-            best_move = flip.pos;
+            if (beta <= alpha)
+                break;
         }
-        if (beta <= alpha)
-            break;
     }
     if (best_move != f_best_move)
         child_transpose_table.reg(&search->board, hash_code, best_move);
@@ -405,30 +407,32 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
         v = g;
         legal ^= 1ULL << best_move;
     }
-    const int canput = pop_count_ull(legal);
-    vector<Flip> move_list(canput);
-    int idx = 0;
-    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
-        calc_flip(&move_list[idx++], &search->board, cell);
-    move_ordering(search, move_list, depth, alpha, beta, is_end_search);
-    bool searching = true;
-    for (const Flip &flip: move_list){
-        search->board.move(&flip);
-            if (v == -INF)
-                g = -nega_scout(search, -beta, -alpha, depth - 1, false, flip.n_legal, is_end_search);
-            else{
-                g = -nega_alpha_ordering(search, -alpha - 1, -alpha, depth - 1, false, flip.n_legal, is_end_search, &searching);
-                if (alpha < g)
-                    g = -nega_scout(search, -beta, -g, depth - 1, false, flip.n_legal, is_end_search);
+    if (alpha < beta){
+        const int canput = pop_count_ull(legal);
+        vector<Flip> move_list(canput);
+        int idx = 0;
+        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
+            calc_flip(&move_list[idx++], &search->board, cell);
+        move_ordering(search, move_list, depth, alpha, beta, is_end_search);
+        bool searching = true;
+        for (const Flip &flip: move_list){
+            search->board.move(&flip);
+                if (v == -INF)
+                    g = -nega_scout(search, -beta, -alpha, depth - 1, false, flip.n_legal, is_end_search);
+                else{
+                    g = -nega_alpha_ordering(search, -alpha - 1, -alpha, depth - 1, false, flip.n_legal, is_end_search, &searching);
+                    if (alpha < g)
+                        g = -nega_scout(search, -beta, -g, depth - 1, false, flip.n_legal, is_end_search);
+                }
+            search->board.undo(&flip);
+            alpha = max(alpha, g);
+            if (v < g){
+                v = g;
+                best_move = flip.pos;
             }
-        search->board.undo(&flip);
-        alpha = max(alpha, g);
-        if (v < g){
-            v = g;
-            best_move = flip.pos;
+            if (beta <= alpha)
+                break;
         }
-        if (beta <= alpha)
-            break;
     }
     if (best_move != f_best_move)
         child_transpose_table.reg(&search->board, hash_code, best_move);
