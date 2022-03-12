@@ -9,9 +9,9 @@ if len(sys.argv) > 3:
     beta = str(sys.argv[5])
 else:
     hour = '0'
-    minute = '10'
+    minute = '20'
     second = '0'
-    beta = '0.003'
+    beta = '0.005'
 additional_params = ' big_data_new_4.dat big_data_new_6.dat big_data_new_7.dat big_data_new_8.dat big_data_new_9.dat big_data_new_10.dat'
 #additional_params = ' big_data_new_1.dat big_data_new_2.dat big_data_new_12.dat big_data_new_13.dat'
 #additional_params = ' big_data.dat'
