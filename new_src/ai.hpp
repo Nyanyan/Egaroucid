@@ -126,6 +126,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
         else
             g = (g + result.first) / 2;
         policy = result.second;
+        cerr << policy << " " << idx_to_coord(policy) << endl;
         if (show_log)
             cerr << "midsearch time " << tim() - strt << " depth " << depth << " value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
     }
