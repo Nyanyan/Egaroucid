@@ -194,7 +194,7 @@ inline double probcut_sigma(int n_stones, int depth1, int depth2){
     double x = depth1;
     double y = depth2;
     double res = 0.0;
-    res += probcut_a * w * w * w + probcut_b * w * w * (x + y) + probcut_c * w * (x * x + y * y) + probcut_d * (x * x * x + y * y * y);
+    //res += probcut_a * w * w * w + probcut_b * w * w * (x + y) + probcut_c * w * (x * x + y * y) + probcut_d * (x * x * x + y * y * y);
     res += probcut_e * w * w + probcut_f * w * (x + y) + probcut_g * (x * x + y * y);
     res += probcut_h * w + probcut_i * (x + y) + probcut_j;
     return res * W_PROBCUT_SIGMA_ALL;
@@ -204,7 +204,7 @@ inline double probcut_sigma_depth0(int n_stones, int depth1){
     double w = n_stones;
     double x = depth1;
     double res = 0.0;
-    res += probcut_a * w * w * w + probcut_b * w * w * x + probcut_c * w * x * x + probcut_d * x * x * x;
+    //res += probcut_a * w * w * w + probcut_b * w * w * x + probcut_c * w * x * x + probcut_d * x * x * x;
     res += probcut_e * w * w + probcut_f * w * x + probcut_g * x * x;
     res += probcut_h * w + probcut_i * x + probcut_j;
     return res * W_PROBCUT_SIGMA_ALL;
@@ -214,7 +214,7 @@ inline double probcut_sigma_end(int n_stones, int depth){
     double x = n_stones;
     double y = depth;
     double res = 0.0;
-    res += probcut_end_a * x * x * x + probcut_end_b * x * x * y + probcut_end_c * x * y * y + probcut_end_d * y * y * y;
+    //res += probcut_end_a * x * x * x + probcut_end_b * x * x * y + probcut_end_c * x * y * y + probcut_end_d * y * y * y;
     res += probcut_end_e * x * x + probcut_end_f * x * y + probcut_end_g * y * y;
     res += probcut_end_h * x + probcut_end_i * y + probcut_end_j;
     return res * W_PROBCUT_SIGMA_ALL;
@@ -223,7 +223,7 @@ inline double probcut_sigma_end(int n_stones, int depth){
 inline double probcut_sigma_end_depth0(int n_stones){
     double x = n_stones;
     double res = 0.0;
-    res += probcut_end_a * x * x * x;
+    //res += probcut_end_a * x * x * x;
     res += probcut_end_e * x * x;
     res += probcut_end_h * x + probcut_end_j;
     return res * W_PROBCUT_SIGMA_ALL;

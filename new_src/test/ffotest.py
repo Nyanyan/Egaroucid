@@ -50,8 +50,8 @@ res_str_proc = ''
 for line, ans_line in zip(res_str.splitlines(), answer.splitlines()):
     ans_score = ans_line.split()[1]
     ans_policies = ans_line.split()[2:]
-    score = line.split()[3]
-    policy = line.split()[5]
+    score = line.split()[4]
+    policy = line.split()[6]
     res_str_proc += line
     if ans_score != score:
         res_str_proc += ' WRONG_SCORE'
