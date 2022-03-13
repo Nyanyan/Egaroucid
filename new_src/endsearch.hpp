@@ -22,8 +22,8 @@ int nega_alpha_end_nomemo(Search *search, int alpha, int beta, int depth, bool s
         return SCORE_UNDEFINED;
     if (depth <= MID_FAST_DEPTH)
         return nega_alpha(search, alpha, beta, depth, skipped);
-    if (depth == 1)
-        return nega_alpha_eval1(search, alpha, beta, skipped);
+    //if (depth == 1)
+    //    return nega_alpha_eval1(search, alpha, beta, skipped);
     ++(search->n_nodes);
     #if USE_END_SC
         int stab_res = stability_cut(search, &alpha, &beta);

@@ -124,60 +124,19 @@ constexpr double mpcsd[N_PHASES][MID_MPC_MAX_DEPTH - MID_MPC_MIN_DEPTH + 1]={
     {3.615, 2.16, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
 };
 */
-#define W_PROBCUT_SIGMA_ALL 1.5
-#define W_PROBCUT_SIGMA_ALL_END 1.5
-/*
-constexpr double probcut_params[6] = {
-    -0.07924286622429888, 0.016903451472509934, -0.05294261414319046, -0.254443804366251, -0.8506676921018298, 1.0213552153297525
-};
-*/
-/*
-#define probcut_a 0.0001075802799025416
-#define probcut_b 0.00025181631602000376
-#define probcut_c -2.8350375561148056e-05
-#define probcut_d 0.0005100624040597079
-#define probcut_e -0.010150457547919656
-#define probcut_f -0.009803910452852005
-#define probcut_g -0.012251813045764948
-#define probcut_h 0.29898682383748876
-#define probcut_i 0.1179020675344451
-#define probcut_j -0.3632247442453185
-*/
-/*
-#define probcut_a 4.351338661867654e-05
-#define probcut_b -2.192690473634684e-12
-#define probcut_c -2.191580250610059e-12
-#define probcut_d 4.351338662333948e-05
-#define probcut_e -0.001334276523697886
-#define probcut_f -6.294964549624638e-13
-#define probcut_g -0.0013342765238915089
-#define probcut_h -0.2645161570246706
-#define probcut_i -0.2645161570178731
-#define probcut_j 27.106346105598853
-*/
-/*
-#define probcut_a 5.4541259274222235e-05
-#define probcut_b 0.0001632368875162654
-#define probcut_c 0.00015335124078963476
-#define probcut_d -0.0001967053176508893
-#define probcut_e -0.0076470458911749575
-#define probcut_f -0.012227622950627284
-#define probcut_g 0.009618458845586403
-#define probcut_h 0.3551438315343388
-#define probcut_i -0.099495732478085
-#define probcut_j 0.682571187269726
-*/
+#define W_PROBCUT_SIGMA_ALL 1.0
+#define W_PROBCUT_SIGMA_ALL_END 1.0
 
-#define probcut_a 3.3733336446929645e-06
-#define probcut_b 7.831500517290527e-06
-#define probcut_c 9.120535644446465e-06
-#define probcut_d -4.886599282761222e-05
-#define probcut_e -0.0011681016106954425
-#define probcut_f -0.001452450301486007
-#define probcut_g 0.005004873160103861
-#define probcut_h 0.11153311042908952
-#define probcut_i -0.13361791318887276
-#define probcut_j 2.1939908019307652
+#define probcut_a 1.0
+#define probcut_b 1.0
+#define probcut_c 1.0
+#define probcut_d 1.0
+#define probcut_e -0.0005608281583355801
+#define probcut_f -0.0003755805739296125
+#define probcut_g 0.0032158303265618082
+#define probcut_h 0.0755123298024819
+#define probcut_i -0.13412549538390373
+#define probcut_j 2.639871993729959
 
 #define probcut_end_a -0.0006463495275057518
 #define probcut_end_b 9.34697148624597e-06
@@ -230,7 +189,7 @@ inline double probcut_sigma_end_depth0(int n_stones){
     return res * W_PROBCUT_SIGMA_ALL_END;
 }
 
-int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped);
+//int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped);
 int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped);
 int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal);
 
@@ -253,9 +212,9 @@ inline bool mpc_higher(Search *search, int beta, int depth, uint64_t legal, int 
             case 0:
                 res = mid_evaluate(&search->board) >= bound;
                 break;
-            case 1:
-                res = nega_alpha_eval1(search, bound - 1, bound, false) >= bound;
-                break;
+            //case 1:
+            //    res = nega_alpha_eval1(search, bound - 1, bound, false) >= bound;
+            //    break;
             default:
                 if (mpcd[depth] <= MID_FAST_DEPTH)
                     res = nega_alpha(search, bound - 1, bound, mpcd[depth], false) >= bound;
@@ -292,9 +251,9 @@ inline bool mpc_lower(Search *search, int alpha, int depth, uint64_t legal, int 
             case 0:
                 res = mid_evaluate(&search->board) <= bound;
                 break;
-            case 1:
-                res = nega_alpha_eval1(search, bound, bound + 1, false) <= bound;
-                break;
+            //case 1:
+            //    res = nega_alpha_eval1(search, bound, bound + 1, false) <= bound;
+            //    break;
             default:
                 if (mpcd[depth] <= MID_FAST_DEPTH)
                     res = nega_alpha(search, bound, bound + 1, mpcd[depth], false) <= bound;

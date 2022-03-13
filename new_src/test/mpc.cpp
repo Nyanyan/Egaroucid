@@ -23,6 +23,7 @@ int main(){
         cin >> depth;
         cin >> search.use_mpc;
         cin >> search.mpct;
+        search.p = (search.board.p + depth) % 2;
         child_transpose_table.init();
         if (depth >= 20){
             parent_transpose_table.init();
