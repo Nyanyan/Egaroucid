@@ -2160,13 +2160,15 @@ void Main() {
 				}
 				else if (KeyRight.down() || KeyD.down()) {
 					if (fork_mode) {
-						history_place = min((int)fork_history.size() - 1, history_place + 1);
+						history_place = min(fork_history[fork_history.size() - 1].b.n - 4, history_place + 1);
 					}
 					else {
-						history_place = min((int)history.size() - 1, history_place + 1);
+						history_place = min(history[history.size() - 1].b.n - 4, history_place + 1);
 					}
 				}
-				history_place = graph.update_place(history, fork_history, history_place);
+				else {
+					history_place = graph.update_place(history, fork_history, history_place);
+				}
 				if (history_place != former_history_place) {
 					if (ai_thinking) {
 						reset_ai(&ai_thinking, &ai_future);
