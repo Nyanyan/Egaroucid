@@ -108,8 +108,18 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
     
     } else{
         child_transpose_table.init();
-        search.use_mpc = use_mpc;
-        search.mpct = mpct;
+        if (depth >= 15){
+            search.use_mpc = true;
+            search.mpct = 0.6;
+            parent_transpose_table.init();
+            result = first_nega_scout(&search, -HW2, HW2, depth, false, false);
+            g = result.first;
+            policy = result.second;
+            if (show_log)
+                cerr << "presearch time " << tim() - strt << " depth " << depth << " value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
+        }
+        search.use_mpc = 1;
+        search.mpct = 0.8;
         g = -INF;
         if (depth - 1 >= 1){
             parent_transpose_table.init();
@@ -119,6 +129,8 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
             if (show_log)
                 cerr << "presearch time " << tim() - strt << " depth " << depth - 1 << " value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
         }
+        search.use_mpc = use_mpc;
+        search.mpct = mpct;
         parent_transpose_table.init();
         result = first_nega_scout(&search, -HW2, HW2, depth, false, false);
         if (g == -INF)
