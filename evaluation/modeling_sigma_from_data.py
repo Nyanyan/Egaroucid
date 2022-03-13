@@ -6,20 +6,22 @@ import numpy as np
 from scipy.optimize import curve_fit
 from matplotlib import animation
 
-with open('sigma_data.txt', 'r') as f:
+with open('sigma_data_fixedbug.txt', 'r') as f:
     raw_data = f.read().splitlines()
 
-n_stones_div = 2
-depth_div = 2
+n_stones_div = 1
+depth_div = 1
 
-data = [[[[] for _ in range(0, 33 + 1, depth_div)] for _ in range(0, 33 + 1, depth_div)] for _ in range(0, 64, n_stones_div)]
+data = [[[[] for _ in range(0, 60 + 1, depth_div)] for _ in range(0, 60 + 1, depth_div)] for _ in range(0, 65, n_stones_div)]
 
 for datum in raw_data:
     n_stones, depth1, score1, depth2, score2 = [int(float(elem)) for elem in datum.split()]
     if n_stones + depth1 == 64 or n_stones + depth2 == 64:
         continue
-    data[n_stones // n_stones_div][depth1 // depth_div][depth2 // depth_div].append(score1 - score2)
-    data[n_stones // n_stones_div][depth2 // depth_div][depth1 // depth_div].append(score2 - score1)
+    if depth1 < depth2:
+        depth1, depth2 = depth2, depth1
+    data[n_stones // n_stones_div][depth1 // depth_div][depth2 // depth_div].append(abs(score1 - score2))
+    #data[n_stones // n_stones_div][depth2 // depth_div][depth1 // depth_div].append(abs(score2 - score1))
 
 w_n_stones = []
 x_depth1 = []
@@ -38,19 +40,20 @@ for w in range(len(data)):
                 n_stones = w * n_stones_div + n_stones_div / 2
                 depth1 = x * depth_div + depth_div / 2
                 depth2 = y * depth_div + depth_div / 2
-                
+                sigma = statistics.stdev(data[w][x][y])
+
                 w_n_stones.append(n_stones)
                 x_depth1.append(depth1)
                 y_depth2.append(depth2)
-                z_sigma.append(statistics.stdev(data[w][x][y]))
-'''
+                z_sigma.append(sigma)
+
 for w in range(4, 65):
-    for xy in range(30, 61):
+    for xy in range(0, 61):
         w_n_stones.append(w)
         x_depth1.append(xy)
         y_depth2.append(xy)
-        z_sigma.append(1.5)
-'''
+        z_sigma.append(0.0)
+
 probcut_params_before = [
     1.0 for _ in range(10)
 ]
@@ -58,9 +61,11 @@ probcut_params_before = [
 def f(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g, probcut_h, probcut_i, probcut_j):
     w, x, y = wxy
     res = 0.0
-    res = probcut_a * w * w * w + probcut_b * w * w * (x + y) + probcut_c * w * (x * x + y * y) + probcut_d * (x * x * x + y * y * y)
-    res += probcut_e * w * w + probcut_f * w * (x + y) + probcut_g * (x * x + y * y)
-    res += probcut_h * w + probcut_i * (x + y) + probcut_j
+    #res = probcut_a * w * w * w + probcut_b * w * w * x + probcut_c * w * w * y + probcut_d * w * x * y
+    #res += probcut_e * w * w + probcut_f * w * x + probcut_g * w * y
+    #res += probcut_h * w + probcut_i * (x - y) + probcut_j
+    res = probcut_a * w + probcut_b * x + probcut_c * y
+    res = probcut_d * res * res * res + probcut_e * res * res + probcut_f * res + probcut_g
     return res
 
 def to_rgb(x):

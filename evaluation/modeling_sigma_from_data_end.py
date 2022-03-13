@@ -6,7 +6,7 @@ import numpy as np
 from scipy.optimize import curve_fit
 from matplotlib import animation
 
-with open('sigma_data.txt', 'r') as f:
+with open('sigma_data_fixedbug.txt', 'r') as f:
     raw_data = f.read().splitlines()
 
 n_stones_div = 2
@@ -53,9 +53,8 @@ probcut_end_params_before = [
 def f(xy, probcut_end_a, probcut_end_b, probcut_end_c, probcut_end_d, probcut_end_e, probcut_end_f, probcut_end_g, probcut_end_h, probcut_end_i, probcut_end_j):
     x, y = xy
     res = 0.0
-    res = probcut_end_a * x * x * x + probcut_end_b * x * x * y + probcut_end_c * x * y * y + probcut_end_d * y * y * y
-    res += probcut_end_e * x * x + probcut_end_f * x * y + probcut_end_g * y * y
-    res += probcut_end_h * x + probcut_end_i * y + probcut_end_j
+    res = probcut_end_a * x + probcut_end_b * y
+    res = probcut_end_c * res * res * res + probcut_end_d * res * res + probcut_end_e * res + probcut_end_f
     return res
 
 def to_rgb(x):

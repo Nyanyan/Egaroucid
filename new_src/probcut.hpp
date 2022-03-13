@@ -124,68 +124,53 @@ constexpr double mpcsd[N_PHASES][MID_MPC_MAX_DEPTH - MID_MPC_MIN_DEPTH + 1]={
     {3.615, 2.16, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
 };
 */
-#define W_PROBCUT_SIGMA_ALL 1.0
-#define W_PROBCUT_SIGMA_ALL_END 1.0
+#define W_PROBCUT_SIGMA_ALL 2.0
+#define W_PROBCUT_SIGMA_ALL_END 1.5
 
-#define probcut_a 1.0
-#define probcut_b 1.0
-#define probcut_c 1.0
-#define probcut_d 1.0
-#define probcut_e -0.0005608281583355801
-#define probcut_f -0.0003755805739296125
-#define probcut_g 0.0032158303265618082
-#define probcut_h 0.0755123298024819
-#define probcut_i -0.13412549538390373
-#define probcut_j 2.639871993729959
+#define probcut_a -0.0357225993199761
+#define probcut_b -0.04530966248237199
+#define probcut_c 0.15170452165914777
+#define probcut_d -0.01272565650309804
+#define probcut_e 0.11773716513643095
+#define probcut_f -0.41788442411957694
+#define probcut_g 0.6981255362635859
 
-#define probcut_end_a -0.0006463495275057518
-#define probcut_end_b 9.34697148624597e-06
-#define probcut_end_c 0.0006300518246449283
-#define probcut_end_d 3.799243057989177e-05
-#define probcut_end_e 0.08930498944427212
-#define probcut_end_f -0.016126494593668106
-#define probcut_end_g -0.022542479146499206
-#define probcut_end_h -4.049577431725491
-#define probcut_end_i 0.5040459681403044
-#define probcut_end_j 65.74623349238385
+#define probcut_end_a 0.09203028534665475
+#define probcut_end_b 0.07562660777993534
+#define probcut_end_c -0.24920368873833124
+#define probcut_end_d 3.3536609816091323
+#define probcut_end_e -15.569950419215495
+#define probcut_end_f 29.658267111094627
 
 inline double probcut_sigma(int n_stones, int depth1, int depth2){
     double w = n_stones;
     double x = depth1;
     double y = depth2;
-    double res = 0.0;
-    //res += probcut_a * w * w * w + probcut_b * w * w * (x + y) + probcut_c * w * (x * x + y * y) + probcut_d * (x * x * x + y * y * y);
-    res += probcut_e * w * w + probcut_f * w * (x + y) + probcut_g * (x * x + y * y);
-    res += probcut_h * w + probcut_i * (x + y) + probcut_j;
+    double res = probcut_a * w + probcut_b * x + probcut_c * y;
+    res = probcut_d * res * res * res + probcut_e * res * res + probcut_f * res + probcut_g;
     return res * W_PROBCUT_SIGMA_ALL;
 }
 
 inline double probcut_sigma_depth0(int n_stones, int depth1){
     double w = n_stones;
     double x = depth1;
-    double res = 0.0;
-    //res += probcut_a * w * w * w + probcut_b * w * w * x + probcut_c * w * x * x + probcut_d * x * x * x;
-    res += probcut_e * w * w + probcut_f * w * x + probcut_g * x * x;
-    res += probcut_h * w + probcut_i * x + probcut_j;
+    double res = probcut_a * w + probcut_b * x;
+    res = probcut_d * res * res * res + probcut_e * res * res + probcut_f * res + probcut_g;
     return res * W_PROBCUT_SIGMA_ALL;
 }
 
 inline double probcut_sigma_end(int n_stones, int depth){
     double x = n_stones;
     double y = depth;
-    double res = 0.0;
-    res += probcut_end_a * x * x * x + probcut_end_b * x * x * y + probcut_end_c * x * y * y + probcut_end_d * y * y * y;
-    res += probcut_end_e * x * x + probcut_end_f * x * y + probcut_end_g * y * y;
-    res += probcut_end_h * x + probcut_end_i * y + probcut_end_j;
+    double res = probcut_end_a * x + probcut_end_b * y;
+    res = probcut_end_c * res * res * res + probcut_end_d * res * res + probcut_end_e * res + probcut_end_f;
     return res * W_PROBCUT_SIGMA_ALL_END;
 }
 
 inline double probcut_sigma_end_depth0(int n_stones){
     double x = n_stones;
-    double res = 0.0;
-    res += probcut_end_a * x * x * x;
-    res += probcut_end_e * x * x;
-    res += probcut_end_h * x + probcut_end_j;
+    double res = probcut_end_a * x;
+    res = probcut_end_c * res * res * res + probcut_end_d * res * res + probcut_end_e * res + probcut_end_f;
     return res * W_PROBCUT_SIGMA_ALL_END;
 }
 
