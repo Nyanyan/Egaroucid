@@ -51,9 +51,9 @@ public:
 		int i, j;
 		bool flag;
 		for (i = 0; i < (int)arr.size(); ++i) {
-			if (b.player == BLACK && arr[i].first.player == b.player && arr[i].first.opponent == b.opponent)
+			if (b.p == BLACK && arr[i].first.player == b.player && arr[i].first.opponent == b.opponent)
 				return arr[i].second;
-			if (b.player == WHITE && arr[i].first.player == b.opponent && arr[i].first.opponent == b.player)
+			if (b.p == WHITE && arr[i].first.player == b.opponent && arr[i].first.opponent == b.player)
 				return arr[i].second;
 		}
 		return "";
