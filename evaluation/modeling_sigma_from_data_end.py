@@ -15,7 +15,7 @@ data = [[[] for _ in range(0, 33 + 1)] for _ in range(0, 64, n_stones_div)]
 
 for datum in raw_data:
     n_stones, depth1, score1, depth2, score2 = [int(float(elem)) for elem in datum.split()]
-    if n_stones + depth1 == 64 or n_stones + depth2 == 64:
+    if n_stones + depth1 != 64 and n_stones + depth2 != 64:
         continue
     if n_stones + depth2 == 64:
         depth1, depth2 = depth2, depth1
@@ -40,12 +40,12 @@ for x in range(len(data)):
             x_n_stones.append(n_stones)
             y_depth.append(depth)
             z_sigma.append(statistics.stdev(data[x][y]))
-
+'''
 for y in range(30, 61):
     x_n_stones.append(0)
     y_depth.append(y)
     z_sigma.append(0.5)
-
+'''
 probcut_end_params_before = [
     1.0 for _ in range(10)
 ]
