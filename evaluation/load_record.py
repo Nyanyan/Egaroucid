@@ -172,8 +172,8 @@ def collect_data(num, s):
         x = ord(s[idx]) - ord('a')
         y = int(s[idx + 1]) - 1
         idx += 2
-        #if turn <= 20:
-        if True:
+        if turn <= 20:
+            #if True:
             grid_str = ''
             for i in range(hw):
                 for j in range(hw):
@@ -206,9 +206,9 @@ def collect_data(num, s):
 
 games = []
 
-for i in range(0, 9):
+for i in range(52, 56):
     raw_data = ''
-    with open('third_party/records9/' + digit(i, 7) + '.txt', 'r') as f:
+    with open('third_party/records3/' + digit(i, 7) + '.txt', 'r') as f:
         raw_data = f.read()
     games.extend([i for i in raw_data.splitlines()])
 '''

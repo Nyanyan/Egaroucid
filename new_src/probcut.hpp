@@ -124,16 +124,16 @@ constexpr double mpcsd[N_PHASES][MID_MPC_MAX_DEPTH - MID_MPC_MIN_DEPTH + 1]={
     {3.615, 2.16, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
 };
 */
-#define W_PROBCUT_SIGMA_ALL 2.0
+#define W_PROBCUT_SIGMA_ALL 2.5
 #define W_PROBCUT_SIGMA_ALL_END 1.5
 
-#define probcut_a -0.0357225993199761
-#define probcut_b -0.04530966248237199
-#define probcut_c 0.15170452165914777
-#define probcut_d -0.01272565650309804
-#define probcut_e 0.11773716513643095
-#define probcut_f -0.41788442411957694
-#define probcut_g 0.6981255362635859
+#define probcut_a -0.025522384929799295
+#define probcut_b -0.005898867297542293
+#define probcut_c 0.06805658173027652
+#define probcut_d -0.055447568997751676
+#define probcut_e 0.3616096553435381
+#define probcut_f -0.910279523369793
+#define probcut_g 0.9190076662535323
 
 #define probcut_end_a 0.09203028534665475
 #define probcut_end_b 0.07562660777993534

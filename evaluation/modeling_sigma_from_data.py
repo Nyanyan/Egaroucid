@@ -48,7 +48,7 @@ for w in range(len(data)):
                 z_sigma.append(sigma)
 
 for w in range(4, 65):
-    for xy in range(0, 61):
+    for xy in range(30, 61):
         w_n_stones.append(w)
         x_depth1.append(xy)
         y_depth2.append(xy)
