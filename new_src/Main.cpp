@@ -719,6 +719,10 @@ int import_record_popup(Font big_font, Font mid_font, Font small_font, String* r
 	Rect text_area{ sx + 25, sy + 100, popup_import_width - 50, 200};
 	text_area.draw(textbox_active_color).drawFrame(2, popup_frame_color);
 	TextInput::UpdateText(*record);
+	bool return_pressed = false;
+	if ((*record)[record->size() - 1] == '\n') {
+		return_pressed = true;
+	}
 	if (KeyControl.pressed() && KeyV.down()) {
 		String clip_text;
 		Clipboard::GetText(clip_text);
@@ -731,7 +735,7 @@ int import_record_popup(Font big_font, Font mid_font, Font small_font, String* r
 	FrameButton import_button;
 	import_button.init(x_center + 25, sy + 350, 200, 50, 10, 2, language.get("button", "import"), mid_font, button_color, button_font_color, button_font_color);
 	import_button.draw();
-	if (import_button.clicked()) {
+	if (import_button.clicked() || return_pressed) {
 		return 1;
 	}
 	else if (close_button.clicked()) {
@@ -749,6 +753,10 @@ int import_board_popup(Font big_font, Font mid_font, Font small_font, String* te
 	Rect text_area{ sx + 25, sy + 100, popup_import_width - 50, 200 };
 	text_area.draw(textbox_active_color).drawFrame(2, popup_frame_color);
 	TextInput::UpdateText(*text);
+	bool return_pressed = false;
+	if ((*text)[text->size() - 1] == '\n') {
+		return_pressed = true;
+	}
 	if (KeyControl.pressed() && KeyV.down()) {
 		String clip_text;
 		Clipboard::GetText(clip_text);
@@ -761,7 +769,7 @@ int import_board_popup(Font big_font, Font mid_font, Font small_font, String* te
 	FrameButton import_button;
 	import_button.init(x_center + 25, sy + 350, 200, 50, 10, 2, language.get("button", "import"), mid_font, button_color, button_font_color, button_font_color);
 	import_button.draw();
-	if (import_button.clicked()) {
+	if (import_button.clicked() || return_pressed) {
 		return 1;
 	}
 	else if (close_button.clicked()) {
@@ -1351,7 +1359,7 @@ void Main() {
 	Window::Resize(window_size);
 	Window::SetStyle(WindowStyle::Sizable);
 	Scene::SetResizeMode(ResizeMode::Keep);
-	Window::SetTitle(U"Egaroucid5.4.1");
+	Window::SetTitle(U"Egaroucid5.5.0");
 	System::SetTerminationTriggers(UserAction::NoAction);
 	Scene::SetBackground(green);
 	Console.open();
@@ -1882,7 +1890,7 @@ void Main() {
 									break;
 								}
 							}
-							if (!next_fork_mode) {
+							if (!next_fork_mode && fork_history.size()) {
 								History_elem hist_tmp = { bd, -INF, moved_board.first, fork_history[fork_history.size() - 1].record + str_record(moved_board.first) };
 								fork_history.emplace_back(hist_tmp);
 							}
