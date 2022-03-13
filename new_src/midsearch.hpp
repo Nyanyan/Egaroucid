@@ -402,9 +402,9 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
         calc_flip(&flip, &search->board, best_move);
         search->board.move(&flip);
             g = -nega_scout(search, -beta, -alpha, depth - 1, false, LEGAL_UNDEFINED, is_end_search);
-            cerr << (int)flip.pos << " " << g << endl;
-            search->board.print();
-            cerr << endl;
+            //cerr << (int)flip.pos << " " << g << endl;
+            //search->board.print();
+            //cerr << endl;
         search->board.undo(&flip);
         alpha = max(alpha, g);
         v = g;
@@ -427,9 +427,9 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
                     if (alpha < g)
                         g = -nega_scout(search, -beta, -g, depth - 1, false, flip.n_legal, is_end_search);
                 }
-                cerr << (int)flip.pos << " " << v << " " << g << endl;
-                search->board.print();
-                cerr << endl;
+                //cerr << (int)flip.pos << " " << v << " " << g << endl;
+                //search->board.print();
+                //cerr << endl;
             search->board.undo(&flip);
             alpha = max(alpha, g);
             if (v < g){
@@ -442,6 +442,6 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
     }
     if (best_move != f_best_move)
         child_transpose_table.reg(&search->board, hash_code, best_move);
-    cerr << "best move " << best_move << endl;
+    //cerr << "best move " << best_move << endl;
     return make_pair(v, best_move);
 }

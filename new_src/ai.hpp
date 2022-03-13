@@ -36,9 +36,9 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
         if (show_log)
             cerr << "presearch d=" << depth / 2 << " t=" << search.mpct << " [-64,64] " << g << " " << idx_to_coord(result.second) << endl;
 
-        if (depth >= 22 && 1.2 < mpct){
+        if (depth >= 22 && 1.0 < mpct){
             parent_transpose_table.init();
-            search.mpct = 1.2;
+            search.mpct = 1.0;
             //search.mpct = 0.0;
             search.use_mpc = true;
             result = first_nega_scout(&search, -HW2, HW2, depth, false, true);
@@ -46,9 +46,9 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
             if (show_log)
                 cerr << "presearch d=" << depth << " t=" << search.mpct << " [-64,64] " << g << " " << idx_to_coord(result.second) << endl;
 
-            if (depth >= 24 && 1.7 < mpct){
+            if (depth >= 24 && 1.5 < mpct){
                 parent_transpose_table.init();
-                search.mpct = 1.7;
+                search.mpct = 1.5;
                 search.use_mpc = true;
                 alpha = max(-HW2, g - 3);
                 beta = min(HW2, g + 3);
@@ -57,9 +57,9 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
                 if (show_log)
                     cerr << "presearch d=" << depth << " t=" << search.mpct << " [" << alpha << "," << beta << "] " << g << " " << idx_to_coord(result.second) << endl;
 
-                if (depth >= 26 && 2.3 < mpct){
+                if (depth >= 26 && 1.8 < mpct){
                     parent_transpose_table.init();
-                    search.mpct = 2.3;
+                    search.mpct = 1.8;
                     search.use_mpc = true;
                     alpha = max(-HW2, g - 2);
                     beta = min(HW2, g + 2);
@@ -126,7 +126,6 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
         else
             g = (g + result.first) / 2;
         policy = result.second;
-        cerr << policy << " " << idx_to_coord(policy) << endl;
         if (show_log)
             cerr << "midsearch time " << tim() - strt << " depth " << depth << " value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
     }

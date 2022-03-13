@@ -52,7 +52,7 @@ int main(){
         if (depth >= 24){
             parent_transpose_table.init();
             strt2 = tim();
-            search.mpct = 1.2;
+            search.mpct = 1.0;
             //search.mpct = 0.0;
             search.use_mpc = true;
             result = first_nega_scout(&search, -HW2, HW2, depth, false, true);
@@ -63,7 +63,7 @@ int main(){
             if (depth >= 26){
                 parent_transpose_table.init();
                 strt2 = tim();
-                search.mpct = 1.7;
+                search.mpct = 1.5;
                 search.use_mpc = true;
                 alpha = max(-HW2, g - 3);
                 beta = min(HW2, g + 3);
@@ -75,7 +75,7 @@ int main(){
                 if (depth >= 28){
                     parent_transpose_table.init();
                     strt2 = tim();
-                    search.mpct = 2.3;
+                    search.mpct = 1.8;
                     search.use_mpc = true;
                     alpha = max(-HW2, g - 2);
                     beta = min(HW2, g + 2);
