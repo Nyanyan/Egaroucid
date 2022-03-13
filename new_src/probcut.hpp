@@ -165,39 +165,35 @@ constexpr double probcut_params[6] = {
 #define probcut_i -0.099495732478085
 #define probcut_j 0.682571187269726
 */
-#define probcut_a 0.0001073493320920226
-#define probcut_b 0.00023602237115474679
-#define probcut_c 0.0002492687468723234
-#define probcut_d -0.00017079480382325066
-#define probcut_e -0.013043657204210284
-#define probcut_f -0.017197945850759958
-#define probcut_g 0.007621796894212528
-#define probcut_h 0.5050019117729893
-#define probcut_i -0.04763526729985809
-#define probcut_j -0.4801438430859192
+
+#define probcut_a 3.3733336446929645e-06
+#define probcut_b 7.831500517290527e-06
+#define probcut_c 9.120535644446465e-06
+#define probcut_d -4.886599282761222e-05
+#define probcut_e -0.0011681016106954425
+#define probcut_f -0.001452450301486007
+#define probcut_g 0.005004873160103861
+#define probcut_h 0.11153311042908952
+#define probcut_i -0.13361791318887276
+#define probcut_j 2.1939908019307652
+
+#define probcut_end_a 4.1040277019053455e-05
+#define probcut_end_b 6.113783271739243e-05
+#define probcut_end_c 8.078569455944451e-05
+#define probcut_end_d -3.8223114648400084e-05
+#define probcut_end_e -0.004163146728873442
+#define probcut_end_f -0.005381871153993548
+#define probcut_end_g 0.003317369848559614
+#define probcut_end_h 0.17451659959563617
+#define probcut_end_i -0.0708268850167601
+#define probcut_end_j 0.6465924325750432
 
 inline double probcut_sigma(int n_stones, int depth1, int depth2){
-    /*
-    double x = n_stones;
-    double y = depth1 - depth2;
-    double res = probcut_a * x * x * x + probcut_b * x * x * y + probcut_c * x * y * y + probcut_d * y * y * y;
-    res += probcut_e * x * x + probcut_f * x * y + probcut_g * y * y;
-    res += probcut_h * x + probcut_i * y + probcut_j;
-    return res;
-    */
-    /*
-    double x = n_stones + depth;
-    double y = n_stones + mpcd[depth];
-    double res = probcut_a * x * x * x + probcut_a * y * y * y;
-    res += probcut_e * x * x + probcut_e * y * y;
-    res += probcut_h * x + probcut_h * y + probcut_j;
-    return res;
-    */
-    
     double w = n_stones;
     double x = depth1;
     double y = depth2;
-    double res = probcut_a * w * w * w + probcut_b * w * w * (x + y) + probcut_c * w * (x * x + y * y) + probcut_d * (x * x * x + y * y * y);
+    double res = 0.0;
+    res += probcut_a * w * w * w + probcut_b * w * w * (x + y) + probcut_c * w * (x * x + y * y) + probcut_d * (x * x * x + y * y * y);
     res += probcut_e * w * w + probcut_f * w * (x + y) + probcut_g * (x * x + y * y);
     res += probcut_h * w + probcut_i * (x + y) + probcut_j;
     return res;
@@ -206,35 +202,49 @@ inline double probcut_sigma(int n_stones, int depth1, int depth2){
 inline double probcut_sigma_depth0(int n_stones, int depth1){
     double w = n_stones;
     double x = depth1;
-    double res = probcut_a * w * w * w + probcut_b * w * w * x + probcut_c * w * x * x + probcut_d * x * x * x;
+    double res = 0.0;
+    res += probcut_a * w * w * w + probcut_b * w * w * x + probcut_c * w * x * x + probcut_d * x * x * x;
     res += probcut_e * w * w + probcut_f * w * x + probcut_g * x * x;
     res += probcut_h * w + probcut_i * x + probcut_j;
     return res;
 }
-/*
-inline double probcut_sigma(int n_stones, int depth){
-    double t = probcut_params[0] * n_stones + probcut_params[1] * (depth - mpcd[depth]);
-    return probcut_params[2] * t * t * t + probcut_params[3] * t * t + probcut_params[4] * t + probcut_params[5];
-    //return 1.0 + 0.05 * n_stones;
-    //int x1 = min(N_PHASES - 1, (n_stones + depth - 4) / PHASE_N_STONES);
-    //int x2 = min(N_PHASES - 1, (n_stones + mpcd[depth] - 4) / PHASE_N_STONES);
-    //return probcut_sigmas[x1][x2] * sqrt(w_probcut_sigma[x1] * w_probcut_sigma[x2]); // * W_PROBCUT_SIGMA_ALL;
-    //return probcut_sigmas[x1][x2] * W_PROBCUT_SIGMA_ALL;
-    //return probcut_sigmas[x1][x2] * exp(-0.0075 * (x1 + x2));
+
+inline double probcut_sigma_end(int n_stones, int depth){
+    double x = n_stones;
+    double y = depth;
+    double res = 0.0;
+    res += probcut_end_a * x * x * x + probcut_end_b * x * x * y + probcut_end_c * x * y * y + probcut_end_d * y * y * y;
+    res += probcut_end_e * x * x + probcut_end_f * x * y + probcut_end_g * y * y;
+    res += probcut_end_h * x + probcut_end_i * y + probcut_end_j;
+    return res;
 }
-*/
+
+inline double probcut_sigma_end_depth0(int n_stones){
+    double x = n_stones;
+    double res = 0.0;
+    res += probcut_end_a * x * x * x;
+    res += probcut_end_e * x * x;
+    res += probcut_end_h * x + probcut_end_j;
+    return res;
+}
+
 int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped);
 int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped);
 int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal);
 
 inline bool mpc_higher(Search *search, int beta, int depth, uint64_t legal, int score_eval){
-    //if (depth <= 8)
-    //    return false;
-    //int score_eval = mid_evaluate(&search->board);
-    int eval_error = search->mpct * probcut_sigma_depth0(search->board.n, depth);
+    int eval_error;
+    if (search->board.n + depth < HW2)
+        eval_error = search->mpct * probcut_sigma_depth0(search->board.n, depth);
+    else
+        eval_error = search->mpct * probcut_sigma_end_depth0(search->board.n);
     bool res = false;
     if (score_eval >= beta - eval_error){
-        int bound = beta + floor(search->mpct * probcut_sigma(search->board.n, depth, mpcd[depth]));
+        int bound;
+        if (search->board.n + depth < HW2)
+            bound = beta + floor(search->mpct * probcut_sigma(search->board.n, depth, mpcd[depth]));
+        else
+            bound = beta + floor(search->mpct * probcut_sigma_end(search->board.n, mpcd[depth]));
         if (bound > HW2)
             bound = HW2; //return false;
         switch(mpcd[depth]){
@@ -262,13 +272,18 @@ inline bool mpc_higher(Search *search, int beta, int depth, uint64_t legal, int 
 }
 
 inline bool mpc_lower(Search *search, int alpha, int depth, uint64_t legal, int score_eval){
-    //if (depth <= 8)
-    //    return false;
-    //int score_eval = mid_evaluate(&search->board);
-    int eval_error = search->mpct * probcut_sigma_depth0(search->board.n, depth);
+    int eval_error;
+    if (search->board.n + depth < HW2)
+        eval_error = search->mpct * probcut_sigma_depth0(search->board.n, depth);
+    else
+        eval_error = search->mpct * probcut_sigma_end_depth0(search->board.n);
     bool res = false;
     if (score_eval <= alpha + eval_error){
-        int bound = alpha - floor(search->mpct * probcut_sigma(search->board.n, depth, mpcd[depth]));
+        int bound;
+        if (search->board.n + depth < HW2)
+            bound = alpha - floor(search->mpct * probcut_sigma(search->board.n, depth, mpcd[depth]));
+        else
+            bound = alpha - floor(search->mpct * probcut_sigma_end(search->board.n, mpcd[depth]));
         if (bound < -HW2)
             bound = -HW2; //return false;
         switch(mpcd[depth]){
