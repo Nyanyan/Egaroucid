@@ -4002,7 +4002,22 @@ same
 3373768071 nodes
 211840265.66620618 nps
 
-
+2022/03/13 update evaluation function
+#40 depth 20 value 38 policy a2 nodes 28747905 whole time 145 search time 137 nps 209838722
+#41 depth 22 value 0 policy h4 nodes 39337503 whole time 274 search time 261 nps 150718402
+#42 depth 22 value 6 policy g2 nodes 48258548 whole time 230 search time 222 nps 217380846
+#43 depth 23 value -12 policy c7 nodes 174728317 whole time 932 search time 924 nps 189099910
+#44 depth 23 value -14 policy d2 nodes 76524479 whole time 539 search time 531 nps 144113896
+#45 depth 24 value 6 policy b2 nodes 840075467 whole time 3555 search time 3541 nps 237242436
+#46 depth 24 value -8 policy b3 nodes 225206168 whole time 1219 search time 1204 nps 187048312
+#47 depth 25 value 4 policy g2 nodes 109085750 whole time 656 search time 642 nps 169915498
+#48 depth 25 value 28 policy f6 nodes 953585170 whole time 4540 search time 4526 nps 210690492
+#49 depth 26 value 16 policy e1 nodes 1187281322 whole time 5114 search time 5091 nps 233211809
+17.204 sec
+17.079 sec search
+21.440478563308716 sec total
+3682830629 nodes
+215635027.16786698 nps
 
 
 
