@@ -8,8 +8,8 @@ from scipy.optimize import curve_fit
 with open('sigma_data.txt', 'r') as f:
     raw_data = f.read().splitlines()
 
-n_stones_div = 4
-depth_div = 4
+n_stones_div = 2
+depth_div = 2
 
 data = [[[[] for _ in range(0, 33 + 1, depth_div)] for _ in range(0, 33 + 1, depth_div)] for _ in range(0, 64, n_stones_div)]
 

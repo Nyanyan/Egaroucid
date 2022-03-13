@@ -153,7 +153,7 @@ constexpr double probcut_params[6] = {
 #define probcut_i -0.2645161570178731
 #define probcut_j 27.106346105598853
 */
-
+/*
 #define probcut_a 5.4541259274222235e-05
 #define probcut_b 0.0001632368875162654
 #define probcut_c 0.00015335124078963476
@@ -164,6 +164,17 @@ constexpr double probcut_params[6] = {
 #define probcut_h 0.3551438315343388
 #define probcut_i -0.099495732478085
 #define probcut_j 0.682571187269726
+*/
+#define probcut_a 0.0001073493320920226
+#define probcut_b 0.00023602237115474679
+#define probcut_c 0.0002492687468723234
+#define probcut_d -0.00017079480382325066
+#define probcut_e -0.013043657204210284
+#define probcut_f -0.017197945850759958
+#define probcut_g 0.007621796894212528
+#define probcut_h 0.5050019117729893
+#define probcut_i -0.04763526729985809
+#define probcut_j -0.4801438430859192
 
 inline double probcut_sigma(int n_stones, int depth1, int depth2){
     /*
@@ -186,7 +197,7 @@ inline double probcut_sigma(int n_stones, int depth1, int depth2){
     double w = n_stones;
     double x = depth1;
     double y = depth2;
-    double res = probcut_b * w * w * (x + y) + probcut_c * w * (x * x + y * y) + probcut_d * (x * x * x + y * y * y);
+    double res = probcut_a * w * w * w + probcut_b * w * w * (x + y) + probcut_c * w * (x * x + y * y) + probcut_d * (x * x * x + y * y * y);
     res += probcut_e * w * w + probcut_f * w * (x + y) + probcut_g * (x * x + y * y);
     res += probcut_h * w + probcut_i * (x + y) + probcut_j;
     return res;
@@ -195,7 +206,7 @@ inline double probcut_sigma(int n_stones, int depth1, int depth2){
 inline double probcut_sigma_depth0(int n_stones, int depth1){
     double w = n_stones;
     double x = depth1;
-    double res = probcut_b * w * w * x + probcut_c * w * x * x + probcut_d * x * x * x;
+    double res = probcut_a * w * w * w + probcut_b * w * w * x + probcut_c * w * x * x + probcut_d * x * x * x;
     res += probcut_e * w * w + probcut_f * w * x + probcut_g * x * x;
     res += probcut_h * w + probcut_i * x + probcut_j;
     return res;

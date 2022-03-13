@@ -28,7 +28,7 @@ evaluate = subprocess.Popen('../new_src/test/a.exe'.split(), stdin=subprocess.PI
 sleep(1)
 
 min_depth = 0
-max_depth = 28
+max_depth = 32
 
 depth_width = max_depth - min_depth + 1
 
@@ -70,7 +70,7 @@ def collect_data(directory, num):
             for j in range(hw):
                 board_proc += board[i * hw + j]
             board_proc += '\n'
-        board_proc += str(depth1) + '\n1\n1.0\n'
+        board_proc += str(depth1) + '\n1\n1.3\n'
         #print(board_proc)
         if depth1 == 64 - n_stones:
             v1 = score
@@ -87,7 +87,7 @@ def collect_data(directory, num):
             for j in range(hw):
                 board_proc += board[i * hw + j]
             board_proc += '\n'
-        board_proc += str(depth2) + '\n1\n1.0\n'
+        board_proc += str(depth2) + '\n1\n1.3\n'
         #print(board_proc)
         if depth2 == 64 - n_stones:
             v2 = score
