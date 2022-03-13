@@ -125,10 +125,11 @@ constexpr double mpcsd[N_PHASES][MID_MPC_MAX_DEPTH - MID_MPC_MIN_DEPTH + 1]={
 };
 */
 #define W_PROBCUT_SIGMA_ALL 0.9
-
+/*
 constexpr double probcut_params[6] = {
     -0.07924286622429888, 0.016903451472509934, -0.05294261414319046, -0.254443804366251, -0.8506676921018298, 1.0213552153297525
 };
+*/
 /*
 #define probcut_a 0.0001075802799025416
 #define probcut_b 0.00025181631602000376
@@ -196,7 +197,7 @@ inline double probcut_sigma(int n_stones, int depth1, int depth2){
     res += probcut_a * w * w * w + probcut_b * w * w * (x + y) + probcut_c * w * (x * x + y * y) + probcut_d * (x * x * x + y * y * y);
     res += probcut_e * w * w + probcut_f * w * (x + y) + probcut_g * (x * x + y * y);
     res += probcut_h * w + probcut_i * (x + y) + probcut_j;
-    return res;
+    return res * W_PROBCUT_SIGMA_ALL;
 }
 
 inline double probcut_sigma_depth0(int n_stones, int depth1){
@@ -206,7 +207,7 @@ inline double probcut_sigma_depth0(int n_stones, int depth1){
     res += probcut_a * w * w * w + probcut_b * w * w * x + probcut_c * w * x * x + probcut_d * x * x * x;
     res += probcut_e * w * w + probcut_f * w * x + probcut_g * x * x;
     res += probcut_h * w + probcut_i * x + probcut_j;
-    return res;
+    return res * W_PROBCUT_SIGMA_ALL;
 }
 
 inline double probcut_sigma_end(int n_stones, int depth){
@@ -216,7 +217,7 @@ inline double probcut_sigma_end(int n_stones, int depth){
     res += probcut_end_a * x * x * x + probcut_end_b * x * x * y + probcut_end_c * x * y * y + probcut_end_d * y * y * y;
     res += probcut_end_e * x * x + probcut_end_f * x * y + probcut_end_g * y * y;
     res += probcut_end_h * x + probcut_end_i * y + probcut_end_j;
-    return res;
+    return res * W_PROBCUT_SIGMA_ALL;
 }
 
 inline double probcut_sigma_end_depth0(int n_stones){
@@ -225,7 +226,7 @@ inline double probcut_sigma_end_depth0(int n_stones){
     res += probcut_end_a * x * x * x;
     res += probcut_end_e * x * x;
     res += probcut_end_h * x + probcut_end_j;
-    return res;
+    return res * W_PROBCUT_SIGMA_ALL;
 }
 
 int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped);
