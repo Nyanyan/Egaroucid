@@ -98,7 +98,8 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
                     break;
             }
         } else{
-            result = first_nega_scout(&search, -HW, HW, depth, false, true);
+            cerr << "main search with probcut" << endl;
+            result = first_nega_scout(&search, -HW2, HW2, depth, false, true);
             g = result.first;
         }
         policy = result.second;
