@@ -1373,9 +1373,9 @@ void Main() {
 	Window::SetTitle(U"Egaroucid5.5.0");
 	System::SetTerminationTriggers(UserAction::NoAction);
 	Scene::SetBackground(green);
-	Console.open();
+	//Console.open();
 	stringstream logger_stream;
-	//cerr.rdbuf(logger_stream.rdbuf());
+	cerr.rdbuf(logger_stream.rdbuf());
 	string logger;
 	String logger_String;
 
@@ -2226,7 +2226,7 @@ void Main() {
 						book_start_learn);
 			}
 			else if (!fork_mode) {
-				if (analyzing) {
+				if (analyzing && analyze_idx < (int)history.size()) {
 					int next_policy = -1;
 					if ((int)history.size() > analyze_idx + 1) {
 						next_policy = history[analyze_idx + 1].policy;
@@ -2253,7 +2253,7 @@ void Main() {
 				}
 			}
 			else {
-				if (analyzing) {
+				if (analyzing && analyze_idx < (int)fork_history.size()) {
 					int next_policy = -1;
 					if ((int)fork_history.size() > analyze_idx + 1) {
 						next_policy = fork_history[analyze_idx + 1].policy;
