@@ -89,7 +89,7 @@ Menu create_menu(Texture checkbox,
 	bool* output_record_flag, bool* output_game_flag, bool* input_record_flag, bool* input_board_flag,
 	bool* show_end_popup, bool* show_log,
 	bool* thread1, bool* thread2, bool* thread4, bool* thread8, bool* thread16, bool* thread32, bool* thread64, bool* thread128,
-	bool* stop_read_flag, bool* resume_read_flag, bool* vertical_convert, bool* white_line_convert, bool* black_line_convert,
+	bool* stop_read_flag, bool* resume_read_flag, bool* vertical_convert, bool* black_line_convert, bool* white_line_convert,
 	bool* usage_flag, bool* bug_report_flag,
 	bool lang_acts[], vector<string> lang_name_vector) {
 	Menu menu;
@@ -720,8 +720,10 @@ int import_record_popup(Font big_font, Font mid_font, Font small_font, String* r
 	text_area.draw(textbox_active_color).drawFrame(2, popup_frame_color);
 	TextInput::UpdateText(*record);
 	bool return_pressed = false;
-	if ((*record)[record->size() - 1] == '\n') {
-		return_pressed = true;
+	if (record->size()) {
+		if ((*record)[record->size() - 1] == '\n') {
+			return_pressed = true;
+		}
 	}
 	if (KeyControl.pressed() && KeyV.down()) {
 		String clip_text;
@@ -754,8 +756,10 @@ int import_board_popup(Font big_font, Font mid_font, Font small_font, String* te
 	text_area.draw(textbox_active_color).drawFrame(2, popup_frame_color);
 	TextInput::UpdateText(*text);
 	bool return_pressed = false;
-	if ((*text)[text->size() - 1] == '\n') {
-		return_pressed = true;
+	if (text->size()) {
+		if ((*text)[text->size() - 1] == '\n') {
+			return_pressed = true;
+		}
 	}
 	if (KeyControl.pressed() && KeyV.down()) {
 		String clip_text;
@@ -1185,7 +1189,7 @@ void info_draw(Board bd, string joseki_name, int ai_level, int hint_level, Font 
 		mid_font(language.get("info", "white")).draw(info_sx, info_sy);
 	}
 	mid_font(language.get("info", "joseki_name") + U": " + Unicode::FromUTF8(joseki_name)).draw(info_sx, info_sy + 40);
-	if (bd.get_legal() == 0) {
+	if (bd.get_legal() != 0) {
 		mid_font(Format(pop_count_ull(bd.player) + pop_count_ull(bd.opponent) - 3) + language.get("info", "moves")).draw(info_sx, info_sy + 80);
 	}
 	int stone_info_cy = board_sy + board_size + 30;
@@ -2202,20 +2206,40 @@ void Main() {
 
 			/*** Board draw ***/
 			if (!fork_mode) {
-				board_draw(board_cells, history[find_history_idx(history, history_place)], int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
-					hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, hint_actual_nums[hint_num], normal_hint_font, small_hint_font, font30, mini_hint_font, board_coord_font,
-					before_start_game,
-					umigame_state, umigame_value,
-					human_value_state, human_value,
-					book_start_learn);
+				if (analyzing) {
+					board_draw(board_cells, history[analyze_idx], int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
+						hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, hint_actual_nums[hint_num], normal_hint_font, small_hint_font, font30, mini_hint_font, board_coord_font,
+						before_start_game,
+						umigame_state, umigame_value,
+						human_value_state, human_value,
+						book_start_learn);
+				}
+				else {
+					board_draw(board_cells, history[find_history_idx(history, history_place)], int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
+						hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, hint_actual_nums[hint_num], normal_hint_font, small_hint_font, font30, mini_hint_font, board_coord_font,
+						before_start_game,
+						umigame_state, umigame_value,
+						human_value_state, human_value,
+						book_start_learn);
+				}
 			}
 			else {
-				board_draw(board_cells, fork_history[find_history_idx(fork_history, history_place)], int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
-					hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, hint_actual_nums[hint_num], normal_hint_font, small_hint_font, font30, mini_hint_font, board_coord_font,
-					before_start_game,
-					umigame_state, umigame_value,
-					human_value_state, human_value,
-					book_start_learn);
+				if (analyzing) {
+					board_draw(board_cells, fork_history[analyze_idx], int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
+						hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, hint_actual_nums[hint_num], normal_hint_font, small_hint_font, font30, mini_hint_font, board_coord_font,
+						before_start_game,
+						umigame_state, umigame_value,
+						human_value_state, human_value,
+						book_start_learn);
+				}
+				else {
+					board_draw(board_cells, fork_history[find_history_idx(fork_history, history_place)], int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
+						hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, hint_actual_nums[hint_num], normal_hint_font, small_hint_font, font30, mini_hint_font, board_coord_font,
+						before_start_game,
+						umigame_state, umigame_value,
+						human_value_state, human_value,
+						book_start_learn);
+				}
 			}
 			/*** Board draw ***/
 
@@ -2522,21 +2546,25 @@ void Main() {
 				global_searching = true;
 			}
 			else if (vertical_convert && !analyzing && !book_learning && !book_modifying && !ai_thinking) {
-				bd.board_vertical_mirror();
+				bd.board_rotate_180();
 				String record = U"";
 				for (History_elem& elem : history) {
-					elem.b.board_vertical_mirror();
+					elem.b.board_rotate_180();
 					if (elem.policy != -1) {
-						record += str_record(elem.policy);
+						record += str_record(HW2_M1 - elem.policy);
+						elem.policy = HW2_M1 - elem.policy;
 						elem.record = record;
 					}
 				}
-				record = U"";
-				for (History_elem& elem : fork_history) {
-					elem.b.board_vertical_mirror();
-					if (elem.policy != -1) {
-						record += str_record(elem.policy);
-						elem.record = record;
+				if (fork_history.size()) {
+					record = history[find_history_idx(history, fork_history[fork_history.size() - 1].b.n - 4)].record;
+					for (History_elem& elem : fork_history) {
+						elem.b.board_rotate_180();
+						if (elem.policy != -1) {
+							record += str_record(HW2_M1 - elem.policy);
+							elem.policy = HW2_M1 - elem.policy;
+							elem.record = record;
+						}
 					}
 				}
 				reset_hint(&hint_state, &hint_future);
@@ -2545,21 +2573,29 @@ void Main() {
 				reset_ai(&ai_thinking, &ai_future);
 			}
 			else if (black_line_convert && !analyzing && !book_learning && !book_modifying && !ai_thinking) {
-				bd.board_white_line_mirror(); // because the Board is vertical mirrored
+				bd.board_black_line_mirror();
 				String record = U"";
 				for (History_elem& elem : history) {
-					elem.b.board_white_line_mirror(); // because the Board is vertical mirrored
+					elem.b.board_black_line_mirror();
 					if (elem.policy != -1) {
-						record += str_record(elem.policy);
+						int y = HW_M1 - elem.policy % HW;
+						int x = HW_M1 - elem.policy / HW;
+						record += str_record(y * HW + x);
+						elem.policy = y * HW + x;
 						elem.record = record;
 					}
 				}
-				record = U"";
-				for (History_elem& elem : fork_history) {
-					elem.b.board_white_line_mirror(); // because the Board is vertical mirrored
-					if (elem.policy != -1) {
-						record += str_record(elem.policy);
-						elem.record = record;
+				if (fork_history.size()) {
+					record = history[find_history_idx(history, fork_history[fork_history.size() - 1].b.n - 4)].record;
+					for (History_elem& elem : fork_history) {
+						elem.b.board_black_line_mirror();
+						if (elem.policy != -1) {
+							int y = HW_M1 - elem.policy % HW;
+							int x = HW_M1 - elem.policy / HW;
+							record += str_record(y * HW + x);
+							elem.policy = y * HW + x;
+							elem.record = record;
+						}
 					}
 				}
 				reset_hint(&hint_state, &hint_future);
@@ -2568,21 +2604,29 @@ void Main() {
 				reset_ai(&ai_thinking, &ai_future);
 			}
 			else if (white_line_convert && !analyzing && !book_learning && !book_modifying && !ai_thinking) {
-				bd.board_black_line_mirror(); // because the Board is vertical mirrored
+				bd.board_white_line_mirror();
 				String record = U"";
 				for (History_elem& elem : history) {
-					elem.b.board_black_line_mirror(); // because the Board is vertical mirrored
+					elem.b.board_white_line_mirror();
 					if (elem.policy != -1) {
-						record += str_record(elem.policy);
+						int y = elem.policy % HW;
+						int x = elem.policy / HW;
+						record += str_record(y * HW + x);
+						elem.policy = y * HW + x;
 						elem.record = record;
 					}
 				}
-				record = U"";
-				for (History_elem& elem : fork_history) {
-					elem.b.board_black_line_mirror(); // because the Board is vertical mirrored
-					if (elem.policy != -1) {
-						record += str_record(elem.policy);
-						elem.record = record;
+				if (fork_history.size()) {
+					record = history[find_history_idx(history, fork_history[fork_history.size() - 1].b.n - 4)].record;
+					for (History_elem& elem : fork_history) {
+						elem.b.board_white_line_mirror();
+						if (elem.policy != -1) {
+							int y = elem.policy % HW;
+							int x = elem.policy / HW;
+							record += str_record(y * HW + x);
+							elem.policy = y * HW + x;
+							elem.record = record;
+						}
 					}
 				}
 				reset_hint(&hint_state, &hint_future);
