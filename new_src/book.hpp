@@ -252,6 +252,7 @@ class Book{
             res = get_onebook(&nb);
             if (res != -INF)
                 return res;
+            return -INF;
         }
 
         inline Book_value get_random(Board *b, int accept_value){
@@ -371,7 +372,6 @@ class Book{
         }
 
         inline int register_symmetric_book(Board b, int value, int line){
-            int res = 1;
             if (get_onebook(&b) != -INF){
                 register_book(b, b.hash() & BOOK_HASH_MASK, value, line);
                 return 0;
