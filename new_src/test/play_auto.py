@@ -3,13 +3,18 @@
 import subprocess
 from othello_py import *
 import tkinter
+import sys
+
+level = 21
+if len(sys.argv) >= 2:
+    level = int(sys.argv[1])
 
 offset_y = 10
 offset_x = 10
 rect_size = 60
 circle_offset = 3
 
-ai_exe = subprocess.Popen('./a.exe'.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+ai_exe = subprocess.Popen(('./a.exe ' + str(level)).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 #ai_exe.stdin.write((str(ai_player) + '\n').encode('utf-8'))
 #ai_exe.stdin.flush()
 record = ''
