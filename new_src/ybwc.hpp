@@ -71,6 +71,7 @@ inline bool ybwc_split(Search *search, const Flip *flip, int alpha, int beta, co
             copy_search.use_mpc = search->use_mpc;
             copy_search.mpct = search->mpct;
             copy_search.n_nodes = 0;
+            //copy_search.p = search->p;
             parallel_tasks.emplace_back(thread_pool.push(bind(&ybwc_do_task, copy_search, alpha, beta, depth, legal, is_end_search, searching, policy)));
             return true;
         }
