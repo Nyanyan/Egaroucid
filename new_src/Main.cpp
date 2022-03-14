@@ -123,7 +123,7 @@ Menu create_menu(Texture checkbox,
 		*ai_level = min(*ai_level, 30);
 		*hint_level = min(*hint_level, 15);
 		menu_e.init_button(language.get("ai_settings", "ai_settings"), dummy);
-		side_menu.init_bar(language.get("ai_settings", "ai_level"), ai_level, *ai_level, 0, 30);
+		side_menu.init_bar(language.get("ai_settings", "ai_level"), ai_level, *ai_level, 0, 25);
 		menu_e.push(side_menu);
 		side_menu.init_bar(language.get("ai_settings", "hint_level"), hint_level, *hint_level, 0, 15);
 		menu_e.push(side_menu);
