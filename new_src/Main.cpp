@@ -120,7 +120,7 @@ Menu create_menu(Texture checkbox,
 	title.init(language.get("settings", "settings"));
 
 	if (*entry_mode) {
-		*ai_level = min(*ai_level, 30);
+		*ai_level = min(*ai_level, 25);
 		*hint_level = min(*hint_level, 15);
 		menu_e.init_button(language.get("ai_settings", "ai_settings"), dummy);
 		side_menu.init_bar(language.get("ai_settings", "ai_level"), ai_level, *ai_level, 0, 25);
@@ -140,9 +140,9 @@ Menu create_menu(Texture checkbox,
 		title.push(menu_e);
 	}
 	else if (*serious_game) {
-		*ai_level = min(*ai_level, 30);
+		*ai_level = min(*ai_level, 25);
 		menu_e.init_button(language.get("ai_settings", "ai_settings"), dummy);
-		side_menu.init_bar(language.get("ai_settings", "ai_level"), ai_level, *ai_level, 0, 30);
+		side_menu.init_bar(language.get("ai_settings", "ai_level"), ai_level, *ai_level, 0, 25);
 		menu_e.push(side_menu);
 		title.push(menu_e);
 	}
