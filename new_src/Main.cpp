@@ -380,7 +380,7 @@ void closing_draw(Font font, Font small_font, Texture icon, Texture logo, bool t
 	font(language.get("closing")).draw(right_left, y_center + font.fontSize(), font_color);
 }
 
-void board_draw(Rect board_cells[], History_elem b, int int_mode, bool use_hint_flag, bool normal_hint, bool human_hint, bool umigame_hint,
+void board_draw(Rect board_cells[], History_elem b, int next_policy, int int_mode, bool use_hint_flag, bool normal_hint, bool human_hint, bool umigame_hint,
 	const int hint_state, const uint64_t hint_legal, const int hint_value[], const int hint_depth[], const bool hint_best_moves[], const int hint_show_num, Font normal_font, Font small_font, Font big_font, Font mini_font, Font coord_font,
 	bool before_start_game,
 	const int umigame_state[], const umigame_result umigame_value[],
@@ -414,6 +414,16 @@ void board_draw(Rect board_cells[], History_elem b, int int_mode, bool use_hint_
 			Circle(x, y, stone_size).draw(Palette::White);
 		}
 		if (1 & (legal >> cell)) {
+			if (cell == next_policy) {
+				int xx = board_sx + (HW_M1 - cell % HW) * board_cell_size + board_cell_size / 2;
+				int yy = board_sy + (HW_M1 - cell / HW) * board_cell_size + board_cell_size / 2;
+				if (b.b.p == WHITE) {
+					Circle(xx, yy, stone_size).draw(ColorF(Palette::White, 0.3));
+				}
+				else {
+					Circle(xx, yy, stone_size).draw(ColorF(Palette::Black, 0.3));
+				}
+			}
 			if (!before_start_game && !book_start_learn && (!use_hint_flag || (!normal_hint && !human_hint && !umigame_hint))) {
 				int xx = board_sx + (HW_M1 - cell % HW) * board_cell_size + board_cell_size / 2;
 				int yy = board_sy + (HW_M1 - cell / HW) * board_cell_size + board_cell_size / 2;
@@ -2207,7 +2217,11 @@ void Main() {
 			/*** Board draw ***/
 			if (!fork_mode) {
 				if (analyzing) {
-					board_draw(board_cells, history[analyze_idx], int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
+					int next_policy = -1;
+					if ((int)history.size() > analyze_idx + 1) {
+						next_policy = history[analyze_idx + 1].policy;
+					}
+					board_draw(board_cells, history[analyze_idx], next_policy, int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
 						hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, hint_actual_nums[hint_num], normal_hint_font, small_hint_font, font30, mini_hint_font, board_coord_font,
 						before_start_game,
 						umigame_state, umigame_value,
@@ -2215,7 +2229,12 @@ void Main() {
 						book_start_learn);
 				}
 				else {
-					board_draw(board_cells, history[find_history_idx(history, history_place)], int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
+					int history_idx = find_history_idx(history, history_place);
+					int next_policy = -1;
+					if ((int)history.size() > history_idx + 1) {
+						next_policy = history[history_idx + 1].policy;
+					}
+					board_draw(board_cells, history[history_idx], next_policy, int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
 						hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, hint_actual_nums[hint_num], normal_hint_font, small_hint_font, font30, mini_hint_font, board_coord_font,
 						before_start_game,
 						umigame_state, umigame_value,
@@ -2225,7 +2244,11 @@ void Main() {
 			}
 			else {
 				if (analyzing) {
-					board_draw(board_cells, fork_history[analyze_idx], int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
+					int next_policy = -1;
+					if ((int)fork_history.size() > analyze_idx + 1) {
+						next_policy = fork_history[analyze_idx + 1].policy;
+					}
+					board_draw(board_cells, fork_history[analyze_idx], next_policy, int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
 						hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, hint_actual_nums[hint_num], normal_hint_font, small_hint_font, font30, mini_hint_font, board_coord_font,
 						before_start_game,
 						umigame_state, umigame_value,
@@ -2233,7 +2256,12 @@ void Main() {
 						book_start_learn);
 				}
 				else {
-					board_draw(board_cells, fork_history[find_history_idx(fork_history, history_place)], int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
+					int history_idx = find_history_idx(fork_history, history_place);
+					int next_policy = -1;
+					if ((int)fork_history.size() > history_idx + 1) {
+						next_policy = fork_history[history_idx + 1].policy;
+					}
+					board_draw(board_cells, fork_history[history_idx], next_policy, int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
 						hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, hint_actual_nums[hint_num], normal_hint_font, small_hint_font, font30, mini_hint_font, board_coord_font,
 						before_start_game,
 						umigame_state, umigame_value,
