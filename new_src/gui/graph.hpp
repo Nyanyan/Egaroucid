@@ -10,7 +10,7 @@ constexpr Color graph_color = Color(51, 51, 51);
 constexpr Color graph_history_color = Palette::White;
 constexpr Color graph_fork_color = Palette::Black;
 constexpr Color graph_place_color = Palette::White;
-constexpr double graph_transparency = 0.5;
+constexpr double graph_transparency = 1.0;
 
 class Graph {
 public:
@@ -45,7 +45,7 @@ public:
 			font(x).draw(sx + x * dx + adj_x * x / 60 - font(x).region(Point{0, 0}).w, sy - 2 * font_size, graph_color);
 			Line{ sx + x * dx + adj_x * x / 60, sy, sx + x * dx + adj_x * x / 60, sy + size_y }.draw(1, graph_color);
 		}
-		draw_graph(nodes1, graph_history_color, true);
+		draw_graph(nodes1, graph_history_color, false);
 		draw_graph(nodes2, graph_fork_color, true);
 		int place_x = sx + place * dx + place * adj_x / 60;
 		Circle(sx, sy, 10).draw(Palette::Black);
@@ -113,39 +113,21 @@ private:
 	}
 
 	void draw_graph(vector<History_elem> nodes, Color color, bool show_not_calculated) {
+		vector<pair<int, int>> values;
 		for (const History_elem& b : nodes) {
 			if (b.v != -INF) {
+				int xx = sx + (b.b.n - 4) * dx + (b.b.n - 4) * adj_x / 60;
 				int yy = sy + (y_max - b.v) * dy + adj_y * (y_max - b.v) / (y_max - y_min);
-				Circle{ sx + (b.b.n - 4) * dx + (b.b.n - 4) * adj_x / 60, yy, 3 }.draw(color);
+				values.emplace_back(make_pair(xx, yy));
+				Circle{ xx, yy, 3 }.draw(color);
 			}
 			else if (show_not_calculated) {
 				int yy = sy + y_max * dy + adj_y * y_max / (y_max - y_min);
 				Circle{ sx + (b.b.n - 4) * dx + (b.b.n - 4) * adj_x / 60, yy, 3 }.draw(color);
 			}
 		}
-		int idx1 = 0, idx2 = 0;
-		while (idx2 < (int)nodes.size()) {
-			while (idx1 < (int)nodes.size()) {
-				if (nodes[idx1].v != -INF)
-					break;
-				++idx1;
-			}
-			if (idx1 >= (int)nodes.size())
-				break;
-			int xx1 = sx + (nodes[idx1].b.n - 4) * dx + (nodes[idx1].b.n - 4) * adj_x / 60;
-			int yy1 = sy + (y_max - nodes[idx1].v) * dy + adj_y * (y_max - nodes[idx1].v) / (y_max - y_min);
-			idx2 = idx1 + 1;
-			while (idx2 < (int)nodes.size()) {
-				if (nodes[idx2].v != -INF)
-					break;
-				++idx2;
-			}
-			if (idx2 >= (int)nodes.size())
-				break;
-			int xx2 = sx + (nodes[idx2].b.n - 4) * dx + (nodes[idx2].b.n - 4) * adj_x / 60;
-			int yy2 = sy + (y_max - nodes[idx2].v) * dy + adj_y * (y_max - nodes[idx2].v) / (y_max - y_min);
-			Line(xx1, yy1, xx2, yy2).draw(2, ColorF(color, graph_transparency));
-			idx1 = idx2;
+		for (int i = 0; i < (int)values.size() - 1; ++i) {
+			Line(values[i].first, values[i].second, values[i + 1].first, values[i + 1].second).draw(2, ColorF(color, graph_transparency));
 		}
 	}
 };

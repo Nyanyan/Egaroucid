@@ -419,10 +419,10 @@ void board_draw(Rect board_cells[], History_elem b, int next_policy, int int_mod
 				int xx = board_sx + (HW_M1 - cell % HW) * board_cell_size + board_cell_size / 2;
 				int yy = board_sy + (HW_M1 - cell / HW) * board_cell_size + board_cell_size / 2;
 				if (b.b.p == WHITE) {
-					Circle(xx, yy, stone_size).draw(ColorF(Palette::White, 0.3));
+					Circle(xx, yy, stone_size).draw(ColorF(Palette::White, 0.2));
 				}
 				else {
-					Circle(xx, yy, stone_size).draw(ColorF(Palette::Black, 0.3));
+					Circle(xx, yy, stone_size).draw(ColorF(Palette::Black, 0.2));
 				}
 			}
 			if (!before_start_game && !book_start_learn && (!use_hint_flag || (!normal_hint && !human_hint && !umigame_hint))) {
@@ -2051,6 +2051,7 @@ void Main() {
 										else {
 											int changed_book_value = ParseOr<int>(changed_book_value_str, -1000);
 											if (changed_book_value != -1000) {
+												global_searching = false;
 												Flip m;
 												calc_flip(&m, &bd, cell);
 												book.change(bd.move_copy(&m), changed_book_value);
@@ -2058,6 +2059,7 @@ void Main() {
 												book_changed = true;
 												changing_book = false;
 												hint_state = 0;
+												global_searching = true;
 											}
 										}
 									}
