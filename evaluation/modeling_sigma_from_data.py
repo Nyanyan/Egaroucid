@@ -134,7 +134,7 @@ for i in range(len(popt)):
     print('#define probcut_' + chr(ord('a') + i), popt[i])
 perr = np.sqrt(np.diag(pcov))
 #plot_fit_result(popt)
-plot_fit_result_onephase(20, popt)
+plot_fit_result_onephase(30, popt)
 exit()
 
 fig = plt.figure()

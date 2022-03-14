@@ -124,8 +124,8 @@ constexpr double mpcsd[N_PHASES][MID_MPC_MAX_DEPTH - MID_MPC_MIN_DEPTH + 1]={
     {3.615, 2.16, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
 };
 */
-#define W_PROBCUT_SIGMA_ALL 2.75
-#define W_PROBCUT_SIGMA_ALL_END 0.8
+#define W_PROBCUT_SIGMA_ALL 1.75
+#define W_PROBCUT_SIGMA_ALL_END 0.9
 
 #define probcut_a 0.05026449055749905
 #define probcut_b 0.015173815707697134
