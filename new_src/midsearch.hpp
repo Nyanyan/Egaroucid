@@ -280,7 +280,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     }
     if (!is_end_search && depth <= MID_FAST_DEPTH)
         return nega_alpha(search, alpha, beta, depth, skipped);
-    if (!is_end_search &&depth == 0)
+    if (!is_end_search && depth == 0)
         return mid_evaluate(&search->board);
     ++(search->n_nodes);
     #if USE_MID_SC
