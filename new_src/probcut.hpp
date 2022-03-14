@@ -125,22 +125,22 @@ constexpr double mpcsd[N_PHASES][MID_MPC_MAX_DEPTH - MID_MPC_MIN_DEPTH + 1]={
 };
 */
 #define W_PROBCUT_SIGMA_ALL 3.0
-#define W_PROBCUT_SIGMA_ALL_END 1.5
+#define W_PROBCUT_SIGMA_ALL_END 0.8
 
-#define probcut_a -0.025522384929799295
-#define probcut_b -0.005898867297542293
-#define probcut_c 0.06805658173027652
-#define probcut_d -0.055447568997751676
-#define probcut_e 0.3616096553435381
-#define probcut_f -0.910279523369793
-#define probcut_g 0.9190076662535323
+#define probcut_a -0.2315106344706964
+#define probcut_b -0.1044297089843069
+#define probcut_c 0.6892968684297434
+#define probcut_d -6.162383403839533e-05
+#define probcut_e 0.004240556553660292
+#define probcut_f -0.10217687468816121
+#define probcut_g 0.8672526708886795
 
-#define probcut_end_a 0.09203028534665475
-#define probcut_end_b 0.07562660777993534
-#define probcut_end_c -0.24920368873833124
-#define probcut_end_d 3.3536609816091323
-#define probcut_end_e -15.569950419215495
-#define probcut_end_f 29.658267111094627
+#define probcut_end_a 0.011906469671142237
+#define probcut_end_b 0.09081746694660578
+#define probcut_end_c -0.30010624525166885
+#define probcut_end_d 2.28263424740548
+#define probcut_end_e -5.691010282363529
+#define probcut_end_f 8.076339949627421
 
 inline double probcut_sigma(int n_stones, int depth1, int depth2){
     double w = n_stones;

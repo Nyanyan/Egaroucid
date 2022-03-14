@@ -6,7 +6,7 @@ import numpy as np
 from scipy.optimize import curve_fit
 from matplotlib import animation
 
-with open('sigma_data_fixedbug.txt', 'r') as f:
+with open('sigma_data.txt', 'r') as f:
     raw_data = f.read().splitlines()
 
 n_stones_div = 2
