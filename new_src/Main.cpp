@@ -1259,17 +1259,13 @@ void learn_book(Board bd, int level, int depth, int book_learn_accept, Board* bd
 			legal = b.get_legal();
 			for (i = 0; i < HW2; ++i) {
 				if (1 & (legal >> i)) {
-					calc_flip(&mob, &b, i);
-					b.move_copy(&mob, &nb);
 					if (!(*book_learning)) {
 						return;
 					}
-					value = book.get(&nb);
-					reg_value = (abs(value) == INF);
-					if (reg_value) {
-						value = ai(nb, level, 0).value;
-					}
-					if (abs(value) != INF) {
+					calc_flip(&mob, &b, i);
+					b.move_copy(&mob, &nb);
+					value = -ai_value(nb, level);
+					if (abs(value) <= HW2) {
 						nb.copy(bd_ptr);
 						*value_ptr = value;
 						book.reg(nb, value);
@@ -2215,7 +2211,20 @@ void Main() {
 			/*** graph interaction ***/
 
 			/*** Board draw ***/
-			if (!fork_mode) {
+			if (book_learning) {
+				History_elem history_elem;
+				history_elem.b = bd;
+				history_elem.policy = -1;
+				history_elem.record = U"";
+				history_elem.v = -INF;
+				board_draw(board_cells, history_elem, -1, int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
+						hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, hint_actual_nums[hint_num], normal_hint_font, small_hint_font, font30, mini_hint_font, board_coord_font,
+						before_start_game,
+						umigame_state, umigame_value,
+						human_value_state, human_value,
+						book_start_learn);
+			}
+			else if (!fork_mode) {
 				if (analyzing) {
 					int next_policy = -1;
 					if ((int)history.size() > analyze_idx + 1) {

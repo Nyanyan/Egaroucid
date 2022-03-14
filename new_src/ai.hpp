@@ -257,3 +257,23 @@ bool ai_hint(Board b, int level, int max_level, int res[], int info[], bool best
     }
     return true;
 }
+
+int ai_value(Board b, int level){
+    int res = book.get(&b);
+    if (res != -INF){
+        cerr << "BOOK " << res << endl;
+        return -res;
+    } else if (level == 0){
+        res = mid_evaluate(&b);
+        cerr << "level 0 " << res << endl;
+        return res;
+    } else{
+        int depth;
+        bool use_mpc, is_mid_search;
+        double mpct;
+        get_level(level, b.n - 4, &is_mid_search, &depth, &use_mpc, &mpct);
+        cerr << "level status " << level << " " << b.n - 4 << " " << depth << " " << use_mpc << " " << mpct << endl;
+        return tree_search(b, depth, use_mpc, mpct, true).value;
+    }
+    return res;
+}
