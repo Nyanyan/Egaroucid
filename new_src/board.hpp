@@ -165,14 +165,15 @@ class Board {
         }
 
         inline void translate_to_arr_player(uint_fast8_t res[]) {
-            for (int i = 0; i < HW2; ++i){
-                if (1 & (player >> i))
-                    res[HW2_M1 - i] = 0;
-                else if (1 & (opponent >> i))
-                    res[HW2_M1 - i] = 1;
-                else
-                    res[HW2_M1 - i] = 2;
-            }
+            uint64_t p2 = player & 0x5555555555555555ULL, np2 = (~player) & 0x5555555555555555ULL, no2 = (~opponent) & 0x5555555555555555ULL;
+            uint64_t res_bit = (np2 + no2) ^ p2;
+            int i;
+            for (i = 0; i < HW2; i += 2)
+                res[HW2_M1 - i] = (res_bit >> i) & 0b11;
+            p2 = (player >> 1) & 0x5555555555555555ULL, np2 = ((~player) >> 1) & 0x5555555555555555ULL, no2 = ((~opponent) >> 1) & 0x5555555555555555ULL;
+            res_bit = (np2 + no2) ^ p2;
+            for (i = 0; i < HW2; i += 2)
+                res[HW2_M1 - i - 1] = (res_bit >> i) & 0b11;
         }
 
         inline void translate_to_arr(int res[]) {

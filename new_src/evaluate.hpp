@@ -379,12 +379,12 @@ inline int mid_evaluate(Board *b){
     uint64_t player_mobility, opponent_mobility, empties;
     player_mobility = calc_legal(b->player, b->opponent);
     opponent_mobility = calc_legal(b->opponent, b->player);
-    empties = ~(b->player | b->opponent);
     canput0 = min(MAX_CANPUT - 1, pop_count_ull(player_mobility));
     canput1 = min(MAX_CANPUT - 1, pop_count_ull(opponent_mobility));
     if (canput0 == 0 && canput1 == 0)
         return end_evaluate(b);
     phase_idx = b->phase();
+    empties = ~(b->player | b->opponent);
     sur0 = min(MAX_SURROUND - 1, calc_surround(b->player, empties));
     sur1 = min(MAX_SURROUND - 1, calc_surround(b->opponent, empties));
     calc_stability(b, &stab0, &stab1);
