@@ -341,19 +341,20 @@ class Book{
             int res = 1;
             if (!register_book(b, b.hash() & BOOK_HASH_MASK, value, line))
                 res = 0;
-            b.board_white_line_mirror();
-            register_book(b, b.hash() & BOOK_HASH_MASK, value, line);
             b.board_black_line_mirror();
             register_book(b, b.hash() & BOOK_HASH_MASK, value, line);
-            b.board_white_line_mirror();
+            b.board_rotate_180();
+            register_book(b, b.hash() & BOOK_HASH_MASK, value, line);
+            b.board_black_line_mirror();
             register_book(b, b.hash() & BOOK_HASH_MASK, value, line);
             b.board_horizontal_mirror();
             register_book(b, b.hash() & BOOK_HASH_MASK, value, line);
-            b.board_white_line_mirror();
+            b.board_black_line_mirror();
+            register_book(b, b.hash() & BOOK_HASH_MASK, value, line);
+            b.board_rotate_180();
             register_book(b, b.hash() & BOOK_HASH_MASK, value, line);
             b.board_black_line_mirror();
             register_book(b, b.hash() & BOOK_HASH_MASK, value, line);
-            //b.board_white_line_mirror();
             return res;
         }
 
