@@ -340,8 +340,9 @@ Cell_value analyze_search(Board b, int level) {
 
 int find_history_idx(vector<History_elem> history, int history_place) {
 	for (int i = 0; i < (int)history.size(); ++i) {
-		if (history[i].b.n - 4 == history_place)
+		if (history[i].b.n - 4 == history_place) {
 			return i;
+		}
 	}
 	return 0;
 }
@@ -2281,21 +2282,19 @@ void Main() {
 			/*** Board draw ***/
 
 			/*** joseki ***/
-			if (fork_mode) {
-				string new_joseki;
-				joseki_name.clear();
-				for (int i = 0; i <= history_place; ++i) {
-					new_joseki = joseki.get(fork_history[i].b);
-					if (new_joseki != "") {
-						joseki_name = new_joseki;
-					}
+			string new_joseki;
+			joseki_name.clear();
+			int history_idx = find_history_idx(history, history_place);
+			for (int i = 0; i <= history_idx; ++i) {
+				new_joseki = joseki.get(history[i].b);
+				if (new_joseki != "") {
+					joseki_name = new_joseki;
 				}
 			}
-			else {
-				string new_joseki;
-				joseki_name.clear();
-				for (int i = 0; i <= history_place; ++i) {
-					new_joseki = joseki.get(history[i].b);
+			if (fork_mode) {
+				int history_idx = find_history_idx(fork_history, history_place);
+				for (int i = 0; i <= history_idx; ++i) {
+					new_joseki = joseki.get(fork_history[i].b);
 					if (new_joseki != "") {
 						joseki_name = new_joseki;
 					}
@@ -2594,7 +2593,7 @@ void Main() {
 					}
 				}
 				if (fork_history.size()) {
-					record = history[find_history_idx(history, fork_history[fork_history.size() - 1].b.n - 4)].record;
+					record = history[find_history_idx(history, fork_history[0].b.n - 5)].record;
 					for (History_elem& elem : fork_history) {
 						elem.b.board_rotate_180();
 						if (elem.policy != -1) {
@@ -2623,7 +2622,7 @@ void Main() {
 					}
 				}
 				if (fork_history.size()) {
-					record = history[find_history_idx(history, fork_history[fork_history.size() - 1].b.n - 4)].record;
+					record = history[find_history_idx(history, fork_history[0].b.n - 5)].record;
 					for (History_elem& elem : fork_history) {
 						elem.b.board_black_line_mirror();
 						if (elem.policy != -1) {
@@ -2654,7 +2653,7 @@ void Main() {
 					}
 				}
 				if (fork_history.size()) {
-					record = history[find_history_idx(history, fork_history[fork_history.size() - 1].b.n - 4)].record;
+					record = history[find_history_idx(history, fork_history[0].b.n - 5)].record;
 					for (History_elem& elem : fork_history) {
 						elem.b.board_white_line_mirror();
 						if (elem.policy != -1) {
