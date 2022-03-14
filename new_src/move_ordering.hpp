@@ -32,7 +32,7 @@
 #define W_END_MOBILITY 64
 #define W_END_PARITY 14
 
-//int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped);
+int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped);
 int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped);
 int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal);
 int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search);
@@ -76,9 +76,9 @@ inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int
                     case 0:
                         flip->value += (HW2 - mid_evaluate(&search->board)) * W_VALUE_SHALLOW;
                         break;
-                    //case 1:
-                    //    flip->value += (HW2 - nega_alpha_eval1(search, alpha, beta, false)) * W_VALUE;
-                    //    break;
+                    case 1:
+                        flip->value += (HW2 - nega_alpha_eval1(search, alpha, beta, false)) * W_VALUE;
+                        break;
                     default:
                         if (depth <= MID_FAST_DEPTH)
                             flip->value += (HW2 - nega_alpha(search, alpha, beta, depth, false)) * W_VALUE;

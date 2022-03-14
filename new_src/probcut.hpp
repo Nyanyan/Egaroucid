@@ -174,7 +174,7 @@ inline double probcut_sigma_end_depth0(int n_stones){
     return res * W_PROBCUT_SIGMA_ALL_END;
 }
 
-//int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped);
+int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped);
 int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped);
 int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal);
 
@@ -197,9 +197,9 @@ inline bool mpc_higher(Search *search, int beta, int depth, uint64_t legal, int 
             case 0:
                 res = mid_evaluate(&search->board) >= bound;
                 break;
-            //case 1:
-            //    res = nega_alpha_eval1(search, bound - 1, bound, false) >= bound;
-            //    break;
+            case 1:
+                res = nega_alpha_eval1(search, bound - 1, bound, false) >= bound;
+                break;
             default:
                 if (mpcd[depth] <= MID_FAST_DEPTH)
                     res = nega_alpha(search, bound - 1, bound, mpcd[depth], false) >= bound;
@@ -236,9 +236,9 @@ inline bool mpc_lower(Search *search, int alpha, int depth, uint64_t legal, int 
             case 0:
                 res = mid_evaluate(&search->board) <= bound;
                 break;
-            //case 1:
-            //    res = nega_alpha_eval1(search, bound, bound + 1, false) <= bound;
-            //    break;
+            case 1:
+                res = nega_alpha_eval1(search, bound, bound + 1, false) <= bound;
+                break;
             default:
                 if (mpcd[depth] <= MID_FAST_DEPTH)
                     res = nega_alpha(search, bound, bound + 1, mpcd[depth], false) <= bound;

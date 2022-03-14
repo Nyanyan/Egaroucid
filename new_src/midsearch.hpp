@@ -22,7 +22,6 @@
 
 using namespace std;
 
-/*
 inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped){
     ++(search->n_nodes);
     int g, v = -INF;
@@ -49,14 +48,13 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped){
     }
     return v;
 }
-*/
 
 int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped){
     if (!global_searching)
         return SCORE_UNDEFINED;
     ++(search->n_nodes);
-    //if (depth == 1)
-    //    return nega_alpha_eval1(search, alpha, beta, skipped);
+    if (depth == 1)
+        return nega_alpha_eval1(search, alpha, beta, skipped);
     if (depth == 0)
         return mid_evaluate(&search->board);
     #if USE_MID_SC
