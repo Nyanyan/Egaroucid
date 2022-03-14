@@ -6,7 +6,7 @@
 #include "midsearch.hpp"
 
 using namespace std;
-/*
+
 constexpr int mpcd[61] = {
     0, 1, 0, 1, 2, 3, 2, 3, 2, 3, 
     4, 3, 4, 3, 4, 5, 4, 5, 6, 5, 
@@ -16,8 +16,8 @@ constexpr int mpcd[61] = {
     14, 13, 14, 13, 14, 15, 14, 15, 16, 15,
     16
 };
-*/
 
+/*
 constexpr int mpcd[61] = {
     0, 1, 0, 1, 0, 1, 2, 1, 2, 1, 
     2, 3, 2, 3, 2, 3, 4, 3, 4, 3, 
@@ -27,7 +27,7 @@ constexpr int mpcd[61] = {
     10, 11, 10, 11, 10, 11, 12, 11, 12, 11,
     12
 };
-
+*/
 /*
 constexpr int mpcd[61] = {
     0, 1, 0, 1, 0, 1, 2, 1, 2, 1, 
@@ -124,23 +124,23 @@ constexpr double mpcsd[N_PHASES][MID_MPC_MAX_DEPTH - MID_MPC_MIN_DEPTH + 1]={
     {3.615, 2.16, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
 };
 */
-#define W_PROBCUT_SIGMA_ALL 2.0
-#define W_PROBCUT_SIGMA_ALL_END 0.8
+#define W_PROBCUT_SIGMA_ALL 1.0
+#define W_PROBCUT_SIGMA_ALL_END 1.0
 
-#define probcut_a -0.009045429048098474
-#define probcut_b -0.02063940129265774
-#define probcut_c 0.04729441058195065
-#define probcut_d -0.6419372737867132
-#define probcut_e 1.513284146923471
-#define probcut_f -1.5259244859052548
-#define probcut_g 0.753342755335471
+#define probcut_a -0.24318260112276702
+#define probcut_b -0.4014730823658223
+#define probcut_c 1.0655360635409914
+#define probcut_d -3.771411692303555e-05
+#define probcut_e 0.002624303055327084
+#define probcut_f -0.07155144256617593
+#define probcut_g 2.7961281264487092
 
-#define probcut_end_a 0.011906469671142237
-#define probcut_end_b 0.09081746694660578
-#define probcut_end_c -0.30010624525166885
-#define probcut_end_d 2.28263424740548
-#define probcut_end_e -5.691010282363529
-#define probcut_end_f 8.076339949627421
+#define probcut_end_a -0.007067691798918974
+#define probcut_end_b -0.03625767020840132
+#define probcut_end_c 7.057010691277178
+#define probcut_end_d 21.002429687642383
+#define probcut_end_e 21.02101092545754
+#define probcut_end_f 10.510201246471908
 
 inline double probcut_sigma(int n_stones, int depth1, int depth2){
     double w = n_stones;

@@ -4053,6 +4053,23 @@ same
 3367363560 nodes
 231752481.761872 nps
 
+2022/03/14 new mpc
+#40 depth 20 value 38 policy a2 nodes 28675866 whole time 143 search time 135 nps 212413822
+#41 depth 22 value 0 policy h4 nodes 38913206 whole time 270 search time 262 nps 148523687
+#42 depth 22 value 6 policy g2 nodes 54179061 whole time 256 search time 248 nps 218463955
+#43 depth 23 value -12 policy c7 nodes 178875702 whole time 902 search time 895 nps 199861119
+#44 depth 23 value -14 policy b8 nodes 37610670 whole time 307 search time 300 nps 125368900
+#45 depth 24 value 6 policy b2 nodes 881490820 whole time 3492 search time 3477 nps 253520511
+#46 depth 24 value -8 policy b3 nodes 191921914 whole time 1124 search time 1106 nps 173527951
+#47 depth 25 value 4 policy g2 nodes 120295751 whole time 669 search time 655 nps 183657635
+#48 depth 25 value 28 policy f6 nodes 1059729426 whole time 4738 search time 4724 nps 224328837
+#49 depth 26 value 16 policy e1 nodes 1098348898 whole time 5131 search time 5108 nps 215025234
+17.032 sec
+16.91 sec search
+21.186054229736328 sec total
+3690041314 nodes
+218216517.68184507 nps
+
 
 
 

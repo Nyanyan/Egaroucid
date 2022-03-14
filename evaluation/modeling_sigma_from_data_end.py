@@ -40,12 +40,12 @@ for x in range(len(data)):
             x_n_stones.append(n_stones)
             y_depth.append(depth)
             z_sigma.append(statistics.stdev(data[x][y]))
-'''
-for y in range(30, 61):
-    x_n_stones.append(0)
-    y_depth.append(y)
-    z_sigma.append(0.5)
-'''
+
+for x in range(10):
+    x_n_stones.append(x)
+    y_depth.append(0)
+    z_sigma.append(10.0)
+
 probcut_end_params_before = [
     1.0 for _ in range(10)
 ]
@@ -70,7 +70,7 @@ def plot_fit_result_onephase(params):
     #ax.plot(sdxs, sdys, sdzs, ms=3, marker="o",linestyle='None')
     phase = n_stones // n_stones_div
     ax.plot(x_n_stones, y_depth, z_sigma, ms=3, marker="o",linestyle='None')
-    mx, my = np.meshgrid(range(65), range(61))
+    mx, my = np.meshgrid(range(65), range(31))
     ax.plot_wireframe(mx, my, f((mx, my), *params), rstride=10, cstride=10)
     ax.set_xlabel('n_stones')
     ax.set_ylabel('depth')

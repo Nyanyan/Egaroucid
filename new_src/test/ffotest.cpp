@@ -44,13 +44,13 @@ int main(){
         strt2 = tim();
         search.mpct = 0.6;
         search.use_mpc = true;
-        search.p = (search.board.p + depth / 2) % 2;
+        //search.p = (search.board.p + depth / 2) % 2;
         result = first_nega_scout(&search, -HW2, HW2, depth / 2, false, false);
         g = result.first;
         cerr << "presearch d=" << depth / 2 << " t=" << search.mpct << " [-64,64] " << g << " " << idx_to_coord(result.second) << endl;
         search_time += tim() - strt2;
 
-        search.p = (search.board.p + depth) % 2;
+        //search.p = (search.board.p + depth) % 2;
         if (depth >= 24){
             parent_transpose_table.init();
             strt2 = tim();
