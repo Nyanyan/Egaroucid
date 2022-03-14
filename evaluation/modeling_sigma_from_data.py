@@ -9,8 +9,8 @@ from matplotlib import animation
 with open('sigma_data.txt', 'r') as f:
     raw_data = f.read().splitlines()
 
-n_stones_div = 1
-depth_div = 1
+n_stones_div = 2
+depth_div = 2
 
 data = [[[[] for _ in range(0, 60 + 1, depth_div)] for _ in range(0, 60 + 1, depth_div)] for _ in range(0, 65, n_stones_div)]
 
@@ -40,19 +40,26 @@ for w in range(len(data)):
                 n_stones = w * n_stones_div + n_stones_div / 2
                 depth1 = x * depth_div + depth_div / 2
                 depth2 = y * depth_div + depth_div / 2
+                
                 sigma = statistics.stdev(data[w][x][y])
-
+                
                 w_n_stones.append(n_stones)
                 x_depth1.append(depth1)
                 y_depth2.append(depth2)
                 z_sigma.append(sigma)
+                if y == 0:
+                    for _ in range(2):
+                        w_n_stones.append(n_stones)
+                        x_depth1.append(depth1)
+                        y_depth2.append(depth2)
+                        z_sigma.append(sigma)
 
 for w in range(4, 65):
-    for xy in range(30, 61):
+    for xy in range(40, 61):
         w_n_stones.append(w)
         x_depth1.append(xy)
         y_depth2.append(xy)
-        z_sigma.append(0.0)
+        z_sigma.append(0.5)
 
 probcut_params_before = [
     1.0 for _ in range(10)
