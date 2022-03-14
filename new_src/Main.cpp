@@ -1483,6 +1483,7 @@ void Main() {
 
 	bool show_popup_flag = true;
 	bool show_end_popup = true;
+	bool show_end_popup_change = true;
 	long long popup_start_time = 0;
 
 	bool analyzing = false;
@@ -1593,6 +1594,8 @@ void Main() {
 		hint_nums[i] = i == hint_num;
 	}
 
+	show_end_popup_change = show_end_popup;
+
 	int lang_initialized = 0;
 	string lang_file = "resources/languages/" + lang_name + ".json";
 	future<bool> lang_initialize_future = async(launch::async, lang_initialize, lang_file);
@@ -1672,7 +1675,7 @@ void Main() {
 					&ai_level, &hint_level, &ai_book_accept,
 					&start_book_learn_flag, &stop_book_learn_flag, &book_modify, &book_depth, &book_learn_accept, &import_book_flag,
 					&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag,
-					&show_end_popup, &show_log,
+					&show_end_popup_change, &show_log,
 					&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
 					&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert,
 					&usage_flag, &bug_report_flag,
@@ -1698,7 +1701,7 @@ void Main() {
 						&ai_level, &hint_level, &ai_book_accept,
 						&start_book_learn_flag, &stop_book_learn_flag, &book_modify, &book_depth, &book_learn_accept, &import_book_flag,
 						&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag,
-						&show_end_popup, &show_log,
+						&show_end_popup_change, &show_log,
 						&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
 						&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert,
 						&usage_flag, &bug_report_flag,
@@ -1772,7 +1775,7 @@ void Main() {
 					&ai_level, &hint_level, &ai_book_accept,
 					&start_book_learn_flag, &stop_book_learn_flag, &book_modify, &book_depth, &book_learn_accept, &import_book_flag,
 					&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag,
-					&show_end_popup, &show_log,
+					&show_end_popup_change, &show_log,
 					&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
 					&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert,
 					&usage_flag, &bug_report_flag,
@@ -1809,7 +1812,7 @@ void Main() {
 						&ai_level, &hint_level, &ai_book_accept,
 						&start_book_learn_flag, &stop_book_learn_flag, &book_modify, &book_depth, &book_learn_accept, &import_book_flag,
 						&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag,
-						&show_end_popup, &show_log,
+						&show_end_popup_change, &show_log,
 						&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
 						&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert,
 						&usage_flag, &bug_report_flag,
@@ -2143,7 +2146,6 @@ void Main() {
 								popup_start_time = tim();
 							}
 							int v = sgn * ai_result.value;
-							history[history.size() - 1].v = v;
 							History_elem hist_tmp = { bd, v, flip.pos, history[history.size() - 1].record + str_record(flip.pos) };
 							history.emplace_back(hist_tmp);
 							history_place = bd.n - 4;
@@ -2701,6 +2703,12 @@ void Main() {
 			}
 			else if (bug_report_flag) {
 				System::LaunchBrowser(U"https://docs.google.com/forms/d/e/1FAIpQLSd6ML1T1fc707luPEefBXuImMnlM9cQP8j-YHKiSyFoS-8rmQ/viewform?usp=sf_link");
+			}
+			else if (show_end_popup_change != show_end_popup) {
+				if (!main_window_active && show_end_popup) {
+					main_window_active = true;
+				}
+				show_end_popup = show_end_popup_change;
 			}
 			/*** menu buttons ***/
 
