@@ -6,6 +6,17 @@
 #include "midsearch.hpp"
 
 using namespace std;
+/*
+constexpr int mpcd[61] = {
+    0, 1, 0, 1, 2, 3, 2, 3, 4, 3, 
+    4, 3, 4, 5, 4, 5, 6, 5, 6, 5, 
+    6, 7, 6, 7, 8, 7, 8, 7, 8, 9, 
+    8, 9, 10, 9, 10, 9, 10, 11, 10, 11, 
+    10, 11, 12, 11, 12, 11, 12, 13, 12, 13, 
+    14, 13, 14, 13, 14, 15, 14, 15, 16, 15,
+    16
+};
+*/
 
 constexpr int mpcd[61] = {
     0, 1, 0, 1, 2, 3, 2, 3, 2, 3, 
@@ -133,7 +144,7 @@ constexpr double mpcsd[N_PHASES][MID_MPC_MAX_DEPTH - MID_MPC_MIN_DEPTH + 1]={
 #define probcut_d -3.771411692303555e-05
 #define probcut_e 0.002624303055327084
 #define probcut_f -0.07155144256617593
-#define probcut_g 2.7961281264487092
+#define probcut_g 3.2961281264487092
 
 #define probcut_end_a -0.007067691798918974
 #define probcut_end_b -0.03625767020840132

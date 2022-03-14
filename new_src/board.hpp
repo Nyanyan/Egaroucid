@@ -226,7 +226,7 @@ class Board {
                     }
                 }
             }
-            p = player;
+            p = player_idx;
         }
 
         inline void translate_from_ull(const uint64_t pl, const uint64_t op, int player) {

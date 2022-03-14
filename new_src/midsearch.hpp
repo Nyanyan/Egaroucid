@@ -19,6 +19,7 @@
 #if USE_LOG
     #include "log.hpp"
 #endif
+#include "util.hpp"
 
 using namespace std;
 
@@ -394,12 +395,13 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
     }
     int best_move = child_transpose_table.get(&search->board, hash_code);
     int f_best_move = best_move;
+    const int canput_all = pop_count_ull(legal);
     if (best_move != TRANSPOSE_TABLE_UNDEFINED){
         Flip flip;
         calc_flip(&flip, &search->board, best_move);
         search->board.move(&flip);
             g = -nega_scout(search, -beta, -alpha, depth - 1, false, LEGAL_UNDEFINED, is_end_search);
-            //cerr << (int)flip.pos << " " << g << endl;
+            cerr << 1 << "/" << canput_all << " " << idx_to_coord(best_move) << " value " << g << endl;
             //search->board.print();
             //cerr << endl;
         search->board.undo(&flip);
@@ -409,6 +411,7 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
     }
     if (alpha < beta){
         const int canput = pop_count_ull(legal);
+        int mobility_idx = (v == -INF) ? 1 : 2;
         vector<Flip> move_list(canput);
         int idx = 0;
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
@@ -424,7 +427,11 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
                     if (alpha < g)
                         g = -nega_scout(search, -beta, -g, depth - 1, false, flip.n_legal, is_end_search);
                 }
-                //cerr << (int)flip.pos << " " << v << " " << g << endl;
+                if (g <= alpha)
+                    cerr << mobility_idx << "/" << canput_all << " " << idx_to_coord((int)flip.pos) << " value " << g << " or lower" << endl;
+                else
+                    cerr << mobility_idx << "/" << canput_all << " " << idx_to_coord((int)flip.pos) << " value " << g << endl;
+                ++mobility_idx;
                 //search->board.print();
                 //cerr << endl;
             search->board.undo(&flip);
