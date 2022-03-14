@@ -207,7 +207,7 @@ class Book{
             n_book += register_symmetric_book(b, value, n_book);
         }
 
-        inline int get(Board *b){
+        inline int get_onebook(Board *b){
             Node_book *p_node = this->book[b->hash() & BOOK_HASH_MASK];
             while(p_node != NULL){
                 if(compare_key(b, p_node)){
@@ -218,6 +218,42 @@ class Book{
             return -INF;
         }
 
+        inline int get(Board *b){
+            Board nb = b->copy();
+            int res = -INF;
+            res = get_onebook(&nb);
+            if (res != -INF)
+                return res;
+            nb.board_black_line_mirror();
+            res = get_onebook(&nb);
+            if (res != -INF)
+                return res;
+            nb.board_rotate_180();
+            res = get_onebook(&nb);
+            if (res != -INF)
+                return res;
+            nb.board_black_line_mirror();
+            res = get_onebook(&nb);
+            if (res != -INF)
+                return res;
+            nb.board_horizontal_mirror();
+            res = get_onebook(&nb);
+            if (res != -INF)
+                return res;
+            nb.board_black_line_mirror();
+            res = get_onebook(&nb);
+            if (res != -INF)
+                return res;
+            nb.board_rotate_180();
+            res = get_onebook(&nb);
+            if (res != -INF)
+                return res;
+            nb.board_black_line_mirror();
+            res = get_onebook(&nb);
+            if (res != -INF)
+                return res;
+        }
+
         inline Book_value get_random(Board *b, int accept_value){
             vector<int> policies;
             vector<int> values;
@@ -225,18 +261,15 @@ class Book{
             int max_value = -INF;
             uint64_t legal = b->get_legal();
             Flip flip;
+            int value;
             for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
                 calc_flip(&flip, b, cell);
                 nb = b->move_copy(&flip);
-                Node_book *p_node = this->book[nb.hash() & BOOK_HASH_MASK];
-                while(p_node != NULL){
-                    if(compare_key(&nb, p_node)){
-                        policies.push_back(cell);
-                        values.push_back(p_node->value);
-                        max_value = max(max_value, p_node->value);
-                        break;
-                    }
-                    p_node = p_node->p_n_node;
+                value = get(&nb);
+                if (value != -INF){
+                    policies.push_back(cell);
+                    values.push_back(value);
+                    max_value = max(max_value, value);
                 }
             }
             Book_value res;
@@ -339,23 +372,47 @@ class Book{
 
         inline int register_symmetric_book(Board b, int value, int line){
             int res = 1;
-            if (!register_book(b, b.hash() & BOOK_HASH_MASK, value, line))
-                res = 0;
+            if (get_onebook(&b) != -INF){
+                register_book(b, b.hash() & BOOK_HASH_MASK, value, line);
+                return 0;
+            }
             b.board_black_line_mirror();
-            register_book(b, b.hash() & BOOK_HASH_MASK, value, line);
+            if (get_onebook(&b) != -INF){
+                register_book(b, b.hash() & BOOK_HASH_MASK, value, line);
+                return 0;
+            }
             b.board_rotate_180();
-            register_book(b, b.hash() & BOOK_HASH_MASK, value, line);
+            if (get_onebook(&b) != -INF){
+                register_book(b, b.hash() & BOOK_HASH_MASK, value, line);
+                return 0;
+            }
             b.board_black_line_mirror();
-            register_book(b, b.hash() & BOOK_HASH_MASK, value, line);
+            if (get_onebook(&b) != -INF){
+                register_book(b, b.hash() & BOOK_HASH_MASK, value, line);
+                return 0;
+            }
             b.board_horizontal_mirror();
-            register_book(b, b.hash() & BOOK_HASH_MASK, value, line);
+            if (get_onebook(&b) != -INF){
+                register_book(b, b.hash() & BOOK_HASH_MASK, value, line);
+                return 0;
+            }
             b.board_black_line_mirror();
-            register_book(b, b.hash() & BOOK_HASH_MASK, value, line);
+            if (get_onebook(&b) != -INF){
+                register_book(b, b.hash() & BOOK_HASH_MASK, value, line);
+                return 0;
+            }
             b.board_rotate_180();
-            register_book(b, b.hash() & BOOK_HASH_MASK, value, line);
+            if (get_onebook(&b) != -INF){
+                register_book(b, b.hash() & BOOK_HASH_MASK, value, line);
+                return 0;
+            }
             b.board_black_line_mirror();
+            if (get_onebook(&b) != -INF){
+                register_book(b, b.hash() & BOOK_HASH_MASK, value, line);
+                return 0;
+            }
             register_book(b, b.hash() & BOOK_HASH_MASK, value, line);
-            return res;
+            return 1;
         }
 
         inline void create_arr(Node_book *node, int arr[], int p){
