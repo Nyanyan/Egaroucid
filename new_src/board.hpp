@@ -111,6 +111,8 @@ class Board {
             if (passed){
                 pass();
                 passed = (get_legal() == 0);
+                if (passed)
+                    pass();
             }
             return passed;
         }
