@@ -17,7 +17,7 @@ constexpr int mpcd[61] = {
     16
 };
 */
-/*
+
 constexpr int mpcd[61] = {
     0, 1, 0, 1, 0, 1, 2, 1, 2, 1, 
     2, 3, 2, 3, 2, 3, 4, 3, 4, 3, 
@@ -27,8 +27,8 @@ constexpr int mpcd[61] = {
     10, 11, 10, 11, 10, 11, 12, 11, 12, 11,
     12
 };
-*/
 
+/*
 constexpr int mpcd[61] = {
     0, 1, 0, 1, 0, 1, 2, 1, 2, 1, 
     2, 1, 2, 3, 2, 3, 2, 3, 4, 3, 
@@ -38,7 +38,7 @@ constexpr int mpcd[61] = {
     8, 9, 8, 9, 10, 9, 10, 9, 10, 9,
     10
 };
-
+*/
 /*
 constexpr int mpcd[61] = {
     0, 1, 0, 1, 0, 1, 0, 1, 2, 1, 
@@ -124,16 +124,16 @@ constexpr double mpcsd[N_PHASES][MID_MPC_MAX_DEPTH - MID_MPC_MIN_DEPTH + 1]={
     {3.615, 2.16, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
 };
 */
-#define W_PROBCUT_SIGMA_ALL 3.0
+#define W_PROBCUT_SIGMA_ALL 2.0
 #define W_PROBCUT_SIGMA_ALL_END 0.8
 
-#define probcut_a 0.05026449055749905
-#define probcut_b 0.015173815707697134
-#define probcut_c -0.15332608792185295
-#define probcut_d 0.008783146032688182
-#define probcut_e 0.11786751953964904
-#define probcut_f 0.47939877524958735
-#define probcut_g 1.0740451770744293
+#define probcut_a -0.009045429048098474
+#define probcut_b -0.02063940129265774
+#define probcut_c 0.04729441058195065
+#define probcut_d -0.6419372737867132
+#define probcut_e 1.513284146923471
+#define probcut_f -1.5259244859052548
+#define probcut_g 0.753342755335471
 
 #define probcut_end_a 0.011906469671142237
 #define probcut_end_b 0.09081746694660578

@@ -57,6 +57,13 @@ for w in range(len(data)):
                 '''
 
 for w in range(4, 65):
+    w_n_stones.append(w)
+    x_depth1.append(60)
+    y_depth2.append(0)
+    z_sigma.append(10.0)
+
+
+for w in range(4, 65):
     for xy in range(40, 61):
         w_n_stones.append(w)
         x_depth1.append(xy)
