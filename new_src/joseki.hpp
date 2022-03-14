@@ -37,9 +37,9 @@ public:
 			b.translate_from_arr(board_arr, BLACK);
 			name = line.substr(65, line.size());
 			arr.push_back(make_pair(b, name));
-			b.board_white_line_mirror();
+			b.board_black_line_mirror();
 			arr.push_back(make_pair(b, name));
-			b.board_vertical_mirror();
+			b.board_rotate_180();
 			arr.push_back(make_pair(b, name));
 			b.board_black_line_mirror();
 			arr.push_back(make_pair(b, name));
