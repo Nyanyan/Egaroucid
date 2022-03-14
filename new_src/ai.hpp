@@ -122,7 +122,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
                 cerr << "presearch time " << tim() - strt << " depth " << depth << " value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
         }
         search.use_mpc = 1;
-        search.mpct = 0.8;
+        search.mpct = 0.9;
         g = -INF;
         if (depth - 1 >= 1){
             //search.p = (search.board.p + depth - 1) % 2;

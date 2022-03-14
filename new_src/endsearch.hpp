@@ -452,10 +452,9 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
     #if USE_END_MPC
         int depth = HW2 - search->board.n;
         if (search->use_mpc){
-            int score_eval = mid_evaluate(&search->board);
-            if (mpc_higher(search, beta, depth, legal, score_eval))
+            if (mpc_higher(search, beta, depth, legal))
                 return beta;
-            if (mpc_lower(search, alpha, depth, legal, score_eval))
+            if (mpc_lower(search, alpha, depth, legal))
                 return alpha;
         }
     #endif

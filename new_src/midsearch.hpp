@@ -101,10 +101,9 @@ int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, b
         legal = search->board.get_legal();
     #if USE_MID_MPC
         if (search->use_mpc){
-            int score_eval = mid_evaluate(&search->board);
-            if (mpc_higher(search, beta, depth, legal, score_eval))
+            if (mpc_higher(search, beta, depth, legal))
                 return beta;
-            if (mpc_lower(search, alpha, depth, legal, score_eval))
+            if (mpc_lower(search, alpha, depth, legal))
                 return alpha;
         }
     #endif
@@ -170,10 +169,9 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
         legal = search->board.get_legal();
     #if USE_MID_MPC
         if (search->use_mpc){
-            int score_eval = mid_evaluate(&search->board);
-            if (mpc_higher(search, beta, depth, legal, score_eval))
+            if (mpc_higher(search, beta, depth, legal))
                 return beta;
-            if (mpc_lower(search, alpha, depth, legal, score_eval))
+            if (mpc_lower(search, alpha, depth, legal))
                 return alpha;
         }
     #endif
@@ -309,10 +307,9 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
         legal = search->board.get_legal();
     #if USE_MID_MPC
         if (search->use_mpc){
-            int score_eval = mid_evaluate(&search->board);
-            if (mpc_higher(search, beta, depth, legal, score_eval))
+            if (mpc_higher(search, beta, depth, legal))
                 return beta;
-            if (mpc_lower(search, alpha, depth, legal, score_eval))
+            if (mpc_lower(search, alpha, depth, legal))
                 return alpha;
         }
     #endif

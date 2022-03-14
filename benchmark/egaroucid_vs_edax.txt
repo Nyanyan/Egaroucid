@@ -446,6 +446,6 @@ level 5 400 games
 
 level 11 200 games used exact edax's level
 start depth: 10 Egaroucid plays black WDL: 53-7-40 Egaroucid plays white WDL: 49-9-42 Egaroucid win rate: 0.5543478260869565
-
+start depth: 20 Egaroucid plays black WDL: 49-11-40 Egaroucid plays white WDL: 48-11-41 Egaroucid win rate: 0.5449438202247191
 
 level 15 100 games used exact edax's level
