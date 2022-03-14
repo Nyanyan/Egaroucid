@@ -1271,7 +1271,7 @@ void learn_book(Board bd, int level, int depth, int book_learn_accept, Board* bd
 						*value_ptr = value;
 						book.reg(nb, value);
 						if (-value <= book_learn_accept && global_searching && nb.n - 4 < depth) {
-							children.emplace_back(make_pair(-value, nb));
+							children.emplace_back(make_pair(-value + popped.first, nb));
 						}
 					}
 				}
@@ -1883,7 +1883,7 @@ void Main() {
 				for (int cell = 0; cell < HW2; ++cell) {
 					board_clicked[cell] = false;
 				}
-				if (!menu.active() && !book_learning && !book_modifying && main_window_active && ((both_human || (human_first && bd.p == BLACK) || (human_second && bd.p == WHITE)) || (history_place != history[history.size() - 1].b.n - 4 && show_mode[1]))) {
+				if (!menu.active() && !changing_book && !book_learning && !book_modifying && main_window_active && ((both_human || (human_first && bd.p == BLACK) || (human_second && bd.p == WHITE)) || (history_place != history[history.size() - 1].b.n - 4 && show_mode[1]))) {
 					for (int cell = 0; cell < HW2; ++cell) {
 						board_clicked[cell] = board_cells[cell].leftClicked() && (1 & (legal >> cell));
 					}
@@ -2067,6 +2067,27 @@ void Main() {
 									}
 								}
 							}
+						}
+						if (changing_book && KeyEnter.down()) {
+							if (changed_book_value_str.size() == 0) {
+								changing_book = false;
+							}
+							else {
+								int changed_book_value = ParseOr<int>(changed_book_value_str, -1000);
+								if (changed_book_value != -1000) {
+									Flip m;
+									calc_flip(&m, &bd, change_book_cell);
+									book.change(bd.move_copy(&m), changed_book_value);
+									changed_book_value_str.clear();
+									book_changed = true;
+									changing_book = false;
+									hint_state = 0;
+								}
+							}
+						}
+						if (changing_book && KeyEscape.down()) {
+							changing_book = false;
+							changed_book_value_str.clear();
 						}
 						if (changing_book) {
 							if (Key0.down() || KeyNum0.down()) {
