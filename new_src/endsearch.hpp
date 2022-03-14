@@ -452,9 +452,9 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
     #if USE_END_MPC
         int depth = HW2 - search->board.n;
         if (search->use_mpc){
-            if (mpc_higher(search, beta, depth, legal))
+            if (mpc_higher(search, beta, depth, legal, true))
                 return beta;
-            if (mpc_lower(search, alpha, depth, legal))
+            if (mpc_lower(search, alpha, depth, legal, true))
                 return alpha;
         }
     #endif

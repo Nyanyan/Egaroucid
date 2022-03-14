@@ -144,7 +144,7 @@ constexpr double mpcsd[N_PHASES][MID_MPC_MAX_DEPTH - MID_MPC_MIN_DEPTH + 1]={
 #define probcut_d -3.771411692303555e-05
 #define probcut_e 0.002624303055327084
 #define probcut_f -0.07155144256617593
-#define probcut_g 3.2961281264487092
+#define probcut_g 2.7961281264487092
 
 #define probcut_end_a -0.007067691798918974
 #define probcut_end_b -0.03625767020840132
@@ -189,7 +189,9 @@ int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped);
 int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped);
 int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal);
 
-inline bool mpc_higher(Search *search, int beta, int depth, uint64_t legal){
+inline bool mpc_higher(Search *search, int beta, int depth, uint64_t legal, bool is_end_search){
+    if ((!is_end_search && depth >= 17) || (is_end_search && depth >= 23))
+        return false;
     bool res = false;
     int bound;
     if (search->board.n + depth < HW2)
@@ -221,7 +223,9 @@ inline bool mpc_higher(Search *search, int beta, int depth, uint64_t legal){
     return res;
 }
 
-inline bool mpc_lower(Search *search, int alpha, int depth, uint64_t legal){
+inline bool mpc_lower(Search *search, int alpha, int depth, uint64_t legal, bool is_end_search){
+    if ((!is_end_search && depth >= 17) || (is_end_search && depth >= 23))
+        return false;
     bool res = false;
     int bound;
     if (search->board.n + depth < HW2)
