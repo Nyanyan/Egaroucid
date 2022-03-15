@@ -603,82 +603,64 @@ header, .context-menu, .megamenu-content, footer{
 </style>
 </head>
 <body class='typora-export os-windows typora-export-show-outline typora-export-no-collapse-outline'><div class='typora-export-content'>
-<div class="typora-export-sidebar"><div class="outline-content"><li class="outline-item-wrapper outline-h1"><div class="outline-item"><span class="outline-expander"></span><a class="outline-label" href="#オセロ研究支援aiアプリ-egaroucid-各種ベンチマーク">オセロ研究支援AIアプリ Egaroucid 各種ベンチマーク</a></div><ul class="outline-children"><li class="outline-item-wrapper outline-h2"><div class="outline-item"><span class="outline-expander"></span><a class="outline-label" href="#ffo-endgame-test">FFO endgame test</a></div><ul class="outline-children"><li class="outline-item-wrapper outline-h3"><div class="outline-item"><span class="outline-expander"></span><a class="outline-label" href="#core-i7-1165g78スレッド">Core i7-1165G7、8スレッド</a></div><ul class="outline-children"></ul></li><li class="outline-item-wrapper outline-h3"><div class="outline-item"><span class="outline-expander"></span><a class="outline-label" href="#core-i9-11900k16スレッド">Core i9-11900K、16スレッド</a></div><ul class="outline-children"></ul></li></ul></li><li class="outline-item-wrapper outline-h2"><div class="outline-item"><span class="outline-expander"></span><a class="outline-label" href="#edax44との対戦">Edax4.4との対戦</a></div><ul class="outline-children"><li class="outline-item-wrapper outline-h3"><div class="outline-item"><span class="outline-expander"></span><a class="outline-label" href="#レベル1同士">レベル1同士</a></div><ul class="outline-children"></ul></li><li class="outline-item-wrapper outline-h3"><div class="outline-item"><span class="outline-expander"></span><a class="outline-label" href="#レベル5同士">レベル5同士</a></div><ul class="outline-children"></ul></li><li class="outline-item-wrapper outline-h3"><div class="outline-item"><span class="outline-expander"></span><a class="outline-label" href="#レベル15同士">レベル15同士</a></div><ul class="outline-children"></ul></li></ul></li><li class="outline-item-wrapper outline-h2"><div class="outline-item"><span class="outline-expander"></span><a class="outline-label" href="#評価関数の精度">評価関数の精度</a></div><ul class="outline-children"></ul></li></ul></li></div></div><div id='write'  class=''><h1 id='オセロ研究支援aiアプリ-egaroucid-各種ベンチマーク'><a href='https://www.egaroucid-app.nyanyan.dev/'><span>オセロ研究支援AIアプリ Egaroucid</span></a><span> 各種ベンチマーク</span></h1><p><a href="https://twitter.com/share?ref_src=twsrc%5Etfw" class="twitter-share-button" data-text="最強レベルAI搭載オセロ研究支援ソフト" data-url="https://www.egaroucid-app.nyanyan.dev/" data-hashtags="egaroucid" data-related="takuto_yamana,Nyanyan_Cube" data-show-count="false"><span>Tweet</span></a><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script><span> </span><a href=./../en/><span>English</span></a></p><h2 id='ffo-endgame-test'><span>FFO endgame test</span></h2><p><span>FFO endgame testはオセロAIの終盤探索力の指標として広く使われるベンチマークです。</span></p><p><span>depthで示される深さを完全読みして、訪問ノード数と探索時間を計測しました。</span></p><p><span>重要なのはdepth(深さ)、overall time(探索+前処理の時間ミリ秒)、policy(最善手、a1が63でh8が0)、value(評価値)です。</span></p><h3 id='core-i7-1165g78スレッド'><span>Core i7-1165G7、8スレッド</span></h3><div style="font-size:60%"><pre>#40 endsearch depth 20 overall time 454 search time 437 mpct 10000 policy 55 value 38 nodes 21883562 nps 50076800
-#41 endsearch depth 22 overall time 826 search time 809 mpct 10000 policy 32 value 0 nodes 20718255 nps 25609709
-#42 endsearch depth 22 overall time 1558 search time 1543 mpct 10000 policy 49 value 6 nodes 46661916 nps 30241034
-#43 endsearch depth 23 overall time 3096 search time 3082 mpct 10000 policy 13 value -12 nodes 102837142 nps 33367015
-#44 endsearch depth 23 overall time 1138 search time 1118 mpct 10000 policy 52 value -14 nodes 20038331 nps 17923372
-#45 endsearch depth 24 overall time 12883 search time 12868 mpct 10000 policy 54 value 6 nodes 620671228 nps 48233698
-#46 endsearch depth 24 overall time 3637 search time 3622 mpct 10000 policy 46 value -8 nodes 104409194 nps 28826392
-#47 endsearch depth 25 overall time 2158 search time 2140 mpct 10000 policy 49 value 4 nodes 59663965 nps 27880357
-#48 endsearch depth 25 overall time 13829 search time 13810 mpct 10000 policy 18 value 28 nodes 521653685 nps 37773619
-#49 endsearch depth 26 overall time 17074 search time 17056 mpct 10000 policy 59 value 16 nodes 759255959 nps 44515476
-#50 endsearch depth 26 overall time 83807 search time 83789 mpct 10000 policy 4 value 10 nodes 3464616181 nps 41349296
-#51 endsearch depth 27 overall time 18537 search time 18520 mpct 10000 policy 51 value 6 nodes 590955123 nps 31909023
-#52 endsearch depth 27 overall time 23248 search time 23233 mpct 10000 policy 47 value 0 nodes 713734705 nps 30720729
-#53 endsearch depth 28 overall time 251202 search time 251188 mpct 10000 policy 4 value -2 nodes 8562663481 nps 34088664
-#54 endsearch depth 28 overall time 342245 search time 342232 mpct 10000 policy 13 value -2 nodes 10929039954 nps 31934593
-#55 endsearch depth 29 overall time 1484852 search time 1484835 mpct 10000 policy 17 value 0 nodes 41169384044 nps 27726571
-#56 endsearch depth 29 overall time 74321 search time 74283 mpct 10000 policy 24 value 2 nodes 1911766004 nps 25736251
-#57 endsearch depth 30 overall time 390517 search time 390501 mpct 10000 policy 23 value -10 nodes 11861268107 nps 30374488
-#58 endsearch depth 30 overall time 185752 search time 185737 mpct 10000 policy 57 value 4 nodes 6519574712 nps 35101109
-#59 endsearch depth 34 overall time 4047 search time 4031 mpct 10000 policy 1 value 64 nodes 58477674 nps 14506989</pre></div><h3 id='core-i9-11900k16スレッド'><span>Core i9-11900K、16スレッド</span></h3><div style="font-size:60%"><pre>#40 endsearch depth 20 overall time 329 search time 305 mpct 10000 policy 55 value 38 nodes 21899271 nps 71800888
-#41 endsearch depth 22 overall time 571 search time 547 mpct 10000 policy 32 value 0 nodes 29195205 nps 53373318
-#42 endsearch depth 22 overall time 675 search time 651 mpct 10000 policy 49 value 6 nodes 38560430 nps 59232611
-#43 endsearch depth 23 overall time 1359 search time 1335 mpct 10000 policy 41 value -12 nodes 103808885 nps 77759464
-#44 endsearch depth 23 overall time 708 search time 684 mpct 10000 policy 52 value -14 nodes 29233404 nps 42738894
-#45 endsearch depth 24 overall time 7027 search time 7000 mpct 10000 policy 54 value 6 nodes 740350828 nps 105764404
-#46 endsearch depth 24 overall time 2009 search time 1981 mpct 10000 policy 46 value -8 nodes 125044941 nps 63122130
-#47 endsearch depth 25 overall time 770 search time 744 mpct 10000 policy 49 value 4 nodes 45921608 nps 61722591
-#48 endsearch depth 25 overall time 10347 search time 10317 mpct 10000 policy 18 value 28 nodes 1144183176 nps 110902701
-#49 endsearch depth 26 overall time 7885 search time 7856 mpct 10000 policy 59 value 16 nodes 887698342 nps 112996224
-#50 endsearch depth 26 overall time 30077 search time 30048 mpct 10000 policy 4 value 10 nodes 2678797208 nps 89150599
-#51 endsearch depth 27 overall time 12585 search time 12558 mpct 10000 policy 51 value 6 nodes 960039193 nps 76448414
-#52 endsearch depth 27 overall time 13495 search time 13466 mpct 10000 policy 47 value 0 nodes 1000193465 nps 74275468
-#53 endsearch depth 28 overall time 119188 search time 119159 mpct 10000 policy 4 value -2 nodes 12209490563 nps 102463855
-#54 endsearch depth 28 overall time 135965 search time 135940 mpct 10000 policy 13 value -2 nodes 13338877012 nps 98123267
-#55 endsearch depth 29 overall time 778209 search time 778178 mpct 10000 policy 17 value 0 nodes 76506263895 nps 98314606
-#56 endsearch depth 29 overall time 35400 search time 35372 mpct 10000 policy 24 value 2 nodes 2258792760 nps 63858214
-#57 endsearch depth 30 overall time 142756 search time 142731 mpct 10000 policy 23 value -10 nodes 12676954794 nps 88817109
-#58 endsearch depth 30 overall time 50923 search time 50893 mpct 10000 policy 57 value 4 nodes 4423383484 nps 86915361
-#59 endsearch depth 34 overall time 1614 search time 1583 mpct 10000 policy 3 value 64 nodes 94965014 nps 59990533</pre></div><p>&nbsp;</p><h2 id='edax44との対戦'><span>Edax4.4との対戦</span></h2><p><span>現状世界最強とも言われるオセロAI、</span><a href='https://github.com/abulmo/edax-reversi'><span>Edax4.4</span></a><span>との対戦結果です。</span></p><p><span>初手からの対戦では同じ進行ばかりになって評価関数の強さは計測できないので、ある程度手を進めた局面から打たせて勝敗を数えました。このとき、同じ進行に対して両者が必ず先手と後手の双方を1回ずつ持つようにしました。こうすることで、両者の強さが全く同じであれば勝率は50%となるはずです。</span></p><p><span>なお、テストに使った局面はEgaroucidの評価関数の学習に使ったものとは別のデータで、最終的に引き分けまたは2石差になったものを使いました。</span></p><p><span>bookは双方未使用です。</span></p><p><span>以下に結果を載せますが、大事なのはstart depth(何手目まで打った棋譜で実験したか)、WDL(win-draw-lose)の数字と、Egaroucid win rate(Egaroucidの勝率(分母は引き分けを除外した対戦数))です。Egaroucid win rateが0.5を上回っていればEgaroucidがEdaxに勝ち越しています。</span></p><h3 id='レベル1同士'><span>レベル1同士</span></h3><p><span>両者とも中盤1手読み、終盤2マス空き完全読みです。</span></p><div style="font-size:60%"><pre>start depth: 10 Egaroucid plays black WDL: 190-8-202 Egaroucid plays white WDL: 209-13-178 Egaroucid win rate: 0.5121951219512195 
-start depth: 20 Egaroucid plays black WDL: 177-9-214 Egaroucid plays white WDL: 210-7-183 Egaroucid win rate: 0.49362244897959184 
-start depth: 30 Egaroucid plays black WDL: 175-9-216 Egaroucid plays white WDL: 191-11-198 Egaroucid win rate: 0.46923076923076923
-start depth: 40 Egaroucid plays black WDL: 184-16-200 Egaroucid plays white WDL: 225-10-165 Egaroucid win rate: 0.5284237726098191
-start depth: 50 Egaroucid plays black WDL: 171-29-200 Egaroucid plays white WDL: 211-30-159 Egaroucid win rate: 0.5155195681511471</pre></div><h3 id='レベル5同士'><span>レベル5同士</span></h3><p><span>両者とも中盤5手読み、終盤10マス空き完全読みです。</span></p><div style="font-size:60%"><pre>start depth: 10 Egaroucid plays black WDL: 179-14-107 Egaroucid plays white WDL: 161-17-122 Egaroucid win rate: 0.5975395430579965
-start depth: 20 Egaroucid plays black WDL: 152-12-136 Egaroucid plays white WDL: 159-18-123 Egaroucid win rate: 0.5456140350877193
-start depth: 30 Egaroucid plays black WDL: 163-23-114 Egaroucid plays white WDL: 143-21-136 Egaroucid win rate: 0.5503597122302158
-start depth: 40 Egaroucid plays black WDL: 155-14-131 Egaroucid plays white WDL: 144-26-130 Egaroucid win rate: 0.5339285714285714</pre></div><h3 id='レベル15同士'><span>レベル15同士</span></h3><p><span>両者中盤15手読みです。実験条件一致のため、前向きな枝刈りに使う確証(Selectivity)を両者73%に揃えました。本来Egaroucidは88%です。</span></p><p><span>EgaroucidはEdaxより終盤読み切りタイミングが早いため、評価関数の強さを計測するという目的のもと、Edaxが終盤読み切りを始める直前まで両者に打たせてその局面から必勝読みして勝敗を決定しました。</span></p><div style="font-size:60%"><pre>start depth: 10 Egaroucid plays black WDL: 63-11-26 Egaroucid plays white WDL: 52-11-37 Egaroucid win rate: 0.6460674157303371
-start depth: 20 Egaroucid plays black WDL: 52-9-39 Egaroucid plays white WDL: 49-7-44 Egaroucid win rate: 0.5489130434782609</pre></div><p>&nbsp;</p><h2 id='評価関数の精度'><span>評価関数の精度</span></h2><p><span>評価関数の精度をmse(誤差の2乗の平均値)とmae(誤差の絶対値の平均値)で示します。単位はmseなら石^2、maeなら石です。</span></p><p><span>評価関数は4手ごと15フェーズに分けて別のものを使っているので、フェーズごとに結果が出ます。フェーズをxとして、フェーズxの評価関数は4x+1から4x+4手目までに使う評価関数です。</span></p><p><span>注意していただきたいのは、この数字が学習データによるものであって、専用のテストデータによるものではないことです。</span></p><div style="font-size:60%"><pre>phase: 0 player: 0 mse: 204.541 mae: 10.3472
-phase: 0 player: 1 mse: 203.126 mae: 10.3203
-phase: 1 player: 0 mse: 193.086 mae: 10.0982
-phase: 1 player: 1 mse: 189.377 mae: 10.0326
-phase: 2 player: 0 mse: 167.657 mae: 9.49416
-phase: 2 player: 1 mse: 171.334 mae: 9.59947
-phase: 3 player: 0 mse: 153.715 mae: 9.10538
-phase: 3 player: 1 mse: 147.108 mae: 8.92787
-phase: 4 player: 0 mse: 125.843 mae: 8.25102
-phase: 4 player: 1 mse: 118.686 mae: 8.01218
-phase: 5 player: 0 mse: 96.8807 mae: 7.21713
-phase: 5 player: 1 mse: 89.9291 mae: 6.95694
-phase: 6 player: 0 mse: 70.7947 mae: 6.22337
-phase: 6 player: 1 mse: 64.1276 mae: 5.93864
-phase: 7 player: 0 mse: 44.4569 mae: 4.97553
-phase: 7 player: 1 mse: 38.9941 mae: 4.6714
-phase: 8 player: 0 mse: 27.5961 mae: 3.98422
-phase: 8 player: 1 mse: 26.0039 mae: 3.86099
-phase: 9 player: 0 mse: 25.1337 mae: 3.83054
-phase: 9 player: 1 mse: 25.4945 mae: 3.86686
-phase: 10 player: 0 mse: 27.1559 mae: 4.01309
-phase: 10 player: 1 mse: 27.7309 mae: 4.05462
-phase: 11 player: 0 mse: 29.705 mae: 4.1883
-phase: 11 player: 1 mse: 30.1991 mae: 4.22131
-phase: 12 player: 0 mse: 30.7841 mae: 4.25091
-phase: 12 player: 1 mse: 30.218 mae: 4.21713
-phase: 13 player: 0 mse: 26.6728 mae: 3.95094
-phase: 13 player: 1 mse: 24.7366 mae: 3.79713
-phase: 14 player: 0 mse: 12.1516 mae: 2.52663
-phase: 14 player: 1 mse: 9.08629 mae: 2.101</pre></div><p>&nbsp;</p></div></div>
+<div class="typora-export-sidebar"><div class="outline-content"><li class="outline-item-wrapper outline-h1"><div class="outline-item"><span class="outline-expander"></span><a class="outline-label" href="#オセロ研究支援aiアプリ-egaroucid-各種ベンチマーク">オセロ研究支援AIアプリ Egaroucid 各種ベンチマーク</a></div><ul class="outline-children"><li class="outline-item-wrapper outline-h2"><div class="outline-item"><span class="outline-expander"></span><a class="outline-label" href="#ffo-endgame-test">FFO endgame test</a></div><ul class="outline-children"><li class="outline-item-wrapper outline-h3"><div class="outline-item"><span class="outline-expander"></span><a class="outline-label" href="#core-i9-11900k16スレッド">Core i9-11900K、16スレッド</a></div><ul class="outline-children"></ul></li></ul></li><li class="outline-item-wrapper outline-h2"><div class="outline-item"><span class="outline-expander"></span><a class="outline-label" href="#edax44との対戦">Edax4.4との対戦</a></div><ul class="outline-children"><li class="outline-item-wrapper outline-h3"><div class="outline-item"><span class="outline-expander"></span><a class="outline-label" href="#レベル1同士">レベル1同士</a></div><ul class="outline-children"></ul></li><li class="outline-item-wrapper outline-h3"><div class="outline-item"><span class="outline-expander"></span><a class="outline-label" href="#レベル5同士">レベル5同士</a></div><ul class="outline-children"></ul></li><li class="outline-item-wrapper outline-h3"><div class="outline-item"><span class="outline-expander"></span><a class="outline-label" href="#レベル15同士">レベル15同士</a></div><ul class="outline-children"></ul></li></ul></li><li class="outline-item-wrapper outline-h2"><div class="outline-item"><span class="outline-expander"></span><a class="outline-label" href="#評価関数の精度">評価関数の精度</a></div><ul class="outline-children"></ul></li><li class="outline-item-wrapper outline-h2"><div class="outline-item"><span class="outline-expander"></span><a class="outline-label" href="#過去バージョン">過去バージョン</a></div><ul class="outline-children"></ul></li></ul></li></div></div><div id='write'  class=''><h1 id='オセロ研究支援aiアプリ-egaroucid-各種ベンチマーク'><a href='https://www.egaroucid-app.nyanyan.dev/'><span>オセロ研究支援AIアプリ Egaroucid</span></a><span> 各種ベンチマーク</span></h1><p><a href="https://twitter.com/share?ref_src=twsrc%5Etfw" class="twitter-share-button" data-text="最強レベルAI搭載オセロ研究支援ソフト" data-url="https://www.egaroucid-app.nyanyan.dev/" data-hashtags="egaroucid" data-related="takuto_yamana,Nyanyan_Cube" data-show-count="false"><span>Tweet</span></a><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script><span> </span><a href=./../en/><span>English</span></a></p><p><span>これはバージョン5.5.0の結果です。</span></p><h2 id='ffo-endgame-test'><span>FFO endgame test</span></h2><p><span>FFO endgame testはオセロAIの終盤探索力の指標として広く使われるベンチマークです。</span></p><p><span>depthで示される深さを完全読みして、訪問ノード数と探索時間を計測しました。</span></p><p><span>重要なのはdepth(深さ)、whole time(探索+前処理の時間ミリ秒)、policy(最善手)、value(評価値)です。</span></p><h3 id='core-i9-11900k16スレッド'><span>Core i9-11900K、16スレッド</span></h3><div style="font-size:60%"><pre>#40 depth 20 value 38 policy a2 nodes 27871488 whole time 135 search time 128 nps 217746000
+#41 depth 22 value 0 policy h4 nodes 28862801 whole time 199 search time 191 nps 151114141
+#42 depth 22 value 6 policy g2 nodes 48660062 whole time 213 search time 205 nps 237366156
+#43 depth 23 value -12 policy c7 nodes 166809244 whole time 776 search time 769 nps 216917092
+#44 depth 23 value -14 policy d2 nodes 42549145 whole time 323 search time 316 nps 134649193
+#45 depth 24 value 6 policy b2 nodes 912441891 whole time 3241 search time 3226 nps 282840015
+#46 depth 24 value -8 policy b3 nodes 227129647 whole time 1089 search time 1073 nps 211677210
+#47 depth 25 value 4 policy g2 nodes 151105116 whole time 852 search time 837 nps 180531799
+#48 depth 25 value 28 policy f6 nodes 724631805 whole time 3025 search time 3011 nps 240661509
+#49 depth 26 value 16 policy e1 nodes 1079040603 whole time 4537 search time 4514 nps 239043110
+#50 depth 26 value 10 policy d8 nodes 3688114040 whole time 13943 search time 13922 nps 264912659
+#51 depth 27 value 6 policy a3 nodes 2782257813 whole time 14732 search time 14709 nps 189153430
+#52 depth 27 value 0 policy a3 nodes 604311247 whole time 3785 search time 3762 nps 160635631
+#53 depth 28 value -2 policy d8 nodes 11344109584 whole time 69739 search time 69586 nps 163022872
+#54 depth 28 value -2 policy c7 nodes 12621020703 whole time 63972 search time 63874 nps 197592458
+#55 depth 29 value 0 policy b7 nodes 78910958123 whole time 458573 search time 458442 nps 172128553
+#56 depth 29 value 2 policy h5 nodes 3533955047 whole time 25576 search time 25526 nps 138445312
+#57 depth 30 value -10 policy a6 nodes 9948249883 whole time 59654 search time 59586 nps 166956162
+#58 depth 30 value 4 policy g1 nodes 3949220953 whole time 23824 search time 23781 nps 166066227
+#59 depth 34 value 64 policy g8 nodes 7096 whole time 43 search time 11 nps 645090
+748.231 sec
+747.469 sec search
+802.5422124862671 sec total
+130791306291 nodes
+174978903.86223373 nps</pre></div><p>&nbsp;</p><p>&nbsp;</p><h2 id='edax44との対戦'><span>Edax4.4との対戦</span></h2><p><span>現状世界最強とも言われるオセロAI、</span><a href='https://github.com/abulmo/edax-reversi'><span>Edax4.4</span></a><span>との対戦結果です。</span></p><p><span>初手からの対戦では同じ進行ばかりになって評価関数の強さは計測できないので、ある程度手を進めた局面から打たせて勝敗を数えました。このとき、同じ進行に対して両者が必ず先手と後手の双方を1回ずつ持つようにしました。こうすることで、両者の強さが全く同じであれば勝率は50%となるはずです。</span></p><p><span>なお、テストに使った局面はEgaroucidの評価関数の学習に使ったものとは別のデータで、最終的に引き分けまたは2石差になったものを使いました。</span></p><p><span>bookは双方未使用です。</span></p><p><span>以下に結果を載せますが、大事なのはstart depth(何手目まで打った棋譜で実験したか)、WDL(win-draw-lose)の数字と、Egaroucid win rate(Egaroucidの勝率(分母は引き分けを除外した対戦数))です。Egaroucid win rateが0.5を上回っていればEgaroucidがEdaxに勝ち越しています。</span></p><h3 id='レベル1同士'><span>レベル1同士</span></h3><p><span>両者とも中盤1手読み、終盤2マス空き完全読みです。それぞれ600戦した結果です。</span></p><div style="font-size:60%"><pre>start depth: 10 Egaroucid plays black WDL: 148-7-145 Egaroucid plays white WDL: 181-10-109 Egaroucid win rate: 0.5643224699828473
+start depth: 20 Egaroucid plays black WDL: 154-8-138 Egaroucid plays white WDL: 165-4-131 Egaroucid win rate: 0.5425170068027211
+</pre></div><h3 id='レベル5同士'><span>レベル5同士</span></h3><p><span>両者とも中盤5手読み、終盤10マス空き完全読みです。それぞれ400戦した結果です。</span></p><div style="font-size:60%"><pre>start depth: 10 Egaroucid plays black WDL: 107-8-85 Egaroucid plays white WDL: 114-12-74 Egaroucid win rate: 0.5815789473684211
+start depth: 20 Egaroucid plays black WDL: 105-12-83 Egaroucid plays white WDL: 97-7-96 Egaroucid win rate: 0.5301837270341208</pre></div><h3 id='レベル15同士'><span>レベル15同士</span></h3><p><span>両者中盤15手読みです。実験条件一致のため、前向きな枝刈りに使う確証(Selectivity)を両者揃えました。さらに、終盤の読み切りタイミングもEdaxに合わせて実験しました。</span></p><p><span>それぞれ200戦した結果です。</span></p><div style="font-size:60%"><pre>start depth: 10 Egaroucid plays black WDL: 50-11-39 Egaroucid plays white WDL: 52-9-39 Egaroucid win rate: 0.5666666666666667
+start depth: 20 Egaroucid plays black WDL: 61-10-29 Egaroucid plays white WDL: 48-6-46 Egaroucid win rate: 0.592391304347826</pre></div><p>&nbsp;</p><h2 id='評価関数の精度'><span>評価関数の精度</span></h2><p><span>評価関数の精度をmse(誤差の2乗の平均値)とmae(誤差の絶対値の平均値)で示します。単位はmseなら石^2、maeなら石です。</span></p><p><span>評価関数は2手ごと30フェーズに分けて別のものを使っているので、フェーズごとに結果が出ます。フェーズをxとして、フェーズxの評価関数は2x+1から2x+2手目までに使う評価関数です。</span></p><p><span>注意していただきたいのは、この数字が学習データによるものであって、専用のテストデータによるものではないことです。</span></p><div style="font-size:60%"><pre>phase 0 mse 184.415 mae 9.79577
+phase 1 mse 181.731 mae 9.74168
+phase 2 mse 176.078 mae 9.61612
+phase 3 mse 166.574 mae 9.39029
+phase 4 mse 153.356 mae 9.05595
+phase 5 mse 273.548 mae 12.0107
+phase 6 mse 94.0067 mae 7.18964
+phase 7 mse 87.0103 mae 6.94262
+phase 8 mse 80.5171 mae 6.70287
+phase 9 mse 73.5077 mae 6.42004
+phase 10 mse 67.8453 mae 6.13735
+phase 11 mse 62.4096 mae 5.91408
+phase 12 mse 57.1586 mae 5.69015
+phase 13 mse 51.493 mae 5.42289
+phase 14 mse 45.5248 mae 5.11642
+phase 15 mse 39.6584 mae 4.78097
+phase 16 mse 36.1119 mae 4.56925
+phase 17 mse 32.6206 mae 4.34778
+phase 18 mse 29.1944 mae 4.12316
+phase 19 mse 28.7966 mae 4.10928
+phase 20 mse 29.1392 mae 4.15409
+phase 21 mse 29.9168 mae 4.22495
+phase 22 mse 31.1575 mae 4.32002
+phase 23 mse 33.4589 mae 4.478
+phase 24 mse 33.8493 mae 4.50079
+phase 25 mse 32.3792 mae 4.39883
+phase 26 mse 29.3648 mae 4.17235
+phase 27 mse 24.5691 mae 3.80085
+phase 28 mse 16.3138 mae 3.05533
+phase 29 mse 4.51746 mae 1.3841</pre></div><p>&nbsp;</p><h2 id='過去バージョン'><span>過去バージョン</span></h2><ul><li><a href='./../5_4_1'><span>5.4.1</span></a></li></ul><p>&nbsp;</p></div></div>
 
 <script>(function(){var e=document.body.parentElement,t=[],n=null,i=document.body.classList.contains("typora-export-collapse-outline"),r=function(e,t,n){document.addEventListener(e,function(e){if(!e.defaultPrevented)for(var i=e.target;i&&i!=this;i=i.parentNode)if(i.matches(t)){!1===n.call(i,e)&&(e.preventDefault(),e.stopPropagation());break}},!1)};function o(){return e.scrollTop}r("click",".outline-expander",function(e){var t=this.closest(".outline-item-wrapper").classList;return t.contains("outline-item-open")?t.remove("outline-item-open"):t.add("outline-item-open"),d(),!1}),r("click",".outline-item",function(e){var t=this.querySelector(".outline-label");if(location.hash="#"+t.getAttribute("href"),i){var n=this.closest(".outline-item-wrapper").classList;n.contains("outline-item-open")||n.add("outline-item-open"),c(),n.add("outline-item-active")}});var a,s,l=function(){var e=o();n=null;for(var i=0;i<t.length&&t[i][1]-e<60;i++)n=t[i]},c=function(){document.querySelectorAll(".outline-item-active").forEach(e=>e.classList.remove("outline-item-active")),document.querySelectorAll(".outline-item-single.outline-item-open").forEach(e=>e.classList.remove("outline-item-open"))},d=function(){if(n){c();var e=document.querySelector('.outline-label[href="#'+(CSS.escape?CSS.escape(n[0]):n[0])+'"]');if(e)if(i){var t=e.closest(".outline-item-open>ul>.outline-item-wrapper");if(t)t.classList.add("outline-item-active");else{for(var r=(e=e.closest(".outline-item-wrapper")).parentElement.closest(".outline-item-wrapper");r;)r=(e=r).parentElement.closest(".outline-item-wrapper");e.classList.add("outline-item-active")}}else e.closest(".outline-item-wrapper").classList.add("outline-item-active")}};window.addEventListener("scroll",function(e){a&&clearTimeout(a),a=setTimeout(function(){l(),d()},300)});var u=function(){s=setTimeout(function(){!function(){t=[];var e=o();document.querySelector("#write").querySelectorAll("h1, h2, h3, h4, h5, h6").forEach(n=>{var i=n.getAttribute("id");t.push([i,e+n.getBoundingClientRect().y])})}(),l(),d()},300)};window.addEventListener("resize",function(e){s&&clearTimeout(s),u()}),u()})();</script></body>
 </html>
