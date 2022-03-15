@@ -84,7 +84,7 @@ Menu create_menu(Texture checkbox,
 	bool* use_hint_flag, bool* normal_hint, bool* human_hint, bool* umigame_hint,
 	bool* hint_num1, bool* hint_num2, bool* hint_num4, bool* hint_num8, bool* hint_num16, bool* hint_numall,
 	bool* use_value_flag,
-	int* ai_level, int* hint_level, int* book_error,
+	bool* use_book_flag, int* ai_level, int* hint_level, int* book_error, int* use_book_depth,
 	bool* start_book_learn_flag, bool* stop_book_learn_flag, bool* modify_book, int* book_depth, int* book_learn_accept, bool* import_book_flag,
 	bool* output_record_flag, bool* output_game_flag, bool* input_record_flag, bool* input_board_flag,
 	bool* show_end_popup, bool* show_log,
@@ -122,6 +122,8 @@ Menu create_menu(Texture checkbox,
 	if (*entry_mode) {
 		*ai_level = min(*ai_level, 25);
 		*hint_level = min(*hint_level, 15);
+		*use_book_depth = 60;
+		*use_book_flag = true;
 		menu_e.init_button(language.get("ai_settings", "ai_settings"), dummy);
 		side_menu.init_bar(language.get("ai_settings", "ai_level"), ai_level, *ai_level, 0, 25);
 		menu_e.push(side_menu);
@@ -131,16 +133,22 @@ Menu create_menu(Texture checkbox,
 	}
 	else if (*professional_mode) {
 		menu_e.init_button(language.get("ai_settings", "ai_settings"), dummy);
+		side_menu.init_check(language.get("ai_settings", "use_book"), use_book_flag, *use_book_flag);
+		menu_e.push(side_menu);
 		side_menu.init_bar(language.get("ai_settings", "ai_level"), ai_level, *ai_level, 0, 60);
 		menu_e.push(side_menu);
 		side_menu.init_bar(language.get("ai_settings", "hint_level"), hint_level, *hint_level, 0, 60);
 		menu_e.push(side_menu);
 		side_menu.init_bar(language.get("ai_settings", "book_error"), book_error, *book_error, 0, 64);
 		menu_e.push(side_menu);
+		side_menu.init_bar(language.get("ai_settings", "use_book_depth"), use_book_depth, *use_book_depth, 0, 60);
+		menu_e.push(side_menu);
 		title.push(menu_e);
 	}
 	else if (*serious_game) {
 		*ai_level = min(*ai_level, 25);
+		*use_book_depth = 60;
+		*use_book_flag = true;
 		menu_e.init_button(language.get("ai_settings", "ai_settings"), dummy);
 		side_menu.init_bar(language.get("ai_settings", "ai_level"), ai_level, *ai_level, 0, 25);
 		menu_e.push(side_menu);
@@ -315,7 +323,7 @@ pair<int, Board> move_board(Board b, bool board_clicked[]) {
 	return make_pair(-1, b);
 }
 
-Cell_value analyze_search(Board b, int level) {
+Cell_value analyze_search(Board b, int level, bool use_book, int use_book_depth) {
 	Cell_value res;
 	if (b.get_legal() == 0) {
 		res.depth = 0;
@@ -331,7 +339,7 @@ Cell_value analyze_search(Board b, int level) {
 		bool use_mpc, is_mid_search;
 		double mpct;
 		get_level(level, b.n - 4, &is_mid_search, &depth, &use_mpc, &mpct);
-		Search_result search_result = ai(b, level, 0);
+		Search_result search_result = ai(b, level, use_book & b.n - 3 <= use_book_depth, 0);
 		res.value = (b.p ? -1 : 1) * search_result.value;
 		res.depth = search_result.depth;
 	}
@@ -882,7 +890,7 @@ string import_str(ifstream* ifs) {
 	return line;
 }
 
-bool import_setting(int* int_mode, int* ai_level, int* ai_book_accept, int* hint_level,
+bool import_setting(int* int_mode, bool* use_book, int* ai_level, int* ai_book_accept, int* hint_level, int* use_book_depth,
 	int* use_ai_mode,
 	bool* use_hint_flag, bool* normal_hint, bool* human_hint, bool* umigame_hint,
 	bool* show_end_popup,
@@ -899,6 +907,10 @@ bool import_setting(int* int_mode, int* ai_level, int* ai_book_accept, int* hint
 	if (*int_mode == -INF) {
 		return false;
 	}
+	*use_book = import_int(&ifs);
+	if (*use_book == -INF) {
+		return false;
+	}
 	*ai_level = import_int(&ifs);
 	if (*ai_level == -INF) {
 		return false;
@@ -909,6 +921,10 @@ bool import_setting(int* int_mode, int* ai_level, int* ai_book_accept, int* hint
 	}
 	*hint_level = import_int(&ifs);
 	if (*hint_level == -INF) {
+		return false;
+	}
+	*use_book_depth = import_int(&ifs);
+	if (*use_book_depth == -INF) {
 		return false;
 	}
 	*use_ai_mode = import_int(&ifs);
@@ -965,7 +981,7 @@ bool import_setting(int* int_mode, int* ai_level, int* ai_book_accept, int* hint
 	return true;
 }
 
-void export_setting(int int_mode, int ai_level, int ai_book_accept, int hint_level,
+void export_setting(int int_mode, bool use_book, int ai_level, int ai_book_accept, int hint_level, int use_book_depth, 
 	int use_ai_mode,
 	bool use_hint_flag, bool normal_hint, bool human_hint, bool umigame_hint,
 	bool show_end_popup,
@@ -977,9 +993,11 @@ void export_setting(int int_mode, int ai_level, int ai_book_accept, int hint_lev
 	ofstream ofs("resources/settings.txt");
 	if (!ofs.fail()) {
 		ofs << int_mode << endl;
+		ofs << use_book << endl;
 		ofs << ai_level << endl;
 		ofs << ai_book_accept << endl;
 		ofs << hint_level << endl;
+		ofs << use_book_depth << endl;
 		ofs << use_ai_mode << endl;
 		ofs << use_hint_flag << endl;
 		ofs << normal_hint << endl;
@@ -1153,7 +1171,7 @@ bool close_app(int* hint_state, future<bool>* hint_future,
 	int* human_value_state, future<void>* human_value_future,
 	bool* ai_thinking, future<Search_result>* ai_future,
 	bool* analyzing, future<Cell_value>* analyze_future,
-	int int_mode, int ai_level, int ai_book_accept, int hint_level,
+	int int_mode, bool use_book, int ai_level, int ai_book_accept, int hint_level, int use_book_depth, 
 	int use_ai_mode,
 	bool use_hint_flag, bool normal_hint, bool human_hint, bool umigame_hint,
 	bool show_end_popup,
@@ -1168,7 +1186,7 @@ bool close_app(int* hint_state, future<bool>* hint_future,
 	reset_human_value(human_value_state, human_value_future);
 	reset_ai(ai_thinking, ai_future);
 	reset_analyze(analyzing, analyze_future);
-	export_setting(int_mode, ai_level, ai_book_accept, hint_level,
+	export_setting(int_mode, use_book, ai_level, ai_book_accept, hint_level, use_book_depth, 
 		use_ai_mode,
 		use_hint_flag, normal_hint, human_hint, umigame_hint,
 		show_end_popup,
@@ -1234,7 +1252,7 @@ void learn_book(Board bd, int level, int depth, int book_learn_accept, Board* bd
 	priority_queue<pair<int, Board>> que;
 	int value = book.get(&bd);
 	if (value == -INF) {
-		value = -ai(bd, level, 0).value;
+		value = -ai_value(bd, level);
 		if (value == INF) {
 			*book_learning = false;
 			return;
@@ -1476,7 +1494,8 @@ void Main() {
 	future<Search_result> ai_future;
 	bool ai_thinking = false;
 	int ai_value = 0;
-	int ai_level = 21, ai_book_accept = 4, hint_level = 9;
+	int ai_level = 21, ai_book_accept = 4, hint_level = 9, use_book_depth = 60;
+	bool use_book = true;
 
 	bool before_start_game = true;
 	Button start_game_button;
@@ -1530,7 +1549,7 @@ void Main() {
 
 	int use_ai_mode;
 	string lang_name;
-	if (!import_setting(&int_mode, &ai_level, &ai_book_accept, &hint_level,
+	if (!import_setting(&int_mode, &use_book, &ai_level, &ai_book_accept, &hint_level, &use_book_depth,
 		&use_ai_mode,
 		&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
 		&show_end_popup,
@@ -1541,9 +1560,11 @@ void Main() {
 		&lang_name)) {
 		cerr << "use default setting" << endl;
 		int_mode = 0;
+		use_book = true;
 		ai_level = 15;
 		ai_book_accept = 2;
 		hint_level = 7;
+		use_book_depth = 60;
 		use_ai_mode = 0;
 		use_hint_flag = true;
 		normal_hint = true;
@@ -1631,7 +1652,7 @@ void Main() {
 				&human_value_state, &human_value_future,
 				&ai_thinking, &ai_future,
 				&analyzing, &analyze_future,
-				int_mode, ai_level, ai_book_accept, hint_level,
+				int_mode, use_book, ai_level, ai_book_accept, hint_level, use_book_depth, 
 				use_ai_mode,
 				use_hint_flag, normal_hint, human_hint, umigame_hint,
 				show_end_popup,
@@ -1672,7 +1693,7 @@ void Main() {
 					&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
 					&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
 					&use_value_flag,
-					&ai_level, &hint_level, &ai_book_accept,
+					&use_book, &ai_level, &hint_level, &ai_book_accept, &use_book_depth,
 					&start_book_learn_flag, &stop_book_learn_flag, &book_modify, &book_depth, &book_learn_accept, &import_book_flag,
 					&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag,
 					&show_end_popup_change, &show_log,
@@ -1698,7 +1719,7 @@ void Main() {
 						&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
 						&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
 						&use_value_flag,
-						&ai_level, &hint_level, &ai_book_accept,
+						&use_book, &ai_level, &hint_level, &ai_book_accept, &use_book_depth,
 						&start_book_learn_flag, &stop_book_learn_flag, &book_modify, &book_depth, &book_learn_accept, &import_book_flag,
 						&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag,
 						&show_end_popup_change, &show_log,
@@ -1772,7 +1793,7 @@ void Main() {
 					&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
 					&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
 					&use_value_flag,
-					&ai_level, &hint_level, &ai_book_accept,
+					&use_book, &ai_level, &hint_level, &ai_book_accept, &use_book_depth,
 					&start_book_learn_flag, &stop_book_learn_flag, &book_modify, &book_depth, &book_learn_accept, &import_book_flag,
 					&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag,
 					&show_end_popup_change, &show_log,
@@ -1809,7 +1830,7 @@ void Main() {
 						&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
 						&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
 						&use_value_flag,
-						&ai_level, &hint_level, &ai_book_accept,
+						&use_book, &ai_level, &hint_level, &ai_book_accept, &use_book_depth,
 						&start_book_learn_flag, &stop_book_learn_flag, &book_modify, &book_depth, &book_learn_accept, &import_book_flag,
 						&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag,
 						&show_end_popup_change, &show_log,
@@ -1845,7 +1866,7 @@ void Main() {
 						history_place = fork_history[analyze_idx].b.n - 4;
 						if (!analyze_state) {
 							fork_history[analyze_idx].v = -INF;
-							analyze_future = async(launch::async, analyze_search, fork_history[analyze_idx].b, ai_level);
+							analyze_future = async(launch::async, analyze_search, fork_history[analyze_idx].b, ai_level, use_book, use_book_depth);
 							analyze_state = true;
 						}
 						else if (analyze_future.wait_for(chrono::seconds(0)) == future_status::ready) {
@@ -1865,7 +1886,7 @@ void Main() {
 						history_place = history[analyze_idx].b.n - 4;
 						if (!analyze_state) {
 							history_place = history[analyze_idx].v = -INF;
-							analyze_future = async(launch::async, analyze_search, history[analyze_idx].b, ai_level);
+							analyze_future = async(launch::async, analyze_search, history[analyze_idx].b, ai_level, use_book, use_book_depth);
 							analyze_state = true;
 						}
 						else if (analyze_future.wait_for(chrono::seconds(0)) == future_status::ready) {
@@ -2181,7 +2202,7 @@ void Main() {
 						}
 					}
 					else if (global_searching) {
-						ai_future = async(launch::async, ai, bd, ai_level, show_mode[2] ? 0 : ai_book_accept);
+						ai_future = async(launch::async, ai, bd, ai_level, use_book & bd.n - 3 <= use_book_depth, show_mode[2] ? 0 : ai_book_accept);
 						ai_thinking = true;
 					}
 				}
