@@ -2097,6 +2097,7 @@ void Main() {
 							else {
 								int changed_book_value = ParseOr<int>(changed_book_value_str, -1000);
 								if (changed_book_value != -1000) {
+									reset_hint(&hint_state, &hint_future);
 									Flip m;
 									calc_flip(&m, &bd, change_book_cell);
 									book.change(bd.move_copy(&m), changed_book_value);
