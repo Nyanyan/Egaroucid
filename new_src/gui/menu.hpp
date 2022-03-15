@@ -158,7 +158,7 @@ public:
 			int min_error = INF;
 			int cursor_x = Cursor::Pos().x;
 			for (int i = min_elem; i <= max_elem; ++i) {
-				int x = bar_sx + bar_size * (i - min_elem + 5) / (max_elem - min_elem + 10);
+				int x = round((double)bar_sx + 10.0 + (double)(bar_size - 20) * (double)(i - min_elem) / (double)(max_elem - min_elem));
 				if (abs(cursor_x - x) < min_error) {
 					min_error = abs(cursor_x - x);
 					*bar_elem = i;
@@ -190,7 +190,7 @@ public:
 		if (mode == bar_mode) {
 			font(*bar_elem).draw(bar_sx - menu_offset_x - menu_child_offset - bar_value_offset, rect.y + menu_offset_y, menu_font_color);
 			bar_rect.draw(bar_color);
-			bar_circle.x = bar_sx + bar_size * (*bar_elem - min_elem + 5) / (max_elem - min_elem + 10);
+			bar_circle.x = round((double)bar_sx + 10.0 + (double)(bar_size - 20) * (double)(*bar_elem - min_elem) / (double)(max_elem - min_elem));
 			bar_circle.draw(bar_circle_color);
 		}
 		if (has_child) {
