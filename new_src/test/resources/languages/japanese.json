@@ -37,9 +37,11 @@
     },
     "ai_settings": {
         "ai_settings": "AIの設定",
+        "use_book": "book使用",
         "ai_level": "AIレベル",
         "hint_level": "ヒントレベル",
-        "book_error": "book誤差"
+        "book_error": "book誤差",
+        "use_book_depth": "book使用深さ"
     },
     "book": {
         "book": "定石",

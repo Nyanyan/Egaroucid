@@ -37,9 +37,11 @@
     },
     "ai_settings": {
         "ai_settings": "AI Settings",
+        "use_book": "Book Use",
         "ai_level": "AI Level",
         "hint_level": "Hint Level",
-        "book_error": "book Error"
+        "book_error": "Book Error",
+        "use_book_depth": "Book Depth of Use"
     },
     "book": {
         "book": "Book",
