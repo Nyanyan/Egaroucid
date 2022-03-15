@@ -297,6 +297,7 @@ This application has a default book. This book is created as:
 
 * Modified Zebra's book
 * AI Level 21
+* Depth 40
 * Modified with a Edax's book [here](http://infinitelyinfinite.blog.fc2.com/blog-entry-64.html).
 * I modified manually
 

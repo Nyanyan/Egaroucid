@@ -297,6 +297,7 @@ bookはその性質上、同じレベルで作ったのであれば終局に近�
 
 * 基本的には第三者のオセロソフトZebraの標準付属bookと同じで一部の値を修正
 * レベル21
+* 深さ40
 * [こちら](http://infinitelyinfinite.blog.fc2.com/blog-entry-64.html)に公開されているEdaxのbookを参考に微修正
 * 作者が手動で微修正
 
