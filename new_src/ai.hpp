@@ -169,10 +169,10 @@ inline int tree_search_noid(Board board, int depth, bool use_mpc, double mpct){
     return g;
 }
 
-Search_result ai(Board b, int level, int book_error){
+Search_result ai(Board b, int level, bool use_book, int book_error){
     Search_result res;
     Book_value book_result = book.get_random(&b, book_error);
-    if (book_result.policy != -1){
+    if (book_result.policy != -1 && use_book){
         cerr << "BOOK " << book_result.policy << " " << book_result.value << endl;
         res.policy = book_result.policy;
         res.value = book_result.value;

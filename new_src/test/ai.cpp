@@ -22,7 +22,7 @@ int main(int argc, char *argv[]){
     Search_result result;
     while (true){
         board = input_board();
-        result = ai(board, level, book_error);
+        result = ai(board, level, true, book_error);
         cout << result.value << " " << idx_to_coord(result.policy) << endl;
     }
 
