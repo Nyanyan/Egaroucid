@@ -206,7 +206,7 @@ bool ai_hint(Board b, int level, int max_level, int res[], int info[], bool best
     bool use_mpc, is_mid_search;
     double mpct;
     get_level(level, b.n - 4, &is_mid_search, &depth, &use_mpc, &mpct);
-    if (!is_mid_search && level != max_level && !use_mpc)
+    if (!is_mid_search && level != max_level)
         return false;
     if (depth - 1 >= 0){
         parent_transpose_table.init();
