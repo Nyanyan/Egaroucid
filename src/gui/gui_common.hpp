@@ -5,5 +5,7 @@ using namespace std;
 
 struct History_elem {
 	Board b;
+	int v;
+	int policy;
 	String record;
 };

@@ -24,7 +24,7 @@ double calc_human_value(Board *b, int depth, bool passed, double a){
         //return val;
     }
     double res = 0.0;
-    unsigned long long legal = b->mobility_ull();
+	unsigned long long legal = b->get_legal ();
     if (legal == 0){
         if (passed){
             int val = -book.get(b);
@@ -42,15 +42,15 @@ double calc_human_value(Board *b, int depth, bool passed, double a){
         b->p = 1 - b->p;
         return res;
     }
-    Mobility mob;
+	Flip flip;
     int cell;
     for (cell = 0; cell < HW2; ++cell) {
         if (1 & (legal >> cell)){
-            calc_flip(&mob, b, cell);
-            b->move(&mob);
+            calc_flip(&flip, b, cell);
+            b->move(&flip);
             //res = max(res, -calc_human_value(b, depth - 1, false, a));
-            res += -calc_human_value(b, depth - 1, false, a);
-            b->undo(&mob);
+				res += -calc_human_value(b, depth - 1, false, a);
+            b->undo(&flip);
         }
     }
     //return res; // / (double)pop_count_ull(legal);
@@ -58,16 +58,16 @@ double calc_human_value(Board *b, int depth, bool passed, double a){
 }
 
 void calc_all_human_value(Board b, int depth, double a, int res[]) {
-    unsigned long long legal = b.mobility_ull();
+    unsigned long long legal = b.get_legal();
     double double_res[HW2];
-    Mobility mob;
+	Flip flip;
     int cell;
     for (cell = 0; cell < HW2; ++cell) {
         if (1 & (legal >> cell)) {
-            calc_flip(&mob, &b, cell);
-            b.move(&mob);
+            calc_flip(&flip, &b, cell);
+            b.move(&flip);
             double_res[cell] = -calc_human_value(&b, depth, false, a);
-            b.undo(&mob);
+            b.undo(&flip);
             //cerr << cell << " " << double_res[cell] << endl;
         }
     }

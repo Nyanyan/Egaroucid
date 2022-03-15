@@ -1,408 +1,289 @@
 #pragma once
 #include <iostream>
+#include "bit.hpp"
 #include "setting.hpp"
-#include "common.hpp"
-#include "flip.hpp"
+/*
+inline uint64_t calc_some_mobility(uint64_t p, uint64_t o){
+    uint64_t p1 = (p & 0x7F7F7F7F7F7F7F7FULL) << 1;
+    uint64_t res = ~(p1 | o) & (p1 + (o & 0x7F7F7F7F7F7F7F7FULL));
+    horizontal_mirror_double(&p, &o);
+    p1 = (p & 0x7F7F7F7F7F7F7F7FULL) << 1;
+    return res | horizontal_mirror(~(p1 | o) & (p1 + (o & 0x7F7F7F7F7F7F7F7FULL)));
+}
+*/
 
-using namespace std;
+#if LEGAL_CALCULATION_MODE < 2
+    #if LEGAL_CALCULATION_MODE == 0
 
-constexpr uint_fast8_t d7_mask[HW2] = {
-    0b10000000, 0b11000000, 0b11100000, 0b11110000, 0b11111000, 0b11111100, 0b11111110, 0b11111111,
-    0b11000000, 0b11100000, 0b11110000, 0b11111000, 0b11111100, 0b11111110, 0b11111111, 0b01111111,
-    0b11100000, 0b11110000, 0b11111000, 0b11111100, 0b11111110, 0b11111111, 0b01111111, 0b00111111,
-    0b11110000, 0b11111000, 0b11111100, 0b11111110, 0b11111111, 0b01111111, 0b00111111, 0b00011111,
-    0b11111000, 0b11111100, 0b11111110, 0b11111111, 0b01111111, 0b00111111, 0b00011111, 0b00001111,
-    0b11111100, 0b11111110, 0b11111111, 0b01111111, 0b00111111, 0b00011111, 0b00001111, 0b00000111,
-    0b11111110, 0b11111111, 0b01111111, 0b00111111, 0b00011111, 0b00001111, 0b00000111, 0b00000011,
-    0b11111111, 0b01111111, 0b00111111, 0b00011111, 0b00001111, 0b00000111, 0b00000011, 0b00000001
-};
-
-constexpr uint_fast8_t d9_mask[HW2] = {
-    0b11111111, 0b01111111, 0b00111111, 0b00011111, 0b00001111, 0b00000111, 0b00000011, 0b00000001,
-    0b11111110, 0b11111111, 0b01111111, 0b00111111, 0b00011111, 0b00001111, 0b00000111, 0b00000011,
-    0b11111100, 0b11111110, 0b11111111, 0b01111111, 0b00111111, 0b00011111, 0b00001111, 0b00000111,
-    0b11111000, 0b11111100, 0b11111110, 0b11111111, 0b01111111, 0b00111111, 0b00011111, 0b00001111,
-    0b11110000, 0b11111000, 0b11111100, 0b11111110, 0b11111111, 0b01111111, 0b00111111, 0b00011111,
-    0b11100000, 0b11110000, 0b11111000, 0b11111100, 0b11111110, 0b11111111, 0b01111111, 0b00111111,
-    0b11000000, 0b11100000, 0b11110000, 0b11111000, 0b11111100, 0b11111110, 0b11111111, 0b01111111,
-    0b10000000, 0b11000000, 0b11100000, 0b11110000, 0b11111000, 0b11111100, 0b11111110, 0b11111111
-};
-
-uint_fast8_t flip_pre_calc[N_8BIT][N_8BIT][HW];
-uint_fast8_t n_flip_pre_calc[N_8BIT][N_8BIT][HW];
-unsigned long long line_to_board_v[N_8BIT];
-unsigned long long line_to_board_d7[N_8BIT][HW * 2];
-unsigned long long line_to_board_d9[N_8BIT][HW * 2];
-
-
-class Mobility{
-    public:
-        int pos;
-        unsigned long long flip;
-        int value;
-    
-    public:
-        inline void copy(Mobility *mob) const{
-            mob->pos = pos;
-            mob->flip = flip;
-            mob->value = value;
-        }
-
-        #if FLIP_CALC_MODE == 0
-            inline void calc_flip(const unsigned long long player, const unsigned long long opponent, const int place){
-                unsigned long long wh, put, m1, m2, m3, m4, m5, m6, rev;
-                put = 1ULL << place;
-                rev = 0;
-
-                wh = opponent & 0b0111111001111110011111100111111001111110011111100111111001111110ULL;
-                m1 = put >> 1;
-                if( (m1 & wh) != 0 ) {
-                    if( ((m2 = m1 >> 1) & wh) == 0  ) {
-                        if( (m2 & player) != 0 )
-                            rev |= m1;
-                    } else if( ((m3 = m2 >> 1) & wh) == 0 ) {
-                        if( (m3 & player) != 0 )
-                            rev |= m1 | m2;
-                    } else if( ((m4 = m3 >> 1) & wh) == 0 ) {
-                        if( (m4 & player) != 0 )
-                            rev |= m1 | m2 | m3;
-                    } else if( ((m5 = m4 >> 1) & wh) == 0 ) {
-                        if( (m5 & player) != 0 )
-                            rev |= m1 | m2 | m3 | m4;
-                    } else if( ((m6 = m5 >> 1) & wh) == 0 ) {
-                        if( (m6 & player) != 0 )
-                            rev |= m1 | m2 | m3 | m4 | m5;
-                    } else {
-                        if( ((m6 >> 1) & player) != 0 )
-                            rev |= m1 | m2 | m3 | m4 | m5 | m6;
-                    }
-                }
-                m1 = put << 1;
-                if( (m1 & wh) != 0 ) {
-                    if( ((m2 = m1 << 1) & wh) == 0  ) {
-                        if( (m2 & player) != 0 )
-                            rev |= m1;
-                    } else if( ((m3 = m2 << 1) & wh) == 0 ) {
-                        if( (m3 & player) != 0 )
-                            rev |= m1 | m2;
-                    } else if( ((m4 = m3 << 1) & wh) == 0 ) {
-                        if( (m4 & player) != 0 )
-                            rev |= m1 | m2 | m3;
-                    } else if( ((m5 = m4 << 1) & wh) == 0 ) {
-                        if( (m5 & player) != 0 )
-                            rev |= m1 | m2 | m3 | m4;
-                    } else if( ((m6 = m5 << 1) & wh) == 0 ) {
-                        if( (m6 & player) != 0 )
-                            rev |= m1 | m2 | m3 | m4 | m5;
-                    } else {
-                        if( ((m6 << 1) & player) != 0 )
-                            rev |= m1 | m2 | m3 | m4 | m5 | m6;
-                    }
-                }
-
-                wh = opponent & 0b0000000011111111111111111111111111111111111111111111111100000000ULL;
-                m1 = put >> HW;
-                if( (m1 & wh) != 0 ) {
-                    if( ((m2 = m1 >> HW) & wh) == 0  ) {
-                        if( (m2 & player) != 0 )
-                            rev |= m1;
-                    } else if( ((m3 = m2 >> HW) & wh) == 0 ) {
-                        if( (m3 & player) != 0 )
-                            rev |= m1 | m2;
-                    } else if( ((m4 = m3 >> HW) & wh) == 0 ) {
-                        if( (m4 & player) != 0 )
-                            rev |= m1 | m2 | m3;
-                    } else if( ((m5 = m4 >> HW) & wh) == 0 ) {
-                        if( (m5 & player) != 0 )
-                            rev |= m1 | m2 | m3 | m4;
-                    } else if( ((m6 = m5 >> HW) & wh) == 0 ) {
-                        if( (m6 & player) != 0 )
-                            rev |= m1 | m2 | m3 | m4 | m5;
-                    } else {
-                        if( ((m6 >> HW) & player) != 0 )
-                            rev |= m1 | m2 | m3 | m4 | m5 | m6;
-                    }
-                }
-                m1 = put << HW;
-                if( (m1 & wh) != 0 ) {
-                    if( ((m2 = m1 << HW) & wh) == 0  ) {
-                        if( (m2 & player) != 0 )
-                            rev |= m1;
-                    } else if( ((m3 = m2 << HW) & wh) == 0 ) {
-                        if( (m3 & player) != 0 )
-                            rev |= m1 | m2;
-                    } else if( ((m4 = m3 << HW) & wh) == 0 ) {
-                        if( (m4 & player) != 0 )
-                            rev |= m1 | m2 | m3;
-                    } else if( ((m5 = m4 << HW) & wh) == 0 ) {
-                        if( (m5 & player) != 0 )
-                            rev |= m1 | m2 | m3 | m4;
-                    } else if( ((m6 = m5 << HW) & wh) == 0 ) {
-                        if( (m6 & player) != 0 )
-                            rev |= m1 | m2 | m3 | m4 | m5;
-                    } else {
-                        if( ((m6 << HW) & player) != 0 )
-                            rev |= m1 | m2 | m3 | m4 | m5 | m6;
-                    }
-                }
-
-                wh = opponent & 0b0000000001111110011111100111111001111110011111100111111000000000ULL;
-                m1 = put >> (HW - 1);
-                if( (m1 & wh) != 0 ) {
-                    if( ((m2 = m1 >> (HW - 1)) & wh) == 0  ) {
-                        if( (m2 & player) != 0 )
-                            rev |= m1;
-                    } else if( ((m3 = m2 >> (HW - 1)) & wh) == 0 ) {
-                        if( (m3 & player) != 0 )
-                            rev |= m1 | m2;
-                    } else if( ((m4 = m3 >> (HW - 1)) & wh) == 0 ) {
-                        if( (m4 & player) != 0 )
-                            rev |= m1 | m2 | m3;
-                    } else if( ((m5 = m4 >> (HW - 1)) & wh) == 0 ) {
-                        if( (m5 & player) != 0 )
-                            rev |= m1 | m2 | m3 | m4;
-                    } else if( ((m6 = m5 >> (HW - 1)) & wh) == 0 ) {
-                        if( (m6 & player) != 0 )
-                            rev |= m1 | m2 | m3 | m4 | m5;
-                    } else {
-                        if( ((m6 >> (HW - 1)) & player) != 0 )
-                            rev |= m1 | m2 | m3 | m4 | m5 | m6;
-                    }
-                }
-                m1 = put << (HW - 1);
-                if( (m1 & wh) != 0 ) {
-                    if( ((m2 = m1 << (HW - 1)) & wh) == 0  ) {
-                        if( (m2 & player) != 0 )
-                            rev |= m1;
-                    } else if( ((m3 = m2 << (HW - 1)) & wh) == 0 ) {
-                        if( (m3 & player) != 0 )
-                            rev |= m1 | m2;
-                    } else if( ((m4 = m3 << (HW - 1)) & wh) == 0 ) {
-                        if( (m4 & player) != 0 )
-                            rev |= m1 | m2 | m3;
-                    } else if( ((m5 = m4 << (HW - 1)) & wh) == 0 ) {
-                        if( (m5 & player) != 0 )
-                            rev |= m1 | m2 | m3 | m4;
-                    } else if( ((m6 = m5 << (HW - 1)) & wh) == 0 ) {
-                        if( (m6 & player) != 0 )
-                            rev |= m1 | m2 | m3 | m4 | m5;
-                    } else {
-                        if( ((m6 << (HW - 1)) & player) != 0 )
-                            rev |= m1 | m2 | m3 | m4 | m5 | m6;
-                    }
-                }
-
-                m1 = put >> (HW + 1);
-                if( (m1 & wh) != 0 ) {
-                    if( ((m2 = m1 >> (HW + 1)) & wh) == 0  ) {
-                        if( (m2 & player) != 0 )
-                            rev |= m1;
-                    } else if( ((m3 = m2 >> (HW + 1)) & wh) == 0 ) {
-                        if( (m3 & player) != 0 )
-                            rev |= m1 | m2;
-                    } else if( ((m4 = m3 >> (HW + 1)) & wh) == 0 ) {
-                        if( (m4 & player) != 0 )
-                            rev |= m1 | m2 | m3;
-                    } else if( ((m5 = m4 >> (HW + 1)) & wh) == 0 ) {
-                        if( (m5 & player) != 0 )
-                            rev |= m1 | m2 | m3 | m4;
-                    } else if( ((m6 = m5 >> (HW + 1)) & wh) == 0 ) {
-                        if( (m6 & player) != 0 )
-                            rev |= m1 | m2 | m3 | m4 | m5;
-                    } else {
-                        if( ((m6 >> (HW + 1)) & player) != 0 )
-                            rev |= m1 | m2 | m3 | m4 | m5 | m6;
-                    }
-                }
-                m1 = put << (HW + 1);
-                if( (m1 & wh) != 0 ) {
-                    if( ((m2 = m1 << (HW + 1)) & wh) == 0  ) {
-                        if( (m2 & player) != 0 )
-                            rev |= m1;
-                    } else if( ((m3 = m2 << (HW + 1)) & wh) == 0 ) {
-                        if( (m3 & player) != 0 )
-                            rev |= m1 | m2;
-                    } else if( ((m4 = m3 << (HW + 1)) & wh) == 0 ) {
-                        if( (m4 & player) != 0 )
-                            rev |= m1 | m2 | m3;
-                    } else if( ((m5 = m4 << (HW + 1)) & wh) == 0 ) {
-                        if( (m5 & player) != 0 )
-                            rev |= m1 | m2 | m3 | m4;
-                    } else if( ((m6 = m5 << (HW + 1)) & wh) == 0 ) {
-                        if( (m6 & player) != 0 )
-                            rev |= m1 | m2 | m3 | m4 | m5;
-                    } else {
-                        if( ((m6 << (HW + 1)) & player) != 0 )
-                            rev |= m1 | m2 | m3 | m4 | m5 | m6;
-                    }
-                }
-
-                flip = rev;
-                pos = place;
-            }
+        inline uint64_t calc_some_mobility_hv(uint64_t ph, uint64_t oh){
+            uint64_t pv, ov;
+            black_line_mirror_double(ph, oh, &pv, &ov);
+            __m128i p1, o, res1, res2, mask;
+            mask = _mm_set1_epi64x(0x7F7F7F7F7F7F7F7FULL);
+            p1 = _mm_set_epi64x(ph, pv) & mask;
+            p1 = _mm_slli_epi64(p1, 1);
+            o = _mm_set_epi64x(oh, ov);
+            res1 = ~(p1 | o) & (_mm_add_epi64(p1, o & mask));
             
-        #elif FLIP_CALC_MODE == 1
-            inline void calc_flip(const unsigned long long player, const unsigned long long opponent, const int place){
-                int t, u, p, o;
-                flip = 0;
-                pos = place;
+            horizontal_mirror_double(&ph, &pv);
+            p1 = _mm_set_epi64x(ph, pv) & mask;
+            p1 = _mm_slli_epi64(p1, 1);
+            horizontal_mirror_m128(&o);
+            res2 = ~(p1 | o) & (_mm_add_epi64(p1, o & mask));
+            horizontal_mirror_m128(&res2);
 
-                t = place / HW;
-                u = place % HW;
-                p = (player >> (HW * t)) & 0b11111111;
-                o = (opponent >> (HW * t)) & 0b11111111;
-                flip |= (unsigned long long)flip_pre_calc[p][o][u] << (HW * t);
-
-                p = join_v_line(player, u);
-                o = join_v_line(opponent, u);
-                flip |= line_to_board_v[flip_pre_calc[p][o][t]] << u;
-
-                u += t;
-                if (u >= 2 && u <= 12){
-                    p = join_d7_line(player, u) & d7_mask[place];
-                    o = join_d7_line(opponent, u) & d7_mask[place];
-                    flip |= line_to_board_d7[flip_pre_calc[p][o][HW_M1 - t]][u];
-                }
-
-                u -= t * 2;
-                if (u >= -5 && u <= 5){
-                    p = join_d9_line(player, u) & d9_mask[place];
-                    o = join_d9_line(opponent, u) & d9_mask[place];
-                    flip |= line_to_board_d9[flip_pre_calc[p][o][t]][u + HW];
-                }
-            }
-        #elif FLIP_CALC_MODE == 2
-            inline void calc_flip(const unsigned long long player, const unsigned long long opponent, const int place){
-                int t, u, p, o;
-                flip = 0;
-                pos = place;
-
-                t = place / HW;
-                u = place % HW;
-                p = (player >> (HW * t)) & 0b11111111;
-                o = (opponent >> (HW * t)) & 0b11111111;
-                flip |= (unsigned long long)flip_pre_calc[p][o][u] << (HW * t);
-
-                p = join_v_line(player, u);
-                o = join_v_line(opponent, u);
-                flip |= line_to_board_v[flip_pre_calc[p][o][t]] << u;
-
-                u += t;
-                if (u >= 2 && u <= 12){
-                    p = join_d7_line_fast[u - 2](player);
-                    o = join_d7_line_fast[u - 2](opponent);
-                    flip |= line_to_board_d7[flip_pre_calc[p][o][HW_M1 - t]][u];
-                }
-
-                u -= t * 2;
-                if (u >= -5 && u <= 5){
-                    p = join_d9_line_fast[u + 5](player);
-                    o = join_d9_line_fast[u + 5](opponent);
-                    flip |= line_to_board_d9[flip_pre_calc[p][o][t]][u + HW];
-                }
-            }
-        #endif
-};
-
-inline int count_last_flip(unsigned long long player, unsigned long long opponent, const int place){
-    int t, u, p, o;
-    int res = 0;
-
-    t = place / HW;
-    u = place % HW;
-    p = (player >> (HW * t)) & 0b11111111;
-    o = (opponent >> (HW * t)) & 0b11111111;
-    res += n_flip_pre_calc[p][o][u];
-
-    p = join_v_line(player, u);
-    o = join_v_line(opponent, u);
-    res += n_flip_pre_calc[p][o][t];
-
-    t = place / HW;
-    u = place % HW + t;
-    if (u >= 2 && u <= 12){
-        p = join_d7_line(player, u) & d7_mask[place];
-        o = join_d7_line(opponent, u) & d7_mask[place];
-        res += pop_count_uchar(flip_pre_calc[p][o][HW_M1 - t] & d7_mask[place]);
-    }
-
-    u -= t * 2;
-    if (u >= -5 && u <= 5){
-        p = join_d9_line(player, u) & d9_mask[place];
-        o = join_d9_line(opponent, u) & d9_mask[place];
-        res += pop_count_uchar(flip_pre_calc[p][o][t] & d9_mask[place]);
-    }
-    return res;
-}
-
-void mobility_init(){
-    int player, opponent, place;
-    int wh, put, m1, m2, m3, m4, m5, m6;
-    int idx, t, i;
-    for (player = 0; player < N_8BIT; ++player){
-        for (opponent = 0; opponent < N_8BIT; ++opponent){
-            for (place = 0; place < HW; ++place){
-                flip_pre_calc[player][opponent][place] = 0;
-                n_flip_pre_calc[player][opponent][place] = 0;
-                if ((1 & (player >> place)) == 0 && (1 & (opponent >> place)) == 0 && (player & opponent) == 0){
-                    put = 1 << place;
-                    wh = opponent & 0b01111110;
-                    m1 = put >> 1;
-                    if( (m1 & wh) != 0 ) {
-                        if( ((m2 = m1 >> 1) & wh) == 0  ) {
-                            if( (m2 & player) != 0 )
-                                flip_pre_calc[player][opponent][place] |= m1;
-                        } else if( ((m3 = m2 >> 1) & wh) == 0 ) {
-                            if( (m3 & player) != 0 )
-                                flip_pre_calc[player][opponent][place] |= m1 | m2;
-                        } else if( ((m4 = m3 >> 1) & wh) == 0 ) {
-                            if( (m4 & player) != 0 )
-                                flip_pre_calc[player][opponent][place] |= m1 | m2 | m3;
-                        } else if( ((m5 = m4 >> 1) & wh) == 0 ) {
-                            if( (m5 & player) != 0 )
-                                flip_pre_calc[player][opponent][place] |= m1 | m2 | m3 | m4;
-                        } else if( ((m6 = m5 >> 1) & wh) == 0 ) {
-                            if( (m6 & player) != 0 )
-                                flip_pre_calc[player][opponent][place] |= m1 | m2 | m3 | m4 | m5;
-                        } else {
-                            if( ((m6 >> 1) & player) != 0 )
-                                flip_pre_calc[player][opponent][place] |= m1 | m2 | m3 | m4 | m5 | m6;
-                        }
-                    }
-                    m1 = put << 1;
-                    if( (m1 & wh) != 0 ) {
-                        if( ((m2 = m1 << 1) & wh) == 0  ) {
-                            if( (m2 & player) != 0 )
-                                flip_pre_calc[player][opponent][place] |= m1;
-                        } else if( ((m3 = m2 << 1) & wh) == 0 ) {
-                            if( (m3 & player) != 0 )
-                                flip_pre_calc[player][opponent][place] |= m1 | m2;
-                        } else if( ((m4 = m3 << 1) & wh) == 0 ) {
-                            if( (m4 & player) != 0 )
-                                flip_pre_calc[player][opponent][place] |= m1 | m2 | m3;
-                        } else if( ((m5 = m4 << 1) & wh) == 0 ) {
-                            if( (m5 & player) != 0 )
-                                flip_pre_calc[player][opponent][place] |= m1 | m2 | m3 | m4;
-                        } else if( ((m6 = m5 << 1) & wh) == 0 ) {
-                            if( (m6 & player) != 0 )
-                                flip_pre_calc[player][opponent][place] |= m1 | m2 | m3 | m4 | m5;
-                        } else {
-                            if( ((m6 << 1) & player) != 0 )
-                                flip_pre_calc[player][opponent][place] |= m1 | m2 | m3 | m4 | m5 | m6;
-                        }
-                    }
-                    n_flip_pre_calc[player][opponent][place] = 0;
-                    for (i = 1; i < HW_M1; ++i)
-                        n_flip_pre_calc[player][opponent][place] += 1 & (flip_pre_calc[player][opponent][place] >> i);
-                }
-            }
+            res1 |= res2;
+            return black_line_mirror(_mm_cvtsi128_si64(res1)) | _mm_cvtsi128_si64(_mm_unpackhi_epi64(res1, res1));
         }
+
+    #else
+
+        inline uint64_t calc_some_mobility_hv(uint64_t ph, uint64_t oh){
+            uint64_t pv, ov, phr, ohr, pvr, ovr;
+            black_line_mirror_double(ph, oh, &pv, &ov);
+            horizontal_mirror_quad(ph, oh, pv, ov, &phr, &ohr, &pvr, &ovr);
+            __m256i p1, o, res, mask;
+            mask = _mm256_set1_epi64x(0x7F7F7F7F7F7F7F7FULL);
+            p1 = _mm256_and_si256(_mm256_set_epi64x(ph, pv, phr, pvr), mask);
+            p1 = _mm256_slli_epi64(p1, 1);
+            o = _mm256_set_epi64x(oh, ov, ohr, ovr);
+            res = _mm256_andnot_si256(_mm256_or_si256(p1, o), _mm256_add_epi64(p1, o & mask));
+            
+            uint64_t a, b;
+            a = _mm256_extract_epi64(res, 1);
+            b = _mm256_extract_epi64(res, 0);
+            horizontal_mirror_double(&a, &b);
+            a |= _mm256_extract_epi64(res, 3);
+            b |= _mm256_extract_epi64(res, 2);
+            return a | black_line_mirror(b);
+        }
+
+    #endif
+    /*
+    inline uint64_t calc_some_mobility_diag9(uint64_t p, uint64_t o){
+        rotate_45_double(&p, &o);
+        uint64_t p_r, o_r;
+        horizontal_mirror_double(p, o, &p_r, &o_r);
+        __m128i mask = _mm_set_epi64x(0x5F6F777B7D7E7F3FULL, 0x7D7B776F5F3F7F7EULL);
+        __m128i p1 = _mm_and_si128(_mm_set_epi64x(p, p_r), mask);
+        p1 = _mm_slli_epi64(p1, 1);
+        __m128i oo = _mm_set_epi64x(o, o_r);
+        __m128i res = _mm_and_si128(~_mm_or_si128(p1, oo), _mm_add_epi64(p1, oo & mask));
+        return unrotate_45(horizontal_mirror(_mm_cvtsi128_si64(res)) | _mm_cvtsi128_si64(_mm_unpackhi_epi64(res, res)));
     }
-    for (idx = 0; idx < N_8BIT; ++idx){
-        line_to_board_v[idx] = split_v_line((uint_fast8_t)idx, 0);
-        for (t = 0; t < HW * 2; ++t)
-            line_to_board_d7[idx][t] = split_d7_line((uint_fast8_t)idx, t);
-        for (t = -HW; t < HW; ++t)
-            line_to_board_d9[idx][t + HW] = split_d9_line((uint_fast8_t)idx, t);
+
+    inline uint64_t calc_some_mobility_diag7(uint64_t p, uint64_t o){
+        rotate_135_double(&p, &o);
+        uint64_t p_r, o_r;
+        horizontal_mirror_double(p, o, &p_r, &o_r);
+        __m128i mask = _mm_set_epi64x(0x7D7B776F5F3F7F7EULL, 0x5F6F777B7D7E7F3FULL);
+        __m128i p1 = _mm_and_si128(_mm_set_epi64x(p, p_r), mask);
+        p1 = _mm_slli_epi64(p1, 1);
+        __m128i oo = _mm_set_epi64x(o, o_r);
+        __m128i res = _mm_and_si128(~_mm_or_si128(p1, oo), _mm_add_epi64(p1, oo & mask));
+        return unrotate_135(horizontal_mirror(_mm_cvtsi128_si64(res)) | _mm_cvtsi128_si64(_mm_unpackhi_epi64(res, res)));
     }
-}
+    */
+
+    inline uint64_t calc_some_mobility_diag(uint64_t p, uint64_t o){
+        uint64_t p45, o45, p135, o135, p45r, o45r, p135r, o135r;
+        rotate_45_double_135_double(p, o, &p45, &o45, &p135, &o135);
+        horizontal_mirror_quad(p45, o45, p135, o135, &p45r, &o45r, &p135r, &o135r);
+        __m256i mask = _mm256_set_epi64x(0x5F6F777B7D7E7F3FULL, 0x7D7B776F5F3F7F7EULL, 0x7D7B776F5F3F7F7EULL, 0x5F6F777B7D7E7F3FULL);
+        __m256i p1 = _mm256_and_si256(_mm256_set_epi64x(p45, p135, p45r, p135r), mask);
+        p1 = _mm256_slli_epi64(p1, 1);
+        __m256i oo = _mm256_set_epi64x(o45, o135, o45r, o135r);
+        __m256i res = _mm256_andnot_si256(_mm256_or_si256(p1, oo), _mm256_add_epi64(p1, _mm256_and_si256(oo, mask)));
+        uint64_t a, b;
+        a = _mm256_extract_epi64(res, 1);
+        b = _mm256_extract_epi64(res, 0);
+        horizontal_mirror_double(&a, &b);
+        a |= _mm256_extract_epi64(res, 3);
+        b |= _mm256_extract_epi64(res, 2);
+        return unrotate_45_135(a, b);
+    }
+
+    inline uint64_t calc_legal(uint64_t p, uint64_t o){
+        /*
+        uint64_t res = 
+            calc_some_mobility_hv(p, o) | 
+            calc_some_mobility_diag9(p, o) | 
+            calc_some_mobility_diag7(p, o);
+        */
+        uint64_t res = 
+            calc_some_mobility_hv(p, o) | 
+            calc_some_mobility_diag(p, o);
+        return res & ~(p | o);
+    }
+
+#elif LEGAL_CALCULATION_MODE == 2
+
+    inline uint64_t calc_legal(const uint64_t P, const uint64_t O){
+        uint64_t moves, mO, flip1, pre1, flip8, pre8;
+        __m128i    PP, mOO, MM, flip, pre;
+        mO = O & 0x7E7E7E7E7E7E7E7EULL;
+        PP  = _mm_set_epi64x(vertical_mirror(P), P);
+        mOO = _mm_set_epi64x(vertical_mirror(mO), mO);
+        flip = _mm_and_si128(mOO, _mm_slli_epi64(PP, 7));                           flip1  = mO & (P << 1);             flip8  = O & (P << 8);
+        flip = _mm_or_si128(flip, _mm_and_si128(mOO, _mm_slli_epi64(flip, 7)));     flip1 |= mO & (flip1 << 1);         flip8 |= O & (flip8 << 8);
+        pre  = _mm_and_si128(mOO, _mm_slli_epi64(mOO, 7));                          pre1   = mO & (mO << 1);            pre8   = O & (O << 8);
+        flip = _mm_or_si128(flip, _mm_and_si128(pre, _mm_slli_epi64(flip, 14)));    flip1 |= pre1 & (flip1 << 2);       flip8 |= pre8 & (flip8 << 16);
+        flip = _mm_or_si128(flip, _mm_and_si128(pre, _mm_slli_epi64(flip, 14)));    flip1 |= pre1 & (flip1 << 2);       flip8 |= pre8 & (flip8 << 16);
+        MM = _mm_slli_epi64(flip, 7);                                               moves = flip1 << 1;                 moves |= flip8 << 8;
+        flip = _mm_and_si128(mOO, _mm_slli_epi64(PP, 9));                           flip1  = mO & (P >> 1);             flip8  = O & (P >> 8);
+        flip = _mm_or_si128(flip, _mm_and_si128(mOO, _mm_slli_epi64(flip, 9)));     flip1 |= mO & (flip1 >> 1);         flip8 |= O & (flip8 >> 8);
+        pre = _mm_and_si128(mOO, _mm_slli_epi64(mOO, 9));                           pre1 >>= 1;                         pre8 >>= 8;
+        flip = _mm_or_si128(flip, _mm_and_si128(pre, _mm_slli_epi64(flip, 18)));    flip1 |= pre1 & (flip1 >> 2);       flip8 |= pre8 & (flip8 >> 16);
+        flip = _mm_or_si128(flip, _mm_and_si128(pre, _mm_slli_epi64(flip, 18)));    flip1 |= pre1 & (flip1 >> 2);       flip8 |= pre8 & (flip8 >> 16);
+        MM = _mm_or_si128(MM, _mm_slli_epi64(flip, 9));                             moves |= flip1 >> 1;                moves |= flip8 >> 8;
+        moves |= _mm_cvtsi128_si64(MM) | vertical_mirror(_mm_cvtsi128_si64(_mm_unpackhi_epi64(MM, MM)));
+        return moves & ~(P|O);
+    }
+
+#elif LEGAL_CALCULATION_MODE == 3
+
+    inline uint64_t calc_mobility_left(uint64_t p, uint64_t o){
+        uint64_t p1 = (p & 0x7F7F7F7F7F7F7F7FULL) << 1;
+        return ~(p1 | o) & (p1 + (o & 0x7F7F7F7F7F7F7F7FULL));
+    }
+
+    inline uint64_t calc_legal(const uint64_t P, const uint64_t O){
+        uint64_t moves, mO, flip1, pre1, flip8, pre8;
+        __m128i    PP, mOO, MM, flip, pre;
+        mO = O & 0x7E7E7E7E7E7E7E7EULL;
+        PP  = _mm_set_epi64x(vertical_mirror(P), P);
+        mOO = _mm_set_epi64x(vertical_mirror(mO), mO);
+        flip = _mm_and_si128(mOO, _mm_slli_epi64(PP, 7));                                                               flip8  = O & (P << 8);
+        flip = _mm_or_si128(flip, _mm_and_si128(mOO, _mm_slli_epi64(flip, 7)));                                         flip8 |= O & (flip8 << 8);
+        pre  = _mm_and_si128(mOO, _mm_slli_epi64(mOO, 7));                                                              pre8   = O & (O << 8);
+        flip = _mm_or_si128(flip, _mm_and_si128(pre, _mm_slli_epi64(flip, 14)));                                        flip8 |= pre8 & (flip8 << 16);
+        flip = _mm_or_si128(flip, _mm_and_si128(pre, _mm_slli_epi64(flip, 14)));                                        flip8 |= pre8 & (flip8 << 16);
+        MM = _mm_slli_epi64(flip, 7);                                               moves = calc_mobility_left(P, O);   moves |= flip8 << 8;
+        flip = _mm_and_si128(mOO, _mm_slli_epi64(PP, 9));                           flip1  = mO & (P >> 1);             flip8  = O & (P >> 8);
+        flip = _mm_or_si128(flip, _mm_and_si128(mOO, _mm_slli_epi64(flip, 9)));     flip1 |= mO & (flip1 >> 1);         flip8 |= O & (flip8 >> 8);
+        pre = _mm_and_si128(mOO, _mm_slli_epi64(mOO, 9));                           pre1   = mO & (mO >> 1);            pre8 >>= 8;
+        flip = _mm_or_si128(flip, _mm_and_si128(pre, _mm_slli_epi64(flip, 18)));    flip1 |= pre1 & (flip1 >> 2);       flip8 |= pre8 & (flip8 >> 16);
+        flip = _mm_or_si128(flip, _mm_and_si128(pre, _mm_slli_epi64(flip, 18)));    flip1 |= pre1 & (flip1 >> 2);       flip8 |= pre8 & (flip8 >> 16);
+        MM = _mm_or_si128(MM, _mm_slli_epi64(flip, 9));                             moves |= flip1 >> 1;                moves |= flip8 >> 8;
+        moves |= _mm_cvtsi128_si64(MM) | vertical_mirror(_mm_cvtsi128_si64(_mm_unpackhi_epi64(MM, MM)));
+        return moves & ~(P | O);
+    }
+
+#elif LEGAL_CALCULATION_MODE == 4
+
+    inline uint64_t calc_some_mobility_hv(uint64_t ph, uint64_t oh){
+        uint64_t pv, ov, phr, ohr, pvr, ovr;
+        black_line_mirror_double(ph, oh, &pv, &ov);
+        horizontal_mirror_quad(ph, oh, pv, ov, &phr, &ohr, &pvr, &ovr);
+        __m256i p1, o, res, mask;
+        mask = _mm256_set1_epi64x(0x7F7F7F7F7F7F7F7FULL);
+        p1 = _mm256_and_si256(_mm256_set_epi64x(ph, pv, phr, pvr), mask);
+        p1 = _mm256_slli_epi64(p1, 1);
+        o = _mm256_set_epi64x(oh, ov, ohr, ovr);
+        res = _mm256_andnot_si256(_mm256_or_si256(p1, o), _mm256_add_epi64(p1, o & mask));
+        
+        uint64_t a, b;
+        a = _mm256_extract_epi64(res, 1);
+        b = _mm256_extract_epi64(res, 0);
+        horizontal_mirror_double(&a, &b);
+        a |= _mm256_extract_epi64(res, 3);
+        b |= _mm256_extract_epi64(res, 2);
+        return a | black_line_mirror(b);
+    }
+
+    inline uint64_t calc_legal(const uint64_t P, const uint64_t O){
+        uint64_t moves, mO;
+        __m128i    PP, mOO, MM, flip, pre;
+        mO = O & 0x7E7E7E7E7E7E7E7EULL;
+        PP  = _mm_set_epi64x(vertical_mirror(P), P);
+        mOO = _mm_set_epi64x(vertical_mirror(mO), mO);
+        flip = _mm_and_si128(mOO, _mm_slli_epi64(PP, 7));
+        flip = _mm_or_si128(flip, _mm_and_si128(mOO, _mm_slli_epi64(flip, 7)));
+        pre  = _mm_and_si128(mOO, _mm_slli_epi64(mOO, 7));
+        flip = _mm_or_si128(flip, _mm_and_si128(pre, _mm_slli_epi64(flip, 14)));
+        flip = _mm_or_si128(flip, _mm_and_si128(pre, _mm_slli_epi64(flip, 14)));
+        MM = _mm_slli_epi64(flip, 7);
+        flip = _mm_and_si128(mOO, _mm_slli_epi64(PP, 9));
+        flip = _mm_or_si128(flip, _mm_and_si128(mOO, _mm_slli_epi64(flip, 9)));
+        pre = _mm_and_si128(mOO, _mm_slli_epi64(mOO, 9));
+        flip = _mm_or_si128(flip, _mm_and_si128(pre, _mm_slli_epi64(flip, 18)));
+        flip = _mm_or_si128(flip, _mm_and_si128(pre, _mm_slli_epi64(flip, 18)));
+        MM = _mm_or_si128(MM, _mm_slli_epi64(flip, 9));
+        moves = calc_some_mobility_hv(P, O) | _mm_cvtsi128_si64(MM) | vertical_mirror(_mm_cvtsi128_si64(_mm_unpackhi_epi64(MM, MM)));
+        return moves & ~(P | O);
+    }
+
+#elif LEGAL_CALCULATION_MODE == 5
+
+    uint64_t calc_legal(const uint64_t P, const uint64_t O){
+        __m256i	PP, mOO, MM, flip_l, flip_r, pre_l, pre_r, shift2;
+        __m128i	M;
+        const __m256i shift1897 = _mm256_set_epi64x(7, 9, 8, 1);
+        const __m256i mflipH = _mm256_set_epi64x(0x7E7E7E7E7E7E7E7E, 0x7E7E7E7E7E7E7E7E, -1, 0x7E7E7E7E7E7E7E7E);
+        PP = _mm256_broadcastq_epi64(_mm_cvtsi64_si128(P));
+        mOO = _mm256_and_si256(_mm256_broadcastq_epi64(_mm_cvtsi64_si128(O)), mflipH);
+        flip_l = _mm256_and_si256(mOO, _mm256_sllv_epi64(PP, shift1897));
+        flip_r = _mm256_and_si256(mOO, _mm256_srlv_epi64(PP, shift1897));
+        flip_l = _mm256_or_si256(flip_l, _mm256_and_si256(mOO, _mm256_sllv_epi64(flip_l, shift1897)));
+        flip_r = _mm256_or_si256(flip_r, _mm256_and_si256(mOO, _mm256_srlv_epi64(flip_r, shift1897)));
+        pre_l = _mm256_and_si256(mOO, _mm256_sllv_epi64(mOO, shift1897));
+        pre_r = _mm256_srlv_epi64(pre_l, shift1897);
+        shift2 = _mm256_add_epi64(shift1897, shift1897);
+        flip_l = _mm256_or_si256(flip_l, _mm256_and_si256(pre_l, _mm256_sllv_epi64(flip_l, shift2)));
+        flip_r = _mm256_or_si256(flip_r, _mm256_and_si256(pre_r, _mm256_srlv_epi64(flip_r, shift2)));
+        flip_l = _mm256_or_si256(flip_l, _mm256_and_si256(pre_l, _mm256_sllv_epi64(flip_l, shift2)));
+        flip_r = _mm256_or_si256(flip_r, _mm256_and_si256(pre_r, _mm256_srlv_epi64(flip_r, shift2)));
+        MM = _mm256_sllv_epi64(flip_l, shift1897);
+        MM = _mm256_or_si256(MM, _mm256_srlv_epi64(flip_r, shift1897));
+        M = _mm_or_si128(_mm256_castsi256_si128(MM), _mm256_extracti128_si256(MM, 1));
+        M = _mm_or_si128(M, _mm_unpackhi_epi64(M, M));
+        return _mm_cvtsi128_si64(M) & ~(P | O);
+    }
+
+#elif LEGAL_CALCULATION_MODE == 6
+    inline uint64_t calc_mobility_hv(uint64_t p, uint64_t o){
+        u64_4 p_o_pb_ob(p, o, p, o);
+        p_o_pb_ob = black_line_mirror_3_4(p_o_pb_ob);
+        u64_4 pr_or_pbr_obr = horizontal_mirror(p_o_pb_ob);
+
+        u64_4 p1, oo;
+        p1.data = _mm256_unpackhi_epi64(pr_or_pbr_obr, p_o_pb_ob); // p, pr, pb, pbr
+        oo.data = _mm256_unpacklo_epi64(pr_or_pbr_obr, p_o_pb_ob); // o, or, ob, obr
+
+        u64_4 mask(0x7F7F7F7F7F7F7F7FULL);
+        p1 = (p1 & mask) << 1;
+        oo = oo & mask;
+        u64_4 legal = (~(p1 | oo)) & (p1 + oo);
+
+        legal = horizontal_mirror_1_3(legal); // p, p, pb, pb
+        legal = black_line_mirror_3_4(legal); // p, p, p, p
+
+        return _mm256_extract_epi64(legal.data, 3) | _mm256_extract_epi64(legal.data, 2) | _mm256_extract_epi64(legal.data, 1) | _mm256_extract_epi64(legal.data, 0);
+    }
+
+    inline uint64_t calc_mobility_diag(uint64_t p, uint64_t o){
+        u64_4 p45_o45_p135_o135(p, o, p, o);
+        p45_o45_p135_o135 = rotate_45_45_135_135(p45_o45_p135_o135);
+        u64_4 p45r_o45r_p135r_o135r = horizontal_mirror(p45_o45_p135_o135);
+
+        u64_4 p1, oo;
+        p1.data = _mm256_unpackhi_epi64(p45r_o45r_p135r_o135r, p45_o45_p135_o135); // p45, p45r, p135, p135r
+        oo.data = _mm256_unpacklo_epi64(p45r_o45r_p135r_o135r, p45_o45_p135_o135); // o45, o45r, o135, o135r
+
+        u64_4 mask(0x5F6F777B7D7E7F3FULL, 0x7D7B776F5F3F7F7EULL, 0x7D7B776F5F3F7F7EULL, 0x5F6F777B7D7E7F3FULL);
+        p1 = (p1 & mask) << 1;
+        oo = oo & mask;
+        u64_4 legal = (~(p1 | oo)) & (p1 + oo);
+
+        legal = horizontal_mirror_1_3(legal); // p45, p45, p135, p135
+        legal = unrotate_45_45_135_135(legal); // p, p, p, p
+
+        return _mm256_extract_epi64(legal.data, 3) | _mm256_extract_epi64(legal.data, 2) | _mm256_extract_epi64(legal.data, 1) | _mm256_extract_epi64(legal.data, 0);
+    }
+
+    inline uint64_t calc_legal(uint64_t p, uint64_t o){
+        return
+            (calc_mobility_hv(p, o) | 
+            calc_mobility_diag(p, o)) & ~(p | o);
+    }
+#endif

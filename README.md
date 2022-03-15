@@ -69,35 +69,19 @@ $ git clone git@github.com:Nyanyan/Egaroucid5.git
 Then move to the ```src``` directory
 
 ```
-$ cd Egaroucid5/src
+$ cd Egaroucid5/src/test
 ```
 
 Compile ```egaroucid5.cpp```
 
 ```
-$ g++ egaroucid5.cpp -O3 -fexcess-precision=fast -funroll-loops -flto -march=native -lpthread -Wall -o egaroucid5.out
-```
-
-If you don't have boost library, compilation will finish with some errors. Then please 1. install boost libraries or 2. use STL version of thread pool.
-
-If you want to use STL thread pool, Please edit ```setting.hpp``` like:
-
-```
-// boost library
-#define USE_BOOST true
-```
-
-to
-
-```
-// boost library
-#define USE_BOOST false
+$ g++ -O3 -fexcess-precision=fast -funroll-loops -flto -march=native -lpthread -Wall ai.cpp -o a.exe
 ```
 
 Execute ```main.py```
 
 ```
-$ python3 main.py
+$ python3 play.py
 ```
 
 Then choose which color AI play. 0 for black, 1 for white

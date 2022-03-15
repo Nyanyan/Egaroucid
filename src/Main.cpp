@@ -11,23 +11,10 @@
 #include <time.h>
 #include <queue>
 #include <algorithm>
-#include "setting.hpp"
-#include "common.hpp"
-#include "level.hpp"
-#include "mobility.hpp"
-#include "board.hpp"
-#include "book.hpp"
-#include "evaluate.hpp"
-#include "transpose_table.hpp"
-#include "search.hpp"
-#include "midsearch.hpp"
-#include "endsearch.hpp"
-#include "search.hpp"
 #include "ai.hpp"
 #include "human_value.hpp"
 #include "joseki.hpp"
 #include "umigame.hpp"
-#include "thread_pool.hpp"
 #include "gui/gui_common.hpp"
 #include "gui/graph.hpp"
 #include "gui/menu.hpp"
@@ -73,10 +60,9 @@ struct Cell_value {
 };
 
 bool ai_init() {
+	bit_init();
+	flip_init();
 	board_init();
-	mobility_init();
-	parent_transpose_table.init();
-	child_transpose_table.init();
 	if (!evaluate_init())
 		return false;
 	if (!book_init())
@@ -98,12 +84,12 @@ Menu create_menu(Texture checkbox,
 	bool* use_hint_flag, bool* normal_hint, bool* human_hint, bool* umigame_hint,
 	bool* hint_num1, bool* hint_num2, bool* hint_num4, bool* hint_num8, bool* hint_num16, bool* hint_numall,
 	bool* use_value_flag,
-	int* ai_level, int* hint_level, int* book_error,
+	bool* use_book_flag, int* ai_level, int* hint_level, int* book_error, int* use_book_depth,
 	bool* start_book_learn_flag, bool* stop_book_learn_flag, bool* modify_book, int* book_depth, int* book_learn_accept, bool* import_book_flag,
 	bool* output_record_flag, bool* output_game_flag, bool* input_record_flag, bool* input_board_flag,
 	bool* show_end_popup, bool* show_log,
 	bool* thread1, bool* thread2, bool* thread4, bool* thread8, bool* thread16, bool* thread32, bool* thread64, bool* thread128,
-	bool* stop_read_flag, bool* resume_read_flag, bool* vertical_convert, bool* white_line_convert, bool* black_line_convert,
+	bool* stop_read_flag, bool* resume_read_flag, bool* vertical_convert, bool* black_line_convert, bool* white_line_convert,
 	bool* usage_flag, bool* bug_report_flag,
 	bool lang_acts[], vector<string> lang_name_vector) {
 	Menu menu;
@@ -134,10 +120,12 @@ Menu create_menu(Texture checkbox,
 	title.init(language.get("settings", "settings"));
 
 	if (*entry_mode) {
-		*ai_level = min(*ai_level, 30);
+		*ai_level = min(*ai_level, 25);
 		*hint_level = min(*hint_level, 15);
+		*use_book_depth = 60;
+		*use_book_flag = true;
 		menu_e.init_button(language.get("ai_settings", "ai_settings"), dummy);
-		side_menu.init_bar(language.get("ai_settings", "ai_level"), ai_level, *ai_level, 0, 30);
+		side_menu.init_bar(language.get("ai_settings", "ai_level"), ai_level, *ai_level, 0, 25);
 		menu_e.push(side_menu);
 		side_menu.init_bar(language.get("ai_settings", "hint_level"), hint_level, *hint_level, 0, 15);
 		menu_e.push(side_menu);
@@ -145,18 +133,24 @@ Menu create_menu(Texture checkbox,
 	}
 	else if (*professional_mode) {
 		menu_e.init_button(language.get("ai_settings", "ai_settings"), dummy);
+		side_menu.init_check(language.get("ai_settings", "use_book"), use_book_flag, *use_book_flag);
+		menu_e.push(side_menu);
 		side_menu.init_bar(language.get("ai_settings", "ai_level"), ai_level, *ai_level, 0, 60);
 		menu_e.push(side_menu);
 		side_menu.init_bar(language.get("ai_settings", "hint_level"), hint_level, *hint_level, 0, 60);
 		menu_e.push(side_menu);
 		side_menu.init_bar(language.get("ai_settings", "book_error"), book_error, *book_error, 0, 64);
 		menu_e.push(side_menu);
+		side_menu.init_bar(language.get("ai_settings", "use_book_depth"), use_book_depth, *use_book_depth, 0, 60);
+		menu_e.push(side_menu);
 		title.push(menu_e);
 	}
 	else if (*serious_game) {
-		*ai_level = min(*ai_level, 30);
+		*ai_level = min(*ai_level, 25);
+		*use_book_depth = 60;
+		*use_book_flag = true;
 		menu_e.init_button(language.get("ai_settings", "ai_settings"), dummy);
-		side_menu.init_bar(language.get("ai_settings", "ai_level"), ai_level, *ai_level, 0, 30);
+		side_menu.init_bar(language.get("ai_settings", "ai_level"), ai_level, *ai_level, 0, 25);
 		menu_e.push(side_menu);
 		title.push(menu_e);
 	}
@@ -316,67 +310,47 @@ Menu create_menu(Texture checkbox,
 	return menu;
 }
 
-pair<bool, Board> move_board(Board b, bool board_clicked[]) {
-	Mobility mob;
+pair<int, Board> move_board(Board b, bool board_clicked[]) {
+	Flip flip;
 	for (int cell = 0; cell < HW2; ++cell) {
 		if (board_clicked[cell]) {
-			calc_flip(&mob, &b, cell);
-			b.move(&mob);
+			calc_flip(&flip, &b, cell);
+			b.move(&flip);
 			b.check_player();
-			return make_pair(true, b);
+			return make_pair(cell, b);
 		}
 	}
-	return make_pair(false, b);
+	return make_pair(-1, b);
 }
 
-inline vector<int> create_vacant_lst(Board bd) {
-	int bd_arr[HW2];
-	unsigned long long empties = ~(bd.b | bd.w);
-	vector<int> vacant_lst;
-	for (int i = 0; i < HW2; ++i) {
-		if (1 & (empties >> i)) {
-			vacant_lst.emplace_back(i);
-		}
-	}
-	if (bd.n < HW2_M1)
-		sort(vacant_lst.begin(), vacant_lst.end(), cmp_vacant);
-	return vacant_lst;
-}
-
-Cell_value analyze_search(Board b, int level) {
+Cell_value analyze_search(Board b, int level, bool use_book, int use_book_depth) {
 	Cell_value res;
-	if (b.p == VACANT) {
+	if (b.get_legal() == 0) {
 		res.depth = 0;
-		res.value = b.score(BLACK);
+		if (b.p == BLACK) {
+			res.value = b.score_player();
+		}
+		else {
+			res.value = b.score_opponent();
+		}
 	}
 	else {
 		int depth;
 		bool use_mpc, is_mid_search;
 		double mpct;
 		get_level(level, b.n - 4, &is_mid_search, &depth, &use_mpc, &mpct);
-		res.value = book.get(&b) * (b.p ? 1 : -1);
-		if (abs(res.value) != INF) {
-			res.depth = SEARCH_BOOK;
-		}
-		else {
-			vector<int> vacant_lst;
-			unsigned long long empties = ~(b.b | b.w);
-			for (int i = 0; i < HW2; ++i) {
-				if (1 & (empties >> i)) {
-					vacant_lst.emplace_back(i);
-				}
-			}
-			res.value = (b.p ? -1 : 1) * tree_search_value(b, depth, use_mpc, mpct, vacant_lst, true);
-			res.depth = depth;
-		}
+		Search_result search_result = ai(b, level, use_book & b.n - 3 <= use_book_depth, 0);
+		res.value = (b.p ? -1 : 1) * search_result.value;
+		res.depth = search_result.depth;
 	}
 	return res;
 }
 
 int find_history_idx(vector<History_elem> history, int history_place) {
 	for (int i = 0; i < (int)history.size(); ++i) {
-		if (history[i].b.n - 4 == history_place)
+		if (history[i].b.n - 4 == history_place) {
 			return i;
+		}
 	}
 	return 0;
 }
@@ -415,8 +389,8 @@ void closing_draw(Font font, Font small_font, Texture icon, Texture logo, bool t
 	font(language.get("closing")).draw(right_left, y_center + font.fontSize(), font_color);
 }
 
-void board_draw(Rect board_cells[], Board b, int int_mode, bool use_hint_flag, bool normal_hint, bool human_hint, bool umigame_hint,
-	const int hint_state, const unsigned long long hint_legal, const int hint_value[], const int hint_depth[], const bool hint_best_moves[], const int hint_show_num, Font normal_font, Font small_font, Font big_font, Font mini_font, Font coord_font,
+void board_draw(Rect board_cells[], History_elem b, int next_policy, int int_mode, bool use_hint_flag, bool normal_hint, bool human_hint, bool umigame_hint,
+	const int hint_state, const uint64_t hint_legal, const int hint_value[], const int hint_depth[], const bool hint_best_moves[], const int hint_show_num, Font normal_font, Font small_font, Font big_font, Font mini_font, Font coord_font,
 	bool before_start_game,
 	const int umigame_state[], const umigame_result umigame_value[],
 	const int human_value_state, const int human_value[],
@@ -436,9 +410,9 @@ void board_draw(Rect board_cells[], Board b, int int_mode, bool use_hint_flag, b
 	Circle(board_sx + 6 * board_cell_size, board_sy + 6 * board_cell_size, 5).draw(Color(51, 51, 51));
 	RoundRect(board_sx, board_sy, board_cell_size * HW, board_cell_size * HW, 20).draw(ColorF(0, 0, 0, 0)).drawFrame(0, board_frame_width, Palette::White);
 	int board_arr[HW2];
-	Mobility mob;
-	unsigned long long legal = b.mobility_ull();
-	b.translate_to_arr(board_arr);
+	Flip mob;
+	uint64_t legal = b.b.get_legal();
+	b.b.translate_to_arr(board_arr);
 	for (int cell = 0; cell < HW2; ++cell) {
 		int x = board_sx + (cell % HW) * board_cell_size + board_cell_size / 2;
 		int y = board_sy + (cell / HW) * board_cell_size + board_cell_size / 2;
@@ -449,6 +423,16 @@ void board_draw(Rect board_cells[], Board b, int int_mode, bool use_hint_flag, b
 			Circle(x, y, stone_size).draw(Palette::White);
 		}
 		if (1 & (legal >> cell)) {
+			if (cell == next_policy) {
+				int xx = board_sx + (HW_M1 - cell % HW) * board_cell_size + board_cell_size / 2;
+				int yy = board_sy + (HW_M1 - cell / HW) * board_cell_size + board_cell_size / 2;
+				if (b.b.p == WHITE) {
+					Circle(xx, yy, stone_size).draw(ColorF(Palette::White, 0.2));
+				}
+				else {
+					Circle(xx, yy, stone_size).draw(ColorF(Palette::Black, 0.2));
+				}
+			}
 			if (!before_start_game && !book_start_learn && (!use_hint_flag || (!normal_hint && !human_hint && !umigame_hint))) {
 				int xx = board_sx + (HW_M1 - cell % HW) * board_cell_size + board_cell_size / 2;
 				int yy = board_sy + (HW_M1 - cell / HW) * board_cell_size + board_cell_size / 2;
@@ -459,7 +443,7 @@ void board_draw(Rect board_cells[], Board b, int int_mode, bool use_hint_flag, b
 	if (b.policy != -1) {
 		Circle(board_sx + (HW_M1 - b.policy % HW) * board_cell_size + board_cell_size / 2, board_sy + (HW_M1 - b.policy / HW) * board_cell_size + board_cell_size / 2, legal_size).draw(Palette::Red);
 	}
-	if (use_hint_flag && b.p != VACANT && !before_start_game && !book_start_learn && (b.mobility_ull() | hint_legal) == b.mobility_ull()) {
+	if (use_hint_flag && legal != 0 && !before_start_game && !book_start_learn && (legal | hint_legal) == legal) {
 		bool hint_shown[HW2];
 		for (int i = 0; i < HW2; ++i) {
 			hint_shown[i] = false;
@@ -467,7 +451,7 @@ void board_draw(Rect board_cells[], Board b, int int_mode, bool use_hint_flag, b
 		if (normal_hint) {
 			if (hint_state >= 2) {
 				vector<pair<int, int>> show_cells;
-				unsigned long long all_legal = b.mobility_ull();
+				uint64_t all_legal = b.b.get_legal();
 				for (int cell = 0; cell < HW2; ++cell) {
 					if (1 & (all_legal >> cell)) {
 						if (1 & (hint_legal >> cell) && (hint_best_moves[cell] || hint_depth[cell] == SEARCH_BOOK)) {
@@ -558,8 +542,11 @@ void board_draw(Rect board_cells[], Board b, int int_mode, bool use_hint_flag, b
 bool show_popup(Board b, bool use_ai_flag, bool human_first, bool human_second, bool both_ai, int ai_level, Font big_font, Font small_font, long long strt) {
 	double transparency = min(1.0, (double)(tim() - strt) / popup_fade_time);
 	RoundRect(x_center - popup_width / 2, y_center - popup_height / 2, popup_width, popup_height, popup_r).draw(ColorF(popup_color, transparency));
-	int black_stones = pop_count_ull(b.b);
-	int white_stones = pop_count_ull(b.w);
+	int black_stones = pop_count_ull(b.player);
+	int white_stones = pop_count_ull(b.opponent);
+	if (b.p == WHITE) {
+		swap(black_stones, white_stones);
+	}
 	String result_str;
 	if (use_ai_flag && human_first) {
 		if (black_stones > white_stones) {
@@ -751,6 +738,12 @@ int import_record_popup(Font big_font, Font mid_font, Font small_font, String* r
 	Rect text_area{ sx + 25, sy + 100, popup_import_width - 50, 200};
 	text_area.draw(textbox_active_color).drawFrame(2, popup_frame_color);
 	TextInput::UpdateText(*record);
+	bool return_pressed = false;
+	if (record->size()) {
+		if ((*record)[record->size() - 1] == '\n') {
+			return_pressed = true;
+		}
+	}
 	if (KeyControl.pressed() && KeyV.down()) {
 		String clip_text;
 		Clipboard::GetText(clip_text);
@@ -763,7 +756,7 @@ int import_record_popup(Font big_font, Font mid_font, Font small_font, String* r
 	FrameButton import_button;
 	import_button.init(x_center + 25, sy + 350, 200, 50, 10, 2, language.get("button", "import"), mid_font, button_color, button_font_color, button_font_color);
 	import_button.draw();
-	if (import_button.clicked()) {
+	if (import_button.clicked() || return_pressed) {
 		return 1;
 	}
 	else if (close_button.clicked()) {
@@ -781,6 +774,12 @@ int import_board_popup(Font big_font, Font mid_font, Font small_font, String* te
 	Rect text_area{ sx + 25, sy + 100, popup_import_width - 50, 200 };
 	text_area.draw(textbox_active_color).drawFrame(2, popup_frame_color);
 	TextInput::UpdateText(*text);
+	bool return_pressed = false;
+	if (text->size()) {
+		if ((*text)[text->size() - 1] == '\n') {
+			return_pressed = true;
+		}
+	}
 	if (KeyControl.pressed() && KeyV.down()) {
 		String clip_text;
 		Clipboard::GetText(clip_text);
@@ -793,7 +792,7 @@ int import_board_popup(Font big_font, Font mid_font, Font small_font, String* te
 	FrameButton import_button;
 	import_button.init(x_center + 25, sy + 350, 200, 50, 10, 2, language.get("button", "import"), mid_font, button_color, button_font_color, button_font_color);
 	import_button.draw();
-	if (import_button.clicked()) {
+	if (import_button.clicked() || return_pressed) {
 		return 1;
 	}
 	else if (close_button.clicked()) {
@@ -852,7 +851,7 @@ void reset_analyze(bool* analyzing, future<Cell_value>* analyze_future) {
 }
 
 bool not_finished(Board bd) {
-	return bd.p == 0 || bd.p == 1;
+	return calc_legal(bd.player, bd.opponent) != 0ULL || calc_legal(bd.opponent, bd.player) != 0ULL;
 }
 
 umigame_result get_umigame_p(Board b) {
@@ -891,7 +890,7 @@ string import_str(ifstream* ifs) {
 	return line;
 }
 
-bool import_setting(int* int_mode, int* ai_level, int* ai_book_accept, int* hint_level,
+bool import_setting(int* int_mode, bool* use_book, int* ai_level, int* ai_book_accept, int* hint_level, int* use_book_depth,
 	int* use_ai_mode,
 	bool* use_hint_flag, bool* normal_hint, bool* human_hint, bool* umigame_hint,
 	bool* show_end_popup,
@@ -908,6 +907,10 @@ bool import_setting(int* int_mode, int* ai_level, int* ai_book_accept, int* hint
 	if (*int_mode == -INF) {
 		return false;
 	}
+	*use_book = import_int(&ifs);
+	if (*use_book == -INF) {
+		return false;
+	}
 	*ai_level = import_int(&ifs);
 	if (*ai_level == -INF) {
 		return false;
@@ -918,6 +921,10 @@ bool import_setting(int* int_mode, int* ai_level, int* ai_book_accept, int* hint
 	}
 	*hint_level = import_int(&ifs);
 	if (*hint_level == -INF) {
+		return false;
+	}
+	*use_book_depth = import_int(&ifs);
+	if (*use_book_depth == -INF) {
 		return false;
 	}
 	*use_ai_mode = import_int(&ifs);
@@ -974,7 +981,7 @@ bool import_setting(int* int_mode, int* ai_level, int* ai_book_accept, int* hint
 	return true;
 }
 
-void export_setting(int int_mode, int ai_level, int ai_book_accept, int hint_level,
+void export_setting(int int_mode, bool use_book, int ai_level, int ai_book_accept, int hint_level, int use_book_depth, 
 	int use_ai_mode,
 	bool use_hint_flag, bool normal_hint, bool human_hint, bool umigame_hint,
 	bool show_end_popup,
@@ -986,9 +993,11 @@ void export_setting(int int_mode, int ai_level, int ai_book_accept, int hint_lev
 	ofstream ofs("resources/settings.txt");
 	if (!ofs.fail()) {
 		ofs << int_mode << endl;
+		ofs << use_book << endl;
 		ofs << ai_level << endl;
 		ofs << ai_book_accept << endl;
 		ofs << hint_level << endl;
+		ofs << use_book_depth << endl;
 		ofs << use_ai_mode << endl;
 		ofs << use_hint_flag << endl;
 		ofs << normal_hint << endl;
@@ -1018,13 +1027,12 @@ bool import_record(String record, vector<History_elem>* n_history) {
 	}
 	else {
 		int y, x;
-		unsigned long long legal;
-		Mobility mob;
+		uint64_t legal;
+		Flip flip;
 		h_bd.reset();
-		h_bd.v = -INF;
-		History_elem hist_tmp = { h_bd, U"" };
+		History_elem hist_tmp = { h_bd, -INF, -1, U"" };
 		n_history->emplace_back(hist_tmp);
-		for (int i = 0; i < record.size(); i += 2) {
+		for (int i = 0; i < (int)record.size(); i += 2) {
 			x = (int)record[i] - (int)'a';
 			if (x < 0 || HW <= x) {
 				x = (int)record[i] - (int)'A';
@@ -1040,12 +1048,11 @@ bool import_record(String record, vector<History_elem>* n_history) {
 			}
 			y = HW_M1 - y;
 			x = HW_M1 - x;
-			legal = h_bd.mobility_ull();
+			legal = h_bd.get_legal();
 			if (1 & (legal >> (y * HW + x))) {
-				calc_flip(&mob, &h_bd, y * HW + x);
-				h_bd.move(&mob);
-				h_bd.check_player();
-				if (h_bd.p == VACANT) {
+				calc_flip(&flip, &h_bd, y * HW + x);
+				h_bd.move(&flip);
+				if (h_bd.check_player()) {
 					if (i != record.size() - 2) {
 						flag = false;
 						break;
@@ -1056,8 +1063,7 @@ bool import_record(String record, vector<History_elem>* n_history) {
 				flag = false;
 				break;
 			}
-			h_bd.v = -INF;
-			History_elem hist_tmp = { h_bd, n_history->at(n_history->size() - 1).record + str_record(y * HW + x) };
+			hist_tmp = { h_bd, -INF, y * HW + x, n_history->at(n_history->size() - 1).record + str_record(y * HW + x) };
 			n_history->emplace_back(hist_tmp);
 		}
 	}
@@ -1141,8 +1147,13 @@ bool output_game(History_elem hist, int ai_level, int use_ai_mode, String black_
 		return false;
 	}
 	string result = "?";
-	if (hist.b.p == VACANT) {
-		result = to_string(hist.b.score(BLACK));
+	if (hist.b.get_legal() == 0) {
+		if (hist.b.p == BLACK) {
+			result = to_string(hist.b.score_player());
+		}
+		else {
+			result = to_string(hist.b.score_opponent());
+		}
 	}
 	ofs << hist.record.narrow() << endl;
 	ofs << result << endl;
@@ -1160,7 +1171,7 @@ bool close_app(int* hint_state, future<bool>* hint_future,
 	int* human_value_state, future<void>* human_value_future,
 	bool* ai_thinking, future<Search_result>* ai_future,
 	bool* analyzing, future<Cell_value>* analyze_future,
-	int int_mode, int ai_level, int ai_book_accept, int hint_level,
+	int int_mode, bool use_book, int ai_level, int ai_book_accept, int hint_level, int use_book_depth, 
 	int use_ai_mode,
 	bool use_hint_flag, bool normal_hint, bool human_hint, bool umigame_hint,
 	bool show_end_popup,
@@ -1175,7 +1186,7 @@ bool close_app(int* hint_state, future<bool>* hint_future,
 	reset_human_value(human_value_state, human_value_future);
 	reset_ai(ai_thinking, ai_future);
 	reset_analyze(analyzing, analyze_future);
-	export_setting(int_mode, ai_level, ai_book_accept, hint_level,
+	export_setting(int_mode, use_book, ai_level, ai_book_accept, hint_level, use_book_depth, 
 		use_ai_mode,
 		use_hint_flag, normal_hint, human_hint, umigame_hint,
 		show_end_popup,
@@ -1197,24 +1208,30 @@ bool close_app(int* hint_state, future<bool>* hint_future,
 }
 
 void info_draw(Board bd, string joseki_name, int ai_level, int hint_level, Font mid_font, Font small_font) {
-	if (bd.p == BLACK) {
+	if (bd.get_legal() == 0) {
+		mid_font(language.get("info", "game_end")).draw(info_sx, info_sy);
+	}
+	else if (bd.p == BLACK) {
 		mid_font(language.get("info", "black")).draw(info_sx, info_sy);
 	}
 	else if (bd.p == WHITE) {
 		mid_font(language.get("info", "white")).draw(info_sx, info_sy);
 	}
-	else if (bd.p == VACANT) {
-		mid_font(language.get("info", "game_end")).draw(info_sx, info_sy);
-	}
 	mid_font(language.get("info", "joseki_name") + U": " + Unicode::FromUTF8(joseki_name)).draw(info_sx, info_sy + 40);
-	if (bd.p != VACANT) {
-		mid_font(Format(pop_count_ull(bd.b) + pop_count_ull(bd.w) - 3) + language.get("info", "moves")).draw(info_sx, info_sy + 80);
+	if (bd.get_legal() != 0) {
+		mid_font(Format(pop_count_ull(bd.player) + pop_count_ull(bd.opponent) - 3) + language.get("info", "moves")).draw(info_sx, info_sy + 80);
 	}
 	int stone_info_cy = board_sy + board_size + 30;
 	Circle(board_sx + 20, stone_info_cy, 12).draw(Palette::Black);
 	Circle(board_sx + board_size - 20, stone_info_cy, 12).draw(Palette::White);
-	mid_font(pop_count_ull(bd.b)).draw(Arg::leftCenter(board_sx + 20 + 20, stone_info_cy));
-	mid_font(pop_count_ull(bd.w)).draw(Arg::rightCenter(board_sx + board_size - 20 - 20, stone_info_cy));
+	if (bd.p == BLACK) {
+		mid_font(pop_count_ull(bd.player)).draw(Arg::leftCenter(board_sx + 20 + 20, stone_info_cy));
+		mid_font(pop_count_ull(bd.opponent)).draw(Arg::rightCenter(board_sx + board_size - 20 - 20, stone_info_cy));
+	}
+	else {
+		mid_font(pop_count_ull(bd.opponent)).draw(Arg::leftCenter(board_sx + 20 + 20, stone_info_cy));
+		mid_font(pop_count_ull(bd.player)).draw(Arg::rightCenter(board_sx + board_size - 20 - 20, stone_info_cy));
+	}
 	int mid_depth, end_depth;
 	get_level_depth(ai_level, &mid_depth, &end_depth);
 	small_font(language.get("info", "ai") + U": " + language.get("common", "level") + Format(ai_level)).draw(info_sx, info_bottom_sy);
@@ -1226,12 +1243,16 @@ void info_draw(Board bd, string joseki_name, int ai_level, int hint_level, Font 
 	small_font(language.get("info", "complete_0") + Format(end_depth) + language.get("info", "complete_1")).draw(info_sx + 200, info_bottom_sy + 60);
 }
 
+bool operator< (const pair<int, Board> &a, const pair<int, Board> &b){
+	return a.first < b.first;
+};
+
 void learn_book(Board bd, int level, int depth, int book_learn_accept, Board* bd_ptr, int* value_ptr, bool* book_learning) {
 	cerr << "start learning book" << endl;
 	priority_queue<pair<int, Board>> que;
 	int value = book.get(&bd);
 	if (value == -INF) {
-		value = -ai_book(bd, level, book_learn_accept, create_vacant_lst(bd));
+		value = -ai_value(bd, level);
 		if (value == INF) {
 			*book_learning = false;
 			return;
@@ -1244,9 +1265,9 @@ void learn_book(Board bd, int level, int depth, int book_learn_accept, Board* bd
 	pair<int, Board> popped;
 	vector<pair<int, Board>> children;
 	int weight, i, j;
-	unsigned long long legal;
+	uint64_t legal;
 	Board b, nb;
-	Mobility mob;
+	Flip mob;
 	bool reg_value;
 	while (!que.empty()) {
 		popped = que.top();
@@ -1254,27 +1275,21 @@ void learn_book(Board bd, int level, int depth, int book_learn_accept, Board* bd
 		b = popped.second;
 		if (b.n - 4 < depth) {
 			children.clear();
-			legal = b.mobility_ull();
+			legal = b.get_legal();
 			for (i = 0; i < HW2; ++i) {
 				if (1 & (legal >> i)) {
-					calc_flip(&mob, &b, i);
-					b.move_copy(&mob, &nb);
 					if (!(*book_learning)) {
 						return;
 					}
-					value = book.get(&nb);
-					reg_value = abs(value) == INF;
-					if (abs(value) == INF) {
-						value = ai_book(nb, level, book_learn_accept, create_vacant_lst(nb));
-					}
-					if (abs(value) != INF) {
-						if (reg_value) {
-							nb.copy(bd_ptr);
-							*value_ptr = value;
-							book.reg(nb, value);
-						}
+					calc_flip(&mob, &b, i);
+					b.move_copy(&mob, &nb);
+					value = -ai_value(nb, level);
+					if (abs(value) <= HW2) {
+						nb.copy(bd_ptr);
+						*value_ptr = value;
+						book.reg(nb, value);
 						if (-value <= book_learn_accept && global_searching && nb.n - 4 < depth) {
-							children.emplace_back(make_pair(-value, nb));
+							children.emplace_back(make_pair(-value + popped.first, nb));
 						}
 					}
 				}
@@ -1373,7 +1388,7 @@ void Main() {
 	Window::Resize(window_size);
 	Window::SetStyle(WindowStyle::Sizable);
 	Scene::SetResizeMode(ResizeMode::Keep);
-	Window::SetTitle(U"Egaroucid5.4.1");
+	Window::SetTitle(U"Egaroucid5.5.0");
 	System::SetTerminationTriggers(UserAction::NoAction);
 	Scene::SetBackground(green);
 	//Console.open();
@@ -1451,7 +1466,7 @@ void Main() {
 	int hint_value[HW2], hint_depth[HW2];
 	int hint_calc_value[HW2], hint_calc_depth[HW2];
 	bool hint_best_moves[HW2];
-	unsigned long long hint_legal = 0;
+	uint64_t hint_legal = 0;
 	future<bool>  hint_future;
 	int hint_state = 0;
 	bool hint_nums[6] = { false, false, false, false, false, true };
@@ -1479,13 +1494,15 @@ void Main() {
 	future<Search_result> ai_future;
 	bool ai_thinking = false;
 	int ai_value = 0;
-	int ai_level = 21, ai_book_accept = 4, hint_level = 9;
+	int ai_level = 21, ai_book_accept = 4, hint_level = 9, use_book_depth = 60;
+	bool use_book = true;
 
 	bool before_start_game = true;
 	Button start_game_button;
 
 	bool show_popup_flag = true;
 	bool show_end_popup = true;
+	bool show_end_popup_change = true;
 	long long popup_start_time = 0;
 
 	bool analyzing = false;
@@ -1532,7 +1549,7 @@ void Main() {
 
 	int use_ai_mode;
 	string lang_name;
-	if (!import_setting(&int_mode, &ai_level, &ai_book_accept, &hint_level,
+	if (!import_setting(&int_mode, &use_book, &ai_level, &ai_book_accept, &hint_level, &use_book_depth,
 		&use_ai_mode,
 		&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
 		&show_end_popup,
@@ -1543,9 +1560,11 @@ void Main() {
 		&lang_name)) {
 		cerr << "use default setting" << endl;
 		int_mode = 0;
+		use_book = true;
 		ai_level = 15;
 		ai_book_accept = 2;
 		hint_level = 7;
+		use_book_depth = 60;
 		use_ai_mode = 0;
 		use_hint_flag = true;
 		normal_hint = true;
@@ -1596,6 +1615,8 @@ void Main() {
 		hint_nums[i] = i == hint_num;
 	}
 
+	show_end_popup_change = show_end_popup;
+
 	int lang_initialized = 0;
 	string lang_file = "resources/languages/" + lang_name + ".json";
 	future<bool> lang_initialize_future = async(launch::async, lang_initialize, lang_file);
@@ -1631,7 +1652,7 @@ void Main() {
 				&human_value_state, &human_value_future,
 				&ai_thinking, &ai_future,
 				&analyzing, &analyze_future,
-				int_mode, ai_level, ai_book_accept, hint_level,
+				int_mode, use_book, ai_level, ai_book_accept, hint_level, use_book_depth, 
 				use_ai_mode,
 				use_hint_flag, normal_hint, human_hint, umigame_hint,
 				show_end_popup,
@@ -1672,10 +1693,10 @@ void Main() {
 					&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
 					&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
 					&use_value_flag,
-					&ai_level, &hint_level, &ai_book_accept,
+					&use_book, &ai_level, &hint_level, &ai_book_accept, &use_book_depth,
 					&start_book_learn_flag, &stop_book_learn_flag, &book_modify, &book_depth, &book_learn_accept, &import_book_flag,
 					&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag,
-					&show_end_popup, &show_log,
+					&show_end_popup_change, &show_log,
 					&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
 					&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert,
 					&usage_flag, &bug_report_flag,
@@ -1698,10 +1719,10 @@ void Main() {
 						&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
 						&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
 						&use_value_flag,
-						&ai_level, &hint_level, &ai_book_accept,
+						&use_book, &ai_level, &hint_level, &ai_book_accept, &use_book_depth,
 						&start_book_learn_flag, &stop_book_learn_flag, &book_modify, &book_depth, &book_learn_accept, &import_book_flag,
 						&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag,
-						&show_end_popup, &show_log,
+						&show_end_popup_change, &show_log,
 						&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
 						&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert,
 						&usage_flag, &bug_report_flag,
@@ -1710,8 +1731,7 @@ void Main() {
 				initialize_draw(&initialize_future, &initializing, &initialize_failed, font50, font20, icon, logo, texture_loaded, tips);
 				if (!initializing) {
 					bd.reset();
-					bd.v = -INF;
-					History_elem hist_tmp = { bd, U"" };
+					History_elem hist_tmp = { bd, -INF, -1, U"" };
 					history.emplace_back(hist_tmp);
 					history_place = 0;
 					fork_mode = false;
@@ -1773,10 +1793,10 @@ void Main() {
 					&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
 					&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
 					&use_value_flag,
-					&ai_level, &hint_level, &ai_book_accept,
+					&use_book, &ai_level, &hint_level, &ai_book_accept, &use_book_depth,
 					&start_book_learn_flag, &stop_book_learn_flag, &book_modify, &book_depth, &book_learn_accept, &import_book_flag,
 					&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag,
-					&show_end_popup, &show_log,
+					&show_end_popup_change, &show_log,
 					&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
 					&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert,
 					&usage_flag, &bug_report_flag,
@@ -1810,10 +1830,10 @@ void Main() {
 						&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
 						&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
 						&use_value_flag,
-						&ai_level, &hint_level, &ai_book_accept,
+						&use_book, &ai_level, &hint_level, &ai_book_accept, &use_book_depth,
 						&start_book_learn_flag, &stop_book_learn_flag, &book_modify, &book_depth, &book_learn_accept, &import_book_flag,
 						&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag,
-						&show_end_popup, &show_log,
+						&show_end_popup_change, &show_log,
 						&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
 						&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert,
 						&usage_flag, &bug_report_flag,
@@ -1845,12 +1865,12 @@ void Main() {
 						bd = fork_history[analyze_idx].b;
 						history_place = fork_history[analyze_idx].b.n - 4;
 						if (!analyze_state) {
-							fork_history[analyze_idx].b.v = -INF;
-							analyze_future = async(launch::async, analyze_search, fork_history[analyze_idx].b, ai_level);
+							fork_history[analyze_idx].v = -INF;
+							analyze_future = async(launch::async, analyze_search, fork_history[analyze_idx].b, ai_level, use_book, use_book_depth);
 							analyze_state = true;
 						}
 						else if (analyze_future.wait_for(chrono::seconds(0)) == future_status::ready) {
-							fork_history[analyze_idx].b.v = analyze_future.get().value;
+							fork_history[analyze_idx].v = analyze_future.get().value;
 							analyze_state = false;
 							++analyze_idx;
 						}
@@ -1865,12 +1885,12 @@ void Main() {
 						bd = history[analyze_idx].b;
 						history_place = history[analyze_idx].b.n - 4;
 						if (!analyze_state) {
-							history_place = history[analyze_idx].b.v = -INF;
-							analyze_future = async(launch::async, analyze_search, history[analyze_idx].b, ai_level);
+							history_place = history[analyze_idx].v = -INF;
+							analyze_future = async(launch::async, analyze_search, history[analyze_idx].b, ai_level, use_book, use_book_depth);
 							analyze_state = true;
 						}
 						else if (analyze_future.wait_for(chrono::seconds(0)) == future_status::ready) {
-							history[analyze_idx].b.v = analyze_future.get().value;
+							history[analyze_idx].v = analyze_future.get().value;
 							analyze_state = false;
 							++analyze_idx;
 						}
@@ -1880,23 +1900,22 @@ void Main() {
 			/*** analyzing ***/
 
 			if (!before_start_game) {
-				unsigned long long legal = bd.mobility_ull();
+				uint64_t legal = bd.get_legal();
 				for (int cell = 0; cell < HW2; ++cell) {
 					board_clicked[cell] = false;
 				}
-				if (!menu.active() && !book_learning && !book_modifying && main_window_active && ((both_human || (human_first && bd.p == BLACK) || (human_second && bd.p == WHITE)) || (history_place != history[history.size() - 1].b.n - 4 && show_mode[1]))) {
+				if (!menu.active() && !changing_book && !book_learning && !book_modifying && main_window_active && ((both_human || (human_first && bd.p == BLACK) || (human_second && bd.p == WHITE)) || (history_place != history[history.size() - 1].b.n - 4 && show_mode[1]))) {
 					for (int cell = 0; cell < HW2; ++cell) {
 						board_clicked[cell] = board_cells[cell].leftClicked() && (1 & (legal >> cell));
 					}
 				}
 				if (not_finished(bd) && (both_human || (human_first && bd.p == BLACK) || (human_second && bd.p == WHITE) || history_place != history[history.size() - 1].b.n - 4)) {
 					/*** human plays ***/
-					pair<bool, Board> moved_board = move_board(bd, board_clicked);
-					if (moved_board.first) {
+					pair<int, Board> moved_board = move_board(bd, board_clicked);
+					if (moved_board.first != -1) {
 						bool next_fork_mode = (!fork_mode && history_place != history[history.size() - 1].b.n - 4);
 						bd = moved_board.second;
 						bd.check_player();
-						bd.v = -INF;
 						if (fork_mode || next_fork_mode) {
 							while (fork_history.size()) {
 								if (fork_history[fork_history.size() - 1].b.n >= bd.n) {
@@ -1906,18 +1925,18 @@ void Main() {
 									break;
 								}
 							}
-							if (!next_fork_mode) {
-								History_elem hist_tmp = { bd, fork_history[fork_history.size() - 1].record + str_record(bd.policy) };
+							if (!next_fork_mode && fork_history.size()) {
+								History_elem hist_tmp = { bd, -INF, moved_board.first, fork_history[fork_history.size() - 1].record + str_record(moved_board.first) };
 								fork_history.emplace_back(hist_tmp);
 							}
 							else {
-								History_elem hist_tmp = { bd, history[find_history_idx(history, history_place)].record + str_record(bd.policy) };
+								History_elem hist_tmp = { bd, -INF, moved_board.first, history[find_history_idx(history, history_place)].record + str_record(moved_board.first) };
 								fork_history.emplace_back(hist_tmp);
 								fork_mode = true;
 							}
 						}
 						else {
-							History_elem hist_tmp = { bd, history[history.size() - 1].record + str_record(bd.policy) };
+							History_elem hist_tmp = { bd, -INF, moved_board.first, history[history.size() - 1].record + str_record(moved_board.first) };
 							history.emplace_back(hist_tmp);
 						}
 						history_place = bd.n - 4;
@@ -1934,13 +1953,14 @@ void Main() {
 							if (hint_state % 2 == 0) {
 								if (global_searching) {
 									if (hint_state == 0) {
-										hint_legal = bd.mobility_ull();
+										hint_legal = bd.get_legal();
 										for (int cell = 0; cell < HW2; ++cell) {
 											hint_value[cell] = 0;
 										}
+										child_transpose_table.init();
 									}
 									else if (show_mode[1] && hint_state == hint_level * 2 / 3 * 2) {
-										unsigned long long n_hint_legal = 0;
+										uint64_t n_hint_legal = 0;
 										vector<pair<int, int>> legals;
 										for (int cell = 0; cell < HW2; ++cell) {
 											if (1 & (hint_legal >> cell)) {
@@ -1958,7 +1978,7 @@ void Main() {
 										}
 										hint_legal = n_hint_legal;
 									}
-									hint_future = async(launch::async, ai_hint, bd, hint_state / 2, hint_level, hint_calc_value, hint_calc_depth, hint_best_moves, hint_value, hint_legal, create_vacant_lst(bd));
+									hint_future = async(launch::async, ai_hint, bd, hint_state / 2, hint_level, hint_calc_value, hint_calc_depth, hint_best_moves, hint_value, hint_legal);
 									++hint_state;
 								}
 							}
@@ -1967,7 +1987,7 @@ void Main() {
 								if (hint_calclated) {
 									bool is_mid_search = get_level_midsearch(hint_state / 2, bd.n - 4);
 									if (global_searching) {
-										unsigned long long all_legal = bd.mobility_ull();
+										uint64_t all_legal = bd.get_legal();
 										bool all_complete_searched = true;
 										for (int cell = 0; cell < HW2; ++cell) {
 											if (1 & (hint_legal >> cell)) {
@@ -2004,7 +2024,7 @@ void Main() {
 							for (int cell = 0; cell < HW2; ++cell) {
 								if ((1 & (legal >> cell))) {
 									if (umigame_state[cell] == 0) {
-										Mobility m;
+										Flip m;
 										calc_flip(&m, &bd, cell);
 										Board moved_b = bd.move_copy(&m);
 										if (book.get(&moved_b) != -INF) {
@@ -2041,7 +2061,7 @@ void Main() {
 
 					/*** change book ***/
 					if (show_mode[1]) {
-						unsigned long long legal = bd.mobility_ull();
+						uint64_t legal = bd.get_legal();
 						for (int cell = 0; cell < HW2; ++cell) {
 							if (1 & (legal >> cell)) {
 								if (board_cells[cell].rightClicked()) {
@@ -2052,7 +2072,8 @@ void Main() {
 										else {
 											int changed_book_value = ParseOr<int>(changed_book_value_str, -1000);
 											if (changed_book_value != -1000) {
-												Mobility m;
+												reset_hint(&hint_state, &hint_future);
+												Flip m;
 												calc_flip(&m, &bd, cell);
 												book.change(bd.move_copy(&m), changed_book_value);
 												changed_book_value_str.clear();
@@ -2068,6 +2089,28 @@ void Main() {
 									}
 								}
 							}
+						}
+						if (changing_book && KeyEnter.down()) {
+							if (changed_book_value_str.size() == 0) {
+								changing_book = false;
+							}
+							else {
+								int changed_book_value = ParseOr<int>(changed_book_value_str, -1000);
+								if (changed_book_value != -1000) {
+									reset_hint(&hint_state, &hint_future);
+									Flip m;
+									calc_flip(&m, &bd, change_book_cell);
+									book.change(bd.move_copy(&m), changed_book_value);
+									changed_book_value_str.clear();
+									book_changed = true;
+									changing_book = false;
+									hint_state = 0;
+								}
+							}
+						}
+						if (changing_book && KeyEscape.down()) {
+							changing_book = false;
+							changed_book_value_str.clear();
 						}
 						if (changing_book) {
 							if (Key0.down() || KeyNum0.down()) {
@@ -2140,16 +2183,17 @@ void Main() {
 						if (ai_future.wait_for(chrono::seconds(0)) == future_status::ready) {
 							Search_result ai_result = ai_future.get();
 							int sgn = (bd.p ? -1 : 1);
-							Mobility mob;
-							calc_flip(&mob, &bd, ai_result.policy);
-							bd.move(&mob);
-							bd.check_player();
-							if (bd.p == VACANT) {
+							Flip flip;
+							calc_flip(&flip, &bd, ai_result.policy);
+							bd.move(&flip);
+							if (bd.check_player()) {
 								popup_start_time = tim();
 							}
-							history[history.size() - 1].b.v = sgn * ai_result.value;
-							bd.v = sgn * ai_result.value;
-							History_elem hist_tmp = { bd, history[history.size() - 1].record + str_record(bd.policy) };
+							int v = sgn * ai_result.value;
+							if (history.size()) {
+								history[history.size() - 1].v = v;
+							}
+							History_elem hist_tmp = { bd, -INF, flip.pos, history[history.size() - 1].record + str_record(flip.pos) };
 							history.emplace_back(hist_tmp);
 							history_place = bd.n - 4;
 							ai_value = ai_result.value;
@@ -2161,7 +2205,7 @@ void Main() {
 						}
 					}
 					else if (global_searching) {
-						ai_future = async(launch::async, ai, bd, ai_level, show_mode[2] ? 0 : ai_book_accept, create_vacant_lst(bd));
+						ai_future = async(launch::async, ai, bd, ai_level, use_book & bd.n - 3 <= use_book_depth, show_mode[2] ? 0 : ai_book_accept);
 						ai_thinking = true;
 					}
 				}
@@ -2176,13 +2220,15 @@ void Main() {
 				}
 				else if (KeyRight.down() || KeyD.down()) {
 					if (fork_mode) {
-						history_place = min((int)fork_history.size() - 1, history_place + 1);
+						history_place = min(fork_history[fork_history.size() - 1].b.n - 4, history_place + 1);
 					}
 					else {
-						history_place = min((int)history.size() - 1, history_place + 1);
+						history_place = min(history[history.size() - 1].b.n - 4, history_place + 1);
 					}
 				}
-				history_place = graph.update_place(history, fork_history, history_place);
+				else {
+					history_place = graph.update_place(history, fork_history, history_place);
+				}
 				if (history_place != former_history_place) {
 					if (ai_thinking) {
 						reset_ai(&ai_thinking, &ai_future);
@@ -2215,30 +2261,89 @@ void Main() {
 			/*** graph interaction ***/
 
 			/*** Board draw ***/
-			board_draw(board_cells, bd, int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
-				hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, hint_actual_nums[hint_num], normal_hint_font, small_hint_font, font30, mini_hint_font, board_coord_font,
-				before_start_game,
-				umigame_state, umigame_value,
-				human_value_state, human_value,
-				book_start_learn);
-			/*** Board draw ***/
-
-			/*** joseki ***/
-			if (fork_mode) {
-				string new_joseki;
-				joseki_name.clear();
-				for (int i = 0; i <= history_place; ++i) {
-					new_joseki = joseki.get(fork_history[i].b);
-					if (new_joseki != "") {
-						joseki_name = new_joseki;
+			if (book_learning) {
+				History_elem history_elem;
+				history_elem.b = bd;
+				history_elem.policy = -1;
+				history_elem.record = U"";
+				history_elem.v = -INF;
+				board_draw(board_cells, history_elem, -1, int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
+						hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, hint_actual_nums[hint_num], normal_hint_font, small_hint_font, font30, mini_hint_font, board_coord_font,
+						before_start_game,
+						umigame_state, umigame_value,
+						human_value_state, human_value,
+						book_start_learn);
+			}
+			else if (!fork_mode) {
+				if (analyzing && analyze_idx < (int)history.size()) {
+					int next_policy = -1;
+					if ((int)history.size() > analyze_idx + 1) {
+						next_policy = history[analyze_idx + 1].policy;
 					}
+					board_draw(board_cells, history[analyze_idx], next_policy, int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
+						hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, hint_actual_nums[hint_num], normal_hint_font, small_hint_font, font30, mini_hint_font, board_coord_font,
+						before_start_game,
+						umigame_state, umigame_value,
+						human_value_state, human_value,
+						book_start_learn);
+				}
+				else {
+					int history_idx = find_history_idx(history, history_place);
+					int next_policy = -1;
+					if ((int)history.size() > history_idx + 1) {
+						next_policy = history[history_idx + 1].policy;
+					}
+					board_draw(board_cells, history[history_idx], next_policy, int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
+						hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, hint_actual_nums[hint_num], normal_hint_font, small_hint_font, font30, mini_hint_font, board_coord_font,
+						before_start_game,
+						umigame_state, umigame_value,
+						human_value_state, human_value,
+						book_start_learn);
 				}
 			}
 			else {
-				string new_joseki;
-				joseki_name.clear();
-				for (int i = 0; i <= history_place; ++i) {
-					new_joseki = joseki.get(history[i].b);
+				if (analyzing && analyze_idx < (int)fork_history.size()) {
+					int next_policy = -1;
+					if ((int)fork_history.size() > analyze_idx + 1) {
+						next_policy = fork_history[analyze_idx + 1].policy;
+					}
+					board_draw(board_cells, fork_history[analyze_idx], next_policy, int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
+						hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, hint_actual_nums[hint_num], normal_hint_font, small_hint_font, font30, mini_hint_font, board_coord_font,
+						before_start_game,
+						umigame_state, umigame_value,
+						human_value_state, human_value,
+						book_start_learn);
+				}
+				else {
+					int history_idx = find_history_idx(fork_history, history_place);
+					int next_policy = -1;
+					if ((int)fork_history.size() > history_idx + 1) {
+						next_policy = fork_history[history_idx + 1].policy;
+					}
+					board_draw(board_cells, fork_history[history_idx], next_policy, int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
+						hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, hint_actual_nums[hint_num], normal_hint_font, small_hint_font, font30, mini_hint_font, board_coord_font,
+						before_start_game,
+						umigame_state, umigame_value,
+						human_value_state, human_value,
+						book_start_learn);
+				}
+			}
+			/*** Board draw ***/
+
+			/*** joseki ***/
+			string new_joseki;
+			joseki_name.clear();
+			int history_idx = find_history_idx(history, history_place);
+			for (int i = 0; i <= history_idx; ++i) {
+				new_joseki = joseki.get(history[i].b);
+				if (new_joseki != "") {
+					joseki_name = new_joseki;
+				}
+			}
+			if (fork_mode) {
+				int history_idx = find_history_idx(fork_history, history_place);
+				for (int i = 0; i <= history_idx; ++i) {
+					new_joseki = joseki.get(fork_history[i].b);
 					if (new_joseki != "") {
 						joseki_name = new_joseki;
 					}
@@ -2255,7 +2360,7 @@ void Main() {
 				if (use_value_flag) {
 					graph.draw(history, fork_history, history_place);
 				}
-				if (bd.p == VACANT && !fork_mode && show_popup_flag && show_end_popup) {
+				if (bd.get_legal() == 0ULL && !fork_mode && show_popup_flag && show_end_popup) {
 					show_popup_flag = !show_popup(bd, !both_human, human_first, human_second, both_ai, ai_level, font50, font30, popup_start_time);
 					main_window_active = !show_popup_flag;
 					if (main_window_active) {
@@ -2373,10 +2478,9 @@ void Main() {
 					pair<bool, Board> imported = import_board(imported_board);
 					if (imported.first) {
 						bd = imported.second;
-						bd.v = -INF;
 						history.clear();
 						fork_history.clear();
-						History_elem hist_tmp = { bd, U"" };
+						History_elem hist_tmp = { bd, -INF, -1, U"" };
 						history.emplace_back(hist_tmp);
 						history_place = bd.n - 4;
 						fork_mode = false;
@@ -2432,9 +2536,8 @@ void Main() {
 			if (start_game_flag && !book_learning && !book_modifying) {
 				cerr << "reset" << endl;
 				bd.reset();
-				bd.v = -INF;
 				history.clear();
-				History_elem hist_tmp = { bd, U"" };
+				History_elem hist_tmp = { bd, -INF, -1, U"" };
 				history.emplace_back(hist_tmp);
 				fork_history.clear();
 				history_place = 0;
@@ -2528,21 +2631,25 @@ void Main() {
 				global_searching = true;
 			}
 			else if (vertical_convert && !analyzing && !book_learning && !book_modifying && !ai_thinking) {
-				bd.vertical_mirror();
+				bd.board_rotate_180();
 				String record = U"";
 				for (History_elem& elem : history) {
-					elem.b.vertical_mirror();
-					if (elem.b.policy != -1) {
-						record += str_record(elem.b.policy);
+					elem.b.board_rotate_180();
+					if (elem.policy != -1) {
+						record += str_record(HW2_M1 - elem.policy);
+						elem.policy = HW2_M1 - elem.policy;
 						elem.record = record;
 					}
 				}
-				record = U"";
-				for (History_elem& elem : fork_history) {
-					elem.b.vertical_mirror();
-					if (elem.b.policy != -1) {
-						record += str_record(elem.b.policy);
-						elem.record = record;
+				if (fork_history.size()) {
+					record = history[find_history_idx(history, fork_history[0].b.n - 5)].record;
+					for (History_elem& elem : fork_history) {
+						elem.b.board_rotate_180();
+						if (elem.policy != -1) {
+							record += str_record(HW2_M1 - elem.policy);
+							elem.policy = HW2_M1 - elem.policy;
+							elem.record = record;
+						}
 					}
 				}
 				reset_hint(&hint_state, &hint_future);
@@ -2551,21 +2658,29 @@ void Main() {
 				reset_ai(&ai_thinking, &ai_future);
 			}
 			else if (black_line_convert && !analyzing && !book_learning && !book_modifying && !ai_thinking) {
-				bd.white_mirror(); // because the Board is vertical mirrored
+				bd.board_black_line_mirror();
 				String record = U"";
 				for (History_elem& elem : history) {
-					elem.b.white_mirror(); // because the Board is vertical mirrored
-					if (elem.b.policy != -1) {
-						record += str_record(elem.b.policy);
+					elem.b.board_black_line_mirror();
+					if (elem.policy != -1) {
+						int y = HW_M1 - elem.policy % HW;
+						int x = HW_M1 - elem.policy / HW;
+						record += str_record(y * HW + x);
+						elem.policy = y * HW + x;
 						elem.record = record;
 					}
 				}
-				record = U"";
-				for (History_elem& elem : fork_history) {
-					elem.b.white_mirror(); // because the Board is vertical mirrored
-					if (elem.b.policy != -1) {
-						record += str_record(elem.b.policy);
-						elem.record = record;
+				if (fork_history.size()) {
+					record = history[find_history_idx(history, fork_history[0].b.n - 5)].record;
+					for (History_elem& elem : fork_history) {
+						elem.b.board_black_line_mirror();
+						if (elem.policy != -1) {
+							int y = HW_M1 - elem.policy % HW;
+							int x = HW_M1 - elem.policy / HW;
+							record += str_record(y * HW + x);
+							elem.policy = y * HW + x;
+							elem.record = record;
+						}
 					}
 				}
 				reset_hint(&hint_state, &hint_future);
@@ -2574,21 +2689,29 @@ void Main() {
 				reset_ai(&ai_thinking, &ai_future);
 			}
 			else if (white_line_convert && !analyzing && !book_learning && !book_modifying && !ai_thinking) {
-				bd.black_mirror(); // because the Board is vertical mirrored
+				bd.board_white_line_mirror();
 				String record = U"";
 				for (History_elem& elem : history) {
-					elem.b.black_mirror(); // because the Board is vertical mirrored
-					if (elem.b.policy != -1) {
-						record += str_record(elem.b.policy);
+					elem.b.board_white_line_mirror();
+					if (elem.policy != -1) {
+						int y = elem.policy % HW;
+						int x = elem.policy / HW;
+						record += str_record(y * HW + x);
+						elem.policy = y * HW + x;
 						elem.record = record;
 					}
 				}
-				record = U"";
-				for (History_elem& elem : fork_history) {
-					elem.b.black_mirror(); // because the Board is vertical mirrored
-					if (elem.b.policy != -1) {
-						record += str_record(elem.b.policy);
-						elem.record = record;
+				if (fork_history.size()) {
+					record = history[find_history_idx(history, fork_history[0].b.n - 5)].record;
+					for (History_elem& elem : fork_history) {
+						elem.b.board_white_line_mirror();
+						if (elem.policy != -1) {
+							int y = elem.policy % HW;
+							int x = elem.policy / HW;
+							record += str_record(y * HW + x);
+							elem.policy = y * HW + x;
+							elem.record = record;
+						}
 					}
 				}
 				reset_hint(&hint_state, &hint_future);
@@ -2627,6 +2750,12 @@ void Main() {
 			}
 			else if (bug_report_flag) {
 				System::LaunchBrowser(U"https://docs.google.com/forms/d/e/1FAIpQLSd6ML1T1fc707luPEefBXuImMnlM9cQP8j-YHKiSyFoS-8rmQ/viewform?usp=sf_link");
+			}
+			else if (show_end_popup_change != show_end_popup) {
+				if (!main_window_active && show_end_popup) {
+					main_window_active = true;
+				}
+				show_end_popup = show_end_popup_change;
 			}
 			/*** menu buttons ***/
 

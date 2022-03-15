@@ -2,392 +2,294 @@
 #include "setting.hpp"
 #include "common.hpp"
 #include "board.hpp"
+#include <atomic>
 #if USE_MULTI_THREAD
     #include "thread_pool.hpp"
-    #include <math.h>
     #include <future>
-    #include <vector>
 #endif
-#if USE_BOOST
-    #include <boost/atomic/atomic.hpp>
-#else
-    #include <atomic>
-#endif
+#include <mutex>
 
 using namespace std;
 
-#define TRANSPOSE_TABLE_SIZE 1048576
-#define TRANSPOSE_TABLE_MASK 1048575
+#define TRANSPOSE_TABLE_SIZE 33554432
+#define TRANSPOSE_TABLE_MASK 33554431
+#define TRANSPOSE_TABLE_DIVISION 1024
+#define TRANSPOSE_MINI_TABLE_SIZE (TRANSPOSE_TABLE_SIZE / TRANSPOSE_TABLE_DIVISION)
 
 #define TRANSPOSE_TABLE_UNDEFINED -INF
 
-#define N_BEST_MOVES 3
-
 class Node_child_transpose_table{
-    public:
-        atomic<unsigned long long> b;
-        atomic<unsigned long long> w;
-        atomic<int> p;
-        atomic<int> best_moves[N_BEST_MOVES];
-        atomic<int> best_value;
+    private:
+        atomic<unsigned long long> player;
+        atomic<unsigned long long> opponent;
+        atomic<int> best_move;
+        //atomic<Node_child_transpose_table*> p_n_node;
 
     public:
+
         inline void init(){
-            b.store(0, memory_order_relaxed);
-            w.store(0, memory_order_relaxed);
-            p.store(-1, memory_order_relaxed);
-            best_value.store(-INF, memory_order_relaxed);
-        }
-
-        inline void register_value(const Board *board, const int policy, const int value){
-            b.store(board->b);
-            w.store(board->w);
-            p.store(board->p);
-            best_moves[0].store(policy);
-            best_moves[1].store(TRANSPOSE_TABLE_UNDEFINED);
-            best_moves[2].store(TRANSPOSE_TABLE_UNDEFINED);
-            best_value.store(value);
-        }
-
-        inline void register_value(const int policy, const int value){
-            if (best_value.load(memory_order_relaxed) < value){
-                best_value.store(value);
-                best_moves[2].store(best_moves[1].load(memory_order_relaxed));
-                best_moves[1].store(best_moves[0].load(memory_order_relaxed));
-                best_moves[0].store(policy);
+            /*
+            Node_child_transpose_table *p = p_n_node.load(memory_order_relaxed);
+            if (p != NULL){
+                p->init();
             }
+            */
+            free(this);
         }
 
-        inline void register_value(const Board *board, const int policies[], const int value){
-            b.store(board->b);
-            w.store(board->w);
-            p.store(board->p);
-            best_value.store(value);
-            best_moves[0].store(policies[0]);
-            best_moves[1].store(policies[1]);
-            best_moves[2].store(policies[2]);
+        inline void register_value(const int policy){
+            best_move.store(policy);
         }
 
-        inline void register_value(const int policies[], const int value){
-            best_value.store(value);
-            best_moves[0].store(policies[0]);
-            best_moves[1].store(policies[1]);
-            best_moves[2].store(policies[2]);
+        inline void register_value(const Board *board, const int policy){
+            player.store(board->player);
+            opponent.store(board->opponent);
+            best_move.store(policy);
         }
 
-        inline void get(int b[]) const{
-            b[0] = best_moves[0].load(memory_order_relaxed);
-            b[1] = best_moves[1].load(memory_order_relaxed);
-            b[2] = best_moves[2].load(memory_order_relaxed);
+        inline int get() const{
+            return best_move.load();
         }
+
+        inline bool compare(const Board *a) const{
+            return a->player == player.load(memory_order_relaxed) && a->opponent == opponent.load(memory_order_relaxed);
+        }
+        /*
+        inline Node_child_transpose_table* get_p_n_node(){
+            return p_n_node.load(memory_order_relaxed);
+        }
+
+        inline void register_p_n_node(Node_child_transpose_table *p){
+            return p_n_node.store(p);
+        }
+        */
+};
+
+struct Child_mini_transpose_table{
+    Node_child_transpose_table *table[TRANSPOSE_MINI_TABLE_SIZE];
+    mutex mtx;
 };
 
 #if USE_MULTI_THREAD
-    void child_init_p(int id, Node_child_transpose_table table[2][TRANSPOSE_TABLE_SIZE], const int idx, const int s, const int e){
-        for(int i = s; i < e; ++i)
-            table[idx][i].init();
+    void init_child_transpose_table(int id, Child_mini_transpose_table *table, int s, int e){
+        lock_guard<mutex> lock(table->mtx);
+        for(int i = s; i < e; ++i){
+            if (table->table[i] != NULL){
+                table->table[i]->init();
+                table->table[i] = NULL;
+            }
+        }
     }
 #endif
 
 class Child_transpose_table{
     private:
-        int prev;
-        int now;
-        Node_child_transpose_table table[2][TRANSPOSE_TABLE_SIZE];
-        atomic<int> n_reg;
+        Child_mini_transpose_table table[TRANSPOSE_TABLE_DIVISION];
 
     public:
-        inline void init(){
-            now = 0;
-            prev = 1;
-            init_now();
-            init_prev();
-        }
-
-        inline void ready_next_search(){
-            swap(now, prev);
-            init_now();
+        inline void first_init(){
+            int i, j;
+            for(i = 0; i < TRANSPOSE_TABLE_DIVISION; ++i){
+                for (j = 0; j < TRANSPOSE_MINI_TABLE_SIZE; ++j)
+                    table[i].table[j] = NULL;
+            }
         }
 
         #if USE_MULTI_THREAD
-            inline void init_prev(){
-                const int thread_size = thread_pool.size();
-                const int delta = ceil((double)TRANSPOSE_TABLE_SIZE / thread_size);
-                int s = 0;
-                vector<future<void>> init_future;
-                for (int i = 0; i < thread_size; ++i){
-                    init_future.emplace_back(thread_pool.push(child_init_p, table, prev, s, min(TRANSPOSE_TABLE_SIZE, s + delta)));
-                    s = min(TRANSPOSE_TABLE_SIZE - 1, s + delta);
+            inline void init(){
+                vector<future<void>> tasks;
+                for(int i = 0; i < TRANSPOSE_TABLE_DIVISION; ++i){
+                    tasks.emplace_back(thread_pool.push(init_child_transpose_table, &table[i], 0, TRANSPOSE_MINI_TABLE_SIZE));
                 }
-                for (int i = 0; i < thread_size; ++i)
-                    init_future[i].get();
-            }
-
-            inline void init_now(){
-                const int thread_size = thread_pool.size();
-                const int delta = ceil((double)TRANSPOSE_TABLE_SIZE / thread_size);
-                int s = 0;
-                vector<future<void>> init_future;
-                for (int i = 0; i < thread_size; ++i){
-                    init_future.emplace_back(thread_pool.push(child_init_p, table, now, s, min(TRANSPOSE_TABLE_SIZE, s + delta)));
-                    s = min(TRANSPOSE_TABLE_SIZE - 1, s + delta);
-                }
-                for (int i = 0; i < thread_size; ++i)
-                    init_future[i].get();
+                for (future<void> &task: tasks)
+                    task.get();
             }
         #else
-            inline void init_prev(){
-                for(int i = 0; i < TRANSPOSE_TABLE_SIZE; ++i)
-                    table[prev][i].init();
+            inline void init(){
+                int i, j;
+            for(i = 0; i < TRANSPOSE_TABLE_DIVISION; ++i){
+                for (j = 0; j < TRANSPOSE_MINI_TABLE_SIZE; ++j)
+                    if(table[i].table[j] != NULL){
+                        table[i].table[j]->init();
+                        table[i].table[j] = NULL;
+                    }
             }
-
-            inline void init_now(){
-                for(int i = 0; i < TRANSPOSE_TABLE_SIZE; ++i)
-                    table[now][i].init();
             }
         #endif
 
-        inline int now_idx() const{
-            return now;
-        }
-
-        inline int prev_idx() const{
-            return prev;
-        }
-
-        inline void reg(const Board *board, const int hash, const int policy, const int value){
-            if (!compare_key(board, &table[now][hash])){
-                table[now][hash].register_value(board, policy, value);
-                //++n_reg;
-            } else
-                table[now][hash].register_value(policy, value);
-        }
-
-        inline void reg(const int idx, const Board *board, const int hash, const int policy, const int value){
-            if (!compare_key(board, &table[idx][hash])){
-                table[idx][hash].register_value(board, policy, value);
-                //++n_reg;
-            } else
-                table[idx][hash].register_value(policy, value);
-        }
-
-        inline void reg(const Board *board, const int hash, const int policies[], const int value){
-            if (!compare_key(board, &table[now][hash])){
-                table[now][hash].register_value(board, policies, value);
-                //++n_reg;
-            } else
-                table[now][hash].register_value(policies, value);
-        }
-
-        inline bool get_now(Board *board, const int hash, int best_moves[]) const{
-            if (compare_key(board, &table[now][hash])){
-                table[now][hash].get(best_moves);
-                return true;
+        inline void reg(const Board *board, const uint32_t hash, const int policy){
+            lock_guard<mutex> lock(table[get_mini_idx(hash)].mtx);
+            Node_child_transpose_table *p_node = get_node(hash);
+            if (p_node != NULL){
+                if (p_node != NULL){
+                    if (p_node->compare(board))
+                        p_node->register_value(policy);
+                    else
+                        p_node->register_value(board, policy);
+                }
+            } else{
+                p_node = (Node_child_transpose_table*)malloc(sizeof(Node_child_transpose_table));
+                p_node->register_value(board, policy);
+                table[hash / TRANSPOSE_MINI_TABLE_SIZE].table[hash % TRANSPOSE_MINI_TABLE_SIZE] = p_node;
             }
-            best_moves[0] = TRANSPOSE_TABLE_UNDEFINED;
-            best_moves[1] = TRANSPOSE_TABLE_UNDEFINED;
-            best_moves[2] = TRANSPOSE_TABLE_UNDEFINED;
-            return false;
         }
 
-        inline bool get_prev(Board *board, const int hash, int best_moves[]) const{
-            if (compare_key(board, &table[prev][hash])){
-                table[prev][hash].get(best_moves);
-                return true;
+        inline int get(Board *board, const uint32_t hash) const{
+            Node_child_transpose_table *p_node = get_node(hash);
+            if (p_node != NULL){
+                if (p_node->compare(board))
+                    return p_node->get();
             }
-            best_moves[0] = TRANSPOSE_TABLE_UNDEFINED;
-            best_moves[1] = TRANSPOSE_TABLE_UNDEFINED;
-            best_moves[2] = TRANSPOSE_TABLE_UNDEFINED;
-            return false;
-        }
-
-        inline bool get(const int idx, Board *board, const int hash, int best_moves[]) const{
-            if (compare_key(board, &table[idx][hash])){
-                table[idx][hash].get(best_moves);
-                return true;
-            }
-            best_moves[0] = TRANSPOSE_TABLE_UNDEFINED;
-            best_moves[1] = TRANSPOSE_TABLE_UNDEFINED;
-            best_moves[2] = TRANSPOSE_TABLE_UNDEFINED;
-            return false;
-        }
-
-        inline int get_best_value(Board *board, const int hash){
-            if (compare_key(board, &table[now][hash]))
-                return table[now][hash].best_value.load(memory_order_relaxed);
             return TRANSPOSE_TABLE_UNDEFINED;
         }
-
-        inline int get_n_reg() const{
-            return n_reg.load();
+    
+    private:
+        inline Node_child_transpose_table* get_node(const uint32_t hash) const{
+            return table[hash / TRANSPOSE_MINI_TABLE_SIZE].table[hash % TRANSPOSE_MINI_TABLE_SIZE];
         }
 
-    private:
-        inline bool compare_key(const Board *a, const Node_child_transpose_table *b) const{
-            return a->p == b->p.load(memory_order_relaxed) && a->b == b->b.load(memory_order_relaxed) && a->w == b->w.load(memory_order_relaxed);
+        inline uint32_t get_mini_idx(const uint32_t hash) const{
+            return hash / TRANSPOSE_MINI_TABLE_SIZE;
         }
 };
 
 
 class Node_parent_transpose_table{
-    public:
-        atomic<unsigned long long> b;
-        atomic<unsigned long long> w;
-        atomic<int> p;
+    private:
+        atomic<unsigned long long> player;
+        atomic<unsigned long long> opponent;
         atomic<int> lower;
         atomic<int> upper;
+        //atomic<Node_parent_transpose_table*> p_n_node;
 
     public:
+
         inline void init(){
-            b.store(0, memory_order_relaxed);
-            w.store(0, memory_order_relaxed);
-            p.store(-1, memory_order_relaxed);
+            //Node_parent_transpose_table *p = p_n_node.load(memory_order_relaxed);
+            //if (p != NULL){
+            //    p->init();
+            //}
+            free(this);
         }
 
         inline void register_value(const Board *board, const int l, const int u){
-            b.store(board->b);
-            w.store(board->w);
-            p.store(board->p);
+            player.store(board->player);
+            opponent.store(board->opponent);
             lower.store(l);
             upper.store(u);
         }
 
         inline void register_value(const int l, const int u){
-            if (lower.load(memory_order_relaxed) < l)
-                lower.store(l);
-            if (u < upper.load(memory_order_relaxed))
-                upper.store(u);
+            lower.store(l);
+            upper.store(u);
         }
 
         inline void get(int *l, int *u) const{
             *l = lower.load(memory_order_relaxed);
             *u = upper.load(memory_order_relaxed);
         }
+
+        inline bool compare(const Board *a) const{
+            return a->player == player.load(memory_order_relaxed) && a->opponent == opponent.load(memory_order_relaxed);
+        }
+        /*
+        inline Node_parent_transpose_table* get_p_n_node(){
+            return p_n_node.load(memory_order_relaxed);
+        }
+
+        inline void register_p_n_node(Node_parent_transpose_table *p){
+            return p_n_node.store(p);
+        }
+        */
+};
+
+struct Parent_mini_transpose_table{
+    Node_parent_transpose_table *table[TRANSPOSE_MINI_TABLE_SIZE];
+    mutex mtx;
 };
 
 #if USE_MULTI_THREAD
-    void parent_init_p(int id, Node_parent_transpose_table table[2][TRANSPOSE_TABLE_SIZE], const int idx, const int s, const int e){
-        for(int i = s; i < e; ++i)
-            table[idx][i].init();
+    void init_parent_transpose_table(int id, Parent_mini_transpose_table *table, int s, int e){
+        lock_guard<mutex> lock(table->mtx);
+        for(int i = s; i < e; ++i){
+            if (table->table[i] != NULL){
+                table->table[i]->init();
+                table->table[i] = NULL;
+            }
+        }
     }
 #endif
 
 class Parent_transpose_table{
     private:
-        int prev;
-        int now;
-        Node_parent_transpose_table table[2][TRANSPOSE_TABLE_SIZE];
+        Parent_mini_transpose_table table[TRANSPOSE_TABLE_DIVISION];
 
     public:
-        inline void init(){
-            now = 0;
-            prev = 1;
-            init_now();
-            init_prev();
-        }
-
-        inline void ready_next_search(){
-            swap(now, prev);
-            init_now();
+        inline void first_init(){
+            int i, j;
+            for(i = 0; i < TRANSPOSE_TABLE_DIVISION; ++i){
+                for (j = 0; j < TRANSPOSE_MINI_TABLE_SIZE; ++j){
+                    table[i].table[j] = NULL;
+                }
+            }
         }
 
         #if USE_MULTI_THREAD
-            inline void init_now(){
-                const int thread_size = thread_pool.size();
-                const int delta = ceil((double)TRANSPOSE_TABLE_SIZE / thread_size);
-                int s = 0;
-                vector<future<void>> init_future;
-                for (int i = 0; i < thread_size; ++i){
-                    init_future.emplace_back(thread_pool.push(parent_init_p, table, now, s, min(TRANSPOSE_TABLE_SIZE, s + delta)));
-                    s = min(TRANSPOSE_TABLE_SIZE - 1, s + delta);
+            inline void init(){
+                vector<future<void>> tasks;
+                for(int i = 0; i < TRANSPOSE_TABLE_DIVISION; ++i){
+                    tasks.emplace_back(thread_pool.push(init_parent_transpose_table, &table[i], 0, TRANSPOSE_MINI_TABLE_SIZE));
                 }
-                for (int i = 0; i < thread_size; ++i)
-                    init_future[i].get();
-            }
-
-            inline void init_prev(){
-                const int thread_size = thread_pool.size();
-                const int delta = ceil((double)TRANSPOSE_TABLE_SIZE / thread_size);
-                int s = 0;
-                vector<future<void>> init_future;
-                for (int i = 0; i < thread_size; ++i){
-                    init_future.emplace_back(thread_pool.push(parent_init_p, table, prev, s, min(TRANSPOSE_TABLE_SIZE, s + delta)));
-                    s = min(TRANSPOSE_TABLE_SIZE - 1, s + delta);
-                }
-                for (int i = 0; i < thread_size; ++i)
-                    init_future[i].get();
+                for (future<void> &task: tasks)
+                    task.get();
             }
         #else
-            inline void init_now(){
-                for(int i = 0; i < TRANSPOSE_TABLE_SIZE; ++i)
-                    table[now][i].init();
+            inline void init(){
+                int i, j;
+            for(i = 0; i < TRANSPOSE_TABLE_DIVISION; ++i){
+                for (j = 0; j < TRANSPOSE_MINI_TABLE_SIZE; ++j)
+                    if(table[i].table[j] != NULL){
+                        table[i].table[j]->init();
+                        table[i].table[j] = NULL;
+                    }
             }
-
-            inline void init_prev(){
-                for(int i = 0; i < TRANSPOSE_TABLE_SIZE; ++i)
-                    table[prev][i].init();
             }
         #endif
 
-        inline void reg(const Board *board, const int hash, const int l, const int u){
-            if (!compare_key(board, &table[now][hash]))
-                table[now][hash].register_value(board, l, u);
-            else
-                table[now][hash].register_value(l, u);
+        inline void reg(const Board *board, const uint32_t hash, const int l, const int u){
+            lock_guard<mutex> lock(table[get_mini_idx(hash)].mtx);
+            Node_parent_transpose_table *p_node = get_node(hash);
+            if (p_node != NULL){
+                if (p_node->compare(board))
+                    p_node->register_value(l, u);
+                else
+                    p_node->register_value(board, l, u);
+            } else{
+                p_node = (Node_parent_transpose_table*)malloc(sizeof(Node_parent_transpose_table));
+                p_node->register_value(board, l, u);
+                table[hash / TRANSPOSE_MINI_TABLE_SIZE].table[hash % TRANSPOSE_MINI_TABLE_SIZE] = p_node;
+            }
         }
 
-        inline void reg(const int idx, const Board *board, const int hash, const int l, const int u){
-            if (!compare_key(board, &table[idx][hash]))
-                table[idx][hash].register_value(board, l, u);
-            else
-                table[idx][hash].register_value(l, u);
-        }
-
-        inline void reg_prev(const Board *board, const int hash, const int l, const int u){
-            if (!compare_key(board, &table[prev][hash]))
-                table[prev][hash].register_value(board, l, u);
-            else
-                table[prev][hash].register_value(l, u);
-        }
-
-        inline void get_now(Board *board, const int hash, int *l, int *u) const{
-            if (compare_key(board, &table[now][hash])){
-                table[now][hash].get(l, u);
-                return;
+        inline void get(Board *board, const uint32_t hash, int *l, int *u) const{
+            Node_parent_transpose_table *p_node = get_node(hash);
+            if (p_node != NULL){
+                if (p_node->compare(board)){
+                    p_node->get(l, u);
+                    return;
+                }
             }
             *l = -INF;
             *u = INF;
         }
-
-        inline void get_prev(Board *board, const int hash, int *l, int *u) const{
-            if (compare_key(board, &table[prev][hash])){
-                table[prev][hash].get(l, u);
-                return;
-            }
-            *l = -INF;
-            *u = INF;
-        }
-
-        inline void get(const int idx, Board *board, const int hash, int *l, int *u) const{
-            if (compare_key(board, &table[idx][hash])){
-                table[idx][hash].get(l, u);
-                return;
-            }
-            *l = -INF;
-            *u = INF;
-        }
-
-        inline int now_idx() const{
-            return now;
-        }
-
-        inline int prev_idx() const{
-            return prev;
-        }
-
+    
     private:
-        inline bool compare_key(const Board *a, const Node_parent_transpose_table *b) const{
-            return a->p == b->p.load(memory_order_relaxed) && a->b == b->b.load(memory_order_relaxed) && a->w == b->w.load(memory_order_relaxed);
+        inline Node_parent_transpose_table* get_node(const uint32_t hash) const{
+            return table[hash / TRANSPOSE_MINI_TABLE_SIZE].table[hash % TRANSPOSE_MINI_TABLE_SIZE];
+        }
+
+        inline uint32_t get_mini_idx(const uint32_t hash) const{
+            return hash / TRANSPOSE_MINI_TABLE_SIZE;
         }
 };
 

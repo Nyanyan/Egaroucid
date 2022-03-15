@@ -37,11 +37,11 @@ public:
 			b.translate_from_arr(board_arr, BLACK);
 			name = line.substr(65, line.size());
 			arr.push_back(make_pair(b, name));
-			b.white_mirror();
+			b.board_black_line_mirror();
 			arr.push_back(make_pair(b, name));
-			b.vertical_mirror();
+			b.board_rotate_180();
 			arr.push_back(make_pair(b, name));
-			b.white_mirror();
+			b.board_black_line_mirror();
 			arr.push_back(make_pair(b, name));
 		}
 		return true;
@@ -51,7 +51,9 @@ public:
 		int i, j;
 		bool flag;
 		for (i = 0; i < (int)arr.size(); ++i) {
-			if (arr[i].first.b == b.b && arr[i].first.w == b.w)
+			if (b.p == BLACK && arr[i].first.player == b.player && arr[i].first.opponent == b.opponent)
+				return arr[i].second;
+			if (b.p == WHITE && arr[i].first.player == b.opponent && arr[i].first.opponent == b.player)
 				return arr[i].second;
 		}
 		return "";

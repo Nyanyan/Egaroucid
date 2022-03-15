@@ -1,0 +1,158 @@
+{
+    "lang_name": "English",
+    "common": {
+        "black": "Black",
+        "white": "White",
+        "level": "Level",
+        "othello_ai": "Othello AI"
+    },
+    "loading": {
+        "loading": "Loading...",
+        "load_failed": "Loading Failed\nPlease check the resources directory"
+    },
+    "closing": "Bye!",
+    "mode": {
+        "mode": "mode",
+        "entry_mode": "Simple",
+        "professional_mode": "Study",
+        "serious_game": "Serious Game"
+    },
+    "play": {
+        "game": "Game",
+        "new_game": "New Game",
+        "analyze": "Analyze"
+    },
+    "settings": {
+        "settings": "Settings",
+        "play": {
+            "play":  "AI Plays",
+            "human_first": "Second",
+            "human_second": "First",
+            "both_ai": "Both",
+            "both_human": "None"
+        },
+        "thread": {
+            "thread": "Number of Threads"
+        }
+    },
+    "ai_settings": {
+        "ai_settings": "AI Settings",
+        "use_book": "Book Use",
+        "ai_level": "AI Level",
+        "hint_level": "Hint Level",
+        "book_error": "Book Error",
+        "use_book_depth": "Book Depth of Use"
+    },
+    "book": {
+        "book": "Book",
+        "start_learn": "Start Learning",
+        "stop_learn": "Stop Learning",
+        "auto_modification": "Auto Modification",
+        "settings": "Book Settings",
+        "depth": "Depth",
+        "accept": "Acceptance",
+        "changed_value": "Modified Value",
+        "import": "Import",
+        "import_explanation": "Import Egaroucid/Edax book\nby drag-and-drop",
+        "import_failed": "Import Failed",
+        "back": "Back",
+        "loading": "Importing..."
+    },
+    "in_out": {
+        "in_out": "In/Out",
+        "output_record": "Copy Record",
+        "output_game": "Save Game",
+        "input_record": "Import Record",
+        "input_board": "Import Board"
+    },
+    "display": {
+        "display": "Display",
+        "hint": {
+            "hint": "Hint",
+            "stone_value": "Disc Difference",
+            "show_number": "",
+            "show_all": "All",
+            "human_value": "Human Sense Value",
+            "umigame_value": "Umigame's Value"
+        },
+        "graph": "Graph",
+        "end_popup": "Pop-Up When Game Ends",
+        "log": "Log"
+    },
+    "operation": {
+        "operation": "Operation",
+        "stop_read": "Stop Calculating",
+        "resume_read": "Resume Calculating",
+        "convert": {
+            "convert": "Convert",
+            "vertical": "Vertical",
+            "white_line": "White Line",
+            "black_line": "Black Line"
+        }
+    },
+    "button": {
+        "start_game": "Start Game",
+        "how_to_use": "Usage",
+        "close": "Close",
+        "tweet": "Tweet",
+        "save_game": "Save This Game",
+        "not_save_game": "Close Without Saving",
+        "import": "Import"
+    },
+    "result": {
+        "you_win": "You Won!",
+        "AI_win": "AI Won!",
+        "draw": "Draw!",
+        "black_win": "Black Won!",
+        "white_win": "White Won!",
+        "tweet_you_win_0": "I won against ",
+        "tweet_you_win_1": "!",
+        "tweet_AI_win_0": "I lose against ",
+        "tweet_AI_win_1": "...",
+        "tweet_draw_0": "I had a draw with ",
+        "tweet_draw_1": "!"
+    },
+    "save_game": {
+        "save_game": "Save This Game",
+        "player_name": "Each Player's Name",
+        "memo": "Memo"
+    },
+    "info": {
+        "black": "Black Turn",
+        "white": "White Turn",
+        "game_end": "Game End",
+        "joseki_name": "Joseki",
+        "ai": "AI",
+        "hint": "Hint",
+        "moves": "moves",
+        "lookahead_0": "Lookahead: ",
+        "lookahead_1": "moves",
+        "complete_0": "Complete: ",
+        "complete_1": "empties"
+    },
+    "help": {
+        "help": "Help",
+        "how_to_use": "Usage",
+        "bug_report": "Report a Bug"
+    },
+    "tips": {
+        "do_you_know": "Do You Know?",
+        "tips": [
+            "Modify your book \nby right-clicking in study mode",
+            "You can import Edax's book",
+            "Move boards by dragging, <-/-> keys, A/D keys",
+            "You can save games in records directory",
+            "Book & settings are \nautomatically saved in closing",
+            "You can import various formatted boards",
+            "You can import records or boards",
+            "Human sense values are comprehensive evaluation",
+            "Umigame values depend on your book",
+            "You can hide pop-up when game ends",
+            "Calculating never finish \nif the level is too high",
+            "You can stop AI calculating \nwith Stop Calculating button",
+            "Rightclicking a cell \nto change a book value",
+            "You can exit book changing \nmode with key Esc",
+            "You can finish book changing \n mode with key Enter"
+        ]
+    }
+}
