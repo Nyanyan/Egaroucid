@@ -1913,37 +1913,47 @@ void Main() {
 					/*** human plays ***/
 					pair<int, Board> moved_board = move_board(bd, board_clicked);
 					if (moved_board.first != -1) {
-						bool next_fork_mode = (!fork_mode && history_place != history[history.size() - 1].b.n - 4);
-						bd = moved_board.second;
-						bd.check_player();
-						if (fork_mode || next_fork_mode) {
-							while (fork_history.size()) {
-								if (fork_history[fork_history.size() - 1].b.n >= bd.n) {
-									fork_history.pop_back();
-								}
-								else {
-									break;
-								}
-							}
-							if (!next_fork_mode && fork_history.size()) {
-								History_elem hist_tmp = { bd, -INF, moved_board.first, fork_history[fork_history.size() - 1].record + str_record(moved_board.first) };
-								fork_history.emplace_back(hist_tmp);
-							}
-							else {
-								History_elem hist_tmp = { bd, -INF, moved_board.first, history[find_history_idx(history, history_place)].record + str_record(moved_board.first) };
-								fork_history.emplace_back(hist_tmp);
-								fork_mode = true;
-							}
-						}
-						else {
-							History_elem hist_tmp = { bd, -INF, moved_board.first, history[history.size() - 1].record + str_record(moved_board.first) };
-							history.emplace_back(hist_tmp);
-						}
-						history_place = bd.n - 4;
 						reset_hint(&hint_state, &hint_future);
 						reset_umigame(umigame_state, umigame_future);
 						reset_human_value(&human_value_state, &human_value_future);
 						reset_analyze(&analyzing, &analyze_future);
+						moved_board.second.check_player();
+						bool next_fork_mode = (!fork_mode && history_place != history[history.size() - 1].b.n - 4);
+						if (next_fork_mode && history[find_history_idx(history, moved_board.second.n - 4)].b == moved_board.second) {
+							bd = moved_board.second;
+							history_place = bd.n - 4;
+						}
+						else if (fork_mode && fork_history[find_history_idx(fork_history, moved_board.second.n - 4)].b == moved_board.second) {
+							bd = moved_board.second;
+							history_place = bd.n - 4;
+						}
+						else {
+							bd = moved_board.second;
+							if (fork_mode || next_fork_mode) {
+								while (fork_history.size()) {
+									if (fork_history[fork_history.size() - 1].b.n >= bd.n) {
+										fork_history.pop_back();
+									}
+									else {
+										break;
+									}
+								}
+								if (!next_fork_mode && fork_history.size()) {
+									History_elem hist_tmp = { bd, -INF, moved_board.first, fork_history[fork_history.size() - 1].record + str_record(moved_board.first) };
+									fork_history.emplace_back(hist_tmp);
+								}
+								else {
+									History_elem hist_tmp = { bd, -INF, moved_board.first, history[find_history_idx(history, history_place)].record + str_record(moved_board.first) };
+									fork_history.emplace_back(hist_tmp);
+									fork_mode = true;
+								}
+							}
+							else {
+								History_elem hist_tmp = { bd, -INF, moved_board.first, history[history.size() - 1].record + str_record(moved_board.first) };
+								history.emplace_back(hist_tmp);
+							}
+							history_place = bd.n - 4;
+						}
 					}
 					/*** human plays ***/
 

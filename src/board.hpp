@@ -24,6 +24,10 @@ class Board {
         uint_fast8_t parity;
 
     public:
+        int operator == (Board a) {
+            return player == a.player && opponent == a.opponent && p == a.p;
+        }
+        
         inline Board copy(){
             Board res;
             res.player = player;
