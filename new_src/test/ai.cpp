@@ -8,7 +8,7 @@ int main(int argc, char *argv[]){
     flip_init();
     board_init();
     evaluate_init();
-    book_init();
+    //book_init();
     parent_transpose_table.first_init();
     child_transpose_table.first_init();
     #if USE_MULTI_THREAD
