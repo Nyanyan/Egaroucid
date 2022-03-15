@@ -2072,7 +2072,7 @@ void Main() {
 										else {
 											int changed_book_value = ParseOr<int>(changed_book_value_str, -1000);
 											if (changed_book_value != -1000) {
-												global_searching = false;
+												reset_hint(&hint_state, &hint_future);
 												Flip m;
 												calc_flip(&m, &bd, cell);
 												book.change(bd.move_copy(&m), changed_book_value);
@@ -2080,7 +2080,6 @@ void Main() {
 												book_changed = true;
 												changing_book = false;
 												hint_state = 0;
-												global_searching = true;
 											}
 										}
 									}
@@ -2190,7 +2189,10 @@ void Main() {
 								popup_start_time = tim();
 							}
 							int v = sgn * ai_result.value;
-							History_elem hist_tmp = { bd, v, flip.pos, history[history.size() - 1].record + str_record(flip.pos) };
+							if (history.size()) {
+								history[history.size() - 1].v = v;
+							}
+							History_elem hist_tmp = { bd, -INF, flip.pos, history[history.size() - 1].record + str_record(flip.pos) };
 							history.emplace_back(hist_tmp);
 							history_place = bd.n - 4;
 							ai_value = ai_result.value;
