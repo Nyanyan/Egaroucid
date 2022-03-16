@@ -38,7 +38,7 @@ Unzip the zip to anywhere, then click ```Egaroucid5.exe``` to execute. For MacOS
 
 ### How to open in MacOS
 
-Now, version 5.4.1, has a trouble in opening this application.
+Only version 5.4.1 can be used in MacOS. Egaroucid5.4.1 has a trouble in opening.
 
 To open it, please
 
@@ -49,7 +49,7 @@ chmod Egaroucid.app/Contents/MacOS/Egaroucid
 
 Then please execute ```Egaroucid.app/Contents/MacOS/Egaroucid```.
 
-Now fixing this oproblem.
+Now fixing this problem.
 
 
 
