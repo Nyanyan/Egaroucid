@@ -533,5 +533,5 @@ void modify_book_parent(Board *b){
         seen_nodes[i] = false;
     int n_seen = 0;
     modify_book(b, false, &n_seen, seen_nodes);
-    cerr << "book modified seen " << n_seen << " nodes, book has " << n_book << " nodes" << endl;
+    cerr << "book modified seen " << n_seen << " nodes" << endl;
 }
