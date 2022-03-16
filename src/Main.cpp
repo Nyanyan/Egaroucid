@@ -433,7 +433,7 @@ void board_draw(Rect board_cells[], History_elem b, int next_policy, int int_mod
 					Circle(xx, yy, stone_size).draw(ColorF(Palette::Black, 0.2));
 				}
 			}
-			if (!before_start_game && !book_start_learn && (!use_hint_flag || (!normal_hint && !human_hint && !umigame_hint))) {
+			if (int_mode != 2 && !before_start_game && !book_start_learn && (!use_hint_flag || (!normal_hint && !human_hint && !umigame_hint))) {
 				int xx = board_sx + (HW_M1 - cell % HW) * board_cell_size + board_cell_size / 2;
 				int yy = board_sy + (HW_M1 - cell / HW) * board_cell_size + board_cell_size / 2;
 				Circle(xx, yy, legal_size).draw(Palette::Cyan);
@@ -443,7 +443,7 @@ void board_draw(Rect board_cells[], History_elem b, int next_policy, int int_mod
 	if (b.policy != -1) {
 		Circle(board_sx + (HW_M1 - b.policy % HW) * board_cell_size + board_cell_size / 2, board_sy + (HW_M1 - b.policy / HW) * board_cell_size + board_cell_size / 2, legal_size).draw(Palette::Red);
 	}
-	if (use_hint_flag && legal != 0 && !before_start_game && !book_start_learn && (legal | hint_legal) == legal) {
+	if (int_mode != 2 && use_hint_flag && legal != 0 && !before_start_game && !book_start_learn && (legal | hint_legal) == legal) {
 		bool hint_shown[HW2];
 		for (int i = 0; i < HW2; ++i) {
 			hint_shown[i] = false;
