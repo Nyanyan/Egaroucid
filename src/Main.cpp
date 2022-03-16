@@ -1522,7 +1522,7 @@ void Main() {
 	int book_learn_accept = 4, book_depth = 30;
 	bool book_changed = false;
 
-	future<int> modify_book_future;
+	future<void> modify_book_future;
 	bool book_modifying = false;
 
 	bool changing_book = false;
@@ -2271,7 +2271,7 @@ void Main() {
 			/*** graph interaction ***/
 
 			/*** Board draw ***/
-			if (book_learning) {
+			if (book_learning || book_modifying) {
 				History_elem history_elem;
 				history_elem.b = bd;
 				history_elem.policy = -1;
@@ -2527,7 +2527,6 @@ void Main() {
 				if (modify_book_future.wait_for(chrono::seconds(0)) == future_status::ready) {
 					modify_book_future.get();
 					book_modifying = false;
-					cerr << "modifying book done" << endl;
 				}
 			}
 			/*** book modification ***/
@@ -2752,7 +2751,7 @@ void Main() {
 					cerr << "modifying book..." << endl;
 					book_modifying = true;
 					book_changed = true;
-					modify_book_future = async(launch::async, modify_book, bd);
+					modify_book_future = async(launch::async, modify_book_parent, &bd);
 				}
 			}
 			else if (usage_flag) {

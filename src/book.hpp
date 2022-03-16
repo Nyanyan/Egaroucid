@@ -291,9 +291,67 @@ class Book{
             return res;
         }
 
+        inline int get_n_book(){
+            return n_book;
+        }
+
+        inline int get_oneline(Board *b){
+            Node_book *p_node = this->book[b->hash() & BOOK_HASH_MASK];
+            while(p_node != NULL){
+                if(compare_key(b, p_node)){
+                    return p_node->line;
+                }
+                p_node = p_node->p_n_node;
+            }
+            return -INF;
+        }
+
+        inline int get_line(Board *b){
+            Board nb = b->copy();
+            int res = -INF;
+            res = get_oneline(&nb);
+            if (res != -INF)
+                return res;
+            nb.board_black_line_mirror();
+            res = get_oneline(&nb);
+            if (res != -INF)
+                return res;
+            nb.board_rotate_180();
+            res = get_oneline(&nb);
+            if (res != -INF)
+                return res;
+            nb.board_black_line_mirror();
+            res = get_oneline(&nb);
+            if (res != -INF)
+                return res;
+            nb.board_horizontal_mirror();
+            res = get_oneline(&nb);
+            if (res != -INF)
+                return res;
+            nb.board_black_line_mirror();
+            res = get_oneline(&nb);
+            if (res != -INF)
+                return res;
+            nb.board_rotate_180();
+            res = get_oneline(&nb);
+            if (res != -INF)
+                return res;
+            nb.board_black_line_mirror();
+            res = get_oneline(&nb);
+            if (res != -INF)
+                return res;
+            return -INF;
+        }
+
         inline void change(Board b, int value){
             n_book += register_symmetric_book(b, value, n_book);
-            cerr << "book changed" << endl;
+            //cerr << "book changed" << endl;
+        }
+
+        inline void change(Board *b, int value){
+            Board nb = b->copy();
+            n_book += register_symmetric_book(nb, value, n_book);
+            //cerr << "book changed" << endl;
         }
 
         inline void save_bin(){
@@ -430,26 +488,50 @@ bool book_init(){
     return book.init();
 }
 
-int modify_book(Board b){
-    uint64_t legal = b.get_legal();
-    Flip flip;
-    bool has_child = false;
-    int v = -INF;
-    int vbook = book.get(&b);
-    for (int cell = 0; cell < HW2; ++cell){
-        if (1 & (legal >> cell)){
-            calc_flip(&flip, &b, cell);
-            b.move(&flip);
-                if (book.get(&b) != -INF){
-                    has_child = true;
-                    v = max(v, modify_book(b));
-                }
-            b.undo(&flip);
+int modify_book(Board *b, bool passed, int *n_seen, vector<bool> &seen_nodes){
+    const int line = book.get_oneline(b);
+    if (0 <= line && line < (int)seen_nodes.size()){
+        if (seen_nodes[line]){
+            return book.get(b);
         }
+        seen_nodes[line] = true;
     }
-    if (!has_child)
+    uint64_t legal = b->get_legal();
+    if (legal == 0ULL){
+        if (passed)
+            return end_evaluate(b);
+        int res;
+        b->pass();
+            res = -modify_book(b, true, n_seen, seen_nodes);
+        b->pass();
+        return res;
+    }
+    ++(*n_seen);
+    if (((*n_seen) & 0b111111111) == 0b111111111)
+        cerr << (*n_seen) << " nodes" << endl;
+    int alpha = INF;
+    Flip flip;
+    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+        calc_flip(&flip, b, cell);
+        b->move(&flip);
+            if (book.get(b) != -INF)
+                alpha = min(alpha, -modify_book(b, false, n_seen, seen_nodes));
+        b->undo(&flip);
+    }
+    int vbook = book.get(b);
+    if (alpha == INF)
         return vbook;
-    if (-v != vbook)
-        book.change(b, -v);
-    return -v;
+    if (alpha != vbook)
+        book.change(b, alpha);
+    return alpha;
+}
+
+void modify_book_parent(Board *b){
+    const int n_book = book.get_n_book();
+    vector<bool> seen_nodes(n_book);
+    for (int i = 0; i < n_book; ++i)
+        seen_nodes[i] = false;
+    int n_seen = 0;
+    modify_book(b, false, &n_seen, seen_nodes);
+    cerr << "book modified seen " << n_seen << " nodes, book has " << n_book << " nodes" << endl;
 }
