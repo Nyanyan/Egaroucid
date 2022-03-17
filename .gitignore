@@ -15,7 +15,7 @@ src/log.txt
 src/testcases
 /move_ordering/*.txt
 legacy
-new_src/test/*.exe
-new_src/test/*.out
-new_src/*.out
-new_src/*.exe
+src/test/*.exe
+src/test/*.out
+src/*.out
+src/*.exe
