@@ -1025,7 +1025,7 @@ bool import_record(String record, vector<History_elem>* n_history) {
 	bool flag = true;
 	String record_tmp = U"";
 	record = record.replace(U"\r", U"").replace(U"\n", U"");
-	if (record.size() % 2 != 0) {
+	if (record.size() % 2 != 0 && record.size() <= 120) {
 		flag = false;
 	}
 	else {
