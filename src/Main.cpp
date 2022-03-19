@@ -34,6 +34,9 @@ using namespace std;
 #define x_center 500
 #define y_center 360
 
+#define BUTTON_NOT_PUSHED 0
+#define BUTTON_LONG_PRESS_THRESHOLD 500
+
 constexpr Color font_color = Palette::White;;
 constexpr int board_size = 480, board_coord_size = 20;
 constexpr int board_sx = left_left + board_coord_size, board_sy = y_center - board_size / 2, board_cell_size = board_size / HW, board_cell_frame_width = 2, board_frame_width = 7;
@@ -1547,6 +1550,9 @@ void Main() {
 	bool inputting_board = false;
 	String imported_board;
 
+	uint64_t left_pushed = BUTTON_NOT_PUSHED;
+	uint64_t right_pushed = BUTTON_NOT_PUSHED;
+
 	int use_ai_mode;
 	string lang_name;
 	if (!import_setting(&int_mode, &use_book, &ai_level, &ai_book_accept, &hint_level, &use_book_depth,
@@ -2225,15 +2231,27 @@ void Main() {
 			/*** graph interaction ***/
 			if (main_window_active && !ai_thinking && !book_learning && !book_modifying) {
 				int former_history_place = history_place;
-				if (KeyLeft.down() || KeyA.down()) {
-					history_place = max(0, history_place - 1);
+				if (!KeyLeft.pressed() && !KeyA.pressed()) {
+					left_pushed = BUTTON_NOT_PUSHED;
 				}
-				else if (KeyRight.down() || KeyD.down()) {
+				if (!KeyRight.pressed() && !KeyD.pressed()) {
+					right_pushed = BUTTON_NOT_PUSHED;
+				}
+				if (KeyLeft.down() || KeyA.down() || (left_pushed != BUTTON_NOT_PUSHED && tim() - left_pushed >= BUTTON_LONG_PRESS_THRESHOLD)) {
+					history_place = max(0, history_place - 1);
+					if (KeyLeft.down() || KeyA.down()) {
+						left_pushed = tim();
+					}
+				}
+				else if (KeyRight.down() || KeyD.down() || (right_pushed != BUTTON_NOT_PUSHED && tim() - right_pushed >= BUTTON_LONG_PRESS_THRESHOLD)) {
 					if (fork_mode) {
 						history_place = min(fork_history[fork_history.size() - 1].b.n - 4, history_place + 1);
 					}
 					else {
 						history_place = min(history[history.size() - 1].b.n - 4, history_place + 1);
+					}
+					if (KeyRight.down() || KeyD.down()) {
+						right_pushed = tim();
 					}
 				}
 				else if (use_value_flag) {
