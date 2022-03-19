@@ -2236,7 +2236,7 @@ void Main() {
 						history_place = min(history[history.size() - 1].b.n - 4, history_place + 1);
 					}
 				}
-				else {
+				else if (use_value_flag) {
 					history_place = graph.update_place(history, fork_history, history_place);
 				}
 				if (history_place != former_history_place) {
