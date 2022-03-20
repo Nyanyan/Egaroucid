@@ -624,7 +624,8 @@ bool show_popup(Board b, bool use_ai_flag, bool human_first, bool human_second, 
 		tweet_result += U" #egaroucid https://www.egaroucid-app.nyanyan.dev/";
 		Twitter::OpenTweetWindow(tweet_result);
 	}
-	return (transparency == 1.0) && close_button.clicked();
+	bool close_flag = close_button.clicked() || KeyEnter.pressed() || KeyEscape.pressed();
+	return (transparency == 1.0) && close_flag;
 }
 
 int output_game_popup(Font big_font, Font mid_font, Font small_font, String* black_player, String* white_player, String* game_memo, bool active_cells[]) {
@@ -726,7 +727,7 @@ int output_game_popup(Font big_font, Font mid_font, Font small_font, String* bla
 	if (save_button.clicked()) {
 		return 1;
 	}
-	else if (close_button.clicked()) {
+	else if (close_button.clicked() || KeyEscape.pressed()) {
 		return 2;
 	}
 	return 0;
@@ -762,7 +763,7 @@ int import_record_popup(Font big_font, Font mid_font, Font small_font, String* r
 	if (import_button.clicked() || return_pressed) {
 		return 1;
 	}
-	else if (close_button.clicked()) {
+	else if (close_button.clicked() || KeyEscape.pressed()) {
 		return 2;
 	}
 	return 0;
@@ -798,7 +799,7 @@ int import_board_popup(Font big_font, Font mid_font, Font small_font, String* te
 	if (import_button.clicked() || return_pressed) {
 		return 1;
 	}
-	else if (close_button.clicked()) {
+	else if (close_button.clicked() || KeyEscape.pressed()) {
 		return 2;
 	}
 	return 0;
@@ -1391,7 +1392,7 @@ void Main() {
 	Window::Resize(window_size);
 	Window::SetStyle(WindowStyle::Sizable);
 	Scene::SetResizeMode(ResizeMode::Keep);
-	Window::SetTitle(U"Egaroucid5.5.0");
+	Window::SetTitle(U"Egaroucid5.5.1");
 	System::SetTerminationTriggers(UserAction::NoAction);
 	Scene::SetBackground(green);
 	//Console.open();
