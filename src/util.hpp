@@ -43,3 +43,29 @@ string idx_to_coord(int idx){
     const string x_coord = "abcdefgh";
     return x_coord[x] + to_string(y + 1);
 }
+
+inline int value_to_score(int v){
+    #if EVALUATION_STEP_WIDTH_MODE == 0
+        return v;
+    #elif EVALUATION_STEP_WIDTH_MODE == 1
+        return v * 2;
+    #elif EVALUATION_STEP_WIDTH_MODE == 2
+        if (v > 0)
+            ++v;
+        else if (v < 0)
+            --v;
+        return v / 2;
+    #elif EVALUATION_STEP_WIDTH_MODE == 3
+        if (v > 0)
+            v += 2;
+        else if (v < 0)
+            v -= 2;
+        return v / 4;
+    #elif EVALUATION_STEP_WIDTH_MODE == 4
+        if (v > 0)
+            v += 4;
+        else if (v < 0)
+            v -= 4;
+        return v / 8;
+    #endif
+}

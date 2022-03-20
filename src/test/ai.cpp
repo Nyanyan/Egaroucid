@@ -8,13 +8,13 @@ int main(int argc, char *argv[]){
     flip_init();
     board_init();
     evaluate_init();
-    book_init();
+    //book_init();
     parent_transpose_table.first_init();
     child_transpose_table.first_init();
     #if USE_MULTI_THREAD
         thread_pool.resize(16);
     #endif
-    int level = 21;
+    int level = 5;
     if (argc >= 2)
         level = atoi(argv[1]);
     constexpr int book_error = 0;

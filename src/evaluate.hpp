@@ -18,6 +18,18 @@ using namespace std;
 #define STEP 256
 #define STEP_2 128
 
+#if EVALUATION_STEP_WIDTH_MODE == 0
+    #define SCORE_MAX 64
+#elif EVALUATION_STEP_WIDTH_MODE == 1
+    #define SCORE_MAX 32
+#elif EVALUATION_STEP_WIDTH_MODE == 2
+    #define SCORE_MAX 128
+#elif EVALUATION_STEP_WIDTH_MODE == 3
+    #define SCORE_MAX 256
+#elif EVALUATION_STEP_WIDTH_MODE == 4
+    #define SCORE_MAX 512
+#endif
+
 #define P31 3
 #define P32 9
 #define P33 27
@@ -362,7 +374,18 @@ inline int calc_canput_pattern(const int phase_idx, Board *b, const uint64_t pla
 }
 
 inline int end_evaluate(Board *b){
-    return b->score_player();
+    int res = b->score_player();
+    #if EVALUATION_STEP_WIDTH_MODE == 0
+        return res;
+    #elif EVALUATION_STEP_WIDTH_MODE == 1
+        return res / 2;
+    #elif EVALUATION_STEP_WIDTH_MODE == 2
+        return res * 2;
+    #elif EVALUATION_STEP_WIDTH_MODE == 3
+        return res * 4;
+    #elif EVALUATION_STEP_WIDTH_MODE == 4
+        return res * 8;
+    #endif
 }
 
 inline int score_modification(int phase, int estimated_score){
@@ -400,11 +423,37 @@ inline int mid_evaluate(Board *b){
         calc_canput_pattern(phase_idx, b, player_mobility, opponent_mobility);
     //return score_modification(phase_idx, res);
     //cerr << res << endl;
-    if (res > 0)
-        res += STEP_2;
-    else if (res < 0)
-        res -= STEP_2;
-    res /= STEP;
-    return max(-HW2, min(HW2, res));
+    #if EVALUATION_STEP_WIDTH_MODE == 0
+        if (res > 0)
+            res += STEP_2;
+        else if (res < 0)
+            res -= STEP_2;
+        res /= STEP;
+    #elif EVALUATION_STEP_WIDTH_MODE == 1
+        if (res > 0)
+            res += STEP;
+        else if (res < 0)
+            res -= STEP;
+        res /= STEP * 2;
+    #elif EVALUATION_STEP_WIDTH_MODE == 2
+        if (res > 0)
+            res += STEP / 4;
+        else if (res < 0)
+            res -= STEP / 4;
+        res /= STEP_2;
     
+    #elif EVALUATION_STEP_WIDTH_MODE == 3
+        if (res > 0)
+            res += STEP / 8;
+        else if (res < 0)
+            res -= STEP / 8;
+        res /= STEP / 4;
+    #elif EVALUATION_STEP_WIDTH_MODE == 4
+        if (res > 0)
+            res += STEP / 16;
+        else if (res < 0)
+            res -= STEP / 16;
+        res /= STEP / 8;
+    #endif
+    return max(-SCORE_MAX, min(SCORE_MAX, res));
 }

@@ -14,6 +14,7 @@
     #include "thread_pool.hpp"
     #include "ybwc.hpp"
 #endif
+#include "util.hpp"
 
 using namespace std;
 
@@ -73,7 +74,17 @@ inline int last1(Search *search, int alpha, int beta, int p0){
             score -= 2 * n_flip + 2;
     } else
         score += 2 * n_flip;
-    return score;
+    #if EVALUATION_STEP_WIDTH_MODE == 0
+        return score;
+    #elif EVALUATION_STEP_WIDTH_MODE == 1
+        return score / 2;
+    #elif EVALUATION_STEP_WIDTH_MODE == 2
+        return score * 2;
+    #elif EVALUATION_STEP_WIDTH_MODE == 3
+        return score * 4;
+    #elif EVALUATION_STEP_WIDTH_MODE == 4
+        return score * 8;
+    #endif
 }
 
 /*

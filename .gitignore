@@ -19,3 +19,4 @@ src/test/*.exe
 src/test/*.out
 src/*.out
 src/*.exe
+src/close_quest.txt
