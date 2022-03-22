@@ -5,7 +5,7 @@ from random import shuffle
 with open('close_quest.txt', 'r') as f:
     tactic = [elem for elem in f.read().splitlines()]
 
-level = 3
+level = 5
 
 egaroucid = [
     subprocess.Popen(('a.exe ' + str(level)).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL),
