@@ -37,7 +37,9 @@
 // evaluation function step width
 // 0: 1 discs
 // 1: 2 discs
-// 2: 0.5 discs
-// 3: 0.25 discs
-// 4: 0.125 discs
-#define EVALUATION_STEP_WIDTH_MODE 1
+// 2: 1/2 discs
+// 3: 1/4 discs
+// 4: 1/8 discs
+// 5: 1/16 discs
+// 6: 1/32 discs
+#define EVALUATION_STEP_WIDTH_MODE 3

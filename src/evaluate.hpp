@@ -29,6 +29,10 @@ using namespace std;
     #define SCORE_MAX 256
 #elif EVALUATION_STEP_WIDTH_MODE == 4
     #define SCORE_MAX 512
+#elif EVALUATION_STEP_WIDTH_MODE == 5
+    #define SCORE_MAX 1024
+#elif EVALUATION_STEP_WIDTH_MODE == 6
+    #define SCORE_MAX 2048
 #endif
 
 #define P31 3
@@ -445,6 +449,18 @@ inline int mid_evaluate(Board *b){
         else if (res < 0)
             res -= STEP / 16;
         res /= STEP / 8;
+    #elif EVALUATION_STEP_WIDTH_MODE == 5
+        if (res > 0)
+            res += STEP / 32;
+        else if (res < 0)
+            res -= STEP / 32;
+        res /= STEP / 16;
+    #elif EVALUATION_STEP_WIDTH_MODE == 6
+        if (res > 0)
+            res += STEP / 64;
+        else if (res < 0)
+            res -= STEP / 64;
+        res /= STEP / 32;
     #endif
     //cerr << res << " " << value_to_score_double(res) << endl;
     return max(-SCORE_MAX, min(SCORE_MAX, res));

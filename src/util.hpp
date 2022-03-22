@@ -67,6 +67,18 @@ inline int value_to_score_int(int v){
         else if (v < 0)
             v -= 4;
         return v / 8;
+    #elif EVALUATION_STEP_WIDTH_MODE == 5
+        if (v > 0)
+            v += 8;
+        else if (v < 0)
+            v -= 8;
+        return v / 16;
+    #elif EVALUATION_STEP_WIDTH_MODE == 6
+        if (v > 0)
+            v += 16;
+        else if (v < 0)
+            v -= 16;
+        return v / 32;
     #endif
 }
 
@@ -82,6 +94,10 @@ inline double value_to_score_double(int v){
         return vd / 4.0;
     #elif EVALUATION_STEP_WIDTH_MODE == 4
         return vd / 8.0;
+    #elif EVALUATION_STEP_WIDTH_MODE == 5
+        return vd / 16.0;
+    #elif EVALUATION_STEP_WIDTH_MODE == 6
+        return vd / 32.0;
     #endif
 }
 
@@ -96,6 +112,10 @@ inline int score_to_value(int v){
         return v * 4;
     #elif EVALUATION_STEP_WIDTH_MODE == 4
         return v * 8;
+    #elif EVALUATION_STEP_WIDTH_MODE == 5
+        return v * 16;
+    #elif EVALUATION_STEP_WIDTH_MODE == 6
+        return v * 32;
     #endif
 }
 
@@ -110,5 +130,9 @@ inline int score_to_value(double v){
         return v * 4;
     #elif EVALUATION_STEP_WIDTH_MODE == 4
         return v * 8;
+    #elif EVALUATION_STEP_WIDTH_MODE == 5
+        return v * 16;
+    #elif EVALUATION_STEP_WIDTH_MODE == 6
+        return v * 32;
     #endif
 }
