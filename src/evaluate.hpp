@@ -446,5 +446,6 @@ inline int mid_evaluate(Board *b){
             res -= STEP / 16;
         res /= STEP / 8;
     #endif
+    //cerr << res << " " << value_to_score_double(res) << endl;
     return max(-SCORE_MAX, min(SCORE_MAX, res));
 }

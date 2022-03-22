@@ -70,17 +70,18 @@ inline int value_to_score_int(int v){
     #endif
 }
 
-inline int value_to_score_double(int v){
+inline double value_to_score_double(int v){
+    double vd = (double)v;
     #if EVALUATION_STEP_WIDTH_MODE == 0
-        return (double)v;
+        return vd;
     #elif EVALUATION_STEP_WIDTH_MODE == 1
-        return (double)v * 2;
+        return vd * 2;
     #elif EVALUATION_STEP_WIDTH_MODE == 2
-        return (double)v / 2.0;
+        return vd / 2.0;
     #elif EVALUATION_STEP_WIDTH_MODE == 3
-        return (double)v / 4.0;
+        return vd / 4.0;
     #elif EVALUATION_STEP_WIDTH_MODE == 4
-        return (double)v / 8.0;
+        return vd / 8.0;
     #endif
 }
 

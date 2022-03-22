@@ -83,16 +83,21 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
             alpha = -INF;
             beta = -INF;
             while ((g <= alpha || beta <= g) && global_searching){
-                if (value_to_score_int(g) % 2){
+                #if EVALUATION_STEP_WIDTH_MODE == 1
                     alpha = max(-SCORE_MAX, score_to_value(value_to_score_double(g) - 2.0));
                     beta = min(SCORE_MAX, score_to_value(value_to_score_double(g) + 2.0));
-                } else{
-                    alpha = max(-SCORE_MAX, score_to_value(value_to_score_double(g) - 1.0));
-                    beta = min(SCORE_MAX, score_to_value(value_to_score_double(g) + 1.0));
-                }
+                #else
+                    if (value_to_score_int(g) % 2){
+                        alpha = max(-SCORE_MAX, score_to_value(value_to_score_double(g) - 2.0));
+                        beta = min(SCORE_MAX, score_to_value(value_to_score_double(g) + 2.0));
+                    } else{
+                        alpha = max(-SCORE_MAX, score_to_value(value_to_score_double(g) - 1.0));
+                        beta = min(SCORE_MAX, score_to_value(value_to_score_double(g) + 1.0));
+                    }
+                #endif
                 result = first_nega_scout(&search, alpha, beta, depth, false, true);
                 g = result.first;
-                cerr << alpha << " " << g << " " << beta << endl;
+                //cerr << alpha << " " << g << " " << beta << endl;
                 if (show_log)
                     cerr << "mainsearch d=" << depth << " t=" << search.mpct << " [" << value_to_score_double(alpha) << "," << value_to_score_double(beta) << "] " << value_to_score_double(g) << " " << idx_to_coord(result.second) << endl;
                 if (alpha == -SCORE_MAX && g == -SCORE_MAX)

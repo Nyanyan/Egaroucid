@@ -12,7 +12,7 @@ int main(int argc, char *argv[]){
     parent_transpose_table.first_init();
     child_transpose_table.first_init();
     #if USE_MULTI_THREAD
-        thread_pool.resize(16);
+        thread_pool.resize(8);
     #endif
     int level = 5;
     if (argc >= 2)
