@@ -40,4 +40,4 @@
 // 2: 0.5 discs
 // 3: 0.25 discs
 // 4: 0.125 discs
-#define EVALUATION_STEP_WIDTH_MODE 4
+#define EVALUATION_STEP_WIDTH_MODE 2

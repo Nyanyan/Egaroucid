@@ -4,6 +4,7 @@
 #include "setting.hpp"
 #include "common.hpp"
 #include "board.hpp"
+#include "util.hpp"
 
 using namespace std;
 
@@ -375,17 +376,7 @@ inline int calc_canput_pattern(const int phase_idx, Board *b, const uint64_t pla
 
 inline int end_evaluate(Board *b){
     int res = b->score_player();
-    #if EVALUATION_STEP_WIDTH_MODE == 0
-        return res;
-    #elif EVALUATION_STEP_WIDTH_MODE == 1
-        return res / 2;
-    #elif EVALUATION_STEP_WIDTH_MODE == 2
-        return res * 2;
-    #elif EVALUATION_STEP_WIDTH_MODE == 3
-        return res * 4;
-    #elif EVALUATION_STEP_WIDTH_MODE == 4
-        return res * 8;
-    #endif
+    return score_to_value(res);
 }
 
 inline int score_modification(int phase, int estimated_score){

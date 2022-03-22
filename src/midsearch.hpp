@@ -401,7 +401,7 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
         calc_flip(&flip, &search->board, best_move);
         search->board.move(&flip);
             g = -nega_scout(search, -beta, -alpha, depth - 1, false, LEGAL_UNDEFINED, is_end_search);
-            cerr << 1 << "/" << canput_all << " " << idx_to_coord(best_move) << " value " << value_to_score(g) << endl;
+            cerr << 1 << "/" << canput_all << " " << idx_to_coord(best_move) << " value " << value_to_score_double(g) << endl;
             //search->board.print();
             //cerr << endl;
         search->board.undo(&flip);
@@ -428,9 +428,9 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
                         g = -nega_scout(search, -beta, -g, depth - 1, false, flip.n_legal, is_end_search);
                 }
                 if (g <= alpha)
-                    cerr << mobility_idx << "/" << canput_all << " " << idx_to_coord((int)flip.pos) << " value " << value_to_score(g) << " or lower" << endl;
+                    cerr << mobility_idx << "/" << canput_all << " " << idx_to_coord((int)flip.pos) << " value " << value_to_score_double(g) << " or lower" << endl;
                 else
-                    cerr << mobility_idx << "/" << canput_all << " " << idx_to_coord((int)flip.pos) << " value " << value_to_score(g) << endl;
+                    cerr << mobility_idx << "/" << canput_all << " " << idx_to_coord((int)flip.pos) << " value " << value_to_score_double(g) << endl;
                 ++mobility_idx;
                 //search->board.print();
                 //cerr << endl;

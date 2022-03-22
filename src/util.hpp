@@ -44,7 +44,7 @@ string idx_to_coord(int idx){
     return x_coord[x] + to_string(y + 1);
 }
 
-inline int value_to_score(int v){
+inline int value_to_score_int(int v){
     #if EVALUATION_STEP_WIDTH_MODE == 0
         return v;
     #elif EVALUATION_STEP_WIDTH_MODE == 1
@@ -67,5 +67,47 @@ inline int value_to_score(int v){
         else if (v < 0)
             v -= 4;
         return v / 8;
+    #endif
+}
+
+inline int value_to_score_double(int v){
+    #if EVALUATION_STEP_WIDTH_MODE == 0
+        return (double)v;
+    #elif EVALUATION_STEP_WIDTH_MODE == 1
+        return (double)v * 2;
+    #elif EVALUATION_STEP_WIDTH_MODE == 2
+        return (double)v / 2.0;
+    #elif EVALUATION_STEP_WIDTH_MODE == 3
+        return (double)v / 4.0;
+    #elif EVALUATION_STEP_WIDTH_MODE == 4
+        return (double)v / 8.0;
+    #endif
+}
+
+inline int score_to_value(int v){
+    #if EVALUATION_STEP_WIDTH_MODE == 0
+        return v;
+    #elif EVALUATION_STEP_WIDTH_MODE == 1
+        return v / 2;
+    #elif EVALUATION_STEP_WIDTH_MODE == 2
+        return v * 2;
+    #elif EVALUATION_STEP_WIDTH_MODE == 3
+        return v * 4;
+    #elif EVALUATION_STEP_WIDTH_MODE == 4
+        return v * 8;
+    #endif
+}
+
+inline int score_to_value(double v){
+    #if EVALUATION_STEP_WIDTH_MODE == 0
+        return v;
+    #elif EVALUATION_STEP_WIDTH_MODE == 1
+        return v / 2;
+    #elif EVALUATION_STEP_WIDTH_MODE == 2
+        return v * 2;
+    #elif EVALUATION_STEP_WIDTH_MODE == 3
+        return v * 4;
+    #elif EVALUATION_STEP_WIDTH_MODE == 4
+        return v * 8;
     #endif
 }
