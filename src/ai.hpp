@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <future>
+#include <unordered_set>
 #include "level.hpp"
 #include "midsearch.hpp"
 #include "book.hpp"
@@ -211,7 +212,8 @@ bool ai_hint(Board b, int level, int max_level, int res[], int info[], bool best
     int depth;
     bool use_mpc, is_mid_search;
     double mpct;
-    double value_double, max_value = -INF, bestmove = -1;
+    double value_double, max_value = -INF;
+    unordered_set<int> best_moves_set;
     get_level(level, b.n - 4, &is_mid_search, &depth, &use_mpc, &mpct);
     if (!is_mid_search && level != max_level)
         return false;
@@ -231,8 +233,10 @@ bool ai_hint(Board b, int level, int max_level, int res[], int info[], bool best
                 } else{
                     if (max_value < (double)res[i]){
                         max_value = (double)res[i];
-                        bestmove = i;
-                    }
+                        best_moves_set.clear();
+                        best_moves_set.emplace(i);
+                    } else if (max_value == (double)res[i])
+                        best_moves_set.emplace(i);
                     info[i] = SEARCH_BOOK;
                 }
             }
@@ -241,10 +245,13 @@ bool ai_hint(Board b, int level, int max_level, int res[], int info[], bool best
             if (1 & (legal >> i)){
                 if (res[i] == -INF){
                     value_double = -val_future[i].get();
+                    //cerr << idx_to_coord(i) << " " << value_double << endl;
                     if (max_value < value_double){
                         max_value = value_double;
-                        bestmove = i;
-                    }
+                        best_moves_set.clear();
+                        best_moves_set.emplace(i);
+                    } else if (max_value == value_double)
+                        best_moves_set.emplace(i);
                     res[i] = round(value_double);
                 }
             }
@@ -256,16 +263,22 @@ bool ai_hint(Board b, int level, int max_level, int res[], int info[], bool best
                 b.move_copy(&flip, &nb);
                 res[i] = book.get(&nb);
                 if (res[i] == -INF){
-                    res[i] = -mid_evaluate(&nb);
+                    res[i] = value_to_score_int(-mid_evaluate(&nb));
                     info[i] = level;
                 } else
                     info[i] = SEARCH_BOOK;
+                if (max_value < (double)res[i]){
+                    max_value = (double)res[i];
+                    best_moves_set.clear();
+                    best_moves_set.emplace(i);
+                } else if (max_value == (double)res[i])
+                    best_moves_set.emplace(i);
             }
         }
     }
     for (int i = 0; i < HW2; ++i){
         if (1 & (legal >> i))
-            best_moves[i] = (i == bestmove);
+            best_moves[i] = (best_moves_set.find(i) != best_moves_set.end());
     }
     return true;
 }

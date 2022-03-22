@@ -5,7 +5,7 @@ from random import shuffle
 with open('close_quest.txt', 'r') as f:
     tactic = [elem for elem in f.read().splitlines()]
 
-level = 5
+level = 3
 
 egaroucid = [
     subprocess.Popen(('a.exe ' + str(level)).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL),
@@ -21,10 +21,12 @@ for t in tactic:
     if len(t) >= use_len * 2:
         tactic_set.add(t[:use_len * 2])
 tactic = list(tactic_set)
-shuffle(tactic)
+
+#shuffle(tactic)
+
 print(len(tactic))
 
-max_num = min(len(tactic), 200)
+max_num = min(len(tactic), 500)
 
 smpl = range(len(tactic))
 
