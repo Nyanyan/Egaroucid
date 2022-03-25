@@ -66,17 +66,6 @@ using namespace std;
 #define P47 16384
 #define P48 65536
 
-#define score_modify_a 0.0002518401380363633
-#define score_modify_b -0.0007321678023179956
-#define score_modify_c 1.6175118945360722e-05
-#define score_modify_d -1.3628159635237225e-05
-#define score_modify_e -0.013016724285152437
-#define score_modify_f 0.029646485878489948
-#define score_modify_g -0.00029154916894080785
-#define score_modify_h 0.1937966297074467
-#define score_modify_i -0.24216195212198421
-#define score_modify_j -0.7776593951734261
-
 constexpr uint_fast16_t pow3[11] = {1, P31, P32, P33, P34, P35, P36, P37, P38, P39, P310};
 uint64_t stability_edge_arr[N_8BIT][N_8BIT][2];
 int16_t pattern_arr[N_PHASES][N_PATTERNS][MAX_EVALUATE_IDX];
@@ -381,15 +370,6 @@ inline int calc_canput_pattern(const int phase_idx, Board *b, const uint64_t pla
 inline int end_evaluate(Board *b){
     int res = b->score_player();
     return score_to_value(res);
-}
-
-inline int score_modification(int phase, int estimated_score){
-    double x = phase;
-    double y = (double)estimated_score / STEP;
-    double res = score_modify_a * x * x * x + score_modify_b * x * x * y + score_modify_c * x * y * y + score_modify_d * y * y * y;
-    res += score_modify_e * x * x + score_modify_f * x * y + score_modify_g * y * y;
-    res += score_modify_h * x + score_modify_i * y + score_modify_j;
-    return max(-HW2, min(HW2, (int)round(y + res)));
 }
 
 inline int mid_evaluate(Board *b){
