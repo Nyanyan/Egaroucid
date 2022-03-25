@@ -83,6 +83,8 @@
         "operation": "操作",
         "stop_read": "読み停止",
         "resume_read": "読み再開",
+        "forward": "進む (->/D)",
+        "backward": "戻る (<-/A)",
         "convert": {
             "convert": "変換",
             "vertical": "180度",

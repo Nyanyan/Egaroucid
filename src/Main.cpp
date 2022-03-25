@@ -92,7 +92,7 @@ Menu create_menu(Texture checkbox,
 	bool* output_record_flag, bool* output_game_flag, bool* input_record_flag, bool* input_board_flag,
 	bool* show_end_popup, bool* show_log,
 	bool* thread1, bool* thread2, bool* thread4, bool* thread8, bool* thread16, bool* thread32, bool* thread64, bool* thread128,
-	bool* stop_read_flag, bool* resume_read_flag, bool* vertical_convert, bool* black_line_convert, bool* white_line_convert,
+	bool* stop_read_flag, bool* resume_read_flag, bool* vertical_convert, bool* black_line_convert, bool* white_line_convert, bool* forward_flag, bool *backward_flag,
 	bool* usage_flag, bool* bug_report_flag,
 	bool lang_acts[], vector<string> lang_name_vector) {
 	Menu menu;
@@ -277,6 +277,11 @@ Menu create_menu(Texture checkbox,
 	menu_e.init_button(language.get("operation", "stop_read"), stop_read_flag);
 	title.push(menu_e);
 	menu_e.init_button(language.get("operation", "resume_read"), resume_read_flag);
+	title.push(menu_e);
+
+	menu_e.init_button(language.get("operation", "forward"), forward_flag);
+	title.push(menu_e);
+	menu_e.init_button(language.get("operation", "backward"), backward_flag);
 	title.push(menu_e);
 
 	if (*professional_mode) {
@@ -1415,7 +1420,7 @@ void Main() {
 	bool n_threads[8] = { false, false, true, false, false, false, false, false };
 	int n_threads_num[8] = { 1, 2, 4, 8, 16, 32, 64, 128 };
 	int n_thread_idx = 2;
-	bool stop_read_flag = false, resume_read_flag = false, vertical_convert = false, white_line_convert = false, black_line_convert = false;
+	bool stop_read_flag = false, resume_read_flag = false, vertical_convert = false, white_line_convert = false, black_line_convert = false, forward_flag = false, backward_flag = false;
 	bool usage_flag = false, bug_report_flag = false;
 	bool language_acts[100];
 	language_acts[0] = true;
@@ -1705,7 +1710,7 @@ void Main() {
 					&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag,
 					&show_end_popup_change, &show_log,
 					&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
-					&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert,
+					&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert, &forward_flag, &backward_flag,
 					&usage_flag, &bug_report_flag,
 					language_acts, language_names);
 				start_game_button.init(start_game_button_x, start_game_button_y, start_game_button_w, start_game_button_h, start_game_button_r, language.get("button", "start_game"), font15, button_color, button_font_color);
@@ -1731,7 +1736,7 @@ void Main() {
 						&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag,
 						&show_end_popup_change, &show_log,
 						&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
-						&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert,
+						&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert, &forward_flag, &backward_flag,
 						&usage_flag, &bug_report_flag,
 						language_acts, language_names);
 				}
@@ -1805,7 +1810,7 @@ void Main() {
 					&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag,
 					&show_end_popup_change, &show_log,
 					&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
-					&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert,
+					&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert, &forward_flag, &backward_flag,
 					&usage_flag, &bug_report_flag,
 					language_acts, language_names);
 			}
@@ -1842,7 +1847,7 @@ void Main() {
 						&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag,
 						&show_end_popup_change, &show_log,
 						&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
-						&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert,
+						&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert, &forward_flag, &backward_flag,
 						&usage_flag, &bug_report_flag,
 						language_acts, language_names);
 					start_game_button.init(start_game_button_x, start_game_button_y, start_game_button_w, start_game_button_h, start_game_button_r, language.get("button", "start_game"), font15, button_color, button_font_color);
@@ -2238,13 +2243,13 @@ void Main() {
 				if (!KeyRight.pressed() && !KeyD.pressed()) {
 					right_pushed = BUTTON_NOT_PUSHED;
 				}
-				if (KeyLeft.down() || KeyA.down() || (left_pushed != BUTTON_NOT_PUSHED && tim() - left_pushed >= BUTTON_LONG_PRESS_THRESHOLD)) {
+				if (KeyLeft.down() || KeyA.down() || (left_pushed != BUTTON_NOT_PUSHED && tim() - left_pushed >= BUTTON_LONG_PRESS_THRESHOLD) || backward_flag) {
 					history_place = max(0, history_place - 1);
 					if (KeyLeft.down() || KeyA.down()) {
 						left_pushed = tim();
 					}
 				}
-				else if (KeyRight.down() || KeyD.down() || (right_pushed != BUTTON_NOT_PUSHED && tim() - right_pushed >= BUTTON_LONG_PRESS_THRESHOLD)) {
+				else if (KeyRight.down() || KeyD.down() || (right_pushed != BUTTON_NOT_PUSHED && tim() - right_pushed >= BUTTON_LONG_PRESS_THRESHOLD) || forward_flag) {
 					if (fork_mode) {
 						history_place = min(fork_history[fork_history.size() - 1].b.n - 4, history_place + 1);
 					}

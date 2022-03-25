@@ -83,6 +83,8 @@
         "operation": "Operation",
         "stop_read": "Stop Calculating",
         "resume_read": "Resume Calculating",
+        "forward": "Forward (->/D)",
+        "backward": "Backward (<-/A)",
         "convert": {
             "convert": "Convert",
             "vertical": "Vertical",
