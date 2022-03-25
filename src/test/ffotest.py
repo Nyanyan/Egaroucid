@@ -9,7 +9,6 @@ egaroucid = subprocess.Popen('a.exe'.split(), stdin=subprocess.PIPE, stdout=subp
 
 res_str = ''
 tim = 0
-stim = 0
 nodes = 0
 strt = time()
 for i in range(strt_idx, end_idx):
@@ -20,8 +19,7 @@ for i in range(strt_idx, end_idx):
     egaroucid.stdin.flush()
     result = egaroucid.stdout.readline().decode()
     res_str += '#' + str(i) + ' ' + result
-    tim += int(result.split()[10])
-    stim += int(result.split()[13])
+    tim += int(result.split()[9])
     nodes += int(result.split()[7])
 egaroucid.kill()
 
@@ -62,7 +60,6 @@ for line, ans_line in zip(res_str.splitlines(), answer.splitlines()):
 print('done')
 print(res_str_proc, end='')
 print(tim / 1000, 'sec')
-print(stim / 1000, 'sec search')
 print(time() - strt, 'sec total')
 print(nodes, 'nodes')
-print(nodes / stim * 1000, 'nps')
+print(nodes / tim * 1000, 'nps')

@@ -27,9 +27,6 @@ constexpr int cell_weight[HW2] = {
     18,  4,  16, 12, 12, 16,  4, 18
 };
 
-
-unsigned long long can_be_flipped[HW2];
-
 struct Search_result{
     int policy;
     int value;
