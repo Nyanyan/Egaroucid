@@ -4199,7 +4199,37 @@ same
 130791306291 nodes
 174978903.86223373 nps
 
+2022/03/27 laptop level 21
+#40 depth 20 value 38 policy a2 nodes 26840826 time 336 nps 79883410
+#41 depth 22 value 0 policy h4 nodes 8044398 time 419 nps 19199040
+#42 depth 22 value 2 policy g2 nodes 12263568 time 666 nps 18413765 WRONG_SCORE
+#43 depth 23 value -10 policy g3 nodes 6718386 time 381 nps 17633559 WRONG_SCORE
+#44 depth 23 value -12 policy d2 nodes 10515959 time 623 nps 16879548 WRONG_SCORE
+#45 depth 24 value 4 policy b2 nodes 52202267 time 2160 nps 24167716 WRONG_SCORE
+#46 depth 24 value -8 policy b3 nodes 16170156 time 992 nps 16300560
+#47 depth 25 value 8 policy g2 nodes 8902338 time 511 nps 17421405 WRONG_SCORE
+#48 depth 25 value 21 policy f6 nodes 7081853 time 599 nps 11822792 WRONG_SCORE
+#49 depth 26 value 14 policy e1 nodes 32067780 time 1712 nps 18731179 WRONG_SCORE
+8.399 sec
+9.26171088218689 sec total
+180807531 nodes
+21527268.84152875 nps
 
+2022/03/27 change depth
+#40 depth 20 value 38 policy a2 nodes 26746951 time 312 nps 85727407
+#41 depth 22 value 0 policy h4 nodes 7106181 time 876 nps 8112078
+#42 depth 22 value 2 policy g2 nodes 16021805 time 1587 nps 10095655 WRONG_SCORE
+#43 depth 23 value -10 policy g3 nodes 5504662 time 686 nps 8024288 WRONG_SCORE
+#44 depth 23 value -14 policy b8 nodes 7019086 time 931 nps 7539297
+#45 depth 24 value 6 policy b2 nodes 61058486 time 4529 nps 13481670
+#46 depth 24 value -8 policy b3 nodes 28731093 time 4705 nps 6106502
+#47 depth 25 value 4 policy g2 nodes 15051315 time 2563 nps 5872538
+#48 depth 25 value 24 policy f6 nodes 3419604 time 795 nps 4301388 WRONG_SCORE
+#49 depth 26 value 14 policy e1 nodes 94961664 time 12882 nps 7371655 WRONG_SCORE
+29.866 sec
+30.737483263015747 sec total
+265620847 nodes
+8893753.666376483 nps
 
 
 

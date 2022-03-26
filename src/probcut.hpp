@@ -7,7 +7,7 @@
 #include "util.hpp"
 
 using namespace std;
-/*
+
 constexpr int mpcd[61] = {
     0, 1, 0, 1, 2, 3, 2, 3, 4, 3, 
     4, 5, 4, 5, 6, 5, 6, 7, 6, 7, 
@@ -17,7 +17,7 @@ constexpr int mpcd[61] = {
     18, 17, 18, 19, 18, 19, 20, 19, 20, 21,
     20
 };
-*/
+
 /*
 constexpr int mpcd[61] = {
     0, 1, 0, 1, 2, 3, 2, 3, 4, 3, 
@@ -40,7 +40,7 @@ constexpr int mpcd[61] = {
     16
 };
 */
-
+/*
 constexpr int mpcd[61] = {
     0, 1, 0, 1, 0, 1, 2, 1, 2, 1, 
     2, 3, 2, 3, 2, 3, 4, 3, 4, 3, 
@@ -50,7 +50,7 @@ constexpr int mpcd[61] = {
     10, 11, 10, 11, 10, 11, 12, 11, 12, 11,
     12
 };
-
+*/
 /*
 constexpr int mpcd[61] = {
     0, 1, 0, 1, 0, 1, 2, 1, 2, 1, 
@@ -199,12 +199,14 @@ inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, 
     bool res = false;
     const int depth0_value = mid_evaluate(&search->board);
     int error_depth0, error_search;
-    if (search->board.n + depth < HW2){
-        error_depth0 = round(search->mpct * score_to_value(probcut_sigma_depth0(search->board.n, depth)));
-        error_search = round(search->mpct * score_to_value(probcut_sigma(search->board.n, depth, mpcd[depth])));
-    } else{
+    if (is_end_search){
+        alpha -= alpha & 1;
+        beta += beta & 1;
         error_depth0 = round(search->mpct * score_to_value(probcut_sigma_end_depth0(search->board.n)));
         error_search = round(search->mpct * score_to_value(probcut_sigma_end(search->board.n, mpcd[depth])));
+    } else{
+        error_depth0 = round(search->mpct * score_to_value(probcut_sigma_depth0(search->board.n, depth)));
+        error_search = round(search->mpct * score_to_value(probcut_sigma(search->board.n, depth, mpcd[depth])));
     }
     if (depth0_value >= beta - error_depth0 && beta + error_search <= SCORE_MAX){
         switch(mpcd[depth]){
