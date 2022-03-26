@@ -346,7 +346,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
                     if (alpha < g){
                         if (is_end_search){
                             g = value_to_score_int(g);
-                            g += g & 1;
+                            g -= g & 1;
                             g = score_to_value(g);
                         }
                         g = -nega_scout(search, -beta, -g, depth - 1, false, flip.n_legal, is_end_search);
