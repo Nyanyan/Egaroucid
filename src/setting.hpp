@@ -42,4 +42,4 @@
 // 4: 1/8 discs
 // 5: 1/16 discs
 // 6: 1/32 discs
-#define EVALUATION_STEP_WIDTH_MODE 3
+#define EVALUATION_STEP_WIDTH_MODE 0

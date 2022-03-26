@@ -42,6 +42,12 @@ int nega_alpha_end_nomemo(Search *search, int alpha, int beta, int depth, bool s
         search->board.pass();
         return v;
     }
+    #if USE_MID_MPC
+        if (search->use_mpc){
+            if (mpc(search, alpha, beta, depth, legal, false, &v))
+                return v;
+        }
+    #endif
     const int canput = pop_count_ull(legal);
     vector<Flip> move_list(canput);
     int idx = 0;
@@ -450,15 +456,6 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
         alpha = max(alpha, l);
         beta = min(beta, u);
     #endif
-    #if USE_END_MPC
-        int depth = HW2 - search->board.n;
-        if (search->use_mpc){
-            if (mpc_higher(search, beta, depth, legal, true))
-                return beta;
-            if (mpc_lower(search, alpha, depth, legal, true))
-                return alpha;
-        }
-    #endif
     if (legal == LEGAL_UNDEFINED)
         legal = search->board.get_legal();
     int g, v = -INF;
@@ -470,6 +467,12 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
         search->board.pass();
         return v;
     }
+    #if USE_END_MPC
+        if (search->use_mpc){
+            if (mpc(search, alpha, beta, HW2 - search->board.n, legal, false, &v))
+                return v;
+        }
+    #endif
     int best_move = child_transpose_table.get(&search->board, hash_code);
     int f_best_move = best_move;
     if (best_move != TRANSPOSE_TABLE_UNDEFINED){

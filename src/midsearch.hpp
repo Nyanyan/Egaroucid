@@ -100,14 +100,6 @@ int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, b
     #endif
     if (legal == LEGAL_UNDEFINED)
         legal = search->board.get_legal();
-    #if USE_MID_MPC
-        if (search->use_mpc){
-            if (mpc_higher(search, beta, depth, legal, false))
-                return beta;
-            if (mpc_lower(search, alpha, depth, legal, false))
-                return alpha;
-        }
-    #endif
     int g, v = -INF;
     if (legal == 0ULL){
         if (skipped)
@@ -117,6 +109,12 @@ int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, b
         search->board.pass();
         return v;
     }
+    #if USE_MID_MPC
+        if (search->use_mpc){
+            if (mpc(search, alpha, beta, depth, legal, false, &v))
+                return v;
+        }
+    #endif
     const int canput = pop_count_ull(legal);
     vector<Flip> move_list(canput);
     int idx = 0;
@@ -168,14 +166,6 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
     #endif
     if (legal == LEGAL_UNDEFINED)
         legal = search->board.get_legal();
-    #if USE_MID_MPC
-        if (search->use_mpc){
-            if (mpc_higher(search, beta, depth, legal, is_end_search))
-                return beta;
-            if (mpc_lower(search, alpha, depth, legal, is_end_search))
-                return alpha;
-        }
-    #endif
     int g, v = -INF;
     if (legal == 0ULL){
         if (skipped)
@@ -185,6 +175,12 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
         search->board.pass();
         return v;
     }
+    #if USE_MID_MPC
+        if (search->use_mpc){
+            if (mpc(search, alpha, beta, depth, legal, is_end_search, &v))
+                return v;
+        }
+    #endif
     int best_move = child_transpose_table.get(&search->board, hash_code);
     int f_best_move = best_move;
     if (best_move != TRANSPOSE_TABLE_UNDEFINED){
@@ -306,14 +302,6 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     #endif
     if (legal == LEGAL_UNDEFINED)
         legal = search->board.get_legal();
-    #if USE_MID_MPC
-        if (search->use_mpc){
-            if (mpc_higher(search, beta, depth, legal, is_end_search))
-                return beta;
-            if (mpc_lower(search, alpha, depth, legal, is_end_search))
-                return alpha;
-        }
-    #endif
     int g, v = -INF;
     if (legal == 0ULL){
         if (skipped)
@@ -323,6 +311,12 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
         search->board.pass();
         return v;
     }
+    #if USE_MID_MPC
+        if (search->use_mpc){
+            if (mpc(search, alpha, beta, depth, legal, is_end_search, &v))
+                return v;
+        }
+    #endif
     int best_move = child_transpose_table.get(&search->board, hash_code);
     int f_best_move = best_move;
     if (best_move != TRANSPOSE_TABLE_UNDEFINED){
