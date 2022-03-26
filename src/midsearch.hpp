@@ -344,9 +344,11 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
                 else{
                     g = -nega_alpha_ordering(search, -alpha - 1, -alpha, depth - 1, false, flip.n_legal, is_end_search, &searching);
                     if (alpha < g){
-                        g = value_to_score_int(g);
-                        g -= g & 1;
-                        g = score_to_value(g);
+                        if (is_end_search){
+                            g = value_to_score_int(g);
+                            g += g & 1;
+                            g = score_to_value(g);
+                        }
                         g = -nega_scout(search, -beta, -g, depth - 1, false, flip.n_legal, is_end_search);
                     }
                 }
