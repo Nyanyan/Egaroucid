@@ -200,8 +200,12 @@ inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, 
     const int depth0_value = mid_evaluate(&search->board);
     int error_depth0, error_search;
     if (is_end_search){
+        alpha = value_to_score_int(alpha);
         alpha -= alpha & 1;
+        alpha = score_to_value(alpha);
+        beta = value_to_score_int(beta);
         beta += beta & 1;
+        beta = score_to_value(beta);
         error_depth0 = round(search->mpct * score_to_value(probcut_sigma_end_depth0(search->board.n)));
         error_search = round(search->mpct * score_to_value(probcut_sigma_end(search->board.n, mpcd[depth])));
     } else{

@@ -343,8 +343,12 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
                     g = -nega_scout(search, -beta, -alpha, depth - 1, false, flip.n_legal, is_end_search);
                 else{
                     g = -nega_alpha_ordering(search, -alpha - 1, -alpha, depth - 1, false, flip.n_legal, is_end_search, &searching);
-                    if (alpha < g)
+                    if (alpha < g){
+                        g = value_to_score_int(g);
+                        g -= g & 1;
+                        g = score_to_value(g);
                         g = -nega_scout(search, -beta, -g, depth - 1, false, flip.n_legal, is_end_search);
+                    }
                 }
             search->board.undo(&flip);
             alpha = max(alpha, g);
