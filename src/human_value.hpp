@@ -8,6 +8,7 @@
 #include "book.hpp"
 #include "evaluate.hpp"
 #include "midsearch.hpp"
+#include "util.hpp"
 
 #define human_sense_value_weight1 0.01
 #define human_sense_value_weight2 1.0
@@ -27,7 +28,7 @@ void calc_human_value(Board *b, int depth, bool passed, bool is_black, int searc
     if (depth == 0){
         val = -book.get(b);
         if (val == INF)
-            val = nega_scout(search, -SCORE_MAX, SCORE_MAX, search_depth, passed, LEGAL_UNDEFINED, false);
+            val = value_to_score_int(nega_scout(search, -SCORE_MAX, SCORE_MAX, search_depth, passed, LEGAL_UNDEFINED, false));
         v = human_sense_value_weight2 * exp(-human_sense_value_weight1 * val * val);
         if (is_black)
             res.first += v;
@@ -40,7 +41,7 @@ void calc_human_value(Board *b, int depth, bool passed, bool is_black, int searc
         if (passed){
             val = -book.get(b);
             if (val == INF)
-                val = nega_scout(search, -SCORE_MAX, SCORE_MAX, search_depth, passed, LEGAL_UNDEFINED, false);
+                val = value_to_score_int(nega_scout(search, -SCORE_MAX, SCORE_MAX, search_depth, passed, LEGAL_UNDEFINED, false));
             v = human_sense_value_weight2 * exp(-human_sense_value_weight1 * val * val);
             if (is_black)
                 res.first += v;
@@ -58,7 +59,7 @@ void calc_human_value(Board *b, int depth, bool passed, bool is_black, int searc
         calc_flip(&flip, b, cell);
         b->move(&flip);
             calc_human_value(b, depth - 1, false, !is_black, search_depth, search, res);
-            val = nega_scout(search, -SCORE_MAX, SCORE_MAX, search_depth, passed, LEGAL_UNDEFINED, false);
+            val = value_to_score_int(nega_scout(search, -SCORE_MAX, SCORE_MAX, search_depth, passed, LEGAL_UNDEFINED, false));
         b->undo(&flip);
         v = human_sense_value_weight2 * exp(-human_sense_value_weight1 * val * val);
         if (is_black)
@@ -87,6 +88,7 @@ void calc_all_human_value(Board b, int depth, Human_value res[], int search_dept
         res[cell].moves = b.n - 4;
         res[cell].stability_black = searched_res.first;
         res[cell].stability_white = searched_res.second;
+        cerr << idx_to_coord(cell) << " " << searched_res.first << " " << searched_res.second << endl;
     }
 }
 
