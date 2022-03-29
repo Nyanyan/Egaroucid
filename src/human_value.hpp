@@ -10,90 +10,87 @@
 #include "midsearch.hpp"
 #include "util.hpp"
 
-#define human_sense_value_weight1 0.01
-#define human_sense_value_weight2 1.0
-
 struct Human_value{
     int moves;
-    int prospects;
+    int prospect;
     double stability_black;
     double stability_white;
 };
 
-void calc_human_value(Board *b, int depth, bool passed, bool is_black, int search_depth, Search *search, pair<double, double> &res){
-    if (!global_searching)
-        return;
-    int val;
-    double v;
-    if (depth == 0){
-        val = -book.get(b);
-        if (val == INF)
-            val = value_to_score_int(nega_alpha_ordering_nomemo(search, -SCORE_MAX, SCORE_MAX, search_depth, passed, LEGAL_UNDEFINED));
-        v = human_sense_value_weight2 * exp(-human_sense_value_weight1 * val * val);
-        if (!is_black)
-            res.first += v;
-        else
-            res.second += v;
-        return;
+inline int get_human_sense_raw_value(Board *b, Search *search, int search_depth, bool passed){
+    int val = -book.get(b);
+    if (val == INF){
+        search->board = b->copy();
+        val = value_to_score_int(nega_alpha_ordering_nomemo(search, -SCORE_MAX, SCORE_MAX, search_depth, passed, LEGAL_UNDEFINED));
     }
+    return val;
+}
+
+void calc_human_value_stability(Board *b, int depth, bool passed, int search_depth, Search *search, double res[], int searched_times[]){
+    if (!global_searching || depth == 0)
+        return;
 	uint64_t legal = b->get_legal();
     if (!legal){
-        if (passed){
-            val = -book.get(b);
-            if (val == INF)
-                val = value_to_score_int(nega_alpha_ordering_nomemo(search, -SCORE_MAX, SCORE_MAX, search_depth, passed, LEGAL_UNDEFINED));
-            v = human_sense_value_weight2 * exp(-human_sense_value_weight1 * val * val);
-            if (!is_black)
-                res.first += v;
-            else
-                res.second += v;
-        } else{
+        if (!passed){
             b->pass();
-                calc_human_value(b, depth, true, !is_black, search_depth, search, res);
+                calc_human_value_stability(b, depth, true, search_depth, search, res, searched_times);
             b->pass();
         }
         return;
     }
 	Flip flip;
+    const int canput = pop_count_ull(legal);
+    vector<int> values;
+    int val, max_val = -INF;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
         calc_flip(&flip, b, cell);
         b->move(&flip);
-            calc_human_value(b, depth - 1, false, !is_black, search_depth, search, res);
-            val = value_to_score_int(nega_alpha_ordering_nomemo(search, -SCORE_MAX, SCORE_MAX, search_depth, passed, LEGAL_UNDEFINED));
+            calc_human_value_stability(b, depth - 1, false, search_depth, search, res, searched_times);
+            val = -get_human_sense_raw_value(b, search, search_depth, passed);
         b->undo(&flip);
-        v = human_sense_value_weight2 * exp(-human_sense_value_weight1 * val * val);
-        if (!is_black)
-            res.first += v;
-        else
-            res.second += v;
-        cerr << depth << " " << is_black << " " << val << endl;
+        max_val = max(max_val, val);
+        values.emplace_back(val);
     }
-    return;
+    double v = 0.0;
+    if (max_val >= 0){
+        for (const int &value: values)
+            v += max(0.0, (double)value);
+        v /= canput;
+    } else{
+        for (const int &value: values)
+            v += (double)(value + HW2);
+        v /= canput;
+    }
+    res[b->p == WHITE] += v;
+    ++searched_times[b->p == WHITE];
 }
 
 void calc_all_human_value(Board b, int depth, Human_value res[], int search_depth) {
     uint64_t legal = b.get_legal();
 	Flip flip;
-    pair<double, double> searched_res = make_pair(0.0, 0.0);
+    double values[2];
+    int searched_times[2];
     Search search;
     search.mpct = 1.5;
     search.use_mpc = true;
     search.n_nodes = 0;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
         calc_flip(&flip, &b, cell);
-        searched_res.first = 0.0;
-        searched_res.second = 0.0;
-        b.move(&flip);
-            calc_human_value(&b, depth - 1, false, b.p == BLACK, search_depth, &search, searched_res);
-        b.undo(&flip);
         res[cell].moves = b.n - 4;
-        res[cell].stability_black = searched_res.first;
-        res[cell].stability_white = searched_res.second;
-        cerr << idx_to_coord(cell) << " " << searched_res.first << " " << searched_res.second << endl;
+        values[0] = 0.0;
+        values[1] = 0.0;
+        searched_times[0] = 0;
+        searched_times[1] = 0;
+        b.move(&flip);
+            calc_human_value_stability(&b, depth - 1, false, search_depth, &search, values, searched_times);
+        b.undo(&flip);
+        res[cell].stability_black = values[0] / searched_times[0];
+        res[cell].stability_white = values[1] / searched_times[1];
+        cerr << idx_to_coord(cell) << " " << res[cell].stability_black << " " << res[cell].stability_white << endl;
     }
 }
 
 void update_human_value_stone_values(Human_value res[], uint64_t legal, const int stone_values[]){
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
-        res[cell].prospects = stone_values[cell];
+        res[cell].prospect = stone_values[cell];
 }
