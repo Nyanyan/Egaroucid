@@ -28,9 +28,9 @@ void calc_human_value(Board *b, int depth, bool passed, bool is_black, int searc
     if (depth == 0){
         val = -book.get(b);
         if (val == INF)
-            val = value_to_score_int(nega_scout(search, -SCORE_MAX, SCORE_MAX, search_depth, passed, LEGAL_UNDEFINED, false));
+            val = value_to_score_int(nega_alpha_ordering_nomemo(search, -SCORE_MAX, SCORE_MAX, search_depth, passed, LEGAL_UNDEFINED));
         v = human_sense_value_weight2 * exp(-human_sense_value_weight1 * val * val);
-        if (is_black)
+        if (!is_black)
             res.first += v;
         else
             res.second += v;
@@ -41,9 +41,9 @@ void calc_human_value(Board *b, int depth, bool passed, bool is_black, int searc
         if (passed){
             val = -book.get(b);
             if (val == INF)
-                val = value_to_score_int(nega_scout(search, -SCORE_MAX, SCORE_MAX, search_depth, passed, LEGAL_UNDEFINED, false));
+                val = value_to_score_int(nega_alpha_ordering_nomemo(search, -SCORE_MAX, SCORE_MAX, search_depth, passed, LEGAL_UNDEFINED));
             v = human_sense_value_weight2 * exp(-human_sense_value_weight1 * val * val);
-            if (is_black)
+            if (!is_black)
                 res.first += v;
             else
                 res.second += v;
@@ -59,13 +59,14 @@ void calc_human_value(Board *b, int depth, bool passed, bool is_black, int searc
         calc_flip(&flip, b, cell);
         b->move(&flip);
             calc_human_value(b, depth - 1, false, !is_black, search_depth, search, res);
-            val = value_to_score_int(nega_scout(search, -SCORE_MAX, SCORE_MAX, search_depth, passed, LEGAL_UNDEFINED, false));
+            val = value_to_score_int(nega_alpha_ordering_nomemo(search, -SCORE_MAX, SCORE_MAX, search_depth, passed, LEGAL_UNDEFINED));
         b->undo(&flip);
         v = human_sense_value_weight2 * exp(-human_sense_value_weight1 * val * val);
-        if (is_black)
+        if (!is_black)
             res.first += v;
         else
             res.second += v;
+        cerr << depth << " " << is_black << " " << val << endl;
     }
     return;
 }
