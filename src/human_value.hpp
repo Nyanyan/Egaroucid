@@ -9,6 +9,13 @@
 #include "evaluate.hpp"
 #include "midsearch.hpp"
 
+struct Human_value{
+	int moves;
+	int prospects;
+	double stability_black;
+	double stability_white;
+};
+
 double calc_human_value(Board *b, int depth, bool passed, double a){
     if (!global_searching)
         return 0.0;
