@@ -84,8 +84,10 @@ void calc_all_human_value(Board b, int depth, Human_value res[], int search_dept
         b.move(&flip);
             calc_human_value_stability(&b, depth - 1, false, search_depth, &search, values, searched_times);
         b.undo(&flip);
-        res[cell].stability_black = values[0] / searched_times[0];
-        res[cell].stability_white = values[1] / searched_times[1];
+        if (searched_times[0])
+            res[cell].stability_black = values[0] / searched_times[0];
+        if (searched_times[1])
+            res[cell].stability_white = values[1] / searched_times[1];
         cerr << idx_to_coord(cell) << " " << res[cell].stability_black << " " << res[cell].stability_white << endl;
     }
 }
@@ -93,4 +95,23 @@ void calc_all_human_value(Board b, int depth, Human_value res[], int search_dept
 void update_human_value_stone_values(Human_value res[], uint64_t legal, const int stone_values[]){
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
         res[cell].prospect = stone_values[cell];
+}
+
+Human_value calc_human_value(Board b, int depth, int search_depth, int calculated_value){
+    double values[2] = {0.0, 0.0};
+    int searched_times[2] = {0, 0};
+    Search search;
+    search.mpct = 1.5;
+    search.use_mpc = true;
+    search.n_nodes = 0;
+    calc_human_value_stability(&b, depth - 1, false, search_depth, &search, values, searched_times);
+    Human_value res;
+    res.moves = b.n - 4;
+    res.prospect = calculated_value;
+    if (searched_times[0])
+        res.stability_black = values[0] / searched_times[0];
+    if (searched_times[1])
+        res.stability_white = values[1] / searched_times[1];
+    cerr << "human sense values " << res.stability_black << " " << res.stability_white << endl;
+    return res;
 }

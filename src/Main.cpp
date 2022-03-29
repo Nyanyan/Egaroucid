@@ -43,7 +43,7 @@ constexpr int board_size = 480, board_coord_size = 20;
 constexpr int board_sx = left_left + board_coord_size, board_sy = y_center - board_size / 2, board_cell_size = board_size / HW, board_cell_frame_width = 2, board_frame_width = 7;
 constexpr int stone_size = 25, legal_size = 5;
 constexpr int graph_sx = 575, graph_sy = 425, graph_width = 400, graph_height = 175, graph_resolution = 8, graph_font_size = 15;
-constexpr int human_sense_graph_sx_black = 575, human_sense_graph_sx_white = 800, human_sense_graph_sy = 185, human_sense_graph_width = 175, human_sense_graph_height = 175, humnan_sense_graph_stability_resolution = 2, human_sense_graph_stone_resolution = 32;
+constexpr int human_sense_graph_sx_black = 575, human_sense_graph_sx_white = 800, human_sense_graph_sy = 185, human_sense_graph_width = 175, human_sense_graph_height = 175, humnan_sense_graph_stability_resolution = 16, human_sense_graph_stone_resolution = 16;
 constexpr Color green = Color(36, 153, 114, 100);
 constexpr int start_game_how_to_use_width = 120, start_game_how_to_use_height = 30;
 constexpr int start_game_button_x = 20, start_game_button_y = 50, start_game_button_w = start_game_how_to_use_width, start_game_button_h = start_game_how_to_use_height, start_game_button_r = 5;
@@ -399,7 +399,7 @@ void board_draw(Rect board_cells[], History_elem b, int next_policy, int int_mod
 	const int hint_state, const uint64_t hint_legal, const int hint_value[], const int hint_depth[], const bool hint_best_moves[], const int hint_show_num, Font normal_font, Font small_font, Font big_font, Font mini_font, Font coord_font,
 	bool before_start_game,
 	const int umigame_state[], const umigame_result umigame_value[],
-	const int human_value_state, const int human_value[],
+	const int human_value_state, const Human_value human_value[],
 	bool book_start_learn) {
 	String coord_x = U"abcdefgh";
 	for (int i = 0; i < HW; ++i) {
@@ -460,7 +460,7 @@ void board_draw(Rect board_cells[], History_elem b, int next_policy, int int_mod
 				uint64_t all_legal = b.b.get_legal();
 				for (int cell = 0; cell < HW2; ++cell) {
 					if (1 & (all_legal >> cell)) {
-						if (1 & (hint_legal >> cell) && (hint_best_moves[cell] || hint_depth[cell] == SEARCH_BOOK)) {
+						if ((1 & (hint_legal >> cell)) && (hint_best_moves[cell] || hint_depth[cell] == SEARCH_BOOK)) {
 							show_cells.emplace_back(make_pair(-INF, cell));
 						}
 						else {
@@ -498,7 +498,7 @@ void board_draw(Rect board_cells[], History_elem b, int next_policy, int int_mod
 								small_font(U"100%").draw(x, y, color);
 							}
 							else {
-								small_font(language.get("common", "level"), hint_depth[elem.second]).draw(x, y, color);
+								small_font(U"Lv.", hint_depth[elem.second]).draw(x, y, color);
 							}
 						}
 						hint_shown[elem.second] = true;
@@ -512,7 +512,7 @@ void board_draw(Rect board_cells[], History_elem b, int next_policy, int int_mod
 			for (int cell = 0; cell < HW2; ++cell) {
 				if (1 & (legal >> cell)) {
 					if (umigame_state[cell] == 2) {
-						int umigame_sx = board_sx + (HW_M1 - cell % HW) * board_cell_size + 2;
+						int umigame_sx = board_sx + (HW_M1 - cell % HW) * board_cell_size + 3;
 						int umigame_sy = board_sy + (HW_M1 - cell / HW) * board_cell_size + 38;
 						RectF black_rect = mini_font(umigame_value[cell].b).region(umigame_sx, umigame_sy);
 						mini_font(umigame_value[cell].b).draw(umigame_sx, umigame_sy, Palette::Black);
@@ -527,17 +527,10 @@ void board_draw(Rect board_cells[], History_elem b, int next_policy, int int_mod
 				int max_human_value = -INF;
 				for (int cell = 0; cell < HW2; ++cell) {
 					if (1 & (legal >> cell)) {
-						max_human_value = max(max_human_value, human_value[cell]);
-					}
-				}
-				for (int cell = 0; cell < HW2; ++cell) {
-					if (1 & (legal >> cell)) {
-						Color color = Palette::White;
-						if (human_value[cell] == max_human_value)
-							color = Palette::Cyan;
 						int x = board_sx + (HW_M1 - cell % HW + 1) * board_cell_size - 3;
-						int y = board_sy + (HW_M1 - cell / HW) * board_cell_size + 3;
-						mini_font(human_value[cell]).draw(Arg::topRight(x, y), color);
+						int y = board_sy + (HW_M1 - cell / HW) * board_cell_size + 2;
+						mini_font((int)round(human_value[cell].stability_black)).draw(Arg::topRight(x, y), Palette::Black);
+						mini_font((int)round(human_value[cell].stability_white)).draw(Arg::topRight(x, y + mini_font.fontSize() + 3), Palette::White);
 					}
 				}
 			}
@@ -848,12 +841,18 @@ void reset_ai(bool* ai_thinking, future<Search_result>* ai_future) {
 	}
 }
 
-void reset_analyze(bool* analyzing, future<Cell_value>* analyze_future) {
+void reset_analyze(bool* analyzing, int *analyze_state, future<Cell_value>* analyze_future, future<Human_value>* analyze_stab_future) {
 	if (*analyzing) {
 		global_searching = false;
-		analyze_future->get();
+		if (*analyze_state == 1) {
+			analyze_future->get();
+		}
+		else if (*analyze_state == 2) {
+			analyze_stab_future->get();
+		}
 		global_searching = true;
 		*analyzing = false;
+		*analyze_state = 0;
 	}
 }
 
@@ -869,8 +868,8 @@ future<umigame_result> get_umigame(Board b) {
 	return async(launch::async, get_umigame_p, b);
 }
 
-future<void> get_human_value(Board b, int depth, double a, int res[]) {
-	return async(launch::async, calc_all_human_value, b, depth, a, res);
+future<void> get_human_value(Board b, int depth, Human_value res[], int search_depth) {
+	return async(launch::async, calc_all_human_value, b, depth, res, search_depth);
 }
 
 int import_int(ifstream* ifs) {
@@ -1177,7 +1176,7 @@ bool close_app(int* hint_state, future<bool>* hint_future,
 	int umigame_state[], future<umigame_result> umigame_future[],
 	int* human_value_state, future<void>* human_value_future,
 	bool* ai_thinking, future<Search_result>* ai_future,
-	bool* analyzing, future<Cell_value>* analyze_future,
+	bool* analyzing, int *analyze_state, future<Cell_value>* analyze_future, future<Human_value>* analyze_human_future,
 	int int_mode, bool use_book, int ai_level, int ai_book_accept, int hint_level, int use_book_depth, 
 	int use_ai_mode,
 	bool use_hint_flag, bool normal_hint, bool human_hint, bool umigame_hint,
@@ -1192,7 +1191,7 @@ bool close_app(int* hint_state, future<bool>* hint_future,
 	reset_umigame(umigame_state, umigame_future);
 	reset_human_value(human_value_state, human_value_future);
 	reset_ai(ai_thinking, ai_future);
-	reset_analyze(analyzing, analyze_future);
+	reset_analyze(analyzing, analyze_state, analyze_future, analyze_human_future);
 	export_setting(int_mode, use_book, ai_level, ai_book_accept, hint_level, use_book_depth, 
 		use_ai_mode,
 		use_hint_flag, normal_hint, human_hint, umigame_hint,
@@ -1395,7 +1394,7 @@ void Main() {
 	Window::Resize(window_size);
 	Window::SetStyle(WindowStyle::Sizable);
 	Scene::SetResizeMode(ResizeMode::Keep);
-	Window::SetTitle(U"Egaroucid5.5.1");
+	Window::SetTitle(U"Egaroucid 5.6.0");
 	System::SetTerminationTriggers(UserAction::NoAction);
 	Scene::SetBackground(green);
 	//Console.open();
@@ -1498,9 +1497,10 @@ void Main() {
 	}
 
 	int human_value_state = 0;
-	int human_value[HW2];
-	double human_value_a = 1.0;
-	int human_value_depth = 5;
+	vector<Human_value> human_value_hist, fork_human_value_hist;
+	Human_value human_value[HW2];
+	int human_value_depth = 4;
+	int human_value_search_depth = 2;
 	future<void> human_value_future;
 
 	future<bool> initialize_future = async(launch::async, ai_init);
@@ -1525,7 +1525,8 @@ void Main() {
 	bool analyzing = false;
 	int analyze_idx = 0;
 	future<Cell_value> analyze_future;
-	bool analyze_state = false;
+	future<Human_value> analyze_human_future;
+	int analyze_state = 0;
 
 	bool closing = false;
 	future<bool> closing_future;
@@ -1566,8 +1567,6 @@ void Main() {
 
 	uint64_t left_pushed = BUTTON_NOT_PUSHED;
 	uint64_t right_pushed = BUTTON_NOT_PUSHED;
-
-	vector<Human_value> human_values;
 
 	int use_ai_mode;
 	string lang_name;
@@ -1673,7 +1672,7 @@ void Main() {
 				umigame_state, umigame_future,
 				&human_value_state, &human_value_future,
 				&ai_thinking, &ai_future,
-				&analyzing, &analyze_future,
+				&analyzing, &analyze_state, &analyze_future, &analyze_human_future,
 				int_mode, use_book, ai_level, ai_book_accept, hint_level, use_book_depth, 
 				use_ai_mode,
 				use_hint_flag, normal_hint, human_hint, umigame_hint,
@@ -1886,14 +1885,25 @@ void Main() {
 					else {
 						bd = fork_history[analyze_idx].b;
 						history_place = fork_history[analyze_idx].b.n - 4;
-						if (!analyze_state) {
+						if (analyze_state == 0) {
 							fork_history[analyze_idx].v = -INF;
 							analyze_future = async(launch::async, analyze_search, fork_history[analyze_idx].b, ai_level, use_book, use_book_depth);
-							analyze_state = true;
+							analyze_state = 1;
 						}
-						else if (analyze_future.wait_for(chrono::seconds(0)) == future_status::ready) {
+						else if (analyze_state == 1 && analyze_future.wait_for(chrono::seconds(0)) == future_status::ready) {
 							fork_history[analyze_idx].v = analyze_future.get().value;
-							analyze_state = false;
+							if (human_hint) {
+								analyze_human_future = async(launch::async, calc_human_value, fork_history[analyze_idx].b, human_value_depth, human_value_search_depth, fork_history[analyze_idx].v);
+								analyze_state = 2;
+							}
+							else {
+								analyze_state = 0;
+								++analyze_idx;
+							}
+						}
+						else if (analyze_state == 2 && analyze_human_future.wait_for(chrono::seconds(0)) == future_status::ready) {
+							fork_human_value_hist.emplace_back(analyze_human_future.get());
+							analyze_state = 0;
 							++analyze_idx;
 						}
 					}
@@ -1906,14 +1916,25 @@ void Main() {
 					else {
 						bd = history[analyze_idx].b;
 						history_place = history[analyze_idx].b.n - 4;
-						if (!analyze_state) {
-							history_place = history[analyze_idx].v = -INF;
+						if (analyze_state == 0) {
+							history[analyze_idx].v = -INF;
 							analyze_future = async(launch::async, analyze_search, history[analyze_idx].b, ai_level, use_book, use_book_depth);
-							analyze_state = true;
+							analyze_state = 1;
 						}
-						else if (analyze_future.wait_for(chrono::seconds(0)) == future_status::ready) {
+						else if (analyze_state == 1 && analyze_future.wait_for(chrono::seconds(0)) == future_status::ready) {
 							history[analyze_idx].v = analyze_future.get().value;
-							analyze_state = false;
+							if (human_hint) {
+								analyze_human_future = async(launch::async, calc_human_value, history[analyze_idx].b, human_value_depth, human_value_search_depth, history[analyze_idx].v);
+								analyze_state = 2;
+							}
+							else {
+								analyze_state = 0;
+								++analyze_idx;
+							}
+						}
+						else if (analyze_state == 2 && analyze_human_future.wait_for(chrono::seconds(0)) == future_status::ready) {
+							human_value_hist.emplace_back(analyze_human_future.get());
+							analyze_state = 0;
 							++analyze_idx;
 						}
 					}
@@ -1938,7 +1959,7 @@ void Main() {
 						reset_hint(&hint_state, &hint_future);
 						reset_umigame(umigame_state, umigame_future);
 						reset_human_value(&human_value_state, &human_value_future);
-						reset_analyze(&analyzing, &analyze_future);
+						reset_analyze(&analyzing, &analyze_state, &analyze_future, &analyze_human_future);
 						moved_board.second.check_player();
 						bool next_fork_mode = (!fork_mode && history_place != history[history.size() - 1].b.n - 4);
 						if (next_fork_mode && history[find_history_idx(history, moved_board.second.n - 4)].b == moved_board.second) {
@@ -2078,7 +2099,7 @@ void Main() {
 						}
 						if (show_mode[1] && human_hint) {
 							if (human_value_state == 0) {
-								human_value_future = get_human_value(bd, human_value_depth, human_value_a, human_value);
+								human_value_future = get_human_value(bd, human_value_depth, human_value, human_value_search_depth);
 								human_value_state = 1;
 							}
 							else if (human_value_state == 1) {
@@ -2233,11 +2254,11 @@ void Main() {
 							reset_hint(&hint_state, &hint_future);
 							reset_umigame(umigame_state, umigame_future);
 							reset_human_value(&human_value_state, &human_value_future);
-							reset_analyze(&analyzing, &analyze_future);
+							reset_analyze(&analyzing, &analyze_state, &analyze_future, &analyze_human_future);
 						}
 					}
 					else if (global_searching) {
-						ai_future = async(launch::async, ai, bd, ai_level, use_book & bd.n - 3 <= use_book_depth, show_mode[2] ? 0 : ai_book_accept);
+						ai_future = async(launch::async, ai, bd, ai_level, use_book && bd.n - 3 <= use_book_depth, show_mode[2] ? 0 : ai_book_accept);
 						ai_thinking = true;
 					}
 				}
@@ -2291,14 +2312,14 @@ void Main() {
 						reset_hint(&hint_state, &hint_future);
 						reset_umigame(umigame_state, umigame_future);
 						reset_human_value(&human_value_state, &human_value_future);
-						reset_analyze(&analyzing, &analyze_future);
+						reset_analyze(&analyzing, &analyze_state, &analyze_future, &analyze_human_future);
 					}
 					else {
 						bd = fork_history[find_history_idx(fork_history, history_place)].b;
 						reset_hint(&hint_state, &hint_future);
 						reset_umigame(umigame_state, umigame_future);
 						reset_human_value(&human_value_state, &human_value_future);
-						reset_analyze(&analyzing, &analyze_future);
+						reset_analyze(&analyzing, &analyze_state, &analyze_future, &analyze_human_future);
 					}
 				}
 			}
@@ -2400,7 +2421,7 @@ void Main() {
 			/*** info draw ***/
 
 			/*** human sense value draw ***/
-			human_sense_graph.draw(human_values);
+			human_sense_graph.draw(human_value_hist, bd);
 			/*** human sense value draw ***/
 
 			/*** before and after game ***/
@@ -2497,6 +2518,8 @@ void Main() {
 						}
 						bd = history[history.size() - 1].b;
 						history_place = bd.n - 4;
+						human_value_hist.clear();
+						fork_human_value_hist.clear();
 						fork_mode = false;
 						before_start_game = true;
 						show_popup_flag = true;
@@ -2505,7 +2528,7 @@ void Main() {
 						reset_umigame(umigame_state, umigame_future);
 						reset_human_value(&human_value_state, &human_value_future);
 						reset_ai(&ai_thinking, &ai_future);
-						reset_analyze(&analyzing, &analyze_future);
+						reset_analyze(&analyzing, &analyze_state, &analyze_future, &analyze_human_future);
 						before_start_game = false;
 						main_window_active = true;
 						inputting_record = false;
@@ -2531,6 +2554,8 @@ void Main() {
 						History_elem hist_tmp = { bd, -INF, -1, U"" };
 						history.emplace_back(hist_tmp);
 						history_place = bd.n - 4;
+						human_value_hist.clear();
+						fork_human_value_hist.clear();
 						fork_mode = false;
 						before_start_game = true;
 						show_popup_flag = true;
@@ -2539,7 +2564,7 @@ void Main() {
 						reset_umigame(umigame_state, umigame_future);
 						reset_human_value(&human_value_state, &human_value_future);
 						reset_ai(&ai_thinking, &ai_future);
-						reset_analyze(&analyzing, &analyze_future);
+						reset_analyze(&analyzing, &analyze_state, &analyze_future, &analyze_human_future);
 						before_start_game = false;
 						main_window_active = true;
 						inputting_board = false;
@@ -2575,7 +2600,7 @@ void Main() {
 				reset_umigame(umigame_state, umigame_future);
 				reset_human_value(&human_value_state, &human_value_future);
 				reset_ai(&ai_thinking, &ai_future);
-				reset_analyze(&analyzing, &analyze_future);
+				reset_analyze(&analyzing, &analyze_state, &analyze_future, &analyze_human_future);
 			}
 			/*** ai stop calculating ***/
 
@@ -2587,6 +2612,8 @@ void Main() {
 				History_elem hist_tmp = { bd, -INF, -1, U"" };
 				history.emplace_back(hist_tmp);
 				fork_history.clear();
+				human_value_hist.clear();
+				fork_human_value_hist.clear();
 				history_place = 0;
 				fork_mode = false;
 				before_start_game = true;
@@ -2596,14 +2623,16 @@ void Main() {
 				reset_umigame(umigame_state, umigame_future);
 				reset_human_value(&human_value_state, &human_value_future);
 				reset_ai(&ai_thinking, &ai_future);
-				reset_analyze(&analyzing, &analyze_future);
+				reset_analyze(&analyzing, &analyze_state, &analyze_future, &analyze_human_future);
 			}
 			else if (analyze_flag && !book_learning && !book_modifying) {
 				reset_hint(&hint_state, &hint_future);
 				reset_umigame(umigame_state, umigame_future);
 				reset_human_value(&human_value_state, &human_value_future);
 				reset_ai(&ai_thinking, &ai_future);
-				reset_analyze(&analyzing, &analyze_future);
+				reset_analyze(&analyzing, &analyze_state, &analyze_future, &analyze_human_future);
+				human_value_hist.clear();
+				fork_human_value_hist.clear();
 				analyzing = true;
 				main_window_active = false;
 				analyze_state = false;
@@ -2665,7 +2694,7 @@ void Main() {
 				reset_umigame(umigame_state, umigame_future);
 				reset_human_value(&human_value_state, &human_value_future);
 				reset_ai(&ai_thinking, &ai_future);
-				reset_analyze(&analyzing, &analyze_future);
+				reset_analyze(&analyzing, &analyze_state, &analyze_future, &analyze_human_future);
 				hint_state = INF;
 				for (int i = 0; i < HW2; ++i) {
 					umigame_state[i] = INF;
