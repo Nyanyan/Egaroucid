@@ -42,7 +42,7 @@ public:
 				Line{ sx, yy, sx + size_x, yy }.draw(1, graph_color);
 		}
 		for (int x = 0; x <= 60; x += 10) {
-			font(x).draw(sx + x * dx + adj_x * x / 60 - font(x).region(Point{0, 0}).w, sy - 2 * font_size, graph_color);
+			font(x).draw(sx + x * dx + adj_x * x / 60 - font(x).region(Point{0, 0}).w / 2, sy - 2 * font_size, graph_color);
 			Line{ sx + x * dx + adj_x * x / 60, sy, sx + x * dx + adj_x * x / 60, sy + size_y }.draw(1, graph_color);
 		}
 		draw_graph(nodes1, graph_history_color, false);
