@@ -2421,8 +2421,9 @@ void Main() {
 			/*** info draw ***/
 
 			/*** human sense value draw ***/
-			if (use_value_flag)
+			if (use_value_flag) {
 				human_sense_graph.draw(human_value_hist, bd);
+			}
 			/*** human sense value draw ***/
 
 			/*** before and after game ***/
