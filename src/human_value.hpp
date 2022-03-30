@@ -41,26 +41,17 @@ void calc_human_value_stability(Board *b, int depth, bool passed, int search_dep
 	Flip flip;
     const int canput = pop_count_ull(legal);
     vector<int> values;
-    int val, max_val = -INF;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
         calc_flip(&flip, b, cell);
         b->move(&flip);
             calc_human_value_stability(b, depth - 1, false, search_depth, search, res, searched_times);
-            val = -get_human_sense_raw_value(b, search, search_depth, passed);
+            values.emplace_back(-get_human_sense_raw_value(b, search, search_depth, passed));
         b->undo(&flip);
-        max_val = max(max_val, val);
-        values.emplace_back(val);
     }
     double v = 0.0;
-    if (max_val >= 0){
-        for (const int &value: values)
-            v += max(0.0, (double)value);
-        v /= canput;
-    } else{
-        for (const int &value: values)
-            v += (double)(value + HW2);
-        v /= canput;
-    }
+    for (const int &value: values)
+        v += (double)(value + HW2) / 2.0;
+    v /= canput;
     res[b->p == WHITE] += v;
     ++searched_times[b->p == WHITE];
 }
@@ -110,8 +101,12 @@ Human_value calc_human_value(Board b, int depth, int search_depth, int calculate
     res.prospect = calculated_value;
     if (searched_times[0])
         res.stability_black = values[0] / searched_times[0];
+    else
+        res.stability_black = 0.0;
     if (searched_times[1])
         res.stability_white = values[1] / searched_times[1];
+    else
+        res.stability_white = 0.0;
     cerr << "human sense values " << res.stability_black << " " << res.stability_white << endl;
     return res;
 }
