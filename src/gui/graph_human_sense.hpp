@@ -61,7 +61,7 @@ private:
 		stone_min = 0;
 		stone_max = 0;
 		for (const Human_value& elem : nodes) {
-			if (elem.moves < bd.n - 4) {
+			if (elem.moves <= bd.n - 4) {
 				res = max(res, elem.stability_black);
 				res = max(res, elem.stability_white);
 				stone_min = min(stone_min, elem.prospect);
@@ -80,7 +80,7 @@ private:
 		vector<pair<int, int>> values_black, values_white;
 		int xx_black, xx_white, yy_black, yy_white;
 		for (const Human_value& elem : nodes) {
-			if (elem.moves < bd.n - 4) {
+			if (elem.moves <= bd.n - 4) {
 				xx_black = sx_black + size_x * (elem.prospect - stone_min) / (stone_max - stone_min);
 				xx_white = sx_white + size_x * (elem.prospect - stone_min) / (stone_max - stone_min);
 				yy_black = sy + size_y - size_y * elem.stability_black / stability_max;
