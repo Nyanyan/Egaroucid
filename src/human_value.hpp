@@ -10,6 +10,9 @@
 #include "midsearch.hpp"
 #include "util.hpp"
 
+#define human_sense_a 0.78125
+#define human_sense_b 0.02
+
 struct Human_value{
     int moves;
     int prospect;
@@ -24,6 +27,10 @@ inline int get_human_sense_raw_value(Board *b, Search *search, int search_depth,
         val = value_to_score_int(nega_alpha_ordering_nomemo(search, -SCORE_MAX, SCORE_MAX, search_depth, passed, LEGAL_UNDEFINED));
     }
     return val;
+}
+
+inline double calc_human_sense_value(int v, int v_max){
+    return human_sense_a * (double)(v + 64) * exp(-human_sense_b * (v_max - v));
 }
 
 void calc_human_value_stability(Board *b, int depth, bool passed, int search_depth, Search *search, double res[], int searched_times[]){
@@ -41,18 +48,21 @@ void calc_human_value_stability(Board *b, int depth, bool passed, int search_dep
 	Flip flip;
     const int canput = pop_count_ull(legal);
     vector<int> values;
+    int v_max = -INF, v;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
         calc_flip(&flip, b, cell);
         b->move(&flip);
             calc_human_value_stability(b, depth - 1, false, search_depth, search, res, searched_times);
-            values.emplace_back(-get_human_sense_raw_value(b, search, search_depth, passed));
+            v = -get_human_sense_raw_value(b, search, search_depth, passed);
         b->undo(&flip);
+        values.emplace_back(v);
+        v_max = max(v_max, v);
     }
-    double v = 0.0;
+    double val = 0.0;
     for (const int &value: values)
-        v += (double)(value + HW2) * 99.99 / (HW2 * 2);
-    v /= canput;
-    res[b->p == WHITE] += v;
+        val += calc_human_sense_value(value, v_max);
+    val /= canput;
+    res[b->p == WHITE] += val;
     ++searched_times[b->p == WHITE];
 }
 
