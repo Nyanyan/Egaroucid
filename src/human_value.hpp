@@ -79,7 +79,7 @@ void calc_all_human_value(Board b, int depth, Human_value res[], int search_dept
             res[cell].stability_black = values[0] / searched_times[0];
         if (searched_times[1])
             res[cell].stability_white = values[1] / searched_times[1];
-        cerr << idx_to_coord(cell) << " " << res[cell].stability_black << " " << res[cell].stability_white << endl;
+        //cerr << idx_to_coord(cell) << " " << res[cell].stability_black << " " << res[cell].stability_white << endl;
     }
 }
 
