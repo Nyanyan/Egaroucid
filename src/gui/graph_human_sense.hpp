@@ -34,19 +34,24 @@ public:
 	void draw(vector<Human_value> nodes, Board bd) {
 		calc_range(nodes, bd);
 		for (int y = 0; y <= stability_max; y += stability_resolution) {
+			int xx = size_x * (-stone_min) / (stone_max - stone_min);
 			int yy = sy + size_y * (stability_max - y) / stability_max;
-			font(y).draw(sx_black + size_x / 2 - font(y).region(Point{0, 0}).w * 1.5, yy - font(y).region(Point{0, 0}).h, graph_color);
+			font(y).draw(sx_black + xx - font(y).region(Point{0, 0}).w * 1.5, yy - font(y).region(Point{0, 0}).h, graph_color);
 			Line{ sx_black, yy, sx_black + size_x, yy }.draw(1, graph_color);
-			font(y).draw(sx_white + size_x / 2 - font(y).region(Point{ 0, 0 }).w * 1.5, yy - font(y).region(Point{ 0, 0 }).h, graph_color);
+			font(y).draw(sx_white + xx - font(y).region(Point{ 0, 0 }).w * 1.5, yy - font(y).region(Point{ 0, 0 }).h, graph_color);
 			Line{ sx_white, yy, sx_white + size_x, yy }.draw(1, graph_color);
 		}
 		for (int x = stone_min; x <= stone_max; x += stone_resolution) {
 			int xx = size_x * (x - stone_min) / (stone_max - stone_min);
-			font(x).draw(sx_black + xx - font(x).region(Point{0, 0}).w / 2, sy + size_y, human_sense_graph_color);
+			font(x).draw(sx_black + xx - font(x).region(Point{0, 0}).w / 2, sy + size_y + 7, human_sense_graph_color);
 			Line{ sx_black + xx, sy, sx_black + xx, sy + size_y }.draw(1, graph_color);
-			font(x).draw(sx_white + xx - font(x).region(Point{ 0, 0 }).w / 2, sy + size_y, human_sense_graph_color);
+			font(x).draw(sx_white + xx - font(x).region(Point{ 0, 0 }).w / 2, sy + size_y + 7, human_sense_graph_color);
 			Line{ sx_white + xx, sy, sx_white + xx, sy + size_y }.draw(1, graph_color);
 		}
+		Circle(sx_black + size_x, sy + size_y, 10).draw(Palette::Black);
+		Circle(sx_black, sy + size_y, 10).draw(Palette::White);
+		Circle(sx_white + size_x, sy + size_y, 10).draw(Palette::Black);
+		Circle(sx_white, sy + size_y, 10).draw(Palette::White);
 		draw_graph(nodes, bd);
 	}
 
@@ -69,7 +74,6 @@ private:
 		stone_max = max(stone_resolution - 1, stone_max);
 		stone_min -= (stone_min + HW2) % stone_resolution;
 		stone_max += stone_resolution - stone_max % stone_resolution;
-		cerr << stone_min << " " << stone_max << " " << stability_max << endl;
 	}
 
 	void draw_graph(vector<Human_value> nodes, Board bd) {

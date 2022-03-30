@@ -43,7 +43,7 @@ constexpr int board_size = 480, board_coord_size = 20;
 constexpr int board_sx = left_left + board_coord_size, board_sy = y_center - board_size / 2, board_cell_size = board_size / HW, board_cell_frame_width = 2, board_frame_width = 7;
 constexpr int stone_size = 25, legal_size = 5;
 constexpr int graph_sx = 575, graph_sy = 425, graph_width = 400, graph_height = 175, graph_resolution = 8, graph_font_size = 15;
-constexpr int human_sense_graph_sx_black = 575, human_sense_graph_sx_white = 800, human_sense_graph_sy = 185, human_sense_graph_width = 175, human_sense_graph_height = 175, humnan_sense_graph_stability_resolution = 16, human_sense_graph_stone_resolution = 16;
+constexpr int human_sense_graph_sx_black = 575, human_sense_graph_sx_white = 800, human_sense_graph_sy = 185, human_sense_graph_width = 175, human_sense_graph_height = 175, humnan_sense_graph_stability_resolution = 20, human_sense_graph_stone_resolution = 16;
 constexpr Color green = Color(36, 153, 114, 100);
 constexpr int start_game_how_to_use_width = 120, start_game_how_to_use_height = 30;
 constexpr int start_game_button_x = 20, start_game_button_y = 50, start_game_button_w = start_game_how_to_use_width, start_game_button_h = start_game_how_to_use_height, start_game_button_r = 5;
@@ -52,7 +52,7 @@ constexpr int popup_width = 500, popup_height = 300, popup_r = 20, popup_circle_
 constexpr Color popup_color = Palette::White, popup_font_color = Palette::Black, popup_frame_color = Palette::Black, textbox_active_color = Palette::Lightcyan;
 constexpr int popup_output_width = 800, popup_output_height = 600;
 constexpr int popup_import_width = 600, popup_import_height = 450;
-constexpr int info_sx = 560, info_sy = 50, info_bottom_sy = 625;
+constexpr int info_sx = 560, info_sy = 50, info_bottom_sy = 610;
 constexpr double popup_fade_time = 500.0;
 
 struct Cell_value {
@@ -1499,7 +1499,7 @@ void Main() {
 	int human_value_state = 0;
 	vector<Human_value> human_value_hist, fork_human_value_hist;
 	Human_value human_value[HW2];
-	int human_value_depth = 4;
+	int human_value_depth = 5;
 	int human_value_search_depth = 2;
 	future<void> human_value_future;
 

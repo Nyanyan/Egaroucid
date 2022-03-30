@@ -50,7 +50,7 @@ void calc_human_value_stability(Board *b, int depth, bool passed, int search_dep
     }
     double v = 0.0;
     for (const int &value: values)
-        v += (double)(value + HW2) / 2.0;
+        v += (double)(value + HW2) * 99.99 / (HW2 * 2);
     v /= canput;
     res[b->p == WHITE] += v;
     ++searched_times[b->p == WHITE];
