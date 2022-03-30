@@ -39,11 +39,11 @@ using namespace std;
 #define BUTTON_LONG_PRESS_THRESHOLD 500
 
 constexpr Color font_color = Palette::White;;
-constexpr int board_size = 480, board_coord_size = 20;
-constexpr int board_sx = left_left + board_coord_size, board_sy = y_center - board_size / 2, board_cell_size = board_size / HW, board_cell_frame_width = 2, board_frame_width = 7;
-constexpr int stone_size = 25, legal_size = 5;
-constexpr int graph_sx = 575, graph_sy = 425, graph_width = 400, graph_height = 175, graph_resolution = 8, graph_font_size = 15;
-constexpr int human_sense_graph_sx_black = 575, human_sense_graph_sx_white = 800, human_sense_graph_sy = 185, human_sense_graph_width = 175, human_sense_graph_height = 175, humnan_sense_graph_stability_resolution = 20, human_sense_graph_stone_resolution = 16;
+constexpr int board_size = 424, board_coord_size = 20;
+constexpr int board_sx = left_left + board_coord_size, board_sy = 60, board_cell_size = board_size / HW, board_cell_frame_width = 2, board_frame_width = 7;
+constexpr int stone_size = 21, legal_size = 5;
+constexpr int graph_sx = 40, graph_sy = 530, graph_width = 424, graph_height = 150, graph_resolution = 8, graph_font_size = 15;
+constexpr int human_sense_graph_sx_black = 520, human_sense_graph_sx_white = 800, human_sense_graph_sy = 275, human_sense_graph_width = 400, human_sense_graph_height = 400, humnan_sense_graph_stability_resolution = 10, human_sense_graph_stone_resolution = 16;
 constexpr Color green = Color(36, 153, 114, 100);
 constexpr int start_game_how_to_use_width = 120, start_game_how_to_use_height = 30;
 constexpr int start_game_button_x = 20, start_game_button_y = 50, start_game_button_w = start_game_how_to_use_width, start_game_button_h = start_game_how_to_use_height, start_game_button_r = 5;
@@ -52,7 +52,7 @@ constexpr int popup_width = 500, popup_height = 300, popup_r = 20, popup_circle_
 constexpr Color popup_color = Palette::White, popup_font_color = Palette::Black, popup_frame_color = Palette::Black, textbox_active_color = Palette::Lightcyan;
 constexpr int popup_output_width = 800, popup_output_height = 600;
 constexpr int popup_import_width = 600, popup_import_height = 450;
-constexpr int info_sx = 560, info_sy = 50, info_bottom_sy = 610;
+constexpr int info_sx = 520, info_sy = 50;
 constexpr double popup_fade_time = 500.0;
 
 struct Cell_value {
@@ -513,7 +513,7 @@ void board_draw(Rect board_cells[], History_elem b, int next_policy, int int_mod
 				if (1 & (legal >> cell)) {
 					if (umigame_state[cell] == 2) {
 						int umigame_sx = board_sx + (HW_M1 - cell % HW) * board_cell_size + 3;
-						int umigame_sy = board_sy + (HW_M1 - cell / HW) * board_cell_size + 38;
+						int umigame_sy = board_sy + (HW_M1 - cell / HW) * board_cell_size + 35;
 						RectF black_rect = mini_font(umigame_value[cell].b).region(umigame_sx, umigame_sy);
 						mini_font(umigame_value[cell].b).draw(umigame_sx, umigame_sy, Palette::Black);
 						umigame_sx += black_rect.size.x;
@@ -530,7 +530,7 @@ void board_draw(Rect board_cells[], History_elem b, int next_policy, int int_mod
 						int x = board_sx + (HW_M1 - cell % HW + 1) * board_cell_size - 3;
 						int y = board_sy + (HW_M1 - cell / HW) * board_cell_size + 2;
 						mini_font((int)round(human_value[cell].stability_black)).draw(Arg::topRight(x, y), Palette::Black);
-						mini_font((int)round(human_value[cell].stability_white)).draw(Arg::topRight(x, y + mini_font.fontSize() + 3), Palette::White);
+						mini_font((int)round(human_value[cell].stability_white)).draw(Arg::topRight(x, y + mini_font.fontSize() + 1), Palette::White);
 					}
 				}
 			}
@@ -1214,39 +1214,38 @@ bool close_app(int* hint_state, future<bool>* hint_future,
 }
 
 void info_draw(Board bd, string joseki_name, int ai_level, int hint_level, Font mid_font, Font small_font) {
+	if (bd.get_legal() != 0) {
+		mid_font(Format(pop_count_ull(bd.player) + pop_count_ull(bd.opponent) - 3) + language.get("info", "moves")).draw(info_sx, info_sy);
+	}
 	if (bd.get_legal() == 0) {
-		mid_font(language.get("info", "game_end")).draw(info_sx, info_sy);
+		mid_font(language.get("info", "game_end")).draw(info_sx, info_sy + 40);
 	}
 	else if (bd.p == BLACK) {
-		mid_font(language.get("info", "black")).draw(info_sx, info_sy);
+		mid_font(language.get("info", "black")).draw(info_sx, info_sy + 40);
 	}
 	else if (bd.p == WHITE) {
-		mid_font(language.get("info", "white")).draw(info_sx, info_sy);
+		mid_font(language.get("info", "white")).draw(info_sx, info_sy + 40);
 	}
-	mid_font(language.get("info", "joseki_name") + U": " + Unicode::FromUTF8(joseki_name)).draw(info_sx, info_sy + 40);
-	if (bd.get_legal() != 0) {
-		mid_font(Format(pop_count_ull(bd.player) + pop_count_ull(bd.opponent) - 3) + language.get("info", "moves")).draw(info_sx, info_sy + 80);
-	}
-	int stone_info_cy = board_sy + board_size + 30;
-	Circle(board_sx + 20, stone_info_cy, 12).draw(Palette::Black);
-	Circle(board_sx + board_size - 20, stone_info_cy, 12).draw(Palette::White);
+	mid_font(language.get("info", "joseki_name") + U": " + Unicode::FromUTF8(joseki_name)).draw(info_sx, info_sy + 80);
+	Circle(info_sx + 12, info_sy + 140, 12).draw(Palette::Black);
+	Circle(info_sx + 12, info_sy + 180, 12).draw(Palette::White);
 	if (bd.p == BLACK) {
-		mid_font(pop_count_ull(bd.player)).draw(Arg::leftCenter(board_sx + 20 + 20, stone_info_cy));
-		mid_font(pop_count_ull(bd.opponent)).draw(Arg::rightCenter(board_sx + board_size - 20 - 20, stone_info_cy));
+		mid_font(pop_count_ull(bd.player)).draw(Arg::leftCenter(info_sx + 40, info_sy + 140));
+		mid_font(pop_count_ull(bd.opponent)).draw(Arg::leftCenter(info_sx + 40, info_sy + 180));
 	}
 	else {
-		mid_font(pop_count_ull(bd.opponent)).draw(Arg::leftCenter(board_sx + 20 + 20, stone_info_cy));
-		mid_font(pop_count_ull(bd.player)).draw(Arg::rightCenter(board_sx + board_size - 20 - 20, stone_info_cy));
+		mid_font(pop_count_ull(bd.opponent)).draw(Arg::leftCenter(info_sx + 40, info_sy + 140));
+		mid_font(pop_count_ull(bd.player)).draw(Arg::leftCenter(info_sx + 40, info_sy + 180));
 	}
 	int mid_depth, end_depth;
 	get_level_depth(ai_level, &mid_depth, &end_depth);
-	small_font(language.get("info", "ai") + U": " + language.get("common", "level") + Format(ai_level)).draw(info_sx, info_bottom_sy);
-	small_font(language.get("info", "lookahead_0") + Format(mid_depth) + language.get("info", "lookahead_1")).draw(info_sx, info_bottom_sy + 30);
-	small_font(language.get("info", "complete_0") + Format(end_depth) + language.get("info", "complete_1")).draw(info_sx, info_bottom_sy + 60);
+	small_font(language.get("info", "ai") + U": " + language.get("common", "level") + Format(ai_level)).draw(info_sx + 120, info_sy + 125);
+	small_font(language.get("info", "lookahead_0") + Format(mid_depth) + language.get("info", "lookahead_1")).draw(info_sx + 120, info_sy + 150);
+	small_font(language.get("info", "complete_0") + Format(end_depth) + language.get("info", "complete_1")).draw(info_sx + 120, info_sy + 175);
 	get_level_depth(hint_level, &mid_depth, &end_depth);
-	small_font(language.get("info", "hint") + U": " + language.get("common", "level") + Format(hint_level)).draw(info_sx + 200, info_bottom_sy);
-	small_font(language.get("info", "lookahead_0") + Format(mid_depth) + language.get("info", "lookahead_1")).draw(info_sx + 200, info_bottom_sy + 30);
-	small_font(language.get("info", "complete_0") + Format(end_depth) + language.get("info", "complete_1")).draw(info_sx + 200, info_bottom_sy + 60);
+	small_font(language.get("info", "hint") + U": " + language.get("common", "level") + Format(hint_level)).draw(info_sx + 280, info_sy + 125);
+	small_font(language.get("info", "lookahead_0") + Format(mid_depth) + language.get("info", "lookahead_1")).draw(info_sx + 280, info_sy + 150);
+	small_font(language.get("info", "complete_0") + Format(end_depth) + language.get("info", "complete_1")).draw(info_sx + 280, info_sy + 175);
 }
 
 bool operator< (const pair<int, Board> &a, const pair<int, Board> &b){
@@ -1468,9 +1467,9 @@ void Main() {
 	Font font30(30);
 	Font font20(20);
 	Font font15(15);
-	Font normal_hint_font(18, Typeface::Bold);
-	Font mini_hint_font(14, Typeface::Heavy);
-	Font small_hint_font(10, Typeface::Bold);
+	Font normal_hint_font(17, Typeface::Bold);
+	Font mini_hint_font(13, Typeface::Heavy);
+	Font small_hint_font(9, Typeface::Bold);
 
 	Board bd;
 	bool board_clicked[HW2];
