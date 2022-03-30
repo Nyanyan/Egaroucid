@@ -48,8 +48,8 @@ public:
 		draw_graph(nodes1, graph_history_color, false);
 		draw_graph(nodes2, graph_fork_color, true);
 		int place_x = sx + place * dx + place * adj_x / 60;
-		Circle(sx, sy, 10).draw(Palette::Black);
-		Circle(sx, sy + size_y, 10).draw(Palette::White);
+		Circle(sx, sy, 7).draw(Palette::Black);
+		Circle(sx, sy + size_y, 7).draw(Palette::White);
 		Line(place_x, sy, place_x, sy + size_y).draw(3, graph_place_color);
 		RoundRect(place_x - 9, sy + size_y, 18, 10, 3).draw(graph_place_color);
 		Line(place_x - 6, sy + size_y + 3, place_x - 6, sy + size_y + 7).draw(2, graph_color);
@@ -88,8 +88,8 @@ public:
 
 private:
 	void calc_range(vector<History_elem> nodes1, vector<History_elem> nodes2) {
-		y_min = 1000;
-		y_max = -1000;
+		y_min = -resolution;
+		y_max = resolution;
 		for (const History_elem& b : nodes1) {
 			if (b.v != -INF) {
 				y_min = min(y_min, b.v);
@@ -102,10 +102,10 @@ private:
 				y_max = max(y_max, b.v);
 			}
 		}
-		y_min = min(y_min, 0);
-		y_max = max(y_max, 0);
-		y_min = y_min - resolution + abs(y_min) % resolution;
-		y_max = y_max + resolution - abs(y_max) % resolution;
+		cerr << y_min << " " << y_max << " ";
+		y_min -= (y_min + HW2) % resolution;
+		y_max += (resolution - (y_max + HW2) % resolution) % resolution;
+		cerr << y_min << " " << y_max << endl;
 		dy = size_y / (y_max - y_min);
 		dx = size_x / 60;
 		adj_y = size_y - dy * (y_max - y_min);

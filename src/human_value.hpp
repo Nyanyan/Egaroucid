@@ -15,7 +15,6 @@
 
 struct Human_value{
     int moves;
-    int prospect;
     double stability_black;
     double stability_white;
 };
@@ -93,12 +92,7 @@ void calc_all_human_value(Board b, int depth, Human_value res[], int search_dept
     }
 }
 
-void update_human_value_stone_values(Human_value res[], uint64_t legal, const int stone_values[]){
-    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
-        res[cell].prospect = stone_values[cell];
-}
-
-Human_value calc_human_value(Board b, int depth, int search_depth, int calculated_value){
+Human_value calc_human_value(Board b, int depth, int search_depth){
     Search search;
     search.mpct = 1.5;
     search.use_mpc = true;
@@ -109,7 +103,6 @@ Human_value calc_human_value(Board b, int depth, int search_depth, int calculate
     calc_human_value_stability(&b, depth - 1, false, search_depth, &search, values, searched_times);
     Human_value res;
     res.moves = b.n - 4;
-    res.prospect = calculated_value;
     res.stability_black = values[0] / searched_times[0];
     res.stability_white = values[1] / searched_times[1];
     cerr << "human sense values " << res.stability_black << " " << res.stability_white << endl;
