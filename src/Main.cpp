@@ -404,7 +404,7 @@ void board_draw(Rect board_cells[], History_elem b, int next_policy, int int_mod
 	String coord_x = U"abcdefgh";
 	for (int i = 0; i < HW; ++i) {
 		coord_font(i + 1).draw(Arg::center(board_sx - board_coord_size, board_sy + board_cell_size * i + board_cell_size / 2), Color(51, 51, 51));
-		coord_font(coord_x[i]).draw(Arg::center(board_sx + board_cell_size * i + board_cell_size / 2, board_sy - board_coord_size), Color(51, 51, 51));
+		coord_font(coord_x[i]).draw(Arg::center(board_sx + board_cell_size * i + board_cell_size / 2, board_sy - board_coord_size - 2), Color(51, 51, 51));
 	}
 	for (int i = 0; i < HW_M1; ++i) {
 		Line(board_sx + board_cell_size * (i + 1), board_sy, board_sx + board_cell_size * (i + 1), board_sy + board_cell_size * HW).draw(board_cell_frame_width, Color(51, 51, 51));

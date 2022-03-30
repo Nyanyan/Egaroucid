@@ -102,10 +102,8 @@ private:
 				y_max = max(y_max, b.v);
 			}
 		}
-		cerr << y_min << " " << y_max << " ";
 		y_min -= (y_min + HW2) % resolution;
 		y_max += (resolution - (y_max + HW2) % resolution) % resolution;
-		cerr << y_min << " " << y_max << endl;
 		dy = size_y / (y_max - y_min);
 		dx = size_x / 60;
 		adj_y = size_y - dy * (y_max - y_min);
