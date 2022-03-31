@@ -2263,7 +2263,7 @@ void Main() {
 			}
 
 			/*** graph interaction ***/
-			if (main_window_active && !ai_thinking && !book_learning && !book_modifying) {
+			if (main_window_active && !ai_thinking && !book_learning && !book_modifying && !changing_book) {
 				int former_history_place = history_place;
 				if (!KeyLeft.pressed() && !KeyA.pressed()) {
 					left_pushed = BUTTON_NOT_PUSHED;
@@ -2423,11 +2423,14 @@ void Main() {
 			}
 			/*** human sense value draw ***/
 
+			/*** graph draw ***/
+			if (use_value_flag) {
+				graph.draw(history, fork_history, history_place);
+			}
+			/*** graph draw ***/
+
 			/*** before and after game ***/
 			if (!before_start_game) {
-				if (use_value_flag) {
-					graph.draw(history, fork_history, history_place);
-				}
 				if (bd.get_legal() == 0ULL && !fork_mode && show_popup_flag && show_end_popup) {
 					show_popup_flag = !show_popup(bd, !both_human, human_first, human_second, both_ai, ai_level, font50, font30, popup_start_time);
 					main_window_active = !show_popup_flag;
