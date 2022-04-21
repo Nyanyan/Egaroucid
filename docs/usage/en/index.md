@@ -79,9 +79,19 @@ Mode: Study, Simple
 
 Evaluation values are shown in each legal cells.
 
+
+
+#### Disc Difference Values
+
 If the board is in your book, ```book``` will be shown. If not, the AI will search at the ```Hint Level``` and show the the level or ```100%``` when exact search is done. 
 
 The best moves are shown in blue letters. Best moves and values sometimes mismatch, but this is not a bug. Best moves seems to be more accurate than values.
+
+##### Graph of Disc Difference Values
+
+Disc Difference Values are shown in the graph under the board when AI plays. Horizontal axis shows the move numbers, and vertical axis shows the disc difference. If the graph goes upper, it shows that black seems to win. The lower, white seems to win.
+
+
 
 #### Human Sense Values
 
@@ -94,13 +104,19 @@ This application has another evaluation values. Human Sense Values are defined a
 
 The idea came from (in Japanese): https://othelloq.com/tweet/quantifing-human-difficulty
 
-Checking```Human Sense Value``` to enable this function. The values are shown in upper-right corner. The greater the value is, the better the move is.
+Checking```Human Sense Value``` to enable this function. The values are shown in upper-right corner. Black letters for black player, white letters for white player. When the situation seems to be equal, the value is 50. The greater the value is, the better the move is.
 
 Human Sense Values are calculated as:
 
 1. Calculate the all recent N moves bifurcation
 2. Calculate the disc difference prediction in each end of bifurcation
 3. Calculate the number of good and bad bifurcations
+
+##### Graph of Human Sense Values
+
+Human Sense Values are shown in the graph on the right side of the screen. Horizontal axis shows the value of black, and vertical axis shows the values of white. If graph goes right, black seems to win. If graph goes up, white seems to win.
+
+
 
 #### Umigame's values
 
@@ -110,7 +126,7 @@ Umigame's values are the numbers of the bifurcations of the best moves to memori
 
 You can see this value with checking ```Umigame's value```.
 
-Black letters show black player's number, White letters show white player's number.
+Black letters show black player's number, White letters show white player's number. The values are shown in the bottom-left corner.
 
 Umigame's values are announced here in Japanese: http://blog.livedoor.jp/umigame_oth/archives/1075469317.html
 
