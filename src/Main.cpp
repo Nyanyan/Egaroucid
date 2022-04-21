@@ -2419,7 +2419,7 @@ void Main() {
 
 			/*** human sense value draw ***/
 			if (use_value_flag) {
-				human_sense_graph.draw(human_value_hist, bd);
+				human_sense_graph.draw(human_value_hist, fork_human_value_hist, bd);
 			}
 			/*** human sense value draw ***/
 
@@ -2633,8 +2633,12 @@ void Main() {
 				reset_human_value(&human_value_state, &human_value_future);
 				reset_ai(&ai_thinking, &ai_future);
 				reset_analyze(&analyzing, &analyze_state, &analyze_future, &analyze_human_future);
-				human_value_hist.clear();
-				fork_human_value_hist.clear();
+				if (!fork_mode) {
+					human_value_hist.clear();
+				}
+				else {
+					fork_human_value_hist.clear();
+				}
 				analyzing = true;
 				main_window_active = false;
 				analyze_state = false;

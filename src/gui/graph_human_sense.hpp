@@ -28,8 +28,8 @@ private:
 	int stability_white_max;
 
 public:
-	void draw(vector<Human_value> nodes, Board bd) {
-		calc_range(nodes, bd);
+	void draw(vector<Human_value> nodes1, vector<Human_value> nodes2, Board bd) {
+		calc_range(nodes1, nodes2, bd);
 		int xx, yy;
 		yy = size_y - size_y * (50 - stability_white_min) / (stability_white_max - stability_white_min);
 		for (int x = stability_black_min; x <= stability_black_max; x += resolution) {
@@ -59,16 +59,25 @@ public:
 		Circle(sx + size_x, sy + yy, 7).draw(Palette::Black);
 		Circle(sx + xx, sy, 7).draw(Palette::White);
 		Circle(sx + xx, sy + size_y, 7).draw(Palette::White);
-		draw_graph(nodes, bd);
+		draw_graph(nodes1, bd, Palette::White);
+		draw_graph(nodes2, bd, Palette::Black);
 	}
 
 private:
-	void calc_range(vector<Human_value> nodes, Board bd) {
+	void calc_range(vector<Human_value> nodes1, vector<Human_value> nodes2, Board bd) {
 		stability_black_min = 50 - resolution;
 		stability_black_max = 50 + resolution;
 		stability_white_min = 50 - resolution;
 		stability_white_max = 50 + resolution;
-		for (const Human_value& elem : nodes) {
+		for (const Human_value& elem : nodes1) {
+			if (elem.moves <= bd.n - 4) {
+				stability_black_min = min(stability_black_min, (int)round(elem.stability_black));
+				stability_black_max = max(stability_black_max, (int)round(elem.stability_black));
+				stability_white_min = min(stability_white_min, (int)round(elem.stability_white));
+				stability_white_max = max(stability_white_max, (int)round(elem.stability_white));
+			}
+		}
+		for (const Human_value& elem : nodes2) {
 			if (elem.moves <= bd.n - 4) {
 				stability_black_min = min(stability_black_min, (int)round(elem.stability_black));
 				stability_black_max = max(stability_black_max, (int)round(elem.stability_black));
@@ -82,19 +91,19 @@ private:
 		stability_white_max += (resolution - stability_white_max % resolution) % resolution;
 	}
 
-	void draw_graph(vector<Human_value> nodes, Board bd) {
+	void draw_graph(vector<Human_value> nodes, Board bd, Color color) {
 		vector<pair<int, int>> values;
 		int xx, yy;
 		for (const Human_value& elem : nodes) {
 			if (elem.moves <= bd.n - 4) {
 				xx = sx + size_x * ((int)round(elem.stability_black) - stability_black_min) / (stability_black_max - stability_black_min);
 				yy = sy + size_y - size_y * ((int)round(elem.stability_white) - stability_white_min) / (stability_white_max - stability_white_min);
-				Circle{ xx, yy, 3 }.draw(Palette::White);
+				Circle{ xx, yy, 3 }.draw(color);
 				values.emplace_back(make_pair(xx, yy));
 			}
 		}
 		for (int i = 0; i < (int)values.size() - 1; ++i) {
-			Line(values[i].first, values[i].second, values[i + 1].first, values[i + 1].second).draw(2, Palette::White);
+			Line(values[i].first, values[i].second, values[i + 1].first, values[i + 1].second).draw(2, color);
 		}
 	}
 };
