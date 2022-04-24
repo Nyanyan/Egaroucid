@@ -42,7 +42,7 @@ constexpr Color font_color = Palette::White;;
 constexpr int board_size = 424, board_coord_size = 20;
 constexpr int big_board_size = 560, big_board_coord_size = 20;
 constexpr int board_sx = left_left + board_coord_size, board_sy = 60, board_cell_size = board_size / HW, board_cell_frame_width = 2, board_frame_width = 7;
-constexpr int big_board_sx = left_left + board_coord_size, big_board_sy = 60, big_board_cell_size = big_board_size / HW;
+constexpr int big_board_sx = left_left + board_coord_size, big_board_sy = 80, big_board_cell_size = big_board_size / HW;
 constexpr int stone_size = 21, legal_size = 5;
 constexpr int big_stone_size = 30, big_legal_size = 7;
 constexpr int graph_sx = 40, graph_sy = 530, graph_width = 424, graph_height = 150, graph_resolution = 8, graph_font_size = 15;
