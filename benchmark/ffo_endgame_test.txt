@@ -4326,7 +4326,7 @@ same
 3612290582 nodes
 191318816.9058842 nps
 
-2022/04/24 adjust mpc parity
+2022/04/24 adjust mpc parity with bug
 #40 depth 20 value 38 policy a2 nodes 26888815 time 162 nps 165980339
 #41 depth 22 value 0 policy h4 nodes 36068129 time 264 nps 136621700
 #42 depth 22 value 6 policy g2 nodes 53804351 time 346 nps 155503904
@@ -4341,6 +4341,22 @@ same
 19.80989098548889 sec total
 3515977495 nodes
 183841960.52287582 nps
+
+2022/04/24 adjust mpc parity
+#40 depth 20 value 38 policy a2 nodes 26922336 time 168 nps 160252000
+#41 depth 22 value 0 policy h4 nodes 25827150 time 215 nps 120126279
+#42 depth 22 value 6 policy g2 nodes 51702435 time 341 nps 151620043
+#43 depth 23 value -12 policy c7 nodes 136859550 time 741 nps 184695748
+#44 depth 23 value -14 policy d2 nodes 42943866 time 528 nps 81333079
+#45 depth 24 value 6 policy b2 nodes 975615140 time 3845 nps 253736057
+#46 depth 24 value -8 policy b3 nodes 183782030 time 2220 nps 82784698
+#47 depth 25 value 4 policy g2 nodes 149666484 time 905 nps 165377330
+#48 depth 25 value 28 policy f6 nodes 805836443 time 3924 nps 205360969
+#49 depth 26 value 16 policy e1 nodes 1192439462 time 6302 nps 189216036
+19.189 sec
+19.864097833633423 sec total
+3591594896 nodes
+187169466.6736151 nps
 
 
 

@@ -93,12 +93,12 @@ constexpr int mpcd[61] = {
 #define probcut_f -0.36362643370418024
 #define probcut_g 4.071950100378323
 
-#define probcut_end_a -0.007067691798918974
-#define probcut_end_b -0.03625767020840132
-#define probcut_end_c 7.057010691277178
-#define probcut_end_d 21.002429687642383
-#define probcut_end_e 21.02101092545754
-#define probcut_end_f 10.510201246471908
+#define probcut_end_a 0.0056769014659393
+#define probcut_end_b 0.05764745266845939
+#define probcut_end_c -1.0153372986220075
+#define probcut_end_d 4.90203027104922
+#define probcut_end_e -7.607180916778645
+#define probcut_end_f 7.238464237861993
 
 inline double probcut_sigma(int n_stones, int depth1, int depth2){
     double w = n_stones;
@@ -210,7 +210,7 @@ inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, 
     if ((!is_end_search && depth >= 17) || (is_end_search && depth >= 23))
         return false;
     bool res = false;
-    int search_depth = (depth >> 4) + (depth & 1);
+    int search_depth = ((depth >> 4) & 0xFE) ^ (depth & 1);
     const int depth0_value = mid_evaluate(&search->board);
     int error_depth0, error_search;
     if (is_end_search){
