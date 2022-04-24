@@ -20,8 +20,8 @@ using namespace std;
 
 class Node_child_transpose_table{
     private:
-        atomic<unsigned long long> player;
-        atomic<unsigned long long> opponent;
+        atomic<uint64_t> player;
+        atomic<uint64_t> opponent;
         atomic<int> best_move;
         //atomic<Node_child_transpose_table*> p_n_node;
 
@@ -156,8 +156,8 @@ class Child_transpose_table{
 
 class Node_parent_transpose_table{
     private:
-        atomic<unsigned long long> player;
-        atomic<unsigned long long> opponent;
+        atomic<uint64_t> player;
+        atomic<uint64_t> opponent;
         atomic<int> lower;
         atomic<int> upper;
         //atomic<Node_parent_transpose_table*> p_n_node;
