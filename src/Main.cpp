@@ -49,7 +49,7 @@ constexpr int graph_sx = 40, graph_sy = 530, graph_width = 424, graph_height = 1
 constexpr int human_sense_graph_sx = 520, human_sense_graph_sy = 275, human_sense_graph_width = 405, human_sense_graph_height = 405, humnan_sense_graph_resolution = 10;
 constexpr Color green = Color(36, 153, 114, 100);
 constexpr int start_game_how_to_use_width = 120, start_game_how_to_use_height = 30;
-constexpr int start_game_button_x = 600, start_game_button_y = 49, start_game_button_w = start_game_how_to_use_width, start_game_button_h = start_game_how_to_use_height, start_game_button_r = 5;
+constexpr int start_game_button_x = 740, start_game_button_y = 49, start_game_button_w = start_game_how_to_use_width, start_game_button_h = start_game_how_to_use_height, start_game_button_r = 5;
 constexpr Color button_color = Palette::White, button_font_color = Palette::Black;
 constexpr int popup_width = 500, popup_height = 300, popup_r = 20, popup_circle_r = 30;
 constexpr Color popup_color = Palette::White, popup_font_color = Palette::Black, popup_frame_color = Palette::Black, textbox_active_color = Palette::Lightcyan;
@@ -1494,7 +1494,7 @@ void Main() {
 	Window::Resize(window_size);
 	Window::SetStyle(WindowStyle::Sizable);
 	Scene::SetResizeMode(ResizeMode::Keep);
-	Window::SetTitle(U"Egaroucid 5.6.1");
+	Window::SetTitle(U"Egaroucid 5.7.0");
 	System::SetTerminationTriggers(UserAction::NoAction);
 	Scene::SetBackground(green);
 	//Console.open();
