@@ -1411,7 +1411,7 @@ void learn_book(Board bd, int level, int depth, int book_learn_accept, Board* bd
 }
 
 void show_change_book(int change_book_cell, String changed_book_value_str, Font font) {
-	font(language.get("book", "changed_value") + U"(" + str_record(change_book_cell) + U"): " + changed_book_value_str).draw(600, 90, font_color);
+	font(language.get("book", "changed_value") + U"(" + str_record(change_book_cell) + U"): " + changed_book_value_str).draw(720, 90, font_color);
 }
 
 bool import_book_p(string file) {
@@ -2063,12 +2063,31 @@ void Main() {
 					/*** human plays ***/
 					pair<int, Board> moved_board = move_board(bd, board_clicked);
 					if (moved_board.first != -1) {
+						bool next_fork_mode = (!fork_mode && history_place != history[history.size() - 1].b.n - 4);
+						int v = -INF;
+						for (int cell = 0; cell < HW2; ++cell) {
+							if (1 & (hint_legal >> cell) && hint_state > 0 && use_hint_flag) {
+								v = max(v, hint_value[cell]);
+							}
+						}
+						if (v != -INF) {
+							v *= (bd.p ? -1 : 1);
+							if (!fork_mode && !next_fork_mode) {
+								if (history.size()) {
+									history[history.size() - 1].v = v;
+								}
+							}
+							else {
+								if (fork_history.size()) {
+									fork_history[find_history_idx(fork_history, bd.n - 4)].v = v;
+								}
+							}
+						}
 						reset_hint(&hint_state, &hint_future);
 						reset_umigame(umigame_state, umigame_future);
 						reset_human_value(&human_value_state, &human_value_future);
 						reset_analyze(&analyzing, &analyze_state, &analyze_future, &analyze_human_future);
 						moved_board.second.check_player();
-						bool next_fork_mode = (!fork_mode && history_place != history[history.size() - 1].b.n - 4);
 						if (next_fork_mode && history[find_history_idx(history, moved_board.second.n - 4)].b == moved_board.second) {
 							bd = moved_board.second;
 							history_place = bd.n - 4;
