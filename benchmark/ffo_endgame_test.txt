@@ -4278,6 +4278,22 @@ same
 3488009518 nodes
 108078254.82601556 nps
 
+2022/04/24 i9 11900k 16 threads update last flip
+#40 depth 20 value 38 policy a2 nodes 32291171 time 200 nps 161455855
+#41 depth 22 value 0 policy h4 nodes 29932057 time 423 nps 70761364
+#42 depth 22 value 6 policy g2 nodes 56226454 time 491 nps 114514162
+#43 depth 23 value -12 policy c7 nodes 155420344 time 1017 nps 152822363
+#44 depth 23 value -14 policy d2 nodes 35428716 time 787 nps 45017428
+#45 depth 24 value 6 policy b2 nodes 920236078 time 6036 nps 152457932
+#46 depth 24 value -8 policy b3 nodes 159648745 time 3800 nps 42012827
+#47 depth 25 value 4 policy g2 nodes 110376525 time 1445 nps 76385138
+#48 depth 25 value 28 policy f6 nodes 777085601 time 4535 nps 171352943
+#49 depth 26 value 16 policy e1 nodes 1274326510 time 13288 nps 95900550
+32.022 sec
+32.71713662147522 sec total
+3550972201 nodes
+110891643.27649741 nps
+
 
 
 /***** copy *****/

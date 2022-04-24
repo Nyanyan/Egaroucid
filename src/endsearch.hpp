@@ -65,7 +65,7 @@ int nega_alpha_end_nomemo(Search *search, int alpha, int beta, int depth, bool s
     }
     return v;
 }
-
+/*
 inline int last1(Search *search, int alpha, int beta, int p0){
     ++search->n_nodes;
     int score = HW2 - 2 * search->board.count_opponent();
@@ -82,8 +82,8 @@ inline int last1(Search *search, int alpha, int beta, int p0){
         score += 2 * n_flip;
     return score_to_value(score);
 }
+*/
 
-/*
 inline int last1(Search *search, int alpha, int beta, int p0){
     ++search->n_nodes;
     int score = HW2 - 2 * search->board.count_opponent();
@@ -109,7 +109,7 @@ inline int last1(Search *search, int alpha, int beta, int p0){
         score += 2 * n_flip;
     return score;
 }
-*/
+
 inline int last2(Search *search, int alpha, int beta, int p0, int p1, bool skipped){
     ++search->n_nodes;
     #if USE_END_PO & false

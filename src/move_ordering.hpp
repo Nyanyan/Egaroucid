@@ -71,23 +71,25 @@ inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int
                 flip->value += calc_stability_edge_player(search->board.opponent, search->board.player) * W_STABILITY;
                 flip->n_legal = search->board.get_legal();
                 flip->value += -pop_count_ull(flip->n_legal) * W_MOBILITY;
-                switch(depth){
-                    case 0:
-                        flip->value += (HW2 - value_to_score_int(mid_evaluate(&search->board))) * W_VALUE_SHALLOW;
-                        break;
-                    case 1:
-                        flip->value += (HW2 - value_to_score_int(nega_alpha_eval1(search, alpha, beta, false))) * W_VALUE;
-                        break;
-                    default:
-                        if (depth <= MID_FAST_DEPTH)
-                            flip->value += (HW2 - value_to_score_int(nega_alpha(search, alpha, beta, depth, false))) * W_VALUE;
-                        else{
-                            bool use_mpc = search->use_mpc;
-                            search->use_mpc = false;
-                                flip->value += (HW2 - value_to_score_int(nega_alpha_ordering_nomemo(search, alpha, beta, depth, false, flip->n_legal))) * W_VALUE;
-                            search->use_mpc = use_mpc;
-                        }
-                        break;
+                if (depth >= 0){
+                    switch(depth){
+                        case 0:
+                            flip->value += (HW2 - value_to_score_int(mid_evaluate(&search->board))) * W_VALUE_SHALLOW;
+                            break;
+                        case 1:
+                            flip->value += (HW2 - value_to_score_int(nega_alpha_eval1(search, alpha, beta, false))) * W_VALUE;
+                            break;
+                        default:
+                            if (depth <= MID_FAST_DEPTH)
+                                flip->value += (HW2 - value_to_score_int(nega_alpha(search, alpha, beta, depth, false))) * W_VALUE;
+                            else{
+                                bool use_mpc = search->use_mpc;
+                                search->use_mpc = false;
+                                    flip->value += (HW2 - value_to_score_int(nega_alpha_ordering_nomemo(search, alpha, beta, depth, false, flip->n_legal))) * W_VALUE;
+                                search->use_mpc = use_mpc;
+                            }
+                            break;
+                    }
                 }
             search->board.undo(flip);
         }
