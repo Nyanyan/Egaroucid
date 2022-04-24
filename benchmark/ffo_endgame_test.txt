@@ -4358,6 +4358,22 @@ same
 3591594896 nodes
 187169466.6736151 nps
 
+2022/04/24 adjust mpc model
+#40 depth 20 value 38 policy a2 nodes 26892270 time 161 nps 167032732
+#41 depth 22 value 0 policy h4 nodes 26821766 time 214 nps 125335355
+#42 depth 22 value 6 policy g2 nodes 49418464 time 319 nps 154916815
+#43 depth 23 value -12 policy c7 nodes 166542507 time 848 nps 196394465
+#44 depth 23 value -14 policy d2 nodes 42781713 time 584 nps 73256357
+#45 depth 24 value 6 policy b2 nodes 913886346 time 3625 nps 252106578
+#46 depth 24 value -8 policy b3 nodes 183799598 time 2061 nps 89179814
+#47 depth 25 value 4 policy g2 nodes 140982680 time 829 nps 170063546
+#48 depth 25 value 28 policy f6 nodes 797839834 time 3649 nps 218646158
+#49 depth 26 value 16 policy e1 nodes 1143130128 time 5910 nps 193423033
+18.2 sec
+18.879648447036743 sec total
+3492095306 nodes
+191873368.46153846 nps
+
 
 
 /***** copy *****/
