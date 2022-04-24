@@ -40,8 +40,11 @@ using namespace std;
 
 constexpr Color font_color = Palette::White;;
 constexpr int board_size = 424, board_coord_size = 20;
+constexpr int big_board_size = 560, big_board_coord_size = 20;
 constexpr int board_sx = left_left + board_coord_size, board_sy = 60, board_cell_size = board_size / HW, board_cell_frame_width = 2, board_frame_width = 7;
+constexpr int big_board_sx = left_left + board_coord_size, big_board_sy = 60, big_board_cell_size = big_board_size / HW;
 constexpr int stone_size = 21, legal_size = 5;
+constexpr int big_stone_size = 30, big_legal_size = 7;
 constexpr int graph_sx = 40, graph_sy = 530, graph_width = 424, graph_height = 150, graph_resolution = 8, graph_font_size = 15;
 constexpr int human_sense_graph_sx = 520, human_sense_graph_sy = 275, human_sense_graph_width = 405, human_sense_graph_height = 405, humnan_sense_graph_resolution = 10;
 constexpr Color green = Color(36, 153, 114, 100);
@@ -53,6 +56,7 @@ constexpr Color popup_color = Palette::White, popup_font_color = Palette::Black,
 constexpr int popup_output_width = 800, popup_output_height = 600;
 constexpr int popup_import_width = 600, popup_import_height = 450;
 constexpr int info_sx = 520, info_sy = 50;
+constexpr int big_info_sx = 580, big_info_sy = 50;
 constexpr double popup_fade_time = 500.0;
 
 struct Cell_value {
@@ -395,59 +399,76 @@ void closing_draw(Font font, Font small_font, Texture icon, Texture logo, bool t
 	font(language.get("closing")).draw(right_left, y_center + font.fontSize(), font_color);
 }
 
-void board_draw(Rect board_cells[], History_elem b, int next_policy, int int_mode, bool use_hint_flag, bool normal_hint, bool human_hint, bool umigame_hint,
-	const int hint_state, const uint64_t hint_legal, const int hint_value[], const int hint_depth[], const bool hint_best_moves[], const int hint_show_num, Font normal_font, Font small_font, Font big_font, Font mini_font, Font coord_font,
+void board_draw(bool use_value_flag, Rect board_cells[], History_elem b, int next_policy, int int_mode, bool use_hint_flag, bool normal_hint, bool human_hint, bool umigame_hint,
+	const int hint_state, const uint64_t hint_legal, const int hint_value[], const int hint_depth[], const bool hint_best_moves[], const int hint_show_num, Font huge_font, Font normal_font, Font small_font, Font big_font, Font mini_font, Font coord_font,
 	bool before_start_game,
 	const int umigame_state[], const umigame_result umigame_value[],
 	const int human_value_state, const Human_value human_value[],
 	bool book_start_learn) {
 	String coord_x = U"abcdefgh";
+	int b_sx, b_sy, b_coord_size, b_cell_size, s_size, l_size;
+	if (use_value_flag) {
+		b_sx = board_sx;
+		b_sy = board_sy;
+		b_coord_size = board_coord_size;
+		b_cell_size = board_cell_size;
+		s_size = stone_size;
+		l_size = legal_size;
+	}
+	else {
+		b_sx = big_board_sx;
+		b_sy = big_board_sy;
+		b_coord_size = big_board_coord_size;
+		b_cell_size = big_board_cell_size;
+		s_size = big_stone_size;
+		l_size = big_legal_size;
+	}
 	for (int i = 0; i < HW; ++i) {
-		coord_font(i + 1).draw(Arg::center(board_sx - board_coord_size, board_sy + board_cell_size * i + board_cell_size / 2), Color(51, 51, 51));
-		coord_font(coord_x[i]).draw(Arg::center(board_sx + board_cell_size * i + board_cell_size / 2, board_sy - board_coord_size - 2), Color(51, 51, 51));
+		coord_font(i + 1).draw(Arg::center(b_sx - b_coord_size, b_sy + b_cell_size * i + b_cell_size / 2), Color(51, 51, 51));
+		coord_font(coord_x[i]).draw(Arg::center(b_sx + b_cell_size * i + b_cell_size / 2, b_sy - b_coord_size - 2), Color(51, 51, 51));
 	}
 	for (int i = 0; i < HW_M1; ++i) {
-		Line(board_sx + board_cell_size * (i + 1), board_sy, board_sx + board_cell_size * (i + 1), board_sy + board_cell_size * HW).draw(board_cell_frame_width, Color(51, 51, 51));
-		Line(board_sx, board_sy + board_cell_size * (i + 1), board_sx + board_cell_size * HW, board_sy + board_cell_size * (i + 1)).draw(board_cell_frame_width, Color(51, 51, 51));
+		Line(b_sx + b_cell_size * (i + 1), b_sy, b_sx + b_cell_size * (i + 1), b_sy + b_cell_size * HW).draw(board_cell_frame_width, Color(51, 51, 51));
+		Line(b_sx, b_sy + b_cell_size * (i + 1), b_sx + b_cell_size * HW, b_sy + b_cell_size * (i + 1)).draw(board_cell_frame_width, Color(51, 51, 51));
 	}
-	Circle(board_sx + 2 * board_cell_size, board_sy + 2 * board_cell_size, 5).draw(Color(51, 51, 51));
-	Circle(board_sx + 2 * board_cell_size, board_sy + 6 * board_cell_size, 5).draw(Color(51, 51, 51));
-	Circle(board_sx + 6 * board_cell_size, board_sy + 2 * board_cell_size, 5).draw(Color(51, 51, 51));
-	Circle(board_sx + 6 * board_cell_size, board_sy + 6 * board_cell_size, 5).draw(Color(51, 51, 51));
-	RoundRect(board_sx, board_sy, board_cell_size * HW, board_cell_size * HW, 20).draw(ColorF(0, 0, 0, 0)).drawFrame(0, board_frame_width, Palette::White);
+	Circle(b_sx + 2 * b_cell_size, b_sy + 2 * b_cell_size, 5).draw(Color(51, 51, 51));
+	Circle(b_sx + 2 * b_cell_size, b_sy + 6 * b_cell_size, 5).draw(Color(51, 51, 51));
+	Circle(b_sx + 6 * b_cell_size, b_sy + 2 * b_cell_size, 5).draw(Color(51, 51, 51));
+	Circle(b_sx + 6 * b_cell_size, b_sy + 6 * b_cell_size, 5).draw(Color(51, 51, 51));
+	RoundRect(b_sx, b_sy, b_cell_size * HW, b_cell_size * HW, 20).draw(ColorF(0, 0, 0, 0)).drawFrame(0, board_frame_width, Palette::White);
 	int board_arr[HW2];
 	Flip mob;
 	uint64_t legal = b.b.get_legal();
 	b.b.translate_to_arr(board_arr);
 	for (int cell = 0; cell < HW2; ++cell) {
-		int x = board_sx + (cell % HW) * board_cell_size + board_cell_size / 2;
-		int y = board_sy + (cell / HW) * board_cell_size + board_cell_size / 2;
+		int x = b_sx + (cell % HW) * b_cell_size + b_cell_size / 2;
+		int y = b_sy + (cell / HW) * b_cell_size + b_cell_size / 2;
 		if (board_arr[cell] == BLACK) {
-			Circle(x, y, stone_size).draw(Palette::Black);
+			Circle(x, y, s_size).draw(Palette::Black);
 		}
 		else if (board_arr[cell] == WHITE) {
-			Circle(x, y, stone_size).draw(Palette::White);
+			Circle(x, y, s_size).draw(Palette::White);
 		}
 		if (1 & (legal >> cell)) {
 			if (cell == next_policy) {
-				int xx = board_sx + (HW_M1 - cell % HW) * board_cell_size + board_cell_size / 2;
-				int yy = board_sy + (HW_M1 - cell / HW) * board_cell_size + board_cell_size / 2;
+				int xx = b_sx + (HW_M1 - cell % HW) * b_cell_size + b_cell_size / 2;
+				int yy = b_sy + (HW_M1 - cell / HW) * b_cell_size + b_cell_size / 2;
 				if (b.b.p == WHITE) {
-					Circle(xx, yy, stone_size).draw(ColorF(Palette::White, 0.2));
+					Circle(xx, yy, s_size).draw(ColorF(Palette::White, 0.2));
 				}
 				else {
-					Circle(xx, yy, stone_size).draw(ColorF(Palette::Black, 0.2));
+					Circle(xx, yy, s_size).draw(ColorF(Palette::Black, 0.2));
 				}
 			}
 			if (int_mode != 2 && !before_start_game && !book_start_learn && (!use_hint_flag || (!normal_hint && !human_hint && !umigame_hint))) {
-				int xx = board_sx + (HW_M1 - cell % HW) * board_cell_size + board_cell_size / 2;
-				int yy = board_sy + (HW_M1 - cell / HW) * board_cell_size + board_cell_size / 2;
-				Circle(xx, yy, legal_size).draw(Palette::Cyan);
+				int xx = b_sx + (HW_M1 - cell % HW) * b_cell_size + b_cell_size / 2;
+				int yy = b_sy + (HW_M1 - cell / HW) * b_cell_size + b_cell_size / 2;
+				Circle(xx, yy, l_size).draw(Palette::Cyan);
 			}
 		}
 	}
 	if (b.policy != -1) {
-		Circle(board_sx + (HW_M1 - b.policy % HW) * board_cell_size + board_cell_size / 2, board_sy + (HW_M1 - b.policy / HW) * board_cell_size + board_cell_size / 2, legal_size).draw(Palette::Red);
+		Circle(b_sx + (HW_M1 - b.policy % HW) * b_cell_size + b_cell_size / 2, b_sy + (HW_M1 - b.policy / HW) * b_cell_size + b_cell_size / 2, l_size).draw(Palette::Red);
 	}
 	if (int_mode != 2 && use_hint_flag && legal != 0 && !before_start_game && !book_start_learn && (legal | hint_legal) == legal) {
 		bool hint_shown[HW2];
@@ -472,9 +493,9 @@ void board_draw(Rect board_cells[], History_elem b, int next_policy, int int_mod
 				int n_shown = 0, last_value = -INF;
 				for (pair<int, int> elem : show_cells) {
 					if (last_value > hint_value[elem.second] && n_shown >= hint_show_num) {
-						int x = board_sx + (HW_M1 - elem.second % HW) * board_cell_size + board_cell_size / 2;
-						int y = board_sy + (HW_M1 - elem.second / HW) * board_cell_size + board_cell_size / 2;
-						Circle(x, y, legal_size).draw(Palette::Cyan);
+						int x = b_sx + (HW_M1 - elem.second % HW) * b_cell_size + b_cell_size / 2;
+						int y = b_sy + (HW_M1 - elem.second / HW) * b_cell_size + b_cell_size / 2;
+						Circle(x, y, l_size).draw(Palette::Cyan);
 					}
 					else {
 						Color color = Palette::White;
@@ -482,23 +503,45 @@ void board_draw(Rect board_cells[], History_elem b, int next_policy, int int_mod
 							color = Palette::Cyan;
 						}
 						if (int_mode == 0) {
-							int x = board_sx + (HW_M1 - elem.second % HW) * board_cell_size + board_cell_size / 2;
-							int y = board_sy + (HW_M1 - elem.second / HW) * board_cell_size + board_cell_size / 2;
-							big_font(hint_value[elem.second]).draw(Arg::center = Vec2{ x, y }, color);
-						}
-						else if (int_mode == 1) {
-							int x = board_sx + (HW_M1 - elem.second % HW) * board_cell_size + 3;
-							int y = board_sy + (HW_M1 - elem.second / HW) * board_cell_size + 3;
-							normal_font(hint_value[elem.second]).draw(x, y, color);
-							y += 19;
-							if (hint_depth[elem.second] == SEARCH_BOOK) {
-								small_font(U"book").draw(x, y, color);
-							}
-							else if (hint_depth[elem.second] == SEARCH_FINAL) {
-								small_font(U"100%").draw(x, y, color);
+							int x = b_sx + (HW_M1 - elem.second % HW) * b_cell_size + b_cell_size / 2;
+							int y = b_sy + (HW_M1 - elem.second / HW) * b_cell_size + b_cell_size / 2;
+							if (use_value_flag) {
+								big_font(hint_value[elem.second]).draw(Arg::center = Vec2{ x, y }, color);
 							}
 							else {
-								small_font(U"Lv.", hint_depth[elem.second]).draw(x, y, color);
+								huge_font(hint_value[elem.second]).draw(Arg::center = Vec2{ x, y }, color);
+							}
+						}
+						else if (int_mode == 1) {
+							if (use_value_flag) {
+								int x = b_sx + (HW_M1 - elem.second % HW) * b_cell_size + 3;
+								int y = b_sy + (HW_M1 - elem.second / HW) * b_cell_size + 3;
+								normal_font(hint_value[elem.second]).draw(x, y, color);
+								y += 19;
+								if (hint_depth[elem.second] == SEARCH_BOOK) {
+									small_font(U"book").draw(x, y, color);
+								}
+								else if (hint_depth[elem.second] == SEARCH_FINAL) {
+									small_font(U"100%").draw(x, y, color);
+								}
+								else {
+									small_font(U"Lv.", hint_depth[elem.second]).draw(x, y, color);
+								}
+							}
+							else {
+								int x = b_sx + (HW_M1 - elem.second % HW) * b_cell_size + 3;
+								int y = b_sy + (HW_M1 - elem.second / HW) * b_cell_size + 1;
+								big_font(hint_value[elem.second]).draw(x, y, color);
+								y += 28;
+								if (hint_depth[elem.second] == SEARCH_BOOK) {
+									normal_font(U"book").draw(x, y, color);
+								}
+								else if (hint_depth[elem.second] == SEARCH_FINAL) {
+									normal_font(U"100%").draw(x, y, color);
+								}
+								else {
+									normal_font(U"Lv.", hint_depth[elem.second]).draw(x, y, color);
+								}
 							}
 						}
 						hint_shown[elem.second] = true;
@@ -512,12 +555,22 @@ void board_draw(Rect board_cells[], History_elem b, int next_policy, int int_mod
 			for (int cell = 0; cell < HW2; ++cell) {
 				if (1 & (legal >> cell)) {
 					if (umigame_state[cell] == 2) {
-						int umigame_sx = board_sx + (HW_M1 - cell % HW) * board_cell_size + 3;
-						int umigame_sy = board_sy + (HW_M1 - cell / HW) * board_cell_size + 35;
-						RectF black_rect = mini_font(umigame_value[cell].b).region(umigame_sx, umigame_sy);
-						mini_font(umigame_value[cell].b).draw(umigame_sx, umigame_sy, Palette::Black);
-						umigame_sx += black_rect.size.x;
-						mini_font(umigame_value[cell].w).draw(umigame_sx, umigame_sy, Palette::White);
+						if (use_value_flag) {
+							int umigame_sx = b_sx + (HW_M1 - cell % HW) * b_cell_size + 3;
+							int umigame_sy = b_sy + (HW_M1 - cell / HW) * b_cell_size + 35;
+							RectF black_rect = mini_font(umigame_value[cell].b).region(umigame_sx, umigame_sy);
+							mini_font(umigame_value[cell].b).draw(umigame_sx, umigame_sy, Palette::Black);
+							umigame_sx += black_rect.size.x;
+							mini_font(umigame_value[cell].w).draw(umigame_sx, umigame_sy, Palette::White);
+						}
+						else {
+							int umigame_sx = b_sx + (HW_M1 - cell % HW) * b_cell_size + 3;
+							int umigame_sy = b_sy + (HW_M1 - cell / HW) * b_cell_size + 47;
+							RectF black_rect = normal_font(umigame_value[cell].b).region(umigame_sx, umigame_sy);
+							normal_font(umigame_value[cell].b).draw(umigame_sx, umigame_sy, Palette::Black);
+							umigame_sx += black_rect.size.x;
+							normal_font(umigame_value[cell].w).draw(umigame_sx, umigame_sy, Palette::White);
+						}
 					}
 				}
 			}
@@ -527,10 +580,18 @@ void board_draw(Rect board_cells[], History_elem b, int next_policy, int int_mod
 				int max_human_value = -INF;
 				for (int cell = 0; cell < HW2; ++cell) {
 					if (1 & (legal >> cell)) {
-						int x = board_sx + (HW_M1 - cell % HW + 1) * board_cell_size - 3;
-						int y = board_sy + (HW_M1 - cell / HW) * board_cell_size + 2;
-						mini_font((int)round(human_value[cell].stability_black)).draw(Arg::topRight(x, y), Palette::Black);
-						mini_font((int)round(human_value[cell].stability_white)).draw(Arg::topRight(x, y + mini_font.fontSize() + 1), Palette::White);
+						if (use_value_flag) {
+							int x = b_sx + (HW_M1 - cell % HW + 1) * b_cell_size - 3;
+							int y = b_sy + (HW_M1 - cell / HW) * b_cell_size + 2;
+							mini_font((int)round(human_value[cell].stability_black)).draw(Arg::topRight(x, y), Palette::Black);
+							mini_font((int)round(human_value[cell].stability_white)).draw(Arg::topRight(x, y + mini_font.fontSize() + 1), Palette::White);
+						}
+						else {
+							int x = b_sx + (HW_M1 - cell % HW + 1) * b_cell_size - 3;
+							int y = b_sy + (HW_M1 - cell / HW) * b_cell_size + 2;
+							normal_font((int)round(human_value[cell].stability_black)).draw(Arg::topRight(x, y), Palette::Black);
+							normal_font((int)round(human_value[cell].stability_white)).draw(Arg::topRight(x, y + mini_font.fontSize() + 1), Palette::White);
+						}
 					}
 				}
 			}
@@ -903,7 +964,7 @@ bool import_setting(int* int_mode, bool* use_book, int* ai_level, int* ai_book_a
 	int* n_thread_idx,
 	int* hint_num,
 	int* book_depth, int* book_learn_accept,
-	bool* show_log,
+	bool* show_log, bool *use_value_flag,
 	string* lang_name) {
 	ifstream ifs("resources/settings.txt");
 	if (ifs.fail()) {
@@ -977,6 +1038,10 @@ bool import_setting(int* int_mode, bool* use_book, int* ai_level, int* ai_book_a
 	if (*show_log == -INF) {
 		return false;
 	}
+	*use_value_flag = import_int(&ifs);
+	if (*use_value_flag == -INF) {
+		return false;
+	}
 	*lang_name = import_str(&ifs);
 	while (lang_name->back() == '\n' || lang_name->back() == '\r') {
 		lang_name->pop_back();
@@ -994,7 +1059,7 @@ void export_setting(int int_mode, bool use_book, int ai_level, int ai_book_accep
 	int n_thread_idx,
 	int hint_num,
 	int book_depth, int book_learn_accept,
-	bool show_log,
+	bool show_log, bool use_value_flag,
 	string lang_name) {
 	ofstream ofs("resources/settings.txt");
 	if (!ofs.fail()) {
@@ -1015,6 +1080,7 @@ void export_setting(int int_mode, bool use_book, int ai_level, int ai_book_accep
 		ofs << book_depth << endl;
 		ofs << book_learn_accept << endl;
 		ofs << show_log << endl;
+		ofs << use_value_flag << endl;
 		ofs << lang_name << endl;
 	}
 }
@@ -1184,7 +1250,7 @@ bool close_app(int* hint_state, future<bool>* hint_future,
 	int n_thread_idx,
 	int hint_num,
 	int book_depth, int book_learn_accept,
-	bool show_log,
+	bool show_log, bool use_value_flag,
 	bool* book_learning, future<void>* book_learn_future, bool book_changed,
 	string lang_name) {
 	reset_hint(hint_state, hint_future);
@@ -1199,7 +1265,7 @@ bool close_app(int* hint_state, future<bool>* hint_future,
 		n_thread_idx,
 		hint_num,
 		book_depth, book_learn_accept,
-		show_log,
+		show_log, use_value_flag,
 		lang_name);
 	if (*book_learning) {
 		*book_learning = false;
@@ -1439,9 +1505,6 @@ void Main() {
 		texture_loaded = false;
 	}
 	Rect board_cells[HW2];
-	for (int cell = 0; cell < HW2; ++cell) {
-		board_cells[cell] = Rect(board_sx + (HW_M1 - cell % HW) * board_cell_size, board_sy + (HW_M1 - cell / HW) * board_cell_size, board_cell_size, board_cell_size);
-	}
 	Font graph_font(graph_font_size);
 	Graph graph;
 	graph.sx = graph_sx;
@@ -1462,6 +1525,7 @@ void Main() {
 	Font board_coord_font(board_coord_size);
 	Font font50(50);
 	Font font40(40);
+	Font font35(35);
 	Font font30(30);
 	Font font20(20);
 	Font font15(15);
@@ -1574,14 +1638,14 @@ void Main() {
 		&n_thread_idx,
 		&hint_num,
 		&book_depth, &book_learn_accept,
-		&show_log,
+		&show_log, &use_value_flag,
 		&lang_name)) {
 		cerr << "use default setting" << endl;
 		int_mode = 0;
 		use_book = true;
 		ai_level = 15;
-		ai_book_accept = 2;
-		hint_level = 7;
+		ai_book_accept = 0;
+		hint_level = 15;
 		use_book_depth = 60;
 		use_ai_mode = 0;
 		use_hint_flag = true;
@@ -1591,10 +1655,11 @@ void Main() {
 		show_end_popup = true;
 		n_thread_idx = 2;
 		hint_num = 5;
-		book_depth = 30;
+		book_depth = 40;
 		book_learn_accept = 6;
 		show_log = true;
 		lang_name = language_names[0];
+		use_value_flag = true;
 	}
 	for (int i = 0; i < mode_size; ++i) {
 		show_mode[i] = i == int_mode;
@@ -1677,7 +1742,7 @@ void Main() {
 				n_thread_idx,
 				hint_num,
 				book_depth, book_learn_accept,
-				show_log,
+				show_log, use_value_flag,
 				&book_learning, &book_learn_future, book_changed,
 				lang_name);
 		}
@@ -1940,6 +2005,16 @@ void Main() {
 			/*** analyzing ***/
 
 			if (!before_start_game) {
+				if (use_value_flag) {
+					for (int cell = 0; cell < HW2; ++cell) {
+						board_cells[cell] = Rect(board_sx + (HW_M1 - cell % HW) * board_cell_size, board_sy + (HW_M1 - cell / HW) * board_cell_size, board_cell_size, board_cell_size);
+					}
+				}
+				else {
+					for (int cell = 0; cell < HW2; ++cell) {
+						board_cells[cell] = Rect(big_board_sx + (HW_M1 - cell % HW) * big_board_cell_size, big_board_sy + (HW_M1 - cell / HW) * big_board_cell_size, big_board_cell_size, big_board_cell_size);
+					}
+				}
 				uint64_t legal = bd.get_legal();
 				for (int cell = 0; cell < HW2; ++cell) {
 					board_clicked[cell] = false;
@@ -2329,8 +2404,8 @@ void Main() {
 				history_elem.policy = -1;
 				history_elem.record = U"";
 				history_elem.v = -INF;
-				board_draw(board_cells, history_elem, -1, int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
-						hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, hint_actual_nums[hint_num], normal_hint_font, small_hint_font, font30, mini_hint_font, board_coord_font,
+				board_draw(use_value_flag, board_cells, history_elem, -1, int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
+						hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, hint_actual_nums[hint_num], font35, normal_hint_font, small_hint_font, font30, mini_hint_font, board_coord_font,
 						before_start_game,
 						umigame_state, umigame_value,
 						human_value_state, human_value,
@@ -2342,8 +2417,8 @@ void Main() {
 					if ((int)history.size() > analyze_idx + 1) {
 						next_policy = history[analyze_idx + 1].policy;
 					}
-					board_draw(board_cells, history[analyze_idx], next_policy, int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
-						hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, hint_actual_nums[hint_num], normal_hint_font, small_hint_font, font30, mini_hint_font, board_coord_font,
+					board_draw(use_value_flag, board_cells, history[analyze_idx], next_policy, int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
+						hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, hint_actual_nums[hint_num], font35, normal_hint_font, small_hint_font, font30, mini_hint_font, board_coord_font,
 						before_start_game,
 						umigame_state, umigame_value,
 						human_value_state, human_value,
@@ -2355,8 +2430,8 @@ void Main() {
 					if ((int)history.size() > history_idx + 1) {
 						next_policy = history[history_idx + 1].policy;
 					}
-					board_draw(board_cells, history[history_idx], next_policy, int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
-						hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, hint_actual_nums[hint_num], normal_hint_font, small_hint_font, font30, mini_hint_font, board_coord_font,
+					board_draw(use_value_flag, board_cells, history[history_idx], next_policy, int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
+						hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, hint_actual_nums[hint_num], font35, normal_hint_font, small_hint_font, font30, mini_hint_font, board_coord_font,
 						before_start_game,
 						umigame_state, umigame_value,
 						human_value_state, human_value,
@@ -2369,8 +2444,8 @@ void Main() {
 					if ((int)fork_history.size() > analyze_idx + 1) {
 						next_policy = fork_history[analyze_idx + 1].policy;
 					}
-					board_draw(board_cells, fork_history[analyze_idx], next_policy, int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
-						hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, hint_actual_nums[hint_num], normal_hint_font, small_hint_font, font30, mini_hint_font, board_coord_font,
+					board_draw(use_value_flag, board_cells, fork_history[analyze_idx], next_policy, int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
+						hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, hint_actual_nums[hint_num], font35, normal_hint_font, small_hint_font, font30, mini_hint_font, board_coord_font,
 						before_start_game,
 						umigame_state, umigame_value,
 						human_value_state, human_value,
@@ -2382,8 +2457,8 @@ void Main() {
 					if ((int)fork_history.size() > history_idx + 1) {
 						next_policy = fork_history[history_idx + 1].policy;
 					}
-					board_draw(board_cells, fork_history[history_idx], next_policy, int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
-						hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, hint_actual_nums[hint_num], normal_hint_font, small_hint_font, font30, mini_hint_font, board_coord_font,
+					board_draw(use_value_flag, board_cells, fork_history[history_idx], next_policy, int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
+						hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, hint_actual_nums[hint_num], font35, normal_hint_font, small_hint_font, font30, mini_hint_font, board_coord_font,
 						before_start_game,
 						umigame_state, umigame_value,
 						human_value_state, human_value,
