@@ -240,9 +240,9 @@ inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, 
                 else{
                     //double mpct = search->mpct;
                     //search->mpct = 1.18;
-                    search->use_mpc = false;
+                    //search->use_mpc = false;
                         res = nega_alpha_ordering_nomemo(search, beta + error_search - 1, beta + error_search, search_depth, false, legal) >= beta + error_search;
-                    search->use_mpc = true;
+                    //search->use_mpc = true;
                     //search->mpct = mpct;
                 }
                 break;
@@ -266,9 +266,9 @@ inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, 
                 else{
                     //double mpct = search->mpct;
                     //search->mpct = 1.18;
-                    search->use_mpc = false;
+                    //search->use_mpc = false;
                         res = nega_alpha_ordering_nomemo(search, alpha - error_search, alpha - error_search + 1, search_depth, false, legal) <= alpha - error_search;
-                    search->use_mpc = true;
+                    //search->use_mpc = true;
                     //search->mpct = mpct;
                 }
                 break;
