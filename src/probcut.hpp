@@ -210,7 +210,7 @@ inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, 
     if ((!is_end_search && depth >= 17) || (is_end_search && depth >= 23))
         return false;
     bool res = false;
-    int search_depth = depth >> 4;
+    int search_depth = (depth >> 4) + (depth & 1);
     const int depth0_value = mid_evaluate(&search->board);
     int error_depth0, error_search;
     if (is_end_search){
