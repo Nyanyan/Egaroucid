@@ -1,4 +1,6 @@
 
+// use SIMD
+#define USE_SIMD false
 
 // vertical mirror
 #define USE_FAST_VERTICAL_MIRROR true

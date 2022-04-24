@@ -4,7 +4,6 @@
 #include "common.hpp"
 #include "board.hpp"
 #include "search.hpp"
-#include "flip.hpp"
 #include "transpose_table.hpp"
 #include "midsearch.hpp"
 #include "probcut.hpp"

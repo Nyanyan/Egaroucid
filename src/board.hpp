@@ -1,8 +1,13 @@
 #pragma once
 #include <iostream>
 #include "common.hpp"
-#include "mobility.hpp"
-#include "flip.hpp"
+#if USE_SIMD
+    #include "mobility.hpp"
+    #include "flip.hpp"
+#else
+    #include "mobility_simd_free.hpp"
+    #include "flip_simd_free.hpp"
+#endif
 
 using namespace std;
 
