@@ -1560,11 +1560,11 @@ void Main() {
 	Font board_coord_font(board_coord_size);
 	Font font50(50);
 	Font font40(40);
-	Font font35(35);
 	Font font30(30);
+	Font font25(25);
 	Font font20(20);
 	Font font15(15);
-	Font normal_hint_font(17, Typeface::Bold);
+	Font normal_hint_font(15, Typeface::Bold);
 	Font mini_hint_font(13, Typeface::Heavy);
 	Font small_hint_font(9, Typeface::Bold);
 
@@ -2440,7 +2440,7 @@ void Main() {
 				history_elem.record = U"";
 				history_elem.v = -INF;
 				board_draw(use_value_flag, board_cells, history_elem, -1, int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
-						hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, hint_actual_nums[hint_num], font35, normal_hint_font, small_hint_font, font30, mini_hint_font, board_coord_font,
+						hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, hint_actual_nums[hint_num], font30, normal_hint_font, small_hint_font, font25, mini_hint_font, board_coord_font,
 						before_start_game,
 						umigame_state, umigame_value,
 						human_value_state, human_value,
@@ -2453,7 +2453,7 @@ void Main() {
 						next_policy = history[analyze_idx + 1].policy;
 					}
 					board_draw(use_value_flag, board_cells, history[analyze_idx], next_policy, int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
-						hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, hint_actual_nums[hint_num], font35, normal_hint_font, small_hint_font, font30, mini_hint_font, board_coord_font,
+						hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, hint_actual_nums[hint_num], font30, normal_hint_font, small_hint_font, font25, mini_hint_font, board_coord_font,
 						before_start_game,
 						umigame_state, umigame_value,
 						human_value_state, human_value,
@@ -2466,7 +2466,7 @@ void Main() {
 						next_policy = history[history_idx + 1].policy;
 					}
 					board_draw(use_value_flag, board_cells, history[history_idx], next_policy, int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
-						hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, hint_actual_nums[hint_num], font35, normal_hint_font, small_hint_font, font30, mini_hint_font, board_coord_font,
+						hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, hint_actual_nums[hint_num], font30, normal_hint_font, small_hint_font, font25, mini_hint_font, board_coord_font,
 						before_start_game,
 						umigame_state, umigame_value,
 						human_value_state, human_value,
@@ -2480,7 +2480,7 @@ void Main() {
 						next_policy = fork_history[analyze_idx + 1].policy;
 					}
 					board_draw(use_value_flag, board_cells, fork_history[analyze_idx], next_policy, int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
-						hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, hint_actual_nums[hint_num], font35, normal_hint_font, small_hint_font, font30, mini_hint_font, board_coord_font,
+						hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, hint_actual_nums[hint_num], font30, normal_hint_font, small_hint_font, font25, mini_hint_font, board_coord_font,
 						before_start_game,
 						umigame_state, umigame_value,
 						human_value_state, human_value,
@@ -2493,7 +2493,7 @@ void Main() {
 						next_policy = fork_history[history_idx + 1].policy;
 					}
 					board_draw(use_value_flag, board_cells, fork_history[history_idx], next_policy, int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
-						hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, hint_actual_nums[hint_num], font35, normal_hint_font, small_hint_font, font30, mini_hint_font, board_coord_font,
+						hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, hint_actual_nums[hint_num], font30, normal_hint_font, small_hint_font, font25, mini_hint_font, board_coord_font,
 						before_start_game,
 						umigame_state, umigame_value,
 						human_value_state, human_value,
