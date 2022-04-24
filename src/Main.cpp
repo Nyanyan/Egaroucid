@@ -56,7 +56,7 @@ constexpr Color popup_color = Palette::White, popup_font_color = Palette::Black,
 constexpr int popup_output_width = 800, popup_output_height = 600;
 constexpr int popup_import_width = 600, popup_import_height = 450;
 constexpr int info_sx = 520, info_sy = 50;
-constexpr int big_info_sx = 580, big_info_sy = 50;
+constexpr int big_info_sx = 630, big_info_sy = 50;
 constexpr double popup_fade_time = 500.0;
 
 struct Cell_value {
@@ -1314,6 +1314,41 @@ void info_draw(Board bd, string joseki_name, int ai_level, int hint_level, Font 
 	small_font(language.get("info", "complete_0") + Format(end_depth) + language.get("info", "complete_1")).draw(info_sx + 280, info_sy + 175);
 }
 
+void info_big_draw(Board bd, string joseki_name, int ai_level, int hint_level, Font mid_font, Font small_font) {
+	if (bd.get_legal() != 0) {
+		mid_font(Format(pop_count_ull(bd.player) + pop_count_ull(bd.opponent) - 3) + language.get("info", "moves")).draw(big_info_sx, big_info_sy);
+	}
+	if (bd.get_legal() == 0) {
+		mid_font(language.get("info", "game_end")).draw(big_info_sx, big_info_sy + 40);
+	}
+	else if (bd.p == BLACK) {
+		mid_font(language.get("info", "black")).draw(big_info_sx, big_info_sy + 40);
+	}
+	else if (bd.p == WHITE) {
+		mid_font(language.get("info", "white")).draw(big_info_sx, big_info_sy + 40);
+	}
+	mid_font(language.get("info", "joseki_name") + U": " + Unicode::FromUTF8(joseki_name)).draw(big_info_sx, big_info_sy + 80);
+	Circle(big_info_sx + 12, big_info_sy + 140, 12).draw(Palette::Black);
+	Circle(big_info_sx + 12, big_info_sy + 180, 12).draw(Palette::White);
+	if (bd.p == BLACK) {
+		mid_font(pop_count_ull(bd.player)).draw(Arg::leftCenter(big_info_sx + 40, big_info_sy + 140));
+		mid_font(pop_count_ull(bd.opponent)).draw(Arg::leftCenter(big_info_sx + 40, big_info_sy + 180));
+	}
+	else {
+		mid_font(pop_count_ull(bd.opponent)).draw(Arg::leftCenter(big_info_sx + 40, big_info_sy + 140));
+		mid_font(pop_count_ull(bd.player)).draw(Arg::leftCenter(big_info_sx + 40, big_info_sy + 180));
+	}
+	int mid_depth, end_depth;
+	get_level_depth(ai_level, &mid_depth, &end_depth);
+	small_font(language.get("info", "ai") + U": " + language.get("common", "level") + Format(ai_level)).draw(big_info_sx, big_info_sy + 210);
+	small_font(language.get("info", "lookahead_0") + Format(mid_depth) + language.get("info", "lookahead_1")).draw(big_info_sx, big_info_sy + 235);
+	small_font(language.get("info", "complete_0") + Format(end_depth) + language.get("info", "complete_1")).draw(big_info_sx, big_info_sy + 260);
+	get_level_depth(hint_level, &mid_depth, &end_depth);
+	small_font(language.get("info", "hint") + U": " + language.get("common", "level") + Format(hint_level)).draw(big_info_sx, big_info_sy + 300);
+	small_font(language.get("info", "lookahead_0") + Format(mid_depth) + language.get("info", "lookahead_1")).draw(big_info_sx, big_info_sy + 325);
+	small_font(language.get("info", "complete_0") + Format(end_depth) + language.get("info", "complete_1")).draw(big_info_sx, big_info_sy + 350);
+}
+
 bool operator< (const pair<int, Board> &a, const pair<int, Board> &b){
 	return a.first < b.first;
 };
@@ -1459,7 +1494,7 @@ void Main() {
 	Window::Resize(window_size);
 	Window::SetStyle(WindowStyle::Sizable);
 	Scene::SetResizeMode(ResizeMode::Keep);
-	Window::SetTitle(U"Egaroucid 5.6.0");
+	Window::SetTitle(U"Egaroucid 5.6.1");
 	System::SetTerminationTriggers(UserAction::NoAction);
 	Scene::SetBackground(green);
 	//Console.open();
@@ -2489,7 +2524,12 @@ void Main() {
 			/*** joseki ***/
 
 			/*** info draw ***/
-			info_draw(bd, joseki_name, ai_level, hint_level, font20, font15);
+			if (use_value_flag) {
+				info_draw(bd, joseki_name, ai_level, hint_level, font20, font15);
+			}
+			else {
+				info_big_draw(bd, joseki_name, ai_level, hint_level, font20, font15);
+			}
 			/*** info draw ***/
 
 			/*** human sense value draw ***/
