@@ -99,7 +99,9 @@
         "tweet": "Tweet",
         "save_game": "対局を保存",
         "not_save_game": "保存せず閉じる",
-        "import": "取り込む"
+        "import": "取り込む",
+        "skip": "スキップ",
+        "download": "ダウンロード"
     },
     "result": {
         "you_win": "あなたの勝ち！",
@@ -135,7 +137,10 @@
     "help": {
         "help": "ヘルプ",
         "how_to_use": "使い方",
-        "bug_report": "バグレポート"
+        "bug_report": "バグレポート",
+        "auto_update_check": "自動更新確認",
+        "new_version_available": "新しいバージョンがダウンロードできます。",
+        "download?": "ダウンロードページを開きますか？"
     },
     "tips": {
         "do_you_know": "ご存知ですか？",
