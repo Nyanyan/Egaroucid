@@ -85,13 +85,13 @@ constexpr int mpcd[61] = {
 };
 */
 
-#define probcut_a -0.1237043372413518
-#define probcut_b -0.10181021370042476
-#define probcut_c 1.1166092914902872
-#define probcut_d -0.0001047218699444686
-#define probcut_e 0.01093547044745102
-#define probcut_f -0.36362643370418024
-#define probcut_g 5.071950100378323
+#define probcut_a 0.012906675840010418
+#define probcut_b -0.03682833420772078
+#define probcut_c 0.042146968485682584
+#define probcut_d 1.0617010758495278
+#define probcut_e 1.9250757844841904
+#define probcut_f 1.523171160172907
+#define probcut_g 5.0343171993652645
 
 #define probcut_end_a 0.15811777028350227
 #define probcut_end_b 0.9393034706176613
@@ -103,7 +103,7 @@ constexpr int mpcd[61] = {
 inline double probcut_sigma(int n_stones, int depth1, int depth2){
     double w = n_stones;
     double x = depth1;
-    double y = depth2;
+    double y = depth1 - depth2;
     double res = probcut_a * w + probcut_b * x + probcut_c * y;
     res = probcut_d * res * res * res + probcut_e * res * res + probcut_f * res + probcut_g;
     return res;
@@ -112,7 +112,7 @@ inline double probcut_sigma(int n_stones, int depth1, int depth2){
 inline double probcut_sigma_depth0(int n_stones, int depth1){
     double w = n_stones;
     double x = depth1;
-    double res = probcut_a * w + probcut_b * x;
+    double res = probcut_a * w + probcut_b * x + probcut_c * x;
     res = probcut_d * res * res * res + probcut_e * res * res + probcut_f * res + probcut_g;
     return res;
 }
@@ -244,9 +244,9 @@ inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, 
                 else{
                     //double mpct = search->mpct;
                     //search->mpct = 1.18;
-                    //search->use_mpc = false;
+                    search->use_mpc = false;
                         res = nega_alpha_ordering_nomemo(search, beta + error_search - 1, beta + error_search, search_depth, false, legal) >= beta + error_search;
-                    //search->use_mpc = true;
+                    search->use_mpc = true;
                     //search->mpct = mpct;
                 }
                 break;
@@ -270,9 +270,9 @@ inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, 
                 else{
                     //double mpct = search->mpct;
                     //search->mpct = 1.18;
-                    //search->use_mpc = false;
+                    search->use_mpc = false;
                         res = nega_alpha_ordering_nomemo(search, alpha - error_search, alpha - error_search + 1, search_depth, false, legal) <= alpha - error_search;
-                    //search->use_mpc = true;
+                    search->use_mpc = true;
                     //search->mpct = mpct;
                 }
                 break;

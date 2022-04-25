@@ -45,8 +45,8 @@ for w in range(len(data)):
                 
                 w_n_stones.append(n_stones)
                 x_depth1.append(depth1)
-                y_depth2.append(depth2)
-                z_sigma.append(sigma * 2)
+                y_depth2.append(depth1 - depth2)
+                z_sigma.append(sigma + 4.0)
                 '''
                 if y == 0 and sigma >= 3.0:
                     for _ in range(8):
@@ -55,7 +55,7 @@ for w in range(len(data)):
                         y_depth2.append(depth2)
                         z_sigma.append(sigma)
                 '''
-
+'''
 for w in range(4, 65):
     w_n_stones.append(w)
     x_depth1.append(60)
@@ -70,12 +70,12 @@ for w in range(4, 65):
         z_sigma.append(8.0)
 
 for w in range(4, 65):
-    for xy in range(40, 61):
+    for xy in range(40, 61, 4):
         w_n_stones.append(w)
         x_depth1.append(xy)
         y_depth2.append(xy)
         z_sigma.append(0.0)
-
+'''
 probcut_params_before = [
     1.0 for _ in range(10)
 ]
