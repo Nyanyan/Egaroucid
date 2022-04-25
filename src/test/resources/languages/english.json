@@ -3,6 +3,7 @@
     "common": {
         "black": "Black",
         "white": "White",
+        "empty": "Empty",
         "level": "Level",
         "othello_ai": "Othello AI"
     },
@@ -63,7 +64,8 @@
         "output_record": "Copy Record",
         "output_game": "Save Game",
         "input_record": "Import Record",
-        "input_board": "Import Board"
+        "input_board": "Import Board",
+        "edit_board": "Edit Board"
     },
     "display": {
         "display": "Display",
@@ -134,6 +136,13 @@
         "lookahead_1": "moves",
         "complete_0": "Complete: ",
         "complete_1": "empties"
+    },
+    "edit_board": {
+        "player": "Player",
+        "stone": "Disc Color",
+        "black": "Black(B)",
+        "white": "White(W)",
+        "empty": "Empty(E)"
     },
     "help": {
         "help": "Help",

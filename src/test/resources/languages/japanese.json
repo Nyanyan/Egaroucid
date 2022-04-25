@@ -3,6 +3,7 @@
     "common": {
         "black": "黒",
         "white": "白",
+        "empty": "空",
         "level": "レベル",
         "othello_ai": "オセロAI"
     },
@@ -63,7 +64,8 @@
         "output_record": "棋譜コピー",
         "output_game": "対局保存",
         "input_record": "棋譜入力",
-        "input_board": "盤面入力"
+        "input_board": "盤面入力",
+        "edit_board": "盤面編集"
     },
     "display": {
         "display": "表示",
@@ -134,6 +136,13 @@
         "lookahead_1": "手読み",
         "complete_0": "",
         "complete_1": "手読み切り"
+    },
+    "edit_board": {
+        "player": "手番",
+        "stone": "石の色",
+        "black": "黒(B)",
+        "white": "白(W)",
+        "empty": "空(E)"
     },
     "help": {
         "help": "ヘルプ",
