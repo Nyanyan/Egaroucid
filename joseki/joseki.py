@@ -1,11 +1,22 @@
 from othello_py import *
 
+data = []
 with open('data/joseki_data.txt', 'r', encoding='utf-8') as f:
-    data = [datum.split() for datum in f.read().splitlines()]
+    for datum in f.read().splitlines():
+        n_spaces = 0
+        for i in range(100):
+            if datum[i] != ' ':
+                n_spaces = i
+                break
+        datum = datum.replace(' ', '')
+        name, record = datum.split('=')
+        print(n_spaces, name, record)
+        data.append([n_spaces, name, record])
 
 joseki = {}
+joseki_many = {}
 
-for name, record in data:
+for n_spaces, name, record in data:
     o = othello()
     o.check_legal()
     for i in range(0, len(record), 2):
@@ -17,20 +28,30 @@ for name, record in data:
         if not o.check_legal():
             o.player = 1 - o.player
             o.check_legal()
-    s = ''
-    for i in range(hw):
-        for j in range(hw):
-            if o.grid[i][j] == 0:
-                s += '0'
-            elif o.grid[i][j] == 1:
-                s += '1'
-            else:
-                s += '.'
+        s = ''
+        for i in range(hw):
+            for j in range(hw):
+                if o.grid[i][j] == 0:
+                    s += '0'
+                elif o.grid[i][j] == 1:
+                    s += '1'
+                else:
+                    s += '.'
+        flag = not (s in joseki_many)
+        if (not flag):
+            if joseki_many[s][0] == n_spaces:
+                joseki_many[s].append(name)
+        else:
+            joseki_many[s] = [n_spaces, name]
     #if not (s in joseki.keys()):
     #    joseki[s] = name
     joseki[s] = name
 
 print(len(joseki))
+print(len(joseki_many))
 with open('learned_data/joseki.txt', 'w', encoding='utf-8') as f:
     for board in joseki.keys():
         f.write(board + ' ' + joseki[board] + '\n')
+with open('learned_data/joseki_many.txt', 'w', encoding='utf-8') as f:
+    for board in joseki_many.keys():
+        f.write(board + ' ' + ' '.join(joseki_many[board][1:]) + '\n')

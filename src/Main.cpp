@@ -628,7 +628,7 @@ void board_draw(bool use_value_flag, Rect board_cells[], History_elem b, int nex
 			if ((1 & (legal >> cell)) && cell_rect.mouseOver()) {
 				Flip flip;
 				calc_flip(&flip, &b.b, cell);
-				String joseki_name = Unicode::FromUTF8(joseki.get(b.b.move_copy(&flip)));
+				String joseki_name = Unicode::FromUTF8(joseki_many.get(b.b.move_copy(&flip))).replace(U" ", U"\n");
 				if (joseki_name != U"") {
 					Vec2 pos = Cursor::Pos();
 					pos.x += 20;

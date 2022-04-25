@@ -14,10 +14,10 @@ class Joseki {
 private:
 	vector<pair<Board, string>> arr;
 public:
-	bool init() {
-		ifstream ifs("resources/joseki.txt");
+	bool init(string file) {
+		ifstream ifs(file);
 		if (ifs.fail()) {
-			cerr << "joseki file not found" << endl;
+			cerr << "joseki file " << file << " not found" << endl;
 			return false;
 		}
 		string line;
@@ -62,7 +62,9 @@ public:
 };
 
 Joseki joseki;
+Joseki joseki_many;
 
 bool joseki_init() {
-	return joseki.init();
+	return joseki.init("resources/joseki.txt") && joseki_many.init("resources/joseki_many.txt");
+
 }
