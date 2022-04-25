@@ -76,6 +76,7 @@
             "umigame_value": "Umigame's Value"
         },
         "graph": "Graph",
+        "joseki_on_cell": "Show Joseki on Cell",
         "end_popup": "Pop-Up When Game Ends",
         "log": "Log"
     },

@@ -76,6 +76,7 @@
             "umigame_value": "うみがめ数"
         },
         "graph": "グラフ",
+        "joseki_on_cell": "マスへの定石表示",
         "end_popup": "終了時ポップアップ",
         "log": "ログ"
     },
