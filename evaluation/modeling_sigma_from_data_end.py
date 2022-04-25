@@ -44,7 +44,7 @@ for x in range(len(data)):
 for x in range(10):
     x_n_stones.append(x)
     y_depth.append(0)
-    z_sigma.append(9.0)
+    z_sigma.append(10.0)
 
 probcut_end_params_before = [
     1.0 for _ in range(10)

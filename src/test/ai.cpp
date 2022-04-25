@@ -12,9 +12,9 @@ int main(int argc, char *argv[]){
     parent_transpose_table.first_init();
     child_transpose_table.first_init();
     #if USE_MULTI_THREAD
-        thread_pool.resize(8);
+        thread_pool.resize(16);
     #endif
-    int level = 5;
+    int level = 15;
     if (argc >= 2)
         level = atoi(argv[1]);
     constexpr int book_error = 0;

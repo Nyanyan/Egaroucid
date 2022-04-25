@@ -91,7 +91,7 @@ constexpr int mpcd[61] = {
 #define probcut_d -0.0001047218699444686
 #define probcut_e 0.01093547044745102
 #define probcut_f -0.36362643370418024
-#define probcut_g 4.071950100378323
+#define probcut_g 5.071950100378323
 
 #define probcut_end_a 0.15811777028350227
 #define probcut_end_b 0.9393034706176613
@@ -210,7 +210,11 @@ inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, 
     if ((!is_end_search && depth >= 17) || (is_end_search && depth >= 23))
         return false;
     bool res = false;
-    int search_depth = ((depth >> 4) & 0xFE) ^ (depth & 1);
+    int search_depth;
+    if (is_end_search)
+        search_depth = ((depth >> 4) & 0xFE) ^ (depth & 1);
+    else
+        search_depth = ((depth >> 2) & 0xFE) ^ (depth & 1);
     const int depth0_value = mid_evaluate(&search->board);
     int error_depth0, error_search;
     if (is_end_search){
@@ -226,7 +230,7 @@ inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, 
         error_depth0 = round(search->mpct * score_to_value(probcut_sigma_depth0(search->board.n, depth)));
         error_search = round(search->mpct * score_to_value(probcut_sigma(search->board.n, depth, search_depth)));
     }
-    if (depth0_value >= beta - error_depth0 && beta + error_search <= SCORE_MAX){
+    if (depth0_value >= beta + error_depth0 && beta + error_search <= SCORE_MAX){
         switch(search_depth){
             case 0:
                 res = depth0_value >= beta + error_search;
@@ -252,7 +256,7 @@ inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, 
             return true;
         }
     }
-    if (depth0_value <= alpha + error_depth0 && alpha - error_search >= -SCORE_MAX){
+    if (depth0_value <= alpha - error_depth0 && alpha - error_search >= -SCORE_MAX){
         switch(search_depth){
             case 0:
                 res = depth0_value <= alpha - error_search;
