@@ -1469,8 +1469,19 @@ bool edit_board_draw(Board *b, Font coord_font, Font font, Radio_Button *player_
 			}
 		}
 	}
+	font(language.get("edit_board", "player")).draw(700, 100);
+	font(language.get("edit_board", "stone")).draw(700, 300);
 	player_radio->draw();
 	stone_radio->draw();
+	if (KeyB.pressed()) {
+		stone_radio->checked = BLACK;
+	}
+	else if (KeyW.pressed()) {
+		stone_radio->checked = WHITE;
+	}
+	else if (KeyE.pressed()) {
+		stone_radio->checked = VACANT;
+	}
 	b->translate_from_arr(board_arr, player_radio->checked);
 	Button close_button;
 	close_button.init(700, 600, 200, 50, 10, language.get("button", "close"), font, button_color, button_font_color);
@@ -2031,16 +2042,16 @@ void Main() {
 					main_window_active = false;
 				}
 				edit_board_player_radio.init();
-				radio_button_elem.init(700, 200, font20, 20, language.get("common", "black"), true);
+				radio_button_elem.init(700, 150, font20, 20, language.get("common", "black"), true);
 				edit_board_player_radio.push(radio_button_elem);
-				radio_button_elem.init(700, 250, font20, 20, language.get("common", "white"), false);
+				radio_button_elem.init(700, 180, font20, 20, language.get("common", "white"), false);
 				edit_board_player_radio.push(radio_button_elem);
 				edit_board_stone_radio.init();
-				radio_button_elem.init(700, 350, font20, 20, language.get("common", "black"), true);
+				radio_button_elem.init(700, 350, font20, 20, language.get("edit_board", "black"), true);
 				edit_board_stone_radio.push(radio_button_elem);
-				radio_button_elem.init(700, 400, font20, 20, language.get("common", "white"), false);
+				radio_button_elem.init(700, 380, font20, 20, language.get("edit_board", "white"), false);
 				edit_board_stone_radio.push(radio_button_elem);
-				radio_button_elem.init(700, 450, font20, 20, language.get("common", "empty"), false);
+				radio_button_elem.init(700, 410, font20, 20, language.get("edit_board", "empty"), false);
 				edit_board_stone_radio.push(radio_button_elem);
 			}
 			else {
@@ -2101,16 +2112,16 @@ void Main() {
 					&usage_flag, &bug_report_flag, &auto_update_check,
 					language_acts, language_names);
 				edit_board_player_radio.init();
-				radio_button_elem.init(700, 200, font20, 20, language.get("common", "black"), true);
+				radio_button_elem.init(700, 150, font20, 20, language.get("common", "black"), true);
 				edit_board_player_radio.push(radio_button_elem);
-				radio_button_elem.init(700, 250, font20, 20, language.get("common", "white"), false);
+				radio_button_elem.init(700, 180, font20, 20, language.get("common", "white"), false);
 				edit_board_player_radio.push(radio_button_elem);
 				edit_board_stone_radio.init();
-				radio_button_elem.init(700, 350, font20, 20, language.get("common", "black"), true);
+				radio_button_elem.init(700, 350, font20, 20, language.get("edit_board", "black"), true);
 				edit_board_stone_radio.push(radio_button_elem);
-				radio_button_elem.init(700, 400, font20, 20, language.get("common", "white"), false);
+				radio_button_elem.init(700, 380, font20, 20, language.get("edit_board", "white"), false);
 				edit_board_stone_radio.push(radio_button_elem);
-				radio_button_elem.init(700, 450, font20, 20, language.get("common", "empty"), false);
+				radio_button_elem.init(700, 410, font20, 20, language.get("edit_board", "empty"), false);
 				edit_board_stone_radio.push(radio_button_elem);
 			}
 			/**** when mode changed **/
@@ -2151,16 +2162,16 @@ void Main() {
 						language_acts, language_names);
 					start_game_button.init(start_game_button_x, start_game_button_y, start_game_button_w, start_game_button_h, start_game_button_r, language.get("button", "start_game"), font15, button_color, button_font_color);
 					edit_board_player_radio.init();
-					radio_button_elem.init(700, 200, font20, 20, language.get("common", "black"), true);
+					radio_button_elem.init(700, 150, font20, 20, language.get("common", "black"), true);
 					edit_board_player_radio.push(radio_button_elem);
-					radio_button_elem.init(700, 250, font20, 20, language.get("common", "white"), false);
+					radio_button_elem.init(700, 180, font20, 20, language.get("common", "white"), false);
 					edit_board_player_radio.push(radio_button_elem);
 					edit_board_stone_radio.init();
-					radio_button_elem.init(700, 350, font20, 20, language.get("common", "black"), true);
+					radio_button_elem.init(700, 350, font20, 20, language.get("edit_board", "black"), true);
 					edit_board_stone_radio.push(radio_button_elem);
-					radio_button_elem.init(700, 400, font20, 20, language.get("common", "white"), false);
+					radio_button_elem.init(700, 380, font20, 20, language.get("edit_board", "white"), false);
 					edit_board_stone_radio.push(radio_button_elem);
-					radio_button_elem.init(700, 450, font20, 20, language.get("common", "empty"), false);
+					radio_button_elem.init(700, 410, font20, 20, language.get("edit_board", "empty"), false);
 					edit_board_stone_radio.push(radio_button_elem);
 				}
 
@@ -2806,7 +2817,7 @@ void Main() {
 					reset_human_value(&human_value_state, &human_value_future);
 					reset_ai(&ai_thinking, &ai_future);
 					reset_analyze(&analyzing, &analyze_state, &analyze_future, &analyze_human_future);
-					before_start_game = false;
+					//before_start_game = false;
 					main_window_active = true;
 					inputting_board = false;
 					System::Sleep(100);
@@ -2918,7 +2929,7 @@ void Main() {
 						reset_human_value(&human_value_state, &human_value_future);
 						reset_ai(&ai_thinking, &ai_future);
 						reset_analyze(&analyzing, &analyze_state, &analyze_future, &analyze_human_future);
-						before_start_game = false;
+						//before_start_game = false;
 						main_window_active = true;
 						inputting_record = false;
 						System::Sleep(100);
@@ -2954,7 +2965,7 @@ void Main() {
 						reset_human_value(&human_value_state, &human_value_future);
 						reset_ai(&ai_thinking, &ai_future);
 						reset_analyze(&analyzing, &analyze_state, &analyze_future, &analyze_human_future);
-						before_start_game = false;
+						//before_start_game = false;
 						main_window_active = true;
 						inputting_board = false;
 						System::Sleep(100);
