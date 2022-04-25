@@ -90,7 +90,7 @@ Menu create_menu(Texture checkbox,
 	bool* human_first, bool* human_second, bool* both_ai, bool* both_human,
 	bool* use_hint_flag, bool* normal_hint, bool* human_hint, bool* umigame_hint,
 	bool* hint_num1, bool* hint_num2, bool* hint_num4, bool* hint_num8, bool* hint_num16, bool* hint_numall,
-	bool* use_value_flag,
+	bool* use_value_flag, bool *show_over_joseki,
 	bool* use_book_flag, int* ai_level, int* hint_level, int* book_error, int* use_book_depth,
 	bool* start_book_learn_flag, bool* stop_book_learn_flag, bool* modify_book, int* book_depth, int* book_learn_accept, bool* import_book_flag,
 	bool* output_record_flag, bool* output_game_flag, bool* input_record_flag, bool* input_board_flag,
@@ -229,10 +229,16 @@ Menu create_menu(Texture checkbox,
 	menu_e.init_check(language.get("display", "graph"), use_value_flag, *use_value_flag);
 	title.push(menu_e);
 
+	if (!(*serious_game)) {
+		menu_e.init_check(language.get("display", "joseki_on_cell"), show_over_joseki, *show_over_joseki);
+		title.push(menu_e);
+	}
+
 	menu_e.init_check(language.get("display", "end_popup"), show_end_popup, *show_end_popup);
 	title.push(menu_e);
 	menu_e.init_check(language.get("display", "log"), show_log, *show_log);
 	title.push(menu_e);
+
 
 	menu.push(title);
 
@@ -417,7 +423,8 @@ void board_draw(bool use_value_flag, Rect board_cells[], History_elem b, int nex
 	bool before_start_game,
 	const int umigame_state[], const umigame_result umigame_value[],
 	const int human_value_state, const Human_value human_value[],
-	bool book_start_learn) {
+	bool book_start_learn,
+	bool show_over_joseki) {
 	String coord_x = U"abcdefgh";
 	int b_sx, b_sy, b_coord_size, b_cell_size, s_size, l_size;
 	if (use_value_flag) {
@@ -606,6 +613,26 @@ void board_draw(bool use_value_flag, Rect board_cells[], History_elem b, int nex
 							normal_font((int)round(human_value[cell].stability_white)).draw(Arg::topRight(x, y + mini_font.fontSize() + 1), Palette::White);
 						}
 					}
+				}
+			}
+		}
+	}
+	if (show_over_joseki) {
+		for (int cell = 0; cell < HW2; ++cell) {
+			int x = HW_M1 - cell % HW;
+			int y = HW_M1 - cell / HW;
+			Rect cell_rect(b_sx + x * b_cell_size, b_sy + y * b_cell_size, b_cell_size, b_cell_size);
+			if ((1 & (legal >> cell)) && cell_rect.mouseOver()) {
+				cerr << cell << " over" << endl;
+				Flip flip;
+				calc_flip(&flip, &b.b, cell);
+				String joseki_name = Unicode::FromUTF8(joseki.get(b.b.move_copy(&flip)));
+				if (joseki_name != U"") {
+					Vec2 pos = Cursor::Pos();
+					pos.x += 20;
+					RectF background_rect = normal_font(joseki_name).region(pos);
+					background_rect.draw(Palette::White);
+					normal_font(joseki_name).draw(pos, Palette::Black);
 				}
 			}
 		}
@@ -977,8 +1004,9 @@ bool import_setting(int* int_mode, bool* use_book, int* ai_level, int* ai_book_a
 	int* n_thread_idx,
 	int* hint_num,
 	int* book_depth, int* book_learn_accept,
-	bool* show_log, bool *use_value_flag,
-	bool *auto_update_check,
+	bool* show_log, bool* use_value_flag,
+	bool* auto_update_check,
+	bool* show_over_joseki,
 	string* lang_name) {
 	ifstream ifs("resources/settings.txt");
 	if (ifs.fail()) {
@@ -1060,6 +1088,10 @@ bool import_setting(int* int_mode, bool* use_book, int* ai_level, int* ai_book_a
 	if (*auto_update_check == -INF) {
 		return false;
 	}
+	*show_over_joseki = import_int(&ifs);
+	if (*show_over_joseki == -INF) {
+		return false;
+	}
 	*lang_name = import_str(&ifs);
 	while (lang_name->back() == '\n' || lang_name->back() == '\r') {
 		lang_name->pop_back();
@@ -1079,6 +1111,7 @@ void export_setting(int int_mode, bool use_book, int ai_level, int ai_book_accep
 	int book_depth, int book_learn_accept,
 	bool show_log, bool use_value_flag,
 	bool auto_update_check,
+	bool show_over_joseki,
 	string lang_name) {
 	ofstream ofs("resources/settings.txt");
 	if (!ofs.fail()) {
@@ -1101,6 +1134,7 @@ void export_setting(int int_mode, bool use_book, int ai_level, int ai_book_accep
 		ofs << show_log << endl;
 		ofs << use_value_flag << endl;
 		ofs << auto_update_check << endl;
+		ofs << show_over_joseki << endl;
 		ofs << lang_name << endl;
 	}
 }
@@ -1272,6 +1306,7 @@ bool close_app(int* hint_state, future<bool>* hint_future,
 	int book_depth, int book_learn_accept,
 	bool show_log, bool use_value_flag,
 	bool auto_update_check,
+	bool show_over_joseki,
 	bool* book_learning, future<void>* book_learn_future, bool book_changed,
 	string lang_name) {
 	reset_hint(hint_state, hint_future);
@@ -1288,6 +1323,7 @@ bool close_app(int* hint_state, future<bool>* hint_future,
 		book_depth, book_learn_accept,
 		show_log, use_value_flag,
 		auto_update_check,
+		show_over_joseki,
 		lang_name);
 	if (*book_learning) {
 		*book_learning = false;
@@ -1557,6 +1593,7 @@ void Main() {
 	int n_thread_idx = 2;
 	bool stop_read_flag = false, resume_read_flag = false, vertical_convert = false, white_line_convert = false, black_line_convert = false, forward_flag = false, backward_flag = false;
 	bool usage_flag = false, bug_report_flag = false, auto_update_check = true;
+	bool show_over_joseki = true;
 	bool language_acts[100];
 	language_acts[0] = true;
 	for (int i = 1; i < 100; ++i) {
@@ -1714,6 +1751,7 @@ void Main() {
 		&book_depth, &book_learn_accept,
 		&show_log, &use_value_flag,
 		&auto_update_check,
+		&show_over_joseki,
 		&lang_name)) {
 		cerr << "use default setting" << endl;
 		int_mode = 0;
@@ -1736,6 +1774,7 @@ void Main() {
 		lang_name = language_names[0];
 		use_value_flag = true;
 		auto_update_check = true;
+		show_over_joseki = true;
 	}
 	for (int i = 0; i < mode_size; ++i) {
 		show_mode[i] = i == int_mode;
@@ -1829,6 +1868,7 @@ void Main() {
 				book_depth, book_learn_accept,
 				show_log, use_value_flag,
 				auto_update_check,
+				show_over_joseki,
 				&book_learning, &book_learn_future, book_changed,
 				lang_name);
 		}
@@ -1877,7 +1917,7 @@ void Main() {
 					&human_first, &human_second, &both_ai, &both_human,
 					&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
 					&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
-					&use_value_flag,
+					&use_value_flag, &show_over_joseki,
 					&use_book, &ai_level, &hint_level, &ai_book_accept, &use_book_depth,
 					&start_book_learn_flag, &stop_book_learn_flag, &book_modify, &book_depth, &book_learn_accept, &import_book_flag,
 					&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag,
@@ -1904,7 +1944,7 @@ void Main() {
 						&human_first, &human_second, &both_ai, &both_human,
 						&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
 						&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
-						&use_value_flag,
+						&use_value_flag, &show_over_joseki,
 						&use_book, &ai_level, &hint_level, &ai_book_accept, &use_book_depth,
 						&start_book_learn_flag, &stop_book_learn_flag, &book_modify, &book_depth, &book_learn_accept, &import_book_flag,
 						&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag,
@@ -1978,7 +2018,7 @@ void Main() {
 					&human_first, &human_second, &both_ai, &both_human,
 					&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
 					&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
-					&use_value_flag,
+					&use_value_flag, &show_over_joseki,
 					&use_book, &ai_level, &hint_level, &ai_book_accept, &use_book_depth,
 					&start_book_learn_flag, &stop_book_learn_flag, &book_modify, &book_depth, &book_learn_accept, &import_book_flag,
 					&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag,
@@ -2015,7 +2055,7 @@ void Main() {
 						&human_first, &human_second, &both_ai, &both_human,
 						&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
 						&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
-						&use_value_flag,
+						&use_value_flag, &show_over_joseki,
 						&use_book, &ai_level, &hint_level, &ai_book_accept, &use_book_depth,
 						&start_book_learn_flag, &stop_book_learn_flag, &book_modify, &book_depth, &book_learn_accept, &import_book_flag,
 						&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag,
@@ -2540,7 +2580,8 @@ void Main() {
 						before_start_game,
 						umigame_state, umigame_value,
 						human_value_state, human_value,
-						book_start_learn);
+						book_start_learn,
+						show_over_joseki);
 			}
 			else if (!fork_mode) {
 				if (analyzing && analyze_idx < (int)history.size()) {
@@ -2553,7 +2594,8 @@ void Main() {
 						before_start_game,
 						umigame_state, umigame_value,
 						human_value_state, human_value,
-						book_start_learn);
+						book_start_learn,
+						show_over_joseki);
 				}
 				else {
 					int history_idx = find_history_idx(history, history_place);
@@ -2566,7 +2608,8 @@ void Main() {
 						before_start_game,
 						umigame_state, umigame_value,
 						human_value_state, human_value,
-						book_start_learn);
+						book_start_learn,
+						show_over_joseki);
 				}
 			}
 			else {
@@ -2580,7 +2623,8 @@ void Main() {
 						before_start_game,
 						umigame_state, umigame_value,
 						human_value_state, human_value,
-						book_start_learn);
+						book_start_learn,
+						show_over_joseki);
 				}
 				else {
 					int history_idx = find_history_idx(fork_history, history_place);
@@ -2593,7 +2637,8 @@ void Main() {
 						before_start_game,
 						umigame_state, umigame_value,
 						human_value_state, human_value,
-						book_start_learn);
+						book_start_learn,
+						show_over_joseki);
 				}
 			}
 			/*** Board draw ***/
