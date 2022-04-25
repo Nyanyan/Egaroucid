@@ -369,6 +369,15 @@ int find_history_idx(vector<History_elem> history, int history_place) {
 	return 0;
 }
 
+bool contain_history_idx(vector<History_elem> history, int history_place) {
+	for (int i = 0; i < (int)history.size(); ++i) {
+		if (history[i].b.n - 4 == history_place) {
+			return true;
+		}
+	}
+	return false;
+}
+
 void initialize_draw(future<bool>* f, bool* initializing, bool* initialize_failed, Font font, Font small_font, Texture icon, Texture logo, bool texture_loaded, String tips) {
 	icon.scaled((double)(left_right - left_left) / icon.width()).draw(left_left, y_center - (left_right - left_left) / 2);
 	logo.scaled((double)(left_right - left_left) * 0.8 / logo.width()).draw(right_left, y_center - 30);
@@ -1366,7 +1375,7 @@ bool show_new_version_available(Font font, String new_version) {
 	font(language.get("help", "new_version_available")).draw(Arg::bottomCenter(x_center, 350));
 	font(language.get("help", "download?")).draw(Arg::bottomCenter(x_center, 400));
 	Button close_button;
-	close_button.init(x_center - 225, y_center + 60, 200, 50, 10, language.get("button", "close"), font, button_color, button_font_color);
+	close_button.init(x_center - 225, y_center + 60, 200, 50, 10, language.get("button", "skip"), font, button_color, button_font_color);
 	close_button.draw(1.0);
 	Button download_button;
 	download_button.init(x_center + 25, y_center + 60, 200, 50, 10, language.get("button", "download"), font, button_color, button_font_color);
@@ -2460,7 +2469,16 @@ void Main() {
 					right_pushed = BUTTON_NOT_PUSHED;
 				}
 				if (KeyLeft.down() || KeyA.down() || (left_pushed != BUTTON_NOT_PUSHED && tim() - left_pushed >= BUTTON_LONG_PRESS_THRESHOLD) || backward_flag) {
-					history_place = max(0, history_place - 1);
+					if (fork_mode) {
+						if (contain_history_idx(fork_history, history_place - 1)) {
+							--history_place;
+						}
+					}
+					else {
+						if (contain_history_idx(history, history_place - 1)) {
+							--history_place;
+						}
+					}
 					if (KeyLeft.down() || KeyA.down()) {
 						left_pushed = tim();
 					}
