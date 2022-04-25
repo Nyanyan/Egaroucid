@@ -24,6 +24,8 @@
 
 using namespace std;
 
+#define EGAROUCID_VERSION U"5.7.0"
+
 #define hint_not_calculated_define 0
 
 #define left_left 20
@@ -95,7 +97,7 @@ Menu create_menu(Texture checkbox,
 	bool* show_end_popup, bool* show_log,
 	bool* thread1, bool* thread2, bool* thread4, bool* thread8, bool* thread16, bool* thread32, bool* thread64, bool* thread128,
 	bool* stop_read_flag, bool* resume_read_flag, bool* vertical_convert, bool* black_line_convert, bool* white_line_convert, bool* forward_flag, bool *backward_flag,
-	bool* usage_flag, bool* bug_report_flag,
+	bool* usage_flag, bool* bug_report_flag, bool *auto_update_check,
 	bool lang_acts[], vector<string> lang_name_vector) {
 	Menu menu;
 	menu_title title;
@@ -305,6 +307,8 @@ Menu create_menu(Texture checkbox,
 	menu_e.init_button(language.get("help", "how_to_use"), usage_flag);
 	title.push(menu_e);
 	menu_e.init_button(language.get("help", "bug_report"), bug_report_flag);
+	title.push(menu_e);
+	menu_e.init_check(language.get("help", "auto_update_check"), auto_update_check, *auto_update_check);
 	title.push(menu_e);
 	menu.push(title);
 
@@ -965,6 +969,7 @@ bool import_setting(int* int_mode, bool* use_book, int* ai_level, int* ai_book_a
 	int* hint_num,
 	int* book_depth, int* book_learn_accept,
 	bool* show_log, bool *use_value_flag,
+	bool *auto_update_check,
 	string* lang_name) {
 	ifstream ifs("resources/settings.txt");
 	if (ifs.fail()) {
@@ -1042,6 +1047,10 @@ bool import_setting(int* int_mode, bool* use_book, int* ai_level, int* ai_book_a
 	if (*use_value_flag == -INF) {
 		return false;
 	}
+	*auto_update_check = import_int(&ifs);
+	if (*auto_update_check == -INF) {
+		return false;
+	}
 	*lang_name = import_str(&ifs);
 	while (lang_name->back() == '\n' || lang_name->back() == '\r') {
 		lang_name->pop_back();
@@ -1060,6 +1069,7 @@ void export_setting(int int_mode, bool use_book, int ai_level, int ai_book_accep
 	int hint_num,
 	int book_depth, int book_learn_accept,
 	bool show_log, bool use_value_flag,
+	bool auto_update_check,
 	string lang_name) {
 	ofstream ofs("resources/settings.txt");
 	if (!ofs.fail()) {
@@ -1081,6 +1091,7 @@ void export_setting(int int_mode, bool use_book, int ai_level, int ai_book_accep
 		ofs << book_learn_accept << endl;
 		ofs << show_log << endl;
 		ofs << use_value_flag << endl;
+		ofs << auto_update_check << endl;
 		ofs << lang_name << endl;
 	}
 }
@@ -1251,6 +1262,7 @@ bool close_app(int* hint_state, future<bool>* hint_future,
 	int hint_num,
 	int book_depth, int book_learn_accept,
 	bool show_log, bool use_value_flag,
+	bool auto_update_check,
 	bool* book_learning, future<void>* book_learn_future, bool book_changed,
 	string lang_name) {
 	reset_hint(hint_state, hint_future);
@@ -1266,6 +1278,7 @@ bool close_app(int* hint_state, future<bool>* hint_future,
 		hint_num,
 		book_depth, book_learn_accept,
 		show_log, use_value_flag,
+		auto_update_check,
 		lang_name);
 	if (*book_learning) {
 		*book_learning = false;
@@ -1347,6 +1360,22 @@ void info_big_draw(Board bd, string joseki_name, int ai_level, int hint_level, F
 	small_font(language.get("info", "hint") + U": " + language.get("common", "level") + Format(hint_level)).draw(big_info_sx, big_info_sy + 300);
 	small_font(language.get("info", "lookahead_0") + Format(mid_depth) + language.get("info", "lookahead_1")).draw(big_info_sx, big_info_sy + 325);
 	small_font(language.get("info", "complete_0") + Format(end_depth) + language.get("info", "complete_1")).draw(big_info_sx, big_info_sy + 350);
+}
+
+bool show_new_version_available(Font font, String new_version) {
+	font(language.get("help", "new_version_available")).draw(Arg::bottomCenter(x_center, 350));
+	font(language.get("help", "download?")).draw(Arg::bottomCenter(x_center, 400));
+	Button close_button;
+	close_button.init(x_center - 225, y_center + 60, 200, 50, 10, language.get("button", "close"), font, button_color, button_font_color);
+	close_button.draw(1.0);
+	Button download_button;
+	download_button.init(x_center + 25, y_center + 60, 200, 50, 10, language.get("button", "download"), font, button_color, button_font_color);
+	download_button.draw(1.0);
+	if (download_button.clicked()) {
+		System::LaunchBrowser(U"https://github.com/Nyanyan/Egaroucid5/releases/tag/v{}"_fmt(new_version));
+		return true;
+	}
+	return !(close_button.clicked() || KeyEscape.pressed());
 }
 
 bool operator< (const pair<int, Board> &a, const pair<int, Board> &b){
@@ -1494,7 +1523,7 @@ void Main() {
 	Window::Resize(window_size);
 	Window::SetStyle(WindowStyle::Sizable);
 	Scene::SetResizeMode(ResizeMode::Keep);
-	Window::SetTitle(U"Egaroucid 5.7.0");
+	Window::SetTitle(U"Egaroucid {}"_fmt(EGAROUCID_VERSION));
 	System::SetTerminationTriggers(UserAction::NoAction);
 	Scene::SetBackground(green);
 	//Console.open();
@@ -1518,7 +1547,7 @@ void Main() {
 	int n_threads_num[8] = { 1, 2, 4, 8, 16, 32, 64, 128 };
 	int n_thread_idx = 2;
 	bool stop_read_flag = false, resume_read_flag = false, vertical_convert = false, white_line_convert = false, black_line_convert = false, forward_flag = false, backward_flag = false;
-	bool usage_flag = false, bug_report_flag = false;
+	bool usage_flag = false, bug_report_flag = false, auto_update_check = true;
 	bool language_acts[100];
 	language_acts[0] = true;
 	for (int i = 1; i < 100; ++i) {
@@ -1539,6 +1568,7 @@ void Main() {
 	if (icon.isEmpty() || logo.isEmpty() || checkbox.isEmpty()) {
 		texture_loaded = false;
 	}
+
 	Rect board_cells[HW2];
 	Font graph_font(graph_font_size);
 	Graph graph;
@@ -1674,6 +1704,7 @@ void Main() {
 		&hint_num,
 		&book_depth, &book_learn_accept,
 		&show_log, &use_value_flag,
+		&auto_update_check,
 		&lang_name)) {
 		cerr << "use default setting" << endl;
 		int_mode = 0;
@@ -1695,6 +1726,7 @@ void Main() {
 		show_log = true;
 		lang_name = language_names[0];
 		use_value_flag = true;
+		auto_update_check = true;
 	}
 	for (int i = 0; i < mode_size; ++i) {
 		show_mode[i] = i == int_mode;
@@ -1731,6 +1763,15 @@ void Main() {
 	}
 	for (int i = 0; i < 6; ++i) {
 		hint_nums[i] = i == hint_num;
+	}
+
+	const URL version_url = U"https://www.egaroucid-app.nyanyan.dev/version.txt";
+	const FilePath version_save_path = U"resources/version.txt";
+	AsyncHTTPTask version_get;
+	bool new_version_available = false;
+	String new_version;
+	if (auto_update_check) {
+		version_get = SimpleHTTP::SaveAsync(version_url, version_save_path);
 	}
 
 	show_end_popup_change = show_end_popup;
@@ -1778,6 +1819,7 @@ void Main() {
 				hint_num,
 				book_depth, book_learn_accept,
 				show_log, use_value_flag,
+				auto_update_check,
 				&book_learning, &book_learn_future, book_changed,
 				lang_name);
 		}
@@ -1790,6 +1832,22 @@ void Main() {
 			continue;
 		}
 		/*** terminate ***/
+
+		/*** auto check update ***/
+		if (new_version_available) {
+			new_version_available = show_new_version_available(font30, new_version);
+			continue;
+		}
+		else if (version_get.isReady()) {
+			if (version_get.getResponse().isOK()) {
+				TextReader reader(U"resources/version.txt");
+				if (reader) {
+					reader.readLine(new_version);
+					new_version_available = EGAROUCID_VERSION != new_version;
+				}
+			}
+		}
+		/*** auto check update ***/
 
 		/*** initialize ***/
 		if (initializing) {
@@ -1817,10 +1875,11 @@ void Main() {
 					&show_end_popup_change, &show_log,
 					&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
 					&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert, &forward_flag, &backward_flag,
-					&usage_flag, &bug_report_flag,
+					&usage_flag, &bug_report_flag, &auto_update_check,
 					language_acts, language_names);
 				start_game_button.init(start_game_button_x, start_game_button_y, start_game_button_w, start_game_button_h, start_game_button_r, language.get("button", "start_game"), font15, button_color, button_font_color);
 				tips = language.get_random("tips", "tips");
+				
 				lang_initialized = 2;
 			}
 			else if (lang_initialized == 2) {
@@ -1843,7 +1902,7 @@ void Main() {
 						&show_end_popup_change, &show_log,
 						&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
 						&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert, &forward_flag, &backward_flag,
-						&usage_flag, &bug_report_flag,
+						&usage_flag, &bug_report_flag, &auto_update_check,
 						language_acts, language_names);
 				}
 				initialize_draw(&initialize_future, &initializing, &initialize_failed, font50, font20, icon, logo, texture_loaded, tips);
@@ -1917,7 +1976,7 @@ void Main() {
 					&show_end_popup_change, &show_log,
 					&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
 					&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert, &forward_flag, &backward_flag,
-					&usage_flag, &bug_report_flag,
+					&usage_flag, &bug_report_flag, &auto_update_check,
 					language_acts, language_names);
 			}
 			/**** when mode changed **/
@@ -1954,7 +2013,7 @@ void Main() {
 						&show_end_popup_change, &show_log,
 						&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
 						&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert, &forward_flag, &backward_flag,
-						&usage_flag, &bug_report_flag,
+						&usage_flag, &bug_report_flag, &auto_update_check,
 						language_acts, language_names);
 					start_game_button.init(start_game_button_x, start_game_button_y, start_game_button_w, start_game_button_h, start_game_button_r, language.get("button", "start_game"), font15, button_color, button_font_color);
 				}
