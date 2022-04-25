@@ -21,3 +21,4 @@ src/*.out
 src/*.exe
 src/test/close_quest.txt
 src/test/ignore
+/installer
