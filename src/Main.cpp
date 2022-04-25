@@ -623,7 +623,6 @@ void board_draw(bool use_value_flag, Rect board_cells[], History_elem b, int nex
 			int y = HW_M1 - cell / HW;
 			Rect cell_rect(b_sx + x * b_cell_size, b_sy + y * b_cell_size, b_cell_size, b_cell_size);
 			if ((1 & (legal >> cell)) && cell_rect.mouseOver()) {
-				cerr << cell << " over" << endl;
 				Flip flip;
 				calc_flip(&flip, &b.b, cell);
 				String joseki_name = Unicode::FromUTF8(joseki.get(b.b.move_copy(&flip)));
