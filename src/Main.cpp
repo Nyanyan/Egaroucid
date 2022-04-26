@@ -98,7 +98,7 @@ Menu create_menu(Texture checkbox,
 	bool* show_end_popup, bool* show_log,
 	bool* thread1, bool* thread2, bool* thread4, bool* thread8, bool* thread16, bool* thread32, bool* thread64, bool* thread128,
 	bool* stop_read_flag, bool* resume_read_flag, bool* vertical_convert, bool* black_line_convert, bool* white_line_convert, bool* forward_flag, bool *backward_flag,
-	bool* usage_flag, bool* bug_report_flag, bool *auto_update_check,
+	bool* usage_flag, bool* bug_report_flag, bool *auto_update_check, bool *check_license,
 	bool lang_acts[], vector<string> lang_name_vector) {
 	Menu menu;
 	menu_title title;
@@ -318,6 +318,8 @@ Menu create_menu(Texture checkbox,
 	menu_e.init_button(language.get("help", "bug_report"), bug_report_flag);
 	title.push(menu_e);
 	menu_e.init_check(language.get("help", "auto_update_check"), auto_update_check, *auto_update_check);
+	title.push(menu_e);
+	menu_e.init_button(language.get("help", "license"), check_license);
 	title.push(menu_e);
 	menu.push(title);
 
@@ -1141,25 +1143,25 @@ void export_setting(int int_mode, bool use_book, int ai_level, int ai_book_accep
 	TextWriter writer(U"{}/Egaroucid/setting.txt"_fmt(Unicode::Widen(appdata_dir)));
 	if (writer) {
 		writer.writeln(int_mode);
-		writer.writeln(use_book);
+		writer.writeln((int)use_book);
 		writer.writeln(ai_level);
 		writer.writeln(ai_book_accept);
 		writer.writeln(hint_level);
 		writer.writeln(use_book_depth);
 		writer.writeln(use_ai_mode);
-		writer.writeln(use_hint_flag);
-		writer.writeln(normal_hint);
-		writer.writeln(human_hint);
-		writer.writeln(umigame_hint);
-		writer.writeln(show_end_popup);
+		writer.writeln((int)use_hint_flag);
+		writer.writeln((int)normal_hint);
+		writer.writeln((int)human_hint);
+		writer.writeln((int)umigame_hint);
+		writer.writeln((int)show_end_popup);
 		writer.writeln(n_thread_idx);
 		writer.writeln(hint_num);
 		writer.writeln(book_depth);
 		writer.writeln(book_learn_accept);
-		writer.writeln(show_log);
-		writer.writeln(use_value_flag);
-		writer.writeln(auto_update_check);
-		writer.writeln(show_over_joseki);
+		writer.writeln((int)show_log);
+		writer.writeln((int)use_value_flag);
+		writer.writeln((int)auto_update_check);
+		writer.writeln((int)show_over_joseki);
 		writer.writeln(Unicode::Widen(lang_name));
 	}
 }
@@ -1681,7 +1683,7 @@ void Main() {
 	int n_threads_num[8] = { 1, 2, 4, 8, 16, 32, 64, 128 };
 	int n_thread_idx = 2;
 	bool stop_read_flag = false, resume_read_flag = false, vertical_convert = false, white_line_convert = false, black_line_convert = false, forward_flag = false, backward_flag = false;
-	bool usage_flag = false, bug_report_flag = false, auto_update_check = true;
+	bool usage_flag = false, bug_report_flag = false, auto_update_check = true, check_license;
 	bool show_over_joseki = true;
 	bool language_acts[100];
 	language_acts[0] = true;
@@ -2022,7 +2024,7 @@ void Main() {
 					&show_end_popup_change, &show_log,
 					&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
 					&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert, &forward_flag, &backward_flag,
-					&usage_flag, &bug_report_flag, &auto_update_check,
+					&usage_flag, &bug_report_flag, &auto_update_check, &check_license,
 					language_acts, language_names);
 				start_game_button.init(start_game_button_x, start_game_button_y, start_game_button_w, start_game_button_h, start_game_button_r, language.get("button", "start_game"), font15, button_color, button_font_color);
 				tips = language.get_random("tips", "tips");
@@ -2049,7 +2051,7 @@ void Main() {
 						&show_end_popup_change, &show_log,
 						&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
 						&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert, &forward_flag, &backward_flag,
-						&usage_flag, &bug_report_flag, &auto_update_check,
+						&usage_flag, &bug_report_flag, &auto_update_check, &check_license,
 						language_acts, language_names);
 				}
 				initialize_draw(&initialize_future, &initializing, &initialize_failed, font50, font20, icon, logo, texture_loaded, tips);
@@ -2135,7 +2137,7 @@ void Main() {
 					&show_end_popup_change, &show_log,
 					&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
 					&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert, &forward_flag, &backward_flag,
-					&usage_flag, &bug_report_flag, &auto_update_check,
+					&usage_flag, &bug_report_flag, &auto_update_check, &check_license,
 					language_acts, language_names);
 				edit_board_player_radio.init();
 				radio_button_elem.init(700, 150, font20, 20, language.get("common", "black"), true);
@@ -2184,7 +2186,7 @@ void Main() {
 						&show_end_popup_change, &show_log,
 						&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
 						&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert, &forward_flag, &backward_flag,
-						&usage_flag, &bug_report_flag, &auto_update_check,
+						&usage_flag, &bug_report_flag, &auto_update_check, &check_license,
 						language_acts, language_names);
 					start_game_button.init(start_game_button_x, start_game_button_y, start_game_button_w, start_game_button_h, start_game_button_r, language.get("button", "start_game"), font15, button_color, button_font_color);
 					edit_board_player_radio.init();
@@ -3269,6 +3271,9 @@ void Main() {
 					main_window_active = true;
 				}
 				show_end_popup = show_end_popup_change;
+			}
+			else if (check_license) {
+				LicenseManager::ShowInBrowser();
 			}
 			/*** menu buttons ***/
 
