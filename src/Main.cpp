@@ -1250,7 +1250,7 @@ int get_localtime(tm* a, time_t* b) {
 }
 #endif
 
-bool output_game(History_elem hist, int ai_level, int use_ai_mode, String black_player, String white_player, String game_memo) {
+bool output_game(History_elem hist, int ai_level, int use_ai_mode, String black_player, String white_player, String game_memo, string document_dir) {
 	time_t now;
 	tm newtime;
 	time(&now);
@@ -1276,7 +1276,7 @@ bool output_game(History_elem hist, int ai_level, int use_ai_mode, String black_
 	sout << setfill('0') << setw(2) << newtime.tm_sec;
 	string second = sout.str();
 	string info = year + "_" + month + "_" + day + "_" + hour + "_" + minute + "_" + second;
-	ofstream ofs("records/" + info + ".txt");
+	ofstream ofs(document_dir + "Egaroucid/records/" + info + ".txt");
 	if (ofs.fail()) {
 		return false;
 	}
@@ -2631,8 +2631,12 @@ void Main() {
 				}
 				if (KeyLeft.down() || KeyA.down() || (left_pushed != BUTTON_NOT_PUSHED && tim() - left_pushed >= BUTTON_LONG_PRESS_THRESHOLD) || backward_flag) {
 					if (fork_mode) {
-						if (contain_history_idx(fork_history, history_place - 1)) {
+						if (contain_history_idx(fork_history, history_place - 1) || contain_history_idx(history, history_place - 1)) {
 							--history_place;
+							if (!contain_history_idx(fork_history, history_place - 1)) {
+								fork_mode = false;
+								fork_history.clear();
+							}
 						}
 					}
 					else {
@@ -2892,7 +2896,7 @@ void Main() {
 				int output_state = output_game_popup(font40, font30, font20, &black_player, &white_player, &game_memo, output_active);
 				if (output_state == 1) {
 					if (fork_mode) {
-						if (output_game(fork_history[find_history_idx(fork_history, history_place)], ai_level, use_ai_mode, black_player, white_player, game_memo)) {
+						if (output_game(fork_history[find_history_idx(fork_history, history_place)], ai_level, use_ai_mode, black_player, white_player, game_memo, document_dir)) {
 							cerr << "game saved" << endl;
 						}
 						else {
@@ -2900,7 +2904,7 @@ void Main() {
 						}
 					}
 					else {
-						if (output_game(history[find_history_idx(history, history_place)], ai_level, use_ai_mode, black_player, white_player, game_memo)) {
+						if (output_game(history[find_history_idx(history, history_place)], ai_level, use_ai_mode, black_player, white_player, game_memo, document_dir)) {
 							cerr << "game saved" << endl;
 						}
 						else {
