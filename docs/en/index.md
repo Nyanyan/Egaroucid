@@ -28,9 +28,9 @@ The light version got the first place in the world ([CodinGame Othello](https://
 
 [Here](https://github.com/Nyanyan/Egaroucid5/releases) you can download.
 
-Please select the OS, then click to download.
+Please select the OS, then click to download. Then execute it and please install it with the wizard.
 
-Unzip the zip to anywhere, then click ```Egaroucid5.exe``` to execute. For MacOS users, please see below.
+For MacOS users, please see below.
 
 ![download](./../img/download.png)
 
