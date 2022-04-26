@@ -14,31 +14,31 @@ depthで示される深さを完全読みして、訪問ノード数と探索時
 
 ### Core i9-11900K、16スレッド
 
-<div style="font-size:60%"><pre>#40 depth 20 value 38 policy a2 nodes 32617519 time 187 nps 174425235
-#41 depth 22 value 0 policy h4 nodes 26560625 time 242 nps 109754648
-#42 depth 22 value 6 policy g2 nodes 51191219 time 360 nps 142197830
-#43 depth 23 value -12 policy c7 nodes 168771687 time 929 nps 181670276
-#44 depth 23 value -14 policy d2 nodes 43705622 time 626 nps 69817287
-#45 depth 24 value 6 policy b2 nodes 973544606 time 4256 nps 228746382
-#46 depth 24 value -8 policy b3 nodes 169047118 time 2315 nps 73022513
-#47 depth 25 value 4 policy g2 nodes 115350803 time 816 nps 141361278
-#48 depth 25 value 28 policy f6 nodes 822747204 time 4137 nps 198875321
-#49 depth 26 value 16 policy e1 nodes 1021389690 time 6387 nps 159916970
-#50 depth 26 value 10 policy d8 nodes 3470416861 time 15945 nps 217649223
-#51 depth 27 value 6 policy a3 nodes 2093326335 time 19308 nps 108417564
-#52 depth 27 value 0 policy a3 nodes 666596389 time 7950 nps 83848602
-#53 depth 28 value -2 policy d8 nodes 12227417145 time 67989 nps 179844050
-#54 depth 28 value -2 policy c7 nodes 13290990536 time 71954 nps 184715103
-#55 depth 29 value 0 policy b7 nodes 41506305139 time 276500 nps 150113219
-#56 depth 29 value 2 policy h5 nodes 3409497345 time 28172 nps 121024327
-#57 depth 30 value -10 policy a6 nodes 13317806725 time 88863 nps 149868974
-#58 depth 30 value 4 policy g1 nodes 4861384409 time 31941 nps 152198879
-#59 depth 34 value 64 policy g8 nodes 2975 time 1624 nps 1831
-630.501 sec
-631.2902810573578 sec total
-98268669952 nodes
-155858071.52090162 nps</pre></div>
-
+<div style="font-size:60%"><pre>#40 depth 20 value 38 policy a2 nodes 27871488 whole time 135 search time 128 nps 217746000
+#41 depth 22 value 0 policy h4 nodes 28862801 whole time 199 search time 191 nps 151114141
+#42 depth 22 value 6 policy g2 nodes 48660062 whole time 213 search time 205 nps 237366156
+#43 depth 23 value -12 policy c7 nodes 166809244 whole time 776 search time 769 nps 216917092
+#44 depth 23 value -14 policy d2 nodes 42549145 whole time 323 search time 316 nps 134649193
+#45 depth 24 value 6 policy b2 nodes 912441891 whole time 3241 search time 3226 nps 282840015
+#46 depth 24 value -8 policy b3 nodes 227129647 whole time 1089 search time 1073 nps 211677210
+#47 depth 25 value 4 policy g2 nodes 151105116 whole time 852 search time 837 nps 180531799
+#48 depth 25 value 28 policy f6 nodes 724631805 whole time 3025 search time 3011 nps 240661509
+#49 depth 26 value 16 policy e1 nodes 1079040603 whole time 4537 search time 4514 nps 239043110
+#50 depth 26 value 10 policy d8 nodes 3688114040 whole time 13943 search time 13922 nps 264912659
+#51 depth 27 value 6 policy a3 nodes 2782257813 whole time 14732 search time 14709 nps 189153430
+#52 depth 27 value 0 policy a3 nodes 604311247 whole time 3785 search time 3762 nps 160635631
+#53 depth 28 value -2 policy d8 nodes 11344109584 whole time 69739 search time 69586 nps 163022872
+#54 depth 28 value -2 policy c7 nodes 12621020703 whole time 63972 search time 63874 nps 197592458
+#55 depth 29 value 0 policy b7 nodes 78910958123 whole time 458573 search time 458442 nps 172128553
+#56 depth 29 value 2 policy h5 nodes 3533955047 whole time 25576 search time 25526 nps 138445312
+#57 depth 30 value -10 policy a6 nodes 9948249883 whole time 59654 search time 59586 nps 166956162
+#58 depth 30 value 4 policy g1 nodes 3949220953 whole time 23824 search time 23781 nps 166066227
+#59 depth 34 value 64 policy g8 nodes 7096 whole time 43 search time 11 nps 645090
+748.231 sec
+747.469 sec search
+802.5422124862671 sec total
+130791306291 nodes
+174978903.86223373 nps</pre></div>
 
 
 
@@ -50,7 +50,7 @@ depthで示される深さを完全読みして、訪問ノード数と探索時
 
 初手からの対戦では同じ進行ばかりになって評価関数の強さは計測できないので、ある程度手を進めた局面から打たせて勝敗を数えました。このとき、同じ進行に対して両者が必ず先手と後手の双方を1回ずつ持つようにしました。こうすることで、両者の強さが全く同じであれば勝率は50%となるはずです。
 
-なお、テストに使った局面はEgaroucidの評価関数の学習に使ったものとは別のデータで、[XOT](https://berg.earthlingz.de/xot/index.php)の局面です。
+なお、テストに使った局面はEgaroucidの評価関数の学習に使ったものとは別のデータで、最終的に引き分けまたは2石差になったものを使いました。
 
 bookは双方未使用です。
 
@@ -60,22 +60,26 @@ bookは双方未使用です。
 
 両者とも中盤1手読み、終盤2マス空き完全読みです。それぞれ600戦した結果です。
 
-<div style="font-size:60%"><pre>start depth: 8 Egaroucid plays black WDL: 61-2-67 Egaroucid plays white WDL: 76-3-51 Egaroucid win rate: 0.5372549019607843
+<div style="font-size:60%"><pre>start depth: 10 Egaroucid plays black WDL: 148-7-145 Egaroucid plays white WDL: 181-10-109 Egaroucid win rate: 0.5643224699828473
+start depth: 20 Egaroucid plays black WDL: 154-8-138 Egaroucid plays white WDL: 165-4-131 Egaroucid win rate: 0.5425170068027211
 </pre></div>
+
 
 ### レベル5同士
 
 両者とも中盤5手読み、終盤10マス空き完全読みです。それぞれ400戦した結果です。
 
-<div style="font-size:60%"><pre>start depth: 8 Egaroucid plays black WDL: 68-6-56 Egaroucid plays white WDL: 67-11-52 Egaroucid win rate: 0.5555555555555556</pre></div>
+<div style="font-size:60%"><pre>start depth: 10 Egaroucid plays black WDL: 107-8-85 Egaroucid plays white WDL: 114-12-74 Egaroucid win rate: 0.5815789473684211
+start depth: 20 Egaroucid plays black WDL: 105-12-83 Egaroucid plays white WDL: 97-7-96 Egaroucid win rate: 0.5301837270341208</pre></div>
 
+### レベル15同士
 
-### レベル11同士
+両者中盤15手読みです。実験条件一致のため、前向きな枝刈りに使う確証(Selectivity)を両者揃えました。さらに、終盤の読み切りタイミングもEdaxに合わせて実験しました。
 
-両者中盤11手読みです。実験条件一致のため、前向きな枝刈りに使う確証(Selectivity)を両者揃えました。さらに、終盤の読み切りタイミングもEdaxに合わせて実験しました。
+それぞれ200戦した結果です。
 
-<div style="font-size:60%"><pre>start depth: 8 Egaroucid plays black WDL: 69-18-43 Egaroucid plays white WDL: 61-15-54 Egaroucid win rate: 0.5726872246696035</pre></div>
-
+<div style="font-size:60%"><pre>start depth: 10 Egaroucid plays black WDL: 50-11-39 Egaroucid plays white WDL: 52-9-39 Egaroucid win rate: 0.5666666666666667
+start depth: 20 Egaroucid plays black WDL: 61-10-29 Egaroucid plays white WDL: 48-6-46 Egaroucid win rate: 0.592391304347826</pre></div>
 
 
 
@@ -123,5 +127,4 @@ phase 29 mse 4.51746 mae 1.3841</pre></div>
 ## 過去バージョン
 
 * [5.4.1](./../5_4_1)
-* [5.5.0 と 5.6.0](./../5_5_0)
 
