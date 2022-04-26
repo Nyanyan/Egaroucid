@@ -67,13 +67,17 @@ struct Cell_value {
 	int depth;
 };
 
+
 bool ai_init() {
 	bit_init();
 	flip_init();
 	board_init();
 	if (!evaluate_init())
 		return false;
-	if (!book_init())
+	char document_env[] = "PERSONAL";
+	string document_dir = FileSystem::GetFolderPath(SpecialFolder::Documents).narrow();
+	string book_file = document_dir + "Egaroucid/book.egbk";
+	if (!book_init(book_file))
 		return false;
 	if (!joseki_init())
 		return false;
@@ -977,22 +981,6 @@ future<void> get_human_value(Board b, int depth, Human_value res[], int search_d
 	return async(launch::async, calc_all_human_value, b, depth, res, search_depth);
 }
 
-int dupenv_wrapper(const char* env, string* val) {
-	char* buf = 0;
-	size_t sz = 0;
-	if (_dupenv_s(&buf, &sz, env) == 0) {
-		if (!buf) {
-			return 0;
-		}
-		*val = buf;
-		free(buf);
-	}
-	else {
-		return 0;
-	}
-	return 1;
-}
-
 int import_int(TextReader *reader) {
 	String line;
 	if (reader->readLine(line)) {
@@ -1029,10 +1017,8 @@ bool import_setting(int* int_mode, bool* use_book, int* ai_level, int* ai_book_a
 	bool* auto_update_check,
 	bool* show_over_joseki,
 	string* lang_name) {
-	const char appdata_env[] = "APPDATA";
-	string appdata_dir;
-	dupenv_wrapper(appdata_env, &appdata_dir);
-	TextReader reader(U"{}/Egaroucid/setting.txt"_fmt(Unicode::Widen(appdata_dir)));
+	String appdata_dir = FileSystem::GetFolderPath(SpecialFolder::LocalAppData);
+	TextReader reader(U"{}Egaroucid/setting.txt"_fmt(appdata_dir));
 	if (!reader) {
 		return false;
 	}
@@ -1137,10 +1123,8 @@ void export_setting(int int_mode, bool use_book, int ai_level, int ai_book_accep
 	bool auto_update_check,
 	bool show_over_joseki,
 	string lang_name) {
-	const char appdata_env[] = "APPDATA";
-	string appdata_dir;
-	dupenv_wrapper(appdata_env, &appdata_dir);
-	TextWriter writer(U"{}/Egaroucid/setting.txt"_fmt(Unicode::Widen(appdata_dir)));
+	String appdata_dir = FileSystem::GetFolderPath(SpecialFolder::LocalAppData);
+	TextWriter writer(U"{}Egaroucid/setting.txt"_fmt(appdata_dir));
 	if (writer) {
 		writer.writeln(int_mode);
 		writer.writeln((int)use_book);
@@ -1911,10 +1895,8 @@ void Main() {
 	}
 
 	const URL version_url = U"https://www.egaroucid-app.nyanyan.dev/version.txt";
-	const char appdata_env[] = "APPDATA";
-	string appdata_dir;
-	dupenv_wrapper(appdata_env, &appdata_dir);
-	const FilePath version_save_path = U"{}/Egaroucid/version.txt"_fmt(Unicode::Widen(appdata_dir));
+	String appdata_dir = FileSystem::GetFolderPath(SpecialFolder::LocalAppData);
+	const FilePath version_save_path = U"{}Egaroucid/version.txt"_fmt(appdata_dir);
 	AsyncHTTPTask version_get;
 	bool new_version_available = false;
 	String new_version;

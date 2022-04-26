@@ -29,12 +29,12 @@ class Book{
         int n_book;
         int n_hash_conflict;
     public:
-        bool init(){
+        bool init(string file){
             for (int i = 0; i < BOOK_HASH_TABLE_SIZE; ++i)
                 this->book[i] = NULL;
             n_book = 0;
             n_hash_conflict = 0;
-            return import_file_bin("resources/book.egbk");
+            return import_file_bin(file);
         }
 
         inline bool import_file_bin(string file){
@@ -484,8 +484,8 @@ class Book{
 
 Book book;
 
-bool book_init(){
-    return book.init();
+bool book_init(string file){
+    return book.init(file);
 }
 
 int modify_book(Board *b, bool passed, int *n_seen, vector<bool> &seen_nodes){
