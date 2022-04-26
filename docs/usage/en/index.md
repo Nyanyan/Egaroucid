@@ -32,28 +32,13 @@ If you have some requests, please let me know through my Twitter ([@Nyanyan_Cube
 
 Mode: All
 
-Check if the all things are in these directories before you start the application.
+User may modify its book. Book file is here:
 
 ```
-Egaroucid5.exe
-resources directory
-	book.egbk
-	eval.egev
-	joseki.txt
-	settings.txt
-	img directory
-		checked.png
-		icon.png
-		logo.png
-	languages directory
-		english.json
-		japanese.json
-		languages.json
-		languages.txt
-records directory
+[User's Documents folder]/Egaroucid/book.egbk
 ```
 
-Execute ```Egaroucid5.exe``` to start the application.
+**When you update the software, the book file will be overwritten. Please create a backup before updating.**
 
 
 
@@ -156,7 +141,7 @@ You can move across the boards with dragging the graph or pushing right/left or 
 
 ### Input & Output
 
-#### Inporting a Record
+#### Inport a Record
 
 Mode: Study
 
@@ -164,7 +149,7 @@ You can add a record. The record must be written in F5D6 or f5d6 format.
 
 If importing succeed, you can see the board in your app.
 
-#### Inporting a Board
+#### Inport a Board
 
 Mode: Study
 
@@ -185,6 +170,12 @@ The sample input is:
 ```
 
 If importing succeed, you can see the board in your app.
+
+#### Edit a Board
+
+Mode: Study
+
+You can edit a board on the display. Discs (black, white, empty) can be selected with radio buttons or keys (B/W/E). Then submit with button or Enter key.
 
 #### Save Game
 
