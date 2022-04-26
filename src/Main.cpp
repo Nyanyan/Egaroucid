@@ -25,7 +25,7 @@
 
 using namespace std;
 
-#define EGAROUCID_VERSION U"5.7.0"
+#define EGAROUCID_VERSION U"5.7.1"
 
 #define hint_not_calculated_define 0
 
@@ -2898,6 +2898,9 @@ void Main() {
 					if (fork_mode) {
 						if (output_game(fork_history[find_history_idx(fork_history, history_place)], ai_level, use_ai_mode, black_player, white_player, game_memo, document_dir)) {
 							cerr << "game saved" << endl;
+							outputting_game = false;
+							main_window_active = true;
+							System::Sleep(100);
 						}
 						else {
 							cerr << "game save FAILED" << endl;
@@ -2906,14 +2909,14 @@ void Main() {
 					else {
 						if (output_game(history[find_history_idx(history, history_place)], ai_level, use_ai_mode, black_player, white_player, game_memo, document_dir)) {
 							cerr << "game saved" << endl;
+							outputting_game = false;
+							main_window_active = true;
+							System::Sleep(100);
 						}
 						else {
 							cerr << "game save FAILED" << endl;
 						}
 					}
-					outputting_game = false;
-					main_window_active = true;
-					System::Sleep(100);
 				}
 				else if (output_state == 2) {
 					outputting_game = false;
