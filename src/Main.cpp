@@ -68,15 +68,12 @@ struct Cell_value {
 };
 
 
-bool ai_init() {
+bool ai_init(string book_file) {
 	bit_init();
 	flip_init();
 	board_init();
 	if (!evaluate_init())
 		return false;
-	char document_env[] = "PERSONAL";
-	string document_dir = FileSystem::GetFolderPath(SpecialFolder::Documents).narrow();
-	string book_file = document_dir + "Egaroucid/book.egbk";
 	if (!book_init(book_file))
 		return false;
 	if (!joseki_init())
@@ -1319,7 +1316,8 @@ bool close_app(int* hint_state, future<bool>* hint_future,
 	bool auto_update_check,
 	bool show_over_joseki,
 	bool* book_learning, future<void>* book_learn_future, bool book_changed,
-	string lang_name) {
+	string lang_name,
+	string book_file, string book_bak_file) {
 	reset_hint(hint_state, hint_future);
 	reset_umigame(umigame_state, umigame_future);
 	reset_human_value(human_value_state, human_value_future);
@@ -1343,7 +1341,7 @@ bool close_app(int* hint_state, future<bool>* hint_future,
 		global_searching = true;
 	}
 	if (book_changed) {
-		book.save_bin();
+		book.save_bin(book_file, book_bak_file);
 	}
 	return true;
 }
@@ -1690,6 +1688,10 @@ void Main() {
 		texture_loaded = false;
 	}
 
+	string document_dir = FileSystem::GetFolderPath(SpecialFolder::Documents).narrow();
+	string book_file = document_dir + "Egaroucid/book.egbk";
+	string book_bak_file = document_dir + "Egaroucid/book_backup.egbk";
+
 	Rect board_cells[HW2];
 	Font graph_font(graph_font_size);
 	Graph graph;
@@ -1750,7 +1752,7 @@ void Main() {
 	int human_value_search_depth = 2;
 	future<void> human_value_future;
 
-	future<bool> initialize_future = async(launch::async, ai_init);
+	future<bool> initialize_future = async(launch::async, ai_init, book_file);
 	bool initializing = true, initialize_failed = false;
 
 	Menu menu;
@@ -1952,7 +1954,8 @@ void Main() {
 				auto_update_check,
 				show_over_joseki,
 				&book_learning, &book_learn_future, book_changed,
-				lang_name);
+				lang_name,
+				book_file, book_bak_file);
 		}
 		if (closing) {
 			closing_draw(font50, font20, icon, logo, texture_loaded);

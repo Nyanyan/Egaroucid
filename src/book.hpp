@@ -354,12 +354,12 @@ class Book{
             //cerr << "book changed" << endl;
         }
 
-        inline void save_bin(){
-            if (remove("resources/book_backup.egbk") == -1)
+        inline void save_bin(string file, string bak_file){
+            if (remove(bak_file.c_str()) == -1)
                 cerr << "cannot delete book_backup.egbk" << endl;
-            rename("resources/book.egbk", "resources/book_backup.egbk");
+            rename(file.c_str(), bak_file.c_str());
             ofstream fout;
-            fout.open("resources/book.egbk", ios::out|ios::binary|ios::trunc);
+            fout.open(file.c_str(), ios::out|ios::binary|ios::trunc);
             if (!fout){
                 cerr << "can't open book.egbk" << endl;
                 return;
