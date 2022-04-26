@@ -975,28 +975,45 @@ future<void> get_human_value(Board b, int depth, Human_value res[], int search_d
 	return async(launch::async, calc_all_human_value, b, depth, res, search_depth);
 }
 
-int import_int(ifstream* ifs) {
-	string line;
-	if (!getline(*ifs, line)) {
-		cerr << "setting NOT imported" << endl;
-		return -INF;
+int dupenv_wrapper(const char* env, string* val) {
+	char* buf = 0;
+	size_t sz = 0;
+	if (_dupenv_s(&buf, &sz, env) == 0) {
+		if (!buf) {
+			return 0;
+		}
+		*val = buf;
+		free(buf);
 	}
-	try {
-		return stoi(line);
+	else {
+		return 0;
 	}
-	catch (const invalid_argument& ex) {
-		cerr << "setting NOT imported" << endl;
+	return 1;
+}
+
+int import_int(TextReader *reader) {
+	String line;
+	if (reader->readLine(line)) {
+		try {
+			return Parse<int32>(line);
+		}
+		catch (const ParseError& e){
+			return -INF;
+		}
+	}
+	else {
 		return -INF;
 	}
 }
 
-string import_str(ifstream* ifs) {
-	string line;
-	if (!getline(*ifs, line)) {
-		cerr << "setting NOT imported" << endl;
+string import_str(TextReader* reader) {
+	String line;
+	if (reader->readLine(line)) {
+		return line.narrow();
+	}
+	else {
 		return "undefined";
 	}
-	return line;
 }
 
 bool import_setting(int* int_mode, bool* use_book, int* ai_level, int* ai_book_accept, int* hint_level, int* use_book_depth,
@@ -1010,91 +1027,94 @@ bool import_setting(int* int_mode, bool* use_book, int* ai_level, int* ai_book_a
 	bool* auto_update_check,
 	bool* show_over_joseki,
 	string* lang_name) {
-	ifstream ifs("resources/settings.txt");
-	if (ifs.fail()) {
+	const char appdata_env[] = "APPDATA";
+	string appdata_dir;
+	dupenv_wrapper(appdata_env, &appdata_dir);
+	TextReader reader(U"{}/Egaroucid/setting.txt"_fmt(Unicode::Widen(appdata_dir)));
+	if (!reader) {
 		return false;
 	}
-	*int_mode = import_int(&ifs);
+	*int_mode = import_int(&reader);
 	if (*int_mode == -INF) {
 		return false;
 	}
-	*use_book = import_int(&ifs);
+	*use_book = import_int(&reader);
 	if (*use_book == -INF) {
 		return false;
 	}
-	*ai_level = import_int(&ifs);
+	*ai_level = import_int(&reader);
 	if (*ai_level == -INF) {
 		return false;
 	}
-	*ai_book_accept = import_int(&ifs);
+	*ai_book_accept = import_int(&reader);
 	if (*ai_book_accept == -INF) {
 		return false;
 	}
-	*hint_level = import_int(&ifs);
+	*hint_level = import_int(&reader);
 	if (*hint_level == -INF) {
 		return false;
 	}
-	*use_book_depth = import_int(&ifs);
+	*use_book_depth = import_int(&reader);
 	if (*use_book_depth == -INF) {
 		return false;
 	}
-	*use_ai_mode = import_int(&ifs);
+	*use_ai_mode = import_int(&reader);
 	if (*use_ai_mode == -INF) {
 		return false;
 	}
-	*use_hint_flag = import_int(&ifs);
+	*use_hint_flag = import_int(&reader);
 	if (*use_hint_flag == -INF) {
 		return false;
 	}
-	*normal_hint = import_int(&ifs);
+	*normal_hint = import_int(&reader);
 	if (*normal_hint == -INF) {
 		return false;
 	}
-	*human_hint = import_int(&ifs);
+	*human_hint = import_int(&reader);
 	if (*human_hint == -INF) {
 		return false;
 	}
-	*umigame_hint = import_int(&ifs);
+	*umigame_hint = import_int(&reader);
 	if (*umigame_hint == -INF) {
 		return false;
 	}
-	*show_end_popup = import_int(&ifs);
+	*show_end_popup = import_int(&reader);
 	if (*show_end_popup == -INF) {
 		return false;
 	}
-	*n_thread_idx = import_int(&ifs);
+	*n_thread_idx = import_int(&reader);
 	if (*n_thread_idx == -INF) {
 		return false;
 	}
-	*hint_num = import_int(&ifs);
+	*hint_num = import_int(&reader);
 	if (*hint_num == -INF) {
 		return false;
 	}
-	*book_depth = import_int(&ifs);
+	*book_depth = import_int(&reader);
 	if (*book_depth == -INF) {
 		return false;
 	}
-	*book_learn_accept = import_int(&ifs);
+	*book_learn_accept = import_int(&reader);
 	if (*book_learn_accept == -INF) {
 		return false;
 	}
-	*show_log = import_int(&ifs);
+	*show_log = import_int(&reader);
 	if (*show_log == -INF) {
 		return false;
 	}
-	*use_value_flag = import_int(&ifs);
+	*use_value_flag = import_int(&reader);
 	if (*use_value_flag == -INF) {
 		return false;
 	}
-	*auto_update_check = import_int(&ifs);
+	*auto_update_check = import_int(&reader);
 	if (*auto_update_check == -INF) {
 		return false;
 	}
-	*show_over_joseki = import_int(&ifs);
+	*show_over_joseki = import_int(&reader);
 	if (*show_over_joseki == -INF) {
 		return false;
 	}
-	*lang_name = import_str(&ifs);
+	*lang_name = import_str(&reader);
 	while (lang_name->back() == '\n' || lang_name->back() == '\r') {
 		lang_name->pop_back();
 	}
@@ -1115,29 +1135,32 @@ void export_setting(int int_mode, bool use_book, int ai_level, int ai_book_accep
 	bool auto_update_check,
 	bool show_over_joseki,
 	string lang_name) {
-	ofstream ofs("resources/settings.txt");
-	if (!ofs.fail()) {
-		ofs << int_mode << endl;
-		ofs << use_book << endl;
-		ofs << ai_level << endl;
-		ofs << ai_book_accept << endl;
-		ofs << hint_level << endl;
-		ofs << use_book_depth << endl;
-		ofs << use_ai_mode << endl;
-		ofs << use_hint_flag << endl;
-		ofs << normal_hint << endl;
-		ofs << human_hint << endl;
-		ofs << umigame_hint << endl;
-		ofs << show_end_popup << endl;
-		ofs << n_thread_idx << endl;
-		ofs << hint_num << endl;
-		ofs << book_depth << endl;
-		ofs << book_learn_accept << endl;
-		ofs << show_log << endl;
-		ofs << use_value_flag << endl;
-		ofs << auto_update_check << endl;
-		ofs << show_over_joseki << endl;
-		ofs << lang_name << endl;
+	const char appdata_env[] = "APPDATA";
+	string appdata_dir;
+	dupenv_wrapper(appdata_env, &appdata_dir);
+	TextWriter writer(U"{}/Egaroucid/setting.txt"_fmt(Unicode::Widen(appdata_dir)));
+	if (writer) {
+		writer.writeln(int_mode);
+		writer.writeln(use_book);
+		writer.writeln(ai_level);
+		writer.writeln(ai_book_accept);
+		writer.writeln(hint_level);
+		writer.writeln(use_book_depth);
+		writer.writeln(use_ai_mode);
+		writer.writeln(use_hint_flag);
+		writer.writeln(normal_hint);
+		writer.writeln(human_hint);
+		writer.writeln(umigame_hint);
+		writer.writeln(show_end_popup);
+		writer.writeln(n_thread_idx);
+		writer.writeln(hint_num);
+		writer.writeln(book_depth);
+		writer.writeln(book_learn_accept);
+		writer.writeln(show_log);
+		writer.writeln(use_value_flag);
+		writer.writeln(auto_update_check);
+		writer.writeln(show_over_joseki);
+		writer.writeln(Unicode::Widen(lang_name));
 	}
 }
 
@@ -1886,7 +1909,10 @@ void Main() {
 	}
 
 	const URL version_url = U"https://www.egaroucid-app.nyanyan.dev/version.txt";
-	const FilePath version_save_path = U"resources/version.txt";
+	const char appdata_env[] = "APPDATA";
+	string appdata_dir;
+	dupenv_wrapper(appdata_env, &appdata_dir);
+	const FilePath version_save_path = U"{}/Egaroucid/version.txt"_fmt(Unicode::Widen(appdata_dir));
 	AsyncHTTPTask version_get;
 	bool new_version_available = false;
 	String new_version;
@@ -1961,7 +1987,7 @@ void Main() {
 		}
 		else if (version_get.isReady()) {
 			if (version_get.getResponse().isOK()) {
-				TextReader reader(U"resources/version.txt");
+				TextReader reader(version_save_path);
 				if (reader) {
 					reader.readLine(new_version);
 					new_version_available = EGAROUCID_VERSION != new_version;
