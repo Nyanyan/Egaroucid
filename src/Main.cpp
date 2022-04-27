@@ -25,7 +25,7 @@
 
 using namespace std;
 
-#define EGAROUCID_VERSION U"5.7.1"
+#define EGAROUCID_VERSION U"5.7.2"
 
 #define hint_not_calculated_define 0
 
@@ -93,11 +93,11 @@ Menu create_menu(Texture checkbox,
 	bool* use_hint_flag, bool* normal_hint, bool* human_hint, bool* umigame_hint,
 	bool* hint_num1, bool* hint_num2, bool* hint_num4, bool* hint_num8, bool* hint_num16, bool* hint_numall,
 	bool* use_value_flag, bool *show_over_joseki,
-	bool* use_book_flag, int* ai_level, int* hint_level, int* book_error, int* use_book_depth,
+	bool* use_book_flag, int* ai_level, int* hint_level, int* graph_level, int* book_error, int* use_book_depth,
 	bool* start_book_learn_flag, bool* stop_book_learn_flag, bool* modify_book, int* book_depth, int* book_learn_accept, bool* import_book_flag,
 	bool* output_record_flag, bool* output_game_flag, bool* input_record_flag, bool* input_board_flag, bool *edit_board_flag,
 	bool* show_end_popup, bool* show_log,
-	bool* thread1, bool* thread2, bool* thread4, bool* thread8, bool* thread16, bool* thread32, bool* thread64, bool* thread128,
+	int* n_thread_idx,
 	bool* stop_read_flag, bool* resume_read_flag, bool* vertical_convert, bool* black_line_convert, bool* white_line_convert, bool* forward_flag, bool *backward_flag,
 	bool* usage_flag, bool* bug_report_flag, bool *auto_update_check, bool *check_license,
 	bool lang_acts[], vector<string> lang_name_vector) {
@@ -129,14 +129,19 @@ Menu create_menu(Texture checkbox,
 	title.init(language.get("settings", "settings"));
 
 	if (*entry_mode) {
-		*ai_level = min(*ai_level, 25);
-		*hint_level = min(*hint_level, 15);
+		*ai_level = min(*ai_level, 20);
+		*hint_level = min(*hint_level, 20);
+		*graph_level = min(*graph_level, 20);
 		*use_book_depth = 60;
 		*use_book_flag = true;
 		menu_e.init_button(language.get("ai_settings", "ai_settings"), dummy);
-		side_menu.init_bar(language.get("ai_settings", "ai_level"), ai_level, *ai_level, 0, 25);
+		side_menu.init_bar(language.get("ai_settings", "ai_level"), ai_level, *ai_level, 0, 20);
 		menu_e.push(side_menu);
-		side_menu.init_bar(language.get("ai_settings", "hint_level"), hint_level, *hint_level, 0, 15);
+		side_menu.init_bar(language.get("ai_settings", "hint_level"), hint_level, *hint_level, 0, 20);
+		menu_e.push(side_menu);
+		side_menu.init_bar(language.get("ai_settings", "graph_level"), graph_level, *graph_level, 0, 20);
+		menu_e.push(side_menu);
+		side_menu.init_bar(language.get("settings", "thread", "thread"), n_thread_idx, *n_thread_idx, 1, 32);
 		menu_e.push(side_menu);
 		title.push(menu_e);
 	}
@@ -148,18 +153,27 @@ Menu create_menu(Texture checkbox,
 		menu_e.push(side_menu);
 		side_menu.init_bar(language.get("ai_settings", "hint_level"), hint_level, *hint_level, 0, 60);
 		menu_e.push(side_menu);
+		side_menu.init_bar(language.get("ai_settings", "graph_level"), graph_level, *graph_level, 0, 60);
+		menu_e.push(side_menu);
 		side_menu.init_bar(language.get("ai_settings", "book_error"), book_error, *book_error, 0, 64);
 		menu_e.push(side_menu);
 		side_menu.init_bar(language.get("ai_settings", "use_book_depth"), use_book_depth, *use_book_depth, 0, 60);
 		menu_e.push(side_menu);
+		side_menu.init_bar(language.get("settings", "thread", "thread"), n_thread_idx, *n_thread_idx, 1, 32);
+		menu_e.push(side_menu);
 		title.push(menu_e);
 	}
 	else if (*serious_game) {
-		*ai_level = min(*ai_level, 25);
+		*ai_level = min(*ai_level, 20);
+		*graph_level = min(*graph_level, 20);
 		*use_book_depth = 60;
 		*use_book_flag = true;
 		menu_e.init_button(language.get("ai_settings", "ai_settings"), dummy);
-		side_menu.init_bar(language.get("ai_settings", "ai_level"), ai_level, *ai_level, 0, 25);
+		side_menu.init_bar(language.get("ai_settings", "ai_level"), ai_level, *ai_level, 0, 20);
+		menu_e.push(side_menu);
+		side_menu.init_bar(language.get("ai_settings", "graph_level"), graph_level, *graph_level, 0, 20);
+		menu_e.push(side_menu);
+		side_menu.init_bar(language.get("settings", "thread", "thread"), n_thread_idx, *n_thread_idx, 1, 32);
 		menu_e.push(side_menu);
 		title.push(menu_e);
 	}
@@ -174,27 +188,6 @@ Menu create_menu(Texture checkbox,
 	side_menu.init_radio(language.get("settings", "play", "both_human"), both_human, *both_human);
 	menu_e.push(side_menu);
 	title.push(menu_e);
-
-	if (!(*entry_mode)) {
-		menu_e.init_button(language.get("settings", "thread", "thread"), dummy);
-		side_menu.init_radio(U"1", thread1, *thread1);
-		menu_e.push(side_menu);
-		side_menu.init_radio(U"2", thread2, *thread2);
-		menu_e.push(side_menu);
-		side_menu.init_radio(U"4", thread4, *thread4);
-		menu_e.push(side_menu);
-		side_menu.init_radio(U"8", thread8, *thread8);
-		menu_e.push(side_menu);
-		side_menu.init_radio(U"16", thread16, *thread16);
-		menu_e.push(side_menu);
-		side_menu.init_radio(U"32", thread32, *thread32);
-		menu_e.push(side_menu);
-		side_menu.init_radio(U"64", thread64, *thread64);
-		menu_e.push(side_menu);
-		side_menu.init_radio(U"128", thread128, *thread128);
-		menu_e.push(side_menu);
-		title.push(menu_e);
-	}
 
 	menu.push(title);
 
@@ -1003,7 +996,7 @@ string import_str(TextReader* reader) {
 	}
 }
 
-bool import_setting(int* int_mode, bool* use_book, int* ai_level, int* ai_book_accept, int* hint_level, int* use_book_depth,
+bool import_setting(int* int_mode, bool* use_book, int* ai_level, int* ai_book_accept, int* hint_level, int* use_book_depth, int* graph_level,
 	int* use_ai_mode,
 	bool* use_hint_flag, bool* normal_hint, bool* human_hint, bool* umigame_hint,
 	bool* show_end_popup,
@@ -1041,6 +1034,10 @@ bool import_setting(int* int_mode, bool* use_book, int* ai_level, int* ai_book_a
 	}
 	*use_book_depth = import_int(&reader);
 	if (*use_book_depth == -INF) {
+		return false;
+	}
+	*graph_level = import_int(&reader);
+	if (*graph_level == -INF) {
 		return false;
 	}
 	*use_ai_mode = import_int(&reader);
@@ -1109,7 +1106,7 @@ bool import_setting(int* int_mode, bool* use_book, int* ai_level, int* ai_book_a
 	return true;
 }
 
-void export_setting(int int_mode, bool use_book, int ai_level, int ai_book_accept, int hint_level, int use_book_depth, 
+void export_setting(int int_mode, bool use_book, int ai_level, int ai_book_accept, int hint_level, int use_book_depth, int graph_level,
 	int use_ai_mode,
 	bool use_hint_flag, bool normal_hint, bool human_hint, bool umigame_hint,
 	bool show_end_popup,
@@ -1129,6 +1126,7 @@ void export_setting(int int_mode, bool use_book, int ai_level, int ai_book_accep
 		writer.writeln(ai_book_accept);
 		writer.writeln(hint_level);
 		writer.writeln(use_book_depth);
+		writer.writeln(graph_level);
 		writer.writeln(use_ai_mode);
 		writer.writeln((int)use_hint_flag);
 		writer.writeln((int)normal_hint);
@@ -1305,7 +1303,7 @@ bool close_app(int* hint_state, future<bool>* hint_future,
 	int* human_value_state, future<void>* human_value_future,
 	bool* ai_thinking, future<Search_result>* ai_future,
 	bool* analyzing, int *analyze_state, future<Cell_value>* analyze_future, future<Human_value>* analyze_human_future,
-	int int_mode, bool use_book, int ai_level, int ai_book_accept, int hint_level, int use_book_depth, 
+	int int_mode, bool use_book, int ai_level, int ai_book_accept, int hint_level, int use_book_depth, int graph_level,
 	int use_ai_mode,
 	bool use_hint_flag, bool normal_hint, bool human_hint, bool umigame_hint,
 	bool show_end_popup,
@@ -1323,7 +1321,7 @@ bool close_app(int* hint_state, future<bool>* hint_future,
 	reset_human_value(human_value_state, human_value_future);
 	reset_ai(ai_thinking, ai_future);
 	reset_analyze(analyzing, analyze_state, analyze_future, analyze_human_future);
-	export_setting(int_mode, use_book, ai_level, ai_book_accept, hint_level, use_book_depth, 
+	export_setting(int_mode, use_book, ai_level, ai_book_accept, hint_level, use_book_depth, graph_level,
 		use_ai_mode,
 		use_hint_flag, normal_hint, human_hint, umigame_hint,
 		show_end_popup,
@@ -1661,9 +1659,7 @@ void Main() {
 	bool start_book_learn_flag = false, stop_book_learn_flag = false, book_modify = false;
 	bool output_record_flag = false, output_game_flag = false, input_record_flag = false, input_board_flag = false, edit_board_flag = false;
 	bool texture_loaded = true;
-	bool n_threads[8] = { false, false, true, false, false, false, false, false };
-	int n_threads_num[8] = { 1, 2, 4, 8, 16, 32, 64, 128 };
-	int n_thread_idx = 2;
+	int n_thread_idx = 4, former_n_thread_idx = 4;
 	bool stop_read_flag = false, resume_read_flag = false, vertical_convert = false, white_line_convert = false, black_line_convert = false, forward_flag = false, backward_flag = false;
 	bool usage_flag = false, bug_report_flag = false, auto_update_check = true, check_license;
 	bool show_over_joseki = true;
@@ -1760,7 +1756,7 @@ void Main() {
 	future<Search_result> ai_future;
 	bool ai_thinking = false;
 	int ai_value = 0;
-	int ai_level = 21, ai_book_accept = 4, hint_level = 9, use_book_depth = 60;
+	int ai_level = 15, ai_book_accept = 4, hint_level = 15, use_book_depth = 60, graph_level = 15;
 	bool use_book = true;
 
 	bool before_start_game = true;
@@ -1825,7 +1821,7 @@ void Main() {
 
 	int use_ai_mode;
 	string lang_name;
-	if (!import_setting(&int_mode, &use_book, &ai_level, &ai_book_accept, &hint_level, &use_book_depth,
+	if (!import_setting(&int_mode, &use_book, &ai_level, &ai_book_accept, &hint_level, &use_book_depth, &graph_level,
 		&use_ai_mode,
 		&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
 		&show_end_popup,
@@ -1843,6 +1839,7 @@ void Main() {
 		ai_book_accept = 0;
 		hint_level = 15;
 		use_book_depth = 60;
+		graph_level = 15;
 		use_ai_mode = 0;
 		use_hint_flag = true;
 		normal_hint = true;
@@ -1861,9 +1858,6 @@ void Main() {
 	}
 	for (int i = 0; i < mode_size; ++i) {
 		show_mode[i] = i == int_mode;
-	}
-	for (int i = 0; i < 8; ++i) {
-		n_threads[i] = i == n_thread_idx;
 	}
 	for (int i = 0; i < (int)language_names.size(); ++i) {
 		language_acts[i] = lang_name == language_names[i];
@@ -1943,7 +1937,7 @@ void Main() {
 				&human_value_state, &human_value_future,
 				&ai_thinking, &ai_future,
 				&analyzing, &analyze_state, &analyze_future, &analyze_human_future,
-				int_mode, use_book, ai_level, ai_book_accept, hint_level, use_book_depth, 
+				int_mode, use_book, ai_level, ai_book_accept, hint_level, use_book_depth, graph_level,
 				use_ai_mode,
 				use_hint_flag, normal_hint, human_hint, umigame_hint,
 				show_end_popup,
@@ -2003,11 +1997,11 @@ void Main() {
 					&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
 					&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
 					&use_value_flag, &show_over_joseki,
-					&use_book, &ai_level, &hint_level, &ai_book_accept, &use_book_depth,
+					&use_book, &ai_level, &hint_level, &graph_level, &ai_book_accept, &use_book_depth,
 					&start_book_learn_flag, &stop_book_learn_flag, &book_modify, &book_depth, &book_learn_accept, &import_book_flag,
 					&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag, &edit_board_flag,
 					&show_end_popup_change, &show_log,
-					&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
+					&n_thread_idx,
 					&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert, &forward_flag, &backward_flag,
 					&usage_flag, &bug_report_flag, &auto_update_check, &check_license,
 					language_acts, language_names);
@@ -2030,11 +2024,11 @@ void Main() {
 						&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
 						&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
 						&use_value_flag, &show_over_joseki,
-						&use_book, &ai_level, &hint_level, &ai_book_accept, &use_book_depth,
+						&use_book, &ai_level, &hint_level, &graph_level, &ai_book_accept, &use_book_depth,
 						&start_book_learn_flag, &stop_book_learn_flag, &book_modify, &book_depth, &book_learn_accept, &import_book_flag,
 						&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag, &edit_board_flag,
 						&show_end_popup_change, &show_log,
-						&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
+						&n_thread_idx,
 						&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert, &forward_flag, &backward_flag,
 						&usage_flag, &bug_report_flag, &auto_update_check, &check_license,
 						language_acts, language_names);
@@ -2051,7 +2045,7 @@ void Main() {
 						umigame_state[i] = hint_not_calculated_define;
 					}
 					human_value_state = hint_not_calculated_define;
-					thread_pool.resize(n_threads_num[n_thread_idx]);
+					thread_pool.resize(n_thread_idx);
 					main_window_active = false;
 				}
 				edit_board_player_radio.init();
@@ -2116,11 +2110,11 @@ void Main() {
 					&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
 					&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
 					&use_value_flag, &show_over_joseki,
-					&use_book, &ai_level, &hint_level, &ai_book_accept, &use_book_depth,
+					&use_book, &ai_level, &hint_level, &graph_level, &ai_book_accept, &use_book_depth,
 					&start_book_learn_flag, &stop_book_learn_flag, &book_modify, &book_depth, &book_learn_accept, &import_book_flag,
 					&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag, &edit_board_flag,
 					&show_end_popup_change, &show_log,
-					&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
+					&n_thread_idx,
 					&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert, &forward_flag, &backward_flag,
 					&usage_flag, &bug_report_flag, &auto_update_check, &check_license,
 					language_acts, language_names);
@@ -2140,14 +2134,10 @@ void Main() {
 			/**** when mode changed **/
 
 			/*** thread ***/
-			if (!n_threads[n_thread_idx]) {
-				for (int i = 0; i < 8; ++i) {
-					if (n_threads[i]) {
-						n_thread_idx = i;
-					}
-				}
-				thread_pool.resize(n_threads_num[n_thread_idx]);
-				cerr << "threads resized to " << n_threads_num[n_thread_idx] << " completed " << thread_pool.size() << endl;
+			if (n_thread_idx != former_n_thread_idx) {
+				thread_pool.resize(n_thread_idx);
+				former_n_thread_idx = n_thread_idx;
+				cerr << "threads resized to " << n_thread_idx << " completed " << thread_pool.size() << endl;
 			}
 			/*** thread ***/
 
@@ -2165,11 +2155,11 @@ void Main() {
 						&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
 						&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
 						&use_value_flag, &show_over_joseki,
-						&use_book, &ai_level, &hint_level, &ai_book_accept, &use_book_depth,
+						&use_book, &ai_level, &hint_level, &graph_level, &ai_book_accept, &use_book_depth,
 						&start_book_learn_flag, &stop_book_learn_flag, &book_modify, &book_depth, &book_learn_accept, &import_book_flag,
 						&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag, &edit_board_flag,
 						&show_end_popup_change, &show_log,
-						&n_threads[0], &n_threads[1], &n_threads[2], &n_threads[3], &n_threads[4], &n_threads[5], &n_threads[6], &n_threads[7],
+						&n_thread_idx,
 						&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert, &forward_flag, &backward_flag,
 						&usage_flag, &bug_report_flag, &auto_update_check, &check_license,
 						language_acts, language_names);
@@ -2213,7 +2203,7 @@ void Main() {
 						history_place = fork_history[analyze_idx].b.n - 4;
 						if (analyze_state == 0) {
 							fork_history[analyze_idx].v = -INF;
-							analyze_future = async(launch::async, analyze_search, fork_history[analyze_idx].b, ai_level, use_book, use_book_depth);
+							analyze_future = async(launch::async, analyze_search, fork_history[analyze_idx].b, graph_level, use_book, use_book_depth);
 							analyze_state = 1;
 						}
 						else if (analyze_state == 1 && analyze_future.wait_for(chrono::seconds(0)) == future_status::ready) {
@@ -2244,7 +2234,7 @@ void Main() {
 						history_place = history[analyze_idx].b.n - 4;
 						if (analyze_state == 0) {
 							history[analyze_idx].v = -INF;
-							analyze_future = async(launch::async, analyze_search, history[analyze_idx].b, ai_level, use_book, use_book_depth);
+							analyze_future = async(launch::async, analyze_search, history[analyze_idx].b, graph_level, use_book, use_book_depth);
 							analyze_state = 1;
 						}
 						else if (analyze_state == 1 && analyze_future.wait_for(chrono::seconds(0)) == future_status::ready) {
