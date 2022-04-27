@@ -623,7 +623,7 @@ void board_draw(bool use_value_flag, Rect board_cells[], History_elem b, int nex
 			}
 		}
 	}
-	if (show_over_joseki) {
+	if (show_over_joseki && int_mode != 2) {
 		for (int cell = 0; cell < HW2; ++cell) {
 			int x = HW_M1 - cell % HW;
 			int y = HW_M1 - cell / HW;
