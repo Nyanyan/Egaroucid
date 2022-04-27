@@ -2623,7 +2623,7 @@ void Main() {
 					if (fork_mode) {
 						if (contain_history_idx(fork_history, history_place - 1) || contain_history_idx(history, history_place - 1)) {
 							--history_place;
-							if (!contain_history_idx(fork_history, history_place - 1)) {
+							if (!contain_history_idx(fork_history, history_place)) {
 								fork_mode = false;
 								fork_history.clear();
 							}
@@ -2682,6 +2682,50 @@ void Main() {
 				}
 			}
 			/*** graph interaction ***/
+
+			/*** joseki ***/
+			string new_joseki;
+			joseki_name.clear();
+			int history_idx = find_history_idx(history, history_place);
+			for (int i = 0; i <= history_idx; ++i) {
+				new_joseki = joseki.get(history[i].b);
+				if (new_joseki != "") {
+					joseki_name = new_joseki;
+				}
+			}
+			if (fork_mode) {
+				int history_idx = find_history_idx(fork_history, history_place);
+				for (int i = 0; i <= history_idx; ++i) {
+					new_joseki = joseki.get(fork_history[i].b);
+					if (new_joseki != "") {
+						joseki_name = new_joseki;
+					}
+				}
+			}
+			/*** joseki ***/
+
+			/*** info draw ***/
+			if (!editing_board) {
+				if (use_value_flag) {
+					info_draw(bd, joseki_name, ai_level, hint_level, font20, font15);
+				}
+				else {
+					info_big_draw(bd, joseki_name, ai_level, hint_level, font20, font15);
+				}
+			}
+			/*** info draw ***/
+
+			/*** human sense value draw ***/
+			if (!editing_board && use_value_flag) {
+				human_sense_graph.draw(human_value_hist, fork_human_value_hist, bd);
+			}
+			/*** human sense value draw ***/
+
+			/*** graph draw ***/
+			if (!editing_board && use_value_flag) {
+				graph.draw(history, fork_history, history_place);
+			}
+			/*** graph draw ***/
 
 			/*** Board draw ***/
 			if (!editing_board) {
@@ -2759,50 +2803,6 @@ void Main() {
 				}
 			}
 			/*** Board draw ***/
-
-			/*** joseki ***/
-			string new_joseki;
-			joseki_name.clear();
-			int history_idx = find_history_idx(history, history_place);
-			for (int i = 0; i <= history_idx; ++i) {
-				new_joseki = joseki.get(history[i].b);
-				if (new_joseki != "") {
-					joseki_name = new_joseki;
-				}
-			}
-			if (fork_mode) {
-				int history_idx = find_history_idx(fork_history, history_place);
-				for (int i = 0; i <= history_idx; ++i) {
-					new_joseki = joseki.get(fork_history[i].b);
-					if (new_joseki != "") {
-						joseki_name = new_joseki;
-					}
-				}
-			}
-			/*** joseki ***/
-
-			/*** info draw ***/
-			if (!editing_board) {
-				if (use_value_flag) {
-					info_draw(bd, joseki_name, ai_level, hint_level, font20, font15);
-				}
-				else {
-					info_big_draw(bd, joseki_name, ai_level, hint_level, font20, font15);
-				}
-			}
-			/*** info draw ***/
-
-			/*** human sense value draw ***/
-			if (!editing_board && use_value_flag) {
-				human_sense_graph.draw(human_value_hist, fork_human_value_hist, bd);
-			}
-			/*** human sense value draw ***/
-
-			/*** graph draw ***/
-			if (!editing_board && use_value_flag) {
-				graph.draw(history, fork_history, history_place);
-			}
-			/*** graph draw ***/
 
 			/*** edit board ***/
 			if (editing_board) {
