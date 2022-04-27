@@ -216,11 +216,13 @@ public:
 					++idx;
 				}
 			}
+			/*
 			else {
 				for (menu_elem& elem : children) {
 					elem.update_button();
 				}
 			}
+			*/
 		}
 		if (mode == check_mode) {
 			if (*is_checked) {

@@ -263,16 +263,34 @@ Menu create_menu(Texture checkbox,
 
 		title.init(language.get("in_out", "in_out"));
 
-		menu_e.init_button(language.get("in_out", "output_record"), output_record_flag);
+		menu_e.init_button(language.get("in_out", "in"), dummy);
+		side_menu.init_button(language.get("in_out", "input_record"), input_record_flag);
+		menu_e.push(side_menu);
+		side_menu.init_button(language.get("in_out", "input_board"), input_board_flag);
+		menu_e.push(side_menu);
+		side_menu.init_button(language.get("in_out", "edit_board"), edit_board_flag);
+		menu_e.push(side_menu);
 		title.push(menu_e);
-		menu_e.init_button(language.get("in_out", "output_game"), output_game_flag);
+
+		menu_e.init_button(language.get("in_out", "out"), dummy);
+		side_menu.init_button(language.get("in_out", "output_record"), output_record_flag);
+		menu_e.push(side_menu);
+		side_menu.init_button(language.get("in_out", "output_game"), output_game_flag);
+		menu_e.push(side_menu);
 		title.push(menu_e);
+		
+		/*
 		menu_e.init_button(language.get("in_out", "input_record"), input_record_flag);
 		title.push(menu_e);
 		menu_e.init_button(language.get("in_out", "input_board"), input_board_flag);
 		title.push(menu_e);
 		menu_e.init_button(language.get("in_out", "edit_board"), edit_board_flag);
 		title.push(menu_e);
+		menu_e.init_button(language.get("in_out", "output_record"), output_record_flag);
+		title.push(menu_e);
+		menu_e.init_button(language.get("in_out", "output_game"), output_game_flag);
+		title.push(menu_e);
+		*/
 
 		menu.push(title);
 	}
