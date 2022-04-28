@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <iostream>
 #include <future>
 #include <unordered_set>
@@ -80,7 +80,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
         parent_transpose_table.init();
         search.use_mpc = use_mpc;
         search.mpct = mpct;
-        if (!use_mpc){
+        if (!use_mpc && false){
             alpha = -INF;
             beta = -INF;
             while ((g <= alpha || beta <= g) && global_searching){
@@ -107,7 +107,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
                     break;
             }
         } else{
-            cerr << "main search with probcut" << endl;
+            cerr << "main search" << endl;
             result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth, false, true);
             g = result.first;
         }
@@ -176,6 +176,28 @@ inline double tree_search_noid(Board board, int depth, bool use_mpc, double mpct
     return value_to_score_double(g);
 }
 
+inline bool cache_search(Board b, int *val, int *best_move){
+    int l, u;
+    bak_parent_transpose_table.get(&b, b.hash() & TRANSPOSE_TABLE_MASK, &l, &u);
+    if (l != u)
+        return false;
+    *val = l;
+    *best_move = TRANSPOSE_TABLE_UNDEFINED;
+    uint64_t legal = b.get_legal();
+    Flip flip;
+    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+        calc_flip(&flip, &b, cell);
+        b.move(&flip);
+            bak_parent_transpose_table.get(&b, b.hash() & TRANSPOSE_TABLE_MASK, &l, &u);
+        b.undo(&flip);
+        if (l == u && -l == *val)
+            *best_move = cell;
+    }
+    if (*best_move != TRANSPOSE_TABLE_UNDEFINED)
+        cerr << "cache search success value " << value_to_score_int(*val) << " policy " << idx_to_coord(*best_move) << endl;
+    return *best_move != TRANSPOSE_TABLE_UNDEFINED;
+}
+
 Search_result ai(Board b, int level, bool use_book, int book_error){
     Search_result res;
     Book_value book_result = book.get_random(&b, book_error);
@@ -200,7 +222,27 @@ Search_result ai(Board b, int level, bool use_book, int book_error){
         double mpct;
         get_level(level, b.n - 4, &is_mid_search, &depth, &use_mpc, &mpct);
         cerr << "level status " << level << " " << b.n - 4 << " " << depth << " " << use_mpc << " " << mpct << endl;
-        res = tree_search(b, depth, use_mpc, mpct, true);
+        bool cache_hit = false;
+        if (!is_mid_search && !use_mpc){
+            int val, best_move;
+            if (cache_search(b, &val, &best_move)){
+                res.depth = depth;
+                res.nodes = 0;
+                res.nps = 0;
+                res.policy = best_move;
+                res.value = value_to_score_int(val);
+                cache_hit = true;
+                cerr << "cache hit depth " << depth << " value " << value_to_score_double(val) << " policy " << idx_to_coord(best_move) << endl;
+            }
+        }
+        if (!cache_hit){
+            res = tree_search(b, depth, use_mpc, mpct, true);
+            if (!is_mid_search && !use_mpc){
+                parent_transpose_table.copy(&bak_parent_transpose_table);
+                child_transpose_table.copy(&bak_child_transpose_table);
+                cerr << "cache saved" << endl;
+            }
+        }
     }
     return res;
 }
@@ -218,14 +260,31 @@ bool ai_hint(Board b, int level, int max_level, int res[], int info[], bool best
     if (!is_mid_search && level != max_level)
         return false;
     if (depth - 1 >= 0){
+        int l, u;
+        bool cache_hit;
         parent_transpose_table.init();
         for (int i = 0; i < HW2; ++i){
             if (1 & (legal >> i)){
                 calc_flip(&flip, &b, i);
                 b.move_copy(&flip, &nb);
+                cache_hit = false;
                 res[i] = book.get(&nb);
                 if (res[i] == -INF){
-                    val_future[i] = async(launch::async, tree_search_noid, nb, depth - 1, use_mpc, mpct);
+                    if (!is_mid_search && !use_mpc){
+                        bak_parent_transpose_table.get(&nb, nb.hash() & TRANSPOSE_TABLE_MASK, &l, &u);
+                        if (l == u){
+                            res[i] = -value_to_score_int(l);
+                            if (max_value < (double)res[i]){
+                                max_value = (double)res[i];
+                                best_moves_set.clear();
+                                best_moves_set.emplace(i);
+                            } else if (max_value == (double)res[i])
+                                best_moves_set.emplace(i);
+                            cache_hit = true;
+                        }
+                    }
+                    if (!cache_hit)
+                        val_future[i] = async(launch::async, tree_search_noid, nb, depth - 1, use_mpc, mpct);
                     if (!is_mid_search && !use_mpc)
                         info[i] = SEARCH_FINAL;
                     else
@@ -255,6 +314,10 @@ bool ai_hint(Board b, int level, int max_level, int res[], int info[], bool best
                     res[i] = round(value_double);
                 }
             }
+        }
+        if (!is_mid_search && !use_mpc){
+            parent_transpose_table.copy(&bak_parent_transpose_table);
+            cerr << "cache saved" << endl;
         }
     } else{
         for (int i = 0; i < HW2; ++i){
@@ -298,7 +361,22 @@ int ai_value(Board b, int level){
         double mpct;
         get_level(level, b.n - 4, &is_mid_search, &depth, &use_mpc, &mpct);
         cerr << "level status " << level << " " << b.n - 4 << " " << depth << " " << use_mpc << " " << mpct << endl;
-        return tree_search(b, depth, use_mpc, mpct, true).value;
+        bool cache_hit = false;
+        if (!is_mid_search && !use_mpc){
+            int l, u;
+            bak_parent_transpose_table.get(&b, b.hash() & TRANSPOSE_TABLE_MASK, &l, &u);
+            if (l == u){
+                res = l;
+                cache_hit = true;
+            }
+        }
+        if (!cache_hit){
+            res = tree_search(b, depth, use_mpc, mpct, true).value;
+            if (!is_mid_search && !use_mpc){
+                parent_transpose_table.copy(&bak_parent_transpose_table);
+                cerr << "cache saved" << endl;
+            }
+        }
     }
     return res;
 }

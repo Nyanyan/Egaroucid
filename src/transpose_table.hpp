@@ -38,6 +38,12 @@ class Node_child_transpose_table{
             best_move.store(policy);
         }
 
+        inline void register_value(Node_child_transpose_table *from){
+            player.store(from->player);
+            opponent.store(from->opponent);
+            best_move.store(from->best_move);
+        }
+
         inline int get() const{
             return best_move.load();
         }
@@ -113,6 +119,18 @@ class Child_transpose_table{
             }
             return TRANSPOSE_TABLE_UNDEFINED;
         }
+
+        inline void copy(Child_transpose_table *to){
+            to->init();
+            for(int i = 0; i < TRANSPOSE_TABLE_SIZE; ++i){
+                if (table[i] != NULL){
+                    to->table[i] = (Node_child_transpose_table*)malloc(sizeof(Node_child_transpose_table));
+                    to->table[i]->register_value(table[i]);
+                } else{
+                    to->table[i] = NULL;
+                }
+            }
+        }
 };
 
 
@@ -140,6 +158,13 @@ class Node_parent_transpose_table{
         inline void register_value(const int l, const int u){
             lower.store(l);
             upper.store(u);
+        }
+
+        inline void register_value(Node_parent_transpose_table *from){
+            player.store(from->player);
+            opponent.store(from->opponent);
+            lower.store(from->lower);
+            upper.store(from->upper);
         }
 
         inline void get(int *l, int *u) const{
@@ -220,7 +245,21 @@ class Parent_transpose_table{
             *l = -INF;
             *u = INF;
         }
+
+        inline void copy(Parent_transpose_table *to){
+            to->init();
+            for(int i = 0; i < TRANSPOSE_TABLE_SIZE; ++i){
+                if (table[i] != NULL){
+                    to->table[i] = (Node_parent_transpose_table*)malloc(sizeof(Node_parent_transpose_table));
+                    to->table[i]->register_value(table[i]);
+                } else{
+                    to->table[i] = NULL;
+                }
+            }
+        }
 };
 
 Parent_transpose_table parent_transpose_table;
+Parent_transpose_table bak_parent_transpose_table;
 Child_transpose_table child_transpose_table;
+//Child_transpose_table bak_child_transpose_table;

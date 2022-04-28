@@ -446,6 +446,9 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
     }
     if (best_move != f_best_move)
         child_transpose_table.reg(&search->board, hash_code, best_move);
+    #if USE_END_TC
+        parent_transpose_table.reg(&search->board, hash_code, v, v);
+    #endif
     //cerr << "best move " << best_move << endl;
     return make_pair(v, best_move);
 }
