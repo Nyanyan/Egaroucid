@@ -9,7 +9,7 @@
     },
     "loading": {
         "loading": "起動中...",
-        "load_failed": "起動失敗\nresourcesフォルダを確認してください"
+        "load_failed": "起動失敗\nドキュメント内のbookを確認してください"
     },
     "closing": "終了中...",
     "mode": {
@@ -41,6 +41,7 @@
         "use_book": "book使用",
         "ai_level": "AIレベル",
         "hint_level": "ヒントレベル",
+        "graph_level": "グラフレベル",
         "book_error": "book誤差",
         "use_book_depth": "book使用深さ"
     },
@@ -61,7 +62,9 @@
     },
     "in_out": {
         "in_out": "入出力",
-        "output_record": "棋譜コピー",
+        "in": "入力",
+        "out": "出力",
+        "output_record": "現局面までの棋譜をコピー",
         "output_game": "対局保存",
         "input_record": "棋譜入力",
         "input_board": "盤面入力",
@@ -100,7 +103,8 @@
         "how_to_use": "使い方",
         "close": "閉じる",
         "tweet": "Tweet",
-        "save_game": "対局を保存",
+        "save_game": "現局面までを保存",
+        "save_all_game": "本筋を保存",
         "not_save_game": "保存せず閉じる",
         "import": "取り込む",
         "skip": "スキップ",
@@ -150,7 +154,8 @@
         "bug_report": "バグレポート",
         "auto_update_check": "自動更新確認",
         "new_version_available": "新しいバージョンがダウンロードできます。",
-        "download?": "ダウンロードページを開きますか？"
+        "download?": "ダウンロードページを開きますか？",
+        "license": "ライセンス"
     },
     "tips": {
         "do_you_know": "ご存知ですか？",

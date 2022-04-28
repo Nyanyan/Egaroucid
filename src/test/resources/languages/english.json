@@ -9,7 +9,7 @@
     },
     "loading": {
         "loading": "Loading...",
-        "load_failed": "Loading Failed\nPlease check the resources directory"
+        "load_failed": "Loading Failed\nPlease check the book in Documents."
     },
     "closing": "Bye!",
     "mode": {
@@ -41,6 +41,7 @@
         "use_book": "Book Use",
         "ai_level": "AI Level",
         "hint_level": "Hint Level",
+        "graph_level": "Graph Level",
         "book_error": "Book Error",
         "use_book_depth": "Book Depth of Use"
     },
@@ -61,7 +62,9 @@
     },
     "in_out": {
         "in_out": "In/Out",
-        "output_record": "Copy Record",
+        "in": "Input",
+        "out": "OutPut",
+        "output_record": "Copy Record Until Current Phase",
         "output_game": "Save Game",
         "input_record": "Import Record",
         "input_board": "Import Board",
@@ -100,8 +103,9 @@
         "how_to_use": "Usage",
         "close": "Close",
         "tweet": "Tweet",
-        "save_game": "Save This Game",
-        "not_save_game": "Close Without Saving",
+        "save_game": "Save This Line",
+        "save_all_game": "Save Whole Game",
+        "not_save_game": "Close Without Save",
         "import": "Import",
         "skip": "Skip",
         "download": "Download"
@@ -150,7 +154,8 @@
         "bug_report": "Report a Bug",
         "auto_update_check": "Auto Update Check",
         "new_version_available": "New version available.",
-        "download?": "Open download page?"
+        "download?": "Open download page?",
+        "license": "License"
     },
     "tips": {
         "do_you_know": "Do You Know?",
