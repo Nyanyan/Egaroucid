@@ -832,16 +832,22 @@ int output_game_popup(Font big_font, Font mid_font, Font small_font, String* bla
 		small_font(*game_memo).draw(memo_area.stretched(-4), popup_font_color);
 	}
 	FrameButton close_button;
-	close_button.init(x_center - 375, sy + 500, 350, 50, 10, 2, language.get("button", "not_save_game"), mid_font, button_color, button_font_color, button_font_color);
+	close_button.init(x_center - 350, sy + 500, 200, 50, 10, 2, language.get("button", "not_save_game"), small_font, button_color, button_font_color, button_font_color);
 	close_button.draw();
 	FrameButton save_button;
-	save_button.init(x_center + 25, sy + 500, 350, 50, 10, 2, language.get("button", "save_game"), mid_font, button_color, button_font_color, button_font_color);
+	save_button.init(x_center - 100, sy + 500, 200, 50, 10, 2, language.get("button", "save_game"), small_font, button_color, button_font_color, button_font_color);
 	save_button.draw();
+	FrameButton save_all_button;
+	save_all_button.init(x_center + 150, sy + 500, 200, 50, 10, 2, language.get("button", "save_all_game"), small_font, button_color, button_font_color, button_font_color);
+	save_all_button.draw();
 	if (save_button.clicked()) {
 		return 1;
 	}
-	else if (close_button.clicked() || KeyEscape.pressed()) {
+	else if (save_all_button.clicked()) {
 		return 2;
+	}
+	else if (close_button.clicked() || KeyEscape.pressed()) {
+		return 3;
 	}
 	return 0;
 }
@@ -2927,6 +2933,17 @@ void Main() {
 					}
 				}
 				else if (output_state == 2) {
+					if (output_game(history[history.size() - 1], ai_level, use_ai_mode, black_player, white_player, game_memo, document_dir)) {
+						cerr << "game saved" << endl;
+						outputting_game = false;
+						main_window_active = true;
+						System::Sleep(100);
+					}
+					else {
+						cerr << "game save FAILED" << endl;
+					}
+				}
+				else if (output_state == 3) {
 					outputting_game = false;
 					main_window_active = true;
 				}
@@ -2949,7 +2966,7 @@ void Main() {
 						human_value_hist.clear();
 						fork_human_value_hist.clear();
 						fork_mode = false;
-						before_start_game = true;
+						before_start_game = bd.n < HW2;
 						show_popup_flag = true;
 						joseki_name.clear();
 						reset_hint(&hint_state, &hint_future);
@@ -2985,7 +3002,7 @@ void Main() {
 						human_value_hist.clear();
 						fork_human_value_hist.clear();
 						fork_mode = false;
-						before_start_game = true;
+						before_start_game = bd.n < HW2;
 						show_popup_flag = true;
 						joseki_name.clear();
 						reset_hint(&hint_state, &hint_future);
