@@ -80,7 +80,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
         parent_transpose_table.init();
         search.use_mpc = use_mpc;
         search.mpct = mpct;
-        if (!use_mpc && false){
+        if (!use_mpc){
             alpha = -INF;
             beta = -INF;
             while ((g <= alpha || beta <= g) && global_searching){
@@ -179,6 +179,7 @@ inline double tree_search_noid(Board board, int depth, bool use_mpc, double mpct
 inline bool cache_search(Board b, int *val, int *best_move){
     int l, u;
     bak_parent_transpose_table.get(&b, b.hash() & TRANSPOSE_TABLE_MASK, &l, &u);
+    cerr << "cache get " << l << " " << u << endl;
     if (l != u)
         return false;
     *val = l;
@@ -190,11 +191,12 @@ inline bool cache_search(Board b, int *val, int *best_move){
         b.move(&flip);
             bak_parent_transpose_table.get(&b, b.hash() & TRANSPOSE_TABLE_MASK, &l, &u);
         b.undo(&flip);
+        cerr << idx_to_coord(cell) << " " << l << " " << u << endl;
         if (l == u && -l == *val)
             *best_move = cell;
     }
     if (*best_move != TRANSPOSE_TABLE_UNDEFINED)
-        cerr << "cache search success value " << value_to_score_int(*val) << " policy " << idx_to_coord(*best_move) << endl;
+        cerr << "cache search value " << value_to_score_int(*val) << " policy " << idx_to_coord(*best_move) << endl;
     return *best_move != TRANSPOSE_TABLE_UNDEFINED;
 }
 
@@ -270,6 +272,7 @@ bool ai_hint(Board b, int level, int max_level, int res[], int info[], bool best
                 cache_hit = false;
                 res[i] = book.get(&nb);
                 if (res[i] == -INF){
+                    /*
                     if (!is_mid_search && !use_mpc){
                         bak_parent_transpose_table.get(&nb, nb.hash() & TRANSPOSE_TABLE_MASK, &l, &u);
                         if (l == u){
@@ -283,6 +286,7 @@ bool ai_hint(Board b, int level, int max_level, int res[], int info[], bool best
                             cache_hit = true;
                         }
                     }
+                    */
                     if (!cache_hit)
                         val_future[i] = async(launch::async, tree_search_noid, nb, depth - 1, use_mpc, mpct);
                     if (!is_mid_search && !use_mpc)
