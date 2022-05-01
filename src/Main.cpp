@@ -67,6 +67,17 @@ struct Cell_value {
 	int depth;
 };
 
+struct Game {
+	String record;
+	String score;
+	String date;
+	String level;
+	String mode;
+	String black_name;
+	String white_name;
+	String memo;
+};
+
 
 bool ai_init(string book_file) {
 	bit_init();
@@ -95,7 +106,7 @@ Menu create_menu(Texture checkbox,
 	bool* use_value_flag, bool *show_over_joseki,
 	bool* use_book_flag, int* ai_level, int* hint_level, int* graph_level, int* book_error, int* use_book_depth,
 	bool* start_book_learn_flag, bool* stop_book_learn_flag, bool* modify_book, int* book_depth, int* book_learn_accept, bool* import_book_flag,
-	bool* output_record_flag, bool* output_game_flag, bool* input_record_flag, bool* input_board_flag, bool *edit_board_flag,
+	bool* output_record_flag, bool* output_game_flag, bool* input_record_flag, bool* input_board_flag, bool *edit_board_flag, bool *import_game_flag, 
 	bool* show_end_popup, bool* show_log,
 	int* n_thread_idx,
 	bool* stop_read_flag, bool* resume_read_flag, bool* vertical_convert, bool* black_line_convert, bool* white_line_convert, bool* forward_flag, bool *backward_flag,
@@ -269,6 +280,8 @@ Menu create_menu(Texture checkbox,
 		side_menu.init_button(language.get("in_out", "input_board"), input_board_flag);
 		menu_e.push(side_menu);
 		side_menu.init_button(language.get("in_out", "edit_board"), edit_board_flag);
+		menu_e.push(side_menu);
+		side_menu.init_button(language.get("in_out", "input_game"), import_game_flag);
 		menu_e.push(side_menu);
 		title.push(menu_e);
 
@@ -1298,8 +1311,8 @@ bool output_game(History_elem hist, int ai_level, int use_ai_mode, String black_
 	sout << setfill('0') << setw(2) << newtime.tm_sec;
 	string second = sout.str();
 	string info = year + "_" + month + "_" + day + "_" + hour + "_" + minute + "_" + second;
-	ofstream ofs(document_dir + "Egaroucid/records/" + info + ".txt");
-	if (ofs.fail()) {
+	TextWriter writer(Unicode::Widen(document_dir) + U"Egaroucid/records/" + Unicode::Widen(info) + U".txt");
+	if (!writer) {
 		return false;
 	}
 	string result = "?";
@@ -1311,14 +1324,14 @@ bool output_game(History_elem hist, int ai_level, int use_ai_mode, String black_
 			result = to_string(hist.b.score_opponent());
 		}
 	}
-	ofs << hist.record.narrow() << endl;
-	ofs << result << endl;
-	ofs << info << endl;
-	ofs << ai_level << endl;
-	ofs << use_ai_mode << endl;
-	ofs << black_player.narrow() << endl;
-	ofs << white_player.narrow() << endl;
-	ofs << game_memo.narrow() << endl;
+	writer << hist.record;
+	writer << Unicode::Widen(result);
+	writer << Unicode::Widen(info);
+	writer << Format(ai_level);
+	writer << Format(use_ai_mode);
+	writer << black_player;
+	writer << white_player;
+	writer << game_memo;
 	return true;
 }
 
@@ -1655,6 +1668,111 @@ void import_loading_book(Font font, Texture icon, Texture logo) {
 	font(language.get("book", "loading")).draw(right_left, y_center + font.fontSize(), font_color);
 }
 
+void get_saved_games(string document_dir, vector<Game>& games) {
+	games.clear();
+	FilePath base_path = Unicode::Widen(document_dir) + U"Egaroucid/records";
+	for (const FilePath& path : FileSystem::DirectoryContents(base_path)) {
+		TextReader reader(path);
+		if (reader) {
+			bool got_game = true;
+			Game game;
+			String tmp;
+			if (!reader.readLine(game.record)) {
+				got_game = false;
+			}
+			if (got_game && !reader.readLine(game.score)) {
+				got_game = false;
+			}
+			if (got_game && !reader.readLine(game.date)) {
+				got_game = false;
+			}
+			if (got_game && !reader.readLine(game.level)) {
+				got_game = false;
+			}
+			if (got_game && !reader.readLine(game.mode)) {
+				got_game = false;
+			}
+			if (got_game && !reader.readLine(game.black_name)) {
+				got_game = false;
+			}
+			if (got_game && !reader.readLine(game.white_name)) {
+				got_game = false;
+			}
+			if (got_game) {
+				while (reader.readLine(tmp)) {
+					game.memo += tmp + U"\n";
+				}
+			}
+			if (got_game) {
+				games.emplace_back(game);
+			}
+		}
+	}
+	cerr << games.size() << " games found" << endl;
+}
+
+bool import_game_draw(vector<Game>& games, Board* bd, vector<History_elem>& history, vector<History_elem>& fork_history, Font mid_font, Font small_font, int *show_start_idx) {
+	if (games.size() == 0) {
+		mid_font(language.get("in_out", "no_game_available")).draw(Arg::center = Vec2(x_center, y_center));
+	}
+	else {
+		int sy = 10;
+		constexpr int sx = 20;
+		constexpr int max_y = 500;
+		constexpr int h = 50;
+		constexpr int w = 960;
+		for (int i = *show_start_idx; i < (int)games.size() && sy <= max_y; ++i) {
+			Rect rect;
+			rect.y = sy;
+			rect.x = sx;
+			rect.w = w;
+			rect.h = h;
+			int score = ParseOr<int>(games[i].score, -INF);
+			if (score == -INF || score == 0) {
+				rect.draw(green).drawFrame(1.0, Palette::White);
+			}
+			else if (score > 0) {
+				rect.draw(Palette::Black).drawFrame(1.0, Palette::White);
+			}
+			else {
+				rect.draw(Palette::Darkgray).drawFrame(1.0, Palette::White);
+			}
+			small_font(games[i].black_name).draw(Arg::leftCenter = Vec2{ sx + 10, sy + h / 2 }, Palette::White);
+			RectF area = small_font(games[i].black_name).region(Arg::leftCenter = Vec2{ sx + 10, sy + h / 2 });
+			small_font(U" vs ").draw(Arg::leftCenter = Vec2{ area.x + area.w, sy + h / 2 }, Palette::White);
+			area = small_font(U" vs ").region(Arg::leftCenter = Vec2{ area.x + area.w, sy + h / 2 });
+			small_font(games[i].white_name).draw(Arg::leftCenter = Vec2{ area.x + area.w, sy + h / 2 }, Palette::White);
+			small_font(language.get("in_out", "score") + U": ").draw(Arg::leftCenter = Vec2{ 650, sy + h / 2 }, Palette::White);
+			area = small_font(language.get("in_out", "score") + U": ").region(Arg::leftCenter = Vec2{ 650, sy + h / 2 });
+			small_font(games[i].score).draw(Arg::leftCenter = Vec2{ area.x + area.w, sy + h / 2 }, Palette::White);
+			Button import_button;
+			import_button.init(800, sy + 10, 150, h - 20, 5, language.get("button", "import"), small_font, button_color, button_font_color);
+			import_button.draw();
+			if (import_button.clicked()) {
+				fork_history.clear();
+				history.clear();
+				bool record_imported = import_record(games[i].record, &history);
+				if (record_imported) {
+					history[history.size() - 1].b.copy(bd);
+					return false;
+				}
+				else {
+					cerr << "record broken " << games[i].record.narrow() << endl;
+				}
+			}
+			sy += h;
+		}
+		*show_start_idx = max(0, min((int)games.size() - 1, (*show_start_idx) + (int)Mouse::Wheel()));
+	}
+	Button close_button;
+	close_button.init(x_center - 100, 600, 200, 50, 10, language.get("button", "close"), mid_font, button_color, button_font_color);
+	close_button.draw();
+	if (close_button.clicked() || KeyEscape.pressed()) {
+		return false;
+	}
+	return true;
+}
+
 void Main() {
 	//#ifndef _WIN64
 	//SIV3D_SET(EngineOption::Renderer::OpenGLES);
@@ -1681,7 +1799,7 @@ void Main() {
 	bool use_hint_flag = true, normal_hint = true, human_hint = true, umigame_hint = true;
 	bool use_value_flag = true;
 	bool start_book_learn_flag = false, stop_book_learn_flag = false, book_modify = false;
-	bool output_record_flag = false, output_game_flag = false, input_record_flag = false, input_board_flag = false, edit_board_flag = false;
+	bool output_record_flag = false, output_game_flag = false, input_record_flag = false, input_board_flag = false, edit_board_flag = false, input_game_flag = false;
 	bool texture_loaded = true;
 	int n_thread_idx = 4, former_n_thread_idx = 4;
 	bool stop_read_flag = false, resume_read_flag = false, vertical_convert = false, white_line_convert = false, black_line_convert = false, forward_flag = false, backward_flag = false;
@@ -1833,6 +1951,10 @@ void Main() {
 
 	bool inputting_board = false;
 	String imported_board;
+
+	bool inputting_game = false;
+	vector<Game> games;
+	int show_start_idx = 0;
 
 	uint64_t left_pushed = BUTTON_NOT_PUSHED;
 	uint64_t right_pushed = BUTTON_NOT_PUSHED;
@@ -2023,7 +2145,7 @@ void Main() {
 					&use_value_flag, &show_over_joseki,
 					&use_book, &ai_level, &hint_level, &graph_level, &ai_book_accept, &use_book_depth,
 					&start_book_learn_flag, &stop_book_learn_flag, &book_modify, &book_depth, &book_learn_accept, &import_book_flag,
-					&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag, &edit_board_flag,
+					&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag, &edit_board_flag, &input_game_flag,
 					&show_end_popup_change, &show_log,
 					&n_thread_idx,
 					&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert, &forward_flag, &backward_flag,
@@ -2050,7 +2172,7 @@ void Main() {
 						&use_value_flag, &show_over_joseki,
 						&use_book, &ai_level, &hint_level, &graph_level, &ai_book_accept, &use_book_depth,
 						&start_book_learn_flag, &stop_book_learn_flag, &book_modify, &book_depth, &book_learn_accept, &import_book_flag,
-						&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag, &edit_board_flag,
+						&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag, &edit_board_flag, &input_game_flag,
 						&show_end_popup_change, &show_log,
 						&n_thread_idx,
 						&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert, &forward_flag, &backward_flag,
@@ -2112,6 +2234,15 @@ void Main() {
 		}
 		/*** book importing ***/
 
+		/*** game importing ***/
+		else if (inputting_game) {
+			inputting_game = import_game_draw(games, &bd, history, fork_history, font30, font20, &show_start_idx);
+			if (!inputting_game) {
+				history_place = history[history.size() - 1].b.n - 4;
+			}
+		}
+		/*** game importing ***/
+
 		/*** initialized ***/
 		else {
 			/**** when mode changed **/
@@ -2136,7 +2267,7 @@ void Main() {
 					&use_value_flag, &show_over_joseki,
 					&use_book, &ai_level, &hint_level, &graph_level, &ai_book_accept, &use_book_depth,
 					&start_book_learn_flag, &stop_book_learn_flag, &book_modify, &book_depth, &book_learn_accept, &import_book_flag,
-					&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag, &edit_board_flag,
+					&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag, &edit_board_flag, &input_game_flag,
 					&show_end_popup_change, &show_log,
 					&n_thread_idx,
 					&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert, &forward_flag, &backward_flag,
@@ -2181,7 +2312,7 @@ void Main() {
 						&use_value_flag, &show_over_joseki,
 						&use_book, &ai_level, &hint_level, &graph_level, &ai_book_accept, &use_book_depth,
 						&start_book_learn_flag, &stop_book_learn_flag, &book_modify, &book_depth, &book_learn_accept, &import_book_flag,
-						&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag, &edit_board_flag,
+						&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag, &edit_board_flag, &input_game_flag,
 						&show_end_popup_change, &show_log,
 						&n_thread_idx,
 						&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert, &forward_flag, &backward_flag,
@@ -3143,6 +3274,11 @@ void Main() {
 				editing_board = true;
 				before_start_game = true;
 				edit_board_start = tim();
+			}
+			else if (input_game_flag) {
+				get_saved_games(document_dir, games);
+				show_start_idx = 0;
+				inputting_game = true;
 			}
 			else if (stop_read_flag) {
 				cerr << "stop calculating" << endl;
