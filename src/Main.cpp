@@ -1712,13 +1712,14 @@ void get_saved_games(string document_dir, vector<Game>& games) {
 }
 
 bool import_game_draw(vector<Game>& games, Board* bd, vector<History_elem>& history, vector<History_elem>& fork_history, Font mid_font, Font small_font, int *show_start_idx) {
+	mid_font(language.get("in_out", "input_game")).draw(Arg::topCenter = Vec2(x_center, 10));
 	if (games.size() == 0) {
 		mid_font(language.get("in_out", "no_game_available")).draw(Arg::center = Vec2(x_center, y_center));
 	}
 	else {
-		int sy = 10;
+		int sy = 70;
 		constexpr int sx = 20;
-		constexpr int max_y = 500;
+		constexpr int max_y = 550;
 		constexpr int h = 50;
 		constexpr int w = 960;
 		for (int i = *show_start_idx; i < (int)games.size() && sy <= max_y; ++i) {
@@ -1765,7 +1766,7 @@ bool import_game_draw(vector<Game>& games, Board* bd, vector<History_elem>& hist
 		*show_start_idx = max(0, min((int)games.size() - 1, (*show_start_idx) + (int)Mouse::Wheel()));
 	}
 	Button close_button;
-	close_button.init(x_center - 100, 600, 200, 50, 10, language.get("button", "close"), mid_font, button_color, button_font_color);
+	close_button.init(x_center - 100, 630, 200, 50, 10, language.get("button", "close"), mid_font, button_color, button_font_color);
 	close_button.draw();
 	if (close_button.clicked() || KeyEscape.pressed()) {
 		return false;
