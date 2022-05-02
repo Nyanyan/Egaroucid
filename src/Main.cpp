@@ -1894,7 +1894,7 @@ void Main() {
 	int human_value_state = 0;
 	vector<Human_value> human_value_hist, fork_human_value_hist;
 	Human_value human_value[HW2];
-	int human_value_depth = 5;
+	int human_value_depth = 4;
 	int human_value_search_depth = 2;
 	future<void> human_value_future;
 
@@ -2631,16 +2631,28 @@ void Main() {
 											changing_book = false;
 										}
 										else {
-											int changed_book_value = ParseOr<int>(changed_book_value_str, -1000);
-											if (changed_book_value != -1000) {
+											if (changed_book_value_str == U"--") {
 												reset_hint(&hint_state, &hint_future);
 												Flip m;
 												calc_flip(&m, &bd, cell);
-												book.change(bd.move_copy(&m), changed_book_value);
+												book.delete_elem(bd.move_copy(&m));
 												changed_book_value_str.clear();
 												book_changed = true;
 												changing_book = false;
 												hint_state = 0;
+											}
+											else {
+												int changed_book_value = ParseOr<int>(changed_book_value_str, -1000);
+												if (changed_book_value != -1000) {
+													reset_hint(&hint_state, &hint_future);
+													Flip m;
+													calc_flip(&m, &bd, cell);
+													book.change(bd.move_copy(&m), changed_book_value);
+													changed_book_value_str.clear();
+													book_changed = true;
+													changing_book = false;
+													hint_state = 0;
+												}
 											}
 										}
 									}
@@ -2725,7 +2737,7 @@ void Main() {
 								}
 							}
 							else if (KeyMinus.down()) {
-								if (changed_book_value_str.size() == 0) {
+								if (changed_book_value_str.size() == 0 || changed_book_value_str == U"-") {
 									changed_book_value_str += U"-";
 								}
 							}

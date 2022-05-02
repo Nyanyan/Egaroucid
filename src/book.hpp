@@ -344,14 +344,28 @@ class Book{
         }
 
         inline void change(Board b, int value){
-            n_book += register_symmetric_book(b, value, n_book);
-            //cerr << "book changed" << endl;
+            if (register_symmetric_book(b, value, n_book)){
+                n_book++;
+                cerr << "book registered " << n_book << endl;
+            } else
+                cerr << "book changed " << n_book << endl;
         }
 
         inline void change(Board *b, int value){
             Board nb = b->copy();
-            n_book += register_symmetric_book(nb, value, n_book);
-            //cerr << "book changed" << endl;
+            if (register_symmetric_book(nb, value, n_book)){
+                n_book++;
+                cerr << "book registered " << n_book << endl;
+            } else
+                cerr << "book changed " << n_book << endl;
+        }
+
+        inline void delete_elem(Board b){
+            if (delete_symmetric_book(b)){
+                n_book--;
+                cerr << "deleted book elem " << n_book << endl;
+            } else
+                cerr << "book elem NOT deleted " << n_book << endl;
         }
 
         inline void save_bin(string file, string bak_file){
@@ -364,7 +378,6 @@ class Book{
                 cerr << "can't open book.egbk" << endl;
                 return;
             }
-            unordered_set<int> saved_idxes;
             uint64_t i;
             unsigned char elem;
             fout.write((char*)&n_book, 4);
@@ -374,14 +387,11 @@ class Book{
                     cerr << "saving book " << (i * 100 / BOOK_HASH_TABLE_SIZE) << "%" << endl;
                 Node_book *p_node = this->book[i];
                 while(p_node != NULL){
-                    if (saved_idxes.find(p_node->line) == saved_idxes.end()) {
-                        saved_idxes.emplace(p_node->line);
-                        fout.write((char*)&p_node->player, 8);
-                        fout.write((char*)&p_node->opponent, 8);
-                        elem = max(0, min(HW2 * 2, p_node->value + HW2));
-                        fout.write((char*)&elem, 1);
-                        ++t;
-                    }
+                    fout.write((char*)&p_node->player, 8);
+                    fout.write((char*)&p_node->opponent, 8);
+                    elem = max(0, min(HW2 * 2, p_node->value + HW2));
+                    fout.write((char*)&elem, 1);
+                    ++t;
                     p_node = p_node->p_n_node;
                 }
             }
@@ -429,6 +439,30 @@ class Book{
             return true;
         }
 
+        inline bool delete_book(Board b, int hash){
+            if(this->book[hash] != NULL){
+                Node_book *p_node = this->book[hash];
+                Node_book *p_pre_node = NULL;
+                while(p_node != NULL){
+                    if(compare_key(&b, p_node)){
+                        if (p_pre_node != NULL){
+                            cerr << "pre node exist" << endl;
+                            p_pre_node->p_n_node = p_node->p_n_node;
+                            free(p_node);
+                        } else{
+                            cerr << "first node" << endl;
+                            free(p_node);
+                            this->book[hash] = NULL;
+                        }
+                        return true;
+                    }
+                    p_pre_node = p_node;
+                    p_node = p_node->p_n_node;
+                }
+            }
+            return false;
+        }
+
         inline int register_symmetric_book(Board b, int value, int line){
             if (get_onebook(&b) != -INF){
                 register_book(b, b.hash() & BOOK_HASH_MASK, value, line);
@@ -471,6 +505,41 @@ class Book{
             }
             register_book(b, b.hash() & BOOK_HASH_MASK, value, line);
             return 1;
+        }
+
+        inline int delete_symmetric_book(Board b){
+            if (delete_book(b, b.hash() & BOOK_HASH_MASK)){
+                return 1;
+            }
+            b.board_black_line_mirror();
+            if (delete_book(b, b.hash() & BOOK_HASH_MASK)){
+                return 1;
+            }
+            b.board_rotate_180();
+            if (delete_book(b, b.hash() & BOOK_HASH_MASK)){
+                return 1;
+            }
+            b.board_black_line_mirror();
+            if (delete_book(b, b.hash() & BOOK_HASH_MASK)){
+                return 1;
+            }
+            b.board_horizontal_mirror();
+            if (delete_book(b, b.hash() & BOOK_HASH_MASK)){
+                return 1;
+            }
+            b.board_black_line_mirror();
+            if (delete_book(b, b.hash() & BOOK_HASH_MASK)){
+                return 1;
+            }
+            b.board_rotate_180();
+            if (delete_book(b, b.hash() & BOOK_HASH_MASK)){
+                return 1;
+            }
+            b.board_black_line_mirror();
+            if (delete_book(b, b.hash() & BOOK_HASH_MASK)){
+                return 1;
+            }
+            return 0;
         }
 
         inline void create_arr(Node_book *node, int arr[], int p){
