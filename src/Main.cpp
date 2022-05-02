@@ -1717,12 +1717,16 @@ bool import_game_draw(vector<Game>& games, Board* bd, vector<History_elem>& hist
 		mid_font(language.get("in_out", "no_game_available")).draw(Arg::center = Vec2(x_center, y_center));
 	}
 	else {
-		int sy = 70;
+		int sy = 90;
 		constexpr int sx = 20;
-		constexpr int max_y = 550;
+		constexpr int max_y = 570;
 		constexpr int h = 50;
 		constexpr int w = 960;
-		for (int i = *show_start_idx; i < (int)games.size() && sy <= max_y; ++i) {
+		if (*show_start_idx > 0) {
+			small_font(U"︙").draw(Arg::bottomCenter = Vec2{ x_center, sy }, Palette::White);
+		}
+		int i;
+		for (i = *show_start_idx; i < (int)games.size() && sy <= max_y; ++i) {
 			Rect rect;
 			rect.y = sy;
 			rect.x = sx;
@@ -1762,6 +1766,9 @@ bool import_game_draw(vector<Game>& games, Board* bd, vector<History_elem>& hist
 				}
 			}
 			sy += h;
+		}
+		if (i < (int)games.size()) {
+			small_font(U"︙").draw(Arg::topCenter = Vec2{ x_center, sy }, Palette::White);
 		}
 		*show_start_idx = max(0, min((int)games.size() - 1, (*show_start_idx) + (int)Mouse::Wheel()));
 	}
