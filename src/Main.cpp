@@ -1747,6 +1747,16 @@ bool import_game_draw(vector<Game>& games, Board* bd, vector<History_elem>& hist
 			small_font(U" vs ").draw(Arg::leftCenter = Vec2{ area.x + area.w, sy + h / 2 }, Palette::White);
 			area = small_font(U" vs ").region(Arg::leftCenter = Vec2{ area.x + area.w, sy + h / 2 });
 			small_font(games[i].white_name).draw(Arg::leftCenter = Vec2{ area.x + area.w, sy + h / 2 }, Palette::White);
+			area = small_font(games[i].white_name).region(Arg::leftCenter = Vec2{ area.x + area.w, sy + h / 2 });
+			String memo_preview = games[i].memo.replace(U"\n", U" ");
+			for (int j = 1; j < (int)memo_preview.size(); ++j) {
+				RectF area_tmp = small_font(memo_preview.substr(0, j)).region(Arg::leftCenter = Vec2{ area.x + area.w + 10, sy + h / 2 });
+				if (round(area_tmp.x + area_tmp.w) > 640) {
+					memo_preview = memo_preview.substr(0, j - 1);
+					break;
+				}
+			}
+			small_font(memo_preview).draw(Arg::leftCenter = Vec2{area.x + area.w + 10, sy + h / 2}, Palette::White);
 			small_font(language.get("in_out", "score") + U": ").draw(Arg::leftCenter = Vec2{ 650, sy + h / 2 }, Palette::White);
 			area = small_font(language.get("in_out", "score") + U": ").region(Arg::leftCenter = Vec2{ 650, sy + h / 2 });
 			small_font(games[i].score).draw(Arg::leftCenter = Vec2{ area.x + area.w, sy + h / 2 }, Palette::White);
@@ -2668,16 +2678,28 @@ void Main() {
 								changing_book = false;
 							}
 							else {
-								int changed_book_value = ParseOr<int>(changed_book_value_str, -1000);
-								if (changed_book_value != -1000) {
+								if (changed_book_value_str == U"--") {
 									reset_hint(&hint_state, &hint_future);
 									Flip m;
 									calc_flip(&m, &bd, change_book_cell);
-									book.change(bd.move_copy(&m), changed_book_value);
+									book.delete_elem(bd.move_copy(&m));
 									changed_book_value_str.clear();
 									book_changed = true;
 									changing_book = false;
 									hint_state = 0;
+								}
+								else {
+									int changed_book_value = ParseOr<int>(changed_book_value_str, -1000);
+									if (changed_book_value != -1000) {
+										reset_hint(&hint_state, &hint_future);
+										Flip m;
+										calc_flip(&m, &bd, change_book_cell);
+										book.change(bd.move_copy(&m), changed_book_value);
+										changed_book_value_str.clear();
+										book_changed = true;
+										changing_book = false;
+										hint_state = 0;
+									}
 								}
 							}
 						}
