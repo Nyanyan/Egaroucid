@@ -174,6 +174,7 @@ class Board {
         }
 
         inline void translate_to_arr_player(uint_fast8_t res[]) {
+            /*
             uint64_t p2 = player & 0x5555555555555555ULL, np2 = (~player) & 0x5555555555555555ULL, no2 = (~opponent) & 0x5555555555555555ULL;
             uint64_t res_bit = (np2 + no2) ^ p2;
             int i;
@@ -183,27 +184,18 @@ class Board {
             res_bit = (np2 + no2) ^ p2;
             for (i = 0; i < HW2; i += 2)
                 res[HW2_M1 - i - 1] = (res_bit >> i) & 0b11;
+            */
+            for (int i = 0; i < HW2; ++i)
+                res[HW2_M1 - i] = 2 - (1 & (player >> i)) * 2 - (1 & (opponent >> i));
         }
 
         inline void translate_to_arr(int res[]) {
             if (p == BLACK){
-                for (int i = 0; i < HW2; ++i){
-                    if (1 & (player >> i))
-                        res[HW2_M1 - i] = BLACK;
-                    else if (1 & (opponent >> i))
-                        res[HW2_M1 - i] = WHITE;
-                    else
-                        res[HW2_M1 - i] = VACANT;
-                }
+                for (int i = 0; i < HW2; ++i)
+                    res[HW2_M1 - i] = 2 - (1 & (player >> i)) * 2 - (1 & (opponent >> i));
             } else{
-                for (int i = 0; i < HW2; ++i){
-                    if (1 & (opponent >> i))
-                        res[HW2_M1 - i] = BLACK;
-                    else if (1 & (player >> i))
-                        res[HW2_M1 - i] = WHITE;
-                    else
-                        res[HW2_M1 - i] = VACANT;
-                }
+                for (int i = 0; i < HW2; ++i)
+                    res[HW2_M1 - i] = 2 - (1 & (opponent >> i)) * 2 - (1 & (player >> i));
             }
         }
 

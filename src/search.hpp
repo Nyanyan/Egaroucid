@@ -32,6 +32,7 @@ struct Search_result{
     int value;
     int depth;
     int nps;
+    uint64_t time;
     uint64_t nodes;
 };
 

@@ -291,7 +291,55 @@ inline int calc_stability_edge_player(uint64_t player, uint64_t opponent){
     edge_stability |= stability_edge_arr[pl][op][1];
     return pop_count_ull(edge_stability & player);
 }
+/*
+inline int pick_cell(const Board *b, const int c){
+    return 2 - (1 & (b->player >> c)) * 2 - (1 & (b->opponent >> c));
+}
 
+inline int pick_pattern(const int phase_idx, const int pattern_idx, const Board *b, const int p0, const int p1, const int p2, const int p3, const int p4){
+    return pattern_arr[phase_idx][pattern_idx][pick_cell(b, p0) * P34 + pick_cell(b, p1) * P33 + pick_cell(b, p2) * P32 + pick_cell(b, p3) * P31 + pick_cell(b, p4)];
+}
+
+inline int pick_pattern(const int phase_idx, const int pattern_idx, const Board *b, const int p0, const int p1, const int p2, const int p3, const int p4, const int p5){
+    return pattern_arr[phase_idx][pattern_idx][pick_cell(b, p0) * P35 + pick_cell(b, p1) * P34 + pick_cell(b, p2) * P33 + pick_cell(b, p3) * P32 + pick_cell(b, p4) * P31 + pick_cell(b, p5)];
+}
+
+inline int pick_pattern(const int phase_idx, const int pattern_idx, const Board *b, const int p0, const int p1, const int p2, const int p3, const int p4, const int p5, const int p6){
+    return pattern_arr[phase_idx][pattern_idx][pick_cell(b, p0) * P36 + pick_cell(b, p1) * P35 + pick_cell(b, p2) * P34 + pick_cell(b, p3) * P33 + pick_cell(b, p4) * P32 + pick_cell(b, p5) * P31 + pick_cell(b, p6)];
+}
+
+inline int pick_pattern(const int phase_idx, const int pattern_idx, const Board *b, const int p0, const int p1, const int p2, const int p3, const int p4, const int p5, const int p6, const int p7){
+    return pattern_arr[phase_idx][pattern_idx][pick_cell(b, p0) * P37 + pick_cell(b, p1) * P36 + pick_cell(b, p2) * P35 + pick_cell(b, p3) * P34 + pick_cell(b, p4) * P33 + pick_cell(b, p5) * P32 + pick_cell(b, p6) * P31 + pick_cell(b, p7)];
+}
+
+inline int pick_pattern(const int phase_idx, const int pattern_idx, const Board *b, const int p0, const int p1, const int p2, const int p3, const int p4, const int p5, const int p6, const int p7, const int p8){
+    return pattern_arr[phase_idx][pattern_idx][pick_cell(b, p0) * P38 + pick_cell(b, p1) * P37 + pick_cell(b, p2) * P36 + pick_cell(b, p3) * P35 + pick_cell(b, p4) * P34 + pick_cell(b, p5) * P33 + pick_cell(b, p6) * P32 + pick_cell(b, p7) * P31 + pick_cell(b, p8)];
+}
+
+inline int pick_pattern(const int phase_idx, const int pattern_idx, const Board *b, const int p0, const int p1, const int p2, const int p3, const int p4, const int p5, const int p6, const int p7, const int p8, const int p9){
+    return pattern_arr[phase_idx][pattern_idx][pick_cell(b, p0) * P39 + pick_cell(b, p1) * P38 + pick_cell(b, p2) * P37 + pick_cell(b, p3) * P36 + pick_cell(b, p4) * P35 + pick_cell(b, p5) * P34 + pick_cell(b, p6) * P33 + pick_cell(b, p7) * P32 + pick_cell(b, p8) * P31 + pick_cell(b, p9)];
+}
+
+inline int calc_pattern(const int phase_idx, Board *b){
+    return 
+        pick_pattern(phase_idx, 0, b, 8, 9, 10, 11, 12, 13, 14, 15) + pick_pattern(phase_idx, 0, b, 1, 9, 17, 25, 33, 41, 49, 57) + pick_pattern(phase_idx, 0, b, 48, 49, 50, 51, 52, 53, 54, 55) + pick_pattern(phase_idx, 0, b, 6, 14, 22, 30, 38, 46, 54, 62) + 
+        pick_pattern(phase_idx, 1, b, 16, 17, 18, 19, 20, 21, 22, 23) + pick_pattern(phase_idx, 1, b, 2, 10, 18, 26, 34, 42, 50, 58) + pick_pattern(phase_idx, 1, b, 40, 41, 42, 43, 44, 45, 46, 47) + pick_pattern(phase_idx, 1, b, 5, 13, 21, 29, 37, 45, 53, 61) + 
+        pick_pattern(phase_idx, 2, b, 24, 25, 26, 27, 28, 29, 30, 31) + pick_pattern(phase_idx, 2, b, 3, 11, 19, 27, 35, 43, 51, 59) + pick_pattern(phase_idx, 2, b, 32, 33, 34, 35, 36, 37, 38, 39) + pick_pattern(phase_idx, 2, b, 4, 12, 20, 28, 36, 44, 52, 60) + 
+        pick_pattern(phase_idx, 3, b, 3, 12, 21, 30, 39) + pick_pattern(phase_idx, 3, b, 4, 11, 18, 25, 32) + pick_pattern(phase_idx, 3, b, 24, 33, 42, 51, 60) + pick_pattern(phase_idx, 3, b, 59, 52, 45, 38, 31) + 
+        pick_pattern(phase_idx, 4, b, 2, 11, 20, 29, 38, 47) + pick_pattern(phase_idx, 4, b, 5, 12, 19, 26, 33, 40) + pick_pattern(phase_idx, 4, b, 16, 25, 34, 43, 52, 61) + pick_pattern(phase_idx, 4, b, 58, 51, 44, 37, 30, 23) + 
+        pick_pattern(phase_idx, 5, b, 1, 10, 19, 28, 37, 46, 55) + pick_pattern(phase_idx, 5, b, 6, 13, 20, 27, 34, 41, 48) + pick_pattern(phase_idx, 5, b, 8, 17, 26, 35, 44, 53, 62) + pick_pattern(phase_idx, 5, b, 57, 50, 43, 36, 29, 22, 15) + 
+        pick_pattern(phase_idx, 6, b, 0, 9, 18, 27, 36, 45, 54, 63) + pick_pattern(phase_idx, 6, b, 7, 14, 21, 28, 35, 42, 49, 56) + 
+        pick_pattern(phase_idx, 7, b, 9, 0, 1, 2, 3, 4, 5, 6, 7, 14) + pick_pattern(phase_idx, 7, b, 9, 0, 8, 16, 24, 32, 40, 48, 56, 49) + pick_pattern(phase_idx, 7, b, 49, 56, 57, 58, 59, 60, 61, 62, 63, 54) + pick_pattern(phase_idx, 7, b, 54, 63, 55, 47, 39, 31, 23, 15, 7, 14) + 
+        pick_pattern(phase_idx, 8, b, 0, 1, 2, 3, 8, 9, 10, 16, 17, 24) + pick_pattern(phase_idx, 8, b, 7, 6, 5, 4, 15, 14, 13, 23, 22, 31) + pick_pattern(phase_idx, 8, b, 63, 62, 61, 60, 55, 54, 53, 47, 46, 39) + pick_pattern(phase_idx, 8, b, 56, 57, 58, 59, 48, 49, 50, 40, 41, 32) + 
+        pick_pattern(phase_idx, 9, b, 0, 2, 3, 4, 5, 7, 10, 11, 12, 13) + pick_pattern(phase_idx, 9, b, 0, 16, 24, 32, 40, 56, 17, 25, 33, 41) + pick_pattern(phase_idx, 9, b, 56, 58, 59, 60, 61, 63, 50, 51, 52, 53) + pick_pattern(phase_idx, 9, b, 7, 23, 31, 39, 47, 63, 22, 30, 38, 46) + 
+        pick_pattern(phase_idx, 10, b, 0, 9, 18, 27, 1, 10, 19, 8, 17, 26) + pick_pattern(phase_idx, 10, b, 7, 14, 21, 28, 6, 13, 20, 15, 22, 29) + pick_pattern(phase_idx, 10, b, 56, 49, 42, 35, 57, 50, 43, 48, 41, 34) + pick_pattern(phase_idx, 10, b, 63, 54, 45, 36, 62, 53, 44, 55, 46, 37) + 
+        pick_pattern(phase_idx, 11, b, 0, 1, 2, 8, 9, 10, 16, 17, 18) + pick_pattern(phase_idx, 11, b, 7, 6, 5, 15, 14, 13, 23, 22, 21) + pick_pattern(phase_idx, 11, b, 56, 57, 58, 48, 49, 50, 40, 41, 42) + pick_pattern(phase_idx, 11, b, 63, 62, 61, 55, 54, 53, 47, 46, 45) + 
+        pick_pattern(phase_idx, 12, b, 10, 0, 1, 2, 3, 4, 5, 6, 7, 13) + pick_pattern(phase_idx, 12, b, 17, 0, 8, 16, 24, 32, 40, 48, 56, 41) + pick_pattern(phase_idx, 12, b, 50, 56, 57, 58, 59, 60, 61, 62, 63, 53) + pick_pattern(phase_idx, 12, b, 46, 63, 55, 47, 39, 31, 23, 15, 7, 22) + 
+        pick_pattern(phase_idx, 13, b, 0, 1, 2, 3, 4, 8, 9, 16, 24, 32) + pick_pattern(phase_idx, 13, b, 7, 6, 5, 4, 3, 15, 14, 23, 31, 39) + pick_pattern(phase_idx, 13, b, 63, 62, 61, 60, 59, 55, 54, 47, 39, 31) + pick_pattern(phase_idx, 13, b, 56, 57, 58, 59, 60, 48, 49, 40, 32, 24) + 
+        pick_pattern(phase_idx, 14, b, 0, 1, 8, 9, 10, 11, 17, 18, 25, 27) + pick_pattern(phase_idx, 14, b, 7, 6, 15, 14, 13, 12, 22, 21, 30, 28) + pick_pattern(phase_idx, 14, b, 56, 57, 48, 49, 50, 51, 41, 42, 33, 35) + pick_pattern(phase_idx, 14, b, 63, 62, 55, 54, 53, 52, 46, 45, 38, 36) + 
+        pick_pattern(phase_idx, 15, b, 0, 1, 8, 9, 10, 11, 12, 17, 25, 33) + pick_pattern(phase_idx, 15, b, 7, 6, 15, 14, 13, 12, 11, 22, 30, 38) + pick_pattern(phase_idx, 15, b, 56, 57, 48, 49, 50, 51, 52, 41, 33, 25) + pick_pattern(phase_idx, 15, b, 63, 62, 55, 54, 53, 52, 51, 46, 38, 30);
+}
+*/
 
 inline int pick_pattern(const int phase_idx, const int pattern_idx, const uint_fast8_t b_arr[], const int p0, const int p1, const int p2, const int p3, const int p4){
     return pattern_arr[phase_idx][pattern_idx][b_arr[p0] * P34 + b_arr[p1] * P33 + b_arr[p2] * P32 + b_arr[p3] * P31 + b_arr[p4]];

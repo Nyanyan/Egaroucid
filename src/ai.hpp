@@ -156,7 +156,8 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
     Search_result res;
     res.depth = depth;
     res.nodes = search.n_nodes;
-    res.nps = search.n_nodes * 1000 / max(1ULL, tim() - strt);
+    res.time = tim() - strt;
+    res.nps = search.n_nodes * 1000 / max(1ULL, res.time);
     res.policy = policy;
     res.value = value_to_score_int(g);
     return res;
@@ -262,7 +263,7 @@ bool ai_hint(Board b, int level, int max_level, int res[], int info[], bool best
     if (!is_mid_search && level != max_level)
         return false;
     if (depth - 1 >= 0){
-        int l, u;
+        //int l, u;
         bool cache_hit;
         parent_transpose_table.init();
         for (int i = 0; i < HW2; ++i){
