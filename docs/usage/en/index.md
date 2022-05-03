@@ -177,13 +177,19 @@ Mode: Study
 
 You can edit a board on the display. Discs (black, white, empty) can be selected with radio buttons or keys (B/W/E). Then submit with button or Enter key.
 
+#### Import a Game
+
+Mode: Study
+
+You can import a game which is saved by this application. In the preview screen, you can see players' names, memo, and score.
+
 #### Save Game
 
 Mode: Study
 
 You can save the game with clicking ```Save Game``` button. You can add white/black player names and memo.
 
-A text file will be created in ```records``` directory.
+A text file will be created in ```Documents/Egaroucid/records``` directory.
 
 The filename is:
 
@@ -252,6 +258,8 @@ Set any board and right click the legal cell. You can now set a new value with k
 If you right click a legal cell by mistake, do nothing and click the cell again. You can escape.
 
 When closing the app, the book is automatically saved.
+
+If you want to delete the registered value, please type ```--``` and submit.
 
 #### Register Values to Book Automatically
 
