@@ -4541,6 +4541,21 @@ same
 3502336914 nodes
 175221978.8873324 nps
 
+2022/05/03 use simd in arr conversion
+#40 depth 20 value 38 policy a2 nodes 33273694 time 203 nps 163909822
+#41 depth 22 value 0 policy h4 nodes 26683424 time 258 nps 103424124
+#42 depth 22 value 6 policy g2 nodes 53873986 time 379 nps 142147720
+#43 depth 23 value -12 policy c7 nodes 167297315 time 946 nps 176847056
+#44 depth 23 value -14 policy d2 nodes 39283833 time 576 nps 68201098
+#45 depth 24 value 6 policy b2 nodes 986366121 time 4436 nps 222354851
+#46 depth 24 value -8 policy b3 nodes 183287534 time 2092 nps 87613543
+#47 depth 25 value 4 policy g2 nodes 94514927 time 755 nps 125185333
+#48 depth 25 value 28 policy f6 nodes 822667592 time 4177 nps 196951781
+#49 depth 26 value 16 policy e1 nodes 1246938137 time 6761 nps 184431021
+20.583 sec
+50.25010371208191 sec total
+3654186563 nodes
+177534206.0438226 nps
 
 
 

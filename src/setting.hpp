@@ -5,6 +5,9 @@
 // vertical mirror
 #define USE_FAST_VERTICAL_MIRROR true
 
+// board to array conversion
+#define FAST_ARR_CONVERT true
+
 // flip calculating
 #define FLIP_CALC_MODE 3
 #define LAST_FLIP_CALC_MODE 2
