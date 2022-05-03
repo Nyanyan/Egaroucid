@@ -4557,6 +4557,22 @@ same
 3654186563 nodes
 177534206.0438226 nps
 
+2022/05/03 update tt cache
+#40 depth 20 value 38 policy a2 nodes 32381567 time 193 nps 167780139
+#41 depth 22 value 0 policy h4 nodes 26802917 time 251 nps 106784529
+#42 depth 22 value 6 policy g2 nodes 50060379 time 361 nps 138671409
+#43 depth 23 value -10 policy c7 nodes 68018814 time 467 nps 145650565 WRONG_SCORE
+#44 depth 23 value -14 policy d2 nodes 44030235 time 482 nps 91349035
+#45 depth 24 value 6 policy b2 nodes 1032785609 time 4479 nps 230583971
+#46 depth 24 value -8 policy b3 nodes 183142249 time 2477 nps 73937121
+#47 depth 25 value 4 policy g2 nodes 97674350 time 846 nps 115454314
+#48 depth 25 value 28 policy f6 nodes 897115605 time 4459 nps 201192106
+#49 depth 26 value 16 policy e1 nodes 1171282752 time 6262 nps 187046111
+20.277 sec
+34.94931507110596 sec total
+3603294477 nodes
+177703529.96005327 nps
+
 
 
 
