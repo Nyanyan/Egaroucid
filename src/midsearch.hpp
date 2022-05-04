@@ -359,7 +359,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
                             break;
                         }
                     } else if (depth - 1 <= 11){
-                        if (ybwc_split_without_move(search, &flip, -before_alpha - 1, -before_alpha, depth - 1, flip.n_legal, is_end_search, &n_searching, flip.pos, pv_idx, canput, split_count, parallel_tasks)){
+                        if (ybwc_split_without_move_negascout(search, &flip, -before_alpha - 1, -before_alpha, depth - 1, flip.n_legal, is_end_search, &n_searching, flip.pos, pv_idx, canput, split_count, parallel_tasks)){
                             parallel_flips.emplace_back(flip);
                             ++split_count;
                         } else{
