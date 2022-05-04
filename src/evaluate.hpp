@@ -11,6 +11,7 @@ using namespace std;
 #define N_PATTERNS 16
 #define N_SYMMETRY_PATTERNS 62
 #define MAX_PATTERN_CELLS 10
+#define MAX_CELL_PATTERNS 10
 #define MAX_SURROUND 100
 #define MAX_CANPUT 50
 #define MAX_STABILITY 65
@@ -37,6 +38,7 @@ using namespace std;
     #define SCORE_MAX 2048
 #endif
 
+#define P30 1
 #define P31 3
 #define P32 9
 #define P33 27
@@ -147,104 +149,116 @@ struct Feature_to_coord{
 
 constexpr Feature_to_coord feature_to_coord[N_SYMMETRY_PATTERNS] = {
     // hv2
-    {8, {A2, B2, C2, D2, E2, F2, G2, H2}},
-    {8, {B1, B2, B3, B4, B5, B6, B7, B8}},
-    {8, {A7, B7, C7, D7, E7, F7, G7, H7}},
-    {8, {G1, G2, G3, G4, G5, G6, G7, G8}},
+    {8, {A2, B2, C2, D2, E2, F2, G2, H2}}, // 0
+    {8, {B1, B2, B3, B4, B5, B6, B7, B8}}, // 1
+    {8, {A7, B7, C7, D7, E7, F7, G7, H7}}, // 2
+    {8, {G1, G2, G3, G4, G5, G6, G7, G8}}, // 3
 
     // hv3
-    {8, {A3, B3, C3, D3, E3, F3, G3, H3}},
-    {8, {C1, C2, C3, C4, C5, C6, C7, C8}},
-    {8, {A6, B6, C6, D6, E6, F6, G6, H6}},
-    {8, {F1, F2, F3, F4, F5, F6, F7, F8}},
+    {8, {A3, B3, C3, D3, E3, F3, G3, H3}}, // 4
+    {8, {C1, C2, C3, C4, C5, C6, C7, C8}}, // 5
+    {8, {A6, B6, C6, D6, E6, F6, G6, H6}}, // 6
+    {8, {F1, F2, F3, F4, F5, F6, F7, F8}}, // 7
 
     // hv4
-    {8, {A4, B4, C4, D4, E4, F4, G4, H4}},
-    {8, {D1, D2, D3, D4, D5, D6, D7, D8}},
-    {8, {A5, B5, C5, D5, E5, F5, G5, H5}},
-    {8, {E1, E2, E3, E4, E5, E6, E7, E8}},
+    {8, {A4, B4, C4, D4, E4, F4, G4, H4}}, // 8
+    {8, {D1, D2, D3, D4, D5, D6, D7, D8}}, // 9
+    {8, {A5, B5, C5, D5, E5, F5, G5, H5}}, // 10
+    {8, {E1, E2, E3, E4, E5, E6, E7, E8}}, // 11
 
     // d5
-    {5, {D1, E2, F3, G4, H5}},
-    {5, {E1, D2, C3, B4, A5}},
-    {5, {A4, B5, C6, D7, E8}},
-    {5, {H4, G5, F6, E7, D8}},
+    {5, {D1, E2, F3, G4, H5}}, // 12
+    {5, {E1, D2, C3, B4, A5}}, // 13
+    {5, {A4, B5, C6, D7, E8}}, // 14
+    {5, {H4, G5, F6, E7, D8}}, // 15
 
     // d6
-    {6, {C1, D2, E3, F4, G5, H6}},
-    {6, {F1, E2, D3, C4, B5, A6}},
-    {6, {A3, B4, C5, D6, E7, F8}},
-    {6, {H3, G4, F5, E6, D7, C8}},
+    {6, {C1, D2, E3, F4, G5, H6}}, // 16
+    {6, {F1, E2, D3, C4, B5, A6}}, // 17
+    {6, {A3, B4, C5, D6, E7, F8}}, // 18
+    {6, {H3, G4, F5, E6, D7, C8}}, // 19
 
     // d7
-    {7, {B1, C2, D3, E4, F5, G6, H7}},
-    {7, {G1, F2, E3, D4, C5, B6, A7}},
-    {7, {A2, B3, C4, D5, E6, F7, G8}},
-    {7, {H2, G3, F4, E5, D6, C7, B8}},
+    {7, {B1, C2, D3, E4, F5, G6, H7}}, // 20
+    {7, {G1, F2, E3, D4, C5, B6, A7}}, // 21
+    {7, {A2, B3, C4, D5, E6, F7, G8}}, // 22
+    {7, {H2, G3, F4, E5, D6, C7, B8}}, // 23
 
     // d8
-    {8, {A1, B2, C3, D4, E5, F6, G7, H8}}, 
-    {8, {H1, G2, F3, E4, D5, C6, B7, A8}},
+    {8, {A1, B2, C3, D4, E5, F6, G7, H8}}, // 24
+    {8, {H1, G2, F3, E4, D5, C6, B7, A8}}, // 25
 
     // edge + 2x
-    {10, {B2, A1, B1, C1, D1, E1, F1, G1, H1, G2}},
-    {10, {B2, A1, A2, A3, A4, A5, A6, A7, A8, B7}},
-    {10, {B7, A8, B8, C8, D8, E8, F8, G8, H8, G7}},
-    {10, {G2, H1, H2, H3, H4, H5, H6, H7, H8, G7}},
+    {10, {B2, A1, B1, C1, D1, E1, F1, G1, H1, G2}}, // 26
+    {10, {B2, A1, A2, A3, A4, A5, A6, A7, A8, B7}}, // 27
+    {10, {B7, A8, B8, C8, D8, E8, F8, G8, H8, G7}}, // 28
+    {10, {G2, H1, H2, H3, H4, H5, H6, H7, H8, G7}}, // 29
 
     // triangle
-    {10, {A1, B1, C1, D1, A2, B2, C2, A3, B3, A4}},
-    {10, {H1, G1, F1, E1, H2, G2, F2, H3, G3, H4}},
-    {10, {A8, B8, C8, D8, A7, B7, C7, A6, B6, A5}},
-    {10, {H8, G8, F8, E8, H7, G7, F7, H6, G6, H5}},
+    {10, {A1, B1, C1, D1, A2, B2, C2, A3, B3, A4}}, // 30
+    {10, {H1, G1, F1, E1, H2, G2, F2, H3, G3, H4}}, // 31
+    {10, {A8, B8, C8, D8, A7, B7, C7, A6, B6, A5}}, // 32
+    {10, {H8, G8, F8, E8, H7, G7, F7, H6, G6, H5}}, // 33
 
     // corner + block
-    {10, {A1, C1, D1, E1, F1, H1, C2, D2, E2, F2}},
-    {10, {A1, A3, A4, A5, A6, A8, B3, B4, B5, B6}},
-    {10, {A8, C8, D8, E8, F8, H8, C7, D7, E7, F7}},
-    {10, {H1, H3, H4, H5, H6, H8, G3, G4, G5, G6}},
+    {10, {A1, C1, D1, E1, F1, H1, C2, D2, E2, F2}}, // 34
+    {10, {A1, A3, A4, A5, A6, A8, B3, B4, B5, B6}}, // 35
+    {10, {A8, C8, D8, E8, F8, H8, C7, D7, E7, F7}}, // 36
+    {10, {H1, H3, H4, H5, H6, H8, G3, G4, G5, G6}}, // 37
 
     // cross
-    {10, {A1, B2, C3, D4, B1, C2, D3, A2, B3, C4}},
-    {10, {H1, G2, F3, E4, G1, F2, E3, H2, G3, F4}},
-    {10, {A8, B7, C6, D5, B8, C7, D6, A7, B6, C5}},
-    {10, {H8, G7, F6, E5, G8, F7, E6, H7, G6, F5}},
+    {10, {A1, B2, C3, D4, B1, C2, D3, A2, B3, C4}}, // 38
+    {10, {H1, G2, F3, E4, G1, F2, E3, H2, G3, F4}}, // 39
+    {10, {A8, B7, C6, D5, B8, C7, D6, A7, B6, C5}}, // 40
+    {10, {H8, G7, F6, E5, G8, F7, E6, H7, G6, F5}}, // 41
 
     // corner9
-    {9, {A1, B1, C1, A2, B2, C2, A3, B3, C3}},
-    {9, {H1, G1, F1, H2, G2, F2, H3, G3, F3}},
-    {9, {A8, B8, C8, A7, B7, C7, A6, B6, C6}},
-    {9, {H8, G8, F8, H7, G7, F7, H6, G6, F6}},
+    {9, {A1, B1, C1, A2, B2, C2, A3, B3, C3}}, // 42
+    {9, {H1, G1, F1, H2, G2, F2, H3, G3, F3}}, // 43
+    {9, {A8, B8, C8, A7, B7, C7, A6, B6, C6}}, // 44
+    {9, {H8, G8, F8, H7, G7, F7, H6, G6, F6}}, // 45
 
     // edge + y
-    {10, {C2, A1, B1, C1, D1, E1, F1, G1, H1, F2}},
-    {10, {B3, A1, A2, A3, A4, A5, A6, A7, A8, B6}},
-    {10, {C7, A8, B8, C8, D8, E8, F8, G8, H8, F7}},
-    {10, {G3, H1, H2, H3, H4, H5, H6, H7, H8, G6}},
+    {10, {C2, A1, B1, C1, D1, E1, F1, G1, H1, F2}}, // 46
+    {10, {B3, A1, A2, A3, A4, A5, A6, A7, A8, B6}}, // 47
+    {10, {C7, A8, B8, C8, D8, E8, F8, G8, H8, F7}}, // 48
+    {10, {G3, H1, H2, H3, H4, H5, H6, H7, H8, G6}}, // 49
 
     // narrow triangle
-    {10, {A1, B1, C1, D1, E1, A2, B2, A3, A4, A5}},
-    {10, {H1, G1, F1, E1, D1, H2, G2, H3, H4, H5}},
-    {10, {A8, B8, C8, D8, E8, A7, B7, A6, A5, A4}},
-    {10, {H8, G8, F8, E8, D8, H7, G7, H6, H5, H4}},
+    {10, {A1, B1, C1, D1, E1, A2, B2, A3, A4, A5}}, // 50
+    {10, {H1, G1, F1, E1, D1, H2, G2, H3, H4, H5}}, // 51
+    {10, {A8, B8, C8, D8, E8, A7, B7, A6, A5, A4}}, // 52
+    {10, {H8, G8, F8, E8, D8, H7, G7, H6, H5, H4}}, // 53
 
     // fish
-    {10, {A1, B1, A2, B2, C2, D2, B3, C3, B4, D4}},
-    {10, {H1, G1, H2, G2, F2, E2, G3, F3, G4, E4}},
-    {10, {A8, B8, A7, B7, C7, D7, B6, C6, B5, D5}},
-    {10, {H8, G8, H7, G7, F7, E7, G6, F6, G5, E5}},
+    {10, {A1, B1, A2, B2, C2, D2, B3, C3, B4, D4}}, // 54
+    {10, {H1, G1, H2, G2, F2, E2, G3, F3, G4, E4}}, // 55
+    {10, {A8, B8, A7, B7, C7, D7, B6, C6, B5, D5}}, // 56
+    {10, {H8, G8, H7, G7, F7, E7, G6, F6, G5, E5}}, // 57
 
     // kite
-    {10, {A1, B1, A2, B2, C2, D2, E2, B3, B4, B5}},
-    {10, {H1, G1, H2, G2, F2, E2, D2, G3, G4, G5}},
-    {10, {A8, B8, A7, B7, C7, D7, E7, B6, B5, B4}},
-    {10, {H8, G8, H7, G7, F7, E7, D7, G6, G5, G4}}
+    {10, {A1, B1, A2, B2, C2, D2, E2, B3, B4, B5}}, // 58
+    {10, {H1, G1, H2, G2, F2, E2, D2, G3, G4, G5}}, // 59
+    {10, {A8, B8, A7, B7, C7, D7, E7, B6, B5, B4}}, // 60
+    {10, {H8, G8, H7, G7, F7, E7, D7, G6, G5, G4}}  // 61
+};
+
+struct Coord_feature{
+    uint_fast8_t feature;
+    int x;
 };
 
 struct Coord_to_feature{
-    int n_cells;
-    uint_fast8_t cells[MAX_PATTERN_CELLS];
+    int n_features;
+    Coord_feature features[MAX_CELL_PATTERNS];
 };
+
+constexpr Coord_to_feature coord_to_feature[HW2] = {
+    {13, {{24, P30}, {28, P31}, {29, P31}, {33, P39}, {36, P34}, {37, P34}, {41, P39}, {45, P38}, {48, P31}, {49, P31}, {53, P39}, {57, P39}, {61, P39}}}, // H8
+    {10, {{ 3, P30}, {22, P30}, {28, P32}, {33, P38}, {41, P35}, {45, P37}, {48, P32}, {53, P38}, {57, P38}, {61, P38}}}, // G8
+    { 8, {{ 7, P30}, {18, P30}, {28, P33}, {33, P37}, {36, P35}, {45, P36}, {48, P33}, {53, P37}}}, // F8
+    { 8, {{11, P30}, {14, P30}, {28, P34}, {33, P36}, {36, P36}, {48, P34}, {52, P35}, {53, P36}}}, // E8
+}
 
 constexpr uint_fast16_t pow3[11] = {1, P31, P32, P33, P34, P35, P36, P37, P38, P39, P310};
 uint64_t stability_edge_arr[N_8BIT][N_8BIT][2];
