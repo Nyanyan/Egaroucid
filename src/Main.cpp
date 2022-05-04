@@ -25,7 +25,7 @@
 
 using namespace std;
 
-#define EGAROUCID_VERSION U"5.7.2"
+#define EGAROUCID_VERSION U"5.8.0"
 
 #define hint_not_calculated_define 0
 
