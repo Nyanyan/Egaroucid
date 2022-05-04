@@ -55,9 +55,11 @@ int nega_alpha_end_nomemo(Search *search, int alpha, int beta, int depth, bool s
         calc_flip(&move_list[idx++], &search->board, cell);
     move_ordering(search, move_list, depth, alpha, beta, false);
     for (const Flip &flip: move_list){
+        eval_move(search, &flip);
         search->board.move(&flip);
             g = -nega_alpha_end_nomemo(search, -beta, -alpha, depth - 1, false, flip.n_legal);
         search->board.undo(&flip);
+        eval_undo(search, &flip);
         alpha = max(alpha, g);
         v = max(v, g);
         if (beta <= alpha)
@@ -467,7 +469,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
         search->board.pass();
         return v;
     }
-    #if USE_END_MPC
+    #if USE_END_MPC && false
         if (search->use_mpc){
             if (mpc(search, alpha, beta, HW2 - search->board.n, legal, false, &v))
                 return v;
@@ -478,9 +480,11 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
     if (best_move != TRANSPOSE_TABLE_UNDEFINED){
         Flip flip;
         calc_flip(&flip, &search->board, best_move);
+        //eval_move(search, &flip);
         search->board.move(&flip);
             g = -nega_alpha_end(search, -beta, -alpha, false, LEGAL_UNDEFINED, searching);
         search->board.undo(&flip);
+        //eval_undo(search, &flip);
         alpha = max(alpha, g);
         v = g;
         legal ^= 1ULL << best_move;
@@ -493,9 +497,11 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
             calc_flip(&move_list[idx++], &search->board, cell);
         move_ordering_fast_first(search, move_list);
         for (const Flip &flip: move_list){
+            //eval_move(search, &flip);
             search->board.move(&flip);
                 g = -nega_alpha_end(search, -beta, -alpha, false, flip.n_legal, searching);
             search->board.undo(&flip);
+            //eval_undo(search, &flip);
             alpha = max(alpha, g);
             if (v < g){
                 v = g;

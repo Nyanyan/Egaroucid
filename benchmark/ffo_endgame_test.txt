@@ -4589,6 +4589,22 @@ same
 3853482897 nodes
 197189791.06539762 nps
 
+2022/05/04 fixed endsearch eval update bug & no mpc in endsearch
+#40 depth 20 value 38 policy a2 nodes 33249237 time 187 nps 177803406
+#41 depth 22 value 0 policy h4 nodes 28468758 time 252 nps 112971261
+#42 depth 22 value 6 policy g2 nodes 46578259 time 323 nps 144205136
+#43 depth 23 value -12 policy c7 nodes 159536745 time 927 nps 172100048
+#44 depth 23 value -14 policy d2 nodes 46311017 time 689 nps 67214828
+#45 depth 24 value 6 policy b2 nodes 1082076374 time 4545 nps 238080610
+#46 depth 24 value -8 policy b3 nodes 189997971 time 2088 nps 90995196
+#47 depth 25 value 4 policy g2 nodes 109763108 time 775 nps 141629816
+#48 depth 25 value 28 policy f6 nodes 799519571 time 3813 nps 209682552
+#49 depth 26 value 16 policy e1 nodes 1117338407 time 5318 nps 210105003
+18.917 sec
+33.3722038269043 sec total
+3612839447 nodes
+190983741.97811493 nps
+
 
 
 
