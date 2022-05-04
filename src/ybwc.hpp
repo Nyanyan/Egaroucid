@@ -13,7 +13,12 @@
 //#define YBWC_END_SPLIT_MIN_DEPTH 6
 //#define YBWC_MAX_SPLIT_COUNT 3
 //#define YBWC_PC_OFFSET 3
-#define YBWC_ORDERING_OFFSET 10
+#define YBWC_ORDERING_MAX_OFFSET 16
+#define YBWC_OFFSET_DIV_DEPTH 32
+
+inline int depth_to_offset(const int depth){
+    return depth * YBWC_ORDERING_MAX_OFFSET / YBWC_OFFSET_DIV_DEPTH;
+}
 
 int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
 int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t legal, const bool *searching);
@@ -31,7 +36,7 @@ inline bool ybwc_split(Search *search, const Flip *flip, int alpha, int beta, co
         /* pv_idx > canput / YBWC_SPLIT_DIV && */ 
         /* pv_idx < canput - 1 && */ 
         depth >= YBWC_MID_SPLIT_MIN_DEPTH &&
-        flip->value < first_val - YBWC_ORDERING_OFFSET
+        flip->value < first_val - depth_to_offset(depth)
         /* split_count < YBWC_MAX_SPLIT_COUNT */ ){
         if (thread_pool.n_idle()){
             Search copy_search;
@@ -59,7 +64,7 @@ inline bool ybwc_split_without_move(Search *search, const Flip *flip, int alpha,
         /* pv_idx > canput / YBWC_SPLIT_DIV && */ 
         /* pv_idx < canput - 1 && */ 
         depth >= YBWC_MID_SPLIT_MIN_DEPTH &&
-        flip->value < first_val - YBWC_ORDERING_OFFSET
+        flip->value < first_val - depth_to_offset(depth)
         /* split_count < YBWC_MAX_SPLIT_COUNT */ ){
         if (thread_pool.n_idle()){
             Search copy_search;

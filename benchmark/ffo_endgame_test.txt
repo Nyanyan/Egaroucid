@@ -4745,6 +4745,47 @@ same
 70120065779 nodes
 168809035.02808264 nps
 
+2022/05/05 adjustable ybwc offset 16-32
+#40 depth 20 value 38 policy a2 nodes 30979401 time 206 nps 150385441
+#41 depth 22 value 0 policy h4 nodes 25016422 time 267 nps 93694464
+#42 depth 22 value 6 policy g2 nodes 38353576 time 300 nps 127845253
+#43 depth 23 value -12 policy c7 nodes 100614436 time 653 nps 154080300
+#44 depth 23 value -14 policy d2 nodes 23942384 time 414 nps 57831845
+#45 depth 24 value 6 policy b2 nodes 720416355 time 3471 nps 207552968
+#46 depth 24 value -8 policy b3 nodes 107152178 time 1005 nps 106619082
+#47 depth 25 value 4 policy g2 nodes 80062348 time 605 nps 132334459
+#48 depth 25 value 28 policy f6 nodes 719360311 time 3965 nps 181427568
+#49 depth 26 value 16 policy e1 nodes 818941764 time 4246 nps 192873707
+15.132 sec
+18.082528114318848 sec total
+2664839175 nodes
+176106210.34892944 nps
+
+#40 depth 20 value 38 policy a2 nodes 30879692 time 200 nps 154398460
+#41 depth 22 value 0 policy h4 nodes 24910353 time 247 nps 100851631
+#42 depth 22 value 6 policy g2 nodes 38722607 time 301 nps 128646534
+#43 depth 23 value -12 policy c7 nodes 101093015 time 688 nps 146937521
+#44 depth 23 value -14 policy d2 nodes 23957028 time 433 nps 55328009
+#45 depth 24 value 6 policy b2 nodes 721315341 time 3496 nps 206325898
+#46 depth 24 value -8 policy b3 nodes 106106651 time 981 nps 108161723
+#47 depth 25 value 4 policy g2 nodes 79972640 time 631 nps 126739524
+#48 depth 25 value 28 policy f6 nodes 725406363 time 3994 nps 181624026
+#49 depth 26 value 16 policy e1 nodes 836065713 time 4186 nps 199729028
+#50 depth 26 value 10 policy d8 nodes 2564619711 time 11184 nps 229311490
+#51 depth 27 value 6 policy a3 nodes 1055037030 time 7059 nps 149459842
+#52 depth 27 value 0 policy a3 nodes 438891791 time 3661 nps 119883034
+#53 depth 28 value -2 policy d8 nodes 7039499026 time 39797 nps 176885167
+#54 depth 28 value -2 policy c7 nodes 10283432353 time 49671 nps 207030910
+#55 depth 29 value 0 policy b7 nodes 30848744447 time 185153 nps 166612177
+#56 depth 29 value 2 policy h5 nodes 2669182787 time 20201 nps 132131220
+#57 depth 30 value -10 policy a6 nodes 8699130234 time 54499 nps 159619997
+#58 depth 30 value 4 policy g1 nodes 3687952364 time 22381 nps 164780499
+#59 depth 34 value 64 policy g8 nodes 2743 time 28 nps 97964
+408.791 sec
+427.17082834243774 sec total
+69974921889 nodes
+171175299.576067 nps
+
 
 
 
@@ -4774,6 +4815,32 @@ answer
 #57 -10 a6
 #58 4   g1
 #59 64  g8  h4  e8
+
+2022/05/05 adjustable ybwc offset 16-32
+#40 depth 20 value 38 policy a2 nodes 30879692 time 200 nps 154398460
+#41 depth 22 value 0 policy h4 nodes 24910353 time 247 nps 100851631
+#42 depth 22 value 6 policy g2 nodes 38722607 time 301 nps 128646534
+#43 depth 23 value -12 policy c7 nodes 101093015 time 688 nps 146937521
+#44 depth 23 value -14 policy d2 nodes 23957028 time 433 nps 55328009
+#45 depth 24 value 6 policy b2 nodes 721315341 time 3496 nps 206325898
+#46 depth 24 value -8 policy b3 nodes 106106651 time 981 nps 108161723
+#47 depth 25 value 4 policy g2 nodes 79972640 time 631 nps 126739524
+#48 depth 25 value 28 policy f6 nodes 725406363 time 3994 nps 181624026
+#49 depth 26 value 16 policy e1 nodes 836065713 time 4186 nps 199729028
+#50 depth 26 value 10 policy d8 nodes 2564619711 time 11184 nps 229311490
+#51 depth 27 value 6 policy a3 nodes 1055037030 time 7059 nps 149459842
+#52 depth 27 value 0 policy a3 nodes 438891791 time 3661 nps 119883034
+#53 depth 28 value -2 policy d8 nodes 7039499026 time 39797 nps 176885167
+#54 depth 28 value -2 policy c7 nodes 10283432353 time 49671 nps 207030910
+#55 depth 29 value 0 policy b7 nodes 30848744447 time 185153 nps 166612177
+#56 depth 29 value 2 policy h5 nodes 2669182787 time 20201 nps 132131220
+#57 depth 30 value -10 policy a6 nodes 8699130234 time 54499 nps 159619997
+#58 depth 30 value 4 policy g1 nodes 3687952364 time 22381 nps 164780499
+#59 depth 34 value 64 policy g8 nodes 2743 time 28 nps 97964
+408.791 sec
+427.17082834243774 sec total
+69974921889 nodes
+171175299.576067 nps
 
 2022/05/05 ybwc decide offset = 10
 #40 depth 20 value 38 policy a2 nodes 30495885 time 207 nps 147323115
