@@ -458,7 +458,6 @@ inline bool init_evaluation_calc(){
     }
     int i, ri;
     for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
-        cerr << "=";
         for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx){
             for (i = 0; i < pow3[pattern_sizes[pattern_idx]]; ++i){
                 ri = swap_player_idx(i, pattern_sizes[pattern_idx]);
@@ -466,7 +465,6 @@ inline bool init_evaluation_calc(){
             }
         }
     }
-    cerr << endl;
     cerr << "evaluation function initialized" << endl;
     return true;
 }
@@ -967,8 +965,6 @@ inline void eval_move(Search *search, const Flip *flip){
         if (search->eval_feature_reversed){
             for (i = 0; i < coord_to_feature[flip->pos].n_features; ++i){
                 search->eval_features[coord_to_feature[flip->pos].features[i].feature] -= coord_to_feature[flip->pos].features[i].x;
-                //if (search->eval_features[coord_to_feature[flip->pos].features[i].feature] < 0)
-                //    cerr << "a " << (int)flip->pos << " " << i << " " << (int)coord_to_feature[flip->pos].features[i].feature << " " << coord_to_feature[flip->pos].features[i].x << " " << search->eval_features[coord_to_feature[flip->pos].features[i].feature] << endl;
             }
             uint64_t f = flip->flip;
             for (uint_fast8_t cell = first_bit(&f); f; cell = next_bit(&f)){
@@ -978,8 +974,6 @@ inline void eval_move(Search *search, const Flip *flip){
         } else{
             for (i = 0; i < coord_to_feature[flip->pos].n_features; ++i){
                 search->eval_features[coord_to_feature[flip->pos].features[i].feature] -= 2 * coord_to_feature[flip->pos].features[i].x;
-                //if (search->eval_features[coord_to_feature[flip->pos].features[i].feature] < 0)
-                //    cerr << "b " << (int)flip->pos << " " << i << " " << coord_to_feature[flip->pos].features[i].x << " " << search->eval_features[coord_to_feature[flip->pos].features[i].feature] << endl;
             }
             uint64_t f = flip->flip;
             for (uint_fast8_t cell = first_bit(&f); f; cell = next_bit(&f)){
