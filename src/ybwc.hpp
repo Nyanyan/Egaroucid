@@ -13,7 +13,7 @@
 //#define YBWC_END_SPLIT_MIN_DEPTH 6
 //#define YBWC_MAX_SPLIT_COUNT 3
 //#define YBWC_PC_OFFSET 3
-#define YBWC_ORDERING_OFFSET 8
+#define YBWC_ORDERING_OFFSET 10
 
 int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
 int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t legal, const bool *searching);
