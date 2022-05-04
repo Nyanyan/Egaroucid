@@ -138,7 +138,7 @@ class Board {
             opponent ^= flip->flip;
             player ^= 1ULL << flip->pos;
             swap(player, opponent);
-            p = 1 - p;
+            p ^= 1;
             ++n;
             parity ^= cell_div4[flip->pos];
         }
@@ -147,7 +147,7 @@ class Board {
             res->opponent = player ^ flip->flip;
             res->player = opponent ^ flip->flip;
             res->opponent ^= 1ULL << flip->pos;
-            res->p = 1 - p;
+            res->p = p ^ 1;
             res->n = n + 1;
             res->parity = parity ^ cell_div4[flip->pos];
         }
@@ -160,11 +160,11 @@ class Board {
 
         inline void pass(){
             swap(player, opponent);
-            p = 1 - p;
+            p ^= 1;
         }
 
         inline void undo(const Flip *flip){
-            p = 1 - p;
+            p ^= 1;
             --n;
             parity ^= cell_div4[flip->pos];
             swap(player, opponent);
