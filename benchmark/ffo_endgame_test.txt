@@ -4704,6 +4704,22 @@ same
 4020944200 nodes
 214084985.62453413 nps
 
+2022/05/05 ybwc decide offset = 10
+#40 depth 20 value 38 policy a2 nodes 30624641 time 209 nps 146529382
+#41 depth 22 value 0 policy h4 nodes 32168082 time 288 nps 111694729
+#42 depth 22 value 6 policy g2 nodes 38797490 time 307 nps 126376188
+#43 depth 23 value -12 policy c7 nodes 101436617 time 641 nps 158247452
+#44 depth 23 value -14 policy d2 nodes 23861765 time 417 nps 57222458
+#45 depth 24 value 6 policy b2 nodes 749211361 time 3593 nps 208519721
+#46 depth 24 value -8 policy b3 nodes 106594696 time 1021 nps 104402248
+#47 depth 25 value 4 policy g2 nodes 78117232 time 617 nps 126608155
+#48 depth 25 value 28 policy f6 nodes 696533884 time 3759 nps 185297654
+#49 depth 26 value 16 policy e1 nodes 785477388 time 4033 nps 194762555
+14.885 sec
+17.659039974212646 sec total
+2642823156 nodes
+177549422.64024186 nps
+
 
 
 

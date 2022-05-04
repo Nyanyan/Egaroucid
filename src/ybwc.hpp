@@ -52,11 +52,12 @@ inline bool ybwc_split(Search *search, const Flip *flip, int alpha, int beta, co
     return false;
 }
 
-inline bool ybwc_split_without_move(Search *search, const Flip *flip, int alpha, int beta, const int depth, uint64_t legal, bool is_end_search, const bool *searching, int policy, const int pv_idx, const int canput, const int split_count, vector<future<pair<int, uint64_t>>> &parallel_tasks){
+inline bool ybwc_split_without_move(Search *search, const Flip *flip, int alpha, int beta, const int depth, uint64_t legal, bool is_end_search, const bool *searching, int policy, const int pv_idx, const int canput, const int split_count, vector<future<pair<int, uint64_t>>> &parallel_tasks, const int first_val){
     if (pv_idx > 0 && 
         /* pv_idx > canput / YBWC_SPLIT_DIV && */ 
         /* pv_idx < canput - 1 && */ 
-        depth >= YBWC_MID_SPLIT_MIN_DEPTH /*&&*/
+        depth >= YBWC_MID_SPLIT_MIN_DEPTH &&
+        flip->value < first_val - 10
         /* split_count < YBWC_MAX_SPLIT_COUNT */ ){
         if (thread_pool.n_idle()){
             Search copy_search;
