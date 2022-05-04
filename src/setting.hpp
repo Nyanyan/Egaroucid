@@ -40,7 +40,7 @@
 #define USE_MINUS_NTZ false
 
 // evaluation calculation
-#define USE_FAST_DIFF_EVAL true
+#define USE_FAST_DIFF_EVAL false
 
 // evaluation function step width
 // 0: 1 discs
