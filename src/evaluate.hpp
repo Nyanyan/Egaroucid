@@ -882,7 +882,7 @@ inline void calc_features(Search *search){
         //cerr << i << " ";
         search->eval_features[i] = pick_pattern_idx(b_arr, &feature_to_coord[i]);
     }
-    search->eval_feature_reversed = false;
+    search->eval_feature_reversed = 0;
 }
 
 inline void eval_move(Search *search, const Flip *flip){

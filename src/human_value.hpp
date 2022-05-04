@@ -23,6 +23,7 @@ inline int get_human_sense_raw_value(Board *b, Search *search, int search_depth,
     int val = -book.get(b);
     if (val == INF){
         search->board = b->copy();
+        calc_features(search);
         val = value_to_score_int(nega_alpha_ordering_nomemo(search, -SCORE_MAX, SCORE_MAX, search_depth, passed, LEGAL_UNDEFINED));
     }
     return val;
