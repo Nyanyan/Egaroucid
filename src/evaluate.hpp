@@ -325,7 +325,7 @@ constexpr Coord_to_feature coord_to_feature[HW2] = {
 
 constexpr uint_fast16_t pow3[11] = {1, P31, P32, P33, P34, P35, P36, P37, P38, P39, P310};
 uint64_t stability_edge_arr[N_8BIT][N_8BIT][2];
-int16_t pattern_arr[N_PHASES][N_PATTERNS][MAX_EVALUATE_IDX];
+int16_t pattern_arr[2][N_PHASES][N_PATTERNS][MAX_EVALUATE_IDX];
 int16_t eval_sur0_sur1_arr[N_PHASES][MAX_SURROUND][MAX_SURROUND];
 int16_t eval_canput0_canput1_arr[N_PHASES][MAX_CANPUT][MAX_CANPUT];
 int16_t eval_stab0_stab1_arr[N_PHASES][MAX_STABILITY][MAX_STABILITY];
@@ -413,7 +413,7 @@ inline bool init_evaluation_calc(){
     constexpr int pattern_sizes[N_PATTERNS] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10, 10, 10, 10};
     for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
         for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx){
-            if (fread(pattern_arr[phase_idx][pattern_idx], 2, pow3[pattern_sizes[pattern_idx]], fp) < pow3[pattern_sizes[pattern_idx]]){
+            if (fread(pattern_arr[0][phase_idx][pattern_idx], 2, pow3[pattern_sizes[pattern_idx]], fp) < pow3[pattern_sizes[pattern_idx]]){
                 cerr << "eval.egev broken" << endl;
                 fclose(fp);
                 return false;
@@ -445,6 +445,23 @@ inline bool init_evaluation_calc(){
             return false;
         }
     }
+    int i, j, ri;
+    for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
+        cerr << "=";
+        for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx){
+            for (i = 0; i < pow3[pattern_sizes[pattern_idx]]; ++i){
+                ri = i;
+                for (j = 0; j < pattern_sizes[pattern_idx]; ++j){
+                    if ((i / pow3[j]) % 3 == 0)
+                        ri += pow3[j];
+                    else if ((i / pow3[j]) % 3 == 1)
+                        ri -= pow3[j];
+                }
+                pattern_arr[1][phase_idx][pattern_idx][ri] = pattern_arr[0][phase_idx][pattern_idx][i];
+            }
+        }
+    }
+    cerr << endl;
     cerr << "evaluation function initialized" << endl;
     return true;
 }
@@ -599,27 +616,27 @@ inline int calc_pattern(const int phase_idx, Board *b){
 */
 
 inline int pick_pattern(const int phase_idx, const int pattern_idx, const uint_fast8_t b_arr[], const int p0, const int p1, const int p2, const int p3, const int p4){
-    return pattern_arr[phase_idx][pattern_idx][b_arr[p0] * P34 + b_arr[p1] * P33 + b_arr[p2] * P32 + b_arr[p3] * P31 + b_arr[p4]];
+    return pattern_arr[0][phase_idx][pattern_idx][b_arr[p0] * P34 + b_arr[p1] * P33 + b_arr[p2] * P32 + b_arr[p3] * P31 + b_arr[p4]];
 }
 
 inline int pick_pattern(const int phase_idx, const int pattern_idx, const uint_fast8_t b_arr[], const int p0, const int p1, const int p2, const int p3, const int p4, const int p5){
-    return pattern_arr[phase_idx][pattern_idx][b_arr[p0] * P35 + b_arr[p1] * P34 + b_arr[p2] * P33 + b_arr[p3] * P32 + b_arr[p4] * P31 + b_arr[p5]];
+    return pattern_arr[0][phase_idx][pattern_idx][b_arr[p0] * P35 + b_arr[p1] * P34 + b_arr[p2] * P33 + b_arr[p3] * P32 + b_arr[p4] * P31 + b_arr[p5]];
 }
 
 inline int pick_pattern(const int phase_idx, const int pattern_idx, const uint_fast8_t b_arr[], const int p0, const int p1, const int p2, const int p3, const int p4, const int p5, const int p6){
-    return pattern_arr[phase_idx][pattern_idx][b_arr[p0] * P36 + b_arr[p1] * P35 + b_arr[p2] * P34 + b_arr[p3] * P33 + b_arr[p4] * P32 + b_arr[p5] * P31 + b_arr[p6]];
+    return pattern_arr[0][phase_idx][pattern_idx][b_arr[p0] * P36 + b_arr[p1] * P35 + b_arr[p2] * P34 + b_arr[p3] * P33 + b_arr[p4] * P32 + b_arr[p5] * P31 + b_arr[p6]];
 }
 
 inline int pick_pattern(const int phase_idx, const int pattern_idx, const uint_fast8_t b_arr[], const int p0, const int p1, const int p2, const int p3, const int p4, const int p5, const int p6, const int p7){
-    return pattern_arr[phase_idx][pattern_idx][b_arr[p0] * P37 + b_arr[p1] * P36 + b_arr[p2] * P35 + b_arr[p3] * P34 + b_arr[p4] * P33 + b_arr[p5] * P32 + b_arr[p6] * P31 + b_arr[p7]];
+    return pattern_arr[0][phase_idx][pattern_idx][b_arr[p0] * P37 + b_arr[p1] * P36 + b_arr[p2] * P35 + b_arr[p3] * P34 + b_arr[p4] * P33 + b_arr[p5] * P32 + b_arr[p6] * P31 + b_arr[p7]];
 }
 
 inline int pick_pattern(const int phase_idx, const int pattern_idx, const uint_fast8_t b_arr[], const int p0, const int p1, const int p2, const int p3, const int p4, const int p5, const int p6, const int p7, const int p8){
-    return pattern_arr[phase_idx][pattern_idx][b_arr[p0] * P38 + b_arr[p1] * P37 + b_arr[p2] * P36 + b_arr[p3] * P35 + b_arr[p4] * P34 + b_arr[p5] * P33 + b_arr[p6] * P32 + b_arr[p7] * P31 + b_arr[p8]];
+    return pattern_arr[0][phase_idx][pattern_idx][b_arr[p0] * P38 + b_arr[p1] * P37 + b_arr[p2] * P36 + b_arr[p3] * P35 + b_arr[p4] * P34 + b_arr[p5] * P33 + b_arr[p6] * P32 + b_arr[p7] * P31 + b_arr[p8]];
 }
 
 inline int pick_pattern(const int phase_idx, const int pattern_idx, const uint_fast8_t b_arr[], const int p0, const int p1, const int p2, const int p3, const int p4, const int p5, const int p6, const int p7, const int p8, const int p9){
-    return pattern_arr[phase_idx][pattern_idx][b_arr[p0] * P39 + b_arr[p1] * P38 + b_arr[p2] * P37 + b_arr[p3] * P36 + b_arr[p4] * P35 + b_arr[p5] * P34 + b_arr[p6] * P33 + b_arr[p7] * P32 + b_arr[p8] * P31 + b_arr[p9]];
+    return pattern_arr[0][phase_idx][pattern_idx][b_arr[p0] * P39 + b_arr[p1] * P38 + b_arr[p2] * P37 + b_arr[p3] * P36 + b_arr[p4] * P35 + b_arr[p5] * P34 + b_arr[p6] * P33 + b_arr[p7] * P32 + b_arr[p8] * P31 + b_arr[p9]];
 }
 
 inline int calc_pattern_first(const int phase_idx, Board *b){
@@ -646,22 +663,22 @@ inline int calc_pattern_first(const int phase_idx, Board *b){
 
 inline int calc_pattern_diff(const int phase_idx, Search *search){
     return 
-        pattern_arr[phase_idx][0][search->eval_features[0]] + pattern_arr[phase_idx][0][search->eval_features[1]] + pattern_arr[phase_idx][0][search->eval_features[2]] + pattern_arr[phase_idx][0][search->eval_features[3]] + 
-        pattern_arr[phase_idx][1][search->eval_features[4]] + pattern_arr[phase_idx][1][search->eval_features[5]] + pattern_arr[phase_idx][1][search->eval_features[6]] + pattern_arr[phase_idx][1][search->eval_features[7]] + 
-        pattern_arr[phase_idx][2][search->eval_features[8]] + pattern_arr[phase_idx][2][search->eval_features[9]] + pattern_arr[phase_idx][2][search->eval_features[10]] + pattern_arr[phase_idx][2][search->eval_features[11]] + 
-        pattern_arr[phase_idx][3][search->eval_features[12]] + pattern_arr[phase_idx][3][search->eval_features[13]] + pattern_arr[phase_idx][3][search->eval_features[14]] + pattern_arr[phase_idx][3][search->eval_features[15]] + 
-        pattern_arr[phase_idx][4][search->eval_features[16]] + pattern_arr[phase_idx][4][search->eval_features[17]] + pattern_arr[phase_idx][4][search->eval_features[18]] + pattern_arr[phase_idx][4][search->eval_features[19]] + 
-        pattern_arr[phase_idx][5][search->eval_features[20]] + pattern_arr[phase_idx][5][search->eval_features[21]] + pattern_arr[phase_idx][5][search->eval_features[22]] + pattern_arr[phase_idx][5][search->eval_features[23]] + 
-        pattern_arr[phase_idx][6][search->eval_features[24]] + pattern_arr[phase_idx][6][search->eval_features[25]] + 
-        pattern_arr[phase_idx][7][search->eval_features[26]] + pattern_arr[phase_idx][7][search->eval_features[27]] + pattern_arr[phase_idx][7][search->eval_features[28]] + pattern_arr[phase_idx][7][search->eval_features[29]] + 
-        pattern_arr[phase_idx][8][search->eval_features[30]] + pattern_arr[phase_idx][8][search->eval_features[31]] + pattern_arr[phase_idx][8][search->eval_features[32]] + pattern_arr[phase_idx][8][search->eval_features[33]] + 
-        pattern_arr[phase_idx][9][search->eval_features[34]] + pattern_arr[phase_idx][9][search->eval_features[35]] + pattern_arr[phase_idx][9][search->eval_features[36]] + pattern_arr[phase_idx][9][search->eval_features[37]] + 
-        pattern_arr[phase_idx][10][search->eval_features[38]] + pattern_arr[phase_idx][10][search->eval_features[39]] + pattern_arr[phase_idx][10][search->eval_features[40]] + pattern_arr[phase_idx][10][search->eval_features[41]] + 
-        pattern_arr[phase_idx][11][search->eval_features[42]] + pattern_arr[phase_idx][11][search->eval_features[43]] + pattern_arr[phase_idx][11][search->eval_features[44]] + pattern_arr[phase_idx][11][search->eval_features[45]] + 
-        pattern_arr[phase_idx][12][search->eval_features[46]] + pattern_arr[phase_idx][12][search->eval_features[47]] + pattern_arr[phase_idx][12][search->eval_features[48]] + pattern_arr[phase_idx][12][search->eval_features[49]] + 
-        pattern_arr[phase_idx][13][search->eval_features[50]] + pattern_arr[phase_idx][13][search->eval_features[51]] + pattern_arr[phase_idx][13][search->eval_features[52]] + pattern_arr[phase_idx][13][search->eval_features[53]] + 
-        pattern_arr[phase_idx][14][search->eval_features[54]] + pattern_arr[phase_idx][14][search->eval_features[55]] + pattern_arr[phase_idx][14][search->eval_features[56]] + pattern_arr[phase_idx][14][search->eval_features[57]] + 
-        pattern_arr[phase_idx][15][search->eval_features[58]] + pattern_arr[phase_idx][15][search->eval_features[59]] + pattern_arr[phase_idx][15][search->eval_features[60]] + pattern_arr[phase_idx][15][search->eval_features[61]];
+        pattern_arr[search->eval_feature_reversed][phase_idx][0][search->eval_features[0]] + pattern_arr[search->eval_feature_reversed][phase_idx][0][search->eval_features[1]] + pattern_arr[search->eval_feature_reversed][phase_idx][0][search->eval_features[2]] + pattern_arr[search->eval_feature_reversed][phase_idx][0][search->eval_features[3]] + 
+        pattern_arr[search->eval_feature_reversed][phase_idx][1][search->eval_features[4]] + pattern_arr[search->eval_feature_reversed][phase_idx][1][search->eval_features[5]] + pattern_arr[search->eval_feature_reversed][phase_idx][1][search->eval_features[6]] + pattern_arr[search->eval_feature_reversed][phase_idx][1][search->eval_features[7]] + 
+        pattern_arr[search->eval_feature_reversed][phase_idx][2][search->eval_features[8]] + pattern_arr[search->eval_feature_reversed][phase_idx][2][search->eval_features[9]] + pattern_arr[search->eval_feature_reversed][phase_idx][2][search->eval_features[10]] + pattern_arr[search->eval_feature_reversed][phase_idx][2][search->eval_features[11]] + 
+        pattern_arr[search->eval_feature_reversed][phase_idx][3][search->eval_features[12]] + pattern_arr[search->eval_feature_reversed][phase_idx][3][search->eval_features[13]] + pattern_arr[search->eval_feature_reversed][phase_idx][3][search->eval_features[14]] + pattern_arr[search->eval_feature_reversed][phase_idx][3][search->eval_features[15]] + 
+        pattern_arr[search->eval_feature_reversed][phase_idx][4][search->eval_features[16]] + pattern_arr[search->eval_feature_reversed][phase_idx][4][search->eval_features[17]] + pattern_arr[search->eval_feature_reversed][phase_idx][4][search->eval_features[18]] + pattern_arr[search->eval_feature_reversed][phase_idx][4][search->eval_features[19]] + 
+        pattern_arr[search->eval_feature_reversed][phase_idx][5][search->eval_features[20]] + pattern_arr[search->eval_feature_reversed][phase_idx][5][search->eval_features[21]] + pattern_arr[search->eval_feature_reversed][phase_idx][5][search->eval_features[22]] + pattern_arr[search->eval_feature_reversed][phase_idx][5][search->eval_features[23]] + 
+        pattern_arr[search->eval_feature_reversed][phase_idx][6][search->eval_features[24]] + pattern_arr[search->eval_feature_reversed][phase_idx][6][search->eval_features[25]] + 
+        pattern_arr[search->eval_feature_reversed][phase_idx][7][search->eval_features[26]] + pattern_arr[search->eval_feature_reversed][phase_idx][7][search->eval_features[27]] + pattern_arr[search->eval_feature_reversed][phase_idx][7][search->eval_features[28]] + pattern_arr[search->eval_feature_reversed][phase_idx][7][search->eval_features[29]] + 
+        pattern_arr[search->eval_feature_reversed][phase_idx][8][search->eval_features[30]] + pattern_arr[search->eval_feature_reversed][phase_idx][8][search->eval_features[31]] + pattern_arr[search->eval_feature_reversed][phase_idx][8][search->eval_features[32]] + pattern_arr[search->eval_feature_reversed][phase_idx][8][search->eval_features[33]] + 
+        pattern_arr[search->eval_feature_reversed][phase_idx][9][search->eval_features[34]] + pattern_arr[search->eval_feature_reversed][phase_idx][9][search->eval_features[35]] + pattern_arr[search->eval_feature_reversed][phase_idx][9][search->eval_features[36]] + pattern_arr[search->eval_feature_reversed][phase_idx][9][search->eval_features[37]] + 
+        pattern_arr[search->eval_feature_reversed][phase_idx][10][search->eval_features[38]] + pattern_arr[search->eval_feature_reversed][phase_idx][10][search->eval_features[39]] + pattern_arr[search->eval_feature_reversed][phase_idx][10][search->eval_features[40]] + pattern_arr[search->eval_feature_reversed][phase_idx][10][search->eval_features[41]] + 
+        pattern_arr[search->eval_feature_reversed][phase_idx][11][search->eval_features[42]] + pattern_arr[search->eval_feature_reversed][phase_idx][11][search->eval_features[43]] + pattern_arr[search->eval_feature_reversed][phase_idx][11][search->eval_features[44]] + pattern_arr[search->eval_feature_reversed][phase_idx][11][search->eval_features[45]] + 
+        pattern_arr[search->eval_feature_reversed][phase_idx][12][search->eval_features[46]] + pattern_arr[search->eval_feature_reversed][phase_idx][12][search->eval_features[47]] + pattern_arr[search->eval_feature_reversed][phase_idx][12][search->eval_features[48]] + pattern_arr[search->eval_feature_reversed][phase_idx][12][search->eval_features[49]] + 
+        pattern_arr[search->eval_feature_reversed][phase_idx][13][search->eval_features[50]] + pattern_arr[search->eval_feature_reversed][phase_idx][13][search->eval_features[51]] + pattern_arr[search->eval_feature_reversed][phase_idx][13][search->eval_features[52]] + pattern_arr[search->eval_feature_reversed][phase_idx][13][search->eval_features[53]] + 
+        pattern_arr[search->eval_feature_reversed][phase_idx][14][search->eval_features[54]] + pattern_arr[search->eval_feature_reversed][phase_idx][14][search->eval_features[55]] + pattern_arr[search->eval_feature_reversed][phase_idx][14][search->eval_features[56]] + pattern_arr[search->eval_feature_reversed][phase_idx][14][search->eval_features[57]] + 
+        pattern_arr[search->eval_feature_reversed][phase_idx][15][search->eval_features[58]] + pattern_arr[search->eval_feature_reversed][phase_idx][15][search->eval_features[59]] + pattern_arr[search->eval_feature_reversed][phase_idx][15][search->eval_features[60]] + pattern_arr[search->eval_feature_reversed][phase_idx][15][search->eval_features[61]];
 }
 
 inline int create_canput_line_h(uint64_t b, uint64_t w, int t){
@@ -860,6 +877,7 @@ inline void calc_features(Search *search){
     for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i){
         search->eval_features[i] = pick_pattern_idx(b_arr, &feature_to_coord[i]);
     }
+    search->eval_feature_reversed = false;
 }
 
 inline void eval_move(Search *search, const Flip *flip){
@@ -871,6 +889,7 @@ inline void eval_move(Search *search, const Flip *flip){
         for (i = 0; i < coord_to_feature[cell].n_features; ++i)
             search->eval_features[coord_to_feature[cell].features[i].feature] -= coord_to_feature[cell].features[i].x;
     }
+    search->eval_feature_reversed ^= 1;
 }
 
 inline void eval_undo(Search *search, const Flip *flip){
@@ -882,4 +901,5 @@ inline void eval_undo(Search *search, const Flip *flip){
         for (i = 0; i < coord_to_feature[cell].n_features; ++i)
             search->eval_features[coord_to_feature[cell].features[i].feature] += coord_to_feature[cell].features[i].x;
     }
+    search->eval_feature_reversed ^= 1;
 }
