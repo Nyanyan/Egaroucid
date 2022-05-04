@@ -23,12 +23,14 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
     search.board = board;
     search.n_nodes = 0ULL;
     calc_features(&search);
-    uint64_t strt = tim();
+    uint64_t strt;
 
     if (is_end_search){
         child_transpose_table.init();
-
         parent_transpose_table.init();
+
+        strt = tim();
+
         if (show_log)
             cerr << "start!" << endl;
         search.mpct = 0.6;
@@ -50,17 +52,17 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
             if (show_log)
                 cerr << "presearch d=" << depth << " t=" << search.mpct << " [-64,64] " << value_to_score_double(g) << " " << idx_to_coord(result.second) << endl;
 
-            if (depth >= 24 && 1.5 < mpct){
+            if (depth >= 24 && 1.8 < mpct){
                 parent_transpose_table.init();
-                search.mpct = 1.5;
+                search.mpct = 1.8;
                 search.use_mpc = true;
-                alpha = max(-SCORE_MAX, score_to_value(value_to_score_double(g) - 3.0));
-                beta = min(SCORE_MAX, score_to_value(value_to_score_double(g) + 3.0));
+                alpha = -SCORE_MAX; //max(-SCORE_MAX, score_to_value(value_to_score_double(g) - 3.0));
+                beta = SCORE_MAX; //min(SCORE_MAX, score_to_value(value_to_score_double(g) + 3.0));
                 result = first_nega_scout(&search, alpha, beta, depth, false, true);
                 g = result.first;
                 if (show_log)
                     cerr << "presearch d=" << depth << " t=" << search.mpct << " [" << value_to_score_double(alpha) << "," << value_to_score_double(beta) << "] " << value_to_score_double(g) << " " << idx_to_coord(result.second) << endl;
-
+                /*
                 if (depth >= 26 && 1.8 < mpct){
                     parent_transpose_table.init();
                     search.mpct = 1.8;
@@ -72,6 +74,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
                     if (show_log)
                         cerr << "presearch d=" << depth << " t=" << search.mpct << " [" << value_to_score_double(alpha) << "," << value_to_score_double(beta) << "] " << value_to_score_double(g) << " " << idx_to_coord(result.second) << endl;
                 }
+                */
             }
         }
 
@@ -118,6 +121,9 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
     
     } else{
         child_transpose_table.init();
+        parent_transpose_table.init();
+        strt = tim();
+
         if (depth >= 15){
             search.use_mpc = true;
             search.mpct = 0.6;
