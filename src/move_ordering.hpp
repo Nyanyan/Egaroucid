@@ -18,7 +18,7 @@
 #define W_WIPEOUT 1000000000
 
 #define W_VALUE 8
-#define W_VALUE_SHALLOW 8
+#define W_VALUE_SHALLOW 4
 #define W_STABILITY 4
 #define W_MOBILITY 16
 //#define W_SURROUND 4
@@ -98,6 +98,27 @@ inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int
     }
 }
 
+inline void move_evaluate_fast_first(Search *search, Flip *flip){
+    if (flip->flip == search->board.opponent)
+        flip->value = W_WIPEOUT;
+    else{
+        flip->value = cell_weight[flip->pos];
+        if (search->board.parity & cell_div4[flip->pos]){
+            if (search->n_nodes < 34)
+                flip->value += W_PARITY1;
+            else if (search->n_nodes < 43)
+                flip->value += W_PARITY2;
+            else
+                flip->value += W_PARITY3;
+        }
+        search->board.move(flip);
+            flip->value += calc_stability_edge_player(search->board.opponent, search->board.player) * W_STABILITY;
+            flip->n_legal = search->board.get_legal();
+            flip->value += -pop_count_ull(flip->n_legal) * W_MOBILITY;
+        search->board.undo(flip);
+    }
+}
+
 inline void move_ordering(Search *search, vector<Flip> &move_list, int depth, int alpha, int beta, bool is_end_search){
     if (move_list.size() < 2)
         return;
@@ -137,7 +158,7 @@ inline void move_ordering_fast_first(Search *search, vector<Flip> &move_list){
     if (move_list.size() < 2)
         return;
     for (Flip &flip: move_list)
-        move_evaluate(search, &flip, -1, -1, -1);
+        move_evaluate_fast_first(search, &flip);
     //move_evaluate_fast_first(search, &flip);
     sort(move_list.begin(), move_list.end(), cmp_move_ordering);
 }

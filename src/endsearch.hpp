@@ -433,7 +433,49 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped){
     #endif
     return v;
 }
-
+/*
+int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped){
+    if (!global_searching)
+        return SCORE_UNDEFINED;
+    if (search->board.n == 60){
+        uint_fast8_t cells[4];
+        pick_vacant(search, cells);
+        return last4(search, alpha, beta, cells[0], cells[1], cells[2], cells[3], skipped);
+    }
+    ++search->n_nodes;
+    #if USE_END_SC
+        int stab_res = stability_cut(search, &alpha, &beta);
+        if (stab_res != SCORE_UNDEFINED)
+            return stab_res;
+    #endif
+    uint64_t legal = search->board.get_legal();
+    int g, v = -INF;
+    if (legal == 0ULL){
+        if (skipped)
+            return end_evaluate(&search->board);
+        search->board.pass();
+            v = -nega_alpha_end_fast(search, -beta, -alpha, true);
+        search->board.pass();
+        return v;
+    }
+    const int canput = pop_count_ull(legal);
+    vector<Flip> move_list(canput);
+    int idx = 0;
+    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
+        calc_flip(&move_list[idx++], &search->board, cell);
+    move_ordering_fast_first(search, move_list);
+    for (const Flip &flip: move_list){
+        search->board.move(&flip);
+            g = -nega_alpha_end_fast(search, -beta, -alpha, false);
+        search->board.undo(&flip);
+        alpha = max(alpha, g);
+        if (beta <= alpha)
+            return alpha;
+        v = max(v, g);
+    }
+    return v;
+}
+*/
 int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t legal, const bool *searching){
     if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;

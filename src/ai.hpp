@@ -248,11 +248,13 @@ Search_result ai(Board b, int level, bool use_book, int book_error){
         }
         if (!cache_hit){
             res = tree_search(b, depth, use_mpc, mpct, true);
+            /*
             if (!is_mid_search && !use_mpc && depth > END_FAST_DEPTH){
                 parent_transpose_table.copy(&bak_parent_transpose_table);
                 child_transpose_table.copy(&bak_child_transpose_table);
                 cerr << "cache saved" << endl;
             }
+            */
         }
     }
     return res;
