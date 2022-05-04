@@ -888,51 +888,203 @@ inline void calc_features(Search *search){
 }
 
 inline void eval_move(Search *search, const Flip *flip){
-    int i;
-    if (search->eval_feature_reversed){
-        for (i = 0; i < coord_to_feature[flip->pos].n_features; ++i){
-            search->eval_features[coord_to_feature[flip->pos].features[i].feature] -= coord_to_feature[flip->pos].features[i].x;
-            //if (search->eval_features[coord_to_feature[flip->pos].features[i].feature] < 0)
-            //    cerr << "a " << (int)flip->pos << " " << i << " " << (int)coord_to_feature[flip->pos].features[i].feature << " " << coord_to_feature[flip->pos].features[i].x << " " << search->eval_features[coord_to_feature[flip->pos].features[i].feature] << endl;
+    #if USE_FAST_DIFF_EVAL
+        if (search->eval_feature_reversed){
+            switch (coord_to_feature[flip->pos].n_features){
+                case 13: search->eval_features[coord_to_feature[flip->pos].features[12].feature] -= coord_to_feature[flip->pos].features[12].x; [[fallthrough]];
+                case 12: search->eval_features[coord_to_feature[flip->pos].features[11].feature] -= coord_to_feature[flip->pos].features[11].x; [[fallthrough]];
+                case 11: search->eval_features[coord_to_feature[flip->pos].features[10].feature] -= coord_to_feature[flip->pos].features[10].x; [[fallthrough]];
+                case 10: search->eval_features[coord_to_feature[flip->pos].features[ 9].feature] -= coord_to_feature[flip->pos].features[ 9].x; [[fallthrough]];
+                case  9: search->eval_features[coord_to_feature[flip->pos].features[ 8].feature] -= coord_to_feature[flip->pos].features[ 8].x; [[fallthrough]];
+                case  8: search->eval_features[coord_to_feature[flip->pos].features[ 7].feature] -= coord_to_feature[flip->pos].features[ 7].x; [[fallthrough]];
+                case  7: search->eval_features[coord_to_feature[flip->pos].features[ 6].feature] -= coord_to_feature[flip->pos].features[ 6].x; [[fallthrough]];
+                case  6: search->eval_features[coord_to_feature[flip->pos].features[ 5].feature] -= coord_to_feature[flip->pos].features[ 5].x; [[fallthrough]];
+                case  5: search->eval_features[coord_to_feature[flip->pos].features[ 4].feature] -= coord_to_feature[flip->pos].features[ 4].x; [[fallthrough]];
+                case  4: search->eval_features[coord_to_feature[flip->pos].features[ 3].feature] -= coord_to_feature[flip->pos].features[ 3].x; [[fallthrough]];
+                case  3: search->eval_features[coord_to_feature[flip->pos].features[ 2].feature] -= coord_to_feature[flip->pos].features[ 2].x; [[fallthrough]];
+                case  2: search->eval_features[coord_to_feature[flip->pos].features[ 1].feature] -= coord_to_feature[flip->pos].features[ 1].x; [[fallthrough]];
+                case  1: search->eval_features[coord_to_feature[flip->pos].features[ 0].feature] -= coord_to_feature[flip->pos].features[ 0].x; [[fallthrough]];
+                case  0: break;
+            }
+            uint64_t f = flip->flip;
+            for (uint_fast8_t cell = first_bit(&f); f; cell = next_bit(&f)){
+                switch (coord_to_feature[cell].n_features){
+                    case 13: search->eval_features[coord_to_feature[cell].features[12].feature] += coord_to_feature[cell].features[12].x; [[fallthrough]];
+                    case 12: search->eval_features[coord_to_feature[cell].features[11].feature] += coord_to_feature[cell].features[11].x; [[fallthrough]];
+                    case 11: search->eval_features[coord_to_feature[cell].features[10].feature] += coord_to_feature[cell].features[10].x; [[fallthrough]];
+                    case 10: search->eval_features[coord_to_feature[cell].features[ 9].feature] += coord_to_feature[cell].features[ 9].x; [[fallthrough]];
+                    case  9: search->eval_features[coord_to_feature[cell].features[ 8].feature] += coord_to_feature[cell].features[ 8].x; [[fallthrough]];
+                    case  8: search->eval_features[coord_to_feature[cell].features[ 7].feature] += coord_to_feature[cell].features[ 7].x; [[fallthrough]];
+                    case  7: search->eval_features[coord_to_feature[cell].features[ 6].feature] += coord_to_feature[cell].features[ 6].x; [[fallthrough]];
+                    case  6: search->eval_features[coord_to_feature[cell].features[ 5].feature] += coord_to_feature[cell].features[ 5].x; [[fallthrough]];
+                    case  5: search->eval_features[coord_to_feature[cell].features[ 4].feature] += coord_to_feature[cell].features[ 4].x; [[fallthrough]];
+                    case  4: search->eval_features[coord_to_feature[cell].features[ 3].feature] += coord_to_feature[cell].features[ 3].x; [[fallthrough]];
+                    case  3: search->eval_features[coord_to_feature[cell].features[ 2].feature] += coord_to_feature[cell].features[ 2].x; [[fallthrough]];
+                    case  2: search->eval_features[coord_to_feature[cell].features[ 1].feature] += coord_to_feature[cell].features[ 1].x; [[fallthrough]];
+                    case  1: search->eval_features[coord_to_feature[cell].features[ 0].feature] += coord_to_feature[cell].features[ 0].x; [[fallthrough]];
+                    case  0: break;
+                }
+            }
+        } else{
+            switch (coord_to_feature[flip->pos].n_features){
+                case 13: search->eval_features[coord_to_feature[flip->pos].features[12].feature] -= 2 * coord_to_feature[flip->pos].features[12].x; [[fallthrough]];
+                case 12: search->eval_features[coord_to_feature[flip->pos].features[11].feature] -= 2 * coord_to_feature[flip->pos].features[11].x; [[fallthrough]];
+                case 11: search->eval_features[coord_to_feature[flip->pos].features[10].feature] -= 2 * coord_to_feature[flip->pos].features[10].x; [[fallthrough]];
+                case 10: search->eval_features[coord_to_feature[flip->pos].features[ 9].feature] -= 2 * coord_to_feature[flip->pos].features[ 9].x; [[fallthrough]];
+                case  9: search->eval_features[coord_to_feature[flip->pos].features[ 8].feature] -= 2 * coord_to_feature[flip->pos].features[ 8].x; [[fallthrough]];
+                case  8: search->eval_features[coord_to_feature[flip->pos].features[ 7].feature] -= 2 * coord_to_feature[flip->pos].features[ 7].x; [[fallthrough]];
+                case  7: search->eval_features[coord_to_feature[flip->pos].features[ 6].feature] -= 2 * coord_to_feature[flip->pos].features[ 6].x; [[fallthrough]];
+                case  6: search->eval_features[coord_to_feature[flip->pos].features[ 5].feature] -= 2 * coord_to_feature[flip->pos].features[ 5].x; [[fallthrough]];
+                case  5: search->eval_features[coord_to_feature[flip->pos].features[ 4].feature] -= 2 * coord_to_feature[flip->pos].features[ 4].x; [[fallthrough]];
+                case  4: search->eval_features[coord_to_feature[flip->pos].features[ 3].feature] -= 2 * coord_to_feature[flip->pos].features[ 3].x; [[fallthrough]];
+                case  3: search->eval_features[coord_to_feature[flip->pos].features[ 2].feature] -= 2 * coord_to_feature[flip->pos].features[ 2].x; [[fallthrough]];
+                case  2: search->eval_features[coord_to_feature[flip->pos].features[ 1].feature] -= 2 * coord_to_feature[flip->pos].features[ 1].x; [[fallthrough]];
+                case  1: search->eval_features[coord_to_feature[flip->pos].features[ 0].feature] -= 2 * coord_to_feature[flip->pos].features[ 0].x; [[fallthrough]];
+                case  0: break;
+            }
+            uint64_t f = flip->flip;
+            for (uint_fast8_t cell = first_bit(&f); f; cell = next_bit(&f)){
+                switch (coord_to_feature[cell].n_features){
+                    case 13: search->eval_features[coord_to_feature[cell].features[12].feature] -= coord_to_feature[cell].features[12].x; [[fallthrough]];
+                    case 12: search->eval_features[coord_to_feature[cell].features[11].feature] -= coord_to_feature[cell].features[11].x; [[fallthrough]];
+                    case 11: search->eval_features[coord_to_feature[cell].features[10].feature] -= coord_to_feature[cell].features[10].x; [[fallthrough]];
+                    case 10: search->eval_features[coord_to_feature[cell].features[ 9].feature] -= coord_to_feature[cell].features[ 9].x; [[fallthrough]];
+                    case  9: search->eval_features[coord_to_feature[cell].features[ 8].feature] -= coord_to_feature[cell].features[ 8].x; [[fallthrough]];
+                    case  8: search->eval_features[coord_to_feature[cell].features[ 7].feature] -= coord_to_feature[cell].features[ 7].x; [[fallthrough]];
+                    case  7: search->eval_features[coord_to_feature[cell].features[ 6].feature] -= coord_to_feature[cell].features[ 6].x; [[fallthrough]];
+                    case  6: search->eval_features[coord_to_feature[cell].features[ 5].feature] -= coord_to_feature[cell].features[ 5].x; [[fallthrough]];
+                    case  5: search->eval_features[coord_to_feature[cell].features[ 4].feature] -= coord_to_feature[cell].features[ 4].x; [[fallthrough]];
+                    case  4: search->eval_features[coord_to_feature[cell].features[ 3].feature] -= coord_to_feature[cell].features[ 3].x; [[fallthrough]];
+                    case  3: search->eval_features[coord_to_feature[cell].features[ 2].feature] -= coord_to_feature[cell].features[ 2].x; [[fallthrough]];
+                    case  2: search->eval_features[coord_to_feature[cell].features[ 1].feature] -= coord_to_feature[cell].features[ 1].x; [[fallthrough]];
+                    case  1: search->eval_features[coord_to_feature[cell].features[ 0].feature] -= coord_to_feature[cell].features[ 0].x; [[fallthrough]];
+                    case  0: break;
+                }
+            }
         }
-        uint64_t f = flip->flip;
-        for (uint_fast8_t cell = first_bit(&f); f; cell = next_bit(&f)){
-            for (i = 0; i < coord_to_feature[cell].n_features; ++i)
-                search->eval_features[coord_to_feature[cell].features[i].feature] += coord_to_feature[cell].features[i].x;
+    #else
+        int i;
+        if (search->eval_feature_reversed){
+            for (i = 0; i < coord_to_feature[flip->pos].n_features; ++i){
+                search->eval_features[coord_to_feature[flip->pos].features[i].feature] -= coord_to_feature[flip->pos].features[i].x;
+                //if (search->eval_features[coord_to_feature[flip->pos].features[i].feature] < 0)
+                //    cerr << "a " << (int)flip->pos << " " << i << " " << (int)coord_to_feature[flip->pos].features[i].feature << " " << coord_to_feature[flip->pos].features[i].x << " " << search->eval_features[coord_to_feature[flip->pos].features[i].feature] << endl;
+            }
+            uint64_t f = flip->flip;
+            for (uint_fast8_t cell = first_bit(&f); f; cell = next_bit(&f)){
+                for (i = 0; i < coord_to_feature[cell].n_features; ++i)
+                    search->eval_features[coord_to_feature[cell].features[i].feature] += coord_to_feature[cell].features[i].x;
+            }
+        } else{
+            for (i = 0; i < coord_to_feature[flip->pos].n_features; ++i){
+                search->eval_features[coord_to_feature[flip->pos].features[i].feature] -= 2 * coord_to_feature[flip->pos].features[i].x;
+                //if (search->eval_features[coord_to_feature[flip->pos].features[i].feature] < 0)
+                //    cerr << "b " << (int)flip->pos << " " << i << " " << coord_to_feature[flip->pos].features[i].x << " " << search->eval_features[coord_to_feature[flip->pos].features[i].feature] << endl;
+            }
+            uint64_t f = flip->flip;
+            for (uint_fast8_t cell = first_bit(&f); f; cell = next_bit(&f)){
+                for (i = 0; i < coord_to_feature[cell].n_features; ++i)
+                    search->eval_features[coord_to_feature[cell].features[i].feature] -= coord_to_feature[cell].features[i].x;
+            }
         }
-    } else{
-        for (i = 0; i < coord_to_feature[flip->pos].n_features; ++i){
-            search->eval_features[coord_to_feature[flip->pos].features[i].feature] -= 2 * coord_to_feature[flip->pos].features[i].x;
-            //if (search->eval_features[coord_to_feature[flip->pos].features[i].feature] < 0)
-            //    cerr << "b " << (int)flip->pos << " " << i << " " << coord_to_feature[flip->pos].features[i].x << " " << search->eval_features[coord_to_feature[flip->pos].features[i].feature] << endl;
-        }
-        uint64_t f = flip->flip;
-        for (uint_fast8_t cell = first_bit(&f); f; cell = next_bit(&f)){
-            for (i = 0; i < coord_to_feature[cell].n_features; ++i)
-                search->eval_features[coord_to_feature[cell].features[i].feature] -= coord_to_feature[cell].features[i].x;
-        }
-    }
+    #endif
     search->eval_feature_reversed ^= 1;
 }
 
 inline void eval_undo(Search *search, const Flip *flip){
     search->eval_feature_reversed ^= 1;
-    int i;
-    if (search->eval_feature_reversed){
-        for (i = 0; i < coord_to_feature[flip->pos].n_features; ++i)
-            search->eval_features[coord_to_feature[flip->pos].features[i].feature] += coord_to_feature[flip->pos].features[i].x;
-        uint64_t f = flip->flip;
-        for (uint_fast8_t cell = first_bit(&f); f; cell = next_bit(&f)){
-            for (i = 0; i < coord_to_feature[cell].n_features; ++i)
-                search->eval_features[coord_to_feature[cell].features[i].feature] -= coord_to_feature[cell].features[i].x;
+    #if USE_FAST_DIFF_EVAL
+        if (search->eval_feature_reversed){
+            switch (coord_to_feature[flip->pos].n_features){
+                case 13: search->eval_features[coord_to_feature[flip->pos].features[12].feature] += coord_to_feature[flip->pos].features[12].x; [[fallthrough]];
+                case 12: search->eval_features[coord_to_feature[flip->pos].features[11].feature] += coord_to_feature[flip->pos].features[11].x; [[fallthrough]];
+                case 11: search->eval_features[coord_to_feature[flip->pos].features[10].feature] += coord_to_feature[flip->pos].features[10].x; [[fallthrough]];
+                case 10: search->eval_features[coord_to_feature[flip->pos].features[ 9].feature] += coord_to_feature[flip->pos].features[ 9].x; [[fallthrough]];
+                case  9: search->eval_features[coord_to_feature[flip->pos].features[ 8].feature] += coord_to_feature[flip->pos].features[ 8].x; [[fallthrough]];
+                case  8: search->eval_features[coord_to_feature[flip->pos].features[ 7].feature] += coord_to_feature[flip->pos].features[ 7].x; [[fallthrough]];
+                case  7: search->eval_features[coord_to_feature[flip->pos].features[ 6].feature] += coord_to_feature[flip->pos].features[ 6].x; [[fallthrough]];
+                case  6: search->eval_features[coord_to_feature[flip->pos].features[ 5].feature] += coord_to_feature[flip->pos].features[ 5].x; [[fallthrough]];
+                case  5: search->eval_features[coord_to_feature[flip->pos].features[ 4].feature] += coord_to_feature[flip->pos].features[ 4].x; [[fallthrough]];
+                case  4: search->eval_features[coord_to_feature[flip->pos].features[ 3].feature] += coord_to_feature[flip->pos].features[ 3].x; [[fallthrough]];
+                case  3: search->eval_features[coord_to_feature[flip->pos].features[ 2].feature] += coord_to_feature[flip->pos].features[ 2].x; [[fallthrough]];
+                case  2: search->eval_features[coord_to_feature[flip->pos].features[ 1].feature] += coord_to_feature[flip->pos].features[ 1].x; [[fallthrough]];
+                case  1: search->eval_features[coord_to_feature[flip->pos].features[ 0].feature] += coord_to_feature[flip->pos].features[ 0].x; [[fallthrough]];
+                case  0: break;
+            }
+            uint64_t f = flip->flip;
+            for (uint_fast8_t cell = first_bit(&f); f; cell = next_bit(&f)){
+                switch (coord_to_feature[cell].n_features){
+                    case 13: search->eval_features[coord_to_feature[cell].features[12].feature] -= coord_to_feature[cell].features[12].x; [[fallthrough]];
+                    case 12: search->eval_features[coord_to_feature[cell].features[11].feature] -= coord_to_feature[cell].features[11].x; [[fallthrough]];
+                    case 11: search->eval_features[coord_to_feature[cell].features[10].feature] -= coord_to_feature[cell].features[10].x; [[fallthrough]];
+                    case 10: search->eval_features[coord_to_feature[cell].features[ 9].feature] -= coord_to_feature[cell].features[ 9].x; [[fallthrough]];
+                    case  9: search->eval_features[coord_to_feature[cell].features[ 8].feature] -= coord_to_feature[cell].features[ 8].x; [[fallthrough]];
+                    case  8: search->eval_features[coord_to_feature[cell].features[ 7].feature] -= coord_to_feature[cell].features[ 7].x; [[fallthrough]];
+                    case  7: search->eval_features[coord_to_feature[cell].features[ 6].feature] -= coord_to_feature[cell].features[ 6].x; [[fallthrough]];
+                    case  6: search->eval_features[coord_to_feature[cell].features[ 5].feature] -= coord_to_feature[cell].features[ 5].x; [[fallthrough]];
+                    case  5: search->eval_features[coord_to_feature[cell].features[ 4].feature] -= coord_to_feature[cell].features[ 4].x; [[fallthrough]];
+                    case  4: search->eval_features[coord_to_feature[cell].features[ 3].feature] -= coord_to_feature[cell].features[ 3].x; [[fallthrough]];
+                    case  3: search->eval_features[coord_to_feature[cell].features[ 2].feature] -= coord_to_feature[cell].features[ 2].x; [[fallthrough]];
+                    case  2: search->eval_features[coord_to_feature[cell].features[ 1].feature] -= coord_to_feature[cell].features[ 1].x; [[fallthrough]];
+                    case  1: search->eval_features[coord_to_feature[cell].features[ 0].feature] -= coord_to_feature[cell].features[ 0].x; [[fallthrough]];
+                    case  0: break;
+                }
+            }
+        } else{
+            switch (coord_to_feature[flip->pos].n_features){
+                case 13: search->eval_features[coord_to_feature[flip->pos].features[12].feature] += 2 * coord_to_feature[flip->pos].features[12].x; [[fallthrough]];
+                case 12: search->eval_features[coord_to_feature[flip->pos].features[11].feature] += 2 * coord_to_feature[flip->pos].features[11].x; [[fallthrough]];
+                case 11: search->eval_features[coord_to_feature[flip->pos].features[10].feature] += 2 * coord_to_feature[flip->pos].features[10].x; [[fallthrough]];
+                case 10: search->eval_features[coord_to_feature[flip->pos].features[ 9].feature] += 2 * coord_to_feature[flip->pos].features[ 9].x; [[fallthrough]];
+                case  9: search->eval_features[coord_to_feature[flip->pos].features[ 8].feature] += 2 * coord_to_feature[flip->pos].features[ 8].x; [[fallthrough]];
+                case  8: search->eval_features[coord_to_feature[flip->pos].features[ 7].feature] += 2 * coord_to_feature[flip->pos].features[ 7].x; [[fallthrough]];
+                case  7: search->eval_features[coord_to_feature[flip->pos].features[ 6].feature] += 2 * coord_to_feature[flip->pos].features[ 6].x; [[fallthrough]];
+                case  6: search->eval_features[coord_to_feature[flip->pos].features[ 5].feature] += 2 * coord_to_feature[flip->pos].features[ 5].x; [[fallthrough]];
+                case  5: search->eval_features[coord_to_feature[flip->pos].features[ 4].feature] += 2 * coord_to_feature[flip->pos].features[ 4].x; [[fallthrough]];
+                case  4: search->eval_features[coord_to_feature[flip->pos].features[ 3].feature] += 2 * coord_to_feature[flip->pos].features[ 3].x; [[fallthrough]];
+                case  3: search->eval_features[coord_to_feature[flip->pos].features[ 2].feature] += 2 * coord_to_feature[flip->pos].features[ 2].x; [[fallthrough]];
+                case  2: search->eval_features[coord_to_feature[flip->pos].features[ 1].feature] += 2 * coord_to_feature[flip->pos].features[ 1].x; [[fallthrough]];
+                case  1: search->eval_features[coord_to_feature[flip->pos].features[ 0].feature] += 2 * coord_to_feature[flip->pos].features[ 0].x; [[fallthrough]];
+                case  0: break;
+            }
+            uint64_t f = flip->flip;
+            for (uint_fast8_t cell = first_bit(&f); f; cell = next_bit(&f)){
+                switch (coord_to_feature[cell].n_features){
+                    case 13: search->eval_features[coord_to_feature[cell].features[12].feature] += coord_to_feature[cell].features[12].x; [[fallthrough]];
+                    case 12: search->eval_features[coord_to_feature[cell].features[11].feature] += coord_to_feature[cell].features[11].x; [[fallthrough]];
+                    case 11: search->eval_features[coord_to_feature[cell].features[10].feature] += coord_to_feature[cell].features[10].x; [[fallthrough]];
+                    case 10: search->eval_features[coord_to_feature[cell].features[ 9].feature] += coord_to_feature[cell].features[ 9].x; [[fallthrough]];
+                    case  9: search->eval_features[coord_to_feature[cell].features[ 8].feature] += coord_to_feature[cell].features[ 8].x; [[fallthrough]];
+                    case  8: search->eval_features[coord_to_feature[cell].features[ 7].feature] += coord_to_feature[cell].features[ 7].x; [[fallthrough]];
+                    case  7: search->eval_features[coord_to_feature[cell].features[ 6].feature] += coord_to_feature[cell].features[ 6].x; [[fallthrough]];
+                    case  6: search->eval_features[coord_to_feature[cell].features[ 5].feature] += coord_to_feature[cell].features[ 5].x; [[fallthrough]];
+                    case  5: search->eval_features[coord_to_feature[cell].features[ 4].feature] += coord_to_feature[cell].features[ 4].x; [[fallthrough]];
+                    case  4: search->eval_features[coord_to_feature[cell].features[ 3].feature] += coord_to_feature[cell].features[ 3].x; [[fallthrough]];
+                    case  3: search->eval_features[coord_to_feature[cell].features[ 2].feature] += coord_to_feature[cell].features[ 2].x; [[fallthrough]];
+                    case  2: search->eval_features[coord_to_feature[cell].features[ 1].feature] += coord_to_feature[cell].features[ 1].x; [[fallthrough]];
+                    case  1: search->eval_features[coord_to_feature[cell].features[ 0].feature] += coord_to_feature[cell].features[ 0].x; [[fallthrough]];
+                    case  0: break;
+                }
+            }
         }
-    } else{
-        for (i = 0; i < coord_to_feature[flip->pos].n_features; ++i)
-            search->eval_features[coord_to_feature[flip->pos].features[i].feature] += 2 * coord_to_feature[flip->pos].features[i].x;
-        uint64_t f = flip->flip;
-        for (uint_fast8_t cell = first_bit(&f); f; cell = next_bit(&f)){
-            for (i = 0; i < coord_to_feature[cell].n_features; ++i)
-                search->eval_features[coord_to_feature[cell].features[i].feature] += coord_to_feature[cell].features[i].x;
+    #else
+        int i;
+        if (search->eval_feature_reversed){
+            for (i = 0; i < coord_to_feature[flip->pos].n_features; ++i)
+                search->eval_features[coord_to_feature[flip->pos].features[i].feature] += coord_to_feature[flip->pos].features[i].x;
+            uint64_t f = flip->flip;
+            for (uint_fast8_t cell = first_bit(&f); f; cell = next_bit(&f)){
+                for (i = 0; i < coord_to_feature[cell].n_features; ++i)
+                    search->eval_features[coord_to_feature[cell].features[i].feature] -= coord_to_feature[cell].features[i].x;
+            }
+        } else{
+            for (i = 0; i < coord_to_feature[flip->pos].n_features; ++i)
+                search->eval_features[coord_to_feature[flip->pos].features[i].feature] += 2 * coord_to_feature[flip->pos].features[i].x;
+            uint64_t f = flip->flip;
+            for (uint_fast8_t cell = first_bit(&f); f; cell = next_bit(&f)){
+                for (i = 0; i < coord_to_feature[cell].n_features; ++i)
+                    search->eval_features[coord_to_feature[cell].features[i].feature] += coord_to_feature[cell].features[i].x;
+            }
         }
-    }
+    #endif
 }

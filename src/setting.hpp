@@ -39,6 +39,9 @@
 // NTZ
 #define USE_MINUS_NTZ false
 
+// evaluation calculation
+#define USE_FAST_DIFF_EVAL true
+
 // evaluation function step width
 // 0: 1 discs
 // 1: 2 discs
