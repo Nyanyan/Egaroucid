@@ -30,9 +30,11 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped){
     if (legal == 0ULL){
         if (skipped)
             return end_evaluate(&search->board);
+        search->eval_feature_reversed ^= 1;
         search->board.pass();
             v = -nega_alpha_eval1(search, -beta, -alpha, true);
         search->board.pass();
+        search->eval_feature_reversed ^= 1;
         return v;
     }
     Flip flip;
@@ -70,9 +72,11 @@ int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped){
     if (legal == 0ULL){
         if (skipped)
             return end_evaluate(&search->board);
+        search->eval_feature_reversed ^= 1;
         search->board.pass();
             v = -nega_alpha(search, -beta, -alpha, depth, true);
         search->board.pass();
+        search->eval_feature_reversed ^= 1;
         return v;
     }
     Flip flip;
@@ -108,9 +112,11 @@ int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, b
     if (legal == 0ULL){
         if (skipped)
             return end_evaluate(&search->board);
+        search->eval_feature_reversed ^= 1;
         search->board.pass();
             v = -nega_alpha_ordering_nomemo(search, -beta, -alpha, depth, true, LEGAL_UNDEFINED);
         search->board.pass();
+        search->eval_feature_reversed ^= 1;
         return v;
     }
     #if USE_MID_MPC
@@ -176,9 +182,11 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
     if (legal == 0ULL){
         if (skipped)
             return end_evaluate(&search->board);
+        search->eval_feature_reversed ^= 1;
         search->board.pass();
             v = -nega_alpha_ordering(search, -beta, -alpha, depth, true, LEGAL_UNDEFINED, is_end_search, searching);
         search->board.pass();
+        search->eval_feature_reversed ^= 1;
         return v;
     }
     #if USE_MID_MPC
@@ -319,9 +327,11 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     if (legal == 0ULL){
         if (skipped)
             return end_evaluate(&search->board);
+        search->eval_feature_reversed ^= 1;
         search->board.pass();
             v = -nega_scout(search, -beta, -alpha, depth, true, LEGAL_UNDEFINED, is_end_search);
         search->board.pass();
+        search->eval_feature_reversed ^= 1;
         return v;
     }
     #if USE_MID_MPC
@@ -488,9 +498,11 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
             res.first = end_evaluate(&search->board);
             res.second = -1;
         } else{
+            search->eval_feature_reversed ^= 1;
             search->board.pass();
                 res = first_nega_scout(search, -beta, -alpha, depth, true, is_end_search);
             search->board.pass();
+            search->eval_feature_reversed ^= 1;
             res.first = -res.first;
         }
         return res;

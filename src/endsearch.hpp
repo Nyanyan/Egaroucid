@@ -464,9 +464,11 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
     if (legal == 0ULL){
         if (skipped)
             return end_evaluate(&search->board);
+        //search->eval_feature_reversed ^= 1;
         search->board.pass();
             v = -nega_alpha_end(search, -beta, -alpha, true, LEGAL_UNDEFINED, searching);
         search->board.pass();
+        //search->eval_feature_reversed ^= 1;
         return v;
     }
     #if USE_END_MPC && false
