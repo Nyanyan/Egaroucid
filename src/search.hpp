@@ -10,6 +10,10 @@
 
 using namespace std;
 
+#ifndef N_SYMMETRY_PATTERNS
+    #define N_SYMMETRY_PATTERNS 62
+#endif
+
 #define MID_FAST_DEPTH 1
 #define END_FAST_DEPTH 7
 #define MID_TO_END_DEPTH 13
@@ -44,6 +48,8 @@ struct Search{
     int eval_features[N_SYMMETRY_PATTERNS];
     //uint_fast8_t p;
 };
+
+inline void calc_stability(Board *b, int *stab0, int *stab1);
 
 inline int stability_cut(Search *search, int *alpha, int *beta){
     int stab_player, stab_opponent;

@@ -22,6 +22,17 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
     bool is_end_search = (HW2 - board.n == depth);
     search.board = board;
     search.n_nodes = 0ULL;
+    calc_features(&search);
+    //cerr << mid_evaluate_diff(&search) << " " << mid_evaluate(&search.board) << endl;
+    Flip flp;
+    calc_flip(&flp, &search.board, 34);
+    eval_move(&search, &flp);
+    cerr << mid_evaluate_diff(&search) << " ";
+    search.board.move(&flp);
+    cerr << mid_evaluate(&search.board) << endl;
+    search.board.print();
+    search.board.undo(&flp);
+    eval_undo(&search, &flp);
     uint64_t strt = tim();
 
     if (is_end_search){

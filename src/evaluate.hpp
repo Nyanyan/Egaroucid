@@ -10,9 +10,11 @@
 using namespace std;
 
 #define N_PATTERNS 16
-#define N_SYMMETRY_PATTERNS 62
+#ifndef N_SYMMETRY_PATTERNS
+    #define N_SYMMETRY_PATTERNS 62
+#endif
 #define MAX_PATTERN_CELLS 10
-#define MAX_CELL_PATTERNS 10
+#define MAX_CELL_PATTERNS 13
 #define MAX_SURROUND 100
 #define MAX_CANPUT 50
 #define MAX_STABILITY 65
@@ -319,7 +321,7 @@ constexpr Coord_to_feature coord_to_feature[HW2] = {
     { 8, {{ 5, P37}, {16, P35}, {26, P36}, {30, P37}, {34, P38}, {42, P36}, {46, P36}, {50, P37}}}, // C1
     {10, {{ 1, P37}, {20, P36}, {26, P37}, {30, P38}, {38, P35}, {42, P37}, {46, P37}, {50, P38}, {54, P38}, {58, P38}}}, // B1
     {13, {{24, P37}, {26, P38}, {27, P38}, {30, P39}, {34, P39}, {35, P39}, {38, P39}, {42, P38}, {46, P38}, {47, P38}, {50, P39}, {54, P39}, {58, P39}}}, // A1
-}
+};
 
 constexpr uint_fast16_t pow3[11] = {1, P31, P32, P33, P34, P35, P36, P37, P38, P39, P310};
 uint64_t stability_edge_arr[N_8BIT][N_8BIT][2];
@@ -695,30 +697,30 @@ inline int end_evaluate(Board *b){
     return score_to_value(res);
 }
 
-inline int mid_evaluate_first(Search *search){
+inline int mid_evaluate(Board *b){
     int phase_idx, sur0, sur1, canput0, canput1, stab0, stab1, num0, num1;
     uint64_t player_mobility, opponent_mobility, empties;
-    player_mobility = calc_legal(search->board.player, search->board.opponent);
-    opponent_mobility = calc_legal(search->board.opponent, search->board.player);
+    player_mobility = calc_legal(b->player, b->opponent);
+    opponent_mobility = calc_legal(b->opponent, b->player);
     canput0 = min(MAX_CANPUT - 1, pop_count_ull(player_mobility));
     canput1 = min(MAX_CANPUT - 1, pop_count_ull(opponent_mobility));
     if (canput0 == 0 && canput1 == 0)
-        return end_evaluate(&search->board);
-    phase_idx = search->board.phase();
-    empties = ~(search->board.player | search->board.opponent);
-    sur0 = min(MAX_SURROUND - 1, calc_surround(search->board.player, empties));
-    sur1 = min(MAX_SURROUND - 1, calc_surround(search->board.opponent, empties));
-    calc_stability(&search->board, &stab0, &stab1);
-    num0 = pop_count_ull(search->board.player);
-    num1 = pop_count_ull(search->board.opponent);
+        return end_evaluate(b);
+    phase_idx = b->phase();
+    empties = ~(b->player | b->opponent);
+    sur0 = min(MAX_SURROUND - 1, calc_surround(b->player, empties));
+    sur1 = min(MAX_SURROUND - 1, calc_surround(b->opponent, empties));
+    calc_stability(b, &stab0, &stab1);
+    num0 = pop_count_ull(b->player);
+    num1 = pop_count_ull(b->opponent);
     //cerr << calc_pattern(phase_idx, b) << " " << eval_sur0_sur1_arr[phase_idx][sur0][sur1] << " " << eval_canput0_canput1_arr[phase_idx][canput0][canput1] << " "
     //    << eval_stab0_stab1_arr[phase_idx][stab0][stab1] << " " << eval_num0_num1_arr[phase_idx][num0][num1] << " " << calc_canput_pattern(phase_idx, b, player_mobility, opponent_mobility) << endl;
-    int res = calc_pattern_first(phase_idx, &search->board) + 
+    int res = calc_pattern_first(phase_idx, b) + 
         eval_sur0_sur1_arr[phase_idx][sur0][sur1] + 
         eval_canput0_canput1_arr[phase_idx][canput0][canput1] + 
         eval_stab0_stab1_arr[phase_idx][stab0][stab1] + 
         eval_num0_num1_arr[phase_idx][num0][num1] + 
-        calc_canput_pattern(phase_idx, &search->board, player_mobility, opponent_mobility);
+        calc_canput_pattern(phase_idx, b, player_mobility, opponent_mobility);
     //return score_modification(phase_idx, res);
     //cerr << res << endl;
     #if EVALUATION_STEP_WIDTH_MODE == 0
@@ -769,7 +771,7 @@ inline int mid_evaluate_first(Search *search){
     return max(-SCORE_MAX, min(SCORE_MAX, res));
 }
 
-inline int mid_evaluate_diff(Search *search, Flip *flip){
+inline int mid_evaluate_diff(Search *search){
     int phase_idx, sur0, sur1, canput0, canput1, stab0, stab1, num0, num1;
     uint64_t player_mobility, opponent_mobility, empties;
     player_mobility = calc_legal(search->board.player, search->board.opponent);
@@ -843,7 +845,7 @@ inline int mid_evaluate_diff(Search *search, Flip *flip){
     return max(-SCORE_MAX, min(SCORE_MAX, res));
 }
 
-inline int pick_pattern_idx(const uint_fast8_t b_arr[], Feature_to_coord *f){
+inline int pick_pattern_idx(const uint_fast8_t b_arr[], const Feature_to_coord *f){
     int res = 0;
     for (int i = f->n_cells - 1; i >= 0; --i){
         res *= 3;
@@ -854,13 +856,13 @@ inline int pick_pattern_idx(const uint_fast8_t b_arr[], Feature_to_coord *f){
 
 inline void calc_features(Search *search){
     uint_fast8_t b_arr[HW2];
-    b->translate_to_arr_player(b_arr);
+    search->board.translate_to_arr_player(b_arr);
     for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i){
         search->eval_features[i] = pick_pattern_idx(b_arr, &feature_to_coord[i]);
     }
 }
 
-inline void eval_move(Search *search, Flip *flip){
+inline void eval_move(Search *search, const Flip *flip){
     int i;
     for (i = 0; i < coord_to_feature[flip->pos].n_features; ++i)
         search->eval_features[coord_to_feature[flip->pos].features[i].feature] -= 2 * coord_to_feature[flip->pos].features[i].x;
@@ -871,7 +873,7 @@ inline void eval_move(Search *search, Flip *flip){
     }
 }
 
-inline void eval_undo(Search *search, Flip *flip){
+inline void eval_undo(Search *search, const Flip *flip){
     int i;
     for (i = 0; i < coord_to_feature[flip->pos].n_features; ++i)
         search->eval_features[coord_to_feature[flip->pos].features[i].feature] += 2 * coord_to_feature[flip->pos].features[i].x;
