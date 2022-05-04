@@ -253,10 +253,10 @@ struct Coord_feature{
 
 struct Coord_to_feature{
     int n_features;
-    vector<Coord_feature> features;
+    Coord_feature features[MAX_CELL_PATTERNS];
 };
 
-const Coord_to_feature coord_to_feature[HW2] = {
+constexpr Coord_to_feature coord_to_feature[HW2] = {
     {13, {{24, P37}, {26, P38}, {27, P38}, {30, P39}, {34, P39}, {35, P39}, {38, P39}, {42, P38}, {46, P38}, {47, P38}, {50, P39}, {54, P39}, {58, P39}}}, // COORD_A1
     {10, {{ 1, P37}, {20, P36}, {26, P37}, {30, P38}, {38, P35}, {42, P37}, {46, P37}, {50, P38}, {54, P38}, {58, P38}}}, // COORD_B1
     { 8, {{ 5, P37}, {16, P35}, {26, P36}, {30, P37}, {34, P38}, {42, P36}, {46, P36}, {50, P37}}}, // COORD_C1
@@ -961,21 +961,24 @@ inline void eval_move(Search *search, const Flip *flip){
             }
         }
     #else
+        int i;
         if (search->eval_feature_reversed){
-            for (const Coord_feature &f: coord_to_feature[flip->pos].features)
-                search->eval_features[f.feature] -= f.x;
+            for (i = 0; i < coord_to_feature[flip->pos].n_features; ++i){
+                search->eval_features[coord_to_feature[flip->pos].features[i].feature] -= coord_to_feature[flip->pos].features[i].x;
+            }
             uint64_t f = flip->flip;
             for (uint_fast8_t cell = first_bit(&f); f; cell = next_bit(&f)){
-                for (const Coord_feature &f: coord_to_feature[cell].features)
-                    search->eval_features[f.feature] += f.x;
+                for (i = 0; i < coord_to_feature[cell].n_features; ++i)
+                    search->eval_features[coord_to_feature[cell].features[i].feature] += coord_to_feature[cell].features[i].x;
             }
         } else{
-            for (const Coord_feature &f: coord_to_feature[flip->pos].features)
-                search->eval_features[f.feature] -= 2 * f.x;
+            for (i = 0; i < coord_to_feature[flip->pos].n_features; ++i){
+                search->eval_features[coord_to_feature[flip->pos].features[i].feature] -= 2 * coord_to_feature[flip->pos].features[i].x;
+            }
             uint64_t f = flip->flip;
             for (uint_fast8_t cell = first_bit(&f); f; cell = next_bit(&f)){
-                for (const Coord_feature &f: coord_to_feature[cell].features)
-                    search->eval_features[f.feature] -= f.x;
+                for (i = 0; i < coord_to_feature[cell].n_features; ++i)
+                    search->eval_features[coord_to_feature[cell].features[i].feature] -= coord_to_feature[cell].features[i].x;
             }
         }
     #endif
@@ -1059,21 +1062,22 @@ inline void eval_undo(Search *search, const Flip *flip){
             }
         }
     #else
+        int i;
         if (search->eval_feature_reversed){
-            for (const Coord_feature &f: coord_to_feature[flip->pos].features)
-                search->eval_features[f.feature] += f.x;
+            for (i = 0; i < coord_to_feature[flip->pos].n_features; ++i)
+                search->eval_features[coord_to_feature[flip->pos].features[i].feature] += coord_to_feature[flip->pos].features[i].x;
             uint64_t f = flip->flip;
             for (uint_fast8_t cell = first_bit(&f); f; cell = next_bit(&f)){
-                for (const Coord_feature &f: coord_to_feature[cell].features)
-                    search->eval_features[f.feature] -= f.x;
+                for (i = 0; i < coord_to_feature[cell].n_features; ++i)
+                    search->eval_features[coord_to_feature[cell].features[i].feature] -= coord_to_feature[cell].features[i].x;
             }
         } else{
-            for (const Coord_feature &f: coord_to_feature[flip->pos].features)
-                search->eval_features[f.feature] += 2 * f.x;
+            for (i = 0; i < coord_to_feature[flip->pos].n_features; ++i)
+                search->eval_features[coord_to_feature[flip->pos].features[i].feature] += 2 * coord_to_feature[flip->pos].features[i].x;
             uint64_t f = flip->flip;
             for (uint_fast8_t cell = first_bit(&f); f; cell = next_bit(&f)){
-                for (const Coord_feature &f: coord_to_feature[cell].features)
-                    search->eval_features[f.feature] += f.x;
+                for (i = 0; i < coord_to_feature[cell].n_features; ++i)
+                    search->eval_features[coord_to_feature[cell].features[i].feature] += coord_to_feature[cell].features[i].x;
             }
         }
     #endif
