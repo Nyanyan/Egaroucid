@@ -743,7 +743,6 @@ inline int mid_evaluate(Board *b){
         eval_stab0_stab1_arr[phase_idx][stab0][stab1] + 
         eval_num0_num1_arr[phase_idx][num0][num1] + 
         calc_canput_pattern(phase_idx, b, player_mobility, opponent_mobility);
-    cerr << res << " ";
     //return score_modification(phase_idx, res);
     //cerr << res << endl;
     #if EVALUATION_STEP_WIDTH_MODE == 0
@@ -818,7 +817,6 @@ inline int mid_evaluate_diff(Search *search){
         eval_stab0_stab1_arr[phase_idx][stab0][stab1] + 
         eval_num0_num1_arr[phase_idx][num0][num1] + 
         calc_canput_pattern(phase_idx, &search->board, player_mobility, opponent_mobility);
-    cerr << res << " ";
     //return score_modification(phase_idx, res);
     #if EVALUATION_STEP_WIDTH_MODE == 0
         if (res > 0)
