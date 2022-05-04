@@ -4,6 +4,7 @@
 #include "setting.hpp"
 #include "common.hpp"
 #include "board.hpp"
+#include "search.hpp"
 #include "util.hpp"
 
 using namespace std;
@@ -641,6 +642,26 @@ inline int calc_pattern_first(const int phase_idx, Board *b){
         pick_pattern(phase_idx, 15, b_arr, 0, 1, 8, 9, 10, 11, 12, 17, 25, 33) + pick_pattern(phase_idx, 15, b_arr, 7, 6, 15, 14, 13, 12, 11, 22, 30, 38) + pick_pattern(phase_idx, 15, b_arr, 56, 57, 48, 49, 50, 51, 52, 41, 33, 25) + pick_pattern(phase_idx, 15, b_arr, 63, 62, 55, 54, 53, 52, 51, 46, 38, 30);
 }
 
+inline int calc_pattern_diff(const int phase_idx, Search *search){
+    return 
+        pattern_arr[phase_idx][0][search->eval_features[0]] + pattern_arr[phase_idx][0][search->eval_features[1]] + pattern_arr[phase_idx][0][search->eval_features[2]] + pattern_arr[phase_idx][0][search->eval_features[3]] + 
+        pattern_arr[phase_idx][1][search->eval_features[4]] + pattern_arr[phase_idx][1][search->eval_features[5]] + pattern_arr[phase_idx][1][search->eval_features[6]] + pattern_arr[phase_idx][1][search->eval_features[7]] + 
+        pattern_arr[phase_idx][2][search->eval_features[8]] + pattern_arr[phase_idx][2][search->eval_features[9]] + pattern_arr[phase_idx][2][search->eval_features[10]] + pattern_arr[phase_idx][2][search->eval_features[11]] + 
+        pattern_arr[phase_idx][3][search->eval_features[12]] + pattern_arr[phase_idx][3][search->eval_features[13]] + pattern_arr[phase_idx][3][search->eval_features[14]] + pattern_arr[phase_idx][3][search->eval_features[15]] + 
+        pattern_arr[phase_idx][4][search->eval_features[16]] + pattern_arr[phase_idx][4][search->eval_features[17]] + pattern_arr[phase_idx][4][search->eval_features[18]] + pattern_arr[phase_idx][4][search->eval_features[19]] + 
+        pattern_arr[phase_idx][5][search->eval_features[20]] + pattern_arr[phase_idx][5][search->eval_features[21]] + pattern_arr[phase_idx][5][search->eval_features[22]] + pattern_arr[phase_idx][5][search->eval_features[23]] + 
+        pattern_arr[phase_idx][6][search->eval_features[24]] + pattern_arr[phase_idx][6][search->eval_features[25]] + 
+        pattern_arr[phase_idx][7][search->eval_features[26]] + pattern_arr[phase_idx][7][search->eval_features[27]] + pattern_arr[phase_idx][7][search->eval_features[28]] + pattern_arr[phase_idx][7][search->eval_features[29]] + 
+        pattern_arr[phase_idx][8][search->eval_features[30]] + pattern_arr[phase_idx][8][search->eval_features[31]] + pattern_arr[phase_idx][8][search->eval_features[32]] + pattern_arr[phase_idx][8][search->eval_features[33]] + 
+        pattern_arr[phase_idx][9][search->eval_features[34]] + pattern_arr[phase_idx][9][search->eval_features[35]] + pattern_arr[phase_idx][9][search->eval_features[36]] + pattern_arr[phase_idx][9][search->eval_features[37]] + 
+        pattern_arr[phase_idx][10][search->eval_features[38]] + pattern_arr[phase_idx][10][search->eval_features[39]] + pattern_arr[phase_idx][10][search->eval_features[40]] + pattern_arr[phase_idx][10][search->eval_features[41]] + 
+        pattern_arr[phase_idx][11][search->eval_features[42]] + pattern_arr[phase_idx][11][search->eval_features[43]] + pattern_arr[phase_idx][11][search->eval_features[44]] + pattern_arr[phase_idx][11][search->eval_features[45]] + 
+        pattern_arr[phase_idx][12][search->eval_features[46]] + pattern_arr[phase_idx][12][search->eval_features[47]] + pattern_arr[phase_idx][12][search->eval_features[48]] + pattern_arr[phase_idx][12][search->eval_features[49]] + 
+        pattern_arr[phase_idx][13][search->eval_features[50]] + pattern_arr[phase_idx][13][search->eval_features[51]] + pattern_arr[phase_idx][13][search->eval_features[52]] + pattern_arr[phase_idx][13][search->eval_features[53]] + 
+        pattern_arr[phase_idx][14][search->eval_features[54]] + pattern_arr[phase_idx][14][search->eval_features[55]] + pattern_arr[phase_idx][14][search->eval_features[56]] + pattern_arr[phase_idx][14][search->eval_features[57]] + 
+        pattern_arr[phase_idx][15][search->eval_features[58]] + pattern_arr[phase_idx][15][search->eval_features[59]] + pattern_arr[phase_idx][15][search->eval_features[60]] + pattern_arr[phase_idx][15][search->eval_features[61]];
+}
+
 inline int create_canput_line_h(uint64_t b, uint64_t w, int t){
     return (((w >> (HW * t)) & 0b11111111) << HW) | ((b >> (HW * t)) & 0b11111111);
 }
@@ -692,12 +713,12 @@ inline int mid_evaluate_first(Search *search){
     num1 = pop_count_ull(search->board.opponent);
     //cerr << calc_pattern(phase_idx, b) << " " << eval_sur0_sur1_arr[phase_idx][sur0][sur1] << " " << eval_canput0_canput1_arr[phase_idx][canput0][canput1] << " "
     //    << eval_stab0_stab1_arr[phase_idx][stab0][stab1] << " " << eval_num0_num1_arr[phase_idx][num0][num1] << " " << calc_canput_pattern(phase_idx, b, player_mobility, opponent_mobility) << endl;
-    int res = calc_pattern_first(phase_idx, b) + 
+    int res = calc_pattern_first(phase_idx, &search->board) + 
         eval_sur0_sur1_arr[phase_idx][sur0][sur1] + 
         eval_canput0_canput1_arr[phase_idx][canput0][canput1] + 
         eval_stab0_stab1_arr[phase_idx][stab0][stab1] + 
         eval_num0_num1_arr[phase_idx][num0][num1] + 
-        calc_canput_pattern(phase_idx, b, player_mobility, opponent_mobility);
+        calc_canput_pattern(phase_idx, &search->board, player_mobility, opponent_mobility);
     //return score_modification(phase_idx, res);
     //cerr << res << endl;
     #if EVALUATION_STEP_WIDTH_MODE == 0
@@ -748,11 +769,7 @@ inline int mid_evaluate_first(Search *search){
     return max(-SCORE_MAX, min(SCORE_MAX, res));
 }
 
-inline void eval_update(Search *search, Flip *flip){
-
-}
-
-inline int mid_evaluate_diff(Search *search){
+inline int mid_evaluate_diff(Search *search, Flip *flip){
     int phase_idx, sur0, sur1, canput0, canput1, stab0, stab1, num0, num1;
     uint64_t player_mobility, opponent_mobility, empties;
     player_mobility = calc_legal(search->board.player, search->board.opponent);
@@ -770,12 +787,12 @@ inline int mid_evaluate_diff(Search *search){
     num1 = pop_count_ull(search->board.opponent);
     //cerr << calc_pattern(phase_idx, b) << " " << eval_sur0_sur1_arr[phase_idx][sur0][sur1] << " " << eval_canput0_canput1_arr[phase_idx][canput0][canput1] << " "
     //    << eval_stab0_stab1_arr[phase_idx][stab0][stab1] << " " << eval_num0_num1_arr[phase_idx][num0][num1] << " " << calc_canput_pattern(phase_idx, b, player_mobility, opponent_mobility) << endl;
-    int res = calc_pattern_first(phase_idx, b) + 
+    int res = calc_pattern_diff(phase_idx, search) + 
         eval_sur0_sur1_arr[phase_idx][sur0][sur1] + 
         eval_canput0_canput1_arr[phase_idx][canput0][canput1] + 
         eval_stab0_stab1_arr[phase_idx][stab0][stab1] + 
         eval_num0_num1_arr[phase_idx][num0][num1] + 
-        calc_canput_pattern(phase_idx, b, player_mobility, opponent_mobility);
+        calc_canput_pattern(phase_idx, &search->board, player_mobility, opponent_mobility);
     //return score_modification(phase_idx, res);
     //cerr << res << endl;
     #if EVALUATION_STEP_WIDTH_MODE == 0
@@ -824,4 +841,43 @@ inline int mid_evaluate_diff(Search *search){
     #endif
     //cerr << res << " " << value_to_score_double(res) << endl;
     return max(-SCORE_MAX, min(SCORE_MAX, res));
+}
+
+inline int pick_pattern_idx(const uint_fast8_t b_arr[], Feature_to_coord *f){
+    int res = 0;
+    for (int i = f->n_cells - 1; i >= 0; --i){
+        res *= 3;
+        res += b_arr[f->cells[i]];
+    }
+    return res;
+}
+
+inline void calc_features(Search *search){
+    uint_fast8_t b_arr[HW2];
+    b->translate_to_arr_player(b_arr);
+    for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i){
+        search->eval_features[i] = pick_pattern_idx(b_arr, &feature_to_coord[i]);
+    }
+}
+
+inline void eval_move(Search *search, Flip *flip){
+    int i;
+    for (i = 0; i < coord_to_feature[flip->pos].n_features; ++i)
+        search->eval_features[coord_to_feature[flip->pos].features[i].feature] -= 2 * coord_to_feature[flip->pos].features[i].x;
+    uint64_t f = flip->flip;
+    for (uint_fast8_t cell = first_bit(&f); f; cell = next_bit(&f)){
+        for (i = 0; i < coord_to_feature[cell].n_features; ++i)
+            search->eval_features[coord_to_feature[cell].features[i].feature] -= coord_to_feature[cell].features[i].x;
+    }
+}
+
+inline void eval_undo(Search *search, Flip *flip){
+    int i;
+    for (i = 0; i < coord_to_feature[flip->pos].n_features; ++i)
+        search->eval_features[coord_to_feature[flip->pos].features[i].feature] += 2 * coord_to_feature[flip->pos].features[i].x;
+    uint64_t f = flip->flip;
+    for (uint_fast8_t cell = first_bit(&f); f; cell = next_bit(&f)){
+        for (i = 0; i < coord_to_feature[cell].n_features; ++i)
+            search->eval_features[coord_to_feature[cell].features[i].feature] += coord_to_feature[cell].features[i].x;
+    }
 }
