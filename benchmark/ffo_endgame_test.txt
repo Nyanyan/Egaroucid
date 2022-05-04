@@ -4827,7 +4827,46 @@ same
 70193927238 nodes
 172464532.96151152 nps
 
+2022/05/05 update endsearch mid-negascout with step 2 evaluation
+#40 depth 20 value 38 policy a2 nodes 31150404 time 201 nps 154977134
+#41 depth 22 value 0 policy h4 nodes 24887895 time 235 nps 105905936
+#42 depth 22 value 6 policy g2 nodes 38987142 time 294 nps 132609326
+#43 depth 23 value -12 policy c7 nodes 100941652 time 669 nps 150884382
+#44 depth 23 value -14 policy d2 nodes 24162867 time 412 nps 58647735
+#45 depth 24 value 6 policy b2 nodes 732910936 time 3491 nps 209942977
+#46 depth 24 value -8 policy b3 nodes 108747059 time 994 nps 109403479
+#47 depth 25 value 4 policy g2 nodes 80213796 time 592 nps 135496277
+#48 depth 25 value 28 policy f6 nodes 658715877 time 3668 nps 179584481
+#49 depth 26 value 16 policy e1 nodes 812844888 time 4017 nps 202351229
+14.573 sec
+17.258891820907593 sec total
+2613562516 nodes
+179342792.5615865 nps
 
+#40 depth 20 value 38 policy a2 nodes 31156854 time 194 nps 160602340
+#41 depth 22 value 0 policy h4 nodes 25017647 time 237 nps 105559691
+#42 depth 22 value 6 policy g2 nodes 39423783 time 303 nps 130111495
+#43 depth 23 value -12 policy c7 nodes 101570645 time 656 nps 154833300
+#44 depth 23 value -14 policy d2 nodes 24060124 time 459 nps 52418570
+#45 depth 24 value 6 policy b2 nodes 701422207 time 3326 nps 210890621
+#46 depth 24 value -8 policy b3 nodes 108498576 time 996 nps 108934313
+#47 depth 25 value 4 policy g2 nodes 79039894 time 593 nps 133288185
+#48 depth 25 value 28 policy f6 nodes 710584797 time 3902 nps 182107841
+#49 depth 26 value 16 policy e1 nodes 869833768 time 4251 nps 204618623
+#50 depth 26 value 10 policy d8 nodes 2445963723 time 10791 nps 226667011
+#51 depth 27 value 6 policy e2 nodes 526820494 time 4113 nps 128086674
+#52 depth 27 value 0 policy a3 nodes 544699395 time 4422 nps 123179419
+#53 depth 28 value -2 policy d8 nodes 5516950056 time 32963 nps 167367959
+#54 depth 28 value -2 policy c7 nodes 10546270626 time 50604 nps 208407845
+#55 depth 29 value 0 policy g6 nodes 36046750235 time 211344 nps 170559610
+#56 depth 29 value 2 policy h5 nodes 2479767338 time 18547 nps 133701802
+#57 depth 30 value -10 policy a6 nodes 6793780848 time 42345 nps 160438796
+#58 depth 30 value 4 policy g1 nodes 3796325219 time 24274 nps 156394711
+#59 depth 34 value 64 policy g8 nodes 2743 time 30 nps 91433
+414.35 sec
+431.67032504081726 sec total
+71387938972 nodes
+172288980.26306263 nps
 
 
 

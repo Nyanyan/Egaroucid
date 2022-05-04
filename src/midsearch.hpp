@@ -289,7 +289,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
 
 int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search){
     if (!global_searching)
-        return -INF;
+        return SCORE_UNDEFINED;
     if (is_end_search && depth <= MID_TO_END_DEPTH){
         bool n_searching = true;
         return nega_alpha_end(search, alpha, beta, skipped, legal, &n_searching);
@@ -452,14 +452,14 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
                     if (v == -INF)
                         g = -nega_scout(search, -beta, -alpha, depth - 1, false, flip.n_legal, is_end_search);
                     else{
-                        g = -nega_alpha_ordering(search, -alpha - 1, -alpha, depth - 1, false, flip.n_legal, is_end_search, &searching);
-                        if (alpha < g){
-                            if (is_end_search){
-                                g = value_to_score_int(g);
-                                g -= g & 1;
-                                g = score_to_value(g);
-                            }
-                            g = -nega_scout(search, -beta, -g, depth - 1, false, flip.n_legal, is_end_search);
+                        if (is_end_search && alpha == v){
+                            g = -nega_alpha_ordering(search, -alpha - 2, -alpha - 1, depth - 1, false, flip.n_legal, is_end_search, &searching);
+                            if (alpha + 1 < g)
+                                g = -nega_scout(search, -beta, -g, depth - 1, false, flip.n_legal, is_end_search);
+                        } else{
+                            g = -nega_alpha_ordering(search, -alpha - 1, -alpha, depth - 1, false, flip.n_legal, is_end_search, &searching);
+                            if (alpha < g)
+                                g = -nega_scout(search, -beta, -g, depth - 1, false, flip.n_legal, is_end_search);
                         }
                     }
                 search->board.undo(&flip);
