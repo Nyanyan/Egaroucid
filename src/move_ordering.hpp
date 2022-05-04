@@ -66,6 +66,7 @@ inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int
                 flip->value += -pop_count_ull(flip->n_legal) * W_MOBILITY;
             search->board.undo(flip);
         } else{
+            eval_move(search, flip);
             search->board.move(flip);
                 //flip->value += -calc_surround(search->board.opponent, ~(search->board.player | search->board.opponent)) * W_SURROUND;
                 flip->value += calc_stability_edge_player(search->board.opponent, search->board.player) * W_STABILITY;
@@ -74,7 +75,7 @@ inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int
                 if (depth >= 0){
                     switch(depth){
                         case 0:
-                            flip->value += (HW2 - value_to_score_int(mid_evaluate(&search->board))) * W_VALUE_SHALLOW;
+                            flip->value += (HW2 - value_to_score_int(mid_evaluate_diff(search))) * W_VALUE_SHALLOW;
                             break;
                         case 1:
                             flip->value += (HW2 - value_to_score_int(nega_alpha_eval1(search, alpha, beta, false))) * W_VALUE;
@@ -92,6 +93,7 @@ inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int
                     }
                 }
             search->board.undo(flip);
+            eval_undo(search, flip);
         }
     }
 }

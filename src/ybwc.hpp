@@ -33,41 +33,14 @@ inline bool ybwc_split(Search *search, const Flip *flip, int alpha, int beta, co
         /* split_count < YBWC_MAX_SPLIT_COUNT */ ){
         if (thread_pool.n_idle()){
             Search copy_search;
+            eval_move(search, flip);
             search->board.move(flip);
-                /*
-                if (pv_idx == 0){
-                    int bound = alpha - ceil(0.5 * probcut_sigma(search->board.n));
-                    if (bound > HW2){
-                        search->board.undo(flip);
-                        return false;
-                    }
-                    bool not_split = false;
-                    switch(mpcd[depth]){
-                        case 0:
-                            not_split = mid_evaluate(&search->board) <= bound;
-                            break;
-                        case 1:
-                            not_split = nega_alpha_eval1(search, bound, bound + 1, false) <= bound;
-                            break;
-                        default:
-                            if (mpcd[depth] <= MID_FAST_DEPTH)
-                                not_split = nega_alpha(search, bound, bound + 1, mpcd[depth], false) <= bound;
-                            else{
-                                //bool use_mpc = search->use_mpc;
-                                //search->use_mpc = false;
-                                    not_split = nega_alpha_ordering_nomemo(search, bound, bound + 1, mpcd[depth], false, legal) <= bound;
-                                //search->use_mpc = use_mpc;
-                            }
-                            break;
-                    }
-                    if (not_split){
-                        search->board.undo(flip);
-                        return false;
-                    }
-                }
-                */
                 search->board.copy(&copy_search.board);
+                for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i)
+                    copy_search.eval_features[i] = search->eval_features[i];
+                copy_search.eval_feature_reversed = search->eval_feature_reversed;
             search->board.undo(flip);
+            eval_undo(search, flip);
             copy_search.use_mpc = search->use_mpc;
             copy_search.mpct = search->mpct;
             copy_search.n_nodes = 0;
@@ -88,6 +61,9 @@ inline bool ybwc_split_without_move(Search *search, const Flip *flip, int alpha,
         if (thread_pool.n_idle()){
             Search copy_search;
             search->board.copy(&copy_search.board);
+            for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i)
+                copy_search.eval_features[i] = search->eval_features[i];
+            copy_search.eval_feature_reversed = search->eval_feature_reversed;
             copy_search.use_mpc = search->use_mpc;
             copy_search.mpct = search->mpct;
             copy_search.n_nodes = 0;
@@ -108,6 +84,9 @@ inline bool ybwc_split_without_move_negascout(Search *search, const Flip *flip, 
         if (thread_pool.n_idle()){
             Search copy_search;
             search->board.copy(&copy_search.board);
+            for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i)
+                copy_search.eval_features[i] = search->eval_features[i];
+            copy_search.eval_feature_reversed = search->eval_feature_reversed;
             copy_search.use_mpc = search->use_mpc;
             copy_search.mpct = search->mpct;
             copy_search.n_nodes = 0;

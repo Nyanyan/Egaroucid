@@ -890,16 +890,22 @@ inline void calc_features(Search *search){
 inline void eval_move(Search *search, const Flip *flip){
     int i;
     if (search->eval_feature_reversed){
-        for (i = 0; i < coord_to_feature[flip->pos].n_features; ++i)
+        for (i = 0; i < coord_to_feature[flip->pos].n_features; ++i){
             search->eval_features[coord_to_feature[flip->pos].features[i].feature] -= coord_to_feature[flip->pos].features[i].x;
+            //if (search->eval_features[coord_to_feature[flip->pos].features[i].feature] < 0)
+            //    cerr << "a " << (int)flip->pos << " " << i << " " << (int)coord_to_feature[flip->pos].features[i].feature << " " << coord_to_feature[flip->pos].features[i].x << " " << search->eval_features[coord_to_feature[flip->pos].features[i].feature] << endl;
+        }
         uint64_t f = flip->flip;
         for (uint_fast8_t cell = first_bit(&f); f; cell = next_bit(&f)){
             for (i = 0; i < coord_to_feature[cell].n_features; ++i)
                 search->eval_features[coord_to_feature[cell].features[i].feature] += coord_to_feature[cell].features[i].x;
         }
     } else{
-        for (i = 0; i < coord_to_feature[flip->pos].n_features; ++i)
+        for (i = 0; i < coord_to_feature[flip->pos].n_features; ++i){
             search->eval_features[coord_to_feature[flip->pos].features[i].feature] -= 2 * coord_to_feature[flip->pos].features[i].x;
+            //if (search->eval_features[coord_to_feature[flip->pos].features[i].feature] < 0)
+            //    cerr << "b " << (int)flip->pos << " " << i << " " << coord_to_feature[flip->pos].features[i].x << " " << search->eval_features[coord_to_feature[flip->pos].features[i].feature] << endl;
+        }
         uint64_t f = flip->flip;
         for (uint_fast8_t cell = first_bit(&f); f; cell = next_bit(&f)){
             for (i = 0; i < coord_to_feature[cell].n_features; ++i)

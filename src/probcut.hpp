@@ -215,7 +215,7 @@ inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, 
         search_depth = ((depth >> 4) & 0xFE) ^ (depth & 1);
     else
         search_depth = ((depth >> 2) & 0xFE) ^ (depth & 1);
-    const int depth0_value = mid_evaluate(&search->board);
+    const int depth0_value = mid_evaluate_diff(search);
     int error_depth0, error_search;
     if (is_end_search){
         alpha = value_to_score_int(alpha);
