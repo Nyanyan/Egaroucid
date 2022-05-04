@@ -209,22 +209,24 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
             for (const Flip &flip: move_list){
                 if (!(*searching))
                     break;
-                if (ybwc_split(search, &flip, -beta, -alpha, depth - 1, flip.n_legal, is_end_search, &n_searching, flip.pos, pv_idx++, canput, split_count, parallel_tasks)){
-                    ++split_count;
-                } else{
-                    search->board.move(&flip);
+                search->board.move(&flip);
+                    if (ybwc_split_without_move(search, &flip, -beta, -alpha, depth - 1, flip.n_legal, is_end_search, &n_searching, flip.pos, pv_idx++, canput, split_count, parallel_tasks)){
+                        ++split_count;
+                    } else{
                         g = -nega_alpha_ordering(search, -beta, -alpha, depth - 1, false, flip.n_legal, is_end_search, searching);
-                    search->board.undo(&flip);
-                    if (*searching){
-                        alpha = max(alpha, g);
-                        if (v < g){
-                            v = g;
-                            best_move = flip.pos;
+                        if (*searching){
+                            alpha = max(alpha, g);
+                            if (v < g){
+                                v = g;
+                                best_move = flip.pos;
+                            }
+                            if (beta <= alpha){
+                                search->board.undo(&flip);
+                                break;
+                            }
                         }
-                        if (beta <= alpha)
-                            break;
                     }
-                }
+                search->board.undo(&flip);
             }
             if (split_count){
                 if (beta <= alpha || !(*searching)){
@@ -356,10 +358,30 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
                             search->board.undo(&flip);
                             break;
                         }
-                        ++pv_idx;
-                    } else if (ybwc_split_without_move(search, &flip, -before_alpha - 1, -before_alpha, depth - 1, flip.n_legal, is_end_search, &n_searching, flip.pos, pv_idx++, canput, split_count, parallel_tasks)){
-                        parallel_flips.emplace_back(flip);
-                        ++split_count;
+                    } else if (depth - 1 <= 11){
+                        if (ybwc_split_without_move(search, &flip, -before_alpha - 1, -before_alpha, depth - 1, flip.n_legal, is_end_search, &n_searching, flip.pos, pv_idx, canput, split_count, parallel_tasks)){
+                            parallel_flips.emplace_back(flip);
+                            ++split_count;
+                        } else{
+                            g = -nega_alpha_ordering(search, -alpha - 1, -alpha, depth - 1, false, flip.n_legal, is_end_search, &searching);
+                            if (alpha < g){
+                                if (is_end_search){
+                                    g = value_to_score_int(g);
+                                    g -= g & 1;
+                                    g = score_to_value(g);
+                                }
+                                g = -nega_scout(search, -beta, -g, depth - 1, false, flip.n_legal, is_end_search);
+                            }
+                            alpha = max(alpha, g);
+                            if (v < g){
+                                v = g;
+                                best_move = flip.pos;
+                            }
+                            if (beta <= alpha){
+                                search->board.undo(&flip);
+                                break;
+                            }
+                        }
                     } else{
                         g = -nega_alpha_ordering(search, -alpha - 1, -alpha, depth - 1, false, flip.n_legal, is_end_search, &searching);
                         if (alpha < g){
@@ -381,6 +403,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
                         }
                     }
                 search->board.undo(&flip);
+                ++pv_idx;
             }
             if (split_count){
                 if (beta <= alpha){
