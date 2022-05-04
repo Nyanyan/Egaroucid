@@ -79,18 +79,54 @@ inline bool ybwc_split(Search *search, const Flip *flip, int alpha, int beta, co
     return false;
 }
 
+inline bool ybwc_split_without_move(Search *search, const Flip *flip, int alpha, int beta, const int depth, uint64_t legal, bool is_end_search, const bool *searching, int policy, const int pv_idx, const int canput, const int split_count, vector<future<pair<int, uint64_t>>> &parallel_tasks){
+    if (pv_idx > 0 && 
+        /* pv_idx > canput / YBWC_SPLIT_DIV && */ 
+        /* pv_idx < canput - 1 && */ 
+        depth >= YBWC_MID_SPLIT_MIN_DEPTH /*&&*/
+        /* split_count < YBWC_MAX_SPLIT_COUNT */ ){
+        if (thread_pool.n_idle()){
+            Search copy_search;
+            search->board.copy(&copy_search.board);
+            copy_search.use_mpc = search->use_mpc;
+            copy_search.mpct = search->mpct;
+            copy_search.n_nodes = 0;
+            //copy_search.p = search->p;
+            parallel_tasks.emplace_back(thread_pool.push(bind(&ybwc_do_task, copy_search, alpha, beta, depth, legal, is_end_search, searching, policy)));
+            return true;
+        }
+    }
+    return false;
+}
+
 inline int ybwc_wait_all(Search *search, vector<future<pair<int, uint64_t>>> &parallel_tasks){
     int g = -INF;
     pair<int, uint64_t> got_task;
     for (future<pair<int, uint64_t>> &task: parallel_tasks){
-        //if (task.valid()){
-        //if (task.wait_for(chrono::seconds(0)) == future_status::ready){
         got_task = task.get();
-        //if (got_task.first != SCORE_UNDEFINED)
         g = max(g, got_task.first);
         search->n_nodes += got_task.second;
-        //}
-        //}
     }
     return g;
+}
+
+inline int ybwc_negascout_wait_all(Search *search, vector<future<pair<int, uint64_t>>> &parallel_tasks, vector<Flip> &flips, int before_alpha, int alpha, int beta, int depth, bool skipped, bool is_end_search, int *best_move){
+    int v = alpha, g;
+    pair<int, uint64_t> got_task;
+    for (int i = 0; i < (int)parallel_tasks.size(); ++i){
+        got_task = parallel_tasks[i].get();
+        g = got_task.first;
+        search->n_nodes += got_task.second;
+        if (before_alpha < g){
+            v = max(v, g);
+            search->board.move(&flips[i]);
+                g = -nega_scout(search, -beta, -v, depth, skipped, flips[i].n_legal, is_end_search);
+            search->board.undo(&flips[i]);
+            if (v < g){
+                v = g;
+                *best_move = flips[i].pos;
+            }
+        }
+    }
+    return v;
 }

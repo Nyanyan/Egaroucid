@@ -335,30 +335,89 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
             calc_flip(&move_list[idx++], &search->board, cell);
         move_ordering(search, move_list, depth, alpha, beta, is_end_search);
         bool searching = true;
-        for (const Flip &flip: move_list){
-            search->board.move(&flip);
-                if (v == -INF)
-                    g = -nega_scout(search, -beta, -alpha, depth - 1, false, flip.n_legal, is_end_search);
-                else{
-                    g = -nega_alpha_ordering(search, -alpha - 1, -alpha, depth - 1, false, flip.n_legal, is_end_search, &searching);
-                    if (alpha < g){
-                        if (is_end_search){
-                            g = value_to_score_int(g);
-                            g -= g & 1;
-                            g = score_to_value(g);
+        #if USE_MULTI_THREAD
+            int pv_idx = 0, split_count = 0;
+            if (best_move != TRANSPOSE_TABLE_UNDEFINED)
+                pv_idx = 1;
+            vector<future<pair<int, uint64_t>>> parallel_tasks;
+            vector<Flip> parallel_flips;
+            bool n_searching = true;
+            int before_alpha = alpha;
+            for (const Flip &flip: move_list){
+                search->board.move(&flip);
+                    if (v == -INF){
+                        g = -nega_scout(search, -beta, -alpha, depth - 1, false, flip.n_legal, is_end_search);
+                        alpha = max(alpha, g);
+                        if (v < g){
+                            v = g;
+                            best_move = flip.pos;
                         }
-                        g = -nega_scout(search, -beta, -g, depth - 1, false, flip.n_legal, is_end_search);
+                        if (beta <= alpha){
+                            search->board.undo(&flip);
+                            break;
+                        }
+                        ++pv_idx;
+                    } else if (ybwc_split_without_move(search, &flip, -before_alpha - 1, -before_alpha, depth - 1, flip.n_legal, is_end_search, &n_searching, flip.pos, pv_idx++, canput, split_count, parallel_tasks)){
+                        parallel_flips.emplace_back(flip);
+                        ++split_count;
+                    } else{
+                        g = -nega_alpha_ordering(search, -alpha - 1, -alpha, depth - 1, false, flip.n_legal, is_end_search, &searching);
+                        if (alpha < g){
+                            if (is_end_search){
+                                g = value_to_score_int(g);
+                                g -= g & 1;
+                                g = score_to_value(g);
+                            }
+                            g = -nega_scout(search, -beta, -g, depth - 1, false, flip.n_legal, is_end_search);
+                        }
+                        alpha = max(alpha, g);
+                        if (v < g){
+                            v = g;
+                            best_move = flip.pos;
+                        }
+                        if (beta <= alpha){
+                            search->board.undo(&flip);
+                            break;
+                        }
                     }
-                }
-            search->board.undo(&flip);
-            alpha = max(alpha, g);
-            if (v < g){
-                v = g;
-                best_move = flip.pos;
+                search->board.undo(&flip);
             }
-            if (beta <= alpha)
-                break;
-        }
+            if (split_count){
+                if (beta <= alpha){
+                    n_searching = false;
+                    ybwc_wait_all(search, parallel_tasks);
+                } else{
+                    g = ybwc_negascout_wait_all(search, parallel_tasks, parallel_flips,  before_alpha, alpha, beta, depth - 1, skipped, is_end_search, &best_move);
+                    alpha = max(alpha, g);
+                    v = max(v, g);
+                }
+            }
+        #else
+            for (const Flip &flip: move_list){
+                search->board.move(&flip);
+                    if (v == -INF)
+                        g = -nega_scout(search, -beta, -alpha, depth - 1, false, flip.n_legal, is_end_search);
+                    else{
+                        g = -nega_alpha_ordering(search, -alpha - 1, -alpha, depth - 1, false, flip.n_legal, is_end_search, &searching);
+                        if (alpha < g){
+                            if (is_end_search){
+                                g = value_to_score_int(g);
+                                g -= g & 1;
+                                g = score_to_value(g);
+                            }
+                            g = -nega_scout(search, -beta, -g, depth - 1, false, flip.n_legal, is_end_search);
+                        }
+                    }
+                search->board.undo(&flip);
+                alpha = max(alpha, g);
+                if (v < g){
+                    v = g;
+                    best_move = flip.pos;
+                }
+                if (beta <= alpha)
+                    break;
+            }
+        #endif
     }
     if (best_move != f_best_move)
         child_transpose_table.reg(&search->board, hash_code, best_move);
