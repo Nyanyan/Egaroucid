@@ -9,6 +9,8 @@
 using namespace std;
 
 #define N_PATTERNS 16
+#define N_SYMMETRY_PATTERNS 62
+#define MAX_PATTERN_CELLS 10
 #define MAX_SURROUND 100
 #define MAX_CANPUT 50
 #define MAX_STABILITY 65
@@ -65,6 +67,184 @@ using namespace std;
 #define P46 4096
 #define P47 16384
 #define P48 65536
+
+#define A1 63
+#define B1 62
+#define C1 61
+#define D1 60
+#define E1 59
+#define F1 58
+#define G1 57
+#define H1 56
+
+#define A2 55
+#define B2 54
+#define C2 53
+#define D2 52
+#define E2 51
+#define F2 50
+#define G2 49
+#define H2 48
+
+#define A3 47
+#define B3 46
+#define C3 45
+#define D3 44
+#define E3 43
+#define F3 42
+#define G3 41
+#define H3 40
+
+#define A4 39
+#define B4 38
+#define C4 37
+#define D4 36
+#define E4 35
+#define F4 34
+#define G4 33
+#define H4 32
+
+#define A5 31
+#define B5 30
+#define C5 29
+#define D5 28
+#define E5 27
+#define F5 26
+#define G5 25
+#define H5 24
+
+#define A6 23
+#define B6 22
+#define C6 21
+#define D6 20
+#define E6 19
+#define F6 18
+#define G6 17
+#define H6 16
+
+#define A7 15
+#define B7 14
+#define C7 13
+#define D7 12
+#define E7 11
+#define F7 10
+#define G7 9
+#define H7 8
+
+#define A8 7
+#define B8 6
+#define C8 5
+#define D8 4
+#define E8 3
+#define F8 2
+#define G8 1
+#define H8 0
+
+struct Feature_to_coord{
+    int n_cells;
+    uint_fast8_t cells[MAX_PATTERN_CELLS];
+};
+
+constexpr Feature_to_coord feature_to_coord[N_SYMMETRY_PATTERNS] = {
+    // hv2
+    {8, {A2, B2, C2, D2, E2, F2, G2, H2}},
+    {8, {B1, B2, B3, B4, B5, B6, B7, B8}},
+    {8, {A7, B7, C7, D7, E7, F7, G7, H7}},
+    {8, {G1, G2, G3, G4, G5, G6, G7, G8}},
+
+    // hv3
+    {8, {A3, B3, C3, D3, E3, F3, G3, H3}},
+    {8, {C1, C2, C3, C4, C5, C6, C7, C8}},
+    {8, {A6, B6, C6, D6, E6, F6, G6, H6}},
+    {8, {F1, F2, F3, F4, F5, F6, F7, F8}},
+
+    // hv4
+    {8, {A4, B4, C4, D4, E4, F4, G4, H4}},
+    {8, {D1, D2, D3, D4, D5, D6, D7, D8}},
+    {8, {A5, B5, C5, D5, E5, F5, G5, H5}},
+    {8, {E1, E2, E3, E4, E5, E6, E7, E8}},
+
+    // d5
+    {5, {D1, E2, F3, G4, H5}},
+    {5, {E1, D2, C3, B4, A5}},
+    {5, {A4, B5, C6, D7, E8}},
+    {5, {H4, G5, F6, E7, D8}},
+
+    // d6
+    {6, {C1, D2, E3, F4, G5, H6}},
+    {6, {F1, E2, D3, C4, B5, A6}},
+    {6, {A3, B4, C5, D6, E7, F8}},
+    {6, {H3, G4, F5, E6, D7, C8}},
+
+    // d7
+    {7, {B1, C2, D3, E4, F5, G6, H7}},
+    {7, {G1, F2, E3, D4, C5, B6, A7}},
+    {7, {A2, B3, C4, D5, E6, F7, G8}},
+    {7, {H2, G3, F4, E5, D6, C7, B8}},
+
+    // d8
+    {8, {A1, B2, C3, D4, E5, F6, G7, H8}}, 
+    {8, {H1, G2, F3, E4, D5, C6, B7, A8}},
+
+    // edge + 2x
+    {10, {B2, A1, B1, C1, D1, E1, F1, G1, H1, G2}},
+    {10, {B2, A1, A2, A3, A4, A5, A6, A7, A8, B7}},
+    {10, {B7, A8, B8, C8, D8, E8, F8, G8, H8, G7}},
+    {10, {G2, H1, H2, H3, H4, H5, H6, H7, H8, G7}},
+
+    // triangle
+    {10, {A1, B1, C1, D1, A2, B2, C2, A3, B3, A4}},
+    {10, {H1, G1, F1, E1, H2, G2, F2, H3, G3, H4}},
+    {10, {A8, B8, C8, D8, A7, B7, C7, A6, B6, A5}},
+    {10, {H8, G8, F8, E8, H7, G7, F7, H6, G6, H5}},
+
+    // corner + block
+    {10, {A1, C1, D1, E1, F1, H1, C2, D2, E2, F2}},
+    {10, {A1, A3, A4, A5, A6, A8, B3, B4, B5, B6}},
+    {10, {A8, C8, D8, E8, F8, H8, C7, D7, E7, F7}},
+    {10, {H1, H3, H4, H5, H6, H8, G3, G4, G5, G6}},
+
+    // cross
+    {10, {A1, B2, C3, D4, B1, C2, D3, A2, B3, C4}},
+    {10, {H1, G2, F3, E4, G1, F2, E3, H2, G3, F4}},
+    {10, {A8, B7, C6, D5, B8, C7, D6, A7, B6, C5}},
+    {10, {H8, G7, F6, E5, G8, F7, E6, H7, G6, F5}},
+
+    // corner9
+    {9, {A1, B1, C1, A2, B2, C2, A3, B3, C3}},
+    {9, {H1, G1, F1, H2, G2, F2, H3, G3, F3}},
+    {9, {A8, B8, C8, A7, B7, C7, A6, B6, C6}},
+    {9, {H8, G8, F8, H7, G7, F7, H6, G6, F6}},
+
+    // edge + y
+    {10, {C2, A1, B1, C1, D1, E1, F1, G1, H1, F2}},
+    {10, {B3, A1, A2, A3, A4, A5, A6, A7, A8, B6}},
+    {10, {C7, A8, B8, C8, D8, E8, F8, G8, H8, F7}},
+    {10, {G3, H1, H2, H3, H4, H5, H6, H7, H8, G6}},
+
+    // narrow triangle
+    {10, {A1, B1, C1, D1, E1, A2, B2, A3, A4, A5}},
+    {10, {H1, G1, F1, E1, D1, H2, G2, H3, H4, H5}},
+    {10, {A8, B8, C8, D8, E8, A7, B7, A6, A5, A4}},
+    {10, {H8, G8, F8, E8, D8, H7, G7, H6, H5, H4}},
+
+    // fish
+    {10, {A1, B1, A2, B2, C2, D2, B3, C3, B4, D4}},
+    {10, {H1, G1, H2, G2, F2, E2, G3, F3, G4, E4}},
+    {10, {A8, B8, A7, B7, C7, D7, B6, C6, B5, D5}},
+    {10, {H8, G8, H7, G7, F7, E7, G6, F6, G5, E5}},
+
+    // kite
+    {10, {A1, B1, A2, B2, C2, D2, E2, B3, B4, B5}},
+    {10, {H1, G1, H2, G2, F2, E2, D2, G3, G4, G5}},
+    {10, {A8, B8, A7, B7, C7, D7, E7, B6, B5, B4}},
+    {10, {H8, G8, H7, G7, F7, E7, D7, G6, G5, G4}}
+};
+
+struct Coord_to_feature{
+    int n_cells;
+    uint_fast8_t cells[MAX_PATTERN_CELLS];
+};
 
 constexpr uint_fast16_t pow3[11] = {1, P31, P32, P33, P34, P35, P36, P37, P38, P39, P310};
 uint64_t stability_edge_arr[N_8BIT][N_8BIT][2];
@@ -365,7 +545,7 @@ inline int pick_pattern(const int phase_idx, const int pattern_idx, const uint_f
     return pattern_arr[phase_idx][pattern_idx][b_arr[p0] * P39 + b_arr[p1] * P38 + b_arr[p2] * P37 + b_arr[p3] * P36 + b_arr[p4] * P35 + b_arr[p5] * P34 + b_arr[p6] * P33 + b_arr[p7] * P32 + b_arr[p8] * P31 + b_arr[p9]];
 }
 
-inline int calc_pattern(const int phase_idx, Board *b){
+inline int calc_pattern_first(const int phase_idx, Board *b){
     uint_fast8_t b_arr[HW2];
     b->translate_to_arr_player(b_arr);
     return 
@@ -420,25 +600,103 @@ inline int end_evaluate(Board *b){
     return score_to_value(res);
 }
 
-inline int mid_evaluate(Board *b){
+inline int mid_evaluate_first(Search *search){
     int phase_idx, sur0, sur1, canput0, canput1, stab0, stab1, num0, num1;
     uint64_t player_mobility, opponent_mobility, empties;
-    player_mobility = calc_legal(b->player, b->opponent);
-    opponent_mobility = calc_legal(b->opponent, b->player);
+    player_mobility = calc_legal(search->board.player, search->board.opponent);
+    opponent_mobility = calc_legal(search->board.opponent, search->board.player);
     canput0 = min(MAX_CANPUT - 1, pop_count_ull(player_mobility));
     canput1 = min(MAX_CANPUT - 1, pop_count_ull(opponent_mobility));
     if (canput0 == 0 && canput1 == 0)
-        return end_evaluate(b);
-    phase_idx = b->phase();
-    empties = ~(b->player | b->opponent);
-    sur0 = min(MAX_SURROUND - 1, calc_surround(b->player, empties));
-    sur1 = min(MAX_SURROUND - 1, calc_surround(b->opponent, empties));
-    calc_stability(b, &stab0, &stab1);
-    num0 = pop_count_ull(b->player);
-    num1 = pop_count_ull(b->opponent);
+        return end_evaluate(&search->board);
+    phase_idx = search->board.phase();
+    empties = ~(search->board.player | search->board.opponent);
+    sur0 = min(MAX_SURROUND - 1, calc_surround(search->board.player, empties));
+    sur1 = min(MAX_SURROUND - 1, calc_surround(search->board.opponent, empties));
+    calc_stability(&search->board, &stab0, &stab1);
+    num0 = pop_count_ull(search->board.player);
+    num1 = pop_count_ull(search->board.opponent);
     //cerr << calc_pattern(phase_idx, b) << " " << eval_sur0_sur1_arr[phase_idx][sur0][sur1] << " " << eval_canput0_canput1_arr[phase_idx][canput0][canput1] << " "
     //    << eval_stab0_stab1_arr[phase_idx][stab0][stab1] << " " << eval_num0_num1_arr[phase_idx][num0][num1] << " " << calc_canput_pattern(phase_idx, b, player_mobility, opponent_mobility) << endl;
-    int res = calc_pattern(phase_idx, b) + 
+    int res = calc_pattern_first(phase_idx, b) + 
+        eval_sur0_sur1_arr[phase_idx][sur0][sur1] + 
+        eval_canput0_canput1_arr[phase_idx][canput0][canput1] + 
+        eval_stab0_stab1_arr[phase_idx][stab0][stab1] + 
+        eval_num0_num1_arr[phase_idx][num0][num1] + 
+        calc_canput_pattern(phase_idx, b, player_mobility, opponent_mobility);
+    //return score_modification(phase_idx, res);
+    //cerr << res << endl;
+    #if EVALUATION_STEP_WIDTH_MODE == 0
+        if (res > 0)
+            res += STEP_2;
+        else if (res < 0)
+            res -= STEP_2;
+        res /= STEP;
+    #elif EVALUATION_STEP_WIDTH_MODE == 1
+        if (res > 0)
+            res += STEP;
+        else if (res < 0)
+            res -= STEP;
+        res /= STEP * 2;
+    #elif EVALUATION_STEP_WIDTH_MODE == 2
+        if (res > 0)
+            res += STEP / 4;
+        else if (res < 0)
+            res -= STEP / 4;
+        res /= STEP_2;
+    
+    #elif EVALUATION_STEP_WIDTH_MODE == 3
+        if (res > 0)
+            res += STEP / 8;
+        else if (res < 0)
+            res -= STEP / 8;
+        res /= STEP / 4;
+    #elif EVALUATION_STEP_WIDTH_MODE == 4
+        if (res > 0)
+            res += STEP / 16;
+        else if (res < 0)
+            res -= STEP / 16;
+        res /= STEP / 8;
+    #elif EVALUATION_STEP_WIDTH_MODE == 5
+        if (res > 0)
+            res += STEP / 32;
+        else if (res < 0)
+            res -= STEP / 32;
+        res /= STEP / 16;
+    #elif EVALUATION_STEP_WIDTH_MODE == 6
+        if (res > 0)
+            res += STEP / 64;
+        else if (res < 0)
+            res -= STEP / 64;
+        res /= STEP / 32;
+    #endif
+    //cerr << res << " " << value_to_score_double(res) << endl;
+    return max(-SCORE_MAX, min(SCORE_MAX, res));
+}
+
+inline void eval_update(Search *search, Flip *flip){
+
+}
+
+inline int mid_evaluate_diff(Search *search){
+    int phase_idx, sur0, sur1, canput0, canput1, stab0, stab1, num0, num1;
+    uint64_t player_mobility, opponent_mobility, empties;
+    player_mobility = calc_legal(search->board.player, search->board.opponent);
+    opponent_mobility = calc_legal(search->board.opponent, search->board.player);
+    canput0 = min(MAX_CANPUT - 1, pop_count_ull(player_mobility));
+    canput1 = min(MAX_CANPUT - 1, pop_count_ull(opponent_mobility));
+    if (canput0 == 0 && canput1 == 0)
+        return end_evaluate(&search->board);
+    phase_idx = search->board.phase();
+    empties = ~(search->board.player | search->board.opponent);
+    sur0 = min(MAX_SURROUND - 1, calc_surround(search->board.player, empties));
+    sur1 = min(MAX_SURROUND - 1, calc_surround(search->board.opponent, empties));
+    calc_stability(&search->board, &stab0, &stab1);
+    num0 = pop_count_ull(search->board.player);
+    num1 = pop_count_ull(search->board.opponent);
+    //cerr << calc_pattern(phase_idx, b) << " " << eval_sur0_sur1_arr[phase_idx][sur0][sur1] << " " << eval_canput0_canput1_arr[phase_idx][canput0][canput1] << " "
+    //    << eval_stab0_stab1_arr[phase_idx][stab0][stab1] << " " << eval_num0_num1_arr[phase_idx][num0][num1] << " " << calc_canput_pattern(phase_idx, b, player_mobility, opponent_mobility) << endl;
+    int res = calc_pattern_first(phase_idx, b) + 
         eval_sur0_sur1_arr[phase_idx][sur0][sur1] + 
         eval_canput0_canput1_arr[phase_idx][canput0][canput1] + 
         eval_stab0_stab1_arr[phase_idx][stab0][stab1] + 
