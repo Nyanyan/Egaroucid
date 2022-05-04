@@ -540,9 +540,15 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
                 if (v == -INF)
                     g = -nega_scout(search, -beta, -alpha, depth - 1, false, flip.n_legal, is_end_search);
                 else{
-                    g = -nega_alpha_ordering(search, -alpha - 1, -alpha, depth - 1, false, flip.n_legal, is_end_search, &searching);
-                    if (alpha < g)
-                        g = -nega_scout(search, -beta, -g, depth - 1, false, flip.n_legal, is_end_search);
+                    if (is_end_search && alpha == v){
+                        g = -nega_alpha_ordering(search, -alpha - 2, -alpha - 1, depth - 1, false, flip.n_legal, is_end_search, &searching);
+                        if (alpha + 1 < g)
+                            g = -nega_scout(search, -beta, -g, depth - 1, false, flip.n_legal, is_end_search);
+                    } else{
+                        g = -nega_alpha_ordering(search, -alpha - 1, -alpha, depth - 1, false, flip.n_legal, is_end_search, &searching);
+                        if (alpha < g)
+                            g = -nega_scout(search, -beta, -g, depth - 1, false, flip.n_legal, is_end_search);
+                    }
                 }
                 if (g <= alpha)
                     cerr << mobility_idx << "/" << canput_all << " " << idx_to_coord((int)flip.pos) << " value " << value_to_score_double(g) << " or lower" << endl;

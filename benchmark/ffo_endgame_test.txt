@@ -4786,6 +4786,49 @@ same
 69974921889 nodes
 171175299.576067 nps
 
+2022/05/05 update endsearch negascout with step 2 evaluation
+#40 depth 20 value 38 policy a2 nodes 31190839 time 199 nps 156737884
+#41 depth 22 value 0 policy h4 nodes 24911593 time 237 nps 105112206
+#42 depth 22 value 6 policy g2 nodes 38768321 time 298 nps 130095036
+#43 depth 23 value -12 policy c7 nodes 101059913 time 657 nps 153820263
+#44 depth 23 value -14 policy d2 nodes 23881907 time 423 nps 56458408
+#45 depth 24 value 6 policy b2 nodes 726167306 time 3507 nps 207062248
+#46 depth 24 value -8 policy b3 nodes 109523626 time 1002 nps 109305015
+#47 depth 25 value 4 policy g2 nodes 78309382 time 595 nps 131612406
+#48 depth 25 value 28 policy f6 nodes 696000810 time 3804 nps 182965512
+#49 depth 26 value 16 policy e1 nodes 869214688 time 4217 nps 206121576
+14.939 sec
+17.74233841896057 sec total
+2699028385 nodes
+180669950.13053083 nps
+
+#40 depth 20 value 38 policy a2 nodes 31084475 time 200 nps 155422375
+#41 depth 22 value 0 policy h4 nodes 24940500 time 234 nps 106583333
+#42 depth 22 value 6 policy g2 nodes 39822447 time 303 nps 131427217
+#43 depth 23 value -12 policy c7 nodes 100908599 time 651 nps 155005528
+#44 depth 23 value -14 policy d2 nodes 23851399 time 433 nps 55084062
+#45 depth 24 value 6 policy b2 nodes 736207296 time 3563 nps 206625679
+#46 depth 24 value -8 policy b3 nodes 109804552 time 1030 nps 106606361
+#47 depth 25 value 4 policy g2 nodes 78196655 time 589 nps 132761723
+#48 depth 25 value 28 policy f6 nodes 704715506 time 3839 nps 183567467
+#49 depth 26 value 16 policy e1 nodes 835808087 time 4111 nps 203310164
+#50 depth 26 value 10 policy d8 nodes 2474635260 time 10746 nps 230284316
+#51 depth 27 value 6 policy a3 nodes 696814293 time 4895 nps 142352255
+#52 depth 27 value 0 policy a3 nodes 444505189 time 3731 nps 119138351
+#53 depth 28 value -2 policy d8 nodes 5790529920 time 32339 nps 179057173
+#54 depth 28 value -2 policy c7 nodes 10107456453 time 47649 nps 212123160
+#55 depth 29 value 0 policy g6 nodes 34540742328 time 206060 nps 167624683
+#56 depth 29 value 2 policy h5 nodes 2293637779 time 17287 nps 132679920
+#57 depth 30 value -10 policy a6 nodes 7366268845 time 45203 nps 162959733
+#58 depth 30 value 4 policy g1 nodes 3793994912 time 24113 nps 157342301
+#59 depth 34 value 64 policy g8 nodes 2743 time 29 nps 94586
+407.005 sec
+424.3427703380585 sec total
+70193927238 nodes
+172464532.96151152 nps
+
+
+
 
 
 
@@ -4815,6 +4858,32 @@ answer
 #57 -10 a6
 #58 4   g1
 #59 64  g8  h4  e8
+
+2022/05/05 update endsearch negascout with step 2 evaluation
+#40 depth 20 value 38 policy a2 nodes 31084475 time 200 nps 155422375
+#41 depth 22 value 0 policy h4 nodes 24940500 time 234 nps 106583333
+#42 depth 22 value 6 policy g2 nodes 39822447 time 303 nps 131427217
+#43 depth 23 value -12 policy c7 nodes 100908599 time 651 nps 155005528
+#44 depth 23 value -14 policy d2 nodes 23851399 time 433 nps 55084062
+#45 depth 24 value 6 policy b2 nodes 736207296 time 3563 nps 206625679
+#46 depth 24 value -8 policy b3 nodes 109804552 time 1030 nps 106606361
+#47 depth 25 value 4 policy g2 nodes 78196655 time 589 nps 132761723
+#48 depth 25 value 28 policy f6 nodes 704715506 time 3839 nps 183567467
+#49 depth 26 value 16 policy e1 nodes 835808087 time 4111 nps 203310164
+#50 depth 26 value 10 policy d8 nodes 2474635260 time 10746 nps 230284316
+#51 depth 27 value 6 policy a3 nodes 696814293 time 4895 nps 142352255
+#52 depth 27 value 0 policy a3 nodes 444505189 time 3731 nps 119138351
+#53 depth 28 value -2 policy d8 nodes 5790529920 time 32339 nps 179057173
+#54 depth 28 value -2 policy c7 nodes 10107456453 time 47649 nps 212123160
+#55 depth 29 value 0 policy g6 nodes 34540742328 time 206060 nps 167624683
+#56 depth 29 value 2 policy h5 nodes 2293637779 time 17287 nps 132679920
+#57 depth 30 value -10 policy a6 nodes 7366268845 time 45203 nps 162959733
+#58 depth 30 value 4 policy g1 nodes 3793994912 time 24113 nps 157342301
+#59 depth 34 value 64 policy g8 nodes 2743 time 29 nps 94586
+407.005 sec
+424.3427703380585 sec total
+70193927238 nodes
+172464532.96151152 nps
 
 2022/05/05 adjustable ybwc offset 16-32
 #40 depth 20 value 38 policy a2 nodes 30879692 time 200 nps 154398460
