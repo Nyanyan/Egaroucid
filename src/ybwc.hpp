@@ -13,6 +13,7 @@
 //#define YBWC_END_SPLIT_MIN_DEPTH 6
 //#define YBWC_MAX_SPLIT_COUNT 3
 //#define YBWC_PC_OFFSET 3
+#define YBWC_ORDERING_OFFSET 8
 
 int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
 int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t legal, const bool *searching);
@@ -25,11 +26,12 @@ inline pair<int, uint64_t> ybwc_do_task(Search search, int alpha, int beta, int 
     return make_pair(SCORE_UNDEFINED, search.n_nodes);
 }
 
-inline bool ybwc_split(Search *search, const Flip *flip, int alpha, int beta, const int depth, uint64_t legal, bool is_end_search, const bool *searching, int policy, const int pv_idx, const int canput, const int split_count, vector<future<pair<int, uint64_t>>> &parallel_tasks){
+inline bool ybwc_split(Search *search, const Flip *flip, int alpha, int beta, const int depth, uint64_t legal, bool is_end_search, const bool *searching, int policy, const int pv_idx, const int canput, const int split_count, vector<future<pair<int, uint64_t>>> &parallel_tasks, const int first_val){
     if (pv_idx > 0 && 
         /* pv_idx > canput / YBWC_SPLIT_DIV && */ 
         /* pv_idx < canput - 1 && */ 
-        depth >= YBWC_MID_SPLIT_MIN_DEPTH /*&&*/
+        depth >= YBWC_MID_SPLIT_MIN_DEPTH &&
+        flip->value < first_val - YBWC_ORDERING_OFFSET
         /* split_count < YBWC_MAX_SPLIT_COUNT */ ){
         if (thread_pool.n_idle()){
             Search copy_search;
@@ -57,7 +59,7 @@ inline bool ybwc_split_without_move(Search *search, const Flip *flip, int alpha,
         /* pv_idx > canput / YBWC_SPLIT_DIV && */ 
         /* pv_idx < canput - 1 && */ 
         depth >= YBWC_MID_SPLIT_MIN_DEPTH &&
-        flip->value < first_val - 10
+        flip->value < first_val - YBWC_ORDERING_OFFSET
         /* split_count < YBWC_MAX_SPLIT_COUNT */ ){
         if (thread_pool.n_idle()){
             Search copy_search;
