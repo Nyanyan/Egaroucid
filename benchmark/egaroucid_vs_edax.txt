@@ -458,3 +458,4 @@ start depth: 8 Egaroucid plays black WDL: 69-18-43 Egaroucid plays white WDL: 61
 
 2022/05/05 update evaluation algorithm xot 8 moves
 level: 1 start depth: 8 Egaroucid plays black WDL: 61-2-67 Egaroucid plays white WDL: 76-3-51 Egaroucid win rate: 0.5372549019607843
+level: 5 start depth: 8 Egaroucid plays black WDL: 68-6-56 Egaroucid plays white WDL: 69-11-50 Egaroucid win rate: 0.5637860082304527
