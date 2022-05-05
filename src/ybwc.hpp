@@ -9,11 +9,11 @@
 #include "thread_pool.hpp"
 
 //#define YBWC_SPLIT_DIV 7
-#define YBWC_MID_SPLIT_MIN_DEPTH 5
+#define YBWC_MID_SPLIT_MIN_DEPTH 6
 //#define YBWC_END_SPLIT_MIN_DEPTH 6
 //#define YBWC_MAX_SPLIT_COUNT 3
 //#define YBWC_PC_OFFSET 3
-#define YBWC_ORDERING_MAX_OFFSET 16
+#define YBWC_ORDERING_MAX_OFFSET 12
 #define YBWC_OFFSET_DIV_DEPTH 32
 
 inline int depth_to_offset(const int depth){
