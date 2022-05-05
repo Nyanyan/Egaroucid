@@ -89,6 +89,8 @@ bool ai_init(string book_file) {
 		return false;
 	if (!joseki_init())
 		return false;
+	parent_transpose_table.first_init();
+	child_transpose_table.first_init();
 	return true;
 }
 
