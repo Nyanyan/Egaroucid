@@ -20,7 +20,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
     pair<int, int> result;
     depth = min(HW2 - board.n, depth);
     bool is_end_search = (HW2 - board.n == depth);
-    search.board = board;
+    board.copy(&search.board);
     search.n_nodes = 0ULL;
     calc_features(&search);
     uint64_t strt;
@@ -176,7 +176,7 @@ inline double tree_search_noid(Board board, int depth, bool use_mpc, double mpct
     pair<int, int> result;
     depth = min(HW2 - board.n, depth);
     bool is_end_search = (HW2 - board.n == depth);
-    search.board = board;
+    board.copy(&search.board);
     search.n_nodes = 0ULL;
     search.use_mpc = use_mpc;
     search.mpct = mpct;

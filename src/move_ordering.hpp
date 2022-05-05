@@ -124,7 +124,9 @@ inline void move_ordering(Search *search, vector<Flip> &move_list, int depth, in
         return;
     int eval_alpha = -min(SCORE_MAX, beta + MOVE_ORDERING_VALUE_OFFSET);
     int eval_beta = -max(-SCORE_MAX, alpha - MOVE_ORDERING_VALUE_OFFSET);
-    int eval_depth = depth / 8;
+    int eval_depth = depth >> 3;
+    if (depth >= 22)
+        ++eval_depth;
     for (Flip &flip: move_list)
         move_evaluate(search, &flip, eval_alpha, eval_beta, eval_depth, searching);
     sort(move_list.begin(), move_list.end(), cmp_move_ordering);
