@@ -9,7 +9,7 @@
 #include "thread_pool.hpp"
 
 //#define YBWC_SPLIT_DIV 7
-#define YBWC_MID_SPLIT_MIN_DEPTH 6
+#define YBWC_MID_SPLIT_MIN_DEPTH 5
 //#define YBWC_END_SPLIT_MIN_DEPTH 6
 //#define YBWC_MAX_SPLIT_COUNT 3
 //#define YBWC_PC_OFFSET 3
