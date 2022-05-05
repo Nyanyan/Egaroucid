@@ -4868,6 +4868,52 @@ same
 71387938972 nodes
 172288980.26306263 nps
 
+2022/05/05 compile with vs2022
+#40 depth 20 value 38 policy a2 nodes 31073685 time 199 nps 156149170
+#41 depth 22 value 0 policy h4 nodes 25041200 time 248 nps 100972580
+#42 depth 22 value 6 policy g2 nodes 39028191 time 295 nps 132298952
+#43 depth 23 value -12 policy c7 nodes 102517121 time 647 nps 158449955
+#44 depth 23 value -14 policy d2 nodes 24225260 time 378 nps 64087989
+#45 depth 24 value 6 policy b2 nodes 745211938 time 3776 nps 197354856
+#46 depth 24 value -8 policy b3 nodes 109575334 time 1000 nps 109575334
+#47 depth 25 value 4 policy g2 nodes 79686199 time 582 nps 136917867
+#48 depth 25 value 28 policy f6 nodes 717516879 time 4219 nps 170067996
+#49 depth 26 value 16 policy e1 nodes 835503436 time 4274 nps 195485127
+15.618 sec
+19.419991970062256 sec total
+2709379243 nodes
+173477989.69138175 nps
+
+#40 depth 20 value 38 policy a2 nodes 31061600 time 194 nps 160111340
+#41 depth 22 value 0 policy h4 nodes 25153937 time 226 nps 111300606
+#42 depth 22 value 6 policy g2 nodes 39160219 time 290 nps 135035237
+#43 depth 23 value -12 policy c7 nodes 103469953 time 637 nps 162433207
+#44 depth 23 value -14 policy d2 nodes 24178006 time 365 nps 66241112
+#45 depth 24 value 6 policy b2 nodes 747856635 time 3599 nps 207795675
+#46 depth 24 value -8 policy b3 nodes 109139605 time 962 nps 113450732
+#47 depth 25 value 4 policy g2 nodes 78697424 time 599 nps 131381342
+#48 depth 25 value 28 policy f6 nodes 708529202 time 3845 nps 184272874
+#49 depth 26 value 16 policy e1 nodes 846441578 time 4153 nps 203814490
+#50 depth 26 value 10 policy d8 nodes 2433878638 time 10546 nps 230786899
+#51 depth 27 value 6 policy a3 nodes 610474326 time 4327 nps 141084891
+#52 depth 27 value 0 policy a3 nodes 448760041 time 3599 nps 124690203
+#53 depth 28 value -2 policy d8 nodes 8380906288 time 45371 nps 184719452
+#54 depth 28 value -2 policy c7 nodes 10401519255 time 49971 nps 208151112
+#55 depth 29 value 0 policy b7 nodes 25963235559 time 164044 nps 158269949
+#56 depth 29 value 2 policy h5 nodes 1684353951 time 13505 nps 124720766
+#57 depth 30 value -10 policy a6 nodes 7882116805 time 48671 nps 161946884
+#58 depth 30 value 4 policy g1 nodes 3734108185 time 23560 nps 158493556
+#59 depth 34 value 64 policy g8 nodes 2743 time 25 nps 109720
+378.489 sec
+396.6992177963257 sec total
+64253043950 nodes
+169761985.02466387 nps
+
+
+
+
+
+
 
 
 
@@ -4897,6 +4943,32 @@ answer
 #57 -10 a6
 #58 4   g1
 #59 64  g8  h4  e8
+
+2022/05/05 compile with vs2022
+#40 depth 20 value 38 policy a2 nodes 31061600 time 194 nps 160111340
+#41 depth 22 value 0 policy h4 nodes 25153937 time 226 nps 111300606
+#42 depth 22 value 6 policy g2 nodes 39160219 time 290 nps 135035237
+#43 depth 23 value -12 policy c7 nodes 103469953 time 637 nps 162433207
+#44 depth 23 value -14 policy d2 nodes 24178006 time 365 nps 66241112
+#45 depth 24 value 6 policy b2 nodes 747856635 time 3599 nps 207795675
+#46 depth 24 value -8 policy b3 nodes 109139605 time 962 nps 113450732
+#47 depth 25 value 4 policy g2 nodes 78697424 time 599 nps 131381342
+#48 depth 25 value 28 policy f6 nodes 708529202 time 3845 nps 184272874
+#49 depth 26 value 16 policy e1 nodes 846441578 time 4153 nps 203814490
+#50 depth 26 value 10 policy d8 nodes 2433878638 time 10546 nps 230786899
+#51 depth 27 value 6 policy a3 nodes 610474326 time 4327 nps 141084891
+#52 depth 27 value 0 policy a3 nodes 448760041 time 3599 nps 124690203
+#53 depth 28 value -2 policy d8 nodes 8380906288 time 45371 nps 184719452
+#54 depth 28 value -2 policy c7 nodes 10401519255 time 49971 nps 208151112
+#55 depth 29 value 0 policy b7 nodes 25963235559 time 164044 nps 158269949
+#56 depth 29 value 2 policy h5 nodes 1684353951 time 13505 nps 124720766
+#57 depth 30 value -10 policy a6 nodes 7882116805 time 48671 nps 161946884
+#58 depth 30 value 4 policy g1 nodes 3734108185 time 23560 nps 158493556
+#59 depth 34 value 64 policy g8 nodes 2743 time 25 nps 109720
+378.489 sec
+396.6992177963257 sec total
+64253043950 nodes
+169761985.02466387 nps
 
 2022/05/05 update endsearch negascout with step 2 evaluation
 #40 depth 20 value 38 policy a2 nodes 31084475 time 200 nps 155422375

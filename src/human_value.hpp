@@ -22,9 +22,10 @@ struct Human_value{
 inline int get_human_sense_raw_value(Board *b, Search *search, int search_depth, bool passed){
     int val = -book.get(b);
     if (val == INF){
+        bool searching = true;
         search->board = b->copy();
         calc_features(search);
-        val = value_to_score_int(nega_alpha_ordering_nomemo(search, -SCORE_MAX, SCORE_MAX, search_depth, passed, LEGAL_UNDEFINED));
+        val = value_to_score_int(nega_alpha_ordering_nomemo(search, -SCORE_MAX, SCORE_MAX, search_depth, passed, LEGAL_UNDEFINED, &searching));
     }
     return val;
 }

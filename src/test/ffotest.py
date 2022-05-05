@@ -5,7 +5,7 @@ import sys
 strt_idx = int(sys.argv[1])
 end_idx = int(sys.argv[2])
 
-egaroucid = subprocess.Popen('ffotest.exe'.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+egaroucid = subprocess.Popen('Egaroucid5_test.exe'.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
 res_str = ''
 tim = 0

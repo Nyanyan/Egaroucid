@@ -791,7 +791,9 @@ inline int mid_evaluate(Board *b){
     return max(-SCORE_MAX, min(SCORE_MAX, res));
 }
 
-inline int mid_evaluate_diff(Search *search){
+inline int mid_evaluate_diff(Search *search, const bool *searching){
+    if (!(*searching))
+        return SCORE_UNDEFINED;
     int phase_idx, sur0, sur1, canput0, canput1, stab0, stab1, num0, num1;
     uint64_t player_mobility, opponent_mobility, empties;
     player_mobility = calc_legal(search->board.player, search->board.opponent);

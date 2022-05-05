@@ -31,10 +31,10 @@
 #define W_END_MOBILITY 64
 #define W_END_PARITY 14
 
-int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped);
-int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped);
-int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal);
-int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search);
+int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, const bool *searching);
+int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped, const bool *searching);
+int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, const bool *searching);
+int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
 
 inline void move_sort_top(vector<Flip> &move_list, int best_idx){
     if (best_idx != 0)
@@ -45,7 +45,7 @@ bool cmp_move_ordering(Flip &a, Flip &b){
     return a.value > b.value;
 }
 
-inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int beta, const int depth){
+inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int beta, const int depth, const bool *searching){
     if (flip->flip == search->board.opponent)
         flip->value = W_WIPEOUT;
     else{
@@ -75,18 +75,18 @@ inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int
                 if (depth >= 0){
                     switch(depth){
                         case 0:
-                            flip->value += (HW2 - value_to_score_int(mid_evaluate_diff(search))) * W_VALUE_SHALLOW;
+                            flip->value += (HW2 - value_to_score_int(mid_evaluate_diff(search, searching))) * W_VALUE_SHALLOW;
                             break;
                         case 1:
-                            flip->value += (HW2 - value_to_score_int(nega_alpha_eval1(search, alpha, beta, false))) * W_VALUE;
+                            flip->value += (HW2 - value_to_score_int(nega_alpha_eval1(search, alpha, beta, false, searching))) * W_VALUE;
                             break;
                         default:
                             if (depth <= MID_FAST_DEPTH)
-                                flip->value += (HW2 - value_to_score_int(nega_alpha(search, alpha, beta, depth, false))) * W_VALUE;
+                                flip->value += (HW2 - value_to_score_int(nega_alpha(search, alpha, beta, depth, false, searching))) * W_VALUE;
                             else{
                                 bool use_mpc = search->use_mpc;
                                 search->use_mpc = false;
-                                    flip->value += (HW2 - value_to_score_int(nega_alpha_ordering_nomemo(search, alpha, beta, depth, false, flip->n_legal))) * W_VALUE;
+                                    flip->value += (HW2 - value_to_score_int(nega_alpha_ordering_nomemo(search, alpha, beta, depth, false, flip->n_legal, searching))) * W_VALUE;
                                 search->use_mpc = use_mpc;
                             }
                             break;
@@ -119,14 +119,14 @@ inline void move_evaluate_fast_first(Search *search, Flip *flip){
     }
 }
 
-inline void move_ordering(Search *search, vector<Flip> &move_list, int depth, int alpha, int beta, bool is_end_search){
+inline void move_ordering(Search *search, vector<Flip> &move_list, int depth, int alpha, int beta, bool is_end_search, const bool *searching){
     if (move_list.size() < 2)
         return;
     int eval_alpha = -min(SCORE_MAX, beta + MOVE_ORDERING_VALUE_OFFSET);
     int eval_beta = -max(-SCORE_MAX, alpha - MOVE_ORDERING_VALUE_OFFSET);
     int eval_depth = depth / 8;
     for (Flip &flip: move_list)
-        move_evaluate(search, &flip, eval_alpha, eval_beta, eval_depth);
+        move_evaluate(search, &flip, eval_alpha, eval_beta, eval_depth, searching);
     sort(move_list.begin(), move_list.end(), cmp_move_ordering);
 }
 /*

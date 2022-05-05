@@ -17,7 +17,7 @@
 #include "util.hpp"
 
 using namespace std;
-
+/*
 int nega_alpha_end_nomemo(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal){
     if (!global_searching)
         return SCORE_UNDEFINED;
@@ -67,6 +67,7 @@ int nega_alpha_end_nomemo(Search *search, int alpha, int beta, int depth, bool s
     }
     return v;
 }
+*/
 /*
 inline int last1(Search *search, int alpha, int beta, int p0){
     ++search->n_nodes;

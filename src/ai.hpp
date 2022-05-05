@@ -181,7 +181,8 @@ inline double tree_search_noid(Board board, int depth, bool use_mpc, double mpct
     search.use_mpc = use_mpc;
     search.mpct = mpct;
     calc_features(&search);
-    g = nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth, false, LEGAL_UNDEFINED, is_end_search);
+    bool searching = true;
+    g = nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth, false, LEGAL_UNDEFINED, is_end_search, &searching);
     return value_to_score_double(g);
 }
 

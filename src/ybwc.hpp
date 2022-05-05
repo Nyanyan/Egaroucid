@@ -22,9 +22,10 @@ inline int depth_to_offset(const int depth){
 
 int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
 int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t legal, const bool *searching);
-int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search);
+int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
 
 inline pair<int, uint64_t> ybwc_do_task(Search search, int alpha, int beta, int depth, uint64_t legal, bool is_end_search, const bool *searching, int policy){
+    //calc_features(&search);
     int g = -nega_alpha_ordering(&search, alpha, beta, depth, false, legal, is_end_search, searching);
     if (*searching)
         return make_pair(g, search.n_nodes);
@@ -40,14 +41,14 @@ inline bool ybwc_split(Search *search, const Flip *flip, int alpha, int beta, co
         /* split_count < YBWC_MAX_SPLIT_COUNT */ ){
         if (thread_pool.n_idle()){
             Search copy_search;
-            eval_move(search, flip);
+            //eval_move(search, flip);
             search->board.move(flip);
                 search->board.copy(&copy_search.board);
                 for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i)
                     copy_search.eval_features[i] = search->eval_features[i];
                 copy_search.eval_feature_reversed = search->eval_feature_reversed;
             search->board.undo(flip);
-            eval_undo(search, flip);
+            //eval_undo(search, flip);
             copy_search.use_mpc = search->use_mpc;
             copy_search.mpct = search->mpct;
             copy_search.n_nodes = 0;
@@ -120,6 +121,7 @@ inline int ybwc_wait_all(Search *search, vector<future<pair<int, uint64_t>>> &pa
 inline int ybwc_negascout_wait_all(Search *search, vector<future<pair<int, uint64_t>>> &parallel_tasks, vector<Flip> &flips, int before_alpha, int alpha, int beta, int depth, bool skipped, bool is_end_search, int *best_move){
     int v = alpha, g;
     pair<int, uint64_t> got_task;
+    bool searching = true;
     for (int i = 0; i < (int)parallel_tasks.size(); ++i){
         got_task = parallel_tasks[i].get();
         g = got_task.first;
@@ -127,7 +129,7 @@ inline int ybwc_negascout_wait_all(Search *search, vector<future<pair<int, uint6
         if (before_alpha < g){
             v = max(v, g);
             search->board.move(&flips[i]);
-                g = -nega_scout(search, -beta, -v, depth, skipped, flips[i].n_legal, is_end_search);
+                g = -nega_scout(search, -beta, -v, depth, skipped, flips[i].n_legal, is_end_search, &searching);
             search->board.undo(&flips[i]);
             if (v < g){
                 v = g;
