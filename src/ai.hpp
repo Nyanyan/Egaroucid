@@ -21,6 +21,7 @@
 
 inline Search_result tree_search(Board board, int depth, bool use_mpc, double mpct, bool show_log){
     Search search;
+    search.init();
     int g, alpha, beta, policy = -1;
     pair<int, int> result;
     depth = min(HW2 - board.n, depth);
@@ -165,6 +166,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
         if (show_log)
             cerr << "midsearch time " << tim() - strt << " depth " << depth << " value " << value_to_score_double(g) << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
     }
+    search.del();
     Search_result res;
     res.depth = depth;
     res.nodes = search.n_nodes;
@@ -178,6 +180,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
 inline double tree_search_noid(Board board, int depth, bool use_mpc, double mpct){
     int g;
     Search search;
+    search.init();
     pair<int, int> result;
     depth = min(HW2 - board.n, depth);
     bool is_end_search = (HW2 - board.n == depth);
@@ -188,6 +191,7 @@ inline double tree_search_noid(Board board, int depth, bool use_mpc, double mpct
     calc_features(&search);
     bool searching = true;
     g = nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth, false, LEGAL_UNDEFINED, is_end_search, &searching);
+    search.del();
     return value_to_score_double(g);
 }
 
@@ -334,10 +338,12 @@ bool ai_hint(Board b, int level, int max_level, int res[], int info[], bool best
                 }
             }
         }
+        /*
         if (!is_mid_search && !use_mpc){
             parent_transpose_table.copy(&bak_parent_transpose_table);
             cerr << "cache saved" << endl;
         }
+        */
     } else{
         for (int i = 0; i < HW2; ++i){
             if (1 & (legal >> i)){
