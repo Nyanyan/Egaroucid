@@ -391,7 +391,7 @@ Cell_value analyze_search(Board b, int level, bool use_book, int use_book_depth)
 		bool use_mpc, is_mid_search;
 		double mpct;
 		get_level(level, b.n - 4, &is_mid_search, &depth, &use_mpc, &mpct);
-		Search_result search_result = ai(b, level, use_book & b.n - 3 <= use_book_depth, 0);
+		Search_result search_result = ai(b, level, use_book && b.n - 3 <= use_book_depth, 0);
 		res.value = (b.p ? -1 : 1) * search_result.value;
 		res.depth = search_result.depth;
 	}
@@ -947,6 +947,7 @@ void reset_hint(int* hint_state, future<bool>* hint_future) {
 		}
 		*hint_state = hint_not_calculated_define;
 	}
+	child_transpose_table.init();
 	global_searching = true;
 }
 
@@ -2460,21 +2461,8 @@ void Main() {
 						bool next_fork_mode = (!fork_mode && history_place != history[history.size() - 1].b.n - 4);
 						int v = -INF;
 						for (int cell = 0; cell < HW2; ++cell) {
-							if (1 & (hint_legal >> cell) && hint_state > 0 && use_hint_flag) {
-								v = max(v, hint_value[cell]);
-							}
-						}
-						if (v != -INF) {
-							v *= (bd.p ? -1 : 1);
-							if (!fork_mode && !next_fork_mode) {
-								if (history.size()) {
-									history[history.size() - 1].v = v;
-								}
-							}
-							else {
-								if (fork_history.size()) {
-									fork_history[find_history_idx(fork_history, bd.n - 4)].v = v;
-								}
+							if (board_clicked[cell] && (1 & (hint_legal >> cell)) && hint_state > 0 && use_hint_flag) {
+								v = (bd.p ? -1 : 1) * hint_value[cell];
 							}
 						}
 						reset_hint(&hint_state, &hint_future);
@@ -2502,17 +2490,17 @@ void Main() {
 									}
 								}
 								if (!next_fork_mode && fork_history.size()) {
-									History_elem hist_tmp = { bd, -INF, moved_board.first, fork_history[fork_history.size() - 1].record + str_record(moved_board.first) };
+									History_elem hist_tmp = { bd, v, moved_board.first, fork_history[fork_history.size() - 1].record + str_record(moved_board.first) };
 									fork_history.emplace_back(hist_tmp);
 								}
 								else {
-									History_elem hist_tmp = { bd, -INF, moved_board.first, history[find_history_idx(history, history_place)].record + str_record(moved_board.first) };
+									History_elem hist_tmp = { bd, v, moved_board.first, history[find_history_idx(history, history_place)].record + str_record(moved_board.first) };
 									fork_history.emplace_back(hist_tmp);
 									fork_mode = true;
 								}
 							}
 							else {
-								History_elem hist_tmp = { bd, -INF, moved_board.first, history[history.size() - 1].record + str_record(moved_board.first) };
+								History_elem hist_tmp = { bd, v, moved_board.first, history[history.size() - 1].record + str_record(moved_board.first) };
 								history.emplace_back(hist_tmp);
 							}
 							history_place = bd.n - 4;
@@ -2585,11 +2573,17 @@ void Main() {
 										}
 										else {
 											++hint_state;
+											if (hint_state > hint_level * 2 + 1) {
+												child_transpose_table.init();
+											}
 										}
 									}
 								}
 								else {
 									++hint_state;
+									if (hint_state > hint_level * 2 + 1) {
+										child_transpose_table.init();
+									}
 								}
 							}
 						}
