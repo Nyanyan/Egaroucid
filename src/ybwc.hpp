@@ -4,7 +4,11 @@
 #include "common.hpp"
 #include "transpose_table.hpp"
 #include "search.hpp"
-#include "midsearch.hpp"
+#if USE_CUDA
+    #include "cuda_midsearch.hpp"
+#else
+    #include "midsearch.hpp"
+#endif
 #include "endsearch.hpp"
 #include "thread_pool.hpp"
 
