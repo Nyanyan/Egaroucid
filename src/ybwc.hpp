@@ -49,10 +49,10 @@ pair<int, uint64_t> ybwc_do_task(uint64_t player, uint64_t opponent, uint_fast8_
     search.use_mpc = use_mpc;
     search.mpct = mpct;
     search.eval_feature_reversed = eval_feature_reversed;
-    for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i)
-        search.eval_features[i] = eval_features[i];
+    //for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i)
+    //    search.eval_features[i] = eval_features[i];
     search.n_nodes = 0ULL;
-    //calc_features(&search);
+    calc_features(&search);
     int g = -nega_alpha_ordering(&search, alpha, beta, depth, false, legal, is_end_search, searching);
     search.del();
     if (*searching)
