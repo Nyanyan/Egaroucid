@@ -19,6 +19,7 @@ inline bool ybwc_split_without_move_cuda(Search *search, const int depth, const 
         board.player = search->board.player;
         board.opponent = search->board.opponent;
         board_arr.emplace_back(board);
+        return true;
     }
     return false;
 }

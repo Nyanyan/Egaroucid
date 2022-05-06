@@ -6,10 +6,11 @@
 #include "search.hpp"
 #if USE_CUDA
     #include "cuda_midsearch.hpp"
+    #include "cuda_endsearch.hpp"
 #else
     #include "midsearch.hpp"
+    #include "endsearch.hpp"
 #endif
-#include "endsearch.hpp"
 #include "thread_pool.hpp"
 
 //#define YBWC_SPLIT_DIV 7
@@ -65,6 +66,7 @@ inline bool ybwc_split(Search *search, const Flip *flip, int alpha, int beta, co
 }
 
 inline bool ybwc_split_without_move(Search *search, const Flip *flip, int alpha, int beta, const int depth, uint64_t legal, bool is_end_search, const bool *searching, int policy, const int pv_idx, const int canput, const int split_count, vector<future<pair<int, uint64_t>>> &parallel_tasks, const int first_val){
+    return false;
     if (pv_idx > 0 && 
         /* pv_idx > canput / YBWC_SPLIT_DIV && */ 
         /* pv_idx < canput - 1 && */ 

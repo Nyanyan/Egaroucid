@@ -263,7 +263,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
                 }
                 */
                 if (alpha < beta){
-                    do_search_cuda(board_arr, depth - 1, is_end_search);
+                    alpha = max(alpha, do_search_cuda(board_arr, depth - 1, is_end_search));
                 }
             }
         #else

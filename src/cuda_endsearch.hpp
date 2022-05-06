@@ -18,6 +18,7 @@
 #include "cuda_ybwc.hpp"
 
 using namespace std;
+
 /*
 int nega_alpha_end_nomemo(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal){
     if (!global_searching)
@@ -536,12 +537,19 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
         legal ^= 1ULL << best_move;
     }
     if (alpha < beta){
+        const int canput = pop_count_ull(legal);
+        vector<Flip> move_list(canput);
+        int idx = 0;
+        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
+            calc_flip(&move_list[idx++], &search->board, cell);
+        move_ordering_fast_first(search, move_list);
         #if USE_MULTI_THREAD || true
             int pv_idx = 0, split_count = 0;
             if (best_move != TRANSPOSE_TABLE_UNDEFINED)
                 pv_idx = 1;
             vector<Board_simple> board_arr;
             bool n_searching = true;
+            int depth = HW2 - pop_count_ull(search->board.player | search->board.opponent);
             for (const Flip &flip: move_list){
                 if (!(*searching))
                     break;
@@ -569,7 +577,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
             }
             if (split_count){
                 if (alpha < beta){
-                    do_search_cuda(board_arr, depth - 1, is_end_search);
+                    alpha = max(alpha, do_search_cuda(board_arr, depth - 1, true));
                 }
             }
         #else

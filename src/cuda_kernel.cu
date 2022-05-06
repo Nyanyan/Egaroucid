@@ -21,7 +21,7 @@
 
 using namespace std;
 
-#define CUDA_MAX_DEPTH 10
+#define CUDA_MAX_DEPTH 10 + 1
 #define THREADS_PER_BLOCK 128
 #define SIMD_WIDTH 4
 constexpr int NODES_PER_BLOCK = THREADS_PER_BLOCK / SIMD_WIDTH;
@@ -545,10 +545,10 @@ __global__ void search_cuda(const Board_simple *bd_ary, int *res_ary, int *nodes
 // end of modification
 
 extern "C" int do_search_cuda(vector<Board_simple> &boards, int depth, bool is_end_search){
-    cerr << "start gpu search" << endl;
     if (is_end_search)
         ++depth;
     const size_t n = boards.size();
+    //cerr << "start gpu search depth = " << depth << " size = " << n << endl;
     Board_simple *bd_ary_host = (Board_simple*)malloc(sizeof(Board_simple) * n);
     for (int i = 0; i < n; ++i){
         bd_ary_host[i].player = boards[i].player;
@@ -565,10 +565,12 @@ extern "C" int do_search_cuda(vector<Board_simple> &boards, int depth, bool is_e
     cudaMemset(nodes_count, 0, sizeof(int) * n);
     search_cuda<<<256, THREADS_PER_BLOCK>>>(bd_ary, res_ary, nodes_count, n, depth);
     cudaDeviceSynchronize();
+    //cerr << "gpu calculating done" << endl;
+    //for (int i = 0; i < n; ++i)
+    //    cerr << res_ary[i] << endl;
     int res = -INF;
-    for (int i = 0; i < n; ++i){
+    for (int i = 0; i < n; ++i)
         res = max(res, -res_ary[i]);
-    }
-    cerr << "done val = " << res << endl;
+    //cerr << "done val = " << res << endl;
     return res;
 }
