@@ -7,10 +7,17 @@
 #include <vector>
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
+/*
 #include "setting.hpp"
-#include "common.hpp"
 #include "evaluate.hpp"
+*/
 #include "cuda_board.hpp"
+
+#define HW 8
+#define HW_P1 9
+#define HW_M1 7
+#define SCORE_MAX 64
+#define INF 100000000
 
 using namespace std;
 
@@ -538,6 +545,7 @@ __global__ void search_cuda(const Board_simple *bd_ary, int *res_ary, int *nodes
 // end of modification
 
 extern "C" int do_search_cuda(vector<Board_simple> &boards, int depth, bool is_end_search){
+    cerr << "start gpu search" << endl;
     if (is_end_search)
         ++depth;
     const size_t n = boards.size();
@@ -561,5 +569,6 @@ extern "C" int do_search_cuda(vector<Board_simple> &boards, int depth, bool is_e
     for (int i = 0; i < n; ++i){
         res = max(res, -res_ary[i]);
     }
+    cerr << "done val = " << res << endl;
     return res;
 }

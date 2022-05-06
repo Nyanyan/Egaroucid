@@ -9,7 +9,7 @@
 #include "evaluate.hpp"
 #include "search.hpp"
 #include "transpose_table.hpp"
-#include "endsearch.hpp"
+#include "cuda_endsearch.hpp"
 #include "move_ordering.hpp"
 #include "probcut.hpp"
 #if USE_MULTI_THREAD
@@ -223,14 +223,15 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
             int pv_idx = 0, split_count = 0;
             if (best_move != TRANSPOSE_TABLE_UNDEFINED)
                 pv_idx = 1;
-            vector<future<pair<int, uint64_t>>> parallel_tasks;
+            //vector<future<pair<int, uint64_t>>> parallel_tasks;
+            vector<Board_simple> board_arr;
             bool n_searching = true;
             for (const Flip &flip: move_list){
                 if (!(*searching))
                     break;
                 eval_move(search, &flip);
                 search->board.move(&flip);
-                    if (ybwc_split_without_move(search, &flip, -beta, -alpha, depth - 1, flip.n_legal, is_end_search, &n_searching, flip.pos, pv_idx++, canput, split_count, parallel_tasks, move_list[0].value)){
+                    if (ybwc_split_without_move_cuda(search, depth - 1, pv_idx++, is_end_search, board_arr)){
                         ++split_count;
                     } else{
                         g = -nega_alpha_ordering(search, -beta, -alpha, depth - 1, false, flip.n_legal, is_end_search, searching);
@@ -251,6 +252,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
                 eval_undo(search, &flip);
             }
             if (split_count){
+                /*
                 if (beta <= alpha || !(*searching)){
                     n_searching = false;
                     ybwc_wait_all(search, parallel_tasks);
@@ -258,6 +260,10 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
                     g = ybwc_wait_all(search, parallel_tasks);
                     alpha = max(alpha, g);
                     v = max(v, g);
+                }
+                */
+                if (alpha < beta){
+                    do_search_cuda(board_arr, depth - 1, is_end_search);
                 }
             }
         #else
