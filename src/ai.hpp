@@ -3,7 +3,11 @@
 #include <future>
 #include <unordered_set>
 #include "level.hpp"
-#include "midsearch.hpp"
+#if USE_CUDA
+    #include "cuda_midsearch.hpp"
+#else
+    #include "midsearch.hpp"
+#endif
 #include "book.hpp"
 #include "util.hpp"
 

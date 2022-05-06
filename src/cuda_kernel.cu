@@ -33,7 +33,7 @@ struct Node_cuda {
 };
 
 __shared__ Node_cuda nodes_stack[NODES_PER_BLOCK][CUDA_MAX_DEPTH + 1];
-__shared__ int count[THREADS_PER_BLOCK];
+__shared__ int count_cuda[THREADS_PER_BLOCK];
 
 __device__ inline uint64_t puttable(Board_simple *b){
     uint64_t hmask = b->opponent & 0x7E7E7E7E7E7E7E7EULL;
@@ -50,7 +50,7 @@ __device__ inline uint64_t puttable(uint64_t player, uint64_t opponent){
     uint64_t res = (hmask << 1) | (hmask >> 1) | (vmask << HW) | (vmask >> HW) | (hvmask >> HW_P1) | (hvmask << HW_P1) | (hvmask >> HW_M1) | (hvmask << HW_M1);
     return res & ~(player | opponent);
 }
-
+/*
 __device__ inline uint64_t calc_legal_cuda(uint64_t player, uint64_t opponent){
     uint64_t hmask = opponent & 0x7E7E7E7E7E7E7E7EULL;
     uint64_t vmask = opponent & 0x00FFFFFFFFFFFF00ULL;
@@ -129,7 +129,7 @@ __device__ inline uint64_t calc_surround_part_cuda(const uint64_t player, const 
     return (player << dr | player >> dr);
 }
 
-__device__ inline int calc_surround(const uint64_t player, const uint64_t empties){
+__device__ inline int calc_surround_cuda(const uint64_t player, const uint64_t empties){
     return __popcll(empties & (
         calc_surround_part_cuda(player & 0b0111111001111110011111100111111001111110011111100111111001111110ULL, 1) | 
         calc_surround_part_cuda(player & 0b0000000011111111111111111111111111111111111111111111111100000000ULL, HW) | 
@@ -183,7 +183,7 @@ __device__ inline void full_stability_cuda(uint64_t player, uint64_t opponent, u
     full_stability_d_cuda(stones, d7, d9);
 }
 
-__device__ inline void calc_stability_cuda(Board_simple *b, int *stab0, int *stab1){
+inline void calc_stability_cuda(Board_simple *b, int *stab0, int *stab1){
     uint64_t full_h, full_v, full_d7, full_d9;
     uint64_t edge_stability = 0, player_stability = 0, opponent_stability = 0, n_stability;
     uint64_t h, v, d7, d9;
@@ -228,7 +228,7 @@ __device__ inline void calc_stability_cuda(Board_simple *b, int *stab0, int *sta
     *stab1 = __popcll(opponent_stability);
 }
 
-__global__ inline int calc_pattern_first(const int phase_idx, Board_simple *b){
+inline int calc_pattern_first_cuda(const int phase_idx, Board_simple *b){
     uint_fast8_t b_arr[HW2];
     for (int i = 0; i < HW2; ++i)
         b_arr[HW2_M1 - i] = 2 - (1 & (b->player >> i)) * 2 - (1 & (b->opponent >> i));
@@ -251,40 +251,32 @@ __global__ inline int calc_pattern_first(const int phase_idx, Board_simple *b){
         pick_pattern(phase_idx, 15, b_arr, 0, 1, 8, 9, 10, 11, 12, 17, 25, 33) + pick_pattern(phase_idx, 15, b_arr, 7, 6, 15, 14, 13, 12, 11, 22, 30, 38) + pick_pattern(phase_idx, 15, b_arr, 56, 57, 48, 49, 50, 51, 52, 41, 33, 25) + pick_pattern(phase_idx, 15, b_arr, 63, 62, 55, 54, 53, 52, 51, 46, 38, 30);
 }
 
-__device__ inline int create_canput_line_h(uint64_t b, uint64_t w, int t){
+inline int create_canput_line_h_cuda(uint64_t b, uint64_t w, int t){
     return (((w >> (HW * t)) & 0b11111111) << HW) | ((b >> (HW * t)) & 0b11111111);
 }
 
-__device__ inline int create_canput_line_v(uint64_t b, uint64_t w, int t){
+inline int create_canput_line_v_cuda(uint64_t b, uint64_t w, int t){
     return (join_v_line(w, t) << HW) | join_v_line(b, t);
 }
 
-__device__ inline int calc_canput_pattern(const int phase_idx, const uint64_t player_mobility, const uint64_t opponent_mobility){
+inline int calc_canput_pattern_cuda(const int phase_idx, const uint64_t player_mobility, const uint64_t opponent_mobility){
     return 
-        eval_canput_pattern[phase_idx][0][create_canput_line_h(player_mobility, opponent_mobility, 0)] + 
-        eval_canput_pattern[phase_idx][0][create_canput_line_h(player_mobility, opponent_mobility, 7)] + 
-        eval_canput_pattern[phase_idx][0][create_canput_line_v(player_mobility, opponent_mobility, 0)] + 
-        eval_canput_pattern[phase_idx][0][create_canput_line_v(player_mobility, opponent_mobility, 7)] + 
-        eval_canput_pattern[phase_idx][1][create_canput_line_h(player_mobility, opponent_mobility, 1)] + 
-        eval_canput_pattern[phase_idx][1][create_canput_line_h(player_mobility, opponent_mobility, 6)] + 
-        eval_canput_pattern[phase_idx][1][create_canput_line_v(player_mobility, opponent_mobility, 1)] + 
-        eval_canput_pattern[phase_idx][1][create_canput_line_v(player_mobility, opponent_mobility, 6)] + 
-        eval_canput_pattern[phase_idx][2][create_canput_line_h(player_mobility, opponent_mobility, 2)] + 
-        eval_canput_pattern[phase_idx][2][create_canput_line_h(player_mobility, opponent_mobility, 5)] + 
-        eval_canput_pattern[phase_idx][2][create_canput_line_v(player_mobility, opponent_mobility, 2)] + 
-        eval_canput_pattern[phase_idx][2][create_canput_line_v(player_mobility, opponent_mobility, 5)] + 
-        eval_canput_pattern[phase_idx][3][create_canput_line_h(player_mobility, opponent_mobility, 3)] + 
-        eval_canput_pattern[phase_idx][3][create_canput_line_h(player_mobility, opponent_mobility, 4)] + 
-        eval_canput_pattern[phase_idx][3][create_canput_line_v(player_mobility, opponent_mobility, 3)] + 
-        eval_canput_pattern[phase_idx][3][create_canput_line_v(player_mobility, opponent_mobility, 4)];
-}
-
-__device__ inline int end_evaluate_cuda(Board_simple *b){
-    int p = __popcll(b->player);
-    int o = __popcll(b->opponent);
-    if (pnum == onum) return 0;
-    if (pnum > onum) return 64 - 2 * onum;
-    else return 2 * pnum - 64;
+        eval_canput_pattern[phase_idx][0][create_canput_line_h_cuda(player_mobility, opponent_mobility, 0)] + 
+        eval_canput_pattern[phase_idx][0][create_canput_line_h_cuda(player_mobility, opponent_mobility, 7)] + 
+        eval_canput_pattern[phase_idx][0][create_canput_line_v_cuda(player_mobility, opponent_mobility, 0)] + 
+        eval_canput_pattern[phase_idx][0][create_canput_line_v_cuda(player_mobility, opponent_mobility, 7)] + 
+        eval_canput_pattern[phase_idx][1][create_canput_line_h_cuda(player_mobility, opponent_mobility, 1)] + 
+        eval_canput_pattern[phase_idx][1][create_canput_line_h_cuda(player_mobility, opponent_mobility, 6)] + 
+        eval_canput_pattern[phase_idx][1][create_canput_line_v_cuda(player_mobility, opponent_mobility, 1)] + 
+        eval_canput_pattern[phase_idx][1][create_canput_line_v_cuda(player_mobility, opponent_mobility, 6)] + 
+        eval_canput_pattern[phase_idx][2][create_canput_line_h_cuda(player_mobility, opponent_mobility, 2)] + 
+        eval_canput_pattern[phase_idx][2][create_canput_line_h_cuda(player_mobility, opponent_mobility, 5)] + 
+        eval_canput_pattern[phase_idx][2][create_canput_line_v_cuda(player_mobility, opponent_mobility, 2)] + 
+        eval_canput_pattern[phase_idx][2][create_canput_line_v_cuda(player_mobility, opponent_mobility, 5)] + 
+        eval_canput_pattern[phase_idx][3][create_canput_line_h_cuda(player_mobility, opponent_mobility, 3)] + 
+        eval_canput_pattern[phase_idx][3][create_canput_line_h_cuda(player_mobility, opponent_mobility, 4)] + 
+        eval_canput_pattern[phase_idx][3][create_canput_line_v_cuda(player_mobility, opponent_mobility, 3)] + 
+        eval_canput_pattern[phase_idx][3][create_canput_line_v_cuda(player_mobility, opponent_mobility, 4)];
 }
 
 inline int mid_evaluate_cuda(Board_simple *b){
@@ -305,12 +297,12 @@ inline int mid_evaluate_cuda(Board_simple *b){
     num1 = __popcll(b->opponent);
     //cerr << calc_pattern(phase_idx, b) << " " << eval_sur0_sur1_arr[phase_idx][sur0][sur1] << " " << eval_canput0_canput1_arr[phase_idx][canput0][canput1] << " "
     //    << eval_stab0_stab1_arr[phase_idx][stab0][stab1] << " " << eval_num0_num1_arr[phase_idx][num0][num1] << " " << calc_canput_pattern(phase_idx, b, player_mobility, opponent_mobility) << endl;
-    int res = calc_pattern_first(phase_idx, b) + 
+    int res = calc_pattern_first_cuda(phase_idx, b) + 
         eval_sur0_sur1_arr[phase_idx][sur0][sur1] + 
         eval_canput0_canput1_arr[phase_idx][canput0][canput1] + 
         eval_stab0_stab1_arr[phase_idx][stab0][stab1] + 
         eval_num0_num1_arr[phase_idx][num0][num1] + 
-        calc_canput_pattern(phase_idx, b, player_mobility, opponent_mobility);
+        calc_canput_pattern_cuda(phase_idx, player_mobility, opponent_mobility);
     //return score_modification(phase_idx, res);
     //cerr << res << endl;
     #if EVALUATION_STEP_WIDTH_MODE == 0
@@ -360,6 +352,15 @@ inline int mid_evaluate_cuda(Board_simple *b){
     //cerr << res << " " << value_to_score_double(res) << endl;
     return max(-SCORE_MAX, min(SCORE_MAX, res));
 }
+*/
+
+__device__ inline int end_evaluate_cuda(Board_simple *b){
+    int p = __popcll(b->player);
+    int o = __popcll(b->opponent);
+    if (p == o) return 0;
+    if (p > o) return 64 - 2 * o;
+    else return 2 * p - 64;
+}
 
 // original code https://gist.github.com/primenumber/82443a22f8a789b54213229efdc17ba9
 // modified by Nyanyan
@@ -403,15 +404,15 @@ struct Arrays {
 __device__ bool get_next_node(Arrays &arys, const int node_index, const int simd_index, const int res) {
     if (simd_index == 0) {
         arys.res_ary[arys.index] = res;
-        arys.nodes_count[arys.index] = count[threadIdx.x];
+        arys.nodes_count[arys.index] = count_cuda[threadIdx.x];
     }
     arys.index += (blockDim.x * gridDim.x) / SIMD_WIDTH;
     if (arys.index >= arys.size) return true;
-    count[threadIdx.x] = 1; 
+    count_cuda[threadIdx.x] = 1; 
     if (simd_index == 0) {
         Node_cuda &root = nodes_stack[node_index][0];
-        root.bd = arys.bd_ary[arys.index];
-        root.puttable = ~(root.bd.player | root.bd.opponent);
+        root.board = arys.bd_ary[arys.index];
+        root.puttable = puttable(root.board.player, root.board.opponent);
         root.alpha = -64;
         root.beta = 64;
         root.pass = true;
@@ -426,27 +427,31 @@ __device__ void alpha_beta(Arrays &arys) {
     int stack_index = 0;
     while (true) {
         Node_cuda &node = nodes_stack[node_index][stack_index];
+        /*
         if (node.depth == 0){
-            if (get_next_node(arys, node_index, simd_index, -mid_evaluate_cuda(&node.bd)))
+            if (get_next_node(arys, node_index, simd_index, -mid_evaluate_cuda(&node.board)))
                 return;
         }
+        */
         if (node.puttable == 0) {
             if (node.pass) {
                 if (node.passed) {
                     if (stack_index) {
                         Node_cuda &parent = nodes_stack[node_index][stack_index-1];
                         if (simd_index == 0) {
-                            parent.update(-end_evaluate_cuda(&node.bd));
+                            parent.update(-end_evaluate_cuda(&node.board));
                         }
                         --stack_index;
                 } else {
-                    if (get_next_node(arys, node_index, simd_index, -end_evaluate_cuda(&node.bd)))
+                    if (get_next_node(arys, node_index, simd_index, -end_evaluate_cuda(&node.board)))
                         return;
                 }
                 } else {
                     if (simd_index == 0) {
-                        node.bd = Board(node.bd.opponent, node.bd.player);
-                        node.puttable = ~(node.bd.player | node.bd.opponent);
+                        uint64_t swap_tmp = node.board.player;
+                        node.board.player = node.board.opponent;
+                        node.board.opponent = swap_tmp;
+                        node.puttable = puttable(node.board.player, node.board.opponent);
                         int tmp = node.alpha;
                         node.alpha = -node.beta;
                         node.beta = -tmp;
@@ -477,12 +482,12 @@ __device__ void alpha_beta(Arrays &arys) {
                     return;
             }
         } else {
-            ull bit = node.puttable & -node.puttable;
+            uint64_t bit = node.puttable & -node.puttable;
             if (simd_index == 0) {
                 node.puttable ^= bit;
             }
             int pos = __popcll(bit-1);
-            ull flipped = flip(node.bd, pos, simd_index);
+            uint64_t flipped = flip(node.board, pos, simd_index);
             flipped |= __shfl_xor(flipped, 1);
             flipped |= __shfl_xor(flipped, 2);
             if (flipped) {
@@ -490,29 +495,30 @@ __device__ void alpha_beta(Arrays &arys) {
                 if (simd_index == 0) {
                     Node_cuda &next = nodes_stack[node_index][stack_index];
                     node.pass = false;
-                    next.bd = Board(node.bd.opponent ^ flipped, (node.bd.player ^ flipped) | bit);
-                    next.puttable = ~(next.bd.player | next.bd.opponent);
+                    next.board.player = node.board.opponent ^ flipped;
+                    next.board.opponent = (node.board.player ^ flipped) | bit;
+                    next.puttable = puttable(next.board.player, next.board.opponent);
                     next.alpha = -node.beta;
                     next.beta = -node.alpha;
                     next.pass = true;
                     next.passed = false;
                     next.depth = node.depth - 1;
-                    ++count[threadIdx.x];
+                    ++count_cuda[threadIdx.x];
                 }
             }
         }
     }
 }
 
-__device__ void search_cuda(const Board_simple *bd_ary, int *res_ary, int *nodes_count, const size_t size, int depth) {
+__global__ void search_cuda(const Board_simple *bd_ary, int *res_ary, int *nodes_count, const size_t size, int depth) {
     size_t index = (threadIdx.x + blockIdx.x * blockDim.x) / SIMD_WIDTH;
     int simd_index = threadIdx.x % SIMD_WIDTH;
     int node_index = threadIdx.x / SIMD_WIDTH;
-    count[threadIdx.x] = 1; 
+    count_cuda[threadIdx.x] = 1; 
     if (simd_index == 0) {
         Node_cuda &root = nodes_stack[node_index][0];
-        root.bd = bd_ary[index];
-        root.puttable = ~(root.bd.player | root.bd.opponent);
+        root.board = bd_ary[index];
+        root.puttable = puttable(root.board.player, root.board.opponent);
         root.alpha = -SCORE_MAX;
         root.beta = SCORE_MAX;
         root.pass = true;
@@ -549,7 +555,7 @@ extern "C" int do_search_cuda(vector<Board_simple> &boards, int depth, bool is_e
     cudaMemcpy(bd_ary, bd_ary_host, sizeof(Board_simple) * n, cudaMemcpyHostToDevice);
     cudaMemset(res_ary, 0, sizeof(int) * n);
     cudaMemset(nodes_count, 0, sizeof(int) * n);
-    search_cuda<<<256, threadsPerBlock>>>(bd_ary, res_ary, nodes_count, n, depth);
+    search_cuda<<<256, THREADS_PER_BLOCK>>>(bd_ary, res_ary, nodes_count, n, depth);
     cudaDeviceSynchronize();
     int res = -INF;
     for (int i = 0; i < n; ++i){

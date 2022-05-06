@@ -7,7 +7,11 @@
 #include "board.hpp"
 #include "book.hpp"
 #include "evaluate.hpp"
-#include "midsearch.hpp"
+#if USE_CUDA
+	#include "cuda_midsearch.hpp"
+#else
+	#include "midsearch.hpp"
+#endif
 #include "util.hpp"
 
 #define human_sense_a 0.78125

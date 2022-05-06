@@ -1,4 +1,7 @@
 
+// use CUDA
+#define USE_CUDA true
+
 // use SIMD
 #define USE_SIMD true
 

@@ -17,6 +17,7 @@ using namespace std;
 #define MID_FAST_DEPTH 1
 #define END_FAST_DEPTH 7
 #define MID_TO_END_DEPTH 13
+#define CUDA_YBWC_SPLIT_MAX_DEPTH 10
 
 #define SCORE_UNDEFINED -INF
 

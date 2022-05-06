@@ -3,7 +3,11 @@
 #include "board.hpp"
 #include "evaluate.hpp"
 #include "search.hpp"
-#include "midsearch.hpp"
+#if USE_CUDA
+    #include "cuda_midsearch.hpp"
+#else
+    #include "midsearch.hpp"
+#endif
 #include "util.hpp"
 
 using namespace std;

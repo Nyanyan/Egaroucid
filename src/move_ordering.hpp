@@ -5,7 +5,11 @@
 #include "board.hpp"
 #include "search.hpp"
 #include "transpose_table.hpp"
-#include "midsearch.hpp"
+#if USE_CUDA
+    #include "cuda_midsearch.hpp"
+#else
+    #include "midsearch.hpp"
+#endif
 #include "probcut.hpp"
 
 #define N_MOVE_ORDERING_PATTERNS 10
