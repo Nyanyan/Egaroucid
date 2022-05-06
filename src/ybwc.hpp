@@ -51,14 +51,11 @@ pair<int, uint64_t> ybwc_do_task_end(Search search, int alpha, int beta, int dep
         return make_pair(g, search.n_nodes);
     return make_pair(SCORE_UNDEFINED, search.n_nodes);
 }
-
+/*
 inline bool ybwc_split(Search *search, const Flip *flip, int alpha, int beta, const int depth, uint64_t legal, bool is_end_search, const bool *searching, int policy, const int pv_idx, const int canput, const int split_count, vector<future<pair<int, uint64_t>>> &parallel_tasks, const int first_val){
     if (pv_idx > 0 && 
-        /* pv_idx > canput / YBWC_SPLIT_DIV && */ 
-        /* pv_idx < canput - 1 && */ 
         depth >= YBWC_MID_SPLIT_MIN_DEPTH &&
-        flip->value < first_val - depth_to_offset(depth)
-        /* split_count < YBWC_MAX_SPLIT_COUNT */ ){
+        flip->value < first_val - depth_to_offset(depth)){
         if (thread_pool.n_idle()){
             Search copy_search;
             //eval_move(search, flip);
@@ -79,39 +76,32 @@ inline bool ybwc_split(Search *search, const Flip *flip, int alpha, int beta, co
     }
     return false;
 }
-
+*/
 inline bool ybwc_split_without_move(Search *search, const Flip *flip, int alpha, int beta, const int depth, uint64_t legal, bool is_end_search, const bool *searching, int policy, const int pv_idx, const int canput, const int split_count, vector<future<pair<int, uint64_t>>> &parallel_tasks, const int first_val){
     if (pv_idx > 0 && 
-        /* pv_idx > canput / YBWC_SPLIT_DIV && */ 
-        /* pv_idx < canput - 1 && */ 
         depth >= YBWC_MID_SPLIT_MIN_DEPTH &&
-        //depth <= YBWC_MID_SPLIT_MAX_DEPTH &&
-        flip->value < first_val - depth_to_offset(depth)
-        /* split_count < YBWC_MAX_SPLIT_COUNT */ ){
+        flip->value < first_val - depth_to_offset(depth)){
         if (thread_pool.n_idle()){
             Search copy_search;
             search->board.copy(&copy_search.board);
+            copy_search.eval_features.resize(N_SYMMETRY_PATTERNS);
             for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i)
                 copy_search.eval_features[i] = search->eval_features[i];
             copy_search.eval_feature_reversed = search->eval_feature_reversed;
             copy_search.use_mpc = search->use_mpc;
             copy_search.mpct = search->mpct;
             copy_search.n_nodes = 0;
-            //copy_search.p = search->p;
             parallel_tasks.emplace_back(thread_pool.push(bind(&ybwc_do_task, copy_search, alpha, beta, depth, legal, is_end_search, searching, policy)));
             return true;
         }
     }
     return false;
 }
-
+/*
 inline bool ybwc_split_without_move_end(Search *search, const Flip *flip, int alpha, int beta, const int depth, uint64_t legal, const bool *searching, const int pv_idx, const int canput, const int split_count, vector<future<pair<int, uint64_t>>> &parallel_tasks, const int first_val){
     if (pv_idx > 0 && 
-        /* pv_idx > canput / YBWC_SPLIT_DIV && */ 
-        /* pv_idx < canput - 1 && */ 
         depth >= YBWC_END_SPLIT_MIN_DEPTH &&
-        flip->value < first_val - depth_to_offset_end(depth)
-        /* split_count < YBWC_MAX_SPLIT_COUNT */ ){
+        flip->value < first_val - depth_to_offset_end(depth)){
         if (thread_pool.n_idle()){
             Search copy_search;
             search->board.copy(&copy_search.board);
@@ -131,10 +121,7 @@ inline bool ybwc_split_without_move_end(Search *search, const Flip *flip, int al
 
 inline bool ybwc_split_without_move_negascout(Search *search, const Flip *flip, int alpha, int beta, const int depth, uint64_t legal, bool is_end_search, const bool *searching, int policy, const int pv_idx, const int canput, const int split_count, vector<future<pair<int, uint64_t>>> &parallel_tasks){
     if (pv_idx > 3 && 
-        /* pv_idx > canput / YBWC_SPLIT_DIV && */ 
-        /* pv_idx < canput - 1 && */ 
-        depth >= YBWC_MID_SPLIT_MIN_DEPTH /*&&*/
-        /* split_count < YBWC_MAX_SPLIT_COUNT */ ){
+        depth >= YBWC_MID_SPLIT_MIN_DEPTH){
         if (thread_pool.n_idle()){
             Search copy_search;
             search->board.copy(&copy_search.board);
@@ -151,7 +138,7 @@ inline bool ybwc_split_without_move_negascout(Search *search, const Flip *flip, 
     }
     return false;
 }
-
+*/
 inline int ybwc_wait_all(Search *search, vector<future<pair<int, uint64_t>>> &parallel_tasks){
     int g = -INF;
     pair<int, uint64_t> got_task;

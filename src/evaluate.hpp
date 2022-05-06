@@ -880,6 +880,7 @@ inline int pick_pattern_idx(const uint_fast8_t b_arr[], const Feature_to_coord *
 inline void calc_features(Search *search){
     uint_fast8_t b_arr[HW2];
     search->board.translate_to_arr_player(b_arr);
+    search->eval_features.resize(N_SYMMETRY_PATTERNS);
     for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i){
         //cerr << i << " ";
         search->eval_features[i] = pick_pattern_idx(b_arr, &feature_to_coord[i]);
