@@ -541,20 +541,61 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
             calc_flip(&move_list[idx++], &search->board, cell);
         move_ordering_fast_first(search, move_list);
-        for (const Flip &flip: move_list){
-            //eval_move(search, &flip);
-            search->board.move(&flip);
-                g = -nega_alpha_end(search, -beta, -alpha, false, flip.n_legal, searching);
-            search->board.undo(&flip);
-            //eval_undo(search, &flip);
-            alpha = max(alpha, g);
-            if (v < g){
-                v = g;
-                best_move = flip.pos;
+        #if USE_MULTI_THREAD && false
+            int pv_idx = 0, split_count = 0;
+            if (best_move != TRANSPOSE_TABLE_UNDEFINED)
+                pv_idx = 1;
+            vector<future<pair<int, uint64_t>>> parallel_tasks;
+            bool n_searching = true;
+            int depth = HW2 - pop_count_ull(search->board.player | search->board.opponent);
+            for (const Flip &flip: move_list){
+                if (!(*searching))
+                    break;
+                search->board.move(&flip);
+                    if (ybwc_split_without_move_end(search, &flip, -beta, -alpha, depth - 1, flip.n_legal, &n_searching, pv_idx++, canput, split_count, parallel_tasks, move_list[0].value)){
+                        ++split_count;
+                    } else{
+                        g = -nega_alpha_end(search, -beta, -alpha, false, flip.n_legal, searching);
+                        if (*searching){
+                            alpha = max(alpha, g);
+                            if (v < g){
+                                v = g;
+                                best_move = flip.pos;
+                            }
+                            if (beta <= alpha){
+                                search->board.undo(&flip);
+                                break;
+                            }
+                        }
+                    }
+                search->board.undo(&flip);
             }
-            if (beta <= alpha)
-                break;
-        }
+            if (split_count){
+                if (beta <= alpha || !(*searching)){
+                    n_searching = false;
+                    ybwc_wait_all(search, parallel_tasks);
+                } else{
+                    g = ybwc_wait_all(search, parallel_tasks);
+                    alpha = max(alpha, g);
+                    v = max(v, g);
+                }
+            }
+        #else
+            for (const Flip &flip: move_list){
+                //eval_move(search, &flip);
+                search->board.move(&flip);
+                    g = -nega_alpha_end(search, -beta, -alpha, false, flip.n_legal, searching);
+                search->board.undo(&flip);
+                //eval_undo(search, &flip);
+                alpha = max(alpha, g);
+                if (v < g){
+                    v = g;
+                    best_move = flip.pos;
+                }
+                if (beta <= alpha)
+                    break;
+            }
+        #endif
     }
     if (best_move != f_best_move)
         child_transpose_table.reg(&search->board, hash_code, best_move);
