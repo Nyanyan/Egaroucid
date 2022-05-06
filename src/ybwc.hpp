@@ -43,7 +43,7 @@ pair<int, uint64_t> ybwc_do_task(Search search, int alpha, int beta, int depth, 
         return make_pair(g, search.n_nodes);
     return make_pair(SCORE_UNDEFINED, search.n_nodes);
 }
-
+/*
 pair<int, uint64_t> ybwc_do_task_end(Search search, int alpha, int beta, int depth, uint64_t legal, const bool *searching){
     //calc_features(&search);
     int g = -nega_alpha_end(&search, alpha, beta, false, legal, searching);
@@ -51,6 +51,7 @@ pair<int, uint64_t> ybwc_do_task_end(Search search, int alpha, int beta, int dep
         return make_pair(g, search.n_nodes);
     return make_pair(SCORE_UNDEFINED, search.n_nodes);
 }
+*/
 /*
 inline bool ybwc_split(Search *search, const Flip *flip, int alpha, int beta, const int depth, uint64_t legal, bool is_end_search, const bool *searching, int policy, const int pv_idx, const int canput, const int split_count, vector<future<pair<int, uint64_t>>> &parallel_tasks, const int first_val){
     if (pv_idx > 0 && 
@@ -84,7 +85,6 @@ inline bool ybwc_split_without_move(Search *search, const Flip *flip, int alpha,
         if (thread_pool.n_idle()){
             Search copy_search;
             search->board.copy(&copy_search.board);
-            copy_search.eval_features.resize(N_SYMMETRY_PATTERNS);
             for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i)
                 copy_search.eval_features[i] = search->eval_features[i];
             copy_search.eval_feature_reversed = search->eval_feature_reversed;
@@ -149,7 +149,7 @@ inline int ybwc_wait_all(Search *search, vector<future<pair<int, uint64_t>>> &pa
     }
     return g;
 }
-
+/*
 inline int ybwc_negascout_wait_all(Search *search, vector<future<pair<int, uint64_t>>> &parallel_tasks, vector<Flip> &flips, int before_alpha, int alpha, int beta, int depth, bool skipped, bool is_end_search, int *best_move){
     int v = alpha, g;
     pair<int, uint64_t> got_task;
@@ -171,3 +171,4 @@ inline int ybwc_negascout_wait_all(Search *search, vector<future<pair<int, uint6
     }
     return v;
 }
+*/
