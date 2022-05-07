@@ -1714,7 +1714,7 @@ void get_saved_games(string document_dir, vector<Game>& games) {
 	cerr << games.size() << " games found" << endl;
 }
 
-bool import_game_draw(vector<Game>& games, Board* bd, vector<History_elem>& history, vector<History_elem>& fork_history, Font mid_font, Font small_font, int *show_start_idx) {
+bool import_game_draw(vector<Game>& games, Board* bd, vector<History_elem>& history, vector<History_elem>& fork_history, Font mid_font, Font small_font, Font tiny_font, int *show_start_idx) {
 	mid_font(language.get("in_out", "input_game")).draw(Arg::topCenter = Vec2(x_center, 10));
 	if (games.size() == 0) {
 		mid_font(language.get("in_out", "no_game_available")).draw(Arg::center = Vec2(x_center, y_center));
@@ -1728,14 +1728,15 @@ bool import_game_draw(vector<Game>& games, Board* bd, vector<History_elem>& hist
 		if (*show_start_idx > 0) {
 			small_font(U"︙").draw(Arg::bottomCenter = Vec2{ x_center, sy }, Palette::White);
 		}
-		int i;
+		int i, j;
 		for (i = *show_start_idx; i < (int)games.size() && sy <= max_y; ++i) {
+			j = (int)games.size() - 1 - i;
 			Rect rect;
 			rect.y = sy;
 			rect.x = sx;
 			rect.w = w;
 			rect.h = h;
-			int score = ParseOr<int>(games[i].score, -INF);
+			int score = ParseOr<int>(games[j].score, -INF);
 			if (score == -INF || score == 0) {
 				rect.draw(green).drawFrame(1.0, Palette::White);
 			}
@@ -1745,37 +1746,38 @@ bool import_game_draw(vector<Game>& games, Board* bd, vector<History_elem>& hist
 			else {
 				rect.draw(Palette::Darkgray).drawFrame(1.0, Palette::White);
 			}
-			small_font(games[i].black_name).draw(Arg::leftCenter = Vec2{ sx + 10, sy + h / 2 }, Palette::White);
-			RectF area = small_font(games[i].black_name).region(Arg::leftCenter = Vec2{ sx + 10, sy + h / 2 });
+			small_font(games[j].black_name).draw(Arg::leftCenter = Vec2{ sx + 10, sy + h / 2 }, Palette::White);
+			RectF area = small_font(games[j].black_name).region(Arg::leftCenter = Vec2{ sx + 10, sy + h / 2 });
 			small_font(U" vs ").draw(Arg::leftCenter = Vec2{ area.x + area.w, sy + h / 2 }, Palette::White);
 			area = small_font(U" vs ").region(Arg::leftCenter = Vec2{ area.x + area.w, sy + h / 2 });
-			small_font(games[i].white_name).draw(Arg::leftCenter = Vec2{ area.x + area.w, sy + h / 2 }, Palette::White);
-			area = small_font(games[i].white_name).region(Arg::leftCenter = Vec2{ area.x + area.w, sy + h / 2 });
-			String memo_preview = games[i].memo.replace(U"\n", U" ");
+			small_font(games[j].white_name).draw(Arg::leftCenter = Vec2{ area.x + area.w, sy + h / 2 }, Palette::White);
+			area = small_font(games[j].white_name).region(Arg::leftCenter = Vec2{ area.x + area.w, sy + h / 2 });
+			String memo_preview = games[j].memo.replace(U"\n", U" ");
 			for (int j = 1; j < (int)memo_preview.size(); ++j) {
-				RectF area_tmp = small_font(memo_preview.substr(0, j)).region(Arg::leftCenter = Vec2{ area.x + area.w + 10, sy + h / 2 });
-				if (round(area_tmp.x + area_tmp.w) > 640) {
+				RectF area_tmp = tiny_font(memo_preview.substr(0, j)).region(Arg::leftCenter = Vec2{ area.x + area.w + 10, sy + h / 2 });
+				if (round(area_tmp.x + area_tmp.w) > 590) {
 					memo_preview = memo_preview.substr(0, j - 1);
 					break;
 				}
 			}
-			small_font(memo_preview).draw(Arg::leftCenter = Vec2{area.x + area.w + 10, sy + h / 2}, Palette::White);
-			small_font(language.get("in_out", "score") + U": ").draw(Arg::leftCenter = Vec2{ 650, sy + h / 2 }, Palette::White);
-			area = small_font(language.get("in_out", "score") + U": ").region(Arg::leftCenter = Vec2{ 650, sy + h / 2 });
-			small_font(games[i].score).draw(Arg::leftCenter = Vec2{ area.x + area.w, sy + h / 2 }, Palette::White);
+			tiny_font(memo_preview).draw(Arg::leftCenter = Vec2{area.x + area.w + 10, sy + h / 2}, Palette::White);
+			tiny_font(games[j].date.substr(0, 10)).draw(Arg::leftCenter = Vec2{ 600, sy + h / 2 }, Palette::White);
+			tiny_font(language.get("in_out", "score") + U": ").draw(Arg::leftCenter = Vec2{ 700, sy + h / 2 }, Palette::White);
+			area = tiny_font(language.get("in_out", "score") + U": ").region(Arg::leftCenter = Vec2{ 700, sy + h / 2 });
+			tiny_font(games[j].score).draw(Arg::leftCenter = Vec2{ area.x + area.w, sy + h / 2 }, Palette::White);
 			Button import_button;
 			import_button.init(800, sy + 10, 150, h - 20, 5, language.get("button", "import"), small_font, button_color, button_font_color);
 			import_button.draw();
 			if (import_button.clicked()) {
 				fork_history.clear();
 				history.clear();
-				bool record_imported = import_record(games[i].record, &history);
+				bool record_imported = import_record(games[j].record, &history);
 				if (record_imported) {
 					history[history.size() - 1].b.copy(bd);
 					return false;
 				}
 				else {
-					cerr << "record broken " << games[i].record.narrow() << endl;
+					cerr << "record broken " << games[j].record.narrow() << endl;
 				}
 			}
 			sy += h;
@@ -2257,7 +2259,7 @@ void Main() {
 
 		/*** game importing ***/
 		else if (inputting_game) {
-			inputting_game = import_game_draw(games, &bd, history, fork_history, font30, font20, &show_start_idx);
+			inputting_game = import_game_draw(games, &bd, history, fork_history, font30, font20, font15, &show_start_idx);
 			if (!inputting_game) {
 				history_place = history[history.size() - 1].b.n - 4;
 			}
