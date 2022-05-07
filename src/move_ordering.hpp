@@ -67,7 +67,7 @@ inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int
         if (search->board.parity & cell_div4[flip->pos]){
             if (search->board.n < 34)
                 flip->value += W_PARITY1;
-            else if (search->board.n < 43)
+            else if (search->board.n < 44)
                 flip->value += W_PARITY2;
             else
                 flip->value += W_PARITY3;
@@ -121,7 +121,7 @@ inline void move_evaluate_fast_first(Search *search, Flip *flip){
         if (search->board.parity & cell_div4[flip->pos]){
             if (search->board.n < 34)
                 flip->value += W_PARITY1;
-            else if (search->board.n < 43)
+            else if (search->board.n < 44)
                 flip->value += W_PARITY2;
             else
                 flip->value += W_PARITY3;
