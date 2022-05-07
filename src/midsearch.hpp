@@ -133,7 +133,9 @@ int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, b
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
         calc_flip(&move_list[idx++], &search->board, cell);
     move_ordering(search, move_list, depth, alpha, beta, false, searching);
-    int best_move = TRANSPOSE_TABLE_UNDEFINED;
+    uint32_t hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
+    int best_move = child_transpose_table.get(&search->board, hash_code);
+    int f_best_move = best_move;
     for (const Flip &flip: move_list){
         eval_move(search, &flip);
         search->board.move(&flip);
@@ -148,7 +150,8 @@ int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, b
         if (beta <= alpha)
             break;
     }
-    child_transpose_table.reg(&search->board, search->board.hash() & TRANSPOSE_TABLE_MASK, best_move);
+    if (best_move != f_best_move)
+        child_transpose_table.reg(&search->board, hash_code, best_move);
     return v;
 }
 
