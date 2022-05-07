@@ -2262,6 +2262,13 @@ void Main() {
 			inputting_game = import_game_draw(games, &bd, history, fork_history, font30, font20, font15, &show_start_idx);
 			if (!inputting_game) {
 				history_place = history[history.size() - 1].b.n - 4;
+				if (bd.get_legal() == 0ULL) {
+					bd.pass();
+					if (bd.get_legal() == 0ULL) {
+						before_start_game = false;
+						main_window_active = true;
+					}
+				}
 			}
 		}
 		/*** game importing ***/
