@@ -25,6 +25,7 @@
 #define W_VALUE_SHALLOW 4
 #define W_STABILITY 4
 #define W_MOBILITY 16
+#define W_FLIP_INSIDE 4
 //#define W_SURROUND 4
 #define W_PARITY1 2
 #define W_PARITY2 4
@@ -40,6 +41,15 @@ int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped, con
 int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, const bool *searching);
 int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
 
+inline int flip_inside(uint64_t flip, uint64_t stones){
+    uint64_t hmask = flip & 0x7E7E7E7E7E7E7E7EULL;
+    uint64_t vmask = flip & 0x00FFFFFFFFFFFF00ULL;
+    uint64_t hvmask = flip & 0x0055555555555500ULL;
+    uint64_t connect = (hmask << 1) | (hmask >> 1) | (vmask << HW) | (vmask >> HW) | (hvmask << HW_M1) | (hvmask >> HW_M1) | (hvmask << HW_P1) | (hvmask >> HW_P1);
+    connect &= ~flip;
+    return -pop_count_ull(connect & ~stones);
+}
+
 inline void move_sort_top(vector<Flip> &move_list, int best_idx){
     if (best_idx != 0)
         swap(move_list[best_idx], move_list[0]);
@@ -49,7 +59,7 @@ bool cmp_move_ordering(Flip &a, Flip &b){
     return a.value > b.value;
 }
 
-inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int beta, const int depth, const bool *searching){
+inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int beta, const int depth, const bool *searching, uint64_t stones){
     if (flip->flip == search->board.opponent)
         flip->value = W_WIPEOUT;
     else{
@@ -62,6 +72,7 @@ inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int
             else
                 flip->value += W_PARITY3;
         }
+        flip->value += flip_inside(flip->flip | (1 << flip->pos), stones) * W_FLIP_INSIDE;
         if (depth < 0){
             search->board.move(flip);
                 //flip->value += -calc_surround(search->board.opponent, ~(search->board.player | search->board.opponent)) * W_SURROUND;
@@ -133,8 +144,9 @@ inline void move_ordering(Search *search, vector<Flip> &move_list, int depth, in
         ++eval_depth;
     if (depth >= 26)
         ++eval_depth;
+    uint64_t stones = search->board.player | search->board.opponent;
     for (Flip &flip: move_list)
-        move_evaluate(search, &flip, eval_alpha, eval_beta, eval_depth, searching);
+        move_evaluate(search, &flip, eval_alpha, eval_beta, eval_depth, searching, stones);
     sort(move_list.begin(), move_list.end(), cmp_move_ordering);
 }
 /*
