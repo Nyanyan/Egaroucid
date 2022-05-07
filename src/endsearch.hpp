@@ -436,15 +436,23 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped){
             }
         }
     #else
-        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-            calc_flip(&flip, &search->board, cell);
-            search->board.move(&flip);
-                g = -nega_alpha_end_fast(search, -beta, -alpha, false);
-            search->board.undo(&flip);
-            alpha = max(alpha, g);
-            if (beta <= alpha)
-                return alpha;
-            v = max(v, g);
+        uint64_t legal_copy;
+        uint_fast8_t cell;
+        int i;
+        for (i = 0; i < N_CELL_WEIGHT_MASK; ++i){
+            legal_copy = legal & cell_weight_mask[i];
+            if (legal_copy){
+                for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
+                    calc_flip(&flip, &search->board, cell);
+                    search->board.move(&flip);
+                        g = -nega_alpha_end_fast(search, -beta, -alpha, false);
+                    search->board.undo(&flip);
+                    alpha = max(alpha, g);
+                    if (beta <= alpha)
+                        return alpha;
+                    v = max(v, g);
+                }
+            }
         }
     #endif
     return v;
@@ -492,6 +500,7 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped){
     return v;
 }
 */
+
 int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t legal, const bool *searching){
     if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
