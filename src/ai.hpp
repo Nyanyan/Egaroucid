@@ -286,7 +286,7 @@ bool ai_hint(Board b, int level, int max_level, int res[], int info[], bool best
     search.n_nodes = 0;
     calc_features(&search);
     bool searching = true;
-    if (depth - 1 >= 0){
+    if (depth - 1 >= 1){
         parent_transpose_table.init();
         for (int i = 0; i < HW2; ++i){
             if (1 & (legal >> i)){
@@ -295,7 +295,7 @@ bool ai_hint(Board b, int level, int max_level, int res[], int info[], bool best
                 eval_move(&search, &flip);
                     res[i] = book.get(&search.board);
                     if (res[i] == -INF){
-                        res[i] = round(-nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth - 1, false, LEGAL_UNDEFINED, !is_mid_search, &searching));
+                        res[i] = -first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth - 1, false, !is_mid_search).first;
                         if (!is_mid_search && !use_mpc)
                             info[i] = SEARCH_FINAL;
                         else
