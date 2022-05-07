@@ -2459,10 +2459,26 @@ void Main() {
 					pair<int, Board> moved_board = move_board(bd, board_clicked);
 					if (moved_board.first != -1) {
 						bool next_fork_mode = (!fork_mode && history_place != history[history.size() - 1].b.n - 4);
-						int v = -INF;
+						int v = -INF, v_prev = -INF;
 						for (int cell = 0; cell < HW2; ++cell) {
-							if (board_clicked[cell] && (1 & (hint_legal >> cell)) && hint_state > 0 && use_hint_flag) {
-								v = (bd.p ? -1 : 1) * hint_value[cell];
+							if ((1 & (hint_legal >> cell)) && hint_state > 0 && use_hint_flag) {
+								if (board_clicked[cell]) {
+									v = (bd.p ? -1 : 1) * hint_value[cell];
+								}
+								v_prev = max(v_prev, hint_value[cell]);
+							}
+						}
+						if (v_prev != -INF) {
+							v_prev *= (bd.p ? -1 : 1);
+							if (!fork_mode && !next_fork_mode) {
+								if (history.size()) {
+									history[history.size() - 1].v = v_prev;
+								}
+							}
+							else {
+								if (fork_history.size()) {
+									fork_history[find_history_idx(fork_history, bd.n - 4)].v = v_prev;
+								}
 							}
 						}
 						reset_hint(&hint_state, &hint_future);
