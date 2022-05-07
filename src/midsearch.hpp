@@ -615,7 +615,7 @@ int nega_alpha_ordering_single_thread(Search *search, int alpha, int beta, int d
             return end_evaluate(&search->board);
         search->eval_feature_reversed ^= 1;
         search->board.pass();
-            v = -nega_alpha_ordering(search, -beta, -alpha, depth, true, LEGAL_UNDEFINED, is_end_search, searching);
+            v = -nega_alpha_ordering_single_thread(search, -beta, -alpha, depth, true, LEGAL_UNDEFINED, is_end_search, searching);
         search->board.pass();
         search->eval_feature_reversed ^= 1;
         return v;
@@ -633,7 +633,7 @@ int nega_alpha_ordering_single_thread(Search *search, int alpha, int beta, int d
         calc_flip(&flip, &search->board, best_move);
         eval_move(search, &flip);
         search->board.move(&flip);
-            g = -nega_alpha_ordering(search, -beta, -alpha, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
+            g = -nega_alpha_ordering_single_thread(search, -beta, -alpha, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
         search->board.undo(&flip);
         eval_undo(search, &flip);
         alpha = max(alpha, g);
@@ -650,7 +650,7 @@ int nega_alpha_ordering_single_thread(Search *search, int alpha, int beta, int d
         for (const Flip &flip: move_list){
             eval_move(search, &flip);
             search->board.move(&flip);
-                g = -nega_alpha_ordering(search, -beta, -alpha, depth - 1, false, flip.n_legal, is_end_search, searching);
+                g = -nega_alpha_ordering_single_thread(search, -beta, -alpha, depth - 1, false, flip.n_legal, is_end_search, searching);
             search->board.undo(&flip);
             eval_undo(search, &flip);
             alpha = max(alpha, g);
@@ -715,7 +715,7 @@ int nega_scout_single_thread(Search *search, int alpha, int beta, int depth, boo
             return end_evaluate(&search->board);
         search->eval_feature_reversed ^= 1;
         search->board.pass();
-            v = -nega_scout(search, -beta, -alpha, depth, true, LEGAL_UNDEFINED, is_end_search, searching);
+            v = -nega_scout_single_thread(search, -beta, -alpha, depth, true, LEGAL_UNDEFINED, is_end_search, searching);
         search->board.pass();
         search->eval_feature_reversed ^= 1;
         return v;

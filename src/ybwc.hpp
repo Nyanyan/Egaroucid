@@ -40,7 +40,6 @@ pair<int, uint64_t> ybwc_do_task(uint64_t player, uint64_t opponent, uint_fast8_
         bool use_mpc, double mpct, uint_fast8_t eval_feature_reversed, vector<int> eval_features, 
         int alpha, int beta, int depth, uint64_t legal, bool is_end_search, const bool *searching, int policy){
     Search search;
-    search.init();
     search.board.player = player;
     search.board.opponent = opponent;
     search.board.n = n;
@@ -49,12 +48,11 @@ pair<int, uint64_t> ybwc_do_task(uint64_t player, uint64_t opponent, uint_fast8_
     search.use_mpc = use_mpc;
     search.mpct = mpct;
     search.eval_feature_reversed = eval_feature_reversed;
-    //for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i)
-    //    search.eval_features[i] = eval_features[i];
+    for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i)
+        search.eval_features[i] = eval_features[i];
     search.n_nodes = 0ULL;
     calc_features(&search);
     int g = -nega_alpha_ordering(&search, alpha, beta, depth, false, legal, is_end_search, searching);
-    search.del();
     if (*searching)
         return make_pair(g, search.n_nodes);
     return make_pair(SCORE_UNDEFINED, search.n_nodes);

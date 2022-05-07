@@ -5392,6 +5392,22 @@ same
 53156610716 nodes
 150864805.3788038 nps
 
+2022/05/07 always wait ybwc safely
+#40 depth 20 value 38 policy a2 nodes 30310199 time 217 nps 139678336
+#41 depth 22 value 0 policy h4 nodes 30923573 time 288 nps 107373517
+#42 depth 22 value 6 policy g2 nodes 38662688 time 334 nps 115756550
+#43 depth 23 value -12 policy c7 nodes 112844301 time 780 nps 144672180
+#44 depth 23 value -14 policy d2 nodes 23867554 time 415 nps 57512178
+#45 depth 24 value 6 policy b2 nodes 578836466 time 3051 nps 189720244
+#46 depth 24 value -8 policy b3 nodes 99807823 time 1052 nps 94874356
+#47 depth 25 value 4 policy g2 nodes 57627540 time 612 nps 94162647
+#48 depth 25 value 28 policy f6 nodes 612483054 time 4118 nps 148733135
+#49 depth 26 value 16 policy e1 nodes 842837364 time 4849 nps 173816738
+15.716 sec
+18.925652265548706 sec total
+2428200562 nodes
+154504998.8546704 nps
+
 
 
 

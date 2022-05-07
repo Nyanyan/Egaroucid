@@ -74,17 +74,8 @@ struct Search{
     bool use_mpc;
     double mpct;
     uint64_t n_nodes;
-    int *eval_features;
+    int eval_features[N_SYMMETRY_PATTERNS];
     uint_fast8_t eval_feature_reversed;
-    
-    inline void init(){
-        eval_features = (int*)malloc(sizeof(int) * N_SYMMETRY_PATTERNS);
-    }
-
-    inline void del(){
-        free(eval_features);
-    }
-    //uint_fast8_t p;
 };
 
 inline void calc_stability(Board *b, int *stab0, int *stab1);

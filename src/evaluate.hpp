@@ -408,6 +408,16 @@ inline int swap_player_idx(int i, int pattern_size){
     return ri;
 }
 
+#if USE_MULTI_THREAD
+    void init_pattern_arr_rev(int id, int phase_idx, int pattern_idx, int siz){
+        int ri;
+        for (int i = 0; i < pow3[siz]; ++i){
+            ri = swap_player_idx(i, siz);
+            pattern_arr[1][phase_idx][pattern_idx][ri] = pattern_arr[0][phase_idx][pattern_idx][i];
+        }
+    }
+#endif
+
 inline bool init_evaluation_calc(){
     FILE* fp;
     #ifdef _WIN64
@@ -459,14 +469,13 @@ inline bool init_evaluation_calc(){
         }
     }
     int i, ri;
+    vector<future<void>> tasks;
     for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
-        for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx){
-            for (i = 0; i < pow3[pattern_sizes[pattern_idx]]; ++i){
-                ri = swap_player_idx(i, pattern_sizes[pattern_idx]);
-                pattern_arr[1][phase_idx][pattern_idx][ri] = pattern_arr[0][phase_idx][pattern_idx][i];
-            }
-        }
+        for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx)
+            tasks.emplace_back(thread_pool.push(init_pattern_arr_rev, phase_idx, pattern_idx, pattern_sizes[pattern_idx]));
     }
+    for (future<void> &task: tasks)
+        task.get();
     cerr << "evaluation function initialized" << endl;
     return true;
 }

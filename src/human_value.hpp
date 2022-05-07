@@ -78,7 +78,7 @@ void calc_all_human_value(Board b, int depth, Human_value res[], int search_dept
     int searched_times[2];
     int val;
     Search search;
-    search.init();
+    //search.init();
     search.mpct = 1.5;
     search.use_mpc = true;
     search.n_nodes = 0;
@@ -97,12 +97,12 @@ void calc_all_human_value(Board b, int depth, Human_value res[], int search_dept
         res[cell].stability_white = values[1] / searched_times[1];
         //cerr << idx_to_coord(cell) << " " << res[cell].stability_black << " " << res[cell].stability_white << endl;
     }
-    search.del();
+    //search.del();
 }
 
 Human_value calc_human_value(Board b, int depth, int search_depth){
     Search search;
-    search.init();
+    //search.init();
     search.mpct = 1.5;
     search.use_mpc = true;
     search.n_nodes = 0;
@@ -115,6 +115,6 @@ Human_value calc_human_value(Board b, int depth, int search_depth){
     res.stability_black = values[0] / searched_times[0];
     res.stability_white = values[1] / searched_times[1];
     cerr << "human sense values " << res.stability_black << " " << res.stability_white << endl;
-    search.del();
+    //search.del();
     return res;
 }
