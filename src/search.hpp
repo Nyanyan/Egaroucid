@@ -42,6 +42,24 @@ constexpr uint64_t cell_weight_mask[N_CELL_WEIGHT_MASK] = {
     0b00000000'00111100'01111110'01111110'01111110'01111110'00111100'00000000ULL  // other
 };
 
+/*
+from https://github.com/abulmo/edax-reversi/blob/1ae7c9fe5322ac01975f1b3196e788b0d25c1e10/src/search.c
+modified by Nyanyan
+*/
+const int nws_stability_threshold[60] = {
+    99, 99, 99, 99,  6,  8, 10, 12,
+    14, 16, 20, 22, 24, 26, 28, 30,
+    32, 34, 36, 38, 40, 42, 44, 46,
+    48, 48, 50, 50, 52, 52, 54, 54,
+    56, 56, 58, 58, 60, 60, 62, 62,
+    64, 64, 64, 64, 64, 64, 64, 64,
+    99, 99, 99, 99, 99, 99, 99, 99,
+    99, 99, 99, 99
+};
+/*
+end of modification
+*/
+
 struct Search_result{
     int policy;
     int value;
@@ -72,17 +90,19 @@ struct Search{
 inline void calc_stability(Board *b, int *stab0, int *stab1);
 
 inline int stability_cut(Search *search, int *alpha, int *beta){
-    int stab_player, stab_opponent;
-    calc_stability(&search->board, &stab_player, &stab_opponent);
-    int n_alpha = 2 * stab_player - HW2;
-    int n_beta = HW2 - 2 * stab_opponent;
-    if (*beta <= n_alpha)
-        return n_alpha;
-    if (n_beta <= *alpha)
-        return n_beta;
-    if (n_beta <= n_alpha)
-        return n_alpha;
-    *alpha = max(*alpha, n_alpha);
-    *beta = min(*beta, n_beta);
+    if (*alpha >= nws_stability_threshold[HW2 - search->board.n]){
+        int stab_player, stab_opponent;
+        calc_stability(&search->board, &stab_player, &stab_opponent);
+        int n_alpha = 2 * stab_player - HW2;
+        int n_beta = HW2 - 2 * stab_opponent;
+        if (*beta <= n_alpha)
+            return n_alpha;
+        if (n_beta <= *alpha)
+            return n_beta;
+        if (n_beta <= n_alpha)
+            return n_alpha;
+        *alpha = max(*alpha, n_alpha);
+        *beta = min(*beta, n_beta);
+    }
     return SCORE_UNDEFINED;
 }

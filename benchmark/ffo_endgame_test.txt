@@ -5269,6 +5269,47 @@ same
 51834719761 nodes
 143890205.25596967 nps
 
+2022/05/07 use stability cut in endgame
+#40 depth 20 value 38 policy a2 nodes 30383018 time 215 nps 141316362
+#41 depth 22 value 0 policy h4 nodes 30939744 time 283 nps 109327717
+#42 depth 22 value 6 policy g2 nodes 38362283 time 318 nps 120636110
+#43 depth 23 value -12 policy c7 nodes 112099267 time 761 nps 147305212
+#44 depth 23 value -14 policy d2 nodes 24035166 time 406 nps 59199916
+#45 depth 24 value 6 policy b2 nodes 589092183 time 3046 nps 193398615
+#46 depth 24 value -8 policy b3 nodes 99307526 time 987 nps 100615527
+#47 depth 25 value 4 policy g2 nodes 57557146 time 598 nps 96249408
+#48 depth 25 value 28 policy f6 nodes 611878127 time 4123 nps 148406045
+#49 depth 26 value 16 policy e1 nodes 804798297 time 4617 nps 174311955
+15.354 sec
+19.111181259155273 sec total
+2398452757 nodes
+156210287.6774782 nps
+
+#40 depth 20 value 38 policy a2 nodes 30423299 time 212 nps 143506127
+#41 depth 22 value 0 policy h4 nodes 31145121 time 280 nps 111232575
+#42 depth 22 value 6 policy g2 nodes 38303796 time 312 nps 122768576
+#43 depth 23 value -12 policy c7 nodes 111978469 time 742 nps 150914378
+#44 depth 23 value -14 policy d2 nodes 24065395 time 400 nps 60163487
+#45 depth 24 value 6 policy b2 nodes 592945702 time 2967 nps 199846883
+#46 depth 24 value -8 policy b3 nodes 100085801 time 981 nps 102024261
+#47 depth 25 value 4 policy g2 nodes 56759318 time 589 nps 96365565
+#48 depth 25 value 28 policy f6 nodes 618729796 time 4067 nps 152134201
+#49 depth 26 value 16 policy e1 nodes 799595097 time 4457 nps 179402085
+#50 depth 26 value 10 policy d8 nodes 2155789668 time 10901 nps 197760725
+#51 depth 27 value 6 policy e2 nodes 554127587 time 5070 nps 109295382
+#52 depth 27 value 0 policy a3 nodes 502325515 time 4623 nps 108657909
+#53 depth 28 value -2 policy d8 nodes 5451593707 time 38448 nps 141791346
+#54 depth 28 value -2 policy c7 nodes 7867814417 time 45300 nps 173682437
+#55 depth 29 value 0 policy g6 nodes 19766831834 time 142917 nps 138309871
+#56 depth 29 value 2 policy h5 nodes 1540975726 time 14939 nps 103151196
+#57 depth 30 value -10 policy a6 nodes 5910015777 time 41830 nps 141286535
+#58 depth 30 value 4 policy g1 nodes 2749977072 time 22894 nps 120117806
+#59 depth 34 value 64 policy g8 nodes 2056 time 27 nps 76148
+341.956 sec
+362.38473415374756 sec total
+48903485153 nodes
+143011045.7281054 nps
+
 
 
 
