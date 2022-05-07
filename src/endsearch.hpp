@@ -518,9 +518,9 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
         parent_transpose_table.get(&search->board, hash_code, &l, &u);
         if (u == l)
             return u;
-        if (l >= beta)
+        if (beta <= l)
             return l;
-        if (alpha >= u)
+        if (u <= alpha)
             return u;
         alpha = max(alpha, l);
         beta = min(beta, u);

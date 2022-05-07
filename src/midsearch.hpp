@@ -171,9 +171,9 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
         parent_transpose_table.get(&search->board, hash_code, &l, &u);
         if (u == l)
             return u;
-        if (l >= beta)
+        if (beta <= l)
             return l;
-        if (alpha >= u)
+        if (u <= alpha)
             return u;
         alpha = max(alpha, l);
         beta = min(beta, u);
@@ -314,9 +314,9 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
         parent_transpose_table.get(&search->board, hash_code, &l, &u);
         if (u == l)
             return u;
-        if (l >= beta)
+        if (beta <= l)
             return l;
-        if (alpha >= u)
+        if (u <= alpha)
             return u;
         alpha = max(alpha, l);
         beta = min(beta, u);

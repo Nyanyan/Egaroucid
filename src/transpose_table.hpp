@@ -62,6 +62,20 @@ class Node_child_transpose_table{
             }
         }
     }
+
+    void copy_child_transpose_table(int id, Node_child_transpose_table *from[], Node_child_transpose_table *to[], int s, int e){
+        for(int i = s; i < e; ++i){
+            if (from[i] != NULL){
+                if (to[i] == NULL)
+                    to[i] = (Node_child_transpose_table*)malloc(sizeof(Node_child_transpose_table));
+                to[i]->register_value(from[i]);
+            } else{
+                if (to[i] != NULL)
+                    to[i]->init();
+                to[i] = NULL;
+            }
+        }
+    }
 #endif
 
 class Child_transpose_table{
@@ -120,17 +134,33 @@ class Child_transpose_table{
             return TRANSPOSE_TABLE_UNDEFINED;
         }
 
-        inline void copy(Child_transpose_table *to){
-            to->init();
-            for(int i = 0; i < TRANSPOSE_TABLE_SIZE; ++i){
-                if (table[i] != NULL){
-                    to->table[i] = (Node_child_transpose_table*)malloc(sizeof(Node_child_transpose_table));
-                    to->table[i]->register_value(table[i]);
-                } else{
-                    to->table[i] = NULL;
+        #if USE_MULTI_THREAD
+            inline void copy(Child_transpose_table *to){
+                int thread_size = thread_pool.size();
+                int delta = (TRANSPOSE_TABLE_SIZE + thread_size - 1) / thread_size;
+                int s = 0, e;
+                vector<future<void>> tasks;
+                for (int i = 0; i < thread_size; ++i){
+                    e = min(TRANSPOSE_TABLE_SIZE, s + delta);
+                    tasks.emplace_back(thread_pool.push(copy_child_transpose_table, table, to->table, s, e));
+                    s = e;
+                }
+                for (future<void> &task: tasks)
+                    task.get();
+            }
+        #else
+            inline void copy(Child_transpose_table *to){
+                to->init();
+                for(int i = 0; i < TRANSPOSE_TABLE_SIZE; ++i){
+                    if (table[i] != NULL){
+                        to->table[i] = (Node_child_transpose_table*)malloc(sizeof(Node_child_transpose_table));
+                        to->table[i]->register_value(table[i]);
+                    } else{
+                        to->table[i] = NULL;
+                    }
                 }
             }
-        }
+        #endif
 };
 
 

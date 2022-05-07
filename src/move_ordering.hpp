@@ -144,6 +144,7 @@ inline void move_ordering(Search *search, vector<Flip> &move_list, int depth, in
         ++eval_depth;
     if (depth >= 26)
         ++eval_depth;
+    //eval_depth = max(0, eval_depth);
     uint64_t stones = search->board.player | search->board.opponent;
     for (Flip &flip: move_list)
         move_evaluate(search, &flip, eval_alpha, eval_beta, eval_depth, searching, stones);
