@@ -382,38 +382,57 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped){
                 legal_odd_mask |= 0x0F0F0F0F00000000ULL;
             if (search->board.parity & 8)
                 legal_odd_mask |= 0xF0F0F0F000000000ULL;
-            uint64_t legal_copy = legal & legal_odd_mask;
-            for (uint_fast8_t cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
-                calc_flip(&flip, &search->board, cell);
-                search->board.move(&flip);
-                    g = -nega_alpha_end_fast(search, -beta, -alpha, false);
-                search->board.undo(&flip);
-                alpha = max(alpha, g);
-                if (beta <= alpha)
-                    return alpha;
-                v = max(v, g);
+            uint64_t legal_copy;
+            uint_fast8_t cell;
+            int i;
+            for (i = 0; i < N_CELL_WEIGHT_MASK; ++i){
+                legal_copy = legal & legal_odd_mask & cell_weight_mask[i];
+                if (legal_copy){
+                    for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
+                        calc_flip(&flip, &search->board, cell);
+                        search->board.move(&flip);
+                            g = -nega_alpha_end_fast(search, -beta, -alpha, false);
+                        search->board.undo(&flip);
+                        alpha = max(alpha, g);
+                        if (beta <= alpha)
+                            return alpha;
+                        v = max(v, g);
+                    }
+                }
             }
-            legal_copy = legal & ~legal_odd_mask;
-            for (uint_fast8_t cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
-                calc_flip(&flip, &search->board, cell);
-                search->board.move(&flip);
-                    g = -nega_alpha_end_fast(search, -beta, -alpha, false);
-                search->board.undo(&flip);
-                alpha = max(alpha, g);
-                if (beta <= alpha)
-                    return alpha;
-                v = max(v, g);
+            for (i = 0; i < N_CELL_WEIGHT_MASK; ++i){
+                legal_copy = legal & ~legal_odd_mask & cell_weight_mask[i];
+                if (legal_copy){
+                    for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
+                        calc_flip(&flip, &search->board, cell);
+                        search->board.move(&flip);
+                            g = -nega_alpha_end_fast(search, -beta, -alpha, false);
+                        search->board.undo(&flip);
+                        alpha = max(alpha, g);
+                        if (beta <= alpha)
+                            return alpha;
+                        v = max(v, g);
+                    }
+                }
             }
         } else{
-            for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-                calc_flip(&flip, &search->board, cell);
-                search->board.move(&flip);
-                    g = -nega_alpha_end_fast(search, -beta, -alpha, false);
-                search->board.undo(&flip);
-                alpha = max(alpha, g);
-                if (beta <= alpha)
-                    return alpha;
-                v = max(v, g);
+            uint64_t legal_copy;
+            uint_fast8_t cell;
+            int i;
+            for (i = 0; i < N_CELL_WEIGHT_MASK; ++i){
+                legal_copy = legal & cell_weight_mask[i];
+                if (legal_copy){
+                    for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
+                        calc_flip(&flip, &search->board, cell);
+                        search->board.move(&flip);
+                            g = -nega_alpha_end_fast(search, -beta, -alpha, false);
+                        search->board.undo(&flip);
+                        alpha = max(alpha, g);
+                        if (beta <= alpha)
+                            return alpha;
+                        v = max(v, g);
+                    }
+                }
             }
         }
     #else

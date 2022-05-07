@@ -5228,6 +5228,24 @@ same
 50537096937 nodes
 152509111.95306772 nps
 
+2022/05/07 use cell ordering in end fast search
+#40 depth 20 value 38 policy a2 nodes 30371257 time 209 nps 145317019
+#41 depth 22 value 0 policy h4 nodes 30984030 time 285 nps 108715894
+#42 depth 22 value 6 policy g2 nodes 38995620 time 325 nps 119986523
+#43 depth 23 value -12 policy c7 nodes 109428930 time 707 nps 154779250
+#44 depth 23 value -14 policy d2 nodes 23732751 time 395 nps 60082913
+#45 depth 24 value 6 policy b2 nodes 583659896 time 2904 nps 200984812
+#46 depth 24 value -8 policy b3 nodes 100286333 time 971 nps 103281496
+#47 depth 25 value 4 policy g2 nodes 56798775 time 589 nps 96432555
+#48 depth 25 value 28 policy f6 nodes 626024197 time 3939 nps 158929727
+#49 depth 26 value 16 policy e1 nodes 806348400 time 4421 nps 182390499
+14.745 sec
+18.51267409324646 sec total
+2406630189 nodes
+163216696.439471 nps
+
+
+
 
 
 
