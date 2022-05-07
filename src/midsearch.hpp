@@ -133,7 +133,7 @@ int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, b
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
         calc_flip(&move_list[idx++], &search->board, cell);
     move_ordering(search, move_list, depth, alpha, beta, false, searching);
-    int best_move = -1;
+    int best_move = TRANSPOSE_TABLE_UNDEFINED;
     for (const Flip &flip: move_list){
         eval_move(search, &flip);
         search->board.move(&flip);

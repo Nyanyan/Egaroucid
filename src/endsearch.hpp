@@ -373,20 +373,20 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped){
     Flip flip;
     #if USE_END_PO
         if (0 < search->board.parity && search->board.parity < 15){
-            uint64_t legal_odd_mask = 0ULL;
+            uint64_t legal_mask = 0ULL;
             if (search->board.parity & 1)
-                legal_odd_mask |= 0x000000000F0F0F0FULL;
+                legal_mask |= 0x000000000F0F0F0FULL;
             if (search->board.parity & 2)
-                legal_odd_mask |= 0x00000000F0F0F0F0ULL;
+                legal_mask |= 0x00000000F0F0F0F0ULL;
             if (search->board.parity & 4)
-                legal_odd_mask |= 0x0F0F0F0F00000000ULL;
+                legal_mask |= 0x0F0F0F0F00000000ULL;
             if (search->board.parity & 8)
-                legal_odd_mask |= 0xF0F0F0F000000000ULL;
+                legal_mask |= 0xF0F0F0F000000000ULL;
             uint64_t legal_copy;
             uint_fast8_t cell;
             int i;
             for (i = 0; i < N_CELL_WEIGHT_MASK; ++i){
-                legal_copy = legal & legal_odd_mask & cell_weight_mask[i];
+                legal_copy = legal & legal_mask & cell_weight_mask[i];
                 if (legal_copy){
                     for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
                         calc_flip(&flip, &search->board, cell);
@@ -400,8 +400,9 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped){
                     }
                 }
             }
+            legal_mask = ~legal_mask;
             for (i = 0; i < N_CELL_WEIGHT_MASK; ++i){
-                legal_copy = legal & ~legal_odd_mask & cell_weight_mask[i];
+                legal_copy = legal & legal_mask & cell_weight_mask[i];
                 if (legal_copy){
                     for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
                         calc_flip(&flip, &search->board, cell);
