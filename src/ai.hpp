@@ -249,7 +249,7 @@ Search_result ai(Board b, int level, bool use_book, int book_error){
     }
     return res;
 }
-/*
+
 inline double tree_search_noid(Board board, int depth, bool use_mpc, double mpct){
     int g;
     Search search;
@@ -263,13 +263,15 @@ inline double tree_search_noid(Board board, int depth, bool use_mpc, double mpct
     search.mpct = mpct;
     calc_features(&search);
     bool searching = true;
-    g = nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth, false, LEGAL_UNDEFINED, is_end_search, &searching);
+    g = nega_scout_single_thread(&search, -SCORE_MAX, SCORE_MAX, depth, false, LEGAL_UNDEFINED, is_end_search, &searching);
     search.del();
     return value_to_score_double(g);
 }
-*/
+
 bool ai_hint(Board b, int level, int max_level, int res[], int info[], bool best_moves[], const int pre_searched_values[], uint64_t legal){
     Flip flip;
+    Board nb;
+    future<double> val_future[HW2];
     int depth;
     bool use_mpc, is_mid_search;
     double mpct;
@@ -278,38 +280,64 @@ bool ai_hint(Board b, int level, int max_level, int res[], int info[], bool best
     get_level(level, b.n - 4, &is_mid_search, &depth, &use_mpc, &mpct);
     if (!is_mid_search && level != max_level)
         return false;
-    Search search;
-    search.init();
-    search.board = b;
-    search.use_mpc = use_mpc;
-    search.mpct = mpct;
-    search.n_nodes = 0;
-    calc_features(&search);
-    bool searching = true;
-    if (depth - 1 >= 1){
+    if (depth - 1 >= 0){
+        //int l, u;
+        bool cache_hit;
         parent_transpose_table.init();
         for (int i = 0; i < HW2; ++i){
             if (1 & (legal >> i)){
                 calc_flip(&flip, &b, i);
-                search.board.move(&flip);
-                eval_move(&search, &flip);
-                    res[i] = book.get(&search.board);
-                    if (res[i] == -INF){
-                        res[i] = -first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth - 1, false, !is_mid_search).first;
-                        if (!is_mid_search && !use_mpc)
-                            info[i] = SEARCH_FINAL;
-                        else
-                            info[i] = level;
-                    } else
-                        info[i] = SEARCH_BOOK;
-                eval_undo(&search, &flip);
-                search.board.undo(&flip);
-                if (max_value < (double)res[i]){
-                    max_value = (double)res[i];
-                    best_moves_set.clear();
-                    best_moves_set.emplace(i);
-                } else if (max_value == (double)res[i])
-                    best_moves_set.emplace(i);
+                b.move_copy(&flip, &nb);
+                cache_hit = false;
+                res[i] = book.get(&nb);
+                if (res[i] == -INF){
+                    /*
+                    if (!is_mid_search && !use_mpc){
+                        bak_parent_transpose_table.get(&nb, nb.hash() & TRANSPOSE_TABLE_MASK, &l, &u);
+                        if (l == u){
+                            res[i] = -value_to_score_int(l);
+                            if (max_value < (double)res[i]){
+                                max_value = (double)res[i];
+                                best_moves_set.clear();
+                                best_moves_set.emplace(i);
+                            } else if (max_value == (double)res[i])
+                                best_moves_set.emplace(i);
+                            cache_hit = true;
+                        }
+                    }
+                    */
+                    if (!cache_hit){
+                        val_future[i] = thread_pool.push(bind(&tree_search_noid, nb, depth - 1, use_mpc, mpct));
+                        //val_future[i] = async(launch::async, tree_search_noid, nb, depth - 1, use_mpc, mpct);
+                    }
+                    if (!is_mid_search && !use_mpc)
+                        info[i] = SEARCH_FINAL;
+                    else
+                        info[i] = level;
+                } else{
+                    if (max_value < (double)res[i]){
+                        max_value = (double)res[i];
+                        best_moves_set.clear();
+                        best_moves_set.emplace(i);
+                    } else if (max_value == (double)res[i])
+                        best_moves_set.emplace(i);
+                    info[i] = SEARCH_BOOK;
+                }
+            }
+        }
+        for (int i = 0; i < HW2; ++i){
+            if (1 & (legal >> i)){
+                if (res[i] == -INF){
+                    value_double = -val_future[i].get();
+                    //cerr << idx_to_coord(i) << " " << value_double << endl;
+                    if (max_value < value_double){
+                        max_value = value_double;
+                        best_moves_set.clear();
+                        best_moves_set.emplace(i);
+                    } else if (max_value == value_double)
+                        best_moves_set.emplace(i);
+                    res[i] = round(value_double);
+                }
             }
         }
         /*
@@ -322,16 +350,13 @@ bool ai_hint(Board b, int level, int max_level, int res[], int info[], bool best
         for (int i = 0; i < HW2; ++i){
             if (1 & (legal >> i)){
                 calc_flip(&flip, &b, i);
-                search.board.move(&flip);
-                eval_move(&search, &flip);
-                    res[i] = book.get(&search.board);
-                    if (res[i] == -INF){
-                        res[i] = value_to_score_int(-mid_evaluate_diff(&search, &searching));
-                        info[i] = level;
-                    } else
-                        info[i] = SEARCH_BOOK;
-                eval_undo(&search, &flip);
-                search.board.undo(&flip);
+                b.move_copy(&flip, &nb);
+                res[i] = book.get(&nb);
+                if (res[i] == -INF){
+                    res[i] = value_to_score_int(-mid_evaluate(&nb));
+                    info[i] = level;
+                } else
+                    info[i] = SEARCH_BOOK;
                 if (max_value < (double)res[i]){
                     max_value = (double)res[i];
                     best_moves_set.clear();
@@ -345,7 +370,6 @@ bool ai_hint(Board b, int level, int max_level, int res[], int info[], bool best
         if (1 & (legal >> i))
             best_moves[i] = (best_moves_set.find(i) != best_moves_set.end());
     }
-    search.del();
     return true;
 }
 
