@@ -72,7 +72,7 @@ inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int
             else
                 flip->value += W_PARITY3;
         }
-        flip->value += flip_inside(flip->flip | (1 << flip->pos), stones) * W_FLIP_INSIDE;
+        //flip->value += flip_inside(flip->flip | (1 << flip->pos), stones) * W_FLIP_INSIDE;
         if (depth < 0){
             search->board.move(flip);
                 //flip->value += -calc_surround(search->board.opponent, ~(search->board.player | search->board.opponent)) * W_SURROUND;
