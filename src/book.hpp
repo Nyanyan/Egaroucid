@@ -16,6 +16,11 @@ struct Node_book{
     int value;
     int line;
     Node_book* p_n_node;
+    void init(){
+        if (p_n_node != NULL)
+            p_n_node->init();
+        free(this);
+    }
 };
 
 struct Book_value{
@@ -366,6 +371,18 @@ class Book{
                 cerr << "deleted book elem " << n_book << endl;
             } else
                 cerr << "book elem NOT deleted " << n_book << endl;
+        }
+
+        inline void delete_all(){
+            int t = 0;
+            for (int i = 0; i < BOOK_HASH_TABLE_SIZE; ++i){
+                if (i % 1048576 == 0)
+                    cerr << "clearing book " << (i * 100 / BOOK_HASH_TABLE_SIZE) << "%" << endl;
+                if (this->book[i] != NULL)
+                    this->book[i]->init();
+                this->book[i] = NULL;
+            }
+            cerr << "deleted " << t << " boards" << endl;
         }
 
         inline void save_bin(string file, string bak_file){

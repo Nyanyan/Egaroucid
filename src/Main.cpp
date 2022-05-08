@@ -85,12 +85,11 @@ bool ai_init(string book_file) {
 	board_init();
 	if (!evaluate_init())
 		return false;
-	if (!book_init(book_file))
-		return false;
 	if (!joseki_init())
 		return false;
 	parent_transpose_table.first_init();
 	child_transpose_table.first_init();
+	book_init(book_file);
 	return true;
 }
 
@@ -107,7 +106,7 @@ Menu create_menu(Texture checkbox,
 	bool* hint_num1, bool* hint_num2, bool* hint_num4, bool* hint_num8, bool* hint_num16, bool* hint_numall,
 	bool* use_value_flag, bool *show_over_joseki,
 	bool* use_book_flag, int* ai_level, int* hint_level, int* graph_level, int* book_error, int* use_book_depth,
-	bool* start_book_learn_flag, bool* stop_book_learn_flag, bool* modify_book, int* book_depth, int* book_learn_accept, bool* import_book_flag,
+	bool* start_book_learn_flag, bool* stop_book_learn_flag, bool* modify_book, int* book_depth, int* book_learn_accept, bool* import_book_flag, bool* change_book_path_flag,
 	bool* output_record_flag, bool* output_game_flag, bool* input_record_flag, bool* input_board_flag, bool *edit_board_flag, bool *import_game_flag, 
 	bool* show_end_popup, bool* show_log,
 	int* n_thread_idx,
@@ -269,6 +268,8 @@ Menu create_menu(Texture checkbox,
 		menu_e.push(side_menu);
 		title.push(menu_e);
 		menu_e.init_button(language.get("book", "import"), import_book_flag);
+		title.push(menu_e);
+		menu_e.init_button(language.get("book", "book_reference"), change_book_path_flag);
 		title.push(menu_e);
 		menu.push(title);
 
@@ -1046,7 +1047,7 @@ bool import_setting(int* int_mode, bool* use_book, int* ai_level, int* ai_book_a
 	bool* show_log, bool* use_value_flag,
 	bool* auto_update_check,
 	bool* show_over_joseki,
-	string* lang_name) {
+	string* lang_name, string *book_file) {
 	String appdata_dir = FileSystem::GetFolderPath(SpecialFolder::LocalAppData);
 	TextReader reader(U"{}Egaroucid/setting.txt"_fmt(appdata_dir));
 	if (!reader) {
@@ -1143,6 +1144,13 @@ bool import_setting(int* int_mode, bool* use_book, int* ai_level, int* ai_book_a
 	if (*lang_name == "undefined") {
 		return false;
 	}
+	*book_file = import_str(&reader);
+	while (book_file->back() == '\n' || book_file->back() == '\r') {
+		book_file->pop_back();
+	}
+	if (*book_file == "undefined") {
+		return false;
+	}
 	return true;
 }
 
@@ -1156,7 +1164,7 @@ void export_setting(int int_mode, bool use_book, int ai_level, int ai_book_accep
 	bool show_log, bool use_value_flag,
 	bool auto_update_check,
 	bool show_over_joseki,
-	string lang_name) {
+	string lang_name, string book_file) {
 	String appdata_dir = FileSystem::GetFolderPath(SpecialFolder::LocalAppData);
 	TextWriter writer(U"{}Egaroucid/setting.txt"_fmt(appdata_dir));
 	if (writer) {
@@ -1182,6 +1190,7 @@ void export_setting(int int_mode, bool use_book, int ai_level, int ai_book_accep
 		writer.writeln((int)auto_update_check);
 		writer.writeln((int)show_over_joseki);
 		writer.writeln(Unicode::Widen(lang_name));
+		writer.writeln(Unicode::Widen(book_file));
 	}
 }
 
@@ -1371,7 +1380,7 @@ bool close_app(int* hint_state, future<bool>* hint_future,
 		show_log, use_value_flag,
 		auto_update_check,
 		show_over_joseki,
-		lang_name);
+		lang_name, book_file);
 	if (*book_learning) {
 		*book_learning = false;
 		global_searching = false;
@@ -1627,6 +1636,10 @@ bool import_book_p(string file) {
 	return result;
 }
 
+void delete_book_p() {
+	book.delete_all();
+}
+
 int import_book(future<bool>* import_book_future, Font font, Texture icon, Texture logo) {
 	icon.scaled((double)(left_right - left_left) / icon.width()).draw(left_left, y_center - (left_right - left_left) / 2);
 	logo.scaled((double)(left_right - left_left) * 0.8 / logo.width()).draw(right_left, y_center - 30);
@@ -1796,6 +1809,49 @@ bool import_game_draw(vector<Game>& games, Board* bd, vector<History_elem>& hist
 	return true;
 }
 
+int change_book_path_draw(string *book_file, Font big_font, Font mid_font, string default_book_file) {
+	big_font(language.get("book", "input_book_path")).draw(Arg::topCenter = Vec2(x_center, 15));
+	Rect text_area{ x_center - 400, 80, 800, 400 };
+	text_area.draw(textbox_active_color).drawFrame(2, popup_frame_color);
+	String book_file_str = Unicode::Widen(*book_file);
+	TextInput::UpdateText(book_file_str);
+	const String editingText = TextInput::GetEditingText();
+	bool return_pressed = false;
+	if (KeyControl.pressed() && KeyV.down()) {
+		String clip_text;
+		Clipboard::GetText(clip_text);
+		book_file_str += clip_text;
+	}
+	if (book_file_str.size()) {
+		if (book_file_str[book_file_str.size() - 1] == '\n') {
+			book_file_str.replace(U"\n", U"");
+			return_pressed = true;
+		}
+	}
+	*book_file = book_file_str.narrow();
+	mid_font(book_file_str + U'|' + editingText).draw(text_area.stretched(-4), popup_font_color);
+	Button close_button;
+	close_button.init(x_center - 350, 630, 200, 50, 10, language.get("button", "close"), mid_font, button_color, button_font_color);
+	close_button.draw();
+	Button use_default_button;
+	use_default_button.init(x_center - 100, 630, 200, 50, 10, language.get("book", "use_default"), mid_font, button_color, button_font_color);
+	use_default_button.draw();
+	Button import_button;
+	import_button.init(x_center + 150, 630, 200, 50, 10, language.get("button", "import"), mid_font, button_color, button_font_color);
+	import_button.draw();
+	if (use_default_button.clicked()) {
+		*book_file = default_book_file;
+		return 0;
+	}
+	if (import_button.clicked() || return_pressed) {
+		return 1;
+	}
+	else if (close_button.clicked() || KeyEscape.pressed()) {
+		return 2;
+	}
+	return 0;
+}
+
 void Main() {
 	//#ifndef _WIN64
 	//SIV3D_SET(EngineOption::Renderer::OpenGLES);
@@ -1821,7 +1877,7 @@ void Main() {
 	bool human_first = true, human_second = false, both_ai = false, both_human = false;
 	bool use_hint_flag = true, normal_hint = true, human_hint = true, umigame_hint = true;
 	bool use_value_flag = true;
-	bool start_book_learn_flag = false, stop_book_learn_flag = false, book_modify = false;
+	bool start_book_learn_flag = false, stop_book_learn_flag = false, book_modify = false, change_book_path_flag = false;
 	bool output_record_flag = false, output_game_flag = false, input_record_flag = false, input_board_flag = false, edit_board_flag = false, input_game_flag = false;
 	bool texture_loaded = true;
 	int n_thread_idx = 4, former_n_thread_idx = 4;
@@ -1851,7 +1907,7 @@ void Main() {
 
 	string document_dir = FileSystem::GetFolderPath(SpecialFolder::Documents).narrow();
 	string book_file = document_dir + "Egaroucid/book.egbk";
-	string book_bak_file = document_dir + "Egaroucid/book_backup.egbk";
+	string book_bak_file = document_dir + "Egaroucid/book.egbk.bak";
 
 	Rect board_cells[HW2];
 	Font graph_font(graph_font_size);
@@ -1912,9 +1968,6 @@ void Main() {
 	int human_value_depth = 4;
 	int human_value_search_depth = 2;
 	future<void> human_value_future;
-
-	future<bool> initialize_future = async(launch::async, ai_init, book_file);
-	bool initializing = true, initialize_failed = false;
 
 	Menu menu;
 
@@ -1988,6 +2041,10 @@ void Main() {
 	Radio_Button edit_board_player_radio;
 	Radio_Button edit_board_stone_radio;
 
+	int changing_book_path = 0;
+	future<void> clear_book_future;
+	future<bool> init_book_future;
+
 	int use_ai_mode;
 	string lang_name;
 	if (!import_setting(&int_mode, &use_book, &ai_level, &ai_book_accept, &hint_level, &use_book_depth, &graph_level,
@@ -2000,7 +2057,7 @@ void Main() {
 		&show_log, &use_value_flag,
 		&auto_update_check,
 		&show_over_joseki,
-		&lang_name)) {
+		&lang_name, &book_file)) {
 		cerr << "use default setting" << endl;
 		int_mode = 0;
 		use_book = true;
@@ -2024,6 +2081,7 @@ void Main() {
 		use_value_flag = true;
 		auto_update_check = true;
 		show_over_joseki = true;
+		book_file = document_dir + "Egaroucid/book.egbk";
 	}
 	for (int i = 0; i < mode_size; ++i) {
 		show_mode[i] = i == int_mode;
@@ -2058,6 +2116,12 @@ void Main() {
 	for (int i = 0; i < 6; ++i) {
 		hint_nums[i] = i == hint_num;
 	}
+	book_bak_file = book_file + ".bak";
+
+	thread_pool.resize(n_thread_idx);
+
+	future<bool> initialize_future = async(launch::async, ai_init, book_file);
+	bool initializing = true, initialize_failed = false;
 
 	const URL version_url = U"https://www.egaroucid-app.nyanyan.dev/version.txt";
 	String appdata_dir = FileSystem::GetFolderPath(SpecialFolder::LocalAppData);
@@ -2167,7 +2231,7 @@ void Main() {
 					&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
 					&use_value_flag, &show_over_joseki,
 					&use_book, &ai_level, &hint_level, &graph_level, &ai_book_accept, &use_book_depth,
-					&start_book_learn_flag, &stop_book_learn_flag, &book_modify, &book_depth, &book_learn_accept, &import_book_flag,
+					&start_book_learn_flag, &stop_book_learn_flag, &book_modify, &book_depth, &book_learn_accept, &import_book_flag, &change_book_path_flag, 
 					&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag, &edit_board_flag, &input_game_flag,
 					&show_end_popup_change, &show_log,
 					&n_thread_idx,
@@ -2194,7 +2258,7 @@ void Main() {
 						&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
 						&use_value_flag, &show_over_joseki,
 						&use_book, &ai_level, &hint_level, &graph_level, &ai_book_accept, &use_book_depth,
-						&start_book_learn_flag, &stop_book_learn_flag, &book_modify, &book_depth, &book_learn_accept, &import_book_flag,
+						&start_book_learn_flag, &stop_book_learn_flag, &book_modify, &book_depth, &book_learn_accept, &import_book_flag, &change_book_path_flag,
 						&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag, &edit_board_flag, &input_game_flag,
 						&show_end_popup_change, &show_log,
 						&n_thread_idx,
@@ -2214,7 +2278,6 @@ void Main() {
 						umigame_state[i] = hint_not_calculated_define;
 					}
 					human_value_state = hint_not_calculated_define;
-					thread_pool.resize(n_thread_idx);
 					main_window_active = false;
 				}
 				edit_board_player_radio.init();
@@ -2273,6 +2336,41 @@ void Main() {
 		}
 		/*** game importing ***/
 
+		/*** change book path ***/
+		else if (changing_book_path == 1) {
+			int change_book_state = change_book_path_draw(&book_file, font40, font20, document_dir + "Egaroucid/book.egbk");
+			if (change_book_state == 1) {
+				book_bak_file = book_file + ".bak";
+				changing_book_path = 2;
+			}
+			else if (change_book_state == 2) {
+				changing_book_path = 0;
+			}
+			continue;
+		}
+		else if (changing_book_path == 2) {
+			clear_book_future = async(launch::async, delete_book_p);
+			changing_book_path = 3;
+			continue;
+		}
+		else if (changing_book_path == 3) {
+			if (clear_book_future.wait_for(chrono::seconds(0)) == future_status::ready) {
+				clear_book_future.get();
+				changing_book_path = 4;
+			}
+		}
+		else if (changing_book_path == 4) {
+			init_book_future = async(launch::async, book_init, book_file);
+			changing_book_path = 5;
+		}
+		else if (changing_book_path == 5) {
+			if (init_book_future.wait_for(chrono::seconds(0)) == future_status::ready) {
+				init_book_future.get();
+				changing_book_path = 0;
+			}
+		}
+		/*** change book path ***/
+
 		/*** initialized ***/
 		else {
 			/**** when mode changed **/
@@ -2296,7 +2394,7 @@ void Main() {
 					&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
 					&use_value_flag, &show_over_joseki,
 					&use_book, &ai_level, &hint_level, &graph_level, &ai_book_accept, &use_book_depth,
-					&start_book_learn_flag, &stop_book_learn_flag, &book_modify, &book_depth, &book_learn_accept, &import_book_flag,
+					&start_book_learn_flag, &stop_book_learn_flag, &book_modify, &book_depth, &book_learn_accept, &import_book_flag, &change_book_path_flag,
 					&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag, &edit_board_flag, &input_game_flag,
 					&show_end_popup_change, &show_log,
 					&n_thread_idx,
@@ -2341,7 +2439,7 @@ void Main() {
 						&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
 						&use_value_flag, &show_over_joseki,
 						&use_book, &ai_level, &hint_level, &graph_level, &ai_book_accept, &use_book_depth,
-						&start_book_learn_flag, &stop_book_learn_flag, &book_modify, &book_depth, &book_learn_accept, &import_book_flag,
+						&start_book_learn_flag, &stop_book_learn_flag, &book_modify, &book_depth, &book_learn_accept, &import_book_flag, &change_book_path_flag,
 						&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag, &edit_board_flag, &input_game_flag,
 						&show_end_popup_change, &show_log,
 						&n_thread_idx,
@@ -3475,6 +3573,10 @@ void Main() {
 					book_changed = true;
 					modify_book_future = async(launch::async, modify_book_parent, &bd);
 				}
+			}
+			else if (change_book_path_flag) {
+				cerr << "changing book path" << endl;
+				changing_book_path = 1;
 			}
 			else if (usage_flag) {
 				System::LaunchBrowser(U"https://www.egaroucid-app.nyanyan.dev/usage/");
