@@ -145,7 +145,7 @@ using namespace std;
 #define COORD_G8 1
 #define COORD_H8 0
 
-#define COORD_NO -1
+#define COORD_NO 64
 
 struct Feature_to_coord{
     int n_cells;
