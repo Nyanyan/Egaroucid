@@ -1852,6 +1852,16 @@ int change_book_path_draw(string *book_file, Font big_font, Font mid_font, strin
 	return 0;
 }
 
+bool change_book_path_failed(Font font, Texture icon, Texture logo) {
+	icon.scaled((double)(left_right - left_left) / icon.width()).draw(left_left, y_center - (left_right - left_left) / 2);
+	logo.scaled((double)(left_right - left_left) * 0.8 / logo.width()).draw(right_left, y_center - 30);
+	font(language.get("book", "import_failed")).draw(right_left, y_center + font.fontSize() * 2, font_color);
+	Button break_button;
+	break_button.init(x_center - 125, 600, 250, 50, 10, language.get("button", "close"), font, button_color, button_font_color);
+	break_button.draw();
+	return break_button.clicked();
+}
+
 void Main() {
 	//#ifndef _WIN64
 	//SIV3D_SET(EngineOption::Renderer::OpenGLES);
@@ -2341,6 +2351,8 @@ void Main() {
 			int change_book_state = change_book_path_draw(&book_file, font40, font20, document_dir + "Egaroucid/book.egbk");
 			if (change_book_state == 1) {
 				book_bak_file = book_file + ".bak";
+				reset_hint(&hint_state, &hint_future);
+				hint_state = 0;
 				changing_book_path = 2;
 			}
 			else if (change_book_state == 2) {
@@ -2351,6 +2363,7 @@ void Main() {
 		else if (changing_book_path == 2) {
 			clear_book_future = async(launch::async, delete_book_p);
 			changing_book_path = 3;
+			import_loading_book(font50, icon, logo);
 			continue;
 		}
 		else if (changing_book_path == 3) {
@@ -2358,16 +2371,32 @@ void Main() {
 				clear_book_future.get();
 				changing_book_path = 4;
 			}
+			import_loading_book(font50, icon, logo);
+			continue;
 		}
 		else if (changing_book_path == 4) {
 			init_book_future = async(launch::async, book_init, book_file);
 			changing_book_path = 5;
+			import_loading_book(font50, icon, logo);
+			continue;
 		}
 		else if (changing_book_path == 5) {
 			if (init_book_future.wait_for(chrono::seconds(0)) == future_status::ready) {
-				init_book_future.get();
+				if (init_book_future.get()) {
+					changing_book_path = 0;
+				}
+				else {
+					changing_book_path = 6;
+				}
+			}
+			import_loading_book(font50, icon, logo);
+			continue;
+		}
+		else if (changing_book_path == 6) {
+			if (change_book_path_failed(font30, icon, logo)) {
 				changing_book_path = 0;
 			}
+			continue;
 		}
 		/*** change book path ***/
 
@@ -2810,6 +2839,7 @@ void Main() {
 								else {
 									int changed_book_value = ParseOr<int>(changed_book_value_str, -1000);
 									if (changed_book_value != -1000) {
+										changed_book_value = max(-HW2, min(HW2, changed_book_value));
 										reset_hint(&hint_state, &hint_future);
 										Flip m;
 										calc_flip(&m, &bd, change_book_cell);

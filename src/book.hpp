@@ -375,7 +375,7 @@ class Book{
 
         inline void delete_all(){
             int t = 0;
-            for (int i = 0; i < BOOK_HASH_TABLE_SIZE; ++i){
+            for (uint64_t i = 0; i < BOOK_HASH_TABLE_SIZE; ++i){
                 if (i % 1048576 == 0)
                     cerr << "clearing book " << (i * 100 / BOOK_HASH_TABLE_SIZE) << "%" << endl;
                 if (this->book[i] != NULL)
