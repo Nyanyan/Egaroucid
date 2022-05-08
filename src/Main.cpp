@@ -2802,6 +2802,7 @@ void Main() {
 											else {
 												int changed_book_value = ParseOr<int>(changed_book_value_str, -1000);
 												if (changed_book_value != -1000) {
+													changed_book_value = max(-HW2, min(HW2, changed_book_value));
 													reset_hint(&hint_state, &hint_future);
 													Flip m;
 													calc_flip(&m, &bd, cell);
