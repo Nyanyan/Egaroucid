@@ -8,7 +8,7 @@ window.onload = function() {
     console.log(language);
 
     if (language == 'ja')
-        window.location.href = "./ja";
+        window.location.href = "https://www.egaroucid.nyanyan.dev/ja";
     else
-        window.location.href = "./en";
+        window.location.href = "https://www.egaroucid.nyanyan.dev/en";
 }
