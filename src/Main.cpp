@@ -1811,7 +1811,7 @@ bool import_game_draw(vector<Game>& games, Board* bd, vector<History_elem>& hist
 
 int change_book_path_draw(string *book_file, Font big_font, Font mid_font, string default_book_file) {
 	big_font(language.get("book", "input_book_path")).draw(Arg::topCenter = Vec2(x_center, 15));
-	Rect text_area{ x_center - 400, 80, 800, 400 };
+	Rect text_area{ x_center - 400, 80, 800, 500 };
 	text_area.draw(textbox_active_color).drawFrame(2, popup_frame_color);
 	String book_file_str = Unicode::Widen(*book_file);
 	TextInput::UpdateText(book_file_str);
