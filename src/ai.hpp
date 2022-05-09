@@ -260,10 +260,10 @@ inline double tree_search_noid(Board board, int depth, bool use_mpc, double mpct
     search.mpct = mpct;
     calc_features(&search);
     bool searching = true;
-    if (use_multi_thread)
-        g = nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth, false, LEGAL_UNDEFINED, is_end_search, &searching);
-    else
-        g = nega_scout_single_thread(&search, -SCORE_MAX, SCORE_MAX, depth, false, LEGAL_UNDEFINED, is_end_search, &searching);
+    //if (use_multi_thread)
+    //    g = nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth, false, LEGAL_UNDEFINED, is_end_search, &searching);
+    //else
+    g = nega_scout_single_thread(&search, -SCORE_MAX, SCORE_MAX, depth, false, LEGAL_UNDEFINED, is_end_search, &searching);
     return value_to_score_double(g);
 }
 
