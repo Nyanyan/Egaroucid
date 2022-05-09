@@ -1728,7 +1728,7 @@ void get_saved_games(string document_dir, vector<Game>& games) {
 	cerr << games.size() << " games found" << endl;
 }
 
-bool import_game_draw(vector<Game>& games, Board* bd, vector<History_elem>& history, vector<History_elem>& fork_history, Font mid_font, Font small_font, Font tiny_font, int *show_start_idx) {
+int import_game_draw(vector<Game>& games, Board* bd, vector<History_elem>& history, vector<History_elem>& fork_history, Font mid_font, Font small_font, Font tiny_font, int *show_start_idx) {
 	mid_font(language.get("in_out", "input_game")).draw(Arg::topCenter = Vec2(x_center, 10));
 	if (games.size() == 0) {
 		mid_font(language.get("in_out", "no_game_available")).draw(Arg::center = Vec2(x_center, y_center));
@@ -1788,7 +1788,7 @@ bool import_game_draw(vector<Game>& games, Board* bd, vector<History_elem>& hist
 				bool record_imported = import_record(games[j].record, &history);
 				if (record_imported) {
 					history[history.size() - 1].b.copy(bd);
-					return false;
+					return 1;
 				}
 				else {
 					cerr << "record broken " << games[j].record.narrow() << endl;
@@ -1805,9 +1805,9 @@ bool import_game_draw(vector<Game>& games, Board* bd, vector<History_elem>& hist
 	close_button.init(x_center - 100, 630, 200, 50, 10, language.get("button", "close"), mid_font, button_color, button_font_color);
 	close_button.draw();
 	if (close_button.clicked() || KeyEscape.pressed()) {
-		return false;
+		return 2;
 	}
-	return true;
+	return 0;
 }
 
 int change_book_path_draw(string *book_file, Font big_font, Font mid_font, string default_book_file) {
@@ -2333,8 +2333,9 @@ void Main() {
 
 		/*** game importing ***/
 		else if (inputting_game) {
-			inputting_game = import_game_draw(games, &bd, history, fork_history, font30, font20, font15, &show_start_idx);
-			if (!inputting_game) {
+			int inputting_game_state = import_game_draw(games, &bd, history, fork_history, font30, font20, font15, &show_start_idx);
+			if (inputting_game_state == 1) {
+				inputting_game = false;
 				history_place = history[history.size() - 1].b.n - 4;
 				if (bd.get_legal() == 0ULL) {
 					bd.pass();
@@ -2343,6 +2344,9 @@ void Main() {
 						main_window_active = true;
 					}
 				}
+			}
+			else if (inputting_game_state == 2) {
+				inputting_game = false;
 			}
 		}
 		/*** game importing ***/
