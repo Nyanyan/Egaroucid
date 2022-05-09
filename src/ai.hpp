@@ -248,7 +248,7 @@ Search_result ai(Board b, int level, bool use_book, int book_error){
     return res;
 }
 
-inline double tree_search_noid(Board board, int depth, bool use_mpc, double mpct){
+inline double tree_search_noid(Board board, int depth, bool use_mpc, double mpct, bool use_multi_thread){
     int g;
     Search search;
     pair<int, int> result;
@@ -260,7 +260,10 @@ inline double tree_search_noid(Board board, int depth, bool use_mpc, double mpct
     search.mpct = mpct;
     calc_features(&search);
     bool searching = true;
-    g = nega_scout_single_thread(&search, -SCORE_MAX, SCORE_MAX, depth, false, LEGAL_UNDEFINED, is_end_search, &searching);
+    if (use_multi_thread)
+        g = nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth, false, LEGAL_UNDEFINED, is_end_search, &searching);
+    else
+        g = nega_scout_single_thread(&search, -SCORE_MAX, SCORE_MAX, depth, false, LEGAL_UNDEFINED, is_end_search, &searching);
     return value_to_score_double(g);
 }
 
@@ -276,6 +279,18 @@ bool ai_hint(Board b, int level, int max_level, int res[], int info[], bool best
     get_level(level, b.n - 4, &is_mid_search, &depth, &use_mpc, &mpct);
     if (!is_mid_search && level != max_level)
         return false;
+    int n_legal = 0;
+    for (int i = 0; i < HW2; ++i){
+        if (1 & (legal >> i)){
+            calc_flip(&flip, &b, i);
+            b.move_copy(&flip, &nb);
+            res[i] = book.get(&nb);
+            if (res[i] == -INF)
+                ++n_legal;
+        }
+    }
+    int thread_size = (int)thread_pool.size();
+    bool use_multi_thread = (n_legal < thread_size);
     if (depth - 1 >= 0){
         //int l, u;
         bool cache_hit;
@@ -303,7 +318,7 @@ bool ai_hint(Board b, int level, int max_level, int res[], int info[], bool best
                     }
                     */
                     if (!cache_hit){
-                        val_future[i] = thread_pool.push(bind(&tree_search_noid, nb, depth - 1, use_mpc, mpct));
+                        val_future[i] = thread_pool.push(bind(&tree_search_noid, nb, depth - 1, use_mpc, mpct, use_multi_thread));
                         //val_future[i] = async(launch::async, tree_search_noid, nb, depth - 1, use_mpc, mpct);
                     }
                     if (!is_mid_search && !use_mpc)
