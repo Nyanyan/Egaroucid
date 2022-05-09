@@ -11,6 +11,7 @@
 #include <time.h>
 #include <queue>
 #include <algorithm>
+#include <thread>
 #include "ai.hpp"
 #include "human_value.hpp"
 #include "joseki.hpp"
@@ -2082,7 +2083,7 @@ void Main() {
 		human_hint = false;
 		umigame_hint = false;
 		show_end_popup = true;
-		n_thread_idx = 2;
+		n_thread_idx = min(32, (int)thread::hardware_concurrency());
 		hint_num = 5;
 		book_depth = 40;
 		book_learn_accept = 6;

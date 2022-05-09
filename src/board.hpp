@@ -185,7 +185,7 @@ class Board {
             for (i = 0; i < HW2; i += 2)
                 res[HW2_M1 - i - 1] = (res_bit >> i) & 0b11;
             */
-            #if USE_SIMD && FAST_ARR_CONVERT
+            #if USE_SIMD && FAST_ARR_CONVERT && false
                 u64_4 pl(player);
                 u64_4 op(opponent);
                 u64_4 shift(0, 1, 2, 3);
