@@ -6,14 +6,7 @@
 
 using namespace std;
 
-int main(){
-    Board board = input_board();
-    cerr << "full board:" << endl;
-    board.print();
-
-    uint64_t player = board.player;
-    uint64_t opponent = board.opponent;
-
+inline uint64_t calc_legal_flip_inside(const uint64_t player, const uint64_t opponent){
     const uint64_t empty = ~(player | opponent);
     uint64_t masked = empty & 0x007E7E7E7E7E7E00ULL;
     uint64_t outside_stones_mask = (masked << HW_M1) | (masked >> HW_M1);
@@ -32,15 +25,25 @@ int main(){
     dismiss_tmp ^= shifted;
     dismiss &= dismiss_tmp;
     outside_stones_mask &= ~dismiss;
-    
-    board.player = player;
-    board.opponent = opponent & ~outside_stones_mask;
-    cerr << "inside:" << endl;
+    if ((opponent & ~outside_stones_mask) == 0ULL)
+        return 0ULL;
+    uint64_t legal = calc_legal(player, opponent & ~outside_stones_mask) & empty;
+    if (legal == 0ULL)
+        return 0ULL;
+    return legal & ~calc_legal(player, opponent & outside_stones_mask);
+}
+
+int main(){
+    Board board = input_board();
+    cerr << "full board:" << endl;
     board.print();
 
-    board.player = player;
-    board.opponent = opponent & outside_stones_mask;
-    cerr << "outside:" << endl;
+    uint64_t legal_p = calc_legal_flip_inside(board.player, board.opponent);
+    uint64_t legal_o = calc_legal_flip_inside(board.opponent, board.player);
+    
+    board.player = legal_p;
+    board.opponent = legal_o;
+    cerr << "legals of flipping inside:" << endl;
     board.print();
 
     return 0;

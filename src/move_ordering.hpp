@@ -62,7 +62,7 @@ inline uint64_t calc_legal_flip_inside(const uint64_t player, const uint64_t opp
     outside_stones_mask &= ~dismiss;
     if ((opponent & ~outside_stones_mask) == 0ULL)
         return 0ULL;
-    uint64_t legal = calc_legal(player, opponent & ~outside_stones_mask) & ~stones;
+    uint64_t legal = calc_legal(player, opponent & ~outside_stones_mask) & empty;
     if (legal == 0ULL)
         return 0ULL;
     return legal & ~calc_legal(player, opponent & outside_stones_mask);
