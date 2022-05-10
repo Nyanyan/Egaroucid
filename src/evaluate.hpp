@@ -252,7 +252,7 @@ constexpr Feature_to_coord feature_to_coord[N_SYMMETRY_PATTERNS] = {
 
 struct Coord_feature{
     uint_fast8_t feature;
-    int x;
+    uint_fast16_t x;
 };
 
 struct Coord_to_feature{
