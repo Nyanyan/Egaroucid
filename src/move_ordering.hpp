@@ -41,32 +41,43 @@ int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped, con
 int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, const bool *searching);
 int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
 
-inline uint64_t calc_legal_flip_inside(uint64_t player, uint64_t opponent){
-    uint64_t stones = ~(player | opponent);
-    uint64_t hmask = stones & 0x7E7E7E7E7E7E7E7EULL;
-    uint64_t vmask = stones & 0x00FFFFFFFFFFFF00ULL;
-    uint64_t hvmask = stones & 0x007E7E7E7E7E7E00ULL;
-    uint64_t outside_stones_mask =  (hmask << 1) | (hmask >> 1) | 
-                                    (vmask << HW) | (vmask >> HW) | 
-                                    (hvmask << HW_M1) | (hvmask >> HW_M1) | 
-                                    (hvmask << HW_P1) | (hvmask >> HW_P1);
+inline uint64_t calc_legal_flip_inside(const uint64_t player, const uint64_t opponent){
+    const uint64_t empty = ~(player | opponent);
+    uint64_t masked = empty & 0x007E7E7E7E7E7E00ULL;
+    uint64_t outside_stones_mask = (masked << HW_M1) | (masked >> HW_M1);
+    uint64_t shifted = (masked << HW_P1) | (masked >> HW_P1);
+    uint64_t dismiss_tmp = outside_stones_mask ^ shifted;
+    uint64_t dismiss = dismiss_tmp;
+    outside_stones_mask |= shifted;
+    masked = empty & 0x7E7E7E7E7E7E7E7EULL;
+    shifted = (masked << 1) | (masked >> 1);
+    outside_stones_mask |= shifted;
+    dismiss_tmp ^= shifted;
+    dismiss &= dismiss_tmp;
+    masked = empty & 0x00FFFFFFFFFFFF00ULL;
+    shifted = (masked << HW) | (masked >> HW);
+    outside_stones_mask |= shifted;
+    dismiss_tmp ^= shifted;
+    dismiss &= dismiss_tmp;
+    outside_stones_mask &= ~dismiss;
+    if ((opponent & ~outside_stones_mask) == 0ULL)
+        return 0ULL;
     uint64_t legal = calc_legal(player, opponent & ~outside_stones_mask) & ~stones;
     if (legal == 0ULL)
         return 0ULL;
     return legal & ~calc_legal(player, opponent & outside_stones_mask);
 }
 
-inline bool is_flip_inside(Flip *flip, uint64_t stones){
-    uint64_t hmask = flip->flip & 0x7E7E7E7E7E7E7E7EULL;
-    uint64_t vmask = flip->flip & 0x00FFFFFFFFFFFF00ULL;
-    uint64_t hvmask = flip->flip & 0x007E7E7E7E7E7E00ULL;
-    uint64_t connect = (hmask << 1) | (hmask >> 1) | (vmask << HW) | (vmask >> HW) | (hvmask << HW_M1) | (hvmask >> HW_M1) | (hvmask << HW_P1) | (hvmask >> HW_P1);
-    connect &= ~flip->flip;
-    return (connect & ~(stones | (1ULL << flip->pos))) == 0ULL;
+inline bool is_flip_inside(const Flip *flip, const uint64_t p_legal_flip_inside){
+    return (p_legal_flip_inside >> flip->pos) & 1;
 }
 
-inline bool is_disturb_opponent_flip_inside(Flip *flip, Board *board){
-
+inline bool is_disturb_opponent_flip_inside(const Flip *flip, const int n_o_legal_flip_inside, Board *board){
+    // ここになんか天才的な処理を入れて不必要な計算をスキップする
+    board->move(flip);
+        bool res = n_o_legal_flip_inside > pop_count_ull(calc_legal_flip_inside(board->player, board->opponent));
+    board->undo(flip);
+    return res;
 }
 
 inline bool is_create_my_flip_inside(Flip *flip, Board *board){
