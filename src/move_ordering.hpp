@@ -68,10 +68,10 @@ inline bool is_flip_inside(const Flip *flip, const uint64_t p_legal_flip_inside)
     return (p_legal_flip_inside >> flip->pos) & 1;
 }
 
-inline bool is_create_my_flip_inside(Flip *flip, Board *board, const int n_p_legal_flip_inside){
+inline int create_disturb_my_flip_inside(Flip *flip, Board *board, const int n_p_legal_flip_inside){
     // ここになんか天才的な処理を入れて不必要な計算をスキップする
     board->move(flip);
-        bool res = n_p_legal_flip_inside < pop_count_ull(calc_legal_flip_inside(board->opponent, board->player));
+        int res = n_p_legal_flip_inside - pop_count_ull(calc_legal_flip_inside(board->opponent, board->player));
     board->undo(flip);
     return res;
 }
