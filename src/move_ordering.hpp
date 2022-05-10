@@ -41,10 +41,25 @@ int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped, con
 int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, const bool *searching);
 int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
 
+inline uint64_t calc_legal_flip_inside(uint64_t player, uint64_t opponent){
+    uint64_t stones = ~(player | opponent);
+    uint64_t hmask = stones & 0x7E7E7E7E7E7E7E7EULL;
+    uint64_t vmask = stones & 0x00FFFFFFFFFFFF00ULL;
+    uint64_t hvmask = stones & 0x007E7E7E7E7E7E00ULL;
+    uint64_t outside_stones_mask =  (hmask << 1) | (hmask >> 1) | 
+                                    (vmask << HW) | (vmask >> HW) | 
+                                    (hvmask << HW_M1) | (hvmask >> HW_M1) | 
+                                    (hvmask << HW_P1) | (hvmask >> HW_P1);
+    uint64_t legal = calc_legal(player, opponent & ~outside_stones_mask) & ~stones;
+    if (legal == 0ULL)
+        return 0ULL;
+    return legal & ~calc_legal(player, opponent & outside_stones_mask);
+}
+
 inline bool is_flip_inside(Flip *flip, uint64_t stones){
     uint64_t hmask = flip->flip & 0x7E7E7E7E7E7E7E7EULL;
     uint64_t vmask = flip->flip & 0x00FFFFFFFFFFFF00ULL;
-    uint64_t hvmask = flip->flip & 0x0055555555555500ULL;
+    uint64_t hvmask = flip->flip & 0x007E7E7E7E7E7E00ULL;
     uint64_t connect = (hmask << 1) | (hmask >> 1) | (vmask << HW) | (vmask >> HW) | (hvmask << HW_M1) | (hvmask >> HW_M1) | (hvmask << HW_P1) | (hvmask >> HW_P1);
     connect &= ~flip->flip;
     return (connect & ~(stones | (1ULL << flip->pos))) == 0ULL;
