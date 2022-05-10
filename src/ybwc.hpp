@@ -19,7 +19,7 @@
 #define YBWC_END_SPLIT_MIN_DEPTH 10
 //#define YBWC_MAX_SPLIT_COUNT 3
 //#define YBWC_PC_OFFSET 3
-#define YBWC_ORDERING_MAX_OFFSET 24
+#define YBWC_ORDERING_MAX_OFFSET 16
 #define YBWC_OFFSET_DIV_DEPTH 32
 #define YBWC_ORDERING_MAX_OFFSET_END 6
 #define YBWC_OFFSET_DIV_DEPTH_END 40
@@ -51,7 +51,7 @@ pair<int, uint64_t> ybwc_do_task(uint64_t player, uint64_t opponent, uint_fast8_
     for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i)
         search.eval_features[i] = eval_features[i];
     search.n_nodes = 0ULL;
-    calc_features(&search);
+    //calc_features(&search);
     int g = -nega_alpha_ordering(&search, alpha, beta, depth, false, legal, is_end_search, searching);
     if (*searching)
         return make_pair(g, search.n_nodes);
@@ -98,8 +98,11 @@ inline bool ybwc_split_without_move(Search *search, const Flip *flip, int alpha,
         flip->value < first_val - depth_to_offset(depth)){
         if (thread_pool.n_idle()){
             vector<int> eval_features(N_SYMMETRY_PATTERNS);
-            for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i)
+            for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i){
                 eval_features[i] = search->eval_features[i];
+                if (eval_features[i] >= 65536 || eval_features[i] < 0)
+                    cerr << "error" << endl;
+            }
             parallel_tasks.emplace_back(thread_pool.push(bind(&ybwc_do_task, 
                 search->board.player, search->board.opponent, search->board.n, search->board.p, search->board.parity, 
                 search->use_mpc, search->mpct, search->eval_feature_reversed, eval_features,

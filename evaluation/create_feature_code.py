@@ -85,6 +85,10 @@ for cell in range(64):
         if coord in ss[i]:
             tmp = '{' + digit_space(i, 2) + ', P3' + str(len(ss[i]) - 1 - ss[i].index(coord)) + '}'
             tmp_arr.append(tmp)
-    res_tmp = '{' + digit_space(len(tmp_arr), 2) + ', {' + ', '.join(tmp_arr) + '}}, // ' + coord
+    len_main = len(tmp_arr)
+    for i in range(13 - len_main):
+        tmp = '{ 0, PNO}'
+        tmp_arr.append(tmp)
+    res_tmp = '{' + digit_space(len_main, 2) + ', {' + ', '.join(tmp_arr) + '}}, // ' + coord
     res += res_tmp + '\n'
 print(res)
