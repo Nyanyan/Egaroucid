@@ -5408,6 +5408,21 @@ same
 2428200562 nodes
 154504998.8546704 nps
 
+2022/05/10 use flip inside move ordering
+#40 depth 20 value 38 policy a2 nodes 30172858 time 197 nps 153161715
+#41 depth 22 value 0 policy h4 nodes 31054931 time 270 nps 115018262
+#42 depth 22 value 6 policy g2 nodes 38915017 time 314 nps 123933175
+#43 depth 23 value -12 policy c7 nodes 112077360 time 724 nps 154802983
+#44 depth 23 value -14 policy d2 nodes 23900865 time 394 nps 60662093
+#45 depth 24 value 6 policy b2 nodes 605912468 time 2933 nps 206584544
+#46 depth 24 value -8 policy b3 nodes 99830019 time 940 nps 106202147
+#47 depth 25 value 4 policy g2 nodes 56279763 time 576 nps 97707921
+#48 depth 25 value 28 policy f6 nodes 615419239 time 3951 nps 155762905
+#49 depth 26 value 16 policy e1 nodes 781647294 time 3993 nps 195754393
+14.292 sec
+18.488189697265625 sec total
+2395209814 nodes
+167590946.96333614 nps
 
 
 

@@ -80,7 +80,7 @@ inline bool is_flip_inside(const int pos, const uint64_t p_legal_flip_inside){
     return (p_legal_flip_inside >> pos) & 1;
 }
 
-inline int create_disturb_my_flip_inside(Board *board, const int n_p_legal_flip_inside){
+inline int create_disturb_player_flip_inside(Board *board, const int n_p_legal_flip_inside){
     // ここになんか天才的な処理を入れて不必要な計算をスキップする
     return n_p_legal_flip_inside - pop_count_ull(calc_legal_flip_inside(board->opponent, board->player));
 }
