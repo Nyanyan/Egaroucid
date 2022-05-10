@@ -68,20 +68,20 @@ inline bool is_flip_inside(const Flip *flip, const uint64_t p_legal_flip_inside)
     return (p_legal_flip_inside >> flip->pos) & 1;
 }
 
-inline bool is_disturb_opponent_flip_inside(const Flip *flip, const int n_o_legal_flip_inside, Board *board){
+inline bool is_create_my_flip_inside(Flip *flip, Board *board, const int n_p_legal_flip_inside){
     // ここになんか天才的な処理を入れて不必要な計算をスキップする
     board->move(flip);
-        bool res = n_o_legal_flip_inside > pop_count_ull(calc_legal_flip_inside(board->player, board->opponent));
+        bool res = n_p_legal_flip_inside < pop_count_ull(calc_legal_flip_inside(board->opponent, board->player));
     board->undo(flip);
     return res;
 }
 
-inline bool is_create_my_flip_inside(Flip *flip, Board *board){
-
-}
-
-inline bool is_create_opponent_flip_inside(Flip *flip, Board *board){
-
+inline int create_disturb_opponent_flip_inside(Flip *flip, Board *board, const int n_o_legal_flip_inside){
+    // ここになんか天才的な処理を入れて不必要な計算をスキップする
+    board->move(flip);
+        int res = n_o_legal_flip_inside - pop_count_ull(calc_legal_flip_inside(board->player, board->opponent));
+    board->undo(flip);
+    return res;
 }
 
 inline void move_sort_top(vector<Flip> &move_list, int best_idx){
