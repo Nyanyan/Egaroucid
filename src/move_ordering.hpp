@@ -30,11 +30,23 @@
 #define W_PARITY1 2
 #define W_PARITY2 4
 #define W_PARITY3 8
+#define W_FLIP_INSIDE 32
+#define W_PLAYER_FLIP_INSIDE 8
+#define W_OPPONENT_FLIP_INSIDE 32
 
 #define MOVE_ORDERING_VALUE_OFFSET 14
 
 #define W_END_MOBILITY 64
 #define W_END_PARITY 14
+
+#define USE_FLIP_INSIDE_DEPTH 15
+
+struct Flip_inside_info{
+    uint64_t player;
+    uint64_t opponent;
+    int n_player;
+    int n_opponent;
+};
 
 int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, const bool *searching);
 int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped, const bool *searching);
@@ -64,24 +76,18 @@ inline uint64_t calc_legal_flip_inside(const uint64_t player, const uint64_t opp
     return legal & ~calc_legal(player, opponent & outside_stones_mask);
 }
 
-inline bool is_flip_inside(const Flip *flip, const uint64_t p_legal_flip_inside){
-    return (p_legal_flip_inside >> flip->pos) & 1;
+inline bool is_flip_inside(const int pos, const uint64_t p_legal_flip_inside){
+    return (p_legal_flip_inside >> pos) & 1;
 }
 
-inline int create_disturb_my_flip_inside(Flip *flip, Board *board, const int n_p_legal_flip_inside){
+inline int create_disturb_my_flip_inside(Board *board, const int n_p_legal_flip_inside){
     // ここになんか天才的な処理を入れて不必要な計算をスキップする
-    board->move(flip);
-        int res = n_p_legal_flip_inside - pop_count_ull(calc_legal_flip_inside(board->opponent, board->player));
-    board->undo(flip);
-    return res;
+    return n_p_legal_flip_inside - pop_count_ull(calc_legal_flip_inside(board->opponent, board->player));
 }
 
-inline int create_disturb_opponent_flip_inside(Flip *flip, Board *board, const int n_o_legal_flip_inside){
+inline int create_disturb_opponent_flip_inside(Board *board, const int n_o_legal_flip_inside){
     // ここになんか天才的な処理を入れて不必要な計算をスキップする
-    board->move(flip);
-        int res = n_o_legal_flip_inside - pop_count_ull(calc_legal_flip_inside(board->player, board->opponent));
-    board->undo(flip);
-    return res;
+    return n_o_legal_flip_inside - pop_count_ull(calc_legal_flip_inside(board->player, board->opponent));
 }
 
 inline void move_sort_top(vector<Flip> &move_list, int best_idx){
@@ -93,7 +99,7 @@ bool cmp_move_ordering(Flip &a, Flip &b){
     return a.value > b.value;
 }
 
-inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int beta, const int depth, const bool *searching, uint64_t stones){
+inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int beta, const int depth, const bool *searching, uint64_t stones, const Flip_inside_info *flip_inside_info){
     if (flip->flip == search->board.opponent)
         flip->value = W_WIPEOUT;
     else{
@@ -108,15 +114,19 @@ inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int
         }
         if (depth < 0){
             search->board.move(flip);
-                //flip->value += -calc_surround(search->board.opponent, ~(search->board.player | search->board.opponent)) * W_SURROUND;
                 flip->value += calc_stability_edge_player(search->board.opponent, search->board.player) * W_STABILITY;
                 flip->n_legal = search->board.get_legal();
                 flip->value += -pop_count_ull(flip->n_legal) * W_MOBILITY;
+                if (depth >= USE_FLIP_INSIDE_DEPTH){
+                    if (is_flip_inside(flip->pos, flip_inside_info->player))
+                        flip->value += W_FLIP_INSIDE;
+                    flip->value += create_disturb_player_flip_inside(&search->board, flip_inside_info->n_player) * W_PLAYER_FLIP_INSIDE;
+                    flip->value -= create_disturb_opponent_flip_inside(&search->board, flip_inside_info->n_opponent) * W_OPPONENT_FLIP_INSIDE;
+                }
             search->board.undo(flip);
         } else{
             eval_move(search, flip);
             search->board.move(flip);
-                //flip->value += -calc_surround(search->board.opponent, ~(search->board.player | search->board.opponent)) * W_SURROUND;
                 flip->value += calc_stability_edge_player(search->board.opponent, search->board.player) * W_STABILITY;
                 flip->n_legal = search->board.get_legal();
                 flip->value += -pop_count_ull(flip->n_legal) * W_MOBILITY;
@@ -139,6 +149,12 @@ inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int
                             }
                             break;
                     }
+                }
+                if (depth >= USE_FLIP_INSIDE_DEPTH){
+                    if (is_flip_inside(flip->pos, flip_inside_info->player))
+                        flip->value += W_FLIP_INSIDE;
+                    flip->value += create_disturb_player_flip_inside(&search->board, flip_inside_info->n_player) * W_PLAYER_FLIP_INSIDE;
+                    flip->value -= create_disturb_opponent_flip_inside(&search->board, flip_inside_info->n_opponent) * W_OPPONENT_FLIP_INSIDE;
                 }
             search->board.undo(flip);
             eval_undo(search, flip);
@@ -233,9 +249,16 @@ inline void move_ordering(Search *search, vector<Flip> &move_list, int depth, in
     if (depth >= 26)
         ++eval_depth;
     //eval_depth = max(0, eval_depth);
-    uint64_t stones = search->board.player | search->board.opponent;
+    const uint64_t stones = search->board.player | search->board.opponent;
+    Flip_inside_info flip_inside_info;
+    if (depth >= USE_FLIP_INSIDE_DEPTH){
+        flip_inside_info.player = calc_legal_flip_inside(search->board.player, search->board.opponent);
+        flip_inside_info.opponent = calc_legal_flip_inside(search->board.opponent, search->board.player);
+        flip_inside_info.n_player = pop_count_ull(flip_inside_info.player);
+        flip_inside_info.n_opponent = pop_count_ull(flip_inside_info.opponent);
+    }
     for (Flip &flip: move_list)
-        move_evaluate(search, &flip, eval_alpha, eval_beta, eval_depth, searching, stones);
+        move_evaluate(search, &flip, eval_alpha, eval_beta, eval_depth, searching, stones, &flip_inside_info);
     sort(move_list.begin(), move_list.end(), cmp_move_ordering);
 }
 /*
