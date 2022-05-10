@@ -54,7 +54,7 @@ int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, b
 int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
 
 inline uint64_t or_dismiss_1(const uint64_t a, const uint64_t b, const uint64_t c, const uint64_t d){
-    return (a | b | c) & (b | c | d) & (d | a | b);
+    return (a | b | c) & (a | b | d) & (a | c | d) & (b | c | d);
 }
 
 inline uint64_t calc_legal_flip_inside(const uint64_t player, const uint64_t opponent){
