@@ -65,7 +65,7 @@ H8, G8, H7, G7, F7, E7, D7, G6, G5, G4'''
 ss = [line.split(', ') for line in s.splitlines()]
 
 def cell_to_coord(cell):
-    #cell = 63 - cell
+    cell = 63 - cell
     x = cell % 8
     y = cell // 8
     return chr(ord('A') + x) + str(y + 1)
@@ -76,6 +76,9 @@ def digit_space(n, r):
     for i in range(r - l):
         n = ' ' + n
     return n
+
+for cell in range(64):
+    print('#define COORD_' + cell_to_coord(cell) + ' ' + str(cell))
 
 res = ''
 for cell in range(64):
