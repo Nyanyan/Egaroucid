@@ -74,7 +74,7 @@ struct Search{
     bool use_mpc;
     double mpct;
     uint64_t n_nodes;
-    uint_fast16_t eval_features[N_SYMMETRY_PATTERNS];
+    int eval_features[N_SYMMETRY_PATTERNS];
     uint_fast8_t eval_feature_reversed;
 };
 

@@ -252,7 +252,7 @@ constexpr Feature_to_coord feature_to_coord[N_SYMMETRY_PATTERNS] = {
 
 struct Coord_feature{
     uint_fast8_t feature;
-    uint_fast16_t x;
+    int x;
 };
 
 struct Coord_to_feature{
@@ -1010,9 +1010,10 @@ inline void eval_move(Search *search, const Flip *flip){
     #endif
     search->eval_feature_reversed ^= 1;
     //search->board.move(flip);
-    //search->board.print();
-    //if (search->eval_feature_reversed == 0 && check_features(search))
+    //if (search->eval_feature_reversed == 0 && check_features(search)){
+    //    search->board.print();
     //    cerr << "error" << endl;
+    //}
     //search->board.undo(flip);
 }
 
