@@ -992,29 +992,29 @@ inline void eval_move(Search *search, const Flip *flip){
         int i;
         if (search->eval_feature_reversed){
             for (i = 0; i < coord_to_feature[flip->pos].n_features; ++i){
-                if (search->eval_features[coord_to_feature[flip->pos].features[i].feature] / coord_to_feature[flip->pos].features[i].x % 3 != 2)
-                    cerr << "error " << search->eval_features[coord_to_feature[flip->pos].features[i].feature] << " " << coord_to_feature[flip->pos].features[i].x << " " << flip->pos << endl;
+                //if (search->eval_features[coord_to_feature[flip->pos].features[i].feature] / coord_to_feature[flip->pos].features[i].x % 3 != 2)
+                //    cerr << "error " << search->eval_features[coord_to_feature[flip->pos].features[i].feature] << " " << coord_to_feature[flip->pos].features[i].x << " " << flip->pos << endl;
                 search->eval_features[coord_to_feature[flip->pos].features[i].feature] -= coord_to_feature[flip->pos].features[i].x;
             }
             uint64_t f = flip->flip;
             for (uint_fast8_t cell = first_bit(&f); f; cell = next_bit(&f)){
                 for (i = 0; i < coord_to_feature[cell].n_features; ++i){
-                    if (search->eval_features[coord_to_feature[cell].features[i].feature] / coord_to_feature[cell].features[i].x % 3 != 0)
-                        cerr << "error " << search->eval_features[coord_to_feature[cell].features[i].feature] << " " << coord_to_feature[cell].features[i].x << " " << cell << endl;
+                    //if (search->eval_features[coord_to_feature[cell].features[i].feature] / coord_to_feature[cell].features[i].x % 3 != 0)
+                    //    cerr << "error " << search->eval_features[coord_to_feature[cell].features[i].feature] << " " << coord_to_feature[cell].features[i].x << " " << cell << endl;
                     search->eval_features[coord_to_feature[cell].features[i].feature] += coord_to_feature[cell].features[i].x;
                 }
             }
         } else{
             for (i = 0; i < coord_to_feature[flip->pos].n_features; ++i){
-                if (search->eval_features[coord_to_feature[flip->pos].features[i].feature] / coord_to_feature[flip->pos].features[i].x % 3 != 2)
-                    cerr << "error " << search->eval_features[coord_to_feature[flip->pos].features[i].feature] << " " << coord_to_feature[flip->pos].features[i].x << " " << flip->pos << endl;
+                //if (search->eval_features[coord_to_feature[flip->pos].features[i].feature] / coord_to_feature[flip->pos].features[i].x % 3 != 2)
+                //    cerr << "error " << search->eval_features[coord_to_feature[flip->pos].features[i].feature] << " " << coord_to_feature[flip->pos].features[i].x << " " << flip->pos << endl;
                 search->eval_features[coord_to_feature[flip->pos].features[i].feature] -= 2 * coord_to_feature[flip->pos].features[i].x;
             }
             uint64_t f = flip->flip;
             for (uint_fast8_t cell = first_bit(&f); f; cell = next_bit(&f)){
                 for (i = 0; i < coord_to_feature[cell].n_features; ++i){
-                    if (search->eval_features[coord_to_feature[cell].features[i].feature] / coord_to_feature[cell].features[i].x % 3 != 1)
-                        cerr << "error " << search->eval_features[coord_to_feature[cell].features[i].feature] << " " << coord_to_feature[cell].features[i].x << " " << cell << endl;
+                    //if (search->eval_features[coord_to_feature[cell].features[i].feature] / coord_to_feature[cell].features[i].x % 3 != 1)
+                    //    cerr << "error " << search->eval_features[coord_to_feature[cell].features[i].feature] << " " << coord_to_feature[cell].features[i].x << " " << cell << endl;
                     search->eval_features[coord_to_feature[cell].features[i].feature] -= coord_to_feature[cell].features[i].x;
                 }
             }

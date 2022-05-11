@@ -73,8 +73,10 @@ class Node_child_transpose_table{
     void copy_child_transpose_table(int id, Node_child_transpose_table *from[], Node_child_transpose_table *to[], int s, int e){
         for(int i = s; i < e; ++i){
             if (from[i] != NULL){
-                if (to[i] == NULL)
-                    to[i] = (Node_child_transpose_table*)malloc(sizeof(Node_child_transpose_table));
+                if (to[i] == NULL){
+                    Node_child_transpose_table *p = (Node_child_transpose_table*)malloc(sizeof(Node_child_transpose_table));
+                    to[i] = new(p) Node_child_transpose_table;
+                }
                 to[i]->register_value_with_board(from[i]);
             } else{
                 if (to[i] != NULL)
@@ -227,8 +229,10 @@ class Node_parent_transpose_table{
     void copy_parent_transpose_table(int id, Node_parent_transpose_table *from[], Node_parent_transpose_table *to[], int s, int e){
         for(int i = s; i < e; ++i){
             if (from[i] != NULL){
-                if (to[i] == NULL)
-                    to[i] = (Node_parent_transpose_table*)malloc(sizeof(Node_parent_transpose_table));
+                if (to[i] == NULL){
+                    Node_parent_transpose_table *p = (Node_parent_transpose_table*)malloc(sizeof(Node_parent_transpose_table));
+                    to[i] = new(p) Node_parent_transpose_table;
+                }
                 to[i]->register_value_with_board(from[i]);
             } else{
                 if (to[i] != NULL)
