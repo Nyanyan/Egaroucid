@@ -230,7 +230,8 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
             alpha = max(alpha, g);
             v = g;
             legal ^= 1ULL << best_move;
-        }
+        } else
+            best_move!= TRANSPOSE_TABLE_UNDEFINED;
     }
     if (alpha < beta && legal){
         const int canput = pop_count_ull(legal);
@@ -375,7 +376,8 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
             alpha = max(alpha, g);
             v = g;
             legal ^= 1ULL << best_move;
-        }
+        } else
+            best_move!= TRANSPOSE_TABLE_UNDEFINED;
     }
     if (alpha < beta && legal){
         const int canput = pop_count_ull(legal);

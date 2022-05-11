@@ -2,11 +2,11 @@
 #include "setting.hpp"
 #include "common.hpp"
 #include "board.hpp"
-#include <atomic>
 #if USE_MULTI_THREAD
     #include "thread_pool.hpp"
     #include <future>
 #endif
+#include <mutex>
 
 using namespace std;
 
@@ -17,9 +17,10 @@ using namespace std;
 
 class Node_child_transpose_table{
     private:
-        atomic<uint64_t> player;
-        atomic<uint64_t> opponent;
-        atomic<int> best_move;
+        mutex mtx;
+        uint64_t player;
+        uint64_t opponent;
+        int best_move;
         //atomic<Node_child_transpose_table*> p_n_node;
 
     public:
@@ -28,28 +29,34 @@ class Node_child_transpose_table{
             free(this);
         }
 
-        inline void register_value(const int policy){
-            best_move.store(policy);
+        inline bool register_value(const Board *board, const int policy){
+            lock_guard<mutex> lock(mtx);
+            if (board->player == player && board->opponent == opponent){
+                best_move = policy;
+                return true;
+            }
+            return false;
         }
 
-        inline void register_value(const Board *board, const int policy){
-            player.store(board->player);
-            opponent.store(board->opponent);
-            best_move.store(policy);
+        inline void register_value_with_board(const Board *board, const int policy){
+            lock_guard<mutex> lock(mtx);
+            player = board->player;
+            opponent = board->opponent;
+            best_move = policy;
         }
 
-        inline void register_value(Node_child_transpose_table *from){
-            player.store(from->player);
-            opponent.store(from->opponent);
-            best_move.store(from->best_move);
+        inline void register_value_with_board(Node_child_transpose_table *from){
+            lock_guard<mutex> lock(mtx);
+            player = from->player;
+            opponent = from->opponent;
+            best_move = from->best_move;
         }
 
-        inline int get() const{
-            return best_move.load();
-        }
-
-        inline bool compare(const Board *a) const{
-            return a->player == player.load() && a->opponent == opponent.load();
+        inline int get(const Board *board){
+            lock_guard<mutex> lock(mtx);
+            if (board->player == player && board->opponent == opponent)
+                return best_move;
+            return TRANSPOSE_TABLE_UNDEFINED;
         }
 };
 
@@ -68,7 +75,7 @@ class Node_child_transpose_table{
             if (from[i] != NULL){
                 if (to[i] == NULL)
                     to[i] = (Node_child_transpose_table*)malloc(sizeof(Node_child_transpose_table));
-                to[i]->register_value(from[i]);
+                to[i]->register_value_with_board(from[i]);
             } else{
                 if (to[i] != NULL)
                     to[i]->init();
@@ -114,23 +121,16 @@ class Child_transpose_table{
         #endif
 
         inline void reg(const Board *board, const uint32_t hash, const int policy){
-            if (table[hash] != NULL){
-                if (table[hash]->compare(board))
-                    table[hash]->register_value(policy);
-                else
-                    table[hash]->register_value(board, policy);
-            } else{
-                table[hash] = (Node_child_transpose_table*)malloc(sizeof(Node_child_transpose_table));
-                table[hash]->register_value(board, policy);
+            if (table[hash] == NULL){
+                Node_child_transpose_table *p = (Node_child_transpose_table*)malloc(sizeof(Node_child_transpose_table));
+                table[hash] = new(p) Node_child_transpose_table;
             }
+            table[hash]->register_value_with_board(board, policy);
         }
 
-        inline int get(Board *board, const uint32_t hash) const{
-            if (table[hash] != NULL){
-                if (table[hash]->compare(board)){
-                    return table[hash]->get();
-                }
-            }
+        inline int get(const Board *board, const uint32_t hash) const{
+            if (table[hash] != NULL)
+                return table[hash]->get(board);
             return TRANSPOSE_TABLE_UNDEFINED;
         }
 
@@ -154,7 +154,7 @@ class Child_transpose_table{
                 for(int i = 0; i < TRANSPOSE_TABLE_SIZE; ++i){
                     if (table[i] != NULL){
                         to->table[i] = (Node_child_transpose_table*)malloc(sizeof(Node_child_transpose_table));
-                        to->table[i]->register_value(table[i]);
+                        to->table[i]->register_value_with_board(table[i]);
                     } else{
                         to->table[i] = NULL;
                     }
@@ -166,10 +166,11 @@ class Child_transpose_table{
 
 class Node_parent_transpose_table{
     private:
-        atomic<uint64_t> player;
-        atomic<uint64_t> opponent;
-        atomic<int> lower;
-        atomic<int> upper;
+        mutex mtx;
+        uint64_t player;
+        uint64_t opponent;
+        int lower;
+        int upper;
         //atomic<Node_child_transpose_table*> p_n_node;
 
     public:
@@ -178,32 +179,38 @@ class Node_parent_transpose_table{
             free(this);
         }
 
-        inline void register_value(const Board *board, const int l, const int u){
-            player.store(board->player);
-            opponent.store(board->opponent);
-            lower.store(l);
-            upper.store(u);
+        inline void register_value_with_board(const Board *board, const int l, const int u){
+            lock_guard<mutex> lock(mtx);
+            player = board->player;
+            opponent = board->opponent;
+            lower = l;
+            upper = u;
         }
 
-        inline void register_value(const int l, const int u){
-            lower.store(l);
-            upper.store(u);
+        inline bool register_value(const Board *board, const int l, const int u){
+            lock_guard<mutex> lock(mtx);
+            if (board->player == player && board->opponent == opponent){
+                lower = l;
+                upper = u;
+                return true;
+            }
+            return false;
         }
 
-        inline void register_value(Node_parent_transpose_table *from){
-            player.store(from->player);
-            opponent.store(from->opponent);
-            lower.store(from->lower);
-            upper.store(from->upper);
+        inline void register_value_with_board(Node_parent_transpose_table *from){
+            lock_guard<mutex> lock(mtx);
+            player = from->player;
+            opponent = from->opponent;
+            lower = from->lower;
+            upper = from->upper;
         }
 
-        inline void get(int *l, int *u) const{
-            *l = lower.load();
-            *u = upper.load();
-        }
-
-        inline bool compare(const Board *a) const{
-            return a->player == player.load() && a->opponent == opponent.load();
+        inline void get(const Board *board, int *l, int *u){
+            lock_guard<mutex> lock(mtx);
+            if (board->player == player && board->opponent == opponent){
+                *l = lower;
+                *u = upper;
+            }
         }
 };
 
@@ -222,7 +229,7 @@ class Node_parent_transpose_table{
             if (from[i] != NULL){
                 if (to[i] == NULL)
                     to[i] = (Node_parent_transpose_table*)malloc(sizeof(Node_parent_transpose_table));
-                to[i]->register_value(from[i]);
+                to[i]->register_value_with_board(from[i]);
             } else{
                 if (to[i] != NULL)
                     to[i]->init();
@@ -268,26 +275,18 @@ class Parent_transpose_table{
         #endif
 
         inline void reg(const Board *board, const uint32_t hash, const int l, const int u){
-            if (table[hash] != NULL){
-                if (table[hash]->compare(board))
-                    table[hash]->register_value(l, u);
-                else
-                    table[hash]->register_value(board, l, u);
-            } else{
-                table[hash] = (Node_parent_transpose_table*)malloc(sizeof(Node_parent_transpose_table));
-                table[hash]->register_value(board, l, u);
+            if (table[hash] == NULL){
+                Node_parent_transpose_table *p = (Node_parent_transpose_table*)malloc(sizeof(Node_parent_transpose_table));
+                table[hash] = new(p) Node_parent_transpose_table;
             }
+            table[hash]->register_value_with_board(board, l, u);
         }
 
-        inline void get(Board *board, const uint32_t hash, int *l, int *u) const{
-            if (table[hash] != NULL){
-                if (table[hash]->compare(board)){
-                    table[hash]->get(l, u);
-                    return;
-                }
-            }
+        inline void get(const Board *board, const uint32_t hash, int *l, int *u) const{
             *l = -INF;
             *u = INF;
+            if (table[hash] != NULL)
+                table[hash]->get(board, l, u);
         }
 
         #if USE_MULTI_THREAD
