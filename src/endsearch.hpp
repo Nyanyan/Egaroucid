@@ -548,16 +548,18 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
     int best_move = child_transpose_table.get(&search->board, hash_code);
     int f_best_move = best_move;
     if (best_move != TRANSPOSE_TABLE_UNDEFINED){
-        Flip flip_best;
-        calc_flip(&flip_best, &search->board, best_move);
-        //eval_move(search, &flip);
-        search->board.move(&flip_best);
-            g = -nega_alpha_end(search, -beta, -alpha, false, LEGAL_UNDEFINED, searching);
-        search->board.undo(&flip_best);
-        //eval_undo(search, &flip);
-        alpha = max(alpha, g);
-        v = g;
-        legal ^= 1ULL << best_move;
+        if (1 & (legal >> best_move)){
+            Flip flip_best;
+            calc_flip(&flip_best, &search->board, best_move);
+            //eval_move(search, &flip);
+            search->board.move(&flip_best);
+                g = -nega_alpha_end(search, -beta, -alpha, false, LEGAL_UNDEFINED, searching);
+            search->board.undo(&flip_best);
+            //eval_undo(search, &flip);
+            alpha = max(alpha, g);
+            v = g;
+            legal ^= 1ULL << best_move;
+        }
     }
     if (alpha < beta && legal){
         const int canput = pop_count_ull(legal);
