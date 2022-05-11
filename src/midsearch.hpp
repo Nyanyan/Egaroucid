@@ -131,18 +131,18 @@ int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, b
     int best_move = child_transpose_table.get(&search->board, hash_code);
     int f_best_move = best_move;
     if (best_move != TRANSPOSE_TABLE_UNDEFINED){
-        Flip flip;
-        calc_flip(&flip, &search->board, best_move);
-        eval_move(search, &flip);
-        search->board.move(&flip);
+        Flip flip_best;
+        calc_flip(&flip_best, &search->board, best_move);
+        eval_move(search, &flip_best);
+        search->board.move(&flip_best);
             g = -nega_alpha_ordering_nomemo(search, -beta, -alpha, depth - 1, false, LEGAL_UNDEFINED, searching);
-        search->board.undo(&flip);
-        eval_undo(search, &flip);
+        search->board.undo(&flip_best);
+        eval_undo(search, &flip_best);
         alpha = max(alpha, g);
         v = g;
         legal ^= 1ULL << best_move;
     }
-    if (alpha < beta){
+    if (alpha < beta && legal){
         const int canput = pop_count_ull(legal);
         vector<Flip> move_list(canput);
         int idx = 0;
@@ -217,18 +217,18 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
     int best_move = child_transpose_table.get(&search->board, hash_code);
     int f_best_move = best_move;
     if (best_move != TRANSPOSE_TABLE_UNDEFINED){
-        Flip flip;
-        calc_flip(&flip, &search->board, best_move);
-        eval_move(search, &flip);
-        search->board.move(&flip);
+        Flip flip_best;
+        calc_flip(&flip_best, &search->board, best_move);
+        eval_move(search, &flip_best);
+        search->board.move(&flip_best);
             g = -nega_alpha_ordering(search, -beta, -alpha, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
-        search->board.undo(&flip);
-        eval_undo(search, &flip);
+        search->board.undo(&flip_best);
+        eval_undo(search, &flip_best);
         alpha = max(alpha, g);
         v = g;
         legal ^= 1ULL << best_move;
     }
-    if (alpha < beta){
+    if (alpha < beta && legal){
         const int canput = pop_count_ull(legal);
         vector<Flip> move_list(canput);
         int idx = 0;
@@ -360,18 +360,18 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     int best_move = child_transpose_table.get(&search->board, hash_code);
     int f_best_move = best_move;
     if (best_move != TRANSPOSE_TABLE_UNDEFINED){
-        Flip flip;
-        calc_flip(&flip, &search->board, best_move);
-        eval_move(search, &flip);
-        search->board.move(&flip);
+        Flip flip_best;
+        calc_flip(&flip_best, &search->board, best_move);
+        eval_move(search, &flip_best);
+        search->board.move(&flip_best);
             g = -nega_scout(search, -beta, -alpha, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
-        search->board.undo(&flip);
-        eval_undo(search, &flip);
+        search->board.undo(&flip_best);
+        eval_undo(search, &flip_best);
         alpha = max(alpha, g);
         v = g;
         legal ^= 1ULL << best_move;
     }
-    if (alpha < beta){
+    if (alpha < beta && legal){
         const int canput = pop_count_ull(legal);
         vector<Flip> move_list(canput);
         int idx = 0;
@@ -530,21 +530,21 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
     int f_best_move = best_move;
     const int canput_all = pop_count_ull(legal);
     if (best_move != TRANSPOSE_TABLE_UNDEFINED){
-        Flip flip;
-        calc_flip(&flip, &search->board, best_move);
-        eval_move(search, &flip);
-        search->board.move(&flip);
+        Flip flip_best;
+        calc_flip(&flip_best, &search->board, best_move);
+        eval_move(search, &flip_best);
+        search->board.move(&flip_best);
             g = -nega_scout(search, -beta, -alpha, depth - 1, false, LEGAL_UNDEFINED, is_end_search, &searching);
             cerr << 1 << "/" << canput_all << " " << idx_to_coord(best_move) << " value " << value_to_score_double(g) << endl;
             //search->board.print();
             //cerr << endl;
-        search->board.undo(&flip);
-        eval_undo(search, &flip);
+        search->board.undo(&flip_best);
+        eval_undo(search, &flip_best);
         alpha = max(alpha, g);
         v = g;
         legal ^= 1ULL << best_move;
     }
-    if (alpha < beta){
+    if (alpha < beta && legal){
         const int canput = pop_count_ull(legal);
         int mobility_idx = (v == -INF) ? 1 : 2;
         vector<Flip> move_list(canput);
@@ -637,18 +637,18 @@ int nega_alpha_ordering_single_thread(Search *search, int alpha, int beta, int d
     int best_move = child_transpose_table.get(&search->board, hash_code);
     int f_best_move = best_move;
     if (best_move != TRANSPOSE_TABLE_UNDEFINED){
-        Flip flip;
-        calc_flip(&flip, &search->board, best_move);
-        eval_move(search, &flip);
-        search->board.move(&flip);
+        Flip flip_best;
+        calc_flip(&flip_best, &search->board, best_move);
+        eval_move(search, &flip_best);
+        search->board.move(&flip_best);
             g = -nega_alpha_ordering_single_thread(search, -beta, -alpha, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
-        search->board.undo(&flip);
-        eval_undo(search, &flip);
+        search->board.undo(&flip_best);
+        eval_undo(search, &flip_best);
         alpha = max(alpha, g);
         v = g;
         legal ^= 1ULL << best_move;
     }
-    if (alpha < beta){
+    if (alpha < beta && legal){
         const int canput = pop_count_ull(legal);
         vector<Flip> move_list(canput);
         int idx = 0;
@@ -737,18 +737,18 @@ int nega_scout_single_thread(Search *search, int alpha, int beta, int depth, boo
     int best_move = child_transpose_table.get(&search->board, hash_code);
     int f_best_move = best_move;
     if (best_move != TRANSPOSE_TABLE_UNDEFINED){
-        Flip flip;
-        calc_flip(&flip, &search->board, best_move);
-        eval_move(search, &flip);
-        search->board.move(&flip);
+        Flip flip_best;
+        calc_flip(&flip_best, &search->board, best_move);
+        eval_move(search, &flip_best);
+        search->board.move(&flip_best);
             g = -nega_scout_single_thread(search, -beta, -alpha, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
-        search->board.undo(&flip);
-        eval_undo(search, &flip);
+        search->board.undo(&flip_best);
+        eval_undo(search, &flip_best);
         alpha = max(alpha, g);
         v = g;
         legal ^= 1ULL << best_move;
     }
-    if (alpha < beta){
+    if (alpha < beta && legal){
         const int canput = pop_count_ull(legal);
         vector<Flip> move_list(canput);
         int idx = 0;

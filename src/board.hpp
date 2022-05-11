@@ -391,12 +391,12 @@ void board_init(){
     cerr << "board initialized" << endl;
 }
 
-inline void calc_flip(Flip *flip, Board *b, const int policy){
+inline void calc_flip(Flip *flip, const Board *b, const int policy){
     flip->calc_flip(b->player, b->opponent, policy);
     flip->n_legal = LEGAL_UNDEFINED;
 }
 
-inline Flip calc_flip(Board *b, const int policy){
+inline Flip calc_flip(const Board *b, const int policy){
     Flip flip;
     flip.calc_flip(b->player, b->opponent, policy);
     flip.n_legal = LEGAL_UNDEFINED;
