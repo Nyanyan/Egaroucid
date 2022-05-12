@@ -33,6 +33,13 @@ private:
 public:
 	void draw(vector<History_elem> nodes1, vector<History_elem> nodes2, int place) {
 		calc_range(nodes1, nodes2);
+		bool fix_resolution_flag = false;
+		if (y_max - y_min > 80) {
+			fix_resolution_flag = true;
+			resolution *= 2;
+			y_min -= (y_min + HW2) % resolution;
+			y_max += (resolution - (y_max + HW2) % resolution) % resolution;
+		}
 		for (int y = 0; y <= y_max - y_min; y += resolution) {
 			int yy = sy + y * dy + adj_y * y / (y_max - y_min);
 			font(y_max - y).draw(sx - font(y_max - y).region(Point{ 0, 0 }).w - 12, yy - font(y_max - y).region(Point{ 0, 0 }).h / 2, graph_color);
@@ -54,6 +61,9 @@ public:
 		RoundRect(place_x - 9, sy + size_y, 18, 10, 3).draw(graph_place_color);
 		Line(place_x - 6, sy + size_y + 3, place_x - 6, sy + size_y + 7).draw(2, graph_color);
 		Line(place_x + 6, sy + size_y + 3, place_x + 6, sy + size_y + 7).draw(2, graph_color);
+		if (fix_resolution_flag) {
+			resolution /= 2;
+		}
 	}
 
 	int update_place(vector<History_elem> nodes1, vector<History_elem> nodes2, int place) {
