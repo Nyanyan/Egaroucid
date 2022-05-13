@@ -18,30 +18,30 @@ I did complete searches for this test and got the time to solve it and number of
 
 ### Core i9-11900K, 16 threads
 
-<div style="font-size:60%"><pre>#40 depth 20 value 38 policy a2 nodes 30240013 time 208 nps 145384677
-#41 depth 22 value 0 policy h4 nodes 30934637 time 282 nps 109697294
-#42 depth 22 value 6 policy g2 nodes 38954689 time 323 nps 120602752
-#43 depth 23 value -12 policy c7 nodes 113328845 time 764 nps 148336184
-#44 depth 23 value -14 policy d2 nodes 24596008 time 400 nps 61490020
-#45 depth 24 value 6 policy b2 nodes 597485227 time 2957 nps 202057905
-#46 depth 24 value -8 policy b3 nodes 101741641 time 975 nps 104350401
-#47 depth 25 value 4 policy g2 nodes 55996875 time 568 nps 98586047
-#48 depth 25 value 28 policy f6 nodes 605660062 time 3955 nps 153137815
-#49 depth 26 value 16 policy e1 nodes 798738457 time 4756 nps 167943325
-#50 depth 26 value 10 policy d8 nodes 2343428530 time 13330 nps 175801090
-#51 depth 27 value 6 policy e2 nodes 532335784 time 5417 nps 98271328
-#52 depth 27 value 0 policy a3 nodes 490500268 time 4371 nps 112216945
-#53 depth 28 value -2 policy d8 nodes 4995871831 time 45686 nps 109352358
-#54 depth 28 value -2 policy c7 nodes 8094332723 time 57814 nps 140006446
-#55 depth 29 value 0 policy g6 nodes 19667033928 time 153868 nps 127817570
-#56 depth 29 value 2 policy h5 nodes 1737263912 time 17839 nps 97385722
-#57 depth 30 value -10 policy a6 nodes 5202620937 time 40738 nps 127709287
-#58 depth 30 value 4 policy g1 nodes 2560167511 time 20250 nps 126428025
-#59 depth 34 value 64 policy g8 nodes 2056 time 26 nps 79076
-374.527 sec
-48021233934 nodes
-128218349.90267725 nps</pre></div>
-
+<div style="font-size:60%"><pre>#40 depth 20 value 38 policy a2 nodes 32617519 time 187 nps 174425235
+#41 depth 22 value 0 policy h4 nodes 26560625 time 242 nps 109754648
+#42 depth 22 value 6 policy g2 nodes 51191219 time 360 nps 142197830
+#43 depth 23 value -12 policy c7 nodes 168771687 time 929 nps 181670276
+#44 depth 23 value -14 policy d2 nodes 43705622 time 626 nps 69817287
+#45 depth 24 value 6 policy b2 nodes 973544606 time 4256 nps 228746382
+#46 depth 24 value -8 policy b3 nodes 169047118 time 2315 nps 73022513
+#47 depth 25 value 4 policy g2 nodes 115350803 time 816 nps 141361278
+#48 depth 25 value 28 policy f6 nodes 822747204 time 4137 nps 198875321
+#49 depth 26 value 16 policy e1 nodes 1021389690 time 6387 nps 159916970
+#50 depth 26 value 10 policy d8 nodes 3470416861 time 15945 nps 217649223
+#51 depth 27 value 6 policy a3 nodes 2093326335 time 19308 nps 108417564
+#52 depth 27 value 0 policy a3 nodes 666596389 time 7950 nps 83848602
+#53 depth 28 value -2 policy d8 nodes 12227417145 time 67989 nps 179844050
+#54 depth 28 value -2 policy c7 nodes 13290990536 time 71954 nps 184715103
+#55 depth 29 value 0 policy b7 nodes 41506305139 time 276500 nps 150113219
+#56 depth 29 value 2 policy h5 nodes 3409497345 time 28172 nps 121024327
+#57 depth 30 value -10 policy a6 nodes 13317806725 time 88863 nps 149868974
+#58 depth 30 value 4 policy g1 nodes 4861384409 time 31941 nps 152198879
+#59 depth 34 value 64 policy g8 nodes 2975 time 1624 nps 1831
+630.501 sec
+631.2902810573578 sec total
+98268669952 nodes
+155858071.52090162 nps</pre></div>
 
 
 
@@ -61,13 +61,27 @@ No book used.
 
 if the win rate is over 0.5, Egaroucid win more than Edax do.
 
-Levels are exactly same as Edax 4.4
+### Level 1
 
-<div style="font-size:60%"><pre>level: 1 start depth: 8 Egaroucid plays black WDL: 489-24-487 Egaroucid plays white WDL: 534-27-439 Egaroucid win rate: 0.5248845561826577
-level: 5 start depth: 8 Egaroucid plays black WDL: 582-59-359 Egaroucid plays white WDL: 549-44-407 Egaroucid win rate: 0.5962045334739061
-level: 10 start depth: 8 Egaroucid plays black WDL: 585-119-296 Egaroucid plays white WDL: 443-124-433 Egaroucid win rate: 0.585088218554354
-level: 11 start depth: 8 Egaroucid plays black WDL: 552-132-316 Egaroucid plays white WDL: 501-115-384 Egaroucid win rate: 0.6006845407872219</pre></div>
+Lookahead depth is 1, complete search depth is 2
 
+<div style="font-size:60%"><pre>start depth: 8 Egaroucid plays black WDL: 61-2-67 Egaroucid plays white WDL: 76-3-51 Egaroucid win rate: 0.5372549019607843
+</pre></div>
+
+### Level 5
+
+Lookahead depth is 5, complete search depth is 10
+
+<div style="font-size:60%"><pre>level 5
+start depth: 8 Egaroucid plays black WDL: 68-6-56 Egaroucid plays white WDL: 67-11-52 Egaroucid win rate: 0.5555555555555556</pre></div>
+
+
+### Level 11
+
+Lookahead depth is 11. Selectivity is 73% (to align the conditions, Egaroucid uses the same selectivity as Edax). The depth of complete search is also the same.
+
+<div style="font-size:60%"><pre>level 11
+start depth: 8 Egaroucid plays black WDL: 69-18-43 Egaroucid plays white WDL: 61-15-54 Egaroucid win rate: 0.5726872246696035</pre></div>
 
 
 
@@ -116,5 +130,4 @@ phase 29 mse 4.51746 mae 1.3841</pre></div>
 
 * [5.4.1](./../5_4_1)
 * [5.5.0 and 5.6.0](./../5_5_0)
-* [5.7.0](./../5_7_0)
 
