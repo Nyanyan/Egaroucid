@@ -9,7 +9,7 @@
     },
     "loading": {
         "loading": "起動中...",
-        "load_failed": "起動失敗\nドキュメント内のbookを確認してください"
+        "load_failed": "起動失敗\nbookファイルを確認してください"
     },
     "closing": "終了中...",
     "mode": {
@@ -58,7 +58,10 @@
         "import_explanation": "ドラッグ&ドロップで\nEgaroucid/Edax形式のbookを追加",
         "import_failed": "取り込み失敗",
         "back": "戻る",
-        "loading": "取り込み中..."
+        "loading": "取り込み中...",
+        "book_reference": "bookの参照",
+        "input_book_path": "bookのパスを入力",
+        "use_default": "初期設定"
     },
     "in_out": {
         "in_out": "入出力",
@@ -78,7 +81,7 @@
         "hint": {
             "hint": "ヒント",
             "stone_value": "石差評価",
-            "show_number": "個",
+            "show_number": "個数",
             "show_all": "全部",
             "human_value": "人間的評価",
             "umigame_value": "うみがめ数"

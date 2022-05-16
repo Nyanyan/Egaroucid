@@ -483,7 +483,7 @@ void menu_contents_init_preference(Menu_contents* contents, vector<string> langu
 
 	contents->help.usage = false;
 	contents->help.report = false;
-	contents->help.update_check = true;
+	contents->help.update_check = preference->auto_update_check;
 	contents->help.license = false;
 
 	contents->language.name = languages;

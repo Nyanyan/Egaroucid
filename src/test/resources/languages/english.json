@@ -9,7 +9,7 @@
     },
     "loading": {
         "loading": "Loading...",
-        "load_failed": "Loading Failed\nPlease check the book in Documents."
+        "load_failed": "Loading Failed\nPlease check the book file."
     },
     "closing": "Bye!",
     "mode": {
@@ -58,7 +58,10 @@
         "import_explanation": "Import Egaroucid/Edax book\nby drag-and-drop",
         "import_failed": "Import Failed",
         "back": "Back",
-        "loading": "Importing..."
+        "loading": "Importing...",
+        "book_reference": "Book Reference",
+        "input_book_path": "Please write book path.",
+        "use_default": "Use Default"
     },
     "in_out": {
         "in_out": "In/Out",
@@ -78,9 +81,9 @@
         "hint": {
             "hint": "Hint",
             "stone_value": "Disc Difference",
-            "show_number": "",
+            "show_number": "Quantity",
             "show_all": "All",
-            "human_value": "Human Sense Value",
+            "human_value": "Human Sense",
             "umigame_value": "Umigame's Value"
         },
         "graph": "Graph",
