@@ -123,3 +123,26 @@ void export_preference(Preference* preference) {
 		writer.writeln(Unicode::Widen(preference->book_file));
 	}
 }
+
+void set_default_preference(Preference* preference, string document_dir) {
+	preference->int_mode = 0;
+	preference->use_book = true;
+	preference->ai_level = 15;
+	preference->hint_level = 15;
+	preference->graph_level = 15;
+	preference->error_level = 0;
+	preference->use_ai_mode = 0;
+	preference->use_hint_flag = true;
+	preference->normal_hint = true;
+	preference->human_hint = false;
+	preference->umigame_hint = false;
+	preference->show_end_popup = true;
+	preference->n_thread_idx = min(32, (int)thread::hardware_concurrency());
+	preference->hint_num = HW2;
+	preference->show_log = true;
+	preference->use_graph_flag = true;
+	preference->auto_update_check = true;
+	preference->show_over_joseki = true;
+	preference->lang_name = "japanese";
+	preference->book_file = document_dir + "Egaroucid/book.egbk";
+}

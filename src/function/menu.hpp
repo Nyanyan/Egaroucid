@@ -1,4 +1,7 @@
 ﻿#pragma once
+#include <iostream>
+#include <string>
+#include <vector>
 #include "./../gui/menu.hpp"
 #include "preference.hpp"
 
@@ -112,21 +115,9 @@ struct Menu_contents {
 };
 
 
-Menu create_menu_simple(Menu_contents* contents, Menu *menu) {
+void create_menu_simple(Font menu_font, Menu_contents* contents, Menu *menu) {
 	menu_title title;
 	menu_elem menu_e, side_menu, side_side_menu;
-	Font menu_font(15);
-
-
-	// game
-	title.init(language.get("play", "game"));
-
-	menu_e.init_button(language.get("play", "new_game"), &contents->game.start);
-	title.push(menu_e);
-	menu_e.init_button(language.get("play", "analyze"), &contents->game.analyze);
-	title.push(menu_e);
-
-	menu->push(title);
 
 	// settings
 	title.init(language.get("settings", "settings"));
@@ -195,20 +186,9 @@ Menu create_menu_simple(Menu_contents* contents, Menu *menu) {
 	menu->push(title);
 }
 
-Menu create_menu_professional(Menu_contents* contents, Menu* menu) {
+void create_menu_professional(Font menu_font, Menu_contents* contents, Menu* menu) {
 	menu_title title;
 	menu_elem menu_e, side_menu, side_side_menu;
-	Font menu_font(15);
-
-	// game
-	title.init(language.get("play", "game"));
-
-	menu_e.init_button(language.get("play", "new_game"), &contents->game.start);
-	title.push(menu_e);
-	menu_e.init_button(language.get("play", "analyze"), &contents->game.analyze);
-	title.push(menu_e);
-
-	menu->push(title);
 
 	// settings
 	title.init(language.get("settings", "settings"));
@@ -325,20 +305,9 @@ Menu create_menu_professional(Menu_contents* contents, Menu* menu) {
 	menu->push(title);
 }
 
-Menu create_menu_game(Menu_contents* contents, Menu* menu) {
+void create_menu_game(Font menu_font, Menu_contents* contents, Menu* menu) {
 	menu_title title;
 	menu_elem menu_e, side_menu, side_side_menu;
-	Font menu_font(15);
-
-	// game
-	title.init(language.get("play", "game"));
-
-	menu_e.init_button(language.get("play", "new_game"), &contents->game.start);
-	title.push(menu_e);
-	menu_e.init_button(language.get("play", "analyze"), &contents->game.analyze);
-	title.push(menu_e);
-
-	menu->push(title);
 
 	// settings
 	title.init(language.get("settings", "settings"));
@@ -377,11 +346,10 @@ Menu create_menu_game(Menu_contents* contents, Menu* menu) {
 	menu->push(title);
 }
 
-Menu create_menu(Texture checkbox, Menu_contents *contents) {
+Menu create_menu(Font menu_font, Texture checkbox, Menu_contents *contents) {
 	Menu menu;
 	menu_title title;
 	menu_elem menu_e, side_menu, side_side_menu;
-	Font menu_font(15);
 
 	// mode
 	title.init(language.get("mode", "mode"));
@@ -395,15 +363,24 @@ Menu create_menu(Texture checkbox, Menu_contents *contents) {
 
 	menu.push(title);
 
+	// game
+	title.init(language.get("play", "game"));
+
+	menu_e.init_button(language.get("play", "new_game"), &contents->game.start);
+	title.push(menu_e);
+	menu_e.init_button(language.get("play", "analyze"), &contents->game.analyze);
+	title.push(menu_e);
+
+	menu.push(title);
 
 	if (contents->mode.simple) {
-		create_menu_simple(contents, &menu);
+		create_menu_simple(menu_font, contents, &menu);
 	}
 	else if (contents->mode.professional) {
-		create_menu_professional(contents, &menu);
+		create_menu_professional(menu_font, contents, &menu);
 	}
-	else if (contents->mode.game) {
-		create_menu_game(contents, &menu);
+	else {
+		create_menu_game(menu_font, contents, &menu);
 	}
 
 	// help
@@ -431,68 +408,6 @@ Menu create_menu(Texture checkbox, Menu_contents *contents) {
 	menu.init(0, 0, menu_font, checkbox);
 
 	return menu;
-}
-
-void menu_contents_init_default(Menu_contents* contents, vector<string> languages, bool* language_acts) {
-	contents->dummy = false;
-
-	contents->mode.simple = true;
-	contents->mode.professional = false;
-	contents->mode.game = false;
-
-	contents->game.start = false;
-	contents->game.analyze = false;
-
-	contents->setting.ai.use_book = true;
-	contents->setting.ai.ai_level = 15;
-	contents->setting.ai.hint_level = 15;
-	contents->setting.ai.graph_level = 15;
-	contents->setting.ai.error_level = 0;
-	contents->setting.ai.n_thread = min(32, (int)thread::hardware_concurrency());
-	contents->setting.player.human_first = true;
-	contents->setting.player.ai_first = false;
-	contents->setting.player.both_ai = false;
-	contents->setting.player.both_human = false;
-
-	contents->display.hint = true;
-	contents->display.hint_elem.disc_difference = true;
-	contents->display.hint_elem.n_disc_difference = HW2;
-	contents->display.hint_elem.human_value = false;
-	contents->display.hint_elem.umigame_value = false;
-	contents->display.graph = true;
-	contents->display.joseki_on_cell = true;
-	contents->display.popup_in_end = true;
-	contents->display.log = true;
-
-	contents->joseki.input = false;
-	contents->joseki.reference = false;
-
-	contents->inout.in.record = false;
-	contents->inout.in.board = false;
-	contents->inout.in.edit_board = false;
-	contents->inout.in.game = false;
-	contents->inout.out.record = false;
-	contents->inout.out.game = false;
-
-	contents->manipulate.stop = false;
-	contents->manipulate.resume = false;
-	contents->manipulate.go = false;
-	contents->manipulate.back = false;
-	contents->manipulate.transform_elem.rotate_180 = false;
-	contents->manipulate.transform_elem.black_line = false;
-	contents->manipulate.transform_elem.white_line = false;
-
-	contents->help.usage = false;
-	contents->help.report = false;
-	contents->help.update_check = true;
-	contents->help.license = false;
-
-	contents->language.name = languages;
-	for (int i = 0; i < (int)languages.size(); ++i) {
-		language_acts[i] = false;
-	}
-	language_acts[0] = true;
-	contents->language.acts = language_acts;
 }
 
 void menu_contents_init_preference(Menu_contents* contents, vector<string> languages, bool* language_acts, Preference* preference) {
@@ -586,4 +501,55 @@ void menu_contents_init_preference(Menu_contents* contents, vector<string> langu
 		language_acts[0] = true;
 	}
 	contents->language.acts = language_acts;
+}
+
+void update_preference(Preference* preference, Menu_contents menu_contents) {
+	if (menu_contents.mode.simple) {
+		preference->int_mode = 0;
+	}
+	else if (menu_contents.mode.professional) {
+		preference->int_mode = 1;
+	}
+	else if (menu_contents.mode.game) {
+		preference->int_mode = 2;
+	}
+	else {
+		preference->int_mode = 0;
+	}
+	preference->use_book = menu_contents.setting.ai.use_book;
+	preference->ai_level = menu_contents.setting.ai.ai_level;
+	preference->hint_level = menu_contents.setting.ai.hint_level;
+	preference->graph_level = menu_contents.setting.ai.graph_level;
+	preference->error_level = menu_contents.setting.ai.error_level;
+	if (menu_contents.setting.player.human_first) {
+		preference->use_ai_mode = 0;
+	}
+	else if (menu_contents.setting.player.ai_first) {
+		preference->use_ai_mode = 1;
+	}
+	else if (menu_contents.setting.player.both_ai) {
+		preference->use_ai_mode = 2;
+	}
+	else if (menu_contents.setting.player.both_human) {
+		preference->use_ai_mode = 3;
+	}
+	else {
+		preference->use_ai_mode = 0;
+	}
+	preference->use_hint_flag = menu_contents.display.hint;
+	preference->normal_hint = menu_contents.display.hint_elem.disc_difference;
+	preference->human_hint = menu_contents.display.hint_elem.human_value;
+	preference->umigame_hint = menu_contents.display.hint_elem.umigame_value;
+	preference->show_end_popup = menu_contents.display.popup_in_end;
+	preference->n_thread_idx = menu_contents.setting.ai.n_thread;
+	preference->hint_num = menu_contents.display.hint_elem.n_disc_difference;
+	preference->show_log = menu_contents.display.log;
+	preference->use_graph_flag = menu_contents.display.graph;
+	preference->auto_update_check = menu_contents.help.update_check;
+	preference->show_over_joseki = menu_contents.display.joseki_on_cell;
+	for (int i = 0; i < (int)menu_contents.language.name.size(); ++i) {
+		if (menu_contents.language.acts[i]) {
+			preference->lang_name = menu_contents.language.name[i];
+		}
+	}
 }
