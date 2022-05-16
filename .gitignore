@@ -22,3 +22,4 @@ src/*.exe
 src/test/close_quest.txt
 src/test/ignore
 /installer
+/evaluation_test/*.dat
