@@ -318,6 +318,8 @@ void create_menu_game(Font menu_font, Menu_contents* contents, Menu* menu) {
 	menu_e.init_button(language.get("ai_settings", "ai_settings"), &contents->dummy);
 	side_menu.init_bar(language.get("ai_settings", "ai_level"), &contents->setting.ai.ai_level, contents->setting.ai.ai_level, 0, 20);
 	menu_e.push(side_menu);
+	side_menu.init_bar(language.get("ai_settings", "error_level"), &contents->setting.ai.error_level, contents->setting.ai.error_level, 0, 25);
+	menu_e.push(side_menu);
 	side_menu.init_bar(language.get("settings", "thread", "thread"), &contents->setting.ai.n_thread, contents->setting.ai.n_thread, 1, 32);
 	menu_e.push(side_menu);
 	title.push(menu_e);
@@ -337,6 +339,9 @@ void create_menu_game(Font menu_font, Menu_contents* contents, Menu* menu) {
 
 	// display
 	title.init(language.get("display", "display"));
+
+	menu_e.init_check(language.get("display", "graph"), &contents->display.graph, contents->display.graph);
+	title.push(menu_e);
 
 	menu_e.init_check(language.get("display", "end_popup"), &contents->display.popup_in_end, contents->display.popup_in_end);
 	title.push(menu_e);

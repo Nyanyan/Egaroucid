@@ -1401,9 +1401,9 @@ void Main() {
 	Window::SetTitle(U"Egaroucid {}"_fmt(EGAROUCID_VERSION));
 	System::SetTerminationTriggers(UserAction::NoAction);
 	Scene::SetBackground(green);
-	Console.open();
+	//Console.open();
 	stringstream logger_stream;
-	//cerr.rdbuf(logger_stream.rdbuf());
+	cerr.rdbuf(logger_stream.rdbuf());
 	string logger;
 	String logger_String;
 
@@ -1616,13 +1616,14 @@ void Main() {
 
 	while (System::Update()) {
 
-
 		/*** log ***/
-		while (getline(logger_stream, logger))
+		while (getline(logger_stream, logger)) {
 			logger_String = Unicode::Widen(logger);
+		}
 		logger_stream.clear();
-		if (menu_contents.display.log)
+		if (menu_contents.display.log) {
 			font15(logger_String).draw(Arg::bottomLeft(5, 720), font_color);
+		}
 		/*** log ***/
 
 
@@ -1961,12 +1962,14 @@ void Main() {
 					if (moved_board.first != -1) {
 						bool next_fork_mode = (!fork_mode && history_place != history[history.size() - 1].b.n - 4);
 						int v = -INF, v_prev = -INF;
-						for (int cell = 0; cell < HW2; ++cell) {
-							if ((1 & (hint_legal >> cell)) && hint_state > 0 && menu_contents.display.hint) {
-								if (board_clicked[cell]) {
-									v = (bd.p ? -1 : 1) * hint_value[cell];
+						if (menu_contents.display.hint && menu_contents.display.hint_elem.disc_difference && !menu_contents.mode.game) {
+							for (int cell = 0; cell < HW2; ++cell) {
+								if ((1 & (hint_legal >> cell)) && hint_state > 0 && menu_contents.display.hint) {
+									if (board_clicked[cell]) {
+										v = (bd.p ? -1 : 1) * hint_value[cell];
+									}
+									v_prev = max(v_prev, hint_value[cell]);
 								}
-								v_prev = max(v_prev, hint_value[cell]);
 							}
 						}
 						if (v_prev != -INF) {
@@ -2292,7 +2295,7 @@ void Main() {
 					if (ai_thinking) {
 						if (ai_future.wait_for(chrono::seconds(0)) == future_status::ready) {
 							Search_result ai_result = ai_future.get();
-							int sgn = (bd.p ? -1 : 1);
+							int sgn = (bd.p ? 1 : -1);
 							Flip flip;
 							calc_flip(&flip, &bd, ai_result.policy);
 							bd.move(&flip);
@@ -2300,10 +2303,7 @@ void Main() {
 								popup_start_time = tim();
 							}
 							int v = sgn * ai_result.value;
-							if (history.size()) {
-								history[history.size() - 1].v = v;
-							}
-							History_elem hist_tmp = { bd, -INF, flip.pos, history[history.size() - 1].record + str_record(flip.pos) };
+							History_elem hist_tmp = { bd, v, flip.pos, history[history.size() - 1].record + str_record(flip.pos) };
 							history.emplace_back(hist_tmp);
 							history_place = bd.n - 4;
 							ai_thinking = false;
@@ -2314,7 +2314,7 @@ void Main() {
 						}
 					}
 					else if (global_searching) {
-						ai_future = async(launch::async, ai, bd, menu_contents.setting.ai.ai_level, menu_contents.setting.ai.use_book, 0);
+						ai_future = async(launch::async, ai, bd, menu_contents.setting.ai.ai_level, menu_contents.setting.ai.use_book, menu_contents.mode.game ? menu_contents.setting.ai.error_level : 0);
 						ai_thinking = true;
 					}
 				}

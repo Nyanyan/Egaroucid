@@ -199,24 +199,13 @@ inline bool cache_search(Board b, int *val, int *best_move){
     return *best_move != TRANSPOSE_TABLE_UNDEFINED;
 }
 
-double val_to_prob(int val, int error_level){
-    switch (error_level){
-        case 1: return (double)(val + SCORE_MAX) * (val + SCORE_MAX) * (val + SCORE_MAX);
-        case 2: return (double)(val + SCORE_MAX) * (val + SCORE_MAX);
-        case 3: return (double)(val + SCORE_MAX);
-        case 4: return sqrt((double)(val + SCORE_MAX));
-        case 5: return cbrt((double)(val + SCORE_MAX));
-    }
+double val_to_prob(int val, int error_level, int min_val, int max_val){
+    double dval = (double)(val - min_val + 1) / (max_val - min_val + 1);
+    return exp((26.0 - error_level) * dval);
 }
 
-int prob_to_val(double val, int error_level){
-    switch (error_level){
-        case 1: return round(cbrt(val) - SCORE_MAX);
-        case 2: return round(sqrt(val) - SCORE_MAX);
-        case 3: return round(val - SCORE_MAX);
-        case 4: return round(val * val - SCORE_MAX);
-        case 5: return round(val * val * val - SCORE_MAX);
-    }
+int prob_to_val(double val, int error_level, int min_val, int max_val){
+    return round(log(val) / (26.0 - error_level) * (max_val - min_val + 1) + min_val - 1);
 }
 
 Search_result ai(Board b, int level, bool use_book, int error_level){
@@ -282,29 +271,38 @@ Search_result ai(Board b, int level, bool use_book, int error_level){
         search.use_mpc = use_mpc;
         search.mpct = mpct;
         double p_sum = 0.0;
+        int min_val = INF;
+        int max_val = -INF;
         for (uint8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
             calc_flip(&flip, &b, cell);
             b.move(&flip);
-                v = -book.get(&b);
-                if (v == INF){
+                v = book.get(&b);
+                if (v == -INF){
                     search.board = b;
                     calc_features(&search);
-                    v = nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth, false, LEGAL_UNDEFINED, !is_mid_search, &searching);
+                    v = -nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth, false, LEGAL_UNDEFINED, !is_mid_search, &searching);
                 }
+                //cerr << idx_to_coord((int)cell) << " " << v << endl;
             b.undo(&flip);
-            probabilities.emplace_back(make_pair((int)cell, val_to_prob(v, error_level)));
-            p_sum += val_to_prob(v, error_level);
+            probabilities.emplace_back(make_pair((int)cell, v));
+            max_val = max(max_val, v);
+            min_val = min(min_val, v);
+        }
+        for (pair<int, double> &elem: probabilities){
+            elem.second = val_to_prob(elem.second, error_level, min_val, max_val);
+            p_sum += elem.second;
         }
         double prob = myrandom();
         double p = 0.0;
         for (pair<int, double> &elem: probabilities){
+            //cerr << idx_to_coord(elem.first) << " " << elem.second / p_sum << endl;
             p += elem.second / p_sum;
             if (p >= prob){
                 res.depth = depth;
                 res.nodes = search.n_nodes;
                 res.nps = 0;
                 res.policy = elem.first;
-                res.value = (b.p ? -1 : 1) * value_to_score_int(prob_to_val(elem.second, error_level));
+                res.value = (b.p ? -1 : 1) * value_to_score_int(prob_to_val(elem.second, error_level, min_val, max_val));
                 break;
             }
         }
