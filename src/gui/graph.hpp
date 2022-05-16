@@ -114,6 +114,8 @@ private:
 		}
 		y_min -= (y_min + HW2) % resolution;
 		y_max += (resolution - (y_max + HW2) % resolution) % resolution;
+		y_min = max(-HW2, y_min);
+		y_max = min(HW2, y_max);
 		dy = size_y / (y_max - y_min);
 		dx = size_x / 60;
 		adj_y = size_y - dy * (y_max - y_min);
@@ -123,7 +125,7 @@ private:
 	void draw_graph(vector<History_elem> nodes, Color color, bool show_not_calculated) {
 		vector<pair<int, int>> values;
 		for (const History_elem& b : nodes) {
-			if (b.v != -INF) {
+			if (abs(b.v) <= HW2) {
 				int xx = sx + (b.b.n - 4) * dx + (b.b.n - 4) * adj_x / 60;
 				int yy = sy + (y_max - b.v) * dy + adj_y * (y_max - b.v) / (y_max - y_min);
 				values.emplace_back(make_pair(xx, yy));
