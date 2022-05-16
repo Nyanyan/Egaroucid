@@ -1401,9 +1401,9 @@ void Main() {
 	Window::SetTitle(U"Egaroucid {}"_fmt(EGAROUCID_VERSION));
 	System::SetTerminationTriggers(UserAction::NoAction);
 	Scene::SetBackground(green);
-	//Console.open();
+	Console.open();
 	stringstream logger_stream;
-	cerr.rdbuf(logger_stream.rdbuf());
+	//cerr.rdbuf(logger_stream.rdbuf());
 	string logger;
 	String logger_String;
 

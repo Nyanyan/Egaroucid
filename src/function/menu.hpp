@@ -390,7 +390,7 @@ Menu create_menu(Font menu_font, Texture checkbox, Menu_contents *contents) {
 	title.push(menu_e);
 	menu_e.init_button(language.get("help", "bug_report"), &contents->help.report);
 	title.push(menu_e);
-	menu_e.init_check(language.get("help", "auto_update_check"), &contents->help.update_check, contents->help.usage);
+	menu_e.init_check(language.get("help", "auto_update_check"), &contents->help.update_check, contents->help.update_check);
 	title.push(menu_e);
 	menu_e.init_button(language.get("help", "license"), &contents->help.license);
 	title.push(menu_e);

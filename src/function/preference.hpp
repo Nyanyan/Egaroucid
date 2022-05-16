@@ -94,6 +94,10 @@ bool import_preference(Preference* preference) {
 	imported &= import_preference_elem_with_check(&reader, &preference->show_over_joseki);
 	imported &= import_preference_elem_with_check(&reader, &preference->lang_name);
 	imported &= import_preference_elem_with_check(&reader, &preference->book_file);
+	String line;
+	if (reader.readLine(line)) {
+		return false;
+	}
 	return imported;
 }
 
