@@ -289,7 +289,7 @@ Search_result ai(Board b, int level, bool use_book, int error_level){
                 if (v == INF){
                     search.board = b;
                     calc_features(&search);
-                    v = -nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth, false, LEGAL_UNDEFINED, !is_mid_search, &searching);
+                    v = nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth, false, LEGAL_UNDEFINED, !is_mid_search, &searching);
                 }
             b.undo(&flip);
             probabilities.emplace_back(make_pair((int)cell, val_to_prob(v, error_level)));
@@ -304,7 +304,7 @@ Search_result ai(Board b, int level, bool use_book, int error_level){
                 res.nodes = search.n_nodes;
                 res.nps = 0;
                 res.policy = elem.first;
-                res.value = value_to_score_int(prob_to_val(elem.second, error_level));
+                res.value = (b.p ? -1 : 1) * value_to_score_int(prob_to_val(elem.second, error_level));
                 break;
             }
         }
