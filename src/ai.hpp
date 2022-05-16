@@ -199,49 +199,113 @@ inline bool cache_search(Board b, int *val, int *best_move){
     return *best_move != TRANSPOSE_TABLE_UNDEFINED;
 }
 
-Search_result ai(Board b, int level, bool use_book, int book_error){
+double val_to_prob(int val, int error_level){
+    switch (error_level){
+        case 1: return (double)(val + SCORE_MAX) * (val + SCORE_MAX) * (val + SCORE_MAX);
+        case 2: return (double)(val + SCORE_MAX) * (val + SCORE_MAX);
+        case 3: return (double)(val + SCORE_MAX);
+        case 4: return sqrt((double)(val + SCORE_MAX));
+        case 5: return cbrt((double)(val + SCORE_MAX));
+    }
+}
+
+int prob_to_val(double val, int error_level){
+    switch (error_level){
+        case 1: return round(cbrt(val) - SCORE_MAX);
+        case 2: return round(sqrt(val) - SCORE_MAX);
+        case 3: return round(val - SCORE_MAX);
+        case 4: return round(val * val - SCORE_MAX);
+        case 5: return round(val * val * val - SCORE_MAX);
+    }
+}
+
+Search_result ai(Board b, int level, bool use_book, int error_level){
     Search_result res;
-    Book_value book_result = book.get_random(&b, book_error);
-    if (book_result.policy != -1 && use_book){
-        cerr << "BOOK " << book_result.policy << " " << book_result.value << endl;
-        res.policy = book_result.policy;
-        res.value = book_result.value;
-        res.depth = SEARCH_BOOK;
-        res.nps = 0;
-    } else if (level == 0){
-        uint64_t legal = b.get_legal();
-        vector<int> move_lst;
-        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
-            move_lst.emplace_back(cell);
-        res.policy = move_lst[myrandrange(0, (int)move_lst.size())];
-        res.value = mid_evaluate(&b);
-        res.depth = 0;
-        res.nps = 0;
+    if (error_level == 0){
+        Book_value book_result = book.get_random(&b, 0);
+        if (book_result.policy != -1 && use_book){
+            cerr << "BOOK " << book_result.policy << " " << book_result.value << endl;
+            res.policy = book_result.policy;
+            res.value = book_result.value;
+            res.depth = SEARCH_BOOK;
+            res.nps = 0;
+        } else if (level == 0){
+            uint64_t legal = b.get_legal();
+            vector<int> move_lst;
+            for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
+                move_lst.emplace_back(cell);
+            res.policy = move_lst[myrandrange(0, (int)move_lst.size())];
+            res.value = mid_evaluate(&b);
+            res.depth = 0;
+            res.nps = 0;
+        } else{
+            int depth;
+            bool use_mpc, is_mid_search;
+            double mpct;
+            get_level(level, b.n - 4, &is_mid_search, &depth, &use_mpc, &mpct);
+            cerr << "level status " << level << " " << b.n - 4 << " " << depth << " " << use_mpc << " " << mpct << endl;
+            bool cache_hit = false;
+            if (!is_mid_search && !use_mpc){
+                int val, best_move;
+                if (cache_search(b, &val, &best_move)){
+                    res.depth = depth;
+                    res.nodes = 0;
+                    res.nps = 0;
+                    res.policy = best_move;
+                    res.value = value_to_score_int(val);
+                    cache_hit = true;
+                    cerr << "cache hit depth " << depth << " value " << value_to_score_double(val) << " policy " << idx_to_coord(best_move) << endl;
+                }
+            }
+            if (!cache_hit){
+                res = tree_search(b, depth, use_mpc, mpct, true);
+                if (!is_mid_search && !use_mpc && depth > END_FAST_DEPTH){
+                    parent_transpose_table.copy(&bak_parent_transpose_table);
+                    child_transpose_table.copy(&bak_child_transpose_table);
+                    cerr << "cache saved" << endl;
+                }
+            }
+        }
     } else{
+        uint64_t legal = b.get_legal();
+        int n_legal = pop_count_ull(legal);
+        vector<pair<int, double>> probabilities;
+        Flip flip;
+        int v;
         int depth;
         bool use_mpc, is_mid_search;
         double mpct;
         get_level(level, b.n - 4, &is_mid_search, &depth, &use_mpc, &mpct);
-        cerr << "level status " << level << " " << b.n - 4 << " " << depth << " " << use_mpc << " " << mpct << endl;
-        bool cache_hit = false;
-        if (!is_mid_search && !use_mpc){
-            int val, best_move;
-            if (cache_search(b, &val, &best_move)){
-                res.depth = depth;
-                res.nodes = 0;
-                res.nps = 0;
-                res.policy = best_move;
-                res.value = value_to_score_int(val);
-                cache_hit = true;
-                cerr << "cache hit depth " << depth << " value " << value_to_score_double(val) << " policy " << idx_to_coord(best_move) << endl;
-            }
+        bool searching = true;
+        Search search;
+        search.n_nodes = 0;
+        search.use_mpc = use_mpc;
+        search.mpct = mpct;
+        double p_sum = 0.0;
+        for (uint8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+            calc_flip(&flip, &b, cell);
+            b.move(&flip);
+                v = -book.get(&b);
+                if (v == INF){
+                    search.board = b;
+                    calc_features(&search);
+                    v = -nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth, false, LEGAL_UNDEFINED, !is_mid_search, &searching);
+                }
+            b.undo(&flip);
+            probabilities.emplace_back(make_pair((int)cell, val_to_prob(v, error_level)));
+            p_sum += val_to_prob(v, error_level);
         }
-        if (!cache_hit){
-            res = tree_search(b, depth, use_mpc, mpct, true);
-            if (!is_mid_search && !use_mpc && depth > END_FAST_DEPTH){
-                parent_transpose_table.copy(&bak_parent_transpose_table);
-                child_transpose_table.copy(&bak_child_transpose_table);
-                cerr << "cache saved" << endl;
+        double prob = myrandom();
+        double p = 0.0;
+        for (pair<int, double> &elem: probabilities){
+            p += elem.second / p_sum;
+            if (p >= prob){
+                res.depth = depth;
+                res.nodes = search.n_nodes;
+                res.nps = 0;
+                res.policy = elem.first;
+                res.value = value_to_score_int(prob_to_val(elem.second, error_level));
+                break;
             }
         }
     }
