@@ -190,7 +190,7 @@ void closing_draw(Font font, Font small_font, Texture icon, Texture logo, bool t
 	font(language.get("closing")).draw(right_left, y_center + font.fontSize(), font_color);
 }
 
-void board_draw(Rect board_cells[], History_elem b, int next_policy, 
+void board_draw(Rect board_cells[], History_elem b, int next_policy,
 	const int hint_state, const uint64_t hint_legal, const int hint_value[], const int hint_depth[], const bool hint_best_moves[], Font huge_font, Font normal_font, Font small_font, Font big_font, Font mini_font, Font coord_font,
 	bool before_start_game,
 	const int umigame_state[], const umigame_result umigame_value[],
@@ -612,7 +612,7 @@ int import_record_popup(Font big_font, Font mid_font, Font small_font, String* r
 	constexpr int textbox_height = 40;
 	RoundRect(sx, sy, popup_import_width, popup_import_height, popup_r).draw(popup_color);
 	big_font(language.get("in_out", "input_record")).draw(Arg::center(x_center, sy + 40), popup_font_color);
-	Rect text_area{ sx + 25, sy + 100, popup_import_width - 50, 200};
+	Rect text_area{ sx + 25, sy + 100, popup_import_width - 50, 200 };
 	text_area.draw(textbox_active_color).drawFrame(2, popup_frame_color);
 	TextInput::UpdateText(*record);
 	bool return_pressed = false;
@@ -719,7 +719,7 @@ void reset_ai(bool* ai_thinking, future<Search_result>* ai_future) {
 	}
 }
 
-void reset_analyze(bool* analyzing, int *analyze_state, future<Cell_value>* analyze_future, future<Human_value>* analyze_stab_future) {
+void reset_analyze(bool* analyzing, int* analyze_state, future<Cell_value>* analyze_future, future<Human_value>* analyze_stab_future) {
 	if (*analyzing) {
 		global_searching = false;
 		if (*analyze_state == 1) {
@@ -843,7 +843,7 @@ pair<bool, Board> import_board(String board_str) {
 }
 
 #ifdef _WIN64
-int get_localtime(tm *a, time_t *b) {
+int get_localtime(tm* a, time_t* b) {
 	return localtime_s(a, b);
 }
 #else
@@ -907,8 +907,8 @@ bool close_app(int* hint_state, future<bool>* hint_future,
 	int umigame_state[], future<umigame_result> umigame_future[],
 	int* human_value_state, future<void>* human_value_future,
 	bool* ai_thinking, future<Search_result>* ai_future,
-	bool* analyzing, int *analyze_state, future<Cell_value>* analyze_future, future<Human_value>* analyze_human_future,
-	Preference *preference, bool book_changed) {
+	bool* analyzing, int* analyze_state, future<Cell_value>* analyze_future, future<Human_value>* analyze_human_future,
+	Preference* preference, bool book_changed) {
 	reset_hint(hint_state, hint_future);
 	reset_umigame(umigame_state, umigame_future);
 	reset_human_value(human_value_state, human_value_future);
@@ -1007,7 +1007,7 @@ bool show_new_version_available(Font font, String new_version) {
 	return !(close_button.clicked() || KeyEscape.pressed());
 }
 
-bool edit_board_draw(Board *b, Font coord_font, Font font, Radio_Button *player_radio, Radio_Button *stone_radio, uint64_t strt) {
+bool edit_board_draw(Board* b, Font coord_font, Font font, Radio_Button* player_radio, Radio_Button* stone_radio, uint64_t strt) {
 	String coord_x = U"abcdefgh";
 	int b_sx, b_sy, b_coord_size, b_cell_size, s_size, l_size;
 	b_sx = big_board_sx;
@@ -1071,7 +1071,7 @@ bool edit_board_draw(Board *b, Font coord_font, Font font, Radio_Button *player_
 	return !(close_button.clicked() || KeyEnter.pressed());
 }
 
-bool operator< (const pair<int, Board> &a, const pair<int, Board> &b){
+bool operator< (const pair<int, Board>& a, const pair<int, Board>& b) {
 	return a.first < b.first;
 };
 
@@ -1255,7 +1255,7 @@ void get_saved_games(string document_dir, vector<Game>& games) {
 	cerr << games.size() << " games found" << endl;
 }
 
-int import_game_draw(vector<Game>& games, Board* bd, vector<History_elem>& history, vector<History_elem>& fork_history, Font mid_font, Font small_font, Font tiny_font, int *show_start_idx) {
+int import_game_draw(vector<Game>& games, Board* bd, vector<History_elem>& history, vector<History_elem>& fork_history, Font mid_font, Font small_font, Font tiny_font, int* show_start_idx) {
 	mid_font(language.get("in_out", "input_game")).draw(Arg::topCenter = Vec2(x_center, 10));
 	if (games.size() == 0) {
 		mid_font(language.get("in_out", "no_game_available")).draw(Arg::center = Vec2(x_center, y_center));
@@ -1301,7 +1301,7 @@ int import_game_draw(vector<Game>& games, Board* bd, vector<History_elem>& histo
 					break;
 				}
 			}
-			tiny_font(memo_preview).draw(Arg::leftCenter = Vec2{area.x + area.w + 10, sy + h / 2}, Palette::White);
+			tiny_font(memo_preview).draw(Arg::leftCenter = Vec2{ area.x + area.w + 10, sy + h / 2 }, Palette::White);
 			tiny_font(games[j].date.substr(0, 10)).draw(Arg::leftCenter = Vec2{ 600, sy + h / 2 }, Palette::White);
 			tiny_font(language.get("in_out", "score") + U": ").draw(Arg::leftCenter = Vec2{ 700, sy + h / 2 }, Palette::White);
 			area = tiny_font(language.get("in_out", "score") + U": ").region(Arg::leftCenter = Vec2{ 700, sy + h / 2 });
@@ -1337,7 +1337,7 @@ int import_game_draw(vector<Game>& games, Board* bd, vector<History_elem>& histo
 	return 0;
 }
 
-int change_book_path_draw(string *book_file, Font big_font, Font mid_font, string default_book_file) {
+int change_book_path_draw(string* book_file, Font big_font, Font mid_font, string default_book_file) {
 	big_font(language.get("book", "input_book_path")).draw(Arg::topCenter = Vec2(x_center, 15));
 	Rect text_area{ x_center - 400, 80, 800, 500 };
 	text_area.draw(textbox_active_color).drawFrame(2, popup_frame_color);
@@ -1680,7 +1680,7 @@ void Main() {
 				menu = create_menu(font15, checkbox, &menu_contents);
 				start_game_button.init(start_game_button_x, start_game_button_y, start_game_button_w, start_game_button_h, start_game_button_r, language.get("button", "start_game"), font15, button_color, button_font_color);
 				tips = language.get_random("tips", "tips");
-				
+
 				lang_initialized = 2;
 			}
 			else if (lang_initialized == 2) {
@@ -2446,7 +2446,7 @@ void Main() {
 						if ((int)history.size() > analyze_idx + 1) {
 							next_policy = history[analyze_idx + 1].policy;
 						}
-						board_draw(board_cells, history[analyze_idx], next_policy, 
+						board_draw(board_cells, history[analyze_idx], next_policy,
 							hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, font30, normal_hint_font, small_hint_font, font25, mini_hint_font, board_coord_font,
 							before_start_game,
 							umigame_state, umigame_value,
@@ -2694,7 +2694,7 @@ void Main() {
 			/*** importing board ***/
 
 			/*** ai stop calculating ***/
-			if (ai_thinking && (menu_contents.setting.player.both_ai || (menu_contents.setting.player.human_first && bd.p == BLACK) || (menu_contents.setting.player.ai_first && bd.p == WHITE))) {
+			if (ai_thinking && (menu_contents.setting.player.both_human || (menu_contents.setting.player.human_first && bd.p == BLACK) || (menu_contents.setting.player.ai_first && bd.p == WHITE))) {
 				reset_hint(&hint_state, &hint_future);
 				reset_umigame(umigame_state, umigame_future);
 				reset_human_value(&human_value_state, &human_value_future);
