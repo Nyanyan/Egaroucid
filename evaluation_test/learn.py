@@ -221,6 +221,9 @@ for file in input_files:
             else:
                 f.read(4 * (n_raw_data_input + 1))
 
+#print(all_data_idx)
+#print(all_labels_raw)
+
 #plt.plot(range(-64, 65), score_arr)
 #plt.show()
 #plt.clf()
@@ -250,6 +253,11 @@ for data_idx in trange(len(all_labels_raw)):
         pattern_unzipped = idx2mobility(idx)
         all_data[n_raw_patterns + n_additional_features + mobility_idx][data_idx] = np.array(pattern_unzipped)
     all_labels[data_idx] = all_labels_raw[data_idx] / 64
+
+#print(all_data)
+#print(all_labels)
+
+#exit()
 
 #print([all_data[i].shape for i in range(n_raw_data)], all_labels.shape)
 #for i in range(n_raw_data):
@@ -306,13 +314,14 @@ pre_calc_data = [np.zeros((65536, input_sizes_raw[i]), float) for i in range(n_r
 for idx in trange(65536):
     for pattern_idx in range(n_patterns):
         if idx < feature_actual_sizes[pattern_idx]:
-            #print(idx2pattern2(pattern_idx, idx))
-            pre_calc_data[feature_idxes[pattern_idx]][idx] = np.array(idx2pattern2(pattern_idx, idx))
+            pattern_unzipped = idx2pattern(feature_idxes[pattern_idx], idx)
+            pre_calc_data[feature_idxes[pattern_idx]][idx] = np.array(pattern_unzipped)
     for additional_feature in range(n_additional_features):
         if idx < feature_actual_sizes[n_patterns + additional_feature]:
             pre_calc_data[feature_idxes[n_patterns + additional_feature]][idx] = np.array([(idx // additional_feature_mul[additional_feature]) / additional_feature_mul[additional_feature], (idx % additional_feature_mul[additional_feature]) / additional_feature_mul[additional_feature]])
     for mobility_idx in range(n_mobility):
-        pre_calc_data[feature_idxes[n_patterns + n_additional_features + mobility_idx]][idx] = np.array(idx2mobility(idx))
+        pattern_unzipped = idx2mobility(idx)
+        pre_calc_data[feature_idxes[n_patterns + n_additional_features + mobility_idx]][idx] = np.array(pattern_unzipped)
 
 last_layer_model = Model(inputs=model.input, outputs=model.get_layer('last_layer').input)
 predictions = last_layer_model.predict(pre_calc_data, batch_size = 4096)
@@ -332,20 +341,42 @@ with open('learned_data/' + str(use_phase) + '_' + str(n_dense_pattern) + '.txt'
             n_lines += 1
 print('done', n_lines, plus_elem)
 
+
 '''
-
 # test prediction
-pred_in_idx = [[1080], [2952], [338], [2308], [243], [3270], [768], [2280], [255], [2919], [1002], [2952], [111], [117], [30], [12], [336], [336], [27], [111], [977], [741], [94], [279], [3200], [2187], [29523], [26244], [16], [37182], [29268], [29160], [46524], [30], [29523], [19687], [199], [19858], [28756], [19927], [85], [49215], [9586], [9477], [30], [15907], [29523], [6562], [19699], [37182], [29430], [29403], [46116], [0], [27306], [26328], [354], [51313], [27325], [26356], [336], [51313], [1], [2], [2], [1], [10], [10], [33], [29], [1], [0], [515], [0], [257], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0]]
-pred_in_idx = [arr[0] for arr in pred_in_idx]
-print(pred_in_idx)
-print(len(pred_in_idx))
-pred_in_feature = []
-for pattern_idx in range(n_raw_patterns):
-    pred_in_feature.append(np.array([idx2pattern(pattern_idx, pred_in_idx[pattern_idx])]))
-for additional_feature in range(n_additional_features):
-    pred_in_feature.append(np.array([[pred_in_idx[n_raw_patterns + additional_feature * 2] / additional_feature_mul[additional_feature], pred_in_idx[n_patterns + additional_feature * 2 + 1] / additional_feature_mul[additional_feature]]]))
-for mobility_idx in range(n_raw_mobility):
-    pred_in_feature.append(np.array([idx2mobility(pred_in_idx[n_raw_patterns + n_additional_features * 2 + mobility_idx])]))
+pred_in_idx = [[6560, 6560], [6560, 6560], [6560, 6560], [6560, 6560], [6560, 6560], [6560, 6479], [6560, 6560], [6560, 6560], [6425, 6209], [6425, 6452], [6371, 6425], [6371, 6425], [242, 242], [242, 242], [242, 242], [242, 242], [728, 728], [728, 719], [728, 728], [728, 728], [2132, 2159], [2159, 2159], [2132, 2078], [2159, 2132], [6452, 6425], [6344, 6452], [59048, 59048], [59048, 59048], [59048, 59048], [59048, 59048], [59048, 59048], [59048, 59048], [59048, 59048], [59048, 59048], [59048, 59048], [59048, 59048], [59048, 59048], [59048, 59048], [58319, 58318], [57590, 58319], [57590, 58319], [58319, 57590], [19682, 19682], [19682, 19682], [19682, 19682], [19682, 19682], [59048, 59048], [59048, 59048], [59048, 59048], [59048, 59048], [59048, 59048], [59048, 59048], [59048, 59048], [59048, 59048], [59047, 59047], [59046, 59047], [59046, 59047], [59047, 59046], [59048, 59048], [59048, 59048], [59048, 59048], [59048, 59048], [10, 5], [10, 13], [4, 3], [4, 3], [0, 0], [0, 0], [2, 1], [2, 4], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [4104, 3072], [2064, 40], [4104, 3072], [2064, 40], [8196, 1056], [1056, 0], [8196, 1056], [1056, 0]]
+pred_in_idx = [[arr[0]] for arr in pred_in_idx]
+all_data = [np.zeros((len(pred_in_idx[0]), input_sizes_raw[i])) for i in range(n_raw_data)]
+for data_idx in trange(len(pred_in_idx[0])):
+    for pattern_idx in range(n_raw_patterns):
+        idx = pred_in_idx[pattern_idx][data_idx]
+        pattern_unzipped = idx2pattern(pattern_idx, idx)
+        #if pattern_idx == 0 and idx == 0:
+        #    print(pattern_unzipped)
+        all_data[pattern_idx][data_idx] = np.array(pattern_unzipped)
+    for additional_feature_idx in range(n_additional_features):
+        additional_feature = [pred_in_idx[n_raw_patterns + additional_feature_idx * 2][data_idx] / additional_feature_mul[additional_feature_idx], pred_in_idx[n_raw_patterns + additional_feature_idx * 2 + 1][data_idx] / additional_feature_mul[additional_feature_idx]]
+        all_data[n_raw_patterns + additional_feature_idx][data_idx] = np.array(additional_feature)
+    for mobility_idx in range(n_raw_mobility):
+        idx = pred_in_idx[n_raw_patterns + n_additional_features * 2 + mobility_idx][data_idx]
+        pattern_unzipped = idx2mobility(idx)
+        all_data[n_raw_patterns + n_additional_features + mobility_idx][data_idx] = np.array(pattern_unzipped)
 
-print(model.predict(pred_in_feature))
+print([arr[0][0] for arr in last_layer_model.predict(all_data)])
+
+for data_idx in trange(len(pred_in_idx[0])):
+    score = 0
+    for pattern_idx in range(n_raw_patterns):
+        idx = pred_in_idx[pattern_idx][data_idx]
+        score += predictions[feature_idxes[pattern_nums[pattern_idx]]][idx][0]
+        print(predictions[feature_idxes[pattern_nums[pattern_idx]]][idx][0], end=' ')
+    for additional_feature_idx in range(n_additional_features):
+        idx = pred_in_idx[n_raw_patterns + additional_feature_idx * 2][data_idx] * additional_feature_mul[additional_feature_idx] + pred_in_idx[n_raw_patterns + additional_feature_idx * 2 + 1][data_idx]
+        score += predictions[feature_idxes[n_patterns + additional_feature_idx]][idx][0]
+        print(predictions[feature_idxes[n_patterns + additional_feature_idx]][idx][0], end=' ')
+    for mobility_idx in range(n_raw_mobility):
+        idx = pred_in_idx[n_raw_patterns + n_additional_features * 2 + mobility_idx][data_idx]
+        score += predictions[feature_idxes[n_patterns + n_additional_features + mobility_idx // 4]][idx][0]
+        print(predictions[feature_idxes[n_patterns + n_additional_features + mobility_idx // 4]][idx][0], end=' ')
+    print(score)
 '''
