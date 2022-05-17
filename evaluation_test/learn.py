@@ -179,7 +179,9 @@ model = Model(inputs=x, outputs=y)
 
 #model = load_model('learned_data/' + str(use_phase) + '_' + str(n_dense_pattern) + '.h5')
 
-model.summary()
+
+
+#model.summary()
 plot_model(model, to_file='model.png', show_shapes=True)
 
 model.compile(loss='mse', metrics='mae', optimizer='adam')
@@ -191,6 +193,7 @@ model.compile(loss='mse', metrics='mae', optimizer='adam')
 # input index data
 all_data_idx = [[] for _ in range(n_raw_data_input)]
 all_labels_raw = []
+score_arr = [0 for _ in range(129)]
 for file in input_files:
     with open(file, 'rb') as f:
         while True:
@@ -212,11 +215,13 @@ for file in input_files:
                 b = f.read(4)
                 score = int.from_bytes(b, byteorder='little', signed=True)
                 all_labels_raw.append(score)
+                score_arr[score + 64] += 1
             else:
                 f.read(4 * (n_raw_data_input + 1))
-            
 
-
+#plt.plot(range(-64, 65), score_arr)
+#plt.show()
+#plt.clf()
 
 
 
@@ -232,19 +237,22 @@ for data_idx in trange(len(all_labels_raw)):
     for pattern_idx in range(n_raw_patterns):
         idx = all_data_idx[pattern_idx][data_idx]
         pattern_unzipped = idx2pattern(pattern_idx, idx)
+        if pattern_idx == 0 and idx == 0:
+            print(pattern_unzipped)
         all_data[pattern_idx][data_idx] = np.array(pattern_unzipped)
     for additional_feature_idx in range(n_additional_features):
-        additional_feature = [all_data_idx[n_raw_patterns + additional_feature_idx * 2][data_idx], all_data_idx[n_raw_patterns + additional_feature_idx * 2 + 1][data_idx]]
+        additional_feature = [all_data_idx[n_raw_patterns + additional_feature_idx * 2][data_idx] / additional_feature_mul[additional_feature_idx], all_data_idx[n_raw_patterns + additional_feature_idx * 2 + 1][data_idx] / additional_feature_mul[additional_feature_idx]]
         all_data[n_raw_patterns + additional_feature_idx][data_idx] = np.array(additional_feature)
     for mobility_idx in range(n_raw_mobility):
         idx = all_data_idx[n_raw_patterns + n_additional_features * 2 + mobility_idx][data_idx]
         pattern_unzipped = idx2mobility(idx)
         all_data[n_raw_patterns + n_additional_features + mobility_idx][data_idx] = np.array(pattern_unzipped)
-    score = all_labels_raw[data_idx] / 64
-    all_labels[data_idx] = score
+    all_labels[data_idx] = all_labels_raw[data_idx] / 64
 
-print([all_data[i].shape for i in range(n_raw_data)], all_labels.shape)
-
+#print([all_data[i].shape for i in range(n_raw_data)], all_labels.shape)
+#for i in range(n_raw_data):
+#    print(i, all_data[i][0])
+#exit()
 
 
 # learn
@@ -269,19 +277,27 @@ test_labels = all_labels[test_idxes]
 early_stop = EarlyStopping(monitor='val_loss', patience=5)
 #model_checkpoint = ModelCheckpoint(filepath=os.path.join('learned_data/' + str(phase), 'model_{epoch:02d}_{val_loss:.5f}_{val_mae:.5f}.h5'), monitor='val_loss', verbose=1)
 reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=4, min_lr=0.0001)
-history = model.fit(train_data, train_labels, epochs=n_epochs, batch_size = 2048, validation_data=(test_data, test_labels), callbacks=[early_stop, reduce_lr])
+history = model.fit(train_data, train_labels, epochs=n_epochs, batch_size = 4096, validation_data=(test_data, test_labels), callbacks=[early_stop, reduce_lr])
 
 #now = datetime.datetime.today()
 #print(str(now.year) + digit(now.month, 2) + digit(now.day, 2) + '_' + digit(now.hour, 2) + digit(now.minute, 2))
 model.save('learned_data/' + str(use_phase) + '_' + str(n_dense_pattern) + '.h5')
 
+plt.xlabel('epoch')
+plt.ylabel('loss')
 for key in ['loss', 'val_loss']:
     plt.plot(history.history[key], label=key)
-    plt.xlabel('epoch')
-    plt.ylabel('loss')
     plt.legend(loc='best')
-    plt.savefig('graph/loss_' + str(use_phase) + '_' + str(n_dense_pattern) + '.png')
-    plt.clf()
+plt.savefig('graph/loss_' + str(use_phase) + '_' + str(n_dense_pattern) + '.png')
+plt.clf()
+
+
+
+
+
+
+
+
 
 # pre calculation
 pre_calc_data = [np.zeros((65536, input_sizes_raw[i])) for i in range(n_raw_data)]
@@ -289,22 +305,25 @@ for idx in trange(65536):
     for pattern_idx in range(n_patterns):
         if idx < feature_actual_sizes[pattern_idx]:
             #print(idx2pattern2(pattern_idx, idx))
+            if pattern_idx == 0 and idx == 0:
+                print(idx2pattern2(pattern_idx, idx))
             pre_calc_data[feature_idxes[pattern_idx]][idx] = np.array(idx2pattern2(pattern_idx, idx))
     for additional_feature in range(n_additional_features):
         if idx < feature_actual_sizes[n_patterns + additional_feature]:
-            pre_calc_data[feature_idxes[n_patterns + additional_feature]][idx] = np.array([idx // additional_feature_mul[additional_feature], idx % additional_feature_mul[additional_feature]])
+            pre_calc_data[feature_idxes[n_patterns + additional_feature]][idx] = np.array([idx // additional_feature_mul[additional_feature] / additional_feature_mul[additional_feature], idx % additional_feature_mul[additional_feature] / additional_feature_mul[additional_feature]])
     for mobility_idx in range(n_mobility):
         pre_calc_data[feature_idxes[n_patterns + n_additional_features + mobility_idx]][idx] = np.array(idx2mobility(idx))
 
 last_layer_model = Model(inputs=model.input, outputs=model.get_layer('last_layer').input)
 
-predictions = last_layer_model.predict(pre_calc_data, batch_size = 2048)
+predictions = last_layer_model.predict(pre_calc_data, batch_size = 4096)
 print(len(predictions), len(predictions[0]))
+print([predictions[feature_idxes[pattern_idx]][0][0] * 64 for pattern_idx in range(24)])
 step = 256
 n_lines = 0
 plus_elem = 0
 with open('learned_data/' + str(use_phase) + '_' + str(n_dense_pattern) + '.txt', 'w') as f:
-    for feature in range(24):
+    for pattern_idx in range(24):
         for i in range(feature_actual_sizes[pattern_idx]):
             val = round(predictions[feature_idxes[pattern_idx]][i][0] * 64 * step)
             if predictions[feature_idxes[pattern_idx]][i][0] > 0.0:
