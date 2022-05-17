@@ -154,7 +154,7 @@ for i in range(n_additional_features):
     y_add = LeakyReLU(alpha=0.01)(y_add)
     y_add = Dense(n_dense_additional, name=add_names[i] + '_dense1')(y_add)
     y_add = LeakyReLU(alpha=0.01)(y_add)
-    y_add = Dense(n_dense_additional, name=add_names[i] + '_out')(y_add)
+    y_add = Dense(1, name=add_names[i] + '_out')(y_add)
     y_before_add.append(y_add)
     idx += 1
 mobility_names = ['mobility1', 'mobility2', 'mobility3', 'mobility4']
@@ -179,6 +179,8 @@ model = Model(inputs=x, outputs=y)
 
 #model = load_model('learned_data/' + str(use_phase) + '_' + str(n_dense_pattern) + '.h5')
 
+#model.summary()
+#exit()
 
 
 #model.summary()
@@ -300,7 +302,7 @@ plt.clf()
 
 
 # pre calculation
-pre_calc_data = [np.zeros((65536, input_sizes_raw[i])) for i in range(n_raw_data)]
+pre_calc_data = [np.zeros((65536, input_sizes_raw[i]), float) for i in range(n_raw_data)]
 for idx in trange(65536):
     for pattern_idx in range(n_patterns):
         if idx < feature_actual_sizes[pattern_idx]:
@@ -308,15 +310,15 @@ for idx in trange(65536):
             pre_calc_data[feature_idxes[pattern_idx]][idx] = np.array(idx2pattern2(pattern_idx, idx))
     for additional_feature in range(n_additional_features):
         if idx < feature_actual_sizes[n_patterns + additional_feature]:
-            pre_calc_data[feature_idxes[n_patterns + additional_feature]][idx] = np.array([idx // additional_feature_mul[additional_feature] / additional_feature_mul[additional_feature], idx % additional_feature_mul[additional_feature] / additional_feature_mul[additional_feature]])
+            pre_calc_data[feature_idxes[n_patterns + additional_feature]][idx] = np.array([(idx // additional_feature_mul[additional_feature]) / additional_feature_mul[additional_feature], (idx % additional_feature_mul[additional_feature]) / additional_feature_mul[additional_feature]])
     for mobility_idx in range(n_mobility):
         pre_calc_data[feature_idxes[n_patterns + n_additional_features + mobility_idx]][idx] = np.array(idx2mobility(idx))
 
 last_layer_model = Model(inputs=model.input, outputs=model.get_layer('last_layer').input)
-
 predictions = last_layer_model.predict(pre_calc_data, batch_size = 4096)
 print(len(predictions), len(predictions[0]))
-print([predictions[feature_idxes[pattern_idx]][0][0] * 64 for pattern_idx in range(24)])
+print([predictions[feature_idxes[pattern_idx]][101][0] * 64 for pattern_idx in range(24)])
+#print([predictions[i][0][0] * 64 for i in range(len(predictions))])
 step = 256
 n_lines = 0
 plus_elem = 0
@@ -329,3 +331,21 @@ with open('learned_data/' + str(use_phase) + '_' + str(n_dense_pattern) + '.txt'
             f.write(str(val) + '\n')
             n_lines += 1
 print('done', n_lines, plus_elem)
+
+'''
+
+# test prediction
+pred_in_idx = [[1080], [2952], [338], [2308], [243], [3270], [768], [2280], [255], [2919], [1002], [2952], [111], [117], [30], [12], [336], [336], [27], [111], [977], [741], [94], [279], [3200], [2187], [29523], [26244], [16], [37182], [29268], [29160], [46524], [30], [29523], [19687], [199], [19858], [28756], [19927], [85], [49215], [9586], [9477], [30], [15907], [29523], [6562], [19699], [37182], [29430], [29403], [46116], [0], [27306], [26328], [354], [51313], [27325], [26356], [336], [51313], [1], [2], [2], [1], [10], [10], [33], [29], [1], [0], [515], [0], [257], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0]]
+pred_in_idx = [arr[0] for arr in pred_in_idx]
+print(pred_in_idx)
+print(len(pred_in_idx))
+pred_in_feature = []
+for pattern_idx in range(n_raw_patterns):
+    pred_in_feature.append(np.array([idx2pattern(pattern_idx, pred_in_idx[pattern_idx])]))
+for additional_feature in range(n_additional_features):
+    pred_in_feature.append(np.array([[pred_in_idx[n_raw_patterns + additional_feature * 2] / additional_feature_mul[additional_feature], pred_in_idx[n_patterns + additional_feature * 2 + 1] / additional_feature_mul[additional_feature]]]))
+for mobility_idx in range(n_raw_mobility):
+    pred_in_feature.append(np.array([idx2mobility(pred_in_idx[n_raw_patterns + n_additional_features * 2 + mobility_idx])]))
+
+print(model.predict(pred_in_feature))
+'''
