@@ -23,12 +23,10 @@
 #include "gui/language.hpp"
 #include "gui/button.hpp"
 #include "gui/radio_button.hpp"
-#include "function/menu.hpp"
-#include "function/preference.hpp"
 
 using namespace std;
 
-#define EGAROUCID_VERSION U"5.8.1"
+#define EGAROUCID_VERSION U"5.8.0"
 
 #define hint_not_calculated_define 0
 
@@ -100,7 +98,258 @@ bool lang_initialize(string file) {
 	return language.init(file);
 }
 
+Menu create_menu(Texture checkbox,
+	bool* dummy,
+	bool* entry_mode, bool* professional_mode, bool* serious_game,
+	bool* start_game_flag, bool* analyze_flag,
+	bool* human_first, bool* human_second, bool* both_ai, bool* both_human,
+	bool* use_hint_flag, bool* normal_hint, bool* human_hint, bool* umigame_hint,
+	bool* hint_num1, bool* hint_num2, bool* hint_num4, bool* hint_num8, bool* hint_num16, bool* hint_numall,
+	bool* use_value_flag, bool* show_over_joseki,
+	bool* use_book_flag, int* ai_level, int* hint_level, int* graph_level, int* error_level,
+	bool* start_book_learn_flag, bool* stop_book_learn_flag, bool* modify_book, int* book_depth, int* book_learn_accept, bool* import_book_flag, bool* change_book_path_flag,
+	bool* output_record_flag, bool* output_game_flag, bool* input_record_flag, bool* input_board_flag, bool* edit_board_flag, bool* import_game_flag,
+	bool* show_end_popup, bool* show_log,
+	int* n_thread_idx,
+	bool* stop_read_flag, bool* resume_read_flag, bool* vertical_convert, bool* black_line_convert, bool* white_line_convert, bool* forward_flag, bool* backward_flag,
+	bool* usage_flag, bool* bug_report_flag, bool* auto_update_check, bool* check_license,
+	bool lang_acts[], vector<string> lang_name_vector) {
+	Menu menu;
+	menu_title title;
+	menu_elem menu_e, side_menu, side_side_menu;
+	Font menu_font(15);
 
+	title.init(language.get("mode", "mode"));
+
+	menu_e.init_radio(language.get("mode", "entry_mode"), entry_mode, *entry_mode);
+	title.push(menu_e);
+	menu_e.init_radio(language.get("mode", "professional_mode"), professional_mode, *professional_mode);
+	title.push(menu_e);
+	menu_e.init_radio(language.get("mode", "serious_game"), serious_game, *serious_game);
+	title.push(menu_e);
+
+	menu.push(title);
+
+	title.init(language.get("play", "game"));
+
+	menu_e.init_button(language.get("play", "new_game"), start_game_flag);
+	title.push(menu_e);
+	menu_e.init_button(language.get("play", "analyze"), analyze_flag);
+	title.push(menu_e);
+
+	menu.push(title);
+
+	title.init(language.get("settings", "settings"));
+
+	if (*entry_mode) {
+		*ai_level = min(*ai_level, 20);
+		*hint_level = min(*hint_level, 20);
+		*graph_level = min(*graph_level, 20);
+		*use_book_flag = true;
+		menu_e.init_button(language.get("ai_settings", "ai_settings"), dummy);
+		side_menu.init_bar(language.get("ai_settings", "ai_level"), ai_level, *ai_level, 0, 20);
+		menu_e.push(side_menu);
+		side_menu.init_bar(language.get("ai_settings", "hint_level"), hint_level, *hint_level, 0, 20);
+		menu_e.push(side_menu);
+		side_menu.init_bar(language.get("ai_settings", "graph_level"), graph_level, *graph_level, 0, 20);
+		menu_e.push(side_menu);
+		side_menu.init_bar(language.get("settings", "thread", "thread"), n_thread_idx, *n_thread_idx, 1, 32);
+		menu_e.push(side_menu);
+		title.push(menu_e);
+	}
+	else if (*professional_mode) {
+		menu_e.init_button(language.get("ai_settings", "ai_settings"), dummy);
+		side_menu.init_check(language.get("ai_settings", "use_book"), use_book_flag, *use_book_flag);
+		menu_e.push(side_menu);
+		side_menu.init_bar(language.get("ai_settings", "ai_level"), ai_level, *ai_level, 0, 60);
+		menu_e.push(side_menu);
+		side_menu.init_bar(language.get("ai_settings", "hint_level"), hint_level, *hint_level, 0, 60);
+		menu_e.push(side_menu);
+		side_menu.init_bar(language.get("ai_settings", "graph_level"), graph_level, *graph_level, 0, 60);
+		menu_e.push(side_menu);
+		//side_menu.init_bar(language.get("ai_settings", "book_error"), book_error, *book_error, 0, 64);
+		//menu_e.push(side_menu);
+		//side_menu.init_bar(language.get("ai_settings", "use_book_depth"), use_book_depth, *use_book_depth, 0, 60);
+		//menu_e.push(side_menu);
+		side_menu.init_bar(language.get("settings", "thread", "thread"), n_thread_idx, *n_thread_idx, 1, 32);
+		menu_e.push(side_menu);
+		title.push(menu_e);
+	}
+	else if (*serious_game) {
+		*ai_level = min(*ai_level, 20);
+		*graph_level = min(*graph_level, 20);
+		*use_book_flag = true;
+		menu_e.init_button(language.get("ai_settings", "ai_settings"), dummy);
+		side_menu.init_bar(language.get("ai_settings", "ai_level"), ai_level, *ai_level, 0, 20);
+		menu_e.push(side_menu);
+		side_menu.init_bar(language.get("ai_settings", "error_level"), error_level, *error_level, 0, 25);
+		menu_e.push(side_menu);
+		side_menu.init_bar(language.get("ai_settings", "graph_level"), graph_level, *graph_level, 0, 20);
+		menu_e.push(side_menu);
+		side_menu.init_bar(language.get("settings", "thread", "thread"), n_thread_idx, *n_thread_idx, 1, 32);
+		menu_e.push(side_menu);
+		title.push(menu_e);
+	}
+
+	menu_e.init_button(language.get("settings", "play", "play"), dummy);
+	side_menu.init_radio(language.get("settings", "play", "human_first"), human_first, *human_first);
+	menu_e.push(side_menu);
+	side_menu.init_radio(language.get("settings", "play", "human_second"), human_second, *human_second);
+	menu_e.push(side_menu);
+	side_menu.init_radio(language.get("settings", "play", "both_ai"), both_ai, *both_ai);
+	menu_e.push(side_menu);
+	side_menu.init_radio(language.get("settings", "play", "both_human"), both_human, *both_human);
+	menu_e.push(side_menu);
+	title.push(menu_e);
+
+	menu.push(title);
+
+
+
+	title.init(language.get("display", "display"));
+
+	if (!(*serious_game)) {
+		menu_e.init_check(language.get("display", "hint", "hint"), use_hint_flag, *use_hint_flag);
+		if (*professional_mode) {
+			side_menu.init_check(language.get("display", "hint", "stone_value"), normal_hint, *normal_hint);
+			side_side_menu.init_radio(U"1" + language.get("display", "hint", "show_number"), hint_num1, *hint_num1);
+			side_menu.push(side_side_menu);
+			side_side_menu.init_radio(U"2" + language.get("display", "hint", "show_number"), hint_num2, *hint_num2);
+			side_menu.push(side_side_menu);
+			side_side_menu.init_radio(U"4" + language.get("display", "hint", "show_number"), hint_num4, *hint_num4);
+			side_menu.push(side_side_menu);
+			side_side_menu.init_radio(U"8" + language.get("display", "hint", "show_number"), hint_num8, *hint_num8);
+			side_menu.push(side_side_menu);
+			side_side_menu.init_radio(U"16" + language.get("display", "hint", "show_number"), hint_num16, *hint_num16);
+			side_menu.push(side_side_menu);
+			side_side_menu.init_radio(language.get("display", "hint", "show_all"), hint_numall, *hint_numall);
+			side_menu.push(side_side_menu);
+			menu_e.push(side_menu);
+
+			side_menu.init_check(language.get("display", "hint", "human_value"), human_hint, *human_hint);
+			menu_e.push(side_menu);
+			side_menu.init_check(language.get("display", "hint", "umigame_value"), umigame_hint, *umigame_hint);
+			menu_e.push(side_menu);
+		}
+		title.push(menu_e);
+	}
+
+	menu_e.init_check(language.get("display", "graph"), use_value_flag, *use_value_flag);
+	title.push(menu_e);
+
+	if (!(*serious_game)) {
+		menu_e.init_check(language.get("display", "joseki_on_cell"), show_over_joseki, *show_over_joseki);
+		title.push(menu_e);
+	}
+
+	menu_e.init_check(language.get("display", "end_popup"), show_end_popup, *show_end_popup);
+	title.push(menu_e);
+	menu_e.init_check(language.get("display", "log"), show_log, *show_log);
+	title.push(menu_e);
+
+
+	menu.push(title);
+
+
+
+
+	if (*professional_mode) {
+		title.init(language.get("book", "book"));
+
+		//menu_e.init_button(language.get("book", "start_learn"), start_book_learn_flag);
+		//title.push(menu_e);
+		//menu_e.init_button(language.get("book", "stop_learn"), stop_book_learn_flag);
+		//title.push(menu_e);
+		//menu_e.init_button(language.get("book", "auto_modification"), modify_book);
+		//title.push(menu_e);
+		//menu_e.init_button(language.get("book", "settings"), dummy);
+		//side_menu.init_bar(language.get("book", "depth"), book_depth, *book_depth, 0, 60);
+		//menu_e.push(side_menu);
+		//side_menu.init_bar(language.get("book", "accept"), book_learn_accept, *book_learn_accept, 0, 64);
+		//menu_e.push(side_menu);
+		//title.push(menu_e);
+		menu_e.init_button(language.get("book", "import"), import_book_flag);
+		title.push(menu_e);
+		menu_e.init_button(language.get("book", "book_reference"), change_book_path_flag);
+		title.push(menu_e);
+		menu.push(title);
+
+
+
+		title.init(language.get("in_out", "in_out"));
+
+		menu_e.init_button(language.get("in_out", "in"), dummy);
+		side_menu.init_button(language.get("in_out", "input_record"), input_record_flag);
+		menu_e.push(side_menu);
+		side_menu.init_button(language.get("in_out", "input_board"), input_board_flag);
+		menu_e.push(side_menu);
+		side_menu.init_button(language.get("in_out", "edit_board"), edit_board_flag);
+		menu_e.push(side_menu);
+		side_menu.init_button(language.get("in_out", "input_game"), import_game_flag);
+		menu_e.push(side_menu);
+		title.push(menu_e);
+
+		menu_e.init_button(language.get("in_out", "out"), dummy);
+		side_menu.init_button(language.get("in_out", "output_record"), output_record_flag);
+		menu_e.push(side_menu);
+		side_menu.init_button(language.get("in_out", "output_game"), output_game_flag);
+		menu_e.push(side_menu);
+		title.push(menu_e);
+
+		menu.push(title);
+	}
+
+
+
+	title.init(language.get("operation", "operation"));
+
+	menu_e.init_button(language.get("operation", "stop_read"), stop_read_flag);
+	title.push(menu_e);
+	menu_e.init_button(language.get("operation", "resume_read"), resume_read_flag);
+	title.push(menu_e);
+
+	menu_e.init_button(language.get("operation", "forward"), forward_flag);
+	title.push(menu_e);
+	menu_e.init_button(language.get("operation", "backward"), backward_flag);
+	title.push(menu_e);
+
+	if (*professional_mode) {
+		menu_e.init_button(language.get("operation", "convert", "convert"), dummy);
+		side_menu.init_button(language.get("operation", "convert", "vertical"), vertical_convert);
+		menu_e.push(side_menu);
+		side_menu.init_button(language.get("operation", "convert", "black_line"), black_line_convert);
+		menu_e.push(side_menu);
+		side_menu.init_button(language.get("operation", "convert", "white_line"), white_line_convert);
+		menu_e.push(side_menu);
+		title.push(menu_e);
+	}
+
+	menu.push(title);
+
+
+
+	title.init(language.get("help", "help"));
+	menu_e.init_button(language.get("help", "how_to_use"), usage_flag);
+	title.push(menu_e);
+	menu_e.init_button(language.get("help", "bug_report"), bug_report_flag);
+	title.push(menu_e);
+	menu_e.init_check(language.get("help", "auto_update_check"), auto_update_check, *auto_update_check);
+	title.push(menu_e);
+	menu_e.init_button(language.get("help", "license"), check_license);
+	title.push(menu_e);
+	menu.push(title);
+
+
+	title.init(U"Language");
+	for (int i = 0; i < (int)lang_name_vector.size(); ++i) {
+		menu_e.init_radio(language_name.get(lang_name_vector[i]), &lang_acts[i], lang_acts[i]);
+		title.push(menu_e);
+	}
+	menu.push(title);
+
+	menu.init(0, 0, menu_font, checkbox);
+	return menu;
+}
 
 pair<int, Board> move_board(Board b, bool board_clicked[]) {
 	Flip flip;
@@ -115,7 +364,7 @@ pair<int, Board> move_board(Board b, bool board_clicked[]) {
 	return make_pair(-1, b);
 }
 
-Cell_value analyze_search(Board b, int level, bool use_book) {
+Cell_value analyze_search(Board b, int level, bool use_book, int use_book_depth) {
 	Cell_value res;
 	if (b.get_legal() == 0) {
 		res.depth = 0;
@@ -131,7 +380,7 @@ Cell_value analyze_search(Board b, int level, bool use_book) {
 		bool use_mpc, is_mid_search;
 		double mpct;
 		get_level(level, b.n - 4, &is_mid_search, &depth, &use_mpc, &mpct);
-		Search_result search_result = ai(b, level, use_book, 0);
+		Search_result search_result = ai(b, level, use_book && b.n - 3 <= use_book_depth, 0);
 		res.value = (b.p ? -1 : 1) * search_result.value;
 		res.depth = search_result.depth;
 	}
@@ -190,15 +439,16 @@ void closing_draw(Font font, Font small_font, Texture icon, Texture logo, bool t
 	font(language.get("closing")).draw(right_left, y_center + font.fontSize(), font_color);
 }
 
-void board_draw(Rect board_cells[], History_elem b, int next_policy,
-	const int hint_state, const uint64_t hint_legal, const int hint_value[], const int hint_depth[], const bool hint_best_moves[], Font huge_font, Font normal_font, Font small_font, Font big_font, Font mini_font, Font coord_font,
+void board_draw(bool use_value_flag, Rect board_cells[], History_elem b, int next_policy, int int_mode, bool use_hint_flag, bool normal_hint, bool human_hint, bool umigame_hint,
+	const int hint_state, const uint64_t hint_legal, const int hint_value[], const int hint_depth[], const bool hint_best_moves[], const int hint_show_num, Font huge_font, Font normal_font, Font small_font, Font big_font, Font mini_font, Font coord_font,
 	bool before_start_game,
 	const int umigame_state[], const umigame_result umigame_value[],
 	const int human_value_state, const Human_value human_value[],
-	Menu_contents* menu_contents) {
+	bool book_start_learn,
+	bool show_over_joseki) {
 	String coord_x = U"abcdefgh";
 	int b_sx, b_sy, b_coord_size, b_cell_size, s_size, l_size;
-	if (menu_contents->display.graph) {
+	if (use_value_flag) {
 		b_sx = board_sx;
 		b_sy = board_sy;
 		b_coord_size = board_coord_size;
@@ -251,7 +501,7 @@ void board_draw(Rect board_cells[], History_elem b, int next_policy,
 					Circle(xx, yy, s_size).draw(ColorF(Palette::Black, 0.2));
 				}
 			}
-			if (!menu_contents->mode.professional && !before_start_game && (!menu_contents->display.hint || (!menu_contents->display.hint_elem.disc_difference && !menu_contents->display.hint_elem.human_value && !menu_contents->display.hint_elem.umigame_value))) {
+			if (int_mode != 2 && !before_start_game && !book_start_learn && (!use_hint_flag || (!normal_hint && !human_hint && !umigame_hint))) {
 				int xx = b_sx + (HW_M1 - cell % HW) * b_cell_size + b_cell_size / 2;
 				int yy = b_sy + (HW_M1 - cell / HW) * b_cell_size + b_cell_size / 2;
 				Circle(xx, yy, l_size).draw(Palette::Cyan);
@@ -261,12 +511,12 @@ void board_draw(Rect board_cells[], History_elem b, int next_policy,
 	if (b.policy != -1) {
 		Circle(b_sx + (HW_M1 - b.policy % HW) * b_cell_size + b_cell_size / 2, b_sy + (HW_M1 - b.policy / HW) * b_cell_size + b_cell_size / 2, l_size).draw(Palette::Red);
 	}
-	if (menu_contents->mode.professional && menu_contents->display.hint && legal != 0 && !before_start_game && (legal | hint_legal) == legal) {
+	if (int_mode != 2 && use_hint_flag && legal != 0 && !before_start_game && !book_start_learn && (legal | hint_legal) == legal) {
 		bool hint_shown[HW2];
 		for (int i = 0; i < HW2; ++i) {
 			hint_shown[i] = false;
 		}
-		if (menu_contents->display.hint_elem.disc_difference) {
+		if (normal_hint) {
 			if (hint_state >= 2) {
 				vector<pair<int, int>> show_cells;
 				uint64_t all_legal = b.b.get_legal();
@@ -283,7 +533,7 @@ void board_draw(Rect board_cells[], History_elem b, int next_policy,
 				sort(show_cells.begin(), show_cells.end());
 				int n_shown = 0, last_value = -INF;
 				for (pair<int, int> elem : show_cells) {
-					if (last_value > hint_value[elem.second] && n_shown >= menu_contents->display.hint_elem.n_disc_difference) {
+					if (last_value > hint_value[elem.second] && n_shown >= hint_show_num) {
 						int x = b_sx + (HW_M1 - elem.second % HW) * b_cell_size + b_cell_size / 2;
 						int y = b_sy + (HW_M1 - elem.second / HW) * b_cell_size + b_cell_size / 2;
 						Circle(x, y, l_size).draw(Palette::Cyan);
@@ -293,18 +543,18 @@ void board_draw(Rect board_cells[], History_elem b, int next_policy,
 						if (hint_best_moves[elem.second]) {
 							color = Palette::Cyan;
 						}
-						if (menu_contents->mode.simple) {
+						if (int_mode == 0) {
 							int x = b_sx + (HW_M1 - elem.second % HW) * b_cell_size + b_cell_size / 2;
 							int y = b_sy + (HW_M1 - elem.second / HW) * b_cell_size + b_cell_size / 2;
-							if (menu_contents->display.graph) {
+							if (use_value_flag) {
 								big_font(hint_value[elem.second]).draw(Arg::center = Vec2{ x, y }, color);
 							}
 							else {
 								huge_font(hint_value[elem.second]).draw(Arg::center = Vec2{ x, y }, color);
 							}
 						}
-						else if (menu_contents->mode.professional) {
-							if (menu_contents->display.graph) {
+						else if (int_mode == 1) {
+							if (use_value_flag) {
 								int x = b_sx + (HW_M1 - elem.second % HW) * b_cell_size + 3;
 								int y = b_sy + (HW_M1 - elem.second / HW) * b_cell_size + 3;
 								normal_font(hint_value[elem.second]).draw(x, y, color);
@@ -342,11 +592,11 @@ void board_draw(Rect board_cells[], History_elem b, int next_policy,
 				}
 			}
 		}
-		if (menu_contents->display.hint_elem.umigame_value && menu_contents->mode.professional) {
+		if (umigame_hint && int_mode == 1) {
 			for (int cell = 0; cell < HW2; ++cell) {
 				if (1 & (legal >> cell)) {
 					if (umigame_state[cell] == 2) {
-						if (menu_contents->display.graph) {
+						if (use_value_flag) {
 							int umigame_sx = b_sx + (HW_M1 - cell % HW) * b_cell_size + 3;
 							int umigame_sy = b_sy + (HW_M1 - cell / HW) * b_cell_size + 35;
 							RectF black_rect = mini_font(umigame_value[cell].b).region(umigame_sx, umigame_sy);
@@ -366,12 +616,12 @@ void board_draw(Rect board_cells[], History_elem b, int next_policy,
 				}
 			}
 		}
-		if (menu_contents->display.hint_elem.human_value && menu_contents->mode.professional) {
+		if (human_hint && int_mode == 1) {
 			if (human_value_state == 2) {
 				int max_human_value = -INF;
 				for (int cell = 0; cell < HW2; ++cell) {
 					if (1 & (legal >> cell)) {
-						if (menu_contents->display.graph) {
+						if (use_value_flag) {
 							int x = b_sx + (HW_M1 - cell % HW + 1) * b_cell_size - 3;
 							int y = b_sy + (HW_M1 - cell / HW) * b_cell_size + 2;
 							mini_font((int)round(human_value[cell].stability_black)).draw(Arg::topRight(x, y), Palette::Black);
@@ -388,7 +638,7 @@ void board_draw(Rect board_cells[], History_elem b, int next_policy,
 			}
 		}
 	}
-	if (menu_contents->display.joseki_on_cell && !menu_contents->mode.game) {
+	if (show_over_joseki && int_mode != 2) {
 		for (int cell = 0; cell < HW2; ++cell) {
 			int x = HW_M1 - cell % HW;
 			int y = HW_M1 - cell / HW;
@@ -750,6 +1000,193 @@ future<void> get_human_value(Board b, int depth, Human_value res[], int search_d
 	return async(launch::async, calc_all_human_value, b, depth, res, search_depth);
 }
 
+int import_int(TextReader* reader) {
+	String line;
+	if (reader->readLine(line)) {
+		try {
+			return Parse<int32>(line);
+		}
+		catch (const ParseError& e) {
+			return -INF;
+		}
+	}
+	else {
+		return -INF;
+	}
+}
+
+string import_str(TextReader* reader) {
+	String line;
+	if (reader->readLine(line)) {
+		return line.narrow();
+	}
+	else {
+		return "undefined";
+	}
+}
+
+bool import_setting(int* int_mode, bool* use_book, int* ai_level, int* ai_book_accept, int* hint_level, int* use_book_depth, int* graph_level, int* error_level,
+	int* use_ai_mode,
+	bool* use_hint_flag, bool* normal_hint, bool* human_hint, bool* umigame_hint,
+	bool* show_end_popup,
+	int* n_thread_idx,
+	int* hint_num,
+	int* book_depth, int* book_learn_accept,
+	bool* show_log, bool* use_value_flag,
+	bool* auto_update_check,
+	bool* show_over_joseki,
+	string* lang_name, string* book_file) {
+	String appdata_dir = FileSystem::GetFolderPath(SpecialFolder::LocalAppData);
+	TextReader reader(U"{}Egaroucid/setting.txt"_fmt(appdata_dir));
+	if (!reader) {
+		return false;
+	}
+	*int_mode = import_int(&reader);
+	if (*int_mode == -INF) {
+		return false;
+	}
+	*use_book = import_int(&reader);
+	if (*use_book == -INF) {
+		return false;
+	}
+	*ai_level = import_int(&reader);
+	if (*ai_level == -INF) {
+		return false;
+	}
+	*ai_book_accept = import_int(&reader);
+	if (*ai_book_accept == -INF) {
+		return false;
+	}
+	*hint_level = import_int(&reader);
+	if (*hint_level == -INF) {
+		return false;
+	}
+	*use_book_depth = import_int(&reader);
+	if (*use_book_depth == -INF) {
+		return false;
+	}
+	*graph_level = import_int(&reader);
+	if (*graph_level == -INF) {
+		return false;
+	}
+	*error_level = import_int(&reader);
+	if (*error_level == -INF) {
+		return false;
+	}
+	*use_ai_mode = import_int(&reader);
+	if (*use_ai_mode == -INF) {
+		return false;
+	}
+	*use_hint_flag = import_int(&reader);
+	if (*use_hint_flag == -INF) {
+		return false;
+	}
+	*normal_hint = import_int(&reader);
+	if (*normal_hint == -INF) {
+		return false;
+	}
+	*human_hint = import_int(&reader);
+	if (*human_hint == -INF) {
+		return false;
+	}
+	*umigame_hint = import_int(&reader);
+	if (*umigame_hint == -INF) {
+		return false;
+	}
+	*show_end_popup = import_int(&reader);
+	if (*show_end_popup == -INF) {
+		return false;
+	}
+	*n_thread_idx = import_int(&reader);
+	if (*n_thread_idx == -INF) {
+		return false;
+	}
+	*hint_num = import_int(&reader);
+	if (*hint_num == -INF) {
+		return false;
+	}
+	*book_depth = import_int(&reader);
+	if (*book_depth == -INF) {
+		return false;
+	}
+	*book_learn_accept = import_int(&reader);
+	if (*book_learn_accept == -INF) {
+		return false;
+	}
+	*show_log = import_int(&reader);
+	if (*show_log == -INF) {
+		return false;
+	}
+	*use_value_flag = import_int(&reader);
+	if (*use_value_flag == -INF) {
+		return false;
+	}
+	*auto_update_check = import_int(&reader);
+	if (*auto_update_check == -INF) {
+		return false;
+	}
+	*show_over_joseki = import_int(&reader);
+	if (*show_over_joseki == -INF) {
+		return false;
+	}
+	*lang_name = import_str(&reader);
+	while (lang_name->back() == '\n' || lang_name->back() == '\r') {
+		lang_name->pop_back();
+	}
+	if (*lang_name == "undefined") {
+		return false;
+	}
+	*book_file = import_str(&reader);
+	while (book_file->back() == '\n' || book_file->back() == '\r') {
+		book_file->pop_back();
+	}
+	if (*book_file == "undefined") {
+		return false;
+	}
+	return true;
+}
+
+void export_setting(int int_mode, bool use_book, int ai_level, int ai_book_accept, int hint_level, int use_book_depth, int graph_level, int error_level,
+	int use_ai_mode,
+	bool use_hint_flag, bool normal_hint, bool human_hint, bool umigame_hint,
+	bool show_end_popup,
+	int n_thread_idx,
+	int hint_num,
+	int book_depth, int book_learn_accept,
+	bool show_log, bool use_value_flag,
+	bool auto_update_check,
+	bool show_over_joseki,
+	string lang_name, string book_file) {
+	String appdata_dir = FileSystem::GetFolderPath(SpecialFolder::LocalAppData);
+	TextWriter writer(U"{}Egaroucid/setting.txt"_fmt(appdata_dir));
+	if (writer) {
+		writer.writeln(int_mode);
+		writer.writeln((int)use_book);
+		writer.writeln(ai_level);
+		writer.writeln(ai_book_accept);
+		writer.writeln(hint_level);
+		writer.writeln(use_book_depth);
+		writer.writeln(graph_level);
+		writer.writeln(error_level);
+		writer.writeln(use_ai_mode);
+		writer.writeln((int)use_hint_flag);
+		writer.writeln((int)normal_hint);
+		writer.writeln((int)human_hint);
+		writer.writeln((int)umigame_hint);
+		writer.writeln((int)show_end_popup);
+		writer.writeln(n_thread_idx);
+		writer.writeln(hint_num);
+		writer.writeln(book_depth);
+		writer.writeln(book_learn_accept);
+		writer.writeln((int)show_log);
+		writer.writeln((int)use_value_flag);
+		writer.writeln((int)auto_update_check);
+		writer.writeln((int)show_over_joseki);
+		writer.writeln(Unicode::Widen(lang_name));
+		writer.writeln(Unicode::Widen(book_file));
+	}
+}
+
 String str_record(int policy) {
 	return Unicode::Widen(string({ (char)('a' + HW_M1 - policy % HW), (char)('1' + HW_M1 - policy / HW) }));
 }
@@ -908,15 +1345,43 @@ bool close_app(int* hint_state, future<bool>* hint_future,
 	int* human_value_state, future<void>* human_value_future,
 	bool* ai_thinking, future<Search_result>* ai_future,
 	bool* analyzing, int* analyze_state, future<Cell_value>* analyze_future, future<Human_value>* analyze_human_future,
-	Preference* preference, bool book_changed) {
+	int int_mode, bool use_book, int ai_level, int ai_book_accept, int hint_level, int use_book_depth, int graph_level, int error_level,
+	int use_ai_mode,
+	bool use_hint_flag, bool normal_hint, bool human_hint, bool umigame_hint,
+	bool show_end_popup,
+	int n_thread_idx,
+	int hint_num,
+	int book_depth, int book_learn_accept,
+	bool show_log, bool use_value_flag,
+	bool auto_update_check,
+	bool show_over_joseki,
+	bool* book_learning, future<void>* book_learn_future, bool book_changed,
+	string lang_name,
+	string book_file, string book_bak_file) {
 	reset_hint(hint_state, hint_future);
 	reset_umigame(umigame_state, umigame_future);
 	reset_human_value(human_value_state, human_value_future);
 	reset_ai(ai_thinking, ai_future);
 	reset_analyze(analyzing, analyze_state, analyze_future, analyze_human_future);
-	export_preference(preference);
+	export_setting(int_mode, use_book, ai_level, ai_book_accept, hint_level, use_book_depth, graph_level, error_level,
+		use_ai_mode,
+		use_hint_flag, normal_hint, human_hint, umigame_hint,
+		show_end_popup,
+		n_thread_idx,
+		hint_num,
+		book_depth, book_learn_accept,
+		show_log, use_value_flag,
+		auto_update_check,
+		show_over_joseki,
+		lang_name, book_file);
+	if (*book_learning) {
+		*book_learning = false;
+		global_searching = false;
+		book_learn_future->get();
+		global_searching = true;
+	}
 	if (book_changed) {
-		book.save_bin(preference->book_file, preference->book_file + ".bak");
+		book.save_bin(book_file, book_bak_file);
 	}
 	return true;
 }
@@ -1175,7 +1640,7 @@ int import_book(future<bool>* import_book_future, Font font, Texture icon, Textu
 	Button break_button;
 	break_button.init(x_center - 125, 600, 250, 50, 10, language.get("book", "back"), font, button_color, button_font_color);
 	break_button.draw();
-	if (break_button.clicked()) {
+	if (break_button.clicked() || KeyEscape.pressed()) {
 		return 0;
 	}
 	if (DragDrop::HasNewFilePaths()) {
@@ -1407,12 +1872,26 @@ void Main() {
 	string logger;
 	String logger_String;
 
-	// menu
-	Menu_contents menu_contents;
-	Menu menu;
-
-	// language
+	bool dummy;
+	constexpr int mode_size = 3;
+	bool show_mode[mode_size] = { true, false, false };
+	int int_mode = 0;
+	bool start_game_flag = false, analyze_flag = false;
+	bool human_first = true, human_second = false, both_ai = false, both_human = false;
+	bool use_hint_flag = true, normal_hint = true, human_hint = true, umigame_hint = true;
+	bool use_value_flag = true;
+	bool start_book_learn_flag = false, stop_book_learn_flag = false, book_modify = false, change_book_path_flag = false;
+	bool output_record_flag = false, output_game_flag = false, input_record_flag = false, input_board_flag = false, edit_board_flag = false, input_game_flag = false;
+	bool texture_loaded = true;
+	int n_thread_idx = 4, former_n_thread_idx = 4;
+	bool stop_read_flag = false, resume_read_flag = false, vertical_convert = false, white_line_convert = false, black_line_convert = false, forward_flag = false, backward_flag = false;
+	bool usage_flag = false, bug_report_flag = false, auto_update_check = true, check_license;
+	bool show_over_joseki = true;
 	bool language_acts[100];
+	language_acts[0] = true;
+	for (int i = 1; i < 100; ++i) {
+		language_acts[i] = false;
+	}
 	vector<string> language_names;
 	ifstream ifs("resources/languages/languages.txt");
 	string lang_line;
@@ -1422,9 +1901,6 @@ void Main() {
 		}
 		language_names.emplace_back(lang_line);
 	}
-
-	// texture
-	bool texture_loaded = true;
 	Texture icon(U"resources/img/icon.png", TextureDesc::Mipped);
 	Texture logo(U"resources/img/logo.png", TextureDesc::Mipped);
 	Texture checkbox(U"resources/img/checked.png", TextureDesc::Mipped);
@@ -1432,13 +1908,11 @@ void Main() {
 		texture_loaded = false;
 	}
 
-	// documents
 	string document_dir = FileSystem::GetFolderPath(SpecialFolder::Documents).narrow();
+	string book_file = document_dir + "Egaroucid/book.egbk";
+	string book_bak_file = document_dir + "Egaroucid/book.egbk.bak";
 
-	// board drawing
 	Rect board_cells[HW2];
-
-	// graph
 	Font graph_font(graph_font_size);
 	Graph graph;
 	graph.sx = graph_sx;
@@ -1448,8 +1922,6 @@ void Main() {
 	graph.resolution = graph_resolution;
 	graph.font = graph_font;
 	graph.font_size = graph_font_size;
-
-	// human sense graph
 	Human_sense_graph human_sense_graph;
 	human_sense_graph.sx = human_sense_graph_sx;
 	human_sense_graph.sy = human_sense_graph_sy;
@@ -1458,8 +1930,6 @@ void Main() {
 	human_sense_graph.resolution = humnan_sense_graph_resolution;
 	human_sense_graph.font = graph_font;
 	human_sense_graph.font_size = graph_font_size;
-
-	// font
 	Font board_coord_font(board_coord_size);
 	Font font50(50);
 	Font font40(40);
@@ -1471,7 +1941,6 @@ void Main() {
 	Font mini_hint_font(13, Typeface::Heavy);
 	Font small_hint_font(9, Typeface::Bold);
 
-	// board
 	Board bd;
 	bool board_clicked[HW2];
 	vector<History_elem> history, fork_history;
@@ -1479,15 +1948,16 @@ void Main() {
 	bool fork_mode = false;
 	int bd_value = 0;
 
-	// hints
 	int hint_value[HW2], hint_depth[HW2];
 	int hint_calc_value[HW2], hint_calc_depth[HW2];
 	bool hint_best_moves[HW2];
 	uint64_t hint_legal = 0;
 	future<bool>  hint_future;
 	int hint_state = 0;
+	bool hint_nums[6] = { false, false, false, false, false, true };
+	constexpr int hint_actual_nums[6] = { 1, 2, 4, 8, 16, HW2 };
+	int hint_num = 5;
 
-	// umigame hint
 	int umigame_state[HW2];
 	umigame_result umigame_value[HW2];
 	future<umigame_result> umigame_future[HW2];
@@ -1495,7 +1965,6 @@ void Main() {
 		umigame_state[i] = 0;
 	}
 
-	// human sense hint
 	int human_value_state = 0;
 	vector<Human_value> human_value_hist, fork_human_value_hist;
 	Human_value human_value[HW2];
@@ -1503,140 +1972,221 @@ void Main() {
 	int human_value_search_depth = 2;
 	future<void> human_value_future;
 
-	// ai
+	Menu menu;
+
 	future<Search_result> ai_future;
 	bool ai_thinking = false;
+	int ai_value = 0;
+	int ai_level = 15, ai_book_accept = 4, hint_level = 15, use_book_depth = 60, graph_level = 15, error_level = 0;
+	bool use_book = true;
 
-	// start game
 	bool before_start_game = true;
 	Button start_game_button;
 
-	// end popup
 	bool show_popup_flag = true;
+	bool show_end_popup = true;
+	bool show_end_popup_change = true;
 	long long popup_start_time = 0;
 
-	// analyze
 	bool analyzing = false;
 	int analyze_idx = 0;
 	future<Cell_value> analyze_future;
 	future<Human_value> analyze_human_future;
 	int analyze_state = 0;
 
-	// close
 	bool closing = false;
 	future<bool> closing_future;
 
-	// output game
 	bool outputting_game = false;
 	String black_player = U"", white_player = U"", game_memo = U"";
 	bool output_active[3] = { false, false, false };
 
-	// book
+	future<void> book_learn_future;
+	bool book_learning = false, book_start_learn = false;
+	int book_learn_accept = 4, book_depth = 30;
 	bool book_changed = false;
 
-	// change book
+	future<void> modify_book_future;
+	bool book_modifying = false;
+
 	bool changing_book = false;
 	int change_book_cell = -1;
 	String changed_book_value_str;
 
-	// import book
+	bool import_book_flag = false;
 	int importing_book = 0;
 	future<bool> import_book_future;
 
-	// popup
+	bool show_log = true;
+
 	bool main_window_active = true;
 
-	// joseki
 	string joseki_name = "";
 
-	// tips
 	String tips;
 
-	// input record
 	bool inputting_record = false;
 	String imported_record;
 
-	// input board
 	bool inputting_board = false;
 	String imported_board;
 
-	// input game
 	bool inputting_game = false;
 	vector<Game> games;
 	int show_start_idx = 0;
 
-	// board fast move
 	uint64_t left_pushed = BUTTON_NOT_PUSHED;
 	uint64_t right_pushed = BUTTON_NOT_PUSHED;
 
-	// edit board
 	bool editing_board = false;
 	uint64_t edit_board_start;
 	Radio_Button_Element radio_button_elem;
 	Radio_Button edit_board_player_radio;
 	Radio_Button edit_board_stone_radio;
 
-	// book reference
 	int changing_book_path = 0;
 	future<void> clear_book_future;
 	future<bool> init_book_future;
 
-	// preference
-	Preference preference;
-	if (!import_preference(&preference)) {
+	int use_ai_mode;
+	string lang_name;
+	if (!import_setting(&int_mode, &use_book, &ai_level, &ai_book_accept, &hint_level, &use_book_depth, &graph_level, &error_level,
+		&use_ai_mode,
+		&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
+		&show_end_popup,
+		&n_thread_idx,
+		&hint_num,
+		&book_depth, &book_learn_accept,
+		&show_log, &use_value_flag,
+		&auto_update_check,
+		&show_over_joseki,
+		&lang_name, &book_file)) {
 		cerr << "use default setting" << endl;
-		set_default_preference(&preference, document_dir);
+		int_mode = 0;
+		use_book = true;
+		ai_level = 15;
+		ai_book_accept = 0;
+		hint_level = 15;
+		use_book_depth = 60;
+		graph_level = 15;
+		error_level = 0;
+		use_ai_mode = 0;
+		use_hint_flag = true;
+		normal_hint = true;
+		human_hint = false;
+		umigame_hint = false;
+		show_end_popup = true;
+		n_thread_idx = min(32, (int)thread::hardware_concurrency());
+		hint_num = 5;
+		book_depth = 40;
+		book_learn_accept = 6;
+		show_log = true;
+		lang_name = language_names[0];
+		use_value_flag = true;
+		auto_update_check = true;
+		show_over_joseki = true;
+		book_file = document_dir + "Egaroucid/book.egbk";
 	}
-	menu_contents_init_preference(&menu_contents, language_names, language_acts, &preference);
+	for (int i = 0; i < mode_size; ++i) {
+		show_mode[i] = i == int_mode;
+	}
+	for (int i = 0; i < (int)language_names.size(); ++i) {
+		language_acts[i] = lang_name == language_names[i];
+	}
+	if (use_ai_mode == 0) {
+		human_first = true;
+		human_second = false;
+		both_ai = false;
+		both_human = false;
+	}
+	else if (use_ai_mode == 1) {
+		human_first = false;
+		human_second = true;
+		both_ai = false;
+		both_human = false;
+	}
+	else if (use_ai_mode == 2) {
+		human_first = false;
+		human_second = false;
+		both_ai = true;
+		both_human = false;
+	}
+	else if (use_ai_mode == 3) {
+		human_first = false;
+		human_second = false;
+		both_ai = false;
+		both_human = true;
+	}
+	for (int i = 0; i < 6; ++i) {
+		hint_nums[i] = i == hint_num;
+	}
+	book_bak_file = book_file + ".bak";
 
-	// thread pool
-	thread_pool.resize(menu_contents.setting.ai.n_thread);
+	thread_pool.resize(n_thread_idx);
 
-	// ai initialize
-	future<bool> initialize_future = async(launch::async, ai_init, preference.book_file);
+	future<bool> initialize_future = async(launch::async, ai_init, book_file);
 	bool initializing = true, initialize_failed = false;
 
-	// version check
 	const URL version_url = U"https://www.egaroucid-app.nyanyan.dev/version.txt";
 	String appdata_dir = FileSystem::GetFolderPath(SpecialFolder::LocalAppData);
 	const FilePath version_save_path = U"{}Egaroucid/version.txt"_fmt(appdata_dir);
 	AsyncHTTPTask version_get;
 	bool new_version_available = false;
 	String new_version;
-	if (menu_contents.help.update_check) {
+	if (auto_update_check) {
 		version_get = SimpleHTTP::SaveAsync(version_url, version_save_path);
 	}
 
-	// language initialize
+	show_end_popup_change = show_end_popup;
+
 	int lang_initialized = 0;
-	string lang_file = "resources/languages/" + preference.lang_name + ".json";
+	string lang_file = "resources/languages/" + lang_name + ".json";
 	future<bool> lang_initialize_future = async(launch::async, lang_initialize, lang_file);
 	language_name.init();
 
 
 	while (System::Update()) {
-
 		/*** log ***/
-		while (getline(logger_stream, logger)) {
+		while (getline(logger_stream, logger))
 			logger_String = Unicode::Widen(logger);
-		}
 		logger_stream.clear();
-		if (menu_contents.display.log) {
+		if (show_log)
 			font15(logger_String).draw(Arg::bottomLeft(5, 720), font_color);
-		}
 		/*** log ***/
-
-
 		/*** terminate ***/
 		if (System::GetUserActions() & UserAction::CloseButtonClicked) {
 			closing = true;
-			update_preference(&preference, menu_contents);
+			use_ai_mode = 0;
+			if (human_first) {
+				use_ai_mode = 0;
+			}
+			else if (human_second) {
+				use_ai_mode = 1;
+			}
+			else if (both_ai) {
+				use_ai_mode = 2;
+			}
+			else if (both_human) {
+				use_ai_mode = 3;
+			}
 			closing_future = async(launch::async, close_app, &hint_state, &hint_future,
 				umigame_state, umigame_future,
 				&human_value_state, &human_value_future,
 				&ai_thinking, &ai_future,
 				&analyzing, &analyze_state, &analyze_future, &analyze_human_future,
-				&preference, book_changed);
+				int_mode, use_book, ai_level, ai_book_accept, hint_level, use_book_depth, graph_level, error_level,
+				use_ai_mode,
+				use_hint_flag, normal_hint, human_hint, umigame_hint,
+				show_end_popup,
+				n_thread_idx,
+				hint_num,
+				book_depth, book_learn_accept,
+				show_log, use_value_flag,
+				auto_update_check,
+				show_over_joseki,
+				&book_learning, &book_learn_future, book_changed,
+				lang_name,
+				book_file, book_bak_file);
 		}
 		if (closing) {
 			closing_draw(font50, font20, icon, logo, texture_loaded);
@@ -1677,14 +2227,49 @@ void Main() {
 				}
 			}
 			else if (lang_initialized == 1) {
-				menu = create_menu(font15, checkbox, &menu_contents);
+				menu = create_menu(checkbox, &dummy,
+					&show_mode[0], &show_mode[1], &show_mode[2],
+					&start_game_flag, &analyze_flag,
+					&human_first, &human_second, &both_ai, &both_human,
+					&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
+					&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
+					&use_value_flag, &show_over_joseki,
+					&use_book, &ai_level, &hint_level, &graph_level, &error_level,
+					&start_book_learn_flag, &stop_book_learn_flag, &book_modify, &book_depth, &book_learn_accept, &import_book_flag, &change_book_path_flag,
+					&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag, &edit_board_flag, &input_game_flag,
+					&show_end_popup_change, &show_log,
+					&n_thread_idx,
+					&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert, &forward_flag, &backward_flag,
+					&usage_flag, &bug_report_flag, &auto_update_check, &check_license,
+					language_acts, language_names);
 				start_game_button.init(start_game_button_x, start_game_button_y, start_game_button_w, start_game_button_h, start_game_button_r, language.get("button", "start_game"), font15, button_color, button_font_color);
 				tips = language.get_random("tips", "tips");
 
 				lang_initialized = 2;
 			}
 			else if (lang_initialized == 2) {
-				menu = create_menu(font15, checkbox, &menu_contents);
+				if (!show_mode[int_mode]) {
+					for (int i = 0; i < mode_size; ++i) {
+						if (show_mode[i]) {
+							int_mode = i;
+						}
+					}
+					menu = create_menu(checkbox, &dummy,
+						&show_mode[0], &show_mode[1], &show_mode[2],
+						&start_game_flag, &analyze_flag,
+						&human_first, &human_second, &both_ai, &both_human,
+						&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
+						&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
+						&use_value_flag, &show_over_joseki,
+						&use_book, &ai_level, &hint_level, &graph_level, &error_level,
+						&start_book_learn_flag, &stop_book_learn_flag, &book_modify, &book_depth, &book_learn_accept, &import_book_flag, &change_book_path_flag,
+						&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag, &edit_board_flag, &input_game_flag,
+						&show_end_popup_change, &show_log,
+						&n_thread_idx,
+						&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert, &forward_flag, &backward_flag,
+						&usage_flag, &bug_report_flag, &auto_update_check, &check_license,
+						language_acts, language_names);
+				}
 				initialize_draw(&initialize_future, &initializing, &initialize_failed, font50, font20, icon, logo, texture_loaded, tips);
 				if (!initializing) {
 					bd.reset();
@@ -1761,8 +2346,9 @@ void Main() {
 
 		/*** change book path ***/
 		else if (changing_book_path == 1) {
-			int change_book_state = change_book_path_draw(&preference.book_file, font40, font20, document_dir + "Egaroucid/book.egbk");
+			int change_book_state = change_book_path_draw(&book_file, font40, font20, document_dir + "Egaroucid/book.egbk");
 			if (change_book_state == 1) {
+				book_bak_file = book_file + ".bak";
 				reset_hint(&hint_state, &hint_future);
 				hint_state = 0;
 				changing_book_path = 2;
@@ -1787,7 +2373,7 @@ void Main() {
 			continue;
 		}
 		else if (changing_book_path == 4) {
-			init_book_future = async(launch::async, book_init, preference.book_file);
+			init_book_future = async(launch::async, book_init, book_file);
 			changing_book_path = 5;
 			import_loading_book(font50, icon, logo);
 			continue;
@@ -1814,43 +2400,79 @@ void Main() {
 
 		/*** initialized ***/
 		else {
-			/**** mode change **/
-			if ((preference.int_mode == 0 && !menu_contents.mode.simple) || (preference.int_mode == 1 && !menu_contents.mode.professional) || (preference.int_mode == 2 && !menu_contents.mode.game)) {
-				if (menu_contents.mode.simple) {
-					preference.int_mode = 0;
+			/**** when mode changed **/
+			if (!show_mode[int_mode]) {
+				for (int i = 0; i < mode_size; ++i) {
+					if (show_mode[i]) {
+						int_mode = i;
+					}
 				}
-				else if (menu_contents.mode.professional) {
-					preference.int_mode = 1;
-				}
-				else if (menu_contents.mode.game) {
-					preference.int_mode = 2;
-				}
-				if (menu_contents.mode.professional && fork_mode) {
+				if (int_mode != 1 && fork_mode) {
 					fork_mode = false;
 					fork_history.clear();
 					history_place = min(history_place, (int)history.size() - 1);
 					bd = history[find_history_idx(history, history_place)].b;
 				}
-				menu = create_menu(font15, checkbox, &menu_contents);
+				menu = create_menu(checkbox, &dummy,
+					&show_mode[0], &show_mode[1], &show_mode[2],
+					&start_game_flag, &analyze_flag,
+					&human_first, &human_second, &both_ai, &both_human,
+					&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
+					&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
+					&use_value_flag, &show_over_joseki,
+					&use_book, &ai_level, &hint_level, &graph_level, &error_level,
+					&start_book_learn_flag, &stop_book_learn_flag, &book_modify, &book_depth, &book_learn_accept, &import_book_flag, &change_book_path_flag,
+					&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag, &edit_board_flag, &input_game_flag,
+					&show_end_popup_change, &show_log,
+					&n_thread_idx,
+					&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert, &forward_flag, &backward_flag,
+					&usage_flag, &bug_report_flag, &auto_update_check, &check_license,
+					language_acts, language_names);
+				edit_board_player_radio.init();
+				radio_button_elem.init(700, 150, font20, 20, language.get("common", "black"), true);
+				edit_board_player_radio.push(radio_button_elem);
+				radio_button_elem.init(700, 180, font20, 20, language.get("common", "white"), false);
+				edit_board_player_radio.push(radio_button_elem);
+				edit_board_stone_radio.init();
+				radio_button_elem.init(700, 350, font20, 20, language.get("edit_board", "black"), true);
+				edit_board_stone_radio.push(radio_button_elem);
+				radio_button_elem.init(700, 380, font20, 20, language.get("edit_board", "white"), false);
+				edit_board_stone_radio.push(radio_button_elem);
+				radio_button_elem.init(700, 410, font20, 20, language.get("edit_board", "empty"), false);
+				edit_board_stone_radio.push(radio_button_elem);
 			}
-			/**** mode change **/
+			/**** when mode changed **/
 
 			/*** thread ***/
-			if (menu_contents.setting.ai.n_thread != preference.n_thread_idx) {
-				thread_pool.resize(menu_contents.setting.ai.n_thread);
-				preference.n_thread_idx = menu_contents.setting.ai.n_thread;
-				cerr << "threads resized to " << menu_contents.setting.ai.n_thread << endl;
+			if (n_thread_idx != former_n_thread_idx) {
+				thread_pool.resize(n_thread_idx);
+				former_n_thread_idx = n_thread_idx;
+				cerr << "threads resized to " << n_thread_idx << " completed " << thread_pool.size() << endl;
 			}
 			/*** thread ***/
 
 			/*** language ***/
-			for (int i = 0; i < (int)menu_contents.language.name.size(); ++i) {
-				if (menu_contents.language.acts[i] && menu_contents.language.name[i] != preference.lang_name) {
-					preference.lang_name = menu_contents.language.name[i];
-					lang_file = "resources/languages/" + menu_contents.language.name[i] + ".json";
+			for (int i = 0; i < (int)language_names.size(); ++i) {
+				if (language_acts[i] && language_names[i] != lang_name) {
+					lang_name = language_names[i];
+					lang_file = "resources/languages/" + lang_name + ".json";
 					lang_initialize(lang_file);
 					cerr << "lang " << language.get("lang_name").narrow() << endl;
-					menu = create_menu(font15, checkbox, &menu_contents);
+					menu = create_menu(checkbox, &dummy,
+						&show_mode[0], &show_mode[1], &show_mode[2],
+						&start_game_flag, &analyze_flag,
+						&human_first, &human_second, &both_ai, &both_human,
+						&use_hint_flag, &normal_hint, &human_hint, &umigame_hint,
+						&hint_nums[0], &hint_nums[1], &hint_nums[2], &hint_nums[3], &hint_nums[4], &hint_nums[5],
+						&use_value_flag, &show_over_joseki,
+						&use_book, &ai_level, &hint_level, &graph_level, &error_level,
+						&start_book_learn_flag, &stop_book_learn_flag, &book_modify, &book_depth, &book_learn_accept, &import_book_flag, &change_book_path_flag,
+						&output_record_flag, &output_game_flag, &input_record_flag, &input_board_flag, &edit_board_flag, &input_game_flag,
+						&show_end_popup_change, &show_log,
+						&n_thread_idx,
+						&stop_read_flag, &resume_read_flag, &vertical_convert, &black_line_convert, &white_line_convert, &forward_flag, &backward_flag,
+						&usage_flag, &bug_report_flag, &auto_update_check, &check_license,
+						language_acts, language_names);
 					start_game_button.init(start_game_button_x, start_game_button_y, start_game_button_w, start_game_button_h, start_game_button_r, language.get("button", "start_game"), font15, button_color, button_font_color);
 					edit_board_player_radio.init();
 					radio_button_elem.init(700, 150, font20, 20, language.get("common", "black"), true);
@@ -1869,6 +2491,16 @@ void Main() {
 			}
 			/*** language ***/
 
+			/*** hint show num ***/
+			if (!hint_nums[hint_num]) {
+				for (int i = 0; i < 6; ++i) {
+					if (hint_nums[i]) {
+						hint_num = i;
+					}
+				}
+			}
+			/*** hint show num ***/
+
 			/*** analyzing ***/
 			if (analyzing) {
 				if (fork_mode) {
@@ -1881,12 +2513,12 @@ void Main() {
 						history_place = fork_history[analyze_idx].b.n - 4;
 						if (analyze_state == 0) {
 							fork_history[analyze_idx].v = -INF;
-							analyze_future = async(launch::async, analyze_search, fork_history[analyze_idx].b, menu_contents.setting.ai.graph_level, menu_contents.setting.ai.use_book);
+							analyze_future = async(launch::async, analyze_search, fork_history[analyze_idx].b, graph_level, use_book, use_book_depth);
 							analyze_state = 1;
 						}
 						else if (analyze_state == 1 && analyze_future.wait_for(chrono::seconds(0)) == future_status::ready) {
 							fork_history[analyze_idx].v = analyze_future.get().value;
-							if (menu_contents.display.hint_elem.human_value) {
+							if (human_hint) {
 								analyze_human_future = async(launch::async, calc_human_value, fork_history[analyze_idx].b, human_value_depth, human_value_search_depth);
 								analyze_state = 2;
 							}
@@ -1912,12 +2544,12 @@ void Main() {
 						history_place = history[analyze_idx].b.n - 4;
 						if (analyze_state == 0) {
 							history[analyze_idx].v = -INF;
-							analyze_future = async(launch::async, analyze_search, history[analyze_idx].b, menu_contents.setting.ai.graph_level, menu_contents.setting.ai.use_book);
+							analyze_future = async(launch::async, analyze_search, history[analyze_idx].b, graph_level, use_book, use_book_depth);
 							analyze_state = 1;
 						}
 						else if (analyze_state == 1 && analyze_future.wait_for(chrono::seconds(0)) == future_status::ready) {
 							history[analyze_idx].v = analyze_future.get().value;
-							if (menu_contents.display.hint_elem.human_value) {
+							if (human_hint) {
 								analyze_human_future = async(launch::async, calc_human_value, history[analyze_idx].b, human_value_depth, human_value_search_depth);
 								analyze_state = 2;
 							}
@@ -1937,7 +2569,7 @@ void Main() {
 			/*** analyzing ***/
 
 			if (!editing_board && !before_start_game) {
-				if (menu_contents.display.graph) {
+				if (use_value_flag) {
 					for (int cell = 0; cell < HW2; ++cell) {
 						board_cells[cell] = Rect(board_sx + (HW_M1 - cell % HW) * board_cell_size, board_sy + (HW_M1 - cell / HW) * board_cell_size, board_cell_size, board_cell_size);
 					}
@@ -1951,25 +2583,23 @@ void Main() {
 				for (int cell = 0; cell < HW2; ++cell) {
 					board_clicked[cell] = false;
 				}
-				if (!menu.active() && !changing_book && main_window_active && ((menu_contents.setting.player.both_human || (menu_contents.setting.player.human_first && bd.p == BLACK) || (menu_contents.setting.player.ai_first && bd.p == WHITE)) || (history_place != history[history.size() - 1].b.n - 4 && menu_contents.mode.professional))) {
+				if (!menu.active() && !changing_book && !book_learning && !book_modifying && main_window_active && ((both_human || (human_first && bd.p == BLACK) || (human_second && bd.p == WHITE)) || (history_place != history[history.size() - 1].b.n - 4 && show_mode[1]))) {
 					for (int cell = 0; cell < HW2; ++cell) {
 						board_clicked[cell] = board_cells[cell].leftClicked() && (1 & (legal >> cell));
 					}
 				}
-				if (not_finished(bd) && (menu_contents.setting.player.both_human || (menu_contents.setting.player.human_first && bd.p == BLACK) || (menu_contents.setting.player.ai_first && bd.p == WHITE) || history_place != history[history.size() - 1].b.n - 4)) {
+				if (not_finished(bd) && (both_human || (human_first && bd.p == BLACK) || (human_second && bd.p == WHITE) || history_place != history[history.size() - 1].b.n - 4)) {
 					/*** human plays ***/
 					pair<int, Board> moved_board = move_board(bd, board_clicked);
 					if (moved_board.first != -1) {
 						bool next_fork_mode = (!fork_mode && history_place != history[history.size() - 1].b.n - 4);
 						int v = -INF, v_prev = -INF;
-						if (menu_contents.display.hint && menu_contents.display.hint_elem.disc_difference && !menu_contents.mode.game) {
-							for (int cell = 0; cell < HW2; ++cell) {
-								if ((1 & (hint_legal >> cell)) && hint_state > 0 && menu_contents.display.hint) {
-									if (board_clicked[cell]) {
-										v = (bd.p ? -1 : 1) * hint_value[cell];
-									}
-									v_prev = max(v_prev, hint_value[cell]);
+						for (int cell = 0; cell < HW2; ++cell) {
+							if ((1 & (hint_legal >> cell)) && hint_state > 0 && use_hint_flag) {
+								if (board_clicked[cell]) {
+									v = (bd.p ? -1 : 1) * hint_value[cell];
 								}
+								v_prev = max(v_prev, hint_value[cell]);
 							}
 						}
 						if (v_prev != -INF) {
@@ -2029,8 +2659,8 @@ void Main() {
 					/*** human plays ***/
 
 					/*** hints ***/
-					if (not_finished(bd) && menu_contents.display.hint && !analyzing) {
-						if (menu_contents.display.hint_elem.disc_difference && hint_state <= menu_contents.setting.ai.hint_level * 2 + 1) {
+					if (not_finished(bd) && use_hint_flag && !analyzing) {
+						if (normal_hint && hint_state <= hint_level * 2 + 1) {
 							if (hint_state % 2 == 0) {
 								if (global_searching) {
 									if (hint_state == 0) {
@@ -2040,7 +2670,7 @@ void Main() {
 										}
 										child_transpose_table.init();
 									}
-									else if (menu_contents.mode.professional && hint_state == menu_contents.setting.ai.hint_level * 2 / 3 * 2) {
+									else if (show_mode[1] && hint_state == hint_level * 2 / 3 * 2) {
 										uint64_t n_hint_legal = 0;
 										vector<pair<int, int>> legals;
 										for (int cell = 0; cell < HW2; ++cell) {
@@ -2049,7 +2679,7 @@ void Main() {
 											}
 										}
 										sort(legals.begin(), legals.end());
-										for (int i = 0; i < min((int)legals.size(), max(menu_contents.display.hint_elem.n_disc_difference + 4, menu_contents.display.hint_elem.n_disc_difference * 3 / 2 + 1)); ++i) {
+										for (int i = 0; i < min((int)legals.size(), max(hint_actual_nums[hint_num] + 4, hint_actual_nums[hint_num] * 3 / 2 + 1)); ++i) {
 											n_hint_legal |= 1ULL << legals[i].second;
 										}
 										for (int i = 0; i < (int)legals.size(); ++i) {
@@ -2059,7 +2689,7 @@ void Main() {
 										}
 										hint_legal = n_hint_legal;
 									}
-									hint_future = async(launch::async, ai_hint, bd, hint_state / 2, menu_contents.setting.ai.hint_level, hint_calc_value, hint_calc_depth, hint_best_moves, hint_value, hint_legal);
+									hint_future = async(launch::async, ai_hint, bd, hint_state / 2, hint_level, hint_calc_value, hint_calc_depth, hint_best_moves, hint_value, hint_legal);
 									++hint_state;
 								}
 							}
@@ -2089,11 +2719,11 @@ void Main() {
 											}
 										}
 										if (all_complete_searched) {
-											hint_state = menu_contents.setting.ai.hint_level * 2 + 2;
+											hint_state = hint_level * 2 + 2;
 										}
 										else {
 											++hint_state;
-											if (hint_state > menu_contents.setting.ai.hint_level * 2 + 1) {
+											if (hint_state > hint_level * 2 + 1) {
 												child_transpose_table.init();
 											}
 										}
@@ -2101,13 +2731,13 @@ void Main() {
 								}
 								else {
 									++hint_state;
-									if (hint_state > menu_contents.setting.ai.hint_level * 2 + 1) {
+									if (hint_state > hint_level * 2 + 1) {
 										child_transpose_table.init();
 									}
 								}
 							}
 						}
-						if (menu_contents.mode.professional && menu_contents.display.hint_elem.umigame_value) {
+						if (show_mode[1] && umigame_hint) {
 							for (int cell = 0; cell < HW2; ++cell) {
 								if ((1 & (legal >> cell))) {
 									if (umigame_state[cell] == 0) {
@@ -2131,7 +2761,7 @@ void Main() {
 								}
 							}
 						}
-						if (menu_contents.mode.professional && menu_contents.display.hint_elem.human_value) {
+						if (show_mode[1] && human_hint) {
 							if (human_value_state == 0) {
 								human_value_future = get_human_value(bd, human_value_depth, human_value, human_value_search_depth);
 								human_value_state = 1;
@@ -2147,7 +2777,7 @@ void Main() {
 					/*** hints ***/
 
 					/*** change book ***/
-					if (menu_contents.mode.professional) {
+					if (show_mode[1]) {
 						uint64_t legal = bd.get_legal();
 						for (int cell = 0; cell < HW2; ++cell) {
 							if (1 & (legal >> cell)) {
@@ -2291,11 +2921,11 @@ void Main() {
 					/*** change book ***/
 				}
 				/*** ai plays ***/
-				else if (not_finished(bd) && history[history.size() - 1].b.n - 4 == history_place) {
+				else if (not_finished(bd) && history[history.size() - 1].b.n - 4 == history_place && !book_learning && !book_modifying) {
 					if (ai_thinking) {
 						if (ai_future.wait_for(chrono::seconds(0)) == future_status::ready) {
 							Search_result ai_result = ai_future.get();
-							int sgn = (bd.p ? 1 : -1);
+							int sgn = (bd.p ? -1 : 1);
 							Flip flip;
 							calc_flip(&flip, &bd, ai_result.policy);
 							bd.move(&flip);
@@ -2303,9 +2933,13 @@ void Main() {
 								popup_start_time = tim();
 							}
 							int v = sgn * ai_result.value;
-							History_elem hist_tmp = { bd, v, flip.pos, history[history.size() - 1].record + str_record(flip.pos) };
+							if (history.size()) {
+								history[history.size() - 1].v = v;
+							}
+							History_elem hist_tmp = { bd, -INF, flip.pos, history[history.size() - 1].record + str_record(flip.pos) };
 							history.emplace_back(hist_tmp);
 							history_place = bd.n - 4;
+							ai_value = ai_result.value;
 							ai_thinking = false;
 							reset_hint(&hint_state, &hint_future);
 							reset_umigame(umigame_state, umigame_future);
@@ -2314,7 +2948,7 @@ void Main() {
 						}
 					}
 					else if (global_searching) {
-						ai_future = async(launch::async, ai, bd, menu_contents.setting.ai.ai_level, menu_contents.setting.ai.use_book, menu_contents.mode.game ? menu_contents.setting.ai.error_level : 0);
+						ai_future = async(launch::async, ai, bd, ai_level, use_book && bd.n - 3 <= use_book_depth, show_mode[2] ? error_level : 0);
 						ai_thinking = true;
 					}
 				}
@@ -2322,7 +2956,7 @@ void Main() {
 			}
 
 			/*** graph interaction ***/
-			if (!editing_board && main_window_active && !ai_thinking && !changing_book) {
+			if (!editing_board && main_window_active && !ai_thinking && !book_learning && !book_modifying && !changing_book) {
 				int former_history_place = history_place;
 				if (!KeyLeft.pressed() && !KeyA.pressed()) {
 					left_pushed = BUTTON_NOT_PUSHED;
@@ -2330,7 +2964,7 @@ void Main() {
 				if (!KeyRight.pressed() && !KeyD.pressed()) {
 					right_pushed = BUTTON_NOT_PUSHED;
 				}
-				if (KeyLeft.down() || KeyA.down() || (left_pushed != BUTTON_NOT_PUSHED && tim() - left_pushed >= BUTTON_LONG_PRESS_THRESHOLD) || menu_contents.manipulate.back) {
+				if (KeyLeft.down() || KeyA.down() || (left_pushed != BUTTON_NOT_PUSHED && tim() - left_pushed >= BUTTON_LONG_PRESS_THRESHOLD) || backward_flag) {
 					if (fork_mode) {
 						if (contain_history_idx(fork_history, history_place - 1) || contain_history_idx(history, history_place - 1)) {
 							--history_place;
@@ -2345,22 +2979,22 @@ void Main() {
 							--history_place;
 						}
 					}
-					if (KeyLeft.down() || KeyA.down() || menu_contents.manipulate.back) {
+					if (KeyLeft.down() || KeyA.down()) {
 						left_pushed = tim();
 					}
 				}
-				else if (KeyRight.down() || KeyD.down() || (right_pushed != BUTTON_NOT_PUSHED && tim() - right_pushed >= BUTTON_LONG_PRESS_THRESHOLD) || menu_contents.manipulate.go) {
+				else if (KeyRight.down() || KeyD.down() || (right_pushed != BUTTON_NOT_PUSHED && tim() - right_pushed >= BUTTON_LONG_PRESS_THRESHOLD) || forward_flag) {
 					if (fork_mode) {
 						history_place = min(fork_history[fork_history.size() - 1].b.n - 4, history_place + 1);
 					}
 					else {
 						history_place = min(history[history.size() - 1].b.n - 4, history_place + 1);
 					}
-					if (KeyRight.down() || KeyD.down() || menu_contents.manipulate.go) {
+					if (KeyRight.down() || KeyD.down()) {
 						right_pushed = tim();
 					}
 				}
-				else if (menu_contents.display.graph) {
+				else if (use_value_flag) {
 					history_place = graph.update_place(history, fork_history, history_place);
 				}
 				if (history_place != former_history_place) {
@@ -2417,41 +3051,56 @@ void Main() {
 
 			/*** info draw ***/
 			if (!editing_board) {
-				if (menu_contents.display.graph) {
-					info_draw(bd, joseki_name, menu_contents.setting.ai.ai_level, menu_contents.setting.ai.hint_level, font20, font15);
+				if (use_value_flag) {
+					info_draw(bd, joseki_name, ai_level, hint_level, font20, font15);
 				}
 				else {
-					info_big_draw(bd, joseki_name, menu_contents.setting.ai.ai_level, menu_contents.setting.ai.hint_level, font20, font15);
+					info_big_draw(bd, joseki_name, ai_level, hint_level, font20, font15);
 				}
 			}
 			/*** info draw ***/
 
 			/*** human sense value draw ***/
-			if (!editing_board && menu_contents.display.graph) {
+			if (!editing_board && use_value_flag) {
 				human_sense_graph.draw(human_value_hist, fork_human_value_hist, bd);
 			}
 			/*** human sense value draw ***/
 
 			/*** graph draw ***/
-			if (!editing_board && menu_contents.display.graph) {
+			if (!editing_board && use_value_flag) {
 				graph.draw(history, fork_history, history_place);
 			}
 			/*** graph draw ***/
 
 			/*** Board draw ***/
 			if (!editing_board) {
-				if (!fork_mode) {
+				if (book_learning || book_modifying) {
+					History_elem history_elem;
+					history_elem.b = bd;
+					history_elem.policy = -1;
+					history_elem.record = U"";
+					history_elem.v = -INF;
+					board_draw(use_value_flag, board_cells, history_elem, -1, int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
+							hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, hint_actual_nums[hint_num], font30, normal_hint_font, small_hint_font, font25, mini_hint_font, board_coord_font,
+							before_start_game,
+							umigame_state, umigame_value,
+							human_value_state, human_value,
+							book_start_learn,
+							show_over_joseki);
+				}
+				else if (!fork_mode) {
 					if (analyzing && analyze_idx < (int)history.size()) {
 						int next_policy = -1;
 						if ((int)history.size() > analyze_idx + 1) {
 							next_policy = history[analyze_idx + 1].policy;
 						}
-						board_draw(board_cells, history[analyze_idx], next_policy,
-							hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, font30, normal_hint_font, small_hint_font, font25, mini_hint_font, board_coord_font,
+						board_draw(use_value_flag, board_cells, history[analyze_idx], next_policy, int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
+							hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, hint_actual_nums[hint_num], font30, normal_hint_font, small_hint_font, font25, mini_hint_font, board_coord_font,
 							before_start_game,
 							umigame_state, umigame_value,
 							human_value_state, human_value,
-							&menu_contents);
+							book_start_learn,
+							show_over_joseki);
 					}
 					else {
 						int history_idx = find_history_idx(history, history_place);
@@ -2459,12 +3108,13 @@ void Main() {
 						if ((int)history.size() > history_idx + 1) {
 							next_policy = history[history_idx + 1].policy;
 						}
-						board_draw(board_cells, history[history_idx], next_policy,
-							hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, font30, normal_hint_font, small_hint_font, font25, mini_hint_font, board_coord_font,
+						board_draw(use_value_flag, board_cells, history[history_idx], next_policy, int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
+							hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, hint_actual_nums[hint_num], font30, normal_hint_font, small_hint_font, font25, mini_hint_font, board_coord_font,
 							before_start_game,
 							umigame_state, umigame_value,
 							human_value_state, human_value,
-							&menu_contents);
+							book_start_learn,
+							show_over_joseki);
 					}
 				}
 				else {
@@ -2473,12 +3123,13 @@ void Main() {
 						if ((int)fork_history.size() > analyze_idx + 1) {
 							next_policy = fork_history[analyze_idx + 1].policy;
 						}
-						board_draw(board_cells, fork_history[analyze_idx], next_policy,
-							hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, font30, normal_hint_font, small_hint_font, font25, mini_hint_font, board_coord_font,
+						board_draw(use_value_flag, board_cells, fork_history[analyze_idx], next_policy, int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
+							hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, hint_actual_nums[hint_num], font30, normal_hint_font, small_hint_font, font25, mini_hint_font, board_coord_font,
 							before_start_game,
 							umigame_state, umigame_value,
 							human_value_state, human_value,
-							&menu_contents);
+							book_start_learn,
+							show_over_joseki);
 					}
 					else {
 						int history_idx = find_history_idx(fork_history, history_place);
@@ -2486,12 +3137,13 @@ void Main() {
 						if ((int)fork_history.size() > history_idx + 1) {
 							next_policy = fork_history[history_idx + 1].policy;
 						}
-						board_draw(board_cells, fork_history[history_idx], next_policy,
-							hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, font30, normal_hint_font, small_hint_font, font25, mini_hint_font, board_coord_font,
+						board_draw(use_value_flag, board_cells, fork_history[history_idx], next_policy, int_mode, use_hint_flag, normal_hint, human_hint, umigame_hint,
+							hint_state, hint_legal, hint_value, hint_depth, hint_best_moves, hint_actual_nums[hint_num], font30, normal_hint_font, small_hint_font, font25, mini_hint_font, board_coord_font,
 							before_start_game,
 							umigame_state, umigame_value,
 							human_value_state, human_value,
-							&menu_contents);
+							book_start_learn,
+							show_over_joseki);
 					}
 				}
 			}
@@ -2528,8 +3180,8 @@ void Main() {
 			/*** before and after game ***/
 			if (!editing_board) {
 				if (!before_start_game) {
-					if (bd.get_legal() == 0ULL && !fork_mode && show_popup_flag && menu_contents.display.popup_in_end) {
-						show_popup_flag = !show_popup(bd, !menu_contents.setting.player.both_human, menu_contents.setting.player.human_first, menu_contents.setting.player.ai_first, menu_contents.setting.player.both_ai, menu_contents.setting.ai.ai_level, font50, font30, popup_start_time);
+					if (bd.get_legal() == 0ULL && !fork_mode && show_popup_flag && show_end_popup) {
+						show_popup_flag = !show_popup(bd, !both_human, human_first, human_second, both_ai, ai_level, font50, font30, popup_start_time);
 						main_window_active = !show_popup_flag;
 						if (main_window_active) {
 							global_searching = true;
@@ -2537,7 +3189,7 @@ void Main() {
 						}
 					}
 				}
-				else if (menu_contents.setting.player.ai_first || menu_contents.setting.player.both_ai) {
+				else if (human_second || both_ai) {
 					start_game_button.draw();
 					main_window_active = false;
 					if (!menu.active() && start_game_button.clicked()) {
@@ -2577,10 +3229,9 @@ void Main() {
 			/*** output game ***/
 			if (outputting_game) {
 				int output_state = output_game_popup(font40, font30, font20, &black_player, &white_player, &game_memo, output_active);
-				int use_ai_mode = (int)menu_contents.setting.player.human_first + (int)menu_contents.setting.player.ai_first * 2 + (int)menu_contents.setting.player.both_ai * 3 + (int)menu_contents.setting.player.both_human * 4;
 				if (output_state == 1) {
 					if (fork_mode) {
-						if (output_game(fork_history[find_history_idx(fork_history, history_place)], menu_contents.setting.ai.ai_level, use_ai_mode, black_player, white_player, game_memo, document_dir)) {
+						if (output_game(fork_history[find_history_idx(fork_history, history_place)], ai_level, use_ai_mode, black_player, white_player, game_memo, document_dir)) {
 							cerr << "game saved" << endl;
 							outputting_game = false;
 							main_window_active = true;
@@ -2591,7 +3242,7 @@ void Main() {
 						}
 					}
 					else {
-						if (output_game(history[find_history_idx(history, history_place)], menu_contents.setting.ai.ai_level, use_ai_mode, black_player, white_player, game_memo, document_dir)) {
+						if (output_game(history[find_history_idx(history, history_place)], ai_level, use_ai_mode, black_player, white_player, game_memo, document_dir)) {
 							cerr << "game saved" << endl;
 							outputting_game = false;
 							main_window_active = true;
@@ -2603,7 +3254,7 @@ void Main() {
 					}
 				}
 				else if (output_state == 2) {
-					if (output_game(history[history.size() - 1], menu_contents.setting.ai.ai_level, use_ai_mode, black_player, white_player, game_memo, document_dir)) {
+					if (output_game(history[history.size() - 1], ai_level, use_ai_mode, black_player, white_player, game_memo, document_dir)) {
 						cerr << "game saved" << endl;
 						outputting_game = false;
 						main_window_active = true;
@@ -2693,8 +3344,24 @@ void Main() {
 			}
 			/*** importing board ***/
 
+			/*** book learn ***/
+			if (book_start_learn && !book_learning && !book_modifying) {
+				book_start_learn = false;
+				book_learn_future.get();
+			}
+			/*** book learn ***/
+
+			/*** book modification ***/
+			if (book_modifying) {
+				if (modify_book_future.wait_for(chrono::seconds(0)) == future_status::ready) {
+					modify_book_future.get();
+					book_modifying = false;
+				}
+			}
+			/*** book modification ***/
+
 			/*** ai stop calculating ***/
-			if (ai_thinking && (menu_contents.setting.player.both_human || (menu_contents.setting.player.human_first && bd.p == BLACK) || (menu_contents.setting.player.ai_first && bd.p == WHITE))) {
+			if (ai_thinking && (both_human || (human_first && bd.p == BLACK) || (human_second && bd.p == WHITE))) {
 				reset_hint(&hint_state, &hint_future);
 				reset_umigame(umigame_state, umigame_future);
 				reset_human_value(&human_value_state, &human_value_future);
@@ -2704,7 +3371,7 @@ void Main() {
 			/*** ai stop calculating ***/
 
 			/*** menu buttons ***/
-			if (menu_contents.game.start) {
+			if (start_game_flag && !book_learning && !book_modifying) {
 				cerr << "reset" << endl;
 				bd.reset();
 				history.clear();
@@ -2724,7 +3391,7 @@ void Main() {
 				reset_ai(&ai_thinking, &ai_future);
 				reset_analyze(&analyzing, &analyze_state, &analyze_future, &analyze_human_future);
 			}
-			else if (menu_contents.game.analyze) {
+			else if (analyze_flag && !book_learning && !book_modifying) {
 				reset_hint(&hint_state, &hint_future);
 				reset_umigame(umigame_state, umigame_future);
 				reset_human_value(&human_value_state, &human_value_future);
@@ -2742,7 +3409,7 @@ void Main() {
 				analyze_idx = 0;
 				before_start_game = false;
 			}
-			else if (menu_contents.inout.out.record) {
+			else if (output_record_flag && !book_learning) {
 				if (fork_mode) {
 					Clipboard::SetText(fork_history[find_history_idx(fork_history, history_place)].record);
 				}
@@ -2751,19 +3418,19 @@ void Main() {
 				}
 				cerr << "record copied" << endl;
 			}
-			else if (menu_contents.inout.out.game && !before_start_game && main_window_active && !inputting_record && !inputting_board) {
-				if (!menu_contents.setting.player.both_human) {
-					if (menu_contents.setting.player.both_ai) {
+			else if (output_game_flag && !before_start_game && main_window_active && !book_learning && !book_modifying && !inputting_record && !inputting_board) {
+				if (!both_human) {
+					if (both_ai) {
 						black_player = U"Egaroucid";
 						white_player = U"Egaroucid";
 					}
-					else if (menu_contents.setting.player.human_first) {
+					else if (human_first) {
 						if (black_player == U"Egaroucid") {
 							black_player = U"";
 						}
 						white_player = U"Egaroucid";
 					}
-					else if (menu_contents.setting.player.ai_first) {
+					else if (human_second) {
 						if (white_player == U"Egaroucid") {
 							white_player = U"";
 						}
@@ -2781,29 +3448,29 @@ void Main() {
 				outputting_game = true;
 				main_window_active = false;
 			}
-			else if (menu_contents.inout.in.record && !outputting_game && !inputting_board) {
+			else if (input_record_flag && !book_learning && !book_modifying && !outputting_game && !inputting_board) {
 				editing_board = false;
 				inputting_record = true;
 				main_window_active = false;
 				imported_record.clear();
 			}
-			else if (menu_contents.inout.in.board && !outputting_game && !inputting_record) {
+			else if (input_board_flag && !book_learning && !book_modifying && !outputting_game && !inputting_record) {
 				editing_board = false;
 				inputting_board = true;
 				main_window_active = false;
 				imported_board.clear();
 			}
-			else if (menu_contents.inout.in.edit_board && !outputting_game && !inputting_record && !inputting_board) {
+			else if (edit_board_flag && !book_learning && !book_modifying && !outputting_game && !inputting_record && !inputting_board) {
 				editing_board = true;
 				before_start_game = true;
 				edit_board_start = tim();
 			}
-			else if (menu_contents.inout.in.game && !outputting_game && !inputting_record && !inputting_board) {
+			else if (input_game_flag) {
 				get_saved_games(document_dir, games);
 				show_start_idx = 0;
 				inputting_game = true;
 			}
-			else if (menu_contents.manipulate.stop) {
+			else if (stop_read_flag) {
 				cerr << "stop calculating" << endl;
 				reset_hint(&hint_state, &hint_future);
 				reset_umigame(umigame_state, umigame_future);
@@ -2817,11 +3484,11 @@ void Main() {
 				human_value_state = INF;
 				global_searching = false;
 			}
-			else if (menu_contents.manipulate.resume) {
+			else if (resume_read_flag) {
 				cerr << "resume calculating" << endl;
 				global_searching = true;
 			}
-			else if (menu_contents.manipulate.transform_elem.rotate_180 && !analyzing && !ai_thinking) {
+			else if (vertical_convert && !analyzing && !book_learning && !book_modifying && !ai_thinking) {
 				bd.board_rotate_180();
 				String record = U"";
 				for (History_elem& elem : history) {
@@ -2848,7 +3515,7 @@ void Main() {
 				reset_human_value(&human_value_state, &human_value_future);
 				reset_ai(&ai_thinking, &ai_future);
 			}
-			else if (menu_contents.manipulate.transform_elem.black_line && !analyzing && !ai_thinking) {
+			else if (black_line_convert && !analyzing && !book_learning && !book_modifying && !ai_thinking) {
 				bd.board_black_line_mirror();
 				String record = U"";
 				for (History_elem& elem : history) {
@@ -2879,7 +3546,7 @@ void Main() {
 				reset_human_value(&human_value_state, &human_value_future);
 				reset_ai(&ai_thinking, &ai_future);
 			}
-			else if (menu_contents.manipulate.transform_elem.white_line && !analyzing && !ai_thinking) {
+			else if (white_line_convert && !analyzing && !book_learning && !book_modifying && !ai_thinking) {
 				bd.board_white_line_mirror();
 				String record = U"";
 				for (History_elem& elem : history) {
@@ -2910,26 +3577,49 @@ void Main() {
 				reset_human_value(&human_value_state, &human_value_future);
 				reset_ai(&ai_thinking, &ai_future);
 			}
-			else if (menu_contents.joseki.input) {
+			else if (start_book_learn_flag && !before_start_game && !book_learning && !book_modifying) {
+				book_learning = true;
+				book_start_learn = true;
+				book_changed = true;
+				book_learn_future = async(launch::async, learn_book, bd, ai_level, book_depth, book_learn_accept, &bd, &bd_value, &book_learning);
+			}
+			else if (stop_book_learn_flag || (book_learning && !show_mode[1])) {
+				if (book_learning) {
+					book_learning = false;
+					global_searching = false;
+					book_learn_future.get();
+					global_searching = true;
+				}
+				book_start_learn = false;
+			}
+			else if (import_book_flag && !book_learning && !book_modifying) {
 				importing_book = 1;
 			}
-			else if (menu_contents.joseki.reference) {
+			else if (book_modify && !book_learning && !book_modifying) {
+				if (book.get(&bd) != -INF) {
+					cerr << "modifying book..." << endl;
+					book_modifying = true;
+					book_changed = true;
+					modify_book_future = async(launch::async, modify_book_parent, &bd);
+				}
+			}
+			else if (change_book_path_flag) {
 				cerr << "changing book path" << endl;
 				changing_book_path = 1;
 			}
-			else if (menu_contents.help.usage) {
+			else if (usage_flag) {
 				System::LaunchBrowser(U"https://www.egaroucid-app.nyanyan.dev/usage/");
 			}
-			else if (menu_contents.help.report) {
+			else if (bug_report_flag) {
 				System::LaunchBrowser(U"https://docs.google.com/forms/d/e/1FAIpQLSd6ML1T1fc707luPEefBXuImMnlM9cQP8j-YHKiSyFoS-8rmQ/viewform?usp=sf_link");
 			}
-			else if (menu_contents.display.popup_in_end != preference.show_end_popup) {
-				preference.show_end_popup = menu_contents.display.popup_in_end;
-				if (!main_window_active && menu_contents.display.popup_in_end) {
+			else if (show_end_popup_change != show_end_popup) {
+				if (!main_window_active && show_end_popup) {
 					main_window_active = true;
 				}
+				show_end_popup = show_end_popup_change;
 			}
-			else if (menu_contents.help.license) {
+			else if (check_license) {
 				LicenseManager::ShowInBrowser();
 			}
 			/*** menu buttons ***/
