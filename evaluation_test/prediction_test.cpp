@@ -39,5 +39,5 @@ int main(int argc, char *argv[]){
         error_sum += abs(arr1[i] - arr2[i]);
         ++div;
     }
-    cout << (double)error_sum / div << endl;
+    cout << (double)error_sum / div << " " << (double)error_sum / div / 256 << endl;
 }

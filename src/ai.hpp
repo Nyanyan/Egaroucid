@@ -280,7 +280,7 @@ Search_result ai(Board b, int level, bool use_book, int error_level){
                 if (v == -INF){
                     search.board = b;
                     calc_features(&search);
-                    v = -nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth, false, LEGAL_UNDEFINED, !is_mid_search, &searching);
+                    v = -nega_scout(&search, -SCORE_MAX, SCORE_MAX, max(0, depth - 1), false, LEGAL_UNDEFINED, !is_mid_search, &searching);
                 }
                 //cerr << idx_to_coord((int)cell) << " " << v << endl;
             b.undo(&flip);

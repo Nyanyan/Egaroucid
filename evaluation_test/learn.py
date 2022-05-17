@@ -237,8 +237,8 @@ for data_idx in trange(len(all_labels_raw)):
     for pattern_idx in range(n_raw_patterns):
         idx = all_data_idx[pattern_idx][data_idx]
         pattern_unzipped = idx2pattern(pattern_idx, idx)
-        if pattern_idx == 0 and idx == 0:
-            print(pattern_unzipped)
+        #if pattern_idx == 0 and idx == 0:
+        #    print(pattern_unzipped)
         all_data[pattern_idx][data_idx] = np.array(pattern_unzipped)
     for additional_feature_idx in range(n_additional_features):
         additional_feature = [all_data_idx[n_raw_patterns + additional_feature_idx * 2][data_idx] / additional_feature_mul[additional_feature_idx], all_data_idx[n_raw_patterns + additional_feature_idx * 2 + 1][data_idx] / additional_feature_mul[additional_feature_idx]]
@@ -305,8 +305,6 @@ for idx in trange(65536):
     for pattern_idx in range(n_patterns):
         if idx < feature_actual_sizes[pattern_idx]:
             #print(idx2pattern2(pattern_idx, idx))
-            if pattern_idx == 0 and idx == 0:
-                print(idx2pattern2(pattern_idx, idx))
             pre_calc_data[feature_idxes[pattern_idx]][idx] = np.array(idx2pattern2(pattern_idx, idx))
     for additional_feature in range(n_additional_features):
         if idx < feature_actual_sizes[n_patterns + additional_feature]:
