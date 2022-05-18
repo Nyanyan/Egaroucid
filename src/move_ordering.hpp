@@ -38,6 +38,8 @@
 
 #define W_END_MOBILITY 64
 #define W_END_PARITY 14
+#define W_END_STABILITY 8
+#define W_END_ANTI_EVEN 16
 
 #define USE_FLIP_INSIDE_DEPTH 15
 
@@ -236,6 +238,53 @@ inline void move_evaluate_fast_first(Search *search, Flip *flip){
     }
 }
 
+inline int is_anti_even(Search *search, uint_fast8_t cell){
+    if (search->board.parity & cell_div4[cell]){
+        int res = 1;
+        res &= search->board.opponent >> (cell + 1);
+        res &= search->board.opponent >> (cell - 1);
+        res &= search->board.opponent >> (cell + HW);
+        res &= search->board.opponent >> (cell - HW);
+        res &= search->board.opponent >> (cell + HW_P1);
+        res &= search->board.opponent >> (cell - HW_P1);
+        res &= search->board.opponent >> (cell + HW_M1);
+        res &= search->board.opponent >> (cell - HW_M1);
+        return res;
+    }
+    return 0;
+}
+
+inline void move_evaluate_end(Search *search, Flip *flip){
+    if (flip->flip == search->board.opponent)
+        flip->value = W_WIPEOUT;
+    else{
+        if (search->board.parity & cell_div4[flip->pos]){
+            if (search->board.n < 34)
+                flip->value = W_PARITY1;
+            else if (search->board.n < 44)
+                flip->value = W_PARITY2;
+            else
+                flip->value = W_PARITY3;
+        }
+        search->board.move(flip);
+            /*
+            uint64_t empties = ~(search->board.player | search->board.opponent);
+            if (1 & (empties >> (flip->pos + 1)))
+                flip->value -= is_anti_even(search, flip->pos + 1) * W_END_ANTI_EVEN;
+            if (1 & (empties >> (flip->pos - 1)))
+                flip->value -= is_anti_even(search, flip->pos - 1) * W_END_ANTI_EVEN;
+            if (1 & (empties >> (flip->pos + HW)))
+                flip->value -= is_anti_even(search, flip->pos + HW) * W_END_ANTI_EVEN;
+            if (1 & (empties >> (flip->pos - HW)))
+                flip->value -= is_anti_even(search, flip->pos - HW) * W_END_ANTI_EVEN;
+            */
+            flip->value += calc_stability_edge_player(search->board.opponent, search->board.player) * W_END_STABILITY;
+            flip->n_legal = search->board.get_legal();
+            flip->value += -pop_count_ull(flip->n_legal) * W_MOBILITY;
+        search->board.undo(flip);
+    }
+}
+
 inline void move_ordering(Search *search, vector<Flip> &move_list, int depth, int alpha, int beta, bool is_end_search, const bool *searching){
     if (move_list.size() < 2)
         return;
@@ -293,3 +342,11 @@ inline void move_ordering_fast_first(Search *search, vector<Flip> &move_list){
     sort(move_list.begin(), move_list.end(), cmp_move_ordering);
 }
 
+inline void move_ordering_end(Search *search, vector<Flip> &move_list){
+    if (move_list.size() < 2)
+        return;
+    for (Flip &flip: move_list)
+        move_evaluate_end(search, &flip);
+    //move_evaluate_fast_first(search, &flip);
+    sort(move_list.begin(), move_list.end(), cmp_move_ordering);
+}

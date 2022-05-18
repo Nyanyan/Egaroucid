@@ -458,6 +458,7 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped){
     #endif
     return v;
 }
+
 /*
 int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped){
     if (!global_searching)
@@ -498,6 +499,101 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped){
             return alpha;
         v = max(v, g);
     }
+    return v;
+}
+*/
+/*
+int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t legal, const bool *searching){
+    if (!global_searching || !(*searching))
+        return SCORE_UNDEFINED;
+    if (search->board.n >= HW2 - END_FAST_DEPTH)
+        return nega_alpha_end_fast(search, alpha, beta, skipped);
+    ++search->n_nodes;
+    #if USE_END_SC
+        int stab_res = stability_cut(search, &alpha, &beta);
+        if (stab_res != SCORE_UNDEFINED)
+            return stab_res;
+    #endif
+    uint32_t hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
+    #if USE_END_TC
+        int l, u;
+        parent_transpose_table.get(&search->board, hash_code, &l, &u);
+        if (u == l)
+            return u;
+        if (beta <= l)
+            return l;
+        if (u <= alpha)
+            return u;
+        alpha = max(alpha, l);
+        beta = min(beta, u);
+    #endif
+    if (legal == LEGAL_UNDEFINED)
+        legal = search->board.get_legal();
+    int g, v = -INF;
+    if (legal == 0ULL){
+        if (skipped)
+            return end_evaluate(&search->board);
+        //search->eval_feature_reversed ^= 1;
+        search->board.pass();
+            v = -nega_alpha_end(search, -beta, -alpha, true, LEGAL_UNDEFINED, searching);
+        search->board.pass();
+        //search->eval_feature_reversed ^= 1;
+        return v;
+    }
+    #if USE_END_MPC && false
+        if (search->use_mpc){
+            if (mpc(search, alpha, beta, HW2 - search->board.n, legal, false, &v))
+                return v;
+        }
+    #endif
+    int best_move = child_transpose_table.get(&search->board, hash_code);
+    int f_best_move = best_move;
+    if (best_move != TRANSPOSE_TABLE_UNDEFINED){
+        if (1 & (legal >> best_move)){
+            Flip flip_best;
+            calc_flip(&flip_best, &search->board, best_move);
+            //eval_move(search, &flip);
+            search->board.move(&flip_best);
+                g = -nega_alpha_end(search, -beta, -alpha, false, LEGAL_UNDEFINED, searching);
+            search->board.undo(&flip_best);
+            //eval_undo(search, &flip);
+            alpha = max(alpha, g);
+            v = g;
+            legal ^= 1ULL << best_move;
+        }
+    }
+    if (alpha < beta && legal){
+        const int canput = pop_count_ull(legal);
+        vector<Flip> move_list(canput);
+        int idx = 0;
+        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
+            calc_flip(&move_list[idx++], &search->board, cell);
+        move_ordering_end(search, move_list);
+        for (const Flip &flip: move_list){
+            //eval_move(search, &flip);
+            search->board.move(&flip);
+                g = -nega_alpha_end(search, -beta, -alpha, false, flip.n_legal, searching);
+            search->board.undo(&flip);
+            //eval_undo(search, &flip);
+            alpha = max(alpha, g);
+            if (v < g){
+                v = g;
+                best_move = flip.pos;
+            }
+            if (beta <= alpha)
+                break;
+        }
+    }
+    if (best_move != f_best_move)
+        child_transpose_table.reg(&search->board, hash_code, best_move);
+    #if USE_END_TC
+        if (beta <= v && l < v)
+            parent_transpose_table.reg(&search->board, hash_code, v, u);
+        else if (v <= alpha && v < u)
+            parent_transpose_table.reg(&search->board, hash_code, l, v);
+        else if (alpha < v && v < beta)
+            parent_transpose_table.reg(&search->board, hash_code, v, v);
+    #endif
     return v;
 }
 */
