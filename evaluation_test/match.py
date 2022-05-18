@@ -155,7 +155,7 @@ for num in range(max_num):
             #print(record)
         plot_eg[player].append(egaroucid5_dnn_win[player])
         plot_ed[player].append(egaroucid5_win[player])
-        print('\r', num, ' ', egaroucid5_dnn_win, draw, egaroucid5_win, sum(egaroucid5_dnn_win), sum(egaroucid5_win), sum(egaroucid5_dnn_win) / max(1, sum(egaroucid5_dnn_win) + sum(egaroucid5_win)), end='')
+        print('\r', num, ' ', egaroucid5_dnn_win, draw, egaroucid5_win, sum(egaroucid5_dnn_win), sum(egaroucid5_win), sum(egaroucid5_dnn_win) / max(1, sum(egaroucid5_dnn_win) + sum(egaroucid5_win)), end='                         ')
         '''
         with open('records.txt', 'a') as f:
             f.write(record + '\n')

@@ -27,7 +27,7 @@ n_dense_additional = int(sys.argv[2])
 #use_phase = int(sys.argv[3])
 ply_d = 2
 
-n_epochs = 400
+n_epochs = 500
 
 inf = 10000000.0
 
@@ -128,8 +128,8 @@ def create_input_feature(feature_idx, idx):
     if feature_idx < 16:
         return idx2pattern2(feature_idx, idx)
     elif feature_idx < 20:
-        return [(idx // additional_feature_mul[feature_idx - 20]) / additional_feature_mul[feature_idx - 20],
-                (idx % additional_feature_mul[feature_idx - 20]) / additional_feature_mul[feature_idx - 20]]
+        return [(idx // additional_feature_mul[feature_idx - 16]) / additional_feature_mul[feature_idx - 16],
+                (idx % additional_feature_mul[feature_idx - 16]) / additional_feature_mul[feature_idx - 16]]
     else:
         return idx2mobility(idx)
 
@@ -172,7 +172,7 @@ for use_phase in range(30):
         
         early_stop = EarlyStopping(monitor='loss', patience=5)
         reduce_lr = ReduceLROnPlateau(monitor='loss', factor=0.5, patience=4, min_lr=0.0001)
-        history = model.fit(train_data, train_labels, sample_weight=train_weights, epochs=n_epochs, batch_size=2048, validation_split=0.0, callbacks=[early_stop, reduce_lr])
+        history = model.fit(train_data, train_labels, sample_weight=train_weights, epochs=n_epochs, batch_size=1024, validation_split=0.0, callbacks=[early_stop, reduce_lr])
         #model.save('learned_data/' + str(use_phase) + '_' + str(n_dense_pattern) + '_' + str(feature_idx) + '.h5')
         
         predict_data = np.zeros((feature_actual_sizes[feature_idx], input_sizes[feature_idx]))
