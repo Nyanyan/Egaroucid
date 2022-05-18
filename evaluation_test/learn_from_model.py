@@ -158,7 +158,7 @@ for use_phase in range(30):
         train_weights_tmp = []
         for i in range(data_strt_idx, data_strt_idx + feature_actual_sizes[feature_idx]):
             if all_weights[i] > 0:
-                train_data_tmp.append(i)
+                train_data_tmp.append(i - data_strt_idx)
                 train_labels_tmp.append(all_labels[i])
                 train_weights_tmp.append(all_weights[i])
         train_data = np.zeros((len(train_data_tmp), input_sizes[feature_idx]))
@@ -166,13 +166,15 @@ for use_phase in range(30):
         train_weights = np.zeros(len(train_data_tmp))
         max_train_weight = max(train_weights_tmp)
         for i in range(len(train_data_tmp)):
-            train_data[i] = np.array(create_input_feature(feature_idx, i))
+            train_data[i] = np.array(create_input_feature(feature_idx, train_data_tmp[i]))
             train_labels[i] = train_labels_tmp[i]
             train_weights[i] = train_weights_tmp[i] / max_train_weight
         
         early_stop = EarlyStopping(monitor='loss', patience=5)
         reduce_lr = ReduceLROnPlateau(monitor='loss', factor=0.5, patience=4, min_lr=0.0001)
         history = model.fit(train_data, train_labels, sample_weight=train_weights, epochs=n_epochs, batch_size=1024, validation_split=0.0, callbacks=[early_stop, reduce_lr])
+        #with open('learned_data/log.txt', 'a') as f:
+        #    f.write(str(model.evaluate(train_data, train_labels)) + '\n')
         #model.save('learned_data/' + str(use_phase) + '_' + str(n_dense_pattern) + '_' + str(feature_idx) + '.h5')
         
         predict_data = np.zeros((feature_actual_sizes[feature_idx], input_sizes[feature_idx]))
