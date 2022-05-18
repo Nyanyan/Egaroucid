@@ -20,6 +20,43 @@ import os
 from math import tanh, log
 from copy import deepcopy
 import sys
+import datetime
+
+# original code: https://qiita.com/rhene/items/459c2f6b07d5e851efc0
+class DisplayCallBack(tf.keras.callbacks.Callback):
+    def __init__(self):
+        self.last_mae, self.last_loss = None, None
+        self.now_batch, self.now_epoch = None, None
+
+    def print_progress(self):
+        epoch = self.now_epoch
+        epochs = self.epochs
+        print("\rEpoch %d/%d -- mae: %f loss: %f" % (epoch+1, epochs, self.last_mae, self.last_loss), end='')
+
+    def on_train_begin(self, logs={}):
+        print('##### Train Start ##### ' + str(datetime.datetime.now()))
+        self.epochs = self.params['epochs']
+        self.params['verbose'] = 0
+
+    def on_batch_begin(self, batch, logs={}):
+        self.now_batch = batch
+
+    def on_batch_end(self, batch, logs={}):
+        self.last_mae = logs.get('mae') if logs.get('mae') else 0.0
+        self.last_loss = logs.get('loss') if logs.get('loss') else 0.0
+
+        self.print_progress()
+
+    def on_epoch_begin(self, epoch, log={}):
+        self.now_epoch = epoch
+
+    def on_epoch_end(self, epoch, logs={}):
+        self.last_mae = logs.get('mae') if logs.get('mae') else 0.0
+        self.last_loss = logs.get('loss') if logs.get('loss') else 0.0
+        self.print_progress()
+
+    def on_train_end(self, logs={}):
+        print('\n##### Train Complete ##### ' + str(datetime.datetime.now()))
 
 n_dense_pattern = int(sys.argv[1])
 n_dense_additional = int(sys.argv[2])
@@ -27,7 +64,7 @@ n_dense_additional = int(sys.argv[2])
 #use_phase = int(sys.argv[3])
 ply_d = 2
 
-n_epochs = 500
+n_epochs = 4000
 
 inf = 10000000.0
 
@@ -75,6 +112,7 @@ feature_actual_sizes = [
     100 * 100, 50 * 50, 65 * 65, 65 * 65,
     2 ** 16, 2 ** 16, 2 ** 16, 2 ** 16
 ]
+print(feature_actual_sizes)
 
 feature_idxes = [
     0, 4, 8, 12, 16, 20, 24, 26, 30, 34, 38, 42, 46, 50, 54, 58, 
@@ -128,15 +166,14 @@ def create_input_feature(feature_idx, idx):
     if feature_idx < 16:
         return idx2pattern2(feature_idx, idx)
     elif feature_idx < 20:
-        return [(idx // additional_feature_mul[feature_idx - 16]) / additional_feature_mul[feature_idx - 16],
-                (idx % additional_feature_mul[feature_idx - 16]) / additional_feature_mul[feature_idx - 16]]
+        return [idx // additional_feature_mul[feature_idx - 16], idx % additional_feature_mul[feature_idx - 16]]
     else:
         return idx2mobility(idx)
 
 
-for use_phase in range(30):
+for use_phase in reversed(range(29)):
     with open('data/' + str(use_phase) + '.txt', 'r') as f:
-        all_labels = [int(elem) / 64 / 256 for elem in f.read().splitlines()]
+        all_labels = [int(elem) for elem in f.read().splitlines()]
 
     with open('data/' + str(use_phase) + '_count.txt', 'r') as f:
         all_weights = [int(elem) for elem in f.read().splitlines()]
@@ -144,6 +181,7 @@ for use_phase in range(30):
     data_strt_idx = 0
 
     for feature_idx in range(24):
+        print('phase', use_phase, 'feature', feature_idx)
         n_dense = n_dense_additional if input_sizes[feature_idx] == 2 else n_dense_pattern
         x = Input(shape=input_sizes[feature_idx], name='')
         y = Dense(n_dense, name='dense0')(x)
@@ -168,11 +206,13 @@ for use_phase in range(30):
         for i in range(len(train_data_tmp)):
             train_data[i] = np.array(create_input_feature(feature_idx, train_data_tmp[i]))
             train_labels[i] = train_labels_tmp[i]
-            train_weights[i] = train_weights_tmp[i] / max_train_weight
+            train_weights[i] = max(0.1, train_weights_tmp[i] / max_train_weight)
         
         early_stop = EarlyStopping(monitor='loss', patience=5)
         reduce_lr = ReduceLROnPlateau(monitor='loss', factor=0.5, patience=4, min_lr=0.0001)
-        history = model.fit(train_data, train_labels, sample_weight=train_weights, epochs=n_epochs, batch_size=1024, validation_split=0.0, callbacks=[early_stop, reduce_lr])
+        cbDisplay = DisplayCallBack()
+        history = model.fit(train_data, train_labels, sample_weight=train_weights, epochs=n_epochs, batch_size=4096, validation_split=0.0, verbose=0, callbacks=[early_stop, reduce_lr, cbDisplay])
+        #history = model.fit(train_data, train_labels, epochs=n_epochs, batch_size=1024, validation_split=0.0, verbose=0, callbacks=[early_stop, reduce_lr])
         #with open('learned_data/log.txt', 'a') as f:
         #    f.write(str(model.evaluate(train_data, train_labels)) + '\n')
         #model.save('learned_data/' + str(use_phase) + '_' + str(n_dense_pattern) + '_' + str(feature_idx) + '.h5')
@@ -180,10 +220,10 @@ for use_phase in range(30):
         predict_data = np.zeros((feature_actual_sizes[feature_idx], input_sizes[feature_idx]))
         for i in range(feature_actual_sizes[feature_idx]):
             predict_data[i] = np.array(create_input_feature(feature_idx, i))
-        prediction = model.predict(predict_data)
+        prediction = model.predict(predict_data, batch_size=8192)
         print(prediction.shape)
         with open('learned_data/' + str(use_phase) + '_' + str(n_dense_pattern) + '_model.txt', 'a') as f:
             for i in range(feature_actual_sizes[feature_idx]):
-                f.write(str(round(prediction[i][0] * 64 * 256)) + '\n')
+                f.write(str(round(prediction[i][0])) + '\n')
         
         data_strt_idx += feature_actual_sizes[feature_idx]
