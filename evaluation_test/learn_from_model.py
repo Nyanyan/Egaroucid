@@ -39,13 +39,10 @@ class DisplayCallBack(tf.keras.callbacks.Callback):
         self.params['verbose'] = 0
 
     def on_batch_begin(self, batch, logs={}):
-        self.now_batch = batch
+        return
 
     def on_batch_end(self, batch, logs={}):
-        self.last_mae = logs.get('mae') if logs.get('mae') else 0.0
-        self.last_loss = logs.get('loss') if logs.get('loss') else 0.0
-
-        self.print_progress()
+        return
 
     def on_epoch_begin(self, epoch, log={}):
         self.now_epoch = epoch
@@ -64,7 +61,7 @@ n_dense_additional = int(sys.argv[2])
 #use_phase = int(sys.argv[3])
 ply_d = 2
 
-n_epochs = 4000
+n_epochs = 10000
 
 inf = 10000000.0
 
@@ -112,7 +109,6 @@ feature_actual_sizes = [
     100 * 100, 50 * 50, 65 * 65, 65 * 65,
     2 ** 16, 2 ** 16, 2 ** 16, 2 ** 16
 ]
-print(feature_actual_sizes)
 
 feature_idxes = [
     0, 4, 8, 12, 16, 20, 24, 26, 30, 34, 38, 42, 46, 50, 54, 58, 
@@ -170,8 +166,22 @@ def create_input_feature(feature_idx, idx):
     else:
         return idx2mobility(idx)
 
+n_params = 0
 
-for use_phase in reversed(range(29)):
+for feature_idx in range(24):
+    n_dense = n_dense_additional if input_sizes[feature_idx] == 2 else n_dense_pattern
+    x = Input(shape=input_sizes[feature_idx], name='')
+    y = Dense(n_dense, name='dense0')(x)
+    y = LeakyReLU(alpha=0.01)(y)
+    y = Dense(n_dense, name='dense1')(y)
+    y = LeakyReLU(alpha=0.01)(y)
+    y = Dense(1, name='out')(y)
+    model = Model(inputs=x, outputs=y)
+    n_params += model.count_params()
+
+print('n_params', n_params, n_params * 30)
+
+for use_phase in reversed(range(30)):
     with open('data/' + str(use_phase) + '.txt', 'r') as f:
         all_labels = [int(elem) for elem in f.read().splitlines()]
 
@@ -208,8 +218,8 @@ for use_phase in reversed(range(29)):
             train_labels[i] = train_labels_tmp[i]
             train_weights[i] = max(0.1, train_weights_tmp[i] / max_train_weight)
         
-        early_stop = EarlyStopping(monitor='loss', patience=5)
-        reduce_lr = ReduceLROnPlateau(monitor='loss', factor=0.5, patience=4, min_lr=0.0001)
+        early_stop = EarlyStopping(monitor='loss', patience=100)
+        reduce_lr = ReduceLROnPlateau(monitor='loss', factor=0.5, patience=50, min_lr=0.0001)
         cbDisplay = DisplayCallBack()
         history = model.fit(train_data, train_labels, sample_weight=train_weights, epochs=n_epochs, batch_size=4096, validation_split=0.0, verbose=0, callbacks=[early_stop, reduce_lr, cbDisplay])
         #history = model.fit(train_data, train_labels, epochs=n_epochs, batch_size=1024, validation_split=0.0, verbose=0, callbacks=[early_stop, reduce_lr])
@@ -227,3 +237,6 @@ for use_phase in reversed(range(29)):
                 f.write(str(round(prediction[i][0])) + '\n')
         
         data_strt_idx += feature_actual_sizes[feature_idx]
+        print('')
+
+    print('')
