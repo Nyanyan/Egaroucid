@@ -1,9 +1,9 @@
 import subprocess
 
-n_dense_pattern = 16
-n_dense_additional = 4
+n_dense_pattern = 32
+n_dense_additional = 8
 
-for use_phase in range(2, 30):
+for use_phase in reversed(range(30)):
     if use_phase < 10:
         subprocess.run('python learn.py ' + str(n_dense_pattern) + ' ' + str(n_dense_additional) + ' ' + str(use_phase) + ' big_data_new_1.dat big_data_new_2.dat big_data_new_3.dat')
     else:
