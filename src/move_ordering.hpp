@@ -291,9 +291,7 @@ inline void move_ordering(Search *search, vector<Flip> &move_list, int depth, in
     int eval_alpha = -min(SCORE_MAX, beta + MOVE_ORDERING_VALUE_OFFSET);
     int eval_beta = -max(-SCORE_MAX, alpha - MOVE_ORDERING_VALUE_OFFSET);
     int eval_depth = depth >> 3;
-    if (depth >= 16)
-        ++eval_depth;
-    if (depth >= 28)
+    if (depth >= 18)
         ++eval_depth;
     if (depth >= 20)
         ++eval_depth;
