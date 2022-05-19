@@ -127,7 +127,7 @@ inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int
         } else{
             eval_move(search, flip);
             search->board.move(flip);
-                flip->value += calc_stability_edge_player(search->board.opponent, search->board.player) * W_STABILITY;
+                //flip->value += calc_stability_edge_player(search->board.opponent, search->board.player) * W_STABILITY;
                 flip->n_legal = search->board.get_legal();
                 flip->value += -pop_count_ull(flip->n_legal) * W_MOBILITY;
                 if (depth >= 0){

@@ -358,7 +358,6 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped){
     #if USE_END_SC
         int stab_res = stability_cut(search, &alpha, &beta);
         if (stab_res != SCORE_UNDEFINED){
-            cerr << "s";
             return stab_res;
         }
     #endif
