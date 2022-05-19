@@ -5604,6 +5604,21 @@ same
 2032483947 nodes
 139306644.75668266 nps
 
+2022/05/19 update evaluation function, background deeplearning
+#40 depth 20 value 38 policy a2 nodes 25183621 time 203 nps 124057246
+#41 depth 22 value 0 policy h4 nodes 31705025 time 332 nps 95497063
+#42 depth 22 value 6 policy g2 nodes 35096280 time 331 nps 106031057
+#43 depth 23 value -12 policy c7 nodes 99860073 time 803 nps 124358745
+#44 depth 23 value -14 policy d2 nodes 22135692 time 435 nps 50886648
+#45 depth 24 value 6 policy b2 nodes 578957176 time 3140 nps 184381266
+#46 depth 24 value -8 policy b3 nodes 81385177 time 984 nps 82708513
+#47 depth 25 value 4 policy g2 nodes 49153734 time 608 nps 80844957
+#48 depth 25 value 28 policy f6 nodes 178036033 time 2661 nps 66905686
+#49 depth 26 value 16 policy e1 nodes 686639017 time 4768 nps 144009860
+14.265 sec
+18.53028631210327 sec total
+1788151828 nodes
+125352388.9239397 nps
 
 
 

@@ -180,7 +180,7 @@ egaroucid5_dnn.kill()
 egaroucid5.kill()
 print('')
 
-print('level: ', level, ' start depth: ', use_len, ' Egaroucid plays black WDL: ', egaroucid5_dnn_win[0], '-', draw[0], '-', egaroucid5_win[0], ' Egaroucid plays white WDL: ', egaroucid5_dnn_win[1], '-', draw[1], '-', egaroucid5_win[1], ' Egaroucid win rate: ', sum(egaroucid5_dnn_win) / max(1, sum(egaroucid5_dnn_win) + sum(egaroucid5_win)), sep='')
+print('level: ', level, ' start depth: ', use_len, ' Egaroucid plays black WDL: ', egaroucid5_dnn_win[0], '-', draw[0], '-', egaroucid5_win[0], ' ', egaroucid5_dnn_win[0] / (egaroucid5_dnn_win[0] + egaroucid5_win[0]), ' Egaroucid plays white WDL: ', egaroucid5_dnn_win[1], '-', draw[1], '-', egaroucid5_win[1], ' ', egaroucid5_dnn_win[1] / (egaroucid5_dnn_win[1] + egaroucid5_win[1]), ' Egaroucid win rate: ', sum(egaroucid5_dnn_win) / max(1, sum(egaroucid5_dnn_win) + sum(egaroucid5_win)), sep='')
 '''
 pyplot.plot(plot_x, plot_ed[0], label='edax_white')
 pyplot.plot(plot_x, plot_eg[0], label='egaroucid_black')
