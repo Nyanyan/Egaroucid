@@ -11,14 +11,14 @@ for i in range(30):
     try:
         #with open('learned_data/' + str(i) + '.txt', 'r') as f:
         if i >= 28:
-            with open('learned_data/' + str(i) + '_' + str(dense_pattern) + '_model.txt', 'r') as f:
+            with open('learned_data/' + str(i) + '_' + str(dense_pattern) + '.txt', 'r') as f:
                 tmp = f.read()
                 print(i, len(tmp.splitlines()))
                 data += tmp
         else:
             with open('data/' + str(i) + '.txt', 'r') as f:
                 tmp = f.read()
-                print(i, len(tmp.splitlines()))
+                print(i, 'default', len(tmp.splitlines()))
                 data += tmp
     except:
         print(i, 'add 0')

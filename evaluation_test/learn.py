@@ -29,7 +29,7 @@ ply_d = 2
 
 input_files = sys.argv[4:]
 
-n_epochs = 100
+n_epochs = 200
 
 inf = 10000000.0
 
@@ -185,6 +185,7 @@ model = Model(inputs=x, outputs=y)
 
 #model.summary()
 plot_model(model, to_file='model.png', show_shapes=True)
+print('n_params', model.count_params())
 
 model.compile(loss='mse', metrics='mae', optimizer='adam')
 
