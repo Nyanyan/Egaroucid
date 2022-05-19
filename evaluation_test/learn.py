@@ -27,6 +27,8 @@ n_dense_additional = int(sys.argv[2])
 use_phase = int(sys.argv[3])
 ply_d = 2
 
+print('phase', use_phase)
+
 input_files = sys.argv[4:]
 
 n_epochs = 200
