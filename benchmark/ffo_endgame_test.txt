@@ -5588,6 +5588,22 @@ same
 1568772990 nodes
 129149007.16226229 nps
 
+2022/05/19 fixed stability bug
+#40 depth 20 value 38 policy a2 nodes 28432165 time 205 nps 138693487
+#41 depth 22 value 0 policy h4 nodes 36751058 time 327 nps 112388556
+#42 depth 22 value 6 policy g2 nodes 41325011 time 339 nps 121902687
+#43 depth 23 value -12 policy c7 nodes 127657341 time 869 nps 146901428
+#44 depth 23 value -14 policy d2 nodes 30199055 time 468 nps 64527895
+#45 depth 24 value 6 policy b2 nodes 714351814 time 3441 nps 207600062
+#46 depth 24 value -8 policy b3 nodes 101375070 time 1051 nps 96455823
+#47 depth 25 value 4 policy g2 nodes 51559786 time 593 nps 86947362
+#48 depth 25 value 28 policy f6 nodes 177097861 time 2501 nps 70810820
+#49 depth 26 value 16 policy e1 nodes 723734786 time 4796 nps 150903833
+14.59 sec
+19.012173891067505 sec total
+2032483947 nodes
+139306644.75668266 nps
+
 
 
 

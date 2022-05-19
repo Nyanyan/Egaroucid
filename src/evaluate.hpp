@@ -357,7 +357,7 @@ inline void probably_move_line(int p, int o, int place, int *np, int *no){
         for (j = place - 1; j > i; --j)
             *np ^= 1 << j;
     }
-    for (i = place + 1; i < HW && (1 & (o >> i)); ++i);
+    for (i = place + 1; i < HW_M1 && (1 & (o >> i)); ++i);
     if (1 & (p >> i)){
         for (j = place + 1; j < i; ++j)
             *np ^= 1 << j;
@@ -371,8 +371,10 @@ int calc_stability_line(int b, int w){
     for (i = 0; i < HW; ++i){
         if (1 & (empties >> i)){
             probably_move_line(b, w, i, &nb, &nw);
+            res &= b | nw;
             res &= calc_stability_line(nb, nw);
             probably_move_line(w, b, i, &nw, &nb);
+            res &= w | nb;
             res &= calc_stability_line(nb, nw);
         }
     }

@@ -86,7 +86,6 @@ inline int stability_cut(Search *search, int *alpha, int *beta){
         calc_stability(&search->board, &stab_player, &stab_opponent);
         int n_alpha = 2 * stab_player - HW2;
         int n_beta = HW2 - 2 * stab_opponent;
-        cerr << n_alpha << " " << n_beta << endl;
         if (*beta <= n_alpha)
             return n_alpha;
         if (n_beta <= *alpha)
