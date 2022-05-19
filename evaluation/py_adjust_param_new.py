@@ -12,8 +12,10 @@ else:
     minute = '20'
     second = '0'
     beta = '0.005'
-additional_params = ' big_data_new_4.dat big_data_new_6.dat big_data_new_7.dat big_data_new_8.dat big_data_new_9.dat big_data_new_10.dat'
-#additional_params = ' big_data_new_1.dat big_data_new_2.dat big_data_new_3.dat'
+if int(phase) >= 10:
+    additional_params = ' data_0000004.dat data_0000006.dat data_0000007.dat data_0000008.dat data_0000009.dat data_0000010.dat'
+else:
+    additional_params = ' data_0000001.dat data_0000002.dat data_0000003.dat'
 #additional_params = ' big_data_new_3.dat big_data_new_14.dat'
 #additional_params = ' big_data.dat'
 
