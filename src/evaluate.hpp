@@ -428,10 +428,10 @@ inline int swap_player_idx(int i, int pattern_size){
     }
 #endif
 
-inline bool init_evaluation_calc(){
+inline bool init_evaluation_calc(const char* file){
     FILE* fp;
     #ifdef _WIN64
-        if (fopen_s(&fp, "resources/eval.egev", "rb") != 0){
+        if (fopen_s(&fp, file, "rb") != 0){
             cerr << "can't open eval.egev" << endl;
             return false;
         }
@@ -490,9 +490,14 @@ inline bool init_evaluation_calc(){
     return true;
 }
 
+bool evaluate_init(const char* file){
+    init_evaluation_base();
+    return init_evaluation_calc(file);
+}
+
 bool evaluate_init(){
     init_evaluation_base();
-    return init_evaluation_calc();
+    return init_evaluation_calc("resources/eval.egev");
 }
 
 inline uint64_t calc_surround_part(const uint64_t player, const int dr){
@@ -739,7 +744,7 @@ inline int end_evaluate(Board *b){
 }
 
 inline int mid_evaluate(Board *b){
-    int phase_idx, sur0, sur1, canput0, canput1, stab0, stab1, num0, num1;
+    int phase_idx, sur0, sur1, canput0, canput1, stab0 = 0, stab1 = 0, num0, num1;
     uint64_t player_mobility, opponent_mobility, empties;
     player_mobility = calc_legal(b->player, b->opponent);
     opponent_mobility = calc_legal(b->opponent, b->player);
@@ -751,7 +756,8 @@ inline int mid_evaluate(Board *b){
     empties = ~(b->player | b->opponent);
     sur0 = min(MAX_SURROUND - 1, calc_surround(b->player, empties));
     sur1 = min(MAX_SURROUND - 1, calc_surround(b->opponent, empties));
-    calc_stability(b, &stab0, &stab1);
+    if (b->n > 44)
+        calc_stability(b, &stab0, &stab1);
     num0 = pop_count_ull(b->player);
     num1 = pop_count_ull(b->opponent);
     //cerr << calc_pattern(phase_idx, b) << " " << eval_sur0_sur1_arr[phase_idx][sur0][sur1] << " " << eval_canput0_canput1_arr[phase_idx][canput0][canput1] << " "

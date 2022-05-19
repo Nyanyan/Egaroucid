@@ -5620,6 +5620,86 @@ same
 1788151828 nodes
 125352388.9239397 nps
 
+2022/05/19 without background tasks
+#40 depth 20 value 38 policy a2 nodes 24897125 time 197 nps 126381345
+#41 depth 22 value 0 policy h4 nodes 31027180 time 312 nps 99446089
+#42 depth 22 value 6 policy g2 nodes 35847363 time 344 nps 104207450
+#43 depth 23 value -12 policy c7 nodes 99904653 time 789 nps 126621866
+#44 depth 23 value -14 policy d2 nodes 22855142 time 451 nps 50676589
+#45 depth 24 value 6 policy b2 nodes 598605085 time 3240 nps 184754655
+#46 depth 24 value -8 policy b3 nodes 87007392 time 1043 nps 83420318
+#47 depth 25 value 4 policy g2 nodes 59684774 time 662 nps 90158268
+#48 depth 25 value 28 policy f6 nodes 167278413 time 2672 nps 62604196
+#49 depth 26 value 16 policy e1 nodes 625470028 time 4649 nps 134538616
+14.359 sec
+18.390398025512695 sec total
+1752577155 nodes
+122054262.48345986 nps
+
+2022/05/19 update move ordering
+#40 depth 20 value 38 policy a2 nodes 24419847 time 205 nps 119121204
+#41 depth 22 value 0 policy h4 nodes 30443707 time 318 nps 95734927
+#42 depth 22 value 6 policy g2 nodes 36443885 time 364 nps 100120563
+#43 depth 23 value -12 policy c7 nodes 99458671 time 826 nps 120410013
+#44 depth 23 value -14 policy d2 nodes 22157903 time 437 nps 50704583
+#45 depth 24 value 6 policy b2 nodes 560561688 time 3073 nps 182415127
+#46 depth 24 value -8 policy b3 nodes 83756685 time 1023 nps 81873592
+#47 depth 25 value 4 policy g2 nodes 59066043 time 658 nps 89766022
+#48 depth 25 value 28 policy f6 nodes 185984332 time 2686 nps 69242119
+#49 depth 26 value 16 policy e1 nodes 622226368 time 5031 nps 123678467
+14.621 sec
+18.842596769332886 sec total
+1724519129 nodes
+117948097.18897475 nps
+
+2022/05/19 update ybwc
+#40 depth 20 value 38 policy a2 nodes 24613944 time 198 nps 124312848
+#41 depth 22 value 0 policy h4 nodes 30988967 time 288 nps 107600579
+#42 depth 22 value 6 policy g2 nodes 39354000 time 352 nps 111801136
+#43 depth 23 value -12 policy c7 nodes 103506751 time 820 nps 126227745
+#44 depth 23 value -14 policy d2 nodes 23719172 time 434 nps 54652470
+#45 depth 24 value 6 policy b2 nodes 560230896 time 3145 nps 178133830
+#46 depth 24 value -8 policy b3 nodes 90189147 time 1030 nps 87562278
+#47 depth 25 value 4 policy g2 nodes 58470332 time 622 nps 94003749
+#48 depth 25 value 28 policy f6 nodes 227040590 time 2821 nps 80482307
+#49 depth 26 value 16 policy e1 nodes 629937504 time 4433 nps 142101850
+14.143 sec
+18.45377492904663 sec total
+1788051303 nodes
+126426592.87279926 nps
+
+2022/05/19 update move ordering depth
+#40 depth 20 value 38 policy a2 nodes 24421489 time 214 nps 114119107
+#41 depth 22 value 0 policy h4 nodes 28464476 time 326 nps 87314343
+#42 depth 22 value 6 policy g2 nodes 38740061 time 418 nps 92679571
+#43 depth 23 value -12 policy c7 nodes 93840210 time 833 nps 112653313
+#44 depth 23 value -14 policy d2 nodes 17491663 time 474 nps 36902242
+#45 depth 24 value 6 policy b2 nodes 552333766 time 3424 nps 161312431
+#46 depth 24 value -8 policy b3 nodes 84168619 time 1192 nps 70611257
+#47 depth 25 value 4 policy g2 nodes 21170008 time 537 nps 39422733
+#48 depth 25 value 28 policy f6 nodes 148570517 time 2524 nps 58863120
+#49 depth 26 value 16 policy e1 nodes 467055195 time 4322 nps 108064598
+14.264 sec
+17.66376042366028 sec total
+1476256004 nodes
+103495233.034212 nps
+
+2022/05/19 update evaluation function stability
+#40 depth 20 value 38 policy a2 nodes 24707859 time 214 nps 115457285
+#41 depth 22 value 0 policy h4 nodes 28551474 time 321 nps 88945401
+#42 depth 22 value 6 policy g2 nodes 38616394 time 419 nps 92163231
+#43 depth 23 value -12 policy c7 nodes 96867474 time 850 nps 113961734
+#44 depth 23 value -14 policy d2 nodes 17558602 time 477 nps 36810486
+#45 depth 24 value 6 policy b2 nodes 562045607 time 3451 nps 162864563
+#46 depth 24 value -8 policy b3 nodes 83449671 time 1204 nps 69310357
+#47 depth 25 value 4 policy g2 nodes 21237295 time 535 nps 39695878
+#48 depth 25 value 28 policy f6 nodes 171596473 time 2585 nps 66381614
+#49 depth 26 value 16 policy e1 nodes 450664555 time 4141 nps 108829885
+14.197 sec
+17.714082717895508 sec total
+1495295404 nodes
+105324744.94611537 nps
+
 
 
 

@@ -36,10 +36,10 @@
 
 #define MOVE_ORDERING_VALUE_OFFSET 14
 
-#define W_END_MOBILITY 64
-#define W_END_PARITY 14
+#define W_END_MOBILITY 32
 #define W_END_STABILITY 1
 #define W_END_ANTI_EVEN 16
+#define W_END_PARITY 2
 
 #define USE_FLIP_INSIDE_DEPTH 15
 
@@ -114,7 +114,7 @@ inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int
         }
         if (depth < 0){
             search->board.move(flip);
-                flip->value += calc_stability_edge_player(search->board.opponent, search->board.player) * W_STABILITY;
+                //flip->value += calc_stability_edge_player(search->board.opponent, search->board.player) * W_STABILITY;
                 flip->n_legal = search->board.get_legal();
                 flip->value += -pop_count_ull(flip->n_legal) * W_MOBILITY;
                 if (depth >= USE_FLIP_INSIDE_DEPTH){
@@ -222,21 +222,15 @@ inline void move_evaluate_fast_first(Search *search, Flip *flip){
         flip->value = W_WIPEOUT;
     else{
         flip->value = cell_weight[flip->pos];
-        if (search->board.parity & cell_div4[flip->pos]){
-            if (search->board.n < 34)
-                flip->value += W_PARITY1;
-            else if (search->board.n < 44)
-                flip->value += W_PARITY2;
-            else
-                flip->value += W_PARITY3;
-        }
+        if (search->board.parity & cell_div4[flip->pos])
+            flip->value += W_END_PARITY;
         search->board.move(flip);
             //flip->value += calc_stability_edge_player(search->board.opponent, search->board.player) * W_STABILITY;
             int stab0, stab1;
             calc_stability(&search->board, &stab0, &stab1);
             flip->value += stab1 * W_END_STABILITY;
             flip->n_legal = search->board.get_legal();
-            flip->value += -pop_count_ull(flip->n_legal) * W_MOBILITY;
+            flip->value += -pop_count_ull(flip->n_legal) * W_END_MOBILITY;
         search->board.undo(flip);
     }
 }
@@ -283,7 +277,7 @@ inline void move_evaluate_end(Search *search, Flip *flip){
             */
             int stab0, stab1;
             calc_stability(&search->board, &stab0, &stab1);
-            flip->value += (stab1 >> 1) * W_END_STABILITY;
+            flip->value += stab1 * W_END_STABILITY;
             //flip->value += calc_stability_edge_player(search->board.opponent, search->board.player) * W_END_STABILITY;
             flip->n_legal = search->board.get_legal();
             flip->value += -pop_count_ull(flip->n_legal) * W_MOBILITY;
@@ -297,9 +291,13 @@ inline void move_ordering(Search *search, vector<Flip> &move_list, int depth, in
     int eval_alpha = -min(SCORE_MAX, beta + MOVE_ORDERING_VALUE_OFFSET);
     int eval_beta = -max(-SCORE_MAX, alpha - MOVE_ORDERING_VALUE_OFFSET);
     int eval_depth = depth >> 3;
-    if (depth >= 22)
+    if (depth >= 16)
         ++eval_depth;
-    if (depth >= 26)
+    if (depth >= 28)
+        ++eval_depth;
+    if (depth >= 20)
+        ++eval_depth;
+    if (depth >= 22)
         ++eval_depth;
     //eval_depth = max(0, eval_depth);
     const uint64_t stones = search->board.player | search->board.opponent;
