@@ -357,8 +357,10 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped){
     ++search->n_nodes;
     #if USE_END_SC
         int stab_res = stability_cut(search, &alpha, &beta);
-        if (stab_res != SCORE_UNDEFINED)
+        if (stab_res != SCORE_UNDEFINED){
+            cerr << "s";
             return stab_res;
+        }
     #endif
     uint64_t legal = search->board.get_legal();
     int g, v = -INF;

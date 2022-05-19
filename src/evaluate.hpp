@@ -352,7 +352,7 @@ string create_line(int b, int w){
 inline void probably_move_line(int p, int o, int place, int *np, int *no){
     int i, j;
     *np = p | (1 << place);
-    for (i = place - 1; i >= 0 && (1 & (o >> i)); --i);
+    for (i = place - 1; i > 0 && (1 & (o >> i)); --i);
     if (1 & (p >> i)){
         for (j = place - 1; j > i; --j)
             *np ^= 1 << j;
@@ -365,16 +365,15 @@ inline void probably_move_line(int p, int o, int place, int *np, int *no){
     *no = o & ~(*np);
 }
 
-int calc_stability_line(int b, int w, int ob, int ow){
-    int i, nb, nw, res = 0b11111111;
-    res &= b & ob;
-    res &= w & ow;
+int calc_stability_line(int b, int w){
+    int i, nb, nw, res = b | w;
+    int empties = ~(b | w);
     for (i = 0; i < HW; ++i){
-        if ((1 & (b >> i)) == 0 && (1 & (w >> i)) == 0){
+        if (1 & (empties >> i)){
             probably_move_line(b, w, i, &nb, &nw);
-            res &= calc_stability_line(nb, nw, ob, ow);
+            res &= calc_stability_line(nb, nw);
             probably_move_line(w, b, i, &nw, &nb);
-            res &= calc_stability_line(nb, nw, ob, ow);
+            res &= calc_stability_line(nb, nw);
         }
     }
     return res;
@@ -384,17 +383,24 @@ inline void init_evaluation_base() {
     int place, b, w, stab;
     for (b = 0; b < N_8BIT; ++b) {
         for (w = b; w < N_8BIT; ++w){
-            stab = calc_stability_line(b, w, b, w);
-            stability_edge_arr[b][w][0] = 0;
-            stability_edge_arr[b][w][1] = 0;
-            for (place = 0; place < HW; ++place){
-                if (1 & (stab >> place)){
-                    stability_edge_arr[b][w][0] |= 1ULL << place;
-                    stability_edge_arr[b][w][1] |= 1ULL << (place * HW);
+            if (b & w){
+                stability_edge_arr[b][w][0] = 0;
+                stability_edge_arr[b][w][1] = 0;
+                stability_edge_arr[w][b][0] = 0;
+                stability_edge_arr[w][b][1] = 0;
+            } else{
+                stab = calc_stability_line(b, w);
+                stability_edge_arr[b][w][0] = 0;
+                stability_edge_arr[b][w][1] = 0;
+                for (place = 0; place < HW; ++place){
+                    if (1 & (stab >> place)){
+                        stability_edge_arr[b][w][0] |= 1ULL << place;
+                        stability_edge_arr[b][w][1] |= 1ULL << (place * HW);
+                    }
                 }
+                stability_edge_arr[w][b][0] = stability_edge_arr[b][w][0];
+                stability_edge_arr[w][b][1] = stability_edge_arr[b][w][1];
             }
-            stability_edge_arr[w][b][0] = stability_edge_arr[b][w][0];
-            stability_edge_arr[w][b][1] = stability_edge_arr[b][w][1];
         }
     }
 }
@@ -509,16 +515,16 @@ inline void calc_stability(Board *b, int *stab0, int *stab1){
     uint8_t pl, op;
     pl = b->player & 0b11111111U;
     op = b->opponent & 0b11111111U;
-    edge_stability |= stability_edge_arr[pl][op][0] << 56;
+    edge_stability |= stability_edge_arr[pl][op][0];
     pl = (b->player >> 56) & 0b11111111U;
     op = (b->opponent >> 56) & 0b11111111U;
-    edge_stability |= stability_edge_arr[pl][op][0];
+    edge_stability |= stability_edge_arr[pl][op][0] << 56;
     pl = join_v_line(b->player, 0);
     op = join_v_line(b->opponent, 0);
-    edge_stability |= stability_edge_arr[pl][op][1] << 7;
+    edge_stability |= stability_edge_arr[pl][op][1];
     pl = join_v_line(b->player, 7);
     op = join_v_line(b->opponent, 7);
-    edge_stability |= stability_edge_arr[pl][op][1];
+    edge_stability |= stability_edge_arr[pl][op][1] << 7;
     b->full_stability(&full_h, &full_v, &full_d7, &full_d9);
 
     n_stability = (edge_stability & b->player) | (full_h & full_v & full_d7 & full_d9 & player_mask);
