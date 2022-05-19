@@ -38,7 +38,7 @@
 
 #define W_END_MOBILITY 64
 #define W_END_PARITY 14
-#define W_END_STABILITY 8
+#define W_END_STABILITY 1
 #define W_END_ANTI_EVEN 16
 
 #define USE_FLIP_INSIDE_DEPTH 15
@@ -231,7 +231,10 @@ inline void move_evaluate_fast_first(Search *search, Flip *flip){
                 flip->value += W_PARITY3;
         }
         search->board.move(flip);
-            flip->value += calc_stability_edge_player(search->board.opponent, search->board.player) * W_STABILITY;
+            //flip->value += calc_stability_edge_player(search->board.opponent, search->board.player) * W_STABILITY;
+            int stab0, stab1;
+            calc_stability(&search->board, &stab0, &stab1);
+            flip->value += stab1 * W_END_STABILITY;
             flip->n_legal = search->board.get_legal();
             flip->value += -pop_count_ull(flip->n_legal) * W_MOBILITY;
         search->board.undo(flip);
@@ -278,7 +281,10 @@ inline void move_evaluate_end(Search *search, Flip *flip){
             if (1 & (empties >> (flip->pos - HW)))
                 flip->value -= is_anti_even(search, flip->pos - HW) * W_END_ANTI_EVEN;
             */
-            flip->value += calc_stability_edge_player(search->board.opponent, search->board.player) * W_END_STABILITY;
+            int stab0, stab1;
+            calc_stability(&search->board, &stab0, &stab1);
+            flip->value += (stab1 >> 1) * W_END_STABILITY;
+            //flip->value += calc_stability_edge_player(search->board.opponent, search->board.player) * W_END_STABILITY;
             flip->n_legal = search->board.get_legal();
             flip->value += -pop_count_ull(flip->n_legal) * W_MOBILITY;
         search->board.undo(flip);
