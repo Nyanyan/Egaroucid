@@ -2612,6 +2612,7 @@ void Main() {
 							else {
 								if (fork_history.size()) {
 									fork_history[find_history_idx(fork_history, bd.n - 4)].v = v_prev;
+									fork_history[find_history_idx(fork_history, bd.n - 4)].level = hint_state / 2;
 								}
 							}
 						}
@@ -2939,7 +2940,7 @@ void Main() {
 									history[history.size() - 1].level = ai_level;
 								}
 							}
-							History_elem hist_tmp = { bd, -INF, flip.pos, history[history.size() - 1].record + str_record(flip.pos), 0 };
+							History_elem hist_tmp = { bd, v, flip.pos, history[history.size() - 1].record + str_record(flip.pos), ai_level };
 							history.emplace_back(hist_tmp);
 							history_place = bd.n - 4;
 							ai_value = ai_result.value;
