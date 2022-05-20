@@ -11,8 +11,8 @@ with open('learned_data/openingssmall.txt', 'r') as f:
 
 level = int(sys.argv[1])
 
-egaroucid5_dnn = subprocess.Popen(('Egaroucid5_test_multi.exe ' + str(level) + ' learned_data/eval.egev').split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-egaroucid5 = subprocess.Popen(('Egaroucid5_test_multi.exe ' + str(level) + ' learned_data/eval_default.egev').split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+egaroucid5_dnn = subprocess.Popen(('Egaroucid5_test.exe ' + str(level) + ' learned_data/eval.egev').split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+egaroucid5 = subprocess.Popen(('Egaroucid5_test.exe ' + str(level) + ' learned_data/eval_default.egev').split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
 
 egaroucid5_dnn_win = [0, 0]
 egaroucid5_win = [0, 0]
