@@ -8,4 +8,5 @@ struct History_elem {
 	int v;
 	int policy;
 	String record;
+	int level;
 };

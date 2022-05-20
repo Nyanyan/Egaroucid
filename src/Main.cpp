@@ -26,7 +26,7 @@
 
 using namespace std;
 
-#define EGAROUCID_VERSION U"5.8.0"
+#define EGAROUCID_VERSION U"5.9.0"
 
 #define hint_not_calculated_define 0
 
@@ -1204,7 +1204,7 @@ bool import_record(String record, vector<History_elem>* n_history) {
 		uint64_t legal;
 		Flip flip;
 		h_bd.reset();
-		History_elem hist_tmp = { h_bd, -INF, -1, U"" };
+		History_elem hist_tmp = { h_bd, -INF, -1, U"", 0 };
 		n_history->emplace_back(hist_tmp);
 		for (int i = 0; i < (int)record.size(); i += 2) {
 			x = (int)record[i] - (int)'a';
@@ -2273,7 +2273,7 @@ void Main() {
 				initialize_draw(&initialize_future, &initializing, &initialize_failed, font50, font20, icon, logo, texture_loaded, tips);
 				if (!initializing) {
 					bd.reset();
-					History_elem hist_tmp = { bd, -INF, -1, U"" };
+					History_elem hist_tmp = { bd, -INF, -1, U"", 0 };
 					history.emplace_back(hist_tmp);
 					history_place = 0;
 					fork_mode = false;
@@ -2640,17 +2640,17 @@ void Main() {
 									}
 								}
 								if (!next_fork_mode && fork_history.size()) {
-									History_elem hist_tmp = { bd, v, moved_board.first, fork_history[fork_history.size() - 1].record + str_record(moved_board.first) };
+									History_elem hist_tmp = { bd, v, moved_board.first, fork_history[fork_history.size() - 1].record + str_record(moved_board.first), hint_state / 2 };
 									fork_history.emplace_back(hist_tmp);
 								}
 								else {
-									History_elem hist_tmp = { bd, v, moved_board.first, history[find_history_idx(history, history_place)].record + str_record(moved_board.first) };
+									History_elem hist_tmp = { bd, v, moved_board.first, history[find_history_idx(history, history_place)].record + str_record(moved_board.first), hint_state / 2 };
 									fork_history.emplace_back(hist_tmp);
 									fork_mode = true;
 								}
 							}
 							else {
-								History_elem hist_tmp = { bd, v, moved_board.first, history[history.size() - 1].record + str_record(moved_board.first) };
+								History_elem hist_tmp = { bd, v, moved_board.first, history[history.size() - 1].record + str_record(moved_board.first), hint_state / 2 };
 								history.emplace_back(hist_tmp);
 							}
 							history_place = bd.n - 4;
@@ -2934,9 +2934,12 @@ void Main() {
 							}
 							int v = sgn * ai_result.value;
 							if (history.size()) {
-								history[history.size() - 1].v = v;
+								if (history[history.size() - 1].level < ai_level) {
+									history[history.size() - 1].v = v;
+									history[history.size() - 1].level = ai_level;
+								}
 							}
-							History_elem hist_tmp = { bd, -INF, flip.pos, history[history.size() - 1].record + str_record(flip.pos) };
+							History_elem hist_tmp = { bd, -INF, flip.pos, history[history.size() - 1].record + str_record(flip.pos), 0 };
 							history.emplace_back(hist_tmp);
 							history_place = bd.n - 4;
 							ai_value = ai_result.value;
@@ -3155,7 +3158,7 @@ void Main() {
 				if (!editing_board) {
 					history.clear();
 					fork_history.clear();
-					History_elem hist_tmp = { bd, -INF, -1, U"" };
+					History_elem hist_tmp = { bd, -INF, -1, U"", 0 };
 					history.emplace_back(hist_tmp);
 					history_place = bd.n - 4;
 					human_value_hist.clear();
@@ -3317,7 +3320,7 @@ void Main() {
 						bd = imported.second;
 						history.clear();
 						fork_history.clear();
-						History_elem hist_tmp = { bd, -INF, -1, U"" };
+						History_elem hist_tmp = { bd, -INF, -1, U"", 0 };
 						history.emplace_back(hist_tmp);
 						history_place = bd.n - 4;
 						human_value_hist.clear();
@@ -3375,7 +3378,7 @@ void Main() {
 				cerr << "reset" << endl;
 				bd.reset();
 				history.clear();
-				History_elem hist_tmp = { bd, -INF, -1, U"" };
+				History_elem hist_tmp = { bd, -INF, -1, U"", 0 };
 				history.emplace_back(hist_tmp);
 				fork_history.clear();
 				human_value_hist.clear();
