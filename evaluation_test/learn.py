@@ -141,6 +141,8 @@ for i in range(n_patterns):
     layers.append(LeakyReLU(alpha=0.01))
     layers.append(Dense(n_dense_pattern, name=names[i] + '_dense2'))
     layers.append(LeakyReLU(alpha=0.01))
+    layers.append(Dense(n_dense_pattern, name=names[i] + '_dense3'))
+    layers.append(LeakyReLU(alpha=0.01))
     layers.append(Dense(1, name=names[i] + '_out'))
     add_elems = []
     for j in range(n_pattern_varieties[i]):
@@ -169,6 +171,8 @@ for i in range(n_mobility):
     layers.append(Dense(n_dense_pattern, name=mobility_names[i] + '_dense1'))
     layers.append(LeakyReLU(alpha=0.01))
     layers.append(Dense(n_dense_pattern, name=mobility_names[i] + '_dense2'))
+    layers.append(LeakyReLU(alpha=0.01))
+    layers.append(Dense(n_dense_pattern, name=mobility_names[i] + '_dense3'))
     layers.append(LeakyReLU(alpha=0.01))
     layers.append(Dense(1, name=mobility_names[i] + '_out'))
     add_elems = []
@@ -253,7 +257,7 @@ for data_idx in trange(len(all_labels_raw)):
         #    print(pattern_unzipped)
         all_data[pattern_idx][data_idx] = np.array(pattern_unzipped)
     for additional_feature_idx in range(n_additional_features):
-        additional_feature = [all_data_idx[n_raw_patterns + additional_feature_idx * 2][data_idx], all_data_idx[n_raw_patterns + additional_feature_idx * 2 + 1][data_idx]]
+        additional_feature = [all_data_idx[n_raw_patterns + additional_feature_idx * 2][data_idx] / additional_feature_mul[additional_feature_idx], all_data_idx[n_raw_patterns + additional_feature_idx * 2 + 1][data_idx] / additional_feature_mul[additional_feature_idx]]
         all_data[n_raw_patterns + additional_feature_idx][data_idx] = np.array(additional_feature)
     for mobility_idx in range(n_raw_mobility):
         idx = all_data_idx[n_raw_patterns + n_additional_features * 2 + mobility_idx][data_idx]
@@ -325,7 +329,7 @@ for idx in trange(65536):
             pre_calc_data[feature_idxes[pattern_idx]][idx] = np.array(pattern_unzipped)
     for additional_feature in range(n_additional_features):
         if idx < feature_actual_sizes[n_patterns + additional_feature]:
-            pre_calc_data[feature_idxes[n_patterns + additional_feature]][idx] = np.array([idx // additional_feature_mul[additional_feature], idx % additional_feature_mul[additional_feature]])
+            pre_calc_data[feature_idxes[n_patterns + additional_feature]][idx] = np.array([(idx // additional_feature_mul[additional_feature]) / additional_feature_mul[additional_feature], (idx % additional_feature_mul[additional_feature]) / additional_feature_mul[additional_feature]])
     for mobility_idx in range(n_mobility):
         pattern_unzipped = idx2mobility(idx)
         pre_calc_data[feature_idxes[n_patterns + n_additional_features + mobility_idx]][idx] = np.array(pattern_unzipped)
