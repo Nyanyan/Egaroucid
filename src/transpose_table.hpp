@@ -13,6 +13,8 @@ using namespace std;
 #define TRANSPOSE_TABLE_SIZE 33554432
 #define TRANSPOSE_TABLE_MASK 33554431
 
+#define CACHE_SAVE_EMPTY 15
+
 #define TRANSPOSE_TABLE_UNDEFINED -INF
 
 class Node_child_transpose_table{
@@ -77,7 +79,7 @@ class Node_child_transpose_table{
     void copy_child_transpose_table(int id, Node_child_transpose_table *from[], Node_child_transpose_table *to[], int s, int e){
         for(int i = s; i < e; ++i){
             if (from[i] != NULL){
-                if (from[i]->n_stones() < HW2 - 20){
+                if (from[i]->n_stones() < HW2 - CACHE_SAVE_EMPTY){
                     if (to[i] == NULL){
                         Node_child_transpose_table *p = (Node_child_transpose_table*)malloc(sizeof(Node_child_transpose_table));
                         to[i] = new(p) Node_child_transpose_table;
@@ -239,7 +241,7 @@ class Node_parent_transpose_table{
     void copy_parent_transpose_table(int id, Node_parent_transpose_table *from[], Node_parent_transpose_table *to[], int s, int e){
         for(int i = s; i < e; ++i){
             if (from[i] != NULL){
-                if (from[i]->n_stones() < HW2 - 20){
+                if (from[i]->n_stones() < HW2 - CACHE_SAVE_EMPTY){
                     if (to[i] == NULL){
                         Node_parent_transpose_table *p = (Node_parent_transpose_table*)malloc(sizeof(Node_parent_transpose_table));
                         to[i] = new(p) Node_parent_transpose_table;

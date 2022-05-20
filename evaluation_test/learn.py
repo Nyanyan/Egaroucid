@@ -31,7 +31,7 @@ print('phase', use_phase)
 
 input_files = sys.argv[4:]
 
-n_epochs = 200
+n_epochs = 400
 
 inf = 10000000.0
 
@@ -257,7 +257,7 @@ for data_idx in trange(len(all_labels_raw)):
         #    print(pattern_unzipped)
         all_data[pattern_idx][data_idx] = np.array(pattern_unzipped)
     for additional_feature_idx in range(n_additional_features):
-        additional_feature = [all_data_idx[n_raw_patterns + additional_feature_idx * 2][data_idx] / additional_feature_mul[additional_feature_idx], all_data_idx[n_raw_patterns + additional_feature_idx * 2 + 1][data_idx] / additional_feature_mul[additional_feature_idx]]
+        additional_feature = [all_data_idx[n_raw_patterns + additional_feature_idx * 2][data_idx], all_data_idx[n_raw_patterns + additional_feature_idx * 2 + 1][data_idx]]
         all_data[n_raw_patterns + additional_feature_idx][data_idx] = np.array(additional_feature)
     for mobility_idx in range(n_raw_mobility):
         idx = all_data_idx[n_raw_patterns + n_additional_features * 2 + mobility_idx][data_idx]
@@ -298,7 +298,7 @@ test_labels = all_labels[test_idxes]
 early_stop = EarlyStopping(monitor='val_loss', patience=10)
 #model_checkpoint = ModelCheckpoint(filepath=os.path.join('learned_data/' + str(phase), 'model_{epoch:02d}_{val_loss:.5f}_{val_mae:.5f}.h5'), monitor='val_loss', verbose=1)
 reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=4, min_lr=0.0001)
-history = model.fit(train_data, train_labels, epochs=n_epochs, batch_size=8192, validation_data=(test_data, test_labels), callbacks=[early_stop, reduce_lr])
+history = model.fit(train_data, train_labels, epochs=n_epochs, batch_size=16384, validation_data=(test_data, test_labels), callbacks=[early_stop, reduce_lr])
 
 #now = datetime.datetime.today()
 #print(str(now.year) + digit(now.month, 2) + digit(now.day, 2) + '_' + digit(now.hour, 2) + digit(now.minute, 2))
@@ -312,7 +312,19 @@ for key in ['loss', 'val_loss']:
 plt.savefig('graph/loss_' + str(use_phase) + '_' + str(n_dense_pattern) + '.png')
 plt.clf()
 
+plt.xlabel('epoch')
+plt.ylabel('mae')
+for key in ['mae', 'val_mae']:
+    plt.plot(history.history[key], label=key)
+    plt.legend(loc='best')
+plt.savefig('graph/mae_' + str(use_phase) + '_' + str(n_dense_pattern) + '.png')
+plt.clf()
 
+with open('learned_data/learn_log.txt', 'a') as f:
+    f.write(str(history.history['loss'][len(history.history['loss']) - 1]))
+    f.write('\t')
+    f.write(str(history.history['mae'][len(history.history['mae']) - 1]))
+    f.write('\n')
 
 
 
@@ -329,7 +341,7 @@ for idx in trange(65536):
             pre_calc_data[feature_idxes[pattern_idx]][idx] = np.array(pattern_unzipped)
     for additional_feature in range(n_additional_features):
         if idx < feature_actual_sizes[n_patterns + additional_feature]:
-            pre_calc_data[feature_idxes[n_patterns + additional_feature]][idx] = np.array([(idx // additional_feature_mul[additional_feature]) / additional_feature_mul[additional_feature], (idx % additional_feature_mul[additional_feature]) / additional_feature_mul[additional_feature]])
+            pre_calc_data[feature_idxes[n_patterns + additional_feature]][idx] = np.array([idx // additional_feature_mul[additional_feature], idx % additional_feature_mul[additional_feature]])
     for mobility_idx in range(n_mobility):
         pattern_unzipped = idx2mobility(idx)
         pre_calc_data[feature_idxes[n_patterns + n_additional_features + mobility_idx]][idx] = np.array(pattern_unzipped)
