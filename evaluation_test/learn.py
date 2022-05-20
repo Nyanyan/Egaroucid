@@ -127,7 +127,7 @@ def idx2mobility(idx):
             pattern_unzipped[cell] = 1.0
         idx //= 2
     return pattern_unzipped
-'''
+
 # create model
 x = [None for _ in range(n_raw_data)]
 y_before_add = []
@@ -138,6 +138,8 @@ for i in range(n_patterns):
     layers.append(Dense(n_dense_pattern, name=names[i] + '_dense0'))
     layers.append(LeakyReLU(alpha=0.01))
     layers.append(Dense(n_dense_pattern, name=names[i] + '_dense1'))
+    layers.append(LeakyReLU(alpha=0.01))
+    layers.append(Dense(n_dense_pattern, name=names[i] + '_dense2'))
     layers.append(LeakyReLU(alpha=0.01))
     layers.append(Dense(1, name=names[i] + '_out'))
     add_elems = []
@@ -166,6 +168,8 @@ for i in range(n_mobility):
     layers.append(LeakyReLU(alpha=0.01))
     layers.append(Dense(n_dense_pattern, name=mobility_names[i] + '_dense1'))
     layers.append(LeakyReLU(alpha=0.01))
+    layers.append(Dense(n_dense_pattern, name=mobility_names[i] + '_dense2'))
+    layers.append(LeakyReLU(alpha=0.01))
     layers.append(Dense(1, name=mobility_names[i] + '_out'))
     add_elems = []
     for j in range(4):
@@ -178,8 +182,8 @@ for i in range(n_mobility):
     y_before_add.extend(add_elems)
 y = Add(name='last_layer')(y_before_add)
 model = Model(inputs=x, outputs=y)
-'''
-model = load_model('learned_data/' + str(use_phase) + '_' + str(n_dense_pattern) + '.h5')
+
+#model = load_model('learned_data/' + str(use_phase) + '_' + str(n_dense_pattern) + '.h5')
 
 #model.summary()
 #exit()
