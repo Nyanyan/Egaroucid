@@ -127,7 +127,7 @@ def idx2mobility(idx):
             pattern_unzipped[cell] = 1.0
         idx //= 2
     return pattern_unzipped
-
+'''
 # create model
 x = [None for _ in range(n_raw_data)]
 y_before_add = []
@@ -178,8 +178,8 @@ for i in range(n_mobility):
     y_before_add.extend(add_elems)
 y = Add(name='last_layer')(y_before_add)
 model = Model(inputs=x, outputs=y)
-
-#model = load_model('learned_data/' + str(use_phase) + '_' + str(n_dense_pattern) + '.h5')
+'''
+model = load_model('learned_data/' + str(use_phase) + '_' + str(n_dense_pattern) + '.h5')
 
 #model.summary()
 #exit()
@@ -287,7 +287,7 @@ train_labels = all_labels[train_idxes]
 test_data = [arr[test_idxes] for arr in all_data]
 test_labels = all_labels[test_idxes]
 
-early_stop = EarlyStopping(monitor='val_loss', patience=5)
+early_stop = EarlyStopping(monitor='val_loss', patience=10)
 #model_checkpoint = ModelCheckpoint(filepath=os.path.join('learned_data/' + str(phase), 'model_{epoch:02d}_{val_loss:.5f}_{val_mae:.5f}.h5'), monitor='val_loss', verbose=1)
 reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=4, min_lr=0.0001)
 history = model.fit(train_data, train_labels, epochs=n_epochs, batch_size=8192, validation_data=(test_data, test_labels), callbacks=[early_stop, reduce_lr])

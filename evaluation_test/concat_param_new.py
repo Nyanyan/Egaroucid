@@ -10,7 +10,7 @@ data = ''
 for i in range(30):
     try:
         #with open('learned_data/' + str(i) + '.txt', 'r') as f:
-        if i >= 21:
+        if i >= 0:
             with open('learned_data/' + str(i) + '_' + str(dense_pattern) + '.txt', 'r') as f:
                 tmp = f.read()
                 print(i, len(tmp.splitlines()))
