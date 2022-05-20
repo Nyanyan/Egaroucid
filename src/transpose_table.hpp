@@ -313,7 +313,7 @@ class Parent_transpose_table{
                     if (table[i] != NULL){
                         if (to->table[i] == NULL)
                             to->table[i] = (Node_parent_transpose_table*)malloc(sizeof(Node_parent_transpose_table));
-                        to->table[i]->register_value(table[i]);
+                        to->table[i]->register_value_with_board(table[i]);
                     } else{
                         if (to->table[i] != NULL)
                             to->table[i]->init();

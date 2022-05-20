@@ -351,7 +351,10 @@ bool ai_hint(Board b, int level, int max_level, int res[], int info[], bool best
                 ++n_legal;
         }
     }
-    int thread_size = (int)thread_pool.size();
+    int thread_size = 0;
+    #if USE_MULTI_THREAD
+        thread_size = (int)thread_pool.size();
+    #endif
     bool use_multi_thread = (n_legal < thread_size);
     if (depth - 1 >= 0){
         //int l, u;
@@ -380,7 +383,11 @@ bool ai_hint(Board b, int level, int max_level, int res[], int info[], bool best
                     }
                     */
                     if (!cache_hit){
-                        val_future[i] = thread_pool.push(bind(&tree_search_noid, nb, depth - 1, use_mpc, mpct, use_multi_thread));
+                        #if USE_MULTI_THREAD
+                            val_future[i] = thread_pool.push(bind(&tree_search_noid, nb, depth - 1, use_mpc, mpct, use_multi_thread));
+                        #else
+                            val_future[i] = async(launch::async, tree_search_noid, nb, depth - 1, use_mpc, mpct, false);
+                        #endif
                         //val_future[i] = async(launch::async, tree_search_noid, nb, depth - 1, use_mpc, mpct);
                     }
                     if (!is_mid_search && !use_mpc)
