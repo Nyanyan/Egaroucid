@@ -58,7 +58,7 @@ class DisplayCallBack(tf.keras.callbacks.Callback):
 #use_phase = int(sys.argv[3])
 ply_d = 2
 
-n_epochs = 10000
+n_epochs = 20000
 
 inf = 10000000.0
 
@@ -166,8 +166,8 @@ def create_input_feature(feature_idx, idx):
 n_params = 0
 
 n_denses = [
-    64, 64, 64, 64, 
-    64, 64, 64, 256, 
+    128, 128, 128, 64, 
+    64, 128, 64, 256, 
     256, 128, 128, 128, 
     128, 128, 128, 128,
     16, 16, 16, 16, 
@@ -220,7 +220,7 @@ for use_phase in reversed(range(30)):
         for i in range(len(train_data_tmp)):
             train_data[i] = np.array(create_input_feature(feature_idx, train_data_tmp[i]))
             train_labels[i] = train_labels_tmp[i]
-            train_weights[i] = max(0.001, train_weights_tmp[i] / max_train_weight)
+            train_weights[i] = max(0.005, train_weights_tmp[i] / max_train_weight) * len(train_weights_tmp)
         
         early_stop = EarlyStopping(monitor='loss', patience=100)
         reduce_lr = ReduceLROnPlateau(monitor='loss', factor=0.5, patience=50, min_lr=0.0001)
