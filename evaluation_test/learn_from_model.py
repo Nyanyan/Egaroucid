@@ -186,7 +186,7 @@ for feature_idx in range(24):
 
 print('n_params', n_params, n_params * 30)
 
-for use_phase in reversed(range(23)):
+for use_phase in reversed(range(30)):
     with open('data/' + str(use_phase) + '.txt', 'r') as f:
         all_labels = [int(elem) for elem in f.read().splitlines()]
 
@@ -229,7 +229,16 @@ for use_phase in reversed(range(23)):
         #history = model.fit(train_data, train_labels, epochs=n_epochs, batch_size=16384, validation_split=0.0, verbose=0, callbacks=[early_stop, reduce_lr, cbDisplay])
         #with open('learned_data/log.txt', 'a') as f:
         #    f.write(str(model.evaluate(train_data, train_labels)) + '\n')
-        #model.save('learned_data/' + str(use_phase) + '_' + str(n_dense_pattern) + '_' + str(feature_idx) + '.h5')
+        model.save('learned_data/' + str(use_phase) + '_' + str(feature_idx) + '.h5')
+        with open('learned_data/learn_log.txt', 'a') as f:
+            f.write(str(use_phase))
+            f.write('\t')
+            f.write(str(feature_idx))
+            f.write('\t')
+            f.write(str(history.history['loss'][len(history.history['loss']) - 1]))
+            f.write('\t')
+            f.write(str(history.history['mae'][len(history.history['mae']) - 1]))
+            f.write('\n')
         
         predict_data = np.zeros((feature_actual_sizes[feature_idx], input_sizes[feature_idx]))
         for i in range(feature_actual_sizes[feature_idx]):
