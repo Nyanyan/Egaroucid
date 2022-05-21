@@ -78,7 +78,7 @@ Compile ```egaroucid5.cpp```
 $ g++ -O3 -fexcess-precision=fast -funroll-loops -flto -march=native -lpthread -Wall ai.cpp -o a.exe
 ```
 
-Execute ```main.py```
+Execute ```play.py```
 
 ```
 $ python3 play.py
