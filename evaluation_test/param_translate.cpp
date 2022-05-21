@@ -6,6 +6,8 @@ using namespace std;
 
 #define n_data (804572 * 30)
 
+constexpr short max_num = 32760;
+
 int main(){
     ifstream ifs("learned_data/param.txt");
     if (ifs.fail()){
@@ -27,6 +29,10 @@ int main(){
             cerr << '\r' << (i * 100 / n_data) << "%";
         getline(ifs, line);
         elem = stoi(line);
+        if (elem > max_num)
+            elem = max_num;
+        if (elem < -max_num)
+            elem = -max_num;
         max_elem = max(max_elem, elem);
         min_elem = min(min_elem, elem);
         fout.write((char*)&elem, 2);

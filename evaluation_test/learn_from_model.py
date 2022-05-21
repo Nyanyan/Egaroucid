@@ -186,7 +186,7 @@ for feature_idx in range(24):
 
 print('n_params', n_params, n_params * 30)
 
-for use_phase in reversed(range(30)):
+for use_phase in reversed(range(23)):
     with open('data/' + str(use_phase) + '.txt', 'r') as f:
         all_labels = [int(elem) for elem in f.read().splitlines()]
 
