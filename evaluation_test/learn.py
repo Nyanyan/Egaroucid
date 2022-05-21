@@ -21,15 +21,13 @@ from math import tanh, log
 from copy import deepcopy
 import sys
 
-n_dense_pattern = int(sys.argv[1])
-n_dense_additional = int(sys.argv[2])
-
-use_phase = int(sys.argv[3])
+use_phase = int(sys.argv[1])
 ply_d = 2
 
 print('phase', use_phase)
 
-input_files = sys.argv[4:]
+input_files = sys.argv[2:]
+print(input_files)
 
 n_epochs = 400
 
@@ -128,6 +126,15 @@ def idx2mobility(idx):
         idx //= 2
     return pattern_unzipped
 
+n_denses = [
+    128, 128, 128, 64, 
+    64, 128, 64, 256, 
+    256, 128, 128, 128, 
+    128, 128, 128, 128,
+    16, 16, 16, 16, 
+    128, 128, 128, 128
+]
+
 # create model
 x = [None for _ in range(n_raw_data)]
 y_before_add = []
@@ -135,13 +142,9 @@ names = ['line2', 'line3', 'line4', 'diagonal5', 'diagonal6', 'diagonal7', 'diag
 idx = 0
 for i in range(n_patterns):
     layers = []
-    layers.append(Dense(n_dense_pattern, name=names[i] + '_dense0'))
+    layers.append(Dense(n_denses[i], name=names[i] + '_dense0'))
     layers.append(LeakyReLU(alpha=0.01))
-    layers.append(Dense(n_dense_pattern, name=names[i] + '_dense1'))
-    layers.append(LeakyReLU(alpha=0.01))
-    layers.append(Dense(n_dense_pattern, name=names[i] + '_dense2'))
-    layers.append(LeakyReLU(alpha=0.01))
-    layers.append(Dense(n_dense_pattern, name=names[i] + '_dense3'))
+    layers.append(Dense(n_denses[i], name=names[i] + '_dense1'))
     layers.append(LeakyReLU(alpha=0.01))
     layers.append(Dense(1, name=names[i] + '_out'))
     add_elems = []
@@ -156,9 +159,9 @@ for i in range(n_patterns):
 add_names = ['surround', 'canput', 'stability', 'num']
 for i in range(n_additional_features):
     x[idx] = Input(shape=2, name=add_names[i] + '_in')
-    y_add = Dense(n_dense_additional, name=add_names[i] + '_dense0')(x[idx])
+    y_add = Dense(n_denses[n_patterns + i], name=add_names[i] + '_dense0')(x[idx])
     y_add = LeakyReLU(alpha=0.01)(y_add)
-    y_add = Dense(n_dense_additional, name=add_names[i] + '_dense1')(y_add)
+    y_add = Dense(n_denses[n_patterns + i], name=add_names[i] + '_dense1')(y_add)
     y_add = LeakyReLU(alpha=0.01)(y_add)
     y_add = Dense(1, name=add_names[i] + '_out')(y_add)
     y_before_add.append(y_add)
@@ -166,13 +169,9 @@ for i in range(n_additional_features):
 mobility_names = ['mobility1', 'mobility2', 'mobility3', 'mobility4']
 for i in range(n_mobility):
     layers = []
-    layers.append(Dense(n_dense_pattern, name=mobility_names[i] + '_dense0'))
+    layers.append(Dense(n_denses[n_patterns + n_additional_features + i], name=mobility_names[i] + '_dense0'))
     layers.append(LeakyReLU(alpha=0.01))
-    layers.append(Dense(n_dense_pattern, name=mobility_names[i] + '_dense1'))
-    layers.append(LeakyReLU(alpha=0.01))
-    layers.append(Dense(n_dense_pattern, name=mobility_names[i] + '_dense2'))
-    layers.append(LeakyReLU(alpha=0.01))
-    layers.append(Dense(n_dense_pattern, name=mobility_names[i] + '_dense3'))
+    layers.append(Dense(n_denses[n_patterns + n_additional_features + i], name=mobility_names[i] + '_dense1'))
     layers.append(LeakyReLU(alpha=0.01))
     layers.append(Dense(1, name=mobility_names[i] + '_out'))
     add_elems = []
@@ -187,7 +186,7 @@ for i in range(n_mobility):
 y = Add(name='last_layer')(y_before_add)
 model = Model(inputs=x, outputs=y)
 
-#model = load_model('learned_data/' + str(use_phase) + '_' + str(n_dense_pattern) + '.h5')
+#model = load_model('learned_data/' + str(use_phase) + '.h5')
 
 #model.summary()
 #exit()
@@ -302,14 +301,14 @@ history = model.fit(train_data, train_labels, epochs=n_epochs, batch_size=16384,
 
 #now = datetime.datetime.today()
 #print(str(now.year) + digit(now.month, 2) + digit(now.day, 2) + '_' + digit(now.hour, 2) + digit(now.minute, 2))
-model.save('learned_data/' + str(use_phase) + '_' + str(n_dense_pattern) + '.h5')
+model.save('learned_data/' + str(use_phase) + '.h5')
 
 plt.xlabel('epoch')
 plt.ylabel('loss')
 for key in ['loss', 'val_loss']:
     plt.plot(history.history[key], label=key)
     plt.legend(loc='best')
-plt.savefig('graph/loss_' + str(use_phase) + '_' + str(n_dense_pattern) + '.png')
+plt.savefig('graph/loss_' + str(use_phase) + '.png')
 plt.clf()
 
 plt.xlabel('epoch')
@@ -317,7 +316,7 @@ plt.ylabel('mae')
 for key in ['mae', 'val_mae']:
     plt.plot(history.history[key], label=key)
     plt.legend(loc='best')
-plt.savefig('graph/mae_' + str(use_phase) + '_' + str(n_dense_pattern) + '.png')
+plt.savefig('graph/mae_' + str(use_phase) + '.png')
 plt.clf()
 
 with open('learned_data/learn_log.txt', 'a') as f:
@@ -354,7 +353,7 @@ print([predictions[feature_idxes[pattern_idx]][101][0] / 256 for pattern_idx in 
 step = 256
 n_lines = 0
 plus_elem = 0
-with open('learned_data/' + str(use_phase) + '_' + str(n_dense_pattern) + '.txt', 'w') as f:
+with open('learned_data/' + str(use_phase) + '.txt', 'w') as f:
     for pattern_idx in range(24):
         for i in range(feature_actual_sizes[pattern_idx]):
             val = round(predictions[feature_idxes[pattern_idx]][i][0])
