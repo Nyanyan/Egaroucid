@@ -55,9 +55,6 @@ class DisplayCallBack(tf.keras.callbacks.Callback):
     def on_train_end(self, logs={}):
         print('\n##### Train Complete ##### ' + str(datetime.datetime.now()))
 
-n_dense_pattern = int(sys.argv[1])
-n_dense_additional = int(sys.argv[2])
-
 #use_phase = int(sys.argv[3])
 ply_d = 2
 
@@ -168,16 +165,20 @@ def create_input_feature(feature_idx, idx):
 
 n_params = 0
 
+n_denses = [
+    64, 64, 64, 64, 
+    64, 64, 64, 256, 
+    256, 128, 128, 128, 
+    128, 128, 128, 128,
+    16, 16, 16, 16, 
+    128, 128, 128, 128
+]
+
 for feature_idx in range(24):
-    n_dense = n_dense_additional if input_sizes[feature_idx] == 2 else n_dense_pattern
     x = Input(shape=input_sizes[feature_idx], name='')
-    y = Dense(n_dense, name='dense0')(x)
+    y = Dense(n_denses[feature_idx], name='dense0')(x)
     y = LeakyReLU(alpha=0.01)(y)
-    y = Dense(n_dense, name='dense1')(y)
-    y = LeakyReLU(alpha=0.01)(y)
-    y = Dense(n_dense, name='dense2')(y)
-    y = LeakyReLU(alpha=0.01)(y)
-    y = Dense(n_dense, name='dense3')(y)
+    y = Dense(n_denses[feature_idx], name='dense1')(y)
     y = LeakyReLU(alpha=0.01)(y)
     y = Dense(1, name='out')(y)
     model = Model(inputs=x, outputs=y)
@@ -196,15 +197,10 @@ for use_phase in reversed(range(30)):
 
     for feature_idx in range(24):
         print('phase', use_phase, 'feature', feature_idx)
-        n_dense = n_dense_additional if input_sizes[feature_idx] == 2 else n_dense_pattern
         x = Input(shape=input_sizes[feature_idx], name='')
-        y = Dense(n_dense, name='dense0')(x)
+        y = Dense(n_denses[feature_idx], name='dense0')(x)
         y = LeakyReLU(alpha=0.01)(y)
-        y = Dense(n_dense, name='dense1')(y)
-        y = LeakyReLU(alpha=0.01)(y)
-        y = Dense(n_dense, name='dense2')(y)
-        y = LeakyReLU(alpha=0.01)(y)
-        y = Dense(n_dense, name='dense3')(y)
+        y = Dense(n_denses[feature_idx], name='dense1')(y)
         y = LeakyReLU(alpha=0.01)(y)
         y = Dense(1, name='out')(y)
         model = Model(inputs=x, outputs=y)
@@ -224,13 +220,13 @@ for use_phase in reversed(range(30)):
         for i in range(len(train_data_tmp)):
             train_data[i] = np.array(create_input_feature(feature_idx, train_data_tmp[i]))
             train_labels[i] = train_labels_tmp[i]
-            train_weights[i] = max(0.1, train_weights_tmp[i] / max_train_weight)
+            train_weights[i] = max(0.001, train_weights_tmp[i] / max_train_weight)
         
         early_stop = EarlyStopping(monitor='loss', patience=100)
         reduce_lr = ReduceLROnPlateau(monitor='loss', factor=0.5, patience=50, min_lr=0.0001)
         cbDisplay = DisplayCallBack()
         history = model.fit(train_data, train_labels, sample_weight=train_weights, epochs=n_epochs, batch_size=16384, validation_split=0.0, verbose=0, callbacks=[early_stop, reduce_lr, cbDisplay])
-        #history = model.fit(train_data, train_labels, epochs=n_epochs, batch_size=16384, validation_split=0.0, verbose=0, callbacks=[early_stop, reduce_lr])
+        #history = model.fit(train_data, train_labels, epochs=n_epochs, batch_size=16384, validation_split=0.0, verbose=0, callbacks=[early_stop, reduce_lr, cbDisplay])
         #with open('learned_data/log.txt', 'a') as f:
         #    f.write(str(model.evaluate(train_data, train_labels)) + '\n')
         #model.save('learned_data/' + str(use_phase) + '_' + str(n_dense_pattern) + '_' + str(feature_idx) + '.h5')
@@ -240,7 +236,7 @@ for use_phase in reversed(range(30)):
             predict_data[i] = np.array(create_input_feature(feature_idx, i))
         prediction = model.predict(predict_data, batch_size=8192)
         print(prediction.shape)
-        with open('learned_data/' + str(use_phase) + '_' + str(n_dense_pattern) + '_model.txt', 'a') as f:
+        with open('learned_data/' + str(use_phase) + '_model.txt', 'a') as f:
             for i in range(feature_actual_sizes[feature_idx]):
                 f.write(str(round(prediction[i][0])) + '\n')
         
