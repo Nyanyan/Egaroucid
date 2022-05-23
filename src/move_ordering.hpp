@@ -23,7 +23,7 @@
 
 #define W_VALUE 8
 #define W_VALUE_SHALLOW 4
-#define W_STABILITY 4
+//#define W_STABILITY 4
 #define W_MOBILITY 16
 #define W_OPENNESS 8
 #define W_OPPONENT_OPENNESS 8
@@ -249,9 +249,8 @@ inline void move_evaluate_fast_first(Search *search, Flip *flip){
             flip->value += W_END_PARITY;
         search->board.move(flip);
             //flip->value += calc_stability_edge_player(search->board.opponent, search->board.player) * W_STABILITY;
-            int stab0, stab1;
-            calc_stability(&search->board, &stab0, &stab1);
-            flip->value += stab1 * W_END_STABILITY;
+            calc_stability(&search->board, &flip->stab1, &flip->stab0);
+            flip->value += flip->stab0 * W_END_STABILITY;
             flip->n_legal = search->board.get_legal();
             flip->value += -pop_count_ull(flip->n_legal) * W_END_MOBILITY;
         search->board.undo(flip);

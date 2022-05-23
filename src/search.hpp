@@ -97,3 +97,17 @@ inline int stability_cut(Search *search, int *alpha, int *beta){
     }
     return SCORE_UNDEFINED;
 }
+
+inline int stability_cut(Search *search, Flip *flip, int *alpha, int *beta){
+    int n_alpha = 2 * flip->stab0 - HW2;
+    int n_beta = HW2 - 2 * flip->stab1;
+    if (*beta <= n_alpha)
+        return n_alpha;
+    if (n_beta <= *alpha)
+        return n_beta;
+    if (n_beta <= n_alpha)
+        return n_alpha;
+    *alpha = max(*alpha, n_alpha);
+    *beta = min(*beta, n_beta);
+    return SCORE_UNDEFINED;
+}

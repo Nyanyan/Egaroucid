@@ -611,11 +611,6 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
     if (search->board.n >= HW2 - END_FAST_DEPTH)
         return nega_alpha_end_fast(search, alpha, beta, skipped);
     ++search->n_nodes;
-    #if USE_END_SC
-        int stab_res = stability_cut(search, &alpha, &beta);
-        if (stab_res != SCORE_UNDEFINED)
-            return stab_res;
-    #endif
     uint32_t hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
     #if USE_END_TC
         int l, u;
@@ -650,12 +645,21 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
     #endif
     int best_move = child_transpose_table.get(&search->board, hash_code);
     int f_best_move = best_move;
+    int stab_res;
     if (best_move != TRANSPOSE_TABLE_UNDEFINED){
         if (1 & (legal >> best_move)){
             Flip flip_best;
             calc_flip(&flip_best, &search->board, best_move);
             //eval_move(search, &flip);
             search->board.move(&flip_best);
+                #if USE_END_SC
+                    calc_stability(&search->board, &flip_best.stab1, &flip_best.stab0);
+                    stab_res = stability_cut(search, &flip_best, &alpha, &beta);
+                    if (stab_res != SCORE_UNDEFINED){
+                        search->board.undo(&flip_best);
+                        return stab_res;
+                    }
+                #endif
                 g = -nega_alpha_end(search, -beta, -alpha, false, LEGAL_UNDEFINED, searching);
             search->board.undo(&flip_best);
             //eval_undo(search, &flip);
@@ -711,9 +715,18 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
                 }
             }
         #else
-            for (const Flip &flip: move_list){
+            for (Flip &flip: move_list){
                 //eval_move(search, &flip);
                 search->board.move(&flip);
+                    #if USE_END_SC
+                        if (flip.stab0 == STABILITY_UNDEFINED)
+                            calc_stability(&search->board, &flip.stab1, &flip.stab0);
+                        stab_res = stability_cut(search, &flip, &alpha, &beta);
+                        if (stab_res != SCORE_UNDEFINED){
+                            search->board.undo(&flip);
+                            return stab_res;
+                        }
+                    #endif
                     g = -nega_alpha_end(search, -beta, -alpha, false, flip.n_legal, searching);
                 search->board.undo(&flip);
                 //eval_undo(search, &flip);

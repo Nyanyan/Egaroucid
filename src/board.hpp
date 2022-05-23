@@ -12,6 +12,7 @@
 using namespace std;
 
 #define LEGAL_UNDEFINED 0x0000001818000000ULL
+#define STABILITY_UNDEFINED -1
 
 uint32_t hash_rand_player[4][65536];
 uint32_t hash_rand_opponent[4][65536];
@@ -394,6 +395,8 @@ void board_init(){
 inline void calc_flip(Flip *flip, const Board *b, const uint8_t policy){
     flip->calc_flip(b->player, b->opponent, policy);
     flip->n_legal = LEGAL_UNDEFINED;
+    flip->stab0 = STABILITY_UNDEFINED;
+    flip->stab1 = STABILITY_UNDEFINED;
 }
 
 inline Flip calc_flip(const Board *b, const int policy){
