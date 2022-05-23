@@ -25,6 +25,7 @@
 #define W_VALUE_SHALLOW 4
 #define W_STABILITY 4
 #define W_MOBILITY 16
+#define W_OPENNESS 8
 //#define W_FLIP_INSIDE 4
 //#define W_SURROUND 4
 #define W_PARITY1 2
@@ -42,6 +43,7 @@
 #define W_END_PARITY 2
 
 #define USE_FLIP_INSIDE_DEPTH 15
+#define USE_OPENNESS_N_STONES 49
 
 struct Flip_inside_info{
     uint64_t player;
@@ -90,6 +92,15 @@ inline int create_disturb_opponent_flip_inside(Board *board, const int n_o_legal
     return n_o_legal_flip_inside - pop_count_ull(calc_legal_flip_inside(board->player, board->opponent));
 }
 
+inline int calc_openness(const Board *board, const Flip *flip){
+    uint64_t res = ~(board->player | board->opponent | (1ULL << flip->pos));
+    res &= (flip->flip << 1) | (flip->flip >> 1);
+    res &= (flip->flip << HW) | (flip->flip >> HW);
+    res &= (flip->flip << HW_M1) | (flip->flip >> HW_M1);
+    res &= (flip->flip << HW_P1) | (flip->flip >> HW_P1);
+    return pop_count_ull(res);
+}
+
 inline void move_sort_top(vector<Flip> &move_list, int best_idx){
     if (best_idx != 0)
         swap(move_list[best_idx], move_list[0]);
@@ -112,17 +123,25 @@ inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int
             else
                 flip->value += W_PARITY3;
         }
+        if (search->board.n <= USE_OPENNESS_N_STONES){
+            int openness = calc_openness(&search->board, flip);
+            flip->value -= openness * W_OPENNESS;
+            if (openness == 0)
+                flip->value += W_FLIP_INSIDE;
+        }
         if (depth < 0){
             search->board.move(flip);
                 //flip->value += calc_stability_edge_player(search->board.opponent, search->board.player) * W_STABILITY;
                 flip->n_legal = search->board.get_legal();
                 flip->value += -pop_count_ull(flip->n_legal) * W_MOBILITY;
+                /*
                 if (depth >= USE_FLIP_INSIDE_DEPTH){
                     if (is_flip_inside(flip->pos, flip_inside_info->player))
                         flip->value += W_FLIP_INSIDE;
                     flip->value += create_disturb_player_flip_inside(&search->board, flip_inside_info->n_player) * W_PLAYER_FLIP_INSIDE;
                     flip->value -= create_disturb_opponent_flip_inside(&search->board, flip_inside_info->n_opponent) * W_OPPONENT_FLIP_INSIDE;
                 }
+                */
             search->board.undo(flip);
         } else{
             eval_move(search, flip);
@@ -150,12 +169,14 @@ inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int
                             break;
                     }
                 }
+                /*
                 if (depth >= USE_FLIP_INSIDE_DEPTH){
                     if (is_flip_inside(flip->pos, flip_inside_info->player))
                         flip->value += W_FLIP_INSIDE;
                     flip->value += create_disturb_player_flip_inside(&search->board, flip_inside_info->n_player) * W_PLAYER_FLIP_INSIDE;
                     flip->value -= create_disturb_opponent_flip_inside(&search->board, flip_inside_info->n_opponent) * W_OPPONENT_FLIP_INSIDE;
                 }
+                */
             search->board.undo(flip);
             eval_undo(search, flip);
         }
