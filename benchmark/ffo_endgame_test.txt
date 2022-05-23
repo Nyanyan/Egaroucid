@@ -5806,7 +5806,21 @@ same
 1564520589 nodes
 114558145.2002636 nps
 
-
+2022/05/24 update stability cut
+#40 depth 20 value 38 policy a2 nodes 19579500 time 193 nps 101448186
+#41 depth 22 value 0 policy h4 nodes 28472532 time 305 nps 93352563
+#42 depth 22 value 6 policy g2 nodes 37148269 time 384 nps 96740283
+#43 depth 23 value -12 policy c7 nodes 78694295 time 783 nps 100503569
+#44 depth 23 value -14 policy d2 nodes 16284721 time 427 nps 38137519
+#45 depth 24 value 6 policy b2 nodes 420240453 time 3087 nps 136132313
+#46 depth 24 value -8 policy b3 nodes 86297818 time 1185 nps 72825162
+#47 depth 25 value 4 policy g2 nodes 23353176 time 478 nps 48856016
+#48 depth 25 value 28 policy f6 nodes 157692257 time 2477 nps 63662598
+#49 depth 26 value 16 policy e1 nodes 370762376 time 4042 nps 91727455
+13.361 sec
+17.058491230010986 sec total
+1238525397 nodes
+92697058.37886386 nps
 
 
 
