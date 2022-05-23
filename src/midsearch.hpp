@@ -512,8 +512,8 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     return v;
 }
 
-pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, bool is_end_search){
-    cerr << "start search depth " << depth << endl;
+pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, bool is_end_search, const bool is_main_search){
+    cerr << "start search depth " << depth << " [" << alpha << "," << beta << "] mpct " << search->mpct << endl;
     bool searching = true;
     ++(search->n_nodes);
     uint32_t hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
@@ -527,7 +527,7 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
         } else{
             search->eval_feature_reversed ^= 1;
             search->board.pass();
-                res = first_nega_scout(search, -beta, -alpha, depth, true, is_end_search);
+                res = first_nega_scout(search, -beta, -alpha, depth, true, is_end_search, is_main_search);
             search->board.pass();
             search->eval_feature_reversed ^= 1;
             res.first = -res.first;
@@ -544,7 +544,8 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
             eval_move(search, &flip_best);
             search->board.move(&flip_best);
                 g = -nega_scout(search, -beta, -alpha, depth - 1, false, LEGAL_UNDEFINED, is_end_search, &searching);
-                cerr << 1 << "/" << canput_all << " " << idx_to_coord(best_move) << " value " << value_to_score_double(g) << endl;
+                if (is_main_search)
+                    cerr << 1 << "/" << canput_all << " " << idx_to_coord(best_move) << " value " << value_to_score_double(g) << endl;
                 //search->board.print();
                 //cerr << endl;
             search->board.undo(&flip_best);
@@ -572,10 +573,12 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
                     if (alpha < g)
                         g = -nega_scout(search, -beta, -g, depth - 1, false, flip.n_legal, is_end_search, &searching);
                 }
-                if (g <= alpha)
-                    cerr << mobility_idx << "/" << canput_all << " " << idx_to_coord((int)flip.pos) << " value " << value_to_score_double(g) << " or lower" << endl;
-                else
-                    cerr << mobility_idx << "/" << canput_all << " " << idx_to_coord((int)flip.pos) << " value " << value_to_score_double(g) << endl;
+                if (is_main_search){
+                    if (g <= alpha)
+                        cerr << mobility_idx << "/" << canput_all << " " << idx_to_coord((int)flip.pos) << " value " << value_to_score_double(g) << " or lower" << endl;
+                    else
+                        cerr << mobility_idx << "/" << canput_all << " " << idx_to_coord((int)flip.pos) << " value " << value_to_score_double(g) << endl;
+                }
                 ++mobility_idx;
                 //search->board.print();
                 //cerr << endl;
