@@ -251,7 +251,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
                     break;
                 eval_move(search, &flip);
                 search->board.move(&flip);
-                    if (ybwc_split_without_move(search, &flip, -beta, -alpha, depth - 1, flip.n_legal, is_end_search, &n_searching, flip.pos, pv_idx++, canput, split_count, parallel_tasks, move_list[0].value)){
+                    if (ybwc_split_without_move(search, &flip, -beta, -alpha, depth - 1, flip.n_legal, is_end_search, &n_searching, flip.pos, pv_idx++, canput, split_count, parallel_tasks, move_list[0].value, move_list[move_list.size() - 1].value)){
                         ++split_count;
                     } else{
                         g = -nega_alpha_ordering(search, -beta, -alpha, depth - 1, false, flip.n_legal, is_end_search, searching);

@@ -5854,6 +5854,25 @@ same
 1213211941 nodes
 92654035.51244844 nps
 
+2022/05/24 update ybwc
+#40 depth 20 value 38 policy a2 nodes 24090044 time 165 nps 146000266
+#41 depth 22 value 0 policy h4 nodes 32161402 time 268 nps 120005231
+#42 depth 22 value 6 policy g2 nodes 50002241 time 339 nps 147499235
+#43 depth 23 value -12 policy c7 nodes 91726649 time 724 nps 126694266
+#44 depth 23 value -14 policy d2 nodes 21327237 time 343 nps 62178533
+#45 depth 24 value 6 policy b2 nodes 513715811 time 2903 nps 176960320
+#46 depth 24 value -8 policy b3 nodes 147406537 time 1154 nps 127735300
+#47 depth 25 value 4 policy g2 nodes 33206428 time 394 nps 84280274
+#48 depth 25 value 28 policy f6 nodes 226194730 time 2296 nps 98516868
+#49 depth 26 value 16 policy e1 nodes 459055573 time 3774 nps 121636346
+12.36 sec
+16.553205490112305 sec total
+1598886652 nodes
+129359761.48867315 nps
+
+
+
+
 
 
 
