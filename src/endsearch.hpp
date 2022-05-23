@@ -179,12 +179,6 @@ inline int last3(Search *search, int alpha, int beta, int p0, int p1, int p2, bo
             }
         }
     #endif
-    #if USE_END_SC
-        int stab_res = stability_cut(search, &alpha, &beta);
-        if (stab_res != SCORE_UNDEFINED){
-            return stab_res;
-        }
-    #endif
     uint64_t legal = search->board.get_legal();
     int v = -INF, g;
     if (legal == 0ULL){
