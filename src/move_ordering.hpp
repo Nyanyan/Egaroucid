@@ -26,13 +26,13 @@
 #define W_STABILITY 4
 #define W_MOBILITY 16
 #define W_OPENNESS 8
+#define W_OPPONENT_OPENNESS 8
 //#define W_FLIP_INSIDE 4
 //#define W_SURROUND 4
 #define W_PARITY1 2
 #define W_PARITY2 4
 #define W_PARITY3 8
-#define W_FLIP_INSIDE 32
-#define W_PLAYER_FLIP_INSIDE 8
+#define W_PLAYER_FLIP_INSIDE 32
 #define W_OPPONENT_FLIP_INSIDE 32
 
 #define MOVE_ORDERING_VALUE_OFFSET 14
@@ -42,8 +42,8 @@
 #define W_END_ANTI_EVEN 16
 #define W_END_PARITY 2
 
-#define USE_FLIP_INSIDE_DEPTH 15
 #define USE_OPENNESS_N_STONES 49
+#define USE_OPPONENT_OPENNESS_DEPTH 16
 
 struct Flip_inside_info{
     uint64_t player;
@@ -101,6 +101,20 @@ inline int calc_openness(const Board *board, const Flip *flip){
     return pop_count_ull(res);
 }
 
+inline int calc_opponent_openness(Search *search, uint64_t legal){
+    if (legal == 0ULL)
+        return 0;
+    int res = INF;
+    Flip flip;
+    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+        calc_flip(&flip, &search->board, cell);
+        res = min(res, calc_openness(&search->board, &flip));
+        if (res == 0)
+            break;
+    }
+    return res;
+}
+
 inline void move_sort_top(vector<Flip> &move_list, int best_idx){
     if (best_idx != 0)
         swap(move_list[best_idx], move_list[0]);
@@ -110,7 +124,7 @@ bool cmp_move_ordering(Flip &a, Flip &b){
     return a.value > b.value;
 }
 
-inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int beta, const int depth, const bool *searching, uint64_t stones){
+inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int beta, const int depth, const bool *searching, uint64_t stones, const int search_depth){
     if (flip->flip == search->board.opponent)
         flip->value = W_WIPEOUT;
     else{
@@ -127,7 +141,7 @@ inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int
             int openness = calc_openness(&search->board, flip);
             flip->value -= openness * W_OPENNESS;
             if (openness == 0)
-                flip->value += W_FLIP_INSIDE;
+                flip->value += W_PLAYER_FLIP_INSIDE;
         }
         if (depth < 0){
             search->board.move(flip);
@@ -141,25 +155,29 @@ inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int
                 //flip->value += calc_stability_edge_player(search->board.opponent, search->board.player) * W_STABILITY;
                 flip->n_legal = search->board.get_legal();
                 flip->value += -pop_count_ull(flip->n_legal) * W_MOBILITY;
-                if (depth >= 0){
-                    switch(depth){
-                        case 0:
-                            flip->value += (HW2 - value_to_score_int(mid_evaluate_diff(search, searching))) * W_VALUE_SHALLOW;
-                            break;
-                        case 1:
-                            flip->value += (HW2 - value_to_score_int(nega_alpha_eval1(search, alpha, beta, false, searching))) * W_VALUE;
-                            break;
-                        default:
-                            if (depth <= MID_FAST_DEPTH)
-                                flip->value += (HW2 - value_to_score_int(nega_alpha(search, alpha, beta, depth, false, searching))) * W_VALUE;
-                            else{
-                                bool use_mpc = search->use_mpc;
-                                search->use_mpc = false;
-                                    flip->value += (HW2 - value_to_score_int(nega_alpha_ordering_nomemo(search, alpha, beta, depth, false, flip->n_legal, searching))) * W_VALUE;
-                                search->use_mpc = use_mpc;
-                            }
-                            break;
-                    }
+                switch(depth){
+                    case 0:
+                        flip->value += (HW2 - value_to_score_int(mid_evaluate_diff(search, searching))) * W_VALUE_SHALLOW;
+                        break;
+                    case 1:
+                        flip->value += (HW2 - value_to_score_int(nega_alpha_eval1(search, alpha, beta, false, searching))) * W_VALUE;
+                        break;
+                    default:
+                        if (depth <= MID_FAST_DEPTH)
+                            flip->value += (HW2 - value_to_score_int(nega_alpha(search, alpha, beta, depth, false, searching))) * W_VALUE;
+                        else{
+                            bool use_mpc = search->use_mpc;
+                            search->use_mpc = false;
+                                flip->value += (HW2 - value_to_score_int(nega_alpha_ordering_nomemo(search, alpha, beta, depth, false, flip->n_legal, searching))) * W_VALUE;
+                            search->use_mpc = use_mpc;
+                        }
+                        break;
+                }
+                if (search->board.n <= USE_OPENNESS_N_STONES && search_depth >= USE_OPPONENT_OPENNESS_DEPTH){
+                    int openness = calc_opponent_openness(search, flip->n_legal);
+                    flip->value += openness * W_OPPONENT_OPENNESS;
+                    if (openness == 0)
+                        flip->value -= W_OPPONENT_FLIP_INSIDE;
                 }
             search->board.undo(flip);
             eval_undo(search, flip);
@@ -305,7 +323,7 @@ inline void move_ordering(Search *search, vector<Flip> &move_list, int depth, in
     //eval_depth = max(0, eval_depth);
     const uint64_t stones = search->board.player | search->board.opponent;
     for (Flip &flip: move_list)
-        move_evaluate(search, &flip, eval_alpha, eval_beta, eval_depth, searching, stones);
+        move_evaluate(search, &flip, eval_alpha, eval_beta, eval_depth, searching, stones, depth);
     sort(move_list.begin(), move_list.end(), cmp_move_ordering);
 }
 /*
