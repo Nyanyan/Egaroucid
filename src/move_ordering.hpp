@@ -43,7 +43,7 @@
 #define W_END_PARITY 2
 
 #define USE_OPENNESS_N_STONES 49
-#define USE_OPPONENT_OPENNESS_DEPTH 16
+#define USE_OPPONENT_OPENNESS_DEPTH 18
 
 struct Flip_inside_info{
     uint64_t player;
@@ -110,7 +110,7 @@ inline int calc_opponent_openness(Search *search, uint64_t legal){
         calc_flip(&flip, &search->board, cell);
         res = min(res, calc_openness(&search->board, &flip));
         if (res == 0)
-            break;
+            return 0;
     }
     return res;
 }

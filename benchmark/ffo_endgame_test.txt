@@ -5838,7 +5838,21 @@ same
 1210945915 nodes
 91158229.0725685 nps
 
-
+2022/05/24 update move ordering
+#40 depth 20 value 38 policy a2 nodes 19764488 time 195 nps 101356348
+#41 depth 22 value 0 policy h4 nodes 28775135 time 305 nps 94344704
+#42 depth 22 value 6 policy g2 nodes 37072017 time 385 nps 96290953
+#43 depth 23 value -12 policy c7 nodes 78469197 time 797 nps 98455705
+#44 depth 23 value -14 policy d2 nodes 16295231 time 434 nps 37546615
+#45 depth 24 value 6 policy b2 nodes 424822409 time 3076 nps 138108715
+#46 depth 24 value -8 policy b3 nodes 89382100 time 1176 nps 76005187
+#47 depth 25 value 4 policy g2 nodes 23433223 time 491 nps 47725505
+#48 depth 25 value 28 policy f6 nodes 159813600 time 2519 nps 63443271
+#49 depth 26 value 16 policy e1 nodes 335384541 time 3716 nps 90254182
+13.094 sec
+16.721095085144043 sec total
+1213211941 nodes
+92654035.51244844 nps
 
 
 
