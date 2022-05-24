@@ -27,6 +27,7 @@
 #define W_PLAYER_FLIP_INSIDE 20
 #define W_OPPONENT_FLIP_INSIDE 8
 #define W_BOUND_FLIP 16
+#define W_DOUBLE_FLIP 40
 
 #define MOVE_ORDERING_VALUE_OFFSET 14
 
@@ -133,6 +134,8 @@ inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int
         }
         */
         if (search->board.n <= MIDGAME_N_STONES){
+            if (is_double_flipping(&search->board, flip))
+                flip->value -= W_DOUBLE_FLIP;
             int openness = calc_openness(&search->board, flip);
             if (openness == 0)
                 flip->value += W_PLAYER_FLIP_INSIDE;
