@@ -11,6 +11,9 @@
     #include "midsearch.hpp"
 #endif
 #include "probcut.hpp"
+#include "flip_variation/flipping.hpp"
+#include "flip_variation/position.hpp"
+#include "flip_variation/stone.hpp"
 
 #define W_WIPEOUT 1000000000
 
@@ -19,10 +22,11 @@
 #define W_MOBILITY 16
 #define W_PARITY1 2
 #define W_PARITY2 4
-#define W_OPENNESS 2
+#define W_OPENNESS 1
 #define W_OPPONENT_OPENNESS 1
-#define W_PLAYER_FLIP_INSIDE 32
-#define W_OPPONENT_FLIP_INSIDE 16
+#define W_PLAYER_FLIP_INSIDE 20
+#define W_OPPONENT_FLIP_INSIDE 8
+#define W_BOUND_FLIP 16
 
 #define MOVE_ORDERING_VALUE_OFFSET 14
 
@@ -31,14 +35,13 @@
 #define W_END_ANTI_EVEN 16
 #define W_END_PARITY 2
 
-#define USE_OPENNESS_N_STONES 49
+#define MIDGAME_N_STONES 44
 #define USE_OPPONENT_OPENNESS_DEPTH 16
 
-struct Flip_inside_info{
-    uint64_t player;
-    uint64_t opponent;
-    int n_player;
-    int n_opponent;
+struct move_ordering_info{
+    uint64_t stones;
+    uint64_t outside;
+    uint64_t opponent_bound_stones;
 };
 
 int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, const bool *searching);
@@ -116,23 +119,28 @@ bool cmp_move_ordering(Flip &a, Flip &b){
     return a.value > b.value;
 }
 
-inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int beta, const int depth, const bool *searching, uint64_t stones, const int search_depth){
+inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int beta, const int depth, const bool *searching, const int search_depth, move_ordering_info *minfo){
     if (flip->flip == search->board.opponent)
         flip->value = W_WIPEOUT;
     else{
         flip->value = cell_weight[flip->pos];
+        /*
         if (search->board.parity & cell_div4[flip->pos]){
             if (search->board.n < 34)
                 flip->value += W_PARITY1;
             else
                 flip->value += W_PARITY2;
         }
-        if (search->board.n <= USE_OPENNESS_N_STONES){
+        */
+        if (search->board.n <= MIDGAME_N_STONES){
             int openness = calc_openness(&search->board, flip);
             if (openness == 0)
                 flip->value += W_PLAYER_FLIP_INSIDE;
-            else
+            else{
                 flip->value -= openness * W_OPENNESS;
+                if (flip->flip & minfo->opponent_bound_stones)
+                    flip->value += W_BOUND_FLIP;
+            }
         }
         if (depth < 0){
             search->board.move(flip);
@@ -162,7 +170,7 @@ inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int
                         }
                         break;
                 }
-                if (search->board.n <= USE_OPENNESS_N_STONES && search_depth >= USE_OPPONENT_OPENNESS_DEPTH && flip->n_legal){
+                if (search->board.n <= MIDGAME_N_STONES && search_depth >= USE_OPPONENT_OPENNESS_DEPTH && flip->n_legal){
                     int openness = calc_opponent_openness(search, flip->n_legal);
                     if (openness == 0)
                         flip->value -= W_OPPONENT_FLIP_INSIDE;
@@ -308,9 +316,12 @@ inline void move_ordering(Search *search, vector<Flip> &move_list, int depth, in
     if (depth >= 22)
         ++eval_depth;
     //eval_depth = max(0, eval_depth);
-    const uint64_t stones = search->board.player | search->board.opponent;
+    move_ordering_info minfo;
+    minfo.stones = search->board.player | search->board.opponent;
+    minfo.outside = calc_outside_stones(&search->board);
+    minfo.opponent_bound_stones = calc_opponent_bound_stones(&search->board, minfo.outside);
     for (Flip &flip: move_list)
-        move_evaluate(search, &flip, eval_alpha, eval_beta, eval_depth, searching, stones, depth);
+        move_evaluate(search, &flip, eval_alpha, eval_beta, eval_depth, searching, depth, &minfo);
     sort(move_list.begin(), move_list.end(), cmp_move_ordering);
 }
 /*

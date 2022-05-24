@@ -76,6 +76,20 @@ inline uint64_t calc_face_stones(uint64_t outside, uint64_t empties){
 }
 
 
+// 境界の石
+/*
+    外側の石で白黒の境界の石
+*/
+inline uint64_t calc_opponent_bound_stones(const Board *board, uint64_t outside){
+    uint64_t player_outside = outside & board->player;
+    uint64_t opponent_outside = outside & board->opponent;
+    uint64_t res = opponent_outside & (
+        ((player_outside & 0xFEFEFEFEFEFEFEFEULL) >> 1) | ((player_outside & 0x7F7F7F7F7F7F7F7FULL) << 1) | 
+        ((player_outside & 0xFFFFFFFFFFFFFF00ULL) >> HW) | ((player_outside & 0x00FFFFFFFFFFFFFFULL) << HW)
+    );
+    return res;
+}
+
 
 // 4近傍で連続しているか
 inline bool is_joining4(uint64_t a, uint64_t b){

@@ -4,6 +4,7 @@
 #include "./../board.hpp"
 #include "around.hpp"
 #include "position.hpp"
+#include "stone.hpp"
 
 
 // 二重返し

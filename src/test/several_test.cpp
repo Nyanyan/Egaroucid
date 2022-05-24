@@ -20,13 +20,16 @@ int main(){
     uint64_t empties = ~(board.player | board.opponent);
     uint64_t face_stones = calc_face_stones(outside, empties);
     uint64_t end_stones = calc_end_stones(outside, empties);
+    uint64_t bound_stones = calc_opponent_bound_stones(&board, outside);
 
     cerr << "outside" << endl;
-    bit_print_board(outside);
+    //bit_print_board(outside);
     cerr << "face_stones" << endl;
-    bit_print_board(face_stones);
+    //bit_print_board(face_stones);
     cerr << "end_stones" << endl;
-    bit_print_board(end_stones);
+    //bit_print_board(end_stones);
+    cerr << "bound_stones" << endl;
+    bit_print_board(bound_stones);
 
 
     calc_flip(&flip, &board, 52);
