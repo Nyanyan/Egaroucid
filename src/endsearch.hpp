@@ -644,7 +644,6 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
         }
     #endif
     int best_move = child_transpose_table.get(&search->board, hash_code);
-    int f_best_move = best_move;
     int stab_res;
     if (best_move != TRANSPOSE_TABLE_UNDEFINED){
         if (1 & (legal >> best_move)){
@@ -740,7 +739,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
             }
         #endif
     }
-    if (best_move != f_best_move)
+    if (best_move != child_transpose_table.get(&search->board, hash_code))
         child_transpose_table.reg(&search->board, hash_code, best_move);
     #if USE_END_TC
         if (beta <= v && l < v)

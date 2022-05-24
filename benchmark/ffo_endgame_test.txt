@@ -6018,6 +6018,21 @@ same
 50969020131 nodes
 113636459.18974778 nps
 
+2022/05/24 update child tt cache saving
+#40 depth 20 value 38 policy a2 nodes 19648417 time 177 nps 111008005
+#41 depth 22 value 0 policy h4 nodes 27659001 time 286 nps 96709793
+#42 depth 22 value 6 policy g2 nodes 37187898 time 374 nps 99432882
+#43 depth 23 value -12 policy c7 nodes 102624988 time 957 nps 107236142
+#44 depth 23 value -14 policy d2 nodes 16986682 time 451 nps 37664483
+#45 depth 24 value 6 policy b2 nodes 409578665 time 2908 nps 140845483
+#46 depth 24 value -8 policy b3 nodes 83201119 time 1116 nps 74552974
+#47 depth 25 value 4 policy g2 nodes 25372994 time 482 nps 52641066
+#48 depth 25 value 28 policy f6 nodes 187620598 time 2398 nps 78240449
+#49 depth 26 value 16 policy e1 nodes 414267227 time 4034 nps 102693908
+13.183 sec
+14.248533248901367 sec total
+1324147589 nodes
+100443570.43161647 nps
 
 
 
