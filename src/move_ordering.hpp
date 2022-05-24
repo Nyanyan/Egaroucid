@@ -12,23 +12,13 @@
 #endif
 #include "probcut.hpp"
 
-#define N_MOVE_ORDERING_PATTERNS 10
-#define MAX_MOVE_ORDERING_EVALUATE_IDX 65536
-#define MOVE_ORDERING_PHASE_DIV 10
-#define N_MOVE_ORDERING_PHASE 6
-
-#define W_BEST_MOVE 900000000
-
 #define W_WIPEOUT 1000000000
 
 #define W_VALUE 8
 #define W_VALUE_SHALLOW 4
-//#define W_STABILITY 4
 #define W_MOBILITY 16
 #define W_OPENNESS 16
 #define W_OPPONENT_OPENNESS 16
-//#define W_FLIP_INSIDE 4
-//#define W_SURROUND 4
 #define W_PARITY1 2
 #define W_PARITY2 4
 #define W_PLAYER_FLIP_INSIDE 128
@@ -142,14 +132,12 @@ inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int
         }
         if (depth < 0){
             search->board.move(flip);
-                //flip->value += calc_stability_edge_player(search->board.opponent, search->board.player) * W_STABILITY;
                 flip->n_legal = search->board.get_legal();
                 flip->value += -pop_count_ull(flip->n_legal) * W_MOBILITY;
             search->board.undo(flip);
         } else{
             eval_move(search, flip);
             search->board.move(flip);
-                //flip->value += calc_stability_edge_player(search->board.opponent, search->board.player) * W_STABILITY;
                 flip->n_legal = search->board.get_legal();
                 flip->value += -pop_count_ull(flip->n_legal) * W_MOBILITY;
                 switch(depth){
