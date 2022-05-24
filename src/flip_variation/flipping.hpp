@@ -51,6 +51,19 @@ inline bool is_flip_horizontally(const Flip *flip){
 }
 
 
+
+// 斜めに返す
+/*
+    斜めに返す
+*/
+inline bool is_flip_diagonally(const Flip *flip){
+    uint64_t pos = 1ULL << flip->pos;
+    return 
+        (flip->flip & (pos << HW_M1)) || (flip->flip & (pos >> HW_M1)) | 
+        (flip->flip & (pos << HW_P1)) || (flip->flip & (pos >> HW_P1));
+}
+
+
 // 2石返し
 /*
     2石以上の空きマスに接する石を返す
@@ -85,6 +98,53 @@ inline bool is_two_stones_split(const Board *board, const Flip *flip){
 /*
     表面の石を縦に返す
 */
-inline bool is_thrust(const Board *board, const Flip *flip){
-    return true;
+inline bool is_thrust(const Flip *flip, const uint64_t face_stones){
+    return (flip->flip & face_stones) && is_flip_vertically(flip) && !is_flip_diagonally(flip);
 }
+
+
+// めくり
+/*
+    表面の石を斜めに返す
+*/
+inline bool is_turn_over(const Flip *flip, const uint64_t face_stones){
+    return (flip->flip & face_stones) && is_flip_diagonally(flip);
+}
+
+
+// 切り
+/*
+    内側の石を斜めに返す
+*/
+inline bool is_cut(const Flip *flip, const uint64_t outside_stones){
+    return ((flip->flip & outside_stones) == 0ULL) && is_flip_diagonally(flip);
+}
+
+
+// 被せ
+/*
+    端の石を表面側に斜めに返す
+*/
+inline bool is_cover(const Flip *flip, const uint64_t end_stones, const uint64_t face_stones){
+    return (flip->flip & end_stones) && is_flip_diagonally(flip) && is_joining4(1ULL << flip->pos, face_stones);
+}
+
+
+// 引き
+/*
+    端の石を辺側に縦に返す
+*/
+inline bool is_pull(const Flip *flip, const uint64_t end_stones){
+    return (flip->flip & end_stones) && is_flip_vertically(flip) && !is_flip_diagonally(flip);
+}
+
+
+// 刺し
+/*
+    端の石を端外側に斜めに返す
+*/
+inline bool is_stab(const Flip *flip, const uint64_t end_stones, const uint64_t face_stones){
+    return (flip->flip & end_stones) && is_flip_diagonally(flip) && !is_joining4(1ULL << flip->pos, face_stones);
+}
+
+

@@ -21,6 +21,15 @@ inline uint64_t calc_outside_stones(const Board *board){
 }
 
 
+// 内側の石
+/*
+    外側でない石
+*/
+inline uint64_t calc_inside_stones(const Board *board){
+    return (board->player | board->opponent) & ~calc_outside_stones(board);
+}
+
+
 // 壁の石
 /*
     外側に接する同じ色の石の3つ以上の4近傍での並び
@@ -64,4 +73,14 @@ inline uint64_t calc_end_stones(uint64_t outside, uint64_t empties){
 */
 inline uint64_t calc_face_stones(uint64_t outside, uint64_t empties){
     return outside & ~calc_end_stones(outside, empties);
+}
+
+
+
+// 4近傍で連続しているか
+inline bool is_joining4(uint64_t a, uint64_t b){
+    uint64_t bb = 
+        ((b & 0xFEFEFEFEFEFEFEFEULL) >> 1) | ((b & 0x7F7F7F7F7F7F7F7FULL) << 1) | 
+        ((b & 0xFFFFFFFFFFFFFF00ULL) >> HW) | ((b & 0x00FFFFFFFFFFFFFFULL) << HW);
+    return (a & bb) != 0ULL;
 }
