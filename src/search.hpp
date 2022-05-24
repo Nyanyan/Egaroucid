@@ -46,7 +46,7 @@ constexpr uint64_t cell_weight_mask[N_CELL_WEIGHT_MASK] = {
 from https://github.com/abulmo/edax-reversi/blob/1ae7c9fe5322ac01975f1b3196e788b0d25c1e10/src/search.c
 modified by Nyanyan
 */
-const int nws_stability_threshold[61] = {
+constexpr int nws_stability_threshold[61] = {
     99, 99, 99, 99,  6,  8, 10, 12,
     14, 16, 20, 22, 24, 26, 28, 30,
     32, 34, 36, 38, 40, 42, 44, 46,
