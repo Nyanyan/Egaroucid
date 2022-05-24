@@ -34,7 +34,7 @@ inline int count_around4_coord(uint64_t stones, uint_fast8_t coord){
     return count_around4_pos(stones, 1ULL << coord);
 }
 
-inline uint_fast8_t is_inside(Flip *flip, uint64_t empties, uint64_t put){
+inline uint_fast8_t is_inside(const Flip *flip, uint64_t empties, uint64_t put){
     if ((flip->flip & put) && count_around_pos(empties, put))
         return 1;
     return 0;

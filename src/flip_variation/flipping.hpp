@@ -85,7 +85,6 @@ inline bool is_two_stones_split(const Board *board, const Flip *flip){
 /*
     表面の石を縦に返す
 */
-
 inline bool is_thrust(const Board *board, const Flip *flip){
-    
+    return true;
 }

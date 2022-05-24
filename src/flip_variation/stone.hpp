@@ -10,7 +10,7 @@
 /*
     空きマスに4近傍のいずれかが接する石
 */
-inline uint64_t calc_outside_stones(Board *board){
+inline uint64_t calc_outside_stones(const Board *board){
     uint64_t empties = ~(board->player | board->opponent);
     uint64_t hmask = empties & 0x7E7E7E7E7E7E7E7EULL;
     uint64_t vmask = empties & 0x00FFFFFFFFFFFF00ULL;

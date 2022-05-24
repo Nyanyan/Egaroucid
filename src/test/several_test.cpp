@@ -4,34 +4,23 @@
 #include "./../board.hpp"
 #include "./../util.hpp"
 #include "./../flip_variation/stone.hpp"
+#include "./../flip_variation/flipping.hpp"
 
 using namespace std;
 
 int main(){
+    bit_init();
+	flip_init();
+	board_init();
     Board board;
-    /*
-    board.p = 0;
-    board.player = 9264090048841921536ULL;
-    board.opponent = 4480051588954062904ULL;
-    */
     board = input_board();
+
+    Flip flip;
+    calc_flip(&flip, &board, 52);
+    cerr << is_flip_2_stones(&board, &flip) << endl;
+
+    board.move(&flip);
     board.print();
-    
-    uint64_t outside = calc_outside_stones(&board);
-    //bit_print_board(outside);
-    cerr << endl;
-
-    uint64_t player_wall = calc_wall_stones(outside & board.player);
-    //bit_print_board(player_wall);
-
-    player_wall = calc_wall_stones(outside & board.opponent);
-    //bit_print_board(player_wall);
-
-    uint64_t end_stones = calc_end_stones(outside, ~(board.player | board.opponent));
-    bit_print_board(end_stones);
-
-    uint64_t face_stones = calc_face_stones(outside, ~(board.player | board.opponent));
-    bit_print_board(face_stones);
 
     return 0;
 }
