@@ -25,15 +25,14 @@
 #define W_VALUE_SHALLOW 4
 //#define W_STABILITY 4
 #define W_MOBILITY 16
-#define W_OPENNESS 8
-#define W_OPPONENT_OPENNESS 8
+#define W_OPENNESS 16
+#define W_OPPONENT_OPENNESS 16
 //#define W_FLIP_INSIDE 4
 //#define W_SURROUND 4
 #define W_PARITY1 2
 #define W_PARITY2 4
-#define W_PARITY3 8
-#define W_PLAYER_FLIP_INSIDE 32
-#define W_OPPONENT_FLIP_INSIDE 32
+#define W_PLAYER_FLIP_INSIDE 128
+#define W_OPPONENT_FLIP_INSIDE 128
 
 #define MOVE_ORDERING_VALUE_OFFSET 14
 
@@ -132,10 +131,8 @@ inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int
         if (search->board.parity & cell_div4[flip->pos]){
             if (search->board.n < 34)
                 flip->value += W_PARITY1;
-            else if (search->board.n < 44)
-                flip->value += W_PARITY2;
             else
-                flip->value += W_PARITY3;
+                flip->value += W_PARITY2;
         }
         if (search->board.n <= USE_OPENNESS_N_STONES){
             int openness = calc_openness(&search->board, flip);
@@ -280,10 +277,8 @@ inline void move_evaluate_end(Search *search, Flip *flip){
         if (search->board.parity & cell_div4[flip->pos]){
             if (search->board.n < 34)
                 flip->value = W_PARITY1;
-            else if (search->board.n < 44)
-                flip->value = W_PARITY2;
             else
-                flip->value = W_PARITY3;
+                flip->value = W_PARITY2;
         }
         search->board.move(flip);
             /*
