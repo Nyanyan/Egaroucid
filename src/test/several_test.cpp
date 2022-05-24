@@ -18,14 +18,17 @@ int main(){
     board.print();
     
     uint64_t outside = calc_outside_stones(&board);
-    bit_print_board(outside);
+    //bit_print_board(outside);
     cerr << endl;
 
     uint64_t player_wall = calc_wall_stones(outside & board.player);
-    bit_print_board(player_wall);
+    //bit_print_board(player_wall);
 
     player_wall = calc_wall_stones(outside & board.opponent);
-    bit_print_board(player_wall);
+    //bit_print_board(player_wall);
+
+    uint64_t end_stones = calc_end_stones(outside, ~(board.player | board.opponent));
+    bit_print_board(end_stones);
 
     return 0;
 }

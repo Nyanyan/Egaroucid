@@ -46,27 +46,19 @@ inline uint64_t calc_wall_stones(uint64_t player_outside_stones){
 }
 
 
-// 表面の石
+// 端の石
 /*
-    壁の真ん中の石
+    外側の石で対面方向に両方接していない石
 */
-inline uint64_t calc_opponent_face_stones(Board *board){
-    uint64_t p_wall = calc_wall_stones(calc_outside_stones(board) & board->opponent);
-    /*
-    uint64_t hmask = p_wall & 0x7E7E7E7E7E7E7E7EULL;
-    uint64_t vmask = p_wall & 0x00FFFFFFFFFFFF00ULL;
-    uint64_t res = 
-        ((hmask << 1) & p_out & (hmask >> 1)) | 
-        ((vmask << HW) & p_out & (vmask >> HW)) | 
-        ()
+inline uint64_t calc_end_stones(uint64_t outside, uint64_t empties){
+    uint64_t res = outside & 
+        (((empties & 0xFEFEFEFEFEFEFEFEULL) >> 1) | ((empties & 0x7F7F7F7F7F7F7F7FULL) << 1)) & 
+        (((empties & 0xFFFFFFFFFFFFFF00ULL) >> HW) | ((empties & 0x00FFFFFFFFFFFFFFULL) << HW));
     return res;
-    */
-    return 0;
 }
 
 
-
-// 端の石
+// 表面の石
 /*
-    壁の端の石
+    壁の真ん中の石
 */
