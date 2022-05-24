@@ -60,5 +60,8 @@ inline uint64_t calc_end_stones(uint64_t outside, uint64_t empties){
 
 // 表面の石
 /*
-    壁の真ん中の石
+    外側に接する石で端でない石
 */
+inline uint64_t calc_face_stones(uint64_t outside, uint64_t empties){
+    return outside & ~calc_end_stones(outside, empties);
+}

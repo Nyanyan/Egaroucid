@@ -30,5 +30,8 @@ int main(){
     uint64_t end_stones = calc_end_stones(outside, ~(board.player | board.opponent));
     bit_print_board(end_stones);
 
+    uint64_t face_stones = calc_face_stones(outside, ~(board.player | board.opponent));
+    bit_print_board(face_stones);
+
     return 0;
 }
