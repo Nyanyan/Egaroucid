@@ -10,8 +10,8 @@
 
 using namespace std;
 
-#define TRANSPOSE_TABLE_SIZE 33554432
-#define TRANSPOSE_TABLE_MASK 33554431
+#define TRANSPOSE_TABLE_SIZE 4194304
+#define TRANSPOSE_TABLE_MASK 4194303
 
 #define CACHE_SAVE_EMPTY 15
 
@@ -19,7 +19,6 @@ using namespace std;
 
 class Node_child_transpose_table{
     private:
-        mutex mtx;
         uint64_t player;
         uint64_t opponent;
         int best_move;
@@ -32,7 +31,6 @@ class Node_child_transpose_table{
         }
 
         inline bool register_value(const Board *board, const int policy){
-            lock_guard<mutex> lock(mtx);
             if (board->player == player && board->opponent == opponent){
                 best_move = policy;
                 return true;
@@ -41,21 +39,18 @@ class Node_child_transpose_table{
         }
 
         inline void register_value_with_board(const Board *board, const int policy){
-            lock_guard<mutex> lock(mtx);
             player = board->player;
             opponent = board->opponent;
             best_move = policy;
         }
 
         inline void register_value_with_board(Node_child_transpose_table *from){
-            lock_guard<mutex> lock(mtx);
             player = from->player;
             opponent = from->opponent;
             best_move = from->best_move;
         }
 
         inline int get(const Board *board){
-            lock_guard<mutex> lock(mtx);
             if (board->player == player && board->opponent == opponent)
                 return best_move;
             return TRANSPOSE_TABLE_UNDEFINED;
@@ -66,30 +61,75 @@ class Node_child_transpose_table{
         }
 };
 
+class Node_mutex_child_transpose_table{
+    private:
+        mutex mtx;
+    public:
+        Node_child_transpose_table *node;
+    
+    public:
+
+        inline bool register_value(const Board *board, const int policy){
+            lock_guard<mutex> lock(mtx);
+            return node->register_value(board, policy);
+        }
+
+        inline void register_value_with_board(const Board *board, const int policy){
+            lock_guard<mutex> lock(mtx);
+            node->register_value_with_board(board, policy);
+        }
+
+        inline void register_value_with_board(Node_child_transpose_table *from){
+            lock_guard<mutex> lock(mtx);
+            node->register_value_with_board(from);
+        }
+
+        inline int get(const Board *board){
+            lock_guard<mutex> lock(mtx);
+            return node->get(board);
+        }
+
+        inline int n_stones() const{
+            return node->n_stones();
+        }
+
+        inline bool is_null() const{
+            return node == NULL;
+        }
+
+        inline void set(){
+            node = (Node_child_transpose_table*)malloc(sizeof(Node_child_transpose_table));
+        }
+
+        inline void set_null(){
+            node = NULL;
+        }
+
+        inline void init(){
+            node->init();
+            node = NULL;
+        }
+};
+
 #if USE_MULTI_THREAD
-    void init_child_transpose_table(int id, Node_child_transpose_table *table[], int s, int e){
+    void init_child_transpose_table(Node_mutex_child_transpose_table table[], int s, int e){
         for(int i = s; i < e; ++i){
-            if (table[i] != NULL){
-                table[i]->init();
-                table[i] = NULL;
-            }
+            if (!table[i].is_null())
+                table[i].init();
         }
     }
 
-    void copy_child_transpose_table(int id, Node_child_transpose_table *from[], Node_child_transpose_table *to[], int s, int e){
+    void copy_child_transpose_table(Node_mutex_child_transpose_table from[], Node_mutex_child_transpose_table to[], int s, int e){
         for(int i = s; i < e; ++i){
-            if (from[i] != NULL){
-                if (from[i]->n_stones() < HW2 - CACHE_SAVE_EMPTY){
-                    if (to[i] == NULL){
-                        Node_child_transpose_table *p = (Node_child_transpose_table*)malloc(sizeof(Node_child_transpose_table));
-                        to[i] = new(p) Node_child_transpose_table;
-                    }
-                    to[i]->register_value_with_board(from[i]);
+            if (!from[i].is_null()){
+                if (from[i].n_stones() < HW2 - CACHE_SAVE_EMPTY){
+                    if (to[i].is_null())
+                        to[i].set();
+                    to[i].register_value_with_board(from[i].node);
                 }
             } else{
-                if (to[i] != NULL)
-                    to[i]->init();
-                to[i] = NULL;
+                if (!to[i].is_null())
+                    to[i].init();
             }
         }
     }
@@ -97,12 +137,12 @@ class Node_child_transpose_table{
 
 class Child_transpose_table{
     private:
-        Node_child_transpose_table *table[TRANSPOSE_TABLE_SIZE];
+        Node_mutex_child_transpose_table table[TRANSPOSE_TABLE_SIZE];
 
     public:
         inline void first_init(){
             for(int i = 0; i < TRANSPOSE_TABLE_SIZE; ++i)
-                table[i] = NULL;
+                table[i].set_null();
         }
 
         #if USE_MULTI_THREAD
@@ -113,7 +153,7 @@ class Child_transpose_table{
                 vector<future<void>> tasks;
                 for (int i = 0; i < thread_size; ++i){
                     e = min(TRANSPOSE_TABLE_SIZE, s + delta);
-                    tasks.emplace_back(thread_pool.push(init_child_transpose_table, table, s, e));
+                    tasks.emplace_back(thread_pool.push(bind(&init_child_transpose_table, table, s, e)));
                     s = e;
                 }
                 for (future<void> &task: tasks)
@@ -122,8 +162,8 @@ class Child_transpose_table{
         #else
             inline void init(){
                 for(int i = 0; i < TRANSPOSE_TABLE_SIZE; ++i){
-                    if (table[i] != NULL){
-                        table[i]->init();
+                    if (!table[i].is_null()){
+                        table[i].init();
                         table[i] = NULL;
                     }
                 }
@@ -131,16 +171,14 @@ class Child_transpose_table{
         #endif
 
         inline void reg(const Board *board, const uint32_t hash, const int policy){
-            if (table[hash] == NULL){
-                Node_child_transpose_table *p = (Node_child_transpose_table*)malloc(sizeof(Node_child_transpose_table));
-                table[hash] = new(p) Node_child_transpose_table;
-            }
-            table[hash]->register_value_with_board(board, policy);
+            if (table[hash].is_null())
+                table[hash].set();
+            table[hash].register_value_with_board(board, policy);
         }
 
-        inline int get(const Board *board, const uint32_t hash) const{
-            if (table[hash] != NULL)
-                return table[hash]->get(board);
+        inline int get(const Board *board, const uint32_t hash){
+            if (!table[hash].is_null())
+                return table[hash].get(board);
             return TRANSPOSE_TABLE_UNDEFINED;
         }
 
@@ -152,7 +190,7 @@ class Child_transpose_table{
                 vector<future<void>> tasks;
                 for (int i = 0; i < thread_size; ++i){
                     e = min(TRANSPOSE_TABLE_SIZE, s + delta);
-                    tasks.emplace_back(thread_pool.push(copy_child_transpose_table, table, to->table, s, e));
+                    tasks.emplace_back(thread_pool.push(bind(&copy_child_transpose_table, table, to->table, s, e)));
                     s = e;
                 }
                 for (future<void> &task: tasks)
@@ -162,11 +200,11 @@ class Child_transpose_table{
             inline void copy(Child_transpose_table *to){
                 to->init();
                 for(int i = 0; i < TRANSPOSE_TABLE_SIZE; ++i){
-                    if (table[i] != NULL){
-                        to->table[i] = (Node_child_transpose_table*)malloc(sizeof(Node_child_transpose_table));
+                    if (!table[i].is_null()){
+                        to->table[i].set();
                         to->table[i]->register_value_with_board(table[i]);
                     } else{
-                        to->table[i] = NULL;
+                        to->table[i].set_null();
                     }
                 }
             }
@@ -229,7 +267,7 @@ class Node_parent_transpose_table{
 };
 
 #if USE_MULTI_THREAD
-    void init_parent_transpose_table(int id, Node_parent_transpose_table *table[], int s, int e){
+    void init_parent_transpose_table(Node_parent_transpose_table *table[], int s, int e){
         for(int i = s; i < e; ++i){
             if (table[i] != NULL){
                 table[i]->init();
@@ -238,7 +276,7 @@ class Node_parent_transpose_table{
         }
     }
 
-    void copy_parent_transpose_table(int id, Node_parent_transpose_table *from[], Node_parent_transpose_table *to[], int s, int e){
+    void copy_parent_transpose_table(Node_parent_transpose_table *from[], Node_parent_transpose_table *to[], int s, int e){
         for(int i = s; i < e; ++i){
             if (from[i] != NULL){
                 if (from[i]->n_stones() < HW2 - CACHE_SAVE_EMPTY){
@@ -275,7 +313,7 @@ class Parent_transpose_table{
                 vector<future<void>> tasks;
                 for (int i = 0; i < thread_size; ++i){
                     e = min(TRANSPOSE_TABLE_SIZE, s + delta);
-                    tasks.emplace_back(thread_pool.push(init_parent_transpose_table, table, s, e));
+                    tasks.emplace_back(thread_pool.push(bind(&init_parent_transpose_table, table, s, e)));
                     s = e;
                 }
                 for (future<void> &task: tasks)
@@ -315,7 +353,7 @@ class Parent_transpose_table{
                 vector<future<void>> tasks;
                 for (int i = 0; i < thread_size; ++i){
                     e = min(TRANSPOSE_TABLE_SIZE, s + delta);
-                    tasks.emplace_back(thread_pool.push(copy_parent_transpose_table, table, to->table, s, e));
+                    tasks.emplace_back(thread_pool.push(bind(&copy_parent_transpose_table, table, to->table, s, e)));
                     s = e;
                 }
                 for (future<void> &task: tasks)
