@@ -17,12 +17,12 @@
 #define W_VALUE 8
 #define W_VALUE_SHALLOW 4
 #define W_MOBILITY 16
-#define W_OPENNESS 16
-#define W_OPPONENT_OPENNESS 16
 #define W_PARITY1 2
 #define W_PARITY2 4
-#define W_PLAYER_FLIP_INSIDE 128
-#define W_OPPONENT_FLIP_INSIDE 128
+#define W_OPENNESS 2
+#define W_OPPONENT_OPENNESS 1
+#define W_PLAYER_FLIP_INSIDE 32
+#define W_OPPONENT_FLIP_INSIDE 16
 
 #define MOVE_ORDERING_VALUE_OFFSET 14
 
@@ -32,7 +32,7 @@
 #define W_END_PARITY 2
 
 #define USE_OPENNESS_N_STONES 49
-#define USE_OPPONENT_OPENNESS_DEPTH 18
+#define USE_OPPONENT_OPENNESS_DEPTH 16
 
 struct Flip_inside_info{
     uint64_t player;
@@ -82,12 +82,15 @@ inline int create_disturb_opponent_flip_inside(Board *board, const int n_o_legal
 }
 
 inline int calc_openness(const Board *board, const Flip *flip){
-    uint64_t res = ~(board->player | board->opponent | (1ULL << flip->pos));
-    res &= (flip->flip << 1) | (flip->flip >> 1);
-    res &= (flip->flip << HW) | (flip->flip >> HW);
-    res &= (flip->flip << HW_M1) | (flip->flip >> HW_M1);
-    res &= (flip->flip << HW_P1) | (flip->flip >> HW_P1);
-    return pop_count_ull(res);
+    uint64_t hmask = flip->flip & 0x7E7E7E7E7E7E7E7EULL;
+    uint64_t vmask = flip->flip & 0x00FFFFFFFFFFFF00ULL;
+    uint64_t hvmask = flip->flip & 0x007E7E7E7E7E7E00ULL;
+    uint64_t around = 
+        (hmask << 1) | (hmask >> 1) | 
+        (vmask << HW) | (vmask >> HW) | 
+        (hvmask << HW_M1) | (hvmask >> HW_M1) | 
+        (hvmask << HW_P1) | (hvmask >> HW_P1);
+    return pop_count_ull(~(board->player | board->opponent | (1ULL << flip->pos)) & around);
 }
 
 inline int calc_opponent_openness(Search *search, uint64_t legal){
@@ -126,9 +129,10 @@ inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int
         }
         if (search->board.n <= USE_OPENNESS_N_STONES){
             int openness = calc_openness(&search->board, flip);
-            flip->value -= openness * W_OPENNESS;
             if (openness == 0)
                 flip->value += W_PLAYER_FLIP_INSIDE;
+            else
+                flip->value -= openness * W_OPENNESS;
         }
         if (depth < 0){
             search->board.move(flip);
@@ -160,9 +164,10 @@ inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int
                 }
                 if (search->board.n <= USE_OPENNESS_N_STONES && search_depth >= USE_OPPONENT_OPENNESS_DEPTH){
                     int openness = calc_opponent_openness(search, flip->n_legal);
-                    flip->value += openness * W_OPPONENT_OPENNESS;
                     if (openness == 0)
                         flip->value -= W_OPPONENT_FLIP_INSIDE;
+                    else
+                        flip->value += openness * W_OPPONENT_OPENNESS;
                 }
             search->board.undo(flip);
             eval_undo(search, flip);

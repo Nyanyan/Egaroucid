@@ -22,7 +22,6 @@ class Node_child_transpose_table{
         uint64_t player;
         uint64_t opponent;
         int best_move;
-        //atomic<Node_child_transpose_table*> p_n_node;
 
     public:
 
@@ -218,7 +217,6 @@ class Node_parent_transpose_table{
         uint64_t opponent;
         int lower;
         int upper;
-        //atomic<Node_child_transpose_table*> p_n_node;
 
     public:
 

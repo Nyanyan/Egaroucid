@@ -99,7 +99,7 @@ class Board {
             opponent = rotate_180(opponent);
         }
 
-        inline void print() {
+        inline void print() const{
             for (int i = HW2_M1; i >= 0; --i){
                 if (1 & (player >> i))
                     cerr << "X ";
