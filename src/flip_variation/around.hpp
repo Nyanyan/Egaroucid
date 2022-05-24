@@ -25,7 +25,7 @@ inline int count_around4_pos(uint64_t stones, uint64_t pos){
     uint64_t vmask = pos & 0x00FFFFFFFFFFFF00ULL;
     uint64_t res = stones & (
         (hmask << 1) | (hmask >> 1) | 
-        (vmask << HW) | (vmask >> HW);
+        (vmask << HW) | (vmask >> HW)
     );
     return pop_count_ull(res);
 }

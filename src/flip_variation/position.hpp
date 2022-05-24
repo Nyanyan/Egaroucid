@@ -44,17 +44,17 @@ inline bool pos_is_corner(Flip *flip){
 }
 
 // A
-inline bool pos_is_corner(Flip *flip){
+inline bool pos_is_A(Flip *flip){
     return ((1ULL << flip->pos) & 0b00100100'00000000'00000000'00000000'00000000'00000000'00000000'00100100ULL) != 0ULL;
 }
 
 // B
-inline bool pos_is_corner(Flip *flip){
+inline bool pos_is_B(Flip *flip){
     return ((1ULL << flip->pos) & 0b00011000'00000000'00000000'00000000'00000000'00000000'00000000'00011000ULL) != 0ULL;
 }
 
 // C
-inline bool pos_is_corner(Flip *flip){
+inline bool pos_is_C(Flip *flip){
     return ((1ULL << flip->pos) & 0b01000010'00000000'00000000'00000000'00000000'00000000'00000000'01000010ULL) != 0ULL;
 }
 
@@ -103,16 +103,16 @@ inline bool pos_is_corner(uint64_t stones){
 }
 
 // A
-inline bool pos_is_corner(uint64_t stones){
+inline bool pos_is_A(uint64_t stones){
     return (stones & 0b00100100'00000000'00000000'00000000'00000000'00000000'00000000'00100100ULL) != 0ULL;
 }
 
 // B
-inline bool pos_is_corner(uint64_t stones){
+inline bool pos_is_B(uint64_t stones){
     return (stones & 0b00011000'00000000'00000000'00000000'00000000'00000000'00000000'00011000ULL) != 0ULL;
 }
 
 // C
-inline bool pos_is_corner(uint64_t stones){
+inline bool pos_is_C(uint64_t stones){
     return (stones & 0b01000010'00000000'00000000'00000000'00000000'00000000'00000000'01000010ULL) != 0ULL;
 }
