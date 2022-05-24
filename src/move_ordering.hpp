@@ -162,7 +162,7 @@ inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int
                         }
                         break;
                 }
-                if (search->board.n <= USE_OPENNESS_N_STONES && search_depth >= USE_OPPONENT_OPENNESS_DEPTH){
+                if (search->board.n <= USE_OPENNESS_N_STONES && search_depth >= USE_OPPONENT_OPENNESS_DEPTH && flip->n_legal){
                     int openness = calc_opponent_openness(search, flip->n_legal);
                     if (openness == 0)
                         flip->value -= W_OPPONENT_FLIP_INSIDE;
