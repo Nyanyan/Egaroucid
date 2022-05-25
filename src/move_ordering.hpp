@@ -17,17 +17,19 @@
 
 #define W_WIPEOUT 1000000000
 
-#define W_VALUE 8
-#define W_VALUE_SHALLOW 4
-#define W_MOBILITY 16
 #define W_PARITY1 2
 #define W_PARITY2 4
+
+#define W_VALUE 10
+#define W_VALUE_SHALLOW 6
+#define W_MOBILITY 14
 #define W_OPENNESS 1
 #define W_OPPONENT_OPENNESS 1
-#define W_PLAYER_FLIP_INSIDE 20
-#define W_OPPONENT_FLIP_INSIDE 8
-#define W_BOUND_FLIP 16
-#define W_DOUBLE_FLIP 40
+#define W_FLIP_INSIDE 16
+#define W_BOUND_FLIP -1
+#define W_CREATE_WALL -4
+#define W_BREAK_WALL -32
+#define W_DOUBLE_FLIP -64
 
 #define MOVE_ORDERING_VALUE_OFFSET 14
 
@@ -43,6 +45,8 @@ struct move_ordering_info{
     uint64_t stones;
     uint64_t outside;
     uint64_t opponent_bound_stones;
+    uint64_t opponent_create_wall_stones;
+    uint64_t opponent_break_wall_stones;
 };
 
 int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, const bool *searching);
@@ -120,6 +124,26 @@ bool cmp_move_ordering(Flip &a, Flip &b){
     return a.value > b.value;
 }
 
+inline int midgame_player_move_ordering_heuristic(Board *board, Flip *flip, move_ordering_info *minfo){
+    int openness = calc_openness(board, flip);
+    // 中割り
+    if (openness == 0)
+        return W_FLIP_INSIDE;
+    // 境界の石返し
+    if (flip->flip & minfo->opponent_bound_stones)
+        return -openness * W_OPENNESS + W_BOUND_FLIP;
+    // 壁化
+    if (flip->flip & minfo->opponent_create_wall_stones)
+        return -openness * W_OPENNESS + W_CREATE_WALL;
+    // 壁破り
+    if (flip->flip & minfo->opponent_break_wall_stones)
+        return -openness * W_OPENNESS + W_BREAK_WALL;
+    // 二重返し
+    if (is_double_flipping(board, flip))
+        return -openness * W_OPENNESS + W_DOUBLE_FLIP;
+    return -openness * W_OPENNESS;
+}
+
 inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int beta, const int depth, const bool *searching, const int search_depth, move_ordering_info *minfo){
     if (flip->flip == search->board.opponent)
         flip->value = W_WIPEOUT;
@@ -133,18 +157,8 @@ inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int
                 flip->value += W_PARITY2;
         }
         */
-        if (search->board.n <= MIDGAME_N_STONES){
-            if (is_double_flipping(&search->board, flip))
-                flip->value -= W_DOUBLE_FLIP;
-            int openness = calc_openness(&search->board, flip);
-            if (openness == 0)
-                flip->value += W_PLAYER_FLIP_INSIDE;
-            else{
-                flip->value -= openness * W_OPENNESS;
-                if (flip->flip & minfo->opponent_bound_stones)
-                    flip->value += W_BOUND_FLIP;
-            }
-        }
+        if (search->board.n <= MIDGAME_N_STONES)
+            flip->value += midgame_player_move_ordering_heuristic(&search->board, flip, minfo);
         if (depth < 0){
             search->board.move(flip);
                 flip->n_legal = search->board.get_legal();
@@ -173,6 +187,7 @@ inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int
                         }
                         break;
                 }
+                /*
                 if (search->board.n <= MIDGAME_N_STONES && search_depth >= USE_OPPONENT_OPENNESS_DEPTH && flip->n_legal){
                     int openness = calc_opponent_openness(search, flip->n_legal);
                     if (openness == 0)
@@ -180,6 +195,7 @@ inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int
                     else
                         flip->value += openness * W_OPPONENT_OPENNESS;
                 }
+                */
             search->board.undo(flip);
             eval_undo(search, flip);
         }
@@ -323,6 +339,8 @@ inline void move_ordering(Search *search, vector<Flip> &move_list, int depth, in
     minfo.stones = search->board.player | search->board.opponent;
     minfo.outside = calc_outside_stones(&search->board);
     minfo.opponent_bound_stones = calc_opponent_bound_stones(&search->board, minfo.outside);
+    minfo.opponent_create_wall_stones = calc_opponent_create_wall_stones(&search->board, minfo.outside, minfo.opponent_bound_stones);
+    minfo.opponent_break_wall_stones = calc_opponent_break_wall_stones(minfo.outside & search->board.opponent, minfo.opponent_bound_stones);
     for (Flip &flip: move_list)
         move_evaluate(search, &flip, eval_alpha, eval_beta, eval_depth, searching, depth, &minfo);
     sort(move_list.begin(), move_list.end(), cmp_move_ordering);

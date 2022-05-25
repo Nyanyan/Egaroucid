@@ -36,10 +36,8 @@ inline uint64_t calc_inside_stones(const Board *board){
 */
 inline uint64_t calc_wall_stones(uint64_t player_outside_stones){
     uint64_t n_res = player_outside_stones & (
-        ((player_outside_stones & 0xFEFEFEFEFEFEFEFEULL) >> 1) | 
-        ((player_outside_stones & 0x7F7F7F7F7F7F7F7FULL) << 1) | 
-        ((player_outside_stones & 0xFFFFFFFFFFFFFF00ULL) >> HW) | 
-        ((player_outside_stones & 0x00FFFFFFFFFFFFFFULL) << HW)
+        ((player_outside_stones & 0xFEFEFEFEFEFEFEFEULL) >> 1) | ((player_outside_stones & 0x7F7F7F7F7F7F7F7FULL) << 1) | 
+        ((player_outside_stones & 0xFFFFFFFFFFFFFF00ULL) >> HW) | ((player_outside_stones & 0x00FFFFFFFFFFFFFFULL) << HW)
     );
     uint64_t res = 0ULL;
     while (n_res & ~res){
@@ -78,16 +76,43 @@ inline uint64_t calc_face_stones(uint64_t outside, uint64_t empties){
 
 // 境界の石
 /*
-    外側の石で白黒の境界の石
+    外側で2つ以上相手の石が連続する石のうち，白黒の境界の石
 */
 inline uint64_t calc_opponent_bound_stones(const Board *board, uint64_t outside){
+    uint64_t player_outside = outside & board->player;
+    uint64_t opponent_outside = outside & board->opponent;
+    opponent_outside &= 
+        ((opponent_outside & 0xFEFEFEFEFEFEFEFEULL) >> 1) | ((opponent_outside & 0x7F7F7F7F7F7F7F7FULL) << 1) | 
+        ((opponent_outside & 0xFFFFFFFFFFFFFF00ULL) >> HW) | ((opponent_outside & 0x00FFFFFFFFFFFFFFULL) << HW);
+    uint64_t res = opponent_outside & (
+        ((player_outside & 0xFEFEFEFEFEFEFEFEULL) >> 1) | ((player_outside & 0x7F7F7F7F7F7F7F7FULL) << 1) | 
+        ((player_outside & 0xFFFFFFFFFFFFFF00ULL) >> HW) | ((player_outside & 0x00FFFFFFFFFFFFFFULL) << HW)
+    );
+    return res;
+}
+
+
+// 壁化の石
+/*
+    外側の白黒境界のうち，境界の石でない石
+*/
+inline uint64_t calc_opponent_create_wall_stones(const Board *board, uint64_t outside, uint64_t bound_stones){
     uint64_t player_outside = outside & board->player;
     uint64_t opponent_outside = outside & board->opponent;
     uint64_t res = opponent_outside & (
         ((player_outside & 0xFEFEFEFEFEFEFEFEULL) >> 1) | ((player_outside & 0x7F7F7F7F7F7F7F7FULL) << 1) | 
         ((player_outside & 0xFFFFFFFFFFFFFF00ULL) >> HW) | ((player_outside & 0x00FFFFFFFFFFFFFFULL) << HW)
     );
-    return res;
+    return res & ~bound_stones;
+}
+
+
+// 壁破りの石
+/*
+    表面の石のうち，端でない石
+*/
+inline uint64_t calc_opponent_break_wall_stones(uint64_t opponent_outside_stones, uint64_t bound_stones){
+    return calc_wall_stones(opponent_outside_stones) & ~bound_stones;
 }
 
 

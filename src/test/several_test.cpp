@@ -21,15 +21,21 @@ int main(){
     uint64_t face_stones = calc_face_stones(outside, empties);
     uint64_t end_stones = calc_end_stones(outside, empties);
     uint64_t bound_stones = calc_opponent_bound_stones(&board, outside);
+    uint64_t create_wall_stones = calc_opponent_create_wall_stones(&board, outside, bound_stones);
+    uint64_t break_wall_stones = calc_opponent_break_wall_stones(outside & board.opponent, bound_stones);
 
     cerr << "outside" << endl;
-    //bit_print_board(outside);
+    bit_print_board(outside);
     cerr << "face_stones" << endl;
     //bit_print_board(face_stones);
     cerr << "end_stones" << endl;
     //bit_print_board(end_stones);
     cerr << "bound_stones" << endl;
     bit_print_board(bound_stones);
+    cerr << "create_wall_stones" << endl;
+    //bit_print_board(create_wall_stones);
+    cerr << "break_wall_stones" << endl;
+    bit_print_board(break_wall_stones);
 
 
     calc_flip(&flip, &board, 52);
