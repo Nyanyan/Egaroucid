@@ -84,7 +84,7 @@ class Node_mutex_child_transpose_table{
         }
 
         inline int get(const Board *board){
-            lock_guard<mutex> lock(mtx);
+            //lock_guard<mutex> lock(mtx);
             return node->get(board);
         }
 
@@ -97,6 +97,7 @@ class Node_mutex_child_transpose_table{
         }
 
         inline void set(){
+            lock_guard<mutex> lock(mtx);
             node = (Node_child_transpose_table*)malloc(sizeof(Node_child_transpose_table));
         }
 
@@ -295,6 +296,7 @@ class Node_mutex_parent_transpose_table{
         }
 
         inline void set(){
+            lock_guard<mutex> lock(mtx);
             node = (Node_parent_transpose_table*)malloc(sizeof(Node_parent_transpose_table));
         }
 
