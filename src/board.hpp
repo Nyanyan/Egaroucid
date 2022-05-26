@@ -341,7 +341,7 @@ inline uint64_t full_stability_h(uint64_t full){
     full &= full >> 1;
     full &= full >> 2;
     full &= full >> 4;
-    return (full & 0x0101010101010101) * 0xff;
+    return (full & 0x0101010101010101ULL) * 0xFF;
 }
 
 inline uint64_t full_stability_v(uint64_t full){
@@ -352,7 +352,7 @@ inline uint64_t full_stability_v(uint64_t full){
 }
 
 inline void full_stability_d(uint64_t full, uint64_t *full_d7, uint64_t *full_d9){
-    constexpr uint64_t edge = 0xFF818181818181FF;
+    constexpr uint64_t edge = 0xFF818181818181FFULL;
     uint64_t l7, r7, l9, r9;
     l7 = r7 = full;
     l7 &= edge | (l7 >> 7);		r7 &= edge | (r7 << 7);
