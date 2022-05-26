@@ -215,7 +215,7 @@ inline uint64_t calc_some_mobility(uint64_t p, uint64_t o){
 
 #elif LEGAL_CALCULATION_MODE == 5
 
-    uint64_t calc_legal(const uint64_t P, const uint64_t O){
+    inline uint64_t calc_legal(const uint64_t P, const uint64_t O){
         __m256i	PP, mOO, MM, flip_l, flip_r, pre_l, pre_r, shift2;
         __m128i	M;
         const __m256i shift1897 = _mm256_set_epi64x(7, 9, 8, 1);

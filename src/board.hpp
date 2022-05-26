@@ -57,11 +57,11 @@ class Board {
                 hash_rand_player[0][0xFFFF & player] ^ 
                 hash_rand_player[1][0xFFFF & (player >> 16)] ^ 
                 hash_rand_player[2][0xFFFF & (player >> 32)] ^ 
-                hash_rand_player[3][0xFFFF & (player >> 48)] ^ 
+                hash_rand_player[3][player >> 48] ^ 
                 hash_rand_opponent[0][0xFFFF & opponent] ^ 
                 hash_rand_opponent[1][0xFFFF & (opponent >> 16)] ^ 
                 hash_rand_opponent[2][0xFFFF & (opponent >> 32)] ^ 
-                hash_rand_opponent[3][0xFFFF & (opponent >> 48)];
+                hash_rand_opponent[3][opponent >> 48];
         }
 
         inline void board_white_line_mirror(){
@@ -352,22 +352,18 @@ inline uint64_t full_stability_v(uint64_t full){
 }
 
 inline void full_stability_d(uint64_t full, uint64_t *full_d7, uint64_t *full_d9){
-    static const uint64_t edge = 0xFF818181818181FF;
-    static const uint64_t e7[4] = {
-        0xFFFF030303030303, 0xC0C0C0C0C0C0FFFF, 0xFFFFFFFF0F0F0F0F, 0xF0F0F0F0FFFFFFFF};
-    static const uint64_t e9[3] = {
-        0xFFFFC0C0C0C0C0C0, 0x030303030303FFFF, 0x0F0F0F0FF0F0F0F0};
+    constexpr uint64_t edge = 0xFF818181818181FF;
     uint64_t l7, r7, l9, r9;
     l7 = r7 = full;
     l7 &= edge | (l7 >> 7);		r7 &= edge | (r7 << 7);
-    l7 &= e7[0] | (l7 >> 14);	r7 &= e7[1] | (r7 << 14);
-    l7 &= e7[2] | (l7 >> 28);	r7 &= e7[3] | (r7 << 28);
+    l7 &= 0xFFFF030303030303ULL | (l7 >> 14);	r7 &= 0xC0C0C0C0C0C0FFFFULL | (r7 << 14);
+    l7 &= 0xFFFFFFFF0F0F0F0FULL | (l7 >> 28);	r7 &= 0xF0F0F0F0FFFFFFFFULL | (r7 << 28);
     *full_d7 = l7 & r7;
 
     l9 = r9 = full;
     l9 &= edge | (l9 >> 9);		r9 &= edge | (r9 << 9);
-    l9 &= e9[0] | (l9 >> 18);	r9 &= e9[1] | (r9 << 18);
-    *full_d9 = l9 & r9 & (e9[2] | (l9 >> 36) | (r9 << 36));
+    l9 &= 0xFFFFC0C0C0C0C0C0ULL | (l9 >> 18);	r9 &= 0x030303030303FFFFULL | (r9 << 18);
+    *full_d9 = l9 & r9 & (0x0F0F0F0FF0F0F0F0ULL | (l9 >> 36) | (r9 << 36));
 }
 
 inline void full_stability(uint64_t player, uint64_t opponent, uint64_t *h, uint64_t *v, uint64_t *d7, uint64_t *d9){
