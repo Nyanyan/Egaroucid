@@ -386,8 +386,20 @@ inline void move_ordering_fast_first(Search *search, vector<Flip> &move_list){
         return;
     for (Flip &flip: move_list)
         move_evaluate_fast_first(search, &flip);
-    //move_evaluate_fast_first(search, &flip);
     sort(move_list.begin(), move_list.end(), cmp_move_ordering);
+    /*
+    int best_score = -INF;
+    int best_idx = 0, i = 0;
+    for (Flip &flip: move_list){
+        move_evaluate_fast_first(search, &flip);
+        if (best_score < flip.value){
+            best_score = flip.value;
+            best_idx = i;
+        }
+        ++i;
+    }
+    move_sort_top(move_list, best_idx);
+    */
 }
 
 inline void move_ordering_end(Search *search, vector<Flip> &move_list){
