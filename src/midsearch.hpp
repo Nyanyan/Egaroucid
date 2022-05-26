@@ -142,7 +142,8 @@ int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, b
             alpha = max(alpha, g);
             v = g;
             legal ^= 1ULL << best_move;
-        }
+        } else
+            best_move = TRANSPOSE_TABLE_UNDEFINED;
     }
     if (alpha < beta && legal){
         const int canput = pop_count_ull(legal);
@@ -234,7 +235,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
             v = g;
             legal ^= 1ULL << best_move;
         } else
-            best_move!= TRANSPOSE_TABLE_UNDEFINED;
+            best_move = TRANSPOSE_TABLE_UNDEFINED;
     }
     if (alpha < beta && legal){
         const int canput = pop_count_ull(legal);
@@ -385,7 +386,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
             v = g;
             legal ^= 1ULL << best_move;
         } else
-            best_move != TRANSPOSE_TABLE_UNDEFINED;
+            best_move = TRANSPOSE_TABLE_UNDEFINED;
     }
     if (alpha < beta && legal){
         const int canput = pop_count_ull(legal);
@@ -558,7 +559,8 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
             alpha = max(alpha, g);
             v = g;
             legal ^= 1ULL << best_move;
-        }
+        } else
+            best_move = TRANSPOSE_TABLE_UNDEFINED;
     }
     if (alpha < beta && legal){
         const int canput = pop_count_ull(legal);
@@ -670,7 +672,8 @@ int nega_alpha_ordering_single_thread(Search *search, int alpha, int beta, int d
             alpha = max(alpha, g);
             v = g;
             legal ^= 1ULL << best_move;
-        }
+        } else
+            best_move = TRANSPOSE_TABLE_UNDEFINED;
     }
     if (alpha < beta && legal){
         const int canput = pop_count_ull(legal);
@@ -777,7 +780,8 @@ int nega_scout_single_thread(Search *search, int alpha, int beta, int depth, boo
             alpha = max(alpha, g);
             v = g;
             legal ^= 1ULL << best_move;
-        }
+        } else
+            best_move = TRANSPOSE_TABLE_UNDEFINED;
     }
     if (alpha < beta && legal){
         const int canput = pop_count_ull(legal);

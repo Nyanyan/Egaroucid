@@ -668,7 +668,8 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
             alpha = max(alpha, g);
             v = g;
             legal ^= 1ULL << best_move;
-        }
+        } else
+            best_move = TRANSPOSE_TABLE_UNDEFINED;
     }
     if (alpha < beta && legal){
         if (best_move == TRANSPOSE_TABLE_UNDEFINED){
