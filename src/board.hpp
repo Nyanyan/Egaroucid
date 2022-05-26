@@ -14,8 +14,8 @@ using namespace std;
 #define LEGAL_UNDEFINED 0x0000001818000000ULL
 #define STABILITY_UNDEFINED -1
 
-uint32_t hash_rand_player[4][65536];
-uint32_t hash_rand_opponent[4][65536];
+uint32_t hash_rand_player[8][256];
+uint32_t hash_rand_opponent[8][256];
 
 inline uint64_t full_stability_h(uint64_t full);
 inline uint64_t full_stability_v(uint64_t full);
@@ -53,6 +53,26 @@ class Board {
         }
 
         inline uint32_t hash(){
+            const uint8_t *p = (uint8_t*)&player;
+            const uint8_t *o = (uint8_t*)&opponent;
+            return 
+                hash_rand_player[0][p[0]] ^ 
+                hash_rand_player[1][p[1]] ^ 
+                hash_rand_player[2][p[2]] ^ 
+                hash_rand_player[3][p[3]] ^ 
+                hash_rand_player[4][p[4]] ^ 
+                hash_rand_player[5][p[5]] ^ 
+                hash_rand_player[6][p[6]] ^ 
+                hash_rand_player[7][p[7]] ^ 
+                hash_rand_player[0][o[0]] ^ 
+                hash_rand_player[1][o[1]] ^ 
+                hash_rand_player[2][o[2]] ^ 
+                hash_rand_player[3][o[3]] ^ 
+                hash_rand_player[4][o[4]] ^ 
+                hash_rand_player[5][o[5]] ^ 
+                hash_rand_player[6][o[6]] ^ 
+                hash_rand_player[7][o[7]];
+            /*
             return 
                 hash_rand_player[0][0xFFFF & player] ^ 
                 hash_rand_player[1][0xFFFF & (player >> 16)] ^ 
@@ -62,6 +82,7 @@ class Board {
                 hash_rand_opponent[1][0xFFFF & (opponent >> 16)] ^ 
                 hash_rand_opponent[2][0xFFFF & (opponent >> 32)] ^ 
                 hash_rand_opponent[3][opponent >> 48];
+            */
         }
 
         inline void board_white_line_mirror(){
@@ -375,13 +396,13 @@ inline void full_stability(uint64_t player, uint64_t opponent, uint64_t *h, uint
 
 void board_init(){
     int i, j;
-    for (i = 0; i < 4; ++i){
-        for (j = 0; j < 65536; ++j){
+    for (i = 0; i < 8; ++i){
+        for (j = 0; j < 256; ++j){
             hash_rand_player[i][j] = 0;
-            while (pop_count_uint(hash_rand_player[i][j]) < 8)
+            while (pop_count_uint(hash_rand_player[i][j]) < 4)
                 hash_rand_player[i][j] = myrand_uint(); //(uint32_t)(rotate_180(myrand_ull()) >> 32);
             hash_rand_opponent[i][j] = 0;
-            while (pop_count_uint(hash_rand_opponent[i][j]) < 8)
+            while (pop_count_uint(hash_rand_opponent[i][j]) < 4)
                 hash_rand_opponent[i][j] = myrand_uint(); //(uint32_t)(rotate_180(myrand_ull()) >> 32);
         }
     }
