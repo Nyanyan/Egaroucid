@@ -108,6 +108,7 @@ int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, b
         if (stab_res != SCORE_UNDEFINED)
             return stab_res;
     #endif
+    int first_alpha = alpha;
     if (legal == LEGAL_UNDEFINED)
         legal = search->board.get_legal();
     int g, v = -INF;
@@ -165,7 +166,8 @@ int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, b
                 break;
         }
     }
-    if (best_move != child_transpose_table.get(&search->board, hash_code))
+    //if (best_move != child_transpose_table.get(&search->board, hash_code))
+    if (first_alpha < v)
         child_transpose_table.reg(&search->board, hash_code, best_move);
     return v;
 }
@@ -186,16 +188,19 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
     uint32_t hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
     #if USE_MID_TC
         int l, u;
-        parent_transpose_table.get(&search->board, hash_code, &l, &u);
-        if (u == l)
-            return u;
-        if (beta <= l)
-            return l;
-        if (u <= alpha)
-            return u;
-        alpha = max(alpha, l);
-        beta = min(beta, u);
+        if (depth >= USE_PARENT_TT_DEPTH_THRESHOLD){
+            parent_transpose_table.get(&search->board, hash_code, &l, &u);
+            if (u == l)
+                return u;
+            if (beta <= l)
+                return l;
+            if (u <= alpha)
+                return u;
+            alpha = max(alpha, l);
+            beta = min(beta, u);
+        }
     #endif
+    int first_alpha = alpha;
     if (legal == LEGAL_UNDEFINED)
         legal = search->board.get_legal();
     int g, v = -INF;
@@ -296,15 +301,18 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
             }
         #endif
     }
-    if (best_move != child_transpose_table.get(&search->board, hash_code))
+    //if (best_move != child_transpose_table.get(&search->board, hash_code))
+    if (first_alpha < v)
         child_transpose_table.reg(&search->board, hash_code, best_move);
-    #if USE_END_TC
-        if (beta <= v && l < v)
-            parent_transpose_table.reg(&search->board, hash_code, v, u);
-        else if (v <= alpha && v < u)
-            parent_transpose_table.reg(&search->board, hash_code, l, v);
-        else if (alpha < v && v < beta)
-            parent_transpose_table.reg(&search->board, hash_code, v, v);
+    #if USE_MID_TC
+        if (depth >= USE_PARENT_TT_DEPTH_THRESHOLD){
+            if (beta <= v && l < v)
+                parent_transpose_table.reg(&search->board, hash_code, v, u);
+            else if (v <= alpha && v < u)
+                parent_transpose_table.reg(&search->board, hash_code, l, v);
+            else if (alpha < v && v < beta)
+                parent_transpose_table.reg(&search->board, hash_code, v, v);
+        }
     #endif
     return v;
 }
@@ -331,16 +339,19 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     uint32_t hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
     #if USE_MID_TC
         int l, u;
-        parent_transpose_table.get(&search->board, hash_code, &l, &u);
-        if (u == l)
-            return u;
-        if (beta <= l)
-            return l;
-        if (u <= alpha)
-            return u;
-        alpha = max(alpha, l);
-        beta = min(beta, u);
+        if (depth >= USE_PARENT_TT_DEPTH_THRESHOLD){
+            parent_transpose_table.get(&search->board, hash_code, &l, &u);
+            if (u == l)
+                return u;
+            if (beta <= l)
+                return l;
+            if (u <= alpha)
+                return u;
+            alpha = max(alpha, l);
+            beta = min(beta, u);
+        }
     #endif
+    int first_alpha = alpha;
     if (legal == LEGAL_UNDEFINED)
         legal = search->board.get_legal();
     int g, v = -INF;
@@ -374,7 +385,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
             v = g;
             legal ^= 1ULL << best_move;
         } else
-            best_move!= TRANSPOSE_TABLE_UNDEFINED;
+            best_move != TRANSPOSE_TABLE_UNDEFINED;
     }
     if (alpha < beta && legal){
         const int canput = pop_count_ull(legal);
@@ -474,15 +485,9 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
                     if (v == -INF)
                         g = -nega_scout(search, -beta, -alpha, depth - 1, false, flip.n_legal, is_end_search, searching);
                     else{
-                        if (is_end_search && alpha == v){
-                            g = -nega_alpha_ordering(search, -alpha - 2, -alpha - 1, depth - 1, false, flip.n_legal, is_end_search, searching);
-                            if (alpha + 1 < g)
-                                g = -nega_scout(search, -beta, -g, depth - 1, false, flip.n_legal, is_end_search, searching);
-                        } else{
-                            g = -nega_alpha_ordering(search, -alpha - 1, -alpha, depth - 1, false, flip.n_legal, is_end_search, searching);
-                            if (alpha < g)
-                                g = -nega_scout(search, -beta, -g, depth - 1, false, flip.n_legal, is_end_search, searching);
-                        }
+                        g = -nega_alpha_ordering(search, -alpha - 1, -alpha, depth - 1, false, flip.n_legal, is_end_search, searching);
+                        if (alpha < g)
+                            g = -nega_scout(search, -beta, -g, depth - 1, false, flip.n_legal, is_end_search, searching);
                     }
                 search->board.undo(&flip);
                 eval_undo(search, &flip);
@@ -496,15 +501,18 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
             }
         #endif
     }
-    if (best_move != child_transpose_table.get(&search->board, hash_code))
+    //if (best_move != child_transpose_table.get(&search->board, hash_code))
+    if (first_alpha < v)
         child_transpose_table.reg(&search->board, hash_code, best_move);
-    #if USE_END_TC
-        if (beta <= v && l < v)
-            parent_transpose_table.reg(&search->board, hash_code, v, u);
-        else if (v <= alpha && v < u)
-            parent_transpose_table.reg(&search->board, hash_code, l, v);
-        else if (alpha < v && v < beta)
-            parent_transpose_table.reg(&search->board, hash_code, v, v);
+    #if USE_MID_TC
+        if (depth >= USE_PARENT_TT_DEPTH_THRESHOLD){
+            if (beta <= v && l < v)
+                parent_transpose_table.reg(&search->board, hash_code, v, u);
+            else if (v <= alpha && v < u)
+                parent_transpose_table.reg(&search->board, hash_code, l, v);
+            else if (alpha < v && v < beta)
+                parent_transpose_table.reg(&search->board, hash_code, v, v);
+        }
     #endif
     return v;
 }
@@ -515,6 +523,7 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
     ++(search->n_nodes);
     uint32_t hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
     uint64_t legal = search->board.get_legal();
+    int first_alpha = alpha;
     int g, v = -INF;
     if (legal == 0ULL){
         pair<int, int> res;
@@ -589,10 +598,12 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
                 break;
         }
     }
-    if (best_move != child_transpose_table.get(&search->board, hash_code))
+    //if (best_move != child_transpose_table.get(&search->board, hash_code))
+    if (first_alpha < v)
         child_transpose_table.reg(&search->board, hash_code, best_move);
-    #if USE_END_TC
-        parent_transpose_table.reg(&search->board, hash_code, v, v);
+    #if USE_MID_TC
+        if (depth >= USE_PARENT_TT_DEPTH_THRESHOLD)
+            parent_transpose_table.reg(&search->board, hash_code, v, v);
     #endif
     //cerr << "best move " << best_move << endl;
     return make_pair(v, best_move);
@@ -614,16 +625,19 @@ int nega_alpha_ordering_single_thread(Search *search, int alpha, int beta, int d
     uint32_t hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
     #if USE_MID_TC
         int l, u;
-        parent_transpose_table.get(&search->board, hash_code, &l, &u);
-        if (u == l)
-            return u;
-        if (beta <= l)
-            return l;
-        if (u <= alpha)
-            return u;
-        alpha = max(alpha, l);
-        beta = min(beta, u);
+        if (depth >= USE_PARENT_TT_DEPTH_THRESHOLD){
+            parent_transpose_table.get(&search->board, hash_code, &l, &u);
+            if (u == l)
+                return u;
+            if (beta <= l)
+                return l;
+            if (u <= alpha)
+                return u;
+            alpha = max(alpha, l);
+            beta = min(beta, u);
+        }
     #endif
+    int first_alpha = alpha;
     if (legal == LEGAL_UNDEFINED)
         legal = search->board.get_legal();
     int g, v = -INF;
@@ -680,15 +694,18 @@ int nega_alpha_ordering_single_thread(Search *search, int alpha, int beta, int d
                 break;
         }
     }
-    if (best_move != child_transpose_table.get(&search->board, hash_code))
+    //if (best_move != child_transpose_table.get(&search->board, hash_code))
+    if (first_alpha < v)
         child_transpose_table.reg(&search->board, hash_code, best_move);
-    #if USE_END_TC
-        if (beta <= v && l < v)
-            parent_transpose_table.reg(&search->board, hash_code, v, u);
-        else if (v <= alpha && v < u)
-            parent_transpose_table.reg(&search->board, hash_code, l, v);
-        else if (alpha < v && v < beta)
-            parent_transpose_table.reg(&search->board, hash_code, v, v);
+    #if USE_MID_TC
+        if (depth >= USE_PARENT_TT_DEPTH_THRESHOLD){
+            if (beta <= v && l < v)
+                parent_transpose_table.reg(&search->board, hash_code, v, u);
+            else if (v <= alpha && v < u)
+                parent_transpose_table.reg(&search->board, hash_code, l, v);
+            else if (alpha < v && v < beta)
+                parent_transpose_table.reg(&search->board, hash_code, v, v);
+        }
     #endif
     return v;
 }
@@ -715,16 +732,19 @@ int nega_scout_single_thread(Search *search, int alpha, int beta, int depth, boo
     uint32_t hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
     #if USE_MID_TC
         int l, u;
-        parent_transpose_table.get(&search->board, hash_code, &l, &u);
-        if (u == l)
-            return u;
-        if (beta <= l)
-            return l;
-        if (u <= alpha)
-            return u;
-        alpha = max(alpha, l);
-        beta = min(beta, u);
+        if (depth >= USE_PARENT_TT_DEPTH_THRESHOLD){
+            parent_transpose_table.get(&search->board, hash_code, &l, &u);
+            if (u == l)
+                return u;
+            if (beta <= l)
+                return l;
+            if (u <= alpha)
+                return u;
+            alpha = max(alpha, l);
+            beta = min(beta, u);
+        }
     #endif
+    int first_alpha = alpha;
     if (legal == LEGAL_UNDEFINED)
         legal = search->board.get_legal();
     int g, v = -INF;
@@ -788,15 +808,18 @@ int nega_scout_single_thread(Search *search, int alpha, int beta, int depth, boo
                 break;
         }
     }
-    if (best_move != child_transpose_table.get(&search->board, hash_code))
+    //if (best_move != child_transpose_table.get(&search->board, hash_code))
+    if (first_alpha < v)
         child_transpose_table.reg(&search->board, hash_code, best_move);
-    #if USE_END_TC
-        if (beta <= v && l < v)
-            parent_transpose_table.reg(&search->board, hash_code, v, u);
-        else if (v <= alpha && v < u)
-            parent_transpose_table.reg(&search->board, hash_code, l, v);
-        else if (alpha < v && v < beta)
-            parent_transpose_table.reg(&search->board, hash_code, v, v);
+    #if USE_MID_TC
+        if (depth >= USE_PARENT_TT_DEPTH_THRESHOLD){
+            if (beta <= v && l < v)
+                parent_transpose_table.reg(&search->board, hash_code, v, u);
+            else if (v <= alpha && v < u)
+                parent_transpose_table.reg(&search->board, hash_code, l, v);
+            else if (alpha < v && v < beta)
+                parent_transpose_table.reg(&search->board, hash_code, v, v);
+        }
     #endif
     return v;
 }

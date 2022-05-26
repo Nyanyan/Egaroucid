@@ -61,36 +61,39 @@ class Node_child_transpose_table{
 };
 
 class Node_shared_mutex_child_transpose_table{
-    private:
-        shared_mutex mtx;
+    //private:
+    //    shared_mutex mtx;
     public:
         Node_child_transpose_table *node;
     
     public:
 
         inline bool register_value(const Board *board, const int policy){
-            lock_guard<shared_mutex> lock(mtx);
+            //lock_guard<shared_mutex> lock(mtx);
             return node->register_value(board, policy);
         }
 
         inline void register_value_with_board(const Board *board, const int policy){
-            lock_guard<shared_mutex> lock(mtx);
+            //lock_guard<shared_mutex> lock(mtx);
             node->register_value_with_board(board, policy);
         }
 
         inline void register_value_with_board(Node_child_transpose_table *from){
-            lock_guard<shared_mutex> lock(mtx);
+            //lock_guard<shared_mutex> lock(mtx);
             node->register_value_with_board(from);
         }
 
         inline int get(const Board *board){
             //lock_guard<shared_mutex> lock(mtx);
+            return node->get(board);
+            /*
             int res = TRANSPOSE_TABLE_UNDEFINED;
             {
                 shared_lock<shared_mutex> lock(mtx);
                 res = node->get(board);
             }
             return res;
+            */
         }
 
         inline int n_stones() const{
@@ -102,8 +105,12 @@ class Node_shared_mutex_child_transpose_table{
         }
 
         inline void set(){
-            lock_guard<shared_mutex> lock(mtx);
-            node = (Node_child_transpose_table*)malloc(sizeof(Node_child_transpose_table));
+            //lock_guard<shared_mutex> lock(mtx);
+            Node_child_transpose_table* p = (Node_child_transpose_table*)malloc(sizeof(Node_child_transpose_table));
+            if (node == NULL)
+                node = p;
+            else
+                free(p);
         }
 
         inline void set_null(){
