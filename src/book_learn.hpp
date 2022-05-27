@@ -50,12 +50,15 @@ int book_learn_search(Board board, int level, const int book_depth, const int fi
         g = book.get(&board);
         if (-SCORE_MAX <= g && g <= SCORE_MAX)
             return g;
-        g = book_learn_calc_value(board, level, false);
-        if (global_searching && -SCORE_MAX <= g && g <= SCORE_MAX){
-            book.reg(board, -g);
-            return g;
-        } else
-            return SCORE_UNDEFINED;
+        g = book_learn_calc_value(board, level / 2, false);
+        if (g >= first_value - expected_error * 2){
+            g = book_learn_calc_value(board, level, false);
+            if (global_searching && -SCORE_MAX <= g && g <= SCORE_MAX){
+                book.reg(board, -g);
+                return g;
+            }
+        }
+        return SCORE_UNDEFINED;
     }
     uint64_t legal = board.get_legal();
     if (legal == 0ULL){
@@ -90,6 +93,8 @@ int book_learn_search(Board board, int level, const int book_depth, const int fi
                 //    book.reg(board, g);
             }
         board.undo(&flip);
+        if (v > first_value + expected_error)
+            return v;
     }
     if (-SCORE_MAX <= v && v <= SCORE_MAX && global_searching){
         book.reg(board, -v);
