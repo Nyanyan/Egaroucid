@@ -89,7 +89,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
         parent_transpose_table.init();
         search.use_mpc = use_mpc;
         search.mpct = mpct;
-        if (!use_mpc){
+        if (!use_mpc && false){
             alpha = -INF;
             beta = -INF;
             while ((g <= alpha || beta <= g) && global_searching){
@@ -134,11 +134,11 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
             search.mpct = 0.6;
             //search.p = (search.board.p + depth) % 2;
             parent_transpose_table.init();
-            result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth, false, false, false);
+            result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth - 1, false, false, false);
             g = result.first;
             policy = result.second;
             if (show_log)
-                cerr << "presearch time " << tim() - strt << " depth " << depth << " value " << value_to_score_double(g) << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
+                cerr << "presearch time " << tim() - strt << " depth " << depth - 1 << " value " << value_to_score_double(g) << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
         }
         search.use_mpc = 1;
         search.mpct = 0.9;
@@ -248,7 +248,7 @@ Search_result ai(Board b, int level, bool use_book, int error_level){
             }
             if (!cache_hit){
                 res = tree_search(b, depth, use_mpc, mpct, true);
-                if (!is_mid_search && !use_mpc && depth > END_FAST_DEPTH){
+                if (!is_mid_search && !use_mpc && depth > CACHE_SAVE_EMPTY){
                     parent_transpose_table.copy(&bak_parent_transpose_table);
                     child_transpose_table.copy(&bak_child_transpose_table);
                     cerr << "cache saved" << endl;
