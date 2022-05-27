@@ -211,6 +211,7 @@ int prob_to_val(double val, int error_level, int min_val, int max_val){
 Search_result ai(Board b, int level, bool use_book, int error_level){
     Search_result res;
     if (error_level == 0){
+        
         Book_value book_result = book.get_random(&b, 0);
         if (book_result.policy != -1 && use_book){
             cerr << "BOOK " << book_result.policy << " " << book_result.value << endl;

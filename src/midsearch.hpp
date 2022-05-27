@@ -20,6 +20,7 @@
     #include "log.hpp"
 #endif
 #include "util.hpp"
+#include "book.hpp"
 
 using namespace std;
 
@@ -573,6 +574,18 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
         for (const Flip &flip: move_list){
             eval_move(search, &flip);
             search->board.move(&flip);
+                /*
+                g = book.get(&search->board);
+                if (g < -SCORE_MAX || SCORE_MAX < g){
+                    if (v == -INF)
+                        g = -nega_scout(search, -beta, -alpha, depth - 1, false, flip.n_legal, is_end_search, &searching);
+                    else{
+                        g = -nega_alpha_ordering(search, -alpha - 1, -alpha, depth - 1, false, flip.n_legal, is_end_search, &searching);
+                        if (alpha < g)
+                            g = -nega_scout(search, -beta, -g, depth - 1, false, flip.n_legal, is_end_search, &searching);
+                    }
+                }
+                */
                 if (v == -INF)
                     g = -nega_scout(search, -beta, -alpha, depth - 1, false, flip.n_legal, is_end_search, &searching);
                 else{

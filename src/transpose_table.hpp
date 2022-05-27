@@ -61,8 +61,8 @@ class Node_child_transpose_table{
 };
 
 class Node_shared_mutex_child_transpose_table{
-    //private:
-    //    shared_mutex mtx;
+    private:
+        shared_mutex mtx;
     public:
         Node_child_transpose_table *node;
     
@@ -105,7 +105,7 @@ class Node_shared_mutex_child_transpose_table{
         }
 
         inline void set(){
-            //lock_guard<shared_mutex> lock(mtx);
+            lock_guard<shared_mutex> lock(mtx);
             Node_child_transpose_table* p = (Node_child_transpose_table*)malloc(sizeof(Node_child_transpose_table));
             if (node == NULL)
                 node = p;
