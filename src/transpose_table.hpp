@@ -106,11 +106,11 @@ class Node_shared_mutex_child_transpose_table{
 
         inline void set(){
             lock_guard<shared_mutex> lock(mtx);
-            Node_child_transpose_table* p = (Node_child_transpose_table*)malloc(sizeof(Node_child_transpose_table));
-            if (node == NULL)
-                node = p;
-            else
-                free(p);
+            node = (Node_child_transpose_table*)malloc(sizeof(Node_child_transpose_table));
+            //if (node == NULL)
+            //    node = p;
+            //else
+            //    free(p);
         }
 
         inline void set_null(){
@@ -118,6 +118,7 @@ class Node_shared_mutex_child_transpose_table{
         }
 
         inline void init(){
+            lock_guard<shared_mutex> lock(mtx);
             node->init();
             node = NULL;
         }
