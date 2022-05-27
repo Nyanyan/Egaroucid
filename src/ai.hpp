@@ -303,7 +303,7 @@ Search_result ai(Board b, int level, bool use_book, int error_level){
                 res.nodes = search.n_nodes;
                 res.nps = 0;
                 res.policy = elem.first;
-                res.value = (b.p ? -1 : 1) * value_to_score_int(prob_to_val(elem.second, error_level, min_val, max_val));
+                res.value = (b.p ? 1 : -1) * value_to_score_int(prob_to_val(elem.second, error_level, min_val, max_val));
                 break;
             }
         }
