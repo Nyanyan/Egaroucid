@@ -25,3 +25,4 @@ src/test/ignore
 /evaluation_test/*.dat
 /evaluation_test/*.exe
 /evaluation_test/graph
+/src/build
