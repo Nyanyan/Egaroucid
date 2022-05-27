@@ -212,6 +212,11 @@ class Book{
             n_book += register_symmetric_book(b, value, n_book);
         }
 
+        inline void reg(Board *b, int value){
+            Board b1 = b->copy();
+            n_book += register_symmetric_book(b1, value, n_book);
+        }
+
         inline int get_onebook(Board *b){
             Node_book *p_node = this->book[b->hash() & BOOK_HASH_MASK];
             while(p_node != NULL){
