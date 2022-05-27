@@ -48,7 +48,7 @@ int book_learn_search(Board board, int level, const int book_depth, const int ex
     int g;
     if (board.n >= 4 + book_depth){
         g = book_learn_calc_value(board, level / 2, false);
-        if (g >= expected_value - expected_error - 2){
+        if (g >= expected_value - expected_error - 4){
             g = ai(board, level, true, 0).value;
             book.reg(board, -g);
             return g;
@@ -65,6 +65,8 @@ int book_learn_search(Board board, int level, const int book_depth, const int ex
     Search_result best_move = ai(board, level, true, 0);
     if (best_move.value < expected_value - expected_error)
         return SCORE_UNDEFINED;
+    if (best_move.value > expected_value + expected_error)
+        return best_move.value;
     //if (-SCORE_MAX <= best_move.value && best_move.value <= SCORE_MAX)
     //    book.reg(board, -best_move.value);
     Flip flip;
@@ -91,7 +93,7 @@ int book_learn_search(Board board, int level, const int book_depth, const int ex
                 //if (g >= best_move.value - expected_error - 2)
                 //    g = -book_learn_calc_value(board, level, false);
             }
-            if (-SCORE_MAX <= g && g <= SCORE_MAX && g >= expected_value - expected_error - 2){
+            if (-SCORE_MAX <= g && g <= SCORE_MAX && g >= expected_value - expected_error - 4){
                 g = -book_learn_search(board, level, book_depth, -expected_value, expected_error, board_copy, strt_tim, book_file, book_bak);
                 if (-SCORE_MAX <= g && g <= SCORE_MAX){
                     if (g > best_move.value){
