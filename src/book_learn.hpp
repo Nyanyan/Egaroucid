@@ -48,7 +48,7 @@ int book_learn_search(Board board, int level, const int book_depth, const int ex
     int g;
     if (board.n >= 4 + book_depth){
         g = book_learn_calc_value(board, level / 2, false);
-        if (g >= expected_value - expected_error - 4){
+        if (g >= expected_value - expected_error - 2){
             g = ai(board, level, true, 0).value;
             book.reg(board, -g);
             return g;
@@ -65,19 +65,23 @@ int book_learn_search(Board board, int level, const int book_depth, const int ex
     Search_result best_move = ai(board, level, true, 0);
     if (best_move.value < expected_value - expected_error)
         return SCORE_UNDEFINED;
-    if (-SCORE_MAX <= best_move.value && best_move.value <= SCORE_MAX)
-        book.reg(board, -best_move.value);
+    //if (-SCORE_MAX <= best_move.value && best_move.value <= SCORE_MAX)
+    //    book.reg(board, -best_move.value);
     Flip flip;
     calc_flip(&flip, &board, (uint8_t)best_move.policy);
     board.move(&flip);
         board.copy(board_copy);
-        best_move.value = -book_learn_search(board, level, book_depth, -expected_value, expected_error, board_copy, strt_tim, book_file, book_bak);
-        cerr << "PV value " << best_move.value << endl;
+        g = -book_learn_search(board, level, book_depth, -expected_value, expected_error, board_copy, strt_tim, book_file, book_bak);
+        if (-SCORE_MAX <= g && g <= SCORE_MAX){
+            best_move.value = g;
+            cerr << "PV value " << best_move.value << endl;
+        } else
+            best_move.value = -INF;
     board.undo(&flip);
     legal ^= 1ULL << best_move.policy;
-    bool flag;
+    //bool flag;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-        flag = false;
+        //flag = false;
         calc_flip(&flip, &board, cell);
         board.move(&flip);
             board.copy(board_copy);
@@ -93,14 +97,14 @@ int book_learn_search(Board board, int level, const int book_depth, const int ex
                     if (g > best_move.value){
                         best_move.value = g;
                         best_move.policy = (int)cell;
-                        flag = true;
+                        //flag = true;
                     }
                     cerr << "   value " << g << " best_move_value " << best_move.value << endl;
                 }
             }
         board.undo(&flip);
-        if (flag)
-            book.reg(board, -best_move.value);
+        //if (flag)
+        //    book.reg(board, -best_move.value);
     }
     if (-SCORE_MAX <= best_move.value && best_move.value <= SCORE_MAX && global_searching){
         book.reg(board, -best_move.value);
