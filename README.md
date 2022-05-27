@@ -66,13 +66,13 @@ First, you have to clone this repository. For example,
 $ git clone git@github.com:Nyanyan/Egaroucid5.git
 ```
 
-Then move to the ```src``` directory
+Then move to the ```src/test``` directory
 
 ```
 $ cd Egaroucid5/src/test
 ```
 
-Compile ```egaroucid5.cpp```
+Compile ```ai.cpp```
 
 ```
 $ g++ -O3 -fexcess-precision=fast -funroll-loops -flto -march=native -lpthread -Wall ai.cpp -o a.exe
@@ -91,4 +91,75 @@ AI moves (0: black 1: white):
 ```
 
 Press ```Start``` button to play!
+
+
+
+## Egaroucid5 on Python
+
+First, you have to clone this repository. For example,
+
+```
+$ git clone git@github.com:Nyanyan/Egaroucid5.git
+```
+
+Then move to the ```src``` directory
+
+```
+$ cd Egaroucid5/src
+```
+
+Modify ```Python.h``` location
+
+```
+// egaroucid5module.cpp
+
+// INCLUDE MUST BE MODIFIED
+#include <Python.h> // < this should be modified
+// example
+//#include "C:/Users/username/AppData/Local/Programs/Python/Python39/include/Python.h"
+```
+
+Setup Egaroucid5
+
+```
+$ python setup.py install
+```
+
+Execute example ```python_egaroucid5.py```
+
+```
+$ python python_egaroucid5.py
+```
+
+### Usage
+
+#### egaroucid5.init(eval_file, book_file)
+
+Returns True if initialized, False if failed.
+
+example:
+
+```
+egaroucid5.init('test/resources/eval.egev', 'test/resources/book.egbk')
+```
+
+#### egaroucid5.ai(board, level)
+
+```0/B/b/X/x/*``` for black, ```1/W/w/O/o``` for white, ```./-``` for empty.
+
+board format:
+
+```
+[board as 64 characters] [player]
+```
+
+Spaces will be ignored.
+
+Returns tuple ```(Score as int, coord as str)```
+
+example (FFO endgame test #40):
+
+```
+egaroucid5.ai('1..11110.1111110110011101101110011111100...11110....1..0........0', 21)
+```
 
