@@ -82,12 +82,12 @@ int book_learn_search(Board board, int level, const int book_depth, const int fi
                     g = -book_learn_calc_value(board, level, false);
             }
             if (-SCORE_MAX <= g && g <= SCORE_MAX){
-                cerr << "pre   value " << g << " parent_value " << v << " root expected value " << first_value << endl;
+                cerr << "pre   value " << g << " parent value " << v << " root expected value " << first_value << endl;
                 if (g >= first_value - expected_error){
                     g = -book_learn_search(board, level, book_depth, -first_value, expected_error, board_copy, strt_tim, book_file, book_bak);
                     if (g != -SCORE_UNDEFINED){
                         v = max(v, g);
-                        cerr << "exact value " << g << " parent_value " << v << " root expected value " << first_value << endl;
+                        cerr << "exact value " << g << " parent value " << v << " root expected value " << first_value << endl;
                     }
                 }// else if (global_searching)
                 //    book.reg(board, g);
@@ -104,7 +104,10 @@ int book_learn_search(Board board, int level, const int book_depth, const int fi
 }
 
 inline void learn_book(Board root_board, int level, const int book_depth, const int expected_error, Board *board_copy, string book_file, string book_bak, bool *book_learning){
-    const int first_value = book_learn_calc_value(root_board, level, false);
+    int first_value = -book.get(&root_board);
+    cerr << "book get " << first_value << endl;
+    if (first_value < -SCORE_MAX || SCORE_MAX < first_value)
+        first_value = book_learn_calc_value(root_board, level, false);
     cerr << "root value " << first_value << endl;
     uint64_t strt_tim = tim();
     int g = book_learn_search(root_board, level, book_depth, first_value, expected_error, board_copy, &strt_tim, book_file, book_bak);
