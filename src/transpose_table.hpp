@@ -26,7 +26,10 @@ class Node_child_transpose_table{
     public:
 
         inline void init(){
-            free(this);
+            player = 0ULL;
+            opponent = 0ULL;
+            best_move = 0ULL;
+            //free(this);
         }
 
         inline bool register_value(const Board *board, const int policy){
@@ -61,79 +64,48 @@ class Node_child_transpose_table{
 };
 
 class Node_shared_mutex_child_transpose_table{
-    private:
-        shared_mutex mtx;
+    //private:
+    //    shared_mutex mtx;
     public:
-        Node_child_transpose_table *node;
+        Node_child_transpose_table node;
     
     public:
 
         inline bool register_value(const Board *board, const int policy){
             //lock_guard<shared_mutex> lock(mtx);
-            return node->register_value(board, policy);
+            return node.register_value(board, policy);
         }
 
         inline void register_value_with_board(const Board *board, const int policy){
             //lock_guard<shared_mutex> lock(mtx);
-            node->register_value_with_board(board, policy);
+            node.register_value_with_board(board, policy);
         }
 
         inline void register_value_with_board(Node_child_transpose_table *from){
             //lock_guard<shared_mutex> lock(mtx);
-            node->register_value_with_board(from);
+            node.register_value_with_board(from);
         }
 
         inline int get(const Board *board){
-            //lock_guard<shared_mutex> lock(mtx);
-            return node->get(board);
-            /*
-            int res = TRANSPOSE_TABLE_UNDEFINED;
-            {
-                shared_lock<shared_mutex> lock(mtx);
-                res = node->get(board);
-            }
-            return res;
-            */
-        }
-
-        inline int n_stones() const{
-            return node->n_stones();
-        }
-
-        inline bool is_null() const{
-            return node == NULL;
-        }
-
-        inline void set(){
-            lock_guard<shared_mutex> lock(mtx);
-            node = (Node_child_transpose_table*)malloc(sizeof(Node_child_transpose_table));
-            //if (node == NULL)
-            //    node = p;
-            //else
-            //    free(p);
-        }
-
-        inline void set_null(){
-            node = NULL;
+            return node.get(board);
         }
 
         inline void init(){
-            lock_guard<shared_mutex> lock(mtx);
-            node->init();
-            node = NULL;
+            node.init();
         }
 };
 
 #if USE_MULTI_THREAD
     void init_child_transpose_table(Node_shared_mutex_child_transpose_table table[], int s, int e){
         for(int i = s; i < e; ++i){
-            if (!table[i].is_null())
-                table[i].init();
+            //if (!table[i].is_null())
+            table[i].init();
         }
     }
 
     void copy_child_transpose_table(Node_shared_mutex_child_transpose_table from[], Node_shared_mutex_child_transpose_table to[], int s, int e){
         for(int i = s; i < e; ++i){
+            /*
             if (!from[i].is_null()){
                 if (from[i].n_stones() < HW2 - CACHE_SAVE_EMPTY){
                     if (to[i].is_null())
@@ -144,6 +116,8 @@ class Node_shared_mutex_child_transpose_table{
                 if (!to[i].is_null())
                     to[i].init();
             }
+            */
+            to[i].register_value_with_board(&from[i].node);
         }
     }
 #endif
@@ -155,7 +129,8 @@ class Child_transpose_table{
     public:
         inline void first_init(){
             for(int i = 0; i < TRANSPOSE_TABLE_SIZE; ++i)
-                table[i].set_null();
+                table[i].init();
+            //table[i].set_null();
         }
 
         #if USE_MULTI_THREAD
@@ -184,15 +159,13 @@ class Child_transpose_table{
         #endif
 
         inline void reg(const Board *board, const uint32_t hash, const int policy){
-            if (table[hash].is_null())
-                table[hash].set();
+            //if (table[hash].is_null())
+            //    table[hash].set();
             table[hash].register_value_with_board(board, policy);
         }
 
         inline int get(const Board *board, const uint32_t hash){
-            if (!table[hash].is_null())
-                return table[hash].get(board);
-            return TRANSPOSE_TABLE_UNDEFINED;
+            return table[hash].get(board);
         }
 
         #if USE_MULTI_THREAD
@@ -235,7 +208,11 @@ class Node_parent_transpose_table{
     public:
 
         inline void init(){
-            free(this);
+            player = 0ULL;
+            opponent = 0ULL;
+            lower = -INF;
+            upper = INF;
+            //free(this);
         }
 
         inline void register_value_with_board(const Board *board, const int l, const int u){
@@ -277,65 +254,49 @@ class Node_shared_mutex_parent_transpose_table{
     private:
         shared_mutex mtx;
     public:
-        Node_parent_transpose_table *node;
+        Node_parent_transpose_table node;
     
     public:
         inline void register_value_with_board(const Board *board, const int l, const int u){
             lock_guard<shared_mutex> lock(mtx);
-            node->register_value_with_board(board, l, u);
+            node.register_value_with_board(board, l, u);
         }
 
         inline bool register_value(const Board *board, const int l, const int u){
             lock_guard<shared_mutex> lock(mtx);
-            return node->register_value(board, l, u);
+            return node.register_value(board, l, u);
         }
 
         inline void register_value_with_board(Node_parent_transpose_table *from){
             lock_guard<shared_mutex> lock(mtx);
-            node->register_value_with_board(from);
+            node.register_value_with_board(from);
         }
 
         inline void get(const Board *board, int *l, int *u){
-            //lock_guard<shared_mutex> lock(mtx);
-            {
-                shared_lock<shared_mutex> lock(mtx);
-                node->get(board, l, u);
-            }
+            shared_lock<shared_mutex> lock(mtx);
+            node.get(board, l, u);
         }
 
         inline int n_stones() const{
-            return node->n_stones();
-        }
-
-        inline bool is_null() const{
-            return node == NULL;
-        }
-
-        inline void set(){
-            lock_guard<shared_mutex> lock(mtx);
-            node = (Node_parent_transpose_table*)malloc(sizeof(Node_parent_transpose_table));
-        }
-
-        inline void set_null(){
-            node = NULL;
+            return node.n_stones();
         }
 
         inline void init(){
-            node->init();
-            node = NULL;
+            node.init();
         }
 };
 
 #if USE_MULTI_THREAD
     void init_parent_transpose_table(Node_shared_mutex_parent_transpose_table table[], int s, int e){
         for(int i = s; i < e; ++i){
-            if (!table[i].is_null())
-                table[i].init();
+            //if (!table[i].is_null())
+            table[i].init();
         }
     }
 
     void copy_parent_transpose_table(Node_shared_mutex_parent_transpose_table from[], Node_shared_mutex_parent_transpose_table to[], int s, int e){
         for(int i = s; i < e; ++i){
+            /*
             if (!from[i].is_null()){
                 if (from[i].n_stones() < HW2 - CACHE_SAVE_EMPTY){
                     if (to[i].is_null())
@@ -346,6 +307,8 @@ class Node_shared_mutex_parent_transpose_table{
                 if (!to[i].is_null())
                     to[i].init();
             }
+            */
+            to[i].register_value_with_board(&from[i].node);
         }
     }
 #endif
@@ -357,7 +320,8 @@ class Parent_transpose_table{
     public:
         inline void first_init(){
             for(int i = 0; i < TRANSPOSE_TABLE_SIZE; ++i)
-                table[i].set_null();
+                table[i].init();
+            //table[i].set_null();
         }
 
         #if USE_MULTI_THREAD
@@ -384,16 +348,16 @@ class Parent_transpose_table{
         #endif
 
         inline void reg(const Board *board, const uint32_t hash, const int l, const int u){
-            if (table[hash].is_null())
-                table[hash].set();
+            //if (table[hash].is_null())
+            //    table[hash].set();
             table[hash].register_value_with_board(board, l, u);
         }
 
         inline void get(const Board *board, const uint32_t hash, int *l, int *u){
             *l = -INF;
             *u = INF;
-            if (!table[hash].is_null())
-                table[hash].get(board, l, u);
+            //if (!table[hash].is_null())
+            table[hash].get(board, l, u);
         }
 
         #if USE_MULTI_THREAD
