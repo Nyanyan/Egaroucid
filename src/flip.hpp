@@ -429,9 +429,37 @@ class Flip{
         return res;
     }
 
+#elif LAST_FLIP_CALC_MODE == 4 // BUG ON THIS MODE
+
+    inline int_fast8_t count_last_flip(uint64_t player, uint64_t opponent, const uint_fast8_t place){
+        int_fast8_t t, u;
+        uint8_t p;
+        int_fast8_t res = 0;
+        t = place >> 3;
+        u = place & 7;
+        p = join_h_line(player, t);
+        res += n_flip_pre_calc[p][u];
+        p = join_v_line(player, u);
+        res += n_flip_pre_calc[p][t];
+        p = join_d7_lines[u + t](player) & d7_mask[place];
+        res += n_flip_pre_calc[p][t];
+        p = join_d9_lines[u - t + HW_M1](player) & d9_mask[place];
+        res += n_flip_pre_calc[p][t];
+        return res;
+    }
+
 #endif
 
 void flip_init(){
+    /* DEBUGGING
+    uint64_t p = 0x0123456789ABCDEF;
+    for (int i = 2; i < 12; ++i){
+        if (join_d7_line(p, i) != join_d7_lines[i](p))
+            cerr << i << " d7 " << (int)join_d7_line(p, i) << " " << (int)join_d7_lines[i](p) << endl;
+        if (join_d9_line(p, i - HW_M1) != join_d9_lines[i](p))
+            cerr << i << " d9 " << (int)join_d9_line(p, i - HW_M1) << " " << (int)join_d9_lines[i](p) << endl;
+    }
+    */
     uint_fast16_t player, opponent, place;
     uint_fast8_t wh, put, m1, m2, m3, m4, m5, m6, i;
     for (player = 0; player < N_8BIT; ++player){

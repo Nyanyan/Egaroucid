@@ -718,7 +718,7 @@ inline uint64_t split_d9_line(uint8_t x, int t){
 }
 
 inline uint_fast8_t join_line_dummy(const uint64_t x){
-    return 0xFFU;
+    return 0;
 }
 
 inline uint_fast8_t join_d7_line_2(const uint64_t x){
