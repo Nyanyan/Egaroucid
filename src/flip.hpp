@@ -7,7 +7,7 @@
 using namespace std;
 
 uint_fast8_t flip_pre_calc[N_8BIT][N_8BIT][HW];
-uint_fast8_t n_flip_pre_calc[N_8BIT][N_8BIT][HW];
+uint_fast8_t n_flip_pre_calc[N_8BIT][HW];
 
 class Flip{
     public:
@@ -414,22 +414,18 @@ class Flip{
 
     inline int_fast8_t count_last_flip(uint64_t player, uint64_t opponent, const uint_fast8_t place){
         int_fast8_t t, u;
-        uint8_t p, o;
+        uint8_t p;
         int_fast8_t res = 0;
         t = place >> 3;
         u = place & 7;
         p = join_h_line(player, t);
-        o = join_h_line(opponent, t);
-        res += n_flip_pre_calc[p][o][u];
+        res += n_flip_pre_calc[p][u];
         p = join_v_line(player, u);
-        o = join_v_line(opponent, u);
-        res += n_flip_pre_calc[p][o][t];
-        p = join_d7_lines[u + t](player);
-        o = join_d7_lines[u + t](opponent);
-        res += n_flip_pre_calc[p][o][t];
-        p = join_d9_lines[u - t + HW_M1](player);
-        o = join_d9_lines[u - t + HW_M1](opponent);
-        res += n_flip_pre_calc[p][o][t];
+        res += n_flip_pre_calc[p][t];
+        p = join_d7_line(player, u + t) & d7_mask[place];
+        res += n_flip_pre_calc[p][t];
+        p = join_d9_line(player, u - t) & d9_mask[place];
+        res += n_flip_pre_calc[p][t];
         return res;
     }
 
@@ -439,10 +435,13 @@ void flip_init(){
     uint_fast16_t player, opponent, place;
     uint_fast8_t wh, put, m1, m2, m3, m4, m5, m6, i;
     for (player = 0; player < N_8BIT; ++player){
+        for (place = 0; place < HW; ++place)
+            n_flip_pre_calc[player][place] = 0;
+    }
+    for (player = 0; player < N_8BIT; ++player){
         for (opponent = 0; opponent < N_8BIT; ++opponent){
             for (place = 0; place < HW; ++place){
                 flip_pre_calc[player][opponent][place] = 0;
-                n_flip_pre_calc[player][opponent][place] = 0;
                 if ((1 & (player >> place)) == 0 && (1 & (opponent >> place)) == 0 && (player & opponent) == 0){
                     put = 1 << place;
                     wh = opponent & 0b01111110;
@@ -490,7 +489,9 @@ void flip_init(){
                                 flip_pre_calc[player][opponent][place] |= m1 | m2 | m3 | m4 | m5 | m6;
                         }
                     }
-                    n_flip_pre_calc[player][opponent][place] = pop_count_uchar(flip_pre_calc[player][opponent][place]);
+                    if (pop_count_uchar(player) + pop_count_uchar(opponent) == HW_M1 && pop_count_uchar(player | opponent) == HW_M1){
+                        n_flip_pre_calc[player][place] = pop_count_uchar(flip_pre_calc[player][opponent][place]);
+                    }
                 }
             }
         }
