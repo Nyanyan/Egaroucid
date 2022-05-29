@@ -410,6 +410,29 @@ class Flip{
         return pop_count_ull(_mm256_extract_epi64(flipped.data, 3) | _mm256_extract_epi64(flipped.data, 2) | _mm256_extract_epi64(flipped.data, 1) | _mm256_extract_epi64(flipped.data, 0));
     }
 
+#elif LAST_FLIP_CALC_MODE == 3
+
+    inline int_fast8_t count_last_flip(uint64_t player, uint64_t opponent, const uint_fast8_t place){
+        int_fast8_t t, u;
+        uint8_t p, o;
+        int_fast8_t res = 0;
+        t = place >> 3;
+        u = place & 7;
+        p = join_h_line(player, t);
+        o = join_h_line(opponent, t);
+        res += n_flip_pre_calc[p][o][u];
+        p = join_v_line(player, u);
+        o = join_v_line(opponent, u);
+        res += n_flip_pre_calc[p][o][t];
+        p = join_d7_lines[u + t](player);
+        o = join_d7_lines[u + t](opponent);
+        res += n_flip_pre_calc[p][o][t];
+        p = join_d9_lines[u - t + HW_M1](player);
+        o = join_d9_lines[u - t + HW_M1](opponent);
+        res += n_flip_pre_calc[p][o][t];
+        return res;
+    }
+
 #endif
 
 void flip_init(){
@@ -467,9 +490,7 @@ void flip_init(){
                                 flip_pre_calc[player][opponent][place] |= m1 | m2 | m3 | m4 | m5 | m6;
                         }
                     }
-                    n_flip_pre_calc[player][opponent][place] = 0;
-                    for (i = 1; i < HW_M1; ++i)
-                        n_flip_pre_calc[player][opponent][place] += 1 & (flip_pre_calc[player][opponent][place] >> i);
+                    n_flip_pre_calc[player][opponent][place] = pop_count_uchar(flip_pre_calc[player][opponent][place]);
                 }
             }
         }

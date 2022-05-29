@@ -717,6 +717,10 @@ inline uint64_t split_d9_line(uint8_t x, int t){
     return t > 0 ? res << t : res >> (-t);
 }
 
+inline uint_fast8_t join_line_dummy(const uint64_t x){
+    return 0xFFU;
+}
+
 inline uint_fast8_t join_d7_line_2(const uint64_t x){
     return ((x & 0b00000000'00000000'00000000'00000000'00000000'00000001'00000010'00000100ULL) * 
                 0b00100000'00100000'00100000'00000000'00000000'00000000'00000000'00000000ULL) >> 56;
@@ -773,9 +777,10 @@ inline uint_fast8_t join_d7_line_12(const uint64_t x){
 }
 
 uint_fast8_t (*join_d7_lines[])(const uint64_t) = {
-    join_d7_line_2, join_d7_line_3, join_d7_line_4, join_d7_line_5, 
-    join_d7_line_6, join_d7_line_7, join_d7_line_8, join_d7_line_9, 
-    join_d7_line_10, join_d7_line_11, join_d7_line_12, 
+    join_line_dummy, join_line_dummy, join_d7_line_2, join_d7_line_3, 
+    join_d7_line_4, join_d7_line_5, join_d7_line_6, join_d7_line_7, 
+    join_d7_line_8, join_d7_line_9, join_d7_line_10, join_d7_line_11, 
+    join_d7_line_12, join_line_dummy, join_line_dummy
 };
 
 inline uint_fast8_t join_d9_line_m5(const uint64_t x){
@@ -834,9 +839,10 @@ inline uint_fast8_t join_d9_line_5(const uint64_t x){
 }
 
 uint_fast8_t (*join_d9_lines[])(const uint64_t) = {
-    join_d9_line_m5, join_d9_line_m4, join_d9_line_m3, join_d9_line_m2, 
-    join_d9_line_m1, join_d9_line_0, join_d9_line_1, join_d9_line_2, 
-    join_d9_line_3, join_d9_line_4, join_d9_line_5 
+    join_line_dummy, join_line_dummy, join_d9_line_m5, join_d9_line_m4, 
+    join_d9_line_m3, join_d9_line_m2, join_d9_line_m1, join_d9_line_0, 
+    join_d9_line_1, join_d9_line_2, join_d9_line_3, join_d9_line_4, 
+    join_d9_line_5, join_line_dummy, join_line_dummy
 };
 
 uint64_t split_v_lines[N_8BIT];
