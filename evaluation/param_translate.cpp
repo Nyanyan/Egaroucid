@@ -4,7 +4,7 @@
 
 using namespace std;
 
-#define n_data (804572 * 30)
+#define n_data (694743 * 30) //(804572 * 30)
 
 int main(){
     ifstream ifs("learned_data/param.txt");
