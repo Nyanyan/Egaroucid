@@ -111,3 +111,18 @@ inline int stability_cut(Search *search, Flip *flip, int *alpha, int *beta){
     *beta = min(*beta, n_beta);
     return SCORE_UNDEFINED;
 }
+
+inline void register_tt(Search *search, uint32_t hash_code, int first_alpha, int v, int best_move, int l, int u, int alpha, int beta){
+    if (first_alpha < v)
+        child_transpose_table.reg(&search->board, hash_code, best_move);
+    #if USE_END_TC
+        if (search->board.n <= HW2 - USE_PARENT_TT_DEPTH_THRESHOLD){
+            if (beta <= v && l < v)
+                parent_transpose_table.reg(&search->board, hash_code, v, u);
+            else if (v <= alpha && v < u)
+                parent_transpose_table.reg(&search->board, hash_code, l, v);
+            else if (alpha < v && v < beta)
+                parent_transpose_table.reg(&search->board, hash_code, v, v);
+        }
+    #endif
+}
