@@ -826,7 +826,7 @@ inline int mid_evaluate(Board *b){
 inline int mid_evaluate_diff(Search *search, const bool *searching){
     if (!(*searching))
         return SCORE_UNDEFINED;
-    int phase_idx, sur0, sur1, canput0, canput1, stab0, stab1, num0, num1;
+    int phase_idx, sur0, sur1, canput0, canput1, stab0 = 0, stab1 = 0, num0, num1;
     uint64_t player_mobility, opponent_mobility, empties;
     player_mobility = calc_legal(search->board.player, search->board.opponent);
     opponent_mobility = calc_legal(search->board.opponent, search->board.player);
@@ -838,6 +838,7 @@ inline int mid_evaluate_diff(Search *search, const bool *searching){
     empties = ~(search->board.player | search->board.opponent);
     sur0 = min(MAX_SURROUND - 1, calc_surround(search->board.player, empties));
     sur1 = min(MAX_SURROUND - 1, calc_surround(search->board.opponent, empties));
+    //if (search->board.n > 49)
     calc_stability(&search->board, &stab0, &stab1);
     num0 = pop_count_ull(search->board.player);
     num1 = pop_count_ull(search->board.opponent);

@@ -395,7 +395,7 @@ inline double calc_score(int phase, int i){
         eval_arr[phase][15][test_data[i][61]] + 
         eval_arr[phase][16][calc_sur0_sur1(test_data[i])] + 
         eval_arr[phase][17][calc_canput0_canput1(test_data[i])] + 
-        eval_arr[phase][18][calc_stab0_stab1(test_data[i])] + 
+        //eval_arr[phase][18][calc_stab0_stab1(test_data[i])] + 
         eval_arr[phase][19][calc_num0_num1(test_data[i])] + 
         eval_arr[phase][20][test_data[i][70]] + 
         eval_arr[phase][20][test_data[i][71]] + 
@@ -640,7 +640,7 @@ int main(int argc, char *argv[]){
     init();
     initialize_param();
     //output_param_onephase();
-    input_param_onephase((string)(argv[6]));
+    //input_param_onephase((string)(argv[6]));
     input_test_data(argc, argv);
 
     sd(second * 1000);
