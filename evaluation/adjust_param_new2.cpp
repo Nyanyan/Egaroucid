@@ -46,7 +46,7 @@ int sa_phase, sa_player;
 #define step 256
 #define sc_w (step * HW2)
 
-#define n_data 10000000
+#define n_data 50000000
 
 #define n_raw_params 78
 
@@ -249,7 +249,11 @@ void input_test_data(int argc, char *argv[]){
             n_weighted_data = 0.0;
             for (j = 0; j < 129; ++j)
                 n_weighted_data += bias[j] * (double)n_data_idx[i][used_idx][j];
-            alpha[i][used_idx] = beta / max(50.0, n_weighted_data);
+            if (used_idx < n_patterns || n_patterns + 4 <= used_idx){
+                for (j = 0; j < 129; ++j)
+                    n_weighted_data += bias[j] * (double)n_data_idx[i][rev_idxes[i][used_idx]][j];
+            }
+            alpha[i][used_idx] = beta / max(100.0, n_weighted_data);
         }
     }
     
@@ -343,12 +347,12 @@ inline int calc_rev_idx(int pattern_idx, int pattern_size, int idx){
         }
     } else if (pattern_idx == 21){ // corner + 2 edge
         int stone_idx = idx / 64;
-        res += p35 * calc_pop(stone_idx, 0, 6);
-        res += p34 * calc_pop(stone_idx, 1, 6);
-        res += p33 * calc_pop(stone_idx, 3, 6);
-        res += p32 * calc_pop(stone_idx, 2, 6);
-        res += p31 * calc_pop(stone_idx, 4, 6);
-        res +=       calc_pop(stone_idx, 5, 6);
+        res += p35 * calc_pop(stone_idx, 5, 6);
+        res += p34 * calc_pop(stone_idx, 4, 6);
+        res += p33 * calc_pop(stone_idx, 2, 6);
+        res += p32 * calc_pop(stone_idx, 3, 6);
+        res += p31 * calc_pop(stone_idx, 1, 6);
+        res +=       calc_pop(stone_idx, 0, 6);
         res *= 64;
         int line_idx0 = idx & 0b111;
         int line_idx1 = (idx >> 3) & 0b111;
@@ -371,7 +375,13 @@ inline void scoring_mae(){
         score = pre_calc_scores[i];
         avg_score += fabs(test_labels[i] - (double)score) / nums;
     }
-    cerr << " " << avg_score << " " << avg_score / step << "                   ";
+    cerr << " " << avg_score << " " << avg_score / step << " "; //"                   ";
+    avg_score = 0;
+    for (i = 0; i < nums; ++i){
+        score = pre_calc_scores[i];
+        avg_score += (fabs(test_labels[i] - (double)score) / step) * (fabs(test_labels[i] - (double)score) / step) / nums;
+    }
+    cerr << "mse " << avg_score << "                   ";
 }
 
 inline double scoring_next_step(int pattern, int idx){
@@ -396,8 +406,8 @@ inline void next_step(){
                 rev_idx = rev_idxes[pattern][idx];
                 if (idx < rev_idx){
                     err = scoring_next_step(pattern, idx) + scoring_next_step(pattern, rev_idx);
-                    eval_arr[pattern][idx] += (alpha[pattern][idx] + alpha[pattern][rev_idx]) * err;
-                    eval_arr[pattern][rev_idx] += (alpha[pattern][idx] + alpha[pattern][rev_idx]) * err;
+                    eval_arr[pattern][idx] += 2.0 * alpha[pattern][idx] * err;
+                    eval_arr[pattern][rev_idx] += 2.0 * alpha[pattern][idx] * err;
                 } else if (idx == rev_idx){
                     err = scoring_next_step(pattern, idx);
                     eval_arr[pattern][idx] += 2.0 * alpha[pattern][idx] * err;
@@ -467,7 +477,7 @@ int main(int argc, char *argv[]){
     init();
     initialize_param();
     //output_param_onephase();
-    //input_param_onephase((string)(argv[6]));
+    input_param_onephase((string)(argv[6]));
     input_test_data(argc, argv);
 
     sd(second * 1000);
