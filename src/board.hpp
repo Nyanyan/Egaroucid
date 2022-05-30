@@ -226,6 +226,37 @@ class Board {
             #endif
         }
 
+        inline void translate_to_arr_player_rev(uint_fast8_t res[]) {
+            /*
+            uint64_t p2 = player & 0x5555555555555555ULL, np2 = (~player) & 0x5555555555555555ULL, no2 = (~opponent) & 0x5555555555555555ULL;
+            uint64_t res_bit = (np2 + no2) ^ p2;
+            int i;
+            for (i = 0; i < HW2; i += 2)
+                res[HW2_M1 - i] = (res_bit >> i) & 0b11;
+            p2 = (player >> 1) & 0x5555555555555555ULL, np2 = ((~player) >> 1) & 0x5555555555555555ULL, no2 = ((~opponent) >> 1) & 0x5555555555555555ULL;
+            res_bit = (np2 + no2) ^ p2;
+            for (i = 0; i < HW2; i += 2)
+                res[HW2_M1 - i - 1] = (res_bit >> i) & 0b11;
+            */
+            #if USE_SIMD && FAST_ARR_CONVERT && false //UNDER CONSTRUCTION
+                u64_4 pl(player);
+                u64_4 op(opponent);
+                u64_4 shift(0, 1, 2, 3);
+                u64_4 bit;
+                for (int i = 0; i < HW2; i += 4){
+                    bit = 2 - (((pl >> shift) & 1) << 1) - ((op >> shift) & 1);
+                    res[HW2_M1 - i] = _mm256_extract_epi64(bit.data, 3);
+                    res[HW2_M1 - i - 1] = _mm256_extract_epi64(bit.data, 2);
+                    res[HW2_M1 - i - 2] = _mm256_extract_epi64(bit.data, 1);
+                    res[HW2_M1 - i - 3] = _mm256_extract_epi64(bit.data, 0);
+                    shift = shift + 4;
+                }
+            #else
+                for (int i = 0; i < HW2; ++i)
+                    res[i] = 2 - (1 & (player >> i)) * 2 - (1 & (opponent >> i));
+            #endif
+        }
+
         inline void translate_to_arr(int res[]) {
             if (p == BLACK){
                 for (int i = 0; i < HW2; ++i)

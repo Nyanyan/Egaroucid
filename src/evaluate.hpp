@@ -258,70 +258,70 @@ struct Coord_to_feature{
 };
 
 constexpr Coord_to_feature coord_to_feature[HW2] = {
-    {12, {{24, P32}, {28, P31}, {29, P31}, {32, P34}, {33, P34}, {37, P39}, {41, P39}, {46, P34}, {47, P37}, {48, P39}, {50, P32}, {51, P39}}}, // COORD_H8
-    { 7, {{ 3, P32}, {22, P33}, {28, P32}, {37, P38}, {41, P38}, {47, P38}, {50, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_G8
-    { 7, {{ 7, P32}, {18, P34}, {28, P33}, {32, P35}, {37, P37}, {41, P37}, {42, P36}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_F8
-    { 7, {{11, P32}, {14, P35}, {28, P34}, {32, P36}, {40, P35}, {41, P36}, {42, P37}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E8
-    { 7, {{ 9, P32}, {15, P35}, {28, P35}, {32, P37}, {40, P36}, {41, P35}, {42, P38}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D8
-    { 7, {{ 5, P32}, {19, P34}, {28, P36}, {32, P38}, {36, P37}, {40, P37}, {42, P39}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_C8
-    { 7, {{ 1, P32}, {23, P33}, {28, P37}, {36, P38}, {40, P38}, {46, P35}, {50, P38}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_B8
-    {12, {{25, P32}, {27, P31}, {28, P38}, {31, P34}, {32, P39}, {36, P39}, {40, P39}, {46, P37}, {47, P39}, {49, P34}, {50, P39}, {53, P32}}}, // COORD_A8
-    { 7, {{ 2, P32}, {20, P33}, {29, P32}, {37, P36}, {41, P34}, {47, P35}, {51, P38}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_H7
-    {10, {{ 2, P33}, { 3, P33}, {24, P33}, {28, P30}, {29, P30}, {37, P35}, {41, P33}, {47, P36}, {50, P34}, {51, P37}, { 0, PNO}, { 0, PNO}}}, // COORD_G7
-    { 6, {{ 2, P34}, { 7, P33}, {22, P34}, {32, P30}, {37, P34}, {50, P35}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_F7
-    { 5, {{ 2, P35}, {11, P33}, {15, P36}, {18, P35}, {32, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E7
-    { 5, {{ 2, P36}, { 9, P33}, {14, P36}, {19, P35}, {32, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D7
-    { 6, {{ 2, P37}, { 5, P33}, {23, P34}, {32, P33}, {36, P34}, {50, P36}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_C7
-    {10, {{ 1, P33}, { 2, P38}, {25, P33}, {27, P30}, {28, P39}, {36, P35}, {40, P33}, {46, P36}, {50, P37}, {53, P34}, { 0, PNO}, { 0, PNO}}}, // COORD_B7
-    { 7, {{ 2, P39}, {21, P33}, {27, P32}, {36, P36}, {40, P34}, {46, P38}, {53, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_A7
-    { 7, {{ 6, P32}, {16, P34}, {29, P33}, {33, P35}, {37, P33}, {41, P32}, {45, P36}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_H6
-    { 6, {{ 3, P34}, { 6, P33}, {20, P34}, {33, P30}, {37, P32}, {51, P36}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_G6
-    { 5, {{ 6, P34}, { 7, P34}, {15, P37}, {24, P34}, {37, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_F6
-    { 4, {{ 6, P35}, {11, P34}, {19, P36}, {22, P35}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E6
-    { 4, {{ 6, P36}, { 9, P34}, {18, P36}, {23, P35}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D6
-    { 5, {{ 5, P34}, { 6, P37}, {14, P37}, {25, P34}, {36, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_C6
-    { 6, {{ 1, P34}, { 6, P38}, {21, P34}, {31, P30}, {36, P32}, {53, P35}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_B6
-    { 7, {{ 6, P39}, {17, P34}, {27, P33}, {31, P35}, {36, P33}, {40, P32}, {43, P36}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_A6
-    { 7, {{10, P32}, {12, P35}, {29, P34}, {33, P36}, {39, P30}, {41, P31}, {45, P37}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_H5
-    { 5, {{ 3, P35}, {10, P33}, {15, P38}, {16, P35}, {33, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_G5
-    { 4, {{ 7, P35}, {10, P34}, {19, P37}, {20, P35}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_F5
-    { 4, {{10, P35}, {11, P35}, {23, P36}, {24, P35}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E5
-    { 4, {{ 9, P35}, {10, P36}, {22, P36}, {25, P35}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D5
-    { 4, {{ 5, P35}, {10, P37}, {18, P37}, {21, P35}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_C5
-    { 5, {{ 1, P35}, {10, P38}, {14, P38}, {17, P35}, {31, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_B5
-    { 7, {{10, P39}, {13, P35}, {27, P34}, {31, P36}, {38, P30}, {40, P31}, {43, P37}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_A5
-    { 7, {{ 8, P32}, {15, P39}, {29, P35}, {33, P37}, {39, P31}, {41, P30}, {45, P38}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_H4
-    { 5, {{ 3, P36}, { 8, P33}, {12, P36}, {19, P38}, {33, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_G4
-    { 4, {{ 7, P36}, { 8, P34}, {16, P36}, {23, P37}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_F4
-    { 4, {{ 8, P35}, {11, P36}, {20, P36}, {25, P36}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E4
-    { 4, {{ 8, P36}, { 9, P36}, {21, P36}, {24, P36}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D4
-    { 4, {{ 5, P36}, { 8, P37}, {17, P36}, {22, P37}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_C4
-    { 5, {{ 1, P36}, { 8, P38}, {13, P36}, {18, P38}, {31, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_B4
-    { 7, {{ 8, P39}, {14, P39}, {27, P35}, {31, P37}, {38, P31}, {40, P30}, {43, P38}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_A4
-    { 7, {{ 4, P32}, {19, P39}, {29, P36}, {33, P38}, {35, P33}, {39, P32}, {45, P39}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_H3
-    { 6, {{ 3, P37}, { 4, P33}, {23, P38}, {33, P33}, {35, P32}, {51, P35}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_G3
-    { 5, {{ 4, P34}, { 7, P37}, {12, P37}, {25, P37}, {35, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_F3
-    { 4, {{ 4, P35}, {11, P37}, {16, P37}, {21, P37}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E3
-    { 4, {{ 4, P36}, { 9, P37}, {17, P37}, {20, P37}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D3
-    { 5, {{ 4, P37}, { 5, P37}, {13, P37}, {24, P37}, {34, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_C3
-    { 6, {{ 1, P37}, { 4, P38}, {22, P38}, {31, P33}, {34, P32}, {53, P36}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_B3
-    { 7, {{ 4, P39}, {18, P39}, {27, P36}, {31, P38}, {34, P33}, {38, P32}, {43, P39}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_A3
-    { 7, {{ 0, P32}, {23, P39}, {29, P37}, {35, P36}, {39, P34}, {48, P38}, {51, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_H2
-    {10, {{ 0, P33}, { 3, P38}, {25, P38}, {26, P30}, {29, P39}, {35, P35}, {39, P33}, {48, P36}, {51, P34}, {52, P37}, { 0, PNO}, { 0, PNO}}}, // COORD_G2
-    { 6, {{ 0, P34}, { 7, P38}, {21, P38}, {30, P30}, {35, P34}, {52, P36}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_F2
-    { 5, {{ 0, P35}, {11, P38}, {12, P38}, {17, P38}, {30, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E2
-    { 5, {{ 0, P36}, { 9, P38}, {13, P38}, {16, P38}, {30, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D2
-    { 6, {{ 0, P37}, { 5, P38}, {20, P38}, {30, P33}, {34, P34}, {52, P35}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_C2
-    {10, {{ 0, P38}, { 1, P38}, {24, P38}, {26, P39}, {27, P39}, {34, P35}, {38, P33}, {49, P36}, {52, P34}, {53, P37}, { 0, PNO}, { 0, PNO}}}, // COORD_B2
-    { 7, {{ 0, P39}, {22, P39}, {27, P37}, {34, P36}, {38, P34}, {49, P35}, {53, P38}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_A2
-    {12, {{25, P39}, {26, P31}, {29, P38}, {30, P34}, {33, P39}, {35, P39}, {39, P39}, {47, P34}, {48, P37}, {49, P39}, {51, P32}, {52, P39}}}, // COORD_H1
-    { 7, {{ 3, P39}, {21, P39}, {26, P32}, {35, P38}, {39, P38}, {48, P35}, {52, P38}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_G1
-    { 7, {{ 7, P39}, {17, P39}, {26, P33}, {30, P35}, {35, P37}, {39, P37}, {44, P36}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_F1
-    { 7, {{11, P39}, {13, P39}, {26, P34}, {30, P36}, {38, P35}, {39, P36}, {44, P37}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E1
-    { 7, {{ 9, P39}, {12, P39}, {26, P35}, {30, P37}, {38, P36}, {39, P35}, {44, P38}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D1
-    { 7, {{ 5, P39}, {16, P39}, {26, P36}, {30, P38}, {34, P37}, {38, P37}, {44, P39}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_C1
-    { 7, {{ 1, P39}, {20, P39}, {26, P37}, {34, P38}, {38, P38}, {49, P38}, {52, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_B1
-    {12, {{24, P39}, {26, P38}, {27, P38}, {30, P39}, {31, P39}, {34, P39}, {38, P39}, {46, P39}, {48, P34}, {49, P37}, {52, P32}, {53, P39}}} // COORD_A1
+    {12, {{24, P30}, {28, P31}, {29, P31}, {32, P34}, {33, P34}, {37, P38}, {41, P39}, {46, P30}, {47, P33}, {48, P35}, {50, P30}, {51, P37}}}, // COORD_H8
+    { 7, {{ 3, P30}, {22, P30}, {28, P32}, {37, P37}, {41, P38}, {47, P34}, {50, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_G8
+    { 7, {{ 7, P30}, {18, P30}, {28, P33}, {32, P35}, {37, P36}, {41, P37}, {42, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_F8
+    { 7, {{11, P30}, {14, P30}, {28, P34}, {32, P36}, {40, P35}, {41, P36}, {42, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E8
+    { 7, {{ 9, P30}, {15, P30}, {28, P35}, {32, P37}, {40, P36}, {41, P35}, {42, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D8
+    { 7, {{ 5, P30}, {19, P30}, {28, P36}, {32, P38}, {36, P36}, {40, P37}, {42, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_C8
+    { 7, {{ 1, P30}, {23, P30}, {28, P37}, {36, P37}, {40, P38}, {46, P31}, {50, P36}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_B8
+    {12, {{25, P30}, {27, P31}, {28, P38}, {31, P34}, {32, P39}, {36, P38}, {40, P39}, {46, P33}, {47, P35}, {49, P30}, {50, P37}, {53, P30}}}, // COORD_A8
+    { 7, {{ 2, P30}, {20, P30}, {29, P32}, {37, P35}, {41, P34}, {47, P31}, {51, P36}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_H7
+    {10, {{ 2, P31}, { 3, P31}, {24, P31}, {28, P30}, {29, P30}, {37, P34}, {41, P33}, {47, P32}, {50, P32}, {51, P35}, { 0, PNO}, { 0, PNO}}}, // COORD_G7
+    { 6, {{ 2, P32}, { 7, P31}, {22, P31}, {32, P30}, {37, P33}, {50, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_F7
+    { 5, {{ 2, P33}, {11, P31}, {15, P31}, {18, P31}, {32, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E7
+    { 5, {{ 2, P34}, { 9, P31}, {14, P31}, {19, P31}, {32, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D7
+    { 6, {{ 2, P35}, { 5, P31}, {23, P31}, {32, P33}, {36, P33}, {50, P34}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_C7
+    {10, {{ 1, P31}, { 2, P36}, {25, P31}, {27, P30}, {28, P39}, {36, P34}, {40, P33}, {46, P32}, {50, P35}, {53, P32}, { 0, PNO}, { 0, PNO}}}, // COORD_B7
+    { 7, {{ 2, P37}, {21, P30}, {27, P32}, {36, P35}, {40, P34}, {46, P34}, {53, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_A7
+    { 7, {{ 6, P30}, {16, P30}, {29, P33}, {33, P35}, {37, P32}, {41, P32}, {45, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_H6
+    { 6, {{ 3, P32}, { 6, P31}, {20, P31}, {33, P30}, {37, P31}, {51, P34}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_G6
+    { 5, {{ 6, P32}, { 7, P32}, {15, P32}, {24, P32}, {37, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_F6
+    { 4, {{ 6, P33}, {11, P32}, {19, P32}, {22, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E6
+    { 4, {{ 6, P34}, { 9, P32}, {18, P32}, {23, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D6
+    { 5, {{ 5, P32}, { 6, P35}, {14, P32}, {25, P32}, {36, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_C6
+    { 6, {{ 1, P32}, { 6, P36}, {21, P31}, {31, P30}, {36, P31}, {53, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_B6
+    { 7, {{ 6, P37}, {17, P30}, {27, P33}, {31, P35}, {36, P32}, {40, P32}, {43, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_A6
+    { 7, {{10, P30}, {12, P30}, {29, P34}, {33, P36}, {39, P30}, {41, P31}, {45, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_H5
+    { 5, {{ 3, P33}, {10, P31}, {15, P33}, {16, P31}, {33, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_G5
+    { 4, {{ 7, P33}, {10, P32}, {19, P33}, {20, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_F5
+    { 4, {{10, P33}, {11, P33}, {23, P33}, {24, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E5
+    { 4, {{ 9, P33}, {10, P34}, {22, P33}, {25, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D5
+    { 4, {{ 5, P33}, {10, P35}, {18, P33}, {21, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_C5
+    { 5, {{ 1, P33}, {10, P36}, {14, P33}, {17, P31}, {31, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_B5
+    { 7, {{10, P37}, {13, P30}, {27, P34}, {31, P36}, {38, P30}, {40, P31}, {43, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_A5
+    { 7, {{ 8, P30}, {15, P34}, {29, P35}, {33, P37}, {39, P31}, {41, P30}, {45, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_H4
+    { 5, {{ 3, P34}, { 8, P31}, {12, P31}, {19, P34}, {33, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_G4
+    { 4, {{ 7, P34}, { 8, P32}, {16, P32}, {23, P34}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_F4
+    { 4, {{ 8, P33}, {11, P34}, {20, P33}, {25, P34}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E4
+    { 4, {{ 8, P34}, { 9, P34}, {21, P33}, {24, P34}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D4
+    { 4, {{ 5, P34}, { 8, P35}, {17, P32}, {22, P34}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_C4
+    { 5, {{ 1, P34}, { 8, P36}, {13, P31}, {18, P34}, {31, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_B4
+    { 7, {{ 8, P37}, {14, P34}, {27, P35}, {31, P37}, {38, P31}, {40, P30}, {43, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_A4
+    { 7, {{ 4, P30}, {19, P35}, {29, P36}, {33, P38}, {35, P32}, {39, P32}, {45, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_H3
+    { 6, {{ 3, P35}, { 4, P31}, {23, P35}, {33, P33}, {35, P31}, {51, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_G3
+    { 5, {{ 4, P32}, { 7, P35}, {12, P32}, {25, P35}, {35, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_F3
+    { 4, {{ 4, P33}, {11, P35}, {16, P33}, {21, P34}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E3
+    { 4, {{ 4, P34}, { 9, P35}, {17, P33}, {20, P34}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D3
+    { 5, {{ 4, P35}, { 5, P35}, {13, P32}, {24, P35}, {34, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_C3
+    { 6, {{ 1, P35}, { 4, P36}, {22, P35}, {31, P33}, {34, P31}, {53, P34}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_B3
+    { 7, {{ 4, P37}, {18, P35}, {27, P36}, {31, P38}, {34, P32}, {38, P32}, {43, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_A3
+    { 7, {{ 0, P30}, {23, P36}, {29, P37}, {35, P35}, {39, P34}, {48, P34}, {51, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_H2
+    {10, {{ 0, P31}, { 3, P36}, {25, P36}, {26, P30}, {29, P39}, {35, P34}, {39, P33}, {48, P32}, {51, P32}, {52, P35}, { 0, PNO}, { 0, PNO}}}, // COORD_G2
+    { 6, {{ 0, P32}, { 7, P36}, {21, P35}, {30, P30}, {35, P33}, {52, P34}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_F2
+    { 5, {{ 0, P33}, {11, P36}, {12, P33}, {17, P34}, {30, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E2
+    { 5, {{ 0, P34}, { 9, P36}, {13, P33}, {16, P34}, {30, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D2
+    { 6, {{ 0, P35}, { 5, P36}, {20, P35}, {30, P33}, {34, P33}, {52, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_C2
+    {10, {{ 0, P36}, { 1, P36}, {24, P36}, {26, P39}, {27, P39}, {34, P34}, {38, P33}, {49, P32}, {52, P32}, {53, P35}, { 0, PNO}, { 0, PNO}}}, // COORD_B2
+    { 7, {{ 0, P37}, {22, P36}, {27, P37}, {34, P35}, {38, P34}, {49, P31}, {53, P36}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_A2
+    {12, {{25, P37}, {26, P31}, {29, P38}, {30, P34}, {33, P39}, {35, P38}, {39, P39}, {47, P30}, {48, P33}, {49, P35}, {51, P30}, {52, P37}}}, // COORD_H1
+    { 7, {{ 3, P37}, {21, P36}, {26, P32}, {35, P37}, {39, P38}, {48, P31}, {52, P36}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_G1
+    { 7, {{ 7, P37}, {17, P35}, {26, P33}, {30, P35}, {35, P36}, {39, P37}, {44, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_F1
+    { 7, {{11, P37}, {13, P34}, {26, P34}, {30, P36}, {38, P35}, {39, P36}, {44, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E1
+    { 7, {{ 9, P37}, {12, P34}, {26, P35}, {30, P37}, {38, P36}, {39, P35}, {44, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D1
+    { 7, {{ 5, P37}, {16, P35}, {26, P36}, {30, P38}, {34, P36}, {38, P37}, {44, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_C1
+    { 7, {{ 1, P37}, {20, P36}, {26, P37}, {34, P37}, {38, P38}, {49, P34}, {52, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_B1
+    {12, {{24, P37}, {26, P38}, {27, P38}, {30, P39}, {31, P39}, {34, P38}, {38, P39}, {46, P35}, {48, P30}, {49, P33}, {52, P30}, {53, P37}}}  // COORD_A1
 };
 
 constexpr uint_fast16_t pow3[11] = {1, P31, P32, P33, P34, P35, P36, P37, P38, P39, P310};
@@ -770,6 +770,7 @@ inline int pick_pattern_mobility(uint64_t b, uint64_t w, const int p0, const int
 }
 
 inline int calc_pattern_mobility(const int phase_idx, const Search *search, const uint64_t player_mobility, const uint64_t opponent_mobility){
+    //cerr << search->eval_features[42] << " " << pick_pattern_mobility(player_mobility, opponent_mobility, COORD_A8, COORD_B8, COORD_G8, COORD_H8) << endl;
     return 
         // edge stone + mobility
         eval_pattern_mobility[search->eval_feature_reversed][phase_idx][0][search->eval_features[42] * 256 + pick_pattern_mobility(player_mobility, opponent_mobility, COORD_A8, COORD_B8, COORD_G8, COORD_H8)] + 
@@ -793,10 +794,10 @@ inline int calc_pattern_joined(const int phase_idx, const Search *search){
         eval_pattern_joined[search->eval_feature_reversed][phase_idx][0][search->eval_features[48] * 64 + pick_joined_pattern(&search->board, 0b00000000'00000000'00000001'00000001'00000001'00000001'00000001'00000000ULL) * 8 + pick_joined_pattern(&search->board, 0b01111100'00000000'00000000'00000000'00000000'00000000'00000000'00000000ULL)] + 
         eval_pattern_joined[search->eval_feature_reversed][phase_idx][0][search->eval_features[49] * 64 + pick_joined_pattern(&search->board, 0b00111110'00000000'00000000'00000000'00000000'00000000'00000000'00000000ULL) * 8 + pick_joined_pattern(&search->board, 0b00000000'00000000'10000000'10000000'10000000'10000000'10000000'00000000ULL)] + 
         // corner + 1 edge
-        eval_pattern_joined[search->eval_feature_reversed][phase_idx][0][search->eval_features[50] * 8 + pick_joined_pattern(&search->board, 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00111100ULL)] + 
-        eval_pattern_joined[search->eval_feature_reversed][phase_idx][0][search->eval_features[51] * 8 + pick_joined_pattern(&search->board, 0b00000000'00000000'00000001'00000001'00000001'00000001'00000000'00000000ULL)] + 
-        eval_pattern_joined[search->eval_feature_reversed][phase_idx][0][search->eval_features[52] * 8 + pick_joined_pattern(&search->board, 0b00111100'00000000'00000000'00000000'00000000'00000000'00000000'00000000ULL)] + 
-        eval_pattern_joined[search->eval_feature_reversed][phase_idx][0][search->eval_features[53] * 8 + pick_joined_pattern(&search->board, 0b00000000'00000000'10000000'10000000'10000000'10000000'00000000'00000000ULL)];
+        eval_pattern_joined[search->eval_feature_reversed][phase_idx][1][search->eval_features[50] * 8 + pick_joined_pattern(&search->board, 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00111100ULL)] + 
+        eval_pattern_joined[search->eval_feature_reversed][phase_idx][1][search->eval_features[51] * 8 + pick_joined_pattern(&search->board, 0b00000000'00000000'00000001'00000001'00000001'00000001'00000000'00000000ULL)] + 
+        eval_pattern_joined[search->eval_feature_reversed][phase_idx][1][search->eval_features[52] * 8 + pick_joined_pattern(&search->board, 0b00111100'00000000'00000000'00000000'00000000'00000000'00000000'00000000ULL)] + 
+        eval_pattern_joined[search->eval_feature_reversed][phase_idx][1][search->eval_features[53] * 8 + pick_joined_pattern(&search->board, 0b00000000'00000000'10000000'10000000'10000000'10000000'00000000'00000000ULL)];
 }
 
 inline int end_evaluate(Board *b){
@@ -884,28 +885,24 @@ inline int mid_evaluate_diff(Search *search, const bool *searching){
 inline int pick_pattern_idx(const uint_fast8_t b_arr[], const Feature_to_coord *f){
     int res = 0;
     for (int i = 0; i < f->n_cells; ++i){
-        //cerr << (int)f->cells[i] << " ";
         res *= 3;
-        res += b_arr[HW2_M1 - f->cells[i]];
+        res += b_arr[f->cells[i]];
     }
-    //cerr << endl;
     return res;
 }
 
 inline void calc_features(Search *search){
     uint_fast8_t b_arr[HW2];
-    search->board.translate_to_arr_player(b_arr);
-    for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i){
-        //cerr << i << " ";
+    search->board.translate_to_arr_player_rev(b_arr);
+    for (int i = 0; i < N_SYMMETRY_PATTERNS + N_ADDITIONAL_SYMMETRY_PATTERNS; ++i)
         search->eval_features[i] = pick_pattern_idx(b_arr, &feature_to_coord[i]);
-    }
     search->eval_feature_reversed = 0;
 }
 
 inline bool check_features(Search *search){
     uint_fast8_t b_arr[HW2];
-    search->board.translate_to_arr_player(b_arr);
-    for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i){
+    search->board.translate_to_arr_player_rev(b_arr);
+    for (int i = 0; i < N_SYMMETRY_PATTERNS + N_ADDITIONAL_SYMMETRY_PATTERNS; ++i){
         //cerr << i << " ";
         if (search->eval_features[i] != pick_pattern_idx(b_arr, &feature_to_coord[i])){
             cerr << i << " " << search->eval_features[i] << " " << pick_pattern_idx(b_arr, &feature_to_coord[i]) << endl;
@@ -995,28 +992,28 @@ inline void eval_move(Search *search, const Flip *flip){
         if (search->eval_feature_reversed){
             for (i = 0; i < coord_to_feature[flip->pos].n_features; ++i){
                 //if (search->eval_features[coord_to_feature[flip->pos].features[i].feature] / coord_to_feature[flip->pos].features[i].x % 3 != 2)
-                //    cerr << "error " << search->eval_features[coord_to_feature[flip->pos].features[i].feature] << " " << coord_to_feature[flip->pos].features[i].x << " " << flip->pos << endl;
+                //    cerr << "error " << (int)coord_to_feature[flip->pos].features[i].feature << " " << search->eval_features[coord_to_feature[flip->pos].features[i].feature] << " " << coord_to_feature[flip->pos].features[i].x << " " << (int)flip->pos << endl;
                 search->eval_features[coord_to_feature[flip->pos].features[i].feature] -= coord_to_feature[flip->pos].features[i].x;
             }
             uint64_t f = flip->flip;
             for (uint_fast8_t cell = first_bit(&f); f; cell = next_bit(&f)){
                 for (i = 0; i < coord_to_feature[cell].n_features; ++i){
                     //if (search->eval_features[coord_to_feature[cell].features[i].feature] / coord_to_feature[cell].features[i].x % 3 != 0)
-                    //    cerr << "error " << search->eval_features[coord_to_feature[cell].features[i].feature] << " " << coord_to_feature[cell].features[i].x << " " << cell << endl;
+                    //    cerr << "error " << (int)coord_to_feature[cell].features[i].feature << " " << search->eval_features[coord_to_feature[cell].features[i].feature] << " " << coord_to_feature[cell].features[i].x << " " << (int)cell << endl;
                     search->eval_features[coord_to_feature[cell].features[i].feature] += coord_to_feature[cell].features[i].x;
                 }
             }
         } else{
             for (i = 0; i < coord_to_feature[flip->pos].n_features; ++i){
                 //if (search->eval_features[coord_to_feature[flip->pos].features[i].feature] / coord_to_feature[flip->pos].features[i].x % 3 != 2)
-                //    cerr << "error " << search->eval_features[coord_to_feature[flip->pos].features[i].feature] << " " << coord_to_feature[flip->pos].features[i].x << " " << flip->pos << endl;
+                //    cerr << "error " << (int)coord_to_feature[flip->pos].features[i].feature << " " << search->eval_features[coord_to_feature[flip->pos].features[i].feature] << " " << coord_to_feature[flip->pos].features[i].x << " " << (int)flip->pos << endl;
                 search->eval_features[coord_to_feature[flip->pos].features[i].feature] -= 2 * coord_to_feature[flip->pos].features[i].x;
             }
             uint64_t f = flip->flip;
             for (uint_fast8_t cell = first_bit(&f); f; cell = next_bit(&f)){
                 for (i = 0; i < coord_to_feature[cell].n_features; ++i){
                     //if (search->eval_features[coord_to_feature[cell].features[i].feature] / coord_to_feature[cell].features[i].x % 3 != 1)
-                    //    cerr << "error " << search->eval_features[coord_to_feature[cell].features[i].feature] << " " << coord_to_feature[cell].features[i].x << " " << cell << endl;
+                    //    cerr << "error " << (int)coord_to_feature[cell].features[i].feature << " " << search->eval_features[coord_to_feature[cell].features[i].feature] << " " << coord_to_feature[cell].features[i].x << " " << (int)cell << endl;
                     search->eval_features[coord_to_feature[cell].features[i].feature] -= coord_to_feature[cell].features[i].x;
                 }
             }
