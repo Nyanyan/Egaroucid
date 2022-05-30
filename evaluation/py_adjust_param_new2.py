@@ -12,14 +12,14 @@ else:
         hour = '0'
         minute = '20'
         second = '0'
-        beta = '0.005'
+        beta = '0.0035'
     else:
         hour = '0'
         minute = '20'
         second = '0'
-        beta = '0.005'
+        beta = '0.0035'
 if int(phase) >= 10:
-    additional_params = ' data2_0000004.dat data2_0000006.dat data2_0000007.dat data2_0000008.dat data2_0000009.dat data2_0000010.dat'
+    additional_params = ' data2_0000004.dat data2_0000006.dat data2_0000007.dat data2_0000008.dat data2_0000009.dat data2_0000010.dat data2_0000011.dat'
 else:
     additional_params = ' data2_0000001.dat data2_0000002.dat data2_0000003.dat'
 #additional_params = ' big_data2_new_3.dat big_data2_new_14.dat'

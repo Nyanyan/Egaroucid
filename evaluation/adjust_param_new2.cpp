@@ -46,7 +46,7 @@ int sa_phase, sa_player;
 #define step 256
 #define sc_w (step * HW2)
 
-#define n_data 2000000
+#define n_data 10000000
 
 #define n_raw_params 70
 
@@ -57,20 +57,44 @@ unsigned long long second = 0;
 
 double alpha[n_eval][max_evaluate_idx];
 
-const int pattern_sizes[n_eval] = {
+constexpr int pattern_sizes[n_eval] = {
     8, 8, 8, 5, 6, 7, 8, 10, 10, 9, 10, 
     0, 0, 0, 0, 
     8, 8, 8, 8, 
     -1
 };
-const int eval_sizes[n_eval] = {
+constexpr int eval_sizes[n_eval] = {
     p38, p38, p38, p35, p36, p37, p38, p310, p310, p39, p310, 
     max_surround * max_surround, max_canput * max_canput, max_stability * max_stability, max_stone_num * max_stone_num, 
     p48, p48, p48, p48, p48, 
     p34 * p44
 };
+constexpr int pattern_nums[n_raw_params] = {
+    0, 0, 0, 0,
+    1, 1, 1, 1,
+    2, 2, 2, 2,
+    3, 3, 3, 3,
+    4, 4, 4, 4,
+    5, 5, 5, 5,
+    6, 6,
+    7, 7, 7, 7,
+    8, 8, 8, 8,
+    9, 9, 9, 9,
+    10, 10, 10, 10,
+
+    11, 12, 13, 14, 
+
+    15, 15, 15, 15, 
+    16, 16, 16, 16, 
+    17, 17, 17, 17, 
+    18, 18, 18, 18, 
+    19, 19, 19, 19,
+
+    20, 20, 20, 20
+};
 double eval_arr[n_eval][max_evaluate_idx];
-int test_data[n_data][n_raw_params];
+//double **eval_arr;
+vector<vector<int>> test_data;
 double test_labels[n_data];
 int nums;
 double scores;
@@ -128,29 +152,6 @@ void input_test_data(int argc, char *argv[]){
     int phase, player, score;
     int t = 0, u = 0;
     nums = 0;
-    const int pattern_nums[n_raw_params] = {
-        0, 0, 0, 0,
-        1, 1, 1, 1,
-        2, 2, 2, 2,
-        3, 3, 3, 3,
-        4, 4, 4, 4,
-        5, 5, 5, 5,
-        6, 6,
-        7, 7, 7, 7,
-        8, 8, 8, 8,
-        9, 9, 9, 9,
-        10, 10, 10, 10,
-
-        11, 12, 13, 14, 
-
-        15, 15, 15, 15, 
-        16, 16, 16, 16, 
-        17, 17, 17, 17, 
-        18, 18, 18, 18, 
-        19, 19, 19, 19,
-
-        20, 20, 20, 20
-    };
     for (j = 0; j < n_eval; ++j){
         used_idxes[j].clear();
         for (k = 0; k < max_evaluate_idx; ++k)
@@ -167,6 +168,7 @@ void input_test_data(int argc, char *argv[]){
         n_data_score[i] = 0;
     int sur, canput, stab, num;
     FILE* fp;
+    int file_idxes[n_raw_params];
     for (int file_idx = 7; file_idx < argc; ++file_idx){
         cerr << argv[file_idx] << endl;
         if (fopen_s(&fp, argv[file_idx], "rb") != 0) {
@@ -181,9 +183,13 @@ void input_test_data(int argc, char *argv[]){
                 break;
             phase = (phase - 4) / phase_n_stones;
             fread(&player, 4, 1, fp);
-            fread(test_data[nums], 4, n_raw_params, fp);
+            fread(file_idxes, 4, n_raw_params, fp);
             fread(&score, 4, 1, fp);
             if (phase == sa_phase){
+                vector<int> file_idxes_vector;
+                for (int i = 0; i < n_raw_params; ++i)
+                    file_idxes_vector.emplace_back(file_idxes[i]);
+                test_data.emplace_back(file_idxes_vector);
                 ++u;
                 for (i = 0; i < n_raw_params; ++i)
                     used_idxes[pattern_nums[i]].emplace(test_data[nums][i]);
@@ -262,29 +268,6 @@ inline double loss(double x, int siz){
 }
 
 inline double calc_score(int phase, int i){
-    constexpr int pattern_nums[n_raw_params] = {
-        0, 0, 0, 0,
-        1, 1, 1, 1,
-        2, 2, 2, 2,
-        3, 3, 3, 3,
-        4, 4, 4, 4,
-        5, 5, 5, 5,
-        6, 6,
-        7, 7, 7, 7,
-        8, 8, 8, 8,
-        9, 9, 9, 9,
-        10, 10, 10, 10,
-
-        11, 12, 13, 14, 
-
-        15, 15, 15, 15, 
-        16, 16, 16, 16, 
-        17, 17, 17, 17, 
-        18, 18, 18, 18, 
-        19, 19, 19, 19,
-
-        20, 20, 20, 20
-    };
     int res = 0;
     for (int j = 0; j < n_raw_params; ++j)
         res += eval_arr[pattern_nums[j]][test_data[i][j]];
@@ -441,6 +424,10 @@ void init(){
 }
 
 int main(int argc, char *argv[]){
+    //eval_arr = new double*[n_eval];
+    //for (int i = 0; i < n_eval; ++i)
+    //    eval_arr[i] = new double[max_evaluate_idx];
+
     sa_phase = atoi(argv[1]);
     hour = atoi(argv[2]);
     minute = atoi(argv[3]);
