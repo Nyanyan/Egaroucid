@@ -12,10 +12,10 @@ else:
         hour = '0'
         minute = '20'
         second = '0'
-        beta = '0.0025'
+        beta = '0.005'
     else:
         hour = '0'
-        minute = '20'
+        minute = '5'
         second = '0'
         beta = '0.0035'
 if int(phase) >= 10:

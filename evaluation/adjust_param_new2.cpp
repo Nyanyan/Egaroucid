@@ -343,12 +343,12 @@ inline int calc_rev_idx(int pattern_idx, int pattern_size, int idx){
         }
     } else if (pattern_idx == 21){ // corner + 2 edge
         int stone_idx = idx / 64;
-        res += p35 * calc_pop(stone_idx, 5, 6);
-        res += p34 * calc_pop(stone_idx, 4, 6);
-        res += p33 * calc_pop(stone_idx, 2, 6);
-        res += p32 * calc_pop(stone_idx, 3, 6);
-        res += p31 * calc_pop(stone_idx, 1, 6);
-        res += calc_pop(stone_idx, 0, 6);
+        res += p35 * calc_pop(stone_idx, 0, 6);
+        res += p34 * calc_pop(stone_idx, 1, 6);
+        res += p33 * calc_pop(stone_idx, 3, 6);
+        res += p32 * calc_pop(stone_idx, 2, 6);
+        res += p31 * calc_pop(stone_idx, 4, 6);
+        res +=       calc_pop(stone_idx, 5, 6);
         res *= 64;
         int line_idx0 = idx & 0b111;
         int line_idx1 = (idx >> 3) & 0b111;
