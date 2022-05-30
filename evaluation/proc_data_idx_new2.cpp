@@ -229,6 +229,13 @@ inline int pick_pattern_mobility(uint64_t b, uint64_t w, const int p0, const int
     return res;
 }
 
+inline int pick_joined_pattern(Board *b, uint64_t mask){
+    int res = (int)((~(b->player | b->opponent) & mask) > 0) << 2;
+    res |= (int)((b->player & mask) > 0) << 1;
+    res |= (int)((b->opponent & mask) > 0);
+    return res;
+}
+
 
 inline void calc_idx(int phase_idx, Board *b, int idxes[]){
     uint_fast8_t b_arr[HW2];
@@ -354,6 +361,16 @@ inline void calc_idx(int phase_idx, Board *b, int idxes[]){
     idxes[67] = pick_pattern(phase_idx, -1, b_arr2, 16, 24, 32, 40) * 256 + pick_pattern_mobility(player_mobility, opponent_mobility, 0, 8, 48, 56);
     idxes[68] = pick_pattern(phase_idx, -1, b_arr2, 2, 3, 4, 5) * 256 + pick_pattern_mobility(player_mobility, opponent_mobility, 0, 1, 6, 7);
     idxes[69] = pick_pattern(phase_idx, -1, b_arr2, 23, 31, 39, 47) * 256 + pick_pattern_mobility(player_mobility, opponent_mobility, 7, 15, 55, 63);
+    // corner + 2 edge
+    idxes[70] = pick_pattern(phase_idx, -1, b_arr2, 0, 48, 56, 49, 57, 63) * 64 + pick_joined_pattern(b, 0b00000000'10000000'10000000'10000000'10000000'10000000'00000000'00000000ULL) * 8 + pick_joined_pattern(b, 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00111110ULL);
+    idxes[71] = pick_pattern(phase_idx, -1, b_arr2, 56, 62, 63, 54, 55, 7) * 64 + pick_joined_pattern(b, 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'01111100ULL) * 8 + pick_joined_pattern(b, 0b00000000'00000001'00000001'00000001'00000001'00000001'00000000'00000000ULL);
+    idxes[72] = pick_pattern(phase_idx, -1, b_arr2, 63, 15, 7, 14, 6, 0) * 64 + pick_joined_pattern(b, 0b00000000'00000000'00000001'00000001'00000001'00000001'00000001'00000000ULL) * 8 + pick_joined_pattern(b, 0b01111100'00000000'00000000'00000000'00000000'00000000'00000000'00000000ULL);
+    idxes[73] = pick_pattern(phase_idx, -1, b_arr2, 7, 1, 0, 9, 8, 56) * 64 + pick_joined_pattern(b, 0b00111110'00000000'00000000'00000000'00000000'00000000'00000000'00000000ULL) * 8 + pick_joined_pattern(b, 0b00000000'00000000'10000000'10000000'10000000'10000000'10000000'00000000ULL);
+    // corner + 1 edge
+    idxes[74] = pick_pattern(phase_idx, -1, b_arr2, 56, 57, 49, 50, 53, 54, 62, 63) * 8 + pick_joined_pattern(b, 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00111100ULL);
+    idxes[75] = pick_pattern(phase_idx, -1, b_arr2, 63, 55, 54, 46, 22, 14, 15, 7) * 8 + pick_joined_pattern(b, 0b00000000'00000000'00000001'00000001'00000001'00000001'00000000'00000000ULL);
+    idxes[76] = pick_pattern(phase_idx, -1, b_arr2, 7, 6, 14, 13, 10, 9, 1, 0) * 8 + pick_joined_pattern(b, 0b00111100'00000000'00000000'00000000'00000000'00000000'00000000'00000000ULL);
+    idxes[77] = pick_pattern(phase_idx, -1, b_arr2, 0, 8, 9, 17, 41, 49, 48, 56) * 8 + pick_joined_pattern(b, 0b00000000'00000000'10000000'10000000'10000000'10000000'00000000'00000000ULL);
 }
 
 inline void convert_idx(string str, ofstream *fout){
@@ -386,12 +403,12 @@ inline void convert_idx(string str, ofstream *fout){
     if (ai_player == 1)
         score = -score;
     //b.print();
-    int idxes[70];
+    int idxes[78];
     calc_idx(0, &b, idxes);
     int n_stones = pop_count_ull(b.player | b.opponent);
     fout->write((char*)&n_stones, 4);
     fout->write((char*)&ai_player, 4);
-    for (i = 0; i < 70; ++i)
+    for (i = 0; i < 78; ++i)
         fout->write((char*)&idxes[i], 4);
     fout->write((char*)&score, 4);
 }

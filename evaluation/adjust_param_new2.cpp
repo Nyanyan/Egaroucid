@@ -13,7 +13,7 @@ using namespace std;
 #define n_phases 30
 #define phase_n_stones 2
 #define n_patterns 11
-#define n_eval 21
+#define n_eval 23
 #define max_evaluate_idx 65536
 
 #define max_surround 100
@@ -48,7 +48,7 @@ int sa_phase, sa_player;
 
 #define n_data 10000000
 
-#define n_raw_params 70
+#define n_raw_params 78
 
 double beta = 0.001;
 unsigned long long hour = 0;
@@ -61,13 +61,15 @@ constexpr int pattern_sizes[n_eval] = {
     8, 8, 8, 5, 6, 7, 8, 10, 10, 9, 10, 
     0, 0, 0, 0, 
     8, 8, 8, 8, 
-    -1
+    -1,
+    -1, -1
 };
 constexpr int eval_sizes[n_eval] = {
     p38, p38, p38, p35, p36, p37, p38, p310, p310, p39, p310, 
     max_surround * max_surround, max_canput * max_canput, max_stability * max_stability, max_stone_num * max_stone_num, 
     p48, p48, p48, p48, p48, 
-    p34 * p44
+    p34 * p44,
+    46656, 52488
 };
 constexpr int pattern_nums[n_raw_params] = {
     0, 0, 0, 0,
@@ -90,7 +92,10 @@ constexpr int pattern_nums[n_raw_params] = {
     18, 18, 18, 18, 
     19, 19, 19, 19,
 
-    20, 20, 20, 20
+    20, 20, 20, 20,
+
+    21, 21, 21, 21,
+    22, 22, 22, 22
 };
 double eval_arr[n_eval][max_evaluate_idx];
 //double **eval_arr;
@@ -336,6 +341,24 @@ inline int calc_rev_idx(int pattern_idx, int pattern_size, int idx){
             res |= (1 & (mobility_idx >> i)) << (3 - i);
             res |= (1 & (mobility_idx >> (4 + i))) << (7 - i);
         }
+    } else if (pattern_idx == 21){ // corner + 2 edge
+        int stone_idx = idx / 64;
+        res += p35 * calc_pop(stone_idx, 5, 6);
+        res += p34 * calc_pop(stone_idx, 4, 6);
+        res += p33 * calc_pop(stone_idx, 2, 6);
+        res += p32 * calc_pop(stone_idx, 3, 6);
+        res += p31 * calc_pop(stone_idx, 1, 6);
+        res += calc_pop(stone_idx, 0, 6);
+        res *= 64;
+        int line_idx0 = idx & 0b111;
+        int line_idx1 = (idx >> 3) & 0b111;
+        res += (line_idx0 << 3) + line_idx1;
+    } else if (pattern_idx == 22){ // corner + 1 edge
+        int stone_idx = idx / 8;
+        for (int i = 0; i < 8; ++i)
+            res += pow3[i] * calc_pop(stone_idx, i, 8);
+        res *= 8;
+        res += idx % 8;
     }
     return res;
 }
