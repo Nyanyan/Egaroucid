@@ -666,7 +666,7 @@ constexpr uint8_t d9_mask[HW2] = {
     0b10000000, 0b11000000, 0b11100000, 0b11110000, 0b11111000, 0b11111100, 0b11111110, 0b11111111
 };
 
-inline uint8_t join_h_line(uint64_t x, int t){
+inline uint_fast8_t join_h_line(uint64_t x, int t){
     return (x >> (HW * t)) & 0b11111111U;
 }
 
@@ -678,11 +678,11 @@ inline void join_h_line_double(uint64_t player, uint64_t opponent, int_fast8_t t
     *p = _mm_cvtsi128_si64(_mm_unpackhi_epi64(po, po));
 }
 
-inline uint64_t split_h_line(uint8_t x, int t){
+inline uint64_t split_h_line(uint_fast8_t x, int t){
     return (uint64_t)x << (HW * t);
 }
 
-inline uint8_t join_v_line(uint64_t x, int t){
+inline uint_fast8_t join_v_line(uint64_t x, int t){
     return _pext_u64(x >> t, 0x0101010101010101ULL);
 }
 
@@ -696,7 +696,7 @@ inline void join_v_line_double(uint64_t player, uint64_t opponent, int_fast8_t t
     *p = _mm_cvtsi128_si64(_mm_unpackhi_epi64(po, po));
 }
 
-inline uint64_t split_v_line(uint8_t x, int t){
+inline uint64_t split_v_line(uint_fast8_t x, int t){
     return _pdep_u64((uint64_t)x, 0x0101010101010101ULL) << t;
 }
 
