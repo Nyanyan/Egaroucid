@@ -89,13 +89,13 @@ constexpr int mpcd[61] = {
 };
 */
 
-#define probcut_a 0.012906675840010418
-#define probcut_b -0.03682833420772078
-#define probcut_c 0.042146968485682584
-#define probcut_d 1.0617010758495278
-#define probcut_e 1.9250757844841904
-#define probcut_f 1.523171160172907
-#define probcut_g 6.0343171993652645
+#define probcut_a -0.0027183880227839127
+#define probcut_b -0.010159330980892623
+#define probcut_c 0.04069811753963199
+#define probcut_d -3.126668257717306
+#define probcut_e 8.513417624696324
+#define probcut_f -9.55097169285451
+#define probcut_g 8.03198419537373
 
 #define probcut_end_a 0.15811777028350227
 #define probcut_end_b 0.9393034706176613
