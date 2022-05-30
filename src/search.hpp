@@ -11,12 +11,13 @@
 using namespace std;
 
 #ifndef N_SYMMETRY_PATTERNS
-    #define N_SYMMETRY_PATTERNS 42
+    #define N_SYMMETRY_PATTERNS 62
 #endif
+/*
 #ifndef N_ADDITIONAL_SYMMETRY_PATTERNS
     #define N_ADDITIONAL_SYMMETRY_PATTERNS 12
 #endif
-
+*/
 #define MID_FAST_DEPTH 1
 #define END_FAST_DEPTH 7
 #define MID_TO_END_DEPTH 13
@@ -77,7 +78,8 @@ struct Search{
     bool use_mpc;
     double mpct;
     uint64_t n_nodes;
-    int eval_features[N_SYMMETRY_PATTERNS + N_ADDITIONAL_SYMMETRY_PATTERNS];
+    //int eval_features[N_SYMMETRY_PATTERNS + N_ADDITIONAL_SYMMETRY_PATTERNS];
+    int eval_features[N_SYMMETRY_PATTERNS];
     uint_fast8_t eval_feature_reversed;
 };
 
