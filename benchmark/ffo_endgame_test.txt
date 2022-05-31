@@ -6969,6 +6969,22 @@ same
 1536719608 nodes
 44571019.43268171 nps
 
+2022/06/01 update child tt with atomic
+#40 depth 20 value 38 policy a2 nodes 20949851 time 314 nps 66719270
+#41 depth 22 value 0 policy h4 nodes 35725631 time 613 nps 58279985
+#42 depth 22 value 6 policy g2 nodes 50161197 time 731 nps 68619968
+#43 depth 23 value -12 policy c7 nodes 99469837 time 1686 nps 58997530
+#44 depth 23 value -14 policy d2 nodes 13888096 time 495 nps 28056759
+#45 depth 24 value 6 policy b2 nodes 518706555 time 8044 nps 64483659
+#46 depth 24 value -8 policy b3 nodes 100518057 time 2610 nps 38512665
+#47 depth 25 value 4 policy g2 nodes 25272929 time 920 nps 27470575
+#48 depth 25 value 28 policy f6 nodes 128854649 time 4751 nps 27121584
+#49 depth 26 value 16 policy e1 nodes 516174746 time 13754 nps 37529063
+33.918 sec
+35.72136163711548 sec total
+1509721548 nodes
+44510924.818680346 nps
+
 
 
 

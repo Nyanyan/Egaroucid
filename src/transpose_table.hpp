@@ -20,47 +20,53 @@ using namespace std;
 
 class Node_child_transpose_table{
     private:
-        uint64_t player;
-        uint64_t opponent;
-        int best_move;
+        atomic<uint64_t> player;
+        atomic<uint64_t> opponent;
+        atomic<int> best_move;
 
     public:
 
         inline void init(){
-            player = 0ULL;
-            opponent = 0ULL;
-            best_move = 0ULL;
+            player.store(0ULL);
+            opponent.store(0ULL);
+            best_move.store(0ULL);
             //free(this);
         }
 
+        /*
         inline bool register_value(const Board *board, const int policy){
-            if (board->player == player && board->opponent == opponent){
+            if (board->player == player.load() && board->opponent == opponent.load()){
                 best_move = policy;
                 return true;
             }
             return false;
         }
+        */
 
         inline void register_value_with_board(const Board *board, const int policy){
-            player = board->player;
-            opponent = board->opponent;
-            best_move = policy;
+            player.store(board->player);
+            opponent.store(board->opponent);
+            best_move.store(policy);
         }
 
         inline void register_value_with_board(Node_child_transpose_table *from){
-            player = from->player;
-            opponent = from->opponent;
-            best_move = from->best_move;
+            player.store(from->player);
+            opponent.store(from->opponent);
+            best_move.store(from->best_move);
         }
 
         inline int get(const Board *board){
-            if (board->player == player && board->opponent == opponent)
-                return best_move;
-            return TRANSPOSE_TABLE_UNDEFINED;
+            int res = TRANSPOSE_TABLE_UNDEFINED;
+            if (board->player == player.load() && board->opponent == opponent.load()){
+                res = best_move;
+                if (board->player != player.load() || board->opponent != opponent.load())
+                    res = TRANSPOSE_TABLE_UNDEFINED;
+            }
+            return res;
         }
 
         inline int n_stones(){
-            return pop_count_ull(player | opponent);
+            return pop_count_ull(player.load() | opponent.load());
         }
 };
 
@@ -71,11 +77,12 @@ class Node_shared_mutex_child_transpose_table{
         Node_child_transpose_table node;
     
     public:
-
+        /*
         inline bool register_value(const Board *board, const int policy){
             //lock_guard<shared_mutex> lock(mtx);
             return node.register_value(board, policy);
         }
+        */
 
         inline void register_value_with_board(const Board *board, const int policy){
             //lock_guard<shared_mutex> lock(mtx);
