@@ -6937,6 +6937,24 @@ same
 48456308852 nodes
 154086852.49654981 nps
 
+2022/05/31 laptop 8 threads
+#40 depth 20 value 38 policy a2 nodes 21795517 time 394 nps 55318571
+#41 depth 22 value 0 policy h4 nodes 37395006 time 707 nps 52892512
+#42 depth 22 value 6 policy g2 nodes 51737145 time 1059 nps 48854716
+#43 depth 23 value -12 policy c7 nodes 98119213 time 2110 nps 46501996
+#44 depth 23 value -14 policy d2 nodes 13621082 time 662 nps 20575652
+#45 depth 24 value 6 policy b2 nodes 543226656 time 11034 nps 49232069
+#46 depth 24 value -8 policy b3 nodes 98969166 time 3025 nps 32717079
+#47 depth 25 value 4 policy g2 nodes 24980999 time 1012 nps 24684781
+#48 depth 25 value 28 policy f6 nodes 133438250 time 6040 nps 22092425
+#49 depth 26 value 16 policy e1 nodes 509567597 time 17054 nps 29879652
+43.097 sec
+44.9249849319458 sec total
+1532850631 nodes
+35567455.53054737 nps
+
+
+
 
 
 
