@@ -47,7 +47,16 @@ for x in range(10):
     z_sigma.append(10.0)
 
 probcut_end_params_before = [
-    1.0 for _ in range(10)
+    0.27811777028350227,
+    0.9393034706176613,
+    -0.0003466476344665104,
+    0.026804233485840375,
+    -0.6919837072602527,
+    12.88628573583576,
+    0.0,
+    0.0,
+    0.0,
+    0.0
 ]
 
 def f(xy, probcut_end_a, probcut_end_b, probcut_end_c, probcut_end_d, probcut_end_e, probcut_end_f, probcut_end_g, probcut_end_h, probcut_end_i, probcut_end_j):
@@ -77,12 +86,12 @@ def plot_fit_result_onephase(params):
     ax.set_zlabel('sigma')
     plt.show()
 
-popt, pcov = curve_fit(f, (x_n_stones, y_depth), z_sigma, np.array(probcut_end_params_before))
-#popt = probcut_end_params_before
+#popt, pcov = curve_fit(f, (x_n_stones, y_depth), z_sigma, np.array(probcut_end_params_before))
+popt = probcut_end_params_before
 print([float(elem) for elem in popt])
 for i in range(len(popt)):
     print('#define probcut_end_' + chr(ord('a') + i), popt[i])
-perr = np.sqrt(np.diag(pcov))
+#perr = np.sqrt(np.diag(pcov))
 #plot_fit_result(popt)
 plot_fit_result_onephase(popt)
 exit()

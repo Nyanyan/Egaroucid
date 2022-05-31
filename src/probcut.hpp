@@ -97,12 +97,12 @@ constexpr int mpcd[61] = {
 #define probcut_f -9.55097169285451
 #define probcut_g 8.03198419537373
 
-#define probcut_end_a 0.15811777028350227
+#define probcut_end_a 0.27811777028350226
 #define probcut_end_b 0.9393034706176613
 #define probcut_end_c -0.0003466476344665104
 #define probcut_end_d 0.026804233485840375
 #define probcut_end_e -0.6919837072602527
-#define probcut_end_f 9.38628573583576
+#define probcut_end_f 12.88628573583576
 
 inline double probcut_sigma(int n_stones, int depth1, int depth2){
     double w = n_stones;
