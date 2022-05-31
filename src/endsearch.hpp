@@ -473,6 +473,180 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped){
     return v;
 }
 
+/* with tt
+int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped){
+    if (!global_searching)
+        return SCORE_UNDEFINED;
+    if (search->board.n == 60){
+        //uint_fast8_t cells[4];
+        //pick_vacant(search, cells);
+        //return last4(search, alpha, beta, cells[0], cells[1], cells[2], cells[3], skipped);
+        uint64_t empties = ~(search->board.player | search->board.opponent);
+        uint_fast8_t p0, p1, p2, p3;
+        p0 = first_bit(&empties);
+        p1 = next_bit(&empties);
+        p2 = next_bit(&empties);
+        p3 = next_bit(&empties);
+        return last4(search, alpha, beta, p0, p1, p2, p3, skipped);
+    }
+    ++search->n_nodes;
+    uint32_t hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
+    #if USE_END_TC
+        int l, u;
+        if (search->board.n <= HW2 - USE_PARENT_TT_DEPTH_THRESHOLD){
+            parent_transpose_table.get(&search->board, hash_code, &l, &u);
+            if (u == l)
+                return u;
+            if (beta <= l)
+                return l;
+            if (u <= alpha)
+                return u;
+            alpha = max(alpha, l);
+            beta = min(beta, u);
+        }
+    #endif
+    int first_alpha = alpha;
+    #if USE_END_SC
+        int stab_res = stability_cut(search, &alpha, &beta);
+        if (stab_res != SCORE_UNDEFINED){
+            register_tt(search, hash_code, first_alpha, stab_res, TRANSPOSE_TABLE_UNDEFINED, l, u, alpha, beta);
+            return stab_res;
+        }
+    #endif
+    uint64_t legal = search->board.get_legal();
+    int g, v = -INF;
+    if (legal == 0ULL){
+        if (skipped)
+            return end_evaluate(&search->board);
+        search->board.pass();
+            v = -nega_alpha_end_fast(search, -beta, -alpha, true);
+        search->board.pass();
+        return v;
+    }
+    Flip flip;
+    int best_move = child_transpose_table.get(&search->board, hash_code);
+    if (best_move != TRANSPOSE_TABLE_UNDEFINED){
+        if (1 & (legal >> best_move)){
+            calc_flip(&flip, &search->board, best_move);
+            search->board.move(&flip);
+                g = -nega_alpha_end_fast(search, -beta, -alpha, false);
+            search->board.undo(&flip);
+            alpha = max(alpha, g);
+            v = g;
+            legal ^= 1ULL << best_move;
+        } else
+            best_move = TRANSPOSE_TABLE_UNDEFINED;
+    }
+    #if USE_END_PO
+        if (0 < search->board.parity && search->board.parity < 15){
+            uint64_t legal_mask = 0ULL;
+            if (search->board.parity & 1)
+                legal_mask |= 0x000000000F0F0F0FULL;
+            if (search->board.parity & 2)
+                legal_mask |= 0x00000000F0F0F0F0ULL;
+            if (search->board.parity & 4)
+                legal_mask |= 0x0F0F0F0F00000000ULL;
+            if (search->board.parity & 8)
+                legal_mask |= 0xF0F0F0F000000000ULL;
+            uint64_t legal_copy;
+            uint_fast8_t cell;
+            int i;
+            for (i = 0; i < N_CELL_WEIGHT_MASK; ++i){
+                legal_copy = legal & legal_mask & cell_weight_mask[i];
+                if (legal_copy){
+                    for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
+                        calc_flip(&flip, &search->board, cell);
+                        search->board.move(&flip);
+                            g = -nega_alpha_end_fast(search, -beta, -alpha, false);
+                        search->board.undo(&flip);
+                        alpha = max(alpha, g);
+                        if (v < g){
+                            v = g;
+                            best_move = cell;
+                            if (beta <= alpha){
+                                register_tt(search, hash_code, first_alpha, v, best_move, l, u, alpha, beta);
+                                return alpha;
+                            }
+                        }
+                    }
+                }
+            }
+            legal_mask = ~legal_mask;
+            for (i = 0; i < N_CELL_WEIGHT_MASK; ++i){
+                legal_copy = legal & legal_mask & cell_weight_mask[i];
+                if (legal_copy){
+                    for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
+                        calc_flip(&flip, &search->board, cell);
+                        search->board.move(&flip);
+                            g = -nega_alpha_end_fast(search, -beta, -alpha, false);
+                        search->board.undo(&flip);
+                        alpha = max(alpha, g);
+                        if (v < g){
+                            v = g;
+                            best_move = cell;
+                            if (beta <= alpha){
+                                register_tt(search, hash_code, first_alpha, v, best_move, l, u, alpha, beta);
+                                return alpha;
+                            }
+                        }
+                    }
+                }
+            }
+        } else{
+            uint64_t legal_copy;
+            uint_fast8_t cell;
+            int i;
+            for (i = 0; i < N_CELL_WEIGHT_MASK; ++i){
+                legal_copy = legal & cell_weight_mask[i];
+                if (legal_copy){
+                    for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
+                        calc_flip(&flip, &search->board, cell);
+                        search->board.move(&flip);
+                            g = -nega_alpha_end_fast(search, -beta, -alpha, false);
+                        search->board.undo(&flip);
+                        alpha = max(alpha, g);
+                        if (v < g){
+                            v = g;
+                            best_move = cell;
+                            if (beta <= alpha){
+                                register_tt(search, hash_code, first_alpha, v, best_move, l, u, alpha, beta);
+                                return alpha;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    #else
+        uint64_t legal_copy;
+        uint_fast8_t cell;
+        int i;
+        for (i = 0; i < N_CELL_WEIGHT_MASK; ++i){
+            legal_copy = legal & cell_weight_mask[i];
+            if (legal_copy){
+                for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
+                    calc_flip(&flip, &search->board, cell);
+                    search->board.move(&flip);
+                        g = -nega_alpha_end_fast(search, -beta, -alpha, false);
+                    search->board.undo(&flip);
+                    alpha = max(alpha, g);
+                    if (v < g){
+                        v = g;
+                        best_move = cell;
+                        if (beta <= alpha){
+                            register_tt(search, hash_code, first_alpha, v, best_move, l, u, alpha, beta);
+                            return alpha;
+                        }
+                    }
+                }
+            }
+        }
+    #endif
+    register_tt(search, hash_code, first_alpha, v, best_move, l, u, alpha, beta);
+    return v;
+}
+*/
+
 /*
 int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped){
     if (!global_searching)

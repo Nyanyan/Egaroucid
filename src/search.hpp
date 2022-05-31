@@ -119,7 +119,7 @@ inline int stability_cut(Search *search, Flip *flip, int *alpha, int *beta){
 }
 
 inline void register_tt(Search *search, uint32_t hash_code, int first_alpha, int v, int best_move, int l, int u, int alpha, int beta){
-    if (first_alpha < v)
+    if (first_alpha < v && best_move != TRANSPOSE_TABLE_UNDEFINED)
         child_transpose_table.reg(&search->board, hash_code, best_move);
     #if USE_END_TC
         if (search->board.n <= HW2 - USE_PARENT_TT_DEPTH_THRESHOLD){
