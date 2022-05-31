@@ -80,7 +80,7 @@ int book_learn_search(Board board, int level, const int book_depth, int alpha, i
                 alpha = g;
                 alpha_updated = true;
             }
-            cerr << "PV value " << g << " alpha " << alpha << endl;
+            cerr << "depth " << board.n_stones - 5 << " PV value " << g << " alpha " << alpha << endl;
             //policies.emplace_back(best_move.policy);
         }
     board.undo(&flip);
@@ -99,7 +99,7 @@ int book_learn_search(Board board, int level, const int book_depth, int alpha, i
                             alpha = g;
                             alpha_updated = true;
                         }
-                        cerr << "   value " << g << " alpha " << alpha << endl;
+                        cerr << "depth " << board.n_stones - 5 << "   value " << g << " alpha " << alpha << endl;
                     }
                 }
             } else if (alpha <= g){
