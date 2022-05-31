@@ -18,7 +18,6 @@
 // transpose table cut
 #define USE_MID_TC true
 #define USE_END_TC true
-#define USE_PARENT_TT_DEPTH_THRESHOLD 13
 
 // parity ordering
 #define USE_END_PO true

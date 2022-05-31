@@ -590,12 +590,15 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
         }
     }
     //if (best_move != child_transpose_table.get(&search->board, hash_code))
+    /*
     if (first_alpha < v)
         child_transpose_table.reg(&search->board, hash_code, best_move);
     #if USE_MID_TC
         if (depth >= USE_PARENT_TT_DEPTH_THRESHOLD)
             parent_transpose_table.reg(&search->board, hash_code, v, v);
     #endif
+    */
+    register_tt(search, hash_code, first_alpha, v, best_move, alpha, beta, alpha, beta);
     //cerr << "best move " << best_move << endl;
     return make_pair(v, best_move);
 }

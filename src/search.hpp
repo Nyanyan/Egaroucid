@@ -22,6 +22,7 @@ using namespace std;
 #define END_FAST_DEPTH 7
 #define MID_TO_END_DEPTH 13
 #define CUDA_YBWC_SPLIT_MAX_DEPTH 10
+#define USE_PARENT_TT_DEPTH_THRESHOLD 7
 
 #define SCORE_UNDEFINED -INF
 
@@ -122,12 +123,12 @@ inline void register_tt(Search *search, uint32_t hash_code, int first_alpha, int
         child_transpose_table.reg(&search->board, hash_code, best_move);
     #if USE_END_TC
         if (search->board.n <= HW2 - USE_PARENT_TT_DEPTH_THRESHOLD){
-            if (beta <= v && l < v)
+            if (first_alpha < v && v < beta)
+                parent_transpose_table.reg(&search->board, hash_code, v, v);
+            else if (beta <= v && l < v)
                 parent_transpose_table.reg(&search->board, hash_code, v, u);
             else if (v <= alpha && v < u)
                 parent_transpose_table.reg(&search->board, hash_code, l, v);
-            else if (alpha < v && v < beta)
-                parent_transpose_table.reg(&search->board, hash_code, v, v);
         }
     #endif
 }

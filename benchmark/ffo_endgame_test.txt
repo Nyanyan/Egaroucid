@@ -7058,6 +7058,24 @@ same
 49722858658 nodes
 45508831.84666272 nps
 
+2022/06/01 fixed endsearch tt bug
+#40 depth 20 value 38 policy a2 nodes 17226581 time 294 nps 58593812
+#41 depth 22 value 0 policy h4 nodes 24073147 time 520 nps 46294513
+#42 depth 22 value 6 policy g2 nodes 38114215 time 664 nps 57400926
+#43 depth 23 value -12 policy c7 nodes 74718902 time 1513 nps 49384601
+#44 depth 23 value -14 policy d2 nodes 13996864 time 590 nps 23723498
+#45 depth 24 value 6 policy b2 nodes 455168733 time 6657 nps 68374452
+#46 depth 24 value -8 policy b3 nodes 90561850 time 2484 nps 36458071
+#47 depth 25 value 4 policy g2 nodes 35138269 time 1202 nps 29233168
+#48 depth 25 value 28 policy f6 nodes 132874527 time 5555 nps 23919806
+#49 depth 26 value 16 policy e1 nodes 249089984 time 7567 nps 32917931
+27.046 sec
+28.91974687576294 sec total
+1130963072 nodes
+41816278.63639725 nps
+
+
+
 
 
 

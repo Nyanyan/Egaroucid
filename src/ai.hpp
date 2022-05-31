@@ -89,7 +89,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
         parent_transpose_table.init();
         search.use_mpc = use_mpc;
         search.mpct = mpct;
-        if (!use_mpc && false){
+        if (!use_mpc){
             alpha = -INF;
             beta = -INF;
             while ((g <= alpha || beta <= g) && global_searching){

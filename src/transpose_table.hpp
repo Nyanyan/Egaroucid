@@ -229,16 +229,6 @@ class Node_parent_transpose_table{
             lower.store(l);
             upper.store(u);
         }
-        /*
-        inline bool register_value(const Board *board, const int l, const int u){
-            if (board->player == player && board->opponent == opponent){
-                lower = l;
-                upper = u;
-                return true;
-            }
-            return false;
-        }
-        */
 
         inline void register_value_with_board(Node_parent_transpose_table *from){
             player.store(from->player);
@@ -274,13 +264,6 @@ class Node_shared_mutex_parent_transpose_table{
             //lock_guard<shared_mutex> lock(mtx);
             node.register_value_with_board(board, l, u);
         }
-        
-        /*
-        inline bool register_value(const Board *board, const int l, const int u){
-            //lock_guard<shared_mutex> lock(mtx);
-            return node.register_value(board, l, u);
-        }
-        */
 
         inline void register_value_with_board(Node_parent_transpose_table *from){
             //lock_guard<shared_mutex> lock(mtx);
@@ -301,6 +284,95 @@ class Node_shared_mutex_parent_transpose_table{
         }
 };
 
+/*
+class Node_parent_transpose_table{
+    private:
+        uint64_t player;
+        uint64_t opponent;
+        int lower;
+        int upper;
+
+    public:
+
+        inline void init(){
+            player = 0ULL;
+            opponent = 0ULL;
+            lower = -INF;
+            upper = INF;
+            //free(this);
+        }
+
+        inline void register_value_with_board(const Board *board, const int l, const int u){
+            player = board->player;
+            opponent = board->opponent;
+            lower = l;
+            upper = u;
+        }
+
+        inline bool register_value(const Board *board, const int l, const int u){
+            if (board->player == player && board->opponent == opponent){
+                lower = l;
+                upper = u;
+                return true;
+            }
+            return false;
+        }
+
+        inline void register_value_with_board(Node_parent_transpose_table *from){
+            player = from->player;
+            opponent = from->opponent;
+            lower = from->lower;
+            upper = from->upper;
+        }
+
+        inline void get(const Board *board, int *l, int *u){
+            if (board->player == player && board->opponent == opponent){
+                *l = lower;
+                *u = upper;
+            }
+        }
+
+        inline int n_stones() const{
+            return pop_count_ull(player | opponent);
+        }
+};
+
+class Node_shared_mutex_parent_transpose_table{
+    private:
+        shared_mutex mtx;
+    public:
+        Node_parent_transpose_table node;
+    
+    public:
+        inline void register_value_with_board(const Board *board, const int l, const int u){
+            lock_guard<shared_mutex> lock(mtx);
+            node.register_value_with_board(board, l, u);
+        }
+
+        inline bool register_value(const Board *board, const int l, const int u){
+            lock_guard<shared_mutex> lock(mtx);
+            return node.register_value(board, l, u);
+        }
+
+        inline void register_value_with_board(Node_parent_transpose_table *from){
+            lock_guard<shared_mutex> lock(mtx);
+            node.register_value_with_board(from);
+        }
+
+        inline void get(const Board *board, int *l, int *u){
+            shared_lock<shared_mutex> lock(mtx);
+            node.get(board, l, u);
+        }
+
+        inline int n_stones() const{
+            return node.n_stones();
+        }
+
+        inline void init(){
+            node.init();
+        }
+};
+*/
 #if USE_MULTI_THREAD
     void init_parent_transpose_table(Node_shared_mutex_parent_transpose_table table[], int s, int e){
         for(int i = s; i < e; ++i){
