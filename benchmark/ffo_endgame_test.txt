@@ -7001,6 +7001,22 @@ same
 1470564067 nodes
 45980991.4014133 nps
 
+2022/06/01 no anti-even move ordering
+#40 depth 20 value 38 policy a2 nodes 21560166 time 356 nps 60562264
+#41 depth 22 value 0 policy h4 nodes 43449190 time 723 nps 60095698
+#42 depth 22 value 6 policy g2 nodes 50681787 time 731 nps 69332129
+#43 depth 23 value -12 policy c7 nodes 100941976 time 1716 nps 58823995
+#44 depth 23 value -14 policy d2 nodes 13631042 time 463 nps 29440695
+#45 depth 24 value 6 policy b2 nodes 535858549 time 6803 nps 78767977
+#46 depth 24 value -8 policy b3 nodes 97755612 time 2515 nps 38869030
+#47 depth 25 value 4 policy g2 nodes 25099357 time 953 nps 26337205
+#48 depth 25 value 28 policy f6 nodes 128939455 time 4897 nps 26330295
+#49 depth 26 value 16 policy e1 nodes 519340596 time 13589 nps 38217719
+32.746 sec
+34.54221200942993 sec total
+1537257730 nodes
+46944901.0566176 nps
+
 
 
 
