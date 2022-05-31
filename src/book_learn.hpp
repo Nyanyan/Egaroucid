@@ -66,7 +66,7 @@ int book_learn_search(Board board, int level, const int book_depth, int alpha, i
         return g;
     }
     Search_result best_move = ai(board, level, true, 0);
-    if (best_move.value > beta + expected_error)
+    if (best_move.value > beta + expected_error * 2)
         return best_move.value;
     //vector<int> policies;
     Flip flip;
