@@ -7,7 +7,6 @@
     #include <future>
 #endif
 #include <shared_mutex>
-#include <atomic>
 
 using namespace std;
 
@@ -201,28 +200,28 @@ class Child_transpose_table{
 
 class Node_parent_transpose_table{
     private:
-        atomic<uint64_t> player;
-        atomic<uint64_t> opponent;
-        atomic<int> lower;
-        atomic<int> upper;
+        uint64_t player;
+        uint64_t opponent;
+        int lower;
+        int upper;
 
     public:
 
         inline void init(){
-            player.store(0ULL);
-            opponent.store(0ULL);
-            lower.store(-INF);
-            upper.store(INF);
+            player = 0ULL;
+            opponent = 0ULL;
+            lower = -INF;
+            upper = INF;
             //free(this);
         }
 
         inline void register_value_with_board(const Board *board, const int l, const int u){
-            player.store(board->player);
-            opponent.store(board->opponent);
-            lower.store(l);
-            upper.store(u);
+            player = board->player;
+            opponent = board->opponent;
+            lower = l;
+            upper = u;
         }
-        /*
+
         inline bool register_value(const Board *board, const int l, const int u){
             if (board->player == player && board->opponent == opponent){
                 lower = l;
@@ -231,57 +230,50 @@ class Node_parent_transpose_table{
             }
             return false;
         }
-        */
 
         inline void register_value_with_board(Node_parent_transpose_table *from){
-            player.store(from->player);
-            opponent.store(from->opponent);
-            lower.store(from->lower);
-            upper.store(from->upper);
+            player = from->player;
+            opponent = from->opponent;
+            lower = from->lower;
+            upper = from->upper;
         }
 
         inline void get(const Board *board, int *l, int *u){
-            if (board->player == player.load() && board->opponent == opponent.load()){
-                *l = lower.load();
-                *u = upper.load();
-                if (board->player != player.load() || board->opponent != opponent.load()){
-                    *l = -INF;
-                    *u = INF;
-                }
+            if (board->player == player && board->opponent == opponent){
+                *l = lower;
+                *u = upper;
             }
         }
 
         inline int n_stones() const{
-            return pop_count_ull(player.load() | opponent.load());
+            return pop_count_ull(player | opponent);
         }
 };
 
 class Node_shared_mutex_parent_transpose_table{
-    //private:
-    //    shared_mutex mtx;
+    private:
+        shared_mutex mtx;
     public:
         Node_parent_transpose_table node;
     
     public:
         inline void register_value_with_board(const Board *board, const int l, const int u){
-            //lock_guard<shared_mutex> lock(mtx);
+            lock_guard<shared_mutex> lock(mtx);
             node.register_value_with_board(board, l, u);
         }
-        
-        /*
+
         inline bool register_value(const Board *board, const int l, const int u){
-            //lock_guard<shared_mutex> lock(mtx);
+            lock_guard<shared_mutex> lock(mtx);
             return node.register_value(board, l, u);
         }
-        */
 
         inline void register_value_with_board(Node_parent_transpose_table *from){
-            //lock_guard<shared_mutex> lock(mtx);
+            lock_guard<shared_mutex> lock(mtx);
             node.register_value_with_board(from);
         }
 
         inline void get(const Board *board, int *l, int *u){
-            //shared_lock<shared_mutex> lock(mtx);
+            shared_lock<shared_mutex> lock(mtx);
             node.get(board, l, u);
         }
 
