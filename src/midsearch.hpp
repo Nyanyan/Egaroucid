@@ -362,6 +362,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
         }
     #endif
     int best_move = child_transpose_table.get(&search->board, hash_code);
+    int use_alpha = alpha;
     if (best_move != TRANSPOSE_TABLE_UNDEFINED){
         if (1 & (legal >> best_move)){
             Flip flip_best;
@@ -371,8 +372,11 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
                 g = -nega_scout(search, -beta, -alpha, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
             search->board.undo(&flip_best);
             eval_undo(search, &flip_best);
-            alpha = max(alpha, g);
             v = g;
+            if (alpha < g){
+                alpha = g;
+                use_alpha = alpha + 1;
+            }
             legal ^= 1ULL << best_move;
         } else
             best_move = TRANSPOSE_TABLE_UNDEFINED;
@@ -475,16 +479,25 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
                     if (v == -INF)
                         g = -nega_scout(search, -beta, -alpha, depth - 1, false, flip.n_legal, is_end_search, searching);
                     else{
-                        g = -nega_alpha_ordering(search, -alpha - 1, -alpha, depth - 1, false, flip.n_legal, is_end_search, searching);
-                        if (alpha < g)
-                            g = -nega_scout(search, -beta, -g, depth - 1, false, flip.n_legal, is_end_search, searching);
+                        if (is_end_search){
+                            g = -nega_alpha_ordering(search, -use_alpha - 1, -use_alpha, depth - 1, false, flip.n_legal, is_end_search, searching);
+                            if (use_alpha < g)
+                                g = -nega_scout(search, -beta, -g, depth - 1, false, flip.n_legal, is_end_search, searching);
+                        } else{
+                            g = -nega_alpha_ordering(search, -alpha - 1, -alpha, depth - 1, false, flip.n_legal, is_end_search, searching);
+                            if (alpha < g)
+                                g = -nega_scout(search, -beta, -g, depth - 1, false, flip.n_legal, is_end_search, searching);
+                        }
                     }
                 search->board.undo(&flip);
                 eval_undo(search, &flip);
-                alpha = max(alpha, g);
                 if (v < g){
                     v = g;
                     best_move = flip.pos;
+                    if (alpha < g){
+                        alpha = g;
+                        use_alpha = alpha + 1;
+                    }
                 }
                 if (beta <= alpha)
                     break;
