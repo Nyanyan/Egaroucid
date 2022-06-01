@@ -22,6 +22,7 @@
 
 #define W_VALUE 10
 #define W_VALUE_SHALLOW 6
+#define W_CACHE_HIT 32
 #define W_MOBILITY 12
 #define W_PLAYER_POTENTIAL_MOBILITY 4
 #define W_OPPONENT_POTENTIAL_MOBILITY 8
@@ -241,40 +242,38 @@ inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int
                 flip->value += -get_weighted_n_moves(flip->n_legal) * W_MOBILITY;
                 flip->value += -get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent)) * W_OPPONENT_POTENTIAL_MOBILITY;
                 flip->value += get_potential_mobility(search->board.player, ~(search->board.player | search->board.opponent)) * W_PLAYER_POTENTIAL_MOBILITY;
-                /*
                 bool value_flag = false;
                 if (search_depth >= USE_PARENT_TT_DEPTH_THRESHOLD){
                     int l, u;
                     parent_transpose_table.get(&search->board, search->board.hash() & TRANSPOSE_TABLE_MASK, &l, &u);
                     if (u <= SCORE_MAX){
                         value_flag = true;
-                        flip->value += (HW2 - u) * W_VALUE;
+                        flip->value += (HW2 - u) * W_VALUE + W_CACHE_HIT;
                     } else if (-SCORE_MAX <= l){
                         value_flag = true;
-                        flip->value += (HW2 - l) * W_VALUE;
+                        flip->value += (HW2 - l) * W_VALUE + W_CACHE_HIT;
                     }
                 }
-                */
-                //if (!value_flag){
-                switch(depth){
-                    case 0:
-                        flip->value += (HW2 - mid_evaluate_diff(search, searching)) * W_VALUE_SHALLOW;
-                        break;
-                    case 1:
-                        flip->value += (HW2 - nega_alpha_eval1(search, alpha, beta, false, searching)) * W_VALUE;
-                        break;
-                    default:
-                        if (depth <= MID_FAST_DEPTH)
-                            flip->value += (HW2 - nega_alpha(search, alpha, beta, depth, false, searching)) * W_VALUE;
-                        else{
-                            bool use_mpc = search->use_mpc;
-                            search->use_mpc = false;
-                                flip->value += (HW2 - nega_alpha_ordering_nomemo(search, alpha, beta, depth, false, flip->n_legal, searching)) * W_VALUE;
-                            search->use_mpc = use_mpc;
-                        }
-                        break;
+                if (!value_flag){
+                    switch(depth){
+                        case 0:
+                            flip->value += (HW2 - mid_evaluate_diff(search, searching)) * W_VALUE_SHALLOW;
+                            break;
+                        case 1:
+                            flip->value += (HW2 - nega_alpha_eval1(search, alpha, beta, false, searching)) * W_VALUE;
+                            break;
+                        default:
+                            if (depth <= MID_FAST_DEPTH)
+                                flip->value += (HW2 - nega_alpha(search, alpha, beta, depth, false, searching)) * W_VALUE;
+                            else{
+                                bool use_mpc = search->use_mpc;
+                                search->use_mpc = false;
+                                    flip->value += (HW2 - nega_alpha_ordering_nomemo(search, alpha, beta, depth, false, flip->n_legal, searching)) * W_VALUE;
+                                search->use_mpc = use_mpc;
+                            }
+                            break;
+                    }
                 }
-                //}
             search->board.undo(flip);
             eval_undo(search, flip);
         }
