@@ -520,6 +520,7 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
     }
     int best_move = child_transpose_table.get(&search->board, hash_code);
     const int canput_all = pop_count_ull(legal);
+    int use_alpha = alpha;
     if (best_move != TRANSPOSE_TABLE_UNDEFINED){
         if (1 & (legal >> best_move)){
             Flip flip_best;
@@ -528,13 +529,16 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
             search->board.move(&flip_best);
                 g = -nega_scout(search, -beta, -alpha, depth - 1, false, LEGAL_UNDEFINED, is_end_search, &searching);
                 if (is_main_search)
-                    cerr << 1 << "/" << canput_all << " " << idx_to_coord(best_move) << " value " << value_to_score_double(g) << endl;
+                    cerr << 1 << "/" << canput_all << " [" << alpha << "," << use_alpha << "," << beta << "] " << idx_to_coord(best_move) << " value " << value_to_score_double(g) << endl;
                 //search->board.print();
                 //cerr << endl;
             search->board.undo(&flip_best);
             eval_undo(search, &flip_best);
-            alpha = max(alpha, g);
             v = g;
+            if (alpha < g){
+                alpha = g;
+                use_alpha = alpha + 1;
+            }
             legal ^= 1ULL << best_move;
         } else
             best_move = TRANSPOSE_TABLE_UNDEFINED;
@@ -565,25 +569,34 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
                 if (v == -INF)
                     g = -nega_scout(search, -beta, -alpha, depth - 1, false, flip.n_legal, is_end_search, &searching);
                 else{
-                    g = -nega_alpha_ordering(search, -alpha - 1, -alpha, depth - 1, false, flip.n_legal, is_end_search, &searching);
-                    if (alpha < g)
-                        g = -nega_scout(search, -beta, -g, depth - 1, false, flip.n_legal, is_end_search, &searching);
+                    if (is_end_search){
+                        g = -nega_alpha_ordering(search, -use_alpha - 1, -use_alpha, depth - 1, false, flip.n_legal, is_end_search, &searching);
+                        if (use_alpha < g)
+                            g = -nega_scout(search, -beta, -g, depth - 1, false, flip.n_legal, is_end_search, &searching);
+                    } else{
+                        g = -nega_alpha_ordering(search, -alpha - 1, -alpha, depth - 1, false, flip.n_legal, is_end_search, &searching);
+                        if (alpha < g)
+                            g = -nega_scout(search, -beta, -g, depth - 1, false, flip.n_legal, is_end_search, &searching);
+                    }
                 }
                 if (is_main_search){
                     if (g <= alpha)
-                        cerr << mobility_idx << "/" << canput_all << " " << idx_to_coord((int)flip.pos) << " value " << value_to_score_double(g) << " or lower" << endl;
+                        cerr << mobility_idx << "/" << canput_all << " [" << alpha << "," << use_alpha << "," << beta << "] " << idx_to_coord((int)flip.pos) << " value " << value_to_score_double(g) << " or lower" << endl;
                     else
-                        cerr << mobility_idx << "/" << canput_all << " " << idx_to_coord((int)flip.pos) << " value " << value_to_score_double(g) << endl;
+                        cerr << mobility_idx << "/" << canput_all << " [" << alpha << "," << use_alpha << "," << beta << "] " << idx_to_coord((int)flip.pos) << " value " << value_to_score_double(g) << endl;
                 }
                 ++mobility_idx;
                 //search->board.print();
                 //cerr << endl;
             search->board.undo(&flip);
             eval_undo(search, &flip);
-            alpha = max(alpha, g);
             if (v < g){
                 v = g;
                 best_move = flip.pos;
+                if (alpha < g){
+                    alpha = g;
+                    use_alpha = alpha + 1;
+                }
             }
             if (beta <= alpha)
                 break;
