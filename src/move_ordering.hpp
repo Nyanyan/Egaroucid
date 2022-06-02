@@ -227,7 +227,7 @@ inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int
     else{
         flip->value = cell_weight[flip->pos];
         if (search->board.n <= MIDGAME_N_STONES)
-            flip->value += -calc_openness(&search->board, flip) * W_OPENNESS;
+            flip->value += -(calc_openness(&search->board, flip) >> 1) * W_OPENNESS;
         if (depth < 0){
             search->board.move(flip);
                 flip->n_legal = search->board.get_legal();
