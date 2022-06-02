@@ -291,7 +291,8 @@ inline void move_evaluate_fast_first(Search *search, Flip *flip){
             flip->value += W_END_PARITY;
         search->board.move(flip);
             //flip->value += calc_stability_edge_player(search->board.opponent, search->board.player) * W_STABILITY;
-            calc_stability(&search->board, &flip->stab1, &flip->stab0);
+            //calc_stability(&search->board, &flip->stab1, &flip->stab0);
+            flip->stab0 = calc_stability_player(search->board.opponent, search->board.player);
             flip->value += flip->stab0 * W_END_STABILITY;
             flip->n_legal = search->board.get_legal();
             flip->value += -pop_count_ull(flip->n_legal) * W_END_MOBILITY;
