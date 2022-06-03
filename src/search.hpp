@@ -52,7 +52,7 @@ from https://github.com/abulmo/edax-reversi/blob/1ae7c9fe5322ac01975f1b3196e788b
 modified by Nyanyan
 */
 constexpr int nws_stability_threshold[61] = {
-    99, 99, 99, 99,  6,  8, 10, 12,
+    99, 99, 99,  4,  6,  8, 10, 12,
     14, 16, 20, 22, 24, 26, 28, 30,
     32, 34, 36, 38, 40, 42, 44, 46,
     48, 48, 50, 50, 52, 52, 54, 54,
@@ -85,6 +85,7 @@ struct Search{
 };
 
 inline void calc_stability(Board *b, int *stab0, int *stab1);
+inline int calc_stability_player(uint64_t player, uint64_t opponent);
 
 inline int stability_cut(Search *search, int *alpha, int *beta){
     if (*alpha >= nws_stability_threshold[HW2 - search->board.n]){
@@ -115,6 +116,18 @@ inline int stability_cut(Search *search, Flip *flip, int *alpha, int *beta){
     //    return n_alpha;
     *alpha = max(*alpha, n_alpha);
     //*beta = min(*beta, n_beta);
+    return SCORE_UNDEFINED;
+}
+
+inline int stability_cut_move(Search *search, Flip *flip, int *alpha, int *beta){
+    if (-(*beta) >= nws_stability_threshold[HW2 - search->board.n]){
+        if (flip->stab0 == STABILITY_UNDEFINED)
+            flip->stab0 = calc_stability_player(search->board.opponent, search->board.player);
+        int n_alpha = 2 * flip->stab0 - HW2;
+        if (*beta <= n_alpha)
+            return n_alpha;
+        *alpha = max(*alpha, n_alpha);
+    }
     return SCORE_UNDEFINED;
 }
 

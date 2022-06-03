@@ -836,8 +836,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
             //eval_move(search, &flip);
             search->board.move(&flip_best);
                 #if USE_END_SC
-                    calc_stability(&search->board, &flip_best.stab1, &flip_best.stab0);
-                    stab_res = stability_cut(search, &flip_best, &alpha, &beta);
+                    stab_res = stability_cut_move(search, &flip_best, &alpha, &beta);
                     if (stab_res != SCORE_UNDEFINED){
                         search->board.undo(&flip_best);
                         register_tt(search, hash_code, first_alpha, stab_res, best_move, l, u, alpha, beta);
@@ -905,9 +904,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
                     //eval_move(search, &flip);
                     search->board.move(&flip);
                         #if USE_END_SC
-                            if (flip.stab0 == STABILITY_UNDEFINED)
-                                calc_stability(&search->board, &flip.stab1, &flip.stab0);
-                            stab_res = stability_cut(search, &flip, &alpha, &beta);
+                            stab_res = stability_cut_move(search, &flip, &alpha, &beta);
                             if (stab_res != SCORE_UNDEFINED){
                                 search->board.undo(&flip);
                                 register_tt(search, hash_code, first_alpha, stab_res, flip.pos, l, u, alpha, beta);
@@ -949,6 +946,14 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
                         for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
                             calc_flip(&flip, &search->board, cell);
                             search->board.move(&flip);
+                                #if USE_END_SC
+                                    stab_res = stability_cut_move(search, &flip, &alpha, &beta);
+                                    if (stab_res != SCORE_UNDEFINED){
+                                        search->board.undo(&flip);
+                                        register_tt(search, hash_code, first_alpha, stab_res, flip.pos, l, u, alpha, beta);
+                                        return stab_res;
+                                    }
+                                #endif
                                 g = -nega_alpha_end(search, -beta, -alpha, false, LEGAL_UNDEFINED, searching);
                             search->board.undo(&flip);
                             alpha = max(alpha, g);
@@ -967,6 +972,14 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
                         for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
                             calc_flip(&flip, &search->board, cell);
                             search->board.move(&flip);
+                                #if USE_END_SC
+                                    stab_res = stability_cut_move(search, &flip, &alpha, &beta);
+                                    if (stab_res != SCORE_UNDEFINED){
+                                        search->board.undo(&flip);
+                                        register_tt(search, hash_code, first_alpha, stab_res, flip.pos, l, u, alpha, beta);
+                                        return stab_res;
+                                    }
+                                #endif
                                 g = -nega_alpha_end(search, -beta, -alpha, false, LEGAL_UNDEFINED, searching);
                             search->board.undo(&flip);
                             alpha = max(alpha, g);
@@ -988,6 +1001,14 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
                         for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
                             calc_flip(&flip, &search->board, cell);
                             search->board.move(&flip);
+                                #if USE_END_SC
+                                    stab_res = stability_cut_move(search, &flip, &alpha, &beta);
+                                    if (stab_res != SCORE_UNDEFINED){
+                                        search->board.undo(&flip);
+                                        register_tt(search, hash_code, first_alpha, stab_res, flip.pos, l, u, alpha, beta);
+                                        return stab_res;
+                                    }
+                                #endif
                                 g = -nega_alpha_end(search, -beta, -alpha, false, LEGAL_UNDEFINED, searching);
                             search->board.undo(&flip);
                             alpha = max(alpha, g);

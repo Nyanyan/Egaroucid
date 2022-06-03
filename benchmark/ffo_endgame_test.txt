@@ -7541,7 +7541,21 @@ same
 37567193768 nodes
 45976474.94052107 nps
 
-
+2022/06/03 use former SC version
+#40 depth 20 value 38 policy a2 nodes 17747165 time 332 nps 53455316
+#41 depth 22 value 0 policy h4 nodes 24656875 time 544 nps 45325137
+#42 depth 22 value 6 policy g2 nodes 38600608 time 698 nps 55301730
+#43 depth 23 value -12 policy c7 nodes 74528950 time 2036 nps 36605574
+#44 depth 23 value -14 policy d2 nodes 13605614 time 894 nps 15218807
+#45 depth 24 value 6 policy b2 nodes 469576734 time 9193 nps 51079814
+#46 depth 24 value -8 policy b3 nodes 91593289 time 2807 nps 32630313
+#47 depth 25 value 4 policy g2 nodes 35843739 time 1210 nps 29622924
+#48 depth 25 value 28 policy f6 nodes 133412281 time 5528 nps 24133914
+#49 depth 26 value 16 policy e1 nodes 224459171 time 7481 nps 30003899
+30.723 sec
+32.7283456325531 sec total
+1124024426 nodes
+36585763.955342904 nps
 
 
 
