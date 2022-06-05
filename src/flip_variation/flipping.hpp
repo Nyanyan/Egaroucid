@@ -7,6 +7,28 @@
 #include "stone.hpp"
 
 
+// 中割り、潜在的中割り
+inline int give_potential_flip_inside(const Board *board, const Flip *flip){
+    uint64_t f = flip->flip;
+    uint64_t place, neighbor;
+    uint64_t empties = ~(board->player | board->opponent | (1ULL << flip->pos));
+    uint_fast8_t openness;
+    int res = 0;
+    for (uint_fast8_t cell = first_bit(&f); f; cell = next_bit(&f)){
+        place = 1ULL << cell;
+        // todo: 表を作って高速化
+        neighbor = (place & 0x7E7E7E7E7E7E7E7EULL << 1) | (place & 0x7E7E7E7E7E7E7E7EULL >> 1);
+        neighbor |= (place & 0x00FFFFFFFFFFFF00ULL << HW) | (place & 0x00FFFFFFFFFFFF00ULL >> HW);
+        neighbor |= (place & 0x007E7E7E7E7E7E00ULL << HW_M1) | (place & 0x007E7E7E7E7E7E00ULL >> HW_M1);
+        neighbor |= (place & 0x007E7E7E7E7E7E00ULL << HW_P1) | (place & 0x007E7E7E7E7E7E00ULL >> HW_P1);
+        openness = pop_count_ull(neighbor | empties);
+        if (openness == 1)
+            ++res;
+    }
+    return res;
+}
+
+
 // 二重返し
 /*
     2方向に同時に返す
