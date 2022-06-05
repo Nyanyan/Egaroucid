@@ -7639,6 +7639,24 @@ same
 38496182984 nodes
 42365090.10792614 nps
 
+2022/06/05 don't do useless stability cut
+#40 depth 20 value 38 policy a2 nodes 17727731 time 330 nps 53720396
+#41 depth 22 value 0 policy h4 nodes 23202266 time 487 nps 47643256
+#42 depth 22 value 6 policy g2 nodes 38758914 time 635 nps 61037659
+#43 depth 23 value -12 policy c7 nodes 76677932 time 1469 nps 52197366
+#44 depth 23 value -14 policy d2 nodes 13593431 time 563 nps 24144637
+#45 depth 24 value 6 policy b2 nodes 480138205 time 6807 nps 70535949
+#46 depth 24 value -8 policy b3 nodes 92046622 time 2729 nps 33729066
+#47 depth 25 value 4 policy g2 nodes 33532167 time 1086 nps 30876765
+#48 depth 25 value 28 policy f6 nodes 137320929 time 5223 nps 26291581
+#49 depth 26 value 16 policy e1 nodes 217620965 time 6892 nps 31575880
+26.221 sec
+28.06753444671631 sec total
+1130619162 nodes
+43118842.22569696 nps
+
+
+
 
 
 

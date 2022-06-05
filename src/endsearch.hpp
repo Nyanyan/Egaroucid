@@ -352,7 +352,7 @@ inline void pick_vacant(Search *search, uint_fast8_t cells[]){
         cells[idx++] = cell;
 }
 
-int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped){
+int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped, bool stab_cut){
     if (!global_searching)
         return SCORE_UNDEFINED;
     if (search->board.n == 60){
@@ -369,9 +369,11 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped){
     }
     ++search->n_nodes;
     #if USE_END_SC
-        int stab_res = stability_cut(search, &alpha, &beta);
-        if (stab_res != SCORE_UNDEFINED){
-            return stab_res;
+        if (stab_cut){
+            int stab_res = stability_cut(search, &alpha, &beta);
+            if (stab_res != SCORE_UNDEFINED){
+                return stab_res;
+            }
         }
     #endif
     uint64_t legal = search->board.get_legal();
@@ -380,7 +382,7 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped){
         if (skipped)
             return end_evaluate(&search->board);
         search->board.pass();
-            v = -nega_alpha_end_fast(search, -beta, -alpha, true);
+            v = -nega_alpha_end_fast(search, -beta, -alpha, true, false);
         search->board.pass();
         return v;
     }
@@ -405,7 +407,7 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped){
                     for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
                         calc_flip(&flip, &search->board, cell);
                         search->board.move(&flip);
-                            g = -nega_alpha_end_fast(search, -beta, -alpha, false);
+                            g = -nega_alpha_end_fast(search, -beta, -alpha, false, true);
                         search->board.undo(&flip);
                         alpha = max(alpha, g);
                         if (beta <= alpha)
@@ -421,7 +423,7 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped){
                     for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
                         calc_flip(&flip, &search->board, cell);
                         search->board.move(&flip);
-                            g = -nega_alpha_end_fast(search, -beta, -alpha, false);
+                            g = -nega_alpha_end_fast(search, -beta, -alpha, false, true);
                         search->board.undo(&flip);
                         alpha = max(alpha, g);
                         if (beta <= alpha)
@@ -440,7 +442,7 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped){
                     for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
                         calc_flip(&flip, &search->board, cell);
                         search->board.move(&flip);
-                            g = -nega_alpha_end_fast(search, -beta, -alpha, false);
+                            g = -nega_alpha_end_fast(search, -beta, -alpha, false, true);
                         search->board.undo(&flip);
                         alpha = max(alpha, g);
                         if (beta <= alpha)
@@ -460,7 +462,7 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped){
                 for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
                     calc_flip(&flip, &search->board, cell);
                     search->board.move(&flip);
-                        g = -nega_alpha_end_fast(search, -beta, -alpha, false);
+                        g = -nega_alpha_end_fast(search, -beta, -alpha, false, true);
                     search->board.undo(&flip);
                     alpha = max(alpha, g);
                     if (beta <= alpha)
@@ -790,7 +792,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
     if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
     if (search->board.n >= HW2 - END_FAST_DEPTH)
-        return nega_alpha_end_fast(search, alpha, beta, skipped);
+        return nega_alpha_end_fast(search, alpha, beta, skipped, false);
     ++search->n_nodes;
     uint32_t hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
     #if USE_END_TC
