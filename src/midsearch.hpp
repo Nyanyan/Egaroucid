@@ -496,7 +496,8 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
 }
 
 pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, bool is_end_search, const bool is_main_search, int best_move){
-    cerr << "start search depth " << depth << " [" << alpha << "," << beta << "] mpct " << search->mpct << endl;
+    if (is_main_search)
+        cerr << "start search depth " << depth << " [" << alpha << "," << beta << "] mpct " << search->mpct << endl;
     bool searching = true;
     ++(search->n_nodes);
     uint32_t hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;

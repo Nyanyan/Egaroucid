@@ -92,7 +92,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
                         beta = min(SCORE_MAX, score_to_value(value_to_score_double(g) + 1.0));
                     }
                 #endif
-                result = first_nega_scout(&search, alpha, beta, depth, false, true, true, result.second);
+                result = first_nega_scout(&search, alpha, beta, depth, false, true, show_log, result.second);
                 g = result.first;
                 //cerr << alpha << " " << g << " " << beta << endl;
                 if (show_log)
@@ -103,8 +103,9 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
                     break;
             }
         } else{
-            cerr << "main search" << endl;
-            result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth, false, true, true, result.second);
+            if (show_log)
+                cerr << "main search" << endl;
+            result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth, false, true, show_log, result.second);
             g = result.first;
         }
         policy = result.second;
@@ -196,7 +197,7 @@ int prob_to_val(double val, int error_level, int min_val, int max_val){
     return round(log(val) / (26.0 - error_level) * (max_val - min_val + 1) + min_val - 1);
 }
 
-Search_result ai(Board b, int level, bool use_book, int error_level){
+Search_result ai(Board b, int level, bool use_book, int error_level, bool show_log){
     Search_result res;
     if (error_level == 0){
         
@@ -221,7 +222,8 @@ Search_result ai(Board b, int level, bool use_book, int error_level){
             bool use_mpc, is_mid_search;
             double mpct;
             get_level(level, b.n - 4, &is_mid_search, &depth, &use_mpc, &mpct);
-            cerr << "level status " << level << " " << b.n - 4 << " " << depth << " " << use_mpc << " " << mpct << endl;
+            if (show_log)
+                cerr << "level status " << level << " " << b.n - 4 << " " << depth << " " << use_mpc << " " << mpct << endl;
             bool cache_hit = false;
             if (!is_mid_search && !use_mpc){
                 int val, best_move;
@@ -232,15 +234,17 @@ Search_result ai(Board b, int level, bool use_book, int error_level){
                     res.policy = best_move;
                     res.value = value_to_score_int(val);
                     cache_hit = true;
-                    cerr << "cache hit depth " << depth << " value " << value_to_score_double(val) << " policy " << idx_to_coord(best_move) << endl;
+                    if (show_log)
+                        cerr << "cache hit depth " << depth << " value " << value_to_score_double(val) << " policy " << idx_to_coord(best_move) << endl;
                 }
             }
             if (!cache_hit){
-                res = tree_search(b, depth, use_mpc, mpct, true);
+                res = tree_search(b, depth, use_mpc, mpct, show_log);
                 if (!is_mid_search && !use_mpc && depth > CACHE_SAVE_EMPTY){
                     parent_transpose_table.copy(&bak_parent_transpose_table);
                     child_transpose_table.copy(&bak_child_transpose_table);
-                    cerr << "cache saved" << endl;
+                    if (show_log)
+                        cerr << "cache saved" << endl;
                 }
             }
         }
@@ -298,6 +302,11 @@ Search_result ai(Board b, int level, bool use_book, int error_level){
     }
     return res;
 }
+/*
+Search_result ai(Board b, int level, bool use_book, int error_level){
+    return ai(b, level, use_book, error_level, true);
+}
+*/
 
 inline double tree_search_noid(Board board, int depth, bool use_mpc, double mpct, bool use_multi_thread){
     int g;

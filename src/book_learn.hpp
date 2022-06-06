@@ -52,6 +52,7 @@ int book_learn_search(Board board, int level, const int book_depth, int alpha, i
     if (board.n >= 4 + book_depth){
         g = book_learn_calc_value(board, level, alpha, beta);
         if (alpha <= g && g <= beta){
+            cerr << "depth " << board.n - 4 << " FN value " << g << " alpha " << alpha << endl;
             //g = ai(board, level, true, 0).value;
             //book.reg(board, -g);
             return g;
@@ -65,7 +66,7 @@ int book_learn_search(Board board, int level, const int book_depth, int alpha, i
         board.pass();
         return g;
     }
-    Search_result best_move = ai(board, level, true, 0);
+    Search_result best_move = ai(board, level, true, 0, false);
     if (best_move.value > beta + expected_error * 2)
         return best_move.value;
     //vector<int> policies;
@@ -80,7 +81,7 @@ int book_learn_search(Board board, int level, const int book_depth, int alpha, i
                 alpha = g;
                 alpha_updated = true;
             }
-            cerr << "depth " << board.n_stones - 5 << " PV value " << g << " alpha " << alpha << endl;
+            cerr << "depth " << board.n - 5 << " PV value " << g << " alpha " << alpha << endl;
             //policies.emplace_back(best_move.policy);
         }
     board.undo(&flip);
@@ -99,7 +100,7 @@ int book_learn_search(Board board, int level, const int book_depth, int alpha, i
                             alpha = g;
                             alpha_updated = true;
                         }
-                        cerr << "depth " << board.n_stones - 5 << "   value " << g << " alpha " << alpha << endl;
+                        cerr << "depth " << board.n - 5 << "   value " << g << " alpha " << alpha << endl;
                     }
                 }
             } else if (alpha <= g){
@@ -247,7 +248,8 @@ inline void learn_book(Board root_board, int level, const int book_depth, const 
     cerr << "book learn started" << endl;
     const int adopt_error_sum = max(expected_error, (book_depth + 4 - root_board.n) * expected_error / 5);
     int g = book_learn_search(root_board, level, book_depth, -SCORE_MAX, SCORE_MAX, 0, expected_error, adopt_error_sum, board_copy, &strt_tim, book_file, book_bak);
-    book.reg(root_board, -g);
+    if (*book_learning)
+        book.reg(root_board, -g);
     root_board.copy(board_copy);
     cerr << "book learn finished " << g << endl;
     *book_learning = false;
