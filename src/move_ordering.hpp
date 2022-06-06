@@ -39,7 +39,7 @@
 #define MAX_MOBILITY 30
 #define MAX_OPENNESS 50
 
-#define W_END_MOBILITY 64
+#define W_END_MOBILITY 32
 #define W_END_STABILITY 4
 #define W_END_ANTI_EVEN 16
 #define W_END_PARITY 2
