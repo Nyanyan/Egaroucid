@@ -35,7 +35,7 @@ class Node_child_transpose_table{
 
         /*
         inline bool register_value(const Board *board, const int policy){
-            if (board->player == player.load() && board->opponent == opponent.load()){
+            if (board->player == player.load(memory_order_relaxed) && board->opponent == opponent.load(memory_order_relaxed)){
                 best_move = policy;
                 return true;
             }
@@ -57,16 +57,16 @@ class Node_child_transpose_table{
 
         inline int get(const Board *board){
             int res = TRANSPOSE_TABLE_UNDEFINED;
-            if (board->player == player.load() && board->opponent == opponent.load()){
+            if (board->player == player.load(memory_order_relaxed) && board->opponent == opponent.load(memory_order_relaxed)){
                 res = best_move;
-                if (board->player != player.load() || board->opponent != opponent.load())
+                if (board->player != player.load(memory_order_relaxed) || board->opponent != opponent.load(memory_order_relaxed))
                     res = TRANSPOSE_TABLE_UNDEFINED;
             }
             return res;
         }
 
         inline int n_stones(){
-            return pop_count_ull(player.load() | opponent.load());
+            return pop_count_ull(player.load(memory_order_relaxed) | opponent.load(memory_order_relaxed));
         }
 };
 
@@ -238,10 +238,10 @@ class Node_parent_transpose_table{
         }
 
         inline void get(const Board *board, int *l, int *u){
-            if (board->player == player.load() && board->opponent == opponent.load()){
-                *l = lower.load();
-                *u = upper.load();
-                if (board->player != player.load() || board->opponent != opponent.load()){
+            if (board->player == player.load(memory_order_relaxed) && board->opponent == opponent.load(memory_order_relaxed)){
+                *l = lower.load(memory_order_relaxed);
+                *u = upper.load(memory_order_relaxed);
+                if (board->player != player.load(memory_order_relaxed) || board->opponent != opponent.load(memory_order_relaxed)){
                     *l = -INF;
                     *u = INF;
                 }
@@ -249,7 +249,7 @@ class Node_parent_transpose_table{
         }
 
         inline int n_stones() const{
-            return pop_count_ull(player.load() | opponent.load());
+            return pop_count_ull(player.load(memory_order_relaxed) | opponent.load(memory_order_relaxed));
         }
 };
 

@@ -795,7 +795,6 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
         return nega_alpha_end_fast(search, alpha, beta, skipped, false);
     ++search->n_nodes;
     uint32_t hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
-    /*
     #if USE_END_TC
         int l, u;
         if (search->board.n <= HW2 - USE_PARENT_TT_DEPTH_THRESHOLD){
@@ -810,7 +809,6 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
             beta = min(beta, u);
         }
     #endif
-    */
     int first_alpha = alpha;
     if (legal == LEGAL_UNDEFINED)
         legal = search->board.get_legal();
@@ -843,7 +841,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
                     stab_res = stability_cut_move(search, &flip_best, &alpha, &beta);
                     if (stab_res != SCORE_UNDEFINED){
                         search->board.undo(&flip_best);
-                        //register_tt(search, hash_code, first_alpha, stab_res, best_move, l, u, alpha, beta);
+                        register_tt(search, hash_code, first_alpha, stab_res, best_move, l, u, alpha, beta);
                         return stab_res;
                     }
                 #endif
@@ -911,8 +909,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
                             stab_res = stability_cut_move(search, &flip, &alpha, &beta);
                             if (stab_res != SCORE_UNDEFINED){
                                 search->board.undo(&flip);
-                                child_transpose_table.reg(&search->board, hash_code, best_move);
-                                //register_tt(search, hash_code, first_alpha, stab_res, flip.pos, l, u, alpha, beta);
+                                register_tt(search, hash_code, first_alpha, stab_res, flip.pos, l, u, alpha, beta);
                                 return stab_res;
                             }
                         #endif
@@ -924,8 +921,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
                         v = g;
                         best_move = flip.pos;
                         if (beta <= alpha){
-                            child_transpose_table.reg(&search->board, hash_code, best_move);
-                            //register_tt(search, hash_code, first_alpha, v, best_move, l, u, alpha, beta);
+                            register_tt(search, hash_code, first_alpha, v, best_move, l, u, alpha, beta);
                             return alpha;
                         }
                     }
@@ -956,8 +952,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
                                     stab_res = stability_cut_move(search, &flip, &alpha, &beta);
                                     if (stab_res != SCORE_UNDEFINED){
                                         search->board.undo(&flip);
-                                        child_transpose_table.reg(&search->board, hash_code, best_move);
-                                        //register_tt(search, hash_code, first_alpha, stab_res, flip.pos, l, u, alpha, beta);
+                                        register_tt(search, hash_code, first_alpha, stab_res, flip.pos, l, u, alpha, beta);
                                         return stab_res;
                                     }
                                 #endif
@@ -966,8 +961,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
                             alpha = max(alpha, g);
                             v = max(v, g);
                             if (beta <= alpha){
-                                child_transpose_table.reg(&search->board, hash_code, best_move);
-                                //register_tt(search, hash_code, first_alpha, v, cell, l, u, alpha, beta);
+                                register_tt(search, hash_code, first_alpha, v, cell, l, u, alpha, beta);
                                 return alpha;
                             }
                         }
@@ -984,8 +978,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
                                     stab_res = stability_cut_move(search, &flip, &alpha, &beta);
                                     if (stab_res != SCORE_UNDEFINED){
                                         search->board.undo(&flip);
-                                        child_transpose_table.reg(&search->board, hash_code, best_move);
-                                        //register_tt(search, hash_code, first_alpha, stab_res, flip.pos, l, u, alpha, beta);
+                                        register_tt(search, hash_code, first_alpha, stab_res, flip.pos, l, u, alpha, beta);
                                         return stab_res;
                                     }
                                 #endif
@@ -994,8 +987,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
                             alpha = max(alpha, g);
                             v = max(v, g);
                             if (beta <= alpha){
-                                child_transpose_table.reg(&search->board, hash_code, best_move);
-                                //register_tt(search, hash_code, first_alpha, v, cell, l, u, alpha, beta);
+                                register_tt(search, hash_code, first_alpha, v, cell, l, u, alpha, beta);
                                 return alpha;
                             }
                         }
@@ -1015,8 +1007,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
                                     stab_res = stability_cut_move(search, &flip, &alpha, &beta);
                                     if (stab_res != SCORE_UNDEFINED){
                                         search->board.undo(&flip);
-                                        child_transpose_table.reg(&search->board, hash_code, best_move);
-                                        //register_tt(search, hash_code, first_alpha, stab_res, flip.pos, l, u, alpha, beta);
+                                        register_tt(search, hash_code, first_alpha, stab_res, flip.pos, l, u, alpha, beta);
                                         return stab_res;
                                     }
                                 #endif
@@ -1025,8 +1016,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
                             alpha = max(alpha, g);
                             v = max(v, g);
                             if (beta <= alpha){
-                                child_transpose_table.reg(&search->board, hash_code, best_move);
-                                //register_tt(search, hash_code, first_alpha, v, cell, l, u, alpha, beta);
+                                register_tt(search, hash_code, first_alpha, v, cell, l, u, alpha, beta);
                                 return alpha;
                             }
                         }
@@ -1035,8 +1025,6 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
             }
         }
     }
-    //register_tt(search, hash_code, first_alpha, v, best_move, l, u, alpha, beta);
-    if (first_alpha < v && best_move != TRANSPOSE_TABLE_UNDEFINED)
-        child_transpose_table.reg(&search->board, hash_code, best_move);
+    register_tt(search, hash_code, first_alpha, v, best_move, l, u, alpha, beta);
     return v;
 }
