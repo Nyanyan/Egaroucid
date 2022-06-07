@@ -182,3 +182,19 @@ bool get_level_midsearch(int level, int n_moves){
         return false;
     }
 }
+
+int get_level_endsearch_depth(int level){
+    return level_definition[level].complete0;
+}
+
+int get_level_complete_depth(int level){
+    if (level_definition[level].complete0_mpct == NOMPC)
+        return level_definition[level].complete0;
+    if (level_definition[level].complete1_mpct == NOMPC)
+        return level_definition[level].complete1;
+    if (level_definition[level].complete2_mpct == NOMPC)
+        return level_definition[level].complete2;
+    if (level_definition[level].complete3_mpct == NOMPC)
+        return level_definition[level].complete3;
+    return level_definition[level].complete4;
+}
