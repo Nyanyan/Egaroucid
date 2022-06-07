@@ -388,6 +388,9 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped, bool 
     }
     Flip flip;
     #if USE_END_PO
+        int i;
+        uint64_t legal_copy;
+        uint_fast8_t cell;
         if (0 < search->board.parity && search->board.parity < 15){
             uint64_t legal_mask = 0ULL;
             if (search->board.parity & 1)
@@ -398,9 +401,6 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped, bool 
                 legal_mask |= 0x0F0F0F0F00000000ULL;
             if (search->board.parity & 8)
                 legal_mask |= 0xF0F0F0F000000000ULL;
-            uint64_t legal_copy;
-            uint_fast8_t cell;
-            int i;
             for (i = 0; i < N_CELL_WEIGHT_MASK; ++i){
                 legal_copy = legal & legal_mask & cell_weight_mask[i];
                 if (legal_copy){
@@ -433,9 +433,6 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped, bool 
                 }
             }
         } else{
-            uint64_t legal_copy;
-            uint_fast8_t cell;
-            int i;
             for (i = 0; i < N_CELL_WEIGHT_MASK; ++i){
                 legal_copy = legal & cell_weight_mask[i];
                 if (legal_copy){
@@ -829,7 +826,9 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
                 return v;
         }
     #endif
-    int best_move = child_transpose_table.get(&search->board, hash_code);
+    int best_move = TRANSPOSE_TABLE_UNDEFINED;
+    if (search->board.n <= HW2 - USE_PARENT_TT_DEPTH_THRESHOLD)
+        best_move = child_transpose_table.get(&search->board, hash_code);
     int stab_res;
     if (best_move != TRANSPOSE_TABLE_UNDEFINED){
         if (1 & (legal >> best_move)){
