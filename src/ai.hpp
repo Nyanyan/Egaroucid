@@ -145,7 +145,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
         search.mpct = mpct;
         //search.p = (search.board.p + depth) % 2;
         parent_transpose_table.init();
-        result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth, false, false, true, result.second);
+        result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth, false, false, show_log, result.second);
         if (g == -INF)
             g = result.first;
         else

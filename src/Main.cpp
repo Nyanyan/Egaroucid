@@ -16,7 +16,6 @@
 #include "human_value.hpp"
 #include "joseki.hpp"
 #include "umigame.hpp"
-#include "book_learn.hpp"
 #include "gui/gui_common.hpp"
 #include "gui/graph.hpp"
 #include "gui/graph_human_sense.hpp"
@@ -257,18 +256,18 @@ Menu create_menu(Texture checkbox,
 	if (*professional_mode) {
 		title.init(language.get("book", "book"));
 
-		menu_e.init_button(language.get("book", "start_learn"), start_book_learn_flag);
-		title.push(menu_e);
+		//menu_e.init_button(language.get("book", "start_learn"), start_book_learn_flag);
+		//title.push(menu_e);
 		//menu_e.init_button(language.get("book", "stop_learn"), stop_book_learn_flag);
 		//title.push(menu_e);
 		//menu_e.init_button(language.get("book", "auto_modification"), modify_book);
 		//title.push(menu_e);
-		menu_e.init_button(language.get("book", "settings"), dummy);
-		side_menu.init_bar(language.get("book", "depth"), book_depth, *book_depth, 0, 60);
-		menu_e.push(side_menu);
-		side_menu.init_bar(language.get("book", "accept"), book_learn_accept, *book_learn_accept, 0, 64);
-		menu_e.push(side_menu);
-		title.push(menu_e);
+		//menu_e.init_button(language.get("book", "settings"), dummy);
+		//side_menu.init_bar(language.get("book", "depth"), book_depth, *book_depth, 0, 60);
+		//menu_e.push(side_menu);
+		//side_menu.init_bar(language.get("book", "accept"), book_learn_accept, *book_learn_accept, 0, 64);
+		//menu_e.push(side_menu);
+		//title.push(menu_e);
 		menu_e.init_button(language.get("book", "import"), import_book_flag);
 		title.push(menu_e);
 		menu_e.init_button(language.get("book", "book_reference"), change_book_path_flag);
@@ -381,7 +380,7 @@ Cell_value analyze_search(Board b, int level, bool use_book, int use_book_depth)
 		bool use_mpc, is_mid_search;
 		double mpct;
 		get_level(level, b.n - 4, &is_mid_search, &depth, &use_mpc, &mpct);
-		Search_result search_result = ai(b, level, use_book && b.n - 3 <= use_book_depth, 0, true);
+		Search_result search_result = ai(b, level, use_book && b.n - 3 <= use_book_depth, 0);
 		res.value = (b.p ? -1 : 1) * search_result.value;
 		res.depth = search_result.depth;
 	}
@@ -1540,7 +1539,7 @@ bool edit_board_draw(Board* b, Font coord_font, Font font, Radio_Button* player_
 bool operator< (const pair<int, Board>& a, const pair<int, Board>& b) {
 	return a.first < b.first;
 };
-/*
+
 void learn_book(Board bd, int level, int depth, int book_learn_accept, Board* bd_ptr, int* value_ptr, bool* book_learning) {
 	cerr << "start learning book" << endl;
 	priority_queue<pair<int, Board>> que;
@@ -1597,7 +1596,7 @@ void learn_book(Board bd, int level, int depth, int book_learn_accept, Board* bd
 	*book_learning = false;
 	cerr << "book learning finished" << endl;
 }
-*/
+
 void show_change_book(int change_book_cell, String changed_book_value_str, Font font) {
 	font(language.get("book", "changed_value") + U"(" + str_record(change_book_cell) + U"): " + changed_book_value_str).draw(720, 90, font_color);
 }
@@ -2709,10 +2708,8 @@ void Main() {
 													all_complete_searched = false;
 												}
 												if (hint_state > 2 && hint_depth[cell] != SEARCH_FINAL && is_mid_search) {
-													if (abs(hint_calc_value[cell]) <= HW2) {
-														hint_value[cell] += hint_calc_value[cell];
-														hint_value[cell] /= 2;
-													}
+													hint_value[cell] += hint_calc_value[cell];
+													hint_value[cell] /= 2;
 												}
 												else {
 													hint_value[cell] = hint_calc_value[cell];
@@ -2955,7 +2952,7 @@ void Main() {
 						}
 					}
 					else if (global_searching) {
-						ai_future = async(launch::async, ai, bd, ai_level, use_book && bd.n - 3 <= use_book_depth, show_mode[2] ? error_level : 0, true);
+						ai_future = async(launch::async, ai, bd, ai_level, use_book && bd.n - 3 <= use_book_depth, show_mode[2] ? error_level : 0);
 						ai_thinking = true;
 					}
 				}
@@ -3490,7 +3487,6 @@ void Main() {
 				}
 				human_value_state = INF;
 				global_searching = false;
-				book_learning = false;
 			}
 			else if (resume_read_flag) {
 				cerr << "resume calculating" << endl;
@@ -3585,11 +3581,11 @@ void Main() {
 				reset_human_value(&human_value_state, &human_value_future);
 				reset_ai(&ai_thinking, &ai_future);
 			}
-			else if (start_book_learn_flag && !ai_thinking && !book_learning && !book_modifying) {
+			else if (start_book_learn_flag && !before_start_game && !book_learning && !book_modifying) {
 				book_learning = true;
 				book_start_learn = true;
 				book_changed = true;
-				book_learn_future = async(launch::async, learn_book, bd, ai_level, book_depth, book_learn_accept, &bd, book_file, book_bak_file, &book_learning);
+				book_learn_future = async(launch::async, learn_book, bd, ai_level, book_depth, book_learn_accept, &bd, &bd_value, &book_learning);
 			}
 			else if (stop_book_learn_flag || (book_learning && !show_mode[1])) {
 				if (book_learning) {
@@ -3611,7 +3607,7 @@ void Main() {
 					modify_book_future = async(launch::async, modify_book_parent, &bd);
 				}
 			}
-			else if (change_book_path_flag && !book_learning && !book_modifying) {
+			else if (change_book_path_flag) {
 				cerr << "changing book path" << endl;
 				changing_book_path = 1;
 			}
