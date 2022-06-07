@@ -6,7 +6,7 @@
     #include "thread_pool.hpp"
     #include <future>
 #endif
-#include <shared_mutex>
+//#include <shared_mutex>
 #include <atomic>
 
 using namespace std;
@@ -70,6 +70,7 @@ class Node_child_transpose_table{
         }
 };
 
+/*
 class Node_shared_mutex_child_transpose_table{
     //private:
     //    shared_mutex mtx;
@@ -77,12 +78,6 @@ class Node_shared_mutex_child_transpose_table{
         Node_child_transpose_table node;
     
     public:
-        /*
-        inline bool register_value(const Board *board, const int policy){
-            //lock_guard<shared_mutex> lock(mtx);
-            return node.register_value(board, policy);
-        }
-        */
 
         inline void register_value_with_board(const Board *board, const int policy){
             //lock_guard<shared_mutex> lock(mtx);
@@ -102,16 +97,17 @@ class Node_shared_mutex_child_transpose_table{
             node.init();
         }
 };
+*/
 
 #if USE_MULTI_THREAD
-    void init_child_transpose_table(Node_shared_mutex_child_transpose_table table[], int s, int e){
+    void init_child_transpose_table(Node_child_transpose_table table[], int s, int e){
         for(int i = s; i < e; ++i){
             //if (!table[i].is_null())
             table[i].init();
         }
     }
 
-    void copy_child_transpose_table(Node_shared_mutex_child_transpose_table from[], Node_shared_mutex_child_transpose_table to[], int s, int e){
+    void copy_child_transpose_table(Node_child_transpose_table from[], Node_child_transpose_table to[], int s, int e){
         for(int i = s; i < e; ++i){
             /*
             if (!from[i].is_null()){
@@ -125,14 +121,14 @@ class Node_shared_mutex_child_transpose_table{
                     to[i].init();
             }
             */
-            to[i].register_value_with_board(&from[i].node);
+            to[i].register_value_with_board(&from[i]);
         }
     }
 #endif
 
 class Child_transpose_table{
     private:
-        Node_shared_mutex_child_transpose_table table[TRANSPOSE_TABLE_SIZE];
+        Node_child_transpose_table table[TRANSPOSE_TABLE_SIZE];
 
     public:
         inline void first_init(){
@@ -252,7 +248,7 @@ class Node_parent_transpose_table{
             return pop_count_ull(player.load(memory_order_relaxed) | opponent.load(memory_order_relaxed));
         }
 };
-
+/*
 class Node_shared_mutex_parent_transpose_table{
     //private:
     //    shared_mutex mtx;
@@ -283,7 +279,7 @@ class Node_shared_mutex_parent_transpose_table{
             node.init();
         }
 };
-
+*/
 /*
 class Node_parent_transpose_table{
     private:
@@ -374,14 +370,14 @@ class Node_shared_mutex_parent_transpose_table{
 };
 */
 #if USE_MULTI_THREAD
-    void init_parent_transpose_table(Node_shared_mutex_parent_transpose_table table[], int s, int e){
+    void init_parent_transpose_table(Node_parent_transpose_table table[], int s, int e){
         for(int i = s; i < e; ++i){
             //if (!table[i].is_null())
             table[i].init();
         }
     }
 
-    void copy_parent_transpose_table(Node_shared_mutex_parent_transpose_table from[], Node_shared_mutex_parent_transpose_table to[], int s, int e){
+    void copy_parent_transpose_table(Node_parent_transpose_table from[], Node_parent_transpose_table to[], int s, int e){
         for(int i = s; i < e; ++i){
             /*
             if (!from[i].is_null()){
@@ -395,14 +391,14 @@ class Node_shared_mutex_parent_transpose_table{
                     to[i].init();
             }
             */
-            to[i].register_value_with_board(&from[i].node);
+            to[i].register_value_with_board(&from[i]);
         }
     }
 #endif
 
 class Parent_transpose_table{
     private:
-        Node_shared_mutex_parent_transpose_table table[TRANSPOSE_TABLE_SIZE];
+        Node_parent_transpose_table table[TRANSPOSE_TABLE_SIZE];
 
     public:
         inline void first_init(){
