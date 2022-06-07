@@ -903,7 +903,6 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
                 }
             #else
                 for (Flip &flip: move_list){
-                    //eval_move(search, &flip);
                     search->board.move(&flip);
                         #if USE_END_SC
                             stab_res = stability_cut_move(search, &flip, &alpha, &beta);
@@ -915,7 +914,6 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
                         #endif
                         g = -nega_alpha_end(search, -beta, -alpha, false, flip.n_legal, searching);
                     search->board.undo(&flip);
-                    //eval_undo(search, &flip);
                     alpha = max(alpha, g);
                     if (v < g){
                         v = g;

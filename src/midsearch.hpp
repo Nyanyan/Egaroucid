@@ -45,7 +45,7 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, c
         calc_flip(&flip, &search->board, cell);
         eval_move(search, &flip);
         search->board.move(&flip);
-            g = -mid_evaluate_diff(search, searching);
+            g = -mid_evaluate_diff(search);
         search->board.undo(&flip);
         eval_undo(search, &flip);
         ++(search->n_nodes);
@@ -64,7 +64,7 @@ int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped, con
     if (depth == 1)
         return nega_alpha_eval1(search, alpha, beta, skipped, searching);
     if (depth == 0)
-        return mid_evaluate_diff(search, searching);
+        return mid_evaluate_diff(search);
     #if USE_MID_SC
         int stab_res = stability_cut(search, &alpha, &beta);
         if (stab_res != SCORE_UNDEFINED)

@@ -261,7 +261,7 @@ inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int
                 */
                 switch(depth){
                     case 0:
-                        flip->value += (HW2 - mid_evaluate_diff(search, searching)) * W_VALUE_SHALLOW;
+                        flip->value += (HW2 - mid_evaluate_diff(search)) * W_VALUE_SHALLOW;
                         break;
                     case 1:
                         flip->value += (HW2 - nega_alpha_eval1(search, alpha, beta, false, searching)) * W_VALUE;
