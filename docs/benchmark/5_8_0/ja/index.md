@@ -14,31 +14,29 @@ depthで示される深さを完全読みして、訪問ノード数と探索時
 
 ### Core i9-11900K、16スレッド
 
-<div style="font-size:60%"><pre>#40 depth 20 value 38 policy a2 nodes 18499320 time 146 nps 126707671
-#41 depth 22 value 0 policy h4 nodes 26526311 time 256 nps 103618402
-#42 depth 22 value 6 policy g2 nodes 40548462 time 350 nps 115852748
-#43 depth 23 value -12 policy c7 nodes 82911207 time 574 nps 144444611
-#44 depth 23 value -14 policy d2 nodes 15270420 time 301 nps 50732292
-#45 depth 24 value 6 policy b2 nodes 498339937 time 2533 nps 196739019
-#46 depth 24 value -8 policy b3 nodes 76840991 time 837 nps 91805246
-#47 depth 25 value 4 policy g2 nodes 37334630 time 435 nps 85826735
-#48 depth 25 value 28 policy f6 nodes 204129724 time 1838 nps 111060785
-#49 depth 26 value 16 policy e1 nodes 256316623 time 2496 nps 102690954
-#50 depth 26 value 10 policy d8 nodes 1179213508 time 7966 nps 148030819
-#51 depth 27 value 6 policy a3 nodes 249226421 time 2557 nps 97468291
-#52 depth 27 value 0 policy a3 nodes 560569333 time 5363 nps 104525327
-#53 depth 28 value -2 policy d8 nodes 4883501669 time 30118 nps 162145616
-#54 depth 28 value -2 policy c7 nodes 6314578504 time 28803 nps 219233361
-#55 depth 29 value 0 policy g6 nodes 23384774474 time 138860 nps 168405404
-#56 depth 29 value 2 policy h5 nodes 1140351709 time 11095 nps 102780685
-#57 depth 30 value -10 policy a6 nodes 1668140404 time 13494 nps 123620898
-#58 depth 30 value 4 policy g1 nodes 1921933011 time 15759 nps 121957802
-#59 depth 34 value 64 policy g8 nodes 28904 time 23 nps 1256695
-263.804 sec
-264.7655096054077 sec total
-42559035562 nodes
-161328242.03575382 nps</pre></div>
-
+<div style="font-size:60%"><pre>#40 depth 20 value 38 policy a2 nodes 30240013 time 208 nps 145384677
+#41 depth 22 value 0 policy h4 nodes 30934637 time 282 nps 109697294
+#42 depth 22 value 6 policy g2 nodes 38954689 time 323 nps 120602752
+#43 depth 23 value -12 policy c7 nodes 113328845 time 764 nps 148336184
+#44 depth 23 value -14 policy d2 nodes 24596008 time 400 nps 61490020
+#45 depth 24 value 6 policy b2 nodes 597485227 time 2957 nps 202057905
+#46 depth 24 value -8 policy b3 nodes 101741641 time 975 nps 104350401
+#47 depth 25 value 4 policy g2 nodes 55996875 time 568 nps 98586047
+#48 depth 25 value 28 policy f6 nodes 605660062 time 3955 nps 153137815
+#49 depth 26 value 16 policy e1 nodes 798738457 time 4756 nps 167943325
+#50 depth 26 value 10 policy d8 nodes 2343428530 time 13330 nps 175801090
+#51 depth 27 value 6 policy e2 nodes 532335784 time 5417 nps 98271328
+#52 depth 27 value 0 policy a3 nodes 490500268 time 4371 nps 112216945
+#53 depth 28 value -2 policy d8 nodes 4995871831 time 45686 nps 109352358
+#54 depth 28 value -2 policy c7 nodes 8094332723 time 57814 nps 140006446
+#55 depth 29 value 0 policy g6 nodes 19667033928 time 153868 nps 127817570
+#56 depth 29 value 2 policy h5 nodes 1737263912 time 17839 nps 97385722
+#57 depth 30 value -10 policy a6 nodes 5202620937 time 40738 nps 127709287
+#58 depth 30 value 4 policy g1 nodes 2560167511 time 20250 nps 126428025
+#59 depth 34 value 64 policy g8 nodes 2056 time 26 nps 79076
+374.527 sec
+48021233934 nodes
+128218349.90267725 nps</pre></div>
 
 
 
@@ -52,23 +50,15 @@ depthで示される深さを完全読みして、訪問ノード数と探索時
 
 bookは双方未使用です。
 
-レベル設定はEdaxのレベルに合わせました。
+以下に結果を載せますが、大事なのはstart depth(何手目まで打った棋譜で実験したか)、WDL(win-draw-lose)の数字と、Egaroucid win rate(Egaroucidの勝率(分母は引き分けを除外した対戦数))です。Egaroucid win rateが0.5を上回っていればEgaroucidがEdaxに勝ち越しています。
 
-Egaroucid先手の結果
+レベル設定はEdaxのレベルに合わせました．
 
-| レベル | Egaroucid勝ち | 引分 | Egaroucid負け | Egaroucid勝率 |
-| ------ | ------------- | ---- | ------------- | ------------- |
-| 1      | 497           | 24   | 479           | 0.51          |
-| 5      | 573           | 52   | 375           | 0.60          |
-| 10     | 536           | 131  | 333           | 0.62          |
+<div style="font-size:60%"><pre>level: 1 start depth: 8 Egaroucid plays black WDL: 489-24-487 Egaroucid plays white WDL: 534-27-439 Egaroucid win rate: 0.5248845561826577
+level: 5 start depth: 8 Egaroucid plays black WDL: 582-59-359 Egaroucid plays white WDL: 549-44-407 Egaroucid win rate: 0.5962045334739061
+level: 10 start depth: 8 Egaroucid plays black WDL: 585-119-296 Egaroucid plays white WDL: 443-124-433 Egaroucid win rate: 0.585088218554354
+level: 11 start depth: 8 Egaroucid plays black WDL: 552-132-316 Egaroucid plays white WDL: 501-115-384 Egaroucid win rate: 0.6006845407872219</pre></div>
 
-Egaroucid後手の結果
-
-| レベル | Egaroucid勝ち | 引分 | Egaroucid負け | Egaroucid勝率 |
-| ------ | ------------- | ---- | ------------- | ------------- |
-| 1      | 532           | 22   | 446           | 0.54          |
-| 5      | 535           | 54   | 411           | 0.57          |
-| 10     | 468           | 109  | 423           | 0.53          |
 
 
 ## 評価関数の精度
@@ -117,5 +107,4 @@ phase 29 mse 4.51746 mae 1.3841</pre></div>
 * [5.4.1](./../5_4_1)
 * [5.5.0 と 5.6.0](./../5_5_0)
 * [5.7.0](./../5_7_0)
-* [5.8.0](./../5_8_0)
 
