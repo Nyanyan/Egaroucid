@@ -567,7 +567,7 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
                     g = -nega_scout(search, -beta, -alpha, depth - 1, false, flip.n_legal, is_end_search, &searching);
                 else{
                     g = -nega_alpha_ordering(search, -alpha - 1, -alpha, depth - 1, false, flip.n_legal, is_end_search, &searching);
-                    if (alpha < g)
+                    if (alpha < g && g < beta)
                         g = -nega_scout(search, -beta, -g, depth - 1, false, flip.n_legal, is_end_search, &searching);
                 }
                 if (is_main_search){
@@ -779,7 +779,7 @@ int nega_scout_single_thread(Search *search, int alpha, int beta, int depth, boo
                     g = -nega_scout_single_thread(search, -beta, -alpha, depth - 1, false, flip.n_legal, is_end_search, searching);
                 else{
                     g = -nega_alpha_ordering_single_thread(search, -alpha - 1, -alpha, depth - 1, false, flip.n_legal, is_end_search, searching);
-                    if (alpha < g)
+                    if (alpha < g && g < beta)
                         g = -nega_scout_single_thread(search, -beta, -g, depth - 1, false, flip.n_legal, is_end_search, searching);
                 }
             search->board.undo(&flip);
