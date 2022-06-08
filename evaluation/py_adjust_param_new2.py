@@ -19,9 +19,9 @@ else:
         second = '0'
         beta = '0.0035'
 if int(phase) >= 10:
-    additional_params = ' data2_0000004.dat data2_0000006.dat data2_0000007.dat data2_0000008.dat data2_0000009.dat data2_0000010.dat data2_0000011.dat'
+    additional_params = ' data2_04.dat data2_06.dat data2_07.dat data2_08.dat data2_09.dat data2_10.dat data2_11.dat'
 else:
-    additional_params = ' data2_0000001.dat data2_0000002.dat data2_0000003.dat'
+    additional_params = ' data2_01.dat data2_02.dat data2_03.dat'
 #additional_params = ' big_data2_new_3.dat big_data2_new_14.dat'
 #additional_params = ' big_data.dat'
 

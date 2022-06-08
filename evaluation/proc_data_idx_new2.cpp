@@ -278,36 +278,36 @@ inline void calc_idx(int phase_idx, Board *b, int idxes[]){
     idxes[27] = pick_pattern(phase_idx, 7, b_arr, 9, 0, 8, 16, 24, 32, 40, 48, 56, 49);
     idxes[28] = pick_pattern(phase_idx, 7, b_arr, 49, 56, 57, 58, 59, 60, 61, 62, 63, 54);
     idxes[29] = pick_pattern(phase_idx, 7, b_arr, 54, 63, 55, 47, 39, 31, 23, 15, 7, 14);
-    // // triangle
-    //idxes[30] = pick_pattern(phase_idx, 8, b_arr, 0, 1, 2, 3, 8, 9, 10, 16, 17, 24);
-    //idxes[31] = pick_pattern(phase_idx, 8, b_arr, 7, 6, 5, 4, 15, 14, 13, 23, 22, 31);
-    //idxes[32] = pick_pattern(phase_idx, 8, b_arr, 63, 62, 61, 60, 55, 54, 53, 47, 46, 39);
-    //idxes[33] = pick_pattern(phase_idx, 8, b_arr, 56, 57, 58, 59, 48, 49, 50, 40, 41, 32);
+    // triangle
+    idxes[30] = pick_pattern(phase_idx, 8, b_arr, 0, 1, 2, 3, 8, 9, 10, 16, 17, 24);
+    idxes[31] = pick_pattern(phase_idx, 8, b_arr, 7, 6, 5, 4, 15, 14, 13, 23, 22, 31);
+    idxes[32] = pick_pattern(phase_idx, 8, b_arr, 63, 62, 61, 60, 55, 54, 53, 47, 46, 39);
+    idxes[33] = pick_pattern(phase_idx, 8, b_arr, 56, 57, 58, 59, 48, 49, 50, 40, 41, 32);
     // edge block
-    idxes[30] = pick_pattern(phase_idx, 9, b_arr, 0, 2, 3, 4, 5, 7, 10, 11, 12, 13);
-    idxes[31] = pick_pattern(phase_idx, 9, b_arr, 0, 16, 24, 32, 40, 56, 17, 25, 33, 41);
-    idxes[32] = pick_pattern(phase_idx, 9, b_arr, 56, 58, 59, 60, 61, 63, 50, 51, 52, 53);
-    idxes[33] = pick_pattern(phase_idx, 9, b_arr, 7, 23, 31, 39, 47, 63, 22, 30, 38, 46);
+    idxes[34] = pick_pattern(phase_idx, 9, b_arr, 0, 2, 3, 4, 5, 7, 10, 11, 12, 13);
+    idxes[35] = pick_pattern(phase_idx, 9, b_arr, 0, 16, 24, 32, 40, 56, 17, 25, 33, 41);
+    idxes[36] = pick_pattern(phase_idx, 9, b_arr, 56, 58, 59, 60, 61, 63, 50, 51, 52, 53);
+    idxes[37] = pick_pattern(phase_idx, 9, b_arr, 7, 23, 31, 39, 47, 63, 22, 30, 38, 46);
     // cross
-    //idxes[38] = pick_pattern(phase_idx, 10, b_arr, 0, 9, 18, 27, 1, 10, 19, 8, 17, 26);
-    //idxes[39] = pick_pattern(phase_idx, 10, b_arr, 7, 14, 21, 28, 6, 13, 20, 15, 22, 29);
-    //idxes[40] = pick_pattern(phase_idx, 10, b_arr, 56, 49, 42, 35, 57, 50, 43, 48, 41, 34);
-    //idxes[41] = pick_pattern(phase_idx, 10, b_arr, 63, 54, 45, 36, 62, 53, 44, 55, 46, 37);
+    idxes[38] = pick_pattern(phase_idx, 10, b_arr, 0, 9, 18, 27, 1, 10, 19, 8, 17, 26);
+    idxes[39] = pick_pattern(phase_idx, 10, b_arr, 7, 14, 21, 28, 6, 13, 20, 15, 22, 29);
+    idxes[40] = pick_pattern(phase_idx, 10, b_arr, 56, 49, 42, 35, 57, 50, 43, 48, 41, 34);
+    idxes[41] = pick_pattern(phase_idx, 10, b_arr, 63, 54, 45, 36, 62, 53, 44, 55, 46, 37);
     // corner9
-    idxes[34] = pick_pattern(phase_idx, 11, b_arr, 0, 1, 2, 8, 9, 10, 16, 17, 18);
-    idxes[35] = pick_pattern(phase_idx, 11, b_arr, 7, 6, 5, 15, 14, 13, 23, 22, 21);
-    idxes[36] = pick_pattern(phase_idx, 11, b_arr, 56, 57, 58, 48, 49, 50, 40, 41, 42);
-    idxes[37] = pick_pattern(phase_idx, 11, b_arr, 63, 62, 61, 55, 54, 53, 47, 46, 45);
+    idxes[42] = pick_pattern(phase_idx, 11, b_arr, 0, 1, 2, 8, 9, 10, 16, 17, 18);
+    idxes[43] = pick_pattern(phase_idx, 11, b_arr, 7, 6, 5, 15, 14, 13, 23, 22, 21);
+    idxes[44] = pick_pattern(phase_idx, 11, b_arr, 56, 57, 58, 48, 49, 50, 40, 41, 42);
+    idxes[45] = pick_pattern(phase_idx, 11, b_arr, 63, 62, 61, 55, 54, 53, 47, 46, 45);
     // edge+2a
     //idxes[46] = pick_pattern(phase_idx, 12, b_arr, 10, 0, 1, 2, 3, 4, 5, 6, 7, 13);
     //idxes[47] = pick_pattern(phase_idx, 12, b_arr, 17, 0, 8, 16, 24, 32, 40, 48, 56, 41);
     //idxes[48] = pick_pattern(phase_idx, 12, b_arr, 50, 56, 57, 58, 59, 60, 61, 62, 63, 53);
     //idxes[49] = pick_pattern(phase_idx, 12, b_arr, 46, 63, 55, 47, 39, 31, 23, 15, 7, 22);
     // narrow triangle
-    idxes[38] = pick_pattern(phase_idx, 13, b_arr, 0, 1, 2, 3, 4, 8, 9, 16, 24, 32);
-    idxes[39] = pick_pattern(phase_idx, 13, b_arr, 7, 6, 5, 4, 3, 15, 14, 23, 31, 39);
-    idxes[40] = pick_pattern(phase_idx, 13, b_arr, 63, 62, 61, 60, 59, 55, 54, 47, 39, 31);
-    idxes[41] = pick_pattern(phase_idx, 13, b_arr, 56, 57, 58, 59, 60, 48, 49, 40, 32, 24);
+    idxes[46] = pick_pattern(phase_idx, 13, b_arr, 0, 1, 2, 3, 4, 8, 9, 16, 24, 32);
+    idxes[47] = pick_pattern(phase_idx, 13, b_arr, 7, 6, 5, 4, 3, 15, 14, 23, 31, 39);
+    idxes[48] = pick_pattern(phase_idx, 13, b_arr, 63, 62, 61, 60, 59, 55, 54, 47, 39, 31);
+    idxes[49] = pick_pattern(phase_idx, 13, b_arr, 56, 57, 58, 59, 60, 48, 49, 40, 32, 24);
     // fish
     //idxes[54] = pick_pattern(phase_idx, 14, b_arr, 0, 1, 8, 9, 10, 11, 17, 18, 25, 27);
     //idxes[55] = pick_pattern(phase_idx, 14, b_arr, 7, 6, 15, 14, 13, 12, 22, 21, 30, 28);
@@ -320,57 +320,57 @@ inline void calc_idx(int phase_idx, Board *b, int idxes[]){
     //idxes[61] = pick_pattern(phase_idx, 15, b_arr, 63, 62, 55, 54, 53, 52, 51, 46, 38, 30);
     //idxes[62] = min(max_surround - 1, calc_surround(b->player, ~(b->player | b->opponent)));
     //idxes[63] = min(max_surround - 1, calc_surround(b->opponent, ~(b->player | b->opponent)));
-    idxes[42] = pop_count_ull(calc_surround(b->player, ~(b->player | b->opponent))) * max_stone_num + pop_count_ull(calc_surround(b->opponent, ~(b->player | b->opponent)));
+    idxes[50] = pop_count_ull(calc_surround(b->player, ~(b->player | b->opponent))) * max_stone_num + pop_count_ull(calc_surround(b->opponent, ~(b->player | b->opponent)));
     uint64_t player_mobility = calc_legal(b->player, b->opponent);
     uint64_t opponent_mobility = calc_legal(b->opponent, b->player);
-    idxes[43] = pop_count_ull(player_mobility) * max_canput + pop_count_ull(opponent_mobility);
-    int stab0, stab1;
-    calc_stability(b, &stab0, &stab1);
-    idxes[44] = stab0 * max_stability + stab1;
-    idxes[45] = pop_count_ull(b->player) * max_stability + pop_count_ull(b->opponent);
+    idxes[51] = pop_count_ull(player_mobility) * max_canput + pop_count_ull(opponent_mobility);
+    //int stab0, stab1;
+    //calc_stability(b, &stab0, &stab1);
+    //idxes[44] = stab0 * max_stability + stab1;
+    //idxes[45] = pop_count_ull(b->player) * max_stability + pop_count_ull(b->opponent);
     // line1
-    idxes[46] = create_canput_line_h(player_mobility, opponent_mobility, 0);
-    idxes[47] = create_canput_line_h(player_mobility, opponent_mobility, 7);
-    idxes[48] = create_canput_line_v(player_mobility, opponent_mobility, 0);
-    idxes[49] = create_canput_line_v(player_mobility, opponent_mobility, 7);
+    idxes[52] = create_canput_line_h(player_mobility, opponent_mobility, 0);
+    idxes[53] = create_canput_line_h(player_mobility, opponent_mobility, 7);
+    idxes[54] = create_canput_line_v(player_mobility, opponent_mobility, 0);
+    idxes[55] = create_canput_line_v(player_mobility, opponent_mobility, 7);
     // line2
-    idxes[50] = create_canput_line_h(player_mobility, opponent_mobility, 1);
-    idxes[51] = create_canput_line_h(player_mobility, opponent_mobility, 6);
-    idxes[52] = create_canput_line_v(player_mobility, opponent_mobility, 1);
-    idxes[53] = create_canput_line_v(player_mobility, opponent_mobility, 6);
+    idxes[56] = create_canput_line_h(player_mobility, opponent_mobility, 1);
+    idxes[57] = create_canput_line_h(player_mobility, opponent_mobility, 6);
+    idxes[58] = create_canput_line_v(player_mobility, opponent_mobility, 1);
+    idxes[59] = create_canput_line_v(player_mobility, opponent_mobility, 6);
     // line3
-    idxes[54] = create_canput_line_h(player_mobility, opponent_mobility, 2);
-    idxes[55] = create_canput_line_h(player_mobility, opponent_mobility, 5);
-    idxes[56] = create_canput_line_v(player_mobility, opponent_mobility, 2);
-    idxes[57] = create_canput_line_v(player_mobility, opponent_mobility, 5);
+    idxes[60] = create_canput_line_h(player_mobility, opponent_mobility, 2);
+    idxes[61] = create_canput_line_h(player_mobility, opponent_mobility, 5);
+    idxes[62] = create_canput_line_v(player_mobility, opponent_mobility, 2);
+    idxes[63] = create_canput_line_v(player_mobility, opponent_mobility, 5);
     // line4
-    idxes[58] = create_canput_line_h(player_mobility, opponent_mobility, 3);
-    idxes[59] = create_canput_line_h(player_mobility, opponent_mobility, 4);
-    idxes[60] = create_canput_line_v(player_mobility, opponent_mobility, 3);
-    idxes[61] = create_canput_line_v(player_mobility, opponent_mobility, 4);
+    idxes[64] = create_canput_line_h(player_mobility, opponent_mobility, 3);
+    idxes[65] = create_canput_line_h(player_mobility, opponent_mobility, 4);
+    idxes[66] = create_canput_line_v(player_mobility, opponent_mobility, 3);
+    idxes[67] = create_canput_line_v(player_mobility, opponent_mobility, 4);
     // corner4-2
-    idxes[62] = pick_pattern_mobility(player_mobility, opponent_mobility, 56, 57, 49, 48, 55, 54, 62, 63);
-    idxes[63] = pick_pattern_mobility(player_mobility, opponent_mobility, 0, 8, 9, 1, 57, 49, 48, 56);
-    idxes[64] = pick_pattern_mobility(player_mobility, opponent_mobility, 7, 6, 14, 15, 8, 9, 1, 0);
-    idxes[65] = pick_pattern_mobility(player_mobility, opponent_mobility, 63, 55, 54, 62, 6, 14, 15, 7);
+    //idxes[68] = pick_pattern_mobility(player_mobility, opponent_mobility, 56, 57, 49, 48, 55, 54, 62, 63);
+    //idxes[69] = pick_pattern_mobility(player_mobility, opponent_mobility, 0, 8, 9, 1, 57, 49, 48, 56);
+    //idxes[70] = pick_pattern_mobility(player_mobility, opponent_mobility, 7, 6, 14, 15, 8, 9, 1, 0);
+    //idxes[71] = pick_pattern_mobility(player_mobility, opponent_mobility, 63, 55, 54, 62, 6, 14, 15, 7);
     uint_fast8_t b_arr2[HW2];
     for (int i = 0; i < HW2; ++i)
         b_arr2[i] = b_arr[HW2_M1 - i];
     // edge stone + mobility
-    idxes[66] = pick_pattern(phase_idx, -1, b_arr2, 58, 59, 60, 61) * 256 + pick_pattern_mobility(player_mobility, opponent_mobility, 56, 57, 62, 63);
-    idxes[67] = pick_pattern(phase_idx, -1, b_arr2, 16, 24, 32, 40) * 256 + pick_pattern_mobility(player_mobility, opponent_mobility, 0, 8, 48, 56);
-    idxes[68] = pick_pattern(phase_idx, -1, b_arr2, 2, 3, 4, 5) * 256 + pick_pattern_mobility(player_mobility, opponent_mobility, 0, 1, 6, 7);
-    idxes[69] = pick_pattern(phase_idx, -1, b_arr2, 23, 31, 39, 47) * 256 + pick_pattern_mobility(player_mobility, opponent_mobility, 7, 15, 55, 63);
+    //idxes[68] = pick_pattern(phase_idx, -1, b_arr2, 58, 59, 60, 61) * 256 + pick_pattern_mobility(player_mobility, opponent_mobility, 56, 57, 62, 63);
+    //idxes[69] = pick_pattern(phase_idx, -1, b_arr2, 16, 24, 32, 40) * 256 + pick_pattern_mobility(player_mobility, opponent_mobility, 0, 8, 48, 56);
+    //idxes[70] = pick_pattern(phase_idx, -1, b_arr2, 2, 3, 4, 5) * 256 + pick_pattern_mobility(player_mobility, opponent_mobility, 0, 1, 6, 7);
+    //idxes[71] = pick_pattern(phase_idx, -1, b_arr2, 23, 31, 39, 47) * 256 + pick_pattern_mobility(player_mobility, opponent_mobility, 7, 15, 55, 63);
     // corner + 2 edge
-    idxes[70] = pick_pattern(phase_idx, -1, b_arr2, 0, 48, 56, 49, 57, 63) * 64 + pick_joined_pattern(b, 0b00000000'00000000'00000001'00000001'00000001'00000001'00000001'00000000ULL) * 8 + pick_joined_pattern(b, 0b01111100'00000000'00000000'00000000'00000000'00000000'00000000'00000000ULL);
-    idxes[71] = pick_pattern(phase_idx, -1, b_arr2, 56, 62, 63, 54, 55, 7) * 64 + pick_joined_pattern(b, 0b00111110'00000000'00000000'00000000'00000000'00000000'00000000'00000000ULL) * 8 + pick_joined_pattern(b, 0b00000000'00000000'10000000'10000000'10000000'10000000'10000000'00000000ULL);
-    idxes[72] = pick_pattern(phase_idx, -1, b_arr2, 63, 15, 7, 14, 6, 0) * 64 + pick_joined_pattern(b, 0b00000000'10000000'10000000'10000000'10000000'10000000'00000000'00000000ULL) * 8 + pick_joined_pattern(b, 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00111110ULL);
-    idxes[73] = pick_pattern(phase_idx, -1, b_arr2, 7, 1, 0, 9, 8, 56) * 64 + pick_joined_pattern(b, 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'01111100ULL) * 8 + pick_joined_pattern(b, 0b00000000'00000001'00000001'00000001'00000001'00000001'00000000'00000000ULL);
+    idxes[68] = pick_pattern(phase_idx, -1, b_arr2, 0, 48, 56, 49, 57, 63) * 64 + pick_joined_pattern(b, 0b00000000'00000000'00000001'00000001'00000001'00000001'00000001'00000000ULL) * 8 + pick_joined_pattern(b, 0b01111100'00000000'00000000'00000000'00000000'00000000'00000000'00000000ULL);
+    idxes[69] = pick_pattern(phase_idx, -1, b_arr2, 56, 62, 63, 54, 55, 7) * 64 + pick_joined_pattern(b, 0b00111110'00000000'00000000'00000000'00000000'00000000'00000000'00000000ULL) * 8 + pick_joined_pattern(b, 0b00000000'00000000'10000000'10000000'10000000'10000000'10000000'00000000ULL);
+    idxes[70] = pick_pattern(phase_idx, -1, b_arr2, 63, 15, 7, 14, 6, 0) * 64 + pick_joined_pattern(b, 0b00000000'10000000'10000000'10000000'10000000'10000000'00000000'00000000ULL) * 8 + pick_joined_pattern(b, 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00111110ULL);
+    idxes[71] = pick_pattern(phase_idx, -1, b_arr2, 7, 1, 0, 9, 8, 56) * 64 + pick_joined_pattern(b, 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'01111100ULL) * 8 + pick_joined_pattern(b, 0b00000000'00000001'00000001'00000001'00000001'00000001'00000000'00000000ULL);
     // corner + 1 edge
-    idxes[74] = pick_pattern(phase_idx, -1, b_arr2, 56, 57, 49, 50, 53, 54, 62, 63) * 8 + pick_joined_pattern(b, 0b00111100'00000000'00000000'00000000'00000000'00000000'00000000'00000000ULL);
-    idxes[75] = pick_pattern(phase_idx, -1, b_arr2, 63, 55, 54, 46, 22, 14, 15, 7) * 8 + pick_joined_pattern(b, 0b00000000'00000000'10000000'10000000'10000000'10000000'00000000'00000000ULL);
-    idxes[76] = pick_pattern(phase_idx, -1, b_arr2, 7, 6, 14, 13, 10, 9, 1, 0) * 8 + pick_joined_pattern(b, 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00111100ULL);
-    idxes[77] = pick_pattern(phase_idx, -1, b_arr2, 0, 8, 9, 17, 41, 49, 48, 56) * 8 + pick_joined_pattern(b, 0b00000000'00000000'00000001'00000001'00000001'00000001'00000000'00000000ULL);
+    idxes[72] = pick_pattern(phase_idx, -1, b_arr2, 56, 57, 49, 50, 53, 54, 62, 63) * 8 + pick_joined_pattern(b, 0b00111100'00000000'00000000'00000000'00000000'00000000'00000000'00000000ULL);
+    idxes[73] = pick_pattern(phase_idx, -1, b_arr2, 63, 55, 54, 46, 22, 14, 15, 7) * 8 + pick_joined_pattern(b, 0b00000000'00000000'10000000'10000000'10000000'10000000'00000000'00000000ULL);
+    idxes[74] = pick_pattern(phase_idx, -1, b_arr2, 7, 6, 14, 13, 10, 9, 1, 0) * 8 + pick_joined_pattern(b, 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00111100ULL);
+    idxes[75] = pick_pattern(phase_idx, -1, b_arr2, 0, 8, 9, 17, 41, 49, 48, 56) * 8 + pick_joined_pattern(b, 0b00000000'00000000'00000001'00000001'00000001'00000001'00000000'00000000ULL);
 }
 
 inline void convert_idx(string str, ofstream *fout){
@@ -403,12 +403,12 @@ inline void convert_idx(string str, ofstream *fout){
     if (ai_player == 1)
         score = -score;
     //b.print();
-    int idxes[78];
+    int idxes[80];
     calc_idx(0, &b, idxes);
     int n_stones = pop_count_ull(b.player | b.opponent);
     fout->write((char*)&n_stones, 4);
     fout->write((char*)&ai_player, 4);
-    for (i = 0; i < 78; ++i)
+    for (i = 0; i < 80; ++i)
         fout->write((char*)&idxes[i], 4);
     fout->write((char*)&score, 4);
 }
