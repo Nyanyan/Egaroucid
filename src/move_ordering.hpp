@@ -96,14 +96,11 @@ inline int create_disturb_opponent_flip_inside(Board *board, const int n_o_legal
 }
 
 inline int calc_openness(const Board *board, const Flip *flip){
-    uint64_t hmask = flip->flip & 0x7E7E7E7E7E7E7E7EULL;
-    uint64_t vmask = flip->flip & 0x00FFFFFFFFFFFF00ULL;
-    uint64_t hvmask = flip->flip & 0x007E7E7E7E7E7E00ULL;
-    uint64_t around = 
-        (hmask << 1) | (hmask >> 1) | 
-        (vmask << HW) | (vmask >> HW) | 
-        (hvmask << HW_M1) | (hvmask >> HW_M1) | 
-        (hvmask << HW_P1) | (hvmask >> HW_P1);
+    uint64_t f = flip->flip;
+    uint64_t around = 0ULL;
+    for (uint_fast8_t cell = first_bit(&f); f; cell = next_bit(&f))
+        around |= bit_around[cell];
+    around &= ~flip->flip;
     return pop_count_ull(~(board->player | board->opponent | (1ULL << flip->pos)) & around);
 }
 
