@@ -19,7 +19,7 @@ using namespace std;
 #endif
 */
 #define MID_FAST_DEPTH 1
-#define END_FAST_DEPTH 6
+#define END_FAST_DEPTH 7
 #define MID_TO_END_DEPTH 13
 #define CUDA_YBWC_SPLIT_MAX_DEPTH 10
 #define USE_PARENT_TT_DEPTH_THRESHOLD 9
