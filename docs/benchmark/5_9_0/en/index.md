@@ -2,7 +2,7 @@
 
 <a href="https://twitter.com/share?ref_src=twsrc%5Etfw" class="twitter-share-button" data-text="Othello research support AI app Egaroucid" data-url="https://www.egaroucid-app.nyanyan.dev/" data-hashtags="egaroucid" data-related="takuto_yamana,Nyanyan_Cube" data-show-count="false">Tweet</a><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script> <a href=./../ja/>日本語</a>
 
-Version 5.10.0
+Version 5.9.0
 
 ## FFO endgame test
 
@@ -18,31 +18,30 @@ I did complete searches for this test and got the time to solve it and number of
 
 ### Core i9-11900K, 16 threads
 
-<div style="font-size:60%"><pre>#40 depth 20 value 38 policy a2 nodes 19437182 time 152 nps 127876197
-#41 depth 22 value 0 policy h4 nodes 28051331 time 254 nps 110438311
-#42 depth 22 value 6 policy g2 nodes 41090111 time 348 nps 118075031
-#43 depth 23 value -12 policy c7 nodes 86703422 time 545 nps 159088847
-#44 depth 23 value -14 policy d2 nodes 15931449 time 293 nps 54373546
-#45 depth 24 value 6 policy b2 nodes 534802372 time 2520 nps 212223163
-#46 depth 24 value -8 policy b3 nodes 103987485 time 924 nps 112540568
-#47 depth 25 value 4 policy g2 nodes 39916702 time 443 nps 90105422
-#48 depth 25 value 28 policy f6 nodes 167648119 time 1615 nps 103806884
-#49 depth 26 value 16 policy e1 nodes 273867075 time 2482 nps 110341287
-#50 depth 26 value 10 policy d8 nodes 1177832829 time 7292 nps 161523975
-#51 depth 27 value 6 policy a3 nodes 263723106 time 2488 nps 105998032
-#52 depth 27 value 0 policy a3 nodes 431703973 time 3830 nps 112716442
-#53 depth 28 value -2 policy d8 nodes 5006612436 time 28493 nps 175713769
-#54 depth 28 value -2 policy c7 nodes 6461535397 time 27352 nps 236236304
-#55 depth 29 value 0 policy g6 nodes 22750219689 time 123158 nps 184723848
-#56 depth 29 value 2 policy h5 nodes 1221714952 time 10716 nps 114008487
-#57 depth 30 value -10 policy a6 nodes 1997564547 time 13915 nps 143554764
-#58 depth 30 value 4 policy g1 nodes 1964184672 time 13976 nps 140539830
-#59 depth 34 value 64 policy g8 nodes 13079 time 38 nps 344184
-240.834 sec
-242.29370999336243 sec total
-42586539928 nodes
-176829434.08322746 nps</pre></div>
-
+<div style="font-size:60%"><pre>#40 depth 20 value 38 policy a2 nodes 18499320 time 146 nps 126707671
+#41 depth 22 value 0 policy h4 nodes 26526311 time 256 nps 103618402
+#42 depth 22 value 6 policy g2 nodes 40548462 time 350 nps 115852748
+#43 depth 23 value -12 policy c7 nodes 82911207 time 574 nps 144444611
+#44 depth 23 value -14 policy d2 nodes 15270420 time 301 nps 50732292
+#45 depth 24 value 6 policy b2 nodes 498339937 time 2533 nps 196739019
+#46 depth 24 value -8 policy b3 nodes 76840991 time 837 nps 91805246
+#47 depth 25 value 4 policy g2 nodes 37334630 time 435 nps 85826735
+#48 depth 25 value 28 policy f6 nodes 204129724 time 1838 nps 111060785
+#49 depth 26 value 16 policy e1 nodes 256316623 time 2496 nps 102690954
+#50 depth 26 value 10 policy d8 nodes 1179213508 time 7966 nps 148030819
+#51 depth 27 value 6 policy a3 nodes 249226421 time 2557 nps 97468291
+#52 depth 27 value 0 policy a3 nodes 560569333 time 5363 nps 104525327
+#53 depth 28 value -2 policy d8 nodes 4883501669 time 30118 nps 162145616
+#54 depth 28 value -2 policy c7 nodes 6314578504 time 28803 nps 219233361
+#55 depth 29 value 0 policy g6 nodes 23384774474 time 138860 nps 168405404
+#56 depth 29 value 2 policy h5 nodes 1140351709 time 11095 nps 102780685
+#57 depth 30 value -10 policy a6 nodes 1668140404 time 13494 nps 123620898
+#58 depth 30 value 4 policy g1 nodes 1921933011 time 15759 nps 121957802
+#59 depth 34 value 64 policy g8 nodes 28904 time 23 nps 1256695
+263.804 sec
+264.7655096054077 sec total
+42559035562 nodes
+161328242.03575382 nps</pre></div>
 
 
 
@@ -127,4 +126,3 @@ phase 29 mse 4.51746 mae 1.3841</pre></div>
 * [5.5.0 and 5.6.0](./../5_5_0)
 * [5.7.0](./../5_7_0)
 * [5.8.0](./../5_8_0)
-* [5.9.0](./../5_9_0)
