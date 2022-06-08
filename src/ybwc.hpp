@@ -36,7 +36,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
 int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t legal, const bool *searching);
 int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
 
-pair<int, uint64_t> ybwc_do_task(uint64_t player, uint64_t opponent, uint_fast8_t n, uint_fast8_t p, uint_fast8_t parity, 
+Parallel_task ybwc_do_task(uint64_t player, uint64_t opponent, uint_fast8_t n, uint_fast8_t p, uint_fast8_t parity, 
         bool use_mpc, double mpct, uint_fast8_t eval_feature_reversed, //vector<int> eval_features, 
         int alpha, int beta, int depth, uint64_t legal, bool is_end_search, const bool *searching, int policy){
     Search search;
@@ -53,9 +53,17 @@ pair<int, uint64_t> ybwc_do_task(uint64_t player, uint64_t opponent, uint_fast8_
     search.n_nodes = 0ULL;
     calc_features(&search);
     int g = -nega_alpha_ordering(&search, alpha, beta, depth, false, legal, is_end_search, searching);
-    if (*searching)
-        return make_pair(g, search.n_nodes);
-    return make_pair(SCORE_UNDEFINED, search.n_nodes);
+    Parallel_task task;
+    if (*searching){
+        task.value = g;
+        task.n_nodes = search.n_nodes;
+        task.cell = policy;
+    } else{
+        task.value = SCORE_UNDEFINED;
+        task.n_nodes = search.n_nodes;
+        task.cell = policy;
+    }
+    return task;
 }
 /*
 pair<int, uint64_t> ybwc_do_task_end(Search search, int alpha, int beta, int depth, uint64_t legal, const bool *searching){
@@ -92,7 +100,7 @@ inline bool ybwc_split(Search *search, const Flip *flip, int alpha, int beta, co
     return false;
 }
 */
-inline bool ybwc_split_without_move(const Search *search, const Flip *flip, int alpha, int beta, const int depth, uint64_t legal, bool is_end_search, const bool *searching, int policy, const int pv_idx, const int canput, const int split_count, vector<future<pair<int, uint64_t>>> &parallel_tasks, const int first_val, const int last_val){
+inline bool ybwc_split_without_move(const Search *search, const Flip *flip, int alpha, int beta, const int depth, uint64_t legal, bool is_end_search, const bool *searching, int policy, const int pv_idx, const int canput, const int split_count, vector<future<Parallel_task>> &parallel_tasks, const int first_val, const int last_val){
     if (pv_idx > 1 && 
         depth >= YBWC_MID_SPLIT_MIN_DEPTH/* &&
         first_val - flip->value > depth_to_offset(depth)*/){
@@ -151,16 +159,26 @@ inline bool ybwc_split_without_move_negascout(Search *search, const Flip *flip, 
     return false;
 }
 */
-inline int ybwc_wait_all(Search *search, vector<future<pair<int, uint64_t>>> &parallel_tasks){
-    int g = -INF;
-    pair<int, uint64_t> got_task;
-    for (future<pair<int, uint64_t>> &task: parallel_tasks){
+inline void ybwc_wait_all(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v, int *best_move){
+    Parallel_task got_task;
+    for (future<Parallel_task> &task: parallel_tasks){
         got_task = task.get();
-        g = max(g, got_task.first);
-        search->n_nodes += got_task.second;
+        if (*v < got_task.value){
+            *v = got_task.value;
+            *best_move = got_task.cell;
+        }
+        search->n_nodes += got_task.n_nodes;
     }
-    return g;
 }
+
+inline void ybwc_wait_all(Search *search, vector<future<Parallel_task>> &parallel_tasks){
+    Parallel_task got_task;
+    for (future<Parallel_task> &task: parallel_tasks){
+        got_task = task.get();
+        search->n_nodes += got_task.n_nodes;
+    }
+}
+
 /*
 inline int ybwc_negascout_wait_all(Search *search, vector<future<pair<int, uint64_t>>> &parallel_tasks, vector<Flip> &flips, int before_alpha, int alpha, int beta, int depth, bool skipped, bool is_end_search, int *best_move){
     int v = alpha, g;

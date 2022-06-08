@@ -249,7 +249,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
             int pv_idx = 0, split_count = 0;
             if (best_move != TRANSPOSE_TABLE_UNDEFINED)
                 pv_idx = 1;
-            vector<future<pair<int, uint64_t>>> parallel_tasks;
+            vector<future<Parallel_task>> parallel_tasks;
             bool n_searching = true;
             for (const Flip &flip: move_list){
                 if (!(*searching))
@@ -281,9 +281,8 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
                     n_searching = false;
                     ybwc_wait_all(search, parallel_tasks);
                 } else{
-                    g = ybwc_wait_all(search, parallel_tasks);
-                    alpha = max(alpha, g);
-                    v = max(v, g);
+                    ybwc_wait_all(search, parallel_tasks, &v, &best_move);
+                    alpha = max(alpha, v);
                 }
             }
         #else
@@ -476,7 +475,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
                         g = -nega_scout(search, -beta, -alpha, depth - 1, false, flip.n_legal, is_end_search, searching);
                     else{
                         g = -nega_alpha_ordering(search, -alpha - 1, -alpha, depth - 1, false, flip.n_legal, is_end_search, searching);
-                        if (alpha < g)
+                        if (alpha < g && g < beta)
                             g = -nega_scout(search, -beta, -g, depth - 1, false, flip.n_legal, is_end_search, searching);
                     }
                 search->board.undo(&flip);

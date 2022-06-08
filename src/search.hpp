@@ -84,6 +84,12 @@ struct Search{
     uint_fast8_t eval_feature_reversed;
 };
 
+struct Parallel_task{
+    int value;
+    uint64_t n_nodes;
+    uint_fast8_t cell;
+};
+
 inline void calc_stability(Board *b, int *stab0, int *stab1);
 inline int calc_stability_player(uint64_t player, uint64_t opponent);
 
