@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <iostream>
 #include "common.hpp"
 #include "setting.hpp"
@@ -68,30 +68,30 @@ void print_board(uint64_t p, uint64_t o){
 }
 
 #if USE_BUILTIN_POPCOUNT
-    #define	pop_count_ull(x) __builtin_popcountll(x)
-    #define pop_count_uint(x) __builtin_popcount(x)
-    #define pop_count_uchar(x) __builtin_popcount(x)
+	#define	pop_count_ull(x) (int)__popcnt64(x)
+	#define pop_count_uint(x) (int)__popcnt(x)
+	#define pop_count_uchar(x) (int)__popcnt(x)
 #else
 
-    inline int pop_count_ull(uint64_t x){
-        x = x - ((x >> 1) & 0x5555555555555555ULL);
-        x = (x & 0x3333333333333333ULL) + ((x >> 2) & 0x3333333333333333ULL);
-        x = (x + (x >> 4)) & 0x0F0F0F0F0F0F0F0FULL;
-        x = (x * 0x0101010101010101ULL) >> 56;
-        return x;
-    }
+	inline int pop_count_ull(uint64_t x) {
+		x = x - ((x >> 1) & 0x5555555555555555ULL);
+		x = (x & 0x3333333333333333ULL) + ((x >> 2) & 0x3333333333333333ULL);
+		x = (x + (x >> 4)) & 0x0F0F0F0F0F0F0F0FULL;
+		x = (x * 0x0101010101010101ULL) >> 56;
+		return x;
+	}
 
-    inline int pop_count_uint(uint32_t x){
-        x = (x & 0x55555555) + ((x & 0xAAAAAAAA) >> 1);
-        x = (x & 0x33333333) + ((x & 0xCCCCCCCC) >> 2);
-        return (x & 0x0F0F0F0F) + ((x & 0xF0F0F0F0) >> 4);
-    }
+	inline int pop_count_uint(uint32_t x) {
+		x = (x & 0x55555555) + ((x & 0xAAAAAAAA) >> 1);
+		x = (x & 0x33333333) + ((x & 0xCCCCCCCC) >> 2);
+		return (x & 0x0F0F0F0F) + ((x & 0xF0F0F0F0) >> 4);
+	}
 
-    inline int pop_count_uchar(uint8_t x){
-        x = (x & 0b01010101) + ((x & 0b10101010) >> 1);
-        x = (x & 0b00110011) + ((x & 0b11001100) >> 2);
-        return (x & 0b00001111) + ((x & 0b11110000) >> 4);
-    }
+	inline int pop_count_uchar(uint8_t x) {
+		x = (x & 0b01010101) + ((x & 0b10101010) >> 1);
+		x = (x & 0b00110011) + ((x & 0b11001100) >> 2);
+		return (x & 0b00001111) + ((x & 0b11110000) >> 4);
+	}
 
 #endif
 
@@ -255,6 +255,17 @@ inline uint_fast8_t next_bit(uint64_t *x){
     *x &= *x - 1;
     return ntz(x);
 }
+
+constexpr uint64_t bit_around[HW2] = {
+    0x302ULL, 0x705ULL, 0xe0aULL, 0x1c14ULL, 0x3828ULL, 0x7050ULL, 0xe0a0ULL, 0xc040ULL, 
+    0x30203ULL, 0x70507ULL, 0xe0a0eULL, 0x1c141cULL, 0x382838ULL, 0x705070ULL, 0xe0a0e0ULL, 0xc040c0ULL,
+    0x3020300ULL, 0x7050700ULL, 0xe0a0e00ULL, 0x1c141c00ULL, 0x38283800ULL, 0x70507000ULL, 0xe0a0e000ULL, 0xc040c000ULL,
+    0x302030000ULL, 0x705070000ULL, 0xe0a0e0000ULL, 0x1c141c0000ULL, 0x3828380000ULL, 0x7050700000ULL, 0xe0a0e00000ULL, 0xc040c00000ULL,
+    0x30203000000ULL, 0x70507000000ULL, 0xe0a0e000000ULL, 0x1c141c000000ULL, 0x382838000000ULL, 0x705070000000ULL, 0xe0a0e0000000ULL, 0xc040c0000000ULL,
+    0x3020300000000ULL, 0x7050700000000ULL, 0xe0a0e00000000ULL, 0x1c141c00000000ULL, 0x38283800000000ULL, 0x70507000000000ULL, 0xe0a0e000000000ULL, 0xc040c000000000ULL,
+    0x302030000000000ULL, 0x705070000000000ULL, 0xe0a0e0000000000ULL, 0x1c141c0000000000ULL, 0x3828380000000000ULL, 0x7050700000000000ULL, 0xe0a0e00000000000ULL, 0xc040c00000000000ULL,
+    0x203000000000000ULL, 0x507000000000000ULL, 0xa0e000000000000ULL, 0x141c000000000000ULL, 0x2838000000000000ULL, 0x5070000000000000ULL, 0xa0e0000000000000ULL, 0x40c0000000000000ULL
+};
 
 /*
 constexpr uint8_t d7_mask[HW2] = {

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <iostream>
 #include "setting.hpp"
 #include "common.hpp"
@@ -19,6 +19,8 @@ class Flip{
         uint64_t flip;
         int32_t value;
         uint64_t n_legal;
+		int stab0;
+		int stab1;
     
     public:
         inline void copy(Flip *mob) const{

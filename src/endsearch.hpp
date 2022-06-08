@@ -121,27 +121,33 @@ inline int last2(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
         if (!p0_parity && p1_parity)
             swap(p0, p1);
     #endif
-    int v = -INF, g;
+    int v, g;
     Flip flip;
-    calc_flip(&flip, &search->board, p0);
-    if (flip.flip){
-        search->board.move(&flip);
-            g = -last1(search, -beta, -alpha, p1);
-        search->board.undo(&flip);
-        alpha = max(alpha, g);
-        if (beta <= alpha)
-            return alpha;
-        v = max(v, g);
-    }
-    calc_flip(&flip, &search->board, p1);
-    if (flip.flip){
-        search->board.move(&flip);
-            g = -last1(search, -beta, -alpha, p0);
-        search->board.undo(&flip);
-        alpha = max(alpha, g);
-        if (beta <= alpha)
-            return alpha;
-        v = max(v, g);
+    if (bit_around[p0] & search->board.opponent){
+        calc_flip(&flip, &search->board, p0);
+        if (flip.flip){
+            search->board.move(&flip);
+                g = -last1(search, -beta, -alpha, p1);
+            search->board.undo(&flip);
+            alpha = max(alpha, g);
+            if (beta <= alpha)
+                return alpha;
+            v = g;
+        } else
+            v = -INF;
+    } else
+        v = -INF;
+    if (bit_around[p1] & search->board.opponent){
+        calc_flip(&flip, &search->board, p1);
+        if (flip.flip){
+            search->board.move(&flip);
+                g = -last1(search, -beta, -alpha, p0);
+            search->board.undo(&flip);
+            alpha = max(alpha, g);
+            if (beta <= alpha)
+                return alpha;
+            v = max(v, g);
+        }
     }
     if (v == -INF){
         if (skipped)
@@ -179,9 +185,46 @@ inline int last3(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
             }
         }
     #endif
-    uint64_t legal = search->board.get_legal();
+    //uint64_t legal = search->board.get_legal();
     int v = -INF, g;
-    if (legal == 0ULL){
+    Flip flip;
+    if (bit_around[p0] & search->board.opponent){
+        calc_flip(&flip, &search->board, p0);
+        if (flip.flip){
+            search->board.move(&flip);
+                g = -last2(search, -beta, -alpha, p1, p2, false);
+            search->board.undo(&flip);
+            alpha = max(alpha, g);
+            if (beta <= alpha)
+                return alpha;
+            v = g;
+        }
+    }
+    if (bit_around[p1] & search->board.opponent){
+        calc_flip(&flip, &search->board, p1);
+        if (flip.flip){
+            search->board.move(&flip);
+                g = -last2(search, -beta, -alpha, p0, p2, false);
+            search->board.undo(&flip);
+            alpha = max(alpha, g);
+            if (beta <= alpha)
+                return alpha;
+            v = max(v, g);
+        }
+    }
+    if (bit_around[p2] & search->board.opponent){
+        calc_flip(&flip, &search->board, p2);
+        if (flip.flip){
+            search->board.move(&flip);
+                g = -last2(search, -beta, -alpha, p0, p1, false);
+            search->board.undo(&flip);
+            alpha = max(alpha, g);
+            if (beta <= alpha)
+                return alpha;
+            v = max(v, g);
+        }
+    }
+    if (v == -INF){
         if (skipped)
             v = end_evaluate(&search->board);
         else{
@@ -190,37 +233,6 @@ inline int last3(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
             search->board.pass();
         }
         return v;
-    }
-    Flip flip;
-    if (1 & (legal >> p0)){
-        calc_flip(&flip, &search->board, p0);
-        search->board.move(&flip);
-            g = -last2(search, -beta, -alpha, p1, p2, false);
-        search->board.undo(&flip);
-        alpha = max(alpha, g);
-        if (beta <= alpha)
-            return alpha;
-        v = max(v, g);
-    }
-    if (1 & (legal >> p1)){
-        calc_flip(&flip, &search->board, p1);
-        search->board.move(&flip);
-            g = -last2(search, -beta, -alpha, p0, p2, false);
-        search->board.undo(&flip);
-        alpha = max(alpha, g);
-        if (beta <= alpha)
-            return alpha;
-        v = max(v, g);
-    }
-    if (1 & (legal >> p2)){
-        calc_flip(&flip, &search->board, p2);
-        search->board.move(&flip);
-            g = -last2(search, -beta, -alpha, p0, p1, false);
-        search->board.undo(&flip);
-        alpha = max(alpha, g);
-        if (beta <= alpha)
-            return alpha;
-        v = max(v, g);
     }
     return v;
 }
@@ -822,7 +834,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
     }
     #if USE_END_MPC && false
         if (search->use_mpc){
-            if (mpc(search, alpha, beta, HW2 - search->board.n, legal, false, &v))
+            if (mpc(search, alpha, beta, HW2 - search->board.n, legal, false, &v, searching))
                 return v;
         }
     #endif
