@@ -353,17 +353,15 @@ inline void move_ordering(Search *search, vector<Flip> &move_list, int depth, in
     int eval_alpha = -min(SCORE_MAX, beta + MOVE_ORDERING_VALUE_OFFSET);
     int eval_beta = -max(-SCORE_MAX, alpha - MOVE_ORDERING_VALUE_OFFSET);
     int eval_depth = depth >> 3;
-    if (depth >= 18){
+    //eval_depth += max(0, min(26, depth) - 16) >> 1;
+    if (depth >= 18 && is_end_search){
         ++eval_depth;
         if (depth >= 20){
             ++eval_depth;
             if (depth >= 22){
                 ++eval_depth;
-                if (depth >= 24){
+                if (depth >= 25){
                     ++eval_depth;
-                    if (depth >= 26){
-                        ++eval_depth;
-                    }
                 }
             }
         }
