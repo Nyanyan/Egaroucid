@@ -359,6 +359,8 @@ inline void move_ordering(Search *search, vector<Flip> &move_list, int depth, in
         ++eval_depth;
     if (depth >= 22)
         ++eval_depth;
+    if (depth >= 24)
+        ++eval_depth;
     int mobility_depth = (depth >> 2) & 0b10;
     //eval_depth = max(0, eval_depth);
     /*
