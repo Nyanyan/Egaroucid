@@ -219,13 +219,13 @@ inline int get_potential_mobility(uint64_t opponent, uint64_t empties){
     return pop_count_ull(empties & res);
 }
 
-inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int beta, const int depth, const int mobility_depth, const bool *searching, const int search_depth){
+inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int beta, const int depth, const bool *searching, const int search_depth){
     if (flip->flip == search->board.opponent)
         flip->value = W_WIPEOUT;
     else{
         flip->value = cell_weight[flip->pos];
-        if (search->board.n <= MIDGAME_N_STONES)
-            flip->value += -(calc_openness(&search->board, flip) >> 1) * W_OPENNESS;
+        //if (search->board.n <= MIDGAME_N_STONES)
+        flip->value += -(calc_openness(&search->board, flip) >> 1) * W_OPENNESS;
         flip->value -= give_potential_flip_inside(&search->board, flip) * W_GIVE_POTENTIAL_FLIP_INSIDE;
         if (depth < 0){
             search->board.move(flip);
@@ -366,7 +366,6 @@ inline void move_ordering(Search *search, vector<Flip> &move_list, int depth, in
             }
         }
     }
-    int mobility_depth = (depth >> 2) & 0b10;
     //eval_depth = max(0, eval_depth);
     /*
     move_ordering_info minfo;
@@ -377,7 +376,7 @@ inline void move_ordering(Search *search, vector<Flip> &move_list, int depth, in
     minfo.opponent_break_wall_stones = calc_opponent_break_wall_stones(minfo.outside & search->board.opponent, minfo.opponent_bound_stones);
     */
     for (Flip &flip: move_list)
-        move_evaluate(search, &flip, eval_alpha, eval_beta, eval_depth, mobility_depth, searching, depth);
+        move_evaluate(search, &flip, eval_alpha, eval_beta, eval_depth, searching, depth);
     sort(move_list.begin(), move_list.end(), cmp_move_ordering);
 }
 /*
