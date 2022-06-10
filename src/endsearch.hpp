@@ -858,10 +858,13 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
                 #endif
                 g = -nega_alpha_end(search, -beta, -alpha, false, LEGAL_UNDEFINED, searching);
             search->board.undo(&flip_best);
-            //eval_undo(search, &flip);
-            alpha = max(alpha, g);
-            v = g;
-            legal ^= 1ULL << best_move;
+            if (*searching){
+                //eval_undo(search, &flip);
+                alpha = max(alpha, g);
+                v = g;
+                legal ^= 1ULL << best_move;
+            } else
+                return SCORE_UNDEFINED;
         } else
             best_move = TRANSPOSE_TABLE_UNDEFINED;
     }
