@@ -20,7 +20,8 @@
 #define W_PARITY1 2
 #define W_PARITY2 4
 
-#define W_VALUE 10
+#define W_VALUE_DEEP 10
+#define W_VALUE 8
 #define W_VALUE_SHALLOW 6
 #define W_CACHE_HIT 16
 #define W_MOBILITY 12
@@ -271,7 +272,7 @@ inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int
                         //double mpct = search->mpct;
                         //search->use_mpc = true;
                         //search->mpct = min(search->mpct, 1.8);
-                        flip->value -= nega_alpha_ordering_nomemo(search, alpha, beta, depth, false, flip->n_legal, searching) * W_VALUE;
+                        flip->value -= nega_alpha_ordering_nomemo(search, alpha, beta, depth, false, flip->n_legal, searching) * W_VALUE_DEEP;
                         //search->use_mpc = use_mpc;
                         //search->mpct = mpct;
                         //}
