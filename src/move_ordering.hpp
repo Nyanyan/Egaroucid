@@ -29,7 +29,7 @@
 #define W_OPPONENT_POTENTIAL_MOBILITY 8
 #define W_OPENNESS 1
 #define W_OPPONENT_OPENNESS 2
-#define W_FLIP_INSIDE 16
+#define W_FLIP_INSIDE 8
 #define W_BOUND_FLIP -1
 #define W_CREATE_WALL -4
 #define W_BREAK_WALL -32
@@ -226,7 +226,11 @@ inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int
     else{
         flip->value = cell_weight[flip->pos];
         //if (search->board.n <= MIDGAME_N_STONES)
-        flip->value += -(calc_openness(&search->board, flip) >> 1) * W_OPENNESS;
+        int openness = calc_openness(&search->board, flip);
+        if (openness == 0)
+            flip->value += W_FLIP_INSIDE;
+        else
+            flip->value -= (openness >> 1) * W_OPENNESS;
         flip->value -= give_potential_flip_inside(&search->board, flip) * W_GIVE_POTENTIAL_FLIP_INSIDE;
         if (depth < 0){
             search->board.move(flip);
