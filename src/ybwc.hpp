@@ -102,8 +102,8 @@ inline bool ybwc_split(Search *search, const Flip *flip, int alpha, int beta, co
 */
 inline bool ybwc_split_without_move(const Search *search, const Flip *flip, int alpha, int beta, const int depth, uint64_t legal, bool is_end_search, const bool *searching, int policy, const int pv_idx, const int canput, const int split_count, vector<future<Parallel_task>> &parallel_tasks, const int first_val, const int last_val){
     if (pv_idx > 0 && 
-        depth >= YBWC_MID_SPLIT_MIN_DEPTH &&
-        first_val - flip->value > 2){
+        depth >= YBWC_MID_SPLIT_MIN_DEPTH /*&&
+        first_val - flip->value > 2*/){
         if (thread_pool.n_idle()){
             //vector<int> eval_features(N_SYMMETRY_PATTERNS);
             //for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i)
@@ -159,23 +159,43 @@ inline bool ybwc_split_without_move_negascout(Search *search, const Flip *flip, 
     return false;
 }
 */
+inline void ybwc_get_end_tasks(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v, int *best_move){
+    Parallel_task got_task;
+    for (future<Parallel_task> &task: parallel_tasks){
+        if (task.valid()){
+            if (task.wait_for(chrono::seconds(0)) == future_status::ready){
+                got_task = task.get();
+                if (*v < got_task.value){
+                    *v = got_task.value;
+                    *best_move = got_task.cell;
+                }
+                search->n_nodes += got_task.n_nodes;
+            }
+        }
+    }
+}
+
 inline void ybwc_wait_all(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v, int *best_move){
     Parallel_task got_task;
     for (future<Parallel_task> &task: parallel_tasks){
-        got_task = task.get();
-        if (*v < got_task.value){
-            *v = got_task.value;
-            *best_move = got_task.cell;
+        if (task.valid()){
+            got_task = task.get();
+            if (*v < got_task.value){
+                *v = got_task.value;
+                *best_move = got_task.cell;
+            }
+            search->n_nodes += got_task.n_nodes;
         }
-        search->n_nodes += got_task.n_nodes;
     }
 }
 
 inline void ybwc_wait_all(Search *search, vector<future<Parallel_task>> &parallel_tasks){
     Parallel_task got_task;
     for (future<Parallel_task> &task: parallel_tasks){
-        got_task = task.get();
-        search->n_nodes += got_task.n_nodes;
+        if (task.valid()){
+            got_task = task.get();
+            search->n_nodes += got_task.n_nodes;
+        }
     }
 }
 

@@ -271,6 +271,13 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
                                 eval_undo(search, &flip);
                                 break;
                             }
+                            ybwc_get_end_tasks(search, parallel_tasks, &v, &best_move);
+                            alpha = max(alpha, v);
+                            if (beta <= alpha){
+                                search->board.undo(&flip);
+                                eval_undo(search, &flip);
+                                break;
+                            }
                         }
                     }
                 search->board.undo(&flip);
