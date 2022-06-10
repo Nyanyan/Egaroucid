@@ -42,7 +42,27 @@ answer = '''#40 38  a2
 #56 2   h5
 #57 -10 a6
 #58 4   g1
-#59 64  g8  h4  e8'''
+#59 64  g8  h4  e8
+#60 20  c2 
+#61 -14 h3 g1
+#62 28  e8
+#63 -2  f2
+#64 20  b4
+#65 10  g1
+#66 30  h3
+#67 22  h3
+#68 28  e8 
+#69 0   h3
+#70 -24 e3
+#71 20  d2
+#72 24  e1
+#73 -4  g4
+#74 -30 f1
+#75 14  d2
+#76 32  a3
+#77 34  b7
+#78 8  f1
+#79 64 d7'''
 
 res_str_proc = ''
 for line, ans_line in zip(res_str.splitlines(), answer.splitlines()):

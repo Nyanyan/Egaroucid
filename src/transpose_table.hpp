@@ -29,7 +29,7 @@ class Node_child_transpose_table{
         inline void init(){
             player.store(0ULL);
             opponent.store(0ULL);
-            best_move.store(0ULL);
+            best_move.store(0);
             //free(this);
         }
 
@@ -57,11 +57,11 @@ class Node_child_transpose_table{
 
         inline int get(const Board *board){
             int res = TRANSPOSE_TABLE_UNDEFINED;
-            if (board->player == player.load(memory_order_relaxed) && board->opponent == opponent.load(memory_order_relaxed)){
-                res = best_move;
-                if (board->player != player.load(memory_order_relaxed) || board->opponent != opponent.load(memory_order_relaxed))
-                    res = TRANSPOSE_TABLE_UNDEFINED;
-            }
+            //if (board->player == player.load(memory_order_relaxed) && board->opponent == opponent.load(memory_order_relaxed)){
+            res = best_move;
+            if (board->player != player.load(memory_order_relaxed) || board->opponent != opponent.load(memory_order_relaxed))
+                res = TRANSPOSE_TABLE_UNDEFINED;
+            //}
             return res;
         }
 
@@ -234,14 +234,14 @@ class Node_parent_transpose_table{
         }
 
         inline void get(const Board *board, int *l, int *u){
-            if (board->player == player.load(memory_order_relaxed) && board->opponent == opponent.load(memory_order_relaxed)){
-                *l = lower.load(memory_order_relaxed);
-                *u = upper.load(memory_order_relaxed);
-                if (board->player != player.load(memory_order_relaxed) || board->opponent != opponent.load(memory_order_relaxed)){
-                    *l = -INF;
-                    *u = INF;
-                }
+            //if (board->player == player.load(memory_order_relaxed) && board->opponent == opponent.load(memory_order_relaxed)){
+            *l = lower.load(memory_order_relaxed);
+            *u = upper.load(memory_order_relaxed);
+            if (board->player != player.load(memory_order_relaxed) || board->opponent != opponent.load(memory_order_relaxed)){
+                *l = -INF;
+                *u = INF;
             }
+            //}
         }
 
         inline int n_stones() const{
