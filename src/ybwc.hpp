@@ -177,6 +177,9 @@ inline void ybwc_get_end_tasks(Search *search, vector<future<Parallel_task>> &pa
 }
 
 inline void ybwc_wait_all(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *alpha, int beta, bool *searching){
+    ybwc_get_end_tasks(search, parallel_tasks, v, best_move, alpha);
+    if (beta <= (*alpha))
+        *searching = false;
     Parallel_task got_task;
     for (future<Parallel_task> &task: parallel_tasks){
         if (task.valid()){
