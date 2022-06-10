@@ -144,13 +144,22 @@ inline u64_4 operator~(const u64_4 lhs) {
 inline u64_4 nonzero(const u64_4 lhs) {
     return _mm256_cmpeq_epi64(lhs.data, _mm256_setzero_si256()) + u64_4(1);
 }
+
+inline uint64_t all_or(const u64_4 lhs) {
+    __m128i lhs_xz_yw = _mm_or_si128(_mm256_castsi256_si128(lhs.data), _mm256_extractf128_si256(lhs.data, 1));
+    return _mm_extract_epi64(lhs_xz_yw, 0) | _mm_extract_epi64(lhs_xz_yw, 1);
+}
+
+inline uint64_t all_and(const u64_4 lhs) {
+    __m128i lhs_xz_yw = _mm_and_si128(_mm256_castsi256_si128(lhs.data), _mm256_extractf128_si256(lhs.data, 1));
+    return _mm_extract_epi64(lhs_xz_yw, 0) & _mm_extract_epi64(lhs_xz_yw, 1);
+}
+
 /*
 end of modification
 */
 
-inline uint64_t all_and(const u64_4 x){
-    return _mm256_extract_epi64(x.data, 3) & _mm256_extract_epi64(x.data, 2) & _mm256_extract_epi64(x.data, 1) & _mm256_extract_epi64(x.data, 0);
-}
+
 
 #if USE_BUILTIN_POPCOUNT
     #define	pop_count_ull(x) (int)__popcnt64(x)

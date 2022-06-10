@@ -341,7 +341,7 @@ class Flip{
                 mask = mask << place;
                 outflank = mask & ((om | ~mask) + 1) & player;
                 flipped = flipped | ((outflank - nonzero(outflank)) & mask);
-                flip = _mm256_extract_epi64(flipped.data, 3) | _mm256_extract_epi64(flipped.data, 2) | _mm256_extract_epi64(flipped.data, 1) | _mm256_extract_epi64(flipped.data, 0);
+                flip = all_or(flipped);
                 /*
                 end of modification
                 */

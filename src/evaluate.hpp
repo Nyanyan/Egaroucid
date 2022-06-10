@@ -518,7 +518,7 @@ inline int calc_surround(const uint64_t player, const uint64_t empties){
     ));
 }
 
-#if USE_SIMD
+#if USE_SIMD && false
     inline int calc_stability_player(uint64_t player, uint64_t opponent){
         uint64_t full_h, full_v, full_d7, full_d9;
         uint64_t edge_stability = 0, player_stability = 0, n_stability;
