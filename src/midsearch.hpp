@@ -271,12 +271,13 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
                                 eval_undo(search, &flip);
                                 break;
                             }
-                            ybwc_get_end_tasks(search, parallel_tasks, &v, &best_move);
-                            alpha = max(alpha, v);
-                            if (beta <= alpha){
-                                search->board.undo(&flip);
-                                eval_undo(search, &flip);
-                                break;
+                            if (split_count){
+                                ybwc_get_end_tasks(search, parallel_tasks, &v, &best_move);
+                                if (beta <= alpha){
+                                    search->board.undo(&flip);
+                                    eval_undo(search, &flip);
+                                    break;
+                                }
                             }
                         }
                     }
@@ -288,8 +289,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
                     n_searching = false;
                     ybwc_wait_all(search, parallel_tasks);
                 } else{
-                    ybwc_wait_all(search, parallel_tasks, &v, &best_move);
-                    alpha = max(alpha, v);
+                    ybwc_wait_all(search, parallel_tasks, &v, &best_move, &alpha, beta, &n_searching);
                 }
             }
         #else
