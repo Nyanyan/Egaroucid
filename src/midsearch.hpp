@@ -90,10 +90,13 @@ int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped, con
             g = -nega_alpha(search, -beta, -alpha, depth - 1, false, searching);
         search->board.undo(&flip);
         eval_undo(search, &flip);
-        alpha = max(alpha, g);
-        v = max(v, g);
-        if (beta <= alpha)
-            break;
+        if (*searching){
+            alpha = max(alpha, g);
+            v = max(v, g);
+            if (beta <= alpha)
+                break;
+        } else
+            return SCORE_UNDEFINED;
     }
     return v;
 }
@@ -140,9 +143,12 @@ int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, b
                 g = -nega_alpha_ordering_nomemo(search, -beta, -alpha, depth - 1, false, LEGAL_UNDEFINED, searching);
             search->board.undo(&flip_best);
             eval_undo(search, &flip_best);
-            alpha = max(alpha, g);
-            v = g;
-            legal ^= 1ULL << best_move;
+            if (*searching){
+                alpha = max(alpha, g);
+                v = g;
+                legal ^= 1ULL << best_move;
+            } else
+                return SCORE_UNDEFINED;
         } else
             best_move = TRANSPOSE_TABLE_UNDEFINED;
     }
@@ -159,13 +165,16 @@ int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, b
                 g = -nega_alpha_ordering_nomemo(search, -beta, -alpha, depth - 1, false, flip.n_legal, searching);
             search->board.undo(&flip);
             eval_undo(search, &flip);
-            alpha = max(alpha, g);
-            if (v < g){
-                v = g;
-                best_move = flip.pos;
-            }
-            if (beta <= alpha)
-                break;
+            if (*searching){
+                alpha = max(alpha, g);
+                if (v < g){
+                    v = g;
+                    best_move = flip.pos;
+                }
+                if (beta <= alpha)
+                    break;
+            } else
+                return SCORE_UNDEFINED;
         }
     }
     //if (best_move != child_transpose_table.get(&search->board, hash_code))
