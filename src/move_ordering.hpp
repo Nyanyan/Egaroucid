@@ -97,12 +97,12 @@ inline int create_disturb_opponent_flip_inside(Board *board, const int n_o_legal
 }
 
 inline int calc_openness(const Board *board, const Flip *flip){
-    uint64_t f = flip->flip;
+    uint64_t f = flip->flip | (1ULL << flip->pos);
     uint64_t around = 0ULL;
     for (uint_fast8_t cell = first_bit(&f); f; cell = next_bit(&f))
         around |= bit_around[cell];
     around &= ~flip->flip;
-    return pop_count_ull(~(board->player | board->opponent | (1ULL << flip->pos)) & around);
+    return pop_count_ull(~(board->player | board->opponent) & around);
 }
 
 inline int calc_opponent_openness(Search *search, uint64_t legal){
@@ -226,11 +226,12 @@ inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int
     else{
         flip->value = cell_weight[flip->pos];
         //if (search->board.n <= MIDGAME_N_STONES)
-        int openness = calc_openness(&search->board, flip);
-        if (openness == 0)
-            flip->value += W_FLIP_INSIDE;
-        else
-            flip->value -= (openness >> 1) * W_OPENNESS;
+        //int openness = calc_openness(&search->board, flip);
+        //if (openness == 0)
+        //    flip->value += W_FLIP_INSIDE;
+        //else
+        //    flip->value -= (openness >> 1) * W_OPENNESS;
+        flip->value -= (calc_openness(&search->board, flip) >> 1) * W_OPENNESS;
         flip->value -= give_potential_flip_inside(&search->board, flip) * W_GIVE_POTENTIAL_FLIP_INSIDE;
         if (depth < 0){
             search->board.move(flip);
