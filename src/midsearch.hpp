@@ -260,8 +260,8 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
         move_ordering(search, move_list, depth, alpha, beta, is_end_search, searching);
         #if USE_MULTI_THREAD
             int pv_idx = 0, split_count = 0;
-            if (best_move != TRANSPOSE_TABLE_UNDEFINED)
-                pv_idx = 1;
+            //if (best_move != TRANSPOSE_TABLE_UNDEFINED)
+            //    pv_idx = 1;
             vector<future<Parallel_task>> parallel_tasks;
             bool n_searching = true;
             for (const Flip &flip: move_list){
