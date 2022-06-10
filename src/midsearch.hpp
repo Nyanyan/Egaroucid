@@ -192,8 +192,14 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
         return SCORE_UNDEFINED;
     if (is_end_search && depth <= MID_TO_END_DEPTH)
         return nega_alpha_end(search, alpha, beta, skipped, legal, searching);
-    if (!is_end_search && depth <= MID_FAST_DEPTH)
-        return nega_alpha(search, alpha, beta, depth, skipped, searching);
+    //if (!is_end_search && depth <= MID_FAST_DEPTH)
+    //    return nega_alpha(search, alpha, beta, depth, skipped, searching);
+    if (!is_end_search){
+        if (depth == 1)
+            return nega_alpha_eval1(search, alpha, beta, skipped, searching);
+        if (depth == 0)
+            return mid_evaluate_diff(search);
+    }
     ++(search->n_nodes);
     #if USE_MID_SC
         int stab_res = stability_cut(search, &alpha, &beta);
