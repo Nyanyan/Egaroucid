@@ -264,14 +264,17 @@ inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int
                         flip->value -= nega_alpha_eval1(search, alpha, beta, false, searching) * W_VALUE;
                         break;
                     default:
-                        if (depth <= MID_FAST_DEPTH)
-                            flip->value -= nega_alpha(search, alpha, beta, depth, false, searching) * W_VALUE;
-                        else{
-                            bool use_mpc = search->use_mpc;
-                            search->use_mpc = false;
-                                flip->value -= nega_alpha_ordering_nomemo(search, alpha, beta, depth, false, flip->n_legal, searching) * W_VALUE;
-                            search->use_mpc = use_mpc;
-                        }
+                        //if (depth <= MID_FAST_DEPTH)
+                        //    flip->value -= nega_alpha(search, alpha, beta, depth, false, searching) * W_VALUE;
+                        //else{
+                        //bool use_mpc = search->use_mpc;
+                        //double mpct = search->mpct;
+                        //search->use_mpc = true;
+                        //search->mpct = min(search->mpct, 1.8);
+                        flip->value -= nega_alpha_ordering_nomemo(search, alpha, beta, depth, false, flip->n_legal, searching) * W_VALUE;
+                        //search->use_mpc = use_mpc;
+                        //search->mpct = mpct;
+                        //}
                         break;
                 }
                 //}
