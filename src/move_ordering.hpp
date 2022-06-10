@@ -20,7 +20,7 @@
 #define W_PARITY1 2
 #define W_PARITY2 4
 
-#define W_VALUE_DEEP 10
+#define W_VALUE_DEEP 8
 #define W_VALUE 8
 #define W_VALUE_SHALLOW 6
 #define W_CACHE_HIT 16
@@ -34,7 +34,7 @@
 #define W_CREATE_WALL -4
 #define W_BREAK_WALL -32
 #define W_DOUBLE_FLIP -64
-#define W_GIVE_POTENTIAL_FLIP_INSIDE 64
+#define W_GIVE_POTENTIAL_FLIP_INSIDE 32
 
 #define MOVE_ORDERING_VALUE_OFFSET 14
 #define MAX_MOBILITY 30
