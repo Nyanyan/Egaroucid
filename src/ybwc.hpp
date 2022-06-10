@@ -159,7 +159,7 @@ inline bool ybwc_split_without_move_negascout(Search *search, const Flip *flip, 
     return false;
 }
 */
-inline void ybwc_get_end_tasks(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v, int *best_move){
+inline void ybwc_get_end_tasks(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *alpha){
     Parallel_task got_task;
     for (future<Parallel_task> &task: parallel_tasks){
         if (task.valid()){
@@ -173,6 +173,7 @@ inline void ybwc_get_end_tasks(Search *search, vector<future<Parallel_task>> &pa
             }
         }
     }
+    *alpha = max((*alpha), (*v));
 }
 
 inline void ybwc_wait_all(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *alpha, int beta, bool *searching){
@@ -180,15 +181,14 @@ inline void ybwc_wait_all(Search *search, vector<future<Parallel_task>> &paralle
     for (future<Parallel_task> &task: parallel_tasks){
         if (task.valid()){
             got_task = task.get();
-            if (*v < got_task.value && *searching){
-                *v = got_task.value;
-                *alpha = max(*alpha, *v);
-                if (beta <= *alpha){
-                    *searching = false;
-                }
-                *best_move = got_task.cell;
-            }
             search->n_nodes += got_task.n_nodes;
+            if ((*v) < got_task.value && (*searching)){
+                *best_move = got_task.cell;
+                *v = got_task.value;
+                *alpha = max((*alpha), (*v));
+                if (beta <= (*alpha))
+                    *searching = false;
+            }
         }
     }
 }

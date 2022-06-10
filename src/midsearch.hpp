@@ -232,9 +232,13 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
                 g = -nega_alpha_ordering(search, -beta, -alpha, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
             search->board.undo(&flip_best);
             eval_undo(search, &flip_best);
-            alpha = max(alpha, g);
-            v = g;
-            legal ^= 1ULL << best_move;
+            if (*searching){
+                alpha = max(alpha, g);
+                v = g;
+                legal ^= 1ULL << best_move;
+            } else{
+                return SCORE_UNDEFINED;
+            }
         } else
             best_move = TRANSPOSE_TABLE_UNDEFINED;
     }
@@ -272,7 +276,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
                                 break;
                             }
                             if (split_count){
-                                ybwc_get_end_tasks(search, parallel_tasks, &v, &best_move);
+                                ybwc_get_end_tasks(search, parallel_tasks, &v, &best_move, &alpha);
                                 if (beta <= alpha){
                                     search->board.undo(&flip);
                                     eval_undo(search, &flip);
