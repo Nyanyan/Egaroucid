@@ -358,9 +358,9 @@ inline void move_ordering(Search *search, vector<Flip> &move_list, int depth, in
         ++eval_depth;
         if (depth >= 20){
             ++eval_depth;
-            if (depth >= 22){
+            if (depth >= 23){
                 ++eval_depth;
-                if (depth >= 25){
+                if (depth >= 26){
                     ++eval_depth;
                 }
             }
