@@ -148,6 +148,10 @@ inline u64_4 nonzero(const u64_4 lhs) {
 end of modification
 */
 
+inline uint64_t all_and(const u64_4 x){
+    return _mm256_extract_epi64(x.data, 3) & _mm256_extract_epi64(x.data, 2) & _mm256_extract_epi64(x.data, 1) & _mm256_extract_epi64(x.data, 0);
+}
+
 #if USE_BUILTIN_POPCOUNT
     #define	pop_count_ull(x) (int)__popcnt64(x)
     #define pop_count_uint(x) (int)__popcnt(x)

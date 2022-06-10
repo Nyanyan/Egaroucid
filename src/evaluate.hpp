@@ -518,81 +518,160 @@ inline int calc_surround(const uint64_t player, const uint64_t empties){
     ));
 }
 
-inline int calc_stability_player(uint64_t player, uint64_t opponent){
-    uint64_t full_h, full_v, full_d7, full_d9;
-    uint64_t edge_stability = 0, player_stability = 0, n_stability;
-    uint64_t h, v, d7, d9;
-    const uint64_t player_mask = player & 0b0000000001111110011111100111111001111110011111100111111000000000ULL;
-    uint8_t pl, op;
-    pl = player & 0b11111111U;
-    op = opponent & 0b11111111U;
-    edge_stability |= stability_edge_arr[pl][op][0];
-    pl = (player >> 56) & 0b11111111U;
-    op = (opponent >> 56) & 0b11111111U;
-    edge_stability |= stability_edge_arr[pl][op][0] << 56;
-    pl = join_v_line(player, 0);
-    op = join_v_line(opponent, 0);
-    edge_stability |= stability_edge_arr[pl][op][1];
-    pl = join_v_line(player, 7);
-    op = join_v_line(opponent, 7);
-    edge_stability |= stability_edge_arr[pl][op][1] << 7;
-    full_stability(player, opponent, &full_h, &full_v, &full_d7, &full_d9);
-    n_stability = (edge_stability & player) | (full_h & full_v & full_d7 & full_d9 & player_mask);
-    while (n_stability & ~player_stability){
-        player_stability |= n_stability;
-        h = (player_stability >> 1) | (player_stability << 1) | full_h;
-        v = (player_stability >> HW) | (player_stability << HW) | full_v;
-        d7 = (player_stability >> HW_M1) | (player_stability << HW_M1) | full_d7;
-        d9 = (player_stability >> HW_P1) | (player_stability << HW_P1) | full_d9;
-        n_stability = h & v & d7 & d9 & player_mask;
-    }
-    return pop_count_ull(player_stability);
-}
-
-inline void calc_stability(Board *b, int *stab0, int *stab1){
-    uint64_t full_h, full_v, full_d7, full_d9;
-    uint64_t edge_stability = 0, player_stability = 0, opponent_stability = 0, n_stability;
-    uint64_t h, v, d7, d9;
-    const uint64_t player_mask = b->player & 0b0000000001111110011111100111111001111110011111100111111000000000ULL;
-    const uint64_t opponent_mask = b->opponent & 0b0000000001111110011111100111111001111110011111100111111000000000ULL;
-    uint8_t pl, op;
-    pl = b->player & 0b11111111U;
-    op = b->opponent & 0b11111111U;
-    edge_stability |= stability_edge_arr[pl][op][0];
-    pl = (b->player >> 56) & 0b11111111U;
-    op = (b->opponent >> 56) & 0b11111111U;
-    edge_stability |= stability_edge_arr[pl][op][0] << 56;
-    pl = join_v_line(b->player, 0);
-    op = join_v_line(b->opponent, 0);
-    edge_stability |= stability_edge_arr[pl][op][1];
-    pl = join_v_line(b->player, 7);
-    op = join_v_line(b->opponent, 7);
-    edge_stability |= stability_edge_arr[pl][op][1] << 7;
-    b->full_stability(&full_h, &full_v, &full_d7, &full_d9);
-
-    n_stability = (edge_stability & b->player) | (full_h & full_v & full_d7 & full_d9 & player_mask);
-    while (n_stability & ~player_stability){
-        player_stability |= n_stability;
-        h = (player_stability >> 1) | (player_stability << 1) | full_h;
-        v = (player_stability >> HW) | (player_stability << HW) | full_v;
-        d7 = (player_stability >> HW_M1) | (player_stability << HW_M1) | full_d7;
-        d9 = (player_stability >> HW_P1) | (player_stability << HW_P1) | full_d9;
-        n_stability = h & v & d7 & d9 & player_mask;
+#if USE_SIMD
+    inline int calc_stability_player(uint64_t player, uint64_t opponent){
+        uint64_t full_h, full_v, full_d7, full_d9;
+        uint64_t edge_stability = 0, player_stability = 0, n_stability;
+        const uint64_t player_mask = player & 0b0000000001111110011111100111111001111110011111100111111000000000ULL;
+        uint8_t pl, op;
+        pl = player & 0b11111111U;
+        op = opponent & 0b11111111U;
+        edge_stability |= stability_edge_arr[pl][op][0];
+        pl = (player >> 56) & 0b11111111U;
+        op = (opponent >> 56) & 0b11111111U;
+        edge_stability |= stability_edge_arr[pl][op][0] << 56;
+        pl = join_v_line(player, 0);
+        op = join_v_line(opponent, 0);
+        edge_stability |= stability_edge_arr[pl][op][1];
+        pl = join_v_line(player, 7);
+        op = join_v_line(opponent, 7);
+        edge_stability |= stability_edge_arr[pl][op][1] << 7;
+        full_stability(player, opponent, &full_h, &full_v, &full_d7, &full_d9);
+        u64_4 hvd7d9;
+        const u64_4 shift(1, HW, HW_M1, HW_P1);
+        u64_4 full(full_h, full_v, full_d7, full_d9);
+        u64_4 stab;
+        n_stability = (edge_stability & player) | (full_h & full_v & full_d7 & full_d9 & player_mask);
+        while (n_stability & ~player_stability){
+            player_stability |= n_stability;
+            stab = player_stability;
+            hvd7d9 = (stab >> shift) | (stab << shift) | full;
+            n_stability = all_and(hvd7d9) & player_mask;
+        }
+        return pop_count_ull(player_stability);
     }
 
-    n_stability = (edge_stability & b->opponent) | (full_h & full_v & full_d7 & full_d9 & opponent_mask);
-    while (n_stability & ~opponent_stability){
-        opponent_stability |= n_stability;
-        h = (opponent_stability >> 1) | (opponent_stability << 1) | full_h;
-        v = (opponent_stability >> HW) | (opponent_stability << HW) | full_v;
-        d7 = (opponent_stability >> HW_M1) | (opponent_stability << HW_M1) | full_d7;
-        d9 = (opponent_stability >> HW_P1) | (opponent_stability << HW_P1) | full_d9;
-        n_stability = h & v & d7 & d9 & opponent_mask;
+    inline void calc_stability(Board *b, int *stab0, int *stab1){
+        uint64_t full_h, full_v, full_d7, full_d9;
+        uint64_t edge_stability = 0, player_stability = 0, opponent_stability = 0, n_stability;
+        const uint64_t player_mask = b->player & 0b0000000001111110011111100111111001111110011111100111111000000000ULL;
+        const uint64_t opponent_mask = b->opponent & 0b0000000001111110011111100111111001111110011111100111111000000000ULL;
+        uint8_t pl, op;
+        pl = b->player & 0b11111111U;
+        op = b->opponent & 0b11111111U;
+        edge_stability |= stability_edge_arr[pl][op][0];
+        pl = (b->player >> 56) & 0b11111111U;
+        op = (b->opponent >> 56) & 0b11111111U;
+        edge_stability |= stability_edge_arr[pl][op][0] << 56;
+        pl = join_v_line(b->player, 0);
+        op = join_v_line(b->opponent, 0);
+        edge_stability |= stability_edge_arr[pl][op][1];
+        pl = join_v_line(b->player, 7);
+        op = join_v_line(b->opponent, 7);
+        edge_stability |= stability_edge_arr[pl][op][1] << 7;
+        b->full_stability(&full_h, &full_v, &full_d7, &full_d9);
+
+        u64_4 hvd7d9;
+        const u64_4 shift(1, HW, HW_M1, HW_P1);
+        u64_4 full(full_h, full_v, full_d7, full_d9);
+        u64_4 stab;
+
+        n_stability = (edge_stability & b->player) | (full_h & full_v & full_d7 & full_d9 & player_mask);
+        while (n_stability & ~player_stability){
+            player_stability |= n_stability;
+            stab = player_stability;
+            hvd7d9 = (stab >> shift) | (stab << shift) | full;
+            n_stability = all_and(hvd7d9) & player_mask;
+        }
+
+        n_stability = (edge_stability & b->opponent) | (full_h & full_v & full_d7 & full_d9 & opponent_mask);
+        while (n_stability & ~opponent_stability){
+            opponent_stability |= n_stability;
+            stab = opponent_stability;
+            hvd7d9 = (stab >> shift) | (stab << shift) | full;
+            n_stability = all_and(hvd7d9) & opponent_mask;
+        }
+
+        *stab0 = pop_count_ull(player_stability);
+        *stab1 = pop_count_ull(opponent_stability);
+    }
+#else
+    inline int calc_stability_player(uint64_t player, uint64_t opponent){
+        uint64_t full_h, full_v, full_d7, full_d9;
+        uint64_t edge_stability = 0, player_stability = 0, n_stability;
+        uint64_t h, v, d7, d9;
+        const uint64_t player_mask = player & 0b0000000001111110011111100111111001111110011111100111111000000000ULL;
+        uint8_t pl, op;
+        pl = player & 0b11111111U;
+        op = opponent & 0b11111111U;
+        edge_stability |= stability_edge_arr[pl][op][0];
+        pl = (player >> 56) & 0b11111111U;
+        op = (opponent >> 56) & 0b11111111U;
+        edge_stability |= stability_edge_arr[pl][op][0] << 56;
+        pl = join_v_line(player, 0);
+        op = join_v_line(opponent, 0);
+        edge_stability |= stability_edge_arr[pl][op][1];
+        pl = join_v_line(player, 7);
+        op = join_v_line(opponent, 7);
+        edge_stability |= stability_edge_arr[pl][op][1] << 7;
+        full_stability(player, opponent, &full_h, &full_v, &full_d7, &full_d9);
+        n_stability = (edge_stability & player) | (full_h & full_v & full_d7 & full_d9 & player_mask);
+        while (n_stability & ~player_stability){
+            player_stability |= n_stability;
+            h = (player_stability >> 1) | (player_stability << 1) | full_h;
+            v = (player_stability >> HW) | (player_stability << HW) | full_v;
+            d7 = (player_stability >> HW_M1) | (player_stability << HW_M1) | full_d7;
+            d9 = (player_stability >> HW_P1) | (player_stability << HW_P1) | full_d9;
+            n_stability = h & v & d7 & d9 & player_mask;
+        }
+        return pop_count_ull(player_stability);
     }
 
-    *stab0 = pop_count_ull(player_stability);
-    *stab1 = pop_count_ull(opponent_stability);
-}
+    inline void calc_stability(Board *b, int *stab0, int *stab1){
+        uint64_t full_h, full_v, full_d7, full_d9;
+        uint64_t edge_stability = 0, player_stability = 0, opponent_stability = 0, n_stability;
+        uint64_t h, v, d7, d9;
+        const uint64_t player_mask = b->player & 0b0000000001111110011111100111111001111110011111100111111000000000ULL;
+        const uint64_t opponent_mask = b->opponent & 0b0000000001111110011111100111111001111110011111100111111000000000ULL;
+        uint8_t pl, op;
+        pl = b->player & 0b11111111U;
+        op = b->opponent & 0b11111111U;
+        edge_stability |= stability_edge_arr[pl][op][0];
+        pl = (b->player >> 56) & 0b11111111U;
+        op = (b->opponent >> 56) & 0b11111111U;
+        edge_stability |= stability_edge_arr[pl][op][0] << 56;
+        pl = join_v_line(b->player, 0);
+        op = join_v_line(b->opponent, 0);
+        edge_stability |= stability_edge_arr[pl][op][1];
+        pl = join_v_line(b->player, 7);
+        op = join_v_line(b->opponent, 7);
+        edge_stability |= stability_edge_arr[pl][op][1] << 7;
+        b->full_stability(&full_h, &full_v, &full_d7, &full_d9);
+
+        n_stability = (edge_stability & b->player) | (full_h & full_v & full_d7 & full_d9 & player_mask);
+        while (n_stability & ~player_stability){
+            player_stability |= n_stability;
+            h = (player_stability >> 1) | (player_stability << 1) | full_h;
+            v = (player_stability >> HW) | (player_stability << HW) | full_v;
+            d7 = (player_stability >> HW_M1) | (player_stability << HW_M1) | full_d7;
+            d9 = (player_stability >> HW_P1) | (player_stability << HW_P1) | full_d9;
+            n_stability = h & v & d7 & d9 & player_mask;
+        }
+
+        n_stability = (edge_stability & b->opponent) | (full_h & full_v & full_d7 & full_d9 & opponent_mask);
+        while (n_stability & ~opponent_stability){
+            opponent_stability |= n_stability;
+            h = (opponent_stability >> 1) | (opponent_stability << 1) | full_h;
+            v = (opponent_stability >> HW) | (opponent_stability << HW) | full_v;
+            d7 = (opponent_stability >> HW_M1) | (opponent_stability << HW_M1) | full_d7;
+            d9 = (opponent_stability >> HW_P1) | (opponent_stability << HW_P1) | full_d9;
+            n_stability = h & v & d7 & d9 & opponent_mask;
+        }
+
+        *stab0 = pop_count_ull(player_stability);
+        *stab1 = pop_count_ull(opponent_stability);
+    }
+#endif
 
 inline void calc_stability_edge(Board *b, int *stab0, int *stab1){
     uint64_t edge_stability = 0;
