@@ -227,7 +227,7 @@ inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int
         flip->value = W_WIPEOUT;
     else{
         flip->value = cell_weight[flip->pos];
-        flip->value -= pop_count_ull(flip->flip) * W_N_FLIP;
+        //flip->value -= pop_count_ull(flip->flip) * W_N_FLIP;
         //flip->value -= pop_count_ull(flip->flip & bit_around[flip->pos]) * W_N_FLIP_DIRECTION;
         //if (search->board.n <= MIDGAME_N_STONES)
         flip->value -= (calc_openness(&search->board, flip) >> 1) * W_OPENNESS;
