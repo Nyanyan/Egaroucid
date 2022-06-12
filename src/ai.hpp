@@ -70,8 +70,8 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
             }
         }
 
-        if (show_log)
-            cerr << "presearch n_nodes " << search.n_nodes << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
+        //if (show_log)
+        //    cerr << "presearch n_nodes " << search.n_nodes << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
 
         parent_transpose_table.init();
         search.use_mpc = use_mpc;

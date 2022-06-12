@@ -232,60 +232,51 @@ inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int
         //if (search->board.n <= MIDGAME_N_STONES)
         flip->value -= (calc_openness(&search->board, flip) >> 1) * W_OPENNESS;
         flip->value -= give_potential_flip_inside(&search->board, flip) * W_GIVE_POTENTIAL_FLIP_INSIDE;
-        if (depth < 0){
-            search->board.move(flip);
-                flip->n_legal = search->board.get_legal();
-                flip->value += -get_weighted_n_moves(flip->n_legal) * W_MOBILITY;
-                flip->value += -get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent)) * W_OPPONENT_POTENTIAL_MOBILITY;
-                flip->value += get_potential_mobility(search->board.player, ~(search->board.player | search->board.opponent)) * W_PLAYER_POTENTIAL_MOBILITY;
-            search->board.undo(flip);
-        } else{
-            eval_move(search, flip);
-            search->board.move(flip);
-                flip->n_legal = search->board.get_legal();
-                flip->value += -get_weighted_n_moves(flip->n_legal) * W_MOBILITY;
-                flip->value += -get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent)) * W_OPPONENT_POTENTIAL_MOBILITY;
-                flip->value += get_potential_mobility(search->board.player, ~(search->board.player | search->board.opponent)) * W_PLAYER_POTENTIAL_MOBILITY;
-                /*
-                bool value_flag = false;
-                if (search_depth >= USE_PARENT_TT_DEPTH_THRESHOLD){
-                    int l, u;
-                    parent_transpose_table.get(&search->board, search->board.hash() & TRANSPOSE_TABLE_MASK, &l, &u);
-                    if (u <= SCORE_MAX){
-                        value_flag = true;
-                        flip->value += (HW2 - u) * W_VALUE + W_CACHE_HIT;
-                    } else if (-SCORE_MAX <= l){
-                        value_flag = true;
-                        flip->value += (HW2 - l) * W_VALUE + W_CACHE_HIT;
-                    }
+        eval_move(search, flip);
+        search->board.move(flip);
+            flip->n_legal = search->board.get_legal();
+            flip->value -= get_weighted_n_moves(flip->n_legal) * W_MOBILITY;
+            flip->value -= get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent)) * W_OPPONENT_POTENTIAL_MOBILITY;
+            flip->value += get_potential_mobility(search->board.player, ~(search->board.player | search->board.opponent)) * W_PLAYER_POTENTIAL_MOBILITY;
+            /*
+            bool value_flag = false;
+            if (search_depth >= USE_PARENT_TT_DEPTH_THRESHOLD){
+                int l, u;
+                parent_transpose_table.get(&search->board, search->board.hash() & TRANSPOSE_TABLE_MASK, &l, &u);
+                if (u <= SCORE_MAX){
+                    value_flag = true;
+                    flip->value += (HW2 - u) * W_VALUE + W_CACHE_HIT;
+                } else if (-SCORE_MAX <= l){
+                    value_flag = true;
+                    flip->value += (HW2 - l) * W_VALUE + W_CACHE_HIT;
                 }
-                if (!value_flag){
-                */
-                switch(depth){
-                    case 0:
-                        flip->value -= mid_evaluate_diff(search) * W_VALUE_SHALLOW;
-                        break;
-                    case 1:
-                        flip->value -= nega_alpha_eval1(search, alpha, beta, false, searching) * W_VALUE;
-                        break;
-                    default:
-                        //if (depth <= MID_FAST_DEPTH)
-                        //    flip->value -= nega_alpha(search, alpha, beta, depth, false, searching) * W_VALUE;
-                        //else{
-                        //bool use_mpc = search->use_mpc;
-                        //double mpct = search->mpct;
-                        //search->use_mpc = true;
-                        //search->mpct = min(search->mpct, 1.8);
-                        flip->value -= nega_alpha_ordering_nomemo(search, alpha, beta, depth, false, flip->n_legal, searching) * W_VALUE_DEEP;
-                        //search->use_mpc = use_mpc;
-                        //search->mpct = mpct;
-                        //}
-                        break;
-                }
-                //}
-            search->board.undo(flip);
-            eval_undo(search, flip);
-        }
+            }
+            if (!value_flag){
+            */
+            switch(depth){
+                case 0:
+                    flip->value += -mid_evaluate_diff(search) * W_VALUE_SHALLOW;
+                    break;
+                case 1:
+                    flip->value += -nega_alpha_eval1(search, alpha, beta, false, searching) * W_VALUE;
+                    break;
+                default:
+                    //if (depth <= MID_FAST_DEPTH)
+                    //    flip->value -= nega_alpha(search, alpha, beta, depth, false, searching) * W_VALUE;
+                    //else{
+                    //bool use_mpc = search->use_mpc;
+                    //double mpct = search->mpct;
+                    //search->use_mpc = true;
+                    //search->mpct = min(search->mpct, 1.8);
+                    flip->value += -nega_alpha_ordering_nomemo(search, alpha, beta, depth, false, flip->n_legal, searching) * (W_VALUE_DEEP + depth - 1);
+                    //search->use_mpc = use_mpc;
+                    //search->mpct = mpct;
+                    //}
+                    break;
+            }
+            //}
+        search->board.undo(flip);
+        eval_undo(search, flip);
     }
 }
 
