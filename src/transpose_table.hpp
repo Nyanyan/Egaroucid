@@ -244,6 +244,10 @@ class Node_parent_transpose_table{
             //}
         }
 
+        inline bool contain(const Board *board){
+            return board->player == player.load(memory_order_relaxed) && board->opponent == opponent.load(memory_order_relaxed);
+        }
+
         inline int n_stones() const{
             return pop_count_ull(player.load(memory_order_relaxed) | opponent.load(memory_order_relaxed));
         }
@@ -441,6 +445,10 @@ class Parent_transpose_table{
             *u = INF;
             //if (!table[hash].is_null())
             table[hash].get(board, l, u);
+        }
+
+        inline bool contain(const Board *board, const uint32_t hash){
+            return table[hash].contain(board);
         }
 
         #if USE_MULTI_THREAD

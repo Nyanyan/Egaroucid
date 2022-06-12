@@ -23,7 +23,7 @@
 #define W_VALUE_DEEP 8
 #define W_VALUE 8
 #define W_VALUE_SHALLOW 6
-#define W_CACHE_HIT 16
+#define W_CACHE_HIT 4
 #define W_MOBILITY 12
 #define W_PLAYER_POTENTIAL_MOBILITY 6
 #define W_OPPONENT_POTENTIAL_MOBILITY 8
@@ -268,6 +268,8 @@ inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int
                     //double mpct = search->mpct;
                     //search->use_mpc = true;
                     //search->mpct = min(search->mpct, 1.8);
+                    if (parent_transpose_table.contain(&search->board, search->board.hash() & TRANSPOSE_TABLE_MASK))
+                        flip->value += W_CACHE_HIT;
                     flip->value += -nega_alpha_ordering_nomemo(search, alpha, beta, depth, false, flip->n_legal, searching) * (W_VALUE_DEEP + (depth - 1) * 2);
                     //search->use_mpc = use_mpc;
                     //search->mpct = mpct;
@@ -355,9 +357,9 @@ inline void move_ordering(Search *search, vector<Flip> &move_list, int depth, in
     //eval_depth += max(0, min(26, depth) - 16) >> 1;
     if (depth >= 18 && is_end_search){
         ++eval_depth;
-        if (depth >= 20){
+        if (depth >= 21){
             ++eval_depth;
-            if (depth >= 22){
+            if (depth >= 23){
                 ++eval_depth;
                 if (depth >= 26){
                     ++eval_depth;
