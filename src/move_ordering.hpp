@@ -268,7 +268,7 @@ inline void move_evaluate(Search *search, Flip *flip, const int alpha, const int
                     //double mpct = search->mpct;
                     //search->use_mpc = true;
                     //search->mpct = min(search->mpct, 1.8);
-                    flip->value += -nega_alpha_ordering_nomemo(search, alpha, beta, depth, false, flip->n_legal, searching) * (W_VALUE_DEEP + depth - 1);
+                    flip->value += -nega_alpha_ordering_nomemo(search, alpha, beta, depth, false, flip->n_legal, searching) * (W_VALUE_DEEP + (depth - 1) * 2);
                     //search->use_mpc = use_mpc;
                     //search->mpct = mpct;
                     //}
