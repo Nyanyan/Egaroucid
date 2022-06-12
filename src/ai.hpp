@@ -57,9 +57,9 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
             if (show_log)
                 cerr << "presearch d=" << depth << " t=" << search.mpct << " [-64,64] " << value_to_score_double(g) << " " << idx_to_coord(result.second) << endl;
 
-            if (depth >= 24 && 1.8 < mpct){
+            if (depth >= 24 && 1.9 < mpct){
                 parent_transpose_table.init();
-                search.mpct = 1.8;
+                search.mpct = 1.9;
                 search.use_mpc = true;
                 alpha = -SCORE_MAX; //max(-SCORE_MAX, score_to_value(value_to_score_double(g) - 3.0));
                 beta = SCORE_MAX; //min(SCORE_MAX, score_to_value(value_to_score_double(g) + 3.0));
