@@ -29,7 +29,7 @@
 using namespace std;
 
 #define INF_DF_PN 0x0100000000000000ULL
-#define DF_PN_TO_NWS_DEPTH 13
+#define DF_PN_TO_NWS_DEPTH 20
 
 struct Entry_df_pn{
     uint64_t proof;
@@ -121,8 +121,7 @@ void df_pn(Search *search, const uint64_t proof_number_threshold, const uint64_t
         if (score_threshold <= score){
             proof_number = 0;
             disproof_number = INF_DF_PN;
-        }
-        else {
+        } else{
             proof_number = INF_DF_PN;
             disproof_number = 0;
         }
@@ -136,8 +135,7 @@ void df_pn(Search *search, const uint64_t proof_number_threshold, const uint64_t
             if (score_threshold <= score){
                 proof_number = 0;
                 disproof_number = INF_DF_PN;
-            }
-            else {
+            } else{
                 proof_number = INF_DF_PN;
                 disproof_number = 0;
             }
