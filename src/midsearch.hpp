@@ -267,14 +267,19 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
         int idx = 0;
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
             calc_flip(&move_list[idx++], &search->board, cell);
-        move_ordering(search, move_list, depth, alpha, beta, is_end_search, searching);
+        move_list_evaluate(search, move_list, depth, alpha, beta, is_end_search, searching);
         #if USE_MULTI_THREAD
             int pv_idx = 0, split_count = 0;
             if (best_move != TRANSPOSE_TABLE_UNDEFINED)
                 pv_idx = 1;
             vector<future<Parallel_task>> parallel_tasks;
             bool n_searching = true;
-            for (const Flip &flip: move_list){
+            Flip flip;
+            const int move_ordering_threshold = MOVE_ORDERING_THRESHOLD - (int)(best_move != TRANSPOSE_TABLE_UNDEFINED);
+            for (int move_idx = 0; move_idx < canput; ++move_idx){
+                if (move_idx < move_ordering_threshold)
+                    swap_next_best_move(move_list, move_idx, canput);
+                flip = move_list[move_idx];
                 if (!(*searching))
                     break;
                 eval_move(search, &flip);

@@ -348,6 +348,40 @@ inline void move_evaluate_end(Search *search, Flip *flip){
     }
 }
 
+inline void move_list_evaluate(Search *search, vector<Flip> &move_list, int depth, int alpha, int beta, bool is_end_search, const bool *searching){
+    if (move_list.size() < 2)
+        return;
+    int eval_alpha = -min(SCORE_MAX, beta + MOVE_ORDERING_VALUE_OFFSET);
+    int eval_beta = -max(-SCORE_MAX, alpha - MOVE_ORDERING_VALUE_OFFSET);
+    int eval_depth = depth >> 3;
+    if (depth >= 18 && is_end_search){
+        ++eval_depth;
+        if (depth >= 21){
+            ++eval_depth;
+            if (depth >= 23){
+                ++eval_depth;
+                if (depth >= 26){
+                    ++eval_depth;
+                }
+            }
+        }
+    }
+    for (Flip &flip: move_list)
+        move_evaluate(search, &flip, eval_alpha, eval_beta, eval_depth, searching, depth);
+}
+
+inline void swap_next_best_move(vector<Flip> &move_list, const int strt, const int siz){
+    int top_idx = strt;
+    int best_value = -INF;
+    for (int i = strt; i < siz; ++i){
+        if (best_value < move_list[i].value){
+            best_value = move_list[i].value;
+            top_idx = i;
+        }
+    }
+    swap(move_list[strt], move_list[top_idx]);
+}
+
 inline void move_ordering(Search *search, vector<Flip> &move_list, int depth, int alpha, int beta, bool is_end_search, const bool *searching){
     if (move_list.size() < 2)
         return;
