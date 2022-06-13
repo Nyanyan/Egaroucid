@@ -877,7 +877,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
             int idx = 0;
             for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
                 calc_flip(&move_list[idx++], &search->board, cell);
-            move_ordering_fast_first(search, move_list);
+            move_evaluate_fast_first(search, move_list);
             #if USE_MULTI_THREAD && false
                 int pv_idx = 0, split_count = 0;
                 if (best_move != TRANSPOSE_TABLE_UNDEFINED)
@@ -918,23 +918,26 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
                     }
                 }
             #else
-                for (Flip &flip: move_list){
-                    search->board.move(&flip);
+                const int move_ordering_threshold = MOVE_ORDERING_THRESHOLD - (int)(best_move != TRANSPOSE_TABLE_UNDEFINED);
+                for (int move_idx = 0; move_idx < canput; ++move_idx){
+                    if (move_idx < move_ordering_threshold)
+                        swap_next_best_move(move_list, move_idx, canput);
+                    search->board.move(&move_list[move_idx]);
                         #if USE_END_SC
-                            stab_res = stability_cut_move(search, &flip, &alpha, &beta);
+                            stab_res = stability_cut_move(search, &move_list[move_idx], &alpha, &beta);
                             if (stab_res != SCORE_UNDEFINED){
-                                search->board.undo(&flip);
-                                register_tt(search, hash_code, first_alpha, stab_res, flip.pos, l, u, alpha, beta);
+                                search->board.undo(&move_list[move_idx]);
+                                register_tt(search, hash_code, first_alpha, stab_res, move_list[move_idx].pos, l, u, alpha, beta);
                                 return stab_res;
                             }
                         #endif
-                        g = -nega_alpha_end(search, -beta, -alpha, false, flip.n_legal, searching);
-                    search->board.undo(&flip);
+                        g = -nega_alpha_end(search, -beta, -alpha, false, move_list[move_idx].n_legal, searching);
+                    search->board.undo(&move_list[move_idx]);
                     if (*searching){
                         alpha = max(alpha, g);
                         if (v < g){
                             v = g;
-                            best_move = flip.pos;
+                            best_move = move_list[move_idx].pos;
                             if (beta <= alpha){
                                 register_tt(search, hash_code, first_alpha, v, best_move, l, u, alpha, beta);
                                 return alpha;

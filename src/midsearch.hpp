@@ -274,43 +274,41 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
                 pv_idx = 1;
             vector<future<Parallel_task>> parallel_tasks;
             bool n_searching = true;
-            Flip flip;
             const int move_ordering_threshold = MOVE_ORDERING_THRESHOLD - (int)(best_move != TRANSPOSE_TABLE_UNDEFINED);
             for (int move_idx = 0; move_idx < canput; ++move_idx){
                 if (move_idx < move_ordering_threshold)
                     swap_next_best_move(move_list, move_idx, canput);
-                flip = move_list[move_idx];
                 if (!(*searching))
                     break;
-                eval_move(search, &flip);
-                search->board.move(&flip);
-                    if (ybwc_split_without_move(search, &flip, -beta, -alpha, depth - 1, flip.n_legal, is_end_search, &n_searching, flip.pos, pv_idx++, canput, split_count, parallel_tasks, move_list[0].value, move_list[move_list.size() - 1].value)){
+                eval_move(search, &move_list[move_idx]);
+                search->board.move(&move_list[move_idx]);
+                    if (ybwc_split_without_move(search, &move_list[move_idx], -beta, -alpha, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].pos, pv_idx++, canput, split_count, parallel_tasks, move_list[0].value, move_list[move_list.size() - 1].value)){
                         ++split_count;
                     } else{
-                        g = -nega_alpha_ordering(search, -beta, -alpha, depth - 1, false, flip.n_legal, is_end_search, searching);
+                        g = -nega_alpha_ordering(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                         if (*searching){
                             alpha = max(alpha, g);
                             if (v < g){
                                 v = g;
-                                best_move = flip.pos;
+                                best_move = move_list[move_idx].pos;
                             }
                             if (beta <= alpha){
-                                search->board.undo(&flip);
-                                eval_undo(search, &flip);
+                                search->board.undo(&move_list[move_idx]);
+                                eval_undo(search, &move_list[move_idx]);
                                 break;
                             }
                             if (split_count){
                                 ybwc_get_end_tasks(search, parallel_tasks, &v, &best_move, &alpha);
                                 if (beta <= alpha){
-                                    search->board.undo(&flip);
-                                    eval_undo(search, &flip);
+                                    search->board.undo(&move_list[move_idx]);
+                                    eval_undo(search, &move_list[move_idx]);
                                     break;
                                 }
                             }
                         }
                     }
-                search->board.undo(&flip);
-                eval_undo(search, &flip);
+                search->board.undo(&move_list[move_idx]);
+                eval_undo(search, &move_list[move_idx]);
             }
             if (split_count){
                 if (beta <= alpha || !(*searching)){
@@ -417,7 +415,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
         int idx = 0;
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
             calc_flip(&move_list[idx++], &search->board, cell);
-        move_ordering(search, move_list, depth, alpha, beta, is_end_search, searching);
+        move_list_evaluate(search, move_list, depth, alpha, beta, is_end_search, searching);
         //bool searching = true;
         #if USE_MULTI_THREAD && false // UNDER CONSTRUCTION
             int pv_idx = 0, split_count = 0;
@@ -503,21 +501,24 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
                 }
             }
         #else
-            for (const Flip &flip: move_list){
-                eval_move(search, &flip);
-                search->board.move(&flip);
+            const int move_ordering_threshold = MOVE_ORDERING_THRESHOLD - (int)(best_move != TRANSPOSE_TABLE_UNDEFINED);
+            for (int move_idx = 0; move_idx < canput; ++move_idx){
+                if (move_idx < move_ordering_threshold)
+                    swap_next_best_move(move_list, move_idx, canput);
+                eval_move(search, &move_list[move_idx]);
+                search->board.move(&move_list[move_idx]);
                     if (v == -INF)
-                        g = -nega_scout(search, -beta, -alpha, depth - 1, false, flip.n_legal, is_end_search, searching);
+                        g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                     else{
-                        g = -nega_alpha_ordering(search, -alpha - 1, -alpha, depth - 1, false, flip.n_legal, is_end_search, searching);
+                        g = -nega_alpha_ordering(search, -alpha - 1, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                         if (alpha < g && g < beta)
-                            g = -nega_scout(search, -beta, -g, depth - 1, false, flip.n_legal, is_end_search, searching);
+                            g = -nega_scout(search, -beta, -g, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                     }
-                search->board.undo(&flip);
-                eval_undo(search, &flip);
+                search->board.undo(&move_list[move_idx]);
+                eval_undo(search, &move_list[move_idx]);
                 if (v < g){
                     v = g;
-                    best_move = flip.pos;
+                    best_move = move_list[move_idx].pos;
                     alpha = max(alpha, g);
                 }
                 if (beta <= alpha)
