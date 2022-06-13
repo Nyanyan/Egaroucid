@@ -709,17 +709,20 @@ int nega_alpha_ordering_single_thread(Search *search, int alpha, int beta, int d
         int idx = 0;
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
             calc_flip(&move_list[idx++], &search->board, cell);
-        move_ordering(search, move_list, depth, alpha, beta, is_end_search, searching);
-        for (const Flip &flip: move_list){
-            eval_move(search, &flip);
-            search->board.move(&flip);
-                g = -nega_alpha_ordering_single_thread(search, -beta, -alpha, depth - 1, false, flip.n_legal, is_end_search, searching);
-            search->board.undo(&flip);
-            eval_undo(search, &flip);
+        move_list_evaluate(search, move_list, depth, alpha, beta, is_end_search, searching);
+        const int move_ordering_threshold = MOVE_ORDERING_THRESHOLD - (int)(best_move != TRANSPOSE_TABLE_UNDEFINED);
+        for (int move_idx = 0; move_idx < canput; ++move_idx){
+            if (move_idx < move_ordering_threshold)
+                swap_next_best_move(move_list, move_idx, canput);
+            eval_move(search, &move_list[move_idx]);
+            search->board.move(&move_list[move_idx]);
+                g = -nega_alpha_ordering_single_thread(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
+            search->board.undo(&move_list[move_idx]);
+            eval_undo(search, &move_list[move_idx]);
             alpha = max(alpha, g);
             if (v < g){
                 v = g;
-                best_move = flip.pos;
+                best_move = move_list[move_idx].pos;
             }
             if (beta <= alpha)
                 break;
@@ -805,24 +808,27 @@ int nega_scout_single_thread(Search *search, int alpha, int beta, int depth, boo
         int idx = 0;
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
             calc_flip(&move_list[idx++], &search->board, cell);
-        move_ordering(search, move_list, depth, alpha, beta, is_end_search, searching);
+        move_list_evaluate(search, move_list, depth, alpha, beta, is_end_search, searching);
         //bool searching = true;
-        for (const Flip &flip: move_list){
-            eval_move(search, &flip);
-            search->board.move(&flip);
+        const int move_ordering_threshold = MOVE_ORDERING_THRESHOLD - (int)(best_move != TRANSPOSE_TABLE_UNDEFINED);
+        for (int move_idx = 0; move_idx < canput; ++move_idx){
+            if (move_idx < move_ordering_threshold)
+                swap_next_best_move(move_list, move_idx, canput);
+            eval_move(search, &move_list[move_idx]);
+            search->board.move(&move_list[move_idx]);
                 if (v == -INF)
-                    g = -nega_scout_single_thread(search, -beta, -alpha, depth - 1, false, flip.n_legal, is_end_search, searching);
+                    g = -nega_scout_single_thread(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                 else{
-                    g = -nega_alpha_ordering_single_thread(search, -alpha - 1, -alpha, depth - 1, false, flip.n_legal, is_end_search, searching);
+                    g = -nega_alpha_ordering_single_thread(search, -alpha - 1, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                     if (alpha < g && g < beta)
-                        g = -nega_scout_single_thread(search, -beta, -g, depth - 1, false, flip.n_legal, is_end_search, searching);
+                        g = -nega_scout_single_thread(search, -beta, -g, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                 }
-            search->board.undo(&flip);
-            eval_undo(search, &flip);
+            search->board.undo(&move_list[move_idx]);
+            eval_undo(search, &move_list[move_idx]);
             alpha = max(alpha, g);
             if (v < g){
                 v = g;
-                best_move = flip.pos;
+                best_move = move_list[move_idx].pos;
             }
             if (beta <= alpha)
                 break;
