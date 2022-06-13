@@ -506,7 +506,7 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped){
     uint32_t hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
     #if USE_END_TC
         int l, u;
-        if (search->board.n <= HW2 - USE_PARENT_TT_DEPTH_THRESHOLD){
+        if (search->board.n <= HW2 - USE_TT_DEPTH_THRESHOLD){
             parent_transpose_table.get(&search->board, hash_code, &l, &u);
             if (u == l)
                 return u;
@@ -808,7 +808,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
     uint32_t hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
     #if USE_END_TC
         int l = -SCORE_MAX, u = SCORE_MAX;
-        if (search->board.n <= HW2 - USE_PARENT_TT_DEPTH_THRESHOLD){
+        if (search->board.n <= HW2 - USE_TT_DEPTH_THRESHOLD){
             parent_transpose_table.get(&search->board, hash_code, &l, &u);
             if (u == l)
                 return u;
@@ -841,7 +841,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
         }
     #endif
     int best_move = TRANSPOSE_TABLE_UNDEFINED;
-    if (search->board.n <= HW2 - USE_PARENT_TT_DEPTH_THRESHOLD)
+    if (search->board.n <= HW2 - USE_TT_DEPTH_THRESHOLD)
         best_move = child_transpose_table.get(&search->board, hash_code);
     int stab_res;
     if (best_move != TRANSPOSE_TABLE_UNDEFINED){

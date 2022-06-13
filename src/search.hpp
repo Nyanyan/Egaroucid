@@ -22,7 +22,7 @@ using namespace std;
 #define END_FAST_DEPTH 7
 #define MID_TO_END_DEPTH 13
 #define CUDA_YBWC_SPLIT_MAX_DEPTH 10
-#define USE_PARENT_TT_DEPTH_THRESHOLD 10
+#define USE_TT_DEPTH_THRESHOLD 10
 #define MOVE_ORDERING_THRESHOLD 4
 
 #define SCORE_UNDEFINED -INF
@@ -144,7 +144,7 @@ inline int stability_cut_move(Search *search, Flip *flip, int *alpha, int *beta)
 
 inline void register_tt(Search *search, uint32_t hash_code, int first_alpha, int v, int best_move, int l, int u, int alpha, int beta){
     #if USE_END_TC
-        if (search->board.n <= HW2 - USE_PARENT_TT_DEPTH_THRESHOLD){
+        if (search->board.n <= HW2 - USE_TT_DEPTH_THRESHOLD){
             if (first_alpha < v && best_move != TRANSPOSE_TABLE_UNDEFINED)
                 child_transpose_table.reg(&search->board, hash_code, best_move);
             if (first_alpha < v && v < beta)

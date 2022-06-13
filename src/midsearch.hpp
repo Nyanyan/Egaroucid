@@ -209,7 +209,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
     uint32_t hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
     #if USE_MID_TC
         int l, u;
-        if (depth >= USE_PARENT_TT_DEPTH_THRESHOLD){
+        if (depth >= USE_TT_DEPTH_THRESHOLD){
             parent_transpose_table.get(&search->board, hash_code, &l, &u);
             if (u == l)
                 return u;
@@ -361,7 +361,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     uint32_t hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
     #if USE_MID_TC
         int l, u;
-        if (depth >= USE_PARENT_TT_DEPTH_THRESHOLD){
+        if (depth >= USE_TT_DEPTH_THRESHOLD){
             parent_transpose_table.get(&search->board, hash_code, &l, &u);
             if (u == l)
                 return u;
@@ -630,7 +630,7 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
     if (first_alpha < v)
         child_transpose_table.reg(&search->board, hash_code, best_move);
     #if USE_MID_TC
-        if (depth >= USE_PARENT_TT_DEPTH_THRESHOLD)
+        if (depth >= USE_TT_DEPTH_THRESHOLD)
             parent_transpose_table.reg(&search->board, hash_code, v, v);
     #endif
     */
@@ -655,7 +655,7 @@ int nega_alpha_ordering_single_thread(Search *search, int alpha, int beta, int d
     uint32_t hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
     #if USE_MID_TC
         int l, u;
-        if (depth >= USE_PARENT_TT_DEPTH_THRESHOLD){
+        if (depth >= USE_TT_DEPTH_THRESHOLD){
             parent_transpose_table.get(&search->board, hash_code, &l, &u);
             if (u == l)
                 return u;
@@ -751,7 +751,7 @@ int nega_scout_single_thread(Search *search, int alpha, int beta, int depth, boo
     uint32_t hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
     #if USE_MID_TC
         int l, u;
-        if (depth >= USE_PARENT_TT_DEPTH_THRESHOLD){
+        if (depth >= USE_TT_DEPTH_THRESHOLD){
             parent_transpose_table.get(&search->board, hash_code, &l, &u);
             if (u == l)
                 return u;
