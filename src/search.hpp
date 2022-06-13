@@ -23,7 +23,6 @@ using namespace std;
 #define MID_TO_END_DEPTH 13
 #define CUDA_YBWC_SPLIT_MAX_DEPTH 10
 #define USE_TT_DEPTH_THRESHOLD 10
-#define MOVE_ORDERING_THRESHOLD 4
 
 #define SCORE_UNDEFINED -INF
 

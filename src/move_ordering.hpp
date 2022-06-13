@@ -50,6 +50,13 @@
 #define MIDGAME_N_STONES 44
 #define USE_OPPONENT_OPENNESS_DEPTH 16
 
+
+
+#define MOVE_ORDERING_THRESHOLD 4
+
+
+
+
 struct move_ordering_info{
     uint64_t stones;
     uint64_t outside;
