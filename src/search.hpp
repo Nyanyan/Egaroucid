@@ -62,6 +62,17 @@ constexpr int nws_stability_threshold[61] = {
     99, 99, 99, 99, 99, 99, 99, 99,
     99, 99, 99, 99, 99
 };
+
+constexpr int nws_stability_threshold_move[61] = {
+    -99, -99, -99, -60, -58, -56, -54, -52,
+    -50, -48, -44, -42, -40, -38, -36, -34,
+    -32, -30, -28, -26, -24, -22, -20, -18,
+    -16, -16, -14, -14, -12, -12, -10, -10,
+     -8,  -8,  -6,  -6,  -4,  -4,  -2,  -2,
+      0,   0,   0,   0,   0,   0,   0,   0,
+    -99, -99, -99, -99, -99, -99, -99, -99,
+    -99, -99, -99, -99, -99
+};
 /*
 end of modification
 */
@@ -127,7 +138,7 @@ inline int stability_cut(Search *search, Flip *flip, int *alpha, int *beta){
 }
 
 inline int stability_cut_move(Search *search, Flip *flip, int *alpha, int *beta){
-    if (-(*beta) >= nws_stability_threshold[HW2 - search->board.n]){
+    if (*alpha <= nws_stability_threshold_move[HW2 - search->board.n]){
         if (flip->stab0 == STABILITY_UNDEFINED)
             flip->stab0 = calc_stability_player(search->board.opponent, search->board.player);
         int n_alpha = 2 * flip->stab0 - HW2;
