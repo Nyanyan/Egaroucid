@@ -111,17 +111,13 @@ inline uint64_t epsilon_trick(const uint64_t a){
     return min(a + 1 + (a >> 2), INF_DF_PN);
 }
 
-void df_pn(Board &board, const uint64_t proof_number_threshold, const uint64_t disproof_number_threshold, const int score_threshold, bool passed){
+void df_pn(Search *search, const uint64_t proof_number_threshold, const uint64_t disproof_number_threshold, const int score_threshold, bool passed){
+    ++search->n_nodes;
     uint64_t proof_number, disproof_number;
-    if (HW2 - board.n <= DF_PN_TO_NWS_DEPTH){
+    if (HW2 - search->board.n <= DF_PN_TO_NWS_DEPTH){
         const bool searching = true;
-        Search search;
-        search.board = board;
-        search.use_mpc = false;
-        search.mpct = 10000;
-        search.n_nodes = 0;
-        calc_features(&search);
-        const int score = nega_alpha_ordering(&search, score_threshold - 1, score_threshold, HW2 - board.n, passed, LEGAL_UNDEFINED, true, &searching);
+        calc_features(search);
+        const int score = nega_alpha_ordering(search, score_threshold - 1, score_threshold, HW2 - search->board.n, passed, LEGAL_UNDEFINED, true, &searching);
         if (score_threshold <= score){
             proof_number = 0;
             disproof_number = INF_DF_PN;
@@ -130,13 +126,13 @@ void df_pn(Board &board, const uint64_t proof_number_threshold, const uint64_t d
             proof_number = INF_DF_PN;
             disproof_number = 0;
         }
-        set_table_df_pn(board, score_threshold, proof_number, disproof_number);
+        set_table_df_pn(search->board, score_threshold, proof_number, disproof_number);
         return;
     }
-    uint64_t legal = board.get_legal();
+    uint64_t legal = search->board.get_legal();
     if (legal == 0ULL){
-        if (passed || board.n == HW2){
-            const int score = board.score_player();
+        if (passed || search->board.n == HW2){
+            const int score = search->board.score_player();
             if (score_threshold <= score){
                 proof_number = 0;
                 disproof_number = INF_DF_PN;
@@ -145,22 +141,22 @@ void df_pn(Board &board, const uint64_t proof_number_threshold, const uint64_t d
                 proof_number = INF_DF_PN;
                 disproof_number = 0;
             }
-            set_table_df_pn(board, score_threshold, proof_number, disproof_number);
+            set_table_df_pn(search->board, score_threshold, proof_number, disproof_number);
             return;
         }
-        board.pass();
-            df_pn(board, disproof_number_threshold, proof_number_threshold, -score_threshold + 1, true);
+        search->board.pass();
+            df_pn(search, disproof_number_threshold, proof_number_threshold, -score_threshold + 1, true);
             uint64_t p = 0, d = 0;
-            get_table_df_pn(board, -score_threshold + 1, &p, &d);
-        board.pass();
-        set_table_df_pn(board, score_threshold, d, p);
+            get_table_df_pn(search->board, -score_threshold + 1, &p, &d);
+        search->board.pass();
+        set_table_df_pn(search->board, score_threshold, d, p);
         return;
     }
     const int canput = pop_count_ull(legal);
     vector<Flip> move_list(canput);
     int idx = 0;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
-        calc_flip(&move_list[idx++], &board, cell);
+        calc_flip(&move_list[idx++], &search->board, cell);
     uint64_t min_disproof_children, sum_proof_children, phi_child, delta_2, delta_child, phi, delta, max_num, num, n_proof_number, n_disproof_number;
     int child_move;
     bool select_child_flag;
@@ -178,9 +174,9 @@ void df_pn(Board &board, const uint64_t proof_number_threshold, const uint64_t d
         for (const Flip &flip: move_list){
             phi = 1;
             delta = 1;
-            board.move(&flip);
-                get_table_df_pn(board, -score_threshold + 1, &phi, &delta);
-            board.undo(&flip);
+            search->board.move(&flip);
+                get_table_df_pn(search->board, -score_threshold + 1, &phi, &delta);
+            search->board.undo(&flip);
             max_num = max(max_num, phi);
             if (delta < min_disproof_children)
                 min_disproof_children = delta;
@@ -198,25 +194,24 @@ void df_pn(Board &board, const uint64_t proof_number_threshold, const uint64_t d
         }
         sum_proof_children = add_df_pn(max_num, canput - 1);
         if (proof_number_threshold <= min_disproof_children || disproof_number_threshold <= sum_proof_children){
-            set_table_df_pn(board, score_threshold, min_disproof_children, sum_proof_children);
+            set_table_df_pn(search->board, score_threshold, min_disproof_children, sum_proof_children);
             break;
         }
-        calc_flip(&n_flip, &board, child_move);
+        calc_flip(&n_flip, &search->board, child_move);
         n_proof_number = sub_df_pn(add_df_pn(disproof_number_threshold, phi_child), sum_proof_children);
         n_disproof_number = min(proof_number_threshold, epsilon_trick(delta_2));
-        board.move(&n_flip);
-            df_pn(board, n_proof_number, n_disproof_number, -score_threshold + 1, false);
-        board.undo(&n_flip);
+        search->board.move(&n_flip);
+            df_pn(search, n_proof_number, n_disproof_number, -score_threshold + 1, false);
+        search->board.undo(&n_flip);
     }
 }
 
-int df_pn_root(Board *board, int alpha, int beta){
+int df_pn_root(Search *search, int alpha, int beta){
     table_df_pn.clear();
-    Board board_copy = board->copy();
-    df_pn(board_copy, INF_DF_PN - 1, INF_DF_PN - 1, beta, false);
+    df_pn(search, INF_DF_PN - 1, INF_DF_PN - 1, beta, false);
 
     uint64_t phi = 0, delta = 0;
-    get_table_df_pn(board_copy, beta, &phi, &delta);
+    get_table_df_pn(search->board, beta, &phi, &delta);
     if (delta == INF_DF_PN)
         return beta;
     return alpha;
