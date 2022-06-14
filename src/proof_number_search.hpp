@@ -52,8 +52,8 @@ unordered_map<Board, Entry_df_pn, Hash_df_pn> table_df_pn;
 
 bool get_table_df_pn(const Board &board, const int score_threshold, uint64_t *proof, uint64_t *disproof){
     if (table_df_pn.find(board) == table_df_pn.end()){
-        *proof = 1ULL;
-        *disproof = 1ULL;
+        *proof = 1;
+        *disproof = 1;
         return false;
     }
     Entry_df_pn entry = table_df_pn[board];
@@ -62,7 +62,7 @@ bool get_table_df_pn(const Board &board, const int score_threshold, uint64_t *pr
         *disproof = INF_DF_PN;
         return true;
     }
-    if (entry.upper <= score_threshold){
+    if (entry.upper < score_threshold){
         *proof = INF_DF_PN;
         *disproof = 0;
         return true;
@@ -78,23 +78,19 @@ void set_table_df_pn(const Board &board, const int score_threshold, const uint64
         Entry_df_pn entry;
         entry.upper = INF;
         entry.lower = -INF;
-        if (proof == INF_DF_PN){
+        if (proof == INF_DF_PN)
             entry.upper = score_threshold;
-        }
-        else if (disproof == INF_DF_PN){
+        else if (disproof == INF_DF_PN)
             entry.lower = score_threshold + 1;
-        }
         entry.disproof = disproof;
         entry.proof = proof;
         table_df_pn[board] = entry;
         return;
     }
-    if (proof == INF_DF_PN){
+    if (proof == INF_DF_PN)
         table_df_pn[board].upper = score_threshold;
-    }
-    else if (disproof == INF_DF_PN){
-        table_df_pn[board].lower = score_threshold + 1;
-    }
+    else if (disproof == INF_DF_PN)
+        table_df_pn[board].lower = score_threshold;
     table_df_pn[board].proof = proof;
     table_df_pn[board].disproof = disproof;
 }
@@ -111,9 +107,10 @@ inline uint64_t epsilon_trick(const uint64_t a){
     return min(a + 1 + (a >> 2), INF_DF_PN);
 }
 
-void df_pn(Search *search, const uint64_t proof_number_threshold, const uint64_t disproof_number_threshold, const int score_threshold, bool passed){
+void df_pn_mid(Search *search, const uint64_t proof_number_threshold, const uint64_t disproof_number_threshold, const int score_threshold, bool passed){
     ++search->n_nodes;
     uint64_t proof_number, disproof_number;
+    /*
     if (HW2 - search->board.n <= DF_PN_TO_NWS_DEPTH){
         const bool searching = true;
         calc_features(search);
@@ -128,6 +125,7 @@ void df_pn(Search *search, const uint64_t proof_number_threshold, const uint64_t
         set_table_df_pn(search->board, score_threshold, proof_number, disproof_number);
         return;
     }
+    */
     uint64_t legal = search->board.get_legal();
     if (legal == 0ULL){
         if (passed || search->board.n == HW2){
@@ -140,14 +138,14 @@ void df_pn(Search *search, const uint64_t proof_number_threshold, const uint64_t
                 disproof_number = 0;
             }
             set_table_df_pn(search->board, score_threshold, proof_number, disproof_number);
-            return;
+        } else{
+            uint64_t p, d;
+            search->board.pass();
+                df_pn_mid(search, disproof_number_threshold, proof_number_threshold, -score_threshold + 1, true);
+                get_table_df_pn(search->board, -score_threshold + 1, &p, &d);
+            search->board.pass();
+            set_table_df_pn(search->board, score_threshold, d, p);
         }
-        search->board.pass();
-            df_pn(search, disproof_number_threshold, proof_number_threshold, -score_threshold + 1, true);
-            uint64_t p = 0, d = 0;
-            get_table_df_pn(search->board, -score_threshold + 1, &p, &d);
-        search->board.pass();
-        set_table_df_pn(search->board, score_threshold, d, p);
         return;
     }
     const int canput = pop_count_ull(legal);
@@ -176,8 +174,8 @@ void df_pn(Search *search, const uint64_t proof_number_threshold, const uint64_t
                 get_table_df_pn(search->board, -score_threshold + 1, &phi, &delta);
             search->board.undo(&flip);
             max_num = max(max_num, phi);
-            if (delta < min_disproof_children)
-                min_disproof_children = delta;
+            min_disproof_children = min(min_disproof_children, delta);
+            sum_proof_children = add_df_pn(sum_proof_children, phi);
             if (!select_child_flag){
                 if (delta < delta_child){
                     delta_2 = delta_child;
@@ -190,28 +188,33 @@ void df_pn(Search *search, const uint64_t proof_number_threshold, const uint64_t
                     select_child_flag = true;
             }
         }
-        sum_proof_children = add_df_pn(max_num, canput - 1);
+        //sum_proof_children = add_df_pn(max_num, canput - 1);
+        // search parent node
         if (proof_number_threshold <= min_disproof_children || disproof_number_threshold <= sum_proof_children){
             set_table_df_pn(search->board, score_threshold, min_disproof_children, sum_proof_children);
             break;
         }
+        // search child node
         calc_flip(&n_flip, &search->board, child_move);
         n_proof_number = sub_df_pn(add_df_pn(disproof_number_threshold, phi_child), sum_proof_children);
         n_disproof_number = min(proof_number_threshold, epsilon_trick(delta_2));
         search->board.move(&n_flip);
-            df_pn(search, n_proof_number, n_disproof_number, -score_threshold + 1, false);
+            df_pn_mid(search, n_proof_number, n_disproof_number, -score_threshold + 1, false);
         search->board.undo(&n_flip);
     }
 }
 
-int df_pn_root(Search *search, int alpha, int beta){
+int df_pn(Search *search, int alpha, int beta){
     table_df_pn.clear();
-    df_pn(search, INF_DF_PN - 1, INF_DF_PN - 1, beta, false);
+    df_pn_mid(search, INF_DF_PN - 1, INF_DF_PN - 1, beta, false);
+    cerr << table_df_pn.size() << endl;
 
     uint64_t phi = 0, delta = 0;
     get_table_df_pn(search->board, beta, &phi, &delta);
     if (delta == INF_DF_PN)
         return beta;
-    return alpha;
+    else if (phi == INF_DF_PN)
+        return alpha;
+    return SCORE_UNDEFINED;
 }
 
