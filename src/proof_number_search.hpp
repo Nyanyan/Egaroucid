@@ -113,11 +113,10 @@ inline uint64_t epsilon_trick(const uint64_t a){
 }
 
 void df_pn_mid(Search *search, const uint64_t proof_number_threshold, const uint64_t disproof_number_threshold, const int score_threshold, bool passed){
-    ++search->n_nodes;
+    //++search->n_nodes;
+    const bool searching = true;
     uint64_t proof_number, disproof_number;
-    /*
     if (HW2 - search->board.n <= DF_PN_TO_NWS_DEPTH){
-        const bool searching = true;
         calc_features(search);
         const int score = nega_alpha_ordering(search, score_threshold - 1, score_threshold, HW2 - search->board.n, passed, LEGAL_UNDEFINED, true, &searching);
         if (score_threshold <= score){
@@ -130,7 +129,6 @@ void df_pn_mid(Search *search, const uint64_t proof_number_threshold, const uint
         set_table_df_pn(search->board, score_threshold, proof_number, disproof_number);
         return;
     }
-    */
     uint64_t legal = search->board.get_legal();
     if (legal == 0ULL){
         if (passed || search->board.n == HW2){
@@ -158,6 +156,7 @@ void df_pn_mid(Search *search, const uint64_t proof_number_threshold, const uint
     int idx = 0;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
         calc_flip(&move_list[idx++], &search->board, cell);
+    //move_ordering(search, move_list, HW2 - search->board.n, score_threshold - 1, score_threshold, true, &searching);
     uint64_t min_disproof_children, sum_proof_children, phi_child, delta_2, delta_child, phi, delta, max_num, num, n_proof_number, n_disproof_number;
     int child_move;
     bool select_child_flag;
@@ -209,10 +208,11 @@ void df_pn_mid(Search *search, const uint64_t proof_number_threshold, const uint
     }
 }
 
-int df_pn_fail_high(Search *search, int alpha, int beta){
+int df_pn(Search *search, int alpha, int beta){
     table_df_pn.clear();
     df_pn_mid(search, INF_DF_PN - 1, INF_DF_PN - 1, beta, false);
     cerr << table_df_pn.size() << endl;
+    search->n_nodes += (uint64_t)table_df_pn.size();
 
     uint64_t phi = 0, delta = 0;
     get_table_df_pn(search->board, beta, &phi, &delta);
@@ -222,29 +222,3 @@ int df_pn_fail_high(Search *search, int alpha, int beta){
         return alpha;
     return SCORE_UNDEFINED;
 }
-
-int df_pn_fail_low(Search *search, int alpha, int beta){
-    uint64_t legal = search->board.get_legal();
-    const int canput = pop_count_ull(legal);
-    vector<Flip> move_list(canput);
-    int idx = 0;
-    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
-        calc_flip(&move_list[idx++], &search->board, cell);
-    uint64_t phi, delta;
-    bool fail_high_found = false;
-    for (const Flip &flip: move_list){
-        search->board.move(&flip);
-            table_df_pn.clear();
-            df_pn_mid(search, INF_DF_PN - 1, INF_DF_PN - 1, -alpha, false);
-            get_table_df_pn(search->board, -alpha, &phi, &delta);
-        search->board.undo(&flip);
-        if (phi == INF_DF_PN){
-            fail_high_found = true;
-            break;
-        }
-    }
-    if (fail_high_found)
-        return beta;
-    return alpha;
-}
-
