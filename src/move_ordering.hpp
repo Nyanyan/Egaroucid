@@ -37,6 +37,7 @@
 #define W_BREAK_WALL -32
 #define W_DOUBLE_FLIP -64
 #define W_GIVE_POTENTIAL_FLIP_INSIDE 32
+#define W_GOOD_STICK 8
 
 #define MOVE_ORDERING_VALUE_OFFSET 14
 #define MAX_MOBILITY 30
@@ -220,6 +221,19 @@ inline int get_potential_mobility(uint64_t opponent, uint64_t empties){
     return pop_count_ull(empties & res);
 }
 
+inline bool is_good_stick(Search *search, Flip *flip){
+    uint64_t place = 1ULL << flip->pos;
+    if (place & 0x0081818181818100ULL){
+        if ((search->board.player | search->board.opponent) & (place << 8 | place >> 8))
+            return pop_count_ull(flip->flip & bit_around[flip->pos]) == 1;
+    }
+    if (place & 0x7E0000000000007EULL){
+        if ((search->board.player | search->board.opponent) & (place << 1 | place >> 1))
+            return pop_count_ull(flip->flip & bit_around[flip->pos]) == 1;
+    }
+    return false;
+}
+
 inline bool move_evaluate(Search *search, Flip *flip, const int alpha, const int beta, const int depth, const bool *searching, const int search_depth){
     if (flip->flip == search->board.opponent){
         flip->value = W_WIPEOUT;
@@ -232,6 +246,8 @@ inline bool move_evaluate(Search *search, Flip *flip, const int alpha, const int
     flip->value -= (calc_openness(&search->board, flip) >> 1) * W_OPENNESS;
     flip->value -= give_potential_flip_inside(&search->board, flip) * W_GIVE_POTENTIAL_FLIP_INSIDE;
     eval_move(search, flip);
+    if (is_good_stick(search, flip))
+        flip->value += W_GOOD_STICK;
     search->board.move(flip);
         flip->n_legal = search->board.get_legal();
         flip->value -= get_weighted_n_moves(flip->n_legal) * W_MOBILITY;
