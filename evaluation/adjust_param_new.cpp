@@ -10,8 +10,8 @@
 
 using namespace std;
 
-#define n_phases 30
-#define phase_n_stones 2
+#define n_phases 60
+#define phase_n_stones 1
 #define n_patterns 16
 #define n_eval (n_patterns + 4 + 4)
 #define max_surround 100
@@ -553,6 +553,17 @@ inline void scoring_mae(){
     cerr << " " << avg_score << " " << avg_score / step << "                   ";
 }
 
+inline void scoring_mae_stdout(){
+    int i, j, score;
+    double avg_score, res = 0.0;
+    avg_score = 0;
+    for (i = 0; i < nums; ++i){
+        score = pre_calc_scores[i];
+        avg_score += fabs(test_labels[i] - (double)score) / nums;
+    }
+    cout << " " << avg_score << " " << avg_score / step;
+}
+
 inline double scoring_next_step(int pattern, int idx){
     double score, res = 0.0, err;
     int data_size = nums;
@@ -607,6 +618,9 @@ void sd(unsigned long long tl){
     cerr << t;
     scoring_mae();
     cerr << endl;
+    cout << t << " " << (now - strt) / 1000;
+    scoring_mae_stdout();
+    cout << endl;
 }
 
 void init(){

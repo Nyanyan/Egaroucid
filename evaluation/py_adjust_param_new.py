@@ -8,7 +8,7 @@ if len(sys.argv) > 3:
     second = str(sys.argv[4])
     beta = str(sys.argv[5])
 else:
-    if int(phase) >= 10:
+    if int(phase) >= 20:
         hour = '0'
         minute = '20'
         second = '0'
@@ -26,8 +26,10 @@ else:
 #additional_params = ' big_data.dat'
 
 cmd = 'adjust_param_new.out ' + phase + ' ' + hour + ' ' + minute + ' ' + second + ' ' + beta + ' learned_data/' + phase + '.txt' + additional_params
-print(cmd)
+print(cmd, file=sys.stderr)
 p = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
+result = p.stdout.readline().decode().replace('\r\n', '\n').replace('\n', '')
+print(result)
 param = p.stdout.read().decode().replace('\r\n', '\n')
 with open(phase + '.txt', 'w') as f:
     f.write(param)
