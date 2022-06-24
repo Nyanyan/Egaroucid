@@ -443,6 +443,7 @@ inline bool init_evaluation_calc(const char* file){
     int phase_idx, pattern_idx;
     constexpr int pattern_sizes[N_PATTERNS] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10, 10, 10, 10};
     for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
+        cerr << "evaluation function " << phase_idx * 100 / N_PHASES << " % initialized" << endl;
         for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx){
             if (fread(pattern_arr[0][phase_idx][pattern_idx], 2, pow3[pattern_sizes[pattern_idx]], fp) < pow3[pattern_sizes[pattern_idx]]){
                 cerr << "eval.egev broken" << endl;
