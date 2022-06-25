@@ -100,10 +100,11 @@ inline bool ybwc_split(Search *search, const Flip *flip, int alpha, int beta, co
     return false;
 }
 */
-inline bool ybwc_split_without_move(const Search *search, const Flip *flip, int alpha, int beta, const int depth, uint64_t legal, bool is_end_search, const bool *searching, int policy, const int pv_idx, const int canput, const int split_count, vector<future<Parallel_task>> &parallel_tasks, const int first_val, const int last_val){
-    if (pv_idx > 0 && 
+inline bool ybwc_split_without_move(const Search *search, const Flip *flip, int alpha, int beta, const int depth, uint64_t legal, bool is_end_search, const bool *searching, int policy, const int pv_idx, const int canput, const int split_count, vector<future<Parallel_task>> &parallel_tasks, const int first_val, const int last_val, const bool worth_searching){
+    if (!worth_searching || 
+        (pv_idx > 0 && 
         depth >= YBWC_MID_SPLIT_MIN_DEPTH /*&&
-        first_val - flip->value > 2*/){
+        first_val - flip->value > 2*/)){
         if (thread_pool.n_idle()){
             //vector<int> eval_features(N_SYMMETRY_PATTERNS);
             //for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i)

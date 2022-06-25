@@ -267,7 +267,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
         int idx = 0;
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
             calc_flip(&move_list[idx++], &search->board, cell);
-        move_list_evaluate(search, move_list, depth, alpha, beta, is_end_search, searching);
+        bool worth_searching = move_list_evaluate(search, move_list, depth, alpha, beta, is_end_search, searching);
         #if USE_MULTI_THREAD
             int pv_idx = 0, split_count = 0;
             if (best_move != TRANSPOSE_TABLE_UNDEFINED)
@@ -282,7 +282,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
                     break;
                 eval_move(search, &move_list[move_idx]);
                 search->board.move(&move_list[move_idx]);
-                    if (ybwc_split_without_move(search, &move_list[move_idx], -beta, -alpha, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].pos, pv_idx++, canput, split_count, parallel_tasks, move_list[0].value, move_list[move_list.size() - 1].value)){
+                    if (ybwc_split_without_move(search, &move_list[move_idx], -beta, -alpha, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].pos, pv_idx++, canput, split_count, parallel_tasks, move_list[0].value, move_list[move_list.size() - 1].value, worth_searching)){
                         ++split_count;
                     } else{
                         g = -nega_alpha_ordering(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);

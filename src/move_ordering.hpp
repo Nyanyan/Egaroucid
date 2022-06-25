@@ -55,6 +55,8 @@
 
 #define MOVE_ORDERING_THRESHOLD 4
 
+#define WORTH_SEARCHING_THRESHOLD 4
+
 
 
 
@@ -234,7 +236,7 @@ inline bool is_good_stick(Search *search, Flip *flip){
     return false;
 }
 
-inline bool move_evaluate(Search *search, Flip *flip, const int alpha, const int beta, const int depth, const bool *searching, const int search_depth){
+inline bool move_evaluate(Search *search, Flip *flip, const int alpha, const int beta, const int depth, const bool *searching, const int search_depth, const int search_alpha, bool *worth_searching){
     if (flip->flip == search->board.opponent){
         flip->value = W_WIPEOUT;
         return true;
@@ -268,12 +270,19 @@ inline bool move_evaluate(Search *search, Flip *flip, const int alpha, const int
         }
         if (!value_flag){
         */
+        int val;
         switch(depth){
             case 0:
-                flip->value += -mid_evaluate_diff(search) * W_VALUE_SHALLOW;
+                val = -mid_evaluate_diff(search);
+                if (search_alpha - WORTH_SEARCHING_THRESHOLD <= val)
+                    *worth_searching = true;
+                flip->value += val * W_VALUE_SHALLOW;
                 break;
             case 1:
-                flip->value += -nega_alpha_eval1(search, alpha, beta, false, searching) * W_VALUE;
+                val = -nega_alpha_eval1(search, alpha, beta, false, searching);
+                if (search_alpha - WORTH_SEARCHING_THRESHOLD <= val)
+                    *worth_searching = true;
+                flip->value += val * W_VALUE;
                 break;
             default:
                 //if (depth <= MID_FAST_DEPTH)
@@ -285,7 +294,10 @@ inline bool move_evaluate(Search *search, Flip *flip, const int alpha, const int
                 //search->mpct = min(search->mpct, 1.8);
                 if (parent_transpose_table.contain(&search->board, search->board.hash() & TRANSPOSE_TABLE_MASK))
                     flip->value += W_CACHE_HIT;
-                flip->value += -nega_alpha_ordering_nomemo(search, alpha, beta, depth, false, flip->n_legal, searching) * (W_VALUE_DEEP + (depth - 1) * 2);
+                val = -nega_alpha_ordering_nomemo(search, alpha, beta, depth, false, flip->n_legal, searching);
+                if (search_alpha - WORTH_SEARCHING_THRESHOLD <= val)
+                    *worth_searching = true;
+                flip->value += val * (W_VALUE_DEEP + (depth - 1) * 2);
                 //search->use_mpc = use_mpc;
                 //search->mpct = mpct;
                 //}
@@ -386,9 +398,9 @@ bool cmp_move_ordering(Flip &a, Flip &b){
     return a.value > b.value;
 }
 
-inline void move_list_evaluate(Search *search, vector<Flip> &move_list, int depth, int alpha, int beta, bool is_end_search, const bool *searching){
+inline bool move_list_evaluate(Search *search, vector<Flip> &move_list, int depth, int alpha, int beta, bool is_end_search, const bool *searching){
     if (move_list.size() < 2)
-        return;
+        return true;
     int eval_alpha = -min(SCORE_MAX, beta + MOVE_ORDERING_VALUE_OFFSET);
     int eval_beta = -max(-SCORE_MAX, alpha - MOVE_ORDERING_VALUE_OFFSET);
     int eval_depth = depth >> 3;
@@ -405,12 +417,14 @@ inline void move_list_evaluate(Search *search, vector<Flip> &move_list, int dept
         }
     }
     bool wipeout_found = false;
+    bool worth_searching = false;
     for (Flip &flip: move_list){
         if (!wipeout_found)
-            wipeout_found = move_evaluate(search, &flip, eval_alpha, eval_beta, eval_depth, searching, depth);
+            wipeout_found = move_evaluate(search, &flip, eval_alpha, eval_beta, eval_depth, searching, depth, alpha, &worth_searching);
         else
             flip.value = -INF;
     }
+    return worth_searching;
 }
 
 inline void move_ordering(Search *search, vector<Flip> &move_list, int depth, int alpha, int beta, bool is_end_search, const bool *searching){
