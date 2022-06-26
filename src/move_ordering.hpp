@@ -39,6 +39,12 @@
 #define W_GIVE_POTENTIAL_FLIP_INSIDE 32
 #define W_GOOD_STICK 8
 
+#define W_FIRST_MIDDLE_EDGE_FLIP_1_DIRECTION 16
+#define W_SECOND_MIDDLE_EDGE_FLIP_HORIZONTAL 64
+#define W_SECOND_MIDDLE_EDGE_NEXT_TO_PILLAR 16
+#define W_FIRST_EDGE_FLIP_1_DIRECTION 8
+#define W_SECOND_EDGE_FLIP_1_DIRECTION 16
+
 #define MOVE_ORDERING_VALUE_OFFSET 14
 #define MAX_MOBILITY 30
 #define MAX_OPENNESS 50
@@ -236,6 +242,76 @@ inline bool is_good_stick(Search *search, Flip *flip){
     return false;
 }
 
+inline bool is_first_middle_edge(Search *search, Flip *flip){
+    uint64_t place = 1ULL << flip->pos;
+    uint64_t stones = search->board.player | search->board.opponent;
+    if (place & 0x003C000000000000ULL)
+        return (stones & 0x003C000000000000ULL) == 0ULL;
+    if (place & 0x0000404040400000ULL)
+        return (stones & 0x0000404040400000ULL) == 0ULL;
+    if (place & 0x0000000000003C00ULL)
+        return (stones & 0x0000000000003C00ULL) == 0ULL;
+    if (place & 0x0000020202020000ULL)
+        return (stones & 0x0000020202020000ULL) == 0ULL;
+    return false;
+}
+
+inline bool is_flip_1_direction(Flip *flip){
+    return pop_count_ull(flip->flip & bit_around[flip->pos]) == 1;
+}
+
+inline bool is_flip_horizontal(Flip *flip){
+    uint64_t place = 1ULL << flip->pos;
+    if (place & 0x003C000000000000ULL)
+        return (flip->flip & 0x003C000000000000ULL) > 0ULL;
+    if (place & 0x0000404040400000ULL)
+        return (flip->flip & 0x0000404040400000ULL) > 0ULL;
+    if (place & 0x0000000000003C00ULL)
+        return (flip->flip & 0x0000000000003C00ULL) > 0ULL;
+    if (place & 0x0000020202020000ULL)
+        return (flip->flip & 0x0000020202020000ULL) > 0ULL;
+    return false;
+}
+
+inline bool is_next_to_pillar(Search *search, Flip *flip){
+    uint64_t place = 1ULL << flip->pos;
+    uint64_t stones = search->board.player | search->board.opponent;
+    if (place & 0x003C000000003C00ULL)
+        return (stones & ((place << 1) | (place >> 1))) > 0ULL;
+    if (place & 0x0000424242420000ULL)
+        return (stones & ((place << HW) | (place >> HW))) > 0ULL;
+    return false;
+}
+
+inline bool is_first_edge(Search *search, Flip *flip){
+    uint64_t place = 1ULL << flip->pos;
+    uint64_t stones = search->board.player | search->board.opponent;
+    if (place & 0x3C00000000000000ULL)
+        return (stones & 0x3C00000000000000ULL) == 0ULL;
+    if (place & 0x0000808080800000ULL)
+        return (stones & 0x0000808080800000ULL) == 0ULL;
+    if (place & 0x000000000000003CULL)
+        return (stones & 0x000000000000003CULL) == 0ULL;
+    if (place & 0x0000010101010000ULL)
+        return (stones & 0x0000010101010000ULL) == 0ULL;
+    return false;
+}
+
+inline bool is_next_to_pillar_edge(Search *search, Flip *flip){
+    uint64_t place = 1ULL << flip->pos;
+    uint64_t stones = search->board.player | search->board.opponent;
+    if (place & 0x3C0000000000003CULL)
+        return (stones & ((place << 1) | (place >> 1))) > 0ULL;
+    if (place & 0x0000818181810000ULL)
+        return (stones & ((place << HW) | (place >> HW))) > 0ULL;
+    return false;
+}
+
+inline bool is_flip_few_stones(Flip *flip, const int threshold){
+    return pop_count_ull(flip->flip) <= threshold;
+}
+
+
 inline bool move_evaluate(Search *search, Flip *flip, const int alpha, const int beta, const int depth, const bool *searching, const int search_depth, const int search_alpha, bool *worth_searching){
     if (flip->flip == search->board.opponent){
         flip->value = W_WIPEOUT;
@@ -247,9 +323,9 @@ inline bool move_evaluate(Search *search, Flip *flip, const int alpha, const int
     //if (search->board.n <= MIDGAME_N_STONES)
     flip->value -= (calc_openness(&search->board, flip) >> 1) * W_OPENNESS;
     flip->value -= give_potential_flip_inside(&search->board, flip) * W_GIVE_POTENTIAL_FLIP_INSIDE;
+    //if (is_good_stick(search, flip))
+    //    flip->value += W_GOOD_STICK;
     eval_move(search, flip);
-    if (is_good_stick(search, flip))
-        flip->value += W_GOOD_STICK;
     search->board.move(flip);
         flip->n_legal = search->board.get_legal();
         flip->value -= get_weighted_n_moves(flip->n_legal) * W_MOBILITY;
@@ -306,6 +382,25 @@ inline bool move_evaluate(Search *search, Flip *flip, const int alpha, const int
         //}
     search->board.undo(flip);
     eval_undo(search, flip);
+    if (pos_is_middle_edge(flip)){
+        if (is_first_middle_edge(search, flip)){
+            if (is_flip_1_direction(flip))
+                flip->value += W_FIRST_MIDDLE_EDGE_FLIP_1_DIRECTION;
+        } else{
+            if (is_flip_horizontal(flip))
+                flip->value -= W_SECOND_MIDDLE_EDGE_FLIP_HORIZONTAL;
+            if (is_next_to_pillar(search, flip) && is_flip_1_direction(flip))
+                flip->value += W_SECOND_MIDDLE_EDGE_NEXT_TO_PILLAR;
+        }
+    } else if (pos_is_edge(flip)){
+        if (is_first_edge(search, flip)){
+            if (is_flip_1_direction(flip))
+                flip->value += W_FIRST_EDGE_FLIP_1_DIRECTION;
+        } else{
+            if (is_next_to_pillar_edge(search, flip) && is_flip_1_direction(flip) && is_flip_few_stones(flip, 2))
+                flip->value += W_SECOND_EDGE_FLIP_1_DIRECTION;
+        }
+    }
     return false;
 }
 
