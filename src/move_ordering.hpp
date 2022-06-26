@@ -20,7 +20,7 @@
 #define W_PARITY1 2
 #define W_PARITY2 4
 
-#define W_VALUE_DEEP 8
+#define W_VALUE_DEEP 10
 #define W_VALUE 8
 #define W_VALUE_SHALLOW 6
 #define W_CACHE_HIT 4
