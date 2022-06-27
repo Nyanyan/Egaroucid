@@ -973,9 +973,8 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
                     if (beta <= alpha || !(*searching)){
                         n_searching = false;
                         ybwc_wait_all(search, parallel_tasks);
-                    } else{
+                    } else
                         ybwc_wait_all(search, parallel_tasks, &v, &best_move, &alpha, beta, &n_searching);
-                    }
                 }
             #else
                 const int move_ordering_threshold = MOVE_ORDERING_THRESHOLD - (int)(best_move != TRANSPOSE_TABLE_UNDEFINED);
