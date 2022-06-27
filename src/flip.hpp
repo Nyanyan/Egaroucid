@@ -54,12 +54,12 @@ constexpr uint_fast8_t flip_place_d7[HW2] = {
 };
 
 constexpr uint_fast8_t flip_place_d9[HW2] = {
-    0, 1, 2, 3, 4, 5, 6, 7, 
-    0, 1, 2, 3, 4, 5, 6, 6, 
-    0, 1, 2, 3, 4, 5, 5, 5, 
-    0, 1, 2, 3, 4, 4, 4, 4, 
-    0, 1, 2, 3, 3, 3, 3, 3, 
-    0, 1, 2, 2, 2, 2, 2, 2, 
+    7, 6, 5, 4, 3, 2, 0, 0, 
+    6, 6, 5, 4, 3, 2, 1, 0, 
+    5, 5, 5, 4, 3, 2, 1, 0, 
+    4, 4, 4, 4, 3, 2, 1, 0, 
+    3, 3, 3, 3, 3, 2, 1, 0, 
+    2, 2, 2, 2, 2, 2, 1, 0, 
     0, 1, 1, 1, 1, 1, 1, 0, 
     0, 0, 0, 0, 0, 0, 0, 0
 };
@@ -486,7 +486,7 @@ class Flip{
             n_flip_pre_calc[join_h_line(player, t)][u] + 
             n_flip_pre_calc[join_v_line(player, u)][t] + 
             n_flip_pre_calc[join_d7_line2(player, u + t)][flip_place_d7[place]] + 
-            n_flip_pre_calc[join_d9_line2(player, u - t + HW)][flip_place_d9[place]];
+            n_flip_pre_calc[join_d9_line2(player, u + 7 - t)][flip_place_d9[place]];
     }
 
 #endif
