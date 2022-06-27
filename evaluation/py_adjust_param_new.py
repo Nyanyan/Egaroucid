@@ -8,17 +8,17 @@ if len(sys.argv) > 3:
     second = str(sys.argv[4])
     beta = str(sys.argv[5])
 else:
-    if int(phase) >= 20:
+    if int(phase) >= 10:
         hour = '0'
-        minute = '20'
+        minute = '10'
         second = '0'
         beta = '0.005'
     else:
         hour = '0'
-        minute = '20'
+        minute = '10'
         second = '0'
         beta = '0.005'
-if int(phase) >= 20:
+if int(phase) >= 10:
     additional_params = ' data_0000004.dat data_0000006.dat data_0000007.dat data_0000008.dat data_0000009.dat data_0000010.dat'
 else:
     additional_params = ' data_0000001.dat data_0000002.dat data_0000003.dat'

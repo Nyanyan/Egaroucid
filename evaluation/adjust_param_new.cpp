@@ -10,8 +10,8 @@
 
 using namespace std;
 
-#define n_phases 60
-#define phase_n_stones 1
+#define n_phases 30
+#define phase_n_stones 2
 #define n_patterns 16
 #define n_eval (n_patterns + 4 + 4)
 #define max_surround 100
