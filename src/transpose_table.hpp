@@ -50,9 +50,9 @@ class Node_child_transpose_table{
         }
 
         inline void register_value_with_board(Node_child_transpose_table *from){
-            player.store(from->player);
-            opponent.store(from->opponent);
-            best_move.store(from->best_move);
+            player.store(from->player.load());
+            opponent.store(from->opponent.load());
+            best_move.store(from->best_move.load());
         }
 
         inline int get(const Board *board){
