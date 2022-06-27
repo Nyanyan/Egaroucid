@@ -1,4 +1,5 @@
 import tkinter as tk
+import pyperclip
 
 def digit(n, r):
     n = str(n)
@@ -7,7 +8,7 @@ def digit(n, r):
         n = '0' + n
     return n
 
-vacant = '  .  '
+vacant = '   .    '
 active = '  %  '
 
 root = tk.Tk()
@@ -28,8 +29,10 @@ def go():
     #print(s)
     bin_num = int(s, 2)
     hex_s = hex(bin_num)[2:]
-    hex_s_fill0 = digit(hex_s, 16)
-    print('0x' + hex_s_fill0 + 'ULL')
+    hex_s_fill0 = digit(hex_s, 16).upper()
+    res = '0x' + hex_s_fill0 + 'ULL'
+    print(res)
+    pyperclip.copy(res)
 
 def reset():
     for txt in txts:
