@@ -399,6 +399,12 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
 inline void pick_vacant(Search *search, uint_fast8_t cells[]){
     int idx = 0;
     uint64_t empties = ~(search->board.player | search->board.opponent);
+    //uint64_t empties_copy;
+    //for (int i = 0; i < N_CELL_WEIGHT_MASK; ++i){
+    //    empties_copy = empties & cell_weight_mask[i];
+    //    for (uint_fast8_t cell = first_bit(&empties_copy); empties_copy; cell = next_bit(&empties_copy))
+    //        cells[idx++] = cell;
+    //}
     for (uint_fast8_t cell = first_bit(&empties); empties; cell = next_bit(&empties))
         cells[idx++] = cell;
 }
@@ -406,17 +412,17 @@ inline void pick_vacant(Search *search, uint_fast8_t cells[]){
 int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped, bool stab_cut, const bool *searching){
     if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
-    if (search->board.n == 60){
+    if (search->board.n == 61){
         //uint_fast8_t cells[4];
         //pick_vacant(search, cells);
         //return last4(search, alpha, beta, cells[0], cells[1], cells[2], cells[3], skipped);
         uint64_t empties = ~(search->board.player | search->board.opponent);
-        uint_fast8_t p0, p1, p2, p3;
+        uint_fast8_t p0, p1, p2;
         p0 = first_bit(&empties);
         p1 = next_bit(&empties);
         p2 = next_bit(&empties);
-        p3 = next_bit(&empties);
-        return last4(search, alpha, beta, p0, p1, p2, p3, skipped);
+        //p3 = next_bit(&empties);
+        return last3(search, alpha, beta, p0, p1, p2, skipped);
     }
     ++search->n_nodes;
     #if USE_END_SC
