@@ -162,7 +162,7 @@ inline int last2(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
     #endif
     int v, g;
     Flip flip;
-    if ((bit_around[p0] & search->board.opponent) && (bit_radiation_dismiss_around[p0] & search->board.player)){
+    if (bit_around[p0] & search->board.opponent){
         calc_flip(&flip, &search->board, p0);
         if (flip.flip){
             search->board.move(&flip);
@@ -176,7 +176,7 @@ inline int last2(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
             v = -INF;
     } else
         v = -INF;
-    if ((bit_around[p1] & search->board.opponent) && (bit_radiation_dismiss_around[p1] & search->board.player)){
+    if (bit_around[p1] & search->board.opponent){
         calc_flip(&flip, &search->board, p1);
         if (flip.flip){
             search->board.move(&flip);
@@ -227,7 +227,7 @@ inline int last3(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
     //uint64_t legal = search->board.get_legal();
     int v = -INF, g;
     Flip flip;
-    if ((bit_around[p0] & search->board.opponent) && (bit_radiation_dismiss_around[p0] & search->board.player)){
+    if (bit_around[p0] & search->board.opponent){
         calc_flip(&flip, &search->board, p0);
         if (flip.flip){
             search->board.move(&flip);
@@ -239,7 +239,7 @@ inline int last3(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
             v = g;
         }
     }
-    if ((bit_around[p1] & search->board.opponent) && (bit_radiation_dismiss_around[p1] & search->board.player)){
+    if (bit_around[p1] & search->board.opponent){
         calc_flip(&flip, &search->board, p1);
         if (flip.flip){
             search->board.move(&flip);
@@ -251,7 +251,7 @@ inline int last3(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
             v = max(v, g);
         }
     }
-    if ((bit_around[p2] & search->board.opponent) && (bit_radiation_dismiss_around[p2] & search->board.player)){
+    if (bit_around[p2] & search->board.opponent){
         calc_flip(&flip, &search->board, p2);
         if (flip.flip){
             search->board.move(&flip);
