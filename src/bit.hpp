@@ -742,111 +742,27 @@ inline uint64_t split_d9_line(uint8_t x, int t){
     return t > 0 ? res << t : res >> (-t);
 }
 
-inline uint_fast8_t join_line_dummy(const uint64_t x){
-    return 0;
-}
-
-inline uint_fast8_t join_d7_line_2(const uint64_t x){
-    return _pext_u64(x, 0x0000000000010204ULL);
-}
-
-inline uint_fast8_t join_d7_line_3(const uint64_t x){
-    return _pext_u64(x, 0x0000000001020408ULL);
-}
-
-inline uint_fast8_t join_d7_line_4(const uint64_t x){
-    return _pext_u64(x, 0x0000000102040810ULL);
-}
-
-inline uint_fast8_t join_d7_line_5(const uint64_t x){
-    return _pext_u64(x, 0x0000010204081020ULL);
-}
-
-inline uint_fast8_t join_d7_line_6(const uint64_t x){
-    return _pext_u64(x, 0x0001020408102040ULL);
-}
-
-inline uint_fast8_t join_d7_line_7(const uint64_t x){
-    return _pext_u64(x, 0x0102040810204080ULL);
-}
-
-inline uint_fast8_t join_d7_line_8(const uint64_t x){
-    return _pext_u64(x, 0x0204081020408000ULL);
-}
-
-inline uint_fast8_t join_d7_line_9(const uint64_t x){
-    return _pext_u64(x, 0x0408102040800000ULL);
-}
-
-inline uint_fast8_t join_d7_line_10(const uint64_t x){
-    return _pext_u64(x, 0x0810204080000000ULL);
-}
-
-inline uint_fast8_t join_d7_line_11(const uint64_t x){
-    return _pext_u64(x, 0x1020408000000000ULL);
-}
-
-inline uint_fast8_t join_d7_line_12(const uint64_t x){
-    return _pext_u64(x, 0x2040800000000000ULL);
-}
-
-uint_fast8_t (*join_d7_lines[])(const uint64_t) = {
-    join_line_dummy, join_line_dummy, join_d7_line_2, join_d7_line_3, 
-    join_d7_line_4, join_d7_line_5, join_d7_line_6, join_d7_line_7, 
-    join_d7_line_8, join_d7_line_9, join_d7_line_10, join_d7_line_11, 
-    join_d7_line_12, join_line_dummy, join_line_dummy
+constexpr uint64_t join_d7_line_mask[15] = {
+    0ULL, 0ULL, 0x0000000000010204ULL, 0x0000000001020408ULL, 
+    0x0000000102040810ULL, 0x0000010204081020ULL, 0x0001020408102040ULL, 0x0102040810204080ULL, 
+    0x0204081020408000ULL, 0x0408102040800000ULL, 0x0810204080000000ULL, 0x1020408000000000ULL, 
+    0x2040800000000000ULL, 0ULL, 0ULL
 };
 
-inline uint_fast8_t join_d9_line_m5(const uint64_t x){
-    return _pext_u64(x, 0x0402010000000000ULL);
+inline uint_fast8_t join_d7_line2(const uint64_t x, const uint_fast8_t t){
+    return _pext_u64(x, join_d7_line_mask[t]);
 }
 
-inline uint_fast8_t join_d9_line_m4(const uint64_t x){
-    return _pext_u64(x, 0x0804020100000000ULL);
-}
-
-inline uint_fast8_t join_d9_line_m3(const uint64_t x){
-    return _pext_u64(x, 0x1008040201000000ULL);
-}
-
-inline uint_fast8_t join_d9_line_m2(const uint64_t x){
-    return _pext_u64(x, 0x2010080402010000ULL);
-}
-
-inline uint_fast8_t join_d9_line_m1(const uint64_t x){
-    return _pext_u64(x, 0x4020100804020100ULL);
-}
-
-inline uint_fast8_t join_d9_line_0(const uint64_t x){
-    return _pext_u64(x, 0x8040201008040201ULL);
-}
-
-inline uint_fast8_t join_d9_line_1(const uint64_t x){
-    return _pext_u64(x, 0x0080402010080402ULL);
-}
-
-inline uint_fast8_t join_d9_line_2(const uint64_t x){
-    return _pext_u64(x, 0x0000804020100804ULL);
-}
-
-inline uint_fast8_t join_d9_line_3(const uint64_t x){
-    return _pext_u64(x, 0x0000008040201008ULL);
-}
-
-inline uint_fast8_t join_d9_line_4(const uint64_t x){
-    return _pext_u64(x, 0x0000000080402010ULL);
-}
-
-inline uint_fast8_t join_d9_line_5(const uint64_t x){
-    return _pext_u64(x, 0x0000000000804020ULL);
-}
-
-uint_fast8_t (*join_d9_lines[])(const uint64_t) = {
-    join_line_dummy, join_line_dummy, join_d9_line_m5, join_d9_line_m4, 
-    join_d9_line_m3, join_d9_line_m2, join_d9_line_m1, join_d9_line_0, 
-    join_d9_line_1, join_d9_line_2, join_d9_line_3, join_d9_line_4, 
-    join_d9_line_5, join_line_dummy, join_line_dummy
+constexpr uint64_t join_d9_line_mask[15] = {
+    0ULL, 0ULL, 0x0402010000000000ULL, 0x0804020100000000ULL, 
+    0x1008040201000000ULL, 0x2010080402010000ULL, 0x4020100804020100ULL, 0x8040201008040201ULL, 
+    0x0080402010080402ULL, 0x0000804020100804ULL, 0x0000008040201008ULL, 0x0000000080402010ULL, 
+    0x0000000000804020ULL, 0ULL, 0ULL
 };
+
+inline uint_fast8_t join_d9_line2(const uint64_t x, const uint_fast8_t t){
+    return _pext_u64(x, join_d9_line_mask[t]);
+}
 
 uint64_t split_v_lines[N_8BIT];
 uint64_t split_d7_lines[N_8BIT];
