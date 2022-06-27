@@ -14,7 +14,7 @@ using namespace std;
 #define TRANSPOSE_TABLE_SIZE 8388608 //2097152
 #define TRANSPOSE_TABLE_MASK 8388607 //2097151
 
-#define CACHE_SAVE_EMPTY 15
+#define CACHE_SAVE_EMPTY 10
 
 #define TRANSPOSE_TABLE_UNDEFINED -INF
 
@@ -56,12 +56,9 @@ class Node_child_transpose_table{
         }
 
         inline int get(const Board *board){
-            int res = TRANSPOSE_TABLE_UNDEFINED;
-            //if (board->player == player.load(memory_order_relaxed) && board->opponent == opponent.load(memory_order_relaxed)){
-            res = best_move;
+            int res = best_move.load(memory_order_relaxed);
             if (board->player != player.load(memory_order_relaxed) || board->opponent != opponent.load(memory_order_relaxed))
                 res = TRANSPOSE_TABLE_UNDEFINED;
-            //}
             return res;
         }
 
@@ -234,14 +231,12 @@ class Node_parent_transpose_table{
         }
 
         inline void get(const Board *board, int *l, int *u){
-            //if (board->player == player.load(memory_order_relaxed) && board->opponent == opponent.load(memory_order_relaxed)){
             *l = lower.load(memory_order_relaxed);
             *u = upper.load(memory_order_relaxed);
             if (board->player != player.load(memory_order_relaxed) || board->opponent != opponent.load(memory_order_relaxed)){
                 *l = -INF;
                 *u = INF;
             }
-            //}
         }
 
         inline bool contain(const Board *board){
@@ -441,8 +436,8 @@ class Parent_transpose_table{
         }
 
         inline void get(const Board *board, const uint32_t hash, int *l, int *u){
-            *l = -INF;
-            *u = INF;
+            //*l = -INF;
+            //*u = INF;
             //if (!table[hash].is_null())
             table[hash].get(board, l, u);
         }
