@@ -87,6 +87,46 @@ inline int last1(Search *search, int alpha, int beta, uint_fast8_t p0){
 }
 */
 
+/*
+inline int last1_without_pass(Search *search, int score, const int alpha, uint_fast8_t p0){
+    ++search->n_nodes;
+    int n_flip = 0;
+    if (score <= 0){
+        score -= 2;
+        if (score >= alpha){
+            if (bit_around[p0] & search->board.player){
+                n_flip = count_last_flip(search->board.opponent, search->board.player, p0);
+                score -= 2 * n_flip;
+            }
+        }
+    } else{
+        if (score >= alpha){
+            if (bit_around[p0] & search->board.player){
+                n_flip = count_last_flip(search->board.opponent, search->board.player, p0);
+                if (n_flip)
+                    score -= 2 * n_flip + 2;
+            }
+        }
+    }
+    return score;
+}
+
+inline int last1(Search *search, int alpha, int beta, uint_fast8_t p0){
+    ++search->n_nodes;
+    int score = HW2 - 2 * search->board.count_opponent();
+    int n_flip = 0;
+    if (bit_around[p0] & search->board.opponent){
+        n_flip = count_last_flip(search->board.player, search->board.opponent, p0);
+        if (n_flip == 0)
+            score = last1_without_pass(search, score, alpha, p0);
+        else
+            score += 2 * n_flip;
+    } else
+        score = last1_without_pass(search, score, alpha, p0);
+    return score;
+}
+*/
+
 inline int last1(Search *search, int alpha, int beta, uint_fast8_t p0){
     ++search->n_nodes;
     int score = HW2 - 2 * search->board.count_opponent();
