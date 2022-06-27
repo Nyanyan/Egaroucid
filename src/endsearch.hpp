@@ -927,39 +927,54 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
                 int pv_idx = 0, split_count = 0;
                 if (best_move != TRANSPOSE_TABLE_UNDEFINED)
                     pv_idx = 1;
-                vector<future<pair<int, uint64_t>>> parallel_tasks;
+                vector<future<Parallel_task>> parallel_tasks;
                 bool n_searching = true;
-                int depth = HW2 - pop_count_ull(search->board.player | search->board.opponent);
-                for (const Flip &flip: move_list){
+                const int move_ordering_threshold = MOVE_ORDERING_THRESHOLD - (int)(best_move != TRANSPOSE_TABLE_UNDEFINED);
+                for (int move_idx = 0; move_idx < canput; ++move_idx){
+                    if (move_idx < move_ordering_threshold)
+                        swap_next_best_move(move_list, move_idx, canput);
                     if (!(*searching))
                         break;
-                    search->board.move(&flip);
-                        if (ybwc_split_without_move_end(search, &flip, -beta, -alpha, depth - 1, flip.n_legal, &n_searching, pv_idx++, canput, split_count, parallel_tasks, move_list[0].value)){
+                    search->board.move(&move_list[move_idx]);
+                        #if USE_END_SC
+                            stab_res = stability_cut_move(search, &move_list[move_idx], &alpha, &beta);
+                            if (stab_res != SCORE_UNDEFINED){
+                                search->board.undo(&move_list[move_idx]);
+                                register_tt(search, hash_code, first_alpha, stab_res, move_list[move_idx].pos, l, u, alpha, beta);
+                                return stab_res;
+                            }
+                        #endif
+                        if (ybwc_split_without_move_end(search, &move_list[move_idx], -beta, -alpha, move_list[move_idx].n_legal, &n_searching, move_list[move_idx].pos, pv_idx++, canput, split_count, parallel_tasks, move_list[0].value, move_list[move_list.size() - 1].value)){
                             ++split_count;
                         } else{
-                            g = -nega_alpha_end(search, -beta, -alpha, false, flip.n_legal, searching);
+                            g = -nega_alpha_end(search, -beta, -alpha, false, move_list[move_idx].n_legal, searching);
                             if (*searching){
                                 alpha = max(alpha, g);
                                 if (v < g){
                                     v = g;
-                                    best_move = flip.pos;
+                                    best_move = move_list[move_idx].pos;
                                 }
                                 if (beta <= alpha){
-                                    search->board.undo(&flip);
+                                    search->board.undo(&move_list[move_idx]);
                                     break;
+                                }
+                                if (split_count){
+                                    ybwc_get_end_tasks(search, parallel_tasks, &v, &best_move, &alpha);
+                                    if (beta <= alpha){
+                                        search->board.undo(&move_list[move_idx]);
+                                        break;
+                                    }
                                 }
                             }
                         }
-                    search->board.undo(&flip);
+                    search->board.undo(&move_list[move_idx]);
                 }
                 if (split_count){
                     if (beta <= alpha || !(*searching)){
                         n_searching = false;
                         ybwc_wait_all(search, parallel_tasks);
                     } else{
-                        g = ybwc_wait_all(search, parallel_tasks);
-                        alpha = max(alpha, g);
-                        v = max(v, g);
+                        ybwc_wait_all(search, parallel_tasks, &v, &best_move, &alpha, beta, &n_searching);
                     }
                 }
             #else
