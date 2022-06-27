@@ -891,8 +891,8 @@ inline int mid_evaluate(Board *b){
     empties = ~(b->player | b->opponent);
     sur0 = min(MAX_SURROUND - 1, calc_surround(b->player, empties));
     sur1 = min(MAX_SURROUND - 1, calc_surround(b->opponent, empties));
-    if (b->n > 44)
-        calc_stability(b, &stab0, &stab1);
+    //if (b->n > 44)
+    //    calc_stability(b, &stab0, &stab1);
     num0 = pop_count_ull(b->player);
     num1 = pop_count_ull(b->opponent);
     //cerr << calc_pattern(phase_idx, b) << " " << eval_sur0_sur1_arr[phase_idx][sur0][sur1] << " " << eval_canput0_canput1_arr[phase_idx][canput0][canput1] << " "
@@ -900,7 +900,7 @@ inline int mid_evaluate(Board *b){
     int res = calc_pattern_first(phase_idx, b) + 
         eval_sur0_sur1_arr[phase_idx][sur0][sur1] + 
         eval_canput0_canput1_arr[phase_idx][canput0][canput1] + 
-        eval_stab0_stab1_arr[phase_idx][stab0][stab1] + 
+        //eval_stab0_stab1_arr[phase_idx][stab0][stab1] + 
         eval_num0_num1_arr[phase_idx][num0][num1] + 
         calc_canput_pattern(phase_idx, b, player_mobility, opponent_mobility);
     //return score_modification(phase_idx, res);
@@ -967,7 +967,7 @@ inline int mid_evaluate_diff(Search *search){
     sur0 = min(MAX_SURROUND - 1, calc_surround(search->board.player, empties));
     sur1 = min(MAX_SURROUND - 1, calc_surround(search->board.opponent, empties));
     //if (search->board.n > 49)
-    calc_stability(&search->board, &stab0, &stab1);
+    //calc_stability(&search->board, &stab0, &stab1);
     num0 = pop_count_ull(search->board.player);
     num1 = pop_count_ull(search->board.opponent);
     //cerr << calc_pattern(phase_idx, b) << " " << eval_sur0_sur1_arr[phase_idx][sur0][sur1] << " " << eval_canput0_canput1_arr[phase_idx][canput0][canput1] << " "
@@ -975,7 +975,7 @@ inline int mid_evaluate_diff(Search *search){
     int res = calc_pattern_diff(phase_idx, search) + 
         eval_sur0_sur1_arr[phase_idx][sur0][sur1] + 
         eval_canput0_canput1_arr[phase_idx][canput0][canput1] + 
-        eval_stab0_stab1_arr[phase_idx][stab0][stab1] + 
+        //eval_stab0_stab1_arr[phase_idx][stab0][stab1] + 
         eval_num0_num1_arr[phase_idx][num0][num1] + 
         calc_canput_pattern(phase_idx, &search->board, player_mobility, opponent_mobility);
     //return score_modification(phase_idx, res);
