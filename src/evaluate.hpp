@@ -693,6 +693,24 @@ inline void calc_stability_edge(Board *b, int *stab0, int *stab1){
     *stab1 = pop_count_ull(edge_stability & b->opponent);
 }
 
+inline int calc_stability_edge(Board *b){
+    uint64_t edge_stability = 0;
+    uint8_t pl, op;
+    pl = b->player & 0b11111111U;
+    op = b->opponent & 0b11111111U;
+    edge_stability |= stability_edge_arr[pl][op][0] << 56;
+    pl = (b->player >> 56) & 0b11111111U;
+    op = (b->opponent >> 56) & 0b11111111U;
+    edge_stability |= stability_edge_arr[pl][op][0];
+    pl = join_v_line(b->player, 0);
+    op = join_v_line(b->opponent, 0);
+    edge_stability |= stability_edge_arr[pl][op][1] << 7;
+    pl = join_v_line(b->player, 7);
+    op = join_v_line(b->opponent, 7);
+    edge_stability |= stability_edge_arr[pl][op][1];
+    return pop_count_ull(edge_stability & b->player) - pop_count_ull(edge_stability & b->opponent);
+}
+
 inline int calc_stability_edge_player(uint64_t player, uint64_t opponent){
     uint64_t edge_stability = 0;
     uint8_t pl, op;
@@ -710,6 +728,7 @@ inline int calc_stability_edge_player(uint64_t player, uint64_t opponent){
     edge_stability |= stability_edge_arr[pl][op][1];
     return pop_count_ull(edge_stability & player);
 }
+
 /*
 inline int pick_cell(const Board *b, const int c){
     return 2 - (1 & (b->player >> c)) * 2 - (1 & (b->opponent >> c));

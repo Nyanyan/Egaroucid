@@ -50,9 +50,10 @@
 #define MAX_OPENNESS 50
 
 #define W_END_MOBILITY 32
-#define W_END_STABILITY 4
+#define W_END_STABILITY 1
 #define W_END_ANTI_EVEN 16
-#define W_END_PARITY 2
+#define W_END_PARITY1 2
+#define W_END_PARITY2 4
 
 #define MIDGAME_N_STONES 44
 #define USE_OPPONENT_OPENNESS_DEPTH 16
@@ -213,8 +214,32 @@ int openness_search(Search *search, int alpha, int beta, const int depth){
     return alpha;
 }
 
+inline int get_corner_mobility(uint64_t legal){
+    legal &= 0b10000001'00000000'00000000'00000000'00000000'00000000'00000000'10000001ULL;
+    int res = (int)((legal & 0b10000001ULL) + (legal >> 56));
+    return (res & 0b11) + (res >> 7);
+}
+
+inline int get_weighted_n_moves(uint64_t legal){
+    return pop_count_ull(legal) + get_corner_mobility(legal);
+}
+
+/*
 inline int get_weighted_n_moves(uint64_t legal){
     return pop_count_ull(legal) + pop_count_ull(legal & 0b10000001'00000000'00000000'00000000'00000000'00000000'00000000'10000001ULL);
+}
+*/
+
+inline int get_corner_X_mobility(uint64_t legal){
+    legal &= 0b10000001'01000010'00000000'00000000'00000000'00000000'01000010'10000001ULL;
+    int res = (int)((legal & 0xFFFFULL) | (legal >> 48));
+    res = ((res & 0b1000001010000010) >> 1) + (res & 0b0100000101000001);
+    res = (res & 0xFF) + (res >> 8);
+    return (res & 0b1111) + (res >> 6);
+}
+
+inline int get_weighted_n_moves_end(uint64_t legal){
+    return pop_count_ull(legal) + get_corner_X_mobility(legal);
 }
 
 inline int get_potential_mobility(uint64_t opponent, uint64_t empties){
@@ -410,15 +435,20 @@ inline bool move_evaluate_fast_first(Search *search, Flip *flip){
         return true;
     }
     flip->value = cell_weight[flip->pos];
-    if (search->board.parity & cell_div4[flip->pos])
-        flip->value += W_END_PARITY;
+    if (search->board.parity & cell_div4[flip->pos]){
+        //if (search->board.n < 54)
+        flip->value += W_END_PARITY1;
+        //else
+        //    flip->value += W_END_PARITY2;
+    }
     search->board.move(flip);
-        //flip->value += calc_stability_edge_player(search->board.opponent, search->board.player) * W_STABILITY;
+        //flip->value += -calc_stability_edge(&search->board) * W_END_STABILITY;
         //calc_stability(&search->board, &flip->stab1, &flip->stab0);
         //flip->stab0 = calc_stability_player(search->board.opponent, search->board.player);
         //flip->value += flip->stab0 * W_END_STABILITY;
         flip->n_legal = search->board.get_legal();
         flip->value += -pop_count_ull(flip->n_legal) * W_END_MOBILITY;
+        //flip->value += -get_weighted_n_moves_end(flip->n_legal) * W_END_MOBILITY;
     search->board.undo(flip);
     return false;
 }
