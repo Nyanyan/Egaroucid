@@ -1013,7 +1013,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
                         for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
                             calc_flip(&flip, &search->board, cell);
                             search->board.move(&flip);
-                                #if USE_END_SC
+                                #if USE_END_SC && false
                                     stab_res = stability_cut_move(search, &flip, &alpha, &beta);
                                     if (stab_res != SCORE_UNDEFINED){
                                         search->board.undo(&flip);
@@ -1042,7 +1042,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
                         for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
                             calc_flip(&flip, &search->board, cell);
                             search->board.move(&flip);
-                                #if USE_END_SC
+                                #if USE_END_SC && false
                                     stab_res = stability_cut_move(search, &flip, &alpha, &beta);
                                     if (stab_res != SCORE_UNDEFINED){
                                         search->board.undo(&flip);
@@ -1074,7 +1074,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
                         for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
                             calc_flip(&flip, &search->board, cell);
                             search->board.move(&flip);
-                                #if USE_END_SC
+                                #if USE_END_SC && false
                                     stab_res = stability_cut_move(search, &flip, &alpha, &beta);
                                     if (stab_res != SCORE_UNDEFINED){
                                         search->board.undo(&flip);
