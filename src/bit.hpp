@@ -92,6 +92,8 @@ struct u64_4 {
     }
 };
 
+const u64_4 u64_4_1(1);
+
 inline u64_4 operator>>(const u64_4 lhs, const size_t n) {
     return _mm256_srli_epi64(lhs.data, n);
 }
@@ -150,7 +152,7 @@ inline u64_4 operator~(const u64_4 lhs) {
 }
 
 inline u64_4 nonzero(const u64_4 lhs) {
-    return _mm256_cmpeq_epi64(lhs.data, _mm256_setzero_si256()) + u64_4(1);
+    return _mm256_cmpeq_epi64(lhs.data, _mm256_setzero_si256()) + u64_4_1;
 }
 
 inline uint64_t all_or(const u64_4 lhs) {
