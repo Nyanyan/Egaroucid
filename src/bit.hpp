@@ -553,7 +553,8 @@ inline uint64_t unrotate_315(uint64_t x){
     }
 #else
     inline uint_fast8_t ntz(uint64_t *x){
-        return pop_count_ull(_blsi_u64(*x) - 1);
+        return _tzcnt_u64(*x);
+        //return pop_count_ull(_blsi_u64(*x) - 1);
         //return pop_count_ull((~(*x)) & ((*x) - 1));
         //return pop_count_ull((*x & (~(*x) + 1)) - 1);
     }
@@ -630,7 +631,8 @@ inline uint_fast8_t first_bit(uint64_t *x){
 }
 
 inline uint_fast8_t next_bit(uint64_t *x){
-    *x &= *x - 1;
+    //*x &= *x - 1;
+    *x = _blsr_u64(*x);
     return ntz(x);
 }
 
