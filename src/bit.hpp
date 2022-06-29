@@ -86,6 +86,10 @@ struct u64_4 {
     //    : data(_mm256_setr_epi64x(_mm_cvtsi128_si64(y.data), _mm_cvtsi128_si64(_mm_unpackhi_epi64(y.data, y.data)), _mm_cvtsi128_si64(x.data), _mm_cvtsi128_si64(_mm_unpackhi_epi64(x.data, x.data)))) {}
     u64_4(__m256i data) : data(data) {}
     operator __m256i() { return data; }
+
+    void set(uint64_t val){
+        data = _mm256_set1_epi64x(val);
+    }
 };
 
 inline u64_4 operator>>(const u64_4 lhs, const size_t n) {
@@ -131,6 +135,10 @@ inline u64_4 operator-(const u64_4 lhs, const u64_4 rhs) {
 
 inline u64_4 operator-(const u64_4 lhs) {
     return _mm256_sub_epi64(_mm256_setzero_si256(), lhs.data);
+}
+
+inline u64_4 operator*(const u64_4 lhs, const u64_4 rhs) {
+    return _mm256_mullo_epi64(lhs.data, rhs.data);
 }
 
 inline u64_4 andnot(const u64_4 lhs, const u64_4 rhs) {
@@ -543,31 +551,38 @@ inline uint64_t unrotate_315(uint64_t x){
     }
 #else
     inline uint_fast8_t ntz(uint64_t *x){
-        return pop_count_ull((*x & (~(*x) + 1)) - 1);
+        return pop_count_ull((~(*x)) & ((*x) - 1));
+        //return pop_count_ull((*x & (~(*x) + 1)) - 1);
     }
 #endif
 
+/*
 inline u64_4 pop_count_ull_quad(u64_4 x){
-    u64_4 mask1(0x5555555555555555ULL);
-    u64_4 mask2(0xAAAAAAAAAAAAAAAAULL);
-    x = (x & mask1) + ((x & mask2) >> 1);
-    mask1 = {0x3333333333333333ULL, 0x3333333333333333ULL, 0x3333333333333333ULL, 0x3333333333333333ULL};
-    mask2 = {0xCCCCCCCCCCCCCCCCULL, 0xCCCCCCCCCCCCCCCCULL, 0xCCCCCCCCCCCCCCCCULL, 0xCCCCCCCCCCCCCCCCULL};
-    x = (x & mask1) + ((x & mask2) >> 2);
-    mask1 = {0x0F0F0F0F0F0F0F0FULL, 0x0F0F0F0F0F0F0F0FULL, 0x0F0F0F0F0F0F0F0FULL, 0x0F0F0F0F0F0F0F0FULL};
-    mask2 = {0xF0F0F0F0F0F0F0F0ULL, 0xF0F0F0F0F0F0F0F0ULL, 0xF0F0F0F0F0F0F0F0ULL, 0xF0F0F0F0F0F0F0F0ULL};
-    x = (x & mask1) + ((x & mask2) >> 4);
-    mask1 = {0x00FF00FF00FF00FFULL, 0x00FF00FF00FF00FFULL, 0x00FF00FF00FF00FFULL, 0x00FF00FF00FF00FFULL};
-    mask2 = {0xFF00FF00FF00FF00ULL, 0xFF00FF00FF00FF00ULL, 0xFF00FF00FF00FF00ULL, 0xFF00FF00FF00FF00ULL};
-    x = (x & mask1) + ((x & mask2) >> 8);
-    mask1 = {0x0000FFFF0000FFFFULL, 0x0000FFFF0000FFFFULL, 0x0000FFFF0000FFFFULL, 0x0000FFFF0000FFFFULL};
-    mask2 = {0xFFFF0000FFFF0000ULL, 0xFFFF0000FFFF0000ULL, 0xFFFF0000FFFF0000ULL, 0xFFFF0000FFFF0000ULL};
-    x = (x & mask1) + ((x & mask2) >> 16);
-    mask1 = {0x00000000FFFFFFFFULL, 0x00000000FFFFFFFFULL, 0x00000000FFFFFFFFULL, 0x00000000FFFFFFFFULL};
-    mask2 = {0xFFFFFFFF00000000ULL, 0xFFFFFFFF00000000ULL, 0xFFFFFFFF00000000ULL, 0xFFFFFFFF00000000ULL};
-    x = (x & mask1) + ((x & mask2) >> 32);
-    return x;
+    u64_4 mask(0x5555555555555555ULL);
+    x = (x & mask) + ((x >> 1) & mask);
+    mask.set(0x3333333333333333ULL);
+    x = (x & mask) + ((x >> 2) & mask);
+    mask.set(0x0F0F0F0F0F0F0F0FULL);
+    x = (x & mask) + ((x >> 4) & mask);
+    mask.set(0x00FF00FF00FF00FFULL);
+    x = (x & mask) + ((x >> 8) & mask);
+    mask.set(0x0000FFFF0000FFFFULL);
+    x = (x & mask) + ((x >> 16) & mask);
+    mask.set(0x00000000FFFFFFFFULL);
+    return (x & mask) + ((x >> 32) & mask);
 }
+*/
+inline u64_4 pop_count_ull_quad(u64_4 x){
+    u64_4 mask(0x5555555555555555ULL);
+    x = x - ((x >> 1) & mask);
+    mask.set(0x3333333333333333ULL);
+    x = (x & mask) + ((x >> 2) & mask);
+    mask.set(0x0F0F0F0F0F0F0F0FULL);
+    x = (x + (x >> 4)) & mask;
+    mask.set(0x0101010101010101ULL);
+    return (x * mask) >> 56;
+}
+
 
 /*
 Original code: https://github.com/primenumber/issen/blob/72f450256878094ffe90b75f8674599e6869c238/src/move_generator.cpp
