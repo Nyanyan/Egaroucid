@@ -731,7 +731,8 @@ constexpr uint8_t d9_mask[HW2] = {
 };
 
 inline uint_fast8_t join_h_line(uint64_t x, int t){
-    return (x >> (HW * t)) & 0b11111111U;
+    return _bextr_u64(x, HW * t, 8);
+    //return (x >> (HW * t)) & 0b11111111U;
 }
 
 inline void join_h_line_double(uint64_t player, uint64_t opponent, int_fast8_t t, uint_fast8_t *p, uint_fast8_t *o){
