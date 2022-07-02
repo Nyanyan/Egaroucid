@@ -54,3 +54,6 @@
 // 5: 1/16 discs
 // 6: 1/32 discs
 #define EVALUATION_STEP_WIDTH_MODE 0
+
+// last parity ordering optimisation
+#define LAST_PO_OPTIMISE true

@@ -204,18 +204,28 @@ inline int last3(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
     ++search->n_nodes;
     #if USE_END_PO
         if (!skipped){
-            bool p0_parity = (search->board.parity & cell_div4[p0]) > 0;
-            bool p1_parity = (search->board.parity & cell_div4[p1]) > 0;
-            bool p2_parity = (search->board.parity & cell_div4[p2]) > 0;
-            if (!p0_parity && p1_parity && p2_parity){
-                swap(p0, p2);
-            } else if (!p0_parity && !p1_parity && p2_parity){
-                swap(p0, p2);
-            } else if (!p0_parity && p1_parity && !p2_parity){
-                swap(p0, p1);
-            } else if (p0_parity && !p1_parity && p2_parity){
-                swap(p1, p2);
-            }
+            const bool p0_parity = (search->board.parity & cell_div4[p0]) > 0;
+            const bool p1_parity = (search->board.parity & cell_div4[p1]) > 0;
+            const bool p2_parity = (search->board.parity & cell_div4[p2]) > 0;
+            #if LAST_PO_OPTIMISE
+                if (!p0_parity && p2_parity){
+                    swap(p0, p2);
+                } else if (!p0_parity && p1_parity && !p2_parity){
+                    swap(p0, p1);
+                } else if (p0_parity && !p1_parity && p2_parity){
+                    swap(p1, p2);
+                }
+            #else
+                if (!p0_parity && p1_parity && p2_parity){
+                    swap(p0, p2);
+                } else if (!p0_parity && !p1_parity && p2_parity){
+                    swap(p0, p2);
+                } else if (!p0_parity && p1_parity && !p2_parity){
+                    swap(p0, p1);
+                } else if (p0_parity && !p1_parity && p2_parity){
+                    swap(p1, p2);
+                }
+            #endif
         }
     #endif
     //uint64_t legal = search->board.get_legal();
@@ -274,34 +284,52 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
     ++search->n_nodes;
     #if USE_END_PO
         if (!skipped){
-            bool p0_parity = (search->board.parity & cell_div4[p0]) > 0;
-            bool p1_parity = (search->board.parity & cell_div4[p1]) > 0;
-            bool p2_parity = (search->board.parity & cell_div4[p2]) > 0;
-            bool p3_parity = (search->board.parity & cell_div4[p3]) > 0;
-            if (!p0_parity && p1_parity && p2_parity && p3_parity){
-                swap(p0, p3);
-            } else if (!p0_parity && !p1_parity && p2_parity && p3_parity){
-                swap(p0, p2);
-                swap(p1, p3);
-            } else if (!p0_parity && p1_parity && !p2_parity && p3_parity){
-                swap(p0, p3);
-            } else if (!p0_parity && p1_parity && p2_parity && !p3_parity){
-                swap(p0, p2);
-            } else if (!p0_parity && !p1_parity && !p2_parity && p3_parity){
-                swap(p0, p3);
-            } else if (!p0_parity && !p1_parity && p2_parity && !p3_parity){
-                swap(p0, p2);
-            } else if (!p0_parity && p1_parity && !p2_parity && !p3_parity){
-                swap(p0, p1);
-            } else if (p0_parity && !p1_parity && p2_parity && p3_parity){
-                swap(p1, p3);
-            } else if (p0_parity && !p1_parity && !p2_parity && p3_parity){
-                swap(p1, p3);
-            } else if (p0_parity && !p1_parity && p2_parity && !p3_parity){
-                swap(p1, p2);
-            } else if (p0_parity && p1_parity && !p2_parity && p3_parity){
-                swap(p2, p3);
-            }
+            const bool p0_parity = (search->board.parity & cell_div4[p0]) > 0;
+            const bool p1_parity = (search->board.parity & cell_div4[p1]) > 0;
+            const bool p2_parity = (search->board.parity & cell_div4[p2]) > 0;
+            const bool p3_parity = (search->board.parity & cell_div4[p3]) > 0;
+            #if LAST_PO_OPTIMISE
+                if (!p0_parity && p3_parity){
+                    swap(p0, p3);
+                    if (!p1_parity && p2_parity)
+                        swap(p1, p2);
+                } else if (!p0_parity && p2_parity && !p3_parity){
+                    swap(p0, p2);
+                } else if (!p0_parity && p1_parity && !p2_parity && !p3_parity){
+                    swap(p0, p1);
+                } else if (p0_parity && !p1_parity && p3_parity){
+                    swap(p1, p3);
+                } else if (p0_parity && !p1_parity && p2_parity && !p3_parity){
+                    swap(p1, p2);
+                } else if (p0_parity && p1_parity && !p2_parity && p3_parity){
+                    swap(p2, p3);
+                }
+            #else
+                if (!p0_parity && p1_parity && p2_parity && p3_parity){
+                    swap(p0, p3);
+                } else if (!p0_parity && !p1_parity && p2_parity && p3_parity){
+                    swap(p0, p2);
+                    swap(p1, p3);
+                } else if (!p0_parity && p1_parity && !p2_parity && p3_parity){
+                    swap(p0, p3);
+                } else if (!p0_parity && p1_parity && p2_parity && !p3_parity){
+                    swap(p0, p2);
+                } else if (!p0_parity && !p1_parity && !p2_parity && p3_parity){
+                    swap(p0, p3);
+                } else if (!p0_parity && !p1_parity && p2_parity && !p3_parity){
+                    swap(p0, p2);
+                } else if (!p0_parity && p1_parity && !p2_parity && !p3_parity){
+                    swap(p0, p1);
+                } else if (p0_parity && !p1_parity && p2_parity && p3_parity){
+                    swap(p1, p3);
+                } else if (p0_parity && !p1_parity && !p2_parity && p3_parity){
+                    swap(p1, p3);
+                } else if (p0_parity && !p1_parity && p2_parity && !p3_parity){
+                    swap(p1, p2);
+                } else if (p0_parity && p1_parity && !p2_parity && p3_parity){
+                    swap(p2, p3);
+                }
+            #endif
         }
     #endif
     #if USE_END_SC
