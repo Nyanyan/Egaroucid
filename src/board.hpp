@@ -442,10 +442,10 @@ void board_init(){
         for (j = 0; j < 65536; ++j){
             hash_rand_player[i][j] = 0;
             while (pop_count_uint(hash_rand_player[i][j]) < 4)
-                hash_rand_player[i][j] = myrand_uint(); //(uint32_t)(rotate_180(myrand_ull()) >> 32);
+                hash_rand_player[i][j] = myrand_uint_rev(); //(uint32_t)(rotate_180(myrand_ull()) >> 32);
             hash_rand_opponent[i][j] = 0;
             while (pop_count_uint(hash_rand_opponent[i][j]) < 4)
-                hash_rand_opponent[i][j] = myrand_uint(); //(uint32_t)(rotate_180(myrand_ull()) >> 32);
+                hash_rand_opponent[i][j] = myrand_uint_rev(); //(uint32_t)(rotate_180(myrand_ull()) >> 32);
         }
     }
     cerr << "board initialized" << endl;

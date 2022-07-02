@@ -40,8 +40,17 @@ inline int32_t myrandrange(int32_t s, int32_t e){
     return s +(int)((e - s) * myrandom());
 }
 
-inline uint64_t myrand_uint(){
-    return (uint64_t)raw_myrandom();
+inline uint32_t myrand_uint(){
+    return (uint32_t)raw_myrandom();
+}
+
+inline uint32_t myrand_uint_rev(){
+    uint32_t x = raw_myrandom();
+    x = ((x & 0x55555555U) << 1) | ((x & 0xAAAAAAAAU) >> 1);
+    x = ((x & 0x33333333U) << 2) | ((x & 0xCCCCCCCCU) >> 2);
+    x = ((x & 0x0F0F0F0FU) << 4) | ((x & 0xF0F0F0F0U) >> 4);
+    x = ((x & 0x00FF00FFU) << 8) | ((x & 0xFF00FF00U) >> 8);
+    return ((x & 0x0000FFFFU) << 16) | ((x & 0xFFFF0000U) >> 16);
 }
 
 inline uint64_t myrand_ull(){
