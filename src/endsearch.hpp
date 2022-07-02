@@ -863,6 +863,12 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
             beta = min(beta, u);
         }
     #endif
+    #if USE_END_SC
+        int stab_res = stability_cut(search, &alpha, &beta);
+        if (stab_res != SCORE_UNDEFINED){
+            return stab_res;
+        }
+    #endif
     int first_alpha = alpha;
     if (legal == LEGAL_UNDEFINED)
         legal = search->board.get_legal();
@@ -886,21 +892,12 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
     int best_move = TRANSPOSE_TABLE_UNDEFINED;
     if (search->board.n <= HW2 - USE_TT_DEPTH_THRESHOLD)
         best_move = child_transpose_table.get(&search->board, hash_code);
-    int stab_res;
     if (best_move != TRANSPOSE_TABLE_UNDEFINED){
         if (1 & (legal >> best_move)){
             Flip flip_best;
             calc_flip(&flip_best, &search->board, best_move);
             //eval_move(search, &flip);
             search->board.move(&flip_best);
-                #if USE_END_SC
-                    stab_res = stability_cut_move(search, &flip_best, &alpha, &beta);
-                    if (stab_res != SCORE_UNDEFINED){
-                        search->board.undo(&flip_best);
-                        register_tt(search, hash_code, first_alpha, stab_res, best_move, l, u, alpha, beta);
-                        return stab_res;
-                    }
-                #endif
                 g = -nega_alpha_end(search, -beta, -alpha, false, LEGAL_UNDEFINED, searching);
             search->board.undo(&flip_best);
             if (*searching){
@@ -980,14 +977,6 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
                     if (move_idx < move_ordering_threshold)
                         swap_next_best_move(move_list, move_idx, canput);
                     search->board.move(&move_list[move_idx]);
-                        #if USE_END_SC
-                            stab_res = stability_cut_move(search, &move_list[move_idx], &alpha, &beta);
-                            if (stab_res != SCORE_UNDEFINED){
-                                search->board.undo(&move_list[move_idx]);
-                                register_tt(search, hash_code, first_alpha, stab_res, move_list[move_idx].pos, l, u, alpha, beta);
-                                return stab_res;
-                            }
-                        #endif
                         g = -nega_alpha_end(search, -beta, -alpha, false, move_list[move_idx].n_legal, searching);
                     search->board.undo(&move_list[move_idx]);
                     if (*searching){
