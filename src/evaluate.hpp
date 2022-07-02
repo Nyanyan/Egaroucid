@@ -24,6 +24,7 @@ using namespace std;
 
 #define STEP 256
 #define STEP_2 128
+#define STEP_SHIFT 8
 
 #if EVALUATION_STEP_WIDTH_MODE == 0
     #define SCORE_MAX 64
@@ -980,11 +981,15 @@ inline int mid_evaluate_diff(Search *search){
         calc_canput_pattern(phase_idx, &search->board, player_mobility, opponent_mobility);
     //return score_modification(phase_idx, res);
     #if EVALUATION_STEP_WIDTH_MODE == 0
+        res += res > 0 ? STEP_2 : (res < 0 ? -STEP_2 : 0);
+        res >>= STEP_SHIFT;
+        /*
         if (res > 0)
             res += STEP_2;
         else if (res < 0)
             res -= STEP_2;
         res /= STEP;
+        */
     #elif EVALUATION_STEP_WIDTH_MODE == 1
         if (res > 0)
             res += STEP;
