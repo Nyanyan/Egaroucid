@@ -92,13 +92,25 @@ struct Parallel_task{
 
 inline void calc_stability(Board *b, int *stab0, int *stab1);
 inline int calc_stability_player(uint64_t player, uint64_t opponent);
+inline void calc_stability_edge(Board *b, int *stab0, int *stab1, uint64_t *edge_stability);
+inline void calc_stability(Board *b, uint64_t edge_stability, int *stab0, int *stab1);
 
 inline int stability_cut(Search *search, int *alpha, int *beta){
     if (*alpha >= nws_stability_threshold[HW2 - search->board.n]){
-        int stab_player, stab_opponent;
-        calc_stability(&search->board, &stab_player, &stab_opponent);
-        int n_alpha = 2 * stab_player - HW2;
-        int n_beta = HW2 - 2 * stab_opponent;
+        int stab_player, stab_opponent, n_alpha, n_beta;
+        uint64_t edge_stability;
+        calc_stability_edge(&search->board, &stab_player, &stab_opponent, &edge_stability);
+        n_alpha = 2 * stab_player - HW2;
+        n_beta = HW2 - 2 * stab_opponent;
+        if (*beta <= n_alpha)
+            return n_alpha;
+        if (n_beta <= *alpha)
+            return n_beta;
+        if (n_beta <= n_alpha)
+            return n_alpha;
+        calc_stability(&search->board, edge_stability, &stab_player, &stab_opponent);
+        n_alpha = 2 * stab_player - HW2;
+        n_beta = HW2 - 2 * stab_opponent;
         if (*beta <= n_alpha)
             return n_alpha;
         if (n_beta <= *alpha)
