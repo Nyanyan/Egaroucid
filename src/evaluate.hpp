@@ -982,6 +982,7 @@ inline int mid_evaluate_diff(Search *search){
     //return score_modification(phase_idx, res);
     #if EVALUATION_STEP_WIDTH_MODE == 0
         res += res > 0 ? STEP_2 : (res < 0 ? -STEP_2 : 0);
+        //res += STEP_2 * min(1, max(-1, res));
         res >>= STEP_SHIFT;
         /*
         if (res > 0)
