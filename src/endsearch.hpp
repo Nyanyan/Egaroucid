@@ -208,15 +208,9 @@ inline int last3(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
             bool p1_parity = (search->board.parity & cell_div4[p1]) > 0;
             bool p2_parity = (search->board.parity & cell_div4[p2]) > 0;
             if (!p0_parity && p1_parity && p2_parity){
-                bool tmp = p0;
-                p0 = p1;
-                p1 = p2;
-                p2 = tmp;
+                swap(p0, p2);
             } else if (!p0_parity && !p1_parity && p2_parity){
-                bool tmp = p0;
-                p0 = p2;
-                p2 = p1;
-                p1 = tmp;
+                swap(p0, p2);
             } else if (!p0_parity && p1_parity && !p2_parity){
                 swap(p0, p1);
             } else if (p0_parity && !p1_parity && p2_parity){
@@ -285,48 +279,24 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
             bool p2_parity = (search->board.parity & cell_div4[p2]) > 0;
             bool p3_parity = (search->board.parity & cell_div4[p3]) > 0;
             if (!p0_parity && p1_parity && p2_parity && p3_parity){
-                bool tmp = p0;
-                p0 = p1;
-                p1 = p2;
-                p2 = p3;
-                p3 = tmp;
+                swap(p0, p3);
             } else if (!p0_parity && !p1_parity && p2_parity && p3_parity){
                 swap(p0, p2);
                 swap(p1, p3);
             } else if (!p0_parity && p1_parity && !p2_parity && p3_parity){
-                bool tmp = p0;
-                p0 = p1;
-                p1 = p3;
-                p3 = p2;
-                p2 = tmp;
+                swap(p0, p3);
             } else if (!p0_parity && p1_parity && p2_parity && !p3_parity){
-                bool tmp = p0;
-                p0 = p1;
-                p1 = p2;
-                p2 = tmp;
+                swap(p0, p2);
             } else if (!p0_parity && !p1_parity && !p2_parity && p3_parity){
-                bool tmp = p0;
-                p0 = p3;
-                p3 = p2;
-                p2 = p1;
-                p1 = tmp;
+                swap(p0, p3);
             } else if (!p0_parity && !p1_parity && p2_parity && !p3_parity){
-                bool tmp = p0;
-                p0 = p2;
-                p2 = p1;
-                p1 = tmp;
+                swap(p0, p2);
             } else if (!p0_parity && p1_parity && !p2_parity && !p3_parity){
                 swap(p0, p1);
             } else if (p0_parity && !p1_parity && p2_parity && p3_parity){
-                bool tmp = p1;
-                p1 = p2;
-                p2 = p3;
-                p3 = tmp;
+                swap(p1, p3);
             } else if (p0_parity && !p1_parity && !p2_parity && p3_parity){
-                bool tmp = p1;
-                p1 = p3;
-                p3 = p2;
-                p2 = tmp;
+                swap(p1, p3);
             } else if (p0_parity && !p1_parity && p2_parity && !p3_parity){
                 swap(p1, p2);
             } else if (p0_parity && p1_parity && !p2_parity && p3_parity){
