@@ -204,23 +204,23 @@ inline int last3(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
     ++search->n_nodes;
     #if USE_END_PO
         if (!skipped){
-            uint_fast8_t p0_parity = (search->board.parity & cell_div4[p0]);
-            uint_fast8_t p1_parity = (search->board.parity & cell_div4[p1]);
-            uint_fast8_t p2_parity = (search->board.parity & cell_div4[p2]);
-            if (p0_parity == 0 && p1_parity && p2_parity){
-                uint_fast8_t tmp = p0;
+            bool p0_parity = (search->board.parity & cell_div4[p0]) > 0;
+            bool p1_parity = (search->board.parity & cell_div4[p1]) > 0;
+            bool p2_parity = (search->board.parity & cell_div4[p2]) > 0;
+            if (!p0_parity && p1_parity && p2_parity){
+                bool tmp = p0;
                 p0 = p1;
                 p1 = p2;
                 p2 = tmp;
-            } else if (p0_parity && p1_parity == 0 && p2_parity){
-                swap(p1, p2);
-            } else if (p0_parity == 0 && p1_parity == 0 && p2_parity){
-                uint_fast8_t tmp = p0;
+            } else if (!p0_parity && !p1_parity && p2_parity){
+                bool tmp = p0;
                 p0 = p2;
                 p2 = p1;
                 p1 = tmp;
-            } else if (p0_parity == 0 && p1_parity && p2_parity == 0){
+            } else if (!p0_parity && p1_parity && !p2_parity){
                 swap(p0, p1);
+            } else if (p0_parity && !p1_parity && p2_parity){
+                swap(p1, p2);
             }
         }
     #endif
@@ -280,57 +280,57 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
     ++search->n_nodes;
     #if USE_END_PO
         if (!skipped){
-            uint_fast8_t p0_parity = (search->board.parity & cell_div4[p0]);
-            uint_fast8_t p1_parity = (search->board.parity & cell_div4[p1]);
-            uint_fast8_t p2_parity = (search->board.parity & cell_div4[p2]);
-            uint_fast8_t p3_parity = (search->board.parity & cell_div4[p3]);
-            if (p0_parity == 0 && p1_parity && p2_parity && p3_parity){
-                uint_fast8_t tmp = p0;
+            bool p0_parity = (search->board.parity & cell_div4[p0]) > 0;
+            bool p1_parity = (search->board.parity & cell_div4[p1]) > 0;
+            bool p2_parity = (search->board.parity & cell_div4[p2]) > 0;
+            bool p3_parity = (search->board.parity & cell_div4[p3]) > 0;
+            if (!p0_parity && p1_parity && p2_parity && p3_parity){
+                bool tmp = p0;
                 p0 = p1;
                 p1 = p2;
                 p2 = p3;
                 p3 = tmp;
-            } else if (p0_parity && p1_parity == 0 && p2_parity && p3_parity){
-                uint_fast8_t tmp = p1;
-                p1 = p2;
-                p2 = p3;
-                p3 = tmp;
-            } else if (p0_parity && p1_parity && p2_parity == 0 && p3_parity){
-                swap(p2, p3);
-            } else if (p0_parity == 0 && p1_parity == 0 && p2_parity && p3_parity){
+            } else if (!p0_parity && !p1_parity && p2_parity && p3_parity){
                 swap(p0, p2);
                 swap(p1, p3);
-            } else if (p0_parity == 0 && p1_parity && p2_parity == 0 && p3_parity){
-                uint_fast8_t tmp = p0;
+            } else if (!p0_parity && p1_parity && !p2_parity && p3_parity){
+                bool tmp = p0;
                 p0 = p1;
                 p1 = p3;
                 p3 = p2;
                 p2 = tmp;
-            } else if (p0_parity == 0 && p1_parity && p2_parity && p3_parity == 0){
-                uint_fast8_t tmp = p0;
+            } else if (!p0_parity && p1_parity && p2_parity && !p3_parity){
+                bool tmp = p0;
                 p0 = p1;
                 p1 = p2;
                 p2 = tmp;
-            } else if (p0_parity && p1_parity == 0 && p2_parity == 0 && p3_parity){
-                uint_fast8_t tmp = p1;
-                p1 = p3;
-                p3 = p2;
-                p2 = tmp;
-            } else if (p0_parity && p1_parity == 0 && p2_parity && p3_parity == 0){
-                swap(p1, p2);
-            } else if (p0_parity == 0 && p1_parity == 0 && p2_parity == 0 && p3_parity){
-                uint_fast8_t tmp = p0;
+            } else if (!p0_parity && !p1_parity && !p2_parity && p3_parity){
+                bool tmp = p0;
                 p0 = p3;
                 p3 = p2;
                 p2 = p1;
                 p1 = tmp;
-            } else if (p0_parity == 0 && p1_parity == 0 && p2_parity && p3_parity == 0){
-                uint_fast8_t tmp = p0;
+            } else if (!p0_parity && !p1_parity && p2_parity && !p3_parity){
+                bool tmp = p0;
                 p0 = p2;
                 p2 = p1;
                 p1 = tmp;
-            } else if (p0_parity == 0 && p1_parity && p2_parity == 0 && p3_parity == 0){
+            } else if (!p0_parity && p1_parity && !p2_parity && !p3_parity){
                 swap(p0, p1);
+            } else if (p0_parity && !p1_parity && p2_parity && p3_parity){
+                bool tmp = p1;
+                p1 = p2;
+                p2 = p3;
+                p3 = tmp;
+            } else if (p0_parity && !p1_parity && !p2_parity && p3_parity){
+                bool tmp = p1;
+                p1 = p3;
+                p3 = p2;
+                p2 = tmp;
+            } else if (p0_parity && !p1_parity && p2_parity && !p3_parity){
+                swap(p1, p2);
+            } else if (p0_parity && p1_parity && !p2_parity && p3_parity){
+                swap(p2, p3);
             }
         }
     #endif
