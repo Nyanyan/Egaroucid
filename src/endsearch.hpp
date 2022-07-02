@@ -282,6 +282,12 @@ inline int last3(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
 
 inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast8_t p1, uint_fast8_t p2, uint_fast8_t p3, bool skipped){
     ++search->n_nodes;
+    #if USE_END_SC
+        int stab_res = stability_cut(search, &alpha, &beta);
+        if (stab_res != SCORE_UNDEFINED){
+            return stab_res;
+        }
+    #endif
     #if USE_END_PO
         if (!skipped){
             const bool p0_parity = (search->board.parity & cell_div4[p0]) > 0;
@@ -330,12 +336,6 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
                     swap(p2, p3);
                 }
             #endif
-        }
-    #endif
-    #if USE_END_SC
-        int stab_res = stability_cut(search, &alpha, &beta);
-        if (stab_res != SCORE_UNDEFINED){
-            return stab_res;
         }
     #endif
     uint64_t legal = search->board.get_legal();
