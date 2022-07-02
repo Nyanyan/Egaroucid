@@ -489,6 +489,18 @@ class Flip{
             n_flip_pre_calc[join_d9_line2(player, u + 7 - t)][flip_place_d9[place]];
     }
 
+#elif LAST_FLIP_CALC_MODE == 5
+
+    inline int_fast8_t count_last_flip(uint64_t player, uint64_t opponent, const uint_fast8_t place){
+        const int t = place >> 3;
+        const int u = place & 7;
+        return
+            n_flip_pre_calc[join_h_line(player, t)][u] + 
+            n_flip_pre_calc[join_v_line(player, u)][t] + 
+            n_flip_pre_calc[join_d7_line2(player, u + t)][max(t, HW_M1 - u)] + 
+            n_flip_pre_calc[join_d9_line2(player, u + 7 - t)][max(t, u)];
+    }
+
 #endif
 
 void flip_init(){
