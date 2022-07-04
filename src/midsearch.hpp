@@ -297,7 +297,6 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
                                 eval_undo(search, &move_list[move_idx]);
                                 break;
                             }
-                            /*
                             if (split_count){
                                 ybwc_get_end_tasks(search, parallel_tasks, &v, &best_move, &alpha);
                                 if (beta <= alpha){
@@ -306,7 +305,6 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
                                     break;
                                 }
                             }
-                            */
                         }
                     }
                 search->board.undo(&move_list[move_idx]);

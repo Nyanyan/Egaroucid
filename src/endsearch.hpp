@@ -863,12 +863,6 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
             beta = min(beta, u);
         }
     #endif
-    #if USE_END_SC
-        int stab_res = stability_cut(search, &alpha, &beta);
-        if (stab_res != SCORE_UNDEFINED){
-            return stab_res;
-        }
-    #endif
     int first_alpha = alpha;
     if (legal == LEGAL_UNDEFINED)
         legal = search->board.get_legal();
@@ -892,12 +886,21 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
     int best_move = TRANSPOSE_TABLE_UNDEFINED;
     if (search->board.n <= HW2 - USE_TT_DEPTH_THRESHOLD)
         best_move = child_transpose_table.get(&search->board, hash_code);
+    int stab_res;
     if (best_move != TRANSPOSE_TABLE_UNDEFINED){
         if (1 & (legal >> best_move)){
             Flip flip_best;
             calc_flip(&flip_best, &search->board, best_move);
             //eval_move(search, &flip);
             search->board.move(&flip_best);
+                #if USE_END_SC
+                    stab_res = stability_cut_move(search, &flip_best, &alpha, &beta);
+                    if (stab_res != SCORE_UNDEFINED){
+                        search->board.undo(&flip_best);
+                        register_tt(search, hash_code, first_alpha, stab_res, best_move, l, u, alpha, beta);
+                        return stab_res;
+                    }
+                #endif
                 g = -nega_alpha_end(search, -beta, -alpha, false, LEGAL_UNDEFINED, searching);
             search->board.undo(&flip_best);
             if (*searching){
@@ -922,14 +925,46 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
                 int pv_idx = 0, split_count = 0;
                 if (best_move != TRANSPOSE_TABLE_UNDEFINED)
                     pv_idx = 1;
-                vector<future<Parallel_task>> parallel_tasks;
+                vector<future<pair<int, uint64_t>>> parallel_tasks;
                 bool n_searching = true;
+                int depth = HW2 - pop_count_ull(search->board.player | search->board.opponent);
+                for (const Flip &flip: move_list){
+                    if (!(*searching))
+                        break;
+                    search->board.move(&flip);
+                        if (ybwc_split_without_move_end(search, &flip, -beta, -alpha, depth - 1, flip.n_legal, &n_searching, pv_idx++, canput, split_count, parallel_tasks, move_list[0].value)){
+                            ++split_count;
+                        } else{
+                            g = -nega_alpha_end(search, -beta, -alpha, false, flip.n_legal, searching);
+                            if (*searching){
+                                alpha = max(alpha, g);
+                                if (v < g){
+                                    v = g;
+                                    best_move = flip.pos;
+                                }
+                                if (beta <= alpha){
+                                    search->board.undo(&flip);
+                                    break;
+                                }
+                            }
+                        }
+                    search->board.undo(&flip);
+                }
+                if (split_count){
+                    if (beta <= alpha || !(*searching)){
+                        n_searching = false;
+                        ybwc_wait_all(search, parallel_tasks);
+                    } else{
+                        g = ybwc_wait_all(search, parallel_tasks);
+                        alpha = max(alpha, g);
+                        v = max(v, g);
+                    }
+                }
+            #else
                 const int move_ordering_threshold = MOVE_ORDERING_THRESHOLD - (int)(best_move != TRANSPOSE_TABLE_UNDEFINED);
                 for (int move_idx = 0; move_idx < canput; ++move_idx){
                     if (move_idx < move_ordering_threshold)
                         swap_next_best_move(move_list, move_idx, canput);
-                    if (!(*searching))
-                        break;
                     search->board.move(&move_list[move_idx]);
                         #if USE_END_SC
                             stab_res = stability_cut_move(search, &move_list[move_idx], &alpha, &beta);
@@ -939,44 +974,6 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
                                 return stab_res;
                             }
                         #endif
-                        if (ybwc_split_without_move_end(search, &move_list[move_idx], -beta, -alpha, move_list[move_idx].n_legal, &n_searching, move_list[move_idx].pos, pv_idx++, canput, split_count, parallel_tasks, move_list[0].value, move_list[move_list.size() - 1].value)){
-                            ++split_count;
-                        } else{
-                            g = -nega_alpha_end(search, -beta, -alpha, false, move_list[move_idx].n_legal, searching);
-                            if (*searching){
-                                alpha = max(alpha, g);
-                                if (v < g){
-                                    v = g;
-                                    best_move = move_list[move_idx].pos;
-                                }
-                                if (beta <= alpha){
-                                    search->board.undo(&move_list[move_idx]);
-                                    break;
-                                }
-                                if (split_count){
-                                    ybwc_get_end_tasks(search, parallel_tasks, &v, &best_move, &alpha);
-                                    if (beta <= alpha){
-                                        search->board.undo(&move_list[move_idx]);
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                    search->board.undo(&move_list[move_idx]);
-                }
-                if (split_count){
-                    if (beta <= alpha || !(*searching)){
-                        n_searching = false;
-                        ybwc_wait_all(search, parallel_tasks);
-                    } else
-                        ybwc_wait_all(search, parallel_tasks, &v, &best_move, &alpha, beta, &n_searching);
-                }
-            #else
-                const int move_ordering_threshold = MOVE_ORDERING_THRESHOLD - (int)(best_move != TRANSPOSE_TABLE_UNDEFINED);
-                for (int move_idx = 0; move_idx < canput; ++move_idx){
-                    if (move_idx < move_ordering_threshold)
-                        swap_next_best_move(move_list, move_idx, canput);
-                    search->board.move(&move_list[move_idx]);
                         g = -nega_alpha_end(search, -beta, -alpha, false, move_list[move_idx].n_legal, searching);
                     search->board.undo(&move_list[move_idx]);
                     if (*searching){
@@ -995,20 +992,108 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
             #endif
         } else{
             Flip flip;
-            for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-                calc_flip(&flip, &search->board, cell);
-                search->board.move(&flip);
-                    g = -nega_alpha_end(search, -beta, -alpha, false, LEGAL_UNDEFINED, searching);
-                search->board.undo(&flip);
-                if (*searching){
-                    alpha = max(alpha, g);
-                    v = max(v, g);
-                    if (beta <= alpha){
-                        register_tt(search, hash_code, first_alpha, v, cell, l, u, alpha, beta);
-                        return alpha;
+            if (0 < search->board.parity && search->board.parity < 15){
+                uint64_t legal_mask = 0ULL;
+                if (search->board.parity & 1)
+                    legal_mask |= 0x000000000F0F0F0FULL;
+                if (search->board.parity & 2)
+                    legal_mask |= 0x00000000F0F0F0F0ULL;
+                if (search->board.parity & 4)
+                    legal_mask |= 0x0F0F0F0F00000000ULL;
+                if (search->board.parity & 8)
+                    legal_mask |= 0xF0F0F0F000000000ULL;
+                uint64_t legal_copy;
+                uint_fast8_t cell;
+                int i;
+                for (i = 0; i < N_CELL_WEIGHT_MASK; ++i){
+                    legal_copy = legal & legal_mask & cell_weight_mask[i];
+                    if (legal_copy){
+                        for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
+                            calc_flip(&flip, &search->board, cell);
+                            search->board.move(&flip);
+                                #if USE_END_SC
+                                    stab_res = stability_cut_move(search, &flip, &alpha, &beta);
+                                    if (stab_res != SCORE_UNDEFINED){
+                                        search->board.undo(&flip);
+                                        register_tt(search, hash_code, first_alpha, stab_res, flip.pos, l, u, alpha, beta);
+                                        return stab_res;
+                                    }
+                                #endif
+                                g = -nega_alpha_end(search, -beta, -alpha, false, LEGAL_UNDEFINED, searching);
+                            search->board.undo(&flip);
+                            if (*searching){
+                                alpha = max(alpha, g);
+                                v = max(v, g);
+                                if (beta <= alpha){
+                                    register_tt(search, hash_code, first_alpha, v, cell, l, u, alpha, beta);
+                                    return alpha;
+                                }
+                            } else
+                                return SCORE_UNDEFINED;
+                        }
                     }
-                } else
-                    return SCORE_UNDEFINED;
+                }
+                legal_mask = ~legal_mask;
+                for (i = 0; i < N_CELL_WEIGHT_MASK; ++i){
+                    legal_copy = legal & legal_mask & cell_weight_mask[i];
+                    if (legal_copy){
+                        for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
+                            calc_flip(&flip, &search->board, cell);
+                            search->board.move(&flip);
+                                #if USE_END_SC
+                                    stab_res = stability_cut_move(search, &flip, &alpha, &beta);
+                                    if (stab_res != SCORE_UNDEFINED){
+                                        search->board.undo(&flip);
+                                        register_tt(search, hash_code, first_alpha, stab_res, flip.pos, l, u, alpha, beta);
+                                        return stab_res;
+                                    }
+                                #endif
+                                g = -nega_alpha_end(search, -beta, -alpha, false, LEGAL_UNDEFINED, searching);
+                            search->board.undo(&flip);
+                            if (*searching){
+                                alpha = max(alpha, g);
+                                v = max(v, g);
+                                if (beta <= alpha){
+                                    register_tt(search, hash_code, first_alpha, v, cell, l, u, alpha, beta);
+                                    return alpha;
+                                }
+                            } else
+                                return SCORE_UNDEFINED;
+                        }
+                    }
+                }
+            } else{
+                uint64_t legal_copy;
+                uint_fast8_t cell;
+                int i;
+                for (i = 0; i < N_CELL_WEIGHT_MASK; ++i){
+                    legal_copy = legal & cell_weight_mask[i];
+                    if (legal_copy){
+                        for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
+                            calc_flip(&flip, &search->board, cell);
+                            search->board.move(&flip);
+                                #if USE_END_SC
+                                    stab_res = stability_cut_move(search, &flip, &alpha, &beta);
+                                    if (stab_res != SCORE_UNDEFINED){
+                                        search->board.undo(&flip);
+                                        register_tt(search, hash_code, first_alpha, stab_res, flip.pos, l, u, alpha, beta);
+                                        return stab_res;
+                                    }
+                                #endif
+                                g = -nega_alpha_end(search, -beta, -alpha, false, LEGAL_UNDEFINED, searching);
+                            search->board.undo(&flip);
+                            if (*searching){
+                                alpha = max(alpha, g);
+                                v = max(v, g);
+                                if (beta <= alpha){
+                                    register_tt(search, hash_code, first_alpha, v, cell, l, u, alpha, beta);
+                                    return alpha;
+                                }
+                            } else
+                                return SCORE_UNDEFINED;
+                        }
+                    }
+                }
             }
         }
     }

@@ -97,6 +97,24 @@ inline void calc_stability(Board *b, uint64_t edge_stability, int *stab0, int *s
 
 inline int stability_cut(Search *search, int *alpha, int *beta){
     if (*alpha >= nws_stability_threshold[HW2 - search->board.n]){
+        int stab_player, stab_opponent;
+        calc_stability(&search->board, &stab_player, &stab_opponent);
+        int n_alpha = 2 * stab_player - HW2;
+        int n_beta = HW2 - 2 * stab_opponent;
+        if (*beta <= n_alpha)
+            return n_alpha;
+        if (n_beta <= *alpha)
+            return n_beta;
+        if (n_beta <= n_alpha)
+            return n_alpha;
+        *alpha = max(*alpha, n_alpha);
+        *beta = min(*beta, n_beta);
+    }
+    return SCORE_UNDEFINED;
+}
+/* // increase nodes
+inline int stability_cut(Search *search, int *alpha, int *beta){
+    if (*alpha >= nws_stability_threshold[HW2 - search->board.n]){
         int stab_player, stab_opponent, n_alpha, n_beta;
         uint64_t edge_stability;
         calc_stability_edge(&search->board, &stab_player, &stab_opponent, &edge_stability);
@@ -122,6 +140,7 @@ inline int stability_cut(Search *search, int *alpha, int *beta){
     }
     return SCORE_UNDEFINED;
 }
+*/
 /*
 inline int stability_cut(Search *search, Flip *flip, int *alpha, int *beta){
     int n_alpha = 2 * flip->stab0 - HW2;
