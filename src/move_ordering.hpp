@@ -494,7 +494,8 @@ inline void swap_next_best_move(vector<Flip> &move_list, const int strt, const i
             top_idx = i;
         }
     }
-    swap(move_list[strt], move_list[top_idx]);
+    if (top_idx != strt)
+        swap(move_list[strt], move_list[top_idx]);
 }
 
 inline void move_sort_top(vector<Flip> &move_list, int best_idx){

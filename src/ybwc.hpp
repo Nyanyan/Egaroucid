@@ -54,15 +54,12 @@ Parallel_task ybwc_do_task(uint64_t player, uint64_t opponent, uint_fast8_t n, u
     calc_features(&search);
     int g = -nega_alpha_ordering(&search, alpha, beta, depth, false, legal, is_end_search, searching);
     Parallel_task task;
-    if (*searching){
+    if (*searching)
         task.value = g;
-        task.n_nodes = search.n_nodes;
-        task.cell = policy;
-    } else{
+    else
         task.value = SCORE_UNDEFINED;
-        task.n_nodes = search.n_nodes;
-        task.cell = policy;
-    }
+    task.n_nodes = search.n_nodes;
+    task.cell = policy;
     return task;
 }
 
@@ -131,7 +128,7 @@ inline bool ybwc_split(Search *search, const Flip *flip, int alpha, int beta, co
 }
 */
 inline bool ybwc_split_without_move(const Search *search, const Flip *flip, int alpha, int beta, const int depth, uint64_t legal, bool is_end_search, const bool *searching, int policy, const int pv_idx, const int canput, const int split_count, vector<future<Parallel_task>> &parallel_tasks, const int first_val, const int last_val, const bool worth_searching){
-    if (/*!worth_searching || */
+    if (!worth_searching || 
         (pv_idx > 0 && 
         depth >= YBWC_MID_SPLIT_MIN_DEPTH /*&& 
         depth <= YBWC_MID_SPLIT_MAX_DEPTH *//*&&
@@ -236,12 +233,12 @@ inline void ybwc_wait_all(Search *search, vector<future<Parallel_task>> &paralle
             if ((*v) < got_task.value && (*searching)){
                 *best_move = got_task.cell;
                 *v = got_task.value;
-                *alpha = max((*alpha), (*v));
-                if (beta <= (*alpha))
+                if (beta <= (*v))
                     *searching = false;
             }
         }
     }
+    *alpha = max((*alpha), (*v));
 }
 
 inline void ybwc_wait_all(Search *search, vector<future<Parallel_task>> &parallel_tasks){

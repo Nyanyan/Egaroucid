@@ -277,10 +277,10 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
             bool n_searching = true;
             const int move_ordering_threshold = MOVE_ORDERING_THRESHOLD - (int)(best_move != TRANSPOSE_TABLE_UNDEFINED);
             for (int move_idx = 0; move_idx < canput; ++move_idx){
-                if (move_idx < move_ordering_threshold)
-                    swap_next_best_move(move_list, move_idx, canput);
                 if (!(*searching))
                     break;
+                if (move_idx < move_ordering_threshold)
+                    swap_next_best_move(move_list, move_idx, canput);
                 eval_move(search, &move_list[move_idx]);
                 search->board.move(&move_list[move_idx]);
                     if (ybwc_split_without_move(search, &move_list[move_idx], -beta, -alpha, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].pos, pv_idx++, canput, split_count, parallel_tasks, move_list[0].value, move_list[move_list.size() - 1].value, worth_searching)){
@@ -335,7 +335,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
             }
         #endif
     }
-    register_tt(search, hash_code, first_alpha, v, best_move, l, u, alpha, beta);
+    register_tt(search, hash_code, first_alpha, v, best_move, l, u, alpha, beta, searching);
     return v;
 }
 
@@ -526,7 +526,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
             }
         #endif
     }
-    register_tt(search, hash_code, first_alpha, v, best_move, l, u, alpha, beta);
+    register_tt(search, hash_code, first_alpha, v, best_move, l, u, alpha, beta, searching);
     return v;
 }
 
@@ -634,7 +634,7 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
             parent_transpose_table.reg(&search->board, hash_code, v, v);
     #endif
     */
-    register_tt(search, hash_code, first_alpha, v, best_move, alpha, beta, alpha, beta);
+    register_tt(search, hash_code, first_alpha, v, best_move, alpha, beta, alpha, beta, &searching);
     //cerr << "best move " << best_move << endl;
     return make_pair(v, best_move);
 }
@@ -728,7 +728,7 @@ int nega_alpha_ordering_single_thread(Search *search, int alpha, int beta, int d
                 break;
         }
     }
-    register_tt(search, hash_code, first_alpha, v, best_move, l, u, alpha, beta);
+    register_tt(search, hash_code, first_alpha, v, best_move, l, u, alpha, beta, searching);
     return v;
 }
 
@@ -834,6 +834,6 @@ int nega_scout_single_thread(Search *search, int alpha, int beta, int depth, boo
                 break;
         }
     }
-    register_tt(search, hash_code, first_alpha, v, best_move, l, u, alpha, beta);
+    register_tt(search, hash_code, first_alpha, v, best_move, l, u, alpha, beta, searching);
     return v;
 }

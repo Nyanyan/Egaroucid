@@ -898,7 +898,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
                     stab_res = stability_cut_move(search, &flip_best, &alpha, &beta);
                     if (stab_res != SCORE_UNDEFINED){
                         search->board.undo(&flip_best);
-                        register_tt(search, hash_code, first_alpha, stab_res, best_move, l, u, alpha, beta);
+                        register_tt(search, hash_code, first_alpha, stab_res, best_move, l, u, alpha, beta, searching);
                         return stab_res;
                     }
                 #endif
@@ -971,7 +971,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
                             stab_res = stability_cut_move(search, &move_list[move_idx], &alpha, &beta);
                             if (stab_res != SCORE_UNDEFINED){
                                 search->board.undo(&move_list[move_idx]);
-                                register_tt(search, hash_code, first_alpha, stab_res, move_list[move_idx].pos, l, u, alpha, beta);
+                                register_tt(search, hash_code, first_alpha, stab_res, move_list[move_idx].pos, l, u, alpha, beta, searching);
                                 return stab_res;
                             }
                         #endif
@@ -983,7 +983,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
                             v = g;
                             best_move = move_list[move_idx].pos;
                             if (beta <= alpha){
-                                register_tt(search, hash_code, first_alpha, v, best_move, l, u, alpha, beta);
+                                register_tt(search, hash_code, first_alpha, v, best_move, l, u, alpha, beta, searching);
                                 return alpha;
                             }
                         }
@@ -1016,7 +1016,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
                                     stab_res = stability_cut_move(search, &flip, &alpha, &beta);
                                     if (stab_res != SCORE_UNDEFINED){
                                         search->board.undo(&flip);
-                                        register_tt(search, hash_code, first_alpha, stab_res, flip.pos, l, u, alpha, beta);
+                                        register_tt(search, hash_code, first_alpha, stab_res, flip.pos, l, u, alpha, beta, searching);
                                         return stab_res;
                                     }
                                 #endif
@@ -1026,7 +1026,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
                                 alpha = max(alpha, g);
                                 v = max(v, g);
                                 if (beta <= alpha){
-                                    register_tt(search, hash_code, first_alpha, v, cell, l, u, alpha, beta);
+                                    register_tt(search, hash_code, first_alpha, v, cell, l, u, alpha, beta, searching);
                                     return alpha;
                                 }
                             } else
@@ -1045,7 +1045,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
                                     stab_res = stability_cut_move(search, &flip, &alpha, &beta);
                                     if (stab_res != SCORE_UNDEFINED){
                                         search->board.undo(&flip);
-                                        register_tt(search, hash_code, first_alpha, stab_res, flip.pos, l, u, alpha, beta);
+                                        register_tt(search, hash_code, first_alpha, stab_res, flip.pos, l, u, alpha, beta, searching);
                                         return stab_res;
                                     }
                                 #endif
@@ -1055,7 +1055,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
                                 alpha = max(alpha, g);
                                 v = max(v, g);
                                 if (beta <= alpha){
-                                    register_tt(search, hash_code, first_alpha, v, cell, l, u, alpha, beta);
+                                    register_tt(search, hash_code, first_alpha, v, cell, l, u, alpha, beta, searching);
                                     return alpha;
                                 }
                             } else
@@ -1077,7 +1077,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
                                     stab_res = stability_cut_move(search, &flip, &alpha, &beta);
                                     if (stab_res != SCORE_UNDEFINED){
                                         search->board.undo(&flip);
-                                        register_tt(search, hash_code, first_alpha, stab_res, flip.pos, l, u, alpha, beta);
+                                        register_tt(search, hash_code, first_alpha, stab_res, flip.pos, l, u, alpha, beta, searching);
                                         return stab_res;
                                     }
                                 #endif
@@ -1087,7 +1087,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
                                 alpha = max(alpha, g);
                                 v = max(v, g);
                                 if (beta <= alpha){
-                                    register_tt(search, hash_code, first_alpha, v, cell, l, u, alpha, beta);
+                                    register_tt(search, hash_code, first_alpha, v, cell, l, u, alpha, beta, searching);
                                     return alpha;
                                 }
                             } else
@@ -1098,6 +1098,6 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
             }
         }
     }
-    register_tt(search, hash_code, first_alpha, v, best_move, l, u, alpha, beta);
+    register_tt(search, hash_code, first_alpha, v, best_move, l, u, alpha, beta, searching);
     return v;
 }

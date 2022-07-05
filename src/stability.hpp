@@ -408,18 +408,3 @@ inline int stability_cut_move(Search *search, Flip *flip, int *alpha, int *beta)
     }
     return SCORE_UNDEFINED;
 }
-
-inline void register_tt(Search *search, uint32_t hash_code, int first_alpha, int v, int best_move, int l, int u, int alpha, int beta){
-    #if USE_END_TC
-        if (search->board.n <= HW2 - USE_TT_DEPTH_THRESHOLD){
-            if (first_alpha < v && best_move != TRANSPOSE_TABLE_UNDEFINED)
-                child_transpose_table.reg(&search->board, hash_code, best_move);
-            if (first_alpha < v && v < beta)
-                parent_transpose_table.reg(&search->board, hash_code, v, v);
-            else if (beta <= v && l < v)
-                parent_transpose_table.reg(&search->board, hash_code, v, u);
-            else if (v <= alpha && v < u)
-                parent_transpose_table.reg(&search->board, hash_code, l, v);
-        }
-    #endif
-}
