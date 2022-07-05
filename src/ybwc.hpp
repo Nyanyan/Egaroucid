@@ -37,7 +37,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
 int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
 
 Parallel_task ybwc_do_task(uint64_t player, uint64_t opponent, uint_fast8_t n, uint_fast8_t p, uint_fast8_t parity, 
-        bool use_mpc, double mpct, uint_fast8_t eval_feature_reversed, //vector<int> eval_features, 
+        bool use_mpc, double mpct, //uint_fast8_t eval_feature_reversed, //vector<int> eval_features, 
         int alpha, int beta, int depth, uint64_t legal, bool is_end_search, const bool *searching, int policy){
     Search search;
     search.board.player = player;
@@ -47,7 +47,7 @@ Parallel_task ybwc_do_task(uint64_t player, uint64_t opponent, uint_fast8_t n, u
     search.board.parity = parity;
     search.use_mpc = use_mpc;
     search.mpct = mpct;
-    search.eval_feature_reversed = eval_feature_reversed;
+    //search.eval_feature_reversed = eval_feature_reversed;
     //for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i)
     //    search.eval_features[i] = eval_features[i];
     search.n_nodes = 0ULL;
@@ -67,7 +67,7 @@ Parallel_task ybwc_do_task(uint64_t player, uint64_t opponent, uint_fast8_t n, u
 }
 
 Parallel_task ybwc_do_task_end(uint64_t player, uint64_t opponent, uint_fast8_t n, uint_fast8_t p, uint_fast8_t parity, 
-        bool use_mpc, double mpct, uint_fast8_t eval_feature_reversed, //vector<int> eval_features, 
+        bool use_mpc, double mpct, //uint_fast8_t eval_feature_reversed, //vector<int> eval_features, 
         int alpha, int beta, uint64_t legal, const bool *searching, int policy){
     Search search;
     search.board.player = player;
@@ -77,7 +77,7 @@ Parallel_task ybwc_do_task_end(uint64_t player, uint64_t opponent, uint_fast8_t 
     search.board.parity = parity;
     search.use_mpc = use_mpc;
     search.mpct = mpct;
-    search.eval_feature_reversed = eval_feature_reversed;
+    //search.eval_feature_reversed = eval_feature_reversed;
     //for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i)
     //    search.eval_features[i] = eval_features[i];
     search.n_nodes = 0ULL;
@@ -142,7 +142,7 @@ inline bool ybwc_split_without_move(const Search *search, const Flip *flip, int 
             //    eval_features[i] = search->eval_features[i];
             parallel_tasks.emplace_back(thread_pool.push(bind(&ybwc_do_task, 
                 search->board.player, search->board.opponent, search->board.n, search->board.p, search->board.parity, 
-                search->use_mpc, search->mpct, search->eval_feature_reversed, //eval_features,
+                search->use_mpc, search->mpct, //search->eval_feature_reversed, //eval_features,
                 alpha, beta, depth, legal, is_end_search, searching, policy)));
             return true;
         }
@@ -158,7 +158,7 @@ inline bool ybwc_split_without_move_end(const Search *search, const Flip *flip, 
             //    eval_features[i] = search->eval_features[i];
             parallel_tasks.emplace_back(thread_pool.push(bind(&ybwc_do_task_end, 
                 search->board.player, search->board.opponent, search->board.n, search->board.p, search->board.parity, 
-                search->use_mpc, search->mpct, search->eval_feature_reversed, //eval_features,
+                search->use_mpc, search->mpct, //search->eval_feature_reversed, //eval_features,
                 alpha, beta, legal, searching, policy)));
             return true;
         }
