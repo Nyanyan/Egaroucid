@@ -11,7 +11,7 @@
 using namespace std;
 
 #ifndef N_SYMMETRY_PATTERNS
-    #define N_SYMMETRY_PATTERNS 62
+    #define N_SYMMETRY_PATTERNS 70
 #endif
 /*
 #ifndef N_ADDITIONAL_SYMMETRY_PATTERNS

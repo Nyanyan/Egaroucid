@@ -9,9 +9,10 @@
 
 using namespace std;
 
-#define N_PATTERNS 15
+#define N_PATTERNS 18
+#define N_JOINED_PATTERNS 5
 #ifndef N_SYMMETRY_PATTERNS
-    #define N_SYMMETRY_PATTERNS 58
+    #define N_SYMMETRY_PATTERNS 70
 #endif
 #define MAX_PATTERN_CELLS 10
 #define MAX_CELL_PATTERNS 12
@@ -153,173 +154,144 @@ struct Feature_to_coord{
 };
 
 constexpr Feature_to_coord feature_to_coord[N_SYMMETRY_PATTERNS] = {
-    // hv2
+    // 0 hv2
     {8, {COORD_A2, COORD_B2, COORD_C2, COORD_D2, COORD_E2, COORD_F2, COORD_G2, COORD_H2, COORD_NO, COORD_NO}}, // 0
     {8, {COORD_B1, COORD_B2, COORD_B3, COORD_B4, COORD_B5, COORD_B6, COORD_B7, COORD_B8, COORD_NO, COORD_NO}}, // 1
     {8, {COORD_A7, COORD_B7, COORD_C7, COORD_D7, COORD_E7, COORD_F7, COORD_G7, COORD_H7, COORD_NO, COORD_NO}}, // 2
     {8, {COORD_G1, COORD_G2, COORD_G3, COORD_G4, COORD_G5, COORD_G6, COORD_G7, COORD_G8, COORD_NO, COORD_NO}}, // 3
 
-    // hv3
+    // 1 hv3
     {8, {COORD_A3, COORD_B3, COORD_C3, COORD_D3, COORD_E3, COORD_F3, COORD_G3, COORD_H3, COORD_NO, COORD_NO}}, // 4
     {8, {COORD_C1, COORD_C2, COORD_C3, COORD_C4, COORD_C5, COORD_C6, COORD_C7, COORD_C8, COORD_NO, COORD_NO}}, // 5
     {8, {COORD_A6, COORD_B6, COORD_C6, COORD_D6, COORD_E6, COORD_F6, COORD_G6, COORD_H6, COORD_NO, COORD_NO}}, // 6
     {8, {COORD_F1, COORD_F2, COORD_F3, COORD_F4, COORD_F5, COORD_F6, COORD_F7, COORD_F8, COORD_NO, COORD_NO}}, // 7
 
-    // hv4
+    // 2 hv4
     {8, {COORD_A4, COORD_B4, COORD_C4, COORD_D4, COORD_E4, COORD_F4, COORD_G4, COORD_H4, COORD_NO, COORD_NO}}, // 8
     {8, {COORD_D1, COORD_D2, COORD_D3, COORD_D4, COORD_D5, COORD_D6, COORD_D7, COORD_D8, COORD_NO, COORD_NO}}, // 9
     {8, {COORD_A5, COORD_B5, COORD_C5, COORD_D5, COORD_E5, COORD_F5, COORD_G5, COORD_H5, COORD_NO, COORD_NO}}, // 10
     {8, {COORD_E1, COORD_E2, COORD_E3, COORD_E4, COORD_E5, COORD_E6, COORD_E7, COORD_E8, COORD_NO, COORD_NO}}, // 11
 
-    // d5
+    // 3 d5
     {5, {COORD_D1, COORD_E2, COORD_F3, COORD_G4, COORD_H5, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 12
     {5, {COORD_E1, COORD_D2, COORD_C3, COORD_B4, COORD_A5, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 13
     {5, {COORD_A4, COORD_B5, COORD_C6, COORD_D7, COORD_E8, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 14
     {5, {COORD_H4, COORD_G5, COORD_F6, COORD_E7, COORD_D8, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 15
 
-    // d6
+    // 4 d6
     {6, {COORD_C1, COORD_D2, COORD_E3, COORD_F4, COORD_G5, COORD_H6, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 16
     {6, {COORD_F1, COORD_E2, COORD_D3, COORD_C4, COORD_B5, COORD_A6, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 17
     {6, {COORD_A3, COORD_B4, COORD_C5, COORD_D6, COORD_E7, COORD_F8, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 18
     {6, {COORD_H3, COORD_G4, COORD_F5, COORD_E6, COORD_D7, COORD_C8, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 19
 
-    // d7
+    // 5 d7
     {7, {COORD_B1, COORD_C2, COORD_D3, COORD_E4, COORD_F5, COORD_G6, COORD_H7, COORD_NO, COORD_NO, COORD_NO}}, // 20
     {7, {COORD_G1, COORD_F2, COORD_E3, COORD_D4, COORD_C5, COORD_B6, COORD_A7, COORD_NO, COORD_NO, COORD_NO}}, // 21
     {7, {COORD_A2, COORD_B3, COORD_C4, COORD_D5, COORD_E6, COORD_F7, COORD_G8, COORD_NO, COORD_NO, COORD_NO}}, // 22
     {7, {COORD_H2, COORD_G3, COORD_F4, COORD_E5, COORD_D6, COORD_C7, COORD_B8, COORD_NO, COORD_NO, COORD_NO}}, // 23
 
-    // d8
+    // 6 d8
     {8, {COORD_A1, COORD_B2, COORD_C3, COORD_D4, COORD_E5, COORD_F6, COORD_G7, COORD_H8, COORD_NO, COORD_NO}}, // 24
     {8, {COORD_H1, COORD_G2, COORD_F3, COORD_E4, COORD_D5, COORD_C6, COORD_B7, COORD_A8, COORD_NO, COORD_NO}}, // 25
 
-    // edge + 2x
+    // 7 edge + 2x
     {10, {COORD_B2, COORD_A1, COORD_B1, COORD_C1, COORD_D1, COORD_E1, COORD_F1, COORD_G1, COORD_H1, COORD_G2}}, // 26
     {10, {COORD_B2, COORD_A1, COORD_A2, COORD_A3, COORD_A4, COORD_A5, COORD_A6, COORD_A7, COORD_A8, COORD_B7}}, // 27
     {10, {COORD_B7, COORD_A8, COORD_B8, COORD_C8, COORD_D8, COORD_E8, COORD_F8, COORD_G8, COORD_H8, COORD_G7}}, // 28
     {10, {COORD_G2, COORD_H1, COORD_H2, COORD_H3, COORD_H4, COORD_H5, COORD_H6, COORD_H7, COORD_H8, COORD_G7}}, // 29
 
-    // corner + block
+    // 8 corner + block
     {10, {COORD_A1, COORD_C1, COORD_D1, COORD_E1, COORD_F1, COORD_H1, COORD_C2, COORD_D2, COORD_E2, COORD_F2}}, // 30
     {10, {COORD_A1, COORD_A3, COORD_A4, COORD_A5, COORD_A6, COORD_A8, COORD_B3, COORD_B4, COORD_B5, COORD_B6}}, // 31
     {10, {COORD_A8, COORD_C8, COORD_D8, COORD_E8, COORD_F8, COORD_H8, COORD_C7, COORD_D7, COORD_E7, COORD_F7}}, // 32
     {10, {COORD_H1, COORD_H3, COORD_H4, COORD_H5, COORD_H6, COORD_H8, COORD_G3, COORD_G4, COORD_G5, COORD_G6}}, // 33
 
-    // corner10
+    // 9 corner10
     {10, {COORD_A1, COORD_B1, COORD_C1, COORD_A2, COORD_B2, COORD_C2, COORD_A3, COORD_B3, COORD_C3, COORD_D4}}, // 34
     {10, {COORD_H1, COORD_G1, COORD_F1, COORD_H2, COORD_G2, COORD_F2, COORD_H3, COORD_G3, COORD_F3, COORD_E4}}, // 35
     {10, {COORD_A8, COORD_B8, COORD_C8, COORD_A7, COORD_B7, COORD_C7, COORD_A6, COORD_B6, COORD_C6, COORD_D5}}, // 36
     {10, {COORD_H8, COORD_G8, COORD_F8, COORD_H7, COORD_G7, COORD_F7, COORD_H6, COORD_G6, COORD_F6, COORD_E5}}, // 37
 
-    // edge + 2Xa
-    {8,  {COORD_A1, COORD_B1, COORD_G1, COORD_H1, COORD_B2, COORD_C2, COORD_F2, COORD_G2, COORD_NO, COORD_NO}}, // 38
-    {8,  {COORD_A8, COORD_B8, COORD_G8, COORD_H8, COORD_B7, COORD_C7, COORD_F7, COORD_G7, COORD_NO, COORD_NO}}, // 39
-    {8,  {COORD_A1, COORD_A2, COORD_A7, COORD_A8, COORD_B2, COORD_B3, COORD_B6, COORD_B7, COORD_NO, COORD_NO}}, // 40
-    {8,  {COORD_H1, COORD_H2, COORD_H7, COORD_H8, COORD_G2, COORD_G3, COORD_G6, COORD_G7, COORD_NO, COORD_NO}}, // 41
+    // 10 cross
+    {10, {COORD_A1, COORD_B2, COORD_C3, COORD_D4, COORD_B1, COORD_C2, COORD_D3, COORD_A2, COORD_B3, COORD_C4}}, // 38
+    {10, {COORD_H1, COORD_G2, COORD_F3, COORD_E4, COORD_G1, COORD_F2, COORD_E3, COORD_H2, COORD_G3, COORD_F4}}, // 39
+    {10, {COORD_A8, COORD_B7, COORD_C6, COORD_D5, COORD_B8, COORD_C7, COORD_D6, COORD_A7, COORD_B6, COORD_C5}}, // 40
+    {10, {COORD_H8, COORD_G7, COORD_F6, COORD_E5, COORD_G8, COORD_F7, COORD_E6, COORD_H7, COORD_G6, COORD_F5}}, // 41
 
-    // 2edge + X
-    {6,  {COORD_A1, COORD_A7, COORD_A8, COORD_B7, COORD_B8, COORD_H8, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 42
-    {6,  {COORD_A8, COORD_G8, COORD_H8, COORD_G7, COORD_H7, COORD_H1, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 43
-    {6,  {COORD_H8, COORD_H2, COORD_H1, COORD_G2, COORD_G1, COORD_A1, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 44
-    {6,  {COORD_H1, COORD_B1, COORD_A1, COORD_B2, COORD_A2, COORD_A8, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 45
+    // 11 kite
+    {10, {COORD_A1, COORD_B1, COORD_A2, COORD_B2, COORD_C2, COORD_D2, COORD_E2, COORD_B3, COORD_B4, COORD_B5}}, // 42
+    {10, {COORD_H1, COORD_G1, COORD_H2, COORD_G2, COORD_F2, COORD_E2, COORD_D2, COORD_G3, COORD_G4, COORD_G5}}, // 43
+    {10, {COORD_A8, COORD_B8, COORD_A7, COORD_B7, COORD_C7, COORD_D7, COORD_E7, COORD_B6, COORD_B5, COORD_B4}}, // 44
+    {10, {COORD_H8, COORD_G8, COORD_H7, COORD_G7, COORD_F7, COORD_E7, COORD_D7, COORD_G6, COORD_G5, COORD_G4}}, // 45
 
-    // edge + midedge
-    {6,  {COORD_A1, COORD_B1, COORD_B2, COORD_G2, COORD_G1, COORD_H1, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 46
-    {6,  {COORD_A8, COORD_B8, COORD_B7, COORD_G7, COORD_G8, COORD_H8, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 47
-    {6,  {COORD_A1, COORD_A2, COORD_B2, COORD_B7, COORD_A7, COORD_A8, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 48
-    {6,  {COORD_H1, COORD_H2, COORD_G2, COORD_G7, COORD_H7, COORD_H8, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 49
+    // 12 triangle
+    {10, {COORD_A1, COORD_B1, COORD_C1, COORD_D1, COORD_A2, COORD_B2, COORD_C2, COORD_A3, COORD_B3, COORD_A4}}, // 46
+    {10, {COORD_H1, COORD_G1, COORD_F1, COORD_E1, COORD_H2, COORD_G2, COORD_F2, COORD_H3, COORD_G3, COORD_H4}}, // 47
+    {10, {COORD_A8, COORD_B8, COORD_C8, COORD_D8, COORD_A7, COORD_B7, COORD_C7, COORD_A6, COORD_B6, COORD_A5}}, // 48
+    {10, {COORD_H8, COORD_G8, COORD_F8, COORD_E8, COORD_H7, COORD_G7, COORD_F7, COORD_H6, COORD_G6, COORD_H5}}, // 49
 
-    // 2edge + corner
-    {6,  {COORD_A1, COORD_B1, COORD_A2, COORD_B2, COORD_C2, COORD_B3, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 50
-    {6,  {COORD_A8, COORD_B8, COORD_A7, COORD_B7, COORD_C7, COORD_B6, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 51
-    {6,  {COORD_H1, COORD_G1, COORD_H2, COORD_G2, COORD_F2, COORD_G3, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 52
-    {6,  {COORD_H8, COORD_G8, COORD_H7, COORD_G7, COORD_F7, COORD_G6, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 53
+    // 13 edge + 2Xa
+    {8,  {COORD_A1, COORD_B1, COORD_G1, COORD_H1, COORD_B2, COORD_C2, COORD_F2, COORD_G2, COORD_NO, COORD_NO}}, // 50
+    {8,  {COORD_A8, COORD_B8, COORD_G8, COORD_H8, COORD_B7, COORD_C7, COORD_F7, COORD_G7, COORD_NO, COORD_NO}}, // 51
+    {8,  {COORD_A1, COORD_A2, COORD_A7, COORD_A8, COORD_B2, COORD_B3, COORD_B6, COORD_B7, COORD_NO, COORD_NO}}, // 52
+    {8,  {COORD_H1, COORD_H2, COORD_H7, COORD_H8, COORD_G2, COORD_G3, COORD_G6, COORD_G7, COORD_NO, COORD_NO}}, // 53
 
-    // corner + 3line
-    {4,  {COORD_A1, COORD_B1, COORD_A2, COORD_B2, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 54
-    {4,  {COORD_A8, COORD_B8, COORD_A7, COORD_B7, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 55
-    {4,  {COORD_H1, COORD_G1, COORD_H2, COORD_G2, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 56
-    {4,  {COORD_H8, COORD_G8, COORD_H7, COORD_G7, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}  // 57
+    // 14 2edge + X
+    {6,  {COORD_A1, COORD_A7, COORD_A8, COORD_B7, COORD_B8, COORD_H8, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 54
+    {6,  {COORD_A8, COORD_G8, COORD_H8, COORD_G7, COORD_H7, COORD_H1, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 55
+    {6,  {COORD_H8, COORD_H2, COORD_H1, COORD_G2, COORD_G1, COORD_A1, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 56
+    {6,  {COORD_H1, COORD_B1, COORD_A1, COORD_B2, COORD_A2, COORD_A8, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 57
+
+    // 15 edge + midedge
+    {6,  {COORD_A1, COORD_B1, COORD_B2, COORD_G2, COORD_G1, COORD_H1, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 58
+    {6,  {COORD_A8, COORD_B8, COORD_B7, COORD_G7, COORD_G8, COORD_H8, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 59
+    {6,  {COORD_A1, COORD_A2, COORD_B2, COORD_B7, COORD_A7, COORD_A8, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 60
+    {6,  {COORD_H1, COORD_H2, COORD_G2, COORD_G7, COORD_H7, COORD_H8, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 61
+
+    // 16 2edge + corner
+    {6,  {COORD_A1, COORD_B1, COORD_A2, COORD_B2, COORD_C2, COORD_B3, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 62
+    {6,  {COORD_A8, COORD_B8, COORD_A7, COORD_B7, COORD_C7, COORD_B6, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 63
+    {6,  {COORD_H1, COORD_G1, COORD_H2, COORD_G2, COORD_F2, COORD_G3, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 64
+    {6,  {COORD_H8, COORD_G8, COORD_H7, COORD_G7, COORD_F7, COORD_G6, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 65
+
+    // 17 corner + 3line
+    {4,  {COORD_A1, COORD_B1, COORD_A2, COORD_B2, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 66
+    {4,  {COORD_A8, COORD_B8, COORD_A7, COORD_B7, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 67
+    {4,  {COORD_H1, COORD_G1, COORD_H2, COORD_G2, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 68
+    {4,  {COORD_H8, COORD_G8, COORD_H7, COORD_G7, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}  // 69
 };
 
 struct Joined_pattern{
     int n_joined;
-    uint64_t masks[3];
+    int offset;
+    uint64_t mask[3];
 };
 
-constexpr Joined_pattern joined_pattern[N_SYMMETRY_PATTERNS] = {
-    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 0
-    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 1
-    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 2
-    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 3
+constexpr Joined_pattern joined_pattern[N_JOINED_PATTERNS] = {
+    {1, 8,   {0x3C00000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 50
+    {1, 8,   {0x000000000000003CULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 51
+    {1, 8,   {0x0000808080800000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 52
+    {1, 8,   {0x0000010101010000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 53
 
-    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 4
-    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 5
-    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 6
-    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 7
+    {2, 64,  {0x0080808080800000ULL, 0x000000000000003EULL, 0x0000000000000000ULL}}, // 54
+    {2, 64,  {0x000000000000007CULL, 0x0001010101010000ULL, 0x0000000000000000ULL}}, // 55
+    {2, 64,  {0x0000010101010100ULL, 0x7C00000000000000ULL, 0x0000000000000000ULL}}, // 56
+    {2, 64,  {0x3E00000000000000ULL, 0x0000808080808000ULL, 0x0000000000000000ULL}}, // 57
 
-    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 8
-    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 9
-    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 10
-    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 11
+    {2, 64,  {0x003C000000000000ULL, 0x3C00000000000000ULL, 0x0000000000000000ULL}}, // 58
+    {2, 64,  {0x0000000000003C00ULL, 0x000000000000003CULL, 0x0000000000000000ULL}}, // 59
+    {2, 64,  {0x0000404040400000ULL, 0x0000808080800000ULL, 0x0000000000000000ULL}}, // 60
+    {2, 64,  {0x0000020202020000ULL, 0x0000010101010000ULL, 0x0000000000000000ULL}}, // 61
 
-    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 12
-    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 13
-    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 14
-    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 15
+    {2, 64,  {0x0000808080808080ULL, 0x3F00000000000000ULL, 0x0000000000000000ULL}}, // 62
+    {2, 64,  {0x8080808080800000ULL, 0x000000000000003FULL, 0x0000000000000000ULL}}, // 63
+    {2, 64,  {0x0000010101010101ULL, 0xFC00000000000000ULL, 0x0000000000000000ULL}}, // 64
+    {2, 64,  {0x0101010101010000ULL, 0x00000000000000FCULL, 0x0000000000000000ULL}}, // 65
 
-    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 16
-    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 17
-    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 18
-    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 19
-
-    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 20
-    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 21
-    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 22
-    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 23
-
-    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 24
-    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 25
-
-    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 26
-    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 27
-    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 28
-    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 29
-
-    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 30
-    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 31
-    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 32
-    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 33
-
-    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 34
-    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 35
-    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 36
-    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 37
-
-    {1, {0x3C00000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 38
-    {1, {0x000000000000003CULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 39
-    {1, {0x0000808080800000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 40
-    {1, {0x0000010101010000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 41
-
-    {2, {0x0080808080800000ULL, 0x000000000000003EULL, 0x0000000000000000ULL}}, // 42
-    {2, {0x000000000000007CULL, 0x0001010101010000ULL, 0x0000000000000000ULL}}, // 43
-    {2, {0x0000010101010100ULL, 0x7C00000000000000ULL, 0x0000000000000000ULL}}, // 44
-    {2, {0x3E00000000000000ULL, 0x0000808080808000ULL, 0x0000000000000000ULL}}, // 45
-
-    {2, {0x003C000000000000ULL, 0x3C00000000000000ULL, 0x0000000000000000ULL}}, // 46
-    {2, {0x0000000000003C00ULL, 0x000000000000003CULL, 0x0000000000000000ULL}}, // 47
-    {2, {0x0000404040400000ULL, 0x0000808080800000ULL, 0x0000000000000000ULL}}, // 48
-    {2, {0x0000020202020000ULL, 0x0000010101010000ULL, 0x0000000000000000ULL}}, // 49
-
-    {2, {0x0000808080808080ULL, 0x3F00000000000000ULL, 0x0000000000000000ULL}}, // 50
-    {2, {0x8080808080800000ULL, 0x000000000000003FULL, 0x0000000000000000ULL}}, // 51
-    {2, {0x0000010101010101ULL, 0xFC00000000000000ULL, 0x0000000000000000ULL}}, // 52
-    {2, {0x0101010101010000ULL, 0x00000000000000FCULL, 0x0000000000000000ULL}}, // 53
-
-    {3, {0x0000808080808080ULL, 0x0000201008040201ULL, 0x3F00000000000000ULL}}, // 54
-    {3, {0x8080808080800000ULL, 0x0102040810200000ULL, 0x000000000000003FULL}}, // 55
-    {3, {0x0000010101010101ULL, 0x0000040810204080ULL, 0xFC00000000000000ULL}}, // 56
-    {3, {0x0101010101010000ULL, 0x8040201008040000ULL, 0x00000000000000FCULL}}  // 57
+    {3, 512, {0x0000808080808080ULL, 0x0000201008040201ULL, 0x3F00000000000000ULL}}, // 66
+    {3, 512, {0x8080808080800000ULL, 0x0102040810200000ULL, 0x000000000000003FULL}}, // 67
+    {3, 512, {0x0000010101010101ULL, 0x0000040810204080ULL, 0xFC00000000000000ULL}}, // 68
+    {3, 512, {0x0101010101010000ULL, 0x8040201008040000ULL, 0x00000000000000FCULL}}  // 69
 };
 
 struct Coord_feature{
@@ -333,70 +305,7 @@ struct Coord_to_feature{
 };
 
 constexpr Coord_to_feature coord_to_feature[HW2] = {
-    {12, {{24, P30}, {28, P31}, {29, P31}, {32, P34}, {33, P34}, {37, P38}, {41, P39}, {46, P30}, {47, P33}, {48, P35}, {50, P30}, {51, P37}}}, // COORD_H8
-    { 7, {{ 3, P30}, {22, P30}, {28, P32}, {37, P37}, {41, P38}, {47, P34}, {50, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_G8
-    { 7, {{ 7, P30}, {18, P30}, {28, P33}, {32, P35}, {37, P36}, {41, P37}, {42, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_F8
-    { 7, {{11, P30}, {14, P30}, {28, P34}, {32, P36}, {40, P35}, {41, P36}, {42, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E8
-    { 7, {{ 9, P30}, {15, P30}, {28, P35}, {32, P37}, {40, P36}, {41, P35}, {42, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D8
-    { 7, {{ 5, P30}, {19, P30}, {28, P36}, {32, P38}, {36, P36}, {40, P37}, {42, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_C8
-    { 7, {{ 1, P30}, {23, P30}, {28, P37}, {36, P37}, {40, P38}, {46, P31}, {50, P36}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_B8
-    {12, {{25, P30}, {27, P31}, {28, P38}, {31, P34}, {32, P39}, {36, P38}, {40, P39}, {46, P33}, {47, P35}, {49, P30}, {50, P37}, {53, P30}}}, // COORD_A8
-    { 7, {{ 2, P30}, {20, P30}, {29, P32}, {37, P35}, {41, P34}, {47, P31}, {51, P36}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_H7
-    {10, {{ 2, P31}, { 3, P31}, {24, P31}, {28, P30}, {29, P30}, {37, P34}, {41, P33}, {47, P32}, {50, P32}, {51, P35}, { 0, PNO}, { 0, PNO}}}, // COORD_G7
-    { 6, {{ 2, P32}, { 7, P31}, {22, P31}, {32, P30}, {37, P33}, {50, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_F7
-    { 5, {{ 2, P33}, {11, P31}, {15, P31}, {18, P31}, {32, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E7
-    { 5, {{ 2, P34}, { 9, P31}, {14, P31}, {19, P31}, {32, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D7
-    { 6, {{ 2, P35}, { 5, P31}, {23, P31}, {32, P33}, {36, P33}, {50, P34}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_C7
-    {10, {{ 1, P31}, { 2, P36}, {25, P31}, {27, P30}, {28, P39}, {36, P34}, {40, P33}, {46, P32}, {50, P35}, {53, P32}, { 0, PNO}, { 0, PNO}}}, // COORD_B7
-    { 7, {{ 2, P37}, {21, P30}, {27, P32}, {36, P35}, {40, P34}, {46, P34}, {53, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_A7
-    { 7, {{ 6, P30}, {16, P30}, {29, P33}, {33, P35}, {37, P32}, {41, P32}, {45, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_H6
-    { 6, {{ 3, P32}, { 6, P31}, {20, P31}, {33, P30}, {37, P31}, {51, P34}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_G6
-    { 5, {{ 6, P32}, { 7, P32}, {15, P32}, {24, P32}, {37, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_F6
-    { 4, {{ 6, P33}, {11, P32}, {19, P32}, {22, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E6
-    { 4, {{ 6, P34}, { 9, P32}, {18, P32}, {23, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D6
-    { 5, {{ 5, P32}, { 6, P35}, {14, P32}, {25, P32}, {36, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_C6
-    { 6, {{ 1, P32}, { 6, P36}, {21, P31}, {31, P30}, {36, P31}, {53, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_B6
-    { 7, {{ 6, P37}, {17, P30}, {27, P33}, {31, P35}, {36, P32}, {40, P32}, {43, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_A6
-    { 7, {{10, P30}, {12, P30}, {29, P34}, {33, P36}, {39, P30}, {41, P31}, {45, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_H5
-    { 5, {{ 3, P33}, {10, P31}, {15, P33}, {16, P31}, {33, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_G5
-    { 4, {{ 7, P33}, {10, P32}, {19, P33}, {20, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_F5
-    { 4, {{10, P33}, {11, P33}, {23, P33}, {24, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E5
-    { 4, {{ 9, P33}, {10, P34}, {22, P33}, {25, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D5
-    { 4, {{ 5, P33}, {10, P35}, {18, P33}, {21, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_C5
-    { 5, {{ 1, P33}, {10, P36}, {14, P33}, {17, P31}, {31, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_B5
-    { 7, {{10, P37}, {13, P30}, {27, P34}, {31, P36}, {38, P30}, {40, P31}, {43, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_A5
-    { 7, {{ 8, P30}, {15, P34}, {29, P35}, {33, P37}, {39, P31}, {41, P30}, {45, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_H4
-    { 5, {{ 3, P34}, { 8, P31}, {12, P31}, {19, P34}, {33, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_G4
-    { 4, {{ 7, P34}, { 8, P32}, {16, P32}, {23, P34}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_F4
-    { 4, {{ 8, P33}, {11, P34}, {20, P33}, {25, P34}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E4
-    { 4, {{ 8, P34}, { 9, P34}, {21, P33}, {24, P34}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D4
-    { 4, {{ 5, P34}, { 8, P35}, {17, P32}, {22, P34}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_C4
-    { 5, {{ 1, P34}, { 8, P36}, {13, P31}, {18, P34}, {31, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_B4
-    { 7, {{ 8, P37}, {14, P34}, {27, P35}, {31, P37}, {38, P31}, {40, P30}, {43, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_A4
-    { 7, {{ 4, P30}, {19, P35}, {29, P36}, {33, P38}, {35, P32}, {39, P32}, {45, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_H3
-    { 6, {{ 3, P35}, { 4, P31}, {23, P35}, {33, P33}, {35, P31}, {51, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_G3
-    { 5, {{ 4, P32}, { 7, P35}, {12, P32}, {25, P35}, {35, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_F3
-    { 4, {{ 4, P33}, {11, P35}, {16, P33}, {21, P34}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E3
-    { 4, {{ 4, P34}, { 9, P35}, {17, P33}, {20, P34}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D3
-    { 5, {{ 4, P35}, { 5, P35}, {13, P32}, {24, P35}, {34, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_C3
-    { 6, {{ 1, P35}, { 4, P36}, {22, P35}, {31, P33}, {34, P31}, {53, P34}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_B3
-    { 7, {{ 4, P37}, {18, P35}, {27, P36}, {31, P38}, {34, P32}, {38, P32}, {43, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_A3
-    { 7, {{ 0, P30}, {23, P36}, {29, P37}, {35, P35}, {39, P34}, {48, P34}, {51, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_H2
-    {10, {{ 0, P31}, { 3, P36}, {25, P36}, {26, P30}, {29, P39}, {35, P34}, {39, P33}, {48, P32}, {51, P32}, {52, P35}, { 0, PNO}, { 0, PNO}}}, // COORD_G2
-    { 6, {{ 0, P32}, { 7, P36}, {21, P35}, {30, P30}, {35, P33}, {52, P34}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_F2
-    { 5, {{ 0, P33}, {11, P36}, {12, P33}, {17, P34}, {30, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E2
-    { 5, {{ 0, P34}, { 9, P36}, {13, P33}, {16, P34}, {30, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D2
-    { 6, {{ 0, P35}, { 5, P36}, {20, P35}, {30, P33}, {34, P33}, {52, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_C2
-    {10, {{ 0, P36}, { 1, P36}, {24, P36}, {26, P39}, {27, P39}, {34, P34}, {38, P33}, {49, P32}, {52, P32}, {53, P35}, { 0, PNO}, { 0, PNO}}}, // COORD_B2
-    { 7, {{ 0, P37}, {22, P36}, {27, P37}, {34, P35}, {38, P34}, {49, P31}, {53, P36}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_A2
-    {12, {{25, P37}, {26, P31}, {29, P38}, {30, P34}, {33, P39}, {35, P38}, {39, P39}, {47, P30}, {48, P33}, {49, P35}, {51, P30}, {52, P37}}}, // COORD_H1
-    { 7, {{ 3, P37}, {21, P36}, {26, P32}, {35, P37}, {39, P38}, {48, P31}, {52, P36}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_G1
-    { 7, {{ 7, P37}, {17, P35}, {26, P33}, {30, P35}, {35, P36}, {39, P37}, {44, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_F1
-    { 7, {{11, P37}, {13, P34}, {26, P34}, {30, P36}, {38, P35}, {39, P36}, {44, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E1
-    { 7, {{ 9, P37}, {12, P34}, {26, P35}, {30, P37}, {38, P36}, {39, P35}, {44, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D1
-    { 7, {{ 5, P37}, {16, P35}, {26, P36}, {30, P38}, {34, P36}, {38, P37}, {44, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_C1
-    { 7, {{ 1, P37}, {20, P36}, {26, P37}, {34, P37}, {38, P38}, {49, P34}, {52, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_B1
-    {12, {{24, P37}, {26, P38}, {27, P38}, {30, P39}, {31, P39}, {34, P38}, {38, P39}, {46, P35}, {48, P30}, {49, P33}, {52, P30}, {53, P37}}}  // COORD_A1
+
 };
 
 constexpr uint_fast16_t pow3[11] = {1, P31, P32, P33, P34, P35, P36, P37, P38, P39, P310};
@@ -514,13 +423,8 @@ inline bool init_evaluation_calc(const char* file){
         }
     #endif
     int phase_idx, pattern_idx;
-    constexpr int pattern_sizes[N_PATTERNS] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 9, 10};
-    constexpr int pattern_mobility_sizes[N_PATTERN_MOBILITY] = {20736};
-    constexpr int pattern_joined_sizes[N_PATTERN_JOINED] = {52488, 46656};
-    constexpr int pattern_mobility_cell_sizes[N_PATTERN_MOBILITY] = {4};
-    constexpr int pattern_joined_cell_sizes[N_PATTERN_JOINED] = {8, 6};
-    constexpr int pattern_mobility_offsets[N_PATTERN_MOBILITY] = {256};
-    constexpr int pattern_joined_offsets[N_PATTERN_JOINED] = {64, 8};
+    constexpr int pattern_sizes[N_PATTERNS] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 10, 10, 8, 6, 6, 6, 4};
+    constexpr int pattern_joined_offsets[N_PATTERNS] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 8, 64, 64, 64, 512};
     for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
         for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx){
             if (fread(eval_pattern_arr[0][phase_idx][pattern_idx], 2, pow3[pattern_sizes[pattern_idx]], fp) < pow3[pattern_sizes[pattern_idx]]){
@@ -550,7 +454,7 @@ inline bool init_evaluation_calc(const char* file){
         vector<future<void>> tasks;
         for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
             for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx)
-                tasks.emplace_back(thread_pool.push(init_pattern_arr_rev, eval_pattern_arr[0][phase_idx][pattern_idx], eval_pattern_arr[1][phase_idx][pattern_idx], pattern_sizes[pattern_idx], 1));
+                tasks.emplace_back(thread_pool.push(init_pattern_arr_rev, eval_pattern_arr[0][phase_idx][pattern_idx], eval_pattern_arr[1][phase_idx][pattern_idx], pattern_sizes[pattern_idx], pattern_joined_offsets[pattern_idx]));
         }
         for (future<void> &task: tasks)
             task.get();
@@ -848,104 +752,15 @@ inline int calc_stability_edge_player(uint64_t player, uint64_t opponent){
     return pop_count_ull(edge_stability & player);
 }
 
-/*
-inline int pick_cell(const Board *b, const int c){
-    return 2 - (1 & (b->player >> c)) * 2 - (1 & (b->opponent >> c));
-}
-
-inline int pick_pattern(const int phase_idx, const int pattern_idx, const Board *b, const int p0, const int p1, const int p2, const int p3, const int p4){
-    return pattern_arr[phase_idx][pattern_idx][pick_cell(b, p0) * P34 + pick_cell(b, p1) * P33 + pick_cell(b, p2) * P32 + pick_cell(b, p3) * P31 + pick_cell(b, p4)];
-}
-
-inline int pick_pattern(const int phase_idx, const int pattern_idx, const Board *b, const int p0, const int p1, const int p2, const int p3, const int p4, const int p5){
-    return pattern_arr[phase_idx][pattern_idx][pick_cell(b, p0) * P35 + pick_cell(b, p1) * P34 + pick_cell(b, p2) * P33 + pick_cell(b, p3) * P32 + pick_cell(b, p4) * P31 + pick_cell(b, p5)];
-}
-
-inline int pick_pattern(const int phase_idx, const int pattern_idx, const Board *b, const int p0, const int p1, const int p2, const int p3, const int p4, const int p5, const int p6){
-    return pattern_arr[phase_idx][pattern_idx][pick_cell(b, p0) * P36 + pick_cell(b, p1) * P35 + pick_cell(b, p2) * P34 + pick_cell(b, p3) * P33 + pick_cell(b, p4) * P32 + pick_cell(b, p5) * P31 + pick_cell(b, p6)];
-}
-
-inline int pick_pattern(const int phase_idx, const int pattern_idx, const Board *b, const int p0, const int p1, const int p2, const int p3, const int p4, const int p5, const int p6, const int p7){
-    return pattern_arr[phase_idx][pattern_idx][pick_cell(b, p0) * P37 + pick_cell(b, p1) * P36 + pick_cell(b, p2) * P35 + pick_cell(b, p3) * P34 + pick_cell(b, p4) * P33 + pick_cell(b, p5) * P32 + pick_cell(b, p6) * P31 + pick_cell(b, p7)];
-}
-
-inline int pick_pattern(const int phase_idx, const int pattern_idx, const Board *b, const int p0, const int p1, const int p2, const int p3, const int p4, const int p5, const int p6, const int p7, const int p8){
-    return pattern_arr[phase_idx][pattern_idx][pick_cell(b, p0) * P38 + pick_cell(b, p1) * P37 + pick_cell(b, p2) * P36 + pick_cell(b, p3) * P35 + pick_cell(b, p4) * P34 + pick_cell(b, p5) * P33 + pick_cell(b, p6) * P32 + pick_cell(b, p7) * P31 + pick_cell(b, p8)];
-}
-
-inline int pick_pattern(const int phase_idx, const int pattern_idx, const Board *b, const int p0, const int p1, const int p2, const int p3, const int p4, const int p5, const int p6, const int p7, const int p8, const int p9){
-    return pattern_arr[phase_idx][pattern_idx][pick_cell(b, p0) * P39 + pick_cell(b, p1) * P38 + pick_cell(b, p2) * P37 + pick_cell(b, p3) * P36 + pick_cell(b, p4) * P35 + pick_cell(b, p5) * P34 + pick_cell(b, p6) * P33 + pick_cell(b, p7) * P32 + pick_cell(b, p8) * P31 + pick_cell(b, p9)];
-}
-
-inline int calc_pattern(const int phase_idx, Board *b){
-    return 
-        pick_pattern(phase_idx, 0, b, 8, 9, 10, 11, 12, 13, 14, 15) + pick_pattern(phase_idx, 0, b, 1, 9, 17, 25, 33, 41, 49, 57) + pick_pattern(phase_idx, 0, b, 48, 49, 50, 51, 52, 53, 54, 55) + pick_pattern(phase_idx, 0, b, 6, 14, 22, 30, 38, 46, 54, 62) + 
-        pick_pattern(phase_idx, 1, b, 16, 17, 18, 19, 20, 21, 22, 23) + pick_pattern(phase_idx, 1, b, 2, 10, 18, 26, 34, 42, 50, 58) + pick_pattern(phase_idx, 1, b, 40, 41, 42, 43, 44, 45, 46, 47) + pick_pattern(phase_idx, 1, b, 5, 13, 21, 29, 37, 45, 53, 61) + 
-        pick_pattern(phase_idx, 2, b, 24, 25, 26, 27, 28, 29, 30, 31) + pick_pattern(phase_idx, 2, b, 3, 11, 19, 27, 35, 43, 51, 59) + pick_pattern(phase_idx, 2, b, 32, 33, 34, 35, 36, 37, 38, 39) + pick_pattern(phase_idx, 2, b, 4, 12, 20, 28, 36, 44, 52, 60) + 
-        pick_pattern(phase_idx, 3, b, 3, 12, 21, 30, 39) + pick_pattern(phase_idx, 3, b, 4, 11, 18, 25, 32) + pick_pattern(phase_idx, 3, b, 24, 33, 42, 51, 60) + pick_pattern(phase_idx, 3, b, 59, 52, 45, 38, 31) + 
-        pick_pattern(phase_idx, 4, b, 2, 11, 20, 29, 38, 47) + pick_pattern(phase_idx, 4, b, 5, 12, 19, 26, 33, 40) + pick_pattern(phase_idx, 4, b, 16, 25, 34, 43, 52, 61) + pick_pattern(phase_idx, 4, b, 58, 51, 44, 37, 30, 23) + 
-        pick_pattern(phase_idx, 5, b, 1, 10, 19, 28, 37, 46, 55) + pick_pattern(phase_idx, 5, b, 6, 13, 20, 27, 34, 41, 48) + pick_pattern(phase_idx, 5, b, 8, 17, 26, 35, 44, 53, 62) + pick_pattern(phase_idx, 5, b, 57, 50, 43, 36, 29, 22, 15) + 
-        pick_pattern(phase_idx, 6, b, 0, 9, 18, 27, 36, 45, 54, 63) + pick_pattern(phase_idx, 6, b, 7, 14, 21, 28, 35, 42, 49, 56) + 
-        pick_pattern(phase_idx, 7, b, 9, 0, 1, 2, 3, 4, 5, 6, 7, 14) + pick_pattern(phase_idx, 7, b, 9, 0, 8, 16, 24, 32, 40, 48, 56, 49) + pick_pattern(phase_idx, 7, b, 49, 56, 57, 58, 59, 60, 61, 62, 63, 54) + pick_pattern(phase_idx, 7, b, 54, 63, 55, 47, 39, 31, 23, 15, 7, 14) + 
-        pick_pattern(phase_idx, 8, b, 0, 1, 2, 3, 8, 9, 10, 16, 17, 24) + pick_pattern(phase_idx, 8, b, 7, 6, 5, 4, 15, 14, 13, 23, 22, 31) + pick_pattern(phase_idx, 8, b, 63, 62, 61, 60, 55, 54, 53, 47, 46, 39) + pick_pattern(phase_idx, 8, b, 56, 57, 58, 59, 48, 49, 50, 40, 41, 32) + 
-        pick_pattern(phase_idx, 9, b, 0, 2, 3, 4, 5, 7, 10, 11, 12, 13) + pick_pattern(phase_idx, 9, b, 0, 16, 24, 32, 40, 56, 17, 25, 33, 41) + pick_pattern(phase_idx, 9, b, 56, 58, 59, 60, 61, 63, 50, 51, 52, 53) + pick_pattern(phase_idx, 9, b, 7, 23, 31, 39, 47, 63, 22, 30, 38, 46) + 
-        pick_pattern(phase_idx, 10, b, 0, 9, 18, 27, 1, 10, 19, 8, 17, 26) + pick_pattern(phase_idx, 10, b, 7, 14, 21, 28, 6, 13, 20, 15, 22, 29) + pick_pattern(phase_idx, 10, b, 56, 49, 42, 35, 57, 50, 43, 48, 41, 34) + pick_pattern(phase_idx, 10, b, 63, 54, 45, 36, 62, 53, 44, 55, 46, 37) + 
-        pick_pattern(phase_idx, 11, b, 0, 1, 2, 8, 9, 10, 16, 17, 18) + pick_pattern(phase_idx, 11, b, 7, 6, 5, 15, 14, 13, 23, 22, 21) + pick_pattern(phase_idx, 11, b, 56, 57, 58, 48, 49, 50, 40, 41, 42) + pick_pattern(phase_idx, 11, b, 63, 62, 61, 55, 54, 53, 47, 46, 45) + 
-        pick_pattern(phase_idx, 12, b, 10, 0, 1, 2, 3, 4, 5, 6, 7, 13) + pick_pattern(phase_idx, 12, b, 17, 0, 8, 16, 24, 32, 40, 48, 56, 41) + pick_pattern(phase_idx, 12, b, 50, 56, 57, 58, 59, 60, 61, 62, 63, 53) + pick_pattern(phase_idx, 12, b, 46, 63, 55, 47, 39, 31, 23, 15, 7, 22) + 
-        pick_pattern(phase_idx, 13, b, 0, 1, 2, 3, 4, 8, 9, 16, 24, 32) + pick_pattern(phase_idx, 13, b, 7, 6, 5, 4, 3, 15, 14, 23, 31, 39) + pick_pattern(phase_idx, 13, b, 63, 62, 61, 60, 59, 55, 54, 47, 39, 31) + pick_pattern(phase_idx, 13, b, 56, 57, 58, 59, 60, 48, 49, 40, 32, 24) + 
-        pick_pattern(phase_idx, 14, b, 0, 1, 8, 9, 10, 11, 17, 18, 25, 27) + pick_pattern(phase_idx, 14, b, 7, 6, 15, 14, 13, 12, 22, 21, 30, 28) + pick_pattern(phase_idx, 14, b, 56, 57, 48, 49, 50, 51, 41, 42, 33, 35) + pick_pattern(phase_idx, 14, b, 63, 62, 55, 54, 53, 52, 46, 45, 38, 36) + 
-        pick_pattern(phase_idx, 15, b, 0, 1, 8, 9, 10, 11, 12, 17, 25, 33) + pick_pattern(phase_idx, 15, b, 7, 6, 15, 14, 13, 12, 11, 22, 30, 38) + pick_pattern(phase_idx, 15, b, 56, 57, 48, 49, 50, 51, 52, 41, 33, 25) + pick_pattern(phase_idx, 15, b, 63, 62, 55, 54, 53, 52, 51, 46, 38, 30);
-}
-*/
-
-inline int pick_pattern(const int phase_idx, const int pattern_idx, const uint_fast8_t b_arr[], const int p0, const int p1, const int p2, const int p3, const int p4){
-    return pattern_arr[0][phase_idx][pattern_idx][b_arr[p0] * P34 + b_arr[p1] * P33 + b_arr[p2] * P32 + b_arr[p3] * P31 + b_arr[p4]];
-}
-
-inline int pick_pattern(const int phase_idx, const int pattern_idx, const uint_fast8_t b_arr[], const int p0, const int p1, const int p2, const int p3, const int p4, const int p5){
-    return pattern_arr[0][phase_idx][pattern_idx][b_arr[p0] * P35 + b_arr[p1] * P34 + b_arr[p2] * P33 + b_arr[p3] * P32 + b_arr[p4] * P31 + b_arr[p5]];
-}
-
-inline int pick_pattern(const int phase_idx, const int pattern_idx, const uint_fast8_t b_arr[], const int p0, const int p1, const int p2, const int p3, const int p4, const int p5, const int p6){
-    return pattern_arr[0][phase_idx][pattern_idx][b_arr[p0] * P36 + b_arr[p1] * P35 + b_arr[p2] * P34 + b_arr[p3] * P33 + b_arr[p4] * P32 + b_arr[p5] * P31 + b_arr[p6]];
-}
-
-inline int pick_pattern(const int phase_idx, const int pattern_idx, const uint_fast8_t b_arr[], const int p0, const int p1, const int p2, const int p3, const int p4, const int p5, const int p6, const int p7){
-    return pattern_arr[0][phase_idx][pattern_idx][b_arr[p0] * P37 + b_arr[p1] * P36 + b_arr[p2] * P35 + b_arr[p3] * P34 + b_arr[p4] * P33 + b_arr[p5] * P32 + b_arr[p6] * P31 + b_arr[p7]];
-}
-
-inline int pick_pattern(const int phase_idx, const int pattern_idx, const uint_fast8_t b_arr[], const int p0, const int p1, const int p2, const int p3, const int p4, const int p5, const int p6, const int p7, const int p8){
-    return pattern_arr[0][phase_idx][pattern_idx][b_arr[p0] * P38 + b_arr[p1] * P37 + b_arr[p2] * P36 + b_arr[p3] * P35 + b_arr[p4] * P34 + b_arr[p5] * P33 + b_arr[p6] * P32 + b_arr[p7] * P31 + b_arr[p8]];
-}
-
-inline int pick_pattern(const int phase_idx, const int pattern_idx, const uint_fast8_t b_arr[], const int p0, const int p1, const int p2, const int p3, const int p4, const int p5, const int p6, const int p7, const int p8, const int p9){
-    return pattern_arr[0][phase_idx][pattern_idx][b_arr[p0] * P39 + b_arr[p1] * P38 + b_arr[p2] * P37 + b_arr[p3] * P36 + b_arr[p4] * P35 + b_arr[p5] * P34 + b_arr[p6] * P33 + b_arr[p7] * P32 + b_arr[p8] * P31 + b_arr[p9]];
-}
-
-inline int calc_pattern_first(const int phase_idx, Board *b){
-    uint_fast8_t b_arr[HW2];
-    b->translate_to_arr_player(b_arr);
-    return 
-        pick_pattern(phase_idx, 0, b_arr, 8, 9, 10, 11, 12, 13, 14, 15) + pick_pattern(phase_idx, 0, b_arr, 1, 9, 17, 25, 33, 41, 49, 57) + pick_pattern(phase_idx, 0, b_arr, 48, 49, 50, 51, 52, 53, 54, 55) + pick_pattern(phase_idx, 0, b_arr, 6, 14, 22, 30, 38, 46, 54, 62) + 
-        pick_pattern(phase_idx, 1, b_arr, 16, 17, 18, 19, 20, 21, 22, 23) + pick_pattern(phase_idx, 1, b_arr, 2, 10, 18, 26, 34, 42, 50, 58) + pick_pattern(phase_idx, 1, b_arr, 40, 41, 42, 43, 44, 45, 46, 47) + pick_pattern(phase_idx, 1, b_arr, 5, 13, 21, 29, 37, 45, 53, 61) + 
-        pick_pattern(phase_idx, 2, b_arr, 24, 25, 26, 27, 28, 29, 30, 31) + pick_pattern(phase_idx, 2, b_arr, 3, 11, 19, 27, 35, 43, 51, 59) + pick_pattern(phase_idx, 2, b_arr, 32, 33, 34, 35, 36, 37, 38, 39) + pick_pattern(phase_idx, 2, b_arr, 4, 12, 20, 28, 36, 44, 52, 60) + 
-        pick_pattern(phase_idx, 3, b_arr, 3, 12, 21, 30, 39) + pick_pattern(phase_idx, 3, b_arr, 4, 11, 18, 25, 32) + pick_pattern(phase_idx, 3, b_arr, 24, 33, 42, 51, 60) + pick_pattern(phase_idx, 3, b_arr, 59, 52, 45, 38, 31) + 
-        pick_pattern(phase_idx, 4, b_arr, 2, 11, 20, 29, 38, 47) + pick_pattern(phase_idx, 4, b_arr, 5, 12, 19, 26, 33, 40) + pick_pattern(phase_idx, 4, b_arr, 16, 25, 34, 43, 52, 61) + pick_pattern(phase_idx, 4, b_arr, 58, 51, 44, 37, 30, 23) + 
-        pick_pattern(phase_idx, 5, b_arr, 1, 10, 19, 28, 37, 46, 55) + pick_pattern(phase_idx, 5, b_arr, 6, 13, 20, 27, 34, 41, 48) + pick_pattern(phase_idx, 5, b_arr, 8, 17, 26, 35, 44, 53, 62) + pick_pattern(phase_idx, 5, b_arr, 57, 50, 43, 36, 29, 22, 15) + 
-        pick_pattern(phase_idx, 6, b_arr, 0, 9, 18, 27, 36, 45, 54, 63) + pick_pattern(phase_idx, 6, b_arr, 7, 14, 21, 28, 35, 42, 49, 56) + 
-        pick_pattern(phase_idx, 7, b_arr, 9, 0, 1, 2, 3, 4, 5, 6, 7, 14) + pick_pattern(phase_idx, 7, b_arr, 9, 0, 8, 16, 24, 32, 40, 48, 56, 49) + pick_pattern(phase_idx, 7, b_arr, 49, 56, 57, 58, 59, 60, 61, 62, 63, 54) + pick_pattern(phase_idx, 7, b_arr, 54, 63, 55, 47, 39, 31, 23, 15, 7, 14) + 
-        pick_pattern(phase_idx, 8, b_arr, 0, 1, 2, 3, 8, 9, 10, 16, 17, 24) + pick_pattern(phase_idx, 8, b_arr, 7, 6, 5, 4, 15, 14, 13, 23, 22, 31) + pick_pattern(phase_idx, 8, b_arr, 63, 62, 61, 60, 55, 54, 53, 47, 46, 39) + pick_pattern(phase_idx, 8, b_arr, 56, 57, 58, 59, 48, 49, 50, 40, 41, 32) + 
-        pick_pattern(phase_idx, 9, b_arr, 0, 2, 3, 4, 5, 7, 10, 11, 12, 13) + pick_pattern(phase_idx, 9, b_arr, 0, 16, 24, 32, 40, 56, 17, 25, 33, 41) + pick_pattern(phase_idx, 9, b_arr, 56, 58, 59, 60, 61, 63, 50, 51, 52, 53) + pick_pattern(phase_idx, 9, b_arr, 7, 23, 31, 39, 47, 63, 22, 30, 38, 46) + 
-        pick_pattern(phase_idx, 10, b_arr, 0, 9, 18, 27, 1, 10, 19, 8, 17, 26) + pick_pattern(phase_idx, 10, b_arr, 7, 14, 21, 28, 6, 13, 20, 15, 22, 29) + pick_pattern(phase_idx, 10, b_arr, 56, 49, 42, 35, 57, 50, 43, 48, 41, 34) + pick_pattern(phase_idx, 10, b_arr, 63, 54, 45, 36, 62, 53, 44, 55, 46, 37) + 
-        pick_pattern(phase_idx, 11, b_arr, 0, 1, 2, 8, 9, 10, 16, 17, 18) + pick_pattern(phase_idx, 11, b_arr, 7, 6, 5, 15, 14, 13, 23, 22, 21) + pick_pattern(phase_idx, 11, b_arr, 56, 57, 58, 48, 49, 50, 40, 41, 42) + pick_pattern(phase_idx, 11, b_arr, 63, 62, 61, 55, 54, 53, 47, 46, 45) + 
-        pick_pattern(phase_idx, 12, b_arr, 10, 0, 1, 2, 3, 4, 5, 6, 7, 13) + pick_pattern(phase_idx, 12, b_arr, 17, 0, 8, 16, 24, 32, 40, 48, 56, 41) + pick_pattern(phase_idx, 12, b_arr, 50, 56, 57, 58, 59, 60, 61, 62, 63, 53) + pick_pattern(phase_idx, 12, b_arr, 46, 63, 55, 47, 39, 31, 23, 15, 7, 22) + 
-        pick_pattern(phase_idx, 13, b_arr, 0, 1, 2, 3, 4, 8, 9, 16, 24, 32) + pick_pattern(phase_idx, 13, b_arr, 7, 6, 5, 4, 3, 15, 14, 23, 31, 39) + pick_pattern(phase_idx, 13, b_arr, 63, 62, 61, 60, 59, 55, 54, 47, 39, 31) + pick_pattern(phase_idx, 13, b_arr, 56, 57, 58, 59, 60, 48, 49, 40, 32, 24) + 
-        pick_pattern(phase_idx, 14, b_arr, 0, 1, 8, 9, 10, 11, 17, 18, 25, 27) + pick_pattern(phase_idx, 14, b_arr, 7, 6, 15, 14, 13, 12, 22, 21, 30, 28) + pick_pattern(phase_idx, 14, b_arr, 56, 57, 48, 49, 50, 51, 41, 42, 33, 35) + pick_pattern(phase_idx, 14, b_arr, 63, 62, 55, 54, 53, 52, 46, 45, 38, 36) + 
-        pick_pattern(phase_idx, 15, b_arr, 0, 1, 8, 9, 10, 11, 12, 17, 25, 33) + pick_pattern(phase_idx, 15, b_arr, 7, 6, 15, 14, 13, 12, 11, 22, 30, 38) + pick_pattern(phase_idx, 15, b_arr, 56, 57, 48, 49, 50, 51, 52, 41, 33, 25) + pick_pattern(phase_idx, 15, b_arr, 63, 62, 55, 54, 53, 52, 51, 46, 38, 30);
+inline int pick_joined_pattern(Board *b, uint64_t mask){
+    int res = (int)((~(b->player | b->opponent) & mask) > 0) << 2;
+    res |= (int)((b->player & mask) > 0) << 1;
+    res |= (int)((b->opponent & mask) > 0);
+    return res;
 }
 
 inline int calc_pattern_diff(const int phase_idx, Search *search){
-    return 
+    int res = 
         pattern_arr[search->eval_feature_reversed][phase_idx][0][search->eval_features[0]] + pattern_arr[search->eval_feature_reversed][phase_idx][0][search->eval_features[1]] + pattern_arr[search->eval_feature_reversed][phase_idx][0][search->eval_features[2]] + pattern_arr[search->eval_feature_reversed][phase_idx][0][search->eval_features[3]] + 
         pattern_arr[search->eval_feature_reversed][phase_idx][1][search->eval_features[4]] + pattern_arr[search->eval_feature_reversed][phase_idx][1][search->eval_features[5]] + pattern_arr[search->eval_feature_reversed][phase_idx][1][search->eval_features[6]] + pattern_arr[search->eval_feature_reversed][phase_idx][1][search->eval_features[7]] + 
         pattern_arr[search->eval_feature_reversed][phase_idx][2][search->eval_features[8]] + pattern_arr[search->eval_feature_reversed][phase_idx][2][search->eval_features[9]] + pattern_arr[search->eval_feature_reversed][phase_idx][2][search->eval_features[10]] + pattern_arr[search->eval_feature_reversed][phase_idx][2][search->eval_features[11]] + 
@@ -958,38 +773,15 @@ inline int calc_pattern_diff(const int phase_idx, Search *search){
         pattern_arr[search->eval_feature_reversed][phase_idx][9][search->eval_features[34]] + pattern_arr[search->eval_feature_reversed][phase_idx][9][search->eval_features[35]] + pattern_arr[search->eval_feature_reversed][phase_idx][9][search->eval_features[36]] + pattern_arr[search->eval_feature_reversed][phase_idx][9][search->eval_features[37]] + 
         pattern_arr[search->eval_feature_reversed][phase_idx][10][search->eval_features[38]] + pattern_arr[search->eval_feature_reversed][phase_idx][10][search->eval_features[39]] + pattern_arr[search->eval_feature_reversed][phase_idx][10][search->eval_features[40]] + pattern_arr[search->eval_feature_reversed][phase_idx][10][search->eval_features[41]] + 
         pattern_arr[search->eval_feature_reversed][phase_idx][11][search->eval_features[42]] + pattern_arr[search->eval_feature_reversed][phase_idx][11][search->eval_features[43]] + pattern_arr[search->eval_feature_reversed][phase_idx][11][search->eval_features[44]] + pattern_arr[search->eval_feature_reversed][phase_idx][11][search->eval_features[45]] + 
-        pattern_arr[search->eval_feature_reversed][phase_idx][12][search->eval_features[46]] + pattern_arr[search->eval_feature_reversed][phase_idx][12][search->eval_features[47]] + pattern_arr[search->eval_feature_reversed][phase_idx][12][search->eval_features[48]] + pattern_arr[search->eval_feature_reversed][phase_idx][12][search->eval_features[49]] + 
-        pattern_arr[search->eval_feature_reversed][phase_idx][13][search->eval_features[50]] + pattern_arr[search->eval_feature_reversed][phase_idx][13][search->eval_features[51]] + pattern_arr[search->eval_feature_reversed][phase_idx][13][search->eval_features[52]] + pattern_arr[search->eval_feature_reversed][phase_idx][13][search->eval_features[53]] + 
-        pattern_arr[search->eval_feature_reversed][phase_idx][14][search->eval_features[54]] + pattern_arr[search->eval_feature_reversed][phase_idx][14][search->eval_features[55]] + pattern_arr[search->eval_feature_reversed][phase_idx][14][search->eval_features[56]] + pattern_arr[search->eval_feature_reversed][phase_idx][14][search->eval_features[57]] + 
-        pattern_arr[search->eval_feature_reversed][phase_idx][15][search->eval_features[58]] + pattern_arr[search->eval_feature_reversed][phase_idx][15][search->eval_features[59]] + pattern_arr[search->eval_feature_reversed][phase_idx][15][search->eval_features[60]] + pattern_arr[search->eval_feature_reversed][phase_idx][15][search->eval_features[61]];
-}
-
-inline int create_canput_line_h(uint64_t b, uint64_t w, int t){
-    return (((w >> (HW * t)) & 0b11111111) << HW) | ((b >> (HW * t)) & 0b11111111);
-}
-
-inline int create_canput_line_v(uint64_t b, uint64_t w, int t){
-    return (join_v_line(w, t) << HW) | join_v_line(b, t);
-}
-
-inline int calc_canput_pattern(const int phase_idx, Board *b, const uint64_t player_mobility, const uint64_t opponent_mobility){
-    return 
-        eval_canput_pattern[phase_idx][0][create_canput_line_h(player_mobility, opponent_mobility, 0)] + 
-        eval_canput_pattern[phase_idx][0][create_canput_line_h(player_mobility, opponent_mobility, 7)] + 
-        eval_canput_pattern[phase_idx][0][create_canput_line_v(player_mobility, opponent_mobility, 0)] + 
-        eval_canput_pattern[phase_idx][0][create_canput_line_v(player_mobility, opponent_mobility, 7)] + 
-        eval_canput_pattern[phase_idx][1][create_canput_line_h(player_mobility, opponent_mobility, 1)] + 
-        eval_canput_pattern[phase_idx][1][create_canput_line_h(player_mobility, opponent_mobility, 6)] + 
-        eval_canput_pattern[phase_idx][1][create_canput_line_v(player_mobility, opponent_mobility, 1)] + 
-        eval_canput_pattern[phase_idx][1][create_canput_line_v(player_mobility, opponent_mobility, 6)] + 
-        eval_canput_pattern[phase_idx][2][create_canput_line_h(player_mobility, opponent_mobility, 2)] + 
-        eval_canput_pattern[phase_idx][2][create_canput_line_h(player_mobility, opponent_mobility, 5)] + 
-        eval_canput_pattern[phase_idx][2][create_canput_line_v(player_mobility, opponent_mobility, 2)] + 
-        eval_canput_pattern[phase_idx][2][create_canput_line_v(player_mobility, opponent_mobility, 5)] + 
-        eval_canput_pattern[phase_idx][3][create_canput_line_h(player_mobility, opponent_mobility, 3)] + 
-        eval_canput_pattern[phase_idx][3][create_canput_line_h(player_mobility, opponent_mobility, 4)] + 
-        eval_canput_pattern[phase_idx][3][create_canput_line_v(player_mobility, opponent_mobility, 3)] + 
-        eval_canput_pattern[phase_idx][3][create_canput_line_v(player_mobility, opponent_mobility, 4)];
+        pattern_arr[search->eval_feature_reversed][phase_idx][12][search->eval_features[46]] + pattern_arr[search->eval_feature_reversed][phase_idx][12][search->eval_features[47]] + pattern_arr[search->eval_feature_reversed][phase_idx][12][search->eval_features[48]] + pattern_arr[search->eval_feature_reversed][phase_idx][12][search->eval_features[49]];
+    int i;
+    for (i = 50; i < 54; ++i)
+        res += pattern_arr[search->eval_feature_reversed][phase_idx][13][search->eval_features[i] * joined_pattern[i - 50].offset + pick_joined_pattern(&search->board, joined_pattern[i - 50].mask[0])];
+    for (i = 54; i < 66; ++i)
+        res += pattern_arr[search->eval_feature_reversed][phase_idx][13 + (i - 50) / 4][search->eval_features[i] * joined_pattern[i - 50].offset + pick_joined_pattern(&search->board, joined_pattern[i - 50].mask[0]) * 8 + pick_joined_pattern(&search->board, joined_pattern[i - 50].mask[1])];
+    for (i = 66; i < 70; ++i)
+        res += pattern_arr[search->eval_feature_reversed][phase_idx][17][search->eval_features[i] * joined_pattern[i - 50].offset + pick_joined_pattern(&search->board, joined_pattern[i - 50].mask[0]) * 64 + pick_joined_pattern(&search->board, joined_pattern[i - 50].mask[1]) * 8 + pick_joined_pattern(&search->board, joined_pattern[i - 50].mask[2])];
+    return res;
 }
 
 inline int end_evaluate(Board *b){
@@ -997,88 +789,8 @@ inline int end_evaluate(Board *b){
     return score_to_value(res);
 }
 
-inline int mid_evaluate(Board *b){
-    int phase_idx, sur0, sur1, canput0, canput1, stab0 = 0, stab1 = 0, num0, num1;
-    uint64_t player_mobility, opponent_mobility, empties;
-    player_mobility = calc_legal(b->player, b->opponent);
-    opponent_mobility = calc_legal(b->opponent, b->player);
-    canput0 = min(MAX_CANPUT - 1, pop_count_ull(player_mobility));
-    canput1 = min(MAX_CANPUT - 1, pop_count_ull(opponent_mobility));
-    if (canput0 == 0 && canput1 == 0)
-        return end_evaluate(b);
-    phase_idx = b->phase();
-    empties = ~(b->player | b->opponent);
-    sur0 = min(MAX_SURROUND - 1, calc_surround(b->player, empties));
-    sur1 = min(MAX_SURROUND - 1, calc_surround(b->opponent, empties));
-    //if (b->n > 44)
-    //    calc_stability(b, &stab0, &stab1);
-    num0 = pop_count_ull(b->player);
-    num1 = pop_count_ull(b->opponent);
-    //cerr << calc_pattern(phase_idx, b) << " " << eval_sur0_sur1_arr[phase_idx][sur0][sur1] << " " << eval_canput0_canput1_arr[phase_idx][canput0][canput1] << " "
-    //    << eval_stab0_stab1_arr[phase_idx][stab0][stab1] << " " << eval_num0_num1_arr[phase_idx][num0][num1] << " " << calc_canput_pattern(phase_idx, b, player_mobility, opponent_mobility) << endl;
-    int res = calc_pattern_first(phase_idx, b) + 
-        eval_sur0_sur1_arr[phase_idx][sur0][sur1] + 
-        eval_canput0_canput1_arr[phase_idx][canput0][canput1] + 
-        //eval_stab0_stab1_arr[phase_idx][stab0][stab1] + 
-        eval_num0_num1_arr[phase_idx][num0][num1] + 
-        calc_canput_pattern(phase_idx, b, player_mobility, opponent_mobility);
-    //return score_modification(phase_idx, res);
-    //cerr << res << endl;
-    #if EVALUATION_STEP_WIDTH_MODE == 0
-        res += res > 0 ? STEP_2 : (res < 0 ? -STEP_2 : 0);
-        //res += STEP_2 * min(1, max(-1, res));
-        res >>= STEP_SHIFT;
-        /*
-        if (res > 0)
-            res += STEP_2;
-        else if (res < 0)
-            res -= STEP_2;
-        res /= STEP;
-        */
-    #elif EVALUATION_STEP_WIDTH_MODE == 1
-        if (res > 0)
-            res += STEP;
-        else if (res < 0)
-            res -= STEP;
-        res /= STEP * 2;
-    #elif EVALUATION_STEP_WIDTH_MODE == 2
-        if (res > 0)
-            res += STEP / 4;
-        else if (res < 0)
-            res -= STEP / 4;
-        res /= STEP_2;
-    
-    #elif EVALUATION_STEP_WIDTH_MODE == 3
-        if (res > 0)
-            res += STEP / 8;
-        else if (res < 0)
-            res -= STEP / 8;
-        res /= STEP / 4;
-    #elif EVALUATION_STEP_WIDTH_MODE == 4
-        if (res > 0)
-            res += STEP / 16;
-        else if (res < 0)
-            res -= STEP / 16;
-        res /= STEP / 8;
-    #elif EVALUATION_STEP_WIDTH_MODE == 5
-        if (res > 0)
-            res += STEP / 32;
-        else if (res < 0)
-            res -= STEP / 32;
-        res /= STEP / 16;
-    #elif EVALUATION_STEP_WIDTH_MODE == 6
-        if (res > 0)
-            res += STEP / 64;
-        else if (res < 0)
-            res -= STEP / 64;
-        res /= STEP / 32;
-    #endif
-    //cerr << res << " " << value_to_score_double(res) << endl;
-    return max(-SCORE_MAX, min(SCORE_MAX, res));
-}
-
 inline int mid_evaluate_diff(Search *search){
-    int phase_idx, sur0, sur1, canput0, canput1, stab0 = 0, stab1 = 0, num0, num1;
+    int phase_idx, sur0, sur1, canput0, canput1, num0, num1;
     uint64_t player_mobility, opponent_mobility, empties;
     player_mobility = calc_legal(search->board.player, search->board.opponent);
     opponent_mobility = calc_legal(search->board.opponent, search->board.player);
@@ -1090,19 +802,12 @@ inline int mid_evaluate_diff(Search *search){
     empties = ~(search->board.player | search->board.opponent);
     sur0 = min(MAX_SURROUND - 1, calc_surround(search->board.player, empties));
     sur1 = min(MAX_SURROUND - 1, calc_surround(search->board.opponent, empties));
-    //if (search->board.n > 49)
-    //calc_stability(&search->board, &stab0, &stab1);
     num0 = pop_count_ull(search->board.player);
     num1 = pop_count_ull(search->board.opponent);
-    //cerr << calc_pattern(phase_idx, b) << " " << eval_sur0_sur1_arr[phase_idx][sur0][sur1] << " " << eval_canput0_canput1_arr[phase_idx][canput0][canput1] << " "
-    //    << eval_stab0_stab1_arr[phase_idx][stab0][stab1] << " " << eval_num0_num1_arr[phase_idx][num0][num1] << " " << calc_canput_pattern(phase_idx, b, player_mobility, opponent_mobility) << endl;
     int res = calc_pattern_diff(phase_idx, search) + 
         eval_sur0_sur1_arr[phase_idx][sur0][sur1] + 
         eval_canput0_canput1_arr[phase_idx][canput0][canput1] + 
-        //eval_stab0_stab1_arr[phase_idx][stab0][stab1] + 
-        eval_num0_num1_arr[phase_idx][num0][num1] + 
-        calc_canput_pattern(phase_idx, &search->board, player_mobility, opponent_mobility);
-    //return score_modification(phase_idx, res);
+        eval_num0_num1_arr[phase_idx][num0][num1];
     #if EVALUATION_STEP_WIDTH_MODE == 0
         res += res > 0 ? STEP_2 : (res < 0 ? -STEP_2 : 0);
         //res += STEP_2 * min(1, max(-1, res));
