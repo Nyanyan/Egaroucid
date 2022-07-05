@@ -15,6 +15,7 @@
     #include "ybwc.hpp"
 #endif
 #include "util.hpp"
+#include "stability.hpp"
 
 using namespace std;
 /*

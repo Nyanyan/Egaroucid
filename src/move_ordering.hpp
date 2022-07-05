@@ -14,6 +14,7 @@
 #include "flip_variation/flipping.hpp"
 #include "flip_variation/position.hpp"
 #include "flip_variation/stone.hpp"
+#include "stability.hpp"
 
 #define W_WIPEOUT 1000000000
 

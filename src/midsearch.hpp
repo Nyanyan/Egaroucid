@@ -21,6 +21,7 @@
 #endif
 #include "util.hpp"
 #include "book.hpp"
+#include "stability.hpp"
 
 using namespace std;
 
