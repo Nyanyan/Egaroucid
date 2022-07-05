@@ -242,8 +242,8 @@ constexpr Feature_to_coord feature_to_coord[N_SYMMETRY_PATTERNS] = {
 
 struct Joined_pattern{
     int n_joined;
-    uint64_t masks[3];
-}
+    uint64_t mask[3];
+};
 
 constexpr Joined_pattern joined_pattern[N_SYMMETRY_PATTERNS] = {
     {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 0
@@ -408,11 +408,11 @@ inline void calc_idx(int phase_idx, Board *b, int idxes[]){
             idxes[i] += pick_joined_pattern(b, joined_pattern[i].mask[2]);
         }
     }
-    idxes[i++] = pop_count_ull(calc_surround(b->player, ~(b->player | b->opponent))) * MAX_STONE_NUM + pop_count_ull(calc_surround(b->opponent, ~(b->player | b->opponent)));
+    idxes[i++] = pop_count_ull(calc_surround(b->player, ~(b->player | b->opponent))) * MAX_SURROUND + pop_count_ull(calc_surround(b->opponent, ~(b->player | b->opponent)));
     uint64_t player_mobility = calc_legal(b->player, b->opponent);
     uint64_t opponent_mobility = calc_legal(b->opponent, b->player);
-    idxes[i++] = pop_count_ull(player_mobility) * max_canput + pop_count_ull(opponent_mobility);
-    idxes[i++] = pop_count_ull(b->player) * max_stability + pop_count_ull(b->opponent);
+    idxes[i++] = pop_count_ull(player_mobility) * MAX_CANPUT + pop_count_ull(opponent_mobility);
+    idxes[i++] = pop_count_ull(b->player) * MAX_STONE_NUM + pop_count_ull(b->opponent);
 }
 
 inline void convert_idx(string str, ofstream *fout){
@@ -457,7 +457,6 @@ inline void convert_idx(string str, ofstream *fout){
 
 int main(int argc, char *argv[]){
     board_init();
-    init_evaluation_base();
 
     int t = 0;
 

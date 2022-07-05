@@ -245,7 +245,7 @@ constexpr Feature_to_coord feature_to_coord[N_SYMMETRY_PATTERNS] = {
 struct Joined_pattern{
     int n_joined;
     uint64_t masks[3];
-}
+};
 
 constexpr Joined_pattern joined_pattern[N_SYMMETRY_PATTERNS] = {
     {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 0
