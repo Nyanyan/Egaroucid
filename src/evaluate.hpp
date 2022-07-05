@@ -537,11 +537,9 @@ inline int end_evaluate(Board *b){
 
 inline int mid_evaluate_diff(Search *search){
     int phase_idx, sur0, sur1, canput0, canput1, num0, num1;
-    uint64_t player_mobility, opponent_mobility, empties;
-    player_mobility = calc_legal(search->board.player, search->board.opponent);
-    opponent_mobility = calc_legal(search->board.opponent, search->board.player);
-    canput0 = min(MAX_CANPUT - 1, pop_count_ull(player_mobility));
-    canput1 = min(MAX_CANPUT - 1, pop_count_ull(opponent_mobility));
+    uint64_t empties;
+    canput0 = min(MAX_CANPUT - 1, pop_count_ull(calc_legal(search->board.player, search->board.opponent)));
+    canput1 = min(MAX_CANPUT - 1, pop_count_ull(calc_legal(search->board.opponent, search->board.player)));
     if (canput0 == 0 && canput1 == 0)
         return end_evaluate(&search->board);
     phase_idx = search->board.phase();
