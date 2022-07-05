@@ -9,25 +9,16 @@
 
 using namespace std;
 
-#define N_PATTERNS 11
+#define N_PATTERNS 15
 #ifndef N_SYMMETRY_PATTERNS
-    #define N_SYMMETRY_PATTERNS 42
-#endif
-#ifndef N_ADDITIONAL_SYMMETRY_PATTERNS
-    #define N_ADDITIONAL_SYMMETRY_PATTERNS 12
+    #define N_SYMMETRY_PATTERNS 58
 #endif
 #define MAX_PATTERN_CELLS 10
 #define MAX_CELL_PATTERNS 12
 #define MAX_SURROUND 100
 #define MAX_CANPUT 50
-#define MAX_STABILITY 65
 #define MAX_STONE_NUM 65
-#define N_CANPUT_PATTERNS 5
-#define N_PATTERN_MOBILITY 1
-#define N_PATTERN_JOINED 2
 #define MAX_EVALUATE_IDX 59049
-#define MAX_PATTERN_MOBILITY_IDX 20736
-#define MAX_PATTERN_JOINED_IDX 52488
 
 #define STEP 256
 #define STEP_2 128
@@ -161,7 +152,7 @@ struct Feature_to_coord{
     uint_fast8_t cells[MAX_PATTERN_CELLS];
 };
 
-constexpr Feature_to_coord feature_to_coord[N_SYMMETRY_PATTERNS + N_ADDITIONAL_SYMMETRY_PATTERNS] = {
+constexpr Feature_to_coord feature_to_coord[N_SYMMETRY_PATTERNS] = {
     // hv2
     {8, {COORD_A2, COORD_B2, COORD_C2, COORD_D2, COORD_E2, COORD_F2, COORD_G2, COORD_H2, COORD_NO, COORD_NO}}, // 0
     {8, {COORD_B1, COORD_B2, COORD_B3, COORD_B4, COORD_B5, COORD_B6, COORD_B7, COORD_B8, COORD_NO, COORD_NO}}, // 1
@@ -214,37 +205,121 @@ constexpr Feature_to_coord feature_to_coord[N_SYMMETRY_PATTERNS + N_ADDITIONAL_S
     {10, {COORD_A8, COORD_C8, COORD_D8, COORD_E8, COORD_F8, COORD_H8, COORD_C7, COORD_D7, COORD_E7, COORD_F7}}, // 32
     {10, {COORD_H1, COORD_H3, COORD_H4, COORD_H5, COORD_H6, COORD_H8, COORD_G3, COORD_G4, COORD_G5, COORD_G6}}, // 33
 
-    // corner9
-    {9, {COORD_A1, COORD_B1, COORD_C1, COORD_A2, COORD_B2, COORD_C2, COORD_A3, COORD_B3, COORD_C3, COORD_NO}}, // 34
-    {9, {COORD_H1, COORD_G1, COORD_F1, COORD_H2, COORD_G2, COORD_F2, COORD_H3, COORD_G3, COORD_F3, COORD_NO}}, // 35
-    {9, {COORD_A8, COORD_B8, COORD_C8, COORD_A7, COORD_B7, COORD_C7, COORD_A6, COORD_B6, COORD_C6, COORD_NO}}, // 36
-    {9, {COORD_H8, COORD_G8, COORD_F8, COORD_H7, COORD_G7, COORD_F7, COORD_H6, COORD_G6, COORD_F6, COORD_NO}}, // 37
+    // corner10
+    {10, {COORD_A1, COORD_B1, COORD_C1, COORD_A2, COORD_B2, COORD_C2, COORD_A3, COORD_B3, COORD_C3, COORD_D4}}, // 34
+    {10, {COORD_H1, COORD_G1, COORD_F1, COORD_H2, COORD_G2, COORD_F2, COORD_H3, COORD_G3, COORD_F3, COORD_E4}}, // 35
+    {10, {COORD_A8, COORD_B8, COORD_C8, COORD_A7, COORD_B7, COORD_C7, COORD_A6, COORD_B6, COORD_C6, COORD_D5}}, // 36
+    {10, {COORD_H8, COORD_G8, COORD_F8, COORD_H7, COORD_G7, COORD_F7, COORD_H6, COORD_G6, COORD_F6, COORD_E5}}, // 37
 
-    // narrow triangle
-    {10, {COORD_A1, COORD_B1, COORD_C1, COORD_D1, COORD_E1, COORD_A2, COORD_B2, COORD_A3, COORD_A4, COORD_A5}}, // 38
-    {10, {COORD_H1, COORD_G1, COORD_F1, COORD_E1, COORD_D1, COORD_H2, COORD_G2, COORD_H3, COORD_H4, COORD_H5}}, // 39
-    {10, {COORD_A8, COORD_B8, COORD_C8, COORD_D8, COORD_E8, COORD_A7, COORD_B7, COORD_A6, COORD_A5, COORD_A4}}, // 40
-    {10, {COORD_H8, COORD_G8, COORD_F8, COORD_E8, COORD_D8, COORD_H7, COORD_G7, COORD_H6, COORD_H5, COORD_H4}}, // 41
+    // edge + 2Xa
+    {8,  {COORD_A1, COORD_B1, COORD_G1, COORD_H1, COORD_B2, COORD_C2, COORD_F2, COORD_G2, COORD_NO, COORD_NO}}, // 38
+    {8,  {COORD_A8, COORD_B8, COORD_G8, COORD_H8, COORD_B7, COORD_C7, COORD_F7, COORD_G7, COORD_NO, COORD_NO}}, // 39
+    {8,  {COORD_A1, COORD_A2, COORD_A7, COORD_A8, COORD_B2, COORD_B3, COORD_B6, COORD_B7, COORD_NO, COORD_NO}}, // 40
+    {8,  {COORD_H1, COORD_H2, COORD_H7, COORD_H8, COORD_G2, COORD_G3, COORD_G6, COORD_G7, COORD_NO, COORD_NO}}, // 41
 
-    // additional patterns
+    // 2edge + X
+    {6,  {COORD_A1, COORD_A7, COORD_A8, COORD_B7, COORD_B8, COORD_H8, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 42
+    {6,  {COORD_A8, COORD_G8, COORD_H8, COORD_G7, COORD_H7, COORD_H1, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 43
+    {6,  {COORD_H8, COORD_H2, COORD_H1, COORD_G2, COORD_G1, COORD_A1, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 44
+    {6,  {COORD_H1, COORD_B1, COORD_A1, COORD_B2, COORD_A2, COORD_A8, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 45
 
-    // edge stone + mobility
-    {4,  {COORD_C8, COORD_D8, COORD_E8, COORD_F8, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 42
-    {4,  {COORD_A3, COORD_A4, COORD_A5, COORD_A6, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 43
-    {4,  {COORD_C1, COORD_D1, COORD_E1, COORD_F1, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 44
-    {4,  {COORD_H3, COORD_H4, COORD_H5, COORD_H6, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 45
+    // edge + midedge
+    {6,  {COORD_A1, COORD_B1, COORD_B2, COORD_G2, COORD_G1, COORD_H1, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 46
+    {6,  {COORD_A8, COORD_B8, COORD_B7, COORD_G7, COORD_G8, COORD_H8, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 47
+    {6,  {COORD_A1, COORD_A2, COORD_B2, COORD_B7, COORD_A7, COORD_A8, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 48
+    {6,  {COORD_H1, COORD_H2, COORD_G2, COORD_G7, COORD_H7, COORD_H8, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 49
 
-    // corner + 2 edge
-    {6,  {COORD_A1, COORD_A7, COORD_A8, COORD_B7, COORD_B8, COORD_H8, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 46
-    {6,  {COORD_A8, COORD_G8, COORD_H8, COORD_G7, COORD_H7, COORD_H1, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 47
-    {6,  {COORD_H8, COORD_H2, COORD_H1, COORD_G2, COORD_G1, COORD_A1, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 48
-    {6,  {COORD_H1, COORD_B1, COORD_A1, COORD_B2, COORD_A2, COORD_A8, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 49
+    // 2edge + corner
+    {6,  {COORD_A1, COORD_B1, COORD_A2, COORD_B2, COORD_C2, COORD_B3, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 50
+    {6,  {COORD_A8, COORD_B8, COORD_A7, COORD_B7, COORD_C7, COORD_B6, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 51
+    {6,  {COORD_H1, COORD_G1, COORD_H2, COORD_G2, COORD_F2, COORD_G3, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 52
+    {6,  {COORD_H8, COORD_G8, COORD_H7, COORD_G7, COORD_F7, COORD_G6, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 53
 
-    // corner + 1 edge
-    {8,  {COORD_A8, COORD_B8, COORD_B7, COORD_C7, COORD_F7, COORD_G7, COORD_G8, COORD_H8, COORD_NO, COORD_NO}}, // 50
-    {8,  {COORD_H8, COORD_H7, COORD_G7, COORD_G6, COORD_G3, COORD_G2, COORD_H2, COORD_H1, COORD_NO, COORD_NO}}, // 51
-    {8,  {COORD_H1, COORD_G1, COORD_G2, COORD_F2, COORD_C2, COORD_B2, COORD_B1, COORD_A1, COORD_NO, COORD_NO}}, // 52
-    {8,  {COORD_A1, COORD_A2, COORD_B2, COORD_B3, COORD_B6, COORD_B7, COORD_A7, COORD_A8, COORD_NO, COORD_NO}}  // 53
+    // corner + 3line
+    {4,  {COORD_A1, COORD_B1, COORD_A2, COORD_B2, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 54
+    {4,  {COORD_A8, COORD_B8, COORD_A7, COORD_B7, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 55
+    {4,  {COORD_H1, COORD_G1, COORD_H2, COORD_G2, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 56
+    {4,  {COORD_H8, COORD_G8, COORD_H7, COORD_G7, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}  // 57
+};
+
+struct Joined_pattern{
+    int n_joined;
+    uint64_t masks[3];
+}
+
+constexpr Joined_pattern joined_pattern[N_SYMMETRY_PATTERNS] = {
+    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 0
+    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 1
+    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 2
+    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 3
+
+    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 4
+    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 5
+    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 6
+    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 7
+
+    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 8
+    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 9
+    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 10
+    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 11
+
+    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 12
+    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 13
+    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 14
+    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 15
+
+    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 16
+    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 17
+    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 18
+    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 19
+
+    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 20
+    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 21
+    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 22
+    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 23
+
+    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 24
+    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 25
+
+    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 26
+    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 27
+    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 28
+    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 29
+
+    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 30
+    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 31
+    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 32
+    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 33
+
+    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 34
+    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 35
+    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 36
+    {0, {0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 37
+
+    {1, {0x3C00000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 38
+    {1, {0x000000000000003CULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 39
+    {1, {0x0000808080800000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 40
+    {1, {0x0000010101010000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL}}, // 41
+
+    {2, {0x0080808080800000ULL, 0x000000000000003EULL, 0x0000000000000000ULL}}, // 42
+    {2, {0x000000000000007CULL, 0x0001010101010000ULL, 0x0000000000000000ULL}}, // 43
+    {2, {0x0000010101010100ULL, 0x7C00000000000000ULL, 0x0000000000000000ULL}}, // 44
+    {2, {0x3E00000000000000ULL, 0x0000808080808000ULL, 0x0000000000000000ULL}}, // 45
+
+    {2, {0x003C000000000000ULL, 0x3C00000000000000ULL, 0x0000000000000000ULL}}, // 46
+    {2, {0x0000000000003C00ULL, 0x000000000000003CULL, 0x0000000000000000ULL}}, // 47
+    {2, {0x0000404040400000ULL, 0x0000808080800000ULL, 0x0000000000000000ULL}}, // 48
+    {2, {0x0000020202020000ULL, 0x0000010101010000ULL, 0x0000000000000000ULL}}, // 49
+
+    {2, {0x0000808080808080ULL, 0x3F00000000000000ULL, 0x0000000000000000ULL}}, // 50
+    {2, {0x8080808080800000ULL, 0x000000000000003FULL, 0x0000000000000000ULL}}, // 51
+    {2, {0x0000010101010101ULL, 0xFC00000000000000ULL, 0x0000000000000000ULL}}, // 52
+    {2, {0x0101010101010000ULL, 0x00000000000000FCULL, 0x0000000000000000ULL}}, // 53
+
+    {3, {0x0000808080808080ULL, 0x0000201008040201ULL, 0x3F00000000000000ULL}}, // 54
+    {3, {0x8080808080800000ULL, 0x0102040810200000ULL, 0x000000000000003FULL}}, // 55
+    {3, {0x0000010101010101ULL, 0x0000040810204080ULL, 0xFC00000000000000ULL}}, // 56
+    {3, {0x0101010101010000ULL, 0x8040201008040000ULL, 0x00000000000000FCULL}}  // 57
 };
 
 struct Coord_feature{
@@ -326,14 +401,10 @@ constexpr Coord_to_feature coord_to_feature[HW2] = {
 
 constexpr uint_fast16_t pow3[11] = {1, P31, P32, P33, P34, P35, P36, P37, P38, P39, P310};
 uint64_t stability_edge_arr[N_8BIT][N_8BIT][2];
-int16_t pattern_arr[2][N_PHASES][N_PATTERNS][MAX_EVALUATE_IDX];
-int16_t eval_pattern_mobility[2][N_PHASES][N_PATTERN_MOBILITY][MAX_PATTERN_MOBILITY_IDX];
-int16_t eval_pattern_joined[2][N_PHASES][N_PATTERN_JOINED][MAX_PATTERN_JOINED_IDX];
+int16_t eval_pattern_arr[2][N_PHASES][N_PATTERNS][MAX_EVALUATE_IDX];
 int16_t eval_sur0_sur1_arr[N_PHASES][MAX_SURROUND][MAX_SURROUND];
 int16_t eval_canput0_canput1_arr[N_PHASES][MAX_CANPUT][MAX_CANPUT];
-int16_t eval_stab0_stab1_arr[N_PHASES][MAX_STABILITY][MAX_STABILITY];
 int16_t eval_num0_num1_arr[N_PHASES][MAX_STONE_NUM][MAX_STONE_NUM];
-int16_t eval_canput_pattern[N_PHASES][N_CANPUT_PATTERNS][P48];
 
 string create_line(int b, int w){
     string res = "";
@@ -452,7 +523,7 @@ inline bool init_evaluation_calc(const char* file){
     constexpr int pattern_joined_offsets[N_PATTERN_JOINED] = {64, 8};
     for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
         for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx){
-            if (fread(pattern_arr[0][phase_idx][pattern_idx], 2, pow3[pattern_sizes[pattern_idx]], fp) < pow3[pattern_sizes[pattern_idx]]){
+            if (fread(eval_pattern_arr[0][phase_idx][pattern_idx], 2, pow3[pattern_sizes[pattern_idx]], fp) < pow3[pattern_sizes[pattern_idx]]){
                 cerr << "eval.egev broken" << endl;
                 fclose(fp);
                 return false;
@@ -468,34 +539,10 @@ inline bool init_evaluation_calc(const char* file){
             fclose(fp);
             return false;
         }
-        if (fread(eval_stab0_stab1_arr[phase_idx], 2, MAX_STABILITY * MAX_STABILITY, fp) < MAX_STABILITY * MAX_STABILITY){
-            cerr << "eval.egev broken" << endl;
-            fclose(fp);
-            return false;
-        }
         if (fread(eval_num0_num1_arr[phase_idx], 2, MAX_STONE_NUM * MAX_STONE_NUM, fp) < MAX_STONE_NUM * MAX_STONE_NUM){
             cerr << "eval.egev broken" << endl;
             fclose(fp);
             return false;
-        }
-        if (fread(eval_canput_pattern[phase_idx], 2, N_CANPUT_PATTERNS * P48, fp) < N_CANPUT_PATTERNS * P48){
-            cerr << "eval.egev broken" << endl;
-            fclose(fp);
-            return false;
-        }
-        for (pattern_idx = 0; pattern_idx < N_PATTERN_MOBILITY; ++pattern_idx){
-            if (fread(eval_pattern_mobility[0][phase_idx][pattern_idx], 2, pattern_mobility_sizes[pattern_idx], fp) < pattern_mobility_sizes[pattern_idx]){
-                cerr << "eval.egev broken" << endl;
-                fclose(fp);
-                return false;
-            }
-        }
-        for (pattern_idx = 0; pattern_idx < N_PATTERN_JOINED; ++pattern_idx){
-            if (fread(eval_pattern_joined[0][phase_idx][pattern_idx], 2, pattern_joined_sizes[pattern_idx], fp) < pattern_joined_sizes[pattern_idx]){
-                cerr << "eval.egev broken" << endl;
-                fclose(fp);
-                return false;
-            }
         }
     }
     #if USE_MULTI_THREAD
@@ -503,22 +550,14 @@ inline bool init_evaluation_calc(const char* file){
         vector<future<void>> tasks;
         for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
             for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx)
-                tasks.emplace_back(thread_pool.push(init_pattern_arr_rev, pattern_arr[0][phase_idx][pattern_idx], pattern_arr[1][phase_idx][pattern_idx], pattern_sizes[pattern_idx], 1));
-            for (pattern_idx = 0; pattern_idx < N_PATTERN_MOBILITY; ++pattern_idx)
-                tasks.emplace_back(thread_pool.push(init_pattern_arr_rev, eval_pattern_mobility[0][phase_idx][pattern_idx], eval_pattern_mobility[1][phase_idx][pattern_idx], pattern_mobility_cell_sizes[pattern_idx], pattern_mobility_offsets[pattern_idx]));
-            for (pattern_idx = 0; pattern_idx < N_PATTERN_JOINED; ++pattern_idx)
-                tasks.emplace_back(thread_pool.push(init_pattern_arr_rev, eval_pattern_joined[0][phase_idx][pattern_idx], eval_pattern_joined[1][phase_idx][pattern_idx], pattern_joined_cell_sizes[pattern_idx], pattern_joined_offsets[pattern_idx]));
+                tasks.emplace_back(thread_pool.push(init_pattern_arr_rev, eval_pattern_arr[0][phase_idx][pattern_idx], eval_pattern_arr[1][phase_idx][pattern_idx], pattern_sizes[pattern_idx], 1));
         }
         for (future<void> &task: tasks)
             task.get();
     #else
         for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
             for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx)
-                init_pattern_arr_rev(0, pattern_arr[0][phase_idx][pattern_idx], pattern_arr[1][phase_idx][pattern_idx], pattern_sizes[pattern_idx], 1);
-            for (pattern_idx = 0; pattern_idx < N_PATTERN_MOBILITY; ++pattern_idx)
-                init_pattern_arr_rev(0, eval_pattern_mobility[0][phase_idx][pattern_idx], eval_pattern_mobility[1][phase_idx][pattern_idx], pattern_mobility_cell_sizes[pattern_idx], pattern_mobility_offsets[pattern_idx]);
-            for (pattern_idx = 0; pattern_idx < N_PATTERN_JOINED; ++pattern_idx)
-                init_pattern_arr_rev(0, eval_pattern_joined[0][phase_idx][pattern_idx], eval_pattern_joined[1][phase_idx][pattern_idx], pattern_joined_cell_sizes[pattern_idx], pattern_joined_offsets[pattern_idx]);
+                init_pattern_arr_rev(0, eval_pattern_arr[0][phase_idx][pattern_idx], pattern_arr[1][phase_idx][pattern_idx], pattern_sizes[pattern_idx], 1);
         }
     #endif
     cerr << "evaluation function initialized" << endl;
