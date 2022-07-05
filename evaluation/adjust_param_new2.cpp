@@ -418,6 +418,23 @@ inline void scoring_mae(){
     cerr << "mse " << avg_score << "                   ";
 }
 
+inline void scoring_mae_cout(){
+    int i, j, score;
+    double avg_score, res = 0.0;
+    avg_score = 0;
+    for (i = 0; i < nums; ++i){
+        score = pre_calc_scores[i];
+        avg_score += fabs((double)round_score((int)test_labels[i]) - (double)round_score(score)) / nums;
+    }
+    cout << " mae " << avg_score << " "; //"                   ";
+    avg_score = 0;
+    for (i = 0; i < nums; ++i){
+        score = pre_calc_scores[i];
+        avg_score += (fabs(test_labels[i] - (double)score) / STEP) * (fabs(test_labels[i] - (double)score) / STEP) / nums;
+    }
+    cout << "mse " << avg_score;
+}
+
 inline double scoring_next_step(int pattern, int idx){
     double score, res = 0.0, err;
     int data_size = nums;
@@ -474,9 +491,9 @@ void sd(unsigned long long tl){
         }
     }
     cerr << endl;
-    cerr << t;
-    scoring_mae();
-    cerr << endl;
+    cout << t;
+    scoring_mae_cout();
+    cout << endl;
 }
 
 void init(){
