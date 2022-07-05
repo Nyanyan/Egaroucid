@@ -10,10 +10,10 @@
 
 using namespace std;
 
-#define N_PATTERNS 15
-#define N_EVAL 18
+#define N_PATTERNS 18
+#define N_EVAL (N_PATTERNS + 3)
 #ifndef N_SYMMETRY_PATTERNS
-    #define N_SYMMETRY_PATTERNS 58
+    #define N_SYMMETRY_PATTERNS 70
 #endif
 #define MAX_SURROUND 100
 #define MAX_CANPUT 50
@@ -62,7 +62,7 @@ int sa_phase, sa_player;
 
 #define N_DATA 50000000
 
-#define N_RAW_PARAMS 61
+#define N_RAW_PARAMS 73
 
 double beta = 0.001;
 unsigned long long hour = 0;
@@ -72,12 +72,12 @@ unsigned long long second = 0;
 double alpha[N_EVAL][MAX_EVALUATE_IDX];
 
 constexpr int pattern_sizes[N_EVAL] = {
-    8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 
+    8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 10, 10, 
     8, 6, 6, 6, 4,
     -1, -1, -1
 };
 constexpr int eval_sizes[N_EVAL] = {
-    P38, P38, P38, P35, P36, P37, P38, P310, P310, P310, 
+    P38, P38, P38, P35, P36, P37, P38, P310, P310, P310, P310, P310, P310, 
     52488, 46656, 46656, 46656, 41472, 
     MAX_SURROUND * MAX_SURROUND, MAX_CANPUT * MAX_CANPUT, MAX_STONE_NUM * MAX_STONE_NUM
 };
@@ -92,14 +92,17 @@ constexpr int pattern_nums[N_RAW_PARAMS] = {
     7, 7, 7, 7,
     8, 8, 8, 8,
     9, 9, 9, 9,
-
     10, 10, 10, 10,
     11, 11, 11, 11,
     12, 12, 12, 12,
+
     13, 13, 13, 13,
     14, 14, 14, 14,
+    15, 15, 15, 15, 
+    16, 16, 16, 16, 
+    17, 17, 17, 17, 
 
-    15, 16, 17
+    18, 19, 20
 };
 
 double eval_arr[N_EVAL][MAX_EVALUATE_IDX];
@@ -322,7 +325,40 @@ inline int calc_rev_idx(int pattern_idx, int pattern_size, int idx){
         res += P32 * calc_pop(idx, 5, pattern_size);
         res += P31 * calc_pop(idx, 8, pattern_size);
         res += calc_pop(idx, 9, pattern_size);
-    } else if (pattern_idx == 10){ // edge + 2Xa
+    } else if (pattern_idx == 10){ // cross
+        res += P39 * calc_pop(idx, 0, pattern_size);
+        res += P38 * calc_pop(idx, 1, pattern_size);
+        res += P37 * calc_pop(idx, 2, pattern_size);
+        res += P36 * calc_pop(idx, 3, pattern_size);
+        res += P35 * calc_pop(idx, 7, pattern_size);
+        res += P34 * calc_pop(idx, 8, pattern_size);
+        res += P33 * calc_pop(idx, 9, pattern_size);
+        res += P32 * calc_pop(idx, 4, pattern_size);
+        res += P31 * calc_pop(idx, 5, pattern_size);
+        res += calc_pop(idx, 6, pattern_size);
+    } else if (pattern_idx == 11){ // kite
+        res += P39 * calc_pop(idx, 0, pattern_size);
+        res += P38 * calc_pop(idx, 2, pattern_size);
+        res += P37 * calc_pop(idx, 1, pattern_size);
+        res += P36 * calc_pop(idx, 3, pattern_size);
+        res += P35 * calc_pop(idx, 7, pattern_size);
+        res += P34 * calc_pop(idx, 8, pattern_size);
+        res += P33 * calc_pop(idx, 9, pattern_size);
+        res += P32 * calc_pop(idx, 4, pattern_size);
+        res += P31 * calc_pop(idx, 5, pattern_size);
+        res += calc_pop(idx, 6, pattern_size);
+    } else if (pattern_idx == 12){ // triangle
+        res += P39 * calc_pop(idx, 0, pattern_size);
+        res += P38 * calc_pop(idx, 4, pattern_size);
+        res += P37 * calc_pop(idx, 7, pattern_size);
+        res += P36 * calc_pop(idx, 9, pattern_size);
+        res += P35 * calc_pop(idx, 1, pattern_size);
+        res += P34 * calc_pop(idx, 5, pattern_size);
+        res += P33 * calc_pop(idx, 8, pattern_size);
+        res += P32 * calc_pop(idx, 2, pattern_size);
+        res += P31 * calc_pop(idx, 6, pattern_size);
+        res += calc_pop(idx, 3, pattern_size);
+    } else if (pattern_idx == 13){ // edge + 2Xa
         int line1 = idx % 8;
         idx /= 8;
         res += P37 * calc_pop(idx, 3, pattern_size);
@@ -335,7 +371,7 @@ inline int calc_rev_idx(int pattern_idx, int pattern_size, int idx){
         res += calc_pop(idx, 4, pattern_size);
         res *= 8;
         res += line1;
-    } else if (pattern_idx == 11){ // 2edge + X
+    } else if (pattern_idx == 14){ // 2edge + X
         int line1 = idx % 8;
         idx /= 8;
         int line2 = idx % 8;
@@ -348,7 +384,7 @@ inline int calc_rev_idx(int pattern_idx, int pattern_size, int idx){
         res += calc_pop(idx, 0, pattern_size);
         res *= 64;
         res += line1 * 8 + line2;
-    } else if (pattern_idx == 12){ // edge + midedge
+    } else if (pattern_idx == 15){ // edge + midedge
         int line1 = idx % 8;
         idx /= 8;
         int line2 = idx % 8;
@@ -361,7 +397,7 @@ inline int calc_rev_idx(int pattern_idx, int pattern_size, int idx){
         res += calc_pop(idx, 0, pattern_size);
         res *= 64;
         res += line2 * 8 + line1;
-    } else if (pattern_idx == 13){ // 2edge + corner
+    } else if (pattern_idx == 16){ // 2edge + corner
         int line1 = idx % 8;
         idx /= 8;
         int line2 = idx % 8;
@@ -374,7 +410,7 @@ inline int calc_rev_idx(int pattern_idx, int pattern_size, int idx){
         res += calc_pop(idx, 4, pattern_size);
         res *= 64;
         res += line1 * 8 + line2;
-    } else if (pattern_idx == 14){ // corner + 3line
+    } else if (pattern_idx == 17){ // corner + 3line
         int line1 = idx % 8;
         idx /= 8;
         int line2 = idx % 8;
@@ -532,6 +568,7 @@ int main(int argc, char *argv[]){
     board_init();
     init();
     initialize_param();
+    cerr << "initialized" << endl;
     //output_param_onephase();
     //input_param_onephase((string)(argv[6]));
     input_test_data(argc, argv);
