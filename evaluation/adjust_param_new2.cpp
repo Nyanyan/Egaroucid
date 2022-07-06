@@ -10,6 +10,8 @@
 
 using namespace std;
 
+#define PHASE_N_STONES_LEARN 2
+
 #define N_PATTERNS 18
 #define N_EVAL (N_PATTERNS + 3)
 #ifndef N_SYMMETRY_PATTERNS
@@ -193,7 +195,7 @@ void input_test_data(int argc, char *argv[]){
                 cerr << '\r' << t;
             if (fread(&phase, 4, 1, fp) < 1)
                 break;
-            phase = (phase - 4) / PHASE_N_STONES;
+            phase = (phase - 4) / PHASE_N_STONES_LEARN;
             fread(&player, 4, 1, fp);
             fread(file_idxes, 4, N_RAW_PARAMS, fp);
             fread(&score, 4, 1, fp);
