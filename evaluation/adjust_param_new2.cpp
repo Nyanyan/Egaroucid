@@ -119,8 +119,8 @@ vector<int> used_idxes_vector[N_EVAL];
 int rev_idxes[N_EVAL][MAX_EVALUATE_IDX];
 int pow4[8];
 int pow3[11];
-int N_DATA_score[129];
-int N_DATA_idx[N_EVAL][MAX_EVALUATE_IDX][129];
+int n_data_score[129];
+int n_data_idx[N_EVAL][MAX_EVALUATE_IDX][129];
 double bias[129];
 
 void initialize_param(){
@@ -175,11 +175,11 @@ void input_test_data(int argc, char *argv[]){
     for (i = 0; i < N_EVAL; ++i){
         for (j = 0; j < MAX_EVALUATE_IDX; ++j){
             for (k = 0; k < 129; ++k)
-                N_DATA_idx[i][j][k] = 0;
+                n_data_idx[i][j][k] = 0;
         }
     }
     for(i = 0; i < 129; ++i)
-        N_DATA_score[i] = 0;
+        n_data_score[i] = 0;
     int sur, canput, stab, num;
     FILE* fp;
     int file_idxes[N_RAW_PARAMS];
@@ -212,9 +212,9 @@ void input_test_data(int argc, char *argv[]){
                     test_memo[pattern_nums[i]][test_data[nums][i]].push_back(nums);
                 test_scores.push_back(0);
                 pre_calc_scores.push_back(0);
-                ++N_DATA_score[score + 64];
+                ++n_data_score[score + 64];
                 for (i = 0; i < N_RAW_PARAMS; ++i)
-                    ++N_DATA_idx[pattern_nums[i]][test_data[nums][i]][score + 64];
+                    ++n_data_idx[pattern_nums[i]][test_data[nums][i]][score + 64];
                 ++nums;
             }
         }
@@ -226,7 +226,7 @@ void input_test_data(int argc, char *argv[]){
             used_idxes_vector[i].push_back(elem);
     }
 
-    cerr << "N_DATA " << u << endl;
+    cerr << "n_data " << u << endl;
 
     u = 0;
     for (i = 0; i < N_EVAL; ++i)
@@ -238,18 +238,18 @@ void input_test_data(int argc, char *argv[]){
     }
     cerr << "used_param " << u << endl;
 
-    int zero_score_N_DATA = N_DATA_score[64];
+    int zero_score_N_DATA = n_data_score[64];
     int wipeout_N_DATA = zero_score_N_DATA / 2;
-    int modified_N_DATA;
+    int modified_n_data;
     for (int i = 0; i < 129; ++i){
-        if (N_DATA_score[i] == 0)
+        if (n_data_score[i] == 0)
             continue;
         if (i <= 64)
-            modified_N_DATA = wipeout_N_DATA + (zero_score_N_DATA - wipeout_N_DATA) * i / 64;
+            modified_n_data = wipeout_N_DATA + (zero_score_N_DATA - wipeout_N_DATA) * i / 64;
         else
-            modified_N_DATA = zero_score_N_DATA - (zero_score_N_DATA - wipeout_N_DATA) * (i - 64) / 64;
-        bias[i] = 1.0; //(double)modified_N_DATA / N_DATA_score[i];
-        //cerr << modified_N_DATA << " " << bias[i] << endl;
+            modified_n_data = zero_score_N_DATA - (zero_score_N_DATA - wipeout_N_DATA) * (i - 64) / 64;
+        bias[i] = 1.0; //(double)modified_n_data / n_data_score[i];
+        //cerr << modified_n_data << " " << bias[i] << endl;
     }
 
     double n_weighted_data;
@@ -257,10 +257,10 @@ void input_test_data(int argc, char *argv[]){
         for (const int &used_idx: used_idxes_vector[i]){
             n_weighted_data = 0.0;
             for (j = 0; j < 129; ++j)
-                n_weighted_data += bias[j] * (double)N_DATA_idx[i][used_idx][j];
+                n_weighted_data += bias[j] * (double)n_data_idx[i][used_idx][j];
             if (used_idx < N_PATTERNS || N_PATTERNS + 4 <= used_idx){
                 for (j = 0; j < 129; ++j)
-                    n_weighted_data += bias[j] * (double)N_DATA_idx[i][rev_idxes[i][used_idx]][j];
+                    n_weighted_data += bias[j] * (double)n_data_idx[i][rev_idxes[i][used_idx]][j];
             }
             alpha[i][used_idx] = beta / max(100.0, n_weighted_data);
         }
@@ -425,7 +425,12 @@ inline int calc_rev_idx(int pattern_idx, int pattern_size, int idx){
         res += calc_pop(idx, 3, pattern_size);
         res *= 512;
         res += line3 * 64 + line2 * 8 + line1;
-    } else{
+    } /*else if (pattern_idx >= N_PATTERNS + 3){
+        for (int i = 0; i < 8; ++i){
+            res |= (1 & (idx >> i)) << (HW_M1 - i);
+            res |= (1 & (idx >> (HW + i))) << (HW + HW_M1 - i);
+        }
+    } */else{
         res = idx;
     }
     return res;
@@ -495,12 +500,12 @@ inline void next_step(){
         pre_calc_scores[i] = calc_score(sa_phase, i);
     for (pattern = 0; pattern < N_EVAL; ++pattern){
         for (const int &idx: used_idxes_vector[pattern]){
-            if (pattern < N_PATTERNS || N_PATTERNS + 4 <= pattern){
+            if (pattern < N_PATTERNS){
                 rev_idx = rev_idxes[pattern][idx];
                 if (idx < rev_idx){
                     err = scoring_next_step(pattern, idx) + scoring_next_step(pattern, rev_idx);
-                    eval_arr[pattern][idx] += 2.0 * alpha[pattern][idx] * err;
-                    eval_arr[pattern][rev_idx] += 2.0 * alpha[pattern][idx] * err;
+                    eval_arr[pattern][idx] += 1.0 * alpha[pattern][idx] * err;
+                    eval_arr[pattern][rev_idx] += 1.0 * alpha[pattern][idx] * err;
                 } else if (idx == rev_idx){
                     err = scoring_next_step(pattern, idx);
                     eval_arr[pattern][idx] += 2.0 * alpha[pattern][idx] * err;

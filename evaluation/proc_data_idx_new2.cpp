@@ -407,6 +407,13 @@ inline int pick_joined_pattern(Board *b, uint64_t mask){
     return res;
 }
 
+inline int create_canput_line_h(uint64_t b, uint64_t w, int t){
+    return (((w >> (HW * t)) & 0b11111111) << HW) | ((b >> (HW * t)) & 0b11111111);
+}
+
+inline int create_canput_line_v(uint64_t b, uint64_t w, int t){
+    return (join_v_line(w, t) << HW) | join_v_line(b, t);
+}
 
 inline void calc_idx(int phase_idx, Board *b, int idxes[]){
     uint_fast8_t b_arr[HW2];
@@ -441,11 +448,29 @@ inline void calc_idx(int phase_idx, Board *b, int idxes[]){
             idxes[i] += pick_joined_pattern(b, joined_pattern[i].mask[2]);
         }
     }
-    idxes[i++] = pop_count_ull(calc_surround(b->player, ~(b->player | b->opponent))) * MAX_SURROUND + pop_count_ull(calc_surround(b->opponent, ~(b->player | b->opponent)));
     uint64_t player_mobility = calc_legal(b->player, b->opponent);
     uint64_t opponent_mobility = calc_legal(b->opponent, b->player);
+    idxes[i++] = pop_count_ull(calc_surround(b->player, ~(b->player | b->opponent))) * MAX_SURROUND + pop_count_ull(calc_surround(b->opponent, ~(b->player | b->opponent)));
     idxes[i++] = pop_count_ull(player_mobility) * MAX_CANPUT + pop_count_ull(opponent_mobility);
     idxes[i++] = pop_count_ull(b->player) * MAX_STONE_NUM + pop_count_ull(b->opponent);
+    /*
+    idxes[i++] = create_canput_line_h(player_mobility, opponent_mobility, 0);
+    idxes[i++] = create_canput_line_h(player_mobility, opponent_mobility, 7);
+    idxes[i++] = create_canput_line_v(player_mobility, opponent_mobility, 0);
+    idxes[i++] = create_canput_line_v(player_mobility, opponent_mobility, 7);
+    idxes[i++] = create_canput_line_h(player_mobility, opponent_mobility, 1);
+    idxes[i++] = create_canput_line_h(player_mobility, opponent_mobility, 6);
+    idxes[i++] = create_canput_line_v(player_mobility, opponent_mobility, 1);
+    idxes[i++] = create_canput_line_v(player_mobility, opponent_mobility, 6);
+    idxes[i++] = create_canput_line_h(player_mobility, opponent_mobility, 2);
+    idxes[i++] = create_canput_line_h(player_mobility, opponent_mobility, 5);
+    idxes[i++] = create_canput_line_v(player_mobility, opponent_mobility, 2);
+    idxes[i++] = create_canput_line_v(player_mobility, opponent_mobility, 5);
+    idxes[i++] = create_canput_line_h(player_mobility, opponent_mobility, 3);
+    idxes[i++] = create_canput_line_h(player_mobility, opponent_mobility, 4);
+    idxes[i++] = create_canput_line_v(player_mobility, opponent_mobility, 3);
+    idxes[i++] = create_canput_line_v(player_mobility, opponent_mobility, 4);
+    */
 }
 
 inline void convert_idx(string str, ofstream *fout){
