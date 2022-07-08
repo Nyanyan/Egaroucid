@@ -504,8 +504,8 @@ inline void next_step(){
                 rev_idx = rev_idxes[pattern][idx];
                 if (idx < rev_idx){
                     err = scoring_next_step(pattern, idx) + scoring_next_step(pattern, rev_idx);
-                    eval_arr[pattern][idx] += 1.0 * alpha[pattern][idx] * err;
-                    eval_arr[pattern][rev_idx] += 1.0 * alpha[pattern][idx] * err;
+                    eval_arr[pattern][idx] += 2.0 * alpha[pattern][idx] * err;
+                    eval_arr[pattern][rev_idx] += 2.0 * alpha[pattern][idx] * err;
                 } else if (idx == rev_idx){
                     err = scoring_next_step(pattern, idx);
                     eval_arr[pattern][idx] += 2.0 * alpha[pattern][idx] * err;

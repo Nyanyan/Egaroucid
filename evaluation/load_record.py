@@ -206,9 +206,9 @@ def collect_data(num, s):
 
 games = []
 
-for i in range(6):
+for i in range(2):
     raw_data = ''
-    with open('third_party/records15/' + digit(i, 7) + '.txt', 'r') as f:
+    with open('third_party/records9999999/' + digit(i, 7) + '.txt', 'r') as f:
         raw_data = f.read()
     games.extend([i for i in raw_data.splitlines()])
 '''
