@@ -412,8 +412,8 @@ inline double scoring_next_step(int pattern, int idx){
     for (const int &i: test_memo[pattern][idx]){
         score = pre_calc_scores[i];
         raw_error = test_labels[i] - score;
-        if (fabs(raw_error) < (double)STEP_2)
-            raw_error = 0.0;
+        //if (fabs(raw_error) < (double)STEP_2)
+        //    raw_error = 0.0;
         err = raw_error * bias[(int)test_labels[i] / STEP + 64];
         res += err;
     }
