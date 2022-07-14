@@ -64,7 +64,7 @@ int sa_phase, sa_player;
 #define STEP_2 128
 #define SC_W (STEP * HW2)
 
-#define N_DATA 50000000
+#define N_DATA 70000000
 
 double beta = 0.001;
 unsigned long long hour = 0;
@@ -150,7 +150,14 @@ void input_param_onephase(string file){
 
 inline double calc_score(int phase, int i);
 
-void input_test_data(int argc, char *argv[]){
+struct Adj_info{
+    int n_data;
+    int n_params;
+    int use_params;
+};
+
+Adj_info input_test_data(int argc, char *argv[]){
+    Adj_info res;
     int i, j, k;
     /*
     ifstream ifs("big_data.txt");
@@ -224,16 +231,19 @@ void input_test_data(int argc, char *argv[]){
     }
 
     cerr << "n_data " << u << endl;
+    res.n_data = u;
 
     u = 0;
     for (i = 0; i < N_EVAL; ++i)
         u += eval_sizes[i];
     cerr << "n_all_param " << u << endl;
+    res.n_params = u;
     u = 0;
     for (i = 0; i < N_EVAL; ++i){
         u += (int)used_idxes[i].size();
     }
     cerr << "used_param " << u << endl;
+    res.use_params = u;
 
     int zero_score_N_DATA = n_data_score[64];
     int wipeout_N_DATA = zero_score_N_DATA / 2;
@@ -262,7 +272,7 @@ void input_test_data(int argc, char *argv[]){
             alpha[i][used_idx] = beta / max(100.0, n_weighted_data);
         }
     }
-    
+    return res;
 }
 
 void output_param_onephase(){
@@ -472,7 +482,7 @@ void sd(unsigned long long tl){
     cerr << endl;
     cout << t;
     scoring_mae_cout();
-    cout << endl;
+    //cout << endl;
 }
 
 void init(){
@@ -514,9 +524,10 @@ int main(int argc, char *argv[]){
     cerr << "initialized" << endl;
     //output_param_onephase();
     //input_param_onephase((string)(argv[6]));
-    input_test_data(argc, argv);
+    Adj_info info = input_test_data(argc, argv);
 
     sd(second * 1000);
+    cout << " n_data " << info.n_data << " n_param " << info.n_params << " n_used_params " << info.use_params << endl;
 
     output_param_onephase();
 

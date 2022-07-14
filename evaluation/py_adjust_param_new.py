@@ -31,7 +31,7 @@ else:
     additional_params = ' data2_01.dat data2_02.dat data2_03.dat'
 '''
 if int(phase) >= 10:
-    additional_params = ' data3_04.dat data3_06.dat data3_07.dat data3_08.dat data3_09.dat data3_10.dat data3_11.dat data3_15.dat data3_99.dat'
+    additional_params = ' data3_04.dat data3_06.dat data3_07.dat data3_08.dat data3_09.dat data3_10.dat data3_11.dat data3_15_0.dat data3_15_1.dat data3_99.dat'
 else:
     additional_params = ' data3_01.dat data3_02.dat data3_03.dat'
 #additional_params = ' big_data_new_3.dat big_data_new_14.dat'
