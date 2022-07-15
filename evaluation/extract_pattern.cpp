@@ -6,6 +6,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <vector>
+#include <algorithm>
 #include "new_util/board.hpp"
 
 using namespace std;
@@ -211,12 +212,12 @@ void scoring(Gene *gene){
     for (auto itr = features.begin(); itr != features.end(); ++itr){
         if (itr->second.size() >= SCORING_SIZE_THRESHOLD){
             ++n_appear_state;
-            avg_sd += calc_sd(itr->second);
+            avg_sd += 1.0 - calc_sd(itr->second);
         }
     }
     avg_sd /= n_appear_state;
     gene->score = (double)n_appear_state / n_possible_state * avg_sd;
-    //cerr << (double)n_appear_state / n_possible_state << " " << avg_sd << " " << gene->score << endl;
+    //cerr << n_appear_state << " " << (double)n_appear_state / n_possible_state << " " << avg_sd << " " << gene->score << endl;
 }
 
 pair<int, double> scoring_all(){
@@ -225,28 +226,79 @@ pair<int, double> scoring_all(){
     int max_idx = -1;
     for (i = 0; i < POPULATION; ++i){
         scoring(&genes[i]);
-        cerr << i << " " << genes[i].score << endl;
+        cerr << "\r" << i << " " << genes[i].score;
         if (max_score < genes[i].score){
             max_score = genes[i].score;
             max_idx = i;
         }
     }
+    cerr << endl;
     return make_pair(max_idx, max_score);
+}
+
+void mate(Gene *parent0, Gene *parent1, Gene *child0, Gene *child1){
+    uint64_t cell_mask0 = myrand_ull(); // BUG ON THIS LINE
+    uint64_t cell_mask1 = ~cell_mask0;
+    child0->cell = (parent0->cell & cell_mask0) | (parent1->cell & cell_mask1);
+    child1->cell = (parent0->cell & cell_mask1) | (parent1->cell & cell_mask0);
+    child0->line[0] = parent0->line[0];
+    child0->line[1] = parent1->line[1];
+    child0->line[2] = parent0->line[2];
+    child0->line[3] = parent1->line[3];
+    child1->line[0] = parent1->line[0];
+    child1->line[1] = parent0->line[1];
+    child1->line[2] = parent1->line[2];
+    child1->line[3] = parent0->line[3];
+}
+
+bool cmp_gene(Gene &x, Gene &y){
+    return x.score > y.score;
+}
+
+pair<int, double> ga(pair<int, double> best){
+    int parent0_idx = myrandrange(0, POPULATION);
+    int parent1_idx = myrandrange(0, POPULATION);
+    while (parent0_idx == parent1_idx)
+        parent1_idx = myrandrange(0, POPULATION);
+    Gene child0, child1;
+    mate(&genes[parent0_idx], &genes[parent1_idx], &child0, &child1);
+    scoring(&child0);
+    scoring(&child1);
+    vector<Gene> lst = {genes[parent0_idx], genes[parent1_idx], child0, child1};
+    sort(lst.begin(), lst.end(), cmp_gene);
+    genes[parent0_idx] = lst[0];
+    genes[parent1_idx] = lst[1];
+    if (lst[0].score > best.second){
+        cerr << lst[0].score << endl;
+        return make_pair(parent0_idx, lst[0].score);
+    }
+    return best;
 }
 
 int main(int argc, char *argv[]){
     n_use_cell = atoi(argv[1]);
     n_use_line = atoi(argv[2]);
+    uint64_t tl = (uint64_t)atoi(argv[3]) * 60 * 1000; // minutes
     n_possible_state = pow(3, n_use_cell) * pow(8, n_use_line);
-    cerr << "cell: " << n_use_cell << " line: " << n_use_line << " population: " << POPULATION << " possible_state: " << n_possible_state << endl;
+    cerr << "cell: " << n_use_cell << " line: " << n_use_line << " population: " << POPULATION << " possible_state: " << n_possible_state << " tl: " << argv[3] << " minutes" << endl;
 
+    cerr << "initializing" << endl;
     init();
     cerr << "initialized" << endl;
 
     input_data("records3", 0, 10);
 
     pair<int, double> idx_score = scoring_all();
+    cerr << endl;
     cerr << idx_score.first << " " << idx_score.second << endl;
+    cerr << genes[idx_score.first].cell << " " << genes[idx_score.first].line[0] << " " << genes[idx_score.first].line[1] << " " << genes[idx_score.first].line[2] << " " << genes[idx_score.first].line[3] << endl;
+
+    uint64_t strt = tim();
+    while (tim() - strt < tl)
+        idx_score = ga(idx_score);
+    cerr << endl;
+    cerr << idx_score.first << " " << idx_score.second << endl;
+    cerr << genes[idx_score.first].cell << " " << genes[idx_score.first].line[0] << " " << genes[idx_score.first].line[1] << " " << genes[idx_score.first].line[2] << " " << genes[idx_score.first].line[3] << endl;
 
     return 0;
 }
