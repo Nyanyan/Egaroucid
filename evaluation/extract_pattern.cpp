@@ -4,13 +4,17 @@
 #include <iomanip>
 #include <fstream>
 #include <unordered_set>
+#include <unordered_map>
+#include <vector>
 #include "new_util/board.hpp"
 
 using namespace std;
 
 #define MAX_N_LINE 4
-#define POPULATION 1024
-#define N_DATA 10000
+#define POPULATION 100
+#define N_DATA 100000
+#define SCORING_SIZE_THRESHOLD 5
+
 #define INF 100000.0
 
 constexpr uint64_t diagonal_lines[22] = {
@@ -24,6 +28,7 @@ constexpr uint64_t diagonal_lines[22] = {
 
 int n_use_cell;
 int n_use_line;
+int n_possible_state;
 
 struct Gene{
     uint64_t cell;
@@ -46,6 +51,50 @@ struct Feature{
     bool line_player[MAX_N_LINE];
     bool line_opponent[MAX_N_LINE];
     bool line_empty[MAX_N_LINE];
+
+    bool operator==(const Feature& other) const {
+        bool res = false;
+        if (cell_player == other.cell_player && cell_opponent == other.cell_opponent){
+            res = true;
+            for (int i = 0; i < n_use_line; ++i){
+                res &= (line_player[i] == other.line_player[i]);
+                res &= (line_opponent[i] == other.line_opponent[i]);
+                res &= (line_empty[i] == other.line_empty[i]);
+            }
+        }
+        return res;
+    };
+
+    bool operator<(const Feature& other) {
+        if (cell_player < other.cell_player)
+            return true;
+        if (cell_opponent < other.cell_opponent)
+            return true;
+        for (int i = 0; i < n_use_line; ++i){
+            if (!line_player[i] && other.line_player[i])
+                return true;
+            if (!line_opponent[i] && other.line_opponent[i])
+                return true;
+            if (!line_empty[i] && other.line_empty[i])
+                return true;
+        }
+        return false;
+    };
+};
+
+struct Feature_hash {
+    size_t operator()(const Feature& x) const noexcept {
+        size_t hash = 
+            hash_rand_player[0][0b1111111111111111 & x.cell_player] ^ 
+            hash_rand_player[1][0b1111111111111111 & (x.cell_player >> 16)] ^ 
+            hash_rand_player[2][0b1111111111111111 & (x.cell_player >> 32)] ^ 
+            hash_rand_player[3][0b1111111111111111 & (x.cell_player >> 48)] ^ 
+            hash_rand_opponent[0][0b1111111111111111 & x.cell_opponent] ^ 
+            hash_rand_opponent[1][0b1111111111111111 & (x.cell_opponent >> 16)] ^ 
+            hash_rand_opponent[2][0b1111111111111111 & (x.cell_opponent >> 32)] ^ 
+            hash_rand_opponent[3][0b1111111111111111 & (x.cell_opponent >> 48)];
+        return hash;
+    };
 };
 
 void init(){
@@ -130,27 +179,59 @@ void input_data(string dir, int start_file, int end_file){
     cerr << endl << t << " data" << endl;
 }
 
+double calc_sd(vector<double> &lst){
+    double avg = 0.0;
+    for (const double &elem: lst)
+        avg += elem / lst.size();
+    double distribution = 0.0;
+    for (const double &elem: lst)
+        distribution += (avg - elem) * (avg - elem) / lst.size();
+    return sqrt(distribution);
+}
+
 void scoring(Gene *gene){
-    unordered_set<Feature> features;
+    unordered_map<Feature, vector<double>, Feature_hash> features;
     int i, j;
     Feature feature;
     for (i = 0; i < N_DATA; ++i){
         feature.cell_player = data[i].board.player & gene->cell;
         feature.cell_opponent = data[i].board.opponent & gene->cell;
         for (j = 0; j < n_use_line; ++j){
-            feature.line_player[j] = data[i].board.player
+            feature.line_player[j] = (data[i].board.player & ~gene->cell & gene->line[j]) > 0;
+            feature.line_opponent[j] = (data[i].board.opponent & ~gene->cell & gene->line[j]) > 0;
+            feature.line_empty[j] = (~(data[i].board.player | data[i].board.opponent) & ~gene->cell & gene->line[j]) > 0;
+        }
+        if (features.find(feature) != features.end())
+            features[feature].emplace_back(data[i].score);
+        else
+            features.emplace(feature, (vector<double>){data[i].score});
+    }
+    int n_appear_state = 0;
+    double avg_sd = 0.0;
+    for (auto itr = features.begin(); itr != features.end(); ++itr){
+        if (itr->second.size() >= SCORING_SIZE_THRESHOLD){
+            ++n_appear_state;
+            avg_sd += calc_sd(itr->second);
         }
     }
+    avg_sd /= n_appear_state;
+    gene->score = (double)n_appear_state / n_possible_state * avg_sd;
+    cerr << (double)n_appear_state / n_possible_state << " " << avg_sd << " " << gene->score << endl;
 }
 
 void scoring_all(){
-
+    int i;
+    for (i = 0; i < POPULATION; ++i){
+        scoring(&genes[i]);
+        cerr << i << " " << genes[i].score << endl;
+    }
 }
 
 int main(int argc, char *argv[]){
     n_use_cell = atoi(argv[1]);
     n_use_line = atoi(argv[2]);
-    cerr << "cell: " << n_use_cell << " line: " << n_use_line << " population: " << POPULATION << endl;
+    n_possible_state = pow(3, n_use_cell) * pow(8, n_use_line);
+    cerr << "cell: " << n_use_cell << " line: " << n_use_line << " population: " << POPULATION << " possible_state: " << n_possible_state << endl;
 
     init();
     cerr << "initialized" << endl;
