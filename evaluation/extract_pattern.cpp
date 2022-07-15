@@ -12,7 +12,7 @@ using namespace std;
 
 #define MAX_N_LINE 4
 #define POPULATION 100
-#define N_DATA 100000
+#define N_DATA 10000
 #define SCORING_SIZE_THRESHOLD 5
 
 #define INF 100000.0
@@ -216,15 +216,22 @@ void scoring(Gene *gene){
     }
     avg_sd /= n_appear_state;
     gene->score = (double)n_appear_state / n_possible_state * avg_sd;
-    cerr << (double)n_appear_state / n_possible_state << " " << avg_sd << " " << gene->score << endl;
+    //cerr << (double)n_appear_state / n_possible_state << " " << avg_sd << " " << gene->score << endl;
 }
 
-void scoring_all(){
+pair<int, double> scoring_all(){
     int i;
+    double max_score = -INF;
+    int max_idx = -1;
     for (i = 0; i < POPULATION; ++i){
         scoring(&genes[i]);
         cerr << i << " " << genes[i].score << endl;
+        if (max_score < genes[i].score){
+            max_score = genes[i].score;
+            max_idx = i;
+        }
     }
+    return make_pair(max_idx, max_score);
 }
 
 int main(int argc, char *argv[]){
@@ -238,7 +245,8 @@ int main(int argc, char *argv[]){
 
     input_data("records3", 0, 10);
 
-    scoring_all();
+    pair<int, double> idx_score = scoring_all();
+    cerr << idx_score.first << " " << idx_score.second << endl;
 
     return 0;
 }
