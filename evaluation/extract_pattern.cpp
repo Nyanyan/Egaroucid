@@ -12,7 +12,7 @@
 using namespace std;
 
 #define MAX_N_LINE 6
-#define POPULATION 1024
+#define POPULATION 2048
 #define N_DATA 5000000
 #define SCORING_SIZE_THRESHOLD 5
 #define HASH_SIZE 1048576
@@ -218,8 +218,10 @@ double calc_sd(vector<double> &lst){
 void scoring(Gene *gene){
     int i, j;
     Feature feature;
-    for (i = 0; i < HASH_SIZE; ++i)
+    for (i = 0; i < HASH_SIZE; ++i){
         scoring_hash_table[i].clear();
+        scoring_hash_table[i].shrink_to_fit();
+    }
     for (i = 0; i < N_DATA; ++i){
         feature.cell_player = data[i].board.player & gene->cell;
         feature.cell_opponent = data[i].board.opponent & gene->cell;
@@ -239,8 +241,8 @@ void scoring(Gene *gene){
         }
     }
     avg_sd /= n_appear_state;
-    //gene->score = (double)n_appear_state / n_possible_state * avg_sd;
-    gene->score = avg_sd;
+    gene->score = (double)n_appear_state / n_possible_state * avg_sd;
+    //gene->score = avg_sd;
     //cerr << n_appear_state << " " << (double)n_appear_state / n_possible_state << " " << avg_sd << " " << gene->score << endl;
 }
 
@@ -316,6 +318,7 @@ bool ga(pair<int, double> &best){
 }
 
 int main(int argc, char *argv[]){
+    board_init();
     n_use_cell = atoi(argv[1]);
     n_use_line = atoi(argv[2]);
     uint64_t tl = (uint64_t)atoi(argv[3]) * 60 * 1000; // minutes
@@ -336,14 +339,17 @@ int main(int argc, char *argv[]){
 
     uint64_t strt = tim();
     uint64_t last = 0ULL;
+    uint64_t t = 0;
     while (tim() - strt < tl){
         ga(idx_score);
         if (tim() - strt - last > 1000){
             cerr << '\r' << (double)(tim() - strt) / tl << "       " << idx_score.second << "                    ";
             last = tim() - strt;
         }
+        ++t;
     }
     cerr << endl;
+    cerr << t << " times" << endl;
     cerr << idx_score.first << " " << idx_score.second << endl;
     cerr << genes[idx_score.first].cell << endl;
     for (int i = 0; i < n_use_line; ++i)
