@@ -8,7 +8,7 @@ print(len(files), 'files found')
 
 res = 0
 for file in files:
-    with open(file) as f:
+    with open(file, 'r') as f:
         while f.readline():
             res += 1
 print(sys.argv[1], res, 'games found')

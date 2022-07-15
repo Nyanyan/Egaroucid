@@ -8,14 +8,14 @@ if len(sys.argv) > 3:
     second = str(sys.argv[4])
     beta = str(sys.argv[5])
 else:
-    if int(phase) >= 10:
+    if int(phase) >= 20:
         hour = '0'
-        minute = '20'
+        minute = '30'
         second = '0'
         beta = '0.005'
     else:
         hour = '0'
-        minute = '10'
+        minute = '20'
         second = '0'
         beta = '0.001'
 '''
@@ -24,10 +24,16 @@ if int(phase) >= 10:
 else:
     additional_params = ' data_0000001.dat data_0000002.dat data_0000003.dat'
 '''
+'''
 if int(phase) >= 10:
     additional_params = ' data2_04.dat data2_06.dat data2_07.dat data2_08.dat data2_09.dat data2_10.dat data2_11.dat data2_15.dat data2_99.dat'
 else:
     additional_params = ' data2_01.dat data2_02.dat data2_03.dat'
+'''
+if int(phase) >= 10:
+    additional_params = ' data3_04.dat data3_06.dat data3_07.dat data3_08.dat data3_09.dat data3_10.dat data3_11.dat data3_15_0.dat data3_15_1.dat data3_99.dat'
+else:
+    additional_params = ' data3_01.dat data3_02.dat data3_03.dat'
 #additional_params = ' big_data_new_3.dat big_data_new_14.dat'
 #additional_params = ' big_data.dat'
 

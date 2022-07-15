@@ -191,7 +191,9 @@ def collect_data(num, s):
         turn += 1
         if rv.end():
             break
-    rv.check_pass()
+    if not (rv.check_pass() and rv.check_pass()):
+        print('record error')
+        return
     #score = 1 if rv.nums[0] > rv.nums[1] else 0 if rv.nums[0] == rv.nums[1] else -1
     result = rv.nums[0] - rv.nums[1]
     if result > 0:
@@ -206,9 +208,9 @@ def collect_data(num, s):
 
 games = []
 
-for i in range(2):
+for i in range(8, 9):
     raw_data = ''
-    with open('third_party/records9999999/' + digit(i, 7) + '.txt', 'r') as f:
+    with open('third_party/records15/' + digit(i, 7) + '.txt', 'r') as f:
         raw_data = f.read()
     games.extend([i for i in raw_data.splitlines()])
 '''
@@ -225,7 +227,7 @@ for i in trange(len(games)):
     #games[i] = games[i].replace('-', '')
     if len(games[i]) == 0:
         continue
-    collect_data(idx // 1000, games[i])
+    collect_data(456 + idx // 1000, games[i])
     idx += 1
 print(idx)
 
