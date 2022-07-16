@@ -10,12 +10,12 @@ if len(sys.argv) > 3:
 else:
     if int(phase) >= 20:
         hour = '0'
-        minute = '30'
+        minute = '10'
         second = '0'
         beta = '0.005'
     else:
         hour = '0'
-        minute = '20'
+        minute = '10'
         second = '0'
         beta = '0.001'
 '''
