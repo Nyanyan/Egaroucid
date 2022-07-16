@@ -58,8 +58,6 @@ struct Gene{
     }
 };
 
-vector<Gene> genes(POPULATION);
-
 struct Datum{
     Board board;
     double score;
@@ -139,35 +137,6 @@ struct Feature_hash {
         return hash;
     };
 };
-
-void init(){
-    int i, j, k, line, offset;
-    bool overlap;
-    for (i = 0; i < POPULATION; ++i){
-        cerr << "\r" << i;
-        genes[i].score = INF;
-        genes[i].cell = 0ULL;
-        while (pop_count_ull(genes[i].cell) != n_use_cell){
-            genes[i].cell = myrand_ull();
-            genes[i].cell &= 0x00000000FFFFFFFFULL;
-        }
-        for (j = 0; j < n_use_line; ++j){
-            line = myrandrange(0, 38);
-            if (line < 8)
-                genes[i].line[j] = 0xFF00000000000000ULL >> (line * HW); // horizontal
-            else if (line < 16)
-                genes[i].line[j] = 0x8080808080808080ULL >> (line - 8); // vertical
-            else
-                genes[i].line[j] = diagonal_lines[line - 16];
-            overlap = false;
-            for (k = 0; k < j; ++k)
-                overlap |= (genes[i].line[j] == genes[i].line[k]);
-            if (overlap)
-                --j;
-        }
-    }
-    cerr << endl;
-}
 
 Datum convert_data(string str){
     int i, j;
@@ -267,134 +236,27 @@ void scoring(Gene *gene){
     avg_sd /= n_appear_state;
     gene->score = (double)n_all_appear_state / n_possible_state * avg_sd;
     //gene->score = avg_sd;
-    //cerr << n_all_appear_state << " " << (double)n_all_appear_state / n_possible_state << " " << avg_sd << " " << gene->score << endl;
-}
-
-pair<int, double> scoring_all(){
-    int i;
-    double max_score = -INF;
-    int max_idx = -1;
-    //#pragma omp parallel for
-    for (i = 0; i < POPULATION; ++i){
-        scoring(&genes[i]);
-        cerr << "\r" << i << " " << genes[i].score;
-        if (max_score < genes[i].score){
-            max_score = genes[i].score;
-            max_idx = i;
-        }
-    }
-    cerr << endl;
-    return make_pair(max_idx, max_score);
-}
-
-void mate(Gene *parent0, Gene *parent1, Gene *child0, Gene *child1){
-    uint64_t cell0 = parent0->cell;
-    uint64_t cell1 = parent1->cell;
-    int i;
-    int threshold = myrandrange(0, n_use_cell);
-    child0->cell = 0;
-    child1->cell = 0;
-    for (i = 0; i < n_use_cell; ++i){
-        if (i < threshold){
-            child0->cell |= cell0 & (-cell0);
-            child1->cell |= cell1 & (-cell1);
-        } else{
-            child0->cell |= cell1 & (-cell1);
-            child1->cell |= cell0 & (-cell0);
-        }
-        cell0 &= (cell0 - 1);
-        cell1 &= (cell1 - 1);
-    }
-    //cerr << pop_count_ull(child0->cell) << " " << pop_count_ull(child1->cell) << endl;
-    threshold = myrandrange(0, n_use_line);
-    for (i = 0; i < n_use_line; ++i){
-        if (i < threshold){
-            child0->line[i] = parent0->line[i];
-            child1->line[i] = parent1->line[i];
-        } else{
-            child0->line[i] = parent1->line[i];
-            child1->line[i] = parent0->line[i];
-        }
-    }
-}
-
-bool cmp_gene(Gene &x, Gene &y){
-    return x.score > y.score;
-}
-
-bool ga(pair<int, double> &best){
-    int parent0_idx = myrandrange(0, POPULATION);
-    int parent1_idx = myrandrange(0, POPULATION);
-    while (parent0_idx == parent1_idx)
-        parent1_idx = myrandrange(0, POPULATION);
-    Gene child0, child1;
-    mate(&genes[parent0_idx], &genes[parent1_idx], &child0, &child1);
-    scoring(&child0);
-    scoring(&child1);
-    vector<Gene> lst = {genes[parent0_idx], genes[parent1_idx], child0, child1};
-    sort(lst.begin(), lst.end(), cmp_gene);
-    //cerr << lst[0].score << " " << lst[1].score << endl;
-    genes[parent0_idx] = lst[0];
-    genes[parent1_idx] = lst[1];
-    bool res = lst[0].score > best.second;
-    if (res)
-        best = make_pair(parent0_idx, lst[0].score);
-    return res;
+    cerr << n_all_appear_state << " " << (double)n_all_appear_state / n_possible_state << " " << avg_sd << " " << gene->score << endl;
 }
 
 int main(int argc, char *argv[]){
     board_init();
     n_use_cell = atoi(argv[1]);
     n_use_line = atoi(argv[2]);
-    uint64_t tl = (uint64_t)atoi(argv[3]) * 60 * 1000; // minutes
     n_possible_state = pow(3, n_use_cell) * pow(8, n_use_line);
-    cerr << "cell: " << n_use_cell << " line: " << n_use_line << " population: " << POPULATION << " possible_state: " << n_possible_state << " tl: " << argv[3] << " minutes" << endl;
+    cerr << "cell: " << n_use_cell << " line: " << n_use_line << " possible_state: " << n_possible_state << endl;
 
     cerr << "initializing" << endl;
-    init();
+    Gene gene;
+    cin >> gene.cell;
+    for (int i = 0; i < n_use_line; ++i)
+        cin >> gene.line[i];
     cerr << "initialized" << endl;
 
     input_data("records15", 0, 150);
 
     cerr << "scoring..." << endl;
-    pair<int, double> idx_score = scoring_all();
+    scoring(&gene);
     cerr << "done" << endl;
-    //cerr << idx_score.first << " " << idx_score.second << endl;
-    //cerr << genes[idx_score.first].cell << " " << genes[idx_score.first].line[0] << " " << genes[idx_score.first].line[1] << " " << genes[idx_score.first].line[2] << " " << genes[idx_score.first].line[3] << endl;
-
-    uint64_t strt = tim();
-    uint64_t last = 0ULL;
-    uint64_t t = 0;
-    while (tim() - strt < tl){
-        ga(idx_score);
-        if (tim() - strt - last > 1000){
-            cerr << '\r' << t << " " << (double)(tim() - strt) / tl << "       " << idx_score.second << "                    ";
-            last = tim() - strt;
-        }
-        ++t;
-    }
-    cerr << endl;
-    cerr << t << " times" << endl;
-    cerr << idx_score.first << " " << idx_score.second << endl;
-    cerr << genes[idx_score.first].cell << endl;
-    for (int i = 0; i < n_use_line; ++i)
-        cerr << genes[idx_score.first].line[i] << endl;
-    
-    sort(genes.begin(), genes.end(), cmp_gene);
-    unordered_set<uint64_t> hashes;
-    uint64_t hash;
-    t = 0;
-    for (int i = 0; i < POPULATION && t < 100; ++i){
-        hash = genes[i].hash();
-        if (hashes.find(hash) == hashes.end()){
-            cout << genes[i].score << " ";
-            cout << genes[i].cell << " ";
-            for (int j = 0; j < n_use_line; ++j)
-                cout << genes[i].line[j] << " ";
-            cout << endl;
-            hashes.emplace(hash);
-            ++t;
-        }
-    }
     return 0;
 }
