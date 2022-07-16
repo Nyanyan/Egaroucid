@@ -12,7 +12,7 @@
 using namespace std;
 
 #define MAX_N_LINE 6
-#define POPULATION 16384
+#define POPULATION 1024
 #define N_DATA 5000000
 #define SCORING_SIZE_THRESHOLD 5
 #define HASH_SIZE 1048576
@@ -37,6 +37,22 @@ struct Gene{
     uint64_t cell;
     uint64_t line[MAX_N_LINE];
     double score;
+
+    uint64_t hash(){
+        uint64_t hash = 
+            hash_rand_player[0][0b1111111111111111 & cell] ^ 
+            hash_rand_player[1][0b1111111111111111 & (cell >> 16)] ^ 
+            hash_rand_player[2][0b1111111111111111 & (cell >> 32)] ^ 
+            hash_rand_player[3][0b1111111111111111 & (cell >> 48)];
+        for (int i = 0; i < n_use_line; ++i){
+            hash ^= 
+                hash_rand_opponent[0][0b1111111111111111 & line[i]] ^ 
+                hash_rand_opponent[1][0b1111111111111111 & (line[i] >> 16)] ^ 
+                hash_rand_opponent[2][0b1111111111111111 & (line[i] >> 32)] ^ 
+                hash_rand_opponent[3][0b1111111111111111 & (line[i] >> 48)];
+        }
+        return hash;
+    }
 };
 
 Gene genes[POPULATION];
@@ -128,8 +144,10 @@ void init(){
         cerr << "\r" << i;
         genes[i].score = INF;
         genes[i].cell = 0ULL;
-        while (pop_count_ull(genes[i].cell) != n_use_cell)
+        while (pop_count_ull(genes[i].cell) != n_use_cell){
             genes[i].cell = myrand_ull();
+            genes[i].cell &= 0x00000000FFFFFFFFULL;
+        }
         for (j = 0; j < n_use_line; ++j){
             line = myrandrange(0, 38);
             if (line < 8)
@@ -355,12 +373,20 @@ int main(int argc, char *argv[]){
     for (int i = 0; i < n_use_line; ++i)
         cerr << genes[idx_score.first].line[i] << endl;
     sort(genes, genes + POPULATION, cmp_gene);
-    for (int i = 0; i < 100; ++i){
-        cout << genes[i].score << " ";
-        cout << genes[i].cell << " ";
-        for (int j = 0; j < n_use_line; ++j)
-            cout << genes[i].line[j] << " ";
-        cout << endl;
+    unordered_set<uint64_t> hashes;
+    uint64_t hash;
+    t = 0;
+    for (int i = 0; i < POPULATION && t < 20; ++i){
+        hash = genes[i].hash();
+        if (hashes.find(hash) == hashes.end()){
+            cout << genes[i].score << " ";
+            cout << genes[i].cell << " ";
+            for (int j = 0; j < n_use_line; ++j)
+                cout << genes[i].line[j] << " ";
+            cout << endl;
+            hashes.emplace(hash);
+            ++t;
+        }
     }
     return 0;
 }
