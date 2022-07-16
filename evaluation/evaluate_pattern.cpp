@@ -234,9 +234,10 @@ void scoring(Gene *gene){
             ++n_all_appear_state;
     }
     avg_sd /= n_appear_state;
-    gene->score = (double)n_all_appear_state / n_possible_state * avg_sd;
+    double appear_score = min(0.5, (double)n_all_appear_state / n_possible_state) * 2.0;
+    gene->score = appear_score * avg_sd;
     //gene->score = avg_sd;
-    cerr << n_all_appear_state << " " << (double)n_all_appear_state / n_possible_state << " " << avg_sd << " " << gene->score << endl;
+    cerr << n_all_appear_state << " " << appear_score << " " << avg_sd << " " << gene->score << endl;
 }
 
 int main(int argc, char *argv[]){
