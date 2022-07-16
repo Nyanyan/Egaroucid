@@ -12,7 +12,7 @@
 using namespace std;
 
 #define MAX_N_LINE 6
-#define POPULATION 2048
+#define POPULATION 16384
 #define N_DATA 5000000
 #define SCORING_SIZE_THRESHOLD 5
 #define HASH_SIZE 1048576
@@ -354,6 +354,13 @@ int main(int argc, char *argv[]){
     cerr << genes[idx_score.first].cell << endl;
     for (int i = 0; i < n_use_line; ++i)
         cerr << genes[idx_score.first].line[i] << endl;
-
+    sort(genes, genes + POPULATION, cmp_gene);
+    for (int i = 0; i < 100; ++i){
+        cout << genes[i].score << " ";
+        cout << genes[i].cell << " ";
+        for (int j = 0; j < n_use_line; ++j)
+            cout << genes[i].line[j] << " ";
+        cout << endl;
+    }
     return 0;
 }
