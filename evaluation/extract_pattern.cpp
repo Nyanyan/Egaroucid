@@ -7,13 +7,16 @@
 #include <unordered_map>
 #include <vector>
 #include <algorithm>
+#include <omp.h> 
 #include "new_util/board.hpp"
 
 using namespace std;
 
 #define MAX_N_LINE 6
-#define POPULATION 1024
-#define N_DATA 5000000
+#define POPULATION 16384
+#define N_DATA 1000000
+//#define POPULATION 1024
+//#define N_DATA 100000
 #define SCORING_SIZE_THRESHOLD 5
 #define HASH_SIZE 1048576
 #define HASH_MASK 1048575
@@ -55,7 +58,7 @@ struct Gene{
     }
 };
 
-Gene genes[POPULATION];
+vector<Gene> genes(POPULATION);
 
 struct Datum{
     Board board;
@@ -268,6 +271,7 @@ pair<int, double> scoring_all(){
     int i;
     double max_score = -INF;
     int max_idx = -1;
+    //#pragma omp parallel for
     for (i = 0; i < POPULATION; ++i){
         scoring(&genes[i]);
         cerr << "\r" << i << " " << genes[i].score;
@@ -341,13 +345,13 @@ int main(int argc, char *argv[]){
     n_use_line = atoi(argv[2]);
     uint64_t tl = (uint64_t)atoi(argv[3]) * 60 * 1000; // minutes
     n_possible_state = pow(3, n_use_cell) * pow(8, n_use_line);
-    cerr << "cell: " << n_use_cell << " line: " << n_use_line << " population: " << POPULATION << " possible_state: " << n_possible_state << " tl: " << argv[3] << " minutes" << endl;
+    cerr << "cell: " << n_use_cell << " line: " << n_use_line << " population: " << POPULATION << " possible_state: " << n_possible_state << " tl: " << argv[3] << " minutes " << omp_get_max_threads() << " threads" << endl;
 
     cerr << "initializing" << endl;
     init();
     cerr << "initialized" << endl;
 
-    input_data("records3", 0, 100);
+    input_data("records15", 0, 150);
 
     cerr << "scoring..." << endl;
     pair<int, double> idx_score = scoring_all();
@@ -361,7 +365,7 @@ int main(int argc, char *argv[]){
     while (tim() - strt < tl){
         ga(idx_score);
         if (tim() - strt - last > 1000){
-            cerr << '\r' << (double)(tim() - strt) / tl << "       " << idx_score.second << "                    ";
+            cerr << '\r' << t << " " << (double)(tim() - strt) / tl << "       " << idx_score.second << "                    ";
             last = tim() - strt;
         }
         ++t;
@@ -372,11 +376,12 @@ int main(int argc, char *argv[]){
     cerr << genes[idx_score.first].cell << endl;
     for (int i = 0; i < n_use_line; ++i)
         cerr << genes[idx_score.first].line[i] << endl;
-    sort(genes, genes + POPULATION, cmp_gene);
+    
+    sort(genes.begin(), genes.end(), cmp_gene);
     unordered_set<uint64_t> hashes;
     uint64_t hash;
     t = 0;
-    for (int i = 0; i < POPULATION && t < 20; ++i){
+    for (int i = 0; i < POPULATION && t < 100; ++i){
         hash = genes[i].hash();
         if (hashes.find(hash) == hashes.end()){
             cout << genes[i].score << " ";
