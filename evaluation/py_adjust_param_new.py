@@ -12,7 +12,7 @@ else:
         hour = '0'
         minute = '10'
         second = '0'
-        beta = '0.005'
+        beta = '0.01'
     else:
         hour = '0'
         minute = '10'

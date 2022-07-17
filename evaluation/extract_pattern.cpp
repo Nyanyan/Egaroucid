@@ -152,6 +152,7 @@ void init(){
         while (pop_count_ull(genes[i].cell) != n_use_cell){
             genes[i].cell = myrand_ull();
             //genes[i].cell &= 0x00000000FFFFFFFFULL;
+            genes[i].cell &= 0x000000003C7EFFFFULL;
         }
         for (j = 0; j < n_use_line; ++j){
             line = myrandrange(0, 38);

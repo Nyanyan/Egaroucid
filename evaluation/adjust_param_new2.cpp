@@ -15,9 +15,9 @@ using namespace std;
 #define N_PATTERNS 16
 #define N_EVAL (N_PATTERNS + 3)
 #ifndef N_SYMMETRY_PATTERNS
-    #define N_SYMMETRY_PATTERNS 66
+    #define N_SYMMETRY_PATTERNS 78
 #endif
-#define N_RAW_PARAMS 69
+#define N_RAW_PARAMS 81
 
 #define MAX_SURROUND 100
 #define MAX_CANPUT 50
@@ -74,13 +74,13 @@ unsigned long long second = 0;
 double alpha[N_EVAL][MAX_EVALUATE_IDX];
 
 constexpr int pattern_sizes[N_EVAL] = {
-    8, 8, 8, 5, 6, 7, 8, 10, 10, 9, 10, 10, 10, 
-    8, 7, 8, 
+    8, 8, 8, 5, 6, 7, 8, 10, 10, 9, 10, 
+    8, 7, 8, 8, 6, 
     -1, -1, -1
 };
 constexpr int eval_sizes[N_EVAL] = {
-    P38, P38, P38, P35, P36, P37, P38, P310, P310, P39, P310, P310, P310,
-    52488, 34992, 52488, 
+    P38, P38, P38, P35, P36, P37, P38, P310, P310, P39, P310, 
+    52488, 34992, 26244, 26244, 23328, 
     MAX_SURROUND * MAX_SURROUND, MAX_CANPUT * MAX_CANPUT, MAX_STONE_NUM * MAX_STONE_NUM
 };
 constexpr int pattern_nums[N_RAW_PARAMS] = {
@@ -96,10 +96,10 @@ constexpr int pattern_nums[N_RAW_PARAMS] = {
     9, 9, 9, 9,
     10, 10, 10, 10,
     11, 11, 11, 11,
-    12, 12, 12, 12, 
-    13, 13, 13, 13, 
+    12, 12, 12, 12, 12, 12, 12, 12, 
+    13, 13, 13, 13, 13, 13, 13, 13, 
     14, 14, 14, 14, 14, 14, 14, 14, 
-    15, 15, 15, 15, 
+    15, 15, 15, 15, 15, 15, 15, 15, 
 
     16, 17, 18
 };
@@ -269,7 +269,7 @@ Adj_info input_test_data(int argc, char *argv[]){
                 for (j = 0; j < 129; ++j)
                     n_weighted_data += bias[j] * (double)n_data_idx[i][rev_idxes[i][used_idx]][j];
             }
-            alpha[i][used_idx] = beta / max(100.0, n_weighted_data);
+            alpha[i][used_idx] = beta / max(50.0, n_weighted_data);
         }
     }
     return res;
@@ -333,18 +333,7 @@ inline int calc_rev_idx(int pattern_idx, int pattern_size, int idx){
         res += P32 * calc_pop(idx, 2, pattern_size);
         res += P31 * calc_pop(idx, 5, pattern_size);
         res += calc_pop(idx, 8, pattern_size);
-    } else if (pattern_idx == 10){ // cross
-        res += P39 * calc_pop(idx, 0, pattern_size);
-        res += P38 * calc_pop(idx, 1, pattern_size);
-        res += P37 * calc_pop(idx, 2, pattern_size);
-        res += P36 * calc_pop(idx, 3, pattern_size);
-        res += P35 * calc_pop(idx, 7, pattern_size);
-        res += P34 * calc_pop(idx, 8, pattern_size);
-        res += P33 * calc_pop(idx, 9, pattern_size);
-        res += P32 * calc_pop(idx, 4, pattern_size);
-        res += P31 * calc_pop(idx, 5, pattern_size);
-        res += calc_pop(idx, 6, pattern_size);
-    } else if (pattern_idx == 11){ // triangle
+    } else if (pattern_idx == 10){ // triangle
         res += P39 * calc_pop(idx, 0, pattern_size);
         res += P38 * calc_pop(idx, 4, pattern_size);
         res += P37 * calc_pop(idx, 7, pattern_size);
@@ -355,7 +344,7 @@ inline int calc_rev_idx(int pattern_idx, int pattern_size, int idx){
         res += P32 * calc_pop(idx, 2, pattern_size);
         res += P31 * calc_pop(idx, 6, pattern_size);
         res += calc_pop(idx, 3, pattern_size);
-    } else if (pattern_idx == 13){ // edge + 2Xa
+    } else if (pattern_idx == 11){ // edge + 2Xa
         int line1 = idx % 8;
         idx /= 8;
         res += P37 * calc_pop(idx, 3, pattern_size);
@@ -366,19 +355,6 @@ inline int calc_rev_idx(int pattern_idx, int pattern_size, int idx){
         res += P32 * calc_pop(idx, 6, pattern_size);
         res += P31 * calc_pop(idx, 5, pattern_size);
         res += calc_pop(idx, 4, pattern_size);
-        res *= 8;
-        res += line1;
-    } else if (pattern_idx == 15){ // edge + middle edge
-        int line1 = idx % 8;
-        idx /= 8;
-        res += P37 * calc_pop(idx, 7, pattern_size);
-        res += P36 * calc_pop(idx, 6, pattern_size);
-        res += P35 * calc_pop(idx, 5, pattern_size);
-        res += P34 * calc_pop(idx, 4, pattern_size);
-        res += P33 * calc_pop(idx, 3, pattern_size);
-        res += P32 * calc_pop(idx, 2, pattern_size);
-        res += P31 * calc_pop(idx, 1, pattern_size);
-        res += calc_pop(idx, 0, pattern_size);
         res *= 8;
         res += line1;
     } else{
@@ -451,16 +427,14 @@ inline void next_step(){
         pre_calc_scores[i] = calc_score(sa_phase, i);
     for (pattern = 0; pattern < N_EVAL; ++pattern){
         for (const int &idx: used_idxes_vector[pattern]){
-            if (idx != rev_idxes[pattern][idx]){
-                rev_idx = rev_idxes[pattern][idx];
-                if (idx < rev_idx){
-                    err = scoring_next_step(pattern, idx) + scoring_next_step(pattern, rev_idx);
-                    eval_arr[pattern][idx] += 2.0 * alpha[pattern][idx] * err;
-                    eval_arr[pattern][rev_idx] += 2.0 * alpha[pattern][idx] * err;
-                }
-            } else{
+            if (idx == rev_idxes[pattern][idx]){
                 err = scoring_next_step(pattern, idx);
                 eval_arr[pattern][idx] += 2.0 * alpha[pattern][idx] * err;
+            } else if (idx < rev_idxes[pattern][idx]){
+                rev_idx = rev_idxes[pattern][idx];
+                err = scoring_next_step(pattern, idx) + scoring_next_step(pattern, rev_idx);
+                eval_arr[pattern][idx] += 2.0 * alpha[pattern][idx] * err;
+                eval_arr[pattern][rev_idx] += 2.0 * alpha[pattern][idx] * err;
             }
         }
     }
