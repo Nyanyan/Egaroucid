@@ -62,6 +62,15 @@ int sa_phase, sa_player;
 #define P47 16384
 #define P48 65536
 
+#define P20 1
+#define P21 2
+#define P22 4
+#define P23 8
+#define P24 16
+#define P25 32
+#define P26 64
+#define P27 128
+
 #define STEP 256
 #define STEP_2 128
 #define SC_W (STEP * HW2)
@@ -321,6 +330,10 @@ inline int calc_pop4(int a, int b, int s){
     return (a / pow4[s - 1 - b]) % 4;
 }
 
+inline int calc_pop2(int a, int b){
+    return 1 & (a >> b);
+}
+
 inline int calc_rev_idx(int pattern_idx, int pattern_size, int idx){
     int res = 0;
     if (pattern_idx <= 7 || pattern_idx == 12){ // edge + 2X & middle edge
@@ -405,40 +418,75 @@ inline int calc_rev_idx(int pattern_idx, int pattern_size, int idx){
         res *= 8;
         res += line1;
     } else if (pattern_idx == 19){ // mobility triangle0
-        res += P45 * calc_pop4(idx, 3, pattern_size);
-        res += P44 * calc_pop4(idx, 1, pattern_size);
-        res += P43 * calc_pop4(idx, 4, pattern_size);
-        res += P42 * calc_pop4(idx, 0, pattern_size);
-        res += P41 * calc_pop4(idx, 2, pattern_size);
-        res += calc_pop4(idx, 5, pattern_size);
+        res |= calc_pop2(idx, 3);
+        res |= calc_pop2(idx, 1) << 1;
+        res |= calc_pop2(idx, 4) << 2;
+        res |= calc_pop2(idx, 0) << 3;
+        res |= calc_pop2(idx, 2) << 4;
+        res |= calc_pop2(idx, 5) << 5;
+        idx >>= 6;
+        res |= calc_pop2(idx, 3) << 6;
+        res |= calc_pop2(idx, 1) << 7;
+        res |= calc_pop2(idx, 4) << 8;
+        res |= calc_pop2(idx, 0) << 9;
+        res |= calc_pop2(idx, 2) << 10;
+        res |= calc_pop2(idx, 5) << 11;
     } else if (pattern_idx == 20){ // mobility triangle1
-        res += P45 * calc_pop4(idx, 5, pattern_size);
-        res += P44 * calc_pop4(idx, 4, pattern_size);
-        res += P43 * calc_pop4(idx, 2, pattern_size);
-        res += P42 * calc_pop4(idx, 3, pattern_size);
-        res += P41 * calc_pop4(idx, 1, pattern_size);
-        res += calc_pop4(idx, 0, pattern_size);
+        res |= calc_pop2(idx, 5);
+        res |= calc_pop2(idx, 4) << 1;
+        res |= calc_pop2(idx, 2) << 2;
+        res |= calc_pop2(idx, 3) << 3;
+        res |= calc_pop2(idx, 1) << 4;
+        res |= calc_pop2(idx, 0) << 5;
+        idx >>= 6;
+        res |= calc_pop2(idx, 5) << 6;
+        res |= calc_pop2(idx, 4) << 7;
+        res |= calc_pop2(idx, 2) << 8;
+        res |= calc_pop2(idx, 3) << 9;
+        res |= calc_pop2(idx, 1) << 10;
+        res |= calc_pop2(idx, 0) << 11;
     } else if (pattern_idx == 21){ // mobility triangle2
-        res += P45 * calc_pop4(idx, 5, pattern_size);
-        res += P44 * calc_pop4(idx, 4, pattern_size);
-        res += P43 * calc_pop4(idx, 2, pattern_size);
-        res += P42 * calc_pop4(idx, 3, pattern_size);
-        res += P41 * calc_pop4(idx, 1, pattern_size);
-        res += calc_pop4(idx, 0, pattern_size);
+        res |= calc_pop2(idx, 5);
+        res |= calc_pop2(idx, 4) << 1;
+        res |= calc_pop2(idx, 2) << 2;
+        res |= calc_pop2(idx, 3) << 3;
+        res |= calc_pop2(idx, 1) << 4;
+        res |= calc_pop2(idx, 0) << 5;
+        idx >>= 6;
+        res |= calc_pop2(idx, 5) << 6;
+        res |= calc_pop2(idx, 4) << 7;
+        res |= calc_pop2(idx, 2) << 8;
+        res |= calc_pop2(idx, 3) << 9;
+        res |= calc_pop2(idx, 1) << 10;
+        res |= calc_pop2(idx, 0) << 11;
     } else if (pattern_idx == 22){ // mobility triangle3
-        res += P45 * calc_pop4(idx, 0, pattern_size);
-        res += P44 * calc_pop4(idx, 3, pattern_size);
-        res += P43 * calc_pop4(idx, 5, pattern_size);
-        res += P42 * calc_pop4(idx, 1, pattern_size);
-        res += P41 * calc_pop4(idx, 4, pattern_size);
-        res += calc_pop4(idx, 2, pattern_size);
+        res |= calc_pop2(idx, 0);
+        res |= calc_pop2(idx, 3) << 1;
+        res |= calc_pop2(idx, 5) << 2;
+        res |= calc_pop2(idx, 1) << 3;
+        res |= calc_pop2(idx, 4) << 4;
+        res |= calc_pop2(idx, 2) << 5;
+        idx >>= 6;
+        res |= calc_pop2(idx, 0) << 6;
+        res |= calc_pop2(idx, 3) << 7;
+        res |= calc_pop2(idx, 5) << 8;
+        res |= calc_pop2(idx, 1) << 9;
+        res |= calc_pop2(idx, 4) << 10;
+        res |= calc_pop2(idx, 2) << 11;
     } else if (pattern_idx == 23){ // mobility midedge
-        res += P45 * calc_pop4(idx, 5, pattern_size);
-        res += P44 * calc_pop4(idx, 4, pattern_size);
-        res += P43 * calc_pop4(idx, 3, pattern_size);
-        res += P42 * calc_pop4(idx, 2, pattern_size);
-        res += P41 * calc_pop4(idx, 1, pattern_size);
-        res += calc_pop4(idx, 0, pattern_size);
+        res |= calc_pop2(idx, 5);
+        res |= calc_pop2(idx, 4) << 1;
+        res |= calc_pop2(idx, 3) << 2;
+        res |= calc_pop2(idx, 2) << 3;
+        res |= calc_pop2(idx, 1) << 4;
+        res |= calc_pop2(idx, 0) << 5;
+        idx >>= 6;
+        res |= calc_pop2(idx, 5) << 6;
+        res |= calc_pop2(idx, 4) << 7;
+        res |= calc_pop2(idx, 3) << 8;
+        res |= calc_pop2(idx, 2) << 9;
+        res |= calc_pop2(idx, 1) << 10;
+        res |= calc_pop2(idx, 0) << 11;
     } else{
         res = idx;
     }

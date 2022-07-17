@@ -535,15 +535,9 @@ inline int create_canput_line_v(uint64_t b, uint64_t w, int t){
 }
 
 inline int create_canput_pattern(uint64_t p, uint64_t o, int idx){
-    p = _pdep_u64(p, canput_pattern_mask[idx]);
-    o = _pdep_u64(o, canput_pattern_mask[idx]);
-    int res = 0;
-    for (int i = canput_pattern_n_cells[idx] - 1; i >= 0; --i){
-        res <<= 2;
-        res |= (1 & (p >> i)) << 1;
-        res |= (1 & (o >> i));
-    }
-    return res;
+    p = _pext_u64(p, canput_pattern_mask[idx]);
+    o = _pext_u64(o, canput_pattern_mask[idx]);
+    return (p << canput_pattern_n_cells[idx]) | o;
 }
 
 inline void calc_idx(int phase_idx, Board *b, int idxes[]){
