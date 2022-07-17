@@ -457,7 +457,7 @@ inline int calc_rev_idx(int pattern_idx, int pattern_size, int idx){
     if (pattern_idx <= 7 || pattern_idx == 12){
         for (int i = 0; i < pattern_size; ++i)
             res += pow3[i] * calc_pop(idx, i, pattern_size);
-    } else if (pattern_idx == 8){
+    } else if (pattern_idx == 8){ // triangle
         res += p39 * calc_pop(idx, 0, pattern_size);
         res += p38 * calc_pop(idx, 4, pattern_size);
         res += p37 * calc_pop(idx, 7, pattern_size);
@@ -468,7 +468,7 @@ inline int calc_rev_idx(int pattern_idx, int pattern_size, int idx){
         res += p32 * calc_pop(idx, 2, pattern_size);
         res += p31 * calc_pop(idx, 6, pattern_size);
         res += calc_pop(idx, 3, pattern_size);
-    } else if (pattern_idx == 9){
+    } else if (pattern_idx == 9){ // edge block
         res += p39 * calc_pop(idx, 5, pattern_size);
         res += p38 * calc_pop(idx, 4, pattern_size);
         res += p37 * calc_pop(idx, 3, pattern_size);
@@ -479,7 +479,7 @@ inline int calc_rev_idx(int pattern_idx, int pattern_size, int idx){
         res += p32 * calc_pop(idx, 8, pattern_size);
         res += p31 * calc_pop(idx, 7, pattern_size);
         res += calc_pop(idx, 6, pattern_size);
-    } else if (pattern_idx == 10){
+    } else if (pattern_idx == 10){ // cross
         res += p39 * calc_pop(idx, 0, pattern_size);
         res += p38 * calc_pop(idx, 1, pattern_size);
         res += p37 * calc_pop(idx, 2, pattern_size);
@@ -490,7 +490,7 @@ inline int calc_rev_idx(int pattern_idx, int pattern_size, int idx){
         res += p32 * calc_pop(idx, 4, pattern_size);
         res += p31 * calc_pop(idx, 5, pattern_size);
         res += calc_pop(idx, 6, pattern_size);
-    } else if (pattern_idx == 11){
+    } else if (pattern_idx == 11){ // corner9
         res += p38 * calc_pop(idx, 0, pattern_size);
         res += p37 * calc_pop(idx, 3, pattern_size);
         res += p36 * calc_pop(idx, 6, pattern_size);
@@ -500,7 +500,7 @@ inline int calc_rev_idx(int pattern_idx, int pattern_size, int idx){
         res += p32 * calc_pop(idx, 2, pattern_size);
         res += p31 * calc_pop(idx, 5, pattern_size);
         res += calc_pop(idx, 8, pattern_size);
-    } else if (pattern_idx == 13){
+    } else if (pattern_idx == 13){ // narrow triangle
         res += p39 * calc_pop(idx, 0, pattern_size);
         res += p38 * calc_pop(idx, 5, pattern_size);
         res += p37 * calc_pop(idx, 7, pattern_size);
@@ -511,7 +511,7 @@ inline int calc_rev_idx(int pattern_idx, int pattern_size, int idx){
         res += p32 * calc_pop(idx, 2, pattern_size);
         res += p31 * calc_pop(idx, 3, pattern_size);
         res += calc_pop(idx, 4, pattern_size);
-    } else if (pattern_idx == 14){
+    } else if (pattern_idx == 14){ // fish
         res += p39 * calc_pop(idx, 0, pattern_size);
         res += p38 * calc_pop(idx, 2, pattern_size);
         res += p37 * calc_pop(idx, 1, pattern_size);
@@ -522,7 +522,7 @@ inline int calc_rev_idx(int pattern_idx, int pattern_size, int idx){
         res += p32 * calc_pop(idx, 7, pattern_size);
         res += p31 * calc_pop(idx, 5, pattern_size);
         res += calc_pop(idx, 9, pattern_size);
-    } else if (pattern_idx == 15){
+    } else if (pattern_idx == 15){ // kite
         res += p39 * calc_pop(idx, 0, pattern_size);
         res += p38 * calc_pop(idx, 2, pattern_size);
         res += p37 * calc_pop(idx, 1, pattern_size);
