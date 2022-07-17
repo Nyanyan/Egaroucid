@@ -1,6 +1,5 @@
-def cant_create():
-    print('cannot create number')
-    exit()
+def cant_create(s):
+    print('[ERR]', s)
 
 def digit_fill(n, r):
     n = str(n)
@@ -18,26 +17,48 @@ while True:
 
 bits.sort(reverse=True)
 
-upper_bit = 63
-res_each_bit = [0 for _ in range(64)]
-affect_bit = [0 for _ in range(64)]
-for bit in bits:
-    shift = upper_bit - bit
-    if res_each_bit[63 - shift]:
-        cant_create()
-    res_each_bit[63 - shift] = 1
-    for b in bits:
-        if 63 - (b + shift) >= 0:
-            if affect_bit[63 - (b + shift)]:
-                cant_create()
-            affect_bit[63 - (b + shift)] = 1
-    upper_bit -= 1
+print('\nans')
 
-bin_num = ''.join([str(elem) for elem in res_each_bit])
-print(bin_num)
-num = int(bin_num, base=2)
-print(num)
-hex_num = hex(num)[2:]
-hex_num = digit_fill(hex_num, 16)
-res = '0x' + hex_num + 'ULL'
-print(res)
+for all_shift in range(min(bits) + 1):
+    upper_bit = 63
+    res_each_bit = [0 for _ in range(64)]
+    affect_bit = [0 for _ in range(64)]
+
+    def plus_one(bit):
+        global affect_bit
+        if bit < 0:
+            return
+        if affect_bit[bit] == 0:
+            affect_bit[bit] = 1
+        else:
+            plus_one(bit - 1)
+
+    err = False
+    for bit in bits:
+        shift = upper_bit - bit
+        if res_each_bit[63 - shift]:
+            cant_create('bit conflict')
+            err = True
+            break
+        res_each_bit[63 - shift] = 1
+        for b in bits:
+            if b == bit:
+                continue
+            plus_one(63 - (b + shift))
+        for i in range(len(bits)):
+            if affect_bit[i]:
+                cant_create('affect conflict')
+                err = True
+                break
+        upper_bit -= 1
+        if err:
+            break
+    
+    if not err:
+
+        bin_num = ''.join([str(elem) for elem in res_each_bit])
+        num = int(bin_num, base=2)
+        hex_num = hex(num)[2:]
+        hex_num = digit_fill(hex_num, 16)
+        res = '0x' + hex_num + 'ULL'
+        print(all_shift, res)
