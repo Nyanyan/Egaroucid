@@ -212,10 +212,10 @@ constexpr Feature_to_coord feature_to_coord[N_SYMMETRY_PATTERNS] = {
     {10, {COORD_H1, COORD_H3, COORD_H4, COORD_H5, COORD_H6, COORD_H8, COORD_G3, COORD_G4, COORD_G5, COORD_G6}}, // 33
 
     // 9 corner9
-    {10, {COORD_A1, COORD_B1, COORD_C1, COORD_A2, COORD_B2, COORD_C2, COORD_A3, COORD_B3, COORD_C3, COORD_NO}}, // 34
-    {10, {COORD_H1, COORD_G1, COORD_F1, COORD_H2, COORD_G2, COORD_F2, COORD_H3, COORD_G3, COORD_F3, COORD_NO}}, // 35
-    {10, {COORD_A8, COORD_B8, COORD_C8, COORD_A7, COORD_B7, COORD_C7, COORD_A6, COORD_B6, COORD_C6, COORD_NO}}, // 36
-    {10, {COORD_H8, COORD_G8, COORD_F8, COORD_H7, COORD_G7, COORD_F7, COORD_H6, COORD_G6, COORD_F6, COORD_NO}}, // 37
+    {9, {COORD_A1, COORD_B1, COORD_C1, COORD_A2, COORD_B2, COORD_C2, COORD_A3, COORD_B3, COORD_C3, COORD_NO}}, // 34
+    {9, {COORD_H1, COORD_G1, COORD_F1, COORD_H2, COORD_G2, COORD_F2, COORD_H3, COORD_G3, COORD_F3, COORD_NO}}, // 35
+    {9, {COORD_A8, COORD_B8, COORD_C8, COORD_A7, COORD_B7, COORD_C7, COORD_A6, COORD_B6, COORD_C6, COORD_NO}}, // 36
+    {9, {COORD_H8, COORD_G8, COORD_F8, COORD_H7, COORD_G7, COORD_F7, COORD_H6, COORD_G6, COORD_F6, COORD_NO}}, // 37
 
     // 10 triangle
     {10, {COORD_A1, COORD_B1, COORD_C1, COORD_D1, COORD_A2, COORD_B2, COORD_C2, COORD_A3, COORD_B3, COORD_A4}}, // 38
@@ -549,6 +549,8 @@ inline void calc_idx(int phase_idx, Board *b, int idxes[]){
     for (i = 0; i < N_SYMMETRY_PATTERNS; ++i){
         if (feature_to_coord[i].n_cells == 10)
             idxes[i] = pick_pattern(phase_idx, -1, b_arr, feature_to_coord[i].cells[0], feature_to_coord[i].cells[1], feature_to_coord[i].cells[2], feature_to_coord[i].cells[3], feature_to_coord[i].cells[4], feature_to_coord[i].cells[5], feature_to_coord[i].cells[6], feature_to_coord[i].cells[7], feature_to_coord[i].cells[8], feature_to_coord[i].cells[9]);
+        else if (feature_to_coord[i].n_cells == 9)
+            idxes[i] = pick_pattern(phase_idx, -1, b_arr, feature_to_coord[i].cells[0], feature_to_coord[i].cells[1], feature_to_coord[i].cells[2], feature_to_coord[i].cells[3], feature_to_coord[i].cells[4], feature_to_coord[i].cells[5], feature_to_coord[i].cells[6], feature_to_coord[i].cells[7], feature_to_coord[i].cells[8]);
         else if (feature_to_coord[i].n_cells == 8)
             idxes[i] = pick_pattern(phase_idx, -1, b_arr, feature_to_coord[i].cells[0], feature_to_coord[i].cells[1], feature_to_coord[i].cells[2], feature_to_coord[i].cells[3], feature_to_coord[i].cells[4], feature_to_coord[i].cells[5], feature_to_coord[i].cells[6], feature_to_coord[i].cells[7]);
         else if (feature_to_coord[i].n_cells == 7)
@@ -579,12 +581,12 @@ inline void calc_idx(int phase_idx, Board *b, int idxes[]){
             idxes[i] += pick_joined_pattern_1bit(b, joined_pattern_1bit[i].mask[0]);
         } else if (joined_pattern_1bit[i].n_joined == 2){
             idxes[i] *= 4;
-            idxes[i] += pick_joined_pattern_1bit(b, joined_pattern_1bit[i].mask[0]) * 4;
+            idxes[i] += pick_joined_pattern_1bit(b, joined_pattern_1bit[i].mask[0]) * 2;
             idxes[i] += pick_joined_pattern_1bit(b, joined_pattern_1bit[i].mask[1]);
         } else if (joined_pattern_1bit[i].n_joined == 3){
             idxes[i] *= 8;
-            idxes[i] += pick_joined_pattern_1bit(b, joined_pattern_1bit[i].mask[0]) * 16;
-            idxes[i] += pick_joined_pattern_1bit(b, joined_pattern_1bit[i].mask[1]) * 4;
+            idxes[i] += pick_joined_pattern_1bit(b, joined_pattern_1bit[i].mask[0]) * 4;
+            idxes[i] += pick_joined_pattern_1bit(b, joined_pattern_1bit[i].mask[1]) * 2;
             idxes[i] += pick_joined_pattern_1bit(b, joined_pattern_1bit[i].mask[2]);
         }
         /*
