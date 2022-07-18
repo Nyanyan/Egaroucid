@@ -1,9 +1,9 @@
-data_size = 896494 #634350 #804572 #694743
+data_size = 528065 #896494 #634350 #804572 #694743
 zeros = ''
 for _ in range(data_size):
     zeros += '0\n'
 data = ''
-for i in range(30):
+for i in range(60):
     try:
         #with open('learned_data/' + str(i) + '.txt', 'r') as f:
         with open('learned_data/' + str(i) + '.txt', 'r') as f:
