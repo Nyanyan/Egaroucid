@@ -210,10 +210,10 @@ constexpr Feature_to_coord feature_to_coord[N_SYMMETRY_PATTERNS] = {
     {10, {COORD_H1, COORD_H3, COORD_H4, COORD_H5, COORD_H6, COORD_H8, COORD_G3, COORD_G4, COORD_G5, COORD_G6}}, // 33
 
     // 9 corner9
-    {10, {COORD_A1, COORD_B1, COORD_C1, COORD_A2, COORD_B2, COORD_C2, COORD_A3, COORD_B3, COORD_C3, COORD_NO}}, // 34
-    {10, {COORD_H1, COORD_G1, COORD_F1, COORD_H2, COORD_G2, COORD_F2, COORD_H3, COORD_G3, COORD_F3, COORD_NO}}, // 35
-    {10, {COORD_A8, COORD_B8, COORD_C8, COORD_A7, COORD_B7, COORD_C7, COORD_A6, COORD_B6, COORD_C6, COORD_NO}}, // 36
-    {10, {COORD_H8, COORD_G8, COORD_F8, COORD_H7, COORD_G7, COORD_F7, COORD_H6, COORD_G6, COORD_F6, COORD_NO}}, // 37
+    {9, {COORD_A1, COORD_B1, COORD_C1, COORD_A2, COORD_B2, COORD_C2, COORD_A3, COORD_B3, COORD_C3, COORD_NO}}, // 34
+    {9, {COORD_H1, COORD_G1, COORD_F1, COORD_H2, COORD_G2, COORD_F2, COORD_H3, COORD_G3, COORD_F3, COORD_NO}}, // 35
+    {9, {COORD_A8, COORD_B8, COORD_C8, COORD_A7, COORD_B7, COORD_C7, COORD_A6, COORD_B6, COORD_C6, COORD_NO}}, // 36
+    {9, {COORD_H8, COORD_G8, COORD_F8, COORD_H7, COORD_G7, COORD_F7, COORD_H6, COORD_G6, COORD_F6, COORD_NO}}, // 37
 
     // 10 triangle
     {10, {COORD_A1, COORD_B1, COORD_C1, COORD_D1, COORD_A2, COORD_B2, COORD_C2, COORD_A3, COORD_B3, COORD_A4}}, // 38
@@ -554,7 +554,8 @@ inline int calc_pattern_diff(const int phase_idx, Search *search){
     for (i = 54; i < 58; ++i)
         res += eval_pattern_arr[search->eval_feature_reversed][phase_idx][14][search->eval_features[i] * 8 + pick_joined_pattern_3bit(&search->board, joined_pattern_3bit_edge_2xa[i - 54])];
     for (i = 58; i < 66; ++i)
-        res += eval_pattern_arr[search->eval_feature_reversed][phase_idx][15][search->eval_features[i] * 16 + pick_joined_pattern_3bit(&search->board, joined_pattern_3bit_wing[i - 58]) * 2 + pick_joined_pattern_3bit(&search->board, joined_pattern_1bit_wing[i - 58])];
+        res += eval_pattern_arr[search->eval_feature_reversed][phase_idx][15][search->eval_features[i] * 16 + pick_joined_pattern_3bit(&search->board, joined_pattern_3bit_wing[i - 58]) * 2 + pick_joined_pattern_1bit(&search->board, joined_pattern_1bit_wing[i - 58])];
+    //cerr << "pattern " << res << endl;
     return res;
 }
 
@@ -569,6 +570,7 @@ inline int calc_mobility_pattern(const int phase_idx, Search *search){
         res += eval_mobility_pattern_arr[phase_idx][i][calc_mobility_idx(search->board.player, search->board.opponent, mobility_pattern_mask[i], 6)];
     for (i = 4; i < 8; ++i)
         res += eval_mobility_pattern_arr[phase_idx][4][calc_mobility_idx(search->board.player, search->board.opponent, mobility_pattern_mask[i], 6)];
+    //cerr << "mobility " << res << endl;
     return res;
 }
 
@@ -670,6 +672,30 @@ inline void calc_features(Search *search){
     search->eval_feature_reversed = 0;
 }
 
+inline int pick_pattern_idx_rev(const uint_fast8_t b_arr[], const Feature_to_coord *f){
+    int res = 0;
+    for (int i = 0; i < f->n_cells; ++i){
+        //cerr << (int)f->cells[i] << " ";
+        res *= 3;
+        if (b_arr[HW2_M1 - f->cells[i]] == 0)
+            res += 1;
+        else if (b_arr[HW2_M1 - f->cells[i]] == 2)
+            res += 2;
+    }
+    //cerr << endl;
+    return res;
+}
+
+inline void calc_features_rev(Search *search){
+    uint_fast8_t b_arr[HW2];
+    search->board.translate_to_arr_player(b_arr);
+    for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i){
+        //cerr << i << " ";
+        search->eval_features[i] = pick_pattern_idx_rev(b_arr, &feature_to_coord[i]);
+    }
+    search->eval_feature_reversed = 1;
+}
+
 inline bool check_features(Search *search){
     uint_fast8_t b_arr[HW2];
     search->board.translate_to_arr_player(b_arr);
@@ -716,12 +742,18 @@ inline void eval_move(Search *search, const Flip *flip){
         }
     }
     search->eval_feature_reversed ^= 1;
-    //search->board.move(flip);
-    //if (search->eval_feature_reversed == 0 && check_features(search)){
-    //    search->board.print();
-    //    cerr << "error" << endl;
-    //}
-    //search->board.undo(flip);
+    /*
+    search->board.move(flip);
+    if (search->eval_feature_reversed == 0 && check_features(search)){
+        search->board.undo(flip);
+            search->board.print();
+        search->board.move(flip);
+        bit_print_board(flip->flip);
+        search->board.print();
+        cerr << "error " << (int)flip->pos << endl;
+    }
+    search->board.undo(flip);
+    */
 }
 
 inline void eval_undo(Search *search, const Flip *flip){
