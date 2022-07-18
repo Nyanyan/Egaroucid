@@ -38,7 +38,7 @@ def show_grid():
     cells = line_split[:10]
     mask_3bit = line_split[10]
     mask_1bit = line_split[11]
-    mobility_place = line_split[12]
+    #mobility_place = line_split[12]
     for y in range(hw):
         for x in range(hw):
             try:
@@ -69,10 +69,12 @@ def show_grid():
             y = cell // hw
             x = cell % hw
             canvas.create_oval(offset_x + rect_size * x + circle_offset, offset_y + rect_size * y + circle_offset, offset_x + rect_size * (x + 1) - circle_offset, offset_y + rect_size * (y + 1) - circle_offset, width=2, fill='yellow', tag=str(y) + '_' + str(x))
+    '''
     if mobility_place != -1:
         y = mobility_place // hw
         x = mobility_place % hw
         canvas.create_oval(offset_x + rect_size * x + circle_offset, offset_y + rect_size * y + circle_offset, offset_x + rect_size * (x + 1) - circle_offset, offset_y + rect_size * (y + 1) - circle_offset, width=2, fill='red', tag=str(y) + '_' + str(x))
+    '''
     app.update()
     input('next')
     for label in labels:
