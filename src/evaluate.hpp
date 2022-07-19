@@ -555,22 +555,21 @@ inline int calc_pattern_diff(const int phase_idx, Search *search){
         res += eval_pattern_arr[search->eval_feature_reversed][phase_idx][14][search->eval_features[i] * 8 + pick_joined_pattern_3bit(&search->board, joined_pattern_3bit_edge_2xa[i - 54])];
     for (i = 58; i < 66; ++i)
         res += eval_pattern_arr[search->eval_feature_reversed][phase_idx][15][search->eval_features[i] * 16 + pick_joined_pattern_3bit(&search->board, joined_pattern_3bit_wing[i - 58]) * 2 + pick_joined_pattern_1bit(&search->board, joined_pattern_1bit_wing[i - 58])];
-    //cerr << "pattern " << res << endl;
     return res;
 }
 
+// TBD: write without pext before release
 inline int calc_mobility_idx(uint64_t p, uint64_t o, uint64_t mask, int shift){
     return (_pext_u64(p, mask) << shift) | _pext_u64(o, mask);
 }
 
-inline int calc_mobility_pattern(const int phase_idx, Search *search){
+inline int calc_mobility_pattern(const int phase_idx, uint64_t p, uint64_t o){
     int res = 0;
     int i;
     for (i = 0; i < 4; ++i)
-        res += eval_mobility_pattern_arr[phase_idx][i][calc_mobility_idx(search->board.player, search->board.opponent, mobility_pattern_mask[i], 6)];
+        res += eval_mobility_pattern_arr[phase_idx][i][calc_mobility_idx(p, o, mobility_pattern_mask[i], 6)];
     for (i = 4; i < 8; ++i)
-        res += eval_mobility_pattern_arr[phase_idx][4][calc_mobility_idx(search->board.player, search->board.opponent, mobility_pattern_mask[i], 6)];
-    //cerr << "mobility " << res << endl;
+        res += eval_mobility_pattern_arr[phase_idx][4][calc_mobility_idx(p, o, mobility_pattern_mask[i], 6)];
     return res;
 }
 
@@ -582,10 +581,12 @@ inline int end_evaluate(Board *b){
 inline int mid_evaluate_diff(Search *search){
     int phase_idx, sur0, sur1, canput0, canput1, num0, num1;
     uint64_t empties;
-    canput0 = min(MAX_CANPUT - 1, pop_count_ull(calc_legal(search->board.player, search->board.opponent)));
-    canput1 = min(MAX_CANPUT - 1, pop_count_ull(calc_legal(search->board.opponent, search->board.player)));
-    if (canput0 == 0 && canput1 == 0)
+    uint64_t mobility_player = calc_legal(search->board.player, search->board.opponent);
+    uint64_t mobility_opponent = calc_legal(search->board.opponent, search->board.player);
+    if (mobility_player == 0ULL && mobility_opponent == 0ULL)
         return end_evaluate(&search->board);
+    canput0 = min(MAX_CANPUT - 1, pop_count_ull(mobility_player));
+    canput1 = min(MAX_CANPUT - 1, pop_count_ull(mobility_opponent));
     phase_idx = search->board.phase();
     empties = ~(search->board.player | search->board.opponent);
     sur0 = min(MAX_SURROUND - 1, calc_surround(search->board.player, empties));
@@ -596,7 +597,7 @@ inline int mid_evaluate_diff(Search *search){
         eval_sur0_sur1_arr[phase_idx][sur0][sur1] + 
         eval_canput0_canput1_arr[phase_idx][canput0][canput1] + 
         eval_num0_num1_arr[phase_idx][num0][num1] + 
-        calc_mobility_pattern(phase_idx, search);
+        calc_mobility_pattern(phase_idx, mobility_player, mobility_opponent);
     #if EVALUATION_STEP_WIDTH_MODE == 0
         res += res > 0 ? STEP_2 : (res < 0 ? -STEP_2 : 0);
         //res += STEP_2 * min(1, max(-1, res));
