@@ -598,6 +598,7 @@ inline int mid_evaluate_diff(Search *search){
         eval_canput0_canput1_arr[phase_idx][canput0][canput1] + 
         eval_num0_num1_arr[phase_idx][num0][num1] + 
         calc_mobility_pattern(phase_idx, mobility_player, mobility_opponent);
+    //cerr << res << endl;
     #if EVALUATION_STEP_WIDTH_MODE == 0
         res += res > 0 ? STEP_2 : (res < 0 ? -STEP_2 : 0);
         //res += STEP_2 * min(1, max(-1, res));
