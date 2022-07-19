@@ -218,20 +218,20 @@ Adj_info input_test_data(int argc, char* argv[]) {
     int sur, canput, stab, num;
     FILE* fp;
     int file_idxes[N_RAW_PARAMS];
-    for (int file_idx = 7; file_idx < 8 /*argc*/ ; ++file_idx) {
-        /*
+    for (int file_idx = 7; file_idx < argc; ++file_idx) {
+        
         cerr << argv[file_idx] << endl;
         if (fopen_s(&fp, argv[file_idx], "rb") != 0) {
             cerr << "can't open " << argv[file_idx] << endl;
             continue;
         }
-        */
-        
+        /*
+
         if (fopen_s(&fp, "data3_06.dat", "rb") != 0) {
             cerr << "can't open " << endl;
             continue;
         }
-        
+        */
         while (t < N_DATA) {
             ++t;
             if ((t & 0b1111111111111111) == 0b1111111111111111)
@@ -338,8 +338,10 @@ inline double calc_score(int phase, int i) {
     return max(-SC_W, min(SC_W, res));
 }
 
-__global__ void calc_score_kernel(int phase, double* arr, int* test_data_arr, double* res_arr) {
-    int i = threadIdx.x;
+__global__ void calc_score_kernel(int phase, double* arr, int* test_data_arr, double* res_arr, int offset, int nums_kernel) {
+    int i = blockDim.x * blockIdx.x + threadIdx.x;
+    if (offset + i >= nums_kernel)
+        return;
     constexpr int pattern_nums_local[N_RAW_PARAMS] = {
         0, 0, 0, 0,
         1, 1, 1, 1,
@@ -616,22 +618,20 @@ double* eval_arr_kernel = 0;
 
 cudaError_t calc_score_with_gpu() {
     cudaError_t cudaStatus;
-    
+
     // Copy input vectors from host memory to GPU buffers.
     cudaStatus = cudaMemcpy(eval_arr_kernel, eval_arr, N_EVAL * MAX_EVALUATE_IDX * sizeof(double), cudaMemcpyHostToDevice);
     if (cudaStatus != cudaSuccess) {
         cerr << "cudaMemcpy failed!" << endl;
         return cudaStatus;
     }
-    
+
     // Launch a kernel on the GPU with one thread for each element.
     const int interval = 1024;
-    int actual_interval;
-    for (int i = 0; i < nums; i += interval) {
-        actual_interval = min(interval, nums - i);
-        calc_score_kernel << <1, actual_interval >> > (sa_phase, eval_arr_kernel, test_data_kernel + i * N_RAW_PARAMS, pre_calc_scores_kernel + i);
-    }
-    
+    for (int i = 0; i < nums; i += interval * interval)
+        calc_score_kernel << <interval, interval >> > (sa_phase, eval_arr_kernel, test_data_kernel + i * N_RAW_PARAMS, pre_calc_scores_kernel + i, i, nums);
+
+
     // Check for any errors launching the kernel
     cudaStatus = cudaGetLastError();
     if (cudaStatus != cudaSuccess) {
@@ -647,8 +647,7 @@ cudaError_t calc_score_with_gpu() {
         return cudaStatus;
     }
 
-    //double* pre_calc_scores_arr = (double*)malloc(nums * sizeof(double));
-    // Copy output vector from GPU buffer to host memory.
+    int actual_interval;
     for (int i = 0; i < nums; i += PRE_CALC_SCORE_INTERVAL) {
         actual_interval = min(PRE_CALC_SCORE_INTERVAL, nums - i);
         cudaStatus = cudaMemcpy(&pre_calc_scores_arr, pre_calc_scores_kernel + i, actual_interval * sizeof(double), cudaMemcpyDeviceToHost);
@@ -810,16 +809,16 @@ int main(int argc, char* argv[]) {
     minute = 1; // atoi(argv[3]);
     second = 0; // atoi(argv[4]);
     beta = 0.01; // atof(argv[5]);
-    /*
+    
     sa_phase = atoi(argv[1]);
     hour = atoi(argv[2]);
     minute = atoi(argv[3]);
     second = atoi(argv[4]);
     beta = atof(argv[5]);
-    */
+    
 
     int i, j;
-    
+
     minute += hour * 60;
     second += minute * 60;
 
@@ -830,7 +829,7 @@ int main(int argc, char* argv[]) {
     initialize_param();
     cerr << "initialized" << endl;
     //output_param_onephase();
-    //input_param_onephase((string)(argv[6]));
+    input_param_onephase((string)(argv[6]));
     Adj_info info = input_test_data(argc, argv);
 
     if (copy_data_kernel())
@@ -844,120 +843,3 @@ int main(int argc, char* argv[]) {
 
     return 0;
 }
-/*
-__global__ void addKernel(int *c, const int *a, const int *b)
-{
-    int i = threadIdx.x;
-    c[i] = a[i] + b[i];
-}
-
-// Helper function for using CUDA to add vectors in parallel.
-cudaError_t addWithCuda(int* c, const int* a, const int* b, unsigned int size)
-{
-    int* dev_a = 0;
-    int* dev_b = 0;
-    int* dev_c = 0;
-    cudaError_t cudaStatus;
-
-    // Choose which GPU to run on, change this on a multi-GPU system.
-    cudaStatus = cudaSetDevice(0);
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaSetDevice failed!  Do you have a CUDA-capable GPU installed?");
-        goto Error;
-    }
-
-    // Allocate GPU buffers for three vectors (two input, one output)    .
-    cudaStatus = cudaMalloc((void**)&dev_c, size * sizeof(int));
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMalloc failed!");
-        goto Error;
-    }
-
-    cudaStatus = cudaMalloc((void**)&dev_a, size * sizeof(int));
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMalloc failed!");
-        goto Error;
-    }
-
-    cudaStatus = cudaMalloc((void**)&dev_b, size * sizeof(int));
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMalloc failed!");
-        goto Error;
-    }
-
-    // Copy input vectors from host memory to GPU buffers.
-    cudaStatus = cudaMemcpy(dev_a, a, size * sizeof(int), cudaMemcpyHostToDevice);
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMemcpy failed!");
-        goto Error;
-    }
-
-    cudaStatus = cudaMemcpy(dev_b, b, size * sizeof(int), cudaMemcpyHostToDevice);
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMemcpy failed!");
-        goto Error;
-    }
-
-    // Launch a kernel on the GPU with one thread for each element.
-    addKernel << <1, size >> > (dev_c, dev_a, dev_b);
-
-    // Check for any errors launching the kernel
-    cudaStatus = cudaGetLastError();
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "addKernel launch failed: %s\n", cudaGetErrorString(cudaStatus));
-        goto Error;
-    }
-
-    // cudaDeviceSynchronize waits for the kernel to finish, and returns
-    // any errors encountered during the launch.
-    cudaStatus = cudaDeviceSynchronize();
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching addKernel!\n", cudaStatus);
-        goto Error;
-    }
-
-    // Copy output vector from GPU buffer to host memory.
-    cudaStatus = cudaMemcpy(c, dev_c, size * sizeof(int), cudaMemcpyDeviceToHost);
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMemcpy failed!");
-        goto Error;
-    }
-
-Error:
-    cudaFree(dev_c);
-    cudaFree(dev_a);
-    cudaFree(dev_b);
-
-    return cudaStatus;
-}
-
-
-int main()
-{
-    const int arraySize = 5;
-    const int a[arraySize] = { 1, 2, 3, 4, 5 };
-    const int b[arraySize] = { 10, 20, 30, 40, 50 };
-    int c[arraySize] = { 0 };
-
-    // Add vectors in parallel.
-    cudaError_t cudaStatus = addWithCuda(c, a, b, arraySize);
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "addWithCuda failed!");
-        return 1;
-    }
-
-    printf("{1,2,3,4,5} + {10,20,30,40,50} = {%d,%d,%d,%d,%d}\n",
-        c[0], c[1], c[2], c[3], c[4]);
-
-    // cudaDeviceReset must be called before exiting in order for profiling and
-    // tracing tools such as Nsight and Visual Profiler to show complete traces.
-    cudaStatus = cudaDeviceReset();
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaDeviceReset failed!");
-        return 1;
-    }
-
-    return 0;
-}
-
-*/

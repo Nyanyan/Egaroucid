@@ -50,7 +50,16 @@ s0 = '''59	733 mae 0.00148207 mse 0.00747858 n_data 1165938 n_param 528065 n_use
 12	2673 mae 12.3503 mse 278.916 n_data 533433 n_param 528065 n_used_params 50074
 11	2761 mae 13.4044 mse 317.776 n_data 533438 n_param 528065 n_used_params 39574
 10	2817 mae 14.3434 mse 354.258 n_data 533457 n_param 528065 n_used_params 29422
-9	2761 mae 12.8046 mse 294.112 n_data 586611 n_param 528065 n_used_params 18507'''
+9	2761 mae 12.8046 mse 294.112 n_data 586611 n_param 528065 n_used_params 18507
+8	2763 mae 13.2899 mse 312.756 n_data 586612 n_param 528065 n_used_params 11235
+7	2782 mae 13.7888 mse 333.544 n_data 586612 n_param 528065 n_used_params 5517
+6	2848 mae 14.1357 mse 347.941 n_data 586612 n_param 528065 n_used_params 2599
+5	2933 mae 14.421 mse 360.81 n_data 586612 n_param 528065 n_used_params 1070
+4	2897 mae 14.6651 mse 370.023 n_data 586612 n_param 528065 n_used_params 454
+3	3076 mae 14.7845 mse 375.038 n_data 586612 n_param 528065 n_used_params 176
+2	3148 mae 14.8826 mse 379.352 n_data 586612 n_param 528065 n_used_params 78
+1	3281 mae 14.9114 mse 380.156 n_data 586612 n_param 528065 n_used_params 40
+0	3278 mae 14.9114 mse 380.146 n_data 586612 n_param 528065 n_used_params 28'''
 
 x0 = []
 y0 = []

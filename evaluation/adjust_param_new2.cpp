@@ -629,7 +629,7 @@ int main(int argc, char *argv[]){
     initialize_param();
     cerr << "initialized" << endl;
     //output_param_onephase();
-    //input_param_onephase((string)(argv[6]));
+    input_param_onephase((string)(argv[6]));
     Adj_info info = input_test_data(argc, argv);
 
     sd(second * 1000);

@@ -12,7 +12,7 @@ else:
         hour = '0'
         minute = '10'
         second = '0'
-        beta = '0.01'
+        beta = '0.005'
     else:
         hour = '0'
         minute = '10'
@@ -37,7 +37,10 @@ else:
 #additional_params = ' big_data_new_3.dat big_data_new_14.dat'
 #additional_params = ' big_data.dat'
 
-cmd = 'adjust_param_new2.out ' + phase + ' ' + hour + ' ' + minute + ' ' + second + ' ' + beta + ' learned_data/' + phase + '.txt' + additional_params
+executable = 'Egaroucid5_evaluation_optimizer_cuda.exe'
+# executable = 'adjust_param_new2.out'
+
+cmd = executable + ' ' + phase + ' ' + hour + ' ' + minute + ' ' + second + ' ' + beta + ' learned_data/' + phase + '.txt' + additional_params
 print(cmd, file=sys.stderr)
 p = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
 result = p.stdout.readline().decode().replace('\r\n', '\n').replace('\n', '')
