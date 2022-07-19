@@ -196,6 +196,17 @@ class Board {
             }
         }
 
+        inline void translate_to_arr_player_rev(uint_fast8_t res[]) {
+            for (int i = 0; i < HW2; ++i){
+                if (1 & (player >> i))
+                    res[i] = 0;
+                else if (1 & (opponent >> i))
+                    res[i] = 1;
+                else
+                    res[i] = 2;
+            }
+        }
+
         inline void translate_to_arr(int res[]) {
             if (p == BLACK){
                 for (int i = 0; i < HW2; ++i){

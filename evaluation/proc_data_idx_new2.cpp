@@ -542,7 +542,7 @@ inline int create_canput_pattern(uint64_t p, uint64_t o, int idx){
 
 inline void calc_idx(int phase_idx, Board *b, int idxes[]){
     uint_fast8_t b_arr[HW2];
-    b->translate_to_arr_player(b_arr);
+    b->translate_to_arr_player_rev(b_arr);
     int i;
     uint64_t player_mobility = calc_legal(b->player, b->opponent);
     uint64_t opponent_mobility = calc_legal(b->opponent, b->player);
@@ -633,8 +633,8 @@ inline void convert_idx(string str, ofstream *fout){
         for (j = 0; j < HW; ++j){
             elem = str[i * HW + j];
             if (elem != '.'){
-                bk |= (unsigned long long)(elem == '0') << (i * HW + j);
-                wt |= (unsigned long long)(elem == '1') << (i * HW + j);
+                bk |= (unsigned long long)(elem == '0') << (HW2_M1 - (i * HW + j));
+                wt |= (unsigned long long)(elem == '1') << (HW2_M1 - (i * HW + j));
                 ++b.n;
             }
         }
