@@ -549,12 +549,19 @@ inline int calc_pattern_diff(const int phase_idx, Search *search){
         eval_pattern_arr[search->eval_feature_reversed][phase_idx][10][search->eval_features[38]] + eval_pattern_arr[search->eval_feature_reversed][phase_idx][10][search->eval_features[39]] + eval_pattern_arr[search->eval_feature_reversed][phase_idx][10][search->eval_features[40]] + eval_pattern_arr[search->eval_feature_reversed][phase_idx][10][search->eval_features[41]] + 
         eval_pattern_arr[search->eval_feature_reversed][phase_idx][11][search->eval_features[42]] + eval_pattern_arr[search->eval_feature_reversed][phase_idx][11][search->eval_features[43]] + eval_pattern_arr[search->eval_feature_reversed][phase_idx][11][search->eval_features[44]] + eval_pattern_arr[search->eval_feature_reversed][phase_idx][11][search->eval_features[45]] + 
         eval_pattern_arr[search->eval_feature_reversed][phase_idx][12][search->eval_features[46]] + eval_pattern_arr[search->eval_feature_reversed][phase_idx][12][search->eval_features[47]] + eval_pattern_arr[search->eval_feature_reversed][phase_idx][12][search->eval_features[48]] + eval_pattern_arr[search->eval_feature_reversed][phase_idx][12][search->eval_features[49]] + 
-        eval_pattern_arr[search->eval_feature_reversed][phase_idx][13][search->eval_features[50]] + eval_pattern_arr[search->eval_feature_reversed][phase_idx][13][search->eval_features[51]] + eval_pattern_arr[search->eval_feature_reversed][phase_idx][13][search->eval_features[52]] + eval_pattern_arr[search->eval_feature_reversed][phase_idx][13][search->eval_features[53]];
-    int i;
-    for (i = 54; i < 58; ++i)
-        res += eval_pattern_arr[search->eval_feature_reversed][phase_idx][14][search->eval_features[i] * 8 + pick_joined_pattern_3bit(&search->board, joined_pattern_3bit_edge_2xa[i - 54])];
-    for (i = 58; i < 66; ++i)
-        res += eval_pattern_arr[search->eval_feature_reversed][phase_idx][15][search->eval_features[i] * 16 + pick_joined_pattern_3bit(&search->board, joined_pattern_3bit_wing[i - 58]) * 2 + pick_joined_pattern_1bit(&search->board, joined_pattern_1bit_wing[i - 58])];
+        eval_pattern_arr[search->eval_feature_reversed][phase_idx][13][search->eval_features[50]] + eval_pattern_arr[search->eval_feature_reversed][phase_idx][13][search->eval_features[51]] + eval_pattern_arr[search->eval_feature_reversed][phase_idx][13][search->eval_features[52]] + eval_pattern_arr[search->eval_feature_reversed][phase_idx][13][search->eval_features[53]] + 
+        eval_pattern_arr[search->eval_feature_reversed][phase_idx][14][search->eval_features[54] * 8 + pick_joined_pattern_3bit(&search->board, joined_pattern_3bit_edge_2xa[0])] + 
+        eval_pattern_arr[search->eval_feature_reversed][phase_idx][14][search->eval_features[55] * 8 + pick_joined_pattern_3bit(&search->board, joined_pattern_3bit_edge_2xa[1])] + 
+        eval_pattern_arr[search->eval_feature_reversed][phase_idx][14][search->eval_features[56] * 8 + pick_joined_pattern_3bit(&search->board, joined_pattern_3bit_edge_2xa[2])] + 
+        eval_pattern_arr[search->eval_feature_reversed][phase_idx][14][search->eval_features[57] * 8 + pick_joined_pattern_3bit(&search->board, joined_pattern_3bit_edge_2xa[3])] + 
+        eval_pattern_arr[search->eval_feature_reversed][phase_idx][15][search->eval_features[58] * 16 + pick_joined_pattern_3bit(&search->board, joined_pattern_3bit_wing[0]) * 2 + pick_joined_pattern_1bit(&search->board, joined_pattern_1bit_wing[0])] + 
+        eval_pattern_arr[search->eval_feature_reversed][phase_idx][15][search->eval_features[59] * 16 + pick_joined_pattern_3bit(&search->board, joined_pattern_3bit_wing[1]) * 2 + pick_joined_pattern_1bit(&search->board, joined_pattern_1bit_wing[1])] + 
+        eval_pattern_arr[search->eval_feature_reversed][phase_idx][15][search->eval_features[60] * 16 + pick_joined_pattern_3bit(&search->board, joined_pattern_3bit_wing[2]) * 2 + pick_joined_pattern_1bit(&search->board, joined_pattern_1bit_wing[2])] + 
+        eval_pattern_arr[search->eval_feature_reversed][phase_idx][15][search->eval_features[61] * 16 + pick_joined_pattern_3bit(&search->board, joined_pattern_3bit_wing[3]) * 2 + pick_joined_pattern_1bit(&search->board, joined_pattern_1bit_wing[3])] + 
+        eval_pattern_arr[search->eval_feature_reversed][phase_idx][15][search->eval_features[62] * 16 + pick_joined_pattern_3bit(&search->board, joined_pattern_3bit_wing[4]) * 2 + pick_joined_pattern_1bit(&search->board, joined_pattern_1bit_wing[4])] + 
+        eval_pattern_arr[search->eval_feature_reversed][phase_idx][15][search->eval_features[63] * 16 + pick_joined_pattern_3bit(&search->board, joined_pattern_3bit_wing[5]) * 2 + pick_joined_pattern_1bit(&search->board, joined_pattern_1bit_wing[5])] + 
+        eval_pattern_arr[search->eval_feature_reversed][phase_idx][15][search->eval_features[64] * 16 + pick_joined_pattern_3bit(&search->board, joined_pattern_3bit_wing[6]) * 2 + pick_joined_pattern_1bit(&search->board, joined_pattern_1bit_wing[6])] + 
+        eval_pattern_arr[search->eval_feature_reversed][phase_idx][15][search->eval_features[65] * 16 + pick_joined_pattern_3bit(&search->board, joined_pattern_3bit_wing[7]) * 2 + pick_joined_pattern_1bit(&search->board, joined_pattern_1bit_wing[7])];
     return res;
 }
 
@@ -563,13 +570,34 @@ inline int calc_mobility_idx(uint64_t p, uint64_t o, uint64_t mask, int shift){
     return (_pext_u64(p, mask) << shift) | _pext_u64(o, mask);
 }
 
+inline int calc_mobility_idx_midedge0(uint64_t p, uint64_t o){
+    return (((p >> 9) & 0b111111) << 6) | ((o >> 9) & 0b111111);
+}
+
+inline int calc_mobility_idx_midedge1(uint64_t p, uint64_t o){
+    return (((p >> 49) & 0b111111) << 6) | ((o >> 49) & 0b111111);
+}
+
+inline int calc_mobility_idx_midedge2(uint64_t p, uint64_t o){
+    return ((((p & 0x0040404040404000ULL) * 0x0000102040810200ULL) >> 58) << 6) | (((o & 0x0040404040404000ULL) * 0x0000102040810200ULL) >> 58);
+}
+
+inline int calc_mobility_idx_midedge3(uint64_t p, uint64_t o){
+    return ((((p & 0x0002020202020200ULL) * 0x0002040810204000ULL) >> 58) << 6) | (((o & 0x0002020202020200ULL) * 0x0002040810204000ULL) >> 58);
+}
+
 inline int calc_mobility_pattern(const int phase_idx, uint64_t p, uint64_t o){
-    int res = 0;
-    int i;
-    for (i = 0; i < 4; ++i)
-        res += eval_mobility_pattern_arr[phase_idx][i][calc_mobility_idx(p, o, mobility_pattern_mask[i], 6)];
-    for (i = 4; i < 8; ++i)
-        res += eval_mobility_pattern_arr[phase_idx][4][calc_mobility_idx(p, o, mobility_pattern_mask[i], 6)];
+    int res = 
+        eval_mobility_pattern_arr[phase_idx][0][calc_mobility_idx(p, o, mobility_pattern_mask[0], 6)] + 
+        eval_mobility_pattern_arr[phase_idx][1][calc_mobility_idx(p, o, mobility_pattern_mask[1], 6)] + 
+        eval_mobility_pattern_arr[phase_idx][2][calc_mobility_idx(p, o, mobility_pattern_mask[2], 6)] + 
+        eval_mobility_pattern_arr[phase_idx][3][calc_mobility_idx(p, o, mobility_pattern_mask[3], 6)] + 
+        eval_mobility_pattern_arr[phase_idx][4][calc_mobility_idx_midedge0(p, o)] + 
+        eval_mobility_pattern_arr[phase_idx][4][calc_mobility_idx_midedge1(p, o)] + 
+        eval_mobility_pattern_arr[phase_idx][4][calc_mobility_idx_midedge2(p, o)] + 
+        eval_mobility_pattern_arr[phase_idx][4][calc_mobility_idx_midedge3(p, o)];
+    //for (int i = 4; i < 8; ++i)
+    //    res += eval_mobility_pattern_arr[phase_idx][4][calc_mobility_idx(p, o, mobility_pattern_mask[i], 6)];
     return res;
 }
 
