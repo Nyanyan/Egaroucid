@@ -13,7 +13,7 @@
 
 // flip calculating
 #define FLIP_CALC_MODE 3
-#define LAST_FLIP_CALC_MODE 4
+#define LAST_FLIP_CALC_MODE 5
 
 // transpose table cut
 #define USE_MID_TC true

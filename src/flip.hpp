@@ -497,8 +497,8 @@ class Flip{
         return
             n_flip_pre_calc[join_h_line(player, t)][u] + 
             n_flip_pre_calc[join_v_line(player, u)][t] + 
-            n_flip_pre_calc[join_d7_line2(player, u + t)][max(t, HW_M1 - u)] + 
-            n_flip_pre_calc[join_d9_line2(player, u + 7 - t)][max(t, u)];
+            n_flip_pre_calc[join_d7_line2(player, u + t)][min(t, 7 - u)] + 
+            n_flip_pre_calc[join_d9_line2(player, u + 7 - t)][min(t, u)];
     }
 
 #endif
