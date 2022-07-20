@@ -218,20 +218,20 @@ Adj_info input_test_data(int argc, char* argv[]) {
     int sur, canput, stab, num;
     FILE* fp;
     int file_idxes[N_RAW_PARAMS];
-    for (int file_idx = 7; file_idx < argc; ++file_idx) {
-        
+    for (int file_idx = 7; file_idx < 8;/* argc;*/ ++file_idx) {
+        /*
         cerr << argv[file_idx] << endl;
         if (fopen_s(&fp, argv[file_idx], "rb") != 0) {
             cerr << "can't open " << argv[file_idx] << endl;
             continue;
         }
-        /*
+        */
 
         if (fopen_s(&fp, "data3_06.dat", "rb") != 0) {
             cerr << "can't open " << endl;
             continue;
         }
-        */
+        
         while (t < N_DATA) {
             ++t;
             if ((t & 0b1111111111111111) == 0b1111111111111111)
@@ -628,23 +628,23 @@ cudaError_t calc_score_with_gpu() {
 
     // Launch a kernel on the GPU with one thread for each element.
     const int interval = 1024;
-    for (int i = 0; i < nums; i += interval * interval)
+    for (int i = 0; i < nums; i += interval * interval) {
         calc_score_kernel << <interval, interval >> > (sa_phase, eval_arr_kernel, test_data_kernel + i * N_RAW_PARAMS, pre_calc_scores_kernel + i, i, nums);
 
+        // Check for any errors launching the kernel
+        cudaStatus = cudaGetLastError();
+        if (cudaStatus != cudaSuccess) {
+            cerr << "calc_score_kernel launch failed: " << cudaGetErrorString(cudaStatus) << endl;
+            return cudaStatus;
+        }
 
-    // Check for any errors launching the kernel
-    cudaStatus = cudaGetLastError();
-    if (cudaStatus != cudaSuccess) {
-        cerr << "calc_score_kernel launch failed: " << cudaGetErrorString(cudaStatus) << endl;
-        return cudaStatus;
-    }
-
-    // cudaDeviceSynchronize waits for the kernel to finish, and returns
-    // any errors encountered during the launch.
-    cudaStatus = cudaDeviceSynchronize();
-    if (cudaStatus != cudaSuccess) {
-        cerr << "cudaDeviceSynchronize returned error code " << cudaStatus << " after launching addKernel!" << endl;
-        return cudaStatus;
+        // cudaDeviceSynchronize waits for the kernel to finish, and returns
+        // any errors encountered during the launch.
+        cudaStatus = cudaDeviceSynchronize();
+        if (cudaStatus != cudaSuccess) {
+            cerr << "cudaDeviceSynchronize returned error code " << cudaStatus << " after launching addKernel!" << endl;
+            return cudaStatus;
+        }
     }
 
     int actual_interval;
@@ -809,13 +809,13 @@ int main(int argc, char* argv[]) {
     minute = 1; // atoi(argv[3]);
     second = 0; // atoi(argv[4]);
     beta = 0.01; // atof(argv[5]);
-    
+    /*
     sa_phase = atoi(argv[1]);
     hour = atoi(argv[2]);
     minute = atoi(argv[3]);
     second = atoi(argv[4]);
     beta = atof(argv[5]);
-    
+    */
 
     int i, j;
 
@@ -829,7 +829,7 @@ int main(int argc, char* argv[]) {
     initialize_param();
     cerr << "initialized" << endl;
     //output_param_onephase();
-    input_param_onephase((string)(argv[6]));
+    //input_param_onephase((string)(argv[6]));
     Adj_info info = input_test_data(argc, argv);
 
     if (copy_data_kernel())

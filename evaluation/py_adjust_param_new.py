@@ -10,7 +10,7 @@ if len(sys.argv) > 3:
 else:
     if int(phase) >= 20:
         hour = '0'
-        minute = '10'
+        minute = '20'
         second = '0'
         beta = '0.005'
     else:
@@ -37,8 +37,8 @@ else:
 #additional_params = ' big_data_new_3.dat big_data_new_14.dat'
 #additional_params = ' big_data.dat'
 
-executable = 'Egaroucid5_evaluation_optimizer_cuda.exe'
-# executable = 'adjust_param_new2.out'
+#executable = 'Egaroucid5_evaluation_optimizer_cuda.exe'
+executable = 'adjust_param_new2.out'
 
 cmd = executable + ' ' + phase + ' ' + hour + ' ' + minute + ' ' + second + ' ' + beta + ' learned_data/' + phase + '.txt' + additional_params
 print(cmd, file=sys.stderr)
