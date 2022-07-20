@@ -23,10 +23,10 @@ s0 = '''59	733 mae 0.00148207 mse 0.00747858 n_data 1165938 n_param 528065 n_use
 39	1240 mae 3.96744 mse 27.2609 n_data 1199109 n_param 528065 n_used_params 237650
 38	1250 mae 3.98501 mse 27.6067 n_data 1199715 n_param 528065 n_used_params 235696
 37	1252 mae 4.00047 mse 27.9472 n_data 1200216 n_param 528065 n_used_params 233115
-36	571 mae 4.11399 mse 29.5397 n_data 1200593 n_param 528065 n_used_params 230682
-35	588 mae 4.30888 mse 32.3274 n_data 1200918 n_param 528065 n_used_params 228331
-34	589 mae 4.43721 mse 34.2522 n_data 1201170 n_param 528065 n_used_params 226294
-33	586 mae 4.56017 mse 36.1269 n_data 1201349 n_param 528065 n_used_params 223857
+36	1187 mae 4.07275 mse 29.0099 n_data 1200593 n_param 528065 n_used_params 230682
+35	1149 mae 4.27048 mse 31.8049 n_data 1200918 n_param 528065 n_used_params 228331
+34	1163 mae 4.39767 mse 33.7052 n_data 1201170 n_param 528065 n_used_params 226294
+33	1169 mae 4.51983 mse 35.5495 n_data 1201349 n_param 528065 n_used_params 223857
 32	590 mae 4.66557 mse 37.8001 n_data 1201500 n_param 528065 n_used_params 221612
 31	634 mae 4.76428 mse 39.4352 n_data 1201600 n_param 528065 n_used_params 218624
 30	645 mae 4.87246 mse 41.2529 n_data 1201640 n_param 528065 n_used_params 216133
