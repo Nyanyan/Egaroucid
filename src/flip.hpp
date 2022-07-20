@@ -361,7 +361,7 @@ class Flip{
                 outflank = upper_bit(andnot(om, mask)) & p;
                 flipped = ((-outflank) << 1) & mask;
                 mask = mask3 << place;
-                outflank = mask & ((om | ~mask) + 1) & player;
+                outflank = mask & ((om | ~mask) + 1) & p;
                 flipped = flipped | ((outflank - nonzero(outflank)) & mask);
                 flip = all_or(flipped);
                 /*
