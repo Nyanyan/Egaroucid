@@ -218,20 +218,20 @@ Adj_info input_test_data(int argc, char* argv[]) {
     int sur, canput, stab, num;
     FILE* fp;
     int file_idxes[N_RAW_PARAMS];
-    for (int file_idx = 7; file_idx < 8;/* argc;*/ ++file_idx) {
-        /*
+    for (int file_idx = 7; file_idx < argc; ++file_idx) {
+        
         cerr << argv[file_idx] << endl;
         if (fopen_s(&fp, argv[file_idx], "rb") != 0) {
             cerr << "can't open " << argv[file_idx] << endl;
             continue;
         }
-        */
+        /*
 
         if (fopen_s(&fp, "data3_06.dat", "rb") != 0) {
             cerr << "can't open " << endl;
             continue;
         }
-        
+        */
         while (t < N_DATA) {
             ++t;
             if ((t & 0b1111111111111111) == 0b1111111111111111)
@@ -809,13 +809,13 @@ int main(int argc, char* argv[]) {
     minute = 1; // atoi(argv[3]);
     second = 0; // atoi(argv[4]);
     beta = 0.01; // atof(argv[5]);
-    /*
+    
     sa_phase = atoi(argv[1]);
     hour = atoi(argv[2]);
     minute = atoi(argv[3]);
     second = atoi(argv[4]);
     beta = atof(argv[5]);
-    */
+    
 
     int i, j;
 
