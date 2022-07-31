@@ -128,7 +128,7 @@ inline void calc_stability(Board *board, int *stab0, int *stab1){
     edge_stability |= stability_edge_arr[pl][op][1] << 7;
     full_stability(board->player | board->opponent, &full_h, &full_v, &full_d7, &full_d9);
 
-    n_stability = (edge_stability & b->player) | (full_h & full_v & full_d7 & full_d9 & player_mask);
+    n_stability = (edge_stability & board->player) | (full_h & full_v & full_d7 & full_d9 & player_mask);
     while (n_stability & ~player_stability){
         player_stability |= n_stability;
         h = (player_stability >> 1) | (player_stability << 1) | full_h;
@@ -138,7 +138,7 @@ inline void calc_stability(Board *board, int *stab0, int *stab1){
         n_stability = h & v & d7 & d9 & player_mask;
     }
 
-    n_stability = (edge_stability & b->opponent) | (full_h & full_v & full_d7 & full_d9 & opponent_mask);
+    n_stability = (edge_stability & board->opponent) | (full_h & full_v & full_d7 & full_d9 & opponent_mask);
     while (n_stability & ~opponent_stability){
         opponent_stability |= n_stability;
         h = (opponent_stability >> 1) | (opponent_stability << 1) | full_h;

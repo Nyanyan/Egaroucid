@@ -182,7 +182,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
     }
     ++search->n_nodes;
     uint32_t hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
-    int l, u;
+    int l = -INF, u = INF;
     if (depth >= USE_TT_DEPTH_THRESHOLD){
         parent_transpose_table.get(&search->board, hash_code, &l, &u);
         if (u == l)
@@ -253,7 +253,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
                 swap_next_best_move(move_list, move_idx, canput);
             eval_move(search, &move_list[move_idx].flip);
             search->move(&move_list[move_idx].flip);
-                if (ybwc_split(search, &move_list[move_idx], -beta, -alpha, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].flip.pos, pv_idx++, canput, split_count, parallel_tasks, move_list[0].value, move_list[move_list.size() - 1].value, worth_searching)){
+                if (ybwc_split(search, &move_list[move_idx].flip, -beta, -alpha, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].flip.pos, pv_idx++, canput, split_count, parallel_tasks, move_list[0].value, move_list[move_list.size() - 1].value, worth_searching)){
                     ++split_count;
                 } else{
                     g = -nega_alpha_ordering(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
@@ -309,7 +309,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
         }
     #endif
     uint32_t hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
-    int l, u;
+    int l = -INF, u = INF;
     if (depth >= USE_TT_DEPTH_THRESHOLD){
         parent_transpose_table.get(&search->board, hash_code, &l, &u);
         if (u == l)
@@ -425,7 +425,7 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
             search->move(&flip_best);
                 g = -nega_scout(search, -beta, -alpha, depth - 1, false, LEGAL_UNDEFINED, is_end_search, &searching);
                 if (is_main_search)
-                    cerr << 1 << "/" << canput_all << " [" << alpha << "," << beta << "] mpct " << search->mpct << " " << idx_to_coord(best_move) << " value " << value_to_score_double(g) << endl;
+                    cerr << 1 << "/" << canput_all << " [" << alpha << "," << beta << "] mpct " << search->mpct << " " << idx_to_coord(best_move) << " value " << g << endl;
             search->undo(&flip_best);
             eval_undo(search, &flip_best);
             v = g;
@@ -454,9 +454,9 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
                 }
                 if (is_main_search){
                     if (g <= alpha)
-                        cerr << mobility_idx << "/" << canput_all << " [" << alpha << "," << beta << "] mpct " << search->mpct << " " << idx_to_coord((int)flip_value.flip.pos) << " value " << value_to_score_double(g) << " or lower" << endl;
+                        cerr << mobility_idx << "/" << canput_all << " [" << alpha << "," << beta << "] mpct " << search->mpct << " " << idx_to_coord((int)flip_value.flip.pos) << " value " << g << " or lower" << endl;
                     else
-                        cerr << mobility_idx << "/" << canput_all << " [" << alpha << "," << beta << "] mpct " << search->mpct << " " << idx_to_coord((int)flip_value.flip.pos) << " value " << value_to_score_double(g) << endl;
+                        cerr << mobility_idx << "/" << canput_all << " [" << alpha << "," << beta << "] mpct " << search->mpct << " " << idx_to_coord((int)flip_value.flip.pos) << " value " << g << endl;
                 }
                 ++mobility_idx;
             search->undo(&flip_value.flip);

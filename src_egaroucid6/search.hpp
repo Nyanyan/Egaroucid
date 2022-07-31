@@ -16,7 +16,6 @@ using namespace std;
 #define MID_FAST_DEPTH 1
 #define END_FAST_DEPTH 7
 #define MID_TO_END_DEPTH 13
-#define CUDA_YBWC_SPLIT_MAX_DEPTH 10
 #define USE_TT_DEPTH_THRESHOLD 10
 
 #define SCORE_UNDEFINED -INF
@@ -92,6 +91,15 @@ class Search{
             parity |= (1 & pop_count_ull(empty & 0xF0F0F0F000000000ULL)) << 3;
         }
 
+        inline void init_board(){
+            n_discs = pop_count_ull(board.player | board.opponent);
+            uint64_t empty = ~(board.player | board.opponent);
+            parity = 1 & pop_count_ull(empty & 0x000000000F0F0F0FULL);
+            parity |= (1 & pop_count_ull(empty & 0x00000000F0F0F0F0ULL)) << 1;
+            parity |= (1 & pop_count_ull(empty & 0x0F0F0F0F00000000ULL)) << 2;
+            parity |= (1 & pop_count_ull(empty & 0xF0F0F0F000000000ULL)) << 3;
+        }
+
         inline void move(const Flip *flip) {
             board.move(flip);
             ++n_discs;
@@ -103,6 +111,10 @@ class Search{
             --n_discs;
             parity ^= cell_div4[flip->pos];
         }
+
+        inline int phase(){
+            return min(N_PHASES - 1, (n_discs - 4) / PHASE_N_STONES);
+        }
 };
 
 struct Parallel_task{
@@ -112,7 +124,7 @@ struct Parallel_task{
 };
 
 inline void register_tt(Search *search, uint32_t hash_code, int first_alpha, int v, int best_move, int l, int u, int alpha, int beta, const bool *searching){
-    if (search->board.n <= HW2 - USE_TT_DEPTH_THRESHOLD && (*searching)){
+    if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD && (*searching)){
         if (first_alpha < v && best_move != TRANSPOSE_TABLE_UNDEFINED)
             child_transpose_table.reg(&search->board, hash_code, best_move);
         if (first_alpha < v && v < beta)

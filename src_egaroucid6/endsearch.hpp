@@ -10,10 +10,6 @@
 #include "move_ordering.hpp"
 #include "probcut.hpp"
 #include "transpose_table.hpp"
-#if USE_MULTI_THREAD
-    #include "thread_pool.hpp"
-    #include "ybwc.hpp"
-#endif
 #include "util.hpp"
 #include "stability.hpp"
 
@@ -47,8 +43,8 @@ inline int last1(Search *search, int alpha, int beta, uint_fast8_t p0){
 inline int last2(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast8_t p1, bool skipped){
     ++search->n_nodes;
     #if USE_END_PO & false
-        uint_fast8_t p0_parity = (search->board.parity & cell_div4[p0]);
-        uint_fast8_t p1_parity = (search->board.parity & cell_div4[p1]);
+        uint_fast8_t p0_parity = (search->parity & cell_div4[p0]);
+        uint_fast8_t p1_parity = (search->parity & cell_div4[p1]);
         if (!p0_parity && p1_parity)
             swap(p0, p1);
     #endif
@@ -96,9 +92,9 @@ inline int last3(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
     ++search->n_nodes;
     #if USE_END_PO
         if (!skipped){
-            const bool p0_parity = (search->board.parity & cell_div4[p0]) > 0;
-            const bool p1_parity = (search->board.parity & cell_div4[p1]) > 0;
-            const bool p2_parity = (search->board.parity & cell_div4[p2]) > 0;
+            const bool p0_parity = (search->parity & cell_div4[p0]) > 0;
+            const bool p1_parity = (search->parity & cell_div4[p1]) > 0;
+            const bool p2_parity = (search->parity & cell_div4[p2]) > 0;
             #if LAST_PO_OPTIMISE
                 if (!p0_parity && p2_parity){
                     swap(p0, p2);
@@ -181,10 +177,10 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
     #endif
     #if USE_END_PO
         if (!skipped){
-            const bool p0_parity = (search->board.parity & cell_div4[p0]) > 0;
-            const bool p1_parity = (search->board.parity & cell_div4[p1]) > 0;
-            const bool p2_parity = (search->board.parity & cell_div4[p2]) > 0;
-            const bool p3_parity = (search->board.parity & cell_div4[p3]) > 0;
+            const bool p0_parity = (search->parity & cell_div4[p0]) > 0;
+            const bool p1_parity = (search->parity & cell_div4[p1]) > 0;
+            const bool p2_parity = (search->parity & cell_div4[p2]) > 0;
+            const bool p3_parity = (search->parity & cell_div4[p3]) > 0;
             #if LAST_PO_OPTIMISE
                 if (!p0_parity && p3_parity){
                     swap(p0, p3);
@@ -288,7 +284,7 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
 int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped, bool stab_cut, const bool *searching){
     if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
-    if (search->n == 60){
+    if (search->n_discs == 60){
         uint64_t empties = ~(search->board.player | search->board.opponent);
         uint_fast8_t p0, p1, p2, p3;
         p0 = first_bit(&empties);
@@ -321,15 +317,15 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped, bool 
         int i;
         uint64_t legal_copy;
         uint_fast8_t cell;
-        if (0 < search->board.parity && search->board.parity < 15){
+        if (0 < search->parity && search->parity < 15){
             uint64_t legal_mask = 0ULL;
-            if (search->board.parity & 1)
+            if (search->parity & 1)
                 legal_mask |= 0x000000000F0F0F0FULL;
-            if (search->board.parity & 2)
+            if (search->parity & 2)
                 legal_mask |= 0x00000000F0F0F0F0ULL;
-            if (search->board.parity & 4)
+            if (search->parity & 4)
                 legal_mask |= 0x0F0F0F0F00000000ULL;
-            if (search->board.parity & 8)
+            if (search->parity & 8)
                 legal_mask |= 0xF0F0F0F000000000ULL;
             legal_copy = legal & legal_mask;
             if (legal_copy){
@@ -440,26 +436,24 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
             best_move = TRANSPOSE_TABLE_UNDEFINED;
     }
     if (alpha < beta && legal){
+        const int canput = pop_count_ull(legal);
+        vector<Flip_value> move_list(canput);
+        int idx = 0;
+        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
+            calc_flip(&move_list[idx++].flip, &search->board, cell);
+        move_evaluate_fast_first(search, move_list);
         const int move_ordering_threshold = MOVE_ORDERING_THRESHOLD - (int)(best_move != TRANSPOSE_TABLE_UNDEFINED);
         for (int move_idx = 0; move_idx < canput; ++move_idx){
             if (move_idx < move_ordering_threshold)
                 swap_next_best_move(move_list, move_idx, canput);
-            search->move(&move_list[move_idx]);
-                #if USE_END_SC
-                    stab_res = stability_cut_move(search, &move_list[move_idx], &alpha, &beta);
-                    if (stab_res != SCORE_UNDEFINED){
-                        search->undo(&move_list[move_idx]);
-                        register_tt(search, hash_code, first_alpha, stab_res, move_list[move_idx].pos, l, u, alpha, beta, searching);
-                        return stab_res;
-                    }
-                #endif
+            search->move(&move_list[move_idx].flip);
                 g = -nega_alpha_end(search, -beta, -alpha, false, move_list[move_idx].n_legal, searching);
-            search->undo(&move_list[move_idx]);
+            search->undo(&move_list[move_idx].flip);
             if (*searching){
                 alpha = max(alpha, g);
                 if (v < g){
                     v = g;
-                    best_move = move_list[move_idx].pos;
+                    best_move = move_list[move_idx].flip.pos;
                     if (beta <= alpha){
                         register_tt(search, hash_code, first_alpha, v, best_move, l, u, alpha, beta, searching);
                         return alpha;

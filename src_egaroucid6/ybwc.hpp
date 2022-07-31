@@ -38,7 +38,7 @@ Parallel_task ybwc_do_task(uint64_t player, uint64_t opponent, uint_fast8_t n, u
     search.board.player = player;
     search.board.opponent = opponent;
     search.n_discs = n;
-    search.board.parity = parity;
+    search.parity = parity;
     search.use_mpc = use_mpc;
     search.mpct = mpct;
     search.n_nodes = 0ULL;
@@ -55,12 +55,13 @@ Parallel_task ybwc_do_task(uint64_t player, uint64_t opponent, uint_fast8_t n, u
 }
 
 inline bool ybwc_split(const Search *search, const Flip *flip, int alpha, int beta, const int depth, uint64_t legal, bool is_end_search, const bool *searching, int policy, const int pv_idx, const int canput, const int split_count, vector<future<Parallel_task>> &parallel_tasks, const int first_val, const int last_val, const bool worth_searching){
+    return false;
     if (!worth_searching || 
         (pv_idx > 0 && 
         depth >= YBWC_MID_SPLIT_MIN_DEPTH)){
         if (thread_pool.n_idle()){
             parallel_tasks.emplace_back(thread_pool.push(bind(&ybwc_do_task, 
-                search->board.player, search->board.opponent, search->board.n, search->board.parity, 
+                search->board.player, search->board.opponent, search->n_discs, search->parity, 
                 search->use_mpc, search->mpct, 
                 alpha, beta, depth, legal, is_end_search, searching, policy)));
             return true;

@@ -545,7 +545,7 @@ inline int mid_evaluate(Board *b){
     canput1 = min(MAX_CANPUT - 1, pop_count_ull(opponent_mobility));
     if (canput0 == 0 && canput1 == 0)
         return end_evaluate(b);
-    phase_idx = b->phase();
+    phase_idx = b->phase_slow();
     empties = ~(b->player | b->opponent);
     sur0 = min(MAX_SURROUND - 1, calc_surround(b->player, empties));
     sur1 = min(MAX_SURROUND - 1, calc_surround(b->opponent, empties));
@@ -570,7 +570,7 @@ inline int mid_evaluate_diff(Search *search){
     canput1 = min(MAX_CANPUT - 1, pop_count_ull(opponent_mobility));
     if (canput0 == 0 && canput1 == 0)
         return end_evaluate(&search->board);
-    phase_idx = search->board.phase();
+    phase_idx = search->phase();
     empties = ~(search->board.player | search->board.opponent);
     sur0 = min(MAX_SURROUND - 1, calc_surround(search->board.player, empties));
     sur1 = min(MAX_SURROUND - 1, calc_surround(search->board.opponent, empties));

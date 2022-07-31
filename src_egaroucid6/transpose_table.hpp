@@ -2,11 +2,8 @@
 #include "setting.hpp"
 #include "common.hpp"
 #include "board.hpp"
-#if USE_MULTI_THREAD
-    #include "thread_pool.hpp"
-    #include <future>
-#endif
-//#include <shared_mutex>
+#include "thread_pool.hpp"
+#include <future>
 #include <atomic>
 
 using namespace std;

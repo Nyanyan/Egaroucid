@@ -91,26 +91,6 @@ inline int calc_opponent_openness(Search *search, uint64_t legal){
     return res;
 }
 
-inline int midgame_player_move_ordering_heuristic(Board *board, Flip *flip, move_ordering_info *minfo){
-    int openness = calc_openness(board, flip);
-    // 中割り
-    if (openness == 0)
-        return W_FLIP_INSIDE;
-    // 境界の石返し
-    if (flip->flip & minfo->opponent_bound_stones)
-        return -openness * W_OPENNESS + W_BOUND_FLIP;
-    // 壁化
-    if (flip->flip & minfo->opponent_create_wall_stones)
-        return -openness * W_OPENNESS + W_CREATE_WALL;
-    // 壁破り
-    if (flip->flip & minfo->opponent_break_wall_stones)
-        return -openness * W_OPENNESS + W_BREAK_WALL;
-    // 二重返し
-    if (is_double_flipping(board, flip))
-        return -openness * W_OPENNESS + W_DOUBLE_FLIP;
-    return -openness * W_OPENNESS;
-}
-
 inline int get_corner_mobility(uint64_t legal){
     legal &= 0b10000001'00000000'00000000'00000000'00000000'00000000'00000000'10000001ULL;
     int res = (int)((legal & 0b10000001ULL) + (legal >> 56));
@@ -221,13 +201,12 @@ inline bool move_evaluate(Search *search, Flip_value *flip_value, const int alph
         flip_value->value = W_WIPEOUT;
         return true;
     }
-    flip_value->value = cell_weight[flip->pos];
-    flip_value->value -= (calc_openness(&search->board, flip) >> 1) * W_OPENNESS;
-    flip_value->value -= give_potential_flip_inside(&search->board, flip) * W_GIVE_POTENTIAL_FLIP_INSIDE;
+    flip_value->value = cell_weight[flip_value->flip.pos];
+    flip_value->value -= (calc_openness(&search->board, &flip_value->flip) >> 1) * W_OPENNESS;
     eval_move(search, &flip_value->flip);
     search->board.move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
-        flip_value->value -= get_weighted_n_moves(flip->n_legal) * W_MOBILITY;
+        flip_value->value -= get_weighted_n_moves(flip_value->n_legal) * W_MOBILITY;
         flip_value->value -= get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent)) * W_OPPONENT_POTENTIAL_MOBILITY;
         flip_value->value += get_potential_mobility(search->board.player, ~(search->board.player | search->board.opponent)) * W_PLAYER_POTENTIAL_MOBILITY;
         int val;
@@ -247,7 +226,7 @@ inline bool move_evaluate(Search *search, Flip_value *flip_value, const int alph
             default:
                 if (parent_transpose_table.contain(&search->board, search->board.hash() & TRANSPOSE_TABLE_MASK))
                     flip_value->value += W_CACHE_HIT;
-                val = -nega_alpha_ordering_nomemo(search, alpha, beta, depth, false, flip->n_legal, searching);
+                val = -nega_alpha_ordering_nomemo(search, alpha, beta, depth, false, flip_value->n_legal, searching);
                 if (search_alpha - WORTH_SEARCHING_THRESHOLD <= val)
                     *worth_searching = true;
                 flip_value->value += val * (W_VALUE_DEEP + (depth - 1) * 2);
@@ -255,25 +234,6 @@ inline bool move_evaluate(Search *search, Flip_value *flip_value, const int alph
         }
     search->board.undo(&flip_value->flip);
     eval_undo(search, &flip_value->flip);
-    if (pos_is_middle_edge(&flip_value->flip)){
-        if (is_first_middle_edge(search, &flip_value->flip)){
-            if (is_flip_1_direction(&flip_value->flip))
-                flip_value->value += W_FIRST_MIDDLE_EDGE_FLIP_1_DIRECTION;
-        } else{
-            if (is_flip_horizontal(&flip_value->flip))
-                flip_value->value -= W_SECOND_MIDDLE_EDGE_FLIP_HORIZONTAL;
-            if (is_next_to_pillar(search, &flip_value->flip) && is_flip_1_direction(&flip_value->flip))
-                flip_value->value += W_SECOND_MIDDLE_EDGE_NEXT_TO_PILLAR;
-        }
-    } else if (pos_is_edge(&flip_value->flip)){
-        if (is_first_edge(search, &flip_value->flip)){
-            if (is_flip_1_direction(&flip_value->flip))
-                flip_value->value += W_FIRST_EDGE_FLIP_1_DIRECTION;
-        } else{
-            if (is_next_to_pillar_edge(search, &flip_value->flip) && is_flip_1_direction(&flip_value->flip) && is_flip_few_stones(&flip_value->flip, 2))
-                flip_value->value += W_SECOND_EDGE_FLIP_1_DIRECTION;
-        }
-    }
     return false;
 }
 
@@ -283,12 +243,12 @@ inline bool move_evaluate_fast_first(Search *search, Flip_value *flip_value){
         return true;
     }
     flip_value->value = cell_weight[flip_value->flip.pos];
-    if (search->board.parity & cell_div4[flip_value->flip.pos])
+    if (search->parity & cell_div4[flip_value->flip.pos])
         flip_value->value += W_END_PARITY;
-    search->board.move(&flip_value.flip);
+    search->board.move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
         flip_value->value += -pop_count_ull(flip_value->n_legal) * W_END_MOBILITY;
-    search->board.undo(&flip_value.flip);
+    search->board.undo(&flip_value->flip);
     return false;
 }
 
@@ -348,7 +308,7 @@ inline void move_ordering(Search *search, vector<Flip_value> &move_list, int dep
     sort(move_list.begin(), move_list.end(), cmp_move_ordering);
 }
 
-inline void move_evaluate_fast_first(Search *search, vector<Flip> &move_list){
+inline void move_evaluate_fast_first(Search *search, vector<Flip_value> &move_list){
     if (move_list.size() < 2)
         return;
     bool wipeout_found = false;

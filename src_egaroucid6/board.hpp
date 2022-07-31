@@ -1,14 +1,9 @@
 #pragma once
 #include <iostream>
 #include "common.hpp"
-#if USE_SIMD
-    #include "mobility.hpp"
-    #include "flip.hpp"
-#else
-    #include "mobility_simd_free.hpp"
-    #include "flip_simd_free.hpp"
-#endif
-
+#include "mobility.hpp"
+#include "flip.hpp"
+#include "last_flip.hpp"
 using namespace std;
 
 uint32_t hash_rand_player[4][65536];
@@ -137,6 +132,11 @@ class Board {
                 res[HW2_M1 - i] = 2 - (1 & (player >> i)) * 2 - (1 & (opponent >> i));
         }
 
+        inline void translate_to_arr_player(int res[]) {
+            for (int i = 0; i < HW2; ++i)
+                res[HW2_M1 - i] = 2 - (1 & (player >> i)) * 2 - (1 & (opponent >> i));
+        }
+
         inline void translate_to_arr_player_rev(uint_fast8_t res[]) {
             for (int i = 0; i < HW2; ++i)
                 res[i] = 2 - (1 & (player >> i)) * 2 - (1 & (opponent >> i));
@@ -146,8 +146,6 @@ class Board {
             int i;
             player = 0;
             opponent = 0;
-            n = HW2;
-            parity = 0;
             if (player_idx == BLACK){
                 for (i = 0; i < HW2; ++i) {
                     if (arr[HW2_M1 - i] == BLACK)
@@ -235,6 +233,11 @@ class Board {
             };
             translate_from_arr(first_board, BLACK);
         }
+
+        inline int phase_slow(){
+            int n_discs = pop_count_ull(player | opponent);
+            return min(N_PHASES - 1, (n_discs - 4) / PHASE_N_STONES);
+        }
 };
 
 void board_init(){
@@ -250,4 +253,8 @@ void board_init(){
         }
     }
     cerr << "board initialized" << endl;
+}
+
+inline void calc_flip(Flip *flip, Board *board, uint_fast8_t place){
+    flip->calc_flip(board->player, board->opponent, place);
 }
