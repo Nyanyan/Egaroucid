@@ -26,6 +26,8 @@ using namespace std;
 
 #define INF 100000000
 
+#define LEGAL_UNDEFINED 0x0000001818000000ULL
+
 inline uint64_t tim(){
     return chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now().time_since_epoch()).count();
 }
