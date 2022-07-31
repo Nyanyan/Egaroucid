@@ -3,6 +3,7 @@
 #include <chrono>
 #include <random>
 #include <string>
+#include "setting.hpp"
 
 using namespace std;
 
