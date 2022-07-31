@@ -63,8 +63,8 @@ constexpr uint_fast8_t cell_div4[HW2] = {
 
 struct Search_result{
     int_fast8_t policy;
-    int_fast8_t value;
-    int_fast8_t depth;
+    int value;
+    int depth;
     uint64_t time;
     uint64_t nodes;
     uint64_t nps;
@@ -97,10 +97,16 @@ class Search{
             ++n_discs;
             parity ^= cell_div4[flip->pos];
         }
+
+        inline void undo(const Flip *flip) {
+            board.undo(flip);
+            --n_discs;
+            parity ^= cell_div4[flip->pos];
+        }
 };
 
 struct Parallel_task{
-    int_fast8_t value;
+    int value;
     uint64_t n_nodes;
     uint_fast8_t cell;
 };

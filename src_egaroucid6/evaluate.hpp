@@ -532,11 +532,11 @@ inline int calc_canput_pattern(const int phase_idx, Board *b, const uint64_t pla
         eval_canput_pattern[phase_idx][3][create_canput_line_v(player_mobility, opponent_mobility, 4)];
 }
 
-inline int_fast8_t end_evaluate(Board *b){
+inline int end_evaluate(Board *b){
     return b->score_player();
 }
 
-inline int_fast8_t mid_evaluate(Board *b){
+inline int mid_evaluate(Board *b){
     int phase_idx, sur0, sur1, canput0, canput1, num0, num1;
     uint64_t player_mobility, opponent_mobility, empties;
     player_mobility = calc_legal(b->player, b->opponent);
@@ -561,7 +561,7 @@ inline int_fast8_t mid_evaluate(Board *b){
     return max(-SCORE_MAX, min(SCORE_MAX, res));
 }
 
-inline int_fast8_t mid_evaluate_diff(Search *search){
+inline int mid_evaluate_diff(Search *search){
     int phase_idx, sur0, sur1, canput0, canput1, num0, num1;
     uint64_t player_mobility, opponent_mobility, empties;
     player_mobility = calc_legal(search->board.player, search->board.opponent);
