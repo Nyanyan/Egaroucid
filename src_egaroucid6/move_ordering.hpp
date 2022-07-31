@@ -275,8 +275,10 @@ bool cmp_move_ordering(Flip_value &a, Flip_value &b){
 }
 
 inline bool move_list_evaluate(Search *search, vector<Flip_value> &move_list, int depth, int alpha, int beta, bool is_end_search, const bool *searching){
-    if (move_list.size() < 2)
+    if (move_list.size() == 1){
+        move_list[0].n_legal = LEGAL_UNDEFINED;
         return true;
+    }
     int eval_alpha = -min(SCORE_MAX, beta + MOVE_ORDERING_VALUE_OFFSET);
     int eval_beta = -max(-SCORE_MAX, alpha - MOVE_ORDERING_VALUE_OFFSET);
     int eval_depth = depth >> 3;
@@ -295,6 +297,7 @@ inline bool move_list_evaluate(Search *search, vector<Flip_value> &move_list, in
     bool wipeout_found = false;
     bool worth_searching = false;
     for (Flip_value &flip_value: move_list){
+        flip_value.n_legal = LEGAL_UNDEFINED;
         if (!wipeout_found)
             wipeout_found = move_evaluate(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching, depth, alpha, &worth_searching);
         else
@@ -309,10 +312,13 @@ inline void move_ordering(Search *search, vector<Flip_value> &move_list, int dep
 }
 
 inline void move_evaluate_fast_first(Search *search, vector<Flip_value> &move_list){
-    if (move_list.size() < 2)
+    if (move_list.size() == 1){
+        move_list[0].n_legal = LEGAL_UNDEFINED;
         return;
+    }
     bool wipeout_found = false;
     for (Flip_value &flip_value: move_list){
+        flip_value.n_legal = LEGAL_UNDEFINED;
         if (!wipeout_found)
             wipeout_found = move_evaluate_fast_first(search, &flip_value);
         else

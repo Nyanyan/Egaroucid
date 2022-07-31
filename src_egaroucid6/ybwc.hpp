@@ -55,7 +55,6 @@ Parallel_task ybwc_do_task(uint64_t player, uint64_t opponent, uint_fast8_t n, u
 }
 
 inline bool ybwc_split(const Search *search, const Flip *flip, int alpha, int beta, const int depth, uint64_t legal, bool is_end_search, const bool *searching, int policy, const int pv_idx, const int canput, const int split_count, vector<future<Parallel_task>> &parallel_tasks, const int first_val, const int last_val, const bool worth_searching){
-    return false;
     if (!worth_searching || 
         (pv_idx > 0 && 
         depth >= YBWC_MID_SPLIT_MIN_DEPTH)){

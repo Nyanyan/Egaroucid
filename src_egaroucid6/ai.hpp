@@ -168,9 +168,9 @@ inline bool cache_search(Board board, int *val, int *best_move){
     Flip flip;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
         calc_flip(&flip, &board, cell);
-        board.move(&flip);
+        board.move_board(&flip);
             bak_parent_transpose_table.get(&board, board.hash() & TRANSPOSE_TABLE_MASK, &l, &u);
-        board.undo(&flip);
+        board.undo_board(&flip);
         cerr << idx_to_coord(cell) << " " << l << " " << u << endl;
         if (l == u && -l == *val && cell == best_move_child_tt)
             *best_move = cell;

@@ -97,7 +97,7 @@ class Board {
             return calc_legal(player, opponent);
         }
 
-        inline void move(const Flip *flip) {
+        inline void move_board(const Flip *flip) {
             player ^= flip->flip;
             opponent ^= flip->flip;
             player ^= 1ULL << flip->pos;
@@ -120,7 +120,7 @@ class Board {
             swap(player, opponent);
         }
 
-        inline void undo(const Flip *flip){
+        inline void undo_board(const Flip *flip){
             swap(player, opponent);
             player ^= 1ULL << flip->pos;
             player ^= flip->flip;

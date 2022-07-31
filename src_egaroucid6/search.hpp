@@ -15,7 +15,7 @@ using namespace std;
 #endif
 #define MID_FAST_DEPTH 1
 #define END_FAST_DEPTH 7
-#define MID_TO_END_DEPTH 100000
+#define MID_TO_END_DEPTH 13
 #define USE_TT_DEPTH_THRESHOLD 10
 
 #define SCORE_UNDEFINED -INF
@@ -99,13 +99,13 @@ class Search{
         }
 
         inline void move(const Flip *flip) {
-            board.move(flip);
+            board.move_board(flip);
             ++n_discs;
             parity ^= cell_div4[flip->pos];
         }
 
         inline void undo(const Flip *flip) {
-            board.undo(flip);
+            board.undo_board(flip);
             --n_discs;
             parity ^= cell_div4[flip->pos];
         }

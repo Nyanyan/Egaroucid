@@ -383,8 +383,8 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped, bool 
 int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t legal, const bool *searching){
     if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
-    //if (search->n_discs >= HW2 - END_FAST_DEPTH)
-    //    return nega_alpha_end_fast(search, alpha, beta, skipped, false, searching);
+    if (search->n_discs >= HW2 - END_FAST_DEPTH)
+        return nega_alpha_end_fast(search, alpha, beta, skipped, false, searching);
     ++search->n_nodes;
     uint32_t hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
     int l = -INF, u = INF;

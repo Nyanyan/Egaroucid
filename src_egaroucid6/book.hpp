@@ -196,9 +196,9 @@ class Book{
                             cerr << "error! illegal move" << endl;
                             return false;
                         }
-                        b.move(&flip);
+                        b.move_board(&flip);
                             n_book += register_symmetric_book(b, (int)link_value, n_book);
-                        b.undo(&flip);
+                        b.undo_board(&flip);
                     }
                 }
             }
@@ -574,52 +574,4 @@ Book book;
 
 bool book_init(string file){
     return book.init(file);
-}
-
-int modify_book(Board *b, bool passed, int *n_seen, vector<bool> &seen_nodes){
-    const int line = book.get_oneline(b);
-    if (0 <= line && line < (int)seen_nodes.size()){
-        if (seen_nodes[line]){
-            return book.get(b);
-        }
-        seen_nodes[line] = true;
-    }
-    uint64_t legal = b->get_legal();
-    if (legal == 0ULL){
-        if (passed)
-            return end_evaluate(b);
-        int res;
-        b->pass();
-            res = -modify_book(b, true, n_seen, seen_nodes);
-        b->pass();
-        return res;
-    }
-    ++(*n_seen);
-    if (((*n_seen) & 0b111111111) == 0b111111111)
-        cerr << (*n_seen) << " nodes" << endl;
-    int alpha = INF;
-    Flip flip;
-    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-        calc_flip(&flip, b, cell);
-        b->move(&flip);
-            if (book.get(b) != -INF)
-                alpha = min(alpha, -modify_book(b, false, n_seen, seen_nodes));
-        b->undo(&flip);
-    }
-    int vbook = book.get(b);
-    if (alpha == INF)
-        return vbook;
-    if (alpha != vbook)
-        book.change(b, alpha);
-    return alpha;
-}
-
-void modify_book_parent(Board *b){
-    const int n_book = book.get_n_book();
-    vector<bool> seen_nodes(n_book);
-    for (int i = 0; i < n_book; ++i)
-        seen_nodes[i] = false;
-    int n_seen = 0;
-    modify_book(b, false, &n_seen, seen_nodes);
-    cerr << "book modified seen " << n_seen << " nodes" << endl;
 }
