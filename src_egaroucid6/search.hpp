@@ -15,12 +15,10 @@ using namespace std;
 #endif
 #define MID_FAST_DEPTH 1
 #define END_FAST_DEPTH 7
-#define MID_TO_END_DEPTH 13
+#define MID_TO_END_DEPTH 100000
 #define USE_TT_DEPTH_THRESHOLD 10
 
 #define SCORE_UNDEFINED -INF
-
-#define N_CELL_WEIGHT_MASK 5
 
 constexpr int cell_weight[HW2] = {
     18,  4,  16, 12, 12, 16,  4, 18,

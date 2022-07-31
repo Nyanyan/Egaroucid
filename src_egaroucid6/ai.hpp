@@ -21,8 +21,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
     pair<int, int> result;
     depth = min(HW2 - pop_count_ull(board.player | board.opponent), depth);
     bool is_end_search = (HW2 - pop_count_ull(board.player | board.opponent) == depth);
-    board.copy(&search.board);
-    search.init_board();
+    search.init_board(&board);
     search.n_nodes = 0ULL;
     calc_features(&search);
     uint64_t strt;
