@@ -26,7 +26,7 @@ Egaroucidは世界最強クラスのオセロAIを搭載したオセロ研究・
 
 ## ダウンロード
 
-[こちら](https://github.com/Nyanyan/Egaroucid5/releases/)から最新バージョンをzip形式でダウンロードできます。
+[こちら](https://github.com/Nyanyan/Egaroucid/releases/)から最新バージョンをzip形式でダウンロードできます。
 
 以下の画像のように、自分のOSに合ったものをクリックしてダウンロードしてください。それを実行し、インストーラの指示に従ってインストールしてください。
 
@@ -115,7 +115,7 @@ trineutron
 
 ## 関連リンク
 
-* [GitHubレポジトリ](https://github.com/Nyanyan/Egaroucid5)
+* [GitHubレポジトリ](https://github.com/Nyanyan/Egaroucid)
 * [作者Twitter(静かな方)](https://twitter.com/takuto_yamana)
 * [作者Twitter(うるさい方)](https://twitter.com/Nyanyan_Cube)
 * [作者webサイト](https://nyanyan.github.io/)

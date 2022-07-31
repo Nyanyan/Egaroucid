@@ -26,7 +26,7 @@ The light version got the first place in the world ([CodinGame Othello](https://
 
 ## Download
 
-[Here](https://github.com/Nyanyan/Egaroucid5/releases) you can download.
+[Here](https://github.com/Nyanyan/Egaroucid/releases) you can download.
 
 Please select the OS, then click to download. Then execute it and please install it with the wizard.
 
@@ -113,7 +113,7 @@ Takuto Yamana / Nyanyan
 
 ## Links
 
-* [GitHub Repository](https://github.com/Nyanyan/Egaroucid5)
+* [GitHub Repository](https://github.com/Nyanyan/Egaroucid)
 * [Creator's Twitter (Quiet)](https://twitter.com/takuto_yamana)
 * [Creator's Twitter (Noisy)](https://twitter.com/Nyanyan_Cube)
 * [Creator's Web Page](https://nyanyan.github.io/)
