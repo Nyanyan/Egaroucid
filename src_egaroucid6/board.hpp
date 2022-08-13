@@ -39,10 +39,10 @@ class Board {
                 hash_rand_player[1][p[1]] ^ 
                 hash_rand_player[2][p[2]] ^ 
                 hash_rand_player[3][p[3]] ^ 
-                hash_rand_player[0][o[0]] ^ 
-                hash_rand_player[1][o[1]] ^ 
-                hash_rand_player[2][o[2]] ^ 
-                hash_rand_player[3][o[3]];
+                hash_rand_opponent[0][o[0]] ^ 
+                hash_rand_opponent[1][o[1]] ^ 
+                hash_rand_opponent[2][o[2]] ^ 
+                hash_rand_opponent[3][o[3]];
         }
 
         inline void board_white_line_mirror(){

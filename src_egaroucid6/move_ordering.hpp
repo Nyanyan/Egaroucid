@@ -16,27 +16,11 @@
 #define W_VALUE_DEEP 10
 #define W_VALUE 8
 #define W_VALUE_SHALLOW 6
-#define W_CACHE_HIT 4
+//#define W_CACHE_HIT 4
 #define W_MOBILITY 12
 #define W_PLAYER_POTENTIAL_MOBILITY 6
 #define W_OPPONENT_POTENTIAL_MOBILITY 8
 #define W_OPENNESS 1
-#define W_OPPONENT_OPENNESS 2
-#define W_FLIP_INSIDE 16
-#define W_N_FLIP 2
-#define W_N_FLIP_DIRECTION 4
-#define W_BOUND_FLIP -1
-#define W_CREATE_WALL -4
-#define W_BREAK_WALL -32
-#define W_DOUBLE_FLIP -64
-#define W_GIVE_POTENTIAL_FLIP_INSIDE 32
-#define W_GOOD_STICK 8
-
-#define W_FIRST_MIDDLE_EDGE_FLIP_1_DIRECTION 16
-#define W_SECOND_MIDDLE_EDGE_FLIP_HORIZONTAL 64
-#define W_SECOND_MIDDLE_EDGE_NEXT_TO_PILLAR 16
-#define W_FIRST_EDGE_FLIP_1_DIRECTION 8
-#define W_SECOND_EDGE_FLIP_1_DIRECTION 16
 
 #define MOVE_ORDERING_VALUE_OFFSET 14
 #define MAX_MOBILITY 30
@@ -77,20 +61,6 @@ inline int calc_openness(const Board *board, const Flip *flip){
     return pop_count_ull(~(board->player | board->opponent | (1ULL << flip->pos)) & around);
 }
 
-inline int calc_opponent_openness(Search *search, uint64_t legal){
-    if (legal == 0ULL)
-        return 0;
-    int res = INF;
-    Flip flip;
-    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-        calc_flip(&flip, &search->board, cell);
-        res = min(res, calc_openness(&search->board, &flip));
-        if (res == 0)
-            return 0;
-    }
-    return res;
-}
-
 inline int get_corner_mobility(uint64_t legal){
     legal &= 0b10000001'00000000'00000000'00000000'00000000'00000000'00000000'10000001ULL;
     int res = (int)((legal & 0b10000001ULL) + (legal >> 56));
@@ -113,96 +83,13 @@ inline int get_potential_mobility(uint64_t opponent, uint64_t empties){
     return pop_count_ull(empties & res);
 }
 
-inline bool is_good_stick(Search *search, Flip *flip){
-    uint64_t place = 1ULL << flip->pos;
-    if (place & 0x0081818181818100ULL){
-        if ((search->board.player | search->board.opponent) & (place << 8 | place >> 8))
-            return pop_count_ull(flip->flip & bit_around[flip->pos]) == 1;
-    }
-    if (place & 0x7E0000000000007EULL){
-        if ((search->board.player | search->board.opponent) & (place << 1 | place >> 1))
-            return pop_count_ull(flip->flip & bit_around[flip->pos]) == 1;
-    }
-    return false;
-}
-
-inline bool is_first_middle_edge(Search *search, Flip *flip){
-    uint64_t place = 1ULL << flip->pos;
-    uint64_t stones = search->board.player | search->board.opponent;
-    if (place & 0x003C000000000000ULL)
-        return (stones & 0x003C000000000000ULL) == 0ULL;
-    if (place & 0x0000404040400000ULL)
-        return (stones & 0x0000404040400000ULL) == 0ULL;
-    if (place & 0x0000000000003C00ULL)
-        return (stones & 0x0000000000003C00ULL) == 0ULL;
-    if (place & 0x0000020202020000ULL)
-        return (stones & 0x0000020202020000ULL) == 0ULL;
-    return false;
-}
-
-inline bool is_flip_1_direction(Flip *flip){
-    return pop_count_ull(flip->flip & bit_around[flip->pos]) == 1;
-}
-
-inline bool is_flip_horizontal(Flip *flip){
-    uint64_t place = 1ULL << flip->pos;
-    if (place & 0x003C000000000000ULL)
-        return (flip->flip & 0x003C000000000000ULL) > 0ULL;
-    if (place & 0x0000404040400000ULL)
-        return (flip->flip & 0x0000404040400000ULL) > 0ULL;
-    if (place & 0x0000000000003C00ULL)
-        return (flip->flip & 0x0000000000003C00ULL) > 0ULL;
-    if (place & 0x0000020202020000ULL)
-        return (flip->flip & 0x0000020202020000ULL) > 0ULL;
-    return false;
-}
-
-inline bool is_next_to_pillar(Search *search, Flip *flip){
-    uint64_t place = 1ULL << flip->pos;
-    uint64_t stones = search->board.player | search->board.opponent;
-    if (place & 0x003C000000003C00ULL)
-        return (stones & ((place << 1) | (place >> 1))) > 0ULL;
-    if (place & 0x0000424242420000ULL)
-        return (stones & ((place << HW) | (place >> HW))) > 0ULL;
-    return false;
-}
-
-inline bool is_first_edge(Search *search, Flip *flip){
-    uint64_t place = 1ULL << flip->pos;
-    uint64_t stones = search->board.player | search->board.opponent;
-    if (place & 0x3C00000000000000ULL)
-        return (stones & 0x3C00000000000000ULL) == 0ULL;
-    if (place & 0x0000808080800000ULL)
-        return (stones & 0x0000808080800000ULL) == 0ULL;
-    if (place & 0x000000000000003CULL)
-        return (stones & 0x000000000000003CULL) == 0ULL;
-    if (place & 0x0000010101010000ULL)
-        return (stones & 0x0000010101010000ULL) == 0ULL;
-    return false;
-}
-
-inline bool is_next_to_pillar_edge(Search *search, Flip *flip){
-    uint64_t place = 1ULL << flip->pos;
-    uint64_t stones = search->board.player | search->board.opponent;
-    if (place & 0x3C0000000000003CULL)
-        return (stones & ((place << 1) | (place >> 1))) > 0ULL;
-    if (place & 0x0000818181810000ULL)
-        return (stones & ((place << HW) | (place >> HW))) > 0ULL;
-    return false;
-}
-
-inline bool is_flip_few_stones(Flip *flip, const int threshold){
-    return pop_count_ull(flip->flip) <= threshold;
-}
-
-
 inline bool move_evaluate(Search *search, Flip_value *flip_value, const int alpha, const int beta, const int depth, const bool *searching, const int search_depth, const int search_alpha, bool *worth_searching){
     if (flip_value->flip.flip == search->board.opponent){
         flip_value->value = W_WIPEOUT;
         return true;
     }
     flip_value->value = cell_weight[flip_value->flip.pos];
-    flip_value->value -= (calc_openness(&search->board, &flip_value->flip) >> 1) * W_OPENNESS;
+    //flip_value->value -= (calc_openness(&search->board, &flip_value->flip) >> 1) * W_OPENNESS;
     eval_move(search, &flip_value->flip);
     search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
@@ -224,8 +111,8 @@ inline bool move_evaluate(Search *search, Flip_value *flip_value, const int alph
                 flip_value->value += val * W_VALUE;
                 break;
             default:
-                if (parent_transpose_table.contain(&search->board, search->board.hash() & TRANSPOSE_TABLE_MASK))
-                    flip_value->value += W_CACHE_HIT;
+                //if (parent_transpose_table.contain(&search->board, search->board.hash() & TRANSPOSE_TABLE_MASK))
+                //    flip_value->value += W_CACHE_HIT;
                 val = -nega_alpha_ordering_nomemo(search, alpha, beta, depth, false, flip_value->n_legal, searching);
                 if (search_alpha - WORTH_SEARCHING_THRESHOLD <= val)
                     *worth_searching = true;
