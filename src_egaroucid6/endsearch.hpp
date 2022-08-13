@@ -417,15 +417,35 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped, bool 
             }
         }
     #else
-        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-            calc_flip(&flip, &search->board, cell);
-            search->move(&flip);
-                g = -nega_alpha_end_fast(search, -beta, -alpha, false, true, searching);
-            search->undo(&flip);
-            alpha = max(alpha, g);
-            if (beta <= alpha)
-                return alpha;
-            v = max(v, g);
+        if (search->n_discs == 59){
+            uint64_t empties;
+                uint_fast8_t p0, p1, p2, p3;
+                for (cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+                    calc_flip(&flip, &search->board, cell);
+                    search->move(&flip);
+                        empties = ~(search->board.player | search->board.opponent);
+                        p0 = first_bit(&empties);
+                        p1 = next_bit(&empties);
+                        p2 = next_bit(&empties);
+                        p3 = next_bit(&empties);
+                        g = -last4(search, -beta, -alpha, p0, p1, p2, p3, skipped);
+                    search->undo(&flip);
+                    alpha = max(alpha, g);
+                    if (beta <= alpha)
+                        return alpha;
+                    v = max(v, g);
+                }
+        } else{
+            for (cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+                calc_flip(&flip, &search->board, cell);
+                search->move(&flip);
+                    g = -nega_alpha_end_fast(search, -beta, -alpha, false, true, searching);
+                search->undo(&flip);
+                alpha = max(alpha, g);
+                if (beta <= alpha)
+                    return alpha;
+                v = max(v, g);
+            }
         }
     #endif
     return v;
