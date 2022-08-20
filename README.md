@@ -66,15 +66,28 @@ First, you have to clone this repository. For example,
 $ git clone git@github.com:Nyanyan/Egaroucid5.git
 ```
 
-Then move to the ```src/test``` directory
+Then move to the ```src``` directory
 
 ```
-$ cd Egaroucid5/src/test
+$ cd Egaroucid5/src
+```
+
+Edit ```setting.hpp```
+
+```
+#define USE_BUILTIN_POPCOUNT true
+```
+
+to
+
+```
+#define USE_BUILTIN_POPCOUNT false
 ```
 
 Compile ```ai.cpp```
 
 ```
+$ cd test
 $ g++ -O3 -fexcess-precision=fast -funroll-loops -flto -march=native -lpthread -Wall ai.cpp -o a.exe
 ```
 
