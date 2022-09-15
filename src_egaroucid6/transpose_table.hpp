@@ -135,6 +135,7 @@ class Node_parent_transpose_table{
         atomic<int> lower;
         atomic<int> upper;
         atomic<double> mpct;
+        atomic<int> depth;
 
     public:
 
@@ -144,14 +145,16 @@ class Node_parent_transpose_table{
             lower.store(-INF);
             upper.store(INF);
             mpct.store(0.0);
+            depth.store(0);
         }
 
-        inline void register_value_with_board(const Board *board, const int l, const int u, const double t){
+        inline void register_value_with_board(const Board *board, const int l, const int u, const double t, const int d){
             player.store(board->player);
             opponent.store(board->opponent);
             lower.store(l);
             upper.store(u);
             mpct.store(t);
+            depth.store(d);
         }
 
         inline void register_value_with_board(Node_parent_transpose_table *from){
@@ -160,10 +163,11 @@ class Node_parent_transpose_table{
             lower.store(from->lower);
             upper.store(from->upper);
             mpct.store(from->mpct);
+            depth.store(from->depth);
         }
 
-        inline void get(const Board *board, int *l, int *u, const double t){
-            if (mpct.load(memory_order_relaxed) < t){
+        inline void get(const Board *board, int *l, int *u, const double t, const int d){
+            if (mpct.load(memory_order_relaxed) * depth.load(memory_order_relaxed) < t * d){
                 *l = -INF;
                 *u = INF;
             } else{
@@ -234,12 +238,12 @@ class Parent_transpose_table{
                 task.get();
         }
 
-        inline void reg(const Board *board, const uint32_t hash, const int l, const int u, const double t){
-            table[hash].register_value_with_board(board, l, u, t);
+        inline void reg(const Board *board, const uint32_t hash, const int l, const int u, const double t, const int d){
+            table[hash].register_value_with_board(board, l, u, t, d);
         }
 
-        inline void get(const Board *board, const uint32_t hash, int *l, int *u, const double t){
-            table[hash].get(board, l, u, t);
+        inline void get(const Board *board, const uint32_t hash, int *l, int *u, const double t, const int d){
+            table[hash].get(board, l, u, t, d);
         }
 
         inline bool contain(const Board *board, const uint32_t hash){

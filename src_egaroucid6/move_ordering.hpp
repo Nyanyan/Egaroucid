@@ -97,7 +97,7 @@ inline bool move_evaluate(Search *search, Flip_value *flip_value, const int alph
         flip_value->value -= get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent)) * W_OPPONENT_POTENTIAL_MOBILITY;
         flip_value->value += get_potential_mobility(search->board.player, ~(search->board.player | search->board.opponent)) * W_PLAYER_POTENTIAL_MOBILITY;
         int l, u;
-        parent_transpose_table.get(&search->board, search->board.hash() & TRANSPOSE_TABLE_MASK, &l, &u, search->mpct - 0.1);
+        parent_transpose_table.get(&search->board, search->board.hash() & TRANSPOSE_TABLE_MASK, &l, &u, search->mpct, depth);
         if (u != INF)
             flip_value->value -= u * W_CACHE;
         else{

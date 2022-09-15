@@ -184,7 +184,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
     uint32_t hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
     int l = -INF, u = INF;
     if (depth >= USE_TT_DEPTH_THRESHOLD){
-        parent_transpose_table.get(&search->board, hash_code, &l, &u, search->mpct);
+        parent_transpose_table.get(&search->board, hash_code, &l, &u, search->mpct, depth);
         if (u == l)
             return u;
         if (beta <= l)
@@ -289,7 +289,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
                 ybwc_wait_all(search, parallel_tasks, &v, &best_move, &alpha, beta, &n_searching);
         }
     }
-    register_tt(search, hash_code, first_alpha, v, best_move, l, u, alpha, beta, searching);
+    register_tt(search, depth, hash_code, first_alpha, v, best_move, l, u, alpha, beta, searching);
     return v;
 }
 
@@ -311,7 +311,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     uint32_t hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
     int l = -INF, u = INF;
     if (depth >= USE_TT_DEPTH_THRESHOLD){
-        parent_transpose_table.get(&search->board, hash_code, &l, &u, search->mpct);
+        parent_transpose_table.get(&search->board, hash_code, &l, &u, search->mpct, depth);
         if (u == l)
             return u;
         if (beta <= l)
@@ -388,7 +388,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
                 break;
         }
     }
-    register_tt(search, hash_code, first_alpha, v, best_move, l, u, alpha, beta, searching);
+    register_tt(search, depth, hash_code, first_alpha, v, best_move, l, u, alpha, beta, searching);
     return v;
 }
 
@@ -470,6 +470,6 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
                 break;
         }
     }
-    register_tt(search, hash_code, first_alpha, v, best_move, alpha, beta, alpha, beta, &searching);
+    register_tt(search, depth, hash_code, first_alpha, v, best_move, alpha, beta, alpha, beta, &searching);
     return make_pair(v, best_move);
 }

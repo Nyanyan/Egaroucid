@@ -470,7 +470,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
     uint32_t hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
     int l = -INF, u = INF;
     if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD){
-        parent_transpose_table.get(&search->board, hash_code, &l, &u, search->mpct);
+        parent_transpose_table.get(&search->board, hash_code, &l, &u, search->mpct, HW2 - search->n_discs);
         if (u == l)
             return u;
         if (beta <= l)
@@ -536,7 +536,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
                     v = g;
                     best_move = move_list[move_idx].flip.pos;
                     if (beta <= alpha){
-                        register_tt(search, hash_code, first_alpha, v, best_move, l, u, alpha, beta, searching);
+                        register_tt(search, HW2 - search->n_discs, hash_code, first_alpha, v, best_move, l, u, alpha, beta, searching);
                         return alpha;
                     }
                 }
@@ -544,6 +544,6 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
                 return SCORE_UNDEFINED;
         }
     }
-    register_tt(search, hash_code, first_alpha, v, best_move, l, u, alpha, beta, searching);
+    register_tt(search, HW2 - search->n_discs, hash_code, first_alpha, v, best_move, l, u, alpha, beta, searching);
     return v;
 }
