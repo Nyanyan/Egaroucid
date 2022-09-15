@@ -13,10 +13,10 @@
 #define W_PARITY1 2
 #define W_PARITY2 4
 
+#define W_CACHE 12
 #define W_VALUE_DEEP 10
 #define W_VALUE 8
 #define W_VALUE_SHALLOW 6
-//#define W_CACHE_HIT 4
 #define W_MOBILITY 12
 #define W_PLAYER_POTENTIAL_MOBILITY 6
 #define W_OPPONENT_POTENTIAL_MOBILITY 8
@@ -96,28 +96,34 @@ inline bool move_evaluate(Search *search, Flip_value *flip_value, const int alph
         flip_value->value -= get_weighted_n_moves(flip_value->n_legal) * W_MOBILITY;
         flip_value->value -= get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent)) * W_OPPONENT_POTENTIAL_MOBILITY;
         flip_value->value += get_potential_mobility(search->board.player, ~(search->board.player | search->board.opponent)) * W_PLAYER_POTENTIAL_MOBILITY;
-        int val;
-        switch(depth){
-            case 0:
-                val = -mid_evaluate_diff(search);
-                if (search_alpha - WORTH_SEARCHING_THRESHOLD <= val)
-                    *worth_searching = true;
-                flip_value->value += val * W_VALUE_SHALLOW;
-                break;
-            case 1:
-                val = -nega_alpha_eval1(search, alpha, beta, false, searching);
-                if (search_alpha - WORTH_SEARCHING_THRESHOLD <= val)
-                    *worth_searching = true;
-                flip_value->value += val * W_VALUE;
-                break;
-            default:
-                //if (parent_transpose_table.contain(&search->board, search->board.hash() & TRANSPOSE_TABLE_MASK))
-                //    flip_value->value += W_CACHE_HIT;
-                val = -nega_alpha_ordering_nomemo(search, alpha, beta, depth, false, flip_value->n_legal, searching);
-                if (search_alpha - WORTH_SEARCHING_THRESHOLD <= val)
-                    *worth_searching = true;
-                flip_value->value += val * (W_VALUE_DEEP + (depth - 1) * 2);
-                break;
+        int l, u;
+        parent_transpose_table.get(&search->board, search->board.hash() & TRANSPOSE_TABLE_MASK, &l, &u, search->mpct - 0.1);
+        if (u != INF)
+            flip_value->value -= u * W_CACHE;
+        else{
+            int val;
+            switch(depth){
+                case 0:
+                    val = -mid_evaluate_diff(search);
+                    if (search_alpha - WORTH_SEARCHING_THRESHOLD <= val)
+                        *worth_searching = true;
+                    flip_value->value += val * W_VALUE_SHALLOW;
+                    break;
+                case 1:
+                    val = -nega_alpha_eval1(search, alpha, beta, false, searching);
+                    if (search_alpha - WORTH_SEARCHING_THRESHOLD <= val)
+                        *worth_searching = true;
+                    flip_value->value += val * W_VALUE;
+                    break;
+                default:
+                    //if (parent_transpose_table.contain(&search->board, search->board.hash() & TRANSPOSE_TABLE_MASK))
+                    //    flip_value->value += W_CACHE_HIT;
+                    val = -nega_alpha_ordering_nomemo(search, alpha, beta, depth, false, flip_value->n_legal, searching);
+                    if (search_alpha - WORTH_SEARCHING_THRESHOLD <= val)
+                        *worth_searching = true;
+                    flip_value->value += val * (W_VALUE_DEEP + (depth - 1) * 2);
+                    break;
+            }
         }
     search->undo(&flip_value->flip);
     eval_undo(search, &flip_value->flip);

@@ -12,6 +12,8 @@ using namespace std;
 #define NOMPC 10000.0
 #define NODEPTH 100
 
+constexpr double mpc_level[5] = {0.6, MPC_81, MPC_95, MPC_98, MPC_99};
+
 struct Level{
     int mid_lookahead;
     double mid_mpct;

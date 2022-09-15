@@ -262,6 +262,6 @@ class Parent_transpose_table{
 };
 
 Parent_transpose_table parent_transpose_table;
-Parent_transpose_table bak_parent_transpose_table;
+//Parent_transpose_table bak_parent_transpose_table;
 Child_transpose_table child_transpose_table;
-Child_transpose_table bak_child_transpose_table;
+//Child_transpose_table bak_child_transpose_table;
