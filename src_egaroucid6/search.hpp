@@ -14,7 +14,7 @@ using namespace std;
     #define N_SYMMETRY_PATTERNS 62
 #endif
 #define MID_FAST_DEPTH 1
-#define END_FAST_DEPTH 7
+#define END_FAST_DEPTH 6
 #define MID_TO_END_DEPTH 13
 #define USE_TT_DEPTH_THRESHOLD 10
 
