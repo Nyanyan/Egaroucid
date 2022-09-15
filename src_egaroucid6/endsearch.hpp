@@ -64,16 +64,18 @@ inline int last2(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
             v = -INF;
     } else
         v = -INF;
-    if (bit_around[p1] & search->board.opponent){
-        calc_flip(&flip, &search->board, p1);
-        if (flip.flip){
-            search->move(&flip);
-                g = -last1(search, -beta, -alpha, p0);
-            search->undo(&flip);
-            alpha = max(alpha, g);
-            if (beta <= alpha)
-                return alpha;
-            v = max(v, g);
+    if (bit_radiation[p0] & bit_radiation[p1]){
+        if (bit_around[p1] & search->board.opponent){
+            calc_flip(&flip, &search->board, p1);
+            if (flip.flip){
+                search->move(&flip);
+                    g = -last1(search, -beta, -alpha, p0);
+                search->undo(&flip);
+                alpha = max(alpha, g);
+                if (beta <= alpha)
+                    return alpha;
+                v = max(v, g);
+            }
         }
     }
     if (v == -INF){
@@ -130,28 +132,32 @@ inline int last3(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
             v = g;
         }
     }
-    if (bit_around[p1] & search->board.opponent){
-        calc_flip(&flip, &search->board, p1);
-        if (flip.flip){
-            search->move(&flip);
-                g = -last2(search, -beta, -alpha, p0, p2, false);
-            search->undo(&flip);
-            alpha = max(alpha, g);
-            if (beta <= alpha)
-                return alpha;
-            v = max(v, g);
+    if (bit_radiation[p0] & bit_radiation[p1]){
+        if (bit_around[p1] & search->board.opponent){
+            calc_flip(&flip, &search->board, p1);
+            if (flip.flip){
+                search->move(&flip);
+                    g = -last2(search, -beta, -alpha, p0, p2, false);
+                search->undo(&flip);
+                alpha = max(alpha, g);
+                if (beta <= alpha)
+                    return alpha;
+                v = max(v, g);
+            }
         }
     }
-    if (bit_around[p2] & search->board.opponent){
-        calc_flip(&flip, &search->board, p2);
-        if (flip.flip){
-            search->move(&flip);
-                g = -last2(search, -beta, -alpha, p0, p1, false);
-            search->undo(&flip);
-            alpha = max(alpha, g);
-            if (beta <= alpha)
-                return alpha;
-            v = max(v, g);
+    if ((bit_radiation[p0] & bit_radiation[p2]) || (bit_radiation[p1] & bit_radiation[p2])){
+        if (bit_around[p2] & search->board.opponent){
+            calc_flip(&flip, &search->board, p2);
+            if (flip.flip){
+                search->move(&flip);
+                    g = -last2(search, -beta, -alpha, p0, p1, false);
+                search->undo(&flip);
+                alpha = max(alpha, g);
+                if (beta <= alpha)
+                    return alpha;
+                v = max(v, g);
+            }
         }
     }
     if (v == -INF){
