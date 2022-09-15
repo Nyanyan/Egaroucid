@@ -198,7 +198,7 @@ inline void move_ordering(Search *search, vector<Flip_value> &move_list, int dep
     sort(move_list.begin(), move_list.end(), cmp_move_ordering);
 }
 
-inline void move_evaluate_fast_first(Search *search, vector<Flip_value> &move_list){
+inline void move_list_evaluate_fast_first(Search *search, vector<Flip_value> &move_list){
     if (move_list.size() == 1){
         move_list[0].n_legal = LEGAL_UNDEFINED;
         return;
@@ -214,6 +214,6 @@ inline void move_evaluate_fast_first(Search *search, vector<Flip_value> &move_li
 }
 
 inline void move_ordering_fast_first(Search *search, vector<Flip_value> &move_list){
-    move_evaluate_fast_first(search, move_list);
+    move_list_evaluate_fast_first(search, move_list);
     sort(move_list.begin(), move_list.end(), cmp_move_ordering);
 }

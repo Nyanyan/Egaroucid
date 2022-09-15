@@ -430,7 +430,7 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped, bool 
         if (search->n_discs == 59){
             uint64_t empties;
                 uint_fast8_t p0, p1, p2, p3;
-                for (cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+                for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
                     calc_flip(&flip, &search->board, cell);
                     search->move(&flip);
                         empties = ~(search->board.player | search->board.opponent);
@@ -446,7 +446,7 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped, bool 
                     v = max(v, g);
                 }
         } else{
-            for (cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+            for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
                 calc_flip(&flip, &search->board, cell);
                 search->move(&flip);
                     g = -nega_alpha_end_fast(search, -beta, -alpha, false, true, searching);
@@ -522,7 +522,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
         int idx = 0;
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
             calc_flip(&move_list[idx++].flip, &search->board, cell);
-        move_evaluate_fast_first(search, move_list);
+        move_list_evaluate_fast_first(search, move_list);
         const int move_ordering_threshold = MOVE_ORDERING_THRESHOLD - (int)(best_move != TRANSPOSE_TABLE_UNDEFINED);
         for (int move_idx = 0; move_idx < canput; ++move_idx){
             if (move_idx < move_ordering_threshold)
