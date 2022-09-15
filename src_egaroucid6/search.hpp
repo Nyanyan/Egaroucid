@@ -126,11 +126,11 @@ inline void register_tt(Search *search, uint32_t hash_code, int first_alpha, int
         if (first_alpha < v && best_move != TRANSPOSE_TABLE_UNDEFINED)
             child_transpose_table.reg(&search->board, hash_code, best_move);
         if (first_alpha < v && v < beta)
-            parent_transpose_table.reg(&search->board, hash_code, v, v);
+            parent_transpose_table.reg(&search->board, hash_code, v, v, search->mpct);
         else if (beta <= v && l < v)
-            parent_transpose_table.reg(&search->board, hash_code, v, u);
+            parent_transpose_table.reg(&search->board, hash_code, v, u, search->mpct);
         else if (v <= alpha && v < u)
-            parent_transpose_table.reg(&search->board, hash_code, l, v);
+            parent_transpose_table.reg(&search->board, hash_code, l, v, search->mpct);
     }
 }
 

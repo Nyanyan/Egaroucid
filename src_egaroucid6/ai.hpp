@@ -157,7 +157,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
 
 inline bool cache_search(Board board, int *val, int *best_move){
     int l, u;
-    bak_parent_transpose_table.get(&board, board.hash() & TRANSPOSE_TABLE_MASK, &l, &u);
+    bak_parent_transpose_table.get(&board, board.hash() & TRANSPOSE_TABLE_MASK, &l, &u, NOMPC);
     int best_move_child_tt = bak_child_transpose_table.get(&board, board.hash() & TRANSPOSE_TABLE_MASK);
     cerr << "cache get " << l << " " << u << endl;
     if (l != u || best_move_child_tt == TRANSPOSE_TABLE_UNDEFINED)
@@ -169,7 +169,7 @@ inline bool cache_search(Board board, int *val, int *best_move){
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
         calc_flip(&flip, &board, cell);
         board.move_board(&flip);
-            bak_parent_transpose_table.get(&board, board.hash() & TRANSPOSE_TABLE_MASK, &l, &u);
+            bak_parent_transpose_table.get(&board, board.hash() & TRANSPOSE_TABLE_MASK, &l, &u, NOMPC);
         board.undo_board(&flip);
         cerr << idx_to_coord(cell) << " " << l << " " << u << endl;
         if (l == u && -l == *val && cell == best_move_child_tt)

@@ -470,7 +470,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
     uint32_t hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
     int l = -INF, u = INF;
     if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD){
-        parent_transpose_table.get(&search->board, hash_code, &l, &u);
+        parent_transpose_table.get(&search->board, hash_code, &l, &u, search->mpct);
         if (u == l)
             return u;
         if (beta <= l)
