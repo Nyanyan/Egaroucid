@@ -11,10 +11,6 @@
 // board to array conversion
 #define FAST_ARR_CONVERT true
 
-// flip calculating
-#define FLIP_CALC_MODE 3
-#define LAST_FLIP_CALC_MODE 5
-
 // parity ordering
 #define USE_END_PO true
 
@@ -25,9 +21,6 @@
 #define USE_MID_MPC true
 #define USE_END_MPC true
 
-// legal calculation
-#define LEGAL_CALCULATION_MODE 5
-
 // pop_count
 #define USE_BUILTIN_POPCOUNT true
 
@@ -37,16 +30,6 @@
 
 // evaluation calculation
 #define USE_FAST_DIFF_EVAL false
-
-// evaluation function step width
-// 0: 1 discs
-// 1: 2 discs
-// 2: 1/2 discs
-// 3: 1/4 discs
-// 4: 1/8 discs
-// 5: 1/16 discs
-// 6: 1/32 discs
-#define EVALUATION_STEP_WIDTH_MODE 0
 
 // last parity ordering optimisation
 #define LAST_PO_OPTIMISE true
