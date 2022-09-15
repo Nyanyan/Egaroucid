@@ -244,6 +244,7 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
         return v;
     }
     Flip flip;
+    uint64_t all_radiation = 0ULL;
     if (1 & (legal >> p0)){
         calc_flip(&flip, &search->board, p0);
         search->move(&flip);
@@ -254,7 +255,8 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
             return alpha;
         v = max(v, g);
     }
-    if (1 & (legal >> p1)){
+    all_radiation |= bit_radiation[p0];
+    if ((1 & (legal >> p1)) && (all_radiation & bit_radiation[p1])){
         calc_flip(&flip, &search->board, p1);
         search->move(&flip);
             g = -last3(search, -beta, -alpha, p0, p2, p3, false);
@@ -264,7 +266,8 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
             return alpha;
         v = max(v, g);
     }
-    if (1 & (legal >> p2)){
+    all_radiation |= bit_radiation[p1];
+    if ((1 & (legal >> p2)) && (all_radiation & bit_radiation[p2])){
         calc_flip(&flip, &search->board, p2);
         search->move(&flip);
             g = -last3(search, -beta, -alpha, p0, p1, p3, false);
@@ -274,7 +277,8 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
             return alpha;
         v = max(v, g);
     }
-    if (1 & (legal >> p3)){
+    all_radiation |= bit_radiation[p2];
+    if ((1 & (legal >> p3)) && (all_radiation & bit_radiation[p3])){
         calc_flip(&flip, &search->board, p3);
         search->move(&flip);
             g = -last3(search, -beta, -alpha, p0, p1, p2, false);
