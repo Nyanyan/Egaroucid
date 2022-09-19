@@ -8,8 +8,8 @@
 
 using namespace std;
 
-#define TRANSPOSE_TABLE_SIZE 8388608 //2097152
-#define TRANSPOSE_TABLE_MASK 8388607 //2097151
+#define TRANSPOSE_TABLE_SIZE 16777216 //8388608
+#define TRANSPOSE_TABLE_MASK 16777215 //8388607
 
 #define CACHE_SAVE_EMPTY 10
 
@@ -56,25 +56,12 @@ class Node_child_transpose_table{
 
 void init_child_transpose_table(Node_child_transpose_table table[], int s, int e){
     for(int i = s; i < e; ++i){
-        //if (!table[i].is_null())
         table[i].init();
     }
 }
 
 void copy_child_transpose_table(Node_child_transpose_table from[], Node_child_transpose_table to[], int s, int e){
     for(int i = s; i < e; ++i){
-        /*
-        if (!from[i].is_null()){
-            if (from[i].n_stones() < HW2 - CACHE_SAVE_EMPTY){
-                if (to[i].is_null())
-                    to[i].set();
-                to[i].register_value_with_board(from[i].node);
-            }
-        } else{
-            if (!to[i].is_null())
-                to[i].init();
-        }
-        */
         to[i].register_value_with_board(&from[i]);
     }
 }
@@ -191,25 +178,12 @@ class Node_parent_transpose_table{
 
 void init_parent_transpose_table(Node_parent_transpose_table table[], int s, int e){
     for(int i = s; i < e; ++i){
-        //if (!table[i].is_null())
         table[i].init();
     }
 }
 
 void copy_parent_transpose_table(Node_parent_transpose_table from[], Node_parent_transpose_table to[], int s, int e){
     for(int i = s; i < e; ++i){
-        /*
-        if (!from[i].is_null()){
-            if (from[i].n_stones() < HW2 - CACHE_SAVE_EMPTY){
-                if (to[i].is_null())
-                    to[i].set();
-                to[i].register_value_with_board(from[i].node);
-            }
-        } else{
-            if (!to[i].is_null())
-                to[i].init();
-        }
-        */
         to[i].register_value_with_board(&from[i]);
     }
 }
@@ -266,6 +240,4 @@ class Parent_transpose_table{
 };
 
 Parent_transpose_table parent_transpose_table;
-//Parent_transpose_table bak_parent_transpose_table;
 Child_transpose_table child_transpose_table;
-//Child_transpose_table bak_child_transpose_table;
