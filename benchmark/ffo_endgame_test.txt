@@ -11691,6 +11691,47 @@ answer
 #78 8  f1
 #79 64 d7
 
+2022/09/19 use tt magic number
+#40 depth 20 value 38 policy a2 nodes 26565180 time 132 nps 201251363
+#41 depth 22 value 0 policy h4 nodes 44919667 time 290 nps 154895403
+#42 depth 22 value 6 policy g2 nodes 45182726 time 183 nps 246900142
+#43 depth 23 value -12 policy c7 nodes 131115101 time 574 nps 228423520
+#44 depth 23 value -14 policy d2 nodes 30715415 time 236 nps 130150063
+#45 depth 24 value 6 policy b2 nodes 521996481 time 1824 nps 286182281
+#46 depth 24 value -8 policy b3 nodes 168235845 time 721 nps 233336816
+#47 depth 25 value 4 policy g2 nodes 42152322 time 276 nps 152725804
+#48 depth 25 value 28 policy f6 nodes 178721520 time 1137 nps 157186912
+#49 depth 26 value 16 policy e1 nodes 549902421 time 2274 nps 241821645
+7.647 sec
+9.354001760482788 sec total
+1739506678 nodes
+227475700.01307702 nps
+
+#40 depth 20 value 38 policy a2 nodes 26301306 time 129 nps 203886093
+#41 depth 22 value 0 policy h4 nodes 43581028 time 277 nps 157332231
+#42 depth 22 value 6 policy g2 nodes 46341747 time 185 nps 250495929
+#43 depth 23 value -12 policy c7 nodes 138338434 time 577 nps 239754651
+#44 depth 23 value -14 policy d2 nodes 27139795 time 223 nps 121703116
+#45 depth 24 value 6 policy b2 nodes 510538391 time 1745 nps 292572143
+#46 depth 24 value -8 policy b3 nodes 166518764 time 715 nps 232893376
+#47 depth 25 value 4 policy g2 nodes 43798262 time 262 nps 167168938
+#48 depth 25 value 28 policy f6 nodes 173284072 time 1083 nps 160003759
+#49 depth 26 value 16 policy e1 nodes 536315260 time 2207 nps 243006461
+#50 depth 26 value 10 policy d8 nodes 1337065480 time 5528 nps 241871468
+#51 depth 27 value 6 policy a3 nodes 488455268 time 2337 nps 209009528
+#52 depth 27 value 0 policy a3 nodes 561394767 time 2357 nps 238181912
+#53 depth 28 value -2 policy d8 nodes 5132059072 time 18069 nps 284025627
+#54 depth 28 value -2 policy c7 nodes 7645213791 time 21579 nps 354289531
+#55 depth 29 value 0 policy g6 nodes 17261056591 time 74482 nps 231748027
+#56 depth 29 value 2 policy h5 nodes 1628815599 time 8471 nps 192281383
+#57 depth 30 value -10 policy a6 nodes 3229187110 time 14626 nps 220784022
+#58 depth 30 value 4 policy g1 nodes 2364835298 time 10742 nps 220148510
+#59 depth 34 value 64 policy g8 nodes 17015 time 4 nps 4253750
+165.598 sec
+167.67407536506653 sec total
+41360257050 nodes
+249763022.80220777 nps
+
 2022/09/19 update presearch mpct
 #40 depth 20 value 38 policy a2 nodes 26657173 time 124 nps 214977201
 #41 depth 22 value 0 policy h4 nodes 43309464 time 264 nps 164051000
