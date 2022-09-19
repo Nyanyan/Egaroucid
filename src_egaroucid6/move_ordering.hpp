@@ -96,11 +96,6 @@ inline bool move_evaluate(Search *search, Flip_value *flip_value, const int alph
         flip_value->value -= get_weighted_n_moves(flip_value->n_legal) * W_MOBILITY;
         flip_value->value -= get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent)) * W_OPPONENT_POTENTIAL_MOBILITY;
         flip_value->value += get_potential_mobility(search->board.player, ~(search->board.player | search->board.opponent)) * W_PLAYER_POTENTIAL_MOBILITY;
-        //int l, u;
-        //parent_transpose_table.get(&search->board, search->board.hash() & TRANSPOSE_TABLE_MASK, &l, &u, search->mpct, depth);
-        //if (u != INF)
-        //    flip_value->value -= u * W_CACHE;
-        //else{
         int val;
         switch(depth){
             case 0:
@@ -116,15 +111,12 @@ inline bool move_evaluate(Search *search, Flip_value *flip_value, const int alph
                 flip_value->value += val * W_VALUE;
                 break;
             default:
-                //if (parent_transpose_table.contain(&search->board, search->board.hash() & TRANSPOSE_TABLE_MASK))
-                //    flip_value->value += W_CACHE_HIT;
                 val = -nega_alpha_ordering_nomemo(search, alpha, beta, depth, false, flip_value->n_legal, searching);
                 if (search_alpha - WORTH_SEARCHING_THRESHOLD <= val)
                     *worth_searching = true;
                 flip_value->value += val * (W_VALUE_DEEP + (depth - 1) * 2);
                 break;
         }
-        //}
     search->undo(&flip_value->flip);
     eval_undo(search, &flip_value->flip);
     return false;
@@ -187,8 +179,6 @@ inline bool move_list_evaluate(Search *search, vector<Flip_value> &move_list, in
             }
         }
     }
-    //if ((depth ^ eval_depth) & 1)
-    //    ++eval_depth;
     bool wipeout_found = false;
     bool worth_searching = false;
     for (Flip_value &flip_value: move_list){

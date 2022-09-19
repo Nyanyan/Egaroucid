@@ -15,6 +15,8 @@ using namespace std;
 
 #define TRANSPOSE_TABLE_UNDEFINED -INF
 
+#define TRANSPOSE_TABLE_STRENGTH_MAGIC_NUMBER 8
+
 class Node_child_transpose_table{
     private:
         atomic<uint64_t> player;
@@ -154,7 +156,7 @@ class Node_parent_transpose_table{
         }
 
         inline void get(const Board *board, int *l, int *u, const double t, const int d){
-            if (mpct.load(memory_order_relaxed) * depth.load(memory_order_relaxed) < t * d){
+            if (mpct.load(memory_order_relaxed) * (TRANSPOSE_TABLE_STRENGTH_MAGIC_NUMBER + depth.load(memory_order_relaxed)) < t * (TRANSPOSE_TABLE_STRENGTH_MAGIC_NUMBER + d)){
                 *l = -INF;
                 *u = INF;
             } else{
