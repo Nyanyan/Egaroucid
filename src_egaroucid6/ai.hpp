@@ -43,6 +43,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
             cerr << "presearch d=" << depth / 2 << " t=" << search.mpct << " [-64,64] " << g << " " << idx_to_coord(result.second) << endl;
 
         //search.p = (search.board.p + depth) % 2;
+        /*
         if (depth >= 22 && 1.0 < mpct){
             //parent_transpose_table.init();
             search.mpct = 1.0;
@@ -52,19 +53,20 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
             g = result.first;
             if (show_log)
                 cerr << "presearch d=" << depth << " t=" << search.mpct << " [-64,64] " << g << " " << idx_to_coord(result.second) << endl;
-
-            if (depth >= 25 && 2.0 < mpct){
-                //parent_transpose_table.init();
-                search.mpct = 2.0;
-                search.use_mpc = true;
-                alpha = -SCORE_MAX;
-                beta = SCORE_MAX;
-                result = first_nega_scout(&search, alpha, beta, depth, false, true, false, result.second);
-                g = result.first;
-                if (show_log)
-                    cerr << "presearch d=" << depth << " t=" << search.mpct << " [" << alpha << "," << beta << "] " << g << " " << idx_to_coord(result.second) << endl;
-            }
+        */
+        double presearch_mpct = 1.0 + 0.1 * (depth - 20);
+        if (depth >= 23 && presearch_mpct < mpct){
+            //parent_transpose_table.init();
+            search.mpct = presearch_mpct;
+            search.use_mpc = true;
+            alpha = -SCORE_MAX;
+            beta = SCORE_MAX;
+            result = first_nega_scout(&search, alpha, beta, depth, false, true, false, result.second);
+            g = result.first;
+            if (show_log)
+                cerr << "presearch d=" << depth << " t=" << search.mpct << " [" << alpha << "," << beta << "] " << g << " " << idx_to_coord(result.second) << endl;
         }
+        //}
 
         //if (show_log)
         //    cerr << "presearch n_nodes " << search.n_nodes << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
