@@ -35,7 +35,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
         if (show_log)
             cerr << "start!" << endl;
         if (depth >= 14){
-            search.mpct = 1.0;
+            search.mpct = 0.8;
             search.use_mpc = true;
             //search.p = (search.board.p + depth / 2) % 2;
             result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth / 2, false, false, false, TRANSPOSE_TABLE_UNDEFINED);
@@ -43,7 +43,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
             if (show_log)
                 cerr << "presearch d=" << depth / 2 << " t=" << search.mpct << " [-64,64] " << g << " " << idx_to_coord(result.second) << endl;
         }
-        double presearch_mpct = 1.0 + 0.1 * (depth - 20);
+        double presearch_mpct = 0.9 + 0.1 * (depth - 20);
         if (depth >= 23 && presearch_mpct < mpct){
             //parent_transpose_table.init();
             search.mpct = presearch_mpct;
