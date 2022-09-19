@@ -421,6 +421,10 @@ bool evaluate_init(const char* file){
     return init_evaluation_calc(file);
 }
 
+bool evaluate_init(const string file){
+    return init_evaluation_calc(file.c_str());
+}
+
 bool evaluate_init(){
     return init_evaluation_calc("resources/eval.egev");
 }
