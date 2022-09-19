@@ -17,6 +17,7 @@ using namespace std;
 #define END_FAST_DEPTH 7
 #define MID_TO_END_DEPTH 13
 #define USE_TT_DEPTH_THRESHOLD 10
+#define USE_MPC_ENDSEARCH_DEPTH 15
 
 #define SCORE_UNDEFINED -INF
 
