@@ -145,18 +145,20 @@ int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, b
         int idx = 0;
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
             calc_flip(&move_list[idx++].flip, &search->board, cell);
-        move_ordering(search, move_list, depth, alpha, beta, false, searching);
-        for (const Flip_value &flip_value: move_list){
-            eval_move(search, &flip_value.flip);
-            search->move(&flip_value.flip);
-                g = -nega_alpha_ordering_nomemo(search, -beta, -alpha, depth - 1, false, flip_value.n_legal, searching);
-            search->undo(&flip_value.flip);
-            eval_undo(search, &flip_value.flip);
+        //move_ordering(search, move_list, depth, alpha, beta, false, searching);
+        move_list_evaluate(search, move_list, depth, alpha, beta, false, searching);
+        for (int move_idx = 0; move_idx < canput; ++move_idx){
+            swap_next_best_move(move_list, move_idx, canput);
+            eval_move(search, &move_list[move_idx].flip);
+            search->move(&move_list[move_idx].flip);
+                g = -nega_alpha_ordering_nomemo(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, searching);
+            search->undo(&move_list[move_idx].flip);
+            eval_undo(search, &move_list[move_idx].flip);
             if (*searching){
                 alpha = max(alpha, g);
                 if (v < g){
                     v = g;
-                    best_move = flip_value.flip.pos;
+                    best_move = move_list[move_idx].flip.pos;
                 }
                 if (beta <= alpha)
                     break;
