@@ -245,12 +245,12 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
             pv_idx = 1;
         vector<future<Parallel_task>> parallel_tasks;
         bool n_searching = true;
-        const int move_ordering_threshold = MOVE_ORDERING_THRESHOLD - (int)(best_move != TRANSPOSE_TABLE_UNDEFINED);
+        //const int move_ordering_threshold = MOVE_ORDERING_THRESHOLD - (int)(best_move != TRANSPOSE_TABLE_UNDEFINED);
         for (int move_idx = 0; move_idx < canput; ++move_idx){
             if (!(*searching))
                 break;
-            if (move_idx < move_ordering_threshold)
-                swap_next_best_move(move_list, move_idx, canput);
+            //if (move_idx < move_ordering_threshold)
+            swap_next_best_move(move_list, move_idx, canput);
             eval_move(search, &move_list[move_idx].flip);
             search->move(&move_list[move_idx].flip);
                 if (ybwc_split(search, &move_list[move_idx].flip, -beta, -alpha, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].flip.pos, pv_idx++, canput, split_count, parallel_tasks, move_list[0].value, move_list[move_list.size() - 1].value, worth_searching)){
@@ -364,10 +364,10 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
             calc_flip(&move_list[idx++].flip, &search->board, cell);
         move_list_evaluate(search, move_list, depth, alpha, beta, is_end_search, searching);
-        const int move_ordering_threshold = MOVE_ORDERING_THRESHOLD - (int)(best_move != TRANSPOSE_TABLE_UNDEFINED);
+        //const int move_ordering_threshold = MOVE_ORDERING_THRESHOLD - (int)(best_move != TRANSPOSE_TABLE_UNDEFINED);
         for (int move_idx = 0; move_idx < canput; ++move_idx){
-            if (move_idx < move_ordering_threshold)
-                swap_next_best_move(move_list, move_idx, canput);
+            //if (move_idx < move_ordering_threshold)
+            swap_next_best_move(move_list, move_idx, canput);
             eval_move(search, &move_list[move_idx].flip);
             search->move(&move_list[move_idx].flip);
                 if (v == -INF)

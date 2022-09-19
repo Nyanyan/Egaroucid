@@ -523,10 +523,10 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
             calc_flip(&move_list[idx++].flip, &search->board, cell);
         move_list_evaluate_fast_first(search, move_list);
-        const int move_ordering_threshold = MOVE_ORDERING_THRESHOLD - (int)(best_move != TRANSPOSE_TABLE_UNDEFINED);
+        //const int move_ordering_threshold = MOVE_ORDERING_THRESHOLD - (int)(best_move != TRANSPOSE_TABLE_UNDEFINED);
         for (int move_idx = 0; move_idx < canput; ++move_idx){
-            if (move_idx < move_ordering_threshold)
-                swap_next_best_move(move_list, move_idx, canput);
+            //if (move_idx < move_ordering_threshold)
+            swap_next_best_move(move_list, move_idx, canput);
             search->move(&move_list[move_idx].flip);
                 g = -nega_alpha_end(search, -beta, -alpha, false, move_list[move_idx].n_legal, searching);
             search->undo(&move_list[move_idx].flip);
