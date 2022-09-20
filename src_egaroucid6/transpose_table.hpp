@@ -17,6 +17,10 @@ using namespace std;
 
 #define TRANSPOSE_TABLE_STRENGTH_MAGIC_NUMBER 8
 
+inline double data_strength(const double t, const int d){
+    return t * (TRANSPOSE_TABLE_STRENGTH_MAGIC_NUMBER + d);
+}
+
 class Node_child_transpose_table{
     private:
         atomic<uint64_t> player;
@@ -138,6 +142,8 @@ class Node_parent_transpose_table{
         }
 
         inline void register_value_with_board(const Board *board, const int l, const int u, const double t, const int d){
+            if (board->player == player.load(memory_order_relaxed) && board->opponent == opponent.load(memory_order_relaxed) && data_strength(mpct.load(memory_order_relaxed), depth.load(memory_order_relaxed)) > data_strength(t, d))
+                return;
             player.store(board->player);
             opponent.store(board->opponent);
             lower.store(l);
@@ -156,7 +162,7 @@ class Node_parent_transpose_table{
         }
 
         inline void get(const Board *board, int *l, int *u, const double t, const int d){
-            if (mpct.load(memory_order_relaxed) * (TRANSPOSE_TABLE_STRENGTH_MAGIC_NUMBER + depth.load(memory_order_relaxed)) < t * (TRANSPOSE_TABLE_STRENGTH_MAGIC_NUMBER + d)){
+            if (data_strength(mpct.load(memory_order_relaxed), depth.load(memory_order_relaxed)) < data_strength(t, d)){
                 *l = -INF;
                 *u = INF;
             } else{
