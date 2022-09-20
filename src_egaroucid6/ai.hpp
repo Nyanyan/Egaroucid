@@ -156,7 +156,7 @@ inline bool cache_search(Board board, int *val, int *best_move){
         board.move_board(&flip);
             parent_transpose_table.get(&board, board.hash() & TRANSPOSE_TABLE_MASK, &l, &u, NOMPC, HW2 - n_discs);
         board.undo_board(&flip);
-        cerr << idx_to_coord(cell) << " " << l << " " << u << endl;
+        //cerr << idx_to_coord(cell) << " " << l << " " << u << endl;
         if (l == u && -l == *val && cell == best_move_child_tt)
             *best_move = cell;
     }
