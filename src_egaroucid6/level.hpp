@@ -9,7 +9,7 @@ using namespace std;
 #define MPC_95 1.64
 #define MPC_98 2.05
 #define MPC_99 2.33
-#define NOMPC 10000.0
+#define NOMPC 5.00
 #define NODEPTH 100
 
 constexpr double mpc_level[5] = {0.6, MPC_81, MPC_95, MPC_98, MPC_99};
