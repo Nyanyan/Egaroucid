@@ -139,32 +139,6 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
     return res;
 }
 
-inline bool cache_search(Board board, int *val, int *best_move){
-    int l, u;
-    int n_discs = pop_count_ull(board.player | board.opponent);
-    parent_transpose_table.get(&board, board.hash() & TRANSPOSE_TABLE_MASK, &l, &u, NOMPC, HW2 - n_discs);
-    int best_move_child_tt = child_transpose_table.get(&board, board.hash() & TRANSPOSE_TABLE_MASK);
-    cerr << "cache get " << l << " " << u << endl;
-    if (l != u || best_move_child_tt == TRANSPOSE_TABLE_UNDEFINED)
-        return false;
-    *val = l;
-    *best_move = TRANSPOSE_TABLE_UNDEFINED;
-    uint64_t legal = board.get_legal();
-    Flip flip;
-    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-        calc_flip(&flip, &board, cell);
-        board.move_board(&flip);
-            parent_transpose_table.get(&board, board.hash() & TRANSPOSE_TABLE_MASK, &l, &u, NOMPC, HW2 - n_discs);
-        board.undo_board(&flip);
-        //cerr << idx_to_coord(cell) << " " << l << " " << u << endl;
-        if (l == u && -l == *val && cell == best_move_child_tt)
-            *best_move = cell;
-    }
-    if (*best_move != TRANSPOSE_TABLE_UNDEFINED)
-        cerr << "cache search value " << *val << " policy " << idx_to_coord(*best_move) << endl;
-    return *best_move != TRANSPOSE_TABLE_UNDEFINED;
-}
-
 double val_to_prob(int val, int error_level, int min_val, int max_val){
     double dval = (double)(val - min_val + 1) / (max_val - min_val + 1);
     return exp((26.0 - error_level) * dval);
@@ -199,31 +173,7 @@ Search_result ai(Board board, int level, bool use_book, int error_level, bool sh
         get_level(level, pop_count_ull(board.player | board.opponent) - 4, &is_mid_search, &depth, &use_mpc, &mpct);
         if (show_log)
             cerr << "level status " << level << " " << pop_count_ull(board.player | board.opponent) - 4 << " " << depth << " " << use_mpc << " " << mpct << endl;
-        bool cache_hit = false;
-        if (!is_mid_search && !use_mpc){
-            int val, best_move;
-            if (cache_search(board, &val, &best_move)){
-                res.depth = depth;
-                res.nodes = 0;
-                res.nps = 0;
-                res.policy = best_move;
-                res.value = val;
-                cache_hit = true;
-                if (show_log)
-                    cerr << "cache hit depth " << depth << " value " << val << " policy " << idx_to_coord(best_move) << endl;
-            }
-        }
-        if (!cache_hit){
-            res = tree_search(board, depth, use_mpc, mpct, show_log);
-            /*
-            if (!is_mid_search && !use_mpc && depth > CACHE_SAVE_EMPTY){
-                parent_transpose_table.copy(&bak_parent_transpose_table);
-                child_transpose_table.copy(&bak_child_transpose_table);
-                if (show_log)
-                    cerr << "cache saved" << endl;
-            }
-            */
-        }
+        res = tree_search(board, depth, use_mpc, mpct, show_log);
     }
     return res;
 }
