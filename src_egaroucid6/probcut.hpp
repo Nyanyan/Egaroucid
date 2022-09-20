@@ -57,8 +57,7 @@ inline double probcut_sigma_end_depth0(int n_stones){
 
 int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, const bool *searching);
 int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped, const bool *searching);
-//int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, const bool *searching);
-int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
+int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, const bool *searching);
 
 inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, bool is_end_search, int *v, const bool *searching){
     if ((!is_end_search && depth >= 17) || (is_end_search && depth >= 23))
@@ -95,7 +94,7 @@ inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, 
                     //double mpct = search->mpct;
                     //search->mpct = 1.18;
                     search->use_mpc = false;
-                        res = nega_alpha_ordering(search, beta + error_search - 1, beta + error_search, search_depth, false, legal, false, searching) >= beta + error_search;
+                        res = nega_alpha_ordering_nomemo(search, beta + error_search - 1, beta + error_search, search_depth, false, legal, searching) >= beta + error_search;
                     search->use_mpc = true;
                     //search->mpct = mpct;
                 }
@@ -121,7 +120,7 @@ inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, 
                     //double mpct = search->mpct;
                     //search->mpct = 1.18;
                     search->use_mpc = false;
-                        res = nega_alpha_ordering(search, alpha - error_search, alpha - error_search + 1, search_depth, false, legal, false, searching) <= alpha - error_search;
+                        res = nega_alpha_ordering_nomemo(search, alpha - error_search, alpha - error_search + 1, search_depth, false, legal, searching) <= alpha - error_search;
                     search->use_mpc = true;
                     //search->mpct = mpct;
                 }

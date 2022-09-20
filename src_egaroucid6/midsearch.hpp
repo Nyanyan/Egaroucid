@@ -90,7 +90,7 @@ int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped, con
     }
     return v;
 }
-/*
+
 int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, const bool *searching){
     if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
@@ -170,7 +170,7 @@ int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, b
         child_transpose_table.reg(&search->board, hash_code, best_move);
     return v;
 }
-*/
+
 int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching){
     if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;

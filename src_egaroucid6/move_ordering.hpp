@@ -48,8 +48,8 @@ struct Flip_value{
 
 int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, const bool *searching);
 int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped, const bool *searching);
-//int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, const bool *searching);
-int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
+int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, const bool *searching);
+//int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
 int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
 
 inline int calc_openness(const Board *board, const Flip *flip){
@@ -111,7 +111,7 @@ inline bool move_evaluate(Search *search, Flip_value *flip_value, const int alph
                 flip_value->value += val * W_VALUE;
                 break;
             default:
-                val = -nega_alpha_ordering(search, alpha, beta, depth, false, flip_value->n_legal, false, searching);
+                val = -nega_alpha_ordering_nomemo(search, alpha, beta, depth, false, flip_value->n_legal, searching);
                 if (search_alpha - WORTH_SEARCHING_THRESHOLD <= val)
                     *worth_searching = true;
                 flip_value->value += val * (W_VALUE_DEEP + (depth - 1) * 2);
