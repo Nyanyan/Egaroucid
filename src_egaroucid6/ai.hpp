@@ -139,15 +139,6 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
     return res;
 }
 
-double val_to_prob(int val, int error_level, int min_val, int max_val){
-    double dval = (double)(val - min_val + 1) / (max_val - min_val + 1);
-    return exp((26.0 - error_level) * dval);
-}
-
-int prob_to_val(double val, int error_level, int min_val, int max_val){
-    return round(log(val) / (26.0 - error_level) * (max_val - min_val + 1) + min_val - 1);
-}
-
 Search_result ai(Board board, int level, bool use_book, int error_level, bool show_log){
     Search_result res;
     Book_value book_result = book.get_random(&board, 0);
