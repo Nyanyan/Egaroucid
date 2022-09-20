@@ -16,10 +16,10 @@
 #define W_VALUE_DEEP 10
 #define W_VALUE 8
 #define W_VALUE_SHALLOW 6
-#define W_MOBILITY 12
+#define W_MOBILITY 8
 #define W_PLAYER_POTENTIAL_MOBILITY 6
 #define W_OPPONENT_POTENTIAL_MOBILITY 8
-#define W_OPENNESS 1
+//#define W_OPENNESS 1
 
 #define MOVE_ORDERING_VALUE_OFFSET 14
 #define MAX_MOBILITY 30
@@ -68,7 +68,7 @@ inline int get_corner_mobility(uint64_t legal){
 }
 
 inline int get_weighted_n_moves(uint64_t legal){
-    return pop_count_ull(legal) + get_corner_mobility(legal);
+    return pop_count_ull(legal) * 2 + get_corner_mobility(legal);
 }
 
 inline int get_potential_mobility(uint64_t opponent, uint64_t empties){

@@ -8,24 +8,7 @@
 #include "endsearch.hpp"
 #include "thread_pool.hpp"
 
-//#define YBWC_SPLIT_DIV 7
 #define YBWC_MID_SPLIT_MIN_DEPTH 6
-#define YBWC_MID_SPLIT_MAX_DEPTH 22
-#define YBWC_END_SPLIT_MIN_DEPTH 11
-//#define YBWC_MAX_SPLIT_COUNT 3
-//#define YBWC_PC_OFFSET 3
-#define YBWC_ORDERING_MAX_OFFSET 8
-#define YBWC_OFFSET_DIV_DEPTH 32
-#define YBWC_ORDERING_MAX_OFFSET_END 6
-#define YBWC_OFFSET_DIV_DEPTH_END 40
-
-inline int depth_to_offset(const int depth){
-    return depth * YBWC_ORDERING_MAX_OFFSET / YBWC_OFFSET_DIV_DEPTH;
-}
-
-inline int depth_to_offset_end(const int depth){
-    return depth * YBWC_ORDERING_MAX_OFFSET_END / YBWC_OFFSET_DIV_DEPTH_END;
-}
 
 int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
 int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t legal, const bool *searching);
