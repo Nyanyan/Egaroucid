@@ -9,6 +9,7 @@
 #include "thread_pool.hpp"
 
 #define YBWC_MID_SPLIT_MIN_DEPTH 6
+#define YBWC_REMAIN_TASKS 1
 
 int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
 int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t legal, const bool *searching);
@@ -37,10 +38,10 @@ Parallel_task ybwc_do_task(uint64_t player, uint64_t opponent, uint_fast8_t n, u
     return task;
 }
 
-inline bool ybwc_split(const Search *search, const Flip *flip, int alpha, int beta, const int depth, uint64_t legal, bool is_end_search, const bool *searching, int policy, const int pv_idx, const int canput, const int split_count, vector<future<Parallel_task>> &parallel_tasks, const int first_val, const int last_val, const bool worth_searching){
-    if (!worth_searching || 
-        (pv_idx > 0 && 
-        depth >= YBWC_MID_SPLIT_MIN_DEPTH)){
+inline bool ybwc_split(const Search *search, const Flip *flip, int alpha, int beta, const int depth, uint64_t legal, bool is_end_search, const bool *searching, int policy, const int canput, const int pv_idx, const int split_count, vector<future<Parallel_task>> &parallel_tasks){
+    if (pv_idx < canput - YBWC_REMAIN_TASKS && 
+        pv_idx > 0 && 
+        depth >= YBWC_MID_SPLIT_MIN_DEPTH){
         if (thread_pool.n_idle()){
             parallel_tasks.emplace_back(thread_pool.push(bind(&ybwc_do_task, 
                 search->board.player, search->board.opponent, search->n_discs, search->parity, 

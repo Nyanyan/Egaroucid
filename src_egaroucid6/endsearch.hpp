@@ -315,7 +315,6 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped, bool 
     }
     Flip flip;
     #if USE_END_PO
-        int i;
         uint64_t legal_copy;
         uint_fast8_t cell;
         if (0 < search->parity && search->parity < 15){
