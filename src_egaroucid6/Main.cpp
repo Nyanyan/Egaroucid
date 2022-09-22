@@ -773,7 +773,7 @@ private:
 				}
 			}
 		}
-		if (getData().history_elem.policy != -1) {
+		if (getData().history_elem.policy != -1 && !getData().menu_elements.use_disc_hint) {
 			int x = BOARD_SX + (HW_M1 - getData().history_elem.policy % HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
 			int y = BOARD_SY + (HW_M1 - getData().history_elem.policy / HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
 			Circle(x, y, LEGAL_SIZE).draw(getData().colors.red);
@@ -800,5 +800,4 @@ void Main() {
 	while (System::Update()) {
 		scene_manager.update();
 	}
-	
 }
