@@ -33,7 +33,7 @@ using namespace std;
 #define AI_MODE_AI_HUMAN 1
 #define AI_MODE_AI_AI 2
 #define AI_MODE_HUMAN_HUMAN 3
-#define SHOW_ALL_HINT 100
+#define SHOW_ALL_HINT 35
 #define UPDATE_CHECK_ALREADY_UPDATED 0
 #define UPDATE_CHECK_UPDATE_FOUND 1
 
@@ -58,17 +58,21 @@ struct Resources {
 
 struct Settings {
 	int n_threads;
-	int use_auto_update_check;
+	bool auto_update_check;
 	string lang_name;
 	string book_file;
-	int use_book;
-	int ai_level;
-	int hint_level;
-	int use_ai_mode;
-	int use_hint_all;
-	int use_normal_hint;
-	int use_umigame_value;
-	int show_hint_num;
+	bool use_book;
+	int level;
+	bool ai_put_black;
+	bool ai_put_white;
+	bool use_disc_hint;
+	bool use_umigame_value;
+	int n_disc_hint;
+	bool show_graph;
+	bool show_opening_on_cell;
+	bool show_log;
+	int book_learn_depth;
+	bool book_learn_error;
 };
 
 struct Fonts {
@@ -89,6 +93,109 @@ struct Common_resources {
 	Resources resources;
 	Settings settings;
 	Fonts fonts;
+};
+
+struct Menu_elements {
+	bool dummy;
+
+	// 対局
+	bool start_game;
+	bool analyze;
+
+	// 設定
+	// AIの設定
+	bool use_book;
+	int level;
+	int n_threads;
+	// 着手
+	bool ai_put_black;
+	bool ai_put_white;
+
+	// 表示
+	bool use_disc_hint;
+	int n_disc_hint;
+	bool show_graph;
+	bool show_opening_on_cell;
+	bool show_log;
+
+	// 定石
+	bool book_start_learn;
+	int book_learn_depth;
+	int book_learn_error;
+	bool book_import;
+	bool book_reference;
+
+	// 入出力
+	// 入力
+	bool input_transcript;
+	bool input_board;
+	bool edit_board;
+	bool input_game;
+	// 出力
+	bool copy_transcript;
+	bool save_game;
+
+	// 操作
+	bool stop_calculating;
+	bool forward;
+	bool backward;
+	// 変換
+	bool convert_180;
+	bool convert_blackline;
+	bool convert_whiteline;
+
+	// ヘルプ
+	bool usage;
+	bool bug_report;
+	bool auto_update_check;
+	bool license;
+
+	// language
+	vector<bool> languages;
+
+	Menu_elements(Common_resources *common_resources) {
+		dummy = false;
+
+		start_game = false;
+		analyze = false;
+
+		use_book = common_resources->settings.use_book;
+		level = common_resources->settings.level;
+		n_threads = common_resources->settings.n_threads;
+		ai_put_black = common_resources->settings.ai_put_black;
+		ai_put_white = common_resources->settings.ai_put_white;
+
+		use_disc_hint = common_resources->settings.use_disc_hint;
+		n_disc_hint = common_resources->settings.n_disc_hint;
+		show_graph = common_resources->settings.show_graph;
+		show_opening_on_cell = common_resources->settings.show_opening_on_cell;
+		show_log = common_resources->settings.show_log;
+
+		book_start_learn = false;
+		book_learn_depth = common_resources->settings.book_learn_depth;
+		book_learn_error = common_resources->settings.book_learn_error;
+		book_import = false;
+		book_reference = false;
+
+		input_transcript = false;
+		input_board = false;
+		edit_board = false;
+		input_game = false;
+		copy_transcript = false;
+		save_game = false;
+
+		stop_calculating = false;
+		forward = false;
+		backward = false;
+		convert_180 = false;
+		convert_blackline = false;
+		convert_whiteline = false;
+
+		usage = false;
+		bug_report = false;
+		auto_update_check = common_resources->settings.auto_update_check;
+		license = false;
+	}
 };
 
 using App = SceneManager<String, Common_resources>;
@@ -139,18 +246,23 @@ int init_resources(Resources* resources, Settings *settings) {
 }
 
 void init_default_settings(const Directories* directories, const Resources *resources, Settings* settings) {
+	cerr << "use default settings" << endl;
 	settings->n_threads = min(32, (int)thread::hardware_concurrency());
-	settings->use_auto_update_check = 1;
+	settings->auto_update_check = 1;
 	settings->lang_name = "japanese";
 	settings->book_file = directories->document_dir + "Egaroucid/book.egbk";
-	settings->use_book = 1;
-	settings->ai_level = 13;
-	settings->hint_level = 13;
-	settings->use_ai_mode = AI_MODE_HUMAN_HUMAN;
-	settings->use_hint_all = 1;
-	settings->use_normal_hint = 1;
-	settings->use_umigame_value = 0;
-	settings->show_hint_num = SHOW_ALL_HINT;
+	settings->use_book = true;
+	settings->level = 13;
+	settings->ai_put_black = false;
+	settings->ai_put_white = false;
+	settings->use_disc_hint = true;
+	settings->use_umigame_value = false;
+	settings->n_disc_hint = SHOW_ALL_HINT;
+	settings->show_graph = true;
+	settings->show_opening_on_cell = true;
+	settings->show_log = true;
+	settings->book_learn_depth = 40;
+	settings->book_learn_error = 6;
 }
 
 int init_settings_import_int(TextReader* reader, int *res) {
@@ -158,6 +270,26 @@ int init_settings_import_int(TextReader* reader, int *res) {
 	if (reader->readLine(line)) {
 		try {
 			*res = Parse<int32>(line);
+			return ERR_OK;
+		}
+		catch (const ParseError& e) {
+			return ERR_IMPORT_SETTINGS;
+		}
+	}
+	else {
+		return ERR_IMPORT_SETTINGS;
+	}
+}
+
+int init_settings_import_bool(TextReader* reader, bool* res) {
+	String line;
+	if (reader->readLine(line)) {
+		try {
+			int int_res = Parse<int32>(line);
+			if (int_res != 0 && int_res != 1) {
+				return ERR_IMPORT_SETTINGS;
+			}
+			*res = (bool)int_res;
 			return ERR_OK;
 		}
 		catch (const ParseError& e) {
@@ -189,7 +321,7 @@ void init_settings(const Directories* directories, const Resources *resources, S
 		if (init_settings_import_int(&reader, &settings->n_threads) != ERR_OK) {
 			goto use_default_settings;
 		}
-		if (init_settings_import_int(&reader, &settings->use_auto_update_check) != ERR_OK) {
+		if (init_settings_import_bool(&reader, &settings->auto_update_check) != ERR_OK) {
 			goto use_default_settings;
 		}
 		if (init_settings_import_str(&reader, &settings->lang_name) != ERR_OK) {
@@ -198,28 +330,25 @@ void init_settings(const Directories* directories, const Resources *resources, S
 		if (init_settings_import_str(&reader, &settings->book_file) != ERR_OK) {
 			goto use_default_settings;
 		}
-		if (init_settings_import_int(&reader, &settings->use_book) != ERR_OK) {
+		if (init_settings_import_bool(&reader, &settings->use_book) != ERR_OK) {
 			goto use_default_settings;
 		}
-		if (init_settings_import_int(&reader, &settings->ai_level) != ERR_OK) {
+		if (init_settings_import_int(&reader, &settings->level) != ERR_OK) {
 			goto use_default_settings;
 		}
-		if (init_settings_import_int(&reader, &settings->hint_level) != ERR_OK) {
+		if (init_settings_import_bool(&reader, &settings->ai_put_black) != ERR_OK) {
 			goto use_default_settings;
 		}
-		if (init_settings_import_int(&reader, &settings->use_ai_mode) != ERR_OK) {
+		if (init_settings_import_bool(&reader, &settings->ai_put_white) != ERR_OK) {
 			goto use_default_settings;
 		}
-		if (init_settings_import_int(&reader, &settings->use_hint_all) != ERR_OK) {
+		if (init_settings_import_bool(&reader, &settings->use_disc_hint) != ERR_OK) {
 			goto use_default_settings;
 		}
-		if (init_settings_import_int(&reader, &settings->use_normal_hint) != ERR_OK) {
+		if (init_settings_import_bool(&reader, &settings->use_umigame_value) != ERR_OK) {
 			goto use_default_settings;
 		}
-		if (init_settings_import_int(&reader, &settings->use_umigame_value) != ERR_OK) {
-			goto use_default_settings;
-		}
-		if (init_settings_import_int(&reader, &settings->show_hint_num) != ERR_OK) {
+		if (init_settings_import_int(&reader, &settings->n_disc_hint) != ERR_OK) {
 			goto use_default_settings;
 		}
 	}
@@ -266,7 +395,7 @@ int silent_load(Directories* directories, Resources* resources, Settings *settin
 }
 
 int load_app(Directories *directories, Resources *resources, Settings *settings, bool *update_found) {
-	if (settings->use_auto_update_check) {
+	if (settings->auto_update_check) {
 		if (check_update(directories) == UPDATE_CHECK_UPDATE_FOUND) {
 			*update_found = true;
 		}
