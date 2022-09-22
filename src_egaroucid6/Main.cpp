@@ -260,14 +260,15 @@ struct Common_resources {
 };
 
 struct Graph_resources {
-	vector<History_elem> nodes1;
-	vector<History_elem> nodes2;
+	vector<History_elem> nodes[2];
 	int place;
+	int put_mode;
 
 	void init() {
-		nodes1.clear();
-		nodes2.clear();
+		nodes[0].clear();
+		nodes[1].clear();
 		place = 0;
+		put_mode = 0;
 	}
 };
 
@@ -603,14 +604,19 @@ public:
 		graph.font = getData().fonts.font15;
 		graph.font_size = 15;
 		graph_resources.init();
+		graph_resources.nodes[graph_resources.put_mode].emplace_back(getData().history_elem);
 		cerr << "main scene loaded" << endl;
 	}
 
 	void update() override {
 		Scene::SetBackground(getData().colors.green);
+		if (!getData().menu.active()) {
+			interact_move();
+		}
+		update_opening();
 		draw_board();
 		if (getData().menu_elements.show_graph) {
-			graph.draw(graph_resources.nodes1, graph_resources.nodes2, graph_resources.place);
+			graph.draw(graph_resources.nodes[0], graph_resources.nodes[1], graph_resources.place);
 		}
 		draw_info();
 		if (getData().menu_elements.show_opening_on_cell) {
@@ -624,6 +630,39 @@ public:
 	}
 
 private:
+	void interact_move() {
+		uint64_t legal = getData().history_elem.board.get_legal();
+		for (uint_fast8_t cell = 0; cell < HW2; ++cell) {
+			if (1 & (legal >> (HW2_M1 - cell))) {
+				int x = cell % HW;
+				int y = cell / HW;
+				Rect cell_rect(BOARD_SX + x * BOARD_CELL_SIZE, BOARD_SY + y * BOARD_CELL_SIZE, BOARD_CELL_SIZE, BOARD_CELL_SIZE);
+				if (cell_rect.leftClicked()) {
+					Flip flip;
+					calc_flip(&flip, &getData().history_elem.board, HW2_M1 - cell);
+					graph_resources.nodes[graph_resources.put_mode][graph_resources.nodes[graph_resources.put_mode].size() - 1].next_policy = HW2_M1 - cell;
+					getData().history_elem.board.move_board(&flip);
+					getData().history_elem.policy = HW2_M1 - cell;
+					getData().history_elem.next_policy = -1;
+					getData().history_elem.v = GRAPH_IGNORE_VALUE;
+					getData().history_elem.player ^= 1;
+					if (getData().history_elem.board.get_legal() == 0ULL) {
+						getData().history_elem.board.pass();
+						getData().history_elem.player ^= 1;
+					}
+					graph_resources.place++;
+				}
+			}
+		}
+	}
+
+	void update_opening() {
+		string new_opening = opening.get(getData().history_elem.board, getData().history_elem.player ^ 1);
+		if (new_opening != "") {
+			getData().history_elem.opening_name = new_opening;
+		}
+	}
+
 	Menu create_menu(Menu_elements* menu_elements) {
 		Menu menu;
 		menu_title title;
@@ -820,7 +859,7 @@ private:
 						Circle(x, y, DISC_SIZE).draw(ColorF(getData().colors.black, 0.2));
 					}
 				}
-				if (getData().menu_elements.show_legal) {
+				if (getData().menu_elements.show_legal && !getData().menu_elements.use_disc_hint) {
 					Circle(x, y, LEGAL_SIZE).draw(getData().colors.cyan);
 				}
 			}
@@ -872,8 +911,9 @@ private:
 			if ((1 & (legal >> cell)) && cell_rect.mouseOver()) {
 				Flip flip;
 				calc_flip(&flip, &getData().history_elem.board, cell);
-				String opening_name = U" " + Unicode::FromUTF8(opening_many.get(getData().history_elem.board.move_copy(&flip))).replace(U" ", U" \n ");
-				if (opening_name != U"") {
+				string openings = opening_many.get(getData().history_elem.board.move_copy(&flip), getData().history_elem.player);
+				if (openings.size()) {
+					String opening_name = U" " + Unicode::FromUTF8(openings).replace(U" ", U" \n ");
 					Vec2 pos = Cursor::Pos();
 					pos.x += 20;
 					RectF background_rect = getData().fonts.font15_bold(opening_name).region(pos);

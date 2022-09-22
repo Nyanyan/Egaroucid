@@ -6,6 +6,8 @@
 
 using namespace std;
 
+#define GRAPH_IGNORE_VALUE INF
+
 constexpr Color graph_color = Color(51, 51, 51);
 constexpr Color graph_history_color = Palette::White;
 constexpr Color graph_fork_color = Palette::Black;
@@ -101,13 +103,13 @@ private:
 		y_min = -resolution;
 		y_max = resolution;
 		for (const History_elem& b : nodes1) {
-			if (b.v != -INF) {
+			if (b.v != GRAPH_IGNORE_VALUE) {
 				y_min = min(y_min, b.v);
 				y_max = max(y_max, b.v);
 			}
 		}
 		for (const History_elem& b : nodes2) {
-			if (b.v != -INF) {
+			if (b.v != GRAPH_IGNORE_VALUE) {
 				y_min = min(y_min, b.v);
 				y_max = max(y_max, b.v);
 			}

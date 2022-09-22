@@ -47,11 +47,13 @@ public:
 		return true;
 	}
 
-	inline string get(Board b) {
+	inline string get(Board b, int p) {
 		int i, j;
 		bool flag;
 		for (i = 0; i < (int)arr.size(); ++i) {
-			if (arr[i].first.player == b.opponent && arr[i].first.opponent == b.player)
+			if (p == BLACK && arr[i].first.player == b.opponent && arr[i].first.opponent == b.player)
+				return arr[i].second;
+			if (p == WHITE && arr[i].first.player == b.player && arr[i].first.opponent == b.opponent)
 				return arr[i].second;
 		}
 		return "";

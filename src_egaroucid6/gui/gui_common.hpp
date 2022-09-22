@@ -3,6 +3,8 @@
 
 using namespace std;
 
+#define GRAPH_IGNORE_VALUE INF
+
 struct History_elem {
 	Board board;
 	int player;
@@ -16,7 +18,7 @@ struct History_elem {
 	History_elem() {
 		board.reset();
 		player = 0;
-		v = 0;
+		v = GRAPH_IGNORE_VALUE;
 		policy = -1;
 		next_policy = -1;
 		level = -1;
