@@ -43,6 +43,7 @@ struct Parallel_args{
 };
 
 #define THREAD_POOL_TASK_ID_SIZE 0x20000000 //1048576
+#define THREAD_POOL_ERASE_STEP 4096
 
 // refer to https://zenn.dev/rita0222/articles/13953a5dfb9698
 
@@ -100,6 +101,7 @@ class Thread_pool{
                     current_task_ = task;
                     current_task_id = task_id;
                     has_task = true;
+                    cond_.notify_all();
                     return true;
                 }
             
@@ -110,6 +112,10 @@ class Thread_pool{
                         cond_.wait(lock, [this]() { return parent_ != nullptr && index_ >= 0; });
                     }
                     while (!is_requested_termination){
+                        {
+                            unique_lock<mutex> lock(mutex_);
+                            cond_.wait(lock, [this]() { return is_requested_termination || has_task;});
+                        }
                         if (has_task){
                             //cerr << "CHILD do " << index_ << " " << current_task_id << endl;
                             Parallel_task res = current_task_();
@@ -186,6 +192,10 @@ class Thread_pool{
                         //cerr << "PARENT send " << i << " " << task_id << endl;
                         return task_id;
                     }
+                    if (task_id == 0)
+                        task_id = THREAD_POOL_TASK_ID_SIZE - 1;
+                    else
+                        --task_id;
                 }
             }
             return -1;
@@ -204,6 +214,12 @@ class Thread_pool{
             if (answers.find(id) == answers.end())
                 return false;
             *res = answers[id].copy();
+            /*
+            if ((id % THREAD_POOL_ERASE_STEP) == 0){
+                unique_lock<mutex> lock(mutex_);
+                answers.erase(id + 1 - THREAD_POOL_ERASE_STEP, id + 1);
+            }
+            */
             unique_lock<mutex> lock(mutex_);
             answers.erase(id);
             return true;
@@ -242,4 +258,4 @@ class Thread_pool{
         }
 };
 
-Thread_pool thread_pool(1);
+Thread_pool thread_pool(0);
