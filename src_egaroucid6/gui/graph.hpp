@@ -71,17 +71,17 @@ public:
 			int cursor_x = Cursor::Pos().x;
 			int min_err = INF;
 			for (int i = 0; i < (int)nodes1.size(); ++i) {
-				int x = sx + (nodes1[i].b.n - 4) * dx + (nodes1[i].b.n - 4) * adj_x / 60;
+				int x = sx + (nodes1[i].board.n_discs() - 4) * dx + (nodes1[i].board.n_discs() - 4) * adj_x / 60;
 				if (abs(x - cursor_x) < min_err) {
 					min_err = abs(x - cursor_x);
-					place = nodes1[i].b.n - 4;
+					place = nodes1[i].board.n_discs() - 4;
 				}
 			}
 			for (int i = 0; i < (int)nodes2.size(); ++i) {
-				int x = sx + (nodes2[i].b.n - 4) * dx + (nodes2[i].b.n - 4) * adj_x / 60;
+				int x = sx + (nodes2[i].board.n_discs() - 4) * dx + (nodes2[i].board.n_discs() - 4) * adj_x / 60;
 				if (abs(x - cursor_x) < min_err) {
 					min_err = abs(x - cursor_x);
-					place = nodes2[i].b.n - 4;
+					place = nodes2[i].board.n_discs() - 4;
 				}
 			}
 		}
@@ -126,14 +126,14 @@ private:
 		vector<pair<int, int>> values;
 		for (const History_elem& b : nodes) {
 			if (abs(b.v) <= HW2) {
-				int xx = sx + (b.b.n - 4) * dx + (b.b.n - 4) * adj_x / 60;
+				int xx = sx + (b.board.n_discs() - 4) * dx + (b.board.n_discs() - 4) * adj_x / 60;
 				int yy = sy + (y_max - b.v) * dy + adj_y * (y_max - b.v) / (y_max - y_min);
 				values.emplace_back(make_pair(xx, yy));
 				Circle{ xx, yy, 3 }.draw(color);
 			}
 			else if (show_not_calculated) {
 				int yy = sy + y_max * dy + adj_y * y_max / (y_max - y_min);
-				Circle{ sx + (b.b.n - 4) * dx + (b.b.n - 4) * adj_x / 60, yy, 3 }.draw(color);
+				Circle{ sx + (b.board.n_discs() - 4) * dx + (b.board.n_discs() - 4) * adj_x / 60, yy, 3 }.draw(color);
 			}
 		}
 		for (int i = 0; i < (int)values.size() - 1; ++i) {

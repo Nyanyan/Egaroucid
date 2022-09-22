@@ -4,6 +4,7 @@
 #include "gui/language.hpp"
 #include "gui/menu.hpp"
 #include "gui/gui_common.hpp"
+#include "gui/graph.hpp"
 #include <Siv3D.hpp> // OpenSiv3D v0.6.3
 
 using namespace std;
@@ -55,6 +56,13 @@ constexpr int Y_CENTER = WINDOW_SIZE_Y / 2;
 constexpr int BOARD_SX = LEFT_LEFT + BOARD_COORD_SIZE;
 constexpr int BOARD_SY = 60;
 constexpr int BOARD_CELL_SIZE = BOARD_SIZE / HW;
+
+// graph drawing constant
+#define GRAPH_RESOLUTION 8
+constexpr int GRAPH_SX = BOARD_SX + BOARD_SIZE + 40;
+constexpr int GRAPH_SY = Y_CENTER + 30;
+constexpr int GRAPH_WIDTH = WINDOW_SIZE_X - GRAPH_SX - 20;
+constexpr int GRAPH_HEIGHT = WINDOW_SIZE_Y - GRAPH_SY - 20;
 
 struct Colors {
 	Color green{ Color(36, 153, 114, 100) };
@@ -241,6 +249,18 @@ struct Common_resources {
 	Menu_elements menu_elements;
 	Menu menu;
 	History_elem history_elem;
+};
+
+struct Graph_resources {
+	vector<History_elem> nodes1;
+	vector<History_elem> nodes2;
+	int place;
+
+	void init() {
+		nodes1.clear();
+		nodes2.clear();
+		place = 0;
+	}
 };
 
 using App = SceneManager<String, Common_resources>;
@@ -553,17 +573,31 @@ public:
 };
 
 class Main_scene : public App::Scene {
+private:
+	Graph graph;
+	Graph_resources graph_resources;
 public:
 	Main_scene(const InitData& init) : IScene{ init } {
 		cerr << "main scene loading" << endl;
 		getData().menu_elements.init(&getData().settings, &getData().resources);
 		getData().menu = create_menu(&getData().menu_elements);
+		graph.sx = GRAPH_SX;
+		graph.sy = GRAPH_SY;
+		graph.size_x = GRAPH_WIDTH;
+		graph.size_y = GRAPH_HEIGHT;
+		graph.resolution = GRAPH_RESOLUTION;
+		graph.font = getData().fonts.font15;
+		graph.font_size = 15;
+		graph_resources.init();
 		cerr << "main scene loaded" << endl;
 	}
 
 	void update() override {
 		Scene::SetBackground(getData().colors.green);
 		draw_board();
+		if (getData().menu_elements.show_graph) {
+			graph.draw(graph_resources.nodes1, graph_resources.nodes2, graph_resources.place);
+		}
 		getData().menu.draw();
 	}
 

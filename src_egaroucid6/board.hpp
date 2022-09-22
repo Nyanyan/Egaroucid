@@ -210,12 +210,16 @@ class Board {
             return score;
         }
 
-        inline int count_player(){
+        inline int count_player() const{
             return pop_count_ull(player);
         }
 
-        inline int count_opponent(){
+        inline int count_opponent() const{
             return pop_count_ull(opponent);
+        }
+
+        inline int n_discs() const{
+            return pop_count_ull(player | opponent);
         }
 
         inline bool check_player(){
