@@ -5,6 +5,7 @@
 #include "gui/menu.hpp"
 #include "gui/gui_common.hpp"
 #include "gui/graph.hpp"
+#include "gui/opening.hpp"
 #include <Siv3D.hpp> // OpenSiv3D v0.6.3
 
 using namespace std;
@@ -31,6 +32,7 @@ constexpr int Y_CENTER = WINDOW_SIZE_Y / 2;
 #define ERR_LANG_JSON_NOT_LOADED 2
 #define ERR_LANG_NOT_LOADED 3
 #define ERR_TEXTURE_NOT_LOADED 4
+#define ERR_OPENING_NOT_LOADED 5
 #define ERR_EVAL_FILE_NOT_IMPORTED 1
 #define ERR_BOOK_FILE_NOT_IMPORTED 2
 #define ERR_IMPORT_SETTINGS 1
@@ -320,6 +322,12 @@ int init_resources(Resources* resources, Settings *settings) {
 	resources->icon = icon;
 	resources->logo = logo;
 	resources->checkbox = checkbox;
+
+	// opening
+	if (!opening_init()) {
+		return ERR_OPENING_NOT_LOADED;
+	}
+
 	return ERR_OK;
 
 }
@@ -605,6 +613,9 @@ public:
 			graph.draw(graph_resources.nodes1, graph_resources.nodes2, graph_resources.place);
 		}
 		draw_info();
+		if (getData().menu_elements.show_opening_on_cell) {
+			draw_opening_on_cell();
+		}
 		getData().menu.draw();
 	}
 
@@ -850,6 +861,27 @@ private:
 		get_level_depth(getData().menu_elements.level, &mid_depth, &end_depth);
 		getData().fonts.font15(language.get("info", "lookahead_0") + Format(mid_depth) + language.get("info", "lookahead_1")).draw(INFO_SX, INFO_SY + 160);
 		getData().fonts.font15(language.get("info", "complete_0") + Format(end_depth) + language.get("info", "complete_1")).draw(INFO_SX, INFO_SY + 185);
+	}
+
+	void draw_opening_on_cell() {
+		uint64_t legal = getData().history_elem.board.get_legal();
+		for (int cell = 0; cell < HW2; ++cell) {
+			int x = HW_M1 - cell % HW;
+			int y = HW_M1 - cell / HW;
+			Rect cell_rect(BOARD_SX + x * BOARD_CELL_SIZE, BOARD_SY + y * BOARD_CELL_SIZE, BOARD_CELL_SIZE, BOARD_CELL_SIZE);
+			if ((1 & (legal >> cell)) && cell_rect.mouseOver()) {
+				Flip flip;
+				calc_flip(&flip, &getData().history_elem.board, cell);
+				String opening_name = U" " + Unicode::FromUTF8(opening_many.get(getData().history_elem.board.move_copy(&flip))).replace(U" ", U" \n ");
+				if (opening_name != U"") {
+					Vec2 pos = Cursor::Pos();
+					pos.x += 20;
+					RectF background_rect = getData().fonts.font15_bold(opening_name).region(pos);
+					background_rect.draw(getData().colors.white);
+					getData().fonts.font15_bold(opening_name).draw(pos, getData().colors.black);
+				}
+			}
+		}
 	}
 };
 
