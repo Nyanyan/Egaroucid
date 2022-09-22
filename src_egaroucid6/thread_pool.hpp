@@ -211,6 +211,7 @@ class Thread_pool{
         }
 
         bool get(int32_t id, Parallel_task *res){
+            unique_lock<mutex> lock(mutex_);
             if (answers.find(id) == answers.end())
                 return false;
             *res = answers[id].copy();
@@ -220,7 +221,6 @@ class Thread_pool{
                 answers.erase(id + 1 - THREAD_POOL_ERASE_STEP, id + 1);
             }
             */
-            unique_lock<mutex> lock(mutex_);
             answers.erase(id);
             return true;
             /*

@@ -10,10 +10,10 @@ if len(sys.argv) >= 4:
 else:
     n_threads = 23
 
-if n_threads >= 2:
-    egaroucid = subprocess.Popen(('Egaroucid6_test.exe ' + str(n_threads - 1)).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-else:
-    egaroucid = subprocess.Popen('Egaroucid6_test_single.exe'.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+#if n_threads >= 2:
+egaroucid = subprocess.Popen(('Egaroucid6_test.exe ' + str(n_threads - 1)).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+#else:
+#    egaroucid = subprocess.Popen('Egaroucid6_test_single.exe'.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
 res_str = ''
 tim = 0
