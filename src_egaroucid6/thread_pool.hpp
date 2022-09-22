@@ -8,39 +8,10 @@
 #include <unordered_map>
 #include "setting.hpp"
 #include "board.hpp"
+#include "parallel.hpp"
 #include "search.hpp"
 
 using namespace std;
-
-
-struct Parallel_task{
-    int value;
-    uint64_t n_nodes;
-    uint_fast8_t cell;
-
-    Parallel_task copy(){
-        Parallel_task res;
-        res.value = value;
-        res.n_nodes = n_nodes;
-        res.cell = cell;
-        return res;
-    }
-};
-
-struct Parallel_args{
-    uint64_t player;
-    uint64_t opponent;
-    uint_fast8_t n_discs;
-    uint_fast8_t parity;
-    bool use_mpc;
-    double mpct;
-    int alpha;
-    int beta;
-    int depth;
-    uint64_t legal;
-    bool is_end_search;
-    int policy;
-};
 
 #define THREAD_POOL_TASK_ID_SIZE 0x20000000 //1048576
 #define THREAD_POOL_ERASE_STEP 4096
