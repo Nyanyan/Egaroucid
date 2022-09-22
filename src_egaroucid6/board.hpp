@@ -137,6 +137,26 @@ class Board {
                 res[HW2_M1 - i] = 2 - (1 & (player >> i)) * 2 - (1 & (opponent >> i));
         }
 
+        inline void translate_to_arr(int res[], int p) {
+            if (p == 0){
+                for (int i = 0; i < HW2; ++i)
+                    res[HW2_M1 - i] = 2 - (1 & (player >> i)) * 2 - (1 & (opponent >> i));
+            } else{
+                for (int i = 0; i < HW2; ++i)
+                    res[HW2_M1 - i] = 2 - (1 & (player >> i)) - (1 & (opponent >> i)) * 2;
+            }
+        }
+
+        inline void translate_to_arr(uint_fast8_t res[], int p) {
+            if (p == 0){
+                for (int i = 0; i < HW2; ++i)
+                    res[HW2_M1 - i] = 2 - (1 & (player >> i)) * 2 - (1 & (opponent >> i));
+            } else{
+                for (int i = 0; i < HW2; ++i)
+                    res[HW2_M1 - i] = 2 - (1 & (player >> i)) - (1 & (opponent >> i)) * 2;
+            }
+        }
+
         inline void translate_to_arr_player_rev(uint_fast8_t res[]) {
             for (int i = 0; i < HW2; ++i)
                 res[i] = 2 - (1 & (player >> i)) * 2 - (1 & (opponent >> i));
@@ -221,17 +241,8 @@ class Board {
         }
 
         inline void reset(){
-            constexpr int first_board[HW2] = {
-                VACANT,VACANT,VACANT,VACANT,VACANT,VACANT,VACANT,VACANT,
-                VACANT,VACANT,VACANT,VACANT,VACANT,VACANT,VACANT,VACANT,
-                VACANT,VACANT,VACANT,VACANT,VACANT,VACANT,VACANT,VACANT,
-                VACANT,VACANT,VACANT,WHITE,BLACK,VACANT,VACANT,VACANT,
-                VACANT,VACANT,VACANT,BLACK,WHITE,VACANT,VACANT,VACANT,
-                VACANT,VACANT,VACANT,VACANT,VACANT,VACANT,VACANT,VACANT,
-                VACANT,VACANT,VACANT,VACANT,VACANT,VACANT,VACANT,VACANT,
-                VACANT,VACANT,VACANT,VACANT,VACANT,VACANT,VACANT,VACANT
-            };
-            translate_from_arr(first_board, BLACK);
+            player = 0x0000000810000000ULL;
+            opponent = 0x0000001008000000ULL;
         }
 
         inline int phase_slow(){

@@ -2,6 +2,8 @@
 #include <future>
 #include "ai.hpp"
 #include "gui/language.hpp"
+#include "gui/menu.hpp"
+#include "gui/gui_common.hpp"
 #include <Siv3D.hpp> // OpenSiv3D v0.6.3
 
 using namespace std;
@@ -10,20 +12,24 @@ using namespace std;
 #define EGAROUCID_VERSION U"6.0.0"
 
 // coordinate definition
-#define LEFT_LEFT 20
-#define LEFT_CENTER 255
-#define LEFT_RIGHT 490
-#define RIGHT_LEFT 510
-#define RIGHT_CENTER 745
-#define RIGHT_RIGHT 980
-#define X_CENTER 500
-#define Y_CENTER 360
+#define WINDOW_SIZE_X 800
+#define WINDOW_SIZE_Y 500
+#define PADDING 20
+constexpr int LEFT_LEFT = PADDING;
+constexpr int LEFT_RIGHT = WINDOW_SIZE_X / 2 - PADDING;
+constexpr int LEFT_CENTER = (LEFT_LEFT + LEFT_RIGHT) / 2;
+constexpr int RIGHT_LEFT = WINDOW_SIZE_X / 2 + PADDING;
+constexpr int RIGHT_RIGHT = WINDOW_SIZE_X - PADDING;
+constexpr int RIGHT_CENTER = (RIGHT_LEFT + RIGHT_RIGHT) / 2;
+constexpr int X_CENTER = WINDOW_SIZE_X / 2;
+constexpr int Y_CENTER = WINDOW_SIZE_Y / 2;
 
 // error definition
 #define ERR_OK 0
 #define ERR_LANG_LIST_NOT_LOADED 1
-#define ERR_LANG_NOT_LOADED 2
-#define ERR_TEXTURE_NOT_LOADED 3
+#define ERR_LANG_JSON_NOT_LOADED 2
+#define ERR_LANG_NOT_LOADED 3
+#define ERR_TEXTURE_NOT_LOADED 4
 #define ERR_EVAL_FILE_NOT_IMPORTED 1
 #define ERR_BOOK_FILE_NOT_IMPORTED 2
 #define ERR_IMPORT_SETTINGS 1
@@ -37,10 +43,26 @@ using namespace std;
 #define UPDATE_CHECK_ALREADY_UPDATED 0
 #define UPDATE_CHECK_UPDATE_FOUND 1
 
+// board drawing constants
+#define BOARD_SIZE 400
+#define BOARD_COORD_SIZE 20
+#define DISC_SIZE 20
+#define LEGAL_SIZE 7
+#define BOARD_CELL_FRAME_WIDTH 2
+#define BOARD_DOT_SIZE 5
+#define BOARD_ROUND_FRAME_WIDTH 10
+#define BOARD_ROUND_DIAMETER 20
+constexpr int BOARD_SX = LEFT_LEFT + BOARD_COORD_SIZE;
+constexpr int BOARD_SY = 60;
+constexpr int BOARD_CELL_SIZE = BOARD_SIZE / HW;
+
 struct Colors {
 	Color green{ Color(36, 153, 114, 100) };
 	Color black{ Palette::Black };
 	Color white{ Palette::White };
+	Color dark_gray{ Color(51, 51, 51) };
+	Color cyan{ Palette::Cyan };
+	Color red{ Palette::Red };
 };
 
 struct Directories {
@@ -68,11 +90,12 @@ struct Settings {
 	bool use_disc_hint;
 	bool use_umigame_value;
 	int n_disc_hint;
+	bool show_legal;
 	bool show_graph;
 	bool show_opening_on_cell;
 	bool show_log;
 	int book_learn_depth;
-	bool book_learn_error;
+	int book_learn_error;
 };
 
 struct Fonts {
@@ -85,14 +108,6 @@ struct Fonts {
 	Font font15_bold{ 15, Typeface::Bold };
 	Font font13_heavy{ 13, Typeface::Heavy };
 	Font font9_bold{ 9, Typeface::Bold };
-};
-
-struct Common_resources {
-	Colors colors;
-	Directories directories;
-	Resources resources;
-	Settings settings;
-	Fonts fonts;
 };
 
 struct Menu_elements {
@@ -114,6 +129,8 @@ struct Menu_elements {
 	// 表示
 	bool use_disc_hint;
 	int n_disc_hint;
+	bool use_umigame_value;
+	bool show_legal;
 	bool show_graph;
 	bool show_opening_on_cell;
 	bool show_log;
@@ -151,29 +168,31 @@ struct Menu_elements {
 	bool license;
 
 	// language
-	vector<bool> languages;
+	bool languages[200];
 
-	Menu_elements(Common_resources *common_resources) {
+	void init(Settings *settings, Resources *resources) {
 		dummy = false;
 
 		start_game = false;
 		analyze = false;
 
-		use_book = common_resources->settings.use_book;
-		level = common_resources->settings.level;
-		n_threads = common_resources->settings.n_threads;
-		ai_put_black = common_resources->settings.ai_put_black;
-		ai_put_white = common_resources->settings.ai_put_white;
+		use_book = settings->use_book;
+		level = settings->level;
+		n_threads = settings->n_threads;
+		ai_put_black = settings->ai_put_black;
+		ai_put_white = settings->ai_put_white;
 
-		use_disc_hint = common_resources->settings.use_disc_hint;
-		n_disc_hint = common_resources->settings.n_disc_hint;
-		show_graph = common_resources->settings.show_graph;
-		show_opening_on_cell = common_resources->settings.show_opening_on_cell;
-		show_log = common_resources->settings.show_log;
+		use_disc_hint = settings->use_disc_hint;
+		n_disc_hint = settings->n_disc_hint;
+		use_umigame_value = settings->use_umigame_value;
+		show_legal = settings->show_legal;
+		show_graph = settings->show_graph;
+		show_opening_on_cell = settings->show_opening_on_cell;
+		show_log = settings->show_log;
 
 		book_start_learn = false;
-		book_learn_depth = common_resources->settings.book_learn_depth;
-		book_learn_error = common_resources->settings.book_learn_error;
+		book_learn_depth = settings->book_learn_depth;
+		book_learn_error = settings->book_learn_error;
 		book_import = false;
 		book_reference = false;
 
@@ -193,9 +212,35 @@ struct Menu_elements {
 
 		usage = false;
 		bug_report = false;
-		auto_update_check = common_resources->settings.auto_update_check;
+		auto_update_check = settings->auto_update_check;
 		license = false;
+
+		bool lang_found = false;
+		for (int i = 0; i < resources->language_names.size(); ++i) {
+			if (resources->language_names[i] == settings->lang_name) {
+				lang_found = true;
+				languages[i] = true;
+			}
+			else {
+				languages[i] = false;
+			}
+		}
+		if (!lang_found) {
+			settings->lang_name = resources->language_names[0];
+			languages[0] = true;
+		}
 	}
+};
+
+struct Common_resources {
+	Colors colors;
+	Directories directories;
+	Resources resources;
+	Settings settings;
+	Fonts fonts;
+	Menu_elements menu_elements;
+	Menu menu;
+	History_elem history_elem;
 };
 
 using App = SceneManager<String, Common_resources>;
@@ -223,6 +268,14 @@ int init_resources(Resources* resources, Settings *settings) {
 			lang_line.pop_back();
 		}
 		resources->language_names.emplace_back(lang_line);
+	}
+	if (resources->language_names.size() == 0) {
+		return ERR_LANG_LIST_NOT_LOADED;
+	}
+
+	// language json
+	if (!language_name.init()) {
+		return ERR_LANG_JSON_NOT_LOADED;
 	}
 
 	// language
@@ -258,6 +311,7 @@ void init_default_settings(const Directories* directories, const Resources *reso
 	settings->use_disc_hint = true;
 	settings->use_umigame_value = false;
 	settings->n_disc_hint = SHOW_ALL_HINT;
+	settings->show_legal = true;
 	settings->show_graph = true;
 	settings->show_opening_on_cell = true;
 	settings->show_log = true;
@@ -349,6 +403,24 @@ void init_settings(const Directories* directories, const Resources *resources, S
 			goto use_default_settings;
 		}
 		if (init_settings_import_int(&reader, &settings->n_disc_hint) != ERR_OK) {
+			goto use_default_settings;
+		}
+		if (init_settings_import_bool(&reader, &settings->show_legal) != ERR_OK) {
+			goto use_default_settings;
+		}
+		if (init_settings_import_bool(&reader, &settings->show_graph) != ERR_OK) {
+			goto use_default_settings;
+		}
+		if (init_settings_import_bool(&reader, &settings->show_opening_on_cell) != ERR_OK) {
+			goto use_default_settings;
+		}
+		if (init_settings_import_bool(&reader, &settings->show_log) != ERR_OK) {
+			goto use_default_settings;
+		}
+		if (init_settings_import_int(&reader, &settings->book_learn_depth) != ERR_OK) {
+			goto use_default_settings;
+		}
+		if (init_settings_import_int(&reader, &settings->book_learn_error) != ERR_OK) {
 			goto use_default_settings;
 		}
 	}
@@ -454,7 +526,7 @@ public:
 	void update() override {
 		Scene::SetBackground(getData().colors.green);
 		getData().resources.icon.scaled((double)(LEFT_RIGHT - LEFT_LEFT) / getData().resources.icon.width()).draw(LEFT_LEFT, Y_CENTER - (LEFT_RIGHT - LEFT_LEFT) / 2);
-		getData().resources.logo.scaled((double)(LEFT_RIGHT - LEFT_LEFT) * 0.8 / getData().resources.logo.width()).draw(RIGHT_LEFT, Y_CENTER - 30);
+		getData().resources.logo.scaled((double)(LEFT_RIGHT - LEFT_LEFT) * 0.8 / getData().resources.logo.width()).draw(RIGHT_LEFT, Y_CENTER - 40);
 		if (load_future.wait_for(chrono::seconds(0)) == future_status::ready) {
 			int load_code = load_future.get();
 			if (load_code == ERR_OK) {
@@ -466,12 +538,12 @@ public:
 			}
 		}
 		if (load_failed) {
-			getData().fonts.font50(language.get("loading", "load_failed")).draw(RIGHT_LEFT, Y_CENTER + getData().fonts.font50.fontSize(), getData().colors.white);
+			getData().fonts.font50(language.get("loading", "load_failed")).draw(RIGHT_LEFT, Y_CENTER + 30, getData().colors.white);
 		}
 		else {
-			getData().fonts.font50(language.get("loading", "loading")).draw(RIGHT_LEFT, Y_CENTER + getData().fonts.font50.fontSize(), getData().colors.white);
-			getData().fonts.font20(language.get("tips", "do_you_know")).draw(RIGHT_LEFT, Y_CENTER + getData().fonts.font50.fontSize() + 70, getData().colors.white);
-			getData().fonts.font20(tips).draw(RIGHT_LEFT, Y_CENTER + getData().fonts.font50.fontSize() + 100, getData().colors.white);
+			getData().fonts.font50(language.get("loading", "loading")).draw(RIGHT_LEFT, Y_CENTER + 40, getData().colors.white);
+			getData().fonts.font20(language.get("tips", "do_you_know")).draw(RIGHT_LEFT, Y_CENTER + 110, getData().colors.white);
+			getData().fonts.font20(tips).draw(RIGHT_LEFT, Y_CENTER + 140, getData().colors.white);
 		}
 	}
 
@@ -483,20 +555,234 @@ public:
 class Main_scene : public App::Scene {
 public:
 	Main_scene(const InitData& init) : IScene{ init } {
-
+		cerr << "main scene loading" << endl;
+		getData().menu_elements.init(&getData().settings, &getData().resources);
+		getData().menu = create_menu(&getData().menu_elements);
+		cerr << "main scene loaded" << endl;
 	}
 
 	void update() override {
-
+		Scene::SetBackground(getData().colors.green);
+		draw_board();
+		getData().menu.draw();
 	}
 
 	void draw() const override {
 
 	}
+
+private:
+	Menu create_menu(Menu_elements* menu_elements) {
+		Menu menu;
+		menu_title title;
+		menu_elem menu_e, side_menu, side_side_menu;
+		Font menu_font = getData().fonts.font15;
+
+
+
+		title.init(language.get("play", "game"));
+
+		menu_e.init_button(language.get("play", "new_game"), &menu_elements->start_game);
+		title.push(menu_e);
+		menu_e.init_button(language.get("play", "analyze"), &menu_elements->analyze);
+		title.push(menu_e);
+
+		menu.push(title);
+
+
+
+
+		title.init(language.get("settings", "settings"));
+
+		menu_e.init_check(language.get("ai_settings", "use_book"), &menu_elements->use_book, menu_elements->use_book);
+		title.push(menu_e);
+		menu_e.init_bar(language.get("ai_settings", "level"), &menu_elements->level, menu_elements->level, 0, 60);
+		title.push(menu_e);
+		menu_e.init_bar(language.get("settings", "thread", "thread"), &menu_elements->n_threads, menu_elements->n_threads, 1, 32);
+		title.push(menu_e);
+
+		menu_e.init_check(language.get("settings", "play", "ai_put_black"), &menu_elements->ai_put_black, &menu_elements->ai_put_black);
+		title.push(menu_e);
+		menu_e.init_check(language.get("settings", "play", "ai_put_white"), &menu_elements->ai_put_white, &menu_elements->ai_put_white);
+		title.push(menu_e);
+
+		menu.push(title);
+
+
+
+
+		title.init(language.get("display", "display"));
+
+		menu_e.init_button(language.get("display", "hint", "hint"), &menu_elements->dummy);
+		side_menu.init_check(language.get("display", "hint", "disc_value"), &menu_elements->use_disc_hint, menu_elements->use_disc_hint);
+		menu_e.push(side_menu);
+		side_menu.init_bar(language.get("display", "hint", "disc_value_number"), &menu_elements->n_disc_hint, menu_elements->n_disc_hint, 1, SHOW_ALL_HINT);
+		menu_e.push(side_menu);
+		side_menu.init_check(language.get("display", "hint", "umigame_value"), &menu_elements->use_umigame_value, menu_elements->use_umigame_value);
+		menu_e.push(side_menu);
+		title.push(menu_e);
+
+		menu_e.init_check(language.get("display", "graph"), &menu_elements->show_graph, menu_elements->show_graph);
+		title.push(menu_e);
+		menu_e.init_check(language.get("display", "opening_on_cell"), &menu_elements->show_opening_on_cell, menu_elements->show_opening_on_cell);
+		title.push(menu_e);
+		menu_e.init_check(language.get("display", "log"), &menu_elements->show_log, menu_elements->show_log);
+		title.push(menu_e);
+
+		menu.push(title);
+
+
+
+
+		title.init(language.get("book", "book"));
+
+		menu_e.init_button(language.get("book", "start_learn"), &menu_elements->book_start_learn);
+		title.push(menu_e);
+		menu_e.init_button(language.get("book", "settings"), &menu_elements->dummy);
+		side_menu.init_bar(language.get("book", "depth"), &menu_elements->book_learn_depth, menu_elements->book_learn_depth, 0, 60);
+		menu_e.push(side_menu);
+		side_menu.init_bar(language.get("book", "accept"), &menu_elements->book_learn_error, menu_elements->book_learn_error, 0, 64);
+		menu_e.push(side_menu);
+		title.push(menu_e);
+		menu_e.init_button(language.get("book", "import"), &menu_elements->book_import);
+		title.push(menu_e);
+		menu_e.init_button(language.get("book", "book_reference"), &menu_elements->book_reference);
+		title.push(menu_e);
+
+		menu.push(title);
+
+
+
+		title.init(language.get("in_out", "in_out"));
+
+		menu_e.init_button(language.get("in_out", "in"), &menu_elements->dummy);
+		side_menu.init_button(language.get("in_out", "input_transcript"), &menu_elements->input_transcript);
+		menu_e.push(side_menu);
+		side_menu.init_button(language.get("in_out", "input_board"), &menu_elements->input_board);
+		menu_e.push(side_menu);
+		side_menu.init_button(language.get("in_out", "edit_board"), &menu_elements->edit_board);
+		menu_e.push(side_menu);
+		side_menu.init_button(language.get("in_out", "input_game"), &menu_elements->input_game);
+		menu_e.push(side_menu);
+		title.push(menu_e);
+
+		menu_e.init_button(language.get("in_out", "out"), &menu_elements->dummy);
+		side_menu.init_button(language.get("in_out", "output_transcript"), &menu_elements->copy_transcript);
+		menu_e.push(side_menu);
+		side_menu.init_button(language.get("in_out", "output_game"), &menu_elements->save_game);
+		menu_e.push(side_menu);
+		title.push(menu_e);
+
+		menu.push(title);
+
+
+
+
+		title.init(language.get("operation", "operation"));
+
+		menu_e.init_button(language.get("operation", "stop_calculating"), &menu_elements->stop_calculating);
+		title.push(menu_e);
+
+		menu_e.init_button(language.get("operation", "forward"), &menu_elements->forward);
+		title.push(menu_e);
+		menu_e.init_button(language.get("operation", "backward"), &menu_elements->backward);
+		title.push(menu_e);
+
+		menu_e.init_button(language.get("operation", "convert", "convert"), &menu_elements->dummy);
+		side_menu.init_button(language.get("operation", "convert", "vertical"), &menu_elements->convert_180);
+		menu_e.push(side_menu);
+		side_menu.init_button(language.get("operation", "convert", "black_line"), &menu_elements->convert_blackline);
+		menu_e.push(side_menu);
+		side_menu.init_button(language.get("operation", "convert", "white_line"), &menu_elements->convert_whiteline);
+		menu_e.push(side_menu);
+		title.push(menu_e);
+
+		menu.push(title);
+
+
+
+
+		title.init(language.get("help", "help"));
+		menu_e.init_button(language.get("help", "how_to_use"), &menu_elements->usage);
+		title.push(menu_e);
+		menu_e.init_button(language.get("help", "bug_report"), &menu_elements->bug_report);
+		title.push(menu_e);
+		menu_e.init_check(language.get("help", "auto_update_check"), &menu_elements->auto_update_check, menu_elements->auto_update_check);
+		title.push(menu_e);
+		menu_e.init_button(language.get("help", "license"), &menu_elements->license);
+		title.push(menu_e);
+		menu.push(title);
+
+
+
+
+
+		title.init(U"Language");
+		for (int i = 0; i < (int)getData().resources.language_names.size(); ++i) {
+			menu_e.init_radio(language_name.get(getData().resources.language_names[i]), &menu_elements->languages[i], menu_elements->languages[i]);
+			title.push(menu_e);
+		}
+		menu.push(title);
+
+
+
+
+		menu.init(0, 0, menu_font, getData().resources.checkbox);
+		return menu;
+	}
+
+	void draw_board() {
+		String coord_x = U"abcdefgh";
+		for (int i = 0; i < HW; ++i) {
+			getData().fonts.font15_bold(i + 1).draw(Arg::center(BOARD_SX - BOARD_COORD_SIZE, BOARD_SY + BOARD_CELL_SIZE * i + BOARD_CELL_SIZE / 2), getData().colors.dark_gray);
+			getData().fonts.font15_bold(coord_x[i]).draw(Arg::center(BOARD_SX + BOARD_CELL_SIZE * i + BOARD_CELL_SIZE / 2, BOARD_SY - BOARD_COORD_SIZE - 2), getData().colors.dark_gray);
+		}
+		for (int i = 0; i < HW_M1; ++i) {
+			Line(BOARD_SX + BOARD_CELL_SIZE * (i + 1), BOARD_SY, BOARD_SX + BOARD_CELL_SIZE * (i + 1), BOARD_SY + BOARD_CELL_SIZE * HW).draw(BOARD_CELL_FRAME_WIDTH, getData().colors.dark_gray);
+			Line(BOARD_SX, BOARD_SY + BOARD_CELL_SIZE * (i + 1), BOARD_SX + BOARD_CELL_SIZE * HW, BOARD_SY + BOARD_CELL_SIZE * (i + 1)).draw(BOARD_CELL_FRAME_WIDTH, getData().colors.dark_gray);
+		}
+		Circle(BOARD_SX + 2 * BOARD_CELL_SIZE, BOARD_SY + 2 * BOARD_CELL_SIZE, BOARD_DOT_SIZE).draw(getData().colors.dark_gray);
+		Circle(BOARD_SX + 2 * BOARD_CELL_SIZE, BOARD_SY + 6 * BOARD_CELL_SIZE, BOARD_DOT_SIZE).draw(getData().colors.dark_gray);
+		Circle(BOARD_SX + 6 * BOARD_CELL_SIZE, BOARD_SY + 2 * BOARD_CELL_SIZE, BOARD_DOT_SIZE).draw(getData().colors.dark_gray);
+		Circle(BOARD_SX + 6 * BOARD_CELL_SIZE, BOARD_SY + 6 * BOARD_CELL_SIZE, BOARD_DOT_SIZE).draw(getData().colors.dark_gray);
+		RoundRect(BOARD_SX, BOARD_SY, BOARD_CELL_SIZE * HW, BOARD_CELL_SIZE * HW, BOARD_ROUND_DIAMETER).drawFrame(0, BOARD_ROUND_FRAME_WIDTH, getData().colors.white);
+		Flip flip;
+		uint64_t legal = getData().history_elem.board.get_legal();
+		int board_arr[HW2];
+		getData().history_elem.board.translate_to_arr(board_arr, getData().history_elem.player);
+		for (int cell = 0; cell < HW2; ++cell) {
+			int x = BOARD_SX + (cell % HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
+			int y = BOARD_SY + (cell / HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
+			if (board_arr[cell] == BLACK) {
+				Circle(x, y, DISC_SIZE).draw(getData().colors.black);
+			}
+			else if (board_arr[cell] == WHITE) {
+				Circle(x, y, DISC_SIZE).draw(getData().colors.white);
+			}
+			if (1 & (legal >> (HW2_M1 - cell))) {
+				if (cell == getData().history_elem.next_policy) {
+					if (getData().history_elem.player == WHITE) {
+						Circle(x, y, DISC_SIZE).draw(ColorF(getData().colors.white, 0.2));
+					}
+					else {
+						Circle(x, y, DISC_SIZE).draw(ColorF(getData().colors.black, 0.2));
+					}
+				}
+				if (getData().menu_elements.show_legal) {
+					Circle(x, y, LEGAL_SIZE).draw(getData().colors.cyan);
+				}
+			}
+		}
+		if (getData().history_elem.policy != -1) {
+			int x = BOARD_SX + (HW_M1 - getData().history_elem.policy % HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
+			int y = BOARD_SY + (HW_M1 - getData().history_elem.policy / HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
+			Circle(x, y, LEGAL_SIZE).draw(getData().colors.red);
+		}
+	}
 };
 
 void Main() {
-	Size window_size = Size(1000, 720);
+	Size window_size = Size(WINDOW_SIZE_X, WINDOW_SIZE_Y);
 	Window::Resize(window_size);
 	Window::SetStyle(WindowStyle::Sizable);
 	Scene::SetResizeMode(ResizeMode::Keep);
