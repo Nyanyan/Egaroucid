@@ -53,16 +53,22 @@ constexpr int Y_CENTER = WINDOW_SIZE_Y / 2;
 #define BOARD_DOT_SIZE 5
 #define BOARD_ROUND_FRAME_WIDTH 10
 #define BOARD_ROUND_DIAMETER 20
+#define BOARD_SY 60
 constexpr int BOARD_SX = LEFT_LEFT + BOARD_COORD_SIZE;
-constexpr int BOARD_SY = 60;
 constexpr int BOARD_CELL_SIZE = BOARD_SIZE / HW;
 
-// graph drawing constant
+// graph drawing constants
 #define GRAPH_RESOLUTION 8
 constexpr int GRAPH_SX = BOARD_SX + BOARD_SIZE + 40;
 constexpr int GRAPH_SY = Y_CENTER + 30;
 constexpr int GRAPH_WIDTH = WINDOW_SIZE_X - GRAPH_SX - 20;
 constexpr int GRAPH_HEIGHT = WINDOW_SIZE_Y - GRAPH_SY - 20;
+
+// info drawing constants
+#define INFO_SY 35
+#define INFO_DISC_RADIUS 12
+constexpr int INFO_SX = BOARD_SX + BOARD_SIZE + 25;
+
 
 struct Colors {
 	Color green{ Color(36, 153, 114, 100) };
@@ -598,6 +604,7 @@ public:
 		if (getData().menu_elements.show_graph) {
 			graph.draw(graph_resources.nodes1, graph_resources.nodes2, graph_resources.place);
 		}
+		draw_info();
 		getData().menu.draw();
 	}
 
@@ -812,6 +819,37 @@ private:
 			int y = BOARD_SY + (HW_M1 - getData().history_elem.policy / HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
 			Circle(x, y, LEGAL_SIZE).draw(getData().colors.red);
 		}
+	}
+
+	void draw_info() {
+		if (getData().history_elem.board.get_legal()) {
+			getData().fonts.font20(Format(getData().history_elem.board.n_discs() - 3) + language.get("info", "moves")).draw(INFO_SX, INFO_SY);
+			if (getData().history_elem.player == BLACK) {
+				getData().fonts.font20(language.get("info", "black")).draw(INFO_SX + 100, INFO_SY);
+			}
+			else {
+				getData().fonts.font20(language.get("info", "white")).draw(INFO_SX + 100, INFO_SY);
+			}
+		}
+		else {
+			getData().fonts.font20(language.get("info", "game_end")).draw(INFO_SX, INFO_SY);
+		}
+		getData().fonts.font15(language.get("info", "opening_name") + U": " + Unicode::FromUTF8(getData().history_elem.opening_name)).draw(INFO_SX, INFO_SY + 30);
+		Circle(INFO_SX + INFO_DISC_RADIUS, INFO_SY + 75, INFO_DISC_RADIUS).draw(getData().colors.black);
+		Circle(INFO_SX + INFO_DISC_RADIUS, INFO_SY + 110, INFO_DISC_RADIUS).draw(getData().colors.white);
+		if (getData().history_elem.player == BLACK) {
+			getData().fonts.font20(getData().history_elem.board.count_player()).draw(Arg::leftCenter(INFO_SX + 40, INFO_SY + 75));
+			getData().fonts.font20(getData().history_elem.board.count_opponent()).draw(Arg::leftCenter(INFO_SX + 40, INFO_SY + 110));
+		}
+		else {
+			getData().fonts.font20(getData().history_elem.board.count_opponent()).draw(Arg::leftCenter(INFO_SX + 40, INFO_SY + 75));
+			getData().fonts.font20(getData().history_elem.board.count_player()).draw(Arg::leftCenter(INFO_SX + 40, INFO_SY + 110));
+		}
+		getData().fonts.font15(language.get("common", "level") + Format(getData().menu_elements.level)).draw(INFO_SX, INFO_SY + 135);
+		int mid_depth, end_depth;
+		get_level_depth(getData().menu_elements.level, &mid_depth, &end_depth);
+		getData().fonts.font15(language.get("info", "lookahead_0") + Format(mid_depth) + language.get("info", "lookahead_1")).draw(INFO_SX, INFO_SY + 160);
+		getData().fonts.font15(language.get("info", "complete_0") + Format(end_depth) + language.get("info", "complete_1")).draw(INFO_SX, INFO_SY + 185);
 	}
 };
 

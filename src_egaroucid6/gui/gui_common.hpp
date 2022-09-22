@@ -10,6 +10,7 @@ struct History_elem {
 	int policy;
 	int next_policy;
 	String transcript;
+	string opening_name;
 	int level;
 
 	History_elem() {
