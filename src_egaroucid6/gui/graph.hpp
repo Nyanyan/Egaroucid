@@ -6,8 +6,6 @@
 
 using namespace std;
 
-#define GRAPH_IGNORE_VALUE INF
-
 constexpr Color graph_color = Color(51, 51, 51);
 constexpr Color graph_history_color = Palette::White;
 constexpr Color graph_fork_color = Palette::Black;
@@ -33,7 +31,7 @@ private:
 	int adj_x;
 
 public:
-	void draw(vector<History_elem> nodes1, vector<History_elem> nodes2, int place) {
+	void draw(vector<History_elem> nodes1, vector<History_elem> nodes2, int n_discs) {
 		calc_range(nodes1, nodes2);
 		bool fix_resolution_flag = false;
 		if (y_max - y_min > 80) {
@@ -56,7 +54,7 @@ public:
 		}
 		draw_graph(nodes1, graph_history_color, false);
 		draw_graph(nodes2, graph_fork_color, true);
-		int place_x = sx + place * dx + place * adj_x / 60;
+		int place_x = sx + (n_discs - 4) * dx + (n_discs - 4) * adj_x / 60;
 		Circle(sx, sy, 7).draw(Palette::Black);
 		Circle(sx, sy + size_y, 7).draw(Palette::White);
 		Line(place_x, sy, place_x, sy + size_y).draw(3, graph_place_color);
@@ -68,7 +66,7 @@ public:
 		}
 	}
 
-	int update_place(vector<History_elem> nodes1, vector<History_elem> nodes2, int place) {
+	int update_n_discs(vector<History_elem> nodes1, vector<History_elem> nodes2, int n_discs) {
 		if (Rect(sx - 30, sy, size_x + 40, size_y + 10).leftPressed()) {
 			int cursor_x = Cursor::Pos().x;
 			int min_err = INF;
@@ -76,18 +74,18 @@ public:
 				int x = sx + (nodes1[i].board.n_discs() - 4) * dx + (nodes1[i].board.n_discs() - 4) * adj_x / 60;
 				if (abs(x - cursor_x) < min_err) {
 					min_err = abs(x - cursor_x);
-					place = nodes1[i].board.n_discs() - 4;
+					n_discs = nodes1[i].board.n_discs();
 				}
 			}
 			for (int i = 0; i < (int)nodes2.size(); ++i) {
 				int x = sx + (nodes2[i].board.n_discs() - 4) * dx + (nodes2[i].board.n_discs() - 4) * adj_x / 60;
 				if (abs(x - cursor_x) < min_err) {
 					min_err = abs(x - cursor_x);
-					place = nodes2[i].board.n_discs() - 4;
+					n_discs = nodes2[i].board.n_discs();
 				}
 			}
 		}
-		return place;
+		return n_discs;
 	}
 
 	bool clicked() {
