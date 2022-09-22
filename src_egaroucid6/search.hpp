@@ -5,6 +5,7 @@
 #include "setting.hpp"
 #include "common.hpp"
 #include "board.hpp"
+#include "thread_pool.hpp"
 #include "evaluate.hpp"
 #include "transpose_table.hpp"
 
@@ -114,12 +115,6 @@ class Search{
         inline int phase(){
             return min(N_PHASES - 1, (n_discs - 4) / PHASE_N_STONES);
         }
-};
-
-struct Parallel_task{
-    int value;
-    uint64_t n_nodes;
-    uint_fast8_t cell;
 };
 
 inline void register_tt(Search *search, int depth, uint32_t hash_code, int first_alpha, int v, int best_move, int l, int u, int alpha, int beta, const bool *searching){
