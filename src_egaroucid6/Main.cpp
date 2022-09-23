@@ -630,10 +630,17 @@ public:
 	void update() override {
 		Scene::SetBackground(getData().colors.green);
 		update_opening();
+
+		menu_manipulate();
 		if (!getData().menu.active()) {
 			interact_graph();
+		}
+		update_n_discs();
+
+		if (!getData().menu.active()) {
 			interact_move();
 		}
+
 		draw_board();
 		if (getData().menu_elements.show_graph) {
 			graph.draw(graph_resources.nodes[0], graph_resources.nodes[1], graph_resources.n_discs);
@@ -651,9 +658,17 @@ public:
 	}
 
 private:
+	void menu_manipulate() {
+		if (getData().menu_elements.backward) {
+			--graph_resources.n_discs;
+		}
+		if (getData().menu_elements.forward) {
+			++graph_resources.n_discs;
+		}
+	}
+
 	void interact_graph() {
 		graph_resources.n_discs = graph.update_n_discs(graph_resources.nodes[0], graph_resources.nodes[1], graph_resources.n_discs);
-
 		if (!KeyLeft.pressed() && !KeyA.pressed()) {
 			move_board_button_status.left_pushed = BUTTON_NOT_PUSHED;
 		}
@@ -661,19 +676,21 @@ private:
 			move_board_button_status.right_pushed = BUTTON_NOT_PUSHED;
 		}
 
-		if (MouseX1.down() || KeyLeft.down() || KeyA.down() || (move_board_button_status.left_pushed != BUTTON_NOT_PUSHED && tim() - move_board_button_status.left_pushed >= BUTTON_LONG_PRESS_THRESHOLD) || getData().menu_elements.backward) {
+		if (MouseX1.down() || KeyLeft.down() || KeyA.down() || (move_board_button_status.left_pushed != BUTTON_NOT_PUSHED && tim() - move_board_button_status.left_pushed >= BUTTON_LONG_PRESS_THRESHOLD)) {
 			--graph_resources.n_discs;
 			if (KeyLeft.down() || KeyA.down()) {
 				move_board_button_status.left_pushed = tim();
 			}
 		}
-		else if (MouseX2.down() || KeyRight.down() || KeyD.down() || (move_board_button_status.right_pushed != BUTTON_NOT_PUSHED && tim() - move_board_button_status.right_pushed >= BUTTON_LONG_PRESS_THRESHOLD) || getData().menu_elements.forward) {
+		else if (MouseX2.down() || KeyRight.down() || KeyD.down() || (move_board_button_status.right_pushed != BUTTON_NOT_PUSHED && tim() - move_board_button_status.right_pushed >= BUTTON_LONG_PRESS_THRESHOLD)) {
 			++graph_resources.n_discs;
 			if (KeyRight.down() || KeyD.down()) {
 				move_board_button_status.right_pushed = tim();
 			}
 		}
+	}
 
+	void update_n_discs() {
 		int max_n_discs = graph_resources.nodes[0][graph_resources.nodes[0].size() - 1].board.n_discs();
 		if (graph_resources.nodes[1].size()) {
 			max_n_discs = max(max_n_discs, graph_resources.nodes[1][graph_resources.nodes[1].size() - 1].board.n_discs());
@@ -689,7 +706,12 @@ private:
 			graph_resources.put_mode = 1;
 		}
 		else if (graph_resources.put_mode == 1 && graph_resources.n_discs < graph_resources.nodes[1][0].board.n_discs()) {
-			graph_resources.put_mode = 1;
+			graph_resources.put_mode = 0;
+			graph_resources.nodes[1].clear();
+		}
+		else if (graph_resources.put_mode == 1 && graph_resources.nodes[1].size() == 1 && getData().history_elem.board.n_discs() == graph_resources.nodes[0][graph_resources.nodes[0].size() - 1].board.n_discs()) {
+			graph_resources.put_mode = 0;
+			graph_resources.nodes[1].clear();
 		}
 		int node_idx = graph_resources.node_find(graph_resources.put_mode, graph_resources.n_discs);
 		if (node_idx == -1 && graph_resources.put_mode == 1) {
