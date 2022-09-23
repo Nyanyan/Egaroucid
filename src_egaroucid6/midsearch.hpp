@@ -368,9 +368,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
             calc_flip(&move_list[idx++].flip, &search->board, cell);
         move_list_evaluate(search, move_list, depth, alpha, beta, is_end_search, searching);
-        //const int move_ordering_threshold = MOVE_ORDERING_THRESHOLD - (int)(best_move != TRANSPOSE_TABLE_UNDEFINED);
         for (int move_idx = 0; move_idx < canput; ++move_idx){
-            //if (move_idx < move_ordering_threshold)
             swap_next_best_move(move_list, move_idx, canput);
             eval_move(search, &move_list[move_idx].flip);
             search->move(&move_list[move_idx].flip);

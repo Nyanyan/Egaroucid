@@ -82,8 +82,9 @@ constexpr int INFO_SX = BOARD_SX + BOARD_SIZE + 25;
 // hint constants
 #define HINT_NOT_CALCULATING -1
 #define HINT_INIT_VALUE -INF
-#define HINT_TYPE_BOOK 100
-#define HINT_TYPE_COMPLETE 1000
+#define HINT_TYPE_BOOK 1000
+#define HINT_INF_LEVEL 100
+#define HINT_MAX_LEVEL 60
 
 
 struct Colors {
@@ -135,6 +136,8 @@ struct Fonts {
 	Font font25{ 25 };
 	Font font20{ 20 };
 	Font font15{ 15 };
+	Font font13{ 13 };
+	Font font10{ 10 };
 	Font font15_bold{ 15, Typeface::Bold };
 	Font font13_heavy{ 13, Typeface::Heavy };
 	Font font9_bold{ 9, Typeface::Bold };
@@ -273,6 +276,12 @@ struct Common_resources {
 	History_elem history_elem;
 };
 
+struct Hint_info {
+	double value;
+	int cell;
+	int type;
+};
+
 struct Graph_resources {
 	vector<History_elem> nodes[2];
 	int n_discs;
@@ -310,7 +319,10 @@ struct AI_status {
 	bool hint_use[HW2];
 	double hint_values[HW2];
 	int hint_types[HW2];
-	bool hint_end_search{ false };
+	bool hint_available{ false };
+	bool hint_use_stable[HW2];
+	double hint_values_stable[HW2];
+	int hint_types_stable[HW2];
 };
 
 using App = SceneManager<String, Common_resources>;
@@ -632,6 +644,10 @@ bool compare_value_cell(pair<int, int>& a, pair<int, int>& b) {
 	return a.first > b.first;
 }
 
+bool compare_hint_info(Hint_info& a, Hint_info& b) {
+	return a.value > b.value;
+}
+
 class Main_scene : public App::Scene {
 private:
 	Graph graph;
@@ -681,15 +697,35 @@ public:
 			interact_move();
 		}
 
+		// board drawing
 		draw_board();
+
+		// hint calculating & drawing
+		if (!ai_should_move) {
+			if (!ai_status.hint_calculating && ai_status.hint_level <= getData().menu_elements.level) {
+				hint_init_calculating();
+				if (ai_status.hint_level <= getData().menu_elements.level) {
+					cerr << "hint search level " << ai_status.hint_level << endl;
+				}
+			}
+			hint_do_task();
+			hint_draw();
+		}
+
+		// graph drawing
 		if (getData().menu_elements.show_graph) {
 			graph.draw(graph_resources.nodes[0], graph_resources.nodes[1], graph_resources.n_discs);
 		}
+
+		// info drawing
 		draw_info();
+
+		// opening on cell drawing
 		if (getData().menu_elements.show_opening_on_cell) {
 			draw_opening_on_cell();
 		}
-		
+
+		// menu drawing
 		getData().menu.draw();
 	}
 
@@ -698,6 +734,12 @@ public:
 	}
 
 private:
+	void reset_hint() {
+		ai_status.hint_level = HINT_NOT_CALCULATING;
+		ai_status.hint_available = false;
+		ai_status.hint_calculating = false;
+	}
+
 	void stop_calculating() {
 		global_searching = false;
 		if (ai_status.ai_future.valid()) {
@@ -714,6 +756,7 @@ private:
 	void menu_manipulate() {
 		if (getData().menu_elements.stop_calculating) {
 			stop_calculating();
+			ai_status.hint_level = HINT_INF_LEVEL;
 		}
 		if (getData().menu_elements.backward) {
 			--graph_resources.n_discs;
@@ -775,6 +818,9 @@ private:
 			cerr << "history vector element not found 1" << endl;
 			return;
 		}
+		if (getData().history_elem.board != graph_resources.nodes[graph_resources.put_mode][node_idx].board) {
+			reset_hint();
+		}
 		getData().history_elem = graph_resources.nodes[graph_resources.put_mode][node_idx];
 	}
 
@@ -803,6 +849,7 @@ private:
 		}
 		graph_resources.nodes[graph_resources.put_mode].emplace_back(getData().history_elem);
 		graph_resources.n_discs++;
+		reset_hint();
 	}
 
 	void interact_move() {
@@ -826,7 +873,6 @@ private:
 					}
 					stop_calculating();
 					move_processing(cell);
-					ai_status.hint_level = HINT_NOT_CALCULATING;
 				}
 			}
 		}
@@ -1021,80 +1067,6 @@ private:
 		return menu;
 	}
 
-	void hint_init_calculating () {
-		uint64_t legal = getData().history_elem.board.get_legal();
-		if (ai_status.hint_level == HINT_NOT_CALCULATING) {
-			for (int cell = 0; cell < HW2; ++cell) {
-				ai_status.hint_values[cell] = HINT_INIT_VALUE;
-				ai_status.hint_use[cell] = (bool)(1 & (legal >> (HW2_M1 - cell)));
-			}
-		}
-		vector<pair<int, int>> value_cells;
-		for (int cell = 0; cell < HW2; ++cell) {
-			if (ai_status.hint_use[cell]) {
-				value_cells.emplace_back(make_pair(ai_status.hint_values[cell], cell));
-			}
-		}
-		sort(value_cells.begin(), value_cells.end(), compare_value_cell);
-		int n_legal = pop_count_ull(legal);
-		int hint_adoption_threshold = getData().menu_elements.n_disc_hint + max(1, n_legal * (getData().menu_elements.level - ai_status.hint_level) / getData().menu_elements.level);
-		hint_adoption_threshold = min(hint_adoption_threshold, (int)value_cells.size());
-		ai_status.hint_task_stack.clear();
-		++ai_status.hint_level;
-		int idx = 0;
-		Board board;
-		Flip flip;
-		for (pair<int, int>& value_cell : value_cells) {
-			if (idx++ >= hint_adoption_threshold) {
-				break;
-			}
-			board = getData().history_elem.board;
-			calc_flip(&flip, &board, (uint_fast8_t)(HW2_M1 - value_cell.second));
-			board.move_board(&flip);
-			ai_status.hint_task_stack.emplace_back(make_pair(value_cell.second, bind(ai, board, ai_status.hint_level, getData().menu_elements.use_book, false)));
-		}
-		ai_status.hint_calculating = true;
-	}
-
-	void hint_do_task() {
-		bool has_remaining_task = false;
-		for (int cell = 0; cell < HW2; ++cell) {
-			if (ai_status.hint_future[cell].valid()) {
-				has_remaining_task = true;
-				if (ai_status.hint_future[cell].wait_for(chrono::seconds(0)) == future_status::ready) {
-					Search_result search_result = ai_status.hint_future[cell].get();
-					//cerr << cell << " " << -search_result.value << endl;
-					if (ai_status.hint_values[cell] == HINT_INIT_VALUE || search_result.is_end_search) {
-						ai_status.hint_values[cell] = -search_result.value;
-					}
-					else {
-						ai_status.hint_values[cell] += -search_result.value;
-						ai_status.hint_values[cell] /= 2.0;
-					}
-					if (search_result.depth == SEARCH_BOOK) {
-						ai_status.hint_types[cell] = HINT_TYPE_BOOK;
-					}
-					else if (search_result.is_end_search) {
-						ai_status.hint_types[cell] = search_result.probability;
-					}
-					else {
-						ai_status.hint_types[cell] = ai_status.hint_level;
-					}
-				}
-			}
-		}
-		if (!has_remaining_task) {
-			if (ai_status.hint_task_stack.size()) {
-				pair<int, function<Search_result()>> task = ai_status.hint_task_stack.back();
-				ai_status.hint_task_stack.pop_back();
-				ai_status.hint_future[task.first] = async(launch::async, task.second);
-			}
-			else {
-				ai_status.hint_calculating = false;
-			}
-		}
-	}
-
 	void draw_board() {
 		String coord_x = U"abcdefgh";
 		for (int i = 0; i < HW; ++i) {
@@ -1142,11 +1114,6 @@ private:
 			int y = BOARD_SY + (HW_M1 - getData().history_elem.policy / HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
 			Circle(x, y, LEGAL_SIZE).draw(getData().colors.red);
 		}
-		if (!ai_status.hint_calculating && ai_status.hint_level < getData().menu_elements.level) {
-			hint_init_calculating();
-			cerr << "start hint search level " << ai_status.hint_level << endl;
-		}
-		hint_do_task();
 	}
 
 	void draw_info() {
@@ -1178,6 +1145,124 @@ private:
 		get_level_depth(getData().menu_elements.level, &mid_depth, &end_depth);
 		getData().fonts.font15(language.get("info", "lookahead_0") + Format(mid_depth) + language.get("info", "lookahead_1")).draw(INFO_SX, INFO_SY + 160);
 		getData().fonts.font15(language.get("info", "complete_0") + Format(end_depth) + language.get("info", "complete_1")).draw(INFO_SX, INFO_SY + 185);
+	}
+
+	void hint_init_calculating() {
+		uint64_t legal = getData().history_elem.board.get_legal();
+		if (ai_status.hint_level == HINT_NOT_CALCULATING) {
+			for (int cell = 0; cell < HW2; ++cell) {
+				ai_status.hint_values[cell] = HINT_INIT_VALUE;
+				ai_status.hint_use[cell] = (bool)(1 & (legal >> (HW2_M1 - cell)));
+			}
+		}
+		else {
+			ai_status.hint_available = true;
+		}
+		for (int cell = 0; cell < HW2; ++cell) {
+			ai_status.hint_use_stable[cell] = ai_status.hint_use[cell];
+			ai_status.hint_values_stable[cell] = ai_status.hint_values[cell];
+			ai_status.hint_types_stable[cell] = ai_status.hint_types[cell];
+		}
+		++ai_status.hint_level;
+		if (ai_status.hint_level <= getData().menu_elements.level) {
+			vector<pair<int, int>> value_cells;
+			for (int cell = 0; cell < HW2; ++cell) {
+				if (ai_status.hint_use[cell]) {
+					value_cells.emplace_back(make_pair(ai_status.hint_values[cell], cell));
+				}
+			}
+			sort(value_cells.begin(), value_cells.end(), compare_value_cell);
+			int n_legal = pop_count_ull(legal);
+			int hint_adoption_threshold = getData().menu_elements.n_disc_hint + max(1, n_legal * (getData().menu_elements.level - ai_status.hint_level) / getData().menu_elements.level);
+			hint_adoption_threshold = min(hint_adoption_threshold, (int)value_cells.size());
+			ai_status.hint_task_stack.clear();
+			int idx = 0;
+			Board board;
+			Flip flip;
+			for (pair<int, int>& value_cell : value_cells) {
+				if (idx++ >= hint_adoption_threshold) {
+					break;
+				}
+				board = getData().history_elem.board;
+				calc_flip(&flip, &board, (uint_fast8_t)(HW2_M1 - value_cell.second));
+				board.move_board(&flip);
+				ai_status.hint_task_stack.emplace_back(make_pair(value_cell.second, bind(ai, board, ai_status.hint_level, getData().menu_elements.use_book, false)));
+			}
+			ai_status.hint_calculating = true;
+		}
+	}
+
+	void hint_do_task() {
+		bool has_remaining_task = false;
+		for (int cell = 0; cell < HW2; ++cell) {
+			if (ai_status.hint_future[cell].valid()) {
+				has_remaining_task = true;
+				if (ai_status.hint_future[cell].wait_for(chrono::seconds(0)) == future_status::ready) {
+					Search_result search_result = ai_status.hint_future[cell].get();
+					if (ai_status.hint_values[cell] == HINT_INIT_VALUE || search_result.is_end_search || search_result.depth == SEARCH_BOOK) {
+						ai_status.hint_values[cell] = -search_result.value;
+					}
+					else {
+						ai_status.hint_values[cell] += -search_result.value;
+						ai_status.hint_values[cell] /= 2.0;
+					}
+					if (search_result.depth == SEARCH_BOOK) {
+						ai_status.hint_types[cell] = HINT_TYPE_BOOK;
+					}
+					else if (search_result.is_end_search) {
+						ai_status.hint_types[cell] = search_result.probability;
+					}
+					else {
+						ai_status.hint_types[cell] = ai_status.hint_level;
+					}
+				}
+			}
+		}
+		if (!has_remaining_task) {
+			if (ai_status.hint_task_stack.size()) {
+				pair<int, function<Search_result()>> task = ai_status.hint_task_stack.back();
+				ai_status.hint_task_stack.pop_back();
+				ai_status.hint_future[task.first] = async(launch::async, task.second);
+			}
+			else {
+				ai_status.hint_calculating = false;
+			}
+		}
+	}
+
+	void hint_draw() {
+		if (ai_status.hint_available) {
+			vector<Hint_info> hint_infos;
+			for (int cell = 0; cell < HW2; ++cell) {
+				if (ai_status.hint_use_stable[cell]) {
+					Hint_info hint_info;
+					hint_info.value = ai_status.hint_values[cell];
+					hint_info.cell = cell;
+					hint_info.type = ai_status.hint_types_stable[cell];
+					hint_infos.emplace_back(hint_info);
+				}
+			}
+			sort(hint_infos.begin(), hint_infos.end(), compare_hint_info);
+			int n_disc_hint = min((int)hint_infos.size(), getData().menu_elements.n_disc_hint);
+			for (int i = 0; i < n_disc_hint; ++i) {
+				int sx = BOARD_SX + (hint_infos[i].cell % HW) * BOARD_CELL_SIZE;
+				int sy = BOARD_SY + (hint_infos[i].cell / HW) * BOARD_CELL_SIZE;
+				Color color = getData().colors.white;
+				if (hint_infos[i].value == hint_infos[0].value) {
+					color = getData().colors.cyan;
+				}
+				getData().fonts.font15_bold((int)round(hint_infos[i].value)).draw(sx + 2, sy, color);
+				if (hint_infos[i].type == HINT_TYPE_BOOK) {
+					getData().fonts.font10(U"book").draw(sx + 2, sy + 16, color);
+				}
+				else if (hint_infos[i].type > HINT_MAX_LEVEL) {
+					getData().fonts.font10(Format(hint_infos[i].type) + U"%").draw(sx + 2, sy + 16, color);
+				}
+				else {
+					getData().fonts.font10(U"Lv." + Format(hint_infos[i].type)).draw(sx + 2, sy + 16, color);
+				}
+			}
+		}
 	}
 
 	void draw_opening_on_cell() {

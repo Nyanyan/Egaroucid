@@ -18,6 +18,10 @@ class Board {
         int operator == (Board a) {
             return player == a.player && opponent == a.opponent;
         }
+
+        int operator != (Board a) {
+            return player != a.player || opponent != a.opponent;
+        }
         
         inline Board copy(){
             Board res;

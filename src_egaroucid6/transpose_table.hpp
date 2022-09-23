@@ -18,7 +18,8 @@ using namespace std;
 #define TRANSPOSE_TABLE_STRENGTH_MAGIC_NUMBER 8
 
 inline double data_strength(const double t, const int d){
-    return t * (TRANSPOSE_TABLE_STRENGTH_MAGIC_NUMBER + d);
+    //return t * (TRANSPOSE_TABLE_STRENGTH_MAGIC_NUMBER + d);
+    return t + d * 100;
 }
 
 class Node_child_transpose_table{

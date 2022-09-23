@@ -202,7 +202,7 @@ int get_level_complete_depth(int level){
 }
 
 bool double_near(double a, double b){
-    return a - b < DOUBLE_NEAR_THRESHOLD;
+    return fabs(a - b) < DOUBLE_NEAR_THRESHOLD;
 }
 
 int calc_probability(double mpct){
