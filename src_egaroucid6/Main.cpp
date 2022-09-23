@@ -71,6 +71,10 @@ constexpr int GRAPH_HEIGHT = WINDOW_SIZE_Y - GRAPH_SY - 20;
 #define INFO_DISC_RADIUS 12
 constexpr int INFO_SX = BOARD_SX + BOARD_SIZE + 25;
 
+// graph mode constants
+#define GRAPH_MODE_NORMAL 0
+#define GRAPH_MODE_INSPECT 1
+
 // button press constants
 #define BUTTON_NOT_PUSHED 0
 #define BUTTON_LONG_PRESS_THRESHOLD 500
@@ -708,41 +712,45 @@ private:
 	}
 
 	void update_n_discs() {
-		int max_n_discs = graph_resources.nodes[0][graph_resources.nodes[0].size() - 1].board.n_discs();
-		if (graph_resources.nodes[1].size()) {
-			max_n_discs = max(max_n_discs, graph_resources.nodes[1][graph_resources.nodes[1].size() - 1].board.n_discs());
+		int max_n_discs = graph_resources.nodes[GRAPH_MODE_NORMAL][graph_resources.nodes[GRAPH_MODE_NORMAL].size() - 1].board.n_discs();
+		if (graph_resources.nodes[GRAPH_MODE_INSPECT].size()) {
+			max_n_discs = max(max_n_discs, graph_resources.nodes[GRAPH_MODE_INSPECT][graph_resources.nodes[GRAPH_MODE_INSPECT].size() - 1].board.n_discs());
 		}
 		graph_resources.n_discs = min(graph_resources.n_discs, max_n_discs);
-		int min_n_discs = graph_resources.nodes[0][0].board.n_discs();
-		if (graph_resources.nodes[1].size()) {
-			min_n_discs = min(min_n_discs, graph_resources.nodes[1][0].board.n_discs());
+		int min_n_discs = graph_resources.nodes[GRAPH_MODE_NORMAL][0].board.n_discs();
+		if (graph_resources.nodes[GRAPH_MODE_INSPECT].size()) {
+			min_n_discs = min(min_n_discs, graph_resources.nodes[GRAPH_MODE_INSPECT][0].board.n_discs());
 		}
 		graph_resources.n_discs = max(graph_resources.n_discs, min_n_discs);
 
-		if (graph_resources.put_mode == 0 && graph_resources.n_discs != graph_resources.nodes[0][graph_resources.nodes[0].size() - 1].board.n_discs()) {
-			graph_resources.put_mode = 1;
+		if (graph_resources.put_mode == GRAPH_MODE_NORMAL && graph_resources.n_discs != graph_resources.nodes[GRAPH_MODE_NORMAL][graph_resources.nodes[GRAPH_MODE_NORMAL].size() - 1].board.n_discs()) {
+			graph_resources.put_mode = GRAPH_MODE_INSPECT;
 		}
-		else if (graph_resources.put_mode == 1 && graph_resources.n_discs < graph_resources.nodes[1][0].board.n_discs()) {
-			graph_resources.put_mode = 0;
-			graph_resources.nodes[1].clear();
+		if (graph_resources.put_mode == GRAPH_MODE_INSPECT && graph_resources.nodes[GRAPH_MODE_INSPECT].size()) {
+			if (graph_resources.n_discs < graph_resources.nodes[GRAPH_MODE_INSPECT][0].board.n_discs()) {
+				graph_resources.put_mode = GRAPH_MODE_NORMAL;
+				graph_resources.nodes[1].clear();
+			}
 		}
-		else if (graph_resources.put_mode == 1 && graph_resources.nodes[1].size() == 1 && getData().history_elem.board.n_discs() == graph_resources.nodes[0][graph_resources.nodes[0].size() - 1].board.n_discs()) {
-			graph_resources.put_mode = 0;
-			graph_resources.nodes[1].clear();
+		if (graph_resources.put_mode == GRAPH_MODE_INSPECT && graph_resources.nodes[GRAPH_MODE_INSPECT].size() == 1) {
+			if (getData().history_elem.board.n_discs() == graph_resources.nodes[GRAPH_MODE_NORMAL][graph_resources.nodes[GRAPH_MODE_NORMAL].size() - 1].board.n_discs()) {
+				graph_resources.put_mode = GRAPH_MODE_NORMAL;
+				graph_resources.nodes[1].clear();
+			}
 		}
 		int node_idx = graph_resources.node_find(graph_resources.put_mode, graph_resources.n_discs);
-		if (node_idx == -1 && graph_resources.put_mode == 1) {
-			graph_resources.nodes[1].clear();
-			int node_idx_0 = graph_resources.node_find(0, graph_resources.n_discs);
+		if (node_idx == -1 && graph_resources.put_mode == GRAPH_MODE_INSPECT) {
+			graph_resources.nodes[GRAPH_MODE_INSPECT].clear();
+			int node_idx_0 = graph_resources.node_find(GRAPH_MODE_NORMAL, graph_resources.n_discs);
 			if (node_idx_0 == -1) {
-				cerr << "history vector element not found" << endl;
+				cerr << "history vector element not found 0" << endl;
 				return;
 			}
-			graph_resources.nodes[1].emplace_back(graph_resources.nodes[0][node_idx_0]);
+			graph_resources.nodes[GRAPH_MODE_INSPECT].emplace_back(graph_resources.nodes[GRAPH_MODE_NORMAL][node_idx_0]);
 			node_idx = graph_resources.node_find(graph_resources.put_mode, graph_resources.n_discs);
 		}
-		if (node_idx == -1 && graph_resources.put_mode == 0) {
-			cerr << "history vector element not found" << endl;
+		if (node_idx == -1) {
+			cerr << "history vector element not found 1" << endl;
 			return;
 		}
 		getData().history_elem = graph_resources.nodes[graph_resources.put_mode][node_idx];
@@ -751,7 +759,7 @@ private:
 	void move_processing(int_fast8_t cell) {
 		int parent_idx = graph_resources.node_find(graph_resources.put_mode, getData().history_elem.board.n_discs());
 		if (parent_idx == -1) {
-			cerr << "history vector element not found" << endl;
+			cerr << "history vector element not found 2" << endl;
 			return;
 		}
 		graph_resources.nodes[graph_resources.put_mode][parent_idx].next_policy = HW2_M1 - cell;
@@ -776,7 +784,7 @@ private:
 	}
 
 	void interact_move() {
-		if ((getData().history_elem.player == BLACK && getData().menu_elements.ai_put_black) || (getData().history_elem.player == WHITE && getData().menu_elements.ai_put_white)) {
+		if (graph_resources.put_mode == GRAPH_MODE_NORMAL && ((getData().history_elem.player == BLACK && getData().menu_elements.ai_put_black) || (getData().history_elem.player == WHITE && getData().menu_elements.ai_put_white))) {
 			return;
 		}
 		uint64_t legal = getData().history_elem.board.get_legal();
@@ -793,22 +801,20 @@ private:
 	}
 
 	void ai_move() {
-		if (graph_resources.put_mode == 0) {
-			if ((getData().history_elem.player == BLACK && getData().menu_elements.ai_put_black) || (getData().history_elem.player == WHITE && getData().menu_elements.ai_put_white)) {
-				uint64_t legal = getData().history_elem.board.get_legal();
-				if (!ai_status.ai_thinking) {
-					if (legal) {
-						ai_status.ai_future = async(launch::async, ai, getData().history_elem.board, getData().menu_elements.level, getData().menu_elements.use_book, true);
-						ai_status.ai_thinking = true;
-					}
+		if (graph_resources.put_mode == GRAPH_MODE_NORMAL && ((getData().history_elem.player == BLACK && getData().menu_elements.ai_put_black) || (getData().history_elem.player == WHITE && getData().menu_elements.ai_put_white))) {
+			uint64_t legal = getData().history_elem.board.get_legal();
+			if (!ai_status.ai_thinking) {
+				if (legal) {
+					ai_status.ai_future = async(launch::async, ai, getData().history_elem.board, getData().menu_elements.level, getData().menu_elements.use_book, true);
+					ai_status.ai_thinking = true;
 				}
-				else if (ai_status.ai_future.wait_for(chrono::seconds(0)) == future_status::ready) {
-					Search_result search_result = ai_status.ai_future.get();
-					if (1 & (legal >> search_result.policy)) {
-						move_processing(HW2_M1 - search_result.policy);
-					}
-					ai_status.ai_thinking = false;
+			}
+			else if (ai_status.ai_future.wait_for(chrono::seconds(0)) == future_status::ready) {
+				Search_result search_result = ai_status.ai_future.get();
+				if (1 & (legal >> search_result.policy)) {
+					move_processing(HW2_M1 - search_result.policy);
 				}
+				ai_status.ai_thinking = false;
 			}
 		}
 	}
@@ -819,7 +825,7 @@ private:
 			getData().history_elem.opening_name = new_opening;
 			int node_idx = graph_resources.node_find(graph_resources.put_mode, graph_resources.n_discs);
 			if (node_idx == -1) {
-				cerr << "history vector element not found" << endl;
+				cerr << "history vector element not found 3" << endl;
 				return;
 			}
 			graph_resources.nodes[graph_resources.put_mode][node_idx].opening_name = new_opening;
