@@ -700,16 +700,24 @@ public:
 		// board drawing
 		draw_board();
 
-		// hint calculating & drawing
+		// hint / legalcalculating & drawing
 		if (!ai_should_move) {
-			if (!ai_status.hint_calculating && ai_status.hint_level <= getData().menu_elements.level) {
-				hint_init_calculating();
-				if (ai_status.hint_level <= getData().menu_elements.level) {
-					cerr << "hint search level " << ai_status.hint_level << endl;
+			if (getData().menu_elements.use_disc_hint) {
+				if (!ai_status.hint_calculating && ai_status.hint_level <= getData().menu_elements.level) {
+					hint_init_calculating();
+					if (ai_status.hint_level <= getData().menu_elements.level) {
+						cerr << "hint search level " << ai_status.hint_level << endl;
+					}
+				}
+				hint_do_task();
+				uint64_t legal_ignore = draw_hint();
+				if (getData().menu_elements.show_legal) {
+					draw_legal(legal_ignore);
 				}
 			}
-			hint_do_task();
-			hint_draw();
+			else if (getData().menu_elements.show_legal) {
+				draw_legal(0);
+			}
 		}
 
 		// graph drawing
@@ -958,6 +966,8 @@ private:
 		menu_e.push(side_menu);
 		title.push(menu_e);
 
+		menu_e.init_check(language.get("display", "legal"), &menu_elements->show_legal, menu_elements->show_legal);
+		title.push(menu_e);
 		menu_e.init_check(language.get("display", "graph"), &menu_elements->show_graph, menu_elements->show_graph);
 		title.push(menu_e);
 		menu_e.init_check(language.get("display", "opening_on_cell"), &menu_elements->show_opening_on_cell, menu_elements->show_opening_on_cell);
@@ -1083,7 +1093,6 @@ private:
 		Circle(BOARD_SX + 6 * BOARD_CELL_SIZE, BOARD_SY + 6 * BOARD_CELL_SIZE, BOARD_DOT_SIZE).draw(getData().colors.dark_gray);
 		RoundRect(BOARD_SX, BOARD_SY, BOARD_CELL_SIZE * HW, BOARD_CELL_SIZE * HW, BOARD_ROUND_DIAMETER).drawFrame(0, BOARD_ROUND_FRAME_WIDTH, getData().colors.white);
 		Flip flip;
-		uint64_t legal = getData().history_elem.board.get_legal();
 		int board_arr[HW2];
 		getData().history_elem.board.translate_to_arr(board_arr, getData().history_elem.player);
 		for (int cell = 0; cell < HW2; ++cell) {
@@ -1095,6 +1104,20 @@ private:
 			else if (board_arr[cell] == WHITE) {
 				Circle(x, y, DISC_SIZE).draw(getData().colors.white);
 			}
+		}
+		if (getData().history_elem.policy != -1) {
+			int x = BOARD_SX + (HW_M1 - getData().history_elem.policy % HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
+			int y = BOARD_SY + (HW_M1 - getData().history_elem.policy / HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
+			Circle(x, y, LEGAL_SIZE).draw(getData().colors.red);
+		}
+	}
+
+	void draw_legal(uint64_t ignore) {
+		Flip flip;
+		uint64_t legal = getData().history_elem.board.get_legal();
+		for (int cell = 0; cell < HW2; ++cell) {
+			int x = BOARD_SX + (cell % HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
+			int y = BOARD_SY + (cell / HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
 			if (1 & (legal >> (HW2_M1 - cell))) {
 				if (HW2_M1 - cell == getData().history_elem.next_policy) {
 					if (getData().history_elem.player == WHITE) {
@@ -1104,15 +1127,9 @@ private:
 						Circle(x, y, DISC_SIZE).draw(ColorF(getData().colors.black, 0.2));
 					}
 				}
-				if (getData().menu_elements.show_legal && !getData().menu_elements.use_disc_hint) {
+				if ((1 & (ignore >> (HW2_M1 - cell))) == 0)
 					Circle(x, y, LEGAL_SIZE).draw(getData().colors.cyan);
-				}
 			}
-		}
-		if (getData().history_elem.policy != -1) {
-			int x = BOARD_SX + (HW_M1 - getData().history_elem.policy % HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
-			int y = BOARD_SY + (HW_M1 - getData().history_elem.policy / HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
-			Circle(x, y, LEGAL_SIZE).draw(getData().colors.red);
 		}
 	}
 
@@ -1230,7 +1247,8 @@ private:
 		}
 	}
 
-	void hint_draw() {
+	uint64_t draw_hint() {
+		uint64_t res = 0ULL;
 		if (ai_status.hint_available) {
 			vector<Hint_info> hint_infos;
 			for (int cell = 0; cell < HW2; ++cell) {
@@ -1261,8 +1279,10 @@ private:
 				else {
 					getData().fonts.font10(U"Lv." + Format(hint_infos[i].type)).draw(sx + 2, sy + 16, color);
 				}
+				res |= 1ULL << (HW2_M1 - hint_infos[i].cell);
 			}
 		}
+		return res;
 	}
 
 	void draw_opening_on_cell() {
