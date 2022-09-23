@@ -141,17 +141,48 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
     return res;
 }
 
+inline Search_result tree_search_iterative_deepening(Board board, int depth, bool use_mpc, double mpct, bool show_log){
+    Search search;
+    int g = 0, alpha, beta, policy = -1;
+    pair<int, int> result;
+    depth = min(HW2 - pop_count_ull(board.player | board.opponent), depth);
+    bool is_end_search = (HW2 - pop_count_ull(board.player | board.opponent) == depth);
+    search.init_board(&board);
+    search.n_nodes = 0ULL;
+    search.use_mpc = use_mpc;
+    search.mpct = mpct;
+    calc_features(&search);
+    uint64_t strt = tim();
+
+    if (is_end_search){
+        if (show_log)
+            cerr << "main search" << endl;
+        result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth, false, true, show_log, result.second);
+        g = result.first;
+        policy = result.second;
+        if (show_log)
+            cerr << "depth " << depth << " value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
+    } else{
+        result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth, false, false, show_log, result.second);
+        g = result.first;
+        policy = result.second;
+        if (show_log)
+            cerr << "midsearch time " << tim() - strt << " depth " << depth << " value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
+    }
+    Search_result res;
+    res.depth = depth;
+    res.nodes = search.n_nodes;
+    res.time = tim() - strt;
+    res.nps = search.n_nodes * 1000 / max(1ULL, res.time);
+    res.policy = policy;
+    res.value = g;
+    res.is_end_search = is_end_search;
+    res.probability = calc_probability(mpct);
+    return res;
+}
+
 Search_result ai(Board board, int level, bool use_book, bool show_log){
     Search_result res;
-    if (board.get_legal() == 0ULL){
-        res.policy = -1;
-        res.value = board.score_player();
-        res.depth = 0;
-        res.nps = 0;
-        res.is_end_search = true;
-        res.probability = 100;
-        return res;
-    }
     Book_value book_result = book.get_random(&board, 0);
     if (book_result.policy != -1 && use_book){
         if (show_log)
@@ -181,6 +212,57 @@ Search_result ai(Board board, int level, bool use_book, bool show_log){
         if (show_log)
             cerr << "level status " << level << " " << pop_count_ull(board.player | board.opponent) - 4 << " " << depth << " " << use_mpc << " " << mpct << endl;
         res = tree_search(board, depth, use_mpc, mpct, show_log);
+    }
+    return res;
+}
+
+Search_result ai_hint(Board board, int level, bool use_book, bool show_log){
+    Search_result res;
+    int value_sign = 1;
+    if (board.get_legal() == 0ULL){
+        board.pass();
+        if (board.get_legal() == 0ULL){
+            res.policy = -1;
+            res.value = board.score_player();
+            res.depth = 0;
+            res.nps = 0;
+            res.is_end_search = true;
+            res.probability = 100;
+            return res;
+        } else{
+            value_sign = -1;
+        }
+    }
+    Book_value book_result = book.get_random(&board, 0);
+    if (book_result.policy != -1 && use_book){
+        if (show_log)
+            cerr << "BOOK " << book_result.policy << " " << book_result.value << endl;
+        res.policy = book_result.policy;
+        res.value = value_sign * book_result.value;
+        res.depth = SEARCH_BOOK;
+        res.nps = 0;
+        res.is_end_search = false;
+        res.probability = 100;
+    } else if (level == 0){
+        uint64_t legal = board.get_legal();
+        vector<int> move_lst;
+        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
+            move_lst.emplace_back(cell);
+        res.policy = move_lst[myrandrange(0, (int)move_lst.size())];
+        res.value = value_sign * mid_evaluate(&board);
+        res.depth = 0;
+        res.nps = 0;
+        res.is_end_search = false;
+        res.probability = 0;
+    } else{
+        int depth;
+        bool use_mpc, is_mid_search;
+        double mpct;
+        get_level(level, pop_count_ull(board.player | board.opponent) - 4, &is_mid_search, &depth, &use_mpc, &mpct);
+        if (show_log)
+            cerr << "level status " << level << " " << pop_count_ull(board.player | board.opponent) - 4 << " " << depth << " " << use_mpc << " " << mpct << endl;
+        res = tree_search_iterative_deepening(board, depth, use_mpc, mpct, show_log);
+        res.value *= value_sign;
     }
     return res;
 }

@@ -1203,7 +1203,7 @@ private:
 				board = getData().history_elem.board;
 				calc_flip(&flip, &board, (uint_fast8_t)(HW2_M1 - value_cell.second));
 				board.move_board(&flip);
-				ai_status.hint_task_stack.emplace_back(make_pair(value_cell.second, bind(ai, board, ai_status.hint_level, getData().menu_elements.use_book, false)));
+				ai_status.hint_task_stack.emplace_back(make_pair(value_cell.second, bind(ai_hint, board, ai_status.hint_level, getData().menu_elements.use_book, false)));
 			}
 			ai_status.hint_calculating = true;
 		}
