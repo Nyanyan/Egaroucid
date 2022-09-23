@@ -629,17 +629,22 @@ public:
 
 	void update() override {
 		Scene::SetBackground(getData().colors.green);
+
+		// opening
 		update_opening();
 
+		// transcript move
 		menu_manipulate();
 		if (!getData().menu.active()) {
 			interact_graph();
 		}
 		update_n_discs();
 
+		// move
 		if (!getData().menu.active()) {
 			interact_move();
 		}
+		ai_move();
 
 		draw_board();
 		if (getData().menu_elements.show_graph) {
@@ -731,38 +736,59 @@ private:
 		getData().history_elem = graph_resources.nodes[graph_resources.put_mode][node_idx];
 	}
 
+	void move_processing(int_fast8_t cell) {
+		int parent_idx = graph_resources.node_find(graph_resources.put_mode, getData().history_elem.board.n_discs());
+		if (parent_idx == -1) {
+			cerr << "history vector element not found" << endl;
+			return;
+		}
+		graph_resources.nodes[graph_resources.put_mode][parent_idx].next_policy = HW2_M1 - cell;
+		if (parent_idx + 1 < (int)graph_resources.nodes[graph_resources.put_mode].size()) {
+			for (int i = parent_idx + 1; i < (int)graph_resources.nodes[graph_resources.put_mode].size(); ++i) {
+				graph_resources.nodes[graph_resources.put_mode].pop_back();
+			}
+		}
+		Flip flip;
+		calc_flip(&flip, &getData().history_elem.board, HW2_M1 - cell);
+		getData().history_elem.board.move_board(&flip);
+		getData().history_elem.policy = HW2_M1 - cell;
+		getData().history_elem.next_policy = -1;
+		getData().history_elem.v = GRAPH_IGNORE_VALUE;
+		getData().history_elem.player ^= 1;
+		if (getData().history_elem.board.get_legal() == 0ULL) {
+			getData().history_elem.board.pass();
+			getData().history_elem.player ^= 1;
+		}
+		graph_resources.nodes[graph_resources.put_mode].emplace_back(getData().history_elem);
+		graph_resources.n_discs++;
+	}
+
 	void interact_move() {
+		if ((getData().history_elem.player == BLACK && getData().menu_elements.ai_put_black) || (getData().history_elem.player == WHITE && getData().menu_elements.ai_put_white)) {
+			return;
+		}
 		uint64_t legal = getData().history_elem.board.get_legal();
-		for (uint_fast8_t cell = 0; cell < HW2; ++cell) {
+		for (int_fast8_t cell = 0; cell < HW2; ++cell) {
 			if (1 & (legal >> (HW2_M1 - cell))) {
 				int x = cell % HW;
 				int y = cell / HW;
 				Rect cell_rect(BOARD_SX + x * BOARD_CELL_SIZE, BOARD_SY + y * BOARD_CELL_SIZE, BOARD_CELL_SIZE, BOARD_CELL_SIZE);
 				if (cell_rect.leftClicked()) {
-					int parent_idx = graph_resources.node_find(graph_resources.put_mode, getData().history_elem.board.n_discs());
-					if (parent_idx == -1) {
-						cerr << "history vector element not found" << endl;
-						return;
+					move_processing(cell);
+				}
+			}
+		}
+	}
+
+	void ai_move() {
+		if (graph_resources.put_mode == 0) {
+			if ((getData().history_elem.player == BLACK && getData().menu_elements.ai_put_black) || (getData().history_elem.player == WHITE && getData().menu_elements.ai_put_white)) {
+				uint64_t legal = getData().history_elem.board.get_legal();
+				if (legal) {
+					Search_result search_result = ai(getData().history_elem.board, getData().menu_elements.level, getData().menu_elements.use_book, true);
+					if (1 & (legal >> search_result.policy)) {
+						move_processing(HW2_M1 - search_result.policy);
 					}
-					graph_resources.nodes[graph_resources.put_mode][parent_idx].next_policy = HW2_M1 - cell;
-					if (parent_idx + 1 < (int)graph_resources.nodes[graph_resources.put_mode].size()) {
-						for (int i = parent_idx + 1; i < (int)graph_resources.nodes[graph_resources.put_mode].size(); ++i) {
-							graph_resources.nodes[graph_resources.put_mode].pop_back();
-						}
-					}
-					Flip flip;
-					calc_flip(&flip, &getData().history_elem.board, HW2_M1 - cell);
-					getData().history_elem.board.move_board(&flip);
-					getData().history_elem.policy = HW2_M1 - cell;
-					getData().history_elem.next_policy = -1;
-					getData().history_elem.v = GRAPH_IGNORE_VALUE;
-					getData().history_elem.player ^= 1;
-					if (getData().history_elem.board.get_legal() == 0ULL) {
-						getData().history_elem.board.pass();
-						getData().history_elem.player ^= 1;
-					}
-					graph_resources.nodes[graph_resources.put_mode].emplace_back(getData().history_elem);
-					graph_resources.n_discs++;
 				}
 			}
 		}

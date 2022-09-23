@@ -139,11 +139,12 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
     return res;
 }
 
-Search_result ai(Board board, int level, bool use_book, int error_level, bool show_log){
+Search_result ai(Board board, int level, bool use_book, bool show_log){
     Search_result res;
     Book_value book_result = book.get_random(&board, 0);
     if (book_result.policy != -1 && use_book){
-        cerr << "BOOK " << book_result.policy << " " << book_result.value << endl;
+        if (show_log)
+            cerr << "BOOK " << book_result.policy << " " << book_result.value << endl;
         res.policy = book_result.policy;
         res.value = book_result.value;
         res.depth = SEARCH_BOOK;
