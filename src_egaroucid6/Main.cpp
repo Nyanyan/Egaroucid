@@ -657,10 +657,16 @@ public:
 		update_n_discs();
 
 		// move
-		if (!getData().menu.active()) {
+		bool ai_should_move =
+			graph_resources.put_mode == GRAPH_MODE_NORMAL &&
+			((getData().history_elem.player == BLACK && getData().menu_elements.ai_put_black) || (getData().history_elem.player == WHITE && getData().menu_elements.ai_put_white)) &&
+			getData().history_elem.board.n_discs() == graph_resources.nodes[GRAPH_MODE_NORMAL][graph_resources.nodes[GRAPH_MODE_NORMAL].size() - 1].board.n_discs();
+		if (ai_should_move) {
+			ai_move();
+		}
+		else if (!getData().menu.active()) {
 			interact_move();
 		}
-		ai_move();
 
 		draw_board();
 		if (getData().menu_elements.show_graph) {
@@ -712,28 +718,15 @@ private:
 	}
 
 	void update_n_discs() {
-		int max_n_discs = graph_resources.nodes[GRAPH_MODE_NORMAL][graph_resources.nodes[GRAPH_MODE_NORMAL].size() - 1].board.n_discs();
-		if (graph_resources.nodes[GRAPH_MODE_INSPECT].size()) {
-			max_n_discs = max(max_n_discs, graph_resources.nodes[GRAPH_MODE_INSPECT][graph_resources.nodes[GRAPH_MODE_INSPECT].size() - 1].board.n_discs());
-		}
+		int max_n_discs = graph_resources.nodes[graph_resources.put_mode][graph_resources.nodes[graph_resources.put_mode].size() - 1].board.n_discs();
 		graph_resources.n_discs = min(graph_resources.n_discs, max_n_discs);
 		int min_n_discs = graph_resources.nodes[GRAPH_MODE_NORMAL][0].board.n_discs();
 		if (graph_resources.nodes[GRAPH_MODE_INSPECT].size()) {
 			min_n_discs = min(min_n_discs, graph_resources.nodes[GRAPH_MODE_INSPECT][0].board.n_discs());
 		}
 		graph_resources.n_discs = max(graph_resources.n_discs, min_n_discs);
-
-		if (graph_resources.put_mode == GRAPH_MODE_NORMAL && graph_resources.n_discs != graph_resources.nodes[GRAPH_MODE_NORMAL][graph_resources.nodes[GRAPH_MODE_NORMAL].size() - 1].board.n_discs()) {
-			graph_resources.put_mode = GRAPH_MODE_INSPECT;
-		}
 		if (graph_resources.put_mode == GRAPH_MODE_INSPECT && graph_resources.nodes[GRAPH_MODE_INSPECT].size()) {
 			if (graph_resources.n_discs < graph_resources.nodes[GRAPH_MODE_INSPECT][0].board.n_discs()) {
-				graph_resources.put_mode = GRAPH_MODE_NORMAL;
-				graph_resources.nodes[1].clear();
-			}
-		}
-		if (graph_resources.put_mode == GRAPH_MODE_INSPECT && graph_resources.nodes[GRAPH_MODE_INSPECT].size() == 1) {
-			if (getData().history_elem.board.n_discs() == graph_resources.nodes[GRAPH_MODE_NORMAL][graph_resources.nodes[GRAPH_MODE_NORMAL].size() - 1].board.n_discs()) {
 				graph_resources.put_mode = GRAPH_MODE_NORMAL;
 				graph_resources.nodes[1].clear();
 			}
@@ -758,13 +751,13 @@ private:
 
 	void move_processing(int_fast8_t cell) {
 		int parent_idx = graph_resources.node_find(graph_resources.put_mode, getData().history_elem.board.n_discs());
-		if (parent_idx == -1) {
-			cerr << "history vector element not found 2" << endl;
-			return;
-		}
-		graph_resources.nodes[graph_resources.put_mode][parent_idx].next_policy = HW2_M1 - cell;
-		if (parent_idx + 1 < (int)graph_resources.nodes[graph_resources.put_mode].size()) {
-			for (int i = parent_idx + 1; i < (int)graph_resources.nodes[graph_resources.put_mode].size(); ++i) {
+		if (parent_idx != -1) {
+			if (graph_resources.nodes[graph_resources.put_mode][parent_idx].next_policy == HW2_M1 - cell && parent_idx + 1 < (int)graph_resources.nodes[graph_resources.put_mode].size()) {
+				++graph_resources.n_discs;
+				return;
+			}
+			graph_resources.nodes[graph_resources.put_mode][parent_idx].next_policy = HW2_M1 - cell;
+			while (graph_resources.nodes[graph_resources.put_mode].size() > parent_idx + 1) {
 				graph_resources.nodes[graph_resources.put_mode].pop_back();
 			}
 		}
@@ -784,9 +777,6 @@ private:
 	}
 
 	void interact_move() {
-		if (graph_resources.put_mode == GRAPH_MODE_NORMAL && ((getData().history_elem.player == BLACK && getData().menu_elements.ai_put_black) || (getData().history_elem.player == WHITE && getData().menu_elements.ai_put_white))) {
-			return;
-		}
 		uint64_t legal = getData().history_elem.board.get_legal();
 		for (int_fast8_t cell = 0; cell < HW2; ++cell) {
 			if (1 & (legal >> (HW2_M1 - cell))) {
@@ -794,6 +784,17 @@ private:
 				int y = cell / HW;
 				Rect cell_rect(BOARD_SX + x * BOARD_CELL_SIZE, BOARD_SY + y * BOARD_CELL_SIZE, BOARD_CELL_SIZE, BOARD_CELL_SIZE);
 				if (cell_rect.leftClicked()) {
+					if (graph_resources.put_mode == GRAPH_MODE_NORMAL) {
+						int parent_idx = graph_resources.node_find(GRAPH_MODE_NORMAL, getData().history_elem.board.n_discs());
+						if (parent_idx != -1) {
+							bool go_to_inspection_mode =
+								getData().history_elem.board.n_discs() != graph_resources.nodes[GRAPH_MODE_NORMAL][graph_resources.nodes[GRAPH_MODE_NORMAL].size() - 1].board.n_discs() &&
+								HW2_M1 - cell != graph_resources.nodes[GRAPH_MODE_NORMAL][parent_idx].next_policy;
+							if (go_to_inspection_mode) {
+								graph_resources.put_mode = GRAPH_MODE_INSPECT;
+							}
+						}
+					}
 					move_processing(cell);
 				}
 			}
@@ -801,21 +802,19 @@ private:
 	}
 
 	void ai_move() {
-		if (graph_resources.put_mode == GRAPH_MODE_NORMAL && ((getData().history_elem.player == BLACK && getData().menu_elements.ai_put_black) || (getData().history_elem.player == WHITE && getData().menu_elements.ai_put_white))) {
-			uint64_t legal = getData().history_elem.board.get_legal();
-			if (!ai_status.ai_thinking) {
-				if (legal) {
-					ai_status.ai_future = async(launch::async, ai, getData().history_elem.board, getData().menu_elements.level, getData().menu_elements.use_book, true);
-					ai_status.ai_thinking = true;
-				}
+		uint64_t legal = getData().history_elem.board.get_legal();
+		if (!ai_status.ai_thinking) {
+			if (legal) {
+				ai_status.ai_future = async(launch::async, ai, getData().history_elem.board, getData().menu_elements.level, getData().menu_elements.use_book, true);
+				ai_status.ai_thinking = true;
 			}
-			else if (ai_status.ai_future.wait_for(chrono::seconds(0)) == future_status::ready) {
-				Search_result search_result = ai_status.ai_future.get();
-				if (1 & (legal >> search_result.policy)) {
-					move_processing(HW2_M1 - search_result.policy);
-				}
-				ai_status.ai_thinking = false;
+		}
+		else if (ai_status.ai_future.wait_for(chrono::seconds(0)) == future_status::ready) {
+			Search_result search_result = ai_status.ai_future.get();
+			if (1 & (legal >> search_result.policy)) {
+				move_processing(HW2_M1 - search_result.policy);
 			}
+			ai_status.ai_thinking = false;
 		}
 	}
 
