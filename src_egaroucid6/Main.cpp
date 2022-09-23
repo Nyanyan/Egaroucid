@@ -64,7 +64,7 @@ constexpr int BOARD_CELL_SIZE = BOARD_SIZE / HW;
 constexpr int GRAPH_SX = BOARD_SX + BOARD_SIZE + 40;
 constexpr int GRAPH_SY = Y_CENTER + 30;
 constexpr int GRAPH_WIDTH = WINDOW_SIZE_X - GRAPH_SX - 20;
-constexpr int GRAPH_HEIGHT = WINDOW_SIZE_Y - GRAPH_SY - 20;
+constexpr int GRAPH_HEIGHT = WINDOW_SIZE_Y - GRAPH_SY - 40;
 
 // info drawing constants
 #define INFO_SY 35
@@ -496,7 +496,7 @@ use_default_settings:
 }
 
 int init_ai(const Settings *settings, const Directories *directories) {
-	thread_pool.resize(settings->n_threads);
+	thread_pool.resize(settings->n_threads - 1);
 	bit_init();
 	board_init();
 	stability_init();
