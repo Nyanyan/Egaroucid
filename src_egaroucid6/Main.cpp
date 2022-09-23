@@ -518,6 +518,7 @@ use_default_settings:
 
 int init_ai(const Settings *settings, const Directories *directories) {
 	thread_pool.resize(settings->n_threads - 1);
+	cerr << "there are " << thread_pool.size() << " additional threads" << endl;
 	bit_init();
 	board_init();
 	stability_init();
@@ -703,11 +704,9 @@ public:
 		// hint / legalcalculating & drawing
 		if (!ai_should_move) {
 			if (getData().menu_elements.use_disc_hint) {
-				if (!ai_status.hint_calculating && ai_status.hint_level <= getData().menu_elements.level) {
+				if (!ai_status.hint_calculating && ai_status.hint_level < getData().menu_elements.level) {
 					hint_init_calculating();
-					if (ai_status.hint_level <= getData().menu_elements.level) {
-						cerr << "hint search level " << ai_status.hint_level << endl;
-					}
+					cerr << "hint search level " << ai_status.hint_level << endl;
 				}
 				hint_do_task();
 				uint64_t legal_ignore = draw_hint();
@@ -827,6 +826,7 @@ private:
 			return;
 		}
 		if (getData().history_elem.board != graph_resources.nodes[graph_resources.put_mode][node_idx].board) {
+			stop_calculating();
 			reset_hint();
 		}
 		getData().history_elem = graph_resources.nodes[graph_resources.put_mode][node_idx];
@@ -1175,38 +1175,31 @@ private:
 		else {
 			ai_status.hint_available = true;
 		}
-		for (int cell = 0; cell < HW2; ++cell) {
-			ai_status.hint_use_stable[cell] = ai_status.hint_use[cell];
-			ai_status.hint_values_stable[cell] = ai_status.hint_values[cell];
-			ai_status.hint_types_stable[cell] = ai_status.hint_types[cell];
-		}
 		++ai_status.hint_level;
-		if (ai_status.hint_level <= getData().menu_elements.level) {
-			vector<pair<int, int>> value_cells;
-			for (int cell = 0; cell < HW2; ++cell) {
-				if (ai_status.hint_use[cell]) {
-					value_cells.emplace_back(make_pair(ai_status.hint_values[cell], cell));
-				}
+		vector<pair<int, int>> value_cells;
+		for (int cell = 0; cell < HW2; ++cell) {
+			if (ai_status.hint_use[cell]) {
+				value_cells.emplace_back(make_pair(ai_status.hint_values[cell], cell));
 			}
-			sort(value_cells.begin(), value_cells.end(), compare_value_cell);
-			int n_legal = pop_count_ull(legal);
-			int hint_adoption_threshold = getData().menu_elements.n_disc_hint + max(1, n_legal * (getData().menu_elements.level - ai_status.hint_level) / getData().menu_elements.level);
-			hint_adoption_threshold = min(hint_adoption_threshold, (int)value_cells.size());
-			ai_status.hint_task_stack.clear();
-			int idx = 0;
-			Board board;
-			Flip flip;
-			for (pair<int, int>& value_cell : value_cells) {
-				if (idx++ >= hint_adoption_threshold) {
-					break;
-				}
-				board = getData().history_elem.board;
-				calc_flip(&flip, &board, (uint_fast8_t)(HW2_M1 - value_cell.second));
-				board.move_board(&flip);
-				ai_status.hint_task_stack.emplace_back(make_pair(value_cell.second, bind(ai_hint, board, ai_status.hint_level, getData().menu_elements.use_book, false)));
-			}
-			ai_status.hint_calculating = true;
 		}
+		sort(value_cells.begin(), value_cells.end(), compare_value_cell);
+		int n_legal = pop_count_ull(legal);
+		int hint_adoption_threshold = getData().menu_elements.n_disc_hint + max(1, n_legal * (getData().menu_elements.level - ai_status.hint_level) / getData().menu_elements.level);
+		hint_adoption_threshold = min(hint_adoption_threshold, (int)value_cells.size());
+		ai_status.hint_task_stack.clear();
+		int idx = 0;
+		Board board;
+		Flip flip;
+		for (pair<int, int>& value_cell : value_cells) {
+			if (idx++ >= hint_adoption_threshold) {
+				break;
+			}
+			board = getData().history_elem.board;
+			calc_flip(&flip, &board, (uint_fast8_t)(HW2_M1 - value_cell.second));
+			board.move_board(&flip);
+			ai_status.hint_task_stack.emplace_back(make_pair(value_cell.second, bind(ai_hint, board, ai_status.hint_level, getData().menu_elements.use_book, false)));
+		}
+		ai_status.hint_calculating = true;
 	}
 
 	void hint_do_task() {
@@ -1236,12 +1229,25 @@ private:
 			}
 		}
 		if (!has_remaining_task) {
-			if (ai_status.hint_task_stack.size()) {
-				pair<int, function<Search_result()>> task = ai_status.hint_task_stack.back();
-				ai_status.hint_task_stack.pop_back();
-				ai_status.hint_future[task.first] = async(launch::async, task.second);
+			int loop_time = 1;
+			if (ai_status.hint_level <= 10) {
+				loop_time = max(1, getData().menu_elements.n_threads - 1);
 			}
-			else {
+			bool task_pushed = false;
+			for (int i = 0; i < loop_time; ++i) {
+				if (ai_status.hint_task_stack.size()) {
+					pair<int, function<Search_result()>> task = ai_status.hint_task_stack.back();
+					ai_status.hint_task_stack.pop_back();
+					ai_status.hint_future[task.first] = async(launch::async, task.second);
+					task_pushed = true;
+				}
+			}
+			if (!task_pushed){
+				for (int cell = 0; cell < HW2; ++cell) {
+					ai_status.hint_use_stable[cell] = ai_status.hint_use[cell];
+					ai_status.hint_values_stable[cell] = ai_status.hint_values[cell];
+					ai_status.hint_types_stable[cell] = ai_status.hint_types[cell];
+				}
 				ai_status.hint_calculating = false;
 			}
 		}
