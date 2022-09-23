@@ -75,6 +75,9 @@ constexpr int INFO_SX = BOARD_SX + BOARD_SIZE + 25;
 #define BUTTON_NOT_PUSHED 0
 #define BUTTON_LONG_PRESS_THRESHOLD 500
 
+// hint constants
+#define HINT_NOT_CALCULATING -1
+
 
 struct Colors {
 	Color green{ Color(36, 153, 114, 100) };
@@ -288,6 +291,13 @@ struct Graph_resources {
 struct Move_board_button_status {
 	uint64_t left_pushed{ BUTTON_NOT_PUSHED };
 	uint64_t right_pushed{ BUTTON_NOT_PUSHED };
+};
+
+struct AI_status {
+	bool ai_thinking{ false };
+	future<Search_result> ai_future;
+	int hint_calculating{ HINT_NOT_CALCULATING };
+	future<Search_result> hint_future[HW2];
 };
 
 using App = SceneManager<String, Common_resources>;
@@ -610,6 +620,8 @@ private:
 	Graph graph;
 	Graph_resources graph_resources;
 	Move_board_button_status move_board_button_status;
+	AI_status ai_status;
+
 public:
 	Main_scene(const InitData& init) : IScene{ init } {
 		cerr << "main scene loading" << endl;
@@ -784,11 +796,18 @@ private:
 		if (graph_resources.put_mode == 0) {
 			if ((getData().history_elem.player == BLACK && getData().menu_elements.ai_put_black) || (getData().history_elem.player == WHITE && getData().menu_elements.ai_put_white)) {
 				uint64_t legal = getData().history_elem.board.get_legal();
-				if (legal) {
-					Search_result search_result = ai(getData().history_elem.board, getData().menu_elements.level, getData().menu_elements.use_book, true);
+				if (!ai_status.ai_thinking) {
+					if (legal) {
+						ai_status.ai_future = async(launch::async, ai, getData().history_elem.board, getData().menu_elements.level, getData().menu_elements.use_book, true);
+						ai_status.ai_thinking = true;
+					}
+				}
+				else if (ai_status.ai_future.wait_for(chrono::seconds(0)) == future_status::ready) {
+					Search_result search_result = ai_status.ai_future.get();
 					if (1 & (legal >> search_result.policy)) {
 						move_processing(HW2_M1 - search_result.policy);
 					}
+					ai_status.ai_thinking = false;
 				}
 			}
 		}
