@@ -12,7 +12,7 @@ using namespace std;
 #define NOMPC 5.00
 #define NODEPTH 100
 
-constexpr double mpc_level[5] = {0.6, MPC_81, MPC_95, MPC_98, MPC_99};
+#define DOUBLE_NEAR_THRESHOLD 0.001
 
 struct Level{
     int mid_lookahead;
@@ -199,4 +199,27 @@ int get_level_complete_depth(int level){
     if (level_definition[level].complete3_mpct == NOMPC)
         return level_definition[level].complete3;
     return level_definition[level].complete4;
+}
+
+bool double_near(double a, double b){
+    return a - b < DOUBLE_NEAR_THRESHOLD;
+}
+
+int calc_probability(double mpct){
+    if (double_near(MPC_81, mpct)){
+        return 81;
+    }
+    if (double_near(MPC_95, mpct)){
+        return 95;
+    }
+    if (double_near(MPC_98, mpct)){
+        return 98;
+    }
+    if (double_near(MPC_99, mpct)){
+        return 99;
+    }
+    if (double_near(NOMPC, mpct)){
+        return 100;
+    }
+    return -1;
 }

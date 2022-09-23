@@ -67,6 +67,8 @@ struct Search_result{
     uint64_t time;
     uint64_t nodes;
     uint64_t nps;
+    bool is_end_search;
+    int probability;
 };
 
 class Search{

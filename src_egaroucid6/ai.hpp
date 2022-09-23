@@ -136,11 +136,22 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
     res.nps = search.n_nodes * 1000 / max(1ULL, res.time);
     res.policy = policy;
     res.value = g;
+    res.is_end_search = is_end_search;
+    res.probability = calc_probability(mpct);
     return res;
 }
 
 Search_result ai(Board board, int level, bool use_book, bool show_log){
     Search_result res;
+    if (board.get_legal() == 0ULL){
+        res.policy = -1;
+        res.value = board.score_player();
+        res.depth = 0;
+        res.nps = 0;
+        res.is_end_search = true;
+        res.probability = 100;
+        return res;
+    }
     Book_value book_result = book.get_random(&board, 0);
     if (book_result.policy != -1 && use_book){
         if (show_log)
@@ -149,6 +160,8 @@ Search_result ai(Board board, int level, bool use_book, bool show_log){
         res.value = book_result.value;
         res.depth = SEARCH_BOOK;
         res.nps = 0;
+        res.is_end_search = false;
+        res.probability = 100;
     } else if (level == 0){
         uint64_t legal = board.get_legal();
         vector<int> move_lst;
@@ -158,6 +171,8 @@ Search_result ai(Board board, int level, bool use_book, bool show_log){
         res.value = mid_evaluate(&board);
         res.depth = 0;
         res.nps = 0;
+        res.is_end_search = false;
+        res.probability = 0;
     } else{
         int depth;
         bool use_mpc, is_mid_search;
