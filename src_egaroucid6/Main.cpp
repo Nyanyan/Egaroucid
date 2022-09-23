@@ -71,6 +71,10 @@ constexpr int GRAPH_HEIGHT = WINDOW_SIZE_Y - GRAPH_SY - 20;
 #define INFO_DISC_RADIUS 12
 constexpr int INFO_SX = BOARD_SX + BOARD_SIZE + 25;
 
+// button press constants
+#define BUTTON_NOT_PUSHED 0
+#define BUTTON_LONG_PRESS_THRESHOLD 500
+
 
 struct Colors {
 	Color green{ Color(36, 153, 114, 100) };
@@ -279,6 +283,11 @@ struct Graph_resources {
 		}
 		return -1;
 	}
+};
+
+struct Move_board_button_status {
+	uint64_t left_pushed{ BUTTON_NOT_PUSHED };
+	uint64_t right_pushed{ BUTTON_NOT_PUSHED };
 };
 
 using App = SceneManager<String, Common_resources>;
@@ -600,6 +609,7 @@ class Main_scene : public App::Scene {
 private:
 	Graph graph;
 	Graph_resources graph_resources;
+	Move_board_button_status move_board_button_status;
 public:
 	Main_scene(const InitData& init) : IScene{ init } {
 		cerr << "main scene loading" << endl;
@@ -643,7 +653,44 @@ public:
 private:
 	void interact_graph() {
 		graph_resources.n_discs = graph.update_n_discs(graph_resources.nodes[0], graph_resources.nodes[1], graph_resources.n_discs);
-		graph_resources.put_mode = (int)(graph_resources.n_discs != graph_resources.nodes[0][graph_resources.nodes[0].size() - 1].board.n_discs());
+
+		if (!KeyLeft.pressed() && !KeyA.pressed()) {
+			move_board_button_status.left_pushed = BUTTON_NOT_PUSHED;
+		}
+		if (!KeyRight.pressed() && !KeyD.pressed()) {
+			move_board_button_status.right_pushed = BUTTON_NOT_PUSHED;
+		}
+
+		if (MouseX1.down() || KeyLeft.down() || KeyA.down() || (move_board_button_status.left_pushed != BUTTON_NOT_PUSHED && tim() - move_board_button_status.left_pushed >= BUTTON_LONG_PRESS_THRESHOLD) || getData().menu_elements.backward) {
+			--graph_resources.n_discs;
+			if (KeyLeft.down() || KeyA.down()) {
+				move_board_button_status.left_pushed = tim();
+			}
+		}
+		else if (MouseX2.down() || KeyRight.down() || KeyD.down() || (move_board_button_status.right_pushed != BUTTON_NOT_PUSHED && tim() - move_board_button_status.right_pushed >= BUTTON_LONG_PRESS_THRESHOLD) || getData().menu_elements.forward) {
+			++graph_resources.n_discs;
+			if (KeyRight.down() || KeyD.down()) {
+				move_board_button_status.right_pushed = tim();
+			}
+		}
+
+		int max_n_discs = graph_resources.nodes[0][graph_resources.nodes[0].size() - 1].board.n_discs();
+		if (graph_resources.nodes[1].size()) {
+			max_n_discs = max(max_n_discs, graph_resources.nodes[1][graph_resources.nodes[1].size() - 1].board.n_discs());
+		}
+		graph_resources.n_discs = min(graph_resources.n_discs, max_n_discs);
+		int min_n_discs = graph_resources.nodes[0][0].board.n_discs();
+		if (graph_resources.nodes[1].size()) {
+			min_n_discs = min(min_n_discs, graph_resources.nodes[1][0].board.n_discs());
+		}
+		graph_resources.n_discs = max(graph_resources.n_discs, min_n_discs);
+
+		if (graph_resources.put_mode == 0 && graph_resources.n_discs != graph_resources.nodes[0][graph_resources.nodes[0].size() - 1].board.n_discs()) {
+			graph_resources.put_mode = 1;
+		}
+		else if (graph_resources.put_mode == 1 && graph_resources.n_discs < graph_resources.nodes[1][0].board.n_discs()) {
+			graph_resources.put_mode = 1;
+		}
 		int node_idx = graph_resources.node_find(graph_resources.put_mode, graph_resources.n_discs);
 		if (node_idx == -1 && graph_resources.put_mode == 1) {
 			graph_resources.nodes[1].clear();
@@ -741,9 +788,9 @@ private:
 		menu_e.init_bar(language.get("settings", "thread", "thread"), &menu_elements->n_threads, menu_elements->n_threads, 1, 32);
 		title.push(menu_e);
 
-		menu_e.init_check(language.get("settings", "play", "ai_put_black"), &menu_elements->ai_put_black, &menu_elements->ai_put_black);
+		menu_e.init_check(language.get("settings", "play", "ai_put_black"), &menu_elements->ai_put_black, menu_elements->ai_put_black);
 		title.push(menu_e);
-		menu_e.init_check(language.get("settings", "play", "ai_put_white"), &menu_elements->ai_put_white, &menu_elements->ai_put_white);
+		menu_e.init_check(language.get("settings", "play", "ai_put_white"), &menu_elements->ai_put_white, menu_elements->ai_put_white);
 		title.push(menu_e);
 
 		menu.push(title);
