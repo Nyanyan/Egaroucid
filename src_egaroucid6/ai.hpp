@@ -233,12 +233,12 @@ Search_result ai_hint(Board board, int level, bool use_book, bool show_log){
             value_sign = -1;
         }
     }
-    Book_value book_result = book.get_random(&board, 0);
-    if (book_result.policy != -1 && use_book){
+    int book_result = book.get(&board);
+    if (book_result != -INF && use_book){
         if (show_log)
-            cerr << "BOOK " << book_result.policy << " " << book_result.value << endl;
-        res.policy = book_result.policy;
-        res.value = value_sign * book_result.value;
+            cerr << "BOOK " << book_result << endl;
+        res.policy = -1;
+        res.value = -value_sign * book_result;
         res.depth = SEARCH_BOOK;
         res.nps = 0;
         res.is_end_search = false;
