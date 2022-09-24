@@ -1068,7 +1068,9 @@ private:
 		else if (ai_status.ai_future.wait_for(chrono::seconds(0)) == future_status::ready) {
 			Search_result search_result = ai_status.ai_future.get();
 			if (1 & (legal >> search_result.policy)) {
+				int sgn = getData().history_elem.player == 0 ? 1 : -1;
 				move_processing(HW2_M1 - search_result.policy);
+				graph_resources.nodes[graph_resources.put_mode].back().v = sgn * search_result.value;
 			}
 			ai_status.ai_thinking = false;
 		}
@@ -1076,7 +1078,7 @@ private:
 
 	void update_opening() {
 		string new_opening = opening.get(getData().history_elem.board, getData().history_elem.player ^ 1);
-		if (new_opening.size()) {
+		if (new_opening.size() && getData().history_elem.opening_name != new_opening) {
 			getData().history_elem.opening_name = new_opening;
 			int node_idx = graph_resources.node_find(graph_resources.put_mode, graph_resources.n_discs);
 			if (node_idx == -1) {
@@ -1349,6 +1351,10 @@ private:
 				}
 			}
 			sort(hint_infos.begin(), hint_infos.end(), compare_hint_info);
+			if (hint_infos.size()) {
+				int sgn = getData().history_elem.player == 0 ? 1 : -1;
+				graph_resources.nodes[graph_resources.put_mode].back().v = sgn * (int)round(hint_infos[0].value);
+			}
 			int n_disc_hint = min((int)hint_infos.size(), getData().menu_elements.n_disc_hint);
 			for (int i = 0; i < n_disc_hint; ++i) {
 				int sx = BOARD_SX + (hint_infos[i].cell % HW) * BOARD_CELL_SIZE;
