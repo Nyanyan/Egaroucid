@@ -340,7 +340,7 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped, bool 
                             p1 = next_bit(&empties);
                             p2 = next_bit(&empties);
                             p3 = next_bit(&empties);
-                            g = -last4(search, -beta, -alpha, p0, p1, p2, p3, skipped);
+                            g = -last4(search, -beta, -alpha, p0, p1, p2, p3, false);
                         search->undo(&flip);
                         alpha = max(alpha, g);
                         if (beta <= alpha)
@@ -373,7 +373,7 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped, bool 
                             p1 = next_bit(&empties);
                             p2 = next_bit(&empties);
                             p3 = next_bit(&empties);
-                            g = -last4(search, -beta, -alpha, p0, p1, p2, p3, skipped);
+                            g = -last4(search, -beta, -alpha, p0, p1, p2, p3, false);
                         search->undo(&flip);
                         alpha = max(alpha, g);
                         if (beta <= alpha)
@@ -405,7 +405,7 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped, bool 
                             p1 = next_bit(&empties);
                             p2 = next_bit(&empties);
                             p3 = next_bit(&empties);
-                            g = -last4(search, -beta, -alpha, p0, p1, p2, p3, skipped);
+                            g = -last4(search, -beta, -alpha, p0, p1, p2, p3, false);
                         search->undo(&flip);
                         alpha = max(alpha, g);
                         if (beta <= alpha)
