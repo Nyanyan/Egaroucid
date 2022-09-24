@@ -793,6 +793,8 @@ private:
 		if (getData().menu_elements.start_game) {
 			stop_calculating();
 			getData().history_elem.reset();
+			graph_resources.init();
+			graph_resources.nodes[graph_resources.put_mode].emplace_back(getData().history_elem);
 			reset_hint();
 		}
 		if (getData().menu_elements.analyze) {
