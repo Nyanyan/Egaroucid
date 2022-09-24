@@ -1021,6 +1021,7 @@ private:
 		getData().history_elem.policy = HW2_M1 - cell;
 		getData().history_elem.next_policy = -1;
 		getData().history_elem.v = GRAPH_IGNORE_VALUE;
+		getData().history_elem.level = -1;
 		getData().history_elem.player ^= 1;
 		if (getData().history_elem.board.get_legal() == 0ULL) {
 			getData().history_elem.board.pass();
@@ -1353,7 +1354,13 @@ private:
 			sort(hint_infos.begin(), hint_infos.end(), compare_hint_info);
 			if (hint_infos.size()) {
 				int sgn = getData().history_elem.player == 0 ? 1 : -1;
-				graph_resources.nodes[graph_resources.put_mode].back().v = sgn * (int)round(hint_infos[0].value);
+				int node_idx = graph_resources.node_find(graph_resources.put_mode, graph_resources.n_discs);
+				if (node_idx != -1) {
+					if (graph_resources.nodes[graph_resources.put_mode][node_idx].level < hint_infos[0].type) {
+						graph_resources.nodes[graph_resources.put_mode][node_idx].v = sgn * (int)round(hint_infos[0].value);
+						graph_resources.nodes[graph_resources.put_mode][node_idx].level = hint_infos[0].type;
+					}
+				}
 			}
 			int n_disc_hint = min((int)hint_infos.size(), getData().menu_elements.n_disc_hint);
 			for (int i = 0; i < n_disc_hint; ++i) {
@@ -1516,12 +1523,14 @@ private:
 		getData().history_elem.policy = -1;
 		getData().history_elem.next_policy = -1;
 		getData().history_elem.player = task.first.sgn == 1 ? 0 : 1;
+		graph_resources.n_discs = getData().history_elem.board.n_discs();
 	}
 
 	void analyze_get_task() {
 		if (ai_status.analyze_task_stack.size() == 0) {
 			ai_status.analyzing = false;
 			getData().history_elem = graph_resources.nodes[graph_resources.put_mode].back();
+			graph_resources.n_discs = graph_resources.nodes[graph_resources.put_mode].back().board.n_discs();
 			return;
 		}
 		bool task_finished = false;
@@ -1532,6 +1541,7 @@ private:
 					int value = ai_status.analyze_sgn[i] * search_result.value;
 					cerr << i << " " << value << endl;
 					graph_resources.nodes[graph_resources.put_mode][i].v = value;
+					graph_resources.nodes[graph_resources.put_mode][i].level = getData().menu_elements.level;
 					task_finished = true;
 				}
 			}
