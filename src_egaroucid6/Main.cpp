@@ -86,6 +86,9 @@ constexpr int INFO_SX = BOARD_SX + BOARD_SIZE + 25;
 #define HINT_INF_LEVEL 100
 #define HINT_MAX_LEVEL 60
 
+// analyze constants
+#define ANALYZE_SIZE 62
+
 
 struct Colors {
 	Color green{ Color(36, 153, 114, 100) };
@@ -309,9 +312,15 @@ struct Move_board_button_status {
 	uint64_t right_pushed{ BUTTON_NOT_PUSHED };
 };
 
+struct Analyze_info {
+	int idx;
+	int sgn;
+};
+
 struct AI_status {
 	bool ai_thinking{ false };
 	future<Search_result> ai_future;
+
 	bool hint_calculating{ false };
 	int hint_level{ HINT_NOT_CALCULATING };
 	future<Search_result> hint_future[HW2];
@@ -323,6 +332,11 @@ struct AI_status {
 	bool hint_use_stable[HW2];
 	double hint_values_stable[HW2];
 	int hint_types_stable[HW2];
+
+	bool analyzing{ false };
+	future<Search_result> analyze_future[ANALYZE_SIZE];
+	int analyze_sgn[ANALYZE_SIZE];
+	vector<pair<Analyze_info, function<Search_result()>>> analyze_task_stack;
 };
 
 using App = SceneManager<String, Common_resources>;
@@ -679,30 +693,44 @@ public:
 		// opening
 		update_opening();
 
-		// transcript move
+		// menu
+		menu_game();
 		menu_manipulate();
-		if (!getData().menu.active()) {
+
+		// analyze
+		if (ai_status.analyzing) {
+			analyze_get_task();
+		}
+
+		bool graph_interact_ignore = ai_status.analyzing;
+		// transcript move
+		if (!graph_interact_ignore && !getData().menu.active()) {
 			interact_graph();
 		}
 		update_n_discs();
 
+		bool move_ignore = ai_status.analyzing;
 		// move
 		bool ai_should_move =
 			graph_resources.put_mode == GRAPH_MODE_NORMAL &&
 			((getData().history_elem.player == BLACK && getData().menu_elements.ai_put_black) || (getData().history_elem.player == WHITE && getData().menu_elements.ai_put_white)) &&
 			getData().history_elem.board.n_discs() == graph_resources.nodes[GRAPH_MODE_NORMAL][graph_resources.nodes[GRAPH_MODE_NORMAL].size() - 1].board.n_discs();
-		if (ai_should_move) {
-			ai_move();
-		}
-		else if (!getData().menu.active()) {
-			interact_move();
+		if (!move_ignore) {
+			if (ai_should_move) {
+				ai_move();
+			}
+			else if (!getData().menu.active()) {
+				interact_move();
+			}
 		}
 
 		// board drawing
 		draw_board();
 
+		bool hint_ignore = ai_should_move || ai_status.analyzing;
+
 		// hint / legalcalculating & drawing
-		if (!ai_should_move) {
+		if (!hint_ignore) {
 			if (getData().menu_elements.use_disc_hint) {
 				if (!ai_status.hint_calculating && ai_status.hint_level < getData().menu_elements.level) {
 					hint_init_calculating();
@@ -760,16 +788,73 @@ private:
 		global_searching = true;
 	}
 
+	void init_analyze() {
+		ai_status.analyze_task_stack.clear();
+		int idx = 0;
+		for (History_elem& node : graph_resources.nodes[graph_resources.put_mode]) {
+			Analyze_info analyze_info;
+			analyze_info.idx = idx++;
+			analyze_info.sgn = node.player ? -1 : 1;
+			ai_status.analyze_task_stack.emplace_back(make_pair(analyze_info, bind(ai, node.board, getData().menu_elements.level, getData().menu_elements.use_book, true)));
+		}
+		cerr << "analyze " << ai_status.analyze_task_stack.size() << " tasks" << endl;
+		ai_status.analyzing = true;
+		analyze_do_task();
+	}
+
+	void analyze_do_task() {
+		pair<Analyze_info, function<Search_result()>> task = ai_status.analyze_task_stack.back();
+		ai_status.analyze_task_stack.pop_back();
+		ai_status.analyze_future[task.first.idx] = async(launch::async, task.second);
+		ai_status.analyze_sgn[task.first.idx] = task.first.sgn;
+	}
+
+	void analyze_get_task() {
+		if (ai_status.analyze_task_stack.size() == 0) {
+			ai_status.analyzing = false;
+			return;
+		}
+		bool task_finished = false;
+		for (int i = 0; i < ANALYZE_SIZE; ++i) {
+			if (ai_status.analyze_future[i].valid()) {
+				if (ai_status.analyze_future[i].wait_for(chrono::seconds(0)) == future_status::ready) {
+					Search_result search_result = ai_status.analyze_future[i].get();
+					int value = ai_status.analyze_sgn[i] * search_result.value;
+					cerr << i << " " << value << endl;
+					graph_resources.nodes[graph_resources.put_mode][i].v = value;
+					task_finished = true;
+				}
+			}
+		}
+		if (task_finished) {
+			analyze_do_task();
+		}
+	}
+
+	void menu_game() {
+		if (getData().menu_elements.start_game) {
+			stop_calculating();
+			getData().history_elem.reset();
+			reset_hint();
+		}
+		if (getData().menu_elements.analyze) {
+			stop_calculating();
+			init_analyze();
+		}
+	}
+
 	void menu_manipulate() {
 		if (getData().menu_elements.stop_calculating) {
 			stop_calculating();
 			ai_status.hint_level = HINT_INF_LEVEL;
 		}
-		if (getData().menu_elements.backward) {
-			--graph_resources.n_discs;
-		}
-		if (getData().menu_elements.forward) {
-			++graph_resources.n_discs;
+		if (!ai_status.analyzing) {
+			if (getData().menu_elements.backward) {
+				--graph_resources.n_discs;
+			}
+			if (getData().menu_elements.forward) {
+				++graph_resources.n_discs;
+			}
 		}
 		if (getData().menu_elements.convert_180) {
 			stop_calculating();

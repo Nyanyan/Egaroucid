@@ -12,14 +12,16 @@ struct History_elem {
 	int policy;
 	int next_policy;
 	string opening_name;
-	int level;
 
 	History_elem() {
+		reset();
+	}
+
+	void reset() {
 		board.reset();
 		player = 0;
 		v = GRAPH_IGNORE_VALUE;
 		policy = -1;
 		next_policy = -1;
-		level = -1;
 	}
 };
