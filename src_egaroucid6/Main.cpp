@@ -771,6 +771,88 @@ private:
 		if (getData().menu_elements.forward) {
 			++graph_resources.n_discs;
 		}
+		if (getData().menu_elements.convert_180) {
+			stop_calculating();
+			getData().history_elem.board.board_rotate_180();
+			if (0 <= getData().history_elem.policy && getData().history_elem.policy < HW2) {
+				getData().history_elem.policy = HW2_M1 - getData().history_elem.policy;
+			}
+			if (0 <= getData().history_elem.next_policy && getData().history_elem.next_policy < HW2) {
+				getData().history_elem.next_policy = HW2_M1 - getData().history_elem.next_policy;
+			}
+			for (int i = 0; i < 2; ++i) {
+				for (int j = 0; j < (int)graph_resources.nodes[i].size(); ++j) {
+					graph_resources.nodes[i][j].board.board_rotate_180();
+					if (0 <= graph_resources.nodes[i][j].policy && graph_resources.nodes[i][j].policy < HW2) {
+						graph_resources.nodes[i][j].policy = HW2_M1 - graph_resources.nodes[i][j].policy;
+					}
+					if (0 <= graph_resources.nodes[i][j].next_policy && graph_resources.nodes[i][j].next_policy < HW2) {
+						graph_resources.nodes[i][j].next_policy = HW2_M1 - graph_resources.nodes[i][j].next_policy;
+					}
+				}
+			}
+			reset_hint();
+		}
+		if (getData().menu_elements.convert_blackline) {
+			stop_calculating();
+			getData().history_elem.board.board_black_line_mirror();
+			if (0 <= getData().history_elem.policy && getData().history_elem.policy < HW2) {
+				int x = getData().history_elem.policy % HW;
+				int y = getData().history_elem.policy / HW;
+				getData().history_elem.policy = (HW_M1 - x) * HW + (HW_M1 - y);
+			}
+			if (0 <= getData().history_elem.next_policy && getData().history_elem.next_policy < HW2) {
+				int x = getData().history_elem.next_policy % HW;
+				int y = getData().history_elem.next_policy / HW;
+				getData().history_elem.next_policy = (HW_M1 - x) * HW + (HW_M1 - y);
+			}
+			for (int i = 0; i < 2; ++i) {
+				for (int j = 0; j < (int)graph_resources.nodes[i].size(); ++j) {
+					graph_resources.nodes[i][j].board.board_black_line_mirror();
+					if (0 <= graph_resources.nodes[i][j].policy && graph_resources.nodes[i][j].policy < HW2) {
+						int x = graph_resources.nodes[i][j].policy % HW;
+						int y = graph_resources.nodes[i][j].policy / HW;
+						graph_resources.nodes[i][j].policy = (HW_M1 - x) * HW + (HW_M1 - y);
+					}
+					if (0 <= graph_resources.nodes[i][j].next_policy && graph_resources.nodes[i][j].next_policy < HW2) {
+						int x = graph_resources.nodes[i][j].next_policy % HW;
+						int y = graph_resources.nodes[i][j].next_policy / HW;
+						graph_resources.nodes[i][j].next_policy = (HW_M1 - x) * HW + (HW_M1 - y);
+					}
+				}
+			}
+			reset_hint();
+		}
+		if (getData().menu_elements.convert_whiteline) {
+			stop_calculating();
+			getData().history_elem.board.board_white_line_mirror();
+			if (0 <= getData().history_elem.policy && getData().history_elem.policy < HW2) {
+				int x = getData().history_elem.policy % HW;
+				int y = getData().history_elem.policy / HW;
+				getData().history_elem.policy = x * HW + y;
+			}
+			if (0 <= getData().history_elem.next_policy && getData().history_elem.next_policy < HW2) {
+				int x = getData().history_elem.next_policy % HW;
+				int y = getData().history_elem.next_policy / HW;
+				getData().history_elem.next_policy = x * HW + y;
+			}
+			for (int i = 0; i < 2; ++i) {
+				for (int j = 0; j < (int)graph_resources.nodes[i].size(); ++j) {
+					graph_resources.nodes[i][j].board.board_white_line_mirror();
+					if (0 <= graph_resources.nodes[i][j].policy && graph_resources.nodes[i][j].policy < HW2) {
+						int x = graph_resources.nodes[i][j].policy % HW;
+						int y = graph_resources.nodes[i][j].policy / HW;
+						graph_resources.nodes[i][j].policy = x * HW + y;
+					}
+					if (0 <= graph_resources.nodes[i][j].next_policy && graph_resources.nodes[i][j].next_policy < HW2) {
+						int x = graph_resources.nodes[i][j].next_policy % HW;
+						int y = graph_resources.nodes[i][j].next_policy / HW;
+						graph_resources.nodes[i][j].next_policy = x * HW + y;
+					}
+				}
+			}
+			reset_hint();
+		}
 	}
 
 	void interact_graph() {
