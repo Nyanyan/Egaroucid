@@ -6,12 +6,16 @@
 #include "gui/gui_common.hpp"
 #include "gui/graph.hpp"
 #include "gui/opening.hpp"
+#include "gui/button.hpp"
 #include <Siv3D.hpp> // OpenSiv3D v0.6.3
 
 using namespace std;
 
 // version definition
 #define EGAROUCID_VERSION U"6.0.0"
+
+// scene definition
+#define SCENE_FADE_TIME 200
 
 // coordinate definition
 #define WINDOW_SIZE_X 800
@@ -88,6 +92,13 @@ constexpr int INFO_SX = BOARD_SX + BOARD_SIZE + 25;
 
 // analyze constants
 #define ANALYZE_SIZE 62
+
+// import book constants
+#define IMPORT_BOOK_BUTTON_WIDTH 200
+#define IMPORT_BOOK_BUTTON_HEIGHT 50
+#define IMPORT_BOOK_BUTTON_SY 320
+#define IMPORT_BOOK_BUTTON_RADIUS 20
+constexpr int IMPORT_BOOK_BUTTON_SX = X_CENTER - IMPORT_BOOK_BUTTON_WIDTH / 2;
 
 
 struct Colors {
@@ -596,7 +607,7 @@ public:
 			int load_code = silent_load_future.get();
 			if (load_code == ERR_OK) {
 				cerr << "silent loaded" << endl;
-				changeScene(U"Load", 0.0);
+				changeScene(U"Load", SCENE_FADE_TIME);
 			}
 			else {
 				silent_load_failed = true;
@@ -608,7 +619,8 @@ public:
 	}
 
 	void draw() const override {
-		Scene::SetBackground(getData().colors.green);
+		//Scene::SetBackground(getData().colors.green);
+		Scene::SetBackground(getData().colors.black);
 	}
 };
 
@@ -635,7 +647,7 @@ public:
 			int load_code = load_future.get();
 			if (load_code == ERR_OK) {
 				cerr << "loaded" << endl;
-				changeScene(U"Main_scene", 0.5);
+				changeScene(U"Main_scene", SCENE_FADE_TIME);
 			}
 			else {
 				load_failed = true;
@@ -647,7 +659,7 @@ public:
 		else {
 			getData().fonts.font50(language.get("loading", "loading")).draw(RIGHT_LEFT, Y_CENTER + 40, getData().colors.white);
 			getData().fonts.font20(language.get("tips", "do_you_know")).draw(RIGHT_LEFT, Y_CENTER + 110, getData().colors.white);
-			getData().fonts.font20(tips).draw(RIGHT_LEFT, Y_CENTER + 140, getData().colors.white);
+			getData().fonts.font15(tips).draw(RIGHT_LEFT, Y_CENTER + 140, getData().colors.white);
 		}
 	}
 
@@ -696,6 +708,7 @@ public:
 
 		// menu
 		menu_game();
+		menu_book();
 		menu_manipulate();
 
 		// analyze
@@ -800,6 +813,13 @@ private:
 		if (getData().menu_elements.analyze) {
 			stop_calculating();
 			init_analyze();
+		}
+	}
+
+	void menu_book() {
+		if (getData().menu_elements.book_import) {
+			cerr << "change scene to import_book" << endl;
+			changeScene(U"Import_book", SCENE_FADE_TIME);
 		}
 	}
 
@@ -1109,7 +1129,9 @@ private:
 
 		title.init(language.get("book", "book"));
 
-		menu_e.init_button(language.get("book", "start_learn"), &menu_elements->book_start_learn);
+		menu_e.init_button(language.get("book", "import"), &menu_elements->book_import);
+		title.push(menu_e);
+		menu_e.init_button(language.get("book", "book_reference"), &menu_elements->book_reference);
 		title.push(menu_e);
 		menu_e.init_button(language.get("book", "settings"), &menu_elements->dummy);
 		side_menu.init_bar(language.get("book", "depth"), &menu_elements->book_learn_depth, menu_elements->book_learn_depth, 0, 60);
@@ -1117,9 +1139,7 @@ private:
 		side_menu.init_bar(language.get("book", "accept"), &menu_elements->book_learn_error, menu_elements->book_learn_error, 0, 64);
 		menu_e.push(side_menu);
 		title.push(menu_e);
-		menu_e.init_button(language.get("book", "import"), &menu_elements->book_import);
-		title.push(menu_e);
-		menu_e.init_button(language.get("book", "book_reference"), &menu_elements->book_reference);
+		menu_e.init_button(language.get("book", "start_learn"), &menu_elements->book_start_learn);
 		title.push(menu_e);
 
 		menu.push(title);
@@ -1492,6 +1512,94 @@ private:
 	}
 };
 
+bool import_book(string file) {
+	cerr << "book import" << endl;
+	bool result = true;
+	vector<string> lst;
+	auto offset = string::size_type(0);
+	while (1) {
+		auto pos = file.find(".", offset);
+		if (pos == string::npos) {
+			lst.push_back(file.substr(offset));
+			break;
+		}
+		lst.push_back(file.substr(offset, pos - offset));
+		offset = pos + 1;
+	}
+	if (lst[lst.size() - 1] == "egbk") {
+		cerr << "importing Egaroucid book" << endl;
+		result = !book.import_file_bin(file);
+	}
+	else if (lst[lst.size() - 1] == "dat") {
+		cerr << "importing Edax book" << endl;
+		result = !book.import_edax_book(file);
+	}
+	else {
+		cerr << "this is not a book" << endl;
+	}
+	return result;
+}
+
+class Import_book : public App::Scene {
+private:
+	future<bool> import_book_future;
+	Button back_button;
+	bool importing;
+	bool imported;
+	bool failed;
+
+public:
+	Import_book(const InitData& init) : IScene{ init } {
+		back_button.init(IMPORT_BOOK_BUTTON_SX, IMPORT_BOOK_BUTTON_SY, IMPORT_BOOK_BUTTON_WIDTH, IMPORT_BOOK_BUTTON_HEIGHT, IMPORT_BOOK_BUTTON_RADIUS, language.get("book", "back"), getData().fonts.font25, getData().colors.white, getData().colors.black);
+		importing = false;
+		imported = false;
+		failed = false;
+	}
+
+	void update() override {
+		Scene::SetBackground(getData().colors.green);
+		const int icon_width = (LEFT_RIGHT - LEFT_LEFT) / 2;
+		getData().resources.icon.scaled((double)(LEFT_RIGHT - LEFT_LEFT) / 2 / getData().resources.icon.width()).draw(X_CENTER - icon_width / 2, 20);
+		getData().resources.logo.scaled((double)(LEFT_RIGHT - LEFT_LEFT) / 2 / getData().resources.logo.width()).draw(X_CENTER - icon_width / 2, 20 + icon_width);
+		int sy = 20 + icon_width + 50;
+		if (!importing) {
+			getData().fonts.font25(language.get("book", "import_explanation")).draw(Arg::topCenter(X_CENTER, sy), getData().colors.white);
+			back_button.draw();
+			if (back_button.clicked() || KeyEscape.pressed()) {
+				changeScene(U"Main_scene", SCENE_FADE_TIME);
+			}
+			if (DragDrop::HasNewFilePaths()) {
+				for (const auto& dropped : DragDrop::GetDroppedFilePaths()) {
+					import_book_future = async(launch::async, import_book, dropped.path.narrow());
+					importing = true;
+				}
+			}
+		}
+		else if (!imported) {
+			getData().fonts.font25(language.get("book", "loading")).draw(Arg::topCenter(X_CENTER, sy), getData().colors.white);
+			if (import_book_future.wait_for(chrono::seconds(0)) == future_status::ready) {
+				failed = import_book_future.get();
+				imported = true;
+			}
+		} else {
+			if (failed) {
+				getData().fonts.font25(language.get("book", "import_failed")).draw(Arg::topCenter(X_CENTER, sy), getData().colors.white);
+				back_button.draw();
+				if (back_button.clicked() || KeyEscape.pressed()) {
+					changeScene(U"Main_scene", SCENE_FADE_TIME);
+				}
+			}
+			else {
+				changeScene(U"Main_scene", SCENE_FADE_TIME);
+			}
+		}
+	}
+
+	void draw() const override {
+
+	}
+};
+
 void Main() {
 	Size window_size = Size(WINDOW_SIZE_X, WINDOW_SIZE_Y);
 	Window::Resize(window_size);
@@ -1505,7 +1613,8 @@ void Main() {
 	scene_manager.add <Silent_load> (U"Silent_load");
 	scene_manager.add <Load>(U"Load");
 	scene_manager.add <Main_scene>(U"Main_scene");
-	scene_manager.setFadeColor(Color(36, 153, 114, 100));
+	scene_manager.add <Import_book>(U"Import_book");
+	scene_manager.setFadeColor(Palette::Black);
 	scene_manager.init(U"Silent_load");
 
 	while (System::Update()) {
