@@ -65,7 +65,7 @@ constexpr int BOARD_CELL_SIZE = BOARD_SIZE / HW;
 
 // graph drawing constants
 #define GRAPH_RESOLUTION 8
-constexpr int GRAPH_SX = BOARD_SX + BOARD_SIZE + 40;
+constexpr int GRAPH_SX = BOARD_SX + BOARD_SIZE + 50;
 constexpr int GRAPH_SY = Y_CENTER + 30;
 constexpr int GRAPH_WIDTH = WINDOW_SIZE_X - GRAPH_SX - 20;
 constexpr int GRAPH_HEIGHT = WINDOW_SIZE_Y - GRAPH_SY - 40;
@@ -814,6 +814,11 @@ private:
 		for (int i = 0; i < HW2; ++i) {
 			if (ai_status.hint_future[i].valid()) {
 				ai_status.hint_future[i].get();
+			}
+		}
+		for (int i = 0; i < ANALYZE_SIZE; ++i) {
+			if (ai_status.analyze_future[i].valid()) {
+				ai_status.analyze_future[i].get();
 			}
 		}
 		global_searching = true;
