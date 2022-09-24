@@ -315,6 +315,7 @@ struct Move_board_button_status {
 struct Analyze_info {
 	int idx;
 	int sgn;
+	Board board;
 };
 
 struct AI_status {
@@ -706,8 +707,8 @@ public:
 		// transcript move
 		if (!graph_interact_ignore && !getData().menu.active()) {
 			interact_graph();
+			update_n_discs();
 		}
-		update_n_discs();
 
 		bool move_ignore = ai_status.analyzing;
 		// move
@@ -786,49 +787,6 @@ private:
 			}
 		}
 		global_searching = true;
-	}
-
-	void init_analyze() {
-		ai_status.analyze_task_stack.clear();
-		int idx = 0;
-		for (History_elem& node : graph_resources.nodes[graph_resources.put_mode]) {
-			Analyze_info analyze_info;
-			analyze_info.idx = idx++;
-			analyze_info.sgn = node.player ? -1 : 1;
-			ai_status.analyze_task_stack.emplace_back(make_pair(analyze_info, bind(ai, node.board, getData().menu_elements.level, getData().menu_elements.use_book, true)));
-		}
-		cerr << "analyze " << ai_status.analyze_task_stack.size() << " tasks" << endl;
-		ai_status.analyzing = true;
-		analyze_do_task();
-	}
-
-	void analyze_do_task() {
-		pair<Analyze_info, function<Search_result()>> task = ai_status.analyze_task_stack.back();
-		ai_status.analyze_task_stack.pop_back();
-		ai_status.analyze_future[task.first.idx] = async(launch::async, task.second);
-		ai_status.analyze_sgn[task.first.idx] = task.first.sgn;
-	}
-
-	void analyze_get_task() {
-		if (ai_status.analyze_task_stack.size() == 0) {
-			ai_status.analyzing = false;
-			return;
-		}
-		bool task_finished = false;
-		for (int i = 0; i < ANALYZE_SIZE; ++i) {
-			if (ai_status.analyze_future[i].valid()) {
-				if (ai_status.analyze_future[i].wait_for(chrono::seconds(0)) == future_status::ready) {
-					Search_result search_result = ai_status.analyze_future[i].get();
-					int value = ai_status.analyze_sgn[i] * search_result.value;
-					cerr << i << " " << value << endl;
-					graph_resources.nodes[graph_resources.put_mode][i].v = value;
-					task_finished = true;
-				}
-			}
-		}
-		if (task_finished) {
-			analyze_do_task();
-		}
 	}
 
 	void menu_game() {
@@ -1331,95 +1289,6 @@ private:
 		getData().fonts.font15(language.get("info", "complete_0") + Format(end_depth) + language.get("info", "complete_1")).draw(INFO_SX, INFO_SY + 185);
 	}
 
-	void hint_init_calculating() {
-		uint64_t legal = getData().history_elem.board.get_legal();
-		if (ai_status.hint_level == HINT_NOT_CALCULATING) {
-			for (int cell = 0; cell < HW2; ++cell) {
-				ai_status.hint_values[cell] = HINT_INIT_VALUE;
-				ai_status.hint_use[cell] = (bool)(1 & (legal >> (HW2_M1 - cell)));
-			}
-		}
-		else {
-			ai_status.hint_available = true;
-		}
-		++ai_status.hint_level;
-		vector<pair<int, int>> value_cells;
-		for (int cell = 0; cell < HW2; ++cell) {
-			if (ai_status.hint_use[cell]) {
-				value_cells.emplace_back(make_pair(ai_status.hint_values[cell], cell));
-			}
-		}
-		sort(value_cells.begin(), value_cells.end(), compare_value_cell);
-		int n_legal = pop_count_ull(legal);
-		int hint_adoption_threshold = getData().menu_elements.n_disc_hint + max(1, n_legal * (getData().menu_elements.level - ai_status.hint_level) / getData().menu_elements.level);
-		hint_adoption_threshold = min(hint_adoption_threshold, (int)value_cells.size());
-		ai_status.hint_task_stack.clear();
-		int idx = 0;
-		Board board;
-		Flip flip;
-		for (pair<int, int>& value_cell : value_cells) {
-			if (idx++ >= hint_adoption_threshold) {
-				break;
-			}
-			board = getData().history_elem.board;
-			calc_flip(&flip, &board, (uint_fast8_t)(HW2_M1 - value_cell.second));
-			board.move_board(&flip);
-			ai_status.hint_task_stack.emplace_back(make_pair(value_cell.second, bind(ai_hint, board, ai_status.hint_level, getData().menu_elements.use_book, false)));
-		}
-		ai_status.hint_calculating = true;
-	}
-
-	void hint_do_task() {
-		bool has_remaining_task = false;
-		for (int cell = 0; cell < HW2; ++cell) {
-			if (ai_status.hint_future[cell].valid()) {
-				has_remaining_task = true;
-				if (ai_status.hint_future[cell].wait_for(chrono::seconds(0)) == future_status::ready) {
-					Search_result search_result = ai_status.hint_future[cell].get();
-					if (ai_status.hint_values[cell] == HINT_INIT_VALUE || search_result.is_end_search || search_result.depth == SEARCH_BOOK) {
-						ai_status.hint_values[cell] = -search_result.value;
-					}
-					else {
-						ai_status.hint_values[cell] += -search_result.value;
-						ai_status.hint_values[cell] /= 2.0;
-					}
-					if (search_result.depth == SEARCH_BOOK) {
-						ai_status.hint_types[cell] = HINT_TYPE_BOOK;
-					}
-					else if (search_result.is_end_search) {
-						ai_status.hint_types[cell] = search_result.probability;
-					}
-					else {
-						ai_status.hint_types[cell] = ai_status.hint_level;
-					}
-				}
-			}
-		}
-		if (!has_remaining_task) {
-			int loop_time = 1;
-			if (ai_status.hint_level <= 10) {
-				loop_time = max(1, getData().menu_elements.n_threads - 1);
-			}
-			bool task_pushed = false;
-			for (int i = 0; i < loop_time; ++i) {
-				if (ai_status.hint_task_stack.size()) {
-					pair<int, function<Search_result()>> task = ai_status.hint_task_stack.back();
-					ai_status.hint_task_stack.pop_back();
-					ai_status.hint_future[task.first] = async(launch::async, task.second);
-					task_pushed = true;
-				}
-			}
-			if (!task_pushed){
-				for (int cell = 0; cell < HW2; ++cell) {
-					ai_status.hint_use_stable[cell] = ai_status.hint_use[cell];
-					ai_status.hint_values_stable[cell] = ai_status.hint_values[cell];
-					ai_status.hint_types_stable[cell] = ai_status.hint_types[cell];
-				}
-				ai_status.hint_calculating = false;
-			}
-		}
-	}
-
 	uint64_t draw_hint() {
 		uint64_t res = 0ULL;
 		if (ai_status.hint_available) {
@@ -1477,6 +1346,146 @@ private:
 					getData().fonts.font15_bold(opening_name).draw(pos, getData().colors.black);
 				}
 			}
+		}
+	}
+
+	void hint_init_calculating() {
+		uint64_t legal = getData().history_elem.board.get_legal();
+		if (ai_status.hint_level == HINT_NOT_CALCULATING) {
+			for (int cell = 0; cell < HW2; ++cell) {
+				ai_status.hint_values[cell] = HINT_INIT_VALUE;
+				ai_status.hint_use[cell] = (bool)(1 & (legal >> (HW2_M1 - cell)));
+			}
+		}
+		else {
+			ai_status.hint_available = true;
+		}
+		++ai_status.hint_level;
+		vector<pair<int, int>> value_cells;
+		for (int cell = 0; cell < HW2; ++cell) {
+			if (ai_status.hint_use[cell]) {
+				value_cells.emplace_back(make_pair(ai_status.hint_values[cell], cell));
+			}
+		}
+		sort(value_cells.begin(), value_cells.end(), compare_value_cell);
+		int n_legal = pop_count_ull(legal);
+		int hint_adoption_threshold = getData().menu_elements.n_disc_hint + max(1, n_legal * (getData().menu_elements.level - ai_status.hint_level) / getData().menu_elements.level);
+		hint_adoption_threshold = min(hint_adoption_threshold, (int)value_cells.size());
+		ai_status.hint_task_stack.clear();
+		int idx = 0;
+		Board board;
+		Flip flip;
+		for (pair<int, int>& value_cell : value_cells) {
+			if (idx++ >= hint_adoption_threshold) {
+				break;
+			}
+			board = getData().history_elem.board;
+			calc_flip(&flip, &board, (uint_fast8_t)(HW2_M1 - value_cell.second));
+			board.move_board(&flip);
+			ai_status.hint_task_stack.emplace_back(make_pair(value_cell.second, bind(ai_hint, board, ai_status.hint_level, getData().menu_elements.use_book, false)));
+		}
+		ai_status.hint_calculating = true;
+	}
+
+	void hint_do_task() {
+		bool has_remaining_task = false;
+		for (int cell = 0; cell < HW2; ++cell) {
+			if (ai_status.hint_future[cell].valid()) {
+				if (ai_status.hint_future[cell].wait_for(chrono::seconds(0)) == future_status::ready) {
+					Search_result search_result = ai_status.hint_future[cell].get();
+					if (ai_status.hint_values[cell] == HINT_INIT_VALUE || search_result.is_end_search || search_result.depth == SEARCH_BOOK) {
+						ai_status.hint_values[cell] = -search_result.value;
+					}
+					else {
+						ai_status.hint_values[cell] += -search_result.value;
+						ai_status.hint_values[cell] /= 2.0;
+					}
+					if (search_result.depth == SEARCH_BOOK) {
+						ai_status.hint_types[cell] = HINT_TYPE_BOOK;
+					}
+					else if (search_result.is_end_search) {
+						ai_status.hint_types[cell] = search_result.probability;
+					}
+					else {
+						ai_status.hint_types[cell] = ai_status.hint_level;
+					}
+				}
+				else {
+					has_remaining_task = true;
+				}
+			}
+		}
+		if (!has_remaining_task) {
+			int loop_time = 1;
+			if (ai_status.hint_level <= 10) {
+				loop_time = max(1, getData().menu_elements.n_threads - 1);
+			}
+			bool task_pushed = false;
+			for (int i = 0; i < loop_time; ++i) {
+				if (ai_status.hint_task_stack.size()) {
+					pair<int, function<Search_result()>> task = ai_status.hint_task_stack.back();
+					ai_status.hint_task_stack.pop_back();
+					ai_status.hint_future[task.first] = async(launch::async, task.second);
+					task_pushed = true;
+				}
+			}
+			if (!task_pushed) {
+				for (int cell = 0; cell < HW2; ++cell) {
+					ai_status.hint_use_stable[cell] = ai_status.hint_use[cell];
+					ai_status.hint_values_stable[cell] = ai_status.hint_values[cell];
+					ai_status.hint_types_stable[cell] = ai_status.hint_types[cell];
+				}
+				ai_status.hint_calculating = false;
+			}
+		}
+	}
+
+	void init_analyze() {
+		ai_status.analyze_task_stack.clear();
+		int idx = 0;
+		for (History_elem& node : graph_resources.nodes[graph_resources.put_mode]) {
+			Analyze_info analyze_info;
+			analyze_info.idx = idx++;
+			analyze_info.sgn = node.player ? -1 : 1;
+			analyze_info.board = node.board;
+			ai_status.analyze_task_stack.emplace_back(make_pair(analyze_info, bind(ai, node.board, getData().menu_elements.level, getData().menu_elements.use_book, true)));
+		}
+		cerr << "analyze " << ai_status.analyze_task_stack.size() << " tasks" << endl;
+		ai_status.analyzing = true;
+		analyze_do_task();
+	}
+
+	void analyze_do_task() {
+		pair<Analyze_info, function<Search_result()>> task = ai_status.analyze_task_stack.back();
+		ai_status.analyze_task_stack.pop_back();
+		ai_status.analyze_future[task.first.idx] = async(launch::async, task.second);
+		ai_status.analyze_sgn[task.first.idx] = task.first.sgn;
+		getData().history_elem.board = task.first.board;
+		getData().history_elem.policy = -1;
+		getData().history_elem.next_policy = -1;
+		getData().history_elem.player = task.first.sgn == 1 ? 0 : 1;
+	}
+
+	void analyze_get_task() {
+		if (ai_status.analyze_task_stack.size() == 0) {
+			ai_status.analyzing = false;
+			getData().history_elem = graph_resources.nodes[graph_resources.put_mode].back();
+			return;
+		}
+		bool task_finished = false;
+		for (int i = 0; i < ANALYZE_SIZE; ++i) {
+			if (ai_status.analyze_future[i].valid()) {
+				if (ai_status.analyze_future[i].wait_for(chrono::seconds(0)) == future_status::ready) {
+					Search_result search_result = ai_status.analyze_future[i].get();
+					int value = ai_status.analyze_sgn[i] * search_result.value;
+					cerr << i << " " << value << endl;
+					graph_resources.nodes[graph_resources.put_mode][i].v = value;
+					task_finished = true;
+				}
+			}
+		}
+		if (task_finished) {
+			analyze_do_task();
 		}
 	}
 };

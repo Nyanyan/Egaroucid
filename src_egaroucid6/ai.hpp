@@ -223,7 +223,7 @@ Search_result ai_hint(Board board, int level, bool use_book, bool show_log){
         board.pass();
         if (board.get_legal() == 0ULL){
             res.policy = -1;
-            res.value = board.score_player();
+            res.value = -board.score_player();
             res.depth = 0;
             res.nps = 0;
             res.is_end_search = true;
