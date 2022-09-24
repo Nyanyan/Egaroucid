@@ -355,6 +355,7 @@ void init_pattern_arr_rev(int id, int phase_idx, int pattern_idx, int siz){
 }
 
 inline bool init_evaluation_calc(const char* file){
+    cerr << file << endl;
     FILE* fp;
     #ifdef _WIN64
         if (fopen_s(&fp, file, "rb") != 0){

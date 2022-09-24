@@ -15,14 +15,6 @@ class Board {
         uint64_t opponent;
 
     public:
-        int operator == (Board a) {
-            return player == a.player && opponent == a.opponent;
-        }
-
-        int operator != (Board a) {
-            return player != a.player || opponent != a.opponent;
-        }
-        
         inline Board copy(){
             Board res;
             res.player = player;
@@ -257,6 +249,21 @@ class Board {
             int n_discs = pop_count_ull(player | opponent);
             return min(N_PHASES - 1, (n_discs - 4) / PHASE_N_STONES);
         }
+};
+
+
+bool operator==(const Board& a, const Board& b){
+    return a.player == b.player && a.opponent == b.opponent;
+}
+
+bool operator!=(const Board& a, const Board& b){
+    return a.player != b.player || a.opponent != b.opponent;
+}
+
+struct Board_hash {
+    size_t operator()(Board board) const{
+        return board.hash();
+    }
 };
 
 void board_init(){
