@@ -7,6 +7,7 @@
 #include "gui/graph.hpp"
 #include "gui/opening.hpp"
 #include "gui/button.hpp"
+#include "gui/radio_button.hpp"
 #include <Siv3D.hpp> // OpenSiv3D v0.6.3
 
 using namespace std;
@@ -116,6 +117,13 @@ constexpr int GO_BACK_BUTTON_BACK_SX = X_CENTER - GO_BACK_BUTTON_WIDTH - 10;
 constexpr int BUTTON3_1_SX = X_CENTER - BUTTON3_WIDTH * 3 / 2 - 10;
 constexpr int BUTTON3_2_SX = X_CENTER - BUTTON3_WIDTH / 2;
 constexpr int BUTTON3_3_SX = X_CENTER + BUTTON3_WIDTH / 2 + 10;
+
+#define BUTTON2_VERTICAL_WIDTH 200
+#define BUTTON2_VERTICAL_HEIGHT 50
+#define BUTTON2_VERTICAL_1_SY 350
+#define BUTTON2_VERTICAL_2_SY 420
+#define BUTTON2_VERTICAL_SX 520
+#define BUTTON2_VERTICAL_RADIUS 20
 
 struct Colors {
 	Color green{ Color(36, 153, 114, 100) };
@@ -376,6 +384,16 @@ struct AI_status {
 	future<Search_result> analyze_future[ANALYZE_SIZE];
 	int analyze_sgn[ANALYZE_SIZE];
 	vector<pair<Analyze_info, function<Search_result()>>> analyze_task_stack;
+};
+
+struct Game_abstract {
+	String black_player;
+	String white_player;
+	int black_score;
+	int white_score;
+	String memo;
+	String date;
+	String transcript;
 };
 
 using App = SceneManager<String, Common_resources>;
@@ -704,6 +722,41 @@ bool compare_hint_info(Hint_info& a, Hint_info& b) {
 	return a.value > b.value;
 }
 
+void draw_board(Fonts fonts, Colors colors, History_elem history_elem) {
+	String coord_x = U"abcdefgh";
+	for (int i = 0; i < HW; ++i) {
+		fonts.font15_bold(i + 1).draw(Arg::center(BOARD_SX - BOARD_COORD_SIZE, BOARD_SY + BOARD_CELL_SIZE * i + BOARD_CELL_SIZE / 2), colors.dark_gray);
+		fonts.font15_bold(coord_x[i]).draw(Arg::center(BOARD_SX + BOARD_CELL_SIZE * i + BOARD_CELL_SIZE / 2, BOARD_SY - BOARD_COORD_SIZE - 2), colors.dark_gray);
+	}
+	for (int i = 0; i < HW_M1; ++i) {
+		Line(BOARD_SX + BOARD_CELL_SIZE * (i + 1), BOARD_SY, BOARD_SX + BOARD_CELL_SIZE * (i + 1), BOARD_SY + BOARD_CELL_SIZE * HW).draw(BOARD_CELL_FRAME_WIDTH, colors.dark_gray);
+		Line(BOARD_SX, BOARD_SY + BOARD_CELL_SIZE * (i + 1), BOARD_SX + BOARD_CELL_SIZE * HW, BOARD_SY + BOARD_CELL_SIZE * (i + 1)).draw(BOARD_CELL_FRAME_WIDTH, colors.dark_gray);
+	}
+	Circle(BOARD_SX + 2 * BOARD_CELL_SIZE, BOARD_SY + 2 * BOARD_CELL_SIZE, BOARD_DOT_SIZE).draw(colors.dark_gray);
+	Circle(BOARD_SX + 2 * BOARD_CELL_SIZE, BOARD_SY + 6 * BOARD_CELL_SIZE, BOARD_DOT_SIZE).draw(colors.dark_gray);
+	Circle(BOARD_SX + 6 * BOARD_CELL_SIZE, BOARD_SY + 2 * BOARD_CELL_SIZE, BOARD_DOT_SIZE).draw(colors.dark_gray);
+	Circle(BOARD_SX + 6 * BOARD_CELL_SIZE, BOARD_SY + 6 * BOARD_CELL_SIZE, BOARD_DOT_SIZE).draw(colors.dark_gray);
+	RoundRect(BOARD_SX, BOARD_SY, BOARD_CELL_SIZE * HW, BOARD_CELL_SIZE * HW, BOARD_ROUND_DIAMETER).drawFrame(0, BOARD_ROUND_FRAME_WIDTH, colors.white);
+	Flip flip;
+	int board_arr[HW2];
+	history_elem.board.translate_to_arr(board_arr, history_elem.player);
+	for (int cell = 0; cell < HW2; ++cell) {
+		int x = BOARD_SX + (cell % HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
+		int y = BOARD_SY + (cell / HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
+		if (board_arr[cell] == BLACK) {
+			Circle(x, y, DISC_SIZE).draw(colors.black);
+		}
+		else if (board_arr[cell] == WHITE) {
+			Circle(x, y, DISC_SIZE).draw(colors.white);
+		}
+	}
+	if (history_elem.policy != -1) {
+		int x = BOARD_SX + (HW_M1 - history_elem.policy % HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
+		int y = BOARD_SY + (HW_M1 - history_elem.policy / HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
+		Circle(x, y, LEGAL_SIZE).draw(colors.red);
+	}
+}
+
 class Main_scene : public App::Scene {
 private:
 	Graph graph;
@@ -772,7 +825,7 @@ public:
 		}
 
 		// board drawing
-		draw_board();
+		draw_board(getData().fonts, getData().colors, getData().history_elem);
 
 		bool hint_ignore = ai_should_move || ai_status.analyzing;
 
@@ -860,6 +913,12 @@ private:
 		}
 		if (getData().menu_elements.input_board) {
 			changeScene(U"Import_board", SCENE_FADE_TIME);
+		}
+		if (getData().menu_elements.edit_board) {
+			changeScene(U"Edit_board", SCENE_FADE_TIME);
+		}
+		if (getData().menu_elements.input_game) {
+			changeScene(U"Import_game", SCENE_FADE_TIME);
 		}
 	}
 
@@ -1280,41 +1339,6 @@ private:
 
 		menu.init(0, 0, menu_font, getData().resources.checkbox);
 		return menu;
-	}
-
-	void draw_board() {
-		String coord_x = U"abcdefgh";
-		for (int i = 0; i < HW; ++i) {
-			getData().fonts.font15_bold(i + 1).draw(Arg::center(BOARD_SX - BOARD_COORD_SIZE, BOARD_SY + BOARD_CELL_SIZE * i + BOARD_CELL_SIZE / 2), getData().colors.dark_gray);
-			getData().fonts.font15_bold(coord_x[i]).draw(Arg::center(BOARD_SX + BOARD_CELL_SIZE * i + BOARD_CELL_SIZE / 2, BOARD_SY - BOARD_COORD_SIZE - 2), getData().colors.dark_gray);
-		}
-		for (int i = 0; i < HW_M1; ++i) {
-			Line(BOARD_SX + BOARD_CELL_SIZE * (i + 1), BOARD_SY, BOARD_SX + BOARD_CELL_SIZE * (i + 1), BOARD_SY + BOARD_CELL_SIZE * HW).draw(BOARD_CELL_FRAME_WIDTH, getData().colors.dark_gray);
-			Line(BOARD_SX, BOARD_SY + BOARD_CELL_SIZE * (i + 1), BOARD_SX + BOARD_CELL_SIZE * HW, BOARD_SY + BOARD_CELL_SIZE * (i + 1)).draw(BOARD_CELL_FRAME_WIDTH, getData().colors.dark_gray);
-		}
-		Circle(BOARD_SX + 2 * BOARD_CELL_SIZE, BOARD_SY + 2 * BOARD_CELL_SIZE, BOARD_DOT_SIZE).draw(getData().colors.dark_gray);
-		Circle(BOARD_SX + 2 * BOARD_CELL_SIZE, BOARD_SY + 6 * BOARD_CELL_SIZE, BOARD_DOT_SIZE).draw(getData().colors.dark_gray);
-		Circle(BOARD_SX + 6 * BOARD_CELL_SIZE, BOARD_SY + 2 * BOARD_CELL_SIZE, BOARD_DOT_SIZE).draw(getData().colors.dark_gray);
-		Circle(BOARD_SX + 6 * BOARD_CELL_SIZE, BOARD_SY + 6 * BOARD_CELL_SIZE, BOARD_DOT_SIZE).draw(getData().colors.dark_gray);
-		RoundRect(BOARD_SX, BOARD_SY, BOARD_CELL_SIZE * HW, BOARD_CELL_SIZE * HW, BOARD_ROUND_DIAMETER).drawFrame(0, BOARD_ROUND_FRAME_WIDTH, getData().colors.white);
-		Flip flip;
-		int board_arr[HW2];
-		getData().history_elem.board.translate_to_arr(board_arr, getData().history_elem.player);
-		for (int cell = 0; cell < HW2; ++cell) {
-			int x = BOARD_SX + (cell % HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
-			int y = BOARD_SY + (cell / HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
-			if (board_arr[cell] == BLACK) {
-				Circle(x, y, DISC_SIZE).draw(getData().colors.black);
-			}
-			else if (board_arr[cell] == WHITE) {
-				Circle(x, y, DISC_SIZE).draw(getData().colors.white);
-			}
-		}
-		if (getData().history_elem.policy != -1) {
-			int x = BOARD_SX + (HW_M1 - getData().history_elem.policy % HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
-			int y = BOARD_SY + (HW_M1 - getData().history_elem.policy / HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
-			Circle(x, y, LEGAL_SIZE).draw(getData().colors.red);
-		}
 	}
 
 	void draw_legal(uint64_t ignore) {
@@ -1806,6 +1830,69 @@ public:
 	}
 };
 
+vector<History_elem> import_transcript_processing(string transcript, bool *failed) {
+	Board h_bd;
+	h_bd.reset();
+	vector<History_elem> n_history;
+	String transcript_str = Unicode::Widen(transcript).replace(U"\r", U"").replace(U"\n", U"").replace(U" ", U"");
+	if (transcript_str.size() % 2 != 0 && transcript_str.size() >= 120) {
+		*failed = true;
+	}
+	else {
+		int y, x;
+		uint64_t legal;
+		Flip flip;
+		h_bd.reset();
+		History_elem history_elem;
+		int player = BLACK;
+		history_elem.set(h_bd, player, GRAPH_IGNORE_VALUE, -1, -1, -1, "");
+		n_history.emplace_back(history_elem);
+		for (int i = 0; i < (int)transcript_str.size(); i += 2) {
+			x = (int)transcript_str[i] - (int)'a';
+			if (x < 0 || HW <= x) {
+				x = (int)transcript_str[i] - (int)'A';
+				if (x < 0 || HW <= x) {
+					*failed = true;
+					break;
+				}
+			}
+			y = (int)transcript_str[i + 1] - (int)'1';
+			if (y < 0 || HW <= y) {
+				*failed = true;
+				break;
+			}
+			y = HW_M1 - y;
+			x = HW_M1 - x;
+			legal = h_bd.get_legal();
+			if (1 & (legal >> (y * HW + x))) {
+				calc_flip(&flip, &h_bd, y * HW + x);
+				h_bd.move_board(&flip);
+				player ^= 1;
+				if (h_bd.get_legal() == 0ULL) {
+					h_bd.pass();
+					player ^= 1;
+					if (h_bd.get_legal() == 0ULL) {
+						h_bd.pass();
+						player ^= 1;
+						if (i != transcript_str.size() - 2) {
+							*failed = true;
+							break;
+						}
+					}
+				}
+			}
+			else {
+				*failed = true;
+				break;
+			}
+			n_history.back().next_policy = y * HW + x;
+			history_elem.set(h_bd, player, GRAPH_IGNORE_VALUE, -1, y * HW + x, -1, "");
+			n_history.emplace_back(history_elem);
+		}
+	}
+	return n_history;
+}
+
 class Import_transcript : public App::Scene {
 private:
 	Button single_back_button;
@@ -1859,7 +1946,7 @@ public:
 				changeScene(U"Main_scene", SCENE_FADE_TIME);
 			}
 			if (import_button.clicked() || KeyEnter.pressed()) {
-				failed = import_transcript_processing();
+				n_history = import_transcript_processing(transcript, &failed);
 				done = true;
 			}
 		}
@@ -1883,70 +1970,6 @@ public:
 
 	void draw() const override {
 
-	}
-
-private:
-	bool import_transcript_processing() {
-		Board h_bd;
-		h_bd.reset();
-		bool failed_res = false;
-		String transcript_str = Unicode::Widen(transcript).replace(U"\r", U"").replace(U"\n", U"").replace(U" ", U"");
-		if (transcript_str.size() % 2 != 0 && transcript_str.size() >= 120) {
-			failed_res = true;
-		}
-		else {
-			int y, x;
-			uint64_t legal;
-			Flip flip;
-			h_bd.reset();
-			History_elem history_elem;
-			int player = BLACK;
-			history_elem.set(h_bd, player, GRAPH_IGNORE_VALUE, -1, -1, -1, "");
-			n_history.emplace_back(history_elem);
-			for (int i = 0; i < (int)transcript_str.size(); i += 2) {
-				x = (int)transcript_str[i] - (int)'a';
-				if (x < 0 || HW <= x) {
-					x = (int)transcript_str[i] - (int)'A';
-					if (x < 0 || HW <= x) {
-						failed_res = true;
-						break;
-					}
-				}
-				y = (int)transcript_str[i + 1] - (int)'1';
-				if (y < 0 || HW <= y) {
-					failed_res = true;
-					break;
-				}
-				y = HW_M1 - y;
-				x = HW_M1 - x;
-				legal = h_bd.get_legal();
-				if (1 & (legal >> (y * HW + x))) {
-					calc_flip(&flip, &h_bd, y * HW + x);
-					h_bd.move_board(&flip);
-					player ^= 1;
-					if (h_bd.get_legal() == 0ULL) {
-						h_bd.pass();
-						player ^= 1;
-						if (h_bd.get_legal() == 0ULL) {
-							h_bd.pass();
-							player ^= 1;
-							if (i != transcript_str.size() - 2) {
-								failed_res = true;
-								break;
-							}
-						}
-					}
-				}
-				else {
-					failed_res = true;
-					break;
-				}
-				n_history.back().next_policy = y * HW + x;
-				history_elem.set(h_bd, player, GRAPH_IGNORE_VALUE, -1, y * HW + x, -1, "");
-				n_history.emplace_back(history_elem);
-			}
-		}
-		return failed_res;
 	}
 };
 
@@ -2071,6 +2094,150 @@ private:
 	}
 };
 
+class Edit_board : public App::Scene {
+private:
+	Button back_button;
+	Button set_button;
+	Radio_button player_radio;
+	Radio_button disc_radio;
+	bool done;
+	bool failed;
+	History_elem history_elem;
+
+public:
+	Edit_board(const InitData& init) : IScene{ init } {
+		back_button.init(BUTTON2_VERTICAL_SX, BUTTON2_VERTICAL_1_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("common", "back"), getData().fonts.font25, getData().colors.white, getData().colors.black);
+		set_button.init(BUTTON2_VERTICAL_SX, BUTTON2_VERTICAL_2_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("in_out", "import"), getData().fonts.font25, getData().colors.white, getData().colors.black);
+		done = false;
+		failed = false;
+		history_elem = getData().history_elem;
+		Radio_button_element radio_button_elem;
+		player_radio.init();
+		radio_button_elem.init(480, 120, getData().fonts.font15, 20, language.get("common", "black"), true);
+		player_radio.push(radio_button_elem);
+		radio_button_elem.init(480, 140, getData().fonts.font15, 20, language.get("common", "white"), false);
+		player_radio.push(radio_button_elem);
+		disc_radio.init();
+		radio_button_elem.init(480, 210, getData().fonts.font15, 20, language.get("edit_board", "black"), true);
+		disc_radio.push(radio_button_elem);
+		radio_button_elem.init(480, 230, getData().fonts.font15, 20, language.get("edit_board", "white"), false);
+		disc_radio.push(radio_button_elem);
+		radio_button_elem.init(480, 250, getData().fonts.font15, 20, language.get("edit_board", "empty"), false);
+		disc_radio.push(radio_button_elem);
+
+	}
+
+	void update() override {
+		int board_arr[HW2];
+		history_elem.board.translate_to_arr(board_arr, BLACK);
+		for (int cell = 0; cell < HW2; ++cell) {
+			int x = BOARD_SX + (cell % HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
+			int y = BOARD_SY + (cell / HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
+			if (board_arr[cell] == BLACK) {
+				Circle(x, y, DISC_SIZE).draw(Palette::Black);
+			}
+			else if (board_arr[cell] == WHITE) {
+				Circle(x, y, DISC_SIZE).draw(Palette::White);
+			}
+		}
+		for (int cell = 0; cell < HW2; ++cell) {
+			int x = BOARD_SX + (cell % HW) * BOARD_CELL_SIZE;
+			int y = BOARD_SY + (cell / HW) * BOARD_CELL_SIZE;
+			Rect cell_region(x, y, BOARD_CELL_SIZE, BOARD_CELL_SIZE);
+			if (cell_region.leftPressed()) {
+				board_arr[cell] = disc_radio.checked;
+			}
+		}
+		history_elem.board.translate_from_arr(board_arr, BLACK);
+		if (KeyB.pressed()) {
+			disc_radio.checked = BLACK;
+		}
+		else if (KeyW.pressed()) {
+			disc_radio.checked = WHITE;
+		}
+		else if (KeyE.pressed()) {
+			disc_radio.checked = VACANT;
+		}
+		Scene::SetBackground(getData().colors.green);
+		getData().fonts.font25(language.get("in_out", "edit_board")).draw(480, 20, getData().colors.white);
+		getData().fonts.font20(language.get("in_out", "player")).draw(480, 80, getData().colors.white);
+		getData().fonts.font20(language.get("in_out", "color")).draw(480, 170, getData().colors.white);
+		draw_board(getData().fonts, getData().colors, history_elem);
+		player_radio.draw();
+		disc_radio.draw();
+		back_button.draw();
+		set_button.draw();
+		if (back_button.clicked() || KeyEscape.pressed()) {
+			changeScene(U"Main_scene", SCENE_FADE_TIME);
+		}
+		if (set_button.clicked() || KeyEnter.pressed()) {
+			if (player_radio.checked != BLACK) {
+				history_elem.board.pass();
+			}
+			history_elem.player = player_radio.checked;
+			history_elem.v = GRAPH_IGNORE_VALUE;
+			history_elem.level = -1;
+			getData().history_elem = history_elem;
+			int n_discs = history_elem.board.n_discs();
+			int insert_place = (int)getData().graph_resources.nodes[getData().graph_resources.put_mode].size();
+			int replace_place = -1;
+			for (int i = 0; i < (int)getData().graph_resources.nodes[getData().graph_resources.put_mode].size(); ++i) {
+				int node_n_discs = getData().graph_resources.nodes[getData().graph_resources.put_mode][i].board.n_discs();
+				if (node_n_discs == n_discs) {
+					replace_place = i;
+					insert_place = -1;
+					break;
+				}
+				else if (node_n_discs > n_discs) {
+					insert_place = i;
+					break;
+				}
+			}
+			if (replace_place != -1) {
+				cerr << "replace" << endl;
+				getData().graph_resources.nodes[getData().graph_resources.put_mode][replace_place] = history_elem;
+			}
+			else {
+				cerr << "insert" << endl;
+				getData().graph_resources.nodes[getData().graph_resources.put_mode].insert(getData().graph_resources.nodes[getData().graph_resources.put_mode].begin() + insert_place, history_elem);
+			}
+			getData().graph_resources.need_init = false;
+			getData().graph_resources.n_discs = n_discs;
+			changeScene(U"Main_scene", SCENE_FADE_TIME);
+		}
+	}
+
+	void draw() const override {
+
+	}
+};
+
+class Import_game : public App::Scene {
+private:
+	vector<Game_abstract> game_abstracts;
+	vector<Button> buttons;
+	Button back_button;
+	int strt_idx;
+
+public:
+	Import_game(const InitData& init) : IScene{ init } {
+		strt_idx = 0;
+		back_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "back"), getData().fonts.font25, getData().colors.white, getData().colors.black);
+	}
+
+	void update() override {
+		getData().fonts.font25(language.get("in_out", "input_game")).draw(Arg::topCenter(X_CENTER, 10), getData().colors.white);
+		back_button.draw();
+		if (back_button.clicked() || KeyEscape.pressed()) {
+			changeScene(U"Main_scene", SCENE_FADE_TIME);
+		}
+	}
+
+	void draw() const override {
+
+	}
+};
+
 void Main() {
 	Size window_size = Size(WINDOW_SIZE_X, WINDOW_SIZE_Y);
 	Window::Resize(window_size);
@@ -2088,6 +2255,8 @@ void Main() {
 	scene_manager.add <Refer_book>(U"Refer_book");
 	scene_manager.add <Import_transcript>(U"Import_transcript");
 	scene_manager.add <Import_board>(U"Import_board");
+	scene_manager.add <Edit_board>(U"Edit_board");
+	scene_manager.add <Import_game>(U"Import_game");
 	scene_manager.setFadeColor(Palette::Black);
 	scene_manager.init(U"Silent_load");
 

@@ -8,7 +8,7 @@ using namespace std;
 #define radio_button_r 3
 #define radio_button_margin 20
 
-class Radio_Button_Element {
+class Radio_button_element {
 public:
 	Circle circle;
 	String str;
@@ -45,9 +45,9 @@ public:
 	}
 };
 
-class Radio_Button {
+class Radio_button {
 public:
-	vector<Radio_Button_Element> elems;
+	vector<Radio_button_element> elems;
 	int checked;
 
 public:
@@ -56,12 +56,12 @@ public:
 		checked = 0;
 	}
 
-	void push(Radio_Button_Element elem) {
+	void push(Radio_button_element elem) {
 		elems.emplace_back(elem);
 	}
 
 	void draw() {
-		for (Radio_Button_Element& elem : elems) {
+		for (Radio_button_element& elem : elems) {
 			elem.draw();
 		}
 		for (int i = 0; i < (int)elems.size(); ++i) {
