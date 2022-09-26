@@ -168,6 +168,7 @@ struct Fonts {
 	Font font20{ 20 };
 	Font font15{ 15 };
 	Font font13{ 13 };
+	Font font12{ 12 };
 	Font font10{ 10 };
 	Font font15_bold{ 15, Typeface::Bold };
 	Font font13_heavy{ 13, Typeface::Heavy };
@@ -296,33 +297,22 @@ struct Menu_elements {
 	}
 };
 
-struct Common_resources {
-	Colors colors;
-	Directories directories;
-	Resources resources;
-	Settings settings;
-	Fonts fonts;
-	Menu_elements menu_elements;
-	Menu menu;
-	History_elem history_elem;
-};
-
-struct Hint_info {
-	double value;
-	int cell;
-	int type;
-};
-
 struct Graph_resources {
 	vector<History_elem> nodes[2];
 	int n_discs;
 	int put_mode;
+	bool need_init;
+
+	Graph_resources() {
+		init();
+	}
 
 	void init() {
 		nodes[0].clear();
 		nodes[1].clear();
 		n_discs = 4;
 		put_mode = 0;
+		need_init = true;
 	}
 
 	int node_find(int mode, int n_discs) {
@@ -333,6 +323,24 @@ struct Graph_resources {
 		}
 		return -1;
 	}
+};
+
+struct Common_resources {
+	Colors colors;
+	Directories directories;
+	Resources resources;
+	Settings settings;
+	Fonts fonts;
+	Menu_elements menu_elements;
+	Menu menu;
+	History_elem history_elem;
+	Graph_resources graph_resources;
+};
+
+struct Hint_info {
+	double value;
+	int cell;
+	int type;
 };
 
 struct Move_board_button_status {
@@ -658,8 +666,9 @@ public:
 
 	void update() override {
 		Scene::SetBackground(getData().colors.green);
-		getData().resources.icon.scaled((double)(LEFT_RIGHT - LEFT_LEFT) / getData().resources.icon.width()).draw(LEFT_LEFT, Y_CENTER - (LEFT_RIGHT - LEFT_LEFT) / 2);
-		getData().resources.logo.scaled((double)(LEFT_RIGHT - LEFT_LEFT) * 0.8 / getData().resources.logo.width()).draw(RIGHT_LEFT, Y_CENTER - 40);
+		const int icon_width = (LEFT_RIGHT - LEFT_LEFT);
+		getData().resources.icon.scaled((double)icon_width / getData().resources.icon.width()).draw(LEFT_LEFT, Y_CENTER - icon_width / 2);
+		getData().resources.logo.scaled((double)icon_width * 0.8 / getData().resources.logo.width()).draw(RIGHT_LEFT, Y_CENTER - 40);
 		if (load_future.wait_for(chrono::seconds(0)) == future_status::ready) {
 			int load_code = load_future.get();
 			if (load_code == ERR_OK) {
@@ -696,7 +705,6 @@ bool compare_hint_info(Hint_info& a, Hint_info& b) {
 class Main_scene : public App::Scene {
 private:
 	Graph graph;
-	Graph_resources graph_resources;
 	Move_board_button_status move_board_button_status;
 	AI_status ai_status;
 
@@ -712,8 +720,10 @@ public:
 		graph.resolution = GRAPH_RESOLUTION;
 		graph.font = getData().fonts.font15;
 		graph.font_size = 15;
-		graph_resources.init();
-		graph_resources.nodes[graph_resources.put_mode].emplace_back(getData().history_elem);
+		if (getData().graph_resources.need_init) {
+			getData().graph_resources.init();
+			getData().graph_resources.nodes[getData().graph_resources.put_mode].emplace_back(getData().history_elem);
+		}
 		cerr << "main scene loaded" << endl;
 	}
 
@@ -725,8 +735,9 @@ public:
 
 		// menu
 		menu_game();
-		menu_book();
+		menu_in_out();
 		menu_manipulate();
+		menu_book();
 
 		// analyze
 		if (ai_status.analyzing) {
@@ -743,9 +754,9 @@ public:
 		bool move_ignore = ai_status.analyzing;
 		// move
 		bool ai_should_move =
-			graph_resources.put_mode == GRAPH_MODE_NORMAL &&
+			getData().graph_resources.put_mode == GRAPH_MODE_NORMAL &&
 			((getData().history_elem.player == BLACK && getData().menu_elements.ai_put_black) || (getData().history_elem.player == WHITE && getData().menu_elements.ai_put_white)) &&
-			getData().history_elem.board.n_discs() == graph_resources.nodes[GRAPH_MODE_NORMAL][graph_resources.nodes[GRAPH_MODE_NORMAL].size() - 1].board.n_discs();
+			getData().history_elem.board.n_discs() == getData().graph_resources.nodes[GRAPH_MODE_NORMAL][getData().graph_resources.nodes[GRAPH_MODE_NORMAL].size() - 1].board.n_discs();
 		if (!move_ignore) {
 			if (ai_should_move) {
 				ai_move();
@@ -780,7 +791,7 @@ public:
 
 		// graph drawing
 		if (getData().menu_elements.show_graph) {
-			graph.draw(graph_resources.nodes[0], graph_resources.nodes[1], graph_resources.n_discs);
+			graph.draw(getData().graph_resources.nodes[0], getData().graph_resources.nodes[1], getData().graph_resources.n_discs);
 		}
 
 		// info drawing
@@ -828,8 +839,8 @@ private:
 		if (getData().menu_elements.start_game) {
 			stop_calculating();
 			getData().history_elem.reset();
-			graph_resources.init();
-			graph_resources.nodes[graph_resources.put_mode].emplace_back(getData().history_elem);
+			getData().graph_resources.init();
+			getData().graph_resources.nodes[getData().graph_resources.put_mode].emplace_back(getData().history_elem);
 			reset_hint();
 		}
 		if (getData().menu_elements.analyze) {
@@ -838,12 +849,9 @@ private:
 		}
 	}
 
-	void menu_book() {
-		if (getData().menu_elements.book_import) {
-			changeScene(U"Import_book", SCENE_FADE_TIME);
-		}
-		if (getData().menu_elements.book_reference) {
-			changeScene(U"Refer_book", SCENE_FADE_TIME);
+	void menu_in_out() {
+		if (getData().menu_elements.input_transcript) {
+			changeScene(U"Import_transcript", SCENE_FADE_TIME);
 		}
 	}
 
@@ -854,10 +862,10 @@ private:
 		}
 		if (!ai_status.analyzing) {
 			if (getData().menu_elements.backward) {
-				--graph_resources.n_discs;
+				--getData().graph_resources.n_discs;
 			}
 			if (getData().menu_elements.forward) {
-				++graph_resources.n_discs;
+				++getData().graph_resources.n_discs;
 			}
 		}
 		if (getData().menu_elements.convert_180) {
@@ -870,13 +878,13 @@ private:
 				getData().history_elem.next_policy = HW2_M1 - getData().history_elem.next_policy;
 			}
 			for (int i = 0; i < 2; ++i) {
-				for (int j = 0; j < (int)graph_resources.nodes[i].size(); ++j) {
-					graph_resources.nodes[i][j].board.board_rotate_180();
-					if (0 <= graph_resources.nodes[i][j].policy && graph_resources.nodes[i][j].policy < HW2) {
-						graph_resources.nodes[i][j].policy = HW2_M1 - graph_resources.nodes[i][j].policy;
+				for (int j = 0; j < (int)getData().graph_resources.nodes[i].size(); ++j) {
+					getData().graph_resources.nodes[i][j].board.board_rotate_180();
+					if (0 <= getData().graph_resources.nodes[i][j].policy && getData().graph_resources.nodes[i][j].policy < HW2) {
+						getData().graph_resources.nodes[i][j].policy = HW2_M1 - getData().graph_resources.nodes[i][j].policy;
 					}
-					if (0 <= graph_resources.nodes[i][j].next_policy && graph_resources.nodes[i][j].next_policy < HW2) {
-						graph_resources.nodes[i][j].next_policy = HW2_M1 - graph_resources.nodes[i][j].next_policy;
+					if (0 <= getData().graph_resources.nodes[i][j].next_policy && getData().graph_resources.nodes[i][j].next_policy < HW2) {
+						getData().graph_resources.nodes[i][j].next_policy = HW2_M1 - getData().graph_resources.nodes[i][j].next_policy;
 					}
 				}
 			}
@@ -896,17 +904,17 @@ private:
 				getData().history_elem.next_policy = (HW_M1 - x) * HW + (HW_M1 - y);
 			}
 			for (int i = 0; i < 2; ++i) {
-				for (int j = 0; j < (int)graph_resources.nodes[i].size(); ++j) {
-					graph_resources.nodes[i][j].board.board_black_line_mirror();
-					if (0 <= graph_resources.nodes[i][j].policy && graph_resources.nodes[i][j].policy < HW2) {
-						int x = graph_resources.nodes[i][j].policy % HW;
-						int y = graph_resources.nodes[i][j].policy / HW;
-						graph_resources.nodes[i][j].policy = (HW_M1 - x) * HW + (HW_M1 - y);
+				for (int j = 0; j < (int)getData().graph_resources.nodes[i].size(); ++j) {
+					getData().graph_resources.nodes[i][j].board.board_black_line_mirror();
+					if (0 <= getData().graph_resources.nodes[i][j].policy && getData().graph_resources.nodes[i][j].policy < HW2) {
+						int x = getData().graph_resources.nodes[i][j].policy % HW;
+						int y = getData().graph_resources.nodes[i][j].policy / HW;
+						getData().graph_resources.nodes[i][j].policy = (HW_M1 - x) * HW + (HW_M1 - y);
 					}
-					if (0 <= graph_resources.nodes[i][j].next_policy && graph_resources.nodes[i][j].next_policy < HW2) {
-						int x = graph_resources.nodes[i][j].next_policy % HW;
-						int y = graph_resources.nodes[i][j].next_policy / HW;
-						graph_resources.nodes[i][j].next_policy = (HW_M1 - x) * HW + (HW_M1 - y);
+					if (0 <= getData().graph_resources.nodes[i][j].next_policy && getData().graph_resources.nodes[i][j].next_policy < HW2) {
+						int x = getData().graph_resources.nodes[i][j].next_policy % HW;
+						int y = getData().graph_resources.nodes[i][j].next_policy / HW;
+						getData().graph_resources.nodes[i][j].next_policy = (HW_M1 - x) * HW + (HW_M1 - y);
 					}
 				}
 			}
@@ -926,17 +934,17 @@ private:
 				getData().history_elem.next_policy = x * HW + y;
 			}
 			for (int i = 0; i < 2; ++i) {
-				for (int j = 0; j < (int)graph_resources.nodes[i].size(); ++j) {
-					graph_resources.nodes[i][j].board.board_white_line_mirror();
-					if (0 <= graph_resources.nodes[i][j].policy && graph_resources.nodes[i][j].policy < HW2) {
-						int x = graph_resources.nodes[i][j].policy % HW;
-						int y = graph_resources.nodes[i][j].policy / HW;
-						graph_resources.nodes[i][j].policy = x * HW + y;
+				for (int j = 0; j < (int)getData().graph_resources.nodes[i].size(); ++j) {
+					getData().graph_resources.nodes[i][j].board.board_white_line_mirror();
+					if (0 <= getData().graph_resources.nodes[i][j].policy && getData().graph_resources.nodes[i][j].policy < HW2) {
+						int x = getData().graph_resources.nodes[i][j].policy % HW;
+						int y = getData().graph_resources.nodes[i][j].policy / HW;
+						getData().graph_resources.nodes[i][j].policy = x * HW + y;
 					}
-					if (0 <= graph_resources.nodes[i][j].next_policy && graph_resources.nodes[i][j].next_policy < HW2) {
-						int x = graph_resources.nodes[i][j].next_policy % HW;
-						int y = graph_resources.nodes[i][j].next_policy / HW;
-						graph_resources.nodes[i][j].next_policy = x * HW + y;
+					if (0 <= getData().graph_resources.nodes[i][j].next_policy && getData().graph_resources.nodes[i][j].next_policy < HW2) {
+						int x = getData().graph_resources.nodes[i][j].next_policy % HW;
+						int y = getData().graph_resources.nodes[i][j].next_policy / HW;
+						getData().graph_resources.nodes[i][j].next_policy = x * HW + y;
 					}
 				}
 			}
@@ -944,8 +952,17 @@ private:
 		}
 	}
 
+	void menu_book() {
+		if (getData().menu_elements.book_import) {
+			changeScene(U"Import_book", SCENE_FADE_TIME);
+		}
+		if (getData().menu_elements.book_reference) {
+			changeScene(U"Refer_book", SCENE_FADE_TIME);
+		}
+	}
+
 	void interact_graph() {
-		graph_resources.n_discs = graph.update_n_discs(graph_resources.nodes[0], graph_resources.nodes[1], graph_resources.n_discs);
+		getData().graph_resources.n_discs = graph.update_n_discs(getData().graph_resources.nodes[0], getData().graph_resources.nodes[1], getData().graph_resources.n_discs);
 		if (!KeyLeft.pressed() && !KeyA.pressed()) {
 			move_board_button_status.left_pushed = BUTTON_NOT_PUSHED;
 		}
@@ -954,13 +971,13 @@ private:
 		}
 
 		if (MouseX1.down() || KeyLeft.down() || KeyA.down() || (move_board_button_status.left_pushed != BUTTON_NOT_PUSHED && tim() - move_board_button_status.left_pushed >= BUTTON_LONG_PRESS_THRESHOLD)) {
-			--graph_resources.n_discs;
+			--getData().graph_resources.n_discs;
 			if (KeyLeft.down() || KeyA.down()) {
 				move_board_button_status.left_pushed = tim();
 			}
 		}
 		else if (MouseX2.down() || KeyRight.down() || KeyD.down() || (move_board_button_status.right_pushed != BUTTON_NOT_PUSHED && tim() - move_board_button_status.right_pushed >= BUTTON_LONG_PRESS_THRESHOLD)) {
-			++graph_resources.n_discs;
+			++getData().graph_resources.n_discs;
 			if (KeyRight.down() || KeyD.down()) {
 				move_board_button_status.right_pushed = tim();
 			}
@@ -968,51 +985,51 @@ private:
 	}
 
 	void update_n_discs() {
-		int max_n_discs = graph_resources.nodes[graph_resources.put_mode][graph_resources.nodes[graph_resources.put_mode].size() - 1].board.n_discs();
-		graph_resources.n_discs = min(graph_resources.n_discs, max_n_discs);
-		int min_n_discs = graph_resources.nodes[GRAPH_MODE_NORMAL][0].board.n_discs();
-		if (graph_resources.nodes[GRAPH_MODE_INSPECT].size()) {
-			min_n_discs = min(min_n_discs, graph_resources.nodes[GRAPH_MODE_INSPECT][0].board.n_discs());
+		int max_n_discs = getData().graph_resources.nodes[getData().graph_resources.put_mode][getData().graph_resources.nodes[getData().graph_resources.put_mode].size() - 1].board.n_discs();
+		getData().graph_resources.n_discs = min(getData().graph_resources.n_discs, max_n_discs);
+		int min_n_discs = getData().graph_resources.nodes[GRAPH_MODE_NORMAL][0].board.n_discs();
+		if (getData().graph_resources.nodes[GRAPH_MODE_INSPECT].size()) {
+			min_n_discs = min(min_n_discs, getData().graph_resources.nodes[GRAPH_MODE_INSPECT][0].board.n_discs());
 		}
-		graph_resources.n_discs = max(graph_resources.n_discs, min_n_discs);
-		if (graph_resources.put_mode == GRAPH_MODE_INSPECT && graph_resources.nodes[GRAPH_MODE_INSPECT].size()) {
-			if (graph_resources.n_discs < graph_resources.nodes[GRAPH_MODE_INSPECT][0].board.n_discs()) {
-				graph_resources.put_mode = GRAPH_MODE_NORMAL;
-				graph_resources.nodes[1].clear();
+		getData().graph_resources.n_discs = max(getData().graph_resources.n_discs, min_n_discs);
+		if (getData().graph_resources.put_mode == GRAPH_MODE_INSPECT && getData().graph_resources.nodes[GRAPH_MODE_INSPECT].size()) {
+			if (getData().graph_resources.n_discs < getData().graph_resources.nodes[GRAPH_MODE_INSPECT][0].board.n_discs()) {
+				getData().graph_resources.put_mode = GRAPH_MODE_NORMAL;
+				getData().graph_resources.nodes[1].clear();
 			}
 		}
-		int node_idx = graph_resources.node_find(graph_resources.put_mode, graph_resources.n_discs);
-		if (node_idx == -1 && graph_resources.put_mode == GRAPH_MODE_INSPECT) {
-			graph_resources.nodes[GRAPH_MODE_INSPECT].clear();
-			int node_idx_0 = graph_resources.node_find(GRAPH_MODE_NORMAL, graph_resources.n_discs);
+		int node_idx = getData().graph_resources.node_find(getData().graph_resources.put_mode, getData().graph_resources.n_discs);
+		if (node_idx == -1 && getData().graph_resources.put_mode == GRAPH_MODE_INSPECT) {
+			getData().graph_resources.nodes[GRAPH_MODE_INSPECT].clear();
+			int node_idx_0 = getData().graph_resources.node_find(GRAPH_MODE_NORMAL, getData().graph_resources.n_discs);
 			if (node_idx_0 == -1) {
 				cerr << "history vector element not found 0" << endl;
 				return;
 			}
-			graph_resources.nodes[GRAPH_MODE_INSPECT].emplace_back(graph_resources.nodes[GRAPH_MODE_NORMAL][node_idx_0]);
-			node_idx = graph_resources.node_find(graph_resources.put_mode, graph_resources.n_discs);
+			getData().graph_resources.nodes[GRAPH_MODE_INSPECT].emplace_back(getData().graph_resources.nodes[GRAPH_MODE_NORMAL][node_idx_0]);
+			node_idx = getData().graph_resources.node_find(getData().graph_resources.put_mode, getData().graph_resources.n_discs);
 		}
 		if (node_idx == -1) {
 			cerr << "history vector element not found 1" << endl;
 			return;
 		}
-		if (getData().history_elem.board != graph_resources.nodes[graph_resources.put_mode][node_idx].board) {
+		if (getData().history_elem.board != getData().graph_resources.nodes[getData().graph_resources.put_mode][node_idx].board) {
 			stop_calculating();
 			reset_hint();
 		}
-		getData().history_elem = graph_resources.nodes[graph_resources.put_mode][node_idx];
+		getData().history_elem = getData().graph_resources.nodes[getData().graph_resources.put_mode][node_idx];
 	}
 
 	void move_processing(int_fast8_t cell) {
-		int parent_idx = graph_resources.node_find(graph_resources.put_mode, getData().history_elem.board.n_discs());
+		int parent_idx = getData().graph_resources.node_find(getData().graph_resources.put_mode, getData().history_elem.board.n_discs());
 		if (parent_idx != -1) {
-			if (graph_resources.nodes[graph_resources.put_mode][parent_idx].next_policy == HW2_M1 - cell && parent_idx + 1 < (int)graph_resources.nodes[graph_resources.put_mode].size()) {
-				++graph_resources.n_discs;
+			if (getData().graph_resources.nodes[getData().graph_resources.put_mode][parent_idx].next_policy == HW2_M1 - cell && parent_idx + 1 < (int)getData().graph_resources.nodes[getData().graph_resources.put_mode].size()) {
+				++getData().graph_resources.n_discs;
 				return;
 			}
-			graph_resources.nodes[graph_resources.put_mode][parent_idx].next_policy = HW2_M1 - cell;
-			while (graph_resources.nodes[graph_resources.put_mode].size() > parent_idx + 1) {
-				graph_resources.nodes[graph_resources.put_mode].pop_back();
+			getData().graph_resources.nodes[getData().graph_resources.put_mode][parent_idx].next_policy = HW2_M1 - cell;
+			while (getData().graph_resources.nodes[getData().graph_resources.put_mode].size() > parent_idx + 1) {
+				getData().graph_resources.nodes[getData().graph_resources.put_mode].pop_back();
 			}
 		}
 		Flip flip;
@@ -1027,8 +1044,8 @@ private:
 			getData().history_elem.board.pass();
 			getData().history_elem.player ^= 1;
 		}
-		graph_resources.nodes[graph_resources.put_mode].emplace_back(getData().history_elem);
-		graph_resources.n_discs++;
+		getData().graph_resources.nodes[getData().graph_resources.put_mode].emplace_back(getData().history_elem);
+		getData().graph_resources.n_discs++;
 		reset_hint();
 	}
 
@@ -1040,14 +1057,14 @@ private:
 				int y = cell / HW;
 				Rect cell_rect(BOARD_SX + x * BOARD_CELL_SIZE, BOARD_SY + y * BOARD_CELL_SIZE, BOARD_CELL_SIZE, BOARD_CELL_SIZE);
 				if (cell_rect.leftClicked()) {
-					if (graph_resources.put_mode == GRAPH_MODE_NORMAL) {
-						int parent_idx = graph_resources.node_find(GRAPH_MODE_NORMAL, getData().history_elem.board.n_discs());
+					if (getData().graph_resources.put_mode == GRAPH_MODE_NORMAL) {
+						int parent_idx = getData().graph_resources.node_find(GRAPH_MODE_NORMAL, getData().history_elem.board.n_discs());
 						if (parent_idx != -1) {
 							bool go_to_inspection_mode =
-								getData().history_elem.board.n_discs() != graph_resources.nodes[GRAPH_MODE_NORMAL][graph_resources.nodes[GRAPH_MODE_NORMAL].size() - 1].board.n_discs() &&
-								HW2_M1 - cell != graph_resources.nodes[GRAPH_MODE_NORMAL][parent_idx].next_policy;
+								getData().history_elem.board.n_discs() != getData().graph_resources.nodes[GRAPH_MODE_NORMAL][getData().graph_resources.nodes[GRAPH_MODE_NORMAL].size() - 1].board.n_discs() &&
+								HW2_M1 - cell != getData().graph_resources.nodes[GRAPH_MODE_NORMAL][parent_idx].next_policy;
 							if (go_to_inspection_mode) {
-								graph_resources.put_mode = GRAPH_MODE_INSPECT;
+								getData().graph_resources.put_mode = GRAPH_MODE_INSPECT;
 							}
 						}
 					}
@@ -1071,7 +1088,7 @@ private:
 			if (1 & (legal >> search_result.policy)) {
 				int sgn = getData().history_elem.player == 0 ? 1 : -1;
 				move_processing(HW2_M1 - search_result.policy);
-				graph_resources.nodes[graph_resources.put_mode].back().v = sgn * search_result.value;
+				getData().graph_resources.nodes[getData().graph_resources.put_mode].back().v = sgn * search_result.value;
 			}
 			ai_status.ai_thinking = false;
 		}
@@ -1081,12 +1098,12 @@ private:
 		string new_opening = opening.get(getData().history_elem.board, getData().history_elem.player ^ 1);
 		if (new_opening.size() && getData().history_elem.opening_name != new_opening) {
 			getData().history_elem.opening_name = new_opening;
-			int node_idx = graph_resources.node_find(graph_resources.put_mode, graph_resources.n_discs);
+			int node_idx = getData().graph_resources.node_find(getData().graph_resources.put_mode, getData().graph_resources.n_discs);
 			if (node_idx == -1) {
 				cerr << "history vector element not found 3" << endl;
 				return;
 			}
-			graph_resources.nodes[graph_resources.put_mode][node_idx].opening_name = new_opening;
+			getData().graph_resources.nodes[getData().graph_resources.put_mode][node_idx].opening_name = new_opening;
 		}
 	}
 
@@ -1094,7 +1111,7 @@ private:
 		Menu menu;
 		menu_title title;
 		menu_elem menu_e, side_menu, side_side_menu;
-		Font menu_font = getData().fonts.font15;
+		Font menu_font = getData().fonts.font12;
 
 
 
@@ -1153,26 +1170,6 @@ private:
 
 
 
-
-		title.init(language.get("book", "book"));
-
-		menu_e.init_button(language.get("book", "import"), &menu_elements->book_import);
-		title.push(menu_e);
-		menu_e.init_button(language.get("book", "book_reference"), &menu_elements->book_reference);
-		title.push(menu_e);
-		menu_e.init_button(language.get("book", "settings"), &menu_elements->dummy);
-		side_menu.init_bar(language.get("book", "depth"), &menu_elements->book_learn_depth, menu_elements->book_learn_depth, 0, 60);
-		menu_e.push(side_menu);
-		side_menu.init_bar(language.get("book", "accept"), &menu_elements->book_learn_error, menu_elements->book_learn_error, 0, 64);
-		menu_e.push(side_menu);
-		title.push(menu_e);
-		menu_e.init_button(language.get("book", "start_learn"), &menu_elements->book_start_learn);
-		title.push(menu_e);
-
-		menu.push(title);
-
-
-
 		title.init(language.get("in_out", "in_out"));
 
 		menu_e.init_button(language.get("in_out", "in"), &menu_elements->dummy);
@@ -1215,6 +1212,26 @@ private:
 		menu_e.push(side_menu);
 		side_menu.init_button(language.get("operation", "convert", "white_line"), &menu_elements->convert_whiteline);
 		menu_e.push(side_menu);
+		title.push(menu_e);
+
+		menu.push(title);
+
+
+
+
+		title.init(language.get("book", "book"));
+
+		menu_e.init_button(language.get("book", "import"), &menu_elements->book_import);
+		title.push(menu_e);
+		menu_e.init_button(language.get("book", "book_reference"), &menu_elements->book_reference);
+		title.push(menu_e);
+		menu_e.init_button(language.get("book", "settings"), &menu_elements->dummy);
+		side_menu.init_bar(language.get("book", "depth"), &menu_elements->book_learn_depth, menu_elements->book_learn_depth, 0, 60);
+		menu_e.push(side_menu);
+		side_menu.init_bar(language.get("book", "accept"), &menu_elements->book_learn_error, menu_elements->book_learn_error, 0, 64);
+		menu_e.push(side_menu);
+		title.push(menu_e);
+		menu_e.init_button(language.get("book", "start_learn"), &menu_elements->book_start_learn);
 		title.push(menu_e);
 
 		menu.push(title);
@@ -1354,11 +1371,11 @@ private:
 			sort(hint_infos.begin(), hint_infos.end(), compare_hint_info);
 			if (hint_infos.size()) {
 				int sgn = getData().history_elem.player == 0 ? 1 : -1;
-				int node_idx = graph_resources.node_find(graph_resources.put_mode, graph_resources.n_discs);
+				int node_idx = getData().graph_resources.node_find(getData().graph_resources.put_mode, getData().graph_resources.n_discs);
 				if (node_idx != -1) {
-					if (graph_resources.nodes[graph_resources.put_mode][node_idx].level < hint_infos[0].type) {
-						graph_resources.nodes[graph_resources.put_mode][node_idx].v = sgn * (int)round(hint_infos[0].value);
-						graph_resources.nodes[graph_resources.put_mode][node_idx].level = hint_infos[0].type;
+					if (getData().graph_resources.nodes[getData().graph_resources.put_mode][node_idx].level < hint_infos[0].type) {
+						getData().graph_resources.nodes[getData().graph_resources.put_mode][node_idx].v = sgn * (int)round(hint_infos[0].value);
+						getData().graph_resources.nodes[getData().graph_resources.put_mode][node_idx].level = hint_infos[0].type;
 					}
 				}
 			}
@@ -1502,7 +1519,7 @@ private:
 	void init_analyze() {
 		ai_status.analyze_task_stack.clear();
 		int idx = 0;
-		for (History_elem& node : graph_resources.nodes[graph_resources.put_mode]) {
+		for (History_elem& node : getData().graph_resources.nodes[getData().graph_resources.put_mode]) {
 			Analyze_info analyze_info;
 			analyze_info.idx = idx++;
 			analyze_info.sgn = node.player ? -1 : 1;
@@ -1523,14 +1540,14 @@ private:
 		getData().history_elem.policy = -1;
 		getData().history_elem.next_policy = -1;
 		getData().history_elem.player = task.first.sgn == 1 ? 0 : 1;
-		graph_resources.n_discs = getData().history_elem.board.n_discs();
+		getData().graph_resources.n_discs = getData().history_elem.board.n_discs();
 	}
 
 	void analyze_get_task() {
 		if (ai_status.analyze_task_stack.size() == 0) {
 			ai_status.analyzing = false;
-			getData().history_elem = graph_resources.nodes[graph_resources.put_mode].back();
-			graph_resources.n_discs = graph_resources.nodes[graph_resources.put_mode].back().board.n_discs();
+			getData().history_elem = getData().graph_resources.nodes[getData().graph_resources.put_mode].back();
+			getData().graph_resources.n_discs = getData().graph_resources.nodes[getData().graph_resources.put_mode].back().board.n_discs();
 			return;
 		}
 		bool task_finished = false;
@@ -1540,8 +1557,8 @@ private:
 					Search_result search_result = ai_status.analyze_future[i].get();
 					int value = ai_status.analyze_sgn[i] * search_result.value;
 					cerr << i << " " << value << endl;
-					graph_resources.nodes[graph_resources.put_mode][i].v = value;
-					graph_resources.nodes[graph_resources.put_mode][i].level = getData().menu_elements.level;
+					getData().graph_resources.nodes[getData().graph_resources.put_mode][i].v = value;
+					getData().graph_resources.nodes[getData().graph_resources.put_mode][i].level = getData().menu_elements.level;
 					task_finished = true;
 				}
 			}
@@ -1618,7 +1635,7 @@ private:
 
 public:
 	Import_book(const InitData& init) : IScene{ init } {
-		back_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("book", "back"), getData().fonts.font25, getData().colors.white, getData().colors.black);
+		back_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "back"), getData().fonts.font25, getData().colors.white, getData().colors.black);
 		importing = false;
 		imported = false;
 		failed = false;
@@ -1627,8 +1644,8 @@ public:
 	void update() override {
 		Scene::SetBackground(getData().colors.green);
 		const int icon_width = (LEFT_RIGHT - LEFT_LEFT) / 2;
-		getData().resources.icon.scaled((double)(LEFT_RIGHT - LEFT_LEFT) / 2 / getData().resources.icon.width()).draw(X_CENTER - icon_width / 2, 20);
-		getData().resources.logo.scaled((double)(LEFT_RIGHT - LEFT_LEFT) / 2 / getData().resources.logo.width()).draw(X_CENTER - icon_width / 2, 20 + icon_width);
+		getData().resources.icon.scaled((double)icon_width / getData().resources.icon.width()).draw(X_CENTER - icon_width / 2, 20);
+		getData().resources.logo.scaled((double)icon_width / getData().resources.logo.width()).draw(X_CENTER - icon_width / 2, 20 + icon_width);
 		int sy = 20 + icon_width + 50;
 		if (!importing) {
 			getData().fonts.font25(language.get("book", "import_explanation")).draw(Arg::topCenter(X_CENTER, sy), getData().colors.white);
@@ -1684,8 +1701,8 @@ private:
 
 public:
 	Refer_book(const InitData& init) : IScene{ init } {
-		single_back_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("book", "back"), getData().fonts.font25, getData().colors.white, getData().colors.black);
-		back_button.init(BUTTON3_1_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("book", "back"), getData().fonts.font25, getData().colors.white, getData().colors.black);
+		single_back_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "back"), getData().fonts.font25, getData().colors.white, getData().colors.black);
+		back_button.init(BUTTON3_1_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("common", "back"), getData().fonts.font25, getData().colors.white, getData().colors.black);
 		default_button.init(BUTTON3_2_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("book", "use_default"), getData().fonts.font25, getData().colors.white, getData().colors.black);
 		go_button.init(BUTTON3_3_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("book", "import"), getData().fonts.font25, getData().colors.white, getData().colors.black);
 		book_file = getData().settings.book_file;
@@ -1698,8 +1715,8 @@ public:
 	void update() override {
 		Scene::SetBackground(getData().colors.green);
 		const int icon_width = (LEFT_RIGHT - LEFT_LEFT) / 2;
-		getData().resources.icon.scaled((double)(LEFT_RIGHT - LEFT_LEFT) / 2 / getData().resources.icon.width()).draw(X_CENTER - icon_width / 2, 20);
-		getData().resources.logo.scaled((double)(LEFT_RIGHT - LEFT_LEFT) / 2 / getData().resources.logo.width()).draw(X_CENTER - icon_width / 2, 20 + icon_width);
+		getData().resources.icon.scaled((double)icon_width / getData().resources.icon.width()).draw(X_CENTER - icon_width / 2, 20);
+		getData().resources.logo.scaled((double)icon_width / getData().resources.logo.width()).draw(X_CENTER - icon_width / 2, 20 + icon_width);
 		int sy = 20 + icon_width + 50;
 		if (!book_deleting && !book_importing && !failed && !done) {
 			getData().fonts.font25(language.get("book", "input_book_path")).draw(Arg::topCenter(X_CENTER, sy), getData().colors.white);
@@ -1777,61 +1794,149 @@ public:
 
 class Import_transcript : public App::Scene {
 private:
+	Button single_back_button;
 	Button back_button;
 	Button import_button;
-	bool imported;
+	bool done;
 	bool failed;
+	string transcript;
 
 public:
 	Import_transcript(const InitData& init) : IScene{ init } {
+		single_back_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "back"), getData().fonts.font25, getData().colors.white, getData().colors.black);
 		back_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "back"), getData().fonts.font25, getData().colors.white, getData().colors.black);
 		import_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("in_out", "import"), getData().fonts.font25, getData().colors.white, getData().colors.black);
-		imported = false;
+		done = false;
 		failed = false;
+		transcript.clear();
 	}
 
 	void update() override {
 		Scene::SetBackground(getData().colors.green);
 		const int icon_width = (LEFT_RIGHT - LEFT_LEFT) / 2;
-		getData().resources.icon.scaled((double)(LEFT_RIGHT - LEFT_LEFT) / 2 / getData().resources.icon.width()).draw(X_CENTER - icon_width / 2, 20);
-		getData().resources.logo.scaled((double)(LEFT_RIGHT - LEFT_LEFT) / 2 / getData().resources.logo.width()).draw(X_CENTER - icon_width / 2, 20 + icon_width);
+		getData().resources.icon.scaled((double)icon_width / getData().resources.icon.width()).draw(X_CENTER - icon_width / 2, 20);
+		getData().resources.logo.scaled((double)icon_width / getData().resources.logo.width()).draw(X_CENTER - icon_width / 2, 20 + icon_width);
 		int sy = 20 + icon_width + 50;
-		if (!importing) {
-			getData().fonts.font25(language.get("book", "import_explanation")).draw(Arg::topCenter(X_CENTER, sy), getData().colors.white);
+		if (!done) {
+			getData().fonts.font25(language.get("in_out", "input_transcript")).draw(Arg::topCenter(X_CENTER, sy), getData().colors.white);
+			Rect text_area{ X_CENTER - 300, sy + 40, 600, 70 };
+			text_area.draw(getData().colors.light_cyan).drawFrame(2, getData().colors.black);
+			String str = Unicode::Widen(transcript);
+			TextInput::UpdateText(str);
+			const String editingText = TextInput::GetEditingText();
+			bool return_pressed = false;
+			if (KeyControl.pressed() && KeyV.down()) {
+				String clip_text;
+				Clipboard::GetText(clip_text);
+				str += clip_text;
+			}
+			if (str.size()) {
+				if (str[str.size() - 1] == '\n') {
+					str.replace(U"\n", U"");
+					return_pressed = true;
+				}
+			}
+			transcript = str.narrow();
+			getData().fonts.font15(str + U'|' + editingText).draw(text_area.stretched(-4), getData().colors.black);
 			back_button.draw();
+			import_button.draw();
 			if (back_button.clicked() || KeyEscape.pressed()) {
 				changeScene(U"Main_scene", SCENE_FADE_TIME);
 			}
-			if (DragDrop::HasNewFilePaths()) {
-				for (const auto& dropped : DragDrop::GetDroppedFilePaths()) {
-					import_book_future = async(launch::async, import_book, dropped.path.narrow());
-					importing = true;
-				}
-			}
-		}
-		else if (!imported) {
-			getData().fonts.font25(language.get("book", "loading")).draw(Arg::topCenter(X_CENTER, sy), getData().colors.white);
-			if (import_book_future.wait_for(chrono::seconds(0)) == future_status::ready) {
-				failed = import_book_future.get();
-				imported = true;
+			if (import_button.clicked() || KeyEnter.pressed()) {
+				failed = import_transcript_processing();
+				done = true;
 			}
 		}
 		else {
-			if (failed) {
-				getData().fonts.font25(language.get("book", "import_failed")).draw(Arg::topCenter(X_CENTER, sy), getData().colors.white);
-				back_button.draw();
-				if (back_button.clicked() || KeyEscape.pressed()) {
-					changeScene(U"Main_scene", SCENE_FADE_TIME);
-				}
+			if (!failed) {
+				getData().graph_resources.need_init = false;
+				changeScene(U"Main_scene", SCENE_FADE_TIME);
 			}
 			else {
-				changeScene(U"Main_scene", SCENE_FADE_TIME);
+				getData().fonts.font25(language.get("in_out", "import_failed")).draw(Arg::topCenter(X_CENTER, sy), getData().colors.white);
+				single_back_button.draw();
+				if (single_back_button.clicked() || KeyEscape.pressed()) {
+					changeScene(U"Main_scene", SCENE_FADE_TIME);
+				}
 			}
 		}
 	}
 
 	void draw() const override {
 
+	}
+
+private:
+	bool import_transcript_processing() {
+		Board h_bd;
+		h_bd.reset();
+		bool failed_res = false;
+		String transcript_tmp = U"";
+		String transcript_str = Unicode::Widen(transcript).replace(U"\r", U"").replace(U"\n", U"").replace(U" ", U"");
+		cerr << transcript_str.narrow() << endl;
+		if (transcript_str.size() % 2 != 0 && transcript_str.size() >= 120) {
+			failed_res = true;
+		}
+		else {
+			vector<History_elem> n_history;
+			int y, x;
+			uint64_t legal;
+			Flip flip;
+			h_bd.reset();
+			History_elem history_elem;
+			int player = BLACK;
+			history_elem.set(h_bd, player, GRAPH_IGNORE_VALUE, -1, -1, -1, "");
+			n_history.emplace_back(history_elem);
+			for (int i = 0; i < (int)transcript_str.size(); i += 2) {
+				x = (int)transcript_str[i] - (int)'a';
+				if (x < 0 || HW <= x) {
+					x = (int)transcript_str[i] - (int)'A';
+					if (x < 0 || HW <= x) {
+						failed_res = true;
+						break;
+					}
+				}
+				y = (int)transcript_str[i + 1] - (int)'1';
+				if (y < 0 || HW <= y) {
+					failed_res = true;
+					break;
+				}
+				y = HW_M1 - y;
+				x = HW_M1 - x;
+				legal = h_bd.get_legal();
+				if (1 & (legal >> (y * HW + x))) {
+					calc_flip(&flip, &h_bd, y * HW + x);
+					h_bd.move_board(&flip);
+					player ^= 1;
+					if (h_bd.get_legal() == 0ULL) {
+						h_bd.pass();
+						player ^= 1;
+						if (h_bd.get_legal() == 0ULL) {
+							h_bd.pass();
+							player ^= 1;
+							if (i != transcript_str.size() - 2) {
+								failed_res = true;
+								break;
+							}
+						}
+					}
+				}
+				else {
+					failed_res = true;
+					break;
+				}
+				n_history.back().next_policy = y * HW + x;
+				history_elem.set(h_bd, player, GRAPH_IGNORE_VALUE, -1, y * HW + x, -1, "");
+				n_history.emplace_back(history_elem);
+			}
+			if (!failed_res) {
+				getData().graph_resources.nodes[0] = n_history;
+				getData().graph_resources.nodes[1].clear();
+				getData().graph_resources.n_discs = getData().graph_resources.nodes[0].back().board.n_discs();
+			}
+		}
+		return failed_res;
 	}
 };
 

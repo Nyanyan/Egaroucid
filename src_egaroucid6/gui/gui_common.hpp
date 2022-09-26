@@ -26,4 +26,14 @@ struct History_elem {
 		next_policy = -1;
 		level = -1;
 	}
+
+	void set(Board b, int p, int vv, int l, int pl, int npl, string o) {
+		board = b;
+		player = p;
+		v = vv;
+		level = l;
+		policy = pl;
+		next_policy = npl;
+		opening_name = o;
+	}
 };
