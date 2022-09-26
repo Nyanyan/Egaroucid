@@ -9,6 +9,7 @@ struct History_elem {
 	Board board;
 	int player;
 	int v;
+	int level;
 	int policy;
 	int next_policy;
 	string opening_name;
@@ -23,5 +24,6 @@ struct History_elem {
 		v = GRAPH_IGNORE_VALUE;
 		policy = -1;
 		next_policy = -1;
+		level = -1;
 	}
 };
