@@ -300,6 +300,7 @@ struct Menu_elements {
 struct Graph_resources {
 	vector<History_elem> nodes[2];
 	int n_discs;
+	int delta;
 	int put_mode;
 	bool need_init;
 
@@ -311,6 +312,7 @@ struct Graph_resources {
 		nodes[0].clear();
 		nodes[1].clear();
 		n_discs = 4;
+		delta = 0;
 		put_mode = 0;
 		need_init = true;
 	}
@@ -730,13 +732,16 @@ public:
 	void update() override {
 		Scene::SetBackground(getData().colors.green);
 
+		// init
+		getData().graph_resources.delta = 0;
+
 		// opening
 		update_opening();
 
 		// menu
 		menu_game();
-		menu_in_out();
 		menu_manipulate();
+		menu_in_out();
 		menu_book();
 
 		// analyze
@@ -853,6 +858,9 @@ private:
 		if (getData().menu_elements.input_transcript) {
 			changeScene(U"Import_transcript", SCENE_FADE_TIME);
 		}
+		if (getData().menu_elements.input_board) {
+			changeScene(U"Import_board", SCENE_FADE_TIME);
+		}
 	}
 
 	void menu_manipulate() {
@@ -863,9 +871,11 @@ private:
 		if (!ai_status.analyzing) {
 			if (getData().menu_elements.backward) {
 				--getData().graph_resources.n_discs;
+				getData().graph_resources.delta = -1;
 			}
 			if (getData().menu_elements.forward) {
 				++getData().graph_resources.n_discs;
+				getData().graph_resources.delta = 1;
 			}
 		}
 		if (getData().menu_elements.convert_180) {
@@ -972,12 +982,14 @@ private:
 
 		if (MouseX1.down() || KeyLeft.down() || KeyA.down() || (move_board_button_status.left_pushed != BUTTON_NOT_PUSHED && tim() - move_board_button_status.left_pushed >= BUTTON_LONG_PRESS_THRESHOLD)) {
 			--getData().graph_resources.n_discs;
+			getData().graph_resources.delta = -1;
 			if (KeyLeft.down() || KeyA.down()) {
 				move_board_button_status.left_pushed = tim();
 			}
 		}
 		else if (MouseX2.down() || KeyRight.down() || KeyD.down() || (move_board_button_status.right_pushed != BUTTON_NOT_PUSHED && tim() - move_board_button_status.right_pushed >= BUTTON_LONG_PRESS_THRESHOLD)) {
 			++getData().graph_resources.n_discs;
+			getData().graph_resources.delta = 1;
 			if (KeyRight.down() || KeyD.down()) {
 				move_board_button_status.right_pushed = tim();
 			}
@@ -985,7 +997,7 @@ private:
 	}
 
 	void update_n_discs() {
-		int max_n_discs = getData().graph_resources.nodes[getData().graph_resources.put_mode][getData().graph_resources.nodes[getData().graph_resources.put_mode].size() - 1].board.n_discs();
+		int max_n_discs = getData().graph_resources.nodes[getData().graph_resources.put_mode].back().board.n_discs();
 		getData().graph_resources.n_discs = min(getData().graph_resources.n_discs, max_n_discs);
 		int min_n_discs = getData().graph_resources.nodes[GRAPH_MODE_NORMAL][0].board.n_discs();
 		if (getData().graph_resources.nodes[GRAPH_MODE_INSPECT].size()) {
@@ -1009,9 +1021,10 @@ private:
 			getData().graph_resources.nodes[GRAPH_MODE_INSPECT].emplace_back(getData().graph_resources.nodes[GRAPH_MODE_NORMAL][node_idx_0]);
 			node_idx = getData().graph_resources.node_find(getData().graph_resources.put_mode, getData().graph_resources.n_discs);
 		}
-		if (node_idx == -1) {
-			cerr << "history vector element not found 1" << endl;
-			return;
+		while (node_idx == -1) {
+			//cerr << "history vector element not found 1" << endl;
+			getData().graph_resources.n_discs += getData().graph_resources.delta;
+			node_idx = getData().graph_resources.node_find(GRAPH_MODE_NORMAL, getData().graph_resources.n_discs);
 		}
 		if (getData().history_elem.board != getData().graph_resources.nodes[getData().graph_resources.put_mode][node_idx].board) {
 			stop_calculating();
@@ -1089,6 +1102,7 @@ private:
 				int sgn = getData().history_elem.player == 0 ? 1 : -1;
 				move_processing(HW2_M1 - search_result.policy);
 				getData().graph_resources.nodes[getData().graph_resources.put_mode].back().v = sgn * search_result.value;
+				getData().graph_resources.nodes[getData().graph_resources.put_mode].back().level = getData().menu_elements.level;
 			}
 			ai_status.ai_thinking = false;
 		}
@@ -1100,7 +1114,7 @@ private:
 			getData().history_elem.opening_name = new_opening;
 			int node_idx = getData().graph_resources.node_find(getData().graph_resources.put_mode, getData().graph_resources.n_discs);
 			if (node_idx == -1) {
-				cerr << "history vector element not found 3" << endl;
+				cerr << "history vector element not found 2" << endl;
 				return;
 			}
 			getData().graph_resources.nodes[getData().graph_resources.put_mode][node_idx].opening_name = new_opening;
@@ -1170,30 +1184,6 @@ private:
 
 
 
-		title.init(language.get("in_out", "in_out"));
-
-		menu_e.init_button(language.get("in_out", "in"), &menu_elements->dummy);
-		side_menu.init_button(language.get("in_out", "input_transcript"), &menu_elements->input_transcript);
-		menu_e.push(side_menu);
-		side_menu.init_button(language.get("in_out", "input_board"), &menu_elements->input_board);
-		menu_e.push(side_menu);
-		side_menu.init_button(language.get("in_out", "edit_board"), &menu_elements->edit_board);
-		menu_e.push(side_menu);
-		side_menu.init_button(language.get("in_out", "input_game"), &menu_elements->input_game);
-		menu_e.push(side_menu);
-		title.push(menu_e);
-
-		menu_e.init_button(language.get("in_out", "out"), &menu_elements->dummy);
-		side_menu.init_button(language.get("in_out", "output_transcript"), &menu_elements->copy_transcript);
-		menu_e.push(side_menu);
-		side_menu.init_button(language.get("in_out", "output_game"), &menu_elements->save_game);
-		menu_e.push(side_menu);
-		title.push(menu_e);
-
-		menu.push(title);
-
-
-
 
 		title.init(language.get("operation", "operation"));
 
@@ -1211,6 +1201,30 @@ private:
 		side_menu.init_button(language.get("operation", "convert", "black_line"), &menu_elements->convert_blackline);
 		menu_e.push(side_menu);
 		side_menu.init_button(language.get("operation", "convert", "white_line"), &menu_elements->convert_whiteline);
+		menu_e.push(side_menu);
+		title.push(menu_e);
+
+		menu.push(title);
+
+
+
+		title.init(language.get("in_out", "in_out"));
+
+		menu_e.init_button(language.get("in_out", "in"), &menu_elements->dummy);
+		side_menu.init_button(language.get("in_out", "input_transcript"), &menu_elements->input_transcript);
+		menu_e.push(side_menu);
+		side_menu.init_button(language.get("in_out", "input_board"), &menu_elements->input_board);
+		menu_e.push(side_menu);
+		side_menu.init_button(language.get("in_out", "edit_board"), &menu_elements->edit_board);
+		menu_e.push(side_menu);
+		side_menu.init_button(language.get("in_out", "input_game"), &menu_elements->input_game);
+		menu_e.push(side_menu);
+		title.push(menu_e);
+
+		menu_e.init_button(language.get("in_out", "out"), &menu_elements->dummy);
+		side_menu.init_button(language.get("in_out", "output_transcript"), &menu_elements->copy_transcript);
+		menu_e.push(side_menu);
+		side_menu.init_button(language.get("in_out", "output_game"), &menu_elements->save_game);
 		menu_e.push(side_menu);
 		title.push(menu_e);
 
@@ -1800,6 +1814,7 @@ private:
 	bool done;
 	bool failed;
 	string transcript;
+	vector<History_elem> n_history;
 
 public:
 	Import_transcript(const InitData& init) : IScene{ init } {
@@ -1850,6 +1865,9 @@ public:
 		}
 		else {
 			if (!failed) {
+				getData().graph_resources.init();
+				getData().graph_resources.nodes[0] = n_history;
+				getData().graph_resources.n_discs = getData().graph_resources.nodes[0].back().board.n_discs();
 				getData().graph_resources.need_init = false;
 				changeScene(U"Main_scene", SCENE_FADE_TIME);
 			}
@@ -1872,14 +1890,11 @@ private:
 		Board h_bd;
 		h_bd.reset();
 		bool failed_res = false;
-		String transcript_tmp = U"";
 		String transcript_str = Unicode::Widen(transcript).replace(U"\r", U"").replace(U"\n", U"").replace(U" ", U"");
-		cerr << transcript_str.narrow() << endl;
 		if (transcript_str.size() % 2 != 0 && transcript_str.size() >= 120) {
 			failed_res = true;
 		}
 		else {
-			vector<History_elem> n_history;
 			int y, x;
 			uint64_t legal;
 			Flip flip;
@@ -1930,11 +1945,127 @@ private:
 				history_elem.set(h_bd, player, GRAPH_IGNORE_VALUE, -1, y * HW + x, -1, "");
 				n_history.emplace_back(history_elem);
 			}
-			if (!failed_res) {
-				getData().graph_resources.nodes[0] = n_history;
-				getData().graph_resources.nodes[1].clear();
-				getData().graph_resources.n_discs = getData().graph_resources.nodes[0].back().board.n_discs();
+		}
+		return failed_res;
+	}
+};
+
+class Import_board : public App::Scene {
+private:
+	Button single_back_button;
+	Button back_button;
+	Button import_button;
+	bool done;
+	bool failed;
+	Board board;
+	int player;
+	string board_str;
+
+public:
+	Import_board(const InitData& init) : IScene{ init } {
+		single_back_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "back"), getData().fonts.font25, getData().colors.white, getData().colors.black);
+		back_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "back"), getData().fonts.font25, getData().colors.white, getData().colors.black);
+		import_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("in_out", "import"), getData().fonts.font25, getData().colors.white, getData().colors.black);
+		done = false;
+		failed = false;
+		board_str.clear();
+	}
+
+	void update() override {
+		Scene::SetBackground(getData().colors.green);
+		const int icon_width = (LEFT_RIGHT - LEFT_LEFT) / 2;
+		getData().resources.icon.scaled((double)icon_width / getData().resources.icon.width()).draw(X_CENTER - icon_width / 2, 20);
+		getData().resources.logo.scaled((double)icon_width / getData().resources.logo.width()).draw(X_CENTER - icon_width / 2, 20 + icon_width);
+		int sy = 20 + icon_width + 50;
+		if (!done) {
+			getData().fonts.font25(language.get("in_out", "input_board")).draw(Arg::topCenter(X_CENTER, sy), getData().colors.white);
+			Rect text_area{ X_CENTER - 300, sy + 40, 600, 70 };
+			text_area.draw(getData().colors.light_cyan).drawFrame(2, getData().colors.black);
+			String str = Unicode::Widen(board_str);
+			TextInput::UpdateText(str);
+			const String editingText = TextInput::GetEditingText();
+			bool return_pressed = false;
+			if (KeyControl.pressed() && KeyV.down()) {
+				String clip_text;
+				Clipboard::GetText(clip_text);
+				str += clip_text;
 			}
+			if (str.size()) {
+				if (str[str.size() - 1] == '\n') {
+					str.replace(U"\n", U"");
+					return_pressed = true;
+				}
+			}
+			board_str = str.narrow();
+			getData().fonts.font15(str + U'|' + editingText).draw(text_area.stretched(-4), getData().colors.black);
+			back_button.draw();
+			import_button.draw();
+			if (back_button.clicked() || KeyEscape.pressed()) {
+				changeScene(U"Main_scene", SCENE_FADE_TIME);
+			}
+			if (import_button.clicked() || KeyEnter.pressed()) {
+				failed = import_board_processing();
+				done = true;
+			}
+		}
+		else {
+			if (!failed) {
+				getData().graph_resources.init();
+				History_elem history_elem;
+				history_elem.reset();
+				getData().graph_resources.nodes[0].emplace_back(history_elem);
+				history_elem.player = player;
+				history_elem.board = board;
+				getData().graph_resources.nodes[0].emplace_back(history_elem);
+				getData().graph_resources.n_discs = board.n_discs();
+				getData().graph_resources.need_init = false;
+				changeScene(U"Main_scene", SCENE_FADE_TIME);
+			}
+			else {
+				getData().fonts.font25(language.get("in_out", "import_failed")).draw(Arg::topCenter(X_CENTER, sy), getData().colors.white);
+				single_back_button.draw();
+				if (single_back_button.clicked() || KeyEscape.pressed()) {
+					changeScene(U"Main_scene", SCENE_FADE_TIME);
+				}
+			}
+		}
+	}
+
+	void draw() const override {
+
+	}
+
+private:
+	bool import_board_processing() {
+		String board_str_str = Unicode::Widen(board_str).replace(U"\r", U"").replace(U"\n", U"").replace(U" ", U"");
+		bool failed_res = false;
+		int bd_arr[HW2];
+		Board bd;
+		if (board_str_str.size() != HW2 + 1) {
+			failed_res = true;
+		}
+		else {
+			for (int i = 0; i < HW2; ++i) {
+				if (board_str_str[i] == '0' || board_str_str[i] == 'B' || board_str_str[i] == 'b' || board_str_str[i] == 'X' || board_str_str[i] == 'x' || board_str_str[i] == '*')
+					bd_arr[i] = BLACK;
+				else if (board_str_str[i] == '1' || board_str_str[i] == 'W' || board_str_str[i] == 'w' || board_str_str[i] == 'O' || board_str_str[i] == 'o')
+					bd_arr[i] = WHITE;
+				else if (board_str_str[i] == '.' || board_str_str[i] == '-')
+					bd_arr[i] = VACANT;
+				else {
+					failed_res = true;
+					break;
+				}
+			}
+			if (board_str_str[HW2] == '0' || board_str_str[HW2] == 'B' || board_str_str[HW2] == 'b' || board_str_str[HW2] == 'X' || board_str_str[HW2] == 'x' || board_str_str[HW2] == '*')
+				player = 0;
+			else if (board_str_str[HW2] == '1' || board_str_str[HW2] == 'W' || board_str_str[HW2] == 'w' || board_str_str[HW2] == 'O' || board_str_str[HW2] == 'o')
+				player = 1;
+			else
+				failed_res = true;
+		}
+		if (!failed_res) {
+			board.translate_from_arr(bd_arr, player);
 		}
 		return failed_res;
 	}
@@ -1956,6 +2087,7 @@ void Main() {
 	scene_manager.add <Import_book>(U"Import_book");
 	scene_manager.add <Refer_book>(U"Refer_book");
 	scene_manager.add <Import_transcript>(U"Import_transcript");
+	scene_manager.add <Import_board>(U"Import_board");
 	scene_manager.setFadeColor(Palette::Black);
 	scene_manager.init(U"Silent_load");
 
