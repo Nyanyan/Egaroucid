@@ -1775,6 +1775,66 @@ public:
 	}
 };
 
+class Import_transcript : public App::Scene {
+private:
+	Button back_button;
+	Button import_button;
+	bool imported;
+	bool failed;
+
+public:
+	Import_transcript(const InitData& init) : IScene{ init } {
+		back_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "back"), getData().fonts.font25, getData().colors.white, getData().colors.black);
+		import_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("in_out", "import"), getData().fonts.font25, getData().colors.white, getData().colors.black);
+		imported = false;
+		failed = false;
+	}
+
+	void update() override {
+		Scene::SetBackground(getData().colors.green);
+		const int icon_width = (LEFT_RIGHT - LEFT_LEFT) / 2;
+		getData().resources.icon.scaled((double)(LEFT_RIGHT - LEFT_LEFT) / 2 / getData().resources.icon.width()).draw(X_CENTER - icon_width / 2, 20);
+		getData().resources.logo.scaled((double)(LEFT_RIGHT - LEFT_LEFT) / 2 / getData().resources.logo.width()).draw(X_CENTER - icon_width / 2, 20 + icon_width);
+		int sy = 20 + icon_width + 50;
+		if (!importing) {
+			getData().fonts.font25(language.get("book", "import_explanation")).draw(Arg::topCenter(X_CENTER, sy), getData().colors.white);
+			back_button.draw();
+			if (back_button.clicked() || KeyEscape.pressed()) {
+				changeScene(U"Main_scene", SCENE_FADE_TIME);
+			}
+			if (DragDrop::HasNewFilePaths()) {
+				for (const auto& dropped : DragDrop::GetDroppedFilePaths()) {
+					import_book_future = async(launch::async, import_book, dropped.path.narrow());
+					importing = true;
+				}
+			}
+		}
+		else if (!imported) {
+			getData().fonts.font25(language.get("book", "loading")).draw(Arg::topCenter(X_CENTER, sy), getData().colors.white);
+			if (import_book_future.wait_for(chrono::seconds(0)) == future_status::ready) {
+				failed = import_book_future.get();
+				imported = true;
+			}
+		}
+		else {
+			if (failed) {
+				getData().fonts.font25(language.get("book", "import_failed")).draw(Arg::topCenter(X_CENTER, sy), getData().colors.white);
+				back_button.draw();
+				if (back_button.clicked() || KeyEscape.pressed()) {
+					changeScene(U"Main_scene", SCENE_FADE_TIME);
+				}
+			}
+			else {
+				changeScene(U"Main_scene", SCENE_FADE_TIME);
+			}
+		}
+	}
+
+	void draw() const override {
+
+	}
+};
+
 void Main() {
 	Size window_size = Size(WINDOW_SIZE_X, WINDOW_SIZE_Y);
 	Window::Resize(window_size);
@@ -1790,6 +1850,7 @@ void Main() {
 	scene_manager.add <Main_scene>(U"Main_scene");
 	scene_manager.add <Import_book>(U"Import_book");
 	scene_manager.add <Refer_book>(U"Refer_book");
+	scene_manager.add <Import_transcript>(U"Import_transcript");
 	scene_manager.setFadeColor(Palette::Black);
 	scene_manager.init(U"Silent_load");
 
