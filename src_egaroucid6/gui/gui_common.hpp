@@ -88,6 +88,13 @@ constexpr int INFO_SX = BOARD_SX + BOARD_SIZE + 25;
 // analyze constants
 #define ANALYZE_SIZE 62
 
+// export game constants
+#define EXPORT_GAME_PLAYER_WIDTH 300
+#define EXPORT_GAME_PLAYER_HEIGHT 30
+#define EXPORT_GAME_MEMO_WIDTH 600
+#define EXPORT_GAME_MEMO_HEIGHT 250
+#define EXPORT_GAME_RADIUS 15
+
 // back button constants
 #define BACK_BUTTON_WIDTH 200
 #define BACK_BUTTON_HEIGHT 50
@@ -112,6 +119,7 @@ constexpr int BUTTON3_1_SX = X_CENTER - BUTTON3_WIDTH * 3 / 2 - 10;
 constexpr int BUTTON3_2_SX = X_CENTER - BUTTON3_WIDTH / 2;
 constexpr int BUTTON3_3_SX = X_CENTER + BUTTON3_WIDTH / 2 + 10;
 
+// 2 button vertical constants
 #define BUTTON2_VERTICAL_WIDTH 200
 #define BUTTON2_VERTICAL_HEIGHT 50
 #define BUTTON2_VERTICAL_1_SY 350
