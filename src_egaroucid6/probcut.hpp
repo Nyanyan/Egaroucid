@@ -14,14 +14,14 @@ using namespace std;
 #define probcut_d -3.126668257717306
 #define probcut_e 8.513417624696324
 #define probcut_f -9.55097169285451
-#define probcut_g 5.23198419537373
+#define probcut_g 5.43198419537373
 
 #define probcut_end_a 0.27811777028350226
 #define probcut_end_b 0.9393034706176613
 #define probcut_end_c -0.0003466476344665104
 #define probcut_end_d 0.026804233485840375
 #define probcut_end_e -0.6919837072602527
-#define probcut_end_f 9.88628573583576
+#define probcut_end_f 13.88628573583576
 
 inline double probcut_sigma(int n_stones, int depth1, int depth2){
     double w = n_stones;
@@ -66,8 +66,8 @@ inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, 
     int search_depth;
     if (is_end_search){
         search_depth = ((depth >> 4) & 0xFE) ^ (depth & 1);
-        if (depth >= 23)
-            ++search_depth;
+        //if (depth >= 23)
+        //    ++search_depth;
     } else
         search_depth = ((depth >> 2) & 0xFE) ^ (depth & 1);
     const int depth0_value = mid_evaluate_diff(search);

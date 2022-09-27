@@ -11866,6 +11866,25 @@ same
 47060706219 nodes
 202753486.3899564 nps
 
+2022/09/27 update presearch
+#40 depth 20 value 38 policy a2 nodes 23812211 time 131 nps 181772603
+#41 depth 22 value 0 policy h4 nodes 44916550 time 303 nps 148239438
+#42 depth 22 value 6 policy g2 nodes 38691304 time 175 nps 221093165
+#43 depth 23 value -12 policy c7 nodes 115798279 time 610 nps 189833244
+#44 depth 23 value -14 policy d2 nodes 20468703 time 365 nps 56078638
+#45 depth 24 value 6 policy b2 nodes 448987947 time 2022 nps 222051408
+#46 depth 24 value -8 policy b3 nodes 152807878 time 946 nps 161530526
+#47 depth 25 value 4 policy g2 nodes 41002815 time 787 nps 52100146
+#48 depth 25 value 28 policy f6 nodes 294076086 time 1974 nps 148974714
+#49 depth 26 value 16 policy e1 nodes 502015733 time 4725 nps 106246715
+16 threads
+12.038 sec
+14.658093452453613 sec total
+1682577506 nodes
+139772180.26250207 nps
+
+
+
 
 
 
