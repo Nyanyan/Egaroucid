@@ -8,6 +8,8 @@
 
 using namespace std;
 
+#define PROBCUT_SHALLOW_IGNORE 5
+
 #define probcut_a -0.0027183880227839127
 #define probcut_b -0.010159330980892623
 #define probcut_c 0.04069811753963199
@@ -60,15 +62,13 @@ int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped, con
 int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, const bool *searching);
 
 inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, bool is_end_search, int *v, const bool *searching){
-    //if ((!is_end_search && depth >= 18) || (is_end_search && depth >= 23))
-    //    return false;
+    if (search->first_depth - depth < PROBCUT_SHALLOW_IGNORE)
+        return false;
     bool res = false;
     int search_depth;
-    if (is_end_search){
+    if (is_end_search)
         search_depth = ((depth >> 4) & 0xFE) ^ (depth & 1);
-        //if (depth >= 23)
-        //    ++search_depth;
-    } else
+    else
         search_depth = ((depth >> 2) & 0xFE) ^ (depth & 1);
     const int depth0_value = mid_evaluate_diff(search);
     int error_depth0, error_search;

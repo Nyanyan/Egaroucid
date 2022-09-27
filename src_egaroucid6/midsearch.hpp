@@ -94,14 +94,14 @@ int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped, con
 int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, const bool *searching){
     if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
+    /*
     if (depth <= MID_FAST_DEPTH)
         return nega_alpha(search, alpha, beta, depth, skipped, searching);
-    /*
+    */
     if (depth == 1)
         return nega_alpha_eval1(search, alpha, beta, skipped, searching);
     if (depth == 0)
         return mid_evaluate_diff(search);
-    */
     ++(search->n_nodes);
     int first_alpha = alpha;
     if (legal == LEGAL_UNDEFINED)
