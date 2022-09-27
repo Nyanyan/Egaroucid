@@ -14,14 +14,14 @@ using namespace std;
 #define probcut_d -3.126668257717306
 #define probcut_e 8.513417624696324
 #define probcut_f -9.55097169285451
-#define probcut_g 5.03198419537373
+#define probcut_g 5.23198419537373
 
 #define probcut_end_a 0.27811777028350226
 #define probcut_end_b 0.9393034706176613
 #define probcut_end_c -0.0003466476344665104
 #define probcut_end_d 0.026804233485840375
 #define probcut_end_e -0.6919837072602527
-#define probcut_end_f 13.88628573583576
+#define probcut_end_f 9.88628573583576
 
 inline double probcut_sigma(int n_stones, int depth1, int depth2){
     double w = n_stones;
@@ -60,13 +60,15 @@ int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped, con
 int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, const bool *searching);
 
 inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, bool is_end_search, int *v, const bool *searching){
-    if ((!is_end_search && depth >= 18) || (is_end_search && depth >= 23))
-        return false;
+    //if ((!is_end_search && depth >= 18) || (is_end_search && depth >= 23))
+    //    return false;
     bool res = false;
     int search_depth;
-    if (is_end_search)
+    if (is_end_search){
         search_depth = ((depth >> 4) & 0xFE) ^ (depth & 1);
-    else
+        if (depth >= 23)
+            ++search_depth;
+    } else
         search_depth = ((depth >> 2) & 0xFE) ^ (depth & 1);
     const int depth0_value = mid_evaluate_diff(search);
     int error_depth0, error_search;
