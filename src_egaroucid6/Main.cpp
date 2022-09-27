@@ -693,6 +693,7 @@ public:
 			int load_code = load_future.get();
 			if (load_code == ERR_OK) {
 				cerr << "loaded" << endl;
+				getData().menu_elements.init(&getData().settings, &getData().resources);
 				changeScene(U"Main_scene", SCENE_FADE_TIME);
 			}
 			else {
@@ -766,7 +767,6 @@ private:
 public:
 	Main_scene(const InitData& init) : IScene{ init } {
 		cerr << "main scene loading" << endl;
-		getData().menu_elements.init(&getData().settings, &getData().resources);
 		getData().menu = create_menu(&getData().menu_elements);
 		graph.sx = GRAPH_SX;
 		graph.sy = GRAPH_SY;
@@ -902,6 +902,10 @@ private:
 		}
 		global_searching = true;
 		cerr << "calculation terminated" << endl;
+		reset_ai();
+		reset_hint();
+		reset_analyze();
+		cerr << "reset all calculations" << endl;
 	}
 
 	void menu_game() {
@@ -910,9 +914,6 @@ private:
 			getData().history_elem.reset();
 			getData().graph_resources.init();
 			getData().graph_resources.nodes[getData().graph_resources.put_mode].emplace_back(getData().history_elem);
-			reset_ai();
-			reset_hint();
-			reset_analyze();
 		}
 		if (getData().menu_elements.analyze && !ai_status.ai_thinking && !ai_status.analyzing) {
 			stop_calculating();
