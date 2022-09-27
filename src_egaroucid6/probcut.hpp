@@ -75,11 +75,11 @@ inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, 
     if (is_end_search){
         alpha -= alpha & 1;
         beta += beta & 1;
-        error_depth0 = round(search->mpct * probcut_sigma_end_depth0(search->n_discs));
-        error_search = round(search->mpct * probcut_sigma_end(search->n_discs, search_depth));
+        error_depth0 = ceil(search->mpct * probcut_sigma_end_depth0(search->n_discs));
+        error_search = ceil(search->mpct * probcut_sigma_end(search->n_discs, search_depth));
     } else{
-        error_depth0 = round(search->mpct * probcut_sigma_depth0(search->n_discs, depth));
-        error_search = round(search->mpct * probcut_sigma(search->n_discs, depth, search_depth));
+        error_depth0 = ceil(search->mpct * probcut_sigma_depth0(search->n_discs, depth));
+        error_search = ceil(search->mpct * probcut_sigma(search->n_discs, depth, search_depth));
     }
     if (depth0_value >= beta + error_depth0 && beta + error_search <= SCORE_MAX){
         switch(search_depth){
