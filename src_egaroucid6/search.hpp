@@ -82,7 +82,8 @@ class Search{
         int eval_features[N_SYMMETRY_PATTERNS];
         uint_fast8_t eval_feature_reversed;
         int first_depth;
-    
+        bool use_multi_thread;
+
     public:
         inline void init_board(Board *init_board){
             board = init_board->copy();

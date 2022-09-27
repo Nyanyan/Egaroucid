@@ -15,7 +15,7 @@
 #define PRESEARCH_OFFSET 6
 #define PARALLEL_SPLIT_DIV 6
 
-inline Search_result tree_search(Board board, int depth, bool use_mpc, double mpct, bool show_log){
+inline Search_result tree_search(Board board, int depth, bool use_mpc, double mpct, bool show_log, bool use_multi_thread){
     Search search;
     int g = 0, alpha, beta, policy = -1;
     pair<int, int> result;
@@ -24,6 +24,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
     search.init_board(&board);
     search.n_nodes = 0ULL;
     calc_features(&search);
+    search.use_multi_thread = use_multi_thread;
     uint64_t strt;
 
     if (is_end_search){
@@ -151,7 +152,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
     return res;
 }
 
-inline Search_result tree_search_iterative_deepening(Board board, int depth, bool use_mpc, double mpct, bool show_log){
+inline Search_result tree_search_iterative_deepening(Board board, int depth, bool use_mpc, double mpct, bool show_log, bool use_multi_thread){
     Search search;
     int g = 0, alpha, beta, policy = -1;
     pair<int, int> result;
@@ -162,6 +163,7 @@ inline Search_result tree_search_iterative_deepening(Board board, int depth, boo
     search.use_mpc = use_mpc;
     //search.mpct = max(0.6, mpct - 0.2);
     search.mpct = mpct;
+    search.use_multi_thread = use_multi_thread;
     calc_features(&search);
     //first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth, false, is_end_search, show_log, result.second);
     //search.mpct = mpct;
@@ -187,7 +189,7 @@ inline Search_result tree_search_iterative_deepening(Board board, int depth, boo
     return res;
 }
 
-Search_result ai(Board board, int level, bool use_book, bool show_log){
+Search_result ai(Board board, int level, bool use_book, bool use_multi_thread, bool show_log){
     Search_result res;
     Book_value book_result = book.get_random(&board, 0);
     if (book_result.policy != -1 && use_book){
@@ -217,12 +219,12 @@ Search_result ai(Board board, int level, bool use_book, bool show_log){
         get_level(level, pop_count_ull(board.player | board.opponent) - 4, &is_mid_search, &depth, &use_mpc, &mpct);
         if (show_log)
             cerr << "level status " << level << " " << pop_count_ull(board.player | board.opponent) - 4 << " " << depth << " " << use_mpc << " " << mpct << endl;
-        res = tree_search(board, depth, use_mpc, mpct, show_log);
+        res = tree_search(board, depth, use_mpc, mpct, show_log, use_multi_thread);
     }
     return res;
 }
 
-Search_result ai_hint(Board board, int level, bool use_book, bool show_log){
+Search_result ai_hint(Board board, int level, bool use_book, bool use_multi_thread, bool show_log){
     Search_result res;
     int value_sign = 1;
     if (board.get_legal() == 0ULL){
@@ -267,7 +269,7 @@ Search_result ai_hint(Board board, int level, bool use_book, bool show_log){
         get_level(level, pop_count_ull(board.player | board.opponent) - 4, &is_mid_search, &depth, &use_mpc, &mpct);
         if (show_log)
             cerr << "level status " << level << " " << pop_count_ull(board.player | board.opponent) - 4 << " " << depth << " " << use_mpc << " " << mpct << endl;
-        res = tree_search_iterative_deepening(board, depth, use_mpc, mpct, show_log);
+        res = tree_search_iterative_deepening(board, depth, use_mpc, mpct, show_log, use_multi_thread);
         res.value *= value_sign;
     }
     return res;

@@ -103,8 +103,6 @@ class Thread_pool{
         vector<Worker> workers;
         vector<bool> worker_busy;
         unordered_map<int32_t, Parallel_task> answers;
-        //Parallel_task answers[THREAD_POOL_TASK_ID_SIZE];
-        //atomic<bool> answer_available[THREAD_POOL_TASK_ID_SIZE];
         bool is_requested_termination{false};
         mutex mutex_;
         condition_variable cond_;
@@ -120,17 +118,20 @@ class Thread_pool{
                 workers[i].initialize(this, i);
                 worker_busy[i] = false;
             }
-            //for (int i = 0; i < THREAD_POOL_TASK_ID_SIZE; ++i)
-            //    answer_available[i].store(false);
             n_empty_thread = n_threads;
         }
 
         ~Thread_pool() {
+            is_requested_termination = true;
             wait_until_idle();
             request_termination();
         };
 
         void resize(int n){
+            cerr << "resizing" << endl;
+            is_requested_termination = true;
+            request_termination();
+            cerr << "terminated" << endl;
             unique_lock<mutex> lock(mutex_);
             workers.clear();
             n_threads = n;
@@ -186,22 +187,8 @@ class Thread_pool{
             if (answers.find(id) == answers.end())
                 return false;
             *res = answers[id].copy();
-            /*
-            if ((id % THREAD_POOL_ERASE_STEP) == 0){
-                unique_lock<mutex> lock(mutex_);
-                answers.erase(id + 1 - THREAD_POOL_ERASE_STEP, id + 1);
-            }
-            */
             answers.erase(id);
             return true;
-            /*
-            if (answer_available[id].load(memory_order_relaxed)){
-                *res = answers[id].copy();
-                answer_available[id].store(false);
-                return true;
-            }
-            return false;
-            */
         }
 
         int get_n_empty_thread() const{
