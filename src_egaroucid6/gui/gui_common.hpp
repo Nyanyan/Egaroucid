@@ -406,6 +406,8 @@ struct AI_status {
 	bool hint_use_stable[HW2];
 	double hint_values_stable[HW2];
 	int hint_types_stable[HW2];
+	bool hint_use_multi_thread;
+	int hint_n_doing_tasks;
 
 	bool analyzing{ false };
 	future<Search_result> analyze_future[ANALYZE_SIZE];
