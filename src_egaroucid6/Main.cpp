@@ -875,7 +875,17 @@ private:
 		ai_status.hint_calculating = false;
 	}
 
+	void reset_ai() {
+		ai_status.ai_thinking = false;
+	}
+
+	void reset_analyze() {
+		ai_status.analyzing = false;
+		ai_status.analyze_task_stack.clear();
+	}
+
 	void stop_calculating() {
+		cerr << "terminating calculation" << endl;
 		global_searching = false;
 		if (ai_status.ai_future.valid()) {
 			ai_status.ai_future.get();
@@ -891,6 +901,7 @@ private:
 			}
 		}
 		global_searching = true;
+		cerr << "calculation terminated" << endl;
 	}
 
 	void menu_game() {
@@ -899,9 +910,11 @@ private:
 			getData().history_elem.reset();
 			getData().graph_resources.init();
 			getData().graph_resources.nodes[getData().graph_resources.put_mode].emplace_back(getData().history_elem);
+			reset_ai();
 			reset_hint();
+			reset_analyze();
 		}
-		if (getData().menu_elements.analyze) {
+		if (getData().menu_elements.analyze && !ai_status.ai_thinking && !ai_status.analyzing) {
 			stop_calculating();
 			init_analyze();
 		}
@@ -1155,15 +1168,17 @@ private:
 				ai_status.ai_thinking = true;
 			}
 		}
-		else if (ai_status.ai_future.wait_for(chrono::seconds(0)) == future_status::ready) {
-			Search_result search_result = ai_status.ai_future.get();
-			if (1 & (legal >> search_result.policy)) {
-				int sgn = getData().history_elem.player == 0 ? 1 : -1;
-				move_processing(HW2_M1 - search_result.policy);
-				getData().graph_resources.nodes[getData().graph_resources.put_mode].back().v = sgn * search_result.value;
-				getData().graph_resources.nodes[getData().graph_resources.put_mode].back().level = getData().menu_elements.level;
+		else if (ai_status.ai_future.valid()) {
+			if (ai_status.ai_future.wait_for(chrono::seconds(0)) == future_status::ready) {
+				Search_result search_result = ai_status.ai_future.get();
+				if (1 & (legal >> search_result.policy)) {
+					int sgn = getData().history_elem.player == 0 ? 1 : -1;
+					move_processing(HW2_M1 - search_result.policy);
+					getData().graph_resources.nodes[getData().graph_resources.put_mode].back().v = sgn * search_result.value;
+					getData().graph_resources.nodes[getData().graph_resources.put_mode].back().level = getData().menu_elements.level;
+				}
+				ai_status.ai_thinking = false;
 			}
-			ai_status.ai_thinking = false;
 		}
 	}
 
@@ -2218,18 +2233,26 @@ private:
 	vector<Button> buttons;
 	Button back_button;
 	int strt_idx;
+	int n_games;
 
 public:
 	Import_game(const InitData& init) : IScene{ init } {
 		strt_idx = 0;
 		back_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "back"), getData().fonts.font25, getData().colors.white, getData().colors.black);
+		n_games = 0;
 	}
 
 	void update() override {
 		getData().fonts.font25(language.get("in_out", "input_game")).draw(Arg::topCenter(X_CENTER, 10), getData().colors.white);
+
 		back_button.draw();
 		if (back_button.clicked() || KeyEscape.pressed()) {
 			changeScene(U"Main_scene", SCENE_FADE_TIME);
+		}
+		for (int i = 0; i < n_games; ++i) {
+			if (buttons[i].clicked()) {
+				string transcript = game_abstracts[i].transcript.narrow();
+			}
 		}
 	}
 
