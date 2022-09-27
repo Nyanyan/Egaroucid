@@ -244,6 +244,12 @@ private:
 		if (getData().menu_elements.input_game) {
 			changeScene(U"Import_game", SCENE_FADE_TIME);
 		}
+		if (getData().menu_elements.copy_transcript) {
+			copy_transcript();
+		}
+		if (getData().menu_elements.save_game) {
+			changeScene(U"Export_game", SCENE_FADE_TIME);
+		}
 	}
 
 	void menu_manipulate() {
@@ -958,5 +964,35 @@ private:
 		if (task_finished) {
 			analyze_do_task();
 		}
+	}
+
+	void copy_transcript() {
+		string transcript;
+		int inspect_switch_n_discs = INF;
+		if (getData().graph_resources.put_mode == 1) {
+			if (inspect_switch_n_discs = getData().graph_resources.nodes[GRAPH_MODE_INSPECT].size()) {
+				inspect_switch_n_discs = getData().graph_resources.nodes[GRAPH_MODE_INSPECT][0].board.n_discs();
+			}
+			else {
+				cerr << "no node found in inspect mode" << endl;
+			}
+		}
+		for (History_elem& history_elem : getData().graph_resources.nodes[GRAPH_MODE_NORMAL]) {
+			if (history_elem.board.n_discs() >= inspect_switch_n_discs) {
+				break;
+			}
+			if (history_elem.policy != -1) {
+				transcript += idx_to_coord(history_elem.policy);
+			}
+		}
+		if (inspect_switch_n_discs != INF) {
+			for (History_elem& history_elem : getData().graph_resources.nodes[GRAPH_MODE_INSPECT]) {
+				if (history_elem.policy != -1) {
+					transcript += idx_to_coord(history_elem.policy);
+				}
+			}
+		}
+		cerr << transcript << endl;
+		Clipboard::SetText(Unicode::Widen(transcript));
 	}
 };

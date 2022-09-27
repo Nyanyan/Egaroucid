@@ -10,10 +10,8 @@
 #include "function/radio_button.hpp"
 #include "gui_common.hpp"
 
-vector<History_elem> import_transcript_processing(string transcript, bool* failed) {
-	Board h_bd;
-	h_bd.reset();
-	vector<History_elem> n_history;
+vector<History_elem> import_transcript_processing(vector<History_elem> n_history, History_elem strt_elem, string transcript, bool* failed) {
+	Board h_bd = strt_elem.board;
 	String transcript_str = Unicode::Widen(transcript).replace(U"\r", U"").replace(U"\n", U"").replace(U" ", U"");
 	if (transcript_str.size() % 2 != 0 && transcript_str.size() >= 120) {
 		*failed = true;
@@ -22,11 +20,10 @@ vector<History_elem> import_transcript_processing(string transcript, bool* faile
 		int y, x;
 		uint64_t legal;
 		Flip flip;
-		h_bd.reset();
 		History_elem history_elem;
-		int player = BLACK;
-		history_elem.set(h_bd, player, GRAPH_IGNORE_VALUE, -1, -1, -1, "");
-		n_history.emplace_back(history_elem);
+		int player = strt_elem.player;
+		//history_elem.set(h_bd, player, GRAPH_IGNORE_VALUE, -1, -1, -1, "");
+		//n_history.emplace_back(history_elem);
 		for (int i = 0; i < (int)transcript_str.size(); i += 2) {
 			x = (int)transcript_str[i] - (int)'a';
 			if (x < 0 || HW <= x) {
@@ -78,18 +75,22 @@ private:
 	Button single_back_button;
 	Button back_button;
 	Button import_button;
+	Button import_from_position_button;
 	bool done;
 	bool failed;
 	string transcript;
 	vector<History_elem> n_history;
+	bool imported_from_position;
 
 public:
 	Import_transcript(const InitData& init) : IScene{ init } {
 		single_back_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "back"), getData().fonts.font25, getData().colors.white, getData().colors.black);
-		back_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "back"), getData().fonts.font25, getData().colors.white, getData().colors.black);
-		import_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("in_out", "import"), getData().fonts.font25, getData().colors.white, getData().colors.black);
+		back_button.init(BUTTON3_1_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("common", "back"), getData().fonts.font25, getData().colors.white, getData().colors.black);
+		import_button.init(BUTTON3_2_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("in_out", "import"), getData().fonts.font25, getData().colors.white, getData().colors.black);
+		import_from_position_button.init(BUTTON3_3_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("in_out", "import_from_this_position"), getData().fonts.font15, getData().colors.white, getData().colors.black);
 		done = false;
 		failed = false;
+		imported_from_position = false;
 		transcript.clear();
 	}
 
@@ -122,19 +123,41 @@ public:
 			getData().fonts.font15(str + U'|' + editingText).draw(text_area.stretched(-4), getData().colors.black);
 			back_button.draw();
 			import_button.draw();
+			import_from_position_button.draw();
 			if (back_button.clicked() || KeyEscape.pressed()) {
 				changeScene(U"Main_scene", SCENE_FADE_TIME);
 			}
 			if (import_button.clicked() || KeyEnter.pressed()) {
-				n_history = import_transcript_processing(transcript, &failed);
+				History_elem history_elem;
+				Board h_bd;
+				h_bd.reset();
+				history_elem.set(h_bd, BLACK, GRAPH_IGNORE_VALUE, -1, -1, -1, "");
+				n_history.emplace_back(history_elem);
+				n_history = import_transcript_processing(n_history, history_elem, transcript, &failed);
 				done = true;
+			}
+			if (import_from_position_button.clicked()) {
+				for (History_elem history_elem : getData().graph_resources.nodes[getData().graph_resources.put_mode]) {
+					if (getData().history_elem.board.n_discs() >= history_elem.board.n_discs()) {
+						n_history.emplace_back(history_elem);
+					}
+				}
+				n_history = import_transcript_processing(n_history, getData().history_elem, transcript, &failed);
+				done = true;
+				imported_from_position = true;
 			}
 		}
 		else {
 			if (!failed) {
-				getData().graph_resources.init();
-				getData().graph_resources.nodes[0] = n_history;
-				getData().graph_resources.n_discs = getData().graph_resources.nodes[0].back().board.n_discs();
+				if (!imported_from_position) {
+					getData().graph_resources.init();
+					getData().graph_resources.nodes[0] = n_history;
+					getData().graph_resources.n_discs = getData().graph_resources.nodes[0].back().board.n_discs();
+				}
+				else {
+					getData().graph_resources.nodes[getData().graph_resources.put_mode] = n_history;
+				}
+				getData().graph_resources.n_discs = getData().graph_resources.nodes[getData().graph_resources.put_mode].back().board.n_discs();
 				getData().graph_resources.need_init = false;
 				changeScene(U"Main_scene", SCENE_FADE_TIME);
 			}
@@ -142,6 +165,7 @@ public:
 				getData().fonts.font25(language.get("in_out", "import_failed")).draw(Arg::topCenter(X_CENTER, sy), getData().colors.white);
 				single_back_button.draw();
 				if (single_back_button.clicked() || KeyEscape.pressed()) {
+					getData().graph_resources.need_init = false;
 					changeScene(U"Main_scene", SCENE_FADE_TIME);
 				}
 			}

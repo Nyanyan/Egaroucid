@@ -25,6 +25,7 @@ void Main() {
 	scene_manager.add <Import_board>(U"Import_board");
 	scene_manager.add <Edit_board>(U"Edit_board");
 	scene_manager.add <Import_game>(U"Import_game");
+	scene_manager.add <Export_game>(U"Export_game");
 	scene_manager.setFadeColor(Palette::Black);
 	scene_manager.init(U"Silent_load");
 
