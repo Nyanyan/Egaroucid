@@ -1,13 +1,8 @@
 ﻿#include <iostream>
 #include <future>
 #include "ai.hpp"
-#include "gui/silent_load.hpp"
-#include "gui/load.hpp"
-#include "gui/main_scene.hpp"
-#include "gui/book.hpp"
-#include "gui/input.hpp"
+#include "gui/gui.hpp"
 
-#include <Siv3D.hpp> // OpenSiv3D v0.6.3
 
 using namespace std;
 

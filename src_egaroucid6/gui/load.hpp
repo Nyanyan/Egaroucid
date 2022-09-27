@@ -9,7 +9,6 @@
 #include "function/button.hpp"
 #include "function/radio_button.hpp"
 #include "gui_common.hpp"
-#include <Siv3D.hpp> // OpenSiv3D v0.6.3
 
 int init_ai(const Settings* settings, const Directories* directories) {
 	thread_pool.resize(settings->n_threads - 1);

@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include <iostream>
+#include <Siv3D.hpp> // OpenSiv3D v0.6.3
 #include "./ai.hpp"
 #include "version.hpp"
 
