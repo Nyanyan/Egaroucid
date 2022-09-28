@@ -102,6 +102,7 @@ public:
 		menu_in_out();
 		menu_book();
 		menu_help();
+		menu_language();
 
 		// analyze
 		if (ai_status.analyzing) {
@@ -374,6 +375,25 @@ private:
 		}
 		if (getData().menu_elements.license_siv3d) {
 			LicenseManager::ShowInBrowser();
+		}
+	}
+
+	void menu_language() {
+		for (int i = 0; i < (int)getData().resources.language_names.size(); ++i) {
+			if (getData().menu_elements.languages[i]) {
+				if (getData().settings.lang_name != getData().resources.language_names[i]) {
+					string lang_file = "resources/languages/" + getData().resources.language_names[i] + ".json";
+					if (!language.init(lang_file)) {
+						cerr << "language setting error" << endl;
+						lang_file = "resources/languages/" + getData().settings.lang_name + ".json";
+						language.init(lang_file);
+					}
+					else {
+						getData().settings.lang_name = getData().resources.language_names[i];
+						getData().menu = create_menu(&getData().menu_elements);
+					}
+				}
+			}
 		}
 	}
 
