@@ -80,6 +80,11 @@ public:
 	}
 
 	void update() override {
+		if (System::GetUserActions() & UserAction::CloseButtonClicked) {
+			stop_calculating();
+			changeScene(U"Close", SCENE_FADE_TIME);
+		}
+
 		Scene::SetBackground(getData().colors.green);
 
 		// multi threading
@@ -235,21 +240,31 @@ private:
 
 	void menu_in_out() {
 		if (getData().menu_elements.input_transcript) {
+			stop_calculating();
+			resume_calculating();
 			changeScene(U"Import_transcript", SCENE_FADE_TIME);
 		}
 		if (getData().menu_elements.input_board) {
+			stop_calculating();
+			resume_calculating();
 			changeScene(U"Import_board", SCENE_FADE_TIME);
 		}
 		if (getData().menu_elements.edit_board) {
+			stop_calculating();
+			resume_calculating();
 			changeScene(U"Edit_board", SCENE_FADE_TIME);
 		}
 		if (getData().menu_elements.input_game) {
+			stop_calculating();
+			resume_calculating();
 			changeScene(U"Import_game", SCENE_FADE_TIME);
 		}
 		if (getData().menu_elements.copy_transcript) {
 			copy_transcript();
 		}
 		if (getData().menu_elements.save_game) {
+			stop_calculating();
+			resume_calculating();
 			changeScene(U"Export_game", SCENE_FADE_TIME);
 		}
 	}
@@ -356,9 +371,13 @@ private:
 
 	void menu_book() {
 		if (getData().menu_elements.book_import) {
+			stop_calculating();
+			resume_calculating();
 			changeScene(U"Import_book", SCENE_FADE_TIME);
 		}
 		if (getData().menu_elements.book_reference) {
+			stop_calculating();
+			resume_calculating();
 			changeScene(U"Refer_book", SCENE_FADE_TIME);
 		}
 	}
@@ -958,7 +977,6 @@ private:
 				loop_time = min((int)ai_status.hint_task_stack.size(), getData().menu_elements.n_threads - ai_status.hint_n_doing_tasks);
 			}
 			if (loop_time > 0) {
-				loop_time = 1;
 				for (int i = 0; i < loop_time; ++i) {
 					pair<int, function<Search_result()>> task = ai_status.hint_task_stack.back();
 					ai_status.hint_task_stack.pop_back();

@@ -42,8 +42,5 @@ void Main() {
 		if (scene_manager.get()->menu_elements.show_log) {
 			scene_manager.get()->fonts.font15(logger_String).draw(Arg::bottomLeft(5, WINDOW_SIZE_Y - 5), scene_manager.get()->colors.white);
 		}
-		if (System::GetUserActions() & UserAction::CloseButtonClicked) {
-			scene_manager.changeScene(U"Close", SCENE_FADE_TIME);
-		}
 	}
 }
