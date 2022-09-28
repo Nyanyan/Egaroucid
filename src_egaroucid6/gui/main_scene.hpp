@@ -553,6 +553,8 @@ private:
 		uint64_t legal = getData().history_elem.board.get_legal();
 		if (!ai_status.ai_thinking) {
 			if (legal) {
+				stop_calculating();
+				resume_calculating();
 				ai_status.ai_future = async(launch::async, ai, getData().history_elem.board, getData().menu_elements.level, getData().menu_elements.use_book, true, true);
 				ai_status.ai_thinking = true;
 			}
@@ -562,9 +564,9 @@ private:
 				Search_result search_result = ai_status.ai_future.get();
 				if (1 & (legal >> search_result.policy)) {
 					int sgn = getData().history_elem.player == 0 ? 1 : -1;
-					move_processing(HW2_M1 - search_result.policy);
 					getData().graph_resources.nodes[getData().graph_resources.put_mode].back().v = sgn * search_result.value;
 					getData().graph_resources.nodes[getData().graph_resources.put_mode].back().level = getData().menu_elements.level;
+					move_processing(HW2_M1 - search_result.policy);
 				}
 				ai_status.ai_thinking = false;
 			}
@@ -882,6 +884,8 @@ private:
 	void hint_init_calculating() {
 		uint64_t legal = getData().history_elem.board.get_legal();
 		if (ai_status.hint_level == HINT_NOT_CALCULATING) {
+			stop_calculating();
+			resume_calculating();
 			for (int cell = 0; cell < HW2; ++cell) {
 				ai_status.hint_values[cell] = HINT_INIT_VALUE;
 				ai_status.hint_use[cell] = (bool)(1 & (legal >> (HW2_M1 - cell)));
@@ -894,8 +898,10 @@ private:
 		int before_level = ai_status.hint_level;
 		int n_moves = getData().history_elem.board.n_discs() - 4;
 		++ai_status.hint_level;
-		while (same_level(before_level, ai_status.hint_level, n_moves) && ai_status.hint_level <= getData().menu_elements.level) {
-			++ai_status.hint_level;
+		if (ai_status.hint_level > 1) {
+			while (same_level(before_level, ai_status.hint_level, n_moves) && ai_status.hint_level <= getData().menu_elements.level) {
+				++ai_status.hint_level;
+			}
 		}
 		if (ai_status.hint_level <= getData().menu_elements.level) {
 			vector<pair<int, int>> value_cells;
@@ -921,12 +927,13 @@ private:
 					++next_task_size;
 				}
 			}
-			ai_status.hint_use_multi_thread = true; // next_task_size < getData().menu_elements.n_threads;
+			//ai_status.hint_use_multi_thread = next_task_size < getData().menu_elements.n_threads;
 			/*
 			if (ai_status.hint_level <= 10) {
 				ai_status.hint_use_multi_thread = false;
 			}
 			*/
+			ai_status.hint_use_multi_thread = true;
 			idx = 0;
 			for (pair<int, int>& value_cell : value_cells) {
 				if (idx++ >= hint_adoption_threshold) {
@@ -1071,7 +1078,7 @@ private:
 		}
 		cerr << inspect_switch_n_discs << endl;
 		for (History_elem& history_elem : getData().graph_resources.nodes[GRAPH_MODE_NORMAL]) {
-			if (history_elem.board.n_discs() + 1 >= inspect_switch_n_discs || history_elem.board.n_discs() > getData().history_elem.board.n_discs()) {
+			if (history_elem.board.n_discs() + 1 >= inspect_switch_n_discs || history_elem.board.n_discs() >= getData().history_elem.board.n_discs()) {
 				break;
 			}
 			if (history_elem.next_policy != -1) {
@@ -1083,7 +1090,7 @@ private:
 				transcript += idx_to_coord(getData().graph_resources.nodes[GRAPH_MODE_INSPECT][0].policy);
 			}
 			for (History_elem& history_elem : getData().graph_resources.nodes[GRAPH_MODE_INSPECT]) {
-				if (history_elem.board.n_discs() > getData().history_elem.board.n_discs()) {
+				if (history_elem.board.n_discs() >= getData().history_elem.board.n_discs()) {
 					break;
 				}
 				if (history_elem.next_policy != -1) {
