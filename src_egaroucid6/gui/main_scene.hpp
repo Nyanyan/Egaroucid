@@ -133,11 +133,13 @@ public:
 			((getData().history_elem.player == BLACK && getData().menu_elements.ai_put_black) || (getData().history_elem.player == WHITE && getData().menu_elements.ai_put_white)) &&
 			getData().history_elem.board.n_discs() == getData().graph_resources.nodes[GRAPH_MODE_NORMAL][getData().graph_resources.nodes[GRAPH_MODE_NORMAL].size() - 1].board.n_discs();
 		if (need_start_game_button) {
+			need_start_game_button_calculation();
 			start_game_button.draw();
 			if (start_game_button.clicked()) {
 				need_start_game_button = false;
+				stop_calculating();
+				resume_calculating();
 			}
-			need_start_game_button_calculation();
 		}
 		if (!move_ignore) {
 			if (ai_should_move) {
@@ -151,7 +153,7 @@ public:
 		// board drawing
 		draw_board(getData().fonts, getData().colors, getData().history_elem);
 
-		bool hint_ignore = ai_should_move || ai_status.analyzing;
+		bool hint_ignore = ai_should_move || ai_status.analyzing || need_start_game_button;
 
 		// hint / legalcalculating & drawing
 		if (!hint_ignore) {

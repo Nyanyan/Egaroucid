@@ -442,6 +442,7 @@ public:
 				games.emplace_back(game_abstract);
 			}
 		}
+		reverse(games.begin(), games.end());
 	}
 
 	void update() override {
