@@ -45,29 +45,12 @@ public:
 		getData().fonts.font20(language.get("in_out", "memo")).draw(Arg::topCenter(X_CENTER, 110), getData().colors.white);
 		Rect memo_area{ X_CENTER - EXPORT_GAME_MEMO_WIDTH / 2, 140, EXPORT_GAME_MEMO_WIDTH, EXPORT_GAME_MEMO_HEIGHT };
 		const String editingText = TextInput::GetEditingText();
-		bool tab_inputted = false;
-		if (active_cells[0]) {
-			tab_inputted = black_player_name.narrow().find('\t') != string::npos;
-		}
-		else if (active_cells[1]) {
-			tab_inputted = white_player_name.narrow().find('\t') != string::npos;
-		}
-		else if (active_cells[2]) {
-			tab_inputted = memo.narrow().find('\t') != string::npos;
-		}
-		if (tab_inputted) {
-			for (int i = 0; i < 3; ++i) {
-				if (active_cells[i]) {
-					active_cells[i] = false;
-					active_cells[(i + 1) % 3] = true;
-					break;
-				}
-			}
-			black_player_name = black_player_name.replaced(U"\t", U"");
-			white_player_name = white_player_name.replaced(U"\t", U"");
-			memo = memo.replaced(U"\t", U"");
-		}
-		if (black_area.leftClicked() || active_cells[0]) {
+		bool active_draw = false;
+		if (!active_draw && (black_area.leftClicked() || active_cells[0])) {
+			active_draw = true;
+			active_cells[0] = true;
+			active_cells[1] = false;
+			active_cells[2] = false;
 			black_area.draw(getData().colors.light_cyan).drawFrame(2, getData().colors.black);
 			TextInput::UpdateText(black_player_name);
 			if (KeyControl.pressed() && KeyV.down()) {
@@ -75,16 +58,27 @@ public:
 				Clipboard::GetText(clip_text);
 				black_player_name += clip_text;
 			}
+			if (black_player_name.narrow().find('\t') != string::npos) {
+				for (int i = 0; i < 3; ++i) {
+					if (active_cells[i]) {
+						active_cells[i] = false;
+						active_cells[(i + 1) % 3] = true;
+						break;
+					}
+				}
+			}
+			black_player_name = black_player_name.replaced(U"\r", U"").replaced(U"\n", U" ").replaced(U"\t", U"");
 			getData().fonts.font15(black_player_name + U'|' + editingText).draw(black_area.stretched(-4), getData().colors.black);
-			active_cells[0] = true;
-			active_cells[1] = false;
-			active_cells[2] = false;
 		}
 		else {
 			black_area.draw(getData().colors.white).drawFrame(2, getData().colors.black);
 			getData().fonts.font15(black_player_name).draw(black_area.stretched(-4), getData().colors.black);
 		}
-		if (white_area.leftClicked() || active_cells[1]) {
+		if (!active_draw && (white_area.leftClicked() || active_cells[1])) {
+			active_draw = true;
+			active_cells[0] = false;
+			active_cells[1] = true;
+			active_cells[2] = false;
 			white_area.draw(getData().colors.light_cyan).drawFrame(2, getData().colors.black);
 			TextInput::UpdateText(white_player_name);
 			if (KeyControl.pressed() && KeyV.down()) {
@@ -92,16 +86,27 @@ public:
 				Clipboard::GetText(clip_text);
 				white_player_name += clip_text;
 			}
+			if (white_player_name.narrow().find('\t') != string::npos) {
+				for (int i = 0; i < 3; ++i) {
+					if (active_cells[i]) {
+						active_cells[i] = false;
+						active_cells[(i + 1) % 3] = true;
+						break;
+					}
+				}
+			}
+			white_player_name = white_player_name.replaced(U"\r", U"").replaced(U"\n", U" ").replaced(U"\t", U"");
 			getData().fonts.font15(white_player_name + U'|' + editingText).draw(white_area.stretched(-4), getData().colors.black);
-			active_cells[0] = false;
-			active_cells[1] = true;
-			active_cells[2] = false;
 		}
 		else {
 			white_area.draw(getData().colors.white).drawFrame(2, getData().colors.black);
 			getData().fonts.font15(white_player_name).draw(white_area.stretched(-4), getData().colors.black);
 		}
-		if (memo_area.leftClicked() || active_cells[2]) {
+		if (!active_draw && (memo_area.leftClicked() || active_cells[2])) {
+			active_draw = true;
+			active_cells[0] = false;
+			active_cells[1] = false;
+			active_cells[2] = true;
 			memo_area.draw(getData().colors.light_cyan).drawFrame(2, getData().colors.black);
 			TextInput::UpdateText(memo);
 			if (KeyControl.pressed() && KeyV.down()) {
@@ -109,10 +114,18 @@ public:
 				Clipboard::GetText(clip_text);
 				memo += clip_text;
 			}
+			if (memo.narrow().find('\t') != string::npos) {
+				for (int i = 0; i < 3; ++i) {
+					if (active_cells[i]) {
+						active_cells[i] = false;
+						active_cells[(i + 1) % 3] = true;
+						break;
+					}
+				}
+			}
+			memo = memo.replaced(U"\t", U"");
 			getData().fonts.font15(memo + U'|' + editingText).draw(memo_area.stretched(-4), getData().colors.black);
-			active_cells[0] = false;
-			active_cells[1] = false;
-			active_cells[2] = true;
+			
 		}
 		else {
 			memo_area.draw(getData().colors.white).drawFrame(2, getData().colors.black);
@@ -235,12 +248,12 @@ private:
 			json[n_discs][GAME_LEVEL] = history_elem.level;
 			json[n_discs][GAME_POLICY] = history_elem.policy;
 		}
-		String save_path = Unicode::Widen(getData().directories.document_dir) + U"Egaroucid/games/" + date + U".json";
+		const String save_path = Unicode::Widen(getData().directories.document_dir) + U"Egaroucid/games/" + date + U".json";
 		json.save(save_path);
 
-		String csv_path = Unicode::Widen(getData().directories.document_dir) + U"Egaroucid/games/summary.csv";
+		const String csv_path = Unicode::Widen(getData().directories.document_dir) + U"Egaroucid/games/summary.csv";
 		CSV csv{ csv_path };
-		String memo_summary_all = memo.replace(U"\r", U"").replace(U"\n", U"");
+		String memo_summary_all = memo.replaced(U"\r", U"").replaced(U"\n", U" ");
 		String memo_summary;
 		for (int i = 0; i < min((int)memo_summary_all.size(), GAME_MEMO_SUMMARY_SIZE); ++i) {
 			memo_summary += memo_summary_all[i];

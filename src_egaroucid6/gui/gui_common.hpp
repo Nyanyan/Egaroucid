@@ -37,10 +37,6 @@ constexpr int Y_CENTER = WINDOW_SIZE_Y / 2;
 #define ERR_IMPORT_SETTINGS 1
 
 // constant definition
-#define AI_MODE_HUMAN_AI 0
-#define AI_MODE_AI_HUMAN 1
-#define AI_MODE_AI_AI 2
-#define AI_MODE_HUMAN_HUMAN 3
 #define SHOW_ALL_HINT 35
 #define UPDATE_CHECK_ALREADY_UPDATED 0
 #define UPDATE_CHECK_UPDATE_FOUND 1
@@ -95,6 +91,25 @@ constexpr int INFO_SX = BOARD_SX + BOARD_SIZE + 25;
 #define EXPORT_GAME_MEMO_HEIGHT 250
 #define EXPORT_GAME_RADIUS 15
 
+// import game constants
+#define IMPORT_GAME_N_GAMES_ON_WINDOW 10
+#define IMPORT_GAME_SX 30
+#define IMPORT_GAME_SY 65
+#define IMPORT_GAME_HEIGHT 45
+#define IMPORT_GAME_PLAYER_WIDTH 220
+#define IMPORT_GAME_PLAYER_HEIGHT 25
+#define IMPORT_GAME_SCORE_WIDTH 60
+#define IMPORT_GAME_WINNER_BLACK 0
+#define IMPORT_GAME_WINNER_WHITE 1
+#define IMPORT_GAME_WINNER_DRAW 2
+#define IMPORT_GAME_BUTTON_SX 660
+#define IMPORT_GAME_BUTTON_WIDTH 100
+#define IMPORT_GAME_BUTTON_HEIGHT 25
+#define IMPORT_GAME_BUTTON_RADIUS 7
+#define IMPORT_GAME_DATE_WIDTH 120
+constexpr int IMPORT_GAME_BUTTON_SY = (IMPORT_GAME_HEIGHT - IMPORT_GAME_BUTTON_HEIGHT) / 2;
+constexpr int IMPORT_GAME_WIDTH = WINDOW_SIZE_X - IMPORT_GAME_SX * 2;
+
 // game saving constants
 #define GAME_DATE U"date"
 #define GAME_BLACK_PLAYER U"black_player"
@@ -109,7 +124,7 @@ constexpr int INFO_SX = BOARD_SX + BOARD_SIZE + 25;
 #define GAME_LEVEL U"level"
 #define GAME_POLICY U"policy"
 #define GAME_DISCS_UNDEFINED -1
-#define GAME_MEMO_SUMMARY_SIZE 10
+#define GAME_MEMO_SUMMARY_SIZE 40
 
 
 // back button constants
@@ -178,13 +193,16 @@ struct History_elem {
 };
 
 struct Colors {
-	Color green{ Color(36, 153, 114, 100) };
+	Color green{ Color(36, 153, 114) };
 	Color black{ Palette::Black };
 	Color white{ Palette::White };
 	Color dark_gray{ Color(51, 51, 51) };
 	Color cyan{ Palette::Cyan };
 	Color red{ Palette::Red };
 	Color light_cyan{ Palette::Lightcyan };
+	Color chocolate{ Color(210, 105, 30) };
+	Color darkred{ Color(139, 0, 0) };
+	Color darkblue{ Color(0, 0, 139) };
 };
 
 struct Directories {
@@ -447,7 +465,6 @@ struct Game_abstract {
 	int white_score;
 	String memo;
 	String date;
-	String transcript;
 };
 
 using App = SceneManager<String, Common_resources>;

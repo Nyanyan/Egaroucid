@@ -418,34 +418,187 @@ public:
 
 class Import_game : public App::Scene {
 private:
-	vector<Game_abstract> game_abstracts;
-	vector<Button> buttons;
+	vector<Game_abstract> games;
 	Button back_button;
 	int strt_idx;
-	int n_games;
+	bool failed;
 
 public:
 	Import_game(const InitData& init) : IScene{ init } {
 		strt_idx = 0;
 		back_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "back"), getData().fonts.font25, getData().colors.white, getData().colors.black);
-		n_games = 0;
-	}
-
-	void update() override {
-		getData().fonts.font25(language.get("in_out", "input_game")).draw(Arg::topCenter(X_CENTER, 10), getData().colors.white);
-
-		back_button.draw();
-		if (back_button.clicked() || KeyEscape.pressed()) {
-			changeScene(U"Main_scene", SCENE_FADE_TIME);
-		}
-		for (int i = 0; i < n_games; ++i) {
-			if (buttons[i].clicked()) {
-				string transcript = game_abstracts[i].transcript.narrow();
+		failed = false;
+		const String csv_path = Unicode::Widen(getData().directories.document_dir) + U"Egaroucid/games/summary.csv";
+		const CSV csv{ csv_path };
+		if (csv) {
+			for (size_t row = 0; row < csv.rows(); ++row) {
+				Game_abstract game_abstract;
+				game_abstract.date = csv[row][0];
+				game_abstract.black_player = csv[row][1];
+				game_abstract.white_player = csv[row][2];
+				game_abstract.memo = csv[row][3];
+				game_abstract.black_score = ParseOr<int32>(csv[row][4], GAME_DISCS_UNDEFINED);
+				game_abstract.white_score = ParseOr<int32>(csv[row][5], GAME_DISCS_UNDEFINED);
+				games.emplace_back(game_abstract);
 			}
 		}
 	}
 
+	void update() override {
+		getData().fonts.font25(language.get("in_out", "input_game")).draw(Arg::topCenter(X_CENTER, 10), getData().colors.white);
+		if (failed) {
+			getData().fonts.font20(language.get("in_out", "import_failed")).draw(Arg::center(X_CENTER, Y_CENTER), getData().colors.white);
+		}
+		else if (games.size() == 0) {
+			getData().fonts.font20(language.get("in_out", "no_game_available")).draw(Arg::center(X_CENTER, Y_CENTER), getData().colors.white);
+		}
+		else {
+			vector<pair<int, Button>> buttons;
+			int sy = IMPORT_GAME_SY;
+			if (strt_idx > 0) {
+				getData().fonts.font15(U"︙").draw(Arg::bottomCenter = Vec2{ X_CENTER, sy }, getData().colors.white);
+			}
+			sy += 8;
+			for (int i = strt_idx; i < min((int)games.size(), strt_idx + IMPORT_GAME_N_GAMES_ON_WINDOW); ++i) {
+				Rect rect;
+				rect.y = sy;
+				rect.x = IMPORT_GAME_SX;
+				rect.w = IMPORT_GAME_WIDTH;
+				rect.h = IMPORT_GAME_HEIGHT;
+				int winner = -1;
+				if (games[i].black_score != GAME_DISCS_UNDEFINED && games[i].white_score != GAME_DISCS_UNDEFINED) {
+					if (games[i].black_score > games[i].white_score) {
+						winner = IMPORT_GAME_WINNER_BLACK;
+					}
+					else if (games[i].black_score < games[i].white_score) {
+						winner = IMPORT_GAME_WINNER_WHITE;
+					}
+					else {
+						winner = IMPORT_GAME_WINNER_DRAW;
+					}
+				}
+				rect.draw(getData().colors.green).drawFrame(1.0, getData().colors.white);
+				getData().fonts.font15(games[i].date.substr(0, 10)).draw(IMPORT_GAME_SX + 10, sy + 1, getData().colors.white);
+				Rect black_player_rect;
+				black_player_rect.w = IMPORT_GAME_PLAYER_WIDTH;
+				black_player_rect.h = IMPORT_GAME_PLAYER_HEIGHT;
+				black_player_rect.y = sy + 1;
+				black_player_rect.x = IMPORT_GAME_SX + IMPORT_GAME_DATE_WIDTH;
+				if (winner == IMPORT_GAME_WINNER_BLACK) {
+					black_player_rect.draw(getData().colors.darkred);
+				}
+				else if (winner == IMPORT_GAME_WINNER_WHITE) {
+					black_player_rect.draw(getData().colors.darkblue);
+				}
+				else if (winner == IMPORT_GAME_WINNER_DRAW) {
+					black_player_rect.draw(getData().colors.chocolate);
+				}
+				getData().fonts.font15(games[i].black_player).draw(black_player_rect.stretched(-1), getData().colors.white);
+				if (games[i].black_score != GAME_DISCS_UNDEFINED && games[i].white_score != GAME_DISCS_UNDEFINED) {
+					getData().fonts.font15(games[i].black_score).draw(black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH + 5, sy + 1, getData().colors.white);
+					getData().fonts.font15(U"-").draw(black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH + 28, sy + 1, getData().colors.white);
+					getData().fonts.font15(games[i].white_score).draw(black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH + 38, sy + 1, getData().colors.white);
+				}
+				else {
+					getData().fonts.font15(U"?? - ??").draw(black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH + 5, sy + 1, getData().colors.white);
+				}
+				Rect white_player_rect;
+				white_player_rect.w = IMPORT_GAME_PLAYER_WIDTH;
+				white_player_rect.h = IMPORT_GAME_PLAYER_HEIGHT;
+				white_player_rect.y = sy + 1;
+				white_player_rect.x = black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH + IMPORT_GAME_SCORE_WIDTH;
+				if (winner == IMPORT_GAME_WINNER_BLACK) {
+					white_player_rect.draw(getData().colors.darkblue);
+				}
+				else if (winner == IMPORT_GAME_WINNER_WHITE) {
+					white_player_rect.draw(getData().colors.darkred);
+				}
+				else if (winner == IMPORT_GAME_WINNER_DRAW) {
+					white_player_rect.draw(getData().colors.chocolate);
+				}
+				getData().fonts.font15(games[i].white_player).draw(white_player_rect.stretched(-1), getData().colors.white);
+				getData().fonts.font12(games[i].memo).draw(IMPORT_GAME_SX + 10, black_player_rect.y + black_player_rect.h, getData().colors.white);
+				Button button;
+				button.init(IMPORT_GAME_BUTTON_SX, sy + IMPORT_GAME_BUTTON_SY, IMPORT_GAME_BUTTON_WIDTH, IMPORT_GAME_BUTTON_HEIGHT, IMPORT_GAME_BUTTON_RADIUS, language.get("in_out", "import"), getData().fonts.font15, getData().colors.white, getData().colors.black);
+				button.draw();
+				buttons.emplace_back(make_pair(i, button));
+				sy += IMPORT_GAME_HEIGHT;
+			}
+			for (pair<int, Button> button_pair : buttons) {
+				if (button_pair.second.clicked()) {
+					import_game(button_pair.first);
+				}
+			}
+		}
+		back_button.draw();
+		if (back_button.clicked() || KeyEscape.pressed()) {
+			getData().graph_resources.need_init = false;
+			changeScene(U"Main_scene", SCENE_FADE_TIME);
+		}
+		strt_idx = max(0, min((int)games.size() - 1, strt_idx + (int)Mouse::Wheel()));
+	}
+
 	void draw() const override {
 
+	}
+
+private:
+	void import_game(int idx) {
+		const String json_path = Unicode::Widen(getData().directories.document_dir) + U"Egaroucid/games/" + games[idx].date + U".json";
+		JSON game_json = JSON::Load(json_path);
+		if (not game_json) {
+			cerr << "can't open game" << endl;
+			failed = true;
+			return;
+		}
+		getData().graph_resources.nodes[GRAPH_MODE_NORMAL].clear();
+		getData().graph_resources.nodes[GRAPH_MODE_INSPECT].clear();
+		for (int n_discs = 4; n_discs <= HW2; ++n_discs) {
+			String n_discs_str = Format(n_discs);
+			History_elem history_elem;
+			bool error_found = false;
+			if (game_json[n_discs_str][GAME_BOARD_PLAYER].getType() == JSONValueType::Number) {
+				history_elem.board.player = game_json[n_discs_str][GAME_BOARD_PLAYER].get<uint64_t>();
+			}
+			else {
+				error_found = true;
+			}
+			if (game_json[n_discs_str][GAME_BOARD_OPPONENT].getType() == JSONValueType::Number) {
+				history_elem.board.opponent = game_json[n_discs_str][GAME_BOARD_OPPONENT].get<uint64_t>();
+			}
+			else {
+				error_found = true;
+			}
+			if (game_json[n_discs_str][GAME_LEVEL].getType() == JSONValueType::Number) {
+				history_elem.level = game_json[n_discs_str][GAME_LEVEL].get<int>();
+			}
+			else {
+				error_found = true;
+			}
+			if (game_json[n_discs_str][GAME_PLAYER].getType() == JSONValueType::Number) {
+				history_elem.player = game_json[n_discs_str][GAME_PLAYER].get<int>();
+			}
+			else {
+				error_found = true;
+			}
+			if (game_json[n_discs_str][GAME_POLICY].getType() == JSONValueType::Number) {
+				history_elem.policy = game_json[n_discs_str][GAME_POLICY].get<int>();
+			}
+			else {
+				error_found = true;
+			}
+			if (game_json[n_discs_str][GAME_VALUE].getType() == JSONValueType::Number) {
+				history_elem.v = game_json[n_discs_str][GAME_VALUE].get<int>();
+			}
+			else {
+				error_found = true;
+			}
+			if (!error_found) {
+				getData().graph_resources.nodes[GRAPH_MODE_NORMAL].emplace_back(history_elem);
+			}
+		}
+		getData().graph_resources.n_discs = getData().graph_resources.nodes[GRAPH_MODE_NORMAL].back().board.n_discs();
+		getData().graph_resources.need_init = false;
+		changeScene(U"Main_scene", SCENE_FADE_TIME);
 	}
 };
