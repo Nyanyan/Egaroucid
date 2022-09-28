@@ -159,6 +159,7 @@ public:
 				}
 				getData().graph_resources.n_discs = getData().graph_resources.nodes[getData().graph_resources.put_mode].back().board.n_discs();
 				getData().graph_resources.need_init = false;
+				getData().history_elem = getData().graph_resources.nodes[getData().graph_resources.put_mode].back();
 				changeScene(U"Main_scene", SCENE_FADE_TIME);
 			}
 			else {
@@ -246,6 +247,7 @@ public:
 				getData().graph_resources.nodes[0].emplace_back(history_elem);
 				getData().graph_resources.n_discs = board.n_discs();
 				getData().graph_resources.need_init = false;
+				getData().history_elem = getData().graph_resources.nodes[0].back();
 				changeScene(U"Main_scene", SCENE_FADE_TIME);
 			}
 			else {
@@ -405,8 +407,9 @@ public:
 				cerr << "insert" << endl;
 				getData().graph_resources.nodes[getData().graph_resources.put_mode].insert(getData().graph_resources.nodes[getData().graph_resources.put_mode].begin() + insert_place, history_elem);
 			}
-			getData().graph_resources.need_init = false;
 			getData().graph_resources.n_discs = n_discs;
+			getData().graph_resources.need_init = false;
+			getData().history_elem = getData().graph_resources.nodes[getData().graph_resources.put_mode].back();
 			changeScene(U"Main_scene", SCENE_FADE_TIME);
 		}
 	}
@@ -609,6 +612,7 @@ private:
 		}
 		getData().graph_resources.n_discs = getData().graph_resources.nodes[GRAPH_MODE_NORMAL].back().board.n_discs();
 		getData().graph_resources.need_init = false;
+		getData().history_elem = getData().graph_resources.nodes[GRAPH_MODE_NORMAL].back();
 		changeScene(U"Main_scene", SCENE_FADE_TIME);
 	}
 };

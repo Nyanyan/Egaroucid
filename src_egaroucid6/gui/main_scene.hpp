@@ -1120,6 +1120,10 @@ private:
 	}
 
 	void need_start_game_button_calculation() {
-		need_start_game_button = (getData().history_elem.player == BLACK && getData().menu_elements.ai_put_black) || (getData().history_elem.player == WHITE && getData().menu_elements.ai_put_white);
+		need_start_game_button =
+			((getData().history_elem.player == BLACK && getData().menu_elements.ai_put_black) ||
+			(getData().history_elem.player == WHITE && getData().menu_elements.ai_put_white)) &&
+			getData().history_elem.board.n_discs() == getData().graph_resources.nodes[getData().graph_resources.put_mode].back().board.n_discs() &&
+			!getData().history_elem.board.is_end();
 	}
 };
