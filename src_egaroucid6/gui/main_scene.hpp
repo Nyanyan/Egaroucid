@@ -978,7 +978,7 @@ private:
 			}
 		}
 		for (History_elem& history_elem : getData().graph_resources.nodes[GRAPH_MODE_NORMAL]) {
-			if (history_elem.board.n_discs() >= inspect_switch_n_discs) {
+			if (history_elem.board.n_discs() >= inspect_switch_n_discs || history_elem.board.n_discs() >= getData().history_elem.board.n_discs()) {
 				break;
 			}
 			if (history_elem.policy != -1) {
@@ -987,6 +987,9 @@ private:
 		}
 		if (inspect_switch_n_discs != INF) {
 			for (History_elem& history_elem : getData().graph_resources.nodes[GRAPH_MODE_INSPECT]) {
+				if (history_elem.board.n_discs() >= getData().history_elem.board.n_discs()) {
+					break;
+				}
 				if (history_elem.policy != -1) {
 					transcript += idx_to_coord(history_elem.policy);
 				}

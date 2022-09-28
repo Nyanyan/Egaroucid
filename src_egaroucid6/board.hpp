@@ -229,6 +229,10 @@ class Board {
             return passed;
         }
 
+        inline bool is_end(){
+            return (calc_legal(player, opponent) == 0ULL) && (calc_legal(opponent, player) == 0ULL);
+        }
+
         inline bool check_pass(){
             bool passed = (get_legal() == 0);
             if (passed){

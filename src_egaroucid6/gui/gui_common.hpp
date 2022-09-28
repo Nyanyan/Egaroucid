@@ -95,6 +95,23 @@ constexpr int INFO_SX = BOARD_SX + BOARD_SIZE + 25;
 #define EXPORT_GAME_MEMO_HEIGHT 250
 #define EXPORT_GAME_RADIUS 15
 
+// game saving constants
+#define GAME_DATE U"date"
+#define GAME_BLACK_PLAYER U"black_player"
+#define GAME_WHITE_PLAYER U"white_player"
+#define GAME_BLACK_DISCS U"black_discs"
+#define GAME_WHITE_DISCS U"white_discs"
+#define GAME_MEMO U"memo"
+#define GAME_BOARD_PLAYER U"board_player"
+#define GAME_BOARD_OPPONENT U"board_opponent"
+#define GAME_PLAYER U"player"
+#define GAME_VALUE U"value"
+#define GAME_LEVEL U"level"
+#define GAME_POLICY U"policy"
+#define GAME_DISCS_UNDEFINED -1
+#define GAME_MEMO_SUMMARY_SIZE 10
+
+
 // back button constants
 #define BACK_BUTTON_WIDTH 200
 #define BACK_BUTTON_HEIGHT 50
