@@ -835,6 +835,16 @@ private:
 		}
 	}
 
+	bool same_level(int l1, int l2, int n_moves) {
+		bool m1, m2;
+		int d1, d2;
+		bool u1, u2;
+		double t1, t2;
+		get_level(l1, n_moves, &m1, &d1, &u1, &t1);
+		get_level(l2, n_moves, &m2, &d2, &u2, &t2);
+		return m1 == m2 && d1 == d2 && u1 == u2 && t1 == t2;
+	}
+
 	void hint_init_calculating() {
 		uint64_t legal = getData().history_elem.board.get_legal();
 		if (ai_status.hint_level == HINT_NOT_CALCULATING) {
@@ -847,49 +857,56 @@ private:
 		else {
 			ai_status.hint_available = true;
 		}
+		int before_level = ai_status.hint_level;
+		int n_moves = getData().history_elem.board.n_discs() - 4;
 		++ai_status.hint_level;
-		vector<pair<int, int>> value_cells;
-		for (int cell = 0; cell < HW2; ++cell) {
-			if (ai_status.hint_use[cell]) {
-				value_cells.emplace_back(make_pair(ai_status.hint_values[cell], cell));
-			}
+		while (same_level(before_level, ai_status.hint_level, n_moves) && ai_status.hint_level <= getData().menu_elements.level) {
+			++ai_status.hint_level;
 		}
-		sort(value_cells.begin(), value_cells.end(), compare_value_cell);
-		int n_legal = pop_count_ull(legal);
-		int hint_adoption_threshold = getData().menu_elements.n_disc_hint + max(1, n_legal * (getData().menu_elements.level - ai_status.hint_level) / getData().menu_elements.level);
-		hint_adoption_threshold = min(hint_adoption_threshold, (int)value_cells.size());
-		ai_status.hint_task_stack.clear();
-		Board board;
-		Flip flip;
-		int next_task_size = 0;
-		int idx = 0;
-		for (pair<int, int>& value_cell : value_cells) {
-			if (idx++ >= hint_adoption_threshold) {
-				break;
+		if (ai_status.hint_level <= getData().menu_elements.level) {
+			vector<pair<int, int>> value_cells;
+			for (int cell = 0; cell < HW2; ++cell) {
+				if (ai_status.hint_use[cell]) {
+					value_cells.emplace_back(make_pair(ai_status.hint_values[cell], cell));
+				}
 			}
-			if (ai_status.hint_types[value_cell.second] != HINT_TYPE_BOOK) {
-				++next_task_size;
+			sort(value_cells.begin(), value_cells.end(), compare_value_cell);
+			int n_legal = pop_count_ull(legal);
+			int hint_adoption_threshold = getData().menu_elements.n_disc_hint + max(1, n_legal * (getData().menu_elements.level - ai_status.hint_level) / getData().menu_elements.level);
+			hint_adoption_threshold = min(hint_adoption_threshold, (int)value_cells.size());
+			ai_status.hint_task_stack.clear();
+			Board board;
+			Flip flip;
+			int next_task_size = 0;
+			int idx = 0;
+			for (pair<int, int>& value_cell : value_cells) {
+				if (idx++ >= hint_adoption_threshold) {
+					break;
+				}
+				if (ai_status.hint_types[value_cell.second] != HINT_TYPE_BOOK) {
+					++next_task_size;
+				}
 			}
+			ai_status.hint_use_multi_thread = next_task_size < getData().menu_elements.n_threads;
+			if (ai_status.hint_level <= 10) {
+				ai_status.hint_use_multi_thread = false;
+			}
+			idx = 0;
+			for (pair<int, int>& value_cell : value_cells) {
+				if (idx++ >= hint_adoption_threshold) {
+					break;
+				}
+				if (ai_status.hint_types[value_cell.second] != HINT_TYPE_BOOK) {
+					board = getData().history_elem.board;
+					calc_flip(&flip, &board, (uint_fast8_t)(HW2_M1 - value_cell.second));
+					board.move_board(&flip);
+					ai_status.hint_task_stack.emplace_back(make_pair(value_cell.second, bind(ai_hint, board, ai_status.hint_level, getData().menu_elements.use_book, ai_status.hint_use_multi_thread, false)));
+				}
+			}
+			ai_status.hint_n_doing_tasks = 0;
+			ai_status.hint_calculating = true;
+			cerr << "hint search level " << ai_status.hint_level << " n_tasks " << ai_status.hint_task_stack.size() << " multi_threading " << ai_status.hint_use_multi_thread << endl;
 		}
-		ai_status.hint_use_multi_thread = next_task_size < getData().menu_elements.n_threads;
-		if (ai_status.hint_level <= 10) {
-			ai_status.hint_use_multi_thread = false;
-		}
-		idx = 0;
-		for (pair<int, int>& value_cell : value_cells) {
-			if (idx++ >= hint_adoption_threshold) {
-				break;
-			}
-			if (ai_status.hint_types[value_cell.second] != HINT_TYPE_BOOK) {
-				board = getData().history_elem.board;
-				calc_flip(&flip, &board, (uint_fast8_t)(HW2_M1 - value_cell.second));
-				board.move_board(&flip);
-				ai_status.hint_task_stack.emplace_back(make_pair(value_cell.second, bind(ai_hint, board, ai_status.hint_level, getData().menu_elements.use_book, ai_status.hint_use_multi_thread, false)));
-			}
-		}
-		ai_status.hint_n_doing_tasks = 0;
-		ai_status.hint_calculating = true;
-		cerr << "hint search level " << ai_status.hint_level << " n_tasks " << ai_status.hint_task_stack.size() << " multi_threading " << ai_status.hint_use_multi_thread << endl;
 	}
 
 	void hint_do_task() {
