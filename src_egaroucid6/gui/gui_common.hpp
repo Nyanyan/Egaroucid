@@ -476,6 +476,8 @@ struct AI_status {
 	future<Search_result> analyze_future[ANALYZE_SIZE];
 	int analyze_sgn[ANALYZE_SIZE];
 	vector<pair<Analyze_info, function<Search_result()>>> analyze_task_stack;
+
+	bool book_learning{ false };
 };
 
 struct Game_abstract {

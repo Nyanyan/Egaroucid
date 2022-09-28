@@ -233,3 +233,56 @@ public:
 
 	}
 };
+
+class Learn_book : public App::Scene {
+private:
+	Button stop_button;
+	Button back_button;
+	History_elem history_elem;
+	bool book_learning;
+	bool done;
+	future<void> book_learn_future;
+	Board root_board;
+
+public:
+	Learn_book(const InitData& init) : IScene{ init } {
+		stop_button.init(BUTTON2_VERTICAL_SX, BUTTON2_VERTICAL_2_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("book", "stop_learn"), getData().fonts.font25, getData().colors.white, getData().colors.black);
+		back_button.init(BUTTON2_VERTICAL_SX, BUTTON2_VERTICAL_2_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("common", "back"), getData().fonts.font25, getData().colors.white, getData().colors.black);
+		root_board = getData().history_elem.board;
+		history_elem = getData().history_elem;
+		book_learning = true;
+		done = false;
+		book_learn_future = async(launch::async, learn_book, root_board, getData().menu_elements.level, getData().menu_elements.book_learn_depth, getData().menu_elements.book_learn_error, &history_elem.board, &history_elem.player, getData().settings.book_file, getData().settings.book_file + ".bak", &book_learning);
+	}
+
+	void update() override {
+		Scene::SetBackground(getData().colors.green);
+		getData().fonts.font25(language.get("book", "book_learning")).draw(480, 20, getData().colors.white);
+		draw_board(getData().fonts, getData().colors, history_elem);
+		if (book_learning) {
+			stop_button.draw();
+			if (stop_button.clicked()) {
+				global_searching = false;
+				book_learning = false;
+			}
+		}
+		else if (!done) {
+			if (book_learn_future.wait_for(chrono::seconds(0)) == future_status::ready) {
+				book_learn_future.get();
+				done = true;
+				global_searching = true;
+			}
+		}
+		else {
+			back_button.draw();
+			if (back_button.clicked()) {
+				getData().graph_resources.need_init = false;
+				changeScene(U"Main_scene", SCENE_FADE_TIME);
+			}
+		}
+	}
+
+	void draw() const override {
+
+	}
+};

@@ -390,6 +390,11 @@ private:
 	}
 
 	void menu_book() {
+		if (getData().menu_elements.book_start_learn) {
+			stop_calculating();
+			resume_calculating();
+			changeScene(U"Learn_book", SCENE_FADE_TIME);
+		}
 		if (getData().menu_elements.book_import) {
 			stop_calculating();
 			resume_calculating();

@@ -25,6 +25,7 @@ void Main() {
 	scene_manager.add <Main_scene>(U"Main_scene");
 	scene_manager.add <Import_book>(U"Import_book");
 	scene_manager.add <Refer_book>(U"Refer_book");
+	scene_manager.add <Learn_book>(U"Learn_book");
 	scene_manager.add <Import_transcript>(U"Import_transcript");
 	scene_manager.add <Import_board>(U"Import_board");
 	scene_manager.add <Edit_board>(U"Edit_board");

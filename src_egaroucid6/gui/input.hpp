@@ -337,16 +337,6 @@ public:
 		int board_arr[HW2];
 		history_elem.board.translate_to_arr(board_arr, BLACK);
 		for (int cell = 0; cell < HW2; ++cell) {
-			int x = BOARD_SX + (cell % HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
-			int y = BOARD_SY + (cell / HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
-			if (board_arr[cell] == BLACK) {
-				Circle(x, y, DISC_SIZE).draw(Palette::Black);
-			}
-			else if (board_arr[cell] == WHITE) {
-				Circle(x, y, DISC_SIZE).draw(Palette::White);
-			}
-		}
-		for (int cell = 0; cell < HW2; ++cell) {
 			int x = BOARD_SX + (cell % HW) * BOARD_CELL_SIZE;
 			int y = BOARD_SY + (cell / HW) * BOARD_CELL_SIZE;
 			Rect cell_region(x, y, BOARD_CELL_SIZE, BOARD_CELL_SIZE);

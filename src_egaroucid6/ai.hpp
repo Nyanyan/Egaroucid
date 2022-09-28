@@ -6,6 +6,7 @@
 #include "setting.hpp"
 #include "midsearch.hpp"
 #include "book.hpp"
+#include "book_learn.hpp"
 #include "util.hpp"
 
 #define SEARCH_FINAL 100
