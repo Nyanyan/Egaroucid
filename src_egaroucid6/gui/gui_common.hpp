@@ -55,7 +55,7 @@ constexpr int BOARD_SX = LEFT_LEFT + BOARD_COORD_SIZE;
 constexpr int BOARD_CELL_SIZE = BOARD_SIZE / HW;
 
 // main start game button constants
-#define START_GAME_BUTTON_SX 530
+#define START_GAME_BUTTON_SX 550
 #define START_GAME_BUTTON_SY 110
 #define START_GAME_BUTTON_WIDTH 100
 #define START_GAME_BUTTON_HEIGHT 30
