@@ -322,7 +322,7 @@ class Book{
             int t = 0;
             for (auto itr = book.begin(); itr != book.end(); ++itr){
                 ++t;
-                if (t % 1024 == 0)
+                if (t % 65536 == 0)
                     cerr << "saving book " << (t * 100 / (int)book.size()) << "%" << endl;
                 fout.write((char*)&itr->first.player, 8);
                 fout.write((char*)&itr->first.opponent, 8);

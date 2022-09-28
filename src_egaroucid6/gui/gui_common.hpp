@@ -418,6 +418,11 @@ struct Common_resources {
 	Menu menu;
 	History_elem history_elem;
 	Graph_resources graph_resources;
+	bool book_changed;
+
+	Common_resources() {
+		book_changed = false;
+	}
 };
 
 struct Hint_info {

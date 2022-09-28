@@ -92,61 +92,80 @@ int init_settings_import_str(TextReader* reader, string* res) {
 void init_settings(const Directories* directories, const Resources* resources, Settings* settings) {
 	TextReader reader(U"{}Egaroucid/setting.txt"_fmt(Unicode::Widen(directories->appdata_dir)));
 	if (!reader) {
+		cerr << "err-1" << endl;
 		goto use_default_settings;
 	}
 	else {
 		if (init_settings_import_int(&reader, &settings->n_threads) != ERR_OK) {
+			cerr << "err0" << endl;
 			goto use_default_settings;
 		}
 		if (init_settings_import_bool(&reader, &settings->auto_update_check) != ERR_OK) {
+			cerr << "err1" << endl;
 			goto use_default_settings;
 		}
 		if (init_settings_import_str(&reader, &settings->lang_name) != ERR_OK) {
+			cerr << "err2" << endl;
 			goto use_default_settings;
 		}
 		if (init_settings_import_str(&reader, &settings->book_file) != ERR_OK) {
+			cerr << "err3" << endl;
 			goto use_default_settings;
 		}
 		if (init_settings_import_bool(&reader, &settings->use_book) != ERR_OK) {
+			cerr << "err4" << endl;
 			goto use_default_settings;
 		}
 		if (init_settings_import_int(&reader, &settings->level) != ERR_OK) {
+			cerr << "err5" << endl;
 			goto use_default_settings;
 		}
 		if (init_settings_import_bool(&reader, &settings->ai_put_black) != ERR_OK) {
+			cerr << "err6" << endl;
 			goto use_default_settings;
 		}
 		if (init_settings_import_bool(&reader, &settings->ai_put_white) != ERR_OK) {
+			cerr << "err7" << endl;
 			goto use_default_settings;
 		}
 		if (init_settings_import_bool(&reader, &settings->use_disc_hint) != ERR_OK) {
+			cerr << "err8" << endl;
 			goto use_default_settings;
 		}
 		if (init_settings_import_bool(&reader, &settings->use_umigame_value) != ERR_OK) {
+			cerr << "err9" << endl;
 			goto use_default_settings;
 		}
 		if (init_settings_import_int(&reader, &settings->n_disc_hint) != ERR_OK) {
+			cerr << "err10" << endl;
 			goto use_default_settings;
 		}
 		if (init_settings_import_bool(&reader, &settings->show_legal) != ERR_OK) {
+			cerr << "err11" << endl;
 			goto use_default_settings;
 		}
 		if (init_settings_import_bool(&reader, &settings->show_graph) != ERR_OK) {
+			cerr << "err12" << endl;
 			goto use_default_settings;
 		}
 		if (init_settings_import_bool(&reader, &settings->show_opening_on_cell) != ERR_OK) {
+			cerr << "err13" << endl;
 			goto use_default_settings;
 		}
 		if (init_settings_import_bool(&reader, &settings->show_log) != ERR_OK) {
+			cerr << "err14" << endl;
 			goto use_default_settings;
 		}
 		if (init_settings_import_int(&reader, &settings->book_learn_depth) != ERR_OK) {
+			cerr << "err15" << endl;
 			goto use_default_settings;
 		}
 		if (init_settings_import_int(&reader, &settings->book_learn_error) != ERR_OK) {
+			cerr << "err16" << endl;
 			goto use_default_settings;
 		}
 	}
+	return;
 use_default_settings:
 	init_default_settings(directories, resources, settings);
 }

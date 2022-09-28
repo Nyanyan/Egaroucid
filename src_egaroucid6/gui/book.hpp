@@ -95,10 +95,8 @@ public:
 				changeScene(U"Main_scene", SCENE_FADE_TIME);
 			}
 			if (DragDrop::HasNewFilePaths()) {
-				for (const auto& dropped : DragDrop::GetDroppedFilePaths()) {
-					import_book_future = async(launch::async, import_book, dropped.path.narrow());
-					importing = true;
-				}
+				import_book_future = async(launch::async, import_book, DragDrop::GetDroppedFilePaths()[0].path.narrow());
+				importing = true;
 			}
 		}
 		else if (!imported) {
@@ -117,6 +115,7 @@ public:
 				}
 			}
 			else {
+				getData().book_changed = true;
 				changeScene(U"Main_scene", SCENE_FADE_TIME);
 			}
 		}
@@ -191,6 +190,7 @@ public:
 			}
 			go_button.draw();
 			if (go_button.clicked() || return_pressed) {
+				getData().book_changed = true;
 				getData().settings.book_file = book_file;
 				cerr << "book reference changed to " << book_file << endl;
 				delete_book_future = async(launch::async, delete_book);
