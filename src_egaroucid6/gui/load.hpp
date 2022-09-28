@@ -27,15 +27,14 @@ int init_ai(const Settings* settings, const Directories* directories) {
 	return ERR_OK;
 }
 
-int check_update(const Directories* directories) {
+int check_update(const Directories* directories, String *new_version) {
 	const String version_url = U"https://www.egaroucid-app.nyanyan.dev/version.txt";
 	const FilePath version_save_path = U"{}Egaroucid/version.txt"_fmt(Unicode::Widen(directories->appdata_dir));
 	if (SimpleHTTP::Save(version_url, version_save_path).isOK()) {
 		TextReader reader(version_save_path);
 		if (reader) {
-			String new_version;
-			reader.readLine(new_version);
-			if (EGAROUCID_VERSION != new_version) {
+			reader.readLine(*new_version);
+			if (EGAROUCID_VERSION != *new_version) {
 				return UPDATE_CHECK_UPDATE_FOUND;
 			}
 		}
@@ -45,9 +44,9 @@ int check_update(const Directories* directories) {
 
 
 
-int load_app(Directories* directories, Resources* resources, Settings* settings, bool* update_found) {
+int load_app(Directories* directories, Resources* resources, Settings* settings, bool* update_found, String *new_version) {
 	if (settings->auto_update_check) {
-		if (check_update(directories) == UPDATE_CHECK_UPDATE_FOUND) {
+		if (check_update(directories, new_version) == UPDATE_CHECK_UPDATE_FOUND) {
 			*update_found = true;
 		}
 	}
@@ -62,38 +61,62 @@ private:
 	String tips;
 	bool update_found;
 	future<int> load_future;
+	Button skip_button;
+	Button update_button;
+	String new_version;
 
 public:
 	Load(const InitData& init) : IScene{ init } {
+		skip_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("help", "skip"), getData().fonts.font25, getData().colors.white, getData().colors.black);
+		update_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("help", "download"), getData().fonts.font25, getData().colors.white, getData().colors.black);
 		load_failed = false;
 		tips = language.get_random("tips", "tips");
 		update_found = false;
-		load_future = async(launch::async, load_app, &getData().directories, &getData().resources, &getData().settings, &update_found);
+		load_future = async(launch::async, load_app, &getData().directories, &getData().resources, &getData().settings, &update_found, &new_version);
 	}
 
 	void update() override {
 		Scene::SetBackground(getData().colors.green);
-		const int icon_width = (LEFT_RIGHT - LEFT_LEFT);
-		getData().resources.icon.scaled((double)icon_width / getData().resources.icon.width()).draw(LEFT_LEFT, Y_CENTER - icon_width / 2);
-		getData().resources.logo.scaled((double)icon_width * 0.8 / getData().resources.logo.width()).draw(RIGHT_LEFT, Y_CENTER - 40);
-		if (load_future.wait_for(chrono::seconds(0)) == future_status::ready) {
-			int load_code = load_future.get();
-			if (load_code == ERR_OK) {
-				cerr << "loaded" << endl;
-				getData().menu_elements.init(&getData().settings, &getData().resources);
-				changeScene(U"Main_scene", SCENE_FADE_TIME);
+		if (update_found) {
+			const int icon_width = (LEFT_RIGHT - LEFT_LEFT) / 2;
+			getData().resources.icon.scaled((double)icon_width / getData().resources.icon.width()).draw(X_CENTER - icon_width / 2, 20);
+			getData().resources.logo.scaled((double)icon_width / getData().resources.logo.width()).draw(X_CENTER - icon_width / 2, 20 + icon_width);
+			int sy = 20 + icon_width + 50;
+			getData().fonts.font25(language.get("help", "new_version_available")).draw(Arg::topCenter(X_CENTER, sy), getData().colors.white);
+			sy += 35;
+			getData().fonts.font25(language.get("help", "download?")).draw(Arg::topCenter(X_CENTER, sy), getData().colors.white);
+			skip_button.draw();
+			update_button.draw();
+			if (skip_button.clicked() || KeyEscape.pressed()) {
+				update_found = false;
 			}
-			else {
-				load_failed = true;
+			if (update_button.clicked() || KeyEnter.pressed()) {
+				System::LaunchBrowser(U"https://github.com/Nyanyan/Egaroucid/releases/tag/v{}"_fmt(new_version));
 			}
-		}
-		if (load_failed) {
-			getData().fonts.font50(language.get("loading", "load_failed")).draw(RIGHT_LEFT, Y_CENTER + 30, getData().colors.white);
 		}
 		else {
-			getData().fonts.font50(language.get("loading", "loading")).draw(RIGHT_LEFT, Y_CENTER + 40, getData().colors.white);
-			getData().fonts.font20(language.get("tips", "do_you_know")).draw(RIGHT_LEFT, Y_CENTER + 110, getData().colors.white);
-			getData().fonts.font15(tips).draw(RIGHT_LEFT, Y_CENTER + 140, getData().colors.white);
+			const int icon_width = (LEFT_RIGHT - LEFT_LEFT);
+			getData().resources.icon.scaled((double)icon_width / getData().resources.icon.width()).draw(LEFT_LEFT, Y_CENTER - icon_width / 2);
+			getData().resources.logo.scaled((double)icon_width * 0.8 / getData().resources.logo.width()).draw(RIGHT_LEFT, Y_CENTER - 40);
+			if (load_future.wait_for(chrono::seconds(0)) == future_status::ready) {
+				int load_code = load_future.get();
+				if (load_code == ERR_OK) {
+					cerr << "loaded" << endl;
+					getData().menu_elements.init(&getData().settings, &getData().resources);
+					changeScene(U"Main_scene", SCENE_FADE_TIME);
+				}
+				else {
+					load_failed = true;
+				}
+			}
+			if (load_failed) {
+				getData().fonts.font50(language.get("loading", "load_failed")).draw(RIGHT_LEFT, Y_CENTER + 30, getData().colors.white);
+			}
+			else {
+				getData().fonts.font50(language.get("loading", "loading")).draw(RIGHT_LEFT, Y_CENTER + 40, getData().colors.white);
+				getData().fonts.font20(language.get("tips", "do_you_know")).draw(RIGHT_LEFT, Y_CENTER + 110, getData().colors.white);
+				getData().fonts.font15(tips).draw(RIGHT_LEFT, Y_CENTER + 140, getData().colors.white);
+			}
 		}
 	}
 
