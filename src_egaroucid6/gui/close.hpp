@@ -30,6 +30,7 @@ void save_settings(Menu_elements menu_elements, Settings settings, Directories d
 		writer.writeln((int)menu_elements.show_log);
 		writer.writeln(menu_elements.book_learn_depth);
 		writer.writeln(menu_elements.book_learn_error);
+		writer.writeln((int)menu_elements.show_stable_discs);
 	}
 }
 

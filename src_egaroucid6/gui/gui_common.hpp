@@ -46,6 +46,7 @@ constexpr int Y_CENTER = WINDOW_SIZE_Y / 2;
 #define BOARD_COORD_SIZE 20
 #define DISC_SIZE 20
 #define LEGAL_SIZE 7
+#define STABLE_SIZE 4
 #define BOARD_CELL_FRAME_WIDTH 2
 #define BOARD_DOT_SIZE 5
 #define BOARD_ROUND_FRAME_WIDTH 10
@@ -211,6 +212,7 @@ struct Colors {
 	Color chocolate{ Color(210, 105, 30) };
 	Color darkred{ Color(139, 0, 0) };
 	Color darkblue{ Color(0, 0, 139) };
+	Color burlywood{ Color(222, 184, 135) };
 };
 
 struct Directories {
@@ -244,6 +246,7 @@ struct Settings {
 	bool show_log;
 	int book_learn_depth;
 	int book_learn_error;
+	bool show_stable_discs;
 };
 
 struct Fonts {
@@ -284,6 +287,7 @@ struct Menu_elements {
 	bool show_legal;
 	bool show_graph;
 	bool show_opening_on_cell;
+	bool show_stable_discs;
 	bool show_log;
 
 	// 定石
@@ -340,6 +344,7 @@ struct Menu_elements {
 		show_legal = settings->show_legal;
 		show_graph = settings->show_graph;
 		show_opening_on_cell = settings->show_opening_on_cell;
+		show_stable_discs = settings->show_stable_discs;
 		show_log = settings->show_log;
 
 		book_start_learn = false;

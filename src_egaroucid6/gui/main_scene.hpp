@@ -172,6 +172,11 @@ public:
 			}
 		}
 
+		// stable drawing
+		if (getData().menu_elements.show_stable_discs) {
+			draw_stable_discs();
+		}
+
 		// graph drawing
 		if (getData().menu_elements.show_graph) {
 			graph.draw(getData().graph_resources.nodes[0], getData().graph_resources.nodes[1], getData().graph_resources.n_discs);
@@ -642,6 +647,8 @@ private:
 		title.push(menu_e);
 		menu_e.init_check(language.get("display", "opening_on_cell"), &menu_elements->show_opening_on_cell, menu_elements->show_opening_on_cell);
 		title.push(menu_e);
+		menu_e.init_check(language.get("display", "stable"), &menu_elements->show_stable_discs, menu_elements->show_stable_discs);
+		title.push(menu_e);
 		menu_e.init_check(language.get("display", "log"), &menu_elements->show_log, menu_elements->show_log);
 		title.push(menu_e);
 
@@ -750,7 +757,6 @@ private:
 	}
 
 	void draw_legal(uint64_t ignore) {
-		Flip flip;
 		uint64_t legal = getData().history_elem.board.get_legal();
 		for (int cell = 0; cell < HW2; ++cell) {
 			int x = BOARD_SX + (cell % HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
@@ -847,6 +853,17 @@ private:
 			}
 		}
 		return res;
+	}
+
+	void draw_stable_discs() {
+		uint64_t stable = calc_stability_bits(&getData().history_elem.board);
+		for (int cell = 0; cell < HW2; ++cell) {
+			int x = BOARD_SX + (cell % HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
+			int y = BOARD_SY + (cell / HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
+			if (1 & (stable >> (HW2_M1 - cell))) {
+				Circle(x, y, STABLE_SIZE).draw(getData().colors.burlywood);
+			}
+		}
 	}
 
 	void draw_opening_on_cell() {
