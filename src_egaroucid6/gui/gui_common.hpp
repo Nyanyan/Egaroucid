@@ -92,7 +92,7 @@ constexpr int INFO_SX = BOARD_SX + BOARD_SIZE + 25;
 #define EXPORT_GAME_RADIUS 15
 
 // import game constants
-#define IMPORT_GAME_N_GAMES_ON_WINDOW 10
+#define IMPORT_GAME_N_GAMES_ON_WINDOW 7
 #define IMPORT_GAME_SX 30
 #define IMPORT_GAME_SY 65
 #define IMPORT_GAME_HEIGHT 45
@@ -123,6 +123,7 @@ constexpr int IMPORT_GAME_WIDTH = WINDOW_SIZE_X - IMPORT_GAME_SX * 2;
 #define GAME_VALUE U"value"
 #define GAME_LEVEL U"level"
 #define GAME_POLICY U"policy"
+#define GAME_NEXT_POLICY U"next_policy"
 #define GAME_DISCS_UNDEFINED -1
 #define GAME_MEMO_SUMMARY_SIZE 40
 

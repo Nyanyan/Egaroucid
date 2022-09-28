@@ -46,11 +46,23 @@ public:
 		Rect memo_area{ X_CENTER - EXPORT_GAME_MEMO_WIDTH / 2, 140, EXPORT_GAME_MEMO_WIDTH, EXPORT_GAME_MEMO_HEIGHT };
 		const String editingText = TextInput::GetEditingText();
 		bool active_draw = false;
-		if (!active_draw && (black_area.leftClicked() || active_cells[0])) {
-			active_draw = true;
+		if (black_area.leftClicked()) {
 			active_cells[0] = true;
 			active_cells[1] = false;
 			active_cells[2] = false;
+		}
+		else if (white_area.leftClicked()) {
+			active_cells[0] = false;
+			active_cells[1] = true;
+			active_cells[2] = false;
+		}
+		else if (memo_area.leftClicked()) {
+			active_cells[0] = false;
+			active_cells[1] = false;
+			active_cells[2] = true;
+		}
+		if (!active_draw && active_cells[0]) {
+			active_draw = true;
 			black_area.draw(getData().colors.light_cyan).drawFrame(2, getData().colors.black);
 			TextInput::UpdateText(black_player_name);
 			if (KeyControl.pressed() && KeyV.down()) {
@@ -74,11 +86,8 @@ public:
 			black_area.draw(getData().colors.white).drawFrame(2, getData().colors.black);
 			getData().fonts.font15(black_player_name).draw(black_area.stretched(-4), getData().colors.black);
 		}
-		if (!active_draw && (white_area.leftClicked() || active_cells[1])) {
+		if (!active_draw && active_cells[1]) {
 			active_draw = true;
-			active_cells[0] = false;
-			active_cells[1] = true;
-			active_cells[2] = false;
 			white_area.draw(getData().colors.light_cyan).drawFrame(2, getData().colors.black);
 			TextInput::UpdateText(white_player_name);
 			if (KeyControl.pressed() && KeyV.down()) {
@@ -102,11 +111,8 @@ public:
 			white_area.draw(getData().colors.white).drawFrame(2, getData().colors.black);
 			getData().fonts.font15(white_player_name).draw(white_area.stretched(-4), getData().colors.black);
 		}
-		if (!active_draw && (memo_area.leftClicked() || active_cells[2])) {
+		if (!active_draw && active_cells[2]) {
 			active_draw = true;
-			active_cells[0] = false;
-			active_cells[1] = false;
-			active_cells[2] = true;
 			memo_area.draw(getData().colors.light_cyan).drawFrame(2, getData().colors.black);
 			TextInput::UpdateText(memo);
 			if (KeyControl.pressed() && KeyV.down()) {
@@ -247,6 +253,7 @@ private:
 			json[n_discs][GAME_VALUE] = history_elem.v;
 			json[n_discs][GAME_LEVEL] = history_elem.level;
 			json[n_discs][GAME_POLICY] = history_elem.policy;
+			json[n_discs][GAME_NEXT_POLICY] = history_elem.next_policy;
 		}
 		const String save_path = Unicode::Widen(getData().directories.document_dir) + U"Egaroucid/games/" + date + U".json";
 		json.save(save_path);

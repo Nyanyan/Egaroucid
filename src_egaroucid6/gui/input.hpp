@@ -524,6 +524,9 @@ public:
 				buttons.emplace_back(make_pair(i, button));
 				sy += IMPORT_GAME_HEIGHT;
 			}
+			if (strt_idx + IMPORT_GAME_N_GAMES_ON_WINDOW < (int)games.size() - 1) {
+				getData().fonts.font15(U"︙").draw(Arg::bottomCenter = Vec2{ X_CENTER, 415}, getData().colors.white);
+			}
 			for (pair<int, Button> button_pair : buttons) {
 				if (button_pair.second.clicked()) {
 					import_game(button_pair.first);
@@ -583,6 +586,12 @@ private:
 			}
 			if (game_json[n_discs_str][GAME_POLICY].getType() == JSONValueType::Number) {
 				history_elem.policy = game_json[n_discs_str][GAME_POLICY].get<int>();
+			}
+			else {
+				error_found = true;
+			}
+			if (game_json[n_discs_str][GAME_NEXT_POLICY].getType() == JSONValueType::Number) {
+				history_elem.next_policy = game_json[n_discs_str][GAME_NEXT_POLICY].get<int>();
 			}
 			else {
 				error_found = true;
