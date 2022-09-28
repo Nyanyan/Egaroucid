@@ -14,6 +14,10 @@ void Main() {
 	Window::SetTitle(U"Egaroucid {}"_fmt(EGAROUCID_VERSION));
 	System::SetTerminationTriggers(UserAction::NoAction);
 	Console.open();
+	stringstream logger_stream;
+	//cerr.rdbuf(logger_stream.rdbuf());
+	string logger;
+	String logger_String;
 	
 	App scene_manager;
 	scene_manager.add <Silent_load> (U"Silent_load");
@@ -32,6 +36,12 @@ void Main() {
 
 	while (System::Update()) {
 		scene_manager.update();
+		while (getline(logger_stream, logger))
+			logger_String = Unicode::Widen(logger);
+		logger_stream.clear();
+		if (scene_manager.get()->menu_elements.show_log) {
+			scene_manager.get()->fonts.font15(logger_String).draw(Arg::bottomLeft(5, WINDOW_SIZE_Y - 5), scene_manager.get()->colors.white);
+		}
 		if (System::GetUserActions() & UserAction::CloseButtonClicked) {
 			scene_manager.changeScene(U"Close", SCENE_FADE_TIME);
 		}
