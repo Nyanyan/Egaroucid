@@ -121,9 +121,9 @@ class Thread_pool{
             n_empty_thread = n_threads;
         }
 
-        ~Thread_pool() {
+        void terminate() {
             is_requested_termination = true;
-            wait_until_idle();
+            //wait_until_idle();
             request_termination();
         };
 

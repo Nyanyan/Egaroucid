@@ -56,6 +56,7 @@ public:
 		getData().resources.logo.scaled((double)icon_width * 0.8 / getData().resources.logo.width()).draw(RIGHT_LEFT, Y_CENTER - 40);
 		if (close_future.wait_for(chrono::seconds(0)) == future_status::ready) {
 			close_future.get();
+			thread_pool.terminate();
 			System::Exit();
 		}
 		getData().fonts.font50(language.get("closing")).draw(RIGHT_LEFT, Y_CENTER + 40, getData().colors.white);

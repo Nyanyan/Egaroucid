@@ -42,11 +42,11 @@ for w in range(len(data)):
                 depth2 = y * depth_div + depth_div / 2
                 
                 sigma = statistics.stdev(data[w][x][y])
-                
-                w_n_stones.append(n_stones)
-                x_depth1.append(depth1)
-                y_depth2.append(depth1 - depth2)
-                z_sigma.append(sigma + 4.0)
+                for i in range(3):
+                    w_n_stones.append(n_stones)
+                    x_depth1.append(depth1)
+                    y_depth2.append(depth1 - depth2)
+                    z_sigma.append(sigma + 4.0)
                 '''
                 if y == 0 and sigma >= 3.0:
                     for _ in range(8):
@@ -67,14 +67,14 @@ for w in range(4, 65):
         w_n_stones.append(w)
         x_depth1.append(x)
         y_depth2.append(0)
-        z_sigma.append(12.0)
+        z_sigma.append(9.0)
 
 for w in range(4, 65):
     for xy in range(0, 61, 4):
         w_n_stones.append(w)
         x_depth1.append(xy)
         y_depth2.append(xy)
-        z_sigma.append(0.0)
+        z_sigma.append(2.0)
 
 probcut_params_before = [
     -0.0027183880227839127,
@@ -152,8 +152,8 @@ def plot_fit_result_onephase(n_stones, params):
     ax.set_zlabel('sigma')
     plt.show()
 
-#popt, pcov = curve_fit(f, (w_n_stones, x_depth1, y_depth2), z_sigma, np.array(probcut_params_before))
-popt = probcut_params_before
+popt, pcov = curve_fit(f, (w_n_stones, x_depth1, y_depth2), z_sigma, np.array(probcut_params_before))
+#popt = probcut_params_before
 print([float(elem) for elem in popt])
 for i in range(len(popt)):
     print('#define probcut_' + chr(ord('a') + i), popt[i])

@@ -60,6 +60,8 @@ private:
 	Graph graph;
 	Move_board_button_status move_board_button_status;
 	AI_status ai_status;
+	Button start_game_button;
+	bool need_start_game_button;
 
 public:
 	Main_scene(const InitData& init) : IScene{ init } {
@@ -76,6 +78,8 @@ public:
 			getData().graph_resources.init();
 			getData().graph_resources.nodes[getData().graph_resources.put_mode].emplace_back(getData().history_elem);
 		}
+		start_game_button.init(START_GAME_BUTTON_SX, START_GAME_BUTTON_SY, START_GAME_BUTTON_WIDTH, START_GAME_BUTTON_HEIGHT, START_GAME_BUTTON_RADIUS, language.get("play", "start_game"), getData().fonts.font15, getData().colors.white, getData().colors.black);
+		need_start_game_button_calculation();
 		cerr << "main scene loaded" << endl;
 	}
 
@@ -124,14 +128,22 @@ public:
 		bool move_ignore = ai_status.analyzing;
 		// move
 		bool ai_should_move =
+			!need_start_game_button && 
 			getData().graph_resources.put_mode == GRAPH_MODE_NORMAL &&
 			((getData().history_elem.player == BLACK && getData().menu_elements.ai_put_black) || (getData().history_elem.player == WHITE && getData().menu_elements.ai_put_white)) &&
 			getData().history_elem.board.n_discs() == getData().graph_resources.nodes[GRAPH_MODE_NORMAL][getData().graph_resources.nodes[GRAPH_MODE_NORMAL].size() - 1].board.n_discs();
+		if (need_start_game_button) {
+			start_game_button.draw();
+			if (start_game_button.clicked()) {
+				need_start_game_button = false;
+			}
+			need_start_game_button_calculation();
+		}
 		if (!move_ignore) {
 			if (ai_should_move) {
 				ai_move();
 			}
-			else if (!getData().menu.active()) {
+			else if (!getData().menu.active() && !need_start_game_button) {
 				interact_move();
 			}
 		}
@@ -230,6 +242,7 @@ private:
 			getData().graph_resources.init();
 			getData().graph_resources.nodes[getData().graph_resources.put_mode].emplace_back(getData().history_elem);
 			resume_calculating();
+			need_start_game_button_calculation();
 		}
 		if (getData().menu_elements.analyze && !ai_status.ai_thinking && !ai_status.analyzing) {
 			stop_calculating();
@@ -906,10 +919,12 @@ private:
 					++next_task_size;
 				}
 			}
-			ai_status.hint_use_multi_thread = next_task_size < getData().menu_elements.n_threads;
+			ai_status.hint_use_multi_thread = true; // next_task_size < getData().menu_elements.n_threads;
+			/*
 			if (ai_status.hint_level <= 10) {
 				ai_status.hint_use_multi_thread = false;
 			}
+			*/
 			idx = 0;
 			for (pair<int, int>& value_cell : value_cells) {
 				if (idx++ >= hint_adoption_threshold) {
@@ -964,7 +979,8 @@ private:
 			ai_status.hint_calculating = false;
 		}
 		else if (ai_status.hint_task_stack.size()) {
-			int loop_time = 0;
+			int loop_time = min((int)ai_status.hint_task_stack.size(), getData().menu_elements.n_threads - ai_status.hint_n_doing_tasks);
+			/*
 			if (ai_status.hint_use_multi_thread) {
 				if (max(1, getData().menu_elements.n_threads / HINT_SINGLE_TASK_N_THREAD) - ai_status.hint_n_doing_tasks > 0) {
 					loop_time = min((int)ai_status.hint_task_stack.size(), max(1, getData().menu_elements.n_threads / HINT_SINGLE_TASK_N_THREAD) - ai_status.hint_n_doing_tasks);
@@ -976,6 +992,7 @@ private:
 			else {
 				loop_time = min((int)ai_status.hint_task_stack.size(), getData().menu_elements.n_threads - ai_status.hint_n_doing_tasks);
 			}
+			*/
 			if (loop_time > 0) {
 				for (int i = 0; i < loop_time; ++i) {
 					pair<int, function<Search_result()>> task = ai_status.hint_task_stack.back();
@@ -1003,6 +1020,12 @@ private:
 	}
 
 	void analyze_do_task() {
+		if (ai_status.analyze_task_stack.size() == 0) {
+			ai_status.analyzing = false;
+			getData().history_elem = getData().graph_resources.nodes[getData().graph_resources.put_mode].back();
+			getData().graph_resources.n_discs = getData().graph_resources.nodes[getData().graph_resources.put_mode].back().board.n_discs();
+			return;
+		}
 		pair<Analyze_info, function<Search_result()>> task = ai_status.analyze_task_stack.back();
 		ai_status.analyze_task_stack.pop_back();
 		ai_status.analyze_future[task.first.idx] = async(launch::async, task.second);
@@ -1015,12 +1038,6 @@ private:
 	}
 
 	void analyze_get_task() {
-		if (ai_status.analyze_task_stack.size() == 0) {
-			ai_status.analyzing = false;
-			getData().history_elem = getData().graph_resources.nodes[getData().graph_resources.put_mode].back();
-			getData().graph_resources.n_discs = getData().graph_resources.nodes[getData().graph_resources.put_mode].back().board.n_discs();
-			return;
-		}
 		bool task_finished = false;
 		for (int i = 0; i < ANALYZE_SIZE; ++i) {
 			if (ai_status.analyze_future[i].valid()) {
@@ -1043,32 +1060,40 @@ private:
 		string transcript;
 		int inspect_switch_n_discs = INF;
 		if (getData().graph_resources.put_mode == 1) {
-			if (inspect_switch_n_discs = getData().graph_resources.nodes[GRAPH_MODE_INSPECT].size()) {
+			if (getData().graph_resources.nodes[GRAPH_MODE_INSPECT].size()) {
 				inspect_switch_n_discs = getData().graph_resources.nodes[GRAPH_MODE_INSPECT][0].board.n_discs();
 			}
 			else {
 				cerr << "no node found in inspect mode" << endl;
 			}
 		}
+		cerr << inspect_switch_n_discs << endl;
 		for (History_elem& history_elem : getData().graph_resources.nodes[GRAPH_MODE_NORMAL]) {
-			if (history_elem.board.n_discs() >= inspect_switch_n_discs || history_elem.board.n_discs() >= getData().history_elem.board.n_discs()) {
+			if (history_elem.board.n_discs() + 1 >= inspect_switch_n_discs || history_elem.board.n_discs() > getData().history_elem.board.n_discs()) {
 				break;
 			}
-			if (history_elem.policy != -1) {
-				transcript += idx_to_coord(history_elem.policy);
+			if (history_elem.next_policy != -1) {
+				transcript += idx_to_coord(history_elem.next_policy);
 			}
 		}
 		if (inspect_switch_n_discs != INF) {
+			if (getData().graph_resources.nodes[GRAPH_MODE_INSPECT][0].policy != -1) {
+				transcript += idx_to_coord(getData().graph_resources.nodes[GRAPH_MODE_INSPECT][0].policy);
+			}
 			for (History_elem& history_elem : getData().graph_resources.nodes[GRAPH_MODE_INSPECT]) {
-				if (history_elem.board.n_discs() >= getData().history_elem.board.n_discs()) {
+				if (history_elem.board.n_discs() > getData().history_elem.board.n_discs()) {
 					break;
 				}
-				if (history_elem.policy != -1) {
-					transcript += idx_to_coord(history_elem.policy);
+				if (history_elem.next_policy != -1) {
+					transcript += idx_to_coord(history_elem.next_policy);
 				}
 			}
 		}
 		cerr << transcript << endl;
 		Clipboard::SetText(Unicode::Widen(transcript));
+	}
+
+	void need_start_game_button_calculation() {
+		need_start_game_button = (getData().history_elem.player == BLACK && getData().menu_elements.ai_put_black) || (getData().history_elem.player == WHITE && getData().menu_elements.ai_put_white);
 	}
 };

@@ -54,6 +54,13 @@ constexpr int Y_CENTER = WINDOW_SIZE_Y / 2;
 constexpr int BOARD_SX = LEFT_LEFT + BOARD_COORD_SIZE;
 constexpr int BOARD_CELL_SIZE = BOARD_SIZE / HW;
 
+// main start game button constants
+#define START_GAME_BUTTON_SX 530
+#define START_GAME_BUTTON_SY 110
+#define START_GAME_BUTTON_WIDTH 100
+#define START_GAME_BUTTON_HEIGHT 30
+#define START_GAME_BUTTON_RADIUS 10
+
 // graph drawing constants
 #define GRAPH_RESOLUTION 8
 constexpr int GRAPH_SX = BOARD_SX + BOARD_SIZE + 50;
