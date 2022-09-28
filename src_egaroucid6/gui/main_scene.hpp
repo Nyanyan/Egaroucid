@@ -101,6 +101,7 @@ public:
 		menu_manipulate();
 		menu_in_out();
 		menu_book();
+		menu_help();
 
 		// analyze
 		if (ai_status.analyzing) {
@@ -358,6 +359,21 @@ private:
 		}
 		if (getData().menu_elements.book_reference) {
 			changeScene(U"Refer_book", SCENE_FADE_TIME);
+		}
+	}
+
+	void menu_help() {
+		if (getData().menu_elements.usage) {
+			System::LaunchBrowser(U"https://www.egaroucid-app.nyanyan.dev/usage/");
+		}
+		if (getData().menu_elements.bug_report) {
+			System::LaunchBrowser(U"https://docs.google.com/forms/d/e/1FAIpQLSd6ML1T1fc707luPEefBXuImMnlM9cQP8j-YHKiSyFoS-8rmQ/viewform?usp=sf_link");
+		}
+		if (getData().menu_elements.license_egaroucid) {
+			System::LaunchBrowser(U"https://github.com/Nyanyan/Egaroucid/blob/main/LICENSE");
+		}
+		if (getData().menu_elements.license_siv3d) {
+			LicenseManager::ShowInBrowser();
 		}
 	}
 
@@ -653,7 +669,9 @@ private:
 		title.push(menu_e);
 		menu_e.init_check(language.get("help", "auto_update_check"), &menu_elements->auto_update_check, menu_elements->auto_update_check);
 		title.push(menu_e);
-		menu_e.init_button(language.get("help", "license"), &menu_elements->license);
+		menu_e.init_button(language.get("help", "license_egaroucid"), &menu_elements->license_egaroucid);
+		title.push(menu_e);
+		menu_e.init_button(language.get("help", "license_siv3d"), &menu_elements->license_siv3d);
 		title.push(menu_e);
 		menu.push(title);
 

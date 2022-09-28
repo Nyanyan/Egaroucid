@@ -309,7 +309,8 @@ struct Menu_elements {
 	bool usage;
 	bool bug_report;
 	bool auto_update_check;
-	bool license;
+	bool license_egaroucid;
+	bool license_siv3d;
 
 	// language
 	bool languages[200];
@@ -357,7 +358,8 @@ struct Menu_elements {
 		usage = false;
 		bug_report = false;
 		auto_update_check = settings->auto_update_check;
-		license = false;
+		license_egaroucid = false;
+		license_siv3d = false;
 
 		bool lang_found = false;
 		for (int i = 0; i < resources->language_names.size(); ++i) {
