@@ -65,26 +65,28 @@ int book_learn_search(Board board, int level, const int book_depth, int expected
     *player ^= 1;
     board.undo_board(&flip);
     legal ^= 1ULL << best_move.policy;
-    int n_error_remain, alpha;
-    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-        calc_flip(&flip, &board, cell);
-        board.move_board(&flip);
-        *player ^= 1;
-            board.copy(board_copy);
-            alpha = best_move.value - expected_error;
-            g = -ai_window(board, level, -best_move.value, -alpha + 1, true);
-            if (global_searching && g >= alpha && g <= HW2){
-                n_error_remain = error_remain - max(0, best_move.value - g);
-                if (-HW2 <= expected_value && expected_value <= HW2)
-                    n_error_remain -= max(0, expected_value - g);
-                g = -book_learn_search(board, level, book_depth, max(expected_error, -v), expected_error, n_error_remain, board_copy, player, strt_tim, book_file, book_bak);
-                if (global_searching && g >= -HW2 && g <= HW2){
-                    v = max(v, g);
-                    cerr << "depth " << board.n_discs() - 4 << " AD value " << g << " pre " << best_move.value << " best " << v << " expected " << expected_value << " remaining error " << n_error_remain << endl;
+    if (legal){
+        int n_error_remain, alpha;
+        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+            calc_flip(&flip, &board, cell);
+            board.move_board(&flip);
+            *player ^= 1;
+                board.copy(board_copy);
+                alpha = best_move.value - expected_error;
+                g = -ai_window(board, level, -best_move.value, -alpha + 1, true);
+                if (global_searching && g >= alpha && g <= HW2){
+                    n_error_remain = error_remain - max(0, best_move.value - g);
+                    if (-HW2 <= expected_value && expected_value <= HW2)
+                        n_error_remain -= max(0, expected_value - g);
+                    g = -book_learn_search(board, level, book_depth, max(expected_error, -v), expected_error, n_error_remain, board_copy, player, strt_tim, book_file, book_bak);
+                    if (global_searching && g >= -HW2 && g <= HW2){
+                        v = max(v, g);
+                        cerr << "depth " << board.n_discs() - 4 << " AD value " << g << " pre " << best_move.value << " best " << v << " expected " << expected_value << " remaining error " << n_error_remain << endl;
+                    }
                 }
-            }
-        *player ^= 1;
-        board.undo_board(&flip);
+            *player ^= 1;
+            board.undo_board(&flip);
+        }
     }
     if (global_searching && v >= -HW2 && v <= HW2){
         cerr << "depth " << board.n_discs() - 4 << " RG value " << v << endl;
