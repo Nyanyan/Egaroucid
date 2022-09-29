@@ -42,11 +42,13 @@ for w in range(len(data)):
                 depth2 = y * depth_div + depth_div / 2
                 
                 sigma = statistics.stdev(data[w][x][y])
+                '''
                 for i in range(3):
                     w_n_stones.append(n_stones)
                     x_depth1.append(depth1)
                     y_depth2.append(depth1 - depth2)
-                    z_sigma.append(sigma + 4.0)
+                    z_sigma.append(sigma + 1.0)
+                '''
                 '''
                 if y == 0 and sigma >= 3.0:
                     for _ in range(8):
@@ -62,19 +64,20 @@ for w in range(4, 65):
     y_depth2.append(0)
     z_sigma.append(10.0)
 '''
+
 for w in range(4, 65):
-    for x in range(10, 20):
+    for x in range(0, 64 - w):
         w_n_stones.append(w)
         x_depth1.append(x)
         y_depth2.append(0)
-        z_sigma.append(9.0)
+        z_sigma.append(1.0 + x / (64 - w) * 5.0)
 
 for w in range(4, 65):
-    for xy in range(0, 61, 4):
+    for xy in range(0, 64 - w, 4):
         w_n_stones.append(w)
         x_depth1.append(xy)
         y_depth2.append(xy)
-        z_sigma.append(2.0)
+        z_sigma.append(0.0)
 
 probcut_params_before = [
     -0.0027183880227839127,
@@ -99,6 +102,16 @@ def f(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, pro
     res = probcut_a * w + probcut_b * x + probcut_c * y
     res = probcut_d * res * res * res + probcut_e * res * res + probcut_f * res + probcut_g
     return res
+
+def f_max(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g, probcut_h, probcut_i, probcut_j):
+    w, x, y = wxy
+    res = 0.0
+    #res = probcut_a * w * w * w + probcut_b * w * w * x + probcut_c * w * w * y + probcut_d * w * x * y
+    #res += probcut_e * w * w + probcut_f * w * x + probcut_g * w * y
+    #res += probcut_h * w + probcut_i * (x - y) + probcut_j
+    res = probcut_a * w + probcut_b * x + probcut_c * y
+    res = probcut_d * res * res * res + probcut_e * res * res + probcut_f * res + probcut_g
+    return np.minimum(10.0, np.maximum(-2.0, res))
 
 def to_rgb(x):
     r = min(1.0, x / 20)
@@ -146,7 +159,7 @@ def plot_fit_result_onephase(n_stones, params):
             z_sigma_phase.append(z)
     ax.plot(x_depth1_phase, y_depth2_phase, z_sigma_phase, ms=3, marker="o",linestyle='None')
     mx, my = np.meshgrid(range(61), range(61))
-    ax.plot_wireframe(mx, my, f((n_stones, mx, my), *params), rstride=10, cstride=10)
+    ax.plot_wireframe(mx, my, f_max((n_stones, mx, my), *params), rstride=10, cstride=10)
     ax.set_xlabel('depth1')
     ax.set_ylabel('depth2')
     ax.set_zlabel('sigma')
@@ -159,7 +172,7 @@ for i in range(len(popt)):
     print('#define probcut_' + chr(ord('a') + i), popt[i])
 #perr = np.sqrt(np.diag(pcov))
 #plot_fit_result(popt)
-plot_fit_result_onephase(30, popt)
+plot_fit_result_onephase(4, popt)
 exit()
 
 fig = plt.figure()

@@ -68,6 +68,7 @@ private:
 	Button start_game_button;
 	bool need_start_game_button;
 	Umigame_status umigame_status;
+	bool changing_scene;
 
 public:
 	Main_scene(const InitData& init) : IScene{ init } {
@@ -87,12 +88,14 @@ public:
 		}
 		start_game_button.init(START_GAME_BUTTON_SX, START_GAME_BUTTON_SY, START_GAME_BUTTON_WIDTH, START_GAME_BUTTON_HEIGHT, START_GAME_BUTTON_RADIUS, language.get("play", "start_game"), getData().fonts.font15, getData().colors.white, getData().colors.black);
 		need_start_game_button_calculation();
+		changing_scene = false;
 		cerr << "main scene loaded" << endl;
 	}
 
 	void update() override {
 		if (System::GetUserActions() & UserAction::CloseButtonClicked) {
 			stop_calculating();
+			changing_scene = true;
 			changeScene(U"Close", SCENE_FADE_TIME);
 			return;
 		}
@@ -301,22 +304,30 @@ private:
 		if (getData().menu_elements.input_transcript) {
 			stop_calculating();
 			resume_calculating();
+			changing_scene = true;
 			changeScene(U"Import_transcript", SCENE_FADE_TIME);
+			return;
 		}
 		if (getData().menu_elements.input_board) {
 			stop_calculating();
 			resume_calculating();
+			changing_scene = true;
 			changeScene(U"Import_board", SCENE_FADE_TIME);
+			return;
 		}
 		if (getData().menu_elements.edit_board) {
 			stop_calculating();
 			resume_calculating();
+			changing_scene = true;
 			changeScene(U"Edit_board", SCENE_FADE_TIME);
+			return;
 		}
 		if (getData().menu_elements.input_game) {
 			stop_calculating();
 			resume_calculating();
+			changing_scene = true;
 			changeScene(U"Import_game", SCENE_FADE_TIME);
+			return;
 		}
 		if (getData().menu_elements.copy_transcript) {
 			copy_transcript();
@@ -324,7 +335,9 @@ private:
 		if (getData().menu_elements.save_game) {
 			stop_calculating();
 			resume_calculating();
+			changing_scene = true;
 			changeScene(U"Export_game", SCENE_FADE_TIME);
+			return;
 		}
 	}
 
@@ -432,17 +445,23 @@ private:
 		if (getData().menu_elements.book_start_learn) {
 			stop_calculating();
 			resume_calculating();
+			changing_scene = true;
 			changeScene(U"Learn_book", SCENE_FADE_TIME);
+			return;
 		}
 		if (getData().menu_elements.book_import) {
 			stop_calculating();
 			resume_calculating();
+			changing_scene = true;
 			changeScene(U"Import_book", SCENE_FADE_TIME);
+			return;
 		}
 		if (getData().menu_elements.book_reference) {
 			stop_calculating();
 			resume_calculating();
+			changing_scene = true;
 			changeScene(U"Refer_book", SCENE_FADE_TIME);
+			return;
 		}
 	}
 
@@ -600,25 +619,27 @@ private:
 	}
 
 	void ai_move() {
-		uint64_t legal = getData().history_elem.board.get_legal();
-		if (!ai_status.ai_thinking) {
-			if (legal) {
-				stop_calculating();
-				resume_calculating();
-				ai_status.ai_future = async(launch::async, ai, getData().history_elem.board, getData().menu_elements.level, getData().menu_elements.use_book, true, true);
-				ai_status.ai_thinking = true;
-			}
-		}
-		else if (ai_status.ai_future.valid()) {
-			if (ai_status.ai_future.wait_for(chrono::seconds(0)) == future_status::ready) {
-				Search_result search_result = ai_status.ai_future.get();
-				if (1 & (legal >> search_result.policy)) {
-					int sgn = getData().history_elem.player == 0 ? 1 : -1;
-					getData().graph_resources.nodes[getData().graph_resources.put_mode].back().v = sgn * search_result.value;
-					getData().graph_resources.nodes[getData().graph_resources.put_mode].back().level = getData().menu_elements.level;
-					move_processing(HW2_M1 - search_result.policy);
+		if (!changing_scene) {
+			uint64_t legal = getData().history_elem.board.get_legal();
+			if (!ai_status.ai_thinking) {
+				if (legal) {
+					stop_calculating();
+					resume_calculating();
+					ai_status.ai_future = async(launch::async, ai, getData().history_elem.board, getData().menu_elements.level, getData().menu_elements.use_book, true, true);
+					ai_status.ai_thinking = true;
 				}
-				ai_status.ai_thinking = false;
+			}
+			else if (ai_status.ai_future.valid()) {
+				if (ai_status.ai_future.wait_for(chrono::seconds(0)) == future_status::ready) {
+					Search_result search_result = ai_status.ai_future.get();
+					if (1 & (legal >> search_result.policy)) {
+						int sgn = getData().history_elem.player == 0 ? 1 : -1;
+						getData().graph_resources.nodes[getData().graph_resources.put_mode].back().v = sgn * search_result.value;
+						getData().graph_resources.nodes[getData().graph_resources.put_mode].back().level = getData().menu_elements.level;
+						move_processing(HW2_M1 - search_result.policy);
+					}
+					ai_status.ai_thinking = false;
+				}
 			}
 		}
 	}
@@ -1023,62 +1044,64 @@ private:
 	}
 
 	void hint_do_task() {
-		if (ai_status.hint_n_doing_tasks > 0) {
-			for (int cell = 0; cell < HW2; ++cell) {
-				if (ai_status.hint_future[cell].valid()) {
-					if (ai_status.hint_future[cell].wait_for(chrono::seconds(0)) == future_status::ready) {
-						Search_result search_result = ai_status.hint_future[cell].get();
-						if (ai_status.hint_values[cell] == HINT_INIT_VALUE || search_result.is_end_search || search_result.depth == SEARCH_BOOK) {
-							ai_status.hint_values[cell] = -search_result.value;
+		if (!changing_scene) {
+			if (ai_status.hint_n_doing_tasks > 0) {
+				for (int cell = 0; cell < HW2; ++cell) {
+					if (ai_status.hint_future[cell].valid()) {
+						if (ai_status.hint_future[cell].wait_for(chrono::seconds(0)) == future_status::ready) {
+							Search_result search_result = ai_status.hint_future[cell].get();
+							if (ai_status.hint_values[cell] == HINT_INIT_VALUE || search_result.is_end_search || search_result.depth == SEARCH_BOOK) {
+								ai_status.hint_values[cell] = -search_result.value;
+							}
+							else {
+								ai_status.hint_values[cell] -= 1.2 * search_result.value;
+								ai_status.hint_values[cell] /= 2.2;
+							}
+							if (search_result.depth == SEARCH_BOOK) {
+								ai_status.hint_types[cell] = HINT_TYPE_BOOK;
+							}
+							else if (search_result.is_end_search) {
+								ai_status.hint_types[cell] = search_result.probability;
+							}
+							else {
+								ai_status.hint_types[cell] = ai_status.hint_level;
+							}
+							--ai_status.hint_n_doing_tasks;
 						}
-						else {
-							ai_status.hint_values[cell] -= 1.2 * search_result.value;
-							ai_status.hint_values[cell] /= 2.2;
-						}
-						if (search_result.depth == SEARCH_BOOK) {
-							ai_status.hint_types[cell] = HINT_TYPE_BOOK;
-						}
-						else if (search_result.is_end_search) {
-							ai_status.hint_types[cell] = search_result.probability;
-						}
-						else {
-							ai_status.hint_types[cell] = ai_status.hint_level;
-						}
-						--ai_status.hint_n_doing_tasks;
 					}
 				}
 			}
-		}
-		if (ai_status.hint_task_stack.size() == 0 && ai_status.hint_n_doing_tasks == 0) {
-			for (int cell = 0; cell < HW2; ++cell) {
-				ai_status.hint_use_stable[cell] = ai_status.hint_use[cell];
-				ai_status.hint_values_stable[cell] = ai_status.hint_values[cell];
-				ai_status.hint_types_stable[cell] = ai_status.hint_types[cell];
+			if (ai_status.hint_task_stack.size() == 0 && ai_status.hint_n_doing_tasks == 0) {
+				for (int cell = 0; cell < HW2; ++cell) {
+					ai_status.hint_use_stable[cell] = ai_status.hint_use[cell];
+					ai_status.hint_values_stable[cell] = ai_status.hint_values[cell];
+					ai_status.hint_types_stable[cell] = ai_status.hint_types[cell];
+				}
+				ai_status.hint_calculating = false;
 			}
-			ai_status.hint_calculating = false;
-		}
-		else if (ai_status.hint_task_stack.size()) {
-			int loop_time = min((int)ai_status.hint_task_stack.size(), getData().menu_elements.n_threads - ai_status.hint_n_doing_tasks);
-			/*
-			if (ai_status.hint_use_multi_thread) {
-				if (max(1, getData().menu_elements.n_threads / HINT_SINGLE_TASK_N_THREAD) - ai_status.hint_n_doing_tasks > 0) {
-					loop_time = min((int)ai_status.hint_task_stack.size(), max(1, getData().menu_elements.n_threads / HINT_SINGLE_TASK_N_THREAD) - ai_status.hint_n_doing_tasks);
+			else if (ai_status.hint_task_stack.size()) {
+				int loop_time = min((int)ai_status.hint_task_stack.size(), getData().menu_elements.n_threads - ai_status.hint_n_doing_tasks);
+				/*
+				if (ai_status.hint_use_multi_thread) {
+					if (max(1, getData().menu_elements.n_threads / HINT_SINGLE_TASK_N_THREAD) - ai_status.hint_n_doing_tasks > 0) {
+						loop_time = min((int)ai_status.hint_task_stack.size(), max(1, getData().menu_elements.n_threads / HINT_SINGLE_TASK_N_THREAD) - ai_status.hint_n_doing_tasks);
+					}
+					else {
+						loop_time = 0;
+					}
 				}
 				else {
-					loop_time = 0;
+					loop_time = min((int)ai_status.hint_task_stack.size(), getData().menu_elements.n_threads - ai_status.hint_n_doing_tasks);
 				}
-			}
-			else {
-				loop_time = min((int)ai_status.hint_task_stack.size(), getData().menu_elements.n_threads - ai_status.hint_n_doing_tasks);
-			}
-			*/
-			if (loop_time > 0) {
-				for (int i = 0; i < loop_time; ++i) {
-					pair<int, function<Search_result()>> task = ai_status.hint_task_stack.back();
-					ai_status.hint_task_stack.pop_back();
-					ai_status.hint_future[task.first] = async(launch::async, task.second);
+				*/
+				if (loop_time > 0) {
+					for (int i = 0; i < loop_time; ++i) {
+						pair<int, function<Search_result()>> task = ai_status.hint_task_stack.back();
+						ai_status.hint_task_stack.pop_back();
+						ai_status.hint_future[task.first] = async(launch::async, task.second);
+					}
+					ai_status.hint_n_doing_tasks += loop_time;
 				}
-				ai_status.hint_n_doing_tasks += loop_time;
 			}
 		}
 	}
@@ -1099,21 +1122,23 @@ private:
 	}
 
 	void analyze_do_task() {
-		if (ai_status.analyze_task_stack.size() == 0) {
-			ai_status.analyzing = false;
-			getData().history_elem = getData().graph_resources.nodes[getData().graph_resources.put_mode].back();
-			getData().graph_resources.n_discs = getData().graph_resources.nodes[getData().graph_resources.put_mode].back().board.n_discs();
-			return;
+		if (!changing_scene) {
+			if (ai_status.analyze_task_stack.size() == 0) {
+				ai_status.analyzing = false;
+				getData().history_elem = getData().graph_resources.nodes[getData().graph_resources.put_mode].back();
+				getData().graph_resources.n_discs = getData().graph_resources.nodes[getData().graph_resources.put_mode].back().board.n_discs();
+				return;
+			}
+			pair<Analyze_info, function<Search_result()>> task = ai_status.analyze_task_stack.back();
+			ai_status.analyze_task_stack.pop_back();
+			ai_status.analyze_future[task.first.idx] = async(launch::async, task.second);
+			ai_status.analyze_sgn[task.first.idx] = task.first.sgn;
+			getData().history_elem.board = task.first.board;
+			getData().history_elem.policy = -1;
+			getData().history_elem.next_policy = -1;
+			getData().history_elem.player = task.first.sgn == 1 ? 0 : 1;
+			getData().graph_resources.n_discs = getData().history_elem.board.n_discs();
 		}
-		pair<Analyze_info, function<Search_result()>> task = ai_status.analyze_task_stack.back();
-		ai_status.analyze_task_stack.pop_back();
-		ai_status.analyze_future[task.first.idx] = async(launch::async, task.second);
-		ai_status.analyze_sgn[task.first.idx] = task.first.sgn;
-		getData().history_elem.board = task.first.board;
-		getData().history_elem.policy = -1;
-		getData().history_elem.next_policy = -1;
-		getData().history_elem.player = task.first.sgn == 1 ? 0 : 1;
-		getData().graph_resources.n_discs = getData().history_elem.board.n_discs();
 	}
 
 	void analyze_get_task() {
@@ -1123,7 +1148,6 @@ private:
 				if (ai_status.analyze_future[i].wait_for(chrono::seconds(0)) == future_status::ready) {
 					Search_result search_result = ai_status.analyze_future[i].get();
 					int value = ai_status.analyze_sgn[i] * search_result.value;
-					cerr << i << " " << value << endl;
 					getData().graph_resources.nodes[getData().graph_resources.put_mode][i].v = value;
 					getData().graph_resources.nodes[getData().graph_resources.put_mode][i].level = getData().menu_elements.level;
 					task_finished = true;
@@ -1181,35 +1205,37 @@ private:
 	}
 
 	void calculate_umigame() {
-		uint64_t legal = getData().history_elem.board.get_legal();
-		if (!umigame_status.umigame_calculating) {
-			Board board = getData().history_elem.board;
-			int n_player = getData().history_elem.player ^ 1;
-			Flip flip;
-			for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
-				calc_flip(&flip, &board, cell);
-				board.move_board(&flip);
-				umigame_status.umigame_future[cell] = async(launch::async, get_umigame, board, n_player);
-				board.undo_board(&flip);
+		if (!changing_scene) {
+			uint64_t legal = getData().history_elem.board.get_legal();
+			if (!umigame_status.umigame_calculating) {
+				Board board = getData().history_elem.board;
+				int n_player = getData().history_elem.player ^ 1;
+				Flip flip;
+				for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
+					calc_flip(&flip, &board, cell);
+					board.move_board(&flip);
+					umigame_status.umigame_future[cell] = async(launch::async, get_umigame, board, n_player);
+					board.undo_board(&flip);
+				}
+				umigame_status.umigame_calculating = true;
+				cerr << "start umigame calculation" << endl;
 			}
-			umigame_status.umigame_calculating = true;
-			cerr << "start umigame calculation" << endl;
-		}
-		else {
-			bool all_done = true;
-			for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
-				if (umigame_status.umigame_future[cell].valid()) {
-					if (umigame_status.umigame_future[cell].wait_for(chrono::seconds(0)) == future_status::ready) {
-						umigame_status.umigame[cell] = umigame_status.umigame_future[cell].get();
-					}
-					else {
-						all_done = false;
+			else {
+				bool all_done = true;
+				for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
+					if (umigame_status.umigame_future[cell].valid()) {
+						if (umigame_status.umigame_future[cell].wait_for(chrono::seconds(0)) == future_status::ready) {
+							umigame_status.umigame[cell] = umigame_status.umigame_future[cell].get();
+						}
+						else {
+							all_done = false;
+						}
 					}
 				}
-			}
-			if (all_done) {
-				umigame_status.umigame_calculated = all_done;
-				cerr << "finish umigame calculation" << endl;
+				if (all_done) {
+					umigame_status.umigame_calculated = all_done;
+					cerr << "finish umigame calculation" << endl;
+				}
 			}
 		}
 	}
