@@ -257,9 +257,10 @@ public:
 
 	void update() override {
 		Scene::SetBackground(getData().colors.green);
-		getData().fonts.font25(language.get("book", "book_learning")).draw(480, 20, getData().colors.white);
+		getData().fonts.font25(language.get("book", "book_learn")).draw(480, 20, getData().colors.white);
 		draw_board(getData().fonts, getData().colors, history_elem);
 		if (book_learning) {
+			getData().fonts.font20(language.get("book", "learning")).draw(480, 60, getData().colors.white);
 			stop_button.draw();
 			if (stop_button.clicked()) {
 				global_searching = false;
@@ -267,6 +268,7 @@ public:
 			}
 		}
 		else if (!done) {
+			getData().fonts.font20(language.get("book", "stopping")).draw(480, 60, getData().colors.white);
 			if (book_learn_future.wait_for(chrono::seconds(0)) == future_status::ready) {
 				book_learn_future.get();
 				done = true;
@@ -274,6 +276,7 @@ public:
 			}
 		}
 		else {
+			getData().fonts.font20(language.get("book", "complete")).draw(480, 60, getData().colors.white);
 			back_button.draw();
 			if (back_button.clicked()) {
 				getData().graph_resources.need_init = false;
