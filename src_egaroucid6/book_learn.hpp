@@ -10,7 +10,7 @@
 using namespace std;
 
 Search_result ai(Board board, int level, bool use_book, bool use_multi_thread, bool show_log);
-int ai_nws(Board board, int level, int alpha, int beta, bool use_multi_thread);
+int ai_window(Board board, int level, int alpha, int beta, bool use_multi_thread);
 
 inline int book_learn_calc_value(Board board, int level){
     return ai(board, level, true, true, false).value;
@@ -50,7 +50,7 @@ int book_learn_search(Board board, int level, const int book_depth, int error_su
         return g;
     }
     Search_result best_move = ai(board, level, true, 0, false);
-    cerr << "depth " << board.n_discs() - 5 << " BM value " << best_move.value << " move " << idx_to_coord(best_move.policy) << endl;
+    cerr << "depth " << board.n_discs() - 4 << " BM value " << best_move.value << " move " << idx_to_coord(best_move.policy) << endl;
     Flip flip;
     bool alpha_updated = false;
     calc_flip(&flip, &board, (uint8_t)best_move.policy);
@@ -60,7 +60,8 @@ int book_learn_search(Board board, int level, const int book_depth, int error_su
         g = -book_learn_search(board, level, book_depth, error_sum, expected_error, adopt_error_sum, board_copy, player, strt_tim, book_file, book_bak);
         if (global_searching){
             v = g;
-            cerr << "depth " << board.n_discs() - 5 << " PV value " << g << " move " << idx_to_coord(best_move.policy) << " remaining error " << adopt_error_sum - error_sum << endl;
+            best_move.value = g;
+            cerr << "depth " << board.n_discs() - 4 << " PV value " << g << " move " << idx_to_coord(best_move.policy) << " remaining error " << adopt_error_sum - error_sum << endl;
             //policies.emplace_back(best_move.policy);
         }
     *player ^= 1;
@@ -73,14 +74,13 @@ int book_learn_search(Board board, int level, const int book_depth, int error_su
         *player ^= 1;
             board.copy(board_copy);
             alpha = best_move.value - expected_error;
-            g = -ai_nws(board, level, -alpha, -alpha + 1, true);
-            //cerr << "PRESEARCH depth " << board.n_discs() - 5 << "    value " << g << " move " << idx_to_coord(cell) << " [" << alpha << "," << beta << "]" << endl;
+            g = -ai_window(board, level, -best_move.value, -alpha + 1, true);
             if (global_searching && g >= alpha && g <= HW2){
                 n_error_sum = error_sum + min(0, best_move.value - g);
                 g = -book_learn_search(board, level, book_depth, n_error_sum, expected_error, adopt_error_sum, board_copy, player, strt_tim, book_file, book_bak);
                 if (global_searching){
                     v = max(v, g);
-                    cerr << "depth " << board.n_discs() - 5 << " AD value " << g << " move " << idx_to_coord(cell) << " remaining error " << adopt_error_sum - n_error_sum << endl;
+                    cerr << "depth " << board.n_discs() - 4 << " AD value " << g << " move " << idx_to_coord(cell) << " best move value " << best_move.value << " remaining error " << adopt_error_sum - n_error_sum << endl;
                 }
             }
         *player ^= 1;
@@ -97,6 +97,7 @@ inline void learn_book(Board root_board, int level, const int book_depth, int ex
     uint64_t strt_tim = tim();
     cerr << "book learn started" << endl;
     const int adopt_error_sum = max(expected_error, (book_depth + 4 - root_board.n_discs()) * expected_error / 5);
+    cerr << "remaining error " << adopt_error_sum << endl;
     int g = book_learn_search(root_board, level, book_depth, 0, expected_error, adopt_error_sum, board_copy, player, &strt_tim, book_file, book_bak);
     //if (*book_learning && global_searching)
     //    book.reg(root_board, -g);

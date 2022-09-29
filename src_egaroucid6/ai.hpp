@@ -190,7 +190,7 @@ inline Search_result tree_search_iterative_deepening(Board board, int depth, boo
     return res;
 }
 
-inline int tree_search_nws(Board board, int depth, int alpha, int beta, bool use_mpc, double mpct, bool use_multi_thread){
+inline int tree_search_window(Board board, int depth, int alpha, int beta, bool use_mpc, double mpct, bool use_multi_thread){
     Search search;
     depth = min(HW2 - board.n_discs(), depth);
     bool is_end_search = (HW2 - board.n_discs() == depth);
@@ -202,7 +202,7 @@ inline int tree_search_nws(Board board, int depth, int alpha, int beta, bool use
     calc_features(&search);
     uint64_t strt = tim();
     bool searching = true;
-    return nega_alpha_ordering(&search, alpha, beta, depth, false, LEGAL_UNDEFINED, is_end_search, &searching);
+    return nega_scout(&search, alpha, beta, depth, false, LEGAL_UNDEFINED, is_end_search, &searching);
 }
 
 Search_result ai(Board board, int level, bool use_book, bool use_multi_thread, bool show_log){
@@ -307,7 +307,7 @@ Search_result ai_hint(Board board, int level, bool use_book, bool use_multi_thre
     return res;
 }
 
-int ai_nws(Board board, int level, int alpha, int beta, bool use_multi_thread){
+int ai_window(Board board, int level, int alpha, int beta, bool use_multi_thread){
     int value_sign = 1;
     if (board.get_legal() == 0ULL){
         board.pass();
@@ -325,5 +325,5 @@ int ai_nws(Board board, int level, int alpha, int beta, bool use_multi_thread){
         bool use_mpc, is_mid_search;
         double mpct;
         get_level(level, board.n_discs() - 4, &is_mid_search, &depth, &use_mpc, &mpct);
-    return value_sign * tree_search_nws(board, depth, alpha, beta, use_mpc, mpct, use_multi_thread);
+    return value_sign * tree_search_window(board, depth, alpha, beta, use_mpc, mpct, use_multi_thread);
 }

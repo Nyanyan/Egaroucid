@@ -250,7 +250,12 @@ private:
 			json[n_discs][GAME_VALUE] = history_elem.v;
 			json[n_discs][GAME_LEVEL] = history_elem.level;
 			json[n_discs][GAME_POLICY] = history_elem.policy;
-			json[n_discs][GAME_NEXT_POLICY] = history_elem.next_policy;
+			if (history_elem.board.n_discs() < history.back().board.n_discs()) {
+				json[n_discs][GAME_NEXT_POLICY] = history_elem.next_policy;
+			}
+			else {
+				json[n_discs][GAME_NEXT_POLICY] = -1;
+			}
 		}
 		const String save_path = Unicode::Widen(getData().directories.document_dir) + U"Egaroucid/games/" + date + U".json";
 		json.save(save_path);
