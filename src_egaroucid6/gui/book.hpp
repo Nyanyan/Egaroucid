@@ -115,7 +115,7 @@ public:
 				}
 			}
 			else {
-				getData().book_changed = true;
+				getData().book_information.changed = true;
 				changeScene(U"Main_scene", SCENE_FADE_TIME);
 			}
 		}
@@ -190,7 +190,7 @@ public:
 			}
 			go_button.draw();
 			if (go_button.clicked() || return_pressed) {
-				getData().book_changed = true;
+				getData().book_information.changed = true;
 				getData().settings.book_file = book_file;
 				cerr << "book reference changed to " << book_file << endl;
 				delete_book_future = async(launch::async, delete_book);

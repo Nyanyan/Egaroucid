@@ -136,6 +136,8 @@ constexpr int IMPORT_GAME_WIDTH = WINDOW_SIZE_X - IMPORT_GAME_SX * 2;
 #define GAME_DISCS_UNDEFINED -1
 #define GAME_MEMO_SUMMARY_SIZE 40
 
+// book modification
+#define BOOK_CHANGE_NO_CELL 64
 
 // back button constants
 #define BACK_BUTTON_WIDTH 200
@@ -436,6 +438,12 @@ struct Game_information {
 	}
 };
 
+struct Book_information {
+	bool changed{ false };
+	uint_fast8_t changing{ BOOK_CHANGE_NO_CELL };
+	String val_str;
+};
+
 struct Common_resources {
 	Colors colors;
 	Directories directories;
@@ -447,11 +455,7 @@ struct Common_resources {
 	History_elem history_elem;
 	Graph_resources graph_resources;
 	Game_information game_information;
-	bool book_changed;
-
-	Common_resources() {
-		book_changed = false;
-	}
+	Book_information book_information;
 };
 
 struct Hint_info {

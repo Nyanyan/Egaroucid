@@ -132,7 +132,6 @@ public:
 		}
 		update_n_discs();
 
-		bool move_ignore = ai_status.analyzing;
 		// move
 		bool ai_should_move =
 			!need_start_game_button && 
@@ -148,13 +147,18 @@ public:
 				resume_calculating();
 			}
 		}
-		if (!move_ignore) {
+		if (!ai_status.analyzing) {
 			if (ai_should_move) {
 				ai_move();
 			}
 			else if (!getData().menu.active() && !need_start_game_button) {
 				interact_move();
 			}
+		}
+
+		// book modifying by right-clicking
+		if (!ai_should_move && !need_start_game_button && getData().menu_elements.change_book_by_right_click) {
+			change_book_by_right_click();
 		}
 
 		// board drawing
@@ -264,6 +268,7 @@ private:
 		reset_ai();
 		reset_hint();
 		reset_analyze();
+		reset_umigame();
 		cerr << "reset all calculations" << endl;
 	}
 
@@ -906,11 +911,11 @@ private:
 
 	void draw_opening_on_cell() {
 		uint64_t legal = getData().history_elem.board.get_legal();
-		for (int cell = 0; cell < HW2; ++cell) {
+		for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
 			int x = HW_M1 - cell % HW;
 			int y = HW_M1 - cell / HW;
 			Rect cell_rect(BOARD_SX + x * BOARD_CELL_SIZE, BOARD_SY + y * BOARD_CELL_SIZE, BOARD_CELL_SIZE, BOARD_CELL_SIZE);
-			if ((1 & (legal >> cell)) && cell_rect.mouseOver()) {
+			if (cell_rect.mouseOver()) {
 				Flip flip;
 				calc_flip(&flip, &getData().history_elem.board, cell);
 				string openings = opening_many.get(getData().history_elem.board.move_copy(&flip), getData().history_elem.player);
@@ -1204,8 +1209,32 @@ private:
 		for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
 			int sx = BOARD_SX + ((HW2_M1 - cell) % HW) * BOARD_CELL_SIZE;
 			int sy = BOARD_SY + ((HW2_M1 - cell) / HW) * BOARD_CELL_SIZE;
-			getData().fonts.font13_heavy(umigame_status.umigame[cell].b).draw(Arg::bottomRight(sx + BOARD_CELL_SIZE - 3, sy + BOARD_CELL_SIZE - 17), getData().colors.black);
-			getData().fonts.font13_heavy(umigame_status.umigame[cell].w).draw(Arg::bottomRight(sx + BOARD_CELL_SIZE - 3, sy + BOARD_CELL_SIZE - 1), getData().colors.white);
+			if (umigame_status.umigame[cell].b != UMIGAME_UNDEFINED) {
+				getData().fonts.font13_heavy(umigame_status.umigame[cell].b).draw(Arg::bottomRight(sx + BOARD_CELL_SIZE - 3, sy + BOARD_CELL_SIZE - 17), getData().colors.black);
+				getData().fonts.font13_heavy(umigame_status.umigame[cell].w).draw(Arg::bottomRight(sx + BOARD_CELL_SIZE - 3, sy + BOARD_CELL_SIZE - 1), getData().colors.white);
+			}
+		}
+	}
+
+	void change_book_by_right_click() {
+		if (getData().book_information.changing != BOOK_CHANGE_NO_CELL) {
+
+		}
+		uint64_t legal = getData().history_elem.board.get_legal();
+		for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
+			int x = HW_M1 - cell % HW;
+			int y = HW_M1 - cell / HW;
+			Rect cell_rect(BOARD_SX + x * BOARD_CELL_SIZE, BOARD_SY + y * BOARD_CELL_SIZE, BOARD_CELL_SIZE, BOARD_CELL_SIZE);
+			if (cell_rect.rightClicked()) {
+				if (getData().book_information.changing == cell) {
+					getData().book_information.changing = BOOK_CHANGE_NO_CELL;
+					getData().book_information.changed = true;
+				}
+				else {
+					getData().book_information.val_str.clear();
+					getData().book_information.changing = cell;
+				}
+			}
 		}
 	}
 };

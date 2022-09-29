@@ -18,13 +18,19 @@ struct Umigame_result {
 };
 
 #define UMIGAME_SEARCH_DEPTH 100
+#define UMIGAME_UNDEFINED -1
 
 class Umigame{
 	public:
 		Umigame_result get(Board *b, int player) {
 			Umigame_result res;
-			res.b = search(b, UMIGAME_SEARCH_DEPTH, player, BLACK);
-			res.w = search(b, UMIGAME_SEARCH_DEPTH, player, WHITE);
+			if (book.get(b) != -INF){
+				res.b = search(b, UMIGAME_SEARCH_DEPTH, player, BLACK);
+				res.w = search(b, UMIGAME_SEARCH_DEPTH, player, WHITE);
+			} else{
+				res.b = UMIGAME_UNDEFINED;
+				res.w = UMIGAME_UNDEFINED;
+			}
 			return res;
 		}
 

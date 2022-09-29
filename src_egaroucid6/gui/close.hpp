@@ -35,9 +35,9 @@ void save_settings(Menu_elements menu_elements, Settings settings, Directories d
 	}
 }
 
-void close_app(Menu_elements menu_elements, Settings settings, Directories directories, bool book_changed) {
+void close_app(Menu_elements menu_elements, Settings settings, Directories directories, Book_information book_information) {
 	save_settings(menu_elements, settings, directories);
-	if (book_changed) {
+	if (book_information.changed) {
 		book.save_bin(settings.book_file, settings.book_file + ".bak");
 	}
 }
@@ -48,7 +48,7 @@ private:
 
 public:
 	Close(const InitData& init) : IScene{ init } {
-		close_future = async(launch::async, close_app, getData().menu_elements, getData().settings, getData().directories, getData().book_changed);
+		close_future = async(launch::async, close_app, getData().menu_elements, getData().settings, getData().directories, getData().book_information);
 	}
 
 	void update() override {
