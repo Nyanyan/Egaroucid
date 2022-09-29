@@ -22,7 +22,7 @@ constexpr double radio_ratio = 0.2;
 #define bar_mode 1
 #define check_mode 2
 #define radio_mode 3
-#define bar_size 130
+#define bar_size 140
 #define bar_height 14
 #define bar_radius 6
 

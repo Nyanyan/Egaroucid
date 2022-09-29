@@ -611,6 +611,15 @@ private:
 				getData().graph_resources.nodes[GRAPH_MODE_NORMAL].emplace_back(history_elem);
 			}
 		}
+		string opening_name, n_opening_name;
+		for (int i = 0; i < (int)getData().graph_resources.nodes[GRAPH_MODE_NORMAL].size(); ++i) {
+			n_opening_name.clear();
+			n_opening_name = opening.get(getData().graph_resources.nodes[GRAPH_MODE_NORMAL][i].board, getData().graph_resources.nodes[GRAPH_MODE_NORMAL][i].player ^ 1);
+			if (n_opening_name.size()) {
+				opening_name = n_opening_name;
+			}
+			getData().graph_resources.nodes[GRAPH_MODE_NORMAL][i].opening_name = opening_name;
+		}
 		getData().graph_resources.n_discs = getData().graph_resources.nodes[GRAPH_MODE_NORMAL].back().board.n_discs();
 		getData().graph_resources.need_init = false;
 		getData().history_elem = getData().graph_resources.nodes[GRAPH_MODE_NORMAL].back();
