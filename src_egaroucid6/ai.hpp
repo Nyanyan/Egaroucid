@@ -37,7 +37,6 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
             search.first_depth = depth / 2;
             search.mpct = 0.8;
             search.use_mpc = true;
-            //search.p = (search.board.p + depth / 2) % 2;
             result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search.first_depth, false, false, false, TRANSPOSE_TABLE_UNDEFINED);
             g = result.first;
             if (show_log)
@@ -84,8 +83,6 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
                     break;
             }
         } else{
-            //if (show_log)
-            //    cerr << "main search" << endl;
             result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search.first_depth, false, true, show_log, result.second);
             g = result.first;
         }

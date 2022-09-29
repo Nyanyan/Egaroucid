@@ -8,7 +8,7 @@ end_idx = int(sys.argv[2])
 if len(sys.argv) >= 4:
     n_threads = int(sys.argv[3])
 else:
-    n_threads = 23
+    n_threads = 16
 
 #if n_threads >= 2:
 egaroucid = subprocess.Popen(('Egaroucid6_test.exe ' + str(n_threads - 1)).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)

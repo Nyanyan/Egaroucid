@@ -14,7 +14,6 @@
 using namespace std;
 
 #define THREAD_POOL_TASK_ID_SIZE 0x20000000 //1048576
-#define THREAD_POOL_ERASE_STEP 4096
 
 // refer to https://zenn.dev/rita0222/articles/13953a5dfb9698
 
@@ -128,10 +127,10 @@ class Thread_pool{
         };
 
         void resize(int n){
-            cerr << "resizing" << endl;
+            cerr << "resize to " << n << endl;
             is_requested_termination = true;
             request_termination();
-            cerr << "terminated" << endl;
+            cerr << "threads terminated" << endl;
             unique_lock<mutex> lock(mutex_);
             workers.clear();
             n_threads = n;
@@ -157,7 +156,7 @@ class Thread_pool{
                 if (!worker_busy[i]){
                     ++task_id;
                     if (task_id >= THREAD_POOL_TASK_ID_SIZE)
-                        task_id %= THREAD_POOL_TASK_ID_SIZE;
+                        task_id -= THREAD_POOL_TASK_ID_SIZE;
                     if (workers[i].run(task, task_id)){
                         --n_empty_thread;
                         worker_busy[i] = true;
