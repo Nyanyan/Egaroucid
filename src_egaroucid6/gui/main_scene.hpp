@@ -181,7 +181,7 @@ public:
 		}
 
 		// umigame calculating / drawing
-		if (getData().menu_elements.use_umigame_value && !ai_should_move) {
+		if (getData().menu_elements.use_umigame_value && !hint_ignore) {
 			if (umigame_status.umigame_calculated) {
 				draw_umigame();
 				legal_draw = false;
