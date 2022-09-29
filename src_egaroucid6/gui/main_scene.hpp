@@ -94,6 +94,7 @@ public:
 		if (System::GetUserActions() & UserAction::CloseButtonClicked) {
 			stop_calculating();
 			changeScene(U"Close", SCENE_FADE_TIME);
+			return;
 		}
 
 		Scene::SetBackground(getData().colors.green);
@@ -180,7 +181,7 @@ public:
 		}
 
 		// umigame calculating / drawing
-		if (getData().menu_elements.use_umigame_value) {
+		if (getData().menu_elements.use_umigame_value && !ai_should_move) {
 			if (umigame_status.umigame_calculated) {
 				draw_umigame();
 				legal_draw = false;
@@ -194,6 +195,9 @@ public:
 		if (legal_draw) {
 			draw_legal(legal_ignore);
 		}
+
+		// last move drawing
+		draw_last_move();
 
 		// stable drawing
 		if (getData().menu_elements.show_stable_discs) {
@@ -805,16 +809,22 @@ private:
 			int x = BOARD_SX + (cell % HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
 			int y = BOARD_SY + (cell / HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
 			if (1 & (legal >> (HW2_M1 - cell))) {
-				if (HW2_M1 - cell == getData().history_elem.next_policy) {
-					if (getData().history_elem.player == WHITE) {
-						Circle(x, y, DISC_SIZE).draw(ColorF(getData().colors.white, 0.2));
-					}
-					else {
-						Circle(x, y, DISC_SIZE).draw(ColorF(getData().colors.black, 0.2));
-					}
-				}
 				if ((1 & (ignore >> (HW2_M1 - cell))) == 0)
 					Circle(x, y, LEGAL_SIZE).draw(getData().colors.cyan);
+			}
+		}
+	}
+
+	void draw_last_move() {
+		uint64_t legal = getData().history_elem.board.get_legal();
+		if (1 & (legal >> getData().history_elem.next_policy)) {
+			int x = BOARD_SX + (HW_M1 - getData().history_elem.next_policy % HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
+			int y = BOARD_SY + (HW_M1 - getData().history_elem.next_policy / HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
+			if (getData().history_elem.player == WHITE) {
+				Circle(x, y, DISC_SIZE).draw(ColorF(getData().colors.white, 0.2));
+			}
+			else {
+				Circle(x, y, DISC_SIZE).draw(ColorF(getData().colors.black, 0.2));
 			}
 		}
 	}
