@@ -420,6 +420,18 @@ struct Graph_resources {
 	}
 };
 
+struct Game_information {
+	String black_player_name;
+	String white_player_name;
+	String memo;
+
+	void init() {
+		black_player_name.clear();
+		white_player_name.clear();
+		memo.clear();
+	}
+};
+
 struct Common_resources {
 	Colors colors;
 	Directories directories;
@@ -430,6 +442,7 @@ struct Common_resources {
 	Menu menu;
 	History_elem history_elem;
 	Graph_resources graph_resources;
+	Game_information game_information;
 	bool book_changed;
 
 	Common_resources() {

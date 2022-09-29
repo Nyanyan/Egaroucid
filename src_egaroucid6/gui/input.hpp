@@ -153,6 +153,7 @@ public:
 					getData().graph_resources.init();
 					getData().graph_resources.nodes[0] = n_history;
 					getData().graph_resources.n_discs = getData().graph_resources.nodes[0].back().board.n_discs();
+					getData().game_information.init();
 				}
 				else {
 					getData().graph_resources.nodes[getData().graph_resources.put_mode] = n_history;
@@ -246,6 +247,7 @@ public:
 				history_elem.board = board;
 				getData().graph_resources.nodes[0].emplace_back(history_elem);
 				getData().graph_resources.n_discs = board.n_discs();
+				getData().game_information.init();
 				getData().graph_resources.need_init = false;
 				getData().history_elem = getData().graph_resources.nodes[0].back();
 				changeScene(U"Main_scene", SCENE_FADE_TIME);
@@ -547,6 +549,15 @@ private:
 			cerr << "can't open game" << endl;
 			failed = true;
 			return;
+		}
+		if (game_json[GAME_BLACK_PLAYER].getType() == JSONValueType::String) {
+			getData().game_information.black_player_name = game_json[GAME_BLACK_PLAYER].getString();
+		}
+		if (game_json[GAME_WHITE_PLAYER].getType() == JSONValueType::String) {
+			getData().game_information.white_player_name = game_json[GAME_WHITE_PLAYER].getString();
+		}
+		if (game_json[GAME_MEMO].getType() == JSONValueType::String) {
+			getData().game_information.memo = game_json[GAME_MEMO].getString();
 		}
 		getData().graph_resources.nodes[GRAPH_MODE_NORMAL].clear();
 		getData().graph_resources.nodes[GRAPH_MODE_INSPECT].clear();

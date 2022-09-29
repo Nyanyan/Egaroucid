@@ -75,6 +75,7 @@ public:
 		graph.font = getData().fonts.font15;
 		graph.font_size = 15;
 		if (getData().graph_resources.need_init) {
+			getData().game_information.init();
 			getData().graph_resources.init();
 			getData().graph_resources.nodes[getData().graph_resources.put_mode].emplace_back(getData().history_elem);
 		}
@@ -248,6 +249,7 @@ private:
 			getData().history_elem.reset();
 			getData().graph_resources.init();
 			getData().graph_resources.nodes[getData().graph_resources.put_mode].emplace_back(getData().history_elem);
+			getData().game_information.init();
 			resume_calculating();
 			need_start_game_button_calculation();
 		}

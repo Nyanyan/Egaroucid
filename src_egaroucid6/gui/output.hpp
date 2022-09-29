@@ -15,9 +15,6 @@
 
 class Export_game : public App::Scene {
 private:
-	String black_player_name;
-	String white_player_name;
-	String memo;
 	Button back_button;
 	Button export_main_button;
 	Button export_this_board_button;
@@ -64,13 +61,13 @@ public:
 		if (!active_draw && active_cells[0]) {
 			active_draw = true;
 			black_area.draw(getData().colors.light_cyan).drawFrame(2, getData().colors.black);
-			TextInput::UpdateText(black_player_name);
+			TextInput::UpdateText(getData().game_information.black_player_name);
 			if (KeyControl.pressed() && KeyV.down()) {
 				String clip_text;
 				Clipboard::GetText(clip_text);
-				black_player_name += clip_text;
+				getData().game_information.black_player_name += clip_text;
 			}
-			if (black_player_name.narrow().find('\t') != string::npos) {
+			if (getData().game_information.black_player_name.narrow().find('\t') != string::npos) {
 				for (int i = 0; i < 3; ++i) {
 					if (active_cells[i]) {
 						active_cells[i] = false;
@@ -79,23 +76,23 @@ public:
 					}
 				}
 			}
-			black_player_name = black_player_name.replaced(U"\r", U"").replaced(U"\n", U" ").replaced(U"\t", U"");
-			getData().fonts.font15(black_player_name + U'|' + editingText).draw(black_area.stretched(-4), getData().colors.black);
+			getData().game_information.black_player_name = getData().game_information.black_player_name.replaced(U"\r", U"").replaced(U"\n", U" ").replaced(U"\t", U"");
+			getData().fonts.font15(getData().game_information.black_player_name + U'|' + editingText).draw(black_area.stretched(-4), getData().colors.black);
 		}
 		else {
 			black_area.draw(getData().colors.white).drawFrame(2, getData().colors.black);
-			getData().fonts.font15(black_player_name).draw(black_area.stretched(-4), getData().colors.black);
+			getData().fonts.font15(getData().game_information.black_player_name).draw(black_area.stretched(-4), getData().colors.black);
 		}
 		if (!active_draw && active_cells[1]) {
 			active_draw = true;
 			white_area.draw(getData().colors.light_cyan).drawFrame(2, getData().colors.black);
-			TextInput::UpdateText(white_player_name);
+			TextInput::UpdateText(getData().game_information.white_player_name);
 			if (KeyControl.pressed() && KeyV.down()) {
 				String clip_text;
 				Clipboard::GetText(clip_text);
-				white_player_name += clip_text;
+				getData().game_information.white_player_name += clip_text;
 			}
-			if (white_player_name.narrow().find('\t') != string::npos) {
+			if (getData().game_information.white_player_name.narrow().find('\t') != string::npos) {
 				for (int i = 0; i < 3; ++i) {
 					if (active_cells[i]) {
 						active_cells[i] = false;
@@ -104,23 +101,23 @@ public:
 					}
 				}
 			}
-			white_player_name = white_player_name.replaced(U"\r", U"").replaced(U"\n", U" ").replaced(U"\t", U"");
-			getData().fonts.font15(white_player_name + U'|' + editingText).draw(white_area.stretched(-4), getData().colors.black);
+			getData().game_information.white_player_name = getData().game_information.white_player_name.replaced(U"\r", U"").replaced(U"\n", U" ").replaced(U"\t", U"");
+			getData().fonts.font15(getData().game_information.white_player_name + U'|' + editingText).draw(white_area.stretched(-4), getData().colors.black);
 		}
 		else {
 			white_area.draw(getData().colors.white).drawFrame(2, getData().colors.black);
-			getData().fonts.font15(white_player_name).draw(white_area.stretched(-4), getData().colors.black);
+			getData().fonts.font15(getData().game_information.white_player_name).draw(white_area.stretched(-4), getData().colors.black);
 		}
 		if (!active_draw && active_cells[2]) {
 			active_draw = true;
 			memo_area.draw(getData().colors.light_cyan).drawFrame(2, getData().colors.black);
-			TextInput::UpdateText(memo);
+			TextInput::UpdateText(getData().game_information.memo);
 			if (KeyControl.pressed() && KeyV.down()) {
 				String clip_text;
 				Clipboard::GetText(clip_text);
-				memo += clip_text;
+				getData().game_information.memo += clip_text;
 			}
-			if (memo.narrow().find('\t') != string::npos) {
+			if (getData().game_information.memo.narrow().find('\t') != string::npos) {
 				for (int i = 0; i < 3; ++i) {
 					if (active_cells[i]) {
 						active_cells[i] = false;
@@ -129,13 +126,13 @@ public:
 					}
 				}
 			}
-			memo = memo.replaced(U"\t", U"");
-			getData().fonts.font15(memo + U'|' + editingText).draw(memo_area.stretched(-4), getData().colors.black);
+			getData().game_information.memo = getData().game_information.memo.replaced(U"\t", U"");
+			getData().fonts.font15(getData().game_information.memo + U'|' + editingText).draw(memo_area.stretched(-4), getData().colors.black);
 			
 		}
 		else {
 			memo_area.draw(getData().colors.white).drawFrame(2, getData().colors.black);
-			getData().fonts.font15(memo).draw(memo_area.stretched(-4), getData().colors.black);
+			getData().fonts.font15(getData().game_information.memo).draw(memo_area.stretched(-4), getData().colors.black);
 		}
 		back_button.draw();
 		export_main_button.draw();
@@ -228,9 +225,9 @@ private:
 		String date = Unicode::Widen(calc_date());
 		JSON json;
 		json[GAME_DATE] = date;
-		json[GAME_BLACK_PLAYER] = black_player_name;
-		json[GAME_WHITE_PLAYER] = white_player_name;
-		json[GAME_MEMO] = memo;
+		json[GAME_BLACK_PLAYER] = getData().game_information.black_player_name;
+		json[GAME_WHITE_PLAYER] = getData().game_information.white_player_name;
+		json[GAME_MEMO] = getData().game_information.memo;
 		int black_discs = GAME_DISCS_UNDEFINED;
 		int white_discs = GAME_DISCS_UNDEFINED;
 		if (history.back().board.is_end()) {
@@ -260,12 +257,12 @@ private:
 
 		const String csv_path = Unicode::Widen(getData().directories.document_dir) + U"Egaroucid/games/summary.csv";
 		CSV csv{ csv_path };
-		String memo_summary_all = memo.replaced(U"\r", U"").replaced(U"\n", U" ");
+		String memo_summary_all = getData().game_information.memo.replaced(U"\r", U"").replaced(U"\n", U" ");
 		String memo_summary;
 		for (int i = 0; i < min((int)memo_summary_all.size(), GAME_MEMO_SUMMARY_SIZE); ++i) {
 			memo_summary += memo_summary_all[i];
 		}
-		csv.writeRow(date, black_player_name, white_player_name, memo_summary, black_discs, white_discs);
+		csv.writeRow(date, getData().game_information.black_player_name, getData().game_information.white_player_name, memo_summary, black_discs, white_discs);
 		csv.save(csv_path);
 	}
 };
