@@ -80,7 +80,7 @@ int book_learn_search(Board board, int level, const int book_depth, int error_su
                 g = -book_learn_search(board, level, book_depth, n_error_sum, expected_error, adopt_error_sum, board_copy, player, strt_tim, book_file, book_bak);
                 if (global_searching){
                     v = max(v, g);
-                    cerr << "depth " << board.n_discs() - 4 << " AD value " << g << " move " << idx_to_coord(cell) << " best move value " << best_move.value << " remaining error " << adopt_error_sum - n_error_sum << endl;
+                    cerr << "depth " << board.n_discs() - 4 << " AD value " << g << " move " << idx_to_coord(cell) << " pre " << best_move.value << " best " << v << " remaining error " << adopt_error_sum - n_error_sum << endl;
                 }
             }
         *player ^= 1;

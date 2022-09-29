@@ -721,7 +721,7 @@ private:
 		menu_e.init_button(language.get("book", "settings"), &menu_elements->dummy);
 		side_menu.init_bar(language.get("book", "depth"), &menu_elements->book_learn_depth, menu_elements->book_learn_depth, 0, 60);
 		menu_e.push(side_menu);
-		side_menu.init_bar(language.get("book", "accept"), &menu_elements->book_learn_error, menu_elements->book_learn_error, 0, 64);
+		side_menu.init_bar(language.get("book", "accept"), &menu_elements->book_learn_error, menu_elements->book_learn_error, 0, 128);
 		menu_e.push(side_menu);
 		title.push(menu_e);
 		menu_e.init_button(language.get("book", "start_learn"), &menu_elements->book_start_learn);
