@@ -336,11 +336,9 @@ class Book{
 
     private:
         inline bool register_book(Board b, int value){
-            if (book.find(b) == book.end()){
-                book[b] = value;
-                return true;
-            }
-            return false;
+            bool res = book.find(b) == book.end();
+            book[b] = value;
+            return res;
         }
 
         inline bool delete_book(Board b){

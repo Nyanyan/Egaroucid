@@ -1254,7 +1254,52 @@ private:
 
 	void change_book_by_right_click() {
 		if (getData().book_information.changing != BOOK_CHANGE_NO_CELL) {
-
+			getData().fonts.font15(language.get("book", "changed_value") + U"(" + Unicode::Widen(idx_to_coord(getData().book_information.changing)) + U"): " + getData().book_information.val_str).draw(CHANGE_BOOK_INFO_SX, CHANGE_BOOK_INFO_SY, getData().colors.white);
+			if (KeyEscape.down()) {
+				getData().book_information.changing = BOOK_CHANGE_NO_CELL;
+			}
+			else if (Key0.down() || KeyNum0.down()) {
+				if (getData().book_information.val_str != U"0" && getData().book_information.val_str != U"-") {
+					getData().book_information.val_str += U"0";
+				}
+			}
+			else if (Key1.down() || KeyNum1.down()) {
+				getData().book_information.val_str += U"1";
+			}
+			else if (Key2.down() || KeyNum2.down()) {
+				getData().book_information.val_str += U"2";
+			}
+			else if (Key3.down() || KeyNum3.down()) {
+				getData().book_information.val_str += U"3";
+			}
+			else if (Key4.down() || KeyNum4.down()) {
+				getData().book_information.val_str += U"4";
+			}
+			else if (Key5.down() || KeyNum5.down()) {
+				getData().book_information.val_str += U"5";
+			}
+			else if (Key6.down() || KeyNum6.down()) {
+				getData().book_information.val_str += U"6";
+			}
+			else if (Key7.down() || KeyNum7.down()) {
+				getData().book_information.val_str += U"7";
+			}
+			else if (Key8.down() || KeyNum8.down()) {
+				getData().book_information.val_str += U"8";
+			}
+			else if (Key9.down() || KeyNum9.down()) {
+				getData().book_information.val_str += U"9";
+			}
+			else if (KeyMinus.down()) {
+				if (getData().book_information.val_str == U"") {
+					getData().book_information.val_str += U"-";
+				}
+			}
+			else if (KeyBackspace.down()) {
+				if (getData().book_information.val_str.size()) {
+					getData().book_information.val_str.pop_back();
+				}
+			}
 		}
 		uint64_t legal = getData().history_elem.board.get_legal();
 		for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
@@ -1263,8 +1308,30 @@ private:
 			Rect cell_rect(BOARD_SX + x * BOARD_CELL_SIZE, BOARD_SY + y * BOARD_CELL_SIZE, BOARD_CELL_SIZE, BOARD_CELL_SIZE);
 			if (cell_rect.rightClicked()) {
 				if (getData().book_information.changing == cell) {
-					getData().book_information.changing = BOOK_CHANGE_NO_CELL;
-					getData().book_information.changed = true;
+					if (getData().book_information.val_str.size() == 0) {
+						getData().book_information.changing = BOOK_CHANGE_NO_CELL;
+					}
+					else {
+						int changed_book_value = ParseOr<int>(getData().book_information.val_str, CHANGE_BOOK_ERR);
+						if (changed_book_value < -HW2 || HW2 < changed_book_value) {
+							getData().book_information.val_str.clear();
+							changed_book_value = CHANGE_BOOK_ERR;
+						}
+						if (changed_book_value != CHANGE_BOOK_ERR) {
+							cerr << "new value " << changed_book_value << endl;
+							Flip flip;
+							calc_flip(&flip, &getData().history_elem.board, getData().book_information.changing);
+							Board b = getData().history_elem.board.move_copy(&flip);
+							cerr << book.get(&b) << endl;
+							book.change(getData().history_elem.board.move_copy(&flip), changed_book_value);
+							cerr << book.get(&b) << endl;
+							getData().book_information.changed = true;
+							getData().book_information.changing = BOOK_CHANGE_NO_CELL;
+							getData().book_information.val_str.clear();
+							stop_calculating();
+							resume_calculating();
+						}
+					}
 				}
 				else {
 					getData().book_information.val_str.clear();
