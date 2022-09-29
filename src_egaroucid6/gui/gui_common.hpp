@@ -1,7 +1,8 @@
 ﻿#pragma once
 #include <iostream>
 #include <Siv3D.hpp> // OpenSiv3D v0.6.3
-#include "./ai.hpp"
+#include "./../ai.hpp"
+#include "./../umigame.hpp"
 #include "version.hpp"
 
 using namespace std;
@@ -247,6 +248,7 @@ struct Settings {
 	int book_learn_depth;
 	int book_learn_error;
 	bool show_stable_discs;
+	bool change_book_by_right_click;
 };
 
 struct Fonts {
@@ -261,6 +263,7 @@ struct Fonts {
 	Font font10{ 10 };
 	Font font15_bold{ 15, Typeface::Bold };
 	Font font13_heavy{ 13, Typeface::Heavy };
+	Font font11_heavy{ 11, Typeface::Heavy };
 	Font font9_bold{ 9, Typeface::Bold };
 };
 
@@ -290,12 +293,13 @@ struct Menu_elements {
 	bool show_stable_discs;
 	bool show_log;
 
-	// 定石
+	// book
 	bool book_start_learn;
 	int book_learn_depth;
 	int book_learn_error;
 	bool book_import;
 	bool book_reference;
+	bool change_book_by_right_click;
 
 	// 入出力
 	// 入力
@@ -352,6 +356,7 @@ struct Menu_elements {
 		book_learn_error = settings->book_learn_error;
 		book_import = false;
 		book_reference = false;
+		change_book_by_right_click = false;
 
 		input_transcript = false;
 		input_board = false;
@@ -500,6 +505,13 @@ struct Game_abstract {
 	int white_score;
 	String memo;
 	String date;
+};
+
+struct Umigame_status {
+	bool umigame_calculating{ false };
+	bool umigame_calculated{ false };
+	future<Umigame_result> umigame_future[HW2];
+	Umigame_result umigame[HW2];
 };
 
 using App = SceneManager<String, Common_resources>;

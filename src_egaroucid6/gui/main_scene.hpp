@@ -1,7 +1,8 @@
 ﻿#pragma once
 #include <iostream>
 #include <future>
-#include "./ai.hpp"
+#include "./../ai.hpp"
+#include "./../umigame.hpp"
 #include "function/language.hpp"
 #include "function/menu.hpp"
 #include "function/graph.hpp"
@@ -55,6 +56,10 @@ void draw_board(Fonts fonts, Colors colors, History_elem history_elem) {
 	}
 }
 
+Umigame_result get_umigame(Board board, int player) {
+	return umigame.get(&board, player);
+}
+
 class Main_scene : public App::Scene {
 private:
 	Graph graph;
@@ -62,6 +67,7 @@ private:
 	AI_status ai_status;
 	Button start_game_button;
 	bool need_start_game_button;
+	Umigame_status umigame_status;
 
 public:
 	Main_scene(const InitData& init) : IScene{ init } {
@@ -173,6 +179,16 @@ public:
 			}
 		}
 
+		// umigame calculating / drawing
+		if (getData().menu_elements.use_umigame_value) {
+			if (umigame_status.umigame_calculated) {
+				draw_umigame();
+			}
+			else {
+				calculate_umigame();
+			}
+		}
+
 		// stable drawing
 		if (getData().menu_elements.show_stable_discs) {
 			draw_stable_discs();
@@ -216,6 +232,11 @@ private:
 		ai_status.analyze_task_stack.clear();
 	}
 
+	void reset_umigame() {
+		umigame_status.umigame_calculated = false;
+		umigame_status.umigame_calculating = false;
+	}
+
 	void stop_calculating() {
 		cerr << "terminating calculation" << endl;
 		global_searching = false;
@@ -230,6 +251,11 @@ private:
 		for (int i = 0; i < ANALYZE_SIZE; ++i) {
 			if (ai_status.analyze_future[i].valid()) {
 				ai_status.analyze_future[i].get();
+			}
+		}
+		for (int i = 0; i < HW2; ++i) {
+			if (umigame_status.umigame_future[i].valid()) {
+				umigame_status.umigame_future[i].get();
 			}
 		}
 		cerr << "calculation terminated" << endl;
@@ -532,6 +558,7 @@ private:
 		getData().graph_resources.nodes[getData().graph_resources.put_mode].emplace_back(getData().history_elem);
 		getData().graph_resources.n_discs++;
 		reset_hint();
+		reset_umigame();
 	}
 
 	void interact_move() {
@@ -1132,5 +1159,49 @@ private:
 			(getData().history_elem.player == WHITE && getData().menu_elements.ai_put_white)) &&
 			getData().history_elem.board.n_discs() == getData().graph_resources.nodes[getData().graph_resources.put_mode].back().board.n_discs() &&
 			!getData().history_elem.board.is_end();
+	}
+
+	void calculate_umigame() {
+		uint64_t legal = getData().history_elem.board.get_legal();
+		if (!umigame_status.umigame_calculating) {
+			Board board = getData().history_elem.board;
+			int n_player = getData().history_elem.player ^ 1;
+			Flip flip;
+			for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
+				calc_flip(&flip, &board, cell);
+				board.move_board(&flip);
+				umigame_status.umigame_future[cell] = async(launch::async, get_umigame, board, n_player);
+				board.undo_board(&flip);
+			}
+			umigame_status.umigame_calculating = true;
+			cerr << "start umigame calculation" << endl;
+		}
+		else {
+			bool all_done = true;
+			for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
+				if (umigame_status.umigame_future[cell].valid()) {
+					if (umigame_status.umigame_future[cell].wait_for(chrono::seconds(0)) == future_status::ready) {
+						umigame_status.umigame[cell] = umigame_status.umigame_future[cell].get();
+					}
+					else {
+						all_done = false;
+					}
+				}
+			}
+			if (all_done) {
+				umigame_status.umigame_calculated = all_done;
+				cerr << "finish umigame calculation" << endl;
+			}
+		}
+	}
+
+	void draw_umigame() {
+		uint64_t legal = getData().history_elem.board.get_legal();
+		for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
+			int sx = BOARD_SX + ((HW2_M1 - cell) % HW) * BOARD_CELL_SIZE;
+			int sy = BOARD_SY + ((HW2_M1 - cell) / HW) * BOARD_CELL_SIZE;
+			getData().fonts.font11_heavy(umigame_status.umigame[cell].b).draw(Arg::bottomRight(sx + BOARD_CELL_SIZE - 2, sy + BOARD_CELL_SIZE - 14), getData().colors.black);
+			getData().fonts.font11_heavy(umigame_status.umigame[cell].w).draw(Arg::bottomRight(sx + BOARD_CELL_SIZE - 2, sy + BOARD_CELL_SIZE - 1), getData().colors.white);
+		}
 	}
 };
