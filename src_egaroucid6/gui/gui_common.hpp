@@ -263,7 +263,6 @@ struct Fonts {
 	Font font10{ 10 };
 	Font font15_bold{ 15, Typeface::Bold };
 	Font font13_heavy{ 13, Typeface::Heavy };
-	Font font11_heavy{ 11, Typeface::Heavy };
 	Font font9_bold{ 9, Typeface::Bold };
 };
 
@@ -356,7 +355,7 @@ struct Menu_elements {
 		book_learn_error = settings->book_learn_error;
 		book_import = false;
 		book_reference = false;
-		change_book_by_right_click = false;
+		change_book_by_right_click = settings->change_book_by_right_click;
 
 		input_transcript = false;
 		input_board = false;

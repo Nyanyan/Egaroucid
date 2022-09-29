@@ -31,6 +31,7 @@ void save_settings(Menu_elements menu_elements, Settings settings, Directories d
 		writer.writeln(menu_elements.book_learn_depth);
 		writer.writeln(menu_elements.book_learn_error);
 		writer.writeln((int)menu_elements.show_stable_discs);
+		writer.writeln((int)menu_elements.change_book_by_right_click);
 	}
 }
 

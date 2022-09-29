@@ -160,22 +160,18 @@ public:
 		// board drawing
 		draw_board(getData().fonts, getData().colors, getData().history_elem);
 
-		bool hint_ignore = ai_should_move || ai_status.analyzing || need_start_game_button;
+		bool legal_draw = getData().menu_elements.show_legal;
+		uint64_t legal_ignore = 0ULL;
 
-		// hint / legalcalculating & drawing
+		// hint calculating & drawing
+		bool hint_ignore = ai_should_move || ai_status.analyzing || need_start_game_button;
 		if (!hint_ignore) {
 			if (getData().menu_elements.use_disc_hint) {
 				if (!ai_status.hint_calculating && ai_status.hint_level < getData().menu_elements.level) {
 					hint_init_calculating();
 				}
 				hint_do_task();
-				uint64_t legal_ignore = draw_hint();
-				if (getData().menu_elements.show_legal) {
-					draw_legal(legal_ignore);
-				}
-			}
-			else if (getData().menu_elements.show_legal) {
-				draw_legal(0);
+				legal_ignore = draw_hint();
 			}
 		}
 
@@ -183,10 +179,16 @@ public:
 		if (getData().menu_elements.use_umigame_value) {
 			if (umigame_status.umigame_calculated) {
 				draw_umigame();
+				legal_draw = false;
 			}
 			else {
 				calculate_umigame();
 			}
+		}
+
+		// legal drawing
+		if (legal_draw) {
+			draw_legal(legal_ignore);
 		}
 
 		// stable drawing
@@ -666,22 +668,22 @@ private:
 
 		title.init(language.get("display", "display"));
 
-		menu_e.init_button(language.get("display", "hint", "hint"), &menu_elements->dummy);
-		side_menu.init_check(language.get("display", "hint", "disc_value"), &menu_elements->use_disc_hint, menu_elements->use_disc_hint);
+		menu_e.init_button(language.get("display", "cell", "display_on_cell"), &menu_elements->dummy);
+		side_menu.init_check(language.get("display", "cell", "legal"), &menu_elements->show_legal, menu_elements->show_legal);
 		menu_e.push(side_menu);
-		side_menu.init_bar(language.get("display", "hint", "disc_value_number"), &menu_elements->n_disc_hint, menu_elements->n_disc_hint, 1, SHOW_ALL_HINT);
+		side_menu.init_check(language.get("display", "cell", "disc_value"), &menu_elements->use_disc_hint, menu_elements->use_disc_hint);
+		side_side_menu.init_bar(language.get("display", "cell", "disc_value_number"), &menu_elements->n_disc_hint, menu_elements->n_disc_hint, 1, SHOW_ALL_HINT);
+		side_menu.push(side_side_menu);
 		menu_e.push(side_menu);
-		side_menu.init_check(language.get("display", "hint", "umigame_value"), &menu_elements->use_umigame_value, menu_elements->use_umigame_value);
+		side_menu.init_check(language.get("display", "cell", "umigame_value"), &menu_elements->use_umigame_value, menu_elements->use_umigame_value);
+		menu_e.push(side_menu);
+		side_menu.init_check(language.get("display", "cell", "opening"), &menu_elements->show_opening_on_cell, menu_elements->show_opening_on_cell);
+		menu_e.push(side_menu);
+		side_menu.init_check(language.get("display", "cell", "stable"), &menu_elements->show_stable_discs, menu_elements->show_stable_discs);
 		menu_e.push(side_menu);
 		title.push(menu_e);
 
-		menu_e.init_check(language.get("display", "legal"), &menu_elements->show_legal, menu_elements->show_legal);
-		title.push(menu_e);
 		menu_e.init_check(language.get("display", "graph"), &menu_elements->show_graph, menu_elements->show_graph);
-		title.push(menu_e);
-		menu_e.init_check(language.get("display", "opening_on_cell"), &menu_elements->show_opening_on_cell, menu_elements->show_opening_on_cell);
-		title.push(menu_e);
-		menu_e.init_check(language.get("display", "stable"), &menu_elements->show_stable_discs, menu_elements->show_stable_discs);
 		title.push(menu_e);
 		menu_e.init_check(language.get("display", "log"), &menu_elements->show_log, menu_elements->show_log);
 		title.push(menu_e);
@@ -741,6 +743,8 @@ private:
 
 		title.init(language.get("book", "book"));
 
+		menu_e.init_check(language.get("book", "right_click_to_modify"), &menu_elements->change_book_by_right_click, menu_elements->change_book_by_right_click);
+		title.push(menu_e);
 		menu_e.init_button(language.get("book", "import"), &menu_elements->book_import);
 		title.push(menu_e);
 		menu_e.init_button(language.get("book", "book_reference"), &menu_elements->book_reference);
@@ -748,7 +752,7 @@ private:
 		menu_e.init_button(language.get("book", "settings"), &menu_elements->dummy);
 		side_menu.init_bar(language.get("book", "depth"), &menu_elements->book_learn_depth, menu_elements->book_learn_depth, 0, 60);
 		menu_e.push(side_menu);
-		side_menu.init_bar(language.get("book", "accept"), &menu_elements->book_learn_error, menu_elements->book_learn_error, 0, 128);
+		side_menu.init_bar(language.get("book", "accept"), &menu_elements->book_learn_error, menu_elements->book_learn_error, 0, 32);
 		menu_e.push(side_menu);
 		title.push(menu_e);
 		menu_e.init_button(language.get("book", "start_learn"), &menu_elements->book_start_learn);
@@ -1200,8 +1204,8 @@ private:
 		for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
 			int sx = BOARD_SX + ((HW2_M1 - cell) % HW) * BOARD_CELL_SIZE;
 			int sy = BOARD_SY + ((HW2_M1 - cell) / HW) * BOARD_CELL_SIZE;
-			getData().fonts.font11_heavy(umigame_status.umigame[cell].b).draw(Arg::bottomRight(sx + BOARD_CELL_SIZE - 2, sy + BOARD_CELL_SIZE - 14), getData().colors.black);
-			getData().fonts.font11_heavy(umigame_status.umigame[cell].w).draw(Arg::bottomRight(sx + BOARD_CELL_SIZE - 2, sy + BOARD_CELL_SIZE - 1), getData().colors.white);
+			getData().fonts.font13_heavy(umigame_status.umigame[cell].b).draw(Arg::bottomRight(sx + BOARD_CELL_SIZE - 3, sy + BOARD_CELL_SIZE - 17), getData().colors.black);
+			getData().fonts.font13_heavy(umigame_status.umigame[cell].w).draw(Arg::bottomRight(sx + BOARD_CELL_SIZE - 3, sy + BOARD_CELL_SIZE - 1), getData().colors.white);
 		}
 	}
 };
