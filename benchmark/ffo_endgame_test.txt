@@ -11970,6 +11970,24 @@ same
 43755520430 nodes
 234563741.9856331 nps
 
+2022/09/29 update probcut
+#40 depth 20 value 38 policy a2 nodes 23350676 time 164 nps 142382170
+#41 depth 22 value 0 policy h4 nodes 43619296 time 299 nps 145883933
+#42 depth 22 value 6 policy g2 nodes 47434690 time 259 nps 183145521
+#43 depth 23 value -12 policy c7 nodes 146108936 time 898 nps 162704828
+#44 depth 23 value -14 policy d2 nodes 24243135 time 520 nps 46621413
+#45 depth 24 value 6 policy b2 nodes 402880077 time 2228 nps 180825887
+#46 depth 24 value -8 policy b3 nodes 182421671 time 1081 nps 168752702
+#47 depth 25 value 4 policy g2 nodes 34995349 time 375 nps 93320930
+#48 depth 25 value 28 policy f6 nodes 205274011 time 1778 nps 115452199
+#49 depth 26 value 16 policy e1 nodes 612207889 time 4193 nps 146007128
+16 threads
+11.795 sec
+14.050212621688843 sec total
+1722535730 nodes
+146039485.37515897 nps
+
+
 
 
 

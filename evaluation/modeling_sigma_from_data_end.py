@@ -36,15 +36,31 @@ for x in range(len(data)):
             '''
             n_stones = x * n_stones_div + n_stones_div / 2
             depth = y
-            
+            '''
             x_n_stones.append(n_stones)
             y_depth.append(depth)
             z_sigma.append(statistics.stdev(data[x][y]))
-
+            '''
+'''
 for x in range(10):
     x_n_stones.append(x)
     y_depth.append(0)
     z_sigma.append(10.0)
+'''
+for x in range(4, 64):
+    x_n_stones.append(x)
+    y_depth.append(0)
+    z_sigma.append(3.0 + (64 - x) / 64 * 12.0)
+
+for y in range(0, 60):
+    x_n_stones.append(4)
+    y_depth.append(y)
+    z_sigma.append(3.0 + (60 - y) / 60 * 12.0)
+
+for x in range(4, 64):
+    x_n_stones.append(x)
+    y_depth.append(64 - x)
+    z_sigma.append(3.0)
 
 probcut_end_params_before = [
     0.27811777028350226,
@@ -79,15 +95,15 @@ def plot_fit_result_onephase(params):
     #ax.plot(sdxs, sdys, sdzs, ms=3, marker="o",linestyle='None')
     phase = n_stones // n_stones_div
     ax.plot(x_n_stones, y_depth, z_sigma, ms=3, marker="o",linestyle='None')
-    mx, my = np.meshgrid(range(65), range(31))
+    mx, my = np.meshgrid(range(65), range(61))
     ax.plot_wireframe(mx, my, f((mx, my), *params), rstride=10, cstride=10)
     ax.set_xlabel('n_stones')
     ax.set_ylabel('depth')
     ax.set_zlabel('sigma')
     plt.show()
 
-#popt, pcov = curve_fit(f, (x_n_stones, y_depth), z_sigma, np.array(probcut_end_params_before))
-popt = probcut_end_params_before
+popt, pcov = curve_fit(f, (x_n_stones, y_depth), z_sigma, np.array(probcut_end_params_before))
+#popt = probcut_end_params_before
 print([float(elem) for elem in popt])
 for i in range(len(popt)):
     print('#define probcut_end_' + chr(ord('a') + i), popt[i])
