@@ -36,6 +36,11 @@ int book_learn_search(Board board, int level, const int book_depth, int expected
         book.reg(board, -g);
         return g;
     }
+    int book_value = book.get(&board);
+    if (book_value != -INF){
+        cerr << "depth " << board.n_discs() - 4 << " BK value " << book_value << endl;
+        return book_value;
+    }
     if (get_level_complete_depth(level) >= HW2 - board.n_discs())
         error_remain = 0;
     uint64_t legal = board.get_legal();
@@ -78,7 +83,7 @@ int book_learn_search(Board board, int level, const int book_depth, int expected
                     n_error_remain = error_remain - max(0, best_move.value - g);
                     if (-HW2 <= expected_value && expected_value <= HW2)
                         n_error_remain -= max(0, expected_value - g);
-                    g = -book_learn_search(board, level, book_depth, max(expected_error, -v), expected_error, n_error_remain, board_copy, player, strt_tim, book_file, book_bak);
+                    g = -book_learn_search(board, level, book_depth, max(expected_value, -v), expected_error, n_error_remain, board_copy, player, strt_tim, book_file, book_bak);
                     if (global_searching && g >= -HW2 && g <= HW2){
                         v = max(v, g);
                         cerr << "depth " << board.n_discs() - 4 << " AD value " << g << " pre " << best_move.value << " best " << v << " expected " << expected_value << " remaining error " << n_error_remain << endl;

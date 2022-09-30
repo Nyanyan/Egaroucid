@@ -307,7 +307,7 @@ class Book{
 
         inline void save_bin(string file, string bak_file){
             if (remove(bak_file.c_str()) == -1)
-                cerr << "cannot delete book_backup.egbk" << endl;
+                cerr << "cannot delete backup. you can ignore this." << endl;
             rename(file.c_str(), bak_file.c_str());
             ofstream fout;
             fout.open(file.c_str(), ios::out|ios::binary|ios::trunc);
