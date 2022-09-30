@@ -255,7 +255,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
             int pv_idx = 0, split_count = 0;
             if (best_move != TRANSPOSE_TABLE_UNDEFINED)
                 pv_idx = 1;
-            vector<int32_t> parallel_tasks;
+            vector<future<Parallel_task>> parallel_tasks;
             bool n_searching = true;
             for (int move_idx = 0; move_idx < canput; ++move_idx){
                 if (!(*searching))
