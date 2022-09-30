@@ -94,15 +94,12 @@ int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped, con
 int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, const bool *searching){
     if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
-    
-    if (depth <= MID_FAST_DEPTH)
-        return nega_alpha(search, alpha, beta, depth, skipped, searching);
-    /*
+    //if (depth <= MID_FAST_DEPTH)
+    //    return nega_alpha(search, alpha, beta, depth, skipped, searching);
     if (depth == 1)
         return nega_alpha_eval1(search, alpha, beta, skipped, searching);
     if (depth == 0)
         return mid_evaluate_diff(search);
-    */
     ++(search->n_nodes);
     int first_alpha = alpha;
     if (legal == LEGAL_UNDEFINED)
@@ -182,14 +179,12 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
     if (is_end_search && depth <= MID_TO_END_DEPTH)
         return nega_alpha_end(search, alpha, beta, skipped, legal, searching);
     if (!is_end_search){
-        if (depth <= MID_FAST_DEPTH)
-            return nega_alpha(search, alpha, beta, depth, skipped, searching);
-        /*
+        //if (depth <= MID_FAST_DEPTH)
+        //    return nega_alpha(search, alpha, beta, depth, skipped, searching);
         if (depth == 1)
             return nega_alpha_eval1(search, alpha, beta, skipped, searching);
         if (depth == 0)
             return mid_evaluate_diff(search);
-        */
     }
     ++search->n_nodes;
     uint32_t hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
@@ -332,8 +327,14 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
         return SCORE_UNDEFINED;
     if (is_end_search && depth <= MID_TO_END_DEPTH)
         return nega_alpha_end(search, alpha, beta, skipped, legal, searching);
-    if (!is_end_search && depth <= MID_FAST_DEPTH)
-        return nega_alpha(search, alpha, beta, depth, skipped, searching);
+    //if (!is_end_search && depth <= MID_FAST_DEPTH)
+    //    return nega_alpha(search, alpha, beta, depth, skipped, searching);
+    if (!is_end_search){
+        if (depth == 1)
+            return nega_alpha_eval1(search, alpha, beta, skipped, searching);
+        if (depth == 0)
+            return mid_evaluate_diff(search);
+    }
     ++(search->n_nodes);
     #if USE_END_SC
         if (is_end_search){
