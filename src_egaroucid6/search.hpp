@@ -122,7 +122,7 @@ class Search{
 };
 
 inline void register_tt(Search *search, int depth, uint32_t hash_code, int first_alpha, int v, int best_move, int l, int u, int alpha, int beta, const bool *searching){
-    if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD && (*searching)){
+    if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD && (*searching) && -HW2 <= v && v <= HW2){
         if (first_alpha < v && best_move != TRANSPOSE_TABLE_UNDEFINED)
             child_transpose_table.reg(&search->board, hash_code, best_move);
         if (first_alpha < v && v < beta)
