@@ -255,6 +255,7 @@ struct Settings {
 	int book_learn_error;
 	bool show_stable_discs;
 	bool change_book_by_right_click;
+	bool ignore_book;
 };
 
 struct Fonts {
@@ -305,6 +306,7 @@ struct Menu_elements {
 	bool book_import;
 	bool book_reference;
 	bool change_book_by_right_click;
+	bool ignore_book;
 
 	// 入出力
 	// 入力
@@ -362,6 +364,7 @@ struct Menu_elements {
 		book_import = false;
 		book_reference = false;
 		change_book_by_right_click = settings->change_book_by_right_click;
+		ignore_book = settings->ignore_book;
 
 		input_transcript = false;
 		input_board = false;

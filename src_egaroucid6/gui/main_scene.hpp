@@ -784,6 +784,8 @@ private:
 		menu_e.push(side_menu);
 		side_menu.init_bar(language.get("book", "accept"), &menu_elements->book_learn_error, menu_elements->book_learn_error, 0, 32);
 		menu_e.push(side_menu);
+		side_menu.init_check(language.get("book", "ignore"), &menu_elements->ignore_book, menu_elements->ignore_book);
+		menu_e.push(side_menu);
 		title.push(menu_e);
 		menu_e.init_button(language.get("book", "start_learn"), &menu_elements->book_start_learn);
 		title.push(menu_e);
@@ -1291,7 +1293,7 @@ private:
 				getData().book_information.val_str += U"9";
 			}
 			else if (KeyMinus.down()) {
-				if (getData().book_information.val_str == U"") {
+				if (getData().book_information.val_str == U"" || getData().book_information.val_str == U"-") {
 					getData().book_information.val_str += U"-";
 				}
 			}
@@ -1322,9 +1324,18 @@ private:
 							Flip flip;
 							calc_flip(&flip, &getData().history_elem.board, getData().book_information.changing);
 							Board b = getData().history_elem.board.move_copy(&flip);
-							cerr << book.get(&b) << endl;
 							book.change(getData().history_elem.board.move_copy(&flip), changed_book_value);
-							cerr << book.get(&b) << endl;
+							getData().book_information.changed = true;
+							getData().book_information.changing = BOOK_CHANGE_NO_CELL;
+							getData().book_information.val_str.clear();
+							stop_calculating();
+							resume_calculating();
+						}
+						else {
+							Flip flip;
+							calc_flip(&flip, &getData().history_elem.board, getData().book_information.changing);
+							Board b = getData().history_elem.board.move_copy(&flip);
+							book.delete_elem(b);
 							getData().book_information.changed = true;
 							getData().book_information.changing = BOOK_CHANGE_NO_CELL;
 							getData().book_information.val_str.clear();

@@ -252,7 +252,7 @@ public:
 		history_elem = getData().history_elem;
 		book_learning = true;
 		done = false;
-		book_learn_future = async(launch::async, learn_book, root_board, getData().menu_elements.level, getData().menu_elements.book_learn_depth, getData().menu_elements.book_learn_error, &history_elem.board, &history_elem.player, getData().settings.book_file, getData().settings.book_file + ".bak", &book_learning);
+		book_learn_future = async(launch::async, learn_book, root_board, getData().menu_elements.level, getData().menu_elements.book_learn_depth, getData().menu_elements.book_learn_error, &history_elem.board, &history_elem.player, getData().settings.book_file, getData().settings.book_file + ".bak", getData().menu_elements.ignore_book,  &book_learning);
 	}
 
 	void update() override {

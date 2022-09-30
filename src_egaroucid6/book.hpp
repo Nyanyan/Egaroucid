@@ -342,7 +342,7 @@ class Book{
         }
 
         inline bool delete_book(Board b){
-            if (book.find(b) == book.end()){
+            if (book.find(b) != book.end()){
                 book.erase(b);
                 return true;
             }
