@@ -102,7 +102,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
             g = result.first;
             policy = result.second;
             if (show_log)
-                cerr << "presearch depth " << depth << " value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
+                cerr << "presearch depth " << depth - 1 << " value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
         }
         search.use_mpc = true;
         search.mpct = 0.9;
@@ -113,7 +113,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
             g = result.first;
             policy = result.second;
             if (show_log)
-                cerr << "presearch depth " << depth << " value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
+                cerr << "presearch depth " << depth - 1 << " value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
         }
         search.first_depth = depth;
         search.use_mpc = use_mpc;

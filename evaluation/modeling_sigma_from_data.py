@@ -64,26 +64,26 @@ for w in range(4, 65):
     y_depth2.append(0)
     z_sigma.append(10.0)
 '''
-mx_err = 8.0
+mx_err = 9.0
 for w in range(4, 65):
     for x in range(0, 64 - w):
         w_n_stones.append(w)
         x_depth1.append(x)
         y_depth2.append(0)
-        z_sigma.append(2.5 + x / (64 - w) * mx_err)
+        z_sigma.append(3.3 + x / (64 - w) * mx_err)
 for w in range(4, 65):
     for x in range(0, 64 - w):
         w_n_stones.append(w)
         x_depth1.append(60)
         y_depth2.append(60 - x)
-        z_sigma.append(2.5 + x / (64 - w) * mx_err)
+        z_sigma.append(3.3 + x / (64 - w) * mx_err)
 
 for w in range(4, 65):
     for xy in range(0, 64 - w, 4):
         w_n_stones.append(w)
         x_depth1.append(xy)
         y_depth2.append(xy)
-        z_sigma.append(2.5)
+        z_sigma.append(3.3)
 
 probcut_params_before = [
     -0.0027183880227839127,
@@ -178,7 +178,7 @@ for i in range(len(popt)):
     print('#define probcut_' + chr(ord('a') + i), popt[i])
 #perr = np.sqrt(np.diag(pcov))
 #plot_fit_result(popt)
-plot_fit_result_onephase(4, popt)
+plot_fit_result_onephase(20, popt)
 exit()
 
 fig = plt.figure()

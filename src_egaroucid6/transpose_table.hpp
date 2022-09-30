@@ -19,7 +19,7 @@ using namespace std;
 
 inline double data_strength(const double t, const int d){
     //return t * (TRANSPOSE_TABLE_STRENGTH_MAGIC_NUMBER + d);
-    return t + d * 100;
+    return t + 4.0 * d;
 }
 
 class Node_child_transpose_table{
