@@ -194,6 +194,7 @@ struct History_elem {
 		policy = -1;
 		next_policy = -1;
 		level = -1;
+		opening_name.clear();
 	}
 
 	void set(Board b, int p, int vv, int l, int pl, int npl, string o) {
