@@ -20,7 +20,7 @@ The light version got the first place in the world ([CodinGame Othello](https://
 * Input & Output
 * Create & modify book automatically or manually
 * Add Egaroucid's or Edax's book
-* Show Joseki (in Japanese)
+* Show Opening (in Japanese)
 
 
 
@@ -28,36 +28,15 @@ The light version got the first place in the world ([CodinGame Othello](https://
 
 [Here](https://github.com/Nyanyan/Egaroucid/releases) you can download.
 
-Please select the OS, then click to download. Then execute it and please install it with the wizard.
-
-For MacOS users, please see below.
+Please click to download. Then execute it and please install it with the wizard.
 
 ![download](./../img/download.png)
 
 
 
-### How to open in MacOS
+### For MacOS
 
-Only version 5.4.1 can be used in MacOS. Egaroucid5.4.1 has a trouble in opening.
-
-To open it, please
-
-```
-cd path/to/Egaroucid
-chmod Egaroucid.app/Contents/MacOS/Egaroucid
-```
-
-Then please execute ```Egaroucid.app/Contents/MacOS/Egaroucid```.
-
-Now fixing this problem.
-
-
-
-## Usage
-
-[Here](./../usage/) you can see.
-
-You can also download manuals in [markdown format](./../usage/en/index.md) or [PDF format](./../usage/en/index.pdf).
+Not available for MacOS.
 
 
 
@@ -107,14 +86,13 @@ Kuruton
 
 ## Creator
 
-Takuto Yamana / Nyanyan
+Takuto Yamana
 
 
 
 ## Links
 
 * [GitHub Repository](https://github.com/Nyanyan/Egaroucid)
-* [Creator's Twitter (Quiet)](https://twitter.com/takuto_yamana)
-* [Creator's Twitter (Noisy)](https://twitter.com/Nyanyan_Cube)
+* [Creator's Twitter](https://twitter.com/takuto_yamana)
 * [Creator's Web Page](https://nyanyan.github.io/)
 

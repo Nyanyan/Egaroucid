@@ -16,7 +16,7 @@ Egaroucidは世界最強クラスのオセロAIを搭載したオセロ研究・
 
 * 対局
 * 対局分析
-* 評価値、人間的評価値、うみがめ数の表示
+* 評価値、うみがめ数の表示
 * 各種入出力
 * bookを自動/手動で作成/修正
 * Egaroucid/Edax形式のbookの追加・統合
@@ -28,38 +28,15 @@ Egaroucidは世界最強クラスのオセロAIを搭載したオセロ研究・
 
 [こちら](https://github.com/Nyanyan/Egaroucid/releases/)から最新バージョンをzip形式でダウンロードできます。
 
-以下の画像のように、自分のOSに合ったものをクリックしてダウンロードしてください。それを実行し、インストーラの指示に従ってインストールしてください。
-
-MacOSについては現在バージョン5.4.1のみ対応で、以下の方法で起動できます。
+以下の画像のように、ダウンロードしてください。それを実行し、インストーラの指示に従ってインストールしてください。
 
 ![ダウンロード](./../img/download.png)
 
 
 
-### MacOS版の起動方法
+### MacOS版
 
-MacOS版は不具合で起動方法が特殊です。
-
-まずアプリに実行権限をつけます
-
-```
-cd [Egaroucidのzipを展開したディレクトリ]
-chmod Egaroucid.app/Contents/MacOS/Egaroucid
-```
-
-そして、```Egaroucid.app/Contents/MacOS/Egaroucid```を直接実行すると起動できます。
-
-現在原因究明中です。
-
-
-
-
-
-## 使い方
-
-[こちら](./../usage/)で使い方を解説しています。
-
-なお、内容の同じ[markdown形式](./../usage/ja/index.md)および[PDF形式](./../usage/ja/index.pdf)がダウンロードできます。
+現在非対応です。
 
 
 
@@ -109,13 +86,12 @@ trineutron
 
 ## 作者
 
-山名琢翔/にゃにゃん
+山名琢翔
 
 
 
 ## 関連リンク
 
 * [GitHubレポジトリ](https://github.com/Nyanyan/Egaroucid)
-* [作者Twitter(静かな方)](https://twitter.com/takuto_yamana)
-* [作者Twitter(うるさい方)](https://twitter.com/Nyanyan_Cube)
+* [作者Twitter](https://twitter.com/takuto_yamana)
 * [作者webサイト](https://nyanyan.github.io/)

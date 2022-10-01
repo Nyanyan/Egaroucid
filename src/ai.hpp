@@ -4,12 +4,9 @@
 #include <unordered_set>
 #include "level.hpp"
 #include "setting.hpp"
-#if USE_CUDA
-    #include "cuda_midsearch.hpp"
-#else
-    #include "midsearch.hpp"
-#endif
+#include "midsearch.hpp"
 #include "book.hpp"
+#include "book_learn.hpp"
 #include "util.hpp"
 
 #define SEARCH_FINAL 100
@@ -19,140 +16,116 @@
 #define PRESEARCH_OFFSET 6
 #define PARALLEL_SPLIT_DIV 6
 
-inline Search_result tree_search(Board board, int depth, bool use_mpc, double mpct, bool show_log){
+inline Search_result tree_search(Board board, int depth, bool use_mpc, double mpct, bool show_log, bool use_multi_thread){
     Search search;
-    int g, alpha, beta, policy = -1;
+    int g = 0, alpha, beta, policy = -1;
     pair<int, int> result;
-    depth = min(HW2 - board.n, depth);
-    bool is_end_search = (HW2 - board.n == depth);
-    board.copy(&search.board);
+    depth = min(HW2 - board.n_discs(), depth);
+    bool is_end_search = (HW2 - board.n_discs() == depth);
+    search.init_board(&board);
     search.n_nodes = 0ULL;
     calc_features(&search);
+    search.use_multi_thread = use_multi_thread;
     uint64_t strt;
 
     if (is_end_search){
-        child_transpose_table.init();
-        parent_transpose_table.init();
-
         strt = tim();
 
         if (show_log)
             cerr << "start!" << endl;
-        search.mpct = 0.6;
-        search.use_mpc = true;
-        //search.p = (search.board.p + depth / 2) % 2;
-        result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth / 2, false, false, false, TRANSPOSE_TABLE_UNDEFINED);
-        g = result.first;
-        if (show_log)
-            cerr << "presearch d=" << depth / 2 << " t=" << search.mpct << " [-64,64] " << value_to_score_double(g) << " " << idx_to_coord(result.second) << endl;
-
-        //search.p = (search.board.p + depth) % 2;
-        if (depth >= 22 && 1.0 < mpct){
-            parent_transpose_table.init();
-            search.mpct = 1.0;
-            //search.mpct = 0.0;
+        if (depth >= 14){
+            search.first_depth = depth / 2;
+            search.mpct = 0.8;
             search.use_mpc = true;
-            result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth, false, true, false, result.second);
+            result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search.first_depth, false, false, false, TRANSPOSE_TABLE_UNDEFINED);
             g = result.first;
             if (show_log)
-                cerr << "presearch d=" << depth << " t=" << search.mpct << " [-64,64] " << value_to_score_double(g) << " " << idx_to_coord(result.second) << endl;
-
-            if (depth >= 25 && 2.0 < mpct){
-                parent_transpose_table.init();
-                search.mpct = 2.0;
-                search.use_mpc = true;
-                alpha = -SCORE_MAX; //max(-SCORE_MAX, score_to_value(value_to_score_double(g) - 3.0));
-                beta = SCORE_MAX; //min(SCORE_MAX, score_to_value(value_to_score_double(g) + 3.0));
-                result = first_nega_scout(&search, alpha, beta, depth, false, true, false, result.second);
-                g = result.first;
-                if (show_log)
-                    cerr << "presearch d=" << depth << " t=" << search.mpct << " [" << value_to_score_double(alpha) << "," << value_to_score_double(beta) << "] " << value_to_score_double(g) << " " << idx_to_coord(result.second) << endl;
-            }
+                cerr << "presearch depth " << search.first_depth << " value " << g << " policy " << idx_to_coord(result.second) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
+        }
+        if (depth >= 23){
+            double presearch_mpct;
+            if (use_mpc)
+                presearch_mpct = mpct - 0.4;
+            else
+                presearch_mpct = 1.6 + 0.05 * (depth - 20);
+            search.first_depth = depth;
+            search.mpct = presearch_mpct;
+            search.use_mpc = true;
+            alpha = -SCORE_MAX;
+            beta = SCORE_MAX;
+            result = first_nega_scout(&search, alpha, beta, search.first_depth, false, true, false, result.second);
+            g = result.first;
+            if (show_log)
+                cerr << "presearch depth " << depth << " value " << g << " policy " << idx_to_coord(result.second) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
         }
 
-        //if (show_log)
-        //    cerr << "presearch n_nodes " << search.n_nodes << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
-
-        parent_transpose_table.init();
+        search.first_depth = depth;
         search.use_mpc = use_mpc;
         search.mpct = mpct;
         if (!use_mpc){
             alpha = -INF;
             beta = -INF;
             while ((g <= alpha || beta <= g) && global_searching){
-                #if EVALUATION_STEP_WIDTH_MODE == 1
-                    alpha = max(-SCORE_MAX, score_to_value(value_to_score_double(g) - 2.0));
-                    beta = min(SCORE_MAX, score_to_value(value_to_score_double(g) + 2.0));
-                #else
-                    if (value_to_score_int(g) % 2){
-                        alpha = max(-SCORE_MAX, score_to_value(value_to_score_double(g) - 2.0));
-                        beta = min(SCORE_MAX, score_to_value(value_to_score_double(g) + 2.0));
-                    } else{
-                        alpha = max(-SCORE_MAX, score_to_value(value_to_score_double(g) - 1.0));
-                        beta = min(SCORE_MAX, score_to_value(value_to_score_double(g) + 1.0));
-                    }
-                #endif
-                result = first_nega_scout(&search, alpha, beta, depth, false, true, show_log, result.second);
+                if (g % 2){
+                    alpha = max(-SCORE_MAX, g - 2);
+                    beta = min(SCORE_MAX, g + 2);
+                } else{
+                    alpha = max(-SCORE_MAX, g - 1);
+                    beta = min(SCORE_MAX, g + 1);
+                }
+                result = first_nega_scout(&search, alpha, beta, search.first_depth, false, true, show_log, result.second);
                 g = result.first;
-                //cerr << alpha << " " << g << " " << beta << endl;
                 if (show_log)
-                    cerr << "mainsearch d=" << depth << " t=" << search.mpct << " [" << value_to_score_double(alpha) << "," << value_to_score_double(beta) << "] " << value_to_score_double(g) << " " << idx_to_coord(result.second) << endl;
+                    cerr << "mainsearch doing depth " << search.first_depth << " t=" << search.mpct << " [" << alpha << "," << beta << "] " << g << " " << idx_to_coord(result.second) << endl;
                 if (alpha == -SCORE_MAX && g == -SCORE_MAX)
                     break;
                 if (beta == SCORE_MAX && g == SCORE_MAX)
                     break;
             }
         } else{
-            if (show_log)
-                cerr << "main search" << endl;
-            result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth, false, true, show_log, result.second);
+            result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search.first_depth, false, true, show_log, result.second);
             g = result.first;
         }
         policy = result.second;
         if (show_log)
-            cerr << "depth " << depth << " value " << value_to_score_double(g) << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
+            cerr << "mainsearch depth " << depth << " value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
     
     } else{
-        child_transpose_table.init();
-        parent_transpose_table.init();
         strt = tim();
         result.second = TRANSPOSE_TABLE_UNDEFINED;
 
         if (depth >= 15){
+            search.first_depth = depth - 1;
             search.use_mpc = true;
             search.mpct = 0.6;
-            //search.p = (search.board.p + depth) % 2;
-            parent_transpose_table.init();
-            result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth - 1, false, false, false, TRANSPOSE_TABLE_UNDEFINED);
+            result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search.first_depth, false, false, false, TRANSPOSE_TABLE_UNDEFINED);
             g = result.first;
             policy = result.second;
             if (show_log)
-                cerr << "presearch time " << tim() - strt << " depth " << depth - 1 << " value " << value_to_score_double(g) << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
+                cerr << "presearch depth " << depth - 1 << " value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
         }
-        search.use_mpc = 1;
+        search.use_mpc = true;
         search.mpct = 0.9;
         g = -INF;
         if (depth - 1 >= 1){
-            //search.p = (search.board.p + depth - 1) % 2;
-            parent_transpose_table.init();
-            result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth - 1, false, false, false, result.second);
+            search.first_depth = depth - 1;
+            result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search.first_depth, false, false, false, result.second);
             g = result.first;
             policy = result.second;
             if (show_log)
-                cerr << "presearch time " << tim() - strt << " depth " << depth - 1 << " value " << value_to_score_double(g) << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
+                cerr << "presearch depth " << depth - 1 << " value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
         }
+        search.first_depth = depth;
         search.use_mpc = use_mpc;
         search.mpct = mpct;
-        //search.p = (search.board.p + depth) % 2;
-        parent_transpose_table.init();
-        result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth, false, false, show_log, result.second);
+        result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search.first_depth, false, false, show_log, result.second);
         if (g == -INF)
             g = result.first;
         else
-            g = (g + result.first) / 2;
+            g = round((0.8 * g + 1.2 * result.first) / 2.0);
         policy = result.second;
         if (show_log)
-            cerr << "midsearch time " << tim() - strt << " depth " << depth << " value " << value_to_score_double(g) << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
+            cerr << "mainsearch depth " << depth << " value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
     }
     Search_result res;
     res.depth = depth;
@@ -160,329 +133,183 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
     res.time = tim() - strt;
     res.nps = search.n_nodes * 1000 / max(1ULL, res.time);
     res.policy = policy;
-    res.value = value_to_score_int(g);
+    res.value = g;
+    res.is_end_search = is_end_search;
+    res.probability = calc_probability(mpct);
     return res;
 }
 
-inline bool cache_search(Board b, int *val, int *best_move){
-    int l, u;
-    bak_parent_transpose_table.get(&b, b.hash() & TRANSPOSE_TABLE_MASK, &l, &u);
-    int best_move_child_tt = bak_child_transpose_table.get(&b, b.hash() & TRANSPOSE_TABLE_MASK);
-    cerr << "cache get " << l << " " << u << endl;
-    if (l != u || best_move_child_tt == TRANSPOSE_TABLE_UNDEFINED)
-        return false;
-    *val = l;
-    *best_move = TRANSPOSE_TABLE_UNDEFINED;
-    uint64_t legal = b.get_legal();
-    Flip flip;
-    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-        calc_flip(&flip, &b, cell);
-        b.move(&flip);
-            bak_parent_transpose_table.get(&b, b.hash() & TRANSPOSE_TABLE_MASK, &l, &u);
-        b.undo(&flip);
-        cerr << idx_to_coord(cell) << " " << l << " " << u << endl;
-        if (l == u && -l == *val && cell == best_move_child_tt)
-            *best_move = cell;
-    }
-    if (*best_move != TRANSPOSE_TABLE_UNDEFINED)
-        cerr << "cache search value " << value_to_score_int(*val) << " policy " << idx_to_coord(*best_move) << endl;
-    return *best_move != TRANSPOSE_TABLE_UNDEFINED;
-}
-
-double val_to_prob(int val, int error_level, int min_val, int max_val){
-    double dval = (double)(val - min_val + 1) / (max_val - min_val + 1);
-    return exp((26.0 - error_level) * dval);
-}
-
-int prob_to_val(double val, int error_level, int min_val, int max_val){
-    return round(log(val) / (26.0 - error_level) * (max_val - min_val + 1) + min_val - 1);
-}
-
-Search_result ai(Board b, int level, bool use_book, int error_level, bool show_log){
-    Search_result res;
-    if (error_level == 0){
-        
-        Book_value book_result = book.get_random(&b, 0);
-        if (book_result.policy != -1 && use_book){
-            cerr << "BOOK " << book_result.policy << " " << book_result.value << endl;
-            res.policy = book_result.policy;
-            res.value = book_result.value;
-            res.depth = SEARCH_BOOK;
-            res.nps = 0;
-        } else if (level == 0){
-            uint64_t legal = b.get_legal();
-            vector<int> move_lst;
-            for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
-                move_lst.emplace_back(cell);
-            res.policy = move_lst[myrandrange(0, (int)move_lst.size())];
-            res.value = mid_evaluate(&b);
-            res.depth = 0;
-            res.nps = 0;
-        } else{
-            int depth;
-            bool use_mpc, is_mid_search;
-            double mpct;
-            get_level(level, b.n - 4, &is_mid_search, &depth, &use_mpc, &mpct);
-            if (show_log)
-                cerr << "level status " << level << " " << b.n - 4 << " " << depth << " " << use_mpc << " " << mpct << endl;
-            bool cache_hit = false;
-            if (!is_mid_search && !use_mpc){
-                int val, best_move;
-                if (cache_search(b, &val, &best_move)){
-                    res.depth = depth;
-                    res.nodes = 0;
-                    res.nps = 0;
-                    res.policy = best_move;
-                    res.value = value_to_score_int(val);
-                    cache_hit = true;
-                    if (show_log)
-                        cerr << "cache hit depth " << depth << " value " << value_to_score_double(val) << " policy " << idx_to_coord(best_move) << endl;
-                }
-            }
-            if (!cache_hit){
-                res = tree_search(b, depth, use_mpc, mpct, show_log);
-                if (!is_mid_search && !use_mpc && depth > CACHE_SAVE_EMPTY){
-                    parent_transpose_table.copy(&bak_parent_transpose_table);
-                    child_transpose_table.copy(&bak_child_transpose_table);
-                    if (show_log)
-                        cerr << "cache saved" << endl;
-                }
-            }
-        }
-    } else{
-        uint64_t legal = b.get_legal();
-        int n_legal = pop_count_ull(legal);
-        vector<pair<int, double>> probabilities;
-        Flip flip;
-        int v;
-        int depth;
-        bool use_mpc, is_mid_search;
-        double mpct;
-        get_level(level, b.n - 4, &is_mid_search, &depth, &use_mpc, &mpct);
-        bool searching = true;
-        Search search;
-        search.n_nodes = 0;
-        search.use_mpc = use_mpc;
-        search.mpct = mpct;
-        double p_sum = 0.0;
-        int min_val = INF;
-        int max_val = -INF;
-        for (uint8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-            calc_flip(&flip, &b, cell);
-            b.move(&flip);
-                v = book.get(&b);
-                if (v == -INF){
-                    search.board = b;
-                    calc_features(&search);
-                    v = -nega_scout(&search, -SCORE_MAX, SCORE_MAX, max(0, depth - 1), false, LEGAL_UNDEFINED, !is_mid_search, &searching);
-                }
-                //cerr << idx_to_coord((int)cell) << " " << v << endl;
-            b.undo(&flip);
-            probabilities.emplace_back(make_pair((int)cell, v));
-            max_val = max(max_val, v);
-            min_val = min(min_val, v);
-        }
-        for (pair<int, double> &elem: probabilities){
-            elem.second = val_to_prob(elem.second, error_level, min_val, max_val);
-            p_sum += elem.second;
-        }
-        double prob = myrandom();
-        double p = 0.0;
-        for (pair<int, double> &elem: probabilities){
-            //cerr << idx_to_coord(elem.first) << " " << elem.second / p_sum << endl;
-            p += elem.second / p_sum;
-            if (p >= prob){
-                res.depth = depth;
-                res.nodes = search.n_nodes;
-                res.nps = 0;
-                res.policy = elem.first;
-                res.value = (b.p ? 1 : -1) * value_to_score_int(prob_to_val(elem.second, error_level, min_val, max_val));
-                break;
-            }
-        }
-    }
-    return res;
-}
-/*
-Search_result ai(Board b, int level, bool use_book, int error_level){
-    return ai(b, level, use_book, error_level, true);
-}
-*/
-
-inline double tree_search_noid(Board board, int depth, bool use_mpc, double mpct, bool use_multi_thread){
-    int g;
+inline Search_result tree_search_iterative_deepening(Board board, int depth, bool use_mpc, double mpct, bool show_log, bool use_multi_thread){
     Search search;
+    int g = 0, alpha, beta, policy = -1;
     pair<int, int> result;
-    depth = min(HW2 - board.n, depth);
-    bool is_end_search = (HW2 - board.n == depth);
-    board.copy(&search.board);
+    depth = min(HW2 - board.n_discs(), depth);
+    bool is_end_search = (HW2 - board.n_discs() == depth);
+    search.init_board(&board);
+    search.n_nodes = 0ULL;
+    search.use_mpc = use_mpc;
+    //search.mpct = max(0.6, mpct - 0.2);
+    search.mpct = mpct;
+    search.use_multi_thread = use_multi_thread;
+    calc_features(&search);
+    //first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth, false, is_end_search, show_log, result.second);
+    //search.mpct = mpct;
+    uint64_t strt = tim();
+    result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth, false, is_end_search, show_log, result.second);
+    g = result.first;
+    policy = result.second;
+    if (show_log){
+        if (is_end_search)
+            cerr << "depth " << depth << " value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
+        else
+            cerr << "midsearch time " << tim() - strt << " depth " << depth << " value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
+    }
+    Search_result res;
+    res.depth = depth;
+    res.nodes = search.n_nodes;
+    res.time = tim() - strt;
+    res.nps = search.n_nodes * 1000 / max(1ULL, res.time);
+    res.policy = policy;
+    res.value = g;
+    res.is_end_search = is_end_search;
+    res.probability = calc_probability(mpct);
+    return res;
+}
+
+inline int tree_search_window(Board board, int depth, int alpha, int beta, bool use_mpc, double mpct, bool use_multi_thread){
+    Search search;
+    depth = min(HW2 - board.n_discs(), depth);
+    bool is_end_search = (HW2 - board.n_discs() == depth);
+    search.init_board(&board);
     search.n_nodes = 0ULL;
     search.use_mpc = use_mpc;
     search.mpct = mpct;
+    search.use_multi_thread = use_multi_thread;
     calc_features(&search);
+    uint64_t strt = tim();
     bool searching = true;
-    if (use_multi_thread)
-        g = nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth, false, LEGAL_UNDEFINED, is_end_search, &searching);
-    else
-        g = nega_scout_single_thread(&search, -SCORE_MAX, SCORE_MAX, depth, false, LEGAL_UNDEFINED, is_end_search, &searching);
-    return value_to_score_double(g);
+    return nega_scout(&search, alpha, beta, depth, false, LEGAL_UNDEFINED, is_end_search, &searching);
 }
 
-bool ai_hint(Board b, int level, int max_level, int res[], int info[], bool best_moves[], const int pre_searched_values[], uint64_t legal){
-    Flip flip;
-    Board nb;
-    future<double> val_future[HW2];
-    int depth;
-    bool use_mpc, is_mid_search;
-    double mpct;
-    double value_double, max_value = -INF;
-    unordered_set<int> best_moves_set;
-    get_level(level, b.n - 4, &is_mid_search, &depth, &use_mpc, &mpct);
-    if (!is_mid_search && level != max_level)
-        return false;
-    int n_legal = 0;
-    for (int i = 0; i < HW2; ++i){
-        if (1 & (legal >> i)){
-            calc_flip(&flip, &b, i);
-            b.move_copy(&flip, &nb);
-            res[i] = book.get(&nb);
-            if (res[i] == -INF)
-                ++n_legal;
+Search_result ai(Board board, int level, bool use_book, bool use_multi_thread, bool show_log){
+    Search_result res;
+    int value_sign = 1;
+    if (board.get_legal() == 0ULL){
+        board.pass();
+        if (board.get_legal() == 0ULL){
+            res.policy = -1;
+            res.value = -board.score_player();
+            res.depth = 0;
+            res.nps = 0;
+            res.is_end_search = true;
+            res.probability = 100;
+            return res;
+        } else{
+            value_sign = -1;
         }
     }
-    int thread_size = 0;
-    #if USE_MULTI_THREAD
-        thread_size = (int)thread_pool.size();
-    #endif
-    bool use_multi_thread = (n_legal < thread_size);
-    if (depth - 1 >= 0){
-        //int l, u;
-        bool cache_hit;
-        parent_transpose_table.init();
-        for (int i = 0; i < HW2; ++i){
-            if (1 & (legal >> i)){
-                calc_flip(&flip, &b, i);
-                b.move_copy(&flip, &nb);
-                cache_hit = false;
-                res[i] = book.get(&nb);
-                if (res[i] == -INF){
-                    /*
-                    if (!is_mid_search && !use_mpc){
-                        bak_parent_transpose_table.get(&nb, nb.hash() & TRANSPOSE_TABLE_MASK, &l, &u);
-                        if (l == u){
-                            res[i] = -value_to_score_int(l);
-                            if (max_value < (double)res[i]){
-                                max_value = (double)res[i];
-                                best_moves_set.clear();
-                                best_moves_set.emplace(i);
-                            } else if (max_value == (double)res[i])
-                                best_moves_set.emplace(i);
-                            cache_hit = true;
-                        }
-                    }
-                    */
-                    if (!cache_hit){
-                        #if USE_MULTI_THREAD
-                            val_future[i] = thread_pool.push(bind(&tree_search_noid, nb, depth - 1, use_mpc, mpct, use_multi_thread));
-                        #else
-                            val_future[i] = async(launch::async, tree_search_noid, nb, depth - 1, use_mpc, mpct, false);
-                        #endif
-                        //val_future[i] = async(launch::async, tree_search_noid, nb, depth - 1, use_mpc, mpct);
-                    }
-                    if (!is_mid_search && !use_mpc)
-                        info[i] = SEARCH_FINAL;
-                    else
-                        info[i] = level;
-                } else{
-                    if (max_value < (double)res[i]){
-                        max_value = (double)res[i];
-                        best_moves_set.clear();
-                        best_moves_set.emplace(i);
-                    } else if (max_value == (double)res[i])
-                        best_moves_set.emplace(i);
-                    info[i] = SEARCH_BOOK;
-                }
-            }
-        }
-        for (int i = 0; i < HW2; ++i){
-            if (1 & (legal >> i)){
-                if (res[i] == -INF){
-                    value_double = -val_future[i].get();
-                    //cerr << idx_to_coord(i) << " " << value_double << endl;
-                    if (max_value < value_double){
-                        max_value = value_double;
-                        best_moves_set.clear();
-                        best_moves_set.emplace(i);
-                    } else if (max_value == value_double)
-                        best_moves_set.emplace(i);
-                    res[i] = round(value_double);
-                }
-            }
-        }
-        /*
-        if (!is_mid_search && !use_mpc){
-            parent_transpose_table.copy(&bak_parent_transpose_table);
-            cerr << "cache saved" << endl;
-        }
-        */
-    } else{
-        for (int i = 0; i < HW2; ++i){
-            if (1 & (legal >> i)){
-                calc_flip(&flip, &b, i);
-                b.move_copy(&flip, &nb);
-                res[i] = book.get(&nb);
-                if (res[i] == -INF){
-                    res[i] = value_to_score_int(-mid_evaluate(&nb));
-                    info[i] = level;
-                } else
-                    info[i] = SEARCH_BOOK;
-                if (max_value < (double)res[i]){
-                    max_value = (double)res[i];
-                    best_moves_set.clear();
-                    best_moves_set.emplace(i);
-                } else if (max_value == (double)res[i])
-                    best_moves_set.emplace(i);
-            }
-        }
-    }
-    for (int i = 0; i < HW2; ++i){
-        if (1 & (legal >> i))
-            best_moves[i] = (best_moves_set.find(i) != best_moves_set.end());
-    }
-    return true;
-}
-
-int ai_value(Board b, int level){
-    int res = book.get(&b);
-    if (res != -INF){
-        cerr << "BOOK " << res << endl;
-        return -res;
+    Book_value book_result = book.get_random(&board, 0);
+    if (book_result.policy != -1 && use_book){
+        if (show_log)
+            cerr << "BOOK " << book_result.policy << " " << book_result.value << endl;
+        res.policy = book_result.policy;
+        res.value = value_sign * book_result.value;
+        res.depth = SEARCH_BOOK;
+        res.nps = 0;
+        res.is_end_search = false;
+        res.probability = 100;
     } else if (level == 0){
-        res = mid_evaluate(&b);
-        cerr << "level 0 " << res << endl;
-        return res;
+        uint64_t legal = board.get_legal();
+        vector<int> move_lst;
+        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
+            move_lst.emplace_back(cell);
+        res.policy = move_lst[myrandrange(0, (int)move_lst.size())];
+        res.value = value_sign * mid_evaluate(&board);
+        res.depth = 0;
+        res.nps = 0;
+        res.is_end_search = false;
+        res.probability = 0;
     } else{
         int depth;
         bool use_mpc, is_mid_search;
         double mpct;
-        get_level(level, b.n - 4, &is_mid_search, &depth, &use_mpc, &mpct);
-        cerr << "level status " << level << " " << b.n - 4 << " " << depth << " " << use_mpc << " " << mpct << endl;
-        bool cache_hit = false;
-        if (!is_mid_search && !use_mpc){
-            int l, u;
-            bak_parent_transpose_table.get(&b, b.hash() & TRANSPOSE_TABLE_MASK, &l, &u);
-            if (l == u){
-                res = l;
-                cache_hit = true;
-            }
-        }
-        if (!cache_hit){
-            res = tree_search(b, depth, use_mpc, mpct, true).value;
-            if (!is_mid_search && !use_mpc){
-                parent_transpose_table.copy(&bak_parent_transpose_table);
-                cerr << "cache saved" << endl;
-            }
-        }
+        get_level(level, board.n_discs() - 4, &is_mid_search, &depth, &use_mpc, &mpct);
+        if (show_log)
+            cerr << "level status " << level << " " << board.n_discs() - 4 << " " << depth << " " << use_mpc << " " << mpct << endl;
+        res = tree_search(board, depth, use_mpc, mpct, show_log, use_multi_thread);
+        res.value *= value_sign;
     }
     return res;
+}
+
+Search_result ai_hint(Board board, int level, bool use_book, bool use_multi_thread, bool show_log){
+    Search_result res;
+    int value_sign = 1;
+    if (board.get_legal() == 0ULL){
+        board.pass();
+        if (board.get_legal() == 0ULL){
+            res.policy = -1;
+            res.value = -board.score_player();
+            res.depth = 0;
+            res.nps = 0;
+            res.is_end_search = true;
+            res.probability = 100;
+            return res;
+        } else{
+            value_sign = -1;
+        }
+    }
+    int book_result = book.get(&board);
+    if (book_result != -INF && use_book){
+        if (show_log)
+            cerr << "BOOK " << book_result << endl;
+        res.policy = -1;
+        res.value = -value_sign * book_result;
+        res.depth = SEARCH_BOOK;
+        res.nps = 0;
+        res.is_end_search = false;
+        res.probability = 100;
+    } else if (level == 0){
+        uint64_t legal = board.get_legal();
+        vector<int> move_lst;
+        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
+            move_lst.emplace_back(cell);
+        res.policy = move_lst[myrandrange(0, (int)move_lst.size())];
+        res.value = value_sign * mid_evaluate(&board);
+        res.depth = 0;
+        res.nps = 0;
+        res.is_end_search = false;
+        res.probability = 0;
+    } else{
+        int depth;
+        bool use_mpc, is_mid_search;
+        double mpct;
+        get_level(level, board.n_discs() - 4, &is_mid_search, &depth, &use_mpc, &mpct);
+        if (show_log)
+            cerr << "level status " << level << " " << board.n_discs() - 4 << " " << depth << " " << use_mpc << " " << mpct << endl;
+        res = tree_search_iterative_deepening(board, depth, use_mpc, mpct, show_log, use_multi_thread);
+        res.value *= value_sign;
+    }
+    return res;
+}
+
+int ai_window(Board board, int level, int alpha, int beta, bool use_multi_thread){
+    int value_sign = 1;
+    if (board.get_legal() == 0ULL){
+        board.pass();
+        if (board.get_legal() == 0ULL)
+            return -board.score_player();
+        else
+            value_sign = -1;
+    }
+    int book_result = book.get(&board);
+    if (book_result != -INF)
+        return -value_sign * book_result;
+    else if (level == 0)
+        return value_sign * mid_evaluate(&board);
+    int depth;
+        bool use_mpc, is_mid_search;
+        double mpct;
+        get_level(level, board.n_discs() - 4, &is_mid_search, &depth, &use_mpc, &mpct);
+    return value_sign * tree_search_window(board, depth, alpha, beta, use_mpc, mpct, use_multi_thread);
 }

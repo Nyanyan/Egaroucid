@@ -26,21 +26,7 @@ using namespace std;
 #define STEP_2 128
 #define STEP_SHIFT 8
 
-#if EVALUATION_STEP_WIDTH_MODE == 0
-    #define SCORE_MAX 64
-#elif EVALUATION_STEP_WIDTH_MODE == 1
-    #define SCORE_MAX 32
-#elif EVALUATION_STEP_WIDTH_MODE == 2
-    #define SCORE_MAX 128
-#elif EVALUATION_STEP_WIDTH_MODE == 3
-    #define SCORE_MAX 256
-#elif EVALUATION_STEP_WIDTH_MODE == 4
-    #define SCORE_MAX 512
-#elif EVALUATION_STEP_WIDTH_MODE == 5
-    #define SCORE_MAX 1024
-#elif EVALUATION_STEP_WIDTH_MODE == 6
-    #define SCORE_MAX 2048
-#endif
+#define SCORE_MAX 64
 
 #define PNO 0
 
@@ -369,6 +355,7 @@ void init_pattern_arr_rev(int id, int phase_idx, int pattern_idx, int siz){
 }
 
 inline bool init_evaluation_calc(const char* file){
+    cerr << file << endl;
     FILE* fp;
     #ifdef _WIN64
         if (fopen_s(&fp, file, "rb") != 0){
@@ -419,27 +406,30 @@ inline bool init_evaluation_calc(const char* file){
             return false;
         }
     }
-    #if USE_MULTI_THREAD
-        int i = 0;
-        future<void> tasks[N_PHASES * N_PATTERNS];
-        for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
-            for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx)
-                tasks[i++] = thread_pool.push(init_pattern_arr_rev, phase_idx, pattern_idx, pattern_sizes[pattern_idx]);
-        }
-        for (future<void> &task: tasks)
-            task.get();
-    #else
-        for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
-            for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx)
-                init_pattern_arr_rev(0, phase_idx, pattern_idx, pattern_sizes[pattern_idx]);
-        }
-    #endif
+    int i = 0;
+    /*
+    for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
+        for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx)
+            init_pattern_arr_rev(0, phase_idx, pattern_idx, pattern_sizes[pattern_idx]);
+    }
+    */
+    future<void> tasks[N_PHASES * N_PATTERNS];
+    for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
+        for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx)
+            tasks[i++] = thread_pool.push(init_pattern_arr_rev, phase_idx, pattern_idx, pattern_sizes[pattern_idx]);
+    }
+    for (future<void> &task: tasks)
+        task.get();
     cerr << "evaluation function initialized" << endl;
     return true;
 }
 
 bool evaluate_init(const char* file){
     return init_evaluation_calc(file);
+}
+
+bool evaluate_init(const string file){
+    return init_evaluation_calc(file.c_str());
 }
 
 bool evaluate_init(){
@@ -458,56 +448,6 @@ inline int calc_surround(const uint64_t player, const uint64_t empties){
         calc_surround_part(player & 0b0000000001111110011111100111111001111110011111100111111000000000ULL, HW_P1)
     ));
 }
-
-/*
-inline int pick_cell(const Board *b, const int c){
-    return 2 - (1 & (b->player >> c)) * 2 - (1 & (b->opponent >> c));
-}
-
-inline int pick_pattern(const int phase_idx, const int pattern_idx, const Board *b, const int p0, const int p1, const int p2, const int p3, const int p4){
-    return pattern_arr[phase_idx][pattern_idx][pick_cell(b, p0) * P34 + pick_cell(b, p1) * P33 + pick_cell(b, p2) * P32 + pick_cell(b, p3) * P31 + pick_cell(b, p4)];
-}
-
-inline int pick_pattern(const int phase_idx, const int pattern_idx, const Board *b, const int p0, const int p1, const int p2, const int p3, const int p4, const int p5){
-    return pattern_arr[phase_idx][pattern_idx][pick_cell(b, p0) * P35 + pick_cell(b, p1) * P34 + pick_cell(b, p2) * P33 + pick_cell(b, p3) * P32 + pick_cell(b, p4) * P31 + pick_cell(b, p5)];
-}
-
-inline int pick_pattern(const int phase_idx, const int pattern_idx, const Board *b, const int p0, const int p1, const int p2, const int p3, const int p4, const int p5, const int p6){
-    return pattern_arr[phase_idx][pattern_idx][pick_cell(b, p0) * P36 + pick_cell(b, p1) * P35 + pick_cell(b, p2) * P34 + pick_cell(b, p3) * P33 + pick_cell(b, p4) * P32 + pick_cell(b, p5) * P31 + pick_cell(b, p6)];
-}
-
-inline int pick_pattern(const int phase_idx, const int pattern_idx, const Board *b, const int p0, const int p1, const int p2, const int p3, const int p4, const int p5, const int p6, const int p7){
-    return pattern_arr[phase_idx][pattern_idx][pick_cell(b, p0) * P37 + pick_cell(b, p1) * P36 + pick_cell(b, p2) * P35 + pick_cell(b, p3) * P34 + pick_cell(b, p4) * P33 + pick_cell(b, p5) * P32 + pick_cell(b, p6) * P31 + pick_cell(b, p7)];
-}
-
-inline int pick_pattern(const int phase_idx, const int pattern_idx, const Board *b, const int p0, const int p1, const int p2, const int p3, const int p4, const int p5, const int p6, const int p7, const int p8){
-    return pattern_arr[phase_idx][pattern_idx][pick_cell(b, p0) * P38 + pick_cell(b, p1) * P37 + pick_cell(b, p2) * P36 + pick_cell(b, p3) * P35 + pick_cell(b, p4) * P34 + pick_cell(b, p5) * P33 + pick_cell(b, p6) * P32 + pick_cell(b, p7) * P31 + pick_cell(b, p8)];
-}
-
-inline int pick_pattern(const int phase_idx, const int pattern_idx, const Board *b, const int p0, const int p1, const int p2, const int p3, const int p4, const int p5, const int p6, const int p7, const int p8, const int p9){
-    return pattern_arr[phase_idx][pattern_idx][pick_cell(b, p0) * P39 + pick_cell(b, p1) * P38 + pick_cell(b, p2) * P37 + pick_cell(b, p3) * P36 + pick_cell(b, p4) * P35 + pick_cell(b, p5) * P34 + pick_cell(b, p6) * P33 + pick_cell(b, p7) * P32 + pick_cell(b, p8) * P31 + pick_cell(b, p9)];
-}
-
-inline int calc_pattern(const int phase_idx, Board *b){
-    return 
-        pick_pattern(phase_idx, 0, b, 8, 9, 10, 11, 12, 13, 14, 15) + pick_pattern(phase_idx, 0, b, 1, 9, 17, 25, 33, 41, 49, 57) + pick_pattern(phase_idx, 0, b, 48, 49, 50, 51, 52, 53, 54, 55) + pick_pattern(phase_idx, 0, b, 6, 14, 22, 30, 38, 46, 54, 62) + 
-        pick_pattern(phase_idx, 1, b, 16, 17, 18, 19, 20, 21, 22, 23) + pick_pattern(phase_idx, 1, b, 2, 10, 18, 26, 34, 42, 50, 58) + pick_pattern(phase_idx, 1, b, 40, 41, 42, 43, 44, 45, 46, 47) + pick_pattern(phase_idx, 1, b, 5, 13, 21, 29, 37, 45, 53, 61) + 
-        pick_pattern(phase_idx, 2, b, 24, 25, 26, 27, 28, 29, 30, 31) + pick_pattern(phase_idx, 2, b, 3, 11, 19, 27, 35, 43, 51, 59) + pick_pattern(phase_idx, 2, b, 32, 33, 34, 35, 36, 37, 38, 39) + pick_pattern(phase_idx, 2, b, 4, 12, 20, 28, 36, 44, 52, 60) + 
-        pick_pattern(phase_idx, 3, b, 3, 12, 21, 30, 39) + pick_pattern(phase_idx, 3, b, 4, 11, 18, 25, 32) + pick_pattern(phase_idx, 3, b, 24, 33, 42, 51, 60) + pick_pattern(phase_idx, 3, b, 59, 52, 45, 38, 31) + 
-        pick_pattern(phase_idx, 4, b, 2, 11, 20, 29, 38, 47) + pick_pattern(phase_idx, 4, b, 5, 12, 19, 26, 33, 40) + pick_pattern(phase_idx, 4, b, 16, 25, 34, 43, 52, 61) + pick_pattern(phase_idx, 4, b, 58, 51, 44, 37, 30, 23) + 
-        pick_pattern(phase_idx, 5, b, 1, 10, 19, 28, 37, 46, 55) + pick_pattern(phase_idx, 5, b, 6, 13, 20, 27, 34, 41, 48) + pick_pattern(phase_idx, 5, b, 8, 17, 26, 35, 44, 53, 62) + pick_pattern(phase_idx, 5, b, 57, 50, 43, 36, 29, 22, 15) + 
-        pick_pattern(phase_idx, 6, b, 0, 9, 18, 27, 36, 45, 54, 63) + pick_pattern(phase_idx, 6, b, 7, 14, 21, 28, 35, 42, 49, 56) + 
-        pick_pattern(phase_idx, 7, b, 9, 0, 1, 2, 3, 4, 5, 6, 7, 14) + pick_pattern(phase_idx, 7, b, 9, 0, 8, 16, 24, 32, 40, 48, 56, 49) + pick_pattern(phase_idx, 7, b, 49, 56, 57, 58, 59, 60, 61, 62, 63, 54) + pick_pattern(phase_idx, 7, b, 54, 63, 55, 47, 39, 31, 23, 15, 7, 14) + 
-        pick_pattern(phase_idx, 8, b, 0, 1, 2, 3, 8, 9, 10, 16, 17, 24) + pick_pattern(phase_idx, 8, b, 7, 6, 5, 4, 15, 14, 13, 23, 22, 31) + pick_pattern(phase_idx, 8, b, 63, 62, 61, 60, 55, 54, 53, 47, 46, 39) + pick_pattern(phase_idx, 8, b, 56, 57, 58, 59, 48, 49, 50, 40, 41, 32) + 
-        pick_pattern(phase_idx, 9, b, 0, 2, 3, 4, 5, 7, 10, 11, 12, 13) + pick_pattern(phase_idx, 9, b, 0, 16, 24, 32, 40, 56, 17, 25, 33, 41) + pick_pattern(phase_idx, 9, b, 56, 58, 59, 60, 61, 63, 50, 51, 52, 53) + pick_pattern(phase_idx, 9, b, 7, 23, 31, 39, 47, 63, 22, 30, 38, 46) + 
-        pick_pattern(phase_idx, 10, b, 0, 9, 18, 27, 1, 10, 19, 8, 17, 26) + pick_pattern(phase_idx, 10, b, 7, 14, 21, 28, 6, 13, 20, 15, 22, 29) + pick_pattern(phase_idx, 10, b, 56, 49, 42, 35, 57, 50, 43, 48, 41, 34) + pick_pattern(phase_idx, 10, b, 63, 54, 45, 36, 62, 53, 44, 55, 46, 37) + 
-        pick_pattern(phase_idx, 11, b, 0, 1, 2, 8, 9, 10, 16, 17, 18) + pick_pattern(phase_idx, 11, b, 7, 6, 5, 15, 14, 13, 23, 22, 21) + pick_pattern(phase_idx, 11, b, 56, 57, 58, 48, 49, 50, 40, 41, 42) + pick_pattern(phase_idx, 11, b, 63, 62, 61, 55, 54, 53, 47, 46, 45) + 
-        pick_pattern(phase_idx, 12, b, 10, 0, 1, 2, 3, 4, 5, 6, 7, 13) + pick_pattern(phase_idx, 12, b, 17, 0, 8, 16, 24, 32, 40, 48, 56, 41) + pick_pattern(phase_idx, 12, b, 50, 56, 57, 58, 59, 60, 61, 62, 63, 53) + pick_pattern(phase_idx, 12, b, 46, 63, 55, 47, 39, 31, 23, 15, 7, 22) + 
-        pick_pattern(phase_idx, 13, b, 0, 1, 2, 3, 4, 8, 9, 16, 24, 32) + pick_pattern(phase_idx, 13, b, 7, 6, 5, 4, 3, 15, 14, 23, 31, 39) + pick_pattern(phase_idx, 13, b, 63, 62, 61, 60, 59, 55, 54, 47, 39, 31) + pick_pattern(phase_idx, 13, b, 56, 57, 58, 59, 60, 48, 49, 40, 32, 24) + 
-        pick_pattern(phase_idx, 14, b, 0, 1, 8, 9, 10, 11, 17, 18, 25, 27) + pick_pattern(phase_idx, 14, b, 7, 6, 15, 14, 13, 12, 22, 21, 30, 28) + pick_pattern(phase_idx, 14, b, 56, 57, 48, 49, 50, 51, 41, 42, 33, 35) + pick_pattern(phase_idx, 14, b, 63, 62, 55, 54, 53, 52, 46, 45, 38, 36) + 
-        pick_pattern(phase_idx, 15, b, 0, 1, 8, 9, 10, 11, 12, 17, 25, 33) + pick_pattern(phase_idx, 15, b, 7, 6, 15, 14, 13, 12, 11, 22, 30, 38) + pick_pattern(phase_idx, 15, b, 56, 57, 48, 49, 50, 51, 52, 41, 33, 25) + pick_pattern(phase_idx, 15, b, 63, 62, 55, 54, 53, 52, 51, 46, 38, 30);
-}
-*/
 
 inline int pick_pattern(const int phase_idx, const int pattern_idx, const uint_fast8_t b_arr[], const int p0, const int p1, const int p2, const int p3, const int p4){
     return pattern_arr[0][phase_idx][pattern_idx][b_arr[p0] * P34 + b_arr[p1] * P33 + b_arr[p2] * P32 + b_arr[p3] * P31 + b_arr[p4]];
@@ -604,12 +544,11 @@ inline int calc_canput_pattern(const int phase_idx, Board *b, const uint64_t pla
 }
 
 inline int end_evaluate(Board *b){
-    int res = b->score_player();
-    return score_to_value(res);
+    return b->score_player();
 }
 
 inline int mid_evaluate(Board *b){
-    int phase_idx, sur0, sur1, canput0, canput1, stab0 = 0, stab1 = 0, num0, num1;
+    int phase_idx, sur0, sur1, canput0, canput1, num0, num1;
     uint64_t player_mobility, opponent_mobility, empties;
     player_mobility = calc_legal(b->player, b->opponent);
     opponent_mobility = calc_legal(b->opponent, b->player);
@@ -617,79 +556,24 @@ inline int mid_evaluate(Board *b){
     canput1 = min(MAX_CANPUT - 1, pop_count_ull(opponent_mobility));
     if (canput0 == 0 && canput1 == 0)
         return end_evaluate(b);
-    phase_idx = b->phase();
+    phase_idx = b->phase_slow();
     empties = ~(b->player | b->opponent);
     sur0 = min(MAX_SURROUND - 1, calc_surround(b->player, empties));
     sur1 = min(MAX_SURROUND - 1, calc_surround(b->opponent, empties));
-    //if (b->n > 44)
-    //    calc_stability(b, &stab0, &stab1);
     num0 = pop_count_ull(b->player);
     num1 = pop_count_ull(b->opponent);
-    //cerr << calc_pattern(phase_idx, b) << " " << eval_sur0_sur1_arr[phase_idx][sur0][sur1] << " " << eval_canput0_canput1_arr[phase_idx][canput0][canput1] << " "
-    //    << eval_stab0_stab1_arr[phase_idx][stab0][stab1] << " " << eval_num0_num1_arr[phase_idx][num0][num1] << " " << calc_canput_pattern(phase_idx, b, player_mobility, opponent_mobility) << endl;
     int res = calc_pattern_first(phase_idx, b) + 
         eval_sur0_sur1_arr[phase_idx][sur0][sur1] + 
         eval_canput0_canput1_arr[phase_idx][canput0][canput1] + 
-        //eval_stab0_stab1_arr[phase_idx][stab0][stab1] + 
         eval_num0_num1_arr[phase_idx][num0][num1] + 
         calc_canput_pattern(phase_idx, b, player_mobility, opponent_mobility);
-    //return score_modification(phase_idx, res);
-    //cerr << res << endl;
-    #if EVALUATION_STEP_WIDTH_MODE == 0
-        res += res > 0 ? STEP_2 : (res < 0 ? -STEP_2 : 0);
-        //res += STEP_2 * min(1, max(-1, res));
-        res >>= STEP_SHIFT;
-        /*
-        if (res > 0)
-            res += STEP_2;
-        else if (res < 0)
-            res -= STEP_2;
-        res /= STEP;
-        */
-    #elif EVALUATION_STEP_WIDTH_MODE == 1
-        if (res > 0)
-            res += STEP;
-        else if (res < 0)
-            res -= STEP;
-        res /= STEP * 2;
-    #elif EVALUATION_STEP_WIDTH_MODE == 2
-        if (res > 0)
-            res += STEP / 4;
-        else if (res < 0)
-            res -= STEP / 4;
-        res /= STEP_2;
-    
-    #elif EVALUATION_STEP_WIDTH_MODE == 3
-        if (res > 0)
-            res += STEP / 8;
-        else if (res < 0)
-            res -= STEP / 8;
-        res /= STEP / 4;
-    #elif EVALUATION_STEP_WIDTH_MODE == 4
-        if (res > 0)
-            res += STEP / 16;
-        else if (res < 0)
-            res -= STEP / 16;
-        res /= STEP / 8;
-    #elif EVALUATION_STEP_WIDTH_MODE == 5
-        if (res > 0)
-            res += STEP / 32;
-        else if (res < 0)
-            res -= STEP / 32;
-        res /= STEP / 16;
-    #elif EVALUATION_STEP_WIDTH_MODE == 6
-        if (res > 0)
-            res += STEP / 64;
-        else if (res < 0)
-            res -= STEP / 64;
-        res /= STEP / 32;
-    #endif
-    //cerr << res << " " << value_to_score_double(res) << endl;
+    res += res > 0 ? STEP_2 : (res < 0 ? -STEP_2 : 0);
+    res /= STEP;
     return max(-SCORE_MAX, min(SCORE_MAX, res));
 }
 
 inline int mid_evaluate_diff(Search *search){
-    int phase_idx, sur0, sur1, canput0, canput1, stab0 = 0, stab1 = 0, num0, num1;
+    int phase_idx, sur0, sur1, canput0, canput1, num0, num1;
     uint64_t player_mobility, opponent_mobility, empties;
     player_mobility = calc_legal(search->board.player, search->board.opponent);
     opponent_mobility = calc_legal(search->board.opponent, search->board.player);
@@ -697,84 +581,28 @@ inline int mid_evaluate_diff(Search *search){
     canput1 = min(MAX_CANPUT - 1, pop_count_ull(opponent_mobility));
     if (canput0 == 0 && canput1 == 0)
         return end_evaluate(&search->board);
-    phase_idx = search->board.phase();
+    phase_idx = search->phase();
     empties = ~(search->board.player | search->board.opponent);
     sur0 = min(MAX_SURROUND - 1, calc_surround(search->board.player, empties));
     sur1 = min(MAX_SURROUND - 1, calc_surround(search->board.opponent, empties));
-    //if (search->board.n > 49)
-    //calc_stability(&search->board, &stab0, &stab1);
     num0 = pop_count_ull(search->board.player);
     num1 = pop_count_ull(search->board.opponent);
-    //cerr << calc_pattern(phase_idx, b) << " " << eval_sur0_sur1_arr[phase_idx][sur0][sur1] << " " << eval_canput0_canput1_arr[phase_idx][canput0][canput1] << " "
-    //    << eval_stab0_stab1_arr[phase_idx][stab0][stab1] << " " << eval_num0_num1_arr[phase_idx][num0][num1] << " " << calc_canput_pattern(phase_idx, b, player_mobility, opponent_mobility) << endl;
     int res = calc_pattern_diff(phase_idx, search) + 
         eval_sur0_sur1_arr[phase_idx][sur0][sur1] + 
         eval_canput0_canput1_arr[phase_idx][canput0][canput1] + 
-        //eval_stab0_stab1_arr[phase_idx][stab0][stab1] + 
         eval_num0_num1_arr[phase_idx][num0][num1] + 
         calc_canput_pattern(phase_idx, &search->board, player_mobility, opponent_mobility);
-    //return score_modification(phase_idx, res);
-    #if EVALUATION_STEP_WIDTH_MODE == 0
-        res += res > 0 ? STEP_2 : (res < 0 ? -STEP_2 : 0);
-        //res += STEP_2 * min(1, max(-1, res));
-        res >>= STEP_SHIFT;
-        /*
-        if (res > 0)
-            res += STEP_2;
-        else if (res < 0)
-            res -= STEP_2;
-        res /= STEP;
-        */
-    #elif EVALUATION_STEP_WIDTH_MODE == 1
-        if (res > 0)
-            res += STEP;
-        else if (res < 0)
-            res -= STEP;
-        res /= STEP * 2;
-    #elif EVALUATION_STEP_WIDTH_MODE == 2
-        if (res > 0)
-            res += STEP / 4;
-        else if (res < 0)
-            res -= STEP / 4;
-        res /= STEP_2;
-    
-    #elif EVALUATION_STEP_WIDTH_MODE == 3
-        if (res > 0)
-            res += STEP / 8;
-        else if (res < 0)
-            res -= STEP / 8;
-        res /= STEP / 4;
-    #elif EVALUATION_STEP_WIDTH_MODE == 4
-        if (res > 0)
-            res += STEP / 16;
-        else if (res < 0)
-            res -= STEP / 16;
-        res /= STEP / 8;
-    #elif EVALUATION_STEP_WIDTH_MODE == 5
-        if (res > 0)
-            res += STEP / 32;
-        else if (res < 0)
-            res -= STEP / 32;
-        res /= STEP / 16;
-    #elif EVALUATION_STEP_WIDTH_MODE == 6
-        if (res > 0)
-            res += STEP / 64;
-        else if (res < 0)
-            res -= STEP / 64;
-        res /= STEP / 32;
-    #endif
-    //cerr << res << " " << value_to_score_double(res) << endl;
+    res += res > 0 ? STEP_2 : (res < 0 ? -STEP_2 : 0);
+    res /= STEP;
     return max(-SCORE_MAX, min(SCORE_MAX, res));
 }
 
 inline int pick_pattern_idx(const uint_fast8_t b_arr[], const Feature_to_coord *f){
     int res = 0;
     for (int i = 0; i < f->n_cells; ++i){
-        //cerr << (int)f->cells[i] << " ";
         res *= 3;
         res += b_arr[HW2_M1 - f->cells[i]];
     }
-    //cerr << endl;
     return res;
 }
 
@@ -782,7 +610,6 @@ inline void calc_features(Search *search){
     uint_fast8_t b_arr[HW2];
     search->board.translate_to_arr_player(b_arr);
     for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i){
-        //cerr << i << " ";
         search->eval_features[i] = pick_pattern_idx(b_arr, &feature_to_coord[i]);
     }
     search->eval_feature_reversed = 0;
@@ -792,7 +619,6 @@ inline bool check_features(Search *search){
     uint_fast8_t b_arr[HW2];
     search->board.translate_to_arr_player(b_arr);
     for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i){
-        //cerr << i << " ";
         if (search->eval_features[i] != pick_pattern_idx(b_arr, &feature_to_coord[i])){
             cerr << i << " " << search->eval_features[i] << " " << pick_pattern_idx(b_arr, &feature_to_coord[i]) << endl;
             return true;
@@ -802,219 +628,47 @@ inline bool check_features(Search *search){
 }
 
 inline void eval_move(Search *search, const Flip *flip){
-    #if USE_FAST_DIFF_EVAL
-        if (search->eval_feature_reversed){
-            switch (coord_to_feature[flip->pos].n_features){
-                case 13: search->eval_features[coord_to_feature[flip->pos].features[12].feature] -= coord_to_feature[flip->pos].features[12].x; [[fallthrough]];
-                case 12: search->eval_features[coord_to_feature[flip->pos].features[11].feature] -= coord_to_feature[flip->pos].features[11].x; [[fallthrough]];
-                case 11: search->eval_features[coord_to_feature[flip->pos].features[10].feature] -= coord_to_feature[flip->pos].features[10].x; [[fallthrough]];
-                case 10: search->eval_features[coord_to_feature[flip->pos].features[ 9].feature] -= coord_to_feature[flip->pos].features[ 9].x; [[fallthrough]];
-                case  9: search->eval_features[coord_to_feature[flip->pos].features[ 8].feature] -= coord_to_feature[flip->pos].features[ 8].x; [[fallthrough]];
-                case  8: search->eval_features[coord_to_feature[flip->pos].features[ 7].feature] -= coord_to_feature[flip->pos].features[ 7].x; [[fallthrough]];
-                case  7: search->eval_features[coord_to_feature[flip->pos].features[ 6].feature] -= coord_to_feature[flip->pos].features[ 6].x; [[fallthrough]];
-                case  6: search->eval_features[coord_to_feature[flip->pos].features[ 5].feature] -= coord_to_feature[flip->pos].features[ 5].x; [[fallthrough]];
-                case  5: search->eval_features[coord_to_feature[flip->pos].features[ 4].feature] -= coord_to_feature[flip->pos].features[ 4].x; [[fallthrough]];
-                case  4: search->eval_features[coord_to_feature[flip->pos].features[ 3].feature] -= coord_to_feature[flip->pos].features[ 3].x; [[fallthrough]];
-                case  3: search->eval_features[coord_to_feature[flip->pos].features[ 2].feature] -= coord_to_feature[flip->pos].features[ 2].x; [[fallthrough]];
-                case  2: search->eval_features[coord_to_feature[flip->pos].features[ 1].feature] -= coord_to_feature[flip->pos].features[ 1].x; [[fallthrough]];
-                case  1: search->eval_features[coord_to_feature[flip->pos].features[ 0].feature] -= coord_to_feature[flip->pos].features[ 0].x; [[fallthrough]];
-                case  0: break;
-            }
-            uint64_t f = flip->flip;
-            for (uint_fast8_t cell = first_bit(&f); f; cell = next_bit(&f)){
-                switch (coord_to_feature[cell].n_features){
-                    case 13: search->eval_features[coord_to_feature[cell].features[12].feature] += coord_to_feature[cell].features[12].x; [[fallthrough]];
-                    case 12: search->eval_features[coord_to_feature[cell].features[11].feature] += coord_to_feature[cell].features[11].x; [[fallthrough]];
-                    case 11: search->eval_features[coord_to_feature[cell].features[10].feature] += coord_to_feature[cell].features[10].x; [[fallthrough]];
-                    case 10: search->eval_features[coord_to_feature[cell].features[ 9].feature] += coord_to_feature[cell].features[ 9].x; [[fallthrough]];
-                    case  9: search->eval_features[coord_to_feature[cell].features[ 8].feature] += coord_to_feature[cell].features[ 8].x; [[fallthrough]];
-                    case  8: search->eval_features[coord_to_feature[cell].features[ 7].feature] += coord_to_feature[cell].features[ 7].x; [[fallthrough]];
-                    case  7: search->eval_features[coord_to_feature[cell].features[ 6].feature] += coord_to_feature[cell].features[ 6].x; [[fallthrough]];
-                    case  6: search->eval_features[coord_to_feature[cell].features[ 5].feature] += coord_to_feature[cell].features[ 5].x; [[fallthrough]];
-                    case  5: search->eval_features[coord_to_feature[cell].features[ 4].feature] += coord_to_feature[cell].features[ 4].x; [[fallthrough]];
-                    case  4: search->eval_features[coord_to_feature[cell].features[ 3].feature] += coord_to_feature[cell].features[ 3].x; [[fallthrough]];
-                    case  3: search->eval_features[coord_to_feature[cell].features[ 2].feature] += coord_to_feature[cell].features[ 2].x; [[fallthrough]];
-                    case  2: search->eval_features[coord_to_feature[cell].features[ 1].feature] += coord_to_feature[cell].features[ 1].x; [[fallthrough]];
-                    case  1: search->eval_features[coord_to_feature[cell].features[ 0].feature] += coord_to_feature[cell].features[ 0].x; [[fallthrough]];
-                    case  0: break;
-                }
-            }
-        } else{
-            switch (coord_to_feature[flip->pos].n_features){
-                case 13: search->eval_features[coord_to_feature[flip->pos].features[12].feature] -= 2 * coord_to_feature[flip->pos].features[12].x; [[fallthrough]];
-                case 12: search->eval_features[coord_to_feature[flip->pos].features[11].feature] -= 2 * coord_to_feature[flip->pos].features[11].x; [[fallthrough]];
-                case 11: search->eval_features[coord_to_feature[flip->pos].features[10].feature] -= 2 * coord_to_feature[flip->pos].features[10].x; [[fallthrough]];
-                case 10: search->eval_features[coord_to_feature[flip->pos].features[ 9].feature] -= 2 * coord_to_feature[flip->pos].features[ 9].x; [[fallthrough]];
-                case  9: search->eval_features[coord_to_feature[flip->pos].features[ 8].feature] -= 2 * coord_to_feature[flip->pos].features[ 8].x; [[fallthrough]];
-                case  8: search->eval_features[coord_to_feature[flip->pos].features[ 7].feature] -= 2 * coord_to_feature[flip->pos].features[ 7].x; [[fallthrough]];
-                case  7: search->eval_features[coord_to_feature[flip->pos].features[ 6].feature] -= 2 * coord_to_feature[flip->pos].features[ 6].x; [[fallthrough]];
-                case  6: search->eval_features[coord_to_feature[flip->pos].features[ 5].feature] -= 2 * coord_to_feature[flip->pos].features[ 5].x; [[fallthrough]];
-                case  5: search->eval_features[coord_to_feature[flip->pos].features[ 4].feature] -= 2 * coord_to_feature[flip->pos].features[ 4].x; [[fallthrough]];
-                case  4: search->eval_features[coord_to_feature[flip->pos].features[ 3].feature] -= 2 * coord_to_feature[flip->pos].features[ 3].x; [[fallthrough]];
-                case  3: search->eval_features[coord_to_feature[flip->pos].features[ 2].feature] -= 2 * coord_to_feature[flip->pos].features[ 2].x; [[fallthrough]];
-                case  2: search->eval_features[coord_to_feature[flip->pos].features[ 1].feature] -= 2 * coord_to_feature[flip->pos].features[ 1].x; [[fallthrough]];
-                case  1: search->eval_features[coord_to_feature[flip->pos].features[ 0].feature] -= 2 * coord_to_feature[flip->pos].features[ 0].x; [[fallthrough]];
-                case  0: break;
-            }
-            uint64_t f = flip->flip;
-            for (uint_fast8_t cell = first_bit(&f); f; cell = next_bit(&f)){
-                switch (coord_to_feature[cell].n_features){
-                    case 13: search->eval_features[coord_to_feature[cell].features[12].feature] -= coord_to_feature[cell].features[12].x; [[fallthrough]];
-                    case 12: search->eval_features[coord_to_feature[cell].features[11].feature] -= coord_to_feature[cell].features[11].x; [[fallthrough]];
-                    case 11: search->eval_features[coord_to_feature[cell].features[10].feature] -= coord_to_feature[cell].features[10].x; [[fallthrough]];
-                    case 10: search->eval_features[coord_to_feature[cell].features[ 9].feature] -= coord_to_feature[cell].features[ 9].x; [[fallthrough]];
-                    case  9: search->eval_features[coord_to_feature[cell].features[ 8].feature] -= coord_to_feature[cell].features[ 8].x; [[fallthrough]];
-                    case  8: search->eval_features[coord_to_feature[cell].features[ 7].feature] -= coord_to_feature[cell].features[ 7].x; [[fallthrough]];
-                    case  7: search->eval_features[coord_to_feature[cell].features[ 6].feature] -= coord_to_feature[cell].features[ 6].x; [[fallthrough]];
-                    case  6: search->eval_features[coord_to_feature[cell].features[ 5].feature] -= coord_to_feature[cell].features[ 5].x; [[fallthrough]];
-                    case  5: search->eval_features[coord_to_feature[cell].features[ 4].feature] -= coord_to_feature[cell].features[ 4].x; [[fallthrough]];
-                    case  4: search->eval_features[coord_to_feature[cell].features[ 3].feature] -= coord_to_feature[cell].features[ 3].x; [[fallthrough]];
-                    case  3: search->eval_features[coord_to_feature[cell].features[ 2].feature] -= coord_to_feature[cell].features[ 2].x; [[fallthrough]];
-                    case  2: search->eval_features[coord_to_feature[cell].features[ 1].feature] -= coord_to_feature[cell].features[ 1].x; [[fallthrough]];
-                    case  1: search->eval_features[coord_to_feature[cell].features[ 0].feature] -= coord_to_feature[cell].features[ 0].x; [[fallthrough]];
-                    case  0: break;
-                }
-            }
+    uint_fast8_t i, cell;
+    uint64_t f;
+    if (search->eval_feature_reversed){
+        for (i = 0; i < coord_to_feature[flip->pos].n_features; ++i)
+            search->eval_features[coord_to_feature[flip->pos].features[i].feature] -= coord_to_feature[flip->pos].features[i].x;
+        f = flip->flip;
+        for (cell = first_bit(&f); f; cell = next_bit(&f)){
+            for (i = 0; i < coord_to_feature[cell].n_features; ++i)
+                search->eval_features[coord_to_feature[cell].features[i].feature] += coord_to_feature[cell].features[i].x;
         }
-    #else
-        uint_fast8_t i, cell;
-        uint64_t f;
-        if (search->eval_feature_reversed){
-            for (i = 0; i < coord_to_feature[flip->pos].n_features; ++i){
-                //if (search->eval_features[coord_to_feature[flip->pos].features[i].feature] / coord_to_feature[flip->pos].features[i].x % 3 != 2)
-                //    cerr << "error " << search->eval_features[coord_to_feature[flip->pos].features[i].feature] << " " << coord_to_feature[flip->pos].features[i].x << " " << flip->pos << endl;
-                search->eval_features[coord_to_feature[flip->pos].features[i].feature] -= coord_to_feature[flip->pos].features[i].x;
-            }
-            f = flip->flip;
-            for (cell = first_bit(&f); f; cell = next_bit(&f)){
-                for (i = 0; i < coord_to_feature[cell].n_features; ++i){
-                    //if (search->eval_features[coord_to_feature[cell].features[i].feature] / coord_to_feature[cell].features[i].x % 3 != 0)
-                    //    cerr << "error " << search->eval_features[coord_to_feature[cell].features[i].feature] << " " << coord_to_feature[cell].features[i].x << " " << cell << endl;
-                    search->eval_features[coord_to_feature[cell].features[i].feature] += coord_to_feature[cell].features[i].x;
-                }
-            }
-        } else{
-            for (i = 0; i < coord_to_feature[flip->pos].n_features; ++i){
-                //if (search->eval_features[coord_to_feature[flip->pos].features[i].feature] / coord_to_feature[flip->pos].features[i].x % 3 != 2)
-                //    cerr << "error " << search->eval_features[coord_to_feature[flip->pos].features[i].feature] << " " << coord_to_feature[flip->pos].features[i].x << " " << flip->pos << endl;
-                search->eval_features[coord_to_feature[flip->pos].features[i].feature] -= 2 * coord_to_feature[flip->pos].features[i].x;
-            }
-            f = flip->flip;
-            for (cell = first_bit(&f); f; cell = next_bit(&f)){
-                for (i = 0; i < coord_to_feature[cell].n_features; ++i){
-                    //if (search->eval_features[coord_to_feature[cell].features[i].feature] / coord_to_feature[cell].features[i].x % 3 != 1)
-                    //    cerr << "error " << search->eval_features[coord_to_feature[cell].features[i].feature] << " " << coord_to_feature[cell].features[i].x << " " << cell << endl;
-                    search->eval_features[coord_to_feature[cell].features[i].feature] -= coord_to_feature[cell].features[i].x;
-                }
-            }
+    } else{
+        for (i = 0; i < coord_to_feature[flip->pos].n_features; ++i)
+            search->eval_features[coord_to_feature[flip->pos].features[i].feature] -= 2 * coord_to_feature[flip->pos].features[i].x;
+        f = flip->flip;
+        for (cell = first_bit(&f); f; cell = next_bit(&f)){
+            for (i = 0; i < coord_to_feature[cell].n_features; ++i)
+                search->eval_features[coord_to_feature[cell].features[i].feature] -= coord_to_feature[cell].features[i].x;
         }
-    #endif
+    }
     search->eval_feature_reversed ^= 1;
-    //search->board.move(flip);
-    //if (search->eval_feature_reversed == 0 && check_features(search)){
-    //    search->board.print();
-    //    cerr << "error" << endl;
-    //}
-    //search->board.undo(flip);
 }
 
 inline void eval_undo(Search *search, const Flip *flip){
     search->eval_feature_reversed ^= 1;
-    #if USE_FAST_DIFF_EVAL
-        if (search->eval_feature_reversed){
-            switch (coord_to_feature[flip->pos].n_features){
-                case 13: search->eval_features[coord_to_feature[flip->pos].features[12].feature] += coord_to_feature[flip->pos].features[12].x; [[fallthrough]];
-                case 12: search->eval_features[coord_to_feature[flip->pos].features[11].feature] += coord_to_feature[flip->pos].features[11].x; [[fallthrough]];
-                case 11: search->eval_features[coord_to_feature[flip->pos].features[10].feature] += coord_to_feature[flip->pos].features[10].x; [[fallthrough]];
-                case 10: search->eval_features[coord_to_feature[flip->pos].features[ 9].feature] += coord_to_feature[flip->pos].features[ 9].x; [[fallthrough]];
-                case  9: search->eval_features[coord_to_feature[flip->pos].features[ 8].feature] += coord_to_feature[flip->pos].features[ 8].x; [[fallthrough]];
-                case  8: search->eval_features[coord_to_feature[flip->pos].features[ 7].feature] += coord_to_feature[flip->pos].features[ 7].x; [[fallthrough]];
-                case  7: search->eval_features[coord_to_feature[flip->pos].features[ 6].feature] += coord_to_feature[flip->pos].features[ 6].x; [[fallthrough]];
-                case  6: search->eval_features[coord_to_feature[flip->pos].features[ 5].feature] += coord_to_feature[flip->pos].features[ 5].x; [[fallthrough]];
-                case  5: search->eval_features[coord_to_feature[flip->pos].features[ 4].feature] += coord_to_feature[flip->pos].features[ 4].x; [[fallthrough]];
-                case  4: search->eval_features[coord_to_feature[flip->pos].features[ 3].feature] += coord_to_feature[flip->pos].features[ 3].x; [[fallthrough]];
-                case  3: search->eval_features[coord_to_feature[flip->pos].features[ 2].feature] += coord_to_feature[flip->pos].features[ 2].x; [[fallthrough]];
-                case  2: search->eval_features[coord_to_feature[flip->pos].features[ 1].feature] += coord_to_feature[flip->pos].features[ 1].x; [[fallthrough]];
-                case  1: search->eval_features[coord_to_feature[flip->pos].features[ 0].feature] += coord_to_feature[flip->pos].features[ 0].x; [[fallthrough]];
-                case  0: break;
-            }
-            uint64_t f = flip->flip;
-            for (uint_fast8_t cell = first_bit(&f); f; cell = next_bit(&f)){
-                switch (coord_to_feature[cell].n_features){
-                    case 13: search->eval_features[coord_to_feature[cell].features[12].feature] -= coord_to_feature[cell].features[12].x; [[fallthrough]];
-                    case 12: search->eval_features[coord_to_feature[cell].features[11].feature] -= coord_to_feature[cell].features[11].x; [[fallthrough]];
-                    case 11: search->eval_features[coord_to_feature[cell].features[10].feature] -= coord_to_feature[cell].features[10].x; [[fallthrough]];
-                    case 10: search->eval_features[coord_to_feature[cell].features[ 9].feature] -= coord_to_feature[cell].features[ 9].x; [[fallthrough]];
-                    case  9: search->eval_features[coord_to_feature[cell].features[ 8].feature] -= coord_to_feature[cell].features[ 8].x; [[fallthrough]];
-                    case  8: search->eval_features[coord_to_feature[cell].features[ 7].feature] -= coord_to_feature[cell].features[ 7].x; [[fallthrough]];
-                    case  7: search->eval_features[coord_to_feature[cell].features[ 6].feature] -= coord_to_feature[cell].features[ 6].x; [[fallthrough]];
-                    case  6: search->eval_features[coord_to_feature[cell].features[ 5].feature] -= coord_to_feature[cell].features[ 5].x; [[fallthrough]];
-                    case  5: search->eval_features[coord_to_feature[cell].features[ 4].feature] -= coord_to_feature[cell].features[ 4].x; [[fallthrough]];
-                    case  4: search->eval_features[coord_to_feature[cell].features[ 3].feature] -= coord_to_feature[cell].features[ 3].x; [[fallthrough]];
-                    case  3: search->eval_features[coord_to_feature[cell].features[ 2].feature] -= coord_to_feature[cell].features[ 2].x; [[fallthrough]];
-                    case  2: search->eval_features[coord_to_feature[cell].features[ 1].feature] -= coord_to_feature[cell].features[ 1].x; [[fallthrough]];
-                    case  1: search->eval_features[coord_to_feature[cell].features[ 0].feature] -= coord_to_feature[cell].features[ 0].x; [[fallthrough]];
-                    case  0: break;
-                }
-            }
-        } else{
-            switch (coord_to_feature[flip->pos].n_features){
-                case 13: search->eval_features[coord_to_feature[flip->pos].features[12].feature] += 2 * coord_to_feature[flip->pos].features[12].x; [[fallthrough]];
-                case 12: search->eval_features[coord_to_feature[flip->pos].features[11].feature] += 2 * coord_to_feature[flip->pos].features[11].x; [[fallthrough]];
-                case 11: search->eval_features[coord_to_feature[flip->pos].features[10].feature] += 2 * coord_to_feature[flip->pos].features[10].x; [[fallthrough]];
-                case 10: search->eval_features[coord_to_feature[flip->pos].features[ 9].feature] += 2 * coord_to_feature[flip->pos].features[ 9].x; [[fallthrough]];
-                case  9: search->eval_features[coord_to_feature[flip->pos].features[ 8].feature] += 2 * coord_to_feature[flip->pos].features[ 8].x; [[fallthrough]];
-                case  8: search->eval_features[coord_to_feature[flip->pos].features[ 7].feature] += 2 * coord_to_feature[flip->pos].features[ 7].x; [[fallthrough]];
-                case  7: search->eval_features[coord_to_feature[flip->pos].features[ 6].feature] += 2 * coord_to_feature[flip->pos].features[ 6].x; [[fallthrough]];
-                case  6: search->eval_features[coord_to_feature[flip->pos].features[ 5].feature] += 2 * coord_to_feature[flip->pos].features[ 5].x; [[fallthrough]];
-                case  5: search->eval_features[coord_to_feature[flip->pos].features[ 4].feature] += 2 * coord_to_feature[flip->pos].features[ 4].x; [[fallthrough]];
-                case  4: search->eval_features[coord_to_feature[flip->pos].features[ 3].feature] += 2 * coord_to_feature[flip->pos].features[ 3].x; [[fallthrough]];
-                case  3: search->eval_features[coord_to_feature[flip->pos].features[ 2].feature] += 2 * coord_to_feature[flip->pos].features[ 2].x; [[fallthrough]];
-                case  2: search->eval_features[coord_to_feature[flip->pos].features[ 1].feature] += 2 * coord_to_feature[flip->pos].features[ 1].x; [[fallthrough]];
-                case  1: search->eval_features[coord_to_feature[flip->pos].features[ 0].feature] += 2 * coord_to_feature[flip->pos].features[ 0].x; [[fallthrough]];
-                case  0: break;
-            }
-            uint64_t f = flip->flip;
-            for (uint_fast8_t cell = first_bit(&f); f; cell = next_bit(&f)){
-                switch (coord_to_feature[cell].n_features){
-                    case 13: search->eval_features[coord_to_feature[cell].features[12].feature] += coord_to_feature[cell].features[12].x; [[fallthrough]];
-                    case 12: search->eval_features[coord_to_feature[cell].features[11].feature] += coord_to_feature[cell].features[11].x; [[fallthrough]];
-                    case 11: search->eval_features[coord_to_feature[cell].features[10].feature] += coord_to_feature[cell].features[10].x; [[fallthrough]];
-                    case 10: search->eval_features[coord_to_feature[cell].features[ 9].feature] += coord_to_feature[cell].features[ 9].x; [[fallthrough]];
-                    case  9: search->eval_features[coord_to_feature[cell].features[ 8].feature] += coord_to_feature[cell].features[ 8].x; [[fallthrough]];
-                    case  8: search->eval_features[coord_to_feature[cell].features[ 7].feature] += coord_to_feature[cell].features[ 7].x; [[fallthrough]];
-                    case  7: search->eval_features[coord_to_feature[cell].features[ 6].feature] += coord_to_feature[cell].features[ 6].x; [[fallthrough]];
-                    case  6: search->eval_features[coord_to_feature[cell].features[ 5].feature] += coord_to_feature[cell].features[ 5].x; [[fallthrough]];
-                    case  5: search->eval_features[coord_to_feature[cell].features[ 4].feature] += coord_to_feature[cell].features[ 4].x; [[fallthrough]];
-                    case  4: search->eval_features[coord_to_feature[cell].features[ 3].feature] += coord_to_feature[cell].features[ 3].x; [[fallthrough]];
-                    case  3: search->eval_features[coord_to_feature[cell].features[ 2].feature] += coord_to_feature[cell].features[ 2].x; [[fallthrough]];
-                    case  2: search->eval_features[coord_to_feature[cell].features[ 1].feature] += coord_to_feature[cell].features[ 1].x; [[fallthrough]];
-                    case  1: search->eval_features[coord_to_feature[cell].features[ 0].feature] += coord_to_feature[cell].features[ 0].x; [[fallthrough]];
-                    case  0: break;
-                }
-            }
+    uint_fast8_t i, cell;
+    uint64_t f;
+    if (search->eval_feature_reversed){
+        for (i = 0; i < coord_to_feature[flip->pos].n_features; ++i)
+            search->eval_features[coord_to_feature[flip->pos].features[i].feature] += coord_to_feature[flip->pos].features[i].x;
+        f = flip->flip;
+        for (cell = first_bit(&f); f; cell = next_bit(&f)){
+            for (i = 0; i < coord_to_feature[cell].n_features; ++i)
+                search->eval_features[coord_to_feature[cell].features[i].feature] -= coord_to_feature[cell].features[i].x;
         }
-    #else
-        uint_fast8_t i, cell;
-        uint64_t f;
-        if (search->eval_feature_reversed){
-            for (i = 0; i < coord_to_feature[flip->pos].n_features; ++i)
-                search->eval_features[coord_to_feature[flip->pos].features[i].feature] += coord_to_feature[flip->pos].features[i].x;
-            f = flip->flip;
-            for (cell = first_bit(&f); f; cell = next_bit(&f)){
-                for (i = 0; i < coord_to_feature[cell].n_features; ++i)
-                    search->eval_features[coord_to_feature[cell].features[i].feature] -= coord_to_feature[cell].features[i].x;
-            }
-        } else{
-            for (i = 0; i < coord_to_feature[flip->pos].n_features; ++i)
-                search->eval_features[coord_to_feature[flip->pos].features[i].feature] += 2 * coord_to_feature[flip->pos].features[i].x;
-            f = flip->flip;
-            for (cell = first_bit(&f); f; cell = next_bit(&f)){
-                for (i = 0; i < coord_to_feature[cell].n_features; ++i)
-                    search->eval_features[coord_to_feature[cell].features[i].feature] += coord_to_feature[cell].features[i].x;
-            }
+    } else{
+        for (i = 0; i < coord_to_feature[flip->pos].n_features; ++i)
+            search->eval_features[coord_to_feature[flip->pos].features[i].feature] += 2 * coord_to_feature[flip->pos].features[i].x;
+        f = flip->flip;
+        for (cell = first_bit(&f); f; cell = next_bit(&f)){
+            for (i = 0; i < coord_to_feature[cell].n_features; ++i)
+                search->eval_features[coord_to_feature[cell].features[i].feature] += coord_to_feature[cell].features[i].x;
         }
-    #endif
-    //if (search->eval_feature_reversed == 0 && check_features(search))
-    //    cerr << "error" << endl;
+    }
 }

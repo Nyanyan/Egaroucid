@@ -1,9 +1,9 @@
-# Egaroucid5
+# Egaroucid
 Strong Othello AI Application.
 
 Light version of this othello AI got 1st place in the world ([CodinGame Othello](https://www.codingame.com/multiplayer/bot-programming/othello-1/leaderboard))
 
-**You can use the [application in Japanese or English](https://www.egaroucid-app.nyanyan.dev/) or use Python [tkinter version](#tkinter_version)**
+**You can use the [application in Japanese or English](https://www.egaroucid-app.nyanyan.dev/)**
 
 **You can [play light version of this AI on the Web in Japanese](https://www.egaroucid.nyanyan.dev/).**
 
@@ -21,13 +21,13 @@ Please see: https://www.egaroucid-app.nyanyan.dev/
 
 ## Abstract
 
-Egaroucid5 is an Othello AI.
+Egaroucid is an Othello AI.
 
 There are former versions:
 
 https://github.com/Nyanyan/Reversi
 
-https://github.com/Nyanyan/Egaroucid
+https://github.com/Nyanyan/Egaroucid_early
 
 https://github.com/Nyanyan/Egaroucid3
 
@@ -45,25 +45,19 @@ https://github.com/Nyanyan/Egaroucid4
 ### Additional Python libraries
 
 * subprocess
-* tkinter
 
 ### Additional C++ libraries
 
-* CTPL thread pool library
-  * https://github.com/vit-vit/CTPL
-* Boost
-  * https://www.boost.org/
+* None
 
 
 
-
-
-## How to use with tkinter
+## How to use with console
 
 First, you have to clone this repository. For example,
 
 ```
-$ git clone git@github.com:Nyanyan/Egaroucid5.git
+$ git clone git@github.com:Nyanyan/Egaroucid.git
 ```
 
 Then move to the ```src``` directory
@@ -88,91 +82,46 @@ Compile ```ai.cpp```
 
 ```
 $ cd test
-$ g++ -O3 -fexcess-precision=fast -funroll-loops -flto -march=native -lpthread -Wall ai.cpp -o a.exe
+$ g++ -O3 -fexcess-precision=fast -funroll-loops -flto -march=native -lpthread -Wall Egaroucid6_test.cpp -o egaroucid.exe
 ```
 
-Execute ```play.py```
+Execute ```egaroucid.exe```
 
 ```
-$ python3 play.py
+$ egaroucid.exe
 ```
 
-Then choose which color AI play. 0 for black, 1 for white
+You should input:
 
 ```
-AI moves (0: black 1: white): 
+Player number(0: Black 1: White)
+Board Row 1
+Board Row 2
+Board Row 3
+Board Row 4
+Board Row 5
+Board Row 6
+Board Row 7
+Board Row 8
 ```
 
-Press ```Start``` button to play!
-
-
-
-## Egaroucid5 on Python
-
-First, you have to clone this repository. For example,
+For example,
 
 ```
-$ git clone git@github.com:Nyanyan/Egaroucid5.git
+0
+........
+........
+........
+...10...
+...100..
+...1....
+........
+........
 ```
 
-Then move to the ```src``` directory
+Outputting format is:
 
 ```
-$ cd Egaroucid5/src
-```
-
-Modify ```Python.h``` location
-
-```
-// egaroucid5module.cpp
-
-// INCLUDE MUST BE MODIFIED
-#include <Python.h> // < this should be modified
-// example
-//#include "C:/Users/username/AppData/Local/Programs/Python/Python39/include/Python.h"
-```
-
-Setup Egaroucid5
-
-```
-$ python setup.py install
-```
-
-Execute example ```python_egaroucid5.py```
-
-```
-$ python python_egaroucid5.py
-```
-
-### Usage
-
-#### egaroucid5.init(eval_file, book_file)
-
-Returns True if initialized, False if failed.
-
-example:
-
-```
-egaroucid5.init('test/resources/eval.egev', 'test/resources/book.egbk')
-```
-
-#### egaroucid5.ai(board, level)
-
-```0/B/b/X/x/*``` for black, ```1/W/w/O/o``` for white, ```./-``` for empty.
-
-board format:
-
-```
-[board as 64 characters] [player]
-```
-
-Spaces will be ignored.
-
-Returns tuple ```(Score as int, coord as str)```
-
-example (FFO endgame test #40):
-
-```
-egaroucid5.ai('1..11110.1111110110011101101110011111100...11110....1..0........0', 21)
+{evaluation value} {coordinate}
 ```
 

@@ -299,54 +299,6 @@ inline u64_4 horizontal_mirror_1_3(u64_4 x){
     return x ^ a ^ (a << 4);
 }
 
-/*
-inline void horizontal_mirror_double(uint64_t *x, uint64_t *y){
-    __m128i	xy = _mm_set_epi64x(*x, *y);
-    xy = _mm_or_si128(
-        _mm_and_si128(_mm_srli_epi64(xy, 1), _mm_set1_epi64x(0x5555555555555555ULL)),
-        _mm_and_si128(_mm_slli_epi64(xy, 1), _mm_set1_epi64x(0xAAAAAAAAAAAAAAAAULL)));
-    xy = _mm_or_si128(
-        _mm_and_si128(_mm_srli_epi64(xy, 2), _mm_set1_epi64x(0x3333333333333333ULL)), 
-        _mm_and_si128(_mm_slli_epi64(xy, 2), _mm_set1_epi64x(0xCCCCCCCCCCCCCCCCULL)));
-    xy = _mm_or_si128(
-        _mm_and_si128(_mm_srli_epi64(xy, 4), _mm_set1_epi64x(0x0F0F0F0F0F0F0F0FULL)), 
-        _mm_and_si128(_mm_slli_epi64(xy, 4), _mm_set1_epi64x(0xF0F0F0F0F0F0F0F0ULL)));
-    *y = _mm_cvtsi128_si64(xy);
-    *x = _mm_cvtsi128_si64(_mm_unpackhi_epi64(xy, xy));
-}
-
-inline void horizontal_mirror_double(uint64_t xin, uint64_t yin, uint64_t *x, uint64_t *y){
-    __m128i	xy = _mm_set_epi64x(xin, yin);
-    xy = _mm_or_si128(
-        _mm_and_si128(_mm_srli_epi64(xy, 1), _mm_set1_epi64x(0x5555555555555555ULL)),
-        _mm_and_si128(_mm_slli_epi64(xy, 1), _mm_set1_epi64x(0xAAAAAAAAAAAAAAAAULL)));
-    xy = _mm_or_si128(
-        _mm_and_si128(_mm_srli_epi64(xy, 2), _mm_set1_epi64x(0x3333333333333333ULL)), 
-        _mm_and_si128(_mm_slli_epi64(xy, 2), _mm_set1_epi64x(0xCCCCCCCCCCCCCCCCULL)));
-    xy = _mm_or_si128(
-        _mm_and_si128(_mm_srli_epi64(xy, 4), _mm_set1_epi64x(0x0F0F0F0F0F0F0F0FULL)), 
-        _mm_and_si128(_mm_slli_epi64(xy, 4), _mm_set1_epi64x(0xF0F0F0F0F0F0F0F0ULL)));
-    *y = _mm_cvtsi128_si64(xy);
-    *x = _mm_cvtsi128_si64(_mm_unpackhi_epi64(xy, xy));
-}
-
-inline void horizontal_mirror_quad(uint64_t win, uint64_t xin, uint64_t yin, uint64_t zin, uint64_t *w, uint64_t *x, uint64_t *y, uint64_t *z){
-    __m256i	xy = _mm256_set_epi64x(win, xin, yin, zin);
-    xy = _mm256_or_si256(
-        _mm256_and_si256(_mm256_srli_epi64(xy, 1), _mm256_set1_epi64x(0x5555555555555555ULL)), 
-        _mm256_and_si256(_mm256_slli_epi64(xy, 1), _mm256_set1_epi64x(0xAAAAAAAAAAAAAAAAULL)));
-    xy = _mm256_or_si256(
-        _mm256_and_si256(_mm256_srli_epi64(xy, 2), _mm256_set1_epi64x(0x3333333333333333ULL)), 
-        _mm256_and_si256(_mm256_slli_epi64(xy, 2), _mm256_set1_epi64x(0xCCCCCCCCCCCCCCCCULL)));
-    xy = _mm256_or_si256(
-        _mm256_and_si256(_mm256_srli_epi64(xy, 4), _mm256_set1_epi64x(0x0F0F0F0F0F0F0F0FULL)),
-        _mm256_and_si256(_mm256_slli_epi64(xy, 4), _mm256_set1_epi64x(0xF0F0F0F0F0F0F0F0ULL)));
-    *w = _mm256_extract_epi64(xy, 3);
-    *x = _mm256_extract_epi64(xy, 2);
-    *y = _mm256_extract_epi64(xy, 1);
-    *z = _mm256_extract_epi64(xy, 0);
-}
-*/
 // direction is couner clockwise
 inline uint64_t rotate_90(uint64_t x){
     return vertical_mirror(white_line_mirror(x));
@@ -402,31 +354,7 @@ inline uint64_t rotate_45(uint64_t x){
     a = (x ^ (x >> 32)) & 0x00000000C3E1F078ULL;
     return x ^ a ^ (a << 32);
 }
-/*
-inline void rotate_45_double(uint64_t *x, uint64_t *y){
-    __m128i xy = _mm_set_epi64x(*x, *y);
-    __m128i a = _mm_and_si128(_mm_xor_si128(xy, _mm_srli_epi64(xy, 8)), _mm_set1_epi64x(0x0055005500550055ULL));
-    xy = _mm_xor_si128(_mm_xor_si128(xy, a), _mm_slli_epi64(a, 8));
-    a = _mm_and_si128(_mm_xor_si128(xy, _mm_srli_epi64(xy, 16)), _mm_set1_epi64x(0x0000CC660000CC66ULL));
-    xy = _mm_xor_si128(_mm_xor_si128(xy, a), _mm_slli_epi64(a, 16));
-    a = _mm_and_si128(_mm_xor_si128(xy, _mm_srli_epi64(xy, 32)), _mm_set1_epi64x(0x00000000C3E1F078ULL));
-    xy = _mm_xor_si128(_mm_xor_si128(xy, a), _mm_slli_epi64(a, 32));
-    *y = _mm_cvtsi128_si64(xy);
-    *x = _mm_cvtsi128_si64(_mm_unpackhi_epi64(xy, xy));
-}
 
-inline void rotate_45_double(uint64_t x_in, uint64_t y_in, uint64_t *x, uint64_t *y){
-    __m128i xy = _mm_set_epi64x(x_in, y_in);
-    __m128i a = _mm_and_si128(_mm_xor_si128(xy, _mm_srli_epi64(xy, 8)), _mm_set1_epi64x(0x0055005500550055ULL));
-    xy = _mm_xor_si128(_mm_xor_si128(xy, a), _mm_slli_epi64(a, 8));
-    a = _mm_and_si128(_mm_xor_si128(xy, _mm_srli_epi64(xy, 16)), _mm_set1_epi64x(0x0000CC660000CC66ULL));
-    xy = _mm_xor_si128(_mm_xor_si128(xy, a), _mm_slli_epi64(a, 16));
-    a = _mm_and_si128(_mm_xor_si128(xy, _mm_srli_epi64(xy, 32)), _mm_set1_epi64x(0x00000000C3E1F078ULL));
-    xy = _mm_xor_si128(_mm_xor_si128(xy, a), _mm_slli_epi64(a, 32));
-    *y = _mm_cvtsi128_si64(xy);
-    *x = _mm_cvtsi128_si64(_mm_unpackhi_epi64(xy, xy));
-}
-*/
 // unrotate 45 degrees counter clockwise
 inline uint64_t unrotate_45(uint64_t x){
     uint64_t a = (x ^ (x >> 32)) & 0x00000000C3E1F078ULL;
@@ -453,31 +381,7 @@ inline uint64_t rotate_135(uint64_t x){
     a = (x ^ (x >> 32)) & 0x00000000C3870F1EULL;
     return x ^ a ^ (a << 32);
 }
-/*
-inline void rotate_135_double(uint64_t *x, uint64_t *y){
-    __m128i xy = _mm_set_epi64x(*x, *y);
-    __m128i a = _mm_and_si128(_mm_xor_si128(xy, _mm_srli_epi64(xy, 8)), _mm_set1_epi64x(0x00AA00AA00AA00AAULL));
-    xy = _mm_xor_si128(_mm_xor_si128(xy, a), _mm_slli_epi64(a, 8));
-    a = _mm_and_si128(_mm_xor_si128(xy, _mm_srli_epi64(xy, 16)), _mm_set1_epi64x(0x0000336600003366ULL));
-    xy = _mm_xor_si128(_mm_xor_si128(xy, a), _mm_slli_epi64(a, 16));
-    a = _mm_and_si128(_mm_xor_si128(xy, _mm_srli_epi64(xy, 32)), _mm_set1_epi64x(0x00000000C3870F1EULL));
-    xy = _mm_xor_si128(_mm_xor_si128(xy, a), _mm_slli_epi64(a, 32));
-    *y = _mm_cvtsi128_si64(xy);
-    *x = _mm_cvtsi128_si64(_mm_unpackhi_epi64(xy, xy));
-}
 
-inline void rotate_135_double(uint64_t x_in, uint64_t y_in, uint64_t *x, uint64_t *y){
-    __m128i xy = _mm_set_epi64x(x_in, y_in);
-    __m128i a = _mm_and_si128(_mm_xor_si128(xy, _mm_srli_epi64(xy, 8)), _mm_set1_epi64x(0x00AA00AA00AA00AAULL));
-    xy = _mm_xor_si128(_mm_xor_si128(xy, a), _mm_slli_epi64(a, 8));
-    a = _mm_and_si128(_mm_xor_si128(xy, _mm_srli_epi64(xy, 16)), _mm_set1_epi64x(0x0000336600003366ULL));
-    xy = _mm_xor_si128(_mm_xor_si128(xy, a), _mm_slli_epi64(a, 16));
-    a = _mm_and_si128(_mm_xor_si128(xy, _mm_srli_epi64(xy, 32)), _mm_set1_epi64x(0x00000000C3870F1EULL));
-    xy = _mm_xor_si128(_mm_xor_si128(xy, a), _mm_slli_epi64(a, 32));
-    *y = _mm_cvtsi128_si64(xy);
-    *x = _mm_cvtsi128_si64(_mm_unpackhi_epi64(xy, xy));
-}
-*/
 inline uint64_t unrotate_135(uint64_t x){
     uint64_t a = (x ^ (x >> 32)) & 0x00000000C3870F1EULL;
     x = x ^ a ^ (a << 32);
@@ -486,32 +390,6 @@ inline uint64_t unrotate_135(uint64_t x){
     a = (x ^ (x >> 8)) & 0x00AA00AA00AA00AAULL;
     return x ^ a ^ (a << 8);
 }
-/*
-inline uint64_t unrotate_45_135(uint64_t x, uint64_t y){
-    __m128i xy = _mm_set_epi64x(x, y);
-    __m128i a = _mm_and_si128(_mm_xor_si128(xy, _mm_srli_epi64(xy, 32)), _mm_set_epi64x(0x00000000C3E1F078ULL, 0x00000000C3870F1EULL));
-    xy = _mm_xor_si128(_mm_xor_si128(xy, a), _mm_slli_epi64(a, 32));
-    a = _mm_and_si128(_mm_xor_si128(xy, _mm_srli_epi64(xy, 16)), _mm_set_epi64x(0x0000CC660000CC66ULL, 0x0000336600003366ULL));
-    xy = _mm_xor_si128(_mm_xor_si128(xy, a), _mm_slli_epi64(a, 16));
-    a = _mm_and_si128(_mm_xor_si128(xy, _mm_srli_epi64(xy, 8)), _mm_set_epi64x(0x0055005500550055ULL, 0x00AA00AA00AA00AAULL));
-    xy = _mm_xor_si128(_mm_xor_si128(xy, a), _mm_slli_epi64(a, 8));
-    return _mm_cvtsi128_si64(xy) | _mm_cvtsi128_si64(_mm_unpackhi_epi64(xy, xy));
-}
-
-inline void rotate_45_double_135_double(uint64_t x_in, uint64_t y_in, uint64_t *w, uint64_t *x, uint64_t *y, uint64_t *z){
-    __m256i xy = _mm256_set_epi64x(x_in, y_in, x_in, y_in);
-    __m256i a = _mm256_and_si256(_mm256_xor_si256(xy, _mm256_srli_epi64(xy, 8)), _mm256_set_epi64x(0x0055005500550055ULL, 0x0055005500550055ULL, 0x00AA00AA00AA00AAULL, 0x00AA00AA00AA00AAULL));
-    xy = _mm256_xor_si256(_mm256_xor_si256(xy, a), _mm256_slli_epi64(a, 8));
-    a = _mm256_and_si256(_mm256_xor_si256(xy, _mm256_srli_epi64(xy, 16)), _mm256_set_epi64x(0x0000CC660000CC66ULL, 0x0000CC660000CC66ULL, 0x0000336600003366ULL, 0x0000336600003366ULL));
-    xy = _mm256_xor_si256(_mm256_xor_si256(xy, a), _mm256_slli_epi64(a, 16));
-    a = _mm256_and_si256(_mm256_xor_si256(xy, _mm256_srli_epi64(xy, 32)), _mm256_set_epi64x(0x00000000C3E1F078ULL, 0x00000000C3E1F078ULL, 0x00000000C3870F1EULL, 0x00000000C3870F1EULL));
-    xy = _mm256_xor_si256(_mm256_xor_si256(xy, a), _mm256_slli_epi64(a, 32));
-    *w = _mm256_extract_epi64(xy, 3);
-    *x = _mm256_extract_epi64(xy, 2);
-    *y = _mm256_extract_epi64(xy, 1);
-    *z = _mm256_extract_epi64(xy, 0);
-}
-*/
 
 inline u64_4 rotate_45_45_135_135(u64_4 x){
     u64_4 mask(0x0055005500550055ULL, 0x0055005500550055ULL, 0x00AA00AA00AA00AAULL, 0x00AA00AA00AA00AAULL);
@@ -547,35 +425,22 @@ inline uint64_t unrotate_315(uint64_t x){
     return rotate_180(unrotate_135(x));
 }
 
-#if USE_MINUS_NTZ
+#if USE_BUILTIN_NTZ
+    inline uint_fast8_t ntz(uint64_t *x){
+        return _tzcnt_u64(*x);
+    }
+#elif USE_MINUS_NTZ
     inline uint_fast8_t ntz(uint64_t *x){
         return pop_count_ull((*x & (-(*x))) - 1);
     }
 #else
     inline uint_fast8_t ntz(uint64_t *x){
-        return _tzcnt_u64(*x);
         //return pop_count_ull(_blsi_u64(*x) - 1);
-        //return pop_count_ull((~(*x)) & ((*x) - 1));
+        return pop_count_ull((~(*x)) & ((*x) - 1));
         //return pop_count_ull((*x & (~(*x) + 1)) - 1);
     }
 #endif
 
-/*
-inline u64_4 pop_count_ull_quad(u64_4 x){
-    u64_4 mask(0x5555555555555555ULL);
-    x = (x & mask) + ((x >> 1) & mask);
-    mask.set(0x3333333333333333ULL);
-    x = (x & mask) + ((x >> 2) & mask);
-    mask.set(0x0F0F0F0F0F0F0F0FULL);
-    x = (x & mask) + ((x >> 4) & mask);
-    mask.set(0x00FF00FF00FF00FFULL);
-    x = (x & mask) + ((x >> 8) & mask);
-    mask.set(0x0000FFFF0000FFFFULL);
-    x = (x & mask) + ((x >> 16) & mask);
-    mask.set(0x00000000FFFFFFFFULL);
-    return (x & mask) + ((x >> 32) & mask);
-}
-*/
 inline u64_4 pop_count_ull_quad(u64_4 x){
     u64_4 mask(0x5555555555555555ULL);
     x = x - ((x >> 1) & mask);
@@ -634,36 +499,6 @@ inline uint_fast8_t next_bit(uint64_t *x){
     //*x &= *x - 1;
     *x = _blsr_u64(*x);
     return ntz(x);
-}
-
-inline uint_fast8_t next_odd_bit(uint64_t *x, uint_fast8_t parity){
-    *x &= *x - 1;
-    uint_fast8_t res = ntz(x);
-    while (*x && (parity & cell_div4[res]) == 0)
-        res = next_odd_bit(x, parity);
-    return res;
-}
-
-inline uint_fast8_t first_odd_bit(uint64_t *x, uint_fast8_t parity){
-    uint_fast8_t res = ntz(x);
-    while (*x && (parity & cell_div4[res]) == 0)
-        res = next_odd_bit(x, parity);
-    return res;
-}
-
-inline uint_fast8_t next_even_bit(uint64_t *x, uint_fast8_t parity){
-    *x &= *x - 1;
-    uint_fast8_t res = ntz(x);
-    while (*x && (parity & cell_div4[res]))
-        res = next_even_bit(x, parity);
-    return res;
-}
-
-inline uint_fast8_t first_even_bit(uint64_t *x, uint_fast8_t parity){
-    uint_fast8_t res = ntz(x);
-    while (*x && (parity & cell_div4[res]))
-        res = next_even_bit(x, parity);
-    return res;
 }
 
 constexpr uint64_t bit_around[HW2] = {

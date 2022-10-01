@@ -5,7 +5,15 @@ import sys
 strt_idx = int(sys.argv[1])
 end_idx = int(sys.argv[2])
 
-egaroucid = subprocess.Popen('Egaroucid5_test.exe'.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+if len(sys.argv) >= 4:
+    n_threads = int(sys.argv[3])
+else:
+    n_threads = 16
+
+#if n_threads >= 2:
+egaroucid = subprocess.Popen(('Egaroucid6_test.exe ' + str(n_threads - 1)).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+#else:
+#    egaroucid = subprocess.Popen('Egaroucid6_test_single.exe'.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
 res_str = ''
 tim = 0
@@ -79,6 +87,7 @@ for line, ans_line in zip(res_str.splitlines(), answer.splitlines()):
 
 print('done')
 print(res_str_proc, end='')
+print(n_threads, 'threads')
 print(tim / 1000, 'sec')
 print(time() - strt, 'sec total')
 print(nodes, 'nodes')

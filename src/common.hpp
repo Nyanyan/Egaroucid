@@ -3,6 +3,7 @@
 #include <chrono>
 #include <random>
 #include <string>
+#include "setting.hpp"
 
 using namespace std;
 
@@ -25,6 +26,8 @@ using namespace std;
 #define PHASE_N_STONES 2
 
 #define INF 100000000
+
+#define LEGAL_UNDEFINED 0x0000001818000000ULL
 
 inline uint64_t tim(){
     return chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now().time_since_epoch()).count();
@@ -58,14 +61,3 @@ inline uint64_t myrand_ull(){
 }
 
 bool global_searching = true;
-
-constexpr uint_fast8_t cell_div4[HW2] = {
-    1, 1, 1, 1, 2, 2, 2, 2, 
-    1, 1, 1, 1, 2, 2, 2, 2, 
-    1, 1, 1, 1, 2, 2, 2, 2, 
-    1, 1, 1, 1, 2, 2, 2, 2, 
-    4, 4, 4, 4, 8, 8, 8, 8, 
-    4, 4, 4, 4, 8, 8, 8, 8, 
-    4, 4, 4, 4, 8, 8, 8, 8, 
-    4, 4, 4, 4, 8, 8, 8, 8
-};
