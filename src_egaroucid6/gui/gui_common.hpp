@@ -228,8 +228,8 @@ struct Colors {
 	Color red{ Palette::Red };
 	Color light_cyan{ Palette::Lightcyan };
 	Color chocolate{ Color(210, 105, 30) };
-	Color darkred{ Color(139, 0, 0) };
-	Color darkblue{ Color(0, 0, 139) };
+	Color darkred{ Color(178, 34, 34) };
+	Color darkblue{ Color(34, 34, 178) };
 	Color burlywood{ Color(222, 184, 135) };
 };
 
