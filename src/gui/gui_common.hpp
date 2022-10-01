@@ -72,14 +72,14 @@ constexpr int GRAPH_HEIGHT = WINDOW_SIZE_Y - GRAPH_SY - 40 - 20;
 
 // level drawing constants
 #define LEVEL_INFO_WIDTH 40
-#define LEVEL_INFO_HEIGHT 15
+#define LEVEL_HEIGHT 15
+#define LEVEL_INFO_HEIGHT 20
 constexpr int LEVEL_SX = BOARD_SX + BOARD_SIZE + 50;
 constexpr int LEVEL_SY = Y_CENTER - 34;
 constexpr int LEVEL_WIDTH = WINDOW_SIZE_X - LEVEL_SX - 30;
-constexpr int LEVEL_HEIGHT = 20;
 constexpr int LEVEL_INFO_SX = LEVEL_SX + LEVEL_WIDTH - LEVEL_INFO_WIDTH * 5;
 constexpr int LEVEL_INFO_SY = LEVEL_SY - 45;
-constexpr int LEVEL_DEPTH_SY = LEVEL_SY + LEVEL_HEIGHT + 5;
+constexpr int LEVEL_DEPTH_SY = LEVEL_SY + LEVEL_HEIGHT + 8;
 
 // info drawing constants
 #define INFO_SY 35
