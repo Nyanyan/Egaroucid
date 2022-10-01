@@ -1,0 +1,188 @@
+{
+    "lang_name": "日本語",
+    "common": {
+        "black": "黒",
+        "white": "白",
+        "empty": "空",
+        "level": "レベル",
+        "othello_ai": "オセロAI"
+    },
+    "loading": {
+        "loading": "起動中...",
+        "load_failed": "起動失敗\nbookファイルを確認してください"
+    },
+    "closing": "終了中...",
+    "mode": {
+        "mode": "モード",
+        "entry_mode": "シンプル",
+        "professional_mode": "研究",
+        "serious_game": "対局"
+    },
+    "play": {
+        "game": "対局",
+        "new_game": "新規対局",
+        "analyze": "分析"
+    },
+    "settings": {
+        "settings": "設定",
+        "play": {
+            "play":  "着手",
+            "human_first": "人間先手",
+            "human_second": "人間後手",
+            "both_ai": "AI同士",
+            "both_human": "人間同士"
+        },
+        "thread": {
+            "thread": "スレッド数"
+        }
+    },
+    "ai_settings": {
+        "ai_settings": "AIの設定",
+        "use_book": "book使用",
+        "ai_level": "AIレベル",
+        "hint_level": "ヒントレベル",
+        "graph_level": "グラフレベル",
+        "error_level": "誤差レベル",
+        "book_error": "book誤差",
+        "use_book_depth": "book使用深さ"
+    },
+    "book": {
+        "book": "定石",
+        "start_learn": "学習開始",
+        "stop_learn": "学習停止",
+        "auto_modification": "自動修正",
+        "settings": "bookの設定",
+        "depth": "深さ",
+        "accept": "許容石差",
+        "changed_value": "修正した評価値",
+        "import": "インポート",
+        "import_explanation": "ドラッグ&ドロップで\nEgaroucid/Edax形式のbookを追加",
+        "import_failed": "取り込み失敗",
+        "back": "戻る",
+        "loading": "取り込み中...",
+        "book_reference": "bookの参照",
+        "input_book_path": "bookのパスを入力",
+        "use_default": "初期設定"
+    },
+    "in_out": {
+        "in_out": "入出力",
+        "in": "入力",
+        "out": "出力",
+        "output_record": "現局面までの棋譜をコピー",
+        "output_game": "対局保存",
+        "input_record": "棋譜入力",
+        "input_board": "盤面入力",
+        "edit_board": "盤面編集",
+        "input_game": "対局読み込み",
+        "score": "スコア",
+        "no_game_available": "対局が保存されていません"
+    },
+    "display": {
+        "display": "表示",
+        "hint": {
+            "hint": "ヒント",
+            "stone_value": "石差評価",
+            "show_number": "個",
+            "show_all": "全部",
+            "human_value": "人間的評価",
+            "umigame_value": "うみがめ数"
+        },
+        "graph": "グラフ",
+        "joseki_on_cell": "マスへの定石表示",
+        "end_popup": "終了時ポップアップ",
+        "log": "ログ"
+    },
+    "operation": {
+        "operation": "操作",
+        "stop_read": "読み停止",
+        "resume_read": "読み再開",
+        "forward": "進む (->/D)",
+        "backward": "戻る (<-/A)",
+        "convert": {
+            "convert": "変換",
+            "vertical": "180度",
+            "white_line": "ホワイトライン",
+            "black_line": "ブラックライン"
+        }
+    },
+    "button": {
+        "start_game": "対局開始",
+        "how_to_use": "使い方",
+        "close": "閉じる",
+        "tweet": "Tweet",
+        "save_game": "現局面までを保存",
+        "save_all_game": "本筋を保存",
+        "not_save_game": "保存せず閉じる",
+        "import": "取り込む",
+        "skip": "スキップ",
+        "download": "ダウンロード"
+    },
+    "result": {
+        "you_win": "あなたの勝ち！",
+        "AI_win": "AIの勝ち！",
+        "draw": "引き分け！",
+        "black_win": "黒の勝ち！",
+        "white_win": "白の勝ち！",
+        "tweet_you_win_0": "",
+        "tweet_you_win_1": "に勝ちました！",
+        "tweet_AI_win_0": "",
+        "tweet_AI_win_1": "に負けました…",
+        "tweet_draw_0": "",
+        "tweet_draw_1": "と引き分けました！"
+    },
+    "save_game": {
+        "save_game": "対局保存",
+        "player_name": "プレーヤー名",
+        "memo": "メモ"
+    },
+    "info": {
+        "black": "黒番",
+        "white": "白番",
+        "game_end": "終局",
+        "joseki_name": "定石",
+        "ai": "AI",
+        "hint": "ヒント",
+        "moves": "手目",
+        "lookahead_0": "",
+        "lookahead_1": "手読み",
+        "complete_0": "",
+        "complete_1": "手読み切り"
+    },
+    "edit_board": {
+        "player": "手番",
+        "stone": "石の色",
+        "black": "黒(B)",
+        "white": "白(W)",
+        "empty": "空(E)"
+    },
+    "help": {
+        "help": "ヘルプ",
+        "how_to_use": "使い方",
+        "bug_report": "バグレポート",
+        "auto_update_check": "自動更新確認",
+        "new_version_available": "新しいバージョンがダウンロードできます。",
+        "download?": "ダウンロードページを開きますか？",
+        "license": "ライセンス"
+    },
+    "tips": {
+        "do_you_know": "ご存知ですか？",
+        "tips": [
+            "研究モードではマスを右クリックでbookを変更",
+            "Edax形式のbookもそのまま追加可能",
+            "ドラッグ、←→キーまたはA、Dキーで局面を移動",
+            "対局はrecordsフォルダに保存可能",
+            "bookや設定は終了時に自動保存",
+            "盤面入力は様々な形式に対応",
+            "棋譜や局面を入力可能",
+            "人間的評価値は手筋の総合評価",
+            "うみがめ数表示はbookに依存",
+            "終了時ポップアップは非表示も可能",
+            "AIのレベルを上げすぎると計算時間が爆発",
+            "読み停止ボタンで計算を強制終了",
+            "マスを右クリックbook値手動変更",
+            "book値手動変更はEnterでも完了",
+            "book値手動変更はEscで抜けられる",
+            "マウスの進む/戻るで局面移動"
+        ]
+    }
+}
