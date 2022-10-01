@@ -125,3 +125,9 @@ Outputting format is:
 {evaluation value} {coordinate}
 ```
 
+For example,
+
+```
+0 c3
+```
+
