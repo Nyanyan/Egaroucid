@@ -68,7 +68,7 @@ for w in range(4, 65):
 
 mx_err = 0.7
 base_err = 1.0
-w_weight = 0.05
+w_weight = 0.1
 
 def f_t(t):
     return base_err + t * t * t
@@ -78,14 +78,14 @@ for w in range(4, 65):
         w_n_stones.append(w)
         x_depth1.append(x)
         y_depth2.append(0)
-        t = math.sqrt((64 - w) * w_weight) + x / (64 - w) * mx_err
+        t = math.sqrt(max(44 - w, 0) * w_weight) + x / (64 - w) * mx_err
         z_sigma.append(f_t(t))
 for w in range(4, 65):
     for x in range(0, 64 - w):
         w_n_stones.append(w)
         x_depth1.append(64 - w)
         y_depth2.append(64 - w - x)
-        t = math.sqrt((64 - w) * w_weight) + x / (64 - w) * mx_err
+        t = math.sqrt(max(44 - w, 0) * w_weight) + x / (64 - w) * mx_err
         z_sigma.append(f_t(t))
 
 for w in range(4, 65):
@@ -93,7 +93,7 @@ for w in range(4, 65):
         w_n_stones.append(w)
         x_depth1.append(xy)
         y_depth2.append(xy)
-        t = math.sqrt((64 - w) * w_weight)
+        t = math.sqrt(max(44 - w, 0) * w_weight)
         z_sigma.append(f_t(t))
 
 probcut_params_before = [
