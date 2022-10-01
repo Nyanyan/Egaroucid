@@ -45,9 +45,9 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
         if (depth >= 23){
             double presearch_mpct;
             if (use_mpc)
-                presearch_mpct = mpct - 0.5;
+                presearch_mpct = mpct - 0.4;
             else
-                presearch_mpct = 1.1 + 0.1 * (depth - 20);
+                presearch_mpct = 1.6 + 0.05 * (depth - 20);
             search.first_depth = depth;
             search.mpct = presearch_mpct;
             search.use_mpc = true;
