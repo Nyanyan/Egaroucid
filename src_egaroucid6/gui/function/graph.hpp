@@ -21,8 +21,8 @@ public:
 	int resolution;
 
 private:
-	int font_size{ 13 };
-	Font font{ 13 };
+	int font_size{ 12 };
+	Font font{ 12 };
 	int y_max;
 	int y_min;
 	int dy;

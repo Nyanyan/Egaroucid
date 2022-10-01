@@ -172,7 +172,6 @@ public:
 		// board drawing
 		draw_board(getData().fonts, getData().colors, getData().history_elem);
 
-		bool legal_draw = getData().menu_elements.show_legal;
 		uint64_t legal_ignore = 0ULL;
 
 		// hint calculating & drawing
@@ -191,7 +190,6 @@ public:
 		if (getData().menu_elements.use_umigame_value && !hint_ignore) {
 			if (umigame_status.umigame_calculated) {
 				draw_umigame();
-				legal_draw = false;
 			}
 			else {
 				calculate_umigame();
@@ -199,7 +197,7 @@ public:
 		}
 
 		// legal drawing
-		if (legal_draw) {
+		if (getData().menu_elements.show_legal) {
 			draw_legal(legal_ignore);
 		}
 
@@ -883,9 +881,9 @@ private:
 			getData().fonts.font20(getData().history_elem.board.count_opponent()).draw(Arg::leftCenter(INFO_SX + 40, INFO_SY + 75));
 			getData().fonts.font20(getData().history_elem.board.count_player()).draw(Arg::leftCenter(INFO_SX + 40, INFO_SY + 110));
 		}
-		getData().fonts.font15(language.get("common", "level") + Format(getData().menu_elements.level)).draw(INFO_SX, INFO_SY + 135);
-		int mid_depth, end_depth;
-		get_level_depth(getData().menu_elements.level, &mid_depth, &end_depth);
+		//getData().fonts.font15(language.get("common", "level") + Format(getData().menu_elements.level)).draw(INFO_SX, INFO_SY + 135);
+		//int mid_depth, end_depth;
+		//get_level_depth(getData().menu_elements.level, &mid_depth, &end_depth);
 		//getData().fonts.font15(language.get("info", "lookahead_0") + Format(mid_depth) + language.get("info", "lookahead_1")).draw(INFO_SX, INFO_SY + 160);
 		//getData().fonts.font15(language.get("info", "complete_0") + Format(end_depth) + language.get("info", "complete_1")).draw(INFO_SX, INFO_SY + 185);
 	}

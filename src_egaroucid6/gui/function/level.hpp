@@ -27,15 +27,17 @@ public:
 	int size_y;
 
 private:
-	int font_size{ 13 };
-	Font font{ 13 };
+	int font_size{ 12 };
+	Font font{ 12 };
 	Level_colors level_colors;
+	Font font_big{ 15 };
 
 public:
 	void draw(int level, int n_discs) {
+		font_big(language.get("common", "level") + Format(level)).draw(INFO_SX, LEVEL_INFO_SY);
 		int n_moves = n_discs - 4;
-		int info_x = sx + LEVEL_INFO_SX;
-		int info_y = sy + LEVEL_INFO_SY;
+		int info_x = LEVEL_INFO_SX;
+		int info_y = LEVEL_INFO_SY;
 		Rect rect_81{ info_x, info_y, LEVEL_INFO_WIDTH, LEVEL_INFO_HEIGHT };
 		rect_81.draw(level_colors.color_81);
 		font(U"81%").draw(Arg::center(info_x + LEVEL_INFO_WIDTH / 2, info_y + LEVEL_INFO_HEIGHT / 2), level_info_color);
@@ -60,6 +62,7 @@ public:
 		bool is_mid_search, use_mpc;
 		int depth;
 		double mpct;
+		int first_endsearch_n_moves = -1;
 		for (int x = 0; x < 60; ++x) {
 			int x_coord1 = sx + x * dx + adj_x * x / 60;
 			int x_coord2 = sx + (x + 1) * dx + adj_x * (x + 1) / 60;
@@ -81,8 +84,25 @@ public:
 			}
 			rect.draw(color);
 			if (!is_mid_search) {
-				Line{ x_coord1, sy + size_y / 2, x_coord2, sy + size_y / 2 }.draw(3, level_endsearch_color);
+				if (first_endsearch_n_moves == -1) {
+					first_endsearch_n_moves = x;
+				}
+				Line{ x_coord1, LEVEL_DEPTH_SY, x_coord2, LEVEL_DEPTH_SY }.draw(3, level_endsearch_color);
 			}
+			else {
+				Line{ x_coord1, LEVEL_DEPTH_SY, x_coord2, LEVEL_DEPTH_SY }.draw(3, level_color);
+			}
+		}
+		if (first_endsearch_n_moves == -1) {
+			font(Format(level) + language.get("info", "lookahead")).draw(Arg::topCenter(sx + LEVEL_WIDTH / 2, LEVEL_DEPTH_SY + 5), level_color);
+		}
+		else if (first_endsearch_n_moves == 0) {
+			font(language.get("info", "to_last_move")).draw(Arg::topCenter(sx + LEVEL_WIDTH / 2, LEVEL_DEPTH_SY + 5), level_color);
+		}
+		else  {
+			int endsearch_bound_coord = sx + first_endsearch_n_moves * dx + adj_x * first_endsearch_n_moves / 60;
+			font(Format(level) + language.get("info", "lookahead")).draw(Arg::topCenter((sx + endsearch_bound_coord) / 2, LEVEL_DEPTH_SY + 5), level_color);
+			font(language.get("info", "to_last_move")).draw(Arg::topCenter((sx + LEVEL_WIDTH + endsearch_bound_coord) / 2, LEVEL_DEPTH_SY + 5), level_color);
 		}
 		for (int x = 0; x <= 60; x += 10) {
 			font(x).draw(sx + x * dx + adj_x * x / 60 - font(x).region(Point{ 0, 0 }).w / 2, sy - 1.5 * font_size, level_color);
