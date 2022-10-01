@@ -18,30 +18,31 @@ I did complete searches for this test and got the time to solve it and number of
 
 ### Core i9-11900K
 
-<div style="font-size:60%"><pre>#40 depth 20 value 38 policy a2 nodes 25582789 time 179 nps 142920608
-#41 depth 22 value 0 policy h4 nodes 34534657 time 203 nps 170121463
-#42 depth 22 value 6 policy g2 nodes 45448022 time 221 nps 205647158
-#43 depth 23 value -12 policy g3 nodes 115894371 time 640 nps 181084954
-#44 depth 23 value -14 policy d2 nodes 30071323 time 276 nps 108954068
-#45 depth 24 value 6 policy b2 nodes 500460645 time 1961 nps 255206856
-#46 depth 24 value -8 policy b3 nodes 171538835 time 859 nps 199695966
-#47 depth 25 value 4 policy g2 nodes 28275799 time 251 nps 112652585
-#48 depth 25 value 28 policy f6 nodes 198596283 time 1210 nps 164129159
-#49 depth 26 value 16 policy e1 nodes 346430224 time 1682 nps 205963272
-#50 depth 26 value 10 policy d8 nodes 1316812303 time 5687 nps 231547793
-#51 depth 27 value 6 policy e2 nodes 694688172 time 3248 nps 213881826
-#52 depth 27 value 0 policy a3 nodes 648565467 time 2756 nps 235328543
-#53 depth 28 value -2 policy d8 nodes 4562379057 time 16301 nps 279883384
-#54 depth 28 value -2 policy c7 nodes 7620802496 time 24178 nps 315195735
-#55 depth 29 value 0 policy g6 nodes 17205705816 time 80931 nps 212597222
-#56 depth 29 value 2 policy h5 nodes 1380209141 time 7747 nps 178160467
-#57 depth 30 value -10 policy a6 nodes 3588039500 time 17106 nps 209753273
-#58 depth 30 value 4 policy g1 nodes 2668367658 time 11814 nps 225864877
-#59 depth 34 value 64 policy g8 nodes 5597 time 7 nps 799571
-23 threads
-177.257 sec
-41182408155 nodes
-232331632.3473826 nps</pre></div>
+<div style="font-size:60%"><pre>#40 depth 20 value 38 policy a2 nodes 26708298 time 154 nps 173430506
+#41 depth 22 value 0 policy h4 nodes 42940109 time 231 nps 185887917
+#42 depth 22 value 6 policy g2 nodes 44336316 time 192 nps 230918312
+#43 depth 23 value -12 policy g3 nodes 121614421 time 660 nps 184264274
+#44 depth 23 value -14 policy d2 nodes 30599629 time 245 nps 124896444
+#45 depth 24 value 6 policy b2 nodes 517943847 time 2030 nps 255144752
+#46 depth 24 value -8 policy b3 nodes 166601078 time 755 nps 220663679
+#47 depth 25 value 4 policy g2 nodes 31087376 time 235 nps 132286706
+#48 depth 25 value 28 policy f6 nodes 186075560 time 1186 nps 156893389
+#49 depth 26 value 16 policy e1 nodes 370947489 time 1793 nps 206886496
+#50 depth 26 value 10 policy d8 nodes 1204718003 time 5165 nps 233246467
+#51 depth 27 value 6 policy e2 nodes 781121888 time 3410 nps 229068002
+#52 depth 27 value 0 policy a3 nodes 613123214 time 2604 nps 235454383
+#53 depth 28 value -2 policy d8 nodes 4877119722 time 17510 nps 278533393
+#54 depth 28 value -2 policy c7 nodes 8182705438 time 24710 nps 331149552
+#55 depth 29 value 0 policy g6 nodes 18024313466 time 79955 nps 225430723
+#56 depth 29 value 2 policy h5 nodes 1554001293 time 8738 nps 177844048
+#57 depth 30 value -10 policy a6 nodes 2839876130 time 14835 nps 191430814
+#58 depth 30 value 4 policy g1 nodes 2863663099 time 12629 nps 226752957
+#59 depth 34 value 64 policy g8 nodes 6261 time 7 nps 894428
+177.044 sec
+178.06661581993103 sec total
+42479502637 nodes
+239937544.54824787 nps</pre></div>
+
 
 
 
@@ -63,21 +64,23 @@ if the win rate is over 0.5, Egaroucid win more than Edax do.
 
 Egaroucid plays first
 
-| Level | Egaroucid win | Draw | Edax win | Egaroucid Win Ratio |
+| Level | Egaroucid win | Draw | Edax win | Egaroucid win ratio |
 | ----- | ------------- | ---- | -------- | ------------------- |
 | 1     | 493           | 18   | 489      | 0.50                |
 | 5     | 590           | 57   | 353      | 0.63                |
 | 10    | 598           | 115  | 287      | 0.68                |
-| 15    | 50            | 18   | 32       | 0.61                |
+| 11    | 181           | 36   | 83       | 0.69                |
+| 15    | 106           | 23   | 71       | 0.60                |
 
 Edax plays first
 
-| Level | Egaroucid win | Draw | Edax win | Egaroucid Win Ratio |
+| Level | Egaroucid win | Draw | Edax win | Egaroucid win ratio |
 | ----- | ------------- | ---- | -------- | ------------------- |
 | 1     | 526           | 25   | 449      | 0.54                |
 | 5     | 539           | 52   | 409      | 0.57                |
 | 10    | 473           | 115  | 412      | 0.53                |
-| 15    | 36            | 21   | 43       | 0.46                |
+| 11    | 131           | 37   | 132      | 0.50                |
+| 15    | 89            | 37   | 74       | 0.55                |
 
 
 
