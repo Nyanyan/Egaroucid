@@ -47,20 +47,22 @@ for x in range(10):
     y_depth.append(0)
     z_sigma.append(10.0)
 '''
+mx_err = 7.0
+base_err = 3.2
 for x in range(4, 64):
     x_n_stones.append(x)
     y_depth.append(0)
-    z_sigma.append(3.0 + (64 - x) / 64 * 12.0)
+    z_sigma.append(base_err + (64 - x) / 64 * mx_err)
 
 for y in range(0, 60):
     x_n_stones.append(4)
     y_depth.append(y)
-    z_sigma.append(3.0 + (60 - y) / 60 * 12.0)
+    z_sigma.append(base_err + (60 - y) / 60 * mx_err)
 
 for x in range(4, 64):
     x_n_stones.append(x)
     y_depth.append(64 - x)
-    z_sigma.append(3.0)
+    z_sigma.append(base_err)
 
 probcut_end_params_before = [
     0.27811777028350226,

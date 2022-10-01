@@ -8,22 +8,22 @@
 
 using namespace std;
 
-#define PROBCUT_SHALLOW_IGNORE 5
+#define PROBCUT_SHALLOW_IGNORE 3
 
-#define probcut_a -0.011069804478471355
-#define probcut_b -0.025922697168893255
-#define probcut_c 0.025540650998481903
-#define probcut_d 10.468491603782075
-#define probcut_e 23.856472171427335
-#define probcut_f 6.724053627649888
-#define probcut_g 3.5625469183915084
+#define probcut_a 0.00821735761168101
+#define probcut_b -0.012834696211393116
+#define probcut_c 0.012840328045703168
+#define probcut_d -0.5968530837502954
+#define probcut_e 1.1947866265876816
+#define probcut_f -11.262451219398875
+#define probcut_g 6.087583176765933
 
-#define probcut_end_a 0.14605439398344738
-#define probcut_end_b 0.14286290316667985
-#define probcut_end_c 0.0
-#define probcut_end_d -0.004888592329457639
-#define probcut_end_e -1.323376513593066
-#define probcut_end_f 15.395358122329986
+#define probcut_end_a 0.11403366982367436
+#define probcut_end_b 0.11154187653201657
+//#define probcut_end_c 0.0004170023478135492
+#define probcut_end_d -0.004678016994675576
+#define probcut_end_e -0.9887390149938446
+#define probcut_end_f 10.430625437433863
 
 inline double probcut_sigma(int n_stones, int depth1, int depth2){
     double w = n_stones;
@@ -70,9 +70,9 @@ inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, 
     bool res = false;
     int search_depth;
     if (is_end_search)
-        search_depth = ((depth >> 4) & 0xFE) ^ (depth & 1);
-    else
         search_depth = ((depth >> 3) & 0xFE) ^ (depth & 1);
+    else
+        search_depth = ((depth >> 2) & 0xFE) ^ (depth & 1);
     const int depth0_value = mid_evaluate_diff(search);
     int error_depth0, error_search;
     if (is_end_search){

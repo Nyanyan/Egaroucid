@@ -5,6 +5,7 @@ from random import random, randrange
 import numpy as np
 from scipy.optimize import curve_fit
 from matplotlib import animation
+import math
 
 with open('sigma_data.txt', 'r') as f:
     raw_data = f.read().splitlines()
@@ -64,26 +65,36 @@ for w in range(4, 65):
     y_depth2.append(0)
     z_sigma.append(10.0)
 '''
-mx_err = 9.0
+
+mx_err = 0.7
+base_err = 1.0
+w_weight = 0.05
+
+def f_t(t):
+    return base_err + t * t * t
+
 for w in range(4, 65):
     for x in range(0, 64 - w):
         w_n_stones.append(w)
         x_depth1.append(x)
         y_depth2.append(0)
-        z_sigma.append(3.3 + x / (64 - w) * mx_err)
+        t = math.sqrt((64 - w) * w_weight) + x / (64 - w) * mx_err
+        z_sigma.append(f_t(t))
 for w in range(4, 65):
     for x in range(0, 64 - w):
         w_n_stones.append(w)
-        x_depth1.append(60)
-        y_depth2.append(60 - x)
-        z_sigma.append(3.3 + x / (64 - w) * mx_err)
+        x_depth1.append(64 - w)
+        y_depth2.append(64 - w - x)
+        t = math.sqrt((64 - w) * w_weight) + x / (64 - w) * mx_err
+        z_sigma.append(f_t(t))
 
 for w in range(4, 65):
-    for xy in range(0, 64 - w, 4):
+    for xy in range(0, 64 - w):
         w_n_stones.append(w)
         x_depth1.append(xy)
         y_depth2.append(xy)
-        z_sigma.append(3.3)
+        t = math.sqrt((64 - w) * w_weight)
+        z_sigma.append(f_t(t))
 
 probcut_params_before = [
     -0.0027183880227839127,
@@ -117,7 +128,7 @@ def f_max(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f,
     #res += probcut_h * w + probcut_i * (x - y) + probcut_j
     res = probcut_a * w + probcut_b * x + probcut_c * y
     res = probcut_d * res * res * res + probcut_e * res * res + probcut_f * res + probcut_g
-    return np.minimum(10.0, np.maximum(-2.0, res))
+    return np.minimum(20.0, np.maximum(-2.0, res))
 
 def to_rgb(x):
     r = min(1.0, x / 20)

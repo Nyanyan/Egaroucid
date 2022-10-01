@@ -54,7 +54,7 @@ int book_learn_search(Board board, int level, const int book_depth, int expected
         board.pass();
         return g;
     }
-    Search_result best_move = ai(board, level, !ignore_book, 0, false);
+    Search_result best_move = ai(board, level, true, 0, false);
     cerr << "depth " << board.n_discs() - 4 << " BM value " << best_move.value << endl;
     Flip flip;
     bool alpha_updated = false;
@@ -108,7 +108,7 @@ int book_learn_search(Board board, int level, const int book_depth, int expected
 inline void learn_book(Board root_board, int level, const int book_depth, int expected_error, Board *board_copy, int *player, string book_file, string book_bak, bool ignore_book, bool *book_learning){
     uint64_t strt_tim = tim();
     cerr << "book learn started" << endl;
-    int error_remain = max(expected_error, (book_depth + 4 - root_board.n_discs()) * expected_error / 4);
+    int error_remain = max(expected_error, (book_depth + 4 - root_board.n_discs()) * expected_error / 5);
     cerr << "remaining error " << error_remain << endl;
     int g = book_learn_search(root_board, level, book_depth, SCORE_UNDEFINED, expected_error, error_remain, board_copy, player, &strt_tim, book_file, book_bak, ignore_book);
     //if (*book_learning && global_searching)
