@@ -9,6 +9,7 @@
 #include "function/opening.hpp"
 #include "function/button.hpp"
 #include "function/radio_button.hpp"
+#include "function/level.hpp"
 #include "gui_common.hpp"
 
 #define HINT_SINGLE_TASK_N_THREAD 4
@@ -63,6 +64,7 @@ Umigame_result get_umigame(Board board, int player) {
 class Main_scene : public App::Scene {
 private:
 	Graph graph;
+	Level_display level_display;
 	Move_board_button_status move_board_button_status;
 	AI_status ai_status;
 	Button start_game_button;
@@ -79,8 +81,10 @@ public:
 		graph.size_x = GRAPH_WIDTH;
 		graph.size_y = GRAPH_HEIGHT;
 		graph.resolution = GRAPH_RESOLUTION;
-		graph.font = getData().fonts.font15;
-		graph.font_size = 15;
+		level_display.sx = LEVEL_SX;
+		level_display.sy = LEVEL_SY;
+		level_display.size_x = LEVEL_WIDTH;
+		level_display.size_y = LEVEL_HEIGHT;
 		if (getData().graph_resources.need_init) {
 			getData().game_information.init();
 			getData().graph_resources.init();
@@ -211,6 +215,9 @@ public:
 		if (getData().menu_elements.show_graph) {
 			graph.draw(getData().graph_resources.nodes[0], getData().graph_resources.nodes[1], getData().graph_resources.n_discs);
 		}
+
+		// level display drawing
+		level_display.draw(getData().menu_elements.level, getData().history_elem.board.n_discs());
 
 		// info drawing
 		draw_info();
@@ -879,8 +886,8 @@ private:
 		getData().fonts.font15(language.get("common", "level") + Format(getData().menu_elements.level)).draw(INFO_SX, INFO_SY + 135);
 		int mid_depth, end_depth;
 		get_level_depth(getData().menu_elements.level, &mid_depth, &end_depth);
-		getData().fonts.font15(language.get("info", "lookahead_0") + Format(mid_depth) + language.get("info", "lookahead_1")).draw(INFO_SX, INFO_SY + 160);
-		getData().fonts.font15(language.get("info", "complete_0") + Format(end_depth) + language.get("info", "complete_1")).draw(INFO_SX, INFO_SY + 185);
+		//getData().fonts.font15(language.get("info", "lookahead_0") + Format(mid_depth) + language.get("info", "lookahead_1")).draw(INFO_SX, INFO_SY + 160);
+		//getData().fonts.font15(language.get("info", "complete_0") + Format(end_depth) + language.get("info", "complete_1")).draw(INFO_SX, INFO_SY + 185);
 	}
 
 	uint64_t draw_hint() {

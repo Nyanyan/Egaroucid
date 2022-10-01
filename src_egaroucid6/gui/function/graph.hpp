@@ -19,10 +19,10 @@ public:
 	int size_x;
 	int size_y;
 	int resolution;
-	int font_size;
-	Font font;
 
 private:
+	int font_size{ 13 };
+	Font font{ 13 };
 	int y_max;
 	int y_min;
 	int dy;
@@ -49,7 +49,7 @@ public:
 				Line{ sx, yy, sx + size_x, yy }.draw(1, graph_color);
 		}
 		for (int x = 0; x <= 60; x += 10) {
-			font(x).draw(sx + x * dx + adj_x * x / 60 - font(x).region(Point{0, 0}).w / 2, sy - 2 * font_size, graph_color);
+			font(x).draw(sx + x * dx + adj_x * x / 60 - font(x).region(Point{0, 0}).w / 2, sy + size_y + 5, graph_color);
 			Line{ sx + x * dx + adj_x * x / 60, sy, sx + x * dx + adj_x * x / 60, sy + size_y }.draw(1, graph_color);
 		}
 		draw_graph(nodes1, graph_history_color, false);
@@ -58,9 +58,9 @@ public:
 		Circle(sx, sy, 7).draw(Palette::Black);
 		Circle(sx, sy + size_y, 7).draw(Palette::White);
 		Line(place_x, sy, place_x, sy + size_y).draw(3, graph_place_color);
-		RoundRect(place_x - 9, sy + size_y, 18, 10, 3).draw(graph_place_color);
-		Line(place_x - 6, sy + size_y + 3, place_x - 6, sy + size_y + 7).draw(2, graph_color);
-		Line(place_x + 6, sy + size_y + 3, place_x + 6, sy + size_y + 7).draw(2, graph_color);
+		//RoundRect(place_x - 9, sy + size_y, 18, 10, 3).draw(graph_place_color);
+		//Line(place_x - 6, sy + size_y + 3, place_x - 6, sy + size_y + 7).draw(2, graph_color);
+		//Line(place_x + 6, sy + size_y + 3, place_x + 6, sy + size_y + 7).draw(2, graph_color);
 		if (fix_resolution_flag) {
 			resolution /= 2;
 		}

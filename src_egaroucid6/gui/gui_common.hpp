@@ -66,9 +66,19 @@ constexpr int BOARD_CELL_SIZE = BOARD_SIZE / HW;
 // graph drawing constants
 #define GRAPH_RESOLUTION 8
 constexpr int GRAPH_SX = BOARD_SX + BOARD_SIZE + 50;
-constexpr int GRAPH_SY = Y_CENTER + 30;
+constexpr int GRAPH_SY = Y_CENTER + 20;
 constexpr int GRAPH_WIDTH = WINDOW_SIZE_X - GRAPH_SX - 20;
-constexpr int GRAPH_HEIGHT = WINDOW_SIZE_Y - GRAPH_SY - 40;
+constexpr int GRAPH_HEIGHT = WINDOW_SIZE_Y - GRAPH_SY - 40 - 20;
+
+// level drawing constants
+#define LEVEL_INFO_SY -45
+#define LEVEL_INFO_WIDTH 40
+#define LEVEL_INFO_HEIGHT 20
+constexpr int LEVEL_SX = BOARD_SX + BOARD_SIZE + 50;
+constexpr int LEVEL_SY = Y_CENTER - 15;
+constexpr int LEVEL_WIDTH = WINDOW_SIZE_X - LEVEL_SX - 20;
+constexpr int LEVEL_HEIGHT = 20;
+constexpr int LEVEL_INFO_SX = LEVEL_SX + LEVEL_WIDTH - LEVEL_INFO_WIDTH * 5 - LEVEL_SX;
 
 // info drawing constants
 #define INFO_SY 35

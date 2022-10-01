@@ -79,15 +79,14 @@ class Child_transpose_table{
 
     public:
         inline void first_init(){
-            for(int i = 0; i < TRANSPOSE_TABLE_SIZE; ++i)
-                table[i].init();
-            //table[i].set_null();
+            init();
         }
 
         inline void init(){
+            /*
             for (int i = 0; i < TRANSPOSE_TABLE_SIZE; ++i)
                 table[i].init();
-            /*
+            */
             int thread_size = thread_pool.size();
             int delta = (TRANSPOSE_TABLE_SIZE + thread_size - 1) / thread_size;
             int s = 0, e;
@@ -99,7 +98,7 @@ class Child_transpose_table{
             }
             for (future<void> &task: tasks)
                 task.get();
-            */
+            
         }
 
         inline void reg(const Board *board, const uint32_t hash, const int policy){
@@ -209,14 +208,12 @@ class Parent_transpose_table{
 
     public:
         inline void first_init(){
-            for(int i = 0; i < TRANSPOSE_TABLE_SIZE; ++i)
-                table[i].init();
+            init();
         }
 
         inline void init(){
-            for (int i = 0; i < TRANSPOSE_TABLE_SIZE; ++i)
-                table[i].init();
-            /*
+            //for (int i = 0; i < TRANSPOSE_TABLE_SIZE; ++i)
+            //    table[i].init();
             int thread_size = thread_pool.size();
             int delta = (TRANSPOSE_TABLE_SIZE + thread_size - 1) / thread_size;
             int s = 0, e;
@@ -228,7 +225,6 @@ class Parent_transpose_table{
             }
             for (future<void> &task: tasks)
                 task.get();
-            */
         }
 
         inline void reg(const Board *board, const uint32_t hash, const int l, const int u, const double t, const int d){
