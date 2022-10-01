@@ -33,6 +33,9 @@ public:
 	}
 
 	void update() override {
+		if (System::GetUserActions() & UserAction::CloseButtonClicked) {
+			changeScene(U"Close", SCENE_FADE_TIME);
+		}
 		getData().fonts.font25(language.get("in_out", "output_game")).draw(Arg::topCenter(X_CENTER, 10), getData().colors.white);
 		getData().fonts.font20(language.get("in_out", "player_name")).draw(Arg::topCenter(X_CENTER, 50), getData().colors.white);
 		Rect black_area{ X_CENTER - EXPORT_GAME_PLAYER_WIDTH, 80, EXPORT_GAME_PLAYER_WIDTH, EXPORT_GAME_PLAYER_HEIGHT };

@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include <iostream>
+#include <unordered_map>
 #include "common.hpp"
 #include "board.hpp"
 #include "book.hpp"

@@ -83,6 +83,9 @@ public:
 	}
 
 	void update() override {
+		if (System::GetUserActions() & UserAction::CloseButtonClicked) {
+			changeScene(U"Close", SCENE_FADE_TIME);
+		}
 		Scene::SetBackground(getData().colors.green);
 		const int icon_width = (LEFT_RIGHT - LEFT_LEFT) / 2;
 		getData().resources.icon.scaled((double)icon_width / getData().resources.icon.width()).draw(X_CENTER - icon_width / 2, 20);
@@ -154,6 +157,9 @@ public:
 	}
 
 	void update() override {
+		if (System::GetUserActions() & UserAction::CloseButtonClicked) {
+			changeScene(U"Close", SCENE_FADE_TIME);
+		}
 		Scene::SetBackground(getData().colors.green);
 		const int icon_width = (LEFT_RIGHT - LEFT_LEFT) / 2;
 		getData().resources.icon.scaled((double)icon_width / getData().resources.icon.width()).draw(X_CENTER - icon_width / 2, 20);
@@ -262,6 +268,9 @@ public:
 	}
 
 	void update() override {
+		if (System::GetUserActions() & UserAction::CloseButtonClicked) {
+			changeScene(U"Close", SCENE_FADE_TIME);
+		}
 		Scene::SetBackground(getData().colors.green);
 		getData().fonts.font25(language.get("book", "book_learn")).draw(480, 20, getData().colors.white);
 		draw_board(getData().fonts, getData().colors, history_elem);

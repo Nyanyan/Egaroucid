@@ -95,6 +95,9 @@ public:
 	}
 
 	void update() override {
+		if (System::GetUserActions() & UserAction::CloseButtonClicked) {
+			changeScene(U"Close", SCENE_FADE_TIME);
+		}
 		Scene::SetBackground(getData().colors.green);
 		const int icon_width = (LEFT_RIGHT - LEFT_LEFT) / 2;
 		getData().resources.icon.scaled((double)icon_width / getData().resources.icon.width()).draw(X_CENTER - icon_width / 2, 20);
@@ -210,6 +213,9 @@ public:
 	}
 
 	void update() override {
+		if (System::GetUserActions() & UserAction::CloseButtonClicked) {
+			changeScene(U"Close", SCENE_FADE_TIME);
+		}
 		Scene::SetBackground(getData().colors.green);
 		const int icon_width = (LEFT_RIGHT - LEFT_LEFT) / 2;
 		getData().resources.icon.scaled((double)icon_width / getData().resources.icon.width()).draw(X_CENTER - icon_width / 2, 20);
@@ -345,6 +351,9 @@ public:
 	}
 
 	void update() override {
+		if (System::GetUserActions() & UserAction::CloseButtonClicked) {
+			changeScene(U"Close", SCENE_FADE_TIME);
+		}
 		int board_arr[HW2];
 		history_elem.board.translate_to_arr(board_arr, BLACK);
 		for (int cell = 0; cell < HW2; ++cell) {
@@ -450,6 +459,9 @@ public:
 	}
 
 	void update() override {
+		if (System::GetUserActions() & UserAction::CloseButtonClicked) {
+			changeScene(U"Close", SCENE_FADE_TIME);
+		}
 		getData().fonts.font25(language.get("in_out", "input_game")).draw(Arg::topCenter(X_CENTER, 10), getData().colors.white);
 		if (failed) {
 			getData().fonts.font20(language.get("in_out", "import_failed")).draw(Arg::center(X_CENTER, Y_CENTER), getData().colors.white);
