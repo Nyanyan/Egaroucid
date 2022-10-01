@@ -34,7 +34,7 @@ private:
 
 public:
 	void draw(int level, int n_discs) {
-		font_big(language.get("common", "level") + Format(level)).draw(INFO_SX, LEVEL_INFO_SY);
+		font_big(language.get("common", "level") + U" " + Format(level)).draw(INFO_SX, LEVEL_INFO_SY);
 		int n_moves = n_discs - 4;
 		int info_x = LEVEL_INFO_SX;
 		int info_y = LEVEL_INFO_SY;
@@ -94,15 +94,15 @@ public:
 			}
 		}
 		if (first_endsearch_n_moves == -1) {
-			font(Format(level) + language.get("info", "lookahead")).draw(Arg::topCenter(sx + LEVEL_WIDTH / 2, LEVEL_DEPTH_SY + 5), level_color);
+			font(Format(level) + language.get("info", "lookahead")).draw(Arg::topCenter(sx + LEVEL_WIDTH / 2, LEVEL_DEPTH_SY + 4), level_color);
 		}
 		else if (first_endsearch_n_moves == 0) {
-			font(language.get("info", "to_last_move")).draw(Arg::topCenter(sx + LEVEL_WIDTH / 2, LEVEL_DEPTH_SY + 5), level_color);
+			font(language.get("info", "to_last_move")).draw(Arg::topCenter(sx + LEVEL_WIDTH / 2, LEVEL_DEPTH_SY + 4), level_color);
 		}
 		else  {
 			int endsearch_bound_coord = sx + first_endsearch_n_moves * dx + adj_x * first_endsearch_n_moves / 60;
-			font(Format(level) + language.get("info", "lookahead")).draw(Arg::topCenter((sx + endsearch_bound_coord) / 2, LEVEL_DEPTH_SY + 5), level_color);
-			font(language.get("info", "to_last_move")).draw(Arg::topCenter((sx + LEVEL_WIDTH + endsearch_bound_coord) / 2, LEVEL_DEPTH_SY + 5), level_color);
+			font(Format(level) + language.get("info", "lookahead")).draw(Arg::topCenter((sx + endsearch_bound_coord) / 2, LEVEL_DEPTH_SY + 4), level_color);
+			font(language.get("info", "to_last_move")).draw(Arg::topCenter((sx + LEVEL_WIDTH + endsearch_bound_coord) / 2, LEVEL_DEPTH_SY + 4), level_color);
 		}
 		for (int x = 0; x <= 60; x += 10) {
 			font(x).draw(sx + x * dx + adj_x * x / 60 - font(x).region(Point{ 0, 0 }).w / 2, sy - 1.5 * font_size, level_color);
