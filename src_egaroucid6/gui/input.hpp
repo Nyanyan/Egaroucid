@@ -158,6 +158,15 @@ public:
 				else {
 					getData().graph_resources.nodes[getData().graph_resources.put_mode] = n_history;
 				}
+				string opening_name, n_opening_name;
+				for (int i = 0; i < (int)getData().graph_resources.nodes[getData().graph_resources.put_mode].size(); ++i) {
+					n_opening_name.clear();
+					n_opening_name = opening.get(getData().graph_resources.nodes[getData().graph_resources.put_mode][i].board, getData().graph_resources.nodes[getData().graph_resources.put_mode][i].player ^ 1);
+					if (n_opening_name.size()) {
+						opening_name = n_opening_name;
+					}
+					getData().graph_resources.nodes[getData().graph_resources.put_mode][i].opening_name = opening_name;
+				}
 				getData().graph_resources.n_discs = getData().graph_resources.nodes[getData().graph_resources.put_mode].back().board.n_discs();
 				getData().graph_resources.need_init = false;
 				getData().history_elem = getData().graph_resources.nodes[getData().graph_resources.put_mode].back();

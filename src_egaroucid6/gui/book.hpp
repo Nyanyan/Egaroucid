@@ -243,6 +243,7 @@ private:
 	bool done;
 	future<void> book_learn_future;
 	Board root_board;
+	Level_display level_display;
 
 public:
 	Learn_book(const InitData& init) : IScene{ init } {
@@ -250,6 +251,10 @@ public:
 		back_button.init(BUTTON2_VERTICAL_SX, BUTTON2_VERTICAL_2_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("common", "back"), getData().fonts.font25, getData().colors.white, getData().colors.black);
 		root_board = getData().history_elem.board;
 		history_elem = getData().history_elem;
+		level_display.sx = LEVEL_SX;
+		level_display.sy = LEVEL_SY;
+		level_display.size_x = LEVEL_WIDTH;
+		level_display.size_y = LEVEL_HEIGHT;
 		book_learning = true;
 		done = false;
 		book_learn_future = async(launch::async, learn_book, root_board, getData().menu_elements.level, getData().menu_elements.book_learn_depth, getData().menu_elements.book_learn_error, &history_elem.board, &history_elem.player, getData().settings.book_file, getData().settings.book_file + ".bak", getData().menu_elements.ignore_book,  &book_learning);
@@ -259,6 +264,9 @@ public:
 		Scene::SetBackground(getData().colors.green);
 		getData().fonts.font25(language.get("book", "book_learn")).draw(480, 20, getData().colors.white);
 		draw_board(getData().fonts, getData().colors, history_elem);
+		level_display.draw(getData().menu_elements.level, history_elem.board.n_discs());
+		getData().fonts.font15(language.get("book", "depth") + U": " + Format(getData().menu_elements.book_learn_depth)).draw(480, 300, getData().colors.white);
+		getData().fonts.font15(language.get("book", "accept") + U": " + Format(getData().menu_elements.book_learn_error)).draw(480, 320, getData().colors.white);
 		if (book_learning) {
 			getData().fonts.font20(language.get("book", "learning")).draw(480, 60, getData().colors.white);
 			stop_button.draw();
