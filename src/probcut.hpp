@@ -10,20 +10,20 @@ using namespace std;
 
 #define PROBCUT_SHALLOW_IGNORE 3
 
-#define probcut_a 0.017657554518664877
-#define probcut_b -0.010412254298441956
-#define probcut_c 0.010417334601537077
-#define probcut_d 4.207561319771476
-#define probcut_e 3.92339197988946
-#define probcut_f -17.182424304634445
-#define probcut_g 10.022594246405555
+#define probcut_a -0.01323800746709498
+#define probcut_b -0.02949549232322467
+#define probcut_c 0.029495500489389703
+#define probcut_d 5.890930413931152
+#define probcut_e 19.915451299457136
+#define probcut_f 13.854830911845156
+#define probcut_g 5.961692303824508
 
-#define probcut_end_a 0.12101354407277412
-#define probcut_end_b 0.11836923042785016
-//#define probcut_end_c 0.00039879890035782124
-#define probcut_end_d -0.00474765545318954
-#define probcut_end_e -1.0648103282952852
-#define probcut_end_f 11.76357121642969
+#define probcut_end_a 0.1216326900296734
+#define probcut_end_b 0.11897488156198828
+//#define probcut_end_c 0.0003927176160753807
+#define probcut_end_d -0.004699166591502331
+#define probcut_end_e -1.0593913268138937
+#define probcut_end_f 12.263571811010836
 
 inline double probcut_sigma(int n_stones, int depth1, int depth2){
     double w = n_stones;
