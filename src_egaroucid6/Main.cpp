@@ -13,9 +13,9 @@ void Main() {
 	Scene::SetResizeMode(ResizeMode::Keep);
 	Window::SetTitle(U"Egaroucid {}"_fmt(EGAROUCID_VERSION));
 	System::SetTerminationTriggers(UserAction::NoAction);
-	Console.open();
+	//Console.open();
 	stringstream logger_stream;
-	//cerr.rdbuf(logger_stream.rdbuf());
+	cerr.rdbuf(logger_stream.rdbuf());
 	string logger;
 	String logger_String;
 	
@@ -41,7 +41,7 @@ void Main() {
 			logger_String = Unicode::Widen(logger);
 		logger_stream.clear();
 		if (scene_manager.get()->menu_elements.show_log) {
-			scene_manager.get()->fonts.font15(logger_String).draw(Arg::bottomLeft(5, WINDOW_SIZE_Y - 5), scene_manager.get()->colors.white);
+			scene_manager.get()->fonts.font12(logger_String).draw(Arg::bottomLeft(8, WINDOW_SIZE_Y - 5), scene_manager.get()->colors.white);
 		}
 	}
 }
