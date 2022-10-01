@@ -72,7 +72,7 @@ constexpr int GRAPH_HEIGHT = WINDOW_SIZE_Y - GRAPH_SY - 40 - 20;
 
 // level drawing constants
 #define LEVEL_INFO_WIDTH 40
-#define LEVEL_INFO_HEIGHT 20
+#define LEVEL_INFO_HEIGHT 15
 constexpr int LEVEL_SX = BOARD_SX + BOARD_SIZE + 50;
 constexpr int LEVEL_SY = Y_CENTER - 34;
 constexpr int LEVEL_WIDTH = WINDOW_SIZE_X - LEVEL_SX - 30;
@@ -339,7 +339,7 @@ struct Menu_elements {
 	bool convert_whiteline;
 
 	// ヘルプ
-	bool usage;
+	bool website;
 	bool bug_report;
 	bool auto_update_check;
 	bool license_egaroucid;
@@ -391,7 +391,7 @@ struct Menu_elements {
 		convert_blackline = false;
 		convert_whiteline = false;
 
-		usage = false;
+		website = false;
 		bug_report = false;
 		auto_update_check = settings->auto_update_check;
 		license_egaroucid = false;

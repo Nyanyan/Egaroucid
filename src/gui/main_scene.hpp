@@ -133,16 +133,10 @@ public:
 			analyze_get_task();
 		}
 
-		bool graph_interact_ignore = ai_status.analyzing;
-		// transcript move
-		if (!graph_interact_ignore && !getData().menu.active()) {
-			interact_graph();
-		}
-		update_n_discs();
-
 		// move
 		bool ai_should_move =
-			!need_start_game_button && 
+			!need_start_game_button &&
+			!getData().history_elem.board.is_end() && 
 			getData().graph_resources.put_mode == GRAPH_MODE_NORMAL &&
 			((getData().history_elem.player == BLACK && getData().menu_elements.ai_put_black) || (getData().history_elem.player == WHITE && getData().menu_elements.ai_put_white)) &&
 			getData().history_elem.board.n_discs() == getData().graph_resources.nodes[GRAPH_MODE_NORMAL][getData().graph_resources.nodes[GRAPH_MODE_NORMAL].size() - 1].board.n_discs();
@@ -163,6 +157,13 @@ public:
 				interact_move();
 			}
 		}
+
+		bool graph_interact_ignore = ai_status.analyzing || ai_should_move;
+		// transcript move
+		if (!graph_interact_ignore && !getData().menu.active()) {
+			interact_graph();
+		}
+		update_n_discs();
 
 		// book modifying by right-clicking
 		if (!ai_should_move && !need_start_game_button && getData().menu_elements.change_book_by_right_click) {
@@ -471,8 +472,8 @@ private:
 	}
 
 	void menu_help() {
-		if (getData().menu_elements.usage) {
-			System::LaunchBrowser(U"https://www.egaroucid-app.nyanyan.dev/usage/");
+		if (getData().menu_elements.website) {
+			System::LaunchBrowser(U"https://www.egaroucid-app.nyanyan.dev/");
 		}
 		if (getData().menu_elements.bug_report) {
 			System::LaunchBrowser(U"https://docs.google.com/forms/d/e/1FAIpQLSd6ML1T1fc707luPEefBXuImMnlM9cQP8j-YHKiSyFoS-8rmQ/viewform?usp=sf_link");
@@ -801,7 +802,7 @@ private:
 
 
 		title.init(language.get("help", "help"));
-		menu_e.init_button(language.get("help", "how_to_use"), &menu_elements->usage);
+		menu_e.init_button(language.get("help", "website"), &menu_elements->website);
 		title.push(menu_e);
 		menu_e.init_button(language.get("help", "bug_report"), &menu_elements->bug_report);
 		title.push(menu_e);
