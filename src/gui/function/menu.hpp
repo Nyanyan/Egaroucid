@@ -1,4 +1,12 @@
-﻿#pragma once
+﻿/*
+    Egaroucid Project
+
+    @date 2021-2022
+    @author Takuto Yamana (a.k.a Nyanyan)
+    @license GPL-3.0 license
+*/
+
+#pragma once
 #include <Siv3D.hpp>
 #include <iostream>
 #include <vector>

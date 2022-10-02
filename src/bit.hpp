@@ -1,3 +1,12 @@
+/*
+    Egaroucid Project
+
+    @date 2021-2022
+    @author Takuto Yamana (a.k.a Nyanyan)
+    @license GPL-3.0 license
+    @notice I referred to codes written by others
+*/
+
 #pragma once
 #include <iostream>
 #ifdef _MSC_VER

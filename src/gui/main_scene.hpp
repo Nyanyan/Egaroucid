@@ -1,4 +1,12 @@
-﻿#pragma once
+﻿/*
+    Egaroucid Project
+
+    @date 2021-2022
+    @author Takuto Yamana (a.k.a Nyanyan)
+    @license GPL-3.0 license
+*/
+
+#pragma once
 #include <iostream>
 #include <future>
 #include "./../ai.hpp"
@@ -846,15 +854,17 @@ private:
 	}
 
 	void draw_last_move() {
-		uint64_t legal = getData().history_elem.board.get_legal();
-		if (1 & (legal >> getData().history_elem.next_policy)) {
-			int x = BOARD_SX + (HW_M1 - getData().history_elem.next_policy % HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
-			int y = BOARD_SY + (HW_M1 - getData().history_elem.next_policy / HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
-			if (getData().history_elem.player == WHITE) {
-				Circle(x, y, DISC_SIZE).draw(ColorF(getData().colors.white, 0.2));
-			}
-			else {
-				Circle(x, y, DISC_SIZE).draw(ColorF(getData().colors.black, 0.2));
+		if (0 <= getData().history_elem.next_policy && getData().history_elem.next_policy <= HW2) {
+			uint64_t legal = getData().history_elem.board.get_legal();
+			if (1 & (legal >> getData().history_elem.next_policy)) {
+				int x = BOARD_SX + (HW_M1 - getData().history_elem.next_policy % HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
+				int y = BOARD_SY + (HW_M1 - getData().history_elem.next_policy / HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
+				if (getData().history_elem.player == WHITE) {
+					Circle(x, y, DISC_SIZE).draw(ColorF(getData().colors.white, 0.2));
+				}
+				else {
+					Circle(x, y, DISC_SIZE).draw(ColorF(getData().colors.black, 0.2));
+				}
 			}
 		}
 	}

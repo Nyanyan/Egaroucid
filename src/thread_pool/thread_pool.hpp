@@ -1,5 +1,10 @@
 /*
-modified by Nyanyan 2022
+    Egaroucid Project
+
+    @date 2021-2022
+    @author Takuto Yamana (a.k.a Nyanyan)
+    @license GPL-3.0 license
+    @notice I referred to codes written by others. Original license is written in 'LICENSE_original'.
 */
 
 /*********************************************************
@@ -173,6 +178,8 @@ namespace ctpl {
             this->flags.clear();
         }
 
+        // beginning of modification
+
         template<typename F, typename... Rest>
         auto push(bool *pushed, F && f, Rest&&... rest) ->std::future<decltype(f(0, rest...))> {
             auto pck = std::make_shared<std::packaged_task<decltype(f(0, rest...))(int)>>(
@@ -206,6 +213,8 @@ namespace ctpl {
             }
             return pck->get_future();
         }
+
+        // end of modification
 
         template<typename F, typename... Rest>
         auto push(F && f, Rest&&... rest) ->std::future<decltype(f(0, rest...))> {
