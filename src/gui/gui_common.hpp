@@ -279,7 +279,9 @@ struct Fonts {
 	Font font15{ 15 };
 	Font font13{ 13 };
 	Font font12{ 12 };
+	Font font11{ 11 };
 	Font font10{ 10 };
+	Font font17_bold{ 17, Typeface::Bold };
 	Font font15_bold{ 15, Typeface::Bold };
 	Font font13_heavy{ 13, Typeface::Heavy };
 	Font font9_bold{ 9, Typeface::Bold };

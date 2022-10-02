@@ -173,6 +173,9 @@ public:
 		// board drawing
 		draw_board(getData().fonts, getData().colors, getData().history_elem);
 
+		// last move drawing
+		draw_last_move();
+
 		uint64_t legal_ignore = 0ULL;
 
 		// hint calculating & drawing
@@ -201,9 +204,6 @@ public:
 		if (getData().menu_elements.show_legal) {
 			draw_legal(legal_ignore);
 		}
-
-		// last move drawing
-		draw_last_move();
 
 		// stable drawing
 		if (getData().menu_elements.show_stable_discs) {
@@ -499,6 +499,7 @@ private:
 					else {
 						getData().settings.lang_name = getData().resources.language_names[i];
 						getData().menu = create_menu(&getData().menu_elements);
+						start_game_button.init(START_GAME_BUTTON_SX, START_GAME_BUTTON_SY, START_GAME_BUTTON_WIDTH, START_GAME_BUTTON_HEIGHT, START_GAME_BUTTON_RADIUS, language.get("play", "start_game"), getData().fonts.font15, getData().colors.white, getData().colors.black);
 					}
 				}
 			}
@@ -921,15 +922,15 @@ private:
 				if (hint_infos[i].value == hint_infos[0].value) {
 					color = getData().colors.cyan;
 				}
-				getData().fonts.font15_bold((int)round(hint_infos[i].value)).draw(sx + 2, sy, color);
+				getData().fonts.font17_bold((int)round(hint_infos[i].value)).draw(sx + 2, sy, color);
 				if (hint_infos[i].type == HINT_TYPE_BOOK) {
-					getData().fonts.font10(U"book").draw(sx + 2, sy + 16, color);
+					getData().fonts.font11(U"book").draw(sx + 2, sy + 18, color);
 				}
 				else if (hint_infos[i].type > HINT_MAX_LEVEL) {
-					getData().fonts.font10(Format(hint_infos[i].type) + U"%").draw(sx + 2, sy + 16, color);
+					getData().fonts.font11(Format(hint_infos[i].type) + U"%").draw(sx + 2, sy + 18, color);
 				}
 				else {
-					getData().fonts.font10(U"Lv." + Format(hint_infos[i].type)).draw(sx + 2, sy + 16, color);
+					getData().fonts.font11(U"Lv." + Format(hint_infos[i].type)).draw(sx + 2, sy + 18, color);
 				}
 				res |= 1ULL << (HW2_M1 - hint_infos[i].cell);
 			}
