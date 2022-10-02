@@ -1,4 +1,12 @@
-﻿#include <iostream>
+﻿/*
+	Egaroucid Project
+
+	@date 2021-2022
+	@author Takuto Yamana (a.k.a Nyanyan)
+	@license GPL-3.0 license
+*/
+
+#include <iostream>
 #include <future>
 #include "ai.hpp"
 #include "gui/gui.hpp"
@@ -11,6 +19,7 @@ void Main() {
 	Window::Resize(window_size);
 	Window::SetStyle(WindowStyle::Sizable);
 	Scene::SetResizeMode(ResizeMode::Keep);
+	Scene::SetLetterbox(Color{ 36, 153, 114 });
 	Window::SetTitle(U"Egaroucid {}"_fmt(EGAROUCID_VERSION));
 	System::SetTerminationTriggers(UserAction::NoAction);
 	//Console.open();
