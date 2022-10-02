@@ -57,9 +57,14 @@ class Node_child_transpose_table{
         }
 
         inline int get(const Board *board){
-            int res = best_move.load(memory_order_relaxed);
+            int res;
             if (board->player != player.load(memory_order_relaxed) || board->opponent != opponent.load(memory_order_relaxed))
                 res = TRANSPOSE_TABLE_UNDEFINED;
+            else{
+                res = best_move.load(memory_order_relaxed);
+                if (board->player != player.load(memory_order_relaxed) || board->opponent != opponent.load(memory_order_relaxed))
+                    res = TRANSPOSE_TABLE_UNDEFINED;
+            }
             return res;
         }
 
@@ -180,11 +185,16 @@ class Node_parent_transpose_table{
                 *l = -INF;
                 *u = INF;
             } else{
-                *l = lower.load(memory_order_relaxed);
-                *u = upper.load(memory_order_relaxed);
                 if (board->player != player.load(memory_order_relaxed) || board->opponent != opponent.load(memory_order_relaxed)){
                     *l = -INF;
                     *u = INF;
+                } else{
+                    *l = lower.load(memory_order_relaxed);
+                    *u = upper.load(memory_order_relaxed);
+                    if (board->player != player.load(memory_order_relaxed) || board->opponent != opponent.load(memory_order_relaxed)){
+                        *l = -INF;
+                        *u = INF;
+                    }
                 }
             }
         }
