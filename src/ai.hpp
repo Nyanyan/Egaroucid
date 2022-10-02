@@ -211,7 +211,7 @@ Search_result ai(Board board, int level, bool use_book, bool use_multi_thread, b
     Book_value book_result = book.get_random(&board, 0);
     if (book_result.policy != -1 && use_book){
         if (show_log)
-            cerr << "BOOK " << book_result.policy << " " << book_result.value << endl;
+            cerr << "book " << idx_to_coord(book_result.policy) << " " << book_result.value << endl;
         res.policy = book_result.policy;
         res.value = value_sign * book_result.value;
         res.depth = SEARCH_BOOK;
@@ -262,7 +262,7 @@ Search_result ai_hint(Board board, int level, bool use_book, bool use_multi_thre
     int book_result = book.get(&board);
     if (book_result != -INF && use_book){
         if (show_log)
-            cerr << "BOOK " << book_result << endl;
+            cerr << "book " << idx_to_coord(book_result) << endl;
         res.policy = -1;
         res.value = -value_sign * book_result;
         res.depth = SEARCH_BOOK;
