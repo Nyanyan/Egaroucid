@@ -18,30 +18,31 @@ I did complete searches for this test and got the time to solve it and number of
 
 ### Core i9-11900K
 
-<div style="font-size:60%"><pre>#40 depth 20 value 38 policy a2 nodes 26708298 time 154 nps 173430506
-#41 depth 22 value 0 policy h4 nodes 42940109 time 231 nps 185887917
-#42 depth 22 value 6 policy g2 nodes 44336316 time 192 nps 230918312
-#43 depth 23 value -12 policy g3 nodes 121614421 time 660 nps 184264274
-#44 depth 23 value -14 policy d2 nodes 30599629 time 245 nps 124896444
-#45 depth 24 value 6 policy b2 nodes 517943847 time 2030 nps 255144752
-#46 depth 24 value -8 policy b3 nodes 166601078 time 755 nps 220663679
-#47 depth 25 value 4 policy g2 nodes 31087376 time 235 nps 132286706
-#48 depth 25 value 28 policy f6 nodes 186075560 time 1186 nps 156893389
-#49 depth 26 value 16 policy e1 nodes 370947489 time 1793 nps 206886496
-#50 depth 26 value 10 policy d8 nodes 1204718003 time 5165 nps 233246467
-#51 depth 27 value 6 policy e2 nodes 781121888 time 3410 nps 229068002
-#52 depth 27 value 0 policy a3 nodes 613123214 time 2604 nps 235454383
-#53 depth 28 value -2 policy d8 nodes 4877119722 time 17510 nps 278533393
-#54 depth 28 value -2 policy c7 nodes 8182705438 time 24710 nps 331149552
-#55 depth 29 value 0 policy g6 nodes 18024313466 time 79955 nps 225430723
-#56 depth 29 value 2 policy h5 nodes 1554001293 time 8738 nps 177844048
-#57 depth 30 value -10 policy a6 nodes 2839876130 time 14835 nps 191430814
-#58 depth 30 value 4 policy g1 nodes 2863663099 time 12629 nps 226752957
-#59 depth 34 value 64 policy g8 nodes 6261 time 7 nps 894428
-177.044 sec
-178.06661581993103 sec total
-42479502637 nodes
-239937544.54824787 nps</pre></div>
+<div style="font-size:60%"><pre>#40 depth 20 value 38 policy a2 nodes 25762481 time 149 nps 172902557
+#41 depth 22 value 0 policy h4 nodes 43082407 time 263 nps 163811433
+#42 depth 22 value 6 policy g2 nodes 41356640 time 222 nps 186291171
+#43 depth 23 value -12 policy c7 nodes 110484289 time 655 nps 168678303
+#44 depth 23 value -14 policy d2 nodes 18462790 time 228 nps 80977149
+#45 depth 24 value 6 policy b2 nodes 456685904 time 2255 nps 202521465
+#46 depth 24 value -8 policy b3 nodes 149245136 time 719 nps 207573207
+#47 depth 25 value 4 policy g2 nodes 31094957 time 216 nps 143958134
+#48 depth 25 value 28 policy f6 nodes 179961365 time 1181 nps 152380495
+#49 depth 26 value 16 policy e1 nodes 405509512 time 2002 nps 202552203
+#50 depth 26 value 10 policy d8 nodes 1231298288 time 5367 nps 229420213
+#51 depth 27 value 6 policy e2 nodes 617973874 time 2943 nps 209980928
+#52 depth 27 value 0 policy a3 nodes 583499133 time 2516 nps 231915394
+#53 depth 28 value -2 policy d8 nodes 4633947259 time 18462 nps 250999201
+#54 depth 28 value -2 policy c7 nodes 7127192303 time 23963 nps 297424875
+#55 depth 29 value 0 policy g6 nodes 17225651509 time 80626 nps 213648841
+#56 depth 29 value 2 policy h5 nodes 1348674675 time 7733 nps 174405104
+#57 depth 30 value -10 policy a6 nodes 3229265024 time 15977 nps 202119610
+#58 depth 30 value 4 policy g1 nodes 2816182635 time 12609 nps 223347024
+#59 depth 34 value 64 policy g8 nodes 6452 time 8 nps 806500
+23 threads
+178.094 sec
+40275336633 nodes
+226146510.4551529 nps</pre></div>
+
 
 
 
@@ -69,8 +70,7 @@ Egaroucid plays first
 | 1     | 493           | 18   | 489      | 0.50                |
 | 5     | 590           | 57   | 353      | 0.63                |
 | 10    | 598           | 115  | 287      | 0.68                |
-| 11    | 115           | 21   | 64       | 0.64                |
-| 15    | 98            | 28   | 74       | 0.57                |
+| 15    | 45            | 20   | 35       | 0.56                |
 
 Edax plays first
 
@@ -79,8 +79,7 @@ Edax plays first
 | 1     | 526           | 25   | 449      | 0.54                |
 | 5     | 539           | 52   | 409      | 0.57                |
 | 10    | 473           | 115  | 412      | 0.53                |
-| 11    | 94            | 26   | 80       | 0.59                |
-| 15    | 97            | 35   | 68       | 0.59                |
+| 15    | 41            | 21   | 38       | 0.52                |
 
 
 
