@@ -15,8 +15,8 @@ struct Level_colors {
 	Color color_81{ Color(153, 50, 204) };
 	Color color_95{ Color(178, 34, 34) };
 	Color color_98{ Color(205, 133, 63) };
-	Color color_99{ Color(0, 100, 0) };
-	Color color_100{ Color(30, 144, 255) };
+	Color color_99{ Color(20, 100, 0) };
+	Color color_100{ Color(100, 149, 237) };
 };
 
 class Level_display {
@@ -35,9 +35,26 @@ private:
 public:
 	void draw(int level, int n_discs) {
 		font_big(language.get("common", "level") + U" " + Format(level)).draw(INFO_SX, LEVEL_INFO_SY);
+		String level_type_info;
+		if (level <= LIGHT_LEVEL) {
+			level_type_info = language.get("info", "light");
+		}
+		else if (level <= STANDARD_MAX_LEVEL) {
+			level_type_info = language.get("info", "standard");
+		}
+		else if (level <= PRAGMATIC_MAX_LEVEL) {
+			level_type_info = language.get("info", "pragmatic");
+		}
+		else if (level <= ACCURATE_MAX_LEVEL) {
+			level_type_info = language.get("info", "accurate");
+		}
+		else {
+			level_type_info = language.get("info", "danger");
+		}
+		font(level_type_info).draw(INFO_SX, LEVEL_INFO_SY + 23);
 		int n_moves = n_discs - 4;
 		int info_x = LEVEL_INFO_SX;
-		int info_y = LEVEL_INFO_SY;
+		int info_y = LEVEL_INFO_RECT_SY;
 		Rect rect_81{ info_x, info_y, LEVEL_INFO_WIDTH, LEVEL_INFO_HEIGHT };
 		rect_81.draw(level_colors.color_81);
 		font(U"81%").draw(Arg::center(info_x + LEVEL_INFO_WIDTH / 2, info_y + LEVEL_INFO_HEIGHT / 2), level_info_color);

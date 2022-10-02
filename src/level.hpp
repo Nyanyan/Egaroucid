@@ -3,6 +3,11 @@
 
 using namespace std;
 
+#define ACCURATE_MAX_LEVEL 30
+#define PRAGMATIC_MAX_LEVEL 25
+#define STANDARD_MAX_LEVEL 21
+#define LIGHT_LEVEL 15
+
 #define N_LEVEL 61
 #define N_MOVES 60
 #define MPC_81 0.88
