@@ -21,6 +21,7 @@
 #define W_PARITY1 2
 #define W_PARITY2 4
 
+#define W_VALUE_TT 6
 #define W_VALUE_DEEP 10
 #define W_VALUE 8
 #define W_VALUE_SHALLOW 6
@@ -41,7 +42,8 @@
 #define MIDGAME_N_STONES 44
 #define USE_OPPONENT_OPENNESS_DEPTH 16
 
-
+//#define MOVE_ORDERING_TT_OFFSET 1
+#define MOVE_ORDERING_TT_BONUS 4
 
 #define MOVE_ORDERING_THRESHOLD 4
 
@@ -111,12 +113,16 @@ inline bool move_evaluate(Search *search, Flip_value *flip_value, const int alph
                 flip_value->value += val * W_VALUE_SHALLOW;
                 break;
             case 1:
-                val = -nega_alpha_eval1(search, alpha, beta, false, searching);
+                int val, l, u;
+                parent_transpose_table.get(&search->board, search->board.hash() & TRANSPOSE_TABLE_MASK, &l, &u, 0.0, 0);
+                if (-INF < l && u < INF)
+                    val = -(l + u) / 2 + MOVE_ORDERING_TT_BONUS;
+                else
+                    val = -nega_alpha_eval1(search, alpha, beta, false, searching);
                 flip_value->value += val * W_VALUE;
                 break;
             default:
                 val = -nega_alpha_ordering(search, alpha, beta, depth, false, flip_value->n_legal, false, searching);
-                //val = -nega_alpha_ordering_nomemo(search, alpha, beta, depth, false, flip_value->n_legal, searching);
                 flip_value->value += val * (W_VALUE_DEEP + (depth - 1) * 2);
                 break;
         }
