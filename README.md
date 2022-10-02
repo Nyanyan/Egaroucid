@@ -9,15 +9,19 @@ Light version of this othello AI got 1st place in the world ([CodinGame Othello]
 
 
 
-<a id="application_version"></a>
-
 ## Application
 
 Please see: https://www.egaroucid-app.nyanyan.dev/
 
 
 
-<a id="tkinter_version"></a>
+## License
+
+GPL 3.0 License
+
+**If you want to use Egaroucid in your project, I can customize and build Egaroucid for you to avoid GPL-infection to your project. Please feel free to contact me.**
+
+
 
 ## Abstract
 
