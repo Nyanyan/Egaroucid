@@ -5,7 +5,7 @@ using namespace std;
 
 #define N_LEVEL 61
 #define N_MOVES 60
-#define MPC_81 1.49
+#define MPC_81 0.88
 #define MPC_95 1.64
 #define MPC_98 2.05
 #define MPC_99 2.33
