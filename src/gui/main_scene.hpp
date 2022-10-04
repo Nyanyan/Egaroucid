@@ -33,8 +33,8 @@ bool compare_hint_info(Hint_info& a, Hint_info& b) {
 void draw_board(Fonts fonts, Colors colors, History_elem history_elem) {
 	String coord_x = U"abcdefgh";
 	for (int i = 0; i < HW; ++i) {
-		fonts.font15_bold(i + 1).draw(Arg::center(BOARD_SX - BOARD_COORD_SIZE, BOARD_SY + BOARD_CELL_SIZE * i + BOARD_CELL_SIZE / 2), colors.dark_gray);
-		fonts.font15_bold(coord_x[i]).draw(Arg::center(BOARD_SX + BOARD_CELL_SIZE * i + BOARD_CELL_SIZE / 2, BOARD_SY - BOARD_COORD_SIZE - 2), colors.dark_gray);
+		fonts.font_bold(i + 1).draw(15, Arg::center(BOARD_SX - BOARD_COORD_SIZE, BOARD_SY + BOARD_CELL_SIZE * i + BOARD_CELL_SIZE / 2), colors.dark_gray);
+		fonts.font_bold(coord_x[i]).draw(15, Arg::center(BOARD_SX + BOARD_CELL_SIZE * i + BOARD_CELL_SIZE / 2, BOARD_SY - BOARD_COORD_SIZE - 2), colors.dark_gray);
 	}
 	for (int i = 0; i < HW_M1; ++i) {
 		Line(BOARD_SX + BOARD_CELL_SIZE * (i + 1), BOARD_SY, BOARD_SX + BOARD_CELL_SIZE * (i + 1), BOARD_SY + BOARD_CELL_SIZE * HW).draw(BOARD_CELL_FRAME_WIDTH, colors.dark_gray);
@@ -98,7 +98,7 @@ public:
 			getData().graph_resources.init();
 			getData().graph_resources.nodes[getData().graph_resources.put_mode].emplace_back(getData().history_elem);
 		}
-		start_game_button.init(START_GAME_BUTTON_SX, START_GAME_BUTTON_SY, START_GAME_BUTTON_WIDTH, START_GAME_BUTTON_HEIGHT, START_GAME_BUTTON_RADIUS, language.get("play", "start_game"), getData().fonts.font15, getData().colors.white, getData().colors.black);
+		start_game_button.init(START_GAME_BUTTON_SX, START_GAME_BUTTON_SY, START_GAME_BUTTON_WIDTH, START_GAME_BUTTON_HEIGHT, START_GAME_BUTTON_RADIUS, language.get("play", "start_game"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
 		need_start_game_button_calculation();
 		changing_scene = false;
 		cerr << "main scene loaded" << endl;
@@ -507,7 +507,7 @@ private:
 					else {
 						getData().settings.lang_name = getData().resources.language_names[i];
 						getData().menu = create_menu(&getData().menu_elements);
-						start_game_button.init(START_GAME_BUTTON_SX, START_GAME_BUTTON_SY, START_GAME_BUTTON_WIDTH, START_GAME_BUTTON_HEIGHT, START_GAME_BUTTON_RADIUS, language.get("play", "start_game"), getData().fonts.font15, getData().colors.white, getData().colors.black);
+						start_game_button.init(START_GAME_BUTTON_SX, START_GAME_BUTTON_SY, START_GAME_BUTTON_WIDTH, START_GAME_BUTTON_HEIGHT, START_GAME_BUTTON_RADIUS, language.get("play", "start_game"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
 					}
 				}
 			}
@@ -676,7 +676,6 @@ private:
 		Menu menu;
 		menu_title title;
 		menu_elem menu_e, side_menu, side_side_menu;
-		Font menu_font = getData().fonts.font12;
 
 
 
@@ -790,7 +789,7 @@ private:
 
 		menu_e.init_check(language.get("book", "right_click_to_modify"), &menu_elements->change_book_by_right_click, menu_elements->change_book_by_right_click);
 		title.push(menu_e);
-		menu_e.init_button(language.get("book", "import"), &menu_elements->book_import);
+		menu_e.init_button(language.get("book", "merge"), &menu_elements->book_import);
 		title.push(menu_e);
 		menu_e.init_button(language.get("book", "book_reference"), &menu_elements->book_reference);
 		title.push(menu_e);
@@ -837,7 +836,7 @@ private:
 
 
 
-		menu.init(0, 0, menu_font, getData().resources.checkbox);
+		menu.init(0, 0, 12, getData().fonts.font, getData().resources.checkbox);
 		return menu;
 	}
 
@@ -871,33 +870,28 @@ private:
 
 	void draw_info() {
 		if (getData().history_elem.board.get_legal()) {
-			getData().fonts.font20(Format(getData().history_elem.board.n_discs() - 3) + language.get("info", "moves")).draw(INFO_SX, INFO_SY);
+			getData().fonts.font(Format(getData().history_elem.board.n_discs() - 3) + language.get("info", "moves")).draw(20, INFO_SX, INFO_SY);
 			if (getData().history_elem.player == BLACK) {
-				getData().fonts.font20(language.get("info", "black")).draw(INFO_SX + 100, INFO_SY);
+				getData().fonts.font(language.get("info", "black")).draw(20, INFO_SX + 100, INFO_SY);
 			}
 			else {
-				getData().fonts.font20(language.get("info", "white")).draw(INFO_SX + 100, INFO_SY);
+				getData().fonts.font(language.get("info", "white")).draw(20, INFO_SX + 100, INFO_SY);
 			}
 		}
 		else {
-			getData().fonts.font20(language.get("info", "game_end")).draw(INFO_SX, INFO_SY);
+			getData().fonts.font(language.get("info", "game_end")).draw(20, INFO_SX, INFO_SY);
 		}
-		getData().fonts.font15(language.get("info", "opening_name") + U": " + Unicode::FromUTF8(getData().history_elem.opening_name)).draw(INFO_SX, INFO_SY + 30);
+		getData().fonts.font(language.get("info", "opening_name") + U": " + Unicode::FromUTF8(getData().history_elem.opening_name)).draw(15, INFO_SX, INFO_SY + 30);
 		Circle(INFO_SX + INFO_DISC_RADIUS, INFO_SY + 75, INFO_DISC_RADIUS).draw(getData().colors.black);
 		Circle(INFO_SX + INFO_DISC_RADIUS, INFO_SY + 110, INFO_DISC_RADIUS).draw(getData().colors.white);
 		if (getData().history_elem.player == BLACK) {
-			getData().fonts.font20(getData().history_elem.board.count_player()).draw(Arg::leftCenter(INFO_SX + 40, INFO_SY + 75));
-			getData().fonts.font20(getData().history_elem.board.count_opponent()).draw(Arg::leftCenter(INFO_SX + 40, INFO_SY + 110));
+			getData().fonts.font(getData().history_elem.board.count_player()).draw(20, Arg::leftCenter(INFO_SX + 40, INFO_SY + 75));
+			getData().fonts.font(getData().history_elem.board.count_opponent()).draw(20, Arg::leftCenter(INFO_SX + 40, INFO_SY + 110));
 		}
 		else {
-			getData().fonts.font20(getData().history_elem.board.count_opponent()).draw(Arg::leftCenter(INFO_SX + 40, INFO_SY + 75));
-			getData().fonts.font20(getData().history_elem.board.count_player()).draw(Arg::leftCenter(INFO_SX + 40, INFO_SY + 110));
+			getData().fonts.font(getData().history_elem.board.count_opponent()).draw(20, Arg::leftCenter(INFO_SX + 40, INFO_SY + 75));
+			getData().fonts.font(getData().history_elem.board.count_player()).draw(20, Arg::leftCenter(INFO_SX + 40, INFO_SY + 110));
 		}
-		//getData().fonts.font15(language.get("common", "level") + Format(getData().menu_elements.level)).draw(INFO_SX, INFO_SY + 135);
-		//int mid_depth, end_depth;
-		//get_level_depth(getData().menu_elements.level, &mid_depth, &end_depth);
-		//getData().fonts.font15(language.get("info", "lookahead_0") + Format(mid_depth) + language.get("info", "lookahead_1")).draw(INFO_SX, INFO_SY + 160);
-		//getData().fonts.font15(language.get("info", "complete_0") + Format(end_depth) + language.get("info", "complete_1")).draw(INFO_SX, INFO_SY + 185);
 	}
 
 	uint64_t draw_hint() {
@@ -932,15 +926,15 @@ private:
 				if (hint_infos[i].value == hint_infos[0].value) {
 					color = getData().colors.cyan;
 				}
-				getData().fonts.font17_bold((int)round(hint_infos[i].value)).draw(sx + 2, sy, color);
+				getData().fonts.font_bold((int)round(hint_infos[i].value)).draw(17, sx + 2, sy, color);
 				if (hint_infos[i].type == HINT_TYPE_BOOK) {
-					getData().fonts.font11(U"book").draw(sx + 2, sy + 18, color);
+					getData().fonts.font(U"book").draw(11, sx + 2, sy + 18, color);
 				}
 				else if (hint_infos[i].type > HINT_MAX_LEVEL) {
-					getData().fonts.font11(Format(hint_infos[i].type) + U"%").draw(sx + 2, sy + 18, color);
+					getData().fonts.font(Format(hint_infos[i].type) + U"%").draw(11, sx + 2, sy + 18, color);
 				}
 				else {
-					getData().fonts.font11(U"Lv." + Format(hint_infos[i].type)).draw(sx + 2, sy + 18, color);
+					getData().fonts.font(U"Lv." + Format(hint_infos[i].type)).draw(11, sx + 2, sy + 18, color);
 				}
 				res |= 1ULL << (HW2_M1 - hint_infos[i].cell);
 			}
@@ -973,9 +967,9 @@ private:
 					String opening_name = U" " + Unicode::FromUTF8(openings).replace(U" ", U" \n ");
 					Vec2 pos = Cursor::Pos();
 					pos.x += 20;
-					RectF background_rect = getData().fonts.font15_bold(opening_name).region(pos);
+					RectF background_rect = getData().fonts.font_bold(opening_name).region(15, pos);
 					background_rect.draw(getData().colors.white);
-					getData().fonts.font15_bold(opening_name).draw(pos, getData().colors.black);
+					getData().fonts.font_bold(opening_name).draw(15, pos, getData().colors.black);
 				}
 			}
 		}
@@ -1265,15 +1259,15 @@ private:
 			int sx = BOARD_SX + ((HW2_M1 - cell) % HW) * BOARD_CELL_SIZE;
 			int sy = BOARD_SY + ((HW2_M1 - cell) / HW) * BOARD_CELL_SIZE;
 			if (umigame_status.umigame[cell].b != UMIGAME_UNDEFINED) {
-				getData().fonts.font13_heavy(umigame_status.umigame[cell].b).draw(Arg::bottomRight(sx + BOARD_CELL_SIZE - 3, sy + BOARD_CELL_SIZE - 17), getData().colors.black);
-				getData().fonts.font13_heavy(umigame_status.umigame[cell].w).draw(Arg::bottomRight(sx + BOARD_CELL_SIZE - 3, sy + BOARD_CELL_SIZE - 1), getData().colors.white);
+				getData().fonts.font_heavy(umigame_status.umigame[cell].b).draw(13, Arg::bottomRight(sx + BOARD_CELL_SIZE - 3, sy + BOARD_CELL_SIZE - 17), getData().colors.black);
+				getData().fonts.font_heavy(umigame_status.umigame[cell].w).draw(13, Arg::bottomRight(sx + BOARD_CELL_SIZE - 3, sy + BOARD_CELL_SIZE - 1), getData().colors.white);
 			}
 		}
 	}
 
 	void change_book_by_right_click() {
 		if (getData().book_information.changing != BOOK_CHANGE_NO_CELL) {
-			getData().fonts.font15(language.get("book", "changed_value") + U"(" + Unicode::Widen(idx_to_coord(getData().book_information.changing)) + U"): " + getData().book_information.val_str).draw(CHANGE_BOOK_INFO_SX, CHANGE_BOOK_INFO_SY, getData().colors.white);
+			getData().fonts.font(language.get("book", "changed_value") + U"(" + Unicode::Widen(idx_to_coord(getData().book_information.changing)) + U"): " + getData().book_information.val_str).draw(15, CHANGE_BOOK_INFO_SX, CHANGE_BOOK_INFO_SY, getData().colors.white);
 			if (KeyEscape.down()) {
 				getData().book_information.changing = BOOK_CHANGE_NO_CELL;
 			}

@@ -77,9 +77,9 @@ private:
 
 public:
 	Load(const InitData& init) : IScene{ init } {
-		skip_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("help", "skip"), getData().fonts.font25, getData().colors.white, getData().colors.black);
-		update_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("help", "download"), getData().fonts.font25, getData().colors.white, getData().colors.black);
-		book_ignore_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("loading", "launch"), getData().fonts.font25, getData().colors.white, getData().colors.black);
+		skip_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("help", "skip"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+		update_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("help", "download"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+		book_ignore_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("loading", "launch"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
 		load_failed = false;
 		book_failed = false;
 		tips = language.get_random("tips", "tips");
@@ -94,9 +94,9 @@ public:
 			getData().resources.icon.scaled((double)icon_width / getData().resources.icon.width()).draw(X_CENTER - icon_width / 2, 20);
 			getData().resources.logo.scaled((double)icon_width / getData().resources.logo.width()).draw(X_CENTER - icon_width / 2, 20 + icon_width);
 			int sy = 20 + icon_width + 50;
-			getData().fonts.font25(language.get("help", "new_version_available")).draw(Arg::topCenter(X_CENTER, sy), getData().colors.white);
+			getData().fonts.font(language.get("help", "new_version_available")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
 			sy += 35;
-			getData().fonts.font25(language.get("help", "download?")).draw(Arg::topCenter(X_CENTER, sy), getData().colors.white);
+			getData().fonts.font(language.get("help", "download?")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
 			skip_button.draw();
 			update_button.draw();
 			if (skip_button.clicked() || KeyEscape.pressed()) {
@@ -128,7 +128,7 @@ public:
 			}
 			if (load_failed) {
 				if (book_failed) {
-					getData().fonts.font20(language.get("loading", "book_failed")).draw(RIGHT_LEFT, Y_CENTER + 50, getData().colors.white);
+					getData().fonts.font(language.get("loading", "book_failed")).draw(20, RIGHT_LEFT, Y_CENTER + 50, getData().colors.white);
 					book_ignore_button.draw();
 					if (book_ignore_button.clicked()) {
 						cerr << "loaded" << endl;
@@ -137,14 +137,14 @@ public:
 					}
 				}
 				else {
-					getData().fonts.font20(language.get("loading", "load_failed")).draw(RIGHT_LEFT, Y_CENTER + 50, getData().colors.white);
+					getData().fonts.font(language.get("loading", "load_failed")).draw(20, RIGHT_LEFT, Y_CENTER + 50, getData().colors.white);
 				}
 
 			}
 			else {
-				getData().fonts.font50(language.get("loading", "loading")).draw(RIGHT_LEFT, Y_CENTER + 40, getData().colors.white);
-				getData().fonts.font20(language.get("tips", "do_you_know")).draw(RIGHT_LEFT, Y_CENTER + 110, getData().colors.white);
-				getData().fonts.font15(tips).draw(RIGHT_LEFT, Y_CENTER + 140, getData().colors.white);
+				getData().fonts.font(language.get("loading", "loading")).draw(50, RIGHT_LEFT, Y_CENTER + 40, getData().colors.white);
+				getData().fonts.font(language.get("tips", "do_you_know")).draw(20, RIGHT_LEFT, Y_CENTER + 110, getData().colors.white);
+				getData().fonts.font(tips).draw(15, RIGHT_LEFT, Y_CENTER + 140, getData().colors.white);
 			}
 		}
 	}

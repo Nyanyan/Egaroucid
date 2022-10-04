@@ -84,7 +84,7 @@ private:
 
 public:
 	Import_book(const InitData& init) : IScene{ init } {
-		back_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "back"), getData().fonts.font25, getData().colors.white, getData().colors.black);
+		back_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
 		importing = false;
 		imported = false;
 		failed = false;
@@ -100,7 +100,7 @@ public:
 		getData().resources.logo.scaled((double)icon_width / getData().resources.logo.width()).draw(X_CENTER - icon_width / 2, 20 + icon_width);
 		int sy = 20 + icon_width + 50;
 		if (!importing) {
-			getData().fonts.font25(language.get("book", "import_explanation")).draw(Arg::topCenter(X_CENTER, sy), getData().colors.white);
+			getData().fonts.font(language.get("book", "merge_explanation")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
 			back_button.draw();
 			if (back_button.clicked() || KeyEscape.pressed()) {
 				changeScene(U"Main_scene", SCENE_FADE_TIME);
@@ -111,7 +111,7 @@ public:
 			}
 		}
 		else if (!imported) {
-			getData().fonts.font25(language.get("book", "loading")).draw(Arg::topCenter(X_CENTER, sy), getData().colors.white);
+			getData().fonts.font(language.get("book", "loading")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
 			if (import_book_future.wait_for(chrono::seconds(0)) == future_status::ready) {
 				failed = import_book_future.get();
 				imported = true;
@@ -119,7 +119,7 @@ public:
 		}
 		else {
 			if (failed) {
-				getData().fonts.font25(language.get("book", "import_failed")).draw(Arg::topCenter(X_CENTER, sy), getData().colors.white);
+				getData().fonts.font(language.get("book", "import_failed")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
 				back_button.draw();
 				if (back_button.clicked() || KeyEscape.pressed()) {
 					changeScene(U"Main_scene", SCENE_FADE_TIME);
@@ -153,10 +153,10 @@ private:
 
 public:
 	Refer_book(const InitData& init) : IScene{ init } {
-		single_back_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "back"), getData().fonts.font25, getData().colors.white, getData().colors.black);
-		back_button.init(BUTTON3_1_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("common", "back"), getData().fonts.font25, getData().colors.white, getData().colors.black);
-		default_button.init(BUTTON3_2_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("book", "use_default"), getData().fonts.font25, getData().colors.white, getData().colors.black);
-		go_button.init(BUTTON3_3_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("book", "import"), getData().fonts.font25, getData().colors.white, getData().colors.black);
+		single_back_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+		back_button.init(BUTTON3_1_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+		default_button.init(BUTTON3_2_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("book", "use_default"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+		go_button.init(BUTTON3_3_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("book", "import"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
 		book_file = getData().settings.book_file;
 		book_deleting = false;
 		book_importing = false;
@@ -174,7 +174,7 @@ public:
 		getData().resources.logo.scaled((double)icon_width / getData().resources.logo.width()).draw(X_CENTER - icon_width / 2, 20 + icon_width);
 		int sy = 20 + icon_width + 50;
 		if (!book_deleting && !book_importing && !failed && !done) {
-			getData().fonts.font25(language.get("book", "input_book_path")).draw(Arg::topCenter(X_CENTER, sy), getData().colors.white);
+			getData().fonts.font(language.get("book", "input_book_path")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
 			Rect text_area{ X_CENTER - 300, sy + 40, 600, 70 };
 			text_area.draw(getData().colors.light_cyan).drawFrame(2, getData().colors.black);
 			String book_file_str = Unicode::Widen(book_file);
@@ -193,7 +193,7 @@ public:
 				}
 			}
 			book_file = book_file_str.narrow();
-			getData().fonts.font15(book_file_str + U'|' + editingText).draw(text_area.stretched(-4), getData().colors.black);
+			getData().fonts.font(book_file_str + U'|' + editingText).draw(15, text_area.stretched(-4), getData().colors.black);
 			back_button.draw();
 			if (back_button.clicked() || KeyEscape.pressed()) {
 				changeScene(U"Main_scene", SCENE_FADE_TIME);
@@ -212,7 +212,7 @@ public:
 			}
 		}
 		else if (book_deleting || book_importing) {
-			getData().fonts.font25(language.get("book", "loading")).draw(Arg::topCenter(X_CENTER, sy), getData().colors.white);
+			getData().fonts.font(language.get("book", "loading")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
 			if (book_deleting) {
 				if (delete_book_future.wait_for(chrono::seconds(0)) == future_status::ready) {
 					delete_book_future.get();
@@ -231,7 +231,7 @@ public:
 		}
 		else if (done) {
 			if (failed) {
-				getData().fonts.font25(language.get("book", "import_failed")).draw(Arg::topCenter(X_CENTER, sy), getData().colors.white);
+				getData().fonts.font(language.get("book", "import_failed")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
 				single_back_button.draw();
 				if (single_back_button.clicked() || KeyEscape.pressed()) {
 					changeScene(U"Main_scene", SCENE_FADE_TIME);
@@ -261,8 +261,8 @@ private:
 
 public:
 	Learn_book(const InitData& init) : IScene{ init } {
-		stop_button.init(BUTTON2_VERTICAL_SX, BUTTON2_VERTICAL_2_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("book", "stop_learn"), getData().fonts.font25, getData().colors.white, getData().colors.black);
-		back_button.init(BUTTON2_VERTICAL_SX, BUTTON2_VERTICAL_2_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("common", "back"), getData().fonts.font25, getData().colors.white, getData().colors.black);
+		stop_button.init(BUTTON2_VERTICAL_SX, BUTTON2_VERTICAL_2_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("book", "stop_learn"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+		back_button.init(BUTTON2_VERTICAL_SX, BUTTON2_VERTICAL_2_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
 		root_board = getData().history_elem.board;
 		history_elem = getData().history_elem;
 		history_elem.policy = -1;
@@ -280,13 +280,13 @@ public:
 			changeScene(U"Close", SCENE_FADE_TIME);
 		}
 		Scene::SetBackground(getData().colors.green);
-		getData().fonts.font25(language.get("book", "book_learn")).draw(480, 20, getData().colors.white);
+		getData().fonts.font(language.get("book", "book_learn")).draw(25, 480, 20, getData().colors.white);
 		draw_board(getData().fonts, getData().colors, history_elem);
 		level_display.draw(getData().menu_elements.level, history_elem.board.n_discs());
-		getData().fonts.font15(language.get("book", "depth") + U": " + Format(getData().menu_elements.book_learn_depth)).draw(480, 300, getData().colors.white);
-		getData().fonts.font15(language.get("book", "accept") + U": " + Format(getData().menu_elements.book_learn_error)).draw(480, 320, getData().colors.white);
+		getData().fonts.font(language.get("book", "depth") + U": " + Format(getData().menu_elements.book_learn_depth)).draw(15, 480, 300, getData().colors.white);
+		getData().fonts.font(language.get("book", "accept") + U": " + Format(getData().menu_elements.book_learn_error)).draw(15, 480, 320, getData().colors.white);
 		if (book_learning) {
-			getData().fonts.font20(language.get("book", "learning")).draw(480, 60, getData().colors.white);
+			getData().fonts.font(language.get("book", "learning")).draw(20, 480, 60, getData().colors.white);
 			stop_button.draw();
 			if (stop_button.clicked()) {
 				global_searching = false;
@@ -294,7 +294,7 @@ public:
 			}
 		}
 		else if (!done) {
-			getData().fonts.font20(language.get("book", "stopping")).draw(480, 60, getData().colors.white);
+			getData().fonts.font(language.get("book", "stopping")).draw(20, 480, 60, getData().colors.white);
 			if (book_learn_future.wait_for(chrono::seconds(0)) == future_status::ready) {
 				book_learn_future.get();
 				done = true;
@@ -302,7 +302,7 @@ public:
 			}
 		}
 		else {
-			getData().fonts.font20(language.get("book", "complete")).draw(480, 60, getData().colors.white);
+			getData().fonts.font(language.get("book", "complete")).draw(20, 480, 60, getData().colors.white);
 			back_button.draw();
 			if (back_button.clicked()) {
 				getData().graph_resources.need_init = false;

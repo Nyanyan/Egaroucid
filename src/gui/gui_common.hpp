@@ -194,6 +194,9 @@ constexpr int BUTTON3_3_SX = X_CENTER + BUTTON3_WIDTH / 2 + 10;
 #define BUTTON2_VERTICAL_SX 520
 #define BUTTON2_VERTICAL_RADIUS 20
 
+// font constant
+#define FONT_DEFAULT_SIZE 50
+
 struct History_elem {
 	Board board;
 	int player;
@@ -279,6 +282,10 @@ struct Settings {
 };
 
 struct Fonts {
+	Font font{ FontMethod::MSDF, FONT_DEFAULT_SIZE };
+	Font font_bold{ FontMethod::MSDF, FONT_DEFAULT_SIZE, Typeface::Bold };
+	Font font_heavy{ FontMethod::MSDF, FONT_DEFAULT_SIZE, Typeface::Heavy };
+
 	Font font50{ 50 };
 	Font font40{ 40 };
 	Font font30{ 30 };

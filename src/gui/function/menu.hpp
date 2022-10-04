@@ -39,6 +39,7 @@ private:
 	String str;
 	Rect rect;
 	Font font;
+	int font_size;
 	int mode;
 	bool has_child;
 	vector<menu_elem> children;
@@ -113,10 +114,11 @@ public:
 		children.emplace_back(ch);
 	}
 
-	void pre_init(Font f, Texture c) {
+	void pre_init(int fs, Font f, Texture c) {
+		font_size = fs;
 		font = f;
 		checkbox = c;
-		bar_value_offset = font(U"88").region(Point{ 0, 0 }).w;
+		bar_value_offset = font(U"88").region(font_size, Point{ 0, 0 }).w;
 	}
 
 	void init_inside(int x, int y, int w, int h) {
@@ -127,7 +129,7 @@ public:
 		if (has_child) {
 			int height = h - menu_offset_y * 2, width = 0;
 			for (menu_elem& elem : children) {
-				elem.pre_init(font, checkbox);
+				elem.pre_init(font_size, font, checkbox);
 				RectF r = elem.size();
 				height = max(height, (int)r.h);
 				width = max(width, (int)r.w);
@@ -194,15 +196,15 @@ public:
 		else {
 			rect.draw(menu_select_color);
 		}
-		font(str).draw(rect.x + rect.h - menu_offset_y, rect.y + menu_offset_y, menu_font_color);
+		font(str).draw(font_size, rect.x + rect.h - menu_offset_y, rect.y + menu_offset_y, menu_font_color);
 		if (mode == bar_mode) {
-			font(*bar_elem).draw(bar_sx - menu_offset_x - menu_child_offset - bar_value_offset, rect.y + menu_offset_y, menu_font_color);
+			font(*bar_elem).draw(font_size, bar_sx - menu_offset_x - menu_child_offset - bar_value_offset, rect.y + menu_offset_y, menu_font_color);
 			bar_rect.draw(bar_color);
 			bar_circle.x = round((double)bar_sx + 10.0 + (double)(bar_size - 20) * (double)(*bar_elem - min_elem) / (double)(max_elem - min_elem));
 			bar_circle.draw(bar_circle_color);
 		}
 		if (has_child) {
-			font(U">").draw(rect.x + rect.w - menu_offset_x - menu_child_offset, rect.y + menu_offset_y, menu_font_color);
+			font(U">").draw(font_size, rect.x + rect.w - menu_offset_x - menu_child_offset, rect.y + menu_offset_y, menu_font_color);
 			if (is_active) {
 				int radio_checked = -1;
 				int idx = 0;
@@ -262,7 +264,7 @@ public:
 	}
 
 	RectF size() {
-		RectF res = font(str).region(Point{ 0, 0 });
+		RectF res = font(str).region(font_size, Point{ 0, 0 });
 		res.w += res.h;
 		if (mode == bar_mode) {
 			res.w += bar_size + bar_value_offset + bar_additional_offset;
@@ -303,6 +305,7 @@ private:
 	String str;
 	Rect rect;
 	Font font;
+	int font_size;
 	bool is_open;
 	vector<menu_elem> elems;
 	Texture checkbox;
@@ -314,7 +317,8 @@ public:
 		is_open = false;
 	}
 
-	void pre_init(Font f, Texture c) {
+	void pre_init(int fs, Font f, Texture c) {
+		font_size = fs;
 		font = f;
 		checkbox = c;
 	}
@@ -326,7 +330,7 @@ public:
 		rect.h = h;
 		int height = h - menu_offset_y * 2, width = w - menu_offset_x * 2;
 		for (menu_elem &elem : elems) {
-			elem.pre_init(font, checkbox);
+			elem.pre_init(font_size, font, checkbox);
 			RectF r = elem.size();
 			height = max(height, (int)r.h);
 			width = max(width, (int)r.w);
@@ -384,7 +388,7 @@ public:
 		else {
 			rect.draw(menu_color);
 		}
-		font(str).draw(Arg::topCenter(rect.x + rect.w / 2, rect.y + menu_offset_y), menu_font_color);
+		font(str).draw(font_size, Arg::topCenter(rect.x + rect.w / 2, rect.y + menu_offset_y), menu_font_color);
 		is_open = n_is_open;
 		//if (clicked)
 		//	is_open = false;
@@ -392,11 +396,11 @@ public:
 
 	void draw_title() {
 		rect.draw(menu_color);
-		font(str).draw(Arg::topCenter(rect.x + rect.w / 2, rect.y + menu_offset_y), menu_font_color);
+		font(str).draw(font_size, Arg::topCenter(rect.x + rect.w / 2, rect.y + menu_offset_y), menu_font_color);
 	}
 
 	RectF size() {
-		return font(str).region(Point{ 0, 0 });
+		return font(str).region(font_size, Point{ 0, 0 });
 	}
 
 	bool open() {
@@ -418,10 +422,10 @@ public:
 		menu.emplace_back(elem);
 	}
 
-	void init(int x, int y, Font f, Texture c) {
+	void init(int x, int y, int fs, Font f, Texture c) {
 		int height = 0, width = 0;
 		for (menu_title &elem : menu) {
-			elem.pre_init(f, c);
+			elem.pre_init(fs, f, c);
 			RectF r = elem.size();
 			height = max(height, (int)r.h);
 			width = max(width, (int)r.w);

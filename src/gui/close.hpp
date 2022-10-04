@@ -70,7 +70,7 @@ public:
 			//thread_pool.terminate();
 			System::Exit();
 		}
-		getData().fonts.font50(language.get("closing")).draw(RIGHT_LEFT, Y_CENTER + 40, getData().colors.white);
+		getData().fonts.font(language.get("closing")).draw(50, RIGHT_LEFT, Y_CENTER + 40, getData().colors.white);
 	}
 
 	void draw() const override {

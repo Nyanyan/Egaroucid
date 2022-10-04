@@ -92,10 +92,10 @@ private:
 
 public:
 	Import_transcript(const InitData& init) : IScene{ init } {
-		single_back_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "back"), getData().fonts.font25, getData().colors.white, getData().colors.black);
-		back_button.init(BUTTON3_1_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("common", "back"), getData().fonts.font25, getData().colors.white, getData().colors.black);
-		import_button.init(BUTTON3_2_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("in_out", "import"), getData().fonts.font25, getData().colors.white, getData().colors.black);
-		import_from_position_button.init(BUTTON3_3_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("in_out", "import_from_this_position"), getData().fonts.font15, getData().colors.white, getData().colors.black);
+		single_back_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+		back_button.init(BUTTON3_1_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+		import_button.init(BUTTON3_2_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("in_out", "import"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+		import_from_position_button.init(BUTTON3_3_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("in_out", "import_from_this_position"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
 		done = false;
 		failed = false;
 		imported_from_position = false;
@@ -112,7 +112,7 @@ public:
 		getData().resources.logo.scaled((double)icon_width / getData().resources.logo.width()).draw(X_CENTER - icon_width / 2, 20 + icon_width);
 		int sy = 20 + icon_width + 50;
 		if (!done) {
-			getData().fonts.font25(language.get("in_out", "input_transcript")).draw(Arg::topCenter(X_CENTER, sy), getData().colors.white);
+			getData().fonts.font(language.get("in_out", "input_transcript")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
 			Rect text_area{ X_CENTER - 300, sy + 40, 600, 70 };
 			text_area.draw(getData().colors.light_cyan).drawFrame(2, getData().colors.black);
 			String str = Unicode::Widen(transcript);
@@ -131,7 +131,7 @@ public:
 				}
 			}
 			transcript = str.narrow();
-			getData().fonts.font15(str + U'|' + editingText).draw(text_area.stretched(-4), getData().colors.black);
+			getData().fonts.font(str + U'|' + editingText).draw(15, text_area.stretched(-4), getData().colors.black);
 			back_button.draw();
 			import_button.draw();
 			import_from_position_button.draw();
@@ -184,7 +184,7 @@ public:
 				changeScene(U"Main_scene", SCENE_FADE_TIME);
 			}
 			else {
-				getData().fonts.font25(language.get("in_out", "import_failed")).draw(Arg::topCenter(X_CENTER, sy), getData().colors.white);
+				getData().fonts.font(language.get("in_out", "import_failed")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
 				single_back_button.draw();
 				if (single_back_button.clicked() || KeyEscape.pressed()) {
 					getData().graph_resources.need_init = false;
@@ -212,9 +212,9 @@ private:
 
 public:
 	Import_board(const InitData& init) : IScene{ init } {
-		single_back_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "back"), getData().fonts.font25, getData().colors.white, getData().colors.black);
-		back_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "back"), getData().fonts.font25, getData().colors.white, getData().colors.black);
-		import_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("in_out", "import"), getData().fonts.font25, getData().colors.white, getData().colors.black);
+		single_back_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+		back_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+		import_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("in_out", "import"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
 		done = false;
 		failed = false;
 		board_str.clear();
@@ -230,7 +230,7 @@ public:
 		getData().resources.logo.scaled((double)icon_width / getData().resources.logo.width()).draw(X_CENTER - icon_width / 2, 20 + icon_width);
 		int sy = 20 + icon_width + 50;
 		if (!done) {
-			getData().fonts.font25(language.get("in_out", "input_board")).draw(Arg::topCenter(X_CENTER, sy), getData().colors.white);
+			getData().fonts.font(language.get("in_out", "input_board")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
 			Rect text_area{ X_CENTER - 300, sy + 40, 600, 70 };
 			text_area.draw(getData().colors.light_cyan).drawFrame(2, getData().colors.black);
 			String str = Unicode::Widen(board_str);
@@ -249,7 +249,7 @@ public:
 				}
 			}
 			board_str = str.narrow();
-			getData().fonts.font15(str + U'|' + editingText).draw(text_area.stretched(-4), getData().colors.black);
+			getData().fonts.font(str + U'|' + editingText).draw(15, text_area.stretched(-4), getData().colors.black);
 			back_button.draw();
 			import_button.draw();
 			if (back_button.clicked() || KeyEscape.pressed()) {
@@ -276,7 +276,7 @@ public:
 				changeScene(U"Main_scene", SCENE_FADE_TIME);
 			}
 			else {
-				getData().fonts.font25(language.get("in_out", "import_failed")).draw(Arg::topCenter(X_CENTER, sy), getData().colors.white);
+				getData().fonts.font(language.get("in_out", "import_failed")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
 				single_back_button.draw();
 				if (single_back_button.clicked() || KeyEscape.pressed()) {
 					changeScene(U"Main_scene", SCENE_FADE_TIME);
@@ -337,23 +337,23 @@ private:
 
 public:
 	Edit_board(const InitData& init) : IScene{ init } {
-		back_button.init(BUTTON2_VERTICAL_SX, BUTTON2_VERTICAL_1_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("common", "back"), getData().fonts.font25, getData().colors.white, getData().colors.black);
-		set_button.init(BUTTON2_VERTICAL_SX, BUTTON2_VERTICAL_2_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("in_out", "import"), getData().fonts.font25, getData().colors.white, getData().colors.black);
+		back_button.init(BUTTON2_VERTICAL_SX, BUTTON2_VERTICAL_1_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+		set_button.init(BUTTON2_VERTICAL_SX, BUTTON2_VERTICAL_2_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("in_out", "import"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
 		done = false;
 		failed = false;
 		history_elem = getData().history_elem;
 		Radio_button_element radio_button_elem;
 		player_radio.init();
-		radio_button_elem.init(480, 120, getData().fonts.font15, 20, language.get("common", "black"), true);
+		radio_button_elem.init(480, 120, getData().fonts.font, 15, language.get("common", "black"), true);
 		player_radio.push(radio_button_elem);
-		radio_button_elem.init(480, 140, getData().fonts.font15, 20, language.get("common", "white"), false);
+		radio_button_elem.init(480, 140, getData().fonts.font, 15, language.get("common", "white"), false);
 		player_radio.push(radio_button_elem);
 		disc_radio.init();
-		radio_button_elem.init(480, 210, getData().fonts.font15, 20, language.get("edit_board", "black"), true);
+		radio_button_elem.init(480, 210, getData().fonts.font, 15, language.get("edit_board", "black"), true);
 		disc_radio.push(radio_button_elem);
-		radio_button_elem.init(480, 230, getData().fonts.font15, 20, language.get("edit_board", "white"), false);
+		radio_button_elem.init(480, 230, getData().fonts.font, 15, language.get("edit_board", "white"), false);
 		disc_radio.push(radio_button_elem);
-		radio_button_elem.init(480, 250, getData().fonts.font15, 20, language.get("edit_board", "empty"), false);
+		radio_button_elem.init(480, 250, getData().fonts.font, 15, language.get("edit_board", "empty"), false);
 		disc_radio.push(radio_button_elem);
 
 	}
@@ -383,9 +383,9 @@ public:
 			disc_radio.checked = VACANT;
 		}
 		Scene::SetBackground(getData().colors.green);
-		getData().fonts.font25(language.get("in_out", "edit_board")).draw(480, 20, getData().colors.white);
-		getData().fonts.font20(language.get("in_out", "player")).draw(480, 80, getData().colors.white);
-		getData().fonts.font20(language.get("in_out", "color")).draw(480, 170, getData().colors.white);
+		getData().fonts.font(language.get("in_out", "edit_board")).draw(25, 480, 20, getData().colors.white);
+		getData().fonts.font(language.get("in_out", "player")).draw(20, 480, 80, getData().colors.white);
+		getData().fonts.font(language.get("in_out", "color")).draw(20, 480, 170, getData().colors.white);
 		draw_board(getData().fonts, getData().colors, history_elem);
 		player_radio.draw();
 		disc_radio.draw();
@@ -447,7 +447,7 @@ private:
 public:
 	Import_game(const InitData& init) : IScene{ init } {
 		strt_idx = 0;
-		back_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "back"), getData().fonts.font25, getData().colors.white, getData().colors.black);
+		back_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
 		failed = false;
 		const String csv_path = Unicode::Widen(getData().directories.document_dir) + U"Egaroucid/games/summary.csv";
 		const CSV csv{ csv_path };
@@ -470,18 +470,18 @@ public:
 		if (System::GetUserActions() & UserAction::CloseButtonClicked) {
 			changeScene(U"Close", SCENE_FADE_TIME);
 		}
-		getData().fonts.font25(language.get("in_out", "input_game")).draw(Arg::topCenter(X_CENTER, 10), getData().colors.white);
+		getData().fonts.font(language.get("in_out", "input_game")).draw(25, Arg::topCenter(X_CENTER, 10), getData().colors.white);
 		if (failed) {
-			getData().fonts.font20(language.get("in_out", "import_failed")).draw(Arg::center(X_CENTER, Y_CENTER), getData().colors.white);
+			getData().fonts.font(language.get("in_out", "import_failed")).draw(20, Arg::center(X_CENTER, Y_CENTER), getData().colors.white);
 		}
 		else if (games.size() == 0) {
-			getData().fonts.font20(language.get("in_out", "no_game_available")).draw(Arg::center(X_CENTER, Y_CENTER), getData().colors.white);
+			getData().fonts.font(language.get("in_out", "no_game_available")).draw(20, Arg::center(X_CENTER, Y_CENTER), getData().colors.white);
 		}
 		else {
 			vector<pair<int, Button>> buttons;
 			int sy = IMPORT_GAME_SY;
 			if (strt_idx > 0) {
-				getData().fonts.font15(U"︙").draw(Arg::bottomCenter = Vec2{ X_CENTER, sy }, getData().colors.white);
+				getData().fonts.font(U"︙").draw(15, Arg::bottomCenter = Vec2{ X_CENTER, sy }, getData().colors.white);
 			}
 			sy += 8;
 			for (int i = strt_idx; i < min((int)games.size(), strt_idx + IMPORT_GAME_N_GAMES_ON_WINDOW); ++i) {
@@ -503,7 +503,7 @@ public:
 					}
 				}
 				rect.draw(getData().colors.green).drawFrame(1.0, getData().colors.white);
-				getData().fonts.font15(games[i].date.substr(0, 10)).draw(IMPORT_GAME_SX + 10, sy + 1, getData().colors.white);
+				getData().fonts.font(games[i].date.substr(0, 10)).draw(15, IMPORT_GAME_SX + 10, sy + 1, getData().colors.white);
 				Rect black_player_rect;
 				black_player_rect.w = IMPORT_GAME_PLAYER_WIDTH;
 				black_player_rect.h = IMPORT_GAME_PLAYER_HEIGHT;
@@ -518,14 +518,14 @@ public:
 				else if (winner == IMPORT_GAME_WINNER_DRAW) {
 					black_player_rect.draw(getData().colors.chocolate);
 				}
-				getData().fonts.font15(games[i].black_player).draw(black_player_rect.stretched(-1), getData().colors.white);
+				getData().fonts.font(games[i].black_player).draw(15, black_player_rect.stretched(-1), getData().colors.white);
 				if (games[i].black_score != GAME_DISCS_UNDEFINED && games[i].white_score != GAME_DISCS_UNDEFINED) {
-					getData().fonts.font15(games[i].black_score).draw(black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH + 5, sy + 1, getData().colors.white);
-					getData().fonts.font15(U"-").draw(black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH + 28, sy + 1, getData().colors.white);
-					getData().fonts.font15(games[i].white_score).draw(black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH + 38, sy + 1, getData().colors.white);
+					getData().fonts.font(games[i].black_score).draw(15, black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH + 5, sy + 1, getData().colors.white);
+					getData().fonts.font(U"-").draw(15, black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH + 28, sy + 1, getData().colors.white);
+					getData().fonts.font(games[i].white_score).draw(15, black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH + 38, sy + 1, getData().colors.white);
 				}
 				else {
-					getData().fonts.font15(U"?? - ??").draw(black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH + 5, sy + 1, getData().colors.white);
+					getData().fonts.font(U"?? - ??").draw(15, black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH + 5, sy + 1, getData().colors.white);
 				}
 				Rect white_player_rect;
 				white_player_rect.w = IMPORT_GAME_PLAYER_WIDTH;
@@ -541,16 +541,16 @@ public:
 				else if (winner == IMPORT_GAME_WINNER_DRAW) {
 					white_player_rect.draw(getData().colors.chocolate);
 				}
-				getData().fonts.font15(games[i].white_player).draw(white_player_rect.stretched(-1), getData().colors.white);
-				getData().fonts.font12(games[i].memo).draw(IMPORT_GAME_SX + 10, black_player_rect.y + black_player_rect.h, getData().colors.white);
+				getData().fonts.font(games[i].white_player).draw(15, white_player_rect.stretched(-1), getData().colors.white);
+				getData().fonts.font(games[i].memo).draw(12, IMPORT_GAME_SX + 10, black_player_rect.y + black_player_rect.h, getData().colors.white);
 				Button button;
-				button.init(IMPORT_GAME_BUTTON_SX, sy + IMPORT_GAME_BUTTON_SY, IMPORT_GAME_BUTTON_WIDTH, IMPORT_GAME_BUTTON_HEIGHT, IMPORT_GAME_BUTTON_RADIUS, language.get("in_out", "import"), getData().fonts.font15, getData().colors.white, getData().colors.black);
+				button.init(IMPORT_GAME_BUTTON_SX, sy + IMPORT_GAME_BUTTON_SY, IMPORT_GAME_BUTTON_WIDTH, IMPORT_GAME_BUTTON_HEIGHT, IMPORT_GAME_BUTTON_RADIUS, language.get("in_out", "import"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
 				button.draw();
 				buttons.emplace_back(make_pair(i, button));
 				sy += IMPORT_GAME_HEIGHT;
 			}
 			if (strt_idx + IMPORT_GAME_N_GAMES_ON_WINDOW < (int)games.size() - 1) {
-				getData().fonts.font15(U"︙").draw(Arg::bottomCenter = Vec2{ X_CENTER, 415}, getData().colors.white);
+				getData().fonts.font(U"︙").draw(15, Arg::bottomCenter = Vec2{ X_CENTER, 415}, getData().colors.white);
 			}
 			for (pair<int, Button> button_pair : buttons) {
 				if (button_pair.second.clicked()) {

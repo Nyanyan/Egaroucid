@@ -21,22 +21,24 @@ public:
 	Circle circle;
 	String str;
 	Font font;
+	int font_size;
 	int x;
 	int y;
 	bool checked;
 	RectF region;
 
 public:
-	void init(int xx, int yy, Font f, int font_size, String s, bool c) {
+	void init(int xx, int yy, Font f, int fs, String s, bool c) {
 		x = xx;
 		y = yy;
 		font = f;
+		font_size = fs;
 		circle.x = x + radio_button_margin / 2;
 		circle.y = y;
 		circle.r = radio_button_r;
 		str = s;
 		checked = c;
-		region = font(str).region(Arg::leftCenter = Vec2{ x + radio_button_margin, y });
+		region = font(str).region(font_size, Arg::leftCenter = Vec2{ x + radio_button_margin, y });
 		region.x = x;
 		region.w += radio_button_margin;
 	}
@@ -49,7 +51,7 @@ public:
 		if (checked) {
 			circle.draw(Palette::Cyan);
 		}
-		font(str).draw(Arg::leftCenter = Vec2{ x + radio_button_margin, y }, Palette::White);
+		font(str).draw(font_size, Arg::leftCenter = Vec2{ x + radio_button_margin, y }, Palette::White);
 	}
 };
 

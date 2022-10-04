@@ -30,7 +30,7 @@ public:
 
 private:
 	int font_size{ 12 };
-	Font font{ 12 };
+	Font font{ FontMethod::MSDF, FONT_DEFAULT_SIZE };
 	int y_max;
 	int y_min;
 	int dy;
@@ -50,14 +50,14 @@ public:
 		}
 		for (int y = 0; y <= y_max - y_min; y += resolution) {
 			int yy = sy + y * dy + adj_y * y / (y_max - y_min);
-			font(y_max - y).draw(sx - font(y_max - y).region(Point{ 0, 0 }).w - 12, yy - font(y_max - y).region(Point{ 0, 0 }).h / 2, graph_color);
+			font(y_max - y).draw(font_size, sx - font(y_max - y).region(font_size, Point{ 0, 0 }).w - 12, yy - font(y_max - y).region(font_size, Point{ 0, 0 }).h / 2, graph_color);
 			if (y_max - y == 0)
 				Line{ sx, yy, sx + size_x, yy }.draw(2, graph_color);
 			else
 				Line{ sx, yy, sx + size_x, yy }.draw(1, graph_color);
 		}
 		for (int x = 0; x <= 60; x += 10) {
-			font(x).draw(sx + x * dx + adj_x * x / 60 - font(x).region(Point{0, 0}).w / 2, sy + size_y + 5, graph_color);
+			font(x).draw(font_size, sx + x * dx + adj_x * x / 60 - font(x).region(font_size, Point{0, 0}).w / 2, sy + size_y + 5, graph_color);
 			Line{ sx + x * dx + adj_x * x / 60, sy, sx + x * dx + adj_x * x / 60, sy + size_y }.draw(1, graph_color);
 		}
 		draw_graph(nodes1, graph_history_color, false);

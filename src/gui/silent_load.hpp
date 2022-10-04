@@ -271,7 +271,7 @@ public:
 			}
 		}
 		if (silent_load_failed) {
-			getData().fonts.font30(U"BASIC DATA NOT LOADED. PLEASE RE-INSTALL.").draw(LEFT_LEFT, Y_CENTER + getData().fonts.font50.fontSize(), getData().colors.white);
+			getData().fonts.font(U"BASIC DATA NOT LOADED. PLEASE RE-INSTALL.").draw(30, LEFT_LEFT, Y_CENTER + 50, getData().colors.white);
 		}
 	}
 

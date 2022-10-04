@@ -14,12 +14,16 @@
 
 using namespace std;
 
+double CalculateScale(const Vec2& baseSize, const Vec2& currentSize) {
+	return Min((currentSize.x / baseSize.x), (currentSize.y / baseSize.y));
+}
+
 void Main() {
 	Size window_size = Size(WINDOW_SIZE_X, WINDOW_SIZE_Y);
 	Window::Resize(window_size);
 	Window::SetStyle(WindowStyle::Sizable);
-	Scene::SetResizeMode(ResizeMode::Keep);
-	Scene::SetLetterbox(Color{ 36, 153, 114 });
+	Scene::SetResizeMode(ResizeMode::Virtual);
+	//Scene::SetLetterbox(Color{ 36, 153, 114 });
 	Window::SetTitle(U"Egaroucid {}"_fmt(EGAROUCID_VERSION));
 	System::SetTerminationTriggers(UserAction::NoAction);
 	//Console.open();
@@ -45,12 +49,14 @@ void Main() {
 	scene_manager.init(U"Silent_load");
 
 	while (System::Update()) {
+		const double scale = CalculateScale(window_size, Scene::Size());
+		const Transformer2D screenScaling{ Mat3x2::Scale(scale), TransformCursor::Yes };
 		scene_manager.update();
 		while (getline(logger_stream, logger))
 			logger_String = Unicode::Widen(logger);
 		logger_stream.clear();
 		if (scene_manager.get()->menu_elements.show_log) {
-			scene_manager.get()->fonts.font12(logger_String).draw(Arg::bottomLeft(8, WINDOW_SIZE_Y - 5), scene_manager.get()->colors.white);
+			scene_manager.get()->fonts.font(logger_String).draw(12, Arg::bottomLeft(8, WINDOW_SIZE_Y - 5), scene_manager.get()->colors.white);
 		}
 	}
 }
