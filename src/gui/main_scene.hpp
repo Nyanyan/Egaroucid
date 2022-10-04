@@ -995,6 +995,11 @@ private:
 				ai_status.hint_use[cell] = (bool)(1 & (legal >> (HW2_M1 - cell)));
 				ai_status.hint_types[cell] = HINT_NOT_CALCULATING;
 			}
+			for (int cell = 0; cell < HW2; ++cell) {
+				ai_status.hint_use_stable[cell] = ai_status.hint_use[cell];
+				ai_status.hint_values_stable[cell] = ai_status.hint_values[cell];
+				ai_status.hint_types_stable[cell] = ai_status.hint_types[cell];
+			}
 		}
 		else {
 			ai_status.hint_available = true;
