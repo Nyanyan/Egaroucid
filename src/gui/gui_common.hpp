@@ -285,21 +285,6 @@ struct Fonts {
 	Font font{ FontMethod::MSDF, FONT_DEFAULT_SIZE };
 	Font font_bold{ FontMethod::MSDF, FONT_DEFAULT_SIZE, Typeface::Bold };
 	Font font_heavy{ FontMethod::MSDF, FONT_DEFAULT_SIZE, Typeface::Heavy };
-
-	Font font50{ 50 };
-	Font font40{ 40 };
-	Font font30{ 30 };
-	Font font25{ 25 };
-	Font font20{ 20 };
-	Font font15{ 15 };
-	Font font13{ 13 };
-	Font font12{ 12 };
-	Font font11{ 11 };
-	Font font10{ 10 };
-	Font font17_bold{ 17, Typeface::Bold };
-	Font font15_bold{ 15, Typeface::Bold };
-	Font font13_heavy{ 13, Typeface::Heavy };
-	Font font9_bold{ 9, Typeface::Bold };
 };
 
 struct Menu_elements {
