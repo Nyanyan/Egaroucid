@@ -1324,7 +1324,14 @@ private:
 			int x = HW_M1 - cell % HW;
 			int y = HW_M1 - cell / HW;
 			Rect cell_rect(BOARD_SX + x * BOARD_CELL_SIZE, BOARD_SY + y * BOARD_CELL_SIZE, BOARD_CELL_SIZE, BOARD_CELL_SIZE);
+			int state = 0;
 			if (cell_rect.rightClicked()) {
+				state = 1;
+			}
+			else if (KeyEnter.down()) {
+				state = 2;
+			}
+			if (state) {
 				if (getData().book_information.changing == cell) {
 					if (getData().book_information.val_str.size() == 0) {
 						getData().book_information.changing = BOOK_CHANGE_NO_CELL;
@@ -1360,7 +1367,7 @@ private:
 						}
 					}
 				}
-				else {
+				else if (state == 1) {
 					getData().book_information.val_str.clear();
 					getData().book_information.changing = cell;
 				}
