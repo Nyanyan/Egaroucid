@@ -198,19 +198,19 @@ public:
 			}
 		}
 
+		// legal drawing
+		if (getData().menu_elements.show_legal) {
+			draw_legal(legal_ignore);
+		}
+
 		// umigame calculating / drawing
 		if (getData().menu_elements.use_umigame_value && !hint_ignore) {
 			if (umigame_status.umigame_calculated) {
-				draw_umigame();
+				draw_umigame(legal_ignore);
 			}
 			else {
 				calculate_umigame();
 			}
-		}
-
-		// legal drawing
-		if (getData().menu_elements.show_legal) {
-			draw_legal(legal_ignore);
 		}
 
 		// stable drawing
@@ -1258,14 +1258,16 @@ private:
 		}
 	}
 
-	void draw_umigame() {
+	void draw_umigame(uint64_t legal_ignore) {
 		uint64_t legal = getData().history_elem.board.get_legal();
 		for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
-			int sx = BOARD_SX + ((HW2_M1 - cell) % HW) * BOARD_CELL_SIZE;
-			int sy = BOARD_SY + ((HW2_M1 - cell) / HW) * BOARD_CELL_SIZE;
-			if (umigame_status.umigame[cell].b != UMIGAME_UNDEFINED) {
-				getData().fonts.font_heavy(umigame_status.umigame[cell].b).draw(13, Arg::bottomRight(sx + BOARD_CELL_SIZE - 3, sy + BOARD_CELL_SIZE - 17), getData().colors.black);
-				getData().fonts.font_heavy(umigame_status.umigame[cell].w).draw(13, Arg::bottomRight(sx + BOARD_CELL_SIZE - 3, sy + BOARD_CELL_SIZE - 1), getData().colors.white);
+			if (1 & (legal_ignore >> cell)) {
+				int sx = BOARD_SX + ((HW2_M1 - cell) % HW) * BOARD_CELL_SIZE;
+				int sy = BOARD_SY + ((HW2_M1 - cell) / HW) * BOARD_CELL_SIZE;
+				if (umigame_status.umigame[cell].b != UMIGAME_UNDEFINED) {
+					getData().fonts.font_heavy(umigame_status.umigame[cell].b).draw(13, Arg::bottomRight(sx + BOARD_CELL_SIZE - 3, sy + BOARD_CELL_SIZE - 17), getData().colors.black);
+					getData().fonts.font_heavy(umigame_status.umigame[cell].w).draw(13, Arg::bottomRight(sx + BOARD_CELL_SIZE - 3, sy + BOARD_CELL_SIZE - 1), getData().colors.white);
+				}
 			}
 		}
 	}
