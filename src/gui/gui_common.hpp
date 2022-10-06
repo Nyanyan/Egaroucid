@@ -256,6 +256,7 @@ struct Resources {
 	Texture icon;
 	Texture logo;
 	Texture checkbox;
+	Texture unchecked;
 };
 
 struct Settings {

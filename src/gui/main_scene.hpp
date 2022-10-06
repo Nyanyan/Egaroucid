@@ -836,7 +836,7 @@ private:
 
 
 
-		menu.init(0, 0, 12, getData().fonts.font, getData().resources.checkbox);
+		menu.init(0, 0, 12, getData().fonts.font, getData().resources.checkbox, getData().resources.unchecked);
 		return menu;
 	}
 

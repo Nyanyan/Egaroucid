@@ -51,6 +51,7 @@ private:
 	bool *is_checked;
 	bool dammy_clicked;
 	Texture checkbox;
+	Texture unchecked;
 	int min_elem;
 	int max_elem;
 	int bar_value_offset;
@@ -114,10 +115,11 @@ public:
 		children.emplace_back(ch);
 	}
 
-	void pre_init(int fs, Font f, Texture c) {
+	void pre_init(int fs, Font f, Texture c, Texture u) {
 		font_size = fs;
 		font = f;
 		checkbox = c;
+		unchecked = u;
 		bar_value_offset = font(U"88").region(font_size, Point{ 0, 0 }).w;
 	}
 
@@ -129,7 +131,7 @@ public:
 		if (has_child) {
 			int height = h - menu_offset_y * 2, width = 0;
 			for (menu_elem& elem : children) {
-				elem.pre_init(font_size, font, checkbox);
+				elem.pre_init(font_size, font, checkbox, unchecked);
 				RectF r = elem.size();
 				height = max(height, (int)r.h);
 				width = max(width, (int)r.w);
@@ -238,6 +240,9 @@ public:
 			if (*is_checked) {
 				checkbox.scaled((double)(rect.h - 2 * menu_offset_y) / checkbox.width()).draw(rect.x + menu_offset_y, rect.y + menu_offset_y);
 			}
+			else {
+				unchecked.scaled((double)(rect.h - 2 * menu_offset_y) / unchecked.width()).draw(rect.x + menu_offset_y, rect.y + menu_offset_y);
+			}
 		}
 		else if (mode == radio_mode) {
 			if (*is_checked) {
@@ -309,6 +314,7 @@ private:
 	bool is_open;
 	vector<menu_elem> elems;
 	Texture checkbox;
+	Texture unchecked;
 
 public:
 	void init(String s) {
@@ -317,10 +323,11 @@ public:
 		is_open = false;
 	}
 
-	void pre_init(int fs, Font f, Texture c) {
+	void pre_init(int fs, Font f, Texture c, Texture u) {
 		font_size = fs;
 		font = f;
 		checkbox = c;
+		unchecked = u;
 	}
 
 	void init_inside(int x, int y, int w, int h) {
@@ -330,7 +337,7 @@ public:
 		rect.h = h;
 		int height = h - menu_offset_y * 2, width = w - menu_offset_x * 2;
 		for (menu_elem &elem : elems) {
-			elem.pre_init(font_size, font, checkbox);
+			elem.pre_init(font_size, font, checkbox, unchecked);
 			RectF r = elem.size();
 			height = max(height, (int)r.h);
 			width = max(width, (int)r.w);
@@ -422,10 +429,10 @@ public:
 		menu.emplace_back(elem);
 	}
 
-	void init(int x, int y, int fs, Font f, Texture c) {
+	void init(int x, int y, int fs, Font f, Texture c, Texture u) {
 		int height = 0, width = 0;
 		for (menu_title &elem : menu) {
-			elem.pre_init(fs, f, c);
+			elem.pre_init(fs, f, c, u);
 			RectF r = elem.size();
 			height = max(height, (int)r.h);
 			width = max(width, (int)r.w);

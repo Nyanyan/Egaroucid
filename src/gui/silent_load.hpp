@@ -225,12 +225,14 @@ int init_resources(Resources* resources, Settings* settings) {
 	Texture icon(U"resources/img/icon.png", TextureDesc::Mipped);
 	Texture logo(U"resources/img/logo.png", TextureDesc::Mipped);
 	Texture checkbox(U"resources/img/checked.png", TextureDesc::Mipped);
-	if (icon.isEmpty() || logo.isEmpty() || checkbox.isEmpty()) {
+	Texture unchecked(U"resources/img/unchecked.png", TextureDesc::Mipped);
+	if (icon.isEmpty() || logo.isEmpty() || checkbox.isEmpty() || unchecked.isEmpty()) {
 		return ERR_TEXTURE_NOT_LOADED;
 	}
 	resources->icon = icon;
 	resources->logo = logo;
 	resources->checkbox = checkbox;
+	resources->unchecked = unchecked;
 
 	// opening
 	if (!opening_init()) {
