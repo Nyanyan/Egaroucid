@@ -37,12 +37,12 @@
      inkscape:bbox-nodes="true"
      inkscape:bbox-paths="true"
      inkscape:zoom="0.38885732"
-     inkscape:cx="1389.97"
-     inkscape:cy="2832.6585"
+     inkscape:cx="9.0007307"
+     inkscape:cy="5072.5546"
      inkscape:window-width="2104"
      inkscape:window-height="2071"
-     inkscape:window-x="4118"
-     inkscape:window-y="0"
+     inkscape:window-x="4800"
+     inkscape:window-y="1350"
      inkscape:window-maximized="0"
      inkscape:current-layer="layer1"
      inkscape:snap-global="true" />
@@ -765,6 +765,30 @@
        d="m 57.974062,985.93535 22.453607,34.02055 70.762881,-77.56696"
        id="path10948"
        inkscape:export-filename="C:\github\egaroucid\Egaroucid5\src\resources\checked.png"
+       inkscape:export-xdpi="35.549999"
+       inkscape:export-ydpi="35.549999" />
+    <rect
+       style="fill:#b4b4b4;fill-opacity:1;stroke-width:0.499999"
+       id="rect10405-0"
+       width="142.8866"
+       height="142.8866"
+       x="-9.8593998"
+       y="1142.9142"
+       inkscape:export-filename="C:\Users\yaman\Desktop\unchecked.png"
+       inkscape:export-xdpi="35.549999"
+       inkscape:export-ydpi="35.549999" />
+    <path
+       style="fill:none;stroke:#dcdcdc;stroke-width:20;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="m 108.17218,1167.7692 -93.176563,93.1766"
+       id="path1113-9"
+       inkscape:export-filename="C:\Users\yaman\Desktop\unchecked.png"
+       inkscape:export-xdpi="35.549999"
+       inkscape:export-ydpi="35.549999" />
+    <path
+       style="fill:none;stroke:#dcdcdc;stroke-width:20;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="M 108.1722,1260.9458 14.995596,1167.7692"
+       id="path1113-9-8"
+       inkscape:export-filename="C:\Users\yaman\Desktop\unchecked.png"
        inkscape:export-xdpi="35.549999"
        inkscape:export-ydpi="35.549999" />
   </g>
