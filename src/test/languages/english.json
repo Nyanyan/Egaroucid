@@ -87,7 +87,12 @@
             "disc_value": "Evaluation",
             "disc_value_number": "Number",
             "umigame_value": "Umigame Number",
-            "opening": "Opening",
+            "opening": "Opening"
+        },
+        "disc": {
+            "display_on_disc": "On Disc",
+            "last_move": "Last Move",
+            "next_move": "Next Move",
             "stable": "Stable"
         },
         "graph": "Graph",
