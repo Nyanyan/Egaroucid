@@ -257,7 +257,6 @@ private:
 	bool done;
 	future<void> book_learn_future;
 	Board root_board;
-	Level_display level_display;
 
 public:
 	Learn_book(const InitData& init) : IScene{ init } {
@@ -266,27 +265,23 @@ public:
 		root_board = getData().history_elem.board;
 		history_elem = getData().history_elem;
 		history_elem.policy = -1;
-		level_display.sx = LEVEL_SX;
-		level_display.sy = LEVEL_SY;
-		level_display.size_x = LEVEL_WIDTH;
-		level_display.size_y = LEVEL_HEIGHT;
 		book_learning = true;
 		done = false;
 		book_learn_future = async(launch::async, learn_book, root_board, getData().menu_elements.level, getData().menu_elements.book_learn_depth, getData().menu_elements.book_learn_error, &history_elem.board, &history_elem.player, getData().settings.book_file, getData().settings.book_file + ".bak", getData().menu_elements.ignore_book,  &book_learning);
 	}
 
 	void update() override {
-		if (System::GetUserActions() & UserAction::CloseButtonClicked) {
-			changeScene(U"Close", SCENE_FADE_TIME);
-		}
+		//if (System::GetUserActions() & UserAction::CloseButtonClicked) {
+		//	changeScene(U"Close", SCENE_FADE_TIME);
+		//}
 		Scene::SetBackground(getData().colors.green);
-		getData().fonts.font(language.get("book", "book_learn")).draw(25, 480, 20, getData().colors.white);
 		draw_board(getData().fonts, getData().colors, history_elem);
-		level_display.draw(getData().menu_elements.level, history_elem.board.n_discs());
+		draw_info(getData().colors, history_elem, getData().fonts, getData().menu_elements);
+		getData().fonts.font(language.get("book", "book_learn")).draw(25, 480, 190, getData().colors.white);
 		getData().fonts.font(language.get("book", "depth") + U": " + Format(getData().menu_elements.book_learn_depth)).draw(15, 480, 300, getData().colors.white);
 		getData().fonts.font(language.get("book", "accept") + U": " + Format(getData().menu_elements.book_learn_error)).draw(15, 480, 320, getData().colors.white);
 		if (book_learning) {
-			getData().fonts.font(language.get("book", "learning")).draw(20, 480, 60, getData().colors.white);
+			getData().fonts.font(language.get("book", "learning")).draw(20, 480, 230, getData().colors.white);
 			stop_button.draw();
 			if (stop_button.clicked()) {
 				global_searching = false;
@@ -294,7 +289,7 @@ public:
 			}
 		}
 		else if (!done) {
-			getData().fonts.font(language.get("book", "stopping")).draw(20, 480, 60, getData().colors.white);
+			getData().fonts.font(language.get("book", "stopping")).draw(20, 480, 230, getData().colors.white);
 			if (book_learn_future.wait_for(chrono::seconds(0)) == future_status::ready) {
 				book_learn_future.get();
 				done = true;
@@ -302,7 +297,7 @@ public:
 			}
 		}
 		else {
-			getData().fonts.font(language.get("book", "complete")).draw(20, 480, 60, getData().colors.white);
+			getData().fonts.font(language.get("book", "complete")).draw(20, 480, 230, getData().colors.white);
 			back_button.draw();
 			if (back_button.clicked()) {
 				getData().graph_resources.need_init = false;

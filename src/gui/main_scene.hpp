@@ -17,7 +17,6 @@
 #include "function/opening.hpp"
 #include "function/button.hpp"
 #include "function/radio_button.hpp"
-#include "function/level.hpp"
 #include "gui_common.hpp"
 
 #define HINT_SINGLE_TASK_N_THREAD 4
@@ -60,6 +59,56 @@ void draw_board(Fonts fonts, Colors colors, History_elem history_elem) {
 	}
 }
 
+void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_elements menu_elements) {
+	RoundRect round_rect{ INFO_SX, INFO_SY, INFO_WIDTH, INFO_HEIGHT, INFO_RECT_RADIUS };
+	round_rect.drawFrame(INFO_RECT_THICKNESS, colors.white);
+	if (history_elem.board.get_legal()) {
+		fonts.font(Format(history_elem.board.n_discs() - 3) + language.get("info", "moves")).draw(13, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + 5));
+		if (history_elem.player == BLACK) {
+			fonts.font(language.get("info", "black")).draw(20, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + 22));
+		}
+		else {
+			fonts.font(language.get("info", "white")).draw(20, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + 22));
+		}
+	}
+	else {
+		fonts.font(language.get("info", "game_end")).draw(20, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + 22));
+	}
+	Circle(INFO_SX + 70, INFO_SY + 60 + INFO_DISC_RADIUS, INFO_DISC_RADIUS).draw(colors.black);
+	Circle(INFO_SX + INFO_WIDTH - 70, INFO_SY + 60 + INFO_DISC_RADIUS, INFO_DISC_RADIUS).draw(colors.white);
+	int black_discs, white_discs;
+	if (history_elem.player == BLACK) {
+		black_discs = history_elem.board.count_player();
+		white_discs = history_elem.board.count_opponent();
+	}
+	else {
+		black_discs = history_elem.board.count_opponent();
+		white_discs = history_elem.board.count_player();
+	}
+	fonts.font(black_discs).draw(20, Arg::leftCenter(INFO_SX + 100, INFO_SY + 60 + INFO_DISC_RADIUS));
+	fonts.font(white_discs).draw(20, Arg::rightCenter(INFO_SX + INFO_WIDTH - 100, INFO_SY + 60 + INFO_DISC_RADIUS));
+	Line(INFO_SX + INFO_WIDTH / 2, INFO_SY + 60, INFO_SX + INFO_WIDTH / 2, INFO_SY + 60 + INFO_DISC_RADIUS * 2).draw(2, colors.dark_gray);
+	fonts.font(language.get("info", "opening_name") + U": " + Unicode::FromUTF8(history_elem.opening_name)).draw(13, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + 95));
+	String level_info = language.get("common", "level") + U" " + Format(menu_elements.level) + U" (";
+	if (menu_elements.level <= LIGHT_LEVEL) {
+		level_info += language.get("info", "light");
+	}
+	else if (menu_elements.level <= STANDARD_MAX_LEVEL) {
+		level_info += language.get("info", "standard");
+	}
+	else if (menu_elements.level <= PRAGMATIC_MAX_LEVEL) {
+		level_info += language.get("info", "pragmatic");
+	}
+	else if (menu_elements.level <= ACCURATE_MAX_LEVEL) {
+		level_info += language.get("info", "accurate");
+	}
+	else {
+		level_info += language.get("info", "danger");
+	}
+	level_info += U")";
+	fonts.font(level_info).draw(13, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + 115));
+}
+
 Umigame_result get_umigame(Board board, int player) {
 	return umigame.get(&board, player);
 }
@@ -67,7 +116,7 @@ Umigame_result get_umigame(Board board, int player) {
 class Main_scene : public App::Scene {
 private:
 	Graph graph;
-	Level_display level_display;
+	//Level_display level_display;
 	Move_board_button_status move_board_button_status;
 	AI_status ai_status;
 	Button start_game_button;
@@ -84,10 +133,6 @@ public:
 		graph.size_x = GRAPH_WIDTH;
 		graph.size_y = GRAPH_HEIGHT;
 		graph.resolution = GRAPH_RESOLUTION;
-		level_display.sx = LEVEL_SX;
-		level_display.sy = LEVEL_SY;
-		level_display.size_x = LEVEL_WIDTH;
-		level_display.size_y = LEVEL_HEIGHT;
 		if (getData().graph_resources.need_init) {
 			getData().game_information.init();
 			getData().graph_resources.init();
@@ -221,15 +266,13 @@ public:
 		}
 
 		// graph drawing
-		if (getData().menu_elements.show_graph) {
-			graph.draw(getData().graph_resources.nodes[0], getData().graph_resources.nodes[1], getData().graph_resources.n_discs);
-		}
+		graph.draw(getData().graph_resources.nodes[0], getData().graph_resources.nodes[1], getData().graph_resources.n_discs, getData().menu_elements.show_graph, getData().menu_elements.level);
 
 		// level display drawing
-		level_display.draw(getData().menu_elements.level, getData().history_elem.board.n_discs());
+		//level_display.draw(getData().menu_elements.level, getData().history_elem.board.n_discs());
 
 		// info drawing
-		draw_info();
+		draw_info(getData().colors, getData().history_elem, getData().fonts, getData().menu_elements);
 
 		// opening on cell drawing
 		if (getData().menu_elements.show_opening_on_cell) {
@@ -882,32 +925,6 @@ private:
 					Circle(x, y, DISC_SIZE).draw(ColorF(getData().colors.black, 0.2));
 				}
 			}
-		}
-	}
-
-	void draw_info() {
-		if (getData().history_elem.board.get_legal()) {
-			getData().fonts.font(Format(getData().history_elem.board.n_discs() - 3) + language.get("info", "moves")).draw(20, INFO_SX, INFO_SY);
-			if (getData().history_elem.player == BLACK) {
-				getData().fonts.font(language.get("info", "black")).draw(20, INFO_SX + 100, INFO_SY);
-			}
-			else {
-				getData().fonts.font(language.get("info", "white")).draw(20, INFO_SX + 100, INFO_SY);
-			}
-		}
-		else {
-			getData().fonts.font(language.get("info", "game_end")).draw(20, INFO_SX, INFO_SY);
-		}
-		getData().fonts.font(language.get("info", "opening_name") + U": " + Unicode::FromUTF8(getData().history_elem.opening_name)).draw(15, INFO_SX, INFO_SY + 30);
-		Circle(INFO_SX + INFO_DISC_RADIUS, INFO_SY + 75, INFO_DISC_RADIUS).draw(getData().colors.black);
-		Circle(INFO_SX + INFO_DISC_RADIUS, INFO_SY + 110, INFO_DISC_RADIUS).draw(getData().colors.white);
-		if (getData().history_elem.player == BLACK) {
-			getData().fonts.font(getData().history_elem.board.count_player()).draw(20, Arg::leftCenter(INFO_SX + 40, INFO_SY + 75));
-			getData().fonts.font(getData().history_elem.board.count_opponent()).draw(20, Arg::leftCenter(INFO_SX + 40, INFO_SY + 110));
-		}
-		else {
-			getData().fonts.font(getData().history_elem.board.count_opponent()).draw(20, Arg::leftCenter(INFO_SX + 40, INFO_SY + 75));
-			getData().fonts.font(getData().history_elem.board.count_player()).draw(20, Arg::leftCenter(INFO_SX + 40, INFO_SY + 110));
 		}
 	}
 

@@ -65,20 +65,34 @@ constexpr int BOARD_SX = LEFT_LEFT + BOARD_COORD_SIZE;
 constexpr int BOARD_CELL_SIZE = BOARD_SIZE / HW;
 
 // main start game button constants
-#define START_GAME_BUTTON_SX 550
-#define START_GAME_BUTTON_SY 110
-#define START_GAME_BUTTON_WIDTH 100
+#define START_GAME_BUTTON_SX 700
+#define START_GAME_BUTTON_SY 45
+#define START_GAME_BUTTON_WIDTH 80
 #define START_GAME_BUTTON_HEIGHT 30
 #define START_GAME_BUTTON_RADIUS 10
 
 // graph drawing constants
 #define GRAPH_RESOLUTION 8
-constexpr int GRAPH_SX = BOARD_SX + BOARD_SIZE + 50;
+constexpr int GRAPH_SX = BOARD_SX + BOARD_SIZE + 60;
 constexpr int GRAPH_SY = Y_CENTER + 20;
-constexpr int GRAPH_WIDTH = WINDOW_SIZE_X - GRAPH_SX - 30;
-constexpr int GRAPH_HEIGHT = WINDOW_SIZE_Y - GRAPH_SY - 40 - 20;
+constexpr int GRAPH_WIDTH = WINDOW_SIZE_X - GRAPH_SX - 35;
+constexpr int GRAPH_HEIGHT = WINDOW_SIZE_Y - GRAPH_SY - 60;
 
 // level drawing constants
+#define LEVEL_DEPTH_DY -15
+#define LEVEL_INFO_DY -60
+#define LEVEL_INFO_WIDTH 40
+#define LEVEL_INFO_HEIGHT 20
+#define LEVEL_PROB_WIDTH 90
+
+// level graph roundrect constants
+#define GRAPH_RECT_DY -80
+#define GRAPH_RECT_DX -40
+#define GRAPH_RECT_RADIUS 20
+#define GRAPH_RECT_THICKNESS 5
+constexpr int GRAPH_RECT_WIDTH = WINDOW_SIZE_X - (GRAPH_SX + GRAPH_RECT_DX) - 10;
+constexpr int GRAPH_RECT_HEIGHT = GRAPH_HEIGHT - GRAPH_RECT_DY + 27;
+/*
 #define LEVEL_INFO_WIDTH 40
 #define LEVEL_HEIGHT 15
 #define LEVEL_INFO_HEIGHT 20
@@ -89,11 +103,16 @@ constexpr int LEVEL_INFO_SX = LEVEL_SX + LEVEL_WIDTH - LEVEL_INFO_WIDTH * 5;
 constexpr int LEVEL_INFO_SY = LEVEL_SY - 55;
 constexpr int LEVEL_INFO_RECT_SY = LEVEL_SY - 45;
 constexpr int LEVEL_DEPTH_SY = LEVEL_SY + LEVEL_HEIGHT + 8;
+*/
 
 // info drawing constants
 #define INFO_SY 35
 #define INFO_DISC_RADIUS 12
-constexpr int INFO_SX = BOARD_SX + BOARD_SIZE + 25;
+#define INFO_SX 460
+#define INFO_RECT_RADIUS 20
+#define INFO_RECT_THICKNESS 5
+constexpr int INFO_WIDTH = WINDOW_SIZE_X - 10 - INFO_SX;
+constexpr int INFO_HEIGHT = 190 - INFO_SY - 12;
 
 // graph mode constants
 #define GRAPH_MODE_NORMAL 0
