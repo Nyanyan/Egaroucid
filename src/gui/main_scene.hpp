@@ -58,11 +58,6 @@ void draw_board(Fonts fonts, Colors colors, History_elem history_elem) {
 			Circle(x, y, DISC_SIZE).draw(colors.white);
 		}
 	}
-	if (history_elem.policy != -1) {
-		int x = BOARD_SX + (HW_M1 - history_elem.policy % HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
-		int y = BOARD_SY + (HW_M1 - history_elem.policy / HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
-		Circle(x, y, LEGAL_SIZE).draw(colors.red);
-	}
 }
 
 Umigame_result get_umigame(Board board, int player) {
@@ -182,7 +177,14 @@ public:
 		draw_board(getData().fonts, getData().colors, getData().history_elem);
 
 		// last move drawing
-		draw_last_move();
+		if (getData().menu_elements.show_last_move) {
+			draw_last_move();
+		}
+
+		// next move drawing
+		if (getData().menu_elements.show_next_move) {
+			draw_next_move();
+		}
 
 		uint64_t legal_ignore = 0ULL;
 
@@ -723,7 +725,14 @@ private:
 		menu_e.push(side_menu);
 		side_menu.init_check(language.get("display", "cell", "opening"), &menu_elements->show_opening_on_cell, menu_elements->show_opening_on_cell);
 		menu_e.push(side_menu);
-		side_menu.init_check(language.get("display", "cell", "stable"), &menu_elements->show_stable_discs, menu_elements->show_stable_discs);
+		title.push(menu_e);
+
+		menu_e.init_button(language.get("display", "disc", "display_on_disc"), &menu_elements->dummy);
+		side_menu.init_check(language.get("display", "disc", "last_move"), &menu_elements->show_last_move, menu_elements->show_last_move);
+		menu_e.push(side_menu);
+		side_menu.init_check(language.get("display", "disc", "next_move"), &menu_elements->show_next_move, menu_elements->show_next_move);
+		menu_e.push(side_menu);
+		side_menu.init_check(language.get("display", "disc", "stable"), &menu_elements->show_stable_discs, menu_elements->show_stable_discs);
 		menu_e.push(side_menu);
 		title.push(menu_e);
 
@@ -853,6 +862,14 @@ private:
 	}
 
 	void draw_last_move() {
+		if (getData().history_elem.policy != -1) {
+			int x = BOARD_SX + (HW_M1 - getData().history_elem.policy % HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
+			int y = BOARD_SY + (HW_M1 - getData().history_elem.policy / HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
+			Circle(x, y, LEGAL_SIZE).draw(getData().colors.red);
+		}
+	}
+
+	void draw_next_move() {
 		if (0 <= getData().history_elem.next_policy && getData().history_elem.next_policy <= HW2) {
 			uint64_t legal = getData().history_elem.board.get_legal();
 			if (1 & (legal >> getData().history_elem.next_policy)) {

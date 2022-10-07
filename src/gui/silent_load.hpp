@@ -51,6 +51,8 @@ void init_default_settings(const Directories* directories, const Resources* reso
 	settings->show_stable_discs = false;
 	settings->change_book_by_right_click = false;
 	settings->ignore_book = false;
+	settings->show_last_move = true;
+	settings->show_next_move = true;
 }
 
 int init_settings_import_int(TextReader* reader, int* res) {
@@ -185,6 +187,14 @@ void init_settings(const Directories* directories, const Resources* resources, S
 		}
 		if (init_settings_import_bool(&reader, &settings->ignore_book) != ERR_OK) {
 			cerr << "err19" << endl;
+			goto use_default_settings;
+		}
+		if (init_settings_import_bool(&reader, &settings->show_last_move) != ERR_OK) {
+			cerr << "err20" << endl;
+			goto use_default_settings;
+		}
+		if (init_settings_import_bool(&reader, &settings->show_next_move) != ERR_OK) {
+			cerr << "err21" << endl;
 			goto use_default_settings;
 		}
 	}
