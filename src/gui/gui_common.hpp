@@ -178,8 +178,8 @@ constexpr int IMPORT_GAME_WIDTH = WINDOW_SIZE_X - IMPORT_GAME_SX * 2;
 // book modification
 #define BOOK_CHANGE_NO_CELL 64
 #define CHANGE_BOOK_ERR -1000
-#define CHANGE_BOOK_INFO_SX 550
-#define CHANGE_BOOK_INFO_SY 117
+#define CHANGE_BOOK_INFO_SX 660
+#define CHANGE_BOOK_INFO_SY 40
 
 // back button constants
 #define BACK_BUTTON_WIDTH 200

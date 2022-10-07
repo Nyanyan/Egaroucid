@@ -1308,7 +1308,7 @@ private:
 
 	void change_book_by_right_click() {
 		if (getData().book_information.changing != BOOK_CHANGE_NO_CELL) {
-			getData().fonts.font(language.get("book", "changed_value") + U"(" + Unicode::Widen(idx_to_coord(getData().book_information.changing)) + U"): " + getData().book_information.val_str).draw(15, CHANGE_BOOK_INFO_SX, CHANGE_BOOK_INFO_SY, getData().colors.white);
+			getData().fonts.font(language.get("book", "changed_value") + U"(" + Unicode::Widen(idx_to_coord(getData().book_information.changing)) + U"): " + getData().book_information.val_str).draw(13, CHANGE_BOOK_INFO_SX, CHANGE_BOOK_INFO_SY, getData().colors.white);
 			if (KeyEscape.down()) {
 				getData().book_information.changing = BOOK_CHANGE_NO_CELL;
 			}

@@ -47,7 +47,7 @@
         "settings": "book学習の設定",
         "depth": "深さ",
         "accept": "許容誤差",
-        "changed_value": "修正した評価値",
+        "changed_value": "評価値",
         "merge": "統合",
         "merge_explanation": "ドラッグ&ドロップでEgaroucid/Edax形式のbookを追加統合",
         "import_failed": "取り込み失敗",
