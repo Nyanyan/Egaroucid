@@ -123,7 +123,8 @@
         "standard": "Standard",
         "pragmatic": "Pragmatic",
         "accurate": "Accurate",
-        "danger": "Danger"
+        "danger": "Danger",
+        "probability": "Probability"
     },
     "edit_board": {
         "player": "Player",

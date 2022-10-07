@@ -123,7 +123,8 @@
         "standard": "標準",
         "pragmatic": "実用的",
         "accurate": "正確",
-        "danger": "危険"
+        "danger": "危険",
+        "probability": "探索確率"
     },
     "edit_board": {
         "player": "手番",
