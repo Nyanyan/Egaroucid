@@ -23,9 +23,9 @@ constexpr Color graph_fork_not_calculated_color = Color(65, 65, 65);
 constexpr double graph_transparency = 1.0;
 
 constexpr Color color_81 = Color(227, 88, 72);
-constexpr Color color_95 = Color(240, 127, 20);
-constexpr Color color_98 = Color(220, 170, 36);
-constexpr Color color_99 = Color(186, 200, 88);
+constexpr Color color_95 = Color(240, 135, 20);
+constexpr Color color_98 = Color(205, 170, 36);
+constexpr Color color_99 = Color(176, 210, 88);
 constexpr Color color_100 = Color(51, 161, 255);
 constexpr Color midsearch_color = Color(51, 51, 51);
 constexpr Color endsearch_color = Palette::White;
