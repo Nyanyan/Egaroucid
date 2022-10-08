@@ -23,6 +23,7 @@ private:
 	vector<pair<Board, string>> arr;
 public:
 	bool init(string file) {
+		arr.clear();
 		ifstream ifs(file);
 		if (ifs.fail()) {
 			cerr << "opening file " << file << " not found" << endl;
@@ -72,7 +73,7 @@ public:
 Opening opening;
 Opening opening_many;
 
-bool opening_init() {
-	return opening.init("resources/opening.txt") && opening_many.init("resources/opening_many.txt");
+bool opening_init(string lang) {
+	return opening.init("resources/openings/" + lang + "/openings.txt") && opening_many.init("resources/openings/" + lang + "/openings_fork.txt");
 
 }

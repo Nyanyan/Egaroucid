@@ -88,7 +88,7 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
 	fonts.font(black_discs).draw(20, Arg::leftCenter(INFO_SX + 100, INFO_SY + 60 + INFO_DISC_RADIUS));
 	fonts.font(white_discs).draw(20, Arg::rightCenter(INFO_SX + INFO_WIDTH - 100, INFO_SY + 60 + INFO_DISC_RADIUS));
 	Line(INFO_SX + INFO_WIDTH / 2, INFO_SY + 60, INFO_SX + INFO_WIDTH / 2, INFO_SY + 60 + INFO_DISC_RADIUS * 2).draw(2, colors.dark_gray);
-	fonts.font(language.get("info", "opening_name") + U": " + Unicode::FromUTF8(history_elem.opening_name)).draw(13, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + 95));
+	fonts.font(language.get("info", "opening_name") + U": " + Unicode::FromUTF8(history_elem.opening_name)).draw(12, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + 95));
 	String level_info = language.get("common", "level") + U" " + Format(menu_elements.level) + U" (";
 	if (menu_elements.level <= LIGHT_LEVEL) {
 		level_info += language.get("info", "light");
@@ -549,6 +549,10 @@ private:
 						lang_file = "resources/languages/" + getData().settings.lang_name + ".json";
 						language.init(lang_file);
 					}
+					else if (!opening_init(getData().resources.language_names[i])) {
+						cerr << "opening setting error" << endl;
+						opening_init(getData().settings.lang_name);
+					}
 					else {
 						getData().settings.lang_name = getData().resources.language_names[i];
 						getData().menu = create_menu(&getData().menu_elements);
@@ -998,7 +1002,7 @@ private:
 				calc_flip(&flip, &getData().history_elem.board, cell);
 				string openings = opening_many.get(getData().history_elem.board.move_copy(&flip), getData().history_elem.player);
 				if (openings.size()) {
-					String opening_name = U" " + Unicode::FromUTF8(openings).replace(U" ", U" \n ");
+					String opening_name = U" " + Unicode::FromUTF8(openings).replace(U"|", U" \n ") + U" ";
 					Vec2 pos = Cursor::Pos();
 					pos.x += 20;
 					RectF background_rect = getData().fonts.font_bold(opening_name).region(15, pos);

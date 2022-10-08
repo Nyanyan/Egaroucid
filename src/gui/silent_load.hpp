@@ -245,7 +245,7 @@ int init_resources(Resources* resources, Settings* settings) {
 	resources->unchecked = unchecked;
 
 	// opening
-	if (!opening_init()) {
+	if (!opening_init(settings->lang_name)) {
 		return ERR_OPENING_NOT_LOADED;
 	}
 
