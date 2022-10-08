@@ -73,7 +73,7 @@ int book_learn_search(Board board, int level, const int book_depth, int expected
         g = -book_learn_search(board, level, book_depth, -expected_value, expected_error, error_remain, board_copy, player, strt_tim, book_file, book_bak, ignore_book);
         if (global_searching && g >= -HW2 && g <= HW2){
             v = g;
-            best_move.value = g;
+            //best_move.value = g;
             cerr << "depth " << board.n_discs() - 4 << " PV value " << g << " expected " << expected_value << " remaining error " << error_remain << endl;
             //policies.emplace_back(best_move.policy);
         }
@@ -89,10 +89,13 @@ int book_learn_search(Board board, int level, const int book_depth, int expected
             board.move_board(&flip);
             *player ^= 1;
                 board.copy(board_copy);
-                alpha = best_move.value - expected_error;
-                g = -ai_window(board, level, -best_move.value, -alpha + 1, true);
+                //alpha = best_move.value - expected_error;
+                //g = -ai_window(board, level, -best_move.value, -alpha + 1, true);
+                alpha = v - expected_error;
+                g = -ai_window(board, level, -v, -alpha + 1, true);
                 if (global_searching && g >= alpha && g <= HW2){
-                    n_error_remain = error_remain - max(0, best_move.value - g);
+                    //n_error_remain = error_remain - max(0, best_move.value - g);
+                    n_error_remain = error_remain - max(0, v - g);
                     if (-HW2 <= expected_value && expected_value <= HW2)
                         n_error_remain -= max(0, expected_value - g);
                     n_expected_value = max(n_expected_value, v);
