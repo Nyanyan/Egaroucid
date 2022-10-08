@@ -62,7 +62,7 @@ int book_learn_search(Board board, int level, const int book_depth, int expected
         board.pass();
         return g;
     }
-    Search_result best_move = ai(board, level, true, 0, false);
+    Search_result best_move = ai(board, level, true, true, false);
     cerr << "depth " << board.n_discs() - 4 << " BM value " << best_move.value << endl;
     Flip flip;
     bool alpha_updated = false;
