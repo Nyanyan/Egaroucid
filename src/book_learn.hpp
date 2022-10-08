@@ -91,7 +91,7 @@ int book_learn_search(Board board, int level, const int book_depth, int expected
                 board.copy(board_copy);
                 //alpha = best_move.value - expected_error;
                 //g = -ai_window(board, level, -best_move.value, -alpha + 1, true);
-                alpha = v - expected_error;
+                alpha = max(-HW2, v - expected_error);
                 g = -ai_window(board, level, -v, -alpha + 1, true);
                 if (global_searching && g >= alpha && g <= HW2){
                     //n_error_remain = error_remain - max(0, best_move.value - g);

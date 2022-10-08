@@ -1,7 +1,7 @@
 from othello_py import *
 
 data = []
-with open('data/joseki_data.txt', 'r', encoding='utf-8') as f:
+with open('data/openings_japanese.txt', 'r', encoding='utf-8') as f:
     for datum in f.read().splitlines():
         n_spaces = 0
         for i in range(100):
@@ -49,9 +49,9 @@ for n_spaces, name, record in data:
 
 print(len(joseki))
 print(len(joseki_many))
-with open('learned_data/joseki.txt', 'w', encoding='utf-8') as f:
+with open('learned_data/openings.txt', 'w', encoding='utf-8') as f:
     for board in joseki.keys():
         f.write(board + ' ' + joseki[board] + '\n')
-with open('learned_data/joseki_many.txt', 'w', encoding='utf-8') as f:
+with open('learned_data/openings_fork.txt', 'w', encoding='utf-8') as f:
     for board in joseki_many.keys():
-        f.write(board + ' ' + ' '.join(joseki_many[board][1:]) + '\n')
+        f.write(board + ' ' + '|'.join(joseki_many[board][1:]) + '\n')
