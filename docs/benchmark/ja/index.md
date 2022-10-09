@@ -18,30 +18,31 @@ depthで示される深さを完全読みして、訪問ノード数と探索時
 
 ### Core i9-11900K
 
-<div style="font-size:60%"><pre>#40 depth 20 value 38 policy a2 nodes 25762481 time 149 nps 172902557
-#41 depth 22 value 0 policy h4 nodes 43082407 time 263 nps 163811433
-#42 depth 22 value 6 policy g2 nodes 41356640 time 222 nps 186291171
-#43 depth 23 value -12 policy c7 nodes 110484289 time 655 nps 168678303
-#44 depth 23 value -14 policy d2 nodes 18462790 time 228 nps 80977149
-#45 depth 24 value 6 policy b2 nodes 456685904 time 2255 nps 202521465
-#46 depth 24 value -8 policy b3 nodes 149245136 time 719 nps 207573207
-#47 depth 25 value 4 policy g2 nodes 31094957 time 216 nps 143958134
-#48 depth 25 value 28 policy f6 nodes 179961365 time 1181 nps 152380495
-#49 depth 26 value 16 policy e1 nodes 405509512 time 2002 nps 202552203
-#50 depth 26 value 10 policy d8 nodes 1231298288 time 5367 nps 229420213
-#51 depth 27 value 6 policy e2 nodes 617973874 time 2943 nps 209980928
-#52 depth 27 value 0 policy a3 nodes 583499133 time 2516 nps 231915394
-#53 depth 28 value -2 policy d8 nodes 4633947259 time 18462 nps 250999201
-#54 depth 28 value -2 policy c7 nodes 7127192303 time 23963 nps 297424875
-#55 depth 29 value 0 policy g6 nodes 17225651509 time 80626 nps 213648841
-#56 depth 29 value 2 policy h5 nodes 1348674675 time 7733 nps 174405104
-#57 depth 30 value -10 policy a6 nodes 3229265024 time 15977 nps 202119610
-#58 depth 30 value 4 policy g1 nodes 2816182635 time 12609 nps 223347024
-#59 depth 34 value 64 policy g8 nodes 6452 time 8 nps 806500
+<div style="font-size:60%"><pre>#40 depth 20 value 38 policy a2 nodes 27060281 time 102 nps 265296872
+#41 depth 22 value 0 policy h4 nodes 33056487 time 152 nps 217476888
+#42 depth 22 value 6 policy g2 nodes 60158183 time 249 nps 241599128
+#43 depth 23 value -12 policy c7 nodes 123105384 time 509 nps 241857335
+#44 depth 23 value -14 policy d2 nodes 19512855 time 182 nps 107213489
+#45 depth 24 value 6 policy b2 nodes 483588331 time 1555 nps 310989280
+#46 depth 24 value -8 policy b3 nodes 148832967 time 614 nps 242398969
+#47 depth 25 value 4 policy g2 nodes 35991843 time 234 nps 153811294
+#48 depth 25 value 28 policy f6 nodes 170617090 time 962 nps 177356642
+#49 depth 26 value 16 policy e1 nodes 365884607 time 1673 nps 218699705
+#50 depth 26 value 10 policy d8 nodes 1147103368 time 4738 nps 242107084
+#51 depth 27 value 6 policy e2 nodes 590452638 time 2682 nps 220153854
+#52 depth 27 value 0 policy a3 nodes 666160199 time 2660 nps 250436165
+#53 depth 28 value -2 policy d8 nodes 5055604486 time 17028 nps 296899488
+#54 depth 28 value -2 policy c7 nodes 7053196821 time 21663 nps 325587260
+#55 depth 29 value 0 policy g6 nodes 16591406135 time 72651 nps 228371338
+#56 depth 29 value 2 policy h5 nodes 1418277387 time 7423 nps 191065254
+#57 depth 30 value -10 policy a6 nodes 2812414286 time 13307 nps 211348484
+#58 depth 30 value 4 policy g1 nodes 2650627564 time 11088 nps 239053712
+#59 depth 34 value 64 policy g8 nodes 7415 time 3 nps 2471666
 23 threads
-178.094 sec
-40275336633 nodes
-226146510.4551529 nps</pre></div>
+159.475 sec
+39453058327 nodes
+247393374.0523593 nps</pre></div>
+
 
 
 
@@ -67,7 +68,7 @@ Egaroucid先手の結果
 | 1      | 493           | 18   | 489           | 0.50          |
 | 5      | 590           | 57   | 353           | 0.63          |
 | 10     | 598           | 115  | 287           | 0.68          |
-| 15     | 45            | 20   | 35            | 0.56          |
+| 15     | 58            | 12   | 30            | 0.66          |
 
 Egaroucid後手の結果
 
@@ -76,7 +77,7 @@ Egaroucid後手の結果
 | 1      | 526           | 25   | 449           | 0.54          |
 | 5      | 539           | 52   | 409           | 0.57          |
 | 10     | 473           | 115  | 412           | 0.53          |
-| 15     | 41            | 21   | 38            | 0.52          |
+| 15     | 49            | 18   | 33            | 0.60          |
 
 
 
