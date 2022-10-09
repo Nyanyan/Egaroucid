@@ -38,7 +38,7 @@ struct Parallel_args{
     int depth;
     uint64_t legal;
     bool is_end_search;
-    int policy;
+    uint_fast8_t policy;
 };
 
 struct Parallel_node{
