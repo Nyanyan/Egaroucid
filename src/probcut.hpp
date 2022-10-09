@@ -18,13 +18,13 @@ using namespace std;
 
 #define PROBCUT_SHALLOW_IGNORE 5
 
-#define probcut_a -0.0021484059585693167
-#define probcut_b -0.016934668968841375
-#define probcut_c 0.01693466897168062
-#define probcut_d -10.128037617070438
-#define probcut_e -23.500792952430203
-#define probcut_f -22.319719647724376
-#define probcut_g 2.4170755941617186
+#define probcut_a -0.0019118114019247919
+#define probcut_b -0.01507038017766651
+#define probcut_c 0.015070380158746986
+#define probcut_d -17.247797592922396
+#define probcut_e -35.613076135525276
+#define probcut_f -30.097973429655333
+#define probcut_g 2.900473612850946
 
 #define probcut_end_a 0.11914568978054609
 #define probcut_end_b 0.11654222425507502

@@ -70,7 +70,7 @@ def f_t(w, x):
     t = x / (64 - w)
     offset = (64 - w) / 64
     res = 2.0 + offset * 2.0 + 7.5 * (t ** 0.7)
-    return res * 1.0
+    return res * 1.2
 
 for w in range(4, 65):
     for x in range(0, 64 - w):
