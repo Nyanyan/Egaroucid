@@ -116,6 +116,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
                 cerr << "presearch depth " << depth - 1 << " value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
         }
         */
+        search.first_depth = depth - 1;
         search.use_mpc = true;
         search.mpct = 0.7;
         g = -INF;
@@ -163,6 +164,7 @@ inline Search_result tree_search_iterative_deepening(Board board, int depth, boo
     //search.mpct = max(0.6, mpct - 0.2);
     search.mpct = mpct;
     search.use_multi_thread = use_multi_thread;
+    search.first_depth = depth;
     calc_features(&search);
     //first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth, false, is_end_search, show_log, result.second);
     //search.mpct = mpct;
@@ -193,6 +195,7 @@ inline int tree_search_window(Board board, int depth, int alpha, int beta, bool 
     depth = min(HW2 - board.n_discs(), depth);
     bool is_end_search = (HW2 - board.n_discs() == depth);
     search.init_board(&board);
+    search.first_depth = depth;
     search.n_nodes = 0ULL;
     search.use_mpc = use_mpc;
     search.mpct = mpct;
