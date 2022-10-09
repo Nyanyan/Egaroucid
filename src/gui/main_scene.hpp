@@ -558,6 +558,7 @@ private:
 						getData().settings.lang_name = getData().resources.language_names[i];
 						getData().menu = create_menu(&getData().menu_elements);
 						start_game_button.init(START_GAME_BUTTON_SX, START_GAME_BUTTON_SY, START_GAME_BUTTON_WIDTH, START_GAME_BUTTON_HEIGHT, START_GAME_BUTTON_RADIUS, language.get("play", "start_game"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
+						re_calculate_openings();
 					}
 				}
 			}
@@ -1412,6 +1413,52 @@ private:
 					getData().book_information.val_str.clear();
 					getData().book_information.changing = cell;
 				}
+			}
+		}
+	}
+
+	void re_calculate_openings() {
+		for (int i = 0; i < 2; ++i) {
+			for (int j = 0; j < (int)getData().graph_resources.nodes[i].size(); ++j) {
+				getData().graph_resources.nodes[i][j].opening_name.clear();
+			}
+		}
+		getData().history_elem.opening_name.clear();
+		string opening_name = "";
+		for (int i = 0; i < (int)getData().graph_resources.nodes[0].size(); ++i) {
+			string new_opening = opening.get(getData().graph_resources.nodes[0][i].board, getData().graph_resources.nodes[0][i].player ^ 1);
+			if (new_opening.size()) {
+				opening_name = new_opening;
+			}
+			getData().graph_resources.nodes[0][i].opening_name = opening_name;
+		}
+		if (getData().graph_resources.nodes[1].size()) {
+			int fork_n_discs = getData().graph_resources.nodes[1][0].board.n_discs();
+			int node_idx = getData().graph_resources.node_find(0, fork_n_discs);
+			if (node_idx == -1) {
+				cerr << "history vector element not found" << endl;
+			}
+			else {
+				node_idx = max(0, node_idx - 1);
+				opening_name = getData().graph_resources.nodes[0][node_idx].opening_name;
+				for (int i = 0; i < (int)getData().graph_resources.nodes[1].size(); ++i) {
+					string new_opening = opening.get(getData().graph_resources.nodes[1][i].board, getData().graph_resources.nodes[1][i].player ^ 1);
+					if (new_opening.size()) {
+						opening_name = new_opening;
+					}
+					getData().graph_resources.nodes[1][i].opening_name = opening_name;
+				}
+			}
+		}
+		getData().history_elem.opening_name = opening.get(getData().history_elem.board, getData().history_elem.player ^ 1);
+		if (getData().history_elem.opening_name.size() == 0) {
+			int now_node_idx = getData().graph_resources.node_find(getData().graph_resources.put_mode, getData().history_elem.board.n_discs());
+			if (now_node_idx == -1) {
+				cerr << "history vector element not found" << endl;
+			}
+			else {
+				now_node_idx = max(0, now_node_idx - 1);
+				getData().history_elem.opening_name = getData().graph_resources.nodes[getData().graph_resources.put_mode][now_node_idx].opening_name;
 			}
 		}
 	}
