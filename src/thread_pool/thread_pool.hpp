@@ -185,12 +185,12 @@ namespace ctpl {
             auto pck = std::make_shared<std::packaged_task<decltype(f(0, rest...))(int)>>(
                 std::bind(std::forward<F>(f), std::placeholders::_1, std::forward<Rest>(rest)...)
                 );
-            auto _f = new std::function<void(int id)>([pck](int id) {
-                (*pck)(id);
-            });
             std::unique_lock<std::mutex> lock(this->mutex);
             *pushed = nWaiting.load(memory_order_relaxed) > 0;
             if (*pushed){
+                auto _f = new std::function<void(int id)>([pck](int id) {
+                    (*pck)(id);
+                });
                 this->q.push(_f);
                 this->cv.notify_one();
             }
@@ -202,12 +202,12 @@ namespace ctpl {
         template<typename F>
         auto push(bool *pushed, F && f) ->std::future<decltype(f(0))> {
             auto pck = std::make_shared<std::packaged_task<decltype(f(0))(int)>>(std::forward<F>(f));
-            auto _f = new std::function<void(int id)>([pck](int id) {
-                (*pck)(id);
-            });
             std::unique_lock<std::mutex> lock(this->mutex);
             *pushed = nWaiting.load(memory_order_relaxed) > 0;
             if (*pushed){
+                auto _f = new std::function<void(int id)>([pck](int id) {
+                    (*pck)(id);
+                });
                 this->q.push(_f);
                 this->cv.notify_one();
             }
