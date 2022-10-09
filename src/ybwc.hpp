@@ -24,7 +24,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
 int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t legal, const bool *searching);
 int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
 
-Parallel_task ybwc_do_task(uint64_t player, uint64_t opponent, int_fast8_t n_discs, uint_fast8_t parity, bool use_mpc, double mpct, int alpha, int beta, int depth, uint64_t legal, bool is_end_search, uint_fast8_t policy, const bool *searching){
+Parallel_task ybwc_do_task(int id, uint64_t player, uint64_t opponent, int_fast8_t n_discs, uint_fast8_t parity, bool use_mpc, double mpct, int first_depth, int alpha, int beta, int depth, uint64_t legal, bool is_end_search, uint_fast8_t policy, const bool *searching){
     Search search;
     search.board.player = player;
     search.board.opponent = opponent;
@@ -32,6 +32,7 @@ Parallel_task ybwc_do_task(uint64_t player, uint64_t opponent, int_fast8_t n_dis
     search.parity = parity;
     search.use_mpc = use_mpc;
     search.mpct = mpct;
+    search.first_depth = first_depth;
     search.n_nodes = 0ULL;
     calc_features(&search);
     int g = -nega_alpha_ordering(&search, alpha, beta, depth, false, legal, is_end_search, searching);
@@ -49,23 +50,8 @@ inline bool ybwc_split(const Search *search, const Flip *flip, int alpha, int be
     if (thread_pool.n_idle() &&
         pv_idx > 0 && 
         depth >= YBWC_MID_SPLIT_MIN_DEPTH){
-            /*
-            Parallel_args arg;
-            arg.player = search->board.player;
-            arg.opponent = search->board.opponent;
-            arg.n_discs = search->n_discs;
-            arg.parity = search->parity;
-            arg.use_mpc = search->use_mpc;
-            arg.mpct = search->mpct;
-            arg.alpha = alpha;
-            arg.beta = beta;
-            arg.depth = depth;
-            arg.legal = legal;
-            arg.is_end_search = is_end_search;
-            arg.policy = policy;
-            */
             bool pushed;
-            parallel_tasks.emplace_back(thread_pool.push(&pushed, bind(&ybwc_do_task, search->board.player, search->board.opponent, search->n_discs, search->parity, search->use_mpc, search->mpct, alpha, beta, depth, legal, is_end_search, policy, searching)));
+            parallel_tasks.emplace_back(thread_pool.push(&pushed, &ybwc_do_task, search->board.player, search->board.opponent, search->n_discs, search->parity, search->use_mpc, search->mpct, search->first_depth, alpha, beta, depth, legal, is_end_search, policy, searching));
             if (!pushed)
                 parallel_tasks.pop_back();
             return pushed;

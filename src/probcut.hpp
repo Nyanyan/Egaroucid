@@ -16,7 +16,7 @@
 
 using namespace std;
 
-#define PROBCUT_SHALLOW_IGNORE 3
+#define PROBCUT_SHALLOW_IGNORE 5
 
 #define probcut_a -0.001166933641295927
 #define probcut_b -0.009198824520850676
