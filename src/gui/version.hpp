@@ -7,4 +7,4 @@
 */
 
 // version definition
-#define EGAROUCID_VERSION U"6.0.0 beta 0.1"
+#define EGAROUCID_VERSION U"6.0.0"
