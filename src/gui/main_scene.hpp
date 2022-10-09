@@ -532,6 +532,7 @@ private:
 			System::LaunchBrowser(U"https://docs.google.com/forms/d/e/1FAIpQLSd6ML1T1fc707luPEefBXuImMnlM9cQP8j-YHKiSyFoS-8rmQ/viewform?usp=sf_link");
 		}
 		if (getData().menu_elements.license_egaroucid) {
+			//System::LaunchBrowser(U"LICENSE");
 			System::LaunchBrowser(U"https://github.com/Nyanyan/Egaroucid/blob/main/LICENSE");
 		}
 		if (getData().menu_elements.license_siv3d) {
@@ -1074,13 +1075,13 @@ private:
 					++next_task_size;
 				}
 			}
-			//ai_status.hint_use_multi_thread = next_task_size < getData().menu_elements.n_threads;
-			/*
+			ai_status.hint_use_multi_thread = next_task_size < getData().menu_elements.n_threads;
+			
 			if (ai_status.hint_level <= 10) {
 				ai_status.hint_use_multi_thread = false;
 			}
-			*/
-			ai_status.hint_use_multi_thread = true;
+			
+			//ai_status.hint_use_multi_thread = true;
 			idx = 0;
 			for (pair<int, int>& value_cell : value_cells) {
 				if (idx++ >= hint_adoption_threshold) {
@@ -1137,7 +1138,7 @@ private:
 			}
 			else if (ai_status.hint_task_stack.size()) {
 				int loop_time = min((int)ai_status.hint_task_stack.size(), getData().menu_elements.n_threads - ai_status.hint_n_doing_tasks);
-				/*
+				
 				if (ai_status.hint_use_multi_thread) {
 					if (max(1, getData().menu_elements.n_threads / HINT_SINGLE_TASK_N_THREAD) - ai_status.hint_n_doing_tasks > 0) {
 						loop_time = min((int)ai_status.hint_task_stack.size(), max(1, getData().menu_elements.n_threads / HINT_SINGLE_TASK_N_THREAD) - ai_status.hint_n_doing_tasks);
@@ -1149,7 +1150,7 @@ private:
 				else {
 					loop_time = min((int)ai_status.hint_task_stack.size(), getData().menu_elements.n_threads - ai_status.hint_n_doing_tasks);
 				}
-				*/
+				
 				if (loop_time > 0) {
 					for (int i = 0; i < loop_time; ++i) {
 						pair<int, function<Search_result()>> task = ai_status.hint_task_stack.back();
