@@ -13,15 +13,15 @@ Light version of this othello AI got 1st place in the world ([CodinGame Othello]
 
 Please see: https://www.egaroucid-app.nyanyan.dev/
 
+You can use this software for free in Japanese / English.
 
+![app](img/app.png)
 
 ## License
 
 GPL 3.0 License
 
 **If you want to use Egaroucid in your project, I can customize and build Egaroucid for you to avoid GPL-infection to your project. Please feel free to contact me.**
-
-
 
 ## Abstract
 
