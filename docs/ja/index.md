@@ -70,6 +70,8 @@ Egaroucidは世界最強クラスのオセロAIを搭載したオセロ研究・
 
 ### ユーザテスト
 
+まてぃか
+
 Nettle蕁麻
 
 okojoMK

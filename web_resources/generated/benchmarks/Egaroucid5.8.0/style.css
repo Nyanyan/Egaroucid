@@ -1,0 +1,46 @@
+html, body {
+    font-family: "Arial", "メイリオ";
+}
+
+table{
+    border-collapse:  collapse;
+}
+
+tr:nth-child(odd){
+    background-color:  #eee;
+}
+
+th{
+    padding: 5px 10px;
+    background-color:  #ccc;
+}
+
+td{
+    padding: 5px 10px;
+}
+
+table{
+    margin: auto;
+}
+
+.pic{
+    width: 70vmin;
+}
+
+.box{
+    width: 70vmin;
+    text-align: start;
+    margin: 0 auto;
+}
+
+h1{
+    text-align: center;
+}
+
+h2{
+    text-align: center;
+}
+
+h3{
+    text-align: center;
+}
