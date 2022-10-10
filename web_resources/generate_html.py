@@ -33,7 +33,8 @@ centering_foot = '</div>'
 
 for section in sections:
     print(section)
-    section_name, section_file = section.split()
+    section_file = section.split()[-1]
+    section_name = ' '.join(section.split()[:-1])
     
     if not os.path.exists('generated/' + section_file):
         os.mkdir('generated/' + section_file)

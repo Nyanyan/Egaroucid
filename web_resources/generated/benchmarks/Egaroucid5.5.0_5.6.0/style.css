@@ -44,3 +44,9 @@ h2{
 h3{
     text-align: center;
 }
+
+.h3_left{
+    font-size: larger;
+    font-weight: bold;
+    text-align: left;
+}

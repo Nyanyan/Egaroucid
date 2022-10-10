@@ -2,7 +2,7 @@
 
 ## The FFO endgame test suite
 
-<a href="https://www.egaroucid.nyanyan.dev/" target="_blank" el=”noopener noreferrer”>The FFO endgame test suite</a>はオセロAIの終盤探索力の指標として広く使われるベンチマークです。各テストケースを完全読みし、最善手を計算します。探索時間と訪問ノード数を指標に性能を評価します。NPSはNode Per Secondの略で、1秒あたりの訪問ノード数を表します。
+<a href="http://radagast.se/othello/ffotest.html" target="_blank" el=”noopener noreferrer”>The FFO endgame test suite</a>はオセロAIの終盤探索力の指標として広く使われるベンチマークです。各テストケースを完全読みし、最善手を計算します。探索時間と訪問ノード数を指標に性能を評価します。NPSはNodes Per Secondの略で、1秒あたりの訪問ノード数を表します。
 
 使用CPUはCore i9-11900Kです。
 
@@ -307,4 +307,3 @@ Egaroucid勝率が0.5を上回っていればEgaroucidがEdaxに勝ち越して�
 <td>0.57</td>
 </tr>
 </table>
-
