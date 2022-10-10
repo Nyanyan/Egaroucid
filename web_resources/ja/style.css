@@ -21,6 +21,7 @@ td{
 
 table{
     margin: auto;
+    font-size: min(1.6vmin, 12pt);
 }
 
 .pic{
