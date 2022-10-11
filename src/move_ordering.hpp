@@ -26,7 +26,7 @@
 #define W_VALUE 8
 #define W_VALUE_SHALLOW 6
 #define W_MOBILITY 8
-#define W_PLAYER_POTENTIAL_MOBILITY 6
+#define W_PLAYER_POTENTIAL_MOBILITY 4
 #define W_OPPONENT_POTENTIAL_MOBILITY 8
 //#define W_OPENNESS 1
 
@@ -70,8 +70,8 @@ inline int calc_openness(const Board *board, const Flip *flip){
 }
 
 inline int get_corner_mobility(uint64_t legal){
-    legal &= 0b10000001'00000000'00000000'00000000'00000000'00000000'00000000'10000001ULL;
-    int res = (int)((legal & 0b10000001ULL) + (legal >> 56));
+    //legal &= 0b10000001'00000000'00000000'00000000'00000000'00000000'00000000'10000001ULL;
+    int res = (int)((legal & 0b10000001ULL) + ((legal >> 56) & 0b10000001ULL));
     return (res & 0b11) + (res >> 7);
 }
 
@@ -79,17 +79,27 @@ inline int get_weighted_n_moves(uint64_t legal){
     return pop_count_ull(legal) * 2 + get_corner_mobility(legal);
 }
 
-inline int get_potential_mobility(uint64_t opponent, uint64_t empties){
-    uint64_t hmask = opponent & 0x7E7E7E7E7E7E7E7EULL;
-    uint64_t vmask = opponent & 0x00FFFFFFFFFFFF00ULL;
-    uint64_t hvmask = opponent & 0x007E7E7E7E7E7E00ULL;
-    uint64_t res = 
-        (hmask << 1) | (hmask >> 1) | 
-        (vmask << HW) | (vmask >> HW) | 
-        (hvmask << HW_M1) | (hvmask >> HW_M1) | 
-        (hvmask << HW_P1) | (hvmask >> HW_P1);
-    return pop_count_ull(empties & res);
-}
+#if USE_SIMD
+    inline int get_potential_mobility(uint64_t opponent, uint64_t empties){
+        const u64_4 shift(1, HW, HW_M1, HW_P1);
+        const u64_4 mask(0x7E7E7E7E7E7E7E7EULL, 0x00FFFFFFFFFFFF00ULL, 0x007E7E7E7E7E7E00ULL, 0x007E7E7E7E7E7E00ULL);
+        u64_4 op(opponent);
+        op = op & mask;
+        return pop_count_ull(empties & all_or((op << shift) | (op >> shift)));
+    }
+#else
+    inline int get_potential_mobility(uint64_t opponent, uint64_t empties){
+        uint64_t hmask = opponent & 0x7E7E7E7E7E7E7E7EULL;
+        uint64_t vmask = opponent & 0x00FFFFFFFFFFFF00ULL;
+        uint64_t hvmask = opponent & 0x007E7E7E7E7E7E00ULL;
+        uint64_t res = 
+            (hmask << 1) | (hmask >> 1) | 
+            (vmask << HW) | (vmask >> HW) | 
+            (hvmask << HW_M1) | (hvmask >> HW_M1) | 
+            (hvmask << HW_P1) | (hvmask >> HW_P1);
+        return pop_count_ull(empties & res);
+    }
+#endif
 
 inline bool move_evaluate(Search *search, Flip_value *flip_value, const int alpha, const int beta, const int depth, const bool *searching, const int search_depth, const int search_alpha){
     if (flip_value->flip.flip == search->board.opponent){
@@ -102,8 +112,9 @@ inline bool move_evaluate(Search *search, Flip_value *flip_value, const int alph
     search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
         flip_value->value -= get_weighted_n_moves(flip_value->n_legal) * W_MOBILITY;
-        flip_value->value -= get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent)) * W_OPPONENT_POTENTIAL_MOBILITY;
-        flip_value->value += get_potential_mobility(search->board.player, ~(search->board.player | search->board.opponent)) * W_PLAYER_POTENTIAL_MOBILITY;
+        uint64_t empties = ~(search->board.player | search->board.opponent);
+        flip_value->value -= get_potential_mobility(search->board.opponent, empties) * W_OPPONENT_POTENTIAL_MOBILITY;
+        flip_value->value += get_potential_mobility(search->board.player, empties) * W_PLAYER_POTENTIAL_MOBILITY;
         int l, u;
         parent_transpose_table.get(&search->board, search->board.hash() & TRANSPOSE_TABLE_MASK, &l, &u, 0.0, 0);
         if (-INF < l && u < INF)

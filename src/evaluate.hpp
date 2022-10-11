@@ -444,18 +444,28 @@ bool evaluate_init(){
     return init_evaluation_calc("resources/eval.egev");
 }
 
-inline uint64_t calc_surround_part(const uint64_t player, const int dr){
-    return (player << dr | player >> dr);
-}
+#if USE_SIMD
+    inline int calc_surround(const uint64_t player, const uint64_t empties){
+        const u64_4 shift(1, HW, HW_M1, HW_P1);
+        const u64_4 mask(0x7E7E7E7E7E7E7E7EULL, 0x00FFFFFFFFFFFF00ULL, 0x007E7E7E7E7E7E00ULL, 0x007E7E7E7E7E7E00ULL);
+        u64_4 pl(player);
+        pl = pl & mask;
+        return pop_count_ull(empties & all_or((pl << shift) | (pl >> shift)));
+    }
+#else
+    inline uint64_t calc_surround_part(const uint64_t player, const int dr){
+        return (player << dr) | (player >> dr);
+    }
 
-inline int calc_surround(const uint64_t player, const uint64_t empties){
-    return pop_count_ull(empties & (
-        calc_surround_part(player & 0b0111111001111110011111100111111001111110011111100111111001111110ULL, 1) | 
-        calc_surround_part(player & 0b0000000011111111111111111111111111111111111111111111111100000000ULL, HW) | 
-        calc_surround_part(player & 0b0000000001111110011111100111111001111110011111100111111000000000ULL, HW_M1) | 
-        calc_surround_part(player & 0b0000000001111110011111100111111001111110011111100111111000000000ULL, HW_P1)
-    ));
-}
+    inline int calc_surround(const uint64_t player, const uint64_t empties){
+        return pop_count_ull(empties & (
+            calc_surround_part(player & 0b0111111001111110011111100111111001111110011111100111111001111110ULL, 1) | 
+            calc_surround_part(player & 0b0000000011111111111111111111111111111111111111111111111100000000ULL, HW) | 
+            calc_surround_part(player & 0b0000000001111110011111100111111001111110011111100111111000000000ULL, HW_M1) | 
+            calc_surround_part(player & 0b0000000001111110011111100111111001111110011111100111111000000000ULL, HW_P1)
+        ));
+    }
+#endif
 
 inline int pick_pattern(const int phase_idx, const int pattern_idx, const uint_fast8_t b_arr[], const int p0, const int p1, const int p2, const int p3, const int p4){
     return pattern_arr[0][phase_idx][pattern_idx][b_arr[p0] * P34 + b_arr[p1] * P33 + b_arr[p2] * P32 + b_arr[p3] * P31 + b_arr[p4]];
@@ -581,15 +591,16 @@ inline int mid_evaluate(Board *b){
 }
 
 inline int mid_evaluate_diff(Search *search){
-    int phase_idx, sur0, sur1, canput0, canput1, num0, num1;
-    uint64_t player_mobility, opponent_mobility, empties;
+    uint64_t player_mobility, opponent_mobility;
     player_mobility = calc_legal(search->board.player, search->board.opponent);
     opponent_mobility = calc_legal(search->board.opponent, search->board.player);
+    if ((player_mobility | opponent_mobility) == 0ULL)
+        return end_evaluate(&search->board);
+    int phase_idx, sur0, sur1, canput0, canput1, num0, num1;
+    uint64_t empties;
+    phase_idx = search->phase();
     canput0 = min(MAX_CANPUT - 1, pop_count_ull(player_mobility));
     canput1 = min(MAX_CANPUT - 1, pop_count_ull(opponent_mobility));
-    if (canput0 == 0 && canput1 == 0)
-        return end_evaluate(&search->board);
-    phase_idx = search->phase();
     empties = ~(search->board.player | search->board.opponent);
     sur0 = min(MAX_SURROUND - 1, calc_surround(search->board.player, empties));
     sur1 = min(MAX_SURROUND - 1, calc_surround(search->board.opponent, empties));
