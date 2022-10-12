@@ -22,9 +22,9 @@
 #define W_PARITY2 4
 
 #define W_VALUE_TT 6
-#define W_VALUE_DEEP 10
-#define W_VALUE 8
-#define W_VALUE_SHALLOW 6
+#define W_VALUE_DEEP 12
+#define W_VALUE 10
+#define W_VALUE_SHALLOW 8
 #define W_MOBILITY 8
 #define W_PLAYER_POTENTIAL_MOBILITY 6
 #define W_OPPONENT_POTENTIAL_MOBILITY 8
