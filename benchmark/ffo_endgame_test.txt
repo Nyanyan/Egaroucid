@@ -12435,6 +12435,22 @@ same
 39453058327 nodes
 247393374.0523593 nps
 
+2022/10/12 updating evaluation function
+#40 depth 20 value 38 policy a2 nodes 21017788 time 102 nps 206056745
+#41 depth 22 value 0 policy h4 nodes 33454140 time 193 nps 173337512
+#42 depth 22 value 6 policy g2 nodes 55497843 time 265 nps 209425822
+#43 depth 23 value -12 policy c7 nodes 103443185 time 474 nps 218234567
+#44 depth 23 value -14 policy d2 nodes 24981282 time 221 nps 113037475
+#45 depth 24 value 6 policy b2 nodes 493107849 time 1988 nps 248042177
+#46 depth 24 value -8 policy b3 nodes 114647082 time 626 nps 183142303
+#47 depth 25 value 4 policy g2 nodes 33056606 time 246 nps 134376447
+#48 depth 25 value 28 policy f6 nodes 161696616 time 1106 nps 146199471
+#49 depth 26 value 16 policy e1 nodes 677913812 time 3357 nps 201940366
+16 threads
+8.578 sec
+1718816203 nodes
+200374936.23222196 nps
+
 
 
 

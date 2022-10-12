@@ -13,7 +13,7 @@ using namespace std;
 #define n_phases 30
 #define phase_n_stones 2
 #define n_patterns 16
-#define n_eval (n_patterns + 4 + 4)
+#define n_eval 23
 #define max_surround 100
 #define max_canput 50
 #define max_stability 65
@@ -45,7 +45,7 @@ int sa_phase, sa_player;
 #define step 256
 #define sc_w (step * HW2)
 
-#define n_data 50000000
+#define n_data 65000000
 
 #define n_raw_params 86
 
@@ -56,8 +56,8 @@ unsigned long long second = 0;
 
 double alpha[n_eval][max_evaluate_idx];
 
-const int pattern_sizes[n_eval] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10, 10, 10, 10, 0, 0, 0, 0, 8, 8, 8, 8};
-const int eval_sizes[n_eval] = {p38, p38, p38, p35, p36, p37, p38, p310, p310, p310, p310, p39, p310, p310, p310, p310, max_surround * max_surround, max_canput * max_canput, max_stability * max_stability, max_stone_num * max_stone_num, p48, p48, p48, p48};
+const int pattern_sizes[n_eval] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10, 10, 10, 10, 0, 0, 0, 8, 8, 8, 8};
+const int eval_sizes[n_eval] = {p38, p38, p38, p35, p36, p37, p38, p310, p310, p310, p310, p39, p310, p310, p310, p310, max_surround * max_surround, max_canput * max_canput, max_stone_num * max_stone_num, p48, p48, p48, p48};
 double eval_arr[n_phases][n_eval][max_evaluate_idx];
 int test_data[n_data / n_phases][n_raw_params];
 double test_labels[n_data / n_phases];
@@ -199,10 +199,10 @@ void input_test_data(int argc, char *argv[]){
             cerr << "can't open " << argv[file_idx] << endl;
             continue;
         }
-        while (t < n_data){
+        while (u < n_data / n_phases - 10){
             ++t;
             if ((t & 0b1111111111111111) == 0b1111111111111111)
-                cerr << '\r' << t;
+                cerr << '\r' << t << " " << u;
             if (fread(&phase, 4, 1, fp) < 1)
                 break;
             phase = (phase - 4) / phase_n_stones;
@@ -215,23 +215,20 @@ void input_test_data(int argc, char *argv[]){
                     used_idxes[pattern_nums[i]].emplace(test_data[nums][i]);
                 sur = calc_sur0_sur1(test_data[nums]);
                 canput = calc_canput0_canput1(test_data[nums]);
-                stab = calc_stab0_stab1(test_data[nums]);
                 num = calc_num0_num1(test_data[nums]);
                 used_idxes[16].emplace(sur);
                 used_idxes[17].emplace(canput);
-                used_idxes[18].emplace(stab);
-                used_idxes[19].emplace(num);
+                used_idxes[18].emplace(num);
                 for (i = 0; i < 16; ++i)
-                    used_idxes[20 + i / 4].emplace(test_data[nums][70 + i]);
+                    used_idxes[19 + i / 4].emplace(test_data[nums][70 + i]);
                 test_labels[nums] = score * step;
                 for (i = 0; i < 62; ++i)
                     test_memo[pattern_nums[i]][test_data[nums][i]].push_back(nums);
                 test_memo[16][sur].push_back(nums);
                 test_memo[17][canput].push_back(nums);
-                test_memo[18][stab].push_back(nums);
-                test_memo[19][num].push_back(nums);
+                test_memo[18][num].push_back(nums);
                 for (i = 0; i < 16; ++i)
-                    test_memo[20 + i / 4][test_data[nums][70 + i]].push_back(nums);
+                    test_memo[19 + i / 4][test_data[nums][70 + i]].push_back(nums);
                 test_scores.push_back(0);
                 pre_calc_scores.push_back(0);
                 ++n_data_score[score + 64];
@@ -239,10 +236,9 @@ void input_test_data(int argc, char *argv[]){
                     ++n_data_idx[pattern_nums[i]][test_data[nums][i]][score + 64];
                 ++n_data_idx[16][sur][score + 64];
                 ++n_data_idx[17][canput][score + 64];
-                ++n_data_idx[18][stab][score + 64];
-                ++n_data_idx[19][num][score + 64];
+                ++n_data_idx[18][num][score + 64];
                 for (i = 0; i < 16; ++i)
-                    ++n_data_idx[20 + i / 4][test_data[nums][70 + i]][score + 64];
+                    ++n_data_idx[19 + i / 4][test_data[nums][70 + i]][score + 64];
                 /*
                 if (nums == 0){
                     for (i = 0; i < n_raw_params; ++i)
@@ -395,24 +391,23 @@ inline double calc_score(int phase, int i){
         eval_arr[phase][15][test_data[i][61]] + 
         eval_arr[phase][16][calc_sur0_sur1(test_data[i])] + 
         eval_arr[phase][17][calc_canput0_canput1(test_data[i])] + 
-        //eval_arr[phase][18][calc_stab0_stab1(test_data[i])] + 
-        eval_arr[phase][19][calc_num0_num1(test_data[i])] + 
-        eval_arr[phase][20][test_data[i][70]] + 
-        eval_arr[phase][20][test_data[i][71]] + 
-        eval_arr[phase][20][test_data[i][72]] + 
-        eval_arr[phase][20][test_data[i][73]] + 
-        eval_arr[phase][21][test_data[i][74]] + 
-        eval_arr[phase][21][test_data[i][75]] + 
-        eval_arr[phase][21][test_data[i][76]] + 
-        eval_arr[phase][21][test_data[i][77]] + 
-        eval_arr[phase][22][test_data[i][78]] + 
-        eval_arr[phase][22][test_data[i][79]] + 
-        eval_arr[phase][22][test_data[i][80]] + 
-        eval_arr[phase][22][test_data[i][81]] + 
-        eval_arr[phase][23][test_data[i][82]] + 
-        eval_arr[phase][23][test_data[i][83]] + 
-        eval_arr[phase][23][test_data[i][84]] + 
-        eval_arr[phase][23][test_data[i][85]];
+        eval_arr[phase][18][calc_num0_num1(test_data[i])] + 
+        eval_arr[phase][19][test_data[i][70]] + 
+        eval_arr[phase][19][test_data[i][71]] + 
+        eval_arr[phase][19][test_data[i][72]] + 
+        eval_arr[phase][19][test_data[i][73]] + 
+        eval_arr[phase][20][test_data[i][74]] + 
+        eval_arr[phase][20][test_data[i][75]] + 
+        eval_arr[phase][20][test_data[i][76]] + 
+        eval_arr[phase][20][test_data[i][77]] + 
+        eval_arr[phase][21][test_data[i][78]] + 
+        eval_arr[phase][21][test_data[i][79]] + 
+        eval_arr[phase][21][test_data[i][80]] + 
+        eval_arr[phase][21][test_data[i][81]] + 
+        eval_arr[phase][22][test_data[i][82]] + 
+        eval_arr[phase][22][test_data[i][83]] + 
+        eval_arr[phase][22][test_data[i][84]] + 
+        eval_arr[phase][22][test_data[i][85]];
         /*
         + 
         eval_arr[phase][24][test_data[i][86]] + 
@@ -533,7 +528,7 @@ inline int calc_rev_idx(int pattern_idx, int pattern_size, int idx){
         res += p32 * calc_pop(idx, 4, pattern_size);
         res += p31 * calc_pop(idx, 5, pattern_size);
         res += calc_pop(idx, 6, pattern_size);
-    } else if (pattern_idx >= n_patterns + 4){
+    } else if (pattern_idx >= n_patterns + 3){
         for (int i = 0; i < 8; ++i){
             res |= (1 & (idx >> i)) << (HW_M1 - i);
             res |= (1 & (idx >> (HW + i))) << (HW + HW_M1 - i);
@@ -582,7 +577,7 @@ inline void next_step(){
         pre_calc_scores[i] = calc_score(sa_phase, i);
     for (pattern = 0; pattern < n_eval; ++pattern){
         for (const int &idx: used_idxes_vector[pattern]){
-            if (pattern < n_patterns || n_patterns + 4 <= pattern){
+            if (pattern < n_patterns || n_patterns + 3 <= pattern){
                 rev_idx = rev_idxes[pattern][idx];
                 if (idx < rev_idx){
                     err = scoring_next_step(pattern, idx) + scoring_next_step(pattern, rev_idx);

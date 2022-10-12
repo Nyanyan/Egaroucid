@@ -16,7 +16,7 @@
 #include "midsearch.hpp"
 #include "stability.hpp"
 
-#define W_WIPEOUT 1000000000
+#define W_WIPEOUT INF
 
 #define W_PARITY1 2
 #define W_PARITY2 4

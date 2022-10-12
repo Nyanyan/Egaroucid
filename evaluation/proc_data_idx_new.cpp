@@ -108,7 +108,7 @@ inline void init_evaluation_base() {
 }
 
 inline uint64_t calc_surround_part(const uint64_t player, const int dr){
-    return (player << dr | player >> dr);
+    return (player << dr) | (player >> dr);
 }
 
 inline int calc_surround(const uint64_t player, const uint64_t empties){

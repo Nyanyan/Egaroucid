@@ -25,7 +25,7 @@ using namespace std;
 #define MAX_CELL_PATTERNS 13
 #define MAX_SURROUND 100
 #define MAX_CANPUT 50
-#define MAX_STABILITY 65
+//#define MAX_STABILITY 65
 #define MAX_STONE_NUM 65
 #define N_CANPUT_PATTERNS 4
 #define MAX_EVALUATE_IDX 59049
@@ -326,7 +326,7 @@ constexpr uint_fast16_t pow3[11] = {1, P31, P32, P33, P34, P35, P36, P37, P38, P
 int16_t pattern_arr[2][N_PHASES][N_PATTERNS][MAX_EVALUATE_IDX];
 int16_t eval_sur0_sur1_arr[N_PHASES][MAX_SURROUND][MAX_SURROUND];
 int16_t eval_canput0_canput1_arr[N_PHASES][MAX_CANPUT][MAX_CANPUT];
-int16_t eval_stab0_stab1_arr[N_PHASES][MAX_STABILITY][MAX_STABILITY];
+//int16_t eval_stab0_stab1_arr[N_PHASES][MAX_STABILITY][MAX_STABILITY];
 int16_t eval_num0_num1_arr[N_PHASES][MAX_STONE_NUM][MAX_STONE_NUM];
 int16_t eval_canput_pattern[N_PHASES][N_CANPUT_PATTERNS][P48];
 
@@ -398,11 +398,13 @@ inline bool init_evaluation_calc(const char* file){
             fclose(fp);
             return false;
         }
+        /*
         if (fread(eval_stab0_stab1_arr[phase_idx], 2, MAX_STABILITY * MAX_STABILITY, fp) < MAX_STABILITY * MAX_STABILITY){
             cerr << "eval.egev broken" << endl;
             fclose(fp);
             return false;
         }
+        */
         if (fread(eval_num0_num1_arr[phase_idx], 2, MAX_STONE_NUM * MAX_STONE_NUM, fp) < MAX_STONE_NUM * MAX_STONE_NUM){
             cerr << "eval.egev broken" << endl;
             fclose(fp);
@@ -421,13 +423,20 @@ inline bool init_evaluation_calc(const char* file){
             init_pattern_arr_rev(0, phase_idx, pattern_idx, pattern_sizes[pattern_idx]);
     }
     */
-    future<void> tasks[N_PHASES * N_PATTERNS];
-    for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
-        for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx)
-            tasks[i++] = thread_pool.push(init_pattern_arr_rev, phase_idx, pattern_idx, pattern_sizes[pattern_idx]);
+    if (thread_pool.size() >= 2){
+        future<void> tasks[N_PHASES * N_PATTERNS];
+        for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
+            for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx)
+                tasks[i++] = thread_pool.push(init_pattern_arr_rev, phase_idx, pattern_idx, pattern_sizes[pattern_idx]);
+        }
+        for (future<void> &task: tasks)
+            task.get();
+    } else{
+        for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
+            for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx)
+                init_pattern_arr_rev(0, phase_idx, pattern_idx, pattern_sizes[pattern_idx]);
+        }
     }
-    for (future<void> &task: tasks)
-        task.get();
     cerr << "evaluation function initialized" << endl;
     return true;
 }
@@ -534,7 +543,8 @@ inline int calc_pattern_diff(const int phase_idx, Search *search){
 }
 
 inline int create_canput_line_h(uint64_t b, uint64_t w, int t){
-    return (((w >> (HW * t)) & 0b11111111) << HW) | ((b >> (HW * t)) & 0b11111111);
+    return (join_h_line(w, t) << HW) | join_h_line(b, t);
+    //return (((w >> (HW * t)) & 0b11111111) << HW) | ((b >> (HW * t)) & 0b11111111);
 }
 
 inline int create_canput_line_v(uint64_t b, uint64_t w, int t){
@@ -542,21 +552,24 @@ inline int create_canput_line_v(uint64_t b, uint64_t w, int t){
 }
 
 inline int calc_canput_pattern(const int phase_idx, Board *b, const uint64_t player_mobility, const uint64_t opponent_mobility){
+    // todo: make this function much faster
+    uint8_t *ph = (uint8_t*)&player_mobility;
+    uint8_t *oh = (uint8_t*)&opponent_mobility;
     return 
-        eval_canput_pattern[phase_idx][0][create_canput_line_h(player_mobility, opponent_mobility, 0)] + 
-        eval_canput_pattern[phase_idx][0][create_canput_line_h(player_mobility, opponent_mobility, 7)] + 
+        eval_canput_pattern[phase_idx][0][(oh[0] << HW) | ph[0]] + 
+        eval_canput_pattern[phase_idx][0][(oh[7] << HW) | ph[7]] + 
         eval_canput_pattern[phase_idx][0][create_canput_line_v(player_mobility, opponent_mobility, 0)] + 
         eval_canput_pattern[phase_idx][0][create_canput_line_v(player_mobility, opponent_mobility, 7)] + 
-        eval_canput_pattern[phase_idx][1][create_canput_line_h(player_mobility, opponent_mobility, 1)] + 
-        eval_canput_pattern[phase_idx][1][create_canput_line_h(player_mobility, opponent_mobility, 6)] + 
+        eval_canput_pattern[phase_idx][1][(oh[1] << HW) | ph[1]] + 
+        eval_canput_pattern[phase_idx][1][(oh[6] << HW) | ph[6]] + 
         eval_canput_pattern[phase_idx][1][create_canput_line_v(player_mobility, opponent_mobility, 1)] + 
         eval_canput_pattern[phase_idx][1][create_canput_line_v(player_mobility, opponent_mobility, 6)] + 
-        eval_canput_pattern[phase_idx][2][create_canput_line_h(player_mobility, opponent_mobility, 2)] + 
-        eval_canput_pattern[phase_idx][2][create_canput_line_h(player_mobility, opponent_mobility, 5)] + 
+        eval_canput_pattern[phase_idx][2][(oh[2] << HW) | ph[2]] + 
+        eval_canput_pattern[phase_idx][2][(oh[5] << HW) | ph[5]] + 
         eval_canput_pattern[phase_idx][2][create_canput_line_v(player_mobility, opponent_mobility, 2)] + 
         eval_canput_pattern[phase_idx][2][create_canput_line_v(player_mobility, opponent_mobility, 5)] + 
-        eval_canput_pattern[phase_idx][3][create_canput_line_h(player_mobility, opponent_mobility, 3)] + 
-        eval_canput_pattern[phase_idx][3][create_canput_line_h(player_mobility, opponent_mobility, 4)] + 
+        eval_canput_pattern[phase_idx][3][(oh[3] << HW) | ph[3]] + 
+        eval_canput_pattern[phase_idx][3][(oh[4] << HW) | ph[4]] + 
         eval_canput_pattern[phase_idx][3][create_canput_line_v(player_mobility, opponent_mobility, 3)] + 
         eval_canput_pattern[phase_idx][3][create_canput_line_v(player_mobility, opponent_mobility, 4)];
 }

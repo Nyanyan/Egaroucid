@@ -218,7 +218,7 @@ inline uint64_t white_line_mirror(uint64_t x){
     a = (x ^ (x >> 14)) & 0x0000CCCC0000CCCCULL;
     x = x ^ a ^ (a << 14);
     a = (x ^ (x >> 28)) & 0x00000000F0F0F0F0ULL;
-    return x = x ^ a ^ (a << 28);
+    return x ^ a ^ (a << 28);
 }
 
 inline uint64_t black_line_mirror(uint64_t x){
@@ -227,7 +227,7 @@ inline uint64_t black_line_mirror(uint64_t x){
     a = (x ^ (x >> 18)) & 0x0000333300003333ULL;
     x = x ^ a ^ (a << 18);
     a = (x ^ (x >> 36)) & 0x000000000F0F0F0FULL;
-    return x = x ^ a ^ (a << 36);
+    return x ^ a ^ (a << 36);
 }
 
 inline u64_4 black_line_mirror(u64_4 x){
@@ -657,16 +657,16 @@ inline uint_fast8_t join_d9_line2(const uint64_t x, const uint_fast8_t t){
     return _pext_u64(x, join_d9_line_mask[t]);
 }
 
-uint64_t split_v_lines[N_8BIT];
-uint64_t split_d7_lines[N_8BIT];
-uint64_t split_d9_lines[N_8BIT];
+//uint64_t split_v_lines[N_8BIT];
+//uint64_t split_d7_lines[N_8BIT];
+//uint64_t split_d9_lines[N_8BIT];
 
 void bit_init(){
-    uint32_t i;
-    for (i = 0; i < N_8BIT; ++i){
-        split_v_lines[i] = split_v_line(i, 0);
-        split_d7_lines[i] = split_d7_line(i, 0);
-        split_d9_lines[i] = split_d9_line(i, 0);
-    }
+    //uint32_t i;
+    //for (i = 0; i < N_8BIT; ++i){
+    //    split_v_lines[i] = split_v_line(i, 0);
+    //    split_d7_lines[i] = split_d7_line(i, 0);
+    //    split_d9_lines[i] = split_d9_line(i, 0);
+    //}
     upper_bit_init();
 }
