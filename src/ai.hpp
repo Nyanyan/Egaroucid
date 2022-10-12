@@ -44,7 +44,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
         
         if (depth >= 14){
             search.first_depth = depth / 2;
-            search.mpct = 0.9;
+            search.mpct = 1.0;
             search.use_mpc = true;
             result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search.first_depth, false, false, false, TRANSPOSE_TABLE_UNDEFINED);
             g = result.first;

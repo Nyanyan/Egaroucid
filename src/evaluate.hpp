@@ -552,7 +552,6 @@ inline int create_canput_line_v(uint64_t b, uint64_t w, int t){
 }
 
 inline int calc_canput_pattern(const int phase_idx, Board *b, const uint64_t player_mobility, const uint64_t opponent_mobility){
-    // todo: make this function much faster
     uint8_t *ph = (uint8_t*)&player_mobility;
     uint8_t *oh = (uint8_t*)&opponent_mobility;
     return 
