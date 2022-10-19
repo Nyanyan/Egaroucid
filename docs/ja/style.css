@@ -57,3 +57,54 @@ h3{
     font-weight: bold;
     text-align: left;
 }
+
+.menu_bar{
+    width: 90vw;
+    height: min(5vw, 50px);
+    background-color:  #3F9770;
+    display: flex;
+    align-items: center;
+}
+
+.menu_a{
+    text-decoration: none;
+    height: 100%;
+    color: white;
+    display: table-cell;
+    vertical-align: middle;
+}
+
+.bar_icon{
+    height: min(5vw, 50px);
+    width: min(5vw, 50px);
+    vertical-align: middle;
+}
+
+.menu_button{
+    width: min(15vw, 130px);
+    height: min(5vw, 50px);
+    background-color:  #3F9770;
+    display: inline-block; 
+    text-align: center;
+    display: table;
+    vertical-align: middle;
+    font-size: min(1.7vw, 12pt);
+}
+
+.download_a{
+    text-decoration: none;
+    height: 100%;
+    color: white;
+    display: table-cell;
+    vertical-align: middle;
+}
+
+.download_button{
+    width: 30vmin;
+    height: min(5vw, 50px);
+    background-color:  #3F9770;
+    display: inline-block; 
+    text-align: center;
+    display: table;
+    vertical-align: middle;
+}

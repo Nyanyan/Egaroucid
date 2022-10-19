@@ -1,0 +1,7 @@
+Home /
+Download /download/
+Web Version /web/
+Benchmark /benchmark/
+Acknowledgements /acknowledgements/
+Links /links/
+Creator https://nyanyan.dev/en/

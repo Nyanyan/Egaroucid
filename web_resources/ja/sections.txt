@@ -1,8 +1,0 @@
-Egaroucidとは what_is_egaroucid
-主な機能 functions
-ダウンロード download
-世界1位バージョンで遊ぶ play_with_light_version
-各種ベンチマーク benchmarks
-謝辞 acknowledgments
-関連リンク links
-作者 creator

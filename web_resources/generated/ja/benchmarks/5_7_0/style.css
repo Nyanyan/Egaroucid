@@ -59,7 +59,7 @@ h3{
 }
 
 .menu_bar{
-    width: 100vw;
+    width: 90vw;
     height: min(5vw, 50px);
     background-color:  #3F9770;
     display: flex;
@@ -76,19 +76,19 @@ h3{
 
 .bar_icon{
     height: min(5vw, 50px);
-    height: min(5vw, 50px);
+    width: min(5vw, 50px);
     vertical-align: middle;
 }
 
 .menu_button{
-    width: min(13vw, 100px);
+    width: min(15vw, 130px);
     height: min(5vw, 50px);
     background-color:  #3F9770;
     display: inline-block; 
     text-align: center;
     display: table;
     vertical-align: middle;
-    font-size: min(1.7vmin, 12pt);
+    font-size: min(1.7vw, 12pt);
 }
 
 .download_a{

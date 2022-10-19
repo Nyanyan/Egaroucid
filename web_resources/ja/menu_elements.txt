@@ -1,6 +1,6 @@
 ホーム /
 ダウンロード /download/
-世界1位版 /web/
+Web版 /web/
 ベンチマーク /benchmark/
 謝辞 /acknowledgements/
 関連リンク /links/
