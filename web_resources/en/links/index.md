@@ -6,7 +6,7 @@
 
 
 
-[Creator's Website](https://nyanyan.dev/ja/)
+[Creator's Website](https://nyanyan.dev/en/)
 
 
 
