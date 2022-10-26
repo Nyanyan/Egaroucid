@@ -182,18 +182,8 @@ inline void move_list_evaluate(Search *search, vector<Flip_value> &move_list, in
     int eval_alpha = -min(SCORE_MAX, beta + MOVE_ORDERING_VALUE_OFFSET);
     int eval_beta = -max(-SCORE_MAX, alpha - MOVE_ORDERING_VALUE_OFFSET);
     int eval_depth = depth >> 3;
-    if (depth >= 18){
-        ++eval_depth;
-        if (depth >= 21){
-            ++eval_depth;
-            if (depth >= 23){
-                ++eval_depth;
-                if (depth >= 25){
-                    ++eval_depth;
-                }
-            }
-        }
-    }
+    if (depth >= 18)
+        eval_depth += (depth - 16) >> 1;
     bool wipeout_found = false;
     for (Flip_value &flip_value: move_list){
         flip_value.n_legal = LEGAL_UNDEFINED;
