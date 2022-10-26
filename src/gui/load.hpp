@@ -22,7 +22,9 @@ int init_ai(const Settings* settings, const Directories* directories) {
 	thread_pool.resize(settings->n_threads - 1);
 	cerr << "there are " << thread_pool.size() << " additional threads" << endl;
 	bit_init();
-	board_init();
+	if (!board_init()) {
+		return ERR_HASH_FILE_NOT_IMPORTED;
+	}
 	stability_init();
 	if (!evaluate_init(directories->eval_file)) {
 		return ERR_EVAL_FILE_NOT_IMPORTED;
@@ -138,6 +140,9 @@ public:
 				}
 				else {
 					getData().fonts.font(language.get("loading", "load_failed")).draw(20, RIGHT_LEFT, Y_CENTER + 50, getData().colors.white);
+					if (System::GetUserActions() & UserAction::CloseButtonClicked) {
+						System::Exit();
+					}
 				}
 
 			}

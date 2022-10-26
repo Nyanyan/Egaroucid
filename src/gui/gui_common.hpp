@@ -43,6 +43,7 @@ constexpr int Y_CENTER = WINDOW_SIZE_Y / 2;
 #define ERR_OPENING_NOT_LOADED 5
 #define ERR_EVAL_FILE_NOT_IMPORTED 1
 #define ERR_BOOK_FILE_NOT_IMPORTED 2
+#define ERR_HASH_FILE_NOT_IMPORTED 3
 #define ERR_IMPORT_SETTINGS 1
 
 // constant definition
