@@ -188,7 +188,7 @@ inline void move_list_evaluate(Search *search, vector<Flip_value> &move_list, in
             ++eval_depth;
             if (depth >= 23){
                 ++eval_depth;
-                if (depth >= 26){
+                if (depth >= 25){
                     ++eval_depth;
                 }
             }
