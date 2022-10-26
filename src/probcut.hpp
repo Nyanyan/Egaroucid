@@ -101,17 +101,17 @@ inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, 
                 res = nega_alpha_eval1(search, beta + error_search - 1, beta + error_search, false, searching) >= beta + error_search;
                 break;
             default:
-                if (search_depth <= MID_FAST_DEPTH)
-                    res = nega_alpha(search, beta + error_search - 1, beta + error_search, search_depth, false, searching) >= beta + error_search;
-                else{
-                    //double mpct = search->mpct;
-                    //search->mpct = 1.18;
-                    search->use_mpc = false;
-                        res = nega_alpha_ordering(search, beta + error_search - 1, beta + error_search, search_depth, false, legal, false, searching) >= beta + error_search;
-                        //res = nega_alpha_ordering_nomemo(search, beta + error_search - 1, beta + error_search, search_depth, false, legal, searching) >= beta + error_search;
-                    search->use_mpc = true;
-                    //search->mpct = mpct;
-                }
+                //if (search_depth <= MID_FAST_DEPTH)
+                //    res = nega_alpha(search, beta + error_search - 1, beta + error_search, search_depth, false, searching) >= beta + error_search;
+                //else{
+                //double mpct = search->mpct;
+                //search->mpct = 1.18;
+                search->use_mpc = false;
+                    res = nega_alpha_ordering(search, beta + error_search - 1, beta + error_search, search_depth, false, legal, false, searching) >= beta + error_search;
+                    //res = nega_alpha_ordering_nomemo(search, beta + error_search - 1, beta + error_search, search_depth, false, legal, searching) >= beta + error_search;
+                search->use_mpc = true;
+                //search->mpct = mpct;
+                //}
                 break;
         }
         if (res){
