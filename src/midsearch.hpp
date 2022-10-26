@@ -259,6 +259,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
             if (best_move != TRANSPOSE_TABLE_UNDEFINED)
                 pv_idx = 1;
             vector<future<Parallel_task>> parallel_tasks;
+            vector<Helper_task> helper_tasks;
             bool n_searching = true;
             for (int move_idx = 0; move_idx < canput; ++move_idx){
                 if (!(*searching))
@@ -266,7 +267,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
                 swap_next_best_move(move_list, move_idx, canput);
                 eval_move(search, &move_list[move_idx].flip);
                 search->move(&move_list[move_idx].flip);
-                    if (ybwc_split(search, &move_list[move_idx].flip, -beta, -alpha, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].flip.pos, canput, pv_idx++, split_count, parallel_tasks)){
+                    if (ybwc_split(search, &move_list[move_idx].flip, -beta, -alpha, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].flip.pos, canput, pv_idx++, split_count, parallel_tasks, helper_tasks)){
                         ++split_count;
                     } else{
                         g = -nega_alpha_ordering(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
@@ -282,7 +283,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
                                 break;
                             }
                             if (split_count){
-                                ybwc_get_end_tasks(search, parallel_tasks, &v, &best_move, &alpha);
+                                ybwc_get_end_tasks(search, parallel_tasks, helper_tasks, &v, &best_move, &alpha);
                                 if (beta <= alpha){
                                     search->undo(&move_list[move_idx].flip);
                                     eval_undo(search, &move_list[move_idx].flip);
@@ -297,9 +298,9 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
             if (split_count){
                 if (beta <= alpha || !(*searching)){
                     n_searching = false;
-                    ybwc_wait_all(search, parallel_tasks);
+                    ybwc_wait_all(search, parallel_tasks, helper_tasks);
                 } else
-                    ybwc_wait_all(search, parallel_tasks, &v, &best_move, &alpha, beta, &n_searching);
+                    ybwc_wait_all(search, parallel_tasks, helper_tasks, &v, &best_move, &alpha, beta, &n_searching);
             }
         } else{
             for (int move_idx = 0; move_idx < canput; ++move_idx){
