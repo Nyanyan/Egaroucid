@@ -47,8 +47,8 @@ for x in range(10):
     y_depth.append(0)
     z_sigma.append(10.0)
 '''
-mx_err = 7.5
-base_err = 5.0
+mx_err = 6.5
+base_err = 6.0
 for x in range(4, 64):
     x_n_stones.append(x)
     y_depth.append(0)
