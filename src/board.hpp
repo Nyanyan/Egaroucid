@@ -296,14 +296,22 @@ void board_init_rand(){
 bool board_init(){
     FILE* fp;
     if (fopen_s(&fp, "resources/hash.eghs", "rb") != 0) {
-        cerr << "can't open " << "hash.eghs" << endl;
+        cerr << "can't open hash.eghs" << endl;
         //board_init_rand();
         return false;
     } else{
-        for (int i = 0; i < 4; ++i)
-            fread(hash_rand_player[i], 4, 65536, fp);
-        for (int i = 0; i < 4; ++i)
-            fread(hash_rand_opponent[i], 4, 65536, fp);
+        for (int i = 0; i < 4; ++i){
+            if (fread(hash_rand_player[i], 4, 65536, fp) < 65536){
+                cerr << "hash.eghs broken" << endl;
+                return false;
+            }
+        }
+        for (int i = 0; i < 4; ++i){
+            if (fread(hash_rand_opponent[i], 4, 65536, fp) < 65536){
+                cerr << "hash.eghs broken" << endl;
+                return false;
+            }
+        }
     }
     cerr << "board initialized" << endl;
     return true;
