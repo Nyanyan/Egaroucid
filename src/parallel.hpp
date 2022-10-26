@@ -10,8 +10,11 @@
 #include <iostream>
 #include <functional>
 #include <mutex>
+#include <condition_variable>
 #include "setting.hpp"
 #include "board.hpp"
+
+using namespace std;
 
 struct Parallel_task{
     int value;
@@ -43,6 +46,7 @@ struct Parallel_args{
 };
 
 struct Parallel_node{
+    condition_variable cond;
     mutex mtx;
     bool is_waiting;
     bool is_helping;
