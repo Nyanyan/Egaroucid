@@ -6,8 +6,8 @@
 */learned_data
 */legacy
 */resources
+*.dat
 /evaluation/*.txt
-/evaluation/*.dat
 /evaluation/eval_testcases
 /evaluation/resources
 #/src/resources
