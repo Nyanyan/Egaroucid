@@ -5,3 +5,4 @@ Web版 /web/
 謝辞 /acknowledgements/
 関連リンク /links/
 作者 https://nyanyan.dev/ja/
+バグ報告 https://docs.google.com/forms/d/e/1FAIpQLSd6ML1T1fc707luPEefBXuImMnlM9cQP8j-YHKiSyFoS-8rmQ/viewform?usp=sf_link

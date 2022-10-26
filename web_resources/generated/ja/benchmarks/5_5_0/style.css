@@ -35,7 +35,7 @@ table{
 }
 
 .box{
-    width: 90vmin;
+    width: min(100vh, 90vw);
     text-align: start;
     margin: 0 auto;
 }
@@ -59,7 +59,7 @@ h3{
 }
 
 .menu_bar{
-    width: 90vw;
+    width: 100%;
     height: min(5vw, 50px);
     background-color:  #3F9770;
     display: flex;
