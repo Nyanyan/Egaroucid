@@ -16,7 +16,6 @@
 #include "thread_pool.hpp"
 #include "evaluate.hpp"
 #include "transpose_table.hpp"
-#include "parallel.hpp"
 
 using namespace std;
 
@@ -92,7 +91,6 @@ class Search{
         uint_fast8_t eval_feature_reversed;
         int first_depth;
         bool use_multi_thread;
-        Parallel_node parallel_node;
 
     public:
         inline void init_board(Board *init_board){

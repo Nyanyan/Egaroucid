@@ -9,12 +9,8 @@
 #pragma once
 #include <iostream>
 #include <functional>
-#include <mutex>
-#include <condition_variable>
 #include "setting.hpp"
 #include "board.hpp"
-
-using namespace std;
 
 struct Parallel_task{
     int value;
@@ -46,29 +42,9 @@ struct Parallel_args{
 };
 
 struct Parallel_node{
-    condition_variable cond;
-    mutex mtx;
     bool is_waiting;
     bool is_helping;
-    bool help_done;
     function<Parallel_task()> help_task;
-    Parallel_task *help_res;
+    int help_res;
     Parallel_node *parent;
-
-    Parallel_node(){
-        is_waiting = false;
-        is_helping = false;
-        help_done = false;
-        parent = nullptr;
-    }
-};
-
-struct Helper_task{
-    bool valid;
-    Parallel_node *node;
-    Parallel_task task;
-
-    Helper_task(){
-        valid = true;
-    }
 };
