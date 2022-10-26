@@ -278,7 +278,7 @@ struct Board_hash {
     }
 };
 
-void board_init(){
+void board_init_rand(){
     int i, j;
     for (i = 0; i < 4; ++i){
         for (j = 0; j < 65536; ++j){
@@ -289,6 +289,20 @@ void board_init(){
             while (pop_count_uint(hash_rand_opponent[i][j]) < 4)
                 hash_rand_opponent[i][j] = myrand_uint_rev(); //(uint32_t)(rotate_180(myrand_ull()) >> 32);
         }
+    }
+    cerr << "board initialized" << endl;
+}
+
+void board_init(){
+    FILE* fp;
+    if (fopen_s(&fp, "resources/hash.eghs", "rb") != 0) {
+        cerr << "can't open " << "hash.eghs" << endl;
+        board_init_rand();
+    } else{
+        for (int i = 0; i < 4; ++i)
+            fread(hash_rand_player[i], 4, 65536, fp);
+        for (int i = 0; i < 4; ++i)
+            fread(hash_rand_opponent[i], 4, 65536, fp);
     }
     cerr << "board initialized" << endl;
 }
