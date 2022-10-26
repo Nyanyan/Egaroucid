@@ -293,11 +293,12 @@ void board_init_rand(){
     cerr << "board initialized" << endl;
 }
 
-void board_init(){
+bool board_init(){
     FILE* fp;
     if (fopen_s(&fp, "resources/hash.eghs", "rb") != 0) {
         cerr << "can't open " << "hash.eghs" << endl;
-        board_init_rand();
+        //board_init_rand();
+        return false;
     } else{
         for (int i = 0; i < 4; ++i)
             fread(hash_rand_player[i], 4, 65536, fp);
@@ -305,6 +306,7 @@ void board_init(){
             fread(hash_rand_opponent[i], 4, 65536, fp);
     }
     cerr << "board initialized" << endl;
+    return true;
 }
 
 inline void calc_flip(Flip *flip, Board *board, uint_fast8_t place){
