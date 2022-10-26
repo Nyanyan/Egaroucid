@@ -74,10 +74,20 @@ void initialize_param(){
     }
 }
 
+void input_param(char *argv[]){
+    FILE* fp;
+    if (fopen_s(&fp, argv[4], "rb") != 0) {
+        cerr << "can't open " << argv[4] << endl;
+        return;
+    }
+    for (int i = 0; i < N_HASH1; ++i)
+        fread(hash_rand[i], 4, N_HASH2, fp);
+}
+
 void input_test_data(int argc, char *argv[]){
     int t = 0, i;
     FILE* fp;
-    for (int file_idx = 4; file_idx < argc; ++file_idx){
+    for (int file_idx = 5; file_idx < argc; ++file_idx){
         cerr << argv[file_idx] << endl;
         if (fopen_s(&fp, argv[file_idx], "rb") != 0) {
             cerr << "can't open " << argv[file_idx] << endl;
@@ -107,7 +117,7 @@ void output_param(){
     int i, j;
     for (i = 0; i < N_HASH1; ++i){
         for (j = 0; j < N_HASH2; ++j){
-            fout.write((char*)&hash_rand[i][j], 2);
+            fout.write((char*)&hash_rand[i][j], 4);
         }
     }
     fout.close();
@@ -160,16 +170,19 @@ void anneal(uint64_t tl){
             swap_idx = myrandrange(0, HASH_N_BIT);
             hash_rand[hi][hj] ^= 1 << swap_idx;
             n_score = calc_score_diff(hi, hj);
-            if (prob(f_score, n_score, strt, tim(), tl) >= myrandom()){
+            //if (prob(f_score, n_score, strt, tim(), tl) >= myrandom()){
+            if (f_score <= n_score){
                 f_score = n_score;
                 cerr << "\r" << ((tim() - strt) * 1000 / tl) << " " << f_score << "                         ";
             } else{
                 hash_rand[hi][hj] ^= 1 << swap_idx;
-                calc_score_diff(hi, hj);
+                n_score = calc_score_diff(hi, hj);
+                if (f_score != n_score)
+                    cerr << f_score << n_score << endl;
             }
         }
     }
-    cerr << "\r" << f_score << endl;
+    cerr << "\r" << f_score << "                       " << endl;
 }
 
 int main(int argc, char *argv[]){
@@ -184,7 +197,8 @@ int main(int argc, char *argv[]){
     cerr << second << " sec" << endl;
 
     board_init();
-    initialize_param();
+    //initialize_param();
+    input_param(argv);
     input_test_data(argc, argv);
 
     anneal(second * 1000);

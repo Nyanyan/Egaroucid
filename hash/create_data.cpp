@@ -8,7 +8,7 @@
 
 using namespace std;
 
-#define USE_N_DISCS 48
+#define USE_N_DISCS 53
 
 inline void convert_idx(string str, ofstream *fout){
     int i, j;
