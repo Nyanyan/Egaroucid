@@ -1,5 +1,5 @@
 ﻿/*
-    Egaroucid for Web Project
+    Egaroucid Project
 
     @date 2021-2022
     @author Takuto Yamana (a.k.a Nyanyan)
@@ -20,8 +20,6 @@
 #include "endsearch.hpp"
 #include "move_ordering.hpp"
 #include "probcut.hpp"
-#include "thread_pool.hpp"
-#include "ybwc.hpp"
 #include "util.hpp"
 #include "stability.hpp"
 
@@ -266,28 +264,24 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
                 swap_next_best_move(move_list, move_idx, canput);
                 eval_move(search, &move_list[move_idx].flip);
                 search->move(&move_list[move_idx].flip);
-                    if (ybwc_split(search, &move_list[move_idx].flip, -beta, -alpha, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].flip.pos, canput, pv_idx++, split_count, parallel_tasks)){
-                        ++split_count;
-                    } else{
-                        g = -nega_alpha_ordering(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
-                        if (*searching){
-                            alpha = max(alpha, g);
-                            if (v < g){
-                                v = g;
-                                best_move = move_list[move_idx].flip.pos;
-                            }
+                    g = -nega_alpha_ordering(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
+                    if (*searching){
+                        alpha = max(alpha, g);
+                        if (v < g){
+                            v = g;
+                            best_move = move_list[move_idx].flip.pos;
+                        }
+                        if (beta <= alpha){
+                            search->undo(&move_list[move_idx].flip);
+                            eval_undo(search, &move_list[move_idx].flip);
+                            break;
+                        }
+                        if (split_count){
+                            ybwc_get_end_tasks(search, parallel_tasks, &v, &best_move, &alpha);
                             if (beta <= alpha){
                                 search->undo(&move_list[move_idx].flip);
                                 eval_undo(search, &move_list[move_idx].flip);
                                 break;
-                            }
-                            if (split_count){
-                                ybwc_get_end_tasks(search, parallel_tasks, &v, &best_move, &alpha);
-                                if (beta <= alpha){
-                                    search->undo(&move_list[move_idx].flip);
-                                    eval_undo(search, &move_list[move_idx].flip);
-                                    break;
-                                }
                             }
                         }
                     }

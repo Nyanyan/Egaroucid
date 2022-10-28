@@ -1,5 +1,5 @@
 /*
-    Egaroucid for Web Project
+    Egaroucid Project
 
     @date 2021-2022
     @author Takuto Yamana (a.k.a Nyanyan)
@@ -14,30 +14,118 @@
 
 using namespace std;
 
+uint8_t flip_pre_calc[N_8BIT][N_8BIT][hw];
+uint8_t n_flip_pre_calc[N_8BIT][N_8BIT][hw];
+uint64_t line_to_board_v[N_8BIT][hw];
+uint64_t line_to_board_d7[N_8BIT][hw * 2];
+uint64_t line_to_board_d9[N_8BIT][hw * 2];
+
 class Flip{
     public:
         uint_fast8_t pos;
         uint64_t flip;
     
     public:
-        //Original code: https://github.com/primenumber/issen/blob/72f450256878094ffe90b75f8674599e6869c238/src/move_generator.cpp
-        //modified by Nyanyan
-        inline void calc_flip(const uint64_t player, const uint64_t opponent, const uint_fast8_t place){
+        inline void calc_flip(const uint64_t player, const uint64_t opponent, const int place){
+            int t, u, p, o;
+            flip = 0;
             pos = place;
-            u64_4 p(player);
-            u64_4 o(opponent);
-            u64_4 flipped, om, outflank, mask;
-            const u64_4 mask1(0xFFFFFFFFFFFFFFFFULL, 0x7E7E7E7E7E7E7E7EULL, 0x7E7E7E7E7E7E7E7EULL, 0x7E7E7E7E7E7E7E7EULL);
-            const u64_4 mask2(0x0080808080808080ULL, 0x7F00000000000000ULL, 0x0102040810204000ULL, 0x0040201008040201ULL);
-            const u64_4 mask3(0x0101010101010100ULL, 0x00000000000000FEULL, 0x0002040810204080ULL, 0x8040201008040200ULL);
-            om = o & mask1;
-            mask = mask2 >> (HW2_M1 - place);
-            outflank = upper_bit(andnot(om, mask)) & p;
-            flipped = ((-outflank) << 1) & mask;
-            mask = mask3 << place;
-            outflank = mask & ((om | ~mask) + 1) & p;
-            flipped = flipped | ((outflank - nonzero(outflank)) & mask);
-            flip = all_or(flipped);
+
+            t = place / hw;
+            u = place % hw;
+            p = (player >> (hw * t)) & 0b11111111;
+            o = (opponent >> (hw * t)) & 0b11111111;
+            flip |= (uint64_t)flip_pre_calc[p][o][u] << (hw * t);
+
+            p = join_v_line(player, u);
+            o = join_v_line(opponent, u);
+            flip |= line_to_board_v[flip_pre_calc[p][o][t]][u];
+
+            u += t;
+            if (u >= 2 && u <= 12){
+                p = join_d7_line(player, u) & d7_mask[place];
+                o = join_d7_line(opponent, u) & d7_mask[place];
+                flip |= line_to_board_d7[flip_pre_calc[p][o][hw_m1 - t]][u];
+            }
+
+            u -= t * 2;
+            if (u >= -5 && u <= 5){
+                p = join_d9_line(player, u) & d9_mask[place];
+                o = join_d9_line(opponent, u) & d9_mask[place];
+                flip |= line_to_board_d9[flip_pre_calc[p][o][t]][u + hw];
+            }
         }
-        //end of modification
 };
+
+void mobility_init(){
+    int player, opponent, place;
+    int wh, put, m1, m2, m3, m4, m5, m6;
+    int idx, t, i;
+    for (player = 0; player < N_8BIT; ++player){
+        for (opponent = 0; opponent < N_8BIT; ++opponent){
+            for (place = 0; place < hw; ++place){
+                flip_pre_calc[player][opponent][place] = 0;
+                n_flip_pre_calc[player][opponent][place] = 0;
+                if ((1 & (player >> place)) == 0 && (1 & (opponent >> place)) == 0 && (player & opponent) == 0){
+                    put = 1 << place;
+                    wh = opponent & 0b01111110;
+                    m1 = put >> 1;
+                    if( (m1 & wh) != 0 ) {
+                        if( ((m2 = m1 >> 1) & wh) == 0  ) {
+                            if( (m2 & player) != 0 )
+                                flip_pre_calc[player][opponent][place] |= m1;
+                        } else if( ((m3 = m2 >> 1) & wh) == 0 ) {
+                            if( (m3 & player) != 0 )
+                                flip_pre_calc[player][opponent][place] |= m1 | m2;
+                        } else if( ((m4 = m3 >> 1) & wh) == 0 ) {
+                            if( (m4 & player) != 0 )
+                                flip_pre_calc[player][opponent][place] |= m1 | m2 | m3;
+                        } else if( ((m5 = m4 >> 1) & wh) == 0 ) {
+                            if( (m5 & player) != 0 )
+                                flip_pre_calc[player][opponent][place] |= m1 | m2 | m3 | m4;
+                        } else if( ((m6 = m5 >> 1) & wh) == 0 ) {
+                            if( (m6 & player) != 0 )
+                                flip_pre_calc[player][opponent][place] |= m1 | m2 | m3 | m4 | m5;
+                        } else {
+                            if( ((m6 >> 1) & player) != 0 )
+                                flip_pre_calc[player][opponent][place] |= m1 | m2 | m3 | m4 | m5 | m6;
+                        }
+                    }
+                    m1 = put << 1;
+                    if( (m1 & wh) != 0 ) {
+                        if( ((m2 = m1 << 1) & wh) == 0  ) {
+                            if( (m2 & player) != 0 )
+                                flip_pre_calc[player][opponent][place] |= m1;
+                        } else if( ((m3 = m2 << 1) & wh) == 0 ) {
+                            if( (m3 & player) != 0 )
+                                flip_pre_calc[player][opponent][place] |= m1 | m2;
+                        } else if( ((m4 = m3 << 1) & wh) == 0 ) {
+                            if( (m4 & player) != 0 )
+                                flip_pre_calc[player][opponent][place] |= m1 | m2 | m3;
+                        } else if( ((m5 = m4 << 1) & wh) == 0 ) {
+                            if( (m5 & player) != 0 )
+                                flip_pre_calc[player][opponent][place] |= m1 | m2 | m3 | m4;
+                        } else if( ((m6 = m5 << 1) & wh) == 0 ) {
+                            if( (m6 & player) != 0 )
+                                flip_pre_calc[player][opponent][place] |= m1 | m2 | m3 | m4 | m5;
+                        } else {
+                            if( ((m6 << 1) & player) != 0 )
+                                flip_pre_calc[player][opponent][place] |= m1 | m2 | m3 | m4 | m5 | m6;
+                        }
+                    }
+                    n_flip_pre_calc[player][opponent][place] = 0;
+                    for (i = 1; i < hw_m1; ++i)
+                        n_flip_pre_calc[player][opponent][place] += 1 & (flip_pre_calc[player][opponent][place] >> i);
+                }
+            }
+        }
+    }
+    for (idx = 0; idx < N_8BIT; ++idx){
+        for (t = 0; t < hw; ++t)
+            line_to_board_v[idx][t] = split_v_line((uint8_t)idx, t);
+        for (t = 0; t < hw * 2; ++t)
+            line_to_board_d7[idx][t] = split_d7_line((uint8_t)idx, t);
+        for (t = -hw; t < hw; ++t)
+            line_to_board_d9[idx][t + hw] = split_d9_line((uint8_t)idx, t);
+    }
+}

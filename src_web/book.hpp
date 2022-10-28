@@ -1,5 +1,5 @@
 ﻿/*
-    Egaroucid for Web Project
+    Egaroucid Project
 
     @date 2021-2022
     @author Takuto Yamana (a.k.a Nyanyan)

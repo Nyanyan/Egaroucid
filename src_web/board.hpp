@@ -1,5 +1,5 @@
 /*
-    Egaroucid for Web Project
+    Egaroucid Project
 
     @date 2021-2022
     @author Takuto Yamana (a.k.a Nyanyan)
@@ -278,7 +278,7 @@ struct Board_hash {
     }
 };
 
-void board_init(){
+void board_init_rand(){
     int i, j;
     for (i = 0; i < 4; ++i){
         for (j = 0; j < 65536; ++j){
@@ -291,6 +291,12 @@ void board_init(){
         }
     }
     cerr << "board initialized" << endl;
+}
+
+bool board_init(){
+    board_init_rand();
+    cerr << "board initialized" << endl;
+    return true;
 }
 
 inline void calc_flip(Flip *flip, Board *board, uint_fast8_t place){

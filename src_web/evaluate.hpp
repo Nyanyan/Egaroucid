@@ -1,5 +1,5 @@
 /*
-    Egaroucid for Web Project
+    Egaroucid Project
 
     @date 2021-2022
     @author Takuto Yamana (a.k.a Nyanyan)
@@ -380,7 +380,7 @@ inline bool init_evaluation_calc(const char* file){
     int phase_idx, pattern_idx;
     constexpr int pattern_sizes[N_PATTERNS] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10, 10, 10, 10};
     for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
-        cerr << "evaluation function " << phase_idx * 100 / N_PHASES << " % initialized" << endl;
+        //cerr << "evaluation function " << phase_idx * 100 / N_PHASES << " % initialized" << endl;
         for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx){
             if (fread(pattern_arr[0][phase_idx][pattern_idx], 2, pow3[pattern_sizes[pattern_idx]], fp) < pow3[pattern_sizes[pattern_idx]]){
                 cerr << "eval.egev broken" << endl;
@@ -554,23 +554,27 @@ inline int create_canput_line_v(uint64_t b, uint64_t w, int t){
 inline int calc_canput_pattern(const int phase_idx, Board *b, const uint64_t player_mobility, const uint64_t opponent_mobility){
     uint8_t *ph = (uint8_t*)&player_mobility;
     uint8_t *oh = (uint8_t*)&opponent_mobility;
+    uint64_t p90 = rotate_90(player_mobility);
+    uint64_t o90 = rotate_90(opponent_mobility);
+    uint8_t *pv = (uint8_t*)&p90;
+    uint8_t *ov = (uint8_t*)&o90;
     return 
-        eval_canput_pattern[phase_idx][0][(oh[0] << HW) | ph[0]] + 
-        eval_canput_pattern[phase_idx][0][(oh[7] << HW) | ph[7]] + 
-        eval_canput_pattern[phase_idx][0][create_canput_line_v(player_mobility, opponent_mobility, 0)] + 
-        eval_canput_pattern[phase_idx][0][create_canput_line_v(player_mobility, opponent_mobility, 7)] + 
-        eval_canput_pattern[phase_idx][1][(oh[1] << HW) | ph[1]] + 
-        eval_canput_pattern[phase_idx][1][(oh[6] << HW) | ph[6]] + 
-        eval_canput_pattern[phase_idx][1][create_canput_line_v(player_mobility, opponent_mobility, 1)] + 
-        eval_canput_pattern[phase_idx][1][create_canput_line_v(player_mobility, opponent_mobility, 6)] + 
-        eval_canput_pattern[phase_idx][2][(oh[2] << HW) | ph[2]] + 
-        eval_canput_pattern[phase_idx][2][(oh[5] << HW) | ph[5]] + 
-        eval_canput_pattern[phase_idx][2][create_canput_line_v(player_mobility, opponent_mobility, 2)] + 
-        eval_canput_pattern[phase_idx][2][create_canput_line_v(player_mobility, opponent_mobility, 5)] + 
-        eval_canput_pattern[phase_idx][3][(oh[3] << HW) | ph[3]] + 
-        eval_canput_pattern[phase_idx][3][(oh[4] << HW) | ph[4]] + 
-        eval_canput_pattern[phase_idx][3][create_canput_line_v(player_mobility, opponent_mobility, 3)] + 
-        eval_canput_pattern[phase_idx][3][create_canput_line_v(player_mobility, opponent_mobility, 4)];
+        eval_canput_pattern[phase_idx][0][((uint32_t)oh[0] << HW) | ph[0]] + 
+        eval_canput_pattern[phase_idx][0][((uint32_t)oh[7] << HW) | ph[7]] + 
+        eval_canput_pattern[phase_idx][0][((uint32_t)ov[0] << HW) | pv[0]] + 
+        eval_canput_pattern[phase_idx][0][((uint32_t)ov[7] << HW) | pv[7]] + 
+        eval_canput_pattern[phase_idx][1][((uint32_t)oh[1] << HW) | ph[1]] + 
+        eval_canput_pattern[phase_idx][1][((uint32_t)oh[6] << HW) | ph[6]] + 
+        eval_canput_pattern[phase_idx][1][((uint32_t)ov[1] << HW) | pv[1]] + 
+        eval_canput_pattern[phase_idx][1][((uint32_t)ov[6] << HW) | pv[6]] + 
+        eval_canput_pattern[phase_idx][2][((uint32_t)oh[2] << HW) | ph[2]] + 
+        eval_canput_pattern[phase_idx][2][((uint32_t)oh[5] << HW) | ph[5]] + 
+        eval_canput_pattern[phase_idx][2][((uint32_t)ov[2] << HW) | pv[2]] + 
+        eval_canput_pattern[phase_idx][2][((uint32_t)ov[5] << HW) | pv[5]] + 
+        eval_canput_pattern[phase_idx][3][((uint32_t)oh[3] << HW) | ph[3]] + 
+        eval_canput_pattern[phase_idx][3][((uint32_t)oh[4] << HW) | ph[4]] + 
+        eval_canput_pattern[phase_idx][3][((uint32_t)ov[3] << HW) | pv[3]] + 
+        eval_canput_pattern[phase_idx][3][((uint32_t)ov[4] << HW) | pv[4]];
 }
 
 inline int end_evaluate(Board *b){

@@ -1,5 +1,5 @@
 /*
-    Egaroucid for Web Project
+    Egaroucid Project
 
     @date 2021-2022
     @author Takuto Yamana (a.k.a Nyanyan)
@@ -18,20 +18,20 @@ using namespace std;
 
 #define PROBCUT_SHALLOW_IGNORE 5
 
-#define probcut_a -0.0022524592092225395
-#define probcut_b -0.017754866484303033
-#define probcut_c 0.017754866482408736
-#define probcut_d -10.545831847655592
-#define probcut_e -25.655582670899747
-#define probcut_f -25.546399211857754
-#define probcut_g 3.5004754748979643
+#define probcut_a -0.00213107112213114
+#define probcut_b -0.016798379790035622
+#define probcut_c 0.01679837977996806
+#define probcut_d -12.453803859134524
+#define probcut_e -28.662952084310923
+#define probcut_f -27.001850455790116
+#define probcut_g 4.10046008079935
 
-#define probcut_end_a 0.2833968290681483
-#define probcut_end_b 0.27720424441757574
-//#define probcut_end_c 2.9106871566362514e-05
-#define probcut_end_d -0.0008114871111040751
-#define probcut_end_e -0.4262684915239276
-#define probcut_end_f 12.747098949148302
+#define probcut_end_a 0.20405456811754308
+#define probcut_end_b 0.19959570867591253
+//#define probcut_end_c 6.238001249226975e-05
+#define probcut_end_d -0.001252230777163415
+#define probcut_end_e -0.47361044068293007
+#define probcut_end_f 11.197678868342406
 
 inline double probcut_sigma(int n_stones, int depth1, int depth2){
     double w = n_stones;
@@ -101,17 +101,17 @@ inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, 
                 res = nega_alpha_eval1(search, beta + error_search - 1, beta + error_search, false, searching) >= beta + error_search;
                 break;
             default:
-                if (search_depth <= MID_FAST_DEPTH)
-                    res = nega_alpha(search, beta + error_search - 1, beta + error_search, search_depth, false, searching) >= beta + error_search;
-                else{
-                    //double mpct = search->mpct;
-                    //search->mpct = 1.18;
-                    search->use_mpc = false;
-                        res = nega_alpha_ordering(search, beta + error_search - 1, beta + error_search, search_depth, false, legal, false, searching) >= beta + error_search;
-                        //res = nega_alpha_ordering_nomemo(search, beta + error_search - 1, beta + error_search, search_depth, false, legal, searching) >= beta + error_search;
-                    search->use_mpc = true;
-                    //search->mpct = mpct;
-                }
+                //if (search_depth <= MID_FAST_DEPTH)
+                //    res = nega_alpha(search, beta + error_search - 1, beta + error_search, search_depth, false, searching) >= beta + error_search;
+                //else{
+                //double mpct = search->mpct;
+                //search->mpct = 1.18;
+                search->use_mpc = false;
+                    res = nega_alpha_ordering(search, beta + error_search - 1, beta + error_search, search_depth, false, legal, false, searching) >= beta + error_search;
+                    //res = nega_alpha_ordering_nomemo(search, beta + error_search - 1, beta + error_search, search_depth, false, legal, searching) >= beta + error_search;
+                search->use_mpc = true;
+                //search->mpct = mpct;
+                //}
                 break;
         }
         if (res){

@@ -1,5 +1,5 @@
 /*
-    Egaroucid for Web Project
+    Egaroucid Project
 
     @date 2021-2022
     @author Takuto Yamana (a.k.a Nyanyan)
@@ -16,8 +16,8 @@
 
 using namespace std;
 
-#define TRANSPOSE_TABLE_SIZE 16777216 //8388608
-#define TRANSPOSE_TABLE_MASK 16777215 //8388607
+#define TRANSPOSE_TABLE_SIZE 262144
+#define TRANSPOSE_TABLE_MASK 262143
 
 #define CACHE_SAVE_EMPTY 10
 

@@ -1,5 +1,5 @@
 /*
-    Egaroucid for Web Project
+    Egaroucid Project
 
     @date 2021-2022
     @author Takuto Yamana (a.k.a Nyanyan)
@@ -11,6 +11,8 @@
 #include <iostream>
 #include "bit.hpp"
 #include "setting.hpp"
+
+
 
 // original code from http://www.amy.hi-ho.ne.jp/okuhara/bitboard.htm
 // modified by Nyanyan
