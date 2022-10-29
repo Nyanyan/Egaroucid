@@ -17,8 +17,8 @@
 
 using namespace std;
 
-#define TRANSPOSITION_TABLE_SIZE 8388608 // 4194304 // 16777216
-//#define TRANSPOSITION_TABLE_MASK 4194303 // 8388607 // 16777215
+#define TRANSPOSITION_TABLE_SIZE 16777216 // 8388608 // 4194304 // 16777216
+#define TRANSPOSITION_TABLE_DIV 16384
 
 #define CACHE_SAVE_EMPTY 10
 
@@ -98,7 +98,6 @@ class Node_value{
 
 class Node_transposition_table{
     private:
-        mutex mtx;
         Node_policy datum_policy;
         Node_value datum_value;
 
@@ -109,23 +108,19 @@ class Node_transposition_table{
         }
 
         inline void reg(const Search *search, const int depth, const int policy, const int lower_bound, const int upper_bound){
-            lock_guard<mutex> lock(mtx);
             datum_policy.reg(search, policy);
             datum_value.reg(search, depth, lower_bound, upper_bound);
         }
 
         inline void reg_policy(const Search *search, const int depth, const int policy){
-            lock_guard<mutex> lock(mtx);
             datum_policy.reg(search, policy);
         }
 
         inline void reg_value(const Search *search, const int depth, const int lower_bound, const int upper_bound){
-            lock_guard<mutex> lock(mtx);
             datum_value.reg(search, depth, lower_bound, upper_bound);
         }
 
         inline void get(const Search *search, const int depth, int *best_move, int *lower_bound, int *upper_bound){
-            lock_guard<mutex> lock(mtx);
             *best_move = TRANSPOSITION_TABLE_UNDEFINED;
             *lower_bound = -INF;
             *upper_bound = INF;
@@ -134,29 +129,66 @@ class Node_transposition_table{
         }
 
         inline void get_policy(const Search *search, const int depth, int *best_move){
-            lock_guard<mutex> lock(mtx);
             *best_move = TRANSPOSITION_TABLE_UNDEFINED;
             datum_policy.get(search, best_move);
         }
 
         inline void get_value(const Search *search, const int depth, int *lower_bound, int *upper_bound){
-            lock_guard<mutex> lock(mtx);
             *lower_bound = -INF;
             *upper_bound = INF;
             datum_value.get(search, depth, lower_bound, upper_bound);
         }
 };
 
+class Part_transposition_table{
+    private:
+        mutex mtx;
+        Node_transposition_table table[TRANSPOSITION_TABLE_SIZE / TRANSPOSITION_TABLE_DIV];
+    
+    public:
+        void init(){
+            for (int i = 0; i < TRANSPOSITION_TABLE_SIZE / TRANSPOSITION_TABLE_DIV; ++i)
+                table[i].init();
+        }
 
-void init_transposition_table(Node_transposition_table table[], int s, int e){
-    for(int i = s; i < e; ++i){
-        table[i].init();
-    }
+        inline void reg(const Search *search, const int depth, const uint32_t idx, const int policy, const int lower_bound, const int upper_bound){
+            lock_guard<mutex> lock(mtx);
+            table[idx].reg(search, depth, policy, lower_bound, upper_bound);
+        }
+
+        inline void reg_policy(const Search *search, const int depth, const uint32_t idx, const int policy){
+            lock_guard<mutex> lock(mtx);
+            table[idx].reg_policy(search, depth, policy);
+        }
+
+        inline void reg_value(const Search *search, const int depth, const uint32_t idx, const int lower_bound, const int upper_bound){
+            lock_guard<mutex> lock(mtx);
+            table[idx].reg_value(search, depth, lower_bound, upper_bound);
+        }
+
+        inline void get(const Search *search, const int depth, const uint32_t idx, int *best_move, int *lower_bound, int *upper_bound){
+            lock_guard<mutex> lock(mtx);
+            return table[idx].get(search, depth, best_move, lower_bound, upper_bound);
+        }
+
+        inline void get_policy(const Search *search, const int depth, const uint32_t idx, int *best_move){
+            lock_guard<mutex> lock(mtx);
+            return table[idx].get_policy(search, depth, best_move);
+        }
+
+        inline void get_value(const Search *search, const int depth, const uint32_t idx, int *lower_bound, int *upper_bound){
+            lock_guard<mutex> lock(mtx);
+            return table[idx].get_value(search, depth, lower_bound, upper_bound);
+        }
+};
+
+void init_transposition_table(Part_transposition_table *table_part){
+    table_part->init();
 }
 
 class Transposition_table{
     private:
-        Node_transposition_table table[TRANSPOSITION_TABLE_SIZE];
+        Part_transposition_table table[TRANSPOSITION_TABLE_DIV];
 
     public:
         inline void first_init(){
@@ -165,46 +197,59 @@ class Transposition_table{
         }
 
         inline void init(){
-            int thread_size = thread_pool.size();
-            if (thread_size >= 2){
-                int delta = (TRANSPOSITION_TABLE_SIZE + thread_size - 1) / thread_size;
-                int s = 0, e;
+            if (thread_pool.size() >= 2){
                 vector<future<void>> tasks;
-                for (int i = 0; i < thread_size; ++i){
-                    e = min(TRANSPOSITION_TABLE_SIZE, s + delta);
-                    tasks.emplace_back(thread_pool.push(bind(&init_transposition_table, table, s, e)));
-                    s = e;
-                }
+                for (int i = 0; i < TRANSPOSITION_TABLE_DIV; ++i)
+                    tasks.emplace_back(thread_pool.push(bind(&init_transposition_table, &table[i])));
+                int i = 0;
                 for (future<void> &task: tasks)
                     task.get();
             } else{
-                for (int i = 0; i < TRANSPOSITION_TABLE_SIZE; ++i)
+                for (int i = 0; i < TRANSPOSITION_TABLE_DIV; ++i)
                     table[i].init();
             }
         }
 
         inline void reg(const Search *search, const int depth, const uint32_t hash_code, const int policy, const int lower_bound, const int upper_bound){
-            table[hash_code].reg(search, depth, policy, lower_bound, upper_bound);
+            int idx1, idx2;
+            get_idxes(hash_code, &idx1, &idx2);
+            table[idx1].reg(search, depth, idx2, policy, lower_bound, upper_bound);
         }
 
         inline void reg_policy(const Search *search, const int depth, const uint32_t hash_code, const int policy){
-            table[hash_code].reg_policy(search, depth, policy);
+            int idx1, idx2;
+            get_idxes(hash_code, &idx1, &idx2);
+            table[idx1].reg_policy(search, depth, idx2, policy);
         }
 
         inline void reg_value(const Search *search, const int depth, const uint32_t hash_code, const int lower_bound, const int upper_bound){
-            table[hash_code].reg_value(search, depth, lower_bound, upper_bound);
+            int idx1, idx2;
+            get_idxes(hash_code, &idx1, &idx2);
+            table[idx1].reg_value(search, depth, idx2, lower_bound, upper_bound);
         }
 
         inline void get(const Search *search, const int depth, const uint32_t hash_code, int *best_move, int *lower_bound, int *upper_bound){
-            return table[hash_code].get(search, depth, best_move, lower_bound, upper_bound);
+            int idx1, idx2;
+            get_idxes(hash_code, &idx1, &idx2);
+            table[idx1].get(search, depth, idx2, best_move, lower_bound, upper_bound);
         }
 
         inline void get_policy(const Search *search, const int depth, const uint32_t hash_code, int *best_move){
-            return table[hash_code].get_policy(search, depth, best_move);
+            int idx1, idx2;
+            get_idxes(hash_code, &idx1, &idx2);
+            table[idx1].get_policy(search, depth, idx2, best_move);
         }
 
         inline void get_value(const Search *search, const int depth, const uint32_t hash_code, int *lower_bound, int *upper_bound){
-            return table[hash_code].get_value(search, depth, lower_bound, upper_bound);
+            int idx1, idx2;
+            get_idxes(hash_code, &idx1, &idx2);
+            table[idx1].get_value(search, depth, idx2, lower_bound, upper_bound);
+        }
+    
+    private:
+        inline void get_idxes(const uint32_t hash_code, int *idx1, int *idx2){
+            *idx1 = hash_code % TRANSPOSITION_TABLE_DIV;
+            *idx2 = hash_code / TRANSPOSITION_TABLE_DIV;
         }
 };
 
