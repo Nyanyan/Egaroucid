@@ -10,7 +10,7 @@
 #include <iostream>
 #include "setting.hpp"
 #include "common.hpp"
-#include "transpose_table.hpp"
+//#include "transposition_table.hpp"
 #include "search.hpp"
 #include "midsearch.hpp"
 #include "endsearch.hpp"

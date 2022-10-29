@@ -17,8 +17,8 @@
 
 using namespace std;
 
-#define TRANSPOSITION_TABLE_SIZE 16777216
-#define TRANSPOSITION_TABLE_MASK 16777215
+#define TRANSPOSITION_TABLE_SIZE 4194304 //16777216
+#define TRANSPOSITION_TABLE_MASK 4194303 //16777215
 
 #define CACHE_SAVE_EMPTY 10
 
@@ -31,7 +31,6 @@ inline double data_strength(const double t, const int d){
 }
 
 struct Node_policy{
-    mutex mtx;
     uint64_t player;
     uint64_t opponent;
     int n_discs;
@@ -45,7 +44,6 @@ struct Node_policy{
     }
 
     inline void reg(const Search *search, const int policy){
-        lock_guard<mutex> lock(mtx);
         player = search->board.player;
         opponent = search->board.opponent;
         n_discs = search->n_discs;
@@ -53,15 +51,15 @@ struct Node_policy{
     }
 
     inline bool get(const Search *search, int *policy){
-        lock_guard<mutex> lock(mtx);
         if (search->board.player == player || search->board.opponent == opponent){
             *policy = best_move;
+            return true;
         }
+        return false;
     }
 };
 
 struct Node_value{
-    mutex mtx;
     uint64_t player;
     uint64_t opponent;
     int n_discs;
@@ -81,7 +79,6 @@ struct Node_value{
     }
 
     inline void reg(const Search *search, const int d, const int l, const int u){
-        lock_guard<mutex> lock(mtx);
         player = search->board.player;
         opponent = search->board.opponent;
         n_discs = search->n_discs;
@@ -92,18 +89,20 @@ struct Node_value{
     }
 
     inline bool get(const Search *search, const int d, int *l, int *u){
-        lock_guard<mutex> lock(mtx);
         if (search->board.player == player || search->board.opponent == opponent){
             if (data_strength(mpct, depth) >= data_strength(search->mpct, d)){
                 *l = lower_bound;
                 *u = upper_bound;
+                return true;
             }
         }
+        return false;
     }
 };
 
 class Node_transposition_table{
     private:
+        mutex mtx;
         Node_policy policy_new;
         Node_value value_new;
 
@@ -115,19 +114,23 @@ class Node_transposition_table{
         }
 
         inline void reg(const Search *search, const int depth, const int policy, const int lower_bound, const int upper_bound){
+            lock_guard<mutex> lock(mtx);
             policy_new.reg(search, policy);
             value_new.reg(search, depth, lower_bound, upper_bound);
         }
 
         inline void reg_policy(const Search *search, const int depth, const int policy){
+            lock_guard<mutex> lock(mtx);
             policy_new.reg(search, policy);
         }
 
         inline void reg_value(const Search *search, const int depth, const int lower_bound, const int upper_bound){
+            lock_guard<mutex> lock(mtx);
             value_new.reg(search, depth, lower_bound, upper_bound);
         }
 
         inline void get(const Search *search, const int depth, int *best_move, int *lower_bound, int *upper_bound){
+            lock_guard<mutex> lock(mtx);
             *best_move = TRANSPOSITION_TABLE_UNDEFINED;
             *lower_bound = -INF;
             *upper_bound = INF;
@@ -136,11 +139,13 @@ class Node_transposition_table{
         }
 
         inline void get_policy(const Search *search, const int depth, int *best_move){
+            lock_guard<mutex> lock(mtx);
             *best_move = TRANSPOSITION_TABLE_UNDEFINED;
             policy_new.get(search, best_move);
         }
 
         inline void get_value(const Search *search, const int depth, int *lower_bound, int *upper_bound){
+            lock_guard<mutex> lock(mtx);
             *lower_bound = -INF;
             *upper_bound = INF;
             value_new.get(search, depth, lower_bound, upper_bound);
@@ -171,7 +176,7 @@ class Transposition_table{
                 vector<future<void>> tasks;
                 for (int i = 0; i < thread_size; ++i){
                     e = min(TRANSPOSITION_TABLE_SIZE, s + delta);
-                    tasks.emplace_back(thread_pool.push(bind(&init_child_transposition_table, table, s, e)));
+                    tasks.emplace_back(thread_pool.push(bind(&init_transposition_table, table, s, e)));
                     s = e;
                 }
                 for (future<void> &task: tasks)
@@ -235,7 +240,7 @@ inline void register_tt(const Search *search, const int depth, const uint32_t ha
     }
 }
 
-inline void register_tt_policy(const Search *search, const int depth, const uint32_t hash_code, int first_alpha, int best_move, const bool *searching){
+inline void register_tt_policy(const Search *search, const int depth, const uint32_t hash_code, int first_alpha, int v, int best_move, const bool *searching){
     if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD && (*searching) && -HW2 <= v && v <= HW2 && global_searching){
         if (first_alpha < v && best_move != TRANSPOSITION_TABLE_UNDEFINED)
             transposition_table.reg_policy(search, depth, hash_code, best_move);

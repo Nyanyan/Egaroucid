@@ -12,7 +12,7 @@
 #include "common.hpp"
 #include "board.hpp"
 #include "search.hpp"
-#include "transpose_table.hpp"
+//#include "transposition_table.hpp"
 #include "midsearch.hpp"
 #include "stability.hpp"
 

@@ -177,7 +177,7 @@ int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, b
                 return SCORE_UNDEFINED;
         }
     }
-    register_tt_policy(search, depth, hash_code, first_alpha, best_move, searching);
+    register_tt_policy(search, depth, hash_code, first_alpha, v, best_move, searching);
     return v;
 }
 
@@ -211,7 +211,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
     uint32_t hash_code = search->board.hash() & TRANSPOSITION_TABLE_MASK;
     int l = -INF, u = INF, best_move = TRANSPOSITION_TABLE_UNDEFINED;
     if (depth >= USE_TT_DEPTH_THRESHOLD){
-        transposition_table.get(search, depth, hash_code, *best_move, *l, *u);
+        transposition_table.get(search, depth, hash_code, &best_move, &l, &u);
         if (u == l)
             return u;
         if (beta <= l)
@@ -364,7 +364,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     uint32_t hash_code = search->board.hash() & TRANSPOSITION_TABLE_MASK;
     int l = -INF, u = INF, best_move = TRANSPOSITION_TABLE_UNDEFINED;
     if (depth >= USE_TT_DEPTH_THRESHOLD){
-        transposition_table.get(search, depth, hash_code, *best_move, *l, *u);
+        transposition_table.get(search, depth, hash_code, &best_move, &l, &u);
         if (u == l)
             return u;
         if (beta <= l)
