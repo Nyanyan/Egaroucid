@@ -30,74 +30,105 @@ inline double data_strength(const double t, const int d){
     return t + 4.0 * d;
 }
 
-struct Node_policy{
-    uint64_t player;
-    uint64_t opponent;
-    int n_discs;
-    int best_move;
+inline bool data_importance(const int n_discs_old, const int n_discs_new, const int first_n_discs){
+    if (n_discs_old < first_n_discs)
+        return true;
+    return n_discs_new <= n_discs_old;
+}
 
-    inline void init(){
-        player = 0ULL;
-        opponent = 0ULL;
-        n_discs = DEPTH_INIT_VALUE;
-        best_move = 0;
-    }
+class Node_policy{
+    private:
+        uint64_t player;
+        uint64_t opponent;
+        int n_discs;
+        int best_move;
 
-    inline void reg(const Search *search, const int policy){
-        player = search->board.player;
-        opponent = search->board.opponent;
-        n_discs = search->n_discs;
-        best_move = policy;
-    }
-
-    inline bool get(const Search *search, int *policy){
-        if (search->board.player == player || search->board.opponent == opponent){
-            *policy = best_move;
-            return true;
+    public:
+        inline void init(){
+            player = 0ULL;
+            opponent = 0ULL;
+            n_discs = DEPTH_INIT_VALUE;
+            best_move = 0;
         }
-        return false;
-    }
-};
 
-struct Node_value{
-    uint64_t player;
-    uint64_t opponent;
-    int n_discs;
-    double mpct;
-    int depth;
-    int lower_bound;
-    int upper_bound;
+        inline void reg(const Search *search, const int policy){
+            player = search->board.player;
+            opponent = search->board.opponent;
+            n_discs = search->n_discs;
+            best_move = policy;
+        }
 
-    inline void init(){
-        player = 0ULL;
-        opponent = 0ULL;
-        n_discs = DEPTH_INIT_VALUE;
-        mpct = 0.0;
-        depth = 0;
-        lower_bound = -INF;
-        upper_bound = INF;
-    }
-
-    inline void reg(const Search *search, const int d, const int l, const int u){
-        player = search->board.player;
-        opponent = search->board.opponent;
-        n_discs = search->n_discs;
-        mpct = search->mpct;
-        depth = d;
-        lower_bound = l;
-        upper_bound = u;
-    }
-
-    inline bool get(const Search *search, const int d, int *l, int *u){
-        if (search->board.player == player || search->board.opponent == opponent){
-            if (data_strength(mpct, depth) >= data_strength(search->mpct, d)){
-                *l = lower_bound;
-                *u = upper_bound;
-                return true;
+        inline void reg_important(const Search *search, const int f, const int policy){
+            if (data_importance(n_discs, search->n_discs, f)){
+                player = search->board.player;
+                opponent = search->board.opponent;
+                n_discs = search->n_discs;
+                best_move = policy;
             }
         }
-        return false;
-    }
+
+        inline bool get(const Search *search, int *policy){
+            if (search->board.player == player || search->board.opponent == opponent){
+                *policy = best_move;
+                return true;
+            }
+            return false;
+        }
+};
+
+class Node_value{
+    private:
+        uint64_t player;
+        uint64_t opponent;
+        int n_discs;
+        double mpct;
+        int depth;
+        int lower_bound;
+        int upper_bound;
+
+    public:
+        inline void init(){
+            player = 0ULL;
+            opponent = 0ULL;
+            n_discs = DEPTH_INIT_VALUE;
+            mpct = 0.0;
+            depth = 0;
+            lower_bound = -INF;
+            upper_bound = INF;
+        }
+
+        inline void reg(const Search *search, const int d, const int l, const int u){
+            player = search->board.player;
+            opponent = search->board.opponent;
+            n_discs = search->n_discs;
+            mpct = search->mpct;
+            depth = d;
+            lower_bound = l;
+            upper_bound = u;
+        }
+
+        inline void reg_important(const Search *search, const int d, const int f, const int l, const int u){
+            if (data_importance(n_discs, search->n_discs, f)){
+                player = search->board.player;
+                opponent = search->board.opponent;
+                n_discs = search->n_discs;
+                mpct = search->mpct;
+                depth = d;
+                lower_bound = l;
+                upper_bound = u;
+            }
+        }
+
+        inline bool get(const Search *search, const int d, int *l, int *u){
+            if (search->board.player == player || search->board.opponent == opponent){
+                if (data_strength(mpct, depth) >= data_strength(search->mpct, d)){
+                    *l = lower_bound;
+                    *u = upper_bound;
+                    return true;
+                }
+            }
+            return false;
+        }
 };
 
 class Node_transposition_table{
@@ -105,9 +136,10 @@ class Node_transposition_table{
         mutex mtx;
         Node_policy policy_new;
         Node_value value_new;
+        Node_policy policy_important;
+        Node_value value_important;
 
     public:
-
         inline void init(){
             policy_new.init();
             value_new.init();
@@ -117,6 +149,9 @@ class Node_transposition_table{
             lock_guard<mutex> lock(mtx);
             policy_new.reg(search, policy);
             value_new.reg(search, depth, lower_bound, upper_bound);
+            const int first_n_discs = search->n_discs - (search->first_depth - depth);
+            policy_important.reg_important(search, first_n_discs, policy);
+            value_important.reg_important(search, depth, first_n_discs, lower_bound, upper_bound);
         }
 
         inline void reg_policy(const Search *search, const int depth, const int policy){
@@ -134,21 +169,25 @@ class Node_transposition_table{
             *best_move = TRANSPOSITION_TABLE_UNDEFINED;
             *lower_bound = -INF;
             *upper_bound = INF;
-            policy_new.get(search, best_move);
-            value_new.get(search, depth, lower_bound, upper_bound);
+            if (!policy_new.get(search, best_move))
+                policy_important.get(search, best_move);
+            if (!value_new.get(search, depth, lower_bound, upper_bound))
+                value_important.get(search, depth, lower_bound, upper_bound);
         }
 
         inline void get_policy(const Search *search, const int depth, int *best_move){
             lock_guard<mutex> lock(mtx);
             *best_move = TRANSPOSITION_TABLE_UNDEFINED;
-            policy_new.get(search, best_move);
+            if (!policy_new.get(search, best_move))
+                policy_important.get(search, best_move);
         }
 
         inline void get_value(const Search *search, const int depth, int *lower_bound, int *upper_bound){
             lock_guard<mutex> lock(mtx);
             *lower_bound = -INF;
             *upper_bound = INF;
-            value_new.get(search, depth, lower_bound, upper_bound);
+            if (!value_new.get(search, depth, lower_bound, upper_bound))
+                value_important.get(search, depth, lower_bound, upper_bound);
         }
 };
 
