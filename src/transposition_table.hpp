@@ -29,7 +29,7 @@ using namespace std;
 #define TT_MAX_BOUND 100
 
 inline int data_strength(const int t, const int d){
-    return t + 4 * MPCT_INT_MUL * d;
+    return d * 4 * MPCT_INT_MUL + t;
 }
 
 
@@ -62,10 +62,10 @@ class Node_value{
     private:
         uint64_t player;
         uint64_t opponent;
-        uint_fast16_t mpct;
-        uint_fast8_t  depth;
-        int_fast8_t lower_bound;
-        int_fast8_t upper_bound;
+        int mpct;
+        int depth;
+        int lower_bound;
+        int upper_bound;
 
     public:
         inline void init(){
