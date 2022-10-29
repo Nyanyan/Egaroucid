@@ -17,8 +17,8 @@
 
 using namespace std;
 
-#define TRANSPOSITION_TABLE_SIZE 4194304 //16777216
-#define TRANSPOSITION_TABLE_MASK 4194303 //16777215
+#define TRANSPOSITION_TABLE_SIZE 4194304 // 8388608 // 16777216
+#define TRANSPOSITION_TABLE_MASK 4194303 // 8388607 // 16777215
 
 #define CACHE_SAVE_EMPTY 10
 
@@ -194,11 +194,17 @@ class Node_transposition_table{
         inline void reg_policy(const Search *search, const int depth, const int policy){
             lock_guard<mutex> lock(mtx);
             policy_new.reg(search, policy);
+            const int first_n_discs = search->n_discs - (search->first_depth - depth);
+            policy_important.reg_important(search, first_n_discs, policy);
+            policy_reusable.reg_reusable(search, policy);
         }
 
         inline void reg_value(const Search *search, const int depth, const int lower_bound, const int upper_bound){
             lock_guard<mutex> lock(mtx);
             value_new.reg(search, depth, lower_bound, upper_bound);
+            const int first_n_discs = search->n_discs - (search->first_depth - depth);
+            value_important.reg_important(search, depth, first_n_discs, lower_bound, upper_bound);
+            value_reusable.reg_reusable(search, depth, lower_bound, upper_bound);
         }
 
         inline void get(const Search *search, const int depth, int *best_move, int *lower_bound, int *upper_bound){
@@ -219,16 +225,20 @@ class Node_transposition_table{
         inline void get_policy(const Search *search, const int depth, int *best_move){
             lock_guard<mutex> lock(mtx);
             *best_move = TRANSPOSITION_TABLE_UNDEFINED;
-            if (!policy_new.get(search, best_move))
-                policy_important.get(search, best_move);
+            if (!policy_new.get(search, best_move)){
+                if (!policy_reusable.get(search, best_move))
+                    policy_important.get(search, best_move);
+            }
         }
 
         inline void get_value(const Search *search, const int depth, int *lower_bound, int *upper_bound){
             lock_guard<mutex> lock(mtx);
             *lower_bound = -INF;
             *upper_bound = INF;
-            if (!value_new.get(search, depth, lower_bound, upper_bound))
-                value_important.get(search, depth, lower_bound, upper_bound);
+            if (!value_new.get(search, depth, lower_bound, upper_bound)){
+                if (value_reusable.get(search, depth, lower_bound, upper_bound))
+                    value_important.get(search, depth, lower_bound, upper_bound);
+            }
         }
 };
 
