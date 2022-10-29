@@ -19,9 +19,9 @@ unsigned long long second = 0;
 #define N_HASH2 65536
 #define N_DATA 50000000
 
-#define HASH_SIZE 4194304
-#define HASH_MASK 4194303
-#define HASH_N_BIT 22
+#define HASH_SIZE 8388608 // 4194304
+#define HASH_MASK 8388607 // 4194303
+#define HASH_N_BIT 23
 
 double start_temp = 0.00001;
 double end_temp =   0.00000000000001;

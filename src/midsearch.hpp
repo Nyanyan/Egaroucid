@@ -129,7 +129,7 @@ int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, b
                 return v;
         }
     #endif
-    uint32_t hash_code = search->board.hash() & TRANSPOSITION_TABLE_MASK;
+    uint32_t hash_code = search->board.hash();
     int best_move;
     transposition_table.get_policy(search, depth, hash_code, &best_move);
     if (best_move != TRANSPOSITION_TABLE_UNDEFINED){
@@ -208,7 +208,7 @@ int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool ski
         search->eval_feature_reversed ^= 1;
         return v;
     }
-    uint32_t hash_code = search->board.hash() & TRANSPOSITION_TABLE_MASK;
+    uint32_t hash_code = search->board.hash();
     int l = -INF, u = INF, best_move = TRANSPOSITION_TABLE_UNDEFINED;
     if (depth >= USE_TT_DEPTH_THRESHOLD){
         transposition_table.get(search, depth, hash_code, &best_move, &l, &u);
@@ -361,7 +361,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
         search->eval_feature_reversed ^= 1;
         return v;
     }
-    uint32_t hash_code = search->board.hash() & TRANSPOSITION_TABLE_MASK;
+    uint32_t hash_code = search->board.hash();
     int l = -INF, u = INF, best_move = TRANSPOSITION_TABLE_UNDEFINED;
     if (depth >= USE_TT_DEPTH_THRESHOLD){
         transposition_table.get(search, depth, hash_code, &best_move, &l, &u);
@@ -434,7 +434,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
 pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, bool is_end_search, const bool is_main_search, int best_move){
     bool searching = true;
     ++(search->n_nodes);
-    uint32_t hash_code = search->board.hash() & TRANSPOSITION_TABLE_MASK;
+    uint32_t hash_code = search->board.hash();
     uint64_t legal = search->board.get_legal();
     int first_alpha = alpha;
     int g, v = -INF;

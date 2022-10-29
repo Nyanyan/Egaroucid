@@ -485,7 +485,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
         search->board.pass();
         return v;
     }
-    uint32_t hash_code = search->board.hash() & TRANSPOSITION_TABLE_MASK;
+    uint32_t hash_code = search->board.hash();
     int l = -INF, u = INF, best_move = TRANSPOSITION_TABLE_UNDEFINED;
     if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD){
         transposition_table.get(search, HW2 - search->n_discs, hash_code, &best_move, &l, &u);

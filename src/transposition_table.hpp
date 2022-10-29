@@ -17,79 +17,44 @@
 
 using namespace std;
 
-#define TRANSPOSITION_TABLE_SIZE 4194304 // 8388608 // 16777216
-#define TRANSPOSITION_TABLE_MASK 4194303 // 8388607 // 16777215
+#define TRANSPOSITION_TABLE_SIZE 8388608 // 4194304 // 16777216
+//#define TRANSPOSITION_TABLE_MASK 4194303 // 8388607 // 16777215
 
 #define CACHE_SAVE_EMPTY 10
 
+#define MPCT_INT_MUL 100
+
 #define TRANSPOSITION_TABLE_UNDEFINED -INF
 
-#define DEPTH_INIT_VALUE -1
+#define TT_MAX_BOUND 100
 
-inline double data_strength(const double t, const int d){
-    return t + 4.0 * d;
+inline int data_strength(const int t, const int d){
+    return t + 4 * MPCT_INT_MUL * d;
 }
 
-inline bool data_importance(const int n_discs_old, const int n_discs_new, const int first_n_discs){
-    if (n_discs_old == DEPTH_INIT_VALUE)
-        return true;
-    if (n_discs_old < first_n_discs)
-        return true;
-    return n_discs_new <= n_discs_old;
-}
-
-inline bool data_reusable(const int n_discs_old, const int n_discs_new){
-    if (n_discs_old == DEPTH_INIT_VALUE)
-        return true;
-    return n_discs_old <= n_discs_new;
-}
 
 class Node_policy{
     private:
         uint64_t player;
         uint64_t opponent;
-        int n_discs;
         int best_move;
 
     public:
         inline void init(){
             player = 0ULL;
             opponent = 0ULL;
-            n_discs = DEPTH_INIT_VALUE;
             best_move = 0;
         }
 
         inline void reg(const Search *search, const int policy){
             player = search->board.player;
             opponent = search->board.opponent;
-            n_discs = search->n_discs;
             best_move = policy;
         }
 
-        inline void reg_important(const Search *search, const int f, const int policy){
-            if (data_importance(n_discs, search->n_discs, f)){
-                player = search->board.player;
-                opponent = search->board.opponent;
-                n_discs = search->n_discs;
-                best_move = policy;
-            }
-        }
-
-        inline void reg_reusable(const Search *search, const int policy){
-            if (data_reusable(n_discs, search->n_discs)){
-                player = search->board.player;
-                opponent = search->board.opponent;
-                n_discs = search->n_discs;
-                best_move = policy;
-            }
-        }
-
-        inline bool get(const Search *search, int *policy){
-            if (search->board.player == player || search->board.opponent == opponent){
+        inline void get(const Search *search, int *policy){
+            if (search->board.player == player || search->board.opponent == opponent)
                 *policy = best_move;
-                return true;
-            }
-            return false;
         }
 };
 
@@ -97,114 +62,66 @@ class Node_value{
     private:
         uint64_t player;
         uint64_t opponent;
-        int n_discs;
-        double mpct;
-        int depth;
-        int lower_bound;
-        int upper_bound;
+        uint_fast16_t mpct;
+        uint_fast8_t  depth;
+        int_fast8_t lower_bound;
+        int_fast8_t upper_bound;
 
     public:
         inline void init(){
             player = 0ULL;
             opponent = 0ULL;
-            n_discs = DEPTH_INIT_VALUE;
             mpct = 0.0;
             depth = 0;
-            lower_bound = -INF;
-            upper_bound = INF;
+            lower_bound = -TT_MAX_BOUND;
+            upper_bound = TT_MAX_BOUND;
         }
 
         inline void reg(const Search *search, const int d, const int l, const int u){
             player = search->board.player;
             opponent = search->board.opponent;
-            n_discs = search->n_discs;
-            mpct = search->mpct;
+            mpct = search->mpct * MPCT_INT_MUL;
             depth = d;
             lower_bound = l;
             upper_bound = u;
         }
 
-        inline void reg_important(const Search *search, const int d, const int f, const int l, const int u){
-            if (data_importance(n_discs, search->n_discs, f)){
-                player = search->board.player;
-                opponent = search->board.opponent;
-                n_discs = search->n_discs;
-                mpct = search->mpct;
-                depth = d;
-                lower_bound = l;
-                upper_bound = u;
-            }
-        }
-
-        inline void reg_reusable(const Search *search, const int d, const int l, const int u){
-            if (data_reusable(n_discs, search->n_discs)){
-                player = search->board.player;
-                opponent = search->board.opponent;
-                n_discs = search->n_discs;
-                mpct = search->mpct;
-                depth = d;
-                lower_bound = l;
-                upper_bound = u;
-            }
-        }
-
-        inline bool get(const Search *search, const int d, int *l, int *u){
+        inline void get(const Search *search, const int d, int *l, int *u){
             if (search->board.player == player || search->board.opponent == opponent){
-                if (data_strength(mpct, depth) >= data_strength(search->mpct, d)){
+                if (data_strength(mpct, depth) >= data_strength(search->mpct * MPCT_INT_MUL, d)){
                     *l = lower_bound;
                     *u = upper_bound;
-                    return true;
                 }
             }
-            return false;
         }
 };
 
 class Node_transposition_table{
     private:
         mutex mtx;
-        Node_policy policy_new;
-        Node_value value_new;
-        Node_policy policy_important;
-        Node_value value_important;
-        Node_policy policy_reusable;
-        Node_value value_reusable;
+        Node_policy datum_policy;
+        Node_value datum_value;
 
     public:
         inline void init(){
-            policy_new.init();
-            value_new.init();
-            policy_important.init();
-            value_important.init();
-            policy_reusable.init();
-            value_reusable.init();
+            datum_policy.init();
+            datum_value.init();
         }
 
         inline void reg(const Search *search, const int depth, const int policy, const int lower_bound, const int upper_bound){
             lock_guard<mutex> lock(mtx);
-            policy_new.reg(search, policy);
-            value_new.reg(search, depth, lower_bound, upper_bound);
-            const int first_n_discs = search->n_discs - (search->first_depth - depth);
-            policy_important.reg_important(search, first_n_discs, policy);
-            value_important.reg_important(search, depth, first_n_discs, lower_bound, upper_bound);
-            policy_reusable.reg_reusable(search, policy);
-            value_reusable.reg_reusable(search, depth, lower_bound, upper_bound);
+            datum_policy.reg(search, policy);
+            datum_value.reg(search, depth, lower_bound, upper_bound);
         }
 
         inline void reg_policy(const Search *search, const int depth, const int policy){
             lock_guard<mutex> lock(mtx);
-            policy_new.reg(search, policy);
-            const int first_n_discs = search->n_discs - (search->first_depth - depth);
-            policy_important.reg_important(search, first_n_discs, policy);
-            policy_reusable.reg_reusable(search, policy);
+            datum_policy.reg(search, policy);
         }
 
         inline void reg_value(const Search *search, const int depth, const int lower_bound, const int upper_bound){
             lock_guard<mutex> lock(mtx);
-            value_new.reg(search, depth, lower_bound, upper_bound);
-            const int first_n_discs = search->n_discs - (search->first_depth - depth);
-            value_important.reg_important(search, depth, first_n_discs, lower_bound, upper_bound);
-            value_reusable.reg_reusable(search, depth, lower_bound, upper_bound);
+            datum_value.reg(search, depth, lower_bound, upper_bound);
         }
 
         inline void get(const Search *search, const int depth, int *best_move, int *lower_bound, int *upper_bound){
@@ -212,33 +129,21 @@ class Node_transposition_table{
             *best_move = TRANSPOSITION_TABLE_UNDEFINED;
             *lower_bound = -INF;
             *upper_bound = INF;
-            if (!policy_new.get(search, best_move)){
-                if (!policy_reusable.get(search, best_move))
-                    policy_important.get(search, best_move);
-            }
-            if (!value_new.get(search, depth, lower_bound, upper_bound)){
-                if (value_reusable.get(search, depth, lower_bound, upper_bound))
-                    value_important.get(search, depth, lower_bound, upper_bound);
-            }
+            datum_policy.get(search, best_move);
+            datum_value.get(search, depth, lower_bound, upper_bound);
         }
 
         inline void get_policy(const Search *search, const int depth, int *best_move){
             lock_guard<mutex> lock(mtx);
             *best_move = TRANSPOSITION_TABLE_UNDEFINED;
-            if (!policy_new.get(search, best_move)){
-                if (!policy_reusable.get(search, best_move))
-                    policy_important.get(search, best_move);
-            }
+            datum_policy.get(search, best_move);
         }
 
         inline void get_value(const Search *search, const int depth, int *lower_bound, int *upper_bound){
             lock_guard<mutex> lock(mtx);
             *lower_bound = -INF;
             *upper_bound = INF;
-            if (!value_new.get(search, depth, lower_bound, upper_bound)){
-                if (value_reusable.get(search, depth, lower_bound, upper_bound))
-                    value_important.get(search, depth, lower_bound, upper_bound);
-            }
+            datum_value.get(search, depth, lower_bound, upper_bound);
         }
 };
 
@@ -255,6 +160,7 @@ class Transposition_table{
 
     public:
         inline void first_init(){
+            cerr << "size of elem " << sizeof(Node_policy) << " " << sizeof(Node_value) << " " << sizeof(mutex) << " " << sizeof(Node_transposition_table) << endl;
             init();
         }
 
