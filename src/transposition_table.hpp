@@ -24,16 +24,24 @@ using namespace std;
 
 #define TRANSPOSITION_TABLE_UNDEFINED -INF
 
-#define DEPTH_INIT_VALUE 100
+#define DEPTH_INIT_VALUE -1
 
 inline double data_strength(const double t, const int d){
     return t + 4.0 * d;
 }
 
 inline bool data_importance(const int n_discs_old, const int n_discs_new, const int first_n_discs){
+    if (n_discs_old == DEPTH_INIT_VALUE)
+        return true;
     if (n_discs_old < first_n_discs)
         return true;
     return n_discs_new <= n_discs_old;
+}
+
+inline bool data_reusable(const int n_discs_old, const int n_discs_new){
+    if (n_discs_old == DEPTH_INIT_VALUE)
+        return true;
+    return n_discs_old <= n_discs_new;
 }
 
 class Node_policy{
@@ -60,6 +68,15 @@ class Node_policy{
 
         inline void reg_important(const Search *search, const int f, const int policy){
             if (data_importance(n_discs, search->n_discs, f)){
+                player = search->board.player;
+                opponent = search->board.opponent;
+                n_discs = search->n_discs;
+                best_move = policy;
+            }
+        }
+
+        inline void reg_reusable(const Search *search, const int policy){
+            if (data_reusable(n_discs, search->n_discs)){
                 player = search->board.player;
                 opponent = search->board.opponent;
                 n_discs = search->n_discs;
@@ -119,6 +136,18 @@ class Node_value{
             }
         }
 
+        inline void reg_reusable(const Search *search, const int d, const int l, const int u){
+            if (data_reusable(n_discs, search->n_discs)){
+                player = search->board.player;
+                opponent = search->board.opponent;
+                n_discs = search->n_discs;
+                mpct = search->mpct;
+                depth = d;
+                lower_bound = l;
+                upper_bound = u;
+            }
+        }
+
         inline bool get(const Search *search, const int d, int *l, int *u){
             if (search->board.player == player || search->board.opponent == opponent){
                 if (data_strength(mpct, depth) >= data_strength(search->mpct, d)){
@@ -138,11 +167,17 @@ class Node_transposition_table{
         Node_value value_new;
         Node_policy policy_important;
         Node_value value_important;
+        Node_policy policy_reusable;
+        Node_value value_reusable;
 
     public:
         inline void init(){
             policy_new.init();
             value_new.init();
+            policy_important.init();
+            value_important.init();
+            policy_reusable.init();
+            value_reusable.init();
         }
 
         inline void reg(const Search *search, const int depth, const int policy, const int lower_bound, const int upper_bound){
@@ -152,6 +187,8 @@ class Node_transposition_table{
             const int first_n_discs = search->n_discs - (search->first_depth - depth);
             policy_important.reg_important(search, first_n_discs, policy);
             value_important.reg_important(search, depth, first_n_discs, lower_bound, upper_bound);
+            policy_reusable.reg_reusable(search, policy);
+            value_reusable.reg_reusable(search, depth, lower_bound, upper_bound);
         }
 
         inline void reg_policy(const Search *search, const int depth, const int policy){
@@ -169,10 +206,14 @@ class Node_transposition_table{
             *best_move = TRANSPOSITION_TABLE_UNDEFINED;
             *lower_bound = -INF;
             *upper_bound = INF;
-            if (!policy_new.get(search, best_move))
-                policy_important.get(search, best_move);
-            if (!value_new.get(search, depth, lower_bound, upper_bound))
-                value_important.get(search, depth, lower_bound, upper_bound);
+            if (!policy_new.get(search, best_move)){
+                if (!policy_reusable.get(search, best_move))
+                    policy_important.get(search, best_move);
+            }
+            if (!value_new.get(search, depth, lower_bound, upper_bound)){
+                if (value_reusable.get(search, depth, lower_bound, upper_bound))
+                    value_important.get(search, depth, lower_bound, upper_bound);
+            }
         }
 
         inline void get_policy(const Search *search, const int depth, int *best_move){
