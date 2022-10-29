@@ -15,7 +15,6 @@
 #include "board.hpp"
 #include "thread_pool.hpp"
 #include "evaluate.hpp"
-#include "transpose_table.hpp"
 
 using namespace std;
 
@@ -128,17 +127,3 @@ class Search{
             return min(N_PHASES - 1, (n_discs - 4) / PHASE_N_STONES);
         }
 };
-
-inline void register_tt(Search *search, int depth, uint32_t hash_code, int first_alpha, int v, int best_move, int l, int u, int alpha, int beta, const bool *searching){
-    if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD && (*searching) && -HW2 <= v && v <= HW2 && global_searching){
-        if (first_alpha < v && best_move != TRANSPOSE_TABLE_UNDEFINED)
-            child_transpose_table.reg(&search->board, hash_code, best_move);
-        if (first_alpha < v && v < beta)
-            parent_transpose_table.reg(&search->board, hash_code, v, v, search->mpct, depth);
-        else if (beta <= v && l < v)
-            parent_transpose_table.reg(&search->board, hash_code, v, u, search->mpct, depth);
-        else if (v <= alpha && v < u)
-            parent_transpose_table.reg(&search->board, hash_code, l, v, search->mpct, depth);
-    }
-}
-

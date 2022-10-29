@@ -10,7 +10,6 @@
 #include "setting.hpp"
 #include "common.hpp"
 #include "board.hpp"
-#include "thread_pool.hpp"
 #include <future>
 #include <atomic>
 
@@ -73,19 +72,6 @@ class Node_child_transpose_table{
         }
 };
 
-
-void init_child_transpose_table(Node_child_transpose_table table[], int s, int e){
-    for(int i = s; i < e; ++i){
-        table[i].init();
-    }
-}
-
-void copy_child_transpose_table(Node_child_transpose_table from[], Node_child_transpose_table to[], int s, int e){
-    for(int i = s; i < e; ++i){
-        to[i].register_value_with_board(&from[i]);
-    }
-}
-
 class Child_transpose_table{
     private:
         Node_child_transpose_table table[TRANSPOSE_TABLE_SIZE];
@@ -96,22 +82,8 @@ class Child_transpose_table{
         }
 
         inline void init(){
-            /*
             for (int i = 0; i < TRANSPOSE_TABLE_SIZE; ++i)
                 table[i].init();
-            */
-            int thread_size = thread_pool.size();
-            int delta = (TRANSPOSE_TABLE_SIZE + thread_size - 1) / thread_size;
-            int s = 0, e;
-            vector<future<void>> tasks;
-            for (int i = 0; i < thread_size; ++i){
-                e = min(TRANSPOSE_TABLE_SIZE, s + delta);
-                tasks.emplace_back(thread_pool.push(bind(&init_child_transpose_table, table, s, e)));
-                s = e;
-            }
-            for (future<void> &task: tasks)
-                task.get();
-            
         }
 
         inline void reg(const Board *board, const uint32_t hash, const int policy){
@@ -120,22 +92,6 @@ class Child_transpose_table{
 
         inline int get(const Board *board, const uint32_t hash){
             return table[hash].get(board);
-        }
-
-        inline void copy(Child_transpose_table *to){
-            /*
-            int thread_size = thread_pool.size();
-            int delta = (TRANSPOSE_TABLE_SIZE + thread_size - 1) / thread_size;
-            int s = 0, e;
-            vector<future<void>> tasks;
-            for (int i = 0; i < thread_size; ++i){
-                e = min(TRANSPOSE_TABLE_SIZE, s + delta);
-                tasks.emplace_back(thread_pool.push(bind(&copy_child_transpose_table, table, to->table, s, e)));
-                s = e;
-            }
-            for (future<void> &task: tasks)
-                task.get();
-            */
         }
 };
 
@@ -208,18 +164,6 @@ class Node_parent_transpose_table{
         }
 };
 
-void init_parent_transpose_table(Node_parent_transpose_table table[], int s, int e){
-    for(int i = s; i < e; ++i){
-        table[i].init();
-    }
-}
-
-void copy_parent_transpose_table(Node_parent_transpose_table from[], Node_parent_transpose_table to[], int s, int e){
-    for(int i = s; i < e; ++i){
-        to[i].register_value_with_board(&from[i]);
-    }
-}
-
 class Parent_transpose_table{
     private:
         Node_parent_transpose_table table[TRANSPOSE_TABLE_SIZE];
@@ -230,19 +174,8 @@ class Parent_transpose_table{
         }
 
         inline void init(){
-            //for (int i = 0; i < TRANSPOSE_TABLE_SIZE; ++i)
-            //    table[i].init();
-            int thread_size = thread_pool.size();
-            int delta = (TRANSPOSE_TABLE_SIZE + thread_size - 1) / thread_size;
-            int s = 0, e;
-            vector<future<void>> tasks;
-            for (int i = 0; i < thread_size; ++i){
-                e = min(TRANSPOSE_TABLE_SIZE, s + delta);
-                tasks.emplace_back(thread_pool.push(bind(&init_parent_transpose_table, table, s, e)));
-                s = e;
-            }
-            for (future<void> &task: tasks)
-                task.get();
+            for (int i = 0; i < TRANSPOSE_TABLE_SIZE; ++i)
+                table[i].init();
         }
 
         inline void reg(const Board *board, const uint32_t hash, const int l, const int u, const double t, const int d){
@@ -255,22 +188,6 @@ class Parent_transpose_table{
 
         inline bool contain(const Board *board, const uint32_t hash){
             return table[hash].contain(board);
-        }
-
-        inline void copy(Parent_transpose_table *to){
-            /*
-            int thread_size = thread_pool.size();
-            int delta = (TRANSPOSE_TABLE_SIZE + thread_size - 1) / thread_size;
-            int s = 0, e;
-            vector<future<void>> tasks;
-            for (int i = 0; i < thread_size; ++i){
-                e = min(TRANSPOSE_TABLE_SIZE, s + delta);
-                tasks.emplace_back(thread_pool.push(bind(&copy_parent_transpose_table, table, to->table, s, e)));
-                s = e;
-            }
-            for (future<void> &task: tasks)
-                task.get();
-            */
         }
 };
 

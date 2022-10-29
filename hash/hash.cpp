@@ -6,6 +6,7 @@
 #include <vector>
 #include <math.h>
 #include <unordered_set>
+#include <iomanip>
 #include "new_util/board.hpp"
 
 using namespace std;
@@ -16,14 +17,14 @@ unsigned long long second = 0;
 
 #define N_HASH1 8
 #define N_HASH2 65536
-#define N_DATA (26461501 + 100)
+#define N_DATA 50000000
 
 #define HASH_SIZE 16777216
 #define HASH_MASK 16777215
-#define HASH_N_BIT 23
+#define HASH_N_BIT 24
 
 double start_temp = 0.00001;
-double end_temp =   0.00000001;
+double end_temp =   0.00000000000001;
 
 double temperature_x(double x){
     return pow(start_temp, 1 - x) * pow(end_temp, x);
@@ -35,7 +36,7 @@ double calc_temperature(uint64_t strt, uint64_t now, uint64_t tl){
 }
 
 double prob(double p_score, double n_score, uint64_t strt, uint64_t now, uint64_t tl){
-    double dis = n_score - p_score;
+    double dis = p_score - n_score;
     if (dis >= 0)
         return 1.0;
     return exp(dis / calc_temperature(strt, now, tl));
@@ -96,7 +97,7 @@ void input_test_data(int argc, char *argv[]){
         while (t < N_DATA - 10){
             if ((t & 0b1111111111111111) == 0b1111111111111111)
                 cerr << '\r' << t;
-            if (fread(data[t], 2, 8, fp) < 1)
+            if (fread(data[t], 2, N_HASH1, fp) < 1)
                 break;
             for (i = 0; i < N_HASH1; ++i)
                 hash_idxes[i][data[t][i]].emplace_back(t);
@@ -130,6 +131,21 @@ int calc_hash(int idx){
     return res;
 }
 
+double calc_final_score(){
+    uint64_t res = 0;
+    for (int i = 0; i < HASH_SIZE; ++i){
+        if (appear_hash[i])
+            res += (appear_hash[i] - 1) * (appear_hash[i] - 1);
+    }
+    return (double)res / hash_variety;
+}
+
+/*
+double calc_final_score(){
+    return 1.0 - (double)hash_variety / HASH_SIZE;
+}
+*/
+
 double calc_score(){
     unordered_set<int> hashes;
     int i, j, hash;
@@ -140,7 +156,7 @@ double calc_score(){
         ++appear_hash[hash];
     }
     hash_variety = (int)hashes.size();
-    return (double)hashes.size() / n_data;
+    return calc_final_score();
 }
 
 double calc_score_diff(int hi, int hj){
@@ -155,12 +171,14 @@ double calc_score_diff(int hi, int hj){
         if (appear_hash[hash] == 1)
             ++hash_variety;
     }
-    return (double)hash_variety / n_data;
+    return calc_final_score();
+    //return (double)hash_variety / n_data;
 }
 
 void anneal(uint64_t tl){
     double f_score = calc_score(), n_score;
-    cerr << f_score << "                         ";
+    cerr << setprecision(15) << f_score << endl;
+    cerr << setprecision(15) << f_score << "                         ";
     int hi, hj, swap_idx;
     uint64_t strt = tim();
     while(tim() - strt < tl){
@@ -170,19 +188,19 @@ void anneal(uint64_t tl){
             swap_idx = myrandrange(0, HASH_N_BIT);
             hash_rand[hi][hj] ^= 1 << swap_idx;
             n_score = calc_score_diff(hi, hj);
-            //if (prob(f_score, n_score, strt, tim(), tl) >= myrandom()){
-            if (f_score <= n_score){
+            if (prob(f_score, n_score, strt, tim(), tl) >= myrandom()){
+            //if (f_score >= n_score){
                 f_score = n_score;
-                cerr << "\r" << ((tim() - strt) * 1000 / tl) << " " << f_score << "                         ";
+                cerr << "\r" << ((tim() - strt) * 1000 / tl) << " " << setprecision(15) << f_score << "                         ";
             } else{
                 hash_rand[hi][hj] ^= 1 << swap_idx;
                 n_score = calc_score_diff(hi, hj);
                 if (f_score != n_score)
-                    cerr << f_score << n_score << endl;
+                    cerr << "ERROR" << setprecision(15) << f_score << " " << setprecision(15) << n_score << endl;
             }
         }
     }
-    cerr << "\r" << f_score << "                       " << endl;
+    cerr << "\r" << setprecision(15) << f_score << "                       " << endl;
 }
 
 int main(int argc, char *argv[]){
@@ -197,8 +215,8 @@ int main(int argc, char *argv[]){
     cerr << second << " sec" << endl;
 
     board_init();
-    //initialize_param();
-    input_param(argv);
+    initialize_param();
+    //input_param(argv);
     input_test_data(argc, argv);
 
     anneal(second * 1000);

@@ -17,7 +17,7 @@
 #include "search.hpp"
 #include "move_ordering.hpp"
 #include "probcut.hpp"
-#include "transpose_table.hpp"
+#include "transposition_table.hpp"
 #include "util.hpp"
 #include "stability.hpp"
 
