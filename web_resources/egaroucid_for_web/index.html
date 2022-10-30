@@ -17,8 +17,8 @@
     </head>
     <body>
         <div class="title">Egaroucid for Web - Othello AI</div>
-        <div class="sub_title"><a href="https://www.codingame.com/multiplayer/bot-programming/othello-1/leaderboard" target="_blank">Codingame Othello</a>で世界1位になったAIです。</div>
-        <div class="sub_title">本気で作ったAIは<a href="https://www.egaroucid-app.nyanyan.dev/" target="_blank">こちら</a>。</div>
+        <div class="sub_title"><a href="https://www.codingame.com/multiplayer/bot-programming/othello-1/leaderboard" target="_blank">Codingame Othello</a>世界1位が作ったオセロAIです。</div>
+        <div class="sub_title">世界最強のPCアプリ版は<a href="https://www.egaroucid-app.nyanyan.dev/" target="_blank">こちら</a>。</div>
         <div class="sub_title">最弱AIは<a href="https://www.egaroucen.nyanyan.dev/" target="_blank">こちら</a>。</div>
         <div align="center">
             <a class="setting" href="#usage">使い方</a>
@@ -86,12 +86,12 @@
                 手番とAIの強さを選択し、対局開始ボタンを押してください。<br>
                 予想最終石差グラフは左が序盤、右が直近の手です。値が大きくなるほどAI有利と判断していて、0が互角です。<br>
                 グラフ表示をオフにしても対局終了後にグラフが描画されます。<br>
-                ヒントは5手読みの評価値ですので精度は悪めです。さらに、序盤専用の評価関数を作っていないので序盤のヒントは役に立ちません。<br>
+                ヒントは最大でも7手読みの評価値ですので精度は悪めです。<br>
             </div>
             <details class="details" id="strength">
                 <summary class="summary">AIの強さ</summary>
                 <div class="text">
-                    AIの強さは中盤の先読み手数、終盤の完全読み手数で調整されます。
+                    AIの強さは中盤の先読み手数、終盤の読み切り手数、及び完全読み手数で調整されます。
                     レベルが上がると計算時間が増えるので、様子を見つつ設定してください。<br>
                     各強さの詳細は以下です。
                 </div>
@@ -99,10 +99,12 @@
                     <tr>
                         <td class="text">レベル</td>
                         <td class="text">読み</td>
+                        <td class="text">読み切り</td>
                         <td class="text">完全読み</td>
                     </tr>
                     <tr>
                         <td class="text">0</td>
+                        <td class="text">0手</td>
                         <td class="text">0手</td>
                         <td class="text">0手</td>
                     </tr>
@@ -110,56 +112,100 @@
                         <td class="text">1</td>
                         <td class="text">1手</td>
                         <td class="text">2手</td>
+                        <td class="text">2手</td>
                     </tr>
                     <tr>
                         <td class="text">2</td>
                         <td class="text">2手</td>
+                        <td class="text">4手</td>
                         <td class="text">4手</td>
                     </tr>
                     <tr>
                         <td class="text">3</td>
                         <td class="text">3手</td>
                         <td class="text">6手</td>
+                        <td class="text">6手</td>
                     </tr>
                     <tr>
                         <td class="text">4</td>
                         <td class="text">4手</td>
+                        <td class="text">8手</td>
                         <td class="text">8手</td>
                     </tr>
                     <tr>
                         <td class="text">5</td>
                         <td class="text">5手</td>
                         <td class="text">10手</td>
+                        <td class="text">10手</td>
                     </tr>
                     <tr>
                         <td class="text">6</td>
                         <td class="text">6手</td>
+                        <td class="text">12手</td>
                         <td class="text">12手</td>
                     </tr>
                     <tr>
                         <td class="text">7</td>
                         <td class="text">7手</td>
                         <td class="text">14手</td>
+                        <td class="text">14手</td>
                     </tr>
                     <tr>
                         <td class="text">8</td>
                         <td class="text">8手</td>
+                        <td class="text">16手</td>
                         <td class="text">16手</td>
                     </tr>
                     <tr>
                         <td class="text">9</td>
                         <td class="text">9手</td>
                         <td class="text">18手</td>
+                        <td class="text">18手</td>
                     </tr>
                     <tr>
                         <td class="text">10</td>
                         <td class="text">10手</td>
                         <td class="text">20手</td>
+                        <td class="text">20手</td>
+                    </tr>
+                    <tr>
+                        <td class="text">11</td>
+                        <td class="text">11手</td>
+                        <td class="text">22手</td>
+                        <td class="text">20手</td>
+                    </tr>
+                    <tr>
+                        <td class="text">12</td>
+                        <td class="text">12手</td>
+                        <td class="text">22手</td>
+                        <td class="text">20手</td>
+                    </tr>
+                    <tr>
+                        <td class="text">13</td>
+                        <td class="text">13手</td>
+                        <td class="text">24手</td>
+                        <td class="text">22手</td>
+                    </tr>
+                    <tr>
+                        <td class="text">14</td>
+                        <td class="text">14手</td>
+                        <td class="text">24手</td>
+                        <td class="text">22手</td>
+                    </tr>
+                    <tr>
+                        <td class="text">15</td>
+                        <td class="text">15手</td>
+                        <td class="text">24手</td>
+                        <td class="text">22手</td>
                     </tr>
                 </table>
             </details>
             <div align="center" class="rect">
                 <div class="sub_title">お知らせ</div>
+                <details class="details">
+                    <summary class="summary_small">AI(Egaroucid6 for Webへ)のアップデートについて</summary>
+                    AIを大幅にアップデートしました。レベルの基準は以前のものと大きく異なります。
+                </details>
                 <details class="details">
                     <summary class="summary_small">本気で作ったオセロソフトについて</summary>
                     このWeb版ではなく、本気で強化・高速化をしたオセロAIを搭載したオセロ研究にも使えるソフト<a href="https://www.egaroucid-app.nyanyan.dev/" target="_blank">Egaroucid5</a>を無料公開しています。
@@ -249,16 +295,21 @@
                         Egaroucid5では探索アルゴリズムにMTD-f法を使いました。さらに、データ構造などを見直して高速化しました。
                     </div>
                 </details>
+                <details class="details">
+                    <summary class="summary_small">Egaroucid6</summary>
+                    <div class="text">
+                        アルゴリズムはNegascoutです。細かな高速化を行いました。
+                    </div>
+                </details>
             </div>
             <div align="center">
                 <div class="sub_title">Made by にゃにゃん(山名琢翔)</div>
                 <p class="text">不具合報告はTwitterやGitHubでお願いします。</p>
                 <div class="text">
-                    <a href="https://github.com/Nyanyan/Egaroucid5" target="_blank">使われているAI(のパソコンアプリバージョン)のGitHubレポジトリ</a><br>
+                    <a href="https://github.com/Nyanyan/Egaroucid" target="_blank">使われているAIのGitHubレポジトリ</a><br>
                     <a href="https://github.com/Nyanyan/Egaroucid_Web_Ver" target="_blank">このページのGitHubレポジトリ</a><br>
-                    <a href="https://nyanyan.github.io/" target="_blank">Webサイト</a><br>
-                    <a href="https://twitter.com/takuto_yamana" target="_blank">Twitter(作品投稿)</a><br>
-                    <a href="https://twitter.com/Nyanyan_Cube" target="_blank">Twitter(雑多な方)</a>
+                    <a href="https://nyanyan.github.io/" target="_blank">作者Webサイト</a><br>
+                    <a href="https://twitter.com/takuto_yamana" target="_blank">Twitter</a><br>
                 </div>
             </div>
             <details class="details">
@@ -543,6 +594,15 @@
                             [表示変更]<br>
                             <ul>
                                 <li>アプリ版の宣伝を追加</li>
+                            </ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="logs">2022/10/31 0:00</td>
+                        <td class="logs">
+                            [仕様変更]<br>
+                            <ul>
+                                <li>AIアップデート(Egaroucid6 for Web)</li>
                             </ul>
                         </td>
                     </tr>
