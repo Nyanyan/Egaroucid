@@ -16,7 +16,7 @@ inline void init(){
     parent_transpose_table.first_init();
     child_transpose_table.first_init();
     evaluate_init();
-    //book.init("resources/book.egbk");
+    book_init();
 }
 
 inline int input_board(Board *bd, const int *arr, const int ai_player){

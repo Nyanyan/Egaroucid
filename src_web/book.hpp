@@ -12,6 +12,7 @@
 #include <unordered_map>
 #include "evaluate.hpp"
 #include "board.hpp"
+#include "book_const.hpp"
 
 struct Book_value{
     int policy;
@@ -24,175 +25,22 @@ class Book{
         int n_book;
 
     public:
-        bool init(string file){
+        void init(){
             n_book = 0;
-            return import_file_bin(file);
+            import_book_const();
         }
 
-        inline bool import_file_bin(string file){
-            cerr << file << endl;
-            FILE* fp;
-            #ifdef _WIN64
-                if (fopen_s(&fp, file.c_str(), "rb") != 0) {
-                    cerr << "can't open " << file << endl;
-                    return false;
-                }
-            #else
-                fp = fopen(file.c_str(), "rb");
-                if (fp == NULL){
-                    cerr << "can't open " << file << endl;
-                    return false;
-                }
-            #endif
+        inline void import_book_const(){
             Board b;
-            int n_boards, i, value;
+            int i, value;
             uint64_t p, o;
             uint8_t elem;
-            if (fread(&n_boards, 4, 1, fp) < 1){
-                cerr << "book NOT FULLY imported " << n_book << " boards code 0" << endl;
-                fclose(fp);
-                return false;
-            }
-            for (i = 0; i < n_boards; ++i) {
-                if (i % 32768 == 0)
-                    cerr << "loading book " << (i * 100 / n_boards) << "%" << endl;
-                if (fread(&p, 8, 1, fp) < 1) {
-                    cerr << "book NOT FULLY imported " << n_book << " boards code 1" << endl;
-                    fclose(fp);
-                    return false;
-                }
-                if (fread(&o, 8, 1, fp) < 1) {
-                    cerr << "book NOT FULLY imported " << n_book << " boards code 2" << endl;
-                    fclose(fp);
-                    return false;
-                }
-                if (fread(&elem, 1, 1, fp) < 1) {
-                    cerr << "book NOT FULLY imported " << n_book << " boards code 3" << endl;
-                    fclose(fp);
-                    return false;
-                }
-                value = elem - HW2;
-                if (value < -HW2 || HW2 < value) {
-                    cerr << "book NOT FULLY imported " << n_book << " boards code 4 got value " << value << endl;
-                    fclose(fp);
-                    return false;
-                }
-                b.player = p;
-                b.opponent = o;
-                n_book += register_symmetric_book(b, value, n_book);
+            for (i = 0; i < N_EMBED_BOOK; ++i) {
+                b.player = embed_book[i].player;
+                b.opponent = embed_book[i].opponent;
+                n_book += register_symmetric_book(b, embed_book[i].value, n_book);
             }
             cerr << "book imported " << n_book << " boards" << endl;
-            fclose(fp);
-            return true;
-        }
-        
-        inline bool import_edax_book(string file) {
-            cerr << file << endl;
-            FILE* fp;
-            #ifdef _WIN64
-                if (fopen_s(&fp, file.c_str(), "rb") != 0) {
-                    cerr << "can't open " << file << endl;
-                    return false;
-                }
-            #else
-                fp = fopen(file.c_str(), "rb");
-                if (fp == NULL){
-                    cerr << "can't open " << file << endl;
-                    return false;
-                }
-            #endif
-            char elem_char;
-            int elem_int;
-            int16_t elem_short;
-            int i, j;
-            for (i = 0; i < 38; ++i){
-                if (fread(&elem_char, 1, 1, fp) < 1) {
-                    cerr << "file broken" << endl;
-                    fclose(fp);
-                    return false;
-                }
-            }
-            if (fread(&elem_int, 4, 1, fp) < 1) {
-                cerr << "file broken" << endl;
-                fclose(fp);
-                return false;
-            }
-            int n_boards = elem_int;
-            uint64_t player, opponent;
-            int16_t value;
-            char link = 0, link_value, link_move;
-            Board b;
-            Flip flip;
-            for (i = 0; i < n_boards; ++i){
-                if (i % 32768 == 0)
-                    cerr << "loading edax book " << (i * 100 / n_boards) << "%" << endl;
-                if (fread(&player, 8, 1, fp) < 1) {
-                    cerr << "file broken" << endl;
-                    fclose(fp);
-                    return false;
-                }
-                if (fread(&opponent, 8, 1, fp) < 1) {
-                    cerr << "file broken" << endl;
-                    fclose(fp);
-                    return false;
-                }
-                for (j = 0; j < 4; ++j) {
-                    if (fread(&elem_int, 4, 1, fp) < 1) {
-                        cerr << "file broken" << endl;
-                        fclose(fp);
-                        return false;
-                    }
-                }
-                if (fread(&value, 2, 1, fp) < 1) {
-                    cerr << "file broken" << endl;
-                    fclose(fp);
-                    return false;
-                }
-                for (j = 0; j < 2; ++j) {
-                    if (fread(&elem_short, 2, 1, fp) < 1) {
-                        cerr << "file broken" << endl;
-                        fclose(fp);
-                        return false;
-                    }
-                }
-                if (fread(&link, 1, 1, fp) < 1) {
-                    cerr << "file broken" << endl;
-                    fclose(fp);
-                    return false;
-                }
-                if (fread(&elem_char, 1, 1, fp) < 1) {
-                    cerr << "file broken" << endl;
-                    fclose(fp);
-                    return false;
-                }
-                b.player = player;
-                b.opponent = opponent;
-                n_book += register_symmetric_book(b, -(int)value, n_book);
-                for (j = 0; j < (int)link + 1; ++j) {
-                    if (fread(&link_value, 1, 1, fp) < 1) {
-                        cerr << "file broken" << endl;
-                        fclose(fp);
-                        return false;
-                    }
-                    if (fread(&link_move, 1, 1, fp) < 1) {
-                        cerr << "file broken" << endl;
-                        fclose(fp);
-                        return false;
-                    }
-                    if (link_move < HW2) {
-                        calc_flip(&flip, &b, (int)link_move);
-                        if (flip.flip == 0ULL){
-                            cerr << "error! illegal move" << endl;
-                            return false;
-                        }
-                        b.move_board(&flip);
-                            n_book += register_symmetric_book(b, (int)link_value, n_book);
-                        b.undo_board(&flip);
-                    }
-                }
-            }
-            cerr << "book imported " << n_book << " boards" << endl;
-            return true;
         }
 
         inline void reg(Board b, int value){
@@ -286,61 +134,6 @@ class Book{
         inline int get_n_book(){
             return n_book;
         }
-
-        inline void change(Board b, int value){
-            if (register_symmetric_book(b, value, n_book)){
-                n_book++;
-                cerr << "book registered " << n_book << endl;
-            } else
-                cerr << "book changed " << n_book << endl;
-        }
-
-        inline void change(Board *b, int value){
-            Board nb = b->copy();
-            change(nb, value);
-        }
-
-        inline void delete_elem(Board b){
-            if (delete_symmetric_book(b)){
-                n_book--;
-                cerr << "deleted book elem " << n_book << endl;
-            } else
-                cerr << "book elem NOT deleted " << n_book << endl;
-        }
-
-        inline void delete_all(){
-            book.clear();
-            n_book = 0;
-        }
-
-        inline void save_bin(string file, string bak_file){
-            if (remove(bak_file.c_str()) == -1)
-                cerr << "cannot delete backup. you can ignore this." << endl;
-            rename(file.c_str(), bak_file.c_str());
-            ofstream fout;
-            fout.open(file.c_str(), ios::out|ios::binary|ios::trunc);
-            if (!fout){
-                cerr << "can't open book.egbk" << endl;
-                return;
-            }
-            uint64_t i;
-            uint8_t elem;
-            cerr << "saving book..." << endl;
-            fout.write((char*)&n_book, 4);
-            int t = 0;
-            for (auto itr = book.begin(); itr != book.end(); ++itr){
-                ++t;
-                if (t % 65536 == 0)
-                    cerr << "saving book " << (t * 100 / (int)book.size()) << "%" << endl;
-                fout.write((char*)&itr->first.player, 8);
-                fout.write((char*)&itr->first.opponent, 8);
-                elem = max(0, min(HW2 * 2, itr->second + HW2));
-                fout.write((char*)&elem, 1);
-            }
-            fout.close();
-            cerr << "saved " << t << " boards" << endl;
-        }
-        
 
     private:
         inline bool register_book(Board b, int value){
@@ -439,6 +232,6 @@ class Book{
 
 Book book;
 
-bool book_init(string file){
-    return book.init(file);
+void book_init(){
+    book.init();
 }
