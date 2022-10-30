@@ -290,7 +290,7 @@ void board_init_rand(){
                 hash_rand_opponent[i][j] = myrand_uint_rev(); //(uint32_t)(rotate_180(myrand_ull()) >> 32);
         }
     }
-    cerr << "board initialized" << endl;
+    cerr << "board rand initialized" << endl;
 }
 
 bool board_init(){

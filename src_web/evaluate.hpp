@@ -416,26 +416,9 @@ inline bool init_evaluation_calc(const char* file){
             return false;
         }
     }
-    int i = 0;
-    /*
     for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
         for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx)
             init_pattern_arr_rev(0, phase_idx, pattern_idx, pattern_sizes[pattern_idx]);
-    }
-    */
-    if (thread_pool.size() >= 2){
-        future<void> tasks[N_PHASES * N_PATTERNS];
-        for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
-            for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx)
-                tasks[i++] = thread_pool.push(init_pattern_arr_rev, phase_idx, pattern_idx, pattern_sizes[pattern_idx]);
-        }
-        for (future<void> &task: tasks)
-            task.get();
-    } else{
-        for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
-            for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx)
-                init_pattern_arr_rev(0, phase_idx, pattern_idx, pattern_sizes[pattern_idx]);
-        }
     }
     cerr << "evaluation function initialized" << endl;
     return true;
@@ -453,28 +436,18 @@ bool evaluate_init(){
     return init_evaluation_calc("resources/eval.egev");
 }
 
-#if USE_SIMD
-    inline int calc_surround(const uint64_t player, const uint64_t empties){
-        const u64_4 shift(1, HW, HW_M1, HW_P1);
-        const u64_4 mask(0x7E7E7E7E7E7E7E7EULL, 0x00FFFFFFFFFFFF00ULL, 0x007E7E7E7E7E7E00ULL, 0x007E7E7E7E7E7E00ULL);
-        u64_4 pl(player);
-        pl = pl & mask;
-        return pop_count_ull(empties & all_or((pl << shift) | (pl >> shift)));
-    }
-#else
-    inline uint64_t calc_surround_part(const uint64_t player, const int dr){
-        return (player << dr) | (player >> dr);
-    }
+inline uint64_t calc_surround_part(const uint64_t player, const int dr){
+    return (player << dr) | (player >> dr);
+}
 
-    inline int calc_surround(const uint64_t player, const uint64_t empties){
-        return pop_count_ull(empties & (
-            calc_surround_part(player & 0b0111111001111110011111100111111001111110011111100111111001111110ULL, 1) | 
-            calc_surround_part(player & 0b0000000011111111111111111111111111111111111111111111111100000000ULL, HW) | 
-            calc_surround_part(player & 0b0000000001111110011111100111111001111110011111100111111000000000ULL, HW_M1) | 
-            calc_surround_part(player & 0b0000000001111110011111100111111001111110011111100111111000000000ULL, HW_P1)
-        ));
-    }
-#endif
+inline int calc_surround(const uint64_t player, const uint64_t empties){
+    return pop_count_ull(empties & (
+        calc_surround_part(player & 0b0111111001111110011111100111111001111110011111100111111001111110ULL, 1) | 
+        calc_surround_part(player & 0b0000000011111111111111111111111111111111111111111111111100000000ULL, HW) | 
+        calc_surround_part(player & 0b0000000001111110011111100111111001111110011111100111111000000000ULL, HW_M1) | 
+        calc_surround_part(player & 0b0000000001111110011111100111111001111110011111100111111000000000ULL, HW_P1)
+    ));
+}
 
 inline int pick_pattern(const int phase_idx, const int pattern_idx, const uint_fast8_t b_arr[], const int p0, const int p1, const int p2, const int p3, const int p4){
     return pattern_arr[0][phase_idx][pattern_idx][b_arr[p0] * P34 + b_arr[p1] * P33 + b_arr[p2] * P32 + b_arr[p3] * P31 + b_arr[p4]];

@@ -275,7 +275,7 @@ constexpr uint64_t bit_radiation_dismiss_around[HW2] = {
     0xFC00050911214181ULL, 0xF8000A1222428202ULL, 0xF100152444840404ULL, 0xE3002A4988080808ULL, 0xC700549211101010ULL, 0x8F00A82422212020ULL, 0x1F00504844424140ULL, 0x3F00A09088848281ULL
 };
 
-constexpr uint8_t d7_mask[hw2] = {
+constexpr uint8_t d7_mask[HW2] = {
     0b10000000, 0b11000000, 0b11100000, 0b11110000, 0b11111000, 0b11111100, 0b11111110, 0b11111111,
     0b11000000, 0b11100000, 0b11110000, 0b11111000, 0b11111100, 0b11111110, 0b11111111, 0b01111111,
     0b11100000, 0b11110000, 0b11111000, 0b11111100, 0b11111110, 0b11111111, 0b01111111, 0b00111111,
@@ -286,7 +286,7 @@ constexpr uint8_t d7_mask[hw2] = {
     0b11111111, 0b01111111, 0b00111111, 0b00011111, 0b00001111, 0b00000111, 0b00000011, 0b00000001
 };
 
-constexpr uint8_t d9_mask[hw2] = {
+constexpr uint8_t d9_mask[HW2] = {
     0b11111111, 0b01111111, 0b00111111, 0b00011111, 0b00001111, 0b00000111, 0b00000011, 0b00000001,
     0b11111110, 0b11111111, 0b01111111, 0b00111111, 0b00011111, 0b00001111, 0b00000111, 0b00000011,
     0b11111100, 0b11111110, 0b11111111, 0b01111111, 0b00111111, 0b00011111, 0b00001111, 0b00000111,
@@ -305,15 +305,15 @@ inline uint64_t split_h_line(uint_fast8_t x, int_fast8_t t){
     return (uint64_t)x << (HW * t);
 }
 
-inline int join_v_line(unsigned long long x, int c){
+inline int join_v_line(uint64_t x, int c){
     x = (x >> c) & 0b0000000100000001000000010000000100000001000000010000000100000001ULL;
     return (x * 0b0000000100000010000001000000100000010000001000000100000010000000ULL) >> 56;
 }
 
-inline unsigned long long split_v_line(uint8_t x, int c){
-    unsigned long long res = 0;
-    unsigned long long a = x & 0b00001111;
-    unsigned long long b = x & 0b11110000;
+inline uint64_t split_v_line(uint8_t x, int c){
+    uint64_t res = 0;
+    uint64_t a = x & 0b00001111;
+    uint64_t b = x & 0b11110000;
     res = a | (b << 28);
     a = res & 0b0000000000000000000000000000001100000000000000000000000000000011ULL;
     b = res & 0b0000000000000000000000000000110000000000000000000000000000001100ULL;
@@ -324,12 +324,12 @@ inline unsigned long long split_v_line(uint8_t x, int c){
     return res << c;
 }
 
-inline int join_d7_line(unsigned long long x, const int t){
+inline int join_d7_line(uint64_t x, const int t){
     x = (x >> t) & 0b0000000000000010000001000000100000010000001000000100000010000001ULL;
     return (x * 0b1000000010000000100000001000000010000000100000001000000010000000ULL) >> 56;
 }
 
-inline unsigned long long split_d7_line(uint8_t x, int t){
+inline uint64_t split_d7_line(uint8_t x, int t){
     uint8_t c = x & 0b01010101;
     uint8_t d = x & 0b10101010;
     x = (c << 1) | (d >> 1);
@@ -339,9 +339,9 @@ inline unsigned long long split_d7_line(uint8_t x, int t){
     c = x & 0b00001111;
     d = x & 0b11110000;
     x = (c << 4) | (d >> 4);
-    unsigned long long a = x & 0b00001111;
-    unsigned long long b = x & 0b11110000;
-    unsigned long long res = a | (b << 24);
+    uint64_t a = x & 0b00001111;
+    uint64_t b = x & 0b11110000;
+    uint64_t res = a | (b << 24);
     a = res & 0b0000000000000000000000000000000000110000000000000000000000000011ULL;
     b = res & 0b0000000000000000000000000000000011000000000000000000000000001100ULL;
     res = a | (b << 12);
@@ -351,19 +351,19 @@ inline unsigned long long split_d7_line(uint8_t x, int t){
     return res << t;
 }
 
-inline int join_d9_line(unsigned long long x, int t){
+inline int join_d9_line(uint64_t x, int t){
     if (t > 0)
         x >>= t;
-    else if (t < 0)
+    else
         x <<= (-t);
     x &= 0b1000000001000000001000000001000000001000000001000000001000000001ULL;
     return (x * 0b0000000100000001000000010000000100000001000000010000000100000001ULL) >> 56;
 }
 
-inline unsigned long long split_d9_line(uint8_t x, int t){
-    unsigned long long a = x & 0b00001111;
-    unsigned long long b = x & 0b11110000;
-    unsigned long long res = a | (b << 32);
+inline uint64_t split_d9_line(uint8_t x, int t){
+    uint64_t a = x & 0b00001111;
+    uint64_t b = x & 0b11110000;
+    uint64_t res = a | (b << 32);
     a = res & 0b0000000000000000000000000011000000000000000000000000000000000011ULL;
     b = res & 0b0000000000000000000000001100000000000000000000000000000000001100ULL;
     res = a | (b << 16);

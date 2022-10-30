@@ -79,27 +79,17 @@ inline int get_weighted_n_moves(uint64_t legal){
     return pop_count_ull(legal) * 2 + get_corner_mobility(legal);
 }
 
-#if USE_SIMD
-    inline int get_potential_mobility(uint64_t opponent, uint64_t empties){
-        const u64_4 shift(1, HW, HW_M1, HW_P1);
-        const u64_4 mask(0x7E7E7E7E7E7E7E7EULL, 0x00FFFFFFFFFFFF00ULL, 0x007E7E7E7E7E7E00ULL, 0x007E7E7E7E7E7E00ULL);
-        u64_4 op(opponent);
-        op = op & mask;
-        return pop_count_ull(empties & all_or((op << shift) | (op >> shift)));
-    }
-#else
-    inline int get_potential_mobility(uint64_t opponent, uint64_t empties){
-        uint64_t hmask = opponent & 0x7E7E7E7E7E7E7E7EULL;
-        uint64_t vmask = opponent & 0x00FFFFFFFFFFFF00ULL;
-        uint64_t hvmask = opponent & 0x007E7E7E7E7E7E00ULL;
-        uint64_t res = 
-            (hmask << 1) | (hmask >> 1) | 
-            (vmask << HW) | (vmask >> HW) | 
-            (hvmask << HW_M1) | (hvmask >> HW_M1) | 
-            (hvmask << HW_P1) | (hvmask >> HW_P1);
-        return pop_count_ull(empties & res);
-    }
-#endif
+inline int get_potential_mobility(uint64_t opponent, uint64_t empties){
+    uint64_t hmask = opponent & 0x7E7E7E7E7E7E7E7EULL;
+    uint64_t vmask = opponent & 0x00FFFFFFFFFFFF00ULL;
+    uint64_t hvmask = opponent & 0x007E7E7E7E7E7E00ULL;
+    uint64_t res = 
+        (hmask << 1) | (hmask >> 1) | 
+        (vmask << HW) | (vmask >> HW) | 
+        (hvmask << HW_M1) | (hvmask >> HW_M1) | 
+        (hvmask << HW_P1) | (hvmask >> HW_P1);
+    return pop_count_ull(empties & res);
+}
 
 inline bool move_evaluate(Search *search, Flip_value *flip_value, const int alpha, const int beta, const int depth, const bool *searching, const int search_depth, const int search_alpha){
     if (flip_value->flip.flip == search->board.opponent){

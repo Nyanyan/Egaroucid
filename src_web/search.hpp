@@ -13,7 +13,6 @@
 #include "setting.hpp"
 #include "common.hpp"
 #include "board.hpp"
-#include "thread_pool.hpp"
 #include "evaluate.hpp"
 #include "transpose_table.hpp"
 
