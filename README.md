@@ -3,9 +3,11 @@ Strong Othello AI Application.
 
 Light version of this othello AI got 1st place in the world ([CodinGame Othello](https://www.codingame.com/multiplayer/bot-programming/othello-1/leaderboard))
 
-**You can use the [application in Japanese or English](https://www.egaroucid-app.nyanyan.dev/)**
+**You can use the [application in Japanese or English](https://www.egaroucid.nyanyan.dev/)**
 
-**You can [play light version of this AI on the Web in Japanese](https://www.egaroucid.nyanyan.dev/).**
+**You can [play Egaroucid for Web](https://www.egaroucid.nyanyan.dev/en/web).**
+
+**すぐ遊べるWeb版は[こちら](https://www.egaroucid.nyanyan.dev/ja/web).**
 
 
 
