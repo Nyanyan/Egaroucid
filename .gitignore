@@ -30,5 +30,3 @@ src/test/ignore
 /src/build
 /src/test/resources
 src_web/*.js
-web_resources/egaroucid_for_web/ai.js
-*.wasm

@@ -2,6 +2,10 @@
 
 
 
+[The Weakest Othello AI](https://www.egaroucen.nyanyan.dev/)
+
+
+
 [GitHub Repository](https://github.com/Nyanyan/Egaroucid)
 
 

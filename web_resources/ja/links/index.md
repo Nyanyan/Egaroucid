@@ -2,6 +2,10 @@
 
 
 
+[最弱オセロAI](https://www.egaroucen.nyanyan.dev/)
+
+
+
 [GitHub レポジトリ](https://github.com/Nyanyan/Egaroucid)
 
 
