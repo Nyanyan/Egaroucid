@@ -89,8 +89,11 @@ def create_html(dr):
         alternate += '<link rel="alternate" href="' + main_page_url + 'en/" hreflang="x-default">\n'
     with open(dr + '/index.md', 'r', encoding='utf-8') as f:
         md = f.read()
+    page_title = ''
     md_split = md.splitlines()
     for i, elem in enumerate(md_split):
+        if i == 0:
+            page_title = elem.replace('# ', '')
         # special replacements
         ## download
         if elem == 'DOWNLOAD_BUTTON_REPLACE':
@@ -124,7 +127,7 @@ def create_html(dr):
     html += '<div class="box">\n'
     html += '<p>\n'
     this_page_url = main_page_url + dr
-    html += tweet.replace('DATA_URL', this_page_url) + ' \n'
+    html += tweet.replace('DATA_URL', this_page_url).replace('DATA_TEXT', page_title) + ' \n'
     for lang_dr, lang_name in langs:
         original_lang = dr.split('/')[0]
         if lang_dr == original_lang:
