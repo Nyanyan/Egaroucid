@@ -30,3 +30,4 @@ src/test/ignore
 /src/build
 /src/test/resources
 src_web/*.js
+src_web/*.wasm
