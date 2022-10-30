@@ -61,6 +61,12 @@ with open(elements_dir + '/tweet.html', 'r', encoding='utf-8') as f:
 with open(elements_dir + '/foot.html', 'r', encoding='utf-8') as f:
     foot = f.read()
 
+with open(elements_dir + '/main_page_title.txt', 'r', encoding='utf-8') as f:
+    main_page_title = f.read()
+
+with open(elements_dir + '/main_page_description.txt', 'r', encoding='utf-8') as f:
+    main_page_description = f.read()
+
 section_head1 = '<div>\n<h2>'
 section_head2 = '</h2>\n'
 section_foot = '</div>\n'
@@ -137,6 +143,8 @@ def create_html(dr):
         html += link21 + lang_link + link22 + lang_name + link23 + ' \n'
     html += '</p>\n'
     additional_head = '<meta property="og:url" content="' + this_page_url + '" />\n'
+    additional_head += '<meta property="og:title" content="' + main_page_title + ' ' + page_title + '" />\n'
+    additional_head += '<meta property="og:description" content="' + main_page_description + '" />\n'
     try:
         with open(dr + '/additional_head.html', 'r', encoding='utf-8') as f:
             additional_head += f.read()
