@@ -118,6 +118,10 @@ void input_param_onephase(string file){
     int t =0;
     int pattern_idx, pattern_elem, dense_idx, canput, sur0, sur1, i, j, k;
     for (pattern_idx = 0; pattern_idx < n_eval; ++pattern_idx){
+        if (12 <= pattern_idx && pattern_idx <= 15)
+            continue;
+        if (19 <= pattern_idx && pattern_idx <= 22)
+            continue;
         cerr << "=";
         for (pattern_elem = 0; pattern_elem < eval_sizes[pattern_idx]; ++pattern_elem){
             ++t;
@@ -658,7 +662,7 @@ int main(int argc, char *argv[]){
     init();
     initialize_param();
     //output_param_onephase();
-    //input_param_onephase((string)(argv[6]));
+    input_param_onephase((string)(argv[6]));
     input_test_data(argc, argv);
 
     sd(second * 1000);

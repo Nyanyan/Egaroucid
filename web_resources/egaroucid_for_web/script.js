@@ -27,7 +27,7 @@ var n_stones = 4;
 var player = 0;
 var ai_player = -1;
 var level_idx = 0;
-let level_names = ['レベル0', 'レベル1', 'レベル2', 'レベル3', 'レベル4', 'レベル5', 'レベル6', 'レベル7', 'レベル8', 'レベル9', 'レベル10'];
+let level_names = ['レベル0', 'レベル1', 'レベル2', 'レベル3', 'レベル4', 'レベル5', 'レベル6', 'レベル7', 'レベル8', 'レベル9', 'レベル10', 'レベル11', 'レベル12', 'レベル13', 'レベル14', 'レベル15'];
 var game_end = false;
 var value_calced = false;
 var div_mcts = 20;
@@ -356,6 +356,9 @@ function calc_value() {
     var hint_level = level_idx - 1;
     if (hint_level < 0){
         hint_level = 0;
+    }
+    if (hint_level > 7){
+        hint_level = 7;
     }
     _calc_value(pointer, pointer_value, hint_level, ai_player);
     _free(pointer);
