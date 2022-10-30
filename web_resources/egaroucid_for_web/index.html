@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
+        <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no">
+        <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+        <script id="twitter-wjs" src="https://platform.twitter.com/widgets.js"></script>
+        <link rel="stylesheet" href="style.css">
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:site" content="@takuto_yamana" />
+        <meta property="og:url" content="https://www.egaroucid.nyanyan.dev" />
+        <meta property="og:title" content="Egaroucid - 世界1位のオセロAI" />
+        <meta property="og:description" content="世界1位のオセロAIと対戦！" />
+        <meta property="og:image" content="https://raw.githubusercontent.com/Nyanyan/Egaroucid_Web_Ver/master/docs/img.png" />
+        <title>Egaroucid Light</title>
+    </head>
+    <body>
+        <div class="title">Egaroucid5 Light - Othello AI</div>
+        <div class="sub_title"><a href="https://www.codingame.com/multiplayer/bot-programming/othello-1/leaderboard" target="_blank">Codingame Othello</a>で世界1位になったAIです。</div>
+        <div class="sub_title">本気で作ったAIは<a href="https://www.egaroucid-app.nyanyan.dev/" target="_blank">こちら</a>。</div>
+        <div class="sub_title">最弱AIは<a href="https://www.egaroucen.nyanyan.dev/" target="_blank">こちら</a>。</div>
+        <div align="center">
+            <a class="setting" href="#usage">使い方</a>
+            <a href="https://twitter.com/share?ref_src=twsrc%5Etfw" class="twitter-share-button" data-text="世界1位のオセロAI&quot;Egaroucid&quot;と勝負！" data-url="https://www.egaroucid.nyanyan.dev/" data-hashtags="egaroucid" data-related="takuto_yamana,Nyanyan_Cube" data-show-count="false">Tweet</a><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+        </div>
+        <p align="center">
+            <input type="radio" class="radio_size" name="ai_player" value="1" id="white" checked><label for="white" class="setting">黒(先手): あなた 白(後手): AI</label>
+            <input type="radio" class="radio_size" name="ai_player" value="0" id="black"><label for="black" class="setting">黒(先手): AI 白(後手): あなた</label>
+        </p>
+        <p align="center">
+            <span class="setting">AIの強さ</span>
+            <input type="range" id="ai_level" min="0" max="10" step="1" value="2">
+            <span class="setting" id="ai_level_label"></span>
+        </p>
+        <p align="center">
+            <input type="checkbox" id="show_value" checked><label class="setting" for="show_value">ヒント表示</label>
+            <input type="checkbox" id="show_graph" checked><label class="setting" for="show_graph">対局中グラフ表示</label>
+        </p>
+        <div align="center" id="div_start">
+            <input type="submit" class="setting" value="AI読込中" onclick="start()" id="start" disabled>
+        </div>
+        <div class="popup" id="js-popup">
+            <div class="popup-inner">
+                <p align="center" class="sub_title" id="result_text"></p>
+                <img class="image" id="game_result">
+                <p align="center" class="hidden" id="tweet_result"></p>
+                <p align="center" class="text">上の画像は右クリックなどで保存できます。</p>
+                <p align="center" class="text">周りをタップするとポップアップが消えます。</p>
+            </div>
+            <div class="black-background" id="js-black-bg"></div>
+        </div>
+        <div id="main">
+            <table class="coords" id="coord_top" align="center"></table>
+            <table align="center">
+                <tr>
+                    <td><table class="coords" id="coord_left" align="center"></table></td>
+                    <td><table class="board" id="board" align="center"></table></td>
+                    <td><table class="coords" id="coord_right" align="center"></table></td>
+                </tr>
+            </table>
+            <table class="status" id="status" align="center">
+                <tr>
+                    <td class="status_cell"><span class="state_blank"></span></td>
+                    <td class="status_cell"><span class="black_stone"></span></td>
+                    <td class="status_char"><span class="state_blank">2</span></td>
+                    <td class="status_char"><span class="state_blank">-</span></td>
+                    <td class="status_char"><span class="state_blank">2</span></td>
+                    <td class="status_cell"><span class="white_stone"></span></td>
+                    <td class="status_cell"><span class="state_blank"></span></td>
+                </tr>
+            </table>
+        </div>
+        <div id="info" align="center">
+            <div class="sub_title">対局情報</div>
+            <div class="sub_sub_title">予想最終石差グラフ</div>
+            <div class="chart" id="chart_container">
+                <canvas id="graph"></canvas>
+            </div>
+            <div class="sub_sub_title">棋譜</div>
+            <div class="record" id="record"></div>
+        </div>
+        <div align="center">
+            <div class="sub_title" id="usage">使い方</div>
+            <div class="text">
+                手番とAIの強さを選択し、対局開始ボタンを押してください。<br>
+                予想最終石差グラフは左が序盤、右が直近の手です。値が大きくなるほどAI有利と判断していて、0が互角です。<br>
+                グラフ表示をオフにしても対局終了後にグラフが描画されます。<br>
+                ヒントは5手読みの評価値ですので精度は悪めです。さらに、序盤専用の評価関数を作っていないので序盤のヒントは役に立ちません。<br>
+            </div>
+            <details class="details" id="strength">
+                <summary class="summary">AIの強さ</summary>
+                <div class="text">
+                    AIの強さは中盤の先読み手数、終盤の完全読み手数で調整されます。
+                    レベルが上がると計算時間が増えるので、様子を見つつ設定してください。<br>
+                    各強さの詳細は以下です。
+                </div>
+                <table>
+                    <tr>
+                        <td class="text">レベル</td>
+                        <td class="text">読み</td>
+                        <td class="text">完全読み</td>
+                    </tr>
+                    <tr>
+                        <td class="text">0</td>
+                        <td class="text">0手</td>
+                        <td class="text">0手</td>
+                    </tr>
+                    <tr>
+                        <td class="text">1</td>
+                        <td class="text">1手</td>
+                        <td class="text">2手</td>
+                    </tr>
+                    <tr>
+                        <td class="text">2</td>
+                        <td class="text">2手</td>
+                        <td class="text">4手</td>
+                    </tr>
+                    <tr>
+                        <td class="text">3</td>
+                        <td class="text">3手</td>
+                        <td class="text">6手</td>
+                    </tr>
+                    <tr>
+                        <td class="text">4</td>
+                        <td class="text">4手</td>
+                        <td class="text">8手</td>
+                    </tr>
+                    <tr>
+                        <td class="text">5</td>
+                        <td class="text">5手</td>
+                        <td class="text">10手</td>
+                    </tr>
+                    <tr>
+                        <td class="text">6</td>
+                        <td class="text">6手</td>
+                        <td class="text">12手</td>
+                    </tr>
+                    <tr>
+                        <td class="text">7</td>
+                        <td class="text">7手</td>
+                        <td class="text">14手</td>
+                    </tr>
+                    <tr>
+                        <td class="text">8</td>
+                        <td class="text">8手</td>
+                        <td class="text">16手</td>
+                    </tr>
+                    <tr>
+                        <td class="text">9</td>
+                        <td class="text">9手</td>
+                        <td class="text">18手</td>
+                    </tr>
+                    <tr>
+                        <td class="text">10</td>
+                        <td class="text">10手</td>
+                        <td class="text">20手</td>
+                    </tr>
+                </table>
+            </details>
+            <div align="center" class="rect">
+                <div class="sub_title">お知らせ</div>
+                <details class="details">
+                    <summary class="summary_small">本気で作ったオセロソフトについて</summary>
+                    このWeb版ではなく、本気で強化・高速化をしたオセロAIを搭載したオセロ研究にも使えるソフト<a href="https://www.egaroucid-app.nyanyan.dev/" target="_blank">Egaroucid5</a>を無料公開しています。
+                </details>
+                <details class="details">
+                    <summary class="summary_small">AI(Egaroucid5 Lightへ)のアップデートについて</summary>
+                    AIを大幅にアップデートしました。レベルの基準は以前のものと大きく異なります。
+                </details>
+                <details class="details">
+                    <summary class="summary_small">最弱オセロAI公開</summary>
+                    このオセロAIのアルゴリズムをほとんどそのまま流用して負けようと努めるオセロAI"Egaroucen"を作りました。<br>
+                    <a href="https://www.egaroucen.nyanyan.dev/" target="_blank">こちら</a>で遊べます。
+                </details>
+                <details class="details">
+                    <summary class="summary_small">AI(Egaroucid4へ)のアップデートについて</summary>
+                    AIを大幅にアップデートしました。レベルの基準は以前のものと大きく異なります。
+                </details>
+                <details class="details">
+                    <summary class="summary_small">AIの再アップデートについて</summary>
+                    AIを大幅にアップデートしました。それに伴いカスタムレベルを機能に追加しました。レベルの基準は以前のものと大きく異なります。
+                </details>
+                <details class="details">
+                    <summary class="summary_small">AIのアップデートについて</summary>
+                    AIを大幅にアップデートしました。これにより、これまでのレベルと今のレベルは大きく基準が違うものとなりました。<br>
+                    また、それによってレベル-2とレベル-1は廃止となりました。<br>
+                </details>
+                <details class="details">
+                    <summary class="summary_small">このサイトの紹介記事</summary>
+                    このサイトの<a href="https://note.com/nyanyan_cubetech/n/n9db224466ca0" target="_blank">紹介記事</a>をnoteに書きました。ぜひご覧ください。
+                </details>
+                <details class="details">
+                    <summary class="summary_small">レベル-1(負けようとする)に負ける方法の解説記事</summary>
+                    Ar-Rayさん(<a href="https://twitter.com/Ray255Ar" target="_blank">Twitter</a>)がこのAIのレベル-1(<a href="#level_minus1">詳細</a>)に負ける方法を<a href="https://ar-ray.hatenablog.com/entry/2021/08/23/214227" target="_blank">はてなブログの記事</a>にしてくださいました。
+                </details>
+                <details class="details">
+                    <summary class="summary_small">オセロ世界4位の方と対戦</summary>
+                    正式公開前に、オセロ世界選手権世界4位経験者の方と0.100秒/手で対戦していただきました。<br>
+                    その様子は<a href="https://www.youtube.com/watch?v=7SMzAaNkfVc&lc=UgwUHI1qZIok2TvpGDx4AaABAg.9RGEhjcbmpt9RGFdX1K6bB" target="_blank">YouTube</a>で見られます。
+                </details>
+            </div>
+            <details class="details" id="achievement">
+                <summary class="summary">世界順位について</summary>
+                <div  class="text">
+                    このAIの旧バージョン(初代Egaroucid)は2021年6月28日に<a href="https://www.codingame.com/multiplayer/bot-programming/othello-1/leaderboard" target="_blank">Codingame Othello</a>で世界10位を獲得しました。
+                    その後初代Egaroucidの順位は世界20位まで落ちてしまい、新たにEgaroucid2を制作しました。こちらは2021年10月16日に世界17位になりました。さらに改良を進め、3代目のEgaroucid3で2021年11月3日、再び世界10位になりました。さらに、高速化などの改良をしたEgaroucid4で2021年11月18日、世界3位になり、最終的に2021年11月22日、世界1位になりました。この後、アップデートしたEgaroucid5 Lightで無敗優勝を達成しました。<br>
+                    このAIは同じ読み深さであればWZebraに勝利できるほど強いですが、このWeb版では計算リソースの問題でそこまで強くない場合があります。また、楽しみやすいよう不利な定石もある程度打つようにしてあります。ご了承ください。なお、パソコン向けアプリとして開発中のEgaroucid5はEdaxを大幅に上回る強さです。
+                </div>
+            </details>
+            <div align="center" class="rect">
+                <div class="sub_title">技術解説</div>
+                <details class="details">
+                    <summary class="summary_small">初代Egaroucid</summary>
+                    <div class="text">
+                        このAIはminimax系ゲーム木探索アルゴリズムであるNegascout法を主体に、葉ノード付近ではNegaalpha法に切り替えて高速化しています。move orderingを行う場合は開放度のようなものを用いています。<br>
+                        オセロの状態管理には完全インデックス化を用いています。完全インデックス化は配列やビットボードよりも高速に処理できます。<br>
+                        評価関数には、列や行のパターン、石数、着手可能数、各マスの重み、確定石数、潜在的着手可能数を正規化したものの重みつけ和を使っています。<br>
+                        序盤、中盤、終盤で評価関数のパラメータのみを変えて全く同じアルゴリズムで探索しています。今後は序盤のbook活用、終盤の必勝読みなどを加えたいです。
+                    </div>
+                </details>
+                <details class="details">
+                    <summary class="summary_small">Egaroucid2</summary>
+                    <div class="text">
+                        Egaroucid2の序中盤は囲碁や将棋などでとても強いAIであるAlphaZeroのアルゴリズムを簡略化したものを使っています。<br>
+                        モンテカルロ木探索(MCTS)に似たPV-MCTSというアルゴリズムで、1回の訪問でノードを展開する他、展開時にニューラルネットワークで盤面の価値(予想勝率)と方策を推論し、打つ手の決定に影響させます。<br>
+                        終盤は初代Egaroucidで使ったアルゴリズムの一部であるNegaalpha法を使って必勝読み(勝てる手筋が見つかり次第探索を打ち切る)をしています。<br>
+                        詳細は<a href="https://scrapbox.io/nyanyan/%E3%82%AA%E3%82%BB%E3%83%ADAI%22Egaroucid%22%E5%85%A8%E8%88%AC" target="_blank">Scrapbox</a>に書きました。
+                    </div>
+                </details>
+                <details class="details">
+                    <summary class="summary_small">Egaroucid3</summary>
+                    <div class="text">
+                        Egaroucid3はNegascout探索を用いたオセロAIです。評価関数には深層学習したニューラルネットワークなどを使っていて、高速化のためにパターン評価を行っています。<br>
+                        評価関数は11種類、計84個のパターンと着手可能数、潜在的着手可能数をニューラルネットワークでまとめて一つの値にしています。<br>
+                        終盤は速さ優先探索と最終1手最適化を行った必勝読みを使用しています。
+                    </div>
+                </details>
+                <details class="details">
+                    <summary class="summary_small">Egaroucid4</summary>
+                    <div class="text">
+                        Egaroucid4はEgaroucid3のアルゴリズムを踏襲し、高速化と評価関数の精度向上、さらにMulti Prob Cutという枝刈りを導入しました。<br>
+                        この改善により、高速に精度良く深い探索ができるようになりました。
+                    </div>
+                </details>
+                <details class="details">
+                    <summary class="summary_small">Egaroucid5</summary>
+                    <div class="text">
+                        Egaroucid5では探索アルゴリズムにMTD-f法を使いました。さらに、データ構造などを見直して高速化しました。
+                    </div>
+                </details>
+            </div>
+            <div align="center">
+                <div class="sub_title">Made by にゃにゃん(山名琢翔)</div>
+                <p class="text">不具合報告はTwitterやGitHubでお願いします。</p>
+                <div class="text">
+                    <a href="https://github.com/Nyanyan/Egaroucid5" target="_blank">使われているAI(のパソコンアプリバージョン)のGitHubレポジトリ</a><br>
+                    <a href="https://github.com/Nyanyan/Egaroucid_Web_Ver" target="_blank">このページのGitHubレポジトリ</a><br>
+                    <a href="https://nyanyan.github.io/" target="_blank">Webサイト</a><br>
+                    <a href="https://twitter.com/takuto_yamana" target="_blank">Twitter(作品投稿)</a><br>
+                    <a href="https://twitter.com/Nyanyan_Cube" target="_blank">Twitter(雑多な方)</a>
+                </div>
+            </div>
+            <details class="details">
+                <summary class="summary">更新履歴</summary>
+                <p class="text">時間はJSTです(作者は日本に住んでいますが生活習慣はUTCです)</p>
+                <table>
+                    <tr>
+                        <td class="logs">2021/08/22 23:30</td>
+                        <td class="logs">公開</td>
+                    </tr>
+                    <tr>
+                        <td class="logs">2021/08/23 17:22</td>
+                        <td class="logs">
+                            [不具合解決]<br>
+                            <ul>
+                                <li>サーバの負荷軽減</li>
+                                <li>意図せずツイート画面に飛ぶバグの解消</li>
+                            </ul>
+                            [表示変更]
+                            <ul>
+                                <li>想定よりも読み手数が少なくなっているのでとりあえずモード表示を変更</li>
+                                <li>レイアウトを若干変更</li>
+                            </ul>
+                            [追加機能]<br>
+                            <ul>
+                                <li>読み手数が少ないからか最強モード(レベル6)が結構負けるので「レベル7」を追加(サーバ負荷が大きかったらやめます)</li>
+                                <li>レベル1相当でもまあまあ強いので、評価値が一番低い手を打つ「レベル-1」を追加</li>
+                            </ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="logs">2021/08/23 17:45</td>
+                        <td class="logs">
+                            [不具合解決]<br>
+                            <ul>
+                                <li>評価値グラフの値がおかしいバグを修正</li>
+                            </ul>
+                            [表示変更]
+                            <ul>
+                                <li>読み手数の表示を変更</li>
+                            </ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="logs">2021/08/23 19:45</td>
+                        <td class="logs">
+                            [表示変更]
+                            <ul>
+                                <li>「お願い」の追加</li>
+                                <li>予想以上に流行ってきたので「世界10位」に関する詳細を追加(叩かないで…)</li>
+                            </ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="logs">2021/08/23 22:50</td>
+                        <td class="logs">
+                            [不具合解決]<br>
+                            <ul>
+                                <li>サーバで動かすAIを少し増やした</li>
+                            </ul>
+                            [表示変更]
+                            <ul>
+                                <li>Ar-Rayさんの記事を紹介</li>
+                                <li>文字の大きさを変更</li>
+                                <li>レベル7の備考を追加</li>
+                                <li>技術解説の追記</li>
+                            </ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="logs">2021/08/23 23:55</td>
+                        <td class="logs">
+                            [追加機能]<br>
+                            <ul>
+                                <li>サーバで対局回数および勝利回数を記録するようにした(個人情報は取っていません)</li>
+                            </ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="logs">2021/08/24 0:05</td>
+                        <td class="logs">
+                            [不具合解決]<br>
+                            <ul>
+                                <li>対局回数ログがうまく取れないのを修正</li>
+                            </ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="logs">2021/08/24 0:25</td>
+                        <td class="logs">
+                            [不具合解決]<br>
+                            <ul>
+                                <li>ログがうまく取れないのを修正</li>
+                            </ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="logs">2021/08/24 2:15</td>
+                        <td class="logs">
+                            [不具合解決]<br>
+                            <ul>
+                                <li>対局回数ログの修正</li>
+                            </ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="logs">2021/08/24 16:45</td>
+                        <td class="logs">
+                            [表示変更]<br>
+                            <ul>
+                                <li>ページが長くなってきたのでdetailsを使用</li>
+                                <li>オセロAIの紹介記事を掲載</li>
+                            </ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="logs">2021/09/05 19:45</td>
+                        <td class="logs">
+                            [不具合解決]<br>
+                            <ul>
+                                <li>バックエンドのエラーでサービスが停止していたので復旧</li>
+                            </ul>
+                            [機能追加]<br>
+                            <ul>
+                                <li>レベル-1よりも負けようと頑張る「レベル-2」を追加(手抜き)</li>
+                            </ul>
+                            [仕様変更]<br>
+                            <ul>
+                                <li>AIを高速化した</li>
+                            </ul>
+                            [表示変更]<br>
+                            <ul>
+                                <li>負のレベルの色と文字の太さを変えた</li>
+                            </ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="logs">2021/10/16 03:11</td>
+                        <td class="logs">
+                            [仕様変更]<br>
+                            <ul>
+                                <li>AIを大幅にアップデートした</li>
+                                <li>AIをwasmで動くようにしたので静的なサイトに移行</li>
+                                <li>AIの計算進捗バーを設置</li>
+                                <li>ヒント表示機能を実装</li>
+                                <li>対局中のグラフ非表示機能を実装</li>
+                            </ul>
+                            [表示変更]<br>
+                            <ul>
+                                <li>レベル選択のUIを変更</li>
+                                <li>AIの仕様変更に伴い文章を変更</li>
+                            </ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="logs">2021/10/16 14:24</td>
+                        <td class="logs">
+                            [仕様変更]<br>
+                            <ul>
+                                <li>敗勢のとき終盤重くなるので軽くした</li>
+                            </ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="logs">2021/11/03 17:00</td>
+                        <td class="logs">
+                            [仕様変更]<br>
+                            <ul>
+                                <li>AIを大幅にアップデートした</li>
+                                <li>カスタムレベルを追加</li>
+                            </ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="logs">2021/11/19 00:30</td>
+                        <td class="logs">
+                            [仕様変更]<br>
+                            <ul>
+                                <li>AIを大幅にアップデートした</li>
+                                <li>読み込みを高速にした</li>
+                            </ul>
+                            [表示変更]<br>
+                            <ul>
+                                <li>石を返すアニメーションを作った</li>
+                            </ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="logs">2021/11/19 07:30</td>
+                        <td class="logs">
+                            [不具合解決]<br>
+                            <ul>
+                                <li>読み込み直後に対局開始するとエラーになる問題を解決</li>
+                            </ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="logs">2021/11/19 12:35</td>
+                        <td class="logs">
+                            [表示変更]<br>
+                            <ul>
+                                <li>諸々の事情で石を返すアニメーションを廃止</li>
+                            </ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="logs">2021/11/23 12:00</td>
+                        <td class="logs">
+                            [仕様変更]<br>
+                            <ul>
+                                <li>AIを世界1位バージョンにアップデートした</li>
+                                <li>同じ読み手数なら高速になったはず</li>
+                            </ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="logs">2021/11/23 20:45</td>
+                        <td class="logs">
+                            [仕様変更]<br>
+                            <ul>
+                                <li>打つ定石をランダムに選ぶようにした</li>
+                            </ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="logs">2021/11/26 23:15</td>
+                        <td class="logs">
+                            [表示変更]<br>
+                            <ul>
+                                <li>最弱AIの宣伝を追加</li>
+                            </ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="logs">2021/12/12 2:31</td>
+                        <td class="logs">
+                            [バグ修正]<br>
+                            <ul>
+                                <li>AIのバグを修正</li>
+                            </ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="logs">2021/12/12 2:40</td>
+                        <td class="logs">
+                            [バグ修正]<br>
+                            <ul>
+                                <li>バグを直したら弱くなったのでとりあえず元に戻した</li>
+                            </ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="logs">2022/2/2 18:30</td>
+                        <td class="logs">
+                            [仕様変更]<br>
+                            <ul>
+                                <li>AIアップデート(Egaroucid5 Light)</li>
+                            </ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="logs">2022/2/2 23:30</td>
+                        <td class="logs">
+                            [バグ修正]<br>
+                            <ul>
+                                <li>読み込みが終わらないバグを修正。<br>まだ読み込み時の描画など問題はある。</li>
+                            </ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="logs">2022/2/3 2:30</td>
+                        <td class="logs">
+                            [バグ修正]<br>
+                            <ul>
+                                <li>読み込み失敗バグを修正</li>
+                            </ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="logs">2022/4/19 2:30</td>
+                        <td class="logs">
+                            [表示変更]<br>
+                            <ul>
+                                <li>アプリ版の宣伝を追加</li>
+                            </ul>
+                        </td>
+                    </tr>
+                </table>
+            </details>
+        </div>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.bundle.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.4.1/html2canvas.js"></script>
+        <script src="ai.js"></script>
+        <script src="script.js"></script>
+    </body>
+</html>

@@ -9,14 +9,14 @@
 #include <iostream>
 #include "ai.hpp"
 
-inline void init(const int16_t buff[]){
+inline void init(){
     board_init();
     mobility_init();
     stability_init();
     parent_transpose_table.first_init();
     child_transpose_table.first_init();
-    evaluate_init(buff);
-    book.init("resources/book.egbk");
+    evaluate_init();
+    //book.init("resources/book.egbk");
 }
 
 inline int input_board(Board *bd, const int *arr, const int ai_player){
@@ -28,8 +28,8 @@ inline int input_board(Board *bd, const int *arr, const int ai_player){
         for (j = 0; j < HW; ++j){
             elem = arr[i * HW + j];
             if (elem != -1){
-                b |= (uint64_t)(elem == 0) << (i * HW + j);
-                w |= (uint64_t)(elem == 1) << (i * HW + j);
+                b |= (uint64_t)(elem == 0) << (HW2_M1 - i * HW - j);
+                w |= (uint64_t)(elem == 1) << (HW2_M1 - i * HW - j);
                 ++n_stones;
             }
         }
@@ -57,12 +57,12 @@ inline void print_result(Search_result result){
 }
 
 inline int output_coord(int policy, int raw_val){
-    return 1000 * policy + 100 + raw_val;
+    return 1000 * (HW2_M1 - policy) + 100 + raw_val;
 }
 
-extern "C" int init_ai(const int16_t buff[]){
+extern "C" int init_ai(){
     cout << "initializing AI" << endl;
-    init(buff);
+    init();
     cout << "AI iniitialized" << endl;
     return 0;
 }
@@ -77,7 +77,7 @@ extern "C" int ai_js(int *arr_board, int level, int ai_player){
     b.print();
     cout << "ply " << n_stones - 3 << endl;
     result = ai(b, level, true, false, true);
-    cout << "searched policy " << result.policy << " value " << result.value << " nps " << result.nps << endl;
+    cout << "searched policy " << idx_to_coord(result.policy) << " value " << result.value << " nps " << result.nps << endl;
     int res = output_coord(result.policy, result.value);
     cout << "res " << res << endl;
     return res;
@@ -87,14 +87,15 @@ extern "C" void calc_value(int *arr_board, int *res, int level, int ai_player){
     int i, n_stones, policy;
     Board b;
     Search_result result;
-    n_stones = input_board(&b, arr_board, ai_player ^ 1);
+    cerr << "AI player " << ai_player << " level " << level << endl;
+    n_stones = input_board(&b, arr_board, 1 - ai_player);
     b.print();
     cout << "ply " << n_stones - 3 << endl;
     int tmp_res[HW2];
-    vector<int> moves;
-    uint64_t legal = b.get_legal();
     for (i = 0; i < HW2; ++i)
         tmp_res[i] = -1;
+    uint64_t legal = b.get_legal();
+    cerr << pop_count_ull(legal) << " legal moves found" << endl;
     Flip flip;
     uint64_t searched_nodes = 0ULL;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
@@ -105,10 +106,10 @@ extern "C" void calc_value(int *arr_board, int *res, int level, int ai_player){
         cerr << idx_to_coord(cell) << " value " << tmp_res[cell] << endl;
     }
     for (i = 0; i < HW2; ++i)
-        res[10 + i] = tmp_res[i];
+        res[10 + HW2_M1 - i] = tmp_res[i];
     for (int y = 0; y < HW; ++y){
         for (int x = 0; x < HW; ++x)
-            cout << tmp_res[y * HW + x] << " ";
+            cout << tmp_res[HW2_M1 - y * HW - x] << " ";
         cout << endl;
     }
 }

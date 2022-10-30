@@ -18,18 +18,12 @@
 
 using namespace std;
 
-#define N_PATTERNS 16
 #ifndef N_SYMMETRY_PATTERNS
     #define N_SYMMETRY_PATTERNS 62
 #endif
 #define MAX_PATTERN_CELLS 10
 #define MAX_CELL_PATTERNS 13
-#define MAX_SURROUND 100
-#define MAX_CANPUT 50
 //#define MAX_STABILITY 65
-#define MAX_STONE_NUM 65
-#define N_CANPUT_PATTERNS 4
-#define MAX_EVALUATE_IDX 59049
 
 #define STEP 256
 #define STEP_2 128
@@ -69,7 +63,9 @@ using namespace std;
 #define P45 1024
 #define P46 4096
 #define P47 16384
-#define P48 65536
+#ifndef P48
+    #define P48 65536
+#endif
 
 #define COORD_A1 63
 #define COORD_B1 62
@@ -324,11 +320,11 @@ constexpr Coord_to_feature coord_to_feature[HW2] = {
 };
 
 constexpr uint_fast16_t pow3[11] = {1, P31, P32, P33, P34, P35, P36, P37, P38, P39, P310};
-int16_t pattern_arr[2][N_PHASES][N_PATTERNS][MAX_EVALUATE_IDX];
-int16_t eval_sur0_sur1_arr[N_PHASES][MAX_SURROUND][MAX_SURROUND];
-int16_t eval_canput0_canput1_arr[N_PHASES][MAX_CANPUT][MAX_CANPUT];
-int16_t eval_num0_num1_arr[N_PHASES][MAX_STONE_NUM][MAX_STONE_NUM];
-int16_t eval_canput_pattern[N_PHASES][N_CANPUT_PATTERNS][P48];
+//int16_t pattern_arr[2][N_PHASES][N_PATTERNS][MAX_EVALUATE_IDX];
+//int16_t eval_sur0_sur1_arr[N_PHASES][MAX_SURROUND][MAX_SURROUND];
+//int16_t eval_canput0_canput1_arr[N_PHASES][MAX_CANPUT][MAX_CANPUT];
+//int16_t eval_num0_num1_arr[N_PHASES][MAX_STONE_NUM][MAX_STONE_NUM];
+//int16_t eval_canput_pattern[N_PHASES][N_CANPUT_PATTERNS][P48];
 
 string create_line(int b, int w){
     string res = "";
@@ -362,38 +358,9 @@ void init_pattern_arr_rev(int id, int phase_idx, int pattern_idx, int siz){
     }
 }
 
-inline bool init_evaluation_calc(const int16_t buff[]){
-    int phase_idx, pattern_idx, i, j;
+inline bool init_evaluation_calc(){
     constexpr int pattern_sizes[N_PATTERNS] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10, 10, 10, 10};
-    int buff_idx = 0;
-    for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
-        //cerr << "evaluation function " << phase_idx * 100 / N_PHASES << " % initialized" << endl;
-        for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx){
-            for (i = 0; i < pow3[pattern_sizes[pattern_idx]]; ++i){
-                pattern_arr[0][phase_idx][pattern_idx][i] = buff[buff_idx++];
-            }
-        }
-        for (i = 0; i < MAX_SURROUND; ++i){
-            for (j = 0; j < MAX_SURROUND; ++j){
-                eval_sur0_sur1_arr[phase_idx][i][j] = buff[buff_idx++];
-            }
-        }
-        for (i = 0; i < MAX_CANPUT; ++i){
-            for (j = 0; j < MAX_CANPUT; ++j){
-                eval_canput0_canput1_arr[phase_idx][i][j] = buff[buff_idx++];
-            }
-        }
-        for (i = 0; i < MAX_STONE_NUM; ++i){
-            for (j = 0; j < MAX_STONE_NUM; ++j){
-                eval_num0_num1_arr[phase_idx][i][j] = buff[buff_idx++];
-            }
-        }
-        for (i = 0; i < N_CANPUT_PATTERNS; ++i){
-            for (j = 0; j < P48; ++j){
-                eval_canput_pattern[phase_idx][i][j] = buff[buff_idx++];
-            }
-        }
-    }
+    int phase_idx, pattern_idx;
     for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
         for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx)
             init_pattern_arr_rev(0, phase_idx, pattern_idx, pattern_sizes[pattern_idx]);
@@ -402,8 +369,8 @@ inline bool init_evaluation_calc(const int16_t buff[]){
     return true;
 }
 
-bool evaluate_init(const int16_t buff[]){
-    return init_evaluation_calc(buff);
+bool evaluate_init(){
+    return init_evaluation_calc();
 }
 
 inline uint64_t calc_surround_part(const uint64_t player, const int dr){
