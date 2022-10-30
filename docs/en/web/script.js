@@ -477,7 +477,7 @@ function end_game() {
         tweet_str = "I tied against the world No.1 Othello AI " + level_names[level_idx] + " " + hint + " by " + dis + "discs... :|";
     }
     var tweet_result = document.getElementById('tweet_result');
-    tweet_result.innerHTML = 'Tweet this result!<a href="https://twitter.com/share?ref_src=twsrc%5Etfw" class="twitter-share-button" data-text="' + tweet_str + '" data-url="https://www.egaroucid-app.nyanyan.dev/web/" data-hashtags="egaroucid" data-related="takuto_yamana" data-show-count="false">Tweet</a><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>';
+    tweet_result.innerHTML = 'Tweet this result!<a href="https://twitter.com/share?ref_src=twsrc%5Etfw" class="twitter-share-button" data-text="' + tweet_str + '" data-url="https://www.egaroucid.nyanyan.dev/web/" data-hashtags="egaroucid" data-related="takuto_yamana" data-show-count="false">Tweet</a><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>';
     twttr.widgets.load();
     var popup = document.getElementById('js-popup');
     if(!popup) return;
