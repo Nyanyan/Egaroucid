@@ -22,6 +22,12 @@ with open('lang.txt', 'r', encoding='utf-8') as f:
 with open('main_page_url.txt', 'r', encoding='utf-8') as f:
     main_page_url = f.readline()
 
+with open(elements_dir + '/head.html', 'r', encoding='utf-8') as f:
+    head = f.read()
+
+with open(elements_dir + '/head2.html', 'r', encoding='utf-8') as f:
+    head2 = f.read()
+
 with open(elements_dir + '/download.txt', 'r', encoding='utf-8') as f:
     raw_download_data = f.read().splitlines()
 download_data = []
@@ -31,12 +37,8 @@ for datum in raw_download_data:
     datum_html = '<div class="download_button"><a class="download_a" href="' + link + '">' + text + '</a></div>\n'
     download_data.append(datum_html)
 
-
-with open(elements_dir + '/head.html', 'r', encoding='utf-8') as f:
-    head = f.read()
-
 menu = '<div class="menu_bar">\n'
-menu += '<a class="menu_a" href="' + main_page_url + elements_dir + '"><img class="bar_icon" src="img/icon.png"></a>\n'
+#menu += '<a class="menu_a" href="' + main_page_url + elements_dir + '"><img class="bar_icon" src="https://raw.githubusercontent.com/Nyanyan/Nyanyan.github.io/master/img/favicon.jpg"></a>\n'
 with open(elements_dir + '/menu_elements.txt', encoding='utf-8') as f:
     menu_elems = f.read().splitlines()
     n_menu_elems = []
@@ -75,11 +77,21 @@ link22 = '">'
 link23 = '</a>'
 
 def create_html(dr):
+    alternate = ''
+    for lang in langs:
+        if dr[3:]:
+            alternate += '<link rel="alternate" href="' + main_page_url + lang[0] + '/' + dr[3:] + '/" hreflang="' + lang[0] + '" />\n'
+        else:
+            alternate += '<link rel="alternate" href="' + main_page_url + lang[0] + '/" hreflang="' + lang[0] + '" />\n'
+    if dr[3:]:
+        alternate += '<link rel="alternate" href="' + main_page_url + 'en/' + dr[3:] + '/" hreflang="x-default">\n'
+    else:
+        alternate += '<link rel="alternate" href="' + main_page_url + 'en/" hreflang="x-default">\n'
     with open(dr + '/index.md', 'r', encoding='utf-8') as f:
         md = f.read()
     md_split = md.splitlines()
     for i, elem in enumerate(md_split):
-        # special replace
+        # special replacements
         ## download
         if elem == 'DOWNLOAD_BUTTON_REPLACE':
             elem = ''
@@ -108,7 +120,8 @@ def create_html(dr):
             elem = elem.replace(bold, html_bold)
         # modify data
         md_split[i] = elem
-    html = '<div class="box">\n'
+    html = ''
+    html += '<div class="box">\n'
     html += '<p>\n'
     html += tweet + ' \n'
     for lang_dr, lang_name in langs:
@@ -119,6 +132,12 @@ def create_html(dr):
         lang_link = main_page_url + lang_dr + '/' + modified_dr
         html += link21 + lang_link + link22 + lang_name + link23 + ' \n'
     html += '</p>\n'
+    try:
+        with open(dr + '/head_additional.html', 'r', encoding='utf-8') as f:
+            html += f.read()
+            html += '\n'
+    except:
+        pass
     last_empty = False
     for line in md_split:
         if last_empty == False and line == '':
@@ -129,12 +148,18 @@ def create_html(dr):
             else:
                 html += line + '<br>\n'
             last_empty = False
+    try:
+        with open(dr + '/foot_additional.html', 'r', encoding='utf-8') as f:
+            html += f.read()
+            html += '\n'
+    except:
+        pass
     html += '</div>\n'
     out_dr = 'generated/' + dr
     if not os.path.exists(out_dr):
         os.mkdir(out_dr)
     with open(out_dr + '/index.html', 'w', encoding='utf-8') as f:
-        f.write(head + menu + html + foot)
+        f.write(head + alternate + head2 + menu + html + foot)
     shutil.copy(css_file, out_dr + '/style.css')
     try:
         shutil.copytree(dr + '/img', out_dr + '/img')

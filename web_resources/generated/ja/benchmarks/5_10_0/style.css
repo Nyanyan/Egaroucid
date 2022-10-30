@@ -21,7 +21,6 @@ td{
 
 table{
     margin: auto;
-    font-size: min(1.6vmin, 12pt);
 }
 
 .pic{
@@ -100,7 +99,7 @@ h3{
 }
 
 .download_button{
-    width: 30vmin;
+    width: 50vmin;
     height: min(5vw, 50px);
     background-color:  #3F9770;
     display: inline-block; 
