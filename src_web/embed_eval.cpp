@@ -2,10 +2,8 @@
 
 using namespace std;
 
-#define N_PATTERNS 16
-#ifndef N_SYMMETRY_PATTERNS
-    #define N_SYMMETRY_PATTERNS 62
-#endif
+#define N_PATTERNS 12
+#define N_SYMMETRY_PATTERNS 45
 #define MAX_PATTERN_CELLS 10
 #define MAX_CELL_PATTERNS 13
 #define MAX_SURROUND 100
@@ -74,7 +72,7 @@ inline bool init_evaluation_calc(const char* file){
         }
     #endif
     int phase_idx, pattern_idx;
-    constexpr int pattern_sizes[N_PATTERNS] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10, 10, 10, 10};
+    constexpr int pattern_sizes[N_PATTERNS] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9};
     for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
         //cerr << "evaluation function " << phase_idx * 100 / N_PHASES << " % initialized" << endl;
         for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx){
@@ -118,7 +116,7 @@ inline bool init_evaluation_calc(const char* file){
 
 int main(){
     init_evaluation_calc("resources/eval.egev");
-    cout << "#define N_PATTERNS 16\n#define MAX_EVALUATE_IDX 59049\n#define MAX_SURROUND 100\n#define MAX_CANPUT 50\n#define MAX_STONE_NUM 65\n#define N_CANPUT_PATTERNS 4\n#define P48 65536" << endl;
+    cout << "#define N_PATTERNS 12\n#define MAX_EVALUATE_IDX 59049\n#define MAX_SURROUND 100\n#define MAX_CANPUT 50\n#define MAX_STONE_NUM 65\n#define N_CANPUT_PATTERNS 4\n#define P48 65536" << endl;
 
     cout << "int16_t pattern_arr[2][N_PHASES][N_PATTERNS][MAX_EVALUATE_IDX]={{" << endl;
     int i, j, k;
