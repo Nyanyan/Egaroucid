@@ -14,6 +14,7 @@
 #include "board.hpp"
 #include "search.hpp"
 #include "util.hpp"
+#include "evaluate_const.hpp"
 
 using namespace std;
 
@@ -326,7 +327,6 @@ constexpr uint_fast16_t pow3[11] = {1, P31, P32, P33, P34, P35, P36, P37, P38, P
 int16_t pattern_arr[2][N_PHASES][N_PATTERNS][MAX_EVALUATE_IDX];
 int16_t eval_sur0_sur1_arr[N_PHASES][MAX_SURROUND][MAX_SURROUND];
 int16_t eval_canput0_canput1_arr[N_PHASES][MAX_CANPUT][MAX_CANPUT];
-//int16_t eval_stab0_stab1_arr[N_PHASES][MAX_STABILITY][MAX_STABILITY];
 int16_t eval_num0_num1_arr[N_PHASES][MAX_STONE_NUM][MAX_STONE_NUM];
 int16_t eval_canput_pattern[N_PHASES][N_CANPUT_PATTERNS][P48];
 
@@ -362,58 +362,36 @@ void init_pattern_arr_rev(int id, int phase_idx, int pattern_idx, int siz){
     }
 }
 
-inline bool init_evaluation_calc(const char* file){
-    cerr << file << endl;
-    FILE* fp;
-    #ifdef _WIN64
-        if (fopen_s(&fp, file, "rb") != 0){
-            cerr << "can't open eval.egev" << endl;
-            return false;
-        }
-    #else
-        fp = fopen("resources/eval.egev", "rb");
-        if (fp == NULL){
-            cerr << "can't open eval.egev" << endl;
-            return false;
-        }
-    #endif
-    int phase_idx, pattern_idx;
+inline bool init_evaluation_calc(const int16_t buff[]){
+    int phase_idx, pattern_idx, i, j;
     constexpr int pattern_sizes[N_PATTERNS] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10, 10, 10, 10};
+    int buff_idx = 0;
     for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
         //cerr << "evaluation function " << phase_idx * 100 / N_PHASES << " % initialized" << endl;
         for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx){
-            if (fread(pattern_arr[0][phase_idx][pattern_idx], 2, pow3[pattern_sizes[pattern_idx]], fp) < pow3[pattern_sizes[pattern_idx]]){
-                cerr << "eval.egev broken" << endl;
-                fclose(fp);
-                return false;
+            for (i = 0; i < pow3[pattern_sizes[pattern_idx]]; ++i){
+                pattern_arr[0][phase_idx][pattern_idx][i] = buff[buff_idx++];
             }
         }
-        if (fread(eval_sur0_sur1_arr[phase_idx], 2, MAX_SURROUND * MAX_SURROUND, fp) < MAX_SURROUND * MAX_SURROUND){
-            cerr << "eval.egev broken" << endl;
-            fclose(fp);
-            return false;
+        for (i = 0; i < MAX_SURROUND; ++i){
+            for (j = 0; j < MAX_SURROUND; ++j){
+                eval_sur0_sur1_arr[phase_idx][i][j] = buff[buff_idx++];
+            }
         }
-        if (fread(eval_canput0_canput1_arr[phase_idx], 2, MAX_CANPUT * MAX_CANPUT, fp) < MAX_CANPUT * MAX_CANPUT){
-            cerr << "eval.egev broken" << endl;
-            fclose(fp);
-            return false;
+        for (i = 0; i < MAX_CANPUT; ++i){
+            for (j = 0; j < MAX_CANPUT; ++j){
+                eval_canput0_canput1_arr[phase_idx][i][j] = buff[buff_idx++];
+            }
         }
-        /*
-        if (fread(eval_stab0_stab1_arr[phase_idx], 2, MAX_STABILITY * MAX_STABILITY, fp) < MAX_STABILITY * MAX_STABILITY){
-            cerr << "eval.egev broken" << endl;
-            fclose(fp);
-            return false;
+        for (i = 0; i < MAX_STONE_NUM; ++i){
+            for (j = 0; j < MAX_STONE_NUM; ++j){
+                eval_num0_num1_arr[phase_idx][i][j] = buff[buff_idx++];
+            }
         }
-        */
-        if (fread(eval_num0_num1_arr[phase_idx], 2, MAX_STONE_NUM * MAX_STONE_NUM, fp) < MAX_STONE_NUM * MAX_STONE_NUM){
-            cerr << "eval.egev broken" << endl;
-            fclose(fp);
-            return false;
-        }
-        if (fread(eval_canput_pattern[phase_idx], 2, N_CANPUT_PATTERNS * P48, fp) < N_CANPUT_PATTERNS * P48){
-            cerr << "eval.egev broken" << endl;
-            fclose(fp);
-            return false;
+        for (i = 0; i < N_CANPUT_PATTERNS; ++i){
+            for (j = 0; j < P48; ++j){
+                eval_canput_pattern[phase_idx][i][j] = buff[buff_idx++];
+            }
         }
     }
     for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
@@ -424,16 +402,8 @@ inline bool init_evaluation_calc(const char* file){
     return true;
 }
 
-bool evaluate_init(const char* file){
-    return init_evaluation_calc(file);
-}
-
-bool evaluate_init(const string file){
-    return init_evaluation_calc(file.c_str());
-}
-
-bool evaluate_init(){
-    return init_evaluation_calc("resources/eval.egev");
+bool evaluate_init(const int16_t buff[]){
+    return init_evaluation_calc(buff);
 }
 
 inline uint64_t calc_surround_part(const uint64_t player, const int dr){

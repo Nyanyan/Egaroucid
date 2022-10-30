@@ -9,13 +9,13 @@
 #include <iostream>
 #include "ai.hpp"
 
-inline void init(){
+inline void init(const int16_t buff[]){
     board_init();
     mobility_init();
     stability_init();
     parent_transpose_table.first_init();
     child_transpose_table.first_init();
-    evaluate_init("resources/eval.egev");
+    evaluate_init(buff);
     book.init("resources/book.egbk");
 }
 
@@ -60,9 +60,9 @@ inline int output_coord(int policy, int raw_val){
     return 1000 * policy + 100 + raw_val;
 }
 
-extern "C" int init_ai(){
+extern "C" int init_ai(const int16_t buff[]){
     cout << "initializing AI" << endl;
-    init();
+    init(buff);
     cout << "AI iniitialized" << endl;
     return 0;
 }
