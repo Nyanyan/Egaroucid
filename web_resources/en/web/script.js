@@ -441,9 +441,11 @@ function update_graph(s) {
 }
 
 function end_game() {
-    for (var i = 0; i < graph_values.length; ++i){
-        graph.data.labels.push(graph_values[i][0]);
-        graph.data.datasets[0].data.push(graph_values[i][1]);
+    if (!show_graph){
+        for (var i = 0; i < graph_values.length; ++i){
+            graph.data.labels.push(graph_values[i][0]);
+            graph.data.datasets[0].data.push(graph_values[i][1]);
+        }
     }
     graph.update();
     let stones = [0, 0];
