@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 
 using namespace std;
 
@@ -108,6 +109,12 @@ inline bool init_evaluation_calc(const char* file){
 }
 
 int main(){
+    ifstream ifs("head.txt");
+    string line;
+    while (getline(ifs, line)){
+        cout << line << endl;
+    }
+
     init_evaluation_calc("resources/eval.egev");
     cout << "#define N_PATTERNS 12\n#define MAX_EVALUATE_IDX 59049\n#define MAX_SURROUND 100\n#define MAX_CANPUT 50\n#define MAX_STONE_NUM 65\n#define N_CANPUT_PATTERNS 4\n#define P48 65536" << endl;
 
