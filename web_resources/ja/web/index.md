@@ -15,7 +15,7 @@
         </p>
         <div align="center" id="div_start">
             <input type="submit" class="setting" value="AI読込中" onclick="start()" id="start" disabled>
-            <input type="submit" class="setting" value="リセット" onclick="reset()" id="reset"　disabled>
+            <input type="submit" class="setting" value="リセット" onclick="reset()" id="reset" disabled>
         </div>
         <div class="popup" id="js-popup">
             <div class="popup-inner">
