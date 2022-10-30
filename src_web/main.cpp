@@ -113,3 +113,12 @@ extern "C" void calc_value(int *arr_board, int *res, int level, int ai_player){
         cout << endl;
     }
 }
+
+extern "C" void stop(){
+    global_searching = false;
+}
+
+extern "C" void resume(){
+    global_searching = true;
+}
+

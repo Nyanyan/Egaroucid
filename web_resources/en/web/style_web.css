@@ -30,6 +30,10 @@
 }
 .coords {
     border-collapse: collapse;
+    background-color: white;
+}
+.white_element{
+    background-color: white;
 }
 .coord_cell {
     text-align: center;
@@ -38,6 +42,7 @@
     width: 7vmin;
     height: 7vmin;
     border: 0.25vmin solid transparent;
+    background-color: white;
 }
 .coord {
     text-align: center;

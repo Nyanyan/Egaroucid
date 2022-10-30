@@ -132,10 +132,10 @@ def create_html(dr):
         lang_link = main_page_url + lang_dr + '/' + modified_dr
         html += link21 + lang_link + link22 + lang_name + link23 + ' \n'
     html += '</p>\n'
+    additional_head = ''
     try:
-        with open(dr + '/head_additional.html', 'r', encoding='utf-8') as f:
-            html += f.read()
-            html += '\n'
+        with open(dr + '/additional_head.html', 'r', encoding='utf-8') as f:
+            additional_head = f.read()
     except:
         pass
     last_empty = False
@@ -148,21 +148,22 @@ def create_html(dr):
             else:
                 html += line + '<br>\n'
             last_empty = False
-    try:
-        with open(dr + '/foot_additional.html', 'r', encoding='utf-8') as f:
-            html += f.read()
-            html += '\n'
-    except:
-        pass
     html += '</div>\n'
     out_dr = 'generated/' + dr
     if not os.path.exists(out_dr):
         os.mkdir(out_dr)
     with open(out_dr + '/index.html', 'w', encoding='utf-8') as f:
-        f.write(head + alternate + head2 + menu + html + foot)
+        f.write(head + alternate + additional_head + head2 + menu + html + foot)
     shutil.copy(css_file, out_dr + '/style.css')
     try:
         shutil.copytree(dr + '/img', out_dr + '/img')
+    except:
+        pass
+    try:
+        with open(dr + '/additional_files.txt', 'r', encoding='utf-8') as f:
+            additional_files = f.read().splitlines()
+        for additional_file in additional_files:
+            shutil.copy(dr + '/' + additional_file, out_dr + '/' + additional_file)
     except:
         pass
     tasks = []

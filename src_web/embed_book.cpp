@@ -5,7 +5,7 @@
 
 using namespace std;
 
-#define BOOK_DEPTH 20
+#define BOOK_DEPTH 24
 
 Book new_book;
 
