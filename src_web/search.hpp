@@ -19,7 +19,7 @@
 using namespace std;
 
 #ifndef N_SYMMETRY_PATTERNS
-    #define N_SYMMETRY_PATTERNS 45
+    #define N_SYMMETRY_PATTERNS 46
 #endif
 #define MID_FAST_DEPTH 1
 #define END_FAST_DEPTH 7

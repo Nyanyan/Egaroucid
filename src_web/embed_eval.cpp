@@ -3,16 +3,12 @@
 using namespace std;
 
 #define N_PATTERNS 12
-#define N_SYMMETRY_PATTERNS 45
-#define MAX_PATTERN_CELLS 10
-#define MAX_CELL_PATTERNS 13
 #define MAX_SURROUND 100
 #define MAX_CANPUT 50
-//#define MAX_STABILITY 65
 #define MAX_STONE_NUM 65
 #define N_CANPUT_PATTERNS 4
 #define MAX_EVALUATE_IDX 59049
-#define N_PHASES 30
+#define N_PHASES 10
 
 #define PNO 0
 
@@ -54,7 +50,7 @@ int16_t pattern_arr[2][N_PHASES][N_PATTERNS][MAX_EVALUATE_IDX];
 int16_t eval_sur0_sur1_arr[N_PHASES][MAX_SURROUND][MAX_SURROUND];
 int16_t eval_canput0_canput1_arr[N_PHASES][MAX_CANPUT][MAX_CANPUT];
 int16_t eval_num0_num1_arr[N_PHASES][MAX_STONE_NUM][MAX_STONE_NUM];
-int16_t eval_canput_pattern[N_PHASES][N_CANPUT_PATTERNS][P48];
+//int16_t eval_canput_pattern[N_PHASES][N_CANPUT_PATTERNS][P48];
 
 inline bool init_evaluation_calc(const char* file){
     cerr << file << endl;
@@ -92,24 +88,21 @@ inline bool init_evaluation_calc(const char* file){
             fclose(fp);
             return false;
         }
-        /*
-        if (fread(eval_stab0_stab1_arr[phase_idx], 2, MAX_STABILITY * MAX_STABILITY, fp) < MAX_STABILITY * MAX_STABILITY){
-            cerr << "eval.egev broken" << endl;
-            fclose(fp);
-            return false;
-        }
-        */
         if (fread(eval_num0_num1_arr[phase_idx], 2, MAX_STONE_NUM * MAX_STONE_NUM, fp) < MAX_STONE_NUM * MAX_STONE_NUM){
             cerr << "eval.egev broken" << endl;
             fclose(fp);
             return false;
         }
+        /*
         if (fread(eval_canput_pattern[phase_idx], 2, N_CANPUT_PATTERNS * P48, fp) < N_CANPUT_PATTERNS * P48){
             cerr << "eval.egev broken" << endl;
             fclose(fp);
             return false;
         }
+        */
     }
+    char d;
+    cerr << fread(&d, 1, 1, fp) << endl;
     cerr << "evaluation function initialized" << endl;
     return true;
 }
@@ -222,7 +215,7 @@ int main(){
             cout << ",";
     }
     cout << "};" << endl;
-
+    /*
     cout << "constexpr int16_t eval_canput_pattern[N_PHASES][N_CANPUT_PATTERNS][P48]={" << endl;
     for (i = 0; i < N_PHASES; ++i){
         cout << "{" << endl;
@@ -248,4 +241,5 @@ int main(){
             cout << ",";
     }
     cout << "};" << endl;
+    */
 }

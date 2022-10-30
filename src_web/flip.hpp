@@ -15,7 +15,7 @@
 using namespace std;
 
 uint8_t flip_pre_calc[N_8BIT][N_8BIT][HW];
-//uint8_t n_flip_pre_calc[N_8BIT][N_8BIT][HW];
+uint8_t n_flip_pre_calc[N_8BIT][N_8BIT][HW];
 uint64_t line_to_board_v[N_8BIT][HW];
 uint64_t line_to_board_d7[N_8BIT][HW * 2];
 uint64_t line_to_board_d9[N_8BIT][HW * 2];
@@ -65,7 +65,7 @@ void mobility_init(){
         for (opponent = 0; opponent < N_8BIT; ++opponent){
             for (place = 0; place < HW; ++place){
                 flip_pre_calc[player][opponent][place] = 0;
-                //n_flip_pre_calc[player][opponent][place] = 0;
+                n_flip_pre_calc[player][opponent][place] = 0;
                 if ((1 & (player >> place)) == 0 && (1 & (opponent >> place)) == 0 && (player & opponent) == 0){
                     put = 1 << place;
                     wh = opponent & 0b01111110;
@@ -113,9 +113,9 @@ void mobility_init(){
                                 flip_pre_calc[player][opponent][place] |= m1 | m2 | m3 | m4 | m5 | m6;
                         }
                     }
-                    //n_flip_pre_calc[player][opponent][place] = 0;
-                    //for (i = 1; i < HW_M1; ++i)
-                    //    n_flip_pre_calc[player][opponent][place] += 1 & (flip_pre_calc[player][opponent][place] >> i);
+                    n_flip_pre_calc[player][opponent][place] = 0;
+                    for (i = 1; i < HW_M1; ++i)
+                        n_flip_pre_calc[player][opponent][place] += 1 & (flip_pre_calc[player][opponent][place] >> i);
                 }
             }
         }

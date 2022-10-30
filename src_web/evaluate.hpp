@@ -19,11 +19,10 @@
 using namespace std;
 
 #ifndef N_SYMMETRY_PATTERNS
-    #define N_SYMMETRY_PATTERNS 45
+    #define N_SYMMETRY_PATTERNS 46
 #endif
-#define MAX_PATTERN_CELLS 8
-#define MAX_CELL_PATTERNS 13
-//#define MAX_STABILITY 65
+#define MAX_PATTERN_CELLS 10
+#define MAX_CELL_PATTERNS 8
 
 #define STEP 256
 #define STEP_2 128
@@ -215,7 +214,7 @@ constexpr Feature_to_coord feature_to_coord[N_SYMMETRY_PATTERNS] = {
     {9, {COORD_A1, COORD_B1, COORD_C1, COORD_A2, COORD_B2, COORD_C2, COORD_A3, COORD_B3, COORD_C3, COORD_NO}}, // 42
     {9, {COORD_H1, COORD_G1, COORD_F1, COORD_H2, COORD_G2, COORD_F2, COORD_H3, COORD_G3, COORD_F3, COORD_NO}}, // 43
     {9, {COORD_A8, COORD_B8, COORD_C8, COORD_A7, COORD_B7, COORD_C7, COORD_A6, COORD_B6, COORD_C6, COORD_NO}}, // 44
-    {9, {COORD_H8, COORD_G8, COORD_F8, COORD_H7, COORD_G7, COORD_F7, COORD_H6, COORD_G6, COORD_F6, COORD_NO}}, // 45
+    {9, {COORD_H8, COORD_G8, COORD_F8, COORD_H7, COORD_G7, COORD_F7, COORD_H6, COORD_G6, COORD_F6, COORD_NO}}  // 45
 };
 
 struct Coord_feature{
@@ -387,32 +386,6 @@ inline int create_canput_line_v(uint64_t b, uint64_t w, int t){
     return (join_v_line(w, t) << HW) | join_v_line(b, t);
 }
 
-inline int calc_canput_pattern(const int phase_idx, Board *b, const uint64_t player_mobility, const uint64_t opponent_mobility){
-    uint8_t *ph = (uint8_t*)&player_mobility;
-    uint8_t *oh = (uint8_t*)&opponent_mobility;
-    uint64_t p90 = rotate_90(player_mobility);
-    uint64_t o90 = rotate_90(opponent_mobility);
-    uint8_t *pv = (uint8_t*)&p90;
-    uint8_t *ov = (uint8_t*)&o90;
-    return 
-        eval_canput_pattern[phase_idx][0][((uint32_t)oh[0] << HW) | ph[0]] + 
-        eval_canput_pattern[phase_idx][0][((uint32_t)oh[7] << HW) | ph[7]] + 
-        eval_canput_pattern[phase_idx][0][((uint32_t)ov[0] << HW) | pv[0]] + 
-        eval_canput_pattern[phase_idx][0][((uint32_t)ov[7] << HW) | pv[7]] + 
-        eval_canput_pattern[phase_idx][1][((uint32_t)oh[1] << HW) | ph[1]] + 
-        eval_canput_pattern[phase_idx][1][((uint32_t)oh[6] << HW) | ph[6]] + 
-        eval_canput_pattern[phase_idx][1][((uint32_t)ov[1] << HW) | pv[1]] + 
-        eval_canput_pattern[phase_idx][1][((uint32_t)ov[6] << HW) | pv[6]] + 
-        eval_canput_pattern[phase_idx][2][((uint32_t)oh[2] << HW) | ph[2]] + 
-        eval_canput_pattern[phase_idx][2][((uint32_t)oh[5] << HW) | ph[5]] + 
-        eval_canput_pattern[phase_idx][2][((uint32_t)ov[2] << HW) | pv[2]] + 
-        eval_canput_pattern[phase_idx][2][((uint32_t)ov[5] << HW) | pv[5]] + 
-        eval_canput_pattern[phase_idx][3][((uint32_t)oh[3] << HW) | ph[3]] + 
-        eval_canput_pattern[phase_idx][3][((uint32_t)oh[4] << HW) | ph[4]] + 
-        eval_canput_pattern[phase_idx][3][((uint32_t)ov[3] << HW) | pv[3]] + 
-        eval_canput_pattern[phase_idx][3][((uint32_t)ov[4] << HW) | pv[4]];
-}
-
 inline int end_evaluate(Board *b){
     return b->score_player();
 }
@@ -436,8 +409,7 @@ inline int mid_evaluate_diff(Search *search){
     int res = calc_pattern_diff(phase_idx, search) + 
         eval_sur0_sur1_arr[phase_idx][sur0][sur1] + 
         eval_canput0_canput1_arr[phase_idx][canput0][canput1] + 
-        eval_num0_num1_arr[phase_idx][num0][num1] + 
-        calc_canput_pattern(phase_idx, &search->board, player_mobility, opponent_mobility);
+        eval_num0_num1_arr[phase_idx][num0][num1];
     res += res > 0 ? STEP_2 : (res < 0 ? -STEP_2 : 0);
     res /= STEP;
     return max(-SCORE_MAX, min(SCORE_MAX, res));
@@ -517,4 +489,11 @@ inline void eval_undo(Search *search, const Flip *flip){
                 search->eval_features[coord_to_feature[cell].features[i].feature] += coord_to_feature[cell].features[i].x;
         }
     }
+}
+
+inline int mid_evaluate(Board *board){
+    Search search;
+    search.init_board(board);
+    calc_features(&search);
+    return mid_evaluate_diff(&search);
 }
