@@ -260,8 +260,13 @@ void input_test_data(int argc, char *argv[]){
     cerr << "n_data " << u << endl;
 
     u = 0;
-    for (i = 0; i < n_eval; ++i)
+    for (i = 0; i < n_eval; ++i){
+        if (12 <= i && i <= 15)
+            continue;
+        if (19 <= i && i <= 22)
+            continue;
         u += eval_sizes[i];
+    }
     cerr << "n_all_param " << u << endl;
     u = 0;
     for (i = 0; i < n_eval; ++i){
@@ -313,6 +318,8 @@ void output_param_onephase(){
     cerr << "=";
     for (pattern_idx = 0; pattern_idx < n_eval; ++pattern_idx){
         if (12 <= pattern_idx && pattern_idx <= 15)
+            continue;
+        if (19 <= pattern_idx && pattern_idx <= 22)
             continue;
         for (pattern_elem = 0; pattern_elem < eval_sizes[pattern_idx]; ++pattern_elem){
             cout << round(eval_arr[sa_phase][pattern_idx][pattern_elem]) << endl;
@@ -393,23 +400,23 @@ inline double calc_score(int phase, int i){
         //eval_arr[phase][15][test_data[i][61]] + 
         eval_arr[phase][16][calc_sur0_sur1(test_data[i])] + 
         eval_arr[phase][17][calc_canput0_canput1(test_data[i])] + 
-        eval_arr[phase][18][calc_num0_num1(test_data[i])] + 
-        eval_arr[phase][19][test_data[i][70]] + 
-        eval_arr[phase][19][test_data[i][71]] + 
-        eval_arr[phase][19][test_data[i][72]] + 
-        eval_arr[phase][19][test_data[i][73]] + 
-        eval_arr[phase][20][test_data[i][74]] + 
-        eval_arr[phase][20][test_data[i][75]] + 
-        eval_arr[phase][20][test_data[i][76]] + 
-        eval_arr[phase][20][test_data[i][77]] + 
-        eval_arr[phase][21][test_data[i][78]] + 
-        eval_arr[phase][21][test_data[i][79]] + 
-        eval_arr[phase][21][test_data[i][80]] + 
-        eval_arr[phase][21][test_data[i][81]] + 
-        eval_arr[phase][22][test_data[i][82]] + 
-        eval_arr[phase][22][test_data[i][83]] + 
-        eval_arr[phase][22][test_data[i][84]] + 
-        eval_arr[phase][22][test_data[i][85]];
+        eval_arr[phase][18][calc_num0_num1(test_data[i])]; // + 
+        //eval_arr[phase][19][test_data[i][70]] + 
+        //eval_arr[phase][19][test_data[i][71]] + 
+        //eval_arr[phase][19][test_data[i][72]] + 
+        //eval_arr[phase][19][test_data[i][73]] + 
+        //eval_arr[phase][20][test_data[i][74]] + 
+        //eval_arr[phase][20][test_data[i][75]] + 
+        //eval_arr[phase][20][test_data[i][76]] + 
+        //eval_arr[phase][20][test_data[i][77]] + 
+        //eval_arr[phase][21][test_data[i][78]] + 
+        //eval_arr[phase][21][test_data[i][79]] + 
+        //eval_arr[phase][21][test_data[i][80]] + 
+        //eval_arr[phase][21][test_data[i][81]] + 
+        //eval_arr[phase][22][test_data[i][82]] + 
+        //eval_arr[phase][22][test_data[i][83]] + 
+        //eval_arr[phase][22][test_data[i][84]] + 
+        //eval_arr[phase][22][test_data[i][85]];
         /*
         + 
         eval_arr[phase][24][test_data[i][86]] + 
