@@ -123,7 +123,8 @@ def create_html(dr):
     html = ''
     html += '<div class="box">\n'
     html += '<p>\n'
-    html += tweet + ' \n'
+    this_page_url = main_page_url + dr
+    html += tweet.replace('DATA_URL', this_page_url) + ' \n'
     for lang_dr, lang_name in langs:
         original_lang = dr.split('/')[0]
         if lang_dr == original_lang:
@@ -132,10 +133,10 @@ def create_html(dr):
         lang_link = main_page_url + lang_dr + '/' + modified_dr
         html += link21 + lang_link + link22 + lang_name + link23 + ' \n'
     html += '</p>\n'
-    additional_head = ''
+    additional_head = '<meta property="og:url" content="' + this_page_url + '" />\n'
     try:
         with open(dr + '/additional_head.html', 'r', encoding='utf-8') as f:
-            additional_head = f.read()
+            additional_head += f.read()
     except:
         pass
     last_empty = False
