@@ -603,6 +603,7 @@ function try_initialize_ai(){
             console.log("loaded AI");
             document.getElementById('start').value = "対局開始";
             document.getElementById('start').disabled = false;
+            document.getElementById('reset').disabled = false;
         } catch(exception){
             console.error(exception);
             document.getElementById('start').value = "読込失敗 リロードしてください";

@@ -16,7 +16,7 @@
         </p>
         <div align="center" id="div_start">
             <input type="submit" class="setting" value="AI Initializing" onclick="start()" id="start" disabled>
-            <input type="submit" class="setting" value="Reset" onclick="reset()" id="reset">
+            <input type="submit" class="setting" value="Reset" onclick="reset()" id="reset"　disabled>
         </div>
         <div class="popup" id="js-popup">
             <div class="popup-inner">

@@ -604,6 +604,7 @@ function try_initialize_ai(){
             console.log("loaded AI");
             document.getElementById('start').value = "Start";
             document.getElementById('start').disabled = false;
+            document.getElementById('reset').disabled = false;
         } catch(exception){
             console.error(exception);
             document.getElementById('start').value = "Failed Initializing Please Reload";
