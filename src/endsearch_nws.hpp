@@ -20,11 +20,10 @@
 #include "transpose_table.hpp"
 #include "util.hpp"
 #include "stability.hpp"
-#include "endsearch_nws.hpp"
 
 using namespace std;
 
-inline int last1(Search *search, int alpha, int beta, uint_fast8_t p0){
+inline int last1_nws(Search *search, int alpha, uint_fast8_t p0){
     ++search->n_nodes;
     int score = HW2 - 2 * search->board.count_opponent();
     int n_flip;
@@ -49,7 +48,7 @@ inline int last1(Search *search, int alpha, int beta, uint_fast8_t p0){
     return score;
 }
 
-inline int last2(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast8_t p1, bool skipped){
+inline int last2_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1, bool skipped){
     ++search->n_nodes;
     #if USE_END_PO & false
         uint_fast8_t p0_parity = (search->parity & cell_div4[p0]);
@@ -63,13 +62,10 @@ inline int last2(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
         calc_flip(&flip, &search->board, p0);
         if (flip.flip){
             search->move(&flip);
-                g = -last1(search, -beta, -alpha, p1);
+                g = -last1_nws(search, -alpha - 1, p1);
             search->undo(&flip);
-            if (alpha < g){
-                alpha = g;
-                if (beta <= alpha)
-                    return alpha;
-            }
+            if (alpha < g)
+                return g;
             v = g;
         } else
             v = -INF;
@@ -80,13 +76,10 @@ inline int last2(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
             calc_flip(&flip, &search->board, p1);
             if (flip.flip){
                 search->move(&flip);
-                    g = -last1(search, -beta, -alpha, p0);
+                    g = -last1_nws(search, -alpha - 1, p0);
                 search->undo(&flip);
-                if (alpha < g){
-                    alpha = g;
-                    if (beta <= alpha)
-                        return alpha;
-                }
+                if (alpha < g)
+                    return g;
                 v = max(v, g);
             }
         }
@@ -96,14 +89,14 @@ inline int last2(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
             v = end_evaluate(&search->board);
         else{
             search->board.pass();
-                v = -last2(search, -beta, -alpha, p0, p1, true);
+                v = -last2_nws(search, -alpha - 1, p0, p1, true);
             search->board.pass();
         }
     }
     return v;
 }
 
-inline int last3(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast8_t p1, uint_fast8_t p2, bool skipped){
+inline int last3_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1, uint_fast8_t p2, bool skipped){
     ++search->n_nodes;
     #if USE_END_PO
         if (!skipped){
@@ -137,13 +130,10 @@ inline int last3(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
         calc_flip(&flip, &search->board, p0);
         if (flip.flip){
             search->move(&flip);
-                g = -last2(search, -beta, -alpha, p1, p2, false);
+                g = -last2_nws(search, -alpha - 1, p1, p2, false);
             search->undo(&flip);
-            if (alpha < g){
-                alpha = g;
-                if (beta <= alpha)
-                    return alpha;
-            }
+            if (alpha < g)
+                return g;
             v = g;
         }
     }
@@ -152,13 +142,10 @@ inline int last3(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
             calc_flip(&flip, &search->board, p1);
             if (flip.flip){
                 search->move(&flip);
-                    g = -last2(search, -beta, -alpha, p0, p2, false);
+                    g = -last2_nws(search, -alpha - 1, p0, p2, false);
                 search->undo(&flip);
-                if (alpha < g){
-                    alpha = g;
-                    if (beta <= alpha)
-                        return alpha;
-                }
+                if (alpha < g)
+                    return g;
                 v = max(v, g);
             }
         }
@@ -168,13 +155,10 @@ inline int last3(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
             calc_flip(&flip, &search->board, p2);
             if (flip.flip){
                 search->move(&flip);
-                    g = -last2(search, -beta, -alpha, p0, p1, false);
+                    g = -last2_nws(search, -alpha - 1, p0, p1, false);
                 search->undo(&flip);
-                if (alpha < g){
-                    alpha = g;
-                    if (beta <= alpha)
-                        return alpha;
-                }
+                if (alpha < g)
+                    return g;
                 v = max(v, g);
             }
         }
@@ -184,7 +168,7 @@ inline int last3(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
             v = end_evaluate(&search->board);
         else{
             search->board.pass();
-                v = -last3(search, -beta, -alpha, p0, p1, p2, true);
+                v = -last3_nws(search, -alpha - 1, p0, p1, p2, true);
             search->board.pass();
         }
         return v;
@@ -192,10 +176,10 @@ inline int last3(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
     return v;
 }
 
-inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast8_t p1, uint_fast8_t p2, uint_fast8_t p3, bool skipped){
+inline int last4_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1, uint_fast8_t p2, uint_fast8_t p3, bool skipped){
     ++search->n_nodes;
     #if USE_END_SC
-        int stab_res = stability_cut(search, &alpha, &beta);
+        int stab_res = stability_cut_nws(search, &alpha);
         if (stab_res != SCORE_UNDEFINED){
             return stab_res;
         }
@@ -257,7 +241,7 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
             v = end_evaluate(&search->board);
         else{
             search->board.pass();
-                v = -last4(search, -beta, -alpha, p0, p1, p2, p3, true);
+                v = -last4_nws(search, -alpha - 1, p0, p1, p2, p3, true);
             search->board.pass();
         }
         return v;
@@ -267,64 +251,52 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
     if (1 & (legal >> p0)){
         calc_flip(&flip, &search->board, p0);
         search->move(&flip);
-            g = -last3(search, -beta, -alpha, p1, p2, p3, false);
+            g = -last3_nws(search, -alpha - 1, p1, p2, p3, false);
         search->undo(&flip);
-        if (alpha < g){
-            alpha = g;
-            if (beta <= alpha)
-                return alpha;
-        }
+        if (alpha < g)
+            return g;
         v = max(v, g);
     }
     all_radiation |= bit_radiation[p0];
     if ((1 & (legal >> p1)) && (all_radiation & bit_radiation[p1])){
         calc_flip(&flip, &search->board, p1);
         search->move(&flip);
-            g = -last3(search, -beta, -alpha, p0, p2, p3, false);
+            g = -last3_nws(search, -alpha - 1, p0, p2, p3, false);
         search->undo(&flip);
-        if (alpha < g){
-            alpha = g;
-            if (beta <= alpha)
-                return alpha;
-        }
+        if (alpha < g)
+            return g;
         v = max(v, g);
     }
     all_radiation |= bit_radiation[p1];
     if ((1 & (legal >> p2)) && (all_radiation & bit_radiation[p2])){
         calc_flip(&flip, &search->board, p2);
         search->move(&flip);
-            g = -last3(search, -beta, -alpha, p0, p1, p3, false);
+            g = -last3_nws(search, -alpha - 1, p0, p1, p3, false);
         search->undo(&flip);
-        if (alpha < g){
-            alpha = g;
-            if (beta <= alpha)
-                return alpha;
-        }
+        if (alpha < g)
+            return g;
         v = max(v, g);
     }
     all_radiation |= bit_radiation[p2];
     if ((1 & (legal >> p3)) && (all_radiation & bit_radiation[p3])){
         calc_flip(&flip, &search->board, p3);
         search->move(&flip);
-            g = -last3(search, -beta, -alpha, p0, p1, p2, false);
+            g = -last3_nws(search, -alpha - 1, p0, p1, p2, false);
         search->undo(&flip);
-        if (alpha < g){
-            alpha = g;
-            if (beta <= alpha)
-                return alpha;
-        }
+        if (alpha < g)
+            return g;
         v = max(v, g);
     }
     return v;
 }
 
-int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped, bool stab_cut, const bool *searching){
+int nega_alpha_end_fast_nws(Search *search, int alpha, bool skipped, bool stab_cut, const bool *searching){
     if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
     ++search->n_nodes;
     #if USE_END_SC
         if (stab_cut){
-            int stab_res = stability_cut(search, &alpha, &beta);
+            int stab_res = stability_cut_nws(search, &alpha);
             if (stab_res != SCORE_UNDEFINED){
                 return stab_res;
             }
@@ -336,7 +308,7 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped, bool 
         if (skipped)
             return end_evaluate(&search->board);
         search->board.pass();
-            v = -nega_alpha_end_fast(search, -beta, -alpha, true, false, searching);
+            v = -nega_alpha_end_fast_nws(search, -alpha - 1, true, false, searching);
         search->board.pass();
         return v;
     }
@@ -367,22 +339,20 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped, bool 
                             p1 = next_bit(&empties);
                             p2 = next_bit(&empties);
                             p3 = next_bit(&empties);
-                            g = -last4(search, -beta, -alpha, p0, p1, p2, p3, false);
+                            g = -last4_nws(search, -alpha - 1, p0, p1, p2, p3, false);
                         search->undo(&flip);
-                        alpha = max(alpha, g);
-                        if (beta <= alpha)
-                            return alpha;
+                        if (alpha < g)
+                            return g;
                         v = max(v, g);
                     }
                 } else{
                     for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
                         calc_flip(&flip, &search->board, cell);
                         search->move(&flip);
-                            g = -nega_alpha_end_fast(search, -beta, -alpha, false, true, searching);
+                            g = -nega_alpha_end_fast_nws(search, -alpha - 1, false, true, searching);
                         search->undo(&flip);
-                        alpha = max(alpha, g);
-                        if (beta <= alpha)
-                            return alpha;
+                        if (alpha < g)
+                            return g;
                         v = max(v, g);
                     }
                 }
@@ -400,22 +370,20 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped, bool 
                             p1 = next_bit(&empties);
                             p2 = next_bit(&empties);
                             p3 = next_bit(&empties);
-                            g = -last4(search, -beta, -alpha, p0, p1, p2, p3, false);
+                            g = -last4_nws(search, -alpha - 1, p0, p1, p2, p3, false);
                         search->undo(&flip);
-                        alpha = max(alpha, g);
-                        if (beta <= alpha)
-                            return alpha;
+                        if (alpha < g)
+                            return g;
                         v = max(v, g);
                     }
                 } else{
                     for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
                         calc_flip(&flip, &search->board, cell);
                         search->move(&flip);
-                            g = -nega_alpha_end_fast(search, -beta, -alpha, false, true, searching);
+                            g = -nega_alpha_end_fast_nws(search, -alpha - 1, false, true, searching);
                         search->undo(&flip);
-                        alpha = max(alpha, g);
-                        if (beta <= alpha)
-                            return alpha;
+                        if (alpha < g)
+                            return g;
                         v = max(v, g);
                     }
                 }
@@ -432,22 +400,20 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped, bool 
                             p1 = next_bit(&empties);
                             p2 = next_bit(&empties);
                             p3 = next_bit(&empties);
-                            g = -last4(search, -beta, -alpha, p0, p1, p2, p3, false);
+                            g = -last4_nws(search, -alpha - 1, p0, p1, p2, p3, false);
                         search->undo(&flip);
-                        alpha = max(alpha, g);
-                        if (beta <= alpha)
-                            return alpha;
+                        if (alpha < g)
+                            return g;
                         v = max(v, g);
                     }
             } else{
                 for (cell = first_bit(&legal); legal; cell = next_bit(&legal)){
                     calc_flip(&flip, &search->board, cell);
                     search->move(&flip);
-                        g = -nega_alpha_end_fast(search, -beta, -alpha, false, true, searching);
+                        g = -nega_alpha_end_fast_nws(search, -alpha - 1, false, true, searching);
                     search->undo(&flip);
-                    alpha = max(alpha, g);
-                    if (beta <= alpha)
-                        return alpha;
+                    if (alpha < g)
+                        return g;
                     v = max(v, g);
                 }
             }
@@ -464,116 +430,23 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped, bool 
                         p1 = next_bit(&empties);
                         p2 = next_bit(&empties);
                         p3 = next_bit(&empties);
-                        g = -last4(search, -beta, -alpha, p0, p1, p2, p3, skipped);
+                        g = -last4_nws(search, -alpha - 1, p0, p1, p2, p3, skipped);
                     search->undo(&flip);
-                    alpha = max(alpha, g);
-                    if (beta <= alpha)
-                        return alpha;
+                    if (alpha < g)
+                        return g;
                     v = max(v, g);
                 }
         } else{
             for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
                 calc_flip(&flip, &search->board, cell);
                 search->move(&flip);
-                    g = -nega_alpha_end_fast(search, -beta, -alpha, false, true, searching);
+                    g = -nega_alpha_end_fast_nws(search, -alpha - 1, false, true, searching);
                 search->undo(&flip);
-                alpha = max(alpha, g);
-                if (beta <= alpha)
-                    return alpha;
+                if (alpha < g)
+                    return g;
                 v = max(v, g);
             }
         }
     #endif
-    return v;
-}
-
-int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t legal, const bool *searching){
-    if (!global_searching || !(*searching))
-        return SCORE_UNDEFINED;
-    if (search->n_discs >= HW2 - END_FAST_DEPTH){
-        if (beta - alpha == 1)
-            return nega_alpha_end_fast_nws(search, alpha, skipped, false, searching);
-        else
-            return nega_alpha_end_fast(search, alpha, beta, skipped, false, searching);
-    }
-    ++search->n_nodes;
-    uint32_t hash_code = search->board.hash() & TRANSPOSE_TABLE_MASK;
-    int l = -INF, u = INF;
-    if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD){
-        parent_transpose_table.get(&search->board, hash_code, &l, &u, search->mpct, HW2 - search->n_discs);
-        if (u == l)
-            return u;
-        if (beta <= l)
-            return l;
-        if (u <= alpha)
-            return u;
-        alpha = max(alpha, l);
-        beta = min(beta, u);
-    }
-    #if USE_END_SC
-        int stab_res = stability_cut(search, &alpha, &beta);
-        if (stab_res != SCORE_UNDEFINED)
-            return stab_res;
-    #endif
-    int first_alpha = alpha;
-    if (legal == LEGAL_UNDEFINED)
-        legal = search->board.get_legal();
-    int g, v = -INF;
-    if (legal == 0ULL){
-        if (skipped)
-            return end_evaluate(&search->board);
-        search->board.pass();
-            v = -nega_alpha_end(search, -beta, -alpha, true, LEGAL_UNDEFINED, searching);
-        search->board.pass();
-        return v;
-    }
-    int best_move = TRANSPOSE_TABLE_UNDEFINED;
-    if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD)
-        best_move = child_transpose_table.get(&search->board, hash_code);
-    if (best_move != TRANSPOSE_TABLE_UNDEFINED){
-        if (1 & (legal >> best_move)){
-            Flip flip_best;
-            calc_flip(&flip_best, &search->board, best_move);
-            search->move(&flip_best);
-                g = -nega_alpha_end(search, -beta, -alpha, false, LEGAL_UNDEFINED, searching);
-            search->undo(&flip_best);
-            if (*searching){
-                alpha = max(alpha, g);
-                v = g;
-                legal ^= 1ULL << best_move;
-            } else
-                return SCORE_UNDEFINED;
-        } else
-            best_move = TRANSPOSE_TABLE_UNDEFINED;
-    }
-    if (alpha < beta && legal){
-        const int canput = pop_count_ull(legal);
-        vector<Flip_value> move_list(canput);
-        int idx = 0;
-        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
-            calc_flip(&move_list[idx++].flip, &search->board, cell);
-        move_list_evaluate_fast_first(search, move_list);
-        //const int move_ordering_threshold = MOVE_ORDERING_THRESHOLD - (int)(best_move != TRANSPOSE_TABLE_UNDEFINED);
-        for (int move_idx = 0; move_idx < canput; ++move_idx){
-            //if (move_idx < move_ordering_threshold)
-            swap_next_best_move(move_list, move_idx, canput);
-            search->move(&move_list[move_idx].flip);
-                g = -nega_alpha_end(search, -beta, -alpha, false, move_list[move_idx].n_legal, searching);
-            search->undo(&move_list[move_idx].flip);
-            if (*searching){
-                alpha = max(alpha, g);
-                if (v < g){
-                    v = g;
-                    best_move = move_list[move_idx].flip.pos;
-                    if (beta <= alpha){
-                        register_tt(search, HW2 - search->n_discs, hash_code, first_alpha, v, best_move, l, u, alpha, beta, searching);
-                        return alpha;
-                    }
-                }
-            } else
-                return SCORE_UNDEFINED;
-        }
-    }
-    register_tt(search, HW2 - search->n_discs, hash_code, first_alpha, v, best_move, l, u, alpha, beta, searching);
     return v;
 }

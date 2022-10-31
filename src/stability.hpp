@@ -221,3 +221,19 @@ inline int stability_cut(Search *search, int *alpha, int *beta){
     }
     return SCORE_UNDEFINED;
 }
+
+inline int stability_cut_nws(Search *search, int *alpha){
+    if (*alpha >= nws_stability_threshold[HW2 - search->n_discs]){
+        int stab_player, stab_opponent;
+        calc_stability(&search->board, &stab_player, &stab_opponent);
+        int n_alpha = 2 * stab_player - HW2;
+        int n_beta = HW2 - 2 * stab_opponent;
+        if (*alpha + 1 <= n_alpha)
+            return n_alpha;
+        if (n_beta <= *alpha)
+            return n_beta;
+        if (n_beta <= n_alpha)
+            return n_alpha;
+    }
+    return SCORE_UNDEFINED;
+}
