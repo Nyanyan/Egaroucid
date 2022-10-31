@@ -518,7 +518,7 @@ function onruntimeinitialized(){
     document.getElementById('start').disabled = false;
 }
 */
-document.addEventListener("DOMContentLoaded", function() {
+window.onload = function() {
     level_range.addEventListener('input', rangeOnChange);
     setCurrentValue(level_range.value);
     var container = document.getElementById('chart_container');
@@ -594,7 +594,7 @@ document.addEventListener("DOMContentLoaded", function() {
     setInterval(try_initialize_ai, 250);
     //ai_init_p();
     //setInterval(check_initialized, 250);
-});
+};
 
 function try_initialize_ai(){
     if (document.getElementById('start').value == 'AI読込中'){
