@@ -19,11 +19,9 @@ using namespace std;
 #define TRANSPOSE_TABLE_SIZE 16777216 //8388608
 #define TRANSPOSE_TABLE_MASK 16777215 //8388607
 
-#define CACHE_SAVE_EMPTY 10
-
 #define TRANSPOSE_TABLE_UNDEFINED -INF
 
-#define TRANSPOSE_TABLE_STRENGTH_MAGIC_NUMBER 8
+//#define TRANSPOSE_TABLE_STRENGTH_MAGIC_NUMBER 8
 
 inline double data_strength(const double t, const int d){
     //return t * (TRANSPOSE_TABLE_STRENGTH_MAGIC_NUMBER + d);
