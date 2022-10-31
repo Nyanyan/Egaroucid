@@ -621,13 +621,14 @@ inline int mid_evaluate_diff(Search *search){
     sur0 = min(MAX_SURROUND - 1, calc_surround(search->board.player, empties));
     sur1 = min(MAX_SURROUND - 1, calc_surround(search->board.opponent, empties));
     num0 = pop_count_ull(search->board.player);
-    num1 = pop_count_ull(search->board.opponent);
+    num1 = search->n_discs - num0;
+    //num1 = pop_count_ull(search->board.opponent);
     int res = calc_pattern_diff(phase_idx, search) + 
         eval_sur0_sur1_arr[phase_idx][sur0][sur1] + 
         eval_canput0_canput1_arr[phase_idx][canput0][canput1] + 
         eval_num0_num1_arr[phase_idx][num0][num1] + 
         calc_canput_pattern(phase_idx, &search->board, player_mobility, opponent_mobility);
-    res += res > 0 ? STEP_2 : (res < 0 ? -STEP_2 : 0);
+    res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
     return max(-SCORE_MAX, min(SCORE_MAX, res));
 }
