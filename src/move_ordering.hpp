@@ -30,7 +30,8 @@
 #define W_OPPONENT_POTENTIAL_MOBILITY 10
 //#define W_OPENNESS 1
 
-#define MOVE_ORDERING_VALUE_OFFSET 10
+#define MOVE_ORDERING_VALUE_OFFSET_ALPHA 10
+#define MOVE_ORDERING_VALUE_OFFSET_BETA 10
 #define MAX_MOBILITY 30
 #define MAX_OPENNESS 50
 
@@ -154,8 +155,8 @@ inline bool move_evaluate_fast_first(Search *search, Flip_value *flip_value){
 
 inline void swap_next_best_move(vector<Flip_value> &move_list, const int strt, const int siz){
     int top_idx = strt;
-    int best_value = -INF;
-    for (int i = strt; i < siz; ++i){
+    int best_value = move_list[strt].value;
+    for (int i = strt + 1; i < siz; ++i){
         if (best_value < move_list[i].value){
             best_value = move_list[i].value;
             top_idx = i;
@@ -179,8 +180,8 @@ inline void move_list_evaluate(Search *search, vector<Flip_value> &move_list, in
         move_list[0].n_legal = LEGAL_UNDEFINED;
         return;
     }
-    int eval_alpha = -min(SCORE_MAX, beta + MOVE_ORDERING_VALUE_OFFSET);
-    int eval_beta = -max(-SCORE_MAX, alpha - MOVE_ORDERING_VALUE_OFFSET);
+    int eval_alpha = -min(SCORE_MAX, beta + MOVE_ORDERING_VALUE_OFFSET_BETA);
+    int eval_beta = -max(-SCORE_MAX, alpha - MOVE_ORDERING_VALUE_OFFSET_ALPHA);
     int eval_depth = depth >> 3;
     if (depth >= 18)
         eval_depth += (depth - 16) >> 1;
