@@ -13436,6 +13436,9 @@ same
 36609326776 nodes
 236604407.57975286 nps
 
+2022/10/31 update cell weight
+
+
 
 
 

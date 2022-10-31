@@ -1,1 +1,1 @@
-em++ main.cpp -s WASM=1 -o ai.js -s "EXPORTED_FUNCTIONS=['_init_ai', '_ai_js', '_calc_value', '_stop', '_resume', '_malloc', '_free']" -O3 -s TOTAL_MEMORY=1258291200 -s ALLOW_MEMORY_GROWTH=1
+em++ main.cpp -s WASM=1 -o ai.js -s "EXPORTED_FUNCTIONS=['_init_ai', '_ai_js', '_calc_value', '_stop', '_resume', '_malloc', '_free']" -O3 -Os -s TOTAL_MEMORY=629145600 -s ALLOW_MEMORY_GROWTH=1
