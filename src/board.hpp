@@ -105,7 +105,10 @@ class Board {
             player ^= flip->flip;
             opponent ^= flip->flip;
             player ^= 1ULL << flip->pos;
-            swap(player, opponent);
+            //swap(player, opponent);
+            player ^= opponent;
+            opponent ^= player;
+            player ^= opponent;
         }
 
         inline void move_copy(const Flip *flip, Board *res) {
@@ -121,11 +124,17 @@ class Board {
         }
 
         inline void pass(){
-            swap(player, opponent);
+            //swap(player, opponent);
+            player ^= opponent;
+            opponent ^= player;
+            player ^= opponent;
         }
 
         inline void undo_board(const Flip *flip){
-            swap(player, opponent);
+            //swap(player, opponent);
+            player ^= opponent;
+            opponent ^= player;
+            player ^= opponent;
             player ^= 1ULL << flip->pos;
             player ^= flip->flip;
             opponent ^= flip->flip;
@@ -284,10 +293,10 @@ void board_init_rand(){
         for (j = 0; j < 65536; ++j){
             hash_rand_player[i][j] = 0;
             while (pop_count_uint(hash_rand_player[i][j]) < 4)
-                hash_rand_player[i][j] = myrand_uint_rev(); //(uint32_t)(rotate_180(myrand_ull()) >> 32);
+                hash_rand_player[i][j] = myrand_uint_rev();
             hash_rand_opponent[i][j] = 0;
             while (pop_count_uint(hash_rand_opponent[i][j]) < 4)
-                hash_rand_opponent[i][j] = myrand_uint_rev(); //(uint32_t)(rotate_180(myrand_ull()) >> 32);
+                hash_rand_opponent[i][j] = myrand_uint_rev();
         }
     }
     cerr << "board initialized" << endl;
