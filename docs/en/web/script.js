@@ -578,23 +578,14 @@ window.onload = function() {
         table.appendChild(row);
     }
     show(-2, -2);
-    console.log("loading AI");
-    //document.getElementById('start').value = "AI読込中";
     document.getElementById('start').disabled = true;
-    /*
-    var worker = new Worker("assets/js/init_worker.js");
-    worker.addEventListener('message', function(e) {
-        console.log('Worker said: ', e.data);
-        ai_initialized = e.data;
-        console.log("loaded AI");
-        document.getElementById('start').value = "対局開始";
-        document.getElementById('start').disabled = false;
-    }, false);
-    worker.postMessage('init');
-    */
-    setInterval(try_initialize_ai, 250);
-    //ai_init_p();
-    //setInterval(check_initialized, 250);
+    const scriptElem = document.createElement('script');
+    scriptElem.src = 'ai.js';
+    scriptElem.addEventListener('load', (e) => {
+        console.log("start initializing AI");
+        setInterval(try_initialize_ai, 250);
+    });
+    document.body.appendChild(scriptElem);
 };
 
 function try_initialize_ai(){
@@ -606,9 +597,9 @@ function try_initialize_ai(){
             document.getElementById('start').disabled = false;
             document.getElementById('reset').disabled = false;
         } catch(exception){
-            console.error(exception);
-            document.getElementById('start').value = "Failed Initializing Please Reload";
-            document.getElementById('start').disabled = true;
+            //console.error(exception);
+            //document.getElementById('start').value = "Failed Initializing Please Reload";
+            //document.getElementById('start').disabled = true;
         }
         clearInterval(try_initialize_ai);
     }

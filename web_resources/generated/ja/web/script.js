@@ -599,9 +599,9 @@ function try_initialize_ai(){
             document.getElementById('start').disabled = false;
             document.getElementById('reset').disabled = false;
         } catch(exception){
-            console.error(exception);
-            document.getElementById('start').value = "読込失敗 リロードしてください";
-            document.getElementById('start').disabled = true;
+            //console.error(exception);
+            //document.getElementById('start').value = "読込失敗 リロードしてください";
+            //document.getElementById('start').disabled = true;
         }
         clearInterval(try_initialize_ai);
     }
