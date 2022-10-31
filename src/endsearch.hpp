@@ -64,9 +64,11 @@ inline int last2(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
             search->move(&flip);
                 g = -last1(search, -beta, -alpha, p1);
             search->undo(&flip);
-            alpha = max(alpha, g);
-            if (beta <= alpha)
-                return alpha;
+            if (alpha < g){
+                alpha = g;
+                if (beta <= alpha)
+                    return alpha;
+            }
             v = g;
         } else
             v = -INF;
@@ -79,9 +81,11 @@ inline int last2(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
                 search->move(&flip);
                     g = -last1(search, -beta, -alpha, p0);
                 search->undo(&flip);
-                alpha = max(alpha, g);
-                if (beta <= alpha)
-                    return alpha;
+                if (alpha < g){
+                    alpha = g;
+                    if (beta <= alpha)
+                        return alpha;
+                }
                 v = max(v, g);
             }
         }
@@ -134,9 +138,11 @@ inline int last3(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
             search->move(&flip);
                 g = -last2(search, -beta, -alpha, p1, p2, false);
             search->undo(&flip);
-            alpha = max(alpha, g);
-            if (beta <= alpha)
-                return alpha;
+            if (alpha < g){
+                alpha = g;
+                if (beta <= alpha)
+                    return alpha;
+            }
             v = g;
         }
     }
@@ -147,9 +153,11 @@ inline int last3(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
                 search->move(&flip);
                     g = -last2(search, -beta, -alpha, p0, p2, false);
                 search->undo(&flip);
-                alpha = max(alpha, g);
-                if (beta <= alpha)
-                    return alpha;
+                if (alpha < g){
+                    alpha = g;
+                    if (beta <= alpha)
+                        return alpha;
+                }
                 v = max(v, g);
             }
         }
@@ -161,9 +169,11 @@ inline int last3(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
                 search->move(&flip);
                     g = -last2(search, -beta, -alpha, p0, p1, false);
                 search->undo(&flip);
-                alpha = max(alpha, g);
-                if (beta <= alpha)
-                    return alpha;
+                if (alpha < g){
+                    alpha = g;
+                    if (beta <= alpha)
+                        return alpha;
+                }
                 v = max(v, g);
             }
         }
@@ -258,9 +268,11 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
         search->move(&flip);
             g = -last3(search, -beta, -alpha, p1, p2, p3, false);
         search->undo(&flip);
-        alpha = max(alpha, g);
-        if (beta <= alpha)
-            return alpha;
+        if (alpha < g){
+            alpha = g;
+            if (beta <= alpha)
+                return alpha;
+        }
         v = max(v, g);
     }
     all_radiation |= bit_radiation[p0];
@@ -269,9 +281,11 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
         search->move(&flip);
             g = -last3(search, -beta, -alpha, p0, p2, p3, false);
         search->undo(&flip);
-        alpha = max(alpha, g);
-        if (beta <= alpha)
-            return alpha;
+        if (alpha < g){
+            alpha = g;
+            if (beta <= alpha)
+                return alpha;
+        }
         v = max(v, g);
     }
     all_radiation |= bit_radiation[p1];
@@ -280,9 +294,11 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
         search->move(&flip);
             g = -last3(search, -beta, -alpha, p0, p1, p3, false);
         search->undo(&flip);
-        alpha = max(alpha, g);
-        if (beta <= alpha)
-            return alpha;
+        if (alpha < g){
+            alpha = g;
+            if (beta <= alpha)
+                return alpha;
+        }
         v = max(v, g);
     }
     all_radiation |= bit_radiation[p2];
@@ -291,9 +307,11 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
         search->move(&flip);
             g = -last3(search, -beta, -alpha, p0, p1, p2, false);
         search->undo(&flip);
-        alpha = max(alpha, g);
-        if (beta <= alpha)
-            return alpha;
+        if (alpha < g){
+            alpha = g;
+            if (beta <= alpha)
+                return alpha;
+        }
         v = max(v, g);
     }
     return v;
