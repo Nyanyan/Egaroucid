@@ -137,6 +137,19 @@ void print_arr(double board_arr[], string head){
     print_arr_64(board_arr, head + INDENT);
     cout << head << "10 cells: " << endl;
     print_arr_10(board_arr, head + INDENT);
+}
+
+void print_arr(uint64_t arr[], int siz, string head){
+    cout << head;
+    for (int i = 0; i < siz; ++i)
+        cout << right << setw(N_DIGIT) << arr[i] << " ";
+    cout << endl;
+}
+
+void print_arr(double arr[], int siz, string head){
+    cout << head;
+    for (int i = 0; i < siz; ++i)
+        cout << setprecision(N_DOUBLE_DIGIT) << right << setw(N_DIGIT) << arr[i] << " ";
     cout << endl;
 }
 
@@ -146,6 +159,8 @@ struct Data{
     uint64_t parities[4];
     double places_weighted[HW2];
     double parities_weighted[2];
+    uint64_t n_next_legals[35];
+    double n_next_legals_weighted[35];
 
 
     Data(){
@@ -158,6 +173,10 @@ struct Data{
             places_weighted[i] = 0.0;
         for (int i = 0; i < 2; ++i)
             parities_weighted[i] = 0.0;
+        for (int i = 0; i < 35; ++i)
+            n_next_legals[i] = 0;
+        for (int i = 0; i < 35; ++i)
+            n_next_legals_weighted[i] = 0.0;
     }
 
     void print(){
@@ -165,6 +184,7 @@ struct Data{
 
         cout << "places: " << endl;
         print_arr(places, INDENT);
+        cout << endl;
 
         cout << "parities: " << endl;
         cout << INDENT << "even:       " << parities[0] << endl;
@@ -177,10 +197,21 @@ struct Data{
         for (int i = 0; i < HW2; ++i)
             places_weighted[i] /= max(1ULL, places[i]);
         print_arr(places_weighted, INDENT);
+        cout << endl;
 
         cout << "parities_weighted: " << endl;
         cout << INDENT << "even:       " << parities_weighted[0] / parities[0] << endl;
         cout << INDENT << "odd:        " << parities_weighted[1] / parities[1] << endl;
+        cout << endl;
+
+        cout << "n_next_legals: " << endl;
+        print_arr(n_next_legals, 35, INDENT);
+        cout << endl;
+
+        cout << "n_next_legals_weighted: " << endl;
+        for (int i = 0; i < 35; ++i)
+            n_next_legals_weighted[i] /= max(1ULL, n_next_legals[i]);
+        print_arr(n_next_legals_weighted, 35, INDENT);
         cout << endl;
 
         cout << endl << "done" << endl;
@@ -189,6 +220,7 @@ struct Data{
 
 void add_data(Data *data, string line){
     Board board;
+    Flip flip;
     board.player = 0ULL;
     board.opponent = 0ULL;
     uint64_t p = 0ULL, o = 0ULL;
@@ -222,6 +254,15 @@ void add_data(Data *data, string line){
                 ++n_even_legals;
         }
 
+        int best_next_n_moves = 1000;
+        legal = board.get_legal();
+        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+            calc_flip(&flip, &board, cell);
+            board.move(&flip);
+                best_next_n_moves = min(best_next_n_moves, pop_count_ull(board.get_legal()));
+            board.undo(&flip);
+        }
+
         ++data->n_data;
         ++data->places[policy];
         if (parity == 0)
@@ -239,6 +280,11 @@ void add_data(Data *data, string line){
             else
                 data->parities_weighted[0] += 1.0 - ((double)n_even_legals / n_legal); // even
         }
+        calc_flip(&flip, &board, policy);
+        board.move(&flip);
+        int next_n_legals = pop_count_ull(board.get_legal());
+        ++data->n_next_legals[next_n_legals];
+        data->n_next_legals_weighted[next_n_legals] += (double)(1 + best_next_n_moves) / (1 + next_n_legals);
     }
 }
 

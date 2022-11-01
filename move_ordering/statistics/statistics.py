@@ -1,7 +1,9 @@
 import subprocess
 
 cmds = [
-    'statistics.out',
+    'statistics.out 2 4',
+    'statistics.out 5 7',
+    'statistics.out 8 13',
     'statistics.out 2',
     'statistics.out 3',
     'statistics.out 4',
@@ -17,7 +19,9 @@ cmds = [
 ]
 
 files = [
-    'statistics/all.txt',
+    'statistics/last.txt',
+    'statistics/fast.txt',
+    'statistics/end.txt',
     'statistics/2.txt',
     'statistics/3.txt',
     'statistics/4.txt',
