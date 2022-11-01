@@ -36,7 +36,7 @@
 #define MAX_OPENNESS 50
 
 #define W_END_MOBILITY 16
-//#define W_END_PARITY 2
+#define W_END_PARITY 8
 
 #define MIDGAME_N_STONES 44
 #define USE_OPPONENT_OPENNESS_DEPTH 16
@@ -144,8 +144,8 @@ inline bool move_evaluate_fast_first(Search *search, Flip_value *flip_value){
         return true;
     }
     flip_value->value = cell_weight[flip_value->flip.pos];
-    //if (search->parity & cell_div4[flip_value->flip.pos])
-    //    flip_value->value += W_END_PARITY;
+    if (search->parity & cell_div4[flip_value->flip.pos])
+        flip_value->value += W_END_PARITY;
     search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
         flip_value->value += -pop_count_ull(flip_value->n_legal) * W_END_MOBILITY;
