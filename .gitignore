@@ -31,5 +31,5 @@ src/test/ignore
 /src/test/resources
 src_web/*.js
 src_web/*.wasm
-move_ordering/end_fast/data
-move_ordering/end_fast/statistics
+move_ordering/statistics/data
+move_ordering/statistics/statistics

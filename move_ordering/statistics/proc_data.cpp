@@ -9,8 +9,8 @@ using namespace std;
 
 #define N_DIRS 1
 
-#define MIN_EMPTIES 5
-#define MAX_EMPTIES 7
+#define MIN_EMPTIES 1
+#define MAX_EMPTIES 13
 
 string idx_to_coord(int idx){
     int y = HW_M1 - idx / HW;
