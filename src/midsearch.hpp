@@ -67,7 +67,7 @@ using namespace std;
             }
         }
         return v;
-}
+    }
 #endif
 
 /*

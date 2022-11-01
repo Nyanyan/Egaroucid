@@ -69,6 +69,7 @@ Parallel_task ybwc_do_task_nws(int id, uint64_t player, uint64_t opponent, int_f
     search.mpct = mpct;
     search.first_depth = first_depth;
     search.n_nodes = 0ULL;
+    search.use_multi_thread = true;
     calc_features(&search);
     int g = -nega_alpha_ordering_nws(&search, alpha, depth, false, legal, is_end_search, searching);
     Parallel_task task;
@@ -104,6 +105,7 @@ Parallel_task ybwc_do_task_end(int id, uint64_t player, uint64_t opponent, int_f
     search.mpct = mpct;
     search.first_depth = first_depth;
     search.n_nodes = 0ULL;
+    search.use_multi_thread = true;
     int g = -nega_alpha_end(&search, alpha, beta, false, legal, searching);
     Parallel_task task;
     if (*searching)
@@ -138,6 +140,7 @@ Parallel_task ybwc_do_task_end_nws(int id, uint64_t player, uint64_t opponent, i
     search.mpct = mpct;
     search.first_depth = first_depth;
     search.n_nodes = 0ULL;
+    search.use_multi_thread = true;
     int g = -nega_alpha_end_nws(&search, alpha, false, legal, searching);
     Parallel_task task;
     if (*searching)

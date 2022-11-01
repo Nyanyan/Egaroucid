@@ -53,6 +53,9 @@ struct Flip_value{
     Flip flip;
     int value;
     uint64_t n_legal;
+    Flip_value(){
+        n_legal = LEGAL_UNDEFINED;
+    }
 };
 
 int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, const bool *searching);
@@ -186,10 +189,8 @@ bool cmp_move_ordering(Flip_value &a, Flip_value &b){
 }
 
 inline void move_list_evaluate(Search *search, vector<Flip_value> &move_list, int depth, int alpha, int beta, bool is_end_search, const bool *searching){
-    if (move_list.size() == 1){
-        move_list[0].n_legal = LEGAL_UNDEFINED;
+    if (move_list.size() == 1)
         return;
-    }
     int eval_alpha = -min(SCORE_MAX, beta + MOVE_ORDERING_VALUE_OFFSET_BETA);
     int eval_beta = -max(-SCORE_MAX, alpha - MOVE_ORDERING_VALUE_OFFSET_ALPHA);
     int eval_depth = depth >> 3;
@@ -197,7 +198,6 @@ inline void move_list_evaluate(Search *search, vector<Flip_value> &move_list, in
         eval_depth += (depth - 16) >> 1;
     bool wipeout_found = false;
     for (Flip_value &flip_value: move_list){
-        flip_value.n_legal = LEGAL_UNDEFINED;
         if (!wipeout_found)
             wipeout_found = move_evaluate(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching, depth, alpha);
         else
@@ -211,13 +211,10 @@ inline void move_ordering(Search *search, vector<Flip_value> &move_list, int dep
 }
 
 inline void move_list_evaluate_fast_first(Search *search, vector<Flip_value> &move_list){
-    if (move_list.size() == 1){
-        move_list[0].n_legal = LEGAL_UNDEFINED;
+    if (move_list.size() == 1)
         return;
-    }
     bool wipeout_found = false;
     for (Flip_value &flip_value: move_list){
-        flip_value.n_legal = LEGAL_UNDEFINED;
         if (!wipeout_found)
             wipeout_found = move_evaluate_fast_first(search, &flip_value);
         else

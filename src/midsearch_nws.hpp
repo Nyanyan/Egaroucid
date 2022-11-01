@@ -31,43 +31,45 @@ using namespace std;
 inline void ybwc_get_end_tasks_nws(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v);
 inline void ybwc_wait_all_nws(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v, int alpha, bool *searching);
 
-int nega_alpha_nws(Search *search, int alpha, int depth, bool skipped, const bool *searching){
-    if (!global_searching || !(*searching))
-        return SCORE_UNDEFINED;
-    ++search->n_nodes;
-    if (depth == 1)
-        return nega_alpha_eval1(search, alpha, alpha + 1, skipped, searching);
-    if (depth == 0)
-        return mid_evaluate_diff(search);
-    int v = -INF;
-    uint64_t legal = search->board.get_legal();
-    if (legal == 0ULL){
-        if (skipped)
-            return end_evaluate(&search->board);
-        search->eval_feature_reversed ^= 1;
-        search->board.pass();
-            v = -nega_alpha_nws(search, -alpha - 1, depth, true, searching);
-        search->board.pass();
-        search->eval_feature_reversed ^= 1;
+#if MID_FAST_DEPTH > 1
+    int nega_alpha_nws(Search *search, int alpha, int depth, bool skipped, const bool *searching){
+        if (!global_searching || !(*searching))
+            return SCORE_UNDEFINED;
+        ++search->n_nodes;
+        if (depth == 1)
+            return nega_alpha_eval1(search, alpha, alpha + 1, skipped, searching);
+        if (depth == 0)
+            return mid_evaluate_diff(search);
+        int v = -INF;
+        uint64_t legal = search->board.get_legal();
+        if (legal == 0ULL){
+            if (skipped)
+                return end_evaluate(&search->board);
+            search->eval_feature_reversed ^= 1;
+            search->board.pass();
+                v = -nega_alpha_nws(search, -alpha - 1, depth, true, searching);
+            search->board.pass();
+            search->eval_feature_reversed ^= 1;
+            return v;
+        }
+        Flip flip;
+        int g;
+        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+            calc_flip(&flip, &search->board, cell);
+            eval_move(search, &flip);
+            search->move(&flip);
+                g = -nega_alpha_nws(search, -alpha - 1, depth - 1, false, searching);
+            search->undo(&flip);
+            eval_undo(search, &flip);
+            if (v < g){
+                if (alpha < g)
+                    return g;
+                v = g;
+            }
+        }
         return v;
     }
-    Flip flip;
-    int g;
-    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-        calc_flip(&flip, &search->board, cell);
-        eval_move(search, &flip);
-        search->move(&flip);
-            g = -nega_alpha_nws(search, -alpha - 1, depth - 1, false, searching);
-        search->undo(&flip);
-        eval_undo(search, &flip);
-        if (v < g){
-            if (alpha < g)
-                return g;
-            v = g;
-        }
-    }
-    return v;
-}
+#endif
 
 int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching){
     if (!global_searching || !(*searching))
@@ -75,8 +77,10 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
     if (is_end_search && depth <= MID_TO_END_DEPTH)
         return nega_alpha_end_nws(search, alpha, skipped, legal, searching);
     if (!is_end_search){
-        //if (depth <= MID_FAST_DEPTH)
-        //    return nega_alpha_nws(search, alpha, depth, skipped, searching);
+        #if MID_FAST_DEPTH > 1
+            if (depth <= MID_FAST_DEPTH)
+                return nega_alpha_nws(search, alpha, depth, skipped, searching);
+        #else
         if (depth == 1)
             return nega_alpha_eval1(search, alpha, alpha + 1, skipped, searching);
         if (depth == 0)
