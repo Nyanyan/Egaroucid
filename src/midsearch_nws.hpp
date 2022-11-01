@@ -81,10 +81,11 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
             if (depth <= MID_FAST_DEPTH)
                 return nega_alpha_nws(search, alpha, depth, skipped, searching);
         #else
-        if (depth == 1)
-            return nega_alpha_eval1(search, alpha, alpha + 1, skipped, searching);
-        if (depth == 0)
-            return mid_evaluate_diff(search);
+            if (depth == 1)
+                return nega_alpha_eval1(search, alpha, alpha + 1, skipped, searching);
+            if (depth == 0)
+                return mid_evaluate_diff(search);
+        #endif
     }
     ++search->n_nodes;
     uint32_t hash_code = search->board.hash();

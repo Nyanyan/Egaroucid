@@ -226,17 +226,17 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
         return SCORE_UNDEFINED;
     if (is_end_search && depth <= MID_TO_END_DEPTH)
         return nega_alpha_end(search, alpha, beta, skipped, legal, searching);
-    #if MID_FAST_DEPTH > 1
-        if (!is_end_search && depth <= MID_FAST_DEPTH)
-            return nega_alpha(search, alpha, beta, depth, skipped, searching);
-    #else
-        if (!is_end_search){
+    if (!is_end_search){
+        #if MID_FAST_DEPTH > 1
+            if (depth <= MID_FAST_DEPTH)
+                return nega_alpha(search, alpha, beta, depth, skipped, searching);
+        #else
             if (depth == 1)
                 return nega_alpha_eval1(search, alpha, beta, skipped, searching);
             if (depth == 0)
                 return mid_evaluate_diff(search);
-        }
-    #endif
+        #endif
+    }
     ++(search->n_nodes);
     #if USE_END_SC
         if (is_end_search){
