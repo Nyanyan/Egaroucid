@@ -20,33 +20,16 @@
 #include "transpose_table.hpp"
 #include "util.hpp"
 #include "stability.hpp"
+#include "endsearch_common.hpp"
+#include "ybwc.hpp"
+#include "parallel.hpp"
 
 using namespace std;
 
-inline int last1_nws(Search *search, int alpha, uint_fast8_t p0){
-    ++search->n_nodes;
-    int score = HW2 - 2 * search->board.count_opponent();
-    int n_flip;
-    n_flip = count_last_flip(search->board.player, search->board.opponent, p0);
-    if (n_flip == 0){
-        ++search->n_nodes;
-        if (score <= 0){
-            score -= 2;
-            if (score >= alpha){
-                n_flip = count_last_flip(search->board.opponent, search->board.player, p0);
-                score -= 2 * n_flip;
-            }
-        } else{
-            if (score >= alpha){
-                n_flip = count_last_flip(search->board.opponent, search->board.player, p0);
-                if (n_flip)
-                    score -= 2 * n_flip + 2;
-            }
-        }
-    } else
-        score += 2 * n_flip;
-    return score;
-}
+inline bool ybwc_split_end_nws(const Search *search, const Flip *flip, int alpha, uint64_t legal, const bool *searching, uint_fast8_t policy, const int canput, const int pv_idx, const int split_count, vector<future<Parallel_task>> &parallel_tasks);
+inline void ybwc_get_end_tasks_nws(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v);
+inline void ybwc_wait_all(Search *search, vector<future<Parallel_task>> &parallel_tasks);
+inline void ybwc_wait_all_nws(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v, int alpha, bool *searching);
 
 inline int last2_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1, bool skipped){
     ++search->n_nodes;
@@ -56,32 +39,28 @@ inline int last2_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
         if (!p0_parity && p1_parity)
             swap(p0, p1);
     #endif
-    int v, g;
+    int v = -INF;
     Flip flip;
     if (bit_around[p0] & search->board.opponent){
         calc_flip(&flip, &search->board, p0);
         if (flip.flip){
             search->move(&flip);
-                g = -last1_nws(search, -alpha - 1, p1);
+                v = -last1(search, -alpha - 1, p1);
             search->undo(&flip);
-            if (alpha < g)
+            if (alpha < v)
+                return v;
+        }
+    }
+    if (bit_around[p1] & search->board.opponent){
+        calc_flip(&flip, &search->board, p1);
+        if (flip.flip){
+            search->move(&flip);
+                int g = -last1(search, -alpha - 1, p0);
+            search->undo(&flip);
+            if (v < g)
                 return g;
-            v = g;
-        } else
-            v = -INF;
-    } else
-        v = -INF;
-    if (bit_radiation[p0] & bit_radiation[p1]){
-        if (bit_around[p1] & search->board.opponent){
-            calc_flip(&flip, &search->board, p1);
-            if (flip.flip){
-                search->move(&flip);
-                    g = -last1_nws(search, -alpha - 1, p0);
-                search->undo(&flip);
-                if (alpha < g)
-                    return g;
-                v = max(v, g);
-            }
+            else
+                return v;
         }
     }
     if (v == -INF){
@@ -124,43 +103,42 @@ inline int last3_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
             #endif
         }
     #endif
-    int v = -INF, g;
+    int v = -INF;
     Flip flip;
     if (bit_around[p0] & search->board.opponent){
         calc_flip(&flip, &search->board, p0);
         if (flip.flip){
             search->move(&flip);
-                g = -last2_nws(search, -alpha - 1, p1, p2, false);
+                v = -last2_nws(search, -alpha - 1, p1, p2, false);
             search->undo(&flip);
-            if (alpha < g)
+            if (alpha < v)
+                return v;
+        }
+    }
+    int g;
+    if (bit_around[p1] & search->board.opponent){
+        calc_flip(&flip, &search->board, p1);
+        if (flip.flip){
+            search->move(&flip);
+                g = -last2_nws(search, -alpha - 1, p0, p2, false);
+            search->undo(&flip);
+            if (v < g){
+                if (alpha < g)
+                    return g;
+                v = g;
+            }
+        }
+    }
+    if (bit_around[p2] & search->board.opponent){
+        calc_flip(&flip, &search->board, p2);
+        if (flip.flip){
+            search->move(&flip);
+                g = -last2_nws(search, -alpha - 1, p0, p1, false);
+            search->undo(&flip);
+            if (v < g)
                 return g;
-            v = g;
-        }
-    }
-    if (bit_radiation[p0] & bit_radiation[p1]){
-        if (bit_around[p1] & search->board.opponent){
-            calc_flip(&flip, &search->board, p1);
-            if (flip.flip){
-                search->move(&flip);
-                    g = -last2_nws(search, -alpha - 1, p0, p2, false);
-                search->undo(&flip);
-                if (alpha < g)
-                    return g;
-                v = max(v, g);
-            }
-        }
-    }
-    if ((bit_radiation[p0] & bit_radiation[p2]) || (bit_radiation[p1] & bit_radiation[p2])){
-        if (bit_around[p2] & search->board.opponent){
-            calc_flip(&flip, &search->board, p2);
-            if (flip.flip){
-                search->move(&flip);
-                    g = -last2_nws(search, -alpha - 1, p0, p1, false);
-                search->undo(&flip);
-                if (alpha < g)
-                    return g;
-                v = max(v, g);
-            }
+            else
+                return v;
         }
     }
     if (v == -INF){
@@ -171,7 +149,6 @@ inline int last3_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
                 v = -last3_nws(search, -alpha - 1, p0, p1, p2, true);
             search->board.pass();
         }
-        return v;
     }
     return v;
 }
@@ -235,7 +212,7 @@ inline int last4_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
         }
     #endif
     uint64_t legal = search->board.get_legal();
-    int v = -INF, g;
+    int v = -INF;
     if (legal == 0ULL){
         if (skipped)
             v = end_evaluate(&search->board);
@@ -247,45 +224,44 @@ inline int last4_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
         return v;
     }
     Flip flip;
-    uint64_t all_radiation = 0ULL;
     if (1 & (legal >> p0)){
         calc_flip(&flip, &search->board, p0);
         search->move(&flip);
-            g = -last3_nws(search, -alpha - 1, p1, p2, p3, false);
+            v = -last3_nws(search, -alpha - 1, p1, p2, p3, false);
         search->undo(&flip);
-        if (alpha < g)
-            return g;
-        v = max(v, g);
+        if (alpha < v)
+            return v;
     }
-    all_radiation |= bit_radiation[p0];
-    if ((1 & (legal >> p1)) && (all_radiation & bit_radiation[p1])){
+    int g;
+    if (1 & (legal >> p1)){
         calc_flip(&flip, &search->board, p1);
         search->move(&flip);
             g = -last3_nws(search, -alpha - 1, p0, p2, p3, false);
         search->undo(&flip);
-        if (alpha < g)
-            return g;
-        v = max(v, g);
+        if (v < g){
+            if (alpha < g)
+                return g;
+            v = g;
+        }
     }
-    all_radiation |= bit_radiation[p1];
-    if ((1 & (legal >> p2)) && (all_radiation & bit_radiation[p2])){
+    if (1 & (legal >> p2)){
         calc_flip(&flip, &search->board, p2);
         search->move(&flip);
             g = -last3_nws(search, -alpha - 1, p0, p1, p3, false);
         search->undo(&flip);
-        if (alpha < g)
-            return g;
-        v = max(v, g);
+        if (v < g){
+            if (alpha < g)
+                return g;
+            v = g;
+        }
     }
-    all_radiation |= bit_radiation[p2];
-    if ((1 & (legal >> p3)) && (all_radiation & bit_radiation[p3])){
+    if (1 & (legal >> p3)){
         calc_flip(&flip, &search->board, p3);
         search->move(&flip);
             g = -last3_nws(search, -alpha - 1, p0, p1, p2, false);
         search->undo(&flip);
-        if (alpha < g)
+        if (v < g)
             return g;
-        v = max(v, g);
     }
     return v;
 }
@@ -303,7 +279,7 @@ int nega_alpha_end_fast_nws(Search *search, int alpha, bool skipped, bool stab_c
         }
     #endif
     uint64_t legal = search->board.get_legal();
-    int g, v = -INF;
+    int v = -INF;
     if (legal == 0ULL){
         if (skipped)
             return end_evaluate(&search->board);
@@ -312,10 +288,11 @@ int nega_alpha_end_fast_nws(Search *search, int alpha, bool skipped, bool stab_c
         search->board.pass();
         return v;
     }
+    int g;
     Flip flip;
+    uint_fast8_t cell;
     #if USE_END_PO
         uint64_t legal_copy;
-        uint_fast8_t cell;
         if (0 < search->parity && search->parity < 15){
             uint64_t legal_mask = 0ULL;
             if (search->parity & 1)
@@ -326,103 +303,11 @@ int nega_alpha_end_fast_nws(Search *search, int alpha, bool skipped, bool stab_c
                 legal_mask |= 0x0F0F0F0F00000000ULL;
             if (search->parity & 8)
                 legal_mask |= 0xF0F0F0F000000000ULL;
-            legal_copy = legal & legal_mask;
-            if (legal_copy){
-                if (search->n_discs == 59){
-                    uint64_t empties;
-                    uint_fast8_t p0, p1, p2, p3;
-                    for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
-                        calc_flip(&flip, &search->board, cell);
-                        search->move(&flip);
-                            empties = ~(search->board.player | search->board.opponent);
-                            p0 = first_bit(&empties);
-                            p1 = next_bit(&empties);
-                            p2 = next_bit(&empties);
-                            p3 = next_bit(&empties);
-                            g = -last4_nws(search, -alpha - 1, p0, p1, p2, p3, false);
-                        search->undo(&flip);
-                        if (alpha < g)
-                            return g;
-                        v = max(v, g);
-                    }
-                } else{
-                    for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
-                        calc_flip(&flip, &search->board, cell);
-                        search->move(&flip);
-                            g = -nega_alpha_end_fast_nws(search, -alpha - 1, false, true, searching);
-                        search->undo(&flip);
-                        if (alpha < g)
-                            return g;
-                        v = max(v, g);
-                    }
-                }
-            }
-            legal_copy = legal & ~legal_mask;
-            if (legal_copy){
-                if (search->n_discs == 59){
-                    uint64_t empties;
-                    uint_fast8_t p0, p1, p2, p3;
-                    for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
-                        calc_flip(&flip, &search->board, cell);
-                        search->move(&flip);
-                            empties = ~(search->board.player | search->board.opponent);
-                            p0 = first_bit(&empties);
-                            p1 = next_bit(&empties);
-                            p2 = next_bit(&empties);
-                            p3 = next_bit(&empties);
-                            g = -last4_nws(search, -alpha - 1, p0, p1, p2, p3, false);
-                        search->undo(&flip);
-                        if (alpha < g)
-                            return g;
-                        v = max(v, g);
-                    }
-                } else{
-                    for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
-                        calc_flip(&flip, &search->board, cell);
-                        search->move(&flip);
-                            g = -nega_alpha_end_fast_nws(search, -alpha - 1, false, true, searching);
-                        search->undo(&flip);
-                        if (alpha < g)
-                            return g;
-                        v = max(v, g);
-                    }
-                }
-            }
-        } else{
             if (search->n_discs == 59){
                 uint64_t empties;
-                    uint_fast8_t p0, p1, p2, p3;
-                    for (cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-                        calc_flip(&flip, &search->board, cell);
-                        search->move(&flip);
-                            empties = ~(search->board.player | search->board.opponent);
-                            p0 = first_bit(&empties);
-                            p1 = next_bit(&empties);
-                            p2 = next_bit(&empties);
-                            p3 = next_bit(&empties);
-                            g = -last4_nws(search, -alpha - 1, p0, p1, p2, p3, false);
-                        search->undo(&flip);
-                        if (alpha < g)
-                            return g;
-                        v = max(v, g);
-                    }
-            } else{
-                for (cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-                    calc_flip(&flip, &search->board, cell);
-                    search->move(&flip);
-                        g = -nega_alpha_end_fast_nws(search, -alpha - 1, false, true, searching);
-                    search->undo(&flip);
-                    if (alpha < g)
-                        return g;
-                    v = max(v, g);
-                }
-            }
-        }
-    #else
-        if (search->n_discs == 59){
-            uint64_t empties;
                 uint_fast8_t p0, p1, p2, p3;
-                for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+                legal_copy = legal & legal_mask;
+                for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
                     calc_flip(&flip, &search->board, cell);
                     search->move(&flip);
                         empties = ~(search->board.player | search->board.opponent);
@@ -430,23 +315,241 @@ int nega_alpha_end_fast_nws(Search *search, int alpha, bool skipped, bool stab_c
                         p1 = next_bit(&empties);
                         p2 = next_bit(&empties);
                         p3 = next_bit(&empties);
-                        g = -last4_nws(search, -alpha - 1, p0, p1, p2, p3, skipped);
+                        g = -last4_nws(search, -alpha - 1, p0, p1, p2, p3, false);
                     search->undo(&flip);
+                    if (v < g){
+                        if (alpha < g)
+                            return g;
+                        v = g;
+                    }
+                }
+                legal_copy = legal & ~legal_mask;
+                for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
+                    calc_flip(&flip, &search->board, cell);
+                    search->move(&flip);
+                        empties = ~(search->board.player | search->board.opponent);
+                        p0 = first_bit(&empties);
+                        p1 = next_bit(&empties);
+                        p2 = next_bit(&empties);
+                        p3 = next_bit(&empties);
+                        g = -last4_nws(search, -alpha - 1, p0, p1, p2, p3, false);
+                    search->undo(&flip);
+                    if (v < g){
+                        if (alpha < g)
+                            return g;
+                        v = g;
+                    }
+                }
+            } else{
+                legal_copy = legal & legal_mask;
+                for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
+                    calc_flip(&flip, &search->board, cell);
+                    search->move(&flip);
+                        g = -nega_alpha_end_fast_nws(search, -alpha - 1, false, true, searching);
+                    search->undo(&flip);
+                    if (v < g){
+                        if (alpha < g)
+                            return g;
+                        v = g;
+                    }
+                }
+                legal_copy = legal & ~legal_mask;
+                for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
+                    calc_flip(&flip, &search->board, cell);
+                    search->move(&flip);
+                        g = -nega_alpha_end_fast_nws(search, -alpha - 1, false, true, searching);
+                    search->undo(&flip);
+                    if (v < g){
+                        if (alpha < g)
+                            return g;
+                        v = g;
+                    }
+                }
+            }
+        } else{
+            if (search->n_discs == 59){
+                uint64_t empties;
+                uint_fast8_t p0, p1, p2, p3;
+                for (cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+                    calc_flip(&flip, &search->board, cell);
+                    search->move(&flip);
+                        empties = ~(search->board.player | search->board.opponent);
+                        p0 = first_bit(&empties);
+                        p1 = next_bit(&empties);
+                        p2 = next_bit(&empties);
+                        p3 = next_bit(&empties);
+                        g = -last4_nws(search, -alpha - 1, p0, p1, p2, p3, false);
+                    search->undo(&flip);
+                    if (v < g){
+                        if (alpha < g)
+                            return g;
+                        v = g;
+                    }
+                }
+            } else{
+                for (cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+                    calc_flip(&flip, &search->board, cell);
+                    search->move(&flip);
+                        g = -nega_alpha_end_fast_nws(search, -alpha - 1, false, true, searching);
+                    search->undo(&flip);
+                    if (v < g){
+                        if (alpha < g)
+                            return g;
+                        v = g;
+                    }
+                }
+            }
+        }
+    #else
+        if (search->n_discs == 59){
+            uint64_t empties;
+            uint_fast8_t p0, p1, p2, p3;
+            for (cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+                calc_flip(&flip, &search->board, cell);
+                search->move(&flip);
+                    empties = ~(search->board.player | search->board.opponent);
+                    p0 = first_bit(&empties);
+                    p1 = next_bit(&empties);
+                    p2 = next_bit(&empties);
+                    p3 = next_bit(&empties);
+                    g = -last4_nws(search, -alpha - 1, p0, p1, p2, p3, false);
+                search->undo(&flip);
+                if (v < g){
                     if (alpha < g)
                         return g;
-                    v = max(v, g);
+                    v = g;
                 }
+            }
         } else{
-            for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+            for (cell = first_bit(&legal); legal; cell = next_bit(&legal)){
                 calc_flip(&flip, &search->board, cell);
                 search->move(&flip);
                     g = -nega_alpha_end_fast_nws(search, -alpha - 1, false, true, searching);
                 search->undo(&flip);
-                if (alpha < g)
-                    return g;
-                v = max(v, g);
+                if (v < g){
+                    if (alpha < g)
+                        return g;
+                    v = g;
+                }
             }
         }
     #endif
+    return v;
+}
+
+int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, const bool *searching){
+    if (!global_searching || !(*searching))
+        return SCORE_UNDEFINED;
+    if (search->n_discs >= HW2 - END_FAST_DEPTH)
+        return nega_alpha_end_fast_nws(search, alpha, skipped, false, searching);
+    ++search->n_nodes;
+    uint32_t hash_code = search->board.hash();
+    int l = -INF, u = INF;
+    if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD){
+        parent_transpose_table.get(&search->board, hash_code, &l, &u, search->mpct, HW2 - search->n_discs);
+        if (u == l)
+            return u;
+        if (l < alpha && u <= alpha)
+            return u;
+        if (alpha < l && alpha + 1 < u)
+            return l;
+    }
+    #if USE_END_SC
+        int stab_res = stability_cut_nws(search, &alpha);
+        if (stab_res != SCORE_UNDEFINED)
+            return stab_res;
+    #endif
+    if (legal == LEGAL_UNDEFINED)
+        legal = search->board.get_legal();
+    int v = -INF;
+    if (legal == 0ULL){
+        if (skipped)
+            return end_evaluate(&search->board);
+        search->board.pass();
+            v = -nega_alpha_end_nws(search, -alpha - 1, true, LEGAL_UNDEFINED, searching);
+        search->board.pass();
+        return v;
+    }
+    /*
+    int best_move = TRANSPOSE_TABLE_UNDEFINED;
+    if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD){
+        best_move = child_transpose_table.get(&search->board, hash_code);
+        if (best_move != TRANSPOSE_TABLE_UNDEFINED){
+            if (1 & (legal >> best_move)){
+                Flip flip_best;
+                calc_flip(&flip_best, &search->board, best_move);
+                search->move(&flip_best);
+                    v = -nega_alpha_end_nws(search, -alpha - 1, false, LEGAL_UNDEFINED, searching);
+                search->undo(&flip_best);
+                if (alpha < v)
+                    return v;
+            } else
+                best_move = TRANSPOSE_TABLE_UNDEFINED;
+        }
+    }
+    */
+    //if (legal){
+    int g;
+    const int canput = pop_count_ull(legal);
+    vector<Flip_value> move_list(canput);
+    int idx = 0;
+    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
+        calc_flip(&move_list[idx++].flip, &search->board, cell);
+    move_list_evaluate_fast_first(search, move_list);
+    if (search->use_multi_thread){
+        int pv_idx = 0, split_count = 0;
+        //if (best_move != TRANSPOSE_TABLE_UNDEFINED)
+        //    pv_idx = 1;
+        vector<future<Parallel_task>> parallel_tasks;
+        bool n_searching = true;
+        for (int move_idx = 0; move_idx < canput; ++move_idx){
+            swap_next_best_move(move_list, move_idx, canput);
+            search->move(&move_list[move_idx].flip);
+                if (ybwc_split_end_nws(search, &move_list[move_idx].flip, -alpha - 1, move_list[move_idx].n_legal, &n_searching, move_list[move_idx].flip.pos, canput, pv_idx++, split_count, parallel_tasks)){
+                    ++split_count;
+                } else{
+                    g = -nega_alpha_end_nws(search, -alpha - 1, false, move_list[move_idx].n_legal, searching);
+                    if (v < g){
+                        v = g;
+                        if (alpha < v){
+                            search->undo(&move_list[move_idx].flip);
+                            break;
+                        }
+                    }
+                    if (split_count){
+                        //ybwc_get_end_tasks(search, parallel_tasks, &v, &best_move);
+                        ybwc_get_end_tasks_nws(search, parallel_tasks, &v);
+                        if (alpha < v){
+                            search->undo(&move_list[move_idx].flip);
+                            break;
+                        }
+                    }
+                }
+            search->undo(&move_list[move_idx].flip);
+        }
+        if (split_count){
+            if (alpha < v || !(*searching)){
+                n_searching = false;
+                ybwc_wait_all(search, parallel_tasks);
+            } else{
+                ybwc_wait_all_nws(search, parallel_tasks, &v, alpha, &n_searching);
+                //ybwc_wait_all_nws(search, parallel_tasks, &v, &best_move, alpha, &n_searching);
+            }
+        }
+    } else{
+        for (int move_idx = 0; move_idx < canput; ++move_idx){
+            swap_next_best_move(move_list, move_idx, canput);
+            search->move(&move_list[move_idx].flip);
+                g = -nega_alpha_end_nws(search, -alpha - 1, false, move_list[move_idx].n_legal, searching);
+            search->undo(&move_list[move_idx].flip);
+            if (v < g){
+                v = g;
+                if (alpha < v)
+                    break;
+            }
+        }
+    }
+    //}
+    register_tt_nws(search, HW2 - search->n_discs, hash_code, alpha, v, l, u, searching);
     return v;
 }

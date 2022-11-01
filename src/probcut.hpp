@@ -68,9 +68,11 @@ inline double probcut_sigma_end_depth0(int n_stones){
 }
 
 int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, const bool *searching);
-int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped, const bool *searching);
-int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, const bool *searching);
-int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
+#if MID_FAST_DEPTH > 1
+    int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped, const bool *searching);
+#endif
+//int nega_alpha_ordering_nomemo(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, const bool *searching);
+//int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
 
 inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, bool is_end_search, int *v, const bool *searching){
     if (search->first_depth - depth < PROBCUT_SHALLOW_IGNORE)
@@ -101,17 +103,21 @@ inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, 
                 res = nega_alpha_eval1(search, beta + error_search - 1, beta + error_search, false, searching) >= beta + error_search;
                 break;
             default:
-                //if (search_depth <= MID_FAST_DEPTH)
-                //    res = nega_alpha(search, beta + error_search - 1, beta + error_search, search_depth, false, searching) >= beta + error_search;
-                //else{
-                //double mpct = search->mpct;
-                //search->mpct = 1.18;
-                search->use_mpc = false;
-                    res = nega_alpha_ordering(search, beta + error_search - 1, beta + error_search, search_depth, false, legal, false, searching) >= beta + error_search;
-                    //res = nega_alpha_ordering_nomemo(search, beta + error_search - 1, beta + error_search, search_depth, false, legal, searching) >= beta + error_search;
-                search->use_mpc = true;
-                //search->mpct = mpct;
-                //}
+                #if MID_FAST_DEPTH > 1
+                    if (search_depth <= MID_FAST_DEPTH)
+                        res = nega_alpha(search, beta + error_search - 1, beta + error_search, search_depth, false, searching) >= beta + error_search;
+                    else{
+                        search->use_mpc = false;
+                            res = nega_scout(search, beta + error_search - 1, beta + error_search, search_depth, false, legal, false, searching) >= beta + error_search;
+                            //res = nega_alpha_ordering(search, beta + error_search - 1, beta + error_search, search_depth, false, legal, false, searching) >= beta + error_search;
+                        search->use_mpc = true;
+                    }
+                #else
+                    search->use_mpc = false;
+                        res = nega_scout(search, beta + error_search - 1, beta + error_search, search_depth, false, legal, false, searching) >= beta + error_search;
+                        //res = nega_alpha_ordering(search, beta + error_search - 1, beta + error_search, search_depth, false, legal, false, searching) >= beta + error_search;
+                    search->use_mpc = true;
+                #endif
                 break;
         }
         if (res){
@@ -128,17 +134,21 @@ inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, 
                 res = nega_alpha_eval1(search, alpha - error_search, alpha - error_search + 1, false, searching) <= alpha - error_search;
                 break;
             default:
-                if (search_depth <= MID_FAST_DEPTH)
-                    res = nega_alpha(search, alpha - error_search, alpha - error_search + 1, search_depth, false, searching) <= alpha - error_search;
-                else{
-                    //double mpct = search->mpct;
-                    //search->mpct = 1.18;
+                #if MID_FAST_DEPTH > 1
+                    if (search_depth <= MID_FAST_DEPTH)
+                        res = nega_alpha(search, alpha - error_search, alpha - error_search + 1, search_depth, false, searching) <= alpha - error_search;
+                    else{
+                        search->use_mpc = false;
+                            res = nega_scout(search, alpha - error_search, alpha - error_search + 1, search_depth, false, legal, false, searching) <= alpha - error_search;
+                            //res = nega_alpha_ordering(search, alpha - error_search, alpha - error_search + 1, search_depth, false, legal, false, searching) <= alpha - error_search;
+                        search->use_mpc = true;
+                    }
+                #else
                     search->use_mpc = false;
-                        res = nega_alpha_ordering(search, alpha - error_search, alpha - error_search + 1, search_depth, false, legal, false, searching) <= alpha - error_search;
-                        //res = nega_alpha_ordering_nomemo(search, alpha - error_search, alpha - error_search + 1, search_depth, false, legal, searching) <= alpha - error_search;
+                        res = nega_scout(search, alpha - error_search, alpha - error_search + 1, search_depth, false, legal, false, searching) <= alpha - error_search;
+                        //res = nega_alpha_ordering(search, alpha - error_search, alpha - error_search + 1, search_depth, false, legal, false, searching) <= alpha - error_search;
                     search->use_mpc = true;
-                    //search->mpct = mpct;
-                }
+                #endif
                 break;
         }
         if (res){
