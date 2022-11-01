@@ -147,7 +147,7 @@ int main(int argc, char *argv[]){
         N_EMPTIES_MIN = atoi(argv[1]);
         N_EMPTIES_MAX = atoi(argv[1]);
     }
-    cerr << N_EMPTIES_MIN << " empties to " << N_EMPTIES_MAX << " empties" << endl;
+    cout << N_EMPTIES_MIN << " empties to " << N_EMPTIES_MAX << " empties" << endl;
     string data_dir = "data/";
     string sub_dirs[N_DIRS] = {
         "records15/"
