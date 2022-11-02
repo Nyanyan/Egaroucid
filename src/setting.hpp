@@ -20,7 +20,7 @@
 
 // prob cut
 #define USE_MID_MPC true
-#define USE_END_MPC true
+#define USE_END_MPC false
 
 // pop_count
 #define USE_BUILTIN_POPCOUNT true

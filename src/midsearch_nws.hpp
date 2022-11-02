@@ -128,8 +128,15 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
     }
     #if USE_MID_MPC
         if (search->use_mpc){
-            if (mpc(search, alpha, alpha + 1, depth, legal, is_end_search, &v, searching))
-                return v;
+            #if MID_TO_END_DEPTH < USE_MPC_ENDSEARCH_DEPTH
+                if (!is_end_search || (is_end_search && depth <= USE_MPC_ENDSEARCH_DEPTH)){
+                    if (mpc(search, alpha, alpha + 1, depth, legal, is_end_search, &v, searching))
+                        return v;
+                }
+            #else
+                if (mpc(search, alpha, alpha + 1, depth, legal, is_end_search, &v, searching))
+                    return v;
+            #endif
         }
     #endif
     int best_move = child_transpose_table.get(&search->board, hash_code);

@@ -554,6 +554,10 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
             }
         }
     }
-    register_tt_nws(search, HW2 - search->n_discs, hash_code, alpha, v, best_move, l, u, searching);
+    #if USE_END_MPC
+        register_tt_nws(search, HW2 - search->n_discs, hash_code, alpha, v, best_move, l, u, searching);
+    #else
+        register_tt_nws_mpct(search, HW2 - search->n_discs, hash_code, alpha, v, best_move, l, u, searching, NOMPC);
+    #endif
     return v;
 }

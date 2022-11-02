@@ -36,8 +36,6 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
     depth = min(HW2 - search.n_discs, depth);
     bool is_end_search = (HW2 - search.n_discs == depth);
 
-    cerr << "n_discs " << (int)search.n_discs << endl;
-
     if (is_end_search){
         strt = tim();
 

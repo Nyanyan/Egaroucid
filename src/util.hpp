@@ -31,7 +31,7 @@ Board input_board(){
                 res.opponent |= 1ULL << (HW2_M1 - i);
         }
     }
-    res.print();
+    //res.print();
     return res;
 }
 

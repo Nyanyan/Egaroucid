@@ -20,7 +20,6 @@ tim = 0
 nodes = 0
 strt = time()
 for i in range(strt_idx, end_idx):
-    print('#', i)
     with open('./../../benchmark/ffotest/' + str(i) + '.txt', 'r') as f:
         s = f.read()
     egaroucid.stdin.write(s.encode('utf-8'))
@@ -29,6 +28,9 @@ for i in range(strt_idx, end_idx):
     res_str += '#' + str(i) + ' ' + result
     tim += int(result.split()[9])
     nodes += int(result.split()[7])
+    t = int(result.split()[9])
+    n = int(result.split()[7])
+    print('#', i, 'time', t, 'nodes', n, 'nps', n / t * 1000)
 egaroucid.kill()
 
 answer = '''#40 38  a2
