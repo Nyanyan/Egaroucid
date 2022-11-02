@@ -34,8 +34,6 @@ using namespace std;
 #define STEP_2 128
 #define STEP_SHIFT 8
 
-#define SCORE_MAX 64
-
 #define PNO 0
 
 #define P30 1

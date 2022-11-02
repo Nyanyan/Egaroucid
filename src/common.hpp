@@ -22,6 +22,8 @@ using namespace std;
 #define HW2_M1 63
 #define HW2_P1 65
 
+#define SCORE_MAX 64
+
 #define N_8BIT 256
 #define N_DIAG_LINE 11
 #define N_DIAG_LINE_M1 10

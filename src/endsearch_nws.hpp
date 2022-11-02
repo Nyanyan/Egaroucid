@@ -485,6 +485,7 @@ int nega_alpha_end_fast_nws(Search *search, int alpha, bool skipped, bool stab_c
                     search->undo(&flip_best);
                     if (alpha < v)
                         return v;
+                    legal ^= 1ULL << best_move;
                 } else
                     best_move = TRANSPOSE_TABLE_UNDEFINED;
             }
@@ -597,13 +598,13 @@ int nega_alpha_end_fast_nws(Search *search, int alpha, bool skipped, bool stab_c
             calc_flip(&move_list[idx++].flip, &search->board, cell);
         move_list_evaluate_fast_first(search, move_list);
         if (search->use_multi_thread){
-            int pv_idx = 0, split_count = 0;
+            int split_count = 0;
             vector<future<Parallel_task>> parallel_tasks;
             bool n_searching = true;
             for (int move_idx = 0; move_idx < canput; ++move_idx){
                 swap_next_best_move(move_list, move_idx, canput);
                 search->move(&move_list[move_idx].flip);
-                    if (ybwc_split_end_nws(search, &move_list[move_idx].flip, -alpha - 1, move_list[move_idx].n_legal, &n_searching, move_list[move_idx].flip.pos, canput, pv_idx++, split_count, parallel_tasks)){
+                    if (ybwc_split_end_nws(search, &move_list[move_idx].flip, -alpha - 1, move_list[move_idx].n_legal, &n_searching, move_list[move_idx].flip.pos, canput, move_idx, split_count, parallel_tasks)){
                         ++split_count;
                     } else{
                         g = -nega_alpha_end_nws(search, -alpha - 1, false, move_list[move_idx].n_legal, searching);

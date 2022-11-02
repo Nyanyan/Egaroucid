@@ -531,6 +531,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
                 search->undo(&flip_best);
                 if (alpha < v)
                     alpha = v;
+                legal ^= 1ULL << best_move;
             } else
                 best_move = TRANSPOSE_TABLE_UNDEFINED;
         }
