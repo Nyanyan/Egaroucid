@@ -94,22 +94,22 @@ class Child_transpose_table{
         }
 
         inline void init(){
-            /*
-            for (int i = 0; i < TRANSPOSE_TABLE_SIZE; ++i)
-                table[i].init();
-            */
-            int thread_size = thread_pool.size();
-            int delta = (TRANSPOSE_TABLE_SIZE + thread_size - 1) / thread_size;
-            int s = 0, e;
-            vector<future<void>> tasks;
-            for (int i = 0; i < thread_size; ++i){
-                e = min(TRANSPOSE_TABLE_SIZE, s + delta);
-                tasks.emplace_back(thread_pool.push(bind(&init_child_transpose_table, table, s, e)));
-                s = e;
+            if (thread_pool.size() == 0){
+                for (int i = 0; i < TRANSPOSE_TABLE_SIZE; ++i)
+                    table[i].init();
+            } else{
+                int thread_size = thread_pool.size();
+                int delta = (TRANSPOSE_TABLE_SIZE + thread_size - 1) / thread_size;
+                int s = 0, e;
+                vector<future<void>> tasks;
+                for (int i = 0; i < thread_size; ++i){
+                    e = min(TRANSPOSE_TABLE_SIZE, s + delta);
+                    tasks.emplace_back(thread_pool.push(bind(&init_child_transpose_table, table, s, e)));
+                    s = e;
+                }
+                for (future<void> &task: tasks)
+                    task.get();
             }
-            for (future<void> &task: tasks)
-                task.get();
-            
         }
 
         inline void reg(const Board *board, const uint32_t hash, const int policy){
@@ -228,19 +228,22 @@ class Parent_transpose_table{
         }
 
         inline void init(){
-            //for (int i = 0; i < TRANSPOSE_TABLE_SIZE; ++i)
-            //    table[i].init();
-            int thread_size = thread_pool.size();
-            int delta = (TRANSPOSE_TABLE_SIZE + thread_size - 1) / thread_size;
-            int s = 0, e;
-            vector<future<void>> tasks;
-            for (int i = 0; i < thread_size; ++i){
-                e = min(TRANSPOSE_TABLE_SIZE, s + delta);
-                tasks.emplace_back(thread_pool.push(bind(&init_parent_transpose_table, table, s, e)));
-                s = e;
+            if (thread_pool.size() == 0){
+                for (int i = 0; i < TRANSPOSE_TABLE_SIZE; ++i)
+                    table[i].init();
+            } else{
+                int thread_size = thread_pool.size();
+                int delta = (TRANSPOSE_TABLE_SIZE + thread_size - 1) / thread_size;
+                int s = 0, e;
+                vector<future<void>> tasks;
+                for (int i = 0; i < thread_size; ++i){
+                    e = min(TRANSPOSE_TABLE_SIZE, s + delta);
+                    tasks.emplace_back(thread_pool.push(bind(&init_parent_transpose_table, table, s, e)));
+                    s = e;
+                }
+                for (future<void> &task: tasks)
+                    task.get();
             }
-            for (future<void> &task: tasks)
-                task.get();
         }
 
         inline void reg(const Board *board, const uint32_t hash, const int l, const int u, const double t, const int d){
