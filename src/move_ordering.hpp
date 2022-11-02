@@ -30,12 +30,14 @@
 #define W_OPPONENT_POTENTIAL_MOBILITY 10
 //#define W_OPENNESS 1
 
-#define W_NWS_MOBILITY 16
-#define W_NWS_N_FLIP 4
-#define W_NWS_VALUE_DEEP 14
-#define W_NWS_VALUE 12
-#define W_NWS_VALUE_SHALLOW 10
+#define W_NWS_MOBILITY 14
+#define W_NWS_N_FLIP 2
+#define W_NWS_VALUE_DEEP 16
+#define W_NWS_VALUE 14
+#define W_NWS_VALUE_SHALLOW 12
 #define W_NWS_N_NODES 2
+#define W_NWS_PLAYER_POTENTIAL_MOBILITY 8
+#define W_NWS_OPPONENT_POTENTIAL_MOBILITY 10
 
 #define MOVE_ORDERING_VALUE_OFFSET_ALPHA 10
 #define MOVE_ORDERING_VALUE_OFFSET_BETA 10
@@ -181,6 +183,9 @@ inline bool move_evaluate_nws(Search *search, Flip_value *flip_value, const int 
     flip_value->value -= pop_count_ull(flip_value->flip.flip) * W_NWS_N_FLIP;
     eval_move(search, &flip_value->flip);
     search->move(&flip_value->flip);
+        uint64_t empties = ~(search->board.player | search->board.opponent);
+        flip_value->value -= get_potential_mobility(search->board.opponent, empties) * W_NWS_OPPONENT_POTENTIAL_MOBILITY;
+        flip_value->value += get_potential_mobility(search->board.player, empties) * W_NWS_PLAYER_POTENTIAL_MOBILITY;
         flip_value->n_legal = search->board.get_legal();
         //flip_value->value -= pop_count_ull(flip_value->n_legal) * W_NWS_MOBILITY;
         flip_value->value -= get_weighted_n_moves(flip_value->n_legal) * W_NWS_MOBILITY;
