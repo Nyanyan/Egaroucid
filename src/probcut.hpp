@@ -86,13 +86,13 @@ inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, 
     const int depth0_value = mid_evaluate_diff(search);
     int error_depth0, error_search;
     if (is_end_search){
-        alpha -= alpha & 1;
-        beta += beta & 1;
-        error_depth0 = ceil(search->mpct * probcut_sigma_end_depth0(search->n_discs));
-        error_search = ceil(search->mpct * probcut_sigma_end(search->n_discs, search_depth));
+        //alpha -= alpha & 1;
+        //beta += beta & 1;
+        error_depth0 = search->mpct * probcut_sigma_end_depth0(search->n_discs) + 0.999;
+        error_search = search->mpct * probcut_sigma_end(search->n_discs, search_depth) + 0.999;
     } else{
-        error_depth0 = ceil(search->mpct * probcut_sigma_depth0(search->n_discs, depth));
-        error_search = ceil(search->mpct * probcut_sigma(search->n_discs, depth, search_depth));
+        error_depth0 = search->mpct * probcut_sigma_depth0(search->n_discs, depth) + 0.999;
+        error_search = search->mpct * probcut_sigma(search->n_discs, depth, search_depth) + 0.999;
     }
     if (depth0_value >= beta + error_depth0 && beta + error_search <= SCORE_MAX){
         switch(search_depth){
@@ -122,8 +122,7 @@ inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, 
             *v = beta;
             return true;
         }
-    }
-    if (depth0_value <= alpha - error_depth0 && alpha - error_search >= -SCORE_MAX){
+    } else if (depth0_value <= alpha - error_depth0 && alpha - error_search >= -SCORE_MAX){
         switch(search_depth){
             case 0:
                 res = true;
@@ -154,6 +153,7 @@ inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, 
     }
     return false;
 }
+
 #if USE_ALL_NODE_PREDICTION
     inline bool is_like_all_node(Search *search, int alpha, int depth, uint64_t legal, bool is_end_search, const bool *searching){
         if (search->first_depth - depth < PROBCUT_SHALLOW_IGNORE)

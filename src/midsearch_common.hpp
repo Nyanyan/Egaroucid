@@ -31,7 +31,7 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, c
     if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
     ++search->n_nodes;
-    int g, v = -INF;
+    int v = -INF;
     uint64_t legal = search->board.get_legal();
     if (legal == 0ULL){
         if (skipped)
@@ -43,6 +43,7 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, c
         search->eval_feature_reversed ^= 1;
         return v;
     }
+    int g;
     Flip flip;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
         calc_flip(&flip, &search->board, cell);
@@ -52,10 +53,14 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, c
         search->undo(&flip);
         eval_undo(search, &flip);
         ++search->n_nodes;
-        alpha = max(alpha, g);
-        v = max(v, g);
-        if (beta <= alpha)
-            break;
+        if (v < g){
+            if (alpha < g){
+                if (beta <= g)
+                    return g;
+                alpha = g;
+            }
+            v = g;
+        }
     }
     return v;
 }
