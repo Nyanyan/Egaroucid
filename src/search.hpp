@@ -150,3 +150,14 @@ inline void register_tt_nws(Search *search, int depth, uint32_t hash_code, int a
             parent_transpose_table.reg(&search->board, hash_code, l, v, search->mpct, depth);
     }
 }
+
+inline void register_tt_nws(Search *search, int depth, uint32_t hash_code, int alpha, int v, int best_move, int l, int u, const bool *searching){
+    if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD && (*searching) && -HW2 <= v && v <= HW2 && global_searching){
+        if (alpha < v && best_move != TRANSPOSE_TABLE_UNDEFINED)
+            child_transpose_table.reg(&search->board, hash_code, best_move);
+        if (alpha < v)
+            parent_transpose_table.reg(&search->board, hash_code, v, u, search->mpct, depth);
+        else
+            parent_transpose_table.reg(&search->board, hash_code, l, v, search->mpct, depth);
+    }
+}

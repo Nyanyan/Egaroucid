@@ -6,18 +6,11 @@
     @license GPL-3.0 license
 */
 
-
-// use CUDA
-#define USE_CUDA false
-
 // use SIMD
 #define USE_SIMD true
 
 // vertical mirror
 #define USE_FAST_VERTICAL_MIRROR true
-
-// board to array conversion
-#define FAST_ARR_CONVERT true
 
 // parity ordering
 #define USE_END_PO true
@@ -36,8 +29,8 @@
 #define USE_BUILTIN_NTZ true
 #define USE_MINUS_NTZ false
 
-// evaluation calculation
-#define USE_FAST_DIFF_EVAL false
-
 // last parity ordering optimisation
 #define LAST_PO_OPTIMISE true
+
+// NWS best move transposition table
+#define USE_NWS_CHILD_TT false

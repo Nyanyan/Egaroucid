@@ -205,6 +205,22 @@ inline void ybwc_get_end_tasks_nws(Search *search, vector<future<Parallel_task>>
     }
 }
 
+inline void ybwc_get_end_tasks_nws(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v, int *best_move){
+    Parallel_task got_task;
+    for (future<Parallel_task> &task: parallel_tasks){
+        if (task.valid()){
+            if (task.wait_for(chrono::seconds(0)) == future_status::ready){
+                got_task = task.get();
+                if (*v < got_task.value){
+                    *v = got_task.value;
+                    *best_move = got_task.cell;
+                }
+                search->n_nodes += got_task.n_nodes;
+            }
+        }
+    }
+}
+
 
 
 
@@ -251,6 +267,25 @@ inline void ybwc_wait_all_nws(Search *search, vector<future<Parallel_task>> &par
             search->n_nodes += got_task.n_nodes;
             if ((*v) < got_task.value && (*searching)){
                 //*best_move = got_task.cell;
+                *v = got_task.value;
+                if (alpha < (*v))
+                    *searching = false;
+            }
+        }
+    }
+}
+
+inline void ybwc_wait_all_nws(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int alpha, bool *searching){
+    ybwc_get_end_tasks(search, parallel_tasks, v, best_move);
+    if (alpha < (*v))
+        *searching = false;
+    Parallel_task got_task;
+    for (future<Parallel_task> &task: parallel_tasks){
+        if (task.valid()){
+            got_task = task.get();
+            search->n_nodes += got_task.n_nodes;
+            if ((*v) < got_task.value && (*searching)){
+                *best_move = got_task.cell;
                 *v = got_task.value;
                 if (alpha < (*v))
                     *searching = false;
