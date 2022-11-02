@@ -108,9 +108,9 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
         parent_transpose_table.get(&search->board, hash_code, &l, &u, search->mpct, depth);
         if (u == l)
             return u;
-        if (l < alpha && u <= alpha)
+        if (u <= alpha)
             return u;
-        if (alpha < l && alpha + 1 < u)
+        if (alpha < l)
             return l;
     #endif
     if (legal == LEGAL_UNDEFINED)

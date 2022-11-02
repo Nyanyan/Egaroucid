@@ -492,7 +492,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
     uint32_t hash_code = search->board.hash();
     int l = -INF, u = INF;
     if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD){
-        parent_transpose_table.get(&search->board, hash_code, &l, &u, search->mpct, HW2 - search->n_discs);
+        parent_transpose_table.get(&search->board, hash_code, &l, &u, NOMPC, HW2 - search->n_discs);
         if (u == l)
             return u;
         if (beta <= l)
@@ -609,10 +609,6 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
             }
         }
     }
-    #if USE_END_MPC
-        register_tt(search, HW2 - search->n_discs, hash_code, v, best_move, l, u, first_alpha, beta, searching);
-    #else
-        register_tt_mpct(search, HW2 - search->n_discs, hash_code, v, best_move, l, u, first_alpha, beta, searching, NOMPC);
-    #endif
+    register_tt_mpct(search, HW2 - search->n_discs, hash_code, v, best_move, l, u, first_alpha, beta, searching, NOMPC);
     return v;
 }

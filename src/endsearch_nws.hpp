@@ -449,12 +449,12 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
     int l = -INF, u = INF;
     const bool use_tt = search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD;
     if (use_tt){
-        parent_transpose_table.get(&search->board, hash_code, &l, &u, search->mpct, HW2 - search->n_discs);
+        parent_transpose_table.get(&search->board, hash_code, &l, &u, NOMPC, HW2 - search->n_discs);
         if (u == l)
             return u;
-        if (l < alpha && u <= alpha)
+        if (u <= alpha)
             return u;
-        if (alpha < l && alpha + 1 < u)
+        if (alpha < l)
             return l;
     }
     #if USE_END_SC
@@ -554,10 +554,6 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
             }
         }
     }
-    #if USE_END_MPC
-        register_tt_nws(search, HW2 - search->n_discs, hash_code, alpha, v, best_move, l, u, searching);
-    #else
-        register_tt_nws_mpct(search, HW2 - search->n_discs, hash_code, alpha, v, best_move, l, u, searching, NOMPC);
-    #endif
+    register_tt_nws_mpct(search, HW2 - search->n_discs, hash_code, alpha, v, best_move, l, u, searching, NOMPC);
     return v;
 }

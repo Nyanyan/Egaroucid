@@ -11,7 +11,7 @@ else:
     n_threads = 16
 
 #if n_threads >= 2:
-egaroucid = subprocess.Popen(('Egaroucid6_test.exe ' + str(n_threads - 1)).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+egaroucid = subprocess.Popen(('Egaroucid6_test.exe ' + str(n_threads - 1) + ' ' + str(0)).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 #else:
 #    egaroucid = subprocess.Popen('Egaroucid6_test_single.exe'.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
