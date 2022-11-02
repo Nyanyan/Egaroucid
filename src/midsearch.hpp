@@ -98,16 +98,31 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
         }
     #endif
     uint32_t hash_code = search->board.hash();
-    int l, u;
-    parent_transpose_table.get(&search->board, hash_code, &l, &u, search->mpct, depth);
-    if (u == l)
-        return u;
-    if (beta <= l)
-        return l;
-    if (u <= alpha)
-        return u;
-    alpha = max(alpha, l);
-    beta = min(beta, u);
+    #if MID_TO_END_DEPTH < USE_TT_DEPTH_THRESHOLD
+        int l = -INF, u = INF;
+        if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD){
+            parent_transpose_table.get(&search->board, hash_code, &l, &u, search->mpct, depth);
+            if (u == l)
+                return u;
+            if (beta <= l)
+                return l;
+            if (u <= alpha)
+                return u;
+            alpha = max(alpha, l);
+            beta = min(beta, u);
+        }
+    #else
+        int l, u;
+        parent_transpose_table.get(&search->board, hash_code, &l, &u, search->mpct, depth);
+        if (u == l)
+            return u;
+        if (beta <= l)
+            return l;
+        if (u <= alpha)
+            return u;
+        alpha = max(alpha, l);
+        beta = min(beta, u);
+    #endif
     int first_alpha = alpha;
     if (legal == LEGAL_UNDEFINED)
         legal = search->board.get_legal();

@@ -92,14 +92,27 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
     }
     ++search->n_nodes;
     uint32_t hash_code = search->board.hash();
-    int l, u;
-    parent_transpose_table.get(&search->board, hash_code, &l, &u, search->mpct, depth);
-    if (u == l)
-        return u;
-    if (l < alpha && u <= alpha)
-        return u;
-    if (alpha < l && alpha + 1 < u)
-        return l;
+    #if MID_TO_END_DEPTH < USE_TT_DEPTH_THRESHOLD
+        int l = -INF, u = INF;
+        if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD){
+            parent_transpose_table.get(&search->board, hash_code, &l, &u, search->mpct, depth);
+            if (u == l)
+                return u;
+            if (l < alpha && u <= alpha)
+                return u;
+            if (alpha < l && alpha + 1 < u)
+                return l;
+        }
+    #else
+        int l, u;
+        parent_transpose_table.get(&search->board, hash_code, &l, &u, search->mpct, depth);
+        if (u == l)
+            return u;
+        if (l < alpha && u <= alpha)
+            return u;
+        if (alpha < l && alpha + 1 < u)
+            return l;
+    #endif
     if (legal == LEGAL_UNDEFINED)
         legal = search->board.get_legal();
     int v = -INF;
