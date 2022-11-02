@@ -502,7 +502,7 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
         int idx = 0;
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
             calc_flip(&move_list[idx++].flip, &search->board, cell);
-        move_list_evaluate_fast_first(search, move_list);
+        move_list_evaluate_end(search, move_list);
         if (search->use_multi_thread){
             int pv_idx = 0, split_count = 0;
             if (best_move != TRANSPOSE_TABLE_UNDEFINED)

@@ -160,7 +160,8 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
         int idx = 0;
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
             calc_flip(&move_list[idx++].flip, &search->board, cell);
-        move_list_evaluate(search, move_list, depth, alpha, alpha + 1, is_end_search, searching);
+        //move_list_evaluate(search, move_list, depth, alpha, alpha + 1, is_end_search, searching);
+        move_list_evaluate_nws(search, move_list, depth, alpha, is_end_search, searching);
         if (search->use_multi_thread){
             int pv_idx = 0, split_count = 0;
             if (best_move != TRANSPOSE_TABLE_UNDEFINED)
