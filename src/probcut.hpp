@@ -98,26 +98,28 @@ inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, 
         error_depth0 = search->mpct * probcut_sigma_depth0(search->n_discs, depth) + 0.999;
         error_search = search->mpct * probcut_sigma(search->n_discs, depth, search_depth) + 0.999;
     }
-    if (depth0_value >= beta + error_depth0 && beta + error_search <= SCORE_MAX){
+    const int alpha_mpc = alpha - error_search;
+    const int beta_mpc = beta + error_search;
+    if (depth0_value >= beta + error_depth0 && beta_mpc <= SCORE_MAX){
         switch(search_depth){
             case 0:
                 res = true;
                 break;
             case 1:
-                res = nega_alpha_eval1_nws(search, beta + error_search - 1, false, searching) >= beta + error_search;
+                res = nega_alpha_eval1_nws(search, beta_mpc - 1, false, searching) >= beta_mpc;
                 break;
             default:
                 #if MID_FAST_DEPTH > 1
                     if (search_depth <= MID_FAST_DEPTH)
-                        res = nega_alpha_nws(search, beta + error_search - 1, search_depth, false, searching) >= beta + error_search;
+                        res = nega_alpha_nws(search, beta_mpc - 1, search_depth, false, searching) >= beta_mpc;
                     else{
                         search->use_mpc = false;
-                            res = nega_alpha_ordering_nws(search, alpha - error_search, search_depth, false, legal, false, searching) <= alpha - error_search;
+                            res = nega_alpha_ordering_nws(search, beta_mpc - 1, search_depth, false, legal, false, searching) >= beta_mpc;
                         search->use_mpc = true;
                     }
                 #else
                     search->use_mpc = false;
-                        res = nega_alpha_ordering_nws(search, beta + error_search - 1, search_depth, false, legal, false, searching) >= beta + error_search;
+                        res = nega_alpha_ordering_nws(search, beta_mpc - 1, search_depth, false, legal, false, searching) >= beta_mpc;
                     search->use_mpc = true;
                 #endif
                 break;
@@ -126,26 +128,26 @@ inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, 
             *v = beta;
             return true;
         }
-    } else if (depth0_value <= alpha - error_depth0 && alpha - error_search >= -SCORE_MAX){
+    } else if (depth0_value <= alpha - error_depth0 && alpha_mpc >= -SCORE_MAX){
         switch(search_depth){
             case 0:
                 res = true;
                 break;
             case 1:
-                res = nega_alpha_eval1_nws(search, alpha - error_search, false, searching) <= alpha - error_search;
+                res = nega_alpha_eval1_nws(search, alpha_mpc, false, searching) <= alpha_mpc;
                 break;
             default:
                 #if MID_FAST_DEPTH > 1
                     if (search_depth <= MID_FAST_DEPTH)
-                        res = nega_alpha_nws(search, alpha - error_search, search_depth, false, searching) <= alpha - error_search;
+                        res = nega_alpha_nws(search, alpha_mpc, search_depth, false, searching) <= alpha_mpc;
                     else{
                         search->use_mpc = false;
-                            res = nega_alpha_ordering_nws(search, alpha - error_search, search_depth, false, legal, false, searching) <= alpha - error_search;
+                            res = nega_alpha_ordering_nws(search, alpha_mpc, search_depth, false, legal, false, searching) <= alpha_mpc;
                         search->use_mpc = true;
                     }
                 #else
                     search->use_mpc = false;
-                        res = nega_alpha_ordering_nws(search, alpha - error_search, search_depth, false, legal, false, searching) <= alpha - error_search;
+                        res = nega_alpha_ordering_nws(search, alpha_mpc, search_depth, false, legal, false, searching) <= alpha_mpc;
                     search->use_mpc = true;
                 #endif
                 break;
