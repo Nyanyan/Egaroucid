@@ -287,6 +287,8 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
 int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped, bool stab_cut, const bool *searching){
     if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
+    if (alpha + 1 == beta)
+        return nega_alpha_end_fast_nws(search, alpha, skipped, stab_cut, searching);
     ++search->n_nodes;
     #if USE_END_SC
         if (stab_cut){
@@ -482,12 +484,10 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped, bool 
 int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t legal, const bool *searching){
     if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
-    //if (search->n_discs >= HW2 - END_FAST_DEPTH){
-        //if (beta - alpha == 1)
-        //    return nega_alpha_end_fast_nws(search, alpha, skipped, false, searching);
-        //else
-        //return nega_alpha_end_fast(search, alpha, beta, skipped, false, searching);
-    //}
+    if (alpha + 1 == beta)
+        return nega_alpha_end_nws(search, alpha, skipped, legal, searching);
+    if (search->n_discs >= HW2 - END_FAST_DEPTH)
+        return nega_alpha_end_fast(search, alpha, beta, skipped, false, searching);
     ++search->n_nodes;
     uint32_t hash_code = search->board.hash();
     int l = -INF, u = INF;
