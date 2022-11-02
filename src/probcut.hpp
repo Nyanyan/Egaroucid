@@ -73,6 +73,10 @@ int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, const bo
 #if MID_FAST_DEPTH > 1
     int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped, const bool *searching);
 #endif
+#if USE_NEGA_ALPHA_ORDERING
+    int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
+#endif
+int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
 
 inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, bool is_end_search, int *v, const bool *searching){
     if (search->first_depth - depth < PROBCUT_SHALLOW_IGNORE)
@@ -113,6 +117,7 @@ inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, 
                     }
                 #else
                     search->use_mpc = false;
+                        //res = nega_alpha_ordering(search, beta + error_search - 1, beta + error_search, search_depth, false, legal, false, searching) >= beta + error_search;
                         res = nega_scout(search, beta + error_search - 1, beta + error_search, search_depth, false, legal, false, searching) >= beta + error_search;
                     search->use_mpc = true;
                 #endif
@@ -141,6 +146,7 @@ inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, 
                     }
                 #else
                     search->use_mpc = false;
+                        //res = nega_alpha_ordering(search, alpha - error_search, alpha - error_search + 1, search_depth, false, legal, false, searching) <= alpha - error_search;
                         res = nega_scout(search, alpha - error_search, alpha - error_search + 1, search_depth, false, legal, false, searching) <= alpha - error_search;
                     search->use_mpc = true;
                 #endif

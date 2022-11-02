@@ -33,3 +33,6 @@
 
 // use probcut to predict it seems to be an all node
 #define USE_ALL_NODE_PREDICTION false
+
+// use nega_alpha_ordering
+#define USE_NEGA_ALPHA_ORDERING false
