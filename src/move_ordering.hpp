@@ -182,6 +182,7 @@ inline bool move_evaluate_nws(Search *search, Flip_value *flip_value, const int 
     eval_move(search, &flip_value->flip);
     search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
+        //flip_value->value -= pop_count_ull(flip_value->n_legal) * W_NWS_MOBILITY;
         flip_value->value -= get_weighted_n_moves(flip_value->n_legal) * W_NWS_MOBILITY;
         //int64_t bef_n_nodes = search->n_nodes;
         switch (depth){

@@ -13682,6 +13682,10 @@ same
 53157858631 nodes
 308572929.88332266 nps
 
+2022/11/02 update move ordering for nws
+
+
+
 
 
 
