@@ -24,7 +24,6 @@
 #include "ybwc.hpp"
 #include "util.hpp"
 #include "stability.hpp"
-#include "midsearch_common.hpp"
 
 using namespace std;
 
@@ -34,13 +33,49 @@ inline void ybwc_get_end_tasks(Search *search, vector<future<Parallel_task>> &pa
 inline void ybwc_wait_all_nws(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v, int alpha, bool *searching);
 inline void ybwc_wait_all_nws(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int alpha, bool *searching);
 
+inline int nega_alpha_eval1_nws(Search *search, int alpha, bool skipped, const bool *searching){
+    if (!global_searching || !(*searching))
+        return SCORE_UNDEFINED;
+    ++search->n_nodes;
+    int v = -INF;
+    uint64_t legal = search->board.get_legal();
+    if (legal == 0ULL){
+        if (skipped)
+            return end_evaluate(&search->board);
+        search->eval_feature_reversed ^= 1;
+        search->board.pass();
+            v = -nega_alpha_eval1_nws(search, -alpha - 1, true, searching);
+        search->board.pass();
+        search->eval_feature_reversed ^= 1;
+        return v;
+    }
+    int g;
+    Flip flip;
+    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+        calc_flip(&flip, &search->board, cell);
+        eval_move(search, &flip);
+        search->move(&flip);
+            g = -mid_evaluate_diff(search);
+        search->undo(&flip);
+        eval_undo(search, &flip);
+        ++search->n_nodes;
+        if (v < g){
+            if (alpha < g){
+                return g;
+            }
+            v = g;
+        }
+    }
+    return v;
+}
+
 #if MID_FAST_DEPTH > 1
     int nega_alpha_nws(Search *search, int alpha, int depth, bool skipped, const bool *searching){
         if (!global_searching || !(*searching))
             return SCORE_UNDEFINED;
         ++search->n_nodes;
         if (depth == 1)
-            return nega_alpha_eval1(search, alpha, alpha + 1, skipped, searching);
+            return nega_alpha_eval1_nws(search, alpha, alpha + 1, skipped, searching);
         if (depth == 0)
             return mid_evaluate_diff(search);
         int v = -INF;
@@ -85,7 +120,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
                 return nega_alpha_nws(search, alpha, depth, skipped, searching);
         #else
             if (depth == 1)
-                return nega_alpha_eval1(search, alpha, alpha + 1, skipped, searching);
+                return nega_alpha_eval1_nws(search, alpha, skipped, searching);
             if (depth == 0)
                 return mid_evaluate_diff(search);
         #endif

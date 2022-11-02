@@ -27,6 +27,44 @@
 
 using namespace std;
 
+inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, const bool *searching){
+    if (!global_searching || !(*searching))
+        return SCORE_UNDEFINED;
+    ++search->n_nodes;
+    int v = -INF;
+    uint64_t legal = search->board.get_legal();
+    if (legal == 0ULL){
+        if (skipped)
+            return end_evaluate(&search->board);
+        search->eval_feature_reversed ^= 1;
+        search->board.pass();
+            v = -nega_alpha_eval1(search, -beta, -alpha, true, searching);
+        search->board.pass();
+        search->eval_feature_reversed ^= 1;
+        return v;
+    }
+    int g;
+    Flip flip;
+    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+        calc_flip(&flip, &search->board, cell);
+        eval_move(search, &flip);
+        search->move(&flip);
+            g = -mid_evaluate_diff(search);
+        search->undo(&flip);
+        eval_undo(search, &flip);
+        ++search->n_nodes;
+        if (v < g){
+            if (alpha < g){
+                if (beta <= g)
+                    return g;
+                alpha = g;
+            }
+            v = g;
+        }
+    }
+    return v;
+}
+
 #if MID_FAST_DEPTH > 1
     int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped, const bool *searching){
         if (!global_searching || !(*searching))
