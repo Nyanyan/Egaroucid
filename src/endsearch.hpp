@@ -537,6 +537,11 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
         }
     }
     if (alpha < beta && legal){
+        #if USE_ALL_NODE_PREDICTION
+            const bool seems_to_be_all_node = is_like_all_node(search, alpha, HW2 - search->n_discs, LEGAL_UNDEFINED, true, searching);
+        #else
+            constexpr bool seems_to_be_all_node = false;
+        #endif
         int g;
         const int canput = pop_count_ull(legal);
         vector<Flip_value> move_list(canput);
@@ -553,7 +558,7 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
             for (int move_idx = 0; move_idx < canput; ++move_idx){
                 swap_next_best_move(move_list, move_idx, canput);
                 search->move(&move_list[move_idx].flip);
-                    if (ybwc_split_end(search, &move_list[move_idx].flip, -beta, -alpha, move_list[move_idx].n_legal, &n_searching, move_list[move_idx].flip.pos, canput, pv_idx++, split_count, parallel_tasks)){
+                    if (ybwc_split_end(search, &move_list[move_idx].flip, -beta, -alpha, move_list[move_idx].n_legal, &n_searching, move_list[move_idx].flip.pos, canput, pv_idx++, seems_to_be_all_node, split_count, parallel_tasks)){
                         ++split_count;
                     } else{
                         g = -nega_alpha_end(search, -beta, -alpha, false, move_list[move_idx].n_legal, searching);

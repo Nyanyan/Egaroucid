@@ -137,6 +137,11 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
     }
     int g;
     if (legal){
+        #if USE_ALL_NODE_PREDICTION
+            const bool seems_to_be_all_node = is_like_all_node(search, alpha, depth, LEGAL_UNDEFINED, is_end_search, searching);
+        #else
+            constexpr bool seems_to_be_all_node = false;
+        #endif
         const int canput = pop_count_ull(legal);
         vector<Flip_value> move_list(canput);
         int idx = 0;
@@ -153,7 +158,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
                 swap_next_best_move(move_list, move_idx, canput);
                 eval_move(search, &move_list[move_idx].flip);
                 search->move(&move_list[move_idx].flip);
-                    if (ybwc_split_nws(search, &move_list[move_idx].flip, -alpha - 1, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].flip.pos, canput, pv_idx++, split_count, parallel_tasks)){
+                    if (ybwc_split_nws(search, &move_list[move_idx].flip, -alpha - 1, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].flip.pos, canput, pv_idx++, seems_to_be_all_node, split_count, parallel_tasks)){
                         ++split_count;
                     } else{
                         g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);

@@ -31,3 +31,6 @@
 
 // last parity ordering optimisation
 #define LAST_PO_OPTIMISE true
+
+// use probcut to predict it seems to be an all node
+#define USE_ALL_NODE_PREDICTION false
