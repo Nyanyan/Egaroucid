@@ -33,3 +33,4 @@ src_web/*.js
 src_web/*.wasm
 move_ordering/statistics/data
 move_ordering/statistics/statistics
+move_ordering/statistics/resources
