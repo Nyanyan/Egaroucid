@@ -183,14 +183,14 @@ inline bool move_evaluate_nws(Search *search, Flip_value *flip_value, const int 
     search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
         flip_value->value -= get_weighted_n_moves(flip_value->n_legal) * W_NWS_MOBILITY;
-        int64_t bef_n_nodes = search->n_nodes;
+        //int64_t bef_n_nodes = search->n_nodes;
         switch (depth){
             case 0:
                 flip_value->value += -mid_evaluate_diff(search) * W_NWS_VALUE_SHALLOW;
                 break;
             default:
                 flip_value->value += -nega_alpha_eval1(search, alpha, beta, false, searching) * W_NWS_VALUE;
-                flip_value->value -= (search->n_nodes - bef_n_nodes) * W_NWS_N_NODES;
+                //flip_value->value -= (search->n_nodes - bef_n_nodes) * W_NWS_N_NODES;
                 break;
             /*
             default:
