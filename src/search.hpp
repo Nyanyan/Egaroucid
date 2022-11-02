@@ -95,7 +95,7 @@ class Search{
     public:
         inline void init_board(Board *init_board){
             board = init_board->copy();
-            n_discs = pop_count_ull(board.player | board.opponent);
+            n_discs = board.n_discs();
             uint64_t empty = ~(board.player | board.opponent);
             parity = 1 & pop_count_ull(empty & 0x000000000F0F0F0FULL);
             parity |= (1 & pop_count_ull(empty & 0x00000000F0F0F0F0ULL)) << 1;
@@ -104,7 +104,7 @@ class Search{
         }
 
         inline void init_board(){
-            n_discs = pop_count_ull(board.player | board.opponent);
+            n_discs = board.n_discs();
             uint64_t empty = ~(board.player | board.opponent);
             parity = 1 & pop_count_ull(empty & 0x000000000F0F0F0FULL);
             parity |= (1 & pop_count_ull(empty & 0x00000000F0F0F0F0ULL)) << 1;

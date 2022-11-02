@@ -28,13 +28,15 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
     Search search;
     int g = 0, alpha, beta, policy = -1;
     pair<int, int> result;
-    depth = min(HW2 - board.n_discs(), depth);
-    bool is_end_search = (HW2 - board.n_discs() == depth);
     search.init_board(&board);
     search.n_nodes = 0ULL;
-    calc_features(&search);
     search.use_multi_thread = use_multi_thread;
+    calc_features(&search);
     uint64_t strt;
+    depth = min(HW2 - search.n_discs, depth);
+    bool is_end_search = (HW2 - search.n_discs == depth);
+
+    cerr << "n_discs " << (int)search.n_discs << endl;
 
     if (is_end_search){
         strt = tim();
@@ -71,32 +73,8 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
         search.first_depth = depth;
         search.use_mpc = use_mpc;
         search.mpct = mpct;
-        /*
-        if (!use_mpc && false){
-            alpha = -INF;
-            beta = -INF;
-            while ((g <= alpha || beta <= g) && global_searching){
-                if (g % 2){
-                    alpha = max(-SCORE_MAX, g - 2);
-                    beta = min(SCORE_MAX, g + 2);
-                } else{
-                    alpha = max(-SCORE_MAX, g - 1);
-                    beta = min(SCORE_MAX, g + 1);
-                }
-                result = first_nega_scout(&search, alpha, beta, search.first_depth, false, true, show_log, result.second);
-                g = result.first;
-                if (show_log)
-                    cerr << "mainsearch doing depth " << search.first_depth << " t=" << search.mpct << " [" << alpha << "," << beta << "] " << g << " " << idx_to_coord(result.second) << endl;
-                if (alpha == -SCORE_MAX && g == -SCORE_MAX)
-                    break;
-                if (beta == SCORE_MAX && g == SCORE_MAX)
-                    break;
-            }
-        } else{
-        */
         result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search.first_depth, false, true, show_log, result.second);
         g = result.first;
-        //}
         policy = result.second;
         if (show_log)
             cerr << "mainsearch depth " << depth << " value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;

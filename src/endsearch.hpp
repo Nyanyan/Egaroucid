@@ -595,10 +595,8 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
                 if (v < g){
                     v = g;
                     if (alpha < v){
-                        if (beta <= v){
-                            search->undo(&move_list[move_idx].flip);
+                        if (beta <= v)
                             break;
-                        }
                         alpha = v;
                     }
                 }

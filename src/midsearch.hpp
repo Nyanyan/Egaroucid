@@ -20,7 +20,6 @@
 #include "move_ordering.hpp"
 #include "probcut.hpp"
 #include "thread_pool.hpp"
-#include "ybwc.hpp"
 #include "util.hpp"
 #include "stability.hpp"
 #include "endsearch.hpp"
