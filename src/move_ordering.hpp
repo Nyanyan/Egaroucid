@@ -44,8 +44,8 @@
 #define MAX_MOBILITY 30
 #define MAX_OPENNESS 50
 
-#define MOVE_ORDERING_NWS_VALUE_OFFSET_ALPHA 4
-#define MOVE_ORDERING_NWS_VALUE_OFFSET_BETA 5
+#define MOVE_ORDERING_NWS_VALUE_OFFSET_ALPHA 10
+#define MOVE_ORDERING_NWS_VALUE_OFFSET_BETA 3
 
 #define W_END_MOBILITY 16
 #define W_END_PARITY 8
@@ -116,7 +116,7 @@ inline int get_weighted_n_moves(uint64_t legal){
     }
 #endif
 
-inline bool move_evaluate(Search *search, Flip_value *flip_value, const int alpha, const int beta, const int depth, const bool *searching, const int search_alpha){
+inline bool move_evaluate(Search *search, Flip_value *flip_value, int alpha, int beta, int depth, const bool *searching){
     if (flip_value->flip.flip == search->board.opponent){
         flip_value->value = W_WIPEOUT;
         return true;
@@ -174,7 +174,7 @@ inline bool move_evaluate_end(Search *search, Flip_value *flip_value){
     return false;
 }
 
-inline bool move_evaluate_nws(Search *search, Flip_value *flip_value, const int alpha, const int beta, const int depth, const bool *searching, const int search_alpha){
+inline bool move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha, int beta, int depth, const bool *searching){
     if (flip_value->flip.flip == search->board.opponent){
         flip_value->value = W_WIPEOUT;
         return true;
@@ -250,7 +250,7 @@ inline void move_list_evaluate(Search *search, vector<Flip_value> &move_list, in
     bool wipeout_found = false;
     for (Flip_value &flip_value: move_list){
         if (!wipeout_found)
-            wipeout_found = move_evaluate(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching, alpha);
+            wipeout_found = move_evaluate(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
         else
             flip_value.value = -INF;
     }
@@ -287,7 +287,7 @@ inline void move_list_evaluate_nws(Search *search, vector<Flip_value> &move_list
     bool wipeout_found = false;
     for (Flip_value &flip_value: move_list){
         if (!wipeout_found)
-            wipeout_found = move_evaluate_nws(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching, alpha);
+            wipeout_found = move_evaluate_nws(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
         else
             flip_value.value = -INF;
     }
