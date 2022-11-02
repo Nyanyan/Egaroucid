@@ -75,7 +75,7 @@ inline int nega_alpha_eval1_nws(Search *search, int alpha, bool skipped, const b
             return SCORE_UNDEFINED;
         ++search->n_nodes;
         if (depth == 1)
-            return nega_alpha_eval1_nws(search, alpha, alpha + 1, skipped, searching);
+            return nega_alpha_eval1_nws(search, alpha, skipped, searching);
         if (depth == 0)
             return mid_evaluate_diff(search);
         int v = -INF;

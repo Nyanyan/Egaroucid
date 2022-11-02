@@ -81,13 +81,11 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
 inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, bool is_end_search, int *v, const bool *searching){
     if (search->first_depth - depth < PROBCUT_SHALLOW_IGNORE)
         return false;
-    bool res = false;
     int search_depth;
     if (is_end_search)
         search_depth = ((depth >> 4) & 0xFE) ^ (depth & 1);
     else
         search_depth = ((depth >> 2) & 0xFE) ^ (depth & 1);
-    const int depth0_value = mid_evaluate_diff(search);
     int error_depth0, error_search;
     if (is_end_search){
         //alpha -= alpha & 1;
@@ -98,8 +96,12 @@ inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, 
         error_depth0 = search->mpct * probcut_sigma_depth0(search->n_discs, depth) + 0.999;
         error_search = search->mpct * probcut_sigma(search->n_discs, depth, search_depth) + 0.999;
     }
+    if (alpha - error_depth0 < -SCORE_MAX && SCORE_MAX < beta + error_depth0)
+        return false;
     const int alpha_mpc = alpha - error_search;
     const int beta_mpc = beta + error_search;
+    const int depth0_value = mid_evaluate_diff(search);
+    bool res;
     if (depth0_value >= beta + error_depth0 && beta_mpc <= SCORE_MAX){
         switch(search_depth){
             case 0:
