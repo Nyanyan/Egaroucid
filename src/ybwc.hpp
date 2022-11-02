@@ -20,46 +20,10 @@
 #define YBWC_MID_SPLIT_MIN_DEPTH 6
 #define YBWC_END_SPLIT_MIN_DEPTH 13
 
-//int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
 int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
 int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t legal, const bool *searching);
 int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, const bool *searching);
-/*
-Parallel_task ybwc_do_task(int id, uint64_t player, uint64_t opponent, int_fast8_t n_discs, uint_fast8_t parity, bool use_mpc, double mpct, int first_depth, int alpha, int beta, int depth, uint64_t legal, bool is_end_search, uint_fast8_t policy, const bool *searching){
-    Search search;
-    search.board.player = player;
-    search.board.opponent = opponent;
-    search.n_discs = n_discs;
-    search.parity = parity;
-    search.use_mpc = use_mpc;
-    search.mpct = mpct;
-    search.first_depth = first_depth;
-    search.n_nodes = 0ULL;
-    calc_features(&search);
-    int g = -nega_alpha_ordering(&search, alpha, beta, depth, false, legal, is_end_search, searching);
-    Parallel_task task;
-    if (*searching)
-        task.value = g;
-    else
-        task.value = SCORE_UNDEFINED;
-    task.n_nodes = search.n_nodes;
-    task.cell = policy;
-    return task;
-}
 
-inline bool ybwc_split(const Search *search, const Flip *flip, int alpha, int beta, int depth, uint64_t legal, bool is_end_search, const bool *searching, uint_fast8_t policy, const int canput, const int pv_idx, const int split_count, vector<future<Parallel_task>> &parallel_tasks){
-    if (thread_pool.n_idle() &&
-        pv_idx > 0 && 
-        depth >= YBWC_MID_SPLIT_MIN_DEPTH){
-            bool pushed;
-            parallel_tasks.emplace_back(thread_pool.push(&pushed, &ybwc_do_task, search->board.player, search->board.opponent, search->n_discs, search->parity, search->use_mpc, search->mpct, search->first_depth, alpha, beta, depth, legal, is_end_search, policy, searching));
-            if (!pushed)
-                parallel_tasks.pop_back();
-            return pushed;
-    }
-    return false;
-}
-*/
 Parallel_task ybwc_do_task_nws(int id, uint64_t player, uint64_t opponent, int_fast8_t n_discs, uint_fast8_t parity, bool use_mpc, double mpct, int first_depth, int alpha, int depth, uint64_t legal, bool is_end_search, uint_fast8_t policy, const bool *searching){
     Search search;
     search.board.player = player;
