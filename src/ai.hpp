@@ -82,18 +82,6 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
     } else{
         strt = tim();
         result.second = TRANSPOSE_TABLE_UNDEFINED;
-        /*
-        if (depth >= 15){
-            search.first_depth = depth - 1;
-            search.use_mpc = true;
-            search.mpct = 0.6;
-            result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search.first_depth, false, false, false, TRANSPOSE_TABLE_UNDEFINED);
-            g = result.first;
-            policy = result.second;
-            if (show_log)
-                cerr << "presearch depth " << depth - 1 << " value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
-        }
-        */
         search.first_depth = depth - 1;
         search.use_mpc = true;
         search.mpct = 0.7;
