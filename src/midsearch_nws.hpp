@@ -170,7 +170,6 @@ inline void ybwc_wait_all_nws(Search *search, vector<future<Parallel_task>> &par
                             }
                             if (split_count){
                                 ybwc_get_end_tasks(search, parallel_tasks, &v, &best_move);
-                                //ybwc_get_end_tasks_nws(search, parallel_tasks, &v);
                                 if (alpha < v){
                                     search->undo(&move_list[move_idx].flip);
                                     eval_undo(search, &move_list[move_idx].flip);
@@ -185,10 +184,8 @@ inline void ybwc_wait_all_nws(Search *search, vector<future<Parallel_task>> &par
                     if (alpha < v || !(*searching)){
                         n_searching = false;
                         ybwc_wait_all(search, parallel_tasks);
-                    } else{
-                        //ybwc_wait_all_nws(search, parallel_tasks, &v, alpha, &n_searching);
+                    } else
                         ybwc_wait_all_nws(search, parallel_tasks, &v, &best_move, alpha, &n_searching);
-                    }
                 }
             } else{
                 for (int move_idx = 0; move_idx < canput; ++move_idx){
@@ -206,7 +203,6 @@ inline void ybwc_wait_all_nws(Search *search, vector<future<Parallel_task>> &par
                 }
             }
         }
-        //register_tt_nws(search, depth, hash_code, alpha, v, l, u, searching);
         register_tt_nws(search, depth, hash_code, alpha, v, best_move, l, u, searching);
         return v;
     }

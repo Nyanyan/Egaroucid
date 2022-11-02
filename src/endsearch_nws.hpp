@@ -520,7 +520,6 @@ int nega_alpha_end_fast_nws(Search *search, int alpha, bool skipped, bool stab_c
                             }
                             if (split_count){
                                 ybwc_get_end_tasks(search, parallel_tasks, &v, &best_move);
-                                //ybwc_get_end_tasks_nws(search, parallel_tasks, &v);
                                 if (alpha < v){
                                     search->undo(&move_list[move_idx].flip);
                                     break;
@@ -533,10 +532,8 @@ int nega_alpha_end_fast_nws(Search *search, int alpha, bool skipped, bool stab_c
                     if (alpha < v || !(*searching)){
                         n_searching = false;
                         ybwc_wait_all(search, parallel_tasks);
-                    } else{
-                        //ybwc_wait_all_nws(search, parallel_tasks, &v, alpha, &n_searching);
+                    } else
                         ybwc_wait_all_nws(search, parallel_tasks, &v, &best_move, alpha, &n_searching);
-                    }
                 }
             } else{
                 for (int move_idx = 0; move_idx < canput; ++move_idx){
@@ -552,7 +549,6 @@ int nega_alpha_end_fast_nws(Search *search, int alpha, bool skipped, bool stab_c
                 }
             }
         }
-        //register_tt_nws(search, HW2 - search->n_discs, hash_code, alpha, v, l, u, searching);
         register_tt_nws(search, HW2 - search->n_discs, hash_code, alpha, v, best_move, l, u, searching);
         return v;
     }
