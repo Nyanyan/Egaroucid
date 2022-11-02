@@ -31,6 +31,3 @@
 
 // last parity ordering optimisation
 #define LAST_PO_OPTIMISE true
-
-// NWS best move transposition table
-#define USE_NWS_CHILD_TT false
