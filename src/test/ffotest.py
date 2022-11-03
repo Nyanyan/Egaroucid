@@ -4,11 +4,8 @@ import sys
 
 strt_idx = int(sys.argv[1])
 end_idx = int(sys.argv[2])
-
-if len(sys.argv) >= 4:
-    n_threads = int(sys.argv[3])
-else:
-    n_threads = 16
+n_threads = int(sys.argv[3])
+sleep_sec = int(sys.argv[4])
 
 #if n_threads >= 2:
 egaroucid = subprocess.Popen(('Egaroucid6_test.exe ' + str(n_threads - 1) + ' ' + str(0)).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
@@ -20,10 +17,12 @@ tim = 0
 nodes = 0
 strt = time()
 for i in range(strt_idx, end_idx):
-    print('\rsleeping', end='')
+    if sleep_sec:
+        print('\rsleeping', end='')
     with open('./../../benchmark/ffotest/' + str(i) + '.txt', 'r') as f:
         s = f.read()
-    sleep(10)
+    if sleep_sec:
+        sleep(sleep_sec)
     print('\rstart # ' + str(i), end='')
     egaroucid.stdin.write(s.encode('utf-8'))
     egaroucid.stdin.flush()
