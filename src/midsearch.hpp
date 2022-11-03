@@ -304,7 +304,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     #if USE_MID_MPC
         if (search->use_mpc){
             #if MID_TO_END_DEPTH < USE_MPC_ENDSEARCH_DEPTH
-                if (!is_end_search || (is_end_search && depth <= USE_MPC_ENDSEARCH_DEPTH)){
+                if (!(is_end_search && depth > USE_MPC_ENDSEARCH_DEPTH)){
                     if (mpc(search, alpha, beta, depth, legal, is_end_search, &v, searching))
                         return v;
                 }

@@ -17,6 +17,7 @@
 using namespace std;
 
 #define PROBCUT_SHALLOW_IGNORE 5
+#define USE_MPC_ENDSEARCH_DEPTH 13
 
 #define ALL_NODE_CHECK_MPCT 1.8
 
