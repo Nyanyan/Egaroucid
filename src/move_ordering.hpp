@@ -40,7 +40,7 @@
 #define W_NWS_OPPONENT_POTENTIAL_MOBILITY 10
 
 #define MOVE_ORDERING_VALUE_OFFSET_ALPHA 10
-#define MOVE_ORDERING_VALUE_OFFSET_BETA 10
+#define MOVE_ORDERING_VALUE_OFFSET_BETA 4
 #define MAX_MOBILITY 30
 #define MAX_OPENNESS 50
 
@@ -194,11 +194,16 @@ inline bool move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
             case 0:
                 flip_value->value += -mid_evaluate_diff(search) * W_NWS_VALUE_SHALLOW;
                 break;
+            /*
             default:
                 flip_value->value += -nega_alpha_eval1(search, alpha, beta, false, searching) * W_NWS_VALUE;
                 //flip_value->value -= (search->n_nodes - bef_n_nodes) * W_NWS_N_NODES;
                 break;
-            /*
+            */
+            case 1:
+                flip_value->value += -nega_alpha_eval1(search, alpha, beta, false, searching) * W_NWS_VALUE;
+                //flip_value->value -= (search->n_nodes - bef_n_nodes) * W_NWS_N_NODES;
+                break;
             default:
                 #if MID_FAST_DEPTH > 1
                     if (depth <= MID_FAST_DEPTH)
@@ -208,9 +213,8 @@ inline bool move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
                 #else
                     flip_value->value += -nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, searching) * (W_NWS_VALUE_DEEP + (depth - 1) * 2);
                 #endif
-                flip_value->value -= (search->n_nodes - bef_n_nodes) / W_NWS_N_NODES;
+                //flip_value->value -= (search->n_nodes - bef_n_nodes) / W_NWS_N_NODES;
                 break;
-            */
         }
     search->undo(&flip_value->flip);
     eval_undo(search, &flip_value->flip);
