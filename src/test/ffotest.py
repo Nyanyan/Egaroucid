@@ -1,5 +1,5 @@
 import subprocess
-from time import time
+from time import time, sleep
 import sys
 
 strt_idx = int(sys.argv[1])
@@ -20,8 +20,11 @@ tim = 0
 nodes = 0
 strt = time()
 for i in range(strt_idx, end_idx):
+    print('\rsleeping', end='')
     with open('./../../benchmark/ffotest/' + str(i) + '.txt', 'r') as f:
         s = f.read()
+    sleep(10)
+    print('\rstart # ' + str(i), end='')
     egaroucid.stdin.write(s.encode('utf-8'))
     egaroucid.stdin.flush()
     result = egaroucid.stdout.readline().decode()
@@ -30,6 +33,7 @@ for i in range(strt_idx, end_idx):
     nodes += int(result.split()[7])
     t = int(result.split()[9])
     n = int(result.split()[7])
+    print('\r', end='')
     print('#', i, 'time', t, 'nodes', n, 'nps', n / t * 1000)
 egaroucid.kill()
 
