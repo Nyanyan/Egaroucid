@@ -178,12 +178,11 @@ inline bool move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
             case 0:
                 flip_value->value += -mid_evaluate_diff(search) * W_NWS_VALUE_SHALLOW;
                 break;
-            /*
             default:
                 flip_value->value += -nega_alpha_eval1(search, alpha, beta, false, searching) * W_NWS_VALUE;
                 //flip_value->value -= (search->n_nodes - bef_n_nodes) * W_NWS_N_NODES;
                 break;
-            */
+            /*
             case 1:
                 flip_value->value += -nega_alpha_eval1(search, alpha, beta, false, searching) * W_NWS_VALUE;
                 //flip_value->value -= (search->n_nodes - bef_n_nodes) * W_NWS_N_NODES;
@@ -199,6 +198,7 @@ inline bool move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
                 #endif
                 //flip_value->value -= (search->n_nodes - bef_n_nodes) / W_NWS_N_NODES;
                 break;
+            */
         }
     search->undo(&flip_value->flip);
     eval_undo(search, &flip_value->flip);
