@@ -49,8 +49,7 @@ Parallel_task ybwc_do_task_nws(int id, uint64_t player, uint64_t opponent, int_f
 
 inline bool ybwc_split_nws(const Search *search, const Flip *flip, int alpha, int depth, uint64_t legal, bool is_end_search, const bool *searching, uint_fast8_t policy, const int canput, const int pv_idx, const bool seems_to_be_all_node, const int split_count, vector<future<Parallel_task>> &parallel_tasks){
     if (thread_pool.n_idle() &&
-        (pv_idx || seems_to_be_all_node) && 
-        depth >= YBWC_MID_SPLIT_MIN_DEPTH){
+        (pv_idx || seems_to_be_all_node)){
             bool pushed;
             parallel_tasks.emplace_back(thread_pool.push(&pushed, &ybwc_do_task_nws, search->board.player, search->board.opponent, search->n_discs, search->parity, search->use_mpc, search->mpct, search->first_depth, alpha, depth, legal, is_end_search, policy, searching));
             if (!pushed)

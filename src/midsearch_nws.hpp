@@ -192,18 +192,18 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
     }
     int g;
     if (legal){
-        #if USE_ALL_NODE_PREDICTION
-            const bool seems_to_be_all_node = is_like_all_node(search, alpha, depth, LEGAL_UNDEFINED, is_end_search, searching);
-        #else
-            constexpr bool seems_to_be_all_node = false;
-        #endif
         const int canput = pop_count_ull(legal);
         vector<Flip_value> move_list(canput);
         int idx = 0;
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
             calc_flip(&move_list[idx++].flip, &search->board, cell);
         move_list_evaluate_nws(search, move_list, depth, alpha, is_end_search, searching);
-        if (search->use_multi_thread){
+        #if USE_ALL_NODE_PREDICTION
+            const bool seems_to_be_all_node = is_like_all_node(search, alpha, depth, LEGAL_UNDEFINED, is_end_search, searching);
+        #else
+            constexpr bool seems_to_be_all_node = false;
+        #endif
+        if (search->use_multi_thread && depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH){
             int pv_idx = 0, split_count = 0;
             if (best_move != TRANSPOSE_TABLE_UNDEFINED)
                 pv_idx = 1;
