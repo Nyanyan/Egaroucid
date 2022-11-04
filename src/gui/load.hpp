@@ -38,7 +38,7 @@ int init_ai(const Settings* settings, const Directories* directories) {
 }
 
 int check_update(const Directories* directories, String *new_version) {
-	const String version_url = U"https://www.egaroucid-app.nyanyan.dev/version.txt";
+	const String version_url = U"https://www.egaroucid.nyanyan.dev/version.txt";
 	const FilePath version_save_path = U"{}Egaroucid/version.txt"_fmt(Unicode::Widen(directories->appdata_dir));
 	if (SimpleHTTP::Save(version_url, version_save_path).isOK()) {
 		TextReader reader(version_save_path);
