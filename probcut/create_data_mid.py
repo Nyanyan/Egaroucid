@@ -1,6 +1,6 @@
 from tqdm import tqdm
 
-data_file = './../statistics/data/records15_1_50_with_eval/0000000_test.txt'
+data_file = './../statistics/data/records15_1_50_with_eval/0000000_44807boards.txt'
 output_file = 'data/mid.txt'
 
 data_max_depth = 15
@@ -22,5 +22,5 @@ with open(output_file, 'w') as f:
         max_depth = min(len(evals), 64 - n_discs - 1)
         for depth1 in range(max_depth - 1):
             for depth2 in range(depth1 + 2, max_depth, 2):
-                abs_error = abs(evals[depth1] - evals[depth2])
-                f.write(str(n_discs) + ' ' + str(depth1) + ' ' + str(depth2) + ' ' + str(abs_error) + '\n')
+                error = evals[depth1] - evals[depth2]
+                f.write(str(n_discs) + ' ' + str(depth1) + ' ' + str(depth2) + ' ' + str(error) + '\n')

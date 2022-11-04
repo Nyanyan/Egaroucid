@@ -20,41 +20,41 @@ using namespace std;
 
 #define ALL_NODE_CHECK_MPCT 1.8
 
-#define probcut_a 0.0038035799628944483
-#define probcut_b 0.22664834996346628
-#define probcut_c -0.07591420224794357
-#define probcut_d -3758.613500762186
-#define probcut_e 1033.0799473722743
-#define probcut_f -82.70541001707157
-#define probcut_g 3.3052629201455543
+#define probcut_a 0.026782068048394118
+#define probcut_b 1.596379357766985
+#define probcut_c -0.5347052726328154
+#define probcut_d -10.75687329494107
+#define probcut_e 20.82420091888616
+#define probcut_f -11.742045809779999
+#define probcut_g 2.305196009064366
 
-#define probcut_end_a 0.013999540712467156
-#define probcut_end_b 0.023846453004195214
-#define probcut_end_c -52394.958528027695
-#define probcut_end_d 8152.55017674137
-#define probcut_end_e -353.07051244533056
-#define probcut_end_f 6.56708397549606
+#define probcut_end_a 0.9146477634380634
+#define probcut_end_b 0.8671585092657292
+#define probcut_end_c -5.347174078455993
+#define probcut_end_d 2.4381924864168596
+#define probcut_end_e -4.8282100503825
+#define probcut_end_f 8.58344784358737
 
 inline double probcut_sigma(int n_discs, int depth1, int depth2){
-    double res = probcut_a * n_discs / 64.0 + probcut_b * depth1 / 60.0 + probcut_c * depth2 / 60.0;
+    double res = probcut_a * ((double)n_discs / 64.0) + probcut_b * ((double)depth1 / 60.0) + probcut_c * ((double)depth2 / 60.0);
     res = probcut_d * res * res * res + probcut_e * res * res + probcut_f * res + probcut_g;
     return res;
 }
 
 inline double probcut_sigma_depth0(int n_discs, int depth2){
-    double res = probcut_a * n_discs + probcut_c * depth2;
+    double res = probcut_a * ((double)n_discs / 64.0) + probcut_c * ((double)depth2 / 60.0);
     res = probcut_d * res * res * res + probcut_e * res * res + probcut_f * res + probcut_g;
     return res;
 }
 
 inline double probcut_sigma_end(int n_discs, int depth){
-    double res = probcut_end_a * n_discs / 64.0 + probcut_end_b * depth / 60.0;
+    double res = probcut_end_a * ((double)n_discs / 64.0) + probcut_end_b * ((double)depth / 60.0);
     res = probcut_end_c * res * res * res + probcut_end_d * res * res + probcut_end_e * res + probcut_end_f;
     return res;
 }
 
 inline double probcut_sigma_end_depth0(int n_discs){
-    double res = probcut_end_a * n_discs / 64.0;
+    double res = probcut_end_a * ((double)n_discs / 64.0);
     res = probcut_end_c * res * res * res + probcut_end_d * res * res + probcut_end_e * res + probcut_end_f;
     return res;
 }
@@ -73,9 +73,9 @@ inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, 
         return false;
     int search_depth;
     if (is_end_search)
-        search_depth = ((depth >> 4) & 0xFE) ^ (depth & 1);
-    else
         search_depth = ((depth >> 2) & 0xFE) ^ (depth & 1);
+    else
+        search_depth = ((depth >> 1) & 0xFE) ^ (depth & 1);
     if (search_depth == 0){
         int error_depth0;
         if (is_end_search){
@@ -118,9 +118,9 @@ inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, 
                         search->use_mpc = true;
                     }
                 #else
-                    search->use_mpc = false;
-                        res = nega_alpha_ordering_nws(search, beta_mpc - 1, search_depth, false, legal, false, searching) >= beta_mpc;
-                    search->use_mpc = true;
+                    //search->use_mpc = false;
+                    res = nega_alpha_ordering_nws(search, beta_mpc - 1, search_depth, false, legal, false, searching) >= beta_mpc;
+                    //search->use_mpc = true;
                 #endif
             }
             if (res){
@@ -140,9 +140,9 @@ inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, 
                         search->use_mpc = true;
                     }
                 #else
-                    search->use_mpc = false;
-                        res = nega_alpha_ordering_nws(search, alpha_mpc, search_depth, false, legal, false, searching) <= alpha_mpc;
-                    search->use_mpc = true;
+                    //search->use_mpc = false;
+                    res = nega_alpha_ordering_nws(search, alpha_mpc, search_depth, false, legal, false, searching) <= alpha_mpc;
+                    //search->use_mpc = true;
                 #endif
             }
             if (res){

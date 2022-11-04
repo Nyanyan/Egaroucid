@@ -1,9 +1,9 @@
 from tqdm import tqdm
 
-data_file = './../statistics/data/records15_1_50_with_eval/0000000_test.txt'
+data_file = './../statistics/data/records15_1_50_with_eval/0000000_44807boards.txt'
 output_file = 'data/end.txt'
 
-transcript_end_accurate_n_discs = 64 - 21
+transcript_end_accurate_n_discs = 64 - 24
 data_max_depth = 15
 
 # data format n_discs, depth, abs_error
@@ -22,5 +22,5 @@ with open(output_file, 'w') as f:
         n_discs = board.count('p') + board.count('o')
         if n_discs >= transcript_end_accurate_n_discs:
             for depth in range(min(data_max_depth, 64 - n_discs)):
-                abs_error = abs(evals[depth] - score)
-                f.write(str(n_discs) + ' ' + str(depth) + ' ' + str(abs_error) + '\n')
+                error = evals[depth] - score
+                f.write(str(n_discs) + ' ' + str(depth) + ' ' + str(error) + '\n')

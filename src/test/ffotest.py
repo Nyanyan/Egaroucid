@@ -6,9 +6,10 @@ strt_idx = int(sys.argv[1])
 end_idx = int(sys.argv[2])
 n_threads = int(sys.argv[3])
 sleep_sec = int(sys.argv[4])
+show_log = int(sys.argv[5])
 
 #if n_threads >= 2:
-egaroucid = subprocess.Popen(('Egaroucid6_test.exe ' + str(n_threads - 1) + ' ' + str(0)).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+egaroucid = subprocess.Popen(('Egaroucid6_test.exe ' + str(n_threads - 1) + ' ' + str(show_log)).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 #else:
 #    egaroucid = subprocess.Popen('Egaroucid6_test_single.exe'.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
