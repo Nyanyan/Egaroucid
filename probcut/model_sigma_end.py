@@ -9,7 +9,7 @@ import math
 
 data_file = 'data/end.txt'
 
-const_weight = 0.0
+const_weight = 2.0
 
 with open(data_file, 'r') as f:
     raw_data = f.read().splitlines()
@@ -41,14 +41,14 @@ for n_discs in range(80):
     depth = 64 - n_discs + 5
     x_n_discs.append(n_discs)
     y_depth.append(depth)
-    z_error.append(1.0 + const_weight)
+    z_error.append(1.5 + const_weight)
     weight.append(0.001)
 
 for n_discs in range(60):
     for depth in [0]:
         x_n_discs.append(n_discs)
         y_depth.append(depth)
-        z_error.append(1.0 + 3.0 * (60 - depth) / 60 * math.exp((64 - n_discs) / 64) + const_weight)
+        z_error.append(5.0 * (60 - depth) / 60 * math.exp((64 - n_discs) / 64) + const_weight)
         weight.append(0.008)
 
 
