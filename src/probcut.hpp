@@ -28,12 +28,12 @@ using namespace std;
 #define probcut_f -11.742045809779999
 #define probcut_g 2.305196009064366
 
-#define probcut_end_a 1.2435636647304809
-#define probcut_end_b 1.1951289085491434
-#define probcut_end_c -1.7532579882528734
-#define probcut_end_d 5.61859890817466
-#define probcut_end_e -13.474312880332954
-#define probcut_end_f 15.796597431433273
+#define probcut_end_a 1.395231414658785
+#define probcut_end_b 1.340883505399074
+#define probcut_end_c -1.2417691219909042
+#define probcut_end_d 4.464438839942809
+#define probcut_end_e -12.010375402570762
+#define probcut_end_f 13.796730178838157
 
 inline double probcut_sigma(int n_discs, int depth1, int depth2){
     double res = probcut_a * ((double)n_discs / 64.0) + probcut_b * ((double)depth1 / 60.0) + probcut_c * ((double)depth2 / 60.0);
@@ -68,7 +68,7 @@ inline int nega_alpha_eval1_nws(Search *search, int alpha, bool skipped, const b
 #endif
 int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
 
-inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, bool is_end_search, int *v, const bool *searching){
+inline bool mpc_nws(Search *search, int alpha, int depth, uint64_t legal, bool is_end_search, int *v, const bool *searching){
     if (search->first_depth - depth < PROBCUT_SHALLOW_IGNORE)
         return false;
     int search_depth;
@@ -78,17 +78,15 @@ inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, 
         search_depth = ((depth >> 1) & 0xFE) ^ (depth & 1);
     if (search_depth == 0){
         int error_depth0;
-        if (is_end_search){
-            alpha -= alpha & 1;
-            beta += beta & 1;
+        if (is_end_search)
             error_depth0 = ceil(search->mpct * probcut_sigma_end_depth0(search->n_discs));
-        } else
+        else
             error_depth0 = ceil(search->mpct * probcut_sigma_depth0(search->n_discs, depth));
-        if (alpha - error_depth0 < -SCORE_MAX && SCORE_MAX < beta + error_depth0)
+        if (alpha - error_depth0 < -SCORE_MAX && SCORE_MAX < alpha + 1 + error_depth0)
             return false;
         const int depth0_value = mid_evaluate_diff(search);
-        if (depth0_value >= beta + error_depth0){
-            *v = beta;
+        if (depth0_value >= alpha + 1 + error_depth0){
+            *v = alpha + 1;
             return true;
         } else if (depth0_value <= alpha - error_depth0){
             *v = alpha;
@@ -96,14 +94,12 @@ inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, 
         }
     } else{
         int error_search;
-        if (is_end_search){
-            alpha -= alpha & 1;
-            beta += beta & 1;
+        if (is_end_search)
             error_search = ceil(search->mpct * probcut_sigma_end(search->n_discs, search_depth));
-        } else
+        else
             error_search = ceil(search->mpct * probcut_sigma(search->n_discs, search_depth, depth));
         const int alpha_mpc = alpha - error_search;
-        const int beta_mpc = beta + error_search;
+        const int beta_mpc = alpha + 1 + error_search;
         bool res;
         if (beta_mpc <= SCORE_MAX){
             if (search_depth == 1)
@@ -124,7 +120,7 @@ inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, 
                 #endif
             }
             if (res){
-                *v = beta;
+                *v = alpha + 1;
                 return true;
             }
         } else if (alpha_mpc >= -SCORE_MAX){
@@ -148,6 +144,142 @@ inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, 
             if (res){
                 *v = alpha;
                 return true;
+            }
+        }
+    }
+    return false;
+}
+
+inline bool mpc(Search *search, int *alpha, int *beta, int depth, uint64_t legal, bool is_end_search, int *v, const bool *searching){
+    if (search->first_depth - depth < PROBCUT_SHALLOW_IGNORE)
+        return false;
+    int search_depth;
+    if (is_end_search)
+        search_depth = ((depth >> 2) & 0xFE) ^ (depth & 1);
+    else
+        search_depth = ((depth >> 1) & 0xFE) ^ (depth & 1);
+    if (search_depth == 0){
+        int error_depth0;
+        if (is_end_search)
+            error_depth0 = ceil(search->mpct * probcut_sigma_end_depth0(search->n_discs));
+        else
+            error_depth0 = ceil(search->mpct * probcut_sigma_depth0(search->n_discs, depth));
+        if (*alpha - error_depth0 < -SCORE_MAX && SCORE_MAX < *beta + error_depth0)
+            return false;
+        const int depth0_value = mid_evaluate_diff(search);
+        if (depth0_value >= *beta + error_depth0){
+            *v = *beta;
+            return true;
+        } else if (depth0_value <= *alpha - error_depth0){
+            *v = *alpha;
+            return true;
+        } else{
+            *alpha = max(*alpha, depth0_value - error_depth0);
+            *beta = min(*beta, depth0_value + error_depth0);
+        }
+    } else{
+        int error_search;
+        if (is_end_search)
+            error_search = ceil(search->mpct * probcut_sigma_end(search->n_discs, search_depth));
+        else
+            error_search = ceil(search->mpct * probcut_sigma(search->n_discs, search_depth, depth));
+        const int alpha_mpc = *alpha - error_search;
+        const int beta_mpc = *beta + error_search;
+        if (*alpha - error_search < -SCORE_MAX && SCORE_MAX < *beta + error_search)
+            return false;
+        const int depth0_value = mid_evaluate_diff(search);
+        bool res;
+        if (abs(depth0_value - *beta) < abs(depth0_value - *alpha)){
+            if (beta_mpc <= SCORE_MAX){
+                if (search_depth == 1)
+                    res = nega_alpha_eval1_nws(search, beta_mpc - 1, false, searching) >= beta_mpc;
+                else{
+                    #if MID_FAST_DEPTH > 1
+                        if (search_depth <= MID_FAST_DEPTH)
+                            res = nega_alpha_nws(search, beta_mpc - 1, search_depth, false, searching) >= beta_mpc;
+                        else{
+                            search->use_mpc = false;
+                                res = nega_alpha_ordering_nws(search, beta_mpc - 1, search_depth, false, legal, false, searching) >= beta_mpc;
+                            search->use_mpc = true;
+                        }
+                    #else
+                        //search->use_mpc = false;
+                        res = nega_alpha_ordering_nws(search, beta_mpc - 1, search_depth, false, legal, false, searching) >= beta_mpc;
+                        //search->use_mpc = true;
+                    #endif
+                }
+                if (res){
+                    *v = *beta;
+                    return true;
+                }
+            } else if (alpha_mpc >= -SCORE_MAX){
+                if (search_depth == 1)
+                    res = nega_alpha_eval1_nws(search, alpha_mpc, false, searching) <= alpha_mpc;
+                else{
+                    #if MID_FAST_DEPTH > 1
+                        if (search_depth <= MID_FAST_DEPTH)
+                            res = nega_alpha_nws(search, alpha_mpc, search_depth, false, searching) <= alpha_mpc;
+                        else{
+                            search->use_mpc = false;
+                                res = nega_alpha_ordering_nws(search, alpha_mpc, search_depth, false, legal, false, searching) <= alpha_mpc;
+                            search->use_mpc = true;
+                        }
+                    #else
+                        //search->use_mpc = false;
+                        res = nega_alpha_ordering_nws(search, alpha_mpc, search_depth, false, legal, false, searching) <= alpha_mpc;
+                        //search->use_mpc = true;
+                    #endif
+                }
+                if (res){
+                    *v = *alpha;
+                    return true;
+                }
+            }
+        } else{
+            if (alpha_mpc >= -SCORE_MAX){
+                if (search_depth == 1)
+                    res = nega_alpha_eval1_nws(search, alpha_mpc, false, searching) <= alpha_mpc;
+                else{
+                    #if MID_FAST_DEPTH > 1
+                        if (search_depth <= MID_FAST_DEPTH)
+                            res = nega_alpha_nws(search, alpha_mpc, search_depth, false, searching) <= alpha_mpc;
+                        else{
+                            search->use_mpc = false;
+                                res = nega_alpha_ordering_nws(search, alpha_mpc, search_depth, false, legal, false, searching) <= alpha_mpc;
+                            search->use_mpc = true;
+                        }
+                    #else
+                        //search->use_mpc = false;
+                        res = nega_alpha_ordering_nws(search, alpha_mpc, search_depth, false, legal, false, searching) <= alpha_mpc;
+                        //search->use_mpc = true;
+                    #endif
+                }
+                if (res){
+                    *v = *alpha;
+                    return true;
+                }
+            } else if (beta_mpc <= SCORE_MAX){
+                if (search_depth == 1)
+                    res = nega_alpha_eval1_nws(search, beta_mpc - 1, false, searching) >= beta_mpc;
+                else{
+                    #if MID_FAST_DEPTH > 1
+                        if (search_depth <= MID_FAST_DEPTH)
+                            res = nega_alpha_nws(search, beta_mpc - 1, search_depth, false, searching) >= beta_mpc;
+                        else{
+                            search->use_mpc = false;
+                                res = nega_alpha_ordering_nws(search, beta_mpc - 1, search_depth, false, legal, false, searching) >= beta_mpc;
+                            search->use_mpc = true;
+                        }
+                    #else
+                        //search->use_mpc = false;
+                        res = nega_alpha_ordering_nws(search, beta_mpc - 1, search_depth, false, legal, false, searching) >= beta_mpc;
+                        //search->use_mpc = true;
+                    #endif
+                }
+                if (res){
+                    *v = *beta;
+                    return true;
+                }
             }
         }
     }

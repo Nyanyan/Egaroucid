@@ -9,7 +9,7 @@ import math
 
 data_file = 'data/end.txt'
 
-const_weight = 2.0
+const_weight = 0.0
 
 with open(data_file, 'r') as f:
     raw_data = f.read().splitlines()
