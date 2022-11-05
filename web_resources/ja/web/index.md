@@ -6,11 +6,11 @@
         </p>
         <p align="center">
             <span class="setting">AIの強さ</span>
-            <input type="range" id="ai_level" min="0" max="15" step="1" value="5">
+            <input type="range" id="ai_level" min="0" max="15" step="1" value="7">
             <span class="setting" id="ai_level_label"></span>
         </p>
         <p align="center">
-            <input type="checkbox" id="show_value" checked><label class="setting" for="show_value">ヒント</label>
+            <input type="checkbox" id="show_value" unchecked><label class="setting" for="show_value">ヒント</label>
             <input type="checkbox" id="show_graph" checked><label class="setting" for="show_graph">グラフ</label>
         </p>
         <div align="center" id="div_start">
