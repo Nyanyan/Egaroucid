@@ -16,7 +16,8 @@
 
 using namespace std;
 
-#define PROBCUT_SHALLOW_IGNORE 2
+#define PROBCUT_SHALLOW_IGNORE_DEPTH 6
+#define PROBCUT_SHALLOW_IGNORE_N_DISCS 24
 
 #define ALL_NODE_CHECK_MPCT 1.8
 
@@ -70,7 +71,7 @@ inline int nega_alpha_eval1_nws(Search *search, int alpha, bool skipped, const b
 int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
 
 inline bool mpc_nws(Search *search, int alpha, int depth, uint64_t legal, bool is_end_search, int *v, const bool *searching){
-    if (search->n_discs - search->first_n_discs <= PROBCUT_SHALLOW_IGNORE)
+    if (search->n_discs - search->first_n_discs <= PROBCUT_SHALLOW_IGNORE_DEPTH && search->n_discs <= PROBCUT_SHALLOW_IGNORE_N_DISCS)
         return false;
     int search_depth;
     if (is_end_search)
@@ -152,7 +153,7 @@ inline bool mpc_nws(Search *search, int alpha, int depth, uint64_t legal, bool i
 }
 
 inline bool mpc(Search *search, int *alpha, int *beta, int depth, uint64_t legal, bool is_end_search, int *v, const bool *searching){
-    if (search->n_discs - search->first_n_discs <= PROBCUT_SHALLOW_IGNORE)
+    if (search->n_discs - search->first_n_discs <= PROBCUT_SHALLOW_IGNORE_DEPTH && search->n_discs <= PROBCUT_SHALLOW_IGNORE_N_DISCS)
         return false;
     int search_depth;
     if (is_end_search)
