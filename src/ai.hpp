@@ -24,23 +24,22 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
     uint64_t clog_n_nodes = 0;
     vector<Clog_result> clogs;
     uint64_t strt;
-    if (use_mpc){
-        strt = tim();
-        clogs = first_clog_search(board, &clog_n_nodes);
-        if (show_log){
-            cerr << "clog search time " << (tim() - strt) << " nodes " << clog_n_nodes << " nps " << (clog_n_nodes / max(1ULL, tim() - strt)) << endl;
-            for (int i = 0; i < (int)clogs.size(); ++i){
-                cerr << i + 1 << "/" << clogs.size() << " " << idx_to_coord(clogs[i].pos) << " value " << clogs[i].val << endl;
-            }
+    //if (use_mpc){
+    strt = tim();
+    clogs = first_clog_search(board, &clog_n_nodes);
+    if (show_log){
+        cerr << "clog search time " << (tim() - strt) << " nodes " << clog_n_nodes << " nps " << (clog_n_nodes / max(1ULL, tim() - strt)) << endl;
+        for (int i = 0; i < (int)clogs.size(); ++i){
+            cerr << i + 1 << "/" << clogs.size() << " " << idx_to_coord(clogs[i].pos) << " value " << clogs[i].val << endl;
         }
     }
+    //}
     Search search;
     int g = 0, alpha, beta, policy = -1;
     pair<int, int> result;
     search.init_board(&board);
     search.n_nodes = 0ULL;
     search.use_multi_thread = use_multi_thread;
-    search.first_n_discs = search.n_discs;
     calc_features(&search);
     depth = min(HW2 - search.n_discs, depth);
     bool is_end_search = (HW2 - search.n_discs == depth);
@@ -138,7 +137,6 @@ inline Search_result tree_search_iterative_deepening(Board board, int depth, boo
     search.use_mpc = use_mpc;
     search.mpct = mpct;
     search.use_multi_thread = use_multi_thread;
-    search.first_n_discs = search.n_discs;
     calc_features(&search);
     vector<Clog_result> clogs;
     uint64_t strt = tim();
@@ -168,7 +166,6 @@ inline int tree_search_window(Board board, int depth, int alpha, int beta, bool 
     depth = min(HW2 - board.n_discs(), depth);
     bool is_end_search = (HW2 - board.n_discs() == depth);
     search.init_board(&board);
-    search.first_n_discs = search.n_discs;
     search.n_nodes = 0ULL;
     search.use_mpc = use_mpc;
     search.mpct = mpct;

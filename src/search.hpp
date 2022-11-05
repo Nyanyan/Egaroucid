@@ -88,7 +88,7 @@ class Search{
         uint64_t n_nodes;
         int eval_features[N_SYMMETRY_PATTERNS];
         uint_fast8_t eval_feature_reversed;
-        int first_n_discs;
+        //int first_n_discs;
         bool use_multi_thread;
 
     public:
