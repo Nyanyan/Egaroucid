@@ -21,19 +21,23 @@
 #define SEARCH_BOOK -1
 
 inline Search_result tree_search(Board board, int depth, bool use_mpc, double mpct, bool show_log, bool use_multi_thread){
-    uint64_t clog_n_nodes = 0;
-    vector<Clog_result> clogs;
     uint64_t strt;
-    //if (use_mpc){
-    strt = tim();
-    clogs = first_clog_search(board, &clog_n_nodes);
-    if (show_log){
-        cerr << "clog search time " << (tim() - strt) << " nodes " << clog_n_nodes << " nps " << (clog_n_nodes / max(1ULL, tim() - strt)) << endl;
-        for (int i = 0; i < (int)clogs.size(); ++i){
-            cerr << i + 1 << "/" << clogs.size() << " " << idx_to_coord(clogs[i].pos) << " value " << clogs[i].val << endl;
+    Search_result res;
+    depth = min(HW2 - board.n_discs(), depth);
+    bool is_end_search = (HW2 - board.n_discs() == depth);
+    vector<Clog_result> clogs;
+    res.clog_nodes = 0ULL;
+    if (is_end_search || use_mpc){
+        strt = tim();
+        clogs = first_clog_search(board, &res.clog_nodes);
+        res.clog_time = tim() - strt;
+        if (show_log){
+            cerr << "clog search time " << res.clog_time << " nodes " << res.clog_nodes << " nps " << (res.clog_nodes / max(1ULL, res.clog_time)) << endl;
+            for (int i = 0; i < (int)clogs.size(); ++i){
+                cerr << i + 1 << "/" << clogs.size() << " " << idx_to_coord(clogs[i].pos) << " value " << clogs[i].val << endl;
+            }
         }
     }
-    //}
     Search search;
     int g = 0, alpha, beta, policy = -1;
     pair<int, int> result;
@@ -41,8 +45,6 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
     search.n_nodes = 0ULL;
     search.use_multi_thread = use_multi_thread;
     calc_features(&search);
-    depth = min(HW2 - search.n_discs, depth);
-    bool is_end_search = (HW2 - search.n_discs == depth);
     int search_depth;
 
     if (is_end_search){
@@ -113,7 +115,6 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
         if (show_log)
             cerr << "mainsearch depth " << search_depth << " mpct " << search.mpct << " value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
     }
-    Search_result res;
     res.depth = depth;
     res.nodes = search.n_nodes;
     res.time = tim() - strt;

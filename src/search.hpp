@@ -73,6 +73,8 @@ struct Search_result{
     int depth;
     uint64_t time;
     uint64_t nodes;
+    uint64_t clog_time;
+    uint64_t clog_nodes;
     uint64_t nps;
     bool is_end_search;
     int probability;
