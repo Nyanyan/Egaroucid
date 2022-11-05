@@ -365,29 +365,26 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     return v;
 }
 
-pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, bool is_end_search, const bool is_main_search, int best_move){
+pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, bool is_end_search, const bool is_main_search, int best_move, const vector<Clog_result> clogs){
     bool searching = true;
     ++(search->n_nodes);
     uint32_t hash_code = search->board.hash();
     uint64_t legal = search->board.get_legal();
     int first_alpha = alpha;
     int g, v = -INF;
-    if (legal == 0ULL){
-        pair<int, int> res;
-        if (skipped){
-            res.first = end_evaluate(&search->board);
-            res.second = -1;
-        } else{
-            search->eval_feature_reversed ^= 1;
-            search->board.pass();
-                res = first_nega_scout(search, -beta, -alpha, depth, true, is_end_search, is_main_search, best_move);
-            search->board.pass();
-            search->eval_feature_reversed ^= 1;
-            res.first = -res.first;
-        }
-        return res;
-    }
+    if (legal == 0ULL)
+        return make_pair(SCORE_UNDEFINED, -1);
+    int best_move_res = -1;
     const int canput_all = pop_count_ull(legal);
+    for (const Clog_result clog: clogs){
+        if (v < clog.val){
+            v = clog.val;
+            best_move_res = clog.pos;
+        }
+        legal ^= 1ULL << clog.pos;
+    }
+    alpha = max(alpha, v);
+    bool pre_best_move_found = false;
     if (best_move != TRANSPOSE_TABLE_UNDEFINED){
         if (1 & (legal >> best_move)){
             Flip flip_best;
@@ -399,24 +396,29 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
                     cerr << 1 << "/" << canput_all << " [" << alpha << "," << beta << "] mpct " << search->mpct << " " << idx_to_coord(best_move) << " value " << g << endl;
             search->undo(&flip_best);
             eval_undo(search, &flip_best);
-            v = g;
-            alpha = max(alpha, g);
+            if (v < g){
+                v = g;
+                best_move_res = best_move;
+                if (alpha < v)
+                    alpha = v;
+            }
             legal ^= 1ULL << best_move;
-        } else
-            best_move = TRANSPOSE_TABLE_UNDEFINED;
+            pre_best_move_found = true;
+        }
     }
     if (alpha < beta && legal){
         const int canput = pop_count_ull(legal);
-        int mobility_idx = (v == -INF) ? 1 : 2;
+        int mobility_idx = pre_best_move_found ? 1 : 2;
         vector<Flip_value> move_list(canput);
         int idx = 0;
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
             calc_flip(&move_list[idx++].flip, &search->board, cell);
         move_ordering(search, move_list, depth, alpha, beta, is_end_search, &searching);
+        bool is_first_search = true;
         for (const Flip_value &flip_value: move_list){
             eval_move(search, &flip_value.flip);
             search->move(&flip_value.flip);
-                if (v == -INF)
+                if (!pre_best_move_found && is_first_search)
                     g = -nega_scout(search, -beta, -alpha, depth - 1, false, flip_value.n_legal, is_end_search, &searching);
                 else{
                     g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, flip_value.n_legal, is_end_search, &searching);
@@ -434,15 +436,16 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
             eval_undo(search, &flip_value.flip);
             if (v < g){
                 v = g;
-                best_move = flip_value.flip.pos;
+                best_move_res = flip_value.flip.pos;
                 if (alpha < v){
                     if (beta <= v)
                         break;
                     alpha = v;
                 }
             }
+            is_first_search = false;
         }
     }
-    register_tt(search, depth, hash_code, v, best_move, first_alpha, beta, first_alpha, beta, &searching);
-    return make_pair(v, best_move);
+    register_tt(search, depth, hash_code, v, best_move_res, first_alpha, beta, first_alpha, beta, &searching);
+    return make_pair(v, best_move_res);
 }

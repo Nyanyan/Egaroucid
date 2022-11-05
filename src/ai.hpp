@@ -16,15 +16,24 @@
 #include "book.hpp"
 #include "book_learn.hpp"
 #include "util.hpp"
+#include "clogsearch.hpp"
 
-#define SEARCH_FINAL 100
 #define SEARCH_BOOK -1
-#define BOOK_CUT_THRESHOLD_DIV 2
-#define USE_DEFAULT_MPC -1.0
-#define PRESEARCH_OFFSET 6
-#define PARALLEL_SPLIT_DIV 6
 
 inline Search_result tree_search(Board board, int depth, bool use_mpc, double mpct, bool show_log, bool use_multi_thread){
+    uint64_t clog_n_nodes = 0;
+    vector<Clog_result> clogs;
+    uint64_t strt;
+    if (use_mpc){
+        strt = tim();
+        clogs = first_clog_search(board, &clog_n_nodes);
+        if (show_log){
+            cerr << "clog search time " << (tim() - strt) << " nodes " << clog_n_nodes << " nps " << (clog_n_nodes / (tim() - strt)) << endl;
+            for (int i = 0; i < (int)clogs.size(); ++i){
+                cerr << i + 1 << "/" << clogs.size() << " " << idx_to_coord(clogs[i].pos) << " value " << clogs[i].val << endl;
+            }
+        }
+    }
     Search search;
     int g = 0, alpha, beta, policy = -1;
     pair<int, int> result;
@@ -33,7 +42,6 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
     search.use_multi_thread = use_multi_thread;
     search.first_n_discs = search.n_discs;
     calc_features(&search);
-    uint64_t strt;
     depth = min(HW2 - search.n_discs, depth);
     bool is_end_search = (HW2 - search.n_discs == depth);
     int search_depth;
@@ -48,7 +56,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
             search_depth = depth / 2;
             search.mpct = 1.0;
             search.use_mpc = true;
-            result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search_depth, false, false, false, TRANSPOSE_TABLE_UNDEFINED);
+            result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search_depth, false, false, false, TRANSPOSE_TABLE_UNDEFINED, clogs);
             g = result.first;
             if (show_log)
                 cerr << "presearch depth " << search_depth << " mpct " << search.mpct << " value " << g << " policy " << idx_to_coord(result.second) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
@@ -64,7 +72,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
             search.use_mpc = true;
             alpha = -SCORE_MAX;
             beta = SCORE_MAX;
-            result = first_nega_scout(&search, alpha, beta, search_depth, false, true, false, result.second);
+            result = first_nega_scout(&search, alpha, beta, search_depth, false, true, false, result.second, clogs);
             g = result.first;
             if (show_log)
                 cerr << "presearch depth " << search_depth << " mpct " << search.mpct << " value " << g << " policy " << idx_to_coord(result.second) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
@@ -73,7 +81,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
         search_depth = depth;
         search.use_mpc = use_mpc;
         search.mpct = mpct;
-        result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search_depth, false, true, show_log, result.second);
+        result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search_depth, false, true, show_log, result.second, clogs);
         g = result.first;
         policy = result.second;
         if (show_log)
@@ -88,7 +96,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
         g = -INF;
         if (depth - 1 >= 1){
             search_depth = depth - 1;
-            result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search_depth, false, false, false, result.second);
+            result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search_depth, false, false, false, result.second, clogs);
             g = result.first;
             policy = result.second;
             if (show_log)
@@ -97,7 +105,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
         search_depth = depth;
         search.use_mpc = use_mpc;
         search.mpct = mpct;
-        result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search_depth, false, false, show_log, result.second);
+        result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search_depth, false, false, show_log, result.second, clogs);
         if (g == -INF)
             g = result.first;
         else
@@ -118,6 +126,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
     return res;
 }
 
+// for hint search with iterative deepning, no clogsearch needed
 inline Search_result tree_search_iterative_deepening(Board board, int depth, bool use_mpc, double mpct, bool show_log, bool use_multi_thread){
     Search search;
     int g = 0, alpha, beta, policy = -1;
@@ -127,15 +136,13 @@ inline Search_result tree_search_iterative_deepening(Board board, int depth, boo
     search.init_board(&board);
     search.n_nodes = 0ULL;
     search.use_mpc = use_mpc;
-    //search.mpct = max(0.6, mpct - 0.2);
     search.mpct = mpct;
     search.use_multi_thread = use_multi_thread;
     search.first_n_discs = search.n_discs;
     calc_features(&search);
-    //first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth, false, is_end_search, show_log, result.second);
-    //search.mpct = mpct;
+    vector<Clog_result> clogs;
     uint64_t strt = tim();
-    result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth, false, is_end_search, show_log, result.second);
+    result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth, false, is_end_search, show_log, result.second, clogs);
     g = result.first;
     policy = result.second;
     if (show_log){
@@ -169,6 +176,10 @@ inline int tree_search_window(Board board, int depth, int alpha, int beta, bool 
     calc_features(&search);
     uint64_t strt = tim();
     bool searching = true;
+    uint64_t clog_n_nodes = 0ULL;
+    int clog_res = clog_search(board, &clog_n_nodes);
+    if (clog_res != CLOG_NOT_FOUND)
+        return clog_res;
     return nega_scout(&search, alpha, beta, depth, false, LEGAL_UNDEFINED, is_end_search, &searching);
 }
 

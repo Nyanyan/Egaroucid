@@ -128,6 +128,16 @@ class Search{
         }
 };
 
+struct Clog_search{
+    Board board;
+    uint64_t n_nodes;
+};
+
+struct Clog_result{
+    uint_fast8_t pos;
+    int val;
+};
+
 inline void register_tt(Search *search, int depth, uint32_t hash_code, int v, int best_move, int l, int u, int first_alpha, int beta, const bool *searching){
     if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD && (*searching) && -SCORE_MAX <= v && v <= SCORE_MAX && global_searching){
         if (first_alpha < v && best_move != TRANSPOSE_TABLE_UNDEFINED)
