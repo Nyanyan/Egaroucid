@@ -9,7 +9,7 @@ import math
 
 data_file = 'data/mid.txt'
 
-const_weight = 0.0
+const_weight = 2.5
 
 with open(data_file, 'r') as f:
     raw_data = f.read().splitlines()
@@ -45,7 +45,16 @@ for n_discs in range(61):
         w_n_discs.append(n_discs)
         x_depth1.append(depth1)
         y_depth2.append(depth2)
-        z_error.append(0.5 + 1.0 * (depth2 - depth1) / depth2 + const_weight)
+        z_error.append(1.0 + 1.0 * (depth2 - depth1) / depth2 + const_weight)
+        weight.append(0.05)
+
+for n_discs in range(61):
+    for depth2 in range(20, 60):
+        depth1 = 0
+        w_n_discs.append(n_discs)
+        x_depth1.append(depth1)
+        y_depth2.append(depth2)
+        z_error.append(17.0 - (60 - depth2) / 60 * 14.0 + const_weight)
         weight.append(0.05)
 
 def f(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g, probcut_h, probcut_i, probcut_j):
@@ -58,7 +67,7 @@ def f(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, pro
     return res
 
 def f_max(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g, probcut_h, probcut_i, probcut_j):
-    return np.minimum(30.0, f(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g, probcut_h, probcut_i, probcut_j))
+    return np.minimum(20.0, np.maximum(-2.0, f(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g, probcut_h, probcut_i, probcut_j)))
 
 def plot_fit_result_onephase(n_discs, params):
     fig = plt.figure()

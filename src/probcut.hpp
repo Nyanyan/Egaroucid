@@ -22,13 +22,13 @@ using namespace std;
 #define ALL_NODE_CHECK_MPCT 1.8
 
 
-#define probcut_a 0.026782068048394118
-#define probcut_b 1.596379357766985
-#define probcut_c -0.5347052726328154
-#define probcut_d -10.75687329494107
-#define probcut_e 20.82420091888616
-#define probcut_f -11.742045809779999
-#define probcut_g 2.305196009064366
+#define probcut_a -0.001265116404528472
+#define probcut_b -1.758143972292579
+#define probcut_c 1.7566279520842052
+#define probcut_d -1.0938733019995888
+#define probcut_e 1.1290649413162603
+#define probcut_f 10.55327508419982
+#define probcut_g 2.906465908394277
 
 #define probcut_end_a 1.7618824674282139
 #define probcut_end_b 1.6761979186286653
