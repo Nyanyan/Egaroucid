@@ -36,3 +36,6 @@
 
 // use nega_alpha_ordering
 #define USE_NEGA_ALPHA_ORDERING false
+
+// use parallel clog search
+#define USE_PARALLEL_CLOG_SEARCH true
