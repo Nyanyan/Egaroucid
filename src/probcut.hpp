@@ -30,12 +30,12 @@ using namespace std;
 #define probcut_f -11.742045809779999
 #define probcut_g 2.305196009064366
 
-#define probcut_end_a 1.395231414658785
-#define probcut_end_b 1.340883505399074
-#define probcut_end_c -1.2417691219909042
-#define probcut_end_d 4.464438839942809
-#define probcut_end_e -12.010375402570762
-#define probcut_end_f 13.796730178838157
+#define probcut_end_a 1.7618824674282139
+#define probcut_end_b 1.6761979186286653
+#define probcut_end_c -1.5368514045644108
+#define probcut_end_d 5.649224423285564
+#define probcut_end_e -12.020118030448877
+#define probcut_end_f 14.261869478626625
 
 inline double probcut_sigma(int n_discs, int depth1, int depth2){
     double res = probcut_a * ((double)n_discs / 64.0) + probcut_b * ((double)depth1 / 60.0) + probcut_c * ((double)depth2 / 60.0);
