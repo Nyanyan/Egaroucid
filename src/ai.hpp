@@ -28,7 +28,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
         strt = tim();
         clogs = first_clog_search(board, &clog_n_nodes);
         if (show_log){
-            cerr << "clog search time " << (tim() - strt) << " nodes " << clog_n_nodes << " nps " << (clog_n_nodes / (tim() - strt)) << endl;
+            cerr << "clog search time " << (tim() - strt) << " nodes " << clog_n_nodes << " nps " << (clog_n_nodes / max(1ULL, tim() - strt)) << endl;
             for (int i = 0; i < (int)clogs.size(); ++i){
                 cerr << i + 1 << "/" << clogs.size() << " " << idx_to_coord(clogs[i].pos) << " value " << clogs[i].val << endl;
             }

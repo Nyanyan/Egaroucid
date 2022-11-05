@@ -21,8 +21,8 @@
 using namespace std;
 
 #define CLOG_NOT_FOUND -INF
-#define CLOG_SEARCH_DEPTH 7
-#define CLOG_SEARCH_SPLIT_DEPTH 4
+#define CLOG_SEARCH_DEPTH 11
+#define CLOG_SEARCH_SPLIT_DEPTH 6
 
 struct Parallel_clog_task{
     uint64_t n_nodes;
@@ -60,7 +60,8 @@ inline int clog_wait_all(Clog_search *search, vector<future<Parallel_clog_task>>
     Parallel_clog_task got_task;
     for (future<Parallel_clog_task> &task: parallel_tasks){
         got_task = task.get();
-        res = max(res, -got_task.val);
+        if (got_task.val != CLOG_NOT_FOUND)
+            res = max(res, -got_task.val);
         search->n_nodes += got_task.n_nodes;
     }
     return res;
@@ -88,16 +89,17 @@ int clog_search(Clog_search *search, bool is_player, int depth){
     Flip flip;
     int g;
     #if USE_PARALLEL_CLOG_SEARCH
-        if (is_player){
+        if (!is_player){
             vector<future<Parallel_clog_task>> parallel_tasks;
             const int canput = pop_count_ull(legal);
             int pv_idx = 0;
             for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
                 calc_flip(&flip, &search->board, cell);
                 search->board.move_board(&flip);
-                    if (!clog_split(search, canput, pv_idx++, false, depth - 1, parallel_tasks)){
-                        g = clog_search(search, false, depth - 1);
-                        res = max(res, -g);
+                    if (!clog_split(search, canput, pv_idx++, true, depth - 1, parallel_tasks)){
+                        g = clog_search(search, true, depth - 1);
+                        if (g != CLOG_NOT_FOUND)
+                            res = max(res, -g);
                     }
                 search->board.undo_board(&flip);
             }
@@ -106,7 +108,7 @@ int clog_search(Clog_search *search, bool is_player, int depth){
             for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
                 calc_flip(&flip, &search->board, cell);
                 search->board.move_board(&flip);
-                    g = clog_search(search, true, depth - 1);
+                    g = clog_search(search, false, depth - 1);
                 search->board.undo_board(&flip);
                 if (g == CLOG_NOT_FOUND)
                     return CLOG_NOT_FOUND;
@@ -119,9 +121,10 @@ int clog_search(Clog_search *search, bool is_player, int depth){
             search->board.move_board(&flip);
                 g = clog_search(search, !is_player, depth - 1);
             search->board.undo_board(&flip);
-            if (!is_player && g == CLOG_NOT_FOUND)
+            if (g != CLOG_NOT_FOUND)
+                res = max(res, -g);
+            else if (is_player)
                 return CLOG_NOT_FOUND;
-            res = max(res, -g);
         }
     #endif
     return res;
