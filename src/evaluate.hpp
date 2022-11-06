@@ -810,19 +810,19 @@ inline bool check_features(Search *search){
         uint_fast8_t i, cell;
         uint64_t f;
         if (search->eval_feature_reversed){
-            for (i = 0; i < coord_to_feature[flip->pos].n_features; ++i)
+            for (i = 0; i < MAX_CELL_PATTERNS && coord_to_feature[flip->pos].features[i].x; ++i)
                 search->eval_features[coord_to_feature[flip->pos].features[i].feature] -= coord_to_feature[flip->pos].features[i].x;
             f = flip->flip;
             for (cell = first_bit(&f); f; cell = next_bit(&f)){
-                for (i = 0; i < coord_to_feature[cell].n_features; ++i)
+                for (i = 0; i < MAX_CELL_PATTERNS && coord_to_feature[cell].features[i].x; ++i)
                     search->eval_features[coord_to_feature[cell].features[i].feature] += coord_to_feature[cell].features[i].x;
             }
         } else{
-            for (i = 0; i < coord_to_feature[flip->pos].n_features; ++i)
+            for (i = 0; i < MAX_CELL_PATTERNS && coord_to_feature[flip->pos].features[i].x; ++i)
                 search->eval_features[coord_to_feature[flip->pos].features[i].feature] -= 2 * coord_to_feature[flip->pos].features[i].x;
             f = flip->flip;
             for (cell = first_bit(&f); f; cell = next_bit(&f)){
-                for (i = 0; i < coord_to_feature[cell].n_features; ++i)
+                for (i = 0; i < MAX_CELL_PATTERNS && coord_to_feature[cell].features[i].x; ++i)
                     search->eval_features[coord_to_feature[cell].features[i].feature] -= coord_to_feature[cell].features[i].x;
             }
         }
@@ -834,19 +834,19 @@ inline bool check_features(Search *search){
         uint_fast8_t i, cell;
         uint64_t f;
         if (search->eval_feature_reversed){
-            for (i = 0; i < coord_to_feature[flip->pos].n_features; ++i)
+            for (i = 0; i < MAX_CELL_PATTERNS && coord_to_feature[flip->pos].features[i].x; ++i)
                 search->eval_features[coord_to_feature[flip->pos].features[i].feature] += coord_to_feature[flip->pos].features[i].x;
             f = flip->flip;
             for (cell = first_bit(&f); f; cell = next_bit(&f)){
-                for (i = 0; i < coord_to_feature[cell].n_features; ++i)
+                for (i = 0; i < MAX_CELL_PATTERNS && coord_to_feature[cell].features[i].x; ++i)
                     search->eval_features[coord_to_feature[cell].features[i].feature] -= coord_to_feature[cell].features[i].x;
             }
         } else{
-            for (i = 0; i < coord_to_feature[flip->pos].n_features; ++i)
+            for (i = 0; i < MAX_CELL_PATTERNS && coord_to_feature[flip->pos].features[i].x; ++i)
                 search->eval_features[coord_to_feature[flip->pos].features[i].feature] += 2 * coord_to_feature[flip->pos].features[i].x;
             f = flip->flip;
             for (cell = first_bit(&f); f; cell = next_bit(&f)){
-                for (i = 0; i < coord_to_feature[cell].n_features; ++i)
+                for (i = 0; i < MAX_CELL_PATTERNS && coord_to_feature[cell].features[i].x; ++i)
                     search->eval_features[coord_to_feature[cell].features[i].feature] += coord_to_feature[cell].features[i].x;
             }
         }
