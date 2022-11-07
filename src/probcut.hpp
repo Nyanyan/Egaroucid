@@ -28,7 +28,7 @@ using namespace std;
 #define probcut_d -1.0938733019995888
 #define probcut_e 1.1290649413162603
 #define probcut_f 10.55327508419982
-#define probcut_g 2.906465908394277
+#define probcut_g 3.106465908394277
 
 #define probcut_end_a 1.7618824674282139
 #define probcut_end_b 1.6761979186286653
