@@ -325,6 +325,7 @@ constexpr Coord_to_feature coord_to_feature[HW2] = {
 
 #if USE_SIMD_EVALUATION
     __m256i coord_to_feature_simd[HW2][N_SIMD_EVAL_FEATURES];
+    __m256i eval_simd_offsets[N_SIMD_EVAL_FEATURES];
 #endif
 
 constexpr uint_fast16_t pow3[11] = {1, P31, P32, P33, P34, P35, P36, P37, P38, P39, P310};
@@ -465,6 +466,15 @@ inline bool init_evaluation_calc(const char* file){
                 coord_to_feature_simd[cell][i] = _mm256_set_epi32(c2f[idx], c2f[idx + 1], c2f[idx + 2], c2f[idx + 3], c2f[idx + 4], c2f[idx + 5], c2f[idx + 6], c2f[idx + 7]);
             }
         }
+        constexpr int offset1 = MAX_EVALUATE_IDX;
+        eval_simd_offsets[0] = _mm256_set_epi32(0, 0, 0, 0, offset1, offset1, offset1, offset1);
+        eval_simd_offsets[1] = _mm256_set_epi32(offset1 * 2, offset1 * 2, offset1 * 2, offset1 * 2, offset1 * 3, offset1 * 3, offset1 * 3, offset1 * 3);
+        eval_simd_offsets[2] = _mm256_set_epi32(offset1 * 4, offset1 * 4, offset1 * 4, offset1 * 4, offset1 * 5, offset1 * 5, offset1 * 5, offset1 * 5);
+        eval_simd_offsets[3] = _mm256_set_epi32(offset1 * 6, offset1 * 6, offset1 * 7, offset1 * 7, offset1 * 7, offset1 * 7, offset1 * 8, offset1 * 8);
+        eval_simd_offsets[4] = _mm256_set_epi32(offset1 * 8, offset1 * 8, offset1 * 9, offset1 * 9, offset1 * 9, offset1 * 9, offset1 * 10, offset1 * 10);
+        eval_simd_offsets[5] = _mm256_set_epi32(offset1 * 10, offset1 * 10, offset1 * 11, offset1 * 11, offset1 * 11, offset1 * 11, offset1 * 12, offset1 * 12);
+        eval_simd_offsets[6] = _mm256_set_epi32(offset1 * 12, offset1 * 12, offset1 * 13, offset1 * 13, offset1 * 13, offset1 * 13, offset1 * 14, offset1 * 14);
+        eval_simd_offsets[7] = _mm256_set_epi32(offset1 * 14, offset1 * 14, offset1 * 15, offset1 * 15, offset1 * 15, offset1 * 15, offset1 * 16, offset1 * 16);
     #endif
     cerr << "evaluation function initialized" << endl;
     return true;
@@ -552,6 +562,7 @@ inline int calc_pattern_first(const int phase_idx, Board *b){
 }
 
 #if USE_SIMD_EVALUATION
+    /*
     inline void simd_print_epi32(__m256i v){
         cerr << _mm256_extract_epi32(v, 7) << " ";
         cerr << _mm256_extract_epi32(v, 6) << " ";
@@ -574,32 +585,35 @@ inline int calc_pattern_first(const int phase_idx, Board *b){
         cerr << _mm256_extract_epi32(v, 1) << " ";
         cerr << _mm256_extract_epi32(v, 0) << " ";
     }
+    */
 
     inline int calc_pattern_diff(const int phase_idx, Search *search){
         int *pat_com = (int*)pattern_arr[search->eval_feature_reversed][phase_idx][0];
         constexpr int offset1 = MAX_EVALUATE_IDX;
-        __m256i mem_addr_8 = _mm256_add_epi32(search->eval_features.f[0], _mm256_set_epi32(0, 0, 0, 0, offset1, offset1, offset1, offset1));
+        __m256i mem_addr_8 = _mm256_add_epi32(search->eval_features.f[0], eval_simd_offsets[0]);
         __m256i res256 = _mm256_i32gather_epi32(pat_com, mem_addr_8, 4);
-        mem_addr_8 = _mm256_add_epi32(search->eval_features.f[1], _mm256_set_epi32(offset1 * 2, offset1 * 2, offset1 * 2, offset1 * 2, offset1 * 3, offset1 * 3, offset1 * 3, offset1 * 3));
+        mem_addr_8 = _mm256_add_epi32(search->eval_features.f[1], eval_simd_offsets[1]);
         res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, mem_addr_8, 4));
-        mem_addr_8 = _mm256_add_epi32(search->eval_features.f[2], _mm256_set_epi32(offset1 * 4, offset1 * 4, offset1 * 4, offset1 * 4, offset1 * 5, offset1 * 5, offset1 * 5, offset1 * 5));
+        mem_addr_8 = _mm256_add_epi32(search->eval_features.f[2], eval_simd_offsets[2]);
         res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, mem_addr_8, 4));
-        mem_addr_8 = _mm256_add_epi32(search->eval_features.f[3], _mm256_set_epi32(offset1 * 6, offset1 * 6, offset1 * 7, offset1 * 7, offset1 * 7, offset1 * 7, offset1 * 8, offset1 * 8));
+        mem_addr_8 = _mm256_add_epi32(search->eval_features.f[3], eval_simd_offsets[3]);
         res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, mem_addr_8, 4));
-        mem_addr_8 = _mm256_add_epi32(search->eval_features.f[4], _mm256_set_epi32(offset1 * 8, offset1 * 8, offset1 * 9, offset1 * 9, offset1 * 9, offset1 * 9, offset1 * 10, offset1 * 10));
+        mem_addr_8 = _mm256_add_epi32(search->eval_features.f[4], eval_simd_offsets[4]);
         res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, mem_addr_8, 4));
-        mem_addr_8 = _mm256_add_epi32(search->eval_features.f[5], _mm256_set_epi32(offset1 * 10, offset1 * 10, offset1 * 11, offset1 * 11, offset1 * 11, offset1 * 11, offset1 * 12, offset1 * 12));
+        mem_addr_8 = _mm256_add_epi32(search->eval_features.f[5], eval_simd_offsets[5]);
         res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, mem_addr_8, 4));
-        mem_addr_8 = _mm256_add_epi32(search->eval_features.f[6], _mm256_set_epi32(offset1 * 12, offset1 * 12, offset1 * 13, offset1 * 13, offset1 * 13, offset1 * 13, offset1 * 14, offset1 * 14));
+        mem_addr_8 = _mm256_add_epi32(search->eval_features.f[6], eval_simd_offsets[6]);
         res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, mem_addr_8, 4));
-        mem_addr_8 = _mm256_add_epi32(search->eval_features.f[7], _mm256_set_epi32(offset1 * 14, offset1 * 14, offset1 * 15, offset1 * 15, offset1 * 15, offset1 * 15, offset1 * 16, offset1 * 16));
+        mem_addr_8 = _mm256_add_epi32(search->eval_features.f[7], eval_simd_offsets[7]);
         res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, mem_addr_8, 4));
-        res256 = _mm256_add_epi32(res256, _mm256_srli_si256(res256, 8));
-        __m128i res128 = _mm_add_epi32(_mm256_extracti128_si256(res256, 0), _mm256_extracti128_si256(res256, 1));
-        int32_t res64[2];
-        _mm_storel_epi64(reinterpret_cast<__m128i*>(res64), res128);
-        //cerr << res64[0] + res64[1] << " " << calc_pattern_first(phase_idx, &search->board) << endl;
-        return res64[0] + res64[1];
+        return _mm256_extract_epi32(res256, 7) + 
+            _mm256_extract_epi32(res256, 6) + 
+            _mm256_extract_epi32(res256, 5) + 
+            _mm256_extract_epi32(res256, 4) + 
+            _mm256_extract_epi32(res256, 3) + 
+            _mm256_extract_epi32(res256, 2) + 
+            _mm256_extract_epi32(res256, 1) + 
+            _mm256_extract_epi32(res256, 0);
     }
 #else
     inline int calc_pattern_diff(const int phase_idx, Search *search){
@@ -742,6 +756,7 @@ inline int mid_evaluate_diff(Search *search){
         search->eval_feature_reversed = 0;
     }
 
+    /*
     inline bool check_features(Search *search){
         uint_fast8_t b_arr[HW2];
         search->board.translate_to_arr_player(b_arr);
@@ -755,6 +770,7 @@ inline int mid_evaluate_diff(Search *search){
         cerr << endl;
         return false;
     }
+    */
 
     inline void eval_move(Search *search, const Flip *flip){
         uint_fast8_t i, cell;
