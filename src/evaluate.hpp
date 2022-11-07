@@ -329,7 +329,7 @@ constexpr Coord_to_feature coord_to_feature[HW2] = {
 
 constexpr uint_fast16_t pow3[11] = {1, P31, P32, P33, P34, P35, P36, P37, P38, P39, P310};
 #if USE_SIMD_EVALUATION
-    int16_t pattern_arr[2][N_PHASES][N_PATTERNS + 1][MAX_EVALUATE_IDX];
+    int pattern_arr[2][N_PHASES][N_PATTERNS + 1][MAX_EVALUATE_IDX];
 #else
     int16_t pattern_arr[2][N_PHASES][N_PATTERNS][MAX_EVALUATE_IDX];
 #endif
@@ -387,12 +387,12 @@ inline bool init_evaluation_calc(const char* file){
     #endif
     int phase_idx, pattern_idx;
     constexpr int pattern_sizes[N_PATTERNS] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10, 10, 10, 10};
-    #if USE_SIMD_EVALUATION && false
+    #if USE_SIMD_EVALUATION
         int16_t pattern_arr_16[MAX_EVALUATE_IDX];
     #endif
     for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
         //cerr << "evaluation function " << phase_idx * 100 / N_PHASES << " % initialized" << endl;
-        #if USE_SIMD_EVALUATION && false
+        #if USE_SIMD_EVALUATION
             for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx){
                 if (fread(pattern_arr_16, 2, pow3[pattern_sizes[pattern_idx]], fp) < pow3[pattern_sizes[pattern_idx]]){
                     cerr << "eval.egev broken" << endl;
@@ -552,7 +552,6 @@ inline int calc_pattern_first(const int phase_idx, Board *b){
 }
 
 #if USE_SIMD_EVALUATION
-    /*
     inline void simd_print_epi32(__m256i v){
         cerr << _mm256_extract_epi32(v, 7) << " ";
         cerr << _mm256_extract_epi32(v, 6) << " ";
@@ -564,31 +563,42 @@ inline int calc_pattern_first(const int phase_idx, Board *b){
         cerr << _mm256_extract_epi32(v, 0);
         cerr << endl;
     }
-    */
+
+    inline void simd_print_epi32_line(__m256i v){
+        cerr << _mm256_extract_epi32(v, 7) << " ";
+        cerr << _mm256_extract_epi32(v, 6) << " ";
+        cerr << _mm256_extract_epi32(v, 5) << " ";
+        cerr << _mm256_extract_epi32(v, 4) << " ";
+        cerr << _mm256_extract_epi32(v, 3) << " ";
+        cerr << _mm256_extract_epi32(v, 2) << " ";
+        cerr << _mm256_extract_epi32(v, 1) << " ";
+        cerr << _mm256_extract_epi32(v, 0) << " ";
+    }
 
     inline int calc_pattern_diff(const int phase_idx, Search *search){
         int *pat_com = (int*)pattern_arr[search->eval_feature_reversed][phase_idx][0];
         constexpr int offset1 = MAX_EVALUATE_IDX;
         __m256i mem_addr_8 = _mm256_add_epi32(search->eval_features.f[0], _mm256_set_epi32(0, 0, 0, 0, offset1, offset1, offset1, offset1));
-        __m256i res256 = _mm256_i32gather_epi32(pat_com, mem_addr_8, 2);
+        __m256i res256 = _mm256_i32gather_epi32(pat_com, mem_addr_8, 4);
         mem_addr_8 = _mm256_add_epi32(search->eval_features.f[1], _mm256_set_epi32(offset1 * 2, offset1 * 2, offset1 * 2, offset1 * 2, offset1 * 3, offset1 * 3, offset1 * 3, offset1 * 3));
-        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, mem_addr_8, 2));
+        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, mem_addr_8, 4));
         mem_addr_8 = _mm256_add_epi32(search->eval_features.f[2], _mm256_set_epi32(offset1 * 4, offset1 * 4, offset1 * 4, offset1 * 4, offset1 * 5, offset1 * 5, offset1 * 5, offset1 * 5));
-        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, mem_addr_8, 2));
+        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, mem_addr_8, 4));
         mem_addr_8 = _mm256_add_epi32(search->eval_features.f[3], _mm256_set_epi32(offset1 * 6, offset1 * 6, offset1 * 7, offset1 * 7, offset1 * 7, offset1 * 7, offset1 * 8, offset1 * 8));
-        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, mem_addr_8, 2));
+        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, mem_addr_8, 4));
         mem_addr_8 = _mm256_add_epi32(search->eval_features.f[4], _mm256_set_epi32(offset1 * 8, offset1 * 8, offset1 * 9, offset1 * 9, offset1 * 9, offset1 * 9, offset1 * 10, offset1 * 10));
-        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, mem_addr_8, 2));
+        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, mem_addr_8, 4));
         mem_addr_8 = _mm256_add_epi32(search->eval_features.f[5], _mm256_set_epi32(offset1 * 10, offset1 * 10, offset1 * 11, offset1 * 11, offset1 * 11, offset1 * 11, offset1 * 12, offset1 * 12));
-        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, mem_addr_8, 2));
+        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, mem_addr_8, 4));
         mem_addr_8 = _mm256_add_epi32(search->eval_features.f[6], _mm256_set_epi32(offset1 * 12, offset1 * 12, offset1 * 13, offset1 * 13, offset1 * 13, offset1 * 13, offset1 * 14, offset1 * 14));
-        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, mem_addr_8, 2));
+        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, mem_addr_8, 4));
         mem_addr_8 = _mm256_add_epi32(search->eval_features.f[7], _mm256_set_epi32(offset1 * 14, offset1 * 14, offset1 * 15, offset1 * 15, offset1 * 15, offset1 * 15, offset1 * 16, offset1 * 16));
-        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, mem_addr_8, 2));
+        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, mem_addr_8, 4));
         res256 = _mm256_add_epi32(res256, _mm256_srli_si256(res256, 8));
         __m128i res128 = _mm_add_epi32(_mm256_extracti128_si256(res256, 0), _mm256_extracti128_si256(res256, 1));
         int32_t res64[2];
         _mm_storel_epi64(reinterpret_cast<__m128i*>(res64), res128);
+        //cerr << res64[0] + res64[1] << " " << calc_pattern_first(phase_idx, &search->board) << endl;
         return res64[0] + res64[1];
     }
 #else
@@ -730,6 +740,20 @@ inline int mid_evaluate_diff(Search *search){
         search->eval_features.f[6] = _mm256_set_epi32(features[48], features[49], features[50], features[51], features[52], features[53], features[54], features[55]);
         search->eval_features.f[7] = _mm256_set_epi32(features[56], features[57], features[58], features[59], features[60], features[61], 0, 0);
         search->eval_feature_reversed = 0;
+    }
+
+    inline bool check_features(Search *search){
+        uint_fast8_t b_arr[HW2];
+        search->board.translate_to_arr_player(b_arr);
+        cerr << "A. ";
+        for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i)
+            cerr << pick_pattern_idx(b_arr, &feature_to_coord[i]) << " ";
+        cerr << endl;
+        cerr << "Q. ";
+        for (int i = 0; i < N_SIMD_EVAL_FEATURES; ++i)
+            simd_print_epi32_line(search->eval_features.f[i]);
+        cerr << endl;
+        return false;
     }
 
     inline void eval_move(Search *search, const Flip *flip){
