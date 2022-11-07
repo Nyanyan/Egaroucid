@@ -4,6 +4,7 @@
 #include <vector>
 #include <fstream>
 #include <string>
+#include <algorithm>
 
 using namespace std;
 
@@ -35,7 +36,7 @@ inline uint32_t myrand_uint(){
 }
 
 double start_temp = 0.1;
-double end_temp =   0.000001;
+double end_temp =   0.0001;
 
 double temperature_x(double x){
     return pow(start_temp, 1 - x) * pow(end_temp, x);
@@ -121,24 +122,28 @@ int calc_move_score(Datum m, int phase, int depth){ // n_discs: former
     return res;
 }
 
+bool cmp_score(pair<int, int>& a, pair<int, int>& b){
+    return a.first > b.first;
+}
+
 double scoring_part(int phase, int depth){
     double score = 0.0;
-    int max_val, val, cell;
+    vector<pair<int, int>> scores;
     int t = 0;
     for (Board_datum &datum: data){
         if (get_phase(datum.n_discs) == phase){
             ++t;
-            cell = -1;
-            max_val = -100000000;
+            scores.clear();
             for (Datum &m: datum.moves){
-                val = calc_move_score(m, phase, depth);
-                if (max_val < val){
-                    max_val = val;
-                    cell = m.cell;
+                scores.emplace_back(make_pair(calc_move_score(m, phase, depth), m.cell));
+            }
+            sort(scores.begin(), scores.end(), cmp_score);
+            for (int i = 0; i < (int)datum.moves.size(); ++i){
+                if (datum.policy == scores[i].second){
+                    score += 1.0 - (1.0 + i) / datum.moves.size();
+                    break;
                 }
             }
-            if (cell == datum.policy)
-                score += 1.0 - 1.0 / datum.moves.size();
         }
     }
     return score / t;
@@ -153,6 +158,8 @@ void anneal(int phase, int depth, uint64_t tl){
     double n_score;
     while (tim() - strt < tl){
         idx = myrandrange(0, N_WEIGHT);
+        if (idx == 2 || idx == 3)
+            continue;
         delta = myrandrange(-4, 5);
         move_ordering_weights[phase][depth][idx] += delta;
         n_score = scoring_part(phase, depth);
