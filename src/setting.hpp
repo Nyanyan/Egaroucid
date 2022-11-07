@@ -40,5 +40,5 @@
 // use parallel clog search
 #define USE_PARALLEL_CLOG_SEARCH true
 
-// use switch eval_move / eval_undo
-#define USE_SWITCH_EVAL_MOVE_UNDO false
+// use SIMD in evaluation (pattern) function
+#define USE_SIMD_EVALUATION true
