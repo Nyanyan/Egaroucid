@@ -46,6 +46,20 @@
 
 #define MOVE_ORDERING_MPCT 0.7
 
+#define N_MOVE_ORDERING_WEIGHT 3
+#define N_MOVE_ORDERING_DEPTH 12
+#define N_MOVE_ORDERING_PHASES 6
+#define N_MOVE_ORDERING_PHASE_DISCS 10
+
+constexpr int move_ordering_weights[N_MOVE_ORDERING_PHASES][N_MOVE_ORDERING_DEPTH][N_MOVE_ORDERING_WEIGHT] = {
+    {{-19, 198, -161}, {-10, -7, -74}, {-1, 43, -72}, {3, -4, -57}, {-10, 0, -24}, {15, 24, -68}, {-25, -9, -124}, {-17, -26, -186}, {0, 5, -25}, {-76, 0, -153}, {7, 2, -96}, {-24, 5, -54}},
+    {{-30, 20, -55}, {-6, 5, -27}, {-19, 10, -72}, {-17, 3, -43}, {-55, 28, -101}, {-9, 3, -96}, {-13, 11, -61}, {-11, 3, -89}, {-14, 15, -161}, {-4, 0, -66}, {-18, 1, -89}, {-7, 2, -85}}, 
+    {{-29, 6, -74}, {7, 8, -56}, {-10, 3, -64}, {10, 1, -110}, {10, 10, -55}, {-18, 0, -96}, {-10, 12, -43}, {-11, -8, -47}, {-9, 2, -80}, {-4, 1, -45}, {4, 8, -41}, {7, 7, -65}},
+    {{23, 0, -141}, {-10, 0, -99}, {0, 0, -8}, {0, -9, -45}, {-78, -3, -98}, {-14, 0, -70}, {-5, 6, -67}, {-6, 7, -32}, {0, -22, -110}, {-7, 8, -53}, {-10, 31, -175}, {-7, 21, -107}}, 
+    {{-19, 38, -38}, {-24, 34, -63}, {-23, 33, -39}, {-13, 3, -110}, {-7, 15, -19}, {0, 52, -94}, {-18, 20, -27}, {-40, 43, -74}, {-10, 4, -25}, {2, 12, -130}, {0, 0, -143}, {0, 35, -149}},
+    {{-25, -7, -14}, {-27, -13, -27}, {-8, -3, -119}, {-28, -7, -67}, {-50, -11, -77}, {-22, -3, -55}, {-48, -19, -57}, {-51, -5, -116}, {-35, -4, -139}, {-35, -5, -132}, {-43, -2, -123}, {-29, -11, -33}}, 
+};
+
 struct Flip_value{
     Flip flip;
     int value;
@@ -54,6 +68,10 @@ struct Flip_value{
         n_legal = LEGAL_UNDEFINED;
     }
 };
+
+inline int get_move_ordering_phase(int n_discs){
+    return (n_discs - 4) / N_MOVE_ORDERING_PHASE_DISCS;
+}
 
 int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, const bool *searching);
 #if MID_FAST_DEPTH > 1
@@ -100,7 +118,7 @@ inline int get_weighted_n_moves(uint64_t legal){
         return pop_count_ull(empties & res);
     }
 #endif
-
+/*
 inline bool move_evaluate(Search *search, Flip_value *flip_value, int alpha, int beta, int depth, const bool *searching){
     if (flip_value->flip.flip == search->board.opponent){
         flip_value->value = W_WIPEOUT;
@@ -141,6 +159,57 @@ inline bool move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
                     search->use_mpc = true;
                     search->mpct = MOVE_ORDERING_MPCT;
                     flip_value->value += -nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, searching) * (W_VALUE_DEEP + (depth - 1) * 2);
+                    search->use_mpc = use_mpc;
+                    search->mpct = mpct;
+                #endif
+                break;
+        }
+    search->undo(&flip_value->flip);
+    eval_undo(search, &flip_value->flip);
+    return false;
+}
+*/
+inline bool move_evaluate(Search *search, Flip_value *flip_value, int alpha, int beta, int depth, const bool *searching){
+    if (flip_value->flip.flip == search->board.opponent){
+        flip_value->value = W_WIPEOUT;
+        return true;
+    }
+    const int phase = get_move_ordering_phase(search->n_discs);
+    flip_value->value = 0;
+    eval_move(search, &flip_value->flip);
+    search->move(&flip_value->flip);
+        flip_value->n_legal = calc_legal(search->board.player, search->board.opponent);
+        flip_value->value += get_weighted_n_moves(flip_value->n_legal) * move_ordering_weights[phase][depth][0];
+        flip_value->value += get_weighted_n_moves(calc_legal(search->board.opponent, search->board.player)) * move_ordering_weights[phase][depth][1];
+        uint64_t empties = ~(search->board.player | search->board.opponent);
+        //flip_value->value += get_potential_mobility(search->board.opponent, empties) * move_ordering_weights[phase][depth][2];
+        //flip_value->value += get_potential_mobility(search->board.player, empties) * move_ordering_weights[phase][depth][3];
+        switch (depth){
+            case 0:
+                flip_value->value += mid_evaluate_diff(search) * move_ordering_weights[phase][depth][2];
+                break;
+            case 1:
+                flip_value->value += nega_alpha_eval1(search, alpha, beta, false, searching) * move_ordering_weights[phase][depth][2];
+                break;
+            default:
+                #if MID_FAST_DEPTH > 1
+                    if (depth <= MID_FAST_DEPTH)
+                        flip_value->value += nega_alpha(search, alpha, beta, depth, false, searching) * move_ordering_weights[phase][depth][2];
+                    else{
+                        bool use_mpc = search->use_mpc;
+                        double mpct = search->mpct;
+                        search->use_mpc = true;
+                        search->mpct = MOVE_ORDERING_MPCT;
+                            flip_value->value += nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, searching) * move_ordering_weights[phase][depth][2];
+                        search->use_mpc = use_mpc;
+                        search->mpct = mpct;
+                    }
+                #else
+                    bool use_mpc = search->use_mpc;
+                    double mpct = search->mpct;
+                    search->use_mpc = true;
+                    search->mpct = MOVE_ORDERING_MPCT;
+                        flip_value->value += nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, searching) * move_ordering_weights[phase][depth][2];
                     search->use_mpc = use_mpc;
                     search->mpct = mpct;
                 #endif
@@ -243,6 +312,7 @@ inline void move_list_evaluate(Search *search, vector<Flip_value> &move_list, in
     int eval_depth = depth >> 3;
     if (depth >= 18)
         eval_depth += (depth - 16) >> 1;
+    eval_depth = min(eval_depth, N_MOVE_ORDERING_DEPTH - 1);
     bool wipeout_found = false;
     for (Flip_value &flip_value: move_list){
         if (!wipeout_found)

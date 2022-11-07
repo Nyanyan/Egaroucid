@@ -115,7 +115,7 @@ void import_data(){
 
 int calc_move_score(Datum m, int phase, int depth){ // n_discs: former
     int res = 0;
-    for (int i = 0; i < N_WEIGHT - 1; ++i)
+    for (int i = 0; i < N_WEIGHT - 1 - 2; ++i)
         res += move_ordering_weights[phase][depth][i] * m.common_data[i];
     res += move_ordering_weights[phase][depth][N_WEIGHT - 1] * m.eval_data[depth];
     return res;
@@ -179,10 +179,13 @@ int main(){
         cout << "{";
         for (int j = 0; j < N_MOVE_ORDERING_DEPTH; ++j){
             cout << "{";
-            for (int k = 0; k < N_WEIGHT; ++k)
+            for (int k = 0; k < N_WEIGHT; ++k){
+                if (k == 2 || k == 3)
+                    continue;
                 cout << move_ordering_weights[i][j][k] << ", ";
-            cout << "},";
+            }
+            cout << "}, ";
         }
-        cout << "}," << endl;
+        cout << "}, " << endl;
     }
 }
