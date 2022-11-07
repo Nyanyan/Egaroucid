@@ -56,8 +56,8 @@ void add_data(string transcript, ofstream *ofs){
         y = transcript[ply + 1] - '1';
         coord = HW2_M1 - (y * HW + x);
         n_empties = HW2 - n_discs;
-        if (MIN_EMPTIES <= n_empties && n_empties <= MAX_EMPTIES)
-            data.emplace_back(make_pair(board_to_string(board) + coord_to_string(coord), player));
+        //if (MIN_EMPTIES <= n_empties && n_empties <= MAX_EMPTIES)
+        data.emplace_back(make_pair(board_to_string(board) + coord_to_string(coord), player));
         calc_flip(&flip, &board, (uint_fast8_t)coord);
         board.move(&flip);
         player ^= 1;
@@ -79,19 +79,20 @@ int main(){
     board_init();
     flip_init();
     
-    string data_dir = "./../../evaluation/third_party/";
+    string data_dir = "./../evaluation/third_party/";
     string output_dir = "data/";
     string sub_dirs[N_DIRS] = {
-        "records15/"
+        "records16/"
     };
     int n_data[N_DIRS] = {
-        9
+        1
     };
     for (int dir_idx = 0; dir_idx < N_DIRS; ++dir_idx){
         for (int file_idx = 0; file_idx < n_data[dir_idx]; ++file_idx){
             ostringstream sout;
             sout << setfill('0') << setw(7) << file_idx;
             string file_name = sout.str();
+            cerr << data_dir + sub_dirs[dir_idx] + file_name + ".txt" << endl;
             ifstream ifs(data_dir + sub_dirs[dir_idx] + file_name + ".txt");
             string output_file = output_dir + sub_dirs[dir_idx] + file_name + ".txt";
             ofstream ofs;
@@ -102,5 +103,6 @@ int main(){
             ofs.close();
         }
     }
+    cerr << "done" << endl;
     return 0;
 }

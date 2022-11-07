@@ -5,20 +5,20 @@ from copy import deepcopy
 from tqdm import tqdm
 
 drs = [
-    'data/records15/'
+    'data/records16/'
 ]
 
 out_drs = [
-    'data/records15_1_50_with_eval/'
+    'data/records16_with_eval/'
 ]
 
 def score_to_string(score):
     s = (score + 64) // 2
     return chr(ord('!') + s)
 
-MAX_DEPTH = 15
+MAX_DEPTH = 11
 
-egaroucid = subprocess.Popen(('egaroucid6_depth_eval.exe').split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+egaroucid = subprocess.Popen(('Egaroucid6_test.exe').split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
 
 for dr, out_dr in zip(drs, out_drs):
     files = glob.glob(dr + '*.txt')
@@ -64,11 +64,12 @@ for dr, out_dr in zip(drs, out_drs):
                         input_datum += '0' if o.grid[k][l] == black else '1' if o.grid[k][l] == white else '.'
                     input_datum += '\n'
                 for depth in range(MAX_DEPTH):
-                    egaroucid.stdin.write((input_datum + str(depth) + '\n').encode('utf-8'))
+                    egaroucid.stdin.write((str(depth) + '\n' + input_datum).encode('utf-8'))
                     egaroucid.stdin.flush()
                     line = egaroucid.stdout.readline().decode()
                     val = int(line)
                     output_data += score_to_string(val)
+                egaroucid.stdin.write('-1\n'.encode('utf-8'))
                 f.write(datum + ' ' + output_data + '\n')
 
 egaroucid.kill()

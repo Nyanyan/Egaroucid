@@ -115,11 +115,6 @@ inline bool move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
         uint64_t empties = ~(search->board.player | search->board.opponent);
         flip_value->value -= get_potential_mobility(search->board.opponent, empties) * W_OPPONENT_POTENTIAL_MOBILITY;
         flip_value->value += get_potential_mobility(search->board.player, empties) * W_PLAYER_POTENTIAL_MOBILITY;
-        //int l, u;
-        //parent_transpose_table.get(&search->board, search->board.hash() & TRANSPOSE_TABLE_MASK, &l, &u, 0.0, 0);
-        //if (-INF < l && u < INF)
-        //    flip_value->value += (-(l + u) / 2 + MOVE_ORDERING_TT_BONUS) * W_VALUE_DEEP;
-        //else{
         switch (depth){
             case 0:
                 flip_value->value += -mid_evaluate_diff(search) * W_VALUE_SHALLOW;
@@ -151,7 +146,6 @@ inline bool move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
                 #endif
                 break;
         }
-        //}
     search->undo(&flip_value->flip);
     eval_undo(search, &flip_value->flip);
     return false;
