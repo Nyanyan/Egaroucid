@@ -44,6 +44,7 @@
 #define MOVE_ORDERING_NWS_VALUE_OFFSET_ALPHA 10
 #define MOVE_ORDERING_NWS_VALUE_OFFSET_BETA 3
 
+#define MOVE_ORDERING_MPCT 0.7
 
 struct Flip_value{
     Flip flip;
@@ -130,10 +131,23 @@ inline bool move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
                 #if MID_FAST_DEPTH > 1
                     if (depth <= MID_FAST_DEPTH)
                         flip_value->value += -nega_alpha(search, alpha, beta, depth, false, searching) * (W_VALUE_DEEP + (depth - 1) * 2);
-                    else
+                    else{
+                        bool use_mpc = search->use_mpc;
+                        double mpct = search->mpct;
+                        search->use_mpc = true;
+                        search->mpct = MOVE_ORDERING_MPCT;
                         flip_value->value += -nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, searching) * (W_VALUE_DEEP + (depth - 1) * 2);
+                        search->use_mpc = use_mpc;
+                        search->mpct = mpct;
+                    }
                 #else
+                    bool use_mpc = search->use_mpc;
+                    double mpct = search->mpct;
+                    search->use_mpc = true;
+                    search->mpct = MOVE_ORDERING_MPCT;
                     flip_value->value += -nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, searching) * (W_VALUE_DEEP + (depth - 1) * 2);
+                    search->use_mpc = use_mpc;
+                    search->mpct = mpct;
                 #endif
                 break;
         }

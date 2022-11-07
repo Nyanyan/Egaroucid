@@ -14320,7 +14320,21 @@ same
 1138100073 nodes
 95238499.83263598 nps
 
-
+2022/11/07 use mpc in move ordering
+#40 depth 20 value 38 policy a2 nodes 15819762 time 148 nps 106890283
+#41 depth 22 value 0 policy h4 nodes 28791305 time 295 nps 97597644
+#42 depth 22 value 6 policy g2 nodes 49433104 time 410 nps 120568546
+#43 depth 23 value -12 policy g3 nodes 97310871 time 1068 nps 91115047
+#44 depth 23 value -14 policy d2 nodes 18362500 time 297 nps 61826599
+#45 depth 24 value 6 policy b2 nodes 358771106 time 3278 nps 109448171
+#46 depth 24 value -8 policy b3 nodes 106998439 time 1094 nps 97804788
+#47 depth 25 value 4 policy g2 nodes 38254451 time 382 nps 100142541
+#48 depth 25 value 28 policy f6 nodes 164548650 time 2112 nps 77911292
+#49 depth 26 value 16 policy e1 nodes 308804769 time 3839 nps 80438856
+9 threads
+12.923 sec
+1187094957 nodes
+91859085.11955428 nps
 
 
 
