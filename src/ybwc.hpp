@@ -17,7 +17,7 @@
 #include "parallel.hpp"
 #include "thread_pool.hpp"
 
-#define YBWC_MID_SPLIT_MIN_DEPTH 6
+#define YBWC_MID_SPLIT_MIN_DEPTH 5
 #define YBWC_END_SPLIT_MIN_DEPTH 13
 
 int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
