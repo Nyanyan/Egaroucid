@@ -142,17 +142,6 @@ using namespace std;
 
 #define COORD_NO 64
 
-#if USE_SIMD_EVALUATION
-    #define N_SIMD_EVAL_FEATURES 8
-    struct Eval_features{
-        __m256i f[N_SIMD_EVAL_FEATURES];
-    };
-#else
-    struct Eval_features{
-        uint_fast16_t f[N_SYMMETRY_PATTERNS];
-    };
-#endif
-
 struct Feature_to_coord{
     uint_fast8_t n_cells;
     uint_fast8_t cells[MAX_PATTERN_CELLS];
@@ -254,86 +243,159 @@ constexpr Feature_to_coord feature_to_coord[N_SYMMETRY_PATTERNS] = {
     {10, {COORD_H8, COORD_G8, COORD_H7, COORD_G7, COORD_F7, COORD_E7, COORD_D7, COORD_G6, COORD_G5, COORD_G4}}  // 61
 };
 
-struct Coord_feature{
-    uint_fast8_t feature;
-    uint_fast16_t x;
-};
+#if USE_SIMD_EVALUATION
+    struct Coord_to_feature{
+        __m256i v8[N_SIMD_EVAL_FEATURES];
+    };
 
-struct Coord_to_feature{
-    uint_fast8_t n_features;
-    Coord_feature features[MAX_CELL_PATTERNS];
-};
+    constexpr Coord_to_feature coord_to_feature[HW2] = {
+        {{PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P30, PNO, PNO, PNO, P31, P31, PNO, PNO, PNO, P39, PNO, PNO, P34, P34, PNO, PNO, PNO, P39, PNO, PNO, PNO, PNO, PNO, PNO, P31, P31, PNO, PNO, PNO, P39, PNO, PNO, PNO, P39, PNO, PNO, PNO, P39, PNO, PNO}}, // COORD_H8
+        {{PNO, PNO, PNO, P30, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P30, PNO, PNO, PNO, PNO, PNO, P32, PNO, PNO, PNO, PNO, P38, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P35, PNO, PNO, PNO, P37, PNO, PNO, P32, PNO, PNO, PNO, PNO, P38, PNO, PNO, PNO, P38, PNO, PNO, PNO, P38, PNO, PNO}}, // COORD_G8
+        {{PNO, PNO, PNO, PNO, PNO, PNO, PNO, P30, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P30, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P33, PNO, PNO, PNO, PNO, P37, PNO, PNO, P35, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P36, PNO, PNO, P33, PNO, PNO, PNO, PNO, P37, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO}}, // COORD_F8
+        {{PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P30, PNO, PNO, P30, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P34, PNO, PNO, PNO, PNO, P36, PNO, PNO, P36, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P34, PNO, PNO, PNO, P35, P36, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO}}, // COORD_E8
+        {{PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P30, PNO, PNO, PNO, PNO, PNO, P30, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P35, PNO, PNO, PNO, P36, PNO, PNO, PNO, P37, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P35, PNO, PNO, PNO, P36, P35, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO}}, // COORD_D8
+        {{PNO, PNO, PNO, PNO, PNO, P30, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P30, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P36, PNO, PNO, PNO, P37, PNO, PNO, PNO, P38, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P36, PNO, PNO, PNO, P36, PNO, PNO, PNO, P37, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO}}, // COORD_C8
+        {{PNO, P30, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P30, PNO, PNO, PNO, PNO, P37, PNO, PNO, PNO, P38, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P35, PNO, PNO, PNO, P37, PNO, PNO, PNO, P37, PNO, PNO, PNO, P38, PNO, PNO, PNO, P38, PNO, PNO, PNO, P38, PNO, PNO, PNO}}, // COORD_B8
+        {{PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P30, PNO, P31, P38, PNO, PNO, PNO, P39, PNO, PNO, P34, P39, PNO, PNO, PNO, P39, PNO, PNO, PNO, PNO, PNO, PNO, P31, P38, PNO, PNO, PNO, P39, PNO, PNO, PNO, P39, PNO, PNO, PNO, P39, PNO, PNO, PNO}}, // COORD_A8
+        {{PNO, PNO, P30, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P30, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P32, PNO, PNO, PNO, P35, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P32, PNO, PNO, PNO, P35, PNO, PNO, PNO, P32, PNO, PNO, PNO, P34, PNO, PNO, PNO, P37, PNO, PNO, PNO, P37, PNO, PNO}}, // COORD_H7
+        {{PNO, PNO, P31, P31, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P31, PNO, PNO, PNO, P30, P30, PNO, PNO, PNO, P34, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P38, PNO, PNO, PNO, P34, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P33, PNO, PNO, PNO, P36, PNO, PNO, PNO, P36, PNO, PNO}}, // COORD_G7
+        {{PNO, PNO, P32, PNO, PNO, PNO, PNO, P31, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P31, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P33, PNO, PNO, P30, PNO, PNO, PNO, PNO, P34, PNO, PNO, PNO, P33, PNO, PNO, P30, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P35, PNO, PNO, PNO, P35, PNO, PNO}}, // COORD_F7
+        {{PNO, PNO, P33, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P31, PNO, PNO, PNO, P31, PNO, PNO, P31, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P31, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P34, PNO, PNO, P33, P34, PNO, PNO}}, // COORD_E7
+        {{PNO, PNO, P34, PNO, PNO, PNO, PNO, PNO, PNO, P31, PNO, PNO, PNO, PNO, P31, PNO, PNO, PNO, PNO, P31, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P32, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P34, PNO, PNO, PNO, P34, P33, PNO, PNO}}, // COORD_D7
+        {{PNO, PNO, P35, PNO, PNO, P31, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P31, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P33, PNO, PNO, PNO, P33, PNO, PNO, PNO, P34, PNO, PNO, PNO, P33, PNO, PNO, PNO, P39, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P35, PNO, PNO, PNO, P35, PNO, PNO, PNO}}, // COORD_C7
+        {{PNO, P31, P36, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P31, PNO, P30, P39, PNO, PNO, PNO, P34, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P38, PNO, PNO, PNO, P34, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P33, PNO, PNO, PNO, P36, PNO, PNO, PNO, P36, PNO, PNO, PNO}}, // COORD_B7
+        {{PNO, PNO, P37, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P30, PNO, PNO, PNO, PNO, PNO, P32, PNO, PNO, PNO, PNO, P35, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P32, PNO, PNO, PNO, P35, PNO, PNO, P32, PNO, PNO, PNO, PNO, P34, PNO, PNO, PNO, P37, PNO, PNO, PNO, P37, PNO, PNO, PNO}}, // COORD_A7
+        {{PNO, PNO, PNO, PNO, PNO, PNO, P30, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P30, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P33, PNO, PNO, PNO, P32, PNO, PNO, PNO, P35, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P32, PNO, PNO, PNO, P33, PNO, PNO, PNO, P32, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO}}, // COORD_H6
+        {{PNO, PNO, PNO, P32, PNO, PNO, P31, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P31, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P31, PNO, PNO, PNO, P30, PNO, PNO, PNO, P31, PNO, PNO, PNO, P31, PNO, PNO, PNO, P30, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P33, PNO, PNO, PNO, P32, PNO, PNO}}, // COORD_G6
+        {{PNO, PNO, PNO, PNO, PNO, PNO, P32, P32, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P32, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P32, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P37, PNO, PNO, PNO, P30, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P32, PNO, PNO, PNO, PNO, PNO, PNO}}, // COORD_F6
+        {{PNO, PNO, PNO, PNO, PNO, PNO, P33, PNO, PNO, PNO, PNO, P32, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P32, PNO, PNO, P32, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P33, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO}}, // COORD_E6
+        {{PNO, PNO, PNO, PNO, PNO, PNO, P34, PNO, PNO, P32, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P32, PNO, PNO, PNO, PNO, P32, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P33, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO}}, // COORD_D6
+        {{PNO, PNO, PNO, PNO, PNO, P32, P35, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P32, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P32, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P37, PNO, PNO, PNO, P30, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P32, PNO, PNO, PNO, PNO, PNO, PNO, PNO}}, // COORD_C6
+        {{PNO, P32, PNO, PNO, PNO, PNO, P36, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P31, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P31, PNO, PNO, P30, PNO, PNO, PNO, PNO, P31, PNO, PNO, PNO, P31, PNO, PNO, P30, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P33, PNO, PNO, PNO, P32, PNO, PNO, PNO}}, // COORD_B6
+        {{PNO, PNO, PNO, PNO, PNO, PNO, P37, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P30, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P33, PNO, PNO, PNO, PNO, P32, PNO, PNO, P35, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P32, PNO, PNO, P33, PNO, PNO, PNO, PNO, P32, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO}}, // COORD_A6
+        {{PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P30, PNO, P30, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P34, PNO, PNO, PNO, P30, PNO, PNO, PNO, P36, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P34, PNO, P30, PNO, P31, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO}}, // COORD_H5
+        {{PNO, PNO, PNO, P33, PNO, PNO, PNO, PNO, PNO, PNO, P31, PNO, PNO, PNO, PNO, P33, P31, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P31, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P31, PNO, P30, PNO, P31, PNO, PNO}}, // COORD_G5
+        {{PNO, PNO, PNO, PNO, PNO, PNO, PNO, P33, PNO, PNO, P32, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P33, P32, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P30, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO}}, // COORD_F5
+        {{PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P33, P33, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P33, P33, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P36, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P30, PNO, PNO, PNO, PNO, PNO, PNO}}, // COORD_E5
+        {{PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P33, P34, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P33, PNO, PNO, P33, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P36, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P30, PNO, PNO, PNO, PNO, PNO, PNO, PNO}}, // COORD_D5
+        {{PNO, PNO, PNO, PNO, PNO, P33, PNO, PNO, PNO, PNO, P35, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P33, PNO, PNO, P32, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P30, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO}}, // COORD_C5
+        {{PNO, P33, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P36, PNO, PNO, PNO, P33, PNO, PNO, P31, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P31, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P31, PNO, P30, PNO, P31, PNO, PNO, PNO}}, // COORD_B5
+        {{PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P37, PNO, PNO, P30, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P34, PNO, PNO, PNO, PNO, P30, PNO, PNO, P36, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P34, PNO, PNO, P30, PNO, P31, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO}}, // COORD_A5
+        {{PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P30, PNO, PNO, PNO, PNO, PNO, PNO, P34, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P35, PNO, P30, PNO, PNO, PNO, PNO, PNO, P37, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P35, PNO, P31, PNO, P30, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO}}, // COORD_H4
+        {{PNO, PNO, PNO, P34, PNO, PNO, PNO, PNO, P31, PNO, PNO, PNO, P31, PNO, PNO, PNO, PNO, PNO, PNO, P34, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P32, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P31, PNO, PNO, PNO, P31, PNO, P30, PNO, PNO}}, // COORD_G4
+        {{PNO, PNO, PNO, PNO, PNO, PNO, PNO, P34, P32, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P32, PNO, PNO, PNO, PNO, PNO, PNO, P34, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P30, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO}}, // COORD_F4
+        {{PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P33, PNO, PNO, P34, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P33, PNO, PNO, PNO, PNO, P34, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P36, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P30, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO}}, // COORD_E4
+        {{PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P34, P34, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P33, PNO, PNO, P34, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P36, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P30, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO}}, // COORD_D4
+        {{PNO, PNO, PNO, PNO, PNO, P34, PNO, PNO, P35, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P32, PNO, PNO, PNO, PNO, P34, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P30, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO}}, // COORD_C4
+        {{PNO, P34, PNO, PNO, PNO, PNO, PNO, PNO, P36, PNO, PNO, PNO, PNO, P31, PNO, PNO, PNO, PNO, P34, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P32, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P31, PNO, PNO, PNO, P31, PNO, P30, PNO, PNO, PNO}}, // COORD_B4
+        {{PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P37, PNO, PNO, PNO, PNO, PNO, P34, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P35, PNO, PNO, P30, PNO, PNO, PNO, PNO, P37, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P35, PNO, PNO, P31, PNO, P30, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO}}, // COORD_A4
+        {{PNO, PNO, PNO, PNO, P30, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P35, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P36, PNO, P32, PNO, PNO, PNO, PNO, PNO, P38, PNO, PNO, PNO, PNO, PNO, P32, PNO, PNO, PNO, PNO, PNO, P36, PNO, P32, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO}}, // COORD_H3
+        {{PNO, PNO, PNO, P35, P31, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P35, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P31, PNO, PNO, PNO, PNO, PNO, P33, PNO, P31, PNO, PNO, PNO, P31, PNO, PNO, PNO, PNO, PNO, P39, PNO, PNO, PNO, PNO, PNO, P33, PNO, PNO, PNO, P32, PNO, PNO, PNO, PNO}}, // COORD_G3
+        {{PNO, PNO, PNO, PNO, P32, PNO, PNO, P35, PNO, PNO, PNO, PNO, P32, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P35, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P37, PNO, PNO, PNO, P30, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P32, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO}}, // COORD_F3
+        {{PNO, PNO, PNO, PNO, P33, PNO, PNO, PNO, PNO, PNO, PNO, P35, PNO, PNO, PNO, PNO, P33, PNO, PNO, PNO, PNO, P34, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P33, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO}}, // COORD_E3
+        {{PNO, PNO, PNO, PNO, P34, PNO, PNO, PNO, PNO, P35, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P33, PNO, PNO, P34, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P33, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO}}, // COORD_D3
+        {{PNO, PNO, PNO, PNO, P35, P35, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P32, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P35, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P37, PNO, PNO, PNO, P30, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P32, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO}}, // COORD_C3
+        {{PNO, P35, PNO, PNO, P36, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P35, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P31, PNO, PNO, PNO, PNO, P33, PNO, PNO, P31, PNO, PNO, PNO, P31, PNO, PNO, PNO, PNO, P39, PNO, PNO, PNO, PNO, PNO, PNO, P33, PNO, PNO, PNO, P32, PNO, PNO, PNO, PNO, PNO}}, // COORD_B3
+        {{PNO, PNO, PNO, PNO, P37, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P35, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P36, PNO, PNO, P32, PNO, PNO, PNO, PNO, P38, PNO, PNO, PNO, PNO, PNO, PNO, P32, PNO, PNO, PNO, PNO, P36, PNO, PNO, P32, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO}}, // COORD_A3
+        {{P30, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P36, PNO, PNO, PNO, PNO, PNO, P37, PNO, P35, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P32, PNO, PNO, PNO, P35, PNO, PNO, PNO, PNO, PNO, P37, PNO, P34, PNO, PNO, PNO, P37, PNO, PNO, PNO, P37, PNO, PNO, PNO, PNO}}, // COORD_H2
+        {{P31, PNO, PNO, P36, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P36, P30, PNO, PNO, P39, PNO, P34, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P38, PNO, PNO, PNO, P34, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P33, PNO, PNO, PNO, P36, PNO, PNO, PNO, P36, PNO, PNO, PNO, PNO}}, // COORD_G2
+        {{P32, PNO, PNO, PNO, PNO, PNO, PNO, P36, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P35, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P33, PNO, PNO, P30, PNO, PNO, PNO, PNO, P34, PNO, PNO, PNO, P33, PNO, PNO, P30, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P35, PNO, PNO, PNO, P35, PNO, PNO, PNO, PNO}}, // COORD_F2
+        {{P33, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P36, P33, PNO, PNO, PNO, PNO, P34, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P31, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P34, PNO, PNO, P33, P34, PNO, PNO, PNO, PNO}}, // COORD_E2
+        {{P34, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P36, PNO, PNO, PNO, P33, PNO, PNO, P34, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P32, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P34, PNO, PNO, PNO, P34, P33, PNO, PNO, PNO, PNO}}, // COORD_D2
+        {{P35, PNO, PNO, PNO, PNO, P36, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P35, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P33, PNO, PNO, PNO, P33, PNO, PNO, PNO, P34, PNO, PNO, PNO, P33, PNO, PNO, PNO, P39, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P35, PNO, PNO, PNO, P35, PNO, PNO, PNO, PNO, PNO}}, // COORD_C2
+        {{P36, P36, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P36, PNO, P39, P39, PNO, PNO, P34, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P38, PNO, PNO, PNO, P34, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P33, PNO, PNO, PNO, P36, PNO, PNO, PNO, P36, PNO, PNO, PNO, PNO, PNO}}, // COORD_B2
+        {{P37, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P36, PNO, PNO, PNO, PNO, P37, PNO, PNO, P35, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P32, PNO, PNO, PNO, P35, PNO, PNO, PNO, PNO, P37, PNO, PNO, P34, PNO, PNO, PNO, P37, PNO, PNO, PNO, P37, PNO, PNO, PNO, PNO, PNO}}, // COORD_A2
+        {{PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P37, P31, PNO, PNO, P38, PNO, P39, PNO, PNO, P34, PNO, PNO, P39, PNO, P39, PNO, PNO, PNO, PNO, PNO, PNO, P31, PNO, PNO, P38, PNO, P39, PNO, PNO, PNO, P39, PNO, PNO, PNO, P39, PNO, PNO, PNO, PNO}}, // COORD_H1
+        {{PNO, PNO, PNO, P37, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P36, PNO, PNO, PNO, PNO, P32, PNO, PNO, PNO, PNO, P38, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P35, PNO, PNO, PNO, P37, PNO, PNO, P32, PNO, PNO, PNO, PNO, P38, PNO, PNO, PNO, P38, PNO, PNO, PNO, P38, PNO, PNO, PNO, PNO}}, // COORD_G1
+        {{PNO, PNO, PNO, PNO, PNO, PNO, PNO, P37, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P35, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P33, PNO, PNO, PNO, PNO, P37, PNO, PNO, P35, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P36, PNO, PNO, P33, PNO, PNO, PNO, PNO, P37, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO}}, // COORD_F1
+        {{PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P37, PNO, P34, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P34, PNO, PNO, PNO, PNO, P36, PNO, PNO, P36, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P34, PNO, PNO, PNO, P35, P36, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO}}, // COORD_E1
+        {{PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P37, PNO, PNO, P34, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P35, PNO, PNO, PNO, P36, PNO, PNO, PNO, P37, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P35, PNO, PNO, PNO, P36, P35, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO}}, // COORD_D1
+        {{PNO, PNO, PNO, PNO, PNO, P37, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P35, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P36, PNO, PNO, PNO, P37, PNO, PNO, PNO, P38, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P36, PNO, PNO, PNO, P36, PNO, PNO, PNO, P37, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO}}, // COORD_C1
+        {{PNO, P37, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P36, PNO, PNO, PNO, PNO, PNO, P37, PNO, PNO, PNO, P38, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P35, PNO, PNO, PNO, P37, PNO, PNO, PNO, P37, PNO, PNO, PNO, P38, PNO, PNO, PNO, P38, PNO, PNO, PNO, P38, PNO, PNO, PNO, PNO, PNO}}, // COORD_B1
+        {{PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P37, PNO, P38, P38, PNO, PNO, P39, PNO, PNO, PNO, P39, P39, PNO, PNO, P39, PNO, PNO, PNO, PNO, PNO, PNO, PNO, P38, P38, PNO, PNO, P39, PNO, PNO, PNO, P39, PNO, PNO, PNO, P39, PNO, PNO, PNO, PNO, PNO}}  // COORD_A1
+    };
+#else
+    struct Coord_feature{
+        uint_fast8_t feature;
+        uint_fast16_t x;
+    };
 
-constexpr Coord_to_feature coord_to_feature[HW2] = {
-    {13, {{24, P30}, {28, P31}, {29, P31}, {33, P39}, {36, P34}, {37, P34}, {41, P39}, {45, P38}, {48, P31}, {49, P31}, {53, P39}, {57, P39}, {61, P39}}}, // H8
-    {10, {{ 3, P30}, {22, P30}, {28, P32}, {33, P38}, {41, P35}, {45, P37}, {48, P32}, {53, P38}, {57, P38}, {61, P38}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // G8
-    { 8, {{ 7, P30}, {18, P30}, {28, P33}, {33, P37}, {36, P35}, {45, P36}, {48, P33}, {53, P37}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // F8
-    { 8, {{11, P30}, {14, P30}, {28, P34}, {33, P36}, {36, P36}, {48, P34}, {52, P35}, {53, P36}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // E8
-    { 8, {{ 9, P30}, {15, P30}, {28, P35}, {32, P36}, {36, P37}, {48, P35}, {52, P36}, {53, P35}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // D8
-    { 8, {{ 5, P30}, {19, P30}, {28, P36}, {32, P37}, {36, P38}, {44, P36}, {48, P36}, {52, P37}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // C8
-    {10, {{ 1, P30}, {23, P30}, {28, P37}, {32, P38}, {40, P35}, {44, P37}, {48, P37}, {52, P38}, {56, P38}, {60, P38}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // B8
-    {13, {{25, P30}, {27, P31}, {28, P38}, {32, P39}, {35, P34}, {36, P39}, {40, P39}, {44, P38}, {47, P31}, {48, P38}, {52, P39}, {56, P39}, {60, P39}}}, // A8
-    {10, {{ 2, P30}, {20, P30}, {29, P32}, {33, P35}, {41, P32}, {45, P35}, {49, P32}, {53, P34}, {57, P37}, {61, P37}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // H7
-    {11, {{ 2, P31}, { 3, P31}, {24, P31}, {28, P30}, {29, P30}, {33, P34}, {41, P38}, {45, P34}, {53, P33}, {57, P36}, {61, P36}, { 0, PNO}, { 0, PNO}}}, // G7
-    {10, {{ 2, P32}, { 7, P31}, {22, P31}, {33, P33}, {36, P30}, {41, P34}, {45, P33}, {48, P30}, {57, P35}, {61, P35}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // F7
-    { 8, {{ 2, P33}, {11, P31}, {15, P31}, {18, P31}, {36, P31}, {57, P34}, {60, P33}, {61, P34}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // E7
-    { 8, {{ 2, P34}, { 9, P31}, {14, P31}, {19, P31}, {36, P32}, {56, P34}, {60, P34}, {61, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // D7
-    {10, {{ 2, P35}, { 5, P31}, {23, P31}, {32, P33}, {36, P33}, {40, P34}, {44, P33}, {48, P39}, {56, P35}, {60, P35}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // C7
-    {11, {{ 1, P31}, { 2, P36}, {25, P31}, {27, P30}, {28, P39}, {32, P34}, {40, P38}, {44, P34}, {52, P33}, {56, P36}, {60, P36}, { 0, PNO}, { 0, PNO}}}, // B7
-    {10, {{ 2, P37}, {21, P30}, {27, P32}, {32, P35}, {40, P32}, {44, P35}, {47, P32}, {52, P34}, {56, P37}, {60, P37}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // A7
-    { 8, {{ 6, P30}, {16, P30}, {29, P33}, {33, P32}, {37, P35}, {45, P32}, {49, P33}, {53, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // H6
-    {10, {{ 3, P32}, { 6, P31}, {20, P31}, {33, P31}, {37, P30}, {41, P31}, {45, P31}, {49, P30}, {57, P33}, {61, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // G6
-    { 7, {{ 6, P32}, { 7, P32}, {15, P32}, {24, P32}, {41, P37}, {45, P30}, {57, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // F6
-    { 5, {{ 6, P33}, {11, P32}, {19, P32}, {22, P32}, {41, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // E6
-    { 5, {{ 6, P34}, { 9, P32}, {18, P32}, {23, P32}, {40, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // D6
-    { 7, {{ 5, P32}, { 6, P35}, {14, P32}, {25, P32}, {40, P37}, {44, P30}, {56, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // C6
-    {10, {{ 1, P32}, { 6, P36}, {21, P31}, {32, P31}, {35, P30}, {40, P31}, {44, P31}, {47, P30}, {56, P33}, {60, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // B6
-    { 8, {{ 6, P37}, {17, P30}, {27, P33}, {32, P32}, {35, P35}, {44, P32}, {47, P33}, {52, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // A6
-    { 8, {{10, P30}, {12, P30}, {29, P34}, {33, P30}, {37, P36}, {49, P34}, {51, P30}, {53, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // H5
-    { 8, {{ 3, P33}, {10, P31}, {15, P33}, {16, P31}, {37, P31}, {57, P31}, {59, P30}, {61, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // G5
-    { 5, {{ 7, P33}, {10, P32}, {19, P33}, {20, P32}, {41, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // F5
-    { 6, {{10, P33}, {11, P33}, {23, P33}, {24, P33}, {41, P36}, {57, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // E5
-    { 6, {{ 9, P33}, {10, P34}, {22, P33}, {25, P33}, {40, P36}, {56, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // D5
-    { 5, {{ 5, P33}, {10, P35}, {18, P33}, {21, P32}, {40, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // C5
-    { 8, {{ 1, P33}, {10, P36}, {14, P33}, {17, P31}, {35, P31}, {56, P31}, {58, P30}, {60, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // B5
-    { 8, {{10, P37}, {13, P30}, {27, P34}, {32, P30}, {35, P36}, {47, P34}, {50, P30}, {52, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // A5
-    { 8, {{ 8, P30}, {15, P34}, {29, P35}, {31, P30}, {37, P37}, {49, P35}, {51, P31}, {53, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // H4
-    { 8, {{ 3, P34}, { 8, P31}, {12, P31}, {19, P34}, {37, P32}, {55, P31}, {59, P31}, {61, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // G4
-    { 5, {{ 7, P34}, { 8, P32}, {16, P32}, {23, P34}, {39, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // F4
-    { 6, {{ 8, P33}, {11, P34}, {20, P33}, {25, P34}, {39, P36}, {55, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // E4
-    { 6, {{ 8, P34}, { 9, P34}, {21, P33}, {24, P34}, {38, P36}, {54, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // D4
-    { 5, {{ 5, P34}, { 8, P35}, {17, P32}, {22, P34}, {38, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // C4
-    { 8, {{ 1, P34}, { 8, P36}, {13, P31}, {18, P34}, {35, P32}, {54, P31}, {58, P31}, {60, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // B4
-    { 8, {{ 8, P37}, {14, P34}, {27, P35}, {30, P30}, {35, P37}, {47, P35}, {50, P31}, {52, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // A4
-    { 8, {{ 4, P30}, {19, P35}, {29, P36}, {31, P32}, {37, P38}, {43, P32}, {49, P36}, {51, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // H3
-    {10, {{ 3, P35}, { 4, P31}, {23, P35}, {31, P31}, {37, P33}, {39, P31}, {43, P31}, {49, P39}, {55, P33}, {59, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // G3
-    { 7, {{ 4, P32}, { 7, P35}, {12, P32}, {25, P35}, {39, P37}, {43, P30}, {55, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // F3
-    { 5, {{ 4, P33}, {11, P35}, {16, P33}, {21, P34}, {39, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // E3
-    { 5, {{ 4, P34}, { 9, P35}, {17, P33}, {20, P34}, {38, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // D3
-    { 7, {{ 4, P35}, { 5, P35}, {13, P32}, {24, P35}, {38, P37}, {42, P30}, {54, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // C3
-    {10, {{ 1, P35}, { 4, P36}, {22, P35}, {30, P31}, {35, P33}, {38, P31}, {42, P31}, {47, P39}, {54, P33}, {58, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // B3
-    { 8, {{ 4, P37}, {18, P35}, {27, P36}, {30, P32}, {35, P38}, {42, P32}, {47, P36}, {50, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // A3
-    {10, {{ 0, P30}, {23, P36}, {29, P37}, {31, P35}, {39, P32}, {43, P35}, {49, P37}, {51, P34}, {55, P37}, {59, P37}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // H2
-    {11, {{ 0, P31}, { 3, P36}, {25, P36}, {26, P30}, {29, P39}, {31, P34}, {39, P38}, {43, P34}, {51, P33}, {55, P36}, {59, P36}, { 0, PNO}, { 0, PNO}}}, // G2
-    {10, {{ 0, P32}, { 7, P36}, {21, P35}, {31, P33}, {34, P30}, {39, P34}, {43, P33}, {46, P30}, {55, P35}, {59, P35}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // F2
-    { 8, {{ 0, P33}, {11, P36}, {12, P33}, {17, P34}, {34, P31}, {55, P34}, {58, P33}, {59, P34}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // E2
-    { 8, {{ 0, P34}, { 9, P36}, {13, P33}, {16, P34}, {34, P32}, {54, P34}, {58, P34}, {59, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // D2
-    {10, {{ 0, P35}, { 5, P36}, {20, P35}, {30, P33}, {34, P33}, {38, P34}, {42, P33}, {46, P39}, {54, P35}, {58, P35}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // C2
-    {11, {{ 0, P36}, { 1, P36}, {24, P36}, {26, P39}, {27, P39}, {30, P34}, {38, P38}, {42, P34}, {50, P33}, {54, P36}, {58, P36}, { 0, PNO}, { 0, PNO}}}, // B2
-    {10, {{ 0, P37}, {22, P36}, {27, P37}, {30, P35}, {38, P32}, {42, P35}, {47, P37}, {50, P34}, {54, P37}, {58, P37}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // A2
-    {13, {{25, P37}, {26, P31}, {29, P38}, {31, P39}, {34, P34}, {37, P39}, {39, P39}, {43, P38}, {46, P31}, {49, P38}, {51, P39}, {55, P39}, {59, P39}}}, // H1
-    {10, {{ 3, P37}, {21, P36}, {26, P32}, {31, P38}, {39, P35}, {43, P37}, {46, P32}, {51, P38}, {55, P38}, {59, P38}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // G1
-    { 8, {{ 7, P37}, {17, P35}, {26, P33}, {31, P37}, {34, P35}, {43, P36}, {46, P33}, {51, P37}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // F1
-    { 8, {{11, P37}, {13, P34}, {26, P34}, {31, P36}, {34, P36}, {46, P34}, {50, P35}, {51, P36}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // E1
-    { 8, {{ 9, P37}, {12, P34}, {26, P35}, {30, P36}, {34, P37}, {46, P35}, {50, P36}, {51, P35}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // D1
-    { 8, {{ 5, P37}, {16, P35}, {26, P36}, {30, P37}, {34, P38}, {42, P36}, {46, P36}, {50, P37}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // C1
-    {10, {{ 1, P37}, {20, P36}, {26, P37}, {30, P38}, {38, P35}, {42, P37}, {46, P37}, {50, P38}, {54, P38}, {58, P38}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // B1
-    {13, {{24, P37}, {26, P38}, {27, P38}, {30, P39}, {34, P39}, {35, P39}, {38, P39}, {42, P38}, {46, P38}, {47, P38}, {50, P39}, {54, P39}, {58, P39}}}  // A1
-};
+    struct Coord_to_feature{
+        uint_fast8_t n_features;
+        Coord_feature features[MAX_CELL_PATTERNS];
+    };
+
+    constexpr Coord_to_feature coord_to_feature[HW2] = {
+        {13, {{24, P30}, {28, P31}, {29, P31}, {33, P39}, {36, P34}, {37, P34}, {41, P39}, {45, P38}, {48, P31}, {49, P31}, {53, P39}, {57, P39}, {61, P39}}}, // H8
+        {10, {{ 3, P30}, {22, P30}, {28, P32}, {33, P38}, {41, P35}, {45, P37}, {48, P32}, {53, P38}, {57, P38}, {61, P38}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // G8
+        { 8, {{ 7, P30}, {18, P30}, {28, P33}, {33, P37}, {36, P35}, {45, P36}, {48, P33}, {53, P37}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // F8
+        { 8, {{11, P30}, {14, P30}, {28, P34}, {33, P36}, {36, P36}, {48, P34}, {52, P35}, {53, P36}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // E8
+        { 8, {{ 9, P30}, {15, P30}, {28, P35}, {32, P36}, {36, P37}, {48, P35}, {52, P36}, {53, P35}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // D8
+        { 8, {{ 5, P30}, {19, P30}, {28, P36}, {32, P37}, {36, P38}, {44, P36}, {48, P36}, {52, P37}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // C8
+        {10, {{ 1, P30}, {23, P30}, {28, P37}, {32, P38}, {40, P35}, {44, P37}, {48, P37}, {52, P38}, {56, P38}, {60, P38}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // B8
+        {13, {{25, P30}, {27, P31}, {28, P38}, {32, P39}, {35, P34}, {36, P39}, {40, P39}, {44, P38}, {47, P31}, {48, P38}, {52, P39}, {56, P39}, {60, P39}}}, // A8
+        {10, {{ 2, P30}, {20, P30}, {29, P32}, {33, P35}, {41, P32}, {45, P35}, {49, P32}, {53, P34}, {57, P37}, {61, P37}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // H7
+        {11, {{ 2, P31}, { 3, P31}, {24, P31}, {28, P30}, {29, P30}, {33, P34}, {41, P38}, {45, P34}, {53, P33}, {57, P36}, {61, P36}, { 0, PNO}, { 0, PNO}}}, // G7
+        {10, {{ 2, P32}, { 7, P31}, {22, P31}, {33, P33}, {36, P30}, {41, P34}, {45, P33}, {48, P30}, {57, P35}, {61, P35}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // F7
+        { 8, {{ 2, P33}, {11, P31}, {15, P31}, {18, P31}, {36, P31}, {57, P34}, {60, P33}, {61, P34}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // E7
+        { 8, {{ 2, P34}, { 9, P31}, {14, P31}, {19, P31}, {36, P32}, {56, P34}, {60, P34}, {61, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // D7
+        {10, {{ 2, P35}, { 5, P31}, {23, P31}, {32, P33}, {36, P33}, {40, P34}, {44, P33}, {48, P39}, {56, P35}, {60, P35}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // C7
+        {11, {{ 1, P31}, { 2, P36}, {25, P31}, {27, P30}, {28, P39}, {32, P34}, {40, P38}, {44, P34}, {52, P33}, {56, P36}, {60, P36}, { 0, PNO}, { 0, PNO}}}, // B7
+        {10, {{ 2, P37}, {21, P30}, {27, P32}, {32, P35}, {40, P32}, {44, P35}, {47, P32}, {52, P34}, {56, P37}, {60, P37}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // A7
+        { 8, {{ 6, P30}, {16, P30}, {29, P33}, {33, P32}, {37, P35}, {45, P32}, {49, P33}, {53, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // H6
+        {10, {{ 3, P32}, { 6, P31}, {20, P31}, {33, P31}, {37, P30}, {41, P31}, {45, P31}, {49, P30}, {57, P33}, {61, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // G6
+        { 7, {{ 6, P32}, { 7, P32}, {15, P32}, {24, P32}, {41, P37}, {45, P30}, {57, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // F6
+        { 5, {{ 6, P33}, {11, P32}, {19, P32}, {22, P32}, {41, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // E6
+        { 5, {{ 6, P34}, { 9, P32}, {18, P32}, {23, P32}, {40, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // D6
+        { 7, {{ 5, P32}, { 6, P35}, {14, P32}, {25, P32}, {40, P37}, {44, P30}, {56, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // C6
+        {10, {{ 1, P32}, { 6, P36}, {21, P31}, {32, P31}, {35, P30}, {40, P31}, {44, P31}, {47, P30}, {56, P33}, {60, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // B6
+        { 8, {{ 6, P37}, {17, P30}, {27, P33}, {32, P32}, {35, P35}, {44, P32}, {47, P33}, {52, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // A6
+        { 8, {{10, P30}, {12, P30}, {29, P34}, {33, P30}, {37, P36}, {49, P34}, {51, P30}, {53, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // H5
+        { 8, {{ 3, P33}, {10, P31}, {15, P33}, {16, P31}, {37, P31}, {57, P31}, {59, P30}, {61, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // G5
+        { 5, {{ 7, P33}, {10, P32}, {19, P33}, {20, P32}, {41, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // F5
+        { 6, {{10, P33}, {11, P33}, {23, P33}, {24, P33}, {41, P36}, {57, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // E5
+        { 6, {{ 9, P33}, {10, P34}, {22, P33}, {25, P33}, {40, P36}, {56, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // D5
+        { 5, {{ 5, P33}, {10, P35}, {18, P33}, {21, P32}, {40, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // C5
+        { 8, {{ 1, P33}, {10, P36}, {14, P33}, {17, P31}, {35, P31}, {56, P31}, {58, P30}, {60, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // B5
+        { 8, {{10, P37}, {13, P30}, {27, P34}, {32, P30}, {35, P36}, {47, P34}, {50, P30}, {52, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // A5
+        { 8, {{ 8, P30}, {15, P34}, {29, P35}, {31, P30}, {37, P37}, {49, P35}, {51, P31}, {53, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // H4
+        { 8, {{ 3, P34}, { 8, P31}, {12, P31}, {19, P34}, {37, P32}, {55, P31}, {59, P31}, {61, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // G4
+        { 5, {{ 7, P34}, { 8, P32}, {16, P32}, {23, P34}, {39, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // F4
+        { 6, {{ 8, P33}, {11, P34}, {20, P33}, {25, P34}, {39, P36}, {55, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // E4
+        { 6, {{ 8, P34}, { 9, P34}, {21, P33}, {24, P34}, {38, P36}, {54, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // D4
+        { 5, {{ 5, P34}, { 8, P35}, {17, P32}, {22, P34}, {38, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // C4
+        { 8, {{ 1, P34}, { 8, P36}, {13, P31}, {18, P34}, {35, P32}, {54, P31}, {58, P31}, {60, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // B4
+        { 8, {{ 8, P37}, {14, P34}, {27, P35}, {30, P30}, {35, P37}, {47, P35}, {50, P31}, {52, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // A4
+        { 8, {{ 4, P30}, {19, P35}, {29, P36}, {31, P32}, {37, P38}, {43, P32}, {49, P36}, {51, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // H3
+        {10, {{ 3, P35}, { 4, P31}, {23, P35}, {31, P31}, {37, P33}, {39, P31}, {43, P31}, {49, P39}, {55, P33}, {59, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // G3
+        { 7, {{ 4, P32}, { 7, P35}, {12, P32}, {25, P35}, {39, P37}, {43, P30}, {55, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // F3
+        { 5, {{ 4, P33}, {11, P35}, {16, P33}, {21, P34}, {39, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // E3
+        { 5, {{ 4, P34}, { 9, P35}, {17, P33}, {20, P34}, {38, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // D3
+        { 7, {{ 4, P35}, { 5, P35}, {13, P32}, {24, P35}, {38, P37}, {42, P30}, {54, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // C3
+        {10, {{ 1, P35}, { 4, P36}, {22, P35}, {30, P31}, {35, P33}, {38, P31}, {42, P31}, {47, P39}, {54, P33}, {58, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // B3
+        { 8, {{ 4, P37}, {18, P35}, {27, P36}, {30, P32}, {35, P38}, {42, P32}, {47, P36}, {50, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // A3
+        {10, {{ 0, P30}, {23, P36}, {29, P37}, {31, P35}, {39, P32}, {43, P35}, {49, P37}, {51, P34}, {55, P37}, {59, P37}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // H2
+        {11, {{ 0, P31}, { 3, P36}, {25, P36}, {26, P30}, {29, P39}, {31, P34}, {39, P38}, {43, P34}, {51, P33}, {55, P36}, {59, P36}, { 0, PNO}, { 0, PNO}}}, // G2
+        {10, {{ 0, P32}, { 7, P36}, {21, P35}, {31, P33}, {34, P30}, {39, P34}, {43, P33}, {46, P30}, {55, P35}, {59, P35}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // F2
+        { 8, {{ 0, P33}, {11, P36}, {12, P33}, {17, P34}, {34, P31}, {55, P34}, {58, P33}, {59, P34}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // E2
+        { 8, {{ 0, P34}, { 9, P36}, {13, P33}, {16, P34}, {34, P32}, {54, P34}, {58, P34}, {59, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // D2
+        {10, {{ 0, P35}, { 5, P36}, {20, P35}, {30, P33}, {34, P33}, {38, P34}, {42, P33}, {46, P39}, {54, P35}, {58, P35}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // C2
+        {11, {{ 0, P36}, { 1, P36}, {24, P36}, {26, P39}, {27, P39}, {30, P34}, {38, P38}, {42, P34}, {50, P33}, {54, P36}, {58, P36}, { 0, PNO}, { 0, PNO}}}, // B2
+        {10, {{ 0, P37}, {22, P36}, {27, P37}, {30, P35}, {38, P32}, {42, P35}, {47, P37}, {50, P34}, {54, P37}, {58, P37}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // A2
+        {13, {{25, P37}, {26, P31}, {29, P38}, {31, P39}, {34, P34}, {37, P39}, {39, P39}, {43, P38}, {46, P31}, {49, P38}, {51, P39}, {55, P39}, {59, P39}}}, // H1
+        {10, {{ 3, P37}, {21, P36}, {26, P32}, {31, P38}, {39, P35}, {43, P37}, {46, P32}, {51, P38}, {55, P38}, {59, P38}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // G1
+        { 8, {{ 7, P37}, {17, P35}, {26, P33}, {31, P37}, {34, P35}, {43, P36}, {46, P33}, {51, P37}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // F1
+        { 8, {{11, P37}, {13, P34}, {26, P34}, {31, P36}, {34, P36}, {46, P34}, {50, P35}, {51, P36}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // E1
+        { 8, {{ 9, P37}, {12, P34}, {26, P35}, {30, P36}, {34, P37}, {46, P35}, {50, P36}, {51, P35}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // D1
+        { 8, {{ 5, P37}, {16, P35}, {26, P36}, {30, P37}, {34, P38}, {42, P36}, {46, P36}, {50, P37}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // C1
+        {10, {{ 1, P37}, {20, P36}, {26, P37}, {30, P38}, {38, P35}, {42, P37}, {46, P37}, {50, P38}, {54, P38}, {58, P38}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // B1
+        {13, {{24, P37}, {26, P38}, {27, P38}, {30, P39}, {34, P39}, {35, P39}, {38, P39}, {42, P38}, {46, P38}, {47, P38}, {50, P39}, {54, P39}, {58, P39}}}  // A1
+    };
+#endif
 
 constexpr uint_fast16_t pow3[11] = {1, P31, P32, P33, P34, P35, P36, P37, P38, P39, P310};
 #if USE_SIMD_EVALUATION
-    int16_t pattern_arr[2][N_PHASES][N_PATTERNS + 1][MAX_EVALUATE_IDX];
+    int pattern_arr[2][N_PHASES][N_PATTERNS + 1][MAX_EVALUATE_IDX];
 #else
     int16_t pattern_arr[2][N_PHASES][N_PATTERNS][MAX_EVALUATE_IDX];
 #endif
@@ -391,15 +453,30 @@ inline bool init_evaluation_calc(const char* file){
     #endif
     int phase_idx, pattern_idx;
     constexpr int pattern_sizes[N_PATTERNS] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10, 10, 10, 10};
+    #if USE_SIMD_EVALUATION
+        int16_t pattern_arr_16[MAX_EVALUATE_IDX];
+    #endif
     for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
         //cerr << "evaluation function " << phase_idx * 100 / N_PHASES << " % initialized" << endl;
-        for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx){
-            if (fread(pattern_arr[0][phase_idx][pattern_idx], 2, pow3[pattern_sizes[pattern_idx]], fp) < pow3[pattern_sizes[pattern_idx]]){
-                cerr << "eval.egev broken" << endl;
-                fclose(fp);
-                return false;
+        #if USE_SIMD_EVALUATION
+            for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx){
+                if (fread(pattern_arr_16, 2, pow3[pattern_sizes[pattern_idx]], fp) < pow3[pattern_sizes[pattern_idx]]){
+                    cerr << "eval.egev broken" << endl;
+                    fclose(fp);
+                    return false;
+                }
+                for (int i = 0; i < pow3[pattern_sizes[pattern_idx]]; ++i)
+                    pattern_arr[0][phase_idx][pattern_idx][i] = pattern_arr_16[i];
             }
-        }
+        #else
+            for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx){
+                if (fread(pattern_arr[0][phase_idx][pattern_idx], 2, pow3[pattern_sizes[pattern_idx]], fp) < pow3[pattern_sizes[pattern_idx]]){
+                    cerr << "eval.egev broken" << endl;
+                    fclose(fp);
+                    return false;
+                }
+            }
+        #endif
         if (fread(eval_sur0_sur1_arr[phase_idx], 2, MAX_SURROUND * MAX_SURROUND, fp) < MAX_SURROUND * MAX_SURROUND){
             cerr << "eval.egev broken" << endl;
             fclose(fp);
@@ -530,8 +607,8 @@ inline int calc_pattern_first(const int phase_idx, Board *b){
 
 #if USE_SIMD_EVALUATION
     inline int calc_pattern_diff(const int phase_idx, Search *search){
-        const int16_t *pat_com = pattern_arr[search->eval_feature_reversed][phase_idx];
-        const int32_t offset1 = (pat_com[1] - pat_com) / sizeof(int16_t);
+        int *pat_com = pattern_arr[search->eval_feature_reversed][phase_idx][0];
+        constexpr int32_t offset1 = MAX_EVALUATE_IDX;
         __m256i mem_addr_8 = _mm256_add_epi32(search->eval_features.f[0], _mm256_set_epi32(0, 0, 0, 0, offset1, offset1, offset1, offset1));
         __m256i res256 = _mm256_i32gather_epi32(pat_com, mem_addr_8, 2);
         mem_addr_8 = _mm256_add_epi32(search->eval_features.f[1], _mm256_set_epi32(offset1 * 2, offset1 * 2, offset1 * 2, offset1 * 2, offset1 * 3, offset1 * 3, offset1 * 3, offset1 * 3));
@@ -684,14 +761,14 @@ inline int mid_evaluate_diff(Search *search){
         int32_t features[N_SYMMETRY_PATTERNS];
         for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i)
             features[i] = pick_pattern_idx(b_arr, &feature_to_coord[i]);
-        search->eval_features[0] = _mm256_set_epi32(features[0], features[1], features[2], features[3], features[4], features[5], features[6], features[7]);
-        search->eval_features[1] = _mm256_set_epi32(features[8], features[9], features[10], features[11], features[12], features[13], features[14], features[15]);
-        search->eval_features[2] = _mm256_set_epi32(features[16], features[17], features[18], features[19], features[20], features[21], features[22], features[23]);
-        search->eval_features[3] = _mm256_set_epi32(features[24], features[25], features[26], features[27], features[28], features[29], features[30], features[31]);
-        search->eval_features[4] = _mm256_set_epi32(features[32], features[33], features[34], features[35], features[36], features[37], features[38], features[39]);
-        search->eval_features[5] = _mm256_set_epi32(features[40], features[41], features[42], features[43], features[44], features[45], features[46], features[47]);
-        search->eval_features[6] = _mm256_set_epi32(features[48], features[49], features[50], features[51], features[52], features[53], features[54], features[55]);
-        search->eval_features[7] = _mm256_set_epi32(features[56], features[57], features[58], features[59], features[60], features[61], 0, 0);
+        search->eval_features.f[0] = _mm256_set_epi32(features[0], features[1], features[2], features[3], features[4], features[5], features[6], features[7]);
+        search->eval_features.f[1] = _mm256_set_epi32(features[8], features[9], features[10], features[11], features[12], features[13], features[14], features[15]);
+        search->eval_features.f[2] = _mm256_set_epi32(features[16], features[17], features[18], features[19], features[20], features[21], features[22], features[23]);
+        search->eval_features.f[3] = _mm256_set_epi32(features[24], features[25], features[26], features[27], features[28], features[29], features[30], features[31]);
+        search->eval_features.f[4] = _mm256_set_epi32(features[32], features[33], features[34], features[35], features[36], features[37], features[38], features[39]);
+        search->eval_features.f[5] = _mm256_set_epi32(features[40], features[41], features[42], features[43], features[44], features[45], features[46], features[47]);
+        search->eval_features.f[6] = _mm256_set_epi32(features[48], features[49], features[50], features[51], features[52], features[53], features[54], features[55]);
+        search->eval_features.f[7] = _mm256_set_epi32(features[56], features[57], features[58], features[59], features[60], features[61], 0, 0);
         search->eval_feature_reversed = 0;
     }
 
@@ -699,20 +776,20 @@ inline int mid_evaluate_diff(Search *search){
         uint_fast8_t i, cell;
         uint64_t f;
         if (search->eval_feature_reversed){
-            for (i = 0; i < MAX_CELL_PATTERNS && coord_to_feature[flip->pos].features[i].x; ++i)
-                search->eval_features.f[coord_to_feature[flip->pos].features[i].feature] -= coord_to_feature[flip->pos].features[i].x;
+            for (i = 0; i < N_SIMD_EVAL_FEATURES; ++i)
+                search->eval_features.f[i] = _mm256_sub_epi32(search->eval_features.f[i], coord_to_feature[flip->pos].v8[i]);
             f = flip->flip;
             for (cell = first_bit(&f); f; cell = next_bit(&f)){
-                for (i = 0; i < MAX_CELL_PATTERNS && coord_to_feature[cell].features[i].x; ++i)
-                    search->eval_features.f[coord_to_feature[cell].features[i].feature] += coord_to_feature[cell].features[i].x;
+                for (i = 0; i < N_SIMD_EVAL_FEATURES; ++i)
+                    search->eval_features.f[i] = _mm256_add_epi32(search->eval_features.f[i], coord_to_feature[cell].v8[i]);
             }
         } else{
-            for (i = 0; i < MAX_CELL_PATTERNS && coord_to_feature[flip->pos].features[i].x; ++i)
-                search->eval_features.f[coord_to_feature[flip->pos].features[i].feature] -= 2 * coord_to_feature[flip->pos].features[i].x;
+            for (i = 0; i < N_SIMD_EVAL_FEATURES; ++i)
+                search->eval_features.f[i] = _mm256_sub_epi32(search->eval_features.f[i], _mm256_slli_epi32(coord_to_feature[flip->pos].v8[i], 1));
             f = flip->flip;
             for (cell = first_bit(&f); f; cell = next_bit(&f)){
-                for (i = 0; i < MAX_CELL_PATTERNS && coord_to_feature[cell].features[i].x; ++i)
-                    search->eval_features.f[coord_to_feature[cell].features[i].feature] -= coord_to_feature[cell].features[i].x;
+                for (i = 0; i < N_SIMD_EVAL_FEATURES; ++i)
+                    search->eval_features.f[i] = _mm256_sub_epi32(search->eval_features.f[i], coord_to_feature[cell].v8[i]);
             }
         }
         search->eval_feature_reversed ^= 1;
@@ -723,20 +800,20 @@ inline int mid_evaluate_diff(Search *search){
         uint_fast8_t i, cell;
         uint64_t f;
         if (search->eval_feature_reversed){
-            for (i = 0; i < MAX_CELL_PATTERNS && coord_to_feature[flip->pos].features[i].x; ++i)
-                search->eval_features.f[coord_to_feature[flip->pos].features[i].feature] += coord_to_feature[flip->pos].features[i].x;
+            for (i = 0; i < N_SIMD_EVAL_FEATURES; ++i)
+                search->eval_features.f[i] = _mm256_add_epi32(search->eval_features.f[i], coord_to_feature[flip->pos].v8[i]);
             f = flip->flip;
             for (cell = first_bit(&f); f; cell = next_bit(&f)){
-                for (i = 0; i < MAX_CELL_PATTERNS && coord_to_feature[cell].features[i].x; ++i)
-                    search->eval_features.f[coord_to_feature[cell].features[i].feature] -= coord_to_feature[cell].features[i].x;
+                for (i = 0; i < N_SIMD_EVAL_FEATURES; ++i)
+                    search->eval_features.f[i] = _mm256_sub_epi32(search->eval_features.f[i], coord_to_feature[cell].v8[i]);
             }
         } else{
-            for (i = 0; i < MAX_CELL_PATTERNS && coord_to_feature[flip->pos].features[i].x; ++i)
-                search->eval_features.f[coord_to_feature[flip->pos].features[i].feature] += 2 * coord_to_feature[flip->pos].features[i].x;
+            for (i = 0; i < N_SIMD_EVAL_FEATURES; ++i)
+                search->eval_features.f[i] = _mm256_add_epi32(search->eval_features.f[i], _mm256_slli_epi32(coord_to_feature[flip->pos].v8[i], 1));
             f = flip->flip;
             for (cell = first_bit(&f); f; cell = next_bit(&f)){
-                for (i = 0; i < MAX_CELL_PATTERNS && coord_to_feature[cell].features[i].x; ++i)
-                    search->eval_features.f[coord_to_feature[cell].features[i].feature] += coord_to_feature[cell].features[i].x;
+                for (i = 0; i < N_SIMD_EVAL_FEATURES; ++i)
+                    search->eval_features.f[i] = _mm256_add_epi32(search->eval_features.f[i], coord_to_feature[cell].v8[i]);
             }
         }
     }

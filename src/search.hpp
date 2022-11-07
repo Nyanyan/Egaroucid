@@ -80,6 +80,17 @@ struct Search_result{
     int probability;
 };
 
+#if USE_SIMD_EVALUATION
+    #define N_SIMD_EVAL_FEATURES 8
+    struct Eval_features{
+        __m256i f[N_SIMD_EVAL_FEATURES];
+    };
+#else
+    struct Eval_features{
+        uint_fast16_t f[N_SYMMETRY_PATTERNS];
+    };
+#endif
+
 class Search{
     public:
         Board board;
