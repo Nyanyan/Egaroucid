@@ -105,7 +105,12 @@ public:
 				update_found = false;
 			}
 			if (update_button.clicked() || KeyEnter.pressed()) {
-				System::LaunchBrowser(U"https://github.com/Nyanyan/Egaroucid/releases/tag/v{}"_fmt(new_version));
+				if (language.get("lang_name") == U"日本語") {
+					System::LaunchBrowser(U"https://www.egaroucid.nyanyan.dev/ja/download/");
+				}
+				else {
+					System::LaunchBrowser(U"https://www.egaroucid.nyanyan.dev/en/download/");
+				}
 			}
 		}
 		else {

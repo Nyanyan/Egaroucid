@@ -526,7 +526,7 @@ private:
 
 	void menu_help() {
 		if (getData().menu_elements.website) {
-			System::LaunchBrowser(U"https://www.egaroucid-app.nyanyan.dev/");
+			System::LaunchBrowser(U"https://www.egaroucid.nyanyan.dev/");
 		}
 		if (getData().menu_elements.bug_report) {
 			System::LaunchBrowser(U"https://docs.google.com/forms/d/e/1FAIpQLSd6ML1T1fc707luPEefBXuImMnlM9cQP8j-YHKiSyFoS-8rmQ/viewform?usp=sf_link");
