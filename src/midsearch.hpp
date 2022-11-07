@@ -408,7 +408,7 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
     }
     if (alpha < beta && legal){
         const int canput = pop_count_ull(legal);
-        int mobility_idx = pre_best_move_found ? 1 : 2;
+        int mobility_idx = pre_best_move_found ? 2 : 1;
         vector<Flip_value> move_list(canput);
         int idx = 0;
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
