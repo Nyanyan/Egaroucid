@@ -660,16 +660,6 @@ inline uint8_t join_v_line(uint64_t x, int_fast8_t t){
 /*
     @brief bit initialize
 */
-
-//uint64_t split_v_lines[N_8BIT];
-//uint64_t split_d7_lines[N_8BIT];
-//uint64_t split_d9_lines[N_8BIT];
 void bit_init(){
-    //uint32_t i;
-    //for (i = 0; i < N_8BIT; ++i){
-    //    split_v_lines[i] = split_v_line(i, 0);
-    //    split_d7_lines[i] = split_d7_line(i, 0);
-    //    split_d9_lines[i] = split_d9_line(i, 0);
-    //}
     upper_bit_init();
 }
