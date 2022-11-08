@@ -1,6 +1,8 @@
 ﻿/*
     Egaroucid Project
 
+    @file ai.hpp
+        Main algorithm of Egaroucid
     @date 2021-2022
     @author Takuto Yamana (a.k.a Nyanyan)
     @license GPL-3.0 license
@@ -20,10 +22,25 @@
 
 #define SEARCH_BOOK -1
 
+/*
+    @brief Get a result of a search
+
+    Firstly, see if the game ends in few moves if using MPC.
+    Then do some pre-search, and main search.
+
+    @param board                board to solve
+    @param depth                depth to search
+    @param use_mpc              use MPC?
+    @param mpct                 MPC probability
+    @param show_log             show log?
+    @param use_multi_thread     search in multi thread?
+
+    @return the result in Search_result structure
+*/
 inline Search_result tree_search(Board board, int depth, bool use_mpc, double mpct, bool show_log, bool use_multi_thread){
     uint64_t strt;
     Search_result res;
-    depth = min(HW2 - board.n_discs(), depth);
+    depth = std::min(HW2 - board.n_discs(), depth);
     bool is_end_search = (HW2 - board.n_discs() == depth);
     vector<Clog_result> clogs;
     res.clog_nodes = 0ULL;
@@ -32,9 +49,9 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
         clogs = first_clog_search(board, &res.clog_nodes);
         res.clog_time = tim() - strt;
         if (show_log){
-            cerr << "clog search time " << res.clog_time << " nodes " << res.clog_nodes << " nps " << (res.clog_nodes / max(1ULL, res.clog_time)) << endl;
+            std::cerr << "clog search time " << res.clog_time << " nodes " << res.clog_nodes << " nps " << (res.clog_nodes / std::max(1ULL, res.clog_time)) << endl;
             for (int i = 0; i < (int)clogs.size(); ++i){
-                cerr << i + 1 << "/" << clogs.size() << " " << idx_to_coord(clogs[i].pos) << " value " << clogs[i].val << endl;
+                std::cerr << i + 1 << "/" << clogs.size() << " " << idx_to_coord(clogs[i].pos) << " value " << clogs[i].val << endl;
             }
         }
     }
@@ -51,7 +68,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
         strt = tim();
 
         if (show_log)
-            cerr << "start!" << endl;
+            std::cerr << "start!" << endl;
         if (depth >= 23){
             search_depth = depth / 2;
             search.mpct = 1.0;
@@ -59,14 +76,14 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
             result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search_depth, false, false, false, TRANSPOSE_TABLE_UNDEFINED, clogs);
             g = result.first;
             if (show_log)
-                cerr << "presearch depth " << search_depth << " mpct " << search.mpct << " value " << g << " policy " << idx_to_coord(result.second) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
+                std::cerr << "presearch depth " << search_depth << " mpct " << search.mpct << " value " << g << " policy " << idx_to_coord(result.second) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / std::max(1ULL, tim() - strt) << endl;
         }
         if (depth >= 14){
             double presearch_mpct;
             if (use_mpc)
                 presearch_mpct = mpct - 0.4;
             else
-                presearch_mpct = min(2.5, 1.5 + 0.05 * (depth - 14));
+                presearch_mpct = std::min(2.5, 1.5 + 0.05 * (depth - 14));
             search_depth = depth;
             search.mpct = presearch_mpct;
             search.use_mpc = true;
@@ -75,7 +92,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
             result = first_nega_scout(&search, alpha, beta, search_depth, false, true, false, result.second, clogs);
             g = result.first;
             if (show_log)
-                cerr << "presearch depth " << search_depth << " mpct " << search.mpct << " value " << g << " policy " << idx_to_coord(result.second) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
+                std::cerr << "presearch depth " << search_depth << " mpct " << search.mpct << " value " << g << " policy " << idx_to_coord(result.second) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / std::max(1ULL, tim() - strt) << endl;
         }
 
         search_depth = depth;
@@ -85,7 +102,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
         g = result.first;
         policy = result.second;
         if (show_log)
-            cerr << "mainsearch depth " << search_depth << " mpct " << search.mpct << " value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
+            std::cerr << "mainsearch depth " << search_depth << " mpct " << search.mpct << " value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / std::max(1ULL, tim() - strt) << endl;
     
     } else{
         strt = tim();
@@ -100,7 +117,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
             g = result.first;
             policy = result.second;
             if (show_log)
-                cerr << "presearch depth " << search_depth << " mpct " << search.mpct << " value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
+                std::cerr << "presearch depth " << search_depth << " mpct " << search.mpct << " value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / std::max(1ULL, tim() - strt) << endl;
         }
         search_depth = depth;
         search.use_mpc = use_mpc;
@@ -112,12 +129,12 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
             g = round((0.8 * g + 1.2 * result.first) / 2.0);
         policy = result.second;
         if (show_log)
-            cerr << "mainsearch depth " << search_depth << " mpct " << search.mpct << " value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
+            std::cerr << "mainsearch depth " << search_depth << " mpct " << search.mpct << " value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / std::max(1ULL, tim() - strt) << endl;
     }
     res.depth = depth;
     res.nodes = search.n_nodes;
     res.time = tim() - strt;
-    res.nps = search.n_nodes * 1000 / max(1ULL, res.time);
+    res.nps = search.n_nodes * 1000 / std::max(1ULL, res.time);
     res.policy = policy;
     res.value = g;
     res.is_end_search = is_end_search;
@@ -125,12 +142,26 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
     return res;
 }
 
-// for hint search with iterative deepning, no clogsearch needed
+/*
+    @brief Get a result of a search with no pre-search
+
+    No clog search needed because this function is used for iterative deepning.
+    This function is used for hint calculation.
+
+    @param board                board to solve
+    @param depth                depth to search
+    @param use_mpc              use MPC?
+    @param mpct                 MPC probability
+    @param show_log             show log?
+    @param use_multi_thread     search in multi thread?
+
+    @return the result in Search_result structure
+*/
 inline Search_result tree_search_iterative_deepening(Board board, int depth, bool use_mpc, double mpct, bool show_log, bool use_multi_thread){
     Search search;
     int g = 0, alpha, beta, policy = -1;
     pair<int, int> result;
-    depth = min(HW2 - board.n_discs(), depth);
+    depth = std::min(HW2 - board.n_discs(), depth);
     bool is_end_search = (HW2 - board.n_discs() == depth);
     search.init_board(&board);
     search.n_nodes = 0ULL;
@@ -145,15 +176,15 @@ inline Search_result tree_search_iterative_deepening(Board board, int depth, boo
     policy = result.second;
     if (show_log){
         if (is_end_search)
-            cerr << "depth " << depth << " value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
+            std::cerr << "depth " << depth << " value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / std::max(1ULL, tim() - strt) << endl;
         else
-            cerr << "midsearch time " << tim() - strt << " depth " << depth << " value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
+            std::cerr << "midsearch time " << tim() - strt << " depth " << depth << " value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / std::max(1ULL, tim() - strt) << endl;
     }
     Search_result res;
     res.depth = depth;
     res.nodes = search.n_nodes;
     res.time = tim() - strt;
-    res.nps = search.n_nodes * 1000 / max(1ULL, res.time);
+    res.nps = search.n_nodes * 1000 / std::max(1ULL, res.time);
     res.policy = policy;
     res.value = g;
     res.is_end_search = is_end_search;
@@ -161,9 +192,24 @@ inline Search_result tree_search_iterative_deepening(Board board, int depth, boo
     return res;
 }
 
+/*
+    @brief Get a result of a search with given window with no pre-search
+
+    This function is used for book expanding.
+
+    @param board                board to solve
+    @param depth                depth to search
+    @param alpha                alpha of the search window
+    @param beta                 beta of the search window
+    @param use_mpc              use MPC?
+    @param mpct                 MPC probability
+    @param use_multi_thread     search in multi thread?
+
+    @return the score of the board
+*/
 inline int tree_search_window(Board board, int depth, int alpha, int beta, bool use_mpc, double mpct, bool use_multi_thread){
     Search search;
-    depth = min(HW2 - board.n_discs(), depth);
+    depth = std::min(HW2 - board.n_discs(), depth);
     bool is_end_search = (HW2 - board.n_discs() == depth);
     search.init_board(&board);
     search.n_nodes = 0ULL;
@@ -180,6 +226,20 @@ inline int tree_search_window(Board board, int depth, int alpha, int beta, bool 
     return nega_scout(&search, alpha, beta, depth, false, LEGAL_UNDEFINED, is_end_search, &searching);
 }
 
+/*
+    @brief Get a result of a search with book or search
+
+    Firstly, check if the given board is in the book.
+    Then search the board and get the result.
+
+    @param board                board to solve
+    @param level                level of AI
+    @param use_book             use book?
+    @param use_multi_thread     search in multi thread?
+    @param show_log             show log?
+
+    @return the result in Search_result structure
+*/
 Search_result ai(Board board, int level, bool use_book, bool use_multi_thread, bool show_log){
     Search_result res;
     int value_sign = 1;
@@ -200,7 +260,7 @@ Search_result ai(Board board, int level, bool use_book, bool use_multi_thread, b
     Book_value book_result = book.get_random(&board, 0);
     if (book_result.policy != -1 && use_book){
         if (show_log)
-            cerr << "book " << idx_to_coord(book_result.policy) << " " << book_result.value << endl;
+            std::cerr << "book " << idx_to_coord(book_result.policy) << " " << book_result.value << endl;
         res.policy = book_result.policy;
         res.value = value_sign * book_result.value;
         res.depth = SEARCH_BOOK;
@@ -224,13 +284,26 @@ Search_result ai(Board board, int level, bool use_book, bool use_multi_thread, b
         double mpct;
         get_level(level, board.n_discs() - 4, &is_mid_search, &depth, &use_mpc, &mpct);
         if (show_log)
-            cerr << "level status " << level << " " << board.n_discs() - 4 << " " << depth << " " << use_mpc << " " << mpct << endl;
+            std::cerr << "level status " << level << " " << board.n_discs() - 4 << " " << depth << " " << use_mpc << " " << mpct << endl;
         res = tree_search(board, depth, use_mpc, mpct, show_log, use_multi_thread);
         res.value *= value_sign;
     }
     return res;
 }
 
+/*
+    @brief Get a result of a search with book or search
+
+    This function is used for hint calculation.
+
+    @param board                board to solve
+    @param level                level of AI
+    @param use_book             use book?
+    @param use_multi_thread     search in multi thread?
+    @param show_log             show log?
+
+    @return the result in Search_result structure
+*/
 Search_result ai_hint(Board board, int level, bool use_book, bool use_multi_thread, bool show_log){
     Search_result res;
     int value_sign = 1;
@@ -251,7 +324,7 @@ Search_result ai_hint(Board board, int level, bool use_book, bool use_multi_thre
     int book_result = book.get(&board);
     if (book_result != -INF && use_book){
         if (show_log)
-            cerr << "book " << idx_to_coord(book_result) << endl;
+            std::cerr << "book " << idx_to_coord(book_result) << endl;
         res.policy = -1;
         res.value = -value_sign * book_result;
         res.depth = SEARCH_BOOK;
@@ -275,13 +348,26 @@ Search_result ai_hint(Board board, int level, bool use_book, bool use_multi_thre
         double mpct;
         get_level(level, board.n_discs() - 4, &is_mid_search, &depth, &use_mpc, &mpct);
         if (show_log)
-            cerr << "level status " << level << " " << board.n_discs() - 4 << " " << depth << " " << use_mpc << " " << mpct << endl;
+            std::cerr << "level status " << level << " " << board.n_discs() - 4 << " " << depth << " " << use_mpc << " " << mpct << endl;
         res = tree_search_iterative_deepening(board, depth, use_mpc, mpct, show_log, use_multi_thread);
         res.value *= value_sign;
     }
     return res;
 }
 
+/*
+    @brief Get a result of a search with given window with book or search
+
+    This function is used for book expanding.
+
+    @param board                board to solve
+    @param level                level of AI
+    @param alpha                alpha of the search window
+    @param beta                 beta of the search window
+    @param use_multi_thread     search in multi thread?
+
+    @return the score of the board
+*/
 int ai_window(Board board, int level, int alpha, int beta, bool use_multi_thread){
     int value_sign = 1;
     if (board.get_legal() == 0ULL){

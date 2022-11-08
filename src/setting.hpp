@@ -48,3 +48,6 @@
 // move ordering
 #define USE_AUTO_OPTIMIZED_MOVE_ORDERING_MID true
 #define USE_AUTO_OPTIMIZED_MOVE_ORDERING_NWS true
+
+// use bit gather optimization
+#define USE_BIT_GATHER_OPTIMIZE true
