@@ -2,13 +2,16 @@ import subprocess
 from time import time, sleep
 import sys
 
-strt_idx = int(sys.argv[1])
-end_idx = int(sys.argv[2])
-n_threads = int(sys.argv[3])
-sleep_sec = int(sys.argv[4])
-show_log = int(sys.argv[5])
-hash_level = int(sys.argv[6])
-
+try:
+    strt_idx = int(sys.argv[1])
+    end_idx = int(sys.argv[2])
+    n_threads = int(sys.argv[3])
+    sleep_sec = int(sys.argv[4])
+    show_log = int(sys.argv[5])
+    hash_level = int(sys.argv[6])
+except:
+    print('strt, end, thread, sleep, log, hash')
+    exit()
 #if n_threads >= 2:
 egaroucid = subprocess.Popen(('Egaroucid6_test.exe ' + str(n_threads - 1) + ' ' + str(show_log) + ' ' + str(hash_level)).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 #else:
