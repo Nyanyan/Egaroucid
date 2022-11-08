@@ -7,9 +7,10 @@ end_idx = int(sys.argv[2])
 n_threads = int(sys.argv[3])
 sleep_sec = int(sys.argv[4])
 show_log = int(sys.argv[5])
+hash_level = int(sys.argv[6])
 
 #if n_threads >= 2:
-egaroucid = subprocess.Popen(('Egaroucid6_test.exe ' + str(n_threads - 1) + ' ' + str(show_log)).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+egaroucid = subprocess.Popen(('Egaroucid6_test.exe ' + str(n_threads - 1) + ' ' + str(show_log) + ' ' + str(hash_level)).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 #else:
 #    egaroucid = subprocess.Popen('Egaroucid6_test_single.exe'.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
@@ -94,6 +95,7 @@ for line, ans_line in zip(res_str.splitlines(), answer.splitlines()):
 print('done')
 print(res_str_proc, end='')
 print(n_threads, 'threads')
+print('hash level', hash_level)
 print(tim / 1000, 'sec')
 #print(time() - strt, 'sec total')
 print(nodes, 'nodes')
