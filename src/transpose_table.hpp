@@ -193,6 +193,26 @@ class Node_parent_transpose_table{
             depth.store(from->depth);
         }
 
+        inline void get(const Board *board, int *l, int *u, const double t, const int d, bool *mpc_used){
+            if (data_strength(mpct.load(memory_order_relaxed), depth.load(memory_order_relaxed)) < data_strength(t, d)){
+                *l = -INF;
+                *u = INF;
+            } else{
+                if (board->player != player.load(memory_order_relaxed) || board->opponent != opponent.load(memory_order_relaxed)){
+                    *l = -INF;
+                    *u = INF;
+                } else{
+                    *l = lower.load(memory_order_relaxed);
+                    *u = upper.load(memory_order_relaxed);
+                    *mpc_used = mpct.load(memory_order_relaxed) < NOMPC;
+                    if (board->player != player.load(memory_order_relaxed) || board->opponent != opponent.load(memory_order_relaxed)){
+                        *l = -INF;
+                        *u = INF;
+                    }
+                }
+            }
+        }
+
         inline void get(const Board *board, int *l, int *u, const double t, const int d){
             if (data_strength(mpct.load(memory_order_relaxed), depth.load(memory_order_relaxed)) < data_strength(t, d)){
                 *l = -INF;
@@ -287,6 +307,13 @@ class Parent_transpose_table{
                 table_stack[hash].register_value_with_board(board, l, u, t, d);
             else
                 table_heap[hash - TRANSPOSE_TABLE_STACK_SIZE].register_value_with_board(board, l, u, t, d);
+        }
+
+        inline void get(const Board *board, const uint32_t hash, int *l, int *u, const double t, const int d, bool *mpc_used){
+            if (hash < TRANSPOSE_TABLE_STACK_SIZE)
+                table_stack[hash].get(board, l, u, t, d, mpc_used);
+            else
+                table_heap[hash - TRANSPOSE_TABLE_STACK_SIZE].get(board, l, u, t, d, mpc_used);
         }
 
         inline void get(const Board *board, const uint32_t hash, int *l, int *u, const double t, const int d){

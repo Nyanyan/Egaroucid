@@ -69,17 +69,22 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
 
 inline bool mpc_nws(Search *search, int alpha, int depth, uint64_t legal, bool is_end_search, int *v, const bool *searching){
     int search_depth = ((depth >> 2) & 0xFE) ^ (depth & 1);
+    int beta = alpha + 1;
+    if (is_end_search){
+        alpha -= (alpha + SCORE_MAX) & 1;
+        beta += (beta + SCORE_MAX) & 1;
+    }
     if (search_depth == 0){
         int error_depth0;
         if (is_end_search)
             error_depth0 = ceil(search->mpct * probcut_sigma_end_depth0(search->n_discs));
         else
             error_depth0 = ceil(search->mpct * probcut_sigma_depth0(search->n_discs, depth));
-        if (alpha - error_depth0 < -SCORE_MAX && SCORE_MAX < alpha + 1 + error_depth0)
+        if (alpha - error_depth0 < -SCORE_MAX && SCORE_MAX < beta + error_depth0)
             return false;
         const int depth0_value = mid_evaluate_diff(search);
-        if (depth0_value >= alpha + 1 + error_depth0){
-            *v = alpha + 1;
+        if (depth0_value >= beta + error_depth0){
+            *v = beta;
             return true;
         } else if (depth0_value <= alpha - error_depth0){
             *v = alpha;
@@ -92,7 +97,7 @@ inline bool mpc_nws(Search *search, int alpha, int depth, uint64_t legal, bool i
         else
             error_search = ceil(search->mpct * probcut_sigma(search->n_discs, search_depth, depth));
         const int alpha_mpc = alpha - error_search;
-        const int beta_mpc = alpha + 1 + error_search;
+        const int beta_mpc = beta + error_search;
         bool res;
         if (beta_mpc <= SCORE_MAX){
             if (search_depth == 1)
@@ -115,7 +120,7 @@ inline bool mpc_nws(Search *search, int alpha, int depth, uint64_t legal, bool i
                 #endif
             }
             if (res){
-                *v = alpha + 1;
+                *v = beta;
                 return true;
             }
         } else if (alpha_mpc >= -SCORE_MAX){
@@ -147,26 +152,27 @@ inline bool mpc_nws(Search *search, int alpha, int depth, uint64_t legal, bool i
     return false;
 }
 
-inline bool mpc(Search *search, int *alpha, int *beta, int depth, uint64_t legal, bool is_end_search, int *v, const bool *searching){
+inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, bool is_end_search, int *v, const bool *searching){
     int search_depth = ((depth >> 2) & 0xFE) ^ (depth & 1);
+    if (is_end_search){
+        alpha -= (alpha + SCORE_MAX) & 1;
+        beta += (beta + SCORE_MAX) & 1;
+    }
     if (search_depth == 0){
         int error_depth0;
         if (is_end_search)
             error_depth0 = ceil(search->mpct * probcut_sigma_end_depth0(search->n_discs));
         else
             error_depth0 = ceil(search->mpct * probcut_sigma_depth0(search->n_discs, depth));
-        if (*alpha - error_depth0 < -SCORE_MAX && SCORE_MAX < *beta + error_depth0)
+        if (alpha - error_depth0 < -SCORE_MAX && SCORE_MAX < beta + error_depth0)
             return false;
         const int depth0_value = mid_evaluate_diff(search);
-        if (depth0_value >= *beta + error_depth0){
-            *v = *beta;
+        if (depth0_value >= beta + error_depth0){
+            *v = beta;
             return true;
-        } else if (depth0_value <= *alpha - error_depth0){
-            *v = *alpha;
+        } else if (depth0_value <= alpha - error_depth0){
+            *v = alpha;
             return true;
-        } else{
-            *alpha = max(*alpha, depth0_value - error_depth0);
-            *beta = min(*beta, depth0_value + error_depth0);
         }
     } else{
         int error_search;
@@ -174,11 +180,10 @@ inline bool mpc(Search *search, int *alpha, int *beta, int depth, uint64_t legal
             error_search = ceil(search->mpct * probcut_sigma_end(search->n_discs, search_depth));
         else
             error_search = ceil(search->mpct * probcut_sigma(search->n_discs, search_depth, depth));
-        const int alpha_mpc = *alpha - error_search;
-        const int beta_mpc = *beta + error_search;
-        if (*alpha - error_search < -SCORE_MAX && SCORE_MAX < *beta + error_search)
+        const int alpha_mpc = alpha - error_search;
+        const int beta_mpc = beta + error_search;
+        if (alpha_mpc < -SCORE_MAX && SCORE_MAX < beta_mpc)
             return false;
-        const int depth0_value = mid_evaluate_diff(search);
         bool res;
         if (beta_mpc <= SCORE_MAX){
             if (search_depth == 1)
@@ -201,7 +206,7 @@ inline bool mpc(Search *search, int *alpha, int *beta, int depth, uint64_t legal
                 #endif
             }
             if (res){
-                *v = *beta;
+                *v = beta;
                 return true;
             }
         } else if (alpha_mpc >= -SCORE_MAX){
@@ -225,7 +230,7 @@ inline bool mpc(Search *search, int *alpha, int *beta, int depth, uint64_t legal
                 #endif
             }
             if (res){
-                *v = *alpha;
+                *v = alpha;
                 return true;
             }
         }

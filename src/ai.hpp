@@ -52,7 +52,6 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
 
         if (show_log)
             cerr << "start!" << endl;
-        
         if (depth >= 14){
             search_depth = depth / 2;
             search.mpct = 1.0;

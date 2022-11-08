@@ -39,16 +39,13 @@ Parallel_task ybwc_do_task_nws(int id, uint64_t player, uint64_t opponent, int_f
     search.n_nodes = 0ULL;
     search.use_multi_thread = depth > YBWC_MID_SPLIT_MIN_DEPTH;
     calc_features(&search);
-    bool n_mpc_used = false;
-    int g = -nega_alpha_ordering_nws(&search, alpha, depth, false, legal, is_end_search, searching, &n_mpc_used);
     Parallel_task task;
-    if (*searching)
-        task.value = g;
-    else
+    task.mpc_used = false;
+    task.value = -nega_alpha_ordering_nws(&search, alpha, depth, false, legal, is_end_search, searching, &task.mpc_used);
+    if (!(*searching))
         task.value = SCORE_UNDEFINED;
     task.n_nodes = search.n_nodes;
     task.cell = policy;
-    task.mpc_used = n_mpc_used;
     return task;
 }
 
