@@ -65,8 +65,8 @@ constexpr int move_ordering_nws_weights[N_MOVE_ORDERING_PHASES][N_MOVE_ORDERING_
     {-14, -12, 8, -12, -14},
     {-14, -12, 8, -12, -14},
     {-14, -10, 6, -12, -14},
-    {-14, -8, 4, -12, -14},
-    {-14, -6, 2, -12, -14}
+    {-14, -8, 4, -10, -12},
+    {-14, -6, 2, -10, -12}
 };
 
 struct Flip_value{
