@@ -724,22 +724,14 @@ inline int calc_pattern_first(const int phase_idx, Board *b){
     inline int calc_pattern_diff(const int phase_idx, Search *search){
         int *pat_com = (int*)pattern_arr[search->eval_feature_reversed][phase_idx][0];
         constexpr int offset1 = MAX_EVALUATE_IDX;
-        __m256i mem_addr_8 = _mm256_add_epi32(search->eval_features[0], eval_simd_offsets[0]);
-        __m256i res256 = _mm256_i32gather_epi32(pat_com, mem_addr_8, 4);
-        mem_addr_8 = _mm256_add_epi32(search->eval_features[1], eval_simd_offsets[1]);
-        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, mem_addr_8, 4));
-        mem_addr_8 = _mm256_add_epi32(search->eval_features[2], eval_simd_offsets[2]);
-        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, mem_addr_8, 4));
-        mem_addr_8 = _mm256_add_epi32(search->eval_features[3], eval_simd_offsets[3]);
-        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, mem_addr_8, 4));
-        mem_addr_8 = _mm256_add_epi32(search->eval_features[4], eval_simd_offsets[4]);
-        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, mem_addr_8, 4));
-        mem_addr_8 = _mm256_add_epi32(search->eval_features[5], eval_simd_offsets[5]);
-        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, mem_addr_8, 4));
-        mem_addr_8 = _mm256_add_epi32(search->eval_features[6], eval_simd_offsets[6]);
-        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, mem_addr_8, 4));
-        mem_addr_8 = _mm256_add_epi32(search->eval_features[7], eval_simd_offsets[7]);
-        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, mem_addr_8, 4));
+        __m256i res256 = _mm256_i32gather_epi32(pat_com, search->eval_features[0], 4);
+        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, search->eval_features[1], 4));
+        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, search->eval_features[2], 4));
+        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, search->eval_features[3], 4));
+        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, search->eval_features[4], 4));
+        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, search->eval_features[5], 4));
+        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, search->eval_features[6], 4));
+        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, search->eval_features[7], 4));
         return _mm256_extract_epi32(res256, 7) + 
             _mm256_extract_epi32(res256, 6) + 
             _mm256_extract_epi32(res256, 5) + 
@@ -875,6 +867,7 @@ inline int mid_evaluate_diff(Search *search){
                 search->eval_features[i] = _mm256_add_epi32(_mm256_sllv_epi32(search->eval_features[i], feature_to_coord_simd_shift[i][j]), _mm256_and_si256(search->eval_features[i], feature_to_coord_simd_mask[i][j]));
             }
             search->eval_features[i] = _mm256_add_epi32(search->eval_features[i], _mm256_i32gather_epi32(b_arr_int, feature_to_coord_simd_cell[i][MAX_PATTERN_CELLS - 1], 4));
+            search->eval_features[i] = _mm256_add_epi32(search->eval_features[i], eval_simd_offsets[i]);
         }
         search->eval_feature_reversed = 0;
     }
