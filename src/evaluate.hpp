@@ -448,7 +448,7 @@ constexpr uint_fast16_t pow3[11] = {1, P31, P32, P33, P34, P35, P36, P37, P38, P
 int16_t eval_sur0_sur1_arr[N_PHASES][MAX_SURROUND][MAX_SURROUND];
 int16_t eval_canput0_canput1_arr[N_PHASES][MAX_CANPUT][MAX_CANPUT];
 int16_t eval_num0_num1_arr[N_PHASES][MAX_STONE_NUM][MAX_STONE_NUM];
-int16_t eval_canput_pattern[N_PHASES][N_CANPUT_PATTERNS][P48];
+int16_t eval_canput_pattern[N_PHASES][N_CANPUT_PATTERNS][P44][P44];
 
 string create_line(int b, int w){
     string res = "";
@@ -563,7 +563,7 @@ inline bool init_evaluation_calc(const char* file){
             fclose(fp);
             return false;
         }
-        if (fread(eval_canput_pattern[phase_idx], 2, N_CANPUT_PATTERNS * P48, fp) < N_CANPUT_PATTERNS * P48){
+        if (fread(eval_canput_pattern[phase_idx], 2, N_CANPUT_PATTERNS * P44 * P44, fp) < N_CANPUT_PATTERNS * P48){
             cerr << "eval.egev broken" << endl;
             fclose(fp);
             return false;
@@ -779,22 +779,22 @@ inline int calc_canput_pattern(const int phase_idx, Board *b, const uint64_t pla
     uint8_t *pv = (uint8_t*)&p90;
     uint8_t *ov = (uint8_t*)&o90;
     return 
-        eval_canput_pattern[phase_idx][0][((uint32_t)oh[0] << HW) | ph[0]] + 
-        eval_canput_pattern[phase_idx][0][((uint32_t)oh[7] << HW) | ph[7]] + 
-        eval_canput_pattern[phase_idx][0][((uint32_t)ov[0] << HW) | pv[0]] + 
-        eval_canput_pattern[phase_idx][0][((uint32_t)ov[7] << HW) | pv[7]] + 
-        eval_canput_pattern[phase_idx][1][((uint32_t)oh[1] << HW) | ph[1]] + 
-        eval_canput_pattern[phase_idx][1][((uint32_t)oh[6] << HW) | ph[6]] + 
-        eval_canput_pattern[phase_idx][1][((uint32_t)ov[1] << HW) | pv[1]] + 
-        eval_canput_pattern[phase_idx][1][((uint32_t)ov[6] << HW) | pv[6]] + 
-        eval_canput_pattern[phase_idx][2][((uint32_t)oh[2] << HW) | ph[2]] + 
-        eval_canput_pattern[phase_idx][2][((uint32_t)oh[5] << HW) | ph[5]] + 
-        eval_canput_pattern[phase_idx][2][((uint32_t)ov[2] << HW) | pv[2]] + 
-        eval_canput_pattern[phase_idx][2][((uint32_t)ov[5] << HW) | pv[5]] + 
-        eval_canput_pattern[phase_idx][3][((uint32_t)oh[3] << HW) | ph[3]] + 
-        eval_canput_pattern[phase_idx][3][((uint32_t)oh[4] << HW) | ph[4]] + 
-        eval_canput_pattern[phase_idx][3][((uint32_t)ov[3] << HW) | pv[3]] + 
-        eval_canput_pattern[phase_idx][3][((uint32_t)ov[4] << HW) | pv[4]];
+        eval_canput_pattern[phase_idx][0][oh[0]][ph[0]] + 
+        eval_canput_pattern[phase_idx][0][oh[7]][ph[7]] + 
+        eval_canput_pattern[phase_idx][0][ov[0]][pv[0]] + 
+        eval_canput_pattern[phase_idx][0][ov[7]][pv[7]] + 
+        eval_canput_pattern[phase_idx][1][oh[1]][ph[1]] + 
+        eval_canput_pattern[phase_idx][1][oh[6]][ph[6]] + 
+        eval_canput_pattern[phase_idx][1][ov[1]][pv[1]] + 
+        eval_canput_pattern[phase_idx][1][ov[6]][pv[6]] + 
+        eval_canput_pattern[phase_idx][2][oh[2]][ph[2]] + 
+        eval_canput_pattern[phase_idx][2][oh[5]][ph[5]] + 
+        eval_canput_pattern[phase_idx][2][ov[2]][pv[2]] + 
+        eval_canput_pattern[phase_idx][2][ov[5]][pv[5]] + 
+        eval_canput_pattern[phase_idx][3][oh[3]][ph[3]] + 
+        eval_canput_pattern[phase_idx][3][oh[4]][ph[4]] + 
+        eval_canput_pattern[phase_idx][3][ov[3]][pv[3]] + 
+        eval_canput_pattern[phase_idx][3][ov[4]][pv[4]];
 }
 
 inline int end_evaluate(Board *b){
