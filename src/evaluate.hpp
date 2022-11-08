@@ -861,15 +861,6 @@ inline int mid_evaluate_diff(Search *search){
 }
 
 #if USE_SIMD_EVALUATION
-    inline int pick_pattern_idx(const uint_fast8_t b_arr[], const Feature_to_coord *f){
-        int res = 0;
-        for (int i = 0; i < f->n_cells; ++i){
-            res *= 3;
-            res += b_arr[HW2_M1 - f->cells[i]];
-        }
-        return res;
-    }
-
     inline void calc_features(Search *search){
         int b_arr_int[HW2 + 1];
         search->board.translate_to_arr_player_rev(b_arr_int);
@@ -883,39 +874,8 @@ inline int mid_evaluate_diff(Search *search){
             }
             search->eval_features[i] = _mm256_add_epi32(search->eval_features[i], _mm256_i32gather_epi32(b_arr_int, feature_to_coord_simd_cell[i][MAX_PATTERN_CELLS - 1], 4));
         }
-        /*
-        uint_fast8_t b_arr[HW2];
-        search->board.translate_to_arr_player(b_arr);
-        int32_t features[N_SYMMETRY_PATTERNS];
-        for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i)
-            features[i] = pick_pattern_idx(b_arr, &feature_to_coord[i]);
-        search->eval_features[0] = _mm256_set_epi32(features[0], features[1], features[2], features[3], features[4], features[5], features[6], features[7]);
-        search->eval_features[1] = _mm256_set_epi32(features[8], features[9], features[10], features[11], features[12], features[13], features[14], features[15]);
-        search->eval_features[2] = _mm256_set_epi32(features[16], features[17], features[18], features[19], features[20], features[21], features[22], features[23]);
-        search->eval_features[3] = _mm256_set_epi32(features[24], features[25], features[26], features[27], features[28], features[29], features[30], features[31]);
-        search->eval_features[4] = _mm256_set_epi32(features[32], features[33], features[34], features[35], features[36], features[37], features[38], features[39]);
-        search->eval_features[5] = _mm256_set_epi32(features[40], features[41], features[42], features[43], features[44], features[45], features[46], features[47]);
-        search->eval_features[6] = _mm256_set_epi32(features[48], features[49], features[50], features[51], features[52], features[53], features[54], features[55]);
-        search->eval_features[7] = _mm256_set_epi32(features[56], features[57], features[58], features[59], features[60], features[61], 0, 0);
-        */
         search->eval_feature_reversed = 0;
     }
-
-    /*
-    inline bool check_features(Search *search){
-        uint_fast8_t b_arr[HW2];
-        search->board.translate_to_arr_player(b_arr);
-        cerr << "A. ";
-        for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i)
-            cerr << pick_pattern_idx(b_arr, &feature_to_coord[i]) << " ";
-        cerr << endl;
-        cerr << "Q. ";
-        for (int i = 0; i < N_SIMD_EVAL_FEATURES; ++i)
-            simd_print_epi32_line(search->eval_features[i]);
-        cerr << endl;
-        return false;
-    }
-    */
 
     inline void eval_move(Search *search, const Flip *flip){
         uint_fast8_t i, cell;
