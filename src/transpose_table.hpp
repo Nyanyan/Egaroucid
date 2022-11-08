@@ -204,7 +204,7 @@ class Node_parent_transpose_table{
                 } else{
                     *l = lower.load(memory_order_relaxed);
                     *u = upper.load(memory_order_relaxed);
-                    *mpc_used = mpct.load(memory_order_relaxed) < NOMPC;
+                    *mpc_used |= mpct.load(memory_order_relaxed) < NOMPC;
                     if (board->player != player.load(memory_order_relaxed) || board->opponent != opponent.load(memory_order_relaxed)){
                         *l = -INF;
                         *u = INF;

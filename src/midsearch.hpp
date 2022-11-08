@@ -136,6 +136,20 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, c
                     return stab_res;
             }
         #endif
+        int first_alpha = alpha;
+        if (legal == LEGAL_UNDEFINED)
+            legal = search->board.get_legal();
+        int v = -INF;
+        if (legal == 0ULL){
+            if (skipped)
+                return end_evaluate(&search->board);
+            search->eval_feature_reversed ^= 1;
+            search->board.pass();
+                v = -nega_alpha_ordering(search, -beta, -alpha, depth, true, LEGAL_UNDEFINED, is_end_search, searching);
+            search->board.pass();
+            search->eval_feature_reversed ^= 1;
+            return v;
+        }
         uint32_t hash_code = search->board.hash();
         #if MID_TO_END_DEPTH < USE_TT_DEPTH_THRESHOLD
             int l = -INF, u = INF;
@@ -162,20 +176,6 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, c
             alpha = max(alpha, l);
             beta = min(beta, u);
         #endif
-        int first_alpha = alpha;
-        if (legal == LEGAL_UNDEFINED)
-            legal = search->board.get_legal();
-        int v = -INF;
-        if (legal == 0ULL){
-            if (skipped)
-                return end_evaluate(&search->board);
-            search->eval_feature_reversed ^= 1;
-            search->board.pass();
-                v = -nega_alpha_ordering(search, -beta, -alpha, depth, true, LEGAL_UNDEFINED, is_end_search, searching);
-            search->board.pass();
-            search->eval_feature_reversed ^= 1;
-            return v;
-        }
         #if USE_MID_MPC
             if (search->use_mpc){
                 #if MID_TO_END_DEPTH < USE_MPC_ENDSEARCH_DEPTH
@@ -278,6 +278,20 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
                 return stab_res;
         }
     #endif
+    int first_alpha = alpha;
+    if (legal == LEGAL_UNDEFINED)
+        legal = search->board.get_legal();
+    int v = -INF;
+    if (legal == 0ULL){
+        if (skipped)
+            return end_evaluate(&search->board);
+        search->eval_feature_reversed ^= 1;
+        search->board.pass();
+            v = -nega_scout(search, -beta, -alpha, depth, true, LEGAL_UNDEFINED, is_end_search, searching);
+        search->board.pass();
+        search->eval_feature_reversed ^= 1;
+        return v;
+    }
     uint32_t hash_code = search->board.hash();
     #if MID_TO_END_DEPTH < USE_TT_DEPTH_THRESHOLD
         int l = -INF, u = INF;
@@ -304,20 +318,6 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
         alpha = max(alpha, l);
         beta = min(beta, u);
     #endif
-    int first_alpha = alpha;
-    if (legal == LEGAL_UNDEFINED)
-        legal = search->board.get_legal();
-    int v = -INF;
-    if (legal == 0ULL){
-        if (skipped)
-            return end_evaluate(&search->board);
-        search->eval_feature_reversed ^= 1;
-        search->board.pass();
-            v = -nega_scout(search, -beta, -alpha, depth, true, LEGAL_UNDEFINED, is_end_search, searching);
-        search->board.pass();
-        search->eval_feature_reversed ^= 1;
-        return v;
-    }
     #if USE_MID_MPC
         if (search->use_mpc){
             #if MID_TO_END_DEPTH < USE_MPC_ENDSEARCH_DEPTH

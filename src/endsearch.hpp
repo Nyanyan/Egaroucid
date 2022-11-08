@@ -503,6 +503,18 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
             }
         #endif
         ++search->n_nodes;
+        int first_alpha = alpha;
+        if (legal == LEGAL_UNDEFINED)
+            legal = search->board.get_legal();
+        int v = -INF;
+        if (legal == 0ULL){
+            if (skipped)
+                return end_evaluate(&search->board);
+            search->board.pass();
+                v = -nega_alpha_end(search, -beta, -alpha, true, LEGAL_UNDEFINED, searching);
+            search->board.pass();
+            return v;
+        }
         uint32_t hash_code = search->board.hash();
         int l = -INF, u = INF;
         if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD){
@@ -521,18 +533,6 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
             if (stab_res != SCORE_UNDEFINED)
                 return stab_res;
         #endif
-        int first_alpha = alpha;
-        if (legal == LEGAL_UNDEFINED)
-            legal = search->board.get_legal();
-        int v = -INF;
-        if (legal == 0ULL){
-            if (skipped)
-                return end_evaluate(&search->board);
-            search->board.pass();
-                v = -nega_alpha_end(search, -beta, -alpha, true, LEGAL_UNDEFINED, searching);
-            search->board.pass();
-            return v;
-        }
         int best_move = TRANSPOSE_TABLE_UNDEFINED;
         if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD){
             best_move = child_transpose_table.get(&search->board, hash_code);

@@ -126,6 +126,19 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
         #endif
     }
     ++search->n_nodes;
+    if (legal == LEGAL_UNDEFINED)
+        legal = search->board.get_legal();
+    int v = -INF;
+    if (legal == 0ULL){
+        if (skipped)
+            return end_evaluate(&search->board);
+        search->eval_feature_reversed ^= 1;
+        search->board.pass();
+            v = -nega_alpha_ordering_nws(search, -alpha - 1, depth, true, LEGAL_UNDEFINED, is_end_search, searching, mpc_used);
+        search->board.pass();
+        search->eval_feature_reversed ^= 1;
+        return v;
+    }
     uint32_t hash_code = search->board.hash();
     #if MID_TO_END_DEPTH < USE_TT_DEPTH_THRESHOLD
         int l = -INF, u = INF;
@@ -148,19 +161,6 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
         if (alpha < l)
             return l;
     #endif
-    if (legal == LEGAL_UNDEFINED)
-        legal = search->board.get_legal();
-    int v = -INF;
-    if (legal == 0ULL){
-        if (skipped)
-            return end_evaluate(&search->board);
-        search->eval_feature_reversed ^= 1;
-        search->board.pass();
-            v = -nega_alpha_ordering_nws(search, -alpha - 1, depth, true, LEGAL_UNDEFINED, is_end_search, searching, mpc_used);
-        search->board.pass();
-        search->eval_feature_reversed ^= 1;
-        return v;
-    }
     #if USE_MID_MPC
         if (search->use_mpc){
             #if MID_TO_END_DEPTH < USE_MPC_ENDSEARCH_DEPTH
@@ -179,17 +179,18 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
         }
     #endif
     int best_move = child_transpose_table.get(&search->board, hash_code);
-    bool n_mpc_used = false;
+    bool n_mpc_used;
     if (best_move != TRANSPOSE_TABLE_UNDEFINED){
         if (1 & (legal >> best_move)){
             Flip flip_best;
             calc_flip(&flip_best, &search->board, best_move);
             eval_move(search, &flip_best);
             search->move(&flip_best);
+            n_mpc_used = false;
                 v = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching, &n_mpc_used);
+            *mpc_used |= n_mpc_used;
             search->undo(&flip_best);
             eval_undo(search, &flip_best);
-            *mpc_used = n_mpc_used;
             if (alpha < v)
                 return v;
             legal ^= 1ULL << best_move;

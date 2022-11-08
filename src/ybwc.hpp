@@ -247,10 +247,10 @@ inline void ybwc_wait_all_nws(Search *search, vector<future<Parallel_task>> &par
         if (task.valid()){
             got_task = task.get();
             search->n_nodes += got_task.n_nodes;
+            *mpc_used |= got_task.mpc_used;
             if ((*v) < got_task.value && (*searching)){
                 *best_move = got_task.cell;
                 *v = got_task.value;
-                *mpc_used |= got_task.mpc_used;
                 if (alpha < (*v))
                     *searching = false;
             }

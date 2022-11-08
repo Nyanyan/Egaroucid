@@ -445,6 +445,17 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
     if (search->n_discs >= HW2 - END_FAST_DEPTH)
         return nega_alpha_end_fast_nws(search, alpha, skipped, false, searching);
     ++search->n_nodes;
+    if (legal == LEGAL_UNDEFINED)
+        legal = search->board.get_legal();
+    int v = -INF;
+    if (legal == 0ULL){
+        if (skipped)
+            return end_evaluate(&search->board);
+        search->board.pass();
+            v = -nega_alpha_end_nws(search, -alpha - 1, true, LEGAL_UNDEFINED, searching);
+        search->board.pass();
+        return v;
+    }
     uint32_t hash_code = search->board.hash();
     int l = -INF, u = INF;
     const bool use_tt = search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD;
@@ -462,17 +473,6 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
         if (stab_res != SCORE_UNDEFINED)
             return stab_res;
     #endif
-    if (legal == LEGAL_UNDEFINED)
-        legal = search->board.get_legal();
-    int v = -INF;
-    if (legal == 0ULL){
-        if (skipped)
-            return end_evaluate(&search->board);
-        search->board.pass();
-            v = -nega_alpha_end_nws(search, -alpha - 1, true, LEGAL_UNDEFINED, searching);
-        search->board.pass();
-        return v;
-    }
     int best_move = TRANSPOSE_TABLE_UNDEFINED;
     if (use_tt){
         best_move = child_transpose_table.get(&search->board, hash_code);
