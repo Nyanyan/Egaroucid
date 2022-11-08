@@ -98,7 +98,7 @@ class Child_transpose_table{
         inline bool resize(int hash_level){
             size_t n_table_size = hash_sizes[hash_level];
             free(table_heap);
-            if (n_table_size - TRANSPOSE_TABLE_STACK_SIZE > 0){
+            if (n_table_size > TRANSPOSE_TABLE_STACK_SIZE){
                 table_heap = (Node_child_transpose_table*)malloc(sizeof(Node_child_transpose_table) * (n_table_size - TRANSPOSE_TABLE_STACK_SIZE));
                 if (table_heap == NULL)
                     return false;
@@ -124,7 +124,7 @@ class Child_transpose_table{
                     tasks.emplace_back(thread_pool.push(bind(&init_child_transpose_table, table_stack, s, e)));
                     s = e;
                 }
-                if (table_size - TRANSPOSE_TABLE_STACK_SIZE > 0){
+                if (table_size > TRANSPOSE_TABLE_STACK_SIZE){
                     delta = (table_size - (size_t)TRANSPOSE_TABLE_STACK_SIZE + thread_size - 1) / thread_size;
                     s = 0;
                     for (int i = 0; i < thread_size; ++i){
@@ -242,7 +242,7 @@ class Parent_transpose_table{
         inline bool resize(int hash_level){
             size_t n_table_size = hash_sizes[hash_level];
             free(table_heap);
-            if (n_table_size - TRANSPOSE_TABLE_STACK_SIZE > 0){
+            if (n_table_size > TRANSPOSE_TABLE_STACK_SIZE){
                 table_heap = (Node_parent_transpose_table*)malloc(sizeof(Node_parent_transpose_table) * (n_table_size - TRANSPOSE_TABLE_STACK_SIZE));
                 if (table_heap == NULL)
                     return false;
@@ -268,7 +268,7 @@ class Parent_transpose_table{
                     tasks.emplace_back(thread_pool.push(bind(&init_parent_transpose_table, table_stack, s, e)));
                     s = e;
                 }
-                if (table_size - TRANSPOSE_TABLE_STACK_SIZE > 0){
+                if (table_size > TRANSPOSE_TABLE_STACK_SIZE){
                     delta = (table_size - (size_t)TRANSPOSE_TABLE_STACK_SIZE + thread_size - 1) / thread_size;
                     s = 0;
                     for (int i = 0; i < thread_size; ++i){
@@ -308,12 +308,12 @@ Child_transpose_table child_transpose_table;
 
 bool hash_resize(int hash_level, int n_hash_level){
     if (!parent_transpose_table.resize(n_hash_level)){
-        cerr << "hash resize failed" << endl;
+        cerr << "parent hash table resize failed" << endl;
         parent_transpose_table.resize(hash_level);
         return false;
     }
     if (!child_transpose_table.resize(n_hash_level)){
-        cerr << "hash resize failed" << endl;
+        cerr << "child hash table resize failed" << endl;
         parent_transpose_table.resize(hash_level);
         child_transpose_table.resize(hash_level);
         return false;
