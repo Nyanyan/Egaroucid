@@ -217,12 +217,12 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
             bool n_searching = true;
             for (int move_idx = 0; move_idx < canput; ++move_idx){
                 swap_next_best_move(move_list, move_idx, canput);
-                n_mpc_used = false;
                 eval_move(search, &move_list[move_idx].flip);
                 search->move(&move_list[move_idx].flip);
                     if (ybwc_split_nws(search, &move_list[move_idx].flip, -alpha - 1, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].flip.pos, canput, pv_idx++, seems_to_be_all_node, split_count, parallel_tasks)){
                         ++split_count;
                     } else{
+                        n_mpc_used = false;
                         g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching, &n_mpc_used);
                         *mpc_used |= n_mpc_used;
                         if (v < g){
@@ -255,13 +255,13 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
         } else{
             for (int move_idx = 0; move_idx < canput; ++move_idx){
                 swap_next_best_move(move_list, move_idx, canput);
-                n_mpc_used = false;
                 eval_move(search, &move_list[move_idx].flip);
                 search->move(&move_list[move_idx].flip);
+                n_mpc_used = false;
                     g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching, &n_mpc_used);
+                *mpc_used |= n_mpc_used;
                 search->undo(&move_list[move_idx].flip);
                 eval_undo(search, &move_list[move_idx].flip);
-                *mpc_used |= n_mpc_used;
                 if (v < g){
                     v = g;
                     if (alpha < v)

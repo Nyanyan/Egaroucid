@@ -12,10 +12,9 @@
 #include "mobility.hpp"
 #include "flip.hpp"
 #include "last_flip.hpp"
-using namespace std;
+#include "hash.hpp"
 
-uint32_t hash_rand_player[4][65536];
-uint32_t hash_rand_opponent[4][65536];
+using namespace std;
 
 class Board {
     public:
@@ -291,45 +290,6 @@ struct Board_hash {
         return board.hash();
     }
 };
-
-void board_init_rand(){
-    int i, j;
-    for (i = 0; i < 4; ++i){
-        for (j = 0; j < 65536; ++j){
-            hash_rand_player[i][j] = 0;
-            while (pop_count_uint(hash_rand_player[i][j]) < 4)
-                hash_rand_player[i][j] = myrand_uint_rev();
-            hash_rand_opponent[i][j] = 0;
-            while (pop_count_uint(hash_rand_opponent[i][j]) < 4)
-                hash_rand_opponent[i][j] = myrand_uint_rev();
-        }
-    }
-    cerr << "board initialized" << endl;
-}
-
-bool board_init(){
-    FILE* fp;
-    if (fopen_s(&fp, "resources/hash.eghs", "rb") != 0) {
-        cerr << "can't open hash.eghs" << endl;
-        //board_init_rand();
-        return false;
-    } else{
-        for (int i = 0; i < 4; ++i){
-            if (fread(hash_rand_player[i], 4, 65536, fp) < 65536){
-                cerr << "hash.eghs broken" << endl;
-                return false;
-            }
-        }
-        for (int i = 0; i < 4; ++i){
-            if (fread(hash_rand_opponent[i], 4, 65536, fp) < 65536){
-                cerr << "hash.eghs broken" << endl;
-                return false;
-            }
-        }
-    }
-    cerr << "board initialized" << endl;
-    return true;
-}
 
 inline void calc_flip(Flip *flip, Board *board, uint_fast8_t place){
     flip->calc_flip(board->player, board->opponent, place);

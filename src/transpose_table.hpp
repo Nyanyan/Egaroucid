@@ -16,9 +16,6 @@
 
 using namespace std;
 
-#define TRANSPOSE_TABLE_SIZE 16777216 //8388608
-#define TRANSPOSE_TABLE_MASK 16777215 //8388607
-
 #define TRANSPOSE_TABLE_UNDEFINED -INF
 
 //#define TRANSPOSE_TABLE_STRENGTH_MAGIC_NUMBER 8
@@ -72,8 +69,8 @@ class Node_child_transpose_table{
 };
 
 
-void init_child_transpose_table(Node_child_transpose_table table[], int s, int e){
-    for(int i = s; i < e; ++i){
+void init_child_transpose_table(Node_child_transpose_table table[], size_t s, size_t e){
+    for(size_t i = s; i < e; ++i){
         table[i].init();
     }
 }
@@ -86,24 +83,37 @@ void copy_child_transpose_table(Node_child_transpose_table from[], Node_child_tr
 
 class Child_transpose_table{
     private:
-        Node_child_transpose_table table[TRANSPOSE_TABLE_SIZE];
+        Node_child_transpose_table *table;
+        size_t table_size;
 
     public:
-        inline void first_init(){
+        Child_transpose_table(){
+            table = NULL;
+            table_size = 0;
+        }
+
+        inline bool resize(int hash_level){
+            size_t n_table_size = hash_sizes[hash_level];
+            free(table);
+            table = (Node_child_transpose_table*)malloc(sizeof(Node_child_transpose_table) * n_table_size);
+            if (table == NULL)
+                return false;
+            table_size = n_table_size;
             init();
+            return true;
         }
 
         inline void init(){
             if (thread_pool.size() == 0){
-                for (int i = 0; i < TRANSPOSE_TABLE_SIZE; ++i)
+                for (size_t i = 0; i < table_size; ++i)
                     table[i].init();
             } else{
                 int thread_size = thread_pool.size();
-                int delta = (TRANSPOSE_TABLE_SIZE + thread_size - 1) / thread_size;
-                int s = 0, e;
+                size_t delta = (table_size + thread_size - 1) / thread_size;
+                size_t s = 0, e;
                 vector<future<void>> tasks;
                 for (int i = 0; i < thread_size; ++i){
-                    e = min(TRANSPOSE_TABLE_SIZE, s + delta);
+                    e = min(table_size, s + delta);
                     tasks.emplace_back(thread_pool.push(bind(&init_child_transpose_table, table, s, e)));
                     s = e;
                 }
@@ -118,22 +128,6 @@ class Child_transpose_table{
 
         inline int get(const Board *board, const uint32_t hash){
             return table[hash].get(board);
-        }
-
-        inline void copy(Child_transpose_table *to){
-            /*
-            int thread_size = thread_pool.size();
-            int delta = (TRANSPOSE_TABLE_SIZE + thread_size - 1) / thread_size;
-            int s = 0, e;
-            vector<future<void>> tasks;
-            for (int i = 0; i < thread_size; ++i){
-                e = min(TRANSPOSE_TABLE_SIZE, s + delta);
-                tasks.emplace_back(thread_pool.push(bind(&copy_child_transpose_table, table, to->table, s, e)));
-                s = e;
-            }
-            for (future<void> &task: tasks)
-                task.get();
-            */
         }
 };
 
@@ -206,38 +200,45 @@ class Node_parent_transpose_table{
         }
 };
 
-void init_parent_transpose_table(Node_parent_transpose_table table[], int s, int e){
-    for(int i = s; i < e; ++i){
+void init_parent_transpose_table(Node_parent_transpose_table table[], size_t s, size_t e){
+    for(size_t i = s; i < e; ++i){
         table[i].init();
-    }
-}
-
-void copy_parent_transpose_table(Node_parent_transpose_table from[], Node_parent_transpose_table to[], int s, int e){
-    for(int i = s; i < e; ++i){
-        to[i].register_value_with_board(&from[i]);
     }
 }
 
 class Parent_transpose_table{
     private:
-        Node_parent_transpose_table table[TRANSPOSE_TABLE_SIZE];
+        Node_parent_transpose_table *table;
+        size_t table_size;
 
     public:
-        inline void first_init(){
+        Parent_transpose_table(){
+            table = NULL;
+            table_size = 0;
+        }
+
+        inline bool resize(int hash_level){
+            size_t n_table_size = hash_sizes[hash_level];
+            free(table);
+            table = (Node_parent_transpose_table*)malloc(sizeof(Node_parent_transpose_table) * n_table_size);
+            if (table == NULL)
+                return false;
+            table_size = n_table_size;
             init();
+            return true;
         }
 
         inline void init(){
             if (thread_pool.size() == 0){
-                for (int i = 0; i < TRANSPOSE_TABLE_SIZE; ++i)
+                for (size_t i = 0; i < table_size; ++i)
                     table[i].init();
             } else{
                 int thread_size = thread_pool.size();
-                int delta = (TRANSPOSE_TABLE_SIZE + thread_size - 1) / thread_size;
-                int s = 0, e;
+                size_t delta = (table_size + thread_size - 1) / thread_size;
+                size_t s = 0, e;
                 vector<future<void>> tasks;
                 for (int i = 0; i < thread_size; ++i){
-                    e = min(TRANSPOSE_TABLE_SIZE, s + delta);
+                    e = min(table_size, s + delta);
                     tasks.emplace_back(thread_pool.push(bind(&init_parent_transpose_table, table, s, e)));
                     s = e;
                 }
@@ -257,23 +258,28 @@ class Parent_transpose_table{
         inline bool contain(const Board *board, const uint32_t hash){
             return table[hash].contain(board);
         }
-
-        inline void copy(Parent_transpose_table *to){
-            /*
-            int thread_size = thread_pool.size();
-            int delta = (TRANSPOSE_TABLE_SIZE + thread_size - 1) / thread_size;
-            int s = 0, e;
-            vector<future<void>> tasks;
-            for (int i = 0; i < thread_size; ++i){
-                e = min(TRANSPOSE_TABLE_SIZE, s + delta);
-                tasks.emplace_back(thread_pool.push(bind(&copy_parent_transpose_table, table, to->table, s, e)));
-                s = e;
-            }
-            for (future<void> &task: tasks)
-                task.get();
-            */
-        }
 };
 
 Parent_transpose_table parent_transpose_table;
 Child_transpose_table child_transpose_table;
+
+bool hash_resize(int hash_level, int n_hash_level){
+    if (!parent_transpose_table.resize(n_hash_level)){
+        cerr << "hash resize failed" << endl;
+        parent_transpose_table.resize(hash_level);
+        return false;
+    }
+    if (!child_transpose_table.resize(n_hash_level)){
+        cerr << "hash resize failed" << endl;
+        parent_transpose_table.resize(hash_level);
+        child_transpose_table.resize(hash_level);
+        return false;
+    }
+    if (!hash_init(n_hash_level)){
+        cerr << "can't get hash. you can ignore this error" << endl;
+        hash_init_rand(n_hash_level);
+    }
+    double size_mb = (double)(sizeof(Node_parent_transpose_table) + sizeof(Node_child_transpose_table)) / 1024 / 1024 * hash_sizes[n_hash_level];
+    cerr << "hash resized to level " << n_hash_level << " elements " << hash_sizes[n_hash_level] << " size " << size_mb << " MB" << endl;
+    return true;
+}
