@@ -68,7 +68,11 @@ inline int nega_alpha_eval1_nws(Search *search, int alpha, bool skipped, const b
 int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching, bool *mpc_used);
 
 inline bool mpc_nws(Search *search, int alpha, int depth, uint64_t legal, bool is_end_search, int *v, const bool *searching){
-    int search_depth = ((depth >> 2) & 0xFE) ^ (depth & 1);
+    int search_depth;
+    if (is_end_search)
+        search_depth = ((depth >> 2) & 0xFE) ^ (depth & 1);
+    else
+        search_depth = ((depth >> 1) & 0xFE) ^ (depth & 1);
     int beta = alpha + 1;
     if (is_end_search){
         alpha -= (alpha + SCORE_MAX) & 1;
@@ -153,7 +157,11 @@ inline bool mpc_nws(Search *search, int alpha, int depth, uint64_t legal, bool i
 }
 
 inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, bool is_end_search, int *v, const bool *searching){
-    int search_depth = ((depth >> 2) & 0xFE) ^ (depth & 1);
+    int search_depth;
+    if (is_end_search)
+        search_depth = ((depth >> 2) & 0xFE) ^ (depth & 1);
+    else
+        search_depth = ((depth >> 1) & 0xFE) ^ (depth & 1);
     if (is_end_search){
         alpha -= (alpha + SCORE_MAX) & 1;
         beta += (beta + SCORE_MAX) & 1;
