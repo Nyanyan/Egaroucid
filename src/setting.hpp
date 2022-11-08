@@ -42,3 +42,7 @@
 
 // use SIMD in evaluation (pattern) function
 #define USE_SIMD_EVALUATION true
+
+// move ordering
+#define USE_AUTO_OPTIMIZED_MOVE_ORDERING_MID true
+#define USE_AUTO_OPTIMIZED_MOVE_ORDERING_NWS true
