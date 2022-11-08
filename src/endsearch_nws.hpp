@@ -568,6 +568,6 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
             }
         #endif
     }
-    register_tt_nws_mpct(search, HW2 - search->n_discs, hash_code, alpha, v, best_move, l, u, searching, NOMPC);
+    register_tt_nws_nompc(search, HW2 - search->n_discs, hash_code, alpha, v, best_move, l, u, searching);
     return v;
 }

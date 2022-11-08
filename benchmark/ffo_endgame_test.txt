@@ -14400,6 +14400,24 @@ same
 1168037764 nodes
 74038904.91886409 nps
 
+2022/11/08 add mpc check
+#40 depth 20 value 38 policy a2 nodes 15562066 time 170 nps 91541564
+#41 depth 22 value 0 policy h4 nodes 31005675 time 335 nps 92554253
+#42 depth 22 value 6 policy g2 nodes 58579252 time 546 nps 107288007
+#43 depth 23 value -12 policy g3 nodes 95250787 time 1220 nps 78074415
+#44 depth 23 value -14 policy d2 nodes 11824408 time 219 nps 53992730
+#45 depth 24 value 6 policy b2 nodes 363737712 time 3724 nps 97673929
+#46 depth 24 value -8 policy b3 nodes 89816626 time 1033 nps 86947363
+#47 depth 25 value 4 policy g2 nodes 30245835 time 356 nps 84960210
+#48 depth 25 value 28 policy f6 nodes 175066095 time 2426 nps 72162446
+#49 depth 26 value 16 policy e1 nodes 291069483 time 3558 nps 81807049
+9 threads
+13.587 sec
+1162157939 nodes
+85534550.59983808 nps
+
+
+
 
 
 

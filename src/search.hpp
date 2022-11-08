@@ -198,13 +198,13 @@ inline void register_tt_nws(Search *search, int depth, uint32_t hash_code, int a
     }
 }
 
-inline void register_tt_nws_mpct(Search *search, int depth, uint32_t hash_code, int alpha, int v, int best_move, int l, int u, const bool *searching, double mpct){
+inline void register_tt_nws_nompc(Search *search, int depth, uint32_t hash_code, int alpha, int v, int best_move, int l, int u, const bool *searching){
     if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD && (*searching) && -SCORE_MAX <= v && v <= SCORE_MAX && global_searching){
         if (alpha < v && best_move != TRANSPOSE_TABLE_UNDEFINED)
             child_transpose_table.reg(&search->board, hash_code, best_move);
         if (alpha < v)
-            parent_transpose_table.reg(&search->board, hash_code, v, u, mpct, depth);
+            parent_transpose_table.reg(&search->board, hash_code, v, u, NOMPC, depth);
         else
-            parent_transpose_table.reg(&search->board, hash_code, l, v, mpct, depth);
+            parent_transpose_table.reg(&search->board, hash_code, l, v, NOMPC, depth);
     }
 }

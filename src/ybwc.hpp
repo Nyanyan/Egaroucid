@@ -20,7 +20,7 @@
 #define YBWC_MID_SPLIT_MIN_DEPTH 5
 #define YBWC_END_SPLIT_MIN_DEPTH 13
 
-int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
+int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching, bool *mpc_used);
 //int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t legal, const bool *searching);
 //int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, const bool *searching);
 
@@ -35,7 +35,8 @@ Parallel_task ybwc_do_task_nws(int id, uint64_t player, uint64_t opponent, int_f
     search.n_nodes = 0ULL;
     search.use_multi_thread = depth > YBWC_MID_SPLIT_MIN_DEPTH;
     calc_features(&search);
-    int g = -nega_alpha_ordering_nws(&search, alpha, depth, false, legal, is_end_search, searching);
+    bool n_mpc_used = false;
+    int g = -nega_alpha_ordering_nws(&search, alpha, depth, false, legal, is_end_search, searching, &n_mpc_used);
     Parallel_task task;
     if (*searching)
         task.value = g;
@@ -43,6 +44,7 @@ Parallel_task ybwc_do_task_nws(int id, uint64_t player, uint64_t opponent, int_f
         task.value = SCORE_UNDEFINED;
     task.n_nodes = search.n_nodes;
     task.cell = policy;
+    task.mpc_used = n_mpc_used;
     return task;
 }
 
@@ -233,7 +235,7 @@ inline void ybwc_wait_all_nws(Search *search, vector<future<Parallel_task>> &par
     }
 }
 
-inline void ybwc_wait_all_nws(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int alpha, bool *searching){
+inline void ybwc_wait_all_nws(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int alpha, bool *searching, bool *mpc_used){
     ybwc_get_end_tasks(search, parallel_tasks, v, best_move);
     if (alpha < (*v))
         *searching = false;
@@ -245,6 +247,7 @@ inline void ybwc_wait_all_nws(Search *search, vector<future<Parallel_task>> &par
             if ((*v) < got_task.value && (*searching)){
                 *best_move = got_task.cell;
                 *v = got_task.value;
+                *mpc_used |= got_task.mpc_used;
                 if (alpha < (*v))
                     *searching = false;
             }

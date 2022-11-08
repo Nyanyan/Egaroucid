@@ -68,7 +68,7 @@ inline int nega_alpha_eval1_nws(Search *search, int alpha, bool skipped, const b
 #if USE_NEGA_ALPHA_ORDERING
     int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
 #endif
-int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
+int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching, bool *mpc_used);
 
 inline bool mpc_nws(Search *search, int alpha, int depth, uint64_t legal, bool is_end_search, int *v, const bool *searching){
     //if (search->n_discs - search->first_n_discs <= PROBCUT_SHALLOW_IGNORE_DEPTH && search->n_discs <= PROBCUT_SHALLOW_IGNORE_N_DISCS)
@@ -116,8 +116,9 @@ inline bool mpc_nws(Search *search, int alpha, int depth, uint64_t legal, bool i
                         search->use_mpc = true;
                     }
                 #else
+                    bool mpc_used = false;
                     //search->use_mpc = false;
-                    res = nega_alpha_ordering_nws(search, beta_mpc - 1, search_depth, false, legal, false, searching) >= beta_mpc;
+                    res = nega_alpha_ordering_nws(search, beta_mpc - 1, search_depth, false, legal, false, searching, &mpc_used) >= beta_mpc;
                     //search->use_mpc = true;
                 #endif
             }
@@ -138,8 +139,9 @@ inline bool mpc_nws(Search *search, int alpha, int depth, uint64_t legal, bool i
                         search->use_mpc = true;
                     }
                 #else
+                    bool mpc_used = false;
                     //search->use_mpc = false;
-                    res = nega_alpha_ordering_nws(search, alpha_mpc, search_depth, false, legal, false, searching) <= alpha_mpc;
+                    res = nega_alpha_ordering_nws(search, alpha_mpc, search_depth, false, legal, false, searching, &mpc_used) <= alpha_mpc;
                     //search->use_mpc = true;
                 #endif
             }
@@ -204,8 +206,9 @@ inline bool mpc(Search *search, int *alpha, int *beta, int depth, uint64_t legal
                         search->use_mpc = true;
                     }
                 #else
+                    bool mpc_used = false;
                     //search->use_mpc = false;
-                    res = nega_alpha_ordering_nws(search, beta_mpc - 1, search_depth, false, legal, false, searching) >= beta_mpc;
+                    res = nega_alpha_ordering_nws(search, beta_mpc - 1, search_depth, false, legal, false, searching, &mpc_used) >= beta_mpc;
                     //search->use_mpc = true;
                 #endif
             }
@@ -226,8 +229,9 @@ inline bool mpc(Search *search, int *alpha, int *beta, int depth, uint64_t legal
                         search->use_mpc = true;
                     }
                 #else
+                    bool mpc_used = false;
                     //search->use_mpc = false;
-                    res = nega_alpha_ordering_nws(search, alpha_mpc, search_depth, false, legal, false, searching) <= alpha_mpc;
+                    res = nega_alpha_ordering_nws(search, alpha_mpc, search_depth, false, legal, false, searching, &mpc_used) <= alpha_mpc;
                     //search->use_mpc = true;
                 #endif
             }
