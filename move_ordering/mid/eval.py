@@ -17,7 +17,7 @@ def score_to_string(score):
     s = (score + 64) // 2
     return chr(ord('!') + s)
 
-MAX_DEPTH = 12
+MAX_DEPTH = 14
 
 egaroucid = subprocess.Popen(('Egaroucid6_test.exe').split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
 sleep(2)
