@@ -872,23 +872,47 @@ inline int mid_evaluate_diff(Search *search){
     }
 
     inline void eval_move(Search *search, const Flip *flip){
-        uint_fast8_t i, cell;
+        uint_fast8_t cell;
         uint64_t f;
         if (search->eval_feature_reversed){
-            for (i = 0; i < N_SIMD_EVAL_FEATURES; ++i)
-                search->eval_features[i] = _mm256_sub_epi32(search->eval_features[i], coord_to_feature_simd[flip->pos][i]);
+            search->eval_features[0] = _mm256_sub_epi32(search->eval_features[0], coord_to_feature_simd[flip->pos][0]);
+            search->eval_features[1] = _mm256_sub_epi32(search->eval_features[1], coord_to_feature_simd[flip->pos][1]);
+            search->eval_features[2] = _mm256_sub_epi32(search->eval_features[2], coord_to_feature_simd[flip->pos][2]);
+            search->eval_features[3] = _mm256_sub_epi32(search->eval_features[3], coord_to_feature_simd[flip->pos][3]);
+            search->eval_features[4] = _mm256_sub_epi32(search->eval_features[4], coord_to_feature_simd[flip->pos][4]);
+            search->eval_features[5] = _mm256_sub_epi32(search->eval_features[5], coord_to_feature_simd[flip->pos][5]);
+            search->eval_features[6] = _mm256_sub_epi32(search->eval_features[6], coord_to_feature_simd[flip->pos][6]);
+            search->eval_features[7] = _mm256_sub_epi32(search->eval_features[7], coord_to_feature_simd[flip->pos][7]);
             f = flip->flip;
             for (cell = first_bit(&f); f; cell = next_bit(&f)){
-                for (i = 0; i < N_SIMD_EVAL_FEATURES; ++i)
-                    search->eval_features[i] = _mm256_add_epi32(search->eval_features[i], coord_to_feature_simd[cell][i]);
+                search->eval_features[0] = _mm256_add_epi32(search->eval_features[0], coord_to_feature_simd[cell][0]);
+                search->eval_features[1] = _mm256_add_epi32(search->eval_features[1], coord_to_feature_simd[cell][1]);
+                search->eval_features[2] = _mm256_add_epi32(search->eval_features[2], coord_to_feature_simd[cell][2]);
+                search->eval_features[3] = _mm256_add_epi32(search->eval_features[3], coord_to_feature_simd[cell][3]);
+                search->eval_features[4] = _mm256_add_epi32(search->eval_features[4], coord_to_feature_simd[cell][4]);
+                search->eval_features[5] = _mm256_add_epi32(search->eval_features[5], coord_to_feature_simd[cell][5]);
+                search->eval_features[6] = _mm256_add_epi32(search->eval_features[6], coord_to_feature_simd[cell][6]);
+                search->eval_features[7] = _mm256_add_epi32(search->eval_features[7], coord_to_feature_simd[cell][7]);
             }
         } else{
-            for (i = 0; i < N_SIMD_EVAL_FEATURES; ++i)
-                search->eval_features[i] = _mm256_sub_epi32(search->eval_features[i], coord_to_feature_simd2[flip->pos][i]);
+            search->eval_features[0] = _mm256_sub_epi32(search->eval_features[0], coord_to_feature_simd2[flip->pos][0]);
+            search->eval_features[1] = _mm256_sub_epi32(search->eval_features[1], coord_to_feature_simd2[flip->pos][1]);
+            search->eval_features[2] = _mm256_sub_epi32(search->eval_features[2], coord_to_feature_simd2[flip->pos][2]);
+            search->eval_features[3] = _mm256_sub_epi32(search->eval_features[3], coord_to_feature_simd2[flip->pos][3]);
+            search->eval_features[4] = _mm256_sub_epi32(search->eval_features[4], coord_to_feature_simd2[flip->pos][4]);
+            search->eval_features[5] = _mm256_sub_epi32(search->eval_features[5], coord_to_feature_simd2[flip->pos][5]);
+            search->eval_features[6] = _mm256_sub_epi32(search->eval_features[6], coord_to_feature_simd2[flip->pos][6]);
+            search->eval_features[7] = _mm256_sub_epi32(search->eval_features[7], coord_to_feature_simd2[flip->pos][7]);
             f = flip->flip;
             for (cell = first_bit(&f); f; cell = next_bit(&f)){
-                for (i = 0; i < N_SIMD_EVAL_FEATURES; ++i)
-                    search->eval_features[i] = _mm256_sub_epi32(search->eval_features[i], coord_to_feature_simd[cell][i]);
+                search->eval_features[0] = _mm256_sub_epi32(search->eval_features[0], coord_to_feature_simd[cell][0]);
+                search->eval_features[1] = _mm256_sub_epi32(search->eval_features[1], coord_to_feature_simd[cell][1]);
+                search->eval_features[2] = _mm256_sub_epi32(search->eval_features[2], coord_to_feature_simd[cell][2]);
+                search->eval_features[3] = _mm256_sub_epi32(search->eval_features[3], coord_to_feature_simd[cell][3]);
+                search->eval_features[4] = _mm256_sub_epi32(search->eval_features[4], coord_to_feature_simd[cell][4]);
+                search->eval_features[5] = _mm256_sub_epi32(search->eval_features[5], coord_to_feature_simd[cell][5]);
+                search->eval_features[6] = _mm256_sub_epi32(search->eval_features[6], coord_to_feature_simd[cell][6]);
+                search->eval_features[7] = _mm256_sub_epi32(search->eval_features[7], coord_to_feature_simd[cell][7]);
             }
         }
         search->eval_feature_reversed ^= 1;
@@ -896,23 +920,47 @@ inline int mid_evaluate_diff(Search *search){
 
     inline void eval_undo(Search *search, const Flip *flip){
         search->eval_feature_reversed ^= 1;
-        uint_fast8_t i, cell;
+        uint_fast8_t cell;
         uint64_t f;
         if (search->eval_feature_reversed){
-            for (i = 0; i < N_SIMD_EVAL_FEATURES; ++i)
-                search->eval_features[i] = _mm256_add_epi32(search->eval_features[i], coord_to_feature_simd[flip->pos][i]);
+            search->eval_features[0] = _mm256_add_epi32(search->eval_features[0], coord_to_feature_simd[flip->pos][0]);
+            search->eval_features[1] = _mm256_add_epi32(search->eval_features[1], coord_to_feature_simd[flip->pos][1]);
+            search->eval_features[2] = _mm256_add_epi32(search->eval_features[2], coord_to_feature_simd[flip->pos][2]);
+            search->eval_features[3] = _mm256_add_epi32(search->eval_features[3], coord_to_feature_simd[flip->pos][3]);
+            search->eval_features[4] = _mm256_add_epi32(search->eval_features[4], coord_to_feature_simd[flip->pos][4]);
+            search->eval_features[5] = _mm256_add_epi32(search->eval_features[5], coord_to_feature_simd[flip->pos][5]);
+            search->eval_features[6] = _mm256_add_epi32(search->eval_features[6], coord_to_feature_simd[flip->pos][6]);
+            search->eval_features[7] = _mm256_add_epi32(search->eval_features[7], coord_to_feature_simd[flip->pos][7]);
             f = flip->flip;
             for (cell = first_bit(&f); f; cell = next_bit(&f)){
-                for (i = 0; i < N_SIMD_EVAL_FEATURES; ++i)
-                    search->eval_features[i] = _mm256_sub_epi32(search->eval_features[i], coord_to_feature_simd[cell][i]);
+                search->eval_features[0] = _mm256_sub_epi32(search->eval_features[0], coord_to_feature_simd[cell][0]);
+                search->eval_features[1] = _mm256_sub_epi32(search->eval_features[1], coord_to_feature_simd[cell][1]);
+                search->eval_features[2] = _mm256_sub_epi32(search->eval_features[2], coord_to_feature_simd[cell][2]);
+                search->eval_features[3] = _mm256_sub_epi32(search->eval_features[3], coord_to_feature_simd[cell][3]);
+                search->eval_features[4] = _mm256_sub_epi32(search->eval_features[4], coord_to_feature_simd[cell][4]);
+                search->eval_features[5] = _mm256_sub_epi32(search->eval_features[5], coord_to_feature_simd[cell][5]);
+                search->eval_features[6] = _mm256_sub_epi32(search->eval_features[6], coord_to_feature_simd[cell][6]);
+                search->eval_features[7] = _mm256_sub_epi32(search->eval_features[7], coord_to_feature_simd[cell][7]);
             }
         } else{
-            for (i = 0; i < N_SIMD_EVAL_FEATURES; ++i)
-                search->eval_features[i] = _mm256_add_epi32(search->eval_features[i], coord_to_feature_simd2[flip->pos][i]);
+            search->eval_features[0] = _mm256_add_epi32(search->eval_features[0], coord_to_feature_simd2[flip->pos][0]);
+            search->eval_features[1] = _mm256_add_epi32(search->eval_features[1], coord_to_feature_simd2[flip->pos][1]);
+            search->eval_features[2] = _mm256_add_epi32(search->eval_features[2], coord_to_feature_simd2[flip->pos][2]);
+            search->eval_features[3] = _mm256_add_epi32(search->eval_features[3], coord_to_feature_simd2[flip->pos][3]);
+            search->eval_features[4] = _mm256_add_epi32(search->eval_features[4], coord_to_feature_simd2[flip->pos][4]);
+            search->eval_features[5] = _mm256_add_epi32(search->eval_features[5], coord_to_feature_simd2[flip->pos][5]);
+            search->eval_features[6] = _mm256_add_epi32(search->eval_features[6], coord_to_feature_simd2[flip->pos][6]);
+            search->eval_features[7] = _mm256_add_epi32(search->eval_features[7], coord_to_feature_simd2[flip->pos][7]);
             f = flip->flip;
             for (cell = first_bit(&f); f; cell = next_bit(&f)){
-                for (i = 0; i < N_SIMD_EVAL_FEATURES; ++i)
-                    search->eval_features[i] = _mm256_add_epi32(search->eval_features[i], coord_to_feature_simd[cell][i]);
+                search->eval_features[0] = _mm256_add_epi32(search->eval_features[0], coord_to_feature_simd[cell][0]);
+                search->eval_features[1] = _mm256_add_epi32(search->eval_features[1], coord_to_feature_simd[cell][1]);
+                search->eval_features[2] = _mm256_add_epi32(search->eval_features[2], coord_to_feature_simd[cell][2]);
+                search->eval_features[3] = _mm256_add_epi32(search->eval_features[3], coord_to_feature_simd[cell][3]);
+                search->eval_features[4] = _mm256_add_epi32(search->eval_features[4], coord_to_feature_simd[cell][4]);
+                search->eval_features[5] = _mm256_add_epi32(search->eval_features[5], coord_to_feature_simd[cell][5]);
+                search->eval_features[6] = _mm256_add_epi32(search->eval_features[6], coord_to_feature_simd[cell][6]);
+                search->eval_features[7] = _mm256_add_epi32(search->eval_features[7], coord_to_feature_simd[cell][7]);
             }
         }
     }
