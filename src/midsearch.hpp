@@ -230,7 +230,8 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, c
                 }
             }
         }
-        register_tt(search, depth, hash_code, v, best_move, l, u, first_alpha, beta, searching);
+        if (*searching && global_searching)
+            register_tt(search, depth, hash_code, v, best_move, l, u, first_alpha, beta, searching);
         return v;
     }
 #endif
@@ -379,7 +380,8 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
             }
         }
     }
-    register_tt(search, depth, hash_code, v, best_move, l, u, first_alpha, beta, searching);
+    if (*searching && global_searching)
+        register_tt(search, depth, hash_code, v, best_move, l, u, first_alpha, beta, searching);
     return v;
 }
 
@@ -466,6 +468,7 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
             is_first_search = false;
         }
     }
-    register_tt(search, depth, hash_code, v, best_move_res, first_alpha, beta, first_alpha, beta, &searching);
+    if (global_searching)
+        register_tt(search, depth, hash_code, v, best_move_res, first_alpha, beta, first_alpha, beta, &searching);
     return make_pair(v, best_move_res);
 }

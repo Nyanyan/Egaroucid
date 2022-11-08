@@ -270,9 +270,11 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
             }
         }
     }
-    if (*mpc_used)
-        register_tt_nws(search, depth, hash_code, alpha, v, best_move, l, u, searching);
-    else
-        register_tt_nws_nompc(search, depth, hash_code, alpha, v, best_move, l, u, searching);
+    if (*searching && global_searching){
+        if (*mpc_used)
+            register_tt_nws(search, depth, hash_code, alpha, v, best_move, l, u, searching);
+        else
+            register_tt_nws_nompc(search, depth, hash_code, alpha, v, best_move, l, u, searching);
+    }
     return v;
 }
