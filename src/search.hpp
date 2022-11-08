@@ -82,13 +82,6 @@ struct Search_result{
 
 #if USE_SIMD_EVALUATION
     #define N_SIMD_EVAL_FEATURES 8
-    struct Eval_features{
-        __m256i f[N_SIMD_EVAL_FEATURES];
-    };
-#else
-    struct Eval_features{
-        uint_fast16_t f[N_SYMMETRY_PATTERNS];
-    };
 #endif
 
 class Search{
@@ -99,8 +92,12 @@ class Search{
         bool use_mpc;
         double mpct;
         uint64_t n_nodes;
-        Eval_features eval_features;
-        //uint_fast16_t eval_features[N_SYMMETRY_PATTERNS];
+        //Eval_features eval_features;
+        #if USE_SIMD_EVALUATION
+            __m256i eval_features[N_SIMD_EVAL_FEATURES];
+        #else
+            uint_fast16_t eval_features[N_SYMMETRY_PATTERNS];
+        #endif
         uint_fast8_t eval_feature_reversed;
         //int first_n_discs;
         bool use_multi_thread;
