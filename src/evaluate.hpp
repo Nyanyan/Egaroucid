@@ -762,6 +762,7 @@ inline int calc_pattern_first(const int phase_idx, Board *b){
     }
 #endif
 
+/*
 inline int create_canput_line_h(uint64_t b, uint64_t w, int t){
     return (join_h_line(w, t) << HW) | join_h_line(b, t);
     //return (((w >> (HW * t)) & 0b11111111) << HW) | ((b >> (HW * t)) & 0b11111111);
@@ -770,6 +771,7 @@ inline int create_canput_line_h(uint64_t b, uint64_t w, int t){
 inline int create_canput_line_v(uint64_t b, uint64_t w, int t){
     return (join_v_line(w, t) << HW) | join_v_line(b, t);
 }
+*/
 
 inline int calc_canput_pattern(const int phase_idx, Board *b, const uint64_t player_mobility, const uint64_t opponent_mobility){
     uint8_t *ph = (uint8_t*)&player_mobility;
