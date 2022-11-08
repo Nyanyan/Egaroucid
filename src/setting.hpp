@@ -34,8 +34,10 @@
 // use probcut to predict it seems to be an all node
 #define USE_ALL_NODE_PREDICTION false
 
-// use nega_alpha_ordering
+// use search algs
 #define USE_NEGA_ALPHA_ORDERING false
+#define USE_NEGA_ALPHA_END false
+#define USE_NEGA_ALPHA_END_FAST false
 
 // use parallel clog search
 #define USE_PARALLEL_CLOG_SEARCH true
