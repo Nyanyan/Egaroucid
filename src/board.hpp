@@ -175,6 +175,11 @@ class Board {
                 res[i] = 2 - (1 & (player >> i)) * 2 - (1 & (opponent >> i));
         }
 
+        inline void translate_to_arr_player_rev(int res[]) {
+            for (int i = 0; i < HW2; ++i)
+                res[i] = 2 - (1 & (player >> i)) * 2 - (1 & (opponent >> i));
+        }
+
         inline void translate_from_arr(const int arr[], int player_idx) {
             int i;
             player = 0;
