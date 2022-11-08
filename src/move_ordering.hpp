@@ -259,15 +259,10 @@ inline bool move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
         //flip_value->value -= pop_count_ull(flip_value->n_legal) * W_NWS_MOBILITY;
         flip_value->value -= get_weighted_n_moves(flip_value->n_legal) * W_NWS_MOBILITY;
         //int64_t bef_n_nodes = search->n_nodes;
-        switch (depth){
-            case 0:
-                flip_value->value += -mid_evaluate_diff(search) * W_NWS_VALUE_SHALLOW;
-                break;
-            default:
-                flip_value->value += -nega_alpha_eval1(search, alpha, beta, false, searching) * W_NWS_VALUE;
-                //flip_value->value -= (search->n_nodes - bef_n_nodes) * W_NWS_N_NODES;
-                break;
-        }
+        if (depth == 0)
+            flip_value->value += -mid_evaluate_diff(search) * W_NWS_VALUE_SHALLOW;
+        else
+            flip_value->value += -nega_alpha_eval1(search, alpha, beta, false, searching) * W_NWS_VALUE;
     search->undo(&flip_value->flip);
     eval_undo(search, &flip_value->flip);
     return false;
