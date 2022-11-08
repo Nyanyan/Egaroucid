@@ -435,6 +435,7 @@ constexpr Coord_to_feature coord_to_feature[HW2] = {
     __m256i feature_to_coord_simd_mask[N_SIMD_EVAL_FEATURES][MAX_PATTERN_CELLS - 1];
     __m256i feature_to_coord_simd_cell[N_SIMD_EVAL_FEATURES][MAX_PATTERN_CELLS];
     __m256i coord_to_feature_simd[HW2][N_SIMD_EVAL_FEATURES];
+    __m256i coord_to_feature_simd2[HW2][N_SIMD_EVAL_FEATURES];
     __m256i eval_simd_offsets[N_SIMD_EVAL_FEATURES];
 #endif
 
@@ -621,6 +622,7 @@ inline bool init_evaluation_calc(const char* file){
             for (i = 0; i < N_SIMD_EVAL_FEATURES; ++i){
                 idx = i * 8;
                 coord_to_feature_simd[cell][i] = _mm256_set_epi32(c2f[idx], c2f[idx + 1], c2f[idx + 2], c2f[idx + 3], c2f[idx + 4], c2f[idx + 5], c2f[idx + 6], c2f[idx + 7]);
+                coord_to_feature_simd2[cell][i] = _mm256_slli_epi32(coord_to_feature_simd[cell][i], 1);
             }
         }
         constexpr int offset1 = MAX_EVALUATE_IDX;
@@ -890,7 +892,7 @@ inline int mid_evaluate_diff(Search *search){
             }
         } else{
             for (i = 0; i < N_SIMD_EVAL_FEATURES; ++i)
-                search->eval_features[i] = _mm256_sub_epi32(search->eval_features[i], _mm256_slli_epi32(coord_to_feature_simd[flip->pos][i], 1));
+                search->eval_features[i] = _mm256_sub_epi32(search->eval_features[i], coord_to_feature_simd2[flip->pos][i]);
             f = flip->flip;
             for (cell = first_bit(&f); f; cell = next_bit(&f)){
                 for (i = 0; i < N_SIMD_EVAL_FEATURES; ++i)
@@ -914,7 +916,7 @@ inline int mid_evaluate_diff(Search *search){
             }
         } else{
             for (i = 0; i < N_SIMD_EVAL_FEATURES; ++i)
-                search->eval_features[i] = _mm256_add_epi32(search->eval_features[i], _mm256_slli_epi32(coord_to_feature_simd[flip->pos][i], 1));
+                search->eval_features[i] = _mm256_add_epi32(search->eval_features[i], coord_to_feature_simd2[flip->pos][i]);
             f = flip->flip;
             for (cell = first_bit(&f); f; cell = next_bit(&f)){
                 for (i = 0; i < N_SIMD_EVAL_FEATURES; ++i)
