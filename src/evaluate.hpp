@@ -723,7 +723,6 @@ inline int calc_pattern_first(const int phase_idx, Board *b){
 #if USE_SIMD_EVALUATION
     inline int calc_pattern_diff(const int phase_idx, Search *search){
         int *pat_com = (int*)pattern_arr[search->eval_feature_reversed][phase_idx][0];
-        constexpr int offset1 = MAX_EVALUATE_IDX;
         __m256i res256 = _mm256_i32gather_epi32(pat_com, search->eval_features[0], 4);
         res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, search->eval_features[1], 4));
         res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, search->eval_features[2], 4));
