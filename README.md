@@ -13,7 +13,7 @@ Light version of this othello AI got 1st place in the world ([CodinGame Othello]
 
 ## Application
 
-Please see: https://www.egaroucid-app.nyanyan.dev/
+Please see: https://www.egaroucid.nyanyan.dev/en/
 
 You can use this software for free in Japanese / English.
 
