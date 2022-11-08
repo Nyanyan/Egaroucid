@@ -99,7 +99,6 @@ class Search{
             uint_fast16_t eval_features[N_SYMMETRY_PATTERNS];
         #endif
         uint_fast8_t eval_feature_reversed;
-        //int first_n_discs;
         bool use_multi_thread;
 
     public:
