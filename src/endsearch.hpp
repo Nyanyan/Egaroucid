@@ -283,7 +283,7 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
     }
     return v;
 }
-
+/*
 int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped, bool stab_cut, const bool *searching){
     if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
@@ -480,7 +480,8 @@ int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped, bool 
     #endif
     return v;
 }
-
+*/
+/*
 int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t legal, const bool *searching){
     if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
@@ -629,3 +630,4 @@ int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t l
     register_tt_mpct(search, HW2 - search->n_discs, hash_code, v, best_move, l, u, first_alpha, beta, searching, NOMPC);
     return v;
 }
+*/

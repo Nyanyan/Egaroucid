@@ -282,7 +282,6 @@ inline bool move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
         uint64_t empties = ~(search->board.player | search->board.opponent);
         flip_value->value += get_potential_mobility(search->board.opponent, empties) * move_ordering_nws_weights[phase][1];
         flip_value->value += get_potential_mobility(search->board.player, empties) * move_ordering_nws_weights[phase][2];
-        //int64_t bef_n_nodes = search->n_nodes;
         if (depth == 0)
             flip_value->value += mid_evaluate_diff(search) * move_ordering_nws_weights[phase][3];
         else
