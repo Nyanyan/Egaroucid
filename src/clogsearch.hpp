@@ -3,7 +3,7 @@
 
     @file clogsearch.hpp
         Clog search
-        MPC might cut a very bad move as a very good move.
+        MPC (Multi-ProbCut) might cut a very bad move as a very good move.
         For example, with MPC, Egaroucid might be wiped out without clog search.
     @date 2021-2022
     @author Takuto Yamana (a.k.a Nyanyan)
