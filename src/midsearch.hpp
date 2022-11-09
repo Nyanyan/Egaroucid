@@ -16,7 +16,7 @@
 #include "board.hpp"
 #include "evaluate.hpp"
 #include "search.hpp"
-#include "transpose_table.hpp"
+#include "transposition_table.hpp"
 #include "move_ordering.hpp"
 #include "probcut.hpp"
 #include "thread_pool.hpp"
@@ -154,7 +154,7 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, c
         #if MID_TO_END_DEPTH < USE_TT_DEPTH_THRESHOLD
             int l = -INF, u = INF;
             if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD){
-                parent_transpose_table.get(&search->board, hash_code, &l, &u, search->mpct, depth);
+                parent_transposition_table.get(&search->board, hash_code, &l, &u, search->mpct, depth);
                 if (u == l)
                     return u;
                 if (beta <= l)
@@ -166,7 +166,7 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, c
             }
         #else
             int l, u;
-            parent_transpose_table.get(&search->board, hash_code, &l, &u, search->mpct, depth);
+            parent_transposition_table.get(&search->board, hash_code, &l, &u, search->mpct, depth);
             if (u == l)
                 return u;
             if (beta <= l)
@@ -189,8 +189,8 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, c
                 #endif
             }
         #endif
-        int best_move = child_transpose_table.get(&search->board, hash_code);
-        if (best_move != TRANSPOSE_TABLE_UNDEFINED){
+        int best_move = child_transposition_table.get(&search->board, hash_code);
+        if (best_move != TRANSPOSITION_TABLE_UNDEFINED){
             if (1 & (legal >> best_move)){
                 Flip flip_best;
                 calc_flip(&flip_best, &search->board, best_move);
@@ -202,7 +202,7 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, c
                 alpha = max(alpha, v);
                 legal ^= 1ULL << best_move;
             } else
-                best_move = TRANSPOSE_TABLE_UNDEFINED;
+                best_move = TRANSPOSITION_TABLE_UNDEFINED;
         }
         int g;
         if (alpha < beta && legal){
@@ -296,7 +296,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     #if MID_TO_END_DEPTH < USE_TT_DEPTH_THRESHOLD
         int l = -INF, u = INF;
         if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD){
-            parent_transpose_table.get(&search->board, hash_code, &l, &u, search->mpct, depth);
+            parent_transposition_table.get(&search->board, hash_code, &l, &u, search->mpct, depth);
             if (u == l)
                 return u;
             if (beta <= l)
@@ -308,7 +308,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
         }
     #else
         int l, u;
-        parent_transpose_table.get(&search->board, hash_code, &l, &u, search->mpct, depth);
+        parent_transposition_table.get(&search->board, hash_code, &l, &u, search->mpct, depth);
         if (u == l)
             return u;
         if (beta <= l)
@@ -331,8 +331,8 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
             #endif
         }
     #endif
-    int best_move = child_transpose_table.get(&search->board, hash_code);
-    if (best_move != TRANSPOSE_TABLE_UNDEFINED){
+    int best_move = child_transposition_table.get(&search->board, hash_code);
+    if (best_move != TRANSPOSITION_TABLE_UNDEFINED){
         if (1 & (legal >> best_move)){
             Flip flip_best;
             calc_flip(&flip_best, &search->board, best_move);
@@ -344,7 +344,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
             alpha = max(alpha, v);
             legal ^= 1ULL << best_move;
         } else
-            best_move = TRANSPOSE_TABLE_UNDEFINED;
+            best_move = TRANSPOSITION_TABLE_UNDEFINED;
     }
     int g;
     if (alpha < beta && legal){
@@ -404,7 +404,7 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
     }
     alpha = max(alpha, v);
     bool pre_best_move_found = false;
-    if (best_move != TRANSPOSE_TABLE_UNDEFINED){
+    if (best_move != TRANSPOSITION_TABLE_UNDEFINED){
         if (1 & (legal >> best_move)){
             Flip flip_best;
             calc_flip(&flip_best, &search->board, best_move);

@@ -16,7 +16,7 @@
 #include "board.hpp"
 #include "evaluate.hpp"
 #include "search.hpp"
-#include "transpose_table.hpp"
+#include "transposition_table.hpp"
 #include "endsearch.hpp"
 #include "move_ordering.hpp"
 #include "probcut.hpp"
@@ -143,7 +143,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
     #if MID_TO_END_DEPTH < USE_TT_DEPTH_THRESHOLD
         int l = -INF, u = INF;
         if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD){
-            parent_transpose_table.get(&search->board, hash_code, &l, &u, search->mpct, depth, mpc_used);
+            parent_transposition_table.get(&search->board, hash_code, &l, &u, search->mpct, depth, mpc_used);
             if (u == l)
                 return u;
             if (l < alpha && u <= alpha)
@@ -153,7 +153,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
         }
     #else
         int l, u;
-        parent_transpose_table.get(&search->board, hash_code, &l, &u, search->mpct, depth, mpc_used);
+        parent_transposition_table.get(&search->board, hash_code, &l, &u, search->mpct, depth, mpc_used);
         if (u == l)
             return u;
         if (u <= alpha)
@@ -178,9 +178,9 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
             #endif
         }
     #endif
-    int best_move = child_transpose_table.get(&search->board, hash_code);
+    int best_move = child_transposition_table.get(&search->board, hash_code);
     bool n_mpc_used;
-    if (best_move != TRANSPOSE_TABLE_UNDEFINED){
+    if (best_move != TRANSPOSITION_TABLE_UNDEFINED){
         if (1 & (legal >> best_move)){
             Flip flip_best;
             calc_flip(&flip_best, &search->board, best_move);
@@ -195,7 +195,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
                 return v;
             legal ^= 1ULL << best_move;
         } else
-            best_move = TRANSPOSE_TABLE_UNDEFINED;
+            best_move = TRANSPOSITION_TABLE_UNDEFINED;
     }
     int g;
     if (legal){
@@ -212,7 +212,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
         #endif
         if (search->use_multi_thread && depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH){
             int pv_idx = 0, split_count = 0;
-            if (best_move != TRANSPOSE_TABLE_UNDEFINED)
+            if (best_move != TRANSPOSITION_TABLE_UNDEFINED)
                 pv_idx = 1;
             vector<future<Parallel_task>> parallel_tasks;
             bool n_searching = true;

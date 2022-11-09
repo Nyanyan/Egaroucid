@@ -71,7 +71,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
             search_depth = depth / 2;
             search.mpct = 1.0;
             search.use_mpc = true;
-            result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search_depth, false, false, false, TRANSPOSE_TABLE_UNDEFINED, clogs);
+            result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search_depth, false, false, false, TRANSPOSITION_TABLE_UNDEFINED, clogs);
             g = result.first;
             if (show_log)
                 std::cerr << "presearch depth " << search_depth << " mpct " << search.mpct << " value " << g << " policy " << idx_to_coord(result.second) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / std::max(1ULL, tim() - strt) << endl;
@@ -104,7 +104,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
     
     } else{
         strt = tim();
-        result.second = TRANSPOSE_TABLE_UNDEFINED;
+        result.second = TRANSPOSITION_TABLE_UNDEFINED;
         search_depth = depth - 1;
         search.use_mpc = true;
         search.mpct = 0.7;
