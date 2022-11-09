@@ -53,3 +53,6 @@
 
 // use bit gather optimization
 #define USE_BIT_GATHER_OPTIMIZE true
+
+// evaluation harness
+#define USE_EVALUATION_HARNESS false
