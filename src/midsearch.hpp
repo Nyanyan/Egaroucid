@@ -201,8 +201,8 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, c
                     return l;
                 if (u <= alpha)
                     return u;
-                alpha = max(alpha, l);
-                beta = min(beta, u);
+                alpha = std::max(alpha, l);
+                beta = std::min(beta, u);
             }
         #else
             int l, u;
@@ -213,8 +213,8 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, c
                 return l;
             if (u <= alpha)
                 return u;
-            alpha = max(alpha, l);
-            beta = min(beta, u);
+            alpha = std::max(alpha, l);
+            beta = std::min(beta, u);
         #endif
         #if USE_MID_MPC
             if (search->use_mpc){
@@ -239,7 +239,7 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, c
                     v = -nega_alpha_ordering(search, -beta, -alpha, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
                 search->undo(&flip_best);
                 eval_undo(search, &flip_best);
-                alpha = max(alpha, v);
+                alpha = std::max(alpha, v);
                 legal ^= 1ULL << best_move;
             } else
                 best_move = TRANSPOSITION_TABLE_UNDEFINED;
@@ -358,8 +358,8 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
                 return l;
             if (u <= alpha)
                 return u;
-            alpha = max(alpha, l);
-            beta = min(beta, u);
+            alpha = std::max(alpha, l);
+            beta = std::min(beta, u);
         }
     #else
         int l, u;
@@ -370,8 +370,8 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
             return l;
         if (u <= alpha)
             return u;
-        alpha = max(alpha, l);
-        beta = min(beta, u);
+        alpha = std::max(alpha, l);
+        beta = std::min(beta, u);
     #endif
     #if USE_MID_MPC
         if (search->use_mpc){
@@ -396,7 +396,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
                 v = -nega_scout(search, -beta, -alpha, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
             search->undo(&flip_best);
             eval_undo(search, &flip_best);
-            alpha = max(alpha, v);
+            alpha = std::max(alpha, v);
             legal ^= 1ULL << best_move;
         } else
             best_move = TRANSPOSITION_TABLE_UNDEFINED;
@@ -473,7 +473,7 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
         }
         legal ^= 1ULL << clog.pos;
     }
-    alpha = max(alpha, v);
+    alpha = std::max(alpha, v);
     bool pre_best_move_found = false;
     if (best_move != TRANSPOSITION_TABLE_UNDEFINED){
         if (1 & (legal >> best_move)){
@@ -483,7 +483,7 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
             search->move(&flip_best);
                 g = -nega_scout(search, -beta, -alpha, depth - 1, false, LEGAL_UNDEFINED, is_end_search, &searching);
                 if (is_main_search)
-                    cerr << 1 << "/" << canput_all << " [" << alpha << "," << beta << "] mpct " << search->mpct << " " << idx_to_coord(best_move) << " value " << g << endl;
+                    std::cerr << 1 << "/" << canput_all << " [" << alpha << "," << beta << "] mpct " << search->mpct << " " << idx_to_coord(best_move) << " value " << g << endl;
             search->undo(&flip_best);
             eval_undo(search, &flip_best);
             if (v < g){
@@ -519,9 +519,9 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
                 }
                 if (is_main_search){
                     if (g <= alpha)
-                        cerr << mobility_idx << "/" << canput_all << " [" << alpha << "," << beta << "] mpct " << search->mpct << " " << idx_to_coord((int)flip_value.flip.pos) << " value " << g << " or lower" << endl;
+                        std::cerr << mobility_idx << "/" << canput_all << " [" << alpha << "," << beta << "] mpct " << search->mpct << " " << idx_to_coord((int)flip_value.flip.pos) << " value " << g << " or lower" << endl;
                     else
-                        cerr << mobility_idx << "/" << canput_all << " [" << alpha << "," << beta << "] mpct " << search->mpct << " " << idx_to_coord((int)flip_value.flip.pos) << " value " << g << endl;
+                        std::cerr << mobility_idx << "/" << canput_all << " [" << alpha << "," << beta << "] mpct " << search->mpct << " " << idx_to_coord((int)flip_value.flip.pos) << " value " << g << endl;
                 }
                 ++mobility_idx;
             search->undo(&flip_value.flip);
