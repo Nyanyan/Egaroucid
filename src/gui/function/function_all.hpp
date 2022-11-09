@@ -14,3 +14,6 @@
 #include "menu.hpp"
 #include "opening_gui.hpp"
 #include "radio_button.hpp"
+#include "gui_common.hpp"
+#include "version.hpp"
+#include "url.hpp"

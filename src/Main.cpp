@@ -9,7 +9,7 @@
 */
 
 #include <iostream>
-#include "all.hpp"
+#include "engine/engine_all.hpp"
 #include "gui/gui_all.hpp"
 
 /*

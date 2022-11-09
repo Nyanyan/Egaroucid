@@ -12,4 +12,4 @@
 
 // URL definition
 #define WEB_PAGE_URL U"https://www.egaroucid.nyanyan.dev/"
-constexpr String VERSION_URL = WEB_PAGE_URL + U"version.txt"
+#define VERSION_URL U"https://www.egaroucid.nyanyan.dev/version.txt"

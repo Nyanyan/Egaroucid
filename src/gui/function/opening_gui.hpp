@@ -14,7 +14,7 @@
 #include <fstream>
 #include <vector>
 #include <string>
-#include "./../../engine/board.hpp"
+#include "./../../engine/engine_all.hpp"
 
 class Opening {
 private:
@@ -22,9 +22,9 @@ private:
 public:
 	bool init(std::string file) {
 		arr.clear();
-		ifstream ifs(file);
+		std::ifstream ifs(file);
 		if (ifs.fail()) {
-			cerr << "opening file " << file << " not found" << endl;
+			std::cerr << "opening file " << file << " not found" << std::endl;
 			return false;
 		}
 		std::string line;

@@ -16,6 +16,9 @@
     @brief definition of maximum hash level
 */
 #define N_HASH_LEVEL 30
+#define DEFAULT_HASH_LEVEL 24
+
+int global_hash_level = 0;
 
 /*
     @brief array for calculating hash code
@@ -106,6 +109,7 @@ bool hash_init(int hash_level){
             }
         }
     }
+    global_hash_level = hash_level;
     std::cerr << "hash initialized" << std::endl;
     return true;
 }

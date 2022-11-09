@@ -12,7 +12,8 @@
 #include <Siv3D.hpp> // OpenSiv3D v0.6.3
 #include <vector>
 #include "./../../engine/board.hpp"
-#include "./../gui_common.hpp"
+#include "language.hpp"
+#include "gui_common.hpp"
 
 constexpr Color graph_color = Color(51, 51, 51);
 constexpr Color graph_history_color = Palette::White;
@@ -230,12 +231,12 @@ private:
 	}
 
 	void draw_graph(std::vector<History_elem> nodes, Color color, Color color2) {
-		std::vector<pair<int, int>> values;
+		std::vector<std::pair<int, int>> values;
 		for (const History_elem& b : nodes) {
 			if (abs(b.v) <= HW2) {
 				int xx = sx + (b.board.n_discs() - 4) * dx + (b.board.n_discs() - 4) * adj_x / 60;
 				int yy = sy + (y_max - b.v) * dy + adj_y * (y_max - b.v) / (y_max - y_min);
-				values.emplace_back(make_pair(xx, yy));
+				values.emplace_back(std::make_pair(xx, yy));
 				Circle{ xx, yy, 3 }.draw(color);
 			}
 			else {
@@ -249,7 +250,7 @@ private:
 	}
 
 	void draw_graph_not_calculated(std::vector<History_elem> nodes, Color color) {
-		std::vector<pair<int, int>> values;
+		std::vector<std::pair<int, int>> values;
 		for (const History_elem& b : nodes) {
 			int yy = sy + y_max * dy + adj_y * y_max / (y_max - y_min);
 			Circle{ sx + (b.board.n_discs() - 4) * dx + (b.board.n_discs() - 4) * adj_x / 60, yy, 2.5 }.draw(color);

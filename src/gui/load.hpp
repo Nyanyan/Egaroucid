@@ -13,21 +13,21 @@
 #include <future>
 #include "./../engine/engine_all.hpp"
 #include "function/function_all.hpp"
-#include "gui_common.hpp"
 
-int init_ai(const Settings* settings, const Directories* directories) {
+int init_ai(Settings* settings, const Directories* directories) {
     thread_pool.resize(settings->n_threads - 1);
     std::cerr << "there are " << thread_pool.size() << " additional threads" << std::endl;
     bit_init();
-    if (!board_init()) {
-        return ERR_HASH_FILE_NOT_IMPORTED;
+    mobility_init();
+    if (!hash_resize(DEFAULT_HASH_LEVEL, settings->hash_level)) {
+        std::cerr << "hash resize failed. use default setting" << std::endl;
+        settings->hash_level = DEFAULT_HASH_LEVEL;
+        hash_resize(DEFAULT_HASH_LEVEL, settings->hash_level);
     }
     stability_init();
     if (!evaluate_init(directories->eval_file)) {
         return ERR_EVAL_FILE_NOT_IMPORTED;
     }
-    parent_transpose_table.first_init();
-    child_transpose_table.first_init();
     if (!book_init(settings->book_file)) {
         return ERR_BOOK_FILE_NOT_IMPORTED;
     }
@@ -67,7 +67,7 @@ private:
     bool book_failed;
     String tips;
     bool update_found;
-    future<int> load_future;
+    std::future<int> load_future;
     Button skip_button;
     Button update_button;
     Button book_ignore_button;
@@ -82,7 +82,7 @@ public:
         book_failed = false;
         tips = language.get_random("tips", "tips");
         update_found = false;
-        load_future = async(launch::async, load_app, &getData().directories, &getData().resources, &getData().settings, &update_found, &new_version);
+        load_future = std::async(std::launch::async, load_app, &getData().directories, &getData().resources, &getData().settings, &update_found, &new_version);
     }
 
     void update() override {
@@ -114,7 +114,7 @@ public:
             getData().resources.icon.scaled((double)icon_width / getData().resources.icon.width()).draw(LEFT_LEFT, Y_CENTER - icon_width / 2);
             getData().resources.logo.scaled((double)icon_width * 0.8 / getData().resources.logo.width()).draw(RIGHT_LEFT, Y_CENTER - 40);
             if (load_future.valid()) {
-                if (load_future.wait_for(chrono::seconds(0)) == future_status::ready) {
+                if (load_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                     int load_code = load_future.get();
                     if (load_code == ERR_OK) {
                         std::cerr << "loaded" << std::endl;

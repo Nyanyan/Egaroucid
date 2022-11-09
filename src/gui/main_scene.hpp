@@ -13,7 +13,7 @@
 #include <future>
 #include "./../engine/engine_all.hpp"
 #include "function/function_all.hpp"
-#include "gui_common.hpp"
+#include "draw.hpp"
 
 #define HINT_SINGLE_TASK_N_THREAD 4
 
@@ -25,88 +25,8 @@ bool compare_hint_info(Hint_info& a, Hint_info& b) {
     return a.value > b.value;
 }
 
-void draw_board(Fonts fonts, Colors colors, History_elem history_elem) {
-    String coord_x = U"abcdefgh";
-    for (int i = 0; i < HW; ++i) {
-        fonts.font_bold(i + 1).draw(15, Arg::center(BOARD_SX - BOARD_COORD_SIZE, BOARD_SY + BOARD_CELL_SIZE * i + BOARD_CELL_SIZE / 2), colors.dark_gray);
-        fonts.font_bold(coord_x[i]).draw(15, Arg::center(BOARD_SX + BOARD_CELL_SIZE * i + BOARD_CELL_SIZE / 2, BOARD_SY - BOARD_COORD_SIZE - 2), colors.dark_gray);
-    }
-    for (int i = 0; i < HW_M1; ++i) {
-        Line(BOARD_SX + BOARD_CELL_SIZE * (i + 1), BOARD_SY, BOARD_SX + BOARD_CELL_SIZE * (i + 1), BOARD_SY + BOARD_CELL_SIZE * HW).draw(BOARD_CELL_FRAME_WIDTH, colors.dark_gray);
-        Line(BOARD_SX, BOARD_SY + BOARD_CELL_SIZE * (i + 1), BOARD_SX + BOARD_CELL_SIZE * HW, BOARD_SY + BOARD_CELL_SIZE * (i + 1)).draw(BOARD_CELL_FRAME_WIDTH, colors.dark_gray);
-    }
-    Circle(BOARD_SX + 2 * BOARD_CELL_SIZE, BOARD_SY + 2 * BOARD_CELL_SIZE, BOARD_DOT_SIZE).draw(colors.dark_gray);
-    Circle(BOARD_SX + 2 * BOARD_CELL_SIZE, BOARD_SY + 6 * BOARD_CELL_SIZE, BOARD_DOT_SIZE).draw(colors.dark_gray);
-    Circle(BOARD_SX + 6 * BOARD_CELL_SIZE, BOARD_SY + 2 * BOARD_CELL_SIZE, BOARD_DOT_SIZE).draw(colors.dark_gray);
-    Circle(BOARD_SX + 6 * BOARD_CELL_SIZE, BOARD_SY + 6 * BOARD_CELL_SIZE, BOARD_DOT_SIZE).draw(colors.dark_gray);
-    RoundRect(BOARD_SX, BOARD_SY, BOARD_CELL_SIZE * HW, BOARD_CELL_SIZE * HW, BOARD_ROUND_DIAMETER).drawFrame(0, BOARD_ROUND_FRAME_WIDTH, colors.white);
-    Flip flip;
-    int board_arr[HW2];
-    history_elem.board.translate_to_arr(board_arr, history_elem.player);
-    for (int cell = 0; cell < HW2; ++cell) {
-        int x = BOARD_SX + (cell % HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
-        int y = BOARD_SY + (cell / HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
-        if (board_arr[cell] == BLACK) {
-            Circle(x, y, DISC_SIZE).draw(colors.black);
-        }
-        else if (board_arr[cell] == WHITE) {
-            Circle(x, y, DISC_SIZE).draw(colors.white);
-        }
-    }
-}
-
-void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_elements menu_elements) {
-    RoundRect round_rect{ INFO_SX, INFO_SY, INFO_WIDTH, INFO_HEIGHT, INFO_RECT_RADIUS };
-    round_rect.drawFrame(INFO_RECT_THICKNESS, colors.white);
-    if (history_elem.board.get_legal()) {
-        fonts.font(Format(history_elem.board.n_discs() - 3) + language.get("info", "moves")).draw(13, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + 5));
-        if (history_elem.player == BLACK) {
-            fonts.font(language.get("info", "black")).draw(20, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + 22));
-        }
-        else {
-            fonts.font(language.get("info", "white")).draw(20, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + 22));
-        }
-    }
-    else {
-        fonts.font(language.get("info", "game_end")).draw(20, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + 22));
-    }
-    Circle(INFO_SX + 70, INFO_SY + 60 + INFO_DISC_RADIUS, INFO_DISC_RADIUS).draw(colors.black);
-    Circle(INFO_SX + INFO_WIDTH - 70, INFO_SY + 60 + INFO_DISC_RADIUS, INFO_DISC_RADIUS).draw(colors.white);
-    int black_discs, white_discs;
-    if (history_elem.player == BLACK) {
-        black_discs = history_elem.board.count_player();
-        white_discs = history_elem.board.count_opponent();
-    }
-    else {
-        black_discs = history_elem.board.count_opponent();
-        white_discs = history_elem.board.count_player();
-    }
-    fonts.font(black_discs).draw(20, Arg::leftCenter(INFO_SX + 100, INFO_SY + 60 + INFO_DISC_RADIUS));
-    fonts.font(white_discs).draw(20, Arg::rightCenter(INFO_SX + INFO_WIDTH - 100, INFO_SY + 60 + INFO_DISC_RADIUS));
-    Line(INFO_SX + INFO_WIDTH / 2, INFO_SY + 60, INFO_SX + INFO_WIDTH / 2, INFO_SY + 60 + INFO_DISC_RADIUS * 2).draw(2, colors.dark_gray);
-    fonts.font(language.get("info", "opening_name") + U": " + Unicode::FromUTF8(history_elem.opening_name)).draw(12, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + 95));
-    String level_info = language.get("common", "level") + U" " + Format(menu_elements.level) + U" (";
-    if (menu_elements.level <= LIGHT_LEVEL) {
-        level_info += language.get("info", "light");
-    }
-    else if (menu_elements.level <= STANDARD_MAX_LEVEL) {
-        level_info += language.get("info", "standard");
-    }
-    else if (menu_elements.level <= PRAGMATIC_MAX_LEVEL) {
-        level_info += language.get("info", "pragmatic");
-    }
-    else if (menu_elements.level <= ACCURATE_MAX_LEVEL) {
-        level_info += language.get("info", "accurate");
-    }
-    else {
-        level_info += language.get("info", "danger");
-    }
-    level_info += U")";
-    fonts.font(level_info).draw(13, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + 115));
-}
-
 Umigame_result get_umigame(Board board, int player) {
-    return umigame.get(&board, player);
+    return calculate_umigame(&board, player);
 }
 
 class Main_scene : public App::Scene {
@@ -155,6 +75,15 @@ public:
             stop_calculating();
             thread_pool.resize(getData().menu_elements.n_threads);
             std::cerr << "thread pool resized to " << thread_pool.size() << std::endl;
+            resume_calculating();
+        }
+
+        // hash resize
+        if (getData().menu_elements.hash_level != global_hash_level) {
+            stop_calculating();
+            if (!hash_resize(global_hash_level, getData().menu_elements.hash_level)){
+                std::cerr << "hash resize failed. use former level" << std::endl;
+            }
             resume_calculating();
         }
 
@@ -687,12 +616,12 @@ private:
                 if (legal) {
                     stop_calculating();
                     resume_calculating();
-                    ai_status.ai_future = async(launch::async, ai, getData().history_elem.board, getData().menu_elements.level, getData().menu_elements.use_book, true, true);
+                    ai_status.ai_future = std::async(std::launch::async, ai, getData().history_elem.board, getData().menu_elements.level, getData().menu_elements.use_book, true, true);
                     ai_status.ai_thinking = true;
                 }
             }
             else if (ai_status.ai_future.valid()) {
-                if (ai_status.ai_future.wait_for(chrono::seconds(0)) == future_status::ready) {
+                if (ai_status.ai_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                     Search_result search_result = ai_status.ai_future.get();
                     if (1 & (legal >> search_result.policy)) {
                         int sgn = getData().history_elem.player == 0 ? 1 : -1;
@@ -745,6 +674,8 @@ private:
         menu_e.init_bar(language.get("ai_settings", "level"), &menu_elements->level, menu_elements->level, 0, 60);
         title.push(menu_e);
         menu_e.init_bar(language.get("settings", "thread", "thread"), &menu_elements->n_threads, menu_elements->n_threads, 1, 32);
+        title.push(menu_e);
+        menu_e.init_bar(language.get("settings", "hash_level"), &menu_elements->hash_level, menu_elements->hash_level, DEFAULT_HASH_LEVEL, 27);
         title.push(menu_e);
 
         menu_e.init_check(language.get("settings", "play", "ai_put_black"), &menu_elements->ai_put_black, menu_elements->ai_put_black);
@@ -851,8 +782,6 @@ private:
         side_menu.init_bar(language.get("book", "depth"), &menu_elements->book_learn_depth, menu_elements->book_learn_depth, 0, 60);
         menu_e.push(side_menu);
         side_menu.init_bar(language.get("book", "accept"), &menu_elements->book_learn_error, menu_elements->book_learn_error, 0, 32);
-        menu_e.push(side_menu);
-        side_menu.init_check(language.get("book", "ignore"), &menu_elements->ignore_book, menu_elements->ignore_book);
         menu_e.push(side_menu);
         title.push(menu_e);
         menu_e.init_button(language.get("book", "start_learn"), &menu_elements->book_start_learn);
@@ -1088,7 +1017,7 @@ private:
                     board = getData().history_elem.board;
                     calc_flip(&flip, &board, (uint_fast8_t)(HW2_M1 - value_cell.second));
                     board.move_board(&flip);
-                    ai_status.hint_task_stack.emplace_back(std::make_pair(value_cell.second, bind(ai_hint, board, ai_status.hint_level, getData().menu_elements.use_book, ai_status.hint_use_multi_thread, false)));
+                    ai_status.hint_task_stack.emplace_back(std::make_pair(value_cell.second, std::bind(ai_hint, board, ai_status.hint_level, getData().menu_elements.use_book, ai_status.hint_use_multi_thread, false)));
                 }
             }
             ai_status.hint_n_doing_tasks = 0;
@@ -1102,7 +1031,7 @@ private:
             if (ai_status.hint_n_doing_tasks > 0) {
                 for (int cell = 0; cell < HW2; ++cell) {
                     if (ai_status.hint_future[cell].valid()) {
-                        if (ai_status.hint_future[cell].wait_for(chrono::seconds(0)) == future_status::ready) {
+                        if (ai_status.hint_future[cell].wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                             Search_result search_result = ai_status.hint_future[cell].get();
                             if (ai_status.hint_values[cell] == HINT_INIT_VALUE || search_result.is_end_search || search_result.depth == SEARCH_BOOK) {
                                 ai_status.hint_values[cell] = -search_result.value;
@@ -1150,9 +1079,9 @@ private:
                 
                 if (loop_time > 0) {
                     for (int i = 0; i < loop_time; ++i) {
-                        std::pair<int, function<Search_result()>> task = ai_status.hint_task_stack.back();
+                        std::pair<int, std::function<Search_result()>> task = ai_status.hint_task_stack.back();
                         ai_status.hint_task_stack.pop_back();
-                        ai_status.hint_future[task.first] = async(launch::async, task.second);
+                        ai_status.hint_future[task.first] = std::async(std::launch::async, task.second);
                     }
                     ai_status.hint_n_doing_tasks += loop_time;
                 }
@@ -1168,7 +1097,7 @@ private:
             analyze_info.idx = idx++;
             analyze_info.sgn = node.player ? -1 : 1;
             analyze_info.board = node.board;
-            ai_status.analyze_task_stack.emplace_back(std::make_pair(analyze_info, bind(ai, node.board, getData().menu_elements.level, getData().menu_elements.use_book, true, true)));
+            ai_status.analyze_task_stack.emplace_back(std::make_pair(analyze_info, std::bind(ai, node.board, getData().menu_elements.level, getData().menu_elements.use_book, true, true)));
         }
         std::cerr << "analyze " << ai_status.analyze_task_stack.size() << " tasks" << std::endl;
         ai_status.analyzing = true;
@@ -1183,9 +1112,9 @@ private:
                 getData().graph_resources.n_discs = getData().graph_resources.nodes[getData().graph_resources.put_mode].back().board.n_discs();
                 return;
             }
-            std::pair<Analyze_info, function<Search_result()>> task = ai_status.analyze_task_stack.back();
+            std::pair<Analyze_info, std::function<Search_result()>> task = ai_status.analyze_task_stack.back();
             ai_status.analyze_task_stack.pop_back();
-            ai_status.analyze_future[task.first.idx] = async(launch::async, task.second);
+            ai_status.analyze_future[task.first.idx] = std::async(std::launch::async, task.second);
             ai_status.analyze_sgn[task.first.idx] = task.first.sgn;
             getData().history_elem.board = task.first.board;
             getData().history_elem.policy = -1;
@@ -1199,7 +1128,7 @@ private:
         bool task_finished = false;
         for (int i = 0; i < ANALYZE_SIZE; ++i) {
             if (ai_status.analyze_future[i].valid()) {
-                if (ai_status.analyze_future[i].wait_for(chrono::seconds(0)) == future_status::ready) {
+                if (ai_status.analyze_future[i].wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                     Search_result search_result = ai_status.analyze_future[i].get();
                     int value = ai_status.analyze_sgn[i] * search_result.value;
                     getData().graph_resources.nodes[getData().graph_resources.put_mode][i].v = value;
@@ -1268,7 +1197,7 @@ private:
                 for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
                     calc_flip(&flip, &board, cell);
                     board.move_board(&flip);
-                    umigame_status.umigame_future[cell] = async(launch::async, get_umigame, board, n_player);
+                    umigame_status.umigame_future[cell] = std::async(std::launch::async, get_umigame, board, n_player);
                     board.undo_board(&flip);
                 }
                 umigame_status.umigame_calculating = true;
@@ -1278,7 +1207,7 @@ private:
                 bool all_done = true;
                 for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
                     if (umigame_status.umigame_future[cell].valid()) {
-                        if (umigame_status.umigame_future[cell].wait_for(chrono::seconds(0)) == future_status::ready) {
+                        if (umigame_status.umigame_future[cell].wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                             umigame_status.umigame[cell] = umigame_status.umigame_future[cell].get();
                         }
                         else {

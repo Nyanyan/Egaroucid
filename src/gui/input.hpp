@@ -13,9 +13,8 @@
 #include <future>
 #include "./../engine/engine_all.hpp"
 #include "function/function_all.hpp"
-#include "gui_common.hpp"
 
-std::vector<History_elem> import_transcript_processing(std::vector<History_elem> n_history, History_elem strt_elem, string transcript, bool* failed) {
+std::vector<History_elem> import_transcript_processing(std::vector<History_elem> n_history, History_elem strt_elem, std::string transcript, bool* failed) {
     Board h_bd = strt_elem.board;
     String transcript_str = Unicode::Widen(transcript).replace(U"\r", U"").replace(U"\n", U"").replace(U" ", U"");
     if (transcript_str.size() % 2 != 0 && transcript_str.size() >= 120) {
@@ -83,7 +82,7 @@ private:
     Button import_from_position_button;
     bool done;
     bool failed;
-    string transcript;
+    std::string transcript;
     std::vector<History_elem> n_history;
     bool imported_from_position;
 
@@ -166,7 +165,7 @@ public:
                 else {
                     getData().graph_resources.nodes[getData().graph_resources.put_mode] = n_history;
                 }
-                string opening_name, n_opening_name;
+                std::string opening_name, n_opening_name;
                 for (int i = 0; i < (int)getData().graph_resources.nodes[getData().graph_resources.put_mode].size(); ++i) {
                     n_opening_name.clear();
                     n_opening_name = opening.get(getData().graph_resources.nodes[getData().graph_resources.put_mode][i].board, getData().graph_resources.nodes[getData().graph_resources.put_mode][i].player ^ 1);
@@ -205,7 +204,7 @@ private:
     bool failed;
     Board board;
     int player;
-    string board_str;
+    std::string board_str;
 
 public:
     Import_board(const InitData& init) : IScene{ init } {
@@ -637,7 +636,7 @@ private:
                 getData().graph_resources.nodes[GRAPH_MODE_NORMAL].emplace_back(history_elem);
             }
         }
-        string opening_name, n_opening_name;
+        std::string opening_name, n_opening_name;
         for (int i = 0; i < (int)getData().graph_resources.nodes[GRAPH_MODE_NORMAL].size(); ++i) {
             n_opening_name.clear();
             n_opening_name = opening.get(getData().graph_resources.nodes[GRAPH_MODE_NORMAL][i].board, getData().graph_resources.nodes[GRAPH_MODE_NORMAL][i].player ^ 1);

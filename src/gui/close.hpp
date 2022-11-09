@@ -13,7 +13,6 @@
 #include <future>
 #include "./../engine/engine_all.hpp"
 #include "function/function_all.hpp"
-#include "gui_common.hpp"
 
 void save_settings(Menu_elements menu_elements, Settings settings, Directories directories) {
     TextWriter writer(U"{}Egaroucid/setting.txt"_fmt(Unicode::Widen(directories.appdata_dir)));
@@ -37,9 +36,9 @@ void save_settings(Menu_elements menu_elements, Settings settings, Directories d
         writer.writeln(menu_elements.book_learn_error);
         writer.writeln((int)menu_elements.show_stable_discs);
         writer.writeln((int)menu_elements.change_book_by_right_click);
-        writer.writeln((int)menu_elements.ignore_book);
         writer.writeln((int)menu_elements.show_last_move);
         writer.writeln((int)menu_elements.show_next_move);
+        writer.writeln(menu_elements.hash_level);
     }
 }
 
@@ -56,7 +55,7 @@ private:
 
 public:
     Close(const InitData& init) : IScene{ init } {
-        close_future = async(launch::async, close_app, getData().menu_elements, getData().settings, getData().directories, getData().book_information);
+        close_future = std::async(std::launch::async, close_app, getData().menu_elements, getData().settings, getData().directories, getData().book_information);
     }
 
     void update() override {

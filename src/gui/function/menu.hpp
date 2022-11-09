@@ -133,8 +133,8 @@ public:
 			for (menu_elem& elem : children) {
 				elem.pre_init(font_size, font, checkbox, unchecked);
 				RectF r = elem.size();
-				height = max(height, (int)r.h);
-				width = max(width, (int)r.w);
+				height = std::max(height, (int)r.h);
+				width = std::max(width, (int)r.w);
 			}
 			height += menu_offset_y * 2;
 			width += menu_offset_x * 2;
@@ -339,8 +339,8 @@ public:
 		for (menu_elem &elem : elems) {
 			elem.pre_init(font_size, font, checkbox, unchecked);
 			RectF r = elem.size();
-			height = max(height, (int)r.h);
-			width = max(width, (int)r.w);
+			height = std::max(height, (int)r.h);
+			width = std::max(width, (int)r.w);
 		}
 		height += menu_offset_y * 2;
 		width += menu_offset_x * 2;
@@ -434,8 +434,8 @@ public:
 		for (menu_title &elem : menu) {
 			elem.pre_init(fs, f, c, u);
 			RectF r = elem.size();
-			height = max(height, (int)r.h);
-			width = max(width, (int)r.w);
+			height = std::max(height, (int)r.h);
+			width = std::max(width, (int)r.w);
 		}
 		height += menu_offset_y * 2;
 		width += menu_offset_x * 2;

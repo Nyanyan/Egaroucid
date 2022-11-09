@@ -13,7 +13,6 @@
 #include <future>
 #include "./../engine/engine_all.hpp"
 #include "function/function_all.hpp"
-#include "gui_common.hpp"
 
 void init_directories(Directories* directories) {
 	// system directory
@@ -28,7 +27,7 @@ void init_directories(Directories* directories) {
 
 void init_default_settings(const Directories* directories, const Resources* resources, Settings* settings) {
 	std::cerr << "use default settings" << std::endl;
-	settings->n_threads = std::min(32, (int)thread::hardware_concurrency());
+	settings->n_threads = std::min(32, (int)std::thread::hardware_concurrency());
 	settings->auto_update_check = 1;
 	settings->lang_name = "japanese";
 	settings->book_file = directories->document_dir + "Egaroucid/book.egbk";
@@ -47,9 +46,9 @@ void init_default_settings(const Directories* directories, const Resources* reso
 	settings->book_learn_error = 3;
 	settings->show_stable_discs = false;
 	settings->change_book_by_right_click = false;
-	settings->ignore_book = false;
 	settings->show_last_move = true;
 	settings->show_next_move = true;
+	settings->hash_level = DEFAULT_HASH_LEVEL;
 }
 
 int init_settings_import_int(TextReader* reader, int* res) {
@@ -182,16 +181,16 @@ void init_settings(const Directories* directories, const Resources* resources, S
 			std::cerr << "err18" << std::endl;
 			goto use_default_settings;
 		}
-		if (init_settings_import_bool(&reader, &settings->ignore_book) != ERR_OK) {
-			std::cerr << "err19" << std::endl;
-			goto use_default_settings;
-		}
 		if (init_settings_import_bool(&reader, &settings->show_last_move) != ERR_OK) {
 			std::cerr << "err20" << std::endl;
 			goto use_default_settings;
 		}
 		if (init_settings_import_bool(&reader, &settings->show_next_move) != ERR_OK) {
 			std::cerr << "err21" << std::endl;
+			goto use_default_settings;
+		}
+		if (init_settings_import_int(&reader, &settings->hash_level) != ERR_OK) {
+			std::cerr << "err22" << std::endl;
 			goto use_default_settings;
 		}
 	}
@@ -202,7 +201,7 @@ use_default_settings:
 
 int init_resources(Resources* resources, Settings* settings) {
 	// language names
-	ifstream ifs_lang("resources/languages/languages.txt");
+	std::ifstream ifs_lang("resources/languages/languages.txt");
 	if (ifs_lang.fail()) {
 		return ERR_LANG_LIST_NOT_LOADED;
 	}
@@ -258,18 +257,18 @@ int silent_load(Directories* directories, Resources* resources, Settings* settin
 
 class Silent_load : public App::Scene {
 private:
-	future<int> silent_load_future;
+	std::future<int> silent_load_future;
 	bool silent_load_failed;
 
 public:
 	Silent_load(const InitData& init) : IScene{ init } {
-		silent_load_future = async(launch::async, silent_load, &getData().directories, &getData().resources, &getData().settings);
+		silent_load_future = std::async(std::launch::async, silent_load, &getData().directories, &getData().resources, &getData().settings);
 		silent_load_failed = false;
 		std::cerr << "start silent loading" << std::endl;
 	}
 
 	void update() override {
-		if (silent_load_future.wait_for(chrono::seconds(0)) == future_status::ready) {
+		if (silent_load_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
 			int load_code = silent_load_future.get();
 			if (load_code == ERR_OK) {
 				std::cerr << "silent loaded" << std::endl;

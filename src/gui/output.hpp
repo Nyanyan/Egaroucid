@@ -16,7 +16,6 @@
 #include <sstream>
 #include "./../engine/engine_all.hpp"
 #include "function/function_all.hpp"
-#include "gui_common.hpp"
 
 class Export_game : public App::Scene {
 private:
@@ -206,25 +205,25 @@ private:
         tm newtime;
         time(&now);
         int err = get_localtime(&newtime, &now);
-        ostd::stringstream sout;
-        std::string year = to_std::string(newtime.tm_year + 1900);
-        sout << setfill('0') << setw(2) << newtime.tm_mon + 1;
+        std::stringstream sout;
+        std::string year = std::to_string(newtime.tm_year + 1900);
+        sout << std::setfill('0') << std::setw(2) << newtime.tm_mon + 1;
         std::string month = sout.str();
         sout.str("");
         sout.clear(std::stringstream::goodbit);
-        sout << setfill('0') << setw(2) << newtime.tm_mday;
+        sout << std::setfill('0') << std::setw(2) << newtime.tm_mday;
         std::string day = sout.str();
         sout.str("");
         sout.clear(std::stringstream::goodbit);
-        sout << setfill('0') << setw(2) << newtime.tm_hour;
+        sout << std::setfill('0') << std::setw(2) << newtime.tm_hour;
         std::string hour = sout.str();
         sout.str("");
         sout.clear(std::stringstream::goodbit);
-        sout << setfill('0') << setw(2) << newtime.tm_min;
+        sout << std::setfill('0') << std::setw(2) << newtime.tm_min;
         std::string minute = sout.str();
         sout.str("");
         sout.clear(std::stringstream::goodbit);
-        sout << setfill('0') << setw(2) << newtime.tm_sec;
+        sout << std::setfill('0') << std::setw(2) << newtime.tm_sec;
         std::string second = sout.str();
         return year + "_" + month + "_" + day + "_" + hour + "_" + minute + "_" + second;
     }

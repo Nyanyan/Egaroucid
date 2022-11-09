@@ -13,7 +13,7 @@
 #include <future>
 #include "./../engine/engine_all.hpp"
 #include "function/function_all.hpp"
-#include "gui_common.hpp"
+#include "draw.hpp"
 
 void delete_book() {
     book.delete_all();
@@ -103,13 +103,13 @@ public:
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
             if (DragDrop::HasNewFilePaths()) {
-                import_book_future = async(launch::async, import_book, DragDrop::GetDroppedFilePaths()[0].path.narrow());
+                import_book_future = std::async(std::launch::async, import_book, DragDrop::GetDroppedFilePaths()[0].path.narrow());
                 importing = true;
             }
         }
         else if (!imported) {
             getData().fonts.font(language.get("book", "loading")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
-            if (import_book_future.wait_for(chrono::seconds(0)) == future_status::ready) {
+            if (import_book_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 failed = import_book_future.get();
                 imported = true;
             }
@@ -204,22 +204,22 @@ public:
                 getData().book_information.changed = true;
                 getData().settings.book_file = book_file;
                 std::cerr << "book reference changed to " << book_file << std::endl;
-                delete_book_future = async(launch::async, delete_book);
+                delete_book_future = std::async(std::launch::async, delete_book);
                 book_deleting = true;
             }
         }
         else if (book_deleting || book_importing) {
             getData().fonts.font(language.get("book", "loading")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             if (book_deleting) {
-                if (delete_book_future.wait_for(chrono::seconds(0)) == future_status::ready) {
+                if (delete_book_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                     delete_book_future.get();
                     book_deleting = false;
-                    import_book_future = async(launch::async, import_book_egaroucid, getData().settings.book_file);
+                    import_book_future = std::async(std::launch::async, import_book_egaroucid, getData().settings.book_file);
                     book_importing = true;
                 }
             }
             else if (book_importing) {
-                if (import_book_future.wait_for(chrono::seconds(0)) == future_status::ready) {
+                if (import_book_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                     failed = import_book_future.get();
                     book_importing = false;
                     done = true;
@@ -264,7 +264,7 @@ public:
         history_elem.policy = -1;
         book_learning = true;
         done = false;
-        book_learn_future = async(launch::async, learn_book, root_board, getData().menu_elements.level, getData().menu_elements.book_learn_depth, getData().menu_elements.book_learn_error, &history_elem.board, &history_elem.player, getData().settings.book_file, getData().settings.book_file + ".bak", getData().menu_elements.ignore_book,  &book_learning);
+        book_learn_future = std::async(std::launch::async, book_widen, root_board, getData().menu_elements.level, getData().menu_elements.book_learn_depth, getData().menu_elements.book_learn_error, &history_elem.board, &history_elem.player, getData().settings.book_file, getData().settings.book_file + ".bak", &book_learning);
     }
 
     void update() override {
@@ -287,7 +287,7 @@ public:
         }
         else if (!done) {
             getData().fonts.font(language.get("book", "stopping")).draw(20, 480, 230, getData().colors.white);
-            if (book_learn_future.wait_for(chrono::seconds(0)) == future_status::ready) {
+            if (book_learn_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 book_learn_future.get();
                 done = true;
                 global_searching = true;

@@ -11,11 +11,10 @@
 #pragma once
 #include <iostream>
 #include <Siv3D.hpp> // OpenSiv3D v0.6.3
-#include "./../engine/engine_all.hpp"
+#include "./../../engine/engine_all.hpp"
+#include "menu.hpp"
 #include "version.hpp"
 #include "url.hpp"
-
-using namespace std;
 
 // graph definition
 #define GRAPH_IGNORE_VALUE INF
@@ -45,7 +44,7 @@ constexpr int Y_CENTER = WINDOW_SIZE_Y / 2;
 #define ERR_OPENING_NOT_LOADED 5
 #define ERR_EVAL_FILE_NOT_IMPORTED 1
 #define ERR_BOOK_FILE_NOT_IMPORTED 2
-#define ERR_HASH_FILE_NOT_IMPORTED 3
+#define ERR_HASH_NOT_RESIZED 3
 #define ERR_IMPORT_SETTINGS 1
 
 // constant definition
@@ -226,7 +225,7 @@ struct History_elem {
     int level;
     int policy;
     int next_policy;
-    string opening_name;
+    std::string opening_name;
 
     History_elem() {
         reset();
@@ -242,7 +241,7 @@ struct History_elem {
         opening_name.clear();
     }
 
-    void set(Board b, int p, int vv, int l, int pl, int npl, string o) {
+    void set(Board b, int p, int vv, int l, int pl, int npl, std::string o) {
         board = b;
         player = p;
         v = vv;
@@ -268,13 +267,13 @@ struct Colors {
 };
 
 struct Directories {
-    string document_dir;
-    string appdata_dir;
-    string eval_file;
+    std::string document_dir;
+    std::string appdata_dir;
+    std::string eval_file;
 };
 
 struct Resources {
-    std::vector<string> language_names;
+    std::vector<std::string> language_names;
     Texture icon;
     Texture logo;
     Texture checkbox;
@@ -284,8 +283,8 @@ struct Resources {
 struct Settings {
     int n_threads;
     bool auto_update_check;
-    string lang_name;
-    string book_file;
+    std::string lang_name;
+    std::string book_file;
     bool use_book;
     int level;
     bool ai_put_black;
@@ -301,9 +300,9 @@ struct Settings {
     int book_learn_error;
     bool show_stable_discs;
     bool change_book_by_right_click;
-    bool ignore_book;
     bool show_last_move;
     bool show_next_move;
+    int hash_level;
 };
 
 struct Fonts {
@@ -324,6 +323,7 @@ struct Menu_elements {
     bool use_book;
     int level;
     int n_threads;
+    int hash_level;
     // player
     bool ai_put_black;
     bool ai_put_white;
@@ -347,7 +347,6 @@ struct Menu_elements {
     bool book_import;
     bool book_reference;
     bool change_book_by_right_click;
-    bool ignore_book;
 
     // input / output
     // input
@@ -387,6 +386,7 @@ struct Menu_elements {
         use_book = settings->use_book;
         level = settings->level;
         n_threads = settings->n_threads;
+        hash_level = settings->hash_level;
         ai_put_black = settings->ai_put_black;
         ai_put_white = settings->ai_put_white;
 
@@ -407,7 +407,6 @@ struct Menu_elements {
         book_import = false;
         book_reference = false;
         change_book_by_right_click = settings->change_book_by_right_click;
-        ignore_book = settings->ignore_book;
 
         input_transcript = false;
         input_board = false;
@@ -527,12 +526,12 @@ struct Analyze_info {
 
 struct AI_status {
     bool ai_thinking{ false };
-    future<Search_result> ai_future;
+    std::future<Search_result> ai_future;
 
     bool hint_calculating{ false };
     int hint_level{ HINT_NOT_CALCULATING };
-    future<Search_result> hint_future[HW2];
-    std::vector<std::pair<int, function<Search_result()>>> hint_task_stack;
+    std::future<Search_result> hint_future[HW2];
+    std::vector<std::pair<int, std::function<Search_result()>>> hint_task_stack;
     bool hint_use[HW2];
     double hint_values[HW2];
     int hint_types[HW2];
@@ -544,9 +543,9 @@ struct AI_status {
     int hint_n_doing_tasks;
 
     bool analyzing{ false };
-    future<Search_result> analyze_future[ANALYZE_SIZE];
+    std::future<Search_result> analyze_future[ANALYZE_SIZE];
     int analyze_sgn[ANALYZE_SIZE];
-    std::vector<std::pair<Analyze_info, function<Search_result()>>> analyze_task_stack;
+    std::vector<std::pair<Analyze_info, std::function<Search_result()>>> analyze_task_stack;
 
     bool book_learning{ false };
 };
@@ -563,7 +562,7 @@ struct Game_abstract {
 struct Umigame_status {
     bool umigame_calculating{ false };
     bool umigame_calculated{ false };
-    future<Umigame_result> umigame_future[HW2];
+    std::future<Umigame_result> umigame_future[HW2];
     Umigame_result umigame[HW2];
 };
 
