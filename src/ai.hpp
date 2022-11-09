@@ -16,7 +16,6 @@
 #include "setting.hpp"
 #include "midsearch.hpp"
 #include "book.hpp"
-#include "book_learn.hpp"
 #include "util.hpp"
 #include "clogsearch.hpp"
 
