@@ -1,6 +1,8 @@
 /*
     Egaroucid Project
 
+    @file stability.hpp
+        Calculate stable discs
     @date 2021-2022
     @author Takuto Yamana (a.k.a. Nyanyan)
     @license GPL-3.0 license
@@ -8,19 +10,26 @@
 
 #pragma once
 #include <iostream>
-#include <fstream>
 #include "setting.hpp"
 #include "common.hpp"
 #include "board.hpp"
 #include "search.hpp"
 #include "util.hpp"
 
-using namespace std;
-
-
-
+/*
+    @brief Pre-calculation result of edge stability
+*/
 uint64_t stability_edge_arr[N_8BIT][N_8BIT][2];
 
+/*
+    @brief Find flippable discs on a line
+
+    @param p                    an integer representing player
+    @param o                    an integer representing opponent
+    @param place                place to put a disc
+    @param np                   an integer to store result of player discs
+    @param no                   an integer to store result of opponent discs
+*/
 inline void probably_move_line(int p, int o, int place, int *np, int *no){
     int i, j;
     *np = p | (1 << place);
@@ -37,6 +46,12 @@ inline void probably_move_line(int p, int o, int place, int *np, int *no){
     *no = o & ~(*np);
 }
 
+/*
+    @brief Calculate all stable discs on a line
+
+    @param b                    player 1/2
+    @param w                    player 2/2
+*/
 int calc_stability_line(int b, int w){
     int i, nb, nw, res = b | w;
     int empties = ~(b | w);
@@ -53,6 +68,9 @@ int calc_stability_line(int b, int w){
     return res;
 }
 
+/*
+    @brief Initialize stability calculation
+*/
 inline void stability_init() {
     int place, b, w, stab;
     for (b = 0; b < N_8BIT; ++b) {
@@ -79,6 +97,11 @@ inline void stability_init() {
     }
 }
 
+/*
+    @brief Calculate full stability in horizontal direction
+
+    @param full                 a bitboard representing discs
+*/
 inline uint64_t full_stability_h(uint64_t full){
     full &= full >> 1;
     full &= full >> 2;
@@ -86,6 +109,11 @@ inline uint64_t full_stability_h(uint64_t full){
     return (full & 0x0101010101010101ULL) * 0xFF;
 }
 
+/*
+    @brief Calculate full stability in vertical direction
+
+    @param full                 a bitboard representing discs
+*/
 inline uint64_t full_stability_v(uint64_t full){
     full &= (full >> 8) | (full << 56);
     full &= (full >> 16) | (full << 48);
@@ -93,6 +121,13 @@ inline uint64_t full_stability_v(uint64_t full){
     return full;
 }
 
+/*
+    @brief Calculate full stability in diagonal direction
+
+    @param full                 a bitboard representing discs
+    @param full_d7              an integer to store result of d7 line
+    @param full_d9              an integer to store result of d9 line
+*/
 inline void full_stability_d(uint64_t full, uint64_t *full_d7, uint64_t *full_d9){
     constexpr uint64_t edge = 0xFF818181818181FFULL;
     uint64_t l7, r7, l9, r9;
@@ -108,12 +143,30 @@ inline void full_stability_d(uint64_t full, uint64_t *full_d7, uint64_t *full_d9
     *full_d9 = l9 & r9 & (0x0F0F0F0FF0F0F0F0ULL | (l9 >> 36) | (r9 << 36));
 }
 
+/*
+    @brief Calculate full stability in all direction
+
+    @param discs                a bitboard representing discs
+    @param h                    an integer to store result of h line
+    @param v                    an integer to store result of h line
+    @param d7                   an integer to store result of d7 line
+    @param d9                   an integer to store result of d9 line
+*/
 inline void full_stability(uint64_t discs, uint64_t *h, uint64_t *v, uint64_t *d7, uint64_t *d9){
     *h = full_stability_h(discs);
     *v = full_stability_v(discs);
     full_stability_d(discs, d7, d9);
 }
 
+/*
+    @brief Calculate stable discs as a bitboard
+
+    This function cannot find every stable discs
+    From an idea of https://github.com/abulmo/edax-reversi/blob/1ae7c9fe5322ac01975f1b3196e788b0d25c1e10/src/board.c#L1030
+
+    @param board                board
+    @return found stable discs as a bitboard
+*/
 inline uint64_t calc_stability_bits(Board *board){
     uint64_t full_h, full_v, full_d7, full_d9;
     uint64_t edge_stability = 0, player_stability = 0, opponent_stability = 0, n_stability;
@@ -158,6 +211,16 @@ inline uint64_t calc_stability_bits(Board *board){
     return player_stability | opponent_stability;
 }
 
+/*
+    @brief Calculate number of stable discs
+
+    This function cannot find every stable discs
+    From an idea of https://github.com/abulmo/edax-reversi/blob/1ae7c9fe5322ac01975f1b3196e788b0d25c1e10/src/board.c#L1030
+
+    @param board                board
+    @param stab0                number of player's stable discs
+    @param stab1                number of opponent's stable discs
+*/
 inline void calc_stability(Board *board, int *stab0, int *stab1){
     uint64_t full_h, full_v, full_d7, full_d9;
     uint64_t edge_stability = 0, player_stability = 0, opponent_stability = 0, n_stability;
@@ -203,7 +266,18 @@ inline void calc_stability(Board *board, int *stab0, int *stab1){
     *stab1 = pop_count_ull(opponent_stability);
 }
 
+/*
+    @brief Stability cutoff
 
+    If P (number of player's stable discs) and O (number of opponent's stable discs) are calculated, 
+    then the final score should be 2 * P - 64 <= final_score <= 64 - 2 * O.
+    Using this formula, we can narrow the search window.
+
+    @param search               search information
+    @param alpha                alpha value
+    @param beta                 beta value
+    @return SCORE_UNDEFINED if no cutoff found else the score
+*/
 inline int stability_cut(Search *search, int *alpha, int *beta){
     if (*alpha >= nws_stability_threshold[HW2 - search->n_discs]){
         int stab_player, stab_opponent;
@@ -214,14 +288,23 @@ inline int stability_cut(Search *search, int *alpha, int *beta){
             return n_alpha;
         if (n_beta <= *alpha)
             return n_beta;
-        if (n_beta <= n_alpha)
-            return n_alpha;
-        *alpha = max(*alpha, n_alpha);
-        *beta = min(*beta, n_beta);
+        *alpha = std::max(*alpha, n_alpha);
+        *beta = std::min(*beta, n_beta);
     }
     return SCORE_UNDEFINED;
 }
 
+/*
+    @brief Stability cutoff for NWS (Null Window Search)
+
+    If P (number of player's stable discs) and O (number of opponent's stable discs) are calculated, 
+    then the final score should be 2 * P - 64 <= final_score <= 64 - 2 * O.
+    Using this formula, we can narrow the search window.
+
+    @param search               search information
+    @param alpha                alpha value (beta = alpha + 1)
+    @return SCORE_UNDEFINED if no cutoff found else the score
+*/
 inline int stability_cut_nws(Search *search, int *alpha){
     if (*alpha >= nws_stability_threshold[HW2 - search->n_discs]){
         int stab_player, stab_opponent;
@@ -232,8 +315,6 @@ inline int stability_cut_nws(Search *search, int *alpha){
             return n_alpha;
         if (n_beta <= *alpha)
             return n_beta;
-        if (n_beta <= n_alpha)
-            return n_alpha;
     }
     return SCORE_UNDEFINED;
 }
