@@ -34,7 +34,7 @@
 #define LAST_PO_OPTIMIZE true
 
 // use probcut to predict it seems to be an all node
-#define USE_ALL_NODE_PREDICTION true
+#define USE_ALL_NODE_PREDICTION false
 
 // use search algs
 #define USE_NEGA_ALPHA_ORDERING false
