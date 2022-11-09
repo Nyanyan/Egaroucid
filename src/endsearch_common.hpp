@@ -1,6 +1,8 @@
 /*
     Egaroucid Project
 
+    @file endsearch_common.hpp
+        Common things for endgame search
     @date 2021-2022
     @author Takuto Yamana (a.k.a Nyanyan)
     @license GPL-3.0 license
@@ -15,8 +17,16 @@
 #include "board.hpp"
 #include "search.hpp"
 
-using namespace std;
+/*
+    @brief Get a final score with last 1 empty
 
+    Special optimization from an idea of https://github.com/abulmo/edax-reversi/blob/1ae7c9fe5322ac01975f1b3196e788b0d25c1e10/src/endgame.c#L85
+
+    @param search               search information
+    @param alpha                alpha value
+    @param p0                   last empty square
+    @return the final score
+*/
 inline int last1(Search *search, int alpha, uint_fast8_t p0){
     ++search->n_nodes;
     int score = HW2 - 2 * search->board.count_opponent();
