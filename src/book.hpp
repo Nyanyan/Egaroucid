@@ -1,6 +1,8 @@
 ﻿/*
     Egaroucid Project
 
+    @file book.hpp
+        Book class
     @date 2021-2022
     @author Takuto Yamana (a.k.a Nyanyan)
     @license GPL-3.0 license
@@ -13,6 +15,12 @@
 #include "evaluate.hpp"
 #include "board.hpp"
 
+/*
+    @brief book result structure
+
+    @param policy               selected best move
+    @param value                registered score
+*/
 struct Book_value{
     int policy;
     int value;
@@ -20,15 +28,33 @@ struct Book_value{
 
 class Book{
     private:
+        /*
+            @brief book data
+
+            @param book                 book data
+            @param n_book               number of boards registered
+        */
         unordered_map<Board, int, Board_hash> book;
         int n_book;
 
     public:
+        /*
+            @brief initialize book
+
+            @param file                 book file (.egbk file)
+            @return book completely imported?
+        */
         bool init(string file){
             n_book = 0;
             return import_file_bin(file);
         }
 
+        /*
+            @brief import Egaroucid-formatted book
+
+            @param file                 book file (.egbk file)
+            @return book completely imported?
+        */
         inline bool import_file_bin(string file){
             cerr << file << endl;
             FILE* fp;
@@ -79,13 +105,19 @@ class Book{
                 }
                 b.player = p;
                 b.opponent = o;
-                n_book += register_symmetric_book(b, value, n_book);
+                n_book += register_symmetric_book(b, value);
             }
             cerr << "book imported " << n_book << " boards" << endl;
             fclose(fp);
             return true;
         }
-        
+
+        /*
+            @brief import Edax-formatted book
+
+            @param file                 book file (.dat file)
+            @return book completely imported?
+        */
         inline bool import_edax_book(string file) {
             cerr << file << endl;
             FILE* fp;
@@ -167,7 +199,7 @@ class Book{
                 }
                 b.player = player;
                 b.opponent = opponent;
-                n_book += register_symmetric_book(b, -(int)value, n_book);
+                n_book += register_symmetric_book(b, -(int)value);
                 for (j = 0; j < (int)link + 1; ++j) {
                     if (fread(&link_value, 1, 1, fp) < 1) {
                         cerr << "file broken" << endl;
@@ -186,7 +218,7 @@ class Book{
                             return false;
                         }
                         b.move_board(&flip);
-                            n_book += register_symmetric_book(b, (int)link_value, n_book);
+                            n_book += register_symmetric_book(b, (int)link_value);
                         b.undo_board(&flip);
                     }
                 }
@@ -195,21 +227,45 @@ class Book{
             return true;
         }
 
+        /*
+            @brief register a board to book
+
+            @param b                    a board to register
+            @param value                score of the board
+        */
         inline void reg(Board b, int value){
-            n_book += register_symmetric_book(b, value, n_book);
+            n_book += register_symmetric_book(b, value);
         }
 
+        /*
+            @brief register a board to book
+
+            @param b                    a board pointer to register
+            @param value                score of the board
+        */
         inline void reg(Board *b, int value){
             Board b1 = b->copy();
-            n_book += register_symmetric_book(b1, value, n_book);
+            n_book += register_symmetric_book(b1, value);
         }
 
+        /*
+            @brief get registered score
+
+            @param b                    a board to find
+            @return registered value (if not registered, returns -INF)
+        */
         inline int get_onebook(Board b){
             if (book.find(b) == book.end())
                 return -INF;
             return book[b];
         }
 
+        /*
+            @brief get registered score with all rotation
+
+            @param b                    a board pointer to find
+            @return registered value (if not registered, returns -INF)
+        */
         inline int get(Board *b){
             Board nb = b->copy();
             int res = -INF;
@@ -247,6 +303,13 @@ class Book{
             return -INF;
         }
 
+        /*
+            @brief get a best move
+
+            @param b                    a board pointer to find
+            @param accept_value         an error to allow
+            @return best move and value as Book_value structure
+        */
         inline Book_value get_random(Board *b, int accept_value){
             vector<int> policies;
             vector<int> values;
@@ -283,23 +346,45 @@ class Book{
             return res;
         }
 
+        /*
+            @brief get how many boards registered in this book
+
+            @return number of registered boards
+        */
         inline int get_n_book(){
             return n_book;
         }
 
+        /*
+            @brief change or register a board
+
+            @param b                    a board to change or register
+            @param value                a value to change or register
+        */
         inline void change(Board b, int value){
-            if (register_symmetric_book(b, value, n_book)){
+            if (register_symmetric_book(b, value)){
                 n_book++;
                 cerr << "book registered " << n_book << endl;
             } else
                 cerr << "book changed " << n_book << endl;
         }
 
+        /*
+            @brief change or register a board
+
+            @param b                    a board pointer to change or register
+            @param value                a value to change or register
+        */
         inline void change(Board *b, int value){
             Board nb = b->copy();
             change(nb, value);
         }
 
+        /*
+            @brief delete a board
+
+            @param b                    a board to delete
+        */
         inline void delete_elem(Board b){
             if (delete_symmetric_book(b)){
                 n_book--;
@@ -308,11 +393,20 @@ class Book{
                 cerr << "book elem NOT deleted " << n_book << endl;
         }
 
+        /*
+            @brief delete all board in this book
+        */
         inline void delete_all(){
             book.clear();
             n_book = 0;
         }
 
+        /*
+            @brief save as Egaroucid-formatted book (.egbk)
+
+            @param file                 file name to save
+            @param bak_file             backup file name
+        */
         inline void save_bin(string file, string bak_file){
             if (remove(bak_file.c_str()) == -1)
                 cerr << "cannot delete backup. you can ignore this." << endl;
@@ -343,12 +437,25 @@ class Book{
         
 
     private:
+        /*
+            @brief register a board
+
+            @param b                    a board to register
+            @param value                score of the board
+            @return is this board new?
+        */
         inline bool register_book(Board b, int value){
             bool res = book.find(b) == book.end();
             book[b] = value;
             return res;
         }
 
+        /*
+            @brief delete a board
+
+            @param b                    a board to delete
+            @return board deleted?
+        */
         inline bool delete_book(Board b){
             if (book.find(b) != book.end()){
                 book.erase(b);
@@ -357,7 +464,14 @@ class Book{
             return false;
         }
 
-        inline int register_symmetric_book(Board b, int value, int line){
+        /*
+            @brief register a board with checking all symmetry boards
+
+            @param b                    a board to register
+            @param value                score of the board
+            @return 1 if board is new else 0
+        */
+        inline int register_symmetric_book(Board b, int value){
             if (get_onebook(b) != -INF){
                 register_book(b, value);
                 return 0;
@@ -401,6 +515,12 @@ class Book{
             return 1;
         }
 
+        /*
+            @brief delete a board with checking all symmetry boards
+
+            @param b                    a board to delete
+            @return 1 if board is deleted (board found) else 0
+        */
         inline int delete_symmetric_book(Board b){
             if (delete_book(b)){
                 return 1;
