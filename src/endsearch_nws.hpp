@@ -1,6 +1,8 @@
 /*
     Egaroucid Project
 
+    @file endsearch.hpp
+        Search near endgame with NWS (Null Window Search)
     @date 2021-2022
     @author Takuto Yamana (a.k.a Nyanyan)
     @license GPL-3.0 license
@@ -17,30 +19,36 @@
 #include "search.hpp"
 #include "move_ordering.hpp"
 #include "probcut.hpp"
-#include "transpose_table.hpp"
+#include "transposition_table.hpp"
 #include "util.hpp"
 #include "stability.hpp"
 #include "endsearch_common.hpp"
 #include "ybwc.hpp"
 #include "parallel.hpp"
 
-using namespace std;
+#if MID_TO_END_DEPTH < YBWC_END_SPLIT_MIN_DEPTH
+    inline bool ybwc_split_end_nws(const Search *search, const Flip *flip, int alpha, uint64_t legal, const bool *searching, uint_fast8_t policy, const int canput, const int pv_idx, const int split_count, vector<future<Parallel_task>> &parallel_tasks);
+    inline void ybwc_get_end_tasks_nws(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v);
+    inline void ybwc_get_end_tasks(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v, int *best_move);
+    inline void ybwc_wait_all(Search *search, vector<future<Parallel_task>> &parallel_tasks);
+    inline void ybwc_wait_all_nws(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v, int alpha, bool *searching);
+    inline void ybwc_wait_all_nws(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int alpha, bool *searching);
+#endif
 
-inline bool ybwc_split_end_nws(const Search *search, const Flip *flip, int alpha, uint64_t legal, const bool *searching, uint_fast8_t policy, const int canput, const int pv_idx, const int split_count, vector<future<Parallel_task>> &parallel_tasks);
-inline void ybwc_get_end_tasks_nws(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v);
-inline void ybwc_get_end_tasks(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v, int *best_move);
-inline void ybwc_wait_all(Search *search, vector<future<Parallel_task>> &parallel_tasks);
-inline void ybwc_wait_all_nws(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v, int alpha, bool *searching);
-inline void ybwc_wait_all_nws(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int alpha, bool *searching);
+/*
+    @brief Get a final score with last 2 empties (NWS)
 
+    No move ordering. Just search it.
+
+    @param search               search information
+    @param alpha                alpha value (beta value is alpha + 1)
+    @param p0                   empty square 1/2
+    @param p1                   empty square 2/2
+    @param skipped              already passed?
+    @return the final score
+*/
 inline int last2_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1, bool skipped){
     ++search->n_nodes;
-    #if USE_END_PO & false
-        uint_fast8_t p0_parity = (search->parity & cell_div4[p0]);
-        uint_fast8_t p1_parity = (search->parity & cell_div4[p1]);
-        if (!p0_parity && p1_parity)
-            swap(p0, p1);
-    #endif
     int v = -INF;
     Flip flip;
     if (bit_around[p0] & search->board.opponent){
@@ -77,6 +85,19 @@ inline int last2_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
     return v;
 }
 
+/*
+    @brief Get a final score with last 3 empties (NWS)
+
+    Only with parity-based ordering.
+
+    @param search               search information
+    @param alpha                alpha value (beta value is alpha + 1)
+    @param p0                   empty square 1/3
+    @param p1                   empty square 2/3
+    @param p2                   empty square 3/3
+    @param skipped              already passed?
+    @return the final score
+*/
 inline int last3_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1, uint_fast8_t p2, bool skipped){
     ++search->n_nodes;
     #if USE_END_PO
@@ -84,7 +105,7 @@ inline int last3_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
             const bool p0_parity = (search->parity & cell_div4[p0]) > 0;
             const bool p1_parity = (search->parity & cell_div4[p1]) > 0;
             const bool p2_parity = (search->parity & cell_div4[p2]) > 0;
-            #if LAST_PO_OPTIMISE
+            #if LAST_PO_OPTIMIZE
                 if (!p0_parity && p2_parity){
                     swap(p0, p2);
                 } else if (!p0_parity && p1_parity && !p2_parity){
@@ -155,6 +176,20 @@ inline int last3_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
     return v;
 }
 
+/*
+    @brief Get a final score with last 4 empties (NWS)
+
+    Only with parity-based ordering.
+
+    @param search               search information
+    @param alpha                alpha value (beta value is alpha + 1)
+    @param p0                   empty square 1/4
+    @param p1                   empty square 2/4
+    @param p2                   empty square 3/4
+    @param p3                   empty square 4/4
+    @param skipped              already passed?
+    @return the final score
+*/
 inline int last4_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1, uint_fast8_t p2, uint_fast8_t p3, bool skipped){
     ++search->n_nodes;
     #if USE_END_SC
@@ -169,7 +204,7 @@ inline int last4_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
             const bool p1_parity = (search->parity & cell_div4[p1]) > 0;
             const bool p2_parity = (search->parity & cell_div4[p2]) > 0;
             const bool p3_parity = (search->parity & cell_div4[p3]) > 0;
-            #if LAST_PO_OPTIMISE
+            #if LAST_PO_OPTIMIZE
                 if (!p0_parity && p3_parity){
                     swap(p0, p3);
                     if (!p1_parity && p2_parity)
@@ -268,6 +303,18 @@ inline int last4_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
     return v;
 }
 
+/*
+    @brief Get a final score with few empties (NWS)
+
+    Only with parity-based ordering.
+
+    @param search               search information
+    @param alpha                alpha value (beta value is alpha + 1)
+    @param skipped              already passed?
+    @param stab_cut             use stability cutoff?
+    @param searching            flag for terminating this search
+    @return the final score
+*/
 int nega_alpha_end_fast_nws(Search *search, int alpha, bool skipped, bool stab_cut, const bool *searching){
     if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
@@ -439,6 +486,18 @@ int nega_alpha_end_fast_nws(Search *search, int alpha, bool skipped, bool stab_c
     return v;
 }
 
+/*
+    @brief Get a final score with some empties (NWS)
+
+    Search with move ordering for endgame and transposition tables.
+
+    @param search               search information
+    @param alpha                alpha value (beta value is alpha + 1)
+    @param skipped              already passed?
+    @param legal                for use of previously calculated legal bitboard
+    @param searching            flag for terminating this search
+    @return the final score
+*/
 int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, const bool *searching){
     if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
@@ -460,7 +519,7 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
     int l = -INF, u = INF;
     const bool use_tt = search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD;
     if (use_tt){
-        parent_transpose_table.get(&search->board, hash_code, &l, &u, NOMPC, HW2 - search->n_discs);
+        parent_transposition_table.get(&search->board, hash_code, &l, &u, NOMPC, HW2 - search->n_discs);
         if (u == l)
             return u;
         if (u <= alpha)
@@ -473,10 +532,10 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
         if (stab_res != SCORE_UNDEFINED)
             return stab_res;
     #endif
-    int best_move = TRANSPOSE_TABLE_UNDEFINED;
+    int best_move = TRANSPOSITION_TABLE_UNDEFINED;
     if (use_tt){
-        best_move = child_transpose_table.get(&search->board, hash_code);
-        if (best_move != TRANSPOSE_TABLE_UNDEFINED){
+        best_move = child_transposition_table.get(&search->board, hash_code);
+        if (best_move != TRANSPOSITION_TABLE_UNDEFINED){
             if (1 & (legal >> best_move)){
                 Flip flip_best;
                 calc_flip(&flip_best, &search->board, best_move);
@@ -487,7 +546,7 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
                     return v;
                 legal ^= 1ULL << best_move;
             } else
-                best_move = TRANSPOSE_TABLE_UNDEFINED;
+                best_move = TRANSPOSITION_TABLE_UNDEFINED;
         }
     }
     if (legal){
@@ -506,7 +565,7 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
             #endif
             if (search->use_multi_thread){
                 int pv_idx = 0, split_count = 0;
-                if (best_move != TRANSPOSE_TABLE_UNDEFINED)
+                if (best_move != TRANSPOSITION_TABLE_UNDEFINED)
                     pv_idx = 1;
                 vector<future<Parallel_task>> parallel_tasks;
                 bool n_searching = true;

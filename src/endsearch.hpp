@@ -536,7 +536,7 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
     /*
         @brief Get a final score with some empties
 
-        Search with move ordering for endgame.
+        Search with move ordering for endgame and transposition tables.
 
         @param search               search information
         @param alpha                alpha value
