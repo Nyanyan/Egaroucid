@@ -1,6 +1,8 @@
 /*
     Egaroucid Project
 
+    @file level.hpp
+        definition of Egaroucid's level
     @date 2021-2022
     @author Takuto Yamana (a.k.a. Nyanyan)
     @license GPL-3.0 license
@@ -11,22 +13,50 @@
 
 using namespace std;
 
+/*
+    @brief definition of level categories
+
+    0                   - LIGHT_LEVEL           : light
+    LIGHT_LEVEL         - STANDARD_MAX_LEVEL    : standard
+    STANDARD_MAX_LEVEL  - PRAGMATIC_MAX_LEVEL   : pragmatic
+    PRAGMATIC_MAX_LEVEL - ACCURATE_MAX_LEVEL    : accurate
+    ACCURATE_MAX_LEVEL  - 60                    : danger
+*/
 #define ACCURATE_MAX_LEVEL 30
 #define PRAGMATIC_MAX_LEVEL 25
 #define STANDARD_MAX_LEVEL 21
 #define LIGHT_LEVEL 15
 
+/*
+    @brief constants for level definition
+*/
 #define N_LEVEL 61
 #define N_MOVES 60
 #define MPC_81 0.88
 #define MPC_95 1.64
 #define MPC_98 2.05
 #define MPC_99 2.33
-#define NOMPC 5.00
+#define NOMPC 9.99
 #define NODEPTH 100
 
 #define DOUBLE_NEAR_THRESHOLD 0.001
 
+/*
+    @brief structure of level definition
+
+    @param mid_lookahead        lookahead depth in midgame
+    @param mid_mpct             MPC (Multi-ProbCut) constant for midgame search
+    @param complete0            lookahead depth in endgame search 1/5
+    @param complete0_mpct       MPC (Multi-ProbCut) constant for endgame search 1/5
+    @param complete1            lookahead depth in endgame search 2/5
+    @param complete1_mpct       MPC (Multi-ProbCut) constant for endgame search 2/5
+    @param complete2            lookahead depth in endgame search 3/5
+    @param complete2_mpct       MPC (Multi-ProbCut) constant for endgame search 3/5
+    @param complete3            lookahead depth in endgame search 4/5
+    @param complete3_mpct       MPC (Multi-ProbCut) constant for endgame search 4/5
+    @param complete4            lookahead depth in endgame search 5/5
+    @param complete5_mpct       MPC (Multi-ProbCut) constant for endgame search 5/5
+*/
 struct Level{
     int mid_lookahead;
     double mid_mpct;
@@ -42,6 +72,9 @@ struct Level{
     double complete4_mpct;
 };
 
+/*
+    @brief level definition
+*/
 constexpr Level level_definition[N_LEVEL] = {
     {0, NOMPC, 0, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC},
     {1, NOMPC, 2, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC},
@@ -118,6 +151,18 @@ constexpr Level level_definition[N_LEVEL] = {
     {60, MPC_81, 60, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC, NODEPTH, NOMPC}
 };
 
+/*
+    @brief Get level information
+
+    get all information
+
+    @param level                level to search
+    @param n_moves              ply
+    @param is_mid_search        flag to store this search is midgame search or not
+    @param depth                integer to store the depth
+    @param use_mpc              flag to store this search uses MPC (Multi-ProbCut)
+    @param mpct                 value for MPC (Multi-ProbCut) constant
+*/
 void get_level(int level, int n_moves, bool *is_mid_search, int *depth, bool *use_mpc, double *mpct){
     if (level <= 0){
         *is_mid_search = true;
@@ -156,6 +201,15 @@ void get_level(int level, int n_moves, bool *is_mid_search, int *depth, bool *us
     }
 }
 
+/*
+    @brief Get level information
+
+    get MPC usage information
+
+    @param level                level to search
+    @param n_moves              ply
+    @return use MPC (Multi-ProbCut)?
+*/
 bool get_level_use_mpc(int level, int n_moves){
     Level level_status = level_definition[level];
     int n_empties = 60 - n_moves;
@@ -176,12 +230,30 @@ bool get_level_use_mpc(int level, int n_moves){
     }
 }
 
+/*
+    @brief Get level information
+
+    get depth information
+
+    @param level                level to search
+    @param mid_depth            integer to store midgame lookahead depth
+    @param end_depth            integer to store endgame lookahead depth
+*/
 void get_level_depth(int level, int *mid_depth, int *end_depth){
     level = max(0, min(60, level));
     *mid_depth = level_definition[level].mid_lookahead;
     *end_depth = level_definition[level].complete0;
 }
 
+/*
+    @brief Get level information
+
+    get if it is midgame search
+
+    @param level                level to search
+    @param n_moves              ply
+    @return midgame search?
+*/
 bool get_level_midsearch(int level, int n_moves){
     if (level <= 0){
         return true;
@@ -196,10 +268,26 @@ bool get_level_midsearch(int level, int n_moves){
     }
 }
 
+/*
+    @brief Get level information
+
+    get endgame search depth
+
+    @param level                level to search
+    @return endgame search depth
+*/
 int get_level_endsearch_depth(int level){
     return level_definition[level].complete0;
 }
 
+/*
+    @brief Get level information
+
+    get endgame complete (100%) search depth
+
+    @param level                level to search
+    @return endgame complete search depth
+*/
 int get_level_complete_depth(int level){
     if (level_definition[level].complete0_mpct == NOMPC)
         return level_definition[level].complete0;
@@ -212,10 +300,23 @@ int get_level_complete_depth(int level){
     return level_definition[level].complete4;
 }
 
+/*
+    @brief check 2 values are almost same
+
+    @param a                    value 1/2
+    @param b                    value 2/2
+    @return a is near to b?
+*/
 bool double_near(double a, double b){
     return fabs(a - b) < DOUBLE_NEAR_THRESHOLD;
 }
 
+/*
+    @brief find the probability of search
+
+    @param mpct                 MPC (Multi-ProbCut) constant
+    @return the probability in [%]
+*/
 int calc_probability(double mpct){
     if (double_near(MPC_81, mpct)){
         return 81;
