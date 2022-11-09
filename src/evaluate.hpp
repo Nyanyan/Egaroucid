@@ -743,6 +743,16 @@ bool evaluate_init(){
 }
 
 /*
+    @brief evaluation function for game over
+
+    @param b                    board
+    @return final score
+*/
+inline int end_evaluate(Board *b){
+    return b->score_player();
+}
+
+/*
     @brief calculate surround value used in evaluation function
 
     @param player               a bitboard representing player
@@ -939,6 +949,8 @@ inline int calc_mobility_pattern(const int phase_idx, Board *b, const uint64_t p
         return std::max(-SCORE_MAX, std::min(SCORE_MAX, res));
     }
 #else
+    inline void calc_features(Search *search);
+
     inline int mid_evaluate(Board *board){
         Search search;
         search.init_board(board);
@@ -958,7 +970,7 @@ inline int calc_mobility_pattern(const int phase_idx, Board *b, const uint64_t p
         sur1 = std::min(MAX_SURROUND - 1, calc_surround(search.board.opponent, empties));
         num0 = pop_count_ull(search.board.player);
         num1 = search.n_discs - num0;
-        int res = calc_pattern_diff(phase_idx, search) + 
+        int res = calc_pattern_diff(phase_idx, &search) + 
             eval_sur0_sur1_arr[phase_idx][sur0][sur1] + 
             eval_canput0_canput1_arr[phase_idx][canput0][canput1] + 
             eval_num0_num1_arr[phase_idx][num0][num1] + 
@@ -1205,13 +1217,3 @@ inline int mid_evaluate_diff(Search *search){
         }
     }
 #endif
-
-/*
-    @brief evaluation function for game over
-
-    @param b                    board
-    @return final score
-*/
-inline int end_evaluate(Board *b){
-    return b->score_player();
-}
