@@ -234,7 +234,7 @@ int clog_search(Board board, uint64_t *n_nodes){
     Clog_search search;
     search.board = board.copy();
     search.n_nodes = 0ULL;
-    int res = clog_search(&search, true`, CLOG_SEARCH_DEPTH - 1);
+    int res = clog_search(&search, true, CLOG_SEARCH_DEPTH - 1);
     if (res == CLOG_NOT_FOUND)
         res = clog_search(&search, false, CLOG_SEARCH_DEPTH - 1);
     *n_nodes = search.n_nodes;
