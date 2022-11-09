@@ -503,32 +503,33 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
         int idx = 0;
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
             calc_flip(&move_list[idx++].flip, &search->board, cell);
-        move_ordering(search, move_list, depth, alpha, beta, is_end_search, &searching);
+        move_list_evaluate(search, move_list, depth, alpha, beta, is_end_search, &searching);
         bool is_first_search = true;
         bool mpc_used;
-        for (const Flip_value &flip_value: move_list){
-            eval_move(search, &flip_value.flip);
-            search->move(&flip_value.flip);
+        for (int move_idx = 0; move_idx < canput; ++move_idx){
+            swap_next_best_move(move_list, move_idx, canput);
+            eval_move(search, &move_list[move_idx].flip);
+            search->move(&move_list[move_idx].flip);
                 if (!pre_best_move_found && is_first_search)
-                    g = -nega_scout(search, -beta, -alpha, depth - 1, false, flip_value.n_legal, is_end_search, &searching);
+                    g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, &searching);
                 else{
                     mpc_used = false;
-                    g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, flip_value.n_legal, is_end_search, &searching, &mpc_used);
+                    g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, &searching, &mpc_used);
                     if (alpha <= g && g < beta)
-                        g = -nega_scout(search, -beta, -g, depth - 1, false, flip_value.n_legal, is_end_search, &searching);
+                        g = -nega_scout(search, -beta, -g, depth - 1, false, move_list[move_idx].n_legal, is_end_search, &searching);
                 }
                 if (is_main_search){
                     if (g <= alpha)
-                        std::cerr << mobility_idx << "/" << canput_all << " [" << alpha << "," << beta << "] mpct " << search->mpct << " " << idx_to_coord((int)flip_value.flip.pos) << " value " << g << " or lower" << endl;
+                        std::cerr << mobility_idx << "/" << canput_all << " [" << alpha << "," << beta << "] mpct " << search->mpct << " " << idx_to_coord((int)move_list[move_idx].flip.pos) << " value " << g << " or lower" << endl;
                     else
-                        std::cerr << mobility_idx << "/" << canput_all << " [" << alpha << "," << beta << "] mpct " << search->mpct << " " << idx_to_coord((int)flip_value.flip.pos) << " value " << g << endl;
+                        std::cerr << mobility_idx << "/" << canput_all << " [" << alpha << "," << beta << "] mpct " << search->mpct << " " << idx_to_coord((int)move_list[move_idx].flip.pos) << " value " << g << endl;
                 }
                 ++mobility_idx;
-            search->undo(&flip_value.flip);
-            eval_undo(search, &flip_value.flip);
+            search->undo(&move_list[move_idx].flip);
+            eval_undo(search, &move_list[move_idx].flip);
             if (v < g){
                 v = g;
-                best_move_res = flip_value.flip.pos;
+                best_move_res = move_list[move_idx].flip.pos;
                 if (alpha < v){
                     if (beta <= v)
                         break;
