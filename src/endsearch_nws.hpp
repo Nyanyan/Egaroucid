@@ -96,9 +96,10 @@ inline int last2_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
     @param p1                   empty square 2/3
     @param p2                   empty square 3/3
     @param skipped              already passed?
+    @param searching            flag for terminating this search
     @return the final score
 */
-inline int last3_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1, uint_fast8_t p2, bool skipped){
+inline int last3_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1, uint_fast8_t p2, bool skipped, const bool *searching){
     ++search->n_nodes;
     #if USE_END_PO
         if (!skipped){
@@ -169,7 +170,7 @@ inline int last3_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
             v = end_evaluate(&search->board);
         else{
             search->board.pass();
-                v = -last3_nws(search, -alpha - 1, p0, p1, p2, true);
+                v = -last3_nws(search, -alpha - 1, p0, p1, p2, true, searching);
             search->board.pass();
         }
     }
@@ -188,9 +189,10 @@ inline int last3_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
     @param p2                   empty square 3/4
     @param p3                   empty square 4/4
     @param skipped              already passed?
+    @param searching            flag for terminating this search
     @return the final score
 */
-inline int last4_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1, uint_fast8_t p2, uint_fast8_t p3, bool skipped){
+inline int last4_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1, uint_fast8_t p2, uint_fast8_t p3, bool skipped, const bool *searching){
     ++search->n_nodes;
     #if USE_END_SC
         int stab_res = stability_cut_nws(search, &alpha);
@@ -255,7 +257,7 @@ inline int last4_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
             v = end_evaluate(&search->board);
         else{
             search->board.pass();
-                v = -last4_nws(search, -alpha - 1, p0, p1, p2, p3, true);
+                v = -last4_nws(search, -alpha - 1, p0, p1, p2, p3, true, searching);
             search->board.pass();
         }
         return v;
@@ -264,7 +266,7 @@ inline int last4_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
     if (1 & (legal >> p0)){
         calc_flip(&flip, &search->board, p0);
         search->move(&flip);
-            v = -last3_nws(search, -alpha - 1, p1, p2, p3, false);
+            v = -last3_nws(search, -alpha - 1, p1, p2, p3, false, searching);
         search->undo(&flip);
         if (alpha < v)
             return v;
@@ -273,7 +275,7 @@ inline int last4_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
     if (1 & (legal >> p1)){
         calc_flip(&flip, &search->board, p1);
         search->move(&flip);
-            g = -last3_nws(search, -alpha - 1, p0, p2, p3, false);
+            g = -last3_nws(search, -alpha - 1, p0, p2, p3, false, searching);
         search->undo(&flip);
         if (v < g){
             if (alpha < g)
@@ -284,7 +286,7 @@ inline int last4_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
     if (1 & (legal >> p2)){
         calc_flip(&flip, &search->board, p2);
         search->move(&flip);
-            g = -last3_nws(search, -alpha - 1, p0, p1, p3, false);
+            g = -last3_nws(search, -alpha - 1, p0, p1, p3, false, searching);
         search->undo(&flip);
         if (v < g){
             if (alpha < g)
@@ -295,7 +297,7 @@ inline int last4_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
     if (1 & (legal >> p3)){
         calc_flip(&flip, &search->board, p3);
         search->move(&flip);
-            g = -last3_nws(search, -alpha - 1, p0, p1, p2, false);
+            g = -last3_nws(search, -alpha - 1, p0, p1, p2, false, searching);
         search->undo(&flip);
         if (v < g)
             return g;
@@ -364,7 +366,7 @@ int nega_alpha_end_fast_nws(Search *search, int alpha, bool skipped, bool stab_c
                         p1 = next_bit(&empties);
                         p2 = next_bit(&empties);
                         p3 = next_bit(&empties);
-                        g = -last4_nws(search, -alpha - 1, p0, p1, p2, p3, false);
+                        g = -last4_nws(search, -alpha - 1, p0, p1, p2, p3, false, searching);
                     search->undo(&flip);
                     if (v < g){
                         if (alpha < g)
@@ -381,7 +383,7 @@ int nega_alpha_end_fast_nws(Search *search, int alpha, bool skipped, bool stab_c
                         p1 = next_bit(&empties);
                         p2 = next_bit(&empties);
                         p3 = next_bit(&empties);
-                        g = -last4_nws(search, -alpha - 1, p0, p1, p2, p3, false);
+                        g = -last4_nws(search, -alpha - 1, p0, p1, p2, p3, false, searching);
                     search->undo(&flip);
                     if (v < g){
                         if (alpha < g)
@@ -427,7 +429,7 @@ int nega_alpha_end_fast_nws(Search *search, int alpha, bool skipped, bool stab_c
                         p1 = next_bit(&empties);
                         p2 = next_bit(&empties);
                         p3 = next_bit(&empties);
-                        g = -last4_nws(search, -alpha - 1, p0, p1, p2, p3, false);
+                        g = -last4_nws(search, -alpha - 1, p0, p1, p2, p3, false, searching);
                     search->undo(&flip);
                     if (v < g){
                         if (alpha < g)
@@ -461,7 +463,7 @@ int nega_alpha_end_fast_nws(Search *search, int alpha, bool skipped, bool stab_c
                     p1 = next_bit(&empties);
                     p2 = next_bit(&empties);
                     p3 = next_bit(&empties);
-                    g = -last4_nws(search, -alpha - 1, p0, p1, p2, p3, false);
+                    g = -last4_nws(search, -alpha - 1, p0, p1, p2, p3, false, searching);
                 search->undo(&flip);
                 if (v < g){
                     if (alpha < g)
