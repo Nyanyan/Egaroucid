@@ -33,7 +33,6 @@
     @param mpct                 MPC probability
     @param show_log             show log?
     @param use_multi_thread     search in multi thread?
-
     @return the result in Search_result structure
 */
 inline Search_result tree_search(Board board, int depth, bool use_mpc, double mpct, bool show_log, bool use_multi_thread){
@@ -153,7 +152,6 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
     @param mpct                 MPC probability
     @param show_log             show log?
     @param use_multi_thread     search in multi thread?
-
     @return the result in Search_result structure
 */
 inline Search_result tree_search_iterative_deepening(Board board, int depth, bool use_mpc, double mpct, bool show_log, bool use_multi_thread){
@@ -203,7 +201,6 @@ inline Search_result tree_search_iterative_deepening(Board board, int depth, boo
     @param use_mpc              use MPC?
     @param mpct                 MPC probability
     @param use_multi_thread     search in multi thread?
-
     @return the score of the board
 */
 inline int tree_search_window(Board board, int depth, int alpha, int beta, bool use_mpc, double mpct, bool use_multi_thread){
@@ -236,7 +233,6 @@ inline int tree_search_window(Board board, int depth, int alpha, int beta, bool 
     @param use_book             use book?
     @param use_multi_thread     search in multi thread?
     @param show_log             show log?
-
     @return the result in Search_result structure
 */
 Search_result ai(Board board, int level, bool use_book, bool use_multi_thread, bool show_log){
@@ -300,7 +296,6 @@ Search_result ai(Board board, int level, bool use_book, bool use_multi_thread, b
     @param use_book             use book?
     @param use_multi_thread     search in multi thread?
     @param show_log             show log?
-
     @return the result in Search_result structure
 */
 Search_result ai_hint(Board board, int level, bool use_book, bool use_multi_thread, bool show_log){
@@ -364,7 +359,6 @@ Search_result ai_hint(Board board, int level, bool use_book, bool use_multi_thre
     @param alpha                alpha of the search window
     @param beta                 beta of the search window
     @param use_multi_thread     search in multi thread?
-
     @return the score of the board
 */
 int ai_window(Board board, int level, int alpha, int beta, bool use_multi_thread){
