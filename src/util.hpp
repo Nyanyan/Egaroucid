@@ -53,5 +53,5 @@ string idx_to_coord(int idx){
     int y = HW_M1 - idx / HW;
     int x = HW_M1 - idx % HW;
     const string x_coord = "abcdefgh";
-    return x_coord[x] + to_string(y + 1);
+    return x_coord[x] + std::to_string(y + 1);
 }
