@@ -919,14 +919,14 @@ inline int calc_mobility_pattern(const int phase_idx, Board *b, const uint64_t p
         uint64_t player_mobility, opponent_mobility, empties;
         player_mobility = calc_legal(b->player, b->opponent);
         opponent_mobility = calc_legal(b->opponent, b->player);
-        canput0 = min(MAX_CANPUT - 1, pop_count_ull(player_mobility));
-        canput1 = min(MAX_CANPUT - 1, pop_count_ull(opponent_mobility));
+        canput0 = std::min(MAX_CANPUT - 1, pop_count_ull(player_mobility));
+        canput1 = std::min(MAX_CANPUT - 1, pop_count_ull(opponent_mobility));
         if (canput0 == 0 && canput1 == 0)
             return end_evaluate(b);
         phase_idx = b->phase_slow();
         empties = ~(b->player | b->opponent);
-        sur0 = min(MAX_SURROUND - 1, calc_surround(b->player, empties));
-        sur1 = min(MAX_SURROUND - 1, calc_surround(b->opponent, empties));
+        sur0 = std::min(MAX_SURROUND - 1, calc_surround(b->player, empties));
+        sur1 = std::min(MAX_SURROUND - 1, calc_surround(b->opponent, empties));
         num0 = pop_count_ull(b->player);
         num1 = pop_count_ull(b->opponent);
         int res = calc_pattern_first(phase_idx, b) + 
@@ -936,7 +936,7 @@ inline int calc_mobility_pattern(const int phase_idx, Board *b, const uint64_t p
             calc_mobility_pattern(phase_idx, b, player_mobility, opponent_mobility);
         res += res > 0 ? STEP_2 : (res < 0 ? -STEP_2 : 0);
         res /= STEP;
-        return max(-SCORE_MAX, min(SCORE_MAX, res));
+        return std::max(-SCORE_MAX, std::min(SCORE_MAX, res));
     }
 #else
     inline int mid_evaluate(Board *board){
@@ -951,11 +951,11 @@ inline int calc_mobility_pattern(const int phase_idx, Board *b, const uint64_t p
         int phase_idx, sur0, sur1, canput0, canput1, num0, num1;
         uint64_t empties;
         phase_idx = search.phase();
-        canput0 = min(MAX_CANPUT - 1, pop_count_ull(player_mobility));
-        canput1 = min(MAX_CANPUT - 1, pop_count_ull(opponent_mobility));
+        canput0 = std::min(MAX_CANPUT - 1, pop_count_ull(player_mobility));
+        canput1 = std::min(MAX_CANPUT - 1, pop_count_ull(opponent_mobility));
         empties = ~(search.board.player | search.board.opponent);
-        sur0 = min(MAX_SURROUND - 1, calc_surround(search.board.player, empties));
-        sur1 = min(MAX_SURROUND - 1, calc_surround(search.board.opponent, empties));
+        sur0 = std::min(MAX_SURROUND - 1, calc_surround(search.board.player, empties));
+        sur1 = std::min(MAX_SURROUND - 1, calc_surround(search.board.opponent, empties));
         num0 = pop_count_ull(search.board.player);
         num1 = search.n_discs - num0;
         int res = calc_pattern_diff(phase_idx, search) + 
@@ -965,7 +965,7 @@ inline int calc_mobility_pattern(const int phase_idx, Board *b, const uint64_t p
             calc_mobility_pattern(phase_idx, &search.board, player_mobility, opponent_mobility);
         res += res >= 0 ? STEP_2 : -STEP_2;
         res /= STEP;
-        return max(-SCORE_MAX, min(SCORE_MAX, res));
+        return std::max(-SCORE_MAX, std::min(SCORE_MAX, res));
     }
 #endif
 
@@ -984,11 +984,11 @@ inline int mid_evaluate_diff(Search *search){
     int phase_idx, sur0, sur1, canput0, canput1, num0, num1;
     uint64_t empties;
     phase_idx = search->phase();
-    canput0 = min(MAX_CANPUT - 1, pop_count_ull(player_mobility));
-    canput1 = min(MAX_CANPUT - 1, pop_count_ull(opponent_mobility));
+    canput0 = std::min(MAX_CANPUT - 1, pop_count_ull(player_mobility));
+    canput1 = std::min(MAX_CANPUT - 1, pop_count_ull(opponent_mobility));
     empties = ~(search->board.player | search->board.opponent);
-    sur0 = min(MAX_SURROUND - 1, calc_surround(search->board.player, empties));
-    sur1 = min(MAX_SURROUND - 1, calc_surround(search->board.opponent, empties));
+    sur0 = std::min(MAX_SURROUND - 1, calc_surround(search->board.player, empties));
+    sur1 = std::min(MAX_SURROUND - 1, calc_surround(search->board.opponent, empties));
     num0 = pop_count_ull(search->board.player);
     num1 = search->n_discs - num0;
     int res = calc_pattern_diff(phase_idx, search) + 
@@ -998,7 +998,7 @@ inline int mid_evaluate_diff(Search *search){
         calc_mobility_pattern(phase_idx, &search->board, player_mobility, opponent_mobility);
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
-    return max(-SCORE_MAX, min(SCORE_MAX, res));
+    return std::max(-SCORE_MAX, std::min(SCORE_MAX, res));
 }
 
 #if USE_SIMD_EVALUATION
