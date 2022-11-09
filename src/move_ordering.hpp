@@ -1,6 +1,8 @@
 /*
     Egaroucid Project
 
+    @file move_ordering.hpp
+        Move ordering for each search algorithm
     @date 2021-2022
     @author Takuto Yamana (a.k.a. Nyanyan)
     @license GPL-3.0 license
@@ -15,24 +17,27 @@
 #include "midsearch.hpp"
 #include "stability.hpp"
 
+/*
+    @brief if wipeout found, it must be searched first.
+*/
 #define W_WIPEOUT INF
 
-#define W_END_MOBILITY 16
-#define W_END_PARITY 8
-
+/*
+    @brief constants for move ordering
+*/
 #define MOVE_ORDERING_VALUE_OFFSET_ALPHA 10
 #define MOVE_ORDERING_VALUE_OFFSET_BETA 10
 #define MOVE_ORDERING_NWS_VALUE_OFFSET_ALPHA 10
 #define MOVE_ORDERING_NWS_VALUE_OFFSET_BETA 3
-
 #define MOVE_ORDERING_MPCT 0.7
-
-#define N_MOVE_ORDERING_WEIGHT 5
-#define N_MOVE_ORDERING_NWS_WEIGHT 5
-#define N_MOVE_ORDERING_PHASES 6
-#define N_MOVE_ORDERING_PHASE_DISCS 10
+#define W_END_MOBILITY 16
+#define W_END_PARITY 8
 
 #if USE_AUTO_OPTIMIZED_MOVE_ORDERING_MID
+    #ifndef N_MOVE_ORDERING_PHASES
+        #define N_MOVE_ORDERING_PHASES 6
+    #endif
+    #define N_MOVE_ORDERING_WEIGHT 5
     constexpr int move_ordering_weights[N_MOVE_ORDERING_PHASES][N_MOVE_ORDERING_WEIGHT] = {
         {-27, -37, 25, -57, -3},
         {-11, -8, 19, -132, -16},
@@ -53,6 +58,10 @@
 #endif
 
 #if USE_AUTO_OPTIMIZED_MOVE_ORDERING_NWS
+    #ifndef N_MOVE_ORDERING_PHASES
+        #define N_MOVE_ORDERING_PHASES 6
+    #endif
+    #define N_MOVE_ORDERING_NWS_WEIGHT 5
     constexpr int move_ordering_nws_weights[N_MOVE_ORDERING_PHASES][N_MOVE_ORDERING_NWS_WEIGHT] = {
         {-14, -12, 8, -12, -14},
         {-14, -12, 8, -12, -14},
@@ -72,6 +81,13 @@
     #define W_NWS_OPPONENT_POTENTIAL_MOBILITY 12
 #endif
 
+/*
+    @brief Flip structure with more information
+
+    @param flip                 flip information
+    @param value                the move ordering value
+    @param n_legal              next legal moves as a bitboard for reusing
+*/
 struct Flip_value{
     Flip flip;
     int value;
@@ -81,9 +97,18 @@ struct Flip_value{
     }
 };
 
-inline int get_move_ordering_phase(int n_discs){
-    return (n_discs - 4) / N_MOVE_ORDERING_PHASE_DISCS;
-}
+#if USE_AUTO_OPTIMIZED_MOVE_ORDERING || USE_AUTO_OPTIMIZED_MOVE_ORDERING_NWS
+    #define N_MOVE_ORDERING_PHASE_DISCS 10
+    /*
+        @brief Get a phase for move ordering
+
+        @param n_discs              number of discs on the board
+        @return move ordering phase
+    */
+    inline int get_move_ordering_phase(int n_discs){
+        return (n_discs - 4) / N_MOVE_ORDERING_PHASE_DISCS;
+    }
+#endif
 
 int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, const bool *searching);
 #if MID_FAST_DEPTH > 1
@@ -91,6 +116,16 @@ int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, const bo
 #endif
 int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
 
+/*
+    @brief Calculate openness
+
+    Not used for now
+
+    @param board                board
+    @param flip                 flip information
+    @return openness
+*/
+/*
 inline int calc_openness(const Board *board, const Flip *flip){
     uint64_t f = flip->flip;
     uint64_t around = 0ULL;
@@ -99,16 +134,40 @@ inline int calc_openness(const Board *board, const Flip *flip){
     around &= ~flip->flip;
     return pop_count_ull(~(board->player | board->opponent | (1ULL << flip->pos)) & around);
 }
+*/
 
+/*
+    @brief Get number of corner mobility
+
+    Optimized for corner mobility
+
+    @param legal                legal moves as a bitboard
+    @return number of legal moves on corners
+*/
 inline int get_corner_mobility(uint64_t legal){
     int res = (int)((legal & 0b10000001ULL) + ((legal >> 56) & 0b10000001ULL));
     return (res & 0b11) + (res >> 7);
 }
 
+/*
+    @brief Get a weighted mobility
+
+    @param legal                legal moves as a bitboard
+    @return weighted mobility
+*/
 inline int get_weighted_n_moves(uint64_t legal){
     return pop_count_ull(legal) * 2 + get_corner_mobility(legal);
 }
 
+/*
+    @brief Get potential mobility
+
+    Same idea as surround in evaluation function
+
+    @param opponent             a bitboard representing opponent
+    @param empties              a bitboard representing empty squares
+    @return potential mobility
+*/
 #if USE_SIMD
     inline int get_potential_mobility(uint64_t opponent, uint64_t empties){
         const u64_4 shift(1, HW, HW_M1, HW_P1);
@@ -132,6 +191,18 @@ inline int get_weighted_n_moves(uint64_t legal){
 #endif
 
 #if USE_AUTO_OPTIMIZED_MOVE_ORDERING_MID
+    /*
+        @brief Evaluate a move in midgame
+
+        @param search               search information
+        @param flip_value           flip with value
+        @param alpha                alpha value to search
+        @param beta                 beta value to search
+        @param depth                depth to search
+        @param searching            flag for terminating this search
+        @param phase                phase for move ordering
+        @return true if wipeout found else false
+    */
     inline bool move_evaluate(Search *search, Flip_value *flip_value, int alpha, int beta, int depth, const bool *searching, const int phase){
         if (flip_value->flip.flip == search->board.opponent){
             flip_value->value = W_WIPEOUT;
@@ -181,6 +252,17 @@ inline int get_weighted_n_moves(uint64_t legal){
         return false;
     }
 #else
+    /*
+        @brief Evaluate a move in midgame
+
+        @param search               search information
+        @param flip_value           flip with value
+        @param alpha                alpha value to search
+        @param beta                 beta value to search
+        @param depth                depth to search
+        @param searching            flag for terminating this search
+        @return true if wipeout found else false
+    */
     inline bool move_evaluate(Search *search, Flip_value *flip_value, int alpha, int beta, int depth, const bool *searching){
         if (flip_value->flip.flip == search->board.opponent){
             flip_value->value = W_WIPEOUT;
@@ -232,6 +314,13 @@ inline int get_weighted_n_moves(uint64_t legal){
     }
 #endif
 
+/*
+    @brief Evaluate a move in endgame
+
+    @param search               search information
+    @param flip_value           flip with value
+    @return true if wipeout found else false
+*/
 inline bool move_evaluate_end(Search *search, Flip_value *flip_value){
     if (flip_value->flip.flip == search->board.opponent){
         flip_value->value = W_WIPEOUT;
@@ -248,6 +337,18 @@ inline bool move_evaluate_end(Search *search, Flip_value *flip_value){
 }
 
 #if USE_AUTO_OPTIMIZED_MOVE_ORDERING_NWS
+    /*
+        @brief Evaluate a move in midgame for NWS
+
+        @param search               search information
+        @param flip_value           flip with value
+        @param alpha                alpha value to search
+        @param beta                 beta value to search
+        @param depth                depth to search
+        @param searching            flag for terminating this search
+        @param phase                phase for move ordering
+        @return true if wipeout found else false
+    */
     inline bool move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha, int beta, int depth, const bool *searching, const int phase){
         if (flip_value->flip.flip == search->board.opponent){
             flip_value->value = W_WIPEOUT;
@@ -270,6 +371,17 @@ inline bool move_evaluate_end(Search *search, Flip_value *flip_value){
         return false;
     }
 #else
+    /*
+        @brief Evaluate a move in midgame for NWS
+
+        @param search               search information
+        @param flip_value           flip with value
+        @param alpha                alpha value to search
+        @param beta                 beta value to search
+        @param depth                depth to search
+        @param searching            flag for terminating this search
+        @return true if wipeout found else false
+    */
     inline bool move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha, int beta, int depth, const bool *searching){
         if (flip_value->flip.flip == search->board.opponent){
             flip_value->value = W_WIPEOUT;
@@ -296,6 +408,13 @@ inline bool move_evaluate_end(Search *search, Flip_value *flip_value){
     }
 #endif
 
+/*
+    @brief Set the best move to the first element
+
+    @param move_list            list of moves
+    @param strt                 the first index
+    @param siz                  the size of move_list
+*/
 inline void swap_next_best_move(vector<Flip_value> &move_list, const int strt, const int siz){
     int top_idx = strt;
     int best_value = move_list[strt].value;
@@ -306,23 +425,25 @@ inline void swap_next_best_move(vector<Flip_value> &move_list, const int strt, c
         }
     }
     if (top_idx != strt)
-        swap(move_list[strt], move_list[top_idx]);
+        std::swap(move_list[strt], move_list[top_idx]);
 }
 
-inline void move_sort_top(vector<Flip_value> &move_list, int best_idx){
-    if (best_idx != 0)
-        swap(move_list[best_idx], move_list[0]);
-}
+/*
+    @brief Evaluate all legal moves for midgame
 
-bool cmp_move_ordering(Flip_value &a, Flip_value &b){
-    return a.value > b.value;
-}
-
+    @param search               search information
+    @param move_list            list of moves
+    @param depth                remaining depth
+    @param alpha                alpha value
+    @param beta                 beta value
+    @param is_end_search        search till the end?
+    @param searching            flag for terminating this search
+*/
 inline void move_list_evaluate(Search *search, vector<Flip_value> &move_list, int depth, int alpha, int beta, bool is_end_search, const bool *searching){
     if (move_list.size() == 1)
         return;
-    int eval_alpha = -min(SCORE_MAX, beta + MOVE_ORDERING_VALUE_OFFSET_BETA);
-    int eval_beta = -max(-SCORE_MAX, alpha - MOVE_ORDERING_VALUE_OFFSET_ALPHA);
+    int eval_alpha = -std::min(SCORE_MAX, beta + MOVE_ORDERING_VALUE_OFFSET_BETA);
+    int eval_beta = -std::max(-SCORE_MAX, alpha - MOVE_ORDERING_VALUE_OFFSET_ALPHA);
     int phase = get_move_ordering_phase(search->n_discs);
     int eval_depth = depth >> 3;
     if (depth >= 18)
@@ -336,11 +457,12 @@ inline void move_list_evaluate(Search *search, vector<Flip_value> &move_list, in
     }
 }
 
-inline void move_ordering(Search *search, vector<Flip_value> &move_list, int depth, int alpha, int beta, bool is_end_search, const bool *searching){
-    move_list_evaluate(search, move_list, depth, alpha, beta, is_end_search, searching);
-    sort(move_list.begin(), move_list.end(), cmp_move_ordering);
-}
+/*
+    @brief Evaluate all legal moves for endgame
 
+    @param search               search information
+    @param move_list            list of moves
+*/
 inline void move_list_evaluate_end(Search *search, vector<Flip_value> &move_list){
     if (move_list.size() == 1)
         return;
@@ -353,16 +475,21 @@ inline void move_list_evaluate_end(Search *search, vector<Flip_value> &move_list
     }
 }
 
-inline void move_ordering_end(Search *search, vector<Flip_value> &move_list){
-    move_list_evaluate_end(search, move_list);
-    sort(move_list.begin(), move_list.end(), cmp_move_ordering);
-}
+/*
+    @brief Evaluate all legal moves for midgame NWS
 
+    @param search               search information
+    @param move_list            list of moves
+    @param depth                remaining depth
+    @param alpha                alpha value (beta = alpha + 1)
+    @param is_end_search        search till the end?
+    @param searching            flag for terminating this search
+*/
 inline void move_list_evaluate_nws(Search *search, vector<Flip_value> &move_list, int depth, int alpha, bool is_end_search, const bool *searching){
     if (move_list.size() == 1)
         return;
-    const int eval_alpha = -min(SCORE_MAX, alpha + MOVE_ORDERING_NWS_VALUE_OFFSET_BETA);
-    const int eval_beta = -max(-SCORE_MAX, alpha - MOVE_ORDERING_NWS_VALUE_OFFSET_ALPHA);
+    const int eval_alpha = -std::min(SCORE_MAX, alpha + MOVE_ORDERING_NWS_VALUE_OFFSET_BETA);
+    const int eval_beta = -std::max(-SCORE_MAX, alpha - MOVE_ORDERING_NWS_VALUE_OFFSET_ALPHA);
     int phase = get_move_ordering_phase(search->n_discs);
     const int eval_depth = depth >> 4;
     bool wipeout_found = false;
