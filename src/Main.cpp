@@ -1,23 +1,27 @@
 ﻿/*
 	Egaroucid Project
 
+	@file Main.cpp
+		Main file for GUI application
 	@date 2021-2022
 	@author Takuto Yamana (a.k.a. Nyanyan)
 	@license GPL-3.0 license
 */
 
 #include <iostream>
-#include <future>
 #include "all.hpp"
 #include "gui/gui_all.hpp"
 
-
-using namespace std;
-
+/*
+    @brief used for scaling
+*/
 double CalculateScale(const Vec2& baseSize, const Vec2& currentSize) {
 	return Min((currentSize.x / baseSize.x), (currentSize.y / baseSize.y));
 }
 
+/*
+    @brief main function
+*/
 void Main() {
 	Size window_size = Size(WINDOW_SIZE_X, WINDOW_SIZE_Y);
 	Window::Resize(window_size);
