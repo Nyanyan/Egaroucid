@@ -1,6 +1,8 @@
 ﻿/*
     Egaroucid Project
 
+    @file gui_common.hpp
+        Common things about GUI
     @date 2021-2022
     @author Takuto Yamana (a.k.a. Nyanyan)
     @license GPL-3.0 license
@@ -9,9 +11,9 @@
 #pragma once
 #include <iostream>
 #include <Siv3D.hpp> // OpenSiv3D v0.6.3
-#include "./../ai.hpp"
-#include "./../umigame.hpp"
+#include "./../engine/engine_all.hpp"
 #include "version.hpp"
+#include "url.hpp"
 
 using namespace std;
 
@@ -218,351 +220,351 @@ constexpr int BUTTON3_3_SX = X_CENTER + BUTTON3_WIDTH / 2 + 10;
 #define FONT_DEFAULT_SIZE 50
 
 struct History_elem {
-	Board board;
-	int player;
-	int v;
-	int level;
-	int policy;
-	int next_policy;
-	string opening_name;
+    Board board;
+    int player;
+    int v;
+    int level;
+    int policy;
+    int next_policy;
+    string opening_name;
 
-	History_elem() {
-		reset();
-	}
+    History_elem() {
+        reset();
+    }
 
-	void reset() {
-		board.reset();
-		player = 0;
-		v = GRAPH_IGNORE_VALUE;
-		policy = -1;
-		next_policy = -1;
-		level = -1;
-		opening_name.clear();
-	}
+    void reset() {
+        board.reset();
+        player = 0;
+        v = GRAPH_IGNORE_VALUE;
+        policy = -1;
+        next_policy = -1;
+        level = -1;
+        opening_name.clear();
+    }
 
-	void set(Board b, int p, int vv, int l, int pl, int npl, string o) {
-		board = b;
-		player = p;
-		v = vv;
-		level = l;
-		policy = pl;
-		next_policy = npl;
-		opening_name = o;
-	}
+    void set(Board b, int p, int vv, int l, int pl, int npl, string o) {
+        board = b;
+        player = p;
+        v = vv;
+        level = l;
+        policy = pl;
+        next_policy = npl;
+        opening_name = o;
+    }
 };
 
 struct Colors {
-	Color green{ Color(36, 153, 114) };
-	Color black{ Palette::Black };
-	Color white{ Palette::White };
-	Color dark_gray{ Color(51, 51, 51) };
-	Color cyan{ Color(70, 250, 255) };
-	Color red{ Palette::Red };
-	Color light_cyan{ Palette::Lightcyan };
-	Color chocolate{ Color(210, 105, 30) };
-	Color darkred{ Color(178, 34, 34) };
-	Color darkblue{ Color(34, 34, 178) };
-	Color burlywood{ Color(222, 184, 135) };
+    Color green{ Color(36, 153, 114) };
+    Color black{ Palette::Black };
+    Color white{ Palette::White };
+    Color dark_gray{ Color(51, 51, 51) };
+    Color cyan{ Color(70, 250, 255) };
+    Color red{ Palette::Red };
+    Color light_cyan{ Palette::Lightcyan };
+    Color chocolate{ Color(210, 105, 30) };
+    Color darkred{ Color(178, 34, 34) };
+    Color darkblue{ Color(34, 34, 178) };
+    Color burlywood{ Color(222, 184, 135) };
 };
 
 struct Directories {
-	string document_dir;
-	string appdata_dir;
-	string eval_file;
+    string document_dir;
+    string appdata_dir;
+    string eval_file;
 };
 
 struct Resources {
-	vector<string> language_names;
-	Texture icon;
-	Texture logo;
-	Texture checkbox;
-	Texture unchecked;
+    std::vector<string> language_names;
+    Texture icon;
+    Texture logo;
+    Texture checkbox;
+    Texture unchecked;
 };
 
 struct Settings {
-	int n_threads;
-	bool auto_update_check;
-	string lang_name;
-	string book_file;
-	bool use_book;
-	int level;
-	bool ai_put_black;
-	bool ai_put_white;
-	bool use_disc_hint;
-	bool use_umigame_value;
-	int n_disc_hint;
-	bool show_legal;
-	bool show_graph;
-	bool show_opening_on_cell;
-	bool show_log;
-	int book_learn_depth;
-	int book_learn_error;
-	bool show_stable_discs;
-	bool change_book_by_right_click;
-	bool ignore_book;
-	bool show_last_move;
-	bool show_next_move;
+    int n_threads;
+    bool auto_update_check;
+    string lang_name;
+    string book_file;
+    bool use_book;
+    int level;
+    bool ai_put_black;
+    bool ai_put_white;
+    bool use_disc_hint;
+    bool use_umigame_value;
+    int n_disc_hint;
+    bool show_legal;
+    bool show_graph;
+    bool show_opening_on_cell;
+    bool show_log;
+    int book_learn_depth;
+    int book_learn_error;
+    bool show_stable_discs;
+    bool change_book_by_right_click;
+    bool ignore_book;
+    bool show_last_move;
+    bool show_next_move;
 };
 
 struct Fonts {
-	Font font{ FontMethod::MSDF, FONT_DEFAULT_SIZE };
-	Font font_bold{ FontMethod::MSDF, FONT_DEFAULT_SIZE, Typeface::Bold };
-	Font font_heavy{ FontMethod::MSDF, FONT_DEFAULT_SIZE, Typeface::Heavy };
+    Font font{ FontMethod::MSDF, FONT_DEFAULT_SIZE };
+    Font font_bold{ FontMethod::MSDF, FONT_DEFAULT_SIZE, Typeface::Bold };
+    Font font_heavy{ FontMethod::MSDF, FONT_DEFAULT_SIZE, Typeface::Heavy };
 };
 
 struct Menu_elements {
-	bool dummy;
+    bool dummy;
 
-	// 対局
-	bool start_game;
-	bool analyze;
+    // game
+    bool start_game;
+    bool analyze;
 
-	// 設定
-	// AIの設定
-	bool use_book;
-	int level;
-	int n_threads;
-	// 着手
-	bool ai_put_black;
-	bool ai_put_white;
+    // settings
+    // AI settings
+    bool use_book;
+    int level;
+    int n_threads;
+    // player
+    bool ai_put_black;
+    bool ai_put_white;
 
-	// 表示
-	bool use_disc_hint;
-	int n_disc_hint;
-	bool use_umigame_value;
-	bool show_legal;
-	bool show_graph;
-	bool show_opening_on_cell;
-	bool show_stable_discs;
-	bool show_log;
-	bool show_last_move;
-	bool show_next_move;
+    // display
+    bool use_disc_hint;
+    int n_disc_hint;
+    bool use_umigame_value;
+    bool show_legal;
+    bool show_graph;
+    bool show_opening_on_cell;
+    bool show_stable_discs;
+    bool show_log;
+    bool show_last_move;
+    bool show_next_move;
 
-	// book
-	bool book_start_learn;
-	int book_learn_depth;
-	int book_learn_error;
-	bool book_import;
-	bool book_reference;
-	bool change_book_by_right_click;
-	bool ignore_book;
+    // book
+    bool book_start_learn;
+    int book_learn_depth;
+    int book_learn_error;
+    bool book_import;
+    bool book_reference;
+    bool change_book_by_right_click;
+    bool ignore_book;
 
-	// 入出力
-	// 入力
-	bool input_transcript;
-	bool input_board;
-	bool edit_board;
-	bool input_game;
-	// 出力
-	bool copy_transcript;
-	bool save_game;
+    // input / output
+    // input
+    bool input_transcript;
+    bool input_board;
+    bool edit_board;
+    bool input_game;
+    // output
+    bool copy_transcript;
+    bool save_game;
 
-	// 操作
-	bool stop_calculating;
-	bool forward;
-	bool backward;
-	// 変換
-	bool convert_180;
-	bool convert_blackline;
-	bool convert_whiteline;
+    // manipulation
+    bool stop_calculating;
+    bool forward;
+    bool backward;
+    // conversion
+    bool convert_180;
+    bool convert_blackline;
+    bool convert_whiteline;
 
-	// ヘルプ
-	bool website;
-	bool bug_report;
-	bool auto_update_check;
-	bool license_egaroucid;
-	bool license_siv3d;
+    // help
+    bool website;
+    bool bug_report;
+    bool auto_update_check;
+    bool license_egaroucid;
+    bool license_siv3d;
 
-	// language
-	bool languages[200];
+    // language
+    bool languages[200];
 
-	void init(Settings* settings, Resources* resources) {
-		dummy = false;
+    void init(Settings* settings, Resources* resources) {
+        dummy = false;
 
-		start_game = false;
-		analyze = false;
+        start_game = false;
+        analyze = false;
 
-		use_book = settings->use_book;
-		level = settings->level;
-		n_threads = settings->n_threads;
-		ai_put_black = settings->ai_put_black;
-		ai_put_white = settings->ai_put_white;
+        use_book = settings->use_book;
+        level = settings->level;
+        n_threads = settings->n_threads;
+        ai_put_black = settings->ai_put_black;
+        ai_put_white = settings->ai_put_white;
 
-		use_disc_hint = settings->use_disc_hint;
-		n_disc_hint = settings->n_disc_hint;
-		use_umigame_value = settings->use_umigame_value;
-		show_legal = settings->show_legal;
-		show_graph = settings->show_graph;
-		show_opening_on_cell = settings->show_opening_on_cell;
-		show_stable_discs = settings->show_stable_discs;
-		show_log = settings->show_log;
-		show_last_move = settings->show_last_move;
-		show_next_move = settings->show_next_move;
+        use_disc_hint = settings->use_disc_hint;
+        n_disc_hint = settings->n_disc_hint;
+        use_umigame_value = settings->use_umigame_value;
+        show_legal = settings->show_legal;
+        show_graph = settings->show_graph;
+        show_opening_on_cell = settings->show_opening_on_cell;
+        show_stable_discs = settings->show_stable_discs;
+        show_log = settings->show_log;
+        show_last_move = settings->show_last_move;
+        show_next_move = settings->show_next_move;
 
-		book_start_learn = false;
-		book_learn_depth = settings->book_learn_depth;
-		book_learn_error = settings->book_learn_error;
-		book_import = false;
-		book_reference = false;
-		change_book_by_right_click = settings->change_book_by_right_click;
-		ignore_book = settings->ignore_book;
+        book_start_learn = false;
+        book_learn_depth = settings->book_learn_depth;
+        book_learn_error = settings->book_learn_error;
+        book_import = false;
+        book_reference = false;
+        change_book_by_right_click = settings->change_book_by_right_click;
+        ignore_book = settings->ignore_book;
 
-		input_transcript = false;
-		input_board = false;
-		edit_board = false;
-		input_game = false;
-		copy_transcript = false;
-		save_game = false;
+        input_transcript = false;
+        input_board = false;
+        edit_board = false;
+        input_game = false;
+        copy_transcript = false;
+        save_game = false;
 
-		stop_calculating = false;
-		forward = false;
-		backward = false;
-		convert_180 = false;
-		convert_blackline = false;
-		convert_whiteline = false;
+        stop_calculating = false;
+        forward = false;
+        backward = false;
+        convert_180 = false;
+        convert_blackline = false;
+        convert_whiteline = false;
 
-		website = false;
-		bug_report = false;
-		auto_update_check = settings->auto_update_check;
-		license_egaroucid = false;
-		license_siv3d = false;
+        website = false;
+        bug_report = false;
+        auto_update_check = settings->auto_update_check;
+        license_egaroucid = false;
+        license_siv3d = false;
 
-		bool lang_found = false;
-		for (int i = 0; i < resources->language_names.size(); ++i) {
-			if (resources->language_names[i] == settings->lang_name) {
-				lang_found = true;
-				languages[i] = true;
-			}
-			else {
-				languages[i] = false;
-			}
-		}
-		if (!lang_found) {
-			settings->lang_name = resources->language_names[0];
-			languages[0] = true;
-		}
-	}
+        bool lang_found = false;
+        for (int i = 0; i < resources->language_names.size(); ++i) {
+            if (resources->language_names[i] == settings->lang_name) {
+                lang_found = true;
+                languages[i] = true;
+            }
+            else {
+                languages[i] = false;
+            }
+        }
+        if (!lang_found) {
+            settings->lang_name = resources->language_names[0];
+            languages[0] = true;
+        }
+    }
 };
 
 struct Graph_resources {
-	vector<History_elem> nodes[2];
-	int n_discs;
-	int delta;
-	int put_mode;
-	bool need_init;
+    std::vector<History_elem> nodes[2];
+    int n_discs;
+    int delta;
+    int put_mode;
+    bool need_init;
 
-	Graph_resources() {
-		init();
-	}
+    Graph_resources() {
+        init();
+    }
 
-	void init() {
-		nodes[0].clear();
-		nodes[1].clear();
-		n_discs = 4;
-		delta = 0;
-		put_mode = 0;
-		need_init = true;
-	}
+    void init() {
+        nodes[0].clear();
+        nodes[1].clear();
+        n_discs = 4;
+        delta = 0;
+        put_mode = 0;
+        need_init = true;
+    }
 
-	int node_find(int mode, int n_discs) {
-		for (int i = 0; i < (int)nodes[mode].size(); ++i) {
-			if (nodes[mode][i].board.n_discs() == n_discs) {
-				return i;
-			}
-		}
-		return -1;
-	}
+    int node_find(int mode, int n_discs) {
+        for (int i = 0; i < (int)nodes[mode].size(); ++i) {
+            if (nodes[mode][i].board.n_discs() == n_discs) {
+                return i;
+            }
+        }
+        return -1;
+    }
 };
 
 struct Game_information {
-	String black_player_name;
-	String white_player_name;
-	String memo;
+    String black_player_name;
+    String white_player_name;
+    String memo;
 
-	void init() {
-		black_player_name.clear();
-		white_player_name.clear();
-		memo.clear();
-	}
+    void init() {
+        black_player_name.clear();
+        white_player_name.clear();
+        memo.clear();
+    }
 };
 
 struct Book_information {
-	bool changed{ false };
-	uint_fast8_t changing{ BOOK_CHANGE_NO_CELL };
-	String val_str;
+    bool changed{ false };
+    uint_fast8_t changing{ BOOK_CHANGE_NO_CELL };
+    String val_str;
 };
 
 struct Common_resources {
-	Colors colors;
-	Directories directories;
-	Resources resources;
-	Settings settings;
-	Fonts fonts;
-	Menu_elements menu_elements;
-	Menu menu;
-	History_elem history_elem;
-	Graph_resources graph_resources;
-	Game_information game_information;
-	Book_information book_information;
+    Colors colors;
+    Directories directories;
+    Resources resources;
+    Settings settings;
+    Fonts fonts;
+    Menu_elements menu_elements;
+    Menu menu;
+    History_elem history_elem;
+    Graph_resources graph_resources;
+    Game_information game_information;
+    Book_information book_information;
 };
 
 struct Hint_info {
-	double value;
-	int cell;
-	int type;
+    double value;
+    int cell;
+    int type;
 };
 
 struct Move_board_button_status {
-	uint64_t left_pushed{ BUTTON_NOT_PUSHED };
-	uint64_t right_pushed{ BUTTON_NOT_PUSHED };
+    uint64_t left_pushed{ BUTTON_NOT_PUSHED };
+    uint64_t right_pushed{ BUTTON_NOT_PUSHED };
 };
 
 struct Analyze_info {
-	int idx;
-	int sgn;
-	Board board;
+    int idx;
+    int sgn;
+    Board board;
 };
 
 struct AI_status {
-	bool ai_thinking{ false };
-	future<Search_result> ai_future;
+    bool ai_thinking{ false };
+    future<Search_result> ai_future;
 
-	bool hint_calculating{ false };
-	int hint_level{ HINT_NOT_CALCULATING };
-	future<Search_result> hint_future[HW2];
-	vector<pair<int, function<Search_result()>>> hint_task_stack;
-	bool hint_use[HW2];
-	double hint_values[HW2];
-	int hint_types[HW2];
-	bool hint_available{ false };
-	bool hint_use_stable[HW2];
-	double hint_values_stable[HW2];
-	int hint_types_stable[HW2];
-	bool hint_use_multi_thread;
-	int hint_n_doing_tasks;
+    bool hint_calculating{ false };
+    int hint_level{ HINT_NOT_CALCULATING };
+    future<Search_result> hint_future[HW2];
+    std::vector<std::pair<int, function<Search_result()>>> hint_task_stack;
+    bool hint_use[HW2];
+    double hint_values[HW2];
+    int hint_types[HW2];
+    bool hint_available{ false };
+    bool hint_use_stable[HW2];
+    double hint_values_stable[HW2];
+    int hint_types_stable[HW2];
+    bool hint_use_multi_thread;
+    int hint_n_doing_tasks;
 
-	bool analyzing{ false };
-	future<Search_result> analyze_future[ANALYZE_SIZE];
-	int analyze_sgn[ANALYZE_SIZE];
-	vector<pair<Analyze_info, function<Search_result()>>> analyze_task_stack;
+    bool analyzing{ false };
+    future<Search_result> analyze_future[ANALYZE_SIZE];
+    int analyze_sgn[ANALYZE_SIZE];
+    std::vector<std::pair<Analyze_info, function<Search_result()>>> analyze_task_stack;
 
-	bool book_learning{ false };
+    bool book_learning{ false };
 };
 
 struct Game_abstract {
-	String black_player;
-	String white_player;
-	int black_score;
-	int white_score;
-	String memo;
-	String date;
+    String black_player;
+    String white_player;
+    int black_score;
+    int white_score;
+    String memo;
+    String date;
 };
 
 struct Umigame_status {
-	bool umigame_calculating{ false };
-	bool umigame_calculated{ false };
-	future<Umigame_result> umigame_future[HW2];
-	Umigame_result umigame[HW2];
+    bool umigame_calculating{ false };
+    bool umigame_calculated{ false };
+    future<Umigame_result> umigame_future[HW2];
+    Umigame_result umigame[HW2];
 };
 
 using App = SceneManager<String, Common_resources>;

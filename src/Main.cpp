@@ -31,9 +31,9 @@ void Main() {
 	Window::SetTitle(U"Egaroucid {}"_fmt(EGAROUCID_VERSION));
 	System::SetTerminationTriggers(UserAction::NoAction);
 	//Console.open();
-	stringstream logger_stream;
-	cerr.rdbuf(logger_stream.rdbuf());
-	string logger;
+	std::stringstream logger_stream;
+	std::cerr.rdbuf(logger_stream.rdbuf());
+	std::string logger;
 	String logger_String;
 	
 	App scene_manager;
