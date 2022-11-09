@@ -1,6 +1,8 @@
 ﻿/*
     Egaroucid Project
 
+	@file opening_gui.hpp
+		Opening manager for GUI
     @date 2021-2022
     @author Takuto Yamana (a.k.a. Nyanyan)
     @license GPL-3.0 license
@@ -12,25 +14,21 @@
 #include <fstream>
 #include <vector>
 #include <string>
-#include "./../board.hpp"
-
-using namespace std;
-
-
+#include "./../../engine/board.hpp"
 
 class Opening {
 private:
-	vector<pair<Board, string>> arr;
+	std::vector<std::pair<Board, std::string>> arr;
 public:
-	bool init(string file) {
+	bool init(std::string file) {
 		arr.clear();
 		ifstream ifs(file);
 		if (ifs.fail()) {
 			cerr << "opening file " << file << " not found" << endl;
 			return false;
 		}
-		string line;
-		string name;
+		std::string line;
+		std::string name;
 		int board_arr[HW2];
 		int i;
 		Board b;
@@ -45,18 +43,18 @@ public:
 			}
 			b.translate_from_arr(board_arr, BLACK);
 			name = line.substr(65, line.size());
-			arr.push_back(make_pair(b, name));
+			arr.push_back(std::make_pair(b, name));
 			b.board_black_line_mirror();
-			arr.push_back(make_pair(b, name));
+			arr.push_back(std::make_pair(b, name));
 			b.board_rotate_180();
-			arr.push_back(make_pair(b, name));
+			arr.push_back(std::make_pair(b, name));
 			b.board_black_line_mirror();
-			arr.push_back(make_pair(b, name));
+			arr.push_back(std::make_pair(b, name));
 		}
 		return true;
 	}
 
-	inline string get(Board b, int p) {
+	inline std::string get(Board b, int p) {
 		int i, j;
 		bool flag;
 		for (i = 0; i < (int)arr.size(); ++i) {
@@ -73,7 +71,7 @@ public:
 Opening opening;
 Opening opening_many;
 
-bool opening_init(string lang) {
+bool opening_init(std::string lang) {
 	return opening.init("resources/openings/" + lang + "/openings.txt") && opening_many.init("resources/openings/" + lang + "/openings_fork.txt");
 
 }

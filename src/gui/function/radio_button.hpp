@@ -1,6 +1,8 @@
 ﻿/*
     Egaroucid Project
 
+	@file radio_button.hpp
+		Radio button for GUI
     @date 2021-2022
     @author Takuto Yamana (a.k.a. Nyanyan)
     @license GPL-3.0 license
@@ -10,8 +12,6 @@
 #include <Siv3D.hpp>
 #include <iostream>
 #include <vector>
-
-using namespace std;
 
 #define radio_button_r 3
 #define radio_button_margin 20
@@ -57,7 +57,7 @@ public:
 
 class Radio_button {
 public:
-	vector<Radio_button_element> elems;
+	std::vector<Radio_button_element> elems;
 	int checked;
 
 public:
