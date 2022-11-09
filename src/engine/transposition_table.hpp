@@ -473,6 +473,7 @@ Best_move_transposition_table best_move_transposition_table;
     @return hash resized?
 */
 bool hash_resize(int hash_level, int n_hash_level){
+    std::cerr << "hash resize to " << n_hash_level << " if failed, use " << hash_level << std::endl;
     if (!value_transposition_table.resize(n_hash_level)){
         std::cerr << "parent hash table resize failed" << std::endl;
         value_transposition_table.resize(hash_level);

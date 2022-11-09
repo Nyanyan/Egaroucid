@@ -192,7 +192,8 @@ void init_settings(const Directories* directories, const Resources* resources, S
 		if (init_settings_import_int(&reader, &settings->hash_level) != ERR_OK) {
 			std::cerr << "err22" << std::endl;
 			goto use_default_settings;
-		}
+		} else
+			settings->hash_level = std::max(settings->hash_level, DEFAULT_HASH_LEVEL);
 	}
 	return;
 use_default_settings:

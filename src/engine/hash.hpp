@@ -74,10 +74,10 @@ void hash_init_rand(int hash_level){
     for (i = 0; i < 4; ++i){
         for (j = 0; j < 65536; ++j){
             hash_rand_player[i][j] = 0;
-            while (pop_count_uint(hash_rand_player[i][j]) < 4)
+            while (pop_count_uint(hash_rand_player[i][j]) < hash_level / 6)
                 hash_rand_player[i][j] = myrand_uint_rev() & (hash_sizes[hash_level] - 1);
             hash_rand_opponent[i][j] = 0;
-            while (pop_count_uint(hash_rand_opponent[i][j]) < 4)
+            while (pop_count_uint(hash_rand_opponent[i][j]) < hash_level / 6)
                 hash_rand_opponent[i][j] = myrand_uint_rev() & (hash_sizes[hash_level] - 1);
         }
     }
