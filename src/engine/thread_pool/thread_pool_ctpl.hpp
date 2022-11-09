@@ -1,7 +1,7 @@
 /*
     Egaroucid Project
 
-    @file thread_pool.hpp
+    @file thread_pool_ctpl.hpp
         Threadpool for multi-thread search
     @date 2021-2022
     @author Takuto Yamana (a.k.a. Nyanyan)

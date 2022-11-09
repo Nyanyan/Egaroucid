@@ -12,6 +12,6 @@
 #include <iostream>
 #include "setting.hpp"
 #include "board.hpp"
-#include "thread_pool/thread_pool.hpp"
+#include "thread_pool/thread_pool_ctpl.hpp"
 
 ctpl::thread_pool thread_pool(1);
