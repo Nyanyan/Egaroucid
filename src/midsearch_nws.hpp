@@ -1,6 +1,8 @@
 /*
     Egaroucid Project
 
+    @file midsearch_nws.hpp
+        Search midgame with NWS (Null Window Search)
     @date 2021-2022
     @author Takuto Yamana (a.k.a. Nyanyan)
     @license GPL-3.0 license
@@ -25,14 +27,23 @@
 #include "util.hpp"
 #include "stability.hpp"
 
-using namespace std;
-
 inline bool ybwc_split_nws(const Search *search, const Flip *flip, int alpha, int depth, uint64_t legal, bool is_end_search, const bool *searching, uint_fast8_t policy, const int canput, const int pv_idx, const int split_count, vector<future<Parallel_task>> &parallel_tasks);
 inline void ybwc_get_end_tasks_nws(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v);
 inline void ybwc_get_end_tasks(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v, int *best_move);
 inline void ybwc_wait_all_nws(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v, int alpha, bool *searching);
 inline void ybwc_wait_all_nws(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int alpha, bool *searching);
 
+/*
+    @brief Get a value with last move with Nega-Alpha algorithm (NWS)
+
+    No move ordering. Just search it.
+
+    @param search               search information
+    @param alpha                alpha value (beta value is alpha + 1)
+    @param skipped              already passed?
+    @param searching            flag for terminating this search
+    @return the value
+*/
 inline int nega_alpha_eval1_nws(Search *search, int alpha, bool skipped, const bool *searching){
     if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
@@ -70,6 +81,18 @@ inline int nega_alpha_eval1_nws(Search *search, int alpha, bool skipped, const b
 }
 
 #if MID_FAST_DEPTH > 1
+    /*
+        @brief Get a value with last few moves with Nega-Alpha algorithm (NWS)
+
+        No move ordering. Just search it.
+
+        @param search               search information
+        @param alpha                alpha value (beta value is alpha + 1)
+        @param depth                remaining depth
+        @param skipped              already passed?
+        @param searching            flag for terminating this search
+        @return the value
+    */
     int nega_alpha_nws(Search *search, int alpha, int depth, bool skipped, const bool *searching){
         if (!global_searching || !(*searching))
             return SCORE_UNDEFINED;
@@ -109,6 +132,21 @@ inline int nega_alpha_eval1_nws(Search *search, int alpha, bool skipped, const b
     }
 #endif
 
+/*
+    @brief Get a value with given depth with Nega-Alpha algorithm (NWS)
+
+    Search with move ordering for midgame NWS
+    Parallel search (YBWC: Young Brothers Wait Concept) used.
+
+    @param search               search information
+    @param alpha                alpha value (beta value is alpha + 1)
+    @param depth                remaining depth
+    @param skipped              already passed?
+    @param legal                for use of previously calculated legal bitboard
+    @param is_end_search        search till the end?
+    @param searching            flag for terminating this search
+    @return the value
+*/
 int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching, bool *mpc_used){
     if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
