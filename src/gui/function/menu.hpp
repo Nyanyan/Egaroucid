@@ -1,6 +1,8 @@
 ﻿/*
     Egaroucid Project
 
+	@file menu.hpp
+		Menu class
     @date 2021-2022
     @author Takuto Yamana (a.k.a. Nyanyan)
     @license GPL-3.0 license
@@ -10,8 +12,6 @@
 #include <Siv3D.hpp>
 #include <iostream>
 #include <vector>
-
-using namespace std;
 
 constexpr Color menu_color = Palette::Gainsboro;
 constexpr Color menu_active_color = Palette::Lightblue;
@@ -42,7 +42,7 @@ private:
 	int font_size;
 	int mode;
 	bool has_child;
-	vector<menu_elem> children;
+	std::vector<menu_elem> children;
 	bool is_active;
 	bool was_active;
 	int *bar_elem;
@@ -312,7 +312,7 @@ private:
 	Font font;
 	int font_size;
 	bool is_open;
-	vector<menu_elem> elems;
+	std::vector<menu_elem> elems;
 	Texture checkbox;
 	Texture unchecked;
 
@@ -422,7 +422,7 @@ public:
 class Menu{
 private:
 	bool is_open;
-	vector<menu_title> menu;
+	std::vector<menu_title> menu;
 
 public:
 	void push(menu_title elem) {

@@ -1,6 +1,8 @@
 ﻿/*
     Egaroucid Project
 
+	@file language.hpp
+		Language manager
     @date 2021-2022
     @author Takuto Yamana (a.k.a. Nyanyan)
     @license GPL-3.0 license
@@ -13,15 +15,13 @@
 #include <string>
 #include <fstream>
 
-using namespace std;
-
 class Language {
 private:
 	JSON lang;
 
 public:
 
-	bool init(string file) {
+	bool init(std::string file) {
 		lang.clear();
 		lang = JSON::Load(Unicode::Widen(file));
 		if (not lang) {
@@ -31,14 +31,14 @@ public:
 		return true;
 	}
 
-	String get(string v0) {
+	String get(std::string v0) {
 		String v0s = Unicode::Widen(v0);
 		if (lang[v0s].getType() != JSONValueType::String)
 			return U"?";
 		return lang[v0s].getString();
 	}
 
-	String get(string v0, string v1) {
+	String get(std::string v0, std::string v1) {
 		String v0s = Unicode::Widen(v0);
 		String v1s = Unicode::Widen(v1);
 		if (lang[v0s][v1s].getType() != JSONValueType::String)
@@ -46,7 +46,7 @@ public:
 		return lang[v0s][v1s].getString();
 	}
 
-	String get(string v0, string v1, string v2) {
+	String get(std::string v0, std::string v1, std::string v2) {
 		String v0s = Unicode::Widen(v0);
 		String v1s = Unicode::Widen(v1);
 		String v2s = Unicode::Widen(v2);
@@ -55,12 +55,12 @@ public:
 		return lang[v0s][v1s][v2s].getString();
 	}
 
-	String get_random(string v0, string v1) {
+	String get_random(std::string v0, std::string v1) {
 		String v0s = Unicode::Widen(v0);
 		String v1s = Unicode::Widen(v1);
 		if (lang[v0s][v1s].getType() != JSONValueType::Array)
 			return U"?";
-		vector<String> arr;
+		std::vector<String> arr;
 		for (const auto& elem : lang[v0s][v1s].arrayView()){
 			arr.emplace_back(elem.getString());
 		}
@@ -85,7 +85,7 @@ public:
 		return true;
 	}
 
-	String get(string v0) {
+	String get(std::string v0) {
 		String v0s = Unicode::Widen(v0);
 		if (lang[v0s].getType() != JSONValueType::String)
 			return U"?";

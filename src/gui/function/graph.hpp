@@ -1,6 +1,8 @@
 ﻿/*
     Egaroucid Project
 
+	@file graph.hpp
+		Graph drawing
     @date 2021-2022
     @author Takuto Yamana (a.k.a. Nyanyan)
     @license GPL-3.0 license
@@ -9,10 +11,8 @@
 #pragma once
 #include <Siv3D.hpp> // OpenSiv3D v0.6.3
 #include <vector>
-#include "../board.hpp"
-#include "gui_common.hpp"
-
-using namespace std;
+#include "./../../engine/board.hpp"
+#include "./../gui_common.hpp"
 
 constexpr Color graph_color = Color(51, 51, 51);
 constexpr Color graph_history_color = Palette::White;
@@ -53,7 +53,7 @@ private:
 	int adj_x;
 
 public:
-	void draw(vector<History_elem> nodes1, vector<History_elem> nodes2, int n_discs, bool show_graph, int level) {
+	void draw(std::vector<History_elem> nodes1, std::vector<History_elem> nodes2, int n_discs, bool show_graph, int level) {
 		bool fix_resolution_flag = false;
 		if (show_graph) {
 			calc_range(nodes1, nodes2);
@@ -173,7 +173,7 @@ public:
 		}
 	}
 
-	int update_n_discs(vector<History_elem> nodes1, vector<History_elem> nodes2, int n_discs) {
+	int update_n_discs(std::vector<History_elem> nodes1, std::vector<History_elem> nodes2, int n_discs) {
 		if (Rect(sx - 30, sy, size_x + 40, size_y + 10).leftPressed()) {
 			int cursor_x = Cursor::Pos().x;
 			int min_err = INF;
@@ -204,7 +204,7 @@ public:
 	}
 
 private:
-	void calc_range(vector<History_elem> nodes1, vector<History_elem> nodes2) {
+	void calc_range(std::vector<History_elem> nodes1, std::vector<History_elem> nodes2) {
 		y_min = -resolution;
 		y_max = resolution;
 		for (const History_elem& b : nodes1) {
@@ -229,8 +229,8 @@ private:
 		adj_x = size_x - dx * 60;
 	}
 
-	void draw_graph(vector<History_elem> nodes, Color color, Color color2) {
-		vector<pair<int, int>> values;
+	void draw_graph(std::vector<History_elem> nodes, Color color, Color color2) {
+		std::vector<pair<int, int>> values;
 		for (const History_elem& b : nodes) {
 			if (abs(b.v) <= HW2) {
 				int xx = sx + (b.board.n_discs() - 4) * dx + (b.board.n_discs() - 4) * adj_x / 60;
@@ -248,8 +248,8 @@ private:
 		}
 	}
 
-	void draw_graph_not_calculated(vector<History_elem> nodes, Color color) {
-		vector<pair<int, int>> values;
+	void draw_graph_not_calculated(std::vector<History_elem> nodes, Color color) {
+		std::vector<pair<int, int>> values;
 		for (const History_elem& b : nodes) {
 			int yy = sy + y_max * dy + adj_y * y_max / (y_max - y_min);
 			Circle{ sx + (b.board.n_discs() - 4) * dx + (b.board.n_discs() - 4) * adj_x / 60, yy, 2.5 }.draw(color);

@@ -1,6 +1,8 @@
 ﻿/*
     Egaroucid Project
 
+	@file book_scene.hpp
+        Book expand / deepen
     @date 2021-2022
     @author Takuto Yamana (a.k.a. Nyanyan)
     @license GPL-3.0 license
@@ -9,13 +11,8 @@
 #pragma once
 #include <iostream>
 #include <future>
-#include "./ai.hpp"
-#include "function/language.hpp"
-#include "function/menu.hpp"
-#include "function/graph.hpp"
-#include "function/opening.hpp"
-#include "function/button.hpp"
-#include "function/radio_button.hpp"
+#include "./../engine/engine_all.hpp"
+#include "function/function_all.hpp"
 #include "gui_common.hpp"
 
 void delete_book() {
