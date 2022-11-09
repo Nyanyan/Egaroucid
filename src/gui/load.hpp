@@ -22,7 +22,6 @@ int init_ai(Settings* settings, const Directories* directories) {
     if (!hash_resize(DEFAULT_HASH_LEVEL, settings->hash_level)) {
         std::cerr << "hash resize failed. use default setting" << std::endl;
         settings->hash_level = DEFAULT_HASH_LEVEL;
-        hash_resize(DEFAULT_HASH_LEVEL, settings->hash_level);
     }
     stability_init();
     if (!evaluate_init(directories->eval_file)) {

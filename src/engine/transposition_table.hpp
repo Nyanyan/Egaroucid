@@ -20,7 +20,7 @@
     @brief constants
 */
 #define TRANSPOSITION_TABLE_UNDEFINED -INF
-#define TRANSPOSITION_TABLE_STACK_SIZE 16777216
+constexpr size_t TRANSPOSITION_TABLE_STACK_SIZE = hash_sizes[DEFAULT_HASH_LEVEL];
 
 /*
     @brief Calculate the reliability
@@ -468,28 +468,39 @@ Best_move_transposition_table best_move_transposition_table;
 /*
     @brief Resize hash and transposition tables
 
-    @param hash_level           previous hash level 
-    @param n_hash_level         new hash level
+    @param hash_level_failed    hash level used when failed
+    @param hash_level           new hash level
     @return hash resized?
 */
-bool hash_resize(int hash_level, int n_hash_level){
-    std::cerr << "hash resize to " << n_hash_level << " if failed, use " << hash_level << std::endl;
-    if (!value_transposition_table.resize(n_hash_level)){
+bool hash_resize(int hash_level_failed, int hash_level){
+    std::cerr << "hash resize to " << hash_level << " if failed, use " << hash_level_failed << std::endl;
+    if (!value_transposition_table.resize(hash_level)){
         std::cerr << "parent hash table resize failed" << std::endl;
-        value_transposition_table.resize(hash_level);
+        value_transposition_table.resize(hash_level_failed);
+        if (!hash_init(hash_level_failed)){
+            std::cerr << "can't get hash. you can ignore this error" << std::endl;
+            hash_init_rand(hash_level_failed);
+        }
+        global_hash_level = hash_level_failed;
         return false;
     }
-    if (!best_move_transposition_table.resize(n_hash_level)){
+    if (!best_move_transposition_table.resize(hash_level)){
         std::cerr << "child hash table resize failed" << std::endl;
-        value_transposition_table.resize(hash_level);
-        best_move_transposition_table.resize(hash_level);
+        value_transposition_table.resize(hash_level_failed);
+        best_move_transposition_table.resize(hash_level_failed);
+        if (!hash_init(hash_level_failed)){
+            std::cerr << "can't get hash. you can ignore this error" << std::endl;
+            hash_init_rand(hash_level_failed);
+        }
+        global_hash_level = hash_level_failed;
         return false;
     }
-    if (!hash_init(n_hash_level)){
+    if (!hash_init(hash_level)){
         std::cerr << "can't get hash. you can ignore this error" << std::endl;
-        hash_init_rand(n_hash_level);
+        hash_init_rand(hash_level);
     }
-    double size_mb = (double)(sizeof(Node_value_transposition_table) + sizeof(Node_best_move_transposition_table)) / 1024 / 1024 * hash_sizes[n_hash_level];
-    std::cerr << "hash resized to level " << n_hash_level << " elements " << hash_sizes[n_hash_level] << " size " << size_mb << " MB" << std::endl;
+    global_hash_level = hash_level;
+    double size_mb = (double)(sizeof(Node_value_transposition_table) + sizeof(Node_best_move_transposition_table)) / 1024 / 1024 * hash_sizes[hash_level];
+    std::cerr << "hash resized to level " << hash_level << " elements " << hash_sizes[hash_level] << " size " << size_mb << " MB" << std::endl;
     return true;
 }
