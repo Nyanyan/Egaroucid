@@ -415,7 +415,7 @@ inline bool move_evaluate_end(Search *search, Flip_value *flip_value){
     @param strt                 the first index
     @param siz                  the size of move_list
 */
-inline void swap_next_best_move(vector<Flip_value> &move_list, const int strt, const int siz){
+inline void swap_next_best_move(std::vector<Flip_value> &move_list, const int strt, const int siz){
     int top_idx = strt;
     int best_value = move_list[strt].value;
     for (int i = strt + 1; i < siz; ++i){
@@ -439,7 +439,7 @@ inline void swap_next_best_move(vector<Flip_value> &move_list, const int strt, c
     @param is_end_search        search till the end?
     @param searching            flag for terminating this search
 */
-inline void move_list_evaluate(Search *search, vector<Flip_value> &move_list, int depth, int alpha, int beta, bool is_end_search, const bool *searching){
+inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_list, int depth, int alpha, int beta, bool is_end_search, const bool *searching){
     if (move_list.size() == 1)
         return;
     int eval_alpha = -std::min(SCORE_MAX, beta + MOVE_ORDERING_VALUE_OFFSET_BETA);
@@ -463,7 +463,7 @@ inline void move_list_evaluate(Search *search, vector<Flip_value> &move_list, in
     @param search               search information
     @param move_list            list of moves
 */
-inline void move_list_evaluate_end(Search *search, vector<Flip_value> &move_list){
+inline void move_list_evaluate_end(Search *search, std::vector<Flip_value> &move_list){
     if (move_list.size() == 1)
         return;
     bool wipeout_found = false;
@@ -485,7 +485,7 @@ inline void move_list_evaluate_end(Search *search, vector<Flip_value> &move_list
     @param is_end_search        search till the end?
     @param searching            flag for terminating this search
 */
-inline void move_list_evaluate_nws(Search *search, vector<Flip_value> &move_list, int depth, int alpha, bool is_end_search, const bool *searching){
+inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move_list, int depth, int alpha, bool is_end_search, const bool *searching){
     if (move_list.size() == 1)
         return;
     const int eval_alpha = -std::min(SCORE_MAX, alpha + MOVE_ORDERING_NWS_VALUE_OFFSET_BETA);

@@ -545,15 +545,15 @@ void init_pattern_arr_rev(int id, int phase_idx, int pattern_idx, int siz){
         @param v                    value to print
     */
     inline void simd_print_epi32(__m256i v){
-        cerr << _mm256_extract_epi32(v, 7) << " ";
-        cerr << _mm256_extract_epi32(v, 6) << " ";
-        cerr << _mm256_extract_epi32(v, 5) << " ";
-        cerr << _mm256_extract_epi32(v, 4) << " ";
-        cerr << _mm256_extract_epi32(v, 3) << " ";
-        cerr << _mm256_extract_epi32(v, 2) << " ";
-        cerr << _mm256_extract_epi32(v, 1) << " ";
-        cerr << _mm256_extract_epi32(v, 0);
-        cerr << endl;
+        std::cerr << _mm256_extract_epi32(v, 7) << " ";
+        std::cerr << _mm256_extract_epi32(v, 6) << " ";
+        std::cerr << _mm256_extract_epi32(v, 5) << " ";
+        std::cerr << _mm256_extract_epi32(v, 4) << " ";
+        std::cerr << _mm256_extract_epi32(v, 3) << " ";
+        std::cerr << _mm256_extract_epi32(v, 2) << " ";
+        std::cerr << _mm256_extract_epi32(v, 1) << " ";
+        std::cerr << _mm256_extract_epi32(v, 0);
+        std::cerr << std::endl;
     }
 
     /*
@@ -564,14 +564,14 @@ void init_pattern_arr_rev(int id, int phase_idx, int pattern_idx, int siz){
         @param v                    value to print
     */
     inline void simd_print_epi32_line(__m256i v){
-        cerr << _mm256_extract_epi32(v, 7) << " ";
-        cerr << _mm256_extract_epi32(v, 6) << " ";
-        cerr << _mm256_extract_epi32(v, 5) << " ";
-        cerr << _mm256_extract_epi32(v, 4) << " ";
-        cerr << _mm256_extract_epi32(v, 3) << " ";
-        cerr << _mm256_extract_epi32(v, 2) << " ";
-        cerr << _mm256_extract_epi32(v, 1) << " ";
-        cerr << _mm256_extract_epi32(v, 0) << " ";
+        std::cerr << _mm256_extract_epi32(v, 7) << " ";
+        std::cerr << _mm256_extract_epi32(v, 6) << " ";
+        std::cerr << _mm256_extract_epi32(v, 5) << " ";
+        std::cerr << _mm256_extract_epi32(v, 4) << " ";
+        std::cerr << _mm256_extract_epi32(v, 3) << " ";
+        std::cerr << _mm256_extract_epi32(v, 2) << " ";
+        std::cerr << _mm256_extract_epi32(v, 1) << " ";
+        std::cerr << _mm256_extract_epi32(v, 0) << " ";
     }
 #endif
 
@@ -582,17 +582,17 @@ void init_pattern_arr_rev(int id, int phase_idx, int pattern_idx, int siz){
     @return evaluation function conpletely initialized?
 */
 inline bool init_evaluation_calc(const char* file){
-    cerr << file << endl;
+    std::cerr << file << std::endl;
     FILE* fp;
     #ifdef _WIN64
         if (fopen_s(&fp, file, "rb") != 0){
-            cerr << "can't open eval.egev" << endl;
+            std::cerr << "can't open eval.egev" << std::endl;
             return false;
         }
     #else
         fp = fopen("resources/eval.egev", "rb");
         if (fp == NULL){
-            cerr << "can't open eval.egev" << endl;
+            std::cerr << "can't open eval.egev" << std::endl;
             return false;
         }
     #endif
@@ -602,11 +602,11 @@ inline bool init_evaluation_calc(const char* file){
         int16_t pattern_arr_16[MAX_EVALUATE_IDX];
     #endif
     for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
-        //cerr << "evaluation function " << phase_idx * 100 / N_PHASES << " % initialized" << endl;
+        //std::cerr << "evaluation function " << phase_idx * 100 / N_PHASES << " % initialized" << std::endl;
         #if USE_SIMD_EVALUATION
             for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx){
                 if (fread(pattern_arr_16, 2, pow3[pattern_sizes[pattern_idx]], fp) < pow3[pattern_sizes[pattern_idx]]){
-                    cerr << "eval.egev broken" << endl;
+                    std::cerr << "eval.egev broken" << std::endl;
                     fclose(fp);
                     return false;
                 }
@@ -616,41 +616,41 @@ inline bool init_evaluation_calc(const char* file){
         #else
             for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx){
                 if (fread(pattern_arr[0][phase_idx][pattern_idx], 2, pow3[pattern_sizes[pattern_idx]], fp) < pow3[pattern_sizes[pattern_idx]]){
-                    cerr << "eval.egev broken" << endl;
+                    std::cerr << "eval.egev broken" << std::endl;
                     fclose(fp);
                     return false;
                 }
             }
         #endif
         if (fread(eval_sur0_sur1_arr[phase_idx], 2, MAX_SURROUND * MAX_SURROUND, fp) < MAX_SURROUND * MAX_SURROUND){
-            cerr << "eval.egev broken" << endl;
+            std::cerr << "eval.egev broken" << std::endl;
             fclose(fp);
             return false;
         }
         if (fread(eval_canput0_canput1_arr[phase_idx], 2, MAX_CANPUT * MAX_CANPUT, fp) < MAX_CANPUT * MAX_CANPUT){
-            cerr << "eval.egev broken" << endl;
+            std::cerr << "eval.egev broken" << std::endl;
             fclose(fp);
             return false;
         }
         if (fread(eval_num0_num1_arr[phase_idx], 2, MAX_STONE_NUM * MAX_STONE_NUM, fp) < MAX_STONE_NUM * MAX_STONE_NUM){
-            cerr << "eval.egev broken" << endl;
+            std::cerr << "eval.egev broken" << std::endl;
             fclose(fp);
             return false;
         }
         if (fread(eval_mobility_pattern[phase_idx], 2, N_CANPUT_PATTERNS * P44 * P44, fp) < N_CANPUT_PATTERNS * P48){
-            cerr << "eval.egev broken" << endl;
+            std::cerr << "eval.egev broken" << std::endl;
             fclose(fp);
             return false;
         }
     }
     if (thread_pool.size() >= 2){
-        future<void> tasks[N_PHASES * N_PATTERNS];
+        std::future<void> tasks[N_PHASES * N_PATTERNS];
         int i = 0;
         for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
             for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx)
                 tasks[i++] = thread_pool.push(init_pattern_arr_rev, phase_idx, pattern_idx, pattern_sizes[pattern_idx]);
         }
-        for (future<void> &task: tasks)
+        for (std::future<void> &task: tasks)
             task.get();
     } else{
         for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
@@ -709,7 +709,7 @@ inline bool init_evaluation_calc(const char* file){
         eval_simd_offsets[6] = _mm256_set_epi32(offset1 * 12, offset1 * 12, offset1 * 13, offset1 * 13, offset1 * 13, offset1 * 13, offset1 * 14, offset1 * 14);
         eval_simd_offsets[7] = _mm256_set_epi32(offset1 * 14, offset1 * 14, offset1 * 15, offset1 * 15, offset1 * 15, offset1 * 15, offset1 * 16, offset1 * 16);
     #endif
-    cerr << "evaluation function initialized" << endl;
+    std::cerr << "evaluation function initialized" << std::endl;
     return true;
 }
 
@@ -729,7 +729,7 @@ bool evaluate_init(const char* file){
     @param file                 evaluation file name
     @return evaluation function conpletely initialized?
 */
-bool evaluate_init(const string file){
+bool evaluate_init(const std::string file){
     return init_evaluation_calc(file.c_str());
 }
 
@@ -1164,7 +1164,7 @@ inline int mid_evaluate_diff(Search *search){
         search->board.translate_to_arr_player(b_arr);
         for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i){
             if (search->eval_features[i] != pick_pattern_idx(b_arr, &feature_to_coord[i])){
-                cerr << i << " " << search->eval_features[i] << " " << pick_pattern_idx(b_arr, &feature_to_coord[i]) << endl;
+                std::cerr << i << " " << search->eval_features[i] << " " << pick_pattern_idx(b_arr, &feature_to_coord[i]) << std::endl;
                 return true;
             }
         }

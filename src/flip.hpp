@@ -15,8 +15,6 @@
 #include "common.hpp"
 #include "bit.hpp"
 
-using namespace std;
-
 /*
     @brief Flip class
 

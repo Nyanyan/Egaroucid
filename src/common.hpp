@@ -52,7 +52,7 @@ inline uint64_t tim(){
     return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
 }
 
-mt19937 raw_myrandom(tim());
+std::mt19937 raw_myrandom(tim());
 
 /*
     @brief random function
@@ -60,7 +60,7 @@ mt19937 raw_myrandom(tim());
     @return random value from 0.0 to 1.0 (not including 1.0)
 */
 inline double myrandom(){
-    return (double)raw_myrandom() / mt19937::max();
+    return (double)raw_myrandom() / std::mt19937::max();
 }
 
 /*

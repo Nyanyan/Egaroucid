@@ -49,9 +49,9 @@ Board input_board(){
     @param idx                  index of the coordinate
     @return coordinate as string
 */
-string idx_to_coord(int idx){
+std::string idx_to_coord(int idx){
     int y = HW_M1 - idx / HW;
     int x = HW_M1 - idx % HW;
-    const string x_coord = "abcdefgh";
+    const std::string x_coord = "abcdefgh";
     return x_coord[x] + std::to_string(y + 1);
 }

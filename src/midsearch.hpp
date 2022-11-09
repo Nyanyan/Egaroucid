@@ -247,7 +247,7 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, c
         int g;
         if (alpha < beta && legal){
             const int canput = pop_count_ull(legal);
-            vector<Flip_value> move_list(canput);
+            std::vector<Flip_value> move_list(canput);
             int idx = 0;
             for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
                 calc_flip(&move_list[idx++].flip, &search->board, cell);
@@ -404,7 +404,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     int g;
     if (alpha < beta && legal){
         const int canput = pop_count_ull(legal);
-        vector<Flip_value> move_list(canput);
+        std::vector<Flip_value> move_list(canput);
         int idx = 0;
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
             calc_flip(&move_list[idx++].flip, &search->board, cell);
@@ -455,7 +455,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     @param clogs                previously found clog moves
     @return pair of value and best move
 */
-pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, bool is_end_search, const bool is_main_search, int best_move, const vector<Clog_result> clogs){
+std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, bool is_end_search, const bool is_main_search, int best_move, const std::vector<Clog_result> clogs){
     bool searching = true;
     ++(search->n_nodes);
     uint32_t hash_code = search->board.hash();
@@ -463,7 +463,7 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
     int first_alpha = alpha;
     int g, v = -INF;
     if (legal == 0ULL)
-        return make_pair(SCORE_UNDEFINED, -1);
+        return std::make_pair(SCORE_UNDEFINED, -1);
     int best_move_res = -1;
     const int canput_all = pop_count_ull(legal);
     for (const Clog_result clog: clogs){
@@ -483,7 +483,7 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
             search->move(&flip_best);
                 g = -nega_scout(search, -beta, -alpha, depth - 1, false, LEGAL_UNDEFINED, is_end_search, &searching);
                 if (is_main_search)
-                    std::cerr << 1 << "/" << canput_all << " [" << alpha << "," << beta << "] mpct " << search->mpct << " " << idx_to_coord(best_move) << " value " << g << endl;
+                    std::cerr << 1 << "/" << canput_all << " [" << alpha << "," << beta << "] mpct " << search->mpct << " " << idx_to_coord(best_move) << " value " << g << std::endl;
             search->undo(&flip_best);
             eval_undo(search, &flip_best);
             if (v < g){
@@ -499,7 +499,7 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
     if (alpha < beta && legal){
         const int canput = pop_count_ull(legal);
         int mobility_idx = pre_best_move_found ? 2 : 1;
-        vector<Flip_value> move_list(canput);
+        std::vector<Flip_value> move_list(canput);
         int idx = 0;
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
             calc_flip(&move_list[idx++].flip, &search->board, cell);
@@ -520,9 +520,9 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
                 }
                 if (is_main_search){
                     if (g <= alpha)
-                        std::cerr << mobility_idx << "/" << canput_all << " [" << alpha << "," << beta << "] mpct " << search->mpct << " " << idx_to_coord((int)move_list[move_idx].flip.pos) << " value " << g << " or lower" << endl;
+                        std::cerr << mobility_idx << "/" << canput_all << " [" << alpha << "," << beta << "] mpct " << search->mpct << " " << idx_to_coord((int)move_list[move_idx].flip.pos) << " value " << g << " or lower" << std::endl;
                     else
-                        std::cerr << mobility_idx << "/" << canput_all << " [" << alpha << "," << beta << "] mpct " << search->mpct << " " << idx_to_coord((int)move_list[move_idx].flip.pos) << " value " << g << endl;
+                        std::cerr << mobility_idx << "/" << canput_all << " [" << alpha << "," << beta << "] mpct " << search->mpct << " " << idx_to_coord((int)move_list[move_idx].flip.pos) << " value " << g << std::endl;
                 }
                 ++mobility_idx;
             search->undo(&move_list[move_idx].flip);
@@ -540,5 +540,5 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
         }
     }
     register_tt(search, depth, hash_code, v, best_move_res, first_alpha, beta, first_alpha, beta, &searching);
-    return make_pair(v, best_move_res);
+    return std::make_pair(v, best_move_res);
 }

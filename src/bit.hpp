@@ -26,7 +26,7 @@
 inline void bit_print_reverse(uint64_t x){
     for (uint32_t i = 0; i < HW2; ++i)
         std::cerr << (1 & (x >> i));
-    std::cerr << endl;
+    std::cerr << std::endl;
 }
 
 /*
@@ -37,7 +37,7 @@ inline void bit_print_reverse(uint64_t x){
 inline void bit_print(uint64_t x){
     for (uint32_t i = 0; i < HW2; ++i)
         std::cerr << (1 & (x >> (HW2_M1 - i)));
-    std::cerr << endl;
+    std::cerr << std::endl;
 }
 
 /*
@@ -48,7 +48,7 @@ inline void bit_print(uint64_t x){
 inline void bit_print_uchar(uint8_t x){
     for (uint32_t i = 0; i < HW; ++i)
         std::cerr << (1 & (x >> (HW_M1 - i)));
-    std::cerr << endl;
+    std::cerr << std::endl;
 }
 
 /*
@@ -60,9 +60,9 @@ inline void bit_print_board_reverse(uint64_t x){
     for (uint32_t i = 0; i < HW2; ++i){
         std::cerr << (1 & (x >> i));
         if (i % HW == HW_M1)
-            std::cerr << endl;
+            std::cerr << std::endl;
     }
-    std::cerr << endl;
+    std::cerr << std::endl;
 }
 
 /*
@@ -74,9 +74,9 @@ inline void bit_print_board(uint64_t x){
     for (uint32_t i = 0; i < HW2; ++i){
         std::cerr << (1 & (x >> (HW2_M1 - i)));
         if (i % HW == HW_M1)
-            std::cerr << endl;
+            std::cerr << std::endl;
     }
-    std::cerr << endl;
+    std::cerr << std::endl;
 }
 
 /*
@@ -94,7 +94,7 @@ void print_board(uint64_t p, uint64_t o){
         else
             std::cerr << '.';
         if (i % HW == HW_M1)
-            std::cerr << endl;
+            std::cerr << std::endl;
     }
 }
 

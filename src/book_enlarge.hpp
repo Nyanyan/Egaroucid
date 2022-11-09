@@ -55,7 +55,7 @@ inline int book_enlarge_calc_value(Board board, int level){
 
     @return a score of the board
 */
-int book_widen_search(Board board, int level, const int book_depth, int expected_value, int expected_error, int remaining_error, Board *board_copy, int *player, uint64_t *strt_tim, string book_file, string book_bak){
+int book_widen_search(Board board, int level, const int book_depth, int expected_value, int expected_error, int remaining_error, Board *board_copy, int *player, uint64_t *strt_tim, std::string book_file, std::string book_bak){
     if (!global_searching || remaining_error < 0)
         return SCORE_UNDEFINED;
     if (tim() - *strt_tim > AUTO_BOOK_SAVE_TIME){
@@ -65,13 +65,13 @@ int book_widen_search(Board board, int level, const int book_depth, int expected
     int g, v = SCORE_UNDEFINED;
     if (board.is_end()){
         g = board.score_player();
-        std::cerr << "depth " << board.n_discs() - 4 << " LF value " << g << endl;
+        std::cerr << "depth " << board.n_discs() - 4 << " LF value " << g << std::endl;
         book.reg(board, -g);
         return g;
     }
     if (board.n_discs() >= 4 + book_depth){
         g = book_enlarge_calc_value(board, level);
-        std::cerr << "depth " << board.n_discs() - 4 << " LF value " << g << endl;
+        std::cerr << "depth " << board.n_discs() - 4 << " LF value " << g << std::endl;
         book.reg(board, -g);
         return g;
     }
@@ -87,7 +87,7 @@ int book_widen_search(Board board, int level, const int book_depth, int expected
         return g;
     }
     Search_result best_move = ai(board, level, true, true, false);
-    std::cerr << "depth " << board.n_discs() - 4 << " BM value " << best_move.value << endl;
+    std::cerr << "depth " << board.n_discs() - 4 << " BM value " << best_move.value << std::endl;
     Flip flip;
     bool alpha_updated = false;
     calc_flip(&flip, &board, (uint8_t)best_move.policy);
@@ -98,7 +98,7 @@ int book_widen_search(Board board, int level, const int book_depth, int expected
         if (global_searching && g >= -HW2 && g <= HW2){
             v = g;
             best_move.value = std::min(best_move.value, g);
-            std::cerr << "depth " << board.n_discs() - 4 << " PV value " << g << " expected " << expected_value << " remaining error " << remaining_error << endl;
+            std::cerr << "depth " << board.n_discs() - 4 << " PV value " << g << " expected " << expected_value << " remaining error " << remaining_error << std::endl;
         }
     *player ^= 1;
     board.undo_board(&flip);
@@ -125,7 +125,7 @@ int book_widen_search(Board board, int level, const int book_depth, int expected
                     g = -book_widen_search(board, level, book_depth, -n_expected_value, expected_error, n_remaining_error, board_copy, player, strt_tim, book_file, book_bak);
                     if (global_searching && g >= -HW2 && g <= HW2){
                         v = std::max(v, g);
-                        std::cerr << "depth " << board.n_discs() - 4 << " AD value " << g << " pre " << best_move.value << " best " << v << " expected " << expected_value << " remaining error " << n_remaining_error << endl;
+                        std::cerr << "depth " << board.n_discs() - 4 << " AD value " << g << " pre " << best_move.value << " best " << v << " expected " << expected_value << " remaining error " << n_remaining_error << std::endl;
                     }
                 }
             board.undo_board(&flip);
@@ -134,7 +134,7 @@ int book_widen_search(Board board, int level, const int book_depth, int expected
         }
     }
     if (global_searching && v >= -HW2 && v <= HW2){
-        std::cerr << "depth " << board.n_discs() - 4 << " RG value " << v << endl;
+        std::cerr << "depth " << board.n_discs() - 4 << " RG value " << v << std::endl;
         book.reg(board, -v);
     }
     return v;
@@ -156,14 +156,14 @@ int book_widen_search(Board board, int level, const int book_depth, int expected
     @param book_bak             book backup file name
     @param book_learning        a flag for screen drawing
 */
-inline void book_widen(Board root_board, int level, const int book_depth, int expected_error, Board *board_copy, int *player, string book_file, string book_bak, bool *book_learning){
+inline void book_widen(Board root_board, int level, const int book_depth, int expected_error, Board *board_copy, int *player, std::string book_file, std::string book_bak, bool *book_learning){
     uint64_t strt_tim = tim();
-    std::cerr << "book learn started" << endl;
+    std::cerr << "book learn started" << std::endl;
     int remaining_error = std::max(expected_error, (book_depth + 4 - root_board.n_discs()) * expected_error / 5);
-    std::cerr << "remaining error " << remaining_error << endl;
+    std::cerr << "remaining error " << remaining_error << std::endl;
     int g = book_widen_search(root_board, level, book_depth, SCORE_UNDEFINED, expected_error, remaining_error, board_copy, player, &strt_tim, book_file, book_bak);
     root_board.copy(board_copy);
     book.save_bin(book_file, book_bak);
-    std::cerr << "book learn finished " << g << endl;
+    std::cerr << "book learn finished " << g << std::endl;
     *book_learning = false;
 }

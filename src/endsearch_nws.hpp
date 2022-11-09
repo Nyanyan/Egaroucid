@@ -27,10 +27,10 @@
 #include "parallel.hpp"
 
 #if MID_TO_END_DEPTH < YBWC_END_SPLIT_MIN_DEPTH
-    inline bool ybwc_split_end_nws(const Search *search, int alpha, uint64_t legal, const bool *searching, uint_fast8_t policy, const int canput, const int pv_idx, const int split_count, vector<future<Parallel_task>> &parallel_tasks);
-    inline void ybwc_get_end_tasks(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v, int *best_move);
-    inline void ybwc_wait_all(Search *search, vector<future<Parallel_task>> &parallel_tasks);
-    inline void ybwc_wait_all_nws(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int alpha, bool *searching);
+    inline bool ybwc_split_end_nws(const Search *search, int alpha, uint64_t legal, const bool *searching, uint_fast8_t policy, const int canput, const int pv_idx, const int split_count, std::vector<std::future<Parallel_task>> &parallel_tasks);
+    inline void ybwc_get_end_tasks(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, int *v, int *best_move);
+    inline void ybwc_wait_all(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks);
+    inline void ybwc_wait_all_nws(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int alpha, bool *searching);
 #endif
 
 /*
@@ -106,21 +106,21 @@ inline int last3_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
             const bool p2_parity = (search->parity & cell_div4[p2]) > 0;
             #if LAST_PO_OPTIMIZE
                 if (!p0_parity && p2_parity){
-                    swap(p0, p2);
+                    std::swap(p0, p2);
                 } else if (!p0_parity && p1_parity && !p2_parity){
-                    swap(p0, p1);
+                    std::swap(p0, p1);
                 } else if (p0_parity && !p1_parity && p2_parity){
-                    swap(p1, p2);
+                    std::swap(p1, p2);
                 }
             #else
                 if (!p0_parity && p1_parity && p2_parity){
-                    swap(p0, p2);
+                    std::swap(p0, p2);
                 } else if (!p0_parity && !p1_parity && p2_parity){
-                    swap(p0, p2);
+                    std::swap(p0, p2);
                 } else if (!p0_parity && p1_parity && !p2_parity){
-                    swap(p0, p1);
+                    std::swap(p0, p1);
                 } else if (p0_parity && !p1_parity && p2_parity){
-                    swap(p1, p2);
+                    std::swap(p1, p2);
                 }
             #endif
         }
@@ -206,44 +206,44 @@ inline int last4_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
             const bool p3_parity = (search->parity & cell_div4[p3]) > 0;
             #if LAST_PO_OPTIMIZE
                 if (!p0_parity && p3_parity){
-                    swap(p0, p3);
+                    std::swap(p0, p3);
                     if (!p1_parity && p2_parity)
-                        swap(p1, p2);
+                        std::swap(p1, p2);
                 } else if (!p0_parity && p2_parity && !p3_parity){
-                    swap(p0, p2);
+                    std::swap(p0, p2);
                 } else if (!p0_parity && p1_parity && !p2_parity && !p3_parity){
-                    swap(p0, p1);
+                    std::swap(p0, p1);
                 } else if (p0_parity && !p1_parity && p3_parity){
-                    swap(p1, p3);
+                    std::swap(p1, p3);
                 } else if (p0_parity && !p1_parity && p2_parity && !p3_parity){
-                    swap(p1, p2);
+                    std::swap(p1, p2);
                 } else if (p0_parity && p1_parity && !p2_parity && p3_parity){
-                    swap(p2, p3);
+                    std::swap(p2, p3);
                 }
             #else
                 if (!p0_parity && p1_parity && p2_parity && p3_parity){
-                    swap(p0, p3);
+                    std::swap(p0, p3);
                 } else if (!p0_parity && !p1_parity && p2_parity && p3_parity){
-                    swap(p0, p2);
-                    swap(p1, p3);
+                    std::swap(p0, p2);
+                    std::swap(p1, p3);
                 } else if (!p0_parity && p1_parity && !p2_parity && p3_parity){
-                    swap(p0, p3);
+                    std::swap(p0, p3);
                 } else if (!p0_parity && p1_parity && p2_parity && !p3_parity){
-                    swap(p0, p2);
+                    std::swap(p0, p2);
                 } else if (!p0_parity && !p1_parity && !p2_parity && p3_parity){
-                    swap(p0, p3);
+                    std::swap(p0, p3);
                 } else if (!p0_parity && !p1_parity && p2_parity && !p3_parity){
-                    swap(p0, p2);
+                    std::swap(p0, p2);
                 } else if (!p0_parity && p1_parity && !p2_parity && !p3_parity){
-                    swap(p0, p1);
+                    std::swap(p0, p1);
                 } else if (p0_parity && !p1_parity && p2_parity && p3_parity){
-                    swap(p1, p3);
+                    std::swap(p1, p3);
                 } else if (p0_parity && !p1_parity && !p2_parity && p3_parity){
-                    swap(p1, p3);
+                    std::swap(p1, p3);
                 } else if (p0_parity && !p1_parity && p2_parity && !p3_parity){
-                    swap(p1, p2);
+                    std::swap(p1, p2);
                 } else if (p0_parity && p1_parity && !p2_parity && p3_parity){
-                    swap(p2, p3);
+                    std::swap(p2, p3);
                 }
             #endif
         }
@@ -552,7 +552,7 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
     if (legal){
         int g;
         const int canput = pop_count_ull(legal);
-        vector<Flip_value> move_list(canput);
+        std::vector<Flip_value> move_list(canput);
         int idx = 0;
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
             calc_flip(&move_list[idx++].flip, &search->board, cell);
@@ -567,7 +567,7 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
                 int pv_idx = 0, split_count = 0;
                 if (best_move != TRANSPOSITION_TABLE_UNDEFINED)
                     pv_idx = 1;
-                vector<future<Parallel_task>> parallel_tasks;
+                std::vector<std::future<Parallel_task>> parallel_tasks;
                 bool n_searching = true;
                 for (int move_idx = 0; move_idx < canput; ++move_idx){
                     swap_next_best_move(move_list, move_idx, canput);

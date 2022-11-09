@@ -244,7 +244,7 @@ inline void ybwc_get_end_tasks(Search *search, std::vector<std::future<Parallel_
     Parallel_task got_task;
     for (std::future<Parallel_task> &task: parallel_tasks){
         if (task.valid()){
-            if (task.wait_for(chrono::seconds(0)) == future_status::ready){
+            if (task.wait_for(std::chrono::seconds(0)) == std::future_status::ready){
                 got_task = task.get();
                 if (*v < got_task.value){
                     *v = got_task.value;
@@ -267,7 +267,7 @@ inline void ybwc_get_end_tasks(Search *search, std::vector<std::future<Parallel_
 */
 inline void ybwc_get_end_tasks(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *alpha){
     ybwc_get_end_tasks(search, parallel_tasks, v, best_move);
-    *alpha = max((*alpha), (*v));
+    *alpha = std::max((*alpha), (*v));
 }
 
 /*
@@ -316,7 +316,7 @@ inline void ybwc_wait_all(Search *search, std::vector<std::future<Parallel_task>
             }
         }
     }
-    *alpha = max((*alpha), (*v));
+    *alpha = std::max((*alpha), (*v));
 }
 
 /*
@@ -329,7 +329,7 @@ inline void ybwc_wait_all(Search *search, std::vector<std::future<Parallel_task>
     @param alpha                alpha value
     @param searching            flag for terminating this search
 */
-inline void ybwc_wait_all_nws(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int alpha, bool *searching){
+inline void ybwc_wait_all_nws(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int alpha, bool *searching){
     ybwc_get_end_tasks(search, parallel_tasks, v, best_move);
     if (alpha < (*v))
         *searching = false;

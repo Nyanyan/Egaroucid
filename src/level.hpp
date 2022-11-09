@@ -11,8 +11,6 @@
 #pragma once
 #include <iostream>
 
-using namespace std;
-
 /*
     @brief definition of level categories
 
@@ -240,7 +238,7 @@ bool get_level_use_mpc(int level, int n_moves){
     @param end_depth            integer to store endgame lookahead depth
 */
 void get_level_depth(int level, int *mid_depth, int *end_depth){
-    level = max(0, min(60, level));
+    level = std::max(0, std::min(60, level));
     *mid_depth = level_definition[level].mid_lookahead;
     *end_depth = level_definition[level].complete0;
 }

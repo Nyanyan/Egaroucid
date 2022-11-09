@@ -27,10 +27,10 @@
 #include "ybwc.hpp"
 
 #if USE_NEGA_ALPHA_END && MID_TO_END_DEPTH < YBWC_END_SPLIT_MIN_DEPTH
-    inline bool ybwc_split_end(const Search *search, int alpha, int beta, uint64_t legal, const bool *searching, uint_fast8_t policy, const int canput, const int pv_idx, const int split_count, vector<future<Parallel_task>> &parallel_tasks);
-    inline void ybwc_get_end_tasks(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *alpha);
-    inline void ybwc_wait_all(Search *search, vector<future<Parallel_task>> &parallel_tasks);
-    inline void ybwc_wait_all(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *alpha, int beta, bool *searching);
+    inline bool ybwc_split_end(const Search *search, int alpha, int beta, uint64_t legal, const bool *searching, uint_fast8_t policy, const int canput, const int pv_idx, const int split_count, std::vector<std::future<Parallel_task>> &parallel_tasks);
+    inline void ybwc_get_end_tasks(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *alpha);
+    inline void ybwc_wait_all(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks);
+    inline void ybwc_wait_all(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *alpha, int beta, bool *searching);
 #endif
 
 /*
@@ -623,7 +623,7 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
         if (alpha < beta && legal){
             int g;
             const int canput = pop_count_ull(legal);
-            vector<Flip_value> move_list(canput);
+            std::vector<Flip_value> move_list(canput);
             int idx = 0;
             for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
                 calc_flip(&move_list[idx++].flip, &search->board, cell);
@@ -638,7 +638,7 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
                     int pv_idx = 0, split_count = 0;
                     if (best_move != transposition_TABLE_UNDEFINED)
                         pv_idx = 1;
-                    vector<future<Parallel_task>> parallel_tasks;
+                    std::vector<std::future<Parallel_task>> parallel_tasks;
                     bool n_searching = true;
                     for (int move_idx = 0; move_idx < canput; ++move_idx){
                         swap_next_best_move(move_list, move_idx, canput);

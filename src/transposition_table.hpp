@@ -42,9 +42,9 @@ inline double data_strength(const double t, const int d){
 */
 class Node_best_move_transposition_table{
     private:
-        atomic<uint64_t> player;
-        atomic<uint64_t> opponent;
-        atomic<int> best_move;
+        std::atomic<uint64_t> player;
+        std::atomic<uint64_t> opponent;
+        std::atomic<int> best_move;
 
     public:
 
@@ -79,11 +79,11 @@ class Node_best_move_transposition_table{
         */
         inline int get(const Board *board){
             int res;
-            if (board->player != player.load(memory_order_relaxed) || board->opponent != opponent.load(memory_order_relaxed))
+            if (board->player != player.load(std::memory_order_relaxed) || board->opponent != opponent.load(std::memory_order_relaxed))
                 res = TRANSPOSITION_TABLE_UNDEFINED;
             else{
-                res = best_move.load(memory_order_relaxed);
-                if (board->player != player.load(memory_order_relaxed) || board->opponent != opponent.load(memory_order_relaxed))
+                res = best_move.load(std::memory_order_relaxed);
+                if (board->player != player.load(std::memory_order_relaxed) || board->opponent != opponent.load(std::memory_order_relaxed))
                     res = TRANSPOSITION_TABLE_UNDEFINED;
             }
             return res;
@@ -157,10 +157,10 @@ class Best_move_transposition_table{
                 int thread_size = thread_pool.size();
                 size_t delta = (std::min(table_size, (size_t)TRANSPOSITION_TABLE_STACK_SIZE) + thread_size - 1) / thread_size;
                 size_t s = 0, e;
-                vector<future<void>> tasks;
+                std::vector<std::future<void>> tasks;
                 for (int i = 0; i < thread_size; ++i){
                     e = std::min(std::min(table_size, (size_t)TRANSPOSITION_TABLE_STACK_SIZE), s + delta);
-                    tasks.emplace_back(thread_pool.push(bind(&init_best_move_transposition_table, table_stack, s, e)));
+                    tasks.emplace_back(thread_pool.push(std::bind(&init_best_move_transposition_table, table_stack, s, e)));
                     s = e;
                 }
                 if (table_size > TRANSPOSITION_TABLE_STACK_SIZE){
@@ -168,11 +168,11 @@ class Best_move_transposition_table{
                     s = 0;
                     for (int i = 0; i < thread_size; ++i){
                         e = std::min(table_size - (size_t)TRANSPOSITION_TABLE_STACK_SIZE, s + delta);
-                        tasks.emplace_back(thread_pool.push(bind(&init_best_move_transposition_table, table_heap, s, e)));
+                        tasks.emplace_back(thread_pool.push(std::bind(&init_best_move_transposition_table, table_heap, s, e)));
                         s = e;
                     }
                 }
-                for (future<void> &task: tasks)
+                for (std::future<void> &task: tasks)
                     task.get();
             }
         }
@@ -217,12 +217,12 @@ class Best_move_transposition_table{
 */
 class Node_value_transposition_table{
     private:
-        atomic<uint64_t> player;
-        atomic<uint64_t> opponent;
-        atomic<int> lower;
-        atomic<int> upper;
-        atomic<double> mpct;
-        atomic<int> depth;
+        std::atomic<uint64_t> player;
+        std::atomic<uint64_t> opponent;
+        std::atomic<int> lower;
+        std::atomic<int> upper;
+        std::atomic<double> mpct;
+        std::atomic<int> depth;
 
     public:
         /*
@@ -249,7 +249,7 @@ class Node_value_transposition_table{
             @param d                    new depth
         */
         inline void reg(const Board *board, const int l, const int u, const double t, const int d){
-            if (board->player == player.load(memory_order_relaxed) && board->opponent == opponent.load(memory_order_relaxed) && data_strength(mpct.load(memory_order_relaxed), depth.load(memory_order_relaxed)) > data_strength(t, d))
+            if (board->player == player.load(std::memory_order_relaxed) && board->opponent == opponent.load(std::memory_order_relaxed) && data_strength(mpct.load(std::memory_order_relaxed), depth.load(std::memory_order_relaxed)) > data_strength(t, d))
                 return;
             player.store(board->player);
             opponent.store(board->opponent);
@@ -272,18 +272,18 @@ class Node_value_transposition_table{
             @param mpc_used             mpc used flag to store
         */
         inline void get(const Board *board, int *l, int *u, const double t, const int d, bool *mpc_used){
-            if (data_strength(mpct.load(memory_order_relaxed), depth.load(memory_order_relaxed)) < data_strength(t, d)){
+            if (data_strength(mpct.load(std::memory_order_relaxed), depth.load(std::memory_order_relaxed)) < data_strength(t, d)){
                 *l = -INF;
                 *u = INF;
             } else{
-                if (board->player != player.load(memory_order_relaxed) || board->opponent != opponent.load(memory_order_relaxed)){
+                if (board->player != player.load(std::memory_order_relaxed) || board->opponent != opponent.load(std::memory_order_relaxed)){
                     *l = -INF;
                     *u = INF;
                 } else{
-                    *l = lower.load(memory_order_relaxed);
-                    *u = upper.load(memory_order_relaxed);
-                    *mpc_used |= mpct.load(memory_order_relaxed) < NOMPC;
-                    if (board->player != player.load(memory_order_relaxed) || board->opponent != opponent.load(memory_order_relaxed)){
+                    *l = lower.load(std::memory_order_relaxed);
+                    *u = upper.load(std::memory_order_relaxed);
+                    *mpc_used |= mpct.load(std::memory_order_relaxed) < NOMPC;
+                    if (board->player != player.load(std::memory_order_relaxed) || board->opponent != opponent.load(std::memory_order_relaxed)){
                         *l = -INF;
                         *u = INF;
                     }
@@ -303,17 +303,17 @@ class Node_value_transposition_table{
             @param d                    requested depth
         */
         inline void get(const Board *board, int *l, int *u, const double t, const int d){
-            if (data_strength(mpct.load(memory_order_relaxed), depth.load(memory_order_relaxed)) < data_strength(t, d)){
+            if (data_strength(mpct.load(std::memory_order_relaxed), depth.load(std::memory_order_relaxed)) < data_strength(t, d)){
                 *l = -INF;
                 *u = INF;
             } else{
-                if (board->player != player.load(memory_order_relaxed) || board->opponent != opponent.load(memory_order_relaxed)){
+                if (board->player != player.load(std::memory_order_relaxed) || board->opponent != opponent.load(std::memory_order_relaxed)){
                     *l = -INF;
                     *u = INF;
                 } else{
-                    *l = lower.load(memory_order_relaxed);
-                    *u = upper.load(memory_order_relaxed);
-                    if (board->player != player.load(memory_order_relaxed) || board->opponent != opponent.load(memory_order_relaxed)){
+                    *l = lower.load(std::memory_order_relaxed);
+                    *u = upper.load(std::memory_order_relaxed);
+                    if (board->player != player.load(std::memory_order_relaxed) || board->opponent != opponent.load(std::memory_order_relaxed)){
                         *l = -INF;
                         *u = INF;
                     }
@@ -389,10 +389,10 @@ class Value_transposition_table{
                 int thread_size = thread_pool.size();
                 size_t delta = (std::min(table_size, (size_t)TRANSPOSITION_TABLE_STACK_SIZE) + thread_size - 1) / thread_size;
                 size_t s = 0, e;
-                vector<future<void>> tasks;
+                std::vector<std::future<void>> tasks;
                 for (int i = 0; i < thread_size; ++i){
                     e = std::min(std::min(table_size, (size_t)TRANSPOSITION_TABLE_STACK_SIZE), s + delta);
-                    tasks.emplace_back(thread_pool.push(bind(&init_value_transposition_table, table_stack, s, e)));
+                    tasks.emplace_back(thread_pool.push(std::bind(&init_value_transposition_table, table_stack, s, e)));
                     s = e;
                 }
                 if (table_size > TRANSPOSITION_TABLE_STACK_SIZE){
@@ -400,11 +400,11 @@ class Value_transposition_table{
                     s = 0;
                     for (int i = 0; i < thread_size; ++i){
                         e = std::min(table_size - (size_t)TRANSPOSITION_TABLE_STACK_SIZE, s + delta);
-                        tasks.emplace_back(thread_pool.push(bind(&init_value_transposition_table, table_heap, s, e)));
+                        tasks.emplace_back(thread_pool.push(std::bind(&init_value_transposition_table, table_heap, s, e)));
                         s = e;
                     }
                 }
-                for (future<void> &task: tasks)
+                for (std::future<void> &task: tasks)
                     task.get();
             }
         }
@@ -474,21 +474,21 @@ Best_move_transposition_table best_move_transposition_table;
 */
 bool hash_resize(int hash_level, int n_hash_level){
     if (!value_transposition_table.resize(n_hash_level)){
-        std::cerr << "parent hash table resize failed" << endl;
+        std::cerr << "parent hash table resize failed" << std::endl;
         value_transposition_table.resize(hash_level);
         return false;
     }
     if (!best_move_transposition_table.resize(n_hash_level)){
-        std::cerr << "child hash table resize failed" << endl;
+        std::cerr << "child hash table resize failed" << std::endl;
         value_transposition_table.resize(hash_level);
         best_move_transposition_table.resize(hash_level);
         return false;
     }
     if (!hash_init(n_hash_level)){
-        std::cerr << "can't get hash. you can ignore this error" << endl;
+        std::cerr << "can't get hash. you can ignore this error" << std::endl;
         hash_init_rand(n_hash_level);
     }
     double size_mb = (double)(sizeof(Node_value_transposition_table) + sizeof(Node_best_move_transposition_table)) / 1024 / 1024 * hash_sizes[n_hash_level];
-    std::cerr << "hash resized to level " << n_hash_level << " elements " << hash_sizes[n_hash_level] << " size " << size_mb << " MB" << endl;
+    std::cerr << "hash resized to level " << n_hash_level << " elements " << hash_sizes[n_hash_level] << " size " << size_mb << " MB" << std::endl;
     return true;
 }

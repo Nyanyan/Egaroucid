@@ -188,7 +188,7 @@ namespace ctpl {
                 std::bind(std::forward<F>(f), std::placeholders::_1, std::forward<Rest>(rest)...)
                 );
             std::unique_lock<std::mutex> lock(this->mutex);
-            *pushed = nWaiting.load(memory_order_relaxed) > 0;
+            *pushed = nWaiting.load(std::memory_order_relaxed) > 0;
             if (*pushed){
                 auto _f = new std::function<void(int id)>([pck](int id) {
                     (*pck)(id);
@@ -205,7 +205,7 @@ namespace ctpl {
         auto push(bool *pushed, F && f) ->std::future<decltype(f(0))> {
             auto pck = std::make_shared<std::packaged_task<decltype(f(0))(int)>>(std::forward<F>(f));
             std::unique_lock<std::mutex> lock(this->mutex);
-            *pushed = nWaiting.load(memory_order_relaxed) > 0;
+            *pushed = nWaiting.load(std::memory_order_relaxed) > 0;
             if (*pushed){
                 auto _f = new std::function<void(int id)>([pck](int id) {
                     (*pck)(id);

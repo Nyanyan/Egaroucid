@@ -142,7 +142,7 @@ class Board {
                 else
                     std::cerr << ". ";
                 if (i % HW == 0)
-                    std::cerr << endl;
+                    std::cerr << std::endl;
             }
         }
 
@@ -319,7 +319,7 @@ class Board {
         */
         inline void translate_from_ull(const uint64_t pl, const uint64_t op) {
             if (pl & op)
-                std::cerr << "both on same square" << endl;
+                std::cerr << "both on same square" << std::endl;
             player = pl;
             opponent = op;
         }
