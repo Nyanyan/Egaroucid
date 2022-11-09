@@ -244,13 +244,13 @@ struct Clog_result{
 inline void register_tt(Search *search, int depth, uint32_t hash_code, int v, int best_move, int l, int u, int first_alpha, int beta, const bool *searching){
     if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD && (*searching) && -SCORE_MAX <= v && v <= SCORE_MAX && global_searching){
         if (first_alpha < v && best_move != TRANSPOSITION_TABLE_UNDEFINED)
-            child_transposition_table.reg(&search->board, hash_code, best_move);
+            best_move_transposition_table.reg(&search->board, hash_code, best_move);
         if (first_alpha < v && v < beta)
-            parent_transposition_table.reg(&search->board, hash_code, v, v, search->mpct, depth);
+            value_transposition_table.reg(&search->board, hash_code, v, v, search->mpct, depth);
         else if (beta <= v && l < v)
-            parent_transposition_table.reg(&search->board, hash_code, v, u, search->mpct, depth);
+            value_transposition_table.reg(&search->board, hash_code, v, u, search->mpct, depth);
         else if (v <= first_alpha && v < u)
-            parent_transposition_table.reg(&search->board, hash_code, l, v, search->mpct, depth);
+            value_transposition_table.reg(&search->board, hash_code, l, v, search->mpct, depth);
     }
 }
 
@@ -269,9 +269,9 @@ inline void register_tt(Search *search, int depth, uint32_t hash_code, int v, in
 inline void register_tt_nws(Search *search, int depth, uint32_t hash_code, int alpha, int v, int l, int u, const bool *searching){
     if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD && (*searching) && -SCORE_MAX <= v && v <= SCORE_MAX && global_searching){
         if (alpha < v)
-            parent_transposition_table.reg(&search->board, hash_code, v, u, search->mpct, depth);
+            value_transposition_table.reg(&search->board, hash_code, v, u, search->mpct, depth);
         else
-            parent_transposition_table.reg(&search->board, hash_code, l, v, search->mpct, depth);
+            value_transposition_table.reg(&search->board, hash_code, l, v, search->mpct, depth);
     }
 }
 
@@ -291,11 +291,11 @@ inline void register_tt_nws(Search *search, int depth, uint32_t hash_code, int a
 inline void register_tt_nws(Search *search, int depth, uint32_t hash_code, int alpha, int v, int best_move, int l, int u, const bool *searching){
     if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD && (*searching) && -SCORE_MAX <= v && v <= SCORE_MAX && global_searching){
         if (alpha < v && best_move != TRANSPOSITION_TABLE_UNDEFINED)
-            child_transposition_table.reg(&search->board, hash_code, best_move);
+            best_move_transposition_table.reg(&search->board, hash_code, best_move);
         if (alpha < v)
-            parent_transposition_table.reg(&search->board, hash_code, v, u, search->mpct, depth);
+            value_transposition_table.reg(&search->board, hash_code, v, u, search->mpct, depth);
         else
-            parent_transposition_table.reg(&search->board, hash_code, l, v, search->mpct, depth);
+            value_transposition_table.reg(&search->board, hash_code, l, v, search->mpct, depth);
     }
 }
 
@@ -315,10 +315,10 @@ inline void register_tt_nws(Search *search, int depth, uint32_t hash_code, int a
 inline void register_tt_nws_nompc(Search *search, int depth, uint32_t hash_code, int alpha, int v, int best_move, int l, int u, const bool *searching){
     if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD && (*searching) && -SCORE_MAX <= v && v <= SCORE_MAX && global_searching){
         if (alpha < v && best_move != TRANSPOSITION_TABLE_UNDEFINED)
-            child_transposition_table.reg(&search->board, hash_code, best_move);
+            best_move_transposition_table.reg(&search->board, hash_code, best_move);
         if (alpha < v)
-            parent_transposition_table.reg(&search->board, hash_code, v, u, NOMPC, depth);
+            value_transposition_table.reg(&search->board, hash_code, v, u, NOMPC, depth);
         else
-            parent_transposition_table.reg(&search->board, hash_code, l, v, NOMPC, depth);
+            value_transposition_table.reg(&search->board, hash_code, l, v, NOMPC, depth);
     }
 }

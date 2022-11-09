@@ -194,7 +194,7 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, c
         #if MID_TO_END_DEPTH < USE_TT_DEPTH_THRESHOLD
             int l = -INF, u = INF;
             if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD){
-                parent_transposition_table.get(&search->board, hash_code, &l, &u, search->mpct, depth);
+                value_transposition_table.get(&search->board, hash_code, &l, &u, search->mpct, depth);
                 if (u == l)
                     return u;
                 if (beta <= l)
@@ -206,7 +206,7 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, c
             }
         #else
             int l, u;
-            parent_transposition_table.get(&search->board, hash_code, &l, &u, search->mpct, depth);
+            value_transposition_table.get(&search->board, hash_code, &l, &u, search->mpct, depth);
             if (u == l)
                 return u;
             if (beta <= l)
@@ -229,7 +229,7 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, c
                 #endif
             }
         #endif
-        int best_move = child_transposition_table.get(&search->board, hash_code);
+        int best_move = best_move_transposition_table.get(&search->board, hash_code);
         if (best_move != TRANSPOSITION_TABLE_UNDEFINED){
             if (1 & (legal >> best_move)){
                 Flip flip_best;
@@ -351,7 +351,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     #if MID_TO_END_DEPTH < USE_TT_DEPTH_THRESHOLD
         int l = -INF, u = INF;
         if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD){
-            parent_transposition_table.get(&search->board, hash_code, &l, &u, search->mpct, depth);
+            value_transposition_table.get(&search->board, hash_code, &l, &u, search->mpct, depth);
             if (u == l)
                 return u;
             if (beta <= l)
@@ -363,7 +363,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
         }
     #else
         int l, u;
-        parent_transposition_table.get(&search->board, hash_code, &l, &u, search->mpct, depth);
+        value_transposition_table.get(&search->board, hash_code, &l, &u, search->mpct, depth);
         if (u == l)
             return u;
         if (beta <= l)
@@ -386,7 +386,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
             #endif
         }
     #endif
-    int best_move = child_transposition_table.get(&search->board, hash_code);
+    int best_move = best_move_transposition_table.get(&search->board, hash_code);
     if (best_move != TRANSPOSITION_TABLE_UNDEFINED){
         if (1 & (legal >> best_move)){
             Flip flip_best;

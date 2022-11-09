@@ -521,7 +521,7 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
     int l = -INF, u = INF;
     const bool use_tt = search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD;
     if (use_tt){
-        parent_transposition_table.get(&search->board, hash_code, &l, &u, NOMPC, HW2 - search->n_discs);
+        value_transposition_table.get(&search->board, hash_code, &l, &u, NOMPC, HW2 - search->n_discs);
         if (u == l)
             return u;
         if (u <= alpha)
@@ -536,7 +536,7 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
     #endif
     int best_move = TRANSPOSITION_TABLE_UNDEFINED;
     if (use_tt){
-        best_move = child_transposition_table.get(&search->board, hash_code);
+        best_move = best_move_transposition_table.get(&search->board, hash_code);
         if (best_move != TRANSPOSITION_TABLE_UNDEFINED){
             if (1 & (legal >> best_move)){
                 Flip flip_best;

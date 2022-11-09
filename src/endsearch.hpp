@@ -586,7 +586,7 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
         uint32_t hash_code = search->board.hash();
         int l = -INF, u = INF;
         if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD){
-            parent_transposition_table.get(&search->board, hash_code, &l, &u, NOMPC, HW2 - search->n_discs);
+            value_transposition_table.get(&search->board, hash_code, &l, &u, NOMPC, HW2 - search->n_discs);
             if (u == l)
                 return u;
             if (beta <= l)
@@ -603,7 +603,7 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
         #endif
         int best_move = transposition_TABLE_UNDEFINED;
         if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD){
-            best_move = child_transposition_table.get(&search->board, hash_code);
+            best_move = best_move_transposition_table.get(&search->board, hash_code);
             if (best_move != transposition_TABLE_UNDEFINED){
                 if (1 & (legal >> best_move)){
                     Flip flip_best;
