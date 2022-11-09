@@ -451,12 +451,6 @@ bool operator!=(const Board& a, const Board& b){
     return a.player != b.player || a.opponent != b.opponent;
 }
 
-struct Board_hash {
-    size_t operator()(Board board) const{
-        return board.hash();
-    }
-};
-
 /*
     @brief calculate flip
 

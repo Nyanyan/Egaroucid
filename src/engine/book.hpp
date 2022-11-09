@@ -26,15 +26,90 @@ struct Book_value{
     int value;
 };
 
+/*
+    @brief array for calculating hash code for book
+*/
+size_t hash_rand_player_book[4][65536];
+size_t hash_rand_opponent_book[4][65536];
+
+/*
+    @brief initialize hash array for book randomly
+*/
+void book_hash_init_rand(){
+    int i, j;
+    for (i = 0; i < 4; ++i){
+        for (j = 0; j < 65536; ++j){
+            hash_rand_player_book[i][j] = 0;
+            while (pop_count_uint(hash_rand_player_book[i][j]) < 9)
+                hash_rand_player_book[i][j] = myrand_ull();
+            hash_rand_opponent_book[i][j] = 0;
+            while (pop_count_uint(hash_rand_opponent_book[i][j]) < 9)
+                hash_rand_opponent_book[i][j] = myrand_ull();
+        }
+    }
+    std::cerr << "hash initialized randomly" << std::endl;
+}
+
+/*
+    @brief initialize hash array for book
+*/
+void book_hash_init(){
+    FILE* fp;
+    if (fopen_s(&fp, "resources/hash_book.eghs", "rb") != 0) {
+        std::cerr << "can't open hash_book.eghs" << std::endl;
+        book_hash_init_rand();
+        return;
+    } else{
+        for (int i = 0; i < 4; ++i){
+            if (fread(hash_rand_player_book[i], 8, 65536, fp) < 65536){
+                std::cerr << "hash_book.eghs broken" << std::endl;
+                book_hash_init_rand();
+                return;
+            }
+        }
+        for (int i = 0; i < 4; ++i){
+            if (fread(hash_rand_opponent_book[i], 8, 65536, fp) < 65536){
+                std::cerr << "hash_book.eghs broken" << std::endl;
+                book_hash_init_rand();
+                return;
+            }
+        }
+    }
+    std::cerr << "hash for book initialized" << std::endl;
+    return;
+}
+
+/*
+    @brief Hash function for book
+
+    @param board                board
+    @return hash code
+*/
+struct Book_hash {
+    size_t operator()(Board board) const{
+        const uint16_t *p = (uint16_t*)&board.player;
+        const uint16_t *o = (uint16_t*)&board.opponent;
+        return 
+            hash_rand_player_book[0][p[0]] ^ 
+            hash_rand_player_book[1][p[1]] ^ 
+            hash_rand_player_book[2][p[2]] ^ 
+            hash_rand_player_book[3][p[3]] ^ 
+            hash_rand_opponent_book[0][o[0]] ^ 
+            hash_rand_opponent_book[1][o[1]] ^ 
+            hash_rand_opponent_book[2][o[2]] ^ 
+            hash_rand_opponent_book[3][o[3]];
+    }
+};
+
+/*
+    @brief book data
+
+    @param book                 book data
+    @param n_book               number of boards registered
+*/
 class Book{
     private:
-        /*
-            @brief book data
-
-            @param book                 book data
-            @param n_book               number of boards registered
-        */
-        std::unordered_map<Board, int, Board_hash> book;
+        std::unordered_map<Board, int, Book_hash> book;
         int n_book;
 
     public:
@@ -560,5 +635,6 @@ class Book{
 Book book;
 
 bool book_init(std::string file){
+    book_hash_init();
     return book.init(file);
 }
