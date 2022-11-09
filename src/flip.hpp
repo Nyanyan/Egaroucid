@@ -1,9 +1,12 @@
 /*
     Egaroucid Project
 
+    @file flip.hpp
+        Flip calculation
     @date 2021-2022
     @author Takuto Yamana (a.k.a Nyanyan)
     @license GPL-3.0 license
+    @notice I referred to codes written by others
 */
 
 #pragma once
@@ -14,6 +17,12 @@
 
 using namespace std;
 
+/*
+    @brief Flip class
+
+    @param pos                  a cell to put disc
+    @param flip                 a bitboard representing flipped discs
+*/
 class Flip{
     public:
         uint_fast8_t pos;
