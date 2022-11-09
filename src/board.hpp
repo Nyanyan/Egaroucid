@@ -164,10 +164,7 @@ class Board {
             player ^= flip->flip;
             opponent ^= flip->flip;
             player ^= 1ULL << flip->pos;
-            //swap(player, opponent);
-            player ^= opponent;
-            opponent ^= player;
-            player ^= opponent;
+            std::swap(player, opponent);
         }
 
         /*
@@ -200,10 +197,7 @@ class Board {
             swap player and opponent
         */
         inline void pass(){
-            //swap(player, opponent);
-            player ^= opponent;
-            opponent ^= player;
-            player ^= opponent;
+            std::swap(player, opponent);
         }
 
         /*
@@ -212,10 +206,7 @@ class Board {
             @param flip                 Flip structure
         */
         inline void undo_board(const Flip *flip){
-            //swap(player, opponent);
-            player ^= opponent;
-            opponent ^= player;
-            player ^= opponent;
+            std::swap(player, opponent);
             player ^= 1ULL << flip->pos;
             player ^= flip->flip;
             opponent ^= flip->flip;
