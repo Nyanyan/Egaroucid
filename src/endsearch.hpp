@@ -1,6 +1,8 @@
 /*
     Egaroucid Project
 
+    @file endsearch.hpp
+        Search near endgame
     @date 2021-2022
     @author Takuto Yamana (a.k.a Nyanyan)
     @license GPL-3.0 license
@@ -17,28 +19,33 @@
 #include "search.hpp"
 #include "move_ordering.hpp"
 #include "probcut.hpp"
-#include "transpose_table.hpp"
+#include "transposition_table.hpp"
 #include "util.hpp"
 #include "stability.hpp"
 #include "endsearch_nws.hpp"
 #include "parallel.hpp"
 #include "ybwc.hpp"
 
-using namespace std;
-
 inline bool ybwc_split_end(const Search *search, const Flip *flip, int alpha, int beta, uint64_t legal, const bool *searching, uint_fast8_t policy, const int canput, const int pv_idx, const int split_count, vector<future<Parallel_task>> &parallel_tasks);
 inline void ybwc_get_end_tasks(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *alpha);
 inline void ybwc_wait_all(Search *search, vector<future<Parallel_task>> &parallel_tasks);
 inline void ybwc_wait_all(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *alpha, int beta, bool *searching);
 
+/*
+    @brief Get a final score with last 2 empties
+
+    No move ordering. Just search it.
+
+    @param search               search information
+    @param alpha                alpha value
+    @param beta                 beta value
+    @param p0                   empty square 1/2
+    @param p1                   empty square 2/2
+    @param skipped              already passed?
+    @return the final score
+*/
 inline int last2(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast8_t p1, bool skipped){
     ++search->n_nodes;
-    #if USE_END_PO & false
-        uint_fast8_t p0_parity = (search->parity & cell_div4[p0]);
-        uint_fast8_t p1_parity = (search->parity & cell_div4[p1]);
-        if (!p0_parity && p1_parity)
-            swap(p0, p1);
-    #endif
     int v = -INF;
     Flip flip;
     if (bit_around[p0] & search->board.opponent){
@@ -78,6 +85,20 @@ inline int last2(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
     return v;
 }
 
+/*
+    @brief Get a final score with last 3 empties
+
+    Only with parity-based ordering.
+
+    @param search               search information
+    @param alpha                alpha value
+    @param beta                 beta value
+    @param p0                   empty square 1/3
+    @param p1                   empty square 2/3
+    @param p2                   empty square 3/3
+    @param skipped              already passed?
+    @return the final score
+*/
 inline int last3(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast8_t p1, uint_fast8_t p2, bool skipped){
     ++search->n_nodes;
     #if USE_END_PO
@@ -85,23 +106,23 @@ inline int last3(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
             const bool p0_parity = (search->parity & cell_div4[p0]) > 0;
             const bool p1_parity = (search->parity & cell_div4[p1]) > 0;
             const bool p2_parity = (search->parity & cell_div4[p2]) > 0;
-            #if LAST_PO_OPTIMISE
+            #if LAST_PO_OPTIMIZE
                 if (!p0_parity && p2_parity){
-                    swap(p0, p2);
+                    std::swap(p0, p2);
                 } else if (!p0_parity && p1_parity && !p2_parity){
-                    swap(p0, p1);
+                    std::swap(p0, p1);
                 } else if (p0_parity && !p1_parity && p2_parity){
-                    swap(p1, p2);
+                    std::swap(p1, p2);
                 }
             #else
                 if (!p0_parity && p1_parity && p2_parity){
-                    swap(p0, p2);
+                    std::swap(p0, p2);
                 } else if (!p0_parity && !p1_parity && p2_parity){
-                    swap(p0, p2);
+                    std::swap(p0, p2);
                 } else if (!p0_parity && p1_parity && !p2_parity){
-                    swap(p0, p1);
+                    std::swap(p0, p1);
                 } else if (p0_parity && !p1_parity && p2_parity){
-                    swap(p1, p2);
+                    std::swap(p1, p2);
                 }
             #endif
         }
@@ -162,6 +183,21 @@ inline int last3(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
     return v;
 }
 
+/*
+    @brief Get a final score with last 4 empties
+
+    Only with parity-based ordering.
+
+    @param search               search information
+    @param alpha                alpha value
+    @param beta                 beta value
+    @param p0                   empty square 1/4
+    @param p1                   empty square 2/4
+    @param p2                   empty square 3/4
+    @param p3                   empty square 4/4
+    @param skipped              already passed?
+    @return the final score
+*/
 inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast8_t p1, uint_fast8_t p2, uint_fast8_t p3, bool skipped){
     ++search->n_nodes;
     #if USE_END_SC
@@ -176,46 +212,46 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
             const bool p1_parity = (search->parity & cell_div4[p1]) > 0;
             const bool p2_parity = (search->parity & cell_div4[p2]) > 0;
             const bool p3_parity = (search->parity & cell_div4[p3]) > 0;
-            #if LAST_PO_OPTIMISE
+            #if LAST_PO_OPTIMIZE
                 if (!p0_parity && p3_parity){
-                    swap(p0, p3);
+                    std::swap(p0, p3);
                     if (!p1_parity && p2_parity)
-                        swap(p1, p2);
+                        std::swap(p1, p2);
                 } else if (!p0_parity && p2_parity && !p3_parity){
-                    swap(p0, p2);
+                    std::swap(p0, p2);
                 } else if (!p0_parity && p1_parity && !p2_parity && !p3_parity){
-                    swap(p0, p1);
+                    std::swap(p0, p1);
                 } else if (p0_parity && !p1_parity && p3_parity){
-                    swap(p1, p3);
+                    std::swap(p1, p3);
                 } else if (p0_parity && !p1_parity && p2_parity && !p3_parity){
-                    swap(p1, p2);
+                    std::swap(p1, p2);
                 } else if (p0_parity && p1_parity && !p2_parity && p3_parity){
-                    swap(p2, p3);
+                    std::swap(p2, p3);
                 }
             #else
                 if (!p0_parity && p1_parity && p2_parity && p3_parity){
-                    swap(p0, p3);
+                    std::swap(p0, p3);
                 } else if (!p0_parity && !p1_parity && p2_parity && p3_parity){
-                    swap(p0, p2);
-                    swap(p1, p3);
+                    std::swap(p0, p2);
+                    std::swap(p1, p3);
                 } else if (!p0_parity && p1_parity && !p2_parity && p3_parity){
-                    swap(p0, p3);
+                    std::swap(p0, p3);
                 } else if (!p0_parity && p1_parity && p2_parity && !p3_parity){
-                    swap(p0, p2);
+                    std::swap(p0, p2);
                 } else if (!p0_parity && !p1_parity && !p2_parity && p3_parity){
-                    swap(p0, p3);
+                    std::swap(p0, p3);
                 } else if (!p0_parity && !p1_parity && p2_parity && !p3_parity){
-                    swap(p0, p2);
+                    std::swap(p0, p2);
                 } else if (!p0_parity && p1_parity && !p2_parity && !p3_parity){
-                    swap(p0, p1);
+                    std::swap(p0, p1);
                 } else if (p0_parity && !p1_parity && p2_parity && p3_parity){
-                    swap(p1, p3);
+                    std::swap(p1, p3);
                 } else if (p0_parity && !p1_parity && !p2_parity && p3_parity){
-                    swap(p1, p3);
+                    std::swap(p1, p3);
                 } else if (p0_parity && !p1_parity && p2_parity && !p3_parity){
-                    swap(p1, p2);
+                    std::swap(p1, p2);
                 } else if (p0_parity && p1_parity && !p2_parity && p3_parity){
-                    swap(p2, p3);
+                    std::swap(p2, p3);
                 }
             #endif
         }
@@ -285,6 +321,19 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
 }
 
 #if USE_NEGA_ALPHA_END_FAST
+    /*
+        @brief Get a final score with few empties
+
+        Only with parity-based ordering.
+
+        @param search               search information
+        @param alpha                alpha value
+        @param beta                 beta value
+        @param skipped              already passed?
+        @param stab_cut             use stability cutoff?
+        @param searching            flag for terminating this search
+        @return the final score
+    */
     int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped, bool stab_cut, const bool *searching){
         if (!global_searching || !(*searching))
             return SCORE_UNDEFINED;
@@ -484,6 +533,19 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
 #endif
 
 #if USE_NEGA_ALPHA_END
+    /*
+        @brief Get a final score with some empties
+
+        Search with move ordering for endgame.
+
+        @param search               search information
+        @param alpha                alpha value
+        @param beta                 beta value
+        @param skipped              already passed?
+        @param legal                for use of previously calculated legal bitboard
+        @param searching            flag for terminating this search
+        @return the final score
+    */
     int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t legal, const bool *searching){
         if (!global_searching || !(*searching))
             return SCORE_UNDEFINED;
@@ -518,25 +580,25 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
         uint32_t hash_code = search->board.hash();
         int l = -INF, u = INF;
         if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD){
-            parent_transpose_table.get(&search->board, hash_code, &l, &u, NOMPC, HW2 - search->n_discs);
+            parent_transposition_table.get(&search->board, hash_code, &l, &u, NOMPC, HW2 - search->n_discs);
             if (u == l)
                 return u;
             if (beta <= l)
                 return l;
             if (u <= alpha)
                 return u;
-            alpha = max(alpha, l);
-            beta = min(beta, u);
+            alpha = std::max(alpha, l);
+            beta = std::min(beta, u);
         }
         #if USE_END_SC
             int stab_res = stability_cut(search, &alpha, &beta);
             if (stab_res != SCORE_UNDEFINED)
                 return stab_res;
         #endif
-        int best_move = TRANSPOSE_TABLE_UNDEFINED;
+        int best_move = transposition_TABLE_UNDEFINED;
         if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD){
-            best_move = child_transpose_table.get(&search->board, hash_code);
-            if (best_move != TRANSPOSE_TABLE_UNDEFINED){
+            best_move = child_transposition_table.get(&search->board, hash_code);
+            if (best_move != transposition_TABLE_UNDEFINED){
                 if (1 & (legal >> best_move)){
                     Flip flip_best;
                     calc_flip(&flip_best, &search->board, best_move);
@@ -547,7 +609,7 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
                         alpha = v;
                     legal ^= 1ULL << best_move;
                 } else
-                    best_move = TRANSPOSE_TABLE_UNDEFINED;
+                    best_move = transposition_TABLE_UNDEFINED;
             }
         }
         if (alpha < beta && legal){
@@ -566,7 +628,7 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
                 #endif
                 if (search->use_multi_thread){
                     int pv_idx = 0, split_count = 0;
-                    if (best_move != TRANSPOSE_TABLE_UNDEFINED)
+                    if (best_move != transposition_TABLE_UNDEFINED)
                         pv_idx = 1;
                     vector<future<Parallel_task>> parallel_tasks;
                     bool n_searching = true;
