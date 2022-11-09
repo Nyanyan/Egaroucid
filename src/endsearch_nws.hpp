@@ -561,7 +561,7 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
         move_list_evaluate_end(search, move_list);
         #if MID_TO_END_DEPTH < YBWC_END_SPLIT_MIN_DEPTH
             #if USE_ALL_NODE_PREDICTION
-                const bool seems_to_be_all_node = is_like_all_node(search, alpha, HW2 - search->n_discs, LEGAL_UNDEFINED, true, searching);
+                const bool seems_to_be_all_node = predict_all_node(search, alpha, HW2 - search->n_discs, LEGAL_UNDEFINED, true, searching);
             #else
                 constexpr bool seems_to_be_all_node = false;
             #endif
