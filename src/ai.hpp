@@ -25,7 +25,7 @@
 /*
     @brief Get a result of a search
 
-    Firstly, see if the game ends in few moves if using MPC.
+    Firstly, if using MPC, execute clog search for finding special endgame.
     Then do some pre-search, and main search.
 
     @param board                board to solve
