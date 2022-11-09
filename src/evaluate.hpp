@@ -22,6 +22,9 @@
 #include "search.hpp"
 #include "util.hpp"
 
+/*
+    @brief evaluation pattern definition
+*/
 #define N_PATTERNS 16
 #ifndef N_SYMMETRY_PATTERNS
     #define N_SYMMETRY_PATTERNS 62
@@ -38,12 +41,19 @@
 #define N_CANPUT_PATTERNS 4
 #define MAX_EVALUATE_IDX 59049
 
+/*
+    @brief value definition
+
+    Raw score is STEP times larger than the real score.
+*/
 #define STEP 256
 #define STEP_2 128
 #define STEP_SHIFT 8
 
+/*
+    @brief 3 ^ N definition
+*/
 #define PNO 0
-
 #define P30 1
 #define P31 3
 #define P32 9
@@ -66,6 +76,9 @@
 #define P39m 19682
 #define P310m 59048
 
+/*
+    @brief 4 ^ N definition
+*/
 #define P40 1
 #define P41 4
 #define P42 16
@@ -76,6 +89,9 @@
 #define P47 16384
 #define P48 65536
 
+/*
+    @brief coordinate definition
+*/
 #define COORD_A1 63
 #define COORD_B1 62
 #define COORD_C1 61
@@ -150,6 +166,14 @@
 
 #define COORD_NO 64
 
+/*
+    @brief definition of patterns in evaluation function
+
+    pattern -> coordinate
+
+    @param n_cells              number of cells included in the pattern
+    @param cells                coordinates of each cell
+*/
 struct Feature_to_coord{
     uint_fast8_t n_cells;
     uint_fast8_t cells[MAX_PATTERN_CELLS];
@@ -353,11 +377,27 @@ struct Feature_to_coord{
     };
 #endif
 
+/*
+    @brief definition of patterns in evaluation function
+
+    coordinate -> pattern
+
+    @param feature              the index of feature
+    @param x                    the offset value of the cell in this feature
+*/
 struct Coord_feature{
     uint_fast8_t feature;
     uint_fast16_t x;
 };
 
+/*
+    @brief definition of patterns in evaluation function
+
+    coordinate -> all patterns
+
+    @param n_features           number of features the cell is used by
+    @param features             information for each feature
+*/
 struct Coord_to_feature{
     uint_fast8_t n_features;
     Coord_feature features[MAX_CELL_PATTERNS];
@@ -431,6 +471,9 @@ constexpr Coord_to_feature coord_to_feature[HW2] = {
 };
 
 #if USE_SIMD_EVALUATION
+    /*
+        @brief constants used for evaluation function with SIMD
+    */
     __m256i feature_to_coord_simd_shift[N_SIMD_EVAL_FEATURES][MAX_PATTERN_CELLS - 1];
     __m256i feature_to_coord_simd_mask[N_SIMD_EVAL_FEATURES][MAX_PATTERN_CELLS - 1];
     __m256i feature_to_coord_simd_cell[N_SIMD_EVAL_FEATURES][MAX_PATTERN_CELLS];
@@ -439,7 +482,14 @@ constexpr Coord_to_feature coord_to_feature[HW2] = {
     __m256i eval_simd_offsets[N_SIMD_EVAL_FEATURES];
 #endif
 
+/*
+    @brief constants of 3 ^ N
+*/
 constexpr uint_fast16_t pow3[11] = {1, P31, P32, P33, P34, P35, P36, P37, P38, P39, P310};
+
+/*
+    @brief evaluation parameters
+*/
 #if USE_SIMD_EVALUATION
     int pattern_arr[2][N_PHASES][N_PATTERNS + 1][MAX_EVALUATE_IDX];
 #else
@@ -448,21 +498,17 @@ constexpr uint_fast16_t pow3[11] = {1, P31, P32, P33, P34, P35, P36, P37, P38, P
 int16_t eval_sur0_sur1_arr[N_PHASES][MAX_SURROUND][MAX_SURROUND];
 int16_t eval_canput0_canput1_arr[N_PHASES][MAX_CANPUT][MAX_CANPUT];
 int16_t eval_num0_num1_arr[N_PHASES][MAX_STONE_NUM][MAX_STONE_NUM];
-int16_t eval_canput_pattern[N_PHASES][N_CANPUT_PATTERNS][P44][P44];
+int16_t eval_mobility_pattern[N_PHASES][N_CANPUT_PATTERNS][P44][P44];
 
-string create_line(int b, int w){
-    string res = "";
-    for (int i = 0; i < HW; ++i){
-        if ((b >> i) & 1)
-            res += "X";
-        else if ((w >> i) & 1)
-            res += "O";
-        else
-            res += ".";
-    }
-    return res;
-}
+/*
+    @brief used for unzipping the evaluation function
 
+    This function swaps the player in the index
+
+    @param i                    index representing the discs in a pattern
+    @param pattern_size         size of the pattern
+    @return swapped index
+*/
 inline int swap_player_idx(int i, int pattern_size){
     int j, ri = i;
     for (j = 0; j < pattern_size; ++j){
@@ -474,6 +520,14 @@ inline int swap_player_idx(int i, int pattern_size){
     return ri;
 }
 
+/*
+    @brief used for unzipping the evaluation function
+
+    @param id                   for threadpool. not used at all
+    @param phase_idx            evaluation phase
+    @param pattern_idx          evaluation pattern's index
+    @param siz                  size of the pattern
+*/
 void init_pattern_arr_rev(int id, int phase_idx, int pattern_idx, int siz){
     int ri;
     for (int i = 0; i < pow3[siz]; ++i){
@@ -482,7 +536,14 @@ void init_pattern_arr_rev(int id, int phase_idx, int pattern_idx, int siz){
     }
 }
 
-#if USE_SIMD_EVALUATION
+#if USE_SIMD_EVALUATION && USE_SIMD_DEBUG
+    /*
+        @brief print each value in __m256i
+
+        used for debugging evaluation function
+
+        @param v                    value to print
+    */
     inline void simd_print_epi32(__m256i v){
         cerr << _mm256_extract_epi32(v, 7) << " ";
         cerr << _mm256_extract_epi32(v, 6) << " ";
@@ -495,6 +556,13 @@ void init_pattern_arr_rev(int id, int phase_idx, int pattern_idx, int siz){
         cerr << endl;
     }
 
+    /*
+        @brief print each value in __m256i in line
+
+        used for debugging evaluation function
+
+        @param v                    value to print
+    */
     inline void simd_print_epi32_line(__m256i v){
         cerr << _mm256_extract_epi32(v, 7) << " ";
         cerr << _mm256_extract_epi32(v, 6) << " ";
@@ -507,6 +575,12 @@ void init_pattern_arr_rev(int id, int phase_idx, int pattern_idx, int siz){
     }
 #endif
 
+/*
+    @brief initialize the evaluation function
+
+    @param file                 evaluation file name
+    @return evaluation function conpletely initialized?
+*/
 inline bool init_evaluation_calc(const char* file){
     cerr << file << endl;
     FILE* fp;
@@ -563,7 +637,7 @@ inline bool init_evaluation_calc(const char* file){
             fclose(fp);
             return false;
         }
-        if (fread(eval_canput_pattern[phase_idx], 2, N_CANPUT_PATTERNS * P44 * P44, fp) < N_CANPUT_PATTERNS * P48){
+        if (fread(eval_mobility_pattern[phase_idx], 2, N_CANPUT_PATTERNS * P44 * P44, fp) < N_CANPUT_PATTERNS * P48){
             cerr << "eval.egev broken" << endl;
             fclose(fp);
             return false;
@@ -639,18 +713,42 @@ inline bool init_evaluation_calc(const char* file){
     return true;
 }
 
+/*
+    @brief Wrapper of evaluation initializing
+
+    @param file                 evaluation file name
+    @return evaluation function conpletely initialized?
+*/
 bool evaluate_init(const char* file){
     return init_evaluation_calc(file);
 }
 
+/*
+    @brief Wrapper of evaluation initializing
+
+    @param file                 evaluation file name
+    @return evaluation function conpletely initialized?
+*/
 bool evaluate_init(const string file){
     return init_evaluation_calc(file.c_str());
 }
 
+/*
+    @brief Wrapper of evaluation initializing
+
+    @return evaluation function conpletely initialized?
+*/
 bool evaluate_init(){
     return init_evaluation_calc("resources/eval.egev");
 }
 
+/*
+    @brief calculate surround value used in evaluation function
+
+    @param player               a bitboard representing player
+    @param empties              a bitboard representing empties
+    @return surround value
+*/
 #if USE_SIMD
     inline int calc_surround(const uint64_t player, const uint64_t empties){
         const u64_4 shift(1, HW, HW_M1, HW_P1);
@@ -674,6 +772,9 @@ bool evaluate_init(){
     }
 #endif
 
+/*
+    @brief pattern evaluation for harness
+*/
 #if USE_EVALUATION_HARNESS
     inline int pick_pattern(const int phase_idx, const int pattern_idx, const uint_fast8_t b_arr[], const int p0, const int p1, const int p2, const int p3, const int p4){
         return pattern_arr[0][phase_idx][pattern_idx][b_arr[p0] * P34 + b_arr[p1] * P33 + b_arr[p2] * P32 + b_arr[p3] * P31 + b_arr[p4]];
@@ -722,6 +823,13 @@ bool evaluate_init(){
     }
 #endif
 
+/*
+    @brief pattern evaluation
+
+    @param phase_idx            evaluation phase
+    @param search               search information
+    @return pattern evaluation value
+*/
 #if USE_SIMD_EVALUATION
     inline int calc_pattern_diff(const int phase_idx, Search *search){
         int *pat_com = (int*)pattern_arr[search->eval_feature_reversed][phase_idx][0];
@@ -765,17 +873,15 @@ bool evaluate_init(){
 #endif
 
 /*
-inline int create_canput_line_h(uint64_t b, uint64_t w, int t){
-    return (join_h_line(w, t) << HW) | join_h_line(b, t);
-    //return (((w >> (HW * t)) & 0b11111111) << HW) | ((b >> (HW * t)) & 0b11111111);
-}
+    @brief mobility pattern evaluation
 
-inline int create_canput_line_v(uint64_t b, uint64_t w, int t){
-    return (join_v_line(w, t) << HW) | join_v_line(b, t);
-}
+    @param phase_idx            evaluation phase
+    @param b                    board
+    @param player_mobility      player's legal moves in bitboard
+    @param opponent_mobility    opponent's legal moves in bitboard
+    @return mobility pattern evaluation value
 */
-
-inline int calc_canput_pattern(const int phase_idx, Board *b, const uint64_t player_mobility, const uint64_t opponent_mobility){
+inline int calc_mobility_pattern(const int phase_idx, Board *b, const uint64_t player_mobility, const uint64_t opponent_mobility){
     uint8_t *ph = (uint8_t*)&player_mobility;
     uint8_t *oh = (uint8_t*)&opponent_mobility;
     uint64_t p90 = rotate_90(player_mobility);
@@ -783,28 +889,30 @@ inline int calc_canput_pattern(const int phase_idx, Board *b, const uint64_t pla
     uint8_t *pv = (uint8_t*)&p90;
     uint8_t *ov = (uint8_t*)&o90;
     return 
-        eval_canput_pattern[phase_idx][0][oh[0]][ph[0]] + 
-        eval_canput_pattern[phase_idx][0][oh[7]][ph[7]] + 
-        eval_canput_pattern[phase_idx][0][ov[0]][pv[0]] + 
-        eval_canput_pattern[phase_idx][0][ov[7]][pv[7]] + 
-        eval_canput_pattern[phase_idx][1][oh[1]][ph[1]] + 
-        eval_canput_pattern[phase_idx][1][oh[6]][ph[6]] + 
-        eval_canput_pattern[phase_idx][1][ov[1]][pv[1]] + 
-        eval_canput_pattern[phase_idx][1][ov[6]][pv[6]] + 
-        eval_canput_pattern[phase_idx][2][oh[2]][ph[2]] + 
-        eval_canput_pattern[phase_idx][2][oh[5]][ph[5]] + 
-        eval_canput_pattern[phase_idx][2][ov[2]][pv[2]] + 
-        eval_canput_pattern[phase_idx][2][ov[5]][pv[5]] + 
-        eval_canput_pattern[phase_idx][3][oh[3]][ph[3]] + 
-        eval_canput_pattern[phase_idx][3][oh[4]][ph[4]] + 
-        eval_canput_pattern[phase_idx][3][ov[3]][pv[3]] + 
-        eval_canput_pattern[phase_idx][3][ov[4]][pv[4]];
+        eval_mobility_pattern[phase_idx][0][oh[0]][ph[0]] + 
+        eval_mobility_pattern[phase_idx][0][oh[7]][ph[7]] + 
+        eval_mobility_pattern[phase_idx][0][ov[0]][pv[0]] + 
+        eval_mobility_pattern[phase_idx][0][ov[7]][pv[7]] + 
+        eval_mobility_pattern[phase_idx][1][oh[1]][ph[1]] + 
+        eval_mobility_pattern[phase_idx][1][oh[6]][ph[6]] + 
+        eval_mobility_pattern[phase_idx][1][ov[1]][pv[1]] + 
+        eval_mobility_pattern[phase_idx][1][ov[6]][pv[6]] + 
+        eval_mobility_pattern[phase_idx][2][oh[2]][ph[2]] + 
+        eval_mobility_pattern[phase_idx][2][oh[5]][ph[5]] + 
+        eval_mobility_pattern[phase_idx][2][ov[2]][pv[2]] + 
+        eval_mobility_pattern[phase_idx][2][ov[5]][pv[5]] + 
+        eval_mobility_pattern[phase_idx][3][oh[3]][ph[3]] + 
+        eval_mobility_pattern[phase_idx][3][oh[4]][ph[4]] + 
+        eval_mobility_pattern[phase_idx][3][ov[3]][pv[3]] + 
+        eval_mobility_pattern[phase_idx][3][ov[4]][pv[4]];
 }
 
-inline int end_evaluate(Board *b){
-    return b->score_player();
-}
+/*
+    @brief midgame evaluation function
 
+    @param b                    board
+    @return evaluation value
+*/
 #if USE_EVALUATION_HARNESS
     inline int mid_evaluate(Board *b){
         int phase_idx, sur0, sur1, canput0, canput1, num0, num1;
@@ -825,7 +933,7 @@ inline int end_evaluate(Board *b){
             eval_sur0_sur1_arr[phase_idx][sur0][sur1] + 
             eval_canput0_canput1_arr[phase_idx][canput0][canput1] + 
             eval_num0_num1_arr[phase_idx][num0][num1] + 
-            calc_canput_pattern(phase_idx, b, player_mobility, opponent_mobility);
+            calc_mobility_pattern(phase_idx, b, player_mobility, opponent_mobility);
         res += res > 0 ? STEP_2 : (res < 0 ? -STEP_2 : 0);
         res /= STEP;
         return max(-SCORE_MAX, min(SCORE_MAX, res));
@@ -854,13 +962,19 @@ inline int end_evaluate(Board *b){
             eval_sur0_sur1_arr[phase_idx][sur0][sur1] + 
             eval_canput0_canput1_arr[phase_idx][canput0][canput1] + 
             eval_num0_num1_arr[phase_idx][num0][num1] + 
-            calc_canput_pattern(phase_idx, &search.board, player_mobility, opponent_mobility);
+            calc_mobility_pattern(phase_idx, &search.board, player_mobility, opponent_mobility);
         res += res >= 0 ? STEP_2 : -STEP_2;
         res /= STEP;
         return max(-SCORE_MAX, min(SCORE_MAX, res));
     }
 #endif
 
+/*
+    @brief midgame evaluation function
+
+    @param search               search information
+    @return evaluation value
+*/
 inline int mid_evaluate_diff(Search *search){
     uint64_t player_mobility, opponent_mobility;
     player_mobility = calc_legal(search->board.player, search->board.opponent);
@@ -881,13 +995,18 @@ inline int mid_evaluate_diff(Search *search){
         eval_sur0_sur1_arr[phase_idx][sur0][sur1] + 
         eval_canput0_canput1_arr[phase_idx][canput0][canput1] + 
         eval_num0_num1_arr[phase_idx][num0][num1] + 
-        calc_canput_pattern(phase_idx, &search->board, player_mobility, opponent_mobility);
+        calc_mobility_pattern(phase_idx, &search->board, player_mobility, opponent_mobility);
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
     return max(-SCORE_MAX, min(SCORE_MAX, res));
 }
 
 #if USE_SIMD_EVALUATION
+    /*
+        @brief calculate features for pattern evaluation
+
+        @param search               search information
+    */
     inline void calc_features(Search *search){
         int b_arr_int[HW2 + 1];
         search->board.translate_to_arr_player_rev(b_arr_int);
@@ -905,6 +1024,12 @@ inline int mid_evaluate_diff(Search *search){
         search->eval_feature_reversed = 0;
     }
 
+    /*
+        @brief move evaluation features
+
+        @param search               search information
+        @param flip                 flip information
+    */
     inline void eval_move(Search *search, const Flip *flip){
         uint_fast8_t cell;
         uint64_t f;
@@ -952,6 +1077,12 @@ inline int mid_evaluate_diff(Search *search){
         search->eval_feature_reversed ^= 1;
     }
 
+    /*
+        @brief undo evaluation features
+
+        @param search               search information
+        @param flip                 flip information
+    */
     inline void eval_undo(Search *search, const Flip *flip){
         search->eval_feature_reversed ^= 1;
         uint_fast8_t cell;
@@ -1074,3 +1205,13 @@ inline int mid_evaluate_diff(Search *search){
         }
     }
 #endif
+
+/*
+    @brief evaluation function for game over
+
+    @param b                    board
+    @return final score
+*/
+inline int end_evaluate(Board *b){
+    return b->score_player();
+}
