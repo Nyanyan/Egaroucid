@@ -1,6 +1,8 @@
 /*
     Egaroucid Project
 
+    @file common.hpp
+        Common things
     @date 2021-2022
     @author Takuto Yamana (a.k.a Nyanyan)
     @license GPL-3.0 license
@@ -13,8 +15,7 @@
 #include <string>
 #include "setting.hpp"
 
-using namespace std;
-
+// board size definition
 #define HW 8
 #define HW_M1 7
 #define HW_P1 9
@@ -22,41 +23,71 @@ using namespace std;
 #define HW2_M1 63
 #define HW2_P1 65
 
+// score definition
 #define SCORE_MAX 64
 
 #define N_8BIT 256
-#define N_DIAG_LINE 11
-#define N_DIAG_LINE_M1 10
 
+// color definition
 #define BLACK 0
 #define WHITE 1
 #define VACANT 2
 
+// evaluation phase definition
 #define N_PHASES 30
 #define PHASE_N_STONES 2
 
+// constant
 #define INF 100000000
 
+// undefined legal bitboard: set bit on d4, d5, e4, and e5
 #define LEGAL_UNDEFINED 0x0000001818000000ULL
 
+/*
+    @brief timing function
+
+    @return time in milliseconds
+*/
 inline uint64_t tim(){
-    return chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now().time_since_epoch()).count();
+    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
 }
 
 mt19937 raw_myrandom(tim());
 
+/*
+    @brief random function
+
+    @return random value from 0.0 to 1.0 (not including 1.0)
+*/
 inline double myrandom(){
     return (double)raw_myrandom() / mt19937::max();
 }
 
+/*
+    @brief randrange function
+
+    @param s                    minimum integer
+    @param e                    maximum integer
+    @return random integer from s to e - 1
+*/
 inline int32_t myrandrange(int32_t s, int32_t e){
     return s +(int)((e - s) * myrandom());
 }
 
+/*
+    @brief random integer function
+
+    @return random 32bit integer
+*/
 inline uint32_t myrand_uint(){
     return (uint32_t)raw_myrandom();
 }
 
+/*
+    @brief random integer function with bit reversed
+
+    @return random 32bit integer with reversed bits
+*/
 inline uint32_t myrand_uint_rev(){
     uint32_t x = raw_myrandom();
     x = ((x & 0x55555555U) << 1) | ((x & 0xAAAAAAAAU) >> 1);
@@ -66,8 +97,14 @@ inline uint32_t myrand_uint_rev(){
     return ((x & 0x0000FFFFU) << 16) | ((x & 0xFFFF0000U) >> 16);
 }
 
+/*
+    @brief random integer function
+
+    @return random 64bit integer
+*/
 inline uint64_t myrand_ull(){
     return ((uint64_t)raw_myrandom() << 32) | (uint64_t)raw_myrandom();
 }
 
+// set false to stop all search immediately
 bool global_searching = true;
