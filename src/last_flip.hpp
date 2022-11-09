@@ -1,6 +1,8 @@
 /*
     Egaroucid Project
 
+    @file last_flip.hpp
+        calculate number of flipped discs in the last move
     @date 2021-2022
     @author Takuto Yamana (a.k.a. Nyanyan)
     @license GPL-3.0 license
@@ -12,8 +14,9 @@
 #include "common.hpp"
 #include "bit.hpp"
 
-using namespace std;
-
+/*
+    @brief constant of number of flipping discs
+*/
 constexpr int_fast8_t n_flip_pre_calc[N_8BIT][HW] = {
     {0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 1, 2, 3, 4, 5, 6}, {0, 0, 0, 1, 2, 3, 4, 5}, {0, 0, 0, 1, 2, 3, 4, 5}, {1, 0, 0, 0, 1, 2, 3, 4}, {0, 0, 0, 0, 1, 2, 3, 4}, {0, 0, 0, 0, 1, 2, 3, 4}, {0, 0, 0, 0, 1, 2, 3, 4}, 
     {2, 1, 0, 0, 0, 1, 2, 3}, {0, 1, 1, 0, 0, 1, 2, 3}, {0, 0, 0, 0, 0, 1, 2, 3}, {0, 0, 0, 0, 0, 1, 2, 3}, {1, 0, 0, 0, 0, 1, 2, 3}, {0, 0, 0, 0, 0, 1, 2, 3}, {0, 0, 0, 0, 0, 1, 2, 3}, {0, 0, 0, 0, 0, 1, 2, 3},
@@ -49,12 +52,20 @@ constexpr int_fast8_t n_flip_pre_calc[N_8BIT][HW] = {
     {2, 1, 0, 0, 0, 0, 0, 0}, {0, 1, 1, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0}, {1, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0}
 };
 
+/*
+    @brief calculate number of flipped discs in the last move
+
+    @param player               a bitboard representing player
+    @param opponent             a bitboard representing opponent
+    @param place                a place to put
+    @return number of flipping discs
+*/
 inline int_fast8_t count_last_flip(uint64_t player, uint64_t opponent, const uint_fast8_t place){
     const int t = place >> 3;
     const int u = place & 7;
     return
         n_flip_pre_calc[join_h_line(player, t)][u] + 
         n_flip_pre_calc[join_v_line(player, u)][t] + 
-        n_flip_pre_calc[join_d7_line(player, u + t)][min(t, 7 - u)] + 
-        n_flip_pre_calc[join_d9_line(player, u + 7 - t)][min(t, u)];
+        n_flip_pre_calc[join_d7_line(player, u + t)][std::min(t, 7 - u)] + 
+        n_flip_pre_calc[join_d9_line(player, u + 7 - t)][std::min(t, u)];
 }
