@@ -1,6 +1,8 @@
 /*
     Egaroucid Project
 
+    @file parallel.hpp
+        Structures for parallel search
     @date 2021-2022
     @author Takuto Yamana (a.k.a. Nyanyan)
     @license GPL-3.0 license
@@ -12,6 +14,14 @@
 #include "setting.hpp"
 #include "board.hpp"
 
+/*
+    @brief Structure for Parallel search
+
+    @param value                search result
+    @param n_nodes              number of nodes visited
+    @param cell                 last move (for transposition table)
+    @param mpc_used             MPC used? (for transposition table)
+*/
 struct Parallel_task{
     int value;
     uint64_t n_nodes;
@@ -26,27 +36,4 @@ struct Parallel_task{
         res.mpc_used = mpc_used;
         return res;
     }
-};
-
-struct Parallel_args{
-    uint64_t player;
-    uint64_t opponent;
-    uint_fast8_t n_discs;
-    uint_fast8_t parity;
-    bool use_mpc;
-    double mpct;
-    int alpha;
-    int beta;
-    int depth;
-    uint64_t legal;
-    bool is_end_search;
-    uint_fast8_t policy;
-};
-
-struct Parallel_node{
-    bool is_waiting;
-    bool is_helping;
-    function<Parallel_task()> help_task;
-    int help_res;
-    Parallel_node *parent;
 };
