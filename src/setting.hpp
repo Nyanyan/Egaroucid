@@ -30,8 +30,8 @@
 #define USE_BUILTIN_NTZ true
 #define USE_MINUS_NTZ false
 
-// last parity ordering optimisation
-#define LAST_PO_OPTIMISE true
+// last parity ordering optimization
+#define LAST_PO_OPTIMIZE true
 
 // use probcut to predict it seems to be an all node
 #define USE_ALL_NODE_PREDICTION false
