@@ -1,6 +1,8 @@
 ﻿/*
     Egaroucid Project
 
+    @file midsearch.hpp
+        Search midgame
     @date 2021-2022
     @author Takuto Yamana (a.k.a. Nyanyan)
     @license GPL-3.0 license
@@ -25,8 +27,18 @@
 #include "endsearch.hpp"
 #include "midsearch_nws.hpp"
 
-using namespace std;
+/*
+    @brief Get a value with last move with Nega-Alpha algorithm
 
+    No move ordering. Just search it.
+
+    @param search               search information
+    @param alpha                alpha value
+    @param beta                 beta value
+    @param skipped              already passed?
+    @param searching            flag for terminating this search
+    @return the value
+*/
 inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, const bool *searching){
     if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
@@ -66,6 +78,19 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, c
 }
 
 #if MID_FAST_DEPTH > 1
+    /*
+        @brief Get a value with last few moves with Nega-Alpha algorithm
+
+        No move ordering. Just search it.
+
+        @param search               search information
+        @param alpha                alpha value
+        @param beta                 beta value
+        @param depth                remaining depth
+        @param skipped              already passed?
+        @param searching            flag for terminating this search
+        @return the value
+    */
     int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped, const bool *searching){
         if (!global_searching || !(*searching))
             return SCORE_UNDEFINED;
@@ -110,6 +135,21 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, c
 #endif
 
 #if USE_NEGA_ALPHA_ORDERING
+    /*
+        @brief Get a value with given depth with Nega-Alpha algorithm
+
+        Search with move ordering for midgame
+
+        @param search               search information
+        @param alpha                alpha value
+        @param beta                 beta value
+        @param depth                remaining depth
+        @param skipped              already passed?
+        @param legal                for use of previously calculated legal bitboard
+        @param is_end_search        search till the end?
+        @param searching            flag for terminating this search
+        @return the value
+    */
     int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching){
         if (!global_searching || !(*searching))
             return SCORE_UNDEFINED;
@@ -236,6 +276,21 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, c
     }
 #endif
 
+/*
+    @brief Get a value with given depth with Negascout algorithm
+
+    Search with move ordering for midgame
+
+    @param search               search information
+    @param alpha                alpha value
+    @param beta                 beta value
+    @param depth                remaining depth
+    @param skipped              already passed?
+    @param legal                for use of previously calculated legal bitboard
+    @param is_end_search        search till the end?
+    @param searching            flag for terminating this search
+    @return the value
+*/
 int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching){
     if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
@@ -256,7 +311,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
             uint_fast8_t p1 = next_bit(&empties);
             uint_fast8_t p2 = next_bit(&empties);
             uint_fast8_t p3 = next_bit(&empties);
-            return last4(search, alpha, beta, p0, p1, p2, p3, false);
+            return last4(search, alpha, beta, p0, p1, p2, p3, false, searching);
         }
     #endif
     if (!is_end_search){
@@ -384,6 +439,22 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     return v;
 }
 
+/*
+    @brief Wrapper of nega_scout
+
+    This function is used in root node
+
+    @param search               search information
+    @param alpha                alpha value
+    @param beta                 beta value
+    @param depth                remaining depth
+    @param skipped              already passed?
+    @param is_end_search        search till the end?
+    @param is_main_search       is this main search? (used for logging)
+    @param best_move            previously calculated best move
+    @param clogs                previously found clog moves
+    @return pair of value and best move
+*/
 pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, bool is_end_search, const bool is_main_search, int best_move, const vector<Clog_result> clogs){
     bool searching = true;
     ++(search->n_nodes);
