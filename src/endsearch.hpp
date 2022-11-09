@@ -26,10 +26,12 @@
 #include "parallel.hpp"
 #include "ybwc.hpp"
 
-inline bool ybwc_split_end(const Search *search, const Flip *flip, int alpha, int beta, uint64_t legal, const bool *searching, uint_fast8_t policy, const int canput, const int pv_idx, const int split_count, vector<future<Parallel_task>> &parallel_tasks);
-inline void ybwc_get_end_tasks(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *alpha);
-inline void ybwc_wait_all(Search *search, vector<future<Parallel_task>> &parallel_tasks);
-inline void ybwc_wait_all(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *alpha, int beta, bool *searching);
+#if USE_NEGA_ALPHA_END && MID_TO_END_DEPTH < YBWC_END_SPLIT_MIN_DEPTH
+    inline bool ybwc_split_end(const Search *search, int alpha, int beta, uint64_t legal, const bool *searching, uint_fast8_t policy, const int canput, const int pv_idx, const int split_count, vector<future<Parallel_task>> &parallel_tasks);
+    inline void ybwc_get_end_tasks(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *alpha);
+    inline void ybwc_wait_all(Search *search, vector<future<Parallel_task>> &parallel_tasks);
+    inline void ybwc_wait_all(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *alpha, int beta, bool *searching);
+#endif
 
 /*
     @brief Get a final score with last 2 empties
@@ -641,7 +643,7 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
                     for (int move_idx = 0; move_idx < canput; ++move_idx){
                         swap_next_best_move(move_list, move_idx, canput);
                         search->move(&move_list[move_idx].flip);
-                            if (ybwc_split_end(search, &move_list[move_idx].flip, -beta, -alpha, move_list[move_idx].n_legal, &n_searching, move_list[move_idx].flip.pos, canput, pv_idx++, seems_to_be_all_node, split_count, parallel_tasks)){
+                            if (ybwc_split_end(search, -beta, -alpha, move_list[move_idx].n_legal, &n_searching, move_list[move_idx].flip.pos, canput, pv_idx++, seems_to_be_all_node, split_count, parallel_tasks)){
                                 ++split_count;
                             } else{
                                 g = -nega_alpha_end(search, -beta, -alpha, false, move_list[move_idx].n_legal, searching);

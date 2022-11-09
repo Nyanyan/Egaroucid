@@ -27,11 +27,9 @@
 #include "parallel.hpp"
 
 #if MID_TO_END_DEPTH < YBWC_END_SPLIT_MIN_DEPTH
-    inline bool ybwc_split_end_nws(const Search *search, const Flip *flip, int alpha, uint64_t legal, const bool *searching, uint_fast8_t policy, const int canput, const int pv_idx, const int split_count, vector<future<Parallel_task>> &parallel_tasks);
-    inline void ybwc_get_end_tasks_nws(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v);
+    inline bool ybwc_split_end_nws(const Search *search, int alpha, uint64_t legal, const bool *searching, uint_fast8_t policy, const int canput, const int pv_idx, const int split_count, vector<future<Parallel_task>> &parallel_tasks);
     inline void ybwc_get_end_tasks(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v, int *best_move);
     inline void ybwc_wait_all(Search *search, vector<future<Parallel_task>> &parallel_tasks);
-    inline void ybwc_wait_all_nws(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v, int alpha, bool *searching);
     inline void ybwc_wait_all_nws(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int alpha, bool *searching);
 #endif
 
@@ -574,7 +572,7 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
                 for (int move_idx = 0; move_idx < canput; ++move_idx){
                     swap_next_best_move(move_list, move_idx, canput);
                     search->move(&move_list[move_idx].flip);
-                        if (ybwc_split_end_nws(search, &move_list[move_idx].flip, -alpha - 1, move_list[move_idx].n_legal, &n_searching, move_list[move_idx].flip.pos, canput, pv_idx++, seems_to_be_all_node, split_count, parallel_tasks)){
+                        if (ybwc_split_end_nws(search, -alpha - 1, move_list[move_idx].n_legal, &n_searching, move_list[move_idx].flip.pos, canput, pv_idx++, seems_to_be_all_node, split_count, parallel_tasks)){
                             ++split_count;
                         } else{
                             g = -nega_alpha_end_nws(search, -alpha - 1, false, move_list[move_idx].n_legal, searching);

@@ -1,6 +1,8 @@
 /*
     Egaroucid Project
 
+    @file ybwc.hpp
+        Parallel search with YBWC (Young Brothers Wait Concept)
     @date 2021-2022
     @author Takuto Yamana (a.k.a. Nyanyan)
     @license GPL-3.0 license
@@ -16,6 +18,9 @@
 #include "parallel.hpp"
 #include "thread_pool.hpp"
 
+/*
+    @brief YBWC splitting depth threshold
+*/
 #define YBWC_MID_SPLIT_MIN_DEPTH 5
 #define YBWC_END_SPLIT_MIN_DEPTH 13
 
@@ -27,6 +32,24 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
     int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, const bool *searching);
 #endif
 
+/*
+    @brief Wrapper for parallel NWS (Null Window Search)
+
+    @param id                   id for thread pool (not used at all)
+    @param player               a bitboard representing player
+    @param opponent             a bitboard representing opponent
+    @param n_discs              number of discs on the board
+    @param parity               parity of the board
+    @param use_mpc              use MPC (Multi-ProbCut)?
+    @param mpct                 MPC (Multi-ProbCut) probability
+    @param alpha                alpha value
+    @param depth                remaining depth
+    @param legal                for use of previously calculated legal bitboard
+    @param is_end_search        search till the end?
+    @param policy               the last move
+    @param searching            flag for terminating this search
+    @return the result in Parallel_task structure
+*/
 Parallel_task ybwc_do_task_nws(int id, uint64_t player, uint64_t opponent, int_fast8_t n_discs, uint_fast8_t parity, bool use_mpc, double mpct, int alpha, int depth, uint64_t legal, bool is_end_search, uint_fast8_t policy, const bool *searching){
     Search search;
     search.board.player = player;
@@ -48,7 +71,24 @@ Parallel_task ybwc_do_task_nws(int id, uint64_t player, uint64_t opponent, int_f
     return task;
 }
 
-inline bool ybwc_split_nws(const Search *search, const Flip *flip, int alpha, int depth, uint64_t legal, bool is_end_search, const bool *searching, uint_fast8_t policy, const int canput, const int pv_idx, const bool seems_to_be_all_node, const int split_count, vector<future<Parallel_task>> &parallel_tasks){
+/*
+    @brief Try to do parallel NWS (Null Window Search)
+
+    @param search               searching information
+    @param alpha                alpha value
+    @param depth                remaining depth
+    @param legal                for use of previously calculated legal bitboard
+    @param is_end_search        search till the end?
+    @param searching            flag for terminating this search
+    @param policy               the last move
+    @param canput               number of legal moves
+    @param pv_idx               the priority of this move
+    @param seems_to_be_all_node     this node seems to be ALL node?
+    @param split_count          number of splitted nodes here
+    @param parallel_tasks       vector of splitted tasks
+    @return task splitted?
+*/
+inline bool ybwc_split_nws(const Search *search, int alpha, int depth, uint64_t legal, bool is_end_search, const bool *searching, uint_fast8_t policy, const int canput, const int pv_idx, const bool seems_to_be_all_node, const int split_count, std::vector<std::future<Parallel_task>> &parallel_tasks){
     if (thread_pool.n_idle() &&
         (pv_idx || seems_to_be_all_node)){
             bool pushed;
@@ -62,6 +102,21 @@ inline bool ybwc_split_nws(const Search *search, const Flip *flip, int alpha, in
 
 #if MID_TO_END_DEPTH < YBWC_END_SPLIT_MIN_DEPTH
     #if USE_NEGA_ALPHA_END
+        /*
+            @brief Wrapper for parallel endgame search
+
+            @param id                   id for thread pool (not used at all)
+            @param player               a bitboard representing player
+            @param opponent             a bitboard representing opponent
+            @param n_discs              number of discs on the board
+            @param parity               parity of the board
+            @param alpha                alpha value
+            @param beta                 beta value
+            @param legal                for use of previously calculated legal bitboard
+            @param policy               the last move
+            @param searching            flag for terminating this search
+            @return the result in Parallel_task structure
+        */
         Parallel_task ybwc_do_task_end(int id, uint64_t player, uint64_t opponent, int_fast8_t n_discs, uint_fast8_t parity, int alpha, int beta, uint64_t legal, uint_fast8_t policy, const bool *searching){
             Search search;
             search.board.player = player;
@@ -83,7 +138,23 @@ inline bool ybwc_split_nws(const Search *search, const Flip *flip, int alpha, in
             return task;
         }
 
-        inline bool ybwc_split_end(const Search *search, const Flip *flip, int alpha, int beta, uint64_t legal, const bool *searching, uint_fast8_t policy, const int canput, const int pv_idx, const bool seems_to_be_all_node, const int split_count, vector<future<Parallel_task>> &parallel_tasks){
+        /*
+            @brief Try to do parallel endgame search
+
+            @param search               searching information
+            @param alpha                alpha value
+            @param beta                 beta value
+            @param legal                for use of previously calculated legal bitboard
+            @param searching            flag for terminating this search
+            @param policy               the last move
+            @param canput               number of legal moves
+            @param pv_idx               the priority of this move
+            @param seems_to_be_all_node     this node seems to be ALL node?
+            @param split_count          number of splitted nodes here
+            @param parallel_tasks       vector of splitted tasks
+            @return task splitted?
+        */
+        inline bool ybwc_split_end(const Search *search, int alpha, int beta, uint64_t legal, const bool *searching, uint_fast8_t policy, const int canput, const int pv_idx, const bool seems_to_be_all_node, const int split_count, std::vector<std::future<Parallel_task>> &parallel_tasks){
             if (thread_pool.n_idle() &&
                 (pv_idx || seems_to_be_all_node) && 
                 search->n_discs <= HW2 - YBWC_END_SPLIT_MIN_DEPTH){
@@ -97,6 +168,20 @@ inline bool ybwc_split_nws(const Search *search, const Flip *flip, int alpha, in
         }
     #endif
 
+    /*
+        @brief Wrapper for parallel endgame NWS (Null Window Search)
+
+        @param id                   id for thread pool (not used at all)
+        @param player               a bitboard representing player
+        @param opponent             a bitboard representing opponent
+        @param n_discs              number of discs on the board
+        @param parity               parity of the board
+        @param alpha                alpha value
+        @param legal                for use of previously calculated legal bitboard
+        @param policy               the last move
+        @param searching            flag for terminating this search
+        @return the result in Parallel_task structure
+    */
     Parallel_task ybwc_do_task_end_nws(int id, uint64_t player, uint64_t opponent, int_fast8_t n_discs, uint_fast8_t parity, int alpha, uint64_t legal, uint_fast8_t policy, const bool *searching){
         Search search;
         search.board.player = player;
@@ -118,7 +203,22 @@ inline bool ybwc_split_nws(const Search *search, const Flip *flip, int alpha, in
         return task;
     }
 
-    inline bool ybwc_split_end_nws(const Search *search, const Flip *flip, int alpha, uint64_t legal, const bool *searching, uint_fast8_t policy, const int canput, const int pv_idx, const bool seems_to_be_all_node, const int split_count, vector<future<Parallel_task>> &parallel_tasks){
+    /*
+        @brief Try to do parallel endgame NWS (Null Window Search)
+
+        @param search               searching information
+        @param alpha                alpha value
+        @param legal                for use of previously calculated legal bitboard
+        @param searching            flag for terminating this search
+        @param policy               the last move
+        @param canput               number of legal moves
+        @param pv_idx               the priority of this move
+        @param seems_to_be_all_node     this node seems to be ALL node?
+        @param split_count          number of splitted nodes here
+        @param parallel_tasks       vector of splitted tasks
+        @return task splitted?
+    */
+    inline bool ybwc_split_end_nws(const Search *search, int alpha, uint64_t legal, const bool *searching, uint_fast8_t policy, const int canput, const int pv_idx, const bool seems_to_be_all_node, const int split_count, std::vector<std::future<Parallel_task>> &parallel_tasks){
         if (thread_pool.n_idle() &&
             (pv_idx || seems_to_be_all_node) && 
             search->n_discs <= HW2 - YBWC_END_SPLIT_MIN_DEPTH){
@@ -132,9 +232,17 @@ inline bool ybwc_split_nws(const Search *search, const Flip *flip, int alpha, in
     }
 #endif
 
-inline void ybwc_get_end_tasks(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v, int *best_move){
+/*
+    @brief Get end tasks of YBWC
+
+    @param search               search information
+    @param parallel_tasks       vector of splitted tasks
+    @param v                    value to store
+    @param best_move            best move to store
+*/
+inline void ybwc_get_end_tasks(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, int *v, int *best_move){
     Parallel_task got_task;
-    for (future<Parallel_task> &task: parallel_tasks){
+    for (std::future<Parallel_task> &task: parallel_tasks){
         if (task.valid()){
             if (task.wait_for(chrono::seconds(0)) == future_status::ready){
                 got_task = task.get();
@@ -148,52 +256,55 @@ inline void ybwc_get_end_tasks(Search *search, vector<future<Parallel_task>> &pa
     }
 }
 
-inline void ybwc_get_end_tasks(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *alpha){
+/*
+    @brief Get end tasks of YBWC
+
+    @param search               search information
+    @param parallel_tasks       vector of splitted tasks
+    @param v                    value to store
+    @param best_move            best move to store
+    @param alpha                alpha value to store
+*/
+inline void ybwc_get_end_tasks(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *alpha){
     ybwc_get_end_tasks(search, parallel_tasks, v, best_move);
     *alpha = max((*alpha), (*v));
 }
 
-inline void ybwc_get_end_tasks_nws(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v){
+/*
+    @brief Wait all running tasks
+
+    For fail high
+
+    @param search               search information
+    @param parallel_tasks       vector of splitted tasks
+*/
+inline void ybwc_wait_all(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks){
     Parallel_task got_task;
-    for (future<Parallel_task> &task: parallel_tasks){
+    for (std::future<Parallel_task> &task: parallel_tasks){
         if (task.valid()){
-            if (task.wait_for(chrono::seconds(0)) == future_status::ready){
-                got_task = task.get();
-                if (*v < got_task.value)
-                    *v = got_task.value;
-                search->n_nodes += got_task.n_nodes;
-            }
+            got_task = task.get();
+            search->n_nodes += got_task.n_nodes;
         }
     }
 }
 
-inline void ybwc_get_end_tasks_nws(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v, int *best_move){
-    Parallel_task got_task;
-    for (future<Parallel_task> &task: parallel_tasks){
-        if (task.valid()){
-            if (task.wait_for(chrono::seconds(0)) == future_status::ready){
-                got_task = task.get();
-                if (*v < got_task.value){
-                    *v = got_task.value;
-                    *best_move = got_task.cell;
-                }
-                search->n_nodes += got_task.n_nodes;
-            }
-        }
-    }
-}
+/*
+    @brief Wait all running tasks
 
-
-
-
-
-
-inline void ybwc_wait_all(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *alpha, int beta, bool *searching){
+    @param search               search information
+    @param parallel_tasks       vector of splitted tasks
+    @param v                    value to store
+    @param best_move            best move to store
+    @param alpha                alpha value to store
+    @param beta                 beta value
+    @param searching            flag for terminating this search
+*/
+inline void ybwc_wait_all(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *alpha, int beta, bool *searching){
     ybwc_get_end_tasks(search, parallel_tasks, v, best_move, alpha);
     if (beta <= (*alpha))
         *searching = false;
     Parallel_task got_task;
-    for (future<Parallel_task> &task: parallel_tasks){
+    for (std::future<Parallel_task> &task: parallel_tasks){
         if (task.valid()){
             got_task = task.get();
             search->n_nodes += got_task.n_nodes;
@@ -208,27 +319,27 @@ inline void ybwc_wait_all(Search *search, vector<future<Parallel_task>> &paralle
     *alpha = max((*alpha), (*v));
 }
 
-inline void ybwc_wait_all(Search *search, vector<future<Parallel_task>> &parallel_tasks){
-    Parallel_task got_task;
-    for (future<Parallel_task> &task: parallel_tasks){
-        if (task.valid()){
-            got_task = task.get();
-            search->n_nodes += got_task.n_nodes;
-        }
-    }
-}
+/*
+    @brief Wait all running tasks for NWS (Null Window Search)
 
-inline void ybwc_wait_all_nws(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v, int alpha, bool *searching){
-    ybwc_get_end_tasks_nws(search, parallel_tasks, v);
+    @param search               search information
+    @param parallel_tasks       vector of splitted tasks
+    @param v                    value to store
+    @param best_move            best move to store
+    @param alpha                alpha value
+    @param searching            flag for terminating this search
+*/
+inline void ybwc_wait_all_nws(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int alpha, bool *searching){
+    ybwc_get_end_tasks(search, parallel_tasks, v, best_move);
     if (alpha < (*v))
         *searching = false;
     Parallel_task got_task;
-    for (future<Parallel_task> &task: parallel_tasks){
+    for (std::future<Parallel_task> &task: parallel_tasks){
         if (task.valid()){
             got_task = task.get();
             search->n_nodes += got_task.n_nodes;
             if ((*v) < got_task.value && (*searching)){
-                //*best_move = got_task.cell;
+                *best_move = got_task.cell;
                 *v = got_task.value;
                 if (alpha < (*v))
                     *searching = false;
@@ -237,12 +348,23 @@ inline void ybwc_wait_all_nws(Search *search, vector<future<Parallel_task>> &par
     }
 }
 
-inline void ybwc_wait_all_nws(Search *search, vector<future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int alpha, bool *searching, bool *mpc_used){
+/*
+    @brief Wait all running tasks for NWS (Null Window Search)
+
+    @param search               search information
+    @param parallel_tasks       vector of splitted tasks
+    @param v                    value to store
+    @param best_move            best move to store
+    @param alpha                alpha value
+    @param searching            flag for terminating this search
+    @param mpc_used             mpc used flag to store             
+*/
+inline void ybwc_wait_all_nws(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int alpha, bool *searching, bool *mpc_used){
     ybwc_get_end_tasks(search, parallel_tasks, v, best_move);
     if (alpha < (*v))
         *searching = false;
     Parallel_task got_task;
-    for (future<Parallel_task> &task: parallel_tasks){
+    for (std::future<Parallel_task> &task: parallel_tasks){
         if (task.valid()){
             got_task = task.get();
             search->n_nodes += got_task.n_nodes;

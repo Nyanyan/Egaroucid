@@ -92,7 +92,7 @@ inline bool clog_split(const Clog_search *search, const int canput, const int pv
     @brief Wait all splitted parallel tasks
 
     @param search               searching information
-    @param parallel_tasks       if task splitted, push the task in this vector
+    @param parallel_tasks       vector of splitted tasks
     @return best score
 */
 inline int clog_wait_all(Clog_search *search, std::vector<std::future<Parallel_clog_task>> &parallel_tasks){
