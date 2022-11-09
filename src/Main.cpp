@@ -8,8 +8,8 @@
 
 #include <iostream>
 #include <future>
-#include "ai.hpp"
-#include "gui/gui.hpp"
+#include "all.hpp"
+#include "gui/gui_all.hpp"
 
 
 using namespace std;

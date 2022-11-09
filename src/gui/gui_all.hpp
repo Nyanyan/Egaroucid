@@ -10,7 +10,7 @@
 #include "silent_load.hpp"
 #include "load.hpp"
 #include "main_scene.hpp"
-#include "book.hpp"
+#include "book_scene.hpp"
 #include "input.hpp"
 #include "output.hpp"
 #include "close.hpp"
