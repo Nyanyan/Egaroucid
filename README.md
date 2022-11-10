@@ -1,5 +1,8 @@
 # Egaroucid
+
 One of the strongest Othello AI Application in the world
+
+See also https://www.egaroucid.nyanyan.dev/en/
 
 
 
