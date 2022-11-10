@@ -151,3 +151,27 @@ void print_special_commandline_options(std::vector<Commandline_option> commandli
         std::exit(0);
     }
 }
+
+void print_board_info(Board_info *board){
+    uint64_t black = board->board.player;
+    uint64_t white = board->board.opponent;
+    if (board->player == WHITE)
+        std::swap(black, white);
+    std::cout << "  ";
+    for (int x = 0; x < HW; ++x)
+        std::cout << (char)('a' + x) << " ";
+    std::cout << std::endl;
+    for (int y = 0; y < HW; ++y){
+        std::cout << y + 1 << " ";
+        for (int x = 0; x < HW; ++x){
+            int cell = HW2_M1 - (y * HW + x);
+            if (1 & (black >> cell))
+                std::cout << "X ";
+            else if (1 & (white >> cell))
+                std::cout << "O ";
+            else
+                std::cout << ". ";
+        }
+        std::cout << std::endl;
+    }
+}

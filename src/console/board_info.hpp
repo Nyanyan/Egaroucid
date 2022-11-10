@@ -16,14 +16,16 @@
 struct Board_info{
     Board board;
     uint_fast8_t player;
-    bool game_over;
     int put_cells[HW2 - 4];
+    Board first_board;
+    uint_fast8_t first_player;
 
     void reset(){
         board.reset();
         player = BLACK;
-        game_over = false;
         for (int i = 0; i < HW2 - 4; ++i)
             put_cells[i] = INVALID_CELL;
+        first_board.reset();
+        first_player = BLACK;
     }
 };
