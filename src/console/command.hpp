@@ -130,8 +130,8 @@ void redo(Board_info *board, int remain){
 }
 
 void check_command(Board_info *board, State *state, Options *options){
-    std::cout << std::endl;
     print_board_info(board);
+    std::cout << std::endl;
     std::string cmd_line = get_command_line();
     std::string cmd, arg;
     split_cmd_arg(cmd_line, &cmd, &arg);
