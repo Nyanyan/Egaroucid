@@ -28,8 +28,8 @@ src/test/ignore
 /evaluation_test/graph
 /src/build
 /src/test/resources
-src_web/*.js
-src_web/*.wasm
+src/ai.js
+src/ai.wasm
 statistics/data
 statistics/statistics
 statistics/resources

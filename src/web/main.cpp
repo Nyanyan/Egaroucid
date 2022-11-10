@@ -1,13 +1,16 @@
 /*
     Egaroucid for Web Project
 
+    @file Egaroucid_for_web.cpp
+        Main file for Egaroucid for Web
+
     @date 2021-2022
     @author Takuto Yamana (a.k.a Nyanyan)
     @license GPL-3.0 license
 */
 
 #include <iostream>
-#include "ai.hpp"
+#include "web/ai.hpp"
 
 inline void init(){
     board_init();
