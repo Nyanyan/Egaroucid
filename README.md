@@ -65,7 +65,7 @@ Required:
   * worked with version 8.1.0
 
 ```
-$ g++ -O3 Egaroucid_console.cpp -o Egaroucid_for_console.exe -march=native
+$ g++ -O2 Egaroucid_console.cpp -o Egaroucid_for_console.exe -mtune=native -march=native -mfpmath=both
 ```
 
 
