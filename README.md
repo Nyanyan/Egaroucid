@@ -57,6 +57,19 @@ Need translation? Please contact me [here](https://docs.google.com/forms/d/e/1FA
 
 Under construction
 
+You can build with this command
+
+Required:
+
+* ```g++``` command
+  * worked with version 8.1.0
+
+```
+$ g++ -O3 Egaroucid_console.cpp -o Egaroucid_for_console.exe -march=native
+```
+
+
+
 #### Reference
 
 Please execute
