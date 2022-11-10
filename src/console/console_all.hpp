@@ -9,6 +9,7 @@
 */
 
 #pragma once
+#include "board_info.hpp"
 #include "command.hpp"
 #include "commandline_option.hpp"
 #include "info.hpp"

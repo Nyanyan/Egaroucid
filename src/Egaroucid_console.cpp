@@ -31,13 +31,10 @@ int main(int argc, char* argv[]) {
     Options options = get_options(commandline_options);
     init_console(options);
 
-    Board board;
-    Search_result res;
+    Board_info board;
+    board.reset();
     while (true) {
-        board = input_board();
-        //board.reset();
-        res = ai(board, options.level, true, true, options.show_log);
-        std::cout << "depth " << res.depth << " value " << res.value << " policy " << idx_to_coord(res.policy) << " nodes " << res.nodes << " time " << res.time << " nps " << res.nps << std::endl;
+        check_command(&board, options);
     }
 
     return 0;
