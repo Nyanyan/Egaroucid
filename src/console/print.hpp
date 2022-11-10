@@ -11,6 +11,7 @@
 #pragma once
 #include <iostream>
 #include <unordered_map>
+#include "./../engine/engine_all.hpp"
 #include "option.hpp"
 #include "info.hpp"
 #include "command_definition.hpp"
@@ -23,6 +24,7 @@
 #define LEVEL_INFO_TAB_SIZE 5
 #define LEVEL_MIDGAME_TAB_SIZE 15
 #define LEVEL_DEPTH_TAB_SIZE 10
+#define SEARCH_RESULT_TAB_SIZE 15
 
 void print_version(){
     std::cout << "Egaroucid " << EGAROUCID_VERSION << std::endl;
@@ -195,6 +197,66 @@ void print_board_info(Board_info *board){
             else if (board->mode == MODE_HUMAN_VS_HUMAN)
                 std::cout << "BLACK: You  WHITE: You";
         }
+        std::cout << std::endl;
+    }
+}
+
+void print_search_result(Search_result result, int level){
+    std::cout << "|";
+    std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << "Level";
+    std::cout << "|";
+    std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << "Depth";
+    std::cout << "|";
+    std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << "Move";
+    std::cout << "|";
+    std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << "Score";
+    std::cout << "|";
+    std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << "Time";
+    std::cout << "|";
+    std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << "NPS";
+    std::cout << "|";
+    std::cout << std::endl;
+    std::string s;
+    if (result.depth == SEARCH_BOOK){
+        std::cout << "|";
+        std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << level;
+        std::cout << "|";
+        std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << "Book";
+        std::cout << "|";
+        std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << idx_to_coord(result.policy);
+        std::cout << "|";
+        if (result.value >= 0)
+            s = "+" + std::to_string(result.value);
+        else
+            s = std::to_string(result.value);
+        std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << s;
+        std::cout << "|";
+        std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << 0;
+        std::cout << "|";
+        std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << 0;
+        std::cout << "|";
+        std::cout << std::endl;
+    } else{
+        std::cout << "|";
+        std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << level;
+        std::cout << "|";
+        s = std::to_string(result.depth) + "@" + std::to_string(result.probability) + "%";
+        std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << s;
+        std::cout << "|";
+        std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << idx_to_coord(result.policy);
+        std::cout << "|";
+        if (result.value >= 0)
+            s = "+" + std::to_string(result.value);
+        else
+            s = std::to_string(result.value);
+        std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << s;
+        std::cout << "|";
+        s = std::to_string((double)result.time / 1000);
+        s = s.substr(0, s.length() - 3) + "s";
+        std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << s;
+        std::cout << "|";
+        std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << result.nps;
+        std::cout << "|";
         std::cout << std::endl;
     }
 }

@@ -129,6 +129,26 @@ void redo(Board_info *board, int remain){
     redo(board, remain - 1);
 }
 
+void go(Board_info *board, Options *options){
+    if (board->board.is_end()){
+        std::cerr << "[ERROR] game over" << std::endl;
+        return;
+    }
+    Search_result result = ai(board->board, options->level, true, true, options->show_log);
+    print_search_result(result, options->level);
+    Flip flip;
+    calc_flip(&flip, &board->board, result.policy);
+    board->board.move_board(&flip);
+    board->player ^= 1;
+    if (board->board.get_legal() == 0ULL){
+        board->board.pass();
+        board->player ^= 1;
+    }
+    board->boards.emplace_back(board->board);
+    board->players.emplace_back(board->player);
+
+}
+
 void check_command(Board_info *board, State *state, Options *options){
     print_board_info(board);
     std::cout << std::endl;
@@ -174,5 +194,6 @@ void check_command(Board_info *board, State *state, Options *options){
         if (remain <= 0)
             remain = 1;
         redo(board, remain);
-    }
+    } else if (cmd_id == CMD_ID_GO)
+        go(board, options);
 }
