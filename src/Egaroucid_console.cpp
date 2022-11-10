@@ -10,9 +10,15 @@
 
 #include <iostream>
 #include "engine/engine_all.hpp"
+#include "console/console_all.hpp"
 
 // ffotest
 int main(int argc, char* argv[]) {
+    std::vector<Commandline_option> commandline_options = get_commandline_options(argc, argv);
+    if (find_commandline_option(commandline_options, ID_HELP) == OPTION_FOUND){
+        print_help();
+        return 0;
+    }
     int n_threads = 10;
     bool show_log = true;
     int hash_level = 24;

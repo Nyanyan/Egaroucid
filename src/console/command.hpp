@@ -7,3 +7,5 @@
     @author Takuto Yamana (a.k.a. Nyanyan)
     @license GPL-3.0 license
 */
+
+#pragma once
