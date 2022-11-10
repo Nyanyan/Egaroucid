@@ -53,6 +53,7 @@ void print_commandline_options(){
 }
 
 void print_help(){
+    print_version();
     print_commandline_options();
 }
 

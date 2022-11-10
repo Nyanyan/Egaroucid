@@ -47,35 +47,35 @@ void book_hash_init_rand(){
                 hash_rand_opponent_book[i][j] = myrand_ull();
         }
     }
-    std::cerr << "hash initialized randomly" << std::endl;
 }
 
 /*
     @brief initialize hash array for book
 */
-void book_hash_init(){
+void book_hash_init(bool show_log){
     FILE* fp;
     if (fopen_s(&fp, "resources/hash_book.eghs", "rb") != 0) {
-        std::cerr << "can't open hash_book.eghs" << std::endl;
+        std::cerr << "[ERROR] can't open hash_book.eghs" << std::endl;
         book_hash_init_rand();
         return;
     } else{
         for (int i = 0; i < 4; ++i){
             if (fread(hash_rand_player_book[i], 8, 65536, fp) < 65536){
-                std::cerr << "hash_book.eghs broken" << std::endl;
+                std::cerr << "[ERROR] hash_book.eghs broken" << std::endl;
                 book_hash_init_rand();
                 return;
             }
         }
         for (int i = 0; i < 4; ++i){
             if (fread(hash_rand_opponent_book[i], 8, 65536, fp) < 65536){
-                std::cerr << "hash_book.eghs broken" << std::endl;
+                std::cerr << "[ERROR] hash_book.eghs broken" << std::endl;
                 book_hash_init_rand();
                 return;
             }
         }
     }
-    std::cerr << "hash for book initialized" << std::endl;
+    if (show_log)
+        std::cerr << "hash for book initialized" << std::endl;
     return;
 }
 
@@ -639,6 +639,6 @@ class Book{
 Book book;
 
 bool book_init(std::string file, bool show_log){
-    book_hash_init();
+    book_hash_init(show_log);
     return book.init(file, show_log);
 }
