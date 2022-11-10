@@ -20,7 +20,8 @@ void init_console(Options options){
     stability_init();
     if (!evaluate_init(options.eval_file, options.show_log))
         std::exit(0);
-    book_init(options.book_file, options.show_log);
+    if (!options.nobook)
+        book_init(options.book_file, options.show_log);
     if (options.show_log)
         std::cerr << "initialized" << std::endl;
 }
@@ -35,7 +36,7 @@ int main(int argc, char* argv[]) {
     State state;
     board.reset();
     while (true) {
-        check_command(&board, &state, options);
+        check_command(&board, &state, &options);
     }
 
     return 0;

@@ -10,8 +10,11 @@
 
 #pragma once
 #include "board_info.hpp"
+#include "close.hpp"
 #include "command.hpp"
+#include "command_definition.hpp"
 #include "commandline_option.hpp"
+#include "commandline_option_definition.hpp"
 #include "info.hpp"
 #include "option.hpp"
 #include "print.hpp"

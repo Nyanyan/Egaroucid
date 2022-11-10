@@ -11,13 +11,46 @@
 #pragma once
 #include <iostream>
 #include <string>
+#include <sstream>
 #include "./../engine/engine_all.hpp"
 #include "board_info.hpp"
 #include "option.hpp"
 #include "state.hpp"
+#include "close.hpp"
+#include "print.hpp"
+#include "command_definition.hpp"
 
-void check_command(Board_info *board, State *state, Options options){
+std::string get_command_line(){
     std::cout << "> ";
     std::string cmd_line;
     std::getline(std::cin, cmd_line);
+    return cmd_line;
+}
+
+void split_cmd_arg(std::string cmd_line, std::string *cmd, std::string *arg){
+    std::istringstream iss(cmd_line);
+    iss >> *cmd;
+    if (cmd->length() + 1 < cmd_line.length())
+        *arg = cmd_line.substr(cmd->length() + 1);
+}
+
+int get_command_id(std::string cmd){
+    for (int i = 0; i < N_COMMANDS; ++i){
+        if (std::find(command_data[i].names.begin(), command_data[i].names.end(), cmd) != command_data[i].names.end())
+            return command_data[i].id;
+    }
+    return COMMAND_NOT_FOUND;
+}
+
+void check_command(Board_info *board, State *state, Options *options){
+    std::string cmd_line = get_command_line();
+    std::string cmd, arg;
+    split_cmd_arg(cmd_line, &cmd, &arg);
+    int cmd_id = get_command_id(cmd);
+    if (cmd_id == COMMAND_NOT_FOUND)
+        std::cout << "[ERROR] command `" << cmd << "` not found" << std::endl;
+    else if (cmd_id == CMD_ID_HELP)
+        print_commands_list();
+    else if (cmd_id == CMD_ID_EXIT)
+        close(state, options);
 }

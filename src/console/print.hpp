@@ -13,10 +13,13 @@
 #include <unordered_map>
 #include "option.hpp"
 #include "info.hpp"
+#include "command_definition.hpp"
+#include "commandline_option_definition.hpp"
 
 #define COUT_TAB "  "
 #define VERSION_TAB_SIZE 10
 #define COMMANDLINE_OPTION_HELP_TAB_SIZE 40
+#define COMMAND_HELP_TAB_SIZE 40
 #define LEVEL_INFO_TAB_SIZE 5
 #define LEVEL_MIDGAME_TAB_SIZE 15
 #define LEVEL_DEPTH_TAB_SIZE 10
@@ -34,7 +37,7 @@ void print_version(){
     std::cout << std::endl;
 }
 
-void print_commandline_options(){
+void print_commandline_options_list(){
     std::cout << "Commandline options:" << std::endl;
     for (int i = 0; i < N_COMMANDLINE_OPTIONS; ++i){
         std::string s;
@@ -52,9 +55,28 @@ void print_commandline_options(){
     std::cout << std::endl;
 }
 
+void print_commands_list(){
+    std::cout << "Commands:" << std::endl;
+    for (int i = 0; i < N_COMMANDS; ++i){
+        std::string s;
+        for (int j = 0; j < (int)command_data[i].names.size(); ++j){
+            if (j != 0)
+                s += "|";
+            s += command_data[i].names[j];
+        }
+        s += " " + command_data[i].arg;
+        std::cout << COUT_TAB;
+        std::cout << std::left << std::setw(COMMAND_HELP_TAB_SIZE) << s;
+        std::cout << command_data[i].description;
+        std::cout << std::endl;
+    }
+    std::cout << std::endl;
+}
+
 void print_help(){
     print_version();
-    print_commandline_options();
+    print_commandline_options_list();
+    print_commands_list();
 }
 
 void print_level_info(){

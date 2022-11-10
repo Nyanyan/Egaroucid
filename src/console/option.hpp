@@ -20,6 +20,7 @@ struct Options{
     int hash_level;
     std::string book_file;
     std::string eval_file;
+    bool nobook;
 };
 
 Options get_options(std::vector<Commandline_option> commandline_options){
@@ -75,5 +76,6 @@ Options get_options(std::vector<Commandline_option> commandline_options){
     str = find_commandline_option(commandline_options, ID_EVAL_FILE);
     if (str != OPTION_NOT_FOUND)
         res.eval_file = str;
+    res.nobook = find_commandline_option(commandline_options, ID_NOBOOK) == OPTION_FOUND;
     return res;
 }
