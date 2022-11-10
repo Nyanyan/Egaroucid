@@ -53,4 +53,7 @@ void check_command(Board_info *board, State *state, Options *options){
         print_commands_list();
     else if (cmd_id == CMD_ID_EXIT)
         close(state, options);
+    else if (cmd_id == CMD_ID_VERSION)
+        print_version();
+    
 }
