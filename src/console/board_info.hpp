@@ -21,18 +21,29 @@
 struct Board_info{
     Board board;
     uint_fast8_t player;
-    int put_cells[HW2 - 4];
-    Board first_board;
-    uint_fast8_t first_player;
     int mode;
+    std::vector<Board> boards;
+    std::vector<int> players;
+    int ply_vec;
 
     void reset(){
         board.reset();
         player = BLACK;
-        for (int i = 0; i < HW2 - 4; ++i)
-            put_cells[i] = INVALID_CELL;
-        first_board.reset();
-        first_player = BLACK;
         mode = MODE_HUMAN_VS_HUMAN;
+        boards.clear();
+        players.clear();
+        boards.emplace_back(board);
+        players.emplace_back(player);
+        ply_vec = 0;
+    }
+
+    Board_info copy(){
+        Board_info res;
+        res.board = board.copy();
+        res.player = player;
+        res.mode = mode;
+        res.boards = boards;
+        res.players = players;
+        res.ply_vec = ply_vec;
     }
 };
