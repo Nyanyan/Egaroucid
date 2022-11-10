@@ -12,6 +12,8 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+#include <cctype>
+#include <algorithm>
 #include "./../engine/engine_all.hpp"
 #include "board_info.hpp"
 #include "option.hpp"
@@ -149,6 +151,41 @@ void go(Board_info *board, Options *options){
 
 }
 
+void setboard(Board_info *board, std::string board_str){
+    board_str.erase(std::remove_if(board_str.begin(), board_str.end(), ::isspace), board_str.end());
+    if (board_str.length() != HW2 + 1){
+        std::cerr << "[ERROR] invalid argument" << std::endl;
+        return;
+    }
+    Board new_board;
+    int player = BLACK;
+    new_board.player = 0ULL;
+    new_board.opponent = 0ULL;
+    for (int i = 0; i < HW2; ++i){
+        if (board_str[i] == 'B' || board_str[i] == 'b' || board_str[i] == 'X' || board_str[i] == 'x' || board_str[i] == '0' || board_str[i] == '*')
+            new_board.player |= 1ULL << (HW2_M1 - i);
+        else if (board_str[i] == 'W' || board_str[i] == 'W' || board_str[i] == 'O' || board_str[i] == 'o' || board_str[i] == '1')
+            new_board.opponent |= 1ULL << (HW2_M1 - i);
+    }
+    if (board_str[HW2] == 'B' || board_str[HW2] == 'b' || board_str[HW2] == 'X' || board_str[HW2] == 'x' || board_str[HW2] == '0' || board_str[HW2] == '*')
+        player = BLACK;
+    else if (board_str[HW2] == 'W' || board_str[HW2] == 'W' || board_str[HW2] == 'O' || board_str[HW2] == 'o' || board_str[HW2] == '1')
+        player = WHITE;
+    else{
+        std::cerr << "[ERROR] invalid player argument" << std::endl;
+        return;
+    }
+    if (player == WHITE)
+        std::swap(new_board.player, new_board.opponent);
+    board->board = new_board.copy();
+    board->player = player;
+    board->boards.clear();
+    board->players.clear();
+    board->boards.emplace_back(board->board);
+    board->players.emplace_back(board->player);
+    board->ply_vec = 0;
+}
+
 void check_command(Board_info *board, State *state, Options *options){
     print_board_info(board);
     std::cout << std::endl;
@@ -196,4 +233,6 @@ void check_command(Board_info *board, State *state, Options *options){
         redo(board, remain);
     } else if (cmd_id == CMD_ID_GO)
         go(board, options);
+    else if (cmd_id == CMD_ID_SETBOARD)
+        setboard(board, arg);
 }
