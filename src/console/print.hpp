@@ -172,6 +172,29 @@ void print_board_info(Board_info *board){
             else
                 std::cout << ". ";
         }
+        if (y == 2){
+            std::cout << COUT_TAB;
+            if (board->board.is_end())
+                std::cout << "GAME OVER";
+            else if (board->player == BLACK)
+                std::cout << "BLACK to move";
+            else
+                std::cout << "WHITE to move";
+        } else if (y == 3){
+            std::cout << COUT_TAB;
+            std::cout << "ply " << board->board.n_discs() - 3 << " " << HW2 - board->board.n_discs() << " empties";
+        } else if (y == 4){
+            std::cout << COUT_TAB;
+            std::cout << "mode " << board->mode << " ";
+            if (board->mode == MODE_HUMAN_VS_AI)
+                std::cout << "BLACK: Egaroucid  WHITE: You";
+            else if (board->mode == MODE_AI_VS_HUMAN)
+                std::cout << "BLACK: You  WHITE: Egaroucid";
+            else if (board->mode == MODE_AI_VS_AI)
+                std::cout << "BLACK: Egaroucid  WHITE: Egaroucid";
+            else if (board->mode == MODE_HUMAN_VS_HUMAN)
+                std::cout << "BLACK: You  WHITE: You";
+        }
         std::cout << std::endl;
     }
 }

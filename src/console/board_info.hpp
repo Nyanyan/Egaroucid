@@ -13,12 +13,18 @@
 
 #define INVALID_CELL -1
 
+#define MODE_HUMAN_VS_AI 0
+#define MODE_AI_VS_HUMAN 1
+#define MODE_AI_VS_AI 2
+#define MODE_HUMAN_VS_HUMAN 3
+
 struct Board_info{
     Board board;
     uint_fast8_t player;
     int put_cells[HW2 - 4];
     Board first_board;
     uint_fast8_t first_player;
+    int mode;
 
     void reset(){
         board.reset();
@@ -27,5 +33,6 @@ struct Board_info{
             put_cells[i] = INVALID_CELL;
         first_board.reset();
         first_player = BLACK;
+        mode = MODE_HUMAN_VS_HUMAN;
     }
 };
