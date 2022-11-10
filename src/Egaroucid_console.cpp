@@ -29,7 +29,6 @@ int main(int argc, char* argv[]) {
     std::vector<Commandline_option> commandline_options = get_commandline_options(argc, argv);
     special_commandline_options(commandline_options);
     Options options = get_options(commandline_options);
-
     init_console(options);
 
     Board board;

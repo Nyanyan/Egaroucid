@@ -43,7 +43,7 @@ const Commandline_option_info commandline_option_data[N_COMMANDLINE_OPTIONS] = {
     {ID_LEVEL,      {"-l", "-level"},                                   "<level>",          "Set level to <level> (0 to 60)"}, 
     {ID_THREAD,     {"-t", "-thread", "-threads"},                      "<n_threads>",      "Set number of threads (more than 0)"},
     {ID_LOG,        {"-noise"},                                         "",                 "Show all logs"},
-    {ID_HASH,       {"-hash"},                                          "<hash_level>",     "Set hash level to <hash_level> (0 to 29)"},
+    {ID_HASH,       {"-hash", "-hashlevel"},                            "<hash_level>",     "Set hash level to <hash_level> (0 to 29)"},
     {ID_LEVEL_INFO, {"-linfo", "-levelinfo"},                           "",                 "See level information"},
     {ID_BOOK_FILE,  {"-b", "-book"},                                    "<book_file>",      "Import <book_file> as Egaroucid's book"},
     {ID_EVAL_FILE,  {"-eval", "-evaluation"},                           "<eval_file>",      "Import <eval_file> as Egaroucid's evaluation function"}
