@@ -82,7 +82,6 @@ void hash_init_rand(int hash_level){
                 hash_rand_opponent[i][j] = myrand_uint_rev() & (hash_sizes[hash_level] - 1);
         }
     }
-    std::cerr << "hash initialized randomly" << std::endl;
 }
 
 /*
@@ -93,23 +92,22 @@ void hash_init_rand(int hash_level){
 bool hash_init(int hash_level){
     FILE* fp;
     if (fopen_s(&fp, ("resources/hash" + std::to_string(hash_level) + ".eghs").c_str(), "rb") != 0) {
-        std::cerr << "can't open hash" + std::to_string(hash_level) + ".eghs" << std::endl;
+        std::cerr << "[ERROR] can't open hash" + std::to_string(hash_level) + ".eghs" << std::endl;
         //hash_init_rand();
         return false;
     } else{
         for (int i = 0; i < 4; ++i){
             if (fread(hash_rand_player[i], 4, 65536, fp) < 65536){
-                std::cerr << "hash" + std::to_string(hash_level) + ".eghs broken" << std::endl;
+                std::cerr << "[ERROR] hash" + std::to_string(hash_level) + ".eghs broken" << std::endl;
                 return false;
             }
         }
         for (int i = 0; i < 4; ++i){
             if (fread(hash_rand_opponent[i], 4, 65536, fp) < 65536){
-                std::cerr << "hash" + std::to_string(hash_level) + ".eghs broken" << std::endl;
+                std::cerr << "[ERROR] hash" + std::to_string(hash_level) + ".eghs broken" << std::endl;
                 return false;
             }
         }
     }
-    std::cerr << "hash initialized" << std::endl;
     return true;
 }

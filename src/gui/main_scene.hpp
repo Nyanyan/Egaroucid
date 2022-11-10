@@ -81,7 +81,7 @@ public:
         // hash resize
         if (getData().menu_elements.hash_level != global_hash_level) {
             stop_calculating();
-            if (!hash_resize(global_hash_level, getData().menu_elements.hash_level)){
+            if (!hash_resize(global_hash_level, getData().menu_elements.hash_level, true)){
                 std::cerr << "hash resize failed. use former level" << std::endl;
                 getData().menu_elements.hash_level = global_hash_level;
             }

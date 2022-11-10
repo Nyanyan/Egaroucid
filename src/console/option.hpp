@@ -51,17 +51,7 @@ Options get_options(std::vector<Commandline_option> commandline_options){
             std::cerr << "[ERROR] thread argument out of range" << std::endl;
         }
     }
-    res.show_log = true;
-    str = find_commandline_option(commandline_options, ID_LOG);
-    if (str != OPTION_NOT_FOUND){
-        try {
-            res.show_log = std::stoi(str) > 0;
-        } catch (const std::invalid_argument& e){
-            std::cerr << "[ERROR] log argument invalid" << std::endl;
-        } catch (const std::out_of_range& e) {
-            std::cerr << "[ERROR] log argument out of range" << std::endl;
-        }
-    }
+    res.show_log = find_commandline_option(commandline_options, ID_LOG) == OPTION_FOUND;
     res.hash_level = DEFAULT_HASH_LEVEL;
     str = find_commandline_option(commandline_options, ID_HASH);
     if (str != OPTION_NOT_FOUND){
@@ -77,4 +67,13 @@ Options get_options(std::vector<Commandline_option> commandline_options){
             std::cerr << "[ERROR] hash argument out of range" << std::endl;
         }
     }
+    res.book_file = "resources/book.egbk";
+    str = find_commandline_option(commandline_options, ID_BOOK_FILE);
+    if (str != OPTION_NOT_FOUND)
+        res.book_file = str;
+    res.eval_file = "resources/eval.egev";
+    str = find_commandline_option(commandline_options, ID_EVAL_FILE);
+    if (str != OPTION_NOT_FOUND)
+        res.eval_file = str;
+    return res;
 }

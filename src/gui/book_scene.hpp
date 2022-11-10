@@ -35,11 +35,11 @@ bool import_book(std::string file) {
     }
     if (lst[lst.size() - 1] == "egbk") {
         std::cerr << "importing Egaroucid book" << std::endl;
-        result = !book.import_file_bin(file);
+        result = !book.import_file_bin(file, true);
     }
     else if (lst[lst.size() - 1] == "dat") {
         std::cerr << "importing Edax book" << std::endl;
-        result = !book.import_edax_book(file);
+        result = !book.import_edax_book(file, true);
     }
     else {
         std::cerr << "this is not a book" << std::endl;
@@ -63,7 +63,7 @@ bool import_book_egaroucid(std::string file) {
     }
     if (lst[lst.size() - 1] == "egbk") {
         std::cerr << "importing Egaroucid book" << std::endl;
-        result = !book.import_file_bin(file);
+        result = !book.import_file_bin(file, true);
     }
     else {
         std::cerr << "this is not an Egaroucid book" << std::endl;

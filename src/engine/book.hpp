@@ -119,9 +119,9 @@ class Book{
             @param file                 book file (.egbk file)
             @return book completely imported?
         */
-        bool init(std::string file){
+        bool init(std::string file, bool show_log){
             n_book = 0;
-            return import_file_bin(file);
+            return import_file_bin(file, show_log);
         }
 
         /*
@@ -130,18 +130,19 @@ class Book{
             @param file                 book file (.egbk file)
             @return book completely imported?
         */
-        inline bool import_file_bin(std::string file){
-            std::cerr << file << std::endl;
+        inline bool import_file_bin(std::string file, bool show_log){
+            if (show_log)
+                std::cerr << "importing " << file << std::endl;
             FILE* fp;
             #ifdef _WIN64
                 if (fopen_s(&fp, file.c_str(), "rb") != 0) {
-                    std::cerr << "can't open " << file << std::endl;
+                    std::cerr << "[ERROR] can't open Egaroucid book " << file << std::endl;
                     return false;
                 }
             #else
                 fp = fopen(file.c_str(), "rb");
                 if (fp == NULL){
-                    std::cerr << "can't open " << file << std::endl;
+                    std::cerr << "[ERROR] can't open Egaroucid book " << file << std::endl;
                     return false;
                 }
             #endif
@@ -150,31 +151,31 @@ class Book{
             uint64_t p, o;
             uint8_t elem;
             if (fread(&n_boards, 4, 1, fp) < 1){
-                std::cerr << "book NOT FULLY imported " << n_book << " boards code 0" << std::endl;
+                std::cerr << "[ERROR] book NOT FULLY imported " << n_book << " boards" << std::endl;
                 fclose(fp);
                 return false;
             }
             for (i = 0; i < n_boards; ++i) {
-                if (i % 32768 == 0)
+                if (i % 32768 == 0 && show_log)
                     std::cerr << "loading book " << (i * 100 / n_boards) << "%" << std::endl;
                 if (fread(&p, 8, 1, fp) < 1) {
-                    std::cerr << "book NOT FULLY imported " << n_book << " boards code 1" << std::endl;
+                    std::cerr << "[ERROR] book NOT FULLY imported " << n_book << " boards" << std::endl;
                     fclose(fp);
                     return false;
                 }
                 if (fread(&o, 8, 1, fp) < 1) {
-                    std::cerr << "book NOT FULLY imported " << n_book << " boards code 2" << std::endl;
+                    std::cerr << "[ERROR] book NOT FULLY imported " << n_book << " boards" << std::endl;
                     fclose(fp);
                     return false;
                 }
                 if (fread(&elem, 1, 1, fp) < 1) {
-                    std::cerr << "book NOT FULLY imported " << n_book << " boards code 3" << std::endl;
+                    std::cerr << "[ERROR] book NOT FULLY imported " << n_book << " boards" << std::endl;
                     fclose(fp);
                     return false;
                 }
                 value = elem - HW2;
                 if (value < -HW2 || HW2 < value) {
-                    std::cerr << "book NOT FULLY imported " << n_book << " boards code 4 got value " << value << std::endl;
+                    std::cerr << "[ERROR] book NOT FULLY imported got value " << value << " " << n_book << " boards" << std::endl;
                     fclose(fp);
                     return false;
                 }
@@ -182,7 +183,8 @@ class Book{
                 b.opponent = o;
                 n_book += register_symmetric_book(b, value);
             }
-            std::cerr << "book imported " << n_book << " boards" << std::endl;
+            if (show_log)
+                std::cerr << "book imported " << n_book << " boards" << std::endl;
             fclose(fp);
             return true;
         }
@@ -193,18 +195,19 @@ class Book{
             @param file                 book file (.dat file)
             @return book completely imported?
         */
-        inline bool import_edax_book(std::string file) {
-            std::cerr << file << std::endl;
+        inline bool import_edax_book(std::string file, bool show_log) {
+            if (show_log)
+                std::cerr << "importing " << file << std::endl;
             FILE* fp;
             #ifdef _WIN64
                 if (fopen_s(&fp, file.c_str(), "rb") != 0) {
-                    std::cerr << "can't open " << file << std::endl;
+                    std::cerr << "[ERROR] can't open Edax book " << file << std::endl;
                     return false;
                 }
             #else
                 fp = fopen(file.c_str(), "rb");
                 if (fp == NULL){
-                    std::cerr << "can't open " << file << std::endl;
+                    std::cerr << "[ERROR] can't open Edax book " << file << std::endl;
                     return false;
                 }
             #endif
@@ -214,13 +217,13 @@ class Book{
             int i, j;
             for (i = 0; i < 38; ++i){
                 if (fread(&elem_char, 1, 1, fp) < 1) {
-                    std::cerr << "file broken" << std::endl;
+                    std::cerr << "[ERROR] file broken" << std::endl;
                     fclose(fp);
                     return false;
                 }
             }
             if (fread(&elem_int, 4, 1, fp) < 1) {
-                std::cerr << "file broken" << std::endl;
+                std::cerr << "[ERROR] file broken" << std::endl;
                 fclose(fp);
                 return false;
             }
@@ -231,44 +234,44 @@ class Book{
             Board b;
             Flip flip;
             for (i = 0; i < n_boards; ++i){
-                if (i % 32768 == 0)
+                if (i % 32768 == 0 && show_log)
                     std::cerr << "loading edax book " << (i * 100 / n_boards) << "%" << std::endl;
                 if (fread(&player, 8, 1, fp) < 1) {
-                    std::cerr << "file broken" << std::endl;
+                    std::cerr << "[ERROR] file broken" << std::endl;
                     fclose(fp);
                     return false;
                 }
                 if (fread(&opponent, 8, 1, fp) < 1) {
-                    std::cerr << "file broken" << std::endl;
+                    std::cerr << "[ERROR] file broken" << std::endl;
                     fclose(fp);
                     return false;
                 }
                 for (j = 0; j < 4; ++j) {
                     if (fread(&elem_int, 4, 1, fp) < 1) {
-                        std::cerr << "file broken" << std::endl;
+                        std::cerr << "[ERROR] file broken" << std::endl;
                         fclose(fp);
                         return false;
                     }
                 }
                 if (fread(&value, 2, 1, fp) < 1) {
-                    std::cerr << "file broken" << std::endl;
+                    std::cerr << "[ERROR] file broken" << std::endl;
                     fclose(fp);
                     return false;
                 }
                 for (j = 0; j < 2; ++j) {
                     if (fread(&elem_short, 2, 1, fp) < 1) {
-                        std::cerr << "file broken" << std::endl;
+                        std::cerr << "[ERROR] file broken" << std::endl;
                         fclose(fp);
                         return false;
                     }
                 }
                 if (fread(&link, 1, 1, fp) < 1) {
-                    std::cerr << "file broken" << std::endl;
+                    std::cerr << "[ERROR] file broken" << std::endl;
                     fclose(fp);
                     return false;
                 }
                 if (fread(&elem_char, 1, 1, fp) < 1) {
-                    std::cerr << "file broken" << std::endl;
+                    std::cerr << "[ERROR] file broken" << std::endl;
                     fclose(fp);
                     return false;
                 }
@@ -277,12 +280,12 @@ class Book{
                 n_book += register_symmetric_book(b, -(int)value);
                 for (j = 0; j < (int)link + 1; ++j) {
                     if (fread(&link_value, 1, 1, fp) < 1) {
-                        std::cerr << "file broken" << std::endl;
+                        std::cerr << "[ERROR] file broken" << std::endl;
                         fclose(fp);
                         return false;
                     }
                     if (fread(&link_move, 1, 1, fp) < 1) {
-                        std::cerr << "file broken" << std::endl;
+                        std::cerr << "[ERROR] file broken" << std::endl;
                         fclose(fp);
                         return false;
                     }
@@ -298,7 +301,8 @@ class Book{
                     }
                 }
             }
-            std::cerr << "book imported " << n_book << " boards" << std::endl;
+            if (show_log)
+                std::cerr << "book imported " << n_book << " boards" << std::endl;
             return true;
         }
 
@@ -634,7 +638,7 @@ class Book{
 
 Book book;
 
-bool book_init(std::string file){
+bool book_init(std::string file, bool show_log){
     book_hash_init();
-    return book.init(file);
+    return book.init(file, show_log);
 }

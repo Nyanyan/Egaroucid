@@ -581,18 +581,19 @@ void init_pattern_arr_rev(int id, int phase_idx, int pattern_idx, int siz){
     @param file                 evaluation file name
     @return evaluation function conpletely initialized?
 */
-inline bool init_evaluation_calc(const char* file){
-    std::cerr << file << std::endl;
+inline bool init_evaluation_calc(const char* file, bool show_log){
+    if (show_log)
+        std::cerr << "evaluation file " << file << std::endl;
     FILE* fp;
     #ifdef _WIN64
         if (fopen_s(&fp, file, "rb") != 0){
-            std::cerr << "can't open eval.egev" << std::endl;
+            std::cerr << "[ERROR] [FATAL] can't open eval " << file << std::endl;
             return false;
         }
     #else
         fp = fopen("resources/eval.egev", "rb");
         if (fp == NULL){
-            std::cerr << "can't open eval.egev" << std::endl;
+            std::cerr << "[ERROR] [FATAL] can't open eval " << file << std::endl;
             return false;
         }
     #endif
@@ -606,7 +607,7 @@ inline bool init_evaluation_calc(const char* file){
         #if USE_SIMD_EVALUATION
             for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx){
                 if (fread(pattern_arr_16, 2, pow3[pattern_sizes[pattern_idx]], fp) < pow3[pattern_sizes[pattern_idx]]){
-                    std::cerr << "eval.egev broken" << std::endl;
+                    std::cerr << "[ERROR] [FATAL] evaluation file broken" << std::endl;
                     fclose(fp);
                     return false;
                 }
@@ -616,29 +617,29 @@ inline bool init_evaluation_calc(const char* file){
         #else
             for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx){
                 if (fread(pattern_arr[0][phase_idx][pattern_idx], 2, pow3[pattern_sizes[pattern_idx]], fp) < pow3[pattern_sizes[pattern_idx]]){
-                    std::cerr << "eval.egev broken" << std::endl;
+                    std::cerr << "[ERROR] [FATAL] evaluation file broken" << std::endl;
                     fclose(fp);
                     return false;
                 }
             }
         #endif
         if (fread(eval_sur0_sur1_arr[phase_idx], 2, MAX_SURROUND * MAX_SURROUND, fp) < MAX_SURROUND * MAX_SURROUND){
-            std::cerr << "eval.egev broken" << std::endl;
+            std::cerr << "[ERROR] [FATAL] evaluation file broken" << std::endl;
             fclose(fp);
             return false;
         }
         if (fread(eval_canput0_canput1_arr[phase_idx], 2, MAX_CANPUT * MAX_CANPUT, fp) < MAX_CANPUT * MAX_CANPUT){
-            std::cerr << "eval.egev broken" << std::endl;
+            std::cerr << "[ERROR] [FATAL] evaluation file broken" << std::endl;
             fclose(fp);
             return false;
         }
         if (fread(eval_num0_num1_arr[phase_idx], 2, MAX_STONE_NUM * MAX_STONE_NUM, fp) < MAX_STONE_NUM * MAX_STONE_NUM){
-            std::cerr << "eval.egev broken" << std::endl;
+            std::cerr << "[ERROR] [FATAL] evaluation file broken" << std::endl;
             fclose(fp);
             return false;
         }
         if (fread(eval_mobility_pattern[phase_idx], 2, N_CANPUT_PATTERNS * P44 * P44, fp) < N_CANPUT_PATTERNS * P48){
-            std::cerr << "eval.egev broken" << std::endl;
+            std::cerr << "[ERROR] [FATAL] evaluation file broken" << std::endl;
             fclose(fp);
             return false;
         }
@@ -709,7 +710,8 @@ inline bool init_evaluation_calc(const char* file){
         eval_simd_offsets[6] = _mm256_set_epi32(offset1 * 12, offset1 * 12, offset1 * 13, offset1 * 13, offset1 * 13, offset1 * 13, offset1 * 14, offset1 * 14);
         eval_simd_offsets[7] = _mm256_set_epi32(offset1 * 14, offset1 * 14, offset1 * 15, offset1 * 15, offset1 * 15, offset1 * 15, offset1 * 16, offset1 * 16);
     #endif
-    std::cerr << "evaluation function initialized" << std::endl;
+    if (show_log)
+        std::cerr << "evaluation function initialized" << std::endl;
     return true;
 }
 
@@ -719,8 +721,8 @@ inline bool init_evaluation_calc(const char* file){
     @param file                 evaluation file name
     @return evaluation function conpletely initialized?
 */
-bool evaluate_init(const char* file){
-    return init_evaluation_calc(file);
+bool evaluate_init(const char* file, bool show_log){
+    return init_evaluation_calc(file, show_log);
 }
 
 /*
@@ -729,8 +731,8 @@ bool evaluate_init(const char* file){
     @param file                 evaluation file name
     @return evaluation function conpletely initialized?
 */
-bool evaluate_init(const std::string file){
-    return init_evaluation_calc(file.c_str());
+bool evaluate_init(const std::string file, bool show_log){
+    return init_evaluation_calc(file.c_str(), show_log);
 }
 
 /*
@@ -738,8 +740,8 @@ bool evaluate_init(const std::string file){
 
     @return evaluation function conpletely initialized?
 */
-bool evaluate_init(){
-    return init_evaluation_calc("resources/eval.egev");
+bool evaluate_init(bool show_log){
+    return init_evaluation_calc("resources/eval.egev", show_log);
 }
 
 /*

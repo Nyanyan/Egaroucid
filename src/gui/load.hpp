@@ -19,15 +19,15 @@ int init_ai(Settings* settings, const Directories* directories) {
     std::cerr << "there are " << thread_pool.size() << " additional threads" << std::endl;
     bit_init();
     mobility_init();
-    if (!hash_resize(DEFAULT_HASH_LEVEL, settings->hash_level)) {
+    if (!hash_resize(DEFAULT_HASH_LEVEL, settings->hash_level, true)) {
         std::cerr << "hash resize failed. use default setting" << std::endl;
         settings->hash_level = DEFAULT_HASH_LEVEL;
     }
     stability_init();
-    if (!evaluate_init(directories->eval_file)) {
+    if (!evaluate_init(directories->eval_file, true)) {
         return ERR_EVAL_FILE_NOT_IMPORTED;
     }
-    if (!book_init(settings->book_file)) {
+    if (!book_init(settings->book_file, true)) {
         return ERR_BOOK_FILE_NOT_IMPORTED;
     }
     return ERR_OK;

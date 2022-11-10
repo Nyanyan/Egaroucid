@@ -32,7 +32,7 @@ void init_default_settings(const Directories* directories, const Resources* reso
 	settings->lang_name = "japanese";
 	settings->book_file = directories->document_dir + "Egaroucid/book.egbk";
 	settings->use_book = true;
-	settings->level = 13;
+	settings->level = DEFAULT_LEVEL;
 	settings->ai_put_black = false;
 	settings->ai_put_white = false;
 	settings->use_disc_hint = true;
