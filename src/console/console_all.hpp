@@ -10,7 +10,6 @@
 
 #pragma once
 #include "command.hpp"
+#include "info.hpp"
 #include "option.hpp"
 #include "print.hpp"
-#include "url.hpp"
-#include "version.hpp"

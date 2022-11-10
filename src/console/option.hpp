@@ -27,8 +27,6 @@
 #define ID_BOOK_FILE 7
 #define ID_EVAL_FILE 8
 
-#define COMMANDLINE_OPTION_HELP_TAB_SIZE 40
-
 #define OPTION_FOUND "1"
 
 struct Commandline_option_info{

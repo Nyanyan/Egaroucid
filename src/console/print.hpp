@@ -11,17 +11,22 @@
 #pragma once
 #include <iostream>
 #include "option.hpp"
-#include "version.hpp"
-#include "url.hpp"
+#include "info.hpp"
 
 #define COUT_TAB "  "
+#define VERSION_TAB_SIZE 10
+#define COMMANDLINE_OPTION_HELP_TAB_SIZE 40
 
 void print_version(){
     std::cout << "Egaroucid " << EGAROUCID_VERSION << std::endl;
-    std::cout << COUT_TAB << "@date " << EGAROUCID_DATE << std::endl;
-    std::cout << COUT_TAB << "@author Takuto Yamana (a.k.a. Nyanyan)" << std::endl;
-    std::cout << COUT_TAB << "@license GPL-3.0 license" << std::endl;
-    std::cout << COUT_TAB << "@website " << WEB_PAGE_URL << std::endl;
+    std::cout << COUT_TAB << std::left << std::setw(VERSION_TAB_SIZE) << "@date ";
+    std::cout << EGAROUCID_DATE << std::endl;
+    std::cout << COUT_TAB << std::left << std::setw(VERSION_TAB_SIZE) << "@author ";
+    std::cout << EGAROUCID_AUTHOR << std::endl;
+    std::cout << COUT_TAB << std::left << std::setw(VERSION_TAB_SIZE) << "@license ";
+    std::cout << EGAROUCID_LICENSE << std::endl;
+    std::cout << COUT_TAB << std::left << std::setw(VERSION_TAB_SIZE) << "@website ";
+    std::cout << EGAROUCID_URL << std::endl;
     std::cout << std::endl;
 }
 
