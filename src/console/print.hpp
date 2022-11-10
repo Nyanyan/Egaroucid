@@ -90,7 +90,11 @@ void print_level_info(){
         std::cout << "|";
         std::cout << std::right << std::setw(LEVEL_INFO_TAB_SIZE) << level;
         std::cout << "|";
-        std::string s = std::to_string(level_definition[level].mid_lookahead) + " moves@" + std::to_string(calc_probability(level_definition[level].mid_mpct)) + "%";
+        std::string s;
+        if (get_level_midsearch(level, 0))
+            s = std::to_string(level_definition[level].mid_lookahead) + " moves@" + std::to_string(calc_probability(level_definition[level].mid_mpct)) + "%";
+        else
+            s = "None";
         std::cout << std::right << std::setw(LEVEL_MIDGAME_TAB_SIZE) << s;
         for (int n_moves = 0; n_moves < HW2 - 4; ++n_moves){
             if (n_moves % LEVEL_DEPTH_TAB_SIZE == 0)
