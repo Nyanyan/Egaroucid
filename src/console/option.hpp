@@ -30,7 +30,7 @@ Options get_options(std::vector<Commandline_option> commandline_options){
     if (str != OPTION_NOT_FOUND){
         try {
             res.level = std::stoi(str);
-            if (res.level < 0 || N_LEVEL <= res.hash_level){
+            if (res.level < 0 || N_LEVEL <= res.level){
                 res.level = DEFAULT_LEVEL;
                 std::cerr << "[ERROR] level argument out of range" << std::endl;
             }
