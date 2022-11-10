@@ -115,7 +115,7 @@ void print_level_info(){
     }
 }
 
-void special_commandline_options(std::vector<Commandline_option> commandline_options){
+void print_special_commandline_options(std::vector<Commandline_option> commandline_options){
     if (find_commandline_option(commandline_options, ID_VERSION) == OPTION_FOUND){
         print_version();
         std::exit(0);

@@ -27,7 +27,7 @@ void init_console(Options options){
 
 int main(int argc, char* argv[]) {
     std::vector<Commandline_option> commandline_options = get_commandline_options(argc, argv);
-    special_commandline_options(commandline_options);
+    print_special_commandline_options(commandline_options);
     Options options = get_options(commandline_options);
     init_console(options);
 
@@ -36,7 +36,7 @@ int main(int argc, char* argv[]) {
     while (true) {
         board = input_board();
         //board.reset();
-        res = ai(board, options.level, false, true, options.show_log);
+        res = ai(board, options.level, true, true, options.show_log);
         std::cout << "depth " << res.depth << " value " << res.value << " policy " << idx_to_coord(res.policy) << " nodes " << res.nodes << " time " << res.time << " nps " << res.nps << std::endl;
     }
 
