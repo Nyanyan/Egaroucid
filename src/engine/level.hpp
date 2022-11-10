@@ -10,6 +10,7 @@
 
 #pragma once
 #include <iostream>
+#include <cmath>
 
 /*
     @brief definition of level categories
@@ -308,7 +309,7 @@ int get_level_complete_depth(int level){
     @return a is near to b?
 */
 bool double_near(double a, double b){
-    return fabs(a - b) < DOUBLE_NEAR_THRESHOLD;
+    return std::fabs(a - b) < DOUBLE_NEAR_THRESHOLD;
 }
 
 /*

@@ -45,5 +45,6 @@ struct Board_info{
         res.boards = boards;
         res.players = players;
         res.ply_vec = ply_vec;
+        return res;
     }
 };

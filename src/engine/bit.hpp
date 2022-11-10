@@ -207,9 +207,15 @@ end of modification
     @param x                    an integer
 */
 #if USE_BUILTIN_POPCOUNT
-    #define	pop_count_ull(x) (int)__popcnt64(x)
-    #define pop_count_uint(x) (int)__popcnt(x)
-    #define pop_count_uchar(x) (int)__popcnt(x)
+    #ifdef __GNUC__
+        #define	pop_count_ull(x) (int)__builtin_popcountll(x)
+        #define pop_count_uint(x) (int)__builtin_popcount(x)
+        #define pop_count_uchar(x) (int)__builtin_popcount(x)
+    #else
+        #define	pop_count_ull(x) (int)__popcnt64(x)
+        #define pop_count_uint(x) (int)__popcnt(x)
+        #define pop_count_uchar(x) (int)__popcnt(x)
+    #endif
 #else
 
     inline int pop_count_ull(uint64_t x){
