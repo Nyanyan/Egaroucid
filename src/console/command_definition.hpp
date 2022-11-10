@@ -39,6 +39,6 @@ const Command_info command_data[N_COMMANDS] = {
     {CMD_ID_INIT,       {"init", "reset"},                                  "",                 "Initialize a game"}, 
     {CMD_ID_NEW,        {"new"},                                            "",                 "Reset board to `setboard` position"},
     {CMD_ID_PLAY,       {"play"},                                           "",                 "Play moves with f5D6... notation"},
-    {CMD_ID_UNDO,       {"undo"},                                           "",                 "Undo your last move"},
-    {CMD_ID_REDO,       {"redo"},                                           "",                 "Redo your last move"}
+    {CMD_ID_UNDO,       {"undo"},                                           "<moves>",          "Undo your last <moves> moves. if <moves> is empty, undo last 1 move."},
+    {CMD_ID_REDO,       {"redo"},                                           "<moves>",          "Redo your last <moves> moves. if <moves> is empty, redo last 1 move."}
 };

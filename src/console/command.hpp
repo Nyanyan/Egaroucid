@@ -66,10 +66,14 @@ void play(Board_info *board, std::string transcript){
         return;
     }
     Board_info board_bak = board->copy();
+    while (board->ply_vec < (int)board->boards.size() - 1){
+        board->boards.pop_back();
+        board->players.pop_back();
+    }
     Flip flip;
     for (int i = 0; i < (int)transcript.length(); i += 2){
         int x = HW_M1 - (int)(transcript[i] - 'a');
-        if (x < 0)
+        if (x >= HW)
             x = HW_M1 - (int)(transcript[i] - 'A');
         int y = HW_M1 - (int)(transcript[i + 1] - '1');
         if (outside(y, x)){
@@ -95,23 +99,34 @@ void play(Board_info *board, std::string transcript){
         }
         board->boards.emplace_back(board->board);
         board->players.emplace_back(board->player);
+        ++board->ply_vec;
     }
 }
 
-void undo(Board_info *board){
-    if (board->ply_vec <= 0)
+void undo(Board_info *board, int remain){
+    if (remain == 0)
         return;
+    if (board->ply_vec <= 0){
+        std::cerr << "[ERROR] can't undo" << std::endl;
+        return;
+    }
     --board->ply_vec;
     board->board = board->boards[board->ply_vec].copy();
     board->player = board->players[board->ply_vec];
+    undo(board, remain - 1);
 }
 
-void redo(Board_info *board){
-    if (board->ply_vec >= (int)board->boards.size())
+void redo(Board_info *board, int remain){
+    if (remain == 0)
         return;
+    if (board->ply_vec >= (int)board->boards.size() - 1){
+        std::cerr << "[ERROR] can't redo" << std::endl;
+        return;
+    }
     ++board->ply_vec;
     board->board = board->boards[board->ply_vec].copy();
     board->player = board->players[board->ply_vec];
+    redo(board, remain - 1);
 }
 
 void check_command(Board_info *board, State *state, Options *options){
@@ -135,8 +150,29 @@ void check_command(Board_info *board, State *state, Options *options){
         new_board(board);
     else if (cmd_id == CMD_ID_PLAY)
         play(board, arg);
-    else if (cmd_id == CMD_ID_UNDO)
-        undo(board);
-    else if (cmd_id == CMD_ID_REDO)
-        redo(board);
+    else if (cmd_id == CMD_ID_UNDO){
+        int remain = 1;
+        try{
+            remain = std::stoi(arg);
+        } catch (const std::invalid_argument& ex){
+            remain = 1;
+        } catch (const std::out_of_range& ex){
+            remain = 1;
+        }
+        if (remain <= 0)
+            remain = 1;
+        undo(board, remain);
+    } else if (cmd_id == CMD_ID_REDO){
+        int remain = 1;
+        try{
+            remain = std::stoi(arg);
+        } catch (const std::invalid_argument& ex){
+            remain = 1;
+        } catch (const std::out_of_range& ex){
+            remain = 1;
+        }
+        if (remain <= 0)
+            remain = 1;
+        redo(board, remain);
+    }
 }
