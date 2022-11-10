@@ -32,9 +32,10 @@ int main(int argc, char* argv[]) {
     init_console(options);
 
     Board_info board;
+    State state;
     board.reset();
     while (true) {
-        check_command(&board, options);
+        check_command(&board, &state, options);
     }
 
     return 0;
