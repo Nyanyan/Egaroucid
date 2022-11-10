@@ -25,6 +25,8 @@
 #define STANDARD_MAX_LEVEL 21
 #define LIGHT_LEVEL 15
 
+#define DEFAULT_LEVEL 21
+
 /*
     @brief constants for level definition
 */

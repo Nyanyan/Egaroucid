@@ -2,7 +2,7 @@
     Egaroucid Project
 
     @file option.hpp
-        Commandline options
+        Options of Egaroucid
     @date 2021-2022
     @author Takuto Yamana (a.k.a. Nyanyan)
     @license GPL-3.0 license
@@ -10,89 +10,71 @@
 
 #pragma once
 #include <iostream>
-#include <vector>
-#include <string>
-#include <ios>
-#include <iomanip>
+#include "./../engine/engine_all.hpp"
+#include "commandline_option.hpp"
 
-#define N_COMMANDLINE_OPTIONS 9
-
-#define ID_VERSION 0
-#define ID_HELP 1
-#define ID_LEVEL 2
-#define ID_THREAD 3
-#define ID_LOG 4
-#define ID_HASH 5
-#define ID_LEVEL_INFO 6
-#define ID_BOOK_FILE 7
-#define ID_EVAL_FILE 8
-
-#define OPTION_FOUND "1"
-
-struct Commandline_option_info{
-    int id;
-    std::vector<std::string> names;
-    std::string arg;
-    std::string description;
+struct Options{
+    int level;
+    int n_threads;
+    bool show_log;
+    int hash_level;
+    std::string book_file;
+    std::string eval_file;
 };
 
-const Commandline_option_info commandline_option_data[N_COMMANDLINE_OPTIONS] = {
-    {ID_VERSION,    {"-v", "-version", "--version"},                    "",                 "Check Egaroucid for Console version"}, 
-    {ID_HELP,       {"-h", "-help", "--help", "-?"},                    "",                 "See help"}, 
-    {ID_LEVEL,      {"-l", "-level"},                                   "<level>",          "Set level to <level> (0 to 60)"}, 
-    {ID_THREAD,     {"-t", "-thread", "-threads"},                      "<n_threads>",      "Set number of threads (more than 0)"},
-    {ID_LOG,        {"-log"},                                           "<log_level>",      "Set log level to <log_level> (0 or 1)"},
-    {ID_HASH,       {"-hash"},                                          "<hash_level>",     "Set hash level to <hash_level> (0 to 29)"},
-    {ID_LEVEL_INFO, {"-linfo", "-levelinfo"},                           "",                 "See level information"},
-    {ID_BOOK_FILE,  {"-b", "-book"},                                    "<book_file>",      "Import <book_file> as Egaroucid's book"},
-    {ID_EVAL_FILE,  {"-eval"},                                          "<eval_file>",      "Import <eval_file> as Egaroucid's evaluation function"}
-};
-
-struct Commandline_option{
-    int id;
-    std::string value;
-
-    Commandline_option(int id_in, std::string value_in){
-        id = id_in;
-        value = value_in;
-    }
-};
-
-std::vector<Commandline_option> get_commandline_options(int argc, char* argv[]){
-    std::vector<std::string> argv_string;
-    int i;
-    for (i = 0; i < argc; ++i){
-        std::string tmp = argv[i];
-        argv_string.emplace_back(tmp);
-    }
-    std::vector<Commandline_option> res;
-    int idx = 0;
-    bool option_found;
-    while (idx < argc){
-        option_found = false;
-        for (i = 0; i < N_COMMANDLINE_OPTIONS; ++i){
-            if (std::find(commandline_option_data[i].names.begin(), commandline_option_data[i].names.end(), argv_string[idx]) != commandline_option_data[i].names.end()){
-                if (commandline_option_data[i].arg != ""){
-                    ++idx;
-                    if (idx >= argc)
-                        break;
-                    res.emplace_back(Commandline_option(commandline_option_data[i].id, argv_string[idx]));
-                    break;
-                } else{
-                    res.emplace_back(Commandline_option(commandline_option_data[i].id, OPTION_FOUND));
-                    break;
-                }
+Options get_options(std::vector<Commandline_option> commandline_options){
+    Options res;
+    std::string str;
+    res.level = DEFAULT_LEVEL;
+    str = find_commandline_option(commandline_options, ID_LEVEL);
+    if (str != OPTION_NOT_FOUND){
+        try {
+            res.level = std::stoi(str);
+            if (res.level < 0 || N_LEVEL <= res.hash_level){
+                res.level = DEFAULT_LEVEL;
+                std::cerr << "[ERROR] level argument out of range" << std::endl;
             }
+        } catch (const std::invalid_argument& e){
+            std::cerr << "[ERROR] level argument invalid" << std::endl;
+        } catch (const std::out_of_range& e) {
+            std::cerr << "[ERROR] level argument out of range" << std::endl;
         }
-        ++idx;
     }
-    return res;
-}
-
-std::string find_commandline_option(std::vector<Commandline_option> commandline_options, int id){
-    for (Commandline_option option: commandline_options){
-        if (option.id == id)
-            return option.value;
+    res.n_threads = std::min(32, (int)std::thread::hardware_concurrency());
+    str = find_commandline_option(commandline_options, ID_THREAD);
+    if (str != OPTION_NOT_FOUND){
+        try {
+            res.n_threads = std::stoi(str);
+        } catch (const std::invalid_argument& e){
+            std::cerr << "[ERROR] thread argument invalid" << std::endl;
+        } catch (const std::out_of_range& e) {
+            std::cerr << "[ERROR] thread argument out of range" << std::endl;
+        }
     }
-    return "";
+    res.show_log = true;
+    str = find_commandline_option(commandline_options, ID_LOG);
+    if (str != OPTION_NOT_FOUND){
+        try {
+            res.show_log = std::stoi(str) > 0;
+        } catch (const std::invalid_argument& e){
+            std::cerr << "[ERROR] log argument invalid" << std::endl;
+        } catch (const std::out_of_range& e) {
+            std::cerr << "[ERROR] log argument out of range" << std::endl;
+        }
+    }
+    res.hash_level = DEFAULT_HASH_LEVEL;
+    str = find_commandline_option(commandline_options, ID_HASH);
+    if (str != OPTION_NOT_FOUND){
+        try {
+            res.hash_level = std::stoi(str);
+            if (res.hash_level < 0 || N_HASH_LEVEL <= res.hash_level){
+                res.hash_level = DEFAULT_HASH_LEVEL;
+                std::cerr << "[ERROR] hash argument out of range" << std::endl;
+            }
+        } catch (const std::invalid_argument& e){
+            std::cerr << "[ERROR] hash argument invalid" << std::endl;
+        } catch (const std::out_of_range& e) {
+            std::cerr << "[ERROR] hash argument out of range" << std::endl;
+        }
+    }
 }

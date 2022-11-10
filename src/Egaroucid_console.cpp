@@ -12,40 +12,24 @@
 #include "engine/engine_all.hpp"
 #include "console/console_all.hpp"
 
-// ffotest
 int main(int argc, char* argv[]) {
-    print_version();
     std::vector<Commandline_option> commandline_options = get_commandline_options(argc, argv);
-    if (find_commandline_option(commandline_options, ID_HELP) == OPTION_FOUND){
-        print_help();
-        return 0;
-    }
-    int n_threads = 10;
-    bool show_log = true;
-    int hash_level = 24;
-    if (argc >= 2) {
-        n_threads = atoi(argv[1]);
-    }
-    if (argc >= 3) {
-        show_log = atoi(argv[2]);
-    }
-    if (argc >= 4) {
-        hash_level = atoi(argv[3]);
-    }
-    thread_pool.resize(n_threads);
+    special_commandline_options(commandline_options);
+    Options options = get_options(commandline_options);
+
+    
+    thread_pool.resize(options.n_threads);
     bit_init();
     mobility_init();
-    hash_resize(0, hash_level);
-    evaluate_init("resources/eval.egev");
+    hash_resize(DEFAULT_HASH_LEVEL, options.hash_level);
+    evaluate_init(options.eval_file);
     stability_init();
     Board board;
     Search_result res;
     while (true) {
         board = input_board();
         //board.reset();
-        if (show_log)
-            board.print();
-        res = ai(board, 60, false, true, show_log);
+        res = ai(board, options.level, false, true, options.show_log);
         std::cout << "depth " << res.depth << " value " << res.value << " policy " << idx_to_coord(res.policy) << " nodes " << res.nodes << " time " << res.time << " nps " << res.nps << std::endl;
     }
 

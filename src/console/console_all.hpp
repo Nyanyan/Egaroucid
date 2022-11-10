@@ -10,6 +10,7 @@
 
 #pragma once
 #include "command.hpp"
+#include "commandline_option.hpp"
 #include "info.hpp"
 #include "option.hpp"
 #include "print.hpp"
