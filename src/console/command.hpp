@@ -146,9 +146,13 @@ void go(Board_info *board, Options *options){
         board->board.pass();
         board->player ^= 1;
     }
+    while (board->ply_vec < (int)board->boards.size() - 1){
+        board->boards.pop_back();
+        board->players.pop_back();
+    }
     board->boards.emplace_back(board->board);
     board->players.emplace_back(board->player);
-
+    ++board->ply_vec;
 }
 
 void setboard(Board_info *board, std::string board_str){
