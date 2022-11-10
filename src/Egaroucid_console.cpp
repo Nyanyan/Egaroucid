@@ -14,6 +14,7 @@
 
 // ffotest
 int main(int argc, char* argv[]) {
+    print_version();
     std::vector<Commandline_option> commandline_options = get_commandline_options(argc, argv);
     if (find_commandline_option(commandline_options, ID_HELP) == OPTION_FOUND){
         print_help();

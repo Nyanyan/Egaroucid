@@ -31,8 +31,6 @@
 
 #define OPTION_FOUND "1"
 
-#define COUT_TAB "  "
-
 struct Commandline_option_info{
     int id;
     std::vector<std::string> names;
@@ -99,21 +97,4 @@ std::string find_commandline_option(std::vector<Commandline_option> commandline_
             return option.value;
     }
     return "";
-}
-
-void print_commandline_options(){
-    std::cout << "Commandline options:" << std::endl;
-    for (int i = 0; i < N_COMMANDLINE_OPTIONS; ++i){
-        std::string s;
-        for (int j = 0; j < (int)commandline_option_data[i].names.size(); ++j){
-            if (j != 0)
-                s += "|";
-            s += commandline_option_data[i].names[j];
-        }
-        s += " " + commandline_option_data[i].arg;
-        std::cout << COUT_TAB;
-        std::cout << std::left << std::setw(COMMANDLINE_OPTION_HELP_TAB_SIZE) << s;
-        std::cout << commandline_option_data[i].description;
-        std::cout << std::endl;
-    }
 }
