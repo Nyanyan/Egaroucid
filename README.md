@@ -65,6 +65,8 @@ Required:
   * worked with version 8.1.0
 
 ```
+$ git clone git@github.com:Nyanyan/Egaroucid.git
+$ cd Egaroucid/src
 $ g++ -O2 Egaroucid_console.cpp -o Egaroucid_for_console.exe -mtune=native -march=native -mfpmath=both
 ```
 
@@ -91,7 +93,7 @@ Required:
 
 ```
 $ git clone git@github.com:Nyanyan/Egaroucid.git
-$ cd src
+$ cd Egaroucid/src
 $ em++ Egaroucid_web.cpp -s WASM=1 -o ai.js -s "EXPORTED_FUNCTIONS=['_init_ai', '_ai_js', '_calc_value', '_stop', '_resume', '_malloc', '_free']" -O3 -s TOTAL_MEMORY=629145600 -s ALLOW_MEMORY_GROWTH=1
 ```
 
