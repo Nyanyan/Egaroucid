@@ -206,7 +206,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
                 }
             }
             #if USE_MID_NMP
-                if (search->n_discs <= USE_NULL_MOVE_PRUNING_N_DISCS){
+                if (search->n_discs <= USE_NULL_MOVE_PRUNING_N_DISCS && depth <= USE_NULL_MOVE_PRUNING_DEPTH){
                     if (nmp_nws(search, alpha, depth, &v)){
                         *mpc_used = true;
                         return v;

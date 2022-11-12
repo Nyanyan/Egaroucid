@@ -17,6 +17,7 @@
 #include "util.hpp"
 
 #define USE_NULL_MOVE_PRUNING_N_DISCS 51
+#define USE_NULL_MOVE_PRUNING_DEPTH 5
 
 /*
     @brief constants for Null Move Pruning
