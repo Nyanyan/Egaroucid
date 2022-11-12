@@ -17,20 +17,20 @@
 #include "util.hpp"
 
 #define USE_NULL_MOVE_PRUNING_N_DISCS 51
-#define USE_NULL_MOVE_PRUNING_DEPTH 5
+#define USE_NULL_MOVE_PRUNING_DEPTH 9
 
 /*
     @brief constants for Null Move Pruning
 */
-#define null_move_const_a -0.2171148865143937
-#define null_move_const_b -1.4594275675153519
+constexpr double null_move_const_a[2] = {-0.8503110335696682, -0.8793653592885485};
+constexpr double null_move_const_b[2] = {-5.7281549015782, -4.222035987304141};
 
-#define null_move_pruning_a 3.3070748373278582
-#define null_move_pruning_b 0.078874261132089
-#define null_move_pruning_c 0.9907496298444651
-#define null_move_pruning_d -4.248239539362103
-#define null_move_pruning_e 6.410624848586558
-#define null_move_pruning_f 1.074308338752178
+#define null_move_pruning_a 1.7953883211601585
+#define null_move_pruning_b 0.19563822250898116
+#define null_move_pruning_c 14.492851079667709
+#define null_move_pruning_d -37.67736919749262
+#define null_move_pruning_e 31.32102383480849
+#define null_move_pruning_f -1.2126603393649316
 
 /*
     @brief Null Move Pruning value conversion
@@ -38,8 +38,8 @@
     @param v                    null move value
     @return expected value
 */
-inline double nmp_convert(int v){
-    return null_move_const_a * v + null_move_const_b;
+inline double nmp_convert(int v, uint_fast8_t parity){
+    return null_move_const_a[parity] * v + null_move_const_b[parity];
 }
 
 /*
@@ -67,7 +67,7 @@ inline double nmp_sigma(int n_discs, int depth){
 */
 inline bool nmp(Search *search, int alpha, int beta, int depth, int *v){
     double error = search->mpct * nmp_sigma(search->n_discs, depth);
-    const double null_move_value = nmp_convert(mid_evaluate_diff_pass(search));
+    const double null_move_value = nmp_convert(mid_evaluate_diff_pass(search), search->n_discs & 1);
     if (null_move_value <= (double)alpha - error){
         *v = alpha;
         return true;

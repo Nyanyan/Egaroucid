@@ -7,22 +7,24 @@ from scipy.optimize import curve_fit
 from matplotlib import animation
 import math
 
-data_file = 'data/mid.txt'
+data_file = 'data/mid_depth.txt'
 
-const_weight = 2.0
+const_weight = 2.5
 
 with open(data_file, 'r') as f:
     raw_data = f.read().splitlines()
 
 data = []
 
-def model(pass_score):
-    return -0.2171148865143937 * pass_score - 1.4594275675153519
+def model(pass_score, parity):
+    a = [-0.8503110335696682, -0.8793653592885485]
+    b = [-5.7281549015782, -4.222035987304141]
+    return a[parity] * pass_score + b[parity]
 
 data = [[[] for _ in range(61)] for _ in range(65)] # n_discs, depth
 for datum in raw_data:
     n_discs, depth, pass_score, val = [int(elem) for elem in datum.split()]
-    data[n_discs][depth].append(val - model(pass_score))
+    data[n_discs][depth].append(val - model(pass_score, n_discs % 2))
 
 x_n_discs = []
 y_depth = []
@@ -35,12 +37,16 @@ for n_discs in range(65):
         if len(data[n_discs][depth]) >= 3:
             mean = statistics.mean(data[n_discs][depth])
             sigma = statistics.stdev(data[n_discs][depth])
+            if n_discs >= 15 and n_discs <= 40:
+                sigma += 1.5
+            elif n_discs > 40:
+                sigma += 1.0
             x_n_discs.append(n_discs)
             y_depth.append(depth)
             z_error.append(sigma + const_weight)
             weight.append(1 / len(data[n_discs][depth]))
 
-for depth in range(65):
+for depth in range(0):
     x_n_discs.append(4)
     y_depth.append(depth)
     z_error.append(const_weight + 1.0)

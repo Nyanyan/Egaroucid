@@ -1,9 +1,9 @@
 from tqdm import tqdm, trange
 
-data_file = './../statistics/data/records16_with_eval_zero/0000000.txt'
+data_file = './../statistics/data/records16_with_eval/0000000_mid.txt'
 data_file2 = './../statistics/data/records16_with_eval_pass/0000000.txt'
 
-output_file = 'data/mid.txt'
+output_file = 'data/mid_depth.txt'
 
 data_max_depth = 11
 
@@ -21,7 +21,11 @@ def str_to_value(elem):
 with open(output_file, 'w') as f:
     for line in trange(len(raw_data)):
         board = raw_data[line][:64]
-        score = int(raw_data[line].split()[1])
+        score = str_to_value(raw_data[line][65])
+        evals = [str_to_value(elem) for elem in raw_data[line][67:]]
         pass_score = int(raw_data2[line].split()[1])
         n_discs = board.count('p') + board.count('o')
-        f.write(str(n_discs) + ' ' + str(pass_score) + ' ' + str(score) + '\n')
+        max_depth = min(len(evals), 64 - n_discs - 1)
+        for depth in range(data_max_depth):
+            error = pass_score - evals[depth]
+            f.write(str(n_discs) + ' ' + str(depth) + ' ' + str(pass_score) + ' ' + str(evals[depth]) + '\n')
