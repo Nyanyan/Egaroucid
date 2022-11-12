@@ -862,6 +862,26 @@ inline int end_evaluate(Board *b){
             _mm256_extract_epi32(res256, 1) + 
             _mm256_extract_epi32(res256, 0);
     }
+
+    inline int calc_pattern_diff_pass(const int phase_idx, Search *search){
+        int *pat_com = (int*)pattern_arr[search->eval_feature_reversed ^ 1][phase_idx][0];
+        __m256i res256 = _mm256_i32gather_epi32(pat_com, search->eval_features[0], 4);
+        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, search->eval_features[1], 4));
+        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, search->eval_features[2], 4));
+        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, search->eval_features[3], 4));
+        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, search->eval_features[4], 4));
+        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, search->eval_features[5], 4));
+        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, search->eval_features[6], 4));
+        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, search->eval_features[7], 4));
+        return _mm256_extract_epi32(res256, 7) + 
+            _mm256_extract_epi32(res256, 6) + 
+            _mm256_extract_epi32(res256, 5) + 
+            _mm256_extract_epi32(res256, 4) + 
+            _mm256_extract_epi32(res256, 3) + 
+            _mm256_extract_epi32(res256, 2) + 
+            _mm256_extract_epi32(res256, 1) + 
+            _mm256_extract_epi32(res256, 0);
+    }
 #else
     inline int calc_pattern_diff(const int phase_idx, Search *search){
         return 
@@ -882,18 +902,24 @@ inline int end_evaluate(Board *b){
             pattern_arr[search->eval_feature_reversed][phase_idx][14][search->eval_features[54]] + pattern_arr[search->eval_feature_reversed][phase_idx][14][search->eval_features[55]] + pattern_arr[search->eval_feature_reversed][phase_idx][14][search->eval_features[56]] + pattern_arr[search->eval_feature_reversed][phase_idx][14][search->eval_features[57]] + 
             pattern_arr[search->eval_feature_reversed][phase_idx][15][search->eval_features[58]] + pattern_arr[search->eval_feature_reversed][phase_idx][15][search->eval_features[59]] + pattern_arr[search->eval_feature_reversed][phase_idx][15][search->eval_features[60]] + pattern_arr[search->eval_feature_reversed][phase_idx][15][search->eval_features[61]];
     }
+
+    inline int calc_pattern_diff_pass(const int phase_idx, Search *search){
+        search->eval_feature_reversed ^= 1;
+        int res = calc_pattern_diff(phase_idx, search);
+        search->eval_feature_reversed ^= 1;
+        return res;
+    }
 #endif
 
 /*
     @brief mobility pattern evaluation
 
     @param phase_idx            evaluation phase
-    @param b                    board
     @param player_mobility      player's legal moves in bitboard
     @param opponent_mobility    opponent's legal moves in bitboard
     @return mobility pattern evaluation value
 */
-inline int calc_mobility_pattern(const int phase_idx, Board *b, const uint64_t player_mobility, const uint64_t opponent_mobility){
+inline int calc_mobility_pattern(const int phase_idx, const uint64_t player_mobility, const uint64_t opponent_mobility){
     uint8_t *ph = (uint8_t*)&player_mobility;
     uint8_t *oh = (uint8_t*)&opponent_mobility;
     uint64_t p90 = rotate_90(player_mobility);
@@ -945,7 +971,7 @@ inline int calc_mobility_pattern(const int phase_idx, Board *b, const uint64_t p
             eval_sur0_sur1_arr[phase_idx][sur0][sur1] + 
             eval_canput0_canput1_arr[phase_idx][canput0][canput1] + 
             eval_num0_num1_arr[phase_idx][num0][num1] + 
-            calc_mobility_pattern(phase_idx, b, player_mobility, opponent_mobility);
+            calc_mobility_pattern(phase_idx, player_mobility, opponent_mobility);
         res += res > 0 ? STEP_2 : (res < 0 ? -STEP_2 : 0);
         res /= STEP;
         return std::max(-SCORE_MAX, std::min(SCORE_MAX, res));
@@ -976,7 +1002,7 @@ inline int calc_mobility_pattern(const int phase_idx, Board *b, const uint64_t p
             eval_sur0_sur1_arr[phase_idx][sur0][sur1] + 
             eval_canput0_canput1_arr[phase_idx][canput0][canput1] + 
             eval_num0_num1_arr[phase_idx][num0][num1] + 
-            calc_mobility_pattern(phase_idx, &search.board, player_mobility, opponent_mobility);
+            calc_mobility_pattern(phase_idx, player_mobility, opponent_mobility);
         res += res >= 0 ? STEP_2 : -STEP_2;
         res /= STEP;
         return std::max(-SCORE_MAX, std::min(SCORE_MAX, res));
@@ -1009,7 +1035,39 @@ inline int mid_evaluate_diff(Search *search){
         eval_sur0_sur1_arr[phase_idx][sur0][sur1] + 
         eval_canput0_canput1_arr[phase_idx][canput0][canput1] + 
         eval_num0_num1_arr[phase_idx][num0][num1] + 
-        calc_mobility_pattern(phase_idx, &search->board, player_mobility, opponent_mobility);
+        calc_mobility_pattern(phase_idx, player_mobility, opponent_mobility);
+    res += res >= 0 ? STEP_2 : -STEP_2;
+    res /= STEP;
+    return std::max(-SCORE_MAX, std::min(SCORE_MAX, res));
+}
+
+/*
+    @brief midgame evaluation function for Null Move Pruning
+
+    @param search               search information
+    @return evaluation value
+*/
+inline int mid_evaluate_diff_pass(Search *search){
+    uint64_t player_mobility, opponent_mobility;
+    player_mobility = calc_legal(search->board.opponent, search->board.player);
+    opponent_mobility = calc_legal(search->board.player, search->board.opponent);
+    if ((player_mobility | opponent_mobility) == 0ULL)
+        return -end_evaluate(&search->board);
+    int phase_idx, sur0, sur1, canput0, canput1, num0, num1;
+    uint64_t empties;
+    phase_idx = search->phase();
+    canput0 = std::min(MAX_CANPUT - 1, pop_count_ull(player_mobility));
+    canput1 = std::min(MAX_CANPUT - 1, pop_count_ull(opponent_mobility));
+    empties = ~(search->board.opponent | search->board.player);
+    sur0 = std::min(MAX_SURROUND - 1, calc_surround(search->board.opponent, empties));
+    sur1 = std::min(MAX_SURROUND - 1, calc_surround(search->board.player, empties));
+    num0 = pop_count_ull(search->board.opponent);
+    num1 = search->n_discs - num0;
+    int res = calc_pattern_diff_pass(phase_idx, search) + 
+        eval_sur0_sur1_arr[phase_idx][sur0][sur1] + 
+        eval_canput0_canput1_arr[phase_idx][canput0][canput1] + 
+        eval_num0_num1_arr[phase_idx][num0][num1] + 
+        calc_mobility_pattern(phase_idx, player_mobility, opponent_mobility);
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
     return std::max(-SCORE_MAX, std::min(SCORE_MAX, res));

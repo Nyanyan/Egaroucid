@@ -49,7 +49,7 @@ inline double nmp_convert(int v){
     @return expected error
 */
 inline double nmp_sigma(int n_discs, int depth){
-    double res = null_move_pruning_a * ((double)n_discs / 64.0) + null_move_pruning_b * ((double)depth / 60.0) + null_move_pruning_c * ((double)depth2 / 60.0);
+    double res = null_move_pruning_a * ((double)n_discs / 64.0) + null_move_pruning_b * ((double)depth / 60.0);
     res = null_move_pruning_c * res * res * res + null_move_pruning_d * res * res + null_move_pruning_e * res + null_move_pruning_f;
     return res;
 }
@@ -65,13 +65,13 @@ inline double nmp_sigma(int n_discs, int depth){
     @return cutoff occurred?
 */
 inline bool nmp(Search *search, int alpha, int beta, int depth, int *v){
-    int error = ceil(search->mpct * nmp_sigma(search->n_discs, depth));
-    const int depth0_value = nmp_convert(mid_evaluate_diff_pass(search));
-    if (depth0_value <= alpha - error){
+    double error = search->mpct * nmp_sigma(search->n_discs, depth);
+    const double null_move_value = nmp_convert(mid_evaluate_diff_pass(search));
+    if (null_move_value <= (double)alpha - error){
         *v = alpha;
         return true;
     }
-    if (depth0_value >= beta + error){
+    if (null_move_value >= (double)beta + error){
         *v = beta;
         return true;
     }

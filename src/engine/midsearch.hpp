@@ -21,6 +21,7 @@
 #include "transposition_table.hpp"
 #include "move_ordering.hpp"
 #include "probcut.hpp"
+#include "null_move_pruning.hpp"
 #include "thread_pool.hpp"
 #include "util.hpp"
 #include "stability.hpp"
@@ -227,6 +228,12 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, c
                     if (mpc(search, alpha, beta, depth, legal, is_end_search, &v, searching))
                         return v;
                 #endif
+                #if USE_MID_NMP
+                    if (search->n_discs <= USE_NULL_MOVE_PRUNING_N_DISCS){
+                        if (nmp(search, alpha, beta, depth, &v))
+                            return v;
+                    }
+                #endif
             }
         #endif
         int best_move = best_move_transposition_table.get(&search->board, hash_code);
@@ -383,6 +390,12 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
             #else
                 if (mpc(search, alpha, beta, depth, legal, is_end_search, &v, searching))
                     return v;
+            #endif
+            #if USE_MID_NMP
+                if (search->n_discs <= USE_NULL_MOVE_PRUNING_N_DISCS){
+                    if (nmp(search, alpha, beta, depth, &v))
+                        return v;
+                }
             #endif
         }
     #endif

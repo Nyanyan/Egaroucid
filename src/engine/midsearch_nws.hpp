@@ -212,6 +212,14 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
                     return v;
                 }
             #endif
+            #if USE_MID_NMP
+                if (search->n_discs <= USE_NULL_MOVE_PRUNING_N_DISCS){
+                    if (nmp_nws(search, alpha, depth, &v)){
+                        *mpc_used = true;
+                        return v;
+                    }
+                }
+            #endif
         }
     #endif
     int best_move = best_move_transposition_table.get(&search->board, hash_code);
