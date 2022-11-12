@@ -16,6 +16,8 @@
 #include "midsearch.hpp"
 #include "util.hpp"
 
+#define USE_MPC_N_DISCS 51
+
 #if USE_ALL_NODE_PREDICTION
     #define ALL_NODE_CHECK_MPCT 1.8
 #endif

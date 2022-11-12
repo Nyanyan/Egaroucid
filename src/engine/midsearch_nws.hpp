@@ -199,19 +199,12 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
     #endif
     #if USE_MID_MPC
         if (search->use_mpc){
-            #if MID_TO_END_DEPTH < USE_MPC_ENDSEARCH_DEPTH
-                if (!(is_end_search && depth < USE_MPC_ENDSEARCH_DEPTH)){
-                    if (mpc_nws(search, alpha, depth, legal, is_end_search, &v, searching)){
-                        *mpc_used = true;
-                        return v;
-                    }
-                }
-            #else
+            if (search->n_discs <= USE_MPC_N_DISCS){
                 if (mpc_nws(search, alpha, depth, legal, is_end_search, &v, searching)){
                     *mpc_used = true;
                     return v;
                 }
-            #endif
+            }
             #if USE_MID_NMP
                 if (search->n_discs <= USE_NULL_MOVE_PRUNING_N_DISCS){
                     if (nmp_nws(search, alpha, depth, &v)){
