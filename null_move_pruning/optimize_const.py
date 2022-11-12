@@ -24,7 +24,7 @@ for datum in raw_data:
     x_pass_scores.append(pass_score)
 
 def f(x, const_a, const_b):
-    return const_a * x / 64 + const_b
+    return const_a * x + const_b
 
 def plot_fit_result(params):
     plt.scatter(x_pass_scores, y_vals)

@@ -50,7 +50,7 @@
 #define USE_MID_MPC true
 
 // Null Move Pruning
-#define USE_MID_NMP true
+#define USE_MID_NMP false
 
 // use probcut to predict it seems to be an all node
 #define USE_ALL_NODE_PREDICTION false

@@ -21,15 +21,15 @@
 /*
     @brief constants for Null Move Pruning
 */
-#define null_move_const_a 13.895352711158006
-#define null_move_const_b -1.4594275635787501
+#define null_move_const_a -0.2171148865143937
+#define null_move_const_b -1.4594275675153519
 
-#define null_move_pruning_a 2.9926628871203254
-#define null_move_pruning_b -0.08800506474056283
-#define null_move_pruning_c 1.370776862257715
-#define null_move_pruning_d -5.274245516055893
-#define null_move_pruning_e 7.126241341550173
-#define null_move_pruning_f -0.9032409632420645
+#define null_move_pruning_a 3.3070748373278582
+#define null_move_pruning_b 0.078874261132089
+#define null_move_pruning_c 0.9907496298444651
+#define null_move_pruning_d -4.248239539362103
+#define null_move_pruning_e 6.410624848586558
+#define null_move_pruning_f 1.074308338752178
 
 /*
     @brief Null Move Pruning value conversion

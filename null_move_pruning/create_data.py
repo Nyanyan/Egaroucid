@@ -23,7 +23,7 @@ with open(output_file, 'w') as f:
         board = raw_data[line][:64]
         score = str_to_value(raw_data[line][65])
         evals = [str_to_value(elem) for elem in raw_data[line][67:]]
-        pass_score = -int(raw_data2[line].split()[1])
+        pass_score = int(raw_data2[line].split()[1])
         n_discs = board.count('p') + board.count('o')
         max_depth = min(len(evals), 64 - n_discs - 1)
         for depth in range(data_max_depth):

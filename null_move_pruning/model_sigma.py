@@ -9,7 +9,7 @@ import math
 
 data_file = 'data/mid.txt'
 
-const_weight = 0.0
+const_weight = 2.0
 
 with open(data_file, 'r') as f:
     raw_data = f.read().splitlines()
@@ -17,7 +17,7 @@ with open(data_file, 'r') as f:
 data = []
 
 def model(pass_score):
-    return 13.895352711158006 * pass_score / 64 - 1.4594275635787501
+    return -0.2171148865143937 * pass_score - 1.4594275675153519
 
 data = [[[] for _ in range(61)] for _ in range(65)] # n_discs, depth
 for datum in raw_data:
@@ -43,7 +43,7 @@ for n_discs in range(65):
 for depth in range(65):
     x_n_discs.append(4)
     y_depth.append(depth)
-    z_error.append(0.2)
+    z_error.append(const_weight + 1.0)
     weight.append(0.006)
 
 def f(xy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g, probcut_h, probcut_i, probcut_j):
