@@ -37,3 +37,4 @@ stability
 probcut/data
 move_ordering/mid/data
 move_ordering/mid/resources
+null_move_pruning/data

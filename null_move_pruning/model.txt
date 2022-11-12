@@ -1,0 +1,11 @@
+V: true value
+v: null move value
+V = -av + b + sigma
+
+a: const > 0
+b: const
+sigma: to optimize
+
+V = -av + b + sigma
+-av = V - b - sigma
+v = -(V - b - sigma) / a
