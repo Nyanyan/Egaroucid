@@ -18,6 +18,8 @@ x_pass_scores = []
 y_vals = []
 for datum in raw_data:
     n_discs, depth, pass_score, val = [int(elem) for elem in datum.split()]
+    if n_discs >= 64 - 13:
+        continue
     y_vals.append(val)
     x_pass_scores.append(pass_score)
 
