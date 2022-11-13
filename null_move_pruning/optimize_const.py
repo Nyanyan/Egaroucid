@@ -7,7 +7,7 @@ from scipy.optimize import curve_fit
 from matplotlib import animation
 import math
 
-data_file = 'data/mid.txt'
+data_file = 'data/mid_pass_5.txt'
 
 with open(data_file, 'r') as f:
     raw_data = f.read().splitlines()
@@ -23,8 +23,9 @@ for datum in raw_data:
     y_vals[n_discs % 2].append(val)
     x_pass_scores[n_discs % 2].append(pass_score)
 
-def f(x, const_a, const_b):
-    return const_a * x + const_b
+def f(x, const_a, const_b, const_c, const_d):
+    x = x / 64
+    return const_a * x * x * x + const_b * x * x + const_c * x + const_d
 
 def y_x(x):
     return -x
@@ -39,12 +40,13 @@ def plot_fit_result(params1, params2):
     plt.plot(x_small, y_x(x_small), color='green')
     plt.show()
 
-probcut_params_before = [1.0 for _ in range(2)]
+probcut_params_before = [1.0 for _ in range(4)]
 
 popt = [[], []]
 for parity in [0, 1]:
     popt[parity], pcov = curve_fit(f, x_pass_scores[parity], y_vals[parity], np.array(probcut_params_before))
-    #popt = probcut_params_before
+print(list(popt[0]))
+print(list(popt[1]))
 for i in range(len(popt[0])):
     print('constexpr double null_move_const_' + chr(ord('a') + i) + '[2] = {' + str(popt[0][i]) + ', ' + str(popt[1][i]) + '};')
 plot_fit_result(popt[0], popt[1])

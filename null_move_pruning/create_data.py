@@ -1,13 +1,9 @@
 from tqdm import tqdm, trange
 
-data_file = './../statistics/data/records16_with_eval_zero/0000000.txt'
+data_file = './../statistics/data/records16_with_eval_5/0000000.txt'
 data_file2 = './../statistics/data/records16_with_eval_pass/0000000.txt'
 
-output_file = 'data/mid.txt'
-
-data_max_depth = 11
-
-# data format n_discs, depth1, depth2, abs_error (depth1 < depth2)
+output_file = 'data/mid_pass_5.txt'
 
 with open(data_file, 'r') as f:
     raw_data = f.read().splitlines()

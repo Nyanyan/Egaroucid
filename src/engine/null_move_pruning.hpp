@@ -22,15 +22,17 @@
 /*
     @brief constants for Null Move Pruning
 */
-constexpr double null_move_const_a[2] = {-0.8503110335696682, -0.8793653592885485};
-constexpr double null_move_const_b[2] = {-5.7281549015782, -4.222035987304141};
+constexpr double null_move_const_a[2] = {-61.3776920479145, -42.489688728004666};
+constexpr double null_move_const_b[2] = {-6.889455582792511, 0.7090865608885384};
+constexpr double null_move_const_c[2] = {-22.020567864648946, -29.95624285424537};
+constexpr double null_move_const_d[2] = {-1.7492521920534927, -2.1414654948687826};
 
-#define null_move_pruning_a 1.7953883211601585
-#define null_move_pruning_b 0.19563822250898116
-#define null_move_pruning_c 14.492851079667709
-#define null_move_pruning_d -37.67736919749262
-#define null_move_pruning_e 31.32102383480849
-#define null_move_pruning_f -1.2126603393649316
+#define null_move_pruning_a 1.4906023693536687
+#define null_move_pruning_b 0.01547301437682099
+#define null_move_pruning_c 15.746679229773422
+#define null_move_pruning_d -35.066778220644736
+#define null_move_pruning_e 25.913544235113513
+#define null_move_pruning_f 0.07597292971713729
 
 /*
     @brief Null Move Pruning value conversion
@@ -39,7 +41,9 @@ constexpr double null_move_const_b[2] = {-5.7281549015782, -4.222035987304141};
     @return expected value
 */
 inline double nmp_convert(int v, uint_fast8_t parity){
-    return null_move_const_a[parity] * v + null_move_const_b[parity];
+    double vv = (double)v / 64;
+    double vv2 = vv * vv;
+    return null_move_const_a[parity] * vv2 * vv + null_move_const_b[parity] * vv2 + null_move_const_c[parity] * vv + null_move_const_d[parity];
 }
 
 /*

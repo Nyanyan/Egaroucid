@@ -9,8 +9,10 @@ drs = [
 ]
 
 out_drs = [
-    'data/records16_with_eval_zero/'
+    'data/records16_with_eval_5/'
 ]
+
+DEPTH = 5
 
 egaroucid = subprocess.Popen(('Egaroucid6_test.exe').split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
 
@@ -57,7 +59,7 @@ for dr, out_dr in zip(drs, out_drs):
                     for l in range(hw):
                         input_datum += '0' if o.grid[k][l] == black else '1' if o.grid[k][l] == white else '.'
                     input_datum += '\n'
-                egaroucid.stdin.write((str(0) + '\n' + input_datum).encode('utf-8'))
+                egaroucid.stdin.write((str(DEPTH) + '\n' + input_datum).encode('utf-8'))
                 egaroucid.stdin.flush()
                 line = egaroucid.stdout.readline().decode()
                 val = int(line)

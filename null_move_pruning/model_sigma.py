@@ -17,9 +17,12 @@ with open(data_file, 'r') as f:
 data = []
 
 def model(pass_score, parity):
-    a = [-0.8503110335696682, -0.8793653592885485]
-    b = [-5.7281549015782, -4.222035987304141]
-    return a[parity] * pass_score + b[parity]
+    popt = [
+        [-61.3776920479145, -6.889455582792511, -22.020567864648946, -1.7492521920534927],
+        [-42.489688728004666, 0.7090865608885384, -29.95624285424537, -2.1414654948687826]
+    ]
+    pass_score /= 64
+    return popt[parity][0] * (pass_score ** 3) + popt[parity][1] * (pass_score ** 2) + popt[parity][2] * pass_score + popt[parity][3]
 
 data = [[[] for _ in range(61)] for _ in range(65)] # n_discs, depth
 for datum in raw_data:
