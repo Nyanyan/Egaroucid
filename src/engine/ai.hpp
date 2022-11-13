@@ -382,6 +382,12 @@ int ai_window(Board board, int level, int alpha, int beta, bool use_multi_thread
     return value_sign * tree_search_window(board, depth, alpha, beta, use_mpc, mpct, use_multi_thread);
 }
 
+/*
+    @brief Get places where opponent want to put
+
+    @param board                board to solve
+    @param res                  array to store result
+*/
 void ai_opponent_move(Board board, double res[]){
     uint64_t legal = board.get_legal();
     Flip flip;
