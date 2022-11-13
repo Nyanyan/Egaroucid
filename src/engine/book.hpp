@@ -426,6 +426,32 @@ class Book{
         }
 
         /*
+            @brief get all best moves
+
+            @param b                    a board pointer to find
+            @return vector of best moves
+        */
+        inline std::vector<int> get_all_best_moves(Board *b){
+            std::vector<int> policies;
+            Board nb;
+            int max_value = -INF;
+            uint64_t legal = b->get_legal();
+            Flip flip;
+            int value;
+            for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+                calc_flip(&flip, b, cell);
+                nb = b->move_copy(&flip);
+                value = get(&nb);
+                if (max_value < value){
+                    policies.push_back(cell);
+                    max_value = value;
+                } else if (value == max_value)
+                    policies.push_back(cell);
+            }
+            return policies;
+        }
+
+        /*
             @brief get how many boards registered in this book
 
             @return number of registered boards

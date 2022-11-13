@@ -381,3 +381,33 @@ int ai_window(Board board, int level, int alpha, int beta, bool use_multi_thread
         get_level(level, board.n_discs() - 4, &is_mid_search, &depth, &use_mpc, &mpct);
     return value_sign * tree_search_window(board, depth, alpha, beta, use_mpc, mpct, use_multi_thread);
 }
+
+void ai_opponent_move(Board board, double res[]){
+    uint64_t legal = board.get_legal();
+    Flip flip;
+    int best_move;
+    for (int i = 0;  i < HW2; ++i)
+        res[i] = 0.0;
+    int cnt = 0;
+    std::vector<int> best_moves;
+    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+        best_move = TRANSPOSITION_TABLE_UNDEFINED;
+        calc_flip(&flip, &board, cell);
+        board.move_board(&flip);
+            best_moves = book.get_all_best_moves(&board);
+            if (best_moves.size()){
+                for (int cell: best_moves){
+                    res[cell] += 1.0;
+                    ++cnt;
+                }
+            } else
+                best_move = best_move_transposition_table.get(&board, board.hash());
+        board.undo_board(&flip);
+        if (best_move != TRANSPOSITION_TABLE_UNDEFINED){
+            res[best_move] += 1.0;
+            ++cnt;
+        }
+    }
+    for (int i = 0;  i < HW2; ++i)
+        res[i] /= cnt;
+}
