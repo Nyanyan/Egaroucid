@@ -26,18 +26,15 @@ void init_console(Options options){
         std::cerr << "initialized" << std::endl;
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char* argv[]){
     std::vector<Commandline_option> commandline_options = get_commandline_options(argc, argv);
     print_special_commandline_options(commandline_options);
     Options options = get_options(commandline_options);
     init_console(options);
-
     Board_info board;
     State state;
     board.reset();
-    while (true) {
+    while (true)
         check_command(&board, &state, &options);
-    }
-
     return 0;
 }
