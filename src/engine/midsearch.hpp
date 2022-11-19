@@ -45,7 +45,7 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, c
         return SCORE_UNDEFINED;
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
-        ++search->n_nodes_mid_last;
+        ++search->n_nodes_discs[search->n_discs];
     #endif
     int v = -INF;
     uint64_t legal = search->board.get_legal();
@@ -104,7 +104,7 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, c
             return nega_alpha_eval1(search, alpha, beta, skipped, searching);
         ++search->n_nodes;
         #if USE_SEARCH_STATISTICS
-            ++search->n_nodes_mid_last;
+            ++search->n_nodes_discs[search->n_discs];
         #endif
         if (depth == 0)
             return mid_evaluate_diff(search);
@@ -177,7 +177,7 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, c
         }
         ++search->n_nodes;
         #if USE_SEARCH_STATISTICS
-            ++search->n_nodes_mid;
+            ++search->n_nodes_discs[search->n_discs];
         #endif
         #if USE_END_SC
             if (is_end_search){
@@ -338,7 +338,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     }
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
-        ++search->n_nodes_mid;
+        ++search->n_nodes_discs[search->n_discs];
     #endif
     #if USE_END_SC
         if (is_end_search){
@@ -474,7 +474,7 @@ std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int de
     bool searching = true;
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
-        ++search->n_nodes_mid;
+        ++search->n_nodes_discs[search->n_discs];
     #endif
     uint32_t hash_code = search->board.hash();
     uint64_t legal = search->board.get_legal();

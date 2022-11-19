@@ -75,4 +75,4 @@
 #define USE_EVALUATION_HARNESS false
 
 // search statistics
-#define USE_SEARCH_STATISTICS false
+#define USE_SEARCH_STATISTICS true

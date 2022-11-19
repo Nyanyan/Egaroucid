@@ -46,6 +46,9 @@ inline int nega_alpha_eval1_nws(Search *search, int alpha, bool skipped, const b
     if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
     ++search->n_nodes;
+    #if USE_SEARCH_STATISTICS
+        ++search->n_nodes_discs[search->n_discs];
+    #endif
     int v = -INF;
     uint64_t legal = search->board.get_legal();
     if (legal == 0ULL){
@@ -95,6 +98,9 @@ inline int nega_alpha_eval1_nws(Search *search, int alpha, bool skipped, const b
         if (!global_searching || !(*searching))
             return SCORE_UNDEFINED;
         ++search->n_nodes;
+        #if USE_SEARCH_STATISTICS
+            ++search->n_nodes_discs[search->n_discs];
+        #endif
         if (depth == 1)
             return nega_alpha_eval1_nws(search, alpha, skipped, searching);
         if (depth == 0)
@@ -162,6 +168,9 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
         #endif
     }
     ++search->n_nodes;
+    #if USE_SEARCH_STATISTICS
+        ++search->n_nodes_discs[search->n_discs];
+    #endif
     if (legal == LEGAL_UNDEFINED)
         legal = search->board.get_legal();
     int v = -INF;

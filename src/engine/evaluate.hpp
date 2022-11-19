@@ -762,7 +762,7 @@ inline int end_evaluate(Board *b){
     @return final score
 */
 inline int end_evaluate(Board *b, int e){
-    int score = pop_count_ull(b->player) * 2 + e - HW2;
+    int score = b->count_player() * 2 + e - HW2;
     if (score > 0)
         score += e;
     else if (score < 0)

@@ -49,7 +49,7 @@
 inline int last2(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast8_t p1, bool skipped){
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
-        ++search->n_nodes_end_last2;
+        ++search->n_nodes_discs[search->n_discs];
     #endif
     int v = -INF;
     Flip flip;
@@ -119,7 +119,7 @@ inline int last3(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
         return SCORE_UNDEFINED;
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
-        ++search->n_nodes_end_last3;
+        ++search->n_nodes_discs[search->n_discs];
     #endif
     #if USE_END_PO
         if (!skipped){
@@ -237,7 +237,7 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
         return SCORE_UNDEFINED;
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
-        ++search->n_nodes_end_last4;
+        ++search->n_nodes_discs[search->n_discs];
     #endif
     #if USE_END_SC
         int stab_res = stability_cut(search, &alpha, &beta);
@@ -385,7 +385,7 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
             return nega_alpha_end_fast_nws(search, alpha, skipped, stab_cut, searching);
         ++search->n_nodes;
         #if USE_SEARCH_STATISTICS
-            ++search->n_nodes_end_fast;
+            ++search->n_nodes_discs[search->n_discs];
         #endif
         #if USE_END_SC
             if (stab_cut){
@@ -613,7 +613,7 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
         #endif
         ++search->n_nodes;
         #if USE_SEARCH_STATISTICS
-            ++search->n_nodes_end;
+            ++search->n_nodes_discs[search->n_discs];
         #endif
         int first_alpha = alpha;
         if (legal == LEGAL_UNDEFINED)
