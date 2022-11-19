@@ -131,13 +131,13 @@ void redo(Board_info *board, int remain){
     redo(board, remain - 1);
 }
 
-void go(Board_info *board, Options *options){
+Search_result go_noprint(Board_info *board, Options *options){
     if (board->board.is_end()){
         std::cerr << "[ERROR] game over" << std::endl;
-        return;
+        Search_result res;
+        return res;
     }
     Search_result result = ai(board->board, options->level, true, true, options->show_log);
-    print_search_result(result, options->level);
     Flip flip;
     calc_flip(&flip, &board->board, result.policy);
     board->board.move_board(&flip);
@@ -153,6 +153,11 @@ void go(Board_info *board, Options *options){
     board->boards.emplace_back(board->board);
     board->players.emplace_back(board->player);
     ++board->ply_vec;
+    return result;
+}
+
+void go(Board_info *board, Options *options){
+    print_search_result(go_noprint(board, options), options->level);
 }
 
 void setboard(Board_info *board, std::string board_str){

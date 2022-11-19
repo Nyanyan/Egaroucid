@@ -15,6 +15,7 @@
 #include "command_definition.hpp"
 #include "commandline_option.hpp"
 #include "commandline_option_definition.hpp"
+#include "function.hpp"
 #include "info.hpp"
 #include "option.hpp"
 #include "print.hpp"

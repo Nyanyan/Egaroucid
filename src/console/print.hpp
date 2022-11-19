@@ -16,6 +16,7 @@
 #include "info.hpp"
 #include "command_definition.hpp"
 #include "commandline_option_definition.hpp"
+#include "function.hpp"
 
 #define COUT_TAB "  "
 #define VERSION_TAB_SIZE 10
@@ -139,21 +140,6 @@ void print_level_info(){
     }
 }
 
-void print_special_commandline_options(std::vector<Commandline_option> commandline_options){
-    if (find_commandline_option(commandline_options, ID_VERSION) == OPTION_FOUND){
-        print_version();
-        std::exit(0);
-    }
-    if (find_commandline_option(commandline_options, ID_HELP) == OPTION_FOUND){
-        print_help();
-        std::exit(0);
-    }
-    if (find_commandline_option(commandline_options, ID_LEVEL_INFO) == OPTION_FOUND){
-        print_level_info();
-        std::exit(0);
-    }
-}
-
 void print_board_info(Board_info *board){
     uint64_t black = board->board.player;
     uint64_t white = board->board.opponent;
@@ -201,23 +187,7 @@ void print_board_info(Board_info *board){
     }
 }
 
-void print_search_result(Search_result result, int level){
-    std::cout << "|";
-    std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << "Level";
-    std::cout << "|";
-    std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << "Depth";
-    std::cout << "|";
-    std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << "Move";
-    std::cout << "|";
-    std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << "Score";
-    std::cout << "|";
-    std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << "Time";
-    std::cout << "|";
-    std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << "Nodes";
-    std::cout << "|";
-    std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << "NPS";
-    std::cout << "|";
-    std::cout << std::endl;
+void print_search_result_body(Search_result result, int level){
     std::string s;
     if (result.depth == SEARCH_BOOK){
         std::cout << "|";
@@ -264,5 +234,51 @@ void print_search_result(Search_result result, int level){
         std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << result.nps;
         std::cout << "|";
         std::cout << std::endl;
+    }
+}
+
+void print_search_result_head(){
+    std::cout << "|";
+    std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << "Level";
+    std::cout << "|";
+    std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << "Depth";
+    std::cout << "|";
+    std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << "Move";
+    std::cout << "|";
+    std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << "Score";
+    std::cout << "|";
+    std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << "Time";
+    std::cout << "|";
+    std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << "Nodes";
+    std::cout << "|";
+    std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << "NPS";
+    std::cout << "|";
+    std::cout << std::endl;
+}
+
+void print_search_result(Search_result result, int level){
+    print_search_result_head();
+    print_search_result_body(result, level);
+}
+
+void print_special_commandline_options(std::vector<Commandline_option> commandline_options, Options *options){
+    if (find_commandline_option(commandline_options, ID_VERSION) == OPTION_FOUND){
+        print_version();
+        std::exit(0);
+    }
+    if (find_commandline_option(commandline_options, ID_HELP) == OPTION_FOUND){
+        print_help();
+        std::exit(0);
+    }
+    if (find_commandline_option(commandline_options, ID_LEVEL_INFO) == OPTION_FOUND){
+        print_level_info();
+        std::exit(0);
+    }
+}
+
+void execute_special_commandline_tasks(std::vector<Commandline_option> commandline_options, Options *options){
+    if (find_commandline_option(commandline_options, ID_SOLVE) != OPTION_NOT_FOUND){
+        solve_problems(find_commandline_option(commandline_options, ID_SOLVE), options);
+        std::exit(0);
     }
 }
