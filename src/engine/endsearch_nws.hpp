@@ -100,7 +100,7 @@ inline int last2_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
     @param searching            flag for terminating this search
     @return the final score
 
-    This board contains only 3 empty squares, so smpty squares on each part will be:
+    This board contains only 3 empty squares, so empty squares on each part will be:
         3 - 0 - 0 - 0
         2 - 1 - 0 - 0 > need to sort
         1 - 1 - 1 - 0
@@ -205,7 +205,7 @@ inline int last3_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
     @param searching            flag for terminating this search
     @return the final score
 
-    This board contains only 4 empty squares, so smpty squares on each part will be:
+    This board contains only 4 empty squares, so empty squares on each part will be:
         4 - 0 - 0 - 0
         3 - 1 - 0 - 0
         2 - 2 - 0 - 0
