@@ -44,6 +44,9 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, c
     if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
     ++search->n_nodes;
+    #if USE_SEARCH_STATISTICS
+        ++search->n_nodes_mid_last;
+    #endif
     int v = -INF;
     uint64_t legal = search->board.get_legal();
     if (legal == 0ULL){
@@ -97,9 +100,12 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, c
             return SCORE_UNDEFINED;
         if (alpha + 1 == beta)
             return nega_alpha_nws(search, alpha, depth, skipped, searching);
-        ++search->n_nodes;
         if (depth == 1)
             return nega_alpha_eval1(search, alpha, beta, skipped, searching);
+        ++search->n_nodes;
+        #if USE_SEARCH_STATISTICS
+            ++search->n_nodes_mid_last;
+        #endif
         if (depth == 0)
             return mid_evaluate_diff(search);
         int g, v = -INF;
@@ -169,7 +175,10 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, c
                     return mid_evaluate_diff(search);
             #endif
         }
-        ++(search->n_nodes);
+        ++search->n_nodes;
+        #if USE_SEARCH_STATISTICS
+            ++search->n_nodes_mid;
+        #endif
         #if USE_END_SC
             if (is_end_search){
                 int stab_res = stability_cut(search, &alpha, &beta);
@@ -327,7 +336,10 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
                 return mid_evaluate_diff(search);
         #endif
     }
-    ++(search->n_nodes);
+    ++search->n_nodes;
+    #if USE_SEARCH_STATISTICS
+        ++search->n_nodes_mid;
+    #endif
     #if USE_END_SC
         if (is_end_search){
             int stab_res = stability_cut(search, &alpha, &beta);
@@ -460,7 +472,10 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
 */
 std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, bool is_end_search, const bool is_main_search, int best_move, const std::vector<Clog_result> clogs){
     bool searching = true;
-    ++(search->n_nodes);
+    ++search->n_nodes;
+    #if USE_SEARCH_STATISTICS
+        ++search->n_nodes_mid;
+    #endif
     uint32_t hash_code = search->board.hash();
     uint64_t legal = search->board.get_legal();
     int first_alpha = alpha;

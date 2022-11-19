@@ -48,6 +48,9 @@
 */
 inline int last2(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast8_t p1, bool skipped){
     ++search->n_nodes;
+    #if USE_SEARCH_STATISTICS
+        ++search->n_nodes_end_last;
+    #endif
     int v = -INF;
     Flip flip;
     if (bit_around[p0] & search->board.opponent){
@@ -106,6 +109,9 @@ inline int last3(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
     if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
     ++search->n_nodes;
+    #if USE_SEARCH_STATISTICS
+        ++search->n_nodes_end_last;
+    #endif
     #if USE_END_PO
         if (!skipped){
             const bool p0_parity = (search->parity & cell_div4[p0]) > 0;
@@ -208,6 +214,9 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
     if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
     ++search->n_nodes;
+    #if USE_SEARCH_STATISTICS
+        ++search->n_nodes_end_last;
+    #endif
     #if USE_END_SC
         int stab_res = stability_cut(search, &alpha, &beta);
         if (stab_res != SCORE_UNDEFINED){
@@ -348,6 +357,9 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
         if (alpha + 1 == beta)
             return nega_alpha_end_fast_nws(search, alpha, skipped, stab_cut, searching);
         ++search->n_nodes;
+        #if USE_SEARCH_STATISTICS
+            ++search->n_nodes_end_fast;
+        #endif
         #if USE_END_SC
             if (stab_cut){
                 int stab_res = stability_cut(search, &alpha, &beta);
@@ -573,6 +585,9 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
             }
         #endif
         ++search->n_nodes;
+        #if USE_SEARCH_STATISTICS
+            ++search->n_nodes_end;
+        #endif
         int first_alpha = alpha;
         if (legal == LEGAL_UNDEFINED)
             legal = search->board.get_legal();

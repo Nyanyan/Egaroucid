@@ -29,6 +29,9 @@
 */
 inline int last1(Search *search, int alpha, uint_fast8_t p0){
     ++search->n_nodes;
+    #if USE_SEARCH_STATISTICS
+        ++search->n_nodes_end_last;
+    #endif
     int score = HW2 - 2 * search->board.count_opponent();
     int n_flip;
     n_flip = count_last_flip(search->board.player, search->board.opponent, p0);

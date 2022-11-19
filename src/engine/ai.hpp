@@ -58,6 +58,13 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
     std::pair<int, int> result;
     search.init_board(&board);
     search.n_nodes = 0ULL;
+    #if USE_SEARCH_STATISTICS
+        search.n_nodes_mid = 0;
+        search.n_nodes_mid_last = 0;
+        search.n_nodes_end = 0;
+        search.n_nodes_end_fast = 0;
+        search.n_nodes_end_last = 0;
+    #endif
     search.use_multi_thread = use_multi_thread;
     calc_features(&search);
     int search_depth;
@@ -137,6 +144,10 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
     res.value = g;
     res.is_end_search = is_end_search;
     res.probability = calc_probability(mpct);
+    #if USE_SEARCH_STATISTICS
+        std::cerr << "statistics:" << std::endl;
+        std::cerr << search.n_nodes_mid << " " << search.n_nodes_mid_last << " " << search.n_nodes_end << " " << search.n_nodes_end_fast << " " << search.n_nodes_end_last << std::endl;
+    #endif
     return res;
 }
 

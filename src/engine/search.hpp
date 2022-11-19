@@ -146,6 +146,14 @@ class Search{
         #endif
         uint_fast8_t eval_feature_reversed;
         bool use_multi_thread;
+        #if USE_SEARCH_STATISTICS
+            uint64_t n_nodes_mid;
+            uint64_t n_nodes_mid_last;
+            uint64_t n_nodes_end;
+            uint64_t n_nodes_end_fast;
+            uint64_t n_nodes_end_last;
+        #else
+        #endif
 
     public:
         /*

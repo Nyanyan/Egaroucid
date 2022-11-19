@@ -47,6 +47,9 @@
 */
 inline int last2_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1, bool skipped){
     ++search->n_nodes;
+    #if USE_SEARCH_STATISTICS
+        ++search->n_nodes_end_last;
+    #endif
     int v = -INF;
     Flip flip;
     if (bit_around[p0] & search->board.opponent){
@@ -99,6 +102,9 @@ inline int last2_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
 */
 inline int last3_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1, uint_fast8_t p2, bool skipped, const bool *searching){
     ++search->n_nodes;
+    #if USE_SEARCH_STATISTICS
+        ++search->n_nodes_end_last;
+    #endif
     #if USE_END_PO
         if (!skipped){
             const bool p0_parity = (search->parity & cell_div4[p0]) > 0;
@@ -192,6 +198,9 @@ inline int last3_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
 */
 inline int last4_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1, uint_fast8_t p2, uint_fast8_t p3, bool skipped, const bool *searching){
     ++search->n_nodes;
+    #if USE_SEARCH_STATISTICS
+        ++search->n_nodes_end_last;
+    #endif
     #if USE_END_SC
         int stab_res = stability_cut_nws(search, &alpha);
         if (stab_res != SCORE_UNDEFINED){
@@ -319,6 +328,9 @@ int nega_alpha_end_fast_nws(Search *search, int alpha, bool skipped, bool stab_c
     if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
     ++search->n_nodes;
+    #if USE_SEARCH_STATISTICS
+        ++search->n_nodes_end_fast;
+    #endif
     #if USE_END_SC
         if (stab_cut){
             int stab_res = stability_cut_nws(search, &alpha);
@@ -504,6 +516,9 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
     if (search->n_discs >= HW2 - END_FAST_DEPTH)
         return nega_alpha_end_fast_nws(search, alpha, skipped, false, searching);
     ++search->n_nodes;
+    #if USE_SEARCH_STATISTICS
+        ++search->n_nodes_end;
+    #endif
     if (legal == LEGAL_UNDEFINED)
         legal = search->board.get_legal();
     int v = -INF;
