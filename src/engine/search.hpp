@@ -55,20 +55,19 @@ constexpr int cell_weight[HW2] = {
 
 /*
     @brief Stability cutoff threshold
+
+    see nws_stability_threshold[n_discs] >= alpha ? 
 */
-//from https://github.com/abulmo/edax-reversi/blob/1ae7c9fe5322ac01975f1b3196e788b0d25c1e10/src/search.c
-//modified by Nyanyan
-constexpr int nws_stability_threshold[61] = {
-    99, 99, 99,  4,  6,  8, 10, 12,
-    14, 16, 20, 22, 24, 26, 28, 30,
-    32, 34, 36, 38, 40, 42, 44, 46,
-    48, 48, 50, 50, 52, 52, 54, 54,
-    56, 56, 58, 58, 60, 60, 62, 62,
-    64, 64, 64, 64, 64, 64, 64, 64,
-    99, 99, 99, 99, 99, 99, 99, 99,
-    99, 99, 99, 99, 99
+constexpr int nws_stability_threshold[HW2] = {
+    -99, -99, -99, -99, -99, -99, -99, -99, 
+    -99, -99, -99, -99, -99, -99, -99, -99, 
+    -99, -99, -99, -99, -99, -99, -99, -99, 
+    -99, -99, -99, -99, -99, -99, -64, -64, 
+    -64, -64, -64, -64, -64, -64, -64, -62, 
+    -54, -46, -38, -30, -26, -20, -18,  -8, 
+     -2,   4,  10,  16,  22,  28,  34,  38, 
+     42,  46,  50,  54,  58,  60,  62,  64
 };
-//end of modification
 
 /*
     @brief board division
