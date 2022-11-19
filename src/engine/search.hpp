@@ -151,7 +151,10 @@ class Search{
             uint64_t n_nodes_mid_last;
             uint64_t n_nodes_end;
             uint64_t n_nodes_end_fast;
-            uint64_t n_nodes_end_last;
+            uint64_t n_nodes_end_last4;
+            uint64_t n_nodes_end_last3;
+            uint64_t n_nodes_end_last2;
+            uint64_t n_nodes_end_last1;
         #else
         #endif
 

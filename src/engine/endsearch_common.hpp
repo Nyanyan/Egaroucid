@@ -30,7 +30,7 @@
 inline int last1(Search *search, int alpha, uint_fast8_t p0){
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
-        ++search->n_nodes_end_last;
+        ++search->n_nodes_end_last1;
     #endif
     int score = HW2 - 2 * search->board.count_opponent();
     int n_flip;

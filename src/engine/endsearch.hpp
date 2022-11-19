@@ -49,7 +49,7 @@
 inline int last2(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast8_t p1, bool skipped){
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
-        ++search->n_nodes_end_last;
+        ++search->n_nodes_end_last2;
     #endif
     int v = -INF;
     Flip flip;
@@ -110,7 +110,7 @@ inline int last3(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
         return SCORE_UNDEFINED;
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
-        ++search->n_nodes_end_last;
+        ++search->n_nodes_end_last3;
     #endif
     #if USE_END_PO
         if (!skipped){
@@ -215,7 +215,7 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
         return SCORE_UNDEFINED;
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
-        ++search->n_nodes_end_last;
+        ++search->n_nodes_end_last4;
     #endif
     #if USE_END_SC
         int stab_res = stability_cut(search, &alpha, &beta);
