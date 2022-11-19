@@ -121,9 +121,9 @@ inline int last3_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
             const bool p2_parity = (search->parity & cell_div4[p2]) > 0;
             #if LAST_PO_OPTIMIZE
                 if (!(p0_parity & p1_parity & p2_parity)){ // check necessity of sorting
-                    if (p1_parity){
+                    if (p1_parity){ // 0 - 1 - 0
                         std::swap(p0, p1);
-                    } else if (p2_parity){
+                    } else if (p2_parity){ // 0 - 0 - 1
                         std::swap(p0, p2);
                     }
                 }
@@ -217,7 +217,6 @@ inline int last3_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
         0 - 0 - 0 - 0
         1 - 1 - 0 - 0 > need to sort
         1 - 1 - 1 - 1
-
 */
 inline int last4_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1, uint_fast8_t p2, uint_fast8_t p3, bool skipped, const bool *searching){
     ++search->n_nodes;

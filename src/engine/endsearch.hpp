@@ -104,6 +104,15 @@ inline int last2(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
     @param skipped              already passed?
     @param searching            flag for terminating this search
     @return the final score
+
+    This board contains only 3 empty squares, so empty squares on each part will be:
+        3 - 0 - 0 - 0
+        2 - 1 - 0 - 0 > need to sort
+        1 - 1 - 1 - 0
+    then the parities for squares will be:
+        1 - 1 - 1
+        1 - 0 - 0 > need to sort
+        1 - 1 - 1
 */
 inline int last3(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast8_t p1, uint_fast8_t p2, bool skipped, const bool *searching){
     if (!global_searching || !(*searching))
@@ -118,12 +127,12 @@ inline int last3(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
             const bool p1_parity = (search->parity & cell_div4[p1]) > 0;
             const bool p2_parity = (search->parity & cell_div4[p2]) > 0;
             #if LAST_PO_OPTIMIZE
-                if (!p0_parity && p2_parity){
-                    std::swap(p0, p2);
-                } else if (!p0_parity && p1_parity && !p2_parity){
-                    std::swap(p0, p1);
-                } else if (p0_parity && !p1_parity && p2_parity){
-                    std::swap(p1, p2);
+                if (!(p0_parity & p1_parity & p2_parity)){ // check necessity of sorting
+                    if (p1_parity){ // 0 - 1 - 0
+                        std::swap(p0, p1);
+                    } else if (p2_parity){ // 0 - 0 - 1
+                        std::swap(p0, p2);
+                    }
                 }
             #else
                 if (!p0_parity && p1_parity && p2_parity){
@@ -209,6 +218,19 @@ inline int last3(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
     @param skipped              already passed?
     @param searching            flag for terminating this search
     @return the final score
+
+    This board contains only 4 empty squares, so empty squares on each part will be:
+        4 - 0 - 0 - 0
+        3 - 1 - 0 - 0
+        2 - 2 - 0 - 0
+        2 - 1 - 1 - 0 > need to sort
+        1 - 1 - 1 - 1
+    then the parities for squares will be:
+        0 - 0 - 0 - 0
+        1 - 1 - 1 - 1
+        0 - 0 - 0 - 0
+        1 - 1 - 0 - 0 > need to sort
+        1 - 1 - 1 - 1
 */
 inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast8_t p1, uint_fast8_t p2, uint_fast8_t p3, bool skipped, const bool *searching){
     if (!global_searching || !(*searching))
@@ -230,20 +252,25 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
             const bool p2_parity = (search->parity & cell_div4[p2]) > 0;
             const bool p3_parity = (search->parity & cell_div4[p3]) > 0;
             #if LAST_PO_OPTIMIZE
-                if (!p0_parity && p3_parity){
-                    std::swap(p0, p3);
-                    if (!p1_parity && p2_parity)
-                        std::swap(p1, p2);
-                } else if (!p0_parity && p2_parity && !p3_parity){
-                    std::swap(p0, p2);
-                } else if (!p0_parity && p1_parity && !p2_parity && !p3_parity){
-                    std::swap(p0, p1);
-                } else if (p0_parity && !p1_parity && p3_parity){
-                    std::swap(p1, p3);
-                } else if (p0_parity && !p1_parity && p2_parity && !p3_parity){
-                    std::swap(p1, p2);
-                } else if (p0_parity && p1_parity && !p2_parity && p3_parity){
-                    std::swap(p2, p3);
+                if ((p0_parity | p1_parity | p2_parity) && !(p0_parity & p1_parity & p2_parity)){ // need to see only 3 squares to check necessity of sorting
+                    if (p0_parity && !p1_parity){ // 1 - 0 - ? - ?
+                        if (p2_parity){ // 1 - 0 - 1 - 0
+                            std::swap(p1, p2);
+                        } else{ // 1 - 0 - 0 - 1
+                            std::swap(p1, p3);
+                        }
+                    } else if (!p0_parity){ // 0 - ? - ? - ?
+                        if (p1_parity){ // 0 - 1 - ? - ?
+                            if (p2_parity){ // 0 - 1 - 1 - 0
+                                std::swap(p0, p2);
+                            } else{ // 0 - 1 - 0 - 1
+                                std::swap(p0, p3);
+                            }
+                        } else{ // 0 - 0 - 1 - 1
+                            std::swap(p0, p2);
+                            std::swap(p1, p3);
+                        }
+                    }
                 }
             #else
                 if (!p0_parity && p1_parity && p2_parity && p3_parity){
