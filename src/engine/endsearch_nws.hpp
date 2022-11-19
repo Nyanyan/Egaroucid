@@ -90,14 +90,6 @@ inline int last2_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
     @brief Get a final score with last 3 empties (NWS)
 
     Only with parity-based ordering.
-    This board contains only 3 empty squares, so smpty squares on each part will be:
-        3 - 0 - 0 - 0
-        2 - 1 - 0 - 0 > need to sort
-        1 - 1 - 1 - 0
-    then the parities for squares will be:
-        1 - 1 - 1
-        1 - 0 - 0 > need to sort
-        1 - 1 - 1
 
     @param search               search information
     @param alpha                alpha value (beta value is alpha + 1)
@@ -107,6 +99,15 @@ inline int last2_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
     @param skipped              already passed?
     @param searching            flag for terminating this search
     @return the final score
+
+    This board contains only 3 empty squares, so smpty squares on each part will be:
+        3 - 0 - 0 - 0
+        2 - 1 - 0 - 0 > need to sort
+        1 - 1 - 1 - 0
+    then the parities for squares will be:
+        1 - 1 - 1
+        1 - 0 - 0 > need to sort
+        1 - 1 - 1
 */
 inline int last3_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1, uint_fast8_t p2, bool skipped, const bool *searching){
     ++search->n_nodes;
@@ -193,6 +194,17 @@ inline int last3_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
     @brief Get a final score with last 4 empties (NWS)
 
     Only with parity-based ordering.
+
+    @param search               search information
+    @param alpha                alpha value (beta value is alpha + 1)
+    @param p0                   empty square 1/4
+    @param p1                   empty square 2/4
+    @param p2                   empty square 3/4
+    @param p3                   empty square 4/4
+    @param skipped              already passed?
+    @param searching            flag for terminating this search
+    @return the final score
+
     This board contains only 4 empty squares, so smpty squares on each part will be:
         4 - 0 - 0 - 0
         3 - 1 - 0 - 0
@@ -206,15 +218,6 @@ inline int last3_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
         1 - 1 - 0 - 0 > need to sort
         1 - 1 - 1 - 1
 
-    @param search               search information
-    @param alpha                alpha value (beta value is alpha + 1)
-    @param p0                   empty square 1/4
-    @param p1                   empty square 2/4
-    @param p2                   empty square 3/4
-    @param p3                   empty square 4/4
-    @param skipped              already passed?
-    @param searching            flag for terminating this search
-    @return the final score
 */
 inline int last4_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1, uint_fast8_t p2, uint_fast8_t p3, bool skipped, const bool *searching){
     ++search->n_nodes;
