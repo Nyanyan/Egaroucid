@@ -76,7 +76,7 @@ inline int last2_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
     }
     if (v == -INF){
         if (skipped)
-            v = end_evaluate(&search->board);
+            v = end_evaluate(&search->board, 2);
         else{
             search->board.pass();
                 v = -last2_nws(search, -alpha - 1, p0, p1, true);
@@ -180,7 +180,7 @@ inline int last3_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
     }
     if (v == -INF){
         if (skipped)
-            v = end_evaluate(&search->board);
+            v = end_evaluate(&search->board, 3);
         else{
             search->board.pass();
                 v = -last3_nws(search, -alpha - 1, p0, p1, p2, true, searching);
@@ -288,7 +288,7 @@ inline int last4_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
     int v = -INF;
     if (legal == 0ULL){
         if (skipped)
-            v = end_evaluate(&search->board);
+            v = end_evaluate(&search->board, 4);
         else{
             search->board.pass();
                 v = -last4_nws(search, -alpha - 1, p0, p1, p2, p3, true, searching);

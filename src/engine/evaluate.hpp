@@ -755,6 +755,22 @@ inline int end_evaluate(Board *b){
 }
 
 /*
+    @brief evaluation function for game over
+
+    @param b                    board
+    @param e                    number of empty squares
+    @return final score
+*/
+inline int end_evaluate(Board *b, int e){
+    int score = pop_count_ull(b->player) * 2 + e - HW2;
+    if (score > 0)
+        score += e;
+    else if (score < 0)
+        score -= e;
+    return score;
+}
+
+/*
     @brief calculate surround value used in evaluation function
 
     @param player               a bitboard representing player

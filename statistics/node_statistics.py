@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 
-s = '1519 15963 779063 5112562 3808643 7512479 9509731 12952200' # ffo42@single thread
+s = '1519 15963 779044 5112464 3808551 7515956 9511446 12958575' # ffo42@single thread
 labels = ['mid', 'mid_last', 'end', 'end_fast', 'last4', 'last3', 'last2', 'last1', 'last4-1', 'all']
 
 data = [int(elem) for elem in s.split()]
