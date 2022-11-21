@@ -292,7 +292,7 @@ inline void convert_idx(string str, ofstream *fout){
     }
     int moves[N_LAST_MOVES];
     for (i = 0; i < N_LAST_MOVES; ++i)
-        moves[i] = str[67 + i] - '!';
+        moves[i] = str[66 + i] - '!';
     int idxes[N_RAW_PARAMS];
     calc_idx(0, &b, idxes);
     int n_stones = pop_count_ull(b.player | b.opponent);

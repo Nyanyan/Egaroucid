@@ -109,8 +109,8 @@ constexpr int pattern_nums[N_RAW_PARAMS] = {
 double eval_arr[N_EVAL][MAX_EVALUATE_IDX][HW2];
 vector<vector<int>> test_data;
 vector<vector<int>> test_pvs;
-vector<int> test_memo[N_EVAL][MAX_EVALUATE_IDX];
-vector<double> pre_calc_scores;
+vector<int> test_memo[N_EVAL][MAX_EVALUATE_IDX][HW2];
+vector<vector<double>> pre_calc_scores;
 int nums;
 unordered_set<int> used_idxes[N_EVAL];
 vector<int> used_idxes_vector[N_EVAL];
@@ -128,7 +128,7 @@ void initialize_param(){
     for (pattern_idx = 0; pattern_idx < N_EVAL; ++pattern_idx){
         for (pattern_elem = 0; pattern_elem < eval_sizes[pattern_idx]; ++pattern_elem){
             for (cell = 0; cell < HW2; ++cell)
-                eval_arr[pattern_idx][pattern_elem][cell] = 0;
+                eval_arr[pattern_idx][pattern_elem][cell] = rand() & 0b111111;
         }
     }
 }
@@ -170,11 +170,6 @@ Adj_info input_test_data(int argc, char *argv[]){
     int phase, player, score;
     int t = 0, u = 0;
     nums = 0;
-    for (j = 0; j < N_EVAL; ++j){
-        used_idxes[j].clear();
-        for (k = 0; k < MAX_EVALUATE_IDX; ++k)
-            test_memo[j][k].clear();
-    }
     for (i = 0; i < N_EVAL; ++i){
         for (j = 0; j < MAX_EVALUATE_IDX; ++j){
             for (k = 0; k < 129; ++k)
@@ -201,18 +196,23 @@ Adj_info input_test_data(int argc, char *argv[]){
             fread(file_idxes, 4, N_RAW_PARAMS, fp);
             fread(moves, 4, N_LAST_MOVES, fp);
             vector<int> file_idxes_vector;
-            for (int i = 0; i < N_RAW_PARAMS; ++i)
+            for (i = 0; i < N_RAW_PARAMS; ++i)
                 file_idxes_vector.emplace_back(file_idxes[i]);
             test_data.emplace_back(file_idxes_vector);
             vector<int> test_pv;
-            for (int i = 0; i < N_LAST_MOVES; ++i)
+            for (i = 0; i < N_LAST_MOVES; ++i)
                 test_pv.push_back(moves[i]);
             test_pvs.emplace_back(test_pv);
             for (i = 0; i < N_RAW_PARAMS; ++i)
                 used_idxes[pattern_nums[i]].emplace(test_data[nums][i]);
-            for (i = 0; i < N_RAW_PARAMS; ++i)
-                test_memo[pattern_nums[i]][test_data[nums][i]].push_back(nums);
-            pre_calc_scores.push_back(0);
+            for (i = 0; i < N_RAW_PARAMS; ++i){
+                for (j = 0; j < N_LAST_MOVES; ++j)
+                    test_memo[pattern_nums[i]][test_data[nums][i]][test_pvs[nums][j]].push_back(nums);
+            }
+            vector<double> pre_calc_scores_part;
+            for (i = 0; i < HW2; ++i)
+                pre_calc_scores_part.push_back(0);
+            pre_calc_scores.push_back(pre_calc_scores_part);
             ++nums;
         }
     }
@@ -271,23 +271,25 @@ inline double loss(double x, int siz){
     return (double)x / (double)siz * (double)x;
 }
 
-inline double calc_score(int i){
-    double res = 0.0;
+inline void calc_score(int i){
     int scores[HW2];
     int scores_last[N_LAST_MOVES];
     int idx = 0;
     for (int cell: test_pvs[i]){
+        if (cell == HW2)
+            continue;
         scores[cell] = 0;
         for (int j = 0; j < N_RAW_PARAMS; ++j)
             scores[cell] += eval_arr[pattern_nums[j]][test_data[i][j]][cell];
         scores_last[idx++] = -scores[cell];
     }
     sort(scores_last, scores_last + N_LAST_MOVES);
-    for (int m = N_LAST_MOVES - 1; m >= 0; --m){
-        res /= 2.0;
-        res += (scores[test_pvs[i][m]] - scores_last[m]) * (scores[test_pvs[i][m]] - scores_last[m]);
+    for (int m = 0; m < N_LAST_MOVES; ++m){
+        if (test_pvs[i][m] < HW2)
+            pre_calc_scores[i][test_pvs[i][m]] = (scores[test_pvs[i][m]] - scores_last[m]) * (scores[test_pvs[i][m]] - scores_last[m]);
+        else
+            pre_calc_scores[i][test_pvs[i][m]] = 0;
     }
-    return res;
 }
 
 inline int calc_pop(int a, int b, int s){
@@ -357,33 +359,37 @@ inline int calc_rev_idx(int pattern_idx, int pattern_size, int idx){
 }
 
 inline void scoring_mae(){
-    int i, j, score;
+    int i, j, score, cell;
     double avg_score, res = 0.0;
     avg_score = 0;
-    for (i = 0; i < nums; ++i){
-        score = pre_calc_scores[i];
-        avg_score += score / nums;
+    for (cell = 0; cell < HW2; ++cell){
+        for (i = 0; i < nums; ++i){
+            score = pre_calc_scores[i][cell];
+            avg_score += score / nums / HW2;
+        }
     }
-    cerr << " avg score " << avg_score << " "; //"                   ";
+    cerr << " avg score " << avg_score << "                   ";
 }
 
 inline void scoring_mae_cout(){
-    int i, j, score;
+    int i, j, score, cell;
     double avg_score, res = 0.0;
     avg_score = 0;
-    for (i = 0; i < nums; ++i){
-        score = pre_calc_scores[i];
-        avg_score += score / nums;
+    for (cell = 0; cell < HW2; ++cell){
+        for (i = 0; i < nums; ++i){
+            score = pre_calc_scores[i][cell];
+            avg_score += score / nums / HW2;
+        }
     }
-    cout << " avg score " << avg_score << " "; //"                   ";
+    cout << " avg score " << avg_score << "                   ";
 }
 
 inline double scoring_next_step(int pattern, int idx, int cell){
     double score, res = 0.0, err;
     int data_size = nums;
     double raw_error;
-    for (const int &i: test_memo[pattern][idx])
-        res += pre_calc_scores[i];
+    for (const int &i: test_memo[pattern][idx][cell])
+        res += pre_calc_scores[i][cell];
     return res;
 }
 
@@ -391,10 +397,10 @@ inline void next_step(){
     int pattern, rev_idx, cell;
     double err;
     for (int i = 0; i < nums; ++i)
-        pre_calc_scores[i] = calc_score(i);
-    for (pattern = 0; pattern < N_EVAL; ++pattern){
-        for (const int &idx: used_idxes_vector[pattern]){
-            for (cell = 0; cell < HW2; ++cell){
+        calc_score(i);
+    for (cell = 0; cell < HW2; ++cell){
+        for (pattern = 0; pattern < N_EVAL; ++pattern){
+            for (const int &idx: used_idxes_vector[pattern]){
                 if (idx == rev_idxes[pattern][idx]){
                     err = scoring_next_step(pattern, idx, cell);
                     eval_arr[pattern][idx][cell] += 2.0 * alpha[pattern][idx] * err;
@@ -451,7 +457,6 @@ int main(int argc, char *argv[]){
     //for (int i = 0; i < N_EVAL; ++i)
     //    eval_arr[i] = new double[MAX_EVALUATE_IDX];
 
-    sa_phase = atoi(argv[1]);
     hour = atoi(argv[2]);
     minute = atoi(argv[3]);
     second = atoi(argv[4]);
@@ -461,14 +466,14 @@ int main(int argc, char *argv[]){
     minute += hour * 60;
     second += minute * 60;
 
-    cerr << sa_phase << " " << second << " " << beta << endl;
+    cerr << second << " " << beta << endl;
 
     board_init();
     init();
     initialize_param();
     cerr << "initialized" << endl;
     //output_param_onephase();
-    input_param_onephase((string)(argv[6]));
+    //input_param_onephase((string)(argv[6]));
     Adj_info info = input_test_data(argc, argv);
 
     sd(second * 1000);
