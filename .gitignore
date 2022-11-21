@@ -1,10 +1,10 @@
 *.out
 *.exe
 */__pycache__
-*/third_party
+/*/third_party
 /*/data/
-*/learned_data
-*/legacy
+/*/learned_data
+/*/legacy
 *.dat
 /evaluation/*.txt
 /evaluation/eval_testcases
