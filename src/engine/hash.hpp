@@ -91,7 +91,7 @@ void hash_init_rand(int hash_level){
 */
 bool hash_init(int hash_level){
     FILE* fp;
-    if (fopen_s(&fp, ("resources/hash" + std::to_string(hash_level) + ".eghs").c_str(), "rb") != 0) {
+    if (fopen_s(&fp, ("resources/hash/hash" + std::to_string(hash_level) + ".eghs").c_str(), "rb") != 0) {
         std::cerr << "[ERROR] can't open hash" + std::to_string(hash_level) + ".eghs" << std::endl;
         //hash_init_rand();
         return false;
