@@ -2,7 +2,7 @@
 *.exe
 */__pycache__
 */third_party
-*/data/
+/*/data/
 */learned_data
 */legacy
 *.dat
