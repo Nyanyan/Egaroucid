@@ -13,7 +13,7 @@
 #include "console/console_all.hpp"
 
 void init_console(Options options){
-    thread_pool.resize(options.n_threads);
+    thread_pool.resize(std::max(0, options.n_threads - 1));
     bit_init();
     mobility_init();
     hash_resize(DEFAULT_HASH_LEVEL, options.hash_level, options.show_log);
