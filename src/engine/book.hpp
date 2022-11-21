@@ -665,6 +665,7 @@ class Book{
 Book book;
 
 bool book_init(std::string file, bool show_log){
-    book_hash_init(show_log);
+    //book_hash_init(show_log);
+    book_hash_init_rand();
     return book.init(file, show_log);
 }

@@ -19,9 +19,9 @@ unsigned long long second = 0;
 #define N_HASH2 65536
 #define N_DATA 50000000
 
-#define HASH_SIZE 8388608 // 4194304
-#define HASH_MASK 8388607 // 4194303
-#define HASH_N_BIT 23
+#define HASH_MAX_SIZE 134217728
+
+int HASH_SIZE, HASH_MASK, HASH_N_BIT;
 
 double start_temp = 0.00001;
 double end_temp =   0.00000000000001;
@@ -47,7 +47,7 @@ uint32_t hash_rand[N_HASH1][N_HASH2];
 uint16_t data[N_DATA][N_HASH1];
 int data_hash[N_DATA];
 vector<int> hash_idxes[N_HASH1][N_HASH2];
-int appear_hash[HASH_SIZE];
+int appear_hash[HASH_MAX_SIZE];
 int hash_variety = 0;
 int n_data;
 
@@ -108,9 +108,9 @@ void input_test_data(int argc, char *argv[]){
     cerr << "\r" << n_data << " data" << endl;
 }
 
-void output_param(){
+void output_param(uint64_t second, double score){
     ofstream fout;
-    fout.open("learned_data/hash.eghs", ios::out|ios::binary|ios::trunc);
+    fout.open("learned_data/hash" + to_string(HASH_N_BIT) + "_" + to_string(second) + "sec_" + to_string(score) + ".eghs", ios::out|ios::binary|ios::trunc);
     if (!fout){
         cerr << "can't open hash.eghs" << endl;
         return;
@@ -175,7 +175,7 @@ double calc_score_diff(int hi, int hj){
     //return (double)hash_variety / n_data;
 }
 
-void anneal(uint64_t tl){
+double anneal(uint64_t tl){
     double f_score = calc_score(), n_score;
     cerr << setprecision(15) << f_score << endl;
     cerr << setprecision(15) << f_score << "                         ";
@@ -201,27 +201,32 @@ void anneal(uint64_t tl){
         }
     }
     cerr << "\r" << setprecision(15) << f_score << "                       " << endl;
+    return f_score;
 }
 
 int main(int argc, char *argv[]){
-    hour = atoi(argv[1]);
-    minute = atoi(argv[2]);
-    second = atoi(argv[3]);
+    HASH_N_BIT = atoi(argv[1]);
+    HASH_SIZE = 1 << HASH_N_BIT;
+    HASH_MASK = HASH_SIZE - 1;
+    hour = atoi(argv[2]);
+    minute = atoi(argv[3]);
+    second = atoi(argv[4]);
     int i, j;
 
     minute += hour * 60;
     second += minute * 60;
 
     cerr << second << " sec" << endl;
+    cerr << "level " << HASH_N_BIT << " " << "size " << HASH_SIZE << endl;
 
     board_init();
     initialize_param();
     //input_param(argv);
     input_test_data(argc, argv);
 
-    anneal(second * 1000);
+    double score = anneal(second * 1000);
 
-    output_param();
+    output_param(second, score);
 
     return 0;
 }
