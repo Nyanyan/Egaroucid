@@ -41,5 +41,5 @@ void solve_problems(std::string file, Options *options){
         total.nodes += res.nodes;
         total.time += res.time;
     }
-    std::cout << "total " << total.nodes << " nodes in " << ((double)total.time / 1000) << "s NPS=" << (total.nodes * 1000 / total.time) << std::endl;
+    std::cout << "total " << total.nodes << " nodes in " << ((double)total.time / 1000) << "s NPS " << (total.nodes * 1000 / total.time) << std::endl;
 }
