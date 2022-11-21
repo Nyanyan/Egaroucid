@@ -28,7 +28,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
 #if USE_NEGA_ALPHA_END
     int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t legal, const bool *searching);
 #endif
-#if MID_TO_END_DEPTH < YBWC_END_SPLIT_MIN_DEPTH
+#if MID_TO_END_DEPTH > YBWC_END_SPLIT_MIN_DEPTH
     int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, const bool *searching);
 #endif
 
@@ -100,7 +100,7 @@ inline bool ybwc_split_nws(const Search *search, int alpha, int depth, uint64_t 
     return false;
 }
 
-#if MID_TO_END_DEPTH < YBWC_END_SPLIT_MIN_DEPTH
+#if MID_TO_END_DEPTH > YBWC_END_SPLIT_MIN_DEPTH
     #if USE_NEGA_ALPHA_END
         /*
             @brief Wrapper for parallel endgame search

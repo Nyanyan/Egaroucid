@@ -26,7 +26,7 @@
 #include "parallel.hpp"
 #include "ybwc.hpp"
 
-#if USE_NEGA_ALPHA_END && MID_TO_END_DEPTH < YBWC_END_SPLIT_MIN_DEPTH
+#if USE_NEGA_ALPHA_END && MID_TO_END_DEPTH > YBWC_END_SPLIT_MIN_DEPTH
     inline bool ybwc_split_end(const Search *search, int alpha, int beta, uint64_t legal, const bool *searching, uint_fast8_t policy, const int canput, const int pv_idx, const int split_count, std::vector<std::future<Parallel_task>> &parallel_tasks);
     inline void ybwc_get_end_tasks(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *alpha);
     inline void ybwc_wait_all(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks);
@@ -670,7 +670,7 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
             for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
                 calc_flip(&move_list[idx++].flip, &search->board, cell);
             move_list_evaluate_end(search, move_list);
-            #if MID_TO_END_DEPTH < YBWC_END_SPLIT_MIN_DEPTH
+            #if MID_TO_END_DEPTH > YBWC_END_SPLIT_MIN_DEPTH
                 #if USE_ALL_NODE_PREDICTION
                     const bool seems_to_be_all_node = predict_all_node(search, alpha, HW2 - search->n_discs, LEGAL_UNDEFINED, true, searching);
                 #else
