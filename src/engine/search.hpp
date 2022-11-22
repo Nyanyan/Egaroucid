@@ -258,6 +258,33 @@ inline void register_tt(Search *search, int depth, uint32_t hash_code, int v, in
 }
 
 /*
+    @brief Register a board to transposition tables as complete search
+
+    @param search               search information
+    @param depth                remaining depth
+    @param hash_code            hash code
+    @param v                    score of the search
+    @param best_move            best move of the search
+    @param l                    previously registered value (lower bound)
+    @param u                    previously registered value (upper bound)
+    @param first_alpha          the alpha value used in beginning of the search (used for detection of fail low / high)
+    @param beta                 the beta value
+    @param searching            search not terminated?
+*/
+inline void register_tt_nompc(Search *search, int depth, uint32_t hash_code, int v, int best_move, int l, int u, int first_alpha, int beta, const bool *searching){
+    if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD && (*searching) && -SCORE_MAX <= v && v <= SCORE_MAX && global_searching){
+        if (first_alpha < v && best_move != TRANSPOSITION_TABLE_UNDEFINED)
+            best_move_transposition_table.reg(&search->board, hash_code, best_move);
+        if (first_alpha < v && v < beta)
+            value_transposition_table.reg(&search->board, hash_code, v, v, NOMPC, depth);
+        else if (beta <= v && l < v)
+            value_transposition_table.reg(&search->board, hash_code, v, u, NOMPC, depth);
+        else if (v <= first_alpha && v < u)
+            value_transposition_table.reg(&search->board, hash_code, l, v, NOMPC, depth);
+    }
+}
+
+/*
     @brief Register a board to transposition tables for NWS (Null Window Search) without best move
 
     @param search               search information

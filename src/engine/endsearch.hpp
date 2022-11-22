@@ -651,10 +651,10 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
             if (stab_res != SCORE_UNDEFINED)
                 return stab_res;
         #endif
-        int best_move = transposition_TABLE_UNDEFINED;
+        int best_move = TRANSPOSITION_TABLE_UNDEFINED;
         if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD){
             best_move = best_move_transposition_table.get(&search->board, hash_code);
-            if (best_move != transposition_TABLE_UNDEFINED){
+            if (best_move != TRANSPOSITION_TABLE_UNDEFINED){
                 if (1 & (legal >> best_move)){
                     Flip flip_best;
                     calc_flip(&flip_best, &search->board, best_move);
@@ -665,7 +665,7 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
                         alpha = v;
                     legal ^= 1ULL << best_move;
                 } else
-                    best_move = transposition_TABLE_UNDEFINED;
+                    best_move = TRANSPOSITION_TABLE_UNDEFINED;
             }
         }
         if (alpha < beta && legal){
@@ -684,7 +684,7 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
                 #endif
                 if (search->use_multi_thread){
                     int pv_idx = 0, split_count = 0;
-                    if (best_move != transposition_TABLE_UNDEFINED)
+                    if (best_move != TRANSPOSITION_TABLE_UNDEFINED)
                         pv_idx = 1;
                     std::vector<std::future<Parallel_task>> parallel_tasks;
                     bool n_searching = true;
