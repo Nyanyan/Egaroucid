@@ -513,7 +513,7 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
                             p1 = next_bit(&empties);
                             p2 = next_bit(&empties);
                             p3 = next_bit(&empties);
-                            g = -last4(search, -beta, -alpha, p0, p1, p2, p3, false);
+                            g = -last4(search, -beta, -alpha, p0, p1, p2, p3, false, searching);
                         search->undo(&flip);
                         if (v < g){
                             if (alpha < g){
