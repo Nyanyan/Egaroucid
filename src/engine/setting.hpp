@@ -60,10 +60,6 @@
 #define USE_NEGA_ALPHA_END true
 #define USE_NEGA_ALPHA_END_FAST false
 
-// move ordering
-#define USE_AUTO_OPTIMIZED_MOVE_ORDERING_MID false
-#define USE_AUTO_OPTIMIZED_MOVE_ORDERING_NWS false
-
 
 /*
     @brief debug settings
@@ -75,4 +71,12 @@
 #define USE_EVALUATION_HARNESS false
 
 // search statistics
-#define USE_SEARCH_STATISTICS true
+#define USE_SEARCH_STATISTICS false
+
+
+/*
+    @brief tuning
+*/
+// move ordering
+#define TUNE_MOVE_ORDERING_MID false
+#define TUNE_MOVE_ORDERING_END true

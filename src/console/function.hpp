@@ -43,3 +43,11 @@ void solve_problems(std::string file, Options *options){
     }
     std::cout << "total " << total.nodes << " nodes in " << ((double)total.time / 1000) << "s NPS " << (total.nodes * 1000 / total.time) << std::endl;
 }
+
+void execute_special_tasks(){
+    // move ordering tuning (endsearch)
+    #if TUNE_MOVE_ORDERING_END
+        tune_move_ordering_end("problem/13_13.txt");
+    #endif
+    std::exit(0);
+}

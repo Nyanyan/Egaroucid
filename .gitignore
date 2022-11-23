@@ -40,3 +40,4 @@ move_ordering/mid/resources
 null_move_pruning/data
 move_ordering/end_last7/data
 move_ordering/end_last7/learned_data
+src/problem
