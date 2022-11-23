@@ -36,7 +36,6 @@
 #define MOVE_ORDERING_MPCT 0.7
 
 #if !TUNE_MOVE_ORDERING_MID
-    #define W_VALUE_TT 6
     #define W_VALUE_DEEP 12
     #define W_VALUE 10
     #define W_VALUE_SHALLOW 8
@@ -67,19 +66,6 @@ struct Flip_value{
         n_legal = LEGAL_UNDEFINED;
     }
 };
-
-#if USE_AUTO_OPTIMIZED_MOVE_ORDERING_MID || USE_AUTO_OPTIMIZED_MOVE_ORDERING_NWS
-    #define N_MOVE_ORDERING_PHASE_DISCS 10
-    /*
-        @brief Get a phase for move ordering
-
-        @param n_discs              number of discs on the board
-        @return move ordering phase
-    */
-    inline int get_move_ordering_phase(int n_discs){
-        return (n_discs - 4) / N_MOVE_ORDERING_PHASE_DISCS;
-    }
-#endif
 
 int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, const bool *searching);
 #if MID_FAST_DEPTH > 1

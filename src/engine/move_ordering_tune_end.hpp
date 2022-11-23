@@ -50,9 +50,8 @@ uint64_t test_move_ordering_end(){
         *move_ordering_end_params[i] = 1 << move_ordering_end_params_shift[i];
     }
     std::vector<std::future<uint64_t>> tasks;
-    for (Board board: move_ordering_end_test_cases){
+    for (Board board: move_ordering_end_test_cases)
         tasks.emplace_back(thread_pool.push(&do_task_test_move_ordering_end, board));
-    }
     uint64_t n_nodes = 0ULL;
     for (std::future<uint64_t> &task: tasks)
         n_nodes += task.get();
