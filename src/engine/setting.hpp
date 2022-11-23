@@ -57,8 +57,10 @@
 
 // use search algs
 #define USE_NEGA_ALPHA_ORDERING false
-#define USE_NEGA_ALPHA_END true
-#define USE_NEGA_ALPHA_END_FAST false
+#define USE
+// move ordering
+#define USE_AUTO_OPTIMIZED_MOVE_ORDERING_MID true
+#define USE_AUTO_OPTIMIZED_MOVE_ORDERING_NWS true
 
 
 /*
@@ -72,7 +74,6 @@
 
 // search statistics
 #define USE_SEARCH_STATISTICS false
-
 
 /*
     @brief tuning

@@ -71,7 +71,6 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
 
         if (show_log)
             std::cerr << "start!" << std::endl;
-        /*
         if (depth >= 23){
             search_depth = depth / 2;
             search.mpct = 1.0;
@@ -97,7 +96,6 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
             if (show_log)
                 std::cerr << "presearch depth " << search_depth << " mpct " << search.mpct << " value " << g << " policy " << idx_to_coord(result.second) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / std::max(1ULL, tim() - strt) << std::endl;
         }
-        */
 
         search_depth = depth;
         search.use_mpc = use_mpc;
