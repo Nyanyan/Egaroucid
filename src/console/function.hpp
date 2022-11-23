@@ -48,6 +48,6 @@ void execute_special_tasks(){
     // move ordering tuning (endsearch)
     #if TUNE_MOVE_ORDERING_END
         tune_move_ordering_end("problem/13_13.txt");
+        std::exit(0);
     #endif
-    std::exit(0);
 }

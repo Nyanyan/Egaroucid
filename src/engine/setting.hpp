@@ -79,4 +79,4 @@
 */
 // move ordering
 #define TUNE_MOVE_ORDERING_MID false
-#define TUNE_MOVE_ORDERING_END true
+#define TUNE_MOVE_ORDERING_END false

@@ -46,10 +46,10 @@
 #endif
 
 #if !TUNE_MOVE_ORDERING_END
-    #define W_END_MOBILITY 16
-    #define W_END_PARITY 8
-    #define W_END_PLAYER_POTENTIAL_MOBILITY 1
-    #define W_END_OPPONENT_POTENTIAL_MOBILITY 1
+    #define W_END_MOBILITY (1 << 4)
+    #define W_END_PARITY (1 << 3)
+    #define W_END_PLAYER_POTENTIAL_MOBILITY (1 << 1)
+    #define W_END_OPPONENT_POTENTIAL_MOBILITY (1 << 0)
 #endif
 
 /*
