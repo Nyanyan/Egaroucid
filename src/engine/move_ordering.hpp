@@ -36,12 +36,12 @@
 #define MOVE_ORDERING_MPCT 0.7
 
 #if !TUNE_MOVE_ORDERING_MID
-    #define W_VALUE_DEEP 12
-    #define W_VALUE 10
-    #define W_VALUE_SHALLOW 8
-    #define W_MOBILITY 8
-    #define W_PLAYER_POTENTIAL_MOBILITY 8
-    #define W_OPPONENT_POTENTIAL_MOBILITY 10
+    #define W_VALUE_DEEP (1 << 7)
+    #define W_VALUE (1 << 6)
+    #define W_VALUE_SHALLOW (1 << 5)
+    #define W_MOBILITY (1 << 2)
+    #define W_PLAYER_POTENTIAL_MOBILITY (1 << 3)
+    #define W_OPPONENT_POTENTIAL_MOBILITY (1 << 3)
 #endif
 
 #if !TUNE_MOVE_ORDERING_END
@@ -72,26 +72,6 @@ int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, const bo
     int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped, const bool *searching);
 #endif
 int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
-
-/*
-    @brief Calculate openness
-
-    Not used for now
-
-    @param board                board
-    @param flip                 flip information
-    @return openness
-*/
-/*
-inline int calc_openness(const Board *board, const Flip *flip){
-    uint64_t f = flip->flip;
-    uint64_t around = 0ULL;
-    for (uint_fast8_t cell = first_bit(&f); f; cell = next_bit(&f))
-        around |= bit_around[cell];
-    around &= ~flip->flip;
-    return pop_count_ull(~(board->player | board->opponent | (1ULL << flip->pos)) & around);
-}
-*/
 
 /*
     @brief Get number of corner mobility
