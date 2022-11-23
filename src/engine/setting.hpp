@@ -61,8 +61,8 @@
 #define USE_NEGA_ALPHA_END_FAST false
 
 // move ordering
-#define USE_AUTO_OPTIMIZED_MOVE_ORDERING_MID true
-#define USE_AUTO_OPTIMIZED_MOVE_ORDERING_NWS true
+#define USE_AUTO_OPTIMIZED_MOVE_ORDERING_MID false
+#define USE_AUTO_OPTIMIZED_MOVE_ORDERING_NWS false
 
 
 /*
@@ -75,4 +75,4 @@
 #define USE_EVALUATION_HARNESS false
 
 // search statistics
-#define USE_SEARCH_STATISTICS false
+#define USE_SEARCH_STATISTICS true
