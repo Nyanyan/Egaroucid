@@ -51,7 +51,7 @@ inline int last2(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
     #if USE_SEARCH_STATISTICS
         ++search->n_nodes_discs[search->n_discs];
     #endif
-    int v = -INF;
+    int v = -SCORE_INF;
     Flip flip;
     if (bit_around[p0] & search->board.opponent){
         calc_flip(&flip, &search->board, p0);
@@ -78,7 +78,7 @@ inline int last2(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
                 return v;
         }
     }
-    if (v == -INF){
+    if (v == -SCORE_INF){
         if (skipped)
             v = end_evaluate(&search->board, 2);
         else{
@@ -147,7 +147,7 @@ inline int last3(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
             #endif
         }
     #endif
-    int v = -INF;
+    int v = -SCORE_INF;
     Flip flip;
     if (bit_around[p0] & search->board.opponent){
         calc_flip(&flip, &search->board, p0);
@@ -191,7 +191,7 @@ inline int last3(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
                 return v;
         }
     }
-    if (v == -INF){
+    if (v == -SCORE_INF){
         if (skipped)
             v = end_evaluate(&search->board, 3);
         else{
@@ -300,7 +300,7 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
             #endif
         }
     #endif
-    int v = -INF;
+    int v = -SCORE_INF;
     Flip flip;
     if (bit_around[p0] & search->board.opponent){
         calc_flip(&flip, &search->board, p0);
@@ -358,7 +358,7 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
                 return g;
         }
     }
-    if (v == -INF){
+    if (v == -SCORE_INF){
         if (skipped)
             v = end_evaluate(&search->board, 4);
         else{
@@ -402,7 +402,7 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
             }
         #endif
         uint64_t legal = search->board.get_legal();
-        int v = -INF;
+        int v = -SCORE_INF;
         if (legal == 0ULL){
             if (skipped)
                 return end_evaluate(&search->board);
@@ -623,7 +623,7 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
         #endif
         if (legal == LEGAL_UNDEFINED)
             legal = search->board.get_legal();
-        int v = -INF;
+        int v = -SCORE_INF;
         if (legal == 0ULL){
             if (skipped)
                 return end_evaluate(&search->board);
@@ -655,7 +655,9 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
         int best_move = TRANSPOSITION_TABLE_UNDEFINED;
         int first_alpha = alpha;
         int g;
-        int pv_idx = 0;
+        #if MID_TO_END_DEPTH > YBWC_END_SPLIT_MIN_DEPTH
+            int pv_idx = 0;
+        #endif
         for (uint_fast8_t i = 0; i < N_TRANSPOSITION_MOVES; ++i){
             if (moves[i] == TRANSPOSITION_TABLE_UNDEFINED)
                 break;
@@ -674,11 +676,12 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
                     }
                 }
                 legal ^= 1ULL << moves[i];
-                ++pv_idx;
+                #if MID_TO_END_DEPTH > YBWC_END_SPLIT_MIN_DEPTH
+                    ++pv_idx;
+                #endif
             }
         }
         if (alpha < beta && legal){
-            int g;
             const int canput = pop_count_ull(legal);
             std::vector<Flip_value> move_list(canput);
             int idx = 0;
@@ -760,15 +763,16 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
                         v = g;
                         best_move = move_list[move_idx].flip.pos;
                         if (alpha < v){
+                            alpha = v;
                             if (beta <= v)
                                 break;
-                            alpha = v;
                         }
                     }
                 }
             #endif
         }
-        transposition_table.reg(search, hash_code, HW2 - search->n_discs, first_alpha, beta, v, best_move);
+        if (*searching && global_searching)
+            transposition_table.reg(search, hash_code, HW2 - search->n_discs, first_alpha, beta, v, best_move);
         return v;
     }
 #endif

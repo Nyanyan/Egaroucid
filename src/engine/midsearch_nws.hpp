@@ -49,7 +49,7 @@ inline int nega_alpha_eval1_nws(Search *search, int alpha, bool skipped, const b
     #if USE_SEARCH_STATISTICS
         ++search->n_nodes_discs[search->n_discs];
     #endif
-    int v = -INF;
+    int v = -SCORE_INF;
     uint64_t legal = search->board.get_legal();
     if (legal == 0ULL){
         if (skipped)
@@ -105,7 +105,7 @@ inline int nega_alpha_eval1_nws(Search *search, int alpha, bool skipped, const b
             return nega_alpha_eval1_nws(search, alpha, skipped, searching);
         if (depth == 0)
             return mid_evaluate_diff(search);
-        int v = -INF;
+        int v = -SCORE_INF;
         uint64_t legal = search->board.get_legal();
         if (legal == 0ULL){
             if (skipped)
@@ -173,7 +173,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
     #endif
     if (legal == LEGAL_UNDEFINED)
         legal = search->board.get_legal();
-    int v = -INF;
+    int v = -SCORE_INF;
     if (legal == 0ULL){
         if (skipped)
             return end_evaluate(&search->board);
@@ -296,6 +296,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
             }
         }
     }
-    transposition_table.reg(search, hash_code, depth, alpha, alpha + 1, v, best_move);
+    if (*searching && global_searching)
+        transposition_table.reg(search, hash_code, depth, alpha, alpha + 1, v, best_move);
     return v;
 }

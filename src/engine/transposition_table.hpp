@@ -55,7 +55,7 @@ class Hash_data{
         uint8_t cost;
         int8_t lower;
         int8_t upper;
-        int8_t moves[N_TRANSPOSITION_MOVES];
+        uint8_t moves[N_TRANSPOSITION_MOVES];
 
     public:
 
@@ -83,9 +83,9 @@ class Hash_data{
         */
         inline void reg_same_level(const int alpha, const int beta, const int value, const int policy){
             if (value < beta && value < upper)
-                upper = (uint8_t)value;
+                upper = (int8_t)value;
             if (alpha < value && lower < value)
-                lower = (uint8_t)value;
+                lower = (int8_t)value;
             if ((alpha < value || value == -SCORE_MAX) && moves[0] != policy){
                 moves[1] = moves[0];
                 moves[0] = (uint8_t)policy;
@@ -107,17 +107,49 @@ class Hash_data{
         */
         inline void reg_new_level(const int d, const uint_fast8_t ml, const uint_fast8_t nd, const int alpha, const int beta, const int value, const int policy){
             if (value < beta)
-                upper = (uint8_t)value;
+                upper = (int8_t)value;
             else
                 upper = SCORE_MAX;
             if (alpha < value)
-                lower = (uint8_t)value;
+                lower = (int8_t)value;
             else
                 lower = -SCORE_MAX;
             if ((alpha < value || value == -SCORE_MAX) && moves[0] != policy){
                 moves[1] = moves[0];
                 moves[0] = policy;
             }
+            depth = d;
+            mpc_level = ml;
+            n_discs = nd;
+        }
+
+        /*
+            @brief Register value (new board)
+
+            update best moves, reset other data
+
+            @param depth                depth
+            @param mpc_level            MPC level
+            @param n_discs              number of discs
+            @param alpha                alpha bound
+            @param beta                 beta bound
+            @param value                best value
+            @param policy               best move
+        */
+        inline void reg_new_data(const int d, const uint_fast8_t ml, const uint_fast8_t nd, const int alpha, const int beta, const int value, const int policy){
+            if (value < beta)
+                upper = (int8_t)value;
+            else
+                upper = SCORE_MAX;
+            if (alpha < value)
+                lower = (int8_t)value;
+            else
+                lower = -SCORE_MAX;
+            if ((alpha < value || value == -SCORE_MAX) && moves[0] != policy)
+                moves[0] = policy;
+            else
+                moves[0] = TRANSPOSITION_TABLE_UNDEFINED;
+            moves[1] = TRANSPOSITION_TABLE_UNDEFINED;
             depth = d;
             mpc_level = ml;
             n_discs = nd;
@@ -266,11 +298,13 @@ class Transposition_table{
                         if (node->board.player != search->board.player || node->board.opponent != search->board.opponent){
                             node->board.player = search->board.player;
                             node->board.opponent = search->board.opponent;
+                            node->data.reg_new_data(depth, search->mpc_level, search->n_discs, alpha, beta, value, policy);
+                        } else{
+                            if (node_level == level)
+                                node->data.reg_same_level(alpha, beta, value, policy);
+                            else
+                                node->data.reg_new_level(depth, search->mpc_level, search->n_discs, alpha, beta, value, policy);
                         }
-                        if (node_level == level)
-                            node->data.reg_same_level(alpha, beta, value, policy);
-                        else
-                            node->data.reg_new_level(depth, search->mpc_level, search->n_discs, alpha, beta, value, policy);
                     }
                 node->lock.unlock();
             }

@@ -46,7 +46,7 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, c
     #if USE_SEARCH_STATISTICS
         ++search->n_nodes_discs[search->n_discs];
     #endif
-    int v = -INF;
+    int v = -SCORE_INF;
     uint64_t legal = search->board.get_legal();
     if (legal == 0ULL){
         if (skipped)
@@ -107,7 +107,7 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, c
         #endif
         if (depth == 0)
             return mid_evaluate_diff(search);
-        int g, v = -INF;
+        int g, v = -SCORE_INF;
         uint64_t legal = search->board.get_legal();
         if (legal == 0ULL){
             if (skipped)
@@ -185,10 +185,9 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, c
                     return stab_res;
             }
         #endif
-        int first_alpha = alpha;
         if (legal == LEGAL_UNDEFINED)
             legal = search->board.get_legal();
-        int v = -INF;
+        int v = -SCORE_INF;
         if (legal == 0ULL){
             if (skipped)
                 return end_evaluate(&search->board);
@@ -341,7 +340,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     #endif
     if (legal == LEGAL_UNDEFINED)
         legal = search->board.get_legal();
-    int v = -INF;
+    int v = -SCORE_INF;
     if (legal == 0ULL){
         if (skipped)
             return end_evaluate(&search->board);
@@ -388,7 +387,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
             calc_flip(&flip_best, &search->board, moves[i]);
             eval_move(search, &flip_best);
             search->move(&flip_best);
-                if (v == -INF)
+                if (v == -SCORE_INF)
                     g = -nega_scout(search, -beta, -alpha, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
                 else{
                     g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
@@ -420,7 +419,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
             swap_next_best_move(move_list, move_idx, canput);
             eval_move(search, &move_list[move_idx].flip);
             search->move(&move_list[move_idx].flip);
-                if (v == -INF)
+                if (v == -SCORE_INF)
                     g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                 else{
                     g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
@@ -440,7 +439,8 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
             }
         }
     }
-    transposition_table.reg(search, hash_code, depth, first_alpha, beta, v, best_move);
+    if (*searching && global_searching)
+        transposition_table.reg(search, hash_code, depth, first_alpha, beta, v, best_move);
     return v;
 }
 
@@ -467,8 +467,7 @@ std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int de
         ++search->n_nodes_discs[search->n_discs];
     #endif
     uint64_t legal = search->board.get_legal();
-    int first_alpha = alpha;
-    int g, v = -INF;
+    int g, v = -SCORE_INF;
     if (legal == 0ULL)
         return std::make_pair(SCORE_UNDEFINED, -1);
     int best_move = TRANSPOSITION_TABLE_UNDEFINED;
@@ -501,6 +500,7 @@ std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int de
         alpha = lower;
     if (upper < beta)
         beta = upper;
+    int first_alpha = alpha;
     int pv_idx = 1;
     Flip flip_best;
     for (uint_fast8_t i = 0; i < N_TRANSPOSITION_MOVES; ++i){
@@ -510,7 +510,7 @@ std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int de
             calc_flip(&flip_best, &search->board, moves[i]);
             eval_move(search, &flip_best);
             search->move(&flip_best);
-                if (v == -INF)
+                if (v == -SCORE_INF)
                     g = -nega_scout(search, -beta, -alpha, depth - 1, false, LEGAL_UNDEFINED, is_end_search, &searching);
                 else{
                     g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, LEGAL_UNDEFINED, is_end_search, &searching);
@@ -549,7 +549,7 @@ std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int de
             swap_next_best_move(move_list, move_idx, canput);
             eval_move(search, &move_list[move_idx].flip);
             search->move(&move_list[move_idx].flip);
-                if (v == -INF)
+                if (v == -SCORE_INF)
                     g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, &searching);
                 else{
                     g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, &searching);
@@ -576,6 +576,7 @@ std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int de
             ++pv_idx;
         }
     }
-    transposition_table.reg(search, hash_code, depth, first_alpha, beta, v, best_move);
+    if (global_searching)
+        transposition_table.reg(search, hash_code, depth, first_alpha, beta, v, best_move);
     return std::make_pair(v, best_move);
 }
