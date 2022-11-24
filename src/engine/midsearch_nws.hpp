@@ -186,7 +186,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
     }
     uint32_t hash_code = search->board.hash();
     int lower = -SCORE_MAX, upper = SCORE_MAX;
-    uint_fast8_t moves[N_TRANSPOSITION_MOVES];
+    uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {TRANSPOSITION_TABLE_UNDEFINED, TRANSPOSITION_TABLE_UNDEFINED};
     #if MID_TO_END_DEPTH < USE_TT_DEPTH_THRESHOLD
         if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD)
             transposition_table.get(search, hash_code, depth, &lower, &upper, moves);
@@ -245,6 +245,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
             int split_count = 0;
             std::vector<std::future<Parallel_task>> parallel_tasks;
             bool n_searching = true;
+            bool break_flag = false;
             for (int move_idx = 0; move_idx < canput; ++move_idx){
                 swap_next_best_move(move_list, move_idx, canput);
                 eval_move(search, &move_list[move_idx].flip);
@@ -257,22 +258,20 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
                             v = g;
                             best_move = move_list[move_idx].flip.pos;
                             if (alpha < v){
-                                search->undo(&move_list[move_idx].flip);
-                                eval_undo(search, &move_list[move_idx].flip);
-                                break;
+                                break_flag = true;
                             }
                         }
                         if (split_count){
                             ybwc_get_end_tasks(search, parallel_tasks, &v, &best_move);
                             if (alpha < v){
-                                search->undo(&move_list[move_idx].flip);
-                                eval_undo(search, &move_list[move_idx].flip);
-                                break;
+                                break_flag = true;
                             }
                         }
                     }
                 search->undo(&move_list[move_idx].flip);
                 eval_undo(search, &move_list[move_idx].flip);
+                if (break_flag)
+                    break;
             }
             if (split_count){
                 if (alpha < v || !(*searching)){
