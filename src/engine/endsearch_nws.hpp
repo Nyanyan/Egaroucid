@@ -587,11 +587,9 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
             break;
         if (1 & (legal >> moves[i])){
             calc_flip(&flip_best, &search->board, moves[i]);
-            eval_move(search, &flip_best);
             search->move(&flip_best);
                 g = -nega_alpha_end_nws(search, -alpha - 1, false, LEGAL_UNDEFINED, searching);
             search->undo(&flip_best);
-            eval_undo(search, &flip_best);
             if (v < g){
                 v = g;
                 best_move = moves[i];

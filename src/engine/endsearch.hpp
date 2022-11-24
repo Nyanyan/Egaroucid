@@ -661,11 +661,9 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
                 break;
             if (1 & (legal >> moves[i])){
                 calc_flip(&flip_best, &search->board, moves[i]);
-                eval_move(search, &flip_best);
                 search->move(&flip_best);
                     g = -nega_alpha_end(search, -beta, -alpha, false, LEGAL_UNDEFINED, searching);
                 search->undo(&flip_best);
-                eval_undo(search, &flip_best);
                 if (v < g){
                     v = g;
                     best_move = moves[i];
