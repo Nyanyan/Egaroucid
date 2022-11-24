@@ -621,6 +621,12 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
         #if USE_SEARCH_STATISTICS
             ++search->n_nodes_discs[search->n_discs];
         #endif
+        #if USE_END_SC
+            int stab_res = stability_cut(search, &alpha, &beta);
+            if (stab_res != SCORE_UNDEFINED){
+                return stab_res;
+            }
+        #endif
         if (legal == LEGAL_UNDEFINED)
             legal = search->board.get_legal();
         int v = -SCORE_INF;
