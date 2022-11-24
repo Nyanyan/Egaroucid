@@ -51,21 +51,12 @@ inline int data_strength(const uint_fast8_t mpc_level, const int d){
 class Hash_data{
     private:
         union{
-            #ifdef __BIG_ENDIAN__
-                struct{
-                    uint8_t cost;
-                    uint8_t n_discs;
-                    uint8_t mpc_level;
-                    uint8_t depth;
-                } level_data;
-            #else
-                struct{
-                    uint8_t depth;
-                    uint8_t mpc_level;
-                    uint8_t n_discs;
-                    uint8_t cost;
-                } level_data;
-            #endif
+            struct{
+                uint8_t cost;
+                uint8_t n_discs;
+                uint8_t mpc_level;
+                uint8_t depth;
+            } level_data;
             uint32_t level;
         } level;
         int8_t lower;
@@ -83,6 +74,7 @@ class Hash_data{
             moves[0] = TRANSPOSITION_TABLE_UNDEFINED;
             moves[1] = TRANSPOSITION_TABLE_UNDEFINED;
             level.level = 0;
+            //std::cerr << (int)level.level_data.depth << " " << (int)level.level_data.mpc_level << " " << (int)level.level_data.n_discs << " " << (int)level.level_data.cost << std::endl;
         }
 
         /*
@@ -136,7 +128,9 @@ class Hash_data{
         }
 
         inline uint32_t get_level(){
-            return level.level;
+            //std::cerr << level.level << " " << (int)level.level_data.depth << " " << (int)level.level_data.mpc_level << " " << (int)level.level_data.n_discs << " " << (int)level.level_data.cost << std::endl;
+            //return level.level;
+            return ((uint32_t)level.level_data.depth << 24) | ((uint32_t)level.level_data.mpc_level << 16) | ((uint32_t)level.level_data.n_discs << 8);
         }
 
         inline void get_moves(uint_fast8_t res_moves[]){
@@ -266,7 +260,7 @@ class Transposition_table{
                 node = &table_stack[hash];
             else
                 node = &table_heap[hash - TRANSPOSITION_TABLE_STACK_SIZE];
-            const uint16_t level = (depth << 24) | (search->mpc_level << 16) | (search->n_discs << 8);
+            const uint32_t level = ((int32_t)depth << 24) | ((int32_t)search->mpc_level << 16) | ((int32_t)search->n_discs << 8);
             uint16_t node_level = node->data.get_level();
             node->lock.lock();
                 if (node_level <= level){
@@ -304,7 +298,7 @@ class Transposition_table{
             if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
                 node->lock.lock();
                     if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
-                        const uint16_t level = (depth << 24) | (search->mpc_level << 16) | (search->n_discs << 8);
+                        const uint32_t level = ((int32_t)depth << 24) | ((int32_t)search->mpc_level << 16) | ((int32_t)search->n_discs << 8);
                         node->data.get_moves(moves);
                         if (node->data.get_level() >= level)
                             node->data.get_bounds(lower, upper);
