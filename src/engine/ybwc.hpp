@@ -49,13 +49,14 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
     @param searching            flag for terminating this search
     @return the result in Parallel_task structure
 */
-Parallel_task ybwc_do_task_nws(int id, uint64_t player, uint64_t opponent, int_fast8_t n_discs, uint_fast8_t parity, uint_fast8_t mpc_level, int alpha, int depth, uint64_t legal, bool is_end_search, uint_fast8_t policy, const bool *searching){
+Parallel_task ybwc_do_task_nws(int id, uint64_t player, uint64_t opponent, int_fast8_t n_discs, uint_fast8_t parity, uint_fast8_t mpc_level, uint8_t date, int alpha, int depth, uint64_t legal, bool is_end_search, uint_fast8_t policy, const bool *searching){
     Search search;
     search.board.player = player;
     search.board.opponent = opponent;
     search.n_discs = n_discs;
     search.parity = parity;
     search.mpc_level = mpc_level;
+    search.date = date;
     search.n_nodes = 0ULL;
     search.use_multi_thread = depth > YBWC_MID_SPLIT_MIN_DEPTH;
     calc_features(&search);
@@ -89,7 +90,7 @@ inline bool ybwc_split_nws(const Search *search, int alpha, int depth, uint64_t 
     if (thread_pool.n_idle() &&
         (pv_idx || seems_to_be_all_node)){
             bool pushed;
-            parallel_tasks.emplace_back(thread_pool.push(&pushed, &ybwc_do_task_nws, search->board.player, search->board.opponent, search->n_discs, search->parity, search->mpc_level, alpha, depth, legal, is_end_search, policy, searching));
+            parallel_tasks.emplace_back(thread_pool.push(&pushed, &ybwc_do_task_nws, search->board.player, search->board.opponent, search->n_discs, search->parity, search->mpc_level, search->date, alpha, depth, legal, is_end_search, policy, searching));
             if (!pushed)
                 parallel_tasks.pop_back();
             return pushed;
@@ -114,13 +115,14 @@ inline bool ybwc_split_nws(const Search *search, int alpha, int depth, uint64_t 
             @param searching            flag for terminating this search
             @return the result in Parallel_task structure
         */
-        Parallel_task ybwc_do_task_end(int id, uint64_t player, uint64_t opponent, int_fast8_t n_discs, uint_fast8_t parity, int alpha, int beta, uint64_t legal, uint_fast8_t policy, const bool *searching){
+        Parallel_task ybwc_do_task_end(int id, uint64_t player, uint64_t opponent, int_fast8_t n_discs, uint_fast8_t parity, uint8_t date, int alpha, int beta, uint64_t legal, uint_fast8_t policy, const bool *searching){
             Search search;
             search.board.player = player;
             search.board.opponent = opponent;
             search.n_discs = n_discs;
             search.parity = parity;
             search.mpc_level = MPC_100_LEVEL;
+            search.date = date;
             search.n_nodes = 0ULL;
             search.use_multi_thread = n_discs < HW2 - YBWC_END_SPLIT_MIN_DEPTH;
             int g = -nega_alpha_end(&search, alpha, beta, false, legal, searching);
@@ -155,7 +157,7 @@ inline bool ybwc_split_nws(const Search *search, int alpha, int depth, uint64_t 
                 (pv_idx || seems_to_be_all_node) && 
                 search->n_discs <= HW2 - YBWC_END_SPLIT_MIN_DEPTH){
                     bool pushed;
-                    parallel_tasks.emplace_back(thread_pool.push(&pushed, &ybwc_do_task_end, search->board.player, search->board.opponent, search->n_discs, search->parity, alpha, beta, legal, policy, searching));
+                    parallel_tasks.emplace_back(thread_pool.push(&pushed, &ybwc_do_task_end, search->board.player, search->board.opponent, search->n_discs, search->parity, search->date, alpha, beta, legal, policy, searching));
                     if (!pushed)
                         parallel_tasks.pop_back();
                     return pushed;
@@ -178,13 +180,14 @@ inline bool ybwc_split_nws(const Search *search, int alpha, int depth, uint64_t 
         @param searching            flag for terminating this search
         @return the result in Parallel_task structure
     */
-    Parallel_task ybwc_do_task_end_nws(int id, uint64_t player, uint64_t opponent, int_fast8_t n_discs, uint_fast8_t parity, int alpha, uint64_t legal, uint_fast8_t policy, const bool *searching){
+    Parallel_task ybwc_do_task_end_nws(int id, uint64_t player, uint64_t opponent, int_fast8_t n_discs, uint_fast8_t parity, uint8_t date, int alpha, uint64_t legal, uint_fast8_t policy, const bool *searching){
         Search search;
         search.board.player = player;
         search.board.opponent = opponent;
         search.n_discs = n_discs;
         search.parity = parity;
         search.mpc_level = MPC_100_LEVEL;
+        search.date = date;
         search.n_nodes = 0ULL;
         search.use_multi_thread = n_discs < HW2 - YBWC_END_SPLIT_MIN_DEPTH;
         int g = -nega_alpha_end_nws(&search, alpha, false, legal, searching);
@@ -218,7 +221,7 @@ inline bool ybwc_split_nws(const Search *search, int alpha, int depth, uint64_t 
             (pv_idx || seems_to_be_all_node) && 
             search->n_discs <= HW2 - YBWC_END_SPLIT_MIN_DEPTH){
                 bool pushed;
-                parallel_tasks.emplace_back(thread_pool.push(&pushed, &ybwc_do_task_end_nws, search->board.player, search->board.opponent, search->n_discs, search->parity, alpha, legal, policy, searching));
+                parallel_tasks.emplace_back(thread_pool.push(&pushed, &ybwc_do_task_end_nws, search->board.player, search->board.opponent, search->n_discs, search->parity, search->date, alpha, legal, policy, searching));
                 if (!pushed)
                     parallel_tasks.pop_back();
                 return pushed;

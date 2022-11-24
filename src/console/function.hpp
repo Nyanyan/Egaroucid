@@ -17,11 +17,11 @@
 #include "command.hpp"
 
 void setboard(Board_info *board, std::string board_str);
-Search_result go_noprint(Board_info *board, Options *options);
+Search_result go_noprint(Board_info *board, Options *options, State *state);
 void print_search_result_head();
 void print_search_result_body(Search_result result, int level);
 
-void solve_problems(std::string file, Options *options){
+void solve_problems(std::string file, Options *options, State *state){
     std::ifstream ifs(file);
     if (ifs.fail()){
         std::cerr << "[ERROR] [FATAL] no problem file found" << std::endl;
@@ -36,7 +36,7 @@ void solve_problems(std::string file, Options *options){
     total.time = 0;
     while (std::getline(ifs, line)){
         setboard(&board, line);
-        Search_result res = go_noprint(&board, options);
+        Search_result res = go_noprint(&board, options, state);
         print_search_result_body(res, options->level);
         total.nodes += res.nodes;
         total.time += res.time;

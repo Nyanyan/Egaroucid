@@ -480,7 +480,6 @@ std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int de
         legal ^= 1ULL << clog.pos;
     }
     alpha = std::max(alpha, v);
-
     uint32_t hash_code = search->board.hash();
     int lower = -SCORE_MAX, upper = SCORE_MAX;
     uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {TRANSPOSITION_TABLE_UNDEFINED, TRANSPOSITION_TABLE_UNDEFINED};

@@ -18,8 +18,8 @@
 // automatically save book in this time (milliseconds)
 #define AUTO_BOOK_SAVE_TIME 60000
 
-Search_result ai(Board board, int level, bool use_book, bool use_multi_thread, bool show_log);
-int ai_window(Board board, int level, int alpha, int beta, bool use_multi_thread);
+Search_result ai(Board board, int level, bool use_book, bool use_multi_thread, bool show_log, uint8_t date);
+int ai_window(Board board, int level, int alpha, int beta, bool use_multi_thread, uint8_t date);
 
 /*
     @brief Get a value of the given board
@@ -31,8 +31,8 @@ int ai_window(Board board, int level, int alpha, int beta, bool use_multi_thread
 
     @return a score of the board
 */
-inline int book_enlarge_calc_value(Board board, int level){
-    return ai(board, level, true, true, false).value;
+inline int book_enlarge_calc_value(Board board, int level, uint8_t date){
+    return ai(board, level, true, true, false, date).value;
 }
 
 /*
@@ -55,7 +55,7 @@ inline int book_enlarge_calc_value(Board board, int level){
 
     @return a score of the board
 */
-int book_widen_search(Board board, int level, const int book_depth, int expected_value, int expected_error, int remaining_error, Board *board_copy, int *player, uint64_t *strt_tim, std::string book_file, std::string book_bak){
+int book_widen_search(Board board, int level, const int book_depth, int expected_value, int expected_error, int remaining_error, Board *board_copy, int *player, uint64_t *strt_tim, std::string book_file, std::string book_bak, uint8_t *date){
     if (!global_searching || remaining_error < 0)
         return SCORE_UNDEFINED;
     if (tim() - *strt_tim > AUTO_BOOK_SAVE_TIME){
@@ -70,7 +70,9 @@ int book_widen_search(Board board, int level, const int book_depth, int expected
         return g;
     }
     if (board.n_discs() >= 4 + book_depth){
-        g = book_enlarge_calc_value(board, level);
+        g = book_enlarge_calc_value(board, level, *date);
+        ++(*date);
+        *date = manage_date(*date);
         std::cerr << "depth " << board.n_discs() - 4 << " LF value " << g << std::endl;
         book.reg(board, -g);
         return g;
@@ -81,19 +83,21 @@ int book_widen_search(Board board, int level, const int book_depth, int expected
     if (legal == 0ULL){
         board.pass();
         *player ^= 1;
-            g = -book_widen_search(board, level, book_depth, -expected_value, expected_error, remaining_error, board_copy, player, strt_tim, book_file, book_bak);
+            g = -book_widen_search(board, level, book_depth, -expected_value, expected_error, remaining_error, board_copy, player, strt_tim, book_file, book_bak, date);
         *player ^= 1;
         board.pass();
         return g;
     }
-    Search_result best_move = ai(board, level, true, true, false);
+    Search_result best_move = ai(board, level, true, true, false, *date);
+    ++(*date);
+    *date = manage_date(*date);
     std::cerr << "depth " << board.n_discs() - 4 << " BM value " << best_move.value << std::endl;
     Flip flip;
     calc_flip(&flip, &board, (uint8_t)best_move.policy);
     board.move_board(&flip);
     *player ^= 1;
         board.copy(board_copy);
-        g = -book_widen_search(board, level, book_depth, -expected_value, expected_error, remaining_error, board_copy, player, strt_tim, book_file, book_bak);
+        g = -book_widen_search(board, level, book_depth, -expected_value, expected_error, remaining_error, board_copy, player, strt_tim, book_file, book_bak, date);
         if (global_searching && g >= -HW2 && g <= HW2){
             v = g;
             best_move.value = std::min(best_move.value, g);
@@ -114,14 +118,16 @@ int book_widen_search(Board board, int level, const int book_depth, int expected
                 //alpha = best_move.value - expected_error;
                 //g = -ai_window(board, level, -best_move.value, -alpha + 1, true);
                 alpha = std::max(-HW2, v - expected_error);
-                g = -ai_window(board, level, -v, -alpha + 1, true);
+                g = -ai_window(board, level, -v, -alpha + 1, true, *date);
+                ++(*date);
+                *date = manage_date(*date);
                 if (global_searching && g >= alpha && g <= HW2){
                     //n_remaining_error = remaining_error - std::max(0, best_move.value - g);
                     n_remaining_error = remaining_error - std::max(0, v - g);
                     if (-HW2 <= expected_value && expected_value <= HW2)
                         n_remaining_error -= std::max(0, expected_value - g);
                     n_expected_value = std::max(n_expected_value, v);
-                    g = -book_widen_search(board, level, book_depth, -n_expected_value, expected_error, n_remaining_error, board_copy, player, strt_tim, book_file, book_bak);
+                    g = -book_widen_search(board, level, book_depth, -n_expected_value, expected_error, n_remaining_error, board_copy, player, strt_tim, book_file, book_bak, date);
                     if (global_searching && g >= -HW2 && g <= HW2){
                         v = std::max(v, g);
                         std::cerr << "depth " << board.n_discs() - 4 << " AD value " << g << " pre " << best_move.value << " best " << v << " expected " << expected_value << " remaining error " << n_remaining_error << std::endl;
@@ -160,8 +166,11 @@ inline void book_widen(Board root_board, int level, const int book_depth, int ex
     std::cerr << "book learn started" << std::endl;
     int remaining_error = std::max(expected_error, (book_depth + 4 - root_board.n_discs()) * expected_error / 5);
     std::cerr << "remaining error " << remaining_error << std::endl;
-    int g = book_widen_search(root_board, level, book_depth, SCORE_UNDEFINED, expected_error, remaining_error, board_copy, player, &strt_tim, book_file, book_bak);
+    uint8_t date = INIT_DATE;
+    transposition_table.reset_date();
+    int g = book_widen_search(root_board, level, book_depth, SCORE_UNDEFINED, expected_error, remaining_error, board_copy, player, &strt_tim, book_file, book_bak, &date);
     root_board.copy(board_copy);
+    transposition_table.reset_date();
     book.save_bin(book_file, book_bak);
     std::cerr << "book learn finished " << g << std::endl;
     *book_learning = false;

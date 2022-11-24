@@ -131,13 +131,15 @@ void redo(Board_info *board, int remain){
     redo(board, remain - 1);
 }
 
-Search_result go_noprint(Board_info *board, Options *options){
+Search_result go_noprint(Board_info *board, Options *options, State *state){
     if (board->board.is_end()){
         std::cerr << "[ERROR] game over" << std::endl;
         Search_result res;
         return res;
     }
-    Search_result result = ai(board->board, options->level, true, true, options->show_log);
+    Search_result result = ai(board->board, options->level, true, true, options->show_log, state->date);
+    ++state->date;
+    state->date = manage_date(state->date);
     Flip flip;
     calc_flip(&flip, &board->board, result.policy);
     board->board.move_board(&flip);
@@ -156,8 +158,8 @@ Search_result go_noprint(Board_info *board, Options *options){
     return result;
 }
 
-void go(Board_info *board, Options *options){
-    print_search_result(go_noprint(board, options), options->level);
+void go(Board_info *board, Options *options, State *state){
+    print_search_result(go_noprint(board, options, state), options->level);
 }
 
 void setboard(Board_info *board, std::string board_str){
@@ -241,7 +243,7 @@ void check_command(Board_info *board, State *state, Options *options){
             remain = 1;
         redo(board, remain);
     } else if (cmd_id == CMD_ID_GO)
-        go(board, options);
+        go(board, options, state);
     else if (cmd_id == CMD_ID_SETBOARD)
         setboard(board, arg);
 }

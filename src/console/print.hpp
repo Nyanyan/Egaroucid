@@ -272,9 +272,9 @@ void print_special_commandline_options(std::vector<Commandline_option> commandli
     }
 }
 
-void execute_special_commandline_tasks(std::vector<Commandline_option> commandline_options, Options *options){
+void execute_special_commandline_tasks(std::vector<Commandline_option> commandline_options, Options *options, State *state){
     if (find_commandline_option(commandline_options, ID_SOLVE) != OPTION_NOT_FOUND){
-        solve_problems(find_commandline_option(commandline_options, ID_SOLVE), options);
+        solve_problems(find_commandline_option(commandline_options, ID_SOLVE), options, state);
         std::exit(0);
     }
 }

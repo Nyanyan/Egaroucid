@@ -144,8 +144,8 @@ class Search{
         bool use_multi_thread;
         #if USE_SEARCH_STATISTICS
             uint64_t n_nodes_discs[HW2];
-        #else
         #endif
+        uint8_t date;
 
     public:
         /*
