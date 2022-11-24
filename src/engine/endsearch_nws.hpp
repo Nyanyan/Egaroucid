@@ -567,7 +567,7 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
     int l = -INF, u = INF;
     const bool use_tt = search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD;
     if (use_tt){
-        value_transposition_table.get(&search->board, hash_code, &l, &u, NOMPC, HW2 - search->n_discs);
+        value_transposition_table.get(&search->board, hash_code, &l, &u, MPC_100_LEVEL, HW2 - search->n_discs);
         if (u == l)
             return u;
         if (u <= alpha)

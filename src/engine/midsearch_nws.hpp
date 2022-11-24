@@ -188,7 +188,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
     #if MID_TO_END_DEPTH < USE_TT_DEPTH_THRESHOLD
         int l = -INF, u = INF;
         if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD){
-            value_transposition_table.get(&search->board, hash_code, &l, &u, search->mpct, depth);
+            value_transposition_table.get(&search->board, hash_code, &l, &u, search->mpc_level, depth);
             if (u == l)
                 return u;
             if (l < alpha && u <= alpha)
@@ -198,7 +198,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
         }
     #else
         int l, u;
-        value_transposition_table.get(&search->board, hash_code, &l, &u, search->mpct, depth);
+        value_transposition_table.get(&search->board, hash_code, &l, &u, search->mpc_level, depth);
         if (u == l)
             return u;
         if (u <= alpha)
@@ -207,19 +207,10 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
             return l;
     #endif
     #if USE_MID_MPC
-        if (search->use_mpc){
-            if (search->n_discs <= USE_MPC_N_DISCS){
-                if (mpc_nws(search, alpha, depth, legal, is_end_search, &v, searching)){
-                    return v;
-                }
+        if (search->n_discs <= USE_MPC_N_DISCS){
+            if (mpc_nws(search, alpha, depth, legal, is_end_search, &v, searching)){
+                return v;
             }
-            #if USE_MID_NMP
-                if (search->n_discs <= USE_NULL_MOVE_PRUNING_N_DISCS && depth <= USE_NULL_MOVE_PRUNING_DEPTH){
-                    if (nmp_nws(search, alpha, depth, &v)){
-                        return v;
-                    }
-                }
-            #endif
         }
     #endif
     int best_move = best_move_transposition_table.get(&search->board, hash_code);

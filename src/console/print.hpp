@@ -83,20 +83,16 @@ void print_help(){
 }
 
 void print_level_info(){
-    std::unordered_map<double, std::string> probability_char;
-    probability_char[MPC_81] = "_";
-    probability_char[MPC_95] = "-";
-    probability_char[MPC_98] = "=";
-    probability_char[MPC_99] = "^";
-    probability_char[NOMPC] = "#";
+    const std::string probability_char = "_-=+^#";
     std::cout << "Level definition:" << std::endl;
     std::cout << COUT_TAB;
     std::cout << "Endgame probability" << std::endl;
-    std::cout << COUT_TAB << COUT_TAB << " 81%: " << probability_char[MPC_81] << std::endl;
-    std::cout << COUT_TAB << COUT_TAB << " 95%: " << probability_char[MPC_95] << std::endl;
-    std::cout << COUT_TAB << COUT_TAB << " 98%: " << probability_char[MPC_98] << std::endl;
-    std::cout << COUT_TAB << COUT_TAB << " 99%: " << probability_char[MPC_99] << std::endl;
-    std::cout << COUT_TAB << COUT_TAB << "100%: " << probability_char[NOMPC] << std::endl;
+    std::cout << COUT_TAB << COUT_TAB << " 78%: " << probability_char[MPC_78_LEVEL] << std::endl;
+    std::cout << COUT_TAB << COUT_TAB << " 81%: " << probability_char[MPC_81_LEVEL] << std::endl;
+    std::cout << COUT_TAB << COUT_TAB << " 95%: " << probability_char[MPC_95_LEVEL] << std::endl;
+    std::cout << COUT_TAB << COUT_TAB << " 98%: " << probability_char[MPC_98_LEVEL] << std::endl;
+    std::cout << COUT_TAB << COUT_TAB << " 99%: " << probability_char[MPC_99_LEVEL] << std::endl;
+    std::cout << COUT_TAB << COUT_TAB << "100%: " << probability_char[MPC_100_LEVEL] << std::endl;
     std::cout << COUT_TAB;
     std::cout << "|";
     std::cout << std::right << std::setw(LEVEL_INFO_TAB_SIZE) << "Level";
@@ -118,21 +114,21 @@ void print_level_info(){
         std::cout << "|";
         std::string s;
         if (get_level_midsearch(level, 0))
-            s = std::to_string(level_definition[level].mid_lookahead) + " moves@" + std::to_string(calc_probability(level_definition[level].mid_mpct)) + "%";
+            s = std::to_string(level_definition[level].mid_lookahead) + " moves@" + std::to_string(SELECTIVITY_PERCENTAGE[level_definition[level].mid_mpc_level]) + "%";
         else
             s = "None";
         std::cout << std::right << std::setw(LEVEL_MIDGAME_TAB_SIZE) << s;
         for (int n_moves = 0; n_moves < HW2 - 4; ++n_moves){
             if (n_moves % LEVEL_DEPTH_TAB_SIZE == 0)
                 std::cout << "|";
-            bool is_mid_search, use_mpc;
-            double mpct;
+            bool is_mid_search;
+            uint_fast8_t mpc_level;
             int depth;
-            get_level(level, n_moves, &is_mid_search, &depth, &use_mpc, &mpct);
+            get_level(level, n_moves, &is_mid_search, &depth, &mpc_level);
             if (is_mid_search)
                 std::cout << " ";
             else{
-                std::cout << probability_char[mpct];
+                std::cout << probability_char[mpc_level];
             }
         }
         std::cout << "|";

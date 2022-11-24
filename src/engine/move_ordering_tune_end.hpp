@@ -37,7 +37,7 @@ uint64_t do_task_test_move_ordering_end(int id, Board board){
     search.n_nodes = 0ULL;
     search.use_multi_thread = false;
     search.use_mpc = false;
-    search.mpct = NOMPC;
+    search.mpct = MPC_100_LEVEL;
     const bool searching = true;
     search.init_board(&board);
     //calc_features(&search);

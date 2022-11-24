@@ -32,7 +32,7 @@
 #define MOVE_ORDERING_VALUE_OFFSET_BETA 10
 #define MOVE_ORDERING_NWS_VALUE_OFFSET_ALPHA 10
 #define MOVE_ORDERING_NWS_VALUE_OFFSET_BETA 3
-#define MOVE_ORDERING_MPCT 0.7
+#define MOVE_ORDERING_MPC_LEVEL MPC_81_LEVEL
 #define W_END_MOBILITY 16
 #define W_END_PARITY 8
 
@@ -189,22 +189,16 @@ inline bool move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
                         if (depth <= MID_FAST_DEPTH)
                             flip_value->value += nega_alpha(search, alpha, beta, depth, false, searching) * (W_VALUE + depth * W_VALUE_DEEP_ADDITIONAL);
                         else{
-                            bool use_mpc = search->use_mpc;
-                            double mpct = search->mpct;
-                            search->use_mpc = true;
-                            search->mpct = MOVE_ORDERING_MPCT;
+                            uint_fast8_t mpc_level = search->mpc_level;
+                            search->mpc_level = MOVE_ORDERING_MPC_LEVEL;
                             flip_value->value += nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, searching) * (W_VALUE + depth * W_VALUE_DEEP_ADDITIONAL);
-                            search->use_mpc = use_mpc;
-                            search->mpct = mpct;
+                            search->mpc_level = mpc_level;
                         }
                     #else
-                        bool use_mpc = search->use_mpc;
-                        double mpct = search->mpct;
-                        search->use_mpc = true;
-                        search->mpct = MOVE_ORDERING_MPCT;
+                        uint_fast8_t mpc_level = search->mpc_level;
+                        search->mpc_level = MOVE_ORDERING_MPC_LEVEL;
                         flip_value->value += nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, searching) * (W_VALUE + depth * W_VALUE_DEEP_ADDITIONAL);
-                        search->use_mpc = use_mpc;
-                        search->mpct = mpct;
+                        search->mpc_level = mpc_level;
                     #endif
                     break;
             }

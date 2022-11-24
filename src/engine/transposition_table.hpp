@@ -29,8 +29,8 @@ constexpr size_t TRANSPOSITION_TABLE_STACK_SIZE = hash_sizes[DEFAULT_HASH_LEVEL]
     @param d                    depth of the search
     @return reliability (strength)
 */
-inline double data_strength(const double t, const int d){
-    return t + 4.0 * d;
+inline int data_strength(const uint_fast8_t mpc_level, const int d){
+    return (mpc_level << 7) + d;
 }
 
 /*
@@ -212,7 +212,7 @@ class Best_move_transposition_table{
     @param opponent             a bitboard representing opponent
     @param lower                lower bound
     @param upper                upper bound
-    @param mpct                 MPC (Multi-ProbCut) probability
+    @param mpc_level                 MPC (Multi-ProbCut) probability
     @param depth                search depth
 */
 class Node_value_transposition_table{
@@ -221,7 +221,7 @@ class Node_value_transposition_table{
         std::atomic<uint64_t> opponent;
         std::atomic<int> lower;
         std::atomic<int> upper;
-        std::atomic<double> mpct;
+        std::atomic<uint_fast8_t> mpc_level;
         std::atomic<int> depth;
 
     public:
@@ -233,7 +233,7 @@ class Node_value_transposition_table{
             opponent.store(0ULL);
             lower.store(-INF);
             upper.store(INF);
-            mpct.store(0.0);
+            mpc_level.store(0.0);
             depth.store(0);
         }
 
@@ -245,17 +245,17 @@ class Node_value_transposition_table{
             @param board                new board
             @param l                    new lower bound
             @param u                    new upper bound
-            @param t                    new probability
+            @param mpc_level            MPC (Multi-ProbCut) level
             @param d                    new depth
         */
-        inline void reg(const Board *board, const int l, const int u, const double t, const int d){
-            if (board->player == player.load(std::memory_order_relaxed) && board->opponent == opponent.load(std::memory_order_relaxed) && data_strength(mpct.load(std::memory_order_relaxed), depth.load(std::memory_order_relaxed)) > data_strength(t, d))
+        inline void reg(const Board *board, const int l, const int u, const uint_fast8_t ml, const int d){
+            if (board->player == player.load(std::memory_order_relaxed) && board->opponent == opponent.load(std::memory_order_relaxed) && data_strength(mpc_level.load(std::memory_order_relaxed), depth.load(std::memory_order_relaxed)) > data_strength(ml, d))
                 return;
             player.store(board->player);
             opponent.store(board->opponent);
             lower.store(l);
             upper.store(u);
-            mpct.store(t);
+            mpc_level.store(ml);
             depth.store(d);
         }
 
@@ -267,11 +267,11 @@ class Node_value_transposition_table{
             @param board                new board
             @param l                    lower bound to store
             @param u                    upper bound to store
-            @param t                    requested MPC (Multi-ProbCut) probability
+            @param mpc_level            requested MPC (Multi-ProbCut) level
             @param d                    requested depth
         */
-        inline void get(const Board *board, int *l, int *u, const double t, const int d){
-            if (data_strength(mpct.load(std::memory_order_relaxed), depth.load(std::memory_order_relaxed)) < data_strength(t, d)){
+        inline void get(const Board *board, int *l, int *u, const uint_fast8_t ml, const int d){
+            if (data_strength(mpc_level.load(std::memory_order_relaxed), depth.load(std::memory_order_relaxed)) < data_strength(ml, d)){
                 *l = -INF;
                 *u = INF;
             } else{
@@ -384,14 +384,14 @@ class Value_transposition_table{
             @param hash                 hash code
             @param l                    lower bound
             @param u                    upper bound
-            @param t                    MPC (Multi-ProbCut) probability
+            @param mpc_level            MPC (Multi-ProbCut) level
             @param d                    depth
         */
-        inline void reg(const Board *board, const uint32_t hash, const int l, const int u, const double t, const int d){
+        inline void reg(const Board *board, const uint32_t hash, const int l, const int u, const uint_fast8_t ml, const int d){
             if (hash < TRANSPOSITION_TABLE_STACK_SIZE)
-                table_stack[hash].reg(board, l, u, t, d);
+                table_stack[hash].reg(board, l, u, ml, d);
             else
-                table_heap[hash - TRANSPOSITION_TABLE_STACK_SIZE].reg(board, l, u, t, d);
+                table_heap[hash - TRANSPOSITION_TABLE_STACK_SIZE].reg(board, l, u, ml, d);
         }
 
         /*
@@ -401,14 +401,14 @@ class Value_transposition_table{
             @param hash                 hash code
             @param l                    lower bound to store
             @param u                    upper bound to store
-            @param t                    requested MPC (Multi-ProbCut) probability
+            @param mpc_level            requested MPC (Multi-ProbCut) level
             @param d                    requested depth
         */
-        inline void get(const Board *board, const uint32_t hash, int *l, int *u, const double t, const int d){
+        inline void get(const Board *board, const uint32_t hash, int *l, int *u, const uint_fast8_t ml, const int d){
             if (hash < TRANSPOSITION_TABLE_STACK_SIZE)
-                table_stack[hash].get(board, l, u, t, d);
+                table_stack[hash].get(board, l, u, ml, d);
             else
-                table_heap[hash - TRANSPOSITION_TABLE_STACK_SIZE].get(board, l, u, t, d);
+                table_heap[hash - TRANSPOSITION_TABLE_STACK_SIZE].get(board, l, u, ml, d);
         }
 };
 

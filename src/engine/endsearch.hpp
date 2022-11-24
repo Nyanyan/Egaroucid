@@ -636,7 +636,7 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
         uint32_t hash_code = search->board.hash();
         int l = -INF, u = INF;
         if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD){
-            value_transposition_table.get(&search->board, hash_code, &l, &u, NOMPC, HW2 - search->n_discs);
+            value_transposition_table.get(&search->board, hash_code, &l, &u, MPC_100_LEVEL, HW2 - search->n_discs);
             if (u == l)
                 return u;
             if (beta <= l)

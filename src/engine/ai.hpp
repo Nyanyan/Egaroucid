@@ -29,20 +29,19 @@
 
     @param board                board to solve
     @param depth                depth to search
-    @param use_mpc              use MPC?
-    @param mpct                 MPC probability
+    @param mpc_level            MPC level
     @param show_log             show log?
     @param use_multi_thread     search in multi thread?
     @return the result in Search_result structure
 */
-inline Search_result tree_search(Board board, int depth, bool use_mpc, double mpct, bool show_log, bool use_multi_thread){
+inline Search_result tree_search(Board board, int depth, uint_fast8_t mpc_level, bool show_log, bool use_multi_thread){
     uint64_t strt;
     Search_result res;
     depth = std::min(HW2 - board.n_discs(), depth);
     bool is_end_search = (HW2 - board.n_discs() == depth);
     std::vector<Clog_result> clogs;
     res.clog_nodes = 0ULL;
-    if (!is_end_search && use_mpc){
+    if (!is_end_search && mpc_level < MPC_100_LEVEL){
         strt = tim();
         clogs = first_clog_search(board, &res.clog_nodes);
         res.clog_time = tim() - strt;
@@ -73,56 +72,45 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
             std::cerr << "start!" << std::endl;
         if (depth >= 23){
             search_depth = depth / 2;
-            search.mpct = 1.0;
-            search.use_mpc = true;
+            search.mpc_level = MPC_81_LEVEL;
             result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search_depth, false, false, false, TRANSPOSITION_TABLE_UNDEFINED, clogs);
             g = result.first;
             if (show_log)
-                std::cerr << "presearch depth " << search_depth << " mpct " << search.mpct << " value " << g << " policy " << idx_to_coord(result.second) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / std::max(1ULL, tim() - strt) << std::endl;
+                std::cerr << "presearch depth " << search_depth << "@" << SELECTIVITY_PERCENTAGE[search.mpc_level] << "% value " << g << " policy " << idx_to_coord(result.second) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / std::max(1ULL, tim() - strt) << std::endl;
         }
         if (depth >= 14){
-            double presearch_mpct;
-            if (use_mpc)
-                presearch_mpct = mpct - 0.4;
-            else
-                presearch_mpct = std::min(2.5, 1.5 + 0.05 * (depth - 14));
             search_depth = depth;
-            search.mpct = presearch_mpct;
-            search.use_mpc = true;
+            search.mpc_level = std::max(0, mpc_level - 2);
             alpha = -SCORE_MAX;
             beta = SCORE_MAX;
             result = first_nega_scout(&search, alpha, beta, search_depth, false, true, false, result.second, clogs);
             g = result.first;
             if (show_log)
-                std::cerr << "presearch depth " << search_depth << " mpct " << search.mpct << " value " << g << " policy " << idx_to_coord(result.second) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / std::max(1ULL, tim() - strt) << std::endl;
+                std::cerr << "presearch depth " << search_depth << "@" << SELECTIVITY_PERCENTAGE[search.mpc_level] << "% value " << g << " policy " << idx_to_coord(result.second) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / std::max(1ULL, tim() - strt) << std::endl;
         }
         search_depth = depth;
-        search.use_mpc = use_mpc;
-        search.mpct = mpct;
+        search.mpc_level = mpc_level;
         result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search_depth, false, true, show_log, result.second, clogs);
         g = result.first;
         policy = result.second;
         if (show_log)
-            std::cerr << "mainsearch depth " << search_depth << " mpct " << search.mpct << " value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / std::max(1ULL, tim() - strt) << std::endl;
+            std::cerr << "mainsearch depth " << search_depth << "@" << SELECTIVITY_PERCENTAGE[search.mpc_level] << "% value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / std::max(1ULL, tim() - strt) << std::endl;
     
     } else{
         strt = tim();
         result.second = TRANSPOSITION_TABLE_UNDEFINED;
-        search_depth = depth - 1;
-        search.use_mpc = true;
-        search.mpct = 0.7;
         g = -INF;
         if (depth - 1 >= 1){
             search_depth = depth - 1;
+            search.mpc_level = std::max(0, mpc_level - 2);
             result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search_depth, false, false, false, result.second, clogs);
             g = result.first;
             policy = result.second;
             if (show_log)
-                std::cerr << "presearch depth " << search_depth << " mpct " << search.mpct << " value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / std::max(1ULL, tim() - strt) << std::endl;
+                std::cerr << "presearch depth " << search_depth << "@" << SELECTIVITY_PERCENTAGE[search.mpc_level] << "% value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / std::max(1ULL, tim() - strt) << std::endl;
         }
         search_depth = depth;
-        search.use_mpc = use_mpc;
-        search.mpct = mpct;
+        search.mpc_level = mpc_level;
         result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search_depth, false, false, show_log, result.second, clogs);
         if (g == -INF)
             g = result.first;
@@ -130,7 +118,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
             g = round((0.8 * g + 1.2 * result.first) / 2.0);
         policy = result.second;
         if (show_log)
-            std::cerr << "mainsearch depth " << search_depth << " mpct " << search.mpct << " value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / std::max(1ULL, tim() - strt) << std::endl;
+            std::cerr << "mainsearch depth " << search_depth << "@" << SELECTIVITY_PERCENTAGE[search.mpc_level] << "% value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / std::max(1ULL, tim() - strt) << std::endl;
     }
     res.depth = depth;
     res.nodes = search.n_nodes;
@@ -139,7 +127,7 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
     res.policy = policy;
     res.value = g;
     res.is_end_search = is_end_search;
-    res.probability = calc_probability(mpct);
+    res.probability = SELECTIVITY_PERCENTAGE[mpc_level];
     #if USE_SEARCH_STATISTICS
         std::cerr << "statistics:" << std::endl;
         for (int i = 0; i < HW2; ++i)
@@ -157,13 +145,12 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
 
     @param board                board to solve
     @param depth                depth to search
-    @param use_mpc              use MPC?
-    @param mpct                 MPC probability
+    @param mpc_level            MPC level
     @param show_log             show log?
     @param use_multi_thread     search in multi thread?
     @return the result in Search_result structure
 */
-inline Search_result tree_search_iterative_deepening(Board board, int depth, bool use_mpc, double mpct, bool show_log, bool use_multi_thread){
+inline Search_result tree_search_iterative_deepening(Board board, int depth, uint_fast8_t mpc_level, bool show_log, bool use_multi_thread){
     Search search;
     int g = 0, alpha, beta, policy = -1;
     std::pair<int, int> result;
@@ -171,8 +158,7 @@ inline Search_result tree_search_iterative_deepening(Board board, int depth, boo
     bool is_end_search = (HW2 - board.n_discs() == depth);
     search.init_board(&board);
     search.n_nodes = 0ULL;
-    search.use_mpc = use_mpc;
-    search.mpct = mpct;
+    search.mpc_level = mpc_level;
     search.use_multi_thread = use_multi_thread;
     calc_features(&search);
     std::vector<Clog_result> clogs;
@@ -182,9 +168,9 @@ inline Search_result tree_search_iterative_deepening(Board board, int depth, boo
     policy = result.second;
     if (show_log){
         if (is_end_search)
-            std::cerr << "depth " << depth << " value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / std::max(1ULL, tim() - strt) << std::endl;
+            std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search.mpc_level] << "% value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / std::max(1ULL, tim() - strt) << std::endl;
         else
-            std::cerr << "midsearch time " << tim() - strt << " depth " << depth << " value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / std::max(1ULL, tim() - strt) << std::endl;
+            std::cerr << "midsearch time " << tim() - strt << " depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search.mpc_level] << "% value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / std::max(1ULL, tim() - strt) << std::endl;
     }
     Search_result res;
     res.depth = depth;
@@ -194,7 +180,7 @@ inline Search_result tree_search_iterative_deepening(Board board, int depth, boo
     res.policy = policy;
     res.value = g;
     res.is_end_search = is_end_search;
-    res.probability = calc_probability(mpct);
+    res.probability = SELECTIVITY_PERCENTAGE[mpc_level];
     return res;
 }
 
@@ -207,19 +193,17 @@ inline Search_result tree_search_iterative_deepening(Board board, int depth, boo
     @param depth                depth to search
     @param alpha                alpha of the search window
     @param beta                 beta of the search window
-    @param use_mpc              use MPC?
-    @param mpct                 MPC probability
+    @param mpc_level            MPC probability
     @param use_multi_thread     search in multi thread?
     @return the score of the board
 */
-inline int tree_search_window(Board board, int depth, int alpha, int beta, bool use_mpc, double mpct, bool use_multi_thread){
+inline int tree_search_window(Board board, int depth, int alpha, int beta, uint_fast8_t mpc_level, bool use_multi_thread){
     Search search;
     depth = std::min(HW2 - board.n_discs(), depth);
     bool is_end_search = (HW2 - board.n_discs() == depth);
     search.init_board(&board);
     search.n_nodes = 0ULL;
-    search.use_mpc = use_mpc;
-    search.mpct = mpct;
+    search.mpc_level = mpc_level;
     search.use_multi_thread = use_multi_thread;
     calc_features(&search);
     uint64_t strt = tim();
@@ -284,12 +268,12 @@ Search_result ai(Board board, int level, bool use_book, bool use_multi_thread, b
         res.probability = 0;
     } else{
         int depth;
-        bool use_mpc, is_mid_search;
-        double mpct;
-        get_level(level, board.n_discs() - 4, &is_mid_search, &depth, &use_mpc, &mpct);
+        bool is_mid_search;
+        uint_fast8_t mpc_level;
+        get_level(level, board.n_discs() - 4, &is_mid_search, &depth, &mpc_level);
         if (show_log)
-            std::cerr << "level status " << level << " " << board.n_discs() - 4 << " " << depth << " " << use_mpc << " " << mpct << std::endl;
-        res = tree_search(board, depth, use_mpc, mpct, show_log, use_multi_thread);
+            std::cerr << "level status " << level << " " << board.n_discs() - 4 << " discs depth " << depth << "@" << SELECTIVITY_PERCENTAGE[mpc_level] << "%" << std::endl;
+        res = tree_search(board, depth, mpc_level, show_log, use_multi_thread);
         res.value *= value_sign;
     }
     return res;
@@ -347,12 +331,12 @@ Search_result ai_hint(Board board, int level, bool use_book, bool use_multi_thre
         res.probability = 0;
     } else{
         int depth;
-        bool use_mpc, is_mid_search;
-        double mpct;
-        get_level(level, board.n_discs() - 4, &is_mid_search, &depth, &use_mpc, &mpct);
+        bool is_mid_search;
+        uint_fast8_t mpc_level;
+        get_level(level, board.n_discs() - 4, &is_mid_search, &depth, &mpc_level);
         if (show_log)
-            std::cerr << "level status " << level << " " << board.n_discs() - 4 << " " << depth << " " << use_mpc << " " << mpct << std::endl;
-        res = tree_search_iterative_deepening(board, depth, use_mpc, mpct, show_log, use_multi_thread);
+            std::cerr << "level status " << level << " " << board.n_discs() - 4 << " discs depth " << depth << "@" << SELECTIVITY_PERCENTAGE[mpc_level] << "%" << std::endl;
+        res = tree_search_iterative_deepening(board, depth, mpc_level, show_log, use_multi_thread);
         res.value *= value_sign;
     }
     return res;
@@ -385,10 +369,10 @@ int ai_window(Board board, int level, int alpha, int beta, bool use_multi_thread
     else if (level == 0)
         return value_sign * mid_evaluate(&board);
     int depth;
-        bool use_mpc, is_mid_search;
-        double mpct;
-        get_level(level, board.n_discs() - 4, &is_mid_search, &depth, &use_mpc, &mpct);
-    return value_sign * tree_search_window(board, depth, alpha, beta, use_mpc, mpct, use_multi_thread);
+        bool is_mid_search;
+        uint_fast8_t mpc_level;
+        get_level(level, board.n_discs() - 4, &is_mid_search, &depth, &mpc_level);
+    return value_sign * tree_search_window(board, depth, alpha, beta, mpc_level, use_multi_thread);
 }
 
 /*

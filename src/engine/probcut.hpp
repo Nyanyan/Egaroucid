@@ -115,6 +115,8 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
     @return cutoff occurred?
 */
 inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, bool is_end_search, int *v, const bool *searching){
+    if (search->mpc_level == MPC_100_LEVEL)
+        return false;
     int search_depth;
     if (is_end_search)
         search_depth = ((depth >> 2) & 0xFE) ^ (depth & 1);
@@ -125,12 +127,13 @@ inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, 
         beta += (beta + SCORE_MAX) & 1;
     }
     int error_depth0, error_search;
+    double mpct = SELECTIVITY_MPCT[search->mpc_level];
     if (is_end_search){
-        error_depth0 = ceil(search->mpct * probcut_sigma_end_depth0(search->n_discs));
-        error_search = ceil(search->mpct * probcut_sigma_end(search->n_discs, search_depth));
+        error_depth0 = ceil(mpct * probcut_sigma_end_depth0(search->n_discs));
+        error_search = ceil(mpct * probcut_sigma_end(search->n_discs, search_depth));
     } else{
-        error_depth0 = ceil(search->mpct * probcut_sigma_depth0(search->n_discs, depth));
-        error_search = ceil(search->mpct * probcut_sigma(search->n_discs, search_depth, depth));
+        error_depth0 = ceil(mpct * probcut_sigma_depth0(search->n_discs, depth));
+        error_search = ceil(mpct * probcut_sigma(search->n_discs, search_depth, depth));
     }
     if (alpha - error_depth0 < -SCORE_MAX && SCORE_MAX < beta + error_depth0)
         return false;
@@ -218,16 +221,19 @@ inline bool mpc_nws(Search *search, int alpha, int depth, uint64_t legal, bool i
         @return this node seems to be ALL node?
     */
     inline bool predict_all_node(Search *search, int alpha, int depth, uint64_t legal, bool is_end_search, const bool *searching){
+        if (search->mpc_level == MPC_100_LEVEL)
+            return false;
         int search_depth;
         if (is_end_search)
             search_depth = ((depth >> 2) & 0xFE) ^ (depth & 1);
         else
             search_depth = ((depth >> 1) & 0xFE) ^ (depth & 1);
         int error_depth0;
+        double mpct = SELECTIVITY_MPCT[search->mpc_level];
         if (is_end_search)
-            error_depth0 = ceil(search->mpct * probcut_sigma_end_depth0(search->n_discs));
+            error_depth0 = ceil(mpct * probcut_sigma_end_depth0(search->n_discs));
         else
-            error_depth0 = ceil(search->mpct * probcut_sigma_depth0(search->n_discs, depth));
+            error_depth0 = ceil(mpct * probcut_sigma_depth0(search->n_discs, depth));
         if (alpha - error_depth0 < -SCORE_MAX)
             return false;
         int depth0_value = mid_evaluate_diff(search);
@@ -236,9 +242,9 @@ inline bool mpc_nws(Search *search, int alpha, int depth, uint64_t legal, bool i
                 return true;
             int error_search;
             if (is_end_search)
-                error_search = ceil(search->mpct * probcut_sigma_end(search->n_discs, search_depth));
+                error_search = ceil(mpct * probcut_sigma_end(search->n_discs, search_depth));
             else
-                error_search = ceil(search->mpct * probcut_sigma(search->n_discs, search_depth, depth));
+                error_search = ceil(mpct * probcut_sigma(search->n_discs, search_depth, depth));
             const int alpha_mpc = alpha - error_search;
             if (alpha_mpc < -SCORE_MAX)
                 return false;
