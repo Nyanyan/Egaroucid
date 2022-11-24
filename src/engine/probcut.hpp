@@ -99,7 +99,7 @@ inline int nega_alpha_eval1_nws(Search *search, int alpha, bool skipped, const b
 #if USE_NEGA_ALPHA_ORDERING
     int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
 #endif
-int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching, bool *mpc_used);
+int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
 
 /*
     @brief Multi-ProbCut for normal search
@@ -149,13 +149,10 @@ inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, 
                 #if MID_FAST_DEPTH > 1
                     if (search_depth <= MID_FAST_DEPTH)
                         res = nega_alpha_nws(search, beta_mpc - 1, search_depth, false, searching) >= beta_mpc;
-                    else{
-                        bool mpc_used = false;
-                        res = nega_alpha_ordering_nws(search, beta_mpc - 1, search_depth, false, legal, false, searching, &mpc_used) >= beta_mpc;
-                    }
+                    else
+                        res = nega_alpha_ordering_nws(search, beta_mpc - 1, search_depth, false, legal, false, searching) >= beta_mpc;
                 #else
-                    bool mpc_used = false;
-                    res = nega_alpha_ordering_nws(search, beta_mpc - 1, search_depth, false, legal, false, searching, &mpc_used) >= beta_mpc;
+                    res = nega_alpha_ordering_nws(search, beta_mpc - 1, search_depth, false, legal, false, searching) >= beta_mpc;
                 #endif
             }
             if (res){
@@ -177,13 +174,10 @@ inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, 
                 #if MID_FAST_DEPTH > 1
                     if (search_depth <= MID_FAST_DEPTH)
                         res = nega_alpha_nws(search, alpha_mpc, search_depth, false, searching) <= alpha_mpc;
-                    else{
-                        bool mpc_used = false;
-                        res = nega_alpha_ordering_nws(search, alpha_mpc, search_depth, false, legal, false, searching, &mpc_used) <= alpha_mpc;
-                    }
+                    else
+                        res = nega_alpha_ordering_nws(search, alpha_mpc, search_depth, false, legal, false, searching) <= alpha_mpc;
                 #else
-                    bool mpc_used = false;
-                    res = nega_alpha_ordering_nws(search, alpha_mpc, search_depth, false, legal, false, searching, &mpc_used) <= alpha_mpc;
+                    res = nega_alpha_ordering_nws(search, alpha_mpc, search_depth, false, legal, false, searching) <= alpha_mpc;
                 #endif
             }
             if (res){
@@ -255,13 +249,10 @@ inline bool mpc_nws(Search *search, int alpha, int depth, uint64_t legal, bool i
                 #if MID_FAST_DEPTH > 1
                     if (search_depth <= MID_FAST_DEPTH)
                         res = nega_alpha_nws(search, alpha_mpc, search_depth, false, searching) <= alpha_mpc;
-                    else{
-                        bool mpc_used = false;
-                        res = nega_alpha_ordering_nws(search, alpha_mpc, search_depth, false, legal, false, searching, &mpc_used) <= alpha_mpc;
-                    }
+                    else
+                        res = nega_alpha_ordering_nws(search, alpha_mpc, search_depth, false, legal, false, searching) <= alpha_mpc;
                 #else
-                    bool mpc_used = false;
-                    res = nega_alpha_ordering_nws(search, alpha_mpc, search_depth, false, legal, false, searching, &mpc_used) <= alpha_mpc;
+                    res = nega_alpha_ordering_nws(search, alpha_mpc, search_depth, false, legal, false, searching) <= alpha_mpc;
                 #endif
             }
             return res;

@@ -24,7 +24,7 @@
 #define YBWC_MID_SPLIT_MIN_DEPTH 5
 #define YBWC_END_SPLIT_MIN_DEPTH 13
 
-int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching, bool *mpc_used);
+int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
 #if USE_NEGA_ALPHA_END
     int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t legal, const bool *searching);
 #endif
@@ -62,8 +62,7 @@ Parallel_task ybwc_do_task_nws(int id, uint64_t player, uint64_t opponent, int_f
     search.use_multi_thread = depth > YBWC_MID_SPLIT_MIN_DEPTH;
     calc_features(&search);
     Parallel_task task;
-    task.mpc_used = false;
-    task.value = -nega_alpha_ordering_nws(&search, alpha, depth, false, legal, is_end_search, searching, &task.mpc_used);
+    task.value = -nega_alpha_ordering_nws(&search, alpha, depth, false, legal, is_end_search, searching);
     if (!(*searching))
         task.value = SCORE_UNDEFINED;
     task.n_nodes = search.n_nodes;
@@ -338,37 +337,6 @@ inline void ybwc_wait_all_nws(Search *search, std::vector<std::future<Parallel_t
         if (task.valid()){
             got_task = task.get();
             search->n_nodes += got_task.n_nodes;
-            if ((*v) < got_task.value && (*searching)){
-                *best_move = got_task.cell;
-                *v = got_task.value;
-                if (alpha < (*v))
-                    *searching = false;
-            }
-        }
-    }
-}
-
-/*
-    @brief Wait all running tasks for NWS (Null Window Search)
-
-    @param search               search information
-    @param parallel_tasks       vector of splitted tasks
-    @param v                    value to store
-    @param best_move            best move to store
-    @param alpha                alpha value
-    @param searching            flag for terminating this search
-    @param mpc_used             mpc used flag to store             
-*/
-inline void ybwc_wait_all_nws(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int alpha, bool *searching, bool *mpc_used){
-    ybwc_get_end_tasks(search, parallel_tasks, v, best_move);
-    if (alpha < (*v))
-        *searching = false;
-    Parallel_task got_task;
-    for (std::future<Parallel_task> &task: parallel_tasks){
-        if (task.valid()){
-            got_task = task.get();
-            search->n_nodes += got_task.n_nodes;
-            *mpc_used |= got_task.mpc_used;
             if ((*v) < got_task.value && (*searching)){
                 *best_move = got_task.cell;
                 *v = got_task.value;

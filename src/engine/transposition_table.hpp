@@ -267,38 +267,6 @@ class Node_value_transposition_table{
             @param board                new board
             @param l                    lower bound to store
             @param u                    upper bound to store
-            @param t                    requested probability
-            @param d                    requested depth
-            @param mpc_used             mpc used flag to store
-        */
-        inline void get(const Board *board, int *l, int *u, const double t, const int d, bool *mpc_used){
-            if (data_strength(mpct.load(std::memory_order_relaxed), depth.load(std::memory_order_relaxed)) < data_strength(t, d)){
-                *l = -INF;
-                *u = INF;
-            } else{
-                if (board->player != player.load(std::memory_order_relaxed) || board->opponent != opponent.load(std::memory_order_relaxed)){
-                    *l = -INF;
-                    *u = INF;
-                } else{
-                    *l = lower.load(std::memory_order_relaxed);
-                    *u = upper.load(std::memory_order_relaxed);
-                    *mpc_used |= mpct.load(std::memory_order_relaxed) < NOMPC;
-                    if (board->player != player.load(std::memory_order_relaxed) || board->opponent != opponent.load(std::memory_order_relaxed)){
-                        *l = -INF;
-                        *u = INF;
-                    }
-                }
-            }
-        }
-
-        /*
-            @brief Get lower / upper bound
-
-            Although board found, if the strength is weaker, ignore it.
-
-            @param board                new board
-            @param l                    lower bound to store
-            @param u                    upper bound to store
             @param t                    requested MPC (Multi-ProbCut) probability
             @param d                    requested depth
         */
@@ -424,24 +392,6 @@ class Value_transposition_table{
                 table_stack[hash].reg(board, l, u, t, d);
             else
                 table_heap[hash - TRANSPOSITION_TABLE_STACK_SIZE].reg(board, l, u, t, d);
-        }
-
-        /*
-            @brief Get bounds from value transposition table
-
-            @param board                board to register
-            @param hash                 hash code
-            @param l                    lower bound to store
-            @param u                    upper bound to store
-            @param t                    requested MPC (Multi-ProbCut) probability
-            @param d                    requested depth
-            @param mpc_used             mpc used flag to store
-        */
-        inline void get(const Board *board, const uint32_t hash, int *l, int *u, const double t, const int d, bool *mpc_used){
-            if (hash < TRANSPOSITION_TABLE_STACK_SIZE)
-                table_stack[hash].get(board, l, u, t, d, mpc_used);
-            else
-                table_heap[hash - TRANSPOSITION_TABLE_STACK_SIZE].get(board, l, u, t, d, mpc_used);
         }
 
         /*

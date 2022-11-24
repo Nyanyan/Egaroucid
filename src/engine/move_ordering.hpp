@@ -16,6 +16,9 @@
 #include "search.hpp"
 #include "midsearch.hpp"
 #include "stability.hpp"
+#if TUNE_MOVE_ORDERING_END
+    #include "move_ordering_tune_end.hpp"
+#endif
 
 /*
     @brief if wipeout found, it must be searched first.

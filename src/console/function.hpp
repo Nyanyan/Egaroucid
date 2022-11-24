@@ -51,9 +51,4 @@ void execute_special_tasks(){
         tune_move_ordering_end("problem/13_13.txt");
         std::exit(0);
     #endif
-    #if TUNE_MOVE_ORDERING_MID
-        std::cout << "tune move ordering (midsearch)" << std::endl;
-        tune_move_ordering_mid("problem/16_55.txt");
-        std::exit(0);
-    #endif
 }

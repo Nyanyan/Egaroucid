@@ -245,7 +245,7 @@ struct Clog_result{
     @param searching            search not terminated?
 */
 inline void register_tt(Search *search, int depth, uint32_t hash_code, int v, int best_move, int l, int u, int first_alpha, int beta, const bool *searching){
-    #if !TUNE_MOVE_ORDERING_MID && !TUNE_MOVE_ORDERING_END && USE_TRANSPOSITION_TABLE
+    #if !TUNE_MOVE_ORDERING_END && USE_TRANSPOSITION_TABLE
         if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD && (*searching) && -SCORE_MAX <= v && v <= SCORE_MAX && global_searching){
             if (first_alpha < v && best_move != TRANSPOSITION_TABLE_UNDEFINED)
                 best_move_transposition_table.reg(&search->board, hash_code, best_move);
@@ -274,7 +274,7 @@ inline void register_tt(Search *search, int depth, uint32_t hash_code, int v, in
     @param searching            search not terminated?
 */
 inline void register_tt_nompc(Search *search, int depth, uint32_t hash_code, int v, int best_move, int l, int u, int first_alpha, int beta, const bool *searching){
-    #if !TUNE_MOVE_ORDERING_MID && !TUNE_MOVE_ORDERING_END && USE_TRANSPOSITION_TABLE
+    #if !TUNE_MOVE_ORDERING_END && USE_TRANSPOSITION_TABLE
         if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD && (*searching) && -SCORE_MAX <= v && v <= SCORE_MAX && global_searching){
             if (first_alpha < v && best_move != TRANSPOSITION_TABLE_UNDEFINED)
                 best_move_transposition_table.reg(&search->board, hash_code, best_move);
@@ -301,7 +301,7 @@ inline void register_tt_nompc(Search *search, int depth, uint32_t hash_code, int
     @param searching            search not terminated?
 */
 inline void register_tt_nws(Search *search, int depth, uint32_t hash_code, int alpha, int v, int l, int u, const bool *searching){
-    #if !TUNE_MOVE_ORDERING_MID && !TUNE_MOVE_ORDERING_END && USE_TRANSPOSITION_TABLE
+    #if !TUNE_MOVE_ORDERING_END && USE_TRANSPOSITION_TABLE
         if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD && (*searching) && -SCORE_MAX <= v && v <= SCORE_MAX && global_searching){
             if (alpha < v)
                 value_transposition_table.reg(&search->board, hash_code, v, u, search->mpct, depth);
@@ -325,7 +325,7 @@ inline void register_tt_nws(Search *search, int depth, uint32_t hash_code, int a
     @param searching            search not terminated?
 */
 inline void register_tt_nws(Search *search, int depth, uint32_t hash_code, int alpha, int v, int best_move, int l, int u, const bool *searching){
-    #if !TUNE_MOVE_ORDERING_MID && !TUNE_MOVE_ORDERING_END && USE_TRANSPOSITION_TABLE
+    #if !TUNE_MOVE_ORDERING_END && USE_TRANSPOSITION_TABLE
         if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD && (*searching) && -SCORE_MAX <= v && v <= SCORE_MAX && global_searching){
             if (alpha < v && best_move != TRANSPOSITION_TABLE_UNDEFINED)
                 best_move_transposition_table.reg(&search->board, hash_code, best_move);
@@ -351,7 +351,7 @@ inline void register_tt_nws(Search *search, int depth, uint32_t hash_code, int a
     @param searching            search not terminated?
 */
 inline void register_tt_nws_nompc(Search *search, int depth, uint32_t hash_code, int alpha, int v, int best_move, int l, int u, const bool *searching){
-    #if !TUNE_MOVE_ORDERING_MID && !TUNE_MOVE_ORDERING_END && USE_TRANSPOSITION_TABLE
+    #if !TUNE_MOVE_ORDERING_END && USE_TRANSPOSITION_TABLE
         if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD && (*searching) && -SCORE_MAX <= v && v <= SCORE_MAX && global_searching){
             if (alpha < v && best_move != TRANSPOSITION_TABLE_UNDEFINED)
                 best_move_transposition_table.reg(&search->board, hash_code, best_move);

@@ -46,7 +46,8 @@ answer = answer.splitlines()
 egaroucid = subprocess.Popen(('Egaroucid_console.exe -l 60 -nobook -thread 23 -solve problem/ffo40-59.txt').split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
 res = ''
-line = egaroucid.stdout.readline()
+line = egaroucid.stdout.readline().decode().replace('\n', '').replace('\r', '')
+print('#   ' + line)
 for i in range(20):
     line = egaroucid.stdout.readline().decode().replace('\n', '').replace('\r', '')
     policy = line.split()[3][:-1]
@@ -57,6 +58,9 @@ for i in range(20):
     correct_score = answer[i].split()[1]
     if int(score) != int(correct_score):
         line += ' WRONG SCORE'
+    line = '#' + str(40 + i) + ' ' + line
     print(line)
     res += line + '\n'
+line = egaroucid.stdout.readline().decode().replace('\n', '').replace('\r', '')
+print(line)
 egaroucid.kill()
