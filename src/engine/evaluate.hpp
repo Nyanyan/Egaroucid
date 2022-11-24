@@ -573,6 +573,20 @@ void init_pattern_arr_rev(int id, int phase_idx, int pattern_idx, int siz){
         std::cerr << _mm256_extract_epi32(v, 1) << " ";
         std::cerr << _mm256_extract_epi32(v, 0) << " ";
     }
+
+    /*
+        @brief check overflow
+
+        @param v                    value to print
+    */
+    inline void check_simd_epi32(__m256i v){
+        for (int i = 0; i < 8; ++i){
+            if (_mm256_extract_epi32(v, 7) < 0){
+                simd_print_epi32(v);
+                return;
+            }
+        }
+    }
 #endif
 
 /*

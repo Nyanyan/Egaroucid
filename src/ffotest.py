@@ -1,4 +1,5 @@
 import subprocess
+import sys
 
 answer = '''#40 38  a2
 #41 0   h4
@@ -43,7 +44,12 @@ answer = '''#40 38  a2
 
 answer = answer.splitlines()
 
-egaroucid = subprocess.Popen(('Egaroucid_console.exe -l 60 -nobook -thread 23 -solve problem/ffo40-59.txt').split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+if sys.argv[1] == 'g':
+    cmd = 'Egaroucid_for_console.exe -l 60 -nobook -thread 23 -solve problem/ffo40-59.txt'
+else:
+    cmd = 'Egaroucid_console.exe -l 60 -nobook -thread 23 -solve problem/ffo40-59.txt'
+print(cmd)
+egaroucid = subprocess.Popen((cmd).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
 res = ''
 line = egaroucid.stdout.readline().decode().replace('\n', '').replace('\r', '')
