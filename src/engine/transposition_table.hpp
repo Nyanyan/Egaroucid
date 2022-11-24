@@ -14,6 +14,7 @@
 #include "board.hpp"
 #include "thread_pool.hpp"
 #include "spinlock.hpp"
+#include "search.hpp"
 #include <future>
 
 /*
@@ -21,6 +22,7 @@
 */
 #define TRANSPOSITION_TABLE_UNDEFINED SCORE_INF
 constexpr size_t TRANSPOSITION_TABLE_STACK_SIZE = hash_sizes[DEFAULT_HASH_LEVEL];
+#define N_TRANSPOSITION_MOVES 2
 
 /*
     @brief Calculate the reliability
@@ -39,6 +41,8 @@ inline int data_strength(const uint_fast8_t mpc_level, const int d){
     @param level
         @param depth                depth
         @param mpc_level            MPC level
+        @param n_discs              number of discs
+        @param cost                 search cost (log2(nodes))
     @param lower                lower bound
     @param upper                upper bound
     @param moves                best moves
@@ -49,6 +53,8 @@ class Hash_data{
         union{
             #ifdef __BIG_ENDIAN__
                 struct{
+                    uint8_t cost;
+                    uint8_t n_discs;
                     uint8_t mpc_level;
                     uint8_t depth;
                 } level_data;
@@ -56,13 +62,15 @@ class Hash_data{
                 struct{
                     uint8_t depth;
                     uint8_t mpc_level;
+                    uint8_t n_discs;
+                    uint8_t cost;
                 } level_data;
             #endif
-            uint16_t level;
+            uint32_t level;
         } level;
         int8_t lower;
         int8_t upper;
-        int8_t moves[2];
+        int8_t moves[N_TRANSPOSITION_MOVES];
 
     public:
 
@@ -102,15 +110,14 @@ class Hash_data{
             update best moves, reset other data
 
             @param depth                depth
-            @param cost                 cost (log2(nodes))
             @param mpc_level            MPC level
-            @param date                 date (increase in each search)
+            @param n_discs              number of discs
             @param alpha                alpha bound
             @param beta                 beta bound
             @param value                best value
             @param policy               best move
         */
-        inline void reg_new_level(const int depth, const int cost, const int mpc_level, const int date, const int alpha, const int beta, const int value, const int policy){
+        inline void reg_new_level(const int depth, const uint_fast8_t mpc_level, const uint_fast8_t n_discs, const int date, const int alpha, const int beta, const int value, const int policy){
             if (value < beta)
                 upper = (uint8_t)value;
             else
@@ -125,13 +132,14 @@ class Hash_data{
             }
             level.level_data.depth = depth;
             level.level_data.mpc_level = mpc_level;
+            level.level_data.n_discs = n_discs;
         }
 
-        inline uint16_t get_level(){
+        inline uint32_t get_level(){
             return level.level;
         }
 
-        inline void get_moves(int res_moves[]){
+        inline void get_moves(uint_fast8_t res_moves[]){
             res_moves[0] = moves[0];
             res_moves[1] = moves[1];
         }
@@ -258,7 +266,7 @@ class Transposition_table{
                 node = &table_stack[hash];
             else
                 node = &table_heap[hash - TRANSPOSITION_TABLE_STACK_SIZE];
-            const uint16_t level = (depth << 8) | search->mpc_level;
+            const uint16_t level = (depth << 24) | (search->mpc_level << 16) | (search->n_discs << 8);
             uint16_t node_level = node->data.get_level();
             node->lock.lock();
                 if (node_level <= level){
@@ -267,11 +275,11 @@ class Transposition_table{
                         if (node_level == level)
                             node->data.reg_same_level(alpha, beta, value, policy);
                         else if (node_level < level)
-                            node->data.reg_new_level(depth, search->mpc_level, alpha, beta, value, policy);
+                            node->data.reg_new_level(depth, search->mpc_level, search->n_discs, alpha, beta, value, policy);
                     } else if (node_level < level){
                         node->board.player = search->board.player;
                         node->board.opponent = search->board.opponent;
-                        node->data.reg_new_level(depth, search->mpc_level, alpha, beta, value, policy);
+                        node->data.reg_new_level(depth, search->mpc_level, search->n_discs, alpha, beta, value, policy);
                     }
                 }
             node->lock.unlock();
@@ -287,7 +295,7 @@ class Transposition_table{
             @param upper                upper bound to store
             @param moves                best moves to store
         */
-        inline void get(const Search *search, const uint32_t hash, const int depth, int *lower, int *upper, int moves[]){
+        inline void get(const Search *search, const uint32_t hash, const int depth, int *lower, int *upper, uint_fast8_t moves[]){
             Hash_node *node;
             if (hash < TRANSPOSITION_TABLE_STACK_SIZE)
                 node = &table_stack[hash];
@@ -296,7 +304,7 @@ class Transposition_table{
             if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
                 node->lock.lock();
                     if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
-                        const uint16_t level = (depth << 8) | search->mpc_level;
+                        const uint16_t level = (depth << 24) | (search->mpc_level << 16) | (search->n_discs << 8);
                         node->data.get_moves(moves);
                         if (node->data.get_level() >= level)
                             node->data.get_bounds(lower, upper);

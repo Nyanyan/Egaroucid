@@ -621,7 +621,6 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
         #if USE_SEARCH_STATISTICS
             ++search->n_nodes_discs[search->n_discs];
         #endif
-        int first_alpha = alpha;
         if (legal == LEGAL_UNDEFINED)
             legal = search->board.get_legal();
         int v = -INF;
@@ -634,41 +633,65 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
             return v;
         }
         uint32_t hash_code = search->board.hash();
-        int l = -INF, u = INF;
-        if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD){
-            value_transposition_table.get(&search->board, hash_code, &l, &u, MPC_100_LEVEL, HW2 - search->n_discs);
-            if (u == l)
-                return u;
-            if (beta <= l)
-                return l;
-            if (u <= alpha)
-                return u;
-            alpha = std::max(alpha, l);
-            beta = std::min(beta, u);
-        }
-        #if USE_END_SC
-            int stab_res = stability_cut(search, &alpha, &beta);
-            if (stab_res != SCORE_UNDEFINED)
-                return stab_res;
+        int lower = -SCORE_MAX, upper = SCORE_MAX;
+        uint_fast8_t moves[N_TRANSPOSITION_MOVES];
+        #if MID_TO_END_DEPTH < USE_TT_DEPTH_THRESHOLD
+            if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD)
+                transposition_table.get(search, hash_code, depth, &lower, &upper, moves);
+        #else
+            transposition_table.get(search, hash_code, depth, &lower, &upper, moves);
         #endif
+        if (upper == lower)
+            return upper;
+        if (beta <= lower)
+            return lower;
+        if (upper <= alpha)
+            return upper;
+        if (alpha < lower)
+            alpha = lower;
+        if (upper < beta)
+            beta = upper;
+        #if USE_MID_MPC
+            if (search->n_discs <= USE_MPC_N_DISCS){
+                if (mpc(search, alpha, beta, depth, legal, is_end_search, &v, searching))
+                    return v;
+            }
+        #endif
+        Flip flip_best;
         int best_move = TRANSPOSITION_TABLE_UNDEFINED;
-        if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD){
-            best_move = best_move_transposition_table.get(&search->board, hash_code);
-            if (best_move != TRANSPOSITION_TABLE_UNDEFINED){
-                if (1 & (legal >> best_move)){
-                    Flip flip_best;
-                    calc_flip(&flip_best, &search->board, best_move);
-                    search->move(&flip_best);
-                        v = -nega_alpha_end(search, -beta, -alpha, false, LEGAL_UNDEFINED, searching);
-                    search->undo(&flip_best);
-                    if (alpha < v)
+        int first_alpha = alpha;
+        int g;
+        int pv_idx = 0;
+        for (uint_fast8_t i = 0; i < N_TRANSPOSITION_MOVES; ++i){
+            if (moves[i] == TRANSPOSITION_TABLE_UNDEFINED)
+                break;
+            if (1 & (legal >> moves[i])){
+                calc_flip(&flip_best, &search->board, moves[i]);
+                eval_move(search, &flip_best);
+                search->move(&flip_best);
+                    if (v == -INF)
+                        g = -nega_scout(search, -beta, -alpha, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
+                    else{
+                        g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
+                        if (alpha < g && g < beta)
+                            g = -nega_scout(search, -beta, -g, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
+                    }
+                search->undo(&flip_best);
+                eval_undo(search, &flip_best);
+                if (v < g){
+                    v = g;
+                    best_move = moves[i];
+                    if (alpha < v){
+                        if (beta <= v)
+                            return v;
                         alpha = v;
-                    legal ^= 1ULL << best_move;
-                } else
-                    best_move = TRANSPOSITION_TABLE_UNDEFINED;
+                    }
+                }
+                legal ^= 1ULL << moves[i];
+                ++pv_idx;
             }
         }
-        if (alpha < beta && legal){
+        if (legal){
             int g;
             const int canput = pop_count_ull(legal);
             std::vector<Flip_value> move_list(canput);
@@ -683,9 +706,7 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
                     constexpr bool seems_to_be_all_node = false;
                 #endif
                 if (search->use_multi_thread){
-                    int pv_idx = 0, split_count = 0;
-                    if (best_move != TRANSPOSITION_TABLE_UNDEFINED)
-                        pv_idx = 1;
+                    int split_count = 0;
                     std::vector<std::future<Parallel_task>> parallel_tasks;
                     bool n_searching = true;
                     for (int move_idx = 0; move_idx < canput; ++move_idx){
@@ -697,6 +718,7 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
                                 g = -nega_alpha_end(search, -beta, -alpha, false, move_list[move_idx].n_legal, searching);
                                 if (v < g){
                                     v = g;
+                                    best_move = move_list[move_idx].flip.pos;
                                     if (alpha < v){
                                         if (beta <= v){
                                             search->undo(&move_list[move_idx].flip);
@@ -733,6 +755,7 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
                         search->undo(&move_list[move_idx].flip);
                         if (v < g){
                             v = g;
+                            best_move = move_list[move_idx].flip.pos;
                             if (alpha < v){
                                 if (beta <= v)
                                     break;
@@ -749,6 +772,7 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
                     search->undo(&move_list[move_idx].flip);
                     if (v < g){
                         v = g;
+                        best_move = move_list[move_idx].flip.pos;
                         if (alpha < v){
                             if (beta <= v)
                                 break;
@@ -758,7 +782,7 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
                 }
             #endif
         }
-        register_tt_nompc(search, HW2 - search->n_discs, hash_code, v, best_move, l, u, first_alpha, beta, searching);
+        transposition_table.reg(search, hash_code, depth, alpha, alpha + 1, v, best_move);
         return v;
     }
 #endif
