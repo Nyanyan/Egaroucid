@@ -304,19 +304,9 @@ inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
     int eval_alpha = -std::min(SCORE_MAX, beta + MOVE_ORDERING_VALUE_OFFSET_BETA);
     int eval_beta = -std::max(-SCORE_MAX, alpha - MOVE_ORDERING_VALUE_OFFSET_ALPHA);
     //int phase = get_move_ordering_phase(search->n_discs);
-    int eval_depth = -1;
-    int min_depth = 9;
-    if (search->n_discs >= 37)
-        min_depth += (search->n_discs - 34) / 3;
-    if (depth >= min_depth){
-        eval_depth = (depth - 15) / 3;
-        if (search->n_discs <= 37)
-            ++eval_depth;
-        if (eval_depth < 0)
-            eval_depth = -1;
-        else if (eval_depth > 6)
-            eval_depth = 6;
-    }
+    int eval_depth = depth >> 3;
+    if (depth >= 18)
+        eval_depth += (depth - 16) >> 1;
     bool wipeout_found = false;
     for (Flip_value &flip_value: move_list){
         if (!wipeout_found)
