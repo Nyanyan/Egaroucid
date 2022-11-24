@@ -58,6 +58,7 @@
 // use search algs
 #define USE_NEGA_ALPHA_ORDERING false
 #define USE_NEGA_ALPHA_END true
+#define USE_NEGA_ALPHA_END_FAST false
 
 // transposition table
 #define USE_TRANSPOSITION_TABLE true
