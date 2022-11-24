@@ -21,7 +21,8 @@
     @brief constants
 */
 #define TRANSPOSITION_TABLE_UNDEFINED SCORE_INF
-constexpr size_t TRANSPOSITION_TABLE_STACK_SIZE = hash_sizes[DEFAULT_HASH_LEVEL];
+#define TRANSPOSITION_TABLE_N_LOOP 4
+constexpr size_t TRANSPOSITION_TABLE_STACK_SIZE = hash_sizes[DEFAULT_HASH_LEVEL] + TRANSPOSITION_TABLE_N_LOOP;
 #define N_TRANSPOSITION_MOVES 2
 
 // date manager
@@ -283,7 +284,7 @@ class Transposition_table{
             @return table initialized?
         */
         inline bool resize(int hash_level){
-            size_t n_table_size = hash_sizes[hash_level];
+            size_t n_table_size = hash_sizes[hash_level] + TRANSPOSITION_TABLE_N_LOOP;
             free(table_heap);
             if (n_table_size > TRANSPOSITION_TABLE_STACK_SIZE){
                 table_heap = (Hash_node*)malloc(sizeof(Hash_node) * (n_table_size - TRANSPOSITION_TABLE_STACK_SIZE));
@@ -373,31 +374,42 @@ class Transposition_table{
             @param policy               best move
             @param cost                 search cost (log2(nodes))
         */
-        inline void reg(const Search *search, const uint32_t hash, const int depth, int alpha, int beta, int value, int policy){
-            Hash_node *node;
-            if (hash < TRANSPOSITION_TABLE_STACK_SIZE)
-                node = &table_stack[hash];
-            else
-                node = &table_heap[hash - TRANSPOSITION_TABLE_STACK_SIZE];
+        inline void reg(const Search *search, uint32_t hash, const int depth, int alpha, int beta, int value, int policy){
+            Hash_node *node = get_node(hash);
+            Hash_node *worst_node = nullptr;
             //const uint32_t level = ((uint32_t)search->date << 24) | ((uint32_t)cost << 16) | ((uint32_t)search->mpc_level << 8) | depth;
             const uint32_t level = ((uint32_t)search->date << 24) | ((uint32_t)search->mpc_level << 8) | depth;
-            uint32_t node_level = node->data.get_level();
-            if (node_level <= level){
-                node->lock.lock();
-                    node_level = node->data.get_level();
-                    if (node_level <= level){
-                        if (node->board.player != search->board.player || node->board.opponent != search->board.opponent){
-                            node->board.player = search->board.player;
-                            node->board.opponent = search->board.opponent;
-                            node->data.reg_new_data(depth, search->mpc_level, 0, search->date, alpha, beta, value, policy);
-                        } else{
-                            if (node_level == level)
-                                node->data.reg_same_level(alpha, beta, value, policy);
-                            else
-                                node->data.reg_new_level(depth, search->mpc_level, 0, search->date, alpha, beta, value, policy);
+            uint32_t node_level, worst_level = 0xFFFFFFFFU;
+            for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
+                if (node->data.get_level() <= level){
+                    node->lock.lock();
+                        node_level = node->data.get_level();
+                        if (node_level <= level){
+                            if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
+                                if (node_level == level)
+                                    node->data.reg_same_level(alpha, beta, value, policy);
+                                else
+                                    node->data.reg_new_level(depth, search->mpc_level, 0, search->date, alpha, beta, value, policy);
+                                node->lock.unlock();
+                                return;
+                            } else if (node_level < worst_level){
+                                worst_level = node_level;
+                                worst_node = node;
+                            }
                         }
+                    node->lock.unlock();
+                }
+                ++hash;
+                node = get_node(hash);
+            }
+            if (worst_node != nullptr){
+                worst_node->lock.lock();
+                    if (worst_node->data.get_level() < level){
+                        worst_node->board.player = search->board.player;
+                        worst_node->board.opponent = search->board.opponent;
+                        worst_node->data.reg_new_data(depth, search->mpc_level, 0, search->date, alpha, beta, value, policy);
                     }
-                node->lock.unlock();
+                worst_node->lock.unlock();
             }
         }
 
@@ -411,21 +423,23 @@ class Transposition_table{
             @param upper                upper bound to store
             @param moves                best moves to store
         */
-        inline void get(const Search *search, const uint32_t hash, const int depth, int *lower, int *upper, uint_fast8_t moves[]){
-            Hash_node *node;
-            if (hash < TRANSPOSITION_TABLE_STACK_SIZE)
-                node = &table_stack[hash];
-            else
-                node = &table_heap[hash - TRANSPOSITION_TABLE_STACK_SIZE];
-            if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
-                node->lock.lock();
-                    if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
-                        const uint32_t level = ((uint32_t)search->date << 24) | ((uint32_t)search->mpc_level << 8) | depth;
-                        node->data.get_moves(moves);
-                        if (node->data.get_level() >= level)
-                            node->data.get_bounds(lower, upper);
-                    }
-                node->lock.unlock();
+        inline void get(const Search *search, uint32_t hash, const int depth, int *lower, int *upper, uint_fast8_t moves[]){
+            Hash_node *node = get_node(hash);
+            const uint32_t level = ((uint32_t)search->date << 24) | ((uint32_t)search->mpc_level << 8) | depth;
+            for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
+                if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
+                    node->lock.lock();
+                        if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
+                            node->data.get_moves(moves);
+                            if (node->data.get_level() >= level)
+                                node->data.get_bounds(lower, upper);
+                            node->lock.unlock();
+                            return;
+                        }
+                    node->lock.unlock();
+                }
+                ++hash;
+                node = get_node(hash);
             }
         }
 
@@ -436,23 +450,30 @@ class Transposition_table{
             @param hash                 hash code
             @return best move
         */
-        inline int get_best_move(const Board *board, const uint32_t hash){
-            Hash_node *node;
-            if (hash < TRANSPOSITION_TABLE_STACK_SIZE)
-                node = &table_stack[hash];
-            else
-                node = &table_heap[hash - TRANSPOSITION_TABLE_STACK_SIZE];
-            int res = TRANSPOSITION_TABLE_UNDEFINED;
-            if (node->board.player == board->player && node->board.opponent == board->opponent){
-                node->lock.lock();
-                    if (node->board.player == board->player && node->board.opponent == board->opponent){
-                        uint_fast8_t moves[N_TRANSPOSITION_MOVES];
-                        node->data.get_moves(moves);
-                        res = moves[0];
-                    }
-                node->lock.unlock();
+        inline int get_best_move(const Board *board, uint32_t hash){
+            Hash_node *node = get_node(hash);
+            for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
+                if (node->board.player == board->player && node->board.opponent == board->opponent){
+                    node->lock.lock();
+                        if (node->board.player == board->player && node->board.opponent == board->opponent){
+                            uint_fast8_t moves[N_TRANSPOSITION_MOVES];
+                            node->data.get_moves(moves);
+                            node->lock.unlock();
+                            return moves[0];
+                        }
+                    node->lock.unlock();
+                }
+                ++hash;
+                node = get_node(hash);
             }
-            return res;
+            return TRANSPOSITION_TABLE_UNDEFINED;
+        }
+
+    private:
+        inline Hash_node* get_node(uint32_t hash){
+            if (hash < TRANSPOSITION_TABLE_STACK_SIZE)
+                return &table_stack[hash];
+            return &table_heap[hash - TRANSPOSITION_TABLE_STACK_SIZE];
         }
 };
 
