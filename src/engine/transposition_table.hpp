@@ -22,7 +22,7 @@
 */
 #define TRANSPOSITION_TABLE_UNDEFINED SCORE_INF
 #define TRANSPOSITION_TABLE_N_LOOP 4
-constexpr size_t TRANSPOSITION_TABLE_STACK_SIZE = hash_sizes[DEFAULT_HASH_LEVEL] + TRANSPOSITION_TABLE_N_LOOP;
+constexpr size_t TRANSPOSITION_TABLE_STACK_SIZE = hash_sizes[DEFAULT_HASH_LEVEL] + TRANSPOSITION_TABLE_N_LOOP - 1;
 #define N_TRANSPOSITION_MOVES 2
 
 // date manager
@@ -45,9 +45,9 @@ inline int data_strength(const uint_fast8_t mpc_level, const int d){
 
     @param level
         @param date                 search date (to rewrite old entry)  more important
-        @param cost                 search cost (log2(nodes))                  |
+        @param depth                depth                                      |
         @param mpc_level            MPC level                                  |
-        @param depth                depth                               less important
+        @param cost                 search cost (log2(nodes))           less important
     @param lower                lower bound
     @param upper                upper bound
     @param moves                best moves
@@ -59,15 +59,15 @@ class Hash_data{
             #ifdef __BIG_ENDIAN__
                 struct{
                     uint8_t date;
-                    uint8_t cost;
-                    uint8_t mpc_level;
                     uint8_t depth;
+                    uint8_t mpc_level;
+                    uint8_t cost;
                 } level_data;
             #else
                 struct{
-                    uint8_t depth;
-                    uint8_t mpc_level;
                     uint8_t cost;
+                    uint8_t mpc_level;
+                    uint8_t depth;
                     uint8_t date;
                 } level_data;
             #endif
@@ -88,7 +88,7 @@ class Hash_data{
             moves[0] = TRANSPOSITION_TABLE_UNDEFINED;
             moves[1] = TRANSPOSITION_TABLE_UNDEFINED;
             level.level = 0;
-            //std::cerr << (int)level.level_data.date << " " << (int)level.level_data.cost << " " << (int)level.level_data.mpc_level << " " << (int)level.level_data.depth << std::endl;
+            //std::cerr << (int)level.level_data.date << " " << (int)level.level_data.depth << " " << (int)level.level_data.mpc_level << " " << (int)level.level_data.cost << std::endl;
         }
 
         /*
@@ -183,9 +183,8 @@ class Hash_data{
             @return level
         */
         inline uint32_t get_level(){
-            //std::cerr << level.level << " " << (int)level.level_data.depth << " " << (int)level.level_data.mpc_level << " " << (int)level.level_data.n_discs << " " << (int)level.level_data.cost << std::endl;
+            //std::cerr << level.level << " " << (int)level.level_data.date << " " << (int)level.level_data.depth << " " << (int)level.level_data.mpc_level << " " << (int)level.level_data.cost << std::endl;
             return level.level;
-            //return ((uint32_t)depth << 24) | ((uint32_t)mpc_level << 16) | ((uint32_t)n_discs << 8);
         }
 
         /*
@@ -284,7 +283,7 @@ class Transposition_table{
             @return table initialized?
         */
         inline bool resize(int hash_level){
-            size_t n_table_size = hash_sizes[hash_level] + TRANSPOSITION_TABLE_N_LOOP;
+            size_t n_table_size = hash_sizes[hash_level] + TRANSPOSITION_TABLE_N_LOOP - 1;
             free(table_heap);
             if (n_table_size > TRANSPOSITION_TABLE_STACK_SIZE){
                 table_heap = (Hash_node*)malloc(sizeof(Hash_node) * (n_table_size - TRANSPOSITION_TABLE_STACK_SIZE));
@@ -378,7 +377,7 @@ class Transposition_table{
             Hash_node *node = get_node(hash);
             Hash_node *worst_node = nullptr;
             //const uint32_t level = ((uint32_t)search->date << 24) | ((uint32_t)cost << 16) | ((uint32_t)search->mpc_level << 8) | depth;
-            const uint32_t level = ((uint32_t)search->date << 24) | ((uint32_t)search->mpc_level << 8) | depth;
+            const uint32_t level = ((uint32_t)search->date << 24) | ((uint32_t)depth << 16) | ((uint32_t)search->mpc_level << 8);
             uint32_t node_level, worst_level = 0xFFFFFFFFU;
             for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
                 if (node->data.get_level() <= level){
@@ -404,7 +403,7 @@ class Transposition_table{
             }
             if (worst_node != nullptr){
                 worst_node->lock.lock();
-                    if (worst_node->data.get_level() < level){
+                    if (worst_node->data.get_level() <= level){
                         worst_node->board.player = search->board.player;
                         worst_node->board.opponent = search->board.opponent;
                         worst_node->data.reg_new_data(depth, search->mpc_level, 0, search->date, alpha, beta, value, policy);
@@ -425,7 +424,7 @@ class Transposition_table{
         */
         inline void get(const Search *search, uint32_t hash, const int depth, int *lower, int *upper, uint_fast8_t moves[]){
             Hash_node *node = get_node(hash);
-            const uint32_t level = ((uint32_t)search->date << 24) | ((uint32_t)search->mpc_level << 8) | depth;
+            const uint32_t level = ((uint32_t)search->date << 24) | ((uint32_t)depth << 16) | ((uint32_t)search->mpc_level << 8);
             for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
                 if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
                     node->lock.lock();
