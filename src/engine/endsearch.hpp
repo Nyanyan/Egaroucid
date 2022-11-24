@@ -635,12 +635,8 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
         uint32_t hash_code = search->board.hash();
         int lower = -SCORE_MAX, upper = SCORE_MAX;
         uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {TRANSPOSITION_TABLE_UNDEFINED, TRANSPOSITION_TABLE_UNDEFINED};
-        #if MID_TO_END_DEPTH < USE_TT_DEPTH_THRESHOLD
-            if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD)
-                transposition_table.get(search, hash_code, HW2 - search->n_discs, &lower, &upper, moves);
-        #else
+        if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD)
             transposition_table.get(search, hash_code, HW2 - search->n_discs, &lower, &upper, moves);
-        #endif
         if (upper == lower)
             return upper;
         if (beta <= lower)
@@ -771,7 +767,7 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
                 }
             #endif
         }
-        if (*searching && global_searching)
+        if (*searching && global_searching && search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD)
             transposition_table.reg(search, hash_code, HW2 - search->n_discs, first_alpha, beta, v, best_move);
         return v;
     }
