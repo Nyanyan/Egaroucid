@@ -53,7 +53,6 @@ int umigame_search(Board *b, int depth, int player, const int target_player){
         return 1;
     if (!global_searching)
         return 0;
-    Board nb;
     int val, max_val = -INF;
     std::vector<Board> boards;
     uint64_t legal = b->get_legal();

@@ -89,7 +89,6 @@ int book_widen_search(Board board, int level, const int book_depth, int expected
     Search_result best_move = ai(board, level, true, true, false);
     std::cerr << "depth " << board.n_discs() - 4 << " BM value " << best_move.value << std::endl;
     Flip flip;
-    bool alpha_updated = false;
     calc_flip(&flip, &board, (uint8_t)best_move.policy);
     board.move_board(&flip);
     *player ^= 1;

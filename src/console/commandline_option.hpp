@@ -38,9 +38,7 @@ std::vector<Commandline_option> get_commandline_options(int argc, char* argv[]){
     }
     std::vector<Commandline_option> res;
     int idx = 0;
-    bool option_found;
     while (idx < argc){
-        option_found = false;
         for (i = 0; i < N_COMMANDLINE_OPTIONS; ++i){
             if (std::find(commandline_option_data[i].names.begin(), commandline_option_data[i].names.end(), argv_string[idx]) != commandline_option_data[i].names.end()){
                 if (commandline_option_data[i].arg != ""){

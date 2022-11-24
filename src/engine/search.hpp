@@ -141,7 +141,7 @@ class Search{
         #else
             uint_fast16_t eval_features[N_SYMMETRY_PATTERNS];
         #endif
-        uint_fast8_t eval_feature_reversed;
+        bool eval_feature_reversed;
         bool use_multi_thread;
         #if USE_SEARCH_STATISTICS
             uint64_t n_nodes_discs[HW2];

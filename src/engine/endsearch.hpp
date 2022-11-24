@@ -250,7 +250,7 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
             const bool p0_parity = (search->parity & cell_div4[p0]) > 0;
             const bool p1_parity = (search->parity & cell_div4[p1]) > 0;
             const bool p2_parity = (search->parity & cell_div4[p2]) > 0;
-            const bool p3_parity = (search->parity & cell_div4[p3]) > 0;
+            //const bool p3_parity = (search->parity & cell_div4[p3]) > 0;
             #if LAST_PO_OPTIMIZE
                 if ((p0_parity | p1_parity | p2_parity) && !(p0_parity & p1_parity & p2_parity)){ // need to see only 3 squares to check necessity of sorting
                     if (p0_parity && !p1_parity){ // 1 - 0 - ? - ?

@@ -152,7 +152,7 @@ inline Search_result tree_search(Board board, int depth, uint_fast8_t mpc_level,
 */
 inline Search_result tree_search_iterative_deepening(Board board, int depth, uint_fast8_t mpc_level, bool show_log, bool use_multi_thread){
     Search search;
-    int g = 0, alpha, beta, policy = -1;
+    int g = 0, policy = -1;
     std::pair<int, int> result;
     depth = std::min(HW2 - board.n_discs(), depth);
     bool is_end_search = (HW2 - board.n_discs() == depth);
@@ -206,7 +206,6 @@ inline int tree_search_window(Board board, int depth, int alpha, int beta, uint_
     search.mpc_level = mpc_level;
     search.use_multi_thread = use_multi_thread;
     calc_features(&search);
-    uint64_t strt = tim();
     bool searching = true;
     uint64_t clog_n_nodes = 0ULL;
     int clog_res = clog_search(board, &clog_n_nodes);

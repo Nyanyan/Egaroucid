@@ -522,7 +522,6 @@ class Book{
                 std::cerr << "can't open book.egbk" << std::endl;
                 return;
             }
-            uint64_t i;
             uint8_t elem;
             std::cerr << "saving book..." << std::endl;
             fout.write((char*)&n_book, 4);
