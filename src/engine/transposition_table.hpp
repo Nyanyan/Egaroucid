@@ -175,8 +175,7 @@ class Hash_data{
 struct Hash_node{
     Board board;
     Hash_data data;
-    //Spinlock lock;
-    std::mutex lock;
+    Spinlock lock;
 
     void init(){
         board.player = 0ULL;
