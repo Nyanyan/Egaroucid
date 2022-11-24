@@ -195,23 +195,18 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
     #endif
     if (upper == lower)
         return upper;
-    if (beta <= lower)
+    if (alpha < lower)
         return lower;
     if (upper <= alpha)
         return upper;
-    if (alpha < lower)
-        alpha = lower;
-    if (upper < beta)
-        beta = upper;
     #if USE_MID_MPC
         if (search->n_discs <= USE_MPC_N_DISCS){
-            if (mpc(search, alpha, beta, depth, legal, is_end_search, &v, searching))
+            if (mpc(search, alpha, alpha + 1, depth, legal, is_end_search, &v, searching))
                 return v;
         }
     #endif
     Flip flip_best;
     int best_move = TRANSPOSITION_TABLE_UNDEFINED;
-    int first_alpha = alpha;
     int g;
     int pv_idx = 0;
     for (uint_fast8_t i = 0; i < N_TRANSPOSITION_MOVES; ++i){
@@ -221,29 +216,20 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
             calc_flip(&flip_best, &search->board, moves[i]);
             eval_move(search, &flip_best);
             search->move(&flip_best);
-                if (v == -INF)
-                    g = -nega_scout(search, -beta, -alpha, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
-                else{
-                    g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
-                    if (alpha < g && g < beta)
-                        g = -nega_scout(search, -beta, -g, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
-                }
+                g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
             search->undo(&flip_best);
             eval_undo(search, &flip_best);
             if (v < g){
                 v = g;
                 best_move = moves[i];
-                if (alpha < v){
-                    if (beta <= v)
-                        return v;
-                    alpha = v;
-                }
+                if (alpha < v)
+                    break;
             }
             legal ^= 1ULL << moves[i];
             ++pv_idx;
         }
     }
-    if (legal){
+    if (v <= alpha && legal){
         const int canput = pop_count_ull(legal);
         std::vector<Flip_value> move_list(canput);
         int idx = 0;

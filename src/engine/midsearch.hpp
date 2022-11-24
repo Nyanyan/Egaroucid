@@ -235,28 +235,22 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, c
                 calc_flip(&flip_best, &search->board, moves[i]);
                 eval_move(search, &flip_best);
                 search->move(&flip_best);
-                    if (v == -INF)
-                        g = -nega_scout(search, -beta, -alpha, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
-                    else{
-                        g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
-                        if (alpha < g && g < beta)
-                            g = -nega_scout(search, -beta, -g, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
-                    }
+                    g = -nega_alpha_ordering(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                 search->undo(&flip_best);
                 eval_undo(search, &flip_best);
                 if (v < g){
                     v = g;
                     best_move = moves[i];
                     if (alpha < v){
-                        if (beta <= v)
-                            return v;
                         alpha = v;
+                        if (beta <= v)
+                            break;
                     }
                 }
                 legal ^= 1ULL << moves[i];
             }
         }
-        if (legal){
+        if (alpha < beta && legal){
             const int canput = pop_count_ull(legal);
             std::vector<Flip_value> move_list(canput);
             int idx = 0;
@@ -407,15 +401,15 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
                 v = g;
                 best_move = moves[i];
                 if (alpha < v){
-                    if (beta <= v)
-                        return v;
                     alpha = v;
+                    if (beta <= v)
+                        break;
                 }
             }
             legal ^= 1ULL << moves[i];
         }
     }
-    if (legal){
+    if (alpha < beta && legal){
         const int canput = pop_count_ull(legal);
         std::vector<Flip_value> move_list(canput);
         int idx = 0;
@@ -517,11 +511,11 @@ std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int de
             eval_move(search, &flip_best);
             search->move(&flip_best);
                 if (v == -INF)
-                    g = -nega_scout(search, -beta, -alpha, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
+                    g = -nega_scout(search, -beta, -alpha, depth - 1, false, LEGAL_UNDEFINED, is_end_search, &searching);
                 else{
-                    g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
-                    if (alpha < g && g < beta)
-                        g = -nega_scout(search, -beta, -g, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
+                    g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, LEGAL_UNDEFINED, is_end_search, &searching);
+                    if (alpha <= g && g < beta)
+                        g = -nega_scout(search, -beta, -g, depth - 1, false, LEGAL_UNDEFINED, is_end_search, &searching);
                 }
             search->undo(&flip_best);
             eval_undo(search, &flip_best);
@@ -535,28 +529,27 @@ std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int de
                 v = g;
                 best_move = moves[i];
                 if (alpha < v){
-                    if (beta <= v)
-                        return v;
                     alpha = v;
+                    if (beta <= v)
+                        break;
                 }
             }
             legal ^= 1ULL << moves[i];
             ++pv_idx;
         }
     }
-    if (legal){
+    if (alpha < beta && legal){
         const int canput = pop_count_ull(legal);
         std::vector<Flip_value> move_list(canput);
         int idx = 0;
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
             calc_flip(&move_list[idx++].flip, &search->board, cell);
         move_list_evaluate(search, move_list, depth, alpha, beta, is_end_search, &searching);
-        bool is_first_search = true;
         for (int move_idx = 0; move_idx < canput; ++move_idx){
             swap_next_best_move(move_list, move_idx, canput);
             eval_move(search, &move_list[move_idx].flip);
             search->move(&move_list[move_idx].flip);
-                if (!pre_best_move_found && is_first_search)
+                if (v == -INF)
                     g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, &searching);
                 else{
                     g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, &searching);

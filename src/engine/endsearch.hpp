@@ -637,9 +637,9 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
         uint_fast8_t moves[N_TRANSPOSITION_MOVES];
         #if MID_TO_END_DEPTH < USE_TT_DEPTH_THRESHOLD
             if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD)
-                transposition_table.get(search, hash_code, depth, &lower, &upper, moves);
+                transposition_table.get(search, hash_code, HW2 - search->n_discs, &lower, &upper, moves);
         #else
-            transposition_table.get(search, hash_code, depth, &lower, &upper, moves);
+            transposition_table.get(search, hash_code, HW2 - search->n_discs, &lower, &upper, moves);
         #endif
         if (upper == lower)
             return upper;
@@ -651,12 +651,6 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
             alpha = lower;
         if (upper < beta)
             beta = upper;
-        #if USE_MID_MPC
-            if (search->n_discs <= USE_MPC_N_DISCS){
-                if (mpc(search, alpha, beta, depth, legal, is_end_search, &v, searching))
-                    return v;
-            }
-        #endif
         Flip flip_best;
         int best_move = TRANSPOSITION_TABLE_UNDEFINED;
         int first_alpha = alpha;
@@ -669,29 +663,23 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
                 calc_flip(&flip_best, &search->board, moves[i]);
                 eval_move(search, &flip_best);
                 search->move(&flip_best);
-                    if (v == -INF)
-                        g = -nega_scout(search, -beta, -alpha, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
-                    else{
-                        g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
-                        if (alpha < g && g < beta)
-                            g = -nega_scout(search, -beta, -g, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
-                    }
+                    g = -nega_alpha_end(search, -beta, -alpha, false, LEGAL_UNDEFINED, searching);
                 search->undo(&flip_best);
                 eval_undo(search, &flip_best);
                 if (v < g){
                     v = g;
                     best_move = moves[i];
                     if (alpha < v){
-                        if (beta <= v)
-                            return v;
                         alpha = v;
+                        if (beta <= v)
+                            break;
                     }
                 }
                 legal ^= 1ULL << moves[i];
                 ++pv_idx;
             }
         }
-        if (legal){
+        if (alpha < beta && legal){
             int g;
             const int canput = pop_count_ull(legal);
             std::vector<Flip_value> move_list(canput);
@@ -782,7 +770,7 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
                 }
             #endif
         }
-        transposition_table.reg(search, hash_code, depth, alpha, alpha + 1, v, best_move);
+        transposition_table.reg(search, hash_code, HW2 - search->n_discs, first_alpha, beta, v, best_move);
         return v;
     }
 #endif

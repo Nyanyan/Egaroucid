@@ -117,7 +117,7 @@ class Hash_data{
             @param value                best value
             @param policy               best move
         */
-        inline void reg_new_level(const int depth, const uint_fast8_t mpc_level, const uint_fast8_t n_discs, const int date, const int alpha, const int beta, const int value, const int policy){
+        inline void reg_new_level(const int depth, const uint_fast8_t mpc_level, const uint_fast8_t n_discs, const int alpha, const int beta, const int value, const int policy){
             if (value < beta)
                 upper = (uint8_t)value;
             else
@@ -190,15 +190,15 @@ class Transposition_table{
 
     public:
         /*
-            @brief Constructor of best move transposition table
+            @brief Constructor of transposition table
         */
-        Best_move_transposition_table(){
+        Transposition_table(){
             table_heap = nullptr;
             table_size = 0;
         }
 
         /*
-            @brief Resize best move transposition table
+            @brief Resize transposition table
 
             @param hash_level           hash level representing the size
             @return table initialized?
@@ -217,7 +217,7 @@ class Transposition_table{
         }
 
         /*
-            @brief Initialize best move transposition table
+            @brief Initialize transposition table
         */
         inline void init(){
             if (thread_pool.size() == 0){
@@ -286,7 +286,7 @@ class Transposition_table{
         }
 
         /*
-            @brief get best move from best move transposition table
+            @brief get best move from transposition table
 
             @param search               Search information
             @param hash                 hash code
@@ -311,6 +311,32 @@ class Transposition_table{
                     }
                 node->lock.unlock();
             }
+        }
+
+        /*
+            @brief get best move from transposition table
+
+            @param board                board
+            @param hash                 hash code
+            @return best move
+        */
+        inline int get_best_move(const Board *board, const uint32_t hash){
+            Hash_node *node;
+            if (hash < TRANSPOSITION_TABLE_STACK_SIZE)
+                node = &table_stack[hash];
+            else
+                node = &table_heap[hash - TRANSPOSITION_TABLE_STACK_SIZE];
+            int res = TRANSPOSITION_TABLE_UNDEFINED;
+            if (node->board.player == board->player && node->board.opponent == board->opponent){
+                node->lock.lock();
+                    if (node->board.player == board->player && node->board.opponent == board->opponent){
+                        uint_fast8_t moves[N_TRANSPOSITION_MOVES];
+                        node->data.get_moves(moves);
+                        res = moves[0];
+                    }
+                node->lock.unlock();
+            }
+            return res;
         }
 };
 
