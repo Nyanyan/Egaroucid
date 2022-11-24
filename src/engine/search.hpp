@@ -36,7 +36,7 @@
 #define MID_TO_END_DEPTH 13
 #define USE_TT_DEPTH_THRESHOLD 10
 
-#define SCORE_UNDEFINED -INF
+#define SCORE_UNDEFINED -SCORE_INF
 
 /*
     @brief Weights of each cell

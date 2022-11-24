@@ -38,11 +38,10 @@ inline int data_strength(const uint_fast8_t mpc_level, const int d){
 /*
     @brief Hash data
 
-    @param level
-        @param depth                depth
-        @param mpc_level            MPC level
-        @param n_discs              number of discs
-        @param cost                 search cost (log2(nodes))
+    @param depth                depth
+    @param mpc_level            MPC level
+    @param n_discs              number of discs
+    @param cost                 search cost (log2(nodes))
     @param lower                lower bound
     @param upper                upper bound
     @param moves                best moves
@@ -50,15 +49,10 @@ inline int data_strength(const uint_fast8_t mpc_level, const int d){
 
 class Hash_data{
     private:
-        union{
-            struct{
-                uint8_t cost;
-                uint8_t n_discs;
-                uint8_t mpc_level;
-                uint8_t depth;
-            } level_data;
-            uint32_t level;
-        } level;
+        uint8_t depth;
+        uint8_t mpc_level;
+        uint8_t n_discs;
+        uint8_t cost;
         int8_t lower;
         int8_t upper;
         int8_t moves[N_TRANSPOSITION_MOVES];
@@ -73,7 +67,9 @@ class Hash_data{
             upper = SCORE_MAX;
             moves[0] = TRANSPOSITION_TABLE_UNDEFINED;
             moves[1] = TRANSPOSITION_TABLE_UNDEFINED;
-            level.level = 0;
+            depth = 0;
+            mpc_level = 0;
+            n_discs = 0;
             //std::cerr << (int)level.level_data.depth << " " << (int)level.level_data.mpc_level << " " << (int)level.level_data.n_discs << " " << (int)level.level_data.cost << std::endl;
         }
 
@@ -109,7 +105,7 @@ class Hash_data{
             @param value                best value
             @param policy               best move
         */
-        inline void reg_new_level(const int depth, const uint_fast8_t mpc_level, const uint_fast8_t n_discs, const int alpha, const int beta, const int value, const int policy){
+        inline void reg_new_level(const int d, const uint_fast8_t ml, const uint_fast8_t nd, const int alpha, const int beta, const int value, const int policy){
             if (value < beta)
                 upper = (uint8_t)value;
             else
@@ -122,15 +118,15 @@ class Hash_data{
                 moves[1] = moves[0];
                 moves[0] = policy;
             }
-            level.level_data.depth = depth;
-            level.level_data.mpc_level = mpc_level;
-            level.level_data.n_discs = n_discs;
+            depth = d;
+            mpc_level = ml;
+            n_discs = nd;
         }
 
         inline uint32_t get_level(){
             //std::cerr << level.level << " " << (int)level.level_data.depth << " " << (int)level.level_data.mpc_level << " " << (int)level.level_data.n_discs << " " << (int)level.level_data.cost << std::endl;
             //return level.level;
-            return ((uint32_t)level.level_data.depth << 24) | ((uint32_t)level.level_data.mpc_level << 16) | ((uint32_t)level.level_data.n_discs << 8);
+            return ((uint32_t)depth << 24) | ((uint32_t)mpc_level << 16) | ((uint32_t)n_discs << 8);
         }
 
         inline void get_moves(uint_fast8_t res_moves[]){
@@ -147,7 +143,8 @@ class Hash_data{
 struct Hash_node{
     Board board;
     Hash_data data;
-    Spinlock lock;
+    //Spinlock lock;
+    std::mutex lock;
 
     void init(){
         board.player = 0ULL;
@@ -260,23 +257,23 @@ class Transposition_table{
                 node = &table_stack[hash];
             else
                 node = &table_heap[hash - TRANSPOSITION_TABLE_STACK_SIZE];
-            const uint32_t level = ((int32_t)depth << 24) | ((int32_t)search->mpc_level << 16) | ((int32_t)search->n_discs << 8);
-            uint16_t node_level = node->data.get_level();
-            node->lock.lock();
-                if (node_level <= level){
+            const uint32_t level = ((uint32_t)depth << 24) | ((uint32_t)search->mpc_level << 16) | ((uint32_t)search->n_discs << 8);
+            uint32_t node_level = node->data.get_level();
+            if (node_level <= level){
+                node->lock.lock();
                     node_level = node->data.get_level();
-                    if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
+                    if (node_level <= level){
+                        if (node->board.player != search->board.player || node->board.opponent != search->board.opponent){
+                            node->board.player = search->board.player;
+                            node->board.opponent = search->board.opponent;
+                        }
                         if (node_level == level)
                             node->data.reg_same_level(alpha, beta, value, policy);
-                        else if (node_level < level)
+                        else
                             node->data.reg_new_level(depth, search->mpc_level, search->n_discs, alpha, beta, value, policy);
-                    } else if (node_level < level){
-                        node->board.player = search->board.player;
-                        node->board.opponent = search->board.opponent;
-                        node->data.reg_new_level(depth, search->mpc_level, search->n_discs, alpha, beta, value, policy);
                     }
-                }
-            node->lock.unlock();
+                node->lock.unlock();
+            }
         }
 
         /*
@@ -298,7 +295,7 @@ class Transposition_table{
             if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
                 node->lock.lock();
                     if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
-                        const uint32_t level = ((int32_t)depth << 24) | ((int32_t)search->mpc_level << 16) | ((int32_t)search->n_discs << 8);
+                        const uint32_t level = ((uint32_t)depth << 24) | ((uint32_t)search->mpc_level << 16) | ((uint32_t)search->n_discs << 8);
                         node->data.get_moves(moves);
                         if (node->data.get_level() >= level)
                             node->data.get_bounds(lower, upper);
