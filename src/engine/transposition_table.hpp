@@ -13,8 +13,8 @@
 #include "common.hpp"
 #include "board.hpp"
 #include "thread_pool.hpp"
+#include "spinlock.hpp"
 #include <future>
-#include <atomic>
 
 /*
     @brief constants
@@ -34,17 +34,35 @@ inline int data_strength(const uint_fast8_t mpc_level, const int d){
 }
 
 /*
-    @brief Node of best move transposition table
+    @brief Hash data
 
-    @param player               a bitboard representing player
-    @param opponent             a bitboard representing opponent
-    @param best_move            best move
+    @param level
+        @param depth                depth
+        @param mpc_level            MPC level
+    @param lower                lower bound
+    @param upper                upper bound
+    @param moves                best moves
 */
-class Node_best_move_transposition_table{
+
+class Hash_data{
     private:
-        std::atomic<uint64_t> player;
-        std::atomic<uint64_t> opponent;
-        std::atomic<int8_t> best_move;
+        union{
+            #ifdef __BIG_ENDIAN__
+                struct{
+                    uint8_t mpc_level;
+                    uint8_t depth;
+                } level_data;
+            #else
+                struct{
+                    uint8_t depth;
+                    uint8_t mpc_level;
+                } level_data;
+            #endif
+            uint16_t level;
+        } level;
+        int8_t lower;
+        int8_t upper;
+        int8_t moves[2];
 
     public:
 
@@ -52,52 +70,98 @@ class Node_best_move_transposition_table{
             @brief Initialize a node
         */
         inline void init(){
-            player.store(0ULL);
-            opponent.store(0ULL);
-            best_move.store(0);
+            lower = -SCORE_MAX;
+            upper = SCORE_MAX;
+            moves[0] = TRANSPOSITION_TABLE_UNDEFINED;
+            moves[1] = TRANSPOSITION_TABLE_UNDEFINED;
+            level.level = 0;
         }
 
         /*
-            @brief Register best move
+            @brief Register value (same level)
 
-            Always overwrite
-
-            @param board                new board
-            @param policy               new best move
+            @param alpha                alpha bound
+            @param beta                 beta bound
+            @param value                best value
+            @param policy               best move
         */
-        inline void reg(const Board *board, const int policy){
-            player.store(board->player);
-            opponent.store(board->opponent);
-            best_move.store(policy);
-        }
-
-        /*
-            @brief Get best move
-
-            @param board                new board
-            @return TRANSPOSITION_TABLE_UNDEFINED if no data found, else the best move
-        */
-        inline int get(const Board *board){
-            int res;
-            if (board->player != player.load(std::memory_order_relaxed) || board->opponent != opponent.load(std::memory_order_relaxed))
-                res = TRANSPOSITION_TABLE_UNDEFINED;
-            else{
-                res = best_move.load(std::memory_order_relaxed);
-                if (board->player != player.load(std::memory_order_relaxed) || board->opponent != opponent.load(std::memory_order_relaxed))
-                    res = TRANSPOSITION_TABLE_UNDEFINED;
+        inline void reg_same_level(const int alpha, const int beta, const int value, const int policy){
+            if (value < beta && value < upper)
+                upper = (uint8_t)value;
+            if (alpha < value && lower < value)
+                lower = (uint8_t)value;
+            if ((alpha < value || value == -SCORE_MAX) && moves[0] != policy){
+                moves[1] = moves[0];
+                moves[0] = (uint8_t)policy;
             }
-            return res;
+        }
+
+        /*
+            @brief Register value (level increase)
+
+            update best moves, reset other data
+
+            @param depth                depth
+            @param cost                 cost (log2(nodes))
+            @param mpc_level            MPC level
+            @param date                 date (increase in each search)
+            @param alpha                alpha bound
+            @param beta                 beta bound
+            @param value                best value
+            @param policy               best move
+        */
+        inline void reg_new_level(const int depth, const int cost, const int mpc_level, const int date, const int alpha, const int beta, const int value, const int policy){
+            if (value < beta)
+                upper = (uint8_t)value;
+            else
+                upper = SCORE_MAX;
+            if (alpha < value)
+                lower = (uint8_t)value;
+            else
+                lower = -SCORE_MAX;
+            if ((alpha < value || value == -SCORE_MAX) && moves[0] != policy){
+                moves[1] = moves[0];
+                moves[0] = policy;
+            }
+            level.level_data.depth = depth;
+            level.level_data.mpc_level = mpc_level;
+        }
+
+        inline uint16_t get_level(){
+            return level.level;
+        }
+
+        inline void get_moves(int res_moves[]){
+            res_moves[0] = moves[0];
+            res_moves[1] = moves[1];
+        }
+
+        inline void get_bounds(int *l, int *u){
+            *l = lower;
+            *u = upper;
         }
 };
 
+struct Hash_node{
+    Board board;
+    Hash_data data;
+    Spinlock lock;
+
+    void init(){
+        board.player = 0ULL;
+        board.opponent = 0ULL;
+        data.init();
+    }
+};
+
 /*
-    @brief Initialize best move transposition table in parallel
+    @brief Initialize transposition table in parallel
 
     @param table                transposition table
     @param s                    start index
     @param e                    end index
 */
-void init_best_move_transposition_table(Node_best_move_transposition_table table[], size_t s, size_t e){
+void init_transposition_table(Hash_node table[], size_t s, size_t e){
     for(size_t i = s; i < e; ++i){
         table[i].init();
     }
@@ -110,10 +174,10 @@ void init_best_move_transposition_table(Node_best_move_transposition_table table
     @param table_heap           transposition table on heap
     @param table_size           total table size
 */
-class Best_move_transposition_table{
+class Transposition_table{
     private:
-        Node_best_move_transposition_table table_stack[TRANSPOSITION_TABLE_STACK_SIZE];
-        Node_best_move_transposition_table *table_heap;
+        Hash_node table_stack[TRANSPOSITION_TABLE_STACK_SIZE];
+        Hash_node *table_heap;
         size_t table_size;
 
     public:
@@ -121,7 +185,7 @@ class Best_move_transposition_table{
             @brief Constructor of best move transposition table
         */
         Best_move_transposition_table(){
-            table_heap = NULL;
+            table_heap = nullptr;
             table_size = 0;
         }
 
@@ -135,7 +199,7 @@ class Best_move_transposition_table{
             size_t n_table_size = hash_sizes[hash_level];
             free(table_heap);
             if (n_table_size > TRANSPOSITION_TABLE_STACK_SIZE){
-                table_heap = (Node_best_move_transposition_table*)malloc(sizeof(Node_best_move_transposition_table) * (n_table_size - TRANSPOSITION_TABLE_STACK_SIZE));
+                table_heap = (Hash_node*)malloc(sizeof(Hash_node) * (n_table_size - TRANSPOSITION_TABLE_STACK_SIZE));
                 if (table_heap == nullptr)
                     return false;
             }
@@ -160,7 +224,7 @@ class Best_move_transposition_table{
                 std::vector<std::future<void>> tasks;
                 for (int i = 0; i < thread_size; ++i){
                     e = std::min(std::min(table_size, (size_t)TRANSPOSITION_TABLE_STACK_SIZE), s + delta);
-                    tasks.emplace_back(thread_pool.push(std::bind(&init_best_move_transposition_table, table_stack, s, e)));
+                    tasks.emplace_back(thread_pool.push(std::bind(&init_transposition_table, table_stack, s, e)));
                     s = e;
                 }
                 if (table_size > TRANSPOSITION_TABLE_STACK_SIZE){
@@ -168,7 +232,7 @@ class Best_move_transposition_table{
                     s = 0;
                     for (int i = 0; i < thread_size; ++i){
                         e = std::min(table_size - (size_t)TRANSPOSITION_TABLE_STACK_SIZE, s + delta);
-                        tasks.emplace_back(thread_pool.push(std::bind(&init_best_move_transposition_table, table_heap, s, e)));
+                        tasks.emplace_back(thread_pool.push(std::bind(&init_transposition_table, table_heap, s, e)));
                         s = e;
                     }
                 }
@@ -178,242 +242,71 @@ class Best_move_transposition_table{
         }
 
         /*
-            @brief Register a board to best move transposition table
+            @brief Register items
 
-            @param board                board to register
+            @param search               Search information
             @param hash                 hash code
+            @param depth                depth
+            @param alpha                alpha bound
+            @param beta                 beta bound
+            @param value                best score
             @param policy               best move
         */
-        inline void reg(const Board *board, const uint32_t hash, const int policy){
+        inline void reg(const Search *search, const uint32_t hash, const int depth, int alpha, int beta, int value, int policy){
+            Hash_node *node;
             if (hash < TRANSPOSITION_TABLE_STACK_SIZE)
-                table_stack[hash].reg(board, policy);
+                node = &table_stack[hash];
             else
-                table_heap[hash - TRANSPOSITION_TABLE_STACK_SIZE].reg(board, policy);
+                node = &table_heap[hash - TRANSPOSITION_TABLE_STACK_SIZE];
+            const uint16_t level = (depth << 8) | search->mpc_level;
+            uint16_t node_level = node->data.get_level();
+            node->lock.lock();
+                if (node_level <= level){
+                    node_level = node->data.get_level();
+                    if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
+                        if (node_level == level)
+                            node->data.reg_same_level(alpha, beta, value, policy);
+                        else if (node_level < level)
+                            node->data.reg_new_level(depth, search->mpc_level, alpha, beta, value, policy);
+                    } else if (node_level < level){
+                        node->board.player = search->board.player;
+                        node->board.opponent = search->board.opponent;
+                        node->data.reg_new_level(depth, search->mpc_level, alpha, beta, value, policy);
+                    }
+                }
+            node->lock.unlock();
         }
 
         /*
             @brief get best move from best move transposition table
 
-            @param board                board to register
+            @param search               Search information
             @param hash                 hash code
-            @return TRANSPOSITION_TABLE_UNDEFINED if not found, else best move 
+            @param depth                depth
+            @param lower                lower bound to store
+            @param upper                upper bound to store
+            @param moves                best moves to store
         */
-        inline int get(const Board *board, const uint32_t hash){
+        inline void get(const Search *search, const uint32_t hash, const int depth, int *lower, int *upper, int moves[]){
+            Hash_node *node;
             if (hash < TRANSPOSITION_TABLE_STACK_SIZE)
-                return table_stack[hash].get(board);
-            return table_heap[hash - TRANSPOSITION_TABLE_STACK_SIZE].get(board);
-        }
-};
-
-/*
-    @brief Node of value transposition table
-
-    @param player               a bitboard representing player
-    @param opponent             a bitboard representing opponent
-    @param lower                lower bound
-    @param upper                upper bound
-    @param mpc_level                 MPC (Multi-ProbCut) probability
-    @param depth                search depth
-*/
-class Node_value_transposition_table{
-    private:
-        std::atomic<uint64_t> player;
-        std::atomic<uint64_t> opponent;
-        std::atomic<int8_t> lower;
-        std::atomic<int8_t> upper;
-        std::atomic<uint8_t> mpc_level;
-        std::atomic<int8_t> depth;
-
-    public:
-        /*
-            @brief Initialize a node
-        */
-        inline void init(){
-            player.store(0ULL);
-            opponent.store(0ULL);
-            lower.store(-SCORE_INF);
-            upper.store(SCORE_INF);
-            mpc_level.store(0);
-            depth.store(0);
-        }
-
-        /*
-            @brief Register best move
-
-            Always overwrite
-
-            @param board                new board
-            @param l                    new lower bound
-            @param u                    new upper bound
-            @param mpc_level            MPC (Multi-ProbCut) level
-            @param d                    new depth
-        */
-        inline void reg(const Board *board, const int l, const int u, const uint_fast8_t ml, const int d){
-            if (board->player == player.load(std::memory_order_relaxed) && board->opponent == opponent.load(std::memory_order_relaxed) && data_strength(mpc_level.load(std::memory_order_relaxed), depth.load(std::memory_order_relaxed)) > data_strength(ml, d))
-                return;
-            player.store(board->player);
-            opponent.store(board->opponent);
-            lower.store(l);
-            upper.store(u);
-            mpc_level.store(ml);
-            depth.store(d);
-        }
-
-        /*
-            @brief Get lower / upper bound
-
-            Although board found, if the strength is weaker, ignore it.
-
-            @param board                new board
-            @param l                    lower bound to store
-            @param u                    upper bound to store
-            @param mpc_level            requested MPC (Multi-ProbCut) level
-            @param d                    requested depth
-        */
-        inline void get(const Board *board, int *l, int *u, const uint_fast8_t ml, const int d){
-            if (data_strength(mpc_level.load(std::memory_order_relaxed), depth.load(std::memory_order_relaxed)) < data_strength(ml, d)){
-                *l = -SCORE_INF;
-                *u = SCORE_INF;
-            } else{
-                if (board->player != player.load(std::memory_order_relaxed) || board->opponent != opponent.load(std::memory_order_relaxed)){
-                    *l = -SCORE_INF;
-                    *u = SCORE_INF;
-                } else{
-                    *l = lower.load(std::memory_order_relaxed);
-                    *u = upper.load(std::memory_order_relaxed);
-                    if (board->player != player.load(std::memory_order_relaxed) || board->opponent != opponent.load(std::memory_order_relaxed)){
-                        *l = -SCORE_INF;
-                        *u = SCORE_INF;
-                    }
-                }
-            }
-        }
-};
-
-/*
-    @brief Initialize value transposition table in parallel
-
-    @param table                transposition table
-    @param s                    start index
-    @param e                    end index
-*/
-void init_value_transposition_table(Node_value_transposition_table table[], size_t s, size_t e){
-    for(size_t i = s; i < e; ++i){
-        table[i].init();
-    }
-}
-
-/*
-    @brief Value transposition table structure
-
-    @param table_stack          transposition table on stack
-    @param table_heap           transposition table on heap
-    @param table_size           total table size
-*/
-class Value_transposition_table{
-    private:
-        Node_value_transposition_table table_stack[TRANSPOSITION_TABLE_STACK_SIZE];
-        Node_value_transposition_table *table_heap;
-        size_t table_size;
-
-    public:
-        /*
-            @brief Constructor of best move transposition table
-        */
-        Value_transposition_table(){
-            table_heap = NULL;
-            table_size = 0;
-        }
-
-        /*
-            @brief Resize best move transposition table
-
-            @param hash_level           hash level representing the size
-            @return table initialized?
-        */
-        inline bool resize(int hash_level){
-            size_t n_table_size = hash_sizes[hash_level];
-            free(table_heap);
-            if (n_table_size > TRANSPOSITION_TABLE_STACK_SIZE){
-                table_heap = (Node_value_transposition_table*)malloc(sizeof(Node_value_transposition_table) * (n_table_size - TRANSPOSITION_TABLE_STACK_SIZE));
-                if (table_heap == nullptr)
-                    return false;
-            }
-            table_size = n_table_size;
-            init();
-            return true;
-        }
-
-        /*
-            @brief Initialize best move transposition table
-        */
-        inline void init(){
-            if (thread_pool.size() == 0){
-                for (size_t i = 0; i < std::min(table_size, (size_t)TRANSPOSITION_TABLE_STACK_SIZE); ++i)
-                    table_stack[i].init();
-                for (size_t i = 0; i < table_size - (size_t)TRANSPOSITION_TABLE_STACK_SIZE; ++i)
-                    table_heap[i].init();
-            } else{
-                int thread_size = thread_pool.size();
-                size_t delta = (std::min(table_size, (size_t)TRANSPOSITION_TABLE_STACK_SIZE) + thread_size - 1) / thread_size;
-                size_t s = 0, e;
-                std::vector<std::future<void>> tasks;
-                for (int i = 0; i < thread_size; ++i){
-                    e = std::min(std::min(table_size, (size_t)TRANSPOSITION_TABLE_STACK_SIZE), s + delta);
-                    tasks.emplace_back(thread_pool.push(std::bind(&init_value_transposition_table, table_stack, s, e)));
-                    s = e;
-                }
-                if (table_size > TRANSPOSITION_TABLE_STACK_SIZE){
-                    delta = (table_size - (size_t)TRANSPOSITION_TABLE_STACK_SIZE + thread_size - 1) / thread_size;
-                    s = 0;
-                    for (int i = 0; i < thread_size; ++i){
-                        e = std::min(table_size - (size_t)TRANSPOSITION_TABLE_STACK_SIZE, s + delta);
-                        tasks.emplace_back(thread_pool.push(std::bind(&init_value_transposition_table, table_heap, s, e)));
-                        s = e;
-                    }
-                }
-                for (std::future<void> &task: tasks)
-                    task.get();
-            }
-        }
-
-        /*
-            @brief Register a board to value transposition table
-
-            @param board                board to register
-            @param hash                 hash code
-            @param l                    lower bound
-            @param u                    upper bound
-            @param mpc_level            MPC (Multi-ProbCut) level
-            @param d                    depth
-        */
-        inline void reg(const Board *board, const uint32_t hash, const int l, const int u, const uint_fast8_t ml, const int d){
-            if (hash < TRANSPOSITION_TABLE_STACK_SIZE)
-                table_stack[hash].reg(board, l, u, ml, d);
+                node = &table_stack[hash];
             else
-                table_heap[hash - TRANSPOSITION_TABLE_STACK_SIZE].reg(board, l, u, ml, d);
-        }
-
-        /*
-            @brief Get bounds from value transposition table
-
-            @param board                board to register
-            @param hash                 hash code
-            @param l                    lower bound to store
-            @param u                    upper bound to store
-            @param mpc_level            requested MPC (Multi-ProbCut) level
-            @param d                    requested depth
-        */
-        inline void get(const Board *board, const uint32_t hash, int *l, int *u, const uint_fast8_t ml, const int d){
-            if (hash < TRANSPOSITION_TABLE_STACK_SIZE)
-                table_stack[hash].get(board, l, u, ml, d);
-            else
-                table_heap[hash - TRANSPOSITION_TABLE_STACK_SIZE].get(board, l, u, ml, d);
+                node = &table_heap[hash - TRANSPOSITION_TABLE_STACK_SIZE];
+            if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
+                node->lock.lock();
+                    if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
+                        const uint16_t level = (depth << 8) | search->mpc_level;
+                        node->data.get_moves(moves);
+                        if (node->data.get_level() >= level)
+                            node->data.get_bounds(lower, upper);
+                    }
+                node->lock.unlock();
+            }
         }
 };
 
-Value_transposition_table value_transposition_table;
-Best_move_transposition_table best_move_transposition_table;
+Transposition_table transposition_table;
 
 /*
     @brief Resize hash and transposition tables
@@ -423,20 +316,9 @@ Best_move_transposition_table best_move_transposition_table;
     @return hash resized?
 */
 bool hash_resize(int hash_level_failed, int hash_level, bool show_log){
-    if (!value_transposition_table.resize(hash_level)){
-        std::cerr << "[ERROR] value hash table resize failed. resize to level " << hash_level_failed << std::endl;
-        value_transposition_table.resize(hash_level_failed);
-        if (!hash_init(hash_level_failed)){
-            std::cerr << "[ERROR] can't get hash. you can ignore this error" << std::endl;
-            hash_init_rand(hash_level_failed);
-        }
-        global_hash_level = hash_level_failed;
-        return false;
-    }
-    if (!best_move_transposition_table.resize(hash_level)){
-        std::cerr << "[ERROR] best move hash table resize failed. resize to level " << hash_level_failed << std::endl;
-        value_transposition_table.resize(hash_level_failed);
-        best_move_transposition_table.resize(hash_level_failed);
+    if (!transposition_table.resize(hash_level)){
+        std::cerr << "[ERROR] hash table resize failed. resize to level " << hash_level_failed << std::endl;
+        transposition_table.resize(hash_level_failed);
         if (!hash_init(hash_level_failed)){
             std::cerr << "[ERROR] can't get hash. you can ignore this error" << std::endl;
             hash_init_rand(hash_level_failed);
@@ -450,7 +332,7 @@ bool hash_resize(int hash_level_failed, int hash_level, bool show_log){
     }
     global_hash_level = hash_level;
     if (show_log){
-        double size_mb = (double)(sizeof(Node_value_transposition_table) + sizeof(Node_best_move_transposition_table)) / 1024 / 1024 * hash_sizes[hash_level];
+        double size_mb = (double)sizeof(Hash_node) / 1024 / 1024 * hash_sizes[hash_level];
         std::cerr << "hash resized to level " << hash_level << " elements " << hash_sizes[hash_level] << " size " << size_mb << " MB" << std::endl;
     }
     return true;
