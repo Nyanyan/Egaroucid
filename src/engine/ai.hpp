@@ -70,23 +70,23 @@ inline Search_result tree_search(Board board, int depth, uint_fast8_t mpc_level,
         strt = tim();
         if (show_log)
             std::cerr << "start!" << std::endl;
-        if (depth >= 23){
-            search_depth = depth / 2;
-            search.mpc_level = MPC_81_LEVEL;
-            result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search_depth, false, false, false, clogs);
-            g = result.first;
-            if (show_log)
-                std::cerr << "presearch depth " << search_depth << "@" << SELECTIVITY_PERCENTAGE[search.mpc_level] << "% value " << g << " policy " << idx_to_coord(result.second) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / std::max(1ULL, tim() - strt) << std::endl;
-        }
-        if (depth >= 14){
+        if (depth >= 12){
             search_depth = depth;
-            search.mpc_level = std::max(0, mpc_level - 3);
+            search.mpc_level = std::max(0, mpc_level - 4);
             result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search_depth, false, true, false, clogs);
             g = result.first;
             if (show_log)
                 std::cerr << "presearch depth " << search_depth << "@" << SELECTIVITY_PERCENTAGE[search.mpc_level] << "% value " << g << " policy " << idx_to_coord(result.second) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / std::max(1ULL, tim() - strt) << std::endl;
         }
-        if (depth >= 23){
+        if (depth >= 18){
+            search_depth = depth;
+            search.mpc_level = std::max(0, mpc_level - 2);
+            result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search_depth, false, true, false, clogs);
+            g = result.first;
+            if (show_log)
+                std::cerr << "presearch depth " << search_depth << "@" << SELECTIVITY_PERCENTAGE[search.mpc_level] << "% value " << g << " policy " << idx_to_coord(result.second) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / std::max(1ULL, tim() - strt) << std::endl;
+        }
+        if (depth >= 26){
             search_depth = depth;
             search.mpc_level = std::max(0, mpc_level - 1);
             result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search_depth, false, true, false, clogs);
