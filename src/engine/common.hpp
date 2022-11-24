@@ -23,11 +23,6 @@
 #define HW2_M1 63
 #define HW2_P1 65
 
-// score definition
-#define SCORE_MAX 64
-
-#define N_8BIT 256
-
 // color definition
 #define BLACK 0
 #define WHITE 1
@@ -38,7 +33,10 @@
 #define PHASE_N_STONES 2
 
 // constant
+#define N_8BIT 256
 #define INF 100000000
+#define SCORE_INF 127
+#define SCORE_MAX 64
 
 // undefined legal bitboard: set bit on d4, d5, e4, and e5
 #define LEGAL_UNDEFINED 0x0000001818000000ULL

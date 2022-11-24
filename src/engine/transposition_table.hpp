@@ -19,7 +19,7 @@
 /*
     @brief constants
 */
-#define TRANSPOSITION_TABLE_UNDEFINED -INF
+#define TRANSPOSITION_TABLE_UNDEFINED SCORE_INF
 constexpr size_t TRANSPOSITION_TABLE_STACK_SIZE = hash_sizes[DEFAULT_HASH_LEVEL];
 
 /*
@@ -44,7 +44,7 @@ class Node_best_move_transposition_table{
     private:
         std::atomic<uint64_t> player;
         std::atomic<uint64_t> opponent;
-        std::atomic<int> best_move;
+        std::atomic<int8_t> best_move;
 
     public:
 
@@ -219,10 +219,10 @@ class Node_value_transposition_table{
     private:
         std::atomic<uint64_t> player;
         std::atomic<uint64_t> opponent;
-        std::atomic<int> lower;
-        std::atomic<int> upper;
-        std::atomic<uint_fast8_t> mpc_level;
-        std::atomic<int> depth;
+        std::atomic<int8_t> lower;
+        std::atomic<int8_t> upper;
+        std::atomic<uint8_t> mpc_level;
+        std::atomic<int8_t> depth;
 
     public:
         /*
@@ -231,9 +231,9 @@ class Node_value_transposition_table{
         inline void init(){
             player.store(0ULL);
             opponent.store(0ULL);
-            lower.store(-INF);
-            upper.store(INF);
-            mpc_level.store(0.0);
+            lower.store(-SCORE_INF);
+            upper.store(SCORE_INF);
+            mpc_level.store(0);
             depth.store(0);
         }
 
@@ -272,18 +272,18 @@ class Node_value_transposition_table{
         */
         inline void get(const Board *board, int *l, int *u, const uint_fast8_t ml, const int d){
             if (data_strength(mpc_level.load(std::memory_order_relaxed), depth.load(std::memory_order_relaxed)) < data_strength(ml, d)){
-                *l = -INF;
-                *u = INF;
+                *l = -SCORE_INF;
+                *u = SCORE_INF;
             } else{
                 if (board->player != player.load(std::memory_order_relaxed) || board->opponent != opponent.load(std::memory_order_relaxed)){
-                    *l = -INF;
-                    *u = INF;
+                    *l = -SCORE_INF;
+                    *u = SCORE_INF;
                 } else{
                     *l = lower.load(std::memory_order_relaxed);
                     *u = upper.load(std::memory_order_relaxed);
                     if (board->player != player.load(std::memory_order_relaxed) || board->opponent != opponent.load(std::memory_order_relaxed)){
-                        *l = -INF;
-                        *u = INF;
+                        *l = -SCORE_INF;
+                        *u = SCORE_INF;
                     }
                 }
             }
