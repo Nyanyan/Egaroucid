@@ -58,10 +58,6 @@
 // use search algs
 #define USE_NEGA_ALPHA_ORDERING false
 
-// move ordering
-#define USE_AUTO_OPTIMIZED_MOVE_ORDERING_MID true
-#define USE_AUTO_OPTIMIZED_MOVE_ORDERING_NWS true
-
 // transposition table
 #define USE_TRANSPOSITION_TABLE true
 

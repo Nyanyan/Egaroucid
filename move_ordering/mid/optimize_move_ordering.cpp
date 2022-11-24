@@ -41,7 +41,7 @@ inline uint32_t myrand_uint(){
     return (uint32_t)raw_myrandom();
 }
 
-double start_temp = 0.001;
+double start_temp = 0.005;
 double end_temp =   0.00001;
 
 double temperature_x(double x){
@@ -111,9 +111,11 @@ void import_data(){
             datum.common_data[0] = cell_weight[datum.cell];
             for (i = 0; i < N_COMMON_DATA - 1; ++i)
                 datum.common_data[i + 1] = line[idx++] - '!';
-            ++idx;
-            for (i = 0; i < N_MOVE_ORDERING_DEPTH; ++i)
+            for (i = 0; i < N_MOVE_ORDERING_DEPTH; ++i){
+                //cerr << i << " " << ((line[idx] - '!') * 2 - 64) << " " << line[idx] << endl;
                 datum.eval_data[i] = (line[idx++] - '!') * 2 - 64;
+            }
+            ++idx;
             board_datum.moves.emplace_back(datum);
         }
         //cerr << flag << endl;
@@ -126,6 +128,8 @@ void import_data(){
 int calc_move_score(Datum m, int depth){ // n_discs: former
     int res = 0;
     for (int i = 0; i < N_COMMON_DATA; ++i){
+        if (i == 3)
+            continue;
         res += move_ordering_weights[i] * m.common_data[i];
     }
     if (depth >= 0)
@@ -140,6 +144,7 @@ bool cmp_score(pair<int, int>& a, pair<int, int>& b){
 double scoring_part(double *mean_rank){
     double score = 0.0;
     int t = 0;
+    int u = 0;
     *mean_rank = 0.0;
     for (Board_datum &datum: data){
         for (int depth = -1; depth < N_MOVE_ORDERING_DEPTH; ++depth){
@@ -158,17 +163,23 @@ double scoring_part(double *mean_rank){
                 scores.emplace_back(move_score);
             }
             //cerr << max_score << " " << policy_score << " " << min_score << endl;
-            score += 0.01 * ((double)(max_score - policy_score) / max(1.0, (double)(max_score - min_score)));
+            double err = 0.0;
+            err += 0.1 * ((double)(max_score - policy_score) / max(1.0, (double)(max_score - min_score)));
             int upper_count = 0;
             for (int s: scores){
                 if (s > policy_score)
                     ++upper_count;
             }
-            score += 1.0 * ((double)upper_count / (double)(scores.size()));
-            *mean_rank += upper_count;
+            err += 1.0 * ((double)upper_count / (double)(scores.size()));
+            if (true){
+                *mean_rank += upper_count;
+                ++u;
+            }
+            err *= 1.0 + (double)(depth + 1) / N_MOVE_ORDERING_DEPTH;
+            score += err;
         }
     }
-    *mean_rank /= t;
+    *mean_rank /= u;
     return score / t;
 }
 
@@ -181,6 +192,8 @@ void anneal(uint64_t tl){
     double n_score;
     while (tim() - strt < tl){
         idx = myrandrange(0, N_WEIGHT);
+        if (idx == 3)
+            continue;
         delta = myrandrange(-2, 3);
         if (delta == 0)
             continue;
