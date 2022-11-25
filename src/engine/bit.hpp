@@ -471,6 +471,24 @@ inline uint_fast8_t next_bit(uint64_t *x){
 }
 
 /*
+    @brief get the MSB (Most Significant Bit) of a bitboard
+
+    Used for search cost calculation
+
+    @param x                    a bitboard
+*/
+
+inline uint8_t msb(uint64_t x){
+    x = x | (x >> 1);
+    x = x | (x >> 2);
+    x = x | (x >> 4);
+    x = x | (x >> 8);
+    x = x | (x >> 16);
+    x = x | (x >> 32);
+    return _tzcnt_u64(x - (x >> 1));
+}
+
+/*
     @brief bits around the cell are set
 */
 constexpr uint64_t bit_around[HW2] = {

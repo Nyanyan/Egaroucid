@@ -139,7 +139,7 @@ class Hash_data{
             }
             level.level_data.depth = d;
             level.level_data.mpc_level = ml;
-            level.level_data.cost = c;
+            //level.level_data.cost = std::max(level.level_data.cost, c);
             level.level_data.date = dt;
         }
 
@@ -173,7 +173,7 @@ class Hash_data{
             moves[1] = TRANSPOSITION_TABLE_UNDEFINED;
             level.level_data.depth = d;
             level.level_data.mpc_level = ml;
-            level.level_data.cost = c;
+            //level.level_data.cost = c;
             level.level_data.date = dt;
         }
 
