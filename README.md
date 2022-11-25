@@ -14,9 +14,9 @@ Light version of this Othello AI got 1st place in the world ([CodinGame Othello]
 
 Totally free application
 
-* **[Egaroucid - GUI application](https://www.egaroucid.nyanyan.dev/en/)**
+* **[Egaroucid](https://www.egaroucid.nyanyan.dev/en/) - GUI application**
   
-  * for Windows
+  * Desktop application for Windows
   * Japanese / English
   
 * **Egaroucid for Console - Console application**
@@ -24,9 +24,9 @@ Totally free application
   * Under construction
   * English
   
-* **[Egaroucid for Web - Web application](https://www.egaroucid.nyanyan.dev/en/web/)**
+* **[Egaroucid for Web](https://www.egaroucid.nyanyan.dev/en/web/) - Web application**
   
-  * Compiled as wasm
+  * Play on your browser
   * Japanese / English
   
   
