@@ -608,11 +608,11 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
     }
     if (v <= alpha && legal){
         const int canput = pop_count_ull(legal);
-        std::vector<Flip_value> move_list(canput);
+        Flip_value move_list[MID_TO_END_DEPTH];
         int idx = 0;
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
             calc_flip(&move_list[idx++].flip, &search->board, cell);
-        move_list_evaluate_end(search, move_list);
+        move_list_evaluate_end(search, move_list, canput);
         #if MID_TO_END_DEPTH > YBWC_END_SPLIT_MIN_DEPTH
             #if USE_ALL_NODE_PREDICTION
                 const bool seems_to_be_all_node = predict_all_node(search, alpha, HW2 - search->n_discs, LEGAL_UNDEFINED, true, searching);

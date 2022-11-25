@@ -285,6 +285,26 @@ inline void swap_next_best_move(std::vector<Flip_value> &move_list, const int st
 }
 
 /*
+    @brief Set the best move to the first element
+
+    @param move_list            list of moves
+    @param strt                 the first index
+    @param siz                  the size of move_list
+*/
+inline void swap_next_best_move(Flip_value move_list[], const int strt, const int siz){
+    int top_idx = strt;
+    int best_value = move_list[strt].value;
+    for (int i = strt + 1; i < siz; ++i){
+        if (best_value < move_list[i].value){
+            best_value = move_list[i].value;
+            top_idx = i;
+        }
+    }
+    if (top_idx != strt)
+        std::swap(move_list[strt], move_list[top_idx]);
+}
+
+/*
     @brief Evaluate all legal moves for midgame
 
     @param search               search information
@@ -319,15 +339,15 @@ inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
     @param search               search information
     @param move_list            list of moves
 */
-inline void move_list_evaluate_end(Search *search, std::vector<Flip_value> &move_list){
-    if (move_list.size() == 1)
+inline void move_list_evaluate_end(Search *search, Flip_value move_list[], const int canput){
+    if (canput == 1)
         return;
     bool wipeout_found = false;
-    for (Flip_value &flip_value: move_list){
+    for (int i = 0; i < canput; ++i){
         if (!wipeout_found)
-            wipeout_found = move_evaluate_end(search, &flip_value);
+            wipeout_found = move_evaluate_end(search, &move_list[i]);
         else
-            flip_value.value = -INF;
+            move_list[i].value = -INF;
     }
 }
 
