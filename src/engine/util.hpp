@@ -10,6 +10,9 @@
 
 #pragma once
 #include <iostream>
+#include <sstream>
+#include <iomanip>
+#include <string>
 #include "board.hpp"
 
 /*
@@ -54,4 +57,31 @@ std::string idx_to_coord(int idx){
     int x = HW_M1 - idx % HW;
     const std::string x_coord = "abcdefgh";
     return x_coord[x] + std::to_string(y + 1);
+}
+
+/*
+    @brief Generate time in string
+
+    @param t                    time in [ms]
+    @return time as string
+*/
+std::string ms_to_time(uint64_t t){
+    std::string res;
+    uint64_t hour = t / (1000 * 60 * 60);
+    t -= hour * 1000 * 60 * 60;
+    uint64_t minute = t / (1000 * 60);
+    t -= minute * 1000 * 60;
+    double second = (double)t / 1000;
+    std::ostringstream hour_s;
+    hour_s << std::setw(3) << std::setfill('0') << hour;
+    res += hour_s.str();
+    res += ":";
+    std::ostringstream minute_s;
+    minute_s << std::setw(2) << std::setfill('0') << minute;
+    res += minute_s.str();
+    res += ":";
+    std::ostringstream second_s;
+    second_s << std::setw(6) << std::setfill('0') << second;
+    res += second_s.str();
+    return res;
 }

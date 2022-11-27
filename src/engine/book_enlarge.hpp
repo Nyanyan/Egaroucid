@@ -36,6 +36,22 @@ inline int book_enlarge_calc_value(Board board, int level, uint8_t date){
 }
 
 /*
+    @brief Get adoptable error
+
+    @param level                search level
+    @param expected_error       expected error set by users
+    @param book_depth           book depth
+    @param n_discs              number of discs
+
+    @return adoptable error
+*/
+int calc_adoptable_error(int level, int expected_error, int book_depth, int n_discs){
+    if (get_level_complete_depth(level) >= HW2 - n_discs)
+        return 0;
+    return std::max(expected_error, (book_depth + 4 - n_discs) * expected_error / 5);
+}
+
+/*
     @brief Widen a book recursively
 
     This function widen the book.
@@ -93,7 +109,7 @@ int book_widen_search(Board board, int level, const int book_depth, int expected
     *date = manage_date(*date);
     std::cerr << "depth " << board.n_discs() - 4 << " BM value " << best_move.value << std::endl;
     Flip flip;
-    calc_flip(&flip, &board, (uint8_t)best_move.policy);
+    calc_flip(&flip, &board, (uint_fast8_t)best_move.policy);
     board.move_board(&flip);
     *player ^= 1;
         board.copy(board_copy);
@@ -148,7 +164,6 @@ int book_widen_search(Board board, int level, const int book_depth, int expected
 /*
     @brief Widen a book
 
-    Widen the book.
     Users use mainly this function.
 
     @param root_board           the root board to register
@@ -163,8 +178,9 @@ int book_widen_search(Board board, int level, const int book_depth, int expected
 */
 inline void book_widen(Board root_board, int level, const int book_depth, int expected_error, Board *board_copy, int *player, std::string book_file, std::string book_bak, bool *book_learning){
     uint64_t strt_tim = tim();
-    std::cerr << "book learn started" << std::endl;
-    int remaining_error = std::max(expected_error, (book_depth + 4 - root_board.n_discs()) * expected_error / 5);
+    uint64_t all_strt = strt_tim;
+    std::cerr << "book widen started" << std::endl;
+    int remaining_error = calc_adoptable_error(level, expected_error, book_depth, root_board.n_discs());
     std::cerr << "remaining error " << remaining_error << std::endl;
     uint8_t date = INIT_DATE;
     transposition_table.reset_date();
@@ -172,6 +188,93 @@ inline void book_widen(Board root_board, int level, const int book_depth, int ex
     root_board.copy(board_copy);
     transposition_table.reset_date();
     book.save_bin(book_file, book_bak);
-    std::cerr << "book learn finished " << g << std::endl;
+    std::cerr << "book widen finished value " << g << " time " << ms_to_time(tim() - all_strt) << std::endl;
+    *book_learning = false;
+}
+
+/*
+    @brief Deepen a book recursively
+
+    This function deepen the book.
+    Register new boards to the book automatically.
+
+    @param board                board to solve
+    @param level                level to search
+    @param book_depth           depth of the book
+    @param expected_error       expected error of search set by users
+    @param board_copy           board pointer for screen drawing
+    @param player               player information for screen drawing
+    @param strt_tim             last saved time for auto-saving
+    @param book_file            book file name
+    @param book_bak             book backup file name
+
+    @return a score of the board
+*/
+int book_deepen_search(Board board, int level, const int book_depth, int expected_error, Board *board_copy, int *player, uint64_t *strt_tim, std::string book_file, std::string book_bak, uint8_t *date){
+    if (!global_searching)
+        return SCORE_UNDEFINED;
+    if (tim() - *strt_tim > AUTO_BOOK_SAVE_TIME){
+        book.save_bin(book_file, book_bak);
+        *strt_tim = tim();
+    }
+    int g, v = SCORE_UNDEFINED;
+    if (board.is_end())
+        return -book.get(&board);
+    if (board.n_discs() >= 4 + book_depth)
+        return -book.get(&board);
+    uint64_t legal = board.get_legal();
+    if (legal == 0ULL){
+        board.pass();
+        *player ^= 1;
+            g = -book_deepen_search(board, level, book_depth, expected_error, board_copy, player, strt_tim, book_file, book_bak, date);
+        *player ^= 1;
+        board.pass();
+        return g;
+    }
+    std::vector<int> best_moves = book.get_all_best_moves(&board);
+    int book_val = -book.get(&board);
+    if (best_moves.size() == 0)
+        return book_widen_search(board, level, book_depth, book_val, expected_error, calc_adoptable_error(level, book_val, book_depth, board.n_discs()), board_copy, player, strt_tim, book_file, book_bak, date);
+    Flip flip;
+    for (int policy: best_moves){
+        calc_flip(&flip, &board, (uint_fast8_t)policy);
+        board.move_board(&flip);
+            g = -book_deepen_search(board, level, book_depth, expected_error, board_copy, player, strt_tim, book_file, book_bak, date);
+        board.undo_board(&flip);
+        v = std::max(v, g);
+    }
+    if (global_searching && v >= -HW2 && v <= HW2 && book_val != v){
+        std::cerr << "depth " << board.n_discs() - 4 << " RW value " << v << std::endl;
+        book.reg(board, -v);
+    }
+    return v;
+}
+
+/*
+    @brief Deepen a book
+
+    Users use mainly this function.
+
+    @param root_board           the root board to register
+    @param level                level to search
+    @param book_depth           depth of the book
+    @param expected_error       expected error of search set by users
+    @param board_copy           board pointer for screen drawing
+    @param player               player information for screen drawing
+    @param book_file            book file name
+    @param book_bak             book backup file name
+    @param book_learning        a flag for screen drawing
+*/
+inline void book_deepen(Board root_board, int level, const int book_depth, int expected_error, Board *board_copy, int *player, std::string book_file, std::string book_bak, bool *book_learning){
+    uint64_t strt_tim = tim();
+    uint64_t all_strt = strt_tim;
+    std::cerr << "book deepen started" << std::endl;
+    uint8_t date = INIT_DATE;
+    transposition_table.reset_date();
+    int g = book_deepen_search(root_board, level, book_depth, expected_error, board_copy, player, &strt_tim, book_file, book_bak, &date);
+    root_board.copy(board_copy);
+    transposition_table.reset_date();
+    book.save_bin(book_file, book_bak);
+    std::cerr << "book deepen finished value " << g << " time " << ms_to_time(tim() - all_strt) << std::endl;
     *book_learning = false;
 }
