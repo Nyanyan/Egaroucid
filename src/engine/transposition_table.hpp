@@ -30,17 +30,6 @@ constexpr size_t TRANSPOSITION_TABLE_STACK_SIZE = hash_sizes[DEFAULT_HASH_LEVEL]
 #define INIT_DATE 1
 
 /*
-    @brief Calculate the reliability
-
-    @param t                    probability of MPC (Multi-ProbCut)
-    @param d                    depth of the search
-    @return reliability (strength)
-*/
-inline int data_strength(const uint_fast8_t mpc_level, const int d){
-    return (mpc_level << 7) + d;
-}
-
-/*
     @brief Hash data
 
     @param level
