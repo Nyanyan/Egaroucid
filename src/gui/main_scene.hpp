@@ -82,12 +82,20 @@ public:
 
         // hash resize
         if (getData().menu_elements.hash_level != global_hash_level) {
-            stop_calculating();
-            if (!hash_resize(global_hash_level, getData().menu_elements.hash_level, true)){
-                std::cerr << "hash resize failed. use former level" << std::endl;
-                getData().menu_elements.hash_level = global_hash_level;
-            }
-            resume_calculating();
+			int n_hash_level = getData().menu_elements.hash_level;
+			if (n_hash_level != global_hash_level) {
+				stop_calculating();
+				if (!hash_resize(global_hash_level, n_hash_level, true)) {
+					std::cerr << "hash resize failed. use default level" << std::endl;
+					hash_resize(DEFAULT_HASH_LEVEL, DEFAULT_HASH_LEVEL, true);
+					getData().menu_elements.hash_level = DEFAULT_HASH_LEVEL;
+					global_hash_level = DEFAULT_HASH_LEVEL;
+				}
+				else {
+					global_hash_level = n_hash_level;
+				}
+				resume_calculating();
+			}
         }
 
         // init
@@ -680,7 +688,7 @@ private:
         title.push(menu_e);
         menu_e.init_bar(language.get("settings", "thread", "thread"), &menu_elements->n_threads, menu_elements->n_threads, 1, 32);
         title.push(menu_e);
-        menu_e.init_bar(language.get("settings", "hash_level"), &menu_elements->hash_level, menu_elements->hash_level, DEFAULT_HASH_LEVEL, MAX_HASH_LEVEL);
+        menu_e.init_bar(language.get("settings", "hash_level"), &menu_elements->hash_level, menu_elements->hash_level, MIN_HASH_LEVEL, MAX_HASH_LEVEL);
         title.push(menu_e);
 
         menu_e.init_check(language.get("settings", "play", "ai_put_black"), &menu_elements->ai_put_black, menu_elements->ai_put_black);

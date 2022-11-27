@@ -16,6 +16,7 @@
     @brief definition of maximum hash level
 */
 #define N_HASH_LEVEL 30
+#define MIN_HASH_LEVEL 23
 #define DEFAULT_HASH_LEVEL 25
 #define MAX_HASH_LEVEL 27
 

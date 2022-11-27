@@ -1,4 +1,4 @@
-/*
+﻿/*
     Egaroucid Project
 
     @file transposition_table.hpp
@@ -275,7 +275,11 @@ class Transposition_table{
         */
         inline bool resize(int hash_level){
             size_t n_table_size = hash_sizes[hash_level] + TRANSPOSITION_TABLE_N_LOOP - 1;
-            free(table_heap);
+            table_size = 0;
+			if (table_heap != nullptr) {
+				free(table_heap);
+				table_heap = nullptr;
+			}
             if (n_table_size > TRANSPOSITION_TABLE_STACK_SIZE){
                 table_heap = (Hash_node*)malloc(sizeof(Hash_node) * (n_table_size - TRANSPOSITION_TABLE_STACK_SIZE));
                 if (table_heap == nullptr)
@@ -293,8 +297,10 @@ class Transposition_table{
             if (thread_pool.size() == 0){
                 for (size_t i = 0; i < std::min(table_size, (size_t)TRANSPOSITION_TABLE_STACK_SIZE); ++i)
                     table_stack[i].init();
-                for (size_t i = 0; i < table_size - (size_t)TRANSPOSITION_TABLE_STACK_SIZE; ++i)
-                    table_heap[i].init();
+                if (table_size > TRANSPOSITION_TABLE_STACK_SIZE){
+                    for (size_t i = 0; i < table_size - (size_t)TRANSPOSITION_TABLE_STACK_SIZE; ++i)
+                        table_heap[i].init();
+                }
             } else{
                 int thread_size = thread_pool.size();
                 size_t delta = (std::min(table_size, (size_t)TRANSPOSITION_TABLE_STACK_SIZE) + thread_size - 1) / thread_size;
@@ -326,8 +332,10 @@ class Transposition_table{
             if (thread_pool.size() == 0){
                 for (size_t i = 0; i < std::min(table_size, (size_t)TRANSPOSITION_TABLE_STACK_SIZE); ++i)
                     table_stack[i].data.reset_date();
-                for (size_t i = 0; i < table_size - (size_t)TRANSPOSITION_TABLE_STACK_SIZE; ++i)
-                    table_heap[i].data.reset_date();
+                if (table_size > TRANSPOSITION_TABLE_STACK_SIZE){
+                    for (size_t i = 0; i < table_size - (size_t)TRANSPOSITION_TABLE_STACK_SIZE; ++i)
+                        table_heap[i].data.reset_date();
+                }
             } else{
                 int thread_size = thread_pool.size();
                 size_t delta = (std::min(table_size, (size_t)TRANSPOSITION_TABLE_STACK_SIZE) + thread_size - 1) / thread_size;
