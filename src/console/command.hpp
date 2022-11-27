@@ -264,4 +264,6 @@ void check_command(Board_info *board, State *state, Options *options){
         setboard(board, arg);
     else if (cmd_id == CMD_ID_LEVEL)
         set_level(options, arg);
+    else if (cmd_id == CMD_ID_LEVELINFO)
+        print_level_info();
 }
