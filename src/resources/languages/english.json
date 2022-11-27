@@ -160,7 +160,8 @@
             "Calculating never ends if level is too high",
             "Click 'Stop Calculating' to terminate AI",
             "You can use Enter/Esc as shortcuts",
-            "Move forward/backward with mouse buttons"
+            "Move forward/backward with mouse buttons",
+            "Increase Hash Level to use more memory"
         ]
     }
 }
