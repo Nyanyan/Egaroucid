@@ -462,7 +462,12 @@ private:
 
     void menu_help() {
         if (getData().menu_elements.website) {
-            System::LaunchBrowser(U"https://www.egaroucid.nyanyan.dev/");
+			if (language.get("lang_name") == U"日本語") {
+				System::LaunchBrowser(U"https://www.egaroucid.nyanyan.dev/ja/");
+			}
+			else {
+				System::LaunchBrowser(U"https://www.egaroucid.nyanyan.dev/en/");
+			}
         }
         if (getData().menu_elements.bug_report) {
             System::LaunchBrowser(U"https://docs.google.com/forms/d/e/1FAIpQLSd6ML1T1fc707luPEefBXuImMnlM9cQP8j-YHKiSyFoS-8rmQ/viewform?usp=sf_link");
@@ -946,6 +951,11 @@ private:
                     Vec2 pos = Cursor::Pos();
                     pos.x += 20;
                     RectF background_rect = getData().fonts.font_bold(opening_name).region(15, pos);
+					if (background_rect.y + background_rect.h > WINDOW_SIZE_Y) {
+						double delta = background_rect.y + background_rect.h - WINDOW_SIZE_Y;
+						background_rect.y -= delta;
+						pos.y -= delta;
+					}
                     background_rect.draw(getData().colors.white);
                     getData().fonts.font_bold(opening_name).draw(15, pos, getData().colors.black);
                 }
