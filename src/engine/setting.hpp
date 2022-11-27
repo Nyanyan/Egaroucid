@@ -36,6 +36,9 @@
 // use bit gather optimization
 #define USE_BIT_GATHER_OPTIMIZE true
 
+// MPC pre calculation
+#define USE_MPC_PRE_CALCULATION true
+
 
 /*
     @brief search settings

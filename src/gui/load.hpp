@@ -19,6 +19,9 @@ int init_ai(Settings* settings, const Directories* directories) {
     std::cerr << "there are " << thread_pool.size() << " additional threads" << std::endl;
     bit_init();
     mobility_init();
+    #if USE_MPC_PRE_CALCULATION
+        mpc_init();
+    #endif
     if (!hash_resize(DEFAULT_HASH_LEVEL, settings->hash_level, true)) {
         std::cerr << "hash resize failed. use default setting" << std::endl;
         settings->hash_level = DEFAULT_HASH_LEVEL;
