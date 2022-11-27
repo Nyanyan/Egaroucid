@@ -239,8 +239,12 @@ int book_deepen_search(Board board, int level, const int book_depth, int expecte
     for (int policy: best_moves){
         calc_flip(&flip, &board, (uint_fast8_t)policy);
         board.move_board(&flip);
+        board.copy(board_copy);
+        *player ^= 1;
             g = -book_deepen_search(board, level, book_depth, expected_error, board_copy, player, strt_tim, book_file, book_bak, date);
         board.undo_board(&flip);
+        board.copy(board_copy);
+        *player ^= 1;
         v = std::max(v, g);
     }
     if (global_searching && v >= -HW2 && v <= HW2 && book_val != v){

@@ -437,13 +437,20 @@ private:
     }
 
     void menu_book() {
-        if (getData().menu_elements.book_start_learn) {
+        if (getData().menu_elements.book_start_widen) {
             stop_calculating();
             resume_calculating();
             changing_scene = true;
-            changeScene(U"Learn_book", SCENE_FADE_TIME);
+            changeScene(U"Widen_book", SCENE_FADE_TIME);
             return;
         }
+		if (getData().menu_elements.book_start_deepen) {
+			stop_calculating();
+			resume_calculating();
+			changing_scene = true;
+			changeScene(U"Deepen_book", SCENE_FADE_TIME);
+			return;
+		}
         if (getData().menu_elements.book_import) {
             stop_calculating();
             resume_calculating();
@@ -802,8 +809,10 @@ private:
         side_menu.init_bar(language.get("book", "accept"), &menu_elements->book_learn_error, menu_elements->book_learn_error, 0, 32);
         menu_e.push(side_menu);
         title.push(menu_e);
-        menu_e.init_button(language.get("book", "start_learn"), &menu_elements->book_start_learn);
+        menu_e.init_button(language.get("book", "book_widen"), &menu_elements->book_start_widen);
         title.push(menu_e);
+		menu_e.init_button(language.get("book", "book_deepen"), &menu_elements->book_start_deepen);
+		title.push(menu_e);
 
         menu.push(title);
 

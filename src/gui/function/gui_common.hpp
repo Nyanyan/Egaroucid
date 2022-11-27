@@ -341,7 +341,8 @@ struct Menu_elements {
     bool show_next_move;
 
     // book
-    bool book_start_learn;
+    bool book_start_widen;
+	bool book_start_deepen;
     int book_learn_depth;
     int book_learn_error;
     bool book_import;
@@ -401,7 +402,8 @@ struct Menu_elements {
         show_last_move = settings->show_last_move;
         show_next_move = settings->show_next_move;
 
-        book_start_learn = false;
+        book_start_widen = false;
+		book_start_deepen = false;
         book_learn_depth = settings->book_learn_depth;
         book_learn_error = settings->book_learn_error;
         book_import = false;

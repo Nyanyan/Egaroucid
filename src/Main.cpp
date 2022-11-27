@@ -30,9 +30,9 @@ void Main() {
 	//Scene::SetLetterbox(Color{ 36, 153, 114 });
 	Window::SetTitle(U"Egaroucid {}"_fmt(EGAROUCID_VERSION));
 	System::SetTerminationTriggers(UserAction::NoAction);
-	//Console.open();
+	Console.open();
 	std::stringstream logger_stream;
-	std::cerr.rdbuf(logger_stream.rdbuf());
+	//std::cerr.rdbuf(logger_stream.rdbuf());
 	std::string logger;
 	String logger_String;
 	
@@ -42,7 +42,8 @@ void Main() {
 	scene_manager.add <Main_scene>(U"Main_scene");
 	scene_manager.add <Import_book>(U"Import_book");
 	scene_manager.add <Refer_book>(U"Refer_book");
-	scene_manager.add <Learn_book>(U"Learn_book");
+	scene_manager.add <Widen_book>(U"Widen_book");
+	scene_manager.add <Deepen_book>(U"Deepen_book");
 	scene_manager.add <Import_transcript>(U"Import_transcript");
 	scene_manager.add <Import_board>(U"Import_board");
 	scene_manager.add <Edit_board>(U"Edit_board");

@@ -442,11 +442,14 @@ class Book{
                 calc_flip(&flip, b, cell);
                 nb = b->move_copy(&flip);
                 value = get(&nb);
-                if (max_value < value){
-                    policies.push_back(cell);
-                    max_value = value;
-                } else if (value == max_value)
-                    policies.push_back(cell);
+                if (value != -INF){
+                    if (max_value < value){
+                        max_value = value;
+                        policies.clear();
+                        policies.push_back(cell);
+                    } else if (value == max_value)
+                        policies.push_back(cell);
+                }
             }
             return policies;
         }
