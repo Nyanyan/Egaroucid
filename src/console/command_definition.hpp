@@ -11,6 +11,7 @@
 #pragma once
 #include <string>
 #include <vector>
+#include "console_common.hpp"
 
 #define N_COMMANDS 13
 
@@ -29,11 +30,6 @@
 #define CMD_ID_MODE 12
 
 #define COMMAND_NOT_FOUND -1
-
-#define MODE_HUMAN_AI 0
-#define MODE_AI_HUMAN 1
-#define MODE_AI_AI 2
-#define MODE_HUMAN_HUMAN 3
 
 struct Command_info{
     int id;

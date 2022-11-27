@@ -12,6 +12,7 @@
 #include <iostream>
 #include "./../engine/engine_all.hpp"
 #include "commandline_option.hpp"
+#include "console_common.hpp"
 
 struct Options{
     int level;
@@ -79,7 +80,7 @@ Options get_options(std::vector<Commandline_option> commandline_options){
     if (str != OPTION_NOT_FOUND)
         res.eval_file = str;
     res.nobook = find_commandline_option(commandline_options, ID_NOBOOK) == OPTION_FOUND;
-    res.mode = 0;
+    res.mode = MODE_HUMAN_HUMAN;
     str = find_commandline_option(commandline_options, ID_MODE);
     if (str != OPTION_NOT_FOUND){
         try {
