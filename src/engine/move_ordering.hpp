@@ -47,8 +47,8 @@
 
 #define W_NWS_MOBILITY -14
 #define W_NWS_POTENTIAL_MOBILITY -8
-#define W_NWS_VALUE -14
-#define W_NWS_VALUE_SHALLOW -12
+#define W_NWS_VALUE -16
+#define W_NWS_VALUE_SHALLOW -14
 
 /*
     @brief Flip structure with more information
