@@ -48,10 +48,9 @@ inline uint32_t get_level_write_common(uint8_t date, int depth, uint_fast8_t mpc
 /*
     @brief Hash data
 
-    @param level
-        @param date                 search date (to rewrite old entry)  more important
-        @param depth                depth                                      |
-        @param mpc_level            MPC level                           less important
+    @param date                 search date (to rewrite old entry)  more important
+    @param depth                depth                                      |
+    @param mpc_level            MPC level                           less important
     @param lower                lower bound
     @param upper                upper bound
     @param moves                best moves
@@ -78,7 +77,6 @@ class Hash_data{
             mpc_level = 0;
             depth = 0;
             date = 0;
-            //std::cerr << (int)date << " " << (int)depth << " " << (int)mpc_level << " " << (int)cost << std::endl;
         }
 
         /*
@@ -107,14 +105,13 @@ class Hash_data{
 
             @param d                    depth
             @param ml                   MPC level
-            @param c                    cost
             @param dt                   date
             @param alpha                alpha bound
             @param beta                 beta bound
             @param value                best value
             @param policy               best move
         */
-        inline void reg_new_level(const int d, const uint_fast8_t ml, const uint8_t c, const uint8_t dt, const int alpha, const int beta, const int value, const int policy){
+        inline void reg_new_level(const int d, const uint_fast8_t ml, const uint8_t dt, const int alpha, const int beta, const int value, const int policy){
             if (value < beta)
                 upper = (int8_t)value;
             else
@@ -129,7 +126,6 @@ class Hash_data{
             }
             depth = d;
             mpc_level = ml;
-            //cost = std::max(cost, c);
             date = dt;
         }
 
@@ -140,14 +136,13 @@ class Hash_data{
 
             @param d                    depth
             @param ml                   MPC level
-            @param c                    cost
             @param dt                   date
             @param alpha                alpha bound
             @param beta                 beta bound
             @param value                best value
             @param policy               best move
         */
-        inline void reg_new_data(const int d, const uint_fast8_t ml, const uint8_t c, const uint8_t dt, const int alpha, const int beta, const int value, const int policy){
+        inline void reg_new_data(const int d, const uint_fast8_t ml, const uint8_t dt, const int alpha, const int beta, const int value, const int policy){
             if (value < beta)
                 upper = (int8_t)value;
             else
@@ -163,7 +158,6 @@ class Hash_data{
             moves[1] = TRANSPOSITION_TABLE_UNDEFINED;
             depth = d;
             mpc_level = ml;
-            //cost = c;
             date = dt;
         }
 
@@ -395,7 +389,7 @@ class Transposition_table{
                                 if (node_level == level)
                                     node->data.reg_same_level(alpha, beta, value, policy);
                                 else
-                                    node->data.reg_new_level(depth, search->mpc_level, 0, search->date, alpha, beta, value, policy);
+                                    node->data.reg_new_level(depth, search->mpc_level, search->date, alpha, beta, value, policy);
                                 node->lock.unlock();
                                 return;
                             } else if (node_level < worst_level){
@@ -413,7 +407,7 @@ class Transposition_table{
                     if (worst_node->data.get_level_write() <= level){
                         worst_node->board.player = search->board.player;
                         worst_node->board.opponent = search->board.opponent;
-                        worst_node->data.reg_new_data(depth, search->mpc_level, 0, search->date, alpha, beta, value, policy);
+                        worst_node->data.reg_new_data(depth, search->mpc_level, search->date, alpha, beta, value, policy);
                     }
                 worst_node->lock.unlock();
             }
