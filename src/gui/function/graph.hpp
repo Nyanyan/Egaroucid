@@ -100,17 +100,18 @@ public:
 		Rect rect_100{ info_x, info_y, LEVEL_INFO_WIDTH, LEVEL_INFO_HEIGHT };
 		rect_100.draw(color_100);
 		font(U"100%").draw(font_size, Arg::center(info_x + LEVEL_INFO_WIDTH / 2, info_y + LEVEL_INFO_HEIGHT / 2), level_info_color);
-		bool is_mid_search, use_mpc;
+		bool is_mid_search;
 		int depth;
+		uint_fast8_t mpc_level;
 		double mpct;
 		int first_endsearch_n_moves = -1;
 		for (int x = 0; x < 60; ++x) {
 			int x_coord1 = sx + x * dx + adj_x * x / 60;
 			int x_coord2 = sx + (x + 1) * dx + adj_x * (x + 1) / 60;
 			Rect rect{ x_coord1, sy, x_coord2 - x_coord1, size_y };
-			get_level(level, x, &is_mid_search, &depth, &use_mpc, &mpct);
+			get_level(level, x, &is_mid_search, &depth, &mpc_level);
 			Color color = color_100;
-			int probability = calc_probability(mpct);
+			int probability = SELECTIVITY_PERCENTAGE[mpc_level];
 			if (probability == 81) {
 				color = color_81;
 			}

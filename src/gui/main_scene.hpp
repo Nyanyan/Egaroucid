@@ -39,6 +39,7 @@ private:
     bool need_start_game_button;
     Umigame_status umigame_status;
     bool changing_scene;
+	uint8_t date;
 
 public:
     Main_scene(const InitData& init) : IScene{ init } {
@@ -57,6 +58,7 @@ public:
         start_game_button.init(START_GAME_BUTTON_SX, START_GAME_BUTTON_SY, START_GAME_BUTTON_WIDTH, START_GAME_BUTTON_HEIGHT, START_GAME_BUTTON_RADIUS, language.get("play", "start_game"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
         need_start_game_button_calculation();
         changing_scene = false;
+		date = INIT_DATE;
         std::cerr << "main scene loaded" << std::endl;
     }
 
@@ -617,8 +619,10 @@ private:
                 if (legal) {
                     stop_calculating();
                     resume_calculating();
-                    ai_status.ai_future = std::async(std::launch::async, ai, getData().history_elem.board, getData().menu_elements.level, getData().menu_elements.use_book, true, true);
+                    ai_status.ai_future = std::async(std::launch::async, ai, getData().history_elem.board, getData().menu_elements.level, getData().menu_elements.use_book, true, true, date);
                     ai_status.ai_thinking = true;
+					++date;
+					date = manage_date(date);
                 }
             }
             else if (ai_status.ai_future.valid()) {
@@ -944,11 +948,10 @@ private:
     bool same_level(int l1, int l2, int n_moves) {
         bool m1, m2;
         int d1, d2;
-        bool u1, u2;
-        double t1, t2;
-        get_level(l1, n_moves, &m1, &d1, &u1, &t1);
-        get_level(l2, n_moves, &m2, &d2, &u2, &t2);
-        return m1 == m2 && d1 == d2 && u1 == u2 && t1 == t2;
+		uint_fast8_t ml1, ml2;
+        get_level(l1, n_moves, &m1, &d1, &ml1);
+        get_level(l2, n_moves, &m2, &d2, &ml2);
+        return m1 == m2 && d1 == d2 && ml1 == ml2;
     }
 
     void hint_init_calculating() {
@@ -1018,12 +1021,14 @@ private:
                     board = getData().history_elem.board;
                     calc_flip(&flip, &board, (uint_fast8_t)(HW2_M1 - value_cell.second));
                     board.move_board(&flip);
-                    ai_status.hint_task_stack.emplace_back(std::make_pair(value_cell.second, std::bind(ai_hint, board, ai_status.hint_level, getData().menu_elements.use_book, ai_status.hint_use_multi_thread, false)));
+                    ai_status.hint_task_stack.emplace_back(std::make_pair(value_cell.second, std::bind(ai_hint, board, ai_status.hint_level, getData().menu_elements.use_book, ai_status.hint_use_multi_thread, false, date)));
                 }
             }
             ai_status.hint_n_doing_tasks = 0;
             ai_status.hint_calculating = true;
-            std::cerr << "hint search level " << ai_status.hint_level << " n_tasks " << ai_status.hint_task_stack.size() << " multi_threading " << ai_status.hint_use_multi_thread << std::endl;
+            std::cerr << "hint search level " << ai_status.hint_level << " n_tasks " << ai_status.hint_task_stack.size() << " multi_threading " << ai_status.hint_use_multi_thread << " date " << (int)date << std::endl;
+			++date;
+			date = manage_date(date);
         }
     }
 
@@ -1098,8 +1103,10 @@ private:
             analyze_info.idx = idx++;
             analyze_info.sgn = node.player ? -1 : 1;
             analyze_info.board = node.board;
-            ai_status.analyze_task_stack.emplace_back(std::make_pair(analyze_info, std::bind(ai, node.board, getData().menu_elements.level, getData().menu_elements.use_book, true, true)));
+            ai_status.analyze_task_stack.emplace_back(std::make_pair(analyze_info, std::bind(ai, node.board, getData().menu_elements.level, getData().menu_elements.use_book, true, true, date))); // HACK: no need to update date in analyze
         }
+		++date;
+		date = manage_date(date);
         std::cerr << "analyze " << ai_status.analyze_task_stack.size() << " tasks" << std::endl;
         ai_status.analyzing = true;
         analyze_do_task();
