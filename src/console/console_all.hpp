@@ -16,6 +16,8 @@
 #include "commandline_option.hpp"
 #include "commandline_option_definition.hpp"
 #include "function.hpp"
+#include "gtp_command.hpp"
+#include "gtp_command_definition.hpp"
 #include "info.hpp"
 #include "option.hpp"
 #include "print.hpp"

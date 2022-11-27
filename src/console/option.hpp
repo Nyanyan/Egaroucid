@@ -22,6 +22,7 @@ struct Options{
     std::string eval_file;
     bool nobook;
     int mode;
+    bool gtp;
 };
 
 Options get_options(std::vector<Commandline_option> commandline_options){
@@ -93,5 +94,6 @@ Options get_options(std::vector<Commandline_option> commandline_options){
             std::cerr << "[ERROR] mode argument out of range" << std::endl;
         }
     }
+    res.gtp = find_commandline_option(commandline_options, ID_GTP) == OPTION_FOUND;
     return res;
 }
