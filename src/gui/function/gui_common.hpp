@@ -367,6 +367,7 @@ struct Menu_elements {
     bool convert_180;
     bool convert_blackline;
     bool convert_whiteline;
+	bool cache_clear;
 
     // help
     bool website;
@@ -423,6 +424,7 @@ struct Menu_elements {
         convert_180 = false;
         convert_blackline = false;
         convert_whiteline = false;
+		cache_clear = false;
 
         website = false;
         bug_report = false;

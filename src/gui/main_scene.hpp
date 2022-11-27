@@ -434,6 +434,11 @@ private:
             }
             resume_calculating();
         }
+		if (getData().menu_elements.cache_clear) {
+			stop_calculating();
+			transposition_table.init();
+			resume_calculating();
+		}
     }
 
     void menu_book() {
@@ -765,6 +770,8 @@ private:
         side_menu.init_button(language.get("operation", "convert", "white_line"), &menu_elements->convert_whiteline);
         menu_e.push(side_menu);
         title.push(menu_e);
+		menu_e.init_button(language.get("operation", "cache_clear"), &menu_elements->cache_clear);
+		title.push(menu_e);
 
         menu.push(title);
 
