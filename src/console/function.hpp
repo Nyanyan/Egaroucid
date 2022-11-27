@@ -36,6 +36,7 @@ void solve_problems(std::string file, Options *options, State *state){
     total.nodes = 0;
     total.time = 0;
     while (std::getline(ifs, line)){
+        transposition_table.init();
         setboard(&board, line);
         Search_result res = go_noprint(&board, options, state);
         print_search_result_body(res, options->level);
