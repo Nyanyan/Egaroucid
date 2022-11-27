@@ -20,6 +20,7 @@ void setboard(Board_info *board, std::string board_str);
 Search_result go_noprint(Board_info *board, Options *options, State *state);
 void print_search_result_head();
 void print_search_result_body(Search_result result, int level);
+void go(Board_info *board, Options *options, State *state);
 
 void solve_problems(std::string file, Options *options, State *state){
     std::ifstream ifs(file);
@@ -51,4 +52,18 @@ void execute_special_tasks(){
         tune_move_ordering_end("problem/13_13.txt");
         std::exit(0);
     #endif
+}
+
+bool execute_special_tasks_loop(Board_info *board, State *state, Options *options){
+    if (options->mode == MODE_HUMAN_AI && board->player == WHITE && !board->board.is_end()){
+        go(board, options, state);
+        return true;
+    } else if (options->mode == MODE_AI_HUMAN && board->player == BLACK && !board->board.is_end()){
+        go(board, options, state);
+        return true;
+    } else if (options->mode == MODE_AI_AI && !board->board.is_end()){
+        go(board, options, state);
+        return true;
+    }
+    return false;
 }

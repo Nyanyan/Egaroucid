@@ -21,6 +21,7 @@ struct Options{
     std::string book_file;
     std::string eval_file;
     bool nobook;
+    int mode;
 };
 
 Options get_options(std::vector<Commandline_option> commandline_options){
@@ -36,7 +37,7 @@ Options get_options(std::vector<Commandline_option> commandline_options){
                 std::cerr << "[ERROR] level argument out of range" << std::endl;
             }
         } catch (const std::invalid_argument& e){
-            std::cerr << "[ERROR] level argument invalid" << std::endl;
+            std::cerr << "[ERROR] invalid level" << std::endl;
         } catch (const std::out_of_range& e) {
             std::cerr << "[ERROR] level argument out of range" << std::endl;
         }
@@ -77,5 +78,20 @@ Options get_options(std::vector<Commandline_option> commandline_options){
     if (str != OPTION_NOT_FOUND)
         res.eval_file = str;
     res.nobook = find_commandline_option(commandline_options, ID_NOBOOK) == OPTION_FOUND;
+    res.mode = 0;
+    str = find_commandline_option(commandline_options, ID_MODE);
+    if (str != OPTION_NOT_FOUND){
+        try {
+            res.mode = std::stoi(str);
+            if (res.mode < 0 || 4 <= res.mode){
+                res.mode = 0;
+                std::cerr << "[ERROR] mode argument out of range" << std::endl;
+            }
+        } catch (const std::invalid_argument& e){
+            std::cerr << "[ERROR] invalid mode" << std::endl;
+        } catch (const std::out_of_range& e) {
+            std::cerr << "[ERROR] mode argument out of range" << std::endl;
+        }
+    }
     return res;
 }

@@ -39,7 +39,11 @@ int main(int argc, char* argv[]){
     execute_special_commandline_tasks(commandline_options, &options, &state);
     Board_info board;
     board.reset();
-    while (true)
-        check_command(&board, &state, &options);
+    while (true){
+        print_board_info(&board);
+        std::cout << std::endl;
+        if (!execute_special_tasks_loop(&board, &state, &options))
+            check_command(&board, &state, &options);
+    }
     return 0;
 }

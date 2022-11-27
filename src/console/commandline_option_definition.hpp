@@ -12,7 +12,7 @@
 #include <string>
 #include <vector>
 
-#define N_COMMANDLINE_OPTIONS 11
+#define N_COMMANDLINE_OPTIONS 12
 
 #define ID_VERSION 0
 #define ID_HELP 1
@@ -25,6 +25,7 @@
 #define ID_EVAL_FILE 8
 #define ID_NOBOOK 9
 #define ID_SOLVE 10
+#define ID_MODE 11
 
 struct Commandline_option_info{
     int id;
@@ -44,5 +45,6 @@ const Commandline_option_info commandline_option_data[N_COMMANDLINE_OPTIONS] = {
     {ID_BOOK_FILE,  {"-b", "-book"},                                    "<book_file>",      "Import <book_file> as Egaroucid's book"},
     {ID_EVAL_FILE,  {"-eval", "-evaluation"},                           "<eval_file>",      "Import <eval_file> as Egaroucid's evaluation function"},
     {ID_NOBOOK,     {"-nobook"},                                        "",                 "Run Egaroucid without book"},
-    {ID_SOLVE,      {"-s", "-solve", "-sol"},                           "<problem file>",   "Solve problems"}
+    {ID_SOLVE,      {"-s", "-solve", "-sol"},                           "<problem file>",   "Solve problems written in <problem file>"},
+    {ID_MODE,       {"-m", "-mode"},                                    "<mode>",           "Set mode to <mode> (0: You vs Egaroucid, 1: Egaroucid vs You, 2: Egaroucid vs Egaroucid, 3: You vs You)"}
 };

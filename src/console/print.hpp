@@ -169,15 +169,12 @@ void print_board_info(Board_info *board){
             std::cout << "ply " << board->board.n_discs() - 3 << " " << HW2 - board->board.n_discs() << " empties";
         } else if (y == 4){
             std::cout << COUT_TAB;
-            std::cout << "mode " << board->mode << " ";
-            if (board->mode == MODE_HUMAN_VS_AI)
-                std::cout << "BLACK: Egaroucid  WHITE: You";
-            else if (board->mode == MODE_AI_VS_HUMAN)
-                std::cout << "BLACK: You  WHITE: Egaroucid";
-            else if (board->mode == MODE_AI_VS_AI)
-                std::cout << "BLACK: Egaroucid  WHITE: Egaroucid";
-            else if (board->mode == MODE_HUMAN_VS_HUMAN)
-                std::cout << "BLACK: You  WHITE: You";
+            int black_discs, white_discs;
+            black_discs = board->board.count_player();
+            white_discs = board->board.count_opponent();
+            if (board->player)
+                std::swap(black_discs, white_discs);
+            std::cout << "BLACK: " << black_discs << " WHITE: " << white_discs;
         }
         std::cout << std::endl;
     }

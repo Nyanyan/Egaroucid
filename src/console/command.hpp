@@ -207,15 +207,29 @@ void set_level(Options *options, std::string level_str){
         } else
             std::cerr << "[ERROR] level out of range" << std::endl;
     } catch (const std::invalid_argument& e) {
-        std::cerr << "[ERROR] level invalid argument" << std::endl;
+        std::cerr << "[ERROR] invalid level" << std::endl;
     } catch (const std::out_of_range& e) {
         std::cerr << "[ERROR] level invalid argument" << std::endl;
     }
 }
 
+void set_mode(Options *options, std::string mode_str){
+    try {
+        int mode = std::stoi(mode_str);
+        if (0 <= mode && mode < 4){
+            options->mode = mode;
+            if (options->show_log)
+                std::cerr << "mode set to " << options->mode << std::endl;
+        } else
+            std::cerr << "[ERROR] mode out of range" << std::endl;
+    } catch (const std::invalid_argument& e) {
+        std::cerr << "[ERROR] invalid mode" << std::endl;
+    } catch (const std::out_of_range& e) {
+        std::cerr << "[ERROR] mode invalid argument" << std::endl;
+    }
+}
+
 void check_command(Board_info *board, State *state, Options *options){
-    print_board_info(board);
-    std::cout << std::endl;
     std::string cmd_line = get_command_line();
     std::string cmd, arg;
     split_cmd_arg(cmd_line, &cmd, &arg);
@@ -266,4 +280,6 @@ void check_command(Board_info *board, State *state, Options *options){
         set_level(options, arg);
     else if (cmd_id == CMD_ID_LEVELINFO)
         print_level_info();
+    else if (cmd_id == CMD_ID_MODE)
+        set_mode(options, arg);
 }
