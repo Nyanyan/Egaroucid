@@ -48,6 +48,7 @@
 
 // stability cut
 #define USE_END_SC true
+#define USE_LAST4_SC false
 
 // Multi-ProbCut
 #define USE_MID_MPC true
