@@ -109,7 +109,8 @@
             "vertical": "Rotate 180",
             "white_line": "White Line",
             "black_line": "Black Line"
-        }
+        },
+        "cache_clear": "Cache Clear"
     },
     "info": {
         "black": "Black to Play",

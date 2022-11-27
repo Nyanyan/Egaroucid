@@ -109,7 +109,8 @@
             "vertical": "180度",
             "white_line": "ホワイトライン",
             "black_line": "ブラックライン"
-        }
+        },
+        "cache_clear": "キャッシュクリア"
     },
     "info": {
         "black": "黒番",
