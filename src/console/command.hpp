@@ -199,7 +199,7 @@ void setboard(Board_info *board, std::string board_str){
 
 void set_level(Options *options, std::string level_str){
     try {
-        int level = stoi(level_str);
+        int level = std::stoi(level_str);
         if (0 <= level && level < N_LEVEL){
             options->level = level;
             if (options->show_log)
