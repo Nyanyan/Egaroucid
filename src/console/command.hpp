@@ -32,6 +32,7 @@ std::string get_command_line(){
 void split_cmd_arg(std::string cmd_line, std::string *cmd, std::string *arg){
     std::istringstream iss(cmd_line);
     iss >> *cmd;
+    iss.get();
     std::getline(iss, *arg);
 }
 

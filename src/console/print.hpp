@@ -28,7 +28,7 @@
 #define SEARCH_RESULT_TAB_SIZE 15
 
 void print_version(){
-    std::cout << "Egaroucid " << EGAROUCID_VERSION << std::endl;
+    std::cout << EGAROUCID_NAME << " " << EGAROUCID_VERSION << std::endl;
     std::cout << COUT_TAB << std::left << std::setw(VERSION_TAB_SIZE) << "@date ";
     std::cout << EGAROUCID_DATE << std::endl;
     std::cout << COUT_TAB << std::left << std::setw(VERSION_TAB_SIZE) << "@author ";
