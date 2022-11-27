@@ -223,7 +223,7 @@ inline int last4_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
     #if USE_SEARCH_STATISTICS
         ++search->n_nodes_discs[search->n_discs];
     #endif
-    #if USE_END_SC
+    #if USE_END_SC && false
         int stab_res = stability_cut_nws(search, &alpha);
         if (stab_res != SCORE_UNDEFINED){
             return stab_res;
