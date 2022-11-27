@@ -12,7 +12,7 @@
 #include <string>
 #include <vector>
 
-#define N_COMMANDS 10
+#define N_COMMANDS 11
 
 #define CMD_ID_HELP 0
 #define CMD_ID_EXIT 1
@@ -24,6 +24,7 @@
 #define CMD_ID_REDO 7
 #define CMD_ID_GO 8
 #define CMD_ID_SETBOARD 9
+#define CMD_ID_LEVEL 10
 
 #define COMMAND_NOT_FOUND -1
 
@@ -44,5 +45,6 @@ const Command_info command_data[N_COMMANDS] = {
     {CMD_ID_UNDO,       {"undo"},                                           "<moves>",          "Undo your last <moves> moves. if <moves> is empty, undo last 1 move."},
     {CMD_ID_REDO,       {"redo"},                                           "<moves>",          "Redo your last <moves> moves. if <moves> is empty, redo last 1 move."},
     {CMD_ID_GO,         {"go"},                                             "",                 "Egaroucid put a disc."},
-    {CMD_ID_SETBOARD,   {"setboard"},                                       "<board>",          "Set position to <board>. `B`, `W`, `-` each represents black, white, empty."}
+    {CMD_ID_SETBOARD,   {"setboard"},                                       "<board>",          "Set position to <board>. `B`, `W`, `-` each represents black, white, empty."},
+    {CMD_ID_LEVEL,      {"level"},                                          "<level>",          "Set level to <level>"}
 };

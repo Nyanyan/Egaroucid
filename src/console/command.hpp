@@ -197,6 +197,22 @@ void setboard(Board_info *board, std::string board_str){
     board->ply_vec = 0;
 }
 
+void set_level(Options *options, std::string level_str){
+    try {
+        int level = stoi(level_str);
+        if (0 <= level && level < N_LEVEL){
+            options->level = level;
+            if (options->show_log)
+                std::cerr << "level set to " << options->level << std::endl;
+        } else
+            std::cerr << "[ERROR] level out of range" << std::endl;
+    } catch (const std::invalid_argument& e) {
+        std::cerr << "[ERROR] level invalid argument" << std::endl;
+    } catch (const std::out_of_range& e) {
+        std::cerr << "[ERROR] level invalid argument" << std::endl;
+    }
+}
+
 void check_command(Board_info *board, State *state, Options *options){
     print_board_info(board);
     std::cout << std::endl;
@@ -246,4 +262,6 @@ void check_command(Board_info *board, State *state, Options *options){
         go(board, options, state);
     else if (cmd_id == CMD_ID_SETBOARD)
         setboard(board, arg);
+    else if (cmd_id == CMD_ID_LEVEL)
+        set_level(options, arg);
 }
