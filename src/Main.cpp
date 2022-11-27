@@ -30,9 +30,9 @@ void Main() {
 	//Scene::SetLetterbox(Color{ 36, 153, 114 });
 	Window::SetTitle(U"Egaroucid {}"_fmt(EGAROUCID_VERSION));
 	System::SetTerminationTriggers(UserAction::NoAction);
-	Console.open();
+	//Console.open();
 	std::stringstream logger_stream;
-	//std::cerr.rdbuf(logger_stream.rdbuf());
+	std::cerr.rdbuf(logger_stream.rdbuf());
 	std::string logger;
 	String logger_String;
 	
