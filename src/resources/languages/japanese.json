@@ -39,8 +39,8 @@
     "book": {
         "book": "Book",
         "right_click_to_modify": "右クリックで編集",
-        "book_learn": "Book学習",
-        "start_learn": "学習開始",
+        "book_widen": "Book拡張",
+        "book_deepen": "Book深化",
         "learning": "学習中...",
         "stop_learn": "学習停止",
         "stopping": "終了中...",

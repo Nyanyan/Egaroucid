@@ -39,8 +39,8 @@
     "book": {
         "book": "Book",
         "right_click_to_modify": "Right-click to Change",
-        "book_learn": "Expand Book",
-        "start_learn": "Start Expand",
+        "book_widen": "Book Widen",
+        "book_deepen": "Book Deepen",
         "learning": "Calculating...",
         "stop_learn": "Stop",
         "stopping": "Terminating...",
