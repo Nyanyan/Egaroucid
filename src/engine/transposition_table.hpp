@@ -56,21 +56,12 @@ inline int data_strength(const uint_fast8_t mpc_level, const int d){
 class Hash_data{
     private:
         union{
-            #ifdef __BIG_ENDIAN__
-                struct{
-                    uint8_t date;
-                    uint8_t depth;
-                    uint8_t mpc_level;
-                    uint8_t cost;
-                } level_data;
-            #else
-                struct{
-                    uint8_t cost;
-                    uint8_t mpc_level;
-                    uint8_t depth;
-                    uint8_t date;
-                } level_data;
-            #endif
+            struct{ // for little endianness
+                uint8_t cost;
+                uint8_t mpc_level;
+                uint8_t depth;
+                uint8_t date;
+            } level_data;
             uint32_t level;
         } level;
         int8_t lower;
