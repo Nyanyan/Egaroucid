@@ -51,17 +51,17 @@ constexpr double SELECTIVITY_MPCT[N_SELECTIVITY_LEVEL] = {0.77, 0.88, 1.64, 2.05
     @brief structure of level definition
 
     @param mid_lookahead        lookahead depth in midgame
-    @param mid_mpc_level             MPC (Multi-ProbCut) constant for midgame search
+    @param mid_mpc_level        MPC (Multi-ProbCut) constant for midgame search
     @param complete0            lookahead depth in endgame search 1/5
-    @param complete0_mpc_level       MPC (Multi-ProbCut) constant for endgame search 1/5
+    @param complete0_mpc_level  MPC (Multi-ProbCut) constant for endgame search 1/5
     @param complete1            lookahead depth in endgame search 2/5
-    @param complete1_mpc_level       MPC (Multi-ProbCut) constant for endgame search 2/5
+    @param complete1_mpc_level  MPC (Multi-ProbCut) constant for endgame search 2/5
     @param complete2            lookahead depth in endgame search 3/5
-    @param complete2_mpc_level       MPC (Multi-ProbCut) constant for endgame search 3/5
+    @param complete2_mpc_level  MPC (Multi-ProbCut) constant for endgame search 3/5
     @param complete3            lookahead depth in endgame search 4/5
-    @param complete3_mpc_level       MPC (Multi-ProbCut) constant for endgame search 4/5
+    @param complete3_mpc_level  MPC (Multi-ProbCut) constant for endgame search 4/5
     @param complete4            lookahead depth in endgame search 5/5
-    @param complete5_mpc_level       MPC (Multi-ProbCut) constant for endgame search 5/5
+    @param complete5_mpc_level  MPC (Multi-ProbCut) constant for endgame search 5/5
 */
 struct Level{
     uint_fast8_t mid_lookahead;
