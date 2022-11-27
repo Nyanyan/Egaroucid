@@ -85,6 +85,6 @@ void gtp_check_command(Board_info *board, State *state, Options *options){
     else if (cmd_id == GTP_CMD_ID_QUIT){
         std::cout << str_gtp_head(id) << GTP_ENDL;
         close(state, options);
-    } else if (cmd_id == GTP_CMD_ID_VERSION)
+    } else if (cmd_id == GTP_CMD_ID_GTP_VERSION)
         print_gtp_version(id);
 }
