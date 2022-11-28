@@ -548,7 +548,6 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
         return SCORE_UNDEFINED;
     if (search->n_discs >= HW2 - END_FAST_DEPTH)
         return nega_alpha_end_fast_nws(search, alpha, skipped, false, searching);
-    uint64_t strt_nodes = search->n_nodes;
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
         ++search->n_nodes_discs[search->n_discs];
@@ -684,6 +683,6 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
         #endif
     }
     if (*searching && global_searching && search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD)
-        transposition_table.reg(search, hash_code, HW2 - search->n_discs, calc_cost(search->n_nodes - strt_nodes), alpha, alpha + 1, v, best_move);
+        transposition_table.reg(search, hash_code, HW2 - search->n_discs, alpha, alpha + 1, v, best_move);
     return v;
 }

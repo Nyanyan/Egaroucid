@@ -9,18 +9,13 @@
 */
 
 #pragma once
-#include <future>
-#ifdef _MSC_VER
-    #include <intrin.h>
-#else
-    #include <x86intrin.h>
-#endif
 #include "setting.hpp"
 #include "common.hpp"
 #include "board.hpp"
 #include "thread_pool.hpp"
 #include "spinlock.hpp"
 #include "search.hpp"
+#include <future>
 
 /*
     @brief constants
@@ -42,34 +37,28 @@ inline uint32_t get_level_read_common(int depth, uint_fast8_t mpc_level){
     return ((uint32_t)depth << 8) | mpc_level;
 }
 
-inline uint32_t get_level_write_common(uint8_t date, uint8_t depth, uint8_t mpc_level, uint8_t cost){
-    return ((uint32_t)date << 24) | ((uint32_t)cost << 16) | ((uint32_t)mpc_level << 8) | depth;
+inline uint32_t get_level_write_common(uint8_t date, uint8_t depth, uint8_t mpc_level){
+    return ((uint32_t)date << 16) | ((uint32_t)depth << 8) | mpc_level;
 }
 
-inline uint32_t get_level_write_common(uint8_t date, int depth, uint_fast8_t mpc_level, uint8_t cost){
-    return ((uint32_t)date << 24) | ((uint32_t)cost << 16) | ((uint32_t)mpc_level << 8) | depth;
-}
-
-inline uint8_t calc_cost(uint64_t x){
-    return 63U - __builtin_clzll(x);
+inline uint32_t get_level_write_common(uint8_t date, int depth, uint_fast8_t mpc_level){
+    return ((uint32_t)date << 16) | ((uint32_t)depth << 8) | mpc_level;
 }
 
 /*
     @brief Hash data
 
     @param date                 search date (to rewrite old entry)  more important
-    @param cost                 search cost (log2(node count))            |
-    @param mpc_level            MPC level                                 |
-    @param depth                depth                               less important (depth is more important than mpc_level when reading)
+    @param depth                depth                                      |
+    @param mpc_level            MPC level                           less important
     @param lower                lower bound
     @param upper                upper bound
     @param moves                best moves
 */
 class Hash_data{
     private:
-        uint8_t depth;
         uint8_t mpc_level;
-        uint8_t cost;
+        uint8_t depth;
         uint8_t date;
         int8_t lower;
         int8_t upper;
@@ -85,9 +74,8 @@ class Hash_data{
             upper = SCORE_MAX;
             moves[0] = TRANSPOSITION_TABLE_UNDEFINED;
             moves[1] = TRANSPOSITION_TABLE_UNDEFINED;
-            depth = 0;
             mpc_level = 0;
-            cost = 0;
+            depth = 0;
             date = 0;
         }
 
@@ -118,13 +106,12 @@ class Hash_data{
             @param d                    depth
             @param ml                   MPC level
             @param dt                   date
-            @param c                    cost
             @param alpha                alpha bound
             @param beta                 beta bound
             @param value                best value
             @param policy               best move
         */
-        inline void reg_new_level(const int d, const uint_fast8_t ml, const uint8_t dt, const uint8_t c, const int alpha, const int beta, const int value, const int policy){
+        inline void reg_new_level(const int d, const uint_fast8_t ml, const uint8_t dt, const int alpha, const int beta, const int value, const int policy){
             if (value < beta)
                 upper = (int8_t)value;
             else
@@ -140,7 +127,6 @@ class Hash_data{
             depth = d;
             mpc_level = ml;
             date = dt;
-            cost = std::max(cost, c);
         }
 
         /*
@@ -151,13 +137,12 @@ class Hash_data{
             @param d                    depth
             @param ml                   MPC level
             @param dt                   date
-            @param c                    cost
             @param alpha                alpha bound
             @param beta                 beta bound
             @param value                best value
             @param policy               best move
         */
-        inline void reg_new_data(const int d, const uint_fast8_t ml, const uint8_t dt, const uint8_t c, const int alpha, const int beta, const int value, const int policy){
+        inline void reg_new_data(const int d, const uint_fast8_t ml, const uint8_t dt, const int alpha, const int beta, const int value, const int policy){
             if (value < beta)
                 upper = (int8_t)value;
             else
@@ -174,7 +159,6 @@ class Hash_data{
             depth = d;
             mpc_level = ml;
             date = dt;
-            cost = c;
         }
 
         /*
@@ -192,7 +176,7 @@ class Hash_data{
             @return level
         */
         inline uint32_t get_level_write(){
-            return get_level_write_common(date, depth, mpc_level, cost);
+            return get_level_write_common(date, depth, mpc_level);
         }
 
         /*
@@ -383,32 +367,35 @@ class Transposition_table{
             @param search               Search information
             @param hash                 hash code
             @param depth                depth
-            @param cost                 cost
             @param alpha                alpha bound
             @param beta                 beta bound
             @param value                best score
             @param policy               best move
             @param cost                 search cost (log2(nodes))
         */
-        inline void reg(const Search *search, uint32_t hash, const int depth, const uint8_t cost, int alpha, int beta, int value, int policy){
+        inline void reg(const Search *search, uint32_t hash, const int depth, int alpha, int beta, int value, int policy){
             Hash_node *node = get_node(hash);
             Hash_node *worst_node = nullptr;
-            const uint32_t level = get_level_write_common(search->date, depth, search->mpc_level, cost);
+            //const uint32_t level = ((uint32_t)search->date << 24) | ((uint32_t)cost << 16) | ((uint32_t)search->mpc_level << 8) | depth;
+            //const uint32_t level = ((uint32_t)search->date << 24) | ((uint32_t)depth << 16) | ((uint32_t)search->mpc_level << 8);
+            const uint32_t level = get_level_write_common(search->date, depth, search->mpc_level);
             uint32_t node_level, worst_level = 0xFFFFFFFFU;
             for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
                 if (node->data.get_level_write() <= level){
                     node->lock.lock();
                         node_level = node->data.get_level_write();
-                        if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
-                            if (node_level == level)
-                                node->data.reg_same_level(alpha, beta, value, policy);
-                            else if (node_level < level)
-                                node->data.reg_new_level(depth, search->mpc_level, search->date, cost, alpha, beta, value, policy);
-                            node->lock.unlock();
-                            return;
-                        } else if (node_level < worst_level){
-                            worst_level = node_level;
-                            worst_node = node;
+                        if (node_level <= level){
+                            if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
+                                if (node_level == level)
+                                    node->data.reg_same_level(alpha, beta, value, policy);
+                                else
+                                    node->data.reg_new_level(depth, search->mpc_level, search->date, alpha, beta, value, policy);
+                                node->lock.unlock();
+                                return;
+                            } else if (node_level < worst_level){
+                                worst_level = node_level;
+                                worst_node = node;
+                            }
                         }
                     node->lock.unlock();
                 }
@@ -420,7 +407,7 @@ class Transposition_table{
                     if (worst_node->data.get_level_write() <= level){
                         worst_node->board.player = search->board.player;
                         worst_node->board.opponent = search->board.opponent;
-                        worst_node->data.reg_new_data(depth, search->mpc_level, search->date, 0, alpha, beta, value, policy);
+                        worst_node->data.reg_new_data(depth, search->mpc_level, search->date, alpha, beta, value, policy);
                     }
                 worst_node->lock.unlock();
             }

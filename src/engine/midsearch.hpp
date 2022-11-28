@@ -174,7 +174,6 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, c
                     return mid_evaluate_diff(search);
             #endif
         }
-        uint64_t strt_nodes = search->n_nodes;
         ++search->n_nodes;
         #if USE_SEARCH_STATISTICS
             ++search->n_nodes_discs[search->n_discs];
@@ -276,7 +275,7 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, c
             }
         }
         if (*searching && global_searching)
-            transposition_table.reg(search, hash_code, depth, calc_cost(search->n_nodes - strt_nodes), first_alpha, beta, v, best_move);
+            transposition_table.reg(search, hash_code, depth, first_alpha, beta, v, best_move);
         return v;
     }
 #endif
@@ -328,7 +327,6 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
                 return mid_evaluate_diff(search);
         #endif
     }
-    uint64_t strt_nodes = search->n_nodes;
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
         ++search->n_nodes_discs[search->n_discs];
@@ -442,7 +440,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
         }
     }
     if (*searching && global_searching)
-        transposition_table.reg(search, hash_code, depth, calc_cost(search->n_nodes - strt_nodes), first_alpha, beta, v, best_move);
+        transposition_table.reg(search, hash_code, depth, first_alpha, beta, v, best_move);
     return v;
 }
 
@@ -464,7 +462,6 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
 */
 std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, bool is_end_search, const bool is_main_search, const std::vector<Clog_result> clogs){
     bool searching = true;
-    uint64_t strt_nodes = search->n_nodes;
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
         ++search->n_nodes_discs[search->n_discs];
@@ -579,6 +576,6 @@ std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int de
         }
     }
     if (global_searching)
-        transposition_table.reg(search, hash_code, depth, calc_cost(search->n_nodes - strt_nodes), first_alpha, beta, v, best_move);
+        transposition_table.reg(search, hash_code, depth, first_alpha, beta, v, best_move);
     return std::make_pair(v, best_move);
 }
