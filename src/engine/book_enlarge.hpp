@@ -140,13 +140,13 @@ int book_widen_search(Board board, int level, const int book_depth, int expected
                 if (global_searching && g >= alpha && g <= HW2){
                     //n_remaining_error = remaining_error - std::max(0, best_move.value - g);
                     n_remaining_error = remaining_error - std::max(0, v - g);
-                    if (-HW2 <= expected_value && expected_value <= HW2)
-                        n_remaining_error -= std::max(0, expected_value - g);
-                    n_expected_value = std::max(n_expected_value, v);
-                    g = -book_widen_search(board, level, book_depth, -n_expected_value, expected_error, n_remaining_error, board_copy, player, strt_tim, book_file, book_bak, date);
-                    if (global_searching && g >= -HW2 && g <= HW2){
-                        v = std::max(v, g);
-                        std::cerr << "depth " << board.n_discs() - 4 << " AD value " << g << " pre " << best_move.value << " best " << v << " expected " << expected_value << " remaining error " << n_remaining_error << std::endl;
+                    if (n_remaining_error >= 0){
+                        n_expected_value = std::max(n_expected_value, v);
+                        g = -book_widen_search(board, level, book_depth, -n_expected_value, expected_error, n_remaining_error, board_copy, player, strt_tim, book_file, book_bak, date);
+                        if (global_searching && g >= -HW2 && g <= HW2){
+                            v = std::max(v, g);
+                            std::cerr << "depth " << board.n_discs() - 4 << " AD value " << g << " pre " << best_move.value << " best " << v << " expected " << expected_value << " remaining error " << n_remaining_error << std::endl;
+                        }
                     }
                 }
             board.undo_board(&flip);
@@ -188,7 +188,7 @@ inline void book_widen(Board root_board, int level, const int book_depth, int ex
     root_board.copy(board_copy);
     transposition_table.reset_date();
     book.save_bin(book_file, book_bak);
-    std::cerr << "book widen finished value " << g << " time " << ms_to_time(tim() - all_strt) << std::endl;
+    std::cerr << "book widen finished value " << g << " time " << ms_to_time_short(tim() - all_strt) << std::endl;
     *book_learning = false;
 }
 
@@ -279,6 +279,6 @@ inline void book_deepen(Board root_board, int level, const int book_depth, int e
     root_board.copy(board_copy);
     transposition_table.reset_date();
     book.save_bin(book_file, book_bak);
-    std::cerr << "book deepen finished value " << g << " time " << ms_to_time(tim() - all_strt) << std::endl;
+    std::cerr << "book deepen finished value " << g << " time " << ms_to_time_short(tim() - all_strt) << std::endl;
     *book_learning = false;
 }
