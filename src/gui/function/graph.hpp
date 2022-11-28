@@ -25,8 +25,8 @@ constexpr double graph_transparency = 1.0;
 
 constexpr Color color_81 = Color(227, 88, 72);
 constexpr Color color_95 = Color(240, 135, 20);
-constexpr Color color_98 = Color(205, 170, 36);
-constexpr Color color_99 = Color(176, 210, 88);
+constexpr Color color_98 = Color(241, 196, 15);
+constexpr Color color_99 = Color(46, 204, 113);
 constexpr Color color_100 = Color(51, 161, 255);
 constexpr Color midsearch_color = Color(51, 51, 51);
 constexpr Color endsearch_color = Palette::White;
