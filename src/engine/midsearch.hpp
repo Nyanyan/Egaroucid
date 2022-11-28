@@ -414,6 +414,12 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
         int idx = 0;
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
             calc_flip(&move_list[idx++].flip, &search->board, cell);
+        #if USE_MID_ETC
+            if (search->n_discs - search->strt_n_discs < MID_ETC_DEPTH){
+                if (etc(search, move_list, depth, &alpha, &beta, &v))
+                    return v;
+            }
+        #endif
         move_list_evaluate(search, move_list, depth, alpha, beta, is_end_search, searching);
         for (int move_idx = 0; move_idx < canput; ++move_idx){
             swap_next_best_move(move_list, move_idx, canput);

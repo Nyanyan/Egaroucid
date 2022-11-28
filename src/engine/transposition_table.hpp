@@ -15,6 +15,7 @@
 #include "thread_pool.hpp"
 #include "spinlock.hpp"
 #include "search.hpp"
+#include "move_ordering.hpp"
 #include <future>
 
 /*
@@ -24,6 +25,8 @@
 #define TRANSPOSITION_TABLE_N_LOOP 3
 constexpr size_t TRANSPOSITION_TABLE_STACK_SIZE = hash_sizes[DEFAULT_HASH_LEVEL] + TRANSPOSITION_TABLE_N_LOOP - 1;
 #define N_TRANSPOSITION_MOVES 2
+
+#define MID_ETC_DEPTH 5
 
 // date manager
 #define MAX_DATE 127
@@ -447,6 +450,35 @@ class Transposition_table{
         /*
             @brief get best move from transposition table
 
+            @param search               Search information
+            @param hash                 hash code
+            @param depth                depth
+            @param lower                lower bound to store
+            @param upper                upper bound to store
+        */
+        inline void get(const Search *search, uint32_t hash, const int depth, int *lower, int *upper){
+            Hash_node *node = get_node(hash);
+            //const uint32_t level = ((uint32_t)search->date << 24) | ((uint32_t)depth << 16) | ((uint32_t)search->mpc_level << 8);
+            const uint32_t level = get_level_read_common(depth, search->mpc_level);
+            for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
+                if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
+                    node->lock.lock();
+                        if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
+                            if (node->data.get_level_read() >= level)
+                                node->data.get_bounds(lower, upper);
+                            node->lock.unlock();
+                            return;
+                        }
+                    node->lock.unlock();
+                }
+                ++hash;
+                node = get_node(hash);
+            }
+        }
+
+        /*
+            @brief get best move from transposition table
+
             @param board                board
             @param hash                 hash code
             @return best move
@@ -521,4 +553,64 @@ uint8_t manage_date(uint8_t date){
         return INIT_DATE;
     }
     return date;
+}
+
+/*
+    @brief Enhanced Transposition Cutoff (ETC)
+
+    @param hash_level_failed    hash level used when failed
+    @param hash_level           new hash level
+    @return hash resized?
+*/
+inline bool etc(Search *search, std::vector<Flip_value> &move_list, int depth, int *alpha, int *beta, int *v){
+    int l = -SCORE_MAX, u = SCORE_MAX, n_alpha = *alpha, n_beta = *beta;
+    for (Flip_value &flip_value: move_list){
+        search->move(&flip_value.flip);
+            transposition_table.get(search, search->board.hash(), depth - 1, &l, &u);
+        search->undo(&flip_value.flip);
+        if (l == u){
+            *v = -l;
+            return true;
+        }
+        n_beta = std::min(n_beta, -l);
+        n_alpha = std::max(n_alpha, -u);
+        if (n_beta <= *alpha){
+            *v = n_beta;
+            return true;
+        }
+        if (n_alpha >= *beta){
+            *v = n_alpha;
+            return true;
+        }
+    }
+    return false;
+}
+
+/*
+    @brief Enhanced Transposition Cutoff (ETC) for NWS
+
+    @param hash_level_failed    hash level used when failed
+    @param hash_level           new hash level
+    @return hash resized?
+*/
+inline bool etc_nws(Search *search, std::vector<Flip_value> &move_list, int depth, int alpha, int *v){
+    int l = -SCORE_MAX, u = SCORE_MAX;
+    for (Flip_value &flip_value: move_list){
+        search->move(&flip_value.flip);
+            transposition_table.get(search, search->board.hash(), depth - 1, &l, &u);
+        search->undo(&flip_value.flip);
+        if (l == u){
+            *v = -l;
+            return true;
+        }
+        if (alpha < -u){
+            *v = -u;
+            return true;
+        }
+        if (-l < alpha + 1){
+            *v = -l;
+            return true;
+        }
+    }
+    return false;
 }

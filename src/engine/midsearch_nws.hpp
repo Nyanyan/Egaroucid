@@ -235,6 +235,12 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
         int idx = 0;
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
             calc_flip(&move_list[idx++].flip, &search->board, cell);
+        #if USE_MID_ETC
+            if (search->n_discs - search->strt_n_discs < MID_ETC_DEPTH){
+                if (etc_nws(search, move_list, depth, alpha, &v))
+                    return v;
+            }
+        #endif
         move_list_evaluate_nws(search, move_list, depth, alpha, is_end_search, searching);
         #if USE_ALL_NODE_PREDICTION
             const bool seems_to_be_all_node = predict_all_node(search, alpha, depth, LEGAL_UNDEFINED, is_end_search, searching);

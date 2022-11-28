@@ -39,25 +39,3 @@ struct Spinlock {
     }
 };
 // end of modification
-
-/*
-// original: https://cpprefjp.github.io/reference/atomic/atomic_flag.html
-// modified by Nyanyan
-class Spinlock {
-    private:
-        std::atomic_flag state_;
-
-    public:
-        Spinlock() : state_(ATOMIC_FLAG_INIT) {}
-
-        void lock(){
-            while (state_.test_and_set(std::memory_order_acquire)) {
-            }
-        }
-
-        void unlock(){
-            state_.clear(std::memory_order_release);
-        }
-};
-// end of modification
-*/

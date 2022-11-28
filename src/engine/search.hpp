@@ -130,6 +130,7 @@ struct Search_result{
 class Search{
     public:
         Board board;
+        int_fast8_t strt_n_discs;
         int_fast8_t n_discs;
         uint_fast8_t parity;
         uint_fast8_t mpc_level;
@@ -156,6 +157,7 @@ class Search{
         inline void init_board(Board *init_board){
             board = init_board->copy();
             n_discs = board.n_discs();
+            strt_n_discs = n_discs;
             uint64_t empty = ~(board.player | board.opponent);
             parity = 1 & pop_count_ull(empty & 0x000000000F0F0F0FULL);
             parity |= (1 & pop_count_ull(empty & 0x00000000F0F0F0F0ULL)) << 1;
@@ -168,6 +170,7 @@ class Search{
         */
         inline void init_search(){
             n_discs = board.n_discs();
+            strt_n_discs = n_discs;
             uint64_t empty = ~(board.player | board.opponent);
             parity = 1 & pop_count_ull(empty & 0x000000000F0F0F0FULL);
             parity |= (1 & pop_count_ull(empty & 0x00000000F0F0F0F0ULL)) << 1;
