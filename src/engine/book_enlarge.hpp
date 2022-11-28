@@ -140,6 +140,8 @@ int book_widen_search(Board board, int level, const int book_depth, int expected
                 if (global_searching && g >= alpha && g <= HW2){
                     //n_remaining_error = remaining_error - std::max(0, best_move.value - g);
                     n_remaining_error = remaining_error - std::max(0, v - g);
+                    //if (-HW2 <= expected_value && expected_value <= HW2)
+                    //    n_remaining_error -= std::max(0, expected_value - g);
                     if (n_remaining_error >= 0){
                         n_expected_value = std::max(n_expected_value, v);
                         g = -book_widen_search(board, level, book_depth, -n_expected_value, expected_error, n_remaining_error, board_copy, player, strt_tim, book_file, book_bak, date);
