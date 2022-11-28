@@ -23,10 +23,10 @@ constexpr Color graph_history_not_calculated_color = Color(200, 200, 200);
 constexpr Color graph_fork_not_calculated_color = Color(65, 65, 65);
 constexpr double graph_transparency = 1.0;
 
-constexpr Color color_81 = Color(227, 88, 72);
-constexpr Color color_95 = Color(240, 135, 20);
-constexpr Color color_98 = Color(241, 196, 15);
-constexpr Color color_99 = Color(46, 204, 113);
+constexpr Color color_81 = Color(190, 46, 221);
+constexpr Color color_95 = Color(247, 143, 179);
+constexpr Color color_98 = Color(227, 88, 72);
+constexpr Color color_99 = Color(240, 135, 20);
 constexpr Color color_100 = Color(51, 161, 255);
 constexpr Color midsearch_color = Color(51, 51, 51);
 constexpr Color endsearch_color = Palette::White;
