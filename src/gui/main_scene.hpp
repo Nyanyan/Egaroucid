@@ -1041,7 +1041,7 @@ private:
             }
             ai_status.hint_use_multi_thread = next_task_size < getData().menu_elements.n_threads;
             
-            if (ai_status.hint_level <= 10) {
+            if (ai_status.hint_level <= 6) {
                 ai_status.hint_use_multi_thread = false;
             }
             
