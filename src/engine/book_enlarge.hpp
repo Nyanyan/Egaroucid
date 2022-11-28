@@ -105,6 +105,8 @@ int book_widen_search(Board board, int level, const int book_depth, int expected
         return g;
     }
     Search_result best_move = ai(board, level, true, true, false, *date);
+    if (-HW2 <= expected_value && expected_value <= HW2 && best_move.value < expected_value - expected_error)
+        return SCORE_UNDEFINED;
     ++(*date);
     *date = manage_date(*date);
     std::cerr << "depth " << board.n_discs() - 4 << " BM value " << best_move.value << std::endl;
