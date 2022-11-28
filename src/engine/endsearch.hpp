@@ -617,6 +617,7 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
                 return last4(search, alpha, beta, p0, p1, p2, p3, false, searching);
             }
         #endif
+        uint64_t strt_nodes = search->n_nodes;
         ++search->n_nodes;
         #if USE_SEARCH_STATISTICS
             ++search->n_nodes_discs[search->n_discs];
@@ -774,7 +775,7 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
             #endif
         }
         if (*searching && global_searching && search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD)
-            transposition_table.reg(search, hash_code, HW2 - search->n_discs, first_alpha, beta, v, best_move);
+            transposition_table.reg(search, hash_code, HW2 - search->n_discs, calc_cost(search->n_nodes - strt_nodes), first_alpha, beta, v, best_move);
         return v;
     }
 #endif

@@ -167,6 +167,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
                 return mid_evaluate_diff(search);
         #endif
     }
+    uint64_t strt_nodes = search->n_nodes;
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
         ++search->n_nodes_discs[search->n_discs];
@@ -297,6 +298,6 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
         }
     }
     if (*searching && global_searching)
-        transposition_table.reg(search, hash_code, depth, alpha, alpha + 1, v, best_move);
+        transposition_table.reg(search, hash_code, depth, calc_cost(search->n_nodes - strt_nodes), alpha, alpha + 1, v, best_move);
     return v;
 }
