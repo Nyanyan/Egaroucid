@@ -140,7 +140,7 @@ class Hash_data{
             depth = d;
             mpc_level = ml;
             date = dt;
-            cost = c;
+            cost = std::max(cost, c);
         }
 
         /*
