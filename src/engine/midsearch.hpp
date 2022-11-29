@@ -218,7 +218,7 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, c
         if (upper < beta)
             beta = upper;
         #if USE_MID_MPC
-            if (search->n_discs <= USE_MPC_N_DISCS){
+            if (depth >= USE_MPC_DEPTH){
                 if (mpc(search, alpha, beta, depth, legal, is_end_search, &v, searching))
                     return v;
             }
@@ -371,7 +371,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     if (upper < beta)
         beta = upper;
     #if USE_MID_MPC
-        if (search->n_discs <= USE_MPC_N_DISCS){
+        if (depth >= USE_MPC_DEPTH){
             if (mpc(search, alpha, beta, depth, legal, is_end_search, &v, searching))
                 return v;
         }

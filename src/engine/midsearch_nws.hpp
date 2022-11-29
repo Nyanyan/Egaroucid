@@ -200,7 +200,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
     if (upper <= alpha)
         return upper;
     #if USE_MID_MPC
-        if (search->n_discs <= USE_MPC_N_DISCS){
+        if (depth >= USE_MPC_DEPTH){
             if (mpc(search, alpha, alpha + 1, depth, legal, is_end_search, &v, searching))
                 return v;
         }
