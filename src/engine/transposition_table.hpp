@@ -378,11 +378,10 @@ class Transposition_table{
         */
         inline void reg(const Search *search, uint32_t hash, const int depth, int alpha, int beta, int value, int policy){
             Hash_node *node = get_node(hash);
-            Hash_node *worst_node = nullptr;
-            //const uint32_t level = ((uint32_t)search->date << 24) | ((uint32_t)cost << 16) | ((uint32_t)search->mpc_level << 8) | depth;
-            //const uint32_t level = ((uint32_t)search->date << 24) | ((uint32_t)depth << 16) | ((uint32_t)search->mpc_level << 8);
+            //Hash_node *worst_node = nullptr;
             const uint32_t level = get_level_write_common(search->date, depth, search->mpc_level);
-            uint32_t node_level, worst_level = 0xFFFFFFFFU;
+            uint32_t node_level;
+            //uint32_t worst_level = 0xFFFFFFFFU;
             for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
                 if (node->data.get_level_write() <= level){
                     node->lock.lock();
@@ -395,9 +394,12 @@ class Transposition_table{
                                     node->data.reg_new_level(depth, search->mpc_level, search->date, alpha, beta, value, policy);
                                 node->lock.unlock();
                                 return;
-                            } else if (node_level < worst_level){
-                                worst_level = node_level;
-                                worst_node = node;
+                            } else{
+                                node->board.player = search->board.player;
+                                node->board.opponent = search->board.opponent;
+                                node->data.reg_new_data(depth, search->mpc_level, search->date, alpha, beta, value, policy);
+                                node->lock.unlock();
+                                return;
                             }
                         }
                     node->lock.unlock();
@@ -405,6 +407,7 @@ class Transposition_table{
                 ++hash;
                 node = get_node(hash);
             }
+            /*
             if (worst_node != nullptr){
                 worst_node->lock.lock();
                     if (worst_node->data.get_level_write() <= level){
@@ -414,6 +417,7 @@ class Transposition_table{
                     }
                 worst_node->lock.unlock();
             }
+            */
         }
 
         /*
