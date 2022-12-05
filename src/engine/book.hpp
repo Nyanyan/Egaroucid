@@ -54,24 +54,32 @@ void book_hash_init_rand(){
 */
 void book_hash_init(bool show_log){
     FILE* fp;
-    if (fopen_s(&fp, "resources/hash_book.eghs", "rb") != 0) {
-        std::cerr << "[ERROR] can't open hash_book.eghs" << std::endl;
-        book_hash_init_rand();
-        return;
-    } else{
-        for (int i = 0; i < 4; ++i){
-            if (fread(hash_rand_player_book[i], 8, 65536, fp) < 65536){
-                std::cerr << "[ERROR] hash_book.eghs broken" << std::endl;
-                book_hash_init_rand();
-                return;
-            }
+    #ifdef _WIN64
+        if (fopen_s(&fp, "resources/hash_book.eghs", "rb") != 0){
+            std::cerr << "[ERROR] can't open hash_book.eghs" << std::endl;
+            book_hash_init_rand();
+            return;
         }
-        for (int i = 0; i < 4; ++i){
-            if (fread(hash_rand_opponent_book[i], 8, 65536, fp) < 65536){
-                std::cerr << "[ERROR] hash_book.eghs broken" << std::endl;
-                book_hash_init_rand();
-                return;
-            }
+    #else
+        fp = fopen("resources/hash_book.eghs", "rb");
+        if (fp == NULL){
+            std::cerr << "[ERROR] can't open hash_book.eghs" << std::endl;
+            book_hash_init_rand();
+            return;
+        }
+    #endif
+    for (int i = 0; i < 4; ++i){
+        if (fread(hash_rand_player_book[i], 8, 65536, fp) < 65536){
+            std::cerr << "[ERROR] hash_book.eghs broken" << std::endl;
+            book_hash_init_rand();
+            return;
+        }
+    }
+    for (int i = 0; i < 4; ++i){
+        if (fread(hash_rand_opponent_book[i], 8, 65536, fp) < 65536){
+            std::cerr << "[ERROR] hash_book.eghs broken" << std::endl;
+            book_hash_init_rand();
+            return;
         }
     }
     if (show_log)
