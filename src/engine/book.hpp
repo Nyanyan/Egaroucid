@@ -54,20 +54,11 @@ void book_hash_init_rand(){
 */
 void book_hash_init(bool show_log){
     FILE* fp;
-    #ifdef _WIN64
-        if (fopen_s(&fp, "resources/hash_book.eghs", "rb") != 0){
-            std::cerr << "[ERROR] can't open hash_book.eghs" << std::endl;
-            book_hash_init_rand();
-            return;
-        }
-    #else
-        fp = fopen("resources/hash_book.eghs", "rb");
-        if (fp == NULL){
-            std::cerr << "[ERROR] can't open hash_book.eghs" << std::endl;
-            book_hash_init_rand();
-            return;
-        }
-    #endif
+    if (!file_open(&fp, "resources/hash_book.eghs", "rb")){
+        std::cerr << "[ERROR] can't open hash_book.eghs" << std::endl;
+        book_hash_init_rand();
+        return;
+    }
     for (int i = 0; i < 4; ++i){
         if (fread(hash_rand_player_book[i], 8, 65536, fp) < 65536){
             std::cerr << "[ERROR] hash_book.eghs broken" << std::endl;
@@ -142,18 +133,10 @@ class Book{
             if (show_log)
                 std::cerr << "importing " << file << std::endl;
             FILE* fp;
-            #ifdef _WIN64
-                if (fopen_s(&fp, file.c_str(), "rb") != 0) {
-                    std::cerr << "[ERROR] can't open Egaroucid book " << file << std::endl;
-                    return false;
-                }
-            #else
-                fp = fopen(file.c_str(), "rb");
-                if (fp == NULL){
-                    std::cerr << "[ERROR] can't open Egaroucid book " << file << std::endl;
-                    return false;
-                }
-            #endif
+            if (!file_open(&fp, file.c_str(), "rb")){
+                std::cerr << "[ERROR] can't open Egaroucid book " << file << std::endl;
+                return false;
+            }
             Board b;
             int n_boards, i, value;
             uint64_t p, o;
@@ -207,18 +190,10 @@ class Book{
             if (show_log)
                 std::cerr << "importing " << file << std::endl;
             FILE* fp;
-            #ifdef _WIN64
-                if (fopen_s(&fp, file.c_str(), "rb") != 0) {
-                    std::cerr << "[ERROR] can't open Edax book " << file << std::endl;
-                    return false;
-                }
-            #else
-                fp = fopen(file.c_str(), "rb");
-                if (fp == NULL){
-                    std::cerr << "[ERROR] can't open Edax book " << file << std::endl;
-                    return false;
-                }
-            #endif
+            if (!file_open(&fp, file.c_str(), "rb")){
+                std::cerr << "[ERROR] can't open Edax book " << file << std::endl;
+                return false;
+            }
             char elem_char;
             int elem_int;
             int16_t elem_short;

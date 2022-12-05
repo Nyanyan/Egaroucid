@@ -10,6 +10,7 @@
 
 #pragma once
 #include <iostream>
+#include <fstream>
 #include <chrono>
 #include <random>
 #include <string>
@@ -102,6 +103,25 @@ inline uint32_t myrand_uint_rev(){
 */
 inline uint64_t myrand_ull(){
     return ((uint64_t)raw_myrandom() << 32) | (uint64_t)raw_myrandom();
+}
+
+/*
+    @brief open a file
+
+    wrapper for cross pratform
+
+    @param fp                   FILE
+    @param file                 file name
+    @param mode                 open mode
+    @return file opened?
+*/
+inline bool file_open(FILE **fp, const char *file, const char *mode){
+    #ifdef _WIN64
+        return fopen_s(fp, file, mode) == 0;
+    #else
+        *fp = fopen(file, mode);
+        return *fp != NULL;
+    #endif
 }
 
 // set false to stop all search immediately

@@ -92,18 +92,10 @@ void hash_init_rand(int hash_level){
 */
 bool hash_init(int hash_level){
     FILE* fp;
-    #ifdef _WIN64
-        if (fopen_s(&fp, ("resources/hash/hash" + std::to_string(hash_level) + ".eghs").c_str(), "rb") != 0){
-            std::cerr << "[ERROR] can't open hash" + std::to_string(hash_level) + ".eghs" << std::endl;
-            return false;
-        }
-    #else
-        fp = fopen(("resources/hash/hash" + std::to_string(hash_level) + ".eghs").c_str(), "rb");
-        if (fp == NULL){
-            std::cerr << "[ERROR] can't open hash" + std::to_string(hash_level) + ".eghs" << std::endl;
-            return false;
-        }
-    #endif
+    if (!file_open(&fp, ("resources/hash/hash" + std::to_string(hash_level) + ".eghs").c_str(), "rb")){
+        std::cerr << "[ERROR] can't open hash" + std::to_string(hash_level) + ".eghs" << std::endl;
+        return false;
+    }
     for (int i = 0; i < 4; ++i){
         if (fread(hash_rand_player[i], 4, 65536, fp) < 65536){
             std::cerr << "[ERROR] hash" + std::to_string(hash_level) + ".eghs broken" << std::endl;
