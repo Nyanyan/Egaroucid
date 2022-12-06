@@ -599,18 +599,10 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
     if (show_log)
         std::cerr << "evaluation file " << file << std::endl;
     FILE* fp;
-    #ifdef _WIN64
-        if (fopen_s(&fp, file, "rb") != 0){
-            std::cerr << "[ERROR] [FATAL] can't open eval " << file << std::endl;
-            return false;
-        }
-    #else
-        fp = fopen("resources/eval.egev", "rb");
-        if (fp == NULL){
-            std::cerr << "[ERROR] [FATAL] can't open eval " << file << std::endl;
-            return false;
-        }
-    #endif
+    if (!file_open(&fp, file, "rb")){
+        std::cerr << "[ERROR] [FATAL] can't open eval " << file << std::endl;
+        return false;
+    }
     int phase_idx, pattern_idx;
     constexpr int pattern_sizes[N_PATTERNS] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10, 10, 10, 10};
     #if USE_SIMD_EVALUATION
