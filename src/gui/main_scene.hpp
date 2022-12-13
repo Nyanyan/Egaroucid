@@ -124,6 +124,8 @@ public:
             getData().graph_resources.put_mode == GRAPH_MODE_NORMAL &&
             ((getData().history_elem.player == BLACK && getData().menu_elements.ai_put_black) || (getData().history_elem.player == WHITE && getData().menu_elements.ai_put_white)) &&
             getData().history_elem.board.n_discs() == getData().graph_resources.nodes[GRAPH_MODE_NORMAL][getData().graph_resources.nodes[GRAPH_MODE_NORMAL].size() - 1].board.n_discs();
+        bool ignore_move = (getData().book_information.changing != BOOK_CHANGE_NO_CELL) || 
+            ai_status.analyzing;
         if (need_start_game_button) {
             need_start_game_button_calculation();
             start_game_button.draw();
@@ -133,7 +135,7 @@ public:
                 resume_calculating();
             }
         }
-        if (!ai_status.analyzing) {
+        if (!ignore_move) {
             if (ai_should_move) {
                 ai_move();
             }
@@ -144,7 +146,7 @@ public:
 
         bool graph_interact_ignore = ai_status.analyzing || ai_should_move;
         // transcript move
-        if (!graph_interact_ignore && !getData().menu.active()) {
+        if (!ignore_move && !graph_interact_ignore && !getData().menu.active()) {
             interact_graph();
         }
         update_n_discs();
