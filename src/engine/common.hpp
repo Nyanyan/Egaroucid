@@ -124,5 +124,18 @@ inline bool file_open(FILE **fp, const char *file, const char *mode){
     #endif
 }
 
+/*
+    @brief caluculate NPS (Nodes Per Second)
+
+    @param n_nodes              number of nodes
+    @param elapsed              time
+    @return NPS
+*/
+inline uint64_t calc_nps(uint64_t n_nodes, uint64_t elapsed){
+    if (elapsed == 0ULL)
+        elapsed = 1ULL;
+    return n_nodes * 1000ULL / elapsed;
+}
+
 // set false to stop all search immediately
 bool global_searching = true;
