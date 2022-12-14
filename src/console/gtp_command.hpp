@@ -25,6 +25,7 @@
 
 #define GTP_VERSION "2.0"
 #define GTP_ENDL "\n\n"
+#define GTP_RULE_ID "Othello"
 #define GTP_ID_NOT_FOUND -1000000000
 #define GTP_POLICY_UNDEFINED 127
 #define GTP_PLAYER_UNDEFINED 127
@@ -71,6 +72,13 @@ std::string gtp_error_head(int id){
     if (id == GTP_ID_NOT_FOUND)
         return "?";
     return "?" + std::to_string(id);
+}
+
+std::string gtp_idx_to_coord(int idx){
+    int y = HW_M1 - idx / HW;
+    int x = HW_M1 - idx % HW;
+    const std::string x_coord = "ABCDEFGH";
+    return x_coord[x] + std::to_string(y + 1);
 }
 
 int check_color(std::string color){
@@ -144,7 +152,7 @@ void gtp_play(int id, std::string arg, Board_info *board){
                 x = coord[0] - 'A';
             int y = coord[1] - '1';
             if (0 <= x && x < HW && 0 < y && y < HW)
-                policy = HW2_M1 - (y * HW + x);
+                policy = y * HW + x;
         }
     } catch (const std::invalid_argument& e) {
         policy = GTP_POLICY_UNDEFINED;
@@ -167,6 +175,10 @@ void gtp_play(int id, std::string arg, Board_info *board){
     //}
     board->board.move_board(&flip);
     board->player ^= 1;
+    if (board->board.get_legal() == 0ULL){
+        board->board.pass();
+        board->player ^= 1;
+    }
     std::cout << gtp_head(id) << GTP_ENDL;
 }
 
@@ -190,7 +202,98 @@ void gtp_genmove(int id, std::string arg, Board_info *board, State *state, Optio
     int policy = ai(board->board, options->level, true, true, true, state->date).policy;
     ++state->date;
     state->date = manage_date(state->date);
-    std::cout << gtp_head(id) << " " << idx_to_coord(policy) << GTP_ENDL;
+    Flip flip;
+    calc_flip(&flip, &board->board, policy);
+    board->board.move_board(&flip);
+    board->player ^= 1;
+    if (board->board.get_legal() == 0ULL){
+        board->board.pass();
+        board->player ^= 1;
+    }
+    std::cout << gtp_head(id) << " " << gtp_idx_to_coord(policy) << GTP_ENDL;
+}
+
+void gtp_rules_game_id(int id){
+    std::cout << gtp_head(id) << " " << GTP_RULE_ID << GTP_ENDL;
+}
+
+void gtp_print_board(Board_info *board){
+    std::cout << " ";
+    for (int i = 0; i < HW; ++i)
+        std::cout << " " << (char)('A' + i);
+    std::cout << '\n';
+    for (int i = 0; i < HW; ++i){
+        std::cout << (char)('8' - i) << " ";
+        for (int j = 0; j < HW; ++j){
+            int coord = (HW_M1 - i) * HW + j;
+            char disc = '.';
+            if (board->player == BLACK){
+                if (1 & (board->board.player >> coord))
+                    disc = 'X';
+                else if (1 & (board->board.opponent >> coord))
+                    disc = 'O';
+            } else{
+                if (1 & (board->board.player >> coord))
+                    disc = 'O';
+                else if (1 & (board->board.opponent >> coord))
+                    disc = 'X';
+            }
+            std::cout << ' ' << disc;
+            --coord;
+        }
+        std::cout << '\n';
+    }
+    std::cout << '\n';
+}
+
+void gtp_rules_board(int id, Board_info *board){
+    std::cout << gtp_head(id) << GTP_ENDL;
+    gtp_print_board(board);
+}
+
+void gtp_rules_board_size(int id){
+    std::cout << gtp_head(id) << " " << HW << GTP_ENDL;
+}
+
+void gtp_rules_legal_moves(int id, Board_info *board){
+    std::cout << gtp_head(id);
+    uint64_t legal = board->board.get_legal();
+    for (int i = 0; i < HW2; ++i){
+        int gtp_coord = HW2_M1 - i;
+        if (1 & (legal >> gtp_coord)){
+            std::cout << " " << gtp_idx_to_coord(i);
+        }
+    }
+    std::cout << GTP_ENDL;
+}
+
+void gtp_rules_side_move(int id, Board_info *board){
+    std::string player = "black";
+    if (board->player == WHITE)
+        player = "white";
+    std::cout << gtp_head(id) << " " << player << GTP_ENDL;
+}
+
+void gtp_rules_final_result(int id, Board_info *board){
+    std::string result = "Game is not over yet.";
+    if (board->board.is_end()){
+        int black_score = board->board.count_player();
+        int white_score = board->board.count_opponent();
+        if (board->player == WHITE)
+            std::swap(black_score, white_score);
+        if (black_score > white_score)
+            result = "Black wins by " + std::to_string(std::abs(board->board.score_player())) + " points.";
+        else if (black_score < white_score)
+            result = "White wins by " + std::to_string(std::abs(board->board.score_player())) + " points.";
+        else
+            result = "Draw.";
+        result += " Final score is B " + std::to_string(black_score) + " and W " + std::to_string(white_score);
+    }
+    std::cout << gtp_head(id) << " " << result << GTP_ENDL;
+}
+
+void gtp_showboard(int id, Board_info *board){
+    gtp_rules_board(id, board);
 }
 
 void gtp_check_command(Board_info *board, State *state, Options *options){
@@ -223,4 +326,18 @@ void gtp_check_command(Board_info *board, State *state, Options *options){
         gtp_play(id, arg, board);
     else if (cmd_id == GTP_CMD_ID_GENMOVE)
         gtp_genmove(id, arg, board, state, options);
+    else if (cmd_id == GTP_CMD_ID_RULES_GAME_ID)
+        gtp_rules_game_id(id);
+    else if (cmd_id == GTP_CMD_ID_RULES_BOARD)
+        gtp_rules_board(id, board);
+    else if (cmd_id == GTP_CMD_ID_RULES_BOARD_SIZE)
+        gtp_rules_board_size(id);
+    else if (cmd_id == GTP_CMD_ID_RULES_LEGAL_MOVES)
+        gtp_rules_legal_moves(id, board);
+    else if (cmd_id == GTP_CMD_ID_RULES_SIDE_MOVE)
+        gtp_rules_side_move(id, board);
+    else if (cmd_id == GTP_CMD_ID_RULES_FINAL_RESULT)
+        gtp_rules_final_result(id, board);
+    else if (cmd_id == GTP_CMD_ID_SHOWBOARD)
+        gtp_showboard(id, board);
 }

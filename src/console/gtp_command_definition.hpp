@@ -13,7 +13,7 @@
 #include <vector>
 #include "command_definition.hpp"
 
-#define N_GTP_COMMANDS 11
+#define N_GTP_COMMANDS 18
 
 #define GTP_CMD_ID_QUIT 0
 #define GTP_CMD_ID_GTP_VERSION 1
@@ -26,17 +26,31 @@
 #define GTP_CMD_ID_KOMI 8
 #define GTP_CMD_ID_PLAY 9
 #define GTP_CMD_ID_GENMOVE 10
+#define GTP_CMD_ID_RULES_GAME_ID 11
+#define GTP_CMD_ID_RULES_BOARD 12
+#define GTP_CMD_ID_RULES_BOARD_SIZE 13
+#define GTP_CMD_ID_RULES_LEGAL_MOVES 14
+#define GTP_CMD_ID_RULES_SIDE_MOVE 15
+#define GTP_CMD_ID_RULES_FINAL_RESULT 16
+#define GTP_CMD_ID_SHOWBOARD 17
 
 const Command_info gtp_command_data[N_GTP_COMMANDS] = {
-    {GTP_CMD_ID_QUIT,           {"quit"},                                                   "",                 "Quit"},
-    {GTP_CMD_ID_GTP_VERSION,    {"protocol_version"},                                       "",                 "See GTP version"},
-    {GTP_CMD_ID_NAME,           {"name"},                                                   "",                 "See name"},
-    {GTP_CMD_ID_VERSION,        {"version"},                                                "",                 "See Egaroucid version"},
-    {GTP_CMD_ID_KNOWN_CMD,      {"known_command"},                                          "",                 ""},
-    {GTP_CMD_ID_LIST_CMD,       {"list_commands"},                                          "",                 ""},
-    {GTP_CMD_ID_BOARDSIZE,      {"boardsize"},                                              "",                 ""},
-    {GTP_CMD_ID_CLEAR_BOARD,    {"clear_board"},                                            "",                 ""},
-    {GTP_CMD_ID_KOMI,           {"komi"},                                                   "",                 ""},
-    {GTP_CMD_ID_PLAY,           {"play"},                                                   "",                 ""},
-    {GTP_CMD_ID_GENMOVE,        {"genmove"},                                                "",                 ""}
+    {GTP_CMD_ID_QUIT,               {"quit"},                                                   "",                 "Quit"},
+    {GTP_CMD_ID_GTP_VERSION,        {"protocol_version"},                                       "",                 "See GTP version"},
+    {GTP_CMD_ID_NAME,               {"name"},                                                   "",                 "See name"},
+    {GTP_CMD_ID_VERSION,            {"version"},                                                "",                 "See Egaroucid version"},
+    {GTP_CMD_ID_KNOWN_CMD,          {"known_command"},                                          "",                 ""},
+    {GTP_CMD_ID_LIST_CMD,           {"list_commands"},                                          "",                 ""},
+    {GTP_CMD_ID_BOARDSIZE,          {"boardsize"},                                              "",                 ""},
+    {GTP_CMD_ID_CLEAR_BOARD,        {"clear_board"},                                            "",                 ""},
+    {GTP_CMD_ID_KOMI,               {"komi"},                                                   "",                 ""},
+    {GTP_CMD_ID_PLAY,               {"play"},                                                   "",                 ""},
+    {GTP_CMD_ID_GENMOVE,            {"genmove"},                                                "",                 ""},
+    {GTP_CMD_ID_RULES_GAME_ID,      {"gogui-rules_game_id"},                                    "",                 ""},
+    {GTP_CMD_ID_RULES_BOARD,        {"gogui-rules_board"},                                      "",                 ""},
+    {GTP_CMD_ID_RULES_BOARD_SIZE,   {"gogui-rules_board_size"},                                 "",                 ""},
+    {GTP_CMD_ID_RULES_LEGAL_MOVES,  {"gogui-rules_legal_moves"},                                "",                 ""},
+    {GTP_CMD_ID_RULES_SIDE_MOVE,    {"gogui-rules_side_to_move"},                               "",                 ""},
+    {GTP_CMD_ID_RULES_FINAL_RESULT, {"gogui-rules_final_result"},                               "",                 ""},
+    {GTP_CMD_ID_SHOWBOARD,          {"showboard"},                                              "",                 ""}
 };
