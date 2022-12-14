@@ -228,11 +228,11 @@ void gtp_rules_game_id(int id){
 
 void gtp_print_board(Board_info *board){
     std::cout << " ";
-    for (int i = 0; i < HW; ++i)
-        std::cout << " " << (char)('A' + i);
-    std::cout << '\n';
+    //for (int i = 0; i < HW; ++i)
+    //    std::cerr << " " << (char)('A' + i);
+    //std::cerr << '\n';
     for (int i = 0; i < HW; ++i){
-        std::cout << (char)('8' - i) << " ";
+        //std::cerr << (char)('8' - i) << " ";
         for (int j = 0; j < HW; ++j){
             int coord = i * HW + (HW_M1 - j);
             char disc = '.';
@@ -256,7 +256,7 @@ void gtp_print_board(Board_info *board){
 }
 
 void gtp_rules_board(int id, Board_info *board){
-    std::cout << gtp_head(id) << GTP_ENDL;
+    std::cout << gtp_head(id);
     gtp_print_board(board);
 }
 
@@ -267,12 +267,14 @@ void gtp_rules_board_size(int id){
 void gtp_rules_legal_moves(int id, Board_info *board){
     std::cout << gtp_head(id);
     uint64_t legal = board->board.get_legal();
-    for (int i = 0; i < HW2; ++i){
-        int gtp_coord = HW2_M1 - i;
-        if (1 & (legal >> gtp_coord)){
-            std::cout << " " << gtp_idx_to_coord(i);
+    if (legal){
+        for (int i = 0; i < HW2; ++i){
+            if (1 & (legal >> i)){
+                std::cout << " " << gtp_idx_to_coord(i);
+            }
         }
-    }
+    } else
+        std::cout << " pass";
     std::cout << GTP_ENDL;
 }
 
