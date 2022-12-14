@@ -28,6 +28,7 @@
 #define GTP_RULE_ID "Othello"
 #define GTP_ID_NOT_FOUND -1000000000
 #define GTP_POLICY_UNDEFINED 127
+#define GTP_POLICY_PASS 100
 #define GTP_PLAYER_UNDEFINED 127
 
 std::string gtp_get_command_line(){
@@ -146,13 +147,16 @@ void gtp_play(int id, std::string arg, Board_info *board){
         iss >> color >> coord;
         player = check_color(color);
         policy = GTP_POLICY_UNDEFINED;
-        if (coord.size() == 2){
-            int x = coord[0] - 'a';
+        if (coord == "PASS"){
+            policy = GTP_POLICY_PASS;
+        }
+        else if (coord.size() == 2){
+            int x = coord[0] - 'A';
             if (x < 0 || HW <= x)
-                x = coord[0] - 'A';
+                x = coord[0] - 'a';
             int y = coord[1] - '1';
-            if (0 <= x && x < HW && 0 < y && y < HW)
-                policy = y * HW + x;
+            if (0 <= x && x < HW && 0 <= y && y < HW)
+                policy = HW2_M1 - (y * HW + x);
         }
     } catch (const std::invalid_argument& e) {
         policy = GTP_POLICY_UNDEFINED;
@@ -160,24 +164,29 @@ void gtp_play(int id, std::string arg, Board_info *board){
         policy = GTP_POLICY_UNDEFINED;
     }
     if (player == GTP_PLAYER_UNDEFINED || policy == GTP_POLICY_UNDEFINED){
-        std::cout << gtp_error_head(id) << " " << "illegal move" << GTP_ENDL;
+        std::cout << gtp_error_head(id) << " " << "illegal move " << color << " " << coord << " " << (int)player << " " << (int)policy << GTP_ENDL;
         return;
     }
     if (player != board->player){
         board->board.pass();
         board->player ^= 1;
     }
-    Flip flip;
-    calc_flip(&flip, &board->board, policy);
-    //if (flip.flip == 0ULL){
-    //    std::cout << gtp_error_head(id) << " " << "illegal move" << GTP_ENDL;
-    //    return;
-    //}
-    board->board.move_board(&flip);
-    board->player ^= 1;
-    if (board->board.get_legal() == 0ULL){
+    if (policy == GTP_POLICY_PASS){
         board->board.pass();
         board->player ^= 1;
+    } else{
+        Flip flip;
+        calc_flip(&flip, &board->board, policy);
+        if (flip.flip == 0ULL){
+            std::cout << gtp_error_head(id) << " " << "illegal move" << GTP_ENDL;
+            return;
+        }
+        board->board.move_board(&flip);
+        board->player ^= 1;
+        //if (board->board.get_legal() == 0ULL){
+        //    board->board.pass();
+        //    board->player ^= 1;
+        //}
     }
     std::cout << gtp_head(id) << GTP_ENDL;
 }
@@ -206,10 +215,10 @@ void gtp_genmove(int id, std::string arg, Board_info *board, State *state, Optio
     calc_flip(&flip, &board->board, policy);
     board->board.move_board(&flip);
     board->player ^= 1;
-    if (board->board.get_legal() == 0ULL){
-        board->board.pass();
-        board->player ^= 1;
-    }
+    //if (board->board.get_legal() == 0ULL){
+    //    board->board.pass();
+    //    board->player ^= 1;
+    //}
     std::cout << gtp_head(id) << " " << gtp_idx_to_coord(policy) << GTP_ENDL;
 }
 
@@ -225,7 +234,7 @@ void gtp_print_board(Board_info *board){
     for (int i = 0; i < HW; ++i){
         std::cout << (char)('8' - i) << " ";
         for (int j = 0; j < HW; ++j){
-            int coord = (HW_M1 - i) * HW + j;
+            int coord = i * HW + (HW_M1 - j);
             char disc = '.';
             if (board->player == BLACK){
                 if (1 & (board->board.player >> coord))
