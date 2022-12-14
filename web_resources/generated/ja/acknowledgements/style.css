@@ -30,7 +30,7 @@ table{
 }
 
 .pic2{
-    width: 45vmin;
+    width: min(20vh, 45%);
 }
 
 .box{
