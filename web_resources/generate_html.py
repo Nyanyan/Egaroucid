@@ -85,14 +85,16 @@ link23 = '</a>'
 def create_html(dr):
     alternate = ''
     for lang in langs:
+        if lang[0] == elements_dir:
+            continue
         if dr[3:]:
-            alternate += '<link rel="alternate" href="' + main_page_url + lang[0] + '/' + dr[3:] + '/" hreflang="' + lang[0] + '" />\n'
+            alternate += '<link rel="alternate" hreflang="' + lang[0] + '" href="' + main_page_url + lang[0] + '/' + dr[3:] + '" />\n'
         else:
-            alternate += '<link rel="alternate" href="' + main_page_url + lang[0] + '/" hreflang="' + lang[0] + '" />\n'
+            alternate += '<link rel="alternate" hreflang="' + lang[0] + '" href="' + main_page_url + lang[0] + '" />\n'
     if dr[3:]:
-        alternate += '<link rel="alternate" href="' + main_page_url + 'en/' + dr[3:] + '/" hreflang="x-default">\n'
+        alternate += '<link rel="alternate" hreflang="x-default" href="' + main_page_url + 'en/' + dr[3:] + '">\n'
     else:
-        alternate += '<link rel="alternate" href="' + main_page_url + 'en/" hreflang="x-default">\n'
+        alternate += '<link rel="alternate"  hreflang="x-default" href="' + main_page_url + 'en">\n'
     with open(dr + '/index.md', 'r', encoding='utf-8') as f:
         md = f.read()
     page_title = ''

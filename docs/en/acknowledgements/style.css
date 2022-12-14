@@ -99,7 +99,7 @@ h3{
 }
 
 .download_button{
-    width: 50vmin;
+    width: 100%;
     height: min(5vw, 50px);
     background-color:  #3F9770;
     display: inline-block; 
