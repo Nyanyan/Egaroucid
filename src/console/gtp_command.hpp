@@ -23,7 +23,7 @@
 #include "gtp_command_definition.hpp"
 #include "command.hpp"
 
-#define GTP_VERSION 2
+#define GTP_VERSION "2.0"
 #define GTP_ENDL "\n\n"
 #define GTP_ID_NOT_FOUND -1000000000
 #define GTP_POLICY_UNDEFINED 127
@@ -121,8 +121,7 @@ void gtp_boardsize(int id){
 
 void gtp_clear_board(int id, Board_info *board){
     board->player = BLACK;
-    board->board.player = 0ULL;
-    board->board.opponent = 0ULL;
+    board->board.reset();
     std::cout << gtp_head(id) << GTP_ENDL;
 }
 
@@ -188,7 +187,7 @@ void gtp_genmove(int id, std::string arg, Board_info *board, State *state, Optio
         board->board.pass();
         board->player ^= 1;
     }
-    int policy = ai(board->board, options->level, true, true, false, state->date).policy;
+    int policy = ai(board->board, options->level, true, true, true, state->date).policy;
     ++state->date;
     state->date = manage_date(state->date);
     std::cout << gtp_head(id) << " " << idx_to_coord(policy) << GTP_ENDL;
