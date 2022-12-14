@@ -22,6 +22,7 @@ Totally free application
 * **Egaroucid for Console - Console application**
   
   * Under construction
+  * Edax-like format / Go Text Protocol(GTP)
   * English
   
 * **[Egaroucid for Web](https://www.egaroucid.nyanyan.dev/en/web/) - Web application**
@@ -79,6 +80,16 @@ Please execute
 ```
 $ Egaroucid_for_console.exe -help
 ```
+
+##### Use with Go Text Protocol (GTP)
+
+Please execute
+
+```
+$ Egaroucid_for_console.exe -gtp
+```
+
+I checked it works with GoGUI.
 
 
 
