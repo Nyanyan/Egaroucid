@@ -356,9 +356,13 @@ void print_analyze_foot(Analyze_summary summary[]){
     std::cout << "|";
     std::cout << std::right << std::setw(ANALYZE_SUMMARY_TAB_SIZE) << "Disagree";
     std::cout << "|";
+    std::cout << std::right << std::setw(ANALYZE_SUMMARY_TAB_SIZE) << "Disagree Loss";
+    std::cout << "|";
     std::cout << std::right << std::setw(ANALYZE_SUMMARY_TAB_SIZE) << "Disagree Rate";
     std::cout << "|";
     std::cout << std::right << std::setw(ANALYZE_SUMMARY_TAB_SIZE) << "Mistake";
+    std::cout << "|";
+    std::cout << std::right << std::setw(ANALYZE_SUMMARY_TAB_SIZE) << "Mistake Loss";
     std::cout << "|";
     std::cout << std::right << std::setw(ANALYZE_SUMMARY_TAB_SIZE) << "Mistake Rate";
     std::cout << "|";
@@ -379,6 +383,8 @@ void print_analyze_foot(Analyze_summary summary[]){
         ss_disagree << std::right << std::setw(2) << summary[i].n_ply;
         std::cout << std::right << std::setw(ANALYZE_SUMMARY_TAB_SIZE) << ss_disagree.str();
         std::cout << "|";
+        std::cout << std::right << std::setw(ANALYZE_SUMMARY_TAB_SIZE) << summary[i].sum_disagree;
+        std::cout << "|";
         std::cout << std::right << std::setw(ANALYZE_SUMMARY_TAB_SIZE) << std::fixed << std::setprecision(3) << ((double)summary[i].n_disagree / summary[i].n_ply);
         std::cout << "|";
         std::stringstream ss_mistake;
@@ -386,6 +392,8 @@ void print_analyze_foot(Analyze_summary summary[]){
         ss_mistake << " / ";
         ss_mistake << std::right << std::setw(2) << summary[i].n_ply;
         std::cout << std::right << std::setw(ANALYZE_SUMMARY_TAB_SIZE) << ss_mistake.str();
+        std::cout << "|";
+        std::cout << std::right << std::setw(ANALYZE_SUMMARY_TAB_SIZE) << summary[i].sum_mistake;
         std::cout << "|";
         std::cout << std::right << std::setw(ANALYZE_SUMMARY_TAB_SIZE) << std::fixed << std::setprecision(3) << ((double)summary[i].n_mistake / summary[i].n_ply);
         std::cout << "|";
