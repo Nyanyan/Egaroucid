@@ -26,6 +26,7 @@
 #define LEVEL_MIDGAME_TAB_SIZE 15
 #define LEVEL_DEPTH_TAB_SIZE 10
 #define SEARCH_RESULT_TAB_SIZE 15
+#define ANALYZE_TAB_SIZE 13
 
 void print_version(){
     std::cout << EGAROUCID_NAME << " " << EGAROUCID_VERSION << std::endl;
@@ -252,6 +253,81 @@ void print_search_result_head(){
 void print_search_result(Search_result result, int level){
     print_search_result_head();
     print_search_result_body(result, level);
+}
+
+void print_analyze_body(Analyze_result result, int ply, int player){
+    std::string s;
+    std::cout << "|";
+    std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << ply;
+    std::cout << "|";
+    if (player == BLACK)
+        std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << "Black";
+    else
+        std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << "White";
+    std::cout << "|";
+    std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << idx_to_coord(result.played_move);
+    std::cout << "|";
+    if (result.played_depth == SEARCH_BOOK)
+        std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << "Book";
+    else{
+        s = std::to_string(result.played_depth) + "@" + std::to_string(result.played_probability) + "%";
+        std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << s;
+    }
+    std::cout << "|";
+    if (result.played_score >= 0)
+        s = "+" + std::to_string(result.played_score);
+    else
+        s = std::to_string(result.played_score);
+    std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << s;
+    std::cout << "|";
+    std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << idx_to_coord(result.alt_move);
+    std::cout << "|";
+    if (result.alt_depth == SEARCH_BOOK)
+        std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << "Book";
+    else{
+        s = std::to_string(result.alt_depth) + "@" + std::to_string(result.alt_probability) + "%";
+        std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << s;
+    }
+    std::cout << "|";
+    if (result.alt_score >= 0)
+        s = "+" + std::to_string(result.alt_score);
+    else
+        s = std::to_string(result.alt_score);
+    std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << s;
+    std::cout << "|";
+    s = "";
+    if (result.played_score < result.alt_score){
+        if (result.alt_score - result.played_score >= 4)
+            s = "Mistake";
+        else
+            s = "Disagree";
+    }
+    std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << s;
+    std::cout << "|";
+    std::cout << std::endl;
+}
+
+void print_analyze_head(){
+    std::cout << "|";
+    std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << "Ply";
+    std::cout << "|";
+    std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << "Player";
+    std::cout << "|";
+    std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << "Played";
+    std::cout << "|";
+    std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << "Depth";
+    std::cout << "|";
+    std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << "Score";
+    std::cout << "|";
+    std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << "Alternative";
+    std::cout << "|";
+    std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << "Depth";
+    std::cout << "|";
+    std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << "Score";
+    std::cout << "|";
+    std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << "Judge";
+    std::cout << "|";
+    std::cout << std::endl;
 }
 
 void print_special_commandline_options(std::vector<Commandline_option> commandline_options, Options *options){

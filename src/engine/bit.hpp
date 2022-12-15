@@ -374,6 +374,10 @@ inline uint64_t rotate_180(uint64_t x){
     inline uint_fast8_t ntz(uint64_t *x){
         return _tzcnt_u64(*x);
     }
+
+    inline uint_fast8_t ntz(uint64_t x){
+        return _tzcnt_u64(x);
+    }
 #elif USE_MINUS_NTZ
     inline uint_fast8_t ntz(uint64_t *x){
         return pop_count_ull((*x & (-(*x))) - 1);

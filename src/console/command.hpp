@@ -295,6 +295,22 @@ void hint(Board_info *board, Options *options, State *state, std::string arg){
         print_search_result_body(result[i], options->level);
 }
 
+void analyze(Board_info *board, Options *options, State *state){
+    print_analyze_head();
+    for (int i = (int)board->boards.size() - 2; i >= 0; --i){
+        Board n_board = board->boards[i].copy();
+        uint64_t played_board = (n_board.player | n_board.opponent) ^ (board->boards[i + 1].player | board->boards[i + 1].opponent);
+        if (pop_count_ull(played_board) == 1){
+            uint_fast8_t played_move = ntz(played_board);
+            Analyze_result result = ai_analyze(n_board, options->level, true, true, state->date, played_move);
+            ++state->date;
+            state->date = manage_date(state->date);
+            int ply = n_board.n_discs() - 3;
+            print_analyze_body(result, ply, board->players[i]);
+        }
+    }
+}
+
 void check_command(Board_info *board, State *state, Options *options){
     std::string cmd_line = get_command_line();
     std::string cmd, arg;
@@ -345,6 +361,10 @@ void check_command(Board_info *board, State *state, Options *options){
             break;
         case CMD_ID_HINT:
             hint(board, options, state, arg);
+            break;
+        case CMD_ID_ANALYZE:
+            analyze(board, options, state);
+            break;
         default:
             break;
     }
