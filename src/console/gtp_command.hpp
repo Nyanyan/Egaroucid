@@ -313,42 +313,65 @@ void gtp_check_command(Board_info *board, State *state, Options *options){
     int id;
     gtp_split_cmd_arg(cmd_line, &id, &cmd, &arg);
     int cmd_id = gtp_get_command_id(cmd);
-    if (cmd_id == COMMAND_NOT_FOUND)
-        std::cout << gtp_error_head(id) << " " << "[ERROR] command not found" << GTP_ENDL;
-    else if (cmd_id == GTP_CMD_ID_QUIT)
-        gtp_quit(id, state, options);
-    else if (cmd_id == GTP_CMD_ID_GTP_VERSION)
-        gtp_print_gtp_version(id);
-    else if (cmd_id == GTP_CMD_ID_NAME)
-        gtp_print_name(id);
-    else if (cmd_id == GTP_CMD_ID_VERSION)
-        gtp_print_version(id);
-    else if (cmd_id == GTP_CMD_ID_KNOWN_CMD)
-        gtp_known_command(id, arg);
-    else if (cmd_id == GTP_CMD_ID_LIST_CMD)
-        gtp_print_list_commands(id);
-    else if (cmd_id == GTP_CMD_ID_BOARDSIZE)
-        gtp_boardsize(id);
-    else if (cmd_id == GTP_CMD_ID_CLEAR_BOARD)
-        gtp_clear_board(id, board);
-    else if (cmd_id == GTP_CMD_ID_KOMI)
-        gtp_komi(id);
-    else if (cmd_id == GTP_CMD_ID_PLAY)
-        gtp_play(id, arg, board);
-    else if (cmd_id == GTP_CMD_ID_GENMOVE)
-        gtp_genmove(id, arg, board, state, options);
-    else if (cmd_id == GTP_CMD_ID_RULES_GAME_ID)
-        gtp_rules_game_id(id);
-    else if (cmd_id == GTP_CMD_ID_RULES_BOARD)
-        gtp_rules_board(id, board);
-    else if (cmd_id == GTP_CMD_ID_RULES_BOARD_SIZE)
-        gtp_rules_board_size(id);
-    else if (cmd_id == GTP_CMD_ID_RULES_LEGAL_MOVES)
-        gtp_rules_legal_moves(id, board);
-    else if (cmd_id == GTP_CMD_ID_RULES_SIDE_MOVE)
-        gtp_rules_side_move(id, board);
-    else if (cmd_id == GTP_CMD_ID_RULES_FINAL_RESULT)
-        gtp_rules_final_result(id, board);
-    else if (cmd_id == GTP_CMD_ID_SHOWBOARD)
-        gtp_showboard(id, board);
+    switch (cmd_id){
+        case COMMAND_NOT_FOUND:
+            std::cout << gtp_error_head(id) << " " << "[ERROR] command not found" << GTP_ENDL;
+            break;
+        case GTP_CMD_ID_QUIT:
+            gtp_quit(id, state, options);
+            break;
+        case GTP_CMD_ID_GTP_VERSION:
+            gtp_print_gtp_version(id);
+            break;
+        case GTP_CMD_ID_NAME:
+            gtp_print_name(id);
+            break;
+        case GTP_CMD_ID_VERSION:
+            gtp_print_version(id);
+            break;
+        case GTP_CMD_ID_KNOWN_CMD:
+            gtp_known_command(id, arg);
+            break;
+        case GTP_CMD_ID_LIST_CMD:
+            gtp_print_list_commands(id);
+            break;
+        case GTP_CMD_ID_BOARDSIZE:
+            gtp_boardsize(id);
+            break;
+        case GTP_CMD_ID_CLEAR_BOARD:
+            gtp_clear_board(id, board);
+            break;
+        case GTP_CMD_ID_KOMI:
+            gtp_komi(id);
+            break;
+        case GTP_CMD_ID_PLAY:
+            gtp_play(id, arg, board);
+            break;
+        case GTP_CMD_ID_GENMOVE:
+            gtp_genmove(id, arg, board, state, options);
+            break;
+        case GTP_CMD_ID_RULES_GAME_ID:
+            gtp_rules_game_id(id);
+            break;
+        case GTP_CMD_ID_RULES_BOARD:
+            gtp_rules_board(id, board);
+            break;
+        case GTP_CMD_ID_RULES_BOARD_SIZE:
+            gtp_rules_board_size(id);
+            break;
+        case GTP_CMD_ID_RULES_LEGAL_MOVES:
+            gtp_rules_legal_moves(id, board);
+            break;
+        case GTP_CMD_ID_RULES_SIDE_MOVE:
+            gtp_rules_side_move(id, board);
+            break;
+        case GTP_CMD_ID_RULES_FINAL_RESULT:
+            gtp_rules_final_result(id, board);
+            break;
+        case GTP_CMD_ID_SHOWBOARD:
+            gtp_showboard(id, board);
+            break;
+        default:
+            break;
+    }
 }

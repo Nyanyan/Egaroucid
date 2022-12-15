@@ -105,6 +105,20 @@ void play(Board_info *board, std::string transcript){
     }
 }
 
+int calc_remain(std::string arg){
+    int remain = 1;
+    try{
+        remain = std::stoi(arg);
+    } catch (const std::invalid_argument& ex){
+        remain = 1;
+    } catch (const std::out_of_range& ex){
+        remain = 1;
+    }
+    if (remain <= 0)
+        remain = 1;
+    return remain;
+}
+
 void undo(Board_info *board, int remain){
     if (remain == 0)
         return;
@@ -234,52 +248,50 @@ void check_command(Board_info *board, State *state, Options *options){
     std::string cmd, arg;
     split_cmd_arg(cmd_line, &cmd, &arg);
     int cmd_id = get_command_id(cmd);
-    if (cmd_id == COMMAND_NOT_FOUND)
-        std::cout << "[ERROR] command `" << cmd << "` not found" << std::endl;
-    else if (cmd_id == CMD_ID_HELP)
-        print_commands_list();
-    else if (cmd_id == CMD_ID_EXIT)
-        close(state, options);
-    else if (cmd_id == CMD_ID_VERSION)
-        print_version();
-    else if (cmd_id == CMD_ID_INIT)
-        init_board(board);
-    else if (cmd_id == CMD_ID_NEW)
-        new_board(board);
-    else if (cmd_id == CMD_ID_PLAY)
-        play(board, arg);
-    else if (cmd_id == CMD_ID_UNDO){
-        int remain = 1;
-        try{
-            remain = std::stoi(arg);
-        } catch (const std::invalid_argument& ex){
-            remain = 1;
-        } catch (const std::out_of_range& ex){
-            remain = 1;
-        }
-        if (remain <= 0)
-            remain = 1;
-        undo(board, remain);
-    } else if (cmd_id == CMD_ID_REDO){
-        int remain = 1;
-        try{
-            remain = std::stoi(arg);
-        } catch (const std::invalid_argument& ex){
-            remain = 1;
-        } catch (const std::out_of_range& ex){
-            remain = 1;
-        }
-        if (remain <= 0)
-            remain = 1;
-        redo(board, remain);
-    } else if (cmd_id == CMD_ID_GO)
-        go(board, options, state);
-    else if (cmd_id == CMD_ID_SETBOARD)
-        setboard(board, arg);
-    else if (cmd_id == CMD_ID_LEVEL)
-        set_level(options, arg);
-    else if (cmd_id == CMD_ID_LEVELINFO)
-        print_level_info();
-    else if (cmd_id == CMD_ID_MODE)
-        set_mode(options, arg);
+    switch (cmd_id){
+        case COMMAND_NOT_FOUND:
+            std::cout << "[ERROR] command `" << cmd << "` not found" << std::endl;
+            break;
+        case CMD_ID_HELP:
+            print_commands_list();
+            break;
+        case CMD_ID_EXIT:
+            close(state, options);
+            break;
+        case CMD_ID_VERSION:
+            print_version();
+            break;
+        case CMD_ID_INIT:
+            init_board(board);
+            break;
+        case CMD_ID_NEW:
+            new_board(board);
+            break;
+        case CMD_ID_PLAY:
+            play(board, arg);
+            break;
+        case CMD_ID_UNDO:
+            undo(board, calc_remain(arg));
+            break;
+        case CMD_ID_REDO:
+            redo(board, calc_remain(arg));
+            break;
+        case CMD_ID_GO:
+            go(board, options, state);
+            break;
+        case CMD_ID_SETBOARD:
+            setboard(board, arg);
+            break;
+        case CMD_ID_LEVEL:
+            set_level(options, arg);
+            break;
+        case CMD_ID_LEVELINFO:
+            print_level_info();
+            break;
+        case CMD_ID_MODE:
+            set_mode(options, arg);
+            break;
+        default:
+            break;
+    }
 }
