@@ -22,6 +22,8 @@
 #include "print.hpp"
 #include "command_definition.hpp"
 
+#define ANALYZE_MISTAKE_THRESHOLD 4
+
 std::string get_command_line(){
     std::cout << "> ";
     std::string cmd_line;
@@ -297,6 +299,7 @@ void hint(Board_info *board, Options *options, State *state, std::string arg){
 
 void analyze(Board_info *board, Options *options, State *state){
     print_analyze_head();
+    Analyze_summary summary[2];
     for (int i = (int)board->boards.size() - 2; i >= 0; --i){
         Board n_board = board->boards[i].copy();
         uint64_t played_board = (n_board.player | n_board.opponent) ^ (board->boards[i + 1].player | board->boards[i + 1].opponent);
@@ -305,10 +308,24 @@ void analyze(Board_info *board, Options *options, State *state){
             Analyze_result result = ai_analyze(n_board, options->level, true, true, state->date, played_move);
             ++state->date;
             state->date = manage_date(state->date);
+            std::string judge = "";
+            ++summary[board->players[i]].n_ply;
+            if (result.alt_score > result.played_score){
+                if (result.alt_score - result.played_score >= ANALYZE_MISTAKE_THRESHOLD){
+                    ++summary[board->players[i]].n_mistake;
+                    summary[board->players[i]].sum_mistake += result.alt_score - result.played_score;
+                    judge = "Mistake";
+                } else{
+                    ++summary[board->players[i]].n_disagree;
+                    summary[board->players[i]].sum_disagree += result.alt_score - result.played_score;
+                    judge = "Disagree";
+                }
+            }
             int ply = n_board.n_discs() - 3;
-            print_analyze_body(result, ply, board->players[i]);
+            print_analyze_body(result, ply, board->players[i], judge);
         }
     }
+    print_analyze_foot(summary);
 }
 
 void check_command(Board_info *board, State *state, Options *options){

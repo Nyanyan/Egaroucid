@@ -138,11 +138,11 @@ struct Search_result{
 };
 
 struct Analyze_result{
-    uint_fast8_t played_move;
+    int played_move;
     int played_score;
     int played_depth;
     int played_probability;
-    uint_fast8_t alt_move;
+    int alt_move;
     int alt_score;
     int alt_depth;
     int alt_probability;

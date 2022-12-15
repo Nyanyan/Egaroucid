@@ -27,6 +27,23 @@
 #define LEVEL_DEPTH_TAB_SIZE 10
 #define SEARCH_RESULT_TAB_SIZE 15
 #define ANALYZE_TAB_SIZE 13
+#define ANALYZE_SUMMARY_TAB_SIZE 13
+
+struct Analyze_summary{
+    int n_ply;
+    int n_disagree;
+    int sum_disagree;
+    int n_mistake;
+    int sum_mistake;
+
+    Analyze_summary(){
+        n_ply = 0;
+        n_disagree = 0;
+        sum_disagree = 0;
+        n_mistake = 0;
+        sum_mistake = 0;
+    }
+};
 
 void print_version(){
     std::cout << EGAROUCID_NAME << " " << EGAROUCID_VERSION << std::endl;
@@ -255,7 +272,7 @@ void print_search_result(Search_result result, int level){
     print_search_result_body(result, level);
 }
 
-void print_analyze_body(Analyze_result result, int ply, int player){
+void print_analyze_body(Analyze_result result, int ply, int player, std::string judge){
     std::string s;
     std::cout << "|";
     std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << ply;
@@ -280,29 +297,31 @@ void print_analyze_body(Analyze_result result, int ply, int player){
         s = std::to_string(result.played_score);
     std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << s;
     std::cout << "|";
-    std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << idx_to_coord(result.alt_move);
-    std::cout << "|";
-    if (result.alt_depth == SEARCH_BOOK)
-        std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << "Book";
-    else{
-        s = std::to_string(result.alt_depth) + "@" + std::to_string(result.alt_probability) + "%";
-        std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << s;
-    }
-    std::cout << "|";
-    if (result.alt_score >= 0)
-        s = "+" + std::to_string(result.alt_score);
-    else
-        s = std::to_string(result.alt_score);
-    std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << s;
-    std::cout << "|";
-    s = "";
-    if (result.played_score < result.alt_score){
-        if (result.alt_score - result.played_score >= 4)
-            s = "Mistake";
+    if (result.alt_move != -1){
+        std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << idx_to_coord(result.alt_move);
+        std::cout << "|";
+        if (result.alt_depth == SEARCH_BOOK)
+            std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << "Book";
+        else{
+            s = std::to_string(result.alt_depth) + "@" + std::to_string(result.alt_probability) + "%";
+            std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << s;
+        }
+        std::cout << "|";
+        if (result.alt_score >= 0)
+            s = "+" + std::to_string(result.alt_score);
         else
-            s = "Disagree";
+            s = std::to_string(result.alt_score);
+        std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << s;
+        std::cout << "|";
+    } else{
+        std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << "None";
+        std::cout << "|";
+        std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << "";
+        std::cout << "|";
+        std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << "";
+        std::cout << "|";
     }
-    std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << s;
+    std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << judge;
     std::cout << "|";
     std::cout << std::endl;
 }
@@ -328,6 +347,52 @@ void print_analyze_head(){
     std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << "Judge";
     std::cout << "|";
     std::cout << std::endl;
+}
+
+void print_analyze_foot(Analyze_summary summary[]){
+    std::cout << std::endl;
+    std::cout << "|";
+    std::cout << std::right << std::setw(ANALYZE_SUMMARY_TAB_SIZE) << "Player";
+    std::cout << "|";
+    std::cout << std::right << std::setw(ANALYZE_SUMMARY_TAB_SIZE) << "Disagree";
+    std::cout << "|";
+    std::cout << std::right << std::setw(ANALYZE_SUMMARY_TAB_SIZE) << "Disagree Rate";
+    std::cout << "|";
+    std::cout << std::right << std::setw(ANALYZE_SUMMARY_TAB_SIZE) << "Mistake";
+    std::cout << "|";
+    std::cout << std::right << std::setw(ANALYZE_SUMMARY_TAB_SIZE) << "Mistake Rate";
+    std::cout << "|";
+    std::cout << std::right << std::setw(ANALYZE_SUMMARY_TAB_SIZE) << "Avg. Error";
+    std::cout << "|";
+    std::cout << std::endl;
+    std::string s;
+    for (int i = 0; i < 2; ++i){
+        std::cout << "|";
+        if (i == BLACK)
+            std::cout << std::right << std::setw(ANALYZE_SUMMARY_TAB_SIZE) << "Black";
+        else
+            std::cout << std::right << std::setw(ANALYZE_SUMMARY_TAB_SIZE) << "White";
+        std::cout << "|";
+        std::stringstream ss_disagree;
+        ss_disagree << std::right << std::setw(2) << summary[i].n_disagree;
+        ss_disagree << " / ";
+        ss_disagree << std::right << std::setw(2) << summary[i].n_ply;
+        std::cout << std::right << std::setw(ANALYZE_SUMMARY_TAB_SIZE) << ss_disagree.str();
+        std::cout << "|";
+        std::cout << std::right << std::setw(ANALYZE_SUMMARY_TAB_SIZE) << std::fixed << std::setprecision(3) << ((double)summary[i].n_disagree / summary[i].n_ply);
+        std::cout << "|";
+        std::stringstream ss_mistake;
+        ss_mistake << std::right << std::setw(2) << summary[i].n_mistake;
+        ss_mistake << " / ";
+        ss_mistake << std::right << std::setw(2) << summary[i].n_ply;
+        std::cout << std::right << std::setw(ANALYZE_SUMMARY_TAB_SIZE) << ss_mistake.str();
+        std::cout << "|";
+        std::cout << std::right << std::setw(ANALYZE_SUMMARY_TAB_SIZE) << std::fixed << std::setprecision(3) << ((double)summary[i].n_mistake / summary[i].n_ply);
+        std::cout << "|";
+        std::cout << std::right << std::setw(ANALYZE_SUMMARY_TAB_SIZE) << std::fixed << std::setprecision(3) << ((double)(summary[i].sum_disagree + summary[i].sum_mistake) / summary[i].n_ply);
+        std::cout << "|";
+        std::cout << std::endl;
+    }
 }
 
 void print_special_commandline_options(std::vector<Commandline_option> commandline_options, Options *options){
