@@ -243,6 +243,58 @@ void set_mode(Options *options, std::string mode_str){
     }
 }
 
+void hint(Board_info *board, Options *options, State *state, std::string arg){
+    int n_show = 1;
+    try {
+        n_show = std::stoi(arg);
+        if (n_show < 1)
+            n_show = 1;
+    } catch (const std::invalid_argument& e) {
+        n_show = 1;
+    } catch (const std::out_of_range& e) {
+        n_show = 1;
+    }
+    uint64_t legal = board->board.get_legal();
+    if (n_show > pop_count_ull(legal))
+        n_show = pop_count_ull(legal);
+    std::vector<Search_result> result = book.get_all_moves_with_value(&board->board);
+    if ((int)result.size() < n_show){
+        for (const Search_result &elem: result)
+            legal ^= 1ULL << elem.policy;
+        int n_check = n_show + n_show / 4 - (int)result.size();
+        if (n_check > pop_count_ull(legal))
+            n_check = pop_count_ull(legal);
+        std::vector<Flip_value> move_list(pop_count_ull(legal));
+        int idx = 0;
+        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
+            calc_flip(&move_list[idx++].flip, &board->board, cell);
+        int presearch_level = options->level / 2;
+        Board n_board = board->board.copy();
+        for (Flip_value &flip_value: move_list){
+            n_board.move_board(&flip_value.flip);
+                flip_value.value = -ai(n_board, presearch_level, true, true, false, state->date).value;
+                ++state->date;
+                state->date = manage_date(state->date);
+            n_board.undo_board(&flip_value.flip);
+        }
+        std::sort(move_list.rbegin(), move_list.rend());
+        for (int i = 0; i < n_check; ++i){
+            n_board.move_board(&move_list[i].flip);
+                Search_result elem = ai(n_board, options->level, true, true, false, state->date);
+                ++state->date;
+                state->date = manage_date(state->date);
+                elem.value *= -1;
+                elem.policy = move_list[i].flip.pos;
+            n_board.undo_board(&move_list[i].flip);
+            result.emplace_back(elem);
+        }
+    }
+    std::sort(result.rbegin(), result.rend());
+    print_search_result_head();
+    for (int i = 0; i < n_show; ++i)
+        print_search_result_body(result[i], options->level);
+}
+
 void check_command(Board_info *board, State *state, Options *options){
     std::string cmd_line = get_command_line();
     std::string cmd, arg;
@@ -291,6 +343,8 @@ void check_command(Board_info *board, State *state, Options *options){
         case CMD_ID_MODE:
             set_mode(options, arg);
             break;
+        case CMD_ID_HINT:
+            hint(board, options, state, arg);
         default:
             break;
     }

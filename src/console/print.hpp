@@ -196,7 +196,8 @@ void print_search_result_body(Search_result result, int level){
             s = std::to_string(result.value);
         std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << s;
         std::cout << "|";
-        std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << 0;
+        s = ms_to_time(0);
+        std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << s;
         std::cout << "|";
         std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << 0;
         std::cout << "|";
@@ -218,8 +219,7 @@ void print_search_result_body(Search_result result, int level){
             s = std::to_string(result.value);
         std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << s;
         std::cout << "|";
-        s = std::to_string((double)result.time / 1000);
-        s = s.substr(0, s.length() - 3) + "s";
+        s = ms_to_time(result.time);
         std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << s;
         std::cout << "|";
         std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << result.nodes;

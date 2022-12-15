@@ -39,6 +39,14 @@
 #define SCORE_UNDEFINED -SCORE_INF
 
 /*
+    @brief Search constant
+*/
+#ifndef SEARCH_BOOK
+    #define SEARCH_BOOK -1
+#endif
+
+
+/*
     @brief Weights of each cell
 */
 constexpr int cell_weight[HW2] = {
@@ -111,6 +119,22 @@ struct Search_result{
     uint64_t nps;
     bool is_end_search;
     int probability;
+
+    bool operator<(const Search_result &another) const{
+        if (depth == SEARCH_BOOK && another.depth != SEARCH_BOOK)
+            return false;
+        else if (depth != SEARCH_BOOK && another.depth == SEARCH_BOOK)
+            return true;
+        return value < another.value;
+    }
+
+    bool operator>(const Search_result &another) const{
+        if (another.depth == SEARCH_BOOK && depth != SEARCH_BOOK)
+            return false;
+        else if (another.depth != SEARCH_BOOK && depth == SEARCH_BOOK)
+            return true;
+        return value > another.value;
+    }
 };
 
 /*

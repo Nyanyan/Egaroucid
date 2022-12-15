@@ -438,6 +438,36 @@ class Book{
         }
 
         /*
+            @brief get all registered moves with value
+
+            @param b                    a board pointer to find
+            @return vector of moves
+        */
+        inline std::vector<Search_result> get_all_moves_with_value(Board *b){
+            std::vector<Search_result> policies;
+            Board nb;
+            uint64_t legal = b->get_legal();
+            Flip flip;
+            int value;
+            for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+                calc_flip(&flip, b, cell);
+                nb = b->move_copy(&flip);
+                value = get(&nb);
+                if (value != -INF){
+                    Search_result elem;
+                    elem.policy = cell;
+                    elem.value = value;
+                    elem.depth = SEARCH_BOOK;
+                    elem.time = 0;
+                    elem.nodes = 0;
+                    elem.nps = 0;
+                    policies.emplace_back(elem);
+                }
+            }
+            return policies;
+        }
+
+        /*
             @brief get how many boards registered in this book
 
             @return number of registered boards

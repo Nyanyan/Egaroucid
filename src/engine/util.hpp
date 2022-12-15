@@ -71,18 +71,23 @@ std::string ms_to_time(uint64_t t){
     t -= hour * 1000 * 60 * 60;
     uint64_t minute = t / (1000 * 60);
     t -= minute * 1000 * 60;
-    double second = (double)t / 1000;
+    uint64_t second = t / 1000;
+    t -= second * 1000;
     std::ostringstream hour_s;
-    hour_s << std::setw(3) << std::setfill('0') << hour;
+    hour_s << std::right << std::setw(3) << std::setfill('0') << hour;
     res += hour_s.str();
     res += ":";
     std::ostringstream minute_s;
-    minute_s << std::setw(2) << std::setfill('0') << minute;
+    minute_s << std::right << std::setw(2) << std::setfill('0') << minute;
     res += minute_s.str();
     res += ":";
     std::ostringstream second_s;
-    second_s << std::setw(6) << std::setfill('0') << second;
+    second_s << std::right << std::setw(2) << std::setfill('0') << second;
     res += second_s.str();
+    res += ".";
+    std::ostringstream msecond_s;
+    msecond_s << std::left << std::setw(3) << std::setfill('0') << t;
+    res += msecond_s.str();
     return res;
 }
 
@@ -98,17 +103,18 @@ std::string ms_to_time_short(uint64_t t){
     t -= hour * 1000 * 60 * 60;
     uint64_t minute = t / (1000 * 60);
     t -= minute * 1000 * 60;
-    int second = (double)t / 1000;
+    uint64_t second = t / 1000;
+    t -= second * 1000;
     std::ostringstream hour_s;
-    hour_s << std::setw(3) << std::setfill('0') << hour;
+    hour_s << std::right << std::setw(3) << std::setfill('0') << hour;
     res += hour_s.str();
     res += ":";
     std::ostringstream minute_s;
-    minute_s << std::setw(2) << std::setfill('0') << minute;
+    minute_s << std::right << std::setw(2) << std::setfill('0') << minute;
     res += minute_s.str();
     res += ":";
     std::ostringstream second_s;
-    second_s << std::setw(2) << std::setfill('0') << second;
+    second_s << std::right << std::setw(2) << std::setfill('0') << second;
     res += second_s.str();
     return res;
 }
