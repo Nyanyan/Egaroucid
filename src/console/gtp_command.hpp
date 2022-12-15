@@ -147,7 +147,7 @@ void gtp_play(int id, std::string arg, Board_info *board){
         iss >> color >> coord;
         player = check_color(color);
         policy = GTP_POLICY_UNDEFINED;
-        if (coord == "PASS"){
+        if (coord == "PASS" || coord == "pass"){
             policy = GTP_POLICY_PASS;
         }
         else if (coord.size() == 2){
@@ -207,6 +207,10 @@ void gtp_genmove(int id, std::string arg, Board_info *board, State *state, Optio
     if (player != board->player){
         board->board.pass();
         board->player ^= 1;
+    }
+    if (board->board.get_legal() == 0ULL){
+        std::cout << gtp_head(id) << " PASS" << GTP_ENDL;
+        return;
     }
     int policy = ai(board->board, options->level, true, true, true, state->date).policy;
     ++state->date;
