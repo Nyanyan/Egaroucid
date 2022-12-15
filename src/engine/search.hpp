@@ -137,6 +137,20 @@ struct Search_result{
     }
 };
 
+/*
+    @brief Analyze result structure
+
+    Used in `analyze` command
+
+    @param played_move          played move
+    @param played_score         score of played move
+    @param played_depth         depth of search for played_score calculation
+    @param played_probability   probability of search for played_score calculation
+    @param alt_move             alternative best move
+    @param alt_score            score of alternative move
+    @param alt_depth            depth of search for alt_score calculation
+    @param alt_probability      probability of search for alt_score calculation
+*/
 struct Analyze_result{
     int played_move;
     int played_score;
