@@ -375,6 +375,12 @@ class Book{
         inline Book_value get_random(Board *b, int accept_value){
             std::vector<int> policies;
             std::vector<int> values;
+            Book_value res;
+            if (get(b) == -INF){
+                res.policy = -1;
+                res.value = -INF;
+                return res;
+            }
             Board nb;
             int max_value = -INF;
             uint64_t legal = b->get_legal();
@@ -390,7 +396,6 @@ class Book{
                     max_value = std::max(max_value, value);
                 }
             }
-            Book_value res;
             if (policies.size() == 0){
                 res.policy = -1;
                 res.value = -INF;
@@ -416,6 +421,8 @@ class Book{
         */
         inline std::vector<int> get_all_best_moves(Board *b){
             std::vector<int> policies;
+            if (get(b) == -INF)
+                return policies;
             Board nb;
             int max_value = -INF;
             uint64_t legal = b->get_legal();
@@ -445,6 +452,8 @@ class Book{
         */
         inline std::vector<Search_result> get_all_moves_with_value(Board *b){
             std::vector<Search_result> policies;
+            if (get(b) == -INF)
+                return policies;
             Board nb;
             uint64_t legal = b->get_legal();
             Flip flip;
