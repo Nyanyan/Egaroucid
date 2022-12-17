@@ -13,7 +13,7 @@
 #include <vector>
 #include "command_definition.hpp"
 
-#define N_GTP_COMMANDS 18
+#define N_GTP_COMMANDS 20
 
 #define GTP_CMD_ID_QUIT 0
 #define GTP_CMD_ID_GTP_VERSION 1
@@ -33,6 +33,8 @@
 #define GTP_CMD_ID_RULES_SIDE_MOVE 15
 #define GTP_CMD_ID_RULES_FINAL_RESULT 16
 #define GTP_CMD_ID_SHOWBOARD 17
+#define GTP_CMD_ID_UNDO 18
+#define GTP_CMD_ID_REG_GENMOVE 19
 
 const Command_info gtp_command_data[N_GTP_COMMANDS] = {
     {GTP_CMD_ID_QUIT,               {"quit"},                                                   "",                 "Quit"},
@@ -52,5 +54,7 @@ const Command_info gtp_command_data[N_GTP_COMMANDS] = {
     {GTP_CMD_ID_RULES_LEGAL_MOVES,  {"gogui-rules_legal_moves"},                                "",                 ""},
     {GTP_CMD_ID_RULES_SIDE_MOVE,    {"gogui-rules_side_to_move"},                               "",                 ""},
     {GTP_CMD_ID_RULES_FINAL_RESULT, {"gogui-rules_final_result"},                               "",                 ""},
-    {GTP_CMD_ID_SHOWBOARD,          {"showboard"},                                              "",                 ""}
+    {GTP_CMD_ID_SHOWBOARD,          {"showboard"},                                              "",                 ""},
+    {GTP_CMD_ID_UNDO,               {"undo"},                                                   "",                 ""},
+    {GTP_CMD_ID_REG_GENMOVE,        {"reg_genmove"},                                            "",                 ""}
 };

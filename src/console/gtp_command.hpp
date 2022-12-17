@@ -183,6 +183,8 @@ void gtp_play(int id, std::string arg, Board_info *board){
         }
         board->board.move_board(&flip);
         board->player ^= 1;
+        board->boards.emplace_back(board->board.copy());
+        board->players.emplace_back(board->player);
         //if (board->board.get_legal() == 0ULL){
         //    board->board.pass();
         //    board->player ^= 1;
@@ -219,6 +221,8 @@ void gtp_genmove(int id, std::string arg, Board_info *board, State *state, Optio
     calc_flip(&flip, &board->board, policy);
     board->board.move_board(&flip);
     board->player ^= 1;
+    board->boards.emplace_back(board->board.copy());
+    board->players.emplace_back(board->player);
     //if (board->board.get_legal() == 0ULL){
     //    board->board.pass();
     //    board->player ^= 1;
@@ -311,6 +315,41 @@ void gtp_showboard(int id, Board_info *board){
     gtp_rules_board(id, board);
 }
 
+void gtp_undo(int id, Board_info *board){
+    board->boards.pop_back();
+    board->players.pop_back();
+    board->board = board->boards.back().copy();
+    board->player = board->players.back();
+    std::cout << gtp_head(id) << GTP_ENDL;
+}
+
+void gtp_reg_genmove(int id, std::string arg, Board_info *board, State *state, Options *options){
+    uint_fast8_t player = GTP_PLAYER_UNDEFINED;
+    try{
+        player = check_color(arg);
+    } catch (const std::invalid_argument& e) {
+        player = GTP_PLAYER_UNDEFINED;
+    } catch (const std::out_of_range& e) {
+        player = GTP_PLAYER_UNDEFINED;
+    }
+    if (player != BLACK && player != WHITE){
+        std::cout << gtp_error_head(id) << " " << "illegal color" << GTP_ENDL;
+        return;
+    }
+    if (player != board->player){
+        board->board.pass();
+        board->player ^= 1;
+    }
+    if (board->board.get_legal() == 0ULL){
+        std::cout << gtp_head(id) << " PASS" << GTP_ENDL;
+        return;
+    }
+    int policy = ai(board->board, options->level, true, true, true, state->date).policy;
+    ++state->date;
+    state->date = manage_date(state->date);
+    std::cout << gtp_head(id) << " " << gtp_idx_to_coord(policy) << GTP_ENDL;
+}
+
 void gtp_check_command(Board_info *board, State *state, Options *options){
     std::string cmd_line = gtp_get_command_line();
     std::string cmd, arg;
@@ -374,6 +413,12 @@ void gtp_check_command(Board_info *board, State *state, Options *options){
             break;
         case GTP_CMD_ID_SHOWBOARD:
             gtp_showboard(id, board);
+            break;
+        case GTP_CMD_ID_UNDO:
+            gtp_undo(id, board);
+            break;
+        case GTP_CMD_ID_REG_GENMOVE:
+            gtp_reg_genmove(id, arg, board, state, options);
             break;
         default:
             break;
