@@ -473,7 +473,7 @@ std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int de
         ++search->n_nodes_discs[search->n_discs];
     #endif
     uint64_t legal = search->board.get_legal();
-    int g, v = -SCORE_INF;
+    int g, v = -SCORE_INF, first_alpha = alpha;
     if (legal == 0ULL)
         return std::make_pair(SCORE_UNDEFINED, -1);
     int best_move = TRANSPOSITION_TABLE_UNDEFINED;
@@ -487,98 +487,99 @@ std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int de
     }
     alpha = std::max(alpha, v);
     uint32_t hash_code = search->board.hash();
-    int lower = -SCORE_MAX, upper = SCORE_MAX;
-    uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {TRANSPOSITION_TABLE_UNDEFINED, TRANSPOSITION_TABLE_UNDEFINED};
-    #if MID_TO_END_DEPTH < USE_TT_DEPTH_THRESHOLD
-        if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD)
-            transposition_table.get(search, hash_code, depth, &lower, &upper, moves);
-    #else
-        transposition_table.get(search, hash_code, depth, &lower, &upper, moves);
-    #endif
-    if (upper == lower)
-        return std::make_pair(upper, moves[0]);
-    if (beta <= lower)
-        return std::make_pair(lower, moves[0]);
-    if (upper <= alpha)
-        return std::make_pair(upper, moves[0]);
-    if (alpha < lower)
-        alpha = lower;
-    if (upper < beta)
-        beta = upper;
-    int first_alpha = alpha;
-    int pv_idx = 1;
-    Flip flip_best;
-    for (uint_fast8_t i = 0; i < N_TRANSPOSITION_MOVES; ++i){
-        if (moves[i] == TRANSPOSITION_TABLE_UNDEFINED)
-            break;
-        if (1 & (legal >> moves[i])){
-            calc_flip(&flip_best, &search->board, moves[i]);
-            eval_move(search, &flip_best);
-            search->move(&flip_best);
-                if (v == -SCORE_INF)
-                    g = -nega_scout(search, -beta, -alpha, depth - 1, false, LEGAL_UNDEFINED, is_end_search, &searching);
-                else{
-                    g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, LEGAL_UNDEFINED, is_end_search, &searching);
-                    if (alpha <= g && g < beta)
-                        g = -nega_scout(search, -beta, -g, depth - 1, false, LEGAL_UNDEFINED, is_end_search, &searching);
-                }
-            search->undo(&flip_best);
-            eval_undo(search, &flip_best);
-            if (is_main_search){
-                if (g <= alpha)
-                    std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " [" << alpha << "," << beta << "] " << idx_to_coord(moves[i]) << " value " << g << " or lower" << std::endl;
-                else
-                    std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " [" << alpha << "," << beta << "] " << idx_to_coord(moves[i]) << " value " << g << std::endl;
-            }
-            if (v < g){
-                v = g;
-                best_move = moves[i];
-                if (alpha < v){
-                    alpha = v;
-                    if (beta <= v)
-                        break;
-                }
-            }
-            legal ^= 1ULL << moves[i];
-            ++pv_idx;
-        }
-    }
     if (alpha < beta && legal){
-        const int canput = pop_count_ull(legal);
-        std::vector<Flip_value> move_list(canput);
-        int idx = 0;
-        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
-            calc_flip(&move_list[idx++].flip, &search->board, cell);
-        move_list_evaluate(search, move_list, depth, alpha, beta, is_end_search, &searching);
-        for (int move_idx = 0; move_idx < canput; ++move_idx){
-            swap_next_best_move(move_list, move_idx, canput);
-            eval_move(search, &move_list[move_idx].flip);
-            search->move(&move_list[move_idx].flip);
-                if (v == -SCORE_INF)
-                    g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, &searching);
-                else{
-                    g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, &searching);
-                    if (alpha <= g && g < beta)
-                        g = -nega_scout(search, -beta, -g, depth - 1, false, move_list[move_idx].n_legal, is_end_search, &searching);
+        int lower = -SCORE_MAX, upper = SCORE_MAX;
+        uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {TRANSPOSITION_TABLE_UNDEFINED, TRANSPOSITION_TABLE_UNDEFINED};
+        #if MID_TO_END_DEPTH < USE_TT_DEPTH_THRESHOLD
+            if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD)
+                transposition_table.get(search, hash_code, depth, &lower, &upper, moves);
+        #else
+            transposition_table.get(search, hash_code, depth, &lower, &upper, moves);
+        #endif
+        if (upper == lower)
+            return std::make_pair(upper, moves[0]);
+        if (beta <= lower)
+            return std::make_pair(lower, moves[0]);
+        if (upper <= alpha)
+            return std::make_pair(upper, moves[0]);
+        if (alpha < lower)
+            alpha = lower;
+        if (upper < beta)
+            beta = upper;
+        int pv_idx = 1;
+        Flip flip_best;
+        for (uint_fast8_t i = 0; i < N_TRANSPOSITION_MOVES; ++i){
+            if (moves[i] == TRANSPOSITION_TABLE_UNDEFINED)
+                break;
+            if (1 & (legal >> moves[i])){
+                calc_flip(&flip_best, &search->board, moves[i]);
+                eval_move(search, &flip_best);
+                search->move(&flip_best);
+                    if (v == -SCORE_INF)
+                        g = -nega_scout(search, -beta, -alpha, depth - 1, false, LEGAL_UNDEFINED, is_end_search, &searching);
+                    else{
+                        g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, LEGAL_UNDEFINED, is_end_search, &searching);
+                        if (alpha <= g && g < beta)
+                            g = -nega_scout(search, -beta, -g, depth - 1, false, LEGAL_UNDEFINED, is_end_search, &searching);
+                    }
+                search->undo(&flip_best);
+                eval_undo(search, &flip_best);
+                if (is_main_search){
+                    if (g <= alpha)
+                        std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " [" << alpha << "," << beta << "] " << idx_to_coord(moves[i]) << " value " << g << " or lower" << std::endl;
+                    else
+                        std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " [" << alpha << "," << beta << "] " << idx_to_coord(moves[i]) << " value " << g << std::endl;
                 }
-            search->undo(&move_list[move_idx].flip);
-            eval_undo(search, &move_list[move_idx].flip);
-            if (is_main_search){
-                if (g <= alpha)
-                    std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " [" << alpha << "," << beta << "] " << idx_to_coord(move_list[move_idx].flip.pos) << " value " << g << " or lower" << std::endl;
-                else
-                    std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " [" << alpha << "," << beta << "] " << idx_to_coord(move_list[move_idx].flip.pos) << " value " << g << std::endl;
-            }
-            if (v < g){
-                v = g;
-                best_move = move_list[move_idx].flip.pos;
-                if (alpha < v){
-                    if (beta <= v)
-                        break;
-                    alpha = v;
+                if (v < g){
+                    v = g;
+                    best_move = moves[i];
+                    if (alpha < v){
+                        alpha = v;
+                        if (beta <= v)
+                            break;
+                    }
                 }
+                legal ^= 1ULL << moves[i];
+                ++pv_idx;
             }
-            ++pv_idx;
+        }
+        if (alpha < beta && legal){
+            const int canput = pop_count_ull(legal);
+            std::vector<Flip_value> move_list(canput);
+            int idx = 0;
+            for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
+                calc_flip(&move_list[idx++].flip, &search->board, cell);
+            move_list_evaluate(search, move_list, depth, alpha, beta, is_end_search, &searching);
+            for (int move_idx = 0; move_idx < canput; ++move_idx){
+                swap_next_best_move(move_list, move_idx, canput);
+                eval_move(search, &move_list[move_idx].flip);
+                search->move(&move_list[move_idx].flip);
+                    if (v == -SCORE_INF)
+                        g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, &searching);
+                    else{
+                        g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, &searching);
+                        if (alpha <= g && g < beta)
+                            g = -nega_scout(search, -beta, -g, depth - 1, false, move_list[move_idx].n_legal, is_end_search, &searching);
+                    }
+                search->undo(&move_list[move_idx].flip);
+                eval_undo(search, &move_list[move_idx].flip);
+                if (is_main_search){
+                    if (g <= alpha)
+                        std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " [" << alpha << "," << beta << "] " << idx_to_coord(move_list[move_idx].flip.pos) << " value " << g << " or lower" << std::endl;
+                    else
+                        std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " [" << alpha << "," << beta << "] " << idx_to_coord(move_list[move_idx].flip.pos) << " value " << g << std::endl;
+                }
+                if (v < g){
+                    v = g;
+                    best_move = move_list[move_idx].flip.pos;
+                    if (alpha < v){
+                        if (beta <= v)
+                            break;
+                        alpha = v;
+                    }
+                }
+                ++pv_idx;
+            }
         }
     }
     if (global_searching)
