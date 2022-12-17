@@ -46,14 +46,13 @@ int clog_search(Clog_search *search, bool is_enduring, int depth);
 /*
     @brief Wrapper for parallel clog search
 
-    @param id                   id for thread pool (not used at all)
     @param player               a bitboard representing the player
     @param opponent             a bitboard representing the opponent
     @param is_enduring          true if player is enduring from opponent's atack, else false
     @param depth                remaining depth
     @return search result in Parallel_clog_task structure
 */
-Parallel_clog_task clog_do_task(int id, uint64_t player, uint64_t opponent, bool is_enduring, int depth){
+Parallel_clog_task clog_do_task(uint64_t player, uint64_t opponent, bool is_enduring, int depth){
     Clog_search search;
     search.board.player = player;
     search.board.opponent = opponent;
@@ -80,7 +79,7 @@ inline bool clog_split(const Clog_search *search, const int canput, const int pv
         pv_idx < canput - 1 && 
         depth >= CLOG_SEARCH_SPLIT_DEPTH){
             bool pushed;
-            parallel_tasks.emplace_back(thread_pool.push(&pushed, &clog_do_task, search->board.player, search->board.opponent, is_enduring, depth));
+            parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&clog_do_task, search->board.player, search->board.opponent, is_enduring, depth)));
             if (!pushed)
                 parallel_tasks.pop_back();
             return pushed;
