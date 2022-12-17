@@ -522,3 +522,6 @@ level: 15 start depth: 8 Egaroucid plays black WDL: 44-23-33 0.5714285714285714 
 start depth: 10 Egaroucid plays black WDL: 59-13-28 Egaroucid plays white WDL: 52-15-33 Egaroucid win rate: 0.6453488372093024
 
 2022/12/17 test for Egaroucid 6.1.0
+vs Edax 4.4
+level: 1 Egaroucid plays black WDL: 549-25-426 0.563076923076923 Egaroucid plays white WDL: 571-23-406 0.5844421699078812 Egaroucid win rate: 0.5737704918032787
+level: 5 Egaroucid plays black WDL: 609-51-340 0.6417281348788199 Egaroucid plays white WDL: 582-49-369 0.61198738170347 Egaroucid win rate: 0.6268421052631579
