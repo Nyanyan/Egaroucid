@@ -459,14 +459,13 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     @param alpha                alpha value
     @param beta                 beta value
     @param depth                remaining depth
-    @param skipped              already passed?
     @param is_end_search        search till the end?
     @param is_main_search       is this main search? (used for logging)
     @param best_move            previously calculated best move
     @param clogs                previously found clog moves
     @return pair of value and best move
 */
-std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, bool is_end_search, const bool is_main_search, const std::vector<Clog_result> clogs){
+std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, bool is_end_search, const bool is_main_search, const std::vector<Clog_result> clogs){
     bool searching = true;
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
