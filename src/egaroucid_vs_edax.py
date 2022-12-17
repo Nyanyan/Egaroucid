@@ -63,8 +63,19 @@ for num in range(max_num):
                 while line == '':
                     line = egaroucid.stdout.readline().decode().replace('\r', '').replace('\n', '')
                 coord = line
-                y = int(coord[1]) - 1
-                x = ord(coord[0]) - ord('a')
+                try:
+                    y = int(coord[1]) - 1
+                    x = ord(coord[0]) - ord('a')
+                except:
+                    print('error')
+                    print(grid_str[:-1])
+                    print(o.player, player)
+                    print(coord)
+                    egaroucid.stdin.write('quit\n'.encode('utf-8'))
+                    egaroucid.stdin.flush()
+                    edax.stdin.write('quit\n'.encode('utf-8'))
+                    edax.stdin.flush()
+                    exit()
             else:
                 edax.stdin.write(grid_str.encode('utf-8'))
                 edax.stdin.flush()
@@ -73,9 +84,20 @@ for num in range(max_num):
                 line = ''
                 while len(line) < 3:
                     line = edax.stdout.readline().decode().replace('\r', '').replace('\n', '')
-                coord = line.split()[2]
-                y = int(coord[1]) - 1
-                x = ord(coord[0]) - ord('A')
+                try:
+                    coord = line.split()[2]
+                    y = int(coord[1]) - 1
+                    x = ord(coord[0]) - ord('A')
+                except:
+                    print('error')
+                    print(grid_str[:-1])
+                    print(o.player, player)
+                    print(coord)
+                    egaroucid.stdin.write('quit\n'.encode('utf-8'))
+                    egaroucid.stdin.flush()
+                    edax.stdin.write('quit\n'.encode('utf-8'))
+                    edax.stdin.flush()
+                    exit()
             record += chr(ord('a') + x) + str(y + 1)
             if not o.move(y, x):
                 o.print_info()
