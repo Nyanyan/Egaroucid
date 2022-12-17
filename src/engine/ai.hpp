@@ -507,7 +507,7 @@ Analyze_result ai_analyze(Board board, int level, bool use_book, bool use_multi_
                 ++idx;
         }
         if (alpha < beta && idx == canput){
-            move_list_evaluate(&search, move_list, depth, alpha, beta, !is_mid_search, &searching);
+            move_list_evaluate(&search, move_list, depth, alpha, beta, &searching);
             for (int move_idx = 0; move_idx < canput; ++move_idx){
                 swap_next_best_move(move_list, move_idx, canput);
                 eval_move(&search, &move_list[move_idx].flip);

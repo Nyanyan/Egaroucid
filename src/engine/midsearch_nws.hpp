@@ -241,7 +241,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
                     return v;
             }
         #endif
-        move_list_evaluate_nws(search, move_list, depth, alpha, is_end_search, searching);
+        move_list_evaluate_nws(search, move_list, depth, alpha, searching);
         #if USE_ALL_NODE_PREDICTION
             const bool seems_to_be_all_node = predict_all_node(search, alpha, depth, LEGAL_UNDEFINED, is_end_search, searching);
         #else

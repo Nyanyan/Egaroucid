@@ -255,7 +255,7 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, c
             int idx = 0;
             for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
                 calc_flip(&move_list[idx++].flip, &search->board, cell);
-            move_list_evaluate(search, move_list, depth, alpha, beta, is_end_search, searching);
+            move_list_evaluate(search, move_list, depth, alpha, beta, searching);
             for (int move_idx = 0; move_idx < canput; ++move_idx){
                 swap_next_best_move(move_list, move_idx, canput);
                 eval_move(search, &move_list[move_idx].flip);
@@ -420,7 +420,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
                     return v;
             }
         #endif
-        move_list_evaluate(search, move_list, depth, alpha, beta, is_end_search, searching);
+        move_list_evaluate(search, move_list, depth, alpha, beta, searching);
         for (int move_idx = 0; move_idx < canput; ++move_idx){
             swap_next_best_move(move_list, move_idx, canput);
             eval_move(search, &move_list[move_idx].flip);
@@ -551,7 +551,7 @@ std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int de
             int idx = 0;
             for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
                 calc_flip(&move_list[idx++].flip, &search->board, cell);
-            move_list_evaluate(search, move_list, depth, alpha, beta, is_end_search, &searching);
+            move_list_evaluate(search, move_list, depth, alpha, beta, &searching);
             for (int move_idx = 0; move_idx < canput; ++move_idx){
                 swap_next_best_move(move_list, move_idx, canput);
                 eval_move(search, &move_list[move_idx].flip);

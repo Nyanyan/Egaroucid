@@ -321,10 +321,9 @@ inline void swap_next_best_move(Flip_value move_list[], const int strt, const in
     @param depth                remaining depth
     @param alpha                alpha value
     @param beta                 beta value
-    @param is_end_search        search till the end?
     @param searching            flag for terminating this search
 */
-inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_list, int depth, int alpha, int beta, bool is_end_search, const bool *searching){
+inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_list, int depth, int alpha, int beta, const bool *searching){
     if (move_list.size() == 1)
         return;
     int eval_alpha = -std::min(SCORE_MAX, beta + MOVE_ORDERING_VALUE_OFFSET_BETA);
@@ -367,10 +366,9 @@ inline void move_list_evaluate_end(Search *search, Flip_value move_list[], const
     @param move_list            list of moves
     @param depth                remaining depth
     @param alpha                alpha value (beta = alpha + 1)
-    @param is_end_search        search till the end?
     @param searching            flag for terminating this search
 */
-inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move_list, int depth, int alpha, bool is_end_search, const bool *searching){
+inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move_list, int depth, int alpha, const bool *searching){
     if (move_list.size() == 1)
         return;
     const int eval_alpha = -std::min(SCORE_MAX, alpha + MOVE_ORDERING_NWS_VALUE_OFFSET_BETA);
