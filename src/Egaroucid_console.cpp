@@ -29,8 +29,27 @@ void init_console(Options options){
         std::cerr << "initialized" << std::endl;
 }
 
+std::string get_binary_path(char* argv0){
+    std::string res;
+    std::string arg = argv0;
+    bool slash_found = false;
+    for (int i = arg.length() - 1; i >= 0; --i){
+        if (arg[i] == '/' || arg[i] == '\\')
+            slash_found = true;
+        if (slash_found){
+            if (arg[i] == '\\')
+                res += '/';
+            else
+                res += arg[i];
+        }
+    }
+    std::reverse(res.begin(), res.end());
+    return res;
+}
+
 int main(int argc, char* argv[]){
     State state;
+    std::string binary_path = get_binary_path(argv[0]);
     std::vector<Commandline_option> commandline_options = get_commandline_options(argc, argv);
     Options options = get_options(commandline_options);
     print_special_commandline_options(commandline_options);
