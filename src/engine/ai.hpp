@@ -42,7 +42,7 @@ inline Search_result tree_search(Board board, int depth, uint_fast8_t mpc_level,
     bool is_end_search = (HW2 - board.n_discs() == depth);
     std::vector<Clog_result> clogs;
     res.clog_nodes = 0ULL;
-    if (!is_end_search && mpc_level < MPC_100_LEVEL){
+    if (!is_end_search || mpc_level != MPC_100_LEVEL){
         strt = tim();
         clogs = first_clog_search(board, &res.clog_nodes);
         res.clog_time = tim() - strt;

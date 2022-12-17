@@ -496,16 +496,18 @@ std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int de
         #else
             transposition_table.get(search, hash_code, depth, &lower, &upper, moves);
         #endif
-        if (upper == lower)
-            return std::make_pair(upper, moves[0]);
-        if (beta <= lower)
-            return std::make_pair(lower, moves[0]);
-        if (upper <= alpha)
-            return std::make_pair(upper, moves[0]);
-        if (alpha < lower)
-            alpha = lower;
-        if (upper < beta)
-            beta = upper;
+        if (moves[0] != TRANSPOSITION_TABLE_UNDEFINED){
+            if (upper == lower)
+                return std::make_pair(upper, moves[0]);
+            if (beta <= lower)
+                return std::make_pair(lower, moves[0]);
+            if (upper <= alpha)
+                return std::make_pair(upper, moves[0]);
+            if (alpha < lower)
+                alpha = lower;
+            if (upper < beta)
+                beta = upper;
+        }
         int pv_idx = 1;
         Flip flip_best;
         for (uint_fast8_t i = 0; i < N_TRANSPOSITION_MOVES; ++i){

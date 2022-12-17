@@ -22,7 +22,7 @@
 #include "thread_pool.hpp"
 #include "util.hpp"
 
-#define CLOG_NOT_FOUND -INF
+#define CLOG_NOT_FOUND -127
 
 // Do clog search in depth CLOG_SEARCH_DEPTH
 #define CLOG_SEARCH_DEPTH 11
