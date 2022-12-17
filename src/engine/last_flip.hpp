@@ -56,11 +56,10 @@ constexpr int_fast8_t n_flip_pre_calc[N_8BIT][HW] = {
     @brief calculate number of flipped discs in the last move
 
     @param player               a bitboard representing player
-    @param opponent             a bitboard representing opponent
     @param place                a place to put
     @return number of flipping discs
 */
-inline int_fast8_t count_last_flip(uint64_t player, uint64_t opponent, const uint_fast8_t place){
+inline int_fast8_t count_last_flip(uint64_t player, const uint_fast8_t place){
     const int t = place >> 3;
     const int u = place & 7;
     return
