@@ -78,14 +78,12 @@ Parallel_task ybwc_do_task_nws(uint64_t player, uint64_t opponent, int_fast8_t n
     @param is_end_search        search till the end?
     @param searching            flag for terminating this search
     @param policy               the last move
-    @param canput               number of legal moves
     @param pv_idx               the priority of this move
     @param seems_to_be_all_node     this node seems to be ALL node?
-    @param split_count          number of splitted nodes here
     @param parallel_tasks       vector of splitted tasks
     @return task splitted?
 */
-inline bool ybwc_split_nws(const Search *search, int alpha, int depth, uint64_t legal, bool is_end_search, const bool *searching, uint_fast8_t policy, const int canput, const int pv_idx, const bool seems_to_be_all_node, const int split_count, std::vector<std::future<Parallel_task>> &parallel_tasks){
+inline bool ybwc_split_nws(const Search *search, int alpha, int depth, uint64_t legal, bool is_end_search, const bool *searching, uint_fast8_t policy, const int pv_idx, const bool seems_to_be_all_node, std::vector<std::future<Parallel_task>> &parallel_tasks){
     if (thread_pool.n_idle() &&
         (pv_idx || seems_to_be_all_node)){
             bool pushed;
