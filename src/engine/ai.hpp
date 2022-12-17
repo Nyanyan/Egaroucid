@@ -434,12 +434,11 @@ void ai_opponent_move(Board board, double res[]){
 
     @param board                board to solve
     @param level                level of AI
-    @param use_book             use book?
     @param use_multi_thread     search in multi thread?
     @param date                 search date (to rewrite old hash data)
     @return the result in Search_result structure
 */
-Analyze_result ai_analyze(Board board, int level, bool use_book, bool use_multi_thread, uint8_t date, uint_fast8_t played_move){
+Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint8_t date, uint_fast8_t played_move){
     Analyze_result res;
     res.played_move = played_move;
     int got_depth, depth;

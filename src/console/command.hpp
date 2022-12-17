@@ -308,7 +308,7 @@ void analyze(Board_info *board, Options *options, State *state){
         uint64_t played_board = (n_board.player | n_board.opponent) ^ (board->boards[i + 1].player | board->boards[i + 1].opponent);
         if (pop_count_ull(played_board) == 1){
             uint_fast8_t played_move = ntz(played_board);
-            Analyze_result result = ai_analyze(n_board, options->level, true, true, state->date, played_move);
+            Analyze_result result = ai_analyze(n_board, options->level, true, state->date, played_move);
             ++state->date;
             state->date = manage_date(state->date);
             std::string judge = "";
