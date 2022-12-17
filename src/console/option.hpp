@@ -15,6 +15,7 @@
 #include "console_common.hpp"
 
 struct Options{
+    std::string binary_path;
     int level;
     int n_threads;
     bool show_log;
@@ -27,8 +28,9 @@ struct Options{
     bool quiet;
 };
 
-Options get_options(std::vector<Commandline_option> commandline_options){
+Options get_options(std::vector<Commandline_option> commandline_options, std::string binary_path){
     Options res;
+    res.binary_path = binary_path;
     std::string str;
     res.level = DEFAULT_LEVEL;
     str = find_commandline_option(commandline_options, ID_LEVEL);
@@ -72,11 +74,11 @@ Options get_options(std::vector<Commandline_option> commandline_options){
             std::cerr << "[ERROR] hash argument out of range" << std::endl;
         }
     }
-    res.book_file = "resources/book.egbk";
+    res.book_file = binary_path + "resources/book.egbk";
     str = find_commandline_option(commandline_options, ID_BOOK_FILE);
     if (str != OPTION_NOT_FOUND)
         res.book_file = str;
-    res.eval_file = "resources/eval.egev";
+    res.eval_file = binary_path + "resources/eval.egev";
     str = find_commandline_option(commandline_options, ID_EVAL_FILE);
     if (str != OPTION_NOT_FOUND)
         res.eval_file = str;

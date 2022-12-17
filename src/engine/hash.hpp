@@ -110,3 +110,30 @@ bool hash_init(int hash_level){
     }
     return true;
 }
+
+/*
+    @brief initialize hash array from optimized data
+
+    @param hash_level           hash level
+    @param binary_path          path to binary
+*/
+bool hash_init(int hash_level, std::string binary_path){
+    FILE* fp;
+    if (!file_open(&fp, (binary_path + "resources/hash/hash" + std::to_string(hash_level) + ".eghs").c_str(), "rb")){
+        std::cerr << "[ERROR] can't open hash" + std::to_string(hash_level) + ".eghs" << std::endl;
+        return false;
+    }
+    for (int i = 0; i < 4; ++i){
+        if (fread(hash_rand_player[i], 4, 65536, fp) < 65536){
+            std::cerr << "[ERROR] hash" + std::to_string(hash_level) + ".eghs broken" << std::endl;
+            return false;
+        }
+    }
+    for (int i = 0; i < 4; ++i){
+        if (fread(hash_rand_opponent[i], 4, 65536, fp) < 65536){
+            std::cerr << "[ERROR] hash" + std::to_string(hash_level) + ".eghs broken" << std::endl;
+            return false;
+        }
+    }
+    return true;
+}

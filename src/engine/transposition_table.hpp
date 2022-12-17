@@ -547,6 +547,37 @@ bool hash_resize(int hash_level_failed, int hash_level, bool show_log){
 }
 
 /*
+    @brief Resize hash and transposition tables
+
+    @param hash_level_failed    hash level used when failed
+    @param hash_level           new hash level
+    @param binary_path          path to binary
+    @return hash resized?
+*/
+bool hash_resize(int hash_level_failed, int hash_level, std::string binary_path, bool show_log){
+    if (!transposition_table.resize(hash_level)){
+        std::cerr << "[ERROR] hash table resize failed. resize to level " << hash_level_failed << std::endl;
+        transposition_table.resize(hash_level_failed);
+        if (!hash_init(hash_level_failed, binary_path)){
+            std::cerr << "[ERROR] can't get hash. you can ignore this error" << std::endl;
+            hash_init_rand(hash_level_failed);
+        }
+        global_hash_level = hash_level_failed;
+        return false;
+    }
+    if (!hash_init(hash_level, binary_path)){
+        std::cerr << "[ERROR] can't get hash. you can ignore this error" << std::endl;
+        hash_init_rand(hash_level);
+    }
+    global_hash_level = hash_level;
+    if (show_log){
+        double size_mb = (double)sizeof(Hash_node) / 1024 / 1024 * hash_sizes[hash_level];
+        std::cerr << "hash resized to level " << hash_level << " elements " << hash_sizes[hash_level] << " size " << size_mb << " MB" << std::endl;
+    }
+    return true;
+}
+
+/*
     @brief manage date
 
     @return new date
