@@ -33,7 +33,7 @@ int main(int argc, char* argv[]){
     State state;
     std::vector<Commandline_option> commandline_options = get_commandline_options(argc, argv);
     Options options = get_options(commandline_options);
-    print_special_commandline_options(commandline_options, &options);
+    print_special_commandline_options(commandline_options);
     init_console(options);
     execute_special_tasks();
     execute_special_commandline_tasks(commandline_options, &options, &state);
