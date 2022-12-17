@@ -523,12 +523,11 @@ inline int swap_player_idx(int i, int pattern_size){
 /*
     @brief used for unzipping the evaluation function
 
-    @param id                   for threadpool. not used at all
     @param phase_idx            evaluation phase
     @param pattern_idx          evaluation pattern's index
     @param siz                  size of the pattern
 */
-void init_pattern_arr_rev(int id, int phase_idx, int pattern_idx, int siz){
+void init_pattern_arr_rev(int phase_idx, int pattern_idx, int siz){
     int ri;
     for (int i = 0; i < pow3[siz]; ++i){
         ri = swap_player_idx(i, siz);
@@ -655,14 +654,14 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
         int i = 0;
         for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
             for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx)
-                tasks[i++] = thread_pool.push(init_pattern_arr_rev, phase_idx, pattern_idx, pattern_sizes[pattern_idx]);
+                tasks[i++] = thread_pool.push(std::bind(init_pattern_arr_rev, phase_idx, pattern_idx, pattern_sizes[pattern_idx]));
         }
         for (std::future<void> &task: tasks)
             task.get();
     } else{
         for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
             for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx)
-                init_pattern_arr_rev(0, phase_idx, pattern_idx, pattern_sizes[pattern_idx]);
+                init_pattern_arr_rev(phase_idx, pattern_idx, pattern_sizes[pattern_idx]);
         }
     }
     #if USE_SIMD_EVALUATION
