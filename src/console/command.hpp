@@ -25,7 +25,7 @@
 #define ANALYZE_MISTAKE_THRESHOLD 4
 
 std::string get_command_line(){
-    std::cout << "> ";
+    std::cerr << "> ";
     std::string cmd_line;
     std::getline(std::cin, cmd_line);
     return cmd_line;
@@ -194,7 +194,7 @@ void setboard(Board_info *board, std::string board_str){
     for (int i = 0; i < HW2; ++i){
         if (board_str[i] == 'B' || board_str[i] == 'b' || board_str[i] == 'X' || board_str[i] == 'x' || board_str[i] == '0' || board_str[i] == '*')
             new_board.player |= 1ULL << (HW2_M1 - i);
-        else if (board_str[i] == 'W' || board_str[i] == 'W' || board_str[i] == 'O' || board_str[i] == 'o' || board_str[i] == '1')
+        else if (board_str[i] == 'W' || board_str[i] == 'w' || board_str[i] == 'O' || board_str[i] == 'o' || board_str[i] == '1')
             new_board.opponent |= 1ULL << (HW2_M1 - i);
     }
     if (board_str[HW2] == 'B' || board_str[HW2] == 'b' || board_str[HW2] == 'X' || board_str[HW2] == 'x' || board_str[HW2] == '0' || board_str[HW2] == '*')
