@@ -199,7 +199,7 @@ void setboard(Board_info *board, std::string board_str){
     }
     if (board_str[HW2] == 'B' || board_str[HW2] == 'b' || board_str[HW2] == 'X' || board_str[HW2] == 'x' || board_str[HW2] == '0' || board_str[HW2] == '*')
         player = BLACK;
-    else if (board_str[HW2] == 'W' || board_str[HW2] == 'W' || board_str[HW2] == 'O' || board_str[HW2] == 'o' || board_str[HW2] == '1')
+    else if (board_str[HW2] == 'W' || board_str[HW2] == 'w' || board_str[HW2] == 'O' || board_str[HW2] == 'o' || board_str[HW2] == '1')
         player = WHITE;
     else{
         std::cerr << "[ERROR] invalid player argument" << std::endl;
