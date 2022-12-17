@@ -24,6 +24,7 @@ struct Options{
     bool nobook;
     int mode;
     bool gtp;
+    bool quiet;
 };
 
 Options get_options(std::vector<Commandline_option> commandline_options){
@@ -96,5 +97,6 @@ Options get_options(std::vector<Commandline_option> commandline_options){
         }
     }
     res.gtp = find_commandline_option(commandline_options, ID_GTP) == OPTION_FOUND;
+    res.quiet = find_commandline_option(commandline_options, ID_QUIET) == OPTION_FOUND;
     return res;
 }

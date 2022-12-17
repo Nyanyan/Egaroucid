@@ -43,8 +43,10 @@ int main(int argc, char* argv[]){
         if (options.gtp){
             gtp_check_command(&board, &state, &options);
         }else {
-            print_board_info(&board);
-            std::cout << std::endl;
+            if (!options.quiet){
+                print_board_info(&board);
+                std::cout << std::endl;
+            }
             if (!execute_special_tasks_loop(&board, &state, &options))
                 check_command(&board, &state, &options);
         }

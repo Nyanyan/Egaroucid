@@ -272,6 +272,10 @@ void print_search_result(Search_result result, int level){
     print_search_result_body(result, level);
 }
 
+void print_search_result_quiet(Search_result result){
+    std::cout << idx_to_coord(result.policy) << std::endl;
+}
+
 void print_analyze_body(Analyze_result result, int ply, int player, std::string judge){
     std::string s;
     std::cout << "|";

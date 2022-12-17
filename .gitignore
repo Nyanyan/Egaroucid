@@ -41,3 +41,6 @@ null_move_pruning/data
 move_ordering/end_last7/data
 move_ordering/end_last7/learned_data
 src/problem
+src/edax-4.4
+src/data
+src/openingssmall.txt
