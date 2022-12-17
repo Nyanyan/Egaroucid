@@ -54,7 +54,6 @@ for num in range(max_num):
                 grid_str += ' b\n'
             else:
                 grid_str += ' w\n'
-            print(grid_str, o.player, player)
             if o.player == player:
                 egaroucid.stdin.write(grid_str.encode('utf-8'))
                 egaroucid.stdin.flush()
@@ -74,7 +73,6 @@ for num in range(max_num):
                 line = ''
                 while len(line) < 3:
                     line = edax.stdout.readline().decode().replace('\r', '').replace('\n', '')
-                    print(line)
                 coord = line.split()[2]
                 y = int(coord[1]) - 1
                 x = ord(coord[0]) - ord('A')
