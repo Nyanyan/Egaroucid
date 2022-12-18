@@ -63,12 +63,13 @@ You can build with this command
 Required:
 
 * ```g++``` command
-  * worked with version 8.1.0
+  * worked with version 12.2.0
+* C++17
 
 ```
 $ git clone git@github.com:Nyanyan/Egaroucid.git
 $ cd Egaroucid/src
-$ g++ -O2 Egaroucid_console.cpp -o Egaroucid_for_console.exe -mtune=native -march=native -mfpmath=both -Wall -Wextra
+$ g++ -O2 Egaroucid_console.cpp -o Egaroucid_for_console.exe -mtune=native -march=native -mfpmath=both -std=c++17 -Wall -Wextra 
 ```
 
 
