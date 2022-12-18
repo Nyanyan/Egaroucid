@@ -50,7 +50,6 @@ std::string get_parent_path(char raw_path[]){
         char link[LINKSIZE];
         snprintf(link, LINKSIZE, "/proc/%d/exe", getpid());
         readlink(link, raw_path, PATH_MAX);
-        std::cerr << raw_path << std::endl;
         std::string res = get_parent_path(raw_path);
         return res;
     }
