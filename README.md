@@ -63,7 +63,9 @@ You can build with this command
 Required:
 
 * ```g++``` command
-  * worked with version 12.2.0
+  * worked with version 12.2.0 on Windows
+  * worked with version 11.3.0 on Ubuntu
+  * TBD for MacIntosh
 * C++17
 
 ```
