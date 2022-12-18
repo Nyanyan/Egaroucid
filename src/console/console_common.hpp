@@ -29,7 +29,7 @@
 
 std::string get_parent_path(char raw_path[]){
     std::filesystem::path p = raw_path;
-    p = std::filesystem::canonical(p);
+    //p = std::filesystem::canonical(p);
     std::string res = p.parent_path().string() + "/";
     return res;
 }
