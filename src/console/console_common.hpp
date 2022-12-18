@@ -10,6 +10,7 @@
 
 #pragma once
 #include <iostream>
+//#include <filesystem>
 #include <stdlib.h>
 #include <string>
 #ifdef _WIN64
@@ -20,6 +21,7 @@
 #define MODE_AI_HUMAN 1
 #define MODE_AI_AI 2
 #define MODE_HUMAN_HUMAN 3
+
 
 std::string replace_backslash(std::string str){
     std::string res;
@@ -42,6 +44,15 @@ std::string get_parent_path(char raw_path[]){
     res += dir;
     return res;
 }
+
+/*
+std::string get_parent_path(char raw_path[]){
+    std::filesystem::path p = raw_path;
+    std::string res = p.parent_path().string();
+    std::cerr << res << std::endl;
+    return res;
+}
+*/
 
 #ifdef _WIN64
     std::string get_binary_path(){
