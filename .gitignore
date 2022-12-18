@@ -46,3 +46,4 @@ src/data
 src/openingssmall.txt
 src/__pycache__
 web_resources
+web_resources/node_modules
