@@ -27,7 +27,7 @@
 #define MODE_AI_AI 2
 #define MODE_HUMAN_HUMAN 3
 
-#ifdef _WIN64
+#ifdef _WIN64 // Windows
     std::string replace_backslash(std::string str){
         std::string res;
         for (int i = 0; i < (int)str.length(); ++i){
@@ -57,8 +57,8 @@
             res = replace_backslash(get_parent_path(raw_path));
         return res;
     }
-#elif __APPLE__ // TBD
-#else
+#elif __APPLE__ // Mac TBD
+#else // Linux
     std::string get_parent_path(char raw_path[]){
         std::filesystem::path p = raw_path;
         std::string res = p.parent_path().string() + "/";
