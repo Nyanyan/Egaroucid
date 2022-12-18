@@ -22,9 +22,13 @@ need_coord_translate = 13
 idxes = [0, 2, 6, 4, 11, 8, 16]
 need_coord_translate = -1
 '''
-
-#5.7.0以降
+'''
+#5.7.0-6.0.0
 idxes = [0, 2, 6, 4, 10, 8, 12]
+need_coord_translate = -1
+'''
+#6.1.0
+idxes = [0, 2, 4, 3, 5, 6, 7]
 need_coord_translate = -1
 
 def coord_translator(cell):
@@ -37,7 +41,8 @@ whole_time = 0
 whole_nodes = 0
 res = head
 while True:
-    data = input().split()
+    data = input().replace('|', ' ').split()
+    print(data)
     try:
         use_data = []
         for idx in idxes:
@@ -45,13 +50,16 @@ while True:
                 use_data.append(coord_translator(data[idx]))
             else:
                 if idx == idxes[4]:
-                    use_data.append(str(round(int(data[idx]) / 1000, 3)))
+                    tim = data[idx][7:]
+                    tim_float = float(tim)
+                    tim = str(tim_float)
+                    #tim = str(round(int(data[idx]) / 1000, 3))
+                    use_data.append(tim)
+                    whole_time += tim_float
                 else:
                     use_data.append(data[idx])
-            if idx == idxes[4]:
-                whole_time += int(data[idx]) / 1000
-            elif idx == idxes[5]:
-                whole_nodes += int(data[idx])
+                if idx == idxes[5]:
+                    whole_nodes += int(data[idx])
         res += '<tr>\n'
         for use_datum in use_data:
             res += '<td>'

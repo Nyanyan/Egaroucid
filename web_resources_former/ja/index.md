@@ -12,7 +12,40 @@ Egaroucidは世界最強クラスのオセロAIを搭載した無料のオセロ
 
 
 
-## 主な機能
+## ラインナップ
+
+<table>
+    <tr>
+        <td>名称</td>
+        <td>対応OS</td>
+        <td>対応言語</td>
+        <td>最新バージョン</td>
+    </tr>
+    <tr>
+        <td>Egaroucid</td>
+        <td>Windows</td>
+        <td>日本語/英語</td>
+        <td>6.0.0</td>
+    </tr>
+    <tr>
+        <td>Egaroucid for Console</td>
+        <td>Windows/MacOS/Linux</td>
+        <td>英語</td>
+        <td>開発中</td>
+    </tr>
+    <tr>
+        <td>Egaroucid for Web</td>
+        <td>任意のブラウザ</td>
+        <td>日本語/英語</td>
+        <td>6.0.0 for Web</td>
+    </tr>
+</table>
+
+以上全てフリーソフトとして公開しています。
+
+
+
+## 特徴
 
 <ul>
     <li>対局</li>

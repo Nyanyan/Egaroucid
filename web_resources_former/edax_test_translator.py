@@ -20,10 +20,14 @@ idxes = [0, 8]
 idxes = [1, 9]
 idxes = [1, 14]
 '''
-# 5.9.0以降
+'''
+# 5.9.0-6.0.0
 #idxes = [1, 9]
 idxes = [1, 15]
-
+'''
+# 6.1.0
+#idxes = [1, 6]
+idxes = [1, 12]
 
 res = head
 while True:

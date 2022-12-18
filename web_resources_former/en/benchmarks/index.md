@@ -11,6 +11,10 @@ The first one is the latest.
 		<td>Version</td>
 		<td>Date</td>
 	</tr>
+    <tr>
+		<td><a href="./6_1_0/">6.1.0</a></td>
+		<td>TBD</td>
+	</tr>
 	<tr>
 		<td><a href="./6_0_0/">6.0.0</a></td>
 		<td>2022/10/10</td>
