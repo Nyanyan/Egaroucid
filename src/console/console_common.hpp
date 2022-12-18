@@ -10,13 +10,13 @@
 
 #pragma once
 #include <iostream>
-#include <stdlib.h>
+//#include <stdlib.h>
 #include <string>
+#include <filesystem>
 #ifdef _WIN64
     #include <windows.h>
 #elif __APPLE__ // TBD
 #else
-    #include <filesystem>
     #include <linux/limits.h>
     #include <sys/types.h>
     #include <unistd.h>
@@ -27,44 +27,22 @@
 #define MODE_AI_AI 2
 #define MODE_HUMAN_HUMAN 3
 
+std::string get_parent_path(char raw_path[]){
+    std::filesystem::path p = raw_path;
+    std::string res = p.parent_path().string() + "/";
+    return res;
+}
+
 #ifdef _WIN64 // Windows
-    std::string replace_backslash(std::string str){
-        std::string res;
-        for (int i = 0; i < (int)str.length(); ++i){
-            if (str[i] == '\\')
-                res += '/';
-            else
-                res += str[i];
-        }
-        return res;
-    }
-
-    std::string get_parent_path(char raw_path[]){
-        char drive[MAX_PATH + 1],
-            dir[MAX_PATH + 1],
-            fname[MAX_PATH + 1],
-            ext[MAX_PATH + 1];
-        _splitpath_s(raw_path,drive,dir,fname,ext);
-        std::string res = drive;
-        res += dir;
-        return res;
-    }
-
     std::string get_binary_path(){
         std::string res;
         char raw_path[MAX_PATH + 1];
         if (GetModuleFileName(NULL, raw_path, MAX_PATH))
-            res = replace_backslash(get_parent_path(raw_path));
+            res = get_parent_path(raw_path);
         return res;
     }
 #elif __APPLE__ // Mac TBD
 #else // Linux
-    std::string get_parent_path(char raw_path[]){
-        std::filesystem::path p = raw_path;
-        std::string res = p.parent_path().string() + "/";
-        return res;
-    }
-
     std::string get_binary_path(){
         char raw_path[PATH_MAX + 1];
         const size_t LINKSIZE = 100;
