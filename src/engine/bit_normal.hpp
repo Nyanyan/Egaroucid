@@ -178,17 +178,6 @@ inline uint64_t horizontal_mirror(uint64_t x){
 }
 
 /*
-    @brief mirroring bitboards in horizontal
-
-    @param x                    bitboards
-*/
-inline u64_4 horizontal_mirror(u64_4 x){
-    x = ((x >> 1) & 0x5555555555555555ULL) | ((x << 1) & 0xAAAAAAAAAAAAAAAAULL);
-    x = ((x >> 2) & 0x3333333333333333ULL) | ((x << 2) & 0xCCCCCCCCCCCCCCCCULL);
-    return ((x >> 4) & 0x0F0F0F0F0F0F0F0FULL) | ((x << 4) & 0xF0F0F0F0F0F0F0F0ULL);
-}
-
-/*
     @brief rotate a board in 90 degrees in counter clockwise
 
     @param x                    a bitboard
@@ -229,9 +218,17 @@ inline uint64_t rotate_180(uint64_t x){
     inline uint_fast8_t ntz(uint64_t *x){
         return pop_count_ull((*x & (-(*x))) - 1);
     }
+
+    inline uint_fast8_t ntz(uint64_t x){
+        return pop_count_ull((x & (-x)) - 1);
+    }
 #else
     inline uint_fast8_t ntz(uint64_t *x){
         return pop_count_ull((~(*x)) & ((*x) - 1));
+    }
+
+    inline uint_fast8_t ntz(uint64_t x){
+        return pop_count_ull((~x) & (x - 1));
     }
 #endif
 
