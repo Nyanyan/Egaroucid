@@ -47,3 +47,4 @@ src/openingssmall.txt
 src/__pycache__
 web_resources
 web_resources/node_modules
+web_resources_former/generated
