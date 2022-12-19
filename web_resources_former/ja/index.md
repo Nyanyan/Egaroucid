@@ -87,6 +87,22 @@ Egaroucidは世界最強クラスのオセロAIを搭載した無料のオセロ
 
 
 
+## バグ報告・新機能の提案などを募集しています
+
+[こちらのGoogleフォーム](https://docs.google.com/forms/d/e/1FAIpQLSd6ML1T1fc707luPEefBXuImMnlM9cQP8j-YHKiSyFoS-8rmQ/viewform)より意見を受け付けています。
+
+<ul>
+    <li>不具合を発見した</li>
+    <li>Egaroucidの翻訳をしたい</li>
+    <li>こんな機能が欲しい</li>
+    <li>こうしたらもっと良くなりそう</li>
+    <li>ユーザテストに参加したい</li>
+</ul>
+
+など、様々な意見をお待ちしております。
+
+
+
 ## 謝辞
 
 開発に多大なる貢献をしていただいた方々に感謝します(順不同、敬称略)。
@@ -115,19 +131,18 @@ UIデザイン
 </ul>
 
 
-
 ## 関連リンク
 
-[Egaroucid GitHub レポジトリ](https://github.com/Nyanyan/Egaroucid)
+<ul>
+    <li>[Egaroucid GitHub レポジトリ](https://github.com/Nyanyan/Egaroucid)</li>
+	<li>[自作最弱オセロAI](https://www.egaroucen.nyanyan.dev/)</li>
+    <li>[作者Webサイト](https://nyanyan.dev/ja/)</li>
+    <li>[作者Twitter](https://twitter.com/takuto_yamana)</li>
+</ul>
 
 
 
-[自作最弱オセロAI](https://www.egaroucen.nyanyan.dev/)
+## 作者
 
+[山名琢翔](https://nyanyan.dev/ja/)
 
-
-[作者Webサイト](https://nyanyan.dev/ja/)
-
-
-
-[作者Twitter](https://twitter.com/takuto_yamana)
