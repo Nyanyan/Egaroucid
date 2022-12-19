@@ -483,7 +483,7 @@ Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint8_t
     if (legal){
         bool book_got, book_found = false;
         Flip flip;
-        int g, v = -INF;
+        int g, v = -INF, best_move = -1;
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
             book_got = false;
             calc_flip(&flip, &search.board, cell);
