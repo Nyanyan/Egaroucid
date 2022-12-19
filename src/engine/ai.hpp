@@ -481,22 +481,19 @@ Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint8_t
     std::cerr << "played" << std::endl;
     uint64_t legal = search.board.get_legal() ^ (1ULL << played_move);
     if (legal){
-        int v = -SCORE_INF, g, alpha = -SCORE_MAX, beta = SCORE_MAX, best_move = TRANSPOSITION_TABLE_UNDEFINED;
-        const int canput = pop_count_ull(legal);
-        std::vector<Flip_value> move_list(canput);
-        int idx = 0;
+        bool book_got, book_found = false;
+        Flip flip;
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-            calc_flip(&move_list[idx].flip, &search.board, cell);
-            bool book_got = false;
-            search.board.move_board(&move_list[idx].flip);
+            book_got = false;
+            calc_flip(&flip, &search.board, cell);
+            search.board.move_board(&flip);
                 g = book.get(&search.board);
                 if (g != -INF){
                     book_got = true;
+                    book_found = true;
                     if (v < g){
                         v = g;
-                        res.alt_depth = SEARCH_BOOK;
-                        res.alt_probability = SELECTIVITY_PERCENTAGE[MPC_100_LEVEL];
-                        best_move = move_list[idx].flip.pos;
+                        best_move = flip.pos;
                         if (alpha < v){
                             if (beta <= v)
                                 break;
@@ -504,42 +501,22 @@ Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint8_t
                         }
                     }
                 }
-            search.board.undo_board(&move_list[idx].flip);
-            if (!book_got)
-                ++idx;
+            search.board.undo_board(&flip);
         }
-        std::cerr << "alternative book " << (idx == canput) << std::endl;
-        if (idx == canput){
-            move_list_evaluate(&search, move_list, depth, alpha, beta, &searching);
-            std::cerr << "movelist evaluated" << std::endl;
-            for (int move_idx = 0; move_idx < canput; ++move_idx){
-                swap_next_best_move(move_list, move_idx, canput);
-                eval_move(&search, &move_list[move_idx].flip);
-                search.move(&move_list[move_idx].flip);
-                    if (v == -SCORE_INF)
-                        g = -nega_scout(&search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, !is_mid_search, &searching);
-                    else{
-                        g = -nega_alpha_ordering_nws(&search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, !is_mid_search, &searching);
-                        if (alpha <= g && g < beta)
-                            g = -nega_scout(&search, -beta, -g, depth - 1, false, move_list[move_idx].n_legal, !is_mid_search, &searching);
-                    }
-                search.undo(&move_list[move_idx].flip);
-                eval_undo(&search, &move_list[move_idx].flip);
-                if (v < g){
-                    v = g;
-                    res.alt_depth = got_depth;
-                    res.alt_probability = SELECTIVITY_PERCENTAGE[mpc_level];
-                    best_move = move_list[move_idx].flip.pos;
-                    if (alpha < v){
-                        if (beta <= v)
-                            break;
-                        alpha = v;
-                    }
-                }
-            }
+        std::cerr << "alternative book " << book_found << std::endl;
+        if (book_found){
+            res.alt_move = best_move;
+            res.alt_score = v;
+            res.alt_depth = SEARCH_BOOK;
+            res.alt_probability = SELECTIVITY_PERCENTAGE[MPC_100_LEVEL];
+        } else{
+            std::vector<Clog_result> clogs;
+            std::pair<int, int> nega_scout_res = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth, !is_mid_search, false, clogs);
+            res.alt_move = nega_scout_res.second;
+            res.alt_score = nega_scout_res.first;
+            res.alt_depth = got_depth;
+            res.alt_probability = SELECTIVITY_PERCENTAGE[mpc_level];
         }
-        res.alt_move = best_move;
-        res.alt_score = v;
     } else{
         res.alt_move = -1;
         res.alt_score = SCORE_UNDEFINED;
