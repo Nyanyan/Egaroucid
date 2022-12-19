@@ -71,7 +71,7 @@ Required:
 ```
 $ git clone git@github.com:Nyanyan/Egaroucid.git
 $ cd Egaroucid/src
-$ g++ -O2 Egaroucid_console.cpp -o Egaroucid_for_console.exe -mtune=native -march=native -mfpmath=both -std=c++17 -Wall -Wextra 
+$ g++ -O2 Egaroucid_console.cpp -o Egaroucid_for_console.exe -mtune=native -march=native -mfpmath=both -pthread -std=c++17 -Wall -Wextra 
 ```
 
 
