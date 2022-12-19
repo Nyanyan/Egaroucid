@@ -120,6 +120,19 @@ struct Search_result{
     bool is_end_search;
     int probability;
 
+    Search_result(){
+        policy = HW2;
+        value = SCORE_UNDEFINED;
+        depth = -1;
+        time = 0;
+        nodes = 0;
+        clog_time = 0;
+        clog_nodes = 0;
+        nps = 0;
+        is_end_search = false;
+        probability = 0;
+    }
+
     bool operator<(const Search_result &another) const{
         if (depth == SEARCH_BOOK && another.depth != SEARCH_BOOK)
             return false;
