@@ -364,6 +364,24 @@ inline void move_list_evaluate_end(Search *search, Flip_value move_list[], const
 }
 
 /*
+    @brief Evaluate all legal moves for endgame
+
+    @param search               search information
+    @param move_list            list of moves
+*/
+inline void move_list_evaluate_end(Search *search, std::vector<Flip_value> &move_list, const int canput){
+    if (canput == 1)
+        return;
+    bool wipeout_found = false;
+    for (Flip_value &flip_value: move_list){
+        if (!wipeout_found)
+            wipeout_found = move_evaluate_end(search, &flip_value);
+        else
+            flip_value.value = -INF;
+    }
+}
+
+/*
     @brief Evaluate all legal moves for midgame NWS
 
     @param search               search information
