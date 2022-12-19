@@ -4,6 +4,7 @@ html, body {
 
 table{
     border-collapse:  collapse;
+    font-size: min(11pt, 2.9vw);
 }
 
 tr:nth-child(odd){
@@ -34,7 +35,7 @@ table{
 }
 
 .box{
-    width: min(100vh, 90vw);
+    width: min(80vh, 90vw);
     text-align: start;
     margin: 0 auto;
 }
@@ -106,4 +107,9 @@ h3{
     text-align: center;
     display: table;
     vertical-align: middle;
+}
+
+.centering_box{
+    width: 100%;
+    text-align: center;
 }

@@ -8,8 +8,6 @@
 
 Egaroucidは世界最強クラスのオセロAIを搭載した無料のオセロ研究・対戦用アプリです。搭載AIの軽量バージョンは[CodinGame Othello](https://www.codingame.com/multiplayer/bot-programming/othello-1)で世界1位になったものです(2022年10月現在)
 
-<img class="pic" src="img/app.png">
-
 
 
 ## ラインナップ
@@ -20,35 +18,49 @@ Egaroucidは世界最強クラスのオセロAIを搭載した無料のオセロ
         <td>対応OS</td>
         <td>対応言語</td>
         <td>最新バージョン</td>
+        <td>導入</td>
     </tr>
     <tr>
         <td>Egaroucid</td>
         <td>Windows</td>
         <td>日本語/英語</td>
         <td>6.0.0</td>
+        <td>[ダウンロード](./download/)</td>
     </tr>
     <tr>
         <td>Egaroucid for Console</td>
-        <td>Windows/MacOS/Linux</td>
+        <td>Windows/Linux</td>
         <td>英語</td>
         <td>開発中</td>
+        <td>[詳細](./console/)</td>
     </tr>
     <tr>
         <td>Egaroucid for Web</td>
         <td>任意のブラウザ</td>
         <td>日本語/英語</td>
         <td>6.0.0 for Web</td>
+        <td>[遊ぶ](./web/)</td>
     </tr>
 </table>
 
 以上全てフリーソフトとして公開しています。
 
+<div class="centering_box">
 
+<img class="pic2" src="img/egaroucid.png">
+
+<img class="pic2" src="img/egaroucid_for_console.png">
+
+<img class="pic2" src="img/egaroucid_for_web.png">
+
+</div>
 
 ## 特徴
 
 <ul>
-    <li>対局</li>
+    <li>正確で高速な独自の評価関数</li>
+    <li>高速な探索</li>
+    <li>AIとの対局</li>
     <li>対局解析</li>
     <li>評価値・うみがめ数の表示</li>
     <li>各種入出力</li>
@@ -56,3 +68,66 @@ Egaroucidは世界最強クラスのオセロAIを搭載した無料のオセロ
     <li>Egaroucid/Edax形式bookの追加・統合</li>
     <li>定石名の表示</li>
 </ul>
+
+
+
+## 導入する
+
+### Egaroucid
+
+[ダウンロードページ](./download/)より自分の環境に合ったものをダウンロードし、インストーラを実行してください。
+
+### Egaroucid for Console
+
+[コンソール版導入ページ](./console/)の解説に従ってダウンロードまたはコンパイルをしてください。
+
+### Egaroucid for Web
+
+ダウンロードやインストールの必要はありません。[Web版ページ](./web/)で今すぐ遊べます。
+
+
+
+## 謝辞
+
+開発に多大なる貢献をしていただいた方々に感謝します(順不同、敬称略)。
+
+
+
+UIデザイン
+
+<ul>
+    <li>金子映像</li>
+</ul>
+
+
+ユーザテスト
+
+<ul>
+    <li>出本大起</li>
+	<li>まてぃか</li>
+    <li>Nettle蕁麻</li>
+    <li>okojoMK</li>
+    <li>高田征吾</li>
+    <li>まだらぬこ</li>
+    <li>長野泰志</li>
+    <li>trineutron</li>
+	<li>クルトン</li>
+</ul>
+
+
+
+## 関連リンク
+
+[Egaroucid GitHub レポジトリ](https://github.com/Nyanyan/Egaroucid)
+
+
+
+[自作最弱オセロAI](https://www.egaroucen.nyanyan.dev/)
+
+
+
+[作者Webサイト](https://nyanyan.dev/ja/)
+
+
+
+[作者Twitter](https://twitter.com/takuto_yamana)

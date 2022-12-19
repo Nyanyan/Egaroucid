@@ -1,0 +1,2 @@
+# Egaroucid for Console
+
