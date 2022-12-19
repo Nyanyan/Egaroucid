@@ -14,7 +14,9 @@
 #include <string>
 #include <filesystem>
 #ifdef _WIN64
-    #define NOMINMAX
+    #ifndef NOMINMAX
+        #define NOMINMAX
+    #endif
     #include <windows.h>
 #elif __APPLE__ // TBD
 #else
@@ -45,7 +47,11 @@ std::string get_parent_path(wchar_t raw_path[]){
 #ifdef _WIN64 // Windows
     std::string get_binary_path(){
         std::string res;
-        wchar_t raw_path[MAX_PATH + 1];
+        #ifdef UNICODE
+            wchar_t raw_path[MAX_PATH + 1];
+        #else
+            char raw_path[MAX_PATH + 1];
+        #endif
         if (GetModuleFileName(NULL, raw_path, MAX_PATH))
             res = get_parent_path(raw_path);
         return res;

@@ -439,8 +439,6 @@ void ai_opponent_move(Board board, double res[]){
     @return the result in Search_result structure
 */
 Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint8_t date, uint_fast8_t played_move){
-    board.print();
-    std::cerr << pop_count_ull(board.get_legal()) << " " << idx_to_coord(played_move) << std::endl;
     Analyze_result res;
     res.played_move = played_move;
     int got_depth, depth;
@@ -478,19 +476,16 @@ Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint8_t
         }
     search.undo(&flip);
     eval_undo(&search, &flip);
-    std::cerr << "played" << std::endl;
     uint64_t legal = search.board.get_legal() ^ (1ULL << played_move);
     if (legal){
-        bool book_got, book_found = false;
+        bool book_found = false;
         Flip flip;
         int g, v = -INF, best_move = -1;
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-            book_got = false;
             calc_flip(&flip, &search.board, cell);
             search.board.move_board(&flip);
                 g = book.get(&search.board);
                 if (g != -INF){
-                    book_got = true;
                     book_found = true;
                     if (v < g){
                         v = g;
@@ -499,7 +494,6 @@ Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint8_t
                 }
             search.board.undo_board(&flip);
         }
-        std::cerr << "alternative book " << book_found << std::endl;
         if (book_found){
             res.alt_move = best_move;
             res.alt_score = v;
@@ -519,6 +513,5 @@ Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint8_t
         res.alt_depth = -1;
         res.alt_probability = -1;
     }
-    std::cerr << "alternative" << std::endl;
     return res;
 }
