@@ -281,6 +281,8 @@ inline bool move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
     @param siz                  the size of move_list
 */
 inline void swap_next_best_move(std::vector<Flip_value> &move_list, const int strt, const int siz){
+    if (strt == siz - 1)
+        return;
     int top_idx = strt;
     int best_value = move_list[strt].value;
     for (int i = strt + 1; i < siz; ++i){
@@ -301,6 +303,8 @@ inline void swap_next_best_move(std::vector<Flip_value> &move_list, const int st
     @param siz                  the size of move_list
 */
 inline void swap_next_best_move(Flip_value move_list[], const int strt, const int siz){
+    if (strt == siz - 1)
+        return;
     int top_idx = strt;
     int best_value = move_list[strt].value;
     for (int i = strt + 1; i < siz; ++i){
