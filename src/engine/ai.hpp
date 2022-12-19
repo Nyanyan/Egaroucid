@@ -439,6 +439,8 @@ void ai_opponent_move(Board board, double res[]){
     @return the result in Search_result structure
 */
 Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint8_t date, uint_fast8_t played_move){
+    board.print();
+    std::cerr << pop_count_ull(board.get_legal()) << " " << idx_to_coord(played_move) << std::endl;
     Analyze_result res;
     res.played_move = played_move;
     int got_depth, depth;
@@ -466,11 +468,13 @@ Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint8_t
     eval_move(&search, &flip);
     search.move(&flip);
         res.played_score = book.get(&search.board);
+        std::cerr << "pbook " << res.played_score << std::endl;
         if (res.played_score != -INF){
             res.played_depth = SEARCH_BOOK;
             res.played_probability = SELECTIVITY_PERCENTAGE[MPC_100_LEVEL];
         } else{
             res.played_score = -nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth, false, LEGAL_UNDEFINED, !is_mid_search, &searching);
+            std::cerr << "psearch " << res.played_score << std::endl;
             res.played_depth = got_depth;
             res.played_probability = SELECTIVITY_PERCENTAGE[mpc_level];
         }
@@ -487,6 +491,7 @@ Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint8_t
             bool book_got = false;
             search.board.move_board(&move_list[idx].flip);
                 g = book.get(&search.board);
+                std::cerr << "abook " << g << std::endl;
                 if (g != -INF){
                     book_got = true;
                     if (v < g){
@@ -519,6 +524,7 @@ Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint8_t
                             g = -nega_scout(&search, -beta, -g, depth - 1, false, move_list[move_idx].n_legal, !is_mid_search, &searching);
                     }
                 search.undo(&move_list[move_idx].flip);
+                std::cerr << "asearch " << g << std::endl;
                 eval_undo(&search, &move_list[move_idx].flip);
                 if (v < g){
                     v = g;
