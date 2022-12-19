@@ -483,6 +483,7 @@ Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint8_t
     if (legal){
         bool book_got, book_found = false;
         Flip flip;
+        int g, v = -INF;
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
             book_got = false;
             calc_flip(&flip, &search.board, cell);
@@ -494,11 +495,6 @@ Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint8_t
                     if (v < g){
                         v = g;
                         best_move = flip.pos;
-                        if (alpha < v){
-                            if (beta <= v)
-                                break;
-                            alpha = v;
-                        }
                     }
                 }
             search.board.undo_board(&flip);
