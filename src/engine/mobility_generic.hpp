@@ -1,7 +1,7 @@
 /*
     Egaroucid Project
 
-    @file mobility_normal.hpp
+    @file mobility_generic.hpp
         Calculate legal moves without AVX2
     @date 2021-2022
     @author Takuto Yamana (a.k.a. Nyanyan)

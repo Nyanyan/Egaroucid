@@ -13,5 +13,5 @@
 #if USE_AVX2
     #include "last_flip_avx2.hpp"
 #else
-    #include "last_flip_normal.hpp"
+    #include "last_flip_generic.hpp"
 #endif

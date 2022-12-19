@@ -1,7 +1,7 @@
 /*
     Egaroucid Project
 
-    @file bit_normal.hpp
+    @file bit_generic.hpp
         Bit manipulation without AVX2
     @date 2021-2022
     @author Takuto Yamana (a.k.a. Nyanyan)

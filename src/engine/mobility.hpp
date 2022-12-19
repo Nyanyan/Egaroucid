@@ -13,5 +13,5 @@
 #if USE_AVX2
     #include "mobility_avx2.hpp"
 #else
-    #include "mobility_normal.hpp"
+    #include "mobility_generic.hpp"
 #endif

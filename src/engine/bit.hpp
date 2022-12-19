@@ -15,5 +15,5 @@
 #if USE_AVX2
     #include "bit_avx2.hpp"
 #else
-    #include "bit_normal.hpp"
+    #include "bit_generic.hpp"
 #endif

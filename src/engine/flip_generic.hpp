@@ -1,8 +1,8 @@
 /*
     Egaroucid Project
 
-    @file flip_avx2.hpp
-        Flip calculation with AVX2
+    @file flip_generic.hpp
+        Flip calculation without AVX2
     @date 2021-2022
     @author Takuto Yamana (a.k.a. Nyanyan)
     @license GPL-3.0 license

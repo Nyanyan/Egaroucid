@@ -6,7 +6,13 @@
     @license GPL-3.0 license
 */
 
-#include <Siv3D.hpp>
+#pragma once
+#include "./../../engine/setting.hpp"
 
-// version definition
-#define EGAROUCID_VERSION U"6.1.0 beta"
+#if USE_AVX2
+    // version definition
+    #define EGAROUCID_VERSION U"6.1.0 AVX2 beta"
+#else
+    // version definition
+    #define EGAROUCID_VERSION U"6.1.0 Generic beta"
+#endif
