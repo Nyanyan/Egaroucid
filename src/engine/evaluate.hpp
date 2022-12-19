@@ -11,10 +11,12 @@
 #pragma once
 #include <iostream>
 #include <fstream>
-#ifdef _MSC_VER
-    #include <intrin.h>
-#else
-    #include <x86intrin.h>
+#if USE_SIMD_EVALUATION
+    #ifdef _MSC_VER
+        #include <intrin.h>
+    #else
+        #include <x86intrin.h>
+    #endif
 #endif
 #include "setting.hpp"
 #include "common.hpp"
