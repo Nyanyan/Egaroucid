@@ -531,7 +531,7 @@ inline int swap_player_idx(int i, int pattern_size){
 */
 void init_pattern_arr_rev(int phase_idx, int pattern_idx, int siz){
     int ri;
-    for (int i = 0; i < pow3[siz]; ++i){
+    for (int i = 0; i < (int)pow3[siz]; ++i){
         ri = swap_player_idx(i, siz);
         pattern_arr[1][phase_idx][pattern_idx][ri] = pattern_arr[0][phase_idx][pattern_idx][i];
     }
@@ -618,7 +618,7 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
                     fclose(fp);
                     return false;
                 }
-                for (int i = 0; i < pow3[pattern_sizes[pattern_idx]]; ++i)
+                for (int i = 0; i < (int)pow3[pattern_sizes[pattern_idx]]; ++i)
                     pattern_arr[0][phase_idx][pattern_idx][i] = pattern_arr_16[i];
             }
         #else
