@@ -16,6 +16,7 @@ void init_console(Options options){
     thread_pool.resize(std::max(0, options.n_threads - 1));
     bit_init();
     mobility_init();
+    flip_init();
     #if USE_MPC_PRE_CALCULATION
         mpc_init();
     #endif

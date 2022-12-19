@@ -19,6 +19,7 @@ int init_ai(Settings* settings, const Directories* directories) {
     std::cerr << "there are " << thread_pool.size() << " additional threads" << std::endl;
     bit_init();
     mobility_init();
+    flip_init();
     #if USE_MPC_PRE_CALCULATION
         mpc_init();
     #endif

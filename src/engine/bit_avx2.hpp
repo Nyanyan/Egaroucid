@@ -2,7 +2,7 @@
     Egaroucid Project
 
     @file bit_avx2.hpp
-        Bit manipulation with avx2
+        Bit manipulation with AVX2
     @date 2021-2022
     @author Takuto Yamana (a.k.a. Nyanyan)
     @license GPL-3.0 license
