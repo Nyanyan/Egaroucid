@@ -1,8 +1,8 @@
 /*
     Egaroucid Project
 
-    @file mobility.hpp
-        Calculate legal moves
+    @file mobility_avx2.hpp
+        Calculate legal moves with AVX2
     @date 2021-2022
     @author Takuto Yamana (a.k.a. Nyanyan)
     @license GPL-3.0 license

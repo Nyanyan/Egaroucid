@@ -11,30 +11,34 @@
 /*
     @brief performance settings
 */
-// use SIMD
-#define USE_SIMD true
+// use AVX2
+#define USE_AVX2 false
 
-// vertical mirror
-#define USE_FAST_VERTICAL_MIRROR true
+#if USE_AVX2
+    // vertical mirror
+    #define USE_FAST_VERTICAL_MIRROR true
 
-// pop_count
-#define USE_BUILTIN_POPCOUNT true
+    // pop_count
+    #define USE_BUILTIN_POPCOUNT true
 
-// NTZ
-#define USE_BUILTIN_NTZ true
-#define USE_MINUS_NTZ false
+    // NTZ
+    #define USE_BUILTIN_NTZ true
+
+    // use SIMD in evaluation (pattern) function
+    #define USE_SIMD_EVALUATION true
+
+    // use bit gather optimization
+    #define USE_BIT_GATHER_OPTIMIZE true
+#else
+    // NTZ
+    #define USE_MINUS_NTZ false
+#endif
 
 // last parity ordering optimization
 #define LAST_PO_OPTIMIZE true
 
 // use parallel clog search
 #define USE_PARALLEL_CLOG_SEARCH true
-
-// use SIMD in evaluation (pattern) function
-#define USE_SIMD_EVALUATION true
-
-// use bit gather optimization
-#define USE_BIT_GATHER_OPTIMIZE true
 
 // MPC pre calculation
 #define USE_MPC_PRE_CALCULATION true

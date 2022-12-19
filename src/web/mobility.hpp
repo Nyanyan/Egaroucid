@@ -4,6 +4,7 @@
     @date 2021-2022
     @author Takuto Yamana (a.k.a Nyanyan)
     @license GPL-3.0 license
+    @notice I referred to codes written by others
 */
 
 #pragma once
@@ -11,6 +12,10 @@
 #include "bit.hpp"
 #include "setting.hpp"
 
+/*
+    Original code: http://www.amy.hi-ho.ne.jp/okuhara/bitboard.htm
+    Modified by Nyanyan
+*/
 inline uint64_t calc_legal(const uint64_t P, const uint64_t O){
     unsigned long long moves, mO;
     unsigned long long flip1, flip7, flip9, flip8, pre1, pre7, pre9, pre8;
@@ -29,3 +34,6 @@ inline uint64_t calc_legal(const uint64_t P, const uint64_t O){
     moves |= flip1 >> 1;           moves |= flip7 >> 7;           moves |= flip9 >> 9;           moves |= flip8 >> 8;
     return moves & ~(P | O);
 }
+/*
+    End of modification
+*/
