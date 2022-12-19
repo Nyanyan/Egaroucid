@@ -12,38 +12,30 @@ Egaroucidは世界最強クラスのオセロAIを搭載した無料のオセロ
 
 ## ラインナップ
 
+全てフリーソフトとして公開しています。
+
 <table>
     <tr>
         <td>名称</td>
         <td>対応OS</td>
-        <td>対応言語</td>
-        <td>最新バージョン</td>
         <td>導入</td>
     </tr>
     <tr>
         <td>Egaroucid</td>
         <td>Windows</td>
-        <td>日本語/英語</td>
-        <td>6.0.0</td>
         <td>[ダウンロード](./download/)</td>
     </tr>
     <tr>
         <td>Egaroucid for Console</td>
         <td>Windows/Linux</td>
-        <td>英語</td>
-        <td>開発中</td>
         <td>[詳細](./console/)</td>
     </tr>
     <tr>
         <td>Egaroucid for Web</td>
         <td>任意のブラウザ</td>
-        <td>日本語/英語</td>
-        <td>6.0.0 for Web</td>
         <td>[遊ぶ](./web/)</td>
     </tr>
 </table>
-
-以上全てフリーソフトとして公開しています。
 
 <div class="centering_box">
 
@@ -103,32 +95,37 @@ Egaroucidは世界最強クラスのオセロAIを搭載した無料のオセロ
 
 
 
+## OSSへの貢献を歓迎します
+
+EgaroucidはGPL-3.0ライセンスの下で作られたオープンソースソフトウェアです。[GitHub](https://github.com/Nyanyan/Egaroucid)にて全てのコードを公開しています。プルリクエストなどによる貢献を歓迎しています。
+
+
+
 ## 謝辞
 
 開発に多大なる貢献をしていただいた方々に感謝します(順不同、敬称略)。
 
-
-
-UIデザイン
-
 <ul>
-    <li>金子映像</li>
+    <li>UIデザイン
+        <ul>
+            <li>金子映像</li>
+        </ul>
+    </li>
+    <li>ユーザテスト
+        <ul>
+            <li>出本大起</li>
+            <li>まてぃか</li>
+            <li>Nettle蕁麻</li>
+            <li>okojoMK</li>
+            <li>高田征吾</li>
+            <li>まだらぬこ</li>
+            <li>長野泰志</li>
+            <li>trineutron</li>
+            <li>クルトン</li>
+        </ul>
+    </li>
 </ul>
 
-
-ユーザテスト
-
-<ul>
-    <li>出本大起</li>
-	<li>まてぃか</li>
-    <li>Nettle蕁麻</li>
-    <li>okojoMK</li>
-    <li>高田征吾</li>
-    <li>まだらぬこ</li>
-    <li>長野泰志</li>
-    <li>trineutron</li>
-	<li>クルトン</li>
-</ul>
 
 
 ## 関連リンク
