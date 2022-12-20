@@ -81,9 +81,13 @@
 
 
 
+## Go Text Protocol (GTP)対応
+
+GTPは囲碁向けに作られた通信プロトコルですが、これを用いてオセロが使えるソフトウェアがいくつか存在します。Egaroucid for ConsoleはGTPに対応していますので、これらのソフトウェアから呼び出すことが可能です。
 
 
-また、Egaroucid for ConsoleはGo Text Protocol (GTP)に対応しています。GTPコマンドを使う場合には
+
+GTPコマンドを使う場合には
 
 
 
@@ -96,6 +100,16 @@
 
 
 WindowsにてGoGUIを用いた動作確認を、UbuntuにてQuarryを用いた動作確認を行いました。
+
+
+
+### GoGUI
+
+
+
+### Quarry
+
+
 
 
 
