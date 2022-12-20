@@ -4,7 +4,7 @@ html, body {
 
 table{
     border-collapse:  collapse;
-    font-size: min(11pt, 2.9vw);
+    font-size: min(12pt, 2.9vw);
 }
 
 tr:nth-child(odd){
@@ -112,4 +112,14 @@ h3{
 .centering_box{
     width: 100%;
     text-align: center;
+}
+
+code {
+    display: inline-block;
+    padding: 0.1em 0.25em;
+    color: #444;
+    background-color: #e7edf3;
+    border-radius: 3px;
+    border: solid 1px #d6dde4;
+    font-family: Consolas, Menlo, Monaco, -apple-system, BlinkMacSystemFont, "Segoe UI", Meiryo, monospace;
 }

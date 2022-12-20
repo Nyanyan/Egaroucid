@@ -6,6 +6,8 @@
 
 使用CPUはCore i9-11900Kです。
 
+### Egaroucid for Console 6.1.0 AVX2
+
 <table>
 <tr>
 <td>番号</td>
@@ -312,6 +314,5 @@ Egaroucid勝率が0.5を上回っていればEgaroucidがEdaxに勝ち越して�
 <td>0.58</td>
 </tr>
 </table>
-
 
 
