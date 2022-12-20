@@ -350,6 +350,10 @@ void gtp_reg_genmove(int id, std::string arg, Board_info *board, State *state, O
     std::cout << gtp_head(id) << " " << gtp_idx_to_coord(policy) << GTP_ENDL;
 }
 
+void gtp_list_games(int id){
+    std::cout << gtp_head(id) << " " << GTP_RULE_ID << GTP_ENDL;
+}
+
 void gtp_check_command(Board_info *board, State *state, Options *options){
     std::string cmd_line = gtp_get_command_line();
     std::string cmd, arg;
@@ -419,6 +423,9 @@ void gtp_check_command(Board_info *board, State *state, Options *options){
             break;
         case GTP_CMD_ID_REG_GENMOVE:
             gtp_reg_genmove(id, arg, board, state, options);
+            break;
+        case GTP_CMD_ID_LIST_GAMES:
+            gtp_list_games(id);
             break;
         default:
             break;

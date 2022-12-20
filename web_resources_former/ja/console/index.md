@@ -81,6 +81,8 @@
 
 
 
+
+
 また、Egaroucid for ConsoleはGo Text Protocol (GTP)に対応しています。GTPコマンドを使う場合には
 
 
@@ -90,6 +92,10 @@
 
 
 を実行してください。
+
+
+
+WindowsにてGoGUIを用いた動作確認を、UbuntuにてQuarryを用いた動作確認を行いました。
 
 
 
