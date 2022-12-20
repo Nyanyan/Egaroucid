@@ -105,7 +105,13 @@ WindowsにてGoGUIを用いた動作確認を、UbuntuにてQuarryを用いた�
 
 ### GoGUI
 
-
+<div class="centering_box">
+    <img class="pic2" src="img/gogui_with_egaroucid.png">
+    <img class="pic2" src="img/gogui_new_program.png">
+    <img class="pic2" src="img/gogui_new_program2.png">
+    <img class="pic2" src="img/gogui_launch.png">
+    <img class="pic2" src="img/gogui_orientation.png">
+</div>
 
 ### Quarry
 
