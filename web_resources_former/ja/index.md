@@ -51,7 +51,17 @@ Egaroucidは世界最強クラスのオセロAIを搭載した無料のオセロ
 <ul>
     <li>正確で高速な独自の評価関数</li>
     <li>高速な探索</li>
-    <li>AIとの対局</li>
+    <li>AIとの対局
+        <ul>
+            <li>独自GUIでの対局</li>
+            <li>Go Text Protocol (GTP)対応GUIを用いた対局
+				<ul>
+                    <li>GoGui</li>
+                    <li>Quarry</li>
+                </ul>
+            </li>
+        </ul>
+    </li>
     <li>対局解析</li>
     <li>評価値・うみがめ数の表示</li>
     <li>各種入出力</li>
@@ -59,6 +69,7 @@ Egaroucidは世界最強クラスのオセロAIを搭載した無料のオセロ
     <li>Egaroucid/Edax形式bookの追加・統合</li>
     <li>定石名の表示</li>
 </ul>
+
 
 
 

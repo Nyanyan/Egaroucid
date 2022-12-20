@@ -99,11 +99,11 @@ GTPコマンドを使う場合には
 
 
 
-WindowsにてGoGUIを用いた動作確認を、UbuntuにてQuarryを用いた動作確認を行いました。
+WindowsにてGoGuiを用いた動作確認を、UbuntuにてQuarryを用いた動作確認を行いました。
 
 
 
-### GoGUI
+### GoGui
 
 <div class="centering_box">
     <img class="pic2" src="img/gogui_with_egaroucid.png">
