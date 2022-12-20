@@ -49,7 +49,7 @@ const Command_info command_data[N_COMMANDS] = {
     {CMD_ID_PLAY,       {"play"},                                           "",                 "Play moves with f5D6... notation"},
     {CMD_ID_UNDO,       {"undo"},                                           "<moves>",          "Undo your last <moves> moves. if <moves> is empty, undo last 1 move."},
     {CMD_ID_REDO,       {"redo"},                                           "<moves>",          "Redo your last <moves> moves. if <moves> is empty, redo last 1 move."},
-    {CMD_ID_GO,         {"go"},                                             "",                 "Egaroucid put a disc."},
+    {CMD_ID_GO,         {"go"},                                             "",                 "Egaroucid puts a disc."},
     {CMD_ID_SETBOARD,   {"setboard"},                                       "<board>",          "Set position to <board>. `B`, `W`, `-` each represents black, white, empty."},
     {CMD_ID_LEVEL,      {"level"},                                          "<level>",          "Set level to <level>"},
     {CMD_ID_LEVELINFO,  {"levelinfo", "linfo"},                             "",                 "See level definition"},
