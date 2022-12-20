@@ -11,8 +11,8 @@
 
 #if USE_AVX2
     // version definition
-    #define EGAROUCID_VERSION U"6.1.0 AVX2 beta"
+    #define EGAROUCID_VERSION U"6.1.0 AVX2"
 #else
     // version definition
-    #define EGAROUCID_VERSION U"6.1.0 Generic beta"
+    #define EGAROUCID_VERSION U"6.1.0 Generic"
 #endif

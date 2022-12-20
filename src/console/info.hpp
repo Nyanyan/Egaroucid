@@ -13,9 +13,9 @@
 
 #define EGAROUCID_NAME "Egaroucid for Console"
 #if USE_AVX2
-    #define EGAROUCID_VERSION "6.1.0 AVX2 beta"
+    #define EGAROUCID_VERSION "6.1.0 AVX2"
 #else
-    #define EGAROUCID_VERSION "6.1.0 Generic beta"
+    #define EGAROUCID_VERSION "6.1.0 Generic"
 #endif
 #define EGAROUCID_DATE "2021-2022"
 #define EGAROUCID_URL "https://www.egaroucid.nyanyan.dev/"
