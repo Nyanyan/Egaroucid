@@ -22,6 +22,8 @@
         <td>[Egaroucid 6.0.0](https://github.com/Nyanyan/Egaroucid/releases/download/v6.0.0/Egaroucid_6_0_0_setup_Windows.exe)</td>
     </tr>
 </table>
+過去のバージョンや各バージョンのリリースノートは[GitHubのリリース](https://github.com/Nyanyan/Egaroucid/releases)からご覧ください。
+
 
 
 ## 手元でのコンパイル
@@ -105,18 +107,48 @@ WindowsにてGoGuiを用いた動作確認を、UbuntuにてQuarryを用いた�
 
 ### GoGui
 
+GoGuiでの動作画面は以下のようになります。
+
 <div class="centering_box">
     <img class="pic2" src="img/gogui_with_egaroucid.png">
+</div>
+
+まず、<code>プログラム>新規プログラム</code>からEgaroucidを登録します。その際、コマンドには<code>-gtp</code>を追加し、ワーキングディレクトリは<code>Egaroucid/src</code>にしてください。
+
+<div class="centering_box">
     <img class="pic2" src="img/gogui_new_program.png">
     <img class="pic2" src="img/gogui_new_program2.png">
+</div>
+
+そして、<code>プログラム>プログラムを起動</code>から追加したEgaroucidを選択することでEgaroucidを起動できます。
+
+<div class="centering_box">
     <img class="pic2" src="img/gogui_launch.png">
+</div>
+
+GoGuiにおいては、盤面の行が上下反転しているので、<code>表示>Board Orientation>Flip Horizontally</code>を選択すると修正できます。
+
+<div class="centering_box">
     <img class="pic2" src="img/gogui_orientation.png">
 </div>
 
+
+
 ### Quarry
+
+Quarryでの動作画面は以下のようになります。
 
 <div class="centering_box">
     <img class="pic2" src="img/quarry_with_egaroucid.png">
+</div>
+
+<code>New Game</code>や<code>Preferences</code>から<code>Manage Engine List</code>を開き、Egaroucidを追加します。このとき、コマンドに<code>-gtp</code>を追加してください。
+
+
+
+手番を選択してゲームを開始するとEgaroucidが起動します。
+
+<div class="centering_box">
     <img class="pic2" src="img/quarry_setting1.png">
     <img class="pic2" src="img/quarry_setting2.png">
 </div>

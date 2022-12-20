@@ -25,6 +25,8 @@
     </tr>
 </table>
 
+過去のバージョンや各バージョンのリリースノートは[GitHubのリリース](https://github.com/Nyanyan/Egaroucid/releases)からご覧ください。
+
 
 
 ## インストール
@@ -35,18 +37,8 @@
 
 「WindowsによってPCが保護されました」と出た場合は、「詳細情報」をクリックすると実行することができます。ただし、この操作は自己責任で行ってください。
 
-
-
 <div class="centering_box">
-
-<img class="pic2" src="img/cant_run1.png">
-
-<img class="pic2" src="img/cant_run2.png">
-
+    <img class="pic2" src="img/cant_run1.png">
+    <img class="pic2" src="img/cant_run2.png">
 </div>
 
-
-
-## 過去のバージョン・リリースノート
-
-過去のバージョンや各バージョンのリリースノートは[GitHubのリリース](https://github.com/Nyanyan/Egaroucid/releases)からご覧ください。
