@@ -357,28 +357,30 @@ inline uint64_t split_d7_line(uint8_t x, const int t){
     return res;
 }
 
+constexpr uint64_t join_d9_line_mask[15] = {
+    0ULL, 0ULL, 0x0402010000000000ULL, 0x0804020100000000ULL, 
+    0x1008040201000000ULL, 0x2010080402010000ULL, 0x4020100804020100ULL, 0x8040201008040201ULL, 
+    0x0080402010080402ULL, 0x0000804020100804ULL, 0x0000008040201008ULL, 0x0000000080402010ULL, 
+    0x0000000000804020ULL, 0ULL, 0ULL
+};
+
+constexpr uint8_t join_d9_line_rightshift[15] = {
+    0, 0, 40, 32, 
+    24, 16, 8, 0, 
+    1, 2, 3, 4, 
+    5, 0, 0
+};
+
 inline int join_d9_line(uint64_t x, int t){
-    if (t > 0)
-        x >>= t;
-    else
-        x <<= (-t);
-    x &= 0b1000000001000000001000000001000000001000000001000000001000000001ULL;
-    return (x * 0b0000000100000001000000010000000100000001000000010000000100000001ULL) >> 56;
+    x = x & join_d9_line_mask[t];
+    x >>= join_d9_line_rightshift[t];
+    return (x * 0x0101010101010101ULL) >> 56;
 }
 
 inline uint64_t split_d9_line(uint8_t x, int t){
-    uint64_t a = x & 0b00001111;
-    uint64_t b = x & 0b11110000;
-    uint64_t res = a | (b << 32);
-    a = res & 0b0000000000000000000000000011000000000000000000000000000000000011ULL;
-    b = res & 0b0000000000000000000000001100000000000000000000000000000000001100ULL;
-    res = a | (b << 16);
-    a = res & 0b0000000001000000000000000001000000000000000001000000000000000001ULL;
-    b = res & 0b0000000010000000000000000010000000000000000010000000000000000010ULL;
-    res = a | (b << 8);
-    if (t > 0)
-        return res << t;
-    return res >> (-t);
+    uint64_t res = ((uint64_t)x * 0x0101010101010101ULL) & 0x8040201008040201ULL;
+    res <<= join_d9_line_rightshift[t];
+    return res;
 }
 
 
