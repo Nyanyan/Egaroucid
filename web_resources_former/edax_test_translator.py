@@ -1,12 +1,24 @@
 import pyperclip
+import sys
 
-head = '''<table>
+if sys.argv[1] == 'ja':
+    head = '''<table>
 <tr>
 <td>レベル</td>
 <td>Egaroucid勝ち</td>
 <td>引分</td>
 <td>Edax勝ち</td>
 <td>Egaroucid勝率</td>
+</tr>
+'''
+else:
+    head = '''<table>
+<tr>
+<td>Level</td>
+<td>Egaroucid win</td>
+<td>Draw</td>
+<td>Edax Win</td>
+<td>Egaroucid Win Ratio</td>
 </tr>
 '''
 

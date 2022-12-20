@@ -1,6 +1,8 @@
 import pyperclip
+import sys
 
-head = '''<table>
+if sys.argv[1] == 'ja':
+    head = '''<table>
 <tr>
 <td>番号</td>
 <td>深さ</td>
@@ -8,6 +10,18 @@ head = '''<table>
 <td>手番の評価値</td>
 <td>探索時間(秒)</td>
 <td>訪問ノード数</td>
+<td>NPS</td>
+</tr>
+'''
+else:
+    head = '''<table>
+<tr>
+<td>No.</td>
+<td>Depth</td>
+<td>Best Move</td>
+<td>Score</td>
+<td>Time (sec)</td>
+<td>Nodes</td>
 <td>NPS</td>
 </tr>
 '''
@@ -50,8 +64,8 @@ while True:
                 use_data.append(coord_translator(data[idx]))
             else:
                 if idx == idxes[4]:
-                    tim = data[idx][7:]
-                    tim_float = float(tim)
+                    tims = data[idx].split(':')
+                    tim_float = float(tims[0]) * 3600 + float(tims[1]) * 60 + float(tims[2])
                     tim = str(tim_float)
                     #tim = str(round(int(data[idx]) / 1000, 3))
                     use_data.append(tim)
@@ -68,8 +82,20 @@ while True:
         res += '</tr>\n'
     except:
         break
-res += '''<tr>
+if sys.argv[1] == 'ja':
+    res += '''<tr>
 <td>全体</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>''' + str(round(whole_time, 3)) + '''</td>
+<td>''' + str(whole_nodes) + '''</td>
+<td>''' + str(round(whole_nodes / whole_time)) + '''</td>
+</tr>
+'''
+else:
+    res += '''<tr>
+<td>All</td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
