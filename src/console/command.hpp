@@ -175,10 +175,11 @@ Search_result go_noprint(Board_info *board, Options *options, State *state){
 }
 
 void go(Board_info *board, Options *options, State *state){
+    Search_result result = go_noprint(board, options, state);
     if (options->quiet)
-        print_search_result_quiet(go_noprint(board, options, state));
+        print_search_result_quiet(result);
     else
-        print_search_result(go_noprint(board, options, state), options->level);
+        print_search_result(result, options->level);
 }
 
 void setboard(Board_info *board, std::string board_str){
