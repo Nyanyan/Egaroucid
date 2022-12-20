@@ -118,8 +118,9 @@ void gtp_known_command(int id, std::string arg){
 }
 
 void gtp_print_list_commands(int id){
+    std::cout << gtp_head(id) << " ";
     for (Command_info cmd: gtp_command_data){
-        std::cout << gtp_head(id) << " " << cmd.names[0] << "\n";
+        std::cout << cmd.names[0] << "\n";
     }
     std::cout << "\n";
 }
