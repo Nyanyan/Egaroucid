@@ -109,6 +109,12 @@ WindowsにてGoGUIを用いた動作確認を、UbuntuにてQuarryを用いた�
 
 ### Quarry
 
+<div class="centering_box">
+    <img class="pic2" src="img/quarry_with_egaroucid.png">
+    <img class="pic2" src="img/quarry_setting1.png">
+    <img class="pic2" src="img/quarry_setting2.png">
+</div>
+
 
 
 
