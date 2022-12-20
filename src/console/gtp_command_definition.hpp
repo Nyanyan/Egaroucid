@@ -58,5 +58,5 @@ const Command_info gtp_command_data[N_GTP_COMMANDS] = {
     {GTP_CMD_ID_SHOWBOARD,          {"showboard"},                                              "",                 ""},
     {GTP_CMD_ID_UNDO,               {"undo"},                                                   "",                 ""},
     {GTP_CMD_ID_REG_GENMOVE,        {"reg_genmove"},                                            "",                 ""},
-    {GTP_CMD_ID_LIST_CMD,           {"list_games"},                                             "",                 ""}
+    {GTP_CMD_ID_LIST_GAMES,         {"list_games"},                                             "",                 ""}
 };
