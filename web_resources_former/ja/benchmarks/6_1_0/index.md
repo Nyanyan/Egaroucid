@@ -210,7 +210,7 @@
 </table>
 
 
-### Egaroucid for Console 6.1.0 General
+### Egaroucid for Console 6.1.0 Generic
 
 <table>
 <tr>

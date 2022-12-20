@@ -12,6 +12,7 @@
 #/src/resources
 #img
 /release
+/release_old
 src/log.txt
 src/testcases
 /move_ordering/*.txt
@@ -22,7 +23,6 @@ src/*.out
 src/*.exe
 src/test/close_quest.txt
 src/test/ignore
-/installer
 /evaluation_test/*.dat
 /evaluation_test/*.exe
 /evaluation_test/graph
