@@ -14,21 +14,44 @@
 // use AVX2
 #define USE_AVX2 true
 
+// use ARM
+#define USE_ARM false
+
 #if USE_AVX2
-    // vertical mirror
-    #define USE_FAST_VERTICAL_MIRROR true
+    #if USE_ARM
+        // vertical mirror
+        #define USE_FAST_VERTICAL_MIRROR true
 
-    // pop_count
-    #define USE_BUILTIN_POPCOUNT true
+        // pop_count
+        #define USE_BUILTIN_POPCOUNT true
 
-    // NTZ
-    #define USE_BUILTIN_NTZ true
+        // NTZ
+        #define USE_MINUS_NTZ false
 
-    // use SIMD in evaluation (pattern) function
-    #define USE_SIMD_EVALUATION true
+        // use SIMD in evaluation (pattern) function
+        #define USE_SIMD_EVALUATION true
+    #else
+        // vertical mirror
+        #define USE_FAST_VERTICAL_MIRROR true
 
-    // use bit gather optimization
-    #define USE_BIT_GATHER_OPTIMIZE true
+        // pop_count
+        #define USE_BUILTIN_POPCOUNT true
+
+        // NTZ
+        #define USE_BUILTIN_NTZ true
+
+        // next bit
+        #define USE_FAST_NEXT_BIT true
+
+        // use SIMD in evaluation (pattern) function
+        #define USE_SIMD_EVALUATION true
+
+        // use bit gather optimization
+        #define USE_BIT_GATHER_OPTIMIZE true
+
+        // use fast join_h_line
+        #define USE_FAST_JOIN_H_LINE true
+    #endif
 #else
     // NTZ
     #define USE_MINUS_NTZ false
