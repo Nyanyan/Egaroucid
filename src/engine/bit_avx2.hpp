@@ -600,70 +600,67 @@ inline uint8_t join_v_line(uint64_t x, int_fast8_t t){
         return _pext_u64(x, join_d9_line_mask[t]);
     }
 #else
-    /*
-    constexpr uint8_t d7_mask[HW2] = {
-        0b10000000, 0b11000000, 0b11100000, 0b11110000, 0b11111000, 0b11111100, 0b11111110, 0b11111111,
-        0b11000000, 0b11100000, 0b11110000, 0b11111000, 0b11111100, 0b11111110, 0b11111111, 0b01111111,
-        0b11100000, 0b11110000, 0b11111000, 0b11111100, 0b11111110, 0b11111111, 0b01111111, 0b00111111,
-        0b11110000, 0b11111000, 0b11111100, 0b11111110, 0b11111111, 0b01111111, 0b00111111, 0b00011111,
-        0b11111000, 0b11111100, 0b11111110, 0b11111111, 0b01111111, 0b00111111, 0b00011111, 0b00001111,
-        0b11111100, 0b11111110, 0b11111111, 0b01111111, 0b00111111, 0b00011111, 0b00001111, 0b00000111,
-        0b11111110, 0b11111111, 0b01111111, 0b00111111, 0b00011111, 0b00001111, 0b00000111, 0b00000011,
-        0b11111111, 0b01111111, 0b00111111, 0b00011111, 0b00001111, 0b00000111, 0b00000011, 0b00000001
-    };
-    */
-    constexpr uint8_t d7_mask[HW2] = {
-        0b00000001, 0b00000011, 0b00000111, 0b00001111, 0b00011111, 0b00111111, 0b01111111, 0b11111111, 
-        0b00000011, 0b00000111, 0b00001111, 0b00011111, 0b00111111, 0b01111111, 0b11111111, 0b11111110, 
-        0b00000111, 0b00001111, 0b00011111, 0b00111111, 0b01111111, 0b11111111, 0b11111110, 0b11111100, 
-        0b00001111, 0b00011111, 0b00111111, 0b01111111, 0b11111111, 0b11111110, 0b11111100, 0b11111000, 
-        0b00011111, 0b00111111, 0b01111111, 0b11111111, 0b11111110, 0b11111100, 0b11111000, 0b11110000, 
-        0b00111111, 0b01111111, 0b11111111, 0b11111110, 0b11111100, 0b11111000, 0b11110000, 0b11100000, 
-        0b01111111, 0b11111111, 0b11111110, 0b11111100, 0b11111000, 0b11110000, 0b11100000, 0b11000000, 
-        0b11111111, 0b11111110, 0b11111100, 0b11111000, 0b11110000, 0b11100000, 0b11000000, 0b10000000
+    constexpr uint64_t join_d7_line_mask[15] = {
+        0ULL, 0ULL, 0x0000000000010204ULL, 0x0000000001020408ULL, 
+        0x0000000102040810ULL, 0x0000010204081020ULL, 0x0001020408102040ULL, 0x0102040810204080ULL, 
+        0x0204081020408000ULL, 0x0408102040800000ULL, 0x0810204080000000ULL, 0x1020408000000000ULL, 
+        0x2040800000000000ULL, 0ULL, 0ULL
     };
 
-    constexpr uint8_t d9_mask[HW2] = {
-        0b11111111, 0b01111111, 0b00111111, 0b00011111, 0b00001111, 0b00000111, 0b00000011, 0b00000001,
-        0b11111110, 0b11111111, 0b01111111, 0b00111111, 0b00011111, 0b00001111, 0b00000111, 0b00000011,
-        0b11111100, 0b11111110, 0b11111111, 0b01111111, 0b00111111, 0b00011111, 0b00001111, 0b00000111,
-        0b11111000, 0b11111100, 0b11111110, 0b11111111, 0b01111111, 0b00111111, 0b00011111, 0b00001111,
-        0b11110000, 0b11111000, 0b11111100, 0b11111110, 0b11111111, 0b01111111, 0b00111111, 0b00011111,
-        0b11100000, 0b11110000, 0b11111000, 0b11111100, 0b11111110, 0b11111111, 0b01111111, 0b00111111,
-        0b11000000, 0b11100000, 0b11110000, 0b11111000, 0b11111100, 0b11111110, 0b11111111, 0b01111111,
-        0b10000000, 0b11000000, 0b11100000, 0b11110000, 0b11111000, 0b11111100, 0b11111110, 0b11111111
+    constexpr uint8_t join_d7_line_leftshift[15] = {
+        0, 0, 5, 4, 
+        3, 2, 1, 0, 
+        0, 0, 0, 0, 
+        0, 0, 0
     };
 
-    inline void join_h_line_double(uint64_t player, uint64_t opponent, int_fast8_t t, uint_fast8_t *p, uint_fast8_t *o){
-        __m128i po = _mm_set_epi64x(player, opponent);
-        po = _mm_srli_epi64(po, HW * t);
-        po = _mm_and_si128(po, _mm_set1_epi64x(0b11111111ULL));
-        *o = _mm_cvtsi128_si64(po);
-        *p = _mm_cvtsi128_si64(_mm_unpackhi_epi64(po, po));
+    constexpr uint8_t join_d7_line_rightshift[15] = {
+        0, 0, 0, 0, 
+        0, 0, 0, 0, 
+        8, 16, 24, 32, 
+        40, 0, 0
+    };
+
+    inline int join_d7_line(uint64_t x, const int t){
+        x = (x & join_d7_line_mask[t]);
+        x <<= join_d7_line_leftshift[t];
+        x >>= join_d7_line_rightshift[t];
+        uint64_t res = ((x * 0x0002082080000000ULL) & 0x0F00000000000000ULL) | ((x * 0x0000000002082080ULL) & 0xF000000000000000ULL);
+        return res >> 56;
     }
 
-    /*
-    inline uint_fast8_t join_v_line(uint64_t x, int t){
-        return _pext_u64(x >> t, 0x0101010101010101ULL);
-    }
-    */
-
-    inline void join_v_line_double(uint64_t player, uint64_t opponent, int_fast8_t t, uint_fast8_t *p, uint_fast8_t *o){
-        __m128i po = _mm_set_epi64x(player, opponent);
-        po = _mm_srli_epi64(po, t);
-        po = _mm_and_si128(po, _mm_set1_epi64x(0x0101010101010101ULL));
-        po = _mm_mullo_epi64(po, _mm_set1_epi64x(0x0102040810204080ULL));
-        po = _mm_srli_epi64(po, 56);
-        *o = _mm_cvtsi128_si64(po);
-        *p = _mm_cvtsi128_si64(_mm_unpackhi_epi64(po, po));
+    inline uint64_t split_d7_line(uint8_t x, const int t){
+        uint64_t res = ((uint64_t)(x & 0b00001111) * 0x0000000002082080ULL) & 0x0000000010204080ULL;
+        res |= ((uint64_t)(x & 0b11110000) * 0x0002082080000000ULL) & 0x0102040800000000ULL;
+        res >>= join_d7_line_leftshift[t];
+        res <<= join_d7_line_rightshift[t];
+        return res;
     }
 
-    inline uint_fast8_t join_d7_line(uint64_t x, int_fast8_t t){
-        return _pext_u64(x >> t, 0x0002040810204081ULL);
+    constexpr uint64_t join_d9_line_mask[15] = {
+        0ULL, 0ULL, 0x0402010000000000ULL, 0x0804020100000000ULL, 
+        0x1008040201000000ULL, 0x2010080402010000ULL, 0x4020100804020100ULL, 0x8040201008040201ULL, 
+        0x0080402010080402ULL, 0x0000804020100804ULL, 0x0000008040201008ULL, 0x0000000080402010ULL, 
+        0x0000000000804020ULL, 0ULL, 0ULL
+    };
+
+    constexpr uint8_t join_d9_line_rightshift[15] = {
+        0, 0, 40, 32, 
+        24, 16, 8, 0, 
+        1, 2, 3, 4, 
+        5, 0, 0
+    };
+
+    inline int join_d9_line(uint64_t x, int t){
+        x = x & join_d9_line_mask[t];
+        x >>= join_d9_line_rightshift[t];
+        return (x * 0x0101010101010101ULL) >> 56;
     }
 
-    inline uint_fast8_t join_d9_line(uint64_t x, int_fast8_t t){
-        return _pext_u64(t > 0 ? x >> t : x << (-t), 0x8040201008040201ULL);
+    inline uint64_t split_d9_line(uint8_t x, int t){
+        uint64_t res = ((uint64_t)x * 0x0101010101010101ULL) & 0x8040201008040201ULL;
+        res <<= join_d9_line_rightshift[t];
+        return res;
     }
 #endif
 
