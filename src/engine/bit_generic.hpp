@@ -343,10 +343,11 @@ constexpr uint8_t join_d7_line_rightshift[15] = {
 };
 
 inline int join_d7_line(uint64_t x, const int t){
-    x = (x & join_d7_line_mask[t])
+    x = (x & join_d7_line_mask[t]);
     x <<= join_d7_line_leftshift[t];
     x >>= join_d7_line_rightshift[t];
-    return (x * 0x8080808080808080ULL) >> 56;
+    uint64_t res = ((x * 0x0002082080000000ULL) & 0x0F00000000000000ULL) | ((x * 0x0000000002082080ULL) & 0xF000000000000000ULL);
+    return res >> 56;
 }
 
 inline uint64_t split_d7_line(uint8_t x, const int t){

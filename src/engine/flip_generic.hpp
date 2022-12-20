@@ -15,11 +15,10 @@
 #include "bit.hpp"
 
 uint8_t flip_pre_calc[N_8BIT][N_8BIT][HW];
-uint64_t line_to_board_v[N_8BIT][HW];
 uint64_t line_to_board_d7[N_8BIT][HW * 2];
 uint64_t line_to_board_d9[N_8BIT][HW * 2];
 
-int_fast8_t n_flip_pre_calc[N_8BIT][HW];
+//int_fast8_t n_flip_pre_calc[N_8BIT][HW];
 
 /*
     @brief Flip class
@@ -34,40 +33,19 @@ class Flip{
     
     public:
         inline void calc_flip(const uint64_t player, const uint64_t opponent, const int place){
-            int t, u, p, o;
-            flip = 0;
             pos = place;
-
-            t = place / HW;
-            u = place % HW;
-            p = (player >> (HW * t)) & 0b11111111;
-            o = (opponent >> (HW * t)) & 0b11111111;
-            flip |= (uint64_t)flip_pre_calc[p][o][u] << (HW * t);
-
-            p = join_v_line(player, u);
-            o = join_v_line(opponent, u);
-            flip |= line_to_board_v[flip_pre_calc[p][o][t]][u];
-
-            u += t;
-            if (u >= 2 && u <= 12){
-                p = join_d7_line(player, u) & d7_mask[place];
-                o = join_d7_line(opponent, u) & d7_mask[place];
-                flip |= line_to_board_d7[flip_pre_calc[p][o][HW_M1 - t]][u];
-            }
-
-            u -= t * 2;
-            if (u >= -5 && u <= 5){
-                p = join_d9_line(player, u) & d9_mask[place];
-                o = join_d9_line(opponent, u) & d9_mask[place];
-                flip |= line_to_board_d9[flip_pre_calc[p][o][t]][u + HW];
-            }
+            const int t = place >> 3;
+            const int u = place & 7;
+            flip = split_h_line(flip_pre_calc[join_h_line(player, t)][join_h_line(opponent, t)][u], t);
+            flip |= split_v_line(flip_pre_calc[join_v_line(player, u)][join_v_line(opponent, u)][t], u);
+            flip |= split_d7_line(flip_pre_calc[join_d7_line(player, u + t)][join_d7_line(opponent, u + t)][std::min(t, 7 - u)], u + t);
+            flip |= split_d9_line(flip_pre_calc[join_d9_line(player, u + 7 - t)][join_d9_line(opponent, u + 7 - t)][std::min(t, u)], u + 7 - t);
         }
 };
 
 void flip_init(){
     int player, opponent, place;
     int wh, put, m1, m2, m3, m4, m5, m6;
-    int idx, t;
     for (player = 0; player < N_8BIT; ++player){
         for (opponent = 0; opponent < N_8BIT; ++opponent){
             for (place = 0; place < HW; ++place){
@@ -123,6 +101,7 @@ void flip_init(){
             }
         }
     }
+    /*
     for (player = 0; player < N_8BIT; ++player){
         for (place = 0; place < HW; ++place){
             n_flip_pre_calc[player][place] = 0;
@@ -132,12 +111,5 @@ void flip_init(){
             n_flip_pre_calc[player][place] = pop_count_uchar(flip_pre_calc[player][opponent][place]);
         }
     }
-    for (idx = 0; idx < N_8BIT; ++idx){
-        for (t = 0; t < HW; ++t)
-            line_to_board_v[idx][t] = split_v_line((uint8_t)idx, t);
-        for (t = 0; t < HW * 2; ++t)
-            line_to_board_d7[idx][t] = split_d7_line((uint8_t)idx, t);
-        for (t = -HW; t < HW; ++t)
-            line_to_board_d9[idx][t + HW] = split_d9_line((uint8_t)idx, t);
-    }
+    */
 }

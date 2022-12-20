@@ -540,8 +540,8 @@ inline uint_fast8_t join_h_line(uint64_t x, int t){
     @param t                    a type of the line
 */
 inline uint8_t join_v_line(uint64_t x, int_fast8_t t){
-    x = (x >> t) & 0b0000000100000001000000010000000100000001000000010000000100000001ULL;
-    return (x * 0b0000000100000010000001000000100000010000001000000100000010000000ULL) >> 56;
+    x = (x >> t) & 0x101010101010101ULL;
+    return (x * 0x102040810204080ULL) >> 56;
 }
 
 #if USE_BIT_GATHER_OPTIMIZE
