@@ -57,6 +57,10 @@ std::string get_parent_path(wchar_t raw_path[]){
         return res;
     }
 #elif __APPLE__ // Mac TBD
+    std::string get_binary_path(){
+        std::string res;
+        return res;
+    }
 #else // Linux
     std::string get_binary_path(){
         char raw_path[PATH_MAX + 1];
