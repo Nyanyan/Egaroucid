@@ -12,7 +12,7 @@
     @brief performance settings
 */
 // use AVX2
-#define USE_AVX2 true
+#define USE_AVX2 false
 
 #if USE_AVX2
     // vertical mirror
