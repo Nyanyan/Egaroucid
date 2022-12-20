@@ -10,6 +10,10 @@
 
 
 
+EgaroucidはAVX2バージョンに最適化して作っていますが、こちらは概ね2013年以降のCPUでないと動作しません。その場合にはGenericバージョンを使用してください。
+
+
+
 <table>
     <tr>
         <td>OS</td>
@@ -40,5 +44,15 @@
 <div class="centering_box">
     <img class="pic2" src="img/cant_run1.png">
     <img class="pic2" src="img/cant_run2.png">
+</div>
+
+
+
+## 実行
+
+インストールした<code>Egaroucid.exe</code>を実行するとEgaroucidが起動します。
+
+<div class="centering_box">
+    <img class="pic" src="img/egaroucid.png">
 </div>
 
