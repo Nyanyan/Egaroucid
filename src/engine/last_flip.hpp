@@ -10,8 +10,8 @@
 
 #pragma once
 #include "setting.hpp"
-#if USE_AVX2
-    #include "last_flip_avx2.hpp"
+#if USE_SIMD
+    #include "last_flip_simd.hpp"
 #else
     #include "last_flip_generic.hpp"
 #endif

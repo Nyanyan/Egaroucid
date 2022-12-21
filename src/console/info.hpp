@@ -12,8 +12,8 @@
 #include "./../engine/setting.hpp"
 
 #define EGAROUCID_NAME "Egaroucid for Console"
-#if USE_AVX2
-    #define EGAROUCID_VERSION "6.1.0 AVX2"
+#if USE_SIMD
+    #define EGAROUCID_VERSION "6.1.0 SIMD"
 #else
     #define EGAROUCID_VERSION "6.1.0 Generic"
 #endif

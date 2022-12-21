@@ -1,8 +1,8 @@
 /*
     Egaroucid Project
 
-    @file last_flip_avx2.hpp
-        calculate number of flipped discs in the last move with AVX2
+    @file last_flip_simd.hpp
+        calculate number of flipped discs in the last move with SIMD
     @date 2021-2022
     @author Takuto Yamana (a.k.a. Nyanyan)
     @license GPL-3.0 license

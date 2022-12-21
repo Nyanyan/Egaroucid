@@ -10,8 +10,8 @@
 
 #pragma once
 #include "setting.hpp"
-#if USE_AVX2
-    #include "mobility_avx2.hpp"
+#if USE_SIMD
+    #include "mobility_simd.hpp"
 #else
     #include "mobility_generic.hpp"
 #endif

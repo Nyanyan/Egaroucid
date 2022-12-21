@@ -11,13 +11,13 @@
 /*
     @brief performance settings
 */
-// use AVX2
-#define USE_AVX2 true
+// use SIMD
+#define USE_SIMD true
 
 // use ARM
 #define USE_ARM false
 
-#if USE_AVX2
+#if USE_SIMD
     #if USE_ARM
         // vertical mirror
         #define USE_FAST_VERTICAL_MIRROR true

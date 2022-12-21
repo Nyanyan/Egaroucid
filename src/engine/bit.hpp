@@ -12,8 +12,8 @@
 #pragma once
 #include "setting.hpp"
 #include "common.hpp"
-#if USE_AVX2
-    #include "bit_avx2.hpp"
+#if USE_SIMD
+    #include "bit_simd.hpp"
 #else
     #include "bit_generic.hpp"
 #endif

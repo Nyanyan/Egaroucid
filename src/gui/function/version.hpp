@@ -9,9 +9,9 @@
 #pragma once
 #include "./../../engine/setting.hpp"
 
-#if USE_AVX2
+#if USE_SIMD
     // version definition
-    #define EGAROUCID_VERSION U"6.1.0 AVX2"
+    #define EGAROUCID_VERSION U"6.1.0 SIMD"
 #else
     // version definition
     #define EGAROUCID_VERSION U"6.1.0 Generic"

@@ -1,8 +1,8 @@
 /*
     Egaroucid Project
 
-    @file bit_avx2.hpp
-        Bit manipulation with AVX2
+    @file bit_simd.hpp
+        Bit manipulation with SIMD
     @date 2021-2022
     @author Takuto Yamana (a.k.a. Nyanyan)
     @license GPL-3.0 license
