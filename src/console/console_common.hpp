@@ -18,6 +18,11 @@
         #define NOMINMAX
     #endif
     #include <windows.h>
+#elif _WIN32
+    #ifndef NOMINMAX
+        #define NOMINMAX
+    #endif
+    #include <windows.h>
 #elif __APPLE__ // TBD
 #else
     #include <linux/limits.h>
@@ -45,6 +50,18 @@ std::string get_parent_path(wchar_t raw_path[]){
 }
 
 #ifdef _WIN64 // Windows
+    std::string get_binary_path(){
+        std::string res;
+        #ifdef UNICODE
+            wchar_t raw_path[MAX_PATH + 1];
+        #else
+            char raw_path[MAX_PATH + 1];
+        #endif
+        if (GetModuleFileName(NULL, raw_path, MAX_PATH))
+            res = get_parent_path(raw_path);
+        return res;
+    }
+#elif _WIN32
     std::string get_binary_path(){
         std::string res;
         #ifdef UNICODE

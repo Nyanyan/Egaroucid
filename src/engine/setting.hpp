@@ -9,13 +9,73 @@
 */
 
 /*
+    @brief version settings
+*/
+#define EGAROUCID_ENGINE_VERSION "6.1"
+#define USE_BETA_VERSION false
+
+#ifdef _WIN64
+    // use SIMD
+    #define USE_SIMD true
+
+    #if USE_SIMD
+        #define EGAROUCID_ENGINE_ENV_VERSION "Windows x64 SIMD"
+    #else
+        #define EGAROUCID_ENGINE_ENV_VERSION "Windows x64 Generic"
+    #endif
+#elif _WIN32
+    // use SIMD
+    #define USE_SIMD true
+
+    #if USE_SIMD
+        #define EGAROUCID_ENGINE_ENV_VERSION "Windows x86 SIMD"
+    #else
+        #define EGAROUCID_ENGINE_ENV_VERSION "Windows x86 Generic"
+    #endif
+#elif __APPLE__ // TBD
+#else
+    // use SIMD
+    #define USE_SIMD true
+
+    // use ARM
+    #define USE_ARM false
+
+    #define USE_64_BIT true
+
+    #if USE_SIMD
+        #if USE_ARM
+            #if USE_64_BIT
+                #define EGAROUCID_ENGINE_ENV_VERSION "Linux ARM64 SIMD"
+            #else
+                #define EGAROUCID_ENGINE_ENV_VERSION "Linux ARM SIMD"
+            #endif
+        #else
+            #if USE_64_BIT
+                #define EGAROUCID_ENGINE_ENV_VERSION "Linux x64 SIMD"
+            #else
+                #define EGAROUCID_ENGINE_ENV_VERSION "Linux x86 SIMD"
+            #endif
+        #endif
+    #else
+        #if USE_ARM
+            #if USE_64_BIT
+                #define EGAROUCID_ENGINE_ENV_VERSION "Linux ARM64 Generic"
+            #else
+                #define EGAROUCID_ENGINE_ENV_VERSION "Linux ARM Generic"
+            #endif
+        #else
+            #if USE_64_BIT
+                #define EGAROUCID_ENGINE_ENV_VERSION "Linux x64 Generic"
+            #else
+                #define EGAROUCID_ENGINE_ENV_VERSION "Linux x86 Generic"
+            #endif
+        #endif
+    #endif
+#endif
+
+/*
     @brief performance settings
 */
-// use SIMD
-#define USE_SIMD true
-
-// use ARM
-#define USE_ARM false
 
 #if USE_SIMD
     #if USE_ARM

@@ -7,12 +7,12 @@
 */
 
 #pragma once
+#include <Siv3D.hpp> // OpenSiv3D v0.6.3
 #include "./../../engine/setting.hpp"
 
-#if USE_SIMD
-    // version definition
-    #define EGAROUCID_VERSION U"6.1.0 SIMD"
+#define EGAROUCID_GUI_VERSION "0"
+#if USE_BETA_VERSION
+    const String EGAROUCID_VERSION = Unicode::Widen(EGAROUCID_ENGINE_VERSION + (std::string)"." + EGAROUCID_GUI_VERSION + (std::string)" " + EGAROUCID_ENGINE_ENV_VERSION + (std::string)" beta");
 #else
-    // version definition
-    #define EGAROUCID_VERSION U"6.1.0 Generic"
+    const String EGAROUCID_VERSION = Unicode::Widen(EGAROUCID_ENGINE_VERSION + (std::string)"." + EGAROUCID_GUI_VERSION + (std::string)" " + EGAROUCID_ENGINE_ENV_VERSION);
 #endif
