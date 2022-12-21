@@ -23,7 +23,7 @@ EgaroucidはAVX2バージョンに最適化して作っていますが、こち�
     </tr>
     <tr>
         <td>Windows</td>
-        <td>AVX2(2013年以降のCPU)</td>
+        <td>x64, Intel, AVX2(標準)</td>
         <td>2022/10/10</td>
         <td>[Egaroucid 6.0.0](https://github.com/Nyanyan/Egaroucid/releases/download/v6.0.0/Egaroucid_6_0_0_setup_Windows.exe)</td>
     </tr>

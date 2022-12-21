@@ -6,28 +6,35 @@
 
 ## ダウンロード
 
-以下から自分の環境に合ったものをダウンロードしてください。
+以下から自分の環境に合ったものをダウンロードし、任意の場所に解凍してください。実行ファイル(<code>Egaroucid_for_console.exe</code>や<code>Egaroucid_for_console.out</code>)をコンソールから実行すると起動します。
 
 
 
-EgaroucidはAVX2バージョンに最適化して作っていますが、こちらは概ね2013年以降のCPUでないと動作しません。その場合にはGenericバージョンを使用してください。
+Egaroucidはx64のAVX2バージョンに最適化して作っていますが、こちらは概ね2013年以降のCPUでないと動作しません。その場合にはGenericバージョンを使用してください。
+
+
+
+なお、ARMおよびARM64バージョンは動作確認ができていませんので、問題がありましたら[こちらのフォーム](https://docs.google.com/forms/d/e/1FAIpQLSd6ML1T1fc707luPEefBXuImMnlM9cQP8j-YHKiSyFoS-8rmQ/viewform?usp=sf_link)よりご報告ください。
 
 
 
 <table>
     <tr>
         <td>OS</td>
-        <td>環境</td>
+        <td>CPU</td>
+        <td>追加要件</td>
         <td>リリース日</td>
         <td>ダウンロード</td>
     </tr>
     <tr>
         <td>Windows</td>
-        <td>AVX2(2013年以降のCPU)</td>
+        <td>x64(標準)</td>
+        <td>AVX2(標準)</td>
         <td>2022/10/10</td>
         <td>[Egaroucid 6.0.0](https://github.com/Nyanyan/Egaroucid/releases/download/v6.0.0/Egaroucid_6_0_0_setup_Windows.exe)</td>
     </tr>
 </table>
+
 過去のバージョンや各バージョンのリリースノートは[GitHubのリリース](https://github.com/Nyanyan/Egaroucid/releases)からご覧ください。
 
 
