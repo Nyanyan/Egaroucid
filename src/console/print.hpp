@@ -198,7 +198,7 @@ void print_board_info(Board_info *board){
     }
 }
 
-void print_search_result_body(Search_result result, int level){
+inline void print_search_result_body(Search_result result, int level){
     std::string s;
     if (result.depth == SEARCH_BOOK){
         std::cout << "|";
@@ -248,7 +248,7 @@ void print_search_result_body(Search_result result, int level){
     }
 }
 
-void print_search_result_head(){
+inline void print_search_result_head(){
     std::cout << "|";
     std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << "Level";
     std::cout << "|";
@@ -267,7 +267,7 @@ void print_search_result_head(){
     std::cout << std::endl;
 }
 
-void print_search_result(Search_result result, int level){
+inline void print_search_result(Search_result result, int level){
     print_search_result_head();
     print_search_result_body(result, level);
 }
@@ -276,7 +276,7 @@ void print_search_result_quiet(Search_result result){
     std::cout << idx_to_coord(result.policy) << std::endl;
 }
 
-void print_analyze_body(Analyze_result result, int ply, int player, std::string judge){
+inline void print_analyze_body(Analyze_result result, int ply, int player, std::string judge){
     std::string s;
     std::cout << "|";
     std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << ply;
@@ -330,7 +330,7 @@ void print_analyze_body(Analyze_result result, int ply, int player, std::string 
     std::cout << std::endl;
 }
 
-void print_analyze_head(){
+inline void print_analyze_head(){
     std::cout << "|";
     std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << "Ply";
     std::cout << "|";
@@ -353,7 +353,7 @@ void print_analyze_head(){
     std::cout << std::endl;
 }
 
-void print_analyze_foot(Analyze_summary summary[]){
+inline void print_analyze_foot(Analyze_summary summary[]){
     std::cout << std::endl;
     std::cout << "|";
     std::cout << std::right << std::setw(ANALYZE_SUMMARY_TAB_SIZE) << "Player";

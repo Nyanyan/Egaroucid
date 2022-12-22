@@ -68,11 +68,11 @@ std::string idx_to_coord(int idx){
 std::string ms_to_time(uint64_t t){
     std::string res;
     uint64_t hour = t / (1000 * 60 * 60);
-    t -= hour * 1000 * 60 * 60;
+    t %= 1000 * 60 * 60;
     uint64_t minute = t / (1000 * 60);
-    t -= minute * 1000 * 60;
+    t %= 1000 * 60;
     uint64_t second = t / 1000;
-    t -= second * 1000;
+    uint64_t msecond = t % 1000;
     std::ostringstream hour_s;
     hour_s << std::right << std::setw(3) << std::setfill('0') << hour;
     res += hour_s.str();
@@ -86,7 +86,7 @@ std::string ms_to_time(uint64_t t){
     res += second_s.str();
     res += ".";
     std::ostringstream msecond_s;
-    msecond_s << std::left << std::setw(3) << std::setfill('0') << t;
+    msecond_s << std::left << std::setw(3) << std::setfill('0') << msecond;
     res += msecond_s.str();
     return res;
 }

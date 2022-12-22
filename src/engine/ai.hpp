@@ -461,7 +461,6 @@ Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint8_t
     #endif
     search.use_multi_thread = use_multi_thread;
     calc_features(&search);
-    const bool searching = true;
     Flip flip;
     calc_flip(&flip, &search.board, played_move);
     eval_move(&search, &flip);
@@ -471,7 +470,7 @@ Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint8_t
             res.played_depth = SEARCH_BOOK;
             res.played_probability = SELECTIVITY_PERCENTAGE[MPC_100_LEVEL];
         } else{
-            res.played_score = -nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth, false, LEGAL_UNDEFINED, !is_mid_search, &searching);
+            res.played_score = -first_nega_scout_value(&search, -SCORE_MAX, SCORE_MAX, depth, !is_mid_search, false, false, search.board.get_legal());
             res.played_depth = got_depth;
             res.played_probability = SELECTIVITY_PERCENTAGE[mpc_level];
         }
@@ -479,6 +478,7 @@ Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint8_t
     eval_undo(&search, &flip);
     uint64_t legal = search.board.get_legal() ^ (1ULL << played_move);
     if (legal){
+        uint64_t legal_copy = legal;
         bool book_found = false;
         Flip flip;
         int g, v = -INF, best_move = -1;
@@ -502,7 +502,7 @@ Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint8_t
             res.alt_probability = SELECTIVITY_PERCENTAGE[MPC_100_LEVEL];
         } else{
             std::vector<Clog_result> clogs;
-            std::pair<int, int> nega_scout_res = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth, !is_mid_search, false, clogs);
+            std::pair<int, int> nega_scout_res = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, got_depth, !is_mid_search, false, clogs, legal_copy);
             res.alt_move = nega_scout_res.second;
             res.alt_score = nega_scout_res.first;
             res.alt_depth = got_depth;

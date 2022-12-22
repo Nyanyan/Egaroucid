@@ -301,7 +301,7 @@ void hint(Board_info *board, Options *options, State *state, std::string arg){
         print_search_result_body(result[i], options->level);
 }
 
-void analyze(Board_info *board, Options *options, State *state){
+inline void analyze(Board_info *board, Options *options, State *state){
     print_analyze_head();
     Analyze_summary summary[2];
     for (int i = (int)board->boards.size() - 2; i >= 0; --i){
