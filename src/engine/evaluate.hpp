@@ -1240,8 +1240,8 @@ inline int mid_evaluate_diff_pass(Search *search){
         }
     }
 #else
-    inline int pick_pattern_idx(const uint_fast8_t b_arr[], const Feature_to_coord *f){
-        int res = 0;
+    inline uint_fast16_t pick_pattern_idx(const uint_fast8_t b_arr[], const Feature_to_coord *f){
+        uint_fast16_t res = 0;
         for (int i = 0; i < f->n_cells; ++i){
             res *= 3;
             res += b_arr[HW2_M1 - f->cells[i]];
