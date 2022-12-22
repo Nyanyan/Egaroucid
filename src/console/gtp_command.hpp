@@ -235,13 +235,13 @@ void gtp_rules_game_id(int id){
     std::cout << gtp_head(id) << " " << GTP_RULE_ID << GTP_ENDL;
 }
 
-void gtp_print_board(Board_info *board){
+void gtp_print_board_reversed(Board_info *board){
     std::cout << " ";
-    //for (int i = 0; i < HW; ++i)
-    //    std::cerr << " " << (char)('A' + i);
-    //std::cerr << '\n';
+    for (int i = 0; i < HW; ++i)
+        std::cerr << " " << (char)('A' + i);
+    std::cerr << '\n';
     for (int i = 0; i < HW; ++i){
-        //std::cerr << (char)('8' - i) << " ";
+        std::cerr << (char)('8' - i) << " ";
         for (int j = 0; j < HW; ++j){
             int coord = i * HW + (HW_M1 - j);
             char disc = '.';
@@ -264,9 +264,37 @@ void gtp_print_board(Board_info *board){
     std::cout << '\n';
 }
 
+void gtp_print_board(Board_info *board){
+    std::cout << " ";
+    for (int i = 0; i < HW; ++i)
+        std::cout << " " << (char)('a' + i);
+    std::cout << '\n';
+    for (int i = 0; i < HW; ++i){
+        std::cout << "  " << (char)('1' + i);
+        for (int j = 0; j < HW; ++j){
+            int coord = i * HW + j;
+            char disc = '.';
+            if (board->player == BLACK){
+                if (1 & (board->board.player >> coord))
+                    disc = 'X';
+                else if (1 & (board->board.opponent >> coord))
+                    disc = 'O';
+            } else{
+                if (1 & (board->board.player >> coord))
+                    disc = 'O';
+                else if (1 & (board->board.opponent >> coord))
+                    disc = 'X';
+            }
+            std::cout << ' ' << disc;
+        }
+        std::cout << '\n';
+    }
+    std::cout << '\n';
+}
+
 void gtp_rules_board(int id, Board_info *board){
     std::cout << gtp_head(id);
-    gtp_print_board(board);
+    gtp_print_board_reversed(board);
 }
 
 void gtp_rules_board_size(int id){
@@ -313,7 +341,8 @@ void gtp_rules_final_result(int id, Board_info *board){
 }
 
 void gtp_showboard(int id, Board_info *board){
-    gtp_rules_board(id, board);
+    std::cout << gtp_head(id);
+    gtp_print_board(board);
 }
 
 void gtp_undo(int id, Board_info *board){
