@@ -84,7 +84,11 @@ std::string get_parent_path(wchar_t raw_path[]){
         const size_t LINKSIZE = 100;
         char link[LINKSIZE];
         snprintf(link, LINKSIZE, "/proc/%d/exe", getpid());
-        readlink(link, raw_path, PATH_MAX);
+        ssize_t e = readlink(link, raw_path, PATH_MAX);
+        if (e == -1){
+            std::cerr << "[ERROR] can't get binary path. You can ignore this error." << std::endl;
+            return "";
+        }
         std::string res = get_parent_path(raw_path);
         return res;
     }
