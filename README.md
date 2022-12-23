@@ -2,7 +2,7 @@
 
 One of the strongest Othello AI Application in the world
 
-See also https://www.egaroucid.nyanyan.dev/en/
+See also https://www.egaroucid.nyanyan.dev/en/ for detail
 
 
 
@@ -19,9 +19,8 @@ Totally free application
   * Desktop application for Windows
   * Japanese / English
   
-* **Egaroucid for Console - Console application**
+* **[Egaroucid for Console](https://www.egaroucid.nyanyan.dev/en/console) - Console application**
   
-  * Under construction
   * Edax-like format / Go Text Protocol(GTP)
   * English
   
@@ -34,9 +33,9 @@ Totally free application
 
 ![app](img/app.png)
 
-![egaroucid_for_web](img/egaroucid_for_web.png)
-
 ![egaroucid_for_console](img/egaroucid_for_console.png)
+
+![egaroucid_for_web](img/egaroucid_for_web.png)
 
 
 
@@ -56,9 +55,7 @@ Need translation? Please contact me [here](https://docs.google.com/forms/d/e/1FA
 
 ### Egaroucid for Console
 
-Under construction
-
-You can build with this command
+You can build with ```g++``` or ```cmake``` command. Please see also https://www.egaroucid.nyanyan.dev/en/console/
 
 Required:
 
@@ -72,6 +69,15 @@ Required:
 $ git clone git@github.com:Nyanyan/Egaroucid.git
 $ cd Egaroucid/src
 $ g++ -O2 Egaroucid_console.cpp -o Egaroucid_for_console.exe -mtune=native -march=native -mfpmath=both -pthread -std=c++17 -Wall -Wextra 
+```
+
+or
+
+```
+$ git clone git@github.com:Nyanyan/Egaroucid.git
+$ cd Egaroucid/src
+$ cmake -S . -B build
+$ cmake --build build
 ```
 
 
@@ -92,7 +98,7 @@ Please execute
 $ Egaroucid_for_console.exe -gtp
 ```
 
-I checked it works with GoGUI.
+I checked it works with GoGui and Quarry.
 
 
 
@@ -159,7 +165,7 @@ Then ```ai.js``` and ```ai.wasm``` will be created.
 
 
 
-## Looking for Your Opinion
+## Looking for Your Voice
 
 **Please contact me [here](https://docs.google.com/forms/d/e/1FAIpQLSd6ML1T1fc707luPEefBXuImMnlM9cQP8j-YHKiSyFoS-8rmQ/viewform)!**
 
