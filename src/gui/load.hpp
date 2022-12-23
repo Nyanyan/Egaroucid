@@ -43,7 +43,7 @@ int check_update(const Directories* directories, String *new_version) {
         TextReader reader(version_save_path);
         if (reader) {
             reader.readLine(*new_version);
-            if (EGAROUCID_VERSION != *new_version) {
+            if (EGAROUCID_NUM_VERSION != *new_version) {
                 return UPDATE_CHECK_UPDATE_FOUND;
             }
         }

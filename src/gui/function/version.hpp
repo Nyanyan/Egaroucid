@@ -16,3 +16,5 @@
 #else
     const String EGAROUCID_VERSION = Unicode::Widen(EGAROUCID_ENGINE_VERSION + (std::string)"." + EGAROUCID_GUI_VERSION + (std::string)" " + EGAROUCID_ENGINE_ENV_VERSION);
 #endif
+
+const String EGAROUCID_NUM_VERSION = Unicode::Widen(EGAROUCID_ENGINE_VERSION + (std::string)"." + EGAROUCID_GUI_VERSION);
