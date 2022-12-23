@@ -30,24 +30,25 @@ Egaroucidはx64のSIMDバージョン(AVX2を使用)に最適化して作って�
         <td>Windows</td>
         <td>x64(標準)</td>
         <td>AVX2(標準)</td>
-        <td>TBD</td>
-        <td>[Egaroucid for Console 6.1.0 Windows x64 SIMD]()</td>
+        <td>2022/12/23</td>
+        <td>[Egaroucid for Console 6.1.0 Windows x64 SIMD](https://github.com/Nyanyan/Egaroucid/releases/download/v6.1.0/Egaroucid_for_Console_6_1_0_Windows_x64_SIMD.zip)</td>
     </tr>
     <tr>
         <td>Windows</td>
         <td>x64(標準)</td>
         <td>-</td>
-        <td>TBD</td>
-        <td>[Egaroucid for Console 6.1.0 Windows x64 Generic]()</td>
+        <td>2022/12/23</td>
+        <td>[Egaroucid for Console 6.1.0 Windows x64 Generic](https://github.com/Nyanyan/Egaroucid/releases/download/v6.1.0/Egaroucid_for_Console_6_1_0_Windows_x64_Generic.zip)</td>
     </tr>
     <tr>
         <td>Windows</td>
         <td>x86</td>
         <td>-</td>
-        <td>TBD</td>
-        <td>[Egaroucid for Console 6.1.0 Windows x86 Generic]()</td>
+        <td>2022/12/23</td>
+        <td>[Egaroucid for Console 6.1.0 Windows x86 Generic](https://github.com/Nyanyan/Egaroucid/releases/download/v6.1.0/Egaroucid_for_Console_6_1_0_Windows_x86_Generic.zip)</td>
     </tr>
 </table>
+
 
 
 
@@ -61,7 +62,7 @@ cmakeでビルドするか、直接g++を使ってビルドすることができ
 
 ### cmakeでビルド
 
-[こちらTBDTBD]()からコードを入手し、任意の場所に解凍します。
+[こちら](https://github.com/Nyanyan/Egaroucid/archive/refs/tags/v6.1.0.zip)からコードを入手し、任意の場所に解凍します。
 
 
 
@@ -135,7 +136,7 @@ cmakeでビルドするか、直接g++を使ってビルドすることができ
     </li>
     <li>C++17の機能が必要</li>
 </ul>
-[こちらTBDTBD]()からコードを入手し、任意の場所に解凍します。
+[こちら](https://github.com/Nyanyan/Egaroucid/archive/refs/tags/v6.1.0.zip)からコードを入手し、任意の場所に解凍します。
 
 
 
@@ -304,6 +305,5 @@ Quarryでの動作画面は以下のようになります。
     <img class="pic2" src="img/quarry_setting1.png">
     <img class="pic2" src="img/quarry_setting2.png">
 </div>
-
 
 

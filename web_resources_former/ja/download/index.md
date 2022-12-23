@@ -26,17 +26,18 @@ EgaroucidはSIMDバージョン(AVX2が必要)に最適化して作っていま�
         <td>Windows</td>
         <td>x64</td>
         <td>AVX2(標準)</td>
-        <td>TBD</td>
-        <td>[Egaroucid 6.1.0 Windows x64 SIMD]()</td>
+        <td>2022/12/23</td>
+        <td>[Egaroucid 6.1.0 Windows x64 SIMD](https://github.com/Nyanyan/Egaroucid/releases/download/v6.1.0/Egaroucid_6_1_0_SIMD_installer.exe)</td>
     </tr>
     <tr>
         <td>Windows</td>
         <td>x64</td>
         <td>-</td>
-        <td>TBD</td>
-        <td>[Egaroucid 6.1.0 Windows x64 Generic]()</td>
+        <td>2022/12/23</td>
+        <td>[Egaroucid 6.1.0 Windows x64 Generic](https://github.com/Nyanyan/Egaroucid/releases/download/v6.1.0/Egaroucid_6_1_0_Generic_installer.exe)</td>
     </tr>
 </table>
+
 
 
 

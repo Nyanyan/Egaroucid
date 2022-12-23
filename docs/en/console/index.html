@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="shortcut icon" type="image/x-icon" href="https://raw.githubusercontent.com/Nyanyan/Egaroucid/main/img/favicon.ico">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no">
+<link rel="stylesheet" href="style.css">
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site" content="@takuto_yamana" />
+<meta property="og:title" content="Othello AI Application Egaroucid" />
+<meta property="og:description" content="Othello application with one of the strongest AI in the world" />
+<meta property="og:image" content="https://raw.githubusercontent.com/Nyanyan/Egaroucid/main/img/eyecatch.png" />
+<title>Egaroucid</title>
+<link rel="alternate" hreflang="ja" href="https://www.egaroucid.nyanyan.dev/ja/console" />
+<link rel="alternate" hreflang="x-default" href="https://www.egaroucid.nyanyan.dev/en/console">
+<meta property="og:url" content="https://www.egaroucid.nyanyan.dev/en/console" />
+<meta property="og:title" content="Strongest Othello AI Egaroucid for Console" />
+<meta property="og:description" content="You can run this Othello AI on your computer or browser" />
+</head>
+<body>
+<div class="menu_bar">
+<div class="menu_button"><a class="menu_a" href="https://www.egaroucid.nyanyan.dev/en/">Home</a></div><div class="menu_button"><a class="menu_a" href="https://www.egaroucid.nyanyan.dev/en/download/">Download</a></div><div class="menu_button"><a class="menu_a" href="https://www.egaroucid.nyanyan.dev/en/console/">Console Version</a></div><div class="menu_button"><a class="menu_a" href="https://www.egaroucid.nyanyan.dev/en/web/">Web Version</a></div><div class="menu_button"><a class="menu_a" href="https://docs.google.com/forms/d/e/1FAIpQLSd6ML1T1fc707luPEefBXuImMnlM9cQP8j-YHKiSyFoS-8rmQ/viewform?usp=sf_link" target="_blank" el=”noopener noreferrer”>Report Bugs</div></a>
+<div class="menu_button"><a class="menu_a" href="https://nyanyan.dev/en/" target="_blank" el=”noopener noreferrer”>About Me</div></a>
+</div>
+<div class="box">
+<p>
+<a href="https://twitter.com/share?ref_src=twsrc%5Etfw" class="twitter-share-button" data-text="One of the strongest AI in the world Egaroucid for Console" data-url="https://www.egaroucid.nyanyan.dev/en/console" data-hashtags="egaroucid" data-related="takuto_yamana" data-show-count="false"><span>Tweet</span></a><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script> 
+<a href="https://www.egaroucid.nyanyan.dev/ja/console">日本語</a> 
+</p>
+<h1>Egaroucid for Console</h1>Operations differ depending on your OS. This software is for Windows and Linux. With MacOS, I don't sure you can run.<br>
+<h2>Windows</h2>Please download the zip file and unzip it, then you can use it. For the best performance, you can also build it on your own. Please see documents for Linux to build it.<h3> Download</h3>Please download a zip file that is suitable to your environment, and unzip wherever you want. Then execute <code>Egaroucid_for_console.exe</code> to run.<br>
+Egaroucid is optimized to SIMD version, which requires AVX2  instructions, but old CPUs (created in 2013 or older) might not be able  to run it. If so, please install Generic version.<br>
+<table>    <tr>        <td>OS</td>        <td>CPU</td>        <td>Requirements</td>        <td>Date</td>        <td>Download</td>    </tr>    <tr>        <td>Windows</td>        <td>x64(Standard)</td>        <td>AVX2(Standard)</td>        <td>2022/12/23</td>        <td><a href="https://github.com/Nyanyan/Egaroucid/releases/download/v6.1.0/Egaroucid_for_Console_6_1_0_Windows_x64_SIMD.zip" target="_blank" el=”noopener noreferrer”>Egaroucid for Console 6.1.0 Windows x64 SIMD</a></td>    </tr>    <tr>        <td>Windows</td>        <td>x64(Standard)</td>        <td>-</td>        <td>2022/12/23</td>        <td><a href="https://github.com/Nyanyan/Egaroucid/releases/download/v6.1.0/Egaroucid_for_Console_6_1_0_Windows_x64_Generic.zip" target="_blank" el=”noopener noreferrer”>Egaroucid for Console 6.1.0 Windows x64 Generic</a></td>    </tr>    <tr>        <td>Windows</td>        <td>x86</td>        <td>-</td>        <td>2022/12/23</td>        <td><a href="https://github.com/Nyanyan/Egaroucid/releases/download/v6.1.0/Egaroucid_for_Console_6_1_0_Windows_x86_Generic.zip" target="_blank" el=”noopener noreferrer”>Egaroucid for Console 6.1.0 Windows x86 Generic</a></td>    </tr></table><br>
+Please visit <a href="https://github.com/Nyanyan/Egaroucid/releases" target="_blank" el=”noopener noreferrer”>GitHub Releases</a> to see older versions and release notes.<br>
+<h2>Linux</h2>Please build on your own. You can use cmake or g++.<h3> Build with cmake</h3>Please download source codes <a href="https://github.com/Nyanyan/Egaroucid/archive/refs/tags/v6.1.0.zip" target="_blank" el=”noopener noreferrer”>here</a>, then unzip it.<br>
+Change directory.<br>
+<code>$ cd Egaroucid/src</code><br>
+Then use <code>cmake</code> command to build.<br>
+<code>$ cmake -S . -B build [options]</code><br>
+You can add additional options in <code>[options]</code>. Available options are:<br>
+<table>    <tr>        <td>You want to</td>        <td>Add this option</td>    </tr>    <tr>        <td>Build without AVX2</td>        <td>-DHAS_NO_AVX2=ON</td>    </tr>    <tr>        <td>Use ARM processors</td>        <td>-DHAS_ARM_PROCESSOR=ON</td>    </tr>    <tr>        <td>Use 32-bit environment</td>        <td>-DHAS_32_BIT_OS=ON</td>    </tr></table><br>
+Then,<br>
+<code>$ cmake --build build</code><br>
+That's all. You can see <code>Egaroucid_for_Console.out</code> and some resources in <code>Egaroucid/src/build</code> directory. You can run with commands below.<br>
+<code>$ cd build</code><br>
+<code>$ ./Egaroucid_for_Console.out</code><br>
+<h3> Build with g++</h3>Requirements are:<ul>    <li><code>g++</code> command        <ul>            <li>I tested with version 12.2.0 on Windows</li>            <li>I tested with version 11.3.0 on Ubuntu</li>        </ul>    </li>    <li>C++17</li></ul>Please download source codes <a href="https://github.com/Nyanyan/Egaroucid/archive/refs/tags/v6.1.0.zip" target="_blank" el=”noopener noreferrer”>here</a>, then unzip it.<br>
+Change directory.<br>
+<code>$ cd Egaroucid/src</code><br>
+Then compile it with <code>g++</code> command. You can change the output name.<br>
+<code>$ g++ -O2 Egaroucid_console.cpp -o Egaroucid_for_Console.out -mtune=native -march=native -mfpmath=both -pthread -std=c++17 -Wall -Wextra [options]</code><br>
+You can add additional options in <code>[options]</code>. Available options are:<table>    <tr>        <td>You want to</td>        <td>Add this option</td>    </tr>    <tr>        <td>Build without AVX2</td>        <td>-DHAS_NO_AVX2</td>    </tr>    <tr>        <td>Use ARM processors</td>        <td>-DHAS_ARM_PROCESSOR</td>    </tr>    <tr>        <td>Use 32-bit environment</td>        <td>-DHAS_32_BIT_OS</td>    </tr></table><br>
+<br>
+Then execute the output file.<br>
+<code>$ ./Egaroucid_for_console.out</code><br>
+<br>
+<h2>Usage</h2><code>$ Egaroucid_for_Console.exe -help</code><br>
+or<br>
+<code>$ ./Egaroucid_for_Console.out -help</code><br>
+to see how to use.<br>
+<h2>Directory Structure</h2>Egaroucid for Console uses some external files. If you've got a trouble, please check it.<ul>    <li>Egaroucid_for_Console.exe</li>    <li>resources        <ul>            <li>hash (Files for hash)                <ul>                    <li>hash23.eghs</li>                    <li>hash24.eghs</li>                    <li>hash25.eghs</li>                    <li>hash26.eghs</li>                    <li>hash27.eghs</li>                </ul>            </li>            <li>book.egbk (book file)</li>            <li>eval.egev (evaluation file)</li>        </ul>    </li></ul><br>
+<br>
+<h2>Documents for Go Text Protocol (GTP) users</h2>GTP is a communication protocol made for game of Go, but you can play Othello with GTP on some applications. Some GTP commands are available on Egaroucid for Console, so these applications can communicate with Egaroucid for Console.<br>
+If you want to use GTP commands, please type this.<br>
+<code>$ Egaroucid_for_Console.exe -gtp</code><br>
+I tested it works with GoGui on Windows and Quarry on Ubuntu.<br>
+<h3> GoGui</h3>GoGui with Egaroucid is something like this.<div class="centering_box">    <img class="pic2" src="img/gogui_with_egaroucid.png"></div>First, you have to register Egaroucid. Please add <code>-gtp</code> to the command, and set working directory <code>Egaroucid/src</code>.<div class="centering_box">    <img class="pic2" src="img/gogui_new_program.png">    <img class="pic2" src="img/gogui_new_program2.png"></div>Then you can execute Egaroucid.<div class="centering_box">    <img class="pic2" src="img/gogui_launch.png"></div>On GoGui, board orientation is horizontally flipped, so you can see the ordinal board with flip the board horizontally again.<div class="centering_box">    <img class="pic2" src="img/gogui_orientation.png"></div><br>
+<h3> Quarry</h3>Egaroucid on Quarry is something like this.<div class="centering_box">    <img class="pic2" src="img/quarry_with_egaroucid.png"></div>First, you have to add Egaroucid. Open <code>Manage Engine List</code> via <code>New Game</code> or <code>Preferences</code>. Please add <code>-gtp</code> to the command.<br>
+Then start game to run Egaroucid.<div class="centering_box">    <img class="pic2" src="img/quarry_setting1.png">    <img class="pic2" src="img/quarry_setting2.png"></div><br>
+</div>
+</body>
+</html>

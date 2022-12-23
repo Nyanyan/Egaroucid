@@ -4,6 +4,7 @@ html, body {
 
 table{
     border-collapse:  collapse;
+    font-size: min(12pt, 2.9vw);
 }
 
 tr:nth-child(odd){
@@ -30,11 +31,11 @@ table{
 }
 
 .pic2{
-    width: min(20vh, 45%);
+    width: min(25vh, 45%);
 }
 
 .box{
-    width: min(100vh, 90vw);
+    width: min(80vh, 90vw);
     text-align: start;
     margin: 0 auto;
 }
@@ -45,6 +46,8 @@ h1{
 
 h2{
     text-align: center;
+    background-color:  #8dc5ac;
+    
 }
 
 h3{
@@ -59,7 +62,7 @@ h3{
 
 .menu_bar{
     width: 100%;
-    height: min(5vw, 50px);
+    height: min(8vw, 50px);
     background-color:  #3F9770;
     display: flex;
     align-items: center;
@@ -80,14 +83,14 @@ h3{
 }
 
 .menu_button{
-    width: min(15vw, 130px);
-    height: min(5vw, 50px);
+    width: min(20vw, 130px);
+    height: min(8vw, 50px);
     background-color:  #3F9770;
     display: inline-block; 
     text-align: center;
     display: table;
     vertical-align: middle;
-    font-size: min(1.7vw, 12pt);
+    font-size: min(2.5vw, 12pt);
 }
 
 .download_a{
@@ -106,4 +109,19 @@ h3{
     text-align: center;
     display: table;
     vertical-align: middle;
+}
+
+.centering_box{
+    width: 100%;
+    text-align: center;
+}
+
+code {
+    display: inline-block;
+    padding: 0.1em 0.25em;
+    color: #444;
+    background-color: #e7edf3;
+    border-radius: 3px;
+    border: solid 1px #d6dde4;
+    font-family: Consolas, Menlo, Monaco, -apple-system, BlinkMacSystemFont, "Segoe UI", Meiryo, monospace;
 }

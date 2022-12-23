@@ -27,16 +27,17 @@ Egaroucid is optimized to SIMD version, which requires AVX2 instructions, but ol
         <td>x64</td>
         <td>AVX2 (Standard)</td>
         <td>TBD</td>
-        <td>[Egaroucid 6.1.0 Windows x64 SIMD]()</td>
+        <td>[Egaroucid 6.1.0 Windows x64 SIMD](https://github.com/Nyanyan/Egaroucid/releases/download/v6.1.0/Egaroucid_6_1_0_SIMD_installer.exe)</td>
     </tr>
     <tr>
         <td>Windows</td>
         <td>x64</td>
         <td>-</td>
         <td>TBD</td>
-        <td>[Egaroucid 6.1.0 Windows x64 Generic]()</td>
+        <td>[Egaroucid 6.1.0 Windows x64 Generic](https://github.com/Nyanyan/Egaroucid/releases/download/v6.1.0/Egaroucid_6_1_0_Generic_installer.exe)</td>
     </tr>
 </table>
+
 
 
 Please visit [GitHub Releases](https://github.com/Nyanyan/Egaroucid/releases) to see older versions and release notes.

@@ -13,7 +13,7 @@ The first one is the latest.
 	</tr>
     <tr>
 		<td><a href="./6_1_0/">6.1.0</a></td>
-		<td>TBD</td>
+		<td>2022/12/23</td>
 	</tr>
 	<tr>
 		<td><a href="./6_0_0/">6.0.0</a></td>
@@ -44,4 +44,3 @@ The first one is the latest.
 		<td>2022/03/02</td>
 	</tr>
 </table>
-

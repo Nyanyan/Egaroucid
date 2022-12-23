@@ -26,14 +26,14 @@ Completely free software. Egaroucid for Web uses a simple (weaker) engine.
         <td>Egaroucid</td>
         <td>Windows</td>
         <td>6.1.0</td>
-        <td>TBD</td>
+        <td>2022/12/23</td>
         <td>[Download](./download/)</td>
     </tr>
     <tr>
         <td>Egaroucid for Console</td>
         <td>Windows/Linux</td>
         <td>6.1.0</td>
-        <td>TBD</td>
+        <td>2022/12/23</td>
         <td>[Download](./console/)</td>
     </tr>
     <tr>

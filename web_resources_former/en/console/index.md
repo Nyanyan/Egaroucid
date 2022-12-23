@@ -30,24 +30,25 @@ Egaroucid is optimized to SIMD version, which requires AVX2  instructions, but o
         <td>Windows</td>
         <td>x64(Standard)</td>
         <td>AVX2(Standard)</td>
-        <td>TBD</td>
-        <td>[Egaroucid for Console 6.1.0 Windows x64 SIMD]()</td>
+        <td>2022/12/23</td>
+        <td>[Egaroucid for Console 6.1.0 Windows x64 SIMD](https://github.com/Nyanyan/Egaroucid/releases/download/v6.1.0/Egaroucid_for_Console_6_1_0_Windows_x64_SIMD.zip)</td>
     </tr>
     <tr>
         <td>Windows</td>
         <td>x64(Standard)</td>
         <td>-</td>
-        <td>TBD</td>
-        <td>[Egaroucid for Console 6.1.0 Windows x64 Generic]()</td>
+        <td>2022/12/23</td>
+        <td>[Egaroucid for Console 6.1.0 Windows x64 Generic](https://github.com/Nyanyan/Egaroucid/releases/download/v6.1.0/Egaroucid_for_Console_6_1_0_Windows_x64_Generic.zip)</td>
     </tr>
     <tr>
         <td>Windows</td>
         <td>x86</td>
         <td>-</td>
-        <td>TBD</td>
-        <td>[Egaroucid for Console 6.1.0 Windows x86 Generic]()</td>
+        <td>2022/12/23</td>
+        <td>[Egaroucid for Console 6.1.0 Windows x86 Generic](https://github.com/Nyanyan/Egaroucid/releases/download/v6.1.0/Egaroucid_for_Console_6_1_0_Windows_x86_Generic.zip)</td>
     </tr>
 </table>
+
 
 Please visit [GitHub Releases](https://github.com/Nyanyan/Egaroucid/releases) to see older versions and release notes.
 
@@ -59,7 +60,7 @@ Please build on your own. You can use cmake or g++.
 
 ### Build with cmake
 
-Please download source codes [hereTBDTBD](), then unzip it.
+Please download source codes [here](https://github.com/Nyanyan/Egaroucid/archive/refs/tags/v6.1.0.zip), then unzip it.
 
 
 
@@ -138,7 +139,7 @@ Requirements are:
     <li>C++17</li>
 </ul>
 
-Please download source codes [hereTBDTBD](), then unzip it.
+Please download source codes [here](https://github.com/Nyanyan/Egaroucid/archive/refs/tags/v6.1.0.zip), then unzip it.
 
 
 
@@ -298,6 +299,5 @@ Then start game to run Egaroucid.
     <img class="pic2" src="img/quarry_setting1.png">
     <img class="pic2" src="img/quarry_setting2.png">
 </div>
-
 
 
