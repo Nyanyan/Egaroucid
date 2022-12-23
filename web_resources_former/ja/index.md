@@ -6,45 +6,54 @@
 
 
 
-Egaroucidは世界最強クラスのオセロAIを搭載した無料のオセロ研究・対戦用アプリです。搭載AIの軽量バージョンは[CodinGame Othello](https://www.codingame.com/multiplayer/bot-programming/othello-1)で世界1位になったものです(2022年10月現在)
+Egaroucidは世界最強クラスのオセロAIを搭載した無料のオセロ研究・対戦用アプリです。搭載AIの軽量バージョンは[CodinGame Othello](https://www.codingame.com/multiplayer/bot-programming/othello-1)で世界1位になったものです(2022年12月現在)
 
 
 
 ## ラインナップ
 
-全てフリーソフトとして公開しています。
+全てフリーソフトとして公開しています。Egaroucid for Webは簡易的な思考エンジンを搭載しています。
 
 <table>
     <tr>
         <td>名称</td>
         <td>対応OS</td>
-        <td>導入</td>
+        <td>最新バージョン</td>
+        <td>最新リリース日</td>
+        <td>詳細</td>
     </tr>
     <tr>
         <td>Egaroucid</td>
         <td>Windows</td>
+        <td>6.1.0</td>
+        <td>TBD</td>
         <td>[ダウンロード](./download/)</td>
     </tr>
     <tr>
         <td>Egaroucid for Console</td>
         <td>Windows/Linux</td>
+        <td>6.1.0</td>
+        <td>TBD</td>
         <td>[ダウンロード](./console/)</td>
     </tr>
     <tr>
         <td>Egaroucid for Web</td>
-        <td>任意のブラウザ</td>
+        <td>任意のWebブラウザ</td>
+        <td>6.0.0</td>
+        <td>2022/10/10</td>
         <td>[今すぐ遊ぶ](./web/)</td>
     </tr>
 </table>
 
+
+
 <div class="centering_box">
-<img class="pic2" src="img/egaroucid.png">
-
-<img class="pic2" src="img/egaroucid_for_console.png">
-
-<img class="pic2" src="img/egaroucid_for_web.png">
-
+	<img class="pic2" src="img/egaroucid.png">
+    <img class="pic2" src="img/egaroucid_for_console.png">
+    <img class="pic2" src="img/egaroucid_for_web.png">
 </div>
+
+
 
 ## 特徴
 
@@ -54,7 +63,7 @@ Egaroucidは世界最強クラスのオセロAIを搭載した無料のオセロ
     <li>AIとの対局
         <ul>
             <li>独自GUIでの対局</li>
-            <li>Go Text Protocol (GTP)対応GUIを用いた対局
+            <li>Go Text Protocol (GTP)対応GUIを用いた対局(Egaroucid for Console)
 				<ul>
                     <li>GoGui</li>
                     <li>Quarry</li>
@@ -73,6 +82,7 @@ Egaroucidは世界最強クラスのオセロAIを搭載した無料のオセロ
 
 
 
+
 ## 導入する
 
 ### Egaroucid
@@ -81,7 +91,7 @@ Egaroucidは世界最強クラスのオセロAIを搭載した無料のオセロ
 
 ### Egaroucid for Console
 
-[コンソール版導入ページ](./console/)の解説に従ってダウンロードまたはコンパイルをしてください。
+[コンソール版導入ページ](./console/)の解説に従ってダウンロードまたはビルドをしてください。
 
 ### Egaroucid for Web
 
@@ -131,6 +141,11 @@ GPL-3.0ライセンスの下で自由に使っていただいて構いません�
             <li>金子映像</li>
         </ul>
     </li>
+    <li>技術的アドバイス
+        <ul>
+            <li>Jon Marc Hornstein</li>
+        </ul>
+    </li>
     <li>ユーザテスト
         <ul>
             <li>出本大起</li>
@@ -145,6 +160,7 @@ GPL-3.0ライセンスの下で自由に使っていただいて構いません�
         </ul>
     </li>
 </ul>
+
 
 
 

@@ -17,17 +17,27 @@ EgaroucidはAVX2バージョンに最適化して作っていますが、こち�
 <table>
     <tr>
         <td>OS</td>
-        <td>環境</td>
+        <td>CPU</td>
+        <td>追加要件</td>
         <td>リリース日</td>
         <td>ダウンロード</td>
     </tr>
     <tr>
         <td>Windows</td>
-        <td>x64, Intel, AVX2(標準)</td>
+        <td>x64</td>
+        <td>AVX2(標準)</td>
+        <td>2022/10/10</td>
+        <td>[Egaroucid 6.0.0](https://github.com/Nyanyan/Egaroucid/releases/download/v6.0.0/Egaroucid_6_0_0_setup_Windows.exe)</td>
+    </tr>
+    <tr>
+        <td>Windows</td>
+        <td>x64</td>
+        <td>-</td>
         <td>2022/10/10</td>
         <td>[Egaroucid 6.0.0](https://github.com/Nyanyan/Egaroucid/releases/download/v6.0.0/Egaroucid_6_0_0_setup_Windows.exe)</td>
     </tr>
 </table>
+
 
 過去のバージョンや各バージョンのリリースノートは[GitHubのリリース](https://github.com/Nyanyan/Egaroucid/releases)からご覧ください。
 
@@ -55,4 +65,3 @@ EgaroucidはAVX2バージョンに最適化して作っていますが、こち�
 <div class="centering_box">
     <img class="pic" src="img/egaroucid.png">
 </div>
-
