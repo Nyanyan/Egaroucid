@@ -10,11 +10,11 @@
 
 
 
-Egaroucidはx64のAVX2バージョンに最適化して作っていますが、こちらは概ね2013年以降のCPUでないと動作しません。その場合にはGenericバージョンを使用してください。
+Egaroucidはx64のSIMDバージョン(AVX2を使用)に最適化して作っていますが、こちらは概ね2013年以降のCPUでないと動作しません。その場合にはSIMDを使用していないGenericバージョンを使用してください。
 
 
 
-なお、ARMおよびARM64バージョンは動作確認ができていませんので、問題がありましたら[こちらのフォーム](https://docs.google.com/forms/d/e/1FAIpQLSd6ML1T1fc707luPEefBXuImMnlM9cQP8j-YHKiSyFoS-8rmQ/viewform?usp=sf_link)よりご報告ください。
+なお、一部のバージョンは実機不足により動作確認ができていませんので、問題がありましたら[こちらのフォーム](https://docs.google.com/forms/d/e/1FAIpQLSd6ML1T1fc707luPEefBXuImMnlM9cQP8j-YHKiSyFoS-8rmQ/viewform?usp=sf_link)よりご報告ください。
 
 
 
@@ -25,6 +25,7 @@ Egaroucidはx64のAVX2バージョンに最適化して作っていますが、�
         <td>追加要件</td>
         <td>リリース日</td>
         <td>ダウンロード</td>
+        <td>動作確認</td>
     </tr>
     <tr>
         <td>Windows</td>
@@ -32,6 +33,23 @@ Egaroucidはx64のAVX2バージョンに最適化して作っていますが、�
         <td>AVX2(標準)</td>
         <td>2022/10/10</td>
         <td>[Egaroucid 6.0.0](https://github.com/Nyanyan/Egaroucid/releases/download/v6.0.0/Egaroucid_6_0_0_setup_Windows.exe)</td>
+        <td>済</td>
+    </tr>
+    <tr>
+        <td>Windows</td>
+        <td>x64(標準)</td>
+        <td>-</td>
+        <td>2022/10/10</td>
+        <td>[Egaroucid 6.0.0](https://github.com/Nyanyan/Egaroucid/releases/download/v6.0.0/Egaroucid_6_0_0_setup_Windows.exe)</td>
+        <td>済</td>
+    </tr>
+    <tr>
+        <td>Windows</td>
+        <td>x86</td>
+        <td>-</td>
+        <td>2022/10/10</td>
+        <td>[Egaroucid 6.0.0](https://github.com/Nyanyan/Egaroucid/releases/download/v6.0.0/Egaroucid_6_0_0_setup_Windows.exe)</td>
+        <td>済</td>
     </tr>
 </table>
 

@@ -272,7 +272,7 @@ void gtp_print_board(Board_info *board){
     for (int i = 0; i < HW; ++i){
         std::cout << "  " << (char)('1' + i);
         for (int j = 0; j < HW; ++j){
-            int coord = i * HW + j;
+            int coord = HW2_M1 - (i * HW + j);
             char disc = '.';
             if (board->player == BLACK){
                 if (1 & (board->board.player >> coord))
