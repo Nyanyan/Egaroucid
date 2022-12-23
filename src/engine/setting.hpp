@@ -14,19 +14,18 @@
 #define EGAROUCID_ENGINE_VERSION "6.1"
 #define USE_BETA_VERSION false
 
-#ifdef _WIN64
-    // use SIMD
+// use SIMD
+#ifndef HAS_NO_AVX2
     #define USE_SIMD true
+#endif
 
+#ifdef _WIN64
     #if USE_SIMD
         #define EGAROUCID_ENGINE_ENV_VERSION "Windows x64 SIMD"
     #else
         #define EGAROUCID_ENGINE_ENV_VERSION "Windows x64 Generic"
     #endif
 #elif _WIN32
-    // use SIMD
-    #define USE_SIMD true
-
     #if USE_SIMD
         #define EGAROUCID_ENGINE_ENV_VERSION "Windows x86 SIMD"
     #else
@@ -34,13 +33,14 @@
     #endif
 #elif __APPLE__ // TBD
 #else
-    // use SIMD
-    #define USE_SIMD true
-
     // use ARM
-    #define USE_ARM false
+    #ifdef HAS_ARM_PROCESSOR
+        #define USE_ARM true
+    #endif
 
-    #define USE_64_BIT true
+    #ifndef HAS_32_BIT_OS
+        #define USE_64_BIT true
+    #endif
 
     #if USE_SIMD
         #if USE_ARM
