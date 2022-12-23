@@ -146,6 +146,11 @@ GPL-3.0ライセンスの下で自由に使っていただいて構いません�
             <li>Jon Marc Hornstein</li>
         </ul>
     </li>
+    <li>Book提供
+        <ul>
+            <li>Gunnar Andersson</li>
+        </ul>
+    </li>
     <li>ユーザテスト
         <ul>
             <li>出本大起</li>
@@ -160,6 +165,7 @@ GPL-3.0ライセンスの下で自由に使っていただいて構いません�
         </ul>
     </li>
 </ul>
+
 
 
 

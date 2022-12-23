@@ -140,6 +140,11 @@ I would like to thank these people for great contributions.
             <li>Jon Marc Hornstein</li>
         </ul>
     </li>
+    <li>Book Provision
+        <ul>
+            <li>Gunnar Andersson</li>
+        </ul>
+    </li>
     <li>User Test
         <ul>
             <li>Taiki Demoto</li>
@@ -154,6 +159,7 @@ I would like to thank these people for great contributions.
         </ul>
     </li>
 </ul>
+
 
 ## Links
 
