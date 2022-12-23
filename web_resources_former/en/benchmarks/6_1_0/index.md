@@ -1,10 +1,12 @@
-# Egaroucid 6.0.0 Benchmarks
+# Egaroucid 6.1.0 Benchmarks
 
 ## The FFO endgame test suite
 
 <a href="http://radagast.se/othello/ffotest.html" target="_blank" el=”noopener noreferrer”>The FFO endgame test suite</a> is a common benchmark for endgame searching. Computer completely solves each testcase, and find the best move. This benchmark evaluates the exact time for searching and the speed (NPS: Nodes Per Second).
 
 I used Core i9-11900K for testing.
+
+### Egaroucid for Console 6.1.0 Windows x64 SIMD
 
 <table>
 <tr>
@@ -210,6 +212,7 @@ I used Core i9-11900K for testing.
 
 
 
+
 ## Play against Edax4.4
 
 <a href="https://github.com/abulmo/edax-reversi" target="_blank" el=”noopener noreferrer”>Edax 4.4</a> is one of the best Othello AI in the world.
@@ -261,6 +264,7 @@ I used <a href="https://berg.earthlingz.de/xot/index.php" target="_blank" el=”
 <td>0.71</td>
 </tr>
 </table>
+
 
 
 

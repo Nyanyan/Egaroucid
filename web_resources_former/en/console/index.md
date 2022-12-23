@@ -1,20 +1,20 @@
 # Egaroucid for Console
 
-OSによって操作が異なります。WindowsとLinuxに対応しています。MacOSの動作確認はできていません。
+Operations differ depending on your OS. This software is for Windows and Linux. With MacOS, I don't sure you can run.
 
 
 
 ## Windows
 
-zipファイルをダウンロードして解凍するだけで使用可能です。なお、Linux版の手法を使って手元でコンパイルするとお使いのパソコンに最適化できるためパフォーマンスが上がる可能性があります。
+Please download the zip file and unzip it, then you can use it. For the best performance, you can also build it on your own. Please see documents for Linux to build it.
 
-### ダウンロード
+### Download
 
-以下から自分の環境に合ったものをダウンロードし、任意の場所に解凍してください。実行ファイル(<code>Egaroucid_for_console.exe</code>)をコンソールから実行すると起動します。
+Please download a zip file that is suitable to your environment, and unzip wherever you want. Then execute <code>Egaroucid_for_console.exe</code> to run.
 
 
 
-Egaroucidはx64のSIMDバージョン(AVX2を使用)に最適化して作っていますが、こちらは概ね2013年以降のCPUでないと動作しません。その場合にはSIMDを使用していないGenericバージョンを使用してください。
+Egaroucid is optimized to SIMD version, which requires AVX2  instructions, but old CPUs (created in 2013 or older) might not be able  to run it. If so, please install Generic version.
 
 
 
@@ -22,53 +22,48 @@ Egaroucidはx64のSIMDバージョン(AVX2を使用)に最適化して作って�
     <tr>
         <td>OS</td>
         <td>CPU</td>
-        <td>追加要件</td>
-        <td>リリース日</td>
-        <td>ダウンロード</td>
+        <td>Requirements</td>
+        <td>Date</td>
+        <td>Download</td>
     </tr>
     <tr>
         <td>Windows</td>
-        <td>x64(標準)</td>
-        <td>AVX2(標準)</td>
-        <td>2022/10/10</td>
-        <td>[Egaroucid 6.0.0](https://github.com/Nyanyan/Egaroucid/releases/download/v6.0.0/Egaroucid_6_0_0_setup_Windows.exe)</td>
+        <td>x64(Standard)</td>
+        <td>AVX2(Standard)</td>
+        <td>TBD</td>
+        <td>[Egaroucid for Console 6.1.0 Windows x64 SIMD]()</td>
     </tr>
     <tr>
         <td>Windows</td>
-        <td>x64(標準)</td>
+        <td>x64(Standard)</td>
         <td>-</td>
-        <td>2022/10/10</td>
-        <td>[Egaroucid 6.0.0](https://github.com/Nyanyan/Egaroucid/releases/download/v6.0.0/Egaroucid_6_0_0_setup_Windows.exe)</td>
+        <td>TBD</td>
+        <td>[Egaroucid for Console 6.1.0 Windows x64 Generic]()</td>
     </tr>
     <tr>
         <td>Windows</td>
         <td>x86</td>
         <td>-</td>
-        <td>2022/10/10</td>
-        <td>[Egaroucid 6.0.0](https://github.com/Nyanyan/Egaroucid/releases/download/v6.0.0/Egaroucid_6_0_0_setup_Windows.exe)</td>
+        <td>TBD</td>
+        <td>[Egaroucid for Console 6.1.0 Windows x86 Generic]()</td>
     </tr>
 </table>
 
-
-過去のバージョンや各バージョンのリリースノートは[GitHubのリリース](https://github.com/Nyanyan/Egaroucid/releases)からご覧ください。
+Please visit [GitHub Releases](https://github.com/Nyanyan/Egaroucid/releases) to see older versions and release notes.
 
 
 
 ## Linux
 
-cmakeでビルドするか、直接g++を使ってビルドすることができます。
+Please build on your own. You can use cmake or g++.
 
-### cmakeでビルド
+### Build with cmake
 
-コードを入手します。
-
-
-
-<code>$ git clone git@github.com:Nyanyan/Egaroucid.git</code>
+Please download source codes [hereTBDTBD](), then unzip it.
 
 
 
-ディレクトリを移動します。
+Change directory.
 
 
 
@@ -76,7 +71,7 @@ cmakeでビルドするか、直接g++を使ってビルドすることができ
 
 
 
-<code>cmake</code>でビルドします。
+Then use <code>cmake</code> command to build.
 
 
 
@@ -84,28 +79,32 @@ cmakeでビルドするか、直接g++を使ってビルドすることができ
 
 
 
-このとき、<code>[options]</code>には以下のオプションを入れられます。
+You can add additional options in <code>[options]</code>. Available options are:
 
 
 
 <table>
     <tr>
-        <td>状況</td>
-        <td>追加するオプション</td>
+        <td>You want to</td>
+        <td>Add this option</td>
     </tr>
     <tr>
-        <td>AVX2(相当)を使わない場合</td>
+        <td>Build without AVX2</td>
         <td>-DHAS_NO_AVX2=ON</td>
     </tr>
     <tr>
-        <td>ARMプロセッサで動かす場合</td>
+        <td>Use ARM processors</td>
         <td>-DHAS_ARM_PROCESSOR=ON</td>
     </tr>
     <tr>
-        <td>32bit環境で動かす場合</td>
+        <td>Use 32-bit environment</td>
         <td>-DHAS_32_BIT_OS=ON</td>
     </tr>
 </table>
+
+
+
+Then,
 
 
 
@@ -113,7 +112,7 @@ cmakeでビルドするか、直接g++を使ってビルドすることができ
 
 
 
-これでビルドができます。<code>Egaroucid/src/build</code>フォルダの中に<code>Egaroucid_for_Console.out</code>と必要なリソースファイルができましたので、以下のコマンドで実行できます。
+That's all. You can see <code>Egaroucid_for_Console.out</code> and some resources in <code>Egaroucid/src/build</code> directory. You can run with commands below.
 
 
 
@@ -125,29 +124,25 @@ cmakeでビルドするか、直接g++を使ってビルドすることができ
 
 
 
-### g++でビルド
+### Build with g++
 
-以下の条件を満たしてください。
+Requirements are:
 
 <ul>
-    <li><code>g++</code>コマンドが必要
+    <li><code>g++</code> command
         <ul>
-            <li>Windowsではバージョン12.2.0で動作確認済</li>
-            <li>Ubuntuではバージョン11.3.0で動作確認済</li>
+            <li>I tested with version 12.2.0 on Windows</li>
+            <li>I tested with version 11.3.0 on Ubuntu</li>
         </ul>
     </li>
-    <li>C++17の機能が必要</li>
+    <li>C++17</li>
 </ul>
 
-コードを入手します。
+Please download source codes [hereTBDTBD](), then unzip it.
 
 
 
-<code>$ git clone git@github.com:Nyanyan/Egaroucid.git</code>
-
-
-
-ディレクトリを移動します。
+Change directory.
 
 
 
@@ -155,7 +150,7 @@ cmakeでビルドするか、直接g++を使ってビルドすることができ
 
 
 
-<code>g++</code>コマンドにてコンパイルします。出力ファイルは任意の名前で構いません。
+Then compile it with <code>g++</code> command. You can change the output name.
 
 
 
@@ -163,68 +158,92 @@ cmakeでビルドするか、直接g++を使ってビルドすることができ
 
 
 
-このとき、<code>[options]</code>には以下のオプションを入れられます。
-
-
+You can add additional options in <code>[options]</code>. Available options are:
 
 <table>
     <tr>
-        <td>状況</td>
-        <td>追加するオプション</td>
+        <td>You want to</td>
+        <td>Add this option</td>
     </tr>
     <tr>
-        <td>AVX2(相当)を使わない場合</td>
+        <td>Build without AVX2</td>
         <td>-DHAS_NO_AVX2</td>
     </tr>
     <tr>
-        <td>ARMプロセッサで動かす場合</td>
+        <td>Use ARM processors</td>
         <td>-DHAS_ARM_PROCESSOR</td>
     </tr>
     <tr>
-        <td>32bit環境で動かす場合</td>
+        <td>Use 32-bit environment</td>
         <td>-DHAS_32_BIT_OS</td>
     </tr>
 </table>
 
 
 
-実行します。
+
+Then execute the output file.
 
 
 
-<code>$ Egaroucid_for_console.out</code>
-
-
-
-
-
-## 使い方
-
-<code>$ Egaroucid_for_console.exe -help</code>
-
-
-
-または
-
-
-
-<code>$ ./Egaroucid_for_console.out -help</code>
-
-
-
-を実行すると使えるオプションやコマンドが確認できます。
+<code>$ ./Egaroucid_for_console.out</code>
 
 
 
 
 
-## Go Text Protocol (GTP)対応
+## Usage
 
-GTPは囲碁向けに作られた通信プロトコルですが、これを用いてオセロが使えるソフトウェアがいくつか存在します。Egaroucid for ConsoleはGTPに対応していますので、これらのソフトウェアから呼び出すことが可能です。
+<code>$ Egaroucid_for_Console.exe -help</code>
 
 
 
-GTPコマンドを使う場合には
+or
+
+
+
+<code>$ ./Egaroucid_for_Console.out -help</code>
+
+
+
+to see how to use.
+
+
+
+## Directory Structure
+
+Egaroucid for Console uses some external files. If you've got a trouble, please check it.
+
+<ul>
+    <li>Egaroucid_for_Console.exe</li>
+    <li>resources
+        <ul>
+            <li>hash (Files for hash)
+                <ul>
+                    <li>hash23.eghs</li>
+                    <li>hash24.eghs</li>
+                    <li>hash25.eghs</li>
+                    <li>hash26.eghs</li>
+                    <li>hash27.eghs</li>
+                </ul>
+            </li>
+            <li>book.egbk (book file)</li>
+            <li>eval.egev (evaluation file)</li>
+        </ul>
+    </li>
+</ul>
+
+
+
+
+
+## Documents for Go Text Protocol (GTP) users
+
+GTP is a communication protocol made for game of Go, but you can play Othello with GTP on some applications. Some GTP commands are available on Egaroucid for Console, so these applications can communicate with Egaroucid for Console.
+
+
+
+If you want to use GTP commands, please type this.
 
 
 
@@ -232,36 +251,29 @@ GTPコマンドを使う場合には
 
 
 
-を実行してください。
-
-
-
-WindowsにてGoGuiを用いた動作確認を、UbuntuにてQuarryを用いた動作確認を行いました。
+I tested it works with GoGui on Windows and Quarry on Ubuntu.
 
 
 
 ### GoGui
 
-GoGuiでの動作画面は以下のようになります。
+GoGui with Egaroucid is something like this.
 
 <div class="centering_box">
     <img class="pic2" src="img/gogui_with_egaroucid.png">
 </div>
-
-まず、<code>プログラム>新規プログラム</code>からEgaroucidを登録します。その際、コマンドには<code>-gtp</code>を追加し、ワーキングディレクトリは<code>Egaroucid/src</code>にしてください。
+First, you have to register Egaroucid. Please add <code>-gtp</code> to the command, and set working directory <code>Egaroucid/src</code>.
 
 <div class="centering_box">
     <img class="pic2" src="img/gogui_new_program.png">
     <img class="pic2" src="img/gogui_new_program2.png">
 </div>
-
-そして、<code>プログラム>プログラムを起動</code>から追加したEgaroucidを選択することでEgaroucidを起動できます。
+Then you can execute Egaroucid.
 
 <div class="centering_box">
     <img class="pic2" src="img/gogui_launch.png">
 </div>
-
-GoGuiにおいては、盤面の行が上下反転しているので、<code>表示>Board Orientation>Flip Horizontally</code>を選択すると修正できます。
+On GoGui, board orientation is horizontally flipped, so you can see the ordinal board with flip the board horizontally again.
 
 <div class="centering_box">
     <img class="pic2" src="img/gogui_orientation.png">
@@ -271,17 +283,16 @@ GoGuiにおいては、盤面の行が上下反転しているので、<code>表
 
 ### Quarry
 
-Quarryでの動作画面は以下のようになります。
+Egaroucid on Quarry is something like this.
 
 <div class="centering_box">
     <img class="pic2" src="img/quarry_with_egaroucid.png">
 </div>
-
-<code>New Game</code>や<code>Preferences</code>から<code>Manage Engine List</code>を開き、Egaroucidを追加します。このとき、コマンドに<code>-gtp</code>を追加してください。
-
+First, you have to add Egaroucid. Open <code>Manage Engine List</code> via <code>New Game</code> or <code>Preferences</code>. Please add <code>-gtp</code> to the command.
 
 
-手番を選択してゲームを開始するとEgaroucidが起動します。
+
+Then start game to run Egaroucid.
 
 <div class="centering_box">
     <img class="pic2" src="img/quarry_setting1.png">
@@ -289,29 +300,4 @@ Quarryでの動作画面は以下のようになります。
 </div>
 
 
-
-
-
-## フォルダ構成
-
-Egaroucid for Consoleはいくつかの外部ファイルを必要とします。上記の方法でダウンロードやコンパイルした場合には特にエラーなく動きますが、もし動かなくなった場合にはフォルダ構成を確認してください。
-
-<ul>
-    <li>Egaroucid_for_Console.exe</li>
-    <li>resources
-        <ul>
-            <li>hash (ハッシュファイル なくても動きます)
-                <ul>
-                    <li>hash23.eghs</li>
-                    <li>hash24.eghs</li>
-                    <li>hash25.eghs</li>
-                    <li>hash26.eghs</li>
-                    <li>hash27.eghs</li>
-                </ul>
-            </li>
-            <li>book.egbk (bookファイル)</li>
-            <li>eval.egev (評価ファイル)</li>
-        </ul>
-    </li>
-</ul>
 

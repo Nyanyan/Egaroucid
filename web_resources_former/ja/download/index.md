@@ -10,7 +10,7 @@
 
 
 
-EgaroucidはAVX2バージョンに最適化して作っていますが、こちらは概ね2013年以降のCPUでないと動作しません。その場合にはGenericバージョンを使用してください。
+EgaroucidはSIMDバージョン(AVX2が必要)に最適化して作っていますが、こちらは概ね2013年以降のCPUでないと動作しません。その場合にはGenericバージョンを使用してください。
 
 
 
@@ -26,17 +26,18 @@ EgaroucidはAVX2バージョンに最適化して作っていますが、こち�
         <td>Windows</td>
         <td>x64</td>
         <td>AVX2(標準)</td>
-        <td>2022/10/10</td>
-        <td>[Egaroucid 6.0.0](https://github.com/Nyanyan/Egaroucid/releases/download/v6.0.0/Egaroucid_6_0_0_setup_Windows.exe)</td>
+        <td>TBD</td>
+        <td>[Egaroucid 6.1.0 Windows x64 SIMD]()</td>
     </tr>
     <tr>
         <td>Windows</td>
         <td>x64</td>
         <td>-</td>
-        <td>2022/10/10</td>
-        <td>[Egaroucid 6.0.0](https://github.com/Nyanyan/Egaroucid/releases/download/v6.0.0/Egaroucid_6_0_0_setup_Windows.exe)</td>
+        <td>TBD</td>
+        <td>[Egaroucid 6.1.0 Windows x64 Generic]()</td>
     </tr>
 </table>
+
 
 
 過去のバージョンや各バージョンのリリースノートは[GitHubのリリース](https://github.com/Nyanyan/Egaroucid/releases)からご覧ください。

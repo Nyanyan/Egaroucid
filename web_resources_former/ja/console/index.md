@@ -30,24 +30,25 @@ Egaroucidはx64のSIMDバージョン(AVX2を使用)に最適化して作って�
         <td>Windows</td>
         <td>x64(標準)</td>
         <td>AVX2(標準)</td>
-        <td>2022/10/10</td>
-        <td>[Egaroucid 6.0.0](https://github.com/Nyanyan/Egaroucid/releases/download/v6.0.0/Egaroucid_6_0_0_setup_Windows.exe)</td>
+        <td>TBD</td>
+        <td>[Egaroucid for Console 6.1.0 Windows x64 SIMD]()</td>
     </tr>
     <tr>
         <td>Windows</td>
         <td>x64(標準)</td>
         <td>-</td>
-        <td>2022/10/10</td>
-        <td>[Egaroucid 6.0.0](https://github.com/Nyanyan/Egaroucid/releases/download/v6.0.0/Egaroucid_6_0_0_setup_Windows.exe)</td>
+        <td>TBD</td>
+        <td>[Egaroucid for Console 6.1.0 Windows x64 Generic]()</td>
     </tr>
     <tr>
         <td>Windows</td>
         <td>x86</td>
         <td>-</td>
-        <td>2022/10/10</td>
-        <td>[Egaroucid 6.0.0](https://github.com/Nyanyan/Egaroucid/releases/download/v6.0.0/Egaroucid_6_0_0_setup_Windows.exe)</td>
+        <td>TBD</td>
+        <td>[Egaroucid for Console 6.1.0 Windows x86 Generic]()</td>
     </tr>
 </table>
+
 
 
 過去のバージョンや各バージョンのリリースノートは[GitHubのリリース](https://github.com/Nyanyan/Egaroucid/releases)からご覧ください。
@@ -60,11 +61,7 @@ cmakeでビルドするか、直接g++を使ってビルドすることができ
 
 ### cmakeでビルド
 
-コードを入手します。
-
-
-
-<code>$ git clone git@github.com:Nyanyan/Egaroucid.git</code>
+[こちらTBDTBD]()からコードを入手し、任意の場所に解凍します。
 
 
 
@@ -138,12 +135,7 @@ cmakeでビルドするか、直接g++を使ってビルドすることができ
     </li>
     <li>C++17の機能が必要</li>
 </ul>
-
-コードを入手します。
-
-
-
-<code>$ git clone git@github.com:Nyanyan/Egaroucid.git</code>
+[こちらTBDTBD]()からコードを入手し、任意の場所に解凍します。
 
 
 
@@ -192,7 +184,7 @@ cmakeでビルドするか、直接g++を使ってビルドすることができ
 
 
 
-<code>$ Egaroucid_for_console.out</code>
+<code>$ ./Egaroucid_for_console.out</code>
 
 
 
@@ -200,7 +192,7 @@ cmakeでビルドするか、直接g++を使ってビルドすることができ
 
 ## 使い方
 
-<code>$ Egaroucid_for_console.exe -help</code>
+<code>$ Egaroucid_for_Console.exe -help</code>
 
 
 
@@ -208,11 +200,36 @@ cmakeでビルドするか、直接g++を使ってビルドすることができ
 
 
 
-<code>$ ./Egaroucid_for_console.out -help</code>
+<code>$ ./Egaroucid_for_Console.out -help</code>
 
 
 
 を実行すると使えるオプションやコマンドが確認できます。
+
+
+
+## フォルダ構成
+
+Egaroucid for Consoleはいくつかの外部ファイルを必要とします。上記の方法でダウンロードやコンパイルした場合には特にエラーなく動きますが、もし動かなくなった場合にはフォルダ構成を確認してください。
+
+<ul>
+    <li>Egaroucid_for_Console.exe</li>
+    <li>resources
+        <ul>
+            <li>hash (ハッシュファイル なくても動きます)
+                <ul>
+                    <li>hash23.eghs</li>
+                    <li>hash24.eghs</li>
+                    <li>hash25.eghs</li>
+                    <li>hash26.eghs</li>
+                    <li>hash27.eghs</li>
+                </ul>
+            </li>
+            <li>book.egbk (bookファイル)</li>
+            <li>eval.egev (評価ファイル)</li>
+        </ul>
+    </li>
+</ul>
 
 
 
@@ -289,29 +306,4 @@ Quarryでの動作画面は以下のようになります。
 </div>
 
 
-
-
-
-## フォルダ構成
-
-Egaroucid for Consoleはいくつかの外部ファイルを必要とします。上記の方法でダウンロードやコンパイルした場合には特にエラーなく動きますが、もし動かなくなった場合にはフォルダ構成を確認してください。
-
-<ul>
-    <li>Egaroucid_for_Console.exe</li>
-    <li>resources
-        <ul>
-            <li>hash (ハッシュファイル なくても動きます)
-                <ul>
-                    <li>hash23.eghs</li>
-                    <li>hash24.eghs</li>
-                    <li>hash25.eghs</li>
-                    <li>hash26.eghs</li>
-                    <li>hash27.eghs</li>
-                </ul>
-            </li>
-            <li>book.egbk (bookファイル)</li>
-            <li>eval.egev (評価ファイル)</li>
-        </ul>
-    </li>
-</ul>
 
