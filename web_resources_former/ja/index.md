@@ -140,6 +140,11 @@ GPL-3.0ライセンスの下で自由に使っていただいて構いません�
             <li>Jon Marc Hornstein</li>
         </ul>
     </li>
+    <li>定石名提供
+        <ul>
+            <li>うえのん</li>
+        </ul>
+    </li>
     <li>Book提供
         <ul>
             <li>Gunnar Andersson</li>
@@ -159,6 +164,7 @@ GPL-3.0ライセンスの下で自由に使っていただいて構いません�
         </ul>
     </li>
 </ul>
+
 
 
 
