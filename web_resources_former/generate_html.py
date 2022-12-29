@@ -171,7 +171,7 @@ def create_html(dr):
     if not os.path.exists(out_dr):
         os.mkdir(out_dr)
     with open(out_dr + '/index.html', 'w', encoding='utf-8') as f:
-        f.write(head + og_image + alternate + additional_head + head_title + head2 + menu + html + foot)
+        f.write(head + alternate + og_image + additional_head + head_title + head2 + menu + html + foot)
     shutil.copy(css_file, out_dr + '/style.css')
     try:
         shutil.copytree(dr + '/img', out_dr + '/img')
