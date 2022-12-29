@@ -95,13 +95,16 @@ def create_html(dr):
         alternate += '<link rel="alternate" hreflang="x-default" href="' + main_page_url + 'en/' + dr[3:] + '">\n'
     else:
         alternate += '<link rel="alternate"  hreflang="x-default" href="' + main_page_url + 'en">\n'
+    with open(dr + '/title.txt', 'r', encoding='utf-8') as f:
+        page_title = f.readline()
+    head_title = '<title>' + page_title + '</title>\n'
     with open(dr + '/index.md', 'r', encoding='utf-8') as f:
         md = f.read()
-    page_title = ''
+    #page_title = ''
     md_split = md.splitlines()
     for i, elem in enumerate(md_split):
-        if i == 0:
-            page_title = elem.replace('# ', '')
+        #if i == 0:
+        #    page_title = elem.replace('# ', '')
         # special replacements
         ## download
         if elem == 'DOWNLOAD_BUTTON_REPLACE':
@@ -145,7 +148,7 @@ def create_html(dr):
         html += link21 + lang_link + link22 + lang_name + link23 + ' \n'
     html += '</p>\n'
     additional_head = '<meta property="og:url" content="' + this_page_url + '" />\n'
-    additional_head += '<meta property="og:title" content="' + main_page_title + ' ' + page_title + '" />\n'
+    additional_head += '<meta property="og:title" content="' + page_title + '" />\n'
     additional_head += '<meta property="og:description" content="' + main_page_description + '" />\n'
     try:
         with open(dr + '/additional_head.html', 'r', encoding='utf-8') as f:
@@ -167,7 +170,7 @@ def create_html(dr):
     if not os.path.exists(out_dr):
         os.mkdir(out_dr)
     with open(out_dr + '/index.html', 'w', encoding='utf-8') as f:
-        f.write(head + alternate + additional_head + head2 + menu + html + foot)
+        f.write(head + alternate + additional_head + head_title + head2 + menu + html + foot)
     shutil.copy(css_file, out_dr + '/style.css')
     try:
         shutil.copytree(dr + '/img', out_dr + '/img')
