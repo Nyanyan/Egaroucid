@@ -1,1 +1,1 @@
-You can run this Othello AI on your computer or browser
+One of the strongest Othello AI for Othello players
