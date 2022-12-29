@@ -97,7 +97,6 @@ def create_html(dr):
         alternate += '<link rel="alternate"  hreflang="x-default" href="' + main_page_url + 'en">\n'
     with open(dr + '/title.txt', 'r', encoding='utf-8') as f:
         page_title = f.readline()
-    head_title = '<title>' + page_title + '</title>\n'
     with open(dr + '/index.md', 'r', encoding='utf-8') as f:
         md = f.read()
     #page_title = ''
@@ -138,6 +137,8 @@ def create_html(dr):
     html += '<div class="box">\n'
     html += '<p>\n'
     this_page_url = main_page_url + dr
+    head_title = '<title>' + page_title + '</title>\n'
+    og_image = '<meta property="og:image" content="' + this_page_url + '/img/eyecatch.png" />\n'
     html += tweet.replace('DATA_URL', this_page_url).replace('DATA_TEXT', page_title) + ' \n'
     for lang_dr, lang_name in langs:
         original_lang = dr.split('/')[0]
@@ -170,7 +171,7 @@ def create_html(dr):
     if not os.path.exists(out_dr):
         os.mkdir(out_dr)
     with open(out_dr + '/index.html', 'w', encoding='utf-8') as f:
-        f.write(head + alternate + additional_head + head_title + head2 + menu + html + foot)
+        f.write(head + og_image + alternate + additional_head + head_title + head2 + menu + html + foot)
     shutil.copy(css_file, out_dr + '/style.css')
     try:
         shutil.copytree(dr + '/img', out_dr + '/img')
