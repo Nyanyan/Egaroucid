@@ -1,10 +1,10 @@
 /*
-    Egaroucid for Web Project
+    Egaroucid Project
 
     @file Egaroucid_web.cpp
         Main file for Egaroucid for Web
 
-    @date 2021-2022
+    @date 2021-2023
     @author Takuto Yamana (a.k.a Nyanyan)
     @license GPL-3.0 license
 */
@@ -124,4 +124,3 @@ extern "C" void stop(){
 extern "C" void resume(){
     global_searching = true;
 }
-

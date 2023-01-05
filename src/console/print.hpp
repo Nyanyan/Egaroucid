@@ -3,7 +3,7 @@
 
     @file print.hpp
         Functions about printing on console
-    @date 2021-2022
+    @date 2021-2023
     @author Takuto Yamana (a.k.a. Nyanyan)
     @license GPL-3.0 license
 */
@@ -47,7 +47,7 @@ struct Analyze_summary{
 
 void print_version(){
     std::cout << EGAROUCID_NAME << " " << EGAROUCID_VERSION << std::endl;
-    std::cout << COUT_TAB << std::left << std::setw(VERSION_TAB_SIZE) << "@date ";
+2023
     std::cout << EGAROUCID_DATE << std::endl;
     std::cout << COUT_TAB << std::left << std::setw(VERSION_TAB_SIZE) << "@author ";
     std::cout << EGAROUCID_AUTHOR << std::endl;

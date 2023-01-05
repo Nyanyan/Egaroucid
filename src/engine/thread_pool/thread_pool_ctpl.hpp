@@ -3,7 +3,7 @@
 
     @file thread_pool_ctpl.hpp
         Threadpool for multi-thread search
-    @date 2021-2022
+    @date 2021-2023
     @author Takuto Yamana (a.k.a. Nyanyan)
     @license GPL-3.0 license
     @notice I referred to codes written by others. Original license is written in 'LICENSE_original'.

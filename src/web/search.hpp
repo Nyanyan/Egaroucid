@@ -1,7 +1,7 @@
 /*
-    Egaroucid for Web Project
+    Egaroucid Project
 
-    @date 2021-2022
+    @date 2021-2023
     @author Takuto Yamana (a.k.a Nyanyan)
     @license GPL-3.0 license
 */
@@ -140,4 +140,3 @@ inline void register_tt(Search *search, int depth, uint32_t hash_code, int first
             parent_transpose_table.reg(&search->board, hash_code, l, v, search->mpct, depth);
     }
 }
-
