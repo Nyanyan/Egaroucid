@@ -388,15 +388,7 @@ int nega_alpha_end_fast_nws(Search *search, int alpha, bool skipped, bool stab_c
     #if USE_END_PO
         uint64_t legal_copy;
         if (0 < search->parity && search->parity < 15){
-            uint64_t legal_mask = 0ULL;
-            if (search->parity & 1)
-                legal_mask |= 0x000000000F0F0F0FULL;
-            if (search->parity & 2)
-                legal_mask |= 0x00000000F0F0F0F0ULL;
-            if (search->parity & 4)
-                legal_mask |= 0x0F0F0F0F00000000ULL;
-            if (search->parity & 8)
-                legal_mask |= 0xF0F0F0F000000000ULL;
+            uint64_t legal_mask = parity_table[search->parity];
             if (search->n_discs == 59){
                 uint64_t empties;
                 uint_fast8_t p0, p1, p2, p3;

@@ -47,7 +47,7 @@ struct Analyze_summary{
 
 void print_version(){
     std::cout << EGAROUCID_NAME << " " << EGAROUCID_VERSION << std::endl;
-2023
+    std::cout << COUT_TAB << std::left << std::setw(VERSION_TAB_SIZE) << "@date ";
     std::cout << EGAROUCID_DATE << std::endl;
     std::cout << COUT_TAB << std::left << std::setw(VERSION_TAB_SIZE) << "@author ";
     std::cout << EGAROUCID_AUTHOR << std::endl;
