@@ -23,8 +23,8 @@
 #include "util.hpp"
 #include "stability.hpp"
 #include "endsearch_common.hpp"
-#include "ybwc.hpp"
 #include "parallel.hpp"
+#include "ybwc.hpp"
 
 #if MID_TO_END_DEPTH > YBWC_END_SPLIT_MIN_DEPTH
     inline bool ybwc_split_end_nws(const Search *search, int alpha, uint64_t legal, const bool *searching, uint_fast8_t policy, const int canput, const int pv_idx, const int split_count, std::vector<std::future<Parallel_task>> &parallel_tasks);
