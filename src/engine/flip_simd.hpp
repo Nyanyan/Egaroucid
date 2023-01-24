@@ -5,6 +5,7 @@
         Flip calculation with SIMD
     @date 2021-2023
     @author Takuto Yamana (a.k.a. Nyanyan)
+    @author Toshihiko Okuhara
     @license GPL-3.0 license
     @notice I referred to codes written by others
 */
@@ -14,6 +15,8 @@
 #include "common.hpp"
 #include "bit.hpp"
 
+__m256i lmask_v4[HW2], rmask_v4[HW2];
+
 /*
     @brief Flip class
 
@@ -21,32 +24,72 @@
     @param flip                 a bitboard representing flipped discs
 */
 class Flip{
+
     public:
         uint_fast8_t pos;
         uint64_t flip;
     
     public:
-        //Original code: https://github.com/primenumber/issen/blob/72f450256878094ffe90b75f8674599e6869c238/src/move_generator.cpp
-        //modified by Nyanyan
-        inline void calc_flip(const uint64_t player, const uint64_t opponent, const uint_fast8_t place){
+        // original code from http://www.amy.hi-ho.ne.jp/okuhara/bitboard.htm
+        // by Toshihiko Okuhara
+        inline void calc_flip(const uint64_t player, const uint64_t opponent, const uint_fast8_t place) {
+            __m256i  PP, OO, flip4, outflank, eraser, mask;
+            __m128i  flip2;
+
             pos = place;
-            u64_4 p(player);
-            u64_4 o(opponent);
-            u64_4 flipped, om, outflank, mask;
-            const u64_4 mask1(0xFFFFFFFFFFFFFFFFULL, 0x7E7E7E7E7E7E7E7EULL, 0x7E7E7E7E7E7E7E7EULL, 0x7E7E7E7E7E7E7E7EULL);
-            const u64_4 mask2(0x0080808080808080ULL, 0x7F00000000000000ULL, 0x0102040810204000ULL, 0x0040201008040201ULL);
-            const u64_4 mask3(0x0101010101010100ULL, 0x00000000000000FEULL, 0x0002040810204080ULL, 0x8040201008040200ULL);
-            om = o & mask1;
-            mask = mask2 >> (HW2_M1 - place);
-            outflank = upper_bit(andnot(om, mask)) & p;
-            flipped = ((-outflank) << 1) & mask;
-            mask = mask3 << place;
-            outflank = mask & ((om | ~mask) + 1) & p;
-            flipped = flipped | ((outflank - nonzero(outflank)) & mask);
-            flip = all_or(flipped);
+            PP = _mm256_broadcastq_epi64(_mm_cvtsi64_si128(player));
+            OO = _mm256_broadcastq_epi64(_mm_cvtsi64_si128(opponent));
+
+            mask = rmask_v4[place];
+              // isolate non-opponent MS1B by clearing lower bits
+            eraser = _mm256_andnot_si256(OO, mask);
+            outflank = _mm256_sllv_epi64(_mm256_and_si256(PP, mask), _mm256_set_epi64x(7, 9, 8, 1));
+            eraser = _mm256_or_si256(eraser, _mm256_srlv_epi64(eraser, _mm256_set_epi64x(7, 9, 8, 1)));
+            outflank = _mm256_andnot_si256(eraser, outflank);
+            outflank = _mm256_andnot_si256(_mm256_srlv_epi64(eraser, _mm256_set_epi64x(14, 18, 16, 2)), outflank);
+            outflank = _mm256_andnot_si256(_mm256_srlv_epi64(eraser, _mm256_set_epi64x(28, 36, 32, 4)), outflank);
+              // set mask bits higher than outflank
+            flip4 = _mm256_and_si256(mask, _mm256_sub_epi64(_mm256_setzero_si256(), outflank));
+
+            mask = lmask_v4[place];
+              // look for non-opponent LS1B
+            outflank = _mm256_andnot_si256(OO, mask);
+            outflank = _mm256_and_si256(outflank, _mm256_sub_epi64(_mm256_setzero_si256(), outflank));  // LS1B
+            outflank = _mm256_and_si256(outflank, PP);
+              // set all bits if outflank = 0, otherwise higher bits than outflank
+            eraser = _mm256_sub_epi64(_mm256_cmpeq_epi64(outflank, _mm256_setzero_si256()), outflank);
+            flip4 = _mm256_or_si256(flip4, _mm256_andnot_si256(eraser, mask));
+
+            flip2 = _mm_or_si128(_mm256_castsi256_si128(flip4), _mm256_extracti128_si256(flip4, 1));
+            flip2 = _mm_or_si128(flip2, _mm_shuffle_epi32(flip2, 0x4e));  // SWAP64
+
+            flip = _mm_cvtsi128_si64(flip2);
         }
-        //end of modification
+
 };
 
-void flip_init(){
+/*
+    @brief Flip initialize
+*/
+void flip_init() {
+    for (int x = 0; x < 8; ++x) {
+        __m256i lmask = _mm256_set_epi64x(
+            (0x0102040810204080ULL >> ((7 - x) * 8)) & 0xffffffffffffff00ULL,
+            (0x8040201008040201ULL >> (x * 8)) & 0xffffffffffffff00ULL,
+            (0x0101010101010101ULL << x) & 0xffffffffffffff00ULL,
+            (0xfe << x) & 0xff
+        );
+        __m256i rmask = _mm256_set_epi64x(
+            (0x0102040810204080ULL << (x * 8)) & 0x00ffffffffffffffULL,
+            (0x8040201008040201ULL << ((7 - x) * 8)) & 0x00ffffffffffffffULL,
+            (0x0101010101010101ULL << x) & 0x00ffffffffffffffULL,
+            (uint64_t)(0x7f >> (7 - x)) << 56
+        );
+
+        for (int y = 0; y < 8; ++y) {
+            __m128i yshift = _mm_cvtsi32_si128(y * 8);
+            lmask_v4[y * 8 + x] = _mm256_sll_epi64(lmask, yshift);
+            rmask_v4[(7 - y) * 8 + x] = _mm256_srl_epi64(rmask, yshift);
+        }
+    }
 }
