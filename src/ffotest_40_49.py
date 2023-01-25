@@ -44,10 +44,10 @@ answer = '''#40 38  a2
 
 answer = answer.splitlines()
 
-if sys.argv[1] == 'g':
-    cmd = 'Egaroucid_for_console.exe -l 60 -nobook -thread 23 -hash 25 -solve problem/ffo40-49.txt'
-else:
-    cmd = 'Egaroucid_console.exe -l 60 -nobook -thread 23 -hash 25 -solve problem/ffo40-49.txt'
+#if sys.argv[1] == 'g':
+cmd = 'Egaroucid_for_Console.exe -l 60 -nobook -thread 23 -hash 25 -solve problem/ffo40-49.txt'
+#else:
+#    cmd = 'Egaroucid_console.exe -l 60 -nobook -thread 23 -hash 25 -solve problem/ffo40-49.txt'
 print(cmd)
 egaroucid = subprocess.Popen((cmd).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
