@@ -476,8 +476,9 @@ constexpr Coord_to_feature coord_to_feature[HW2] = {
     /*
         @brief constants used for evaluation function with SIMD
     */
-    __m256i feature_to_coord_simd_shift[N_SIMD_EVAL_FEATURES][MAX_PATTERN_CELLS - 1];
-    __m256i feature_to_coord_simd_mask[N_SIMD_EVAL_FEATURES][MAX_PATTERN_CELLS - 1];
+    //__m256i feature_to_coord_simd_shift[N_SIMD_EVAL_FEATURES][MAX_PATTERN_CELLS - 1];
+    //__m256i feature_to_coord_simd_mask[N_SIMD_EVAL_FEATURES][MAX_PATTERN_CELLS - 1];
+    __m256i feature_to_coord_simd_mul[N_SIMD_EVAL_FEATURES][MAX_PATTERN_CELLS - 1];
     __m256i feature_to_coord_simd_cell[N_SIMD_EVAL_FEATURES][MAX_PATTERN_CELLS];
     __m256i coord_to_feature_simd[HW2][N_SIMD_EVAL_FEATURES];
     __m256i coord_to_feature_simd2[HW2][N_SIMD_EVAL_FEATURES];
@@ -674,6 +675,7 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
             }
         }
         int f2c[8];
+        /*
         for (i = 0; i < N_SIMD_EVAL_FEATURES; ++i){
             for (j = 0; j < MAX_PATTERN_CELLS - 1; ++j){
                 for (k = 0; k < 8; ++k)
@@ -686,6 +688,14 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
                 for (k = 0; k < 8; ++k)
                     f2c[k] = j < feature_to_coord[i * 8 + k].n_cells - 1 ? 0x7FFFFFFF : 0;
                 feature_to_coord_simd_mask[i][j] = _mm256_set_epi32(f2c[0], f2c[1], f2c[2], f2c[3], f2c[4], f2c[5], f2c[6], f2c[7]);
+            }
+        }
+        */
+        for (i = 0; i < N_SIMD_EVAL_FEATURES; ++i){
+            for (j = 0; j < MAX_PATTERN_CELLS - 1; ++j){
+                for (k = 0; k < 8; ++k)
+                    f2c[k] = j < feature_to_coord[i * 8 + k].n_cells - 1 ? 3 : 1;
+                feature_to_coord_simd_mul[i][j] = _mm256_set_epi32(f2c[0], f2c[1], f2c[2], f2c[3], f2c[4], f2c[5], f2c[6], f2c[7]);
             }
         }
         for (i = 0; i < N_SIMD_EVAL_FEATURES; ++i){
@@ -1126,7 +1136,8 @@ inline int mid_evaluate_diff_pass(Search *search){
             search->eval_features[i] = _mm256_set1_epi32(0);
             for (j = 0; j < MAX_PATTERN_CELLS - 1; ++j){
                 search->eval_features[i] = _mm256_add_epi32(search->eval_features[i], _mm256_i32gather_epi32(b_arr_int, feature_to_coord_simd_cell[i][j], 4));
-                search->eval_features[i] = _mm256_add_epi32(_mm256_sllv_epi32(search->eval_features[i], feature_to_coord_simd_shift[i][j]), _mm256_and_si256(search->eval_features[i], feature_to_coord_simd_mask[i][j]));
+                //search->eval_features[i] = _mm256_add_epi32(_mm256_sllv_epi32(search->eval_features[i], feature_to_coord_simd_shift[i][j]), _mm256_and_si256(search->eval_features[i], feature_to_coord_simd_mask[i][j]));
+                search->eval_features[i] = _mm256_mullo_epi32(search->eval_features[i], feature_to_coord_simd_mul[i][j]);
             }
             search->eval_features[i] = _mm256_add_epi32(search->eval_features[i], _mm256_i32gather_epi32(b_arr_int, feature_to_coord_simd_cell[i][MAX_PATTERN_CELLS - 1], 4));
             search->eval_features[i] = _mm256_add_epi32(search->eval_features[i], eval_simd_offsets[i]);
