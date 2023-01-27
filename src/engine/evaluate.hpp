@@ -67,16 +67,6 @@
 #define P38 6561
 #define P39 19683
 #define P310 59049
-#define P31m 2
-#define P32m 8
-#define P33m 26
-#define P34m 80
-#define P35m 242
-#define P36m 728
-#define P37m 2186
-#define P38m 6560
-#define P39m 19682
-#define P310m 59048
 
 /*
     @brief 4 ^ N definition
