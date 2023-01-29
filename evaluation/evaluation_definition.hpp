@@ -253,6 +253,8 @@ constexpr Feature_to_coord feature_to_coord[N_SYMMETRY_PATTERNS] = {
     {10, {COORD_H8, COORD_G8, COORD_H7, COORD_G7, COORD_F7, COORD_E7, COORD_D7, COORD_G6, COORD_G5, COORD_G4}}  // 61
 };
 
+constexpr int pattern_n_cells[N_PATTERNS] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10, 10, 10, 10};
+
 constexpr int rev_patterns[N_PATTERNS][MAX_PATTERN_CELLS] = {
     {7, 6, 5, 4, 3, 2, 1, 0}, // 0 hv2
     {7, 6, 5, 4, 3, 2, 1, 0}, // 1 hv3
@@ -469,8 +471,9 @@ int pick_digit3(int num, int d, int n_digit){
 uint16_t calc_rev_idx(int feature, int idx){
     uint16_t res = 0;
     if (feature < N_PATTERNS){
-        for (int i = 0; i < feature_to_coord[feature].n_cells; ++i)
-            res += pick_digit3(idx, rev_patterns[feature][i], feature_to_coord[feature].n_cells) * pow3[feature_to_coord[feature].n_cells - 1 - i];
+        for (int i = 0; i < pattern_n_cells[feature]; ++i){
+            res += pick_digit3(idx, rev_patterns[feature][i], pattern_n_cells[feature]) * pow3[pattern_n_cells[feature] - 1 - i];
+        }
     } else if (feature < N_PATTERNS + 3){
         res = idx;
     } else{
