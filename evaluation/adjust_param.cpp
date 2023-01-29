@@ -138,9 +138,10 @@ void import_test_data(int n_files, char *files[], int use_phase, double beta){
     FILE* fp;
     int16_t n_discs, phase, score, player;
     uint16_t raw_features[N_FEATURES];
+    int alpha_occurance[N_EVAL][MAX_EVALUATE_IDX];
     for (int i = 0; i < N_EVAL; ++i){
         for (int j = 0; j < eval_sizes[i]; ++j)
-            alpha[i][j] = 0.0;
+            alpha_occurance[i][j] = 0;
     }
     for (int file_idx = 0; file_idx < n_files; ++file_idx){
         std::cerr << std::endl << files[file_idx] << std::endl;
@@ -161,7 +162,7 @@ void import_test_data(int n_files, char *files[], int use_phase, double beta){
                 Data data;
                 for (int i = 0; i < N_FEATURES; ++i){
                     data.features[i] = raw_features[i];
-                    alpha[feature_to_eval_idx[i]][raw_features[i]] += 1.0;
+                    alpha_occurance[feature_to_eval_idx[i]][raw_features[i]] += 1.0;
                     feature_idx_to_data[feature_to_eval_idx[i]][raw_features[i]].emplace_back(t);
                 }
                 data.score = (double)score;
@@ -175,10 +176,10 @@ void import_test_data(int n_files, char *files[], int use_phase, double beta){
     std::cerr << t << " data loaded" << std::endl;
     for (int i = 0; i < N_EVAL; ++i){
         for (int j = 0; j < eval_sizes[i]; ++j){
-            double n_data_feature = alpha[i][j];
+            int n_data_feature = alpha_occurance[i][j];
             if (rev_idxes[i][j] != j)
-                n_data_feature += alpha[i][rev_idxes[i][j]];
-            alpha[i][j] = beta / std::max(50.0, n_data_feature);
+                n_data_feature += alpha_occurance[i][rev_idxes[i][j]];
+            alpha[i][j] = beta / (double)std::max(50, n_data_feature);
         }
     }
 }
