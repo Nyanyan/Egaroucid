@@ -980,8 +980,8 @@ inline int calc_mobility_pattern(const int phase_idx, const uint64_t player_mobi
         uint64_t player_mobility, opponent_mobility, empties;
         player_mobility = calc_legal(b->player, b->opponent);
         opponent_mobility = calc_legal(b->opponent, b->player);
-        canput0 = std::min(MAX_CANPUT - 1, pop_count_ull(player_mobility));
-        canput1 = std::min(MAX_CANPUT - 1, pop_count_ull(opponent_mobility));
+        canput0 = pop_count_ull(player_mobility);
+        canput1 = pop_count_ull(opponent_mobility);
         if (canput0 == 0 && canput1 == 0)
             return end_evaluate(b);
         phase_idx = b->phase_slow();
@@ -1014,8 +1014,8 @@ inline int calc_mobility_pattern(const int phase_idx, const uint64_t player_mobi
         int phase_idx, sur0, sur1, canput0, canput1, num0, num1;
         uint64_t empties;
         phase_idx = search.phase();
-        canput0 = std::min(MAX_CANPUT - 1, pop_count_ull(player_mobility));
-        canput1 = std::min(MAX_CANPUT - 1, pop_count_ull(opponent_mobility));
+        canput0 = pop_count_ull(player_mobility);
+        canput1 = pop_count_ull(opponent_mobility);
         empties = ~(search.board.player | search.board.opponent);
         sur0 = std::min(MAX_SURROUND - 1, calc_surround(search.board.player, empties));
         sur1 = std::min(MAX_SURROUND - 1, calc_surround(search.board.opponent, empties));
@@ -1052,8 +1052,8 @@ inline int mid_evaluate_diff(Search *search){
     int phase_idx, sur0, sur1, canput0, canput1, num0, num1;
     uint64_t empties;
     phase_idx = search->phase();
-    canput0 = std::min(MAX_CANPUT - 1, pop_count_ull(player_mobility));
-    canput1 = std::min(MAX_CANPUT - 1, pop_count_ull(opponent_mobility));
+    canput0 = pop_count_ull(player_mobility);
+    canput1 = pop_count_ull(opponent_mobility);
     empties = ~(search->board.player | search->board.opponent);
     sur0 = std::min(MAX_SURROUND - 1, calc_surround(search->board.player, empties));
     sur1 = std::min(MAX_SURROUND - 1, calc_surround(search->board.opponent, empties));
@@ -1089,8 +1089,8 @@ inline int mid_evaluate_diff_pass(Search *search){
     int phase_idx, sur0, sur1, canput0, canput1, num0, num1;
     uint64_t empties;
     phase_idx = search->phase();
-    canput0 = std::min(MAX_CANPUT - 1, pop_count_ull(player_mobility));
-    canput1 = std::min(MAX_CANPUT - 1, pop_count_ull(opponent_mobility));
+    canput0 = pop_count_ull(player_mobility);
+    canput1 = pop_count_ull(opponent_mobility);
     empties = ~(search->board.opponent | search->board.player);
     sur0 = std::min(MAX_SURROUND - 1, calc_surround(search->board.opponent, empties));
     sur1 = std::min(MAX_SURROUND - 1, calc_surround(search->board.player, empties));
