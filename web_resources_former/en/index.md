@@ -128,6 +128,11 @@ I would like to thank these people for great contributions.
             <li>Kaneko Eizo</li>
         </ul>
     </li>
+    <li>Technical Contribution
+        <ul>
+            <li>Toshihiko Okuhara</li>
+        </ul>
+    </li>
     <li>Technical Advice
         <ul>
             <li>Jon Marc Hornstein</li>
@@ -158,6 +163,7 @@ I would like to thank these people for great contributions.
         </ul>
     </li>
 </ul>
+
 
 
 
