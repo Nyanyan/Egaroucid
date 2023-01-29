@@ -168,12 +168,20 @@ void import_test_data(int n_files, char *files[], int use_phase, double beta){
     }
 }
 
+void output_param(){
+    for (int i = 0; i < N_EVAL; ++i){
+        for (int j = 0; j < eval_sizes[i]; ++j)
+            std::cout << (int)round(eval_arr[i][j]) << std::endl;
+    }
+    std::cerr << "output data fin" << std::endl;
+}
 
 int main(){
     init_arr();
     //import_eval("file.txt");
-    char* files[] = {"data5_01.dat"};
-    import_test_data(1, files, 20, 0.9);
+    char* files[] = {"data5_01.dat", "data5_02.dat", "data5_03.dat"};
+    import_test_data(3, files, 20, 0.9);
     gradient_descent(60000);
+    output_param();
     return 0;
 }
