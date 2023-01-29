@@ -48,6 +48,20 @@ void calc_score(){
     std::cerr << " mse " << mse << " mae " << mae << "                             ";
 }
 
+void print_result(int phase, int t, uint64_t tl){
+    double err;
+    double mse = 0.0;
+    double mae = 0.0;
+    double double_data_size = (double)test_data.size();
+    for (int i = 0; i < (int)test_data.size(); ++i){
+        preds[i] = round_score(predict(i));
+        err = (double)abs(preds[i] - test_data[i].score);
+        mse += err / double_data_size * err;
+        mae += err / double_data_size;
+    }
+    std::cout << phase << " " << t << " " << tl << " " << mse << " " << mae << std::endl;
+}
+
 double calc_error(int feature, int idx){
     double res = 0.0;
     double raw_err;
@@ -74,7 +88,7 @@ void next_step(){
     }
 }
 
-void gradient_descent(uint64_t tl){
+void gradient_descent(uint64_t tl, int phase){
     uint64_t strt = tim();
     int t = 0;
     calc_score();
@@ -88,6 +102,7 @@ void gradient_descent(uint64_t tl){
     std::cerr << '\r' << t << " " << (tim() - strt) * 1000 / tl;
     calc_score();
     std::cerr << std::endl;
+    print_result(phase, t, tl);
     std::cerr << "fin" << std::endl;
 }
 
@@ -194,7 +209,7 @@ int main(int argc, char *argv[]){
     init_arr();
     import_eval(in_file);
     import_test_data(argc - 6, test_files, phase, beta);
-    gradient_descent(second * 1000);
+    gradient_descent(second * 1000, phase);
     output_param();
     return 0;
 }

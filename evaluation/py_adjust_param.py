@@ -9,9 +9,9 @@ if len(sys.argv) > 3:
     beta = str(sys.argv[5])
 else:
     hour = '0'
-    minute = '20'
+    minute = '10'
     second = '0'
-    beta = '2.0'
+    beta = '3.0'
 
 additional_params = ' data5_01.dat data5_02.dat data5_03.dat data5_06.dat data5_07.dat data5_08.dat data5_09.dat data5_10.dat data5_11.dat data5_15.dat data5_99.dat'
 '''
