@@ -2,5 +2,6 @@ Home /
 Download /download/
 Console Version /console/
 Web Version /web/
+Benchmarks /benchmarks/
 Report Bugs https://docs.google.com/forms/d/e/1FAIpQLSd6ML1T1fc707luPEefBXuImMnlM9cQP8j-YHKiSyFoS-8rmQ/viewform?usp=sf_link
 About Me https://nyanyan.dev/en/
