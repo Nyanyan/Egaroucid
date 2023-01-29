@@ -7,7 +7,7 @@
 
 struct Data{
     uint16_t features[N_FEATURES];
-    int score;
+    double score;
 };
 
 #define N_MAX_DATA 70000000
@@ -15,7 +15,7 @@ struct Data{
 double eval_arr[N_EVAL][MAX_EVALUATE_IDX];
 double alpha[N_EVAL][MAX_EVALUATE_IDX];
 std::vector<Data> test_data;
-std::vector<int> preds;
+std::vector<double> preds;
 uint16_t rev_idxes[N_EVAL][MAX_EVALUATE_IDX];
 std::vector<std::vector<std::vector<int>>> feature_idx_to_data(N_EVAL, std::vector<std::vector<int>>(MAX_EVALUATE_IDX, std::vector<int>(0)));
 
@@ -23,10 +23,10 @@ inline double predict(int problem_idx){
     double res = 0.0;
     for (int i = 0; i < N_FEATURES; ++i)
         res += eval_arr[feature_to_eval_idx[i]][test_data[problem_idx].features[i]];
-    if (res > (double)SCORE_MAX)
-        res = (double)SCORE_MAX;
-    else if (res < -(double)SCORE_MAX)
-        res = -(double)SCORE_MAX;
+    if (res > (double)SCORE_MAX * STEP)
+        res = (double)SCORE_MAX * STEP;
+    else if (res < -(double)SCORE_MAX * STEP)
+        res = -(double)SCORE_MAX * STEP;
     return res;
 }
 
@@ -40,8 +40,8 @@ void calc_score(){
     double mae = 0.0;
     double double_data_size = (double)test_data.size();
     for (int i = 0; i < (int)test_data.size(); ++i){
-        preds[i] = round_score(predict(i));
-        err = (double)abs(preds[i] - test_data[i].score);
+        preds[i] = predict(i) / STEP;
+        err = abs(preds[i] - (double)test_data[i].score);
         mse += err / double_data_size * err;
         mae += err / double_data_size;
     }
@@ -54,8 +54,8 @@ void print_result(int phase, int t, uint64_t tl){
     double mae = 0.0;
     double double_data_size = (double)test_data.size();
     for (int i = 0; i < (int)test_data.size(); ++i){
-        preds[i] = round_score(predict(i));
-        err = (double)abs(preds[i] - test_data[i].score);
+        preds[i] = predict(i) / STEP;
+        err = abs(preds[i] - test_data[i].score);
         mse += err / double_data_size * err;
         mae += err / double_data_size;
     }
@@ -66,7 +66,7 @@ double calc_error(int feature, int idx){
     double res = 0.0;
     double raw_err;
     for (const int &i: feature_idx_to_data[feature][idx]){
-        raw_err = (double)(test_data[i].score - preds[i]);
+        raw_err = test_data[i].score - preds[i];
         res += raw_err;
     }
     return res;
@@ -164,7 +164,7 @@ void import_test_data(int n_files, char *files[], int use_phase, double beta){
                     alpha[feature_to_eval_idx[i]][raw_features[i]] += 1.0;
                     feature_idx_to_data[feature_to_eval_idx[i]][raw_features[i]].emplace_back(t);
                 }
-                data.score = (int)score;
+                data.score = (double)score;
                 preds.emplace_back(0);
                 test_data.emplace_back(data);
                 ++t;

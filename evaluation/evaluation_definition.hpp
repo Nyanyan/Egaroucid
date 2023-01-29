@@ -25,7 +25,7 @@
 #define N_PHASES 30
 #define N_PHASE_DISCS (60 / N_PHASES)
 
-#define SCORE_MAX (HW2 * STEP)
+#define SCORE_MAX HW2
 
 /*
     @brief value definition
