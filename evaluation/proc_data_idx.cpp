@@ -34,14 +34,13 @@ inline void convert_idx(string str, ofstream *fout){
     score = stoi(str.substr(67));
     if (ai_player == 1)
         score = -score;
-    int idxes[N_FEATURES];
+    uint16_t idxes[N_FEATURES];
     calc_features(&b, idxes);
     int n_stones = pop_count_ull(b.player | b.opponent);
-    fout->write((char*)&n_stones, 4);
-    fout->write((char*)&ai_player, 4);
-    for (i = 0; i < N_FEATURES; ++i)
-        fout->write((char*)&idxes[i], 4);
-    fout->write((char*)&score, 4);
+    fout->write((char*)&n_stones, 2);
+    fout->write((char*)&ai_player, 2);
+    fout->write((char*)idxes, 2 * N_FEATURES);
+    fout->write((char*)&score, 2);
 }
 
 int main(int argc, char *argv[]){

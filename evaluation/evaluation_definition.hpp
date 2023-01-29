@@ -17,13 +17,15 @@
 #define MAX_CANPUT 50
 #define MAX_STONE_NUM 65
 #define N_CANPUT_PATTERNS 4
-#define MAX_EVALUATE_IDX 59049
+#define MAX_EVALUATE_IDX 65536
 
 #define N_EVAL (16 + 3 + 4)
 #define N_FEATURES (62 + 3 + 16)
 
 #define N_PHASES 30
 #define N_PHASE_DISCS (60 / N_PHASES)
+
+#define SCORE_MAX (HW2 * STEP)
 
 /*
     @brief value definition
@@ -140,6 +142,8 @@
 
 #define COORD_NO 64
 
+constexpr int pow3[11] = {P30, P31, P32, P33, P34, P35, P36, P37, P38, P39, P310};
+
 /*
     @brief definition of patterns in evaluation function
 
@@ -249,6 +253,25 @@ constexpr Feature_to_coord feature_to_coord[N_SYMMETRY_PATTERNS] = {
     {10, {COORD_H8, COORD_G8, COORD_H7, COORD_G7, COORD_F7, COORD_E7, COORD_D7, COORD_G6, COORD_G5, COORD_G4}}  // 61
 };
 
+constexpr int rev_patterns[N_PATTERNS][MAX_PATTERN_CELLS] = {
+    {7, 6, 5, 4, 3, 2, 1, 0}, // 0 hv2
+    {7, 6, 5, 4, 3, 2, 1, 0}, // 1 hv3
+    {7, 6, 5, 4, 3, 2, 1, 0}, // 2 hv4
+    {4, 3, 2, 1, 0}, // 3 d5
+    {5, 4, 3, 2, 1, 0}, // 4 d6
+    {6, 5, 4, 3, 2, 1, 0}, // 5 d7
+    {7, 6, 5, 4, 3, 2, 1, 0}, // 6 d8
+    {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}, // 7 edge + 2x
+    {0, 4, 7, 9, 1, 5, 8, 2, 6, 3}, // 8 triangle
+    {5, 4, 3, 2, 1, 0, 9, 8, 7, 6}, // 9 corner + block
+    {0, 1, 2, 3, 7, 8, 9, 4, 5, 6}, // 10 cross
+    {0, 3, 6, 1, 4, 7, 2, 5, 8}, // 11 corner9
+    {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}, // 12 edge + y
+    {0, 5, 7, 8, 9, 1, 6, 2, 3, 4}, // 13 narrow triangle
+    {0, 2, 1, 3, 6, 8, 4, 7, 5, 9}, // 14 fish
+    {0, 2, 1, 3, 7, 8, 9, 4, 5, 6}// 15 kite
+};
+
 /*
     @brief definition of patterns in evaluation function
 
@@ -351,7 +374,7 @@ constexpr int eval_sizes[N_EVAL] = {
     P48, P48, P48, P48
 };
 
-constexpr int feature_to_eval[N_FEATURES] = {
+constexpr int feature_to_eval_idx[N_FEATURES] = {
     0, 0, 0, 0, 
     1, 1, 1, 1, 
     2, 2, 2, 2, 
@@ -419,7 +442,7 @@ inline int pick_pattern(const uint_fast8_t b_arr[], int pattern_idx){
     return res;
 }
 
-void calc_features(Board *board, int res[]){
+void calc_features(Board *board, uint16_t res[]){
     uint_fast8_t b_arr[HW2];
     board->translate_to_arr_player(b_arr);
     int idx = 0;
@@ -436,4 +459,25 @@ void calc_features(Board *board, int res[]){
         res[idx++] = create_canput_line_v(player_mobility, opponent_mobility, i);
         res[idx++] = create_canput_line_v(player_mobility, opponent_mobility, 7 - i);
     }
+}
+
+int pick_digit3(int num, int d, int n_digit){
+    num /= pow3[n_digit - 1 - d];
+    return num % 3;
+}
+
+uint16_t calc_rev_idx(int feature, int idx){
+    uint16_t res = 0;
+    if (feature < N_PATTERNS){
+        for (int i = 0; i < feature_to_coord[feature].n_cells; ++i)
+            res += pick_digit3(idx, rev_patterns[feature][i], feature_to_coord[feature].n_cells) * pow3[feature_to_coord[feature].n_cells - 1 - i];
+    } else if (feature < N_PATTERNS + 3){
+        res = idx;
+    } else{
+        for (int i = 0; i < 8; ++i)
+            res |= (1 & (idx >> i)) << (7 - i);
+        for (int i = 0; i < 8; ++i)
+            res |= (1 & (idx >> (8 + i))) << (8 + 7 - i);
+    }
+    return res;
 }
