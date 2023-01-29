@@ -1,3 +1,6 @@
+#pragma once
+#include "new_util/board.hpp"
+
 /*
     @brief evaluation pattern definition
 */
@@ -10,15 +13,17 @@
 #endif
 #define MAX_PATTERN_CELLS 10
 #define MAX_CELL_PATTERNS 13
-#define MAX_SURROUND 100
+#define MAX_SURROUND 128 // < MODIFIED
 #define MAX_CANPUT 50
-//#define MAX_STABILITY 65
 #define MAX_STONE_NUM 65
 #define N_CANPUT_PATTERNS 4
 #define MAX_EVALUATE_IDX 59049
 
 #define N_EVAL (16 + 3 + 4)
 #define N_FEATURES (62 + 3 + 16)
+
+#define N_PHASES 30
+#define N_PHASE_DISCS (60 / N_PHASES)
 
 /*
     @brief value definition
@@ -371,3 +376,64 @@ constexpr int feature_to_eval[N_FEATURES] = {
     21, 21, 21, 21, 
     22, 22, 22, 22
 };
+
+inline uint64_t calc_surround_part(const uint64_t player, const int dr){
+    return (player << dr) | (player >> dr);
+}
+
+inline int calc_surround(const uint64_t player, const uint64_t empties){
+    return pop_count_ull(empties & (
+        calc_surround_part(player & 0b0111111001111110011111100111111001111110011111100111111001111110ULL, 1) | 
+        calc_surround_part(player & 0b0000000011111111111111111111111111111111111111111111111100000000ULL, HW) | 
+        calc_surround_part(player & 0b0000000001111110011111100111111001111110011111100111111000000000ULL, HW_M1) | 
+        calc_surround_part(player & 0b0000000001111110011111100111111001111110011111100111111000000000ULL, HW_P1)
+    ));
+}
+
+int calc_surround_feature(Board *board){
+    return calc_surround(board->player, ~(board->player | board->opponent)) * MAX_SURROUND + calc_surround(board->opponent, ~(board->player | board->opponent));
+}
+
+int calc_legal_feature(Board *board){
+    return pop_count_ull(calc_legal(board->player, board->opponent)) * MAX_CANPUT + pop_count_ull(calc_legal(board->opponent, board->player));
+}
+
+int calc_num_feature(Board *board){
+    return pop_count_ull(board->player) * MAX_STONE_NUM + pop_count_ull(board->opponent);
+}
+
+inline int create_canput_line_h(uint64_t b, uint64_t w, int t){
+    return (((w >> (HW * t)) & 0b11111111) << HW) | ((b >> (HW * t)) & 0b11111111);
+}
+
+inline int create_canput_line_v(uint64_t b, uint64_t w, int t){
+    return (join_v_line(w, t) << HW) | join_v_line(b, t);
+}
+
+inline int pick_pattern(const uint_fast8_t b_arr[], int pattern_idx){
+    int res = 0;
+    for (int i = 0; i < feature_to_coord[pattern_idx].n_cells; ++i){
+        res *= 3;
+        res += b_arr[feature_to_coord[pattern_idx].cells[i]];
+    }
+    return res;
+}
+
+void calc_features(Board *board, int res[]){
+    uint_fast8_t b_arr[HW2];
+    board->translate_to_arr_player(b_arr);
+    int idx = 0;
+    for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i)
+        res[idx++] = pick_pattern(b_arr, i);
+    res[idx++] = calc_surround_feature(board);
+    res[idx++] = calc_legal_feature(board);
+    res[idx++] = calc_num_feature(board);
+    uint64_t player_mobility = calc_legal(board->player, board->opponent);
+    uint64_t opponent_mobility = calc_legal(board->opponent, board->player);
+    for (int i = 0; i < 4; ++i){
+        res[idx++] = create_canput_line_h(player_mobility, opponent_mobility, i);
+        res[idx++] = create_canput_line_h(player_mobility, opponent_mobility, 7 - i);
+        res[idx++] = create_canput_line_v(player_mobility, opponent_mobility, i);
+        res[idx++] = create_canput_line_v(player_mobility, opponent_mobility, 7 - i);
+    }
+}
