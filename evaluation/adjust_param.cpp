@@ -176,12 +176,25 @@ void output_param(){
     std::cerr << "output data fin" << std::endl;
 }
 
-int main(){
+int main(int argc, char *argv[]){
+    if (argc < 7){
+        std::cerr << "input [phase] [hour] [minute] [second] [beta] [in_file] [test_data]" << std::endl;
+        return 1;
+    }
+    int phase = atoi(argv[1]);
+    uint64_t hour = atoi(argv[2]);
+    uint64_t minute = atoi(argv[3]);
+    uint64_t second = atoi(argv[4]);
+    double beta = atof(argv[5]);
+    string in_file = (string)argv[6];
+    char* test_files[argc - 6];
+    for (int i = 6; i < argc; ++i)
+        test_files[i - 6] = argv[i];
+    second += minute * 60 + hour * 3600;
     init_arr();
-    //import_eval("file.txt");
-    char* files[] = {"data5_01.dat", "data5_02.dat", "data5_03.dat"};
-    import_test_data(3, files, 20, 0.9);
-    gradient_descent(60000);
+    import_eval(in_file);
+    import_test_data(argc - 6, test_files, phase, beta);
+    gradient_descent(second * 1000);
     output_param();
     return 0;
 }
