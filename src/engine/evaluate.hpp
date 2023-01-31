@@ -466,10 +466,9 @@ constexpr Coord_to_feature coord_to_feature[HW2] = {
     /*
         @brief constants used for evaluation function with SIMD
     */
-    //__m256i feature_to_coord_simd_shift[N_SIMD_EVAL_FEATURES][MAX_PATTERN_CELLS - 1];
-    //__m256i feature_to_coord_simd_mask[N_SIMD_EVAL_FEATURES][MAX_PATTERN_CELLS - 1];
+    __m256i simd_eval_mask;
     __m256i feature_to_coord_simd_mul[N_SIMD_EVAL_FEATURES][MAX_PATTERN_CELLS - 1];
-    __m256i feature_to_coord_simd_cell[N_SIMD_EVAL_FEATURES][MAX_PATTERN_CELLS];
+    __m256i feature_to_coord_simd_cell[N_SIMD_EVAL_FEATURES][MAX_PATTERN_CELLS][2];
     __m256i coord_to_feature_simd[HW2][N_SIMD_EVAL_FEATURES];
     __m256i coord_to_feature_simd2[HW2][N_SIMD_EVAL_FEATURES];
     __m256i eval_simd_offsets[N_SIMD_EVAL_FEATURES];
@@ -659,63 +658,49 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
     }
     #if USE_SIMD_EVALUATION
         int i, j, k, idx, cell;
+        simd_eval_mask = _mm256_set1_epi32(0x0000FFFF);
         for (i = 0; i < 2; ++i){
             for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
                 pattern_arr[i][phase_idx][N_PATTERNS][0] = 0;
             }
         }
-        int f2c[8];
-        /*
+        int16_t f2c[16];
         for (i = 0; i < N_SIMD_EVAL_FEATURES; ++i){
             for (j = 0; j < MAX_PATTERN_CELLS - 1; ++j){
-                for (k = 0; k < 8; ++k)
-                    f2c[k] = j < feature_to_coord[i * 8 + k].n_cells - 1 ? 1 : 0;
-                feature_to_coord_simd_shift[i][j] = _mm256_set_epi32(f2c[0], f2c[1], f2c[2], f2c[3], f2c[4], f2c[5], f2c[6], f2c[7]);
+                for (k = 0; k < 16; ++k)
+                    f2c[k] = j < feature_to_coord[i * 16 + k].n_cells - 1 ? 3 : 1;
+                feature_to_coord_simd_mul[i][j] = _mm256_set_epi16(f2c[0], f2c[1], f2c[2], f2c[3], f2c[4], f2c[5], f2c[6], f2c[7], f2c[8], f2c[9], f2c[10], f2c[11], f2c[12], f2c[13], f2c[14], f2c[15]);
             }
         }
-        for (i = 0; i < N_SIMD_EVAL_FEATURES; ++i){
-            for (j = 0; j < MAX_PATTERN_CELLS - 1; ++j){
-                for (k = 0; k < 8; ++k)
-                    f2c[k] = j < feature_to_coord[i * 8 + k].n_cells - 1 ? 0x7FFFFFFF : 0;
-                feature_to_coord_simd_mask[i][j] = _mm256_set_epi32(f2c[0], f2c[1], f2c[2], f2c[3], f2c[4], f2c[5], f2c[6], f2c[7]);
-            }
-        }
-        */
-        for (i = 0; i < N_SIMD_EVAL_FEATURES; ++i){
-            for (j = 0; j < MAX_PATTERN_CELLS - 1; ++j){
-                for (k = 0; k < 8; ++k)
-                    f2c[k] = j < feature_to_coord[i * 8 + k].n_cells - 1 ? 3 : 1;
-                feature_to_coord_simd_mul[i][j] = _mm256_set_epi32(f2c[0], f2c[1], f2c[2], f2c[3], f2c[4], f2c[5], f2c[6], f2c[7]);
-            }
-        }
+        int f2c32[8];
         for (i = 0; i < N_SIMD_EVAL_FEATURES; ++i){
             for (j = 0; j < MAX_PATTERN_CELLS; ++j){
                 for (k = 0; k < 8; ++k)
-                    f2c[k] = feature_to_coord[i * 8 + k].cells[j];
-                feature_to_coord_simd_cell[i][j] = _mm256_set_epi32(f2c[0], f2c[1], f2c[2], f2c[3], f2c[4], f2c[5], f2c[6], f2c[7]);
+                    f2c32[k] = feature_to_coord[i * 16 + k * 2 + 1].cells[j];
+                feature_to_coord_simd_cell[i][j][0] = _mm256_set_epi32(f2c32[0], f2c32[1], f2c32[2], f2c32[3], f2c32[4], f2c32[5], f2c32[6], f2c32[7]);
+                for (k = 0; k < 8; ++k)
+                    f2c32[k] = feature_to_coord[i * 16 + k * 2].cells[j];
+                feature_to_coord_simd_cell[i][j][1] = _mm256_set_epi32(f2c32[0], f2c32[1], f2c32[2], f2c32[3], f2c32[4], f2c32[5], f2c32[6], f2c32[7]);
             }
         }
-        int c2f[CEIL_N_SYMMETRY_PATTERNS];
+        int16_t c2f[CEIL_N_SYMMETRY_PATTERNS];
         for (cell = 0; cell < HW2; ++cell){
             for (i = 0; i < CEIL_N_SYMMETRY_PATTERNS; ++i)
                 c2f[i] = 0;
             for (i = 0; i < coord_to_feature[cell].n_features; ++i)
                 c2f[coord_to_feature[cell].features[i].feature] = coord_to_feature[cell].features[i].x;
             for (i = 0; i < N_SIMD_EVAL_FEATURES; ++i){
-                idx = i * 8;
-                coord_to_feature_simd[cell][i] = _mm256_set_epi32(c2f[idx], c2f[idx + 1], c2f[idx + 2], c2f[idx + 3], c2f[idx + 4], c2f[idx + 5], c2f[idx + 6], c2f[idx + 7]);
-                coord_to_feature_simd2[cell][i] = _mm256_slli_epi32(coord_to_feature_simd[cell][i], 1);
+                idx = i * 16;
+                coord_to_feature_simd[cell][i] = _mm256_set_epi16(c2f[idx], c2f[idx + 1], c2f[idx + 2], c2f[idx + 3], c2f[idx + 4], c2f[idx + 5], c2f[idx + 6], c2f[idx + 7], 
+                    c2f[idx + 8], c2f[idx + 9], c2f[idx + 10], c2f[idx + 11], c2f[idx + 12], c2f[idx + 13], c2f[idx + 14], c2f[idx + 15]);
+                coord_to_feature_simd2[cell][i] = _mm256_slli_epi16(coord_to_feature_simd[cell][i], 1);
             }
         }
         constexpr int offset1 = MAX_EVALUATE_IDX;
-        eval_simd_offsets[0] = _mm256_set_epi32(0, 0, 0, 0, offset1, offset1, offset1, offset1);
-        eval_simd_offsets[1] = _mm256_set_epi32(offset1 * 2, offset1 * 2, offset1 * 2, offset1 * 2, offset1 * 3, offset1 * 3, offset1 * 3, offset1 * 3);
-        eval_simd_offsets[2] = _mm256_set_epi32(offset1 * 4, offset1 * 4, offset1 * 4, offset1 * 4, offset1 * 5, offset1 * 5, offset1 * 5, offset1 * 5);
-        eval_simd_offsets[3] = _mm256_set_epi32(offset1 * 6, offset1 * 6, offset1 * 7, offset1 * 7, offset1 * 7, offset1 * 7, offset1 * 8, offset1 * 8);
-        eval_simd_offsets[4] = _mm256_set_epi32(offset1 * 8, offset1 * 8, offset1 * 9, offset1 * 9, offset1 * 9, offset1 * 9, offset1 * 10, offset1 * 10);
-        eval_simd_offsets[5] = _mm256_set_epi32(offset1 * 10, offset1 * 10, offset1 * 11, offset1 * 11, offset1 * 11, offset1 * 11, offset1 * 12, offset1 * 12);
-        eval_simd_offsets[6] = _mm256_set_epi32(offset1 * 12, offset1 * 12, offset1 * 13, offset1 * 13, offset1 * 13, offset1 * 13, offset1 * 14, offset1 * 14);
-        eval_simd_offsets[7] = _mm256_set_epi32(offset1 * 14, offset1 * 14, offset1 * 15, offset1 * 15, offset1 * 15, offset1 * 15, offset1 * 16, offset1 * 16);
+        eval_simd_offsets[0] = _mm256_set_epi32(0, 0, offset1, offset1, offset1 * 2, offset1 * 2, offset1 * 3, offset1 * 3);
+        eval_simd_offsets[1] = _mm256_set_epi32(offset1 * 4, offset1 * 4, offset1 * 5, offset1 * 5, offset1 * 6, offset1 * 7, offset1 * 7, offset1 * 8);
+        eval_simd_offsets[2] = _mm256_set_epi32(offset1 * 8, offset1 * 9, offset1 * 9, offset1 * 10, offset1 * 10, offset1 * 11, offset1 * 11, offset1 * 12);
+        eval_simd_offsets[3] = _mm256_set_epi32(offset1 * 12, offset1 * 13, offset1 * 13, offset1 * 14, offset1 * 14, offset1 * 15, offset1 * 15, offset1 * 16);
     #endif
     if (show_log)
         std::cerr << "evaluation function initialized" << std::endl;
@@ -866,36 +851,24 @@ inline int end_evaluate(Board *b, int e){
     @return pattern evaluation value
 */
 #if USE_SIMD_EVALUATION
-    inline int calc_pattern_diff(const int phase_idx, Search *search){
-        const int *pat_com = (int*)pattern_arr[search->eval_feature_reversed][phase_idx][0];
-        __m256i res256 = _mm256_i32gather_epi32(pat_com, search->eval_features[0], 4);
-        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, search->eval_features[1], 4));
-        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, search->eval_features[2], 4));
-        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, search->eval_features[3], 4));
-        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, search->eval_features[4], 4));
-        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, search->eval_features[5], 4));
-        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, search->eval_features[6], 4));
-        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, search->eval_features[7], 4));
-        return _mm256_extract_epi32(res256, 7) + 
-            _mm256_extract_epi32(res256, 6) + 
-            _mm256_extract_epi32(res256, 5) + 
-            _mm256_extract_epi32(res256, 4) + 
-            _mm256_extract_epi32(res256, 3) + 
-            _mm256_extract_epi32(res256, 2) + 
-            _mm256_extract_epi32(res256, 1) + 
-            _mm256_extract_epi32(res256, 0);
+    inline __m256i calc_idx8_a(const __m256i eval_features[], const int i){
+        return _mm256_add_epi32(_mm256_and_si256(eval_features[i], simd_eval_mask), eval_simd_offsets[i]);
     }
 
-    inline int calc_pattern_diff_pass(const int phase_idx, Search *search){
-        const int *pat_com = (int*)pattern_arr[search->eval_feature_reversed ^ 1][phase_idx][0];
-        __m256i res256 = _mm256_i32gather_epi32(pat_com, search->eval_features[0], 4);
-        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, search->eval_features[1], 4));
-        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, search->eval_features[2], 4));
-        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, search->eval_features[3], 4));
-        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, search->eval_features[4], 4));
-        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, search->eval_features[5], 4));
-        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, search->eval_features[6], 4));
-        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, search->eval_features[7], 4));
+    inline __m256i calc_idx8_b(const __m256i eval_features[], const int i){
+        return _mm256_add_epi32(_mm256_srai_epi32(eval_features[i], 16), eval_simd_offsets[i]);
+    }
+
+    inline int calc_pattern_diff(const int phase_idx, Search *search){
+        const int *pat_com = (int*)pattern_arr[search->eval_feature_reversed][phase_idx][0];
+        __m256i res256 = _mm256_i32gather_epi32(pat_com, calc_idx8_a(search->eval_features, 0), 4);
+        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, calc_idx8_b(search->eval_features, 0), 4));
+        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, calc_idx8_a(search->eval_features, 1), 4));
+        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, calc_idx8_b(search->eval_features, 1), 4));
+        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, calc_idx8_a(search->eval_features, 2), 4));
+        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, calc_idx8_b(search->eval_features, 2), 4));
+        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, calc_idx8_a(search->eval_features, 3), 4));
+        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, calc_idx8_b(search->eval_features, 3), 4));
         return _mm256_extract_epi32(res256, 7) + 
             _mm256_extract_epi32(res256, 6) + 
             _mm256_extract_epi32(res256, 5) + 
@@ -1074,43 +1047,6 @@ inline int mid_evaluate_diff(Search *search){
     return res;
 }
 
-/*
-    @brief midgame evaluation function for Null Move Pruning
-
-    @param search               search information
-    @return evaluation value
-*/
-inline int mid_evaluate_diff_pass(Search *search){
-    uint64_t player_mobility, opponent_mobility;
-    player_mobility = calc_legal(search->board.opponent, search->board.player);
-    opponent_mobility = calc_legal(search->board.player, search->board.opponent);
-    if ((player_mobility | opponent_mobility) == 0ULL)
-        return -end_evaluate(&search->board);
-    int phase_idx, sur0, sur1, canput0, canput1, num0, num1;
-    uint64_t empties;
-    phase_idx = search->phase();
-    canput0 = pop_count_ull(player_mobility);
-    canput1 = pop_count_ull(opponent_mobility);
-    empties = ~(search->board.opponent | search->board.player);
-    sur0 = calc_surround(search->board.opponent, empties);
-    sur1 = calc_surround(search->board.player, empties);
-    num0 = pop_count_ull(search->board.opponent);
-    num1 = search->n_discs - num0;
-    int res = calc_pattern_diff_pass(phase_idx, search) + 
-        eval_sur0_sur1_arr[phase_idx][sur0][sur1] + 
-        eval_canput0_canput1_arr[phase_idx][canput0][canput1] + 
-        eval_num0_num1_arr[phase_idx][num0][num1] + 
-        calc_mobility_pattern(phase_idx, player_mobility, opponent_mobility);
-    res += res >= 0 ? STEP_2 : -STEP_2;
-    res /= STEP;
-    //return std::max(-SCORE_MAX, std::min(SCORE_MAX, res));
-    if (res > SCORE_MAX)
-        return SCORE_MAX;
-    if (res < -SCORE_MAX)
-        return -SCORE_MAX;
-    return res;
-}
-
 #if USE_SIMD_EVALUATION
     /*
         @brief calculate features for pattern evaluation
@@ -1123,14 +1059,14 @@ inline int mid_evaluate_diff_pass(Search *search){
         b_arr_int[COORD_NO] = 0;
         int i, j;
         for (i = 0; i < N_SIMD_EVAL_FEATURES; ++i){
-            search->eval_features[i] = _mm256_set1_epi32(0);
+            search->eval_features[i] = _mm256_set1_epi16(0);
             for (j = 0; j < MAX_PATTERN_CELLS - 1; ++j){
-                search->eval_features[i] = _mm256_add_epi32(search->eval_features[i], _mm256_i32gather_epi32(b_arr_int, feature_to_coord_simd_cell[i][j], 4));
-                //search->eval_features[i] = _mm256_add_epi32(_mm256_sllv_epi32(search->eval_features[i], feature_to_coord_simd_shift[i][j]), _mm256_and_si256(search->eval_features[i], feature_to_coord_simd_mask[i][j]));
-                search->eval_features[i] = _mm256_mullo_epi32(search->eval_features[i], feature_to_coord_simd_mul[i][j]);
+                search->eval_features[i] = _mm256_adds_epu16(search->eval_features[i], _mm256_i32gather_epi32(b_arr_int, feature_to_coord_simd_cell[i][j][0], 4));
+                search->eval_features[i] = _mm256_adds_epu16(search->eval_features[i], _mm256_slli_epi32(_mm256_i32gather_epi32(b_arr_int, feature_to_coord_simd_cell[i][j][1], 4), 16));
+                search->eval_features[i] = _mm256_mullo_epi16(search->eval_features[i], feature_to_coord_simd_mul[i][j]);
             }
-            search->eval_features[i] = _mm256_add_epi32(search->eval_features[i], _mm256_i32gather_epi32(b_arr_int, feature_to_coord_simd_cell[i][MAX_PATTERN_CELLS - 1], 4));
-            search->eval_features[i] = _mm256_add_epi32(search->eval_features[i], eval_simd_offsets[i]);
+            search->eval_features[i] = _mm256_adds_epu16(search->eval_features[i], _mm256_i32gather_epi32(b_arr_int, feature_to_coord_simd_cell[i][MAX_PATTERN_CELLS - 1][0], 4));
+            search->eval_features[i] = _mm256_adds_epu16(search->eval_features[i], _mm256_slli_epi32(_mm256_i32gather_epi32(b_arr_int, feature_to_coord_simd_cell[i][MAX_PATTERN_CELLS - 1][1], 4), 16));
         }
         search->eval_feature_reversed = 0;
     }
@@ -1145,44 +1081,28 @@ inline int mid_evaluate_diff_pass(Search *search){
         uint_fast8_t cell;
         uint64_t f;
         if (search->eval_feature_reversed){
-            search->eval_features[0] = _mm256_sub_epi32(search->eval_features[0], coord_to_feature_simd[flip->pos][0]);
-            search->eval_features[1] = _mm256_sub_epi32(search->eval_features[1], coord_to_feature_simd[flip->pos][1]);
-            search->eval_features[2] = _mm256_sub_epi32(search->eval_features[2], coord_to_feature_simd[flip->pos][2]);
-            search->eval_features[3] = _mm256_sub_epi32(search->eval_features[3], coord_to_feature_simd[flip->pos][3]);
-            search->eval_features[4] = _mm256_sub_epi32(search->eval_features[4], coord_to_feature_simd[flip->pos][4]);
-            search->eval_features[5] = _mm256_sub_epi32(search->eval_features[5], coord_to_feature_simd[flip->pos][5]);
-            search->eval_features[6] = _mm256_sub_epi32(search->eval_features[6], coord_to_feature_simd[flip->pos][6]);
-            search->eval_features[7] = _mm256_sub_epi32(search->eval_features[7], coord_to_feature_simd[flip->pos][7]);
+            search->eval_features[0] = _mm256_subs_epu16(search->eval_features[0], coord_to_feature_simd[flip->pos][0]);
+            search->eval_features[1] = _mm256_subs_epu16(search->eval_features[1], coord_to_feature_simd[flip->pos][1]);
+            search->eval_features[2] = _mm256_subs_epu16(search->eval_features[2], coord_to_feature_simd[flip->pos][2]);
+            search->eval_features[3] = _mm256_subs_epu16(search->eval_features[3], coord_to_feature_simd[flip->pos][3]);
             f = flip->flip;
             for (cell = first_bit(&f); f; cell = next_bit(&f)){
-                search->eval_features[0] = _mm256_add_epi32(search->eval_features[0], coord_to_feature_simd[cell][0]);
-                search->eval_features[1] = _mm256_add_epi32(search->eval_features[1], coord_to_feature_simd[cell][1]);
-                search->eval_features[2] = _mm256_add_epi32(search->eval_features[2], coord_to_feature_simd[cell][2]);
-                search->eval_features[3] = _mm256_add_epi32(search->eval_features[3], coord_to_feature_simd[cell][3]);
-                search->eval_features[4] = _mm256_add_epi32(search->eval_features[4], coord_to_feature_simd[cell][4]);
-                search->eval_features[5] = _mm256_add_epi32(search->eval_features[5], coord_to_feature_simd[cell][5]);
-                search->eval_features[6] = _mm256_add_epi32(search->eval_features[6], coord_to_feature_simd[cell][6]);
-                search->eval_features[7] = _mm256_add_epi32(search->eval_features[7], coord_to_feature_simd[cell][7]);
+                search->eval_features[0] = _mm256_adds_epu16(search->eval_features[0], coord_to_feature_simd[cell][0]);
+                search->eval_features[1] = _mm256_adds_epu16(search->eval_features[1], coord_to_feature_simd[cell][1]);
+                search->eval_features[2] = _mm256_adds_epu16(search->eval_features[2], coord_to_feature_simd[cell][2]);
+                search->eval_features[3] = _mm256_adds_epu16(search->eval_features[3], coord_to_feature_simd[cell][3]);
             }
         } else{
-            search->eval_features[0] = _mm256_sub_epi32(search->eval_features[0], coord_to_feature_simd2[flip->pos][0]);
-            search->eval_features[1] = _mm256_sub_epi32(search->eval_features[1], coord_to_feature_simd2[flip->pos][1]);
-            search->eval_features[2] = _mm256_sub_epi32(search->eval_features[2], coord_to_feature_simd2[flip->pos][2]);
-            search->eval_features[3] = _mm256_sub_epi32(search->eval_features[3], coord_to_feature_simd2[flip->pos][3]);
-            search->eval_features[4] = _mm256_sub_epi32(search->eval_features[4], coord_to_feature_simd2[flip->pos][4]);
-            search->eval_features[5] = _mm256_sub_epi32(search->eval_features[5], coord_to_feature_simd2[flip->pos][5]);
-            search->eval_features[6] = _mm256_sub_epi32(search->eval_features[6], coord_to_feature_simd2[flip->pos][6]);
-            search->eval_features[7] = _mm256_sub_epi32(search->eval_features[7], coord_to_feature_simd2[flip->pos][7]);
+            search->eval_features[0] = _mm256_subs_epu16(search->eval_features[0], coord_to_feature_simd2[flip->pos][0]);
+            search->eval_features[1] = _mm256_subs_epu16(search->eval_features[1], coord_to_feature_simd2[flip->pos][1]);
+            search->eval_features[2] = _mm256_subs_epu16(search->eval_features[2], coord_to_feature_simd2[flip->pos][2]);
+            search->eval_features[3] = _mm256_subs_epu16(search->eval_features[3], coord_to_feature_simd2[flip->pos][3]);
             f = flip->flip;
             for (cell = first_bit(&f); f; cell = next_bit(&f)){
-                search->eval_features[0] = _mm256_sub_epi32(search->eval_features[0], coord_to_feature_simd[cell][0]);
-                search->eval_features[1] = _mm256_sub_epi32(search->eval_features[1], coord_to_feature_simd[cell][1]);
-                search->eval_features[2] = _mm256_sub_epi32(search->eval_features[2], coord_to_feature_simd[cell][2]);
-                search->eval_features[3] = _mm256_sub_epi32(search->eval_features[3], coord_to_feature_simd[cell][3]);
-                search->eval_features[4] = _mm256_sub_epi32(search->eval_features[4], coord_to_feature_simd[cell][4]);
-                search->eval_features[5] = _mm256_sub_epi32(search->eval_features[5], coord_to_feature_simd[cell][5]);
-                search->eval_features[6] = _mm256_sub_epi32(search->eval_features[6], coord_to_feature_simd[cell][6]);
-                search->eval_features[7] = _mm256_sub_epi32(search->eval_features[7], coord_to_feature_simd[cell][7]);
+                search->eval_features[0] = _mm256_subs_epu16(search->eval_features[0], coord_to_feature_simd[cell][0]);
+                search->eval_features[1] = _mm256_subs_epu16(search->eval_features[1], coord_to_feature_simd[cell][1]);
+                search->eval_features[2] = _mm256_subs_epu16(search->eval_features[2], coord_to_feature_simd[cell][2]);
+                search->eval_features[3] = _mm256_subs_epu16(search->eval_features[3], coord_to_feature_simd[cell][3]);
             }
         }
         search->eval_feature_reversed ^= 1;
@@ -1199,44 +1119,28 @@ inline int mid_evaluate_diff_pass(Search *search){
         uint_fast8_t cell;
         uint64_t f;
         if (search->eval_feature_reversed){
-            search->eval_features[0] = _mm256_add_epi32(search->eval_features[0], coord_to_feature_simd[flip->pos][0]);
-            search->eval_features[1] = _mm256_add_epi32(search->eval_features[1], coord_to_feature_simd[flip->pos][1]);
-            search->eval_features[2] = _mm256_add_epi32(search->eval_features[2], coord_to_feature_simd[flip->pos][2]);
-            search->eval_features[3] = _mm256_add_epi32(search->eval_features[3], coord_to_feature_simd[flip->pos][3]);
-            search->eval_features[4] = _mm256_add_epi32(search->eval_features[4], coord_to_feature_simd[flip->pos][4]);
-            search->eval_features[5] = _mm256_add_epi32(search->eval_features[5], coord_to_feature_simd[flip->pos][5]);
-            search->eval_features[6] = _mm256_add_epi32(search->eval_features[6], coord_to_feature_simd[flip->pos][6]);
-            search->eval_features[7] = _mm256_add_epi32(search->eval_features[7], coord_to_feature_simd[flip->pos][7]);
+            search->eval_features[0] = _mm256_adds_epu16(search->eval_features[0], coord_to_feature_simd[flip->pos][0]);
+            search->eval_features[1] = _mm256_adds_epu16(search->eval_features[1], coord_to_feature_simd[flip->pos][1]);
+            search->eval_features[2] = _mm256_adds_epu16(search->eval_features[2], coord_to_feature_simd[flip->pos][2]);
+            search->eval_features[3] = _mm256_adds_epu16(search->eval_features[3], coord_to_feature_simd[flip->pos][3]);
             f = flip->flip;
             for (cell = first_bit(&f); f; cell = next_bit(&f)){
-                search->eval_features[0] = _mm256_sub_epi32(search->eval_features[0], coord_to_feature_simd[cell][0]);
-                search->eval_features[1] = _mm256_sub_epi32(search->eval_features[1], coord_to_feature_simd[cell][1]);
-                search->eval_features[2] = _mm256_sub_epi32(search->eval_features[2], coord_to_feature_simd[cell][2]);
-                search->eval_features[3] = _mm256_sub_epi32(search->eval_features[3], coord_to_feature_simd[cell][3]);
-                search->eval_features[4] = _mm256_sub_epi32(search->eval_features[4], coord_to_feature_simd[cell][4]);
-                search->eval_features[5] = _mm256_sub_epi32(search->eval_features[5], coord_to_feature_simd[cell][5]);
-                search->eval_features[6] = _mm256_sub_epi32(search->eval_features[6], coord_to_feature_simd[cell][6]);
-                search->eval_features[7] = _mm256_sub_epi32(search->eval_features[7], coord_to_feature_simd[cell][7]);
+                search->eval_features[0] = _mm256_subs_epu16(search->eval_features[0], coord_to_feature_simd[cell][0]);
+                search->eval_features[1] = _mm256_subs_epu16(search->eval_features[1], coord_to_feature_simd[cell][1]);
+                search->eval_features[2] = _mm256_subs_epu16(search->eval_features[2], coord_to_feature_simd[cell][2]);
+                search->eval_features[3] = _mm256_subs_epu16(search->eval_features[3], coord_to_feature_simd[cell][3]);
             }
         } else{
-            search->eval_features[0] = _mm256_add_epi32(search->eval_features[0], coord_to_feature_simd2[flip->pos][0]);
-            search->eval_features[1] = _mm256_add_epi32(search->eval_features[1], coord_to_feature_simd2[flip->pos][1]);
-            search->eval_features[2] = _mm256_add_epi32(search->eval_features[2], coord_to_feature_simd2[flip->pos][2]);
-            search->eval_features[3] = _mm256_add_epi32(search->eval_features[3], coord_to_feature_simd2[flip->pos][3]);
-            search->eval_features[4] = _mm256_add_epi32(search->eval_features[4], coord_to_feature_simd2[flip->pos][4]);
-            search->eval_features[5] = _mm256_add_epi32(search->eval_features[5], coord_to_feature_simd2[flip->pos][5]);
-            search->eval_features[6] = _mm256_add_epi32(search->eval_features[6], coord_to_feature_simd2[flip->pos][6]);
-            search->eval_features[7] = _mm256_add_epi32(search->eval_features[7], coord_to_feature_simd2[flip->pos][7]);
+            search->eval_features[0] = _mm256_adds_epu16(search->eval_features[0], coord_to_feature_simd2[flip->pos][0]);
+            search->eval_features[1] = _mm256_adds_epu16(search->eval_features[1], coord_to_feature_simd2[flip->pos][1]);
+            search->eval_features[2] = _mm256_adds_epu16(search->eval_features[2], coord_to_feature_simd2[flip->pos][2]);
+            search->eval_features[3] = _mm256_adds_epu16(search->eval_features[3], coord_to_feature_simd2[flip->pos][3]);
             f = flip->flip;
             for (cell = first_bit(&f); f; cell = next_bit(&f)){
-                search->eval_features[0] = _mm256_add_epi32(search->eval_features[0], coord_to_feature_simd[cell][0]);
-                search->eval_features[1] = _mm256_add_epi32(search->eval_features[1], coord_to_feature_simd[cell][1]);
-                search->eval_features[2] = _mm256_add_epi32(search->eval_features[2], coord_to_feature_simd[cell][2]);
-                search->eval_features[3] = _mm256_add_epi32(search->eval_features[3], coord_to_feature_simd[cell][3]);
-                search->eval_features[4] = _mm256_add_epi32(search->eval_features[4], coord_to_feature_simd[cell][4]);
-                search->eval_features[5] = _mm256_add_epi32(search->eval_features[5], coord_to_feature_simd[cell][5]);
-                search->eval_features[6] = _mm256_add_epi32(search->eval_features[6], coord_to_feature_simd[cell][6]);
-                search->eval_features[7] = _mm256_add_epi32(search->eval_features[7], coord_to_feature_simd[cell][7]);
+                search->eval_features[0] = _mm256_adds_epu16(search->eval_features[0], coord_to_feature_simd[cell][0]);
+                search->eval_features[1] = _mm256_adds_epu16(search->eval_features[1], coord_to_feature_simd[cell][1]);
+                search->eval_features[2] = _mm256_adds_epu16(search->eval_features[2], coord_to_feature_simd[cell][2]);
+                search->eval_features[3] = _mm256_adds_epu16(search->eval_features[3], coord_to_feature_simd[cell][3]);
             }
         }
     }

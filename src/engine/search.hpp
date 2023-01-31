@@ -25,7 +25,7 @@
     #define N_SYMMETRY_PATTERNS 62
 #endif
 #if USE_SIMD_EVALUATION
-    #define N_SIMD_EVAL_FEATURES 8
+    #define N_SIMD_EVAL_FEATURES 4
 #endif
 
 /*
