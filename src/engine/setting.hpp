@@ -160,8 +160,6 @@
 /*
     @brief debug settings
 */
-// use SIMD in evaluation (pattern) function
-#define USE_SIMD_DEBUG false
 
 // evaluation harness
 #define USE_EVALUATION_HARNESS false
