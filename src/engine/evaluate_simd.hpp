@@ -644,15 +644,9 @@ inline int calc_pattern_diff(const int phase_idx, Search *search){
     res256 = _mm256_add_epi32(res256, gather_eval(pat_com, calc_idx8_b(search->eval_features, 2)));
     res256 = _mm256_add_epi32(res256, gather_eval(pat_com, calc_idx8_a(search->eval_features, 3)));
     res256 = _mm256_add_epi32(res256, gather_eval(pat_com, calc_idx8_b(search->eval_features, 3)));
-    return _mm256_extract_epi32(res256, 7) + 
-        _mm256_extract_epi32(res256, 6) + 
-        _mm256_extract_epi32(res256, 5) + 
-        _mm256_extract_epi32(res256, 4) + 
-        _mm256_extract_epi32(res256, 3) + 
-        _mm256_extract_epi32(res256, 2) + 
-        _mm256_extract_epi32(res256, 1) + 
-        _mm256_extract_epi32(res256, 0) - 
-        SIMD_EVAL_OFFSET * N_SYMMETRY_PATTERNS;
+    __m128i res128 = _mm_add_epi32(_mm256_castsi256_si128(res256), _mm256_extracti128_si256(res256, 1));
+    res128 = _mm_hadd_epi32(res128, res128);
+    return _mm_cvtsi128_si32(res128) + _mm_extract_epi32(res128, 1) - SIMD_EVAL_OFFSET * N_SYMMETRY_PATTERNS;
 }
 
 /*
