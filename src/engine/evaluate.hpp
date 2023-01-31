@@ -33,6 +33,7 @@
 #endif
 #if USE_SIMD_EVALUATION
     #define CEIL_N_SYMMETRY_PATTERNS 64
+    #define SIMD_EVAL_OFFSET 32768
 #endif
 #define MAX_PATTERN_CELLS 10
 #define MAX_CELL_PATTERNS 13
@@ -466,7 +467,7 @@ constexpr Coord_to_feature coord_to_feature[HW2] = {
     /*
         @brief constants used for evaluation function with SIMD
     */
-    __m256i simd_eval_mask;
+    __m256i eval_lower_mask;
     __m256i feature_to_coord_simd_mul[N_SIMD_EVAL_FEATURES][MAX_PATTERN_CELLS - 1];
     __m256i feature_to_coord_simd_cell[N_SIMD_EVAL_FEATURES][MAX_PATTERN_CELLS][2];
     __m256i coord_to_feature_simd[HW2][N_SIMD_EVAL_FEATURES];
@@ -483,7 +484,7 @@ constexpr uint_fast16_t pow3[11] = {1, P31, P32, P33, P34, P35, P36, P37, P38, P
     @brief evaluation parameters
 */
 #if USE_SIMD_EVALUATION
-    int pattern_arr[2][N_PHASES][N_PATTERNS + 1][MAX_EVALUATE_IDX];
+    int16_t pattern_arr[2][N_PHASES][N_PATTERNS + 2][MAX_EVALUATE_IDX];
 #else
     int16_t pattern_arr[2][N_PHASES][N_PATTERNS][MAX_EVALUATE_IDX];
 #endif
@@ -596,20 +597,14 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
     }
     int phase_idx, pattern_idx;
     constexpr int pattern_sizes[N_PATTERNS] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10, 10, 10, 10};
-    #if USE_SIMD_EVALUATION
-        int16_t pattern_arr_16[MAX_EVALUATE_IDX];
-    #endif
     for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
-        //std::cerr << "evaluation function " << phase_idx * 100 / N_PHASES << " % initialized" << std::endl;
         #if USE_SIMD_EVALUATION
             for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx){
-                if (fread(pattern_arr_16, 2, pow3[pattern_sizes[pattern_idx]], fp) < pow3[pattern_sizes[pattern_idx]]){
+                if (fread(pattern_arr[0][phase_idx][pattern_idx + 1], 2, pow3[pattern_sizes[pattern_idx]], fp) < pow3[pattern_sizes[pattern_idx]]){
                     std::cerr << "[ERROR] [FATAL] evaluation file broken" << std::endl;
                     fclose(fp);
                     return false;
                 }
-                for (int i = 0; i < (int)pow3[pattern_sizes[pattern_idx]]; ++i)
-                    pattern_arr[0][phase_idx][pattern_idx][i] = pattern_arr_16[i];
             }
         #else
             for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx){
@@ -658,10 +653,21 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
     }
     #if USE_SIMD_EVALUATION
         int i, j, k, idx, cell;
-        simd_eval_mask = _mm256_set1_epi32(0x0000FFFF);
+        eval_lower_mask = _mm256_set1_epi32(0x0000FFFF);
         for (i = 0; i < 2; ++i){
             for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
-                pattern_arr[i][phase_idx][N_PATTERNS][0] = 0;
+                pattern_arr[i][phase_idx][0][0] = 0;
+                pattern_arr[i][phase_idx][N_PATTERNS + 1][0] = 0;
+            }
+        }
+        for (i = 0; i < 2; ++i){
+            for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
+                for (j = 0; j < N_PATTERNS; ++j){
+                    for (k = 0; k < pow3[pattern_sizes[j]]; ++k)
+                        pattern_arr[i][phase_idx][j + 1][k] += SIMD_EVAL_OFFSET;
+                }
+                pattern_arr[i][phase_idx][0][0] = 0;
+                pattern_arr[i][phase_idx][N_PATTERNS + 1][0] = 0;
             }
         }
         int16_t f2c[16];
@@ -701,6 +707,8 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
         eval_simd_offsets[1] = _mm256_set_epi32(offset1 * 4, offset1 * 4, offset1 * 5, offset1 * 5, offset1 * 6, offset1 * 7, offset1 * 7, offset1 * 8);
         eval_simd_offsets[2] = _mm256_set_epi32(offset1 * 8, offset1 * 9, offset1 * 9, offset1 * 10, offset1 * 10, offset1 * 11, offset1 * 11, offset1 * 12);
         eval_simd_offsets[3] = _mm256_set_epi32(offset1 * 12, offset1 * 13, offset1 * 13, offset1 * 14, offset1 * 14, offset1 * 15, offset1 * 15, offset1 * 16);
+        for (i = 0; i < N_SIMD_EVAL_FEATURES; ++i)
+            eval_simd_offsets[i] = _mm256_add_epi32(eval_simd_offsets[i], _mm256_set1_epi32(offset1));
     #endif
     if (show_log)
         std::cerr << "evaluation function initialized" << std::endl;
@@ -852,23 +860,27 @@ inline int end_evaluate(Board *b, int e){
 */
 #if USE_SIMD_EVALUATION
     inline __m256i calc_idx8_a(const __m256i eval_features[], const int i){
-        return _mm256_add_epi32(_mm256_and_si256(eval_features[i], simd_eval_mask), eval_simd_offsets[i]);
+        return _mm256_add_epi32(_mm256_and_si256(eval_features[i], eval_lower_mask), eval_simd_offsets[i]);
     }
 
     inline __m256i calc_idx8_b(const __m256i eval_features[], const int i){
         return _mm256_add_epi32(_mm256_srli_epi32(eval_features[i], 16), eval_simd_offsets[i]);
     }
 
+    inline __m256i gather_eval(const int *pat_com, const __m256i idx8){
+        return _mm256_and_si256(_mm256_i32gather_epi32(pat_com, idx8, 2), eval_lower_mask);
+    }
+
     inline int calc_pattern_diff(const int phase_idx, Search *search){
         const int *pat_com = (int*)pattern_arr[search->eval_feature_reversed][phase_idx][0];
-        __m256i res256 =                  _mm256_i32gather_epi32(pat_com, calc_idx8_a(search->eval_features, 0), 4);
-        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, calc_idx8_b(search->eval_features, 0), 4));
-        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, calc_idx8_a(search->eval_features, 1), 4));
-        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, calc_idx8_b(search->eval_features, 1), 4));
-        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, calc_idx8_a(search->eval_features, 2), 4));
-        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, calc_idx8_b(search->eval_features, 2), 4));
-        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, calc_idx8_a(search->eval_features, 3), 4));
-        res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, calc_idx8_b(search->eval_features, 3), 4));
+        __m256i res256 =                  gather_eval(pat_com, calc_idx8_a(search->eval_features, 0));
+        res256 = _mm256_add_epi32(res256, gather_eval(pat_com, calc_idx8_b(search->eval_features, 0)));
+        res256 = _mm256_add_epi32(res256, gather_eval(pat_com, calc_idx8_a(search->eval_features, 1)));
+        res256 = _mm256_add_epi32(res256, gather_eval(pat_com, calc_idx8_b(search->eval_features, 1)));
+        res256 = _mm256_add_epi32(res256, gather_eval(pat_com, calc_idx8_a(search->eval_features, 2)));
+        res256 = _mm256_add_epi32(res256, gather_eval(pat_com, calc_idx8_b(search->eval_features, 2)));
+        res256 = _mm256_add_epi32(res256, gather_eval(pat_com, calc_idx8_a(search->eval_features, 3)));
+        res256 = _mm256_add_epi32(res256, gather_eval(pat_com, calc_idx8_b(search->eval_features, 3)));
         return _mm256_extract_epi32(res256, 7) + 
             _mm256_extract_epi32(res256, 6) + 
             _mm256_extract_epi32(res256, 5) + 
@@ -876,7 +888,8 @@ inline int end_evaluate(Board *b, int e){
             _mm256_extract_epi32(res256, 3) + 
             _mm256_extract_epi32(res256, 2) + 
             _mm256_extract_epi32(res256, 1) + 
-            _mm256_extract_epi32(res256, 0);
+            _mm256_extract_epi32(res256, 0) - 
+            SIMD_EVAL_OFFSET * N_SYMMETRY_PATTERNS;
     }
 #else
     inline int calc_pattern_diff(const int phase_idx, Search *search){
