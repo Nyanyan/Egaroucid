@@ -36,10 +36,10 @@
 #define MAX_CELL_PATTERNS 13
 #define MAX_SURROUND 100
 #define MAX_CANPUT 50
-//#define MAX_STABILITY 65
 #define MAX_STONE_NUM 65
 #define N_CANPUT_PATTERNS 4
 #define MAX_EVALUATE_IDX 59049
+#define N_PATTERN_PARAMS 521478
 
 /*
     @brief value definition
@@ -380,7 +380,7 @@ constexpr uint_fast16_t pow3[11] = {1, P31, P32, P33, P34, P35, P36, P37, P38, P
 /*
     @brief evaluation parameters
 */
-int16_t pattern_arr[2][N_PHASES][N_PATTERNS + 2][MAX_EVALUATE_IDX];
+int16_t pattern_arr[2][N_PHASES][N_PATTERN_PARAMS + 2];
 int16_t eval_sur0_sur1_arr[N_PHASES][MAX_SURROUND][MAX_SURROUND];
 int16_t eval_canput0_canput1_arr[N_PHASES][MAX_CANPUT][MAX_CANPUT];
 int16_t eval_num0_num1_arr[N_PHASES][MAX_STONE_NUM][MAX_STONE_NUM];
@@ -412,12 +412,13 @@ inline int swap_player_idx(int i, int pattern_size){
     @param phase_idx            evaluation phase
     @param pattern_idx          evaluation pattern's index
     @param siz                  size of the pattern
+    @param strt                 start position of the pattern
 */
-void init_pattern_arr_rev(int phase_idx, int pattern_idx, int siz){
+void init_pattern_arr_rev(int phase_idx, int pattern_idx, int siz, int strt){
     int ri;
     for (int i = 0; i < (int)pow3[siz]; ++i){
         ri = swap_player_idx(i, siz);
-        pattern_arr[1][phase_idx][pattern_idx][ri] = pattern_arr[0][phase_idx][pattern_idx][i];
+        pattern_arr[1][phase_idx][strt + ri] = pattern_arr[0][phase_idx][strt + i];
     }
 }
 
@@ -437,13 +438,12 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
     }
     int phase_idx, pattern_idx;
     constexpr int pattern_sizes[N_PATTERNS] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10, 10, 10, 10};
+    constexpr int pattern_starts[N_PATTERNS] = {1, 6562, 13123, 19684, 19927, 20656, 22843, 29404, 88453, 147502, 206551, 265600, 285283, 344332, 403381, 462430};
     for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
-        for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx){
-            if (fread(pattern_arr[0][phase_idx][pattern_idx + 1], 2, pow3[pattern_sizes[pattern_idx]], fp) < pow3[pattern_sizes[pattern_idx]]){
-                std::cerr << "[ERROR] [FATAL] evaluation file broken" << std::endl;
-                fclose(fp);
-                return false;
-            }
+        if (fread(pattern_arr[0][phase_idx] + 1, 2, N_PATTERN_PARAMS, fp) < N_PATTERN_PARAMS){
+            std::cerr << "[ERROR] [FATAL] evaluation file broken" << std::endl;
+            fclose(fp);
+            return false;
         }
         if (fread(eval_sur0_sur1_arr[phase_idx], 2, MAX_SURROUND * MAX_SURROUND, fp) < MAX_SURROUND * MAX_SURROUND){
             std::cerr << "[ERROR] [FATAL] evaluation file broken" << std::endl;
@@ -470,22 +470,22 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
     eval_lower_mask = _mm256_set1_epi32(0x0000FFFF);
     for (i = 0; i < 2; ++i){
         for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
-            pattern_arr[i][phase_idx][0][0] = 0;
-            pattern_arr[i][phase_idx][N_PATTERNS + 1][0] = 0;
+            pattern_arr[i][phase_idx][0] = 0;
+            pattern_arr[i][phase_idx][N_PATTERN_PARAMS + 1] = 0;
         }
     }
     for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
         for (j = 0; j < N_PATTERNS; ++j){
             for (k = 0; k < pow3[pattern_sizes[j]]; ++k){
-                if (pattern_arr[0][phase_idx][j + 1][k] < -SIMD_EVAL_OFFSET){
-                    pattern_arr[0][phase_idx][j + 1][k] = -SIMD_EVAL_OFFSET;
+                if (pattern_arr[0][phase_idx][pattern_starts[j] + k] < -SIMD_EVAL_OFFSET){
+                    pattern_arr[0][phase_idx][pattern_starts[j] + k] = -SIMD_EVAL_OFFSET;
                     std::cerr << "[ERROR] evaluation value too low. you can ignore this error." << std::endl;
                 }
-                if (pattern_arr[0][phase_idx][j + 1][k] >= 0xFFFF - SIMD_EVAL_OFFSET){
-                    pattern_arr[0][phase_idx][j + 1][k] = 0xFFFF - SIMD_EVAL_OFFSET - 1;
+                if (pattern_arr[0][phase_idx][pattern_starts[j] + k] >= 0x7FFF - SIMD_EVAL_OFFSET){
+                    pattern_arr[0][phase_idx][pattern_starts[j] + k] = 0x7FFF - SIMD_EVAL_OFFSET - 1;
                     std::cerr << "[ERROR] evaluation value too high. you can ignore this error." << std::endl;
                 }
-                pattern_arr[0][phase_idx][j + 1][k] += SIMD_EVAL_OFFSET;
+                pattern_arr[0][phase_idx][pattern_starts[j] + k] += SIMD_EVAL_OFFSET;
             }
         }
     }
@@ -494,14 +494,14 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
         int i = 0;
         for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
             for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx)
-                tasks[i++] = thread_pool.push(std::bind(init_pattern_arr_rev, phase_idx, pattern_idx + 1, pattern_sizes[pattern_idx]));
+                tasks[i++] = thread_pool.push(std::bind(init_pattern_arr_rev, phase_idx, pattern_idx, pattern_sizes[pattern_idx], pattern_starts[pattern_idx]));
         }
         for (std::future<void> &task: tasks)
             task.get();
     } else{
         for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
             for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx)
-                init_pattern_arr_rev(phase_idx, pattern_idx + 1, pattern_sizes[pattern_idx]);
+                init_pattern_arr_rev(phase_idx, pattern_idx, pattern_sizes[pattern_idx], pattern_starts[pattern_idx]);
         }
     }
     int16_t f2c[16];
@@ -536,13 +536,10 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
             coord_to_feature_simd2[cell][i] = _mm256_slli_epi16(coord_to_feature_simd[cell][i], 1);
         }
     }
-    constexpr int offset1 = MAX_EVALUATE_IDX;
-    eval_simd_offsets[0] = _mm256_set_epi32(0, 0, offset1, offset1, offset1 * 2, offset1 * 2, offset1 * 3, offset1 * 3);
-    eval_simd_offsets[1] = _mm256_set_epi32(offset1 * 4, offset1 * 4, offset1 * 5, offset1 * 5, offset1 * 6, offset1 * 7, offset1 * 7, offset1 * 8);
-    eval_simd_offsets[2] = _mm256_set_epi32(offset1 * 8, offset1 * 9, offset1 * 9, offset1 * 10, offset1 * 10, offset1 * 11, offset1 * 11, offset1 * 12);
-    eval_simd_offsets[3] = _mm256_set_epi32(offset1 * 12, offset1 * 13, offset1 * 13, offset1 * 14, offset1 * 14, offset1 * 15, offset1 * 15, offset1 * 16);
-    for (i = 0; i < N_SIMD_EVAL_FEATURES; ++i)
-        eval_simd_offsets[i] = _mm256_add_epi32(eval_simd_offsets[i], _mm256_set1_epi32(offset1));
+    eval_simd_offsets[0] = _mm256_set_epi32(pattern_starts[0], pattern_starts[0], pattern_starts[1], pattern_starts[1], pattern_starts[2], pattern_starts[2], pattern_starts[3], pattern_starts[3]);
+    eval_simd_offsets[1] = _mm256_set_epi32(pattern_starts[4], pattern_starts[4], pattern_starts[5], pattern_starts[5], pattern_starts[6], pattern_starts[7], pattern_starts[7], pattern_starts[8]);
+    eval_simd_offsets[2] = _mm256_set_epi32(pattern_starts[8], pattern_starts[9], pattern_starts[9], pattern_starts[10], pattern_starts[10], pattern_starts[11], pattern_starts[11], pattern_starts[12]);
+    eval_simd_offsets[3] = _mm256_set_epi32(pattern_starts[12], pattern_starts[13], pattern_starts[13], pattern_starts[14], pattern_starts[14], pattern_starts[15], pattern_starts[15], N_PATTERN_PARAMS + 1);
     if (show_log)
         std::cerr << "evaluation function initialized" << std::endl;
     return true;
@@ -638,7 +635,7 @@ inline __m256i gather_eval(const int *pat_com, const __m256i idx8){
 }
 
 inline int calc_pattern_diff(const int phase_idx, Search *search){
-    const int *pat_com = (int*)pattern_arr[search->eval_feature_reversed][phase_idx][0];
+    const int *pat_com = (int*)pattern_arr[search->eval_feature_reversed][phase_idx];
     __m256i res256 =                  gather_eval(pat_com, calc_idx8_a(search->eval_features, 0));
     res256 = _mm256_add_epi32(res256, gather_eval(pat_com, calc_idx8_b(search->eval_features, 0)));
     res256 = _mm256_add_epi32(res256, gather_eval(pat_com, calc_idx8_a(search->eval_features, 1)));
