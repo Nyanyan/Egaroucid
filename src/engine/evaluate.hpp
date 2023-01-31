@@ -861,7 +861,7 @@ inline int end_evaluate(Board *b, int e){
 
     inline int calc_pattern_diff(const int phase_idx, Search *search){
         const int *pat_com = (int*)pattern_arr[search->eval_feature_reversed][phase_idx][0];
-        __m256i res256 = _mm256_i32gather_epi32(pat_com, calc_idx8_a(search->eval_features, 0), 4);
+        __m256i res256 =                  _mm256_i32gather_epi32(pat_com, calc_idx8_a(search->eval_features, 0), 4);
         res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, calc_idx8_b(search->eval_features, 0), 4));
         res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, calc_idx8_a(search->eval_features, 1), 4));
         res256 = _mm256_add_epi32(res256, _mm256_i32gather_epi32(pat_com, calc_idx8_b(search->eval_features, 1), 4));
