@@ -856,7 +856,7 @@ inline int end_evaluate(Board *b, int e){
     }
 
     inline __m256i calc_idx8_b(const __m256i eval_features[], const int i){
-        return _mm256_add_epi32(_mm256_srai_epi32(eval_features[i], 16), eval_simd_offsets[i]);
+        return _mm256_add_epi32(_mm256_srli_epi32(eval_features[i], 16), eval_simd_offsets[i]);
     }
 
     inline int calc_pattern_diff(const int phase_idx, Search *search){
