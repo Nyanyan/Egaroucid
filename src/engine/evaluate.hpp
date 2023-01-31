@@ -33,7 +33,7 @@
 #endif
 #if USE_SIMD_EVALUATION
     #define CEIL_N_SYMMETRY_PATTERNS 64
-    #define SIMD_EVAL_OFFSET 32768
+    #define SIMD_EVAL_OFFSET 16384
 #endif
 #define MAX_PATTERN_CELLS 10
 #define MAX_CELL_PATTERNS 13
@@ -636,21 +636,6 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
             return false;
         }
     }
-    if (thread_pool.size() >= 2){
-        std::future<void> tasks[N_PHASES * N_PATTERNS];
-        int i = 0;
-        for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
-            for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx)
-                tasks[i++] = thread_pool.push(std::bind(init_pattern_arr_rev, phase_idx, pattern_idx, pattern_sizes[pattern_idx]));
-        }
-        for (std::future<void> &task: tasks)
-            task.get();
-    } else{
-        for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
-            for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx)
-                init_pattern_arr_rev(phase_idx, pattern_idx, pattern_sizes[pattern_idx]);
-        }
-    }
     #if USE_SIMD_EVALUATION
         int i, j, k, idx, cell;
         eval_lower_mask = _mm256_set1_epi32(0x0000FFFF);
@@ -660,14 +645,34 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
                 pattern_arr[i][phase_idx][N_PATTERNS + 1][0] = 0;
             }
         }
-        for (i = 0; i < 2; ++i){
-            for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
-                for (j = 0; j < N_PATTERNS; ++j){
-                    for (k = 0; k < pow3[pattern_sizes[j]]; ++k)
-                        pattern_arr[i][phase_idx][j + 1][k] += SIMD_EVAL_OFFSET;
+        for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
+            for (j = 0; j < N_PATTERNS; ++j){
+                for (k = 0; k < pow3[pattern_sizes[j]]; ++k){
+                    if (pattern_arr[0][phase_idx][j + 1][k] < -SIMD_EVAL_OFFSET){
+                        pattern_arr[0][phase_idx][j + 1][k] = -SIMD_EVAL_OFFSET;
+                        std::cerr << "[ERROR] evaluation value too low. you can ignore this error." << std::endl;
+                    }
+                    if (pattern_arr[0][phase_idx][j + 1][k] >= 0xFFFF - SIMD_EVAL_OFFSET){
+                        pattern_arr[0][phase_idx][j + 1][k] = 0xFFFF - SIMD_EVAL_OFFSET - 1;
+                        std::cerr << "[ERROR] evaluation value too high. you can ignore this error." << std::endl;
+                    }
+                    pattern_arr[0][phase_idx][j + 1][k] += SIMD_EVAL_OFFSET;
                 }
-                pattern_arr[i][phase_idx][0][0] = 0;
-                pattern_arr[i][phase_idx][N_PATTERNS + 1][0] = 0;
+            }
+        }
+        if (thread_pool.size() >= 2){
+            std::future<void> tasks[N_PHASES * N_PATTERNS];
+            int i = 0;
+            for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
+                for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx)
+                    tasks[i++] = thread_pool.push(std::bind(init_pattern_arr_rev, phase_idx, pattern_idx + 1, pattern_sizes[pattern_idx]));
+            }
+            for (std::future<void> &task: tasks)
+                task.get();
+        } else{
+            for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
+                for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx)
+                    init_pattern_arr_rev(phase_idx, pattern_idx + 1, pattern_sizes[pattern_idx]);
             }
         }
         int16_t f2c[16];
@@ -709,6 +714,22 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
         eval_simd_offsets[3] = _mm256_set_epi32(offset1 * 12, offset1 * 13, offset1 * 13, offset1 * 14, offset1 * 14, offset1 * 15, offset1 * 15, offset1 * 16);
         for (i = 0; i < N_SIMD_EVAL_FEATURES; ++i)
             eval_simd_offsets[i] = _mm256_add_epi32(eval_simd_offsets[i], _mm256_set1_epi32(offset1));
+    #else
+        if (thread_pool.size() >= 2){
+            std::future<void> tasks[N_PHASES * N_PATTERNS];
+            int i = 0;
+            for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
+                for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx)
+                    tasks[i++] = thread_pool.push(std::bind(init_pattern_arr_rev, phase_idx, pattern_idx, pattern_sizes[pattern_idx]));
+            }
+            for (std::future<void> &task: tasks)
+                task.get();
+        } else{
+            for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
+                for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx)
+                    init_pattern_arr_rev(phase_idx, pattern_idx, pattern_sizes[pattern_idx]);
+            }
+        }
     #endif
     if (show_log)
         std::cerr << "evaluation function initialized" << std::endl;
