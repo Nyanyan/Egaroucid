@@ -11,7 +11,7 @@ else:
     hour = '0'
     minute = '10'
     second = '0'
-    beta = '2.0'
+    beta = '3.0'
 
 train_data = [
     'data5_01.dat',
