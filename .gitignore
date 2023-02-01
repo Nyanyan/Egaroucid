@@ -63,3 +63,4 @@ model
 benchmark/clog
 benchmark/ffotest
 benchmark/parallel_benchmark_log
+evaluation
