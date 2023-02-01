@@ -12,8 +12,6 @@ src/testcases
 legacy
 src/*.out
 src/*.exe
-src/build
-build
 src/ai.js
 src/ai.wasm
 src/openingssmall.txt
