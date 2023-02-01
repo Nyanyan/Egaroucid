@@ -23,6 +23,7 @@ src/tools/opening/data
 src/tools/opening/learned_data
 src/tools/hash/data
 src/tools/hash/learned_data
+src/tools/evaluation/*.txt
 train_data/bin_data
 train_data/board_data
 train_data/transcript
