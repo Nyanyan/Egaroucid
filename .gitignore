@@ -59,3 +59,4 @@ src/tools/hash/learned_data
 train_data/bin_data
 train_data/board_data
 train_data/transcript
+model
