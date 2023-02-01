@@ -11,6 +11,7 @@ struct Adj_Data{
 };
 
 #define ADJ_N_MAX_DATA 70000000
+#define ADJ_MAX_N_FILES 64
 
 double adj_eval_arr[ADJ_N_EVAL][ADJ_MAX_EVALUATE_IDX];
 int adj_alpha_occurance[ADJ_N_EVAL][ADJ_MAX_EVALUATE_IDX];
@@ -198,13 +199,17 @@ int main(int argc, char *argv[]){
         std::cerr << "input [phase] [hour] [minute] [second] [beta] [in_file] [test_data]" << std::endl;
         return 1;
     }
+    if (argc - 6 >= ADJ_MAX_N_FILES){
+        std::cerr << "too many train files" << std::endl;
+        return 1;
+    }
     int phase = atoi(argv[1]);
     uint64_t hour = atoi(argv[2]);
     uint64_t minute = atoi(argv[3]);
     uint64_t second = atoi(argv[4]);
     double beta = atof(argv[5]);
     std::string in_file = (std::string)argv[6];
-    char* test_files[argc - 6];
+    char* test_files[ADJ_MAX_N_FILES];
     for (int i = 6; i < argc; ++i)
         test_files[i - 6] = argv[i];
     second += minute * 60 + hour * 3600;
