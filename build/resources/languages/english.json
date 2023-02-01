@@ -1,0 +1,168 @@
+{
+    "lang_name": "English",
+    "common": {
+        "black": "Black",
+        "white": "White",
+        "empty": "Empty",
+        "back": "Back",
+        "level": "Level",
+        "othello_ai": "Othello AI"
+    },
+    "loading": {
+        "loading": "Loading...",
+        "load_failed": "Load Failed.\nPlease check resiource files.",
+        "book_failed": "Cannot load book.\nYou can start anyway",
+        "launch": "Start"
+    },
+    "closing": "Closing...",
+    "play": {
+        "game": "Game",
+        "new_game": "New Game",
+        "analyze": "Analyze",
+        "start_game": "Start"
+    },
+    "settings": {
+        "settings": "Settings",
+        "play": {
+            "ai_put_black": "AI as Black",
+            "ai_put_white": "AI as White"
+        },
+        "thread": {
+            "thread": "Threads"
+        },
+        "hash_level": "Hash Level"
+    },
+    "ai_settings": {
+        "use_book": "Book Use",
+        "level": "Level"
+    },
+    "book": {
+        "book": "Book",
+        "right_click_to_modify": "Right-click to Change",
+        "book_widen": "Book Widen",
+        "book_deepen": "Book Deepen",
+        "learning": "Calculating...",
+        "stop_learn": "Stop",
+        "stopping": "Terminating...",
+        "complete": "Done",
+        "settings": "Settings",
+        "depth": "Depth",
+        "accept": "Error",
+        "changed_value": "Value",
+        "merge": "Merge",
+        "merge_explanation": "Add Book of Egaroucid/Edax by dragging & dropping",
+        "import_failed": "Import Failed",
+        "loading": "Importing...",
+        "book_reference": "Book Reference",
+        "input_book_path": "Enter your book path",
+        "import": "Import",
+        "use_default": "Default",
+        "ignore": "Overwrite Existing Values"
+    },
+    "in_out": {
+        "in_out": "In/Out",
+        "in": "Input",
+        "out": "Output",
+        "import_failed": "Import Failed",
+        "output_transcript": "Copy Transcript",
+        "output_game": "Save Game",
+        "input_transcript": "Input Transcript",
+        "input_board": "Input Board",
+        "edit_board": "Edit Board",
+        "player": "Player",
+        "color": "Color",
+        "input_game": "Input Game",
+        "no_game_available": "No Game Available",
+        "import": "Import",
+        "import_from_this_position": "Import from set position",
+        "export_main": "Save main line",
+        "export_until_this_board": "Save till set position",
+        "player_name": "Player Name",
+        "memo": "Memo"
+    },
+    "display": {
+        "display": "Display",
+        "cell": {
+            "display_on_cell": "On Cell",
+            "legal": "Legal",
+            "disc_value": "Evaluation",
+            "disc_value_number": "Number",
+            "umigame_value": "Umigame Number",
+            "opening": "Opening"
+        },
+        "disc": {
+            "display_on_disc": "On Disc",
+            "last_move": "Last Move",
+            "next_move": "Next Move",
+            "stable": "Stable"
+        },
+        "graph": "Graph",
+        "log": "Log"
+    },
+    "operation": {
+        "operation": "Operate",
+        "stop_calculating": "Stop Calculating",
+        "forward": "Forward (->/D)",
+        "backward": "Backward (<-/A)",
+        "convert": {
+            "convert": "Convert",
+            "vertical": "Rotate 180",
+            "white_line": "White Line",
+            "black_line": "Black Line"
+        },
+        "cache_clear": "Cache Clear"
+    },
+    "info": {
+        "black": "Black to Play",
+        "white": "White to Play",
+        "moves": " moves",
+        "game_end": "Game Over",
+        "opening_name": "Opening",
+        "ai": "AI",
+        "lookahead": " moves",
+        "to_last_move": "Till End",
+        "light": "Light",
+        "standard": "Standard",
+        "pragmatic": "Pragmatic",
+        "accurate": "Accurate",
+        "danger": "Danger",
+        "probability": "Probability"
+    },
+    "edit_board": {
+        "player": "Player",
+        "stone": "Disc Color",
+        "black": "Black (B)",
+        "white": "White (W)",
+        "empty": "Empty (E)"
+    },
+    "help": {
+        "help": "Help",
+        "website": "Website",
+        "bug_report": "Report Bugs",
+        "auto_update_check": "Auto Check Updates",
+        "new_version_available": "New Version Available.",
+        "download?": "Do you want to visit download page?",
+        "download": "Download",
+        "skip": "Skip",
+        "license_siv3d": "License of Siv3D",
+        "license_egaroucid": "License of Egaroucid"
+    },
+    "tips": {
+        "do_you_know": "Do you know?",
+        "tips": [
+            "Modify book with right-clicking",
+            "You can import Edax's book",
+            "Move boards by dragging, <-/-> keys, A/D keys",
+            "You can save games in 'games' directory",
+            "Book & settings are automatically saved in closing",
+            "You can import board in several formats",
+            "You can import transcript, board, etc.",
+            "Umigame numbers depends on book",
+            "Calculating never ends if level is too high",
+            "Click 'Stop Calculating' to terminate AI",
+            "You can use Enter/Esc as shortcuts",
+            "Move forward/backward with mouse buttons",
+            "Increase Hash Level to use more memory"
+        ]
+    }
+}
