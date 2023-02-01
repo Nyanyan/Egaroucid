@@ -11,7 +11,7 @@ else:
     hour = '0'
     minute = '20'
     second = '0'
-    beta = '3.2'
+    beta = '0.0113'
 
 train_data = [
     'data5_01.dat',
@@ -30,6 +30,7 @@ train_data = [
 
 train_dir = './../../../train_data/bin_data/20230201/'
 model_dir = './../../../model/'
+#model_dir = './../../../model/nomodel/'
 
 additional_params = ''
 for tfile in train_data:

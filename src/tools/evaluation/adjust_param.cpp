@@ -13,6 +13,8 @@ struct Adj_Data{
 #define ADJ_N_MAX_DATA 70000000
 #define ADJ_MAX_N_FILES 64
 
+#define abs_error(x) std::abs(x)
+
 double adj_eval_arr[ADJ_N_EVAL][ADJ_MAX_EVALUATE_IDX];
 int adj_alpha_occurance[ADJ_N_EVAL][ADJ_MAX_EVALUATE_IDX];
 double adj_alpha[ADJ_N_EVAL][ADJ_MAX_EVALUATE_IDX];
@@ -43,10 +45,12 @@ void adj_calc_score(){
     double double_data_size = (double)adj_test_data.size();
     for (int i = 0; i < (int)adj_test_data.size(); ++i){
         adj_preds[i] = adj_predict(i) / ADJ_STEP;
-        err = abs(adj_preds[i] - (double)adj_test_data[i].score);
-        mse += err / double_data_size * err;
-        mae += err / double_data_size;
+        err = abs_error(adj_preds[i] - (double)adj_test_data[i].score);
+        mse += err * err;
+        mae += err;
     }
+    mse /= double_data_size;
+    mae /= double_data_size;
     std::cerr << " mse " << mse << " mae " << mae << "                             ";
 }
 
@@ -57,10 +61,12 @@ void adj_print_result(int phase, int t, uint64_t tl){
     double double_data_size = (double)adj_test_data.size();
     for (int i = 0; i < (int)adj_test_data.size(); ++i){
         adj_preds[i] = adj_predict(i) / ADJ_STEP;
-        err = abs(adj_preds[i] - adj_test_data[i].score);
-        mse += err / double_data_size * err;
-        mae += err / double_data_size;
+        err = abs_error(adj_preds[i] - adj_test_data[i].score);
+        mse += err * err;
+        mae += err;
     }
+    mse /= double_data_size;
+    mae /= double_data_size;
     std::cout << phase << " " << t << " " << tl << " " << mse << " " << mae << std::endl;
 }
 
@@ -80,11 +86,11 @@ void adj_next_step(){
         for (int idx = 0; idx < adj_eval_sizes[feature]; ++idx){
             if (idx == adj_rev_idxes[feature][idx]){
                 err = adj_calc_error(feature, idx);
-                adj_eval_arr[feature][idx] += 2.0 * adj_alpha[feature][idx] * err;
+                adj_eval_arr[feature][idx] += 2.0 * adj_alpha[feature][idx] * err * ADJ_STEP;
             } else if (idx < adj_rev_idxes[feature][idx]){
                 err = adj_calc_error(feature, idx) + adj_calc_error(feature, adj_rev_idxes[feature][idx]);
-                adj_eval_arr[feature][idx] += 2.0 * adj_alpha[feature][idx] * err;
-                adj_eval_arr[feature][adj_rev_idxes[feature][idx]] += 2.0 * adj_alpha[feature][adj_rev_idxes[feature][idx]] * err;
+                adj_eval_arr[feature][idx] += 2.0 * adj_alpha[feature][idx] * err * ADJ_STEP;
+                adj_eval_arr[feature][adj_rev_idxes[feature][idx]] += 2.0 * adj_alpha[feature][adj_rev_idxes[feature][idx]] * err * ADJ_STEP;
             }
         }
     }
