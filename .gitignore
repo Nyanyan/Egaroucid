@@ -30,7 +30,7 @@ model
 benchmark/clog
 benchmark/ffotest
 benchmark/parallel_benchmark_log
-evaluation
+/evaluation
 build/data
 build/problem
 build/edax-4.4
