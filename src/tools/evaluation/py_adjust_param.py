@@ -35,11 +35,8 @@ additional_params = ''
 for tfile in train_data:
     additional_params += ' ' + train_dir + tfile
 
-#additional_params = ' big_data_new_3.dat big_data_new_14.dat'
-#additional_params = ' big_data.dat'
-
-#executable = 'Egaroucid5_evaluation_optimizer_cuda.exe'
-executable = 'adjust_param.out'
+#executable = 'adjust_param.out'
+executable = 'adjust_param_cuda.exe'
 
 cmd = executable + ' ' + phase + ' ' + hour + ' ' + minute + ' ' + second + ' ' + beta + ' ' + model_dir + phase + '.txt' + additional_params
 print(cmd, file=sys.stderr)
