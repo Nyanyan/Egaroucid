@@ -16,9 +16,6 @@ src/build
 build
 src/ai.js
 src/ai.wasm
-src/problem
-src/edax-4.4
-src/data
 src/openingssmall.txt
 web_resources/generated
 src/tools/statistics/data
@@ -36,3 +33,6 @@ benchmark/clog
 benchmark/ffotest
 benchmark/parallel_benchmark_log
 evaluation
+build/data
+build/problem
+build/edax-4.4
