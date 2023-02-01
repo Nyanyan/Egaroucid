@@ -669,8 +669,8 @@ inline int calc_mobility_pattern(const int phase_idx, const uint64_t player_mobi
             return end_evaluate(b);
         phase_idx = b->phase_slow();
         empties = ~(b->player | b->opponent);
-        sur0 = std::min(MAX_SURROUND - 1, calc_surround(b->player, empties));
-        sur1 = std::min(MAX_SURROUND - 1, calc_surround(b->opponent, empties));
+        sur0 = calc_surround(b->player, empties);
+        sur1 = calc_surround(b->opponent, empties);
         num0 = pop_count_ull(b->player);
         num1 = pop_count_ull(b->opponent);
         int res = calc_pattern_first(phase_idx, b) + 
@@ -700,8 +700,8 @@ inline int calc_mobility_pattern(const int phase_idx, const uint64_t player_mobi
         canput0 = pop_count_ull(player_mobility);
         canput1 = pop_count_ull(opponent_mobility);
         empties = ~(search.board.player | search.board.opponent);
-        sur0 = std::min(MAX_SURROUND - 1, calc_surround(search.board.player, empties));
-        sur1 = std::min(MAX_SURROUND - 1, calc_surround(search.board.opponent, empties));
+        sur0 = calc_surround(search.board.player, empties);
+        sur1 = calc_surround(search.board.opponent, empties);
         num0 = pop_count_ull(search.board.player);
         num1 = search.n_discs - num0;
         int res = calc_pattern_diff(phase_idx, &search) + 

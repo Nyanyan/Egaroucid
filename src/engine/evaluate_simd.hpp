@@ -706,8 +706,8 @@ inline int mid_evaluate(Board *board){
     canput0 = pop_count_ull(player_mobility);
     canput1 = pop_count_ull(opponent_mobility);
     empties = ~(search.board.player | search.board.opponent);
-    sur0 = std::min(MAX_SURROUND - 1, calc_surround(search.board.player, empties));
-    sur1 = std::min(MAX_SURROUND - 1, calc_surround(search.board.opponent, empties));
+    sur0 = calc_surround(search.board.player, empties);
+    sur1 = calc_surround(search.board.opponent, empties);
     num0 = pop_count_ull(search.board.player);
     num1 = search.n_discs - num0;
     int res = calc_pattern_diff(phase_idx, &search) + 
