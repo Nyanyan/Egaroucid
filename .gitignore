@@ -60,3 +60,6 @@ train_data/bin_data
 train_data/board_data
 train_data/transcript
 model
+benchmark/clog
+benchmark/ffotest
+benchmark/parallel_benchmark_log
