@@ -125,3 +125,10 @@ code {
     border: solid 1px #d6dde4;
     font-family: Consolas, Menlo, Monaco, -apple-system, BlinkMacSystemFont, "Segoe UI", Meiryo, monospace;
 }
+
+.footer{
+    background-color:  #3F9770;
+    color: white;
+    text-align: right;
+    padding: 1%;
+}

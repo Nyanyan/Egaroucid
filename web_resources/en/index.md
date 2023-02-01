@@ -165,8 +165,6 @@ I would like to thank these people for great contributions.
 </ul>
 
 
-
-
 ## Links
 
 <ul>
@@ -182,4 +180,6 @@ I would like to thank these people for great contributions.
 ## Creator
 
 [Takuto Yamana](https://nyanyan.dev/en/)
+
+
 
