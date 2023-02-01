@@ -13,13 +13,8 @@ else:
     second = '0'
     beta = '2.0'
 
-additional_params = ' data5_01.dat data5_02.dat data5_03.dat data5_06.dat data5_07.dat data5_08.dat data5_09.dat data5_10.dat data5_11.dat data5_15.dat data5_99.dat'
-'''
-if int(phase) >= 10:
-    additional_params = ' data5_04.dat data5_06.dat data5_07.dat data5_08.dat data5_09.dat data5_10.dat data5_11.dat data5_15.dat data5_99.dat'
-else:
-    additional_params = ' data5_01.dat data5_02.dat data5_03.dat'
-'''
+additional_params = ' data5_01.dat data5_02.dat data5_04.dat data5_06.dat data5_07.dat data5_08.dat data5_09.dat data5_10.dat data5_11.dat data5_15.dat data5_16.dat data5_99.dat'
+
 #additional_params = ' big_data_new_3.dat big_data_new_14.dat'
 #additional_params = ' big_data.dat'
 
