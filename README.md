@@ -191,3 +191,9 @@ GPL 3.0 License
 ## Creator
 
 [Takuto Yamana (a.k.a Nyanyan)](https://nyanyan.dev/en/)
+
+
+
+## Notes
+
+オセロ・Othelloは登録商標です。 TM&© Othello,Co. and MegaHouse
