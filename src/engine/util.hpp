@@ -86,7 +86,7 @@ std::string ms_to_time(uint64_t t){
     res += second_s.str();
     res += ".";
     std::ostringstream msecond_s;
-    msecond_s << std::left << std::setw(3) << std::setfill('0') << msecond;
+    msecond_s << std::right << std::setw(3) << std::setfill('0') << msecond;
     res += msecond_s.str();
     return res;
 }
