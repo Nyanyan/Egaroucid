@@ -14,13 +14,13 @@
 #define ADJ_MAX_N_FILES 64
 #define ADJ_MAX_N_DATA_SAME_IDX 100000
 
-#define N_BLOCKS_SCORE 16384
+#define N_BLOCKS_SCORE 8192
 #define N_THREADS_SCORE 512
 
 #define N_BLOCKS_SUM 1
 #define N_THREADS_SUM 1
 
-#define N_BLOCKS_STEP 16384
+#define N_BLOCKS_STEP 8192
 #define N_THREADS_STEP 128
 
 #define ADJ_IDX_UNDEFINED -1
@@ -287,7 +287,7 @@ void adj_copy_feature_idx_to_data(Adj_Feature_to_data** device_feature_idx_to_da
                         std::cerr << "ERROR too many linked data" << std::endl;
                         exit(1);
                     }
-                    
+
                 }
             }
             ++all_idx;
