@@ -1,6 +1,5 @@
 #pragma once
 #include "./../../engine/board.hpp"
-//#include "./../../engine/evaluate.hpp"
 
 /*
     @brief evaluation pattern definition
@@ -13,12 +12,12 @@
 #define ADJ_MAX_CANPUT 35 // < MODIFIED
 #define ADJ_MAX_STONE_NUM 65
 #define ADJ_N_CANPUT_PATTERNS 4
-#define ADJ_MAX_EVALUATE_IDX 65536
+#define ADJ_MAX_EVALUATE_IDX 59049
 
-#define ADJ_N_EVAL (16 + 3 + 4)
-#define ADJ_N_FEATURES (62 + 3 + 16)
+#define ADJ_N_EVAL (16 + 3)
+#define ADJ_N_FEATURES (62 + 3)
 
-#define ADJ_N_PHASES 30
+#define ADJ_N_PHASES 60
 #define ADJ_N_PHASE_DISCS (60 / ADJ_N_PHASES)
 
 //#define ADJ_SCORE_MAX HW2
@@ -372,8 +371,7 @@ constexpr int adj_eval_sizes[ADJ_N_EVAL] = {
     P310, P310, P310, P310, P39, P310, P310, P310, P310, 
     ADJ_MAX_SURROUND * ADJ_MAX_SURROUND, 
     ADJ_MAX_CANPUT * ADJ_MAX_CANPUT, 
-    ADJ_MAX_STONE_NUM * ADJ_MAX_STONE_NUM, 
-    P48, P48, P48, P48
+    ADJ_MAX_STONE_NUM * ADJ_MAX_STONE_NUM
 };
 
 constexpr int adj_feature_to_eval_idx[ADJ_N_FEATURES] = {
@@ -395,11 +393,7 @@ constexpr int adj_feature_to_eval_idx[ADJ_N_FEATURES] = {
     15, 15, 15, 15, 
     16, 
     17, 
-    18, 
-    19, 19, 19, 19, 
-    20, 20, 20, 20, 
-    21, 21, 21, 21, 
-    22, 22, 22, 22
+    18
 };
 
 /*
@@ -455,14 +449,6 @@ void adj_calc_features(Board *board, uint16_t res[]){
     res[idx++] = adj_calc_surround_feature(board);
     res[idx++] = adj_calc_legal_feature(board);
     res[idx++] = adj_calc_num_feature(board);
-    uint64_t player_mobility = calc_legal(board->player, board->opponent);
-    uint64_t opponent_mobility = calc_legal(board->opponent, board->player);
-    for (int i = 0; i < 4; ++i){
-        res[idx++] = adj_create_canput_line_h(player_mobility, opponent_mobility, i);
-        res[idx++] = adj_create_canput_line_h(player_mobility, opponent_mobility, 7 - i);
-        res[idx++] = adj_create_canput_line_v(player_mobility, opponent_mobility, i);
-        res[idx++] = adj_create_canput_line_v(player_mobility, opponent_mobility, 7 - i);
-    }
 }
 
 int adj_pick_digit3(int num, int d, int n_digit){
@@ -476,13 +462,8 @@ uint16_t adj_calc_rev_idx(int feature, int idx){
         for (int i = 0; i < adj_pattern_n_cells[feature]; ++i){
             res += adj_pick_digit3(idx, adj_rev_patterns[feature][i], adj_pattern_n_cells[feature]) * adj_pow3[adj_pattern_n_cells[feature] - 1 - i];
         }
-    } else if (feature < ADJ_N_PATTERNS + 3){
-        res = idx;
     } else{
-        for (int i = 0; i < 8; ++i)
-            res |= (1 & (idx >> i)) << (7 - i);
-        for (int i = 0; i < 8; ++i)
-            res |= (1 & (idx >> (8 + i))) << (8 + 7 - i);
+        res = idx;
     }
     return res;
 }

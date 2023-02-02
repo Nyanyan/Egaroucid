@@ -1,7 +1,7 @@
 import subprocess
 import sys
 
-N_PHASES = 30
+N_PHASES = 60
 
 try:
     strt_phase = int(sys.argv[1])
