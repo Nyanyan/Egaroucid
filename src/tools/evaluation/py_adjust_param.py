@@ -29,8 +29,8 @@ train_data = [
 ]
 
 train_dir = './../../../train_data/bin_data/20230201/'
-#model_dir = './../../../model/'
-model_dir = './../../../model/nomodel/'
+model_dir = './../../../model/'
+#model_dir = './../../../model/nomodel/'
 
 additional_params = ''
 for tfile in train_data:

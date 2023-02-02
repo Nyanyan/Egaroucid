@@ -208,7 +208,7 @@ def collect_data(num, s):
 
 games = []
 
-for i in range(18, 19):
+for i in range(19, 21):
     raw_data = ''
     with open('transcript/records16/' + digit(i, 7) + '.txt', 'r') as f:
         raw_data = f.read()
@@ -227,7 +227,7 @@ for i in trange(len(games)):
     #games[i] = games[i].replace('-', '')
     if len(games[i]) == 0:
         continue
-    collect_data(163 + idx // 1000, games[i])
+    collect_data(173 + idx // 1000, games[i])
     idx += 1
 print(idx)
 
