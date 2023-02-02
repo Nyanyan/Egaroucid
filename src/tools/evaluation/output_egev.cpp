@@ -5,12 +5,6 @@
 #include <ios>
 #include <iomanip>
 
-std::string fill0(int num, int d){
-    std::ostringstream ss;
-    ss << std::setfill('0') << std::right << std::setw(d) << num;
-    return ss.str();
-}
-
 int main(int argc, char* argv[]){
     if (argc < 3){
         std::cerr << "input [model_dir] [n_phases]" << std::endl;
@@ -27,9 +21,9 @@ int main(int argc, char* argv[]){
     short elem;
     short max_elem = -10000, min_elem = 10000;
     for (int phase = 0; phase < n_phases; ++phase){
-        std::ifstream ifs(model_dir + "/" + fill0(phase, 7) + ".txt");
+        std::ifstream ifs(model_dir + "/" + std::to_string(phase) + ".txt");
         if (ifs.fail()){
-            std::cerr << (model_dir + "/" + fill0(phase, 7) + ".txt") << " not exist" << std::endl;
+            std::cerr << (model_dir + "/" + std::to_string(phase) + ".txt") << " not exist" << std::endl;
             return 0;
         }
         std::string line;
