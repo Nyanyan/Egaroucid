@@ -45,8 +45,8 @@ else:
     ]
 
 train_dir = './../../../train_data/bin_data/20230202/'
-model_dir = './../../../model/20230202_2/'
-#model_dir = './../../../model/nomodel/'
+#model_dir = './../../../model/20230202_2/'
+model_dir = './../../../model/nomodel/'
 
 additional_params = ''
 for tfile in train_data:

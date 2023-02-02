@@ -30,8 +30,8 @@
 #define VACANT 2
 
 // evaluation phase definition
-#define N_PHASES 30
-#define PHASE_N_STONES 2
+#define N_PHASES 60
+#define PHASE_N_STONES 1
 
 // constant
 #define N_8BIT 256

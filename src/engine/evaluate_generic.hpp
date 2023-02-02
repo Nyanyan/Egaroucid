@@ -364,7 +364,7 @@ int16_t pattern_arr[2][N_PHASES][N_PATTERNS][MAX_EVALUATE_IDX];
 int16_t eval_sur0_sur1_arr[N_PHASES][MAX_SURROUND][MAX_SURROUND];
 int16_t eval_canput0_canput1_arr[N_PHASES][MAX_CANPUT][MAX_CANPUT];
 int16_t eval_num0_num1_arr[N_PHASES][MAX_STONE_NUM][MAX_STONE_NUM];
-int16_t eval_mobility_pattern[N_PHASES][N_CANPUT_PATTERNS][P44][P44];
+//int16_t eval_mobility_pattern[N_PHASES][N_CANPUT_PATTERNS][P44][P44];
 
 /*
     @brief used for unzipping the evaluation function
@@ -440,11 +440,13 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
             fclose(fp);
             return false;
         }
+        /*
         if (fread(eval_mobility_pattern[phase_idx], 2, N_CANPUT_PATTERNS * P44 * P44, fp) < N_CANPUT_PATTERNS * P48){
             std::cerr << "[ERROR] [FATAL] evaluation file broken" << std::endl;
             fclose(fp);
             return false;
         }
+        */
     }
     if (thread_pool.size() >= 2){
         std::future<void> tasks[N_PHASES * N_PATTERNS];
@@ -627,6 +629,7 @@ inline int calc_pattern_diff(const int phase_idx, Search *search){
     @param opponent_mobility    opponent's legal moves in bitboard
     @return mobility pattern evaluation value
 */
+/*
 inline int calc_mobility_pattern(const int phase_idx, const uint64_t player_mobility, const uint64_t opponent_mobility){
     uint8_t *ph = (uint8_t*)&player_mobility;
     uint8_t *oh = (uint8_t*)&opponent_mobility;
@@ -652,6 +655,7 @@ inline int calc_mobility_pattern(const int phase_idx, const uint64_t player_mobi
         eval_mobility_pattern[phase_idx][3][ov[3]][pv[3]] + 
         eval_mobility_pattern[phase_idx][3][ov[4]][pv[4]];
 }
+*/
 
 /*
     @brief midgame evaluation function
@@ -678,8 +682,8 @@ inline int calc_mobility_pattern(const int phase_idx, const uint64_t player_mobi
         int res = calc_pattern_first(phase_idx, b) + 
             eval_sur0_sur1_arr[phase_idx][sur0][sur1] + 
             eval_canput0_canput1_arr[phase_idx][canput0][canput1] + 
-            eval_num0_num1_arr[phase_idx][num0][num1] + 
-            calc_mobility_pattern(phase_idx, player_mobility, opponent_mobility);
+            eval_num0_num1_arr[phase_idx][num0][num1]; // + 
+            //calc_mobility_pattern(phase_idx, player_mobility, opponent_mobility);
         res += res > 0 ? STEP_2 : (res < 0 ? -STEP_2 : 0);
         res /= STEP;
         return std::max(-SCORE_MAX, std::min(SCORE_MAX, res));
@@ -709,8 +713,8 @@ inline int calc_mobility_pattern(const int phase_idx, const uint64_t player_mobi
         int res = calc_pattern_diff(phase_idx, &search) + 
             eval_sur0_sur1_arr[phase_idx][sur0][sur1] + 
             eval_canput0_canput1_arr[phase_idx][canput0][canput1] + 
-            eval_num0_num1_arr[phase_idx][num0][num1] + 
-            calc_mobility_pattern(phase_idx, player_mobility, opponent_mobility);
+            eval_num0_num1_arr[phase_idx][num0][num1]; // + 
+            //calc_mobility_pattern(phase_idx, player_mobility, opponent_mobility);
         res += res >= 0 ? STEP_2 : -STEP_2;
         res /= STEP;
         //return std::max(-SCORE_MAX, std::min(SCORE_MAX, res));
@@ -747,8 +751,8 @@ inline int mid_evaluate_diff(Search *search){
     int res = calc_pattern_diff(phase_idx, search) + 
         eval_sur0_sur1_arr[phase_idx][sur0][sur1] + 
         eval_canput0_canput1_arr[phase_idx][canput0][canput1] + 
-        eval_num0_num1_arr[phase_idx][num0][num1] + 
-        calc_mobility_pattern(phase_idx, player_mobility, opponent_mobility);
+        eval_num0_num1_arr[phase_idx][num0][num1]; // + 
+        //calc_mobility_pattern(phase_idx, player_mobility, opponent_mobility);
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
     //return std::max(-SCORE_MAX, std::min(SCORE_MAX, res));
