@@ -9,11 +9,11 @@ if len(sys.argv) > 3:
     beta = str(sys.argv[5])
 else:
     hour = '0'
-    minute = '20'
+    minute = '10'
     second = '0'
     beta = '0.0113'
 
-if phase < 10:
+if int(phase) < 10:
     train_data = [
         'data5_01.dat',
         'data5_02.dat',
