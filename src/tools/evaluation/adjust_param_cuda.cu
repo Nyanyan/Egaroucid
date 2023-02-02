@@ -157,20 +157,7 @@ void adj_print_result(int phase, int t, uint64_t tl, double* mse, double* mae, d
     std::cout << phase << " " << tl / 1000 << " " << adj_test_data.size() << " " << t << " " << mse_sum << " " << mae_sum << std::endl;
 }
 
-__device__ double adj_device_calc_error(int feature, int idx, int all_idx, Adj_Feature_to_data* device_feature_idx_to_data, Adj_Data* device_data, double* device_preds, int n_test_data) {
-    double res = 0.0;
-    if (device_feature_idx_to_data[all_idx].idx == ADJ_IDX_UNDEFINED) {
-        return res;
-    }
-    Adj_Feature_to_data* feature_to_data = &device_feature_idx_to_data[all_idx];
-    while (feature_to_data != nullptr) {
-        res += device_data[feature_to_data->idx].score - device_preds[feature_to_data->idx];
-        feature_to_data = feature_to_data->next;
-    }
-    return res;
-}
-
-__global__ void adj_device_next_step1(uint16_t* device_rev_idxes, double* device_eval_arr, double* device_alpha, int* device_eval_sizes, int* device_eval_strts, Adj_Feature_to_data* device_feature_idx_to_data, Adj_Data* device_data, double* device_preds, int n_test_data) {
+__global__ void adj_device_calc_error1(int* device_eval_sizes, int* device_eval_strts, Adj_Feature_to_data* device_feature_idx_to_data, Adj_Data* device_data, double* device_preds, double* device_sum_error, int n_test_data) {
     int all_idx = blockDim.x * blockIdx.x + threadIdx.x;
     int feature = -1, idx = -1;
     for (int i = ADJ_N_EVAL - 1; i >= 0; --i) {
@@ -186,22 +173,45 @@ __global__ void adj_device_next_step1(uint16_t* device_rev_idxes, double* device
     if (idx >= device_eval_sizes[feature]) {
         return;
     }
-    if (idx == device_rev_idxes[all_idx]) {
-        double err = adj_device_calc_error(feature, idx, all_idx, device_feature_idx_to_data, device_data, device_preds, n_test_data);
-        device_eval_arr[all_idx] += 2.0 * device_alpha[all_idx] * err * ADJ_STEP;
+    double res = 0.0;
+    if (device_feature_idx_to_data[all_idx].idx != ADJ_IDX_UNDEFINED) {
+        Adj_Feature_to_data* feature_to_data = &device_feature_idx_to_data[all_idx];
+        while (feature_to_data != nullptr) {
+            res += device_data[feature_to_data->idx].score - device_preds[feature_to_data->idx];
+            feature_to_data = feature_to_data->next;
+        }
     }
-    else if (idx < device_rev_idxes[all_idx]) {
-        int rev_all_idx = device_eval_strts[feature] + device_rev_idxes[all_idx];
-        double err = adj_device_calc_error(feature, idx, all_idx, device_feature_idx_to_data, device_data, device_preds, n_test_data) + // TBD
-            adj_device_calc_error(feature, device_rev_idxes[all_idx], rev_all_idx, device_feature_idx_to_data, device_data, device_preds, n_test_data);
-        device_eval_arr[all_idx] += 2.0 * device_alpha[all_idx] * err * ADJ_STEP;
-        device_eval_arr[rev_all_idx] += 2.0 * device_alpha[rev_all_idx] * err * ADJ_STEP;
-    }
+    device_sum_error[all_idx] = res;
 }
 
-void adj_next_step(uint16_t* device_rev_idxes, double* device_eval_arr, double* device_alpha, int* device_eval_sizes, int* device_eval_strts, Adj_Feature_to_data* device_feature_idx_to_data, Adj_Data* device_data, double* device_preds) {
+__global__ void adj_device_next_step1(uint16_t* device_rev_idxes, double* device_eval_arr, double* device_alpha, int* device_eval_sizes, int* device_eval_strts, double* device_sum_error, int n_test_data) {
+    int all_idx = blockDim.x * blockIdx.x + threadIdx.x;
+    int feature = -1, idx = -1;
+    for (int i = ADJ_N_EVAL - 1; i >= 0; --i) {
+        if (all_idx >= device_eval_strts[i]) {
+            feature = i;
+            idx = all_idx - device_eval_strts[i];
+            break;
+        }
+    }
+    if (feature == -1) {
+        return;
+    }
+    if (idx >= device_eval_sizes[feature]) {
+        return;
+    }
+    double err = device_sum_error[all_idx];
+    if (idx != device_rev_idxes[all_idx]) {
+        err += device_sum_error[device_eval_strts[feature] + device_rev_idxes[all_idx]];
+    }
+    device_eval_arr[all_idx] += 2.0 * device_alpha[all_idx] * err * ADJ_STEP;
+}
+
+void adj_next_step(uint16_t* device_rev_idxes, double* device_eval_arr, double* device_alpha, int* device_eval_sizes, int* device_eval_strts, Adj_Feature_to_data* device_feature_idx_to_data, Adj_Data* device_data, double* device_preds, double* device_sum_error) {
     int n_test_data = (int)adj_test_data.size();
-    adj_device_next_step1 << <N_BLOCKS_STEP, N_THREADS_STEP >> > (device_rev_idxes, device_eval_arr, device_alpha, device_eval_sizes, device_eval_strts, device_feature_idx_to_data, device_data, device_preds, n_test_data);
+    adj_device_calc_error1 << <N_BLOCKS_STEP, N_THREADS_STEP >> > (device_eval_sizes, device_eval_strts, device_feature_idx_to_data, device_data, device_preds, device_sum_error, n_test_data);
+    cudaDeviceSynchronize();
+    adj_device_next_step1 << <N_BLOCKS_STEP, N_THREADS_STEP >> > (device_rev_idxes, device_eval_arr, device_alpha, device_eval_sizes, device_eval_strts, device_sum_error, n_test_data);
     cudaDeviceSynchronize();
 }
 
@@ -321,6 +331,10 @@ void adj_copy_eval_sizes(int** device_eval_sizes) {
     cudaMemcpy(*device_eval_sizes, adj_eval_sizes, ADJ_N_EVAL * sizeof(int), cudaMemcpyHostToDevice);
 }
 
+void adj_malloc_sum_error(double** device_sum_error, int malloc_size) {
+    cudaMalloc(&(*device_sum_error), malloc_size * sizeof(double));
+}
+
 void adj_gradient_descent(uint64_t tl, int phase) {
     int n_eval_params = 0;
     for (int i = 0; i < ADJ_N_EVAL; ++i) {
@@ -338,6 +352,7 @@ void adj_gradient_descent(uint64_t tl, int phase) {
     double* device_alpha = nullptr;
     int* device_eval_strts = nullptr;
     int* device_eval_sizes = nullptr;
+    double* device_sum_error = nullptr;
     adj_copy_train_data(&device_test_data);
     adj_copy_eval_arr(&device_eval_arr, n_eval_params);
     adj_malloc_preds(&device_preds);
@@ -349,6 +364,7 @@ void adj_gradient_descent(uint64_t tl, int phase) {
     adj_copy_alpha(&device_alpha, n_eval_params);
     adj_copy_eval_strt_idx(&device_eval_strts);
     adj_copy_eval_sizes(&device_eval_sizes);
+    adj_malloc_sum_error(&device_sum_error, n_eval_params);
     cudaDeviceSynchronize();
     std::cerr << "data copied to GPU" << std::endl;
 
@@ -359,7 +375,7 @@ void adj_gradient_descent(uint64_t tl, int phase) {
     while (tim() - strt < tl) {
         std::cerr << '\r' << t << " " << (tim() - strt) * 1000 / tl;
         adj_calc_score(device_mse, device_mae, device_preds, device_test_data, device_eval_arr, device_feature_to_eval_idx, device_eval_strts);
-        adj_next_step(device_rev_idxes, device_eval_arr, device_alpha, device_eval_sizes, device_eval_strts, device_feature_idx_to_data, device_test_data, device_preds);
+        adj_next_step(device_rev_idxes, device_eval_arr, device_alpha, device_eval_sizes, device_eval_strts, device_feature_idx_to_data, device_test_data, device_preds, device_sum_error);
         ++t;
     }
     std::cerr << '\r' << t << " " << (tim() - strt) * 1000 / tl;
@@ -381,6 +397,7 @@ void adj_gradient_descent(uint64_t tl, int phase) {
     cudaFree(device_alpha);
     cudaFree(device_eval_strts);
     cudaFree(device_eval_sizes);
+    cudaFree(device_sum_error);
     std::cerr << "fin" << std::endl;
 }
 
