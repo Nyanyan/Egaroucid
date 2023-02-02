@@ -45,7 +45,7 @@ else:
     ]
 
 train_dir = './../../../train_data/bin_data/20230201/'
-model_dir = './../../../model/'
+model_dir = './../../../model/20230202_2/'
 #model_dir = './../../../model/nomodel/'
 
 additional_params = ''
