@@ -13,20 +13,36 @@ else:
     second = '0'
     beta = '0.0113'
 
-train_data = [
-    'data5_01.dat',
-    'data5_02.dat',
-    'data5_04.dat',
-    'data5_06.dat',
-    'data5_07.dat',
-    'data5_08.dat',
-    'data5_09.dat',
-    'data5_10.dat',
-    'data5_11.dat',
-    'data5_15.dat',
-    'data5_16.dat',
-    'data5_99.dat'
-]
+if phase < 10:
+    train_data = [
+        'data5_01.dat',
+        'data5_02.dat',
+        'data5_04.dat',
+        'data5_06.dat',
+        'data5_07.dat',
+        'data5_08.dat',
+        'data5_09.dat',
+        'data5_10.dat',
+        'data5_11.dat',
+        'data5_15.dat',
+        'data5_16.dat',
+        'data5_99.dat'
+    ]
+else:
+    train_data = [
+        #'data5_01.dat',
+        #'data5_02.dat',
+        'data5_04.dat',
+        'data5_06.dat',
+        'data5_07.dat',
+        'data5_08.dat',
+        'data5_09.dat',
+        'data5_10.dat',
+        'data5_11.dat',
+        'data5_15.dat',
+        'data5_16.dat',
+        'data5_99.dat'
+    ]
 
 train_dir = './../../../train_data/bin_data/20230201/'
 model_dir = './../../../model/'
