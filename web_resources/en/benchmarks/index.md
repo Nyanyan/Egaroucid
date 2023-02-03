@@ -4,6 +4,16 @@ The first one is the latest.
 
 
 
+I used two types of benchmarks.
+
+
+
+The first one is [The FFO endgame test suite](http://www.radagast.se/othello/ffotest.html). This test is for the speed of endgame complete search. The second one is the matches against [Edax 4.4](https://github.com/abulmo/edax-reversi/releases/tag/v4.4). To test the strength of its evaluation function, this test uses no book, some levels (the depth of search), and [XOT](https://berg.earthlingz.de/xot/aboutxot.php?lang=en) for the starting positions.
+
+
+
+For each version, the detailed conditions may be different. Please see each page to check it.
+
 
 
 <table>
@@ -44,3 +54,5 @@ The first one is the latest.
 		<td>2022/03/02</td>
 	</tr>
 </table>
+
+

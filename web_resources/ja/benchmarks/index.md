@@ -4,6 +4,16 @@
 
 
 
+Egaroucidの性能の確認として2種類のベンチマークを使用しています。
+
+
+
+1つ目は[The FFO endgame test suite](http://www.radagast.se/othello/ffotest.html)です。これは、終盤の完全読みにかかる時間に関するベンチマークです。2つ目は他の強豪オセロAIとの対戦として、[Edax 4.4](https://github.com/abulmo/edax-reversi/releases/tag/v4.4)との対戦です。単純に評価関数の強さを計測するため、bookを使わず、複数のレベル(読み深さ)で、[XOT](https://berg.earthlingz.de/xot/aboutxot.php?lang=en)という初期局面集を用いて対戦させました。
+
+
+
+各バージョンで少し条件が違うものもありますので、詳細はそれぞれのページをご覧ください。
+
 
 
 <table>
@@ -44,3 +54,5 @@
 		<td>2022/03/02</td>
 	</tr>
 </table>
+
+
