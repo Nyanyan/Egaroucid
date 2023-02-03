@@ -101,22 +101,23 @@ def create_html(dr):
         md = f.read()
     #page_title = ''
     md_split = md.splitlines()
+    raw_html = 0
     for i, elem in enumerate(md_split):
-        #if i == 0:
-        #    page_title = elem.replace('# ', '')
-        # special replacements
-        ## download
-        if elem == 'DOWNLOAD_BUTTON_REPLACE':
-            elem = ''
-            for download_elem in download_data:
-                elem += download_elem
+        html_elems = re.findall('\<.+?\>', elem)
+        for html_elem in html_elems:
+            if html_elem[:2] == '</':
+                raw_html -= 1
+            else:
+                raw_html += 1
         # section tags
         if elem[:2] == '# ':
             elem = '<h1>' + elem[2:] + '</h1>'
-        if elem[:3] == '## ':
+        elif elem[:3] == '## ':
             elem = '<h2>' + elem[3:] + '</h2>'
-        if elem[:4] == '### ':
+        elif elem[:4] == '### ':
             elem = '<h3>' + elem[3:] + '</h3>'
+        elif elem[:5] == '#### ':
+            elem = '<h4>' + elem[3:] + '</h4>'
         # links
         links = re.findall('\[.+?\]\(.+?\)', elem)
         for link in links:
@@ -131,14 +132,17 @@ def create_html(dr):
         for bold in bolds:
             html_bold = '<b>' + bold[2:-2] + '</b>'
             elem = elem.replace(bold, html_bold)
+        # paragraph
+        if raw_html == 0:
+            elem = '<p>' + elem + '</p>'
         # modify data
         md_split[i] = elem
     html = ''
     html += '<div class="box">\n'
-    html += '<p>\n'
     this_page_url = main_page_url + dr
     head_title = '<title>' + page_title + '</title>\n'
     og_image = '<meta property="og:image" content="' + this_page_url + '/img/eyecatch.png" />\n'
+    html += '<p></p>\n'
     html += tweet.replace('DATA_URL', this_page_url).replace('DATA_TEXT', page_title) + ' \n'
     for lang_dr, lang_name in langs:
         original_lang = dr.split('/')[0]
@@ -147,7 +151,6 @@ def create_html(dr):
         modified_dr = dr[len(original_lang) + 1:]
         lang_link = main_page_url + lang_dr + '/' + modified_dr
         html += link21 + lang_link + link22 + lang_name + link23 + ' \n'
-    html += '</p>\n'
     additional_head = '<meta property="og:url" content="' + this_page_url + '" />\n'
     additional_head += '<meta property="og:title" content="' + page_title + '" />\n'
     additional_head += '<meta property="og:description" content="' + main_page_description + '" />\n'
@@ -158,14 +161,15 @@ def create_html(dr):
         pass
     last_empty = False
     for line in md_split:
-        if last_empty == False and line == '':
+        if (not last_empty) and line == '':
             last_empty = True
         else:
             if line:
                 html += line
-            else:
-                html += line + '<br>\n'
+            #else:
+            #    html += line + '<br>\n'
             last_empty = False
+    html += '<p></p>\n'
     html += '</div>\n'
     out_dr = 'generated/' + dr
     if not os.path.exists(out_dr):
