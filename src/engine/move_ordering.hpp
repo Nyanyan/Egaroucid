@@ -16,6 +16,7 @@
 #include "search.hpp"
 #include "midsearch.hpp"
 #include "stability.hpp"
+#include "level.hpp"
 #if TUNE_MOVE_ORDERING_END
     #include "move_ordering_tune_end.hpp"
 #endif
