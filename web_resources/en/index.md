@@ -12,7 +12,7 @@ Egaroucid is an Othello app with one of the strongest othello solver AI. The lig
 
 ## Lineup
 
-Completely free software. Egaroucid for Web uses a simple (weaker) engine.
+Completely free software. Egaroucid and Egaroucid for Console use the same (strong) engine, but Egaroucid for Web uses a simple (weaker) engine.
 
 <table>
     <tr>
