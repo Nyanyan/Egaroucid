@@ -16,9 +16,9 @@ Egaroucidは世界最強クラスのオセロAIを搭載した無料のオセロ
 
 <table>
     <tr>
-        <td>名称</td>
-        <td>対応OS</td>
-        <td>詳細</td>
+        <th>名称</th>
+        <th>対応OS</th>
+        <th>詳細</th>
     </tr>
     <tr>
         <td>Egaroucid</td>
@@ -36,6 +36,7 @@ Egaroucidは世界最強クラスのオセロAIを搭載した無料のオセロ
         <td>[今すぐ遊ぶ](./web/)</td>
     </tr>
 </table>
+
 
 
 

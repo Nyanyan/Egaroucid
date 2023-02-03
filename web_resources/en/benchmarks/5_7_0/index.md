@@ -8,13 +8,13 @@ I used Core i9-11900K for testing.
 
 <table>
 <tr>
-<td>No.</td>
-<td>Depth</td>
-<td>Best Move</td>
-<td>Score</td>
-<td>Time (sec)</td>
-<td>Nodes</td>
-<td>NPS</td>
+<th>No.</th>
+<th>Depth</th>
+<th>Best Move</th>
+<th>Score</th>
+<th>Time (sec)</th>
+<th>Nodes</th>
+<th>NPS</th>
 </tr>
 <tr>
 <td>#40</td>
@@ -213,6 +213,7 @@ I used Core i9-11900K for testing.
 
 
 
+
 ## Play against Edax4.4
 
 <a href="https://github.com/abulmo/edax-reversi" target="_blank" el=”noopener noreferrer”>Edax 4.4</a> is one of the best Othello AI in the world.
@@ -229,11 +230,11 @@ I used <a href="https://berg.earthlingz.de/xot/index.php" target="_blank" el=”
 
 <table>
 <tr>
-<td>Level</td>
-<td>Egaroucid Win</td>
-<td>Draw</td>
-<td>Edax Win</td>
-<td>Egaroucid Win Ratio</td>
+<th>Level</th>
+<th>Egaroucid win</th>
+<th>Draw</th>
+<th>Edax Win</th>
+<th>Egaroucid Win Ratio</th>
 </tr>
 <tr>
 <td>1</td>
@@ -261,15 +262,16 @@ I used <a href="https://berg.earthlingz.de/xot/index.php" target="_blank" el=”
 
 
 
+
 ### Egaroucid played White
 
 <table>
 <tr>
-<td>Level</td>
-<td>Egaroucid Win</td>
-<td>Draw</td>
-<td>Edax Win</td>
-<td>Egaroucid Win Ratio</td>
+<th>Level</th>
+<th>Egaroucid win</th>
+<th>Draw</th>
+<th>Edax Win</th>
+<th>Egaroucid Win Ratio</th>
 </tr>
 <tr>
 <td>1</td>
@@ -293,4 +295,3 @@ I used <a href="https://berg.earthlingz.de/xot/index.php" target="_blank" el=”
 <td>0.53</td>
 </tr>
 </table>
-

@@ -4,25 +4,25 @@ import sys
 if sys.argv[1] == 'ja':
     head = '''<table>
 <tr>
-<td>番号</td>
-<td>深さ</td>
-<td>最善手</td>
-<td>手番の評価値</td>
-<td>探索時間(秒)</td>
-<td>訪問ノード数</td>
-<td>NPS</td>
+<th>番号</th>
+<th>深さ</th>
+<th>最善手</th>
+<th>手番の評価値</th>
+<th>探索時間(秒)</th>
+<th>訪問ノード数</th>
+<th>NPS</th>
 </tr>
 '''
 else:
     head = '''<table>
 <tr>
-<td>No.</td>
-<td>Depth</td>
-<td>Best Move</td>
-<td>Score</td>
-<td>Time (sec)</td>
-<td>Nodes</td>
-<td>NPS</td>
+<th>No.</th>
+<th>Depth</th>
+<th>Best Move</th>
+<th>Score</th>
+<th>Time (sec)</th>
+<th>Nodes</th>
+<th>NPS</th>
 </tr>
 '''
 

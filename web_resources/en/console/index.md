@@ -20,11 +20,11 @@ Egaroucid is optimized to SIMD version, which requires AVX2  instructions, but o
 
 <table>
     <tr>
-        <td>OS</td>
-        <td>CPU</td>
-        <td>Requirements</td>
-        <td>Date</td>
-        <td>Download</td>
+        <th>OS</th>
+        <th>CPU</th>
+        <th>Requirements</th>
+        <th>Date</th>
+        <th>Download</th>
     </tr>
     <tr>
         <td>Windows</td>
@@ -48,6 +48,7 @@ Egaroucid is optimized to SIMD version, which requires AVX2  instructions, but o
         <td>[Egaroucid for Console 6.1.0 Windows x86 Generic](https://github.com/Nyanyan/Egaroucid/releases/download/v6.1.0/Egaroucid_for_Console_6_1_0_Windows_x86_Generic.zip)</td>
     </tr>
 </table>
+
 
 
 Please visit [GitHub Releases](https://github.com/Nyanyan/Egaroucid/releases) to see older versions and release notes.
@@ -86,8 +87,8 @@ You can add additional options in <code>[options]</code>. Available options are:
 
 <table>
     <tr>
-        <td>You want to</td>
-        <td>Add this option</td>
+        <th>You want to</th>
+        <th>Add this option</th>
     </tr>
     <tr>
         <td>Build without AVX2</td>
@@ -102,6 +103,7 @@ You can add additional options in <code>[options]</code>. Available options are:
         <td>-DHAS_32_BIT_OS=ON</td>
     </tr>
 </table>
+
 
 
 
@@ -163,8 +165,8 @@ You can add additional options in <code>[options]</code>. Available options are:
 
 <table>
     <tr>
-        <td>You want to</td>
-        <td>Add this option</td>
+        <th>You want to</th>
+        <th>Add this option</th>
     </tr>
     <tr>
         <td>Build without AVX2</td>

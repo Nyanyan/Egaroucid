@@ -16,11 +16,11 @@ Egaroucid is optimized to SIMD version, which requires AVX2 instructions, but ol
 
 <table>
     <tr>
-        <td>OS</td>
-        <td>CPU</td>
-        <td>Requirements</td>
-        <td>Date</td>
-        <td>Download</td>
+        <th>OS</th>
+        <th>CPU</th>
+        <th>Requirements</th>
+        <th>Date</th>
+        <th>Download</th>
     </tr>
     <tr>
         <td>Windows</td>

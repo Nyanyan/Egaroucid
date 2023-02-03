@@ -4,21 +4,21 @@ import sys
 if sys.argv[1] == 'ja':
     head = '''<table>
 <tr>
-<td>レベル</td>
-<td>Egaroucid勝ち</td>
-<td>引分</td>
-<td>Edax勝ち</td>
-<td>Egaroucid勝率</td>
+<th>レベル</th>
+<th>Egaroucid勝ち</th>
+<th>引分</th>
+<th>Edax勝ち</th>
+<th>Egaroucid勝率</th>
 </tr>
 '''
 else:
     head = '''<table>
 <tr>
-<td>Level</td>
-<td>Egaroucid win</td>
-<td>Draw</td>
-<td>Edax Win</td>
-<td>Egaroucid Win Ratio</td>
+<th>Level</th>
+<th>Egaroucid win</th>
+<th>Draw</th>
+<th>Edax Win</th>
+<th>Egaroucid Win Ratio</th>
 </tr>
 '''
 

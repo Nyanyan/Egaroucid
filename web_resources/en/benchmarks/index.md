@@ -18,8 +18,8 @@ For each version, the detailed conditions may be different. Please see each page
 
 <table>
 	<tr>
-		<td>Version</td>
-		<td>Date</td>
+		<th>Version</th>
+		<th>Date</th>
 	</tr>
     <tr>
 		<td><a href="./6_1_0/">6.1.0</a></td>

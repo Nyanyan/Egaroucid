@@ -20,11 +20,11 @@ Egaroucidはx64のSIMDバージョン(AVX2を使用)に最適化して作って�
 
 <table>
     <tr>
-        <td>OS</td>
-        <td>CPU</td>
-        <td>追加要件</td>
-        <td>リリース日</td>
-        <td>ダウンロード</td>
+        <th>OS</th>
+        <th>CPU</th>
+        <th>追加要件</th>
+        <th>リリース日</th>
+        <th>ダウンロード</th>
     </tr>
     <tr>
         <td>Windows</td>
@@ -48,6 +48,7 @@ Egaroucidはx64のSIMDバージョン(AVX2を使用)に最適化して作って�
         <td>[Egaroucid for Console 6.1.0 Windows x86 Generic](https://github.com/Nyanyan/Egaroucid/releases/download/v6.1.0/Egaroucid_for_Console_6_1_0_Windows_x86_Generic.zip)</td>
     </tr>
 </table>
+
 
 
 
@@ -88,8 +89,8 @@ cmakeでビルドするか、直接g++を使ってビルドすることができ
 
 <table>
     <tr>
-        <td>状況</td>
-        <td>追加するオプション</td>
+        <th>状況</th>
+        <th>追加するオプション</th>
     </tr>
     <tr>
         <td>AVX2(相当)を使わない場合</td>
@@ -104,6 +105,7 @@ cmakeでビルドするか、直接g++を使ってビルドすることができ
         <td>-DHAS_32_BIT_OS=ON</td>
     </tr>
 </table>
+
 
 
 
@@ -162,8 +164,8 @@ cmakeでビルドするか、直接g++を使ってビルドすることができ
 
 <table>
     <tr>
-        <td>状況</td>
-        <td>追加するオプション</td>
+        <th>状況</th>
+        <th>追加するオプション</th>
     </tr>
     <tr>
         <td>AVX2(相当)を使わない場合</td>

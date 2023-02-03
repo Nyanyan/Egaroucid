@@ -16,11 +16,11 @@ EgaroucidはSIMDバージョン(AVX2が必要)に最適化して作っていま�
 
 <table>
     <tr>
-        <td>OS</td>
-        <td>CPU</td>
-        <td>追加要件</td>
-        <td>リリース日</td>
-        <td>ダウンロード</td>
+        <th>OS</th>
+        <th>CPU</th>
+        <th>追加要件</th>
+        <th>リリース日</th>
+        <th>ダウンロード</th>
     </tr>
     <tr>
         <td>Windows</td>
@@ -37,6 +37,7 @@ EgaroucidはSIMDバージョン(AVX2が必要)に最適化して作っていま�
         <td>[Egaroucid 6.1.0 Windows x64 Generic](https://github.com/Nyanyan/Egaroucid/releases/download/v6.1.0/Egaroucid_6_1_0_Generic_installer.exe)</td>
     </tr>
 </table>
+
 
 
 

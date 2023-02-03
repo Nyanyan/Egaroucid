@@ -16,9 +16,9 @@ Completely free software. Egaroucid and Egaroucid for Console use the same (stro
 
 <table>
     <tr>
-        <td>Name</td>
-        <td>OS</td>
-        <td>Details</td>
+        <th>Name</th>
+        <th>OS</th>
+        <th>Details</th>
     </tr>
     <tr>
         <td>Egaroucid</td>

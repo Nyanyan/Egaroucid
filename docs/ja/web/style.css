@@ -13,7 +13,8 @@ tr:nth-child(odd){
 
 th{
     padding: 5px 10px;
-    background-color:  #ccc;
+    background-color:  #ddd;
+    text-align: left;
 }
 
 td{

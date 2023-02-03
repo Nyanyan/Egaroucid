@@ -8,13 +8,13 @@
 
 <table>
 <tr>
-<td>番号</td>
-<td>深さ</td>
-<td>最善手</td>
-<td>手番の評価値</td>
-<td>探索時間(秒)</td>
-<td>訪問ノード数</td>
-<td>NPS</td>
+<th>番号</th>
+<th>深さ</th>
+<th>最善手</th>
+<th>手番の評価値</th>
+<th>探索時間(秒)</th>
+<th>訪問ノード数</th>
+<th>NPS</th>
 </tr>
 <tr>
 <td>#40</td>
@@ -216,6 +216,7 @@
 
 
 
+
 ## Edax4.4との対戦
 
 現状世界最強とも言われるオセロAI、<a href="https://github.com/abulmo/edax-reversi" target="_blank" el=”noopener noreferrer”>Edax 4.4</a>との対戦結果です。
@@ -232,11 +233,11 @@ Egaroucid勝率が0.5を上回っていればEgaroucidがEdaxに勝ち越して�
 
 <table>
 <tr>
-<td>レベル</td>
-<td>Egaroucid勝ち</td>
-<td>引分</td>
-<td>Edax勝ち</td>
-<td>Egaroucid勝率</td>
+<th>レベル</th>
+<th>Egaroucid勝ち</th>
+<th>引分</th>
+<th>Edax勝ち</th>
+<th>Egaroucid勝率</th>
 </tr>
 <tr>
 <td>1</td>
@@ -271,15 +272,16 @@ Egaroucid勝率が0.5を上回っていればEgaroucidがEdaxに勝ち越して�
 
 
 
+
 ### Egaroucidが白番
 
 <table>
 <tr>
-<td>レベル</td>
-<td>Egaroucid勝ち</td>
-<td>引分</td>
-<td>Edax勝ち</td>
-<td>Egaroucid勝率</td>
+<th>レベル</th>
+<th>Egaroucid勝ち</th>
+<th>引分</th>
+<th>Edax勝ち</th>
+<th>Egaroucid勝率</th>
 </tr>
 <tr>
 <td>1</td>
