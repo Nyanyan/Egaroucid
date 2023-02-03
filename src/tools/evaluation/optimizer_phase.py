@@ -9,7 +9,7 @@ if len(sys.argv) > 3:
     beta = str(sys.argv[5])
 else:
     hour = '0'
-    minute = '1'
+    minute = '5'
     second = '0'
     beta = '0.0113'
 
@@ -45,7 +45,7 @@ else:
     ]
 
 train_dir = './../../../train_data/bin_data/20230202/'
-model_dir = './../../../model/20230203/'
+model_dir = './../../../model/20230203_1/'
 #model_dir = './../../../model/nomodel/'
 
 additional_params = ''

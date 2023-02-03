@@ -133,7 +133,7 @@ void adj_next_step(int* device_batch_random_idx, int* device_n_same_idx_in_featu
         cudaDeviceSynchronize();
     }
     cudaMemcpy(mae_list, device_mae_list, BATCH_SIZE * sizeof(double), cudaMemcpyDeviceToHost);
-    cudaMemcpy(mse_list, device_mae_list, BATCH_SIZE * sizeof(double), cudaMemcpyDeviceToHost);
+    cudaMemcpy(mse_list, device_mse_list, BATCH_SIZE * sizeof(double), cudaMemcpyDeviceToHost);
     *mae = 0.0;
     *mse = 0.0;
     for (int i = 0; i < BATCH_SIZE; ++i) {
