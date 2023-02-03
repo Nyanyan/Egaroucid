@@ -13,7 +13,7 @@ else:
     second = '0'
     beta = '0.0113'
 
-if int(phase) < 10:
+if int(phase) < 20:
     train_data = [
         'data5_01.dat',
         'data5_02.dat',
