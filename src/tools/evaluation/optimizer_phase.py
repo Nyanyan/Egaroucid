@@ -53,7 +53,7 @@ for tfile in train_data:
     additional_params += ' ' + train_dir + tfile
 
 #executable = 'gd_eval.out'
-executable = 'gd_eval_cuda.exe'
+executable = 'sgd_eval_cuda.exe'
 
 cmd = executable + ' ' + phase + ' ' + hour + ' ' + minute + ' ' + second + ' ' + beta + ' ' + model_dir + phase + '.txt' + additional_params
 print(cmd, file=sys.stderr)
