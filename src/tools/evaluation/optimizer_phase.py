@@ -9,7 +9,7 @@ if len(sys.argv) > 3:
     beta = str(sys.argv[5])
 else:
     hour = '0'
-    minute = '10'
+    minute = '1'
     second = '0'
     beta = '0.0113'
 

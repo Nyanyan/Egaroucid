@@ -27,7 +27,9 @@
 #define N_BLOCKS_STEP 8192
 #define N_THREADS_STEP 128
 
-#define BATCH_SIZE 512
+#define BATCH_THREAD_SIZE 256
+#define BATCH_BLOCK_SIZE 16
+#define BATCH_SIZE (BATCH_THREAD_SIZE * BATCH_BLOCK_SIZE)
 #define N_FLOOR_UNIQUE_FEATURES 16 // floorpow2(ADJ_N_EVAL)
 #define MAX_BATCH_DO_IDX (BATCH_SIZE / N_FLOOR_UNIQUE_FEATURES)
 
@@ -78,8 +80,9 @@ inline double adj_predict(int problem_idx) {
     return res;
 }
 
-__global__ void adj_device_batch(int* device_batch_random_idx, int* device_n_same_idx_in_feature, int* device_feature_first_idx, uint16_t* device_rev_idxes, double* device_eval_arr, double* device_alpha, int* device_eval_strts, Adj_Data* device_test_data, int n_test_data, int batch_first_idx, int* device_feature_to_eval_idx, double* device_mae_list) {
-    int batch_idx= blockDim.x * blockIdx.x + threadIdx.x + batch_first_idx;
+__global__ void adj_device_batch(int* device_batch_random_idx, int* device_n_same_idx_in_feature, int* device_feature_first_idx, uint16_t* device_rev_idxes, double* device_eval_arr, double* device_alpha, int* device_eval_strts, Adj_Data* device_test_data, int n_test_data, int batch_first_idx, int* device_feature_to_eval_idx, double* device_mae_list, double* device_mse_list) {
+    int thread_block_idx = blockDim.x * blockIdx.x + threadIdx.x;
+    int batch_idx= thread_block_idx + batch_first_idx;
     if (batch_idx >= n_test_data) {
         return;
     }
@@ -87,11 +90,12 @@ __global__ void adj_device_batch(int* device_batch_random_idx, int* device_n_sam
     int i, j, feature, feature_idx, eval_idx, alpha_idx;
     double pred = adj_predict_device(device_test_data, device_eval_arr, device_feature_to_eval_idx, problem_idx, device_eval_strts) / ADJ_STEP;
     double err = device_test_data[problem_idx].score - pred;
-    device_mae_list[threadIdx.x] += err >= 0 ? err : -err;
+    device_mae_list[thread_block_idx] += abs(err);
+    device_mse_list[thread_block_idx] += err * err;
     for (int batch_do_idx = 0; batch_do_idx < MAX_BATCH_DO_IDX; ++batch_do_idx) {
-        if (batch_do_idx == threadIdx.x / N_FLOOR_UNIQUE_FEATURES) {
+        if (batch_do_idx == thread_block_idx / N_FLOOR_UNIQUE_FEATURES) {
             for (i = 0; i < ADJ_N_EVAL; ++i) { // to avoid access collision
-                feature = (threadIdx.x + i) % ADJ_N_EVAL;
+                feature = (thread_block_idx + i) % ADJ_N_EVAL;
                 for (j = 0; j < device_n_same_idx_in_feature[feature]; ++j) {
                     feature_idx = device_feature_first_idx[feature] + j;
                     eval_idx = device_test_data[problem_idx].features[feature_idx];
@@ -113,27 +117,35 @@ void adj_next_step(int* device_batch_random_idx, int* device_n_same_idx_in_featu
     cudaMemcpy(device_batch_random_idx, src, adj_test_data.size() * sizeof(int), cudaMemcpyHostToDevice);
     int n_batch_tasks = ((int)adj_test_data.size() + BATCH_SIZE - 1) / BATCH_SIZE;
     double* mae_list = (double*)malloc(BATCH_SIZE * sizeof(double));
+    double* mse_list = (double*)malloc(BATCH_SIZE * sizeof(double));
     for (int i = 0; i < BATCH_SIZE; ++i) {
         mae_list[i] = 0.0;
+        mse_list[i] = 0.0;
     }
     double* device_mae_list = nullptr;
+    double* device_mse_list = nullptr;
     cudaMalloc(&device_mae_list, BATCH_SIZE * sizeof(double));
+    cudaMalloc(&device_mse_list, BATCH_SIZE * sizeof(double));
     cudaMemcpy(device_mae_list, mae_list, BATCH_SIZE * sizeof(double), cudaMemcpyHostToDevice);
+    cudaMemcpy(device_mse_list, mae_list, BATCH_SIZE * sizeof(double), cudaMemcpyHostToDevice);
     for (int i = 0; i < n_batch_tasks; ++i) {
-        adj_device_batch << <1, BATCH_SIZE>> > (device_batch_random_idx, device_n_same_idx_in_feature, device_feature_first_idx, device_rev_idxes, device_eval_arr, device_alpha, device_eval_strts, device_data, (int)adj_test_data.size(), i * BATCH_SIZE, device_feature_to_eval_idx, device_mae_list);
+        adj_device_batch << <BATCH_BLOCK_SIZE, BATCH_THREAD_SIZE>> > (device_batch_random_idx, device_n_same_idx_in_feature, device_feature_first_idx, device_rev_idxes, device_eval_arr, device_alpha, device_eval_strts, device_data, (int)adj_test_data.size(), i * BATCH_SIZE, device_feature_to_eval_idx, device_mae_list, device_mse_list);
         cudaDeviceSynchronize();
     }
     cudaMemcpy(mae_list, device_mae_list, BATCH_SIZE * sizeof(double), cudaMemcpyDeviceToHost);
+    cudaMemcpy(mse_list, device_mae_list, BATCH_SIZE * sizeof(double), cudaMemcpyDeviceToHost);
     *mae = 0.0;
     *mse = 0.0;
     for (int i = 0; i < BATCH_SIZE; ++i) {
         *mae += mae_list[i];
-        *mse += mae_list[i] * mae_list[i];
+        *mse += mse_list[i];
     }
     *mae /= adj_test_data.size();
     *mse /= adj_test_data.size();
     free(mae_list);
+    free(mse_list);
     cudaFree(device_mae_list);
+    cudaFree(device_mse_list);
 }
 
 void adj_copy_train_data(Adj_Data** device_test_data) {
