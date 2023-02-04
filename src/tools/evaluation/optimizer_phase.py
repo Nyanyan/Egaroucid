@@ -9,8 +9,8 @@ if len(sys.argv) > 3:
     beta = str(sys.argv[5])
 else:
     hour = '0'
-    minute = '0'
-    second = '30'
+    minute = '11'
+    second = '0'
     beta = '0.0113'
 
 if int(phase) < 20:
@@ -21,8 +21,8 @@ else:
 train_data = [str(elem) + '.dat' for elem in train_data_nums]
 
 train_dir = './../../../train_data/bin_data/20230204_1/' + str(4 + int(phase)) + '/'
-#model_dir = './../../../model/20230204_1/'
-model_dir = './../../../model/nomodel/'
+model_dir = './../../../model/20230204_3/'
+#model_dir = './../../../model/nomodel/'
 
 additional_params = ''
 for tfile in train_data:

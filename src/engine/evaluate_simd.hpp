@@ -685,7 +685,6 @@ inline int mid_evaluate(Board *board){
         calc_mobility_pattern(phase_idx, player_mobility, opponent_mobility);
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
-    //return std::max(-SCORE_MAX, std::min(SCORE_MAX, res));
     if (res > SCORE_MAX)
         return SCORE_MAX;
     if (res < -SCORE_MAX)
@@ -722,7 +721,6 @@ inline int mid_evaluate_diff(Search *search){
         calc_mobility_pattern(phase_idx, player_mobility, opponent_mobility);
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
-    //return std::max(-SCORE_MAX, std::min(SCORE_MAX, res));
     if (res > SCORE_MAX)
         return SCORE_MAX;
     if (res < -SCORE_MAX)
