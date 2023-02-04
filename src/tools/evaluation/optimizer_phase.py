@@ -9,8 +9,8 @@ if len(sys.argv) > 3:
     beta = str(sys.argv[5])
 else:
     hour = '0'
-    minute = '5'
-    second = '0'
+    minute = '0'
+    second = '30'
     beta = '0.0113'
 
 if int(phase) < 20:
