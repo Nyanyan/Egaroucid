@@ -16,7 +16,7 @@ for board_sub_dir_num in board_sub_dir_nums:
     n_files_str = str(len(glob.glob(transcript_dir + '/*.txt')))
     cmd = 'expand_transcript.out ' + transcript_dir + ' 0 ' + n_files_str + ' ' + board_file
     p = subprocess.Popen(cmd.split(), stderr=subprocess.DEVNULL, stdout=subprocess.PIPE)
-    log = board_file + '\t' + p.stdout.readline().decode().replace('\r').replace('\n')
+    log = board_file + '\t' + p.stdout.readline().decode().replace('\r', '').replace('\n', '')
     print(log)
     with open(log_file, 'a') as f:
         f.write(log + '\n')

@@ -44,14 +44,20 @@ void trs_convert_transcript(std::string transcript, std::ofstream *fout){
         boards.emplace_back(board);
         calc_flip(&flip, &board.board, board.policy);
         board.board.move_board(&flip);
+        board.player ^= 1;
     }
     int8_t score = board.board.score_player();
+    int8_t rev_score = -score;
     for (Trs_Convert_transcript_info &datum: boards){
         fout->write((char*)&datum.board.player, 8);
         fout->write((char*)&datum.board.opponent, 8);
         fout->write((char*)&datum.player, 1);
         fout->write((char*)&datum.policy, 1);
-        fout->write((char*)&score, 1);
+        if (datum.player == board.player){
+            fout->write((char*)&score, 1);
+        } else{
+            fout->write((char*)&rev_score, 1);
+        }
     }
 }
 
@@ -66,7 +72,7 @@ int main(int argc, char* argv[]){
     int end_file_num = atoi(argv[3]);
     std::string out_file = std::string(argv[4]);
     std::ofstream fout;
-    fout.open(argv[4], std::ios::out|std::ios::binary|std::ios::trunc);
+    fout.open(out_file, std::ios::out|std::ios::binary|std::ios::trunc);
     if (!fout){
         std::cerr << "can't open" << std::endl;
         return 1;
