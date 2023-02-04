@@ -12,38 +12,6 @@ else:
     minute = '5'
     second = '0'
     beta = '0.0113'
-'''
-if int(phase) < 20:
-    train_data = [
-        'data5_01.dat',
-        'data5_02.dat',
-        'data5_04.dat',
-        'data5_06.dat',
-        'data5_07.dat',
-        'data5_08.dat',
-        'data5_09.dat',
-        'data5_10.dat',
-        'data5_11.dat',
-        'data5_15.dat',
-        'data5_16.dat',
-        'data5_99.dat'
-    ]
-else:
-    train_data = [
-        #'data5_01.dat',
-        #'data5_02.dat',
-        'data5_04.dat',
-        'data5_06.dat',
-        'data5_07.dat',
-        'data5_08.dat',
-        'data5_09.dat',
-        'data5_10.dat',
-        'data5_11.dat',
-        'data5_15.dat',
-        'data5_16.dat',
-        'data5_99.dat'
-    ]
-'''
 
 if int(phase) < 20:
     train_data_nums = [1, 2, 4, 6, 7, 8, 9, 11, 15, 16, 99]

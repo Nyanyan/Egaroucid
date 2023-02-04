@@ -43,16 +43,20 @@ void trs_convert_transcript(std::string transcript, std::ofstream *fout){
         board.policy = HW2_M1 - (y * HW + x);
         boards.emplace_back(board);
         calc_flip(&flip, &board.board, board.policy);
+        if (flip.flip == 0ULL){
+            std::cerr << "illegal move found" << std::endl;
+            return;
+        }
         board.board.move_board(&flip);
         board.player ^= 1;
     }
     int8_t score = board.board.score_player();
     int8_t rev_score = -score;
     for (Trs_Convert_transcript_info &datum: boards){
-        fout->write((char*)&datum.board.player, 8);
-        fout->write((char*)&datum.board.opponent, 8);
-        fout->write((char*)&datum.player, 1);
-        fout->write((char*)&datum.policy, 1);
+        fout->write((char*)&(datum.board.player), 8);
+        fout->write((char*)&(datum.board.opponent), 8);
+        fout->write((char*)&(datum.player), 1);
+        fout->write((char*)&(datum.policy), 1);
         if (datum.player == board.player){
             fout->write((char*)&score, 1);
         } else{

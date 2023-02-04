@@ -41,10 +41,10 @@ void trs_convert_board(std::string line, std::ofstream *fout){
     }
     board.policy = HW2;
     int8_t score = stoi(line.substr(67));
-    fout->write((char*)&board.board.player, 8);
-    fout->write((char*)&board.board.opponent, 8);
-    fout->write((char*)&board.player, 1);
-    fout->write((char*)&board.policy, 1);
+    fout->write((char*)&(board.board.player), 8);
+    fout->write((char*)&(board.board.opponent), 8);
+    fout->write((char*)&(board.player), 1);
+    fout->write((char*)&(board.policy), 1);
     fout->write((char*)&score, 1);
 }
 
