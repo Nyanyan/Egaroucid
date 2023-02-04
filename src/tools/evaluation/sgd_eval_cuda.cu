@@ -53,7 +53,6 @@ double adj_alpha[ADJ_N_EVAL][ADJ_MAX_EVALUATE_IDX];
 std::vector<Adj_Data> adj_test_data;
 std::vector<double> adj_preds;
 uint16_t adj_rev_idxes[ADJ_N_EVAL][ADJ_MAX_EVALUATE_IDX];
-std::vector<std::vector<std::vector<int>>> adj_feature_idx_to_data(ADJ_N_EVAL, std::vector<std::vector<int>>(ADJ_MAX_EVALUATE_IDX, std::vector<int>(0)));
 
 __device__ double adj_predict_device(Adj_Data* device_test_data, double* device_eval_arr, int* device_feature_to_eval_idx, int problem_idx, int* device_strt_idxes) {
     double res = 0.0;
@@ -82,7 +81,7 @@ inline double adj_predict(int problem_idx) {
 
 __global__ void adj_device_batch(int* device_batch_random_idx, int* device_n_same_idx_in_feature, int* device_feature_first_idx, uint16_t* device_rev_idxes, double* device_eval_arr, double* device_alpha, int* device_eval_strts, Adj_Data* device_test_data, int n_test_data, int batch_first_idx, int* device_feature_to_eval_idx, double* device_mae_list, double* device_mse_list) {
     int thread_block_idx = blockDim.x * blockIdx.x + threadIdx.x;
-    int batch_idx= thread_block_idx + batch_first_idx;
+    int batch_idx = thread_block_idx + batch_first_idx;
     if (batch_idx >= n_test_data) {
         return;
     }
@@ -110,7 +109,7 @@ __global__ void adj_device_batch(int* device_batch_random_idx, int* device_n_sam
     }
 }
 
-void adj_next_step(int* device_batch_random_idx, int* device_n_same_idx_in_feature, int* device_feature_first_idx, uint16_t* device_rev_idxes, double* device_eval_arr, double* device_alpha, int* device_eval_strts, Adj_Data* device_data, int* device_feature_to_eval_idx, std::vector<int> &batch_random_idx, std::mt19937 &engine, double* mae, double *mse) {
+void adj_next_step(int* device_batch_random_idx, int* device_n_same_idx_in_feature, int* device_feature_first_idx, uint16_t* device_rev_idxes, double* device_eval_arr, double* device_alpha, int* device_eval_strts, Adj_Data* device_data, int* device_feature_to_eval_idx, std::vector<int>& batch_random_idx, std::mt19937& engine, double* mae, double* mse) {
     int n_test_data = (int)adj_test_data.size();
     std::shuffle(batch_random_idx.begin(), batch_random_idx.end(), engine);
     int* src = &(batch_random_idx[0]);
@@ -129,7 +128,7 @@ void adj_next_step(int* device_batch_random_idx, int* device_n_same_idx_in_featu
     cudaMemcpy(device_mae_list, mae_list, BATCH_SIZE * sizeof(double), cudaMemcpyHostToDevice);
     cudaMemcpy(device_mse_list, mae_list, BATCH_SIZE * sizeof(double), cudaMemcpyHostToDevice);
     for (int i = 0; i < n_batch_tasks; ++i) {
-        adj_device_batch << <BATCH_BLOCK_SIZE, BATCH_THREAD_SIZE>> > (device_batch_random_idx, device_n_same_idx_in_feature, device_feature_first_idx, device_rev_idxes, device_eval_arr, device_alpha, device_eval_strts, device_data, (int)adj_test_data.size(), i * BATCH_SIZE, device_feature_to_eval_idx, device_mae_list, device_mse_list);
+        adj_device_batch << <BATCH_BLOCK_SIZE, BATCH_THREAD_SIZE >> > (device_batch_random_idx, device_n_same_idx_in_feature, device_feature_first_idx, device_rev_idxes, device_eval_arr, device_alpha, device_eval_strts, device_data, (int)adj_test_data.size(), i * BATCH_SIZE, device_feature_to_eval_idx, device_mae_list, device_mse_list);
         cudaDeviceSynchronize();
     }
     cudaMemcpy(mae_list, device_mae_list, BATCH_SIZE * sizeof(double), cudaMemcpyDeviceToHost);
@@ -336,12 +335,12 @@ void adj_import_eval(std::string file) {
 }
 
 void adj_import_test_data(int n_files, char* files[], int use_phase, double beta) {
-    int t = 0;
+    int t = 0, i, j;
     FILE* fp;
     int16_t n_discs, phase, score, player;
-    uint16_t raw_features[ADJ_N_FEATURES];
-    for (int i = 0; i < ADJ_N_EVAL; ++i) {
-        for (int j = 0; j < adj_eval_sizes[i]; ++j)
+    Adj_Data data;
+    for (i = 0; i < ADJ_N_EVAL; ++i) {
+        for (j = 0; j < adj_eval_sizes[i]; ++j)
             adj_alpha_occurance[i][j] = 0;
     }
     for (int file_idx = 0; file_idx < n_files; ++file_idx) {
@@ -355,16 +354,13 @@ void adj_import_test_data(int n_files, char* files[], int use_phase, double beta
                 break;
             phase = (n_discs - 4) / ADJ_N_PHASE_DISCS;
             fread(&player, 2, 1, fp);
-            fread(raw_features, 2, ADJ_N_FEATURES, fp);
+            fread(&(data.features[0]), 2, ADJ_N_FEATURES, fp);
             fread(&score, 2, 1, fp);
             if (phase == use_phase) {
                 if ((t & 0b1111111111111111) == 0b1111111111111111)
                     std::cerr << '\r' << t;
-                Adj_Data data;
-                for (int i = 0; i < ADJ_N_FEATURES; ++i) {
-                    data.features[i] = raw_features[i];
-                    adj_alpha_occurance[adj_feature_to_eval_idx[i]][raw_features[i]] += 1.0;
-                    adj_feature_idx_to_data[adj_feature_to_eval_idx[i]][raw_features[i]].emplace_back(t);
+                for (i = 0; i < ADJ_N_FEATURES; ++i) {
+                    ++adj_alpha_occurance[adj_feature_to_eval_idx[i]][data.features[i]];
                 }
                 data.score = (double)score;
                 adj_preds.emplace_back(0);
@@ -376,8 +372,8 @@ void adj_import_test_data(int n_files, char* files[], int use_phase, double beta
     }
     std::cerr << std::endl;
     std::cerr << t << " data loaded" << std::endl;
-    for (int i = 0; i < ADJ_N_EVAL; ++i) {
-        for (int j = 0; j < adj_eval_sizes[i]; ++j) {
+    for (i = 0; i < ADJ_N_EVAL; ++i) {
+        for (j = 0; j < adj_eval_sizes[i]; ++j) {
             int n_data_feature = adj_alpha_occurance[i][j];
             if (adj_rev_idxes[i][j] != j)
                 n_data_feature += adj_alpha_occurance[i][adj_rev_idxes[i][j]];
