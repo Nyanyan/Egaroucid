@@ -5,44 +5,48 @@
 #include <fstream>
 #include "evaluation_definition.hpp"
 
-inline void adj_convert_idx(std::string str, std::ofstream *fout){
+inline void adj_convert_idx(std::string str, std::ofstream *fout, int n_discs){
     int i, j;
     uint64_t bk = 0, wt = 0;
     char elem;
-    Board b;
+    int n = 0;
     for (i = 0; i < HW; ++i){
         for (j = 0; j < HW; ++j){
             elem = str[i * HW + j];
             if (elem != '.'){
                 bk |= (uint64_t)(elem == '0') << (i * HW + j);
                 wt |= (uint64_t)(elem == '1') << (i * HW + j);
+                ++n;
             }
         }
     }
-    int ai_player, score;
-    ai_player = (str[65] == '0' ? 0 : 1);
-    if (ai_player == 0){
-        b.player = bk;
-        b.opponent = wt;
-    } else{
-        b.player = wt;
-        b.opponent = bk;
+    if (n == n_discs){
+        Board b;
+        int ai_player, score;
+        ai_player = (str[65] == '0' ? 0 : 1);
+        if (ai_player == 0){
+            b.player = bk;
+            b.opponent = wt;
+        } else{
+            b.player = wt;
+            b.opponent = bk;
+        }
+        score = stoi(str.substr(67));
+        if (ai_player == 1)
+            score = -score;
+        uint16_t idxes[ADJ_N_FEATURES];
+        adj_calc_features(&b, idxes);
+        int n_stones = pop_count_ull(b.player | b.opponent);
+        fout->write((char*)&n_stones, 2);
+        fout->write((char*)&ai_player, 2);
+        fout->write((char*)idxes, 2 * ADJ_N_FEATURES);
+        fout->write((char*)&score, 2);
     }
-    score = stoi(str.substr(67));
-    if (ai_player == 1)
-        score = -score;
-    uint16_t idxes[ADJ_N_FEATURES];
-    adj_calc_features(&b, idxes);
-    int n_stones = pop_count_ull(b.player | b.opponent);
-    fout->write((char*)&n_stones, 2);
-    fout->write((char*)&ai_player, 2);
-    fout->write((char*)idxes, 2 * ADJ_N_FEATURES);
-    fout->write((char*)&score, 2);
 }
 
 int main(int argc, char *argv[]){
-    if (argc < 5){
-        std::cerr << "input [input dir] [start file no] [n files] [output file]" << std::endl;
+    if (argc < 6){
+        std::cerr << "input [input dir] [start file no] [n files] [output file] [n_discs]" << std::endl;
         return 1;
     }
 
@@ -50,6 +54,7 @@ int main(int argc, char *argv[]){
 
     int start_file = atoi(argv[2]);
     int n_files = atoi(argv[3]);
+    int n_discs = atoi(argv[5]);
 
     std::ofstream fout;
     fout.open(argv[4], std::ios::out|std::ios::binary|std::ios::trunc);
@@ -71,7 +76,7 @@ int main(int argc, char *argv[]){
         std::string line;
         while (getline(ifs, line)){
             ++t;
-            adj_convert_idx(line, &fout);
+            adj_convert_idx(line, &fout, n_discs);
         }
         if (i % 20 == 19)
             std::cerr << std::endl;
