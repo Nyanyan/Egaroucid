@@ -50,6 +50,14 @@ void trs_convert_transcript(std::string transcript, std::ofstream *fout){
         board.board.move_board(&flip);
         board.player ^= 1;
     }
+    if (board.board.get_legal()){
+        return;
+    }
+    board.board.pass();
+    board.player ^= 1;
+    if (board.board.get_legal()){
+        return;
+    }
     int8_t score = board.board.score_player();
     int8_t rev_score = -score;
     for (Trs_Convert_transcript_info &datum: boards){
