@@ -22,9 +22,6 @@
     @brief evaluation pattern definition
 */
 #define N_PATTERNS 16
-#ifndef N_SYMMETRY_PATTERNS
-    #define N_SYMMETRY_PATTERNS 62
-#endif
 #define MAX_PATTERN_CELLS 10
 #define MAX_CELL_PATTERNS 13
 //#define MAX_SURROUND 100
