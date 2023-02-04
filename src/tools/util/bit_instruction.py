@@ -67,6 +67,12 @@ def rshift(src, s):
         set_bit(dst, bit + s, ext_bit(src, bit))
     return dst
 
+def and_1bits(src, bit_lst):
+    dst = ['' for _ in range(N_BIT)]
+    for bit in bit_lst:
+        set_bit(dst, bit, ext_bit(src, bit))
+    return dst
+
 def print_bit_line_head():
     print('|', end='')
     for i in range(8):
@@ -84,12 +90,14 @@ def print_bit_line(src, comment):
     print('|', end='')
     print('', comment)
 
-mul_lst = [0, 6, 11, 21]
-
 print_bit_line_head()
-res = mul_1bits(problem, mul_lst)
-print_bit_line(res, '[0, 6, 11, 21]')
-res1 = rshift(res, -11)
-print_bit_line(res1, '-11')
-res2 = rshift(res, -56)
-print_bit_line(res2, '-56')
+print_bit_line(problem, 'problem')
+
+res = mul_1bits(problem, [0, 6, 11, 21])
+print_bit_line(res, 'res mul [0, 6, 11, 21]')
+
+res1 = and_1bits(res, [11, 12, 13, 14, 15, 16, 56, 57, 58, 59, 60, 61])
+print_bit_line(res1, 'res1 mask')
+
+res2 = mul_1bits(res1, [0, 37])
+print_bit_line(res2, 'res2 mul [0, 37]')
