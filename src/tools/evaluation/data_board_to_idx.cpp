@@ -5,45 +5,6 @@
 #include <fstream>
 #include "evaluation_definition.hpp"
 
-inline void adj_convert_idx(std::string str, std::ofstream *fout, int n_discs){
-    int i, j;
-    uint64_t bk = 0, wt = 0;
-    char elem;
-    int n = 0;
-    for (i = 0; i < HW; ++i){
-        for (j = 0; j < HW; ++j){
-            elem = str[i * HW + j];
-            if (elem != '.'){
-                bk |= (uint64_t)(elem == '0') << (i * HW + j);
-                wt |= (uint64_t)(elem == '1') << (i * HW + j);
-                ++n;
-            }
-        }
-    }
-    if (n == n_discs){
-        Board b;
-        int ai_player, score;
-        ai_player = (str[65] == '0' ? 0 : 1);
-        if (ai_player == 0){
-            b.player = bk;
-            b.opponent = wt;
-        } else{
-            b.player = wt;
-            b.opponent = bk;
-        }
-        score = stoi(str.substr(67));
-        if (ai_player == 1)
-            score = -score;
-        uint16_t idxes[ADJ_N_FEATURES];
-        adj_calc_features(&b, idxes);
-        int n_stones = pop_count_ull(b.player | b.opponent);
-        fout->write((char*)&n_stones, 2);
-        fout->write((char*)&ai_player, 2);
-        fout->write((char*)idxes, 2 * ADJ_N_FEATURES);
-        fout->write((char*)&score, 2);
-    }
-}
-
 int main(int argc, char *argv[]){
     if (argc < 6){
         std::cerr << "input [input dir] [start file no] [n files] [output file] [n_discs]" << std::endl;
@@ -63,20 +24,37 @@ int main(int argc, char *argv[]){
         return 1;
     }
 
+    Board board;
+    int8_t player, score, policy;
+    int16_t player_short, score_short, n;
+    uint16_t idxes[ADJ_N_FEATURES];
+    FILE* fp;
+    std::string file;
     for (int i = start_file; i < n_files; ++i){
         std::cerr << "=";
-        std::ostringstream sout;
-        sout << std::setfill('0') << std::setw(7) << i;
-        std::string file_name = sout.str();
-        std::ifstream ifs(std::string(argv[1]) + "/" + file_name + ".txt");
-        if (ifs.fail()){
-            std::cerr << "evaluation file not exist" << std::endl;
-            return 1;
+        file = std::string(argv[1]) + "/" + std::to_string(i) + ".dat";
+        if (fopen_s(&fp, file.c_str(), "rb") != 0) {
+            std::cerr << "can't open " << file << std::endl;
+            continue;
         }
-        std::string line;
-        while (getline(ifs, line)){
-            ++t;
-            adj_convert_idx(line, &fout, n_discs);
+        while (true){
+            if (fread(&(board.player), 8, 1, fp) < 1)
+                break;
+            fread(&(board.opponent), 8, 1, fp);
+            fread(&player, 1, 1, fp);
+            fread(&policy, 1, 1, fp);
+            fread(&score, 1, 1, fp);
+            n = pop_count_ull(board.player | board.opponent);
+            if (n == n_discs){
+                player_short = player;
+                score_short = score;
+                adj_calc_features(&board, idxes);
+                fout.write((char*)&n, 2);
+                fout.write((char*)&player_short, 2);
+                fout.write((char*)idxes, 2 * ADJ_N_FEATURES);
+                fout.write((char*)&score_short, 2);
+                ++t;
+            }
         }
         if (i % 20 == 19)
             std::cerr << std::endl;
