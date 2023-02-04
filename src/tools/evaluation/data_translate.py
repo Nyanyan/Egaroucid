@@ -8,8 +8,11 @@ board_sub_dir_nums = [1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 15, 16, 99]
 
 for n_discs in range(4, 64):
     bin_dir = bin_root_dir + str(n_discs)
-    os.mkdir(bin_dir)
-    for board_sub_dir_num in board_sub_dir_nums:
+    try:
+        os.mkdir(bin_dir)
+    except:
+        pass
+    for board_sub_dir_num in [16]: #board_sub_dir_nums:
         input_dir = input_root_dir + 'records' + str(board_sub_dir_num)
         n_files_str = str(len(glob.glob(input_dir + '/*.dat')))
         out_file = bin_dir + '/' + str(board_sub_dir_num) + '.dat'

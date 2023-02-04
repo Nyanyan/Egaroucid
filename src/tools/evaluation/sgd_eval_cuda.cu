@@ -16,24 +16,12 @@
 
 #define ADJ_N_MAX_DATA 70000000
 #define ADJ_MAX_N_FILES 64
-#define ADJ_MAX_N_DATA_SAME_IDX 100000
 
-#define N_BLOCKS_SCORE 8192
-#define N_THREADS_SCORE 512
-
-#define N_BLOCKS_SUM 1
-#define N_THREADS_SUM 1
-
-#define N_BLOCKS_STEP 8192
-#define N_THREADS_STEP 128
-
-#define BATCH_THREAD_SIZE 256
-#define BATCH_BLOCK_SIZE 32
+#define BATCH_THREAD_SIZE 512
+#define BATCH_BLOCK_SIZE 128
 #define BATCH_SIZE (BATCH_THREAD_SIZE * BATCH_BLOCK_SIZE)
 #define N_FLOOR_UNIQUE_FEATURES 16 // floorpow2(ADJ_N_EVAL)
 #define MAX_BATCH_DO_IDX (BATCH_SIZE / N_FLOOR_UNIQUE_FEATURES)
-
-#define ADJ_IDX_UNDEFINED -1
 
 #define ADJ_PRINT_INTERVAL 16
 
@@ -42,11 +30,6 @@
 struct Adj_Data {
     uint16_t features[ADJ_N_FEATURES];
     double score;
-};
-
-struct Adj_Feature_to_data {
-    int idx;
-    Adj_Feature_to_data* next;
 };
 
 double adj_eval_arr[ADJ_N_EVAL][ADJ_MAX_EVALUATE_IDX];
@@ -63,21 +46,24 @@ __device__ double adj_predict_device(Adj_Data* device_test_data, double* device_
         eval_idx = device_strt_idxes[device_feature_to_eval_idx[i]] + device_test_data[problem_idx].features[i];
         res += device_eval_arr[eval_idx];
     }
-    if (res > (double)SCORE_MAX * ADJ_STEP)
-        res = (double)SCORE_MAX * ADJ_STEP;
-    else if (res < -(double)SCORE_MAX * ADJ_STEP)
-        res = -(double)SCORE_MAX * ADJ_STEP;
+    res /= ADJ_STEP;
+    if (res > (double)SCORE_MAX)
+        res = (double)SCORE_MAX;
+    else if (res < -(double)SCORE_MAX)
+        res = -(double)SCORE_MAX;
     return res;
 }
 
 inline double adj_predict(int problem_idx) {
     double res = 0.0;
-    for (int i = 0; i < ADJ_N_FEATURES; ++i)
+    for (int i = 0; i < ADJ_N_FEATURES; ++i) {
         res += adj_eval_arr[adj_feature_to_eval_idx[i]][adj_test_data[problem_idx].features[i]];
-    if (res > (double)SCORE_MAX * ADJ_STEP)
-        res = (double)SCORE_MAX * ADJ_STEP;
-    else if (res < -(double)SCORE_MAX * ADJ_STEP)
-        res = -(double)SCORE_MAX * ADJ_STEP;
+    }
+    res /= ADJ_STEP;
+    if (res > (double)SCORE_MAX)
+        res = (double)SCORE_MAX;
+    else if (res < -(double)SCORE_MAX)
+        res = -(double)SCORE_MAX;
     return res;
 }
 
@@ -88,9 +74,10 @@ __global__ void adj_device_batch(bool mae_mse_calc, int* device_batch_random_idx
         return;
     }
     int problem_idx = device_batch_random_idx[batch_idx];
-    int i, j, feature, feature_idx, eval_idx, alpha_idx;
-    double pred = adj_predict_device(device_test_data, device_eval_arr, device_feature_to_eval_idx, problem_idx, device_eval_strts) / ADJ_STEP;
+    int i, j, feature, eval_idx, global_eval_idx;
+    double pred = adj_predict_device(device_test_data, device_eval_arr, device_feature_to_eval_idx, problem_idx, device_eval_strts);
     double err = device_test_data[problem_idx].score - pred;
+    double diff_base = 2.0 * err * ADJ_STEP;
     if (mae_mse_calc) {
         device_mae_list[thread_block_idx] += abs(err);
         device_mse_list[thread_block_idx] += err * err;
@@ -100,12 +87,11 @@ __global__ void adj_device_batch(bool mae_mse_calc, int* device_batch_random_idx
             for (i = 0; i < ADJ_N_EVAL; ++i) {
                 feature = (thread_block_idx + i) % ADJ_N_EVAL; // to avoid access collision
                 for (j = 0; j < device_n_same_idx_in_feature[feature]; ++j) {
-                    feature_idx = device_feature_first_idx[feature] + j;
-                    eval_idx = device_test_data[problem_idx].features[feature_idx];
-                    alpha_idx = device_eval_strts[feature] + eval_idx;
-                    device_eval_arr[device_eval_strts[feature] + eval_idx] += 2.0 * device_alpha[alpha_idx] * err * ADJ_STEP;
+                    eval_idx = device_test_data[problem_idx].features[device_feature_first_idx[feature] + j];
+                    global_eval_idx = device_eval_strts[feature] + eval_idx;
+                    device_eval_arr[device_eval_strts[feature] + eval_idx] += device_alpha[global_eval_idx] * diff_base;
                     if (eval_idx != device_rev_idxes[device_eval_strts[feature] + eval_idx]) {
-                        device_eval_arr[device_eval_strts[feature] + device_rev_idxes[device_eval_strts[feature] + eval_idx]] += 2.0 * device_alpha[alpha_idx] * err * ADJ_STEP;
+                        device_eval_arr[device_eval_strts[feature] + device_rev_idxes[device_eval_strts[feature] + eval_idx]] += device_alpha[global_eval_idx] * diff_base;
                     }
                 }
             }
@@ -254,7 +240,7 @@ void calc_mse_mae(double* mse, double* mae) {
     *mse = 0.0;
     double err;
     for (int i = 0; i < (int)adj_test_data.size(); ++i) {
-        err = abs_error(adj_test_data[i].score - adj_predict(i) / ADJ_STEP);
+        err = abs_error(adj_test_data[i].score - adj_predict(i));
         *mae += err;
         *mse += err * err;
     }
