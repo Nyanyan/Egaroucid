@@ -46,7 +46,7 @@ else:
 '''
 
 if int(phase) < 20:
-    train_data_nums = [1, 2, 4, 6, 7, 8, 9, 10, 11, 15, 16, 99]
+    train_data_nums = [1, 2, 4, 6, 7, 8, 9, 11, 15, 16, 99]
 else:
     train_data_nums = [4, 6, 7, 8, 9, 10, 11, 15, 16, 99]
 
