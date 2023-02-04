@@ -44,7 +44,7 @@ void trs_convert_transcript(std::string transcript, std::ofstream *fout){
         boards.emplace_back(board);
         calc_flip(&flip, &board.board, board.policy);
         if (flip.flip == 0ULL){
-            std::cerr << "illegal move found" << std::endl;
+            std::cerr << "illegal move found in move " << i / 2 << " in " << transcript << std::endl;
             return;
         }
         board.board.move_board(&flip);
