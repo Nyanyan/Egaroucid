@@ -20,9 +20,9 @@ else:
 
 train_data = [str(elem) + '.dat' for elem in train_data_nums]
 
-train_dir = './../../../train_data/bin_data/20230204/' + str(4 + int(phase)) + '/'
-model_dir = './../../../model/20230204_1/'
-#model_dir = './../../../model/nomodel/'
+train_dir = './../../../train_data/bin_data/20230204_1/' + str(4 + int(phase)) + '/'
+#model_dir = './../../../model/20230204_1/'
+model_dir = './../../../model/nomodel/'
 
 additional_params = ''
 for tfile in train_data:
