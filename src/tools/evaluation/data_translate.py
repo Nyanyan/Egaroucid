@@ -11,7 +11,7 @@ for n_discs in range(4, 64):
     os.mkdir(bin_dir)
     for board_sub_dir_num in board_sub_dir_nums:
         input_dir = input_root_dir + 'records' + str(board_sub_dir_num)
-        n_files_str = str(len(glob.glob(input_dir)))
+        n_files_str = str(len(glob.glob(input_dir + '/*.txt')))
         out_file = bin_dir + '/' + str(board_sub_dir_num) + '.dat'
         cmd = 'data_board_to_idx.out ' + input_dir + ' 0 ' + n_files_str + ' ' + out_file + ' ' + str(n_discs)
         print(n_discs, board_sub_dir_num)

@@ -12,7 +12,7 @@ else:
     minute = '5'
     second = '0'
     beta = '0.0113'
-
+'''
 if int(phase) < 20:
     train_data = [
         'data5_01.dat',
@@ -43,8 +43,16 @@ else:
         'data5_16.dat',
         'data5_99.dat'
     ]
+'''
 
-train_dir = './../../../train_data/bin_data/20230202/'
+if int(phase) < 20:
+    train_data_nums = [1, 2, 4, 6, 7, 8, 9, 10, 11, 15, 16, 99]
+else:
+    train_data_nums = [4, 6, 7, 8, 9, 10, 11, 15, 16, 99]
+
+train_data = [str(elem) + '.dat' for elem in train_data_nums]
+
+train_dir = './../../../train_data/bin_data/20230204/' + str(4 + int(phase)) + '/'
 model_dir = './../../../model/20230204/'
 #model_dir = './../../../model/nomodel/'
 
