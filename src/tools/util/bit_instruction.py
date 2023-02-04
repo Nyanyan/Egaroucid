@@ -1,5 +1,36 @@
+BLACK     = '\033[30m'
+RED       = '\033[31m'
+GREEN     = '\033[32m'
+YELLOW    = '\033[33m'
+BLUE      = '\033[34m'
+PURPLE    = '\033[35m'
+CYAN      = '\033[36m'
+WHITE     = '\033[37m'
+END       = '\033[0m'
+
+def red(output):
+    return RED + output + END
+
+def green(output):
+    return GREEN + output + END
+
+def yellow(output):
+    return YELLOW + output + END
+
+def blue(output):
+    return BLUE + output + END
+
+def purple(output):
+    return PURPLE + output + END
+
+def cyan(output):
+    return CYAN + output + END
+
+def white(output):
+    return WHITE + output + END
+
 N_BIT = 64
-UNKNOWN = '-'
+UNKNOWN = '?'
 '''
 problem = [
      '',  '',  '',  '',  '',  '',  '',  '',
@@ -12,28 +43,6 @@ problem = [
      '',  '',  '',  '',  '',  '',  '',  ''
 ]
 '''
-'''
-problem = [
-     '',  '',  '',  '',  '', '2', '1', '0',
-     '',  '',  '',  '',  '',  '', '4', '3',
-     '',  '',  '',  '',  '',  '',  '', '5',
-     '',  '',  '',  '',  '',  '',  '',  '',
-     '',  '',  '',  '',  '',  '',  '',  '',
-    'f',  '',  '',  '',  '',  '',  '',  '',
-    'd', 'e',  '',  '',  '',  '',  '',  '',
-    'a', 'b', 'c',  '',  '',  '',  '',  ''
-]
-'''
-problem = [
-     '',  '',  '',  '',  '', '2', '1', '0',
-     '',  '',  '',  '',  '',  '', '4', '3',
-     '',  '',  '',  '',  '',  '',  '', '5',
-     '',  '',  '',  '',  '',  '',  '',  '',
-     '',  '',  '',  '',  '',  '',  '',  '',
-     '',  '',  '',  '',  '',  '',  '', 'f',
-     '',  '',  '',  '',  '',  '', 'e', 'd',
-     '',  '',  '',  '',  '', 'c', 'b', 'a'
-]
 
 def ext_bit(src, bit):
     return src[N_BIT - 1 - bit]
@@ -84,11 +93,26 @@ def print_bit_line(src, comment):
     print('|', end='')
     for rbit in range(N_BIT):
         if src[rbit]:
-            print(src[rbit], end='')
+            if src[rbit] == UNKNOWN:
+                print(red(src[rbit]), end='')
+            else:
+                print(green(src[rbit]), end='')
         else:
-            print(' ', end='')
+            print('.', end='')
     print('|', end='')
     print('', comment)
+
+
+problem = [
+     '',  '',  '',  '',  '', '2', '1', '0',
+     '',  '',  '',  '',  '',  '', '4', '3',
+     '',  '',  '',  '',  '',  '',  '', '5',
+     '',  '',  '',  '',  '',  '',  '',  '',
+     '',  '',  '',  '',  '',  '',  '',  '',
+     '',  '',  '',  '',  '',  '',  '', 'f',
+     '',  '',  '',  '',  '',  '', 'e', 'd',
+     '',  '',  '',  '',  '', 'c', 'b', 'a'
+]
 
 print_bit_line_head()
 print_bit_line(problem, 'problem')
@@ -99,5 +123,5 @@ print_bit_line(res, 'res mul [0, 6, 11, 21]')
 res1 = and_1bits(res, [11, 12, 13, 14, 15, 16, 56, 57, 58, 59, 60, 61])
 print_bit_line(res1, 'res1 mask')
 
-res2 = mul_1bits(res1, [0, 37])
-print_bit_line(res2, 'res2 mul [0, 37]')
+res2 = mul_1bits(res1, [0, 29])
+print_bit_line(res2, 'res2 mul [0, 29]')
