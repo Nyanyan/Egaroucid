@@ -4,19 +4,21 @@
 /*
     @brief evaluation pattern definition
 */
-#define ADJ_N_PATTERNS 16
-#define ADJ_N_SYMMETRY_PATTERNS 46
+#define ADJ_N_PATTERNS 12
 #define ADJ_N_ADDITIONAL_EVALS 3
-#define ADJ_N_CANPUT_PATTERNS 4
+#define ADJ_N_MOBILITY_PATTERNS 1
+#define ADJ_N_SYMMETRY_PATTERNS 46
 #define ADJ_MAX_PATTERN_CELLS 10
 #define ADJ_MAX_CELL_PATTERNS 8
 #define ADJ_MAX_SURROUND 64
 #define ADJ_MAX_CANPUT 35
 #define ADJ_MAX_STONE_NUM 65
+#define ADJ_MAX_MOBILITY_PATTERN 64
+#define ADJ_MOBILITY_PATTERN_CELLS 6
 #define ADJ_MAX_EVALUATE_IDX 59049
 
-#define ADJ_N_EVAL (12 + 3 + 4)
-#define ADJ_N_FEATURES (46 + 3 + 16)
+#define ADJ_N_EVAL (12 + 3 + 1)
+#define ADJ_N_FEATURES (46 + 3 + 4)
 
 #define ADJ_N_PHASES 60
 #define ADJ_N_PHASE_DISCS (60 / ADJ_N_PHASES)
@@ -28,9 +30,8 @@
 
     Raw score is STEP times larger than the real score.
 */
-#define ADJ_STEP 256
-#define ADJ_STEP_2 128
-#define ADJ_STEP_SHIFT 8
+#define ADJ_STEP 128
+#define ADJ_STEP_2 64
 
 #ifndef PNO
     /*
@@ -246,6 +247,9 @@ constexpr int adj_rev_patterns[ADJ_N_PATTERNS][ADJ_MAX_PATTERN_CELLS] = {
     {0, 5, 7, 8, 9, 1, 6, 2, 3, 4}  // 11 narrow triangle
 };
 
+constexpr int adj_rev_mobility_patterns[ADJ_N_MOBILITY_PATTERNS][ADJ_MOBILITY_PATTERN_CELLS] = {
+    {0, 3, 5, 1, 4, 2}  // mobility triangle
+};
 
 /*
     @brief definition of patterns in evaluation function
@@ -346,7 +350,7 @@ constexpr int adj_eval_sizes[ADJ_N_EVAL] = {
     ADJ_MAX_SURROUND * ADJ_MAX_SURROUND, 
     ADJ_MAX_CANPUT * ADJ_MAX_CANPUT, 
     ADJ_MAX_STONE_NUM * ADJ_MAX_STONE_NUM,
-    P44 * P44, P44 * P44, P44 * P44, P44 * P44
+    ADJ_MAX_MOBILITY_PATTERN * ADJ_MAX_MOBILITY_PATTERN
 };
 
 constexpr int adj_feature_to_eval_idx[ADJ_N_FEATURES] = {
@@ -365,10 +369,7 @@ constexpr int adj_feature_to_eval_idx[ADJ_N_FEATURES] = {
     12, 
     13, 
     14,
-    15, 15, 15, 15, 
-    16, 16, 16, 16, 
-    17, 17, 17, 17, 
-    18, 18, 18, 18
+    15, 15, 15, 15
 };
 
 /*
@@ -398,6 +399,39 @@ int adj_calc_num_feature(Board *board){
     return pop_count_ull(board->player) * ADJ_MAX_STONE_NUM + pop_count_ull(board->opponent);
 }
 
+void adj_calc_mobility_features(Board *board, uint16_t res[], int *idx){
+    uint64_t p = calc_legal(board->player, board->opponent);
+    uint64_t o = calc_legal(board->opponent, board->player);
+    uint64_t pp = p & 0x0703010000010307ULL;
+    uint64_t oo = o & 0x0703010000010307ULL;
+    pp *= 0x0000000000200841ULL;
+    oo *= 0x0000000000200841ULL;
+    pp &= 0x3F0000000001F800ULL;
+    oo &= 0x3F0000000001F800ULL;
+    uint16_t p1, p2, o1, o2;
+    p1 = pp >> 56;
+    p2 = pp >> 11;
+    o1 = oo >> 56;
+    o2 = oo >> 11;
+    res[(*idx)++] = p1 * ADJ_MAX_MOBILITY_PATTERN + o1;
+    res[(*idx)++] = p2 * ADJ_MAX_MOBILITY_PATTERN + o2;
+
+    p = horizontal_mirror(p);
+    o = horizontal_mirror(o);
+    pp = p & 0x0703010000010307ULL;
+    oo = o & 0x0703010000010307ULL;
+    pp *= 0x0000000000200841ULL;
+    oo *= 0x0000000000200841ULL;
+    pp &= 0x3F0000000001F800ULL;
+    oo &= 0x3F0000000001F800ULL;
+    p1 = pp >> 56;
+    p2 = pp >> 11;
+    o1 = oo >> 56;
+    o2 = oo >> 11;
+    res[(*idx)++] = p1 * ADJ_MAX_MOBILITY_PATTERN + o1;
+    res[(*idx)++] = p2 * ADJ_MAX_MOBILITY_PATTERN + o2;
+}
+
 inline int adj_create_canput_line_h(uint64_t b, uint64_t w, int t){
     return (((w >> (HW * t)) & 0b11111111) << HW) | ((b >> (HW * t)) & 0b11111111);
 }
@@ -415,34 +449,6 @@ inline int adj_pick_pattern(const uint_fast8_t b_arr[], int pattern_idx){
     return res;
 }
 
-void adj_calc_legal_features(Board *board, uint16_t res[], int *idx){
-    uint64_t p, o;
-    p = calc_legal(board->player, board->opponent);
-    o = calc_legal(board->opponent, board->player);
-    uint8_t *ph = (uint8_t*)&p;
-    uint8_t *oh = (uint8_t*)&o;
-    uint64_t p90 = black_line_mirror(p);
-    uint64_t o90 = black_line_mirror(o);
-    uint8_t *pv = (uint8_t*)&p90;
-    uint8_t *ov = (uint8_t*)&o90;
-    res[(*idx)++] = ((int)oh[0]) * P44 + ph[0];
-    res[(*idx)++] = ((int)oh[7]) * P44 + ph[7];
-    res[(*idx)++] = ((int)ov[0]) * P44 + pv[0];
-    res[(*idx)++] = ((int)ov[7]) * P44 + pv[7];
-    res[(*idx)++] = ((int)oh[1]) * P44 + ph[1];
-    res[(*idx)++] = ((int)oh[6]) * P44 + ph[6];
-    res[(*idx)++] = ((int)ov[1]) * P44 + pv[1];
-    res[(*idx)++] = ((int)ov[6]) * P44 + pv[6];
-    res[(*idx)++] = ((int)oh[2]) * P44 + ph[2];
-    res[(*idx)++] = ((int)oh[5]) * P44 + ph[5];
-    res[(*idx)++] = ((int)ov[2]) * P44 + pv[2];
-    res[(*idx)++] = ((int)ov[5]) * P44 + pv[5];
-    res[(*idx)++] = ((int)oh[3]) * P44 + ph[3];
-    res[(*idx)++] = ((int)oh[4]) * P44 + ph[4];
-    res[(*idx)++] = ((int)ov[3]) * P44 + pv[3];
-    res[(*idx)++] = ((int)ov[4]) * P44 + pv[4];
-}
-
 void adj_calc_features(Board *board, uint16_t res[]){
     uint_fast8_t b_arr[HW2];
     board->translate_to_arr_player(b_arr);
@@ -452,7 +458,7 @@ void adj_calc_features(Board *board, uint16_t res[]){
     res[idx++] = adj_calc_surround_feature(board);
     res[idx++] = adj_calc_legal_feature(board);
     res[idx++] = adj_calc_num_feature(board);
-    adj_calc_legal_features(board, res, &idx);
+    adj_calc_mobility_features(board, res, &idx);
 }
 
 int adj_pick_digit3(int num, int d, int n_digit){
@@ -470,12 +476,12 @@ uint16_t adj_calc_rev_idx(int feature, int idx){
         for (int i = 0; i < adj_pattern_n_cells[feature]; ++i){
             res += adj_pick_digit3(idx, adj_rev_patterns[feature][i], adj_pattern_n_cells[feature]) * adj_pow3[adj_pattern_n_cells[feature] - 1 - i];
         }
-    } else if (feature < ADJ_N_PATTERNS + ADJ_N_ADDITIONAL_EVALS) {
+    } else if (feature < ADJ_N_PATTERNS + ADJ_N_ADDITIONAL_EVALS){
         res = idx;
     } else{
-        for (int i = 0; i < 8; ++i){
-            res |= adj_pick_digit2(idx, i) << (7 - i);
-            res |= adj_pick_digit2(idx, i + 8) << (15 - i);
+        for (int i = 0; i < ADJ_MOBILITY_PATTERN_CELLS; ++i){
+            res |= adj_pick_digit2(idx, i) << adj_rev_mobility_patterns[0][i];
+            res |= adj_pick_digit2(idx, i + ADJ_MOBILITY_PATTERN_CELLS) << (adj_rev_mobility_patterns[0][i] + ADJ_MOBILITY_PATTERN_CELLS);
         }
     }
     return res;

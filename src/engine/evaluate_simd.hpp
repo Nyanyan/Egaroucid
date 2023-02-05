@@ -34,7 +34,7 @@
 #define MAX_SURROUND 64
 #define MAX_CANPUT 35
 #define MAX_STONE_NUM 65
-#define N_CANPUT_PATTERNS 1
+#define N_CANPUT_PATTERNS 4
 #define MAX_EVALUATE_IDX 59049
 #define N_PATTERN_PARAMS 285282
 #define MOBILITY_PATTERN_SIZE 64
@@ -44,9 +44,9 @@
 
     Raw score is STEP times larger than the real score.
 */
-#define STEP 128
-#define STEP_2 64
-//#define STEP_SHIFT 7
+#define STEP 256
+#define STEP_2 128
+//#define STEP_SHIFT 8
 
 /*
     @brief 3 ^ N definition
@@ -630,23 +630,29 @@ inline int calc_pattern_diff(const int phase_idx, Search *search){
 */
 
 inline int calc_mobility_pattern(const int phase_idx, const uint64_t player_mobility, const uint64_t opponent_mobility){
-    uint64_t pmr = horizontal_mirror(player_mobility);
-    uint64_t omr = horizontal_mirror(opponent_mobility);
-    __m256i m = _mm256_set_epi64x(player_mobility, opponent_mobility, pmr, omr);
-    m = _mm256_and_si256(m, _mm256_set1_epi64x(0x0703010000010307ULL));
-    m = _mm256_mullo_epi64(m, _mm256_set1_epi64x(0x0000000000200841ULL));
-    m = _mm256_and_si256(m, _mm256_set1_epi64x(0x3F0000000001F800ULL));
-    m = _mm256_mullo_epi64(m, _mm256_set1_epi64x(0x0000000020000001ULL));
-    m = _mm256_and_si256(m, _mm256_set1_epi64x(0x3F003F0000000000ULL));
-    m = _mm256_srl_epi64(m, _mm_set_epi32(0, 8, 32, 40));
-    __m128i m128 = _mm_or_si128(_mm256_castsi256_si128(m), _mm256_extracti128_si256(m, 1));
-    uint64_t m64 = _mm_extract_epi64(m128, 0) | _mm_extract_epi64(m128, 1);
-    uint8_t *m8 = (uint8_t*)&m64;
+    uint8_t *ph = (uint8_t*)&player_mobility;
+    uint8_t *oh = (uint8_t*)&opponent_mobility;
+    uint64_t p90 = rotate_90(player_mobility);
+    uint64_t o90 = rotate_90(opponent_mobility);
+    uint8_t *pv = (uint8_t*)&p90;
+    uint8_t *ov = (uint8_t*)&o90;
     return 
-        eval_mobility_pattern[phase_idx][0][m8[0]][m8[1]] + 
-        eval_mobility_pattern[phase_idx][0][m8[2]][m8[3]] + 
-        eval_mobility_pattern[phase_idx][0][m8[4]][m8[5]] + 
-        eval_mobility_pattern[phase_idx][0][m8[6]][m8[7]];
+        eval_mobility_pattern[phase_idx][0][oh[0]][ph[0]] + 
+        eval_mobility_pattern[phase_idx][0][oh[7]][ph[7]] + 
+        eval_mobility_pattern[phase_idx][0][ov[0]][pv[0]] + 
+        eval_mobility_pattern[phase_idx][0][ov[7]][pv[7]] + 
+        eval_mobility_pattern[phase_idx][1][oh[1]][ph[1]] + 
+        eval_mobility_pattern[phase_idx][1][oh[6]][ph[6]] + 
+        eval_mobility_pattern[phase_idx][1][ov[1]][pv[1]] + 
+        eval_mobility_pattern[phase_idx][1][ov[6]][pv[6]] + 
+        eval_mobility_pattern[phase_idx][2][oh[2]][ph[2]] + 
+        eval_mobility_pattern[phase_idx][2][oh[5]][ph[5]] + 
+        eval_mobility_pattern[phase_idx][2][ov[2]][pv[2]] + 
+        eval_mobility_pattern[phase_idx][2][ov[5]][pv[5]] + 
+        eval_mobility_pattern[phase_idx][3][oh[3]][ph[3]] + 
+        eval_mobility_pattern[phase_idx][3][oh[4]][ph[4]] + 
+        eval_mobility_pattern[phase_idx][3][ov[3]][pv[3]] + 
+        eval_mobility_pattern[phase_idx][3][ov[4]][pv[4]];
 }
 
 /*
