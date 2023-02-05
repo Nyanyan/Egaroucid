@@ -88,13 +88,13 @@ def create_html(dr):
         if lang[0] == elements_dir:
             continue
         if dr[3:]:
-            alternate += '<link rel="alternate" hreflang="' + lang[0] + '" href="' + main_page_url + lang[0] + '/' + dr[3:] + '" />\n'
+            alternate += '<link rel="alternate" hreflang="' + lang[0] + '" href="' + main_page_url + lang[0] + '/' + dr[3:] + '/"/>\n'
         else:
-            alternate += '<link rel="alternate" hreflang="' + lang[0] + '" href="' + main_page_url + lang[0] + '" />\n'
+            alternate += '<link rel="alternate" hreflang="' + lang[0] + '" href="' + main_page_url + lang[0] + '/"/>\n'
     if dr[3:]:
-        alternate += '<link rel="alternate" hreflang="x-default" href="' + main_page_url + 'en/' + dr[3:] + '">\n'
+        alternate += '<link rel="alternate" hreflang="x-default" href="' + main_page_url + 'en/' + dr[3:] + '/">\n'
     else:
-        alternate += '<link rel="alternate"  hreflang="x-default" href="' + main_page_url + 'en">\n'
+        alternate += '<link rel="alternate"  hreflang="x-default" href="' + main_page_url + 'en/"/>\n'
     with open(dr + '/title.txt', 'r', encoding='utf-8') as f:
         page_title = f.readline()
     with open(dr + '/index.md', 'r', encoding='utf-8') as f:
@@ -151,9 +151,10 @@ def create_html(dr):
         modified_dr = dr[len(original_lang) + 1:]
         lang_link = main_page_url + lang_dr + '/' + modified_dr
         html += link21 + lang_link + link22 + lang_name + link23 + ' \n'
-    additional_head = '<meta property="og:url" content="' + this_page_url + '" />\n'
+    additional_head = '<meta property="og:url" content="' + this_page_url + '/" />\n'
     additional_head += '<meta property="og:title" content="' + page_title + '" />\n'
     additional_head += '<meta property="og:description" content="' + main_page_description + '" />\n'
+    additional_head += '<link rel="canonical" href="' + this_page_url + '/">\n'
     try:
         with open(dr + '/additional_head.html', 'r', encoding='utf-8') as f:
             additional_head += f.read()
