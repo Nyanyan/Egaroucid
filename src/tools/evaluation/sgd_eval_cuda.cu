@@ -17,7 +17,11 @@
 #define ADJ_N_MAX_DATA 70000000
 #define ADJ_MAX_N_FILES 64
 
-#define BATCH_THREAD_SIZE 512
+#define ADJ_N_MIN_DATA_FEATURES 1
+
+#define ADJ_EVAL_MAX 16380
+
+#define BATCH_THREAD_SIZE 256
 #define BATCH_BLOCK_SIZE 128
 #define BATCH_SIZE (BATCH_THREAD_SIZE * BATCH_BLOCK_SIZE)
 #define N_FLOOR_UNIQUE_FEATURES 16 // floorpow2(ADJ_N_EVAL)
@@ -89,9 +93,9 @@ __global__ void adj_device_batch(bool mae_mse_calc, int* device_batch_random_idx
                 for (j = 0; j < device_n_same_idx_in_feature[feature]; ++j) {
                     eval_idx = device_test_data[problem_idx].features[device_feature_first_idx[feature] + j];
                     global_eval_idx = device_eval_strts[feature] + eval_idx;
-                    device_eval_arr[device_eval_strts[feature] + eval_idx] += device_alpha[global_eval_idx] * diff_base;
-                    if (eval_idx != device_rev_idxes[device_eval_strts[feature] + eval_idx]) {
-                        device_eval_arr[device_eval_strts[feature] + device_rev_idxes[device_eval_strts[feature] + eval_idx]] += device_alpha[global_eval_idx] * diff_base;
+                    device_eval_arr[global_eval_idx] += device_alpha[global_eval_idx] * diff_base;
+                    if (eval_idx != device_rev_idxes[global_eval_idx]) {
+                        device_eval_arr[device_eval_strts[feature] + device_rev_idxes[global_eval_idx]] += device_alpha[global_eval_idx] * diff_base;
                     }
                 }
             }
@@ -248,6 +252,19 @@ void calc_mse_mae(double* mse, double* mae) {
     *mae /= adj_test_data.size();
 }
 
+void adj_eval_round() {
+    for (int i = 0; i < ADJ_N_EVAL; ++i) {
+        for (int j = 0; j < adj_eval_sizes[i]; ++j) {
+            adj_eval_arr[i][j] = round(adj_eval_arr[i][j]);
+            if (adj_eval_arr[i][j] >= ADJ_EVAL_MAX) {
+                adj_eval_arr[i][j] = ADJ_EVAL_MAX;
+            } else if (adj_eval_arr[i][j] <= -ADJ_EVAL_MAX) {
+                adj_eval_arr[i][j] = -ADJ_EVAL_MAX;
+            }
+        }
+    }
+}
+
 void adj_stochastic_gradient_descent(uint64_t tl, int phase) {
     int n_eval_params = 0;
     for (int i = 0; i < ADJ_N_EVAL; ++i) {
@@ -293,6 +310,7 @@ void adj_stochastic_gradient_descent(uint64_t tl, int phase) {
     }
     std::cerr << std::endl << "done" << std::endl;
     adj_get_eval_arr(device_eval_arr);
+    adj_eval_round();
     calc_mse_mae(&mse, &mae);
     std::cout << phase << " " << tl / 1000 << " " << adj_test_data.size() << " " << t << " " << mse << " " << mae << std::endl;
     cudaFree(device_test_data);
@@ -377,7 +395,7 @@ void adj_import_test_data(int n_files, char* files[], int use_phase, double beta
             int n_data_feature = adj_alpha_occurance[i][j];
             if (adj_rev_idxes[i][j] != j)
                 n_data_feature += adj_alpha_occurance[i][adj_rev_idxes[i][j]];
-            adj_alpha[i][j] = beta / (double)std::max(50, n_data_feature);
+            adj_alpha[i][j] = beta / (double)std::max(ADJ_N_MIN_DATA_FEATURES, n_data_feature);
         }
     }
 }
