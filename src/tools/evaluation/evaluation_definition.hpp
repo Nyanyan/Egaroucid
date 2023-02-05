@@ -30,9 +30,8 @@
 
     Raw score is STEP times larger than the real score.
 */
-#define ADJ_STEP 256
-#define ADJ_STEP_2 128
-#define ADJ_STEP_SHIFT 8
+#define ADJ_STEP 128
+#define ADJ_STEP_2 64
 
 #ifndef PNO
     /*

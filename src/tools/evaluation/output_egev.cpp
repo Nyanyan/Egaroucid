@@ -37,6 +37,8 @@ int main(int argc, char* argv[]){
         }
         std::cerr << phase << " " << t << std::endl;
     }
+    std::cerr << "min " << min_elem << std::endl;
+    std::cerr << "max " << max_elem << std::endl;
     std::cerr << "done" << std::endl;
 
     return 0;

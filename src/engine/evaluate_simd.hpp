@@ -31,8 +31,6 @@
 #define SIMD_EVAL_OFFSET 16384
 #define MAX_PATTERN_CELLS 10
 #define MAX_CELL_PATTERNS 8
-//#define MAX_SURROUND 100
-//#define MAX_CANPUT 50
 #define MAX_SURROUND 64
 #define MAX_CANPUT 35
 #define MAX_STONE_NUM 65
@@ -46,9 +44,9 @@
 
     Raw score is STEP times larger than the real score.
 */
-#define STEP 256
-#define STEP_2 128
-#define STEP_SHIFT 8
+#define STEP 128
+#define STEP_2 64
+//#define STEP_SHIFT 7
 
 /*
     @brief 3 ^ N definition
@@ -455,11 +453,11 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
             for (k = 0; k < pow3[pattern_sizes[j]]; ++k){
                 if (pattern_arr[0][phase_idx][pattern_starts[j] + k] < -SIMD_EVAL_OFFSET){
                     pattern_arr[0][phase_idx][pattern_starts[j] + k] = -SIMD_EVAL_OFFSET;
-                    std::cerr << "[ERROR] evaluation value too low. you can ignore this error." << std::endl;
+                    std::cerr << "[ERROR] evaluation value too low. you can ignore this error. phase " << phase_idx << " feature " << j << " index " << k << " found " << pattern_arr[0][phase_idx][pattern_starts[j] + k] << std::endl;
                 }
                 if (pattern_arr[0][phase_idx][pattern_starts[j] + k] >= 0x7FFF - SIMD_EVAL_OFFSET){
                     pattern_arr[0][phase_idx][pattern_starts[j] + k] = 0x7FFF - SIMD_EVAL_OFFSET - 1;
-                    std::cerr << "[ERROR] evaluation value too high. you can ignore this error." << std::endl;
+                    std::cerr << "[ERROR] evaluation value too high. you can ignore this error. phase " << phase_idx << " feature " << j << " index " << k << " found " << pattern_arr[0][phase_idx][pattern_starts[j] + k] << std::endl;
                 }
                 pattern_arr[0][phase_idx][pattern_starts[j] + k] += SIMD_EVAL_OFFSET;
             }
