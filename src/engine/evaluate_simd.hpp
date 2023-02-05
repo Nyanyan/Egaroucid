@@ -37,7 +37,7 @@
 #define N_CANPUT_PATTERNS 4
 #define MAX_EVALUATE_IDX 59049
 #define N_PATTERN_PARAMS 285282
-#define MOBILITY_PATTERN_SIZE 64
+#define MOBILITY_PATTERN_SIZE 256
 
 /*
     @brief value definition
@@ -632,8 +632,8 @@ inline int calc_pattern_diff(const int phase_idx, Search *search){
 inline int calc_mobility_pattern(const int phase_idx, const uint64_t player_mobility, const uint64_t opponent_mobility){
     uint8_t *ph = (uint8_t*)&player_mobility;
     uint8_t *oh = (uint8_t*)&opponent_mobility;
-    uint64_t p90 = rotate_90(player_mobility);
-    uint64_t o90 = rotate_90(opponent_mobility);
+    uint64_t p90 = black_line_mirror(player_mobility);
+    uint64_t o90 = black_line_mirror(opponent_mobility);
     uint8_t *pv = (uint8_t*)&p90;
     uint8_t *ov = (uint8_t*)&o90;
     return 
