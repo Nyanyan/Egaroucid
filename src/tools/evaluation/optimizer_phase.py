@@ -9,24 +9,30 @@ if len(sys.argv) > 3:
     beta = str(sys.argv[5])
 else:
     hour = '0'
-    minute = '2'
-    second = '0'
+    minute = '0'
+    second = '30'
     beta = '0.01'
 
-if int(phase) < 20:
+if int(phase) < 10:
     train_data_nums = [1, 2, 3, 4, 6, 7, 8, 9, 11, 15, 16, 99]
 else:
     train_data_nums = [3, 4, 6, 7, 8, 9, 10, 11, 15, 16, 99]
 
 train_data = [str(elem) + '.dat' for elem in train_data_nums]
 
-train_dir = './../../../train_data/bin_data/20230205/' + str(4 + int(phase)) + '/'
-model_dir = './../../../model/20230205_2/'
-#model_dir = './../../../model/nomodel/'
+train_root_dir = './../../../train_data/bin_data/20230205/'
+
+#train_dirs = [train_root_dir + str(4 + elem) + '/' for elem in range(int(phase) * 2, int(phase) * 2 + 2)]
+train_dirs = [train_root_dir + str(4 + int(phase)) + '/']
+
+#train_dir = './../../../train_data/bin_data/20230205/' + str(4 + int(phase)) + '/'
+#model_dir = './../../../model/20230205_2/'
+model_dir = './../../../model/nomodel/'
 
 additional_params = ''
 for tfile in train_data:
-    additional_params += ' ' + train_dir + tfile
+    for train_dir in train_dirs:
+        additional_params += ' ' + train_dir + tfile
 
 #executable = 'gd_eval.out'
 executable = 'sgd_eval_cuda.exe'

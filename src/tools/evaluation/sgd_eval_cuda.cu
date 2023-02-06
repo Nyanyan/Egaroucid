@@ -372,7 +372,7 @@ void adj_import_eval(std::string file) {
 void adj_import_test_data(int n_files, char* files[], int use_phase, double beta) {
     int t = 0, i, j;
     FILE* fp;
-    int16_t n_discs, phase, score, player;
+    int16_t n_discs, score, player;
     Adj_Data data;
     for (i = 0; i < ADJ_N_EVAL; ++i) {
         for (j = 0; j < adj_eval_sizes[i]; ++j)
@@ -387,21 +387,21 @@ void adj_import_test_data(int n_files, char* files[], int use_phase, double beta
         while (true) {
             if (fread(&n_discs, 2, 1, fp) < 1)
                 break;
-            phase = (n_discs - 4) / ADJ_N_PHASE_DISCS;
+            //phase = (n_discs - 4) / ADJ_N_PHASE_DISCS;
             fread(&player, 2, 1, fp);
             fread(&(data.features[0]), 2, ADJ_N_FEATURES, fp);
             fread(&score, 2, 1, fp);
-            if (phase == use_phase) {
-                if ((t & 0b1111111111111111) == 0b1111111111111111)
-                    std::cerr << '\r' << t;
-                for (i = 0; i < ADJ_N_FEATURES; ++i) {
-                    ++adj_alpha_occurance[adj_feature_to_eval_idx[i]][data.features[i]];
-                }
-                data.score = (double)score;
-                adj_preds.emplace_back(0);
-                adj_test_data.emplace_back(data);
-                ++t;
+            //if (phase == use_phase) {
+            if ((t & 0b1111111111111111) == 0b1111111111111111)
+                std::cerr << '\r' << t;
+            for (i = 0; i < ADJ_N_FEATURES; ++i) {
+                ++adj_alpha_occurance[adj_feature_to_eval_idx[i]][data.features[i]];
             }
+            data.score = (double)score;
+            adj_preds.emplace_back(0);
+            adj_test_data.emplace_back(data);
+            ++t;
+            //}
         }
         std::cerr << '\r' << t << std::endl;
     }
