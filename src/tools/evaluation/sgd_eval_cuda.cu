@@ -68,7 +68,7 @@ inline double adj_predict(int problem_idx) {
     return res;
 }
 
-__global__ void adj_device_batch(bool mae_mse_calc, int* device_batch_random_idx, int* device_n_same_idx_in_feature, int* device_feature_first_idx, uint16_t* device_rev_idxes, double* device_eval_arr, double* device_alpha, int* device_eval_strts, Adj_Data* device_test_data, int n_test_data, int batch_first_idx, int* device_feature_to_eval_idx, double* device_mae_list, double* device_mse_list) {
+__global__ void adj_device_batch(double additional_learning_rate, bool mae_mse_calc, int* device_batch_random_idx, int* device_n_same_idx_in_feature, int* device_feature_first_idx, uint16_t* device_rev_idxes, double* device_eval_arr, double* device_alpha, int* device_eval_strts, Adj_Data* device_test_data, int n_test_data, int batch_first_idx, int* device_feature_to_eval_idx, double* device_mae_list, double* device_mse_list) {
     int thread_block_idx = blockDim.x * blockIdx.x + threadIdx.x;
     int batch_idx = thread_block_idx + batch_first_idx;
     if (batch_idx >= n_test_data) {
@@ -77,7 +77,7 @@ __global__ void adj_device_batch(bool mae_mse_calc, int* device_batch_random_idx
     int problem_idx = device_batch_random_idx[batch_idx];
     int i, j, feature, eval_idx, global_eval_idx;
     double err = adj_predict_device(device_test_data, device_eval_arr, device_feature_to_eval_idx, problem_idx, device_eval_strts) - device_test_data[problem_idx].score;
-    double diff_base = err * ADJ_STEP;
+    double diff_base = additional_learning_rate * err * ADJ_STEP;
     if (mae_mse_calc) {
         device_mae_list[thread_block_idx] += abs(err);
         device_mse_list[thread_block_idx] += err * err;
@@ -99,7 +99,7 @@ __global__ void adj_device_batch(bool mae_mse_calc, int* device_batch_random_idx
     }
 }
 
-void adj_next_step(bool mae_mse_calc, int* device_batch_random_idx, int* device_n_same_idx_in_feature, int* device_feature_first_idx, uint16_t* device_rev_idxes, double* device_eval_arr, double* device_alpha, int* device_eval_strts, Adj_Data* device_data, int* device_feature_to_eval_idx, std::vector<int>& batch_random_idx, std::mt19937& engine, double* mae, double* mse) {
+void adj_next_step(double additional_learning_rate, bool mae_mse_calc, int* device_batch_random_idx, int* device_n_same_idx_in_feature, int* device_feature_first_idx, uint16_t* device_rev_idxes, double* device_eval_arr, double* device_alpha, int* device_eval_strts, Adj_Data* device_data, int* device_feature_to_eval_idx, std::vector<int>& batch_random_idx, std::mt19937& engine, double* mae, double* mse) {
     int n_test_data = (int)adj_test_data.size();
     std::shuffle(batch_random_idx.begin(), batch_random_idx.end(), engine);
     int* src = &(batch_random_idx[0]);
@@ -122,7 +122,7 @@ void adj_next_step(bool mae_mse_calc, int* device_batch_random_idx, int* device_
         cudaMemcpy(device_mse_list, mae_list, BATCH_SIZE * sizeof(double), cudaMemcpyHostToDevice);
     }
     for (int i = 0; i < n_batch_tasks; ++i) {
-        adj_device_batch << <BATCH_BLOCK_SIZE, BATCH_THREAD_SIZE >> > (mae_mse_calc, device_batch_random_idx, device_n_same_idx_in_feature, device_feature_first_idx, device_rev_idxes, device_eval_arr, device_alpha, device_eval_strts, device_data, (int)adj_test_data.size(), i * BATCH_SIZE, device_feature_to_eval_idx, device_mae_list, device_mse_list);
+        adj_device_batch << <BATCH_BLOCK_SIZE, BATCH_THREAD_SIZE >> > (additional_learning_rate, mae_mse_calc, device_batch_random_idx, device_n_same_idx_in_feature, device_feature_first_idx, device_rev_idxes, device_eval_arr, device_alpha, device_eval_strts, device_data, (int)adj_test_data.size(), i * BATCH_SIZE, device_feature_to_eval_idx, device_mae_list, device_mse_list);
         cudaDeviceSynchronize();
     }
     if (mae_mse_calc) {
@@ -299,17 +299,29 @@ void adj_stochastic_gradient_descent(uint64_t tl, int phase) {
     bool mae_mse_calc;
     double min_mse = 10000000.0;
     double min_mae = 10000000.0;
+    double additional_learn_rate = 1.0;
+    int no_better_mse_count = 0;
     while (tim() - strt < tl) {
         mae_mse_calc = (t & (ADJ_PRINT_INTERVAL - 1)) == 0;
-        adj_next_step(mae_mse_calc, device_batch_random_idx, device_n_same_idx_in_feature, device_feature_first_idx, device_rev_idxes, device_eval_arr, device_alpha, device_eval_strts, device_test_data, device_feature_to_eval_idx, batch_random_idx, engine, &mae, &mse);
+        adj_next_step(additional_learn_rate, mae_mse_calc, device_batch_random_idx, device_n_same_idx_in_feature, device_feature_first_idx, device_rev_idxes, device_eval_arr, device_alpha, device_eval_strts, device_test_data, device_feature_to_eval_idx, batch_random_idx, engine, &mae, &mse);
         if (mse < min_mse) {
             min_mse = mse;
         }
         if (mae < min_mae) {
             min_mae = mae;
         }
+        if (mse >= min_mse) {
+            ++no_better_mse_count;
+            if (no_better_mse_count >= 256) {
+                additional_learn_rate *= 0.75;
+                no_better_mse_count = 0;
+            }
+        }
+        else {
+            no_better_mse_count = 0;
+        }
         if (mae_mse_calc) {
-            std::cerr << '\r' << t << " " << (tim() - strt) * 1000 / tl << " mse " << mse << " mae " << mae << "  mmse " << min_mse << " mmae " << min_mae << "                             ";
+            std::cerr << '\r' << t << " " << (tim() - strt) * 1000 / tl << " mse " << mse << " mae " << mae << "  mmse " << min_mse << " mmae " << min_mae << "  a_lr " << additional_learn_rate << "  ";
         }
         ++t;
     }
