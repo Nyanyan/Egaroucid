@@ -360,11 +360,15 @@ void adj_import_eval(std::string file) {
         std::cerr << "evaluation file " << file << " not exist" << std::endl;
         return;
     }
+    std::cerr << "importing eval params " << file << std::endl;
     std::string line;
     for (int pattern_idx = 0; pattern_idx < ADJ_N_EVAL; ++pattern_idx) {
         for (int pattern_elem = 0; pattern_elem < adj_eval_sizes[pattern_idx]; ++pattern_elem) {
-            getline(ifs, line);
-            adj_eval_arr[pattern_idx][pattern_elem] = stoi(line);
+            if (!getline(ifs, line)) {
+                std::cerr << "ERROR evaluation file broken" << std::endl;
+                return;
+            }
+            adj_eval_arr[pattern_idx][pattern_elem] = stof(line);
         }
     }
 }
@@ -430,7 +434,7 @@ int main(int argc, char* argv[]) {
         std::cerr << "input [phase] [hour] [minute] [second] [beta] [in_file] [test_data]" << std::endl;
         return 1;
     }
-    if (argc - 6 >= ADJ_MAX_N_FILES) {
+    if (argc - 7 >= ADJ_MAX_N_FILES) {
         std::cerr << "too many train files" << std::endl;
         return 1;
     }
@@ -441,12 +445,12 @@ int main(int argc, char* argv[]) {
     double beta = atof(argv[5]);
     std::string in_file = (std::string)argv[6];
     char* test_files[ADJ_MAX_N_FILES];
-    for (int i = 6; i < argc; ++i)
-        test_files[i - 6] = argv[i];
+    for (int i = 7; i < argc; ++i)
+        test_files[i - 7] = argv[i];
     second += minute * 60 + hour * 3600;
     adj_init_arr();
     adj_import_eval(in_file);
-    adj_import_test_data(argc - 6, test_files, phase, beta);
+    adj_import_test_data(argc - 7, test_files, phase, beta);
     adj_stochastic_gradient_descent(second * 1000, phase);
     adj_output_param();
     return 0;
