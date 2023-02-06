@@ -11,7 +11,7 @@ else:
     hour = '0'
     minute = '10'
     second = '0'
-    beta = '0.001'
+    beta = '0.002'
 
 if int(phase) < 20:
     train_data_nums = [1, 2, 3, 4, 6, 7, 8, 9, 11, 15, 16, 99]

@@ -14,10 +14,9 @@
 #include <algorithm>
 #include "evaluation_definition.hpp"
 
-#define ADJ_N_MAX_DATA 70000000
 #define ADJ_MAX_N_FILES 64
 
-#define ADJ_N_MIN_DATA_FEATURES 1
+#define ADJ_N_MIN_DATA_FEATURES 100
 
 #define ADJ_EVAL_MAX 16380
 
@@ -28,8 +27,6 @@
 #define MAX_BATCH_DO_IDX (BATCH_SIZE / N_FLOOR_UNIQUE_FEATURES)
 
 #define ADJ_PRINT_INTERVAL 16
-
-#define abs_error(x) std::abs(x)
 
 struct Adj_Data {
     uint16_t features[ADJ_N_FEATURES];
@@ -79,9 +76,8 @@ __global__ void adj_device_batch(bool mae_mse_calc, int* device_batch_random_idx
     }
     int problem_idx = device_batch_random_idx[batch_idx];
     int i, j, feature, eval_idx, global_eval_idx;
-    double pred = adj_predict_device(device_test_data, device_eval_arr, device_feature_to_eval_idx, problem_idx, device_eval_strts);
-    double err = device_test_data[problem_idx].score - pred;
-    double diff_base = 2.0 * err * ADJ_STEP;
+    double err = adj_predict_device(device_test_data, device_eval_arr, device_feature_to_eval_idx, problem_idx, device_eval_strts) - device_test_data[problem_idx].score;
+    double diff_base = err * ADJ_STEP;
     if (mae_mse_calc) {
         device_mae_list[thread_block_idx] += abs(err);
         device_mse_list[thread_block_idx] += err * err;
@@ -93,9 +89,9 @@ __global__ void adj_device_batch(bool mae_mse_calc, int* device_batch_random_idx
                 for (j = 0; j < device_n_same_idx_in_feature[feature]; ++j) {
                     eval_idx = device_test_data[problem_idx].features[device_feature_first_idx[feature] + j];
                     global_eval_idx = device_eval_strts[feature] + eval_idx;
-                    device_eval_arr[global_eval_idx] += device_alpha[global_eval_idx] * diff_base;
+                    device_eval_arr[global_eval_idx] -= device_alpha[global_eval_idx] * diff_base;
                     if (eval_idx != device_rev_idxes[global_eval_idx]) {
-                        device_eval_arr[device_eval_strts[feature] + device_rev_idxes[global_eval_idx]] += device_alpha[global_eval_idx] * diff_base;
+                        device_eval_arr[device_eval_strts[feature] + device_rev_idxes[global_eval_idx]] -= device_alpha[global_eval_idx] * diff_base;
                     }
                 }
             }
@@ -244,7 +240,7 @@ void calc_mse_mae(double* mse, double* mae) {
     *mse = 0.0;
     double err;
     for (int i = 0; i < (int)adj_test_data.size(); ++i) {
-        err = abs_error(adj_test_data[i].score - adj_predict(i));
+        err = std::abs(adj_predict(i) - adj_test_data[i].score);
         *mae += err;
         *mse += err * err;
     }
@@ -258,7 +254,8 @@ void adj_eval_round() {
             adj_eval_arr[i][j] = round(adj_eval_arr[i][j]);
             if (adj_eval_arr[i][j] >= ADJ_EVAL_MAX) {
                 adj_eval_arr[i][j] = ADJ_EVAL_MAX;
-            } else if (adj_eval_arr[i][j] <= -ADJ_EVAL_MAX) {
+            }
+            else if (adj_eval_arr[i][j] <= -ADJ_EVAL_MAX) {
                 adj_eval_arr[i][j] = -ADJ_EVAL_MAX;
             }
         }
@@ -300,11 +297,19 @@ void adj_stochastic_gradient_descent(uint64_t tl, int phase) {
     calc_mse_mae(&mse, &mae);
     std::cerr << "first mse " << mse << " mae " << mae << std::endl;
     bool mae_mse_calc;
+    double min_mse = 10000000.0;
+    double min_mae = 10000000.0;
     while (tim() - strt < tl) {
         mae_mse_calc = (t & (ADJ_PRINT_INTERVAL - 1)) == 0;
         adj_next_step(mae_mse_calc, device_batch_random_idx, device_n_same_idx_in_feature, device_feature_first_idx, device_rev_idxes, device_eval_arr, device_alpha, device_eval_strts, device_test_data, device_feature_to_eval_idx, batch_random_idx, engine, &mae, &mse);
+        if (mse < min_mse) {
+            min_mse = mse;
+        }
+        if (mae < min_mae) {
+            min_mae = mae;
+        }
         if (mae_mse_calc) {
-            std::cerr << '\r' << t << " " << (tim() - strt) * 1000 / tl << " mse " << mse << " mae " << mae << "                             ";
+            std::cerr << '\r' << t << " " << (tim() - strt) * 1000 / tl << " mse " << mse << " mae " << mae << "  mmse " << min_mse << " mmae " << min_mae << "                             ";
         }
         ++t;
     }
@@ -367,7 +372,7 @@ void adj_import_test_data(int n_files, char* files[], int use_phase, double beta
             std::cerr << "can't open " << files[file_idx] << std::endl;
             continue;
         }
-        while (t < ADJ_N_MAX_DATA) {
+        while (true) {
             if (fread(&n_discs, 2, 1, fp) < 1)
                 break;
             phase = (n_discs - 4) / ADJ_N_PHASE_DISCS;
