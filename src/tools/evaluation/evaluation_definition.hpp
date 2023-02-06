@@ -4,22 +4,29 @@
 /*
     @brief evaluation pattern definition
 */
+// disc pattern
 #define ADJ_N_PATTERNS 12
 #define ADJ_N_SYMMETRY_PATTERNS 46
-#define ADJ_N_ADDITIONAL_EVALS 3
-#define ADJ_N_CANPUT_PATTERNS 4
 #define ADJ_MAX_PATTERN_CELLS 10
 #define ADJ_MAX_CELL_PATTERNS 8
+
+// additional features
+#define ADJ_N_ADDITIONAL_EVALS 3
 #define ADJ_MAX_SURROUND 64
 #define ADJ_MAX_CANPUT 35
 #define ADJ_MAX_STONE_NUM 65
-#define ADJ_MAX_EVALUATE_IDX 65536
 
+// legal pattern
+#define ADJ_N_CANPUT_PATTERNS 4
+
+// overall
+#define ADJ_MAX_EVALUATE_IDX 65536
 #define ADJ_N_EVAL (12 + 3 + 4)
 #define ADJ_N_FEATURES (46 + 3 + 16)
 
+// phase
 #define ADJ_N_PHASES 60
-#define ADJ_N_PHASE_DISCS (60 / ADJ_N_PHASES)
+#define ADJ_N_PHASE_DISCS 1 // 60 / ADJ_N_PHASES
 
 //#define ADJ_SCORE_MAX HW2
 
@@ -479,4 +486,8 @@ uint16_t adj_calc_rev_idx(int feature, int idx){
         }
     }
     return res;
+}
+
+void evaluation_definition_init(){
+    mobility_init();
 }

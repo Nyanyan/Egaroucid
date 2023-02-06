@@ -513,3 +513,7 @@ uint16_t adj_calc_rev_idx(int feature, int idx){
     }
     return res;
 }
+
+void evaluation_definition_init(){
+    mobility_init();
+}

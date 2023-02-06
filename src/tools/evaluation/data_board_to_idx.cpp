@@ -11,6 +11,8 @@ int main(int argc, char *argv[]){
         return 1;
     }
 
+    evaluation_definition_init();
+
     int t = 0;
 
     int start_file = atoi(argv[2]);
