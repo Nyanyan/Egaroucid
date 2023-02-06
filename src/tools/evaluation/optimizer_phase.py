@@ -26,7 +26,7 @@ train_root_dir = './../../../train_data/bin_data/20230205/'
 train_dirs = [train_root_dir + str(4 + int(phase)) + '/']
 
 #train_dir = './../../../train_data/bin_data/20230205/' + str(4 + int(phase)) + '/'
-model_dir = './../../../model/20230206_1/'
+model_dir = './../../../model/20230206_2/'
 #model_dir = './../../../model/nomodel/'
 
 additional_params = ''

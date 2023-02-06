@@ -306,22 +306,18 @@ void adj_stochastic_gradient_descent(uint64_t tl, int phase) {
         adj_next_step(additional_learn_rate, mae_mse_calc, device_batch_random_idx, device_n_same_idx_in_feature, device_feature_first_idx, device_rev_idxes, device_eval_arr, device_alpha, device_eval_strts, device_test_data, device_feature_to_eval_idx, batch_random_idx, engine, &mae, &mse);
         if (mse < min_mse) {
             min_mse = mse;
-        }
-        if (mae < min_mae) {
             min_mae = mae;
+            no_better_mse_count = 0;
         }
-        if (mse >= min_mse) {
+        else {
             ++no_better_mse_count;
             if (no_better_mse_count >= 256) {
                 additional_learn_rate *= 0.75;
                 no_better_mse_count = 0;
             }
         }
-        else {
-            no_better_mse_count = 0;
-        }
         if (mae_mse_calc) {
-            std::cerr << '\r' << t << " " << (tim() - strt) * 1000 / tl << " mse " << mse << " mae " << mae << "  mmse " << min_mse << " mmae " << min_mae << "  a_lr " << additional_learn_rate << "  ";
+            std::cerr << '\r' << t << " " << (tim() - strt) * 1000 / tl << " mse " << mse << " (" << min_mse << ") " << " mae " << mae << " (" << min_mae << ")  no_better " << no_better_mse_count << " a_lr " << additional_learn_rate << "  ";
         }
         ++t;
     }
