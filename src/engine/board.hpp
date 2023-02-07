@@ -155,41 +155,39 @@ class Board {
             return calc_legal(player, opponent);
         }
 
-        inline void move_board(const uint64_t flip, const uint64_t cell_bit) {
-            player ^= flip;
-            opponent ^= flip;
-            player ^= cell_bit;
+        /*
+            @brief move the board
+
+            @param flip                 Flip structure
+        */
+        inline void move_board(const Flip *flip) {
+            player ^= flip->flip;
+            opponent ^= flip->flip;
+            player ^= 1ULL << flip->pos;
             std::swap(player, opponent);
         }
 
-        inline void move_copy(const uint64_t flip, const uint64_t cell_bit, Board *res) {
-            res->opponent = player ^ flip;
-            res->player = opponent ^ flip;
-            res->opponent ^= cell_bit;
+        /*
+            @brief move the board
+
+            @param flip                 Flip structure
+            @param res                  board to store result
+        */
+        inline void move_copy(const Flip *flip, Board *res) {
+            res->opponent = player ^ flip->flip;
+            res->player = opponent ^ flip->flip;
+            res->opponent ^= 1ULL << flip->pos;
         }
 
-        inline Board move_copy(const uint64_t flip, const uint64_t cell_bit) {
+        /*
+            @brief move the board
+
+            @param flip                 Flip structure
+            @return board class
+        */
+        inline Board move_copy(const Flip *flip) {
             Board res;
-            move_copy(flip, cell_bit, &res);
-            return res;
-        }
-
-        inline void move_board_cell(const uint64_t flip, const uint_fast8_t cell) {
-            player ^= flip;
-            opponent ^= flip;
-            player ^= 1ULL << cell;
-            std::swap(player, opponent);
-        }
-
-        inline void move_copy_cell(const uint64_t flip, const uint_fast8_t cell, Board *res) {
-            res->opponent = player ^ flip;
-            res->player = opponent ^ flip;
-            res->opponent ^= 1ULL << cell;
-        }
-
-        inline Board move_copy_cell(const uint64_t flip, const uint_fast8_t cell) {
-            Board res;
-            move_copy(flip, cell, &res);
+            move_copy(flip, &res);
             return res;
         }
 
@@ -202,18 +200,16 @@ class Board {
             std::swap(player, opponent);
         }
 
-        inline void undo_board(const uint64_t flip, const uint64_t cell_bit){
-            std::swap(player, opponent);
-            player ^= cell_bit;
-            player ^= flip;
-            opponent ^= flip;
-        }
+        /*
+            @brief undo previout move
 
-        inline void undo_board_cell(const uint64_t flip, const uint_fast8_t cell){
+            @param flip                 Flip structure
+        */
+        inline void undo_board(const Flip *flip){
             std::swap(player, opponent);
-            player ^= 1ULL << cell;
-            player ^= flip;
-            opponent ^= flip;
+            player ^= 1ULL << flip->pos;
+            player ^= flip->flip;
+            opponent ^= flip->flip;
         }
 
         /*
@@ -458,9 +454,10 @@ bool operator!=(const Board& a, const Board& b){
 /*
     @brief calculate flip
 
+    @param flip                 flip structure to store result
     @param board                board class
     @param place                cell to put disc
 */
-inline uint64_t calc_flip(Board *board, uint_fast8_t place){
-    return calc_flip(board->player, board->opponent, place);
+inline void calc_flip(Flip *flip, Board *board, uint_fast8_t place){
+    flip->calc_flip(board->player, board->opponent, place);
 }

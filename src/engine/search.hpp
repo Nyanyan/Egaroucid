@@ -17,8 +17,6 @@
 #include "board.hpp"
 #include "thread_pool.hpp"
 #include "evaluate.hpp"
-#include "const.hpp"
-#include "square.hpp"
 
 /*
     @brief Evaluation constant
@@ -44,6 +42,63 @@
 #ifndef SEARCH_BOOK
     #define SEARCH_BOOK -1
 #endif
+
+
+/*
+    @brief Weights of each cell
+*/
+constexpr int cell_weight[HW2] = {
+    18,  4,  16, 12, 12, 16,  4, 18,
+     4,  2,   6,  8,  8,  6,  2,  4,
+    16,  6,  14, 10, 10, 14,  6, 16,
+    12,  8,  10,  0,  0, 10,  8, 12,
+    12,  8,  10,  0,  0, 10,  8, 12,
+    16,  6,  14, 10, 10, 14,  6, 16,
+     4,  2,   6,  8,  8,  6,  2,  4,
+    18,  4,  16, 12, 12, 16,  4, 18
+};
+
+/*
+    @brief Stability cutoff threshold
+
+    see nws_stability_threshold[n_discs] >= alpha ? 
+*/
+constexpr int nws_stability_threshold[HW2] = {
+    -99, -99, -99, -99, -99, -99, -99, -99, 
+    -99, -99, -99, -99, -99, -99, -99, -99, 
+    -99, -99, -99, -99, -99, -99, -99, -99, 
+    -99, -99, -99, -99, -99, -99, -64, -64, 
+    -64, -64, -64, -64, -64, -64, -64, -62, 
+    -54, -46, -38, -30, -26, -20, -18,  -8, 
+     -2,   4,  10,  16,  22,  28,  34,  38, 
+     42,  46,  50,  54,  58,  60,  62,  64
+};
+
+/*
+    @brief board division
+
+    used for parity calculation
+*/
+constexpr uint_fast8_t cell_div4[HW2] = {
+    1, 1, 1, 1, 2, 2, 2, 2, 
+    1, 1, 1, 1, 2, 2, 2, 2, 
+    1, 1, 1, 1, 2, 2, 2, 2, 
+    1, 1, 1, 1, 2, 2, 2, 2, 
+    4, 4, 4, 4, 8, 8, 8, 8, 
+    4, 4, 4, 4, 8, 8, 8, 8, 
+    4, 4, 4, 4, 8, 8, 8, 8, 
+    4, 4, 4, 4, 8, 8, 8, 8
+};
+
+/*
+    @brief a table for parity-based move ordering
+*/
+constexpr uint64_t parity_table[16] = {
+    0x0000000000000000ULL, 0x000000000F0F0F0FULL, 0x00000000F0F0F0F0ULL, 0x00000000FFFFFFFFULL,
+    0x0F0F0F0F00000000ULL, 0x0F0F0F0F0F0F0F0FULL, 0x0F0F0F0FF0F0F0F0ULL, 0x0F0F0F0FFFFFFFFFULL,
+    0xF0F0F0F000000000ULL, 0xF0F0F0F00F0F0F0FULL, 0xF0F0F0F0F0F0F0F0ULL, 0xF0F0F0F0FFFFFFFFULL,
+    0xFFFFFFFF00000000ULL, 0xFFFFFFFF0F0F0F0FULL, 0xFFFFFFFFF0F0F0F0ULL, 0xFFFFFFFFFFFFFFFFULL
+};
 
 /*
     @brief Search result structure
@@ -162,7 +217,6 @@ class Search{
             uint64_t n_nodes_discs[HW2];
         #endif
         uint8_t date;
-        Square empty_list[HW2 + 2];
 
     public:
         /*
@@ -174,12 +228,11 @@ class Search{
             board = init_board->copy();
             n_discs = board.n_discs();
             strt_n_discs = n_discs;
-            uint64_t empties = ~(board.player | board.opponent);
-            parity = 1 & pop_count_ull(empties & 0x000000000F0F0F0FULL);
-            parity |= (1 & pop_count_ull(empties & 0x00000000F0F0F0F0ULL)) << 1;
-            parity |= (1 & pop_count_ull(empties & 0x0F0F0F0F00000000ULL)) << 2;
-            parity |= (1 & pop_count_ull(empties & 0xF0F0F0F000000000ULL)) << 3;
-            empty_list_init(empty_list, &board);
+            uint64_t empty = ~(board.player | board.opponent);
+            parity = 1 & pop_count_ull(empty & 0x000000000F0F0F0FULL);
+            parity |= (1 & pop_count_ull(empty & 0x00000000F0F0F0F0ULL)) << 1;
+            parity |= (1 & pop_count_ull(empty & 0x0F0F0F0F00000000ULL)) << 2;
+            parity |= (1 & pop_count_ull(empty & 0xF0F0F0F000000000ULL)) << 3;
         }
 
         /*
@@ -188,60 +241,33 @@ class Search{
         inline void init_search(){
             n_discs = board.n_discs();
             strt_n_discs = n_discs;
-            uint64_t empties = ~(board.player | board.opponent);
-            parity = 1 & pop_count_ull(empties & 0x000000000F0F0F0FULL);
-            parity |= (1 & pop_count_ull(empties & 0x00000000F0F0F0F0ULL)) << 1;
-            parity |= (1 & pop_count_ull(empties & 0x0F0F0F0F00000000ULL)) << 2;
-            parity |= (1 & pop_count_ull(empties & 0xF0F0F0F000000000ULL)) << 3;
-            empty_list_init(empty_list, &board);
+            uint64_t empty = ~(board.player | board.opponent);
+            parity = 1 & pop_count_ull(empty & 0x000000000F0F0F0FULL);
+            parity |= (1 & pop_count_ull(empty & 0x00000000F0F0F0F0ULL)) << 1;
+            parity |= (1 & pop_count_ull(empty & 0x0F0F0F0F00000000ULL)) << 2;
+            parity |= (1 & pop_count_ull(empty & 0xF0F0F0F000000000ULL)) << 3;
         }
 
         /*
             @brief Move board and other variables except eval_features
+
+            @param flip                 Flip information
         */
-        inline void move(const uint64_t flip, Square *empty) {
-            board.move_board(flip, empty->cell_bit);
-            empty_list_move(empty);
+        inline void move(const Flip *flip) {
+            board.move_board(flip);
             ++n_discs;
-            parity ^= cell_div4[empty->cell];
+            parity ^= cell_div4[flip->pos];
         }
 
         /*
             @brief Undo board and other variables except eval_features
+
+            @param flip                 Flip information
         */
-        inline void undo(const uint64_t flip, Square *empty) {
-            board.undo_board(flip, empty->cell_bit);
-            empty_list_undo(empty);
+        inline void undo(const Flip *flip) {
+            board.undo_board(flip);
             --n_discs;
-            parity ^= cell_div4[empty->cell];
-        }
-
-        /*
-            @brief Move board and other variables except eval_features
-        */
-        inline void move_cell(const uint64_t flip, const uint_fast8_t cell) {
-            board.move_board_cell(flip, cell);
-            ++n_discs;
-            parity ^= cell_div4[cell];
-        }
-
-        /*
-            @brief Undo board and other variables except eval_features
-        */
-        inline void undo_cell(const uint64_t flip, const uint_fast8_t cell) {
-            board.undo_board_cell(flip, cell);
-            --n_discs;
-            parity ^= cell_div4[cell];
-        }
-
-        inline Square* get_square(const uint_fast8_t cell){
-            Square* res = &empty_list[0];
-            while (res != nullptr){
-                if (res->cell == cell)
-                    break;
-                res = res->next;
-            }
-            return res;
+            parity ^= cell_div4[flip->pos];
         }
 
         /*

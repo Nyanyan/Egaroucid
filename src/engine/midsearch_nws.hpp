@@ -39,9 +39,12 @@ inline void ybwc_wait_all_nws(Search *search, std::vector<std::future<Parallel_t
     @param search               search information
     @param alpha                alpha value (beta value is alpha + 1)
     @param skipped              already passed?
+    @param searching            flag for terminating this search
     @return the value
 */
-inline int nega_alpha_eval1_nws(Search *search, int alpha, bool skipped){
+inline int nega_alpha_eval1_nws(Search *search, int alpha, bool skipped, const bool *searching){
+    if (!global_searching || !(*searching))
+        return SCORE_UNDEFINED;
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
         ++search->n_nodes_discs[search->n_discs];
@@ -53,20 +56,20 @@ inline int nega_alpha_eval1_nws(Search *search, int alpha, bool skipped){
             return end_evaluate(&search->board);
         search->eval_feature_reversed ^= 1;
         search->board.pass();
-            v = -nega_alpha_eval1_nws(search, -alpha - 1, true);
+            v = -nega_alpha_eval1_nws(search, -alpha - 1, true, searching);
         search->board.pass();
         search->eval_feature_reversed ^= 1;
         return v;
     }
     int g;
-    uint64_t flip;
+    Flip flip;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-        flip = calc_flip(&search->board, cell);
-        eval_move(search, flip, cell);
-        search->move_cell(flip, cell);
+        calc_flip(&flip, &search->board, cell);
+        eval_move(search, &flip);
+        search->move(&flip);
             g = -mid_evaluate_diff(search);
-        search->undo_cell(flip, cell);
-        eval_undo(search, flip, cell);
+        search->undo(&flip);
+        eval_undo(search, &flip);
         ++search->n_nodes;
         if (v < g){
             if (alpha < g){
@@ -159,7 +162,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
                 return nega_alpha_nws(search, alpha, depth, skipped, searching);
         #else
             if (depth == 1)
-                return nega_alpha_eval1_nws(search, alpha, skipped);
+                return nega_alpha_eval1_nws(search, alpha, skipped, searching);
             if (depth == 0)
                 return mid_evaluate_diff(search);
         #endif
@@ -202,82 +205,100 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
                 return v;
         }
     #endif
+    Flip flip_best;
     int best_move = TRANSPOSITION_TABLE_UNDEFINED;
     int g;
     int pv_idx = 0;
-    const int canput = pop_count_ull(legal);
-    std::vector<Flip_value> move_list(canput);
-    int idx = 0;
-    Square *square;
-    foreach_square(square, search->empty_list, legal){
-        {
-            move_list[idx].flip = calc_flip(&search->board, square->cell);
-            move_list[idx++].square = square;
-        }
-    }
-    #if USE_MID_ETC
-        if (search->n_discs - search->strt_n_discs < MID_ETC_DEPTH){
-            if (etc_nws(search, move_list, depth, alpha, &v))
-                return v;
-        }
-    #endif
-    move_list_evaluate_nws(search, move_list, depth, alpha, moves, searching);
-    #if USE_ALL_NODE_PREDICTION
-        const bool seems_to_be_all_node = predict_all_node(search, alpha, depth, LEGAL_UNDEFINED, is_end_search, searching);
-    #else
-        constexpr bool seems_to_be_all_node = false;
-    #endif
-    if (search->use_multi_thread && depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH){
-        int split_count = 0;
-        std::vector<std::future<Parallel_task>> parallel_tasks;
-        bool n_searching = true;
-        bool break_flag = false;
-        for (int move_idx = 0; move_idx < canput; ++move_idx){
-            swap_next_best_move(move_list, move_idx, canput);
-            eval_move(search, move_list[move_idx].flip, move_list[move_idx].square->cell);
-            search->move(move_list[move_idx].flip, move_list[move_idx].square);
-                if (ybwc_split_nws(search, -alpha - 1, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].square->cell, pv_idx++, seems_to_be_all_node, parallel_tasks)){
-                    ++split_count;
-                } else{
-                    g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
-                    if (v < g){
-                        v = g;
-                        best_move = move_list[move_idx].square->cell;
-                        if (alpha < v){
-                            break_flag = true;
-                        }
-                    }
-                    if (split_count){
-                        ybwc_get_end_tasks(search, parallel_tasks, &v, &best_move);
-                        if (alpha < v){
-                            break_flag = true;
-                        }
-                    }
-                }
-            search->undo(move_list[move_idx].flip, move_list[move_idx].square);
-            eval_undo(search, move_list[move_idx].flip, move_list[move_idx].square->cell);
-            if (break_flag)
-                break;
-        }
-        if (split_count){
-            if (alpha < v || !(*searching)){
-                n_searching = false;
-                ybwc_wait_all(search, parallel_tasks);
-            } else
-                ybwc_wait_all_nws(search, parallel_tasks, &v, &best_move, alpha, &n_searching);
-        }
-    } else{
-        for (int move_idx = 0; move_idx < canput; ++move_idx){
-            swap_next_best_move(move_list, move_idx, canput);
-            eval_move(search, move_list[move_idx].flip, move_list[move_idx].square->cell);
-            search->move(move_list[move_idx].flip, move_list[move_idx].square);
-                g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
-            search->undo(move_list[move_idx].flip, move_list[move_idx].square);
-            eval_undo(search, move_list[move_idx].flip, move_list[move_idx].square->cell);
+    for (uint_fast8_t i = 0; i < N_TRANSPOSITION_MOVES; ++i){
+        if (moves[i] == TRANSPOSITION_TABLE_UNDEFINED)
+            break;
+        if (1 & (legal >> moves[i])){
+            calc_flip(&flip_best, &search->board, moves[i]);
+            eval_move(search, &flip_best);
+            search->move(&flip_best);
+                g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
+            search->undo(&flip_best);
+            eval_undo(search, &flip_best);
             if (v < g){
                 v = g;
+                best_move = moves[i];
                 if (alpha < v)
                     break;
+            }
+            legal ^= 1ULL << moves[i];
+            ++pv_idx;
+        }
+    }
+    if (v <= alpha && legal){
+        const int canput = pop_count_ull(legal);
+        std::vector<Flip_value> move_list(canput);
+        int idx = 0;
+        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
+            calc_flip(&move_list[idx++].flip, &search->board, cell);
+        #if USE_MID_ETC
+            if (search->n_discs - search->strt_n_discs < MID_ETC_DEPTH){
+                if (etc_nws(search, move_list, depth, alpha, &v))
+                    return v;
+            }
+        #endif
+        move_list_evaluate_nws(search, move_list, depth, alpha, searching);
+        #if USE_ALL_NODE_PREDICTION
+            const bool seems_to_be_all_node = predict_all_node(search, alpha, depth, LEGAL_UNDEFINED, is_end_search, searching);
+        #else
+            constexpr bool seems_to_be_all_node = false;
+        #endif
+        if (search->use_multi_thread && depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH){
+            int split_count = 0;
+            std::vector<std::future<Parallel_task>> parallel_tasks;
+            bool n_searching = true;
+            bool break_flag = false;
+            for (int move_idx = 0; move_idx < canput; ++move_idx){
+                swap_next_best_move(move_list, move_idx, canput);
+                eval_move(search, &move_list[move_idx].flip);
+                search->move(&move_list[move_idx].flip);
+                    if (ybwc_split_nws(search, -alpha - 1, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].flip.pos, pv_idx++, seems_to_be_all_node, parallel_tasks)){
+                        ++split_count;
+                    } else{
+                        g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
+                        if (v < g){
+                            v = g;
+                            best_move = move_list[move_idx].flip.pos;
+                            if (alpha < v){
+                                break_flag = true;
+                            }
+                        }
+                        if (split_count){
+                            ybwc_get_end_tasks(search, parallel_tasks, &v, &best_move);
+                            if (alpha < v){
+                                break_flag = true;
+                            }
+                        }
+                    }
+                search->undo(&move_list[move_idx].flip);
+                eval_undo(search, &move_list[move_idx].flip);
+                if (break_flag)
+                    break;
+            }
+            if (split_count){
+                if (alpha < v || !(*searching)){
+                    n_searching = false;
+                    ybwc_wait_all(search, parallel_tasks);
+                } else
+                    ybwc_wait_all_nws(search, parallel_tasks, &v, &best_move, alpha, &n_searching);
+            }
+        } else{
+            for (int move_idx = 0; move_idx < canput; ++move_idx){
+                swap_next_best_move(move_list, move_idx, canput);
+                eval_move(search, &move_list[move_idx].flip);
+                search->move(&move_list[move_idx].flip);
+                    g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
+                search->undo(&move_list[move_idx].flip);
+                eval_undo(search, &move_list[move_idx].flip);
+                if (v < g){
+                    v = g;
+                    if (alpha < v)
+                        break;
+                }
             }
         }
     }

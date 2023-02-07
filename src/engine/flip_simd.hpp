@@ -17,40 +17,56 @@
 
 __m256i lmask_v4[HW2], rmask_v4[HW2];
 
-// original code from http://www.amy.hi-ho.ne.jp/okuhara/bitboard.htm
-// by Toshihiko Okuhara
-inline uint64_t calc_flip(const uint64_t player, const uint64_t opponent, const uint_fast8_t place) {
-    __m256i  PP, OO, flip4, outflank, eraser, mask;
-    __m128i  flip2;
+/*
+    @brief Flip class
 
-    PP = _mm256_broadcastq_epi64(_mm_cvtsi64_si128(player));
-    OO = _mm256_broadcastq_epi64(_mm_cvtsi64_si128(opponent));
+    @param pos                  a cell to put disc
+    @param flip                 a bitboard representing flipped discs
+*/
+class Flip{
 
-    mask = rmask_v4[place];
-        // isolate non-opponent MS1B by clearing lower bits
-    eraser = _mm256_andnot_si256(OO, mask);
-    outflank = _mm256_sllv_epi64(_mm256_and_si256(PP, mask), _mm256_set_epi64x(7, 9, 8, 1));
-    eraser = _mm256_or_si256(eraser, _mm256_srlv_epi64(eraser, _mm256_set_epi64x(7, 9, 8, 1)));
-    outflank = _mm256_andnot_si256(eraser, outflank);
-    outflank = _mm256_andnot_si256(_mm256_srlv_epi64(eraser, _mm256_set_epi64x(14, 18, 16, 2)), outflank);
-    outflank = _mm256_andnot_si256(_mm256_srlv_epi64(eraser, _mm256_set_epi64x(28, 36, 32, 4)), outflank);
-        // set mask bits higher than outflank
-    flip4 = _mm256_and_si256(mask, _mm256_sub_epi64(_mm256_setzero_si256(), outflank));
+    public:
+        uint_fast8_t pos;
+        uint64_t flip;
+    
+    public:
+        // original code from http://www.amy.hi-ho.ne.jp/okuhara/bitboard.htm
+        // by Toshihiko Okuhara
+        inline void calc_flip(const uint64_t player, const uint64_t opponent, const uint_fast8_t place) {
+            __m256i  PP, OO, flip4, outflank, eraser, mask;
+            __m128i  flip2;
 
-    mask = lmask_v4[place];
-        // look for non-opponent LS1B
-    outflank = _mm256_andnot_si256(OO, mask);
-    outflank = _mm256_and_si256(outflank, _mm256_sub_epi64(_mm256_setzero_si256(), outflank));  // LS1B
-    outflank = _mm256_and_si256(outflank, PP);
-        // set all bits if outflank = 0, otherwise higher bits than outflank
-    eraser = _mm256_sub_epi64(_mm256_cmpeq_epi64(outflank, _mm256_setzero_si256()), outflank);
-    flip4 = _mm256_or_si256(flip4, _mm256_andnot_si256(eraser, mask));
+            pos = place;
+            PP = _mm256_broadcastq_epi64(_mm_cvtsi64_si128(player));
+            OO = _mm256_broadcastq_epi64(_mm_cvtsi64_si128(opponent));
 
-    flip2 = _mm_or_si128(_mm256_castsi256_si128(flip4), _mm256_extracti128_si256(flip4, 1));
-    flip2 = _mm_or_si128(flip2, _mm_shuffle_epi32(flip2, 0x4e));  // SWAP64
+            mask = rmask_v4[place];
+              // isolate non-opponent MS1B by clearing lower bits
+            eraser = _mm256_andnot_si256(OO, mask);
+            outflank = _mm256_sllv_epi64(_mm256_and_si256(PP, mask), _mm256_set_epi64x(7, 9, 8, 1));
+            eraser = _mm256_or_si256(eraser, _mm256_srlv_epi64(eraser, _mm256_set_epi64x(7, 9, 8, 1)));
+            outflank = _mm256_andnot_si256(eraser, outflank);
+            outflank = _mm256_andnot_si256(_mm256_srlv_epi64(eraser, _mm256_set_epi64x(14, 18, 16, 2)), outflank);
+            outflank = _mm256_andnot_si256(_mm256_srlv_epi64(eraser, _mm256_set_epi64x(28, 36, 32, 4)), outflank);
+              // set mask bits higher than outflank
+            flip4 = _mm256_and_si256(mask, _mm256_sub_epi64(_mm256_setzero_si256(), outflank));
 
-    return (uint64_t)_mm_cvtsi128_si64(flip2);
-}
+            mask = lmask_v4[place];
+              // look for non-opponent LS1B
+            outflank = _mm256_andnot_si256(OO, mask);
+            outflank = _mm256_and_si256(outflank, _mm256_sub_epi64(_mm256_setzero_si256(), outflank));  // LS1B
+            outflank = _mm256_and_si256(outflank, PP);
+              // set all bits if outflank = 0, otherwise higher bits than outflank
+            eraser = _mm256_sub_epi64(_mm256_cmpeq_epi64(outflank, _mm256_setzero_si256()), outflank);
+            flip4 = _mm256_or_si256(flip4, _mm256_andnot_si256(eraser, mask));
+
+            flip2 = _mm_or_si128(_mm256_castsi256_si128(flip4), _mm256_extracti128_si256(flip4, 1));
+            flip2 = _mm_or_si128(flip2, _mm_shuffle_epi32(flip2, 0x4e));  // SWAP64
+
+            flip = _mm_cvtsi128_si64(flip2);
+        }
+
+};
 
 /*
     @brief Flip initialize

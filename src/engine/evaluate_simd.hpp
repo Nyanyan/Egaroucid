@@ -793,28 +793,30 @@ inline void calc_features(Search *search){
     @brief move evaluation features
 
     @param search               search information
-    @param flip                 flip discs
-    @param pos                  place to put
+    @param flip                 flip information
 */
-inline void eval_move(Search *search, uint64_t flip, const uint_fast8_t pos){
+inline void eval_move(Search *search, const Flip *flip){
     uint_fast8_t cell;
+    uint64_t f;
     if (search->eval_feature_reversed){
-        search->eval_features[0] = _mm256_subs_epu16(search->eval_features[0], coord_to_feature_simd[pos][0]);
-        search->eval_features[1] = _mm256_subs_epu16(search->eval_features[1], coord_to_feature_simd[pos][1]);
-        search->eval_features[2] = _mm256_subs_epu16(search->eval_features[2], coord_to_feature_simd[pos][2]);
-        search->eval_features[3] = _mm256_subs_epu16(search->eval_features[3], coord_to_feature_simd[pos][3]);
-        for (cell = first_bit(&flip); flip; cell = next_bit(&flip)){
+        search->eval_features[0] = _mm256_subs_epu16(search->eval_features[0], coord_to_feature_simd[flip->pos][0]);
+        search->eval_features[1] = _mm256_subs_epu16(search->eval_features[1], coord_to_feature_simd[flip->pos][1]);
+        search->eval_features[2] = _mm256_subs_epu16(search->eval_features[2], coord_to_feature_simd[flip->pos][2]);
+        search->eval_features[3] = _mm256_subs_epu16(search->eval_features[3], coord_to_feature_simd[flip->pos][3]);
+        f = flip->flip;
+        for (cell = first_bit(&f); f; cell = next_bit(&f)){
             search->eval_features[0] = _mm256_adds_epu16(search->eval_features[0], coord_to_feature_simd[cell][0]);
             search->eval_features[1] = _mm256_adds_epu16(search->eval_features[1], coord_to_feature_simd[cell][1]);
             search->eval_features[2] = _mm256_adds_epu16(search->eval_features[2], coord_to_feature_simd[cell][2]);
             search->eval_features[3] = _mm256_adds_epu16(search->eval_features[3], coord_to_feature_simd[cell][3]);
         }
     } else{
-        search->eval_features[0] = _mm256_subs_epu16(search->eval_features[0], coord_to_feature_simd2[pos][0]);
-        search->eval_features[1] = _mm256_subs_epu16(search->eval_features[1], coord_to_feature_simd2[pos][1]);
-        search->eval_features[2] = _mm256_subs_epu16(search->eval_features[2], coord_to_feature_simd2[pos][2]);
-        search->eval_features[3] = _mm256_subs_epu16(search->eval_features[3], coord_to_feature_simd2[pos][3]);
-        for (cell = first_bit(&flip); flip; cell = next_bit(&flip)){
+        search->eval_features[0] = _mm256_subs_epu16(search->eval_features[0], coord_to_feature_simd2[flip->pos][0]);
+        search->eval_features[1] = _mm256_subs_epu16(search->eval_features[1], coord_to_feature_simd2[flip->pos][1]);
+        search->eval_features[2] = _mm256_subs_epu16(search->eval_features[2], coord_to_feature_simd2[flip->pos][2]);
+        search->eval_features[3] = _mm256_subs_epu16(search->eval_features[3], coord_to_feature_simd2[flip->pos][3]);
+        f = flip->flip;
+        for (cell = first_bit(&f); f; cell = next_bit(&f)){
             search->eval_features[0] = _mm256_subs_epu16(search->eval_features[0], coord_to_feature_simd[cell][0]);
             search->eval_features[1] = _mm256_subs_epu16(search->eval_features[1], coord_to_feature_simd[cell][1]);
             search->eval_features[2] = _mm256_subs_epu16(search->eval_features[2], coord_to_feature_simd[cell][2]);
@@ -828,29 +830,31 @@ inline void eval_move(Search *search, uint64_t flip, const uint_fast8_t pos){
     @brief undo evaluation features
 
     @param search               search information
-    @param flip                 flip discs
-    @param pos                  place to put
+    @param flip                 flip information
 */
-inline void eval_undo(Search *search, uint64_t flip, const uint_fast8_t pos){
+inline void eval_undo(Search *search, const Flip *flip){
     search->eval_feature_reversed ^= 1;
     uint_fast8_t cell;
+    uint64_t f;
     if (search->eval_feature_reversed){
-        search->eval_features[0] = _mm256_adds_epu16(search->eval_features[0], coord_to_feature_simd[pos][0]);
-        search->eval_features[1] = _mm256_adds_epu16(search->eval_features[1], coord_to_feature_simd[pos][1]);
-        search->eval_features[2] = _mm256_adds_epu16(search->eval_features[2], coord_to_feature_simd[pos][2]);
-        search->eval_features[3] = _mm256_adds_epu16(search->eval_features[3], coord_to_feature_simd[pos][3]);
-        for (cell = first_bit(&flip); flip; cell = next_bit(&flip)){
+        search->eval_features[0] = _mm256_adds_epu16(search->eval_features[0], coord_to_feature_simd[flip->pos][0]);
+        search->eval_features[1] = _mm256_adds_epu16(search->eval_features[1], coord_to_feature_simd[flip->pos][1]);
+        search->eval_features[2] = _mm256_adds_epu16(search->eval_features[2], coord_to_feature_simd[flip->pos][2]);
+        search->eval_features[3] = _mm256_adds_epu16(search->eval_features[3], coord_to_feature_simd[flip->pos][3]);
+        f = flip->flip;
+        for (cell = first_bit(&f); f; cell = next_bit(&f)){
             search->eval_features[0] = _mm256_subs_epu16(search->eval_features[0], coord_to_feature_simd[cell][0]);
             search->eval_features[1] = _mm256_subs_epu16(search->eval_features[1], coord_to_feature_simd[cell][1]);
             search->eval_features[2] = _mm256_subs_epu16(search->eval_features[2], coord_to_feature_simd[cell][2]);
             search->eval_features[3] = _mm256_subs_epu16(search->eval_features[3], coord_to_feature_simd[cell][3]);
         }
     } else{
-        search->eval_features[0] = _mm256_adds_epu16(search->eval_features[0], coord_to_feature_simd2[pos][0]);
-        search->eval_features[1] = _mm256_adds_epu16(search->eval_features[1], coord_to_feature_simd2[pos][1]);
-        search->eval_features[2] = _mm256_adds_epu16(search->eval_features[2], coord_to_feature_simd2[pos][2]);
-        search->eval_features[3] = _mm256_adds_epu16(search->eval_features[3], coord_to_feature_simd2[pos][3]);
-        for (cell = first_bit(&flip); flip; cell = next_bit(&flip)){
+        search->eval_features[0] = _mm256_adds_epu16(search->eval_features[0], coord_to_feature_simd2[flip->pos][0]);
+        search->eval_features[1] = _mm256_adds_epu16(search->eval_features[1], coord_to_feature_simd2[flip->pos][1]);
+        search->eval_features[2] = _mm256_adds_epu16(search->eval_features[2], coord_to_feature_simd2[flip->pos][2]);
+        search->eval_features[3] = _mm256_adds_epu16(search->eval_features[3], coord_to_feature_simd2[flip->pos][3]);
+        f = flip->flip;
+        for (cell = first_bit(&f); f; cell = next_bit(&f)){
             search->eval_features[0] = _mm256_adds_epu16(search->eval_features[0], coord_to_feature_simd[cell][0]);
             search->eval_features[1] = _mm256_adds_epu16(search->eval_features[1], coord_to_feature_simd[cell][1]);
             search->eval_features[2] = _mm256_adds_epu16(search->eval_features[2], coord_to_feature_simd[cell][2]);

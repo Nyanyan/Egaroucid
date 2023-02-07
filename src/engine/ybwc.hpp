@@ -52,11 +52,8 @@ Parallel_task ybwc_do_task_nws(uint64_t player, uint64_t opponent, int_fast8_t n
     Search search;
     search.board.player = player;
     search.board.opponent = opponent;
-    search.init_search();
-    /*
     search.n_discs = n_discs;
     search.parity = parity;
-    */
     search.mpc_level = mpc_level;
     search.date = date;
     search.n_nodes = 0ULL;

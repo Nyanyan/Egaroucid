@@ -97,7 +97,7 @@ inline double probcut_sigma_end_depth0(int n_discs){
     return res;
 }
 
-inline int nega_alpha_eval1_nws(Search *search, int alpha, bool skipped);
+inline int nega_alpha_eval1_nws(Search *search, int alpha, bool skipped, const bool *searching);
 #if MID_FAST_DEPTH > 1
     int nega_alpha_nws(Search *search, int alpha, int depth, bool skipped, const bool *searching);
 #endif
@@ -162,7 +162,7 @@ inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, 
         if (beta_mpc <= SCORE_MAX){
             bool res = false;
             if (search_depth == 1)
-                res = nega_alpha_eval1_nws(search, beta_mpc - 1, false) >= beta_mpc;
+                res = nega_alpha_eval1_nws(search, beta_mpc - 1, false, searching) >= beta_mpc;
             else{
                 #if MID_FAST_DEPTH > 1
                     if (search_depth <= MID_FAST_DEPTH)
@@ -187,7 +187,7 @@ inline bool mpc(Search *search, int alpha, int beta, int depth, uint64_t legal, 
         if (alpha_mpc >= -SCORE_MAX){
             bool res = false;
             if (search_depth == 1)
-                res = nega_alpha_eval1_nws(search, alpha_mpc, false) <= alpha_mpc;
+                res = nega_alpha_eval1_nws(search, alpha_mpc, false, searching) <= alpha_mpc;
             else{
                 #if MID_FAST_DEPTH > 1
                     if (search_depth <= MID_FAST_DEPTH)
@@ -265,7 +265,7 @@ inline bool mpc_nws(Search *search, int alpha, int depth, uint64_t legal, bool i
                 return false;
             bool res = false;
             if (search_depth == 1)
-                res = nega_alpha_eval1_nws(search, alpha_mpc, false) <= alpha_mpc;
+                res = nega_alpha_eval1_nws(search, alpha_mpc, false, searching) <= alpha_mpc;
             else{
                 #if MID_FAST_DEPTH > 1
                     if (search_depth <= MID_FAST_DEPTH)

@@ -74,7 +74,7 @@ void play(Board_info *board, std::string transcript){
         board->boards.pop_back();
         board->players.pop_back();
     }
-    uint64_t flip;
+    Flip flip;
     for (int i = 0; i < (int)transcript.length(); i += 2){
         int x = HW_M1 - (int)(transcript[i] - 'a');
         if (x >= HW)
@@ -85,13 +85,13 @@ void play(Board_info *board, std::string transcript){
             *board = board_bak;
             return;
         }
-        flip = calc_flip(&board->board, y * HW + x);
-        if (flip == 0ULL){
+        calc_flip(&flip, &board->board, y * HW + x);
+        if (flip.flip == 0ULL){
             std::cerr << "[ERROR] invalid move " << transcript[i] << transcript[i + 1] << std::endl;
             *board = board_bak;
             return;
         }
-        board->board.move_board_cell(flip, y * HW + x);
+        board->board.move_board(&flip);
         board->player ^= 1;
         if (board->board.is_end() && i < (int)transcript.length() - 2){
             std::cerr << "[ERROR] game over found before checking all transcript. remaining codes ignored." << std::endl;
@@ -156,8 +156,9 @@ Search_result go_noprint(Board_info *board, Options *options, State *state){
     Search_result result = ai(board->board, options->level, true, true, options->show_log, state->date);
     ++state->date;
     state->date = manage_date(state->date);
-    uint64_t flip = calc_flip(&board->board, result.policy);
-    board->board.move_board_cell(flip, result.policy);
+    Flip flip;
+    calc_flip(&flip, &board->board, result.policy);
+    board->board.move_board(&flip);
     board->player ^= 1;
     if (board->board.get_legal() == 0ULL){
         board->board.pass();
@@ -271,33 +272,26 @@ void hint(Board_info *board, Options *options, State *state, std::string arg){
             n_check = pop_count_ull(legal);
         std::vector<Flip_value> move_list(pop_count_ull(legal));
         int idx = 0;
-        Search search;
-        search.init_board(&board->board);
-        Square *square;
-        foreach_square(square, search.empty_list, legal){
-            {
-                move_list[idx].flip = calc_flip(&search.board, square->cell);
-                move_list[idx++].square = square;
-            }
-        }
+        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
+            calc_flip(&move_list[idx++].flip, &board->board, cell);
         int presearch_level = options->level / 2;
         Board n_board = board->board.copy();
         for (Flip_value &flip_value: move_list){
-            n_board.move_board(flip_value.flip, flip_value.square->cell_bit);
+            n_board.move_board(&flip_value.flip);
                 flip_value.value = -ai(n_board, presearch_level, true, true, false, state->date).value;
                 ++state->date;
                 state->date = manage_date(state->date);
-            n_board.undo_board(flip_value.flip, flip_value.square->cell_bit);
+            n_board.undo_board(&flip_value.flip);
         }
         std::sort(move_list.rbegin(), move_list.rend());
         for (int i = 0; i < n_check; ++i){
-            n_board.move_board(move_list[i].flip, move_list[i].square->cell_bit);
+            n_board.move_board(&move_list[i].flip);
                 Search_result elem = ai(n_board, options->level, true, true, false, state->date);
                 ++state->date;
                 state->date = manage_date(state->date);
                 elem.value *= -1;
-                elem.policy = move_list[i].square->cell;
-            n_board.undo_board(move_list[i].flip, move_list[i].square->cell_bit);
+                elem.policy = move_list[i].flip.pos;
+            n_board.undo_board(&move_list[i].flip);
             result.emplace_back(elem);
         }
     }
