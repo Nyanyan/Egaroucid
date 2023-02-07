@@ -209,8 +209,8 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
     std::vector<Flip_value> move_list(canput);
     int idx = 0;
     Square *square;
-    foreach_square(square, search->empty_list){
-        if (1 & (legal >> square->cell)){
+    foreach_square(square, search->empty_list, legal){
+        {
             move_list[idx].flip = calc_flip(&search->board, square->cell);
             move_list[idx++].square = square;
         }

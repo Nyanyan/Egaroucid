@@ -374,8 +374,8 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     std::vector<Flip_value> move_list(canput);
     int idx = 0;
     Square *square;
-    foreach_square(square, search->empty_list){
-        if (1 & (legal >> square->cell)){
+    foreach_square(square, search->empty_list, legal){
+        {
             move_list[idx].flip = calc_flip(&search->board, square->cell);
             move_list[idx++].square = square;
         }
@@ -466,8 +466,8 @@ std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int de
         std::vector<Flip_value> move_list(canput);
         int idx = 0;
         Square *square;
-        foreach_square(square, search->empty_list){
-            if (1 & (legal >> square->cell)){
+        foreach_square(square, search->empty_list, legal){
+            {
                 move_list[idx].flip = calc_flip(&search->board, square->cell);
                 move_list[idx++].square = square;
             }
@@ -578,8 +578,8 @@ int first_nega_scout_value(Search *search, int alpha, int beta, int depth, bool 
         std::vector<Flip_value> move_list(canput);
         int idx = 0;
         Square *square;
-        foreach_square(square, search->empty_list){
-            if (1 & (legal >> square->cell)){
+        foreach_square(square, search->empty_list, legal){
+            {
                 move_list[idx].flip = calc_flip(&search->board, square->cell);
                 move_list[idx++].square = square;
             }

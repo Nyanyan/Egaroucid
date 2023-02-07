@@ -348,7 +348,7 @@ inline int last4_nws_wrapper(Search *search, int alpha){
     p0 = search->empty_list[0].next->cell;
     p1 = search->empty_list[0].next->next->cell;
     p2 = search->empty_list[0].next->next->next->cell;
-    p3 = search->empty_list[0].next->next->next->cell;
+    p3 = search->empty_list[0].next->next->next->next->cell;
     return last4_nws(search, alpha, p0, p1, p2, p3, false);
 }
 
@@ -392,108 +392,121 @@ int nega_alpha_end_fast_nws(Search *search, int alpha, bool skipped, bool stab_c
     int g;
     uint64_t flip;
     Square *square;
-    uint_fast8_t cell;
     #if USE_END_PO
-        uint64_t legal_copy;
         if (0 < search->parity && search->parity < 15){
-            uint64_t legal_mask = parity_table[search->parity];
             if (search->n_discs == 59){
-                foreach_odd_square(square, search->empty_list, search->parity){
-                    flip = calc_flip(&search->board, square->cell);
-                    search->move(flip, square);
-                        g = -last4_nws_wrapper(search, -alpha - 1);
-                    search->undo(flip, square);
-                    if (v < g){
-                        if (alpha < g)
-                            return g;
-                        v = g;
+                foreach_odd_square(square, search->empty_list, legal, search->parity){
+                    {
+                        flip = calc_flip(&search->board, square->cell);
+                        search->move(flip, square);
+                            g = -last4_nws_wrapper(search, -alpha - 1);
+                        search->undo(flip, square);
+                        if (v < g){
+                            if (alpha < g)
+                                return g;
+                            v = g;
+                        }
                     }
                 }
-                foreach_even_square(square, search->empty_list, search->parity){
-                    flip = calc_flip(&search->board, square->cell);
-                    search->move(flip, square);
-                        g = -last4_nws_wrapper(search, -alpha - 1);
-                    search->undo(flip, square);
-                    if (v < g){
-                        if (alpha < g)
-                            return g;
-                        v = g;
+                foreach_even_square(square, search->empty_list, legal, search->parity){
+                    {
+                        flip = calc_flip(&search->board, square->cell);
+                        search->move(flip, square);
+                            g = -last4_nws_wrapper(search, -alpha - 1);
+                        search->undo(flip, square);
+                        if (v < g){
+                            if (alpha < g)
+                                return g;
+                            v = g;
+                        }
                     }
                 }
             } else{
-                foreach_odd_square(square, search->empty_list, search->parity){
-                    flip = calc_flip(&search->board, square->cell);
-                    search->move(flip, square);
-                        g = -nega_alpha_end_fast_nws(search, -alpha - 1, false, true, searching);
-                    search->undo(flip, square);
-                    if (v < g){
-                        if (alpha < g)
-                            return g;
-                        v = g;
+                foreach_odd_square(square, search->empty_list, legal, search->parity){
+                    {
+                        flip = calc_flip(&search->board, square->cell);
+                        search->move(flip, square);
+                            g = -nega_alpha_end_fast_nws(search, -alpha - 1, false, true, searching);
+                        search->undo(flip, square);
+                        if (v < g){
+                            if (alpha < g)
+                                return g;
+                            v = g;
+                        }
                     }
                 }
-                foreach_even_square(square, search->empty_list, search->parity){
-                    flip = calc_flip(&search->board, square->cell);
-                    search->move(flip, square);
-                        g = -nega_alpha_end_fast_nws(search, -alpha - 1, false, true, searching);
-                    search->undo(flip, square);
-                    if (v < g){
-                        if (alpha < g)
-                            return g;
-                        v = g;
+                foreach_even_square(square, search->empty_list, legal, search->parity){
+                    {
+                        flip = calc_flip(&search->board, square->cell);
+                        search->move(flip, square);
+                            g = -nega_alpha_end_fast_nws(search, -alpha - 1, false, true, searching);
+                        search->undo(flip, square);
+                        if (v < g){
+                            if (alpha < g)
+                                return g;
+                            v = g;
+                        }
                     }
                 }
             }
         } else{
             if (search->n_discs == 59){
-                foreach_square(square, search->empty_list){
-                    flip = calc_flip(&search->board, square->cell);
-                    search->move(flip, square);
-                        g = -last4_nws_wrapper(search, -alpha - 1);
-                    search->undo(flip, square);
-                    if (v < g){
-                        if (alpha < g)
-                            return g;
-                        v = g;
+                foreach_square(square, search->empty_list, legal){
+                    {
+                        flip = calc_flip(&search->board, square->cell);
+                        search->move(flip, square);
+                            g = -last4_nws_wrapper(search, -alpha - 1);
+                        search->undo(flip, square);
+                        if (v < g){
+                            if (alpha < g)
+                                return g;
+                            v = g;
+                        }
                     }
                 }
             } else{
-                foreach_square(square, search->empty_list){
-                    flip = calc_flip(&search->board, square->cell);
-                    search->move(flip, square);
-                        g = -nega_alpha_end_fast_nws(search, -alpha - 1, false, true, searching);
-                    search->undo(flip, square);
-                    if (v < g){
-                        if (alpha < g)
-                            return g;
-                        v = g;
+                foreach_square(square, search->empty_list, legal){
+                    {
+                        flip = calc_flip(&search->board, square->cell);
+                        search->move(flip, square);
+                            g = -nega_alpha_end_fast_nws(search, -alpha - 1, false, true, searching);
+                        search->undo(flip, square);
+                        if (v < g){
+                            if (alpha < g)
+                                return g;
+                            v = g;
+                        }
                     }
                 }
             }
         }
     #else
         if (search->n_discs == 59){
-            foreach_square(square, search->empty_list){
-                flip = calc_flip(&search->board, square->cell);
-                search->move(flip, square);
-                    g = -last4_nws_wrapper(search, -alpha - 1);
-                search->undo(flip, square);
-                if (v < g){
-                    if (alpha < g)
-                        return g;
-                    v = g;
+            foreach_square(square, search->empty_list, legal){
+                {
+                    flip = calc_flip(&search->board, square->cell);
+                    search->move(flip, square);
+                        g = -last4_nws_wrapper(search, -alpha - 1);
+                    search->undo(flip, square);
+                    if (v < g){
+                        if (alpha < g)
+                            return g;
+                        v = g;
+                    }
                 }
             }
         } else{
-            foreach_square(square, search->empty_list){
-                flip = calc_flip(&search->board, square->cell);
-                search->move(flip, square);
-                    g = -nega_alpha_end_fast_nws(search, -alpha - 1, false, true, searching);
-                search->undo(flip, square);
-                if (v < g){
-                    if (alpha < g)
-                        return g;
-                    v = g;
+            foreach_square(square, search->empty_list, legal){
+                {
+                    flip = calc_flip(&search->board, square->cell);
+                    search->move(flip, square);
+                        g = -nega_alpha_end_fast_nws(search, -alpha - 1, false, true, searching);
+                    search->undo(flip, square);
+                    if (v < g){
+                        if (alpha < g)
+                            return g;
+                        v = g;
+                    }
                 }
             }
         }
@@ -560,8 +573,8 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
     int best_move = TRANSPOSITION_TABLE_UNDEFINED;
     int idx = 0;
     Square *square;
-    foreach_square(square, search->empty_list){
-        if (1 & (legal >> square->cell)){
+    foreach_square(square, search->empty_list, legal){
+        {
             move_list[idx].flip = calc_flip(&search->board, square->cell);
             move_list[idx++].square = square;
         }

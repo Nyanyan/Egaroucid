@@ -369,7 +369,7 @@ inline int last4_wrapper(Search *search, int alpha, int beta){
     p0 = search->empty_list[0].next->cell;
     p1 = search->empty_list[0].next->next->cell;
     p2 = search->empty_list[0].next->next->next->cell;
-    p3 = search->empty_list[0].next->next->next->cell;
+    p3 = search->empty_list[0].next->next->next->next->cell;
     return last4(search, alpha, beta, p0, p1, p2, p3, false);
 }
 

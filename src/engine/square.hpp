@@ -37,7 +37,7 @@ constexpr uint64_t square_type_mask[N_SQUARE_TYPE] = {
     0x0000001818000000ULL  // center
 };
 
-inline void empty_list_init(Square *empty_list, Board *board){
+inline void empty_list_init(Square empty_list[], Board *board){
     uint_fast8_t cell, square_type;
     uint64_t mask;
     uint64_t empties = ~(board->player | board->opponent);
@@ -45,7 +45,7 @@ inline void empty_list_init(Square *empty_list, Board *board){
     empty_list[0].cell_bit = 0;
     empty_list[0].parity_id = 0;
     empty_list[0].prev = nullptr;
-    empty_list[0].next = &empty_list[1];
+    empty_list[0].next = empty_list + 1;
     int idx = 1;
     for (square_type = 0; square_type < N_SQUARE_TYPE; ++square_type){
         mask = square_type_mask[square_type] & empties;
@@ -53,15 +53,15 @@ inline void empty_list_init(Square *empty_list, Board *board){
             empty_list[idx].cell = cell;
             empty_list[idx].cell_bit = 1ULL << cell;
             empty_list[idx].parity_id = cell_div4[cell];
-            empty_list[idx].prev = &empty_list[idx - 1];
-            empty_list[idx].next = &empty_list[idx + 1];
+            empty_list[idx].prev = empty_list + idx - 1;
+            empty_list[idx].next = empty_list + idx + 1;
             ++idx;
         }
     }
     empty_list[idx].cell = EMPTY_UNDEFINED;
     empty_list[idx].cell_bit = 0;
     empty_list[idx].parity_id = 0;
-    empty_list[idx].prev = &empty_list[idx - 1];
+    empty_list[idx].prev = empty_list + idx - 1;
     empty_list[idx].next = nullptr;
 }
 
@@ -75,8 +75,8 @@ inline void empty_list_undo(Square *empty){
     empty->next->prev = empty;
 }
 
-#define foreach_square(square, empty_list) for ((square) = (empty_list[0]).next; (square)->next; (square) = (square)->next)
+#define foreach_square(square, empty_list, legal) for ((square) = (empty_list[0]).next; (square); (square) = (square)->next) if ((square)->cell != EMPTY_UNDEFINED && (1 & ((legal) >> (square)->cell)))
 
-#define foreach_odd_square(square, empty_list, parity) for ((square) = (empty_list[0]).next; (square)->next; (square) = (square)->next) if ((square)->parity_id & (parity))
+#define foreach_odd_square(square, empty_list, legal, parity) for ((square) = (empty_list[0]).next; (square); (square) = (square)->next) if ((square)->cell != EMPTY_UNDEFINED && (1 & ((legal) >> (square)->cell)) && ((square)->parity_id & (parity)))
 
-#define foreach_even_square(square, empty_list, parity) for ((square) = (empty_list[0]).next; (square)->next; (square) = (square)->next) if (((square)->parity_id & (parity)) == 0)
+#define foreach_even_square(square, empty_list, legal, parity) for ((square) = (empty_list[0]).next; (square); (square) = (square)->next) if ((square)->cell != EMPTY_UNDEFINED && (1 & ((legal) >> (square)->cell)) && ((square)->parity_id & (parity)) == 0)

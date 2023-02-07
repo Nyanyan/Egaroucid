@@ -447,18 +447,20 @@ Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint8_t
         bool book_found = false;
         int g, v = -INF, best_move = -1;
         Square *square;
-        foreach_square(square, search.empty_list){
-            flip = calc_flip(&search.board, square->cell);
-            search.board.move_board(flip, square->cell_bit);
-                g = book.get(&search.board);
-                if (g != -INF){
-                    book_found = true;
-                    if (v < g){
-                        v = g;
-                        best_move = square->cell;
+        foreach_square(square, search.empty_list, legal){
+            {
+                flip = calc_flip(&search.board, square->cell);
+                search.board.move_board(flip, square->cell_bit);
+                    g = book.get(&search.board);
+                    if (g != -INF){
+                        book_found = true;
+                        if (v < g){
+                            v = g;
+                            best_move = square->cell;
+                        }
                     }
-                }
-            search.board.undo_board(flip, square->cell_bit);
+                search.board.undo_board(flip, square->cell_bit);
+            }
         }
         if (book_found){
             res.alt_move = best_move;
