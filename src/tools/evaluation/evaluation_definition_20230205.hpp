@@ -488,6 +488,10 @@ uint16_t adj_calc_rev_idx(int feature, int idx){
     return res;
 }
 
+int calc_phase(Board *board, int16_t player){
+    return (pop_count_ull(board->player | board->opponent) - 4) / ADJ_N_PHASE_DISCS;
+}
+
 void evaluation_definition_init(){
     mobility_init();
 }

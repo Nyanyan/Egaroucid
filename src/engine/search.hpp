@@ -21,9 +21,9 @@
 /*
     @brief Evaluation constant
 */
-#define N_SYMMETRY_PATTERNS 46
+#define N_SYMMETRY_PATTERNS 62
 #if USE_SIMD_EVALUATION
-    #define N_SIMD_EVAL_FEATURES 3
+    #define N_SIMD_EVAL_FEATURES 4
 #endif
 
 /*
@@ -274,7 +274,7 @@ class Search{
             @brief Get evaluation phase
         */
         inline int phase(){
-            return n_discs - 4;
+            return (n_discs - 4) / PHASE_N_STONES;
             //return std::min(N_PHASES - 1, (n_discs - 4) / PHASE_N_STONES);
         }
 };

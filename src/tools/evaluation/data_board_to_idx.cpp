@@ -3,11 +3,11 @@
 #include <sstream>
 #include <iomanip>
 #include <fstream>
-#include "evaluation_definition.hpp"
+#include "evaluation_definition_20230206.hpp"
 
 int main(int argc, char *argv[]){
     if (argc < 6){
-        std::cerr << "input [input dir] [start file no] [n files] [output file] [n_discs]" << std::endl;
+        std::cerr << "input [input dir] [start file no] [n files] [output file] [phase]" << std::endl;
         return 1;
     }
 
@@ -17,7 +17,7 @@ int main(int argc, char *argv[]){
 
     int start_file = atoi(argv[2]);
     int n_files = atoi(argv[3]);
-    int n_discs = atoi(argv[5]);
+    int phase = atoi(argv[5]);
 
     std::ofstream fout;
     fout.open(argv[4], std::ios::out|std::ios::binary|std::ios::trunc);
@@ -46,10 +46,10 @@ int main(int argc, char *argv[]){
             fread(&player, 1, 1, fp);
             fread(&policy, 1, 1, fp);
             fread(&score, 1, 1, fp);
-            n = pop_count_ull(board.player | board.opponent);
-            if (n == n_discs){
+            if (calc_phase(&board, player) == phase){
                 player_short = player;
                 score_short = score;
+                n = pop_count_ull(board.player | board.opponent);
                 adj_calc_features(&board, idxes);
                 fout.write((char*)&n, 2);
                 fout.write((char*)&player_short, 2);
