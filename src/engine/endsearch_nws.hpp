@@ -392,63 +392,71 @@ int nega_alpha_end_fast_nws(Search *search, int alpha, bool skipped, bool stab_c
             if (search->n_discs == 59){
                 uint64_t empties;
                 uint_fast8_t p0, p1, p2, p3;
-                legal_copy = legal & legal_mask;
-                for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
-                    calc_flip(&flip, &search->board, cell);
-                    search->move(&flip);
-                        empties = ~(search->board.player | search->board.opponent);
-                        p0 = first_bit(&empties);
-                        p1 = next_bit(&empties);
-                        p2 = next_bit(&empties);
-                        p3 = next_bit(&empties);
-                        g = -last4_nws(search, -alpha - 1, p0, p1, p2, p3, false, searching);
-                    search->undo(&flip);
-                    if (v < g){
-                        if (alpha < g)
-                            return g;
-                        v = g;
+                for (int i = 0; i < 9; ++i){
+                    legal_copy = legal & legal_mask & square_type_mask[i];
+                    for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
+                        calc_flip(&flip, &search->board, cell);
+                        search->move(&flip);
+                            empties = ~(search->board.player | search->board.opponent);
+                            p0 = first_bit(&empties);
+                            p1 = next_bit(&empties);
+                            p2 = next_bit(&empties);
+                            p3 = next_bit(&empties);
+                            g = -last4_nws(search, -alpha - 1, p0, p1, p2, p3, false, searching);
+                        search->undo(&flip);
+                        if (v < g){
+                            if (alpha < g)
+                                return g;
+                            v = g;
+                        }
                     }
                 }
-                legal_copy = legal & ~legal_mask;
-                for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
-                    calc_flip(&flip, &search->board, cell);
-                    search->move(&flip);
-                        empties = ~(search->board.player | search->board.opponent);
-                        p0 = first_bit(&empties);
-                        p1 = next_bit(&empties);
-                        p2 = next_bit(&empties);
-                        p3 = next_bit(&empties);
-                        g = -last4_nws(search, -alpha - 1, p0, p1, p2, p3, false, searching);
-                    search->undo(&flip);
-                    if (v < g){
-                        if (alpha < g)
-                            return g;
-                        v = g;
+                for (int i = 0; i < 9; ++i){
+                    legal_copy = legal & ~legal_mask & square_type_mask[i];
+                    for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
+                        calc_flip(&flip, &search->board, cell);
+                        search->move(&flip);
+                            empties = ~(search->board.player | search->board.opponent);
+                            p0 = first_bit(&empties);
+                            p1 = next_bit(&empties);
+                            p2 = next_bit(&empties);
+                            p3 = next_bit(&empties);
+                            g = -last4_nws(search, -alpha - 1, p0, p1, p2, p3, false, searching);
+                        search->undo(&flip);
+                        if (v < g){
+                            if (alpha < g)
+                                return g;
+                            v = g;
+                        }
                     }
                 }
             } else{
-                legal_copy = legal & legal_mask;
-                for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
-                    calc_flip(&flip, &search->board, cell);
-                    search->move(&flip);
-                        g = -nega_alpha_end_fast_nws(search, -alpha - 1, false, true, searching);
-                    search->undo(&flip);
-                    if (v < g){
-                        if (alpha < g)
-                            return g;
-                        v = g;
+                for (int i = 0; i < 9; ++i){
+                    legal_copy = legal & legal_mask & square_type_mask[i];
+                    for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
+                        calc_flip(&flip, &search->board, cell);
+                        search->move(&flip);
+                            g = -nega_alpha_end_fast_nws(search, -alpha - 1, false, true, searching);
+                        search->undo(&flip);
+                        if (v < g){
+                            if (alpha < g)
+                                return g;
+                            v = g;
+                        }
                     }
                 }
-                legal_copy = legal & ~legal_mask;
-                for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
-                    calc_flip(&flip, &search->board, cell);
-                    search->move(&flip);
-                        g = -nega_alpha_end_fast_nws(search, -alpha - 1, false, true, searching);
-                    search->undo(&flip);
-                    if (v < g){
-                        if (alpha < g)
-                            return g;
-                        v = g;
+                for (int i = 0; i < 9; ++i){
+                    legal_copy = legal & ~legal_mask & square_type_mask[i];
+                    for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
+                        calc_flip(&flip, &search->board, cell);
+                        search->move(&flip);
+                            g = -nega_alpha_end_fast_nws(search, -alpha - 1, false, true, searching);
+                        search->undo(&flip);
+                        if (v < g){
+                            if (alpha < g)
+                                return g;
+                            v = g;
+                        }
                     }
                 }
             }
@@ -456,32 +464,38 @@ int nega_alpha_end_fast_nws(Search *search, int alpha, bool skipped, bool stab_c
             if (search->n_discs == 59){
                 uint64_t empties;
                 uint_fast8_t p0, p1, p2, p3;
-                for (cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-                    calc_flip(&flip, &search->board, cell);
-                    search->move(&flip);
-                        empties = ~(search->board.player | search->board.opponent);
-                        p0 = first_bit(&empties);
-                        p1 = next_bit(&empties);
-                        p2 = next_bit(&empties);
-                        p3 = next_bit(&empties);
-                        g = -last4_nws(search, -alpha - 1, p0, p1, p2, p3, false, searching);
-                    search->undo(&flip);
-                    if (v < g){
-                        if (alpha < g)
-                            return g;
-                        v = g;
+                for (int i = 0; i < 9; ++i){
+                    legal_copy = legal & square_type_mask[i];
+                    for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
+                        calc_flip(&flip, &search->board, cell);
+                        search->move(&flip);
+                            empties = ~(search->board.player | search->board.opponent);
+                            p0 = first_bit(&empties);
+                            p1 = next_bit(&empties);
+                            p2 = next_bit(&empties);
+                            p3 = next_bit(&empties);
+                            g = -last4_nws(search, -alpha - 1, p0, p1, p2, p3, false, searching);
+                        search->undo(&flip);
+                        if (v < g){
+                            if (alpha < g)
+                                return g;
+                            v = g;
+                        }
                     }
                 }
             } else{
-                for (cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-                    calc_flip(&flip, &search->board, cell);
-                    search->move(&flip);
-                        g = -nega_alpha_end_fast_nws(search, -alpha - 1, false, true, searching);
-                    search->undo(&flip);
-                    if (v < g){
-                        if (alpha < g)
-                            return g;
-                        v = g;
+                for (int i = 0; i < 9; ++i){
+                    legal_copy = legal & square_type_mask[i];
+                    for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
+                        calc_flip(&flip, &search->board, cell);
+                        search->move(&flip);
+                            g = -nega_alpha_end_fast_nws(search, -alpha - 1, false, true, searching);
+                        search->undo(&flip);
+                        if (v < g){
+                            if (alpha < g)
+                                return g;
+                            v = g;
+                        }
                     }
                 }
             }
