@@ -388,46 +388,10 @@ int ai_window(Board board, int level, int alpha, int beta, bool use_multi_thread
     else if (level == 0)
         return value_sign * mid_evaluate(&board);
     int depth;
-        bool is_mid_search;
-        uint_fast8_t mpc_level;
-        get_level(level, board.n_discs() - 4, &is_mid_search, &depth, &mpc_level);
+    bool is_mid_search;
+    uint_fast8_t mpc_level;
+    get_level(level, board.n_discs() - 4, &is_mid_search, &depth, &mpc_level);
     return value_sign * tree_search_window(board, depth, alpha, beta, mpc_level, use_multi_thread, date);
-}
-
-/*
-    @brief Get places where opponent want to put
-
-    @param board                board to solve
-    @param res                  array to store result
-*/
-void ai_opponent_move(Board board, double res[]){
-    uint64_t legal = board.get_legal();
-    Flip flip;
-    int best_move;
-    for (int i = 0;  i < HW2; ++i)
-        res[i] = 0.0;
-    int cnt = 0;
-    std::vector<int> best_moves;
-    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-        best_move = TRANSPOSITION_TABLE_UNDEFINED;
-        calc_flip(&flip, &board, cell);
-        board.move_board(&flip);
-            best_moves = book.get_all_best_moves(&board);
-            if (best_moves.size()){
-                for (int cell: best_moves){
-                    res[cell] += 1.0;
-                    ++cnt;
-                }
-            } else
-                best_move = transposition_table.get_best_move(&board, board.hash());
-        board.undo_board(&flip);
-        if (best_move != TRANSPOSITION_TABLE_UNDEFINED){
-            res[best_move] += 1.0;
-            ++cnt;
-        }
-    }
-    for (int i = 0;  i < HW2; ++i)
-        res[i] /= cnt;
 }
 
 /*
@@ -461,10 +425,11 @@ Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint8_t
     #endif
     search.use_multi_thread = use_multi_thread;
     calc_features(&search);
-    Flip flip;
-    calc_flip(&flip, &search.board, played_move);
-    eval_move(&search, &flip);
-    search.move(&flip);
+    uint64_t flip;
+    Square *played_square = search.get_square(played_move);
+    flip = calc_flip(&search.board, played_move);
+    eval_move(&search, flip, played_square->cell);
+    search.move(flip, played_square);
         res.played_score = book.get(&search.board);
         if (res.played_score != -INF){
             res.played_depth = SEARCH_BOOK;
@@ -474,26 +439,26 @@ Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint8_t
             res.played_depth = got_depth;
             res.played_probability = SELECTIVITY_PERCENTAGE[mpc_level];
         }
-    search.undo(&flip);
-    eval_undo(&search, &flip);
+    search.undo(flip, played_square);
+    eval_undo(&search, flip, played_square->cell);
     uint64_t legal = search.board.get_legal() ^ (1ULL << played_move);
     if (legal){
         uint64_t legal_copy = legal;
         bool book_found = false;
-        Flip flip;
         int g, v = -INF, best_move = -1;
-        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-            calc_flip(&flip, &search.board, cell);
-            search.board.move_board(&flip);
+        Square *square;
+        foreach_square(square, search.empty_list){
+            flip = calc_flip(&search.board, square->cell);
+            search.board.move_board(flip, square->cell_bit);
                 g = book.get(&search.board);
                 if (g != -INF){
                     book_found = true;
                     if (v < g){
                         v = g;
-                        best_move = flip.pos;
+                        best_move = square->cell;
                     }
                 }
-            search.board.undo_board(&flip);
+            search.board.undo_board(flip, square->cell_bit);
         }
         if (book_found){
             res.alt_move = best_move;

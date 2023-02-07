@@ -600,9 +600,9 @@ uint8_t manage_date(uint8_t date){
 inline bool etc(Search *search, std::vector<Flip_value> &move_list, int depth, int *alpha, int *beta, int *v){
     int l = -SCORE_MAX, u = SCORE_MAX, n_alpha = *alpha, n_beta = *beta;
     for (Flip_value &flip_value: move_list){
-        search->move(&flip_value.flip);
+        search->move(flip_value.flip, flip_value.square);
             transposition_table.get(search, search->board.hash(), depth - 1, &l, &u);
-        search->undo(&flip_value.flip);
+        search->undo(flip_value.flip, flip_value.square);
         if (l == u){
             *v = -l;
             return true;
@@ -631,9 +631,9 @@ inline bool etc(Search *search, std::vector<Flip_value> &move_list, int depth, i
 inline bool etc_nws(Search *search, std::vector<Flip_value> &move_list, int depth, int alpha, int *v){
     int l = -SCORE_MAX, u = SCORE_MAX;
     for (Flip_value &flip_value: move_list){
-        search->move(&flip_value.flip);
+        search->move(flip_value.flip, flip_value.square);
             transposition_table.get(search, search->board.hash(), depth - 1, &l, &u);
-        search->undo(&flip_value.flip);
+        search->undo(flip_value.flip, flip_value.square);
         if (l == u){
             *v = -l;
             return true;

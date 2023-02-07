@@ -61,10 +61,10 @@ int umigame_search(Board *b, int depth, int player, const int target_player){
         b->pass();
         legal = b->get_legal();
     }
-    Flip flip;
+    uint64_t flip;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-        calc_flip(&flip, b, cell);
-        b->move_board(&flip);
+        flip = calc_flip(b, cell);
+        b->move_board_cell(flip, cell);
             val = book.get(b);
             if (val != -INF && val >= max_val) {
                 if (val > max_val) {
@@ -73,7 +73,7 @@ int umigame_search(Board *b, int depth, int player, const int target_player){
                 }
                 boards.emplace_back(b->copy());
             }
-        b->undo_board(&flip);
+        b->undo_board_cell(flip, cell);
     }
     if (boards.size() == 0)
         return 1;

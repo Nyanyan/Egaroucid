@@ -215,7 +215,7 @@ class Book{
             int16_t value;
             char link = 0, link_value, link_move;
             Board b;
-            Flip flip;
+            uint64_t flip;
             for (i = 0; i < n_boards; ++i){
                 if (i % 32768 == 0 && show_log)
                     std::cerr << "loading edax book " << (i * 100 / n_boards) << "%" << std::endl;
@@ -273,14 +273,14 @@ class Book{
                         return false;
                     }
                     if (link_move < HW2) {
-                        calc_flip(&flip, &b, (int)link_move);
-                        if (flip.flip == 0ULL){
+                        flip = calc_flip(&b, (uint_fast8_t)link_move);
+                        if (flip == 0ULL){
                             std::cerr << "error! illegal move" << std::endl;
                             return false;
                         }
-                        b.move_board(&flip);
+                        b.move_board_cell(flip, (uint_fast8_t)link_move);
                             n_book += register_symmetric_book(b, (int)link_value);
-                        b.undo_board(&flip);
+                        b.undo_board_cell(flip, (uint_fast8_t)link_move);
                     }
                 }
             }
@@ -384,11 +384,11 @@ class Book{
             Board nb;
             int max_value = -INF;
             uint64_t legal = b->get_legal();
-            Flip flip;
+            uint64_t flip;
             int value;
             for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-                calc_flip(&flip, b, cell);
-                nb = b->move_copy(&flip);
+                flip = calc_flip(b, cell);
+                nb = b->move_copy_cell(flip, cell);
                 value = get(&nb);
                 if (value != -INF){
                     policies.push_back(cell);
@@ -426,11 +426,11 @@ class Book{
             Board nb;
             int max_value = -INF;
             uint64_t legal = b->get_legal();
-            Flip flip;
+            uint64_t flip;
             int value;
             for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-                calc_flip(&flip, b, cell);
-                nb = b->move_copy(&flip);
+                flip = calc_flip(b, cell);
+                nb = b->move_copy_cell(flip, cell);
                 value = get(&nb);
                 if (value != -INF){
                     if (max_value < value){
@@ -456,11 +456,11 @@ class Book{
                 return policies;
             Board nb;
             uint64_t legal = b->get_legal();
-            Flip flip;
+            uint64_t flip;
             int value;
             for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-                calc_flip(&flip, b, cell);
-                nb = b->move_copy(&flip);
+                flip = calc_flip(b, cell);
+                nb = b->move_copy_cell(flip, cell);
                 value = get(&nb);
                 if (value != -INF){
                     Search_result elem;

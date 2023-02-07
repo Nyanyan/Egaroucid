@@ -137,15 +137,15 @@ int clog_search(Clog_search *search, bool is_enduring, int depth){
             return -res;
         return CLOG_NOT_FOUND;
     }
-    Flip flip;
+    uint64_t flip;
     int g;
     #if USE_PARALLEL_CLOG_SEARCH
         if (is_enduring){
             for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-                calc_flip(&flip, &search->board, cell);
-                search->board.move_board(&flip);
+                flip = calc_flip(&search->board, cell);
+                search->board.move_board_cell(flip, cell);
                     g = clog_search(search, false, depth - 1);
-                search->board.undo_board(&flip);
+                search->board.undo_board_cell(flip, cell);
                 if (g == CLOG_NOT_FOUND)
                     return CLOG_NOT_FOUND;
                 res = std::max(res, -g);
@@ -155,23 +155,23 @@ int clog_search(Clog_search *search, bool is_enduring, int depth){
             const int canput = pop_count_ull(legal);
             int pv_idx = 0;
             for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-                calc_flip(&flip, &search->board, cell);
-                search->board.move_board(&flip);
+                flip = calc_flip(&search->board, cell);
+                search->board.move_board_cell(flip, cell);
                     if (!clog_split(search, canput, pv_idx++, true, depth - 1, parallel_tasks)){
                         g = clog_search(search, true, depth - 1);
                         if (g != CLOG_NOT_FOUND)
                             res = std::max(res, -g);
                     }
-                search->board.undo_board(&flip);
+                search->board.undo_board_cell(flip, cell);
             }
             res = std::max(res, clog_wait_all(search, parallel_tasks));
         }
     #else
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-            calc_flip(&flip, &search->board, cell);
-            search->board.move_board(&flip);
+            flip = calc_flip(&search->board, cell);
+            search->board.move_board_cell(flip, cell);
                 g = clog_search(search, !is_enduring, depth - 1);
-            search->board.undo_board(&flip);
+            search->board.undo_board_cell(flip, cell);
             if (g != CLOG_NOT_FOUND)
                 res = std::max(res, -g);
             else if (is_enduring)
@@ -196,11 +196,11 @@ std::vector<Clog_result> first_clog_search(Board board, uint64_t *n_nodes){
     uint64_t legal = search.board.get_legal();
     if (legal == 0ULL)
         return res;
-    Flip flip;
+    uint64_t flip;
     int g;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-        calc_flip(&flip, &search.board, cell);
-        search.board.move_board(&flip);
+        flip = calc_flip(&search.board, cell);
+        search.board.move_board_cell(flip, cell);
             g = clog_search(&search, false, CLOG_SEARCH_DEPTH - 1);
             if (g != CLOG_NOT_FOUND){
                 Clog_result result;
@@ -216,7 +216,7 @@ std::vector<Clog_result> first_clog_search(Board board, uint64_t *n_nodes){
                     res.emplace_back(result);
                 }
             }
-        search.board.undo_board(&flip);
+        search.board.undo_board_cell(flip, cell);
     }
     *n_nodes = search.n_nodes;
     return res;

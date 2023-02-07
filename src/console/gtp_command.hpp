@@ -176,13 +176,13 @@ void gtp_play(int id, std::string arg, Board_info *board){
         board->board.pass();
         board->player ^= 1;
     } else{
-        Flip flip;
-        calc_flip(&flip, &board->board, policy);
-        if (flip.flip == 0ULL){
+        uint64_t flip;
+        flip = calc_flip(&board->board, policy);
+        if (flip == 0ULL){
             std::cout << gtp_error_head(id) << " " << "illegal move" << GTP_ENDL;
             return;
         }
-        board->board.move_board(&flip);
+        board->board.move_board_cell(flip, policy);
         board->player ^= 1;
         board->boards.emplace_back(board->board.copy());
         board->players.emplace_back(board->player);
@@ -218,9 +218,8 @@ void gtp_genmove(int id, std::string arg, Board_info *board, State *state, Optio
     int policy = ai(board->board, options->level, true, true, true, state->date).policy;
     ++state->date;
     state->date = manage_date(state->date);
-    Flip flip;
-    calc_flip(&flip, &board->board, policy);
-    board->board.move_board(&flip);
+    uint64_t flip = calc_flip(&board->board, policy);
+    board->board.move_board_cell(flip, policy);
     board->player ^= 1;
     board->boards.emplace_back(board->board.copy());
     board->players.emplace_back(board->player);

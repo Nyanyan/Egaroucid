@@ -52,13 +52,13 @@ inline int last2(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
         ++search->n_nodes_discs[search->n_discs];
     #endif
     int v = -SCORE_INF;
-    Flip flip;
+    uint64_t flip;
     if (bit_around[p0] & search->board.opponent){
-        calc_flip(&flip, &search->board, p0);
-        if (flip.flip){
-            search->move(&flip);
+        flip = calc_flip(&search->board, p0);
+        if (flip){
+            search->move_cell(flip, p0);
                 v = -last1(search, -beta, p1);
-            search->undo(&flip);
+            search->undo_cell(flip, p0);
             if (alpha < v){
                 if (beta <= v)
                     return v;
@@ -67,11 +67,11 @@ inline int last2(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
         }
     }
     if (bit_around[p1] & search->board.opponent){
-        calc_flip(&flip, &search->board, p1);
-        if (flip.flip){
-            search->move(&flip);
+        flip = calc_flip(&search->board, p1);
+        if (flip){
+            search->move_cell(flip, p1);
                 int g = -last1(search, -beta, p0);
-            search->undo(&flip);
+            search->undo_cell(flip, p1);
             if (v < g)
                 return g;
             else
@@ -102,7 +102,6 @@ inline int last2(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
     @param p1                   empty square 2/3
     @param p2                   empty square 3/3
     @param skipped              already passed?
-    @param searching            flag for terminating this search
     @return the final score
 
     This board contains only 3 empty squares, so empty squares on each part will be:
@@ -114,9 +113,7 @@ inline int last2(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
         1 - 0 - 0 > need to sort
         1 - 1 - 1
 */
-inline int last3(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast8_t p1, uint_fast8_t p2, bool skipped, const bool *searching){
-    if (!global_searching || !(*searching))
-        return SCORE_UNDEFINED;
+inline int last3(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast8_t p1, uint_fast8_t p2, bool skipped){
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
         ++search->n_nodes_discs[search->n_discs];
@@ -148,13 +145,13 @@ inline int last3(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
         }
     #endif
     int v = -SCORE_INF;
-    Flip flip;
+    uint64_t flip;
     if (bit_around[p0] & search->board.opponent){
-        calc_flip(&flip, &search->board, p0);
-        if (flip.flip){
-            search->move(&flip);
+        flip = calc_flip(&search->board, p0);
+        if (flip){
+            search->move_cell(flip, p0);
                 v = -last2(search, -beta, -alpha, p1, p2, false);
-            search->undo(&flip);
+            search->undo_cell(flip, p0);
             if (alpha < v){
                 if (beta <= v)
                     return v;
@@ -164,11 +161,11 @@ inline int last3(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
     }
     int g;
     if (bit_around[p1] & search->board.opponent){
-        calc_flip(&flip, &search->board, p1);
-        if (flip.flip){
-            search->move(&flip);
+        flip = calc_flip(&search->board, p1);
+        if (flip){
+            search->move_cell(flip, p1);
                 g = -last2(search, -beta, -alpha, p0, p2, false);
-            search->undo(&flip);
+            search->undo_cell(flip, p1);
             if (v < g){
                 if (alpha < g){
                     if (beta <= g)
@@ -180,11 +177,11 @@ inline int last3(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
         }
     }
     if (bit_around[p2] & search->board.opponent){
-        calc_flip(&flip, &search->board, p2);
-        if (flip.flip){
-            search->move(&flip);
+        flip = calc_flip(&search->board, p2);
+        if (flip){
+            search->move_cell(flip, p2);
                 g = -last2(search, -beta, -alpha, p0, p1, false);
-            search->undo(&flip);
+            search->undo_cell(flip, p2);
             if (v < g)
                 return g;
             else
@@ -196,7 +193,7 @@ inline int last3(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
             v = end_evaluate(&search->board, 3);
         else{
             search->board.pass();
-                v = -last3(search, -beta, -alpha, p0, p1, p2, true, searching);
+                v = -last3(search, -beta, -alpha, p0, p1, p2, true);
             search->board.pass();
         }
     }
@@ -216,7 +213,6 @@ inline int last3(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
     @param p2                   empty square 3/4
     @param p3                   empty square 4/4
     @param skipped              already passed?
-    @param searching            flag for terminating this search
     @return the final score
 
     This board contains only 4 empty squares, so empty squares on each part will be:
@@ -232,9 +228,7 @@ inline int last3(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
         1 - 1 - 0 - 0 > need to sort
         1 - 1 - 1 - 1
 */
-inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast8_t p1, uint_fast8_t p2, uint_fast8_t p3, bool skipped, const bool *searching){
-    if (!global_searching || !(*searching))
-        return SCORE_UNDEFINED;
+inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast8_t p1, uint_fast8_t p2, uint_fast8_t p3, bool skipped){
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
         ++search->n_nodes_discs[search->n_discs];
@@ -301,13 +295,13 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
         }
     #endif
     int v = -SCORE_INF;
-    Flip flip;
+    uint64_t flip;
     if (bit_around[p0] & search->board.opponent){
-        calc_flip(&flip, &search->board, p0);
-        if (flip.flip){
-            search->move(&flip);
-                v = -last3(search, -beta, -alpha, p1, p2, p3, false, searching);
-            search->undo(&flip);
+        flip = calc_flip(&search->board, p0);
+        if (flip){
+            search->move_cell(flip, p0);
+                v = -last3(search, -beta, -alpha, p1, p2, p3, false);
+            search->undo_cell(flip, p0);
             if (alpha < v){
                 if (beta <= v)
                     return v;
@@ -317,11 +311,11 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
     }
     int g;
     if (bit_around[p1] & search->board.opponent){
-        calc_flip(&flip, &search->board, p1);
-        if (flip.flip){
-            search->move(&flip);
-                g = -last3(search, -beta, -alpha, p0, p2, p3, false, searching);
-            search->undo(&flip);
+        flip = calc_flip(&search->board, p1);
+        if (flip){
+            search->move_cell(flip, p1);
+                g = -last3(search, -beta, -alpha, p0, p2, p3, false);
+            search->undo_cell(flip, p1);
             if (v < g){
                 if (alpha < g){
                     if (beta <= g)
@@ -333,11 +327,11 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
         }
     }
     if (bit_around[p2] & search->board.opponent){
-        calc_flip(&flip, &search->board, p2);
-        if (flip.flip){
-            search->move(&flip);
-                g = -last3(search, -beta, -alpha, p0, p1, p3, false, searching);
-            search->undo(&flip);
+        flip = calc_flip(&search->board, p2);
+        if (flip){
+            search->move_cell(flip, p2);
+                g = -last3(search, -beta, -alpha, p0, p1, p3, false);
+            search->undo_cell(flip, p2);
             if (v < g){
                 if (alpha < g){
                     if (beta <= g)
@@ -349,11 +343,11 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
         }
     }
     if (bit_around[p3] & search->board.opponent){
-        calc_flip(&flip, &search->board, p3);
-        if (flip.flip){
-            search->move(&flip);
-                g = -last3(search, -beta, -alpha, p0, p1, p2, false, searching);
-            search->undo(&flip);
+        flip = calc_flip(&search->board, p3);
+        if (flip){
+            search->move_cell(flip, p3);
+                g = -last3(search, -beta, -alpha, p0, p1, p2, false);
+            search->undo_cell(flip, p3);
             if (v < g)
                 return g;
         }
@@ -363,14 +357,23 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
             v = end_evaluate(&search->board, 4);
         else{
             search->board.pass();
-                v = -last4(search, -beta, -alpha, p0, p1, p2, p3, true, searching);
+                v = -last4(search, -beta, -alpha, p0, p1, p2, p3, true);
             search->board.pass();
         }
     }
     return v;
 }
 
-#if USE_NEGA_ALPHA_END_FAST
+inline int last4_wrapper(Search *search, int alpha, int beta){
+    uint_fast8_t p0, p1, p2, p3;
+    p0 = search->empty_list[0].next->cell;
+    p1 = search->empty_list[0].next->next->cell;
+    p2 = search->empty_list[0].next->next->next->cell;
+    p3 = search->empty_list[0].next->next->next->cell;
+    return last4(search, alpha, beta, p0, p1, p2, p3, false);
+}
+
+#if USE_NEGA_ALPHA_END_FAST // CANNOT BE COMPILED
     /*
         @brief Get a final score with few empties
 
@@ -423,7 +426,7 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
                     uint_fast8_t p0, p1, p2, p3;
                     legal_copy = legal & legal_mask;
                     for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
-                        calc_flip(&flip, &search->board, cell);
+                        flip = calc_flip(&search->board, cell);
                         search->move(&flip);
                             empties = ~(search->board.player | search->board.opponent);
                             p0 = first_bit(&empties);
@@ -443,7 +446,7 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
                     }
                     legal_copy = legal & ~legal_mask;
                     for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
-                        calc_flip(&flip, &search->board, cell);
+                        flip = calc_flip(&search->board, cell);
                         search->move(&flip);
                             empties = ~(search->board.player | search->board.opponent);
                             p0 = first_bit(&empties);
@@ -464,7 +467,7 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
                 } else{
                     legal_copy = legal & legal_mask;
                     for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
-                        calc_flip(&flip, &search->board, cell);
+                        flip = calc_flip(&search->board, cell);
                         search->move(&flip);
                             g = -nega_alpha_end_fast(search, -beta, -alpha, false, true, searching);
                         search->undo(&flip);
@@ -479,7 +482,7 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
                     }
                     legal_copy = legal & ~legal_mask;
                     for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
-                        calc_flip(&flip, &search->board, cell);
+                        flip = calc_flip(&search->board, cell);
                         search->move(&flip);
                             g = -nega_alpha_end_fast(search, -beta, -alpha, false, true, searching);
                         search->undo(&flip);
@@ -498,7 +501,7 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
                     uint64_t empties;
                     uint_fast8_t p0, p1, p2, p3;
                     for (cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-                        calc_flip(&flip, &search->board, cell);
+                        flip = calc_flip(&search->board, cell);
                         search->move(&flip);
                             empties = ~(search->board.player | search->board.opponent);
                             p0 = first_bit(&empties);
@@ -518,7 +521,7 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
                     }
                 } else{
                     for (cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-                        calc_flip(&flip, &search->board, cell);
+                        flip = calc_flip(&search->board, cell);
                         search->move(&flip);
                             g = -nega_alpha_end_fast(search, -beta, -alpha, false, true, searching);
                         search->undo(&flip);
@@ -538,7 +541,7 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
                 uint64_t empties;
                 uint_fast8_t p0, p1, p2, p3;
                 for (cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-                    calc_flip(&flip, &search->board, cell);
+                    flip = calc_flip(&search->board, cell);
                     search->move(&flip);
                         empties = ~(search->board.player | search->board.opponent);
                         p0 = first_bit(&empties);
@@ -558,7 +561,7 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
                 }
             } else{
                 for (cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-                    calc_flip(&flip, &search->board, cell);
+                    flip = calc_flip(&search->board, cell);
                     search->move(&flip);
                         g = -nega_alpha_end_fast(search, -beta, -alpha, false, true, searching);
                     search->undo(&flip);
@@ -577,7 +580,7 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
     }
 #endif
 
-#if USE_NEGA_ALPHA_END
+#if USE_NEGA_ALPHA_END // CANNOT BE COMPILED
     /*
         @brief Get a final score with some empties
 

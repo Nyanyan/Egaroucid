@@ -107,9 +107,9 @@ int book_widen_search(Board board, int level, const int book_depth, int expected
     ++(*date);
     *date = manage_date(*date);
     std::cerr << "time " << ms_to_time_short(tim() - strt) << " depth " << board.n_discs() - 4 << " BM value " << best_move.value << std::endl;
-    Flip flip;
-    calc_flip(&flip, &board, (uint_fast8_t)best_move.policy);
-    board.move_board(&flip);
+    uint64_t flip;
+    flip = calc_flip(&board, (uint_fast8_t)best_move.policy);
+    board.move_board_cell(flip, (uint_fast8_t)best_move.policy);
     *player ^= 1;
         board.copy(board_copy);
         g = -book_widen_search(board, level, book_depth, expected_error, board_copy, player, strt_tim, book_file, book_bak, date, strt);
@@ -118,15 +118,15 @@ int book_widen_search(Board board, int level, const int book_depth, int expected
             std::cerr << "time " << ms_to_time_short(tim() - strt) << " depth " << board.n_discs() - 4 << " PV value " << g << std::endl;
         } else
             return SCORE_UNDEFINED;
-    board.undo_board(&flip);
+    board.undo_board_cell(flip, (uint_fast8_t)best_move.policy);
     board.copy(board_copy);
     *player ^= 1;
     legal ^= 1ULL << best_move.policy;
     if (legal){
         int alpha;
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-            calc_flip(&flip, &board, cell);
-            board.move_board(&flip);
+            flip = calc_flip(&board, cell);
+            board.move_board_cell(flip, cell);
             *player ^= 1;
             board.copy(board_copy);
                 alpha = std::max(-HW2, v - expected_error);
@@ -140,7 +140,7 @@ int book_widen_search(Board board, int level, const int book_depth, int expected
                         std::cerr << "time " << ms_to_time_short(tim() - strt) << " depth " << board.n_discs() - 4 << " AD value " << g << " pre " << best_move.value << " best " << v << std::endl;
                     }
                 }
-            board.undo_board(&flip);
+            board.undo_board_cell(flip, cell);
             board.copy(board_copy);
             *player ^= 1;
         }
@@ -225,14 +225,14 @@ int book_deepen_search(Board board, int level, const int book_depth, int expecte
     int book_val = -book.get(&board);
     if (best_moves.size() == 0)
         return book_widen_search(board, level, book_depth, expected_error, board_copy, player, strt_tim, book_file, book_bak, date, strt);
-    Flip flip;
+    uint64_t flip;
     for (int policy: best_moves){
-        calc_flip(&flip, &board, (uint_fast8_t)policy);
-        board.move_board(&flip);
+        flip = calc_flip(&board, (uint_fast8_t)policy);
+        board.move_board_cell(flip, (uint_fast8_t)policy);
         board.copy(board_copy);
         *player ^= 1;
             g = -book_deepen_search(board, level, book_depth, expected_error, board_copy, player, strt_tim, book_file, book_bak, date, strt);
-        board.undo_board(&flip);
+        board.undo_board(flip, (uint_fast8_t)policy);
         board.copy(board_copy);
         *player ^= 1;
         v = std::max(v, g);
