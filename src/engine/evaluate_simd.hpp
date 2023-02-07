@@ -39,7 +39,7 @@
 #define MAX_CANPUT 35
 #define MAX_STONE_NUM 65
 
-// mobility pattern
+// mobility patterns
 #define N_CANPUT_PATTERNS 4
 #define MOBILITY_PATTERN_SIZE 256
 
