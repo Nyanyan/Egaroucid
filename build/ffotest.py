@@ -45,7 +45,7 @@ answer = '''#40 38  a2
 answer = answer.splitlines()
 
 #if sys.argv[1] == 'g':
-cmd = 'Egaroucid_for_Console_60phase.exe -l 60 -nobook -thread 23 -hash 25 -solve problem/ffo40-59.txt'
+cmd = 'Egaroucid_for_Console.exe -l 60 -nobook -thread 23 -hash 25 -solve problem/ffo40-59.txt'
 #else:
 #    cmd = 'Egaroucid_console.exe -l 60 -nobook -thread 23 -hash 25 -solve problem/ffo40-59.txt'
 print(cmd)
