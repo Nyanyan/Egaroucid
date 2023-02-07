@@ -42,7 +42,7 @@ idxes = [0, 2, 6, 4, 10, 8, 12]
 need_coord_translate = -1
 '''
 #6.1.0
-idxes = [0, 2, 4, 3, 5, 6, 7]
+idxes = [0, 2, 3, 4, 5, 6, 7]
 need_coord_translate = -1
 
 def coord_translator(cell):
