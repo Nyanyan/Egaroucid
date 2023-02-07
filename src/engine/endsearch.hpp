@@ -366,10 +366,15 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
 
 inline int last4_wrapper(Search *search, int alpha, int beta){
     uint_fast8_t p0, p1, p2, p3;
-    p0 = search->empty_list[0].next->cell;
-    p1 = search->empty_list[0].next->next->cell;
-    p2 = search->empty_list[0].next->next->next->cell;
-    p3 = search->empty_list[0].next->next->next->next->cell;
+    Square *square = search->empty_list[0].next;
+    p0 = square->cell;
+    square = square->next;
+    p1 = square->cell;
+    square = square->next;
+    p2 = square->cell;
+    square = square->next;
+    p3 = square->cell;
+    square = square->next;
     return last4(search, alpha, beta, p0, p1, p2, p3, false);
 }
 
