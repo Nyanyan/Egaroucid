@@ -34,8 +34,10 @@
 #define MOVE_ORDERING_NWS_VALUE_OFFSET_ALPHA 10
 #define MOVE_ORDERING_NWS_VALUE_OFFSET_BETA 3
 #define MOVE_ORDERING_MPC_LEVEL MPC_95_LEVEL
-#define W_END_MOBILITY 16
-#define W_END_PARITY 8
+
+#define W_END_MOBILITY 32
+#define W_END_PARITY 4
+#define W_END_VALUE 4
 
 // 5 -10 -20 -70 -25
 // 4 -8 -16 -48 -157
@@ -224,10 +226,22 @@ inline bool move_evaluate_end(Search *search, Flip_value *flip_value){
     flip_value->value = cell_weight[flip_value->flip.pos];
     if (search->parity & cell_div4[flip_value->flip.pos])
         flip_value->value += W_END_PARITY;
+    eval_move(search, &flip_value->flip);
+    search->move(&flip_value->flip);
+        flip_value->n_legal = search->board.get_legal();
+        flip_value->value -= pop_count_ull(flip_value->n_legal) * W_END_MOBILITY;
+        flip_value->value -= mid_evaluate_diff(search) * W_END_VALUE;
+    search->undo(&flip_value->flip);
+    eval_undo(search, &flip_value->flip);
+    /*
+    flip_value->value = cell_weight[flip_value->flip.pos];
+    if (search->parity & cell_div4[flip_value->flip.pos])
+        flip_value->value += W_END_PARITY;
     search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
         flip_value->value -= pop_count_ull(flip_value->n_legal) * W_END_MOBILITY;
     search->undo(&flip_value->flip);
+    */
     return false;
 }
 

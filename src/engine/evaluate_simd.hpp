@@ -44,7 +44,7 @@
 #define MOBILITY_PATTERN_SIZE 256
 
 // constant
-#define SIMD_EVAL_OFFSET 4090
+#define SIMD_EVAL_OFFSET 4092
 
 /*
     @brief value definition
@@ -376,6 +376,7 @@ __m256i feature_to_coord_simd_cell[N_SIMD_EVAL_FEATURES][MAX_PATTERN_CELLS][2];
 __m256i coord_to_feature_simd[HW2][N_SIMD_EVAL_FEATURES];
 __m256i coord_to_feature_simd2[HW2][N_SIMD_EVAL_FEATURES];
 __m256i eval_simd_offsets[N_SIMD_EVAL_FEATURES];
+__m256i eval_simd_offset0;
 
 /*
     @brief constants of 3 ^ N
@@ -483,12 +484,12 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
         for (j = 0; j < N_PATTERNS; ++j){
             for (k = 0; k < pow3[pattern_sizes[j]]; ++k){
                 if (pattern_arr[0][phase_idx][pattern_starts[j] + k] < -SIMD_EVAL_OFFSET){
-                    pattern_arr[0][phase_idx][pattern_starts[j] + k] = -SIMD_EVAL_OFFSET;
                     std::cerr << "[ERROR] evaluation value too low. you can ignore this error. phase " << phase_idx << " feature " << j << " index " << k << " found " << pattern_arr[0][phase_idx][pattern_starts[j] + k] << std::endl;
+                    pattern_arr[0][phase_idx][pattern_starts[j] + k] = -SIMD_EVAL_OFFSET;
                 }
-                if (pattern_arr[0][phase_idx][pattern_starts[j] + k] >= 0x7FFF - SIMD_EVAL_OFFSET){
-                    pattern_arr[0][phase_idx][pattern_starts[j] + k] = 0x7FFF - SIMD_EVAL_OFFSET - 1;
+                if (pattern_arr[0][phase_idx][pattern_starts[j] + k] > SIMD_EVAL_OFFSET){
                     std::cerr << "[ERROR] evaluation value too high. you can ignore this error. phase " << phase_idx << " feature " << j << " index " << k << " found " << pattern_arr[0][phase_idx][pattern_starts[j] + k] << std::endl;
+                    pattern_arr[0][phase_idx][pattern_starts[j] + k] = SIMD_EVAL_OFFSET;
                 }
                 pattern_arr[0][phase_idx][pattern_starts[j] + k] += SIMD_EVAL_OFFSET;
             }
@@ -545,6 +546,10 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
     eval_simd_offsets[1] = _mm256_set_epi32(pattern_starts[4], pattern_starts[4], pattern_starts[5], pattern_starts[5], pattern_starts[6], pattern_starts[7], pattern_starts[7], pattern_starts[8]);
     eval_simd_offsets[2] = _mm256_set_epi32(pattern_starts[8], pattern_starts[9], pattern_starts[9], pattern_starts[10], pattern_starts[10], pattern_starts[11], pattern_starts[11], pattern_starts[12]);
     eval_simd_offsets[3] = _mm256_set_epi32(pattern_starts[12], pattern_starts[13], pattern_starts[13], pattern_starts[14], pattern_starts[14], pattern_starts[15], pattern_starts[15], N_PATTERN_PARAMS + 1);
+    eval_simd_offset0 = _mm256_set_epi16(
+        pattern_starts[0], pattern_starts[0], pattern_starts[0], pattern_starts[0], pattern_starts[1], pattern_starts[1], pattern_starts[1], pattern_starts[1], 
+        pattern_starts[2], pattern_starts[2], pattern_starts[2], pattern_starts[2], pattern_starts[3], pattern_starts[3], pattern_starts[3], pattern_starts[3]
+    );
     if (show_log)
         std::cerr << "evaluation function initialized" << std::endl;
     return true;
@@ -635,8 +640,16 @@ inline __m256i calc_idx8_b(const __m256i eval_features[], const int i){
     return _mm256_add_epi32(_mm256_srli_epi32(eval_features[i], 16), eval_simd_offsets[i]);
 }
 
+inline __m256i calc_idx8_a0(const __m256i feature){
+    return _mm256_and_si256(feature, eval_lower_mask);
+}
+
+inline __m256i calc_idx8_b0(const __m256i feature){
+    return _mm256_srli_epi32(feature, 16);
+}
+
 inline __m256i gather_eval(const int *pat_com, const __m256i idx8){
-    #if SIMD_EVAL_OFFSET * 16 < 65535 // HACK if (SIMD_EVAL_OFFSET * 2) * 8 < 2 ^ 16, and is unnecessary
+    #if SIMD_EVAL_OFFSET * 16 < 65535  // HACK if (SIMD_EVAL_OFFSET * 2) * 8 < 2 ^ 16, and is unnecessary
         return _mm256_i32gather_epi32(pat_com, idx8, 2);
     #else
         return _mm256_and_si256(_mm256_i32gather_epi32(pat_com, idx8, 2), eval_lower_mask);
@@ -645,8 +658,8 @@ inline __m256i gather_eval(const int *pat_com, const __m256i idx8){
 
 inline int calc_pattern_diff(const int phase_idx, Search *search){
     const int *pat_com = (int*)pattern_arr[search->eval_feature_reversed][phase_idx];
-    __m256i res256 =                  gather_eval(pat_com, calc_idx8_a(search->eval_features, 0));
-    res256 = _mm256_add_epi32(res256, gather_eval(pat_com, calc_idx8_b(search->eval_features, 0)));
+    __m256i res256 =                  gather_eval(pat_com, calc_idx8_a0(search->eval_features[0]));
+    res256 = _mm256_add_epi32(res256, gather_eval(pat_com, calc_idx8_b0(search->eval_features[0])));
     res256 = _mm256_add_epi32(res256, gather_eval(pat_com, calc_idx8_a(search->eval_features, 1)));
     res256 = _mm256_add_epi32(res256, gather_eval(pat_com, calc_idx8_b(search->eval_features, 1)));
     res256 = _mm256_add_epi32(res256, gather_eval(pat_com, calc_idx8_a(search->eval_features, 2)));
@@ -793,6 +806,7 @@ inline void calc_features(Search *search){
         search->eval_features[i] = _mm256_adds_epu16(search->eval_features[i], _mm256_i32gather_epi32(b_arr_int, feature_to_coord_simd_cell[i][MAX_PATTERN_CELLS - 1][0], 4));
         search->eval_features[i] = _mm256_adds_epu16(search->eval_features[i], _mm256_slli_epi32(_mm256_i32gather_epi32(b_arr_int, feature_to_coord_simd_cell[i][MAX_PATTERN_CELLS - 1][1], 4), 16));
     }
+    search->eval_features[0] = _mm256_adds_epu16(search->eval_features[0], eval_simd_offset0);
     search->eval_feature_reversed = 0;
 }
 

@@ -41,9 +41,8 @@
 
     Raw score is STEP times larger than the real score.
 */
-#define STEP 256
-#define STEP_2 128
-//#define STEP_SHIFT 8
+#define STEP 128
+#define STEP_2 64
 
 /*
     @brief 3 ^ N definition
