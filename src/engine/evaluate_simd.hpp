@@ -44,15 +44,15 @@
 #define MOBILITY_PATTERN_SIZE 256
 
 // constant
-#define SIMD_EVAL_OFFSET 16384
+#define SIMD_EVAL_OFFSET 4090
 
 /*
     @brief value definition
 
     Raw score is STEP times larger than the real score.
 */
-#define STEP 256
-#define STEP_2 128
+#define STEP 128
+#define STEP_2 64
 //#define STEP_SHIFT 8
 
 /*
@@ -636,7 +636,11 @@ inline __m256i calc_idx8_b(const __m256i eval_features[], const int i){
 }
 
 inline __m256i gather_eval(const int *pat_com, const __m256i idx8){
-    return _mm256_and_si256(_mm256_i32gather_epi32(pat_com, idx8, 2), eval_lower_mask);
+    #if SIMD_EVAL_OFFSET * 16 < 65535 // HACK if (SIMD_EVAL_OFFSET * 2) * 8 < 2 ^ 16, and is unnecessary
+        return _mm256_i32gather_epi32(pat_com, idx8, 2);
+    #else
+        return _mm256_and_si256(_mm256_i32gather_epi32(pat_com, idx8, 2), eval_lower_mask);
+    #endif
 }
 
 inline int calc_pattern_diff(const int phase_idx, Search *search){
@@ -649,6 +653,9 @@ inline int calc_pattern_diff(const int phase_idx, Search *search){
     res256 = _mm256_add_epi32(res256, gather_eval(pat_com, calc_idx8_b(search->eval_features, 2)));
     res256 = _mm256_add_epi32(res256, gather_eval(pat_com, calc_idx8_a(search->eval_features, 3)));
     res256 = _mm256_add_epi32(res256, gather_eval(pat_com, calc_idx8_b(search->eval_features, 3)));
+    #if SIMD_EVAL_OFFSET * 16 < 65535
+        res256 = _mm256_and_si256(res256, eval_lower_mask);
+    #endif
     __m128i res128 = _mm_add_epi32(_mm256_castsi256_si128(res256), _mm256_extracti128_si256(res256, 1));
     res128 = _mm_hadd_epi32(res128, res128);
     return _mm_cvtsi128_si32(res128) + _mm_extract_epi32(res128, 1) - SIMD_EVAL_OFFSET * N_SYMMETRY_PATTERNS;

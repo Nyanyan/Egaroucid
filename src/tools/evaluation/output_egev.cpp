@@ -5,7 +5,7 @@
 #include <ios>
 #include <iomanip>
 
-#define EVAL_MAX 8190
+#define EVAL_MAX 4090
 
 int main(int argc, char* argv[]){
     if (argc < 3){
