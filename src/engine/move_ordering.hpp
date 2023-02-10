@@ -209,6 +209,11 @@ inline bool move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
     return false;
 }
 
+inline bool is_free_odd_empties(Search *search, uint_fast8_t pos){
+    uint64_t masked_empties = ~(search->board.player | search->board.opponent) & parity_table[cell_div4[pos]];
+    return get_potential_mobility(search->board.player, masked_empties) > 0;
+}
+
 /*
     @brief Evaluate a move in endgame
 
@@ -221,18 +226,34 @@ inline bool move_evaluate_end(Search *search, Flip_value *flip_value){
         flip_value->value = W_WIPEOUT;
         return true;
     }
-    flip_value->value = cell_weight[flip_value->flip.pos] * W_CELL_WEIGHT;
-    if (search->parity & cell_div4[flip_value->flip.pos])
+    
+    flip_value->value = cell_weight[flip_value->flip.pos];
+    if (search->parity & cell_div4[flip_value->flip.pos]){
         flip_value->value += W_END_PARITY;
+        if (is_free_odd_empties(search, flip_value->flip.pos))
+            flip_value->value += 32;
+    }
+
     eval_move(search, &flip_value->flip);
     search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
-        flip_value->value += get_weighted_n_moves(flip_value->n_legal) * W_MOBILITY;
-        uint64_t empties = ~(search->board.player | search->board.opponent);
-        flip_value->value += get_potential_mobility(search->board.player, empties) * W_POTENTIAL_MOBILITY;
-        flip_value->value += mid_evaluate_diff(search) * W_VALUE;
+        flip_value->value += pop_count_ull(flip_value->n_legal) * (-16);
+        //uint64_t empties = ~(search->board.player | search->board.opponent);
+        //flip_value->value += get_potential_mobility(search->board.player, empties) * (-1);
+        flip_value->value += mid_evaluate_diff(search) * (-4);
     search->undo(&flip_value->flip);
     eval_undo(search, &flip_value->flip);
+    /**/
+    /*
+    flip_value->value = cell_weight[flip_value->flip.pos];
+    if (search->parity & cell_div4[flip_value->flip.pos])
+        flip_value->value += W_END_PARITY;
+    search->move(&flip_value->flip);
+        flip_value->n_legal = search->board.get_legal();
+        flip_value->value -= pop_count_ull(flip_value->n_legal) * W_END_MOBILITY;
+    search->undo(&flip_value->flip);
+    /**/
+    return false;
 }
 
 /*
