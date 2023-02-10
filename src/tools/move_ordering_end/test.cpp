@@ -5,7 +5,17 @@
 #include <sstream>
 #include <fstream>
 #include <vector>
+#include <algorithm>
 #include "move_evaluation_definition_20230210.hpp"
+
+struct Adj_Data {
+    uint16_t features[ADJ_N_FEATURES];
+    double score;
+    double weight;
+};
+
+double adj_eval_arr[ADJ_N_EVAL][ADJ_MAX_EVALUATE_IDX];
+std::vector<Adj_Data> adj_test_data;
 
 void trs_init(){
     bit_init();
@@ -25,7 +35,35 @@ struct Trs_Convert_transcript_info{
     int8_t policy;
 };
 
-void trs_convert_transcript(std::string transcript, std::ofstream *fout){
+void adj_import_eval(std::string file) {
+    std::ifstream ifs(file);
+    if (ifs.fail()) {
+        std::cerr << "evaluation file " << file << " not exist" << std::endl;
+        return;
+    }
+    std::cerr << "importing eval params " << file << std::endl;
+    std::string line;
+    for (int pattern_idx = 0; pattern_idx < ADJ_N_EVAL; ++pattern_idx) {
+        for (int pattern_elem = 0; pattern_elem < adj_eval_sizes[pattern_idx]; ++pattern_elem) {
+            if (!getline(ifs, line)) {
+                std::cerr << "ERROR evaluation file broken" << std::endl;
+                return;
+            }
+            adj_eval_arr[pattern_idx][pattern_elem] = 0; //stof(line);
+        }
+    }
+}
+
+inline double adj_predict(uint16_t features[]) {
+    double res = 0.0;
+    for (int i = 0; i < ADJ_N_FEATURES - 16; ++i) {
+        res += adj_eval_arr[adj_feature_to_eval_idx[i]][features[i]];
+    }
+    res /= ADJ_MO_SCORE_MAX;
+    return res;
+}
+
+void trs_convert_transcript(std::string transcript, int res[], int *n){
     int8_t y, x;
     std::vector<Trs_Convert_transcript_info> boards;
     Trs_Convert_transcript_info board_info;
@@ -64,41 +102,45 @@ void trs_convert_transcript(std::string transcript, std::ofstream *fout){
     }
     uint64_t legal;
     uint16_t eval_idxes[ADJ_N_FEATURES];
-    uint16_t score;
-    uint16_t weight;
-    int n_legal;
+    double score;
+    int rank;
     for (Trs_Convert_transcript_info &datum: boards){
         legal = datum.board.get_legal();
-        n_legal = pop_count_ull(legal);
+        std::vector<std::pair<double, uint_fast8_t>> scores;
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
             adj_calc_features(&datum.board, cell, eval_idxes);
-            for (int i = 0; i < ADJ_N_FEATURES; ++i)
-                fout->write((char*)&(eval_idxes[i]), 2);
-            score = 2 * (cell == datum.policy) - 1;
-            fout->write((char*)&score, 2);
-            weight = (n_legal - 1) * (cell == datum.policy) + 1;
-            fout->write((char*)&weight, 2);
+            score = adj_predict(eval_idxes);
+            scores.emplace_back(std::make_pair(score, cell));
         }
+        std::sort(scores.begin(), scores.end());
+        rank = 15;
+        for (int i = (int)scores.size() - 1; i >= 0; --i){
+            if (scores[i].second == datum.policy){
+                rank = (int)scores.size() - 1 - i;
+                break;
+            }
+        }
+        ++(*n);
+        ++res[rank];
     }
 }
 
 int main(int argc, char* argv[]){
     if (argc < 5){
-        std::cerr << "input [in_dir] [start_file_num] [end_file_num] [out_file]" << std::endl;
+        std::cerr << "input [in_dir] [start_file_num] [end_file_num] [eval_file]" << std::endl;
         return 1;
     }
     trs_init();
     std::string in_dir = std::string(argv[1]);
     int strt_file_num = atoi(argv[2]);
     int end_file_num = atoi(argv[3]);
-    std::string out_file = std::string(argv[4]);
-    std::ofstream fout;
-    fout.open(out_file, std::ios::out|std::ios::binary|std::ios::trunc);
-    if (!fout){
-        std::cerr << "can't open" << std::endl;
-        return 1;
-    }
+    std::string eval_file = std::string(argv[4]);
+    adj_import_eval(eval_file);
     int t = 0;
+    int benchmark[16];
+    for (int i = 0; i < 16; ++i)
+        benchmark[i] = 0;
+    int n = 0;
     for (int file_num = strt_file_num; file_num < end_file_num; ++file_num){
         std::cerr << "=";
         std::string file = in_dir + "/" + trs_fill0(file_num, 7) + ".txt";
@@ -109,11 +151,16 @@ int main(int argc, char* argv[]){
         }
         std::string line;
         while (std::getline(ifs, line)){
-            trs_convert_transcript(line, &fout);
+            trs_convert_transcript(line, benchmark, &n);
             ++t;
         }
     }
     std::cerr << std::endl;
     std::cout << t << " games found" << std::endl;
+    std::cout << " n " << n << std::endl;
+    for (int i = 0; i < 16; ++i){
+        double rate = (double)benchmark[i] / n;
+        std::cout << i << " " << benchmark[i] << " " << rate << std::endl;
+    }
     return 0;
 }

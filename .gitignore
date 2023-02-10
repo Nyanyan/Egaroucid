@@ -26,6 +26,7 @@ src/tools/hash/learned_data
 src/tools/evaluation/*.txt
 train_data
 model
+move_ordering_model
 benchmark/clog
 benchmark/ffotest
 benchmark/parallel_benchmark_log
