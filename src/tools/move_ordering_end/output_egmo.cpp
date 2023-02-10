@@ -5,7 +5,7 @@
 #include <ios>
 #include <iomanip>
 
-#define N_PARAM 196876
+#define N_PARAM 196858
 
 int main(int argc, char* argv[]){
     if (argc < 2){
