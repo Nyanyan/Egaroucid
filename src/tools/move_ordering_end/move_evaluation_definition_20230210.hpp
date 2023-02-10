@@ -17,8 +17,10 @@
 
 // overall
 #define ADJ_MAX_EVALUATE_IDX 59049
-#define ADJ_N_EVAL (5 + 4)
-#define ADJ_N_FEATURES (5 + 16)
+#define ADJ_N_EVAL (5 + 8)
+#define ADJ_N_FEATURES (5 + 32)
+
+#define ADJ_MO_SCORE_MAX 16384
 
 
 /*
@@ -284,6 +286,7 @@ constexpr Adj_Coord_to_feature adj_coord_to_feature[HW2] = {
 
 constexpr int adj_eval_sizes[ADJ_N_EVAL] = {
     10, 1, 1, ADJ_MO_MAX_MOBILITY, ADJ_MO_MAX_POT_MOBILITY, 
+    P38, P37, P310, P310, 
     P38, P37, P310, P310
 };
 
@@ -292,7 +295,11 @@ constexpr int adj_feature_to_eval_idx[ADJ_N_FEATURES] = {
     5, 5, 5, 5, 
     6, 6, 6, 6, 
     7, 7, 7, 7, 
-    8, 8, 8, 8
+    8, 8, 8, 8, 
+    9, 9, 9, 9, 
+    10, 10, 10, 10, 
+    11, 11, 11, 11, 
+    12, 12, 12, 12
 };
 
 uint16_t cell_type[HW2] = {
@@ -349,7 +356,6 @@ inline int adj_pick_pattern(const uint_fast8_t b_arr[], int pattern_idx){
 
 void adj_calc_features(Board *board, uint_fast8_t cell, uint16_t res[ADJ_N_FEATURES]){
     uint_fast8_t b_arr[HW2];
-    board->translate_to_arr_player(b_arr);
     uint64_t empty = ~(board->player | board->opponent);
     uint_fast8_t parity = 1 & pop_count_ull(empty & 0x000000000F0F0F0FULL);
     parity |= (1 & pop_count_ull(empty & 0x00000000F0F0F0F0ULL)) << 1;
@@ -364,9 +370,13 @@ void adj_calc_features(Board *board, uint_fast8_t cell, uint16_t res[ADJ_N_FEATU
     board->move_board(&flip);
         res[idx++] = pop_count_ull(board->get_legal());
         res[idx++] = get_potential_mobility(board->player, ~(board->player | board->opponent));
+        board->translate_to_arr_player(b_arr);
         for (int i = 0; i < ADJ_N_SYMMETRY_PATTERNS; ++i)
             res[idx++] = adj_pick_pattern(b_arr, i);
-    board->undo_board(&flip);    
+    board->undo_board(&flip);
+    board->translate_to_arr_player(b_arr);
+    for (int i = 0; i < ADJ_N_SYMMETRY_PATTERNS; ++i)
+        res[idx++] = adj_pick_pattern(b_arr, i);
 }
 
 int adj_pick_digit3(int num, int d, int n_digit){
@@ -379,8 +389,9 @@ uint16_t adj_calc_rev_idx(int feature, int idx){
     if (feature < ADJ_N_NORMAL_FEATURES){
         res = idx;
     } else{
-        for (int i = 0; i < adj_pattern_n_cells[feature - ADJ_N_NORMAL_FEATURES]; ++i){
-            res += adj_pick_digit3(idx, adj_rev_patterns[feature - ADJ_N_NORMAL_FEATURES][i], adj_pattern_n_cells[feature - ADJ_N_NORMAL_FEATURES]) * adj_pow3[adj_pattern_n_cells[feature - ADJ_N_NORMAL_FEATURES] - 1 - i];
+        int f = (feature - ADJ_N_NORMAL_FEATURES) % 4;
+        for (int i = 0; i < adj_pattern_n_cells[f]; ++i){
+            res += adj_pick_digit3(idx, adj_rev_patterns[f][i], adj_pattern_n_cells[f]) * adj_pow3[adj_pattern_n_cells[f] - 1 - i];
         }
     }
     return res;

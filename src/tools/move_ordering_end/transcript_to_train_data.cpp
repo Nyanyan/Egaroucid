@@ -63,14 +63,19 @@ void trs_convert_transcript(std::string transcript, std::ofstream *fout){
     uint64_t legal;
     uint16_t eval_idxes[ADJ_N_FEATURES];
     uint16_t score;
+    uint16_t weight;
+    int n_legal;
     for (Trs_Convert_transcript_info &datum: boards){
         legal = datum.board.get_legal();
+        n_legal = pop_count_ull(legal);
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
             adj_calc_features(&datum.board, cell, eval_idxes);
             for (int i = 0; i < ADJ_N_FEATURES; ++i)
                 fout->write((char*)&(eval_idxes[i]), 2);
-            score = (cell == datum.policy);
+            score = 2 * (cell == datum.policy) - 1;
             fout->write((char*)&score, 2);
+            weight = (n_legal - 1) * (cell == datum.policy) + 1;
+            fout->write((char*)&weight, 2);
         }
     }
 }

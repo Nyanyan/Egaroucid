@@ -23,17 +23,15 @@
 #define BATCH_THREAD_SIZE 256
 #define BATCH_BLOCK_SIZE 128
 #define BATCH_SIZE (BATCH_THREAD_SIZE * BATCH_BLOCK_SIZE)
-#define N_FLOOR_UNIQUE_FEATURES 3 // floorpow2(ADJ_N_EVAL)
+#define N_FLOOR_UNIQUE_FEATURES 5 // floorpow2(ADJ_N_EVAL)
 #define MAX_BATCH_DO_IDX (BATCH_SIZE / N_FLOOR_UNIQUE_FEATURES)
 
 #define ADJ_PRINT_INTERVAL 2
 
-#define ADJ_STEP 8192
-#define ADJ_SCORE_MAX 1 // 1 if best move else 0
-
 struct Adj_Data {
     uint16_t features[ADJ_N_FEATURES];
     double score;
+    double weight;
 };
 
 double adj_eval_arr[ADJ_N_EVAL][ADJ_MAX_EVALUATE_IDX];
@@ -50,11 +48,11 @@ __device__ double adj_predict_device(Adj_Data* device_test_data, double* device_
         eval_idx = device_strt_idxes[device_feature_to_eval_idx[i]] + device_test_data[problem_idx].features[i];
         res += device_eval_arr[eval_idx];
     }
-    res /= ADJ_STEP;
-    if (res > (double)ADJ_SCORE_MAX)
-        res = (double)ADJ_SCORE_MAX;
-    else if (res < 0.0)
-        res = 0.0;
+    res /= ADJ_MO_SCORE_MAX;
+    if (res > 1.0)
+        res = 1.0;
+    else if (res < -1.0)
+        res = -1.0;
     return res;
 }
 
@@ -63,11 +61,11 @@ inline double adj_predict(int problem_idx) {
     for (int i = 0; i < ADJ_N_FEATURES; ++i) {
         res += adj_eval_arr[adj_feature_to_eval_idx[i]][adj_test_data[problem_idx].features[i]];
     }
-    res /= ADJ_STEP;
-    if (res > (double)ADJ_SCORE_MAX)
-        res = (double)ADJ_SCORE_MAX;
-    else if (res < 0.0)
-        res = 0.0;
+    res /= ADJ_MO_SCORE_MAX;
+    if (res > 1.0)
+        res = 1.0;
+    else if (res < -1.0)
+        res = -1.0;
     return res;
 }
 
@@ -80,7 +78,8 @@ __global__ void adj_device_batch(double additional_learning_rate, bool mae_mse_c
     int problem_idx = device_batch_random_idx[batch_idx];
     int i, j, feature, eval_idx, global_eval_idx;
     double err = adj_predict_device(device_test_data, device_eval_arr, device_feature_to_eval_idx, problem_idx, device_eval_strts) - device_test_data[problem_idx].score;
-    double diff_base = additional_learning_rate * err * ADJ_STEP;
+    double diff_base = additional_learning_rate * err * ADJ_MO_SCORE_MAX;
+    //diff_base *= device_test_data[problem_idx].weight;
     if (mae_mse_calc) {
         device_mae_list[thread_block_idx] += abs(err);
         device_mse_list[thread_block_idx] += err * err;
@@ -375,7 +374,7 @@ void adj_import_eval(std::string file) {
 void adj_import_test_data(int n_files, char* files[], int use_phase, double beta) {
     int t = 0, i, j;
     FILE* fp;
-    int16_t n_discs, score, player;
+    int16_t score, weight;
     Adj_Data data;
     for (i = 0; i < ADJ_N_EVAL; ++i) {
         for (j = 0; j < adj_eval_sizes[i]; ++j)
@@ -391,12 +390,14 @@ void adj_import_test_data(int n_files, char* files[], int use_phase, double beta
             if (fread(&(data.features[0]), 2, ADJ_N_FEATURES, fp) < ADJ_N_FEATURES)
                 break;
             fread(&score, 2, 1, fp);
+            fread(&weight, 2, 1, fp);
             if ((t & 0b1111111111111111) == 0b1111111111111111)
                 std::cerr << '\r' << t;
             for (i = 0; i < ADJ_N_FEATURES; ++i) {
-                ++adj_alpha_occurance[adj_feature_to_eval_idx[i]][data.features[i]];
+                adj_alpha_occurance[adj_feature_to_eval_idx[i]][data.features[i]] += weight;
             }
             data.score = (double)score;
+            data.weight = (double)weight;
             adj_preds.emplace_back(0);
             adj_test_data.emplace_back(data);
             ++t;
