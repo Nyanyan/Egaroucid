@@ -32,14 +32,14 @@
 #define MAX_PATTERN_CELLS 10
 #define MAX_CELL_PATTERNS 13
 #define MAX_EVALUATE_IDX 59049
-#define N_PATTERN_PARAMS 521478
-#define N_PATTERN_PARAMS_FIRST 49086
-#define N_PATTERN_PARAMS_SECOND 472392
 #define SIMD_EVAL_OFFSET 4092
 #define N_SIMD_EVAL_OFFSET_BEF 2
 #define N_SIMD_EVAL_OFFSET_AFT 2
-#define SIMD_EVAL_START_OFFSET1 19927
-#define SIMD_EVAL_LOCAL_DUMMY_OFFSET 29160
+#define N_PATTERN_PARAMS 521478
+#define N_PATTERN_PARAMS_FIRST 29403
+#define SIMD_EVAL_DUMMY_ADDR 29404
+#define N_PATTERN_PARAMS_SECOND 492075
+#define SIMD_EVAL_F1_OFFSET 19927 // pattern_starts[4]
 
 // additional features
 #define MAX_SURROUND 64
@@ -449,21 +449,22 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
     int phase_idx, pattern_idx;
     constexpr int pattern_sizes[N_PATTERNS] = {8, 8, 8, 5, 6, 7, 8, 9, 10, 10, 10, 10, 10, 10, 10, 10};
     constexpr int pattern_starts[N_PATTERNS] = {
-        1, 6562, 13123, 19684, 19927, 20656, 22843, 29404, 
-        49088, 108137, 167186, 226235, 285284, 344333, 403382, 462431
+        1, 6562, 13123, 19684, // features[0]
+        19927, 20656, 22843, /*dummy here*/ 29405, // features[1]
+        49088, 108137, 167186, 226235, // features[2]
+        285284, 344333, 403382, 462431  // features[3]
     };
-    constexpr int16_t pattern_start_f1[4] = {0, 729, 2916, 9477};
     for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
         pattern_arr[0][phase_idx][0] = 0; // memory bound
         pattern_arr[1][phase_idx][0] = 0; // memory bound
-        if (fread(pattern_arr[0][phase_idx] + 1, 2, N_PATTERN_PARAMS_FIRST, fp) < N_PATTERN_PARAMS_FIRST){
+        if (fread(pattern_arr[0][phase_idx] + pattern_starts[0], 2, N_PATTERN_PARAMS_FIRST, fp) < N_PATTERN_PARAMS_FIRST){
             std::cerr << "[ERROR] [FATAL] evaluation file broken" << std::endl;
             fclose(fp);
             return false;
         }
-        pattern_arr[0][phase_idx][N_PATTERN_PARAMS_FIRST + 1] = 0; // dummy
-        pattern_arr[1][phase_idx][N_PATTERN_PARAMS_FIRST + 1] = 0; // dummy
-        if (fread(pattern_arr[0][phase_idx] + 2 + N_PATTERN_PARAMS_FIRST, 2, N_PATTERN_PARAMS_SECOND, fp) < N_PATTERN_PARAMS_SECOND){
+        pattern_arr[0][phase_idx][SIMD_EVAL_DUMMY_ADDR] = 0; // dummy
+        pattern_arr[1][phase_idx][SIMD_EVAL_DUMMY_ADDR] = 0; // dummy
+        if (fread(pattern_arr[0][phase_idx] + pattern_starts[7], 2, N_PATTERN_PARAMS_SECOND, fp) < N_PATTERN_PARAMS_SECOND){
             std::cerr << "[ERROR] [FATAL] evaluation file broken" << std::endl;
             fclose(fp);
             return false;
@@ -493,7 +494,7 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
     eval_lower_mask = _mm256_set1_epi32(0x0000FFFF);
     for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
         for (i = 1; i < N_PATTERN_PARAMS + 2; ++i){
-            if (i == N_PATTERN_PARAMS_FIRST + 1) // dummy
+            if (i == SIMD_EVAL_DUMMY_ADDR) // dummy
                 continue;
             if (pattern_arr[0][phase_idx][i] < -SIMD_EVAL_OFFSET){
                 std::cerr << "[ERROR] evaluation value too low. you can ignore this error. phase " << phase_idx << " index " << i << " found " << pattern_arr[0][phase_idx][i] << std::endl;
@@ -525,7 +526,7 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
     for (i = 0; i < N_SIMD_EVAL_FEATURES; ++i){
         for (j = 0; j < MAX_PATTERN_CELLS - 1; ++j){
             for (k = 0; k < 16; ++k)
-                f2c[k] = j < feature_to_coord[i * 16 + k].n_cells - 1 ? 3 : 1;
+                f2c[k] = (j < feature_to_coord[i * 16 + k].n_cells - 1) ? 3 : 1;
             feature_to_coord_simd_mul[i][j] = _mm256_set_epi16(f2c[0], f2c[1], f2c[2], f2c[3], f2c[4], f2c[5], f2c[6], f2c[7], f2c[8], f2c[9], f2c[10], f2c[11], f2c[12], f2c[13], f2c[14], f2c[15]);
         }
     }
@@ -548,8 +549,10 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
             c2f[coord_to_feature[cell].features[i].feature] = coord_to_feature[cell].features[i].x;
         for (i = 0; i < N_SIMD_EVAL_FEATURES; ++i){
             idx = i * 16;
-            coord_to_feature_simd[cell][i] = _mm256_set_epi16(c2f[idx], c2f[idx + 1], c2f[idx + 2], c2f[idx + 3], c2f[idx + 4], c2f[idx + 5], c2f[idx + 6], c2f[idx + 7], 
-                c2f[idx + 8], c2f[idx + 9], c2f[idx + 10], c2f[idx + 11], c2f[idx + 12], c2f[idx + 13], c2f[idx + 14], c2f[idx + 15]);
+            coord_to_feature_simd[cell][i] = _mm256_set_epi16(
+                c2f[idx], c2f[idx + 1], c2f[idx + 2], c2f[idx + 3], c2f[idx + 4], c2f[idx + 5], c2f[idx + 6], c2f[idx + 7], 
+                c2f[idx + 8], c2f[idx + 9], c2f[idx + 10], c2f[idx + 11], c2f[idx + 12], c2f[idx + 13], c2f[idx + 14], c2f[idx + 15]
+            );
             coord_to_feature_simd2[cell][i] = _mm256_slli_epi16(coord_to_feature_simd[cell][i], 1);
         }
     }
@@ -558,9 +561,10 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
         pattern_starts[2], pattern_starts[2], pattern_starts[2], pattern_starts[2], pattern_starts[3], pattern_starts[3], pattern_starts[3], pattern_starts[3]
     );
     eval_simd_offsets_bef[1] = _mm256_set_epi16(
-        pattern_start_f1[0], pattern_start_f1[0], pattern_start_f1[0], pattern_start_f1[0], pattern_start_f1[1], pattern_start_f1[1], pattern_start_f1[1], pattern_start_f1[1], 
-        pattern_start_f1[2], pattern_start_f1[2], SIMD_EVAL_LOCAL_DUMMY_OFFSET, SIMD_EVAL_LOCAL_DUMMY_OFFSET, pattern_start_f1[3], pattern_start_f1[3], pattern_start_f1[3], pattern_start_f1[3]
+        pattern_starts[4], pattern_starts[4], pattern_starts[4], pattern_starts[4], pattern_starts[5], pattern_starts[5], pattern_starts[5], pattern_starts[5], 
+        pattern_starts[6], pattern_starts[6], SIMD_EVAL_DUMMY_ADDR, SIMD_EVAL_DUMMY_ADDR, pattern_starts[7], pattern_starts[7], pattern_starts[7], pattern_starts[7]
     );
+    eval_simd_offsets_bef[1] = _mm256_sub_epi16(eval_simd_offsets_bef[1], _mm256_set1_epi16(SIMD_EVAL_F1_OFFSET));
     eval_simd_offsets_aft[0] = _mm256_set_epi32(pattern_starts[8], pattern_starts[8], pattern_starts[9], pattern_starts[9], pattern_starts[10], pattern_starts[10], pattern_starts[11], pattern_starts[11]);
     eval_simd_offsets_aft[1] = _mm256_set_epi32(pattern_starts[12], pattern_starts[12], pattern_starts[13], pattern_starts[13], pattern_starts[14], pattern_starts[14], pattern_starts[15], pattern_starts[15]);
     if (show_log)
@@ -671,10 +675,11 @@ inline __m256i gather_eval(const int *pat_com, const __m256i idx8){
 
 inline int calc_pattern_diff(const int phase_idx, Search *search){
     const int *pat_com = (int*)pattern_arr[search->eval_feature_reversed][phase_idx];
+    const int *pat_com1 = (int*)(&pattern_arr[search->eval_feature_reversed][phase_idx][SIMD_EVAL_F1_OFFSET]);
     __m256i res256 =                  gather_eval(pat_com, calc_idx8_bef_a(search->eval_features[0]));
     res256 = _mm256_add_epi32(res256, gather_eval(pat_com, calc_idx8_bef_b(search->eval_features[0])));
-    res256 = _mm256_add_epi32(res256, gather_eval(pat_com + SIMD_EVAL_START_OFFSET1, calc_idx8_bef_a(search->eval_features[1])));
-    res256 = _mm256_add_epi32(res256, gather_eval(pat_com + SIMD_EVAL_START_OFFSET1, calc_idx8_bef_b(search->eval_features[1])));
+    res256 = _mm256_add_epi32(res256, gather_eval(pat_com1, calc_idx8_bef_a(search->eval_features[1])));
+    res256 = _mm256_add_epi32(res256, gather_eval(pat_com1, calc_idx8_bef_b(search->eval_features[1])));
     res256 = _mm256_add_epi32(res256, gather_eval(pat_com, calc_idx8_aft_a(search->eval_features[2], 0)));
     res256 = _mm256_add_epi32(res256, gather_eval(pat_com, calc_idx8_aft_b(search->eval_features[2], 0)));
     res256 = _mm256_add_epi32(res256, gather_eval(pat_com, calc_idx8_aft_a(search->eval_features[3], 1)));
