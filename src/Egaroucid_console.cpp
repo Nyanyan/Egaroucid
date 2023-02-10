@@ -24,6 +24,8 @@ void init_console(Options options){
     stability_init();
     if (!evaluate_init(options.eval_file, options.show_log))
         std::exit(0);
+    if (!move_ordering_init(/*options.move_ordsering_end_file*/"resources/move_ordering_end.egmo", options.show_log))
+        std::exit(0);
     if (!options.nobook)
         book_init(options.book_file, options.show_log);
     if (options.show_log)

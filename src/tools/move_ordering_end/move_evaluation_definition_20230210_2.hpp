@@ -5,7 +5,7 @@
     @brief evaluation pattern definition
 */
 // features
-#define ADJ_N_NORMAL_FEATURES 5
+#define ADJ_N_NORMAL_FEATURES 3
 #define ADJ_MO_MAX_MOBILITY 16
 #define ADJ_MO_MAX_POT_MOBILITY 16
 
@@ -17,8 +17,8 @@
 
 // overall
 #define ADJ_MAX_EVALUATE_IDX 59049
-#define ADJ_N_EVAL (5 + 8)
-#define ADJ_N_FEATURES (5 + 32)
+#define ADJ_N_EVAL (3 + 8)
+#define ADJ_N_FEATURES (3 + 32)
 
 #define ADJ_MO_SCORE_MAX 16384
 
@@ -285,21 +285,21 @@ constexpr Adj_Coord_to_feature adj_coord_to_feature[HW2] = {
 };
 
 constexpr int adj_eval_sizes[ADJ_N_EVAL] = {
-    10, 2, 2, ADJ_MO_MAX_MOBILITY, ADJ_MO_MAX_POT_MOBILITY, 
+    10, 2, ADJ_MO_MAX_MOBILITY, 
     P310, P310, P310, P39, 
     P310, P310, P310, P39
 };
 
 constexpr int adj_feature_to_eval_idx[ADJ_N_FEATURES] = {
-    0, 1, 2, 3, 4, 
+    0, 1, 2, 
+    3, 3, 3, 3, 
+    4, 4, 4, 4, 
     5, 5, 5, 5, 
     6, 6, 6, 6, 
     7, 7, 7, 7, 
     8, 8, 8, 8, 
     9, 9, 9, 9, 
     10, 10, 10, 10, 
-    11, 11, 11, 11, 
-    12, 12, 12, 12
 };
 
 uint16_t cell_type[HW2] = {
@@ -365,11 +365,11 @@ void adj_calc_features(Board *board, uint_fast8_t cell, uint16_t res[ADJ_N_FEATU
     int idx = 0;
     res[idx++] = cell_type[cell];
     res[idx++] = (parity & cell_div4[cell]) > 0;
-    res[idx++] = is_free_odd_empties(board, cell);
+    //res[idx++] = is_free_odd_empties(board, cell);
     calc_flip(&flip, board, cell);
     board->move_board(&flip);
         res[idx++] = pop_count_ull(board->get_legal());
-        res[idx++] = get_potential_mobility(board->player, ~(board->player | board->opponent));
+        //res[idx++] = get_potential_mobility(board->player, ~(board->player | board->opponent));
         board->translate_to_arr_player(b_arr);
         for (int i = 0; i < ADJ_N_SYMMETRY_PATTERNS; ++i)
             res[idx++] = adj_pick_pattern(b_arr, i);

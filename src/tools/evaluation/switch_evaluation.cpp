@@ -51,9 +51,9 @@ constexpr size_t adj_eval_sizes[ADJ_N_EVAL] = {
 int16_t eval_arr[N_PHASES][ADJ_N_EVAL][ADJ_MAX_EVALUATE_IDX];
 
 constexpr int switch_idxes[ADJ_N_EVAL] = {
-    0, 5, 7, 8, // for move ordering
-    1, 2, 3, 4, 
-    6, 9, 10, 11, 
+    7, 8, 9, 11, // for move ordering
+    0, 1, 2, 3, 
+    4, 5, 6, 10, 
     12, 13, 14, 15, 
     16, 
     17, 

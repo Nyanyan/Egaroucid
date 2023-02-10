@@ -5,7 +5,7 @@
 #include <ios>
 #include <iomanip>
 
-#define N_PARAM 196844
+#define N_PARAM 196876
 
 int main(int argc, char* argv[]){
     if (argc < 2){
@@ -14,7 +14,7 @@ int main(int argc, char* argv[]){
     }
     std::string model_dir = std::string(argv[1]);
     std::ofstream fout;
-    fout.open(model_dir + "/move_ordering.egmo", std::ios::out|std::ios::binary|std::ios::trunc);
+    fout.open(model_dir + "/move_ordering_end.egmo", std::ios::out|std::ios::binary|std::ios::trunc);
     if (!fout){
         std::cerr << "can't open move_ordering.egmo" << std::endl;
         return 1;
@@ -28,14 +28,16 @@ int main(int argc, char* argv[]){
     }
     std::string line;
     int t = 0;
-    while (std::getline(ifs, line) && t < N_PARAM){
+    while (std::getline(ifs, line)){
         elem = stoi(line);
-        max_elem = std::max(max_elem, elem);
-        min_elem = std::min(min_elem, elem);
-        fout.write((char*)&elem, 2);
+        if (t < N_PARAM){
+            max_elem = std::max(max_elem, elem);
+            min_elem = std::min(min_elem, elem);
+            fout.write((char*)&elem, 2);
+        }
         ++t;
     }
-    std::cerr << t << std::endl;
+    std::cerr << t << " " << N_PARAM << std::endl;
     std::cerr << "min " << min_elem << std::endl;
     std::cerr << "max " << max_elem << std::endl;
     std::cerr << "done" << std::endl;

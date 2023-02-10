@@ -51,6 +51,13 @@
 #define W_NWS_VALUE -16
 #define W_NWS_VALUE_SHALLOW -14
 
+#define N_MOVE_ORDERING_END_PATTERN_PARAMS 196830
+#define N_MOVE_ORDERING_END_PATTERNS 4
+#define N_MOVE_ORDERING_END_SYMMETRY_PATTERNS 16
+#define N_MOVE_ORDERING_END_CELL_TYPES 10
+#define N_MOVE_ORDERING_END_LEGAL 16
+#define N_MOVE_ORDERING_END_POTENTIAL_MOBILITY 16
+
 /*
     @brief Flip structure with more information
 
@@ -76,11 +83,126 @@ struct Flip_value{
     }
 };
 
+constexpr uint_fast8_t cell_types[HW2] = {
+    0, 1, 2, 3, 3, 2, 1, 0, 
+    1, 4, 5, 6, 6, 5, 4, 1, 
+    2, 5, 7, 8, 8, 7, 5, 2, 
+    3, 6, 8, 9, 9, 8, 6, 3, 
+    3, 6, 8, 9, 9, 8, 6, 3, 
+    2, 5, 7, 8, 8, 7, 5, 2, 
+    1, 4, 5, 6, 6, 5, 4, 1, 
+    0, 1, 2, 3, 3, 2, 1, 0
+};
+
+int16_t move_ordering_end_score_cell_types[N_MOVE_ORDERING_END_CELL_TYPES];
+int16_t move_ordering_end_score_parity[2];
+int16_t move_ordering_end_score_free_odd[2];
+int16_t move_ordering_end_score_n_legal[N_MOVE_ORDERING_END_LEGAL];
+int16_t move_ordering_end_score_potential_mobility[N_MOVE_ORDERING_END_POTENTIAL_MOBILITY];
+int16_t move_ordering_end_pattern_arr[2][N_MOVE_ORDERING_END_PATTERN_PARAMS + 2];
+
 int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, const bool *searching);
 #if MID_FAST_DEPTH > 1
     int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped, const bool *searching);
 #endif
 int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
+
+void init_move_ordering_pattern_arr_rev(int pattern_idx, int siz, int strt){
+    int ri;
+    for (int i = 0; i < (int)pow3[siz]; ++i){
+        ri = swap_player_idx(i, siz);
+        move_ordering_end_pattern_arr[1][strt + ri] = move_ordering_end_pattern_arr[0][strt + i];
+    }
+}
+
+inline bool get_move_ordering_end_eval(const char* file, bool show_log){
+    if (show_log)
+        std::cerr << "move ordering end evaluation file " << file << std::endl;
+    FILE* fp;
+    if (!file_open(&fp, file, "rb")){
+        std::cerr << "[ERROR] [FATAL] can't open eval " << file << std::endl;
+        return false;
+    }
+    constexpr int pattern_sizes[N_MOVE_ORDERING_END_PATTERNS] = {10, 10, 10, 9};
+    constexpr int pattern_starts[N_MOVE_ORDERING_END_PATTERNS] = {1, 59050, 118099, 177148};
+    if (fread(move_ordering_end_score_cell_types, 2, N_MOVE_ORDERING_END_CELL_TYPES, fp) < N_MOVE_ORDERING_END_CELL_TYPES){
+        std::cerr << "[ERROR] [FATAL] evaluation file broken" << std::endl;
+        fclose(fp);
+        return false;
+    }
+    if (fread(move_ordering_end_score_parity, 2, 2, fp) < 2){
+        std::cerr << "[ERROR] [FATAL] evaluation file broken" << std::endl;
+        fclose(fp);
+        return false;
+    }
+    if (fread(move_ordering_end_score_free_odd, 2, 2, fp) < 2){
+        std::cerr << "[ERROR] [FATAL] evaluation file broken" << std::endl;
+        fclose(fp);
+        return false;
+    }
+    if (fread(move_ordering_end_score_n_legal, 2, N_MOVE_ORDERING_END_LEGAL, fp) < N_MOVE_ORDERING_END_LEGAL){
+        std::cerr << "[ERROR] [FATAL] evaluation file broken" << std::endl;
+        fclose(fp);
+        return false;
+    }
+    if (fread(move_ordering_end_score_potential_mobility, 2, N_MOVE_ORDERING_END_POTENTIAL_MOBILITY, fp) < N_MOVE_ORDERING_END_POTENTIAL_MOBILITY){
+        std::cerr << "[ERROR] [FATAL] evaluation file broken" << std::endl;
+        fclose(fp);
+        return false;
+    }
+    if (fread(move_ordering_end_pattern_arr[0] + 1, 2, N_MOVE_ORDERING_END_PATTERN_PARAMS, fp) < N_MOVE_ORDERING_END_PATTERN_PARAMS){
+        std::cerr << "[ERROR] [FATAL] evaluation file broken" << std::endl;
+        fclose(fp);
+        return false;
+    }
+    int i, j, k, idx, cell, pattern_idx;
+    for (i = 0; i < 2; ++i){
+        move_ordering_end_pattern_arr[i][0] = 0;
+        move_ordering_end_pattern_arr[i][N_MOVE_ORDERING_END_PATTERN_PARAMS + 1] = 0;
+    }
+    for (j = 0; j < N_MOVE_ORDERING_END_PATTERNS; ++j){
+        for (k = 0; k < pow3[pattern_sizes[j]]; ++k){
+            if (move_ordering_end_pattern_arr[0][pattern_starts[j] + k] < -SIMD_EVAL_OFFSET){
+                move_ordering_end_pattern_arr[0][pattern_starts[j] + k] = -SIMD_EVAL_OFFSET;
+                std::cerr << "[ERROR] evaluation value too low. you can ignore this error. feature " << j << " index " << k << " found " << move_ordering_end_pattern_arr[0][pattern_starts[j] + k] << std::endl;
+            }
+            if (move_ordering_end_pattern_arr[0][pattern_starts[j] + k] >= 0x7FFF - SIMD_EVAL_OFFSET){
+                move_ordering_end_pattern_arr[0][pattern_starts[j] + k] = 0x7FFF - SIMD_EVAL_OFFSET - 1;
+                std::cerr << "[ERROR] evaluation value too high. you can ignore this error. feature " << j << " index " << k << " found " << move_ordering_end_pattern_arr[0][pattern_starts[j] + k] << std::endl;
+            }
+            move_ordering_end_pattern_arr[0][pattern_starts[j] + k] += SIMD_EVAL_OFFSET;
+        }
+    }
+    if (thread_pool.size() >= 2){
+        std::future<void> tasks[N_MOVE_ORDERING_END_PATTERNS];
+        int i = 0;
+        for (pattern_idx = 0; pattern_idx < N_MOVE_ORDERING_END_PATTERNS; ++pattern_idx)
+            tasks[i++] = thread_pool.push(std::bind(init_move_ordering_pattern_arr_rev, pattern_idx, pattern_sizes[pattern_idx], pattern_starts[pattern_idx]));
+        for (std::future<void> &task: tasks)
+            task.get();
+    } else{
+        for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx)
+            init_move_ordering_pattern_arr_rev(pattern_idx, pattern_sizes[pattern_idx], pattern_starts[pattern_idx]);
+    }
+    return true;
+}
+
+inline bool move_ordering_init(std::string end_file, bool show_log){
+    return get_move_ordering_end_eval(end_file.c_str(), show_log);
+}
+
+inline int move_ordering_end_pattern_calc(Search *search){
+    const int *pat_com = (int*)move_ordering_end_pattern_arr[search->eval_feature_reversed];
+    __m256i res256 = _mm256_add_epi32(
+        gather_eval(pat_com, calc_idx8_a(search->eval_features, 0)), 
+        gather_eval(pat_com, calc_idx8_b(search->eval_features, 0))
+    );
+    __m128i res128 = _mm_add_epi32(_mm256_castsi256_si128(res256), _mm256_extracti128_si256(res256, 1));
+    res128 = _mm_hadd_epi32(res128, res128);
+    return _mm_cvtsi128_si32(res128) + _mm_extract_epi32(res128, 1) - SIMD_EVAL_OFFSET * N_MOVE_ORDERING_END_SYMMETRY_PATTERNS;
+}
+
+
 
 /*
     @brief Calculate openness
@@ -210,8 +332,11 @@ inline bool move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
 }
 
 inline bool is_free_odd_empties(Search *search, uint_fast8_t pos){
-    uint64_t masked_empties = ~(search->board.player | search->board.opponent) & parity_table[cell_div4[pos]];
-    return get_potential_mobility(search->board.player, masked_empties) > 0;
+    if (search->parity & cell_div4[pos]){
+        uint64_t masked_empties = ~(search->board.player | search->board.opponent) & parity_table[cell_div4[pos]];
+        return get_potential_mobility(search->board.player, masked_empties) > 0;
+    }
+    return false;
 }
 
 /*
@@ -227,20 +352,28 @@ inline bool move_evaluate_end(Search *search, Flip_value *flip_value){
         return true;
     }
     
-    flip_value->value = cell_weight[flip_value->flip.pos];
-    if (search->parity & cell_div4[flip_value->flip.pos]){
-        flip_value->value += W_END_PARITY;
-        if (is_free_odd_empties(search, flip_value->flip.pos))
-            flip_value->value += 32;
-    }
-
+    flip_value->value = move_ordering_end_score_cell_types[cell_types[flip_value->flip.pos]];
+    flip_value->value += move_ordering_end_score_parity[(search->parity & cell_div4[flip_value->flip.pos]) > 0];
+    //flip_value->value += move_ordering_end_score_free_odd[is_free_odd_empties(search, flip_value->flip.pos)];
     eval_move(search, &flip_value->flip);
     search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
-        flip_value->value += pop_count_ull(flip_value->n_legal) * (-16);
-        //uint64_t empties = ~(search->board.player | search->board.opponent);
-        //flip_value->value += get_potential_mobility(search->board.player, empties) * (-1);
-        flip_value->value += mid_evaluate_diff(search) * (-4);
+        flip_value->value += move_ordering_end_score_n_legal[pop_count_ull(flip_value->n_legal)];
+        //flip_value->value += move_ordering_end_score_potential_mobility[get_potential_mobility(search->board.player, ~(search->board.player | search->board.opponent))];
+        flip_value->value += move_ordering_end_pattern_calc(search);
+    search->undo(&flip_value->flip);
+    eval_undo(search, &flip_value->flip);
+    /**/
+    /*
+    flip_value->value = cell_weight[flip_value->flip.pos];
+    if (search->parity & cell_div4[flip_value->flip.pos])
+        flip_value->value += W_END_PARITY;
+    eval_move(search, &flip_value->flip);
+    search->move(&flip_value->flip);
+        flip_value->n_legal = search->board.get_legal();
+        flip_value->value -= pop_count_ull(flip_value->n_legal) * W_END_MOBILITY;
+        flip_value->value += move_ordering_end_pattern_calc(search) / 256;
+        //flip_value->value -= mid_evaluate_diff(search) * 4;
     search->undo(&flip_value->flip);
     eval_undo(search, &flip_value->flip);
     /**/
@@ -359,24 +492,6 @@ inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
             wipeout_found = move_evaluate(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
         else
             flip_value.value = -INF;
-    }
-}
-
-/*
-    @brief Evaluate all legal moves for endgame
-
-    @param search               search information
-    @param move_list            list of moves
-*/
-inline void move_list_evaluate_end(Search *search, Flip_value move_list[], const int canput){
-    if (canput == 1)
-        return;
-    bool wipeout_found = false;
-    for (int i = 0; i < canput; ++i){
-        if (!wipeout_found)
-            wipeout_found = move_evaluate_end(search, &move_list[i]);
-        else
-            move_list[i].value = -INF;
     }
 }
 
