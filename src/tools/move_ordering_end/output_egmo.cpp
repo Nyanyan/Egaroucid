@@ -5,15 +5,14 @@
 #include <ios>
 #include <iomanip>
 
-#define N_PARAM 126860
+#define N_PARAM 196844
 
 int main(int argc, char* argv[]){
-    if (argc < 3){
-        std::cerr << "input [model_dir] [n_phases]" << std::endl;
+    if (argc < 2){
+        std::cerr << "input [model_dir]" << std::endl;
         return 1;
     }
     std::string model_dir = std::string(argv[1]);
-    int n_phases = atoi(argv[2]);
     std::ofstream fout;
     fout.open(model_dir + "/move_ordering.egmo", std::ios::out|std::ios::binary|std::ios::trunc);
     if (!fout){
