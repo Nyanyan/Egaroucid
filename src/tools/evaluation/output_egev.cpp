@@ -5,6 +5,8 @@
 #include <ios>
 #include <iomanip>
 
+#define EVAL_MAX 8190
+
 int main(int argc, char* argv[]){
     if (argc < 3){
         std::cerr << "input [model_dir] [n_phases]" << std::endl;
@@ -30,6 +32,10 @@ int main(int argc, char* argv[]){
         int t = 0;
         while (std::getline(ifs, line)){
             elem = stoi(line);
+            if (elem > EVAL_MAX)
+                elem = EVAL_MAX;
+            else if (elem < -EVAL_MAX)
+                elem = -EVAL_MAX;
             max_elem = std::max(max_elem, elem);
             min_elem = std::min(min_elem, elem);
             fout.write((char*)&elem, 2);
@@ -37,6 +43,7 @@ int main(int argc, char* argv[]){
         }
         std::cerr << phase << " " << t << std::endl;
     }
+    std::cerr << "EVAL_MAX " << EVAL_MAX << std::endl;
     std::cerr << "min " << min_elem << std::endl;
     std::cerr << "max " << max_elem << std::endl;
     std::cerr << "done" << std::endl;
