@@ -38,10 +38,6 @@ s = '''    // 0 hv2
     {8, {COORD_A1, COORD_B2, COORD_C3, COORD_D4, COORD_E5, COORD_F6, COORD_G7, COORD_H8, COORD_NO, COORD_NO}}, // 24
     {8, {COORD_H1, COORD_G2, COORD_F3, COORD_E4, COORD_D5, COORD_C6, COORD_B7, COORD_A8, COORD_NO, COORD_NO}}, // 25
 
-    // dummy
-    {0, {COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 26
-    {0, {COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 27
-
     // 7 corner9
     {9, {COORD_A1, COORD_B1, COORD_C1, COORD_A2, COORD_B2, COORD_C2, COORD_A3, COORD_B3, COORD_C3, COORD_NO}}, // 28
     {9, {COORD_H1, COORD_G1, COORD_F1, COORD_H2, COORD_G2, COORD_F2, COORD_H3, COORD_G3, COORD_F3, COORD_NO}}, // 29
@@ -138,7 +134,10 @@ for cell in range(64):
     tmp_arr = []
     for i in range(len(ss)):
         if coord in ss[i]:
-            tmp = '{' + digit_space(i, 2) + ', P3' + str(len(ss[i]) - 1 - ss[i].index(coord)) + '}'
+            ii = i
+            if i >= 26:
+                ii += 2
+            tmp = '{' + digit_space(ii, 2) + ', P3' + str(len(ss[i]) - 1 - ss[i].index(coord)) + '}'
             tmp_arr.append(tmp)
     len_main = len(tmp_arr)
     for i in range(13 - len_main):
