@@ -49,7 +49,7 @@ void adj_import_eval(std::string file) {
                 std::cerr << "ERROR evaluation file broken" << std::endl;
                 return;
             }
-            adj_eval_arr[pattern_idx][pattern_elem] = 0; //stof(line);
+            adj_eval_arr[pattern_idx][pattern_elem] = stof(line);
         }
     }
 }
@@ -62,6 +62,18 @@ inline double adj_predict(uint16_t features[]) {
     res /= ADJ_MO_SCORE_MAX;
     return res;
 }
+
+/*
+// old version
+inline double adj_predict(uint16_t features[]) {
+    constexpr int cell_weight[10] = {18, 4, 16, 12, 2, 6, 8, 14, 10, 0};
+    double res = 0.0;
+    res += cell_weight[features[0]]; // cell weight
+    res += 8 * features[1]; // parity
+    res += -16 * features[3]; // n_mobility
+    return res;
+}
+*/
 
 void trs_convert_transcript(std::string transcript, int res[], int *n){
     int8_t y, x;
@@ -157,7 +169,7 @@ int main(int argc, char* argv[]){
     }
     std::cerr << std::endl;
     std::cout << t << " games found" << std::endl;
-    std::cout << " n " << n << std::endl;
+    std::cout << "n " << n << std::endl;
     for (int i = 0; i < 16; ++i){
         double rate = (double)benchmark[i] / n;
         std::cout << i << " " << benchmark[i] << " " << rate << std::endl;
