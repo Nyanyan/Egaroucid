@@ -535,11 +535,70 @@ int nega_alpha_end_fast_nws(Search *search, int alpha, bool skipped, bool stab_c
     @param searching            flag for terminating this search
     @return the final score
 */
-int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, const bool *searching){
+int nega_alpha_end_simple_nws(Search *search, int alpha, bool skipped, uint64_t legal, const bool *searching){
     if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
     if (search->n_discs >= HW2 - END_FAST_DEPTH)
         return nega_alpha_end_fast_nws(search, alpha, skipped, false, searching);
+    ++search->n_nodes;
+    #if USE_SEARCH_STATISTICS
+        ++search->n_nodes_discs[search->n_discs];
+    #endif
+    #if USE_END_SC
+        int stab_res = stability_cut_nws(search, &alpha);
+        if (stab_res != SCORE_UNDEFINED){
+            return stab_res;
+        }
+    #endif
+    if (legal == LEGAL_UNDEFINED)
+        legal = search->board.get_legal();
+    int v = -SCORE_INF;
+    if (legal == 0ULL){
+        if (skipped)
+            return end_evaluate(&search->board);
+        search->board.pass();
+            v = -nega_alpha_end_simple_nws(search, -alpha - 1, true, LEGAL_UNDEFINED, searching);
+        search->board.pass();
+        return v;
+    }
+    const int canput = pop_count_ull(legal);
+    std::vector<Flip_value> move_list(canput);
+    int idx = 0;
+    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
+        calc_flip(&move_list[idx++].flip, &search->board, cell);
+    move_list_evaluate_end_simple_nws(search, move_list, canput);
+    int g;
+    for (int move_idx = 0; move_idx < canput; ++move_idx){
+        swap_next_best_move(move_list, move_idx, canput);
+        search->move(&move_list[move_idx].flip);
+            g = -nega_alpha_end_simple_nws(search, -alpha - 1, false, move_list[move_idx].n_legal, searching);
+        search->undo(&move_list[move_idx].flip);
+        if (v < g){
+            v = g;
+            if (alpha < v)
+                break;
+        }
+    }
+    return v;
+}
+
+/*
+    @brief Get a final score with some empties (NWS)
+
+    Search with move ordering for endgame and transposition tables.
+
+    @param search               search information
+    @param alpha                alpha value (beta value is alpha + 1)
+    @param skipped              already passed?
+    @param legal                for use of previously calculated legal bitboard
+    @param searching            flag for terminating this search
+    @return the final score
+*/
+int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, const bool *searching){
+    if (!global_searching || !(*searching))
+        return SCORE_UNDEFINED;
+    if (search->n_discs >= HW2 - END_SIMPLE_DEPTH)
+        return nega_alpha_end_simple_nws(search, alpha, skipped, legal, searching);
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
         ++search->n_nodes_discs[search->n_discs];
@@ -566,8 +625,7 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
     uint32_t hash_code = search->board.hash();
     int lower = -SCORE_MAX, upper = SCORE_MAX;
     uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {TRANSPOSITION_TABLE_UNDEFINED, TRANSPOSITION_TABLE_UNDEFINED};
-    if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD)
-        transposition_table.get(search, hash_code, HW2 - search->n_discs, &lower, &upper, moves);
+    transposition_table.get(search, hash_code, HW2 - search->n_discs, &lower, &upper, moves);
     if (upper == lower)
         return upper;
     if (alpha < lower)
@@ -681,7 +739,7 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
             }
         #endif
     }
-    if (*searching && global_searching && search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD)
+    if (*searching && global_searching)
         transposition_table.reg(search, hash_code, HW2 - search->n_discs, alpha, alpha + 1, v, best_move);
     return v;
 }
