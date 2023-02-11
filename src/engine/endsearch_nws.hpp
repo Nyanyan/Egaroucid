@@ -570,7 +570,8 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, bool skipped, uint64_t 
     move_list_evaluate_end_simple_nws(search, move_list, canput);
     int g;
     for (int move_idx = 0; move_idx < canput; ++move_idx){
-        swap_next_best_move(move_list, move_idx, canput);
+        if (move_idx < 4)
+            swap_next_best_move(move_list, move_idx, canput);
         search->move(&move_list[move_idx].flip);
             g = -nega_alpha_end_simple_nws(search, -alpha - 1, false, move_list[move_idx].n_legal, searching);
         search->undo(&move_list[move_idx].flip);
