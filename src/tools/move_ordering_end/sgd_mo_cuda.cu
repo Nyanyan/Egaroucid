@@ -398,9 +398,9 @@ void adj_import_test_data(int n_files, char* files[], int score_threshold, doubl
                 ++adj_alpha_occurance[adj_feature_to_eval_idx[i]][data.features[i]];
             }
             if (score <= score_threshold)
-                data.score = -ADJ_SCORE_MAX;
+                data.score = -ADJ_SCORE_MAX; // fail low
             else
-                data.score = ADJ_SCORE_MAX;
+                data.score = ADJ_SCORE_MAX; // fail high
             adj_preds.emplace_back(0);
             adj_test_data.emplace_back(data);
             ++t;
