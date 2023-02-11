@@ -246,6 +246,37 @@ inline bool move_evaluate_end(Search *search, Flip_value *flip_value){
 }
 
 /*
+    @brief Evaluate a move in endgame
+
+    @param search               search information
+    @param flip_value           flip with value
+    @return true if wipeout found else false
+*/
+inline bool move_evaluate_end_nws(Search *search, Flip_value *flip_value, int alpha){
+    if (flip_value->flip.flip == search->board.opponent){
+        flip_value->value = W_WIPEOUT;
+        return true;
+    }
+    flip_value->value = cell_weight[flip_value->flip.pos];
+    if (search->parity & cell_div4[flip_value->flip.pos])
+        flip_value->value += W_END_PARITY;
+    search->move(&flip_value->flip);
+        flip_value->n_legal = search->board.get_legal();
+        flip_value->value -= pop_count_ull(flip_value->n_legal) * W_END_MOBILITY;
+    search->undo(&flip_value->flip);
+    /*
+    flip_value->value = cell_weight[flip_value->flip.pos];
+    if (search->parity & cell_div4[flip_value->flip.pos])
+        flip_value->value += W_END_PARITY;
+    search->move(&flip_value->flip);
+        flip_value->n_legal = search->board.get_legal();
+        flip_value->value -= pop_count_ull(flip_value->n_legal) * W_END_MOBILITY;
+    search->undo(&flip_value->flip);
+    */
+    return false;
+}
+
+/*
     @brief Evaluate a move in midgame for NWS
 
     @param search               search information
@@ -364,6 +395,24 @@ inline void move_list_evaluate_end(Search *search, std::vector<Flip_value> &move
     for (Flip_value &flip_value: move_list){
         if (!wipeout_found)
             wipeout_found = move_evaluate_end(search, &flip_value);
+        else
+            flip_value.value = -INF;
+    }
+}
+
+/*
+    @brief Evaluate all legal moves for endgame
+
+    @param search               search information
+    @param move_list            list of moves
+*/
+inline void move_list_evaluate_end_nws(Search *search, std::vector<Flip_value> &move_list, const int canput, int alpha){
+    if (canput == 1)
+        return;
+    bool wipeout_found = false;
+    for (Flip_value &flip_value: move_list){
+        if (!wipeout_found)
+            wipeout_found = move_evaluate_end_nws(search, &flip_value, alpha);
         else
             flip_value.value = -INF;
     }

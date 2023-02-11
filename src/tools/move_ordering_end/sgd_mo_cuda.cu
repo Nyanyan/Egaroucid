@@ -12,13 +12,15 @@
 #include <iterator>
 #include <random>
 #include <algorithm>
-#include "move_evaluation_definition_20230210.hpp"
+#include "move_evaluation_definition_20230211.hpp"
 
 #define ADJ_MAX_N_FILES 64
 
 #define ADJ_N_MIN_DATA_FEATURES 100
 
-#define ADJ_EVAL_MAX 16380
+#define ADJ_EVAL_MAX 4090
+
+#define ADJ_SCORE_MAX 256
 
 #define BATCH_THREAD_SIZE 256
 #define BATCH_BLOCK_SIZE 128
@@ -31,7 +33,6 @@
 struct Adj_Data {
     uint16_t features[ADJ_N_FEATURES];
     double score;
-    double weight;
 };
 
 double adj_eval_arr[ADJ_N_EVAL][ADJ_MAX_EVALUATE_IDX];
@@ -48,11 +49,10 @@ __device__ double adj_predict_device(Adj_Data* device_test_data, double* device_
         eval_idx = device_strt_idxes[device_feature_to_eval_idx[i]] + device_test_data[problem_idx].features[i];
         res += device_eval_arr[eval_idx];
     }
-    res /= ADJ_MO_SCORE_MAX;
-    if (res > 1.0)
-        res = 1.0;
-    else if (res < -1.0)
-        res = -1.0;
+    if (res > ADJ_SCORE_MAX)
+        res = ADJ_SCORE_MAX;
+    else if (res < -ADJ_SCORE_MAX)
+        res = -ADJ_SCORE_MAX;
     return res;
 }
 
@@ -61,11 +61,10 @@ inline double adj_predict(int problem_idx) {
     for (int i = 0; i < ADJ_N_FEATURES; ++i) {
         res += adj_eval_arr[adj_feature_to_eval_idx[i]][adj_test_data[problem_idx].features[i]];
     }
-    res /= ADJ_MO_SCORE_MAX;
-    if (res > 1.0)
-        res = 1.0;
-    else if (res < -1.0)
-        res = -1.0;
+    if (res > ADJ_SCORE_MAX)
+        res = ADJ_SCORE_MAX;
+    else if (res < -ADJ_SCORE_MAX)
+        res = -ADJ_SCORE_MAX;
     return res;
 }
 
@@ -78,7 +77,7 @@ __global__ void adj_device_batch(double additional_learning_rate, bool mae_mse_c
     int problem_idx = device_batch_random_idx[batch_idx];
     int i, j, feature, eval_idx, global_eval_idx;
     double err = adj_predict_device(device_test_data, device_eval_arr, device_feature_to_eval_idx, problem_idx, device_eval_strts) - device_test_data[problem_idx].score;
-    double diff_base = additional_learning_rate * err * ADJ_MO_SCORE_MAX;
+    double diff_base = additional_learning_rate * err;
     //diff_base *= device_test_data[problem_idx].weight;
     if (mae_mse_calc) {
         device_mae_list[thread_block_idx] += abs(err);
@@ -371,10 +370,10 @@ void adj_import_eval(std::string file) {
     }
 }
 
-void adj_import_test_data(int n_files, char* files[], int use_phase, double beta) {
+void adj_import_test_data(int n_files, char* files[], int score_threshold, double beta) {
     int t = 0, i, j;
     FILE* fp;
-    int16_t score, weight;
+    int16_t n_discs, player, score;
     Adj_Data data;
     for (i = 0; i < ADJ_N_EVAL; ++i) {
         for (j = 0; j < adj_eval_sizes[i]; ++j)
@@ -387,17 +386,21 @@ void adj_import_test_data(int n_files, char* files[], int use_phase, double beta
             continue;
         }
         while (true) {
-            if (fread(&(data.features[0]), 2, ADJ_N_FEATURES, fp) < ADJ_N_FEATURES)
+            if (fread(&n_discs, 2, 1, fp) < 1)
                 break;
+            //phase = (n_discs - 4) / ADJ_N_PHASE_DISCS;
+            fread(&player, 2, 1, fp);
+            fread(&(data.features[0]), 2, ADJ_N_FEATURES, fp);
             fread(&score, 2, 1, fp);
-            fread(&weight, 2, 1, fp);
             if ((t & 0b1111111111111111) == 0b1111111111111111)
                 std::cerr << '\r' << t;
             for (i = 0; i < ADJ_N_FEATURES; ++i) {
-                adj_alpha_occurance[adj_feature_to_eval_idx[i]][data.features[i]] += weight;
+                ++adj_alpha_occurance[adj_feature_to_eval_idx[i]][data.features[i]];
             }
-            data.score = (double)score;
-            data.weight = (double)weight;
+            if (score <= score_threshold)
+                data.score = -ADJ_SCORE_MAX;
+            else
+                data.score = ADJ_SCORE_MAX;
             adj_preds.emplace_back(0);
             adj_test_data.emplace_back(data);
             ++t;
@@ -426,14 +429,14 @@ void adj_output_param() {
 
 int main(int argc, char* argv[]) {
     if (argc < 7) {
-        std::cerr << "input [phase] [hour] [minute] [second] [beta] [in_file] [test_data]" << std::endl;
+        std::cerr << "input [score_threshold] [hour] [minute] [second] [beta] [in_file] [test_data]" << std::endl;
         return 1;
     }
     if (argc - 7 >= ADJ_MAX_N_FILES) {
         std::cerr << "too many train files" << std::endl;
         return 1;
     }
-    int phase = atoi(argv[1]);
+    int score_threshold = atoi(argv[1]);
     uint64_t hour = atoi(argv[2]);
     uint64_t minute = atoi(argv[3]);
     uint64_t second = atoi(argv[4]);
@@ -445,8 +448,8 @@ int main(int argc, char* argv[]) {
     second += minute * 60 + hour * 3600;
     adj_init_arr();
     adj_import_eval(in_file);
-    adj_import_test_data(argc - 7, test_files, phase, beta);
-    adj_stochastic_gradient_descent(second * 1000, phase);
+    adj_import_test_data(argc - 7, test_files, score_threshold, beta);
+    adj_stochastic_gradient_descent(second * 1000, score_threshold);
     adj_output_param();
     return 0;
 }
