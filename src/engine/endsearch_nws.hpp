@@ -353,11 +353,10 @@ inline int last4_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
     @param search               search information
     @param alpha                alpha value (beta value is alpha + 1)
     @param skipped              already passed?
-    @param stab_cut             use stability cutoff?
     @param searching            flag for terminating this search
     @return the final score
 */
-int nega_alpha_end_fast_nws(Search *search, int alpha, bool skipped, bool stab_cut, const bool *searching){
+int nega_alpha_end_fast_nws(Search *search, int alpha, bool skipped, const bool *searching){
     if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
     ++search->n_nodes;
@@ -365,7 +364,7 @@ int nega_alpha_end_fast_nws(Search *search, int alpha, bool skipped, bool stab_c
         ++search->n_nodes_discs[search->n_discs];
     #endif
     #if USE_END_SC
-        if (stab_cut){
+        if (!skipped){
             int stab_res = stability_cut_nws(search, &alpha);
             if (stab_res != SCORE_UNDEFINED){
                 return stab_res;
@@ -378,7 +377,7 @@ int nega_alpha_end_fast_nws(Search *search, int alpha, bool skipped, bool stab_c
         if (skipped)
             return end_evaluate(&search->board);
         search->board.pass();
-            v = -nega_alpha_end_fast_nws(search, -alpha - 1, true, false, searching);
+            v = -nega_alpha_end_fast_nws(search, -alpha - 1, true, searching);
         search->board.pass();
         return v;
     }
@@ -431,7 +430,7 @@ int nega_alpha_end_fast_nws(Search *search, int alpha, bool skipped, bool stab_c
                 for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
                     calc_flip(&flip, &search->board, cell);
                     search->move(&flip);
-                        g = -nega_alpha_end_fast_nws(search, -alpha - 1, false, true, searching);
+                        g = -nega_alpha_end_fast_nws(search, -alpha - 1, false, searching);
                     search->undo(&flip);
                     if (v < g){
                         if (alpha < g)
@@ -443,7 +442,7 @@ int nega_alpha_end_fast_nws(Search *search, int alpha, bool skipped, bool stab_c
                 for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
                     calc_flip(&flip, &search->board, cell);
                     search->move(&flip);
-                        g = -nega_alpha_end_fast_nws(search, -alpha - 1, false, true, searching);
+                        g = -nega_alpha_end_fast_nws(search, -alpha - 1, false, searching);
                     search->undo(&flip);
                     if (v < g){
                         if (alpha < g)
@@ -476,7 +475,7 @@ int nega_alpha_end_fast_nws(Search *search, int alpha, bool skipped, bool stab_c
                 for (cell = first_bit(&legal); legal; cell = next_bit(&legal)){
                     calc_flip(&flip, &search->board, cell);
                     search->move(&flip);
-                        g = -nega_alpha_end_fast_nws(search, -alpha - 1, false, true, searching);
+                        g = -nega_alpha_end_fast_nws(search, -alpha - 1, false, searching);
                     search->undo(&flip);
                     if (v < g){
                         if (alpha < g)
@@ -539,15 +538,17 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, bool skipped, uint64_t 
     if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
     if (search->n_discs >= HW2 - END_FAST_DEPTH)
-        return nega_alpha_end_fast_nws(search, alpha, skipped, false, searching);
+        return nega_alpha_end_fast_nws(search, alpha, skipped, searching);
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
         ++search->n_nodes_discs[search->n_discs];
     #endif
     #if USE_END_SC
-        int stab_res = stability_cut_nws(search, &alpha);
-        if (stab_res != SCORE_UNDEFINED){
-            return stab_res;
+        if (!skipped){
+            int stab_res = stability_cut_nws(search, &alpha);
+            if (stab_res != SCORE_UNDEFINED){
+                return stab_res;
+            }
         }
     #endif
     if (legal == LEGAL_UNDEFINED)
@@ -562,7 +563,6 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, bool skipped, uint64_t 
         return v;
     }
     const int canput = pop_count_ull(legal);
-    //std::vector<Flip_value> move_list(canput);
     Flip_value move_list[END_SIMPLE_DEPTH];
     int idx = 0;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
@@ -605,9 +605,11 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
         ++search->n_nodes_discs[search->n_discs];
     #endif
     #if USE_END_SC
-        int stab_res = stability_cut_nws(search, &alpha);
-        if (stab_res != SCORE_UNDEFINED){
-            return stab_res;
+        if (!skipped){
+            int stab_res = stability_cut_nws(search, &alpha);
+            if (stab_res != SCORE_UNDEFINED){
+                return stab_res;
+            }
         }
     #endif
     if (legal == LEGAL_UNDEFINED)
