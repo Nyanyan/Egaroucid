@@ -35,7 +35,7 @@
 #define MOVE_ORDERING_NWS_VALUE_OFFSET_BETA 3
 #define MOVE_ORDERING_MPC_LEVEL MPC_95_LEVEL
 
-#define W_END_MOBILITY 128
+#define W_END_MOBILITY 32
 #define W_END_PARITY 4
 //#define W_END_VALUE 4
 
@@ -661,13 +661,13 @@ inline bool move_evaluate_end_nws(Search *search, Flip_value *flip_value, int al
         flip_value->value = W_WIPEOUT;
         return true;
     }
-    flip_value->value = 0; //cell_weight[flip_value->flip.pos];
-    //if (search->parity & cell_div4[flip_value->flip.pos])
-    //    flip_value->value += W_END_PARITY;
+    flip_value->value = cell_weight[flip_value->flip.pos];
+    if (search->parity & cell_div4[flip_value->flip.pos])
+        flip_value->value += W_END_PARITY;
     search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
         flip_value->value -= pop_count_ull(flip_value->n_legal) * W_END_MOBILITY;
-        flip_value->value -= move_evaluate_end_nws_calc_cell_weight(&search->board, -alpha - 1);
+        //flip_value->value -= move_evaluate_end_nws_calc_cell_weight(&search->board, -alpha - 1);
     search->undo(&flip_value->flip);
     /*
     flip_value->value = cell_weight[flip_value->flip.pos];
