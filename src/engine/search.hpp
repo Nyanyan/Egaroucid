@@ -183,6 +183,13 @@ struct Analyze_result{
     int alt_probability;
 };
 
+#if USE_SIMD_EVALUATION
+    union Eval_features{
+        __m256i f256[N_SIMD_EVAL_FEATURES];
+        __m128i f128[N_SIMD_EVAL_FEATURES * 2];
+    };
+#endif
+
 /*
     @brief Search structure
 
@@ -207,7 +214,7 @@ class Search{
         uint64_t n_nodes;
         //Eval_features eval_features;
         #if USE_SIMD_EVALUATION
-            __m256i eval_features[N_SIMD_EVAL_FEATURES];
+            Eval_features eval_features;
         #else
             uint_fast16_t eval_features[N_SYMMETRY_PATTERNS];
         #endif
