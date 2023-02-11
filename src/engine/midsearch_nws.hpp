@@ -247,7 +247,13 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
         #else
             constexpr bool seems_to_be_all_node = false;
         #endif
-        if (search->use_multi_thread && depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH){
+        if (search->use_multi_thread && 
+            #if MID_TO_END_DEPTH > YBWC_END_SPLIT_MIN_DEPTH
+                ((depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH && !is_end_search) || (depth - 1 >= YBWC_END_SPLIT_MIN_DEPTH && is_end_search))
+            #else
+                depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH
+            #endif
+            ){
             int split_count = 0;
             std::vector<std::future<Parallel_task>> parallel_tasks;
             bool n_searching = true;

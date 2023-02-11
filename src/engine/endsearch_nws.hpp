@@ -562,7 +562,8 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, bool skipped, uint64_t 
         return v;
     }
     const int canput = pop_count_ull(legal);
-    std::vector<Flip_value> move_list(canput);
+    //std::vector<Flip_value> move_list(canput);
+    Flip_value move_list[END_SIMPLE_DEPTH];
     int idx = 0;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
         calc_flip(&move_list[idx++].flip, &search->board, cell);

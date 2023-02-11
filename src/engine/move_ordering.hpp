@@ -426,16 +426,24 @@ inline void move_list_evaluate_end(Search *search, std::vector<Flip_value> &move
     @param search               search information
     @param move_list            list of moves
 */
-inline void move_list_evaluate_end_simple_nws(Search *search, std::vector<Flip_value> &move_list, const int canput){
+inline void move_list_evaluate_end_simple_nws(Search *search, Flip_value move_list[], const int canput){
     if (canput == 1)
         return;
     bool wipeout_found = false;
+    for (int i = 0; i < canput; ++i){
+        if (!wipeout_found)
+            wipeout_found = move_evaluate_end_nws(search, &move_list[i]);
+        else
+            move_list[i].value = -INF;
+    }
+    /*
     for (Flip_value &flip_value: move_list){
         if (!wipeout_found)
             wipeout_found = move_evaluate_end_nws(search, &flip_value);
         else
             flip_value.value = -INF;
     }
+    */
 }
 
 /*
