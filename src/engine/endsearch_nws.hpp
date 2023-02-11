@@ -674,13 +674,14 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
             #else
                 constexpr bool seems_to_be_all_node = false;
             #endif
-            if (search->use_multi_thread){
+            if (search->use_multi_thread && search->n_discs <= HW2 - YBWC_END_SPLIT_MIN_DEPTH){
                 int split_count = 0;
                 std::vector<std::future<Parallel_task>> parallel_tasks;
                 bool n_searching = true;
                 for (int move_idx = 0; move_idx < canput; ++move_idx){
                     swap_next_best_move(move_list, move_idx, canput);
                     search->move(&move_list[move_idx].flip);
+                    eval_move(search, &move_list[move_idx].flip);
                         if (ybwc_split_end_nws(search, -alpha - 1, move_list[move_idx].n_legal, &n_searching, move_list[move_idx].flip.pos, canput, pv_idx++, seems_to_be_all_node, split_count, parallel_tasks)){
                             ++split_count;
                         } else{
@@ -688,6 +689,8 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
                             if (v < g){
                                 v = g;
                                 if (alpha < v){
+                                    best_move = move_list[move_idx].flip.pos;
+                                    eval_undo(search, &move_list[move_idx].flip);
                                     search->undo(&move_list[move_idx].flip);
                                     break;
                                 }
@@ -695,11 +698,13 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
                             if (split_count){
                                 ybwc_get_end_tasks(search, parallel_tasks, &v, &best_move);
                                 if (alpha < v){
+                                    eval_undo(search, &move_list[move_idx].flip);
                                     search->undo(&move_list[move_idx].flip);
                                     break;
                                 }
                             }
                         }
+                    eval_undo(search, &move_list[move_idx].flip);
                     search->undo(&move_list[move_idx].flip);
                 }
                 if (split_count){
@@ -713,10 +718,13 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
                 for (int move_idx = 0; move_idx < canput; ++move_idx){
                     swap_next_best_move(move_list, move_idx, canput);
                     search->move(&move_list[move_idx].flip);
+                    eval_move(search, &move_list[move_idx].flip);
                         g = -nega_alpha_end_nws(search, -alpha - 1, false, move_list[move_idx].n_legal, searching);
+                    eval_undo(search, &move_list[move_idx].flip);
                     search->undo(&move_list[move_idx].flip);
                     if (v < g){
                         v = g;
+                        best_move = move_list[move_idx].flip.pos;
                         if (alpha < v)
                             break;
                     }
