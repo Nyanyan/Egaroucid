@@ -828,7 +828,8 @@ inline void calc_features(Search *search){
     calc_feature_vector(search->eval_features.f256[3], b_arr_int, 3, 9);
     search->eval_features.f256[0] = _mm256_adds_epu16(search->eval_features.f256[0], eval_simd_offsets_bef[0]);
     search->eval_features.f256[1] = _mm256_adds_epu16(search->eval_features.f256[1], eval_simd_offsets_bef[1]);
-    search->eval_feature_reversed = 0;
+    search->eval_feature_reversed = false;
+    search->eval_feature_memo_idx = 0;
 }
 
 /*
@@ -840,6 +841,11 @@ inline void calc_features(Search *search){
 inline void eval_move(Search *search, const Flip *flip){
     uint_fast8_t cell;
     uint64_t f;
+    search->eval_features_memo[search->eval_feature_memo_idx].f256[0] = search->eval_features.f256[0];
+    search->eval_features_memo[search->eval_feature_memo_idx].f256[1] = search->eval_features.f256[1];
+    search->eval_features_memo[search->eval_feature_memo_idx].f256[2] = search->eval_features.f256[2];
+    search->eval_features_memo[search->eval_feature_memo_idx].f256[3] = search->eval_features.f256[3];
+    ++search->eval_feature_memo_idx;
     if (search->eval_feature_reversed){
         search->eval_features.f256[0] = _mm256_subs_epu16(search->eval_features.f256[0], coord_to_feature_simd[flip->pos][0]);
         search->eval_features.f256[1] = _mm256_subs_epu16(search->eval_features.f256[1], coord_to_feature_simd[flip->pos][1]);
@@ -876,6 +882,12 @@ inline void eval_move(Search *search, const Flip *flip){
 */
 inline void eval_undo(Search *search, const Flip *flip){
     search->eval_feature_reversed ^= 1;
+    --search->eval_feature_memo_idx;
+    search->eval_features.f256[0] = search->eval_features_memo[search->eval_feature_memo_idx].f256[0];
+    search->eval_features.f256[1] = search->eval_features_memo[search->eval_feature_memo_idx].f256[1];
+    search->eval_features.f256[2] = search->eval_features_memo[search->eval_feature_memo_idx].f256[2];
+    search->eval_features.f256[3] = search->eval_features_memo[search->eval_feature_memo_idx].f256[3];
+    /*
     uint_fast8_t cell;
     uint64_t f;
     if (search->eval_feature_reversed){
@@ -903,4 +915,5 @@ inline void eval_undo(Search *search, const Flip *flip){
             search->eval_features.f256[3] = _mm256_adds_epu16(search->eval_features.f256[3], coord_to_feature_simd[cell][3]);
         }
     }
+    */
 }
