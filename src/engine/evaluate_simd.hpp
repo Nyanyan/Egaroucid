@@ -812,15 +812,16 @@ inline void calc_features(Search *search){
     search->board.translate_to_arr_player_rev(b_arr_int);
     b_arr_int[COORD_NO] = 0;
     int i, j;
+    constexpr int n_pattern_cells_m1[N_SIMD_EVAL_FEATURES] = {7, 8, 9, 9};
     for (i = 0; i < N_SIMD_EVAL_FEATURES; ++i){
         search->eval_features.f256[i] = _mm256_set1_epi16(0);
-        for (j = 0; j < MAX_PATTERN_CELLS - 1; ++j){
+        for (j = 0; j < n_pattern_cells_m1[i]; ++j){
             search->eval_features.f256[i] = _mm256_adds_epu16(search->eval_features.f256[i], _mm256_i32gather_epi32(b_arr_int, feature_to_coord_simd_cell[i][j][0], 4));
             search->eval_features.f256[i] = _mm256_adds_epu16(search->eval_features.f256[i], _mm256_slli_epi32(_mm256_i32gather_epi32(b_arr_int, feature_to_coord_simd_cell[i][j][1], 4), 16));
             search->eval_features.f256[i] = _mm256_mullo_epi16(search->eval_features.f256[i], feature_to_coord_simd_mul[i][j]);
         }
-        search->eval_features.f256[i] = _mm256_adds_epu16(search->eval_features.f256[i], _mm256_i32gather_epi32(b_arr_int, feature_to_coord_simd_cell[i][MAX_PATTERN_CELLS - 1][0], 4));
-        search->eval_features.f256[i] = _mm256_adds_epu16(search->eval_features.f256[i], _mm256_slli_epi32(_mm256_i32gather_epi32(b_arr_int, feature_to_coord_simd_cell[i][MAX_PATTERN_CELLS - 1][1], 4), 16));
+        search->eval_features.f256[i] = _mm256_adds_epu16(search->eval_features.f256[i], _mm256_i32gather_epi32(b_arr_int, feature_to_coord_simd_cell[i][n_pattern_cells_m1[i]][0], 4));
+        search->eval_features.f256[i] = _mm256_adds_epu16(search->eval_features.f256[i], _mm256_slli_epi32(_mm256_i32gather_epi32(b_arr_int, feature_to_coord_simd_cell[i][n_pattern_cells_m1[i]][1], 4), 16));
     }
     search->eval_features.f256[0] = _mm256_adds_epu16(search->eval_features.f256[0], eval_simd_offsets_bef[0]);
     search->eval_features.f256[1] = _mm256_adds_epu16(search->eval_features.f256[1], eval_simd_offsets_bef[1]);
