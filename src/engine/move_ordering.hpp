@@ -297,6 +297,30 @@ inline bool move_evaluate_end_nws_eval(Search *search, Flip_value *flip_value){
 }
 
 /*
+    @brief Evaluate a move in endgame
+
+    @param search               search information
+    @param flip_value           flip with value
+    @return true if wipeout found else false
+*/
+inline bool move_evaluate_end_simple_nws(Search *search, Flip_value *flip_value){
+    if (flip_value->flip.flip == search->board.opponent){
+        flip_value->value = W_WIPEOUT;
+        return true;
+    }
+    flip_value->value = cell_weight[flip_value->flip.pos];
+    if (search->parity & cell_div4[flip_value->flip.pos])
+        flip_value->value += W_END_PARITY;
+    //uint64_t empties = ~(search->board.player | search->board.opponent);
+    //flip_value->value -= get_potential_mobility(flip_value->flip.flip, empties) * W_END_MOBILITY;
+    search->move(&flip_value->flip);
+        flip_value->n_legal = search->board.get_legal();
+        flip_value->value -= pop_count_ull(flip_value->n_legal) * W_END_MOBILITY;
+    search->undo(&flip_value->flip);
+    return false;
+}
+
+/*
     @brief Evaluate a move in midgame for NWS
 
     @param search               search information
@@ -432,7 +456,7 @@ inline void move_list_evaluate_end_simple_nws(Search *search, Flip_value move_li
     bool wipeout_found = false;
     for (int i = 0; i < canput; ++i){
         if (!wipeout_found)
-            wipeout_found = move_evaluate_end_nws(search, &move_list[i]);
+            wipeout_found = move_evaluate_end_simple_nws(search, &move_list[i]);
         else
             move_list[i].value = -INF;
     }
