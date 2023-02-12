@@ -253,8 +253,12 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, c
             const int canput = pop_count_ull(legal);
             std::vector<Flip_value> move_list(canput);
             int idx = 0;
-            for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
-                calc_flip(&move_list[idx++].flip, &search->board, cell);
+            for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+                calc_flip(&move_list[idx].flip, &search->board, cell);
+                if (move_list[idx].flip.flip == search->board.opponent)
+                    return SCORE_MAX;
+                ++idx;
+            }
             move_list_evaluate(search, move_list, depth, alpha, beta, searching);
             for (int move_idx = 0; move_idx < canput; ++move_idx){
                 swap_next_best_move(move_list, move_idx, canput);
@@ -412,8 +416,12 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
         const int canput = pop_count_ull(legal);
         std::vector<Flip_value> move_list(canput);
         int idx = 0;
-        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
-            calc_flip(&move_list[idx++].flip, &search->board, cell);
+        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+            calc_flip(&move_list[idx].flip, &search->board, cell);
+            if (move_list[idx].flip.flip == search->board.opponent)
+                return SCORE_MAX;
+            ++idx;
+        }
         #if USE_MID_ETC
             if (search->n_discs - search->strt_n_discs < MID_ETC_DEPTH){
                 if (etc(search, move_list, depth, &alpha, &beta, &v))
@@ -553,8 +561,12 @@ std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int de
             const int canput = pop_count_ull(legal);
             std::vector<Flip_value> move_list(canput);
             int idx = 0;
-            for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
-                calc_flip(&move_list[idx++].flip, &search->board, cell);
+            for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+                calc_flip(&move_list[idx].flip, &search->board, cell);
+                if (move_list[idx].flip.flip == search->board.opponent)
+                    return std::make_pair(SCORE_MAX, (int)cell);
+                ++idx;
+            }
             move_list_evaluate(search, move_list, depth, alpha, beta, &searching);
             for (int move_idx = 0; move_idx < canput; ++move_idx){
                 swap_next_best_move(move_list, move_idx, canput);
@@ -714,8 +726,12 @@ int first_nega_scout_value(Search *search, int alpha, int beta, int depth, bool 
             const int canput = pop_count_ull(legal);
             std::vector<Flip_value> move_list(canput);
             int idx = 0;
-            for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
-                calc_flip(&move_list[idx++].flip, &search->board, cell);
+            for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+                calc_flip(&move_list[idx].flip, &search->board, cell);
+                if (move_list[idx].flip.flip == search->board.opponent)
+                    return SCORE_MAX;
+                ++idx;
+            }
             move_list_evaluate(search, move_list, depth, alpha, beta, &searching);
             for (int move_idx = 0; move_idx < canput; ++move_idx){
                 swap_next_best_move(move_list, move_idx, canput);

@@ -173,11 +173,7 @@ inline int get_weighted_n_moves(uint64_t legal){
     @param searching            flag for terminating this search
     @return true if wipeout found else false
 */
-inline bool move_evaluate(Search *search, Flip_value *flip_value, int alpha, int beta, int depth, const bool *searching){
-    if (flip_value->flip.flip == search->board.opponent){
-        flip_value->value = W_WIPEOUT;
-        return true;
-    }
+inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int beta, int depth, const bool *searching){
     flip_value->value = cell_weight[flip_value->flip.pos] * W_CELL_WEIGHT;
     eval_move(search, &flip_value->flip);
     search->move(&flip_value->flip);
@@ -212,7 +208,6 @@ inline bool move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
         }
     search->undo(&flip_value->flip);
     eval_undo(search, &flip_value->flip);
-    return false;
 }
 
 /*
@@ -222,11 +217,7 @@ inline bool move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
     @param flip_value           flip with value
     @return true if wipeout found else false
 */
-inline bool move_evaluate_end(Search *search, Flip_value *flip_value){
-    if (flip_value->flip.flip == search->board.opponent){
-        flip_value->value = W_WIPEOUT;
-        return true;
-    }
+inline void move_evaluate_end(Search *search, Flip_value *flip_value){
     flip_value->value = cell_weight[flip_value->flip.pos];
     if (search->parity & cell_div4[flip_value->flip.pos])
         flip_value->value += W_END_PARITY;
@@ -246,7 +237,6 @@ inline bool move_evaluate_end(Search *search, Flip_value *flip_value){
         flip_value->value -= pop_count_ull(flip_value->n_legal) * W_END_MOBILITY;
     search->undo(&flip_value->flip);
     */
-    return false;
 }
 
 /*
@@ -256,11 +246,7 @@ inline bool move_evaluate_end(Search *search, Flip_value *flip_value){
     @param flip_value           flip with value
     @return true if wipeout found else false
 */
-inline bool move_evaluate_end_nws(Search *search, Flip_value *flip_value){
-    if (flip_value->flip.flip == search->board.opponent){
-        flip_value->value = W_WIPEOUT;
-        return true;
-    }
+inline void move_evaluate_end_nws(Search *search, Flip_value *flip_value){
     flip_value->value = cell_weight[flip_value->flip.pos];
     if (search->parity & cell_div4[flip_value->flip.pos])
         flip_value->value += W_END_PARITY;
@@ -268,7 +254,6 @@ inline bool move_evaluate_end_nws(Search *search, Flip_value *flip_value){
         flip_value->n_legal = search->board.get_legal();
         flip_value->value -= pop_count_ull(flip_value->n_legal) * W_END_MOBILITY;
     search->undo(&flip_value->flip);
-    return false;
 }
 
 /*
@@ -278,11 +263,7 @@ inline bool move_evaluate_end_nws(Search *search, Flip_value *flip_value){
     @param flip_value           flip with value
     @return true if wipeout found else false
 */
-inline bool move_evaluate_end_nws_eval(Search *search, Flip_value *flip_value){
-    if (flip_value->flip.flip == search->board.opponent){
-        flip_value->value = W_WIPEOUT;
-        return true;
-    }
+inline void move_evaluate_end_nws_eval(Search *search, Flip_value *flip_value){
     flip_value->value = cell_weight[flip_value->flip.pos];
     if (search->parity & cell_div4[flip_value->flip.pos])
         flip_value->value += W_END_PARITY;
@@ -293,7 +274,6 @@ inline bool move_evaluate_end_nws_eval(Search *search, Flip_value *flip_value){
         flip_value->value -= mid_evaluate_diff(search) * W_END_VALUE;
     search->undo(&flip_value->flip);
     eval_undo(search, &flip_value->flip);
-    return false;
 }
 
 /*
@@ -303,21 +283,18 @@ inline bool move_evaluate_end_nws_eval(Search *search, Flip_value *flip_value){
     @param flip_value           flip with value
     @return true if wipeout found else false
 */
-inline bool move_evaluate_end_simple_nws(Search *search, Flip_value *flip_value){
-    if (flip_value->flip.flip == search->board.opponent){
-        flip_value->value = W_WIPEOUT;
-        return true;
-    }
+inline void move_evaluate_end_simple_nws(Search *search, Flip_value *flip_value){
     flip_value->value = cell_weight[flip_value->flip.pos];
     if (search->parity & cell_div4[flip_value->flip.pos])
         flip_value->value += W_END_PARITY;
-    //uint64_t empties = ~(search->board.player | search->board.opponent);
-    //flip_value->value -= get_potential_mobility(flip_value->flip.flip, empties) * W_END_MOBILITY;
+    /*
+    uint64_t empties = ~(search->board.player | search->board.opponent);
+    flip_value->value -= get_potential_mobility(flip_value->flip.flip | (1ULL << flip_value->flip.pos), empties) * W_END_MOBILITY;
+    */
     search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
         flip_value->value -= pop_count_ull(flip_value->n_legal) * W_END_MOBILITY;
     search->undo(&flip_value->flip);
-    return false;
 }
 
 /*
@@ -331,11 +308,7 @@ inline bool move_evaluate_end_simple_nws(Search *search, Flip_value *flip_value)
     @param searching            flag for terminating this search
     @return true if wipeout found else false
 */
-inline bool move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha, int beta, int depth, const bool *searching){
-    if (flip_value->flip.flip == search->board.opponent){
-        flip_value->value = W_WIPEOUT;
-        return true;
-    }
+inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha, int beta, int depth, const bool *searching){
     flip_value->value = cell_weight[flip_value->flip.pos];
     //flip_value->value -= pop_count_ull(flip_value->flip.flip) * W_NWS_N_FLIP;
     eval_move(search, &flip_value->flip);
@@ -351,7 +324,6 @@ inline bool move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
             flip_value->value += nega_alpha_eval1(search, alpha, beta, false, searching) * W_NWS_VALUE;
     search->undo(&flip_value->flip);
     eval_undo(search, &flip_value->flip);
-    return false;
 }
 
 /*
@@ -417,13 +389,8 @@ inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
     int eval_depth = depth >> 3;
     if (depth >= 16)
         eval_depth += (depth - 14) >> 1;
-    bool wipeout_found = false;
-    for (Flip_value &flip_value: move_list){
-        if (!wipeout_found)
-            wipeout_found = move_evaluate(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
-        else
-            flip_value.value = -INF;
-    }
+    for (Flip_value &flip_value: move_list)
+        move_evaluate(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
 }
 
 /*
@@ -435,13 +402,8 @@ inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
 inline void move_list_evaluate_end(Search *search, std::vector<Flip_value> &move_list, const int canput){
     if (canput == 1)
         return;
-    bool wipeout_found = false;
-    for (Flip_value &flip_value: move_list){
-        if (!wipeout_found)
-            wipeout_found = move_evaluate_end(search, &flip_value);
-        else
-            flip_value.value = -INF;
-    }
+    for (Flip_value &flip_value: move_list)
+        move_evaluate_end(search, &flip_value);
 }
 
 /*
@@ -453,13 +415,8 @@ inline void move_list_evaluate_end(Search *search, std::vector<Flip_value> &move
 inline void move_list_evaluate_end_simple_nws(Search *search, Flip_value move_list[], const int canput){
     if (canput == 1)
         return;
-    bool wipeout_found = false;
-    for (int i = 0; i < canput; ++i){
-        if (!wipeout_found)
-            wipeout_found = move_evaluate_end_simple_nws(search, &move_list[i]);
-        else
-            move_list[i].value = -INF;
-    }
+    for (int i = 0; i < canput; ++i)
+        move_evaluate_end_simple_nws(search, &move_list[i]);
     /*
     for (Flip_value &flip_value: move_list){
         if (!wipeout_found)
@@ -479,21 +436,12 @@ inline void move_list_evaluate_end_simple_nws(Search *search, Flip_value move_li
 inline void move_list_evaluate_end_nws(Search *search, std::vector<Flip_value> &move_list, const int canput, bool use_eval){
     if (canput == 1)
         return;
-    bool wipeout_found = false;
     if (use_eval){
-        for (Flip_value &flip_value: move_list){
-            if (!wipeout_found)
-                wipeout_found = move_evaluate_end_nws_eval(search, &flip_value);
-            else
-                flip_value.value = -INF;
-        }
+        for (Flip_value &flip_value: move_list)
+            move_evaluate_end_nws_eval(search, &flip_value);
     } else{
-        for (Flip_value &flip_value: move_list){
-            if (!wipeout_found)
-                wipeout_found = move_evaluate_end_nws(search, &flip_value);
-            else
-                flip_value.value = -INF;
-        }
+        for (Flip_value &flip_value: move_list)
+            move_evaluate_end_nws(search, &flip_value);
     }
 }
 
@@ -512,11 +460,6 @@ inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move
     const int eval_alpha = -std::min(SCORE_MAX, alpha + MOVE_ORDERING_NWS_VALUE_OFFSET_BETA);
     const int eval_beta = -std::max(-SCORE_MAX, alpha - MOVE_ORDERING_NWS_VALUE_OFFSET_ALPHA);
     int eval_depth = depth >> 4;
-    bool wipeout_found = false;
-    for (Flip_value &flip_value: move_list){
-        if (!wipeout_found)
-            wipeout_found = move_evaluate_nws(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
-        else
-            flip_value.value = -INF;
-    }
+    for (Flip_value &flip_value: move_list)
+        move_evaluate_nws(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
 }

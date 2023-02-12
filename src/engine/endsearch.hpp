@@ -679,8 +679,12 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
             const int canput = pop_count_ull(legal);
             Flip_value move_list[MID_TO_END_DEPTH];
             int idx = 0;
-            for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
-                calc_flip(&move_list[idx++].flip, &search->board, cell);
+            for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+                calc_flip(&move_list[idx].flip, &search->board, cell);
+                if (move_list[idx].flip.flip == search->board.opponent)
+                    return SCORE_MAX;
+                ++idx;
+            }
             move_list_evaluate_end(search, move_list, canput);
             #if MID_TO_END_DEPTH > YBWC_END_SPLIT_MIN_DEPTH
                 #if USE_ALL_NODE_PREDICTION

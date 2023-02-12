@@ -233,8 +233,12 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
         const int canput = pop_count_ull(legal);
         std::vector<Flip_value> move_list(canput);
         int idx = 0;
-        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
-            calc_flip(&move_list[idx++].flip, &search->board, cell);
+        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+            calc_flip(&move_list[idx].flip, &search->board, cell);
+            if (move_list[idx].flip.flip == search->board.opponent)
+                return SCORE_MAX;
+            ++idx;
+        }
         #if USE_MID_ETC
             if (search->n_discs - search->strt_n_discs < MID_ETC_DEPTH){
                 if (etc_nws(search, move_list, depth, alpha, &v))
