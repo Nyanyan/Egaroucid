@@ -214,9 +214,8 @@ class Search{
         uint_fast8_t mpc_level;
         uint64_t n_nodes;
         #if USE_SIMD_EVALUATION
-            Eval_features eval_features;
-            Eval_features eval_features_memo[HW2 - 4];
-            uint_fast8_t eval_feature_memo_idx;
+            Eval_features eval_features[HW2 - 4];
+            uint_fast8_t eval_feature_idx;
         #else
             uint_fast16_t eval_features[N_SYMMETRY_PATTERNS];
         #endif
