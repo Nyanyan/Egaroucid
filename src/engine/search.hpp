@@ -64,7 +64,7 @@ constexpr int cell_weight[HW2] = {
     @brief Stability cutoff threshold
     from https://github.com/abulmo/edax-reversi/blob/1ae7c9fe5322ac01975f1b3196e788b0d25c1e10/src/search.c#L108 and modified
 */
-constexpr int nws_stability_threshold_nws[HW2] = {
+constexpr int stability_threshold_nws[HW2] = {
     99, 99, 99, 99, 99, 99, 99, 99, 
     99, 99, 99, 99, 99, 99, 99, 99, 
     99, 64, 64, 64, 64, 64, 64, 64, 
@@ -75,7 +75,7 @@ constexpr int nws_stability_threshold_nws[HW2] = {
     14, 12, 10, 8, 6, 99, 99, 99
 };
 
-constexpr int nws_stability_threshold[HW2] = {
+constexpr int stability_threshold[HW2] = {
     99, 99, 99, 99, 99, 99, 99, 99, 
     99, 99, 99, 99, 99, 99, 99, 99, 
     99, 62, 62, 60, 60, 58, 58, 56, 
