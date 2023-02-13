@@ -206,10 +206,6 @@ inline void stability_init() {
     @param board                board
     @return found stable discs as a bitboard
 */
-
-#define join_vl(x) join_v_line((x), 0) // ((((x) & 0x8080808080808080ULL) * 0x0002040810204081ULL) >> 56)
-#define join_vr(x) join_v_line((x), 7) // ((((x) & 0x0101010101010101ULL) * 0x0102040810204080ULL) >> 56)
-
 inline uint64_t calc_stability(uint64_t player, uint64_t opponent){
     uint64_t full_h, full_v, full_d7, full_d9;
     uint64_t player_stability = 0, n_stability;
@@ -218,8 +214,8 @@ inline uint64_t calc_stability(uint64_t player, uint64_t opponent){
     n_stability = 
         stability_edge_arr[player & 0xFFU][opponent & 0xFFU][0] | 
         (stability_edge_arr[player >> 56][opponent >> 56][0] << 56) | 
-        stability_edge_arr[join_vl(player)][join_vl(opponent)][1] | 
-        (stability_edge_arr[join_vr(player)][join_vr(opponent)][1] << 7);
+        stability_edge_arr[join_v_line(player, 0)][join_v_line(opponent, 0)][1] | 
+        (stability_edge_arr[join_v_line(player, 7)][join_v_line(opponent, 7)][1] << 7);
     full_stability(player | opponent, &full_h, &full_v, &full_d7, &full_d9);
     n_stability |= (full_h & full_v & full_d7 & full_d9);
     n_stability &= player;
