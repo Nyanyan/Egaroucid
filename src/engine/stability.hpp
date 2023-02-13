@@ -21,6 +21,9 @@
     @brief Pre-calculation result of edge stability
 */
 uint64_t stability_edge_arr[N_8BIT][N_8BIT][2];
+__m128i stability_e180, stability_e181, stability_e182, stability_e183, stability_e184;
+__m128i stability_e790, stability_e791, stability_e792, stability_e793; 
+
 
 /*
     @brief Find flippable discs on a line
@@ -96,6 +99,15 @@ inline void stability_init() {
             }
         }
     }
+    stability_e180 = _mm_set_epi64x(1, 8);
+    stability_e181 = _mm_set_epi64x(2, 16);
+    stability_e182 = _mm_set_epi64x(4, 32);
+    stability_e183 = _mm_set_epi64x(0x0101010101010101ULL, 0x00000000000000FFULL);
+    stability_e184 = _mm_set_epi64x(0x00000000000000FFULL, 0x0101010101010101ULL);
+    stability_e790 = _mm_set1_epi64x(0xFF80808080808080);
+    stability_e791 = _mm_set1_epi64x(0x01010101010101FF);
+    stability_e792 = _mm_set1_epi64x(0x00003F3F3F3F3F3F);
+    stability_e793 = _mm_set1_epi64x(0x0F0F0F0Ff0F0F0F0);
 }
 
 // @notice from http://www.amy.hi-ho.ne.jp/okuhara/bitboard.htm
@@ -103,32 +115,22 @@ inline void stability_init() {
 #if USE_SIMD
     inline void full_stability(uint64_t discs, uint64_t *h, uint64_t *v, uint64_t *d7, uint64_t *d9){
         // horizontal & vertical
-        const __m128i shift0 = _mm_set_epi64x(1, 8);
-        const __m128i shift1 = _mm_set_epi64x(2, 16);
-        const __m128i shift2 = _mm_set_epi64x(4, 32);
-        const __m128i hvmask = _mm_set_epi64x(0x0101010101010101ULL, 0x00000000000000FFULL);
-        const __m128i hvmul = _mm_set_epi64x(0x00000000000000FFULL, 0x0101010101010101ULL);
         __m128i hv = _mm_set1_epi64x(discs);
-        hv = _mm_and_si128(hv, _mm_srlv_epi64(hv, shift0));
-        hv = _mm_and_si128(hv, _mm_srlv_epi64(hv, shift1));
-        hv = _mm_and_si128(hv, _mm_srlv_epi64(hv, shift2));
-        hv = _mm_and_si128(hv, hvmask);
-        hv = _mm_mullo_epi64(hv, hvmul);
+        hv = _mm_and_si128(hv, _mm_srlv_epi64(hv, stability_e180));
+        hv = _mm_and_si128(hv, _mm_srlv_epi64(hv, stability_e181));
+        hv = _mm_and_si128(hv, _mm_srlv_epi64(hv, stability_e182));
+        hv = _mm_and_si128(hv, stability_e183);
+        hv = _mm_mullo_epi64(hv, stability_e184);
         *v = _mm_cvtsi128_si64(hv);
         *h = _mm_cvtsi128_si64(_mm_unpackhi_epi64(hv, hv));
-
         // diagonal
-        const __m128i e790 = _mm_set1_epi64x(0xFF80808080808080);
-        const __m128i e791 = _mm_set1_epi64x(0x01010101010101FF);
-        const __m128i e792 = _mm_set1_epi64x(0x00003F3F3F3F3F3F);
-        const __m128i e793 = _mm_set1_epi64x(0x0F0F0F0Ff0F0F0F0);
         __m128i l79, r79;
         l79 = r79 = _mm_unpacklo_epi64(_mm_cvtsi64_si128(discs), _mm_cvtsi64_si128(vertical_mirror(discs)));
-        l79 = _mm_and_si128(l79, _mm_or_si128(e790, _mm_srli_epi64(l79, 9)));
-        r79 = _mm_and_si128(r79, _mm_or_si128(e791, _mm_slli_epi64(r79, 9)));
-        l79 = _mm_andnot_si128(_mm_andnot_si128(_mm_srli_epi64(l79, 18), e792), l79);
-        r79 = _mm_andnot_si128(_mm_slli_epi64(_mm_andnot_si128(r79, e792), 18), r79);
-        l79 = _mm_and_si128(_mm_and_si128(l79, r79), _mm_or_si128(e793,
+        l79 = _mm_and_si128(l79, _mm_or_si128(stability_e790, _mm_srli_epi64(l79, 9)));
+        r79 = _mm_and_si128(r79, _mm_or_si128(stability_e791, _mm_slli_epi64(r79, 9)));
+        l79 = _mm_andnot_si128(_mm_andnot_si128(_mm_srli_epi64(l79, 18), stability_e792), l79);
+        r79 = _mm_andnot_si128(_mm_slli_epi64(_mm_andnot_si128(r79, stability_e792), 18), r79);
+        l79 = _mm_and_si128(_mm_and_si128(l79, r79), _mm_or_si128(stability_e793,
             _mm_or_si128(_mm_srli_epi64(l79, 36), _mm_slli_epi64(r79, 36))));
         *d9 = _mm_cvtsi128_si64(l79);
         *d7 = vertical_mirror(_mm_cvtsi128_si64(_mm_unpackhi_epi64(l79, l79)));
