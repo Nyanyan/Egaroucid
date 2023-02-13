@@ -207,26 +207,40 @@ inline void stability_init() {
     @return found stable discs as a bitboard
 */
 inline uint64_t calc_stability(uint64_t player, uint64_t opponent){
-    uint64_t full_h, full_v, full_d7, full_d9;
     uint64_t player_stability = 0, n_stability;
-    uint64_t h, v, d7, d9;
     const uint64_t player_mask = player & 0x007E7E7E7E7E7E00ULL;
-    n_stability = 
-        stability_edge_arr[player & 0xFFU][opponent & 0xFFU][0] | 
-        (stability_edge_arr[player >> 56][opponent >> 56][0] << 56) | 
-        stability_edge_arr[join_v_line(player, 0)][join_v_line(opponent, 0)][1] | 
-        (stability_edge_arr[join_v_line(player, 7)][join_v_line(opponent, 7)][1] << 7);
+    n_stability = stability_edge_arr[player & 0xFFU][opponent & 0xFFU][0];
+    n_stability |= stability_edge_arr[player >> 56][opponent >> 56][0] << 56;
+    n_stability |= stability_edge_arr[join_v_line(player, 0)][join_v_line(opponent, 0)][1];
+    n_stability |= stability_edge_arr[join_v_line(player, 7)][join_v_line(opponent, 7)][1] << 7;
+    uint64_t full_h, full_v, full_d7, full_d9;
     full_stability(player | opponent, &full_h, &full_v, &full_d7, &full_d9);
-    n_stability |= (full_h & full_v & full_d7 & full_d9);
+    n_stability |= full_h & full_v & full_d7 & full_d9;
     n_stability &= player;
-    while (n_stability & ~player_stability){
-        player_stability |= n_stability;
-        h = (player_stability >> 1) | (player_stability << 1) | full_h;
-        v = (player_stability >> HW) | (player_stability << HW) | full_v;
-        d7 = (player_stability >> HW_M1) | (player_stability << HW_M1) | full_d7;
-        d9 = (player_stability >> HW_P1) | (player_stability << HW_P1) | full_d9;
-        n_stability = h & v & d7 & d9 & player_mask;
-    }
+    #if USE_SIMD
+        __m256i hvd7d9, p256;
+        const __m256i shift = _mm256_set_epi64x(1, HW, HW_M1, HW_P1);
+        __m128i and_tmp;
+        while (n_stability & ~player_stability){
+            player_stability |= n_stability;
+            p256 = _mm256_set1_epi64x(player_stability);
+            hvd7d9 = _mm256_set_epi64x(full_h, full_v, full_d7, full_d9);
+            hvd7d9 = _mm256_or_si256(hvd7d9, _mm256_srlv_epi64(p256, shift));
+            hvd7d9 = _mm256_or_si256(hvd7d9, _mm256_sllv_epi64(p256, shift));
+            and_tmp = _mm_and_si128(_mm256_castsi256_si128(hvd7d9), _mm256_extractf128_si256(hvd7d9, 1));
+            n_stability =  _mm_extract_epi64(and_tmp, 0) & _mm_extract_epi64(and_tmp, 1) & player_mask;
+        }
+    #else
+        uint64_t h, v, d7, d9;
+        while (n_stability & ~player_stability){
+            player_stability |= n_stability;
+            h = (player_stability >> 1) | (player_stability << 1) | full_h;
+            v = (player_stability >> HW) | (player_stability << HW) | full_v;
+            d7 = (player_stability >> HW_M1) | (player_stability << HW_M1) | full_d7;
+            d9 = (player_stability >> HW_P1) | (player_stability << HW_P1) | full_d9;
+            n_stability = h & v & d7 & d9 & player_mask;
+        }
+    #endif
     return player_stability;
 }
 
