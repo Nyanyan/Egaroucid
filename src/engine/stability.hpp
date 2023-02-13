@@ -118,10 +118,10 @@ inline void stability_init() {
         *h = _mm_cvtsi128_si64(_mm_unpackhi_epi64(hv, hv));
 
         // diagonal
-        const __m128i e790 = _mm_set1_epi64x(0xff80808080808080);
-        const __m128i e791 = _mm_set1_epi64x(0x01010101010101ff);
-        const __m128i e792 = _mm_set1_epi64x(0x00003f3f3f3f3f3f);
-        const __m128i e793 = _mm_set1_epi64x(0x0f0f0f0ff0f0f0f0);
+        const __m128i e790 = _mm_set1_epi64x(0xFF80808080808080);
+        const __m128i e791 = _mm_set1_epi64x(0x01010101010101FF);
+        const __m128i e792 = _mm_set1_epi64x(0x00003F3F3F3F3F3F);
+        const __m128i e793 = _mm_set1_epi64x(0x0F0F0F0Ff0F0F0F0);
         __m128i l79, r79;
         l79 = r79 = _mm_unpacklo_epi64(_mm_cvtsi64_si128(discs), _mm_cvtsi64_si128(vertical_mirror(discs)));
         l79 = _mm_and_si128(l79, _mm_or_si128(e790, _mm_srli_epi64(l79, 9)));
