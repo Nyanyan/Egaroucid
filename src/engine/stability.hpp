@@ -207,28 +207,27 @@ inline void stability_init() {
     @return found stable discs as a bitboard
 */
 #if USE_SIMD
-    inline void calc_stability_each_bits(Board *board, uint64_t *res_player, uint64_t *res_opponent){
+    inline uint64_t calc_stability(uint64_t player, uint64_t opponent){
         uint64_t full_h, full_v, full_d7, full_d9;
-        uint64_t edge_stability = 0, player_stability = 0, opponent_stability = 0, n_stability;
+        uint64_t edge_stability = 0, player_stability = 0, n_stability;
         uint64_t h, v, d7, d9;
-        const uint64_t player_mask = board->player & 0x007E7E7E7E7E7E00ULL;
-        const uint64_t opponent_mask = board->opponent & 0x007E7E7E7E7E7E00ULL;
+        const uint64_t player_mask = player & 0x007E7E7E7E7E7E00ULL;
         uint8_t pl, op;
-        pl = 0b11111111U & board->player;
-        op = 0b11111111U & board->opponent;
+        pl = 0b11111111U & player;
+        op = 0b11111111U & opponent;
         edge_stability |= stability_edge_arr[pl][op][0];
-        pl = join_h_line(board->player, 7);
-        op = join_h_line(board->opponent, 7);
+        pl = join_h_line(player, 7);
+        op = join_h_line(opponent, 7);
         edge_stability |= stability_edge_arr[pl][op][0] << 56;
-        pl = join_v_line(board->player, 0);
-        op = join_v_line(board->opponent, 0);
+        pl = join_v_line(player, 0);
+        op = join_v_line(opponent, 0);
         edge_stability |= stability_edge_arr[pl][op][1];
-        pl = join_v_line(board->player, 7);
-        op = join_v_line(board->opponent, 7);
+        pl = join_v_line(player, 7);
+        op = join_v_line(opponent, 7);
         edge_stability |= stability_edge_arr[pl][op][1] << 7;
-        full_stability(board->player | board->opponent, &full_h, &full_v, &full_d7, &full_d9);
+        full_stability(player | opponent, &full_h, &full_v, &full_d7, &full_d9);
 
-        n_stability = (edge_stability & board->player) | (full_h & full_v & full_d7 & full_d9 & player_mask);
+        n_stability = (edge_stability & player) | (full_h & full_v & full_d7 & full_d9 & player_mask);
         while (n_stability & ~player_stability){
             player_stability |= n_stability;
             h = (player_stability >> 1) | (player_stability << 1) | full_h;
@@ -237,19 +236,7 @@ inline void stability_init() {
             d9 = (player_stability >> HW_P1) | (player_stability << HW_P1) | full_d9;
             n_stability = h & v & d7 & d9 & player_mask;
         }
-
-        n_stability = (edge_stability & board->opponent) | (full_h & full_v & full_d7 & full_d9 & opponent_mask);
-        while (n_stability & ~opponent_stability){
-            opponent_stability |= n_stability;
-            h = (opponent_stability >> 1) | (opponent_stability << 1) | full_h;
-            v = (opponent_stability >> HW) | (opponent_stability << HW) | full_v;
-            d7 = (opponent_stability >> HW_M1) | (opponent_stability << HW_M1) | full_d7;
-            d9 = (opponent_stability >> HW_P1) | (opponent_stability << HW_P1) | full_d9;
-            n_stability = h & v & d7 & d9 & opponent_mask;
-        }
-
-        *res_player = player_stability;
-        *res_opponent = opponent_stability;
+        return player_stability;
     }
 #else
     inline void calc_stability_each_bits(Board *board, uint64_t *res_player, uint64_t *res_opponent){
@@ -298,29 +285,6 @@ inline void stability_init() {
     }
 #endif
 
-inline uint64_t calc_stability_bits(Board *board){
-    uint64_t p, o;
-    calc_stability_each_bits(board, &p, &o);
-    return p | o;
-}
-
-/*
-    @brief Calculate number of stable discs
-
-    This function cannot find every stable discs
-    From an idea of https://github.com/abulmo/edax-reversi/blob/1ae7c9fe5322ac01975f1b3196e788b0d25c1e10/src/board.c#L1030
-
-    @param board                board
-    @param stab0                number of player's stable discs
-    @param stab1                number of opponent's stable discs
-*/
-inline void calc_stability(Board *board, int *stab0, int *stab1){
-    uint64_t p, o;
-    calc_stability_each_bits(board, &p, &o);
-    *stab0 = pop_count_ull(p);
-    *stab1 = pop_count_ull(o);
-}
-
 /*
     @brief Stability cutoff
 
@@ -335,16 +299,11 @@ inline void calc_stability(Board *board, int *stab0, int *stab1){
 */
 inline int stability_cut(Search *search, int *alpha, int *beta){
     if (*alpha <= nws_stability_threshold[search->n_discs]){
-        int stab_player, stab_opponent;
-        calc_stability(&search->board, &stab_player, &stab_opponent);
-        int n_alpha = 2 * stab_player - HW2;
-        int n_beta = HW2 - 2 * stab_opponent;
-        if (*beta <= n_alpha)
-            return n_alpha;
+        int n_beta = HW2 - 2 * pop_count_ull(calc_stability(search->board.opponent, search->board.player));
         if (n_beta <= *alpha)
             return n_beta;
-        *alpha = std::max(*alpha, n_alpha);
-        *beta = std::min(*beta, n_beta);
+        else if (n_beta < (*beta))
+            *beta = n_beta;
     }
     return SCORE_UNDEFINED;
 }
@@ -362,12 +321,7 @@ inline int stability_cut(Search *search, int *alpha, int *beta){
 */
 inline int stability_cut_nws(Search *search, int *alpha){
     if (*alpha <= nws_stability_threshold[search->n_discs]){
-        int stab_player, stab_opponent;
-        calc_stability(&search->board, &stab_player, &stab_opponent);
-        int n_alpha = 2 * stab_player - HW2;
-        int n_beta = HW2 - 2 * stab_opponent;
-        if (*alpha < n_alpha)
-            return n_alpha;
+        int n_beta = HW2 - 2 * pop_count_ull(calc_stability(search->board.opponent, search->board.player));
         if (n_beta <= *alpha)
             return n_beta;
     }
