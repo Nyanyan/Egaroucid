@@ -298,11 +298,11 @@ inline void stability_init() {
     @return SCORE_UNDEFINED if no cutoff found else the score
 */
 inline int stability_cut(Search *search, int *alpha, int *beta){
-    if (*alpha <= nws_stability_threshold[search->n_discs]){
+    if (*beta >= nws_stability_threshold[search->n_discs]){
         int n_beta = HW2 - 2 * pop_count_ull(calc_stability(search->board.opponent, search->board.player));
         if (n_beta <= *alpha)
             return n_beta;
-        else if (n_beta < (*beta))
+        else if (n_beta < *beta)
             *beta = n_beta;
     }
     return SCORE_UNDEFINED;
@@ -319,10 +319,10 @@ inline int stability_cut(Search *search, int *alpha, int *beta){
     @param alpha                alpha value (beta = alpha + 1)
     @return SCORE_UNDEFINED if no cutoff found else the score
 */
-inline int stability_cut_nws(Search *search, int *alpha){
-    if (*alpha <= nws_stability_threshold[search->n_discs]){
+inline int stability_cut_nws(Search *search, int alpha){
+    if (alpha >= nws_stability_threshold_nws[search->n_discs]){
         int n_beta = HW2 - 2 * pop_count_ull(calc_stability(search->board.opponent, search->board.player));
-        if (n_beta <= *alpha)
+        if (n_beta <= alpha)
             return n_beta;
     }
     return SCORE_UNDEFINED;

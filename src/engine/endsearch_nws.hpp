@@ -224,7 +224,7 @@ inline int last4_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
         ++search->n_nodes_discs[search->n_discs];
     #endif
     #if USE_LAST4_SC
-        int stab_res = stability_cut_nws(search, &alpha);
+        int stab_res = stability_cut_nws(search, alpha);
         if (stab_res != SCORE_UNDEFINED){
             return stab_res;
         }
@@ -365,7 +365,7 @@ int nega_alpha_end_fast_nws(Search *search, int alpha, bool skipped, const bool 
     #endif
     #if USE_END_SC
         if (!skipped){
-            int stab_res = stability_cut_nws(search, &alpha);
+            int stab_res = stability_cut_nws(search, alpha);
             if (stab_res != SCORE_UNDEFINED){
                 return stab_res;
             }
@@ -545,7 +545,7 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, bool skipped, uint64_t 
     #endif
     #if USE_END_SC
         if (!skipped){
-            int stab_res = stability_cut_nws(search, &alpha);
+            int stab_res = stability_cut_nws(search, alpha);
             if (stab_res != SCORE_UNDEFINED){
                 return stab_res;
             }
@@ -611,7 +611,7 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
     #endif
     #if USE_END_SC
         if (!skipped){
-            int stab_res = stability_cut_nws(search, &alpha);
+            int stab_res = stability_cut_nws(search, alpha);
             if (stab_res != SCORE_UNDEFINED){
                 return stab_res;
             }
