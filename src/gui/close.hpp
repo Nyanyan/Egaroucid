@@ -43,7 +43,9 @@ void save_settings(Menu_elements menu_elements, Settings settings, Directories d
 }
 
 void close_app(Menu_elements menu_elements, Settings settings, Directories directories, Book_information book_information) {
-    save_settings(menu_elements, settings, directories);
+	if (settings.need_save) {
+		save_settings(menu_elements, settings, directories);
+	}
     if (book_information.changed) {
         book.save_bin(settings.book_file, settings.book_file + ".bak");
     }

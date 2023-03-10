@@ -86,9 +86,15 @@ public:
         tips = language.get_random("tips", "tips");
         update_found = false;
         load_future = std::async(std::launch::async, load_app, &getData().directories, &getData().resources, &getData().settings, &update_found, &new_version);
+		getData().settings.need_save = true;
     }
 
     void update() override {
+		if (System::GetUserActions() & UserAction::CloseButtonClicked) {
+			getData().settings.need_save = false;
+            changeScene(U"Close", SCENE_FADE_TIME);
+            return;
+        }
         Scene::SetBackground(getData().colors.green);
         if (update_found) {
             const int icon_width = (LEFT_RIGHT - LEFT_LEFT) / 2;

@@ -27,7 +27,6 @@ void Main() {
 	Window::Resize(window_size);
 	Window::SetStyle(WindowStyle::Sizable);
 	Scene::SetResizeMode(ResizeMode::Virtual);
-	//Scene::SetLetterbox(Color{ 36, 153, 114 });
 	Window::SetTitle(U"Egaroucid {}"_fmt(EGAROUCID_VERSION));
 	System::SetTerminationTriggers(UserAction::NoAction);
 	//Console.open();

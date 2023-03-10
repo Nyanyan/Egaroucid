@@ -284,6 +284,7 @@ struct Resources {
 };
 
 struct Settings {
+	bool need_save;
     int n_threads;
     bool auto_update_check;
     std::string lang_name;
