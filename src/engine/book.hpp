@@ -120,7 +120,7 @@ class Book{
         */
         bool init(std::string file, bool show_log, bool *stop_loading){
             n_book = 0;
-            return import_file_bin(file, show_log, stop_loading);
+            return import_file_bin(file, show_log, stop_loading, true);
         }
 
         /*
@@ -129,7 +129,7 @@ class Book{
             @param file                 book file (.egbk file)
             @return book completely imported?
         */
-        inline bool import_file_bin(std::string file, bool show_log, bool *stop_loading){
+        inline bool import_file_bin(std::string file, bool show_log, bool *stop_loading, bool no_symmetry_check){
             if (show_log)
                 std::cerr << "importing " << file << std::endl;
             FILE* fp;
@@ -174,7 +174,10 @@ class Book{
                 }
                 b.player = p;
                 b.opponent = o;
-                n_book += register_symmetric_book(b, value);
+				if (no_symmetry_check)
+					n_book += register_book(b, value);
+				else
+					n_book += register_symmetric_book(b, value);
             }
 			if (*stop_loading){
 				std::cerr << "stop loading book" << std::endl;
@@ -189,7 +192,12 @@ class Book{
 
 		inline bool import_file_bin(std::string file, bool show_log){
 			bool stop_loading = false;
-			return import_file_bin(file, show_log, &stop_loading);
+			return import_file_bin(file, show_log, &stop_loading, false);
+		}
+
+		inline bool import_file_bin(std::string file, bool show_log, bool no_symmetry_check){
+			bool stop_loading = false;
+			return import_file_bin(file, show_log, &stop_loading, no_symmetry_check);
 		}
 
         /*
@@ -586,9 +594,9 @@ class Book{
             @return is this board new?
         */
         inline bool register_book(Board b, int value){
-            bool res = book.find(b) == book.end();
+            int f_size = book.size();
             book[b] = value;
-            return res;
+            return book.size() - f_size > 0;
         }
 
         /*
