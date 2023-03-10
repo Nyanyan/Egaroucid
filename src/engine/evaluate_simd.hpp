@@ -638,6 +638,19 @@ inline int end_evaluate(Board *b, int e){
 }
 
 /*
+    @brief evaluation function for game over (odd empties)
+
+    @param b                    board
+    @param e                    number of empty squares
+    @return final score
+*/
+inline int end_evaluate_odd(Board *b, int e){
+    int score = b->count_player() * 2 + e - HW2;
+    score += score > 0 ? e : -e;
+    return score;
+}
+
+/*
     @brief calculate surround value used in evaluation function
 
     @param player               a bitboard representing player

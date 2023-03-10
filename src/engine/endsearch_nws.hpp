@@ -180,7 +180,7 @@ inline int last3_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
     }
     if (v == -SCORE_INF){
         if (skipped)
-            v = end_evaluate(&search->board, 3);
+            v = end_evaluate_odd(&search->board, 3);
         else{
             search->board.pass();
                 v = -last3_nws(search, -alpha - 1, p0, p1, p2, true, searching);

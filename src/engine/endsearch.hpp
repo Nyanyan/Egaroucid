@@ -193,7 +193,7 @@ inline int last3(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
     }
     if (v == -SCORE_INF){
         if (skipped)
-            v = end_evaluate(&search->board, 3);
+            v = end_evaluate_odd(&search->board, 3);
         else{
             search->board.pass();
                 v = -last3(search, -beta, -alpha, p0, p1, p2, true, searching);
