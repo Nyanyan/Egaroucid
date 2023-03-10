@@ -205,8 +205,9 @@ inline void stability_init() {
     This function cannot find every stable discs
     From an idea of https://github.com/abulmo/edax-reversi/blob/1ae7c9fe5322ac01975f1b3196e788b0d25c1e10/src/board.c#L1030
 
-    @param board                board
-    @return found stable discs as a bitboard
+    @param player               bitboard representing player
+    @param opponent             bitboard representing opponent
+    @return found player's stable discs as a bitboard
 */
 inline uint64_t calc_stability(uint64_t player, uint64_t opponent){
     uint64_t player_stability = 0, n_stability;
@@ -244,6 +245,19 @@ inline uint64_t calc_stability(uint64_t player, uint64_t opponent){
         }
     #endif
     return player_stability;
+}
+
+/*
+    @brief Calculate stable discs as a bitboard
+
+    Get both players' stability discs
+    This function is slow but OK because not used in search
+
+    @param board                board
+    @return found stable discs as a bitboard
+*/
+inline uint64_t calc_stability_bits(Board *board){
+    return calc_stability(board->player, board->opponent) | calc_stability(board->opponent, board->player);
 }
 
 /*
