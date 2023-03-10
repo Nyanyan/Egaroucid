@@ -339,11 +339,14 @@ private:
             changeScene(U"Export_game", SCENE_FADE_TIME);
             return;
         }
-        if (getData().menu_elements.screen_shot){
+        if (getData().menu_elements.screen_shot){ // screen shot, todo: create an image
+            changing_scene = true;
+            changeScene(U"Screen_shot", SCENE_FADE_TIME);
+            return;
             //Graphics::SaveScreenshot(L"screenshot.png");
-            Image image = ScreenCapture::GetFrame();
-            Clipboard::SetImage(image);
-            std::cerr << "screen shot copied to clipboard" << std::endl;
+            //Image image = ScreenCapture::GetFrame();
+            //Clipboard::SetImage(image);
+            //std::cerr << "screen shot copied to clipboard" << std::endl;
         }
     }
 
