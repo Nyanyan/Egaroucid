@@ -114,7 +114,16 @@ inline Search_result tree_search(Board board, int depth, uint_fast8_t mpc_level,
         strt = tim();
         result.second = TRANSPOSITION_TABLE_UNDEFINED;
         g = -INF;
-        if (depth >= 19){
+        if (depth >= 22){
+            search_depth = depth - 6;
+            search.mpc_level = std::max(0, mpc_level - 2);
+            result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search_depth, false, false, clogs);
+            g = result.first;
+            policy = result.second;
+            if (show_log)
+                std::cerr << "presearch depth " << search_depth << "@" << SELECTIVITY_PERCENTAGE[search.mpc_level] << "% value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << calc_nps(search.n_nodes, tim() - strt) << std::endl;
+        }
+        if (depth >= 17){
             search_depth = depth - 4;
             search.mpc_level = std::max(0, mpc_level - 2);
             result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search_depth, false, false, clogs);

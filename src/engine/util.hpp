@@ -53,6 +53,8 @@ Board input_board(){
     @return coordinate as string
 */
 std::string idx_to_coord(int idx){
+    if (idx < 0 || HW2 <= idx)
+        return "??";
     int y = HW_M1 - idx / HW;
     int x = HW_M1 - idx % HW;
     const std::string x_coord = "abcdefgh";
