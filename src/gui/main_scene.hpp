@@ -113,7 +113,7 @@ public:
 			const int clip_sy = BOARD_SY - BOARD_ROUND_FRAME_WIDTH - BOARD_COORD_SIZE;
 			const int clip_size_x = BOARD_CELL_SIZE * HW + BOARD_ROUND_FRAME_WIDTH * 2 + BOARD_COORD_SIZE + 7;
 			const int clip_size_y = BOARD_CELL_SIZE * HW + BOARD_ROUND_FRAME_WIDTH * 2 + BOARD_COORD_SIZE + 7;
-			const Rect clip_rect(clip_sx, clip_sy, clip_size_x, clip_size_y);
+			const Rect clip_rect(clip_sx * global_window_scale, clip_sy * global_window_scale, clip_size_x * global_window_scale, clip_size_y * global_window_scale);
 			Image image_clip = image.clipped(clip_rect);
             Clipboard::SetImage(image_clip);
             taking_screen_shot = false;

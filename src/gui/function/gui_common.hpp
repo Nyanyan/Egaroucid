@@ -218,6 +218,9 @@ constexpr int BUTTON3_3_SX = X_CENTER + BUTTON3_WIDTH / 2 + 10;
 // font constant
 #define FONT_DEFAULT_SIZE 50
 
+// window scale
+double global_window_scale = 1.0;
+
 struct History_elem {
     Board board;
     int player;
