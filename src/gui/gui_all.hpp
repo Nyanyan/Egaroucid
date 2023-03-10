@@ -16,5 +16,4 @@
 #include "main_scene.hpp"
 #include "output.hpp"
 #include "silent_load.hpp"
-#include "screen_shot.hpp"
 #include "function/function_all.hpp"

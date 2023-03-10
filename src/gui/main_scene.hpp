@@ -40,6 +40,7 @@ private:
     Umigame_status umigame_status;
     bool changing_scene;
 	uint8_t date;
+    bool taking_screen_shot;
 
 public:
     Main_scene(const InitData& init) : IScene{ init } {
@@ -59,6 +60,7 @@ public:
         need_start_game_button_calculation();
         changing_scene = false;
 		date = INIT_DATE;
+        taking_screen_shot = false;
         std::cerr << "main scene loaded" << std::endl;
     }
 
@@ -103,6 +105,20 @@ public:
 
         // opening
         update_opening();
+
+        // screen shot
+        if (taking_screen_shot) {
+            Image image = ScreenCapture::GetFrame();
+			const int clip_sx = BOARD_SX - BOARD_ROUND_FRAME_WIDTH - BOARD_COORD_SIZE;
+			const int clip_sy = BOARD_SY - BOARD_ROUND_FRAME_WIDTH - BOARD_COORD_SIZE;
+			const int clip_size_x = BOARD_CELL_SIZE * HW + BOARD_ROUND_FRAME_WIDTH * 2 + BOARD_COORD_SIZE + 7;
+			const int clip_size_y = BOARD_CELL_SIZE * HW + BOARD_ROUND_FRAME_WIDTH * 2 + BOARD_COORD_SIZE + 7;
+			const Rect clip_rect(clip_sx, clip_sy, clip_size_x, clip_size_y);
+			Image image_clip = image.clipped(clip_rect);
+            Clipboard::SetImage(image_clip);
+            taking_screen_shot = false;
+            std::cerr << "screen shot copied to clipboard" << std::endl;
+        }
 
         // menu
         menu_game();
@@ -218,10 +234,15 @@ public:
         }
 
         // menu drawing
-        getData().menu.draw();
+        bool draw_menu_flag = !taking_screen_shot;
+        if (draw_menu_flag) {
+            getData().menu.draw();
+        }
 
         // for screen shot
-        ScreenCapture::RequestCurrentFrame();
+        if (taking_screen_shot) {
+            ScreenCapture::RequestCurrentFrame();
+        }
     }
 
     void draw() const override {
@@ -339,14 +360,9 @@ private:
             changeScene(U"Export_game", SCENE_FADE_TIME);
             return;
         }
-        if (getData().menu_elements.screen_shot){ // screen shot, todo: create an image
-            changing_scene = true;
-            changeScene(U"Screen_shot", SCENE_FADE_TIME);
-            return;
-            //Graphics::SaveScreenshot(L"screenshot.png");
-            //Image image = ScreenCapture::GetFrame();
-            //Clipboard::SetImage(image);
-            //std::cerr << "screen shot copied to clipboard" << std::endl;
+        if (getData().menu_elements.screen_shot) {
+            taking_screen_shot = true;
+            getData().menu_elements.screen_shot = false; // because skip drawing menu in next frame
         }
     }
 
