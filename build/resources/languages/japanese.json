@@ -79,7 +79,7 @@
         "export_until_this_board": "設定局面までを保存",
         "player_name": "プレイヤー名",
         "memo": "メモ",
-        "screen_shot": "スクリーンショット"
+        "screen_shot": "スクリーンショットをコピー"
     },
     "display": {
         "display": "表示",
