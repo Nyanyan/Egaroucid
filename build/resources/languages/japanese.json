@@ -78,7 +78,8 @@
         "export_main": "本筋を保存",
         "export_until_this_board": "設定局面までを保存",
         "player_name": "プレイヤー名",
-        "memo": "メモ"
+        "memo": "メモ",
+        "screen_shot": "スクリーンショット"
     },
     "display": {
         "display": "表示",

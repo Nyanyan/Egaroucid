@@ -219,6 +219,9 @@ public:
 
         // menu drawing
         getData().menu.draw();
+
+        // for screen shot
+        ScreenCapture::RequestCurrentFrame();
     }
 
     void draw() const override {
@@ -335,6 +338,12 @@ private:
             changing_scene = true;
             changeScene(U"Export_game", SCENE_FADE_TIME);
             return;
+        }
+        if (getData().menu_elements.screen_shot){
+            //Graphics::SaveScreenshot(L"screenshot.png");
+            Image image = ScreenCapture::GetFrame();
+            Clipboard::SetImage(image);
+            std::cerr << "screen shot copied to clipboard" << std::endl;
         }
     }
 
@@ -796,6 +805,8 @@ private:
         side_menu.init_button(language.get("in_out", "output_transcript"), &menu_elements->copy_transcript);
         menu_e.push(side_menu);
         side_menu.init_button(language.get("in_out", "output_game"), &menu_elements->save_game);
+        menu_e.push(side_menu);
+        side_menu.init_button(language.get("in_out", "screen_shot"), &menu_elements->screen_shot);
         menu_e.push(side_menu);
         title.push(menu_e);
 

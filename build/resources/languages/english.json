@@ -78,7 +78,8 @@
         "export_main": "Save main line",
         "export_until_this_board": "Save till set position",
         "player_name": "Player Name",
-        "memo": "Memo"
+        "memo": "Memo",
+        "screen_shot": "Screen Shot"
     },
     "display": {
         "display": "Display",

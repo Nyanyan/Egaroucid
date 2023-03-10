@@ -358,6 +358,7 @@ struct Menu_elements {
     // output
     bool copy_transcript;
     bool save_game;
+    bool screen_shot;
 
     // manipulation
     bool stop_calculating;
@@ -417,6 +418,7 @@ struct Menu_elements {
         input_game = false;
         copy_transcript = false;
         save_game = false;
+        screen_shot = false;
 
         stop_calculating = false;
         forward = false;
