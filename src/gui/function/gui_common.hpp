@@ -281,7 +281,6 @@ struct Resources {
 };
 
 struct Settings {
-	bool need_save;
     int n_threads;
     bool auto_update_check;
     std::string lang_name;
@@ -500,6 +499,15 @@ struct Book_information {
     String val_str;
 };
 
+struct Window_state{
+	double window_scale;
+	bool loading;
+	Window_state(){
+		window_scale = 1.0;
+		loading = true;
+	}
+};
+
 struct Common_resources {
     Colors colors;
     Directories directories;
@@ -512,10 +520,7 @@ struct Common_resources {
     Graph_resources graph_resources;
     Game_information game_information;
     Book_information book_information;
-	double window_scale;
-	Common_resources(){
-		window_scale = 1.0;
-	}
+	Window_state window_state;
 };
 
 struct Hint_info {

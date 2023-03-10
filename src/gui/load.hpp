@@ -14,7 +14,7 @@
 #include "./../engine/engine_all.hpp"
 #include "function/function_all.hpp"
 
-int init_ai(Settings* settings, const Directories* directories) {
+int init_ai(Settings* settings, const Directories* directories, bool *stop_loading) {
     thread_pool.resize(settings->n_threads - 1);
     std::cerr << "there are " << thread_pool.size() << " additional threads" << std::endl;
     bit_init();
@@ -31,7 +31,7 @@ int init_ai(Settings* settings, const Directories* directories) {
     if (!evaluate_init(directories->eval_file, true)) {
         return ERR_EVAL_FILE_NOT_IMPORTED;
     }
-    if (!book_init(settings->book_file, true)) {
+    if (!book_init(settings->book_file, true, stop_loading)) {
         return ERR_BOOK_FILE_NOT_IMPORTED;
     }
     return ERR_OK;
@@ -53,13 +53,13 @@ int check_update(const Directories* directories, String *new_version) {
 
 
 
-int load_app(Directories* directories, Resources* resources, Settings* settings, bool* update_found, String *new_version) {
+int load_app(Directories* directories, Resources* resources, Settings* settings, bool* update_found, String *new_version, bool *stop_loading) {
     if (settings->auto_update_check) {
         if (check_update(directories, new_version) == UPDATE_CHECK_UPDATE_FOUND) {
             *update_found = true;
         }
     }
-    return init_ai(settings, directories);
+    return init_ai(settings, directories, stop_loading);
 }
 
 
@@ -75,6 +75,7 @@ private:
     Button update_button;
     Button book_ignore_button;
     String new_version;
+	bool stop_loading;
 
 public:
     Load(const InitData& init) : IScene{ init } {
@@ -85,13 +86,14 @@ public:
         book_failed = false;
         tips = language.get_random("tips", "tips");
         update_found = false;
-        load_future = std::async(std::launch::async, load_app, &getData().directories, &getData().resources, &getData().settings, &update_found, &new_version);
-		getData().settings.need_save = true;
+		stop_loading = false;
+        load_future = std::async(std::launch::async, load_app, &getData().directories, &getData().resources, &getData().settings, &update_found, &new_version, &stop_loading);
     }
 
     void update() override {
 		if (System::GetUserActions() & UserAction::CloseButtonClicked) {
-			getData().settings.need_save = false;
+			stop_loading = true;
+			load_future.get();
             changeScene(U"Close", SCENE_FADE_TIME);
             return;
         }
@@ -128,6 +130,7 @@ public:
                     if (load_code == ERR_OK) {
                         std::cerr << "loaded" << std::endl;
                         getData().menu_elements.init(&getData().settings, &getData().resources);
+						getData().window_state.loading = false;
                         changeScene(U"Main_scene", SCENE_FADE_TIME);
                     }
                     else {
@@ -145,6 +148,7 @@ public:
                     if (book_ignore_button.clicked()) {
                         std::cerr << "loaded" << std::endl;
                         getData().menu_elements.init(&getData().settings, &getData().resources);
+						getData().window_state.loading = false;
                         changeScene(U"Main_scene", SCENE_FADE_TIME);
                     }
                 }

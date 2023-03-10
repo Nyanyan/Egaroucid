@@ -42,8 +42,8 @@ void save_settings(Menu_elements menu_elements, Settings settings, Directories d
     }
 }
 
-void close_app(Menu_elements menu_elements, Settings settings, Directories directories, Book_information book_information) {
-	if (settings.need_save) {
+void close_app(Menu_elements menu_elements, Settings settings, Directories directories, Book_information book_information, Window_state window_state) {
+	if (!window_state.loading) {
 		save_settings(menu_elements, settings, directories);
 	}
     if (book_information.changed) {
@@ -57,7 +57,7 @@ private:
 
 public:
     Close(const InitData& init) : IScene{ init } {
-        close_future = std::async(std::launch::async, close_app, getData().menu_elements, getData().settings, getData().directories, getData().book_information);
+        close_future = std::async(std::launch::async, close_app, getData().menu_elements, getData().settings, getData().directories, getData().book_information, getData().window_state);
     }
 
     void update() override {

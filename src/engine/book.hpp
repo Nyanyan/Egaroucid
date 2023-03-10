@@ -118,9 +118,9 @@ class Book{
             @param file                 book file (.egbk file)
             @return book completely imported?
         */
-        bool init(std::string file, bool show_log){
+        bool init(std::string file, bool show_log, bool *stop_loading){
             n_book = 0;
-            return import_file_bin(file, show_log);
+            return import_file_bin(file, show_log, stop_loading);
         }
 
         /*
@@ -129,7 +129,7 @@ class Book{
             @param file                 book file (.egbk file)
             @return book completely imported?
         */
-        inline bool import_file_bin(std::string file, bool show_log){
+        inline bool import_file_bin(std::string file, bool show_log, bool *stop_loading){
             if (show_log)
                 std::cerr << "importing " << file << std::endl;
             FILE* fp;
@@ -147,6 +147,8 @@ class Book{
                 return false;
             }
             for (i = 0; i < n_boards; ++i) {
+				if (*stop_loading)
+					break;
                 if (i % 32768 == 0 && show_log)
                     std::cerr << "loading book " << (i * 100 / n_boards) << "%" << std::endl;
                 if (fread(&p, 8, 1, fp) < 1) {
@@ -174,11 +176,21 @@ class Book{
                 b.opponent = o;
                 n_book += register_symmetric_book(b, value);
             }
+			if (*stop_loading){
+				std::cerr << "stop loading book" << std::endl;
+				fclose(fp);
+				return false;
+			}
             if (show_log)
                 std::cerr << "book imported " << n_book << " boards" << std::endl;
             fclose(fp);
             return true;
         }
+
+		inline bool import_file_bin(std::string file, bool show_log){
+			bool stop_loading = false;
+			return import_file_bin(file, show_log, &stop_loading);
+		}
 
         /*
             @brief import Edax-formatted book
@@ -691,5 +703,12 @@ Book book;
 bool book_init(std::string file, bool show_log){
     //book_hash_init(show_log);
     book_hash_init_rand();
-    return book.init(file, show_log);
+	bool stop_loading = false;
+    return book.init(file, show_log, &stop_loading);
+}
+
+bool book_init(std::string file, bool show_log, bool *stop_loading){
+    //book_hash_init(show_log);
+    book_hash_init_rand();
+    return book.init(file, show_log, stop_loading);
 }

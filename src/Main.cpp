@@ -56,11 +56,11 @@ void Main() {
 		double scale = CalculateScale(window_size, Scene::Size());
 		const Transformer2D screenScaling{ Mat3x2::Scale(scale), TransformCursor::Yes };
 		scene_manager.update();
-		scene_manager.get()->window_scale = scale;
+		scene_manager.get()->window_state.window_scale = scale;
 		while (getline(logger_stream, logger))
 			logger_String = Unicode::Widen(logger);
 		logger_stream.clear();
-		if (scene_manager.get()->menu_elements.show_log) {
+		if (scene_manager.get()->menu_elements.show_log || scene_manager.get()->window_state.loading) {
 			scene_manager.get()->fonts.font(logger_String).draw(12, Arg::bottomLeft(8, WINDOW_SIZE_Y - 5), scene_manager.get()->colors.white);
 		}
 	}
