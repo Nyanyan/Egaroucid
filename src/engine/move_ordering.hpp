@@ -142,11 +142,7 @@ inline int get_weighted_n_moves(uint64_t legal){
 */
 #if USE_SIMD
     inline int get_potential_mobility(uint64_t opponent, uint64_t empties){
-        const u64_4 shift(1, HW, HW_M1, HW_P1);
-        const u64_4 mask(0x7E7E7E7E7E7E7E7EULL, 0x00FFFFFFFFFFFF00ULL, 0x007E7E7E7E7E7E00ULL, 0x007E7E7E7E7E7E00ULL);
-        u64_4 op(opponent);
-        op = op & mask;
-        return pop_count_ull(empties & all_or((op << shift) | (op >> shift)));
+        return calc_surround(opponent, empties);
     }
 #else
     inline int get_potential_mobility(uint64_t opponent, uint64_t empties){

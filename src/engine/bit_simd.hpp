@@ -99,109 +99,6 @@ void print_board(uint64_t p, uint64_t o){
 }
 
 /*
-Original code: https://github.com/primenumber/issen/blob/72f450256878094ffe90b75f8674599e6869c238/src/move_generator.cpp
-modified by Nyanyan
-*/
-
-/*
-    @brief a structure to maniplate 4 uint64_t
-*/
-struct u64_4 {
-    __m256i data;
-    u64_4() = default;
-    u64_4(uint64_t val)
-        : data(_mm256_set1_epi64x(val)) {}
-    u64_4(uint64_t w, uint64_t x, uint64_t y, uint64_t z)
-        : data(_mm256_set_epi64x(w, x, y, z)) {}
-    //u64_4(u64_2 x, u64_2 y)
-    //    : data(_mm256_setr_epi64x(_mm_cvtsi128_si64(y.data), _mm_cvtsi128_si64(_mm_unpackhi_epi64(y.data, y.data)), _mm_cvtsi128_si64(x.data), _mm_cvtsi128_si64(_mm_unpackhi_epi64(x.data, x.data)))) {}
-    u64_4(__m256i data) : data(data) {}
-    operator __m256i() { return data; }
-
-    void set(uint64_t val){
-        data = _mm256_set1_epi64x(val);
-    }
-};
-
-const u64_4 u64_4_1(1);
-
-inline u64_4 operator>>(const u64_4 lhs, const size_t n) {
-    return _mm256_srli_epi64(lhs.data, n);
-}
-
-inline u64_4 operator>>(const u64_4 lhs, const u64_4 n) {
-    return _mm256_srlv_epi64(lhs.data, n.data);
-}
-
-inline u64_4 operator<<(const u64_4 lhs, const size_t n) {
-    return _mm256_slli_epi64(lhs.data, n);
-}
-
-inline u64_4 operator<<(const u64_4 lhs, const u64_4 n) {
-    return _mm256_sllv_epi64(lhs.data, n.data);
-}
-
-inline u64_4 operator&(const u64_4 lhs, const u64_4 rhs) {
-    return _mm256_and_si256(lhs.data, rhs.data);
-}
-
-inline u64_4 operator|(const u64_4 lhs, const u64_4 rhs) {
-    return _mm256_or_si256(lhs.data, rhs.data);
-}
-
-inline u64_4 operator^(const u64_4 lhs, const u64_4 rhs) {
-    return _mm256_xor_si256(lhs.data, rhs.data);
-}
-
-inline u64_4 operator+(const u64_4 lhs, const u64_4 rhs) {
-    return _mm256_add_epi64(lhs.data, rhs.data);
-}
-
-inline u64_4 operator+(const u64_4 lhs, const uint64_t rhs) {
-    __m256i r64 = _mm256_set1_epi64x(rhs);
-    return _mm256_add_epi64(lhs.data, r64);
-}
-
-inline u64_4 operator-(const u64_4 lhs, const u64_4 rhs) {
-    return _mm256_sub_epi64(lhs.data, rhs.data);
-}
-
-inline u64_4 operator-(const u64_4 lhs) {
-    return _mm256_sub_epi64(_mm256_setzero_si256(), lhs.data);
-}
-
-inline u64_4 operator*(const u64_4 lhs, const u64_4 rhs) {
-    return _mm256_mullo_epi64(lhs.data, rhs.data);
-}
-
-inline u64_4 andnot(const u64_4 lhs, const u64_4 rhs) {
-    return _mm256_andnot_si256(lhs.data, rhs.data);
-}
-
-inline u64_4 operator~(const u64_4 lhs) {
-    return _mm256_andnot_si256(lhs.data, _mm256_set1_epi8(0xFF));
-}
-
-inline u64_4 nonzero(const u64_4 lhs) {
-    return _mm256_cmpeq_epi64(lhs.data, _mm256_setzero_si256()) + u64_4_1;
-}
-
-inline uint64_t all_or(const u64_4 lhs) {
-    __m128i lhs_xz_yw = _mm_or_si128(_mm256_castsi256_si128(lhs.data), _mm256_extractf128_si256(lhs.data, 1));
-    return _mm_extract_epi64(lhs_xz_yw, 0) | _mm_extract_epi64(lhs_xz_yw, 1);
-}
-
-inline uint64_t all_and(const u64_4 lhs) {
-    __m128i lhs_xz_yw = _mm_and_si128(_mm256_castsi256_si128(lhs.data), _mm256_extractf128_si256(lhs.data, 1));
-    return _mm_extract_epi64(lhs_xz_yw, 0) & _mm_extract_epi64(lhs_xz_yw, 1);
-}
-
-/*
-end of modification
-*/
-
-
-/*
     @brief popcount algorithm
 
     @param x                    an integer
@@ -279,20 +176,6 @@ inline uint64_t black_line_mirror(uint64_t x){
 }
 
 /*
-    @brief mirroring bitboards in black line
-
-    @param x                    bitboards
-*/
-inline u64_4 black_line_mirror(u64_4 x){
-    u64_4 a = (x ^ (x >> 9)) & 0x0055005500550055ULL;
-    x = x ^ a ^ (a << 9);
-    a = (x ^ (x >> 18)) & 0x0000333300003333ULL;
-    x = x ^ a ^ (a << 18);
-    a = (x ^ (x >> 36)) & 0x000000000F0F0F0FULL;
-    return x ^ a ^ (a << 36);
-}
-
-/*
     @brief mirroring a bitboard in vertical
 
     @param x                    a bitboard
@@ -317,17 +200,6 @@ inline u64_4 black_line_mirror(u64_4 x){
     @param x                    a bitboard
 */
 inline uint64_t horizontal_mirror(uint64_t x){
-    x = ((x >> 1) & 0x5555555555555555ULL) | ((x << 1) & 0xAAAAAAAAAAAAAAAAULL);
-    x = ((x >> 2) & 0x3333333333333333ULL) | ((x << 2) & 0xCCCCCCCCCCCCCCCCULL);
-    return ((x >> 4) & 0x0F0F0F0F0F0F0F0FULL) | ((x << 4) & 0xF0F0F0F0F0F0F0F0ULL);
-}
-
-/*
-    @brief mirroring bitboards in horizontal
-
-    @param x                    bitboards
-*/
-inline u64_4 horizontal_mirror(u64_4 x){
     x = ((x >> 1) & 0x5555555555555555ULL) | ((x << 1) & 0xAAAAAAAAAAAAAAAAULL);
     x = ((x >> 2) & 0x3333333333333333ULL) | ((x << 2) & 0xCCCCCCCCCCCCCCCCULL);
     return ((x >> 4) & 0x0F0F0F0F0F0F0F0FULL) | ((x << 4) & 0xF0F0F0F0F0F0F0F0ULL);
@@ -397,68 +269,6 @@ inline uint64_t rotate_180(uint64_t x){
         return pop_count_ull((~x) & (x - 1));
     }
 #endif
-
-/*
-    @brief pop-count algorithm for 4 bitboards
-
-    @param x                    bitboards
-*/
-inline u64_4 pop_count_ull_quad(u64_4 x){
-    u64_4 mask(0x5555555555555555ULL);
-    x = x - ((x >> 1) & mask);
-    mask.set(0x3333333333333333ULL);
-    x = (x & mask) + ((x >> 2) & mask);
-    mask.set(0x0F0F0F0F0F0F0F0FULL);
-    x = (x + (x >> 4)) & mask;
-    mask.set(0x0101010101010101ULL);
-    return (x * mask) >> 56;
-}
-
-
-/*
-Original code: https://github.com/primenumber/issen/blob/72f450256878094ffe90b75f8674599e6869c238/src/move_generator.cpp
-modified by Nyanyan
-*/
-/*
-    @brief NLZ (number of leading zeros) algorithm for 4 bitboards
-
-    @param x                    bitboards
-*/
-inline u64_4 nlz_quad(u64_4 x){
-    x = x | (x >> 1);
-    x = x | (x >> 2);
-    x = x | (x >> 4);
-    x = x | (x >> 8);
-    x = x | (x >> 16);
-    return pop_count_ull_quad(~x);
-}
-
-/*
-    @brief upper bit algorithm
-*/
-__m256i flip_vertical_shuffle_table;
-inline void upper_bit_init(){
-    flip_vertical_shuffle_table = _mm256_set_epi8(
-        24, 25, 26, 27, 28, 29, 30, 31,
-        16, 17, 18, 19, 20, 21, 22, 23,
-        8, 9, 10, 11, 12, 13, 14, 15,
-        0, 1, 2, 3, 4, 5, 6, 7
-    );
-}
-
-inline u64_4 upper_bit(u64_4 p) {
-    p = p | (p >> 1);
-    p = p | (p >> 2);
-    p = p | (p >> 4);
-    p = andnot(p >> 1, p);
-    p.data = _mm256_shuffle_epi8(p.data, flip_vertical_shuffle_table);
-    p = p & -p;
-    return _mm256_shuffle_epi8(p.data, flip_vertical_shuffle_table);
-}
-/*
-end of modification
-*/
-
 
 /*
     @brief get the place of the first bit of a given board
@@ -672,5 +482,4 @@ inline uint_fast8_t next_bit(uint64_t *x){
     @brief bit initialize
 */
 void bit_init(){
-    upper_bit_init();
 }
