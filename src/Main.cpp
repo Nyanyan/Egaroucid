@@ -53,9 +53,10 @@ void Main() {
 	scene_manager.init(U"Silent_load");
 
 	while (System::Update()) {
-		global_window_scale = CalculateScale(window_size, Scene::Size());
-		const Transformer2D screenScaling{ Mat3x2::Scale(global_window_scale), TransformCursor::Yes };
+		double scale = CalculateScale(window_size, Scene::Size());
+		const Transformer2D screenScaling{ Mat3x2::Scale(scale), TransformCursor::Yes };
 		scene_manager.update();
+		scene_manager.get()->window_scale = scale;
 		while (getline(logger_stream, logger))
 			logger_String = Unicode::Widen(logger);
 		logger_stream.clear();
