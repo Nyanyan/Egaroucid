@@ -39,7 +39,7 @@ private:
     bool need_start_game_button;
     Umigame_status umigame_status;
     bool changing_scene;
-	uint8_t date;
+    uint8_t date;
     bool taking_screen_shot;
 
 public:
@@ -59,7 +59,7 @@ public:
         start_game_button.init(START_GAME_BUTTON_SX, START_GAME_BUTTON_SY, START_GAME_BUTTON_WIDTH, START_GAME_BUTTON_HEIGHT, START_GAME_BUTTON_RADIUS, language.get("play", "start_game"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
         need_start_game_button_calculation();
         changing_scene = false;
-		date = INIT_DATE;
+        date = INIT_DATE;
         taking_screen_shot = false;
         std::cerr << "main scene loaded" << std::endl;
     }
@@ -84,20 +84,20 @@ public:
 
         // hash resize
         if (getData().menu_elements.hash_level != global_hash_level) {
-			int n_hash_level = getData().menu_elements.hash_level;
-			if (n_hash_level != global_hash_level) {
-				stop_calculating();
-				if (!hash_resize(global_hash_level, n_hash_level, true)) {
-					std::cerr << "hash resize failed. use default level" << std::endl;
-					hash_resize(DEFAULT_HASH_LEVEL, DEFAULT_HASH_LEVEL, true);
-					getData().menu_elements.hash_level = DEFAULT_HASH_LEVEL;
-					global_hash_level = DEFAULT_HASH_LEVEL;
-				}
-				else {
-					global_hash_level = n_hash_level;
-				}
-				resume_calculating();
-			}
+            int n_hash_level = getData().menu_elements.hash_level;
+            if (n_hash_level != global_hash_level) {
+                stop_calculating();
+                if (!hash_resize(global_hash_level, n_hash_level, true)) {
+                    std::cerr << "hash resize failed. use default level" << std::endl;
+                    hash_resize(DEFAULT_HASH_LEVEL, DEFAULT_HASH_LEVEL, true);
+                    getData().menu_elements.hash_level = DEFAULT_HASH_LEVEL;
+                    global_hash_level = DEFAULT_HASH_LEVEL;
+                }
+                else {
+                    global_hash_level = n_hash_level;
+                }
+                resume_calculating();
+            }
         }
 
         // init
@@ -109,12 +109,12 @@ public:
         // screen shot
         if (taking_screen_shot) {
             Image image = ScreenCapture::GetFrame();
-			const int clip_sx = BOARD_SX - BOARD_ROUND_FRAME_WIDTH - BOARD_COORD_SIZE;
-			const int clip_sy = BOARD_SY - BOARD_ROUND_FRAME_WIDTH - BOARD_COORD_SIZE;
-			const int clip_size_x = BOARD_CELL_SIZE * HW + BOARD_ROUND_FRAME_WIDTH * 2 + BOARD_COORD_SIZE + 7;
-			const int clip_size_y = BOARD_CELL_SIZE * HW + BOARD_ROUND_FRAME_WIDTH * 2 + BOARD_COORD_SIZE + 7;
-			const Rect clip_rect(clip_sx * getData().window_state.window_scale, clip_sy * getData().window_state.window_scale, clip_size_x * getData().window_state.window_scale, clip_size_y * getData().window_state.window_scale);
-			Image image_clip = image.clipped(clip_rect);
+            const int clip_sx = BOARD_SX - BOARD_ROUND_FRAME_WIDTH - BOARD_COORD_SIZE;
+            const int clip_sy = BOARD_SY - BOARD_ROUND_FRAME_WIDTH - BOARD_COORD_SIZE;
+            const int clip_size_x = BOARD_CELL_SIZE * HW + BOARD_ROUND_FRAME_WIDTH * 2 + BOARD_COORD_SIZE + 7;
+            const int clip_size_y = BOARD_CELL_SIZE * HW + BOARD_ROUND_FRAME_WIDTH * 2 + BOARD_COORD_SIZE + 7;
+            const Rect clip_rect(clip_sx * getData().window_state.window_scale, clip_sy * getData().window_state.window_scale, clip_size_x * getData().window_state.window_scale, clip_size_y * getData().window_state.window_scale);
+            Image image_clip = image.clipped(clip_rect);
             Clipboard::SetImage(image_clip);
             taking_screen_shot = false;
             std::cerr << "screen shot copied to clipboard" << std::endl;
@@ -464,11 +464,11 @@ private:
             }
             resume_calculating();
         }
-		if (getData().menu_elements.cache_clear) {
-			stop_calculating();
-			transposition_table.init();
-			resume_calculating();
-		}
+        if (getData().menu_elements.cache_clear) {
+            stop_calculating();
+            transposition_table.init();
+            resume_calculating();
+        }
     }
 
     void menu_book() {
@@ -479,13 +479,13 @@ private:
             changeScene(U"Widen_book", SCENE_FADE_TIME);
             return;
         }
-		if (getData().menu_elements.book_start_deepen) {
-			stop_calculating();
-			resume_calculating();
-			changing_scene = true;
-			changeScene(U"Deepen_book", SCENE_FADE_TIME);
-			return;
-		}
+        if (getData().menu_elements.book_start_deepen) {
+            stop_calculating();
+            resume_calculating();
+            changing_scene = true;
+            changeScene(U"Deepen_book", SCENE_FADE_TIME);
+            return;
+        }
         if (getData().menu_elements.book_import) {
             stop_calculating();
             resume_calculating();
@@ -504,12 +504,12 @@ private:
 
     void menu_help() {
         if (getData().menu_elements.website) {
-			if (language.get("lang_name") == U"日本語") {
-				System::LaunchBrowser(U"https://www.egaroucid.nyanyan.dev/ja/");
-			}
-			else {
-				System::LaunchBrowser(U"https://www.egaroucid.nyanyan.dev/en/");
-			}
+            if (language.get("lang_name") == U"日本語") {
+                System::LaunchBrowser(U"https://www.egaroucid.nyanyan.dev/ja/");
+            }
+            else {
+                System::LaunchBrowser(U"https://www.egaroucid.nyanyan.dev/en/");
+            }
         }
         if (getData().menu_elements.bug_report) {
             System::LaunchBrowser(U"https://docs.google.com/forms/d/e/1FAIpQLSd6ML1T1fc707luPEefBXuImMnlM9cQP8j-YHKiSyFoS-8rmQ/viewform?usp=sf_link");
@@ -676,8 +676,8 @@ private:
                     resume_calculating();
                     ai_status.ai_future = std::async(std::launch::async, ai, getData().history_elem.board, getData().menu_elements.level, getData().menu_elements.use_book, true, true, date);
                     ai_status.ai_thinking = true;
-					++date;
-					date = manage_date(date);
+                    ++date;
+                    date = manage_date(date);
                 }
             }
             else if (ai_status.ai_future.valid()) {
@@ -800,8 +800,8 @@ private:
         side_menu.init_button(language.get("operation", "convert", "white_line"), &menu_elements->convert_whiteline);
         menu_e.push(side_menu);
         title.push(menu_e);
-		menu_e.init_button(language.get("operation", "cache_clear"), &menu_elements->cache_clear);
-		title.push(menu_e);
+        menu_e.init_button(language.get("operation", "cache_clear"), &menu_elements->cache_clear);
+        title.push(menu_e);
 
         menu.push(title);
 
@@ -850,8 +850,8 @@ private:
         title.push(menu_e);
         menu_e.init_button(language.get("book", "book_widen"), &menu_elements->book_start_widen);
         title.push(menu_e);
-		menu_e.init_button(language.get("book", "book_deepen"), &menu_elements->book_start_deepen);
-		title.push(menu_e);
+        menu_e.init_button(language.get("book", "book_deepen"), &menu_elements->book_start_deepen);
+        title.push(menu_e);
 
         menu.push(title);
 
@@ -999,11 +999,11 @@ private:
                     Vec2 pos = Cursor::Pos();
                     pos.x += 20;
                     RectF background_rect = getData().fonts.font_bold(opening_name).region(15, pos);
-					if (background_rect.y + background_rect.h > WINDOW_SIZE_Y) {
-						double delta = background_rect.y + background_rect.h - WINDOW_SIZE_Y;
-						background_rect.y -= delta;
-						pos.y -= delta;
-					}
+                    if (background_rect.y + background_rect.h > WINDOW_SIZE_Y) {
+                        double delta = background_rect.y + background_rect.h - WINDOW_SIZE_Y;
+                        background_rect.y -= delta;
+                        pos.y -= delta;
+                    }
                     background_rect.draw(getData().colors.white);
                     getData().fonts.font_bold(opening_name).draw(15, pos, getData().colors.black);
                 }
@@ -1014,7 +1014,7 @@ private:
     bool same_level(int l1, int l2, int n_moves) {
         bool m1, m2;
         int d1, d2;
-		uint_fast8_t ml1, ml2;
+        uint_fast8_t ml1, ml2;
         get_level(l1, n_moves, &m1, &d1, &ml1);
         get_level(l2, n_moves, &m2, &d2, &ml2);
         return m1 == m2 && d1 == d2 && ml1 == ml2;
@@ -1093,8 +1093,8 @@ private:
             ai_status.hint_n_doing_tasks = 0;
             ai_status.hint_calculating = true;
             std::cerr << "hint search level " << ai_status.hint_level << " n_tasks " << ai_status.hint_task_stack.size() << " multi_threading " << ai_status.hint_use_multi_thread << " date " << (int)date << std::endl;
-			++date;
-			date = manage_date(date);
+            ++date;
+            date = manage_date(date);
         }
     }
 
@@ -1107,6 +1107,8 @@ private:
                             Search_result search_result = ai_status.hint_future[cell].get();
                             if (ai_status.hint_values[cell] == HINT_INIT_VALUE || search_result.is_end_search || search_result.depth == SEARCH_BOOK) {
                                 ai_status.hint_values[cell] = -search_result.value;
+                                if (search_result.depth == SEARCH_BOOK)
+                                    ai_status.hint_values[cell] += 0.49999999; // to give priority for book values
                             }
                             else {
                                 ai_status.hint_values[cell] -= 1.2 * search_result.value;
@@ -1171,8 +1173,8 @@ private:
             analyze_info.board = node.board;
             ai_status.analyze_task_stack.emplace_back(std::make_pair(analyze_info, std::bind(ai, node.board, getData().menu_elements.level, getData().menu_elements.use_book, true, true, date))); // HACK: no need to update date in analyze
         }
-		++date;
-		date = manage_date(date);
+        ++date;
+        date = manage_date(date);
         std::cerr << "analyze " << ai_status.analyze_task_stack.size() << " tasks" << std::endl;
         ai_status.analyzing = true;
         analyze_do_task();
