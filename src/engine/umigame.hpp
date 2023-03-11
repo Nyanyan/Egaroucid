@@ -17,6 +17,13 @@
 #include "book.hpp"
 
 /*
+    @brief Constants for Umigame's value
+*/
+#define UMIGAME_SEARCH_DEPTH 100
+#define UMIGAME_UNDEFINED -1
+
+
+/*
     @brief Result of umigame value search 
 
     @param b                            black player's umigame value
@@ -25,6 +32,12 @@
 struct Umigame_result {
     int b;
     int w;
+
+    Umigame_result(){
+        b = UMIGAME_UNDEFINED;
+        w = UMIGAME_UNDEFINED;
+    }
+
     Umigame_result operator+(const Umigame_result& other) {
         Umigame_result res;
         res.b = b + other.b;
@@ -33,62 +46,152 @@ struct Umigame_result {
     }
 };
 
-/*
-    @brief Constants for Umigame's value
-*/
-#define UMIGAME_SEARCH_DEPTH 100
-#define UMIGAME_UNDEFINED -1
+class Umigame{
+    private:
+        std::mutex mtx;
+        std::unordered_map<Board, Umigame_result, Book_hash> umigame;
 
-/*
-    @brief Result of umigame value search 
+    public:
+        void calculate(Board *board){
+            umigame_search(board, UMIGAME_SEARCH_DEPTH, WHITE);
+        }
 
-    @param b                            board to solve
-    @param depth                        remaining depth
-    @param player                       the player of this board
-    @param target_player                target player to calculate umigame's value
-    @return Umigame's value
-*/
-int umigame_search(Board *b, int depth, int player, const int target_player){
-    if (depth == 0)
-        return 1;
-    if (!global_searching)
-        return 0;
-    int val, max_val = -INF;
-    std::vector<Board> boards;
-    uint64_t legal = b->get_legal();
-    if (legal == 0ULL){
-        player ^= 1;
-        b->pass();
-        legal = b->get_legal();
-    }
-    Flip flip;
-    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-        calc_flip(&flip, b, cell);
-        b->move_board(&flip);
-            val = book.get(b);
-            if (val != -INF && val >= max_val) {
-                if (val > max_val) {
-                    boards.clear();
-                    max_val = val;
-                }
-                boards.emplace_back(b->copy());
+        void delete_all(){
+            std::lock_guard<std::mutex> lock(mtx);
+            umigame.clear();
+        }
+
+        /*
+            @brief get registered umigame's value
+
+            @param b                    board
+            @return registered umigame's value (if not registered, returns default value)
+        */
+        Umigame_result get_umigame(Board *b){
+            std::lock_guard<std::mutex> lock(mtx);
+            Board nb = b->copy();
+            Umigame_result res;
+            res = get_oneumigame(nb);
+            if (res.b != UMIGAME_UNDEFINED)
+                return res;
+            nb.board_black_line_mirror();
+            res = get_oneumigame(nb);
+            if (res.b != UMIGAME_UNDEFINED)
+                return res;
+            nb.board_rotate_180();
+            res = get_oneumigame(nb);
+            if (res.b != UMIGAME_UNDEFINED)
+                return res;
+            nb.board_black_line_mirror();
+            res = get_oneumigame(nb);
+            if (res.b != UMIGAME_UNDEFINED)
+                return res;
+            nb.board_horizontal_mirror();
+            res = get_oneumigame(nb);
+            if (res.b != UMIGAME_UNDEFINED)
+                return res;
+            nb.board_black_line_mirror();
+            res = get_oneumigame(nb);
+            if (res.b != UMIGAME_UNDEFINED)
+                return res;
+            nb.board_rotate_180();
+            res = get_oneumigame(nb);
+            if (res.b != UMIGAME_UNDEFINED)
+                return res;
+            nb.board_black_line_mirror();
+            res = get_oneumigame(nb);
+            if (res.b != UMIGAME_UNDEFINED)
+                return res;
+            return res;
+        }
+
+    private:
+        /*
+            @brief Result of umigame value search 
+
+            @param b                            board to solve
+            @param depth                        remaining depth
+            @param player                       the player of this board
+            @return Umigame's value
+        */
+        Umigame_result umigame_search(Board *b, int depth, int player){
+            Umigame_result umigame_res;
+            if (depth == 0)
+                return umigame_res;
+            if (!global_searching)
+                return umigame_res;
+            umigame_res = get_umigame(b);
+            if (umigame_res.b != UMIGAME_UNDEFINED)
+                return umigame_res;
+            int val, max_val = -INF;
+            std::vector<Board> boards;
+            uint64_t legal = b->get_legal();
+            if (legal == 0ULL){
+                player ^= 1;
+                b->pass();
+                legal = b->get_legal();
             }
-        b->undo_board(&flip);
-    }
-    if (boards.size() == 0)
-        return 1;
-    int res;
-    if (player == target_player) {
-        res = INF;
-        for (Board &nnb : boards)
-            res = std::min(res, umigame_search(&nnb, depth - 1, player ^ 1, target_player));
-    } else {
-        res = 0;
-        for (Board &nnb : boards)
-            res += umigame_search(&nnb, depth - 1, player ^ 1, target_player);
-    }
-    return res;
-}
+            Flip flip;
+            for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+                calc_flip(&flip, b, cell);
+                b->move_board(&flip);
+                    val = book.get(b);
+                    if (val != -INF && val >= max_val) {
+                        if (val > max_val) {
+                            boards.clear();
+                            max_val = val;
+                        }
+                        boards.emplace_back(b->copy());
+                    }
+                b->undo_board(&flip);
+            }
+            if (boards.size() == 0){
+                umigame_res.b = 1;
+                umigame_res.w = 1;
+                return umigame_res;
+            }
+            if (player == BLACK){
+                umigame_res.b = INF;
+                umigame_res.w = 0;
+                for (Board &nnb : boards){
+                    Umigame_result nres = umigame_search(&nnb, depth - 1, player ^ 1);
+                    umigame_res.b = std::min(umigame_res.b, nres.b);
+                    umigame_res.w += nres.w;
+                }
+            } else{
+                umigame_res.b = 0;
+                umigame_res.w = INF;
+                for (Board &nnb : boards){
+                    Umigame_result nres = umigame_search(&nnb, depth - 1, player ^ 1);
+                    umigame_res.w = std::min(umigame_res.w, nres.w);
+                    umigame_res.b += nres.b;
+                }
+            }
+            if (global_searching)
+                reg(b, umigame_res);
+            return umigame_res;
+        }
+
+        inline void reg(Board *b, Umigame_result val){
+            std::lock_guard<std::mutex> lock(mtx);
+            umigame[b->copy()] = val;
+        }
+
+        /*
+            @brief get registered umigame's value
+
+            @param b                    a board to find
+            @return registered umigame's value (if not registered, returns defalut)
+        */
+        inline Umigame_result get_oneumigame(Board b){
+            Umigame_result res;
+            if (umigame.find(b) != umigame.end())
+                res = umigame[b];
+            return res;
+        }
+};
+
+Umigame umigame;
 
 /*
     @brief Calculate Umigame's value
@@ -98,13 +201,10 @@ int umigame_search(Board *b, int depth, int player, const int target_player){
     @return Umigame's value in Umigame_result structure
 */
 Umigame_result calculate_umigame(Board *b, int player) {
-    Umigame_result res;
-    if (book.get(b) != -INF){
-        res.b = umigame_search(b, UMIGAME_SEARCH_DEPTH, player, BLACK);
-        res.w = umigame_search(b, UMIGAME_SEARCH_DEPTH, player, WHITE);
-    } else{
-        res.b = UMIGAME_UNDEFINED;
-        res.w = UMIGAME_UNDEFINED;
+    Umigame_result res = umigame.get_umigame(b);
+    if (res.b == UMIGAME_UNDEFINED){
+        umigame.calculate(b);
+        res = umigame.get_umigame(b);
     }
     return res;
 }
