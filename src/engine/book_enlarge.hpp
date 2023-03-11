@@ -92,7 +92,7 @@ int book_widen_search(Board board, int level, const int book_depth, int expected
         book.reg(board, -g);
         return g;
     }
-    if (get_level_complete_depth(level) >= HW2 - board.n_discs())
+    if (get_level_complete_depth(level) >= HW2 - board.n_discs() || max_sum_error < 0)
         expected_error = 0;
     uint64_t legal = board.get_legal();
     if (legal == 0ULL){
@@ -157,7 +157,7 @@ int book_widen_search(Board board, int level, const int book_depth, int expected
 }
 
 int calc_book_widen_sum_error(Board root_board, int book_depth, int expected_error){
-	return std::max(0, (book_depth + 4 - root_board.n_discs()) * expected_error / 4);
+	return std::max(expected_error, (book_depth + 4 - root_board.n_discs()) * expected_error / 12);
 }
 
 /*
