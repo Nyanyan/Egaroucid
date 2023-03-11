@@ -73,10 +73,10 @@ int calc_adoptable_error(int level, int expected_error, int book_depth, int n_di
 int book_widen_search(Board board, int level, const int book_depth, int expected_error, Board *board_copy, int *player, uint64_t *strt_tim, std::string book_file, std::string book_bak, uint8_t *date, uint64_t strt){
     if (!global_searching)
         return SCORE_UNDEFINED;
-    if (tim() - *strt_tim > AUTO_BOOK_SAVE_TIME){
-        book.save_bin(book_file, book_bak);
-        *strt_tim = tim();
-    }
+    //if (tim() - *strt_tim > AUTO_BOOK_SAVE_TIME){
+    //    book.save_bin(book_file, book_bak);
+    //    *strt_tim = tim();
+    //}
     int g, v = SCORE_UNDEFINED;
     if (board.is_end()){
         g = board.score_player();
@@ -98,7 +98,10 @@ int book_widen_search(Board board, int level, const int book_depth, int expected
     if (legal == 0ULL){
         board.pass();
         *player ^= 1;
-            g = -book_widen_search(board, level, book_depth, expected_error, board_copy, player, strt_tim, book_file, book_bak, date, strt);
+            if (board.get_legal() != 0ULL)
+                g = -book_widen_search(board, level, book_depth, expected_error, board_copy, player, strt_tim, book_file, book_bak, date, strt);
+            else
+                g = -board.score_player();
         *player ^= 1;
         board.pass();
         return g;
@@ -203,10 +206,10 @@ inline void book_widen(Board root_board, int level, const int book_depth, int ex
 int book_deepen_search(Board board, int level, const int book_depth, int expected_error, Board *board_copy, int *player, uint64_t *strt_tim, std::string book_file, std::string book_bak, uint8_t *date, uint64_t strt){
     if (!global_searching)
         return SCORE_UNDEFINED;
-    if (tim() - *strt_tim > AUTO_BOOK_SAVE_TIME){
-        book.save_bin(book_file, book_bak);
-        *strt_tim = tim();
-    }
+    //if (tim() - *strt_tim > AUTO_BOOK_SAVE_TIME){
+    //    book.save_bin(book_file, book_bak);
+    //    *strt_tim = tim();
+    //}
     int g, v = SCORE_UNDEFINED;
     if (board.is_end())
         return -book.get(&board);
