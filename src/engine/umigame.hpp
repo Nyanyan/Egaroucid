@@ -52,8 +52,8 @@ class Umigame{
         std::unordered_map<Board, Umigame_result, Book_hash> umigame;
 
     public:
-        void calculate(Board *board){
-            umigame_search(board, UMIGAME_SEARCH_DEPTH, WHITE);
+        void calculate(Board *board, int player){
+            umigame_search(board, UMIGAME_SEARCH_DEPTH, player);
         }
 
         void delete_all(){
@@ -116,10 +116,12 @@ class Umigame{
         */
         Umigame_result umigame_search(Board *b, int depth, int player){
             Umigame_result umigame_res;
+			if (!global_searching)
+                return umigame_res;
             if (depth == 0)
                 return umigame_res;
-            if (!global_searching)
-                return umigame_res;
+			if (book.get(b) == -INF)
+				return umigame_res;
             umigame_res = get_umigame(b);
             if (umigame_res.b != UMIGAME_UNDEFINED)
                 return umigame_res;
@@ -148,6 +150,7 @@ class Umigame{
             if (boards.size() == 0){
                 umigame_res.b = 1;
                 umigame_res.w = 1;
+				reg(b, umigame_res);
                 return umigame_res;
             }
             if (player == BLACK){
@@ -203,7 +206,7 @@ Umigame umigame;
 Umigame_result calculate_umigame(Board *b, int player) {
     Umigame_result res = umigame.get_umigame(b);
     if (res.b == UMIGAME_UNDEFINED){
-        umigame.calculate(b);
+        umigame.calculate(b, player);
         res = umigame.get_umigame(b);
     }
     return res;

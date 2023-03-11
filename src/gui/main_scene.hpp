@@ -1392,6 +1392,7 @@ private:
                             calc_flip(&flip, &getData().history_elem.board, getData().book_information.changing);
                             Board b = getData().history_elem.board.move_copy(&flip);
                             book.change(getData().history_elem.board.move_copy(&flip), changed_book_value);
+							umigame.delete_all();
                             getData().book_information.changed = true;
                             getData().book_information.changing = BOOK_CHANGE_NO_CELL;
                             getData().book_information.val_str.clear();
