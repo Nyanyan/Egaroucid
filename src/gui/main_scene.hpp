@@ -999,8 +999,9 @@ private:
                     Vec2 pos = Cursor::Pos();
                     pos.x += 20;
                     RectF background_rect = getData().fonts.font_bold(opening_name).region(15, pos);
-                    if (background_rect.y + background_rect.h > WINDOW_SIZE_Y) {
-                        double delta = background_rect.y + background_rect.h - WINDOW_SIZE_Y;
+					const int rect_y_max = BOARD_SY + BOARD_SIZE + BOARD_ROUND_FRAME_WIDTH + 5;
+                    if (background_rect.y + background_rect.h > rect_y_max) {
+                        double delta = background_rect.y + background_rect.h - rect_y_max;
                         background_rect.y -= delta;
                         pos.y -= delta;
                     }
