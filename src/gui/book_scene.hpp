@@ -17,6 +17,7 @@
 
 void delete_book() {
     book.delete_all();
+	umigame.delete_all();
 }
 
 bool import_book(std::string file) {
@@ -44,6 +45,7 @@ bool import_book(std::string file) {
     else {
         std::cerr << "this is not a book" << std::endl;
     }
+	umigame.delete_all();
     return result;
 }
 
@@ -68,6 +70,7 @@ bool import_book_egaroucid(std::string file, bool no_symmetry_check) {
     else {
         std::cerr << "this is not an Egaroucid book" << std::endl;
     }
+	umigame.delete_all();
     return result;
 }
 
