@@ -103,6 +103,7 @@ public:
             getData().fonts.font(language.get("book", "merge_explanation")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             back_button.draw();
             if (back_button.clicked() || KeyEscape.pressed()) {
+				umigame.delete_all();
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
             if (DragDrop::HasNewFilePaths()) {
@@ -122,11 +123,13 @@ public:
                 getData().fonts.font(language.get("book", "import_failed")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
                 back_button.draw();
                 if (back_button.clicked() || KeyEscape.pressed()) {
+					umigame.delete_all();
                     changeScene(U"Main_scene", SCENE_FADE_TIME);
                 }
             }
             else {
                 getData().book_information.changed = true;
+				umigame.delete_all();
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
         }
@@ -196,6 +199,7 @@ public:
             getData().fonts.font(book_file_str + U'|' + editingText).draw(15, text_area.stretched(-4), getData().colors.black);
             back_button.draw();
             if (back_button.clicked() || KeyEscape.pressed()) {
+				umigame.delete_all();
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
             default_button.draw();
@@ -234,10 +238,12 @@ public:
                 getData().fonts.font(language.get("book", "import_failed")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
                 single_back_button.draw();
                 if (single_back_button.clicked() || KeyEscape.pressed()) {
+					umigame.delete_all();
                     changeScene(U"Main_scene", SCENE_FADE_TIME);
                 }
             }
             else {
+				umigame.delete_all();
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
         }
@@ -301,6 +307,7 @@ public:
             back_button.draw();
             if (back_button.clicked()) {
                 getData().graph_resources.need_init = false;
+				umigame.delete_all();
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
         }
@@ -364,6 +371,7 @@ public:
 			back_button.draw();
 			if (back_button.clicked()) {
 				getData().graph_resources.need_init = false;
+				umigame.delete_all();
 				changeScene(U"Main_scene", SCENE_FADE_TIME);
 			}
 		}
