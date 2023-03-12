@@ -359,7 +359,7 @@ public:
             changeScene(U"Close", SCENE_FADE_TIME);
         }
         int board_arr[HW2];
-        history_elem.board.translate_to_arr(board_arr, BLACK);
+        history_elem.board.translate_to_arr(board_arr, history_elem.player);
         for (int cell = 0; cell < HW2; ++cell) {
             int x = BOARD_SX + (cell % HW) * BOARD_CELL_SIZE;
             int y = BOARD_SY + (cell / HW) * BOARD_CELL_SIZE;
@@ -368,7 +368,7 @@ public:
                 board_arr[cell] = disc_radio.checked;
             }
         }
-        history_elem.board.translate_from_arr(board_arr, BLACK);
+        history_elem.board.translate_from_arr(board_arr, history_elem.player);
         if (KeyB.pressed()) {
             disc_radio.checked = BLACK;
         }
@@ -391,10 +391,10 @@ public:
             changeScene(U"Main_scene", SCENE_FADE_TIME);
         }
         if (set_button.clicked() || KeyEnter.pressed()) {
-            if (player_radio.checked != BLACK) {
+            if (history_elem.player != player_radio.checked){
                 history_elem.board.pass();
+                history_elem.player = player_radio.checked;
             }
-            history_elem.player = player_radio.checked;
             history_elem.v = GRAPH_IGNORE_VALUE;
             history_elem.level = -1;
             getData().history_elem = history_elem;
