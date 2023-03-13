@@ -120,7 +120,7 @@ class Book{
         */
         bool init(std::string file, bool show_log, bool *stop_loading){
             n_book = 0;
-            return import_file_bin(file, show_log, stop_loading, true);
+            return import_file_bin(file, show_log, stop_loading);
         }
 
         /*
@@ -129,7 +129,7 @@ class Book{
             @param file                 book file (.egbk file)
             @return book completely imported?
         */
-        inline bool import_file_bin(std::string file, bool show_log, bool *stop_loading, bool no_symmetry_check){
+        inline bool import_file_bin(std::string file, bool show_log, bool *stop_loading){
             if (show_log)
                 std::cerr << "importing " << file << std::endl;
             FILE* fp;
@@ -174,10 +174,7 @@ class Book{
                 }
                 b.player = p;
                 b.opponent = o;
-                if (no_symmetry_check)
-                    n_book += register_book(b, value);
-                else
-                    n_book += register_symmetric_book(b, value);
+                n_book += register_symmetric_book(b, value);
             }
             if (*stop_loading){
                 std::cerr << "stop loading book" << std::endl;
@@ -192,12 +189,7 @@ class Book{
 
         inline bool import_file_bin(std::string file, bool show_log){
             bool stop_loading = false;
-            return import_file_bin(file, show_log, &stop_loading, false);
-        }
-
-        inline bool import_file_bin(std::string file, bool show_log, bool no_symmetry_check){
-            bool stop_loading = false;
-            return import_file_bin(file, show_log, &stop_loading, no_symmetry_check);
+            return import_file_bin(file, show_log, &stop_loading);
         }
 
         /*
@@ -349,40 +341,8 @@ class Book{
             @return registered value (if not registered, returns -INF)
         */
         inline int get(Board *b){
-            Board nb = b->copy();
-            int res = -INF;
-            res = get_onebook(nb);
-            if (res != -INF)
-                return res;
-            nb.board_black_line_mirror();
-            res = get_onebook(nb);
-            if (res != -INF)
-                return res;
-            nb.board_rotate_180();
-            res = get_onebook(nb);
-            if (res != -INF)
-                return res;
-            nb.board_black_line_mirror();
-            res = get_onebook(nb);
-            if (res != -INF)
-                return res;
-            nb.board_horizontal_mirror();
-            res = get_onebook(nb);
-            if (res != -INF)
-                return res;
-            nb.board_black_line_mirror();
-            res = get_onebook(nb);
-            if (res != -INF)
-                return res;
-            nb.board_rotate_180();
-            res = get_onebook(nb);
-            if (res != -INF)
-                return res;
-            nb.board_black_line_mirror();
-            res = get_onebook(nb);
-            if (res != -INF)
-                return res;
-            return -INF;
+            Board min_board = get_min_board(b);
+            return get_onebook(min_board);
         }
 
         /*
@@ -613,6 +573,34 @@ class Book{
             return false;
         }
 
+        inline void update_min_board(Board *res, Board *sym){
+            if ((res->player | res->opponent) > (sym->player | sym->opponent))
+                *res = sym->copy();
+        }
+
+        inline Board get_min_board(Board b){
+            Board min_board = b;
+            b.board_black_line_mirror();
+            update_min_board(&min_board, &b);
+            b.board_rotate_180();
+            update_min_board(&min_board, &b);
+            b.board_black_line_mirror();
+            update_min_board(&min_board, &b);
+            b.board_horizontal_mirror();
+            update_min_board(&min_board, &b);
+            b.board_black_line_mirror();
+            update_min_board(&min_board, &b);
+            b.board_rotate_180();
+            update_min_board(&min_board, &b);
+            b.board_black_line_mirror();
+            update_min_board(&min_board, &b);
+            return min_board;
+        }
+
+        inline Board get_min_board(Board *b){
+            return get_min_board(b->copy());
+        }
+
         /*
             @brief register a board with checking all symmetry boards
 
@@ -621,46 +609,8 @@ class Book{
             @return 1 if board is new else 0
         */
         inline int register_symmetric_book(Board b, int value){
-            if (get_onebook(b) != -INF){
-                register_book(b, value);
-                return 0;
-            }
-            b.board_black_line_mirror();
-            if (get_onebook(b) != -INF){
-                register_book(b, value);
-                return 0;
-            }
-            b.board_rotate_180();
-            if (get_onebook(b) != -INF){
-                register_book(b, value);
-                return 0;
-            }
-            b.board_black_line_mirror();
-            if (get_onebook(b) != -INF){
-                register_book(b, value);
-                return 0;
-            }
-            b.board_horizontal_mirror();
-            if (get_onebook(b) != -INF){
-                register_book(b, value);
-                return 0;
-            }
-            b.board_black_line_mirror();
-            if (get_onebook(b) != -INF){
-                register_book(b, value);
-                return 0;
-            }
-            b.board_rotate_180();
-            if (get_onebook(b) != -INF){
-                register_book(b, value);
-                return 0;
-            }
-            b.board_black_line_mirror();
-            if (get_onebook(b) != -INF){
-                register_book(b, value);
-                return 0;
-            }
-            register_book(b, value);
+            Board min_board = get_min_board(b);
+            register_book(min_board, value);
             return 1;
         }
 
@@ -671,38 +621,8 @@ class Book{
             @return 1 if board is deleted (board found) else 0
         */
         inline int delete_symmetric_book(Board b){
-            if (delete_book(b)){
-                return 1;
-            }
-            b.board_black_line_mirror();
-            if (delete_book(b)){
-                return 1;
-            }
-            b.board_rotate_180();
-            if (delete_book(b)){
-                return 1;
-            }
-            b.board_black_line_mirror();
-            if (delete_book(b)){
-                return 1;
-            }
-            b.board_horizontal_mirror();
-            if (delete_book(b)){
-                return 1;
-            }
-            b.board_black_line_mirror();
-            if (delete_book(b)){
-                return 1;
-            }
-            b.board_rotate_180();
-            if (delete_book(b)){
-                return 1;
-            }
-            b.board_black_line_mirror();
-            if (delete_book(b)){
-                return 1;
-            }
-            return 0;
+            Board min_board = get_min_board(b);
+            return delete_book(min_board);
         }
 };
 

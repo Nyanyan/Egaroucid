@@ -49,7 +49,7 @@ bool import_book(std::string file) {
     return result;
 }
 
-bool import_book_egaroucid(std::string file, bool no_symmetry_check) {
+bool import_book_egaroucid(std::string file) {
     std::cerr << "book import" << std::endl;
     bool result = true;
     std::vector<std::string> lst;
@@ -65,7 +65,7 @@ bool import_book_egaroucid(std::string file, bool no_symmetry_check) {
     }
     if (lst[lst.size() - 1] == "egbk") {
         std::cerr << "importing Egaroucid book" << std::endl;
-        result = !book.import_file_bin(file, true, no_symmetry_check);
+        result = !book.import_file_bin(file, true);
     }
     else {
         std::cerr << "this is not an Egaroucid book" << std::endl;
@@ -221,7 +221,7 @@ public:
                 if (delete_book_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                     delete_book_future.get();
                     book_deleting = false;
-                    import_book_future = std::async(std::launch::async, import_book_egaroucid, getData().settings.book_file, true);
+                    import_book_future = std::async(std::launch::async, import_book_egaroucid, getData().settings.book_file);
                     book_importing = true;
                 }
             }
