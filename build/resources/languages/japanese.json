@@ -105,6 +105,7 @@
         "stop_calculating": "計算停止",
         "forward": "進む (->/D)",
         "backward": "戻る (<-/A)",
+        "undo": "着手取り消し (BS)",
         "convert": {
             "convert": "変換",
             "vertical": "180度",

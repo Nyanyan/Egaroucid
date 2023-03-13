@@ -105,6 +105,7 @@
         "stop_calculating": "Stop Calculating",
         "forward": "Forward (->/D)",
         "backward": "Backward (<-/A)",
+        "undo": "Undo (BS)",
         "convert": {
             "convert": "Convert",
             "vertical": "Rotate 180",
