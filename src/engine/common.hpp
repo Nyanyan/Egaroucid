@@ -10,6 +10,8 @@
 
 #pragma once
 #include <iostream>
+#include <sstream>
+#include <iomanip>
 #include <fstream>
 #include <time.h>
 #include <chrono>
