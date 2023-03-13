@@ -415,6 +415,26 @@ private:
                     }
                 }
             }
+			if (getData().menu_elements.save_this_branch) {
+				if (getData().graph_resources.put_mode == 1) {
+					std::vector<History_elem> new_branch;
+					int fork_start_idx = getData().graph_resources.node_find(0, getData().graph_resources.nodes[1].front().board.n_discs());
+					for (int i = 0; i < fork_start_idx; ++i) {
+						new_branch.emplace_back(getData().graph_resources.nodes[0][i]);
+					}
+					new_branch.back().next_policy = getData().graph_resources.nodes[1][0].policy;
+					for (History_elem elem: getData().graph_resources.nodes[1]) {
+						new_branch.emplace_back(elem);
+					}
+					new_branch.back().next_policy = -1;
+					getData().graph_resources.nodes[0].clear();
+					getData().graph_resources.nodes[1].clear();
+					for (History_elem elem: new_branch) {
+						getData().graph_resources.nodes[0].emplace_back(elem);
+					}
+					getData().graph_resources.put_mode = 0;
+				}
+			}
         }
         if (getData().menu_elements.convert_180) {
             stop_calculating();
@@ -826,6 +846,8 @@ private:
         menu_e.init_button(language.get("operation", "backward"), &menu_elements->backward);
         title.push(menu_e);
         menu_e.init_button(language.get("operation", "undo"), &menu_elements->undo);
+        title.push(menu_e);
+        menu_e.init_button(language.get("operation", "save_this_branch"), &menu_elements->save_this_branch);
         title.push(menu_e);
 
         menu_e.init_button(language.get("operation", "convert", "convert"), &menu_elements->dummy);

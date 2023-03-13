@@ -365,6 +365,7 @@ struct Menu_elements {
     bool forward;
     bool backward;
     bool undo;
+	bool save_this_branch;
     // conversion
     bool convert_180;
     bool convert_blackline;
@@ -425,6 +426,7 @@ struct Menu_elements {
         forward = false;
         backward = false;
         undo = false;
+		save_this_branch = false;
         convert_180 = false;
         convert_blackline = false;
         convert_whiteline = false;
