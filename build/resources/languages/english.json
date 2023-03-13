@@ -34,6 +34,7 @@
     },
     "ai_settings": {
         "use_book": "Book Use",
+        "book_accuracy_level": "Book Acc",
         "level": "Level"
     },
     "book": {
