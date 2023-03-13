@@ -185,7 +185,7 @@ inline void book_widen(Board root_board, int level, const int book_depth, int ex
     int g = book_widen_search(root_board, level, book_depth, expected_error, max_sum_error, board_copy, player, &strt_tim, book_file, book_bak, &date, all_strt);
     root_board.copy(board_copy);
     transposition_table.reset_date();
-    //book.save_bin(book_file, book_bak);
+    book.save_bin(book_file, book_bak);
     std::cerr << "time " << ms_to_time_short(tim() - all_strt) << " book widen finished value " << g << std::endl;
     *book_learning = false;
 }
@@ -282,7 +282,7 @@ inline void book_deepen(Board root_board, int level, const int book_depth, int e
     int g = book_deepen_search(root_board, level, book_depth, expected_error, board_copy, player, &strt_tim, book_file, book_bak, &date, all_strt);
     root_board.copy(board_copy);
     transposition_table.reset_date();
-    //book.save_bin(book_file, book_bak);
+    book.save_bin(book_file, book_bak);
     std::cerr << "time " << ms_to_time_short(tim() - all_strt) << " book deepen finished value " << g << std::endl;
     *book_learning = false;
 }
