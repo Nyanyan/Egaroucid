@@ -382,24 +382,31 @@ private:
                 getData().graph_resources.delta = 1;
             }
             if (getData().menu_elements.undo || KeyBackspace.down()) {
-                bool special_ignore = getData().graph_resources.put_mode == 0 && getData().graph_resources.nodes[0].size() <= 1;
-				int before_history_elem_n_discs = getData().history_elem.board.n_discs();
-                while (getData().graph_resources.nodes[getData().graph_resources.put_mode].back().board.n_discs() >= before_history_elem_n_discs && !special_ignore) {
-                    getData().graph_resources.nodes[getData().graph_resources.put_mode].pop_back();
-					History_elem n_history_elem = getData().history_elem;
-                    if (getData().graph_resources.put_mode == 1 && getData().graph_resources.nodes[1].size() == 0){
-                        getData().graph_resources.put_mode = 0;
-						getData().graph_resources.nodes[0][getData().graph_resources.node_find(0, getData().history_elem.board.n_discs())].next_policy = -1;
-						n_history_elem = getData().graph_resources.nodes[0][getData().graph_resources.node_find(0, getData().history_elem.board.n_discs())];
-                    } else {
-						getData().graph_resources.nodes[getData().graph_resources.put_mode].back().next_policy = -1;
-                        n_history_elem = getData().graph_resources.nodes[getData().graph_resources.put_mode].back();
+                bool player_ignore = 
+                    (getData().menu_elements.ai_put_black && getData().history_elem.player == BLACK) || 
+                    (getData().menu_elements.ai_put_white && getData().history_elem.player == WHITE);
+                if (!player_ignore){
+                    int before_history_elem_n_discs = getData().history_elem.board.n_discs();
+                    if (getData().menu_elements.ai_put_black ^ getData().menu_elements.ai_put_white)
+                        --before_history_elem_n_discs;
+                    bool special_ignore = getData().graph_resources.put_mode == 0 && getData().graph_resources.nodes[0].size() <= 1;
+                    while (getData().graph_resources.nodes[getData().graph_resources.put_mode].back().board.n_discs() >= before_history_elem_n_discs && !special_ignore) {
+                        getData().graph_resources.nodes[getData().graph_resources.put_mode].pop_back();
+                        History_elem n_history_elem = getData().history_elem;
+                        if (getData().graph_resources.put_mode == 1 && getData().graph_resources.nodes[1].size() == 0){
+                            getData().graph_resources.put_mode = 0;
+                            getData().graph_resources.nodes[0][getData().graph_resources.node_find(0, getData().history_elem.board.n_discs())].next_policy = -1;
+                            n_history_elem = getData().graph_resources.nodes[0][getData().graph_resources.node_find(0, getData().history_elem.board.n_discs())];
+                        } else {
+                            getData().graph_resources.nodes[getData().graph_resources.put_mode].back().next_policy = -1;
+                            n_history_elem = getData().graph_resources.nodes[getData().graph_resources.put_mode].back();
+                        }
+                        n_history_elem.next_policy = -1;
+                        getData().history_elem = n_history_elem;
+                        getData().graph_resources.n_discs = getData().history_elem.board.n_discs();
+                        reset_hint();
+                        special_ignore = getData().graph_resources.put_mode == 0 && getData().graph_resources.nodes[0].size() <= 1;
                     }
-					n_history_elem.next_policy = -1;
-					getData().history_elem = n_history_elem;
-                    getData().graph_resources.n_discs = getData().history_elem.board.n_discs();
-					reset_hint();
-					special_ignore = getData().graph_resources.put_mode == 0 && getData().graph_resources.nodes[0].size() <= 1;
                 }
             }
         }
