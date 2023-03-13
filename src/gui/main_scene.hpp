@@ -116,8 +116,11 @@ public:
             const Rect clip_rect(clip_sx * getData().window_state.window_scale, clip_sy * getData().window_state.window_scale, clip_size_x * getData().window_state.window_scale, clip_size_y * getData().window_state.window_scale);
             Image image_clip = image.clipped(clip_rect);
             Clipboard::SetImage(image_clip);
+            String img_date = Unicode::Widen(calc_date());
+            String save_path = Unicode::Widen(getData().directories.document_dir) + U"Egaroucid/screenshots/" + img_date + U".png";
+            image_clip.save(save_path);
             taking_screen_shot = false;
-            std::cerr << "screen shot copied to clipboard" << std::endl;
+            std::cerr << "screen shot saved to " << save_path.narrow() << " and copied to clipboard" << std::endl;
         }
 
         // menu
