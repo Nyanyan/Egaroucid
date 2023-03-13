@@ -342,7 +342,7 @@ struct Menu_elements {
 
     // book
     bool book_start_widen;
-	bool book_start_deepen;
+    bool book_start_deepen;
     int book_learn_depth;
     int book_learn_error;
     bool book_import;
@@ -364,11 +364,12 @@ struct Menu_elements {
     bool stop_calculating;
     bool forward;
     bool backward;
+    bool undo;
     // conversion
     bool convert_180;
     bool convert_blackline;
     bool convert_whiteline;
-	bool cache_clear;
+    bool cache_clear;
 
     // help
     bool website;
@@ -405,7 +406,7 @@ struct Menu_elements {
         show_next_move = settings->show_next_move;
 
         book_start_widen = false;
-		book_start_deepen = false;
+        book_start_deepen = false;
         book_learn_depth = settings->book_learn_depth;
         book_learn_error = settings->book_learn_error;
         book_import = false;
@@ -423,10 +424,11 @@ struct Menu_elements {
         stop_calculating = false;
         forward = false;
         backward = false;
+        undo = false;
         convert_180 = false;
         convert_blackline = false;
         convert_whiteline = false;
-		cache_clear = false;
+        cache_clear = false;
 
         website = false;
         bug_report = false;
@@ -500,12 +502,12 @@ struct Book_information {
 };
 
 struct Window_state{
-	double window_scale;
-	bool loading;
-	Window_state(){
-		window_scale = 1.0;
-		loading = true;
-	}
+    double window_scale;
+    bool loading;
+    Window_state(){
+        window_scale = 1.0;
+        loading = true;
+    }
 };
 
 struct Common_resources {
@@ -520,7 +522,7 @@ struct Common_resources {
     Graph_resources graph_resources;
     Game_information game_information;
     Book_information book_information;
-	Window_state window_state;
+    Window_state window_state;
 };
 
 struct Hint_info {

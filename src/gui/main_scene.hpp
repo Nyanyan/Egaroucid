@@ -381,6 +381,27 @@ private:
                 ++getData().graph_resources.n_discs;
                 getData().graph_resources.delta = 1;
             }
+            if (getData().menu_elements.undo || KeyBackspace.down()) {
+                bool special_ignore = getData().graph_resources.put_mode == 0 && getData().graph_resources.nodes[0].size() <= 1;
+				int before_history_elem_n_discs = getData().history_elem.board.n_discs();
+                while (getData().graph_resources.nodes[getData().graph_resources.put_mode].back().board.n_discs() >= before_history_elem_n_discs && !special_ignore) {
+                    getData().graph_resources.nodes[getData().graph_resources.put_mode].pop_back();
+					History_elem n_history_elem = getData().history_elem;
+                    if (getData().graph_resources.put_mode == 1 && getData().graph_resources.nodes[1].size() == 0){
+                        getData().graph_resources.put_mode = 0;
+						getData().graph_resources.nodes[0][getData().graph_resources.node_find(0, getData().history_elem.board.n_discs())].next_policy = -1;
+						n_history_elem = getData().graph_resources.nodes[0][getData().graph_resources.node_find(0, getData().history_elem.board.n_discs())];
+                    } else {
+						getData().graph_resources.nodes[getData().graph_resources.put_mode].back().next_policy = -1;
+                        n_history_elem = getData().graph_resources.nodes[getData().graph_resources.put_mode].back();
+                    }
+					n_history_elem.next_policy = -1;
+					getData().history_elem = n_history_elem;
+                    getData().graph_resources.n_discs = getData().history_elem.board.n_discs();
+					reset_hint();
+					special_ignore = getData().graph_resources.put_mode == 0 && getData().graph_resources.nodes[0].size() <= 1;
+                }
+            }
         }
         if (getData().menu_elements.convert_180) {
             stop_calculating();
@@ -791,6 +812,8 @@ private:
         title.push(menu_e);
         menu_e.init_button(language.get("operation", "backward"), &menu_elements->backward);
         title.push(menu_e);
+        menu_e.init_button(language.get("operation", "undo"), &menu_elements->undo);
+        title.push(menu_e);
 
         menu_e.init_button(language.get("operation", "convert", "convert"), &menu_elements->dummy);
         side_menu.init_button(language.get("operation", "convert", "vertical"), &menu_elements->convert_180);
@@ -999,7 +1022,7 @@ private:
                     Vec2 pos = Cursor::Pos();
                     pos.x += 20;
                     RectF background_rect = getData().fonts.font_bold(opening_name).region(15, pos);
-					const int rect_y_max = BOARD_SY + BOARD_SIZE + BOARD_ROUND_FRAME_WIDTH + 5;
+                    const int rect_y_max = BOARD_SY + BOARD_SIZE + BOARD_ROUND_FRAME_WIDTH + 5;
                     if (background_rect.y + background_rect.h > rect_y_max) {
                         double delta = background_rect.y + background_rect.h - rect_y_max;
                         background_rect.y -= delta;
@@ -1392,7 +1415,7 @@ private:
                             calc_flip(&flip, &getData().history_elem.board, getData().book_information.changing);
                             Board b = getData().history_elem.board.move_copy(&flip);
                             book.change(getData().history_elem.board.move_copy(&flip), changed_book_value);
-							umigame.delete_all();
+                            umigame.delete_all();
                             getData().book_information.changed = true;
                             getData().book_information.changing = BOOK_CHANGE_NO_CELL;
                             getData().book_information.val_str.clear();
