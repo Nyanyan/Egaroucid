@@ -11,6 +11,7 @@
 #pragma once
 #include <iostream>
 #include <fstream>
+#include <time.h>
 #include <chrono>
 #include <random>
 #include <string>
@@ -170,3 +171,55 @@ constexpr uint64_t bit_radiation[HW2] = {
     0x03FE030509112141ULL, 0x07FD070A12224282ULL, 0x0EFB0E1524448404ULL, 0x1CF71C2A49880808ULL, 0x38EF385492111010ULL, 0x70DF70A824222120ULL, 0xE0BFE05048444241ULL, 0xC07FC0A090888482ULL,
     0xFE03050911214181ULL, 0xFD070A1222428202ULL, 0xFB0E152444840404ULL, 0xF71C2A4988080808ULL, 0xEF38549211101010ULL, 0xDF70A82422212020ULL, 0xBFE0504844424140ULL, 0x7FC0A09088848281ULL
 };
+
+#ifdef _WIN64
+    int get_localtime(tm* a, time_t* b) {
+        return localtime_s(a, b);
+    }
+#else
+    int get_localtime(tm* a, time_t* b) {
+        a = localtime(b);
+        return 0;
+    }
+#endif
+
+std::string calc_date() {
+    time_t now;
+    tm newtime;
+    time(&now);
+    int err = get_localtime(&newtime, &now);
+    std::stringstream sout;
+    std::string year = std::to_string(newtime.tm_year + 1900);
+    sout << std::setfill('0') << std::setw(2) << newtime.tm_mon + 1;
+    std::string month = sout.str();
+    sout.str("");
+    sout.clear(std::stringstream::goodbit);
+    sout << std::setfill('0') << std::setw(2) << newtime.tm_mday;
+    std::string day = sout.str();
+    sout.str("");
+    sout.clear(std::stringstream::goodbit);
+    sout << std::setfill('0') << std::setw(2) << newtime.tm_hour;
+    std::string hour = sout.str();
+    sout.str("");
+    sout.clear(std::stringstream::goodbit);
+    sout << std::setfill('0') << std::setw(2) << newtime.tm_min;
+    std::string minute = sout.str();
+    sout.str("");
+    sout.clear(std::stringstream::goodbit);
+    sout << std::setfill('0') << std::setw(2) << newtime.tm_sec;
+    std::string second = sout.str();
+    return year + "_" + month + "_" + day + "_" + hour + "_" + minute + "_" + second;
+}
+
+void calc_date(int *year, int *month, int *day, int *hour, int *minute, int *second) {
+    time_t now;
+    tm newtime;
+    time(&now);
+    int err = get_localtime(&newtime, &now);
+    *year = newtime.tm_year + 1900;
+    *month = newtime.tm_mon + 1;
+    *day = newtime.tm_mday;
+    *hour = newtime.tm_hour;
+    *minute = newtime.tm_min;
+    *second = newtime.tm_sec;
+}

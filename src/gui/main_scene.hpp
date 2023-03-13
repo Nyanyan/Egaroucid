@@ -557,6 +557,12 @@ private:
             changeScene(U"Refer_book", SCENE_FADE_TIME);
             return;
         }
+		if (getData().menu_elements.save_as_edax_book) {
+			stop_calculating();
+            resume_calculating();
+			std::string save_path = getData().directories.document_dir + "Egaroucid/edax_book.dat";
+			book.save_bin_edax(save_path);
+		}
     }
 
     void menu_help() {
@@ -904,6 +910,8 @@ private:
         menu_e.init_button(language.get("book", "merge"), &menu_elements->book_import);
         title.push(menu_e);
         menu_e.init_button(language.get("book", "book_reference"), &menu_elements->book_reference);
+        title.push(menu_e);
+		menu_e.init_button(language.get("book", "save_as_edax_book"), &menu_elements->save_as_edax_book);
         title.push(menu_e);
         menu_e.init_button(language.get("book", "settings"), &menu_elements->dummy);
         side_menu.init_bar(language.get("book", "depth"), &menu_elements->book_learn_depth, menu_elements->book_learn_depth, 0, 60);

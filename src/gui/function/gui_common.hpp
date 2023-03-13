@@ -11,8 +11,6 @@
 #pragma once
 #include <iostream>
 #include <Siv3D.hpp> // OpenSiv3D v0.6.6
-#include <chrono>
-#include <time.h>
 #include "./../../engine/engine_all.hpp"
 #include "menu.hpp"
 #include "version.hpp"
@@ -352,6 +350,7 @@ struct Menu_elements {
     bool book_import;
     bool book_reference;
     bool change_book_by_right_click;
+	bool save_as_edax_book;
 
     // input / output
     // input
@@ -592,42 +591,3 @@ struct Umigame_status {
 };
 
 using App = SceneManager<String, Common_resources>;
-
-#ifdef _WIN64
-    int get_localtime(tm* a, time_t* b) {
-        return localtime_s(a, b);
-    }
-#else
-    int get_localtime(tm* a, time_t* b) {
-        a = localtime(b);
-        return 0;
-    }
-#endif
-
-std::string calc_date() {
-    time_t now;
-    tm newtime;
-    time(&now);
-    int err = get_localtime(&newtime, &now);
-    std::stringstream sout;
-    std::string year = std::to_string(newtime.tm_year + 1900);
-    sout << std::setfill('0') << std::setw(2) << newtime.tm_mon + 1;
-    std::string month = sout.str();
-    sout.str("");
-    sout.clear(std::stringstream::goodbit);
-    sout << std::setfill('0') << std::setw(2) << newtime.tm_mday;
-    std::string day = sout.str();
-    sout.str("");
-    sout.clear(std::stringstream::goodbit);
-    sout << std::setfill('0') << std::setw(2) << newtime.tm_hour;
-    std::string hour = sout.str();
-    sout.str("");
-    sout.clear(std::stringstream::goodbit);
-    sout << std::setfill('0') << std::setw(2) << newtime.tm_min;
-    std::string minute = sout.str();
-    sout.str("");
-    sout.clear(std::stringstream::goodbit);
-    sout << std::setfill('0') << std::setw(2) << newtime.tm_sec;
-    std::string second = sout.str();
-    return year + "_" + month + "_" + day + "_" + hour + "_" + minute + "_" + second;
-}

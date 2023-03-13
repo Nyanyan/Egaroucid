@@ -12,6 +12,7 @@
 #include <iostream>
 #include <fstream>
 #include <unordered_map>
+#include <unordered_set>
 #include "evaluate.hpp"
 #include "board.hpp"
 
@@ -122,7 +123,7 @@ class Book{
             @return book completely imported?
         */
         bool init(std::string file, bool show_log, bool *stop_loading){
-            n_book = 0;
+			delete_all();
             return import_file_bin(file, show_log, stop_loading);
         }
 
@@ -527,7 +528,8 @@ class Book{
         */
         inline void delete_all(){
             book.clear();
-            n_book = 0;
+			reg_first_board();
+            n_book = 1;
         }
 
         /*
@@ -543,7 +545,7 @@ class Book{
             std::ofstream fout;
             fout.open(file.c_str(), std::ios::out|std::ios::binary|std::ios::trunc);
             if (!fout){
-                std::cerr << "can't open book.egbk" << std::endl;
+                std::cerr << "can't open " << file << std::endl;
                 return;
             }
             uint8_t elem;
@@ -562,9 +564,139 @@ class Book{
             fout.close();
             std::cerr << "saved " << t << " boards" << std::endl;
         }
-        
+
+        /*
+            @brief save as Edax-formatted book (.dat)
+
+            @param file                 file name to save
+            @param bak_file             backup file name
+        */
+        inline void save_bin_edax(std::string file){
+            std::ofstream fout;
+            fout.open(file.c_str(), std::ios::out|std::ios::binary|std::ios::trunc);
+            if (!fout){
+                std::cerr << "can't open " << file << std::endl;
+                return;
+            }
+            uint8_t elem;
+            std::cerr << "saving book..." << std::endl;
+            char header[] = "XADEKOOB";
+            for (int i = 0; i < 8; ++i)
+                fout.write((char*)&header[i], 1);
+            char ver = 4;
+            fout.write((char*)&ver, 1);
+            char rel = 4;
+            fout.write((char*)&rel, 1);
+            int year, month, day, hour, minute, second;
+            calc_date(&year, &month, &day, &hour, &minute, &second);
+            fout.write((char*)&year, 2);
+            fout.write((char*)&month, 1);
+            fout.write((char*)&day, 1);
+            fout.write((char*)&hour, 1);
+            fout.write((char*)&minute, 1);
+            fout.write((char*)&second, 1);
+            char dummy = 0;
+            fout.write((char*)&dummy, 1);
+            int level = 21; // fixed
+            fout.write((char*)&level, 4);
+            int n_empties = HW2;
+            for (auto itr = book.begin(); itr != book.end(); ++itr)
+                n_empties = std::min(n_empties, HW2 - itr->first.n_discs());
+            fout.write((char*)&n_empties, 4);
+            int err_mid = 0;
+            fout.write((char*)&err_mid, 4);
+            int err_end = 0;
+            fout.write((char*)&err_end, 4);
+            int verb = 0;
+            fout.write((char*)&verb, 4);
+			int n_positions = 0;
+			std::unordered_set<Board, Book_hash> positions;
+			int t = 0;
+			for (auto itr = book.begin(); itr != book.end(); ++itr){
+				++t;
+				if (t % 16384 == 0)
+                    std::cerr << "converting book " << (t * 100 / (int)book.size()) << "%" << std::endl;
+				Board board = itr->first;
+				uint64_t legal = board.get_legal();
+				Flip flip;
+				for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+					calc_flip(&flip, &board, cell);
+					board.move_board(&flip);
+						if (get(&board) != -INF){
+							++n_positions;
+							board.undo_board(&flip);
+							positions.emplace(edax_representative_board(board));
+							break;
+						}
+					board.undo_board(&flip);
+				}
+			}
+			std::cerr << "Edax formatted positions " << n_positions << std::endl;
+            fout.write((char*)&n_positions, 4);
+            t = 0;
+            int n_win = 0;
+            int n_draw = 0;
+            int n_lose = 0;
+            int n_line = 0;
+            int16_t short_val;
+            char char_level = 21; // fixed
+            for (Board board: positions){
+                ++t;
+                if (t % 8192 == 0)
+                    std::cerr << "saving book " << (t * 100 / (int)positions.size()) << "%" << std::endl;
+				char n_link = 0;
+				uint64_t legal = board.get_legal();
+				Flip flip;
+				std::vector<std::pair<char, char>> links;
+				char leaf_val = 65;
+				char leaf_move = 65;
+				for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+					calc_flip(&flip, &board, cell);
+					board.move_board(&flip);
+						int nval = get(&board);
+						if (nval != -INF){
+							if (nval < leaf_val){
+								leaf_val = nval;
+								leaf_move = cell;
+							}
+							++n_link;
+							links.emplace_back(std::make_pair((char)nval, (char)cell));
+						}
+					board.undo_board(&flip);
+				}
+				if (n_link){
+					fout.write((char*)&board.player, 8);
+					fout.write((char*)&board.opponent, 8);
+					fout.write((char*)&n_win, 4);
+					fout.write((char*)&n_draw, 4);
+					fout.write((char*)&n_lose, 4);
+					fout.write((char*)&n_line, 4);
+					short_val = -get(&board);
+					fout.write((char*)&short_val, 2);
+					fout.write((char*)&short_val, 2);
+					fout.write((char*)&short_val, 2);
+					fout.write((char*)&n_link, 1);
+					fout.write((char*)&char_level, 1);
+					for (std::pair<char, char> &link: links){
+						fout.write((char*)&link.first, 1);
+						fout.write((char*)&link.second, 1);
+					}
+					fout.write((char*)&leaf_val, 1);
+					fout.write((char*)&leaf_move, 1);
+				}
+            }
+            fout.close();
+            std::cerr << "saved " << t << " boards as a edax-formatted book" << std::endl;
+        }
+
 
     private:
+		void reg_first_board(){
+			Board board;
+			board.reset();
+			book[board] = 0;
+		}
+
         /*
             @brief register a board
 
@@ -595,6 +727,15 @@ class Book{
         inline void update_min_board(Board *res, Board *sym){
             if ((res->player | res->opponent) > (sym->player | sym->opponent))
                 *res = sym->copy();
+        }
+
+		inline void update_edax_representative_board(Board *res, Board *sym){
+			if (res->player > sym->player){
+				*res = sym->copy();
+				return;
+			}
+			if (res->player == sym->player && res->opponent > sym->opponent)
+				*res = sym->copy();
         }
 
         inline Board get_min_board(Board b){
@@ -642,6 +783,25 @@ class Book{
             Board min_board = get_min_board(b);
             return delete_book(min_board);
         }
+
+		Board edax_representative_board(Board b){
+			Board min_board = b;
+            b.board_black_line_mirror();
+            update_edax_representative_board(&min_board, &b);
+            b.board_rotate_180();
+            update_edax_representative_board(&min_board, &b);
+            b.board_black_line_mirror();
+            update_edax_representative_board(&min_board, &b);
+            b.board_horizontal_mirror();
+            update_edax_representative_board(&min_board, &b);
+            b.board_black_line_mirror();
+            update_edax_representative_board(&min_board, &b);
+            b.board_rotate_180();
+            update_edax_representative_board(&min_board, &b);
+            b.board_black_line_mirror();
+            update_edax_representative_board(&min_board, &b);
+            return min_board;
+		}
 };
 
 Book book;
