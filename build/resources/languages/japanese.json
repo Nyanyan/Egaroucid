@@ -54,7 +54,7 @@
         "import_failed": "取り込み失敗",
         "loading": "取り込み中...",
         "book_reference": "bookの参照",
-        "input_book_path": "bookのパスを入力",
+        "input_book_path": "bookのパスを入力 / ドラッグ&ドロップ",
         "import": "インポート",
         "use_default": "初期設定",
         "ignore": "既存book値を上書き"

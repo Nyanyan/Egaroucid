@@ -54,7 +54,7 @@
         "import_failed": "Import Failed",
         "loading": "Importing...",
         "book_reference": "Book Reference",
-        "input_book_path": "Enter your book path",
+        "input_book_path": "Enter your book path / Drag & Drop",
         "import": "Import",
         "use_default": "Default",
         "ignore": "Overwrite Existing Values"
