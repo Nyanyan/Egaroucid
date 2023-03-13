@@ -153,7 +153,7 @@ Search_result go_noprint(Board_info *board, Options *options, State *state){
         Search_result res;
         return res;
     }
-    Search_result result = ai(board->board, options->level, true, true, options->show_log, state->date);
+    Search_result result = ai(board->board, options->level, true, BOOK_ACCURACY_LEVEL_INF, true, options->show_log, state->date);
     ++state->date;
     state->date = manage_date(state->date);
     Flip flip;
@@ -278,7 +278,7 @@ void hint(Board_info *board, Options *options, State *state, std::string arg){
         Board n_board = board->board.copy();
         for (Flip_value &flip_value: move_list){
             n_board.move_board(&flip_value.flip);
-                flip_value.value = -ai(n_board, presearch_level, true, true, false, state->date).value;
+                flip_value.value = -ai(n_board, presearch_level, true, BOOK_ACCURACY_LEVEL_INF, true, false, state->date).value;
                 ++state->date;
                 state->date = manage_date(state->date);
             n_board.undo_board(&flip_value.flip);
@@ -286,7 +286,7 @@ void hint(Board_info *board, Options *options, State *state, std::string arg){
         std::sort(move_list.rbegin(), move_list.rend());
         for (int i = 0; i < n_check; ++i){
             n_board.move_board(&move_list[i].flip);
-                Search_result elem = ai(n_board, options->level, true, true, false, state->date);
+                Search_result elem = ai(n_board, options->level, true, BOOK_ACCURACY_LEVEL_INF, true, false, state->date);
                 ++state->date;
                 state->date = manage_date(state->date);
                 elem.value *= -1;

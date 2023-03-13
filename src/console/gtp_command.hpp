@@ -215,7 +215,7 @@ void gtp_genmove(int id, std::string arg, Board_info *board, State *state, Optio
         std::cout << gtp_head(id) << " PASS" << GTP_ENDL;
         return;
     }
-    int policy = ai(board->board, options->level, true, true, options->show_log, state->date).policy;
+    int policy = ai(board->board, options->level, true, BOOK_ACCURACY_LEVEL_INF, true, options->show_log, state->date).policy;
     ++state->date;
     state->date = manage_date(state->date);
     Flip flip;
@@ -374,7 +374,7 @@ void gtp_reg_genmove(int id, std::string arg, Board_info *board, State *state, O
         std::cout << gtp_head(id) << " PASS" << GTP_ENDL;
         return;
     }
-    int policy = ai(board->board, options->level, true, true, options->show_log, state->date).policy;
+    int policy = ai(board->board, options->level, true, BOOK_ACCURACY_LEVEL_INF, true, options->show_log, state->date).policy;
     ++state->date;
     state->date = manage_date(state->date);
     std::cout << gtp_head(id) << " " << gtp_idx_to_coord(policy) << GTP_ENDL;
