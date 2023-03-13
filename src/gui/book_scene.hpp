@@ -17,7 +17,7 @@
 
 void delete_book() {
     book.delete_all();
-	umigame.delete_all();
+    umigame.delete_all();
 }
 
 bool import_book(std::string file) {
@@ -45,7 +45,7 @@ bool import_book(std::string file) {
     else {
         std::cerr << "this is not a book" << std::endl;
     }
-	umigame.delete_all();
+    umigame.delete_all();
     return result;
 }
 
@@ -70,7 +70,7 @@ bool import_book_egaroucid(std::string file) {
     else {
         std::cerr << "this is not an Egaroucid book" << std::endl;
     }
-	umigame.delete_all();
+    umigame.delete_all();
     return result;
 }
 
@@ -103,7 +103,7 @@ public:
             getData().fonts.font(language.get("book", "merge_explanation")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             back_button.draw();
             if (back_button.clicked() || KeyEscape.pressed()) {
-				umigame.delete_all();
+                umigame.delete_all();
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
             if (DragDrop::HasNewFilePaths()) {
@@ -123,13 +123,13 @@ public:
                 getData().fonts.font(language.get("book", "import_failed")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
                 back_button.draw();
                 if (back_button.clicked() || KeyEscape.pressed()) {
-					umigame.delete_all();
+                    umigame.delete_all();
                     changeScene(U"Main_scene", SCENE_FADE_TIME);
                 }
             }
             else {
                 getData().book_information.changed = true;
-				umigame.delete_all();
+                umigame.delete_all();
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
         }
@@ -195,11 +195,16 @@ public:
                     return_pressed = true;
                 }
             }
+            bool file_dragged = false;
+            if (DragDrop::HasNewFilePaths()) {
+                book_file_str = DragDrop::GetDroppedFilePaths()[0].path;
+                file_dragged = true;
+            }
             book_file = book_file_str.narrow();
             getData().fonts.font(book_file_str + U'|' + editingText).draw(15, text_area.stretched(-4), getData().colors.black);
             back_button.draw();
             if (back_button.clicked() || KeyEscape.pressed()) {
-				umigame.delete_all();
+                umigame.delete_all();
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
             default_button.draw();
@@ -207,7 +212,7 @@ public:
                 book_file = getData().directories.document_dir + "Egaroucid/book.egbk";
             }
             go_button.draw();
-            if (go_button.clicked() || return_pressed) {
+            if (go_button.clicked() || return_pressed || file_dragged) {
                 getData().book_information.changed = true;
                 getData().settings.book_file = book_file;
                 std::cerr << "book reference changed to " << book_file << std::endl;
@@ -238,12 +243,12 @@ public:
                 getData().fonts.font(language.get("book", "import_failed")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
                 single_back_button.draw();
                 if (single_back_button.clicked() || KeyEscape.pressed()) {
-					umigame.delete_all();
+                    umigame.delete_all();
                     changeScene(U"Main_scene", SCENE_FADE_TIME);
                 }
             }
             else {
-				umigame.delete_all();
+                umigame.delete_all();
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
         }
@@ -307,7 +312,7 @@ public:
             back_button.draw();
             if (back_button.clicked()) {
                 getData().graph_resources.need_init = false;
-				umigame.delete_all();
+                umigame.delete_all();
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
         }
@@ -320,64 +325,64 @@ public:
 
 class Deepen_book : public App::Scene {
 private:
-	Button stop_button;
-	Button back_button;
-	History_elem history_elem;
-	bool book_learning;
-	bool done;
-	std::future<void> book_learn_future;
-	Board root_board;
+    Button stop_button;
+    Button back_button;
+    History_elem history_elem;
+    bool book_learning;
+    bool done;
+    std::future<void> book_learn_future;
+    Board root_board;
 
 public:
-	Deepen_book(const InitData& init) : IScene{ init } {
-		stop_button.init(BUTTON2_VERTICAL_SX, BUTTON2_VERTICAL_2_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("book", "stop_learn"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-		back_button.init(BUTTON2_VERTICAL_SX, BUTTON2_VERTICAL_2_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-		root_board = getData().history_elem.board;
-		history_elem = getData().history_elem;
-		history_elem.policy = -1;
-		book_learning = true;
-		done = false;
-		book_learn_future = std::async(std::launch::async, book_deepen, root_board, getData().menu_elements.level, getData().menu_elements.book_learn_depth, getData().menu_elements.book_learn_error, &history_elem.board, &history_elem.player, getData().settings.book_file, getData().settings.book_file + ".bak", &book_learning);
-	}
+    Deepen_book(const InitData& init) : IScene{ init } {
+        stop_button.init(BUTTON2_VERTICAL_SX, BUTTON2_VERTICAL_2_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("book", "stop_learn"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        back_button.init(BUTTON2_VERTICAL_SX, BUTTON2_VERTICAL_2_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        root_board = getData().history_elem.board;
+        history_elem = getData().history_elem;
+        history_elem.policy = -1;
+        book_learning = true;
+        done = false;
+        book_learn_future = std::async(std::launch::async, book_deepen, root_board, getData().menu_elements.level, getData().menu_elements.book_learn_depth, getData().menu_elements.book_learn_error, &history_elem.board, &history_elem.player, getData().settings.book_file, getData().settings.book_file + ".bak", &book_learning);
+    }
 
-	void update() override {
-		//if (System::GetUserActions() & UserAction::CloseButtonClicked) {
-		//    changeScene(U"Close", SCENE_FADE_TIME);
-		//}
-		Scene::SetBackground(getData().colors.green);
-		draw_board(getData().fonts, getData().colors, history_elem);
-		draw_info(getData().colors, history_elem, getData().fonts, getData().menu_elements);
-		getData().fonts.font(language.get("book", "book_deepen")).draw(25, 480, 190, getData().colors.white);
-		getData().fonts.font(language.get("book", "depth") + U": " + Format(getData().menu_elements.book_learn_depth)).draw(15, 480, 300, getData().colors.white);
-		getData().fonts.font(language.get("book", "accept") + U": " + Format(getData().menu_elements.book_learn_error)).draw(15, 480, 320, getData().colors.white);
-		if (book_learning) {
-			getData().fonts.font(language.get("book", "learning")).draw(20, 480, 230, getData().colors.white);
-			stop_button.draw();
-			if (stop_button.clicked()) {
-				global_searching = false;
-				book_learning = false;
-			}
-		}
-		else if (!done) {
-			getData().fonts.font(language.get("book", "stopping")).draw(20, 480, 230, getData().colors.white);
-			if (book_learn_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-				book_learn_future.get();
-				done = true;
-				global_searching = true;
-			}
-		}
-		else {
-			getData().fonts.font(language.get("book", "complete")).draw(20, 480, 230, getData().colors.white);
-			back_button.draw();
-			if (back_button.clicked()) {
-				getData().graph_resources.need_init = false;
-				umigame.delete_all();
-				changeScene(U"Main_scene", SCENE_FADE_TIME);
-			}
-		}
-	}
+    void update() override {
+        //if (System::GetUserActions() & UserAction::CloseButtonClicked) {
+        //    changeScene(U"Close", SCENE_FADE_TIME);
+        //}
+        Scene::SetBackground(getData().colors.green);
+        draw_board(getData().fonts, getData().colors, history_elem);
+        draw_info(getData().colors, history_elem, getData().fonts, getData().menu_elements);
+        getData().fonts.font(language.get("book", "book_deepen")).draw(25, 480, 190, getData().colors.white);
+        getData().fonts.font(language.get("book", "depth") + U": " + Format(getData().menu_elements.book_learn_depth)).draw(15, 480, 300, getData().colors.white);
+        getData().fonts.font(language.get("book", "accept") + U": " + Format(getData().menu_elements.book_learn_error)).draw(15, 480, 320, getData().colors.white);
+        if (book_learning) {
+            getData().fonts.font(language.get("book", "learning")).draw(20, 480, 230, getData().colors.white);
+            stop_button.draw();
+            if (stop_button.clicked()) {
+                global_searching = false;
+                book_learning = false;
+            }
+        }
+        else if (!done) {
+            getData().fonts.font(language.get("book", "stopping")).draw(20, 480, 230, getData().colors.white);
+            if (book_learn_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                book_learn_future.get();
+                done = true;
+                global_searching = true;
+            }
+        }
+        else {
+            getData().fonts.font(language.get("book", "complete")).draw(20, 480, 230, getData().colors.white);
+            back_button.draw();
+            if (back_button.clicked()) {
+                getData().graph_resources.need_init = false;
+                umigame.delete_all();
+                changeScene(U"Main_scene", SCENE_FADE_TIME);
+            }
+        }
+    }
 
-	void draw() const override {
+    void draw() const override {
 
-	}
+    }
 };
