@@ -56,9 +56,13 @@
         "loading": "取り込み中...",
         "book_reference": "bookの参照",
         "input_book_path": "bookのパスを入力 / ドラッグ&ドロップ",
-        "import": "インポート",
+        "import": "読み込み",
+        "export_book_as_edax": "Edax形式で書き出し パスを入力",
+        "export": "書き出し",
+        "exporting": "書き出し中...",
         "use_default": "初期設定",
-        "ignore": "既存book値を上書き"
+        "ignore": "既存book値を上書き",
+        "save_as_edax_book": "Edax形式で保存"
     },
     "in_out": {
         "in_out": "入出力",

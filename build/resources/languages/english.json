@@ -57,8 +57,12 @@
         "book_reference": "Book Reference",
         "input_book_path": "Enter your book path / Drag & Drop",
         "import": "Import",
+        "export_book_as_edax": "Export Edax-formatted book. Enter book path.",
+        "export": "Export",
+        "exporting": "Exporting...",
         "use_default": "Default",
-        "ignore": "Overwrite Existing Values"
+        "ignore": "Overwrite Existing Values",
+        "save_as_edax_book": "Save as Edax book"
     },
     "in_out": {
         "in_out": "In/Out",
