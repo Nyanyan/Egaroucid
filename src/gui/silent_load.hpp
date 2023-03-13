@@ -49,6 +49,7 @@ void init_default_settings(const Directories* directories, const Resources* reso
 	settings->show_last_move = true;
 	settings->show_next_move = true;
 	settings->hash_level = DEFAULT_HASH_LEVEL;
+	settings->book_acc_level = BOOK_ACCURACY_LEVEL_INF;
 }
 
 int init_settings_import_int(TextReader* reader, int* res) {
@@ -194,6 +195,10 @@ void init_settings(const Directories* directories, const Resources* resources, S
 			goto use_default_settings;
 		} else
 			settings->hash_level = std::max(settings->hash_level, DEFAULT_HASH_LEVEL);
+		if (init_settings_import_int(&reader, &settings->book_acc_level) != ERR_OK) {
+			std::cerr << "err23" << std::endl;
+			goto use_default_settings;
+		}
 	}
 	return;
 use_default_settings:

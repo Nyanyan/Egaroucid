@@ -18,7 +18,7 @@
 // automatically save book in this time (milliseconds)
 #define AUTO_BOOK_SAVE_TIME 60000
 
-Search_result ai(Board board, int level, bool use_book, bool use_multi_thread, bool show_log, uint8_t date);
+Search_result ai(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint8_t date);
 int ai_window(Board board, int level, int alpha, int beta, bool use_multi_thread, uint8_t date);
 
 /*
@@ -32,7 +32,7 @@ int ai_window(Board board, int level, int alpha, int beta, bool use_multi_thread
     @return a score of the board
 */
 inline int book_enlarge_calc_value(Board board, int level, uint8_t date){
-    return ai(board, level, true, true, false, date).value;
+    return ai(board, level, true, BOOK_ACCURACY_LEVEL_INF, true, false, date).value;
 }
 
 /*
@@ -106,7 +106,7 @@ int book_widen_search(Board board, int level, const int book_depth, int expected
         board.pass();
         return g;
     }
-    Search_result best_move = ai(board, level, true, true, false, *date);
+    Search_result best_move = ai(board, level, true, BOOK_ACCURACY_LEVEL_INF, true, false, *date);
     ++(*date);
     *date = manage_date(*date);
     std::cerr << "time " << ms_to_time_short(tim() - strt) << " depth " << board.n_discs() - 4 << " BM value " << best_move.value << std::endl;

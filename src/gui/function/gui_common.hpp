@@ -305,6 +305,7 @@ struct Settings {
     bool show_last_move;
     bool show_next_move;
     int hash_level;
+	int book_acc_level;
 };
 
 struct Fonts {
@@ -323,6 +324,7 @@ struct Menu_elements {
     // settings
     // AI settings
     bool use_book;
+	int book_acc_level;
     int level;
     int n_threads;
     int hash_level;
@@ -391,6 +393,7 @@ struct Menu_elements {
         analyze = false;
 
         use_book = settings->use_book;
+		book_acc_level = settings->book_acc_level;
         level = settings->level;
         n_threads = settings->n_threads;
         hash_level = settings->hash_level;

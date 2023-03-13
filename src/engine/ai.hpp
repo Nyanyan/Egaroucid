@@ -258,12 +258,13 @@ inline int tree_search_window(Board board, int depth, int alpha, int beta, uint_
     @param board                board to solve
     @param level                level of AI
     @param use_book             use book?
+	@param book_acc_level		book accuracy level
     @param use_multi_thread     search in multi thread?
     @param show_log             show log?
     @param date                 search date (to rewrite old hash data)
     @return the result in Search_result structure
 */
-Search_result ai(Board board, int level, bool use_book, bool use_multi_thread, bool show_log, uint8_t date){
+Search_result ai(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint8_t date){
     Search_result res;
     int value_sign = 1;
     if (board.get_legal() == 0ULL){
@@ -280,7 +281,7 @@ Search_result ai(Board board, int level, bool use_book, bool use_multi_thread, b
             value_sign = -1;
         }
     }
-    Book_value book_result = book.get_random(&board, 0);
+    Book_value book_result = book.get_random(&board, book_acc_level);
     if (book_result.policy != -1 && use_book){
         if (show_log)
             std::cerr << "book " << idx_to_coord(book_result.policy) << " " << book_result.value << std::endl;

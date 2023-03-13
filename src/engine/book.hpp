@@ -15,6 +15,9 @@
 #include "evaluate.hpp"
 #include "board.hpp"
 
+#define BOOK_N_ACCEPT_LEVEL 11
+#define BOOK_ACCURACY_LEVEL_INF 10
+
 /*
     @brief book result structure
 
@@ -346,54 +349,6 @@ class Book{
         }
 
         /*
-            @brief get a best move
-
-            @param b                    a board pointer to find
-            @param accept_value         an error to allow
-            @return best move and value as Book_value structure
-        */
-        inline Book_value get_random(Board *b, int accept_value){
-            std::vector<int> policies;
-            std::vector<int> values;
-            Book_value res;
-            //if (get(b) == -INF){
-            //    res.policy = -1;
-            //    res.value = -INF;
-            //    return res;
-            //}
-            Board nb;
-            int max_value = -INF;
-            uint64_t legal = b->get_legal();
-            Flip flip;
-            int value;
-            for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-                calc_flip(&flip, b, cell);
-                nb = b->move_copy(&flip);
-                value = get(&nb);
-                if (value != -INF){
-                    policies.push_back(cell);
-                    values.push_back(value);
-                    max_value = std::max(max_value, value);
-                }
-            }
-            if (policies.size() == 0){
-                res.policy = -1;
-                res.value = -INF;
-                return res;
-            }
-            int idx;
-            while (true){
-                idx = myrandrange(0, (int)policies.size());
-                if (values[idx] >= max_value - accept_value){
-                    res.policy = policies[idx];
-                    res.value = values[idx];
-                    break;
-                }
-            }
-            return res;
-        }
-
-        /*
             @brief get all best moves
 
             @param b                    a board pointer to find
@@ -454,6 +409,73 @@ class Book{
                 }
             }
             return policies;
+        }
+
+        /*
+            @brief get a best move
+
+            @param b                    a board pointer to find
+            @param accept_value         an error to allow
+            @return best move and value as Book_value structure
+        */
+        inline Book_value get_random(Board *b, int acc_level){
+            std::vector<std::pair<double, int>> value_policies;
+            int best_score = -INF;
+            uint64_t legal = b->get_legal();
+            Flip flip;
+            for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+                calc_flip(&flip, b, cell);
+                Board nb = b->move_copy(&flip);
+                int value = get(&nb);
+                if (value != -INF){
+                    if (value > best_score){
+                        best_score = value;
+                    }
+                    value_policies.emplace_back(std::make_pair((double)value, (int)cell));
+                }
+            }
+            Book_value res;
+            if (value_policies.size() == 0){
+                res.policy = -1;
+                res.value = -INF;
+                return res;
+            }
+            double sum_exp_values = 0.0;
+            for (std::pair<double, int> &elem: value_policies){
+				if (acc_level == BOOK_ACCURACY_LEVEL_INF && elem.first < (double)best_score - 0.5)
+					elem.first = 0.0;
+				else{
+					double exp_val = (exp(elem.first - (double)best_score) + 2.0) / 3.0;
+					elem.first = pow(exp_val, acc_level);
+				}
+                sum_exp_values += elem.first;
+            }
+            for (std::pair<double, int> &elem: value_policies){
+                elem.first /= sum_exp_values;
+                std::cerr << elem.first << " " << idx_to_coord(elem.second) << std::endl;
+            }
+            double rnd = myrandom();
+            std::cerr << "rnd " << rnd << std::endl;
+            double s = 0.0;
+            bool res_got = false;
+            for (std::pair<double, int> &elem: value_policies){
+                s += elem.first;
+                if (s >= rnd){
+                    res.policy = elem.second;
+                    calc_flip(&flip, b, res.policy);
+                    Board nb = b->move_copy(&flip);
+                    res.value = get(&nb);
+                    res_got = true;
+                    break;
+                }
+            }
+            if (!res_got){
+                res.policy = value_policies.back().second;
+                calc_flip(&flip, b, res.policy);
+                Board nb = b->move_copy(&flip);
+                res.value = get(&nb);
+            }
+            return res;
         }
 
         /*
