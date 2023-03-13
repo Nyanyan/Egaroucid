@@ -731,7 +731,7 @@ private:
                 if (legal) {
                     stop_calculating();
                     resume_calculating();
-                    ai_status.ai_future = std::async(std::launch::async, ai, getData().history_elem.board, getData().menu_elements.level, getData().menu_elements.use_book, getData().menu_elements.book_acc_level, true, true, date);
+                    ai_status.ai_future = std::async(std::launch::async, ai, getData().history_elem.board, getData().menu_elements.level, getData().menu_elements.use_book, BOOK_ACCURACY_LEVEL_INF -  getData().menu_elements.book_acc_level, true, true, date);
                     ai_status.ai_thinking = true;
                     ++date;
                     date = manage_date(date);
@@ -1235,7 +1235,7 @@ private:
             analyze_info.idx = idx++;
             analyze_info.sgn = node.player ? -1 : 1;
             analyze_info.board = node.board;
-            ai_status.analyze_task_stack.emplace_back(std::make_pair(analyze_info, std::bind(ai, node.board, getData().menu_elements.level, getData().menu_elements.use_book, getData().menu_elements.book_acc_level, true, true, date))); // HACK: no need to update date in analyze
+            ai_status.analyze_task_stack.emplace_back(std::make_pair(analyze_info, std::bind(ai, node.board, getData().menu_elements.level, getData().menu_elements.use_book, BOOK_ACCURACY_LEVEL_INF -  getData().menu_elements.book_acc_level, true, true, date))); // HACK: no need to update date in analyze
         }
         ++date;
         date = manage_date(date);

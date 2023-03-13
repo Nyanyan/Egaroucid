@@ -49,7 +49,7 @@ void init_default_settings(const Directories* directories, const Resources* reso
 	settings->show_last_move = true;
 	settings->show_next_move = true;
 	settings->hash_level = DEFAULT_HASH_LEVEL;
-	settings->book_acc_level = BOOK_ACCURACY_LEVEL_INF;
+	settings->book_acc_level = 0;
 }
 
 int init_settings_import_int(TextReader* reader, int* res) {
