@@ -125,7 +125,7 @@ int book_widen_search(Board board, int level, const int book_depth, int expected
     board.copy(board_copy);
     *player ^= 1;
     legal ^= 1ULL << best_move.policy;
-    if (legal && max_sum_error >= 0){
+    if (legal && max_sum_error > 0){
         int alpha;
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
             calc_flip(&flip, &board, cell);
