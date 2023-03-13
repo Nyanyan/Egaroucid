@@ -356,11 +356,11 @@ class Book{
             std::vector<int> policies;
             std::vector<int> values;
             Book_value res;
-            if (get(b) == -INF){
-                res.policy = -1;
-                res.value = -INF;
-                return res;
-            }
+            //if (get(b) == -INF){
+            //    res.policy = -1;
+            //    res.value = -INF;
+            //    return res;
+            //}
             Board nb;
             int max_value = -INF;
             uint64_t legal = b->get_legal();
