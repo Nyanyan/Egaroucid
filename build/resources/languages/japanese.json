@@ -34,7 +34,7 @@
     },
     "ai_settings": {
         "use_book": "book使用",
-        "book_accuracy_level": "book正確性",
+        "book_accuracy_level": "book変化レベル",
         "level": "レベル"
     },
     "book": {

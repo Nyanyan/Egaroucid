@@ -34,7 +34,7 @@
     },
     "ai_settings": {
         "use_book": "Book Use",
-        "book_accuracy_level": "Book Acc",
+        "book_accuracy_level": "Book Loss Level",
         "level": "Level"
     },
     "book": {
