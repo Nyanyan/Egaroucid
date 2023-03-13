@@ -450,12 +450,9 @@ class Book{
 				}
                 sum_exp_values += elem.first;
             }
-            for (std::pair<double, int> &elem: value_policies){
+            for (std::pair<double, int> &elem: value_policies)
                 elem.first /= sum_exp_values;
-                std::cerr << elem.first << " " << idx_to_coord(elem.second) << std::endl;
-            }
             double rnd = myrandom();
-            std::cerr << "rnd " << rnd << std::endl;
             double s = 0.0;
             bool res_got = false;
             for (std::pair<double, int> &elem: value_policies){
