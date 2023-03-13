@@ -442,12 +442,12 @@ class Book{
             }
             double sum_exp_values = 0.0;
             for (std::pair<double, int> &elem: value_policies){
-				if (acc_level == BOOK_ACCURACY_LEVEL_INF && elem.first < (double)best_score - 0.5)
-					elem.first = 0.0;
-				else{
-					double exp_val = (exp(elem.first - (double)best_score) + 2.0) / 3.0;
-					elem.first = pow(exp_val, acc_level);
-				}
+                if (acc_level == BOOK_ACCURACY_LEVEL_INF && elem.first < (double)best_score - 0.5)
+                    elem.first = 0.0;
+                else{
+                    double exp_val = (exp(elem.first - (double)best_score) + 2.0) / 3.0;
+                    elem.first = pow(exp_val, acc_level);
+                }
                 sum_exp_values += elem.first;
             }
             for (std::pair<double, int> &elem: value_policies)
@@ -629,8 +629,7 @@ class Book{
         */
         inline int register_symmetric_book(Board b, int value){
             Board min_board = get_min_board(b);
-            register_book(min_board, value);
-            return 1;
+            return register_book(min_board, value);
         }
 
         /*
