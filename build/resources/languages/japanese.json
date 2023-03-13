@@ -105,7 +105,7 @@
         "stop_calculating": "計算停止",
         "forward": "進む (->/D)",
         "backward": "戻る (<-/A)",
-        "undo": "着手取り消し (BS)",
+        "undo": "待った (BS)",
         "save_this_branch": "この分岐を保存",
         "convert": {
             "convert": "変換",
