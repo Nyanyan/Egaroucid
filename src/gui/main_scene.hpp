@@ -560,8 +560,9 @@ private:
 		if (getData().menu_elements.save_as_edax_book) {
 			stop_calculating();
             resume_calculating();
-			std::string save_path = getData().directories.document_dir + "Egaroucid/edax_book.dat";
-			book.save_bin_edax(save_path);
+			changing_scene = true;
+            changeScene(U"Save_book_Edax", SCENE_FADE_TIME);
+            return;
 		}
     }
 

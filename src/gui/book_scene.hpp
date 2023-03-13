@@ -259,6 +259,77 @@ public:
     }
 };
 
+class Save_book_Edax: public App::Scene {
+private:
+    Button back_button;
+    Button go_button;
+    std::string book_file;
+    std::future<void> save_book_edax_future;
+    bool book_saving_edax;
+    bool done;
+
+public:
+    Save_book_Edax(const InitData& init) : IScene{ init } {
+        back_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        go_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("book", "export"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        book_file = getData().directories.document_dir + "Egaroucid/edax_book.dat";
+        book_saving_edax = false;
+        done = false;
+    }
+
+    void update() override {
+        if (System::GetUserActions() & UserAction::CloseButtonClicked) {
+            changeScene(U"Close", SCENE_FADE_TIME);
+        }
+        Scene::SetBackground(getData().colors.green);
+        const int icon_width = (LEFT_RIGHT - LEFT_LEFT) / 2;
+        getData().resources.icon.scaled((double)icon_width / getData().resources.icon.width()).draw(X_CENTER - icon_width / 2, 20);
+        getData().resources.logo.scaled((double)icon_width / getData().resources.logo.width()).draw(X_CENTER - icon_width / 2, 20 + icon_width);
+        int sy = 20 + icon_width + 50;
+        if (!book_saving_edax) {
+            getData().fonts.font(language.get("book", "export_book_as_edax")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
+            Rect text_area{ X_CENTER - 300, sy + 40, 600, 70 };
+            text_area.draw(getData().colors.light_cyan).drawFrame(2, getData().colors.black);
+            String book_file_str = Unicode::Widen(book_file);
+            TextInput::UpdateText(book_file_str);
+            const String editingText = TextInput::GetEditingText();
+            bool return_pressed = false;
+            if (KeyControl.pressed() && KeyV.down()) {
+                String clip_text;
+                Clipboard::GetText(clip_text);
+                book_file_str += clip_text;
+            }
+            if (book_file_str.size()) {
+                if (book_file_str[book_file_str.size() - 1] == '\n') {
+                    book_file_str.replace(U"\n", U"");
+                    return_pressed = true;
+                }
+            }
+            book_file = book_file_str.narrow();
+            getData().fonts.font(book_file_str + U'|' + editingText).draw(15, text_area.stretched(-4), getData().colors.black);
+            back_button.draw();
+            if (back_button.clicked() || KeyEscape.pressed()) {
+                changeScene(U"Main_scene", SCENE_FADE_TIME);
+            }
+            go_button.draw();
+            if (go_button.clicked() || return_pressed) {
+                save_book_edax_future = std::async(std::launch::async, book_save_as_edax, book_file);
+                book_saving_edax = true;
+            }
+        }
+        else {
+            getData().fonts.font(language.get("book", "exporting")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
+			if (save_book_edax_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+				changeScene(U"Main_scene", SCENE_FADE_TIME);
+			}
+        }
+    }
+
+    void draw() const override {
+
+    }
+};
+
 class Widen_book : public App::Scene {
 private:
     Button stop_button;

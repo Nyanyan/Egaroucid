@@ -818,3 +818,7 @@ bool book_init(std::string file, bool show_log, bool *stop_loading){
     book_hash_init_rand();
     return book.init(file, show_log, stop_loading);
 }
+
+void book_save_as_edax(std::string file){
+	book.save_bin_edax(file);
+}
