@@ -106,6 +106,7 @@
         "forward": "Forward (->/D)",
         "backward": "Backward (<-/A)",
         "undo": "Undo (BS)",
+        "save_this_branch": "Save this Branch",
         "convert": {
             "convert": "Convert",
             "vertical": "Rotate 180",
