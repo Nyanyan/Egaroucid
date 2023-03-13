@@ -415,26 +415,26 @@ private:
                     }
                 }
             }
-			if (getData().menu_elements.save_this_branch) {
-				if (getData().graph_resources.put_mode == 1) {
-					std::vector<History_elem> new_branch;
-					int fork_start_idx = getData().graph_resources.node_find(0, getData().graph_resources.nodes[1].front().board.n_discs());
-					for (int i = 0; i < fork_start_idx; ++i) {
-						new_branch.emplace_back(getData().graph_resources.nodes[0][i]);
-					}
-					new_branch.back().next_policy = getData().graph_resources.nodes[1][0].policy;
-					for (History_elem elem: getData().graph_resources.nodes[1]) {
-						new_branch.emplace_back(elem);
-					}
-					new_branch.back().next_policy = -1;
-					getData().graph_resources.nodes[0].clear();
-					getData().graph_resources.nodes[1].clear();
-					for (History_elem elem: new_branch) {
-						getData().graph_resources.nodes[0].emplace_back(elem);
-					}
-					getData().graph_resources.put_mode = 0;
-				}
-			}
+            if (getData().menu_elements.save_this_branch) {
+                if (getData().graph_resources.put_mode == 1) {
+                    std::vector<History_elem> new_branch;
+                    int fork_start_idx = getData().graph_resources.node_find(0, getData().graph_resources.nodes[1].front().board.n_discs());
+                    for (int i = 0; i < fork_start_idx; ++i) {
+                        new_branch.emplace_back(getData().graph_resources.nodes[0][i]);
+                    }
+                    new_branch.back().next_policy = getData().graph_resources.nodes[1][0].policy;
+                    for (History_elem elem: getData().graph_resources.nodes[1]) {
+                        new_branch.emplace_back(elem);
+                    }
+                    new_branch.back().next_policy = -1;
+                    getData().graph_resources.nodes[0].clear();
+                    getData().graph_resources.nodes[1].clear();
+                    for (History_elem elem: new_branch) {
+                        getData().graph_resources.nodes[0].emplace_back(elem);
+                    }
+                    getData().graph_resources.put_mode = 0;
+                }
+            }
         }
         if (getData().menu_elements.convert_180) {
             stop_calculating();
@@ -838,9 +838,6 @@ private:
 
         title.init(language.get("operation", "operation"));
 
-        menu_e.init_button(language.get("operation", "stop_calculating"), &menu_elements->stop_calculating);
-        title.push(menu_e);
-
         menu_e.init_button(language.get("operation", "forward"), &menu_elements->forward);
         title.push(menu_e);
         menu_e.init_button(language.get("operation", "backward"), &menu_elements->backward);
@@ -857,6 +854,9 @@ private:
         menu_e.push(side_menu);
         side_menu.init_button(language.get("operation", "convert", "white_line"), &menu_elements->convert_whiteline);
         menu_e.push(side_menu);
+        title.push(menu_e);
+
+        menu_e.init_button(language.get("operation", "stop_calculating"), &menu_elements->stop_calculating);
         title.push(menu_e);
         menu_e.init_button(language.get("operation", "cache_clear"), &menu_elements->cache_clear);
         title.push(menu_e);

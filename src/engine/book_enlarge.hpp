@@ -137,7 +137,7 @@ int book_widen_search(Board board, int level, const int book_depth, int expected
                 ++(*date);
                 *date = manage_date(*date);
                 if (global_searching && g >= alpha){
-					int pre_error = std::max(0, v - g);
+                    int pre_error = std::max(0, v - g);
                     g = -book_widen_search(board, level, book_depth, expected_error, max_sum_error - pre_error, board_copy, player, strt_tim, book_file, book_bak, date, strt);
                     if (global_searching && g >= -HW2 && g <= HW2){
                         v = std::max(v, g);
@@ -157,7 +157,7 @@ int book_widen_search(Board board, int level, const int book_depth, int expected
 }
 
 int calc_book_widen_sum_error(Board root_board, int book_depth, int expected_error){
-	return std::max(expected_error, (book_depth + 4 - root_board.n_discs()) * expected_error / 12);
+    return std::max(expected_error, (book_depth + 4 - root_board.n_discs()) * expected_error / 12);
 }
 
 /*
@@ -181,11 +181,11 @@ inline void book_widen(Board root_board, int level, const int book_depth, int ex
     std::cerr << "book widen started" << std::endl;
     uint8_t date = INIT_DATE;
     transposition_table.reset_date();
-	int max_sum_error = calc_book_widen_sum_error(root_board, book_depth, expected_error);
-	int before_player = *player;
+    int max_sum_error = calc_book_widen_sum_error(root_board, book_depth, expected_error);
+    int before_player = *player;
     int g = book_widen_search(root_board, level, book_depth, expected_error, max_sum_error, board_copy, player, &strt_tim, book_file, book_bak, &date, all_strt);
     root_board.copy(board_copy);
-	*player = before_player;
+    *player = before_player;
     transposition_table.reset_date();
     book.save_bin(book_file, book_bak);
     std::cerr << "time " << ms_to_time_short(tim() - all_strt) << " book widen finished value " << g << std::endl;
@@ -227,7 +227,7 @@ int book_deepen_search(Board board, int level, const int book_depth, int expecte
     if (legal == 0ULL){
         board.pass();
         *player ^= 1;
-			if (board.get_legal() != 0ULL)
+            if (board.get_legal() != 0ULL)
                 g = -book_deepen_search(board, level, book_depth, expected_error, board_copy, player, strt_tim, book_file, book_bak, date, strt);
             else
                 g = -board.score_player();
@@ -238,9 +238,9 @@ int book_deepen_search(Board board, int level, const int book_depth, int expecte
     std::vector<int> best_moves = book.get_all_best_moves(&board);
     int book_val = -book.get(&board);
     if (best_moves.size() == 0){
-		int max_sum_error = calc_book_widen_sum_error(board, book_depth, expected_error);
+        int max_sum_error = calc_book_widen_sum_error(board, book_depth, expected_error);
         return book_widen_search(board, level, book_depth, expected_error, max_sum_error, board_copy, player, strt_tim, book_file, book_bak, date, strt);
-	}
+    }
     Flip flip;
     for (int policy: best_moves){
         calc_flip(&flip, &board, (uint_fast8_t)policy);
@@ -281,10 +281,10 @@ inline void book_deepen(Board root_board, int level, const int book_depth, int e
     std::cerr << "book deepen started" << std::endl;
     uint8_t date = INIT_DATE;
     transposition_table.reset_date();
-	int before_player = *player;
+    int before_player = *player;
     int g = book_deepen_search(root_board, level, book_depth, expected_error, board_copy, player, &strt_tim, book_file, book_bak, &date, all_strt);
     root_board.copy(board_copy);
-	*player = before_player;
+    *player = before_player;
     transposition_table.reset_date();
     book.save_bin(book_file, book_bak);
     std::cerr << "time " << ms_to_time_short(tim() - all_strt) << " book deepen finished value " << g << std::endl;
