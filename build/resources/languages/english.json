@@ -79,7 +79,7 @@
         "export_until_this_board": "Save till set position",
         "player_name": "Player Name",
         "memo": "Memo",
-        "screen_shot": "Copy Screen Shot"
+        "screen_shot": "Screen Shot (Copy & Save)"
     },
     "display": {
         "display": "Display",
