@@ -39,6 +39,8 @@
     },
     "book": {
         "book": "Book",
+        "book_operation": "Book Operation",
+        "file_operation": "File Operation",
         "right_click_to_modify": "Right-click to Change",
         "book_widen": "Book Widen",
         "book_deepen": "Book Deepen",
@@ -107,7 +109,6 @@
     },
     "operation": {
         "operation": "Operate",
-        "stop_calculating": "Stop Calculating",
         "forward": "Forward (->/D)",
         "backward": "Backward (<-/A)",
         "undo": "Undo (BS)",
@@ -118,7 +119,11 @@
             "white_line": "White Line",
             "black_line": "Black Line"
         },
-        "cache_clear": "Cache Clear"
+        "ai_operation": {
+            "ai_operation": "AI Operation",
+            "stop_calculating": "Stop Calculating",
+            "cache_clear": "Cache Clear"
+        }
     },
     "info": {
         "black": "Black to Play",

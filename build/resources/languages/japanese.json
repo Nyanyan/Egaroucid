@@ -39,6 +39,8 @@
     },
     "book": {
         "book": "Book",
+        "book_operation": "Book操作",
+        "file_operation": "ファイル操作",
         "right_click_to_modify": "右クリックで編集",
         "book_widen": "Book拡張",
         "book_deepen": "Book深化",
@@ -107,7 +109,6 @@
     },
     "operation": {
         "operation": "操作",
-        "stop_calculating": "計算停止",
         "forward": "進む (->/D)",
         "backward": "戻る (<-/A)",
         "undo": "待った (BS)",
@@ -118,7 +119,11 @@
             "white_line": "ホワイトライン",
             "black_line": "ブラックライン"
         },
-        "cache_clear": "キャッシュクリア"
+        "ai_operation": {
+            "ai_operation": "AI操作",
+            "stop_calculating": "計算停止",
+            "cache_clear": "キャッシュクリア"
+        }
     },
     "info": {
         "black": "黒番",
