@@ -868,10 +868,12 @@ private:
         menu_e.push(side_menu);
         title.push(menu_e);
 
-        menu_e.init_button(language.get("operation", "stop_calculating"), &menu_elements->stop_calculating);
-        title.push(menu_e);
-        menu_e.init_button(language.get("operation", "cache_clear"), &menu_elements->cache_clear);
-        title.push(menu_e);
+		menu_e.init_button(language.get("operation", "ai_operation", "ai_operation"), &menu_elements->dummy);
+        side_menu.init_button(language.get("operation", "ai_operation", "stop_calculating"), &menu_elements->stop_calculating);
+        menu_e.push(side_menu);
+        side_menu.init_button(language.get("operation", "ai_operation", "cache_clear"), &menu_elements->cache_clear);
+        menu_e.push(side_menu);
+		title.push(menu_e);
 
         menu.push(title);
 
@@ -906,23 +908,29 @@ private:
 
         title.init(language.get("book", "book"));
 
-        menu_e.init_check(language.get("book", "right_click_to_modify"), &menu_elements->change_book_by_right_click, menu_elements->change_book_by_right_click);
-        title.push(menu_e);
-        menu_e.init_button(language.get("book", "merge"), &menu_elements->book_import);
-        title.push(menu_e);
-        menu_e.init_button(language.get("book", "book_reference"), &menu_elements->book_reference);
-        title.push(menu_e);
-		menu_e.init_button(language.get("book", "save_as_edax_book"), &menu_elements->save_as_edax_book);
-        title.push(menu_e);
-        menu_e.init_button(language.get("book", "settings"), &menu_elements->dummy);
+		menu_e.init_button(language.get("book", "settings"), &menu_elements->dummy);
         side_menu.init_bar(language.get("book", "depth"), &menu_elements->book_learn_depth, menu_elements->book_learn_depth, 0, 60);
         menu_e.push(side_menu);
         side_menu.init_bar(language.get("book", "accept"), &menu_elements->book_learn_error, menu_elements->book_learn_error, 0, 32);
         menu_e.push(side_menu);
-        title.push(menu_e);
-        menu_e.init_button(language.get("book", "book_widen"), &menu_elements->book_start_widen);
-        title.push(menu_e);
-        menu_e.init_button(language.get("book", "book_deepen"), &menu_elements->book_start_deepen);
+		title.push(menu_e);
+
+		menu_e.init_button(language.get("book", "book_operation"), &menu_elements->dummy);
+		side_menu.init_check(language.get("book", "right_click_to_modify"), &menu_elements->change_book_by_right_click, menu_elements->change_book_by_right_click);
+		menu_e.push(side_menu);
+        side_menu.init_button(language.get("book", "book_widen"), &menu_elements->book_start_widen);
+        menu_e.push(side_menu);
+        side_menu.init_button(language.get("book", "book_deepen"), &menu_elements->book_start_deepen);
+		menu_e.push(side_menu);
+		title.push(menu_e);
+
+		menu_e.init_button(language.get("book", "file_operation"), &menu_elements->dummy);
+        side_menu.init_button(language.get("book", "merge"), &menu_elements->book_import);
+        menu_e.push(side_menu);
+        side_menu.init_button(language.get("book", "book_reference"), &menu_elements->book_reference);
+        menu_e.push(side_menu);
+		side_menu.init_button(language.get("book", "save_as_edax_book"), &menu_elements->save_as_edax_book);
+        menu_e.push(side_menu);
         title.push(menu_e);
 
         menu.push(title);
