@@ -182,8 +182,10 @@ inline void book_widen(Board root_board, int level, const int book_depth, int ex
     uint8_t date = INIT_DATE;
     transposition_table.reset_date();
 	int max_sum_error = calc_book_widen_sum_error(root_board, book_depth, expected_error);
+	int before_player = *player;
     int g = book_widen_search(root_board, level, book_depth, expected_error, max_sum_error, board_copy, player, &strt_tim, book_file, book_bak, &date, all_strt);
     root_board.copy(board_copy);
+	*player = before_player;
     transposition_table.reset_date();
     book.save_bin(book_file, book_bak);
     std::cerr << "time " << ms_to_time_short(tim() - all_strt) << " book widen finished value " << g << std::endl;
@@ -279,8 +281,10 @@ inline void book_deepen(Board root_board, int level, const int book_depth, int e
     std::cerr << "book deepen started" << std::endl;
     uint8_t date = INIT_DATE;
     transposition_table.reset_date();
+	int before_player = *player;
     int g = book_deepen_search(root_board, level, book_depth, expected_error, board_copy, player, &strt_tim, book_file, book_bak, &date, all_strt);
     root_board.copy(board_copy);
+	*player = before_player;
     transposition_table.reset_date();
     book.save_bin(book_file, book_bak);
     std::cerr << "time " << ms_to_time_short(tim() - all_strt) << " book deepen finished value " << g << std::endl;
