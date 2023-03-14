@@ -69,7 +69,7 @@ Change directory.
 
 
 
-<code>$ cd Egaroucid/src</code>
+<code>$ cd Egaroucid</code>
 
 
 
@@ -115,15 +115,11 @@ Then,
 
 
 
-That's all. You can see <code>Egaroucid_for_Console.out</code> and some resources in <code>Egaroucid/src/build</code> directory. You can run with commands below.
+That's all. You can see <code>Egaroucid_for_Console.out</code> in <code>Egaroucid/bin</code> directory. You can run with commands below.
 
 
 
-<code>$ cd build</code>
-
-
-
-<code>$ ./Egaroucid_for_Console.out</code>
+<code>$ ./bin/Egaroucid_for_Console.out</code>
 
 
 
@@ -157,7 +153,7 @@ Then compile it with <code>g++</code> command. You can change the output name.
 
 
 
-<code>$ g++ -O2 Egaroucid_console.cpp -o Egaroucid_for_Console.out -mtune=native -march=native -mfpmath=both -pthread -std=c++17 -Wall -Wextra [options]</code>
+<code>$ g++ -O2 ./src/Egaroucid_console.cpp -o ./bin/Egaroucid_for_Console.out -mtune=native -march=native -mfpmath=both -pthread -std=c++17 -Wall -Wextra [options]</code>
 
 
 
@@ -189,7 +185,7 @@ Then execute the output file.
 
 
 
-<code>$ ./Egaroucid_for_console.out</code>
+<code>$ ./bin/Egaroucid_for_console.out</code>
 
 
 

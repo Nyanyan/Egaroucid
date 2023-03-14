@@ -22,6 +22,10 @@ For each version, the detailed conditions may be different. Please see each page
 		<th>Date</th>
 	</tr>
     <tr>
+		<td><a href="./6_2_0/">6.2.0</a></td>
+		<td>2023/03/15</td>
+	</tr>
+    <tr>
 		<td><a href="./6_1_0/">6.1.0</a></td>
 		<td>2022/12/23</td>
 	</tr>

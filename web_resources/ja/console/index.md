@@ -71,7 +71,7 @@ cmakeでビルドするか、直接g++を使ってビルドすることができ
 
 
 
-<code>$ cd Egaroucid/src</code>
+<code>$ cd Egaroucid</code>
 
 
 
@@ -113,15 +113,11 @@ cmakeでビルドするか、直接g++を使ってビルドすることができ
 
 
 
-これでビルドができます。<code>Egaroucid/src/build</code>フォルダの中に<code>Egaroucid_for_Console.out</code>と必要なリソースファイルができましたので、以下のコマンドで実行できます。
+これでビルドができます。<code>Egaroucid/bin</code>フォルダの中に<code>Egaroucid_for_Console.out</code>ができましたので、以下のコマンドで実行できます。
 
 
 
-<code>$ cd build</code>
-
-
-
-<code>$ ./Egaroucid_for_Console.out</code>
+<code>$ ./bin/Egaroucid_for_Console.out</code>
 
 
 
@@ -146,7 +142,7 @@ cmakeでビルドするか、直接g++を使ってビルドすることができ
 
 
 
-<code>$ cd Egaroucid/src</code>
+<code>$ cd Egaroucid</code>
 
 
 
@@ -154,7 +150,7 @@ cmakeでビルドするか、直接g++を使ってビルドすることができ
 
 
 
-<code>$ g++ -O2 Egaroucid_console.cpp -o Egaroucid_for_Console.out -mtune=native -march=native -mfpmath=both -pthread -std=c++17 -Wall -Wextra [options]</code>
+<code>$ g++ -O2 ./src/Egaroucid_console.cpp -o ./bin/Egaroucid_for_Console.out -mtune=native -march=native -mfpmath=both -pthread -std=c++17 -Wall -Wextra [options]</code>
 
 
 
@@ -187,7 +183,7 @@ cmakeでビルドするか、直接g++を使ってビルドすることができ
 
 
 
-<code>$ ./Egaroucid_for_console.out</code>
+<code>$ ./bin/Egaroucid_for_console.out</code>
 
 
 
