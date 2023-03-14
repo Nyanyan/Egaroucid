@@ -262,7 +262,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
             std::vector<std::future<Parallel_task>> parallel_tasks;
             bool n_searching = true;
             bool break_flag = false;
-            for (int move_idx = 0; move_idx < canput; ++move_idx){
+            for (int move_idx = 0; move_idx < canput && !break_flag; ++move_idx){
                 swap_next_best_move(move_list, move_idx, canput);
                 eval_move(search, &move_list[move_idx].flip);
                 search->move(&move_list[move_idx].flip);
@@ -286,8 +286,6 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
                     }
                 search->undo(&move_list[move_idx].flip);
                 eval_undo(search, &move_list[move_idx].flip);
-                if (break_flag)
-                    break;
             }
             if (split_count){
                 if (alpha < v || !(*searching)){
