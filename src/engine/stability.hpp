@@ -112,8 +112,33 @@ inline void stability_init() {
 
 // @notice from http://www.amy.hi-ho.ne.jp/okuhara/bitboard.htm
 // modified by Nyanyan
+/*
+    @brief Calculate full stability in horizontal direction
+
+    @param full                 a bitboard representing discs
+*/
+inline uint64_t full_stability_h(uint64_t full){
+    full &= full >> 1;
+    full &= full >> 2;
+    full &= full >> 4;
+    return (full & 0x0101010101010101ULL) * 0xFF;
+}
+
+/*
+    @brief Calculate full stability in vertical direction
+
+    @param full                 a bitboard representing discs
+*/
+inline uint64_t full_stability_v(uint64_t full){
+    full &= (full >> 8) | (full << 56);
+    full &= (full >> 16) | (full << 48);
+    full &= (full >> 32) | (full << 32);
+    return full;
+}
+
 #if USE_SIMD
     inline void full_stability(uint64_t discs, uint64_t *h, uint64_t *v, uint64_t *d7, uint64_t *d9){
+        /* // need AVX512
         // horizontal & vertical
         __m128i hv = _mm_set1_epi64x(discs);
         hv = _mm_and_si128(hv, _mm_srlv_epi64(hv, stability_e180));
@@ -123,6 +148,9 @@ inline void stability_init() {
         hv = _mm_mullo_epi64(hv, stability_e184);
         *v = _mm_cvtsi128_si64(hv);
         *h = _mm_cvtsi128_si64(_mm_unpackhi_epi64(hv, hv));
+        */
+        *h = full_stability_h(discs);
+        *v = full_stability_v(discs);
         // diagonal
         __m128i l79, r79;
         l79 = r79 = _mm_unpacklo_epi64(_mm_cvtsi64_si128(discs), _mm_cvtsi64_si128(vertical_mirror(discs)));
@@ -136,30 +164,6 @@ inline void stability_init() {
         *d7 = vertical_mirror(_mm_cvtsi128_si64(_mm_unpackhi_epi64(l79, l79)));
     }
 #else
-    /*
-        @brief Calculate full stability in horizontal direction
-
-        @param full                 a bitboard representing discs
-    */
-    inline uint64_t full_stability_h(uint64_t full){
-        full &= full >> 1;
-        full &= full >> 2;
-        full &= full >> 4;
-        return (full & 0x0101010101010101ULL) * 0xFF;
-    }
-
-    /*
-        @brief Calculate full stability in vertical direction
-
-        @param full                 a bitboard representing discs
-    */
-    inline uint64_t full_stability_v(uint64_t full){
-        full &= (full >> 8) | (full << 56);
-        full &= (full >> 16) | (full << 48);
-        full &= (full >> 32) | (full << 32);
-        return full;
-    }
-
     /*
         @brief Calculate full stability in diagonal direction
 
