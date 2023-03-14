@@ -42,7 +42,7 @@ void init_default_settings(const Directories* directories, const Resources* reso
 	settings->show_graph = true;
 	settings->show_opening_on_cell = true;
 	settings->show_log = true;
-	settings->book_learn_depth = 40;
+	settings->book_learn_depth = 36;
 	settings->book_learn_error = 3;
 	settings->show_stable_discs = false;
 	settings->change_book_by_right_click = false;
