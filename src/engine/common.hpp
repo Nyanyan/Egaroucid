@@ -189,7 +189,7 @@ std::string calc_date() {
     time_t now;
     tm newtime;
     time(&now);
-    int err = get_localtime(&newtime, &now);
+    get_localtime(&newtime, &now);
     std::stringstream sout;
     std::string year = std::to_string(newtime.tm_year + 1900);
     sout << std::setfill('0') << std::setw(2) << newtime.tm_mon + 1;
@@ -217,7 +217,7 @@ void calc_date(int *year, int *month, int *day, int *hour, int *minute, int *sec
     time_t now;
     tm newtime;
     time(&now);
-    int err = get_localtime(&newtime, &now);
+    get_localtime(&newtime, &now);
     *year = newtime.tm_year + 1900;
     *month = newtime.tm_mon + 1;
     *day = newtime.tm_mday;
