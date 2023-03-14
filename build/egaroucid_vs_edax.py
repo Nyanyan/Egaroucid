@@ -1,22 +1,24 @@
 import subprocess
 from othello_py import *
 import sys
+from random import shuffle
 
 with open('problem/openingssmall.txt', 'r') as f:
     tactic = [elem for elem in f.read().splitlines()]
 
-#shuffle(tactic)
+shuffle(tactic)
 
 level = int(sys.argv[1])
 n_games = int(sys.argv[2])
 
-egaroucid = subprocess.Popen(('Egaroucid_for_console.exe -quiet -nobook -level ' + str(level)).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+egaroucid = subprocess.Popen(('Egaroucid_for_console.exe -quiet -nobook -thread 23 -level ' + str(level)).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
 edax = subprocess.Popen(('edax-4.4 -q -level ' + str(level)).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 egaroucid_win = [0, 0]
 edax_win = [0, 0]
 draw = [0, 0]
 
 print('level', level)
+print('openings', len(tactic))
 
 max_num = min(len(tactic), n_games)
 smpl = range(len(tactic))
@@ -112,7 +114,7 @@ for num in range(max_num):
         else:
             edax_win[player] += 1
             #print(record)
-        print('\r', num, max_num, ' ', egaroucid_win, draw, edax_win, sum(egaroucid_win), sum(edax_win), sum(egaroucid_win) / max(1, sum(egaroucid_win) + sum(edax_win)), end='')
+        print('\r', num, max_num, ' ', egaroucid_win, draw, edax_win, sum(egaroucid_win), sum(edax_win), sum(egaroucid_win) / max(1, sum(egaroucid_win) + sum(edax_win)), end='                ')
 
 egaroucid.stdin.write('quit\n'.encode('utf-8'))
 egaroucid.stdin.flush()
