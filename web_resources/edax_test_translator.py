@@ -38,8 +38,8 @@ idxes = [1, 14]
 idxes = [1, 15]
 '''
 # 6.1.0
-#idxes = [1, 6]
-idxes = [1, 12]
+idxes = [1, 6]
+#idxes = [1, 12]
 
 res = head
 while True:
