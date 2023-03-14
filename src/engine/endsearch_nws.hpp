@@ -116,6 +116,20 @@ inline int last3_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
     #endif
     #if USE_END_PO
         if (!skipped){
+            const uint_fast8_t parities = 
+                (((search->parity & cell_div4[p0]) >> cell_div4_log[p0]) << 1) | 
+                ((search->parity & cell_div4[p1]) >> cell_div4_log[p1]);
+            switch (parities){
+                case 0:
+                    std::swap(p0, p2);
+                    break;
+                case 1:
+                    std::swap(p0, p1);
+                    break;
+                default:
+                    break;
+            }
+            /*
             const bool p0_parity = (search->parity & cell_div4[p0]) > 0;
             const bool p1_parity = (search->parity & cell_div4[p1]) > 0;
             const bool p2_parity = (search->parity & cell_div4[p2]) > 0;
@@ -138,6 +152,7 @@ inline int last3_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
                     std::swap(p1, p2);
                 }
             #endif
+            */
         }
     #endif
     int v = -SCORE_INF;
@@ -231,7 +246,7 @@ inline int last4_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
     #endif
     #if USE_END_PO
         if (!skipped){
-            uint_fast8_t parities = 
+            const uint_fast8_t parities = 
                 (((search->parity & cell_div4[p0]) >> cell_div4_log[p0]) << 2) | 
                 (((search->parity & cell_div4[p1]) >> cell_div4_log[p1]) << 1) | 
                 ((search->parity & cell_div4[p2]) >> cell_div4_log[p2]);
