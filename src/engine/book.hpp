@@ -578,7 +578,6 @@ class Book{
                 std::cerr << "can't open " << file << std::endl;
                 return;
             }
-            uint8_t elem;
             std::cerr << "saving book..." << std::endl;
             char header[] = "XADEKOOB";
             for (int i = 0; i < 8; ++i)

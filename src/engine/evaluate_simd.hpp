@@ -426,7 +426,7 @@ inline int swap_player_idx(int i, int pattern_size){
     @param siz                  size of the pattern
     @param strt                 start position of the pattern
 */
-void init_pattern_arr_rev(int phase_idx, int pattern_idx, int siz, int strt){
+void init_pattern_arr_rev(int phase_idx, int siz, int strt){
     int ri;
     for (int i = 0; i < (int)pow3[siz]; ++i){
         ri = swap_player_idx(i, siz);
@@ -514,14 +514,14 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
         int i = 0;
         for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
             for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx)
-                tasks[i++] = thread_pool.push(std::bind(init_pattern_arr_rev, phase_idx, pattern_idx, pattern_sizes[pattern_idx], pattern_starts[pattern_idx]));
+                tasks[i++] = thread_pool.push(std::bind(init_pattern_arr_rev, phase_idx, pattern_sizes[pattern_idx], pattern_starts[pattern_idx]));
         }
         for (std::future<void> &task: tasks)
             task.get();
     } else{
         for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
             for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx)
-                init_pattern_arr_rev(phase_idx, pattern_idx, pattern_sizes[pattern_idx], pattern_starts[pattern_idx]);
+                init_pattern_arr_rev(phase_idx, pattern_sizes[pattern_idx], pattern_starts[pattern_idx]);
         }
     }
     int16_t f2c[16];
