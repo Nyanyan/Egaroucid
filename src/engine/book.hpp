@@ -123,7 +123,7 @@ class Book{
             @return book completely imported?
         */
         bool init(std::string file, bool show_log, bool *stop_loading){
-			delete_all();
+            delete_all();
             return import_file_bin(file, show_log, stop_loading);
         }
 
@@ -345,8 +345,8 @@ class Book{
             @return registered value (if not registered, returns -INF)
         */
         inline int get(Board *b){
-            Board min_board = get_min_board(b);
-            return get_onebook(min_board);
+            Board representive_board = get_representative_board(b);
+            return get_onebook(representive_board);
         }
 
         /*
@@ -528,7 +528,7 @@ class Book{
         */
         inline void delete_all(){
             book.clear();
-			reg_first_board();
+            reg_first_board();
             n_book = 1;
         }
 
@@ -609,29 +609,29 @@ class Book{
             fout.write((char*)&err_end, 4);
             int verb = 0;
             fout.write((char*)&verb, 4);
-			int n_positions = 0;
-			std::unordered_set<Board, Book_hash> positions;
-			int t = 0;
-			for (auto itr = book.begin(); itr != book.end(); ++itr){
-				++t;
-				if (t % 16384 == 0)
+            int n_positions = 0;
+            std::unordered_set<Board, Book_hash> positions;
+            int t = 0;
+            for (auto itr = book.begin(); itr != book.end(); ++itr){
+                ++t;
+                if (t % 16384 == 0)
                     std::cerr << "converting book " << (t * 100 / (int)book.size()) << "%" << std::endl;
-				Board board = itr->first;
-				uint64_t legal = board.get_legal();
-				Flip flip;
-				for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-					calc_flip(&flip, &board, cell);
-					board.move_board(&flip);
-						if (get(&board) != -INF){
-							++n_positions;
-							board.undo_board(&flip);
-							positions.emplace(edax_representative_board(board));
-							break;
-						}
-					board.undo_board(&flip);
-				}
-			}
-			std::cerr << "Edax formatted positions " << n_positions << std::endl;
+                Board board = itr->first;
+                uint64_t legal = board.get_legal();
+                Flip flip;
+                for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+                    calc_flip(&flip, &board, cell);
+                    board.move_board(&flip);
+                        if (get(&board) != -INF){
+                            ++n_positions;
+                            board.undo_board(&flip);
+                            positions.emplace(get_representative_board(board));
+                            break;
+                        }
+                    board.undo_board(&flip);
+                }
+            }
+            std::cerr << "Edax formatted positions " << n_positions << std::endl;
             fout.write((char*)&n_positions, 4);
             t = 0;
             int n_win = 0;
@@ -644,46 +644,46 @@ class Book{
                 ++t;
                 if (t % 8192 == 0)
                     std::cerr << "saving book " << (t * 100 / (int)positions.size()) << "%" << std::endl;
-				char n_link = 0;
-				uint64_t legal = board.get_legal();
-				Flip flip;
-				std::vector<std::pair<char, char>> links;
-				char leaf_val = 65;
-				char leaf_move = 65;
-				for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-					calc_flip(&flip, &board, cell);
-					board.move_board(&flip);
-						int nval = get(&board);
-						if (nval != -INF){
-							if (nval < leaf_val){
-								leaf_val = nval;
-								leaf_move = cell;
-							}
-							++n_link;
-							links.emplace_back(std::make_pair((char)nval, (char)cell));
-						}
-					board.undo_board(&flip);
-				}
-				if (n_link){
-					fout.write((char*)&board.player, 8);
-					fout.write((char*)&board.opponent, 8);
-					fout.write((char*)&n_win, 4);
-					fout.write((char*)&n_draw, 4);
-					fout.write((char*)&n_lose, 4);
-					fout.write((char*)&n_line, 4);
-					short_val = -get(&board);
-					fout.write((char*)&short_val, 2);
-					fout.write((char*)&short_val, 2);
-					fout.write((char*)&short_val, 2);
-					fout.write((char*)&n_link, 1);
-					fout.write((char*)&char_level, 1);
-					for (std::pair<char, char> &link: links){
-						fout.write((char*)&link.first, 1);
-						fout.write((char*)&link.second, 1);
-					}
-					fout.write((char*)&leaf_val, 1);
-					fout.write((char*)&leaf_move, 1);
-				}
+                char n_link = 0;
+                uint64_t legal = board.get_legal();
+                Flip flip;
+                std::vector<std::pair<char, char>> links;
+                char leaf_val = 65;
+                char leaf_move = 65;
+                for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+                    calc_flip(&flip, &board, cell);
+                    board.move_board(&flip);
+                        int nval = get(&board);
+                        if (nval != -INF){
+                            if (nval < leaf_val){
+                                leaf_val = nval;
+                                leaf_move = cell;
+                            }
+                            ++n_link;
+                            links.emplace_back(std::make_pair((char)nval, (char)cell));
+                        }
+                    board.undo_board(&flip);
+                }
+                if (n_link){
+                    fout.write((char*)&board.player, 8);
+                    fout.write((char*)&board.opponent, 8);
+                    fout.write((char*)&n_win, 4);
+                    fout.write((char*)&n_draw, 4);
+                    fout.write((char*)&n_lose, 4);
+                    fout.write((char*)&n_line, 4);
+                    short_val = -get(&board);
+                    fout.write((char*)&short_val, 2);
+                    fout.write((char*)&short_val, 2);
+                    fout.write((char*)&short_val, 2);
+                    fout.write((char*)&n_link, 1);
+                    fout.write((char*)&char_level, 1);
+                    for (std::pair<char, char> &link: links){
+                        fout.write((char*)&link.first, 1);
+                        fout.write((char*)&link.second, 1);
+                    }
+                    fout.write((char*)&leaf_val, 1);
+                    fout.write((char*)&leaf_move, 1);
+                }
             }
             fout.close();
             std::cerr << "saved " << t << " boards as a edax-formatted book" << std::endl;
@@ -691,11 +691,11 @@ class Book{
 
 
     private:
-		void reg_first_board(){
-			Board board;
-			board.reset();
-			book[board] = 0;
-		}
+        void reg_first_board(){
+            Board board;
+            board.reset();
+            book[board] = 0;
+        }
 
         /*
             @brief register a board
@@ -724,41 +724,40 @@ class Book{
             return false;
         }
 
-        inline void update_min_board(Board *res, Board *sym){
-            if ((res->player | res->opponent) > (sym->player | sym->opponent))
-                *res = sym->copy();
+        inline void first_update_representative_board(Board *res, Board *sym){
+            uint64_t vp = vertical_mirror(sym->player);
+            uint64_t vo = vertical_mirror(sym->opponent);
+            if (res->player > vp || (res->player == vp && res->opponent > vo)){
+                res->player = vp;
+                res->opponent = vo;
+            }
         }
 
-		inline void update_edax_representative_board(Board *res, Board *sym){
-			if (res->player > sym->player){
-				*res = sym->copy();
-				return;
-			}
-			if (res->player == sym->player && res->opponent > sym->opponent)
-				*res = sym->copy();
+        inline void update_representative_board(Board *res, Board *sym){
+            if (res->player > sym->player || (res->player == sym->player && res->opponent > sym->opponent))
+                sym->copy(res);
+            uint64_t vp = vertical_mirror(sym->player);
+            uint64_t vo = vertical_mirror(sym->opponent);
+            if (res->player > vp || (res->player == vp && res->opponent > vo)){
+                res->player = vp;
+                res->opponent = vo;
+            }
         }
 
-        inline Board get_min_board(Board b){
-            Board min_board = b;
+        inline Board get_representative_board(Board b){
+            Board res = b;
+            first_update_representative_board(&res, &b);
             b.board_black_line_mirror();
-            update_min_board(&min_board, &b);
-            b.board_rotate_180();
-            update_min_board(&min_board, &b);
-            b.board_black_line_mirror();
-            update_min_board(&min_board, &b);
+            update_representative_board(&res, &b);
             b.board_horizontal_mirror();
-            update_min_board(&min_board, &b);
-            b.board_black_line_mirror();
-            update_min_board(&min_board, &b);
-            b.board_rotate_180();
-            update_min_board(&min_board, &b);
-            b.board_black_line_mirror();
-            update_min_board(&min_board, &b);
-            return min_board;
+            update_representative_board(&res, &b);
+            b.board_white_line_mirror();
+            update_representative_board(&res, &b);
+            return res;
         }
 
-        inline Board get_min_board(Board *b){
-            return get_min_board(b->copy());
+        inline Board get_representative_board(Board *b){
+            return get_representative_board(b->copy());
         }
 
         /*
@@ -769,8 +768,8 @@ class Book{
             @return 1 if board is new else 0
         */
         inline int register_symmetric_book(Board b, int value){
-            Board min_board = get_min_board(b);
-            return register_book(min_board, value);
+            Board representive_board = get_representative_board(b);
+            return register_book(representive_board, value);
         }
 
         /*
@@ -780,28 +779,9 @@ class Book{
             @return 1 if board is deleted (board found) else 0
         */
         inline int delete_symmetric_book(Board b){
-            Board min_board = get_min_board(b);
-            return delete_book(min_board);
+            Board representive_board = get_representative_board(b);
+            return delete_book(representive_board);
         }
-
-		Board edax_representative_board(Board b){
-			Board min_board = b;
-            b.board_black_line_mirror();
-            update_edax_representative_board(&min_board, &b);
-            b.board_rotate_180();
-            update_edax_representative_board(&min_board, &b);
-            b.board_black_line_mirror();
-            update_edax_representative_board(&min_board, &b);
-            b.board_horizontal_mirror();
-            update_edax_representative_board(&min_board, &b);
-            b.board_black_line_mirror();
-            update_edax_representative_board(&min_board, &b);
-            b.board_rotate_180();
-            update_edax_representative_board(&min_board, &b);
-            b.board_black_line_mirror();
-            update_edax_representative_board(&min_board, &b);
-            return min_board;
-		}
 };
 
 Book book;
@@ -820,5 +800,5 @@ bool book_init(std::string file, bool show_log, bool *stop_loading){
 }
 
 void book_save_as_edax(std::string file){
-	book.save_bin_edax(file);
+    book.save_bin_edax(file);
 }
