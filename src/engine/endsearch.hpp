@@ -247,6 +247,31 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
     #endif
     #if USE_END_PO
         if (!skipped){
+            uint_fast8_t parities = 
+                (((search->parity & cell_div4[p0]) >> cell_div4_log[p0]) << 2) | 
+                (((search->parity & cell_div4[p1]) >> cell_div4_log[p1]) << 1) | 
+                ((search->parity & cell_div4[p2]) >> cell_div4_log[p2]);
+            switch (parities){
+                case 1:
+                    std::swap(p0, p2);
+                    std::swap(p1, p3);
+                    break;
+                case 2:
+                    std::swap(p0, p3);
+                    break;
+                case 3:
+                    std::swap(p0, p2);
+                    break;
+                case 4:
+                    std::swap(p1, p3);
+                    break;
+                case 5:
+                    std::swap(p1, p2);
+                    break;
+                default:
+                    break;
+            }
+            /*
             const bool p0_parity = (search->parity & cell_div4[p0]) > 0;
             const bool p1_parity = (search->parity & cell_div4[p1]) > 0;
             const bool p2_parity = (search->parity & cell_div4[p2]) > 0;
@@ -298,6 +323,7 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
                     std::swap(p2, p3);
                 }
             #endif
+            */
         }
     #endif
     int v = -SCORE_INF;

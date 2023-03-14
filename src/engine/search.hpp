@@ -102,6 +102,22 @@ constexpr uint_fast8_t cell_div4[HW2] = {
 };
 
 /*
+    @brief board division
+
+    used for parity calculation
+*/
+constexpr uint_fast8_t cell_div4_log[HW2] = {
+    0, 0, 0, 0, 1, 1, 1, 1, 
+    0, 0, 0, 0, 1, 1, 1, 1, 
+    0, 0, 0, 0, 1, 1, 1, 1, 
+    0, 0, 0, 0, 1, 1, 1, 1, 
+    2, 2, 2, 2, 3, 3, 3, 3, 
+    2, 2, 2, 2, 3, 3, 3, 3, 
+    2, 2, 2, 2, 3, 3, 3, 3, 
+    2, 2, 2, 2, 3, 3, 3, 3
+};
+
+/*
     @brief a table for parity-based move ordering
 */
 constexpr uint64_t parity_table[16] = {
