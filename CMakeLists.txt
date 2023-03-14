@@ -22,11 +22,5 @@ if (HAS_32_BIT_OS)
 endif(HAS_32_BIT_OS)
 
 #Executable
-set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/contribBin/Egaroucid)
+set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/bin)
 add_executable(Egaroucid_for_Console.out Egaroucid_console.cpp)
-
-# Resources
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/resources/eval.egev DESTINATION ${EXECUTABLE_OUTPUT_PATH}/resources)
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/resources/book.egbk DESTINATION ${EXECUTABLE_OUTPUT_PATH}/resources)
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/resources/empty_book.egbk DESTINATION ${EXECUTABLE_OUTPUT_PATH}/resources)
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/resources/hash DESTINATION ${EXECUTABLE_OUTPUT_PATH}/resources)

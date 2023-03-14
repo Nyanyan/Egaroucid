@@ -32,6 +32,6 @@ benchmark/clog
 benchmark/ffotest
 benchmark/parallel_benchmark_log
 /evaluation
-build/data
-build/problem
-build/edax-4.4
+bin/data
+bin/problem
+bin/edax-4.4
