@@ -655,12 +655,15 @@ class Book{
                     board.move_board(&flip);
                         int nval = get(&board);
                         if (nval != -INF){
-                            if (nval < leaf_val){
-                                leaf_val = nval;
-                                leaf_move = cell;
+                            if (positions.find(get_representative_board(board)) != positions.end()){ // is link
+                                ++n_link;
+                                links.emplace_back(std::make_pair((char)nval, (char)cell));
+                            } else{ // is leaf
+                                if (nval < leaf_val){
+                                    leaf_val = nval;
+                                    leaf_move = cell;
+                                }
                             }
-                            ++n_link;
-                            links.emplace_back(std::make_pair((char)nval, (char)cell));
                         }
                     board.undo_board(&flip);
                 }
