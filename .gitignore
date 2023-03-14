@@ -35,3 +35,4 @@ benchmark/parallel_benchmark_log
 bin/data
 bin/problem
 bin/edax-4.4
+build

@@ -23,4 +23,4 @@ endif(HAS_32_BIT_OS)
 
 #Executable
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/bin)
-add_executable(Egaroucid_for_Console.out Egaroucid_console.cpp)
+add_executable(Egaroucid_for_Console.out ./src/Egaroucid_console.cpp)
