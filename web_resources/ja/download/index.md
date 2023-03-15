@@ -63,7 +63,7 @@ EgaroucidはSIMDバージョン(AVX2が必要)に最適化して作っていま�
 
 ## 実行
 
-インストールした<code>Egaroucid.exe</code>を実行するとEgaroucidが起動します。
+インストールした<code>Egaroucid6.exe</code>を実行するとEgaroucidが起動します。
 
 <div class="centering_box">
     <img class="pic" src="img/egaroucid.png">

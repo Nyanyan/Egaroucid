@@ -63,7 +63,7 @@ Pictures below are example in Japanese.
 
 ## Execute
 
-Please execute <code>Egaroucid.exe</code> to run Egaroucid!
+Please execute <code>Egaroucid6.exe</code> to run Egaroucid!
 
 <div class="centering_box">
     <img class="pic" src="img/egaroucid.png">
