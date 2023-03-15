@@ -54,34 +54,11 @@ Need translation? Please contact me [here](https://docs.google.com/forms/d/e/1FA
 
 
 
+
+
 ### Egaroucid for Console
 
-You can build with ```g++``` or ```cmake``` command. Please see also https://www.egaroucid.nyanyan.dev/en/console/
-
-Required:
-
-* ```g++``` command
-  * worked with version 12.2.0 on Windows
-  * worked with version 11.3.0 on Ubuntu
-  * TBD for MacIntosh
-* C++17
-
-```
-$ git clone git@github.com:Nyanyan/Egaroucid.git
-$ cd Egaroucid/src
-$ g++ -O2 Egaroucid_console.cpp -o Egaroucid_for_console.exe -mtune=native -march=native -mfpmath=both -pthread -std=c++17 -Wall -Wextra 
-```
-
-or
-
-```
-$ git clone git@github.com:Nyanyan/Egaroucid.git
-$ cd Egaroucid/src
-$ cmake -S . -B build
-$ cmake --build build
-```
-
-
+You can just download binary or build with ```g++``` or ```cmake``` command. Please see https://www.egaroucid.nyanyan.dev/en/console/
 
 #### Reference
 
