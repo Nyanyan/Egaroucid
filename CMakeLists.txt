@@ -1,7 +1,11 @@
 # Common
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.25)
 project(Egaroucid_for_Console CXX)
-add_compile_options(-mtune=native -march=native -mfpmath=both -pthread -std=c++17 -Wall -Wextra)
+if(APPLE)
+    add_compile_options(-mtune=native -pthread -std=c++17 -Wall -Wextra)
+else()
+    add_compile_options(-mtune=native -march=native -mfpmath=both -pthread -std=c++17 -Wall -Wextra)
+endif()
 
 # AVX2 option
 option(HAS_NO_AVX2 "turn on Generic build" OFF)

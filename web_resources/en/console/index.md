@@ -1,6 +1,6 @@
 # Egaroucid for Console
 
-Operations differ depending on your OS. This software is for Windows and Linux. With MacOS, I don't sure you can run.
+Operations differ depending on your OS. This software is for Windows and Linux.
 
 
 
@@ -56,7 +56,7 @@ Please visit [GitHub Releases](https://github.com/Nyanyan/Egaroucid/releases) to
 
 
 
-## Linux
+## Linux / MacOS
 
 Please build on your own. You can use cmake or g++.
 
