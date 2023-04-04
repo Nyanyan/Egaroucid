@@ -1,6 +1,6 @@
 # Egaroucid for Console
 
-OSによって操作が異なります。WindowsとLinuxに対応しています。MacOSの動作確認はできていません。
+OSによって操作が異なります。WindowsとLinuxに対応しています
 
 
 
@@ -58,7 +58,7 @@ Egaroucidはx64のSIMDバージョン(AVX2を使用)に最適化して作って�
 
 
 
-## Linux
+## Linux / MacOS
 
 cmakeでビルドするか、直接g++を使ってビルドすることができます。
 

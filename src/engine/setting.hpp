@@ -31,7 +31,26 @@
     #else
         #define EGAROUCID_ENGINE_ENV_VERSION "Windows x86 Generic"
     #endif
-#elif __APPLE__ // TBD
+#elif __APPLE__
+    // use ARM
+    #ifdef HAS_ARM_PROCESSOR
+        #define USE_ARM true
+    #endif
+
+    // use 64 bit exclusively on Mac as of MacOS Mojave
+    #if USE_SIMD
+        #if USE_ARM
+            #define EGAROUCID_ENGINE_ENV_VERSION "Mac OSX ARM64 SIMD"
+        #else
+            #define EGAROUCID_ENGINE_ENV_VERSION "Mac OSX x64 SIMD"
+        #endif
+    #else
+        #if USE_ARM
+            #define EGAROUCID_ENGINE_ENV_VERSION "Mac OSX ARM64 Generic"
+        #else
+            #define EGAROUCID_ENGINE_ENV_VERSION "Mac OSX x64 Generic"
+        #endif
+    #endif
 #else
     // use ARM
     #ifdef HAS_ARM_PROCESSOR
