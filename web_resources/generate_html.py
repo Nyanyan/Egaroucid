@@ -64,8 +64,8 @@ with open(elements_dir + '/foot.html', 'r', encoding='utf-8') as f:
 with open(elements_dir + '/main_page_title.txt', 'r', encoding='utf-8') as f:
     main_page_title = f.read()
 
-with open(elements_dir + '/main_page_description.txt', 'r', encoding='utf-8') as f:
-    main_page_description = f.read()
+#with open(elements_dir + '/main_page_description.txt', 'r', encoding='utf-8') as f:
+#    main_page_description = f.read()
 
 with open(elements_dir + '/meta_description.txt', 'r', encoding='utf-8') as f:
     meta_description = f.readline()
