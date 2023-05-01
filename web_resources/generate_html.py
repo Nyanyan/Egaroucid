@@ -86,18 +86,25 @@ link22 = '">'
 link23 = '</a>'
 
 def create_html(dr):
+    noenglish = False
+    try:
+        with open(dr + '/noenglish.txt', 'r', encoding='utf-8') as f:
+            noenglish = True
+    except:
+        pass
     alternate = ''
-    for lang in langs:
-        if lang[0] == elements_dir:
-            continue
+    if not noenglish:
+        for lang in langs:
+            if lang[0] == elements_dir:
+                continue
+            if dr[3:]:
+                alternate += '<link rel="alternate" hreflang="' + lang[0] + '" href="' + main_page_url + lang[0] + '/' + dr[3:] + '/"/>\n'
+            else:
+                alternate += '<link rel="alternate" hreflang="' + lang[0] + '" href="' + main_page_url + lang[0] + '/"/>\n'
         if dr[3:]:
-            alternate += '<link rel="alternate" hreflang="' + lang[0] + '" href="' + main_page_url + lang[0] + '/' + dr[3:] + '/"/>\n'
+            alternate += '<link rel="alternate" hreflang="x-default" href="' + main_page_url + 'en/' + dr[3:] + '/">\n'
         else:
-            alternate += '<link rel="alternate" hreflang="' + lang[0] + '" href="' + main_page_url + lang[0] + '/"/>\n'
-    if dr[3:]:
-        alternate += '<link rel="alternate" hreflang="x-default" href="' + main_page_url + 'en/' + dr[3:] + '/">\n'
-    else:
-        alternate += '<link rel="alternate"  hreflang="x-default" href="' + main_page_url + 'en/"/>\n'
+            alternate += '<link rel="alternate"  hreflang="x-default" href="' + main_page_url + 'en/"/>\n'
     with open(dr + '/title.txt', 'r', encoding='utf-8') as f:
         page_title = f.readline()
     with open(dr + '/index.md', 'r', encoding='utf-8') as f:
@@ -147,13 +154,14 @@ def create_html(dr):
     og_image = '<meta property="og:image" content="' + this_page_url + '/img/eyecatch.png" />\n'
     html += '<p></p>\n'
     html += tweet.replace('DATA_URL', this_page_url).replace('DATA_TEXT', page_title) + ' \n'
-    for lang_dr, lang_name in langs:
-        original_lang = dr.split('/')[0]
-        if lang_dr == original_lang:
-            continue
-        modified_dr = dr[len(original_lang) + 1:]
-        lang_link = main_page_url + lang_dr + '/' + modified_dr
-        html += link21 + lang_link + link22 + lang_name + link23 + ' \n'
+    if not noenglish:
+        for lang_dr, lang_name in langs:
+            original_lang = dr.split('/')[0]
+            if lang_dr == original_lang:
+                continue
+            modified_dr = dr[len(original_lang) + 1:]
+            lang_link = main_page_url + lang_dr + '/' + modified_dr
+            html += link21 + lang_link + link22 + lang_name + link23 + ' \n'
     additional_head = '<meta property="og:url" content="' + this_page_url + '/" />\n'
     additional_head += '<meta property="og:title" content="' + page_title + '" />\n'
     #additional_head += '<meta property="og:description" content="' + main_page_description + '" />\n'
