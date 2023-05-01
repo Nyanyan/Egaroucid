@@ -1,1 +1,0 @@
-Web版 オセロAI Egaroucid for Web

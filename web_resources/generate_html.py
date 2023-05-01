@@ -67,6 +67,9 @@ with open(elements_dir + '/main_page_title.txt', 'r', encoding='utf-8') as f:
 with open(elements_dir + '/main_page_description.txt', 'r', encoding='utf-8') as f:
     main_page_description = f.read()
 
+with open(elements_dir + '/meta_description.txt', 'r', encoding='utf-8') as f:
+    meta_description = f.readline()
+
 section_head1 = '<div>\n<h2>'
 section_head2 = '</h2>\n'
 section_foot = '</div>\n'
@@ -97,8 +100,6 @@ def create_html(dr):
         alternate += '<link rel="alternate"  hreflang="x-default" href="' + main_page_url + 'en/"/>\n'
     with open(dr + '/title.txt', 'r', encoding='utf-8') as f:
         page_title = f.readline()
-    with open(dr + '/description.txt', 'r', encoding='utf-8') as f:
-        page_description = f.readline()
     with open(dr + '/index.md', 'r', encoding='utf-8') as f:
         md = f.read()
     #page_title = ''
@@ -155,9 +156,10 @@ def create_html(dr):
         html += link21 + lang_link + link22 + lang_name + link23 + ' \n'
     additional_head = '<meta property="og:url" content="' + this_page_url + '/" />\n'
     additional_head += '<meta property="og:title" content="' + page_title + '" />\n'
-    additional_head += '<meta property="og:description" content="' + main_page_description + '" />\n'
+    #additional_head += '<meta property="og:description" content="' + main_page_description + '" />\n'
+    additional_head += '<meta property="og:description" content="' + meta_description + '" />\n'
     additional_head += '<link rel="canonical" href="' + this_page_url + '/">\n'
-    additional_head += '<meta name="description" content="' + page_description + '"/>\n'
+    additional_head += '<meta name="description" content="' + meta_description + '"/>\n'
     try:
         with open(dr + '/additional_head.html', 'r', encoding='utf-8') as f:
             additional_head += f.read()
