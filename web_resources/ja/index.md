@@ -1,4 +1,4 @@
-# Egaroucid
+# オセロAI Egaroucid
 
 <div style="text-align:center">世界最強レベルAI搭載 オセロ研究支援アプリ</div>
 

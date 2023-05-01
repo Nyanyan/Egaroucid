@@ -1,4 +1,4 @@
-# Egaroucid
+# Othello AI Egaroucid
 
 <div style="text-align:center">Othello Application with one of the strongest AI in the world</div>
 
