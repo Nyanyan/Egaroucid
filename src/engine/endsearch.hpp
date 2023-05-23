@@ -261,14 +261,15 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
                     ((p0 ^ p1) & 0x24) | 
                     (((p1 ^ p2) & 0x24) >> 1) | 
                     (((p2 ^ p3) & 0x24) >> 2);
-                __m128i empties_simd = _mm_cvtsi32_si128((p0 << 24) | (p1 << 16) | (p2 << 8) | p3);
+                __m128i empties_simd = _mm_cvtsi32_si128((p3 << 24) | (p2 << 16) | (p1 << 8) | p0);
                 empties_simd = _mm_shuffle_epi8(empties_simd, parity_ordering_shuffle_mask_last4[parities]);
                 uint32_t empties_32 = _mm_cvtsi128_si32(empties_simd);
-                uint8_t *empties_8 = (uint8_t*)&empties_32;
-                p0 = empties_8[0];
-                p1 = empties_8[1];
-                p2 = empties_8[2];
-                p3 = empties_8[3];
+                //std::cerr << (int)parities << "  " << (int)p0 << " " << (int)p1 << " " << (int)p2 << " " << (int)p3 << "  ";
+                p0 = empties_32 & 0xFF;
+                p1 = (empties_32 >> 8) & 0xFF;
+                p2 = (empties_32 >> 16) & 0xFF;
+                p3 = empties_32 >> 24;
+                //std::cerr << (int)p0 << " " << (int)p1 << " " << (int)p2 << " " << (int)p3 << "  " << empties_32 << std::endl;
             #else
                 const uint_fast8_t parities = 
                     (((search->parity & cell_div4[p0]) >> cell_div4_log[p0]) << 2) | 

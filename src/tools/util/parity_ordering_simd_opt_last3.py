@@ -26,7 +26,7 @@ for places in places_lst:
             else:
                 sort_lst.append(i)
         sort_lst.extend(no_priority)
-        print(places, sort_lst)
+        #print(places, sort_lst)
     sort_lst = list(reversed(sort_lst))
     sort_32bit = 0
     for i in range(3):
