@@ -19,6 +19,7 @@
 
 #if USE_SIMD
     __m128i parity_ordering_shuffle_mask_last4[64];
+    __m128i parity_ordering_shuffle_mask_last3[56];
 #endif
 
 /*
@@ -73,5 +74,16 @@ void endsearch_init(){
         };
         for (int i = 0; i < 64; ++i)
             parity_ordering_shuffle_mask_last4[i] = _mm_cvtsi32_si128(parity_ordering_shuffle_mask_last4_32bit[i]);
+        constexpr uint32_t parity_ordering_shuffle_mask_last3_32bit[56] = {
+            0x20100U, 0x00000U, 0x20100U, 0x00000U, 0x20100U, 0x00000U, 0x20100U, 0x00000U, 
+            0x00000U, 0x00000U, 0x00000U, 0x00000U, 0x00000U, 0x00000U, 0x00000U, 0x00000U,
+            0x20100U, 0x00000U, 0x20100U, 0x00000U, 0x20100U, 0x00000U, 0x20100U, 0x00000U,
+            0x00000U, 0x00000U, 0x00000U, 0x00000U, 0x00000U, 0x00000U, 0x00000U, 0x00000U,
+            0x20100U, 0x00000U, 0x20100U, 0x00000U, 0x20100U, 0x00000U, 0x20100U, 0x00000U,
+            0x00000U, 0x00000U, 0x00000U, 0x00000U, 0x00000U, 0x00000U, 0x00000U, 0x00000U,
+            0x20100U, 0x00000U, 0x20100U, 0x00000U, 0x20100U, 0x00000U, 0x20100U, 0x00000U
+        };
+        for (int i = 0; i < 56; ++i)
+            parity_ordering_shuffle_mask_last3[i] = _mm_cvtsi32_si128(parity_ordering_shuffle_mask_last3_32bit[i]);
     #endif
 }
