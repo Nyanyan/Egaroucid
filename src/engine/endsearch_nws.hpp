@@ -249,10 +249,17 @@ inline int last4_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
                 empties_simd = _mm_shuffle_epi8(empties_simd, parity_ordering_shuffle_mask_last4[parities]);
                 uint32_t empties_32 = _mm_cvtsi128_si32(empties_simd);
                 //std::cerr << (int)parities << "  " << (int)p0 << " " << (int)p1 << " " << (int)p2 << " " << (int)p3 << "  ";
+                uint8_t *empties_8 = (uint8_t*)&empties_32;
+                p0 = empties_8[0];
+                p1 = empties_8[1];
+                p2 = empties_8[2];
+                p3 = empties_8[3];
+                /*
                 p0 = empties_32 & 0xFF;
                 p1 = (empties_32 >> 8) & 0xFF;
                 p2 = (empties_32 >> 16) & 0xFF;
                 p3 = empties_32 >> 24;
+                */
                 //std::cerr << (int)p0 << " " << (int)p1 << " " << (int)p2 << " " << (int)p3 << "  " << empties_32 << std::endl;
             #else
                 const uint_fast8_t parities = 
