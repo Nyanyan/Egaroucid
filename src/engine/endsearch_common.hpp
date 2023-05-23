@@ -18,7 +18,7 @@
 #include "search.hpp"
 
 #if USE_SIMD
-    __m128i parity_ordering_shuffle_mask[64];
+    __m128i parity_ordering_shuffle_mask_last4[64];
 #endif
 
 /*
@@ -61,7 +61,7 @@ inline int last1(Search *search, int alpha, uint_fast8_t p0){
 
 void endsearch_init(){
     #if USE_SIMD
-        constexpr uint32_t parity_ordering_shuffle_mask_32bit[64] = {
+        constexpr uint32_t parity_ordering_shuffle_mask_last4_32bit[64] = {
             0x3020100U, 0x3020100U, 0x3020100U, 0x3020100U, 0x3020100U, 0x3020100U, 0x3020100U, 0x3020100U, 
             0x3020100U, 0x3020100U, 0x1000302U, 0x3020100U, 0x3000201U, 0x3000201U, 0x3020100U, 0x2000301U,
             0x3020100U, 0x1000302U, 0x3020100U, 0x1000302U, 0x3020100U, 0x3020100U, 0x3020100U, 0x3020100U,
@@ -72,6 +72,6 @@ void endsearch_init(){
             0x3020100U, 0x2000301U, 0x3020100U, 0x3010200U, 0x3010200U, 0x3020100U, 0x2000301U, 0x3020100U
         };
         for (int i = 0; i < 64; ++i)
-            parity_ordering_shuffle_mask[i] = _mm_cvtsi32_si128(parity_ordering_shuffle_mask_32bit[i]);
+            parity_ordering_shuffle_mask_last4[i] = _mm_cvtsi32_si128(parity_ordering_shuffle_mask_last4_32bit[i]);
     #endif
 }
