@@ -262,30 +262,47 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
     #endif
     #if USE_END_PO
         if (!skipped){
-            const uint_fast8_t parities = 
-                (((search->parity & cell_div4[p0]) >> cell_div4_log[p0]) << 2) | 
-                (((search->parity & cell_div4[p1]) >> cell_div4_log[p1]) << 1) | 
-                ((search->parity & cell_div4[p2]) >> cell_div4_log[p2]);
-            switch (parities){
-                case 1:
-                    std::swap(p0, p2);
-                    std::swap(p1, p3);
-                    break;
-                case 2:
-                    std::swap(p0, p3);
-                    break;
-                case 3:
-                    std::swap(p0, p2);
-                    break;
-                case 4:
-                    std::swap(p1, p3);
-                    break;
-                case 5:
-                    std::swap(p1, p2);
-                    break;
-                default:
-                    break;
-            }
+            #if USE_SIMD
+                // parity ordering optimization
+                // I referred to http://www.amy.hi-ho.ne.jp/okuhara/edaxopt.htm
+                const uint_fast8_t parities = 
+                    ((p0 ^ p1) & 0x24) | 
+                    (((p1 ^ p2) & 0x24) >> 1) | 
+                    (((p2 ^ p3) & 0x24) >> 2);
+                __m128i empties_simd = _mm_cvtsi32_si128((p0 << 24) | (p1 << 16) | (p2 << 8) | p3);
+                empties_simd = _mm_shuffle_epi8(empties_simd, parity_ordering_shuffle_mask[parities]);
+                uint32_t empties_32 = _mm_cvtsi128_si32(empties_simd);
+                p0 = empties_32 >> 24;
+                p1 = (empties_32 >> 16) & 0xFF;
+                p2 = (empties_32 >> 8) & 0xFF;
+                p3 = empties_32 & 0xFF;
+            #else
+                const uint_fast8_t parities = 
+                    (((search->parity & cell_div4[p0]) >> cell_div4_log[p0]) << 2) | 
+                    (((search->parity & cell_div4[p1]) >> cell_div4_log[p1]) << 1) | 
+                    ((search->parity & cell_div4[p2]) >> cell_div4_log[p2]);
+                switch (parities){
+                    case 1:
+                        std::swap(p0, p2);
+                        std::swap(p1, p3);
+                        break;
+                    case 2:
+                        std::swap(p0, p3);
+                        break;
+                    case 3:
+                        std::swap(p0, p2);
+                        break;
+                    case 4:
+                        std::swap(p1, p3);
+                        break;
+                    case 5:
+                        std::swap(p1, p2);
+                        break;
+                    default:
+                        break;
+                }
+            #endif
+
             /*
             const bool p0_parity = (search->parity & cell_div4[p0]) > 0;
             const bool p1_parity = (search->parity & cell_div4[p1]) > 0;

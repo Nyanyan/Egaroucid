@@ -17,6 +17,12 @@
 #include "board.hpp"
 #include "search.hpp"
 
+#if USE_SIMD
+    __m128i parity_ordering_shuffle_mask[64] = {
+        
+    };
+#endif
+
 /*
     @brief Get a final score with last 1 empty
 
