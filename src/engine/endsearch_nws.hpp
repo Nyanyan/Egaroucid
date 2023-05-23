@@ -129,30 +129,6 @@ inline int last3_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
                 default:
                     break;
             }
-            /*
-            const bool p0_parity = (search->parity & cell_div4[p0]) > 0;
-            const bool p1_parity = (search->parity & cell_div4[p1]) > 0;
-            const bool p2_parity = (search->parity & cell_div4[p2]) > 0;
-            #if LAST_PO_OPTIMIZE
-                if (!(p0_parity & p1_parity & p2_parity)){ // check necessity of sorting
-                    if (p1_parity){ // 0 - 1 - 0
-                        std::swap(p0, p1);
-                    } else if (p2_parity){ // 0 - 0 - 1
-                        std::swap(p0, p2);
-                    }
-                }
-            #else
-                if (!p0_parity && p1_parity && p2_parity){
-                    std::swap(p0, p2);
-                } else if (!p0_parity && !p1_parity && p2_parity){
-                    std::swap(p0, p2);
-                } else if (!p0_parity && p1_parity && !p2_parity){
-                    std::swap(p0, p1);
-                } else if (p0_parity && !p1_parity && p2_parity){
-                    std::swap(p1, p2);
-                }
-            #endif
-            */
         }
     #endif
     int v = -SCORE_INF;
@@ -287,59 +263,6 @@ inline int last4_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
                         break;
                 }
             #endif
-            /*
-            const bool p0_parity = (search->parity & cell_div4[p0]) > 0;
-            const bool p1_parity = (search->parity & cell_div4[p1]) > 0;
-            const bool p2_parity = (search->parity & cell_div4[p2]) > 0;
-            //const bool p3_parity = (search->parity & cell_div4[p3]) > 0;
-            #if LAST_PO_OPTIMIZE
-                if ((p0_parity | p1_parity | p2_parity) & !(p0_parity & p1_parity & p2_parity)){ // need to see only 3 squares to check necessity of sorting
-                    if (p0_parity && !p1_parity){ // 1 - 0 - ? - ?
-                        if (p2_parity){ // 1 - 0 - 1 - 0
-                            std::swap(p1, p2);
-                        } else{ // 1 - 0 - 0 - 1
-                            std::swap(p1, p3);
-                        }
-                    } else if (!p0_parity){ // 0 - ? - ? - ?
-                        if (p1_parity){ // 0 - 1 - ? - ?
-                            if (p2_parity){ // 0 - 1 - 1 - 0
-                                std::swap(p0, p2);
-                            } else{ // 0 - 1 - 0 - 1
-                                std::swap(p0, p3);
-                            }
-                        } else{ // 0 - 0 - 1 - 1
-                            std::swap(p0, p2);
-                            std::swap(p1, p3);
-                        }
-                    }
-                }
-            #else
-                if (!p0_parity && p1_parity && p2_parity && p3_parity){
-                    std::swap(p0, p3);
-                } else if (!p0_parity && !p1_parity && p2_parity && p3_parity){
-                    std::swap(p0, p2);
-                    std::swap(p1, p3);
-                } else if (!p0_parity && p1_parity && !p2_parity && p3_parity){
-                    std::swap(p0, p3);
-                } else if (!p0_parity && p1_parity && p2_parity && !p3_parity){
-                    std::swap(p0, p2);
-                } else if (!p0_parity && !p1_parity && !p2_parity && p3_parity){
-                    std::swap(p0, p3);
-                } else if (!p0_parity && !p1_parity && p2_parity && !p3_parity){
-                    std::swap(p0, p2);
-                } else if (!p0_parity && p1_parity && !p2_parity && !p3_parity){
-                    std::swap(p0, p1);
-                } else if (p0_parity && !p1_parity && p2_parity && p3_parity){
-                    std::swap(p1, p3);
-                } else if (p0_parity && !p1_parity && !p2_parity && p3_parity){
-                    std::swap(p1, p3);
-                } else if (p0_parity && !p1_parity && p2_parity && !p3_parity){
-                    std::swap(p1, p2);
-                } else if (p0_parity && p1_parity && !p2_parity && p3_parity){
-                    std::swap(p2, p3);
-                }
-            #endif
-            */
         }
     #endif
     int v = -SCORE_INF;
