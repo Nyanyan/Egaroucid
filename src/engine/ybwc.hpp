@@ -24,7 +24,7 @@
 #define YBWC_MID_SPLIT_MIN_DEPTH 4
 #define YBWC_END_SPLIT_MIN_DEPTH 13
 
-#define YBWC_MAX_RUNNING_COUNT 1
+#define YBWC_MAX_RUNNING_COUNT 3
 
 int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
 #if USE_NEGA_ALPHA_END
