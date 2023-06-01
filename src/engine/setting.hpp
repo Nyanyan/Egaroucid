@@ -157,7 +157,7 @@
 #define USE_LAST4_SC false
 
 // enhanced enhanced transposition cutoff
-#define USE_MID_ETC false
+#define USE_MID_ETC true
 
 // Multi-ProbCut
 #define USE_MID_MPC true

@@ -240,7 +240,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
             ++idx;
         }
         #if USE_MID_ETC
-            if (search->n_discs - search->strt_n_discs < MID_ETC_DEPTH){
+            if (depth >= MID_ETC_DEPTH){
                 if (etc_nws(search, move_list, depth, alpha, &v))
                     return v;
             }
@@ -264,6 +264,10 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
             bool break_flag = false;
             for (int move_idx = 0; move_idx < canput && !break_flag; ++move_idx){
                 swap_next_best_move(move_list, move_idx, canput);
+                #if USE_MID_ETC
+                    if (move_list[move_idx].flip.flip == 0ULL)
+                        break;
+                #endif
                 eval_move(search, &move_list[move_idx].flip);
                 search->move(&move_list[move_idx].flip);
                     if (ybwc_split_nws(search, -alpha - 1, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].flip.pos, pv_idx++, move_idx, canput, running_count, seems_to_be_all_node, parallel_tasks)){

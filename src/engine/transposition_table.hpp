@@ -26,7 +26,7 @@
 constexpr size_t TRANSPOSITION_TABLE_STACK_SIZE = hash_sizes[DEFAULT_HASH_LEVEL] + TRANSPOSITION_TABLE_N_LOOP - 1;
 #define N_TRANSPOSITION_MOVES 2
 
-#define MID_ETC_DEPTH 5
+#define MID_ETC_DEPTH 15
 
 // date manager
 #define MAX_DATE 127
@@ -598,24 +598,21 @@ uint8_t manage_date(uint8_t date){
     @return hash resized?
 */
 inline bool etc(Search *search, std::vector<Flip_value> &move_list, int depth, int *alpha, int *beta, int *v){
-    int l = -SCORE_MAX, u = SCORE_MAX, n_alpha = *alpha, n_beta = *beta;
+    int l, u;
     for (Flip_value &flip_value: move_list){
+        l = -SCORE_MAX;
+        u = SCORE_MAX;
         search->move(&flip_value.flip);
             transposition_table.get(search, search->board.hash(), depth - 1, &l, &u);
         search->undo(&flip_value.flip);
-        if (l == u){
-            *v = -l;
+        if (*beta <= -u){ // fail high at parent node
+            *v = -u;
             return true;
         }
-        n_beta = std::min(n_beta, -l);
-        n_alpha = std::max(n_alpha, -u);
-        if (n_beta <= *alpha){
-            *v = n_beta;
-            return true;
-        }
-        if (n_alpha >= *beta){
-            *v = n_alpha;
-            return true;
+        if (-(*alpha) <= l){ // fail high at child node
+            if (*v < -l)
+                *v = -l;
+            flip_value.flip.flip = 0ULL; // make this move invalid
         }
     }
     return false;
@@ -629,22 +626,21 @@ inline bool etc(Search *search, std::vector<Flip_value> &move_list, int depth, i
     @return hash resized?
 */
 inline bool etc_nws(Search *search, std::vector<Flip_value> &move_list, int depth, int alpha, int *v){
-    int l = -SCORE_MAX, u = SCORE_MAX;
+    int l, u;
     for (Flip_value &flip_value: move_list){
+        l = -SCORE_MAX;
+        u = SCORE_MAX;
         search->move(&flip_value.flip);
             transposition_table.get(search, search->board.hash(), depth - 1, &l, &u);
         search->undo(&flip_value.flip);
-        if (l == u){
-            *v = -l;
-            return true;
-        }
-        if (alpha < -u){
+        if (alpha < -u){ // fail high at parent node
             *v = -u;
             return true;
         }
-        if (-l < alpha + 1){
-            *v = -l;
-            return true;
+        if (-alpha <= l){ // fail high at child node
+            if (*v < -l)
+                *v = -l;
+            flip_value.flip.flip = 0ULL; // make this move invalid
         }
     }
     return false;

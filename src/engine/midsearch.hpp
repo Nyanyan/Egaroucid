@@ -423,7 +423,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
             ++idx;
         }
         #if USE_MID_ETC
-            if (search->n_discs - search->strt_n_discs < MID_ETC_DEPTH){
+            if (depth >= MID_ETC_DEPTH){
                 if (etc(search, move_list, depth, &alpha, &beta, &v))
                     return v;
             }
@@ -431,6 +431,10 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
         move_list_evaluate(search, move_list, depth, alpha, beta, searching);
         for (int move_idx = 0; move_idx < canput; ++move_idx){
             swap_next_best_move(move_list, move_idx, canput);
+            #if USE_MID_ETC
+                if (move_list[move_idx].flip.flip == 0ULL)
+                    break;
+            #endif
             eval_move(search, &move_list[move_idx].flip);
             search->move(&move_list[move_idx].flip);
                 if (v == -SCORE_INF)

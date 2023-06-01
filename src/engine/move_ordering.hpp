@@ -380,8 +380,16 @@ inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
     int eval_depth = depth >> 3;
     if (depth >= 16)
         eval_depth += (depth - 14) >> 1;
-    for (Flip_value &flip_value: move_list)
-        move_evaluate(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
+    for (Flip_value &flip_value: move_list){
+        #if USE_MID_ETC
+            if (flip_value.flip.flip)
+                move_evaluate(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
+            else
+                flip_value.value = -INF;
+        #else
+            move_evaluate(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
+        #endif
+    }
 }
 
 /*
@@ -447,6 +455,14 @@ inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move
     const int eval_alpha = -std::min(SCORE_MAX, alpha + MOVE_ORDERING_NWS_VALUE_OFFSET_BETA);
     const int eval_beta = -std::max(-SCORE_MAX, alpha - MOVE_ORDERING_NWS_VALUE_OFFSET_ALPHA);
     int eval_depth = depth >> 4;
-    for (Flip_value &flip_value: move_list)
-        move_evaluate_nws(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
+    for (Flip_value &flip_value: move_list){
+        #if USE_MID_ETC
+            if (flip_value.flip.flip)
+                move_evaluate_nws(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
+            else
+                flip_value.value = -INF;
+        #else
+            move_evaluate_nws(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
+        #endif
+    }
 }
