@@ -83,10 +83,13 @@ Parallel_task ybwc_do_task_nws(uint64_t player, uint64_t opponent, int_fast8_t n
     @param parallel_tasks       vector of splitted tasks
     @return task splitted?
 */
-inline bool ybwc_split_nws(const Search *search, int alpha, int depth, uint64_t legal, bool is_end_search, const bool *searching, uint_fast8_t policy, const int pv_idx, const bool seems_to_be_all_node, std::vector<std::future<Parallel_task>> &parallel_tasks){
+inline bool ybwc_split_nws(const Search *search, int alpha, int depth, uint64_t legal, bool is_end_search, const bool *searching, uint_fast8_t policy, const int pv_idx, const int move_idx, const int canput, const bool seems_to_be_all_node, std::vector<std::future<Parallel_task>> &parallel_tasks){
     //std::cout << thread_pool.get_n_idle() << std::endl;
-    if (thread_pool.get_n_idle() &&
-        (pv_idx || seems_to_be_all_node)){
+    if (
+            thread_pool.get_n_idle() &&             // There is an idle thread
+            (pv_idx || seems_to_be_all_node) &&     // The elderest brother is already searched or this node seems to be an ALL node
+            move_idx < canput - 1                   // This node is not the youngest brother
+        ){
             bool pushed;
             parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&ybwc_do_task_nws, search->board.player, search->board.opponent, search->n_discs, search->parity, search->mpc_level, search->date, alpha, depth, legal, is_end_search, policy, searching)));
             if (!pushed){
