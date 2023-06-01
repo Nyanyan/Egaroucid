@@ -136,8 +136,8 @@ class Thread_pool {
             {
                 const std::lock_guard<std::mutex> lock(mtx);
                 tasks.push(std::function<void()>(task));
-                --n_idle;
             }
+            --n_idle;
             condition.notify_one();
         }
 
@@ -146,8 +146,8 @@ class Thread_pool {
                 std::function<void()> task;
                 {
                     std::unique_lock<std::mutex> lock(mtx);
-                    condition.wait(lock, [&] { return !tasks.empty() || !running; });
-                    if (!running && tasks.empty())
+                    condition.wait(lock, [&] {return !tasks.empty() || !running;});
+                    if (!running)
                         return;
                     task = std::move(tasks.front());
                     tasks.pop();

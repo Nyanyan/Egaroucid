@@ -77,4 +77,4 @@ for n_thread in range(1, 25):
     egaroucid.kill()
 
 for datum in data:
-    print(*datum)
+    print(*datum, sep=',')
