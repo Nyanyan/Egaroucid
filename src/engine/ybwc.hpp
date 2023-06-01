@@ -84,7 +84,7 @@ Parallel_task ybwc_do_task_nws(uint64_t player, uint64_t opponent, int_fast8_t n
     @return task splitted?
 */
 inline bool ybwc_split_nws(const Search *search, int alpha, int depth, uint64_t legal, bool is_end_search, const bool *searching, uint_fast8_t policy, const int pv_idx, const bool seems_to_be_all_node, std::vector<std::future<Parallel_task>> &parallel_tasks){
-    if (thread_pool.n_idle() &&
+    if (thread_pool.get_n_idle() &&
         (pv_idx || seems_to_be_all_node)){
             bool pushed;
             parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&ybwc_do_task_nws, search->board.player, search->board.opponent, search->n_discs, search->parity, search->mpc_level, search->date, alpha, depth, legal, is_end_search, policy, searching)));
@@ -153,7 +153,7 @@ inline bool ybwc_split_nws(const Search *search, int alpha, int depth, uint64_t 
             @return task splitted?
         */
         inline bool ybwc_split_end(const Search *search, int alpha, int beta, uint64_t legal, const bool *searching, uint_fast8_t policy, const int canput, const int pv_idx, const bool seems_to_be_all_node, const int split_count, std::vector<std::future<Parallel_task>> &parallel_tasks){
-            if (thread_pool.n_idle() &&
+            if (thread_pool.get_n_idle() &&
                 (pv_idx || seems_to_be_all_node) && 
                 search->n_discs <= HW2 - YBWC_END_SPLIT_MIN_DEPTH){
                     bool pushed;
@@ -218,7 +218,7 @@ inline bool ybwc_split_nws(const Search *search, int alpha, int depth, uint64_t 
         @return task splitted?
     */
     inline bool ybwc_split_end_nws(const Search *search, int alpha, uint64_t legal, const bool *searching, uint_fast8_t policy, const int canput, const int pv_idx, const bool seems_to_be_all_node, const int split_count, std::vector<std::future<Parallel_task>> &parallel_tasks){
-        if (thread_pool.n_idle() &&
+        if (thread_pool.get_n_idle() &&
             (pv_idx || seems_to_be_all_node)){
                 bool pushed;
                 parallel_tasks.emplace_back(thread_pool.push(&pushed, &ybwc_do_task_end_nws, search->board.player, search->board.opponent, search->n_discs, search->parity, search->date, alpha, legal, policy, searching));

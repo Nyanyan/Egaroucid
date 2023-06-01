@@ -514,7 +514,7 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
         int i = 0;
         for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
             for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx)
-                tasks[i++] = thread_pool.push(std::bind(init_pattern_arr_rev, phase_idx, pattern_sizes[pattern_idx], pattern_starts[pattern_idx]));
+                tasks[i++] = thread_pool.push_forced(std::bind(init_pattern_arr_rev, phase_idx, pattern_sizes[pattern_idx], pattern_starts[pattern_idx]));
         }
         for (std::future<void> &task: tasks)
             task.get();

@@ -312,7 +312,7 @@ class Transposition_table{
                 std::vector<std::future<void>> tasks;
                 for (int i = 0; i < thread_size; ++i){
                     e = std::min(std::min(table_size, (size_t)TRANSPOSITION_TABLE_STACK_SIZE), s + delta);
-                    tasks.emplace_back(thread_pool.push(std::bind(&init_transposition_table, table_stack, s, e)));
+                    tasks.emplace_back(thread_pool.push_forced(std::bind(&init_transposition_table, table_stack, s, e)));
                     s = e;
                 }
                 if (table_size > TRANSPOSITION_TABLE_STACK_SIZE){
@@ -320,7 +320,7 @@ class Transposition_table{
                     s = 0;
                     for (int i = 0; i < thread_size; ++i){
                         e = std::min(table_size - (size_t)TRANSPOSITION_TABLE_STACK_SIZE, s + delta);
-                        tasks.emplace_back(thread_pool.push(std::bind(&init_transposition_table, table_heap, s, e)));
+                        tasks.emplace_back(thread_pool.push_forced(std::bind(&init_transposition_table, table_heap, s, e)));
                         s = e;
                     }
                 }
@@ -347,7 +347,7 @@ class Transposition_table{
                 std::vector<std::future<void>> tasks;
                 for (int i = 0; i < thread_size; ++i){
                     e = std::min(std::min(table_size, (size_t)TRANSPOSITION_TABLE_STACK_SIZE), s + delta);
-                    tasks.emplace_back(thread_pool.push(std::bind(&reset_date_transposition_table, table_stack, s, e)));
+                    tasks.emplace_back(thread_pool.push_forced(std::bind(&reset_date_transposition_table, table_stack, s, e)));
                     s = e;
                 }
                 if (table_size > TRANSPOSITION_TABLE_STACK_SIZE){
@@ -355,7 +355,7 @@ class Transposition_table{
                     s = 0;
                     for (int i = 0; i < thread_size; ++i){
                         e = std::min(table_size - (size_t)TRANSPOSITION_TABLE_STACK_SIZE, s + delta);
-                        tasks.emplace_back(thread_pool.push(std::bind(&reset_date_transposition_table, table_heap, s, e)));
+                        tasks.emplace_back(thread_pool.push_forced(std::bind(&reset_date_transposition_table, table_heap, s, e)));
                         s = e;
                     }
                 }

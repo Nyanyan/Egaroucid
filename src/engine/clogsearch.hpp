@@ -75,7 +75,7 @@ Parallel_clog_task clog_do_task(uint64_t player, uint64_t opponent, bool is_endu
     @return task splitted?
 */
 inline bool clog_split(const Clog_search *search, const int canput, const int pv_idx, bool is_enduring, int depth, std::vector<std::future<Parallel_clog_task>> &parallel_tasks){
-    if (thread_pool.n_idle() &&
+    if (thread_pool.get_n_idle() &&
         pv_idx < canput - 1 && 
         depth >= CLOG_SEARCH_SPLIT_DEPTH){
             bool pushed;
