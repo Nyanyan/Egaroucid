@@ -368,6 +368,44 @@ inline void swap_next_best_move(Flip_value move_list[], const int strt, const in
 
     @param search               search information
     @param move_list            list of moves
+    @param moves                list of moves in transposition table
+    @param depth                remaining depth
+    @param alpha                alpha value
+    @param beta                 beta value
+    @param searching            flag for terminating this search
+*/
+inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], int depth, int alpha, int beta, const bool *searching){
+    if (move_list.size() == 1)
+        return;
+    int eval_alpha = -std::min(SCORE_MAX, beta + MOVE_ORDERING_VALUE_OFFSET_BETA);
+    int eval_beta = -std::max(-SCORE_MAX, alpha - MOVE_ORDERING_VALUE_OFFSET_ALPHA);
+    //int phase = get_move_ordering_phase(search->n_discs);
+    int eval_depth = depth >> 3;
+    if (depth >= 16)
+        eval_depth += (depth - 14) >> 1;
+    for (Flip_value &flip_value: move_list){
+        if (flip_value.flip.pos == moves[0])
+            flip_value.value = W_1ST_MOVE;
+        else if (flip_value.flip.pos == moves[1])
+            flip_value.value = W_2ND_MOVE;
+        else{
+            #if USE_MID_ETC
+                if (flip_value.flip.flip)
+                    move_evaluate(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
+                else
+                    flip_value.value = -INF;
+            #else
+                move_evaluate(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
+            #endif
+        }
+    }
+}
+
+/*
+    @brief Evaluate all legal moves for midgame
+
+    @param search               search information
+    @param move_list            list of moves
     @param depth                remaining depth
     @param alpha                alpha value
     @param beta                 beta value

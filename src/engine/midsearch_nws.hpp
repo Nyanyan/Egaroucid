@@ -205,10 +205,8 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
                 return v;
         }
     #endif
-    Flip flip_best;
     int best_move = TRANSPOSITION_TABLE_UNDEFINED;
     int g;
-    int pv_idx = 0;
     const int canput = pop_count_ull(legal);
     std::vector<Flip_value> move_list(canput);
     int idx = 0;
@@ -236,7 +234,8 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
         #else
             depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH
         #endif
-        ){
+    ){
+        int pv_idx = 0;
         int running_count = 0;
         std::vector<std::future<Parallel_task>> parallel_tasks;
         bool n_searching = true;
