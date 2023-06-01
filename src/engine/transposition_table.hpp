@@ -613,7 +613,17 @@ inline bool etc(Search *search, std::vector<Flip_value> &move_list, int depth, i
             if (*v < -l)
                 *v = -l;
             flip_value.flip.flip = 0ULL; // make this move invalid
+        } else if (-(*beta) < u && u < -(*alpha) && *v < -u){ // child window is [-beta, u]
+            *v = -u;
+            if (*alpha < -u)
+                *alpha = -u;
+        } else if (-(*beta) < l && l < -(*alpha) && *v < -l){ // child window is [l, -alpha], if -beta < l < u < -alpha, alpha must be -u, not -l.
+            *v = -l;
+            if (*alpha < -l)
+                *alpha = -l;
         }
+        if (*beta <= *alpha)
+            return true;
     }
     return false;
 }
