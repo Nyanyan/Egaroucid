@@ -14,6 +14,7 @@
 #include <future>
 #include <queue>
 #include <thread>
+#include <atomic>
 #include "setting.hpp"
 #include "board.hpp"
 
@@ -28,7 +29,7 @@ class Thread_pool {
         mutable std::mutex mtx;
         bool running;
         int n_thread;
-        int n_idle;
+        std::atomic<int> n_idle;
         std::queue<std::function<void()>> tasks{};
         std::unique_ptr<std::thread[]> threads;
         std::condition_variable condition;
@@ -113,12 +114,11 @@ class Thread_pool {
     private:
         template<typename F>
         bool push_task(const F &task){
+            if (!running)
+                throw std::runtime_error("Cannot schedule new task after shutdown.");
             bool pushed = false;
             {
                 const std::lock_guard<std::mutex> lock(mtx);
-                if (!running){
-                    throw std::runtime_error("Cannot schedule new task after shutdown.");
-                }
                 if (n_idle){
                     tasks.push(std::function<void()>(task));
                     pushed = true;
@@ -131,11 +131,10 @@ class Thread_pool {
 
         template<typename F>
         void push_task_forced(const F &task){
+            if (!running)
+                throw std::runtime_error("Cannot schedule new task after shutdown.");
             {
                 const std::lock_guard<std::mutex> lock(mtx);
-                if (!running){
-                    throw std::runtime_error("Cannot schedule new task after shutdown.");
-                }
                 tasks.push(std::function<void()>(task));
                 --n_idle;
             }
@@ -154,10 +153,7 @@ class Thread_pool {
                     tasks.pop();
                 }
                 task();
-                {
-                    std::unique_lock<std::mutex> lock(mtx);
-                    ++n_idle;
-                }
+                ++n_idle;
             }
         }
 };
