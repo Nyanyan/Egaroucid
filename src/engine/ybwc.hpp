@@ -84,6 +84,7 @@ Parallel_task ybwc_do_task_nws(uint64_t player, uint64_t opponent, int_fast8_t n
     @return task splitted?
 */
 inline bool ybwc_split_nws(const Search *search, int alpha, int depth, uint64_t legal, bool is_end_search, const bool *searching, uint_fast8_t policy, const int pv_idx, const bool seems_to_be_all_node, std::vector<std::future<Parallel_task>> &parallel_tasks){
+    std::cout << thread_pool.get_n_idle() << std::endl;
     if (thread_pool.get_n_idle() &&
         (pv_idx || seems_to_be_all_node)){
             bool pushed;
