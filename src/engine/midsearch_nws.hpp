@@ -28,7 +28,7 @@
 #include "stability.hpp"
 
 inline bool ybwc_split_nws(const Search *search, int alpha, int depth, uint64_t legal, bool is_end_search, const bool *searching, uint_fast8_t policy, const int pv_idx, std::vector<std::future<Parallel_task>> &parallel_tasks);
-inline void ybwc_get_end_tasks(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, int *v, int *best_move);
+inline void ybwc_get_end_tasks(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *running_count);
 inline void ybwc_wait_all_nws(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int alpha, bool *searching);
 
 /*
@@ -259,6 +259,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
             #endif
             ){
             int split_count = 0;
+            int running_count = 0;
             std::vector<std::future<Parallel_task>> parallel_tasks;
             bool n_searching = true;
             bool break_flag = false;
@@ -268,6 +269,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
                 search->move(&move_list[move_idx].flip);
                     if (ybwc_split_nws(search, -alpha - 1, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].flip.pos, pv_idx++, seems_to_be_all_node, parallel_tasks)){
                         ++split_count;
+                        ++running_count;
                     } else{
                         g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                         if (v < g){
@@ -277,8 +279,8 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
                                 break_flag = true;
                             }
                         }
-                        if (split_count){
-                            ybwc_get_end_tasks(search, parallel_tasks, &v, &best_move);
+                        if (running_count){
+                            ybwc_get_end_tasks(search, parallel_tasks, &v, &best_move, &running_count);
                             if (alpha < v)
                                 break_flag = true;
                         }
@@ -286,7 +288,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
                 search->undo(&move_list[move_idx].flip);
                 eval_undo(search, &move_list[move_idx].flip);
             }
-            if (split_count){
+            if (running_count){
                 if (alpha < v || !(*searching)){
                     n_searching = false;
                     ybwc_wait_all(search, parallel_tasks);

@@ -261,9 +261,35 @@ inline void ybwc_get_end_tasks(Search *search, std::vector<std::future<Parallel_
     @param parallel_tasks       vector of splitted tasks
     @param v                    value to store
     @param best_move            best move to store
+    @param running_count        number of running tasks
+*/
+inline void ybwc_get_end_tasks(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *running_count){
+    Parallel_task got_task;
+    for (std::future<Parallel_task> &task: parallel_tasks){
+        if (task.valid()){
+            if (task.wait_for(std::chrono::seconds(0)) == std::future_status::ready){
+                got_task = task.get();
+                --(*running_count);
+                if (*v < got_task.value){
+                    *v = got_task.value;
+                    *best_move = got_task.cell;
+                }
+                search->n_nodes += got_task.n_nodes;
+            }
+        }
+    }
+}
+
+/*
+    @brief Get end tasks of YBWC
+
+    @param search               search information
+    @param parallel_tasks       vector of splitted tasks
+    @param v                    value to store
+    @param best_move            best move to store
     @param alpha                alpha value to store
 */
-inline void ybwc_get_end_tasks(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *alpha){
+inline void ybwc_get_end_tasks_window(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *alpha){
     ybwc_get_end_tasks(search, parallel_tasks, v, best_move);
     *alpha = std::max((*alpha), (*v));
 }
@@ -298,7 +324,7 @@ inline void ybwc_wait_all(Search *search, std::vector<std::future<Parallel_task>
     @param searching            flag for terminating this search
 */
 inline void ybwc_wait_all(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *alpha, int beta, bool *searching){
-    ybwc_get_end_tasks(search, parallel_tasks, v, best_move, alpha);
+    ybwc_get_end_tasks_window(search, parallel_tasks, v, best_move, alpha);
     if (beta <= (*alpha))
         *searching = false;
     Parallel_task got_task;
