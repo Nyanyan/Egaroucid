@@ -279,9 +279,8 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
                         }
                         if (split_count){
                             ybwc_get_end_tasks(search, parallel_tasks, &v, &best_move);
-                            if (alpha < v){
+                            if (alpha < v)
                                 break_flag = true;
-                            }
                         }
                     }
                 search->undo(&move_list[move_idx].flip);

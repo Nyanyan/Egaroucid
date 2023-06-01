@@ -47,14 +47,14 @@ answer = answer.splitlines()
 data = []
 
 for n_thread in range(1, 25):
-    cmd = 'Egaroucid_for_Console.exe -l 60 -nobook -hash 25 -solve problem/ffo40-59.txt -thread ' + str(n_thread)
+    cmd = 'Egaroucid_for_Console.exe -l 60 -nobook -hash 25 -solve problem/ffo40-49.txt -thread ' + str(n_thread)
     print(cmd)
     egaroucid = subprocess.Popen((cmd).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
     res = ''
     line = egaroucid.stdout.readline().decode().replace('\n', '').replace('\r', '')
     print('#   ' + line)
-    for i in range(20):
+    for i in range(10):
         line = egaroucid.stdout.readline().decode().replace('\n', '').replace('\r', '')
         policy = line.split()[3][:-1]
         policies = answer[i].split()[2:]

@@ -88,10 +88,13 @@ inline bool ybwc_split_nws(const Search *search, int alpha, int depth, uint64_t 
         (pv_idx || seems_to_be_all_node)){
             bool pushed;
             parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&ybwc_do_task_nws, search->board.player, search->board.opponent, search->n_discs, search->parity, search->mpc_level, search->date, alpha, depth, legal, is_end_search, policy, searching)));
-            if (!pushed)
+            if (!pushed){
                 parallel_tasks.pop_back();
+                std::cerr << "b";
+            }
             return pushed;
     }
+    std::cerr << "a";
     return false;
 }
 
