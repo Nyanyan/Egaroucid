@@ -435,6 +435,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     @brief aspiration search used in endgame search
 
     Used in PV node, if predicted value is available
+    Based on MTD-f algorithm
 
     @param search               search information
     @param alpha                alpha value
