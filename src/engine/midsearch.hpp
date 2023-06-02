@@ -577,14 +577,14 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     @return pair of value and best move
 */
 int pv_aspiration_search(Search *search, int alpha, int beta, int predicted_value, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching){
-    if (predicted_value - 1 <= alpha || beta <= predicted_value + 1)
+    if (predicted_value < alpha || beta <= predicted_value)
         return nega_scout(search, alpha, beta, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
     int g1 = nega_alpha_ordering_nws(search, predicted_value - 1, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
     if (g1 < predicted_value) // when exact value < predicted value
-        return nega_scout(search, alpha, predicted_value, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
+        return nega_scout(search, alpha, g1 + 1, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
     int g2 = nega_alpha_ordering_nws(search, predicted_value, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
     if (predicted_value < g2) // when predicted value < exact value
-        return nega_scout(search, predicted_value + 1, beta, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
+        return nega_scout(search, g2, beta, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
     return predicted_value;
 }
 
@@ -790,22 +790,6 @@ int first_nega_scout_value(Search *search, int alpha, int beta, int depth, bool 
         #else
             transposition_table.get(search, hash_code, depth, &lower, &upper, moves);
         #endif
-        /*
-        if (moves[0] != TRANSPOSITION_TABLE_UNDEFINED){
-            if (1 & (legal >> moves[0])){
-                if (upper == lower)
-                    return std::make_pair(upper, moves[0]);
-                if (beta <= lower)
-                    return std::make_pair(lower, moves[0]);
-                if (upper <= alpha)
-                    return std::make_pair(upper, moves[0]);
-                if (alpha < lower)
-                    alpha = lower;
-                if (upper < beta)
-                    beta = upper;
-            }
-        }
-        */
         int pv_idx = 1;
         Flip flip_best;
         for (uint_fast8_t i = 0; i < N_TRANSPOSITION_MOVES; ++i){

@@ -384,20 +384,28 @@ inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
     if (depth >= 16)
         eval_depth += (depth - 14) >> 1;
     for (Flip_value &flip_value: move_list){
-        if (flip_value.flip.pos == moves[0])
-            flip_value.value = W_1ST_MOVE;
-        else if (flip_value.flip.pos == moves[1])
-            flip_value.value = W_2ND_MOVE;
-        else{
-            #if USE_MID_ETC
-                if (flip_value.flip.flip)
-                    move_evaluate(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
+        #if USE_MID_ETC
+            if (flip_value.flip.flip){
+                if (flip_value.flip.flip == search->board.opponent)
+                    flip_value.value = W_WIPEOUT;
+                else if (flip_value.flip.pos == moves[0])
+                    flip_value.value = W_1ST_MOVE;
+                else if (flip_value.flip.pos == moves[1])
+                    flip_value.value = W_2ND_MOVE;
                 else
-                    flip_value.value = -INF;
-            #else
+                    move_evaluate(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
+            } else
+                flip_value.value = -INF;
+        #else
+            if (flip_value.flip.flip == search->board.opponent)
+                flip_value.value = W_WIPEOUT;
+            else if (flip_value.flip.pos == moves[0])
+                flip_value.value = W_1ST_MOVE;
+            else if (flip_value.flip.pos == moves[1])
+                flip_value.value = W_2ND_MOVE;
+            else
                 move_evaluate(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
-            #endif
-        }
+        #endif
     }
 }
 
@@ -422,12 +430,18 @@ inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
         eval_depth += (depth - 14) >> 1;
     for (Flip_value &flip_value: move_list){
         #if USE_MID_ETC
-            if (flip_value.flip.flip)
-                move_evaluate(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
-            else
+            if (flip_value.flip.flip){
+                if (flip_value.flip.flip == search->board.opponent)
+                    flip_value.value = W_WIPEOUT;
+                else
+                    move_evaluate(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
+            } else
                 flip_value.value = -INF;
         #else
-            move_evaluate(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
+            if (flip_value.flip.flip == search->board.opponent)
+                flip_value.value = W_WIPEOUT;
+            else
+                move_evaluate(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
         #endif
     }
 }
@@ -497,19 +511,23 @@ inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move
     const int eval_beta = -std::max(-SCORE_MAX, alpha - MOVE_ORDERING_NWS_VALUE_OFFSET_ALPHA);
     int eval_depth = depth >> 4;
     for (Flip_value &flip_value: move_list){
-        if (flip_value.flip.pos == moves[0])
-            flip_value.value = W_1ST_MOVE;
-        else if (flip_value.flip.pos == moves[1])
-            flip_value.value = W_2ND_MOVE;
-        else{
-            #if USE_MID_ETC
-                if (flip_value.flip.flip)
-                    move_evaluate_nws(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
+        #if USE_MID_ETC
+            if (flip_value.flip.flip){
+                if (flip_value.flip.pos == moves[0])
+                    flip_value.value = W_1ST_MOVE;
+                else if (flip_value.flip.pos == moves[1])
+                    flip_value.value = W_2ND_MOVE;
                 else
-                    flip_value.value = -INF;
-            #else
+                    move_evaluate_nws(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
+            } else
+                flip_value.value = -INF;
+        #else
+            if (flip_value.flip.pos == moves[0])
+                flip_value.value = W_1ST_MOVE;
+            else if (flip_value.flip.pos == moves[1])
+                flip_value.value = W_2ND_MOVE;
+            else
                 move_evaluate_nws(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
-            #endif
-        }
+        #endif
     }
 }
