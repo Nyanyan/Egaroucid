@@ -399,33 +399,144 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
         }
     #endif
     move_list_evaluate(search, move_list, moves, depth, alpha, beta, searching);
-    for (int move_idx = 0; move_idx < canput; ++move_idx){
-        swap_next_best_move(move_list, move_idx, canput);
-        #if USE_MID_ETC
-            if (move_list[move_idx].flip.flip == 0ULL)
-                break;
-        #endif
-        eval_move(search, &move_list[move_idx].flip);
-        search->move(&move_list[move_idx].flip);
-            if (v == -SCORE_INF)
-                g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
-            else{
-                g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
-                if (alpha < g && g < beta)
-                    g = -nega_scout(search, -beta, -g, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
+    #if USE_YBWC_NEGASCOUT
+        if (
+            search->use_multi_thread && 
+            #if MID_TO_END_DEPTH > YBWC_END_SPLIT_MIN_DEPTH
+                ((depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH && !is_end_search) || (depth - 1 >= YBWC_END_SPLIT_MIN_DEPTH && is_end_search))
+            #else
+                depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH
+            #endif
+        ){
+            int running_count = 0;
+            std::vector<std::future<Parallel_task>> parallel_tasks;
+            std::vector<int> parallel_alphas;
+            std::vector<int> parallel_idxes;
+            std::vector<int> additional_search_windows;
+            bool n_searching = true;
+            bool break_flag = false;
+            bool search_splitted;
+            for (int move_idx = 0; move_idx < canput; ++move_idx){
+                swap_next_best_move(move_list, move_idx, canput);
+                #if USE_MID_ETC
+                    if (move_list[move_idx].flip.flip == 0ULL)
+                        break;
+                #endif
+                eval_move(search, &move_list[move_idx].flip);
+                search->move(&move_list[move_idx].flip);
+                    if (v == -SCORE_INF)
+                        g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
+                    else{
+                        search_splitted = false;
+                        if (move_idx >= YBWC_WINDOW_SPLIT_BROTHER_THRESHOLD){
+                            if (ybwc_split_nws(search, -alpha - 1, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].flip.pos, move_idx, canput, running_count, false, parallel_tasks)){
+                                ++running_count;
+                                parallel_alphas.emplace_back(alpha);
+                                parallel_idxes.emplace_back(move_idx);
+                                additional_search_windows.emplace_back(SCORE_UNDEFINED);
+                                search_splitted = true;
+                            }
+                        }
+                        if (!search_splitted){
+                            g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
+                            if (alpha < g && g < beta)
+                                g = -nega_scout(search, -beta, -g, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
+                        }
+                    }
+                search->undo(&move_list[move_idx].flip);
+                eval_undo(search, &move_list[move_idx].flip);
+                if (v < g){
+                    v = g;
+                    best_move = move_list[move_idx].flip.pos;
+                    if (alpha < v){
+                        if (beta <= v){
+                            n_searching = false;
+                            break;
+                        }
+                        alpha = v;
+                    }
+                }
+                if (running_count){
+                    ybwc_get_end_tasks_negascout(search, parallel_tasks, parallel_alphas, additional_search_windows, &running_count);
+                    for (int i = 0; i < (int)parallel_tasks.size(); ++i){
+                        if (additional_search_windows[i] != SCORE_UNDEFINED){
+                            additional_search_windows[i] = std::max(additional_search_windows[i], alpha);
+                            eval_move(search, &move_list[parallel_idxes[i]].flip);
+                            search->move(&move_list[parallel_idxes[i]].flip);
+                                g = -nega_scout(search, -beta, -additional_search_windows[i], depth - 1, false, move_list[parallel_idxes[i]].n_legal, is_end_search, searching);
+                            search->undo(&move_list[parallel_idxes[i]].flip);
+                            eval_undo(search, &move_list[parallel_idxes[i]].flip);
+                            additional_search_windows[i] = SCORE_UNDEFINED;
+                            if (v < g){
+                                v = g;
+                                best_move = move_list[parallel_idxes[i]].flip.pos;
+                                if (alpha < v){
+                                    if (beta <= v){
+                                        n_searching = false;
+                                        break;
+                                    }
+                                    alpha = v;
+                                }
+                            }
+                        }
+                    }
+                }
             }
-        search->undo(&move_list[move_idx].flip);
-        eval_undo(search, &move_list[move_idx].flip);
-        if (v < g){
-            v = g;
-            best_move = move_list[move_idx].flip.pos;
-            if (alpha < v){
-                if (beta <= v)
-                    break;
-                alpha = v;
+            if (running_count){
+                ybwc_wait_all_negascout(search, parallel_tasks, parallel_alphas, additional_search_windows, &running_count);
+                for (int i = 0; i < (int)parallel_tasks.size(); ++i){
+                    if (additional_search_windows[i] != SCORE_UNDEFINED){
+                        additional_search_windows[i] = std::max(additional_search_windows[i], alpha);
+                        eval_move(search, &move_list[parallel_idxes[i]].flip);
+                        search->move(&move_list[parallel_idxes[i]].flip);
+                            g = -nega_scout(search, -beta, -additional_search_windows[i], depth - 1, false, move_list[parallel_idxes[i]].n_legal, is_end_search, searching);
+                        search->undo(&move_list[parallel_idxes[i]].flip);
+                        eval_undo(search, &move_list[parallel_idxes[i]].flip);
+                        additional_search_windows[i] = SCORE_UNDEFINED;
+                        if (v < g){
+                            v = g;
+                            best_move = move_list[parallel_idxes[i]].flip.pos;
+                            if (alpha < v){
+                                if (beta <= v)
+                                    break;
+                                alpha = v;
+                            }
+                        }
+                    }
+                }
             }
+        } else{
+    #endif
+            for (int move_idx = 0; move_idx < canput; ++move_idx){
+                swap_next_best_move(move_list, move_idx, canput);
+                #if USE_MID_ETC
+                    if (move_list[move_idx].flip.flip == 0ULL)
+                        break;
+                #endif
+                eval_move(search, &move_list[move_idx].flip);
+                search->move(&move_list[move_idx].flip);
+                    if (v == -SCORE_INF)
+                        g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
+                    else{
+                        g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
+                        if (alpha < g && g < beta)
+                            g = -nega_scout(search, -beta, -g, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
+                    }
+                search->undo(&move_list[move_idx].flip);
+                eval_undo(search, &move_list[move_idx].flip);
+                if (v < g){
+                    v = g;
+                    best_move = move_list[move_idx].flip.pos;
+                    if (alpha < v){
+                        if (beta <= v)
+                            break;
+                        alpha = v;
+                    }
+                }
+            }
+    #if USE_YBWC_NEGASCOUT
         }
-    }
+    #endif
     if (*searching && global_searching)
         transposition_table.reg(search, hash_code, depth, first_alpha, beta, v, best_move);
     return v;

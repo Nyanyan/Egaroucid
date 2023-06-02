@@ -136,14 +136,8 @@
     #define USE_MINUS_NTZ false
 #endif
 
-// last parity ordering optimization
-#define LAST_PO_OPTIMIZE true
 
-// use parallel clog search
-#define USE_PARALLEL_CLOG_SEARCH true
 
-// MPC pre calculation
-#define USE_MPC_PRE_CALCULATION true
 
 
 /*
@@ -166,7 +160,7 @@
 #define USE_MID_NMP false
 
 // use probcut to predict it seems to be an all node
-#define USE_ALL_NODE_PREDICTION true
+#define USE_ALL_NODE_PREDICTION false
 
 // use search algs
 #define USE_NEGA_ALPHA_ORDERING false
@@ -175,6 +169,23 @@
 
 // transposition table
 #define USE_TRANSPOSITION_TABLE true
+
+// last parity ordering optimization
+#define LAST_PO_OPTIMIZE true
+
+// use parallel clog search
+#define USE_PARALLEL_CLOG_SEARCH true
+
+// MPC pre calculation
+#define USE_MPC_PRE_CALCULATION true
+
+// YBWC in negascout
+#define USE_YBWC_NEGASCOUT true
+
+
+
+
+
 
 /*
     @brief debug settings
@@ -185,6 +196,10 @@
 
 // thread monitor
 #define USE_THREAD_MONITOR false
+
+
+
+
 
 
 /*
