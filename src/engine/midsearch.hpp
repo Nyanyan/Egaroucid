@@ -380,9 +380,25 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
                 return v;
         }
     #endif
+    int g;
+    #if USE_ASPIRATION_NEGASCOUT
+        if (search->mpc_level){
+            --search->mpc_level;
+                int l, u;
+                transposition_table.get(search, hash_code, std::max(0, depth - 2), &l, &u);
+            ++search->mpc_level;
+            if (l == u){
+                g = nega_alpha_ordering_nws(search, l - 1, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
+                if (g >= l){
+                    g = nega_alpha_ordering_nws(search, l, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
+                    if (l >= g)
+                        return l;
+                }
+            }
+        }
+    #endif
     int best_move = TRANSPOSITION_TABLE_UNDEFINED;
     int first_alpha = alpha;
-    int g;
     const int canput = pop_count_ull(legal);
     std::vector<Flip_value> move_list(canput);
     int idx = 0;

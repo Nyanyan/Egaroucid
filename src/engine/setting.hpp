@@ -182,6 +182,9 @@
 // YBWC in negascout
 #define USE_YBWC_NEGASCOUT true
 
+// aspiration search in negascout
+#define USE_ASPIRATION_NEGASCOUT true
+
 
 
 
