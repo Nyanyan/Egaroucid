@@ -123,8 +123,8 @@ class Thread_pool {
                     tasks.push(std::function<void()>(task));
                     pushed = true;
                     --n_idle;
-                    condition.notify_one();
                 }
+                condition.notify_one();
             }
             return pushed;
         }
