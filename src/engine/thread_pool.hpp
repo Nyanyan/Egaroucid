@@ -151,7 +151,6 @@ class Thread_pool {
                     task = std::move(tasks.front());
                     tasks.pop();
                 }
-                //--n_idle;
                 task();
                 ++n_idle;
             }

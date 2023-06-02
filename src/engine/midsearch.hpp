@@ -432,7 +432,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
 }
 
 /*
-    @brief wishful search used in endgame search
+    @brief aspiration search used in endgame search
 
     Used in PV node, if predicted value is available
 
@@ -448,7 +448,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     @param legal                legal moves in bitboard
     @return pair of value and best move
 */
-int pv_wishful_search(Search *search, int alpha, int beta, int predicted_value, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching){
+int pv_aspiration_search(Search *search, int alpha, int beta, int predicted_value, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching){
     if (predicted_value - 1 <= alpha || beta <= predicted_value + 1)
         return nega_scout(search, alpha, beta, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
     int g1 = nega_alpha_ordering_nws(search, predicted_value - 1, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
@@ -520,7 +520,7 @@ std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int pr
                         if (predicted_value == SCORE_UNDEFINED || !is_end_search)
                             g = -nega_scout(search, -beta, -alpha, depth - 1, false, LEGAL_UNDEFINED, is_end_search, &searching);
                         else
-                            g = -pv_wishful_search(search, -beta, -alpha, -predicted_value, depth - 1, false, LEGAL_UNDEFINED, is_end_search, &searching);
+                            g = -pv_aspiration_search(search, -beta, -alpha, -predicted_value, depth - 1, false, LEGAL_UNDEFINED, is_end_search, &searching);
                     } else{
                         g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, LEGAL_UNDEFINED, is_end_search, &searching);
                         if (alpha <= g && g < beta)
@@ -566,7 +566,7 @@ std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int pr
                         if (predicted_value == SCORE_UNDEFINED || !is_end_search)
                             g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, &searching);
                         else
-                            g = -pv_wishful_search(search, -beta, -alpha, -predicted_value, depth - 1, false, move_list[move_idx].n_legal, is_end_search, &searching);
+                            g = -pv_aspiration_search(search, -beta, -alpha, -predicted_value, depth - 1, false, move_list[move_idx].n_legal, is_end_search, &searching);
                     } else{
                         g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, &searching);
                         if (alpha <= g && g < beta)

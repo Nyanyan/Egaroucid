@@ -18105,7 +18105,7 @@ Egaroucid_for_Console.exe -l 60 -nobook -thread 18 -hash 25 -solve problem/ffo40
 #59 |             60|        34@100%|             e8|            +64|  000:00:00.345|        6172851|       17892321|
 total 25437565510 nodes in 86.174s NPS 295188403
 
-2023/06/02 use wishful search
+2023/06/02 use aspiration search
 Egaroucid_for_Console.exe -l 60 -nobook -thread 18 -hash 25 -solve problem/ffo40-49.txt
 #   |          Level|          Depth|           Move|          Score|           Time|          Nodes|            NPS|
 #40 |             60|        20@100%|             a2|            +38|  000:00:00.067|       19980030|      298209402|
@@ -18231,7 +18231,7 @@ answer
 #78 8  f1
 #79 64 d7
 
-2023/06/02 use wishful search
+2023/06/02 use aspiration search
 Egaroucid_for_Console.exe -l 60 -nobook -thread 18 -hash 25 -solve problem/ffo40-49.txt
 #   |          Level|          Depth|           Move|          Score|           Time|          Nodes|            NPS|
 #40 |             60|        20@100%|             a2|            +38|  000:00:00.067|       19980030|      298209402|
