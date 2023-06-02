@@ -183,6 +183,10 @@
 // search statistics
 #define USE_SEARCH_STATISTICS false
 
+// thread monitor
+#define USE_THREAD_MONITOR false
+
+
 /*
     @brief tuning
 */

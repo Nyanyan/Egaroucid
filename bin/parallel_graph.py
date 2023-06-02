@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 
-with open('par.txt', 'r') as f:
+with open('par_20230602_2.txt', 'r') as f:
     raw_data = f.read().splitlines()
 
 x = []
@@ -8,9 +8,10 @@ y = []
 for line in raw_data:
     x.append(float(line.split()[0]))
     y.append(float(line.split()[1]))
-    if x[-1] >= 1450:
+    if x[-1] >= 900:
         break
 
 plt.plot(x, y)
+plt.minorticks_on()
 plt.grid()
 plt.show()

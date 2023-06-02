@@ -54,7 +54,7 @@ inline Search_result tree_search(Board board, int depth, uint_fast8_t mpc_level,
         }
     }
     Search search;
-    int g = 0, policy = -1;
+    int g = SCORE_UNDEFINED, policy = -1;
     std::pair<int, int> result;
     search.init_board(&board);
     search.date = date;
@@ -74,7 +74,7 @@ inline Search_result tree_search(Board board, int depth, uint_fast8_t mpc_level,
         if (depth >= 12){
             search_depth = depth;
             search.mpc_level = std::max(0, mpc_level - 4);
-            result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search_depth, true, false, clogs, strt);
+            result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, SCORE_UNDEFINED, search_depth, true, false, clogs, strt);
             g = result.first;
             if (show_log)
                 std::cerr << "presearch depth " << search_depth << "@" << SELECTIVITY_PERCENTAGE[search.mpc_level] << "% value " << g << " policy " << idx_to_coord(result.second) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << calc_nps(search.n_nodes, tim() - strt) << std::endl;
@@ -82,7 +82,7 @@ inline Search_result tree_search(Board board, int depth, uint_fast8_t mpc_level,
         if (depth >= 14 && search.mpc_level < std::max(0, mpc_level - 3)){
             search_depth = depth;
             search.mpc_level = std::max(0, mpc_level - 3);
-            result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search_depth, true, false, clogs, strt);
+            result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, g, search_depth, true, false, clogs, strt);
             g = result.first;
             if (show_log)
                 std::cerr << "presearch depth " << search_depth << "@" << SELECTIVITY_PERCENTAGE[search.mpc_level] << "% value " << g << " policy " << idx_to_coord(result.second) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << calc_nps(search.n_nodes, tim() - strt) << std::endl;
@@ -90,7 +90,7 @@ inline Search_result tree_search(Board board, int depth, uint_fast8_t mpc_level,
         if (depth >= 18 && search.mpc_level < std::max(0, mpc_level - 2)){
             search_depth = depth;
             search.mpc_level = std::max(0, mpc_level - 2);
-            result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search_depth, true, false, clogs, strt);
+            result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, g, search_depth, true, false, clogs, strt);
             g = result.first;
             if (show_log)
                 std::cerr << "presearch depth " << search_depth << "@" << SELECTIVITY_PERCENTAGE[search.mpc_level] << "% value " << g << " policy " << idx_to_coord(result.second) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << calc_nps(search.n_nodes, tim() - strt) << std::endl;
@@ -98,14 +98,14 @@ inline Search_result tree_search(Board board, int depth, uint_fast8_t mpc_level,
         if (depth >= 26 && search.mpc_level < std::max(0, mpc_level - 1)){
             search_depth = depth;
             search.mpc_level = std::max(0, mpc_level - 1);
-            result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search_depth, true, false, clogs, strt);
+            result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, g, search_depth, true, false, clogs, strt);
             g = result.first;
             if (show_log)
                 std::cerr << "presearch depth " << search_depth << "@" << SELECTIVITY_PERCENTAGE[search.mpc_level] << "% value " << g << " policy " << idx_to_coord(result.second) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << calc_nps(search.n_nodes, tim() - strt) << std::endl;
         }
         search_depth = depth;
         search.mpc_level = mpc_level;
-        result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search_depth, true, show_log, clogs, strt);
+        result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, g, search_depth, true, show_log, clogs, strt);
         g = result.first;
         policy = result.second;
         if (show_log)
@@ -117,7 +117,7 @@ inline Search_result tree_search(Board board, int depth, uint_fast8_t mpc_level,
         if (depth >= 22){
             search_depth = depth - 6;
             search.mpc_level = std::max(0, mpc_level - 2);
-            result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search_depth, false, false, clogs, strt);
+            result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, SCORE_UNDEFINED, search_depth, false, false, clogs, strt);
             g = result.first;
             policy = result.second;
             if (show_log)
@@ -126,7 +126,7 @@ inline Search_result tree_search(Board board, int depth, uint_fast8_t mpc_level,
         if (depth >= 17){
             search_depth = depth - 4;
             search.mpc_level = std::max(0, mpc_level - 2);
-            result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search_depth, false, false, clogs, strt);
+            result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, SCORE_UNDEFINED, search_depth, false, false, clogs, strt);
             g = result.first;
             policy = result.second;
             if (show_log)
@@ -135,7 +135,7 @@ inline Search_result tree_search(Board board, int depth, uint_fast8_t mpc_level,
         if (depth - 1 >= 1){
             search_depth = depth - 1;
             search.mpc_level = std::max(0, mpc_level - 2);
-            result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search_depth, false, false, clogs, strt);
+            result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, SCORE_UNDEFINED, search_depth, false, false, clogs, strt);
             g = result.first;
             policy = result.second;
             if (show_log)
@@ -143,7 +143,7 @@ inline Search_result tree_search(Board board, int depth, uint_fast8_t mpc_level,
         }
         search_depth = depth;
         search.mpc_level = mpc_level;
-        result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search_depth, false, show_log, clogs, strt);
+        result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, SCORE_UNDEFINED, search_depth, false, show_log, clogs, strt);
         if (g == -INF)
             g = result.first;
         else
@@ -196,7 +196,7 @@ inline Search_result tree_search_iterative_deepening(Board board, int depth, uin
     calc_features(&search);
     std::vector<Clog_result> clogs;
     uint64_t strt = tim();
-    result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth, is_end_search, show_log, clogs, strt);
+    result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, SCORE_UNDEFINED, depth, is_end_search, show_log, clogs, strt);
     g = result.first;
     policy = result.second;
     if (show_log){
@@ -522,7 +522,7 @@ Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint8_t
         } else{
             std::vector<Clog_result> clogs;
             uint64_t strt = tim();
-            std::pair<int, int> nega_scout_res = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, got_depth, !is_mid_search, false, clogs, legal_copy, strt);
+            std::pair<int, int> nega_scout_res = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, SCORE_UNDEFINED, got_depth, !is_mid_search, false, clogs, legal_copy, strt);
             res.alt_move = nega_scout_res.second;
             res.alt_score = nega_scout_res.first;
             res.alt_depth = got_depth;

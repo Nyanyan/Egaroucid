@@ -16,7 +16,9 @@
 #include "./../engine/engine_all.hpp"
 #include "command.hpp"
 
-#include "./../engine/thread_monitor.hpp"
+#if USE_THREAD_MONITOR
+    #include "./../engine/thread_monitor.hpp"
+#endif
 
 void setboard(Board_info *board, std::string board_str);
 Search_result go_noprint(Board_info *board, Options *options, State *state);
@@ -40,7 +42,9 @@ void solve_problems(std::string file, Options *options, State *state){
     while (std::getline(ifs, line)){
         transposition_table.init();
         setboard(&board, line);
-        start_thread_monitor();
+        #if USE_THREAD_MONITOR
+            start_thread_monitor();
+        #endif
         Search_result res = go_noprint(&board, options, state);
         print_search_result_body(res, options->level);
         total.nodes += res.nodes;
