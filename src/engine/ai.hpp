@@ -79,9 +79,9 @@ inline Search_result tree_search(Board board, int depth, uint_fast8_t mpc_level,
             if (show_log)
                 std::cerr << "presearch depth " << search_depth << "@" << SELECTIVITY_PERCENTAGE[search.mpc_level] << "% value " << g << " policy " << idx_to_coord(result.second) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << calc_nps(search.n_nodes, tim() - strt) << std::endl;
         }
-        if (depth >= 20 && search.mpc_level < std::max(0, mpc_level - 2)){
+        if (depth >= 20 && search.mpc_level < std::max(0, mpc_level - 3)){
             search_depth = depth;
-            search.mpc_level = std::max(0, mpc_level - 2);
+            search.mpc_level = std::max(0, mpc_level - 3);
             result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, g, search_depth, true, false, clogs, strt);
             g = result.first;
             if (show_log)
