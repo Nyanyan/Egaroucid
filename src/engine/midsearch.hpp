@@ -449,14 +449,14 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     @return pair of value and best move
 */
 int pv_wishful_search(Search *search, int alpha, int beta, int predicted_value, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching){
-    if (predicted_value < alpha || beta <= predicted_value)
-        return nega_scout(search, alpha, beta, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
-    int g1 = nega_alpha_ordering_nws(search, predicted_value - 1, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
+    if (predicted_value - 1 <= alpha || beta <= predicted_value + 1)
+        return nega_scout(search, alpha, beta, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
+    int g1 = nega_alpha_ordering_nws(search, predicted_value - 1, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
     if (g1 < predicted_value) // when exact value < predicted value
-        return nega_scout(search, alpha, predicted_value, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
-    int g2 = nega_alpha_ordering_nws(search, predicted_value, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
-    if (predicted_value < g2) // when exact value > predicted value
-        return nega_scout(search, predicted_value + 1, beta, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
+        return nega_scout(search, alpha, predicted_value, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
+    int g2 = nega_alpha_ordering_nws(search, predicted_value, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
+    if (predicted_value < g2) // when predicted value < exact value
+        return nega_scout(search, predicted_value + 1, beta, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
     return predicted_value;
 }
 
