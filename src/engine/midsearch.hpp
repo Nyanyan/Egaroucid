@@ -447,7 +447,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     @param legal                legal moves in bitboard
     @return pair of value and best move
 */
-std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, bool is_end_search, const bool is_main_search, const std::vector<Clog_result> clogs, uint64_t legal){
+std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, bool is_end_search, const bool is_main_search, const std::vector<Clog_result> clogs, uint64_t legal, uint64_t strt){
     bool searching = true;
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
@@ -513,9 +513,9 @@ std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int de
                 eval_undo(search, &flip_best);
                 if (is_main_search){
                     if (g <= alpha)
-                        std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " best " << idx_to_coord(best_move) << " [" << alpha << "," << beta << "] " << idx_to_coord(moves[i]) << " value " << g << " or lower" << std::endl;
+                        std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " best " << idx_to_coord(best_move) << " [" << alpha << "," << beta << "] " << idx_to_coord(moves[i]) << " value <= " << g << " time " << tim() - strt << std::endl;
                     else
-                        std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " best " << idx_to_coord(best_move) << " [" << alpha << "," << beta << "] " << idx_to_coord(moves[i]) << " value " << g << std::endl;
+                        std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " best " << idx_to_coord(best_move) << " [" << alpha << "," << beta << "] " << idx_to_coord(moves[i]) << " value  = " << g << " time " << tim() - strt << std::endl;
                 }
                 if (v < g){
                     v = g;
@@ -556,9 +556,9 @@ std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int de
                 eval_undo(search, &move_list[move_idx].flip);
                 if (is_main_search){
                     if (g <= alpha)
-                        std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " best " << idx_to_coord(best_move) << " [" << alpha << "," << beta << "] " << idx_to_coord(move_list[move_idx].flip.pos) << " value " << g << " or lower" << std::endl;
+                        std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " best " << idx_to_coord(best_move) << " [" << alpha << "," << beta << "] " << idx_to_coord(move_list[move_idx].flip.pos) << " value <= " << g << " time " << tim() - strt << std::endl;
                     else
-                        std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " best " << idx_to_coord(best_move) << " [" << alpha << "," << beta << "] " << idx_to_coord(move_list[move_idx].flip.pos) << " value " << g << std::endl;
+                        std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " best " << idx_to_coord(best_move) << " [" << alpha << "," << beta << "] " << idx_to_coord(move_list[move_idx].flip.pos) << " value  = " << g << " time " << tim() - strt << std::endl;
                 }
                 if (v < g){
                     v = g;
@@ -593,8 +593,8 @@ std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int de
     @param clogs                previously found clog moves
     @return pair of value and best move
 */
-std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, bool is_end_search, const bool is_main_search, const std::vector<Clog_result> clogs){
-    return first_nega_scout(search, alpha, beta, depth, is_end_search, is_main_search, clogs, search->board.get_legal());
+std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, bool is_end_search, const bool is_main_search, const std::vector<Clog_result> clogs, uint64_t strt){
+    return first_nega_scout(search, alpha, beta, depth, is_end_search, is_main_search, clogs, search->board.get_legal(), strt);
 }
 
 /*

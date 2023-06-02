@@ -34,6 +34,8 @@ class Thread_pool {
 
     public:
         void set_thread(int new_n_thread){
+            if (new_n_thread < 0)
+                new_n_thread = 0;
             n_thread = new_n_thread;
             threads.reset(new std::thread[n_thread]);
             for (int i = 0; i < n_thread; ++i)
@@ -68,8 +70,6 @@ class Thread_pool {
 
         void resize(int new_n_thread){
             exit_thread();
-            if (new_n_thread < 0)
-                new_n_thread = 0;
             set_thread(new_n_thread);
         }
 
@@ -78,7 +78,7 @@ class Thread_pool {
         }
 
         int get_n_idle() const {
-            return n_idle;
+            return n_idle.load(std::memory_order_relaxed);
         }
 
         #if ((defined(_MSVC_LANG) && _MSVC_LANG >= 201703L) || __cplusplus >= 201703L)
@@ -117,13 +117,14 @@ class Thread_pool {
             bool pushed = false;
             {
                 const std::lock_guard<std::mutex> lock(mtx);
-                if (n_idle){
+                if (n_idle > 0){
                     tasks.push(std::function<void()>(task));
                     pushed = true;
                     --n_idle;
                 }
             }
-            condition.notify_one();
+            if (pushed)
+                condition.notify_one();
             return pushed;
         }
 
@@ -134,8 +135,8 @@ class Thread_pool {
             {
                 const std::lock_guard<std::mutex> lock(mtx);
                 tasks.push(std::function<void()>(task));
+                --n_idle;
             }
-            --n_idle;
             condition.notify_one();
         }
 
@@ -150,6 +151,7 @@ class Thread_pool {
                     task = std::move(tasks.front());
                     tasks.pop();
                 }
+                //--n_idle;
                 task();
                 ++n_idle;
             }
