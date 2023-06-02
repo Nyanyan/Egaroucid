@@ -27,7 +27,8 @@ class Thread_pool {
         mutable std::mutex mtx;
         bool running;
         int n_thread;
-        std::atomic<int> n_idle;
+        // std::atomic<int> n_idle;
+        int n_idle;
         std::queue<std::function<void()>> tasks{};
         std::unique_ptr<std::thread[]> threads;
         std::condition_variable condition;
@@ -78,7 +79,8 @@ class Thread_pool {
         }
 
         int get_n_idle() const {
-            return n_idle.load(std::memory_order_relaxed);
+            // return n_idle.load(std::memory_order_relaxed);
+            return n_idle;
         }
 
         #if ((defined(_MSVC_LANG) && _MSVC_LANG >= 201703L) || __cplusplus >= 201703L)
@@ -152,7 +154,10 @@ class Thread_pool {
                     tasks.pop();
                 }
                 task();
-                ++n_idle;
+                {
+                    std::unique_lock<std::mutex> lock(mtx);
+                    ++n_idle;
+                }
             }
         }
 };
