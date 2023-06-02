@@ -6,7 +6,7 @@
         MPC (Multi-ProbCut) might cut a very bad move as a very good move.
         For example, with MPC, Egaroucid might be wiped out without clog search.
     @date 2021-2023
-    @author Takuto Yamana (a.k.a. Nyanyan)
+    @author Takuto Yamana
     @license GPL-3.0 license
 */
 

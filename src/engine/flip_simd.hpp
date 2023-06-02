@@ -4,7 +4,7 @@
     @file flip_simd.hpp
         Flip calculation with SIMD
     @date 2021-2023
-    @author Takuto Yamana (a.k.a. Nyanyan)
+    @author Takuto Yamana
     @author Toshihiko Okuhara
     @license GPL-3.0 license
     @notice I referred to codes written by others

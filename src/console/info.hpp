@@ -4,7 +4,7 @@
     @file info.hpp
         Egaroucid's software information
     @date 2021-2023
-    @author Takuto Yamana (a.k.a. Nyanyan)
+    @author Takuto Yamana
     @license GPL-3.0 license
 */
 
@@ -21,5 +21,5 @@
 
 #define EGAROUCID_DATE "2021-2023"
 #define EGAROUCID_URL "https://www.egaroucid.nyanyan.dev/"
-#define EGAROUCID_AUTHOR "Takuto Yamana (a.k.a. Nyanyan)"
+#define EGAROUCID_AUTHOR "Takuto Yamana"
 #define EGAROUCID_LICENSE "GPL-3.0 license"

@@ -4,7 +4,7 @@
     @file thread_pool.hpp
         Thread pool for Egaroucid
     @date 2021-2023
-    @author Takuto Yamana (a.k.a. Nyanyan)
+    @author Takuto Yamana
     @license GPL-3.0 license
     @notice This code is based on https://github.com/ContentsViewer/nodec/blob/main/nodec/include/nodec/concurrent/thread_pool_executor.hpp , which is published under Apache License 2.0
 */

@@ -4,7 +4,7 @@
     @file function_all.hpp
         Include all things about Egaroucid's GUI functions
     @date 2021-2023
-    @author Takuto Yamana (a.k.a. Nyanyan)
+    @author Takuto Yamana
     @license GPL-3.0 license
 */
 

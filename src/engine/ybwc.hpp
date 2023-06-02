@@ -4,7 +4,7 @@
     @file ybwc.hpp
         Parallel search with YBWC (Young Brothers Wait Concept)
     @date 2021-2023
-    @author Takuto Yamana (a.k.a. Nyanyan)
+    @author Takuto Yamana
     @license GPL-3.0 license
 */
 

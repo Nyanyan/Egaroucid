@@ -4,7 +4,7 @@
     @file last_flip_simd.hpp
         calculate number of flipped discs in the last move with SIMD
     @date 2021-2023
-    @author Takuto Yamana (a.k.a. Nyanyan)
+    @author Takuto Yamana
     @license GPL-3.0 license
 */
 

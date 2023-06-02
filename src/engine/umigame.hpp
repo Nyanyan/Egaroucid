@@ -5,7 +5,7 @@
         Calculate Minimum Memorization Number a.k.a. Umigame's value
         Umigame's value is published here: https://umigamep.github.io/BookAdviser/
     @date 2021-2023
-    @author Takuto Yamana (a.k.a. Nyanyan)
+    @author Takuto Yamana
     @license GPL-3.0 license
 */
 
