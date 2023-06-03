@@ -75,9 +75,9 @@ public:
         Scene::SetBackground(getData().colors.green);
 
         // multi threading
-        if (getData().menu_elements.n_threads != thread_pool.size()) {
+        if (getData().menu_elements.n_threads - 1 != thread_pool.size()) {
             stop_calculating();
-            thread_pool.resize(getData().menu_elements.n_threads);
+            thread_pool.resize(getData().menu_elements.n_threads - 1);
             std::cerr << "thread pool resized to " << thread_pool.size() << std::endl;
             resume_calculating();
         }
