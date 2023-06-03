@@ -142,13 +142,14 @@ class Thread_pool {
         void worker(){
             for (;;){
                 std::function<void()> task;
-                std::unique_lock<std::mutex> lock(mtx);
+                {
+                    std::unique_lock<std::mutex> lock(mtx);
                     condition.wait(lock, [&] {return !tasks.empty() || !running;});
                     if (!running)
                         return;
                     task = std::move(tasks.front());
                     tasks.pop();
-                lock.unlock();
+                }
                 task();
                 mtx.lock();
                     ++n_idle;
