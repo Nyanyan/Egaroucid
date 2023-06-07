@@ -96,7 +96,7 @@ class Thread_pool {
             *pushed = push_task([task](){(*task)();});
             return future;
         }
-
+        /*
         #if ((defined(_MSVC_LANG) && _MSVC_LANG >= 201703L) || __cplusplus >= 201703L)
             template<typename F, typename... Args, typename R = std::invoke_result_t<std::decay_t<F>, std::decay_t<Args>...>>
         #else
@@ -110,6 +110,7 @@ class Thread_pool {
             push_task_forced([task](){(*task)();});
             return future;
         }
+        */
 
     private:
         template<typename F>

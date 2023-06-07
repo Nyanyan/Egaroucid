@@ -312,7 +312,12 @@ class Transposition_table{
                 std::vector<std::future<void>> tasks;
                 for (int i = 0; i < thread_size; ++i){
                     e = std::min(std::min(table_size, (size_t)TRANSPOSITION_TABLE_STACK_SIZE), s + delta);
-                    tasks.emplace_back(thread_pool.push_forced(std::bind(&init_transposition_table, table_stack, s, e)));
+                    bool pushed = false;
+                    while (!pushed){
+                        tasks.emplace_back(thread_pool.push(&pushed, std::bind(&init_transposition_table, table_stack, s, e)));
+                        if (!pushed)
+                            tasks.pop_back();
+                    }
                     s = e;
                 }
                 if (table_size > TRANSPOSITION_TABLE_STACK_SIZE){
@@ -320,7 +325,12 @@ class Transposition_table{
                     s = 0;
                     for (int i = 0; i < thread_size; ++i){
                         e = std::min(table_size - (size_t)TRANSPOSITION_TABLE_STACK_SIZE, s + delta);
-                        tasks.emplace_back(thread_pool.push_forced(std::bind(&init_transposition_table, table_heap, s, e)));
+                        bool pushed = false;
+                        while (!pushed){
+                            tasks.emplace_back(thread_pool.push(&pushed, std::bind(&init_transposition_table, table_heap, s, e)));
+                            if (!pushed)
+                                tasks.pop_back();
+                        }
                         s = e;
                     }
                 }
@@ -347,7 +357,12 @@ class Transposition_table{
                 std::vector<std::future<void>> tasks;
                 for (int i = 0; i < thread_size; ++i){
                     e = std::min(std::min(table_size, (size_t)TRANSPOSITION_TABLE_STACK_SIZE), s + delta);
-                    tasks.emplace_back(thread_pool.push_forced(std::bind(&reset_date_transposition_table, table_stack, s, e)));
+                    bool pushed = false;
+                    while (!pushed){
+                        tasks.emplace_back(thread_pool.push(&pushed, std::bind(&reset_date_transposition_table, table_stack, s, e)));
+                        if (!pushed)
+                            tasks.pop_back();
+                    }
                     s = e;
                 }
                 if (table_size > TRANSPOSITION_TABLE_STACK_SIZE){
@@ -355,7 +370,12 @@ class Transposition_table{
                     s = 0;
                     for (int i = 0; i < thread_size; ++i){
                         e = std::min(table_size - (size_t)TRANSPOSITION_TABLE_STACK_SIZE, s + delta);
-                        tasks.emplace_back(thread_pool.push_forced(std::bind(&reset_date_transposition_table, table_heap, s, e)));
+                        bool pushed = false;
+                        while (!pushed){
+                            tasks.emplace_back(thread_pool.push(&pushed, std::bind(&reset_date_transposition_table, table_heap, s, e)));
+                            if (!pushed)
+                                tasks.pop_back();
+                        }
                         s = e;
                     }
                 }
