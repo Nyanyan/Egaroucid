@@ -655,12 +655,6 @@ std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int pr
                     }
                 search->undo(&flip_best);
                 eval_undo(search, &flip_best);
-                if (is_main_search){
-                    if (g <= alpha)
-                        std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " best " << idx_to_coord(best_move) << " [" << alpha << "," << beta << "] " << idx_to_coord(moves[i]) << " value <= " << g << " time " << tim() - strt << std::endl;
-                    else
-                        std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " best " << idx_to_coord(best_move) << " [" << alpha << "," << beta << "] " << idx_to_coord(moves[i]) << " value = " << g << " time " << tim() - strt << std::endl;
-                }
                 if (v < g){
                     v = g;
                     best_move = moves[i];
@@ -669,6 +663,12 @@ std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int pr
                         if (beta <= v)
                             break;
                     }
+                }
+                if (is_main_search){
+                    if (best_move != moves[i])
+                        std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " best " << idx_to_coord(best_move) << " [" << alpha << "," << beta << "] " << idx_to_coord(moves[i]) << " value <= " << g << " time " << tim() - strt << std::endl;
+                    else
+                        std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " best " << idx_to_coord(best_move) << " [" << alpha << "," << beta << "] " << idx_to_coord(moves[i]) << " value = " << g << " time " << tim() - strt << std::endl;
                 }
                 legal ^= 1ULL << moves[i];
                 ++pv_idx;
@@ -696,17 +696,13 @@ std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int pr
                             g = -pv_aspiration_search(search, -beta, -alpha, -predicted_value, depth - 1, false, move_list[move_idx].n_legal, is_end_search, &searching);
                     } else{
                         g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, &searching);
-                        if (alpha <= g && g < beta)
+                        if (alpha <= g && g < beta){
+                            std::cerr << "research " << alpha << " " << g << " " << beta << std::endl;
                             g = -nega_scout(search, -beta, -g, depth - 1, false, move_list[move_idx].n_legal, is_end_search, &searching);
+                        }
                     }
                 search->undo(&move_list[move_idx].flip);
                 eval_undo(search, &move_list[move_idx].flip);
-                if (is_main_search){
-                    if (g <= alpha)
-                        std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " best " << idx_to_coord(best_move) << " [" << alpha << "," << beta << "] " << idx_to_coord(move_list[move_idx].flip.pos) << " value <= " << g << " time " << tim() - strt << std::endl;
-                    else
-                        std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " best " << idx_to_coord(best_move) << " [" << alpha << "," << beta << "] " << idx_to_coord(move_list[move_idx].flip.pos) << " value = " << g << " time " << tim() - strt << std::endl;
-                }
                 if (v < g){
                     v = g;
                     best_move = move_list[move_idx].flip.pos;
@@ -715,6 +711,12 @@ std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int pr
                             break;
                         alpha = v;
                     }
+                }
+                if (is_main_search){
+                    if (best_move != move_list[move_idx].flip.pos)
+                        std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " best " << idx_to_coord(best_move) << " [" << alpha << "," << beta << "] " << idx_to_coord(move_list[move_idx].flip.pos) << " value <= " << g << " time " << tim() - strt << std::endl;
+                    else
+                        std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " best " << idx_to_coord(best_move) << " [" << alpha << "," << beta << "] " << idx_to_coord(move_list[move_idx].flip.pos) << " value = " << g << " time " << tim() - strt << std::endl;
                 }
                 ++pv_idx;
             }
@@ -807,12 +809,6 @@ int first_nega_scout_value(Search *search, int alpha, int beta, int depth, bool 
                     }
                 search->undo(&flip_best);
                 eval_undo(search, &flip_best);
-                if (is_main_search){
-                    if (g <= alpha)
-                        std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " best " << idx_to_coord(best_move) << " [" << alpha << "," << beta << "] " << idx_to_coord(moves[i]) << " value " << g << " or lower" << std::endl;
-                    else
-                        std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " best " << idx_to_coord(best_move) << " [" << alpha << "," << beta << "] " << idx_to_coord(moves[i]) << " value " << g << std::endl;
-                }
                 if (v < g){
                     v = g;
                     best_move = moves[i];
@@ -821,6 +817,12 @@ int first_nega_scout_value(Search *search, int alpha, int beta, int depth, bool 
                         if (beta <= v)
                             break;
                     }
+                }
+                if (is_main_search){
+                    if (best_move != moves[i])
+                        std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " best " << idx_to_coord(best_move) << " [" << alpha << "," << beta << "] " << idx_to_coord(moves[i]) << " value <= " << g << std::endl;
+                    else
+                        std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " best " << idx_to_coord(best_move) << " [" << alpha << "," << beta << "] " << idx_to_coord(moves[i]) << " value = " << g << std::endl;
                 }
                 legal ^= 1ULL << moves[i];
                 ++pv_idx;
@@ -850,12 +852,6 @@ int first_nega_scout_value(Search *search, int alpha, int beta, int depth, bool 
                     }
                 search->undo(&move_list[move_idx].flip);
                 eval_undo(search, &move_list[move_idx].flip);
-                if (is_main_search){
-                    if (g <= alpha)
-                        std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " best " << idx_to_coord(best_move) << " [" << alpha << "," << beta << "] " << idx_to_coord(move_list[move_idx].flip.pos) << " value " << g << " or lower" << std::endl;
-                    else
-                        std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " best " << idx_to_coord(best_move) << " [" << alpha << "," << beta << "] " << idx_to_coord(move_list[move_idx].flip.pos) << " value " << g << std::endl;
-                }
                 if (v < g){
                     v = g;
                     best_move = move_list[move_idx].flip.pos;
@@ -864,6 +860,12 @@ int first_nega_scout_value(Search *search, int alpha, int beta, int depth, bool 
                             break;
                         alpha = v;
                     }
+                }
+                if (is_main_search){
+                    if (best_move != move_list[move_idx].flip.pos)
+                        std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " best " << idx_to_coord(best_move) << " [" << alpha << "," << beta << "] " << idx_to_coord(move_list[move_idx].flip.pos) << " value <= " << g << std::endl;
+                    else
+                        std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " best " << idx_to_coord(best_move) << " [" << alpha << "," << beta << "] " << idx_to_coord(move_list[move_idx].flip.pos) << " value = " << g << std::endl;
                 }
                 ++pv_idx;
             }
