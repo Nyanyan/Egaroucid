@@ -27,7 +27,7 @@ class Thread_pool {
         mutable std::mutex mtx;
         bool running;
         int n_thread;
-        // std::atomic<int> n_idle;
+        //std::atomic<int> n_idle;
         int n_idle;
         std::queue<std::function<void()>> tasks{};
         std::unique_ptr<std::thread[]> threads;
@@ -79,7 +79,6 @@ class Thread_pool {
         }
 
         int get_n_idle() const {
-            // return n_idle.load(std::memory_order_relaxed);
             return n_idle;
         }
 
@@ -96,22 +95,6 @@ class Thread_pool {
             *pushed = push_task([task](){(*task)();});
             return future;
         }
-
-        /*
-        #if ((defined(_MSVC_LANG) && _MSVC_LANG >= 201703L) || __cplusplus >= 201703L)
-            template<typename F, typename... Args, typename R = std::invoke_result_t<std::decay_t<F>, std::decay_t<Args>...>>
-        #else
-            template<typename F, typename... Args, typename R = typename std::result_of<std::decay_t<F>(std::decay_t<Args>...)>::type>
-        #endif
-        std::future<R> push_forced(F &&func, const Args &&...args){
-            auto task = std::make_shared<std::packaged_task<R()>>([func, args...](){
-                return func(args...);
-            });
-            auto future = task->get_future();
-            push_task_forced([task](){(*task)();});
-            return future;
-        }
-        */
 
     private:
 
@@ -130,36 +113,18 @@ class Thread_pool {
             return pushed;
         }
 
-        /*
-        template<typename F>
-        void push_task_forced(const F &task){
-            if (!running)
-                throw std::runtime_error("Cannot schedule new task after shutdown.");
-            mtx.lock();
-                tasks.push(std::function<void()>(task));
-                --n_idle;
-                condition.notify_one();
-            mtx.unlock();
-        }
-        */
-
-        inline bool get_task_worker(std::function<void()> &task){
-            std::unique_lock<std::mutex> lock(mtx);
-            ++n_idle;
-            condition.wait(lock, [&] {return !tasks.empty() || !running;});
-            //--n_idle;
-            if (!running)
-                return true;
-            task = std::move(tasks.front());
-            tasks.pop();
-            return false;
-        }
-
         void worker(){
             std::function<void()> task;
             for (;;){
-                if (get_task_worker(task))
-                    return;
+                {
+                    std::unique_lock<std::mutex> lock(mtx);
+                    ++n_idle;
+                    condition.wait(lock, [&] {return !tasks.empty() || !running;});
+                    if (!running)
+                        return;
+                    task = std::move(tasks.front());
+                    tasks.pop();
+                }
                 task();
             }
         }
