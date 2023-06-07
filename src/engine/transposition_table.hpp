@@ -618,7 +618,7 @@ uint8_t manage_date(uint8_t date){
     @return hash resized?
 */
 inline bool etc(Search *search, std::vector<Flip_value> &move_list, int depth, int *alpha, int *beta, int *v){
-    int l, u;
+    int l, u, n_beta = *alpha;
     for (Flip_value &flip_value: move_list){
         l = -SCORE_MAX;
         u = SCORE_MAX;
@@ -637,10 +637,6 @@ inline bool etc(Search *search, std::vector<Flip_value> &move_list, int depth, i
             *v = -u;
             if (*alpha < -u)
                 *alpha = -u;
-        } else if (-(*beta) < l && l < -(*alpha) && *v < -l){ // child window is [l, -alpha], if -beta < l < u < -alpha, alpha must be -u, not -l.
-            *v = -l;
-            if (*alpha < -l)
-                *alpha = -l;
         }
         if (*beta <= *alpha)
             return true;

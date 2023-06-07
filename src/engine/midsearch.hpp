@@ -696,10 +696,8 @@ std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int pr
                             g = -pv_aspiration_search(search, -beta, -alpha, -predicted_value, depth - 1, false, move_list[move_idx].n_legal, is_end_search, &searching);
                     } else{
                         g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, &searching);
-                        if (alpha <= g && g < beta){
-                            std::cerr << "research " << alpha << " " << g << " " << beta << std::endl;
+                        if (alpha <= g && g < beta)
                             g = -nega_scout(search, -beta, -g, depth - 1, false, move_list[move_idx].n_legal, is_end_search, &searching);
-                        }
                     }
                 search->undo(&move_list[move_idx].flip);
                 eval_undo(search, &move_list[move_idx].flip);
