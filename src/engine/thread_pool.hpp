@@ -42,7 +42,7 @@ class Thread_pool {
             for (int i = 0; i < n_thread; ++i)
                 threads[i] = std::thread(&Thread_pool::worker, this);
             running = true;
-            n_idle = n_thread;
+            n_idle = 0;
         }
 
         void exit_thread(){
@@ -114,19 +114,19 @@ class Thread_pool {
         */
 
     private:
+
         template<typename F>
-        bool push_task(const F &task){
+        inline bool push_task(const F &task){
             if (!running)
                 throw std::runtime_error("Cannot schedule new task after shutdown.");
             bool pushed = false;
-            mtx.lock();
-                if (n_idle > 0 && tasks.size() == 0){
-                    tasks.push(std::function<void()>(task));
-                    pushed = true;
-                    --n_idle;
-                    condition.notify_one();
-                }
-            mtx.unlock();
+            std::unique_lock<std::mutex> lock(mtx);
+            if (n_idle > 0){
+                pushed = true;
+                tasks.push(std::function<void()>(task));
+                --n_idle;
+                condition.notify_one();
+            }
             return pushed;
         }
 
@@ -143,20 +143,24 @@ class Thread_pool {
         }
         */
 
+        inline bool get_task_worker(std::function<void()> &task){
+            std::unique_lock<std::mutex> lock(mtx);
+            ++n_idle;
+            condition.wait(lock, [&] {return !tasks.empty() || !running;});
+            //--n_idle;
+            if (!running)
+                return true;
+            task = std::move(tasks.front());
+            tasks.pop();
+            return false;
+        }
+
         void worker(){
+            std::function<void()> task;
             for (;;){
-                std::function<void()> task;
-                std::unique_lock<std::mutex> lock(mtx);
-                    condition.wait(lock, [&] {return !tasks.empty() || !running;});
-                    if (!running)
-                        return;
-                    task = std::move(tasks.front());
-                    tasks.pop();
-                lock.unlock();
+                if (get_task_worker(task))
+                    return;
                 task();
-                mtx.lock();
-                    ++n_idle;
-                mtx.unlock();
             }
         }
 };
