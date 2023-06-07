@@ -12,9 +12,8 @@
 #pragma once
 #include <iostream>
 #include <future>
-#include <queue>
 #include <thread>
-#include <atomic>
+#include <unordered_set>
 
 // Original code based on
 //  * <https://github.com/bshoshany/thread-pool>
@@ -27,11 +26,11 @@ class Thread_pool {
         mutable std::mutex mtx;
         bool running;
         int n_thread;
-        // std::atomic<int> n_idle;
-        int n_idle;
-        std::queue<std::function<void()>> tasks{};
+        std::vector<std::function<void()>> tasks{};
+        std::vector<bool> tasks_pushed;
         std::unique_ptr<std::thread[]> threads;
         std::condition_variable condition;
+        std::vector<int> idle_threads;
 
     public:
         void set_thread(int new_n_thread){
@@ -39,10 +38,15 @@ class Thread_pool {
                 new_n_thread = 0;
             n_thread = new_n_thread;
             threads.reset(new std::thread[n_thread]);
-            for (int i = 0; i < n_thread; ++i)
-                threads[i] = std::thread(&Thread_pool::worker, this);
+            idle_threads.clear();
+            tasks_pushed.clear();
+            for (int i = 0; i < n_thread; ++i){
+                threads[i] = std::thread(&Thread_pool::worker, this, i);
+                idle_threads.emplace_back(i);
+                tasks_pushed.emplace_back(false);
+            }
+            tasks.resize(n_thread);
             running = true;
-            n_idle = n_thread;
         }
 
         void exit_thread(){
@@ -53,8 +57,10 @@ class Thread_pool {
             condition.notify_all();
             for (int i = 0; i < n_thread; ++i)
                 threads[i].join();
+            idle_threads.clear();
+            tasks_pushed.clear();
+            tasks.resize(0);
             n_thread = 0;
-            n_idle = 0;
         }
 
         Thread_pool(){
@@ -79,8 +85,7 @@ class Thread_pool {
         }
 
         int get_n_idle() const {
-            // return n_idle.load(std::memory_order_relaxed);
-            return n_idle;
+            return idle_threads.size();
         }
 
         #if ((defined(_MSVC_LANG) && _MSVC_LANG >= 201703L) || __cplusplus >= 201703L)
@@ -119,41 +124,45 @@ class Thread_pool {
                 throw std::runtime_error("Cannot schedule new task after shutdown.");
             bool pushed = false;
             mtx.lock();
-                if (n_idle > (int)tasks.size()){
-                    tasks.push(std::function<void()>(task));
+                if (idle_threads.size()){
+                    int use_thread = idle_threads.back();
+                    idle_threads.pop_back();
+                    tasks[use_thread] = std::function<void()>(task);
+                    tasks_pushed[use_thread] = true;
                     pushed = true;
-                    --n_idle;
                 }
             mtx.unlock();
-            condition.notify_one();
+            if (pushed)
+                condition.notify_all();
             return pushed;
         }
 
+        /*
         template<typename F>
         void push_task_forced(const F &task){
             if (!running)
                 throw std::runtime_error("Cannot schedule new task after shutdown.");
             mtx.lock();
                 tasks.push(std::function<void()>(task));
-                --n_idle;
             mtx.unlock();
             condition.notify_one();
         }
+        */
 
-        void worker(){
+        void worker(const int worker_id){
             for (;;){
                 std::function<void()> task;
                 {
                     std::unique_lock<std::mutex> lock(mtx);
-                    condition.wait(lock, [&] {return !tasks.empty() || !running;});
+                    condition.wait(lock, [&] {return tasks_pushed[worker_id] || !running;});
                     if (!running)
                         return;
-                    task = std::move(tasks.front());
-                    tasks.pop();
+                    tasks_pushed[worker_id] = false;
+                    task = std::move(tasks[worker_id]);
                 }
                 task();
                 mtx.lock();
-                    ++n_idle;
+                    idle_threads.emplace_back(worker_id);
                 mtx.unlock();
             }
         }

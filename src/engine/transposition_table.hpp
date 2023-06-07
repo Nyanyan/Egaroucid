@@ -298,7 +298,8 @@ class Transposition_table{
             @brief Initialize transposition table
         */
         inline void init(){
-            if (thread_pool.size() == 0){
+            int thread_size = thread_pool.size();
+            if (thread_size == 0){
                 for (size_t i = 0; i < std::min(table_size, (size_t)TRANSPOSITION_TABLE_STACK_SIZE); ++i)
                     table_stack[i].init();
                 if (table_size > TRANSPOSITION_TABLE_STACK_SIZE){
@@ -306,7 +307,6 @@ class Transposition_table{
                         table_heap[i].init();
                 }
             } else{
-                int thread_size = thread_pool.size();
                 size_t delta = (std::min(table_size, (size_t)TRANSPOSITION_TABLE_STACK_SIZE) + thread_size - 1) / thread_size;
                 size_t s = 0, e;
                 std::vector<std::future<void>> tasks;
