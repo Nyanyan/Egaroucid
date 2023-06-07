@@ -198,7 +198,7 @@
 #define USE_SEARCH_STATISTICS false
 
 // thread monitor
-#define USE_THREAD_MONITOR false
+#define USE_THREAD_MONITOR true
 
 
 
