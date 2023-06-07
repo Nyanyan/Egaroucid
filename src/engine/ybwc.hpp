@@ -94,7 +94,7 @@ inline bool ybwc_split_nws(const Search *search, int alpha, int depth, uint64_t 
             (move_idx || seems_to_be_all_node) &&     // The elderest brother is already searched or this node seems to be an ALL node
             move_idx < canput - 1 //&&                // This node is not the youngest brother
             //running_count < YBWC_MAX_RUNNING_COUNT  // Do not split too many nodes
-        ){
+    ){
             bool pushed;
             parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&ybwc_do_task_nws, search->board.player, search->board.opponent, search->n_discs, search->parity, search->mpc_level, search->date, alpha, depth, legal, is_end_search, policy, searching)));
             if (!pushed)
@@ -244,6 +244,7 @@ inline bool ybwc_split_nws(const Search *search, int alpha, int depth, uint64_t 
     @param v                    value to store
     @param best_move            best move to store
 */
+/*
 inline void ybwc_get_end_tasks(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, int *v, int *best_move){
     Parallel_task got_task;
     for (std::future<Parallel_task> &task: parallel_tasks){
@@ -259,6 +260,7 @@ inline void ybwc_get_end_tasks(Search *search, std::vector<std::future<Parallel_
         }
     }
 }
+*/
 
 /*
     @brief Get end tasks of YBWC
@@ -314,24 +316,57 @@ inline void ybwc_wait_all(Search *search, std::vector<std::future<Parallel_task>
     @param alpha                alpha value
     @param searching            flag for terminating this search
 */
-inline void ybwc_wait_all_nws(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int alpha, bool *searching){
-    ybwc_get_end_tasks(search, parallel_tasks, v, best_move);
-    if (alpha < (*v))
-        *searching = false;
+inline void ybwc_wait_all_nws(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *running_count, int alpha, const bool *searching, bool *n_searching){
+    ybwc_get_end_tasks(search, parallel_tasks, v, best_move, running_count);
+    *n_searching &= alpha >= (*v);
     Parallel_task got_task;
     for (std::future<Parallel_task> &task: parallel_tasks){
+        *n_searching &= (*searching) & global_searching;
         if (task.valid()){
             got_task = task.get();
+            --(*running_count);
             search->n_nodes += got_task.n_nodes;
-            if ((*v) < got_task.value && (*searching)){
+            if ((*v) < got_task.value && (*n_searching)){
                 *best_move = got_task.cell;
                 *v = got_task.value;
                 if (alpha < (*v))
-                    *searching = false;
+                    *n_searching = false;
             }
         }
     }
 }
+/*
+inline void ybwc_wait_all_nws(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *running_count, int alpha, const bool *searching, bool *n_searching){
+    ybwc_get_end_tasks(search, parallel_tasks, v, best_move, running_count);
+    *n_searching &= alpha >= (*v);
+    Parallel_task got_task;
+    bool task_running = true;
+    int t = 0;
+    while (*running_count){
+        ++t;
+        //if (t >= 10000000)
+        //    std::cerr << (*n_searching) << task_running + 2 << (*running_count) + 4;
+        task_running = false;
+        *n_searching &= (*searching) & global_searching;
+        for (std::future<Parallel_task> &task: parallel_tasks){
+            if (task.valid()){
+                if (task.wait_for(std::chrono::seconds(0)) == std::future_status::ready){
+                    got_task = task.get();
+                    --(*running_count);
+                    search->n_nodes += got_task.n_nodes;
+                    if ((*v) < got_task.value && (*n_searching)){
+                        *best_move = got_task.cell;
+                        *v = got_task.value;
+                        if (alpha < (*v))
+                            *n_searching = false;
+                    }
+                } else
+                    task_running = true;
+            }
+        }
+    }
+}
+*/
 
 /*
     @brief Get end tasks of YBWC

@@ -118,7 +118,7 @@ class Thread_pool {
                 throw std::runtime_error("Cannot schedule new task after shutdown.");
             bool pushed = false;
             mtx.lock();
-                if (n_idle > 0){
+                if (n_idle > (int)tasks.size()){
                     tasks.push(std::function<void()>(task));
                     pushed = true;
                     --n_idle;

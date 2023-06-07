@@ -430,9 +430,8 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
             std::vector<int> parallel_idxes;
             std::vector<int> additional_search_windows;
             bool n_searching = true;
-            bool break_flag = false;
             bool search_splitted;
-            for (int move_idx = 0; move_idx < canput; ++move_idx){
+            for (int move_idx = 0; move_idx < canput && *searching; ++move_idx){
                 swap_next_best_move(move_list, move_idx, canput);
                 #if USE_MID_ETC
                     if (move_list[move_idx].flip.flip == 0ULL)
@@ -523,7 +522,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
             }
         } else{
     #endif
-            for (int move_idx = 0; move_idx < canput; ++move_idx){
+            for (int move_idx = 0; move_idx < canput && *searching; ++move_idx){
                 swap_next_best_move(move_list, move_idx, canput);
                 #if USE_MID_ETC
                     if (move_list[move_idx].flip.flip == 0ULL)
