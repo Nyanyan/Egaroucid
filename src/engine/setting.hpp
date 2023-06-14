@@ -155,6 +155,7 @@
 
 // Multi-ProbCut
 #define USE_MID_MPC true
+#define USE_END_MPC false
 
 // Null Move Pruning
 #define USE_MID_NMP false

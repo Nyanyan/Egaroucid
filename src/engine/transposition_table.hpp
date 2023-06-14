@@ -398,10 +398,8 @@ class Transposition_table{
         */
         inline void reg(const Search *search, uint32_t hash, const int depth, int alpha, int beta, int value, int policy){
             Hash_node *node = get_node(hash);
-            //Hash_node *worst_node = nullptr;
             const uint32_t level = get_level_write_common(search->date, depth, search->mpc_level);
             uint32_t node_level;
-            //uint32_t worst_level = 0xFFFFFFFFU;
             for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
                 if (node->data.get_level_write() <= level){
                     node->lock.lock();
@@ -427,17 +425,49 @@ class Transposition_table{
                 ++hash;
                 node = get_node(hash);
             }
-            /*
-            if (worst_node != nullptr){
-                worst_node->lock.lock();
-                    if (worst_node->data.get_level_write() <= level){
-                        worst_node->board.player = search->board.player;
-                        worst_node->board.opponent = search->board.opponent;
-                        worst_node->data.reg_new_data(depth, search->mpc_level, search->date, alpha, beta, value, policy);
-                    }
-                worst_node->lock.unlock();
+        }
+
+        /*
+            @brief Register items without mpc
+
+            @param search               Search information
+            @param hash                 hash code
+            @param depth                depth
+            @param alpha                alpha bound
+            @param beta                 beta bound
+            @param value                best score
+            @param policy               best move
+            @param cost                 search cost (log2(nodes))
+        */
+        inline void reg_nompc(const Search *search, uint32_t hash, const int depth, int alpha, int beta, int value, int policy){
+            Hash_node *node = get_node(hash);
+            const uint32_t level = get_level_write_common(search->date, depth, MPC_100_LEVEL);
+            uint32_t node_level;
+            for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
+                if (node->data.get_level_write() <= level){
+                    node->lock.lock();
+                        node_level = node->data.get_level_write();
+                        if (node_level <= level){
+                            if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
+                                if (node_level == level)
+                                    node->data.reg_same_level(alpha, beta, value, policy);
+                                else
+                                    node->data.reg_new_level(depth, MPC_100_LEVEL, search->date, alpha, beta, value, policy);
+                                node->lock.unlock();
+                                return;
+                            } else{
+                                node->board.player = search->board.player;
+                                node->board.opponent = search->board.opponent;
+                                node->data.reg_new_data(depth, MPC_100_LEVEL, search->date, alpha, beta, value, policy);
+                                node->lock.unlock();
+                                return;
+                            }
+                        }
+                    node->lock.unlock();
+                }
+                ++hash;
+                node = get_node(hash);
             }
-            */
         }
 
         /*
