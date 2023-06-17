@@ -286,6 +286,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
             eval_undo(search, &move_list[move_idx].flip);
             if (v < g){
                 v = g;
+                best_move = move_list[move_idx].flip.pos;
                 if (alpha < v)
                     break;
             }
