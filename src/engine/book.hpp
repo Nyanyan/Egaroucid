@@ -997,84 +997,42 @@ class Book{
             fout.write((char*)&err_end, 4);
             int verb = 0;
             fout.write((char*)&verb, 4);
-            int n_positions = 0;
-            std::unordered_set<Board, Book_hash> positions;
             int t = 0;
-            for (auto itr = book.begin(); itr != book.end(); ++itr){
-                ++t;
-                if (t % 16384 == 0)
-                    std::cerr << "converting book " << (t * 100 / (int)book.size()) << "%" << std::endl;
-                Board board = itr->first;
-                uint64_t legal = board.get_legal();
-                Flip flip;
-                for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-                    calc_flip(&flip, &board, cell);
-                    board.move_board(&flip);
-                        if (get(&board) != -INF){
-                            ++n_positions;
-                            board.undo_board(&flip);
-                            positions.emplace(get_representative_board(board));
-                            break;
-                        }
-                    board.undo_board(&flip);
-                }
-            }
-            std::cerr << "Edax formatted positions " << n_positions << std::endl;
-            fout.write((char*)&n_positions, 4);
-            t = 0;
             int n_win = 0;
             int n_draw = 0;
             int n_lose = 0;
             int n_line = 0;
             int16_t short_val;
-            char char_level = 21; // fixed
-            for (Board board: positions){
+            char char_level;
+            Book_elem book_elem;
+            char link_value, link_move;
+            char leaf_val = 0, leaf_move = 65;
+            for (auto itr = book.begin(); itr != book.end(); ++itr){
                 ++t;
-                if (t % 8192 == 0)
-                    std::cerr << "saving book " << (t * 100 / (int)positions.size()) << "%" << std::endl;
-                char n_link = 0;
-                uint64_t legal = board.get_legal();
-                Flip flip;
-                std::vector<std::pair<char, char>> links;
-                char leaf_val = 65;
-                char leaf_move = 65;
-                for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-                    calc_flip(&flip, &board, cell);
-                    board.move_board(&flip);
-                        int nval = get(&board);
-                        if (nval != -INF){
-                            if (positions.find(get_representative_board(board)) != positions.end()){ // is link
-                                ++n_link;
-                                links.emplace_back(std::make_pair((char)nval, (char)cell));
-                            } else{ // is leaf
-                                if (nval < leaf_val){
-                                    leaf_val = nval;
-                                    leaf_move = cell;
-                                }
-                            }
-                        }
-                    board.undo_board(&flip);
+                if (t % 16384 == 0)
+                    std::cerr << "converting book " << (t * 100 / (int)book.size()) << "%" << std::endl;
+                fout.write((char*)&itr->first.player, 8);
+                fout.write((char*)&itr->first.opponent, 8);
+                fout.write((char*)&n_win, 4);
+                fout.write((char*)&n_draw, 4);
+                fout.write((char*)&n_lose, 4);
+                fout.write((char*)&n_line, 4);
+                book_elem = get(itr->first);
+                short_val = book_elem.value;
+                char_level = book_elem.level;
+                fout.write((char*)&short_val, 2);
+                fout.write((char*)&short_val, 2);
+                fout.write((char*)&short_val, 2);
+                fout.write((char*)&n_link, 1);
+                fout.write((char*)&char_level, 1);
+                for (Book_value &book_value: book_elem.moves){
+                    link_value = book_value.value;
+                    link_move = book_value.move;
+                    fout.write((char*)&link_value, 1);
+                    fout.write((char*)&link_move, 1);
                 }
-                if (n_link){
-                    fout.write((char*)&board.player, 8);
-                    fout.write((char*)&board.opponent, 8);
-                    fout.write((char*)&n_win, 4);
-                    fout.write((char*)&n_draw, 4);
-                    fout.write((char*)&n_lose, 4);
-                    fout.write((char*)&n_line, 4);
-                    short_val = -get(&board);
-                    fout.write((char*)&short_val, 2);
-                    fout.write((char*)&short_val, 2);
-                    fout.write((char*)&short_val, 2);
-                    fout.write((char*)&n_link, 1);
-                    fout.write((char*)&char_level, 1);
-                    for (std::pair<char, char> &link: links){
-                        fout.write((char*)&link.first, 1);
-                        fout.write((char*)&link.second, 1);
-                    }
-                    fout.write((char*)&leaf_val, 1);
-                    fout.write((char*)&leaf_move, 1);
-                }
+                fout.write((char*)&leaf_val, 1);
+                fout.write((char*)&leaf_move, 1);
             }
             fout.close();
             std::cerr << "saved " << t << " boards as a edax-formatted book" << std::endl;
