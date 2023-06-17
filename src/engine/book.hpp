@@ -1031,6 +1031,8 @@ class Book{
             fout.write((char*)&err_end, 4);
             int verb = 0;
             fout.write((char*)&verb, 4);
+            int n_position = (int)book.size();
+            fout.write((char*)&n_position, 4);
             int t = 0;
             int n_win = 0;
             int n_draw = 0;
@@ -1040,7 +1042,7 @@ class Book{
             char char_level;
             Book_elem book_elem;
             char link_value, link_move;
-            char leaf_val = 0, leaf_move = 65;
+            char leaf_val, leaf_move;
             char n_link;
             Flip flip;
             Board b;
@@ -1048,23 +1050,17 @@ class Book{
                 ++t;
                 if (t % 16384 == 0)
                     std::cerr << "converting book " << (t * 100 / (int)book.size()) << "%" << std::endl;
-                fout.write((char*)&itr->first.player, 8);
-                fout.write((char*)&itr->first.opponent, 8);
-                fout.write((char*)&n_win, 4);
-                fout.write((char*)&n_draw, 4);
-                fout.write((char*)&n_lose, 4);
-                fout.write((char*)&n_line, 4);
                 book_elem = get(itr->first);
                 short_val = book_elem.value;
-                fout.write((char*)&short_val, 2);
-                fout.write((char*)&short_val, 2);
-                fout.write((char*)&short_val, 2);
+                char_level = book_elem.level;
+                if (char_level > 60)
+                    char_level = 60;
                 std::vector<Book_value> links;
                 leaf_val = -65;
                 leaf_move = 65;
                 b = itr->first;
                 for (Book_value &book_value: book_elem.moves){
-                    calc_flip(&flip, &b, book_value.policy);
+                    calc_flip(&flip, &b, (uint_fast8_t)book_value.policy);
                     if (contain_symmetry(b.move_copy(&flip)))
                         links.emplace_back(book_value);
                     else if (leaf_val < book_value.value){
@@ -1073,10 +1069,36 @@ class Book{
                     }
                 }
                 n_link = (char)links.size();
+                if (leaf_val == -65)
+                    leaf_val = 0;
+                if (n_link == 0 && leaf_move == 65)
+                    continue;
+                if (leaf_move == 65){
+                    int worst_val = 65;
+                    int worst_move = 65;
+                    int worst_idx = -1;
+                    for (int i = 0; i < n_link; ++i){
+                        if (links[i].value < worst_val){
+                            worst_val = links[i].value;
+                            worst_move = links[i].policy;
+                            worst_idx = i;
+                        }
+                    }
+                    links.erase(links.begin() + worst_idx);
+                    --n_link;
+                    leaf_move = worst_move;
+                    leaf_val = worst_val;
+                }
+                fout.write((char*)&itr->first.player, 8);
+                fout.write((char*)&itr->first.opponent, 8);
+                fout.write((char*)&n_win, 4);
+                fout.write((char*)&n_draw, 4);
+                fout.write((char*)&n_lose, 4);
+                fout.write((char*)&n_line, 4);
+                fout.write((char*)&short_val, 2);
+                fout.write((char*)&short_val, 2);
+                fout.write((char*)&short_val, 2);
                 fout.write((char*)&n_link, 1);
-                char_level = book_elem.level;
-                if (char_level > 60)
-                    char_level = 60;
                 fout.write((char*)&char_level, 1);
                 for (Book_value &book_value: links){
                     link_value = (char)book_value.value;
@@ -1084,8 +1106,6 @@ class Book{
                     fout.write((char*)&link_value, 1);
                     fout.write((char*)&link_move, 1);
                 }
-                if (leaf_val == -65)
-                    leaf_val = 0;
                 fout.write((char*)&leaf_val, 1);
                 fout.write((char*)&leaf_move, 1);
             }
