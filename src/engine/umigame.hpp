@@ -120,7 +120,7 @@ class Umigame{
                 return umigame_res;
             if (depth == 0)
                 return umigame_res;
-			if (!book.contain(b))
+			if (!book.contain_symmetry(b))
 				return umigame_res;
             umigame_res = get_umigame(b);
             if (umigame_res.b != UMIGAME_UNDEFINED)

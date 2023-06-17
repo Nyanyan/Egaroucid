@@ -732,6 +732,14 @@ class Book{
             return contain(b->copy());
         }
 
+        inline bool contain_symmetry(Board b){
+            return contain(get_representative_board(b));
+        }
+
+        inline bool contain_symmetry(Board *b){
+            return contain(get_representative_board(b));
+        }
+
         /*
             @brief get registered score
 
