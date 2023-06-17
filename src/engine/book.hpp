@@ -553,6 +553,11 @@ class Book{
             return true;
         }
 
+        inline bool import_file_bin(std::string file, bool show_log){
+            bool stop_loading = false;
+            return import_file_bin(file, show_log, &stop_loading);
+        }
+
         /*
             @brief import Egaroucid-formatted book (old version .egbk file)
 
@@ -576,9 +581,9 @@ class Book{
             }
         }
 
-        inline bool import_file_bin(std::string file, bool show_log){
+        inline bool import_file_bin_egbk(std::string file, bool show_log){
             bool stop_loading = false;
-            return import_file_bin(file, show_log, &stop_loading);
+            return import_file_bin_egbk(file, show_log, &stop_loading);
         }
 
         /*

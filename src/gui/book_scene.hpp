@@ -34,9 +34,13 @@ bool import_book(std::string file) {
         lst.push_back(file.substr(offset, pos - offset));
         offset = pos + 1;
     }
-    if (lst[lst.size() - 1] == "egbk") {
+    if (lst[lst.size() - 1] == "egbk2") {
         std::cerr << "importing Egaroucid book" << std::endl;
         result = !book.import_file_bin(file, true);
+    }
+    else if (lst[lst.size() - 1] == "egbk") {
+        std::cerr << "importing Egaroucid book (old version)" << std::endl;
+        result = !book.import_file_bin_egbk(file, true);
     }
     else if (lst[lst.size() - 1] == "dat") {
         std::cerr << "importing Edax book" << std::endl;
@@ -63,9 +67,12 @@ bool import_book_egaroucid(std::string file) {
         lst.push_back(file.substr(offset, pos - offset));
         offset = pos + 1;
     }
-    if (lst[lst.size() - 1] == "egbk") {
+    if (lst[lst.size() - 1] == "egbk2") {
         std::cerr << "importing Egaroucid book" << std::endl;
         result = !book.import_file_bin(file, true);
+    } else if (lst[lst.size() - 1] == "egbk") {
+        std::cerr << "importing Egaroucid book (old version)" << std::endl;
+        result = !book.import_file_bin_egbk(file, true);
     }
     else {
         std::cerr << "this is not an Egaroucid book" << std::endl;
@@ -209,7 +216,7 @@ public:
             }
             default_button.draw();
             if (default_button.clicked()) {
-                book_file = getData().directories.document_dir + "Egaroucid/book.egbk";
+                book_file = getData().directories.document_dir + "Egaroucid/book.egbk2";
             }
             go_button.draw();
             if (go_button.clicked() || return_pressed || file_dragged) {
