@@ -15,6 +15,7 @@
 #include <unordered_set>
 #include "evaluate.hpp"
 #include "board.hpp"
+#include "search.hpp"
 
 #define BOOK_N_ACCEPT_LEVEL 11
 #define BOOK_ACCURACY_LEVEL_INF 10
@@ -32,6 +33,20 @@
 struct Book_value{
     int policy;
     int value;
+
+    Search_result to_search_result(){
+        Search_result res;
+        res.policy = policy;
+        res.value = value;
+        res.depth = SEARCH_BOOK;
+        res.time = 0;
+        res.nodes = 0;
+        res.clog_time = 0;
+        res.clog_nodes = 0;
+        res.nps = 0;
+        res.is_end_search - false;
+        res.probability = -1;
+    }
 };
 
 /*
@@ -791,17 +806,13 @@ class Book{
             @param b                    a board pointer to find
             @return vector of moves
         */
-        inline std::vector<Search_result> get_all_moves_with_value(Board *b){
-            std::vector<Search_result> policies;
+        inline std::vector<Book_value> get_all_moves_with_value(Board *b){
+            std::vector<Book_value> policies;
             Book_elem board_elem = get(b);
             for (Book_value elem: board_elem.moves){
-                Search_result search_result;
-                search_result.policy = elem.policy;
-                search_result.value = elem.value;
-                search_result.depth = SEARCH_BOOK;
-                search_result.time = 0;
-                search_result.nodes = 0;
-                search_result.nps = 0;
+                Book_value book_value;
+                book_value.policy = elem.policy;
+                book_value.value = elem.value;
                 policies.emplace_back(elem);
             }
             return policies;
