@@ -1042,6 +1042,8 @@ class Book{
             char link_value, link_move;
             char leaf_val = 0, leaf_move = 65;
             char n_link;
+            Flip flip;
+            Board b;
             for (auto itr = book.begin(); itr != book.end(); ++itr){
                 ++t;
                 if (t % 16384 == 0)
@@ -1054,19 +1056,36 @@ class Book{
                 fout.write((char*)&n_line, 4);
                 book_elem = get(itr->first);
                 short_val = book_elem.value;
-                char_level = book_elem.level;
                 fout.write((char*)&short_val, 2);
                 fout.write((char*)&short_val, 2);
                 fout.write((char*)&short_val, 2);
-                n_link = (char)book_elem.moves.size();
-                fout.write((char*)&n_link, 1);
-                fout.write((char*)&char_level, 1);
+                std::vector<Book_value> links;
+                leaf_val = -65;
+                leaf_move = 65;
+                b = itr->first;
                 for (Book_value &book_value: book_elem.moves){
-                    link_value = book_value.value;
-                    link_move = book_value.policy;
+                    calc_flip(&flip, &b, book_value.policy);
+                    if (contain_symmetry(b.move_copy(&flip)))
+                        links.emplace_back(book_value);
+                    else if (leaf_val < book_value.value){
+                        leaf_val = book_value.value;
+                        leaf_move = book_value.policy;
+                    }
+                }
+                n_link = (char)links.size();
+                fout.write((char*)&n_link, 1);
+                char_level = book_elem.level;
+                if (char_level > 60)
+                    char_level = 60;
+                fout.write((char*)&char_level, 1);
+                for (Book_value &book_value: links){
+                    link_value = (char)book_value.value;
+                    link_move = (char)book_value.policy;
                     fout.write((char*)&link_value, 1);
                     fout.write((char*)&link_move, 1);
                 }
+                if (leaf_val == -65)
+                    leaf_val = 0;
                 fout.write((char*)&leaf_val, 1);
                 fout.write((char*)&leaf_move, 1);
             }
