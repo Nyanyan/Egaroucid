@@ -21,6 +21,7 @@
 
 #define LEVEL_UNDEFINED -1
 #define LEVEL_HUMAN 70
+#define BOOK_LOSS_IGNORE_THRESHOLD 4
 
 /*
     @brief book result structure
@@ -126,7 +127,7 @@ struct Book_hash {
 };
 
 class Book_old{
-    private:
+    public:
         std::unordered_map<Board, int, Book_hash> book;
         int n_book;
 
@@ -256,44 +257,13 @@ class Book_old{
         }
 
         /*
-            @brief get all best moves
-
-            @param b                    a board pointer to find
-            @return vector of best moves
-        */
-        inline std::vector<int> get_all_best_moves(Board *b){
-            std::vector<int> policies;
-            if (get(b) == -INF)
-                return policies;
-            Board nb;
-            int max_value = -INF;
-            uint64_t legal = b->get_legal();
-            Flip flip;
-            int value;
-            for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-                calc_flip(&flip, b, cell);
-                nb = b->move_copy(&flip);
-                value = get(&nb);
-                if (value != -INF){
-                    if (max_value < value){
-                        max_value = value;
-                        policies.clear();
-                        policies.push_back(cell);
-                    } else if (value == max_value)
-                        policies.push_back(cell);
-                }
-            }
-            return policies;
-        }
-
-        /*
             @brief get all registered moves with value
 
             @param b                    a board pointer to find
             @return vector of moves
         */
-        inline std::vector<Search_result> get_all_moves_with_value(Board *b){
-            std::vector<Search_result> policies;
+        inline std::vector<Book_value> get_all_moves_with_value(Board *b){
+            std::vector<Book_value> policies;
             if (get(b) == -INF)
                 return policies;
             Board nb;
@@ -305,81 +275,13 @@ class Book_old{
                 nb = b->move_copy(&flip);
                 value = get(&nb);
                 if (value != -INF){
-                    Search_result elem;
+                    Book_value elem;
                     elem.policy = cell;
                     elem.value = value;
-                    elem.depth = SEARCH_BOOK;
-                    elem.time = 0;
-                    elem.nodes = 0;
-                    elem.nps = 0;
                     policies.emplace_back(elem);
                 }
             }
             return policies;
-        }
-
-        /*
-            @brief get a best move
-
-            @param b                    a board pointer to find
-            @param accept_value         an error to allow
-            @return best move and value as Book_value structure
-        */
-        inline Book_value get_random(Board *b, int acc_level){
-            std::vector<std::pair<double, int>> value_policies;
-            int best_score = -INF;
-            uint64_t legal = b->get_legal();
-            Flip flip;
-            for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-                calc_flip(&flip, b, cell);
-                Board nb = b->move_copy(&flip);
-                int value = get(&nb);
-                if (value != -INF){
-                    if (value > best_score){
-                        best_score = value;
-                    }
-                    value_policies.emplace_back(std::make_pair((double)value, (int)cell));
-                }
-            }
-            Book_value res;
-            if (value_policies.size() == 0){
-                res.policy = -1;
-                res.value = -INF;
-                return res;
-            }
-            double sum_exp_values = 0.0;
-            for (std::pair<double, int> &elem: value_policies){
-                if (acc_level == BOOK_ACCURACY_LEVEL_INF && elem.first < (double)best_score - 0.5)
-                    elem.first = 0.0;
-                else{
-                    double exp_val = (exp(elem.first - (double)best_score) + 2.0) / 3.0;
-                    elem.first = pow(exp_val, acc_level);
-                }
-                sum_exp_values += elem.first;
-            }
-            for (std::pair<double, int> &elem: value_policies)
-                elem.first /= sum_exp_values;
-            double rnd = myrandom();
-            double s = 0.0;
-            bool res_got = false;
-            for (std::pair<double, int> &elem: value_policies){
-                s += elem.first;
-                if (s >= rnd){
-                    res.policy = elem.second;
-                    calc_flip(&flip, b, res.policy);
-                    Board nb = b->move_copy(&flip);
-                    res.value = get(&nb);
-                    res_got = true;
-                    break;
-                }
-            }
-            if (!res_got){
-                res.policy = value_policies.back().second;
-                calc_flip(&flip, b, res.policy);
-                Board nb = b->move_copy(&flip);
-                res.value = get(&nb);
-            }
-            return res;
         }
 
         /*
@@ -640,7 +542,13 @@ class Book{
             Book_old book_old;
             if (!book_old.init(file, show_log, *stop_loading))
                 return false;
-            
+            for (auto itr = book_old.book.begin(); itr != book_old.book.end(); ++itr){
+                Book_elem book_elem;
+                book_elem.value = itr->second;
+                book_elem.level = 21; // fixed
+                book_elem.moves = book_old.get_all_moves_with_value(&(itr->first));
+                n_book += merge(itr->first, book_elem);
+            }
         }
 
         inline bool import_file_bin(std::string file, bool show_log){
@@ -806,7 +714,7 @@ class Book{
             res = book[b];
             Flip flip;
             for (Book_value &elem: res.moves){
-                calc_flip(&flip, &board, elem.policy);
+                calc_flip(&flip, &b, elem.policy);
                 b.move_board(&flip);
                     if (b.get_legal()){
                         if (contain(b)){
@@ -897,7 +805,7 @@ class Book{
                     value_policies.emplace_back(std::make_pair((double)elem.value, elem.policy));
             }
             Book_value res;
-            if (value_policies.size() == 0){
+            if (value_policies.size() == 0 || best_score < board_elem.value - BOOK_LOSS_IGNORE_THRESHOLD){
                 res.policy = -1;
                 res.value = -INF;
                 return res;
@@ -1172,6 +1080,37 @@ class Book{
             std::cerr << "saved " << t << " boards as a edax-formatted book" << std::endl;
         }
 
+        /*
+            @brief fix each link
+        */
+        inline void fix(){
+            std::vector<Board> boards;
+            for (auto itr = book.begin(); itr != book.end(); ++itr)
+                boards.emplace_back(itr->first);
+            Book_elem book_elem;
+            Flip flip;
+            for (Board &board: b){
+                book_elem = book[b];
+                for (Book_value &elem: book_elem.moves){
+                    calc_flip(&flip, &b, elem.policy);
+                    b.move_board(&flip);
+                        if (b.get_legal()){
+                            if (contain(b)){
+                                elem.value = -book[b].value;
+                            }
+                        } else{
+                            b.pass();
+                                if (contain(b)){
+                                    elem.value = book[b].value;
+                                }
+                            b.pass();
+                        }
+                    b.undo_board(&flip);
+                }
+                book[b] = book_elem;
+            }
+        }
+
 
     private:
         void reg_first_board(){
@@ -1267,6 +1206,29 @@ class Book{
         inline int delete_symmetric_book(Board b){
             Board representive_board = get_representative_board(b);
             return delete_book(representive_board);
+        }
+
+        inline int merge(Board b, Book_elem elem){
+            if (!contain(b))
+                return register_symmetric_book(b, elem);
+            Book_elem book_elem = book[b];
+            book_elem.value = elem.value;
+            book_elem.level = elem.level;
+            for (Book_value &move: elem.moves){
+                bool already_registered = false;
+                for (int i = 0; i < (int)book_elem.moves.size(); ++i){
+                    if (book_elem.moves[i].policy == move.policy){
+                        already_registered = true;
+                        book_elem.moves[i].value = move.value;
+                        break;
+                    }
+                }
+                if (!already_registered){
+                    book_elem.moves.emplace_back(move);
+                }
+            }
+            book[b] = book_elem;
+            return 0;
         }
 };
 
