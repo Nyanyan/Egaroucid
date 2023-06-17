@@ -202,7 +202,7 @@ class Book_old{
                     fclose(fp);
                     return false;
                 }
-                value = elem - HW2;
+                value = (int)elem - HW2;
                 if (value < -HW2 || HW2 < value) {
                     std::cerr << "[ERROR] book NOT FULLY imported got value " << value << " " << n_book << " boards" << std::endl;
                     fclose(fp);
@@ -257,7 +257,7 @@ class Book_old{
         */
         inline int get_onebook(Board b){
             if (book.find(b) == book.end())
-                return -INF;
+                return SCORE_UNDEFINED;
             return book[b];
         }
 
@@ -290,7 +290,7 @@ class Book_old{
                 calc_flip(&flip, &b, cell);
                 nb = b.move_copy(&flip);
                 value = get(&nb);
-                if (value != -INF){
+                if (value != SCORE_UNDEFINED){
                     Book_value elem;
                     elem.policy = cell;
                     elem.value = value;
@@ -451,7 +451,8 @@ class Book{
             }
             Board b;
             Book_elem book_elem;
-            int n_boards, i, value;
+            int n_boards, i;
+            char value;
             uint64_t p, o;
             uint8_t elem;
             uint8_t level, n_moves, val, mov;
@@ -562,7 +563,11 @@ class Book{
             Book_old book_old;
             if (!book_old.init(file, show_log, stop_loading))
                 return false;
+            int t = 0;
             for (auto itr = book_old.book.begin(); itr != book_old.book.end(); ++itr){
+                ++t;
+                if (t % 65536 == 0)
+                    std::cerr << "converting book " << (t * 100 / (int)book_old.book.size()) << "%" << std::endl;
                 Book_elem book_elem;
                 book_elem.value = itr->second;
                 book_elem.level = 21; // fixed
@@ -733,7 +738,7 @@ class Book{
             @param b                    a board to find
             @return registered value (if not registered, returns -INF)
         */
-        inline Book_elem get_onebook(Board b){
+        inline Book_elem get_onebook(Board b, int idx){
             Book_elem res;
             if (!contain(b))
                 return res;
@@ -756,6 +761,9 @@ class Book{
                 b.undo_board(&flip);
             }
             book[b] = res; // update book
+            for (Book_value &elem: res.moves){
+                elem.policy = convert_coord_from_representative_board(elem.policy, idx);
+            }
             return res;
         }
 
@@ -766,8 +774,9 @@ class Book{
             @return registered value (if not registered, returns -INF)
         */
         inline Book_elem get(Board *b){
-            Board representive_board = get_representative_board(b);
-            return get_onebook(representive_board);
+            int rotate_idx;
+            Board representive_board = get_representative_board(b, &rotate_idx);
+            return get_onebook(representive_board, rotate_idx);
         }
 
         /*
@@ -777,8 +786,9 @@ class Book{
             @return registered value (if not registered, returns -INF)
         */
         inline Book_elem get(Board b){
-            Board representive_board = get_representative_board(b);
-            return get_onebook(representive_board);
+            int rotate_idx;
+            Board representive_board = get_representative_board(b, &rotate_idx);
+            return get_onebook(representive_board, rotate_idx);
         }
 
         /*
@@ -985,7 +995,8 @@ class Book{
                 }
             }
             fout.close();
-            std::cerr << "saved " << t << " boards" << std::endl;
+            int book_size = (int)book.size();
+            std::cerr << "saved " << t << " boards , book_size " << book_size << " " << n_book << std::endl;
         }
 
         /*
@@ -1078,12 +1089,17 @@ class Book{
             @brief fix each link
         */
         inline void fix(){
+            std::cerr << "fixing book..." << std::endl;
             std::vector<Board> boards;
             for (auto itr = book.begin(); itr != book.end(); ++itr)
                 boards.emplace_back(itr->first);
             Book_elem book_elem;
             Flip flip;
+            int t = 0;
             for (Board &b: boards){
+                ++t;
+                if (t % 16384 == 0)
+                    std::cerr << "fixing book " << (t * 100 / (int)boards.size()) << "%" << std::endl;
                 book_elem = book[b];
                 for (Book_value &elem: book_elem.moves){
                     calc_flip(&flip, &b, elem.policy);
@@ -1172,6 +1188,87 @@ class Book{
             update_representative_board(&res, &b);
             b.board_white_line_mirror();
             update_representative_board(&res, &b);
+            return res;
+        }
+
+        inline void first_update_representative_board(Board *res, Board *sym, int *idx, int *cnt){
+            uint64_t vp = vertical_mirror(sym->player);
+            uint64_t vo = vertical_mirror(sym->opponent);
+            ++(*cnt);
+            if (res->player > vp || (res->player == vp && res->opponent > vo)){
+                res->player = vp;
+                res->opponent = vo;
+                *idx = *cnt;
+            }
+        }
+
+        inline void update_representative_board(Board *res, Board *sym, int *idx, int *cnt){
+            ++(*cnt);
+            if (res->player > sym->player || (res->player == sym->player && res->opponent > sym->opponent)){
+                sym->copy(res);
+                *idx = *cnt;
+            }
+            uint64_t vp = vertical_mirror(sym->player);
+            uint64_t vo = vertical_mirror(sym->opponent);
+            ++(*cnt);
+            if (res->player > vp || (res->player == vp && res->opponent > vo)){
+                res->player = vp;
+                res->opponent = vo;
+                *idx = *cnt;
+            }
+        }
+
+        inline Board get_representative_board(Board b, int *idx){
+            Board res = b;
+            *idx = 0;
+            int cnt = 0;
+            first_update_representative_board(&res, &b, idx, &cnt);
+            b.board_black_line_mirror();
+            update_representative_board(&res, &b, idx, &cnt);
+            b.board_horizontal_mirror();
+            update_representative_board(&res, &b, idx, &cnt);
+            b.board_white_line_mirror();
+            update_representative_board(&res, &b, idx, &cnt);
+            return res;
+        }
+
+        inline Board get_representative_board(Board *b, int *idx){
+            return get_representative_board(b->copy(), idx);
+        }
+
+        inline int convert_coord_from_representative_board(int cell, int idx){
+            int res;
+            int y = cell / HW;
+            int x = cell % HW;
+            switch (idx){
+                case 0:
+                    res = cell;
+                    break;
+                case 1:
+                    res = (HW_M1 - y) * HW + x; // vertical
+                    break;
+                case 2:
+                    res = (HW_M1 - x) * HW + (HW_M1 - y); // black line
+                    break;
+                case 3:
+                    res = (HW_M1 - x) * HW + y; // black line + vertical ( = rotate 90 clockwise)
+                    break;
+                case 4:
+                    res = x * HW + (HW_M1 - y); // black line + horizontal ( = rotate 90 counterclockwise)
+                    break;
+                case 5:
+                    res = x * HW + y; // black line + horizontal + vertical ( = white line)
+                    break;
+                case 6:
+                    res = y * HW + (HW_M1 - x); // horizontal
+                    break;
+                case 7:
+                    res = (HW_M1 - y) * HW + (HW_M1 - x); // horizontal + vertical ( = rotate180)
+                    break;
+                default:
+                    std::cerr << "converting coord error in book" << std::endl;
+                    break;
+            }
             return res;
         }
 
