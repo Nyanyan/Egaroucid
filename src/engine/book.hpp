@@ -421,6 +421,7 @@ class Book_old{
 class Book{
     private:
         std::unordered_map<Board, Book_elem, Book_hash> book;
+        std::unordered_map<Board, int, Book_hash> n_lines;
         int n_book;
 
     public:
@@ -1038,11 +1039,9 @@ class Book{
             }
             fout.write((char*)&n_position, 4);
             int t = 0;
-            int n_win = 0;
-            int n_draw = 0;
-            int n_lose = 0;
-            int n_line = 0;
-            int16_t short_val;
+            int n_win = 0, n_draw = 0, n_lose = 0;
+            int n_line;
+            short short_val;
             char char_level;
             Book_elem book_elem;
             char link_value, link_move;
@@ -1055,8 +1054,8 @@ class Book{
                 if (book_elem.moves.size() == 0)
                     continue;
                 ++t;
-                if (t % 16384 == 0)
-                    std::cerr << "converting book " << (t * 100 / (int)book.size()) << "%" << std::endl;
+                if (t % 8192 == 0)
+                    std::cerr << "converting book " << (t * 100 / n_position) << "%" << std::endl;
                 short_val = book_elem.value;
                 char_level = book_elem.level;
                 if (char_level > 60)
@@ -1075,24 +1074,27 @@ class Book{
                     }
                 }
                 n_link = (char)links.size();
-                if (leaf_val == -65)
-                    leaf_val = 0;
                 if (leaf_move == 65){
-                    int worst_val = 65;
-                    int worst_move = 65;
-                    int worst_idx = -1;
-                    for (int i = 0; i < n_link; ++i){
-                        if (links[i].value < worst_val){
-                            worst_val = links[i].value;
-                            worst_move = links[i].policy;
-                            worst_idx = i;
+                    uint64_t legal = b.get_legal();
+                    for (Book_value &link: links)
+                        legal ^= 1ULL << link.policy;
+                    if (legal){
+                        leaf_val = -65;
+                        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+                            calc_flip(&flip, &b, cell);
+                            b.move_board(&flip);
+                                int g = -mid_evaluate(&b);
+                            b.undo_board(&flip);
+                            if (leaf_val < g){
+                                leaf_val = g;
+                                leaf_move = cell;
+                            }
                         }
                     }
-                    links.erase(links.begin() + worst_idx);
-                    --n_link;
-                    leaf_move = worst_move;
-                    leaf_val = worst_val;
                 }
+                if (leaf_val == -65)
+                    leaf_val = 0;
+                n_line = 0; //count_n_line(itr->first);
                 fout.write((char*)&itr->first.player, 8);
                 fout.write((char*)&itr->first.opponent, 8);
                 fout.write((char*)&n_win, 4);
@@ -1114,6 +1116,7 @@ class Book{
                 fout.write((char*)&leaf_move, 1);
             }
             fout.close();
+            n_lines.clear();
             std::cerr << "saved " << t << " boards as a edax-formatted book " << n_position << " " << book.size() << std::endl;
         }
 
@@ -1353,6 +1356,26 @@ class Book{
             }
             book[b] = book_elem;
             return 0;
+        }
+
+        int count_n_line(Board board){
+            auto itr = n_lines.find(board);
+            if (itr != n_lines.end())
+                return itr->second;
+            Flip flip;
+            Book_elem book_elem = get(board);
+            if (book_elem.moves.size() == 0)
+                return 1;
+            int res = 0;
+            for (Book_value &move: book_elem.moves){
+                calc_flip(&flip, &board, move.policy);
+                board.move_board(&flip);
+                    if (contain_symmetry(&board))
+                        res += count_n_line(board);
+                board.undo_board(&flip);
+            }
+            n_lines[board] = res;
+            return res;
         }
 };
 
