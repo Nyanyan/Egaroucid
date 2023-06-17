@@ -261,9 +261,12 @@ void hint(Board_info *board, Options *options, State *state, std::string arg){
     uint64_t legal = board->board.get_legal();
     if (n_show > pop_count_ull(legal))
         n_show = pop_count_ull(legal);
-    std::vector<Book_value> result = book.get_all_moves_with_value(&board->board);
+    std::vector<Book_value> result_book_value = book.get_all_moves_with_value(&board->board);
+    std::vector<Search_result> result;
+    for (Book_value elem: result_book_value)
+        result.emplace_back(elem.to_search_result());
     if ((int)result.size() < n_show){
-        for (const Book_value &elem: result)
+        for (const Search_result &elem: result)
             legal ^= 1ULL << elem.policy;
         int n_check = n_show + n_show / 4 - (int)result.size();
         if (n_check > pop_count_ull(legal))
@@ -292,7 +295,7 @@ void hint(Board_info *board, Options *options, State *state, std::string arg){
     std::sort(result.rbegin(), result.rend());
     print_search_result_head();
     for (int i = 0; i < n_show; ++i)
-        print_search_result_body(result[i].to_search_result(), options->level);
+        print_search_result_body(result[i], options->level);
 }
 
 inline void analyze(Board_info *board, Options *options, State *state){

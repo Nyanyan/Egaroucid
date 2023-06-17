@@ -46,6 +46,7 @@ struct Book_value{
         res.nps = 0;
         res.is_end_search - false;
         res.probability = -1;
+        return res;
     }
 };
 
