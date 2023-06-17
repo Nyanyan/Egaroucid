@@ -455,7 +455,6 @@ class Book{
             int n_boards, i;
             char value;
             uint64_t p, o;
-            uint8_t elem;
             char level, n_moves, val, mov;
             char egaroucid_str[10];
             char egaroucid_str_ans[] = "DICUORAGE";

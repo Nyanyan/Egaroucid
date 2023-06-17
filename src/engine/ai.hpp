@@ -343,7 +343,7 @@ Search_result ai_hint(Board board, int level, bool use_book, bool use_multi_thre
         }
     }
     int book_result = book.get(&board).value;
-    if (book_result != -INF && use_book){
+    if (book_result != SCORE_UNDEFINED && use_book){
         if (show_log)
             std::cerr << "book " << idx_to_coord(book_result) << std::endl;
         res.policy = -1;
