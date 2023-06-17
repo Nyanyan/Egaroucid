@@ -21,7 +21,7 @@
 /*
     @brief YBWC splitting depth threshold
 */
-#define YBWC_MID_SPLIT_MIN_DEPTH 4
+#define YBWC_MID_SPLIT_MIN_DEPTH 6
 #define YBWC_END_SPLIT_MIN_DEPTH 13
 
 #define YBWC_MAX_RUNNING_COUNT 3
