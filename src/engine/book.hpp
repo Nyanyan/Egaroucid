@@ -20,6 +20,7 @@
 #define BOOK_ACCURACY_LEVEL_INF 10
 
 #define LEVEL_UNDEFINED -1
+#define LEVEL_HUMAN 70
 
 /*
     @brief book result structure
@@ -535,6 +536,31 @@ class Book{
             uint64_t p, o;
             uint8_t elem;
             uint8_t level, n_moves, val, mov;
+            char egaroucid_str[] = "EGAROUCID";
+            char elem_char;
+            char book_version;
+            for (int i = 0; i < 9; ++i){
+                if (fread(&elem_char, 1, 1, fp) < 1) {
+                    std::cerr << "[ERROR] file broken" << std::endl;
+                    fclose(fp);
+                    return false;
+                }
+                if (elem_char != egaroucid_str[i]){
+                    std::cerr << "[ERROR] This is not Egarocuid book version 2, found " << elem_char << " at char " << i << std::endl;
+                    fclose(fp);
+                    return false;
+                }
+            }
+            if (fread(&book_version, 1, 1, fp) < 1) {
+                std::cerr << "[ERROR] file broken" << std::endl;
+                fclose(fp);
+                return false;
+            }
+            if (book_version != 2){
+                std::cerr << "[ERROR] This is not Egarocuid book version 2, found version" << book_version << std::endl;
+                fclose(fp);
+                return false;
+            }
             if (fread(&n_boards, 4, 1, fp) < 1){
                 std::cerr << "[ERROR] book NOT FULLY imported " << n_book << " boards" << std::endl;
                 fclose(fp);
@@ -555,12 +581,11 @@ class Book{
                     fclose(fp);
                     return false;
                 }
-                if (fread(&elem, 1, 1, fp) < 1) {
+                if (fread(&value, 1, 1, fp) < 1) {
                     std::cerr << "[ERROR] book NOT FULLY imported " << n_book << " boards" << std::endl;
                     fclose(fp);
                     return false;
                 }
-                value = elem - HW2;
                 if (value < -HW2 || HW2 < value) {
                     std::cerr << "[ERROR] book NOT FULLY imported got value " << value << " " << n_book << " boards" << std::endl;
                     fclose(fp);
@@ -765,7 +790,7 @@ class Book{
             @return if contains, true, else false
         */
         inline bool contain(Board *b){
-            return book.find(b->copy()) != book.end();
+            return contain(b->copy());
         }
 
         /*
@@ -776,9 +801,27 @@ class Book{
         */
         inline Book_elem get_onebook(Board b){
             Book_elem res;
-            if (book.find(b) == book.end())
+            if (!contain(b))
                 return res;
             res = book[b];
+            Flip flip;
+            for (Book_value &elem: res.moves){
+                calc_flip(&flip, &board, elem.policy);
+                b.move_board(&flip);
+                    if (b.get_legal()){
+                        if (contain(b)){
+                            elem.value = -book[b].value;
+                        }
+                    } else{
+                        b.pass();
+                            if (contain(b)){
+                                elem.value = book[b].value;
+                            }
+                        b.pass();
+                    }
+                b.undo_board(&flip);
+            }
+            book[b] = res; // update book
             return res;
         }
 
@@ -859,14 +902,13 @@ class Book{
                 res.value = -INF;
                 return res;
             }
-            double acceptable_min_value = best_score - 2.0 * acc_level;
+            double acceptable_min_value = best_score - 2.0 * acc_level - 0.5;
             double sum_exp_values = 0.0;
             for (std::pair<double, int> &elem: value_policies){
-                if (acc_level == BOOK_ACCURACY_LEVEL_INF && elem.first < (double)best_score - 0.5)
+                if (elem.first < acceptable_min_value)
                     elem.first = 0.0;
-                else if (elem.first)
                 else{
-                    double exp_val = (exp(elem.first - best_score) + 2.0) / 3.0;
+                    double exp_val = (exp(elem.first - best_score) + 1.5) / 3.0;
                     elem.first = pow(exp_val, acc_level);
                 }
                 sum_exp_values += elem.first;
@@ -911,12 +953,17 @@ class Book{
             @param b                    a board to change or register
             @param value                a value to change or register
         */
-        inline void change(Board b, int value){
-            if (register_symmetric_book(b, value)){
-                n_book++;
-                std::cerr << "book registered " << n_book << std::endl;
-            } else
-                std::cerr << "book changed " << n_book << std::endl;
+        inline void change(Board b, int value, int level){
+            if (contain(b)){
+                book[b].value = value;
+                book[b].level = level;
+            } else{
+                Book_elem elem;
+                elem.value = value;
+                elem.level = level;
+                register_symmetric_book(b, elem);
+                ++n_book;
+            }
         }
 
         /*
@@ -925,9 +972,9 @@ class Book{
             @param b                    a board pointer to change or register
             @param value                a value to change or register
         */
-        inline void change(Board *b, int value){
+        inline void change(Board *b, int value, int level){
             Board nb = b->copy();
-            change(nb, value);
+            change(nb, value, level);
         }
 
         /*
@@ -960,7 +1007,7 @@ class Book{
         */
         inline void save_bin(std::string file, std::string bak_file){
             if (remove(bak_file.c_str()) == -1)
-                std::cerr << "cannot delete backup. you can ignore this." << std::endl;
+                std::cerr << "cannot delete backup. you can ignore this error." << std::endl;
             rename(file.c_str(), bak_file.c_str());
             std::ofstream fout;
             fout.open(file.c_str(), std::ios::out|std::ios::binary|std::ios::trunc);
@@ -968,8 +1015,12 @@ class Book{
                 std::cerr << "can't open " << file << std::endl;
                 return;
             }
-            uint8_t elem;
+            char elem;
             std::cerr << "saving book..." << std::endl;
+            char egaroucid_str[] = "DICUORAGE";
+            fout.write((char*)&egaroucid_str, 9);
+            char book_version = 2;
+            fout.write((char*)&book_version, 1);
             fout.write((char*)&n_book, 4);
             int t = 0;
             for (auto itr = book.begin(); itr != book.end(); ++itr){
@@ -978,8 +1029,18 @@ class Book{
                     std::cerr << "saving book " << (t * 100 / (int)book.size()) << "%" << std::endl;
                 fout.write((char*)&itr->first.player, 8);
                 fout.write((char*)&itr->first.opponent, 8);
-                elem = std::max(0, std::min(HW2 * 2, itr->second + HW2));
+                elem = (char)itr->second.value;
                 fout.write((char*)&elem, 1);
+                elem = (char)itr->second.level;
+                fout.write((char*)&elem, 1);
+                elem = (char)itr->second.moves.size();
+                fout.write((char*)&elem, 1);
+                for (Book_value &move: itr->second.moves){
+                    elem = (char)move.value;
+                    fout.write((char*)&elem, 1);
+                    elem = (char)move.policy;
+                    fout.write((char*)&elem, 1);
+                }
             }
             fout.close();
             std::cerr << "saved " << t << " boards" << std::endl;
@@ -1116,20 +1177,10 @@ class Book{
         void reg_first_board(){
             Board board;
             board.reset();
-            book_old[board] = 0;
-        }
-
-        /*
-            @brief register a board
-
-            @param b                    a board to register
-            @param value                score of the board
-            @return is this board new?
-        */
-        inline bool register_book_old(Board b, int value){
-            int f_size = book_old.size();
-            book_old[b] = value;
-            return book_old.size() - f_size > 0;
+            Book_elem elem;
+            elem.value = 0;
+            elem.level = LEVEL_HUMAN;
+            book[board] = elem;
         }
 
         /*
@@ -1193,18 +1244,6 @@ class Book{
 
         inline Board get_representative_board(Board *b){
             return get_representative_board(b->copy());
-        }
-
-        /*
-            @brief register a board with checking all symmetry boards
-
-            @param b                    a board to register
-            @param value                score of the board
-            @return 1 if board is new else 0
-        */
-        inline int register_symmetric_book_old(Board b, int value){
-            Board representive_board = get_representative_board(b);
-            return register_book_old(representive_board, value);
         }
 
         /*
