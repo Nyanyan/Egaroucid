@@ -35,6 +35,21 @@ int init_ai(Settings* settings, const Directories* directories, bool *stop_loadi
     if (!book_init(settings->book_file, true, stop_loading)) {
         return ERR_BOOK_FILE_NOT_IMPORTED;
     }
+    std::vector<std::string> lst;
+    auto offset = std::string::size_type(0);
+    while (1) {
+        auto pos = settings->book_file.find(".", offset);
+        if (pos == std::string::npos) {
+            lst.push_back(settings->book_file.substr(offset));
+            break;
+        }
+        lst.push_back(settings->book_file.substr(offset, pos - offset));
+        offset = pos + 1;
+    }
+    if (lst[lst.size() - 1] == "egbk"){
+        settings->book_file += "2"; // force book version 2
+        book.save_bin(settings->book_file, settings->book_file + ".bak");
+    }
     return ERR_OK;
 }
 

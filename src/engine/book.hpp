@@ -431,7 +431,9 @@ class Book{
         */
         bool init(std::string file, bool show_log, bool *stop_loading){
             delete_all();
-            return import_file_bin(file, show_log, stop_loading);
+            if (!import_file_bin(file, show_log, stop_loading))
+                return import_file_bin_egbk(file, show_log, stop_loading);
+            return true;
         }
 
         /*
