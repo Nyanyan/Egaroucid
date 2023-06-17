@@ -736,7 +736,7 @@ private:
                 if (legal) {
                     stop_calculating();
                     resume_calculating();
-                    ai_status.ai_future = std::async(std::launch::async, ai, getData().history_elem.board, getData().menu_elements.level, getData().menu_elements.use_book, BOOK_ACCURACY_LEVEL_INF -  getData().menu_elements.book_acc_level, true, true);
+                    ai_status.ai_future = std::async(std::launch::async, ai, getData().history_elem.board, getData().menu_elements.level, getData().menu_elements.use_book, getData().menu_elements.book_acc_level, true, true);
                     ai_status.ai_thinking = true;
                 }
             }
@@ -1246,7 +1246,7 @@ private:
             analyze_info.idx = idx++;
             analyze_info.sgn = node.player ? -1 : 1;
             analyze_info.board = node.board;
-            ai_status.analyze_task_stack.emplace_back(std::make_pair(analyze_info, std::bind(ai, node.board, getData().menu_elements.level, getData().menu_elements.use_book, BOOK_ACCURACY_LEVEL_INF -  getData().menu_elements.book_acc_level, true, true)));
+            ai_status.analyze_task_stack.emplace_back(std::make_pair(analyze_info, std::bind(ai, node.board, getData().menu_elements.level, getData().menu_elements.use_book, getData().menu_elements.book_acc_level, true, true)));
         }
         std::cerr << "analyze " << ai_status.analyze_task_stack.size() << " tasks" << std::endl;
         ai_status.analyzing = true;
