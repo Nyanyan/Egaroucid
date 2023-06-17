@@ -836,13 +836,12 @@ class Book{
                 value_policies.emplace_back(std::make_pair((double)elem.value, elem.policy));
             }
             Book_value res;
-            if (value_policies.size() == 0 || best_score < board_elem.value - BOOK_LOSS_IGNORE_THRESHOLD){
+            if (value_policies.size() == 0 || best_score < -board_elem.value - BOOK_LOSS_IGNORE_THRESHOLD){
                 res.policy = -1;
                 res.value = -INF;
                 return res;
             }
             double acceptable_min_value = best_score - 2.0 * acc_level - 0.5;
-            std::cerr << best_score << " " << acceptable_min_value << std::endl;
             double sum_exp_values = 0.0;
             for (std::pair<double, int> &elem: value_policies){
                 if (elem.first < acceptable_min_value)
@@ -853,10 +852,8 @@ class Book{
                 }
                 sum_exp_values += elem.first;
             }
-            for (std::pair<double, int> &elem: value_policies){
+            for (std::pair<double, int> &elem: value_policies)
                 elem.first /= sum_exp_values;
-                std::cerr << idx_to_coord(elem.second) << " " << elem.first << std::endl;
-            }
             double rnd = myrandom();
             double s = 0.0;
             bool res_got = false;
