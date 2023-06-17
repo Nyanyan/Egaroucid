@@ -1031,7 +1031,11 @@ class Book{
             fout.write((char*)&err_end, 4);
             int verb = 0;
             fout.write((char*)&verb, 4);
-            int n_position = (int)book.size();
+            int n_position = 0;
+            for (auto itr = book.begin(); itr != book.end(); ++itr){
+                if (itr->second.moves.size())
+                    ++n_position;
+            }
             fout.write((char*)&n_position, 4);
             int t = 0;
             int n_win = 0;
@@ -1047,10 +1051,12 @@ class Book{
             Flip flip;
             Board b;
             for (auto itr = book.begin(); itr != book.end(); ++itr){
+                book_elem = itr->second;
+                if (book_elem.moves.size() == 0)
+                    continue;
                 ++t;
                 if (t % 16384 == 0)
                     std::cerr << "converting book " << (t * 100 / (int)book.size()) << "%" << std::endl;
-                book_elem = get(itr->first);
                 short_val = book_elem.value;
                 char_level = book_elem.level;
                 if (char_level > 60)
@@ -1071,8 +1077,6 @@ class Book{
                 n_link = (char)links.size();
                 if (leaf_val == -65)
                     leaf_val = 0;
-                if (n_link == 0 && leaf_move == 65)
-                    continue;
                 if (leaf_move == 65){
                     int worst_val = 65;
                     int worst_move = 65;
@@ -1110,7 +1114,7 @@ class Book{
                 fout.write((char*)&leaf_move, 1);
             }
             fout.close();
-            std::cerr << "saved " << t << " boards as a edax-formatted book" << std::endl;
+            std::cerr << "saved " << t << " boards as a edax-formatted book " << n_position << " " << book.size() << std::endl;
         }
 
         /*
