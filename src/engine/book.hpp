@@ -455,7 +455,7 @@ class Book{
             char value;
             uint64_t p, o;
             uint8_t elem;
-            uint8_t level, n_moves, val, mov;
+            char level, n_moves, val, mov;
             char egaroucid_str[10];
             char egaroucid_str_ans[] = "DICUORAGE";
             char elem_char;
@@ -538,8 +538,8 @@ class Book{
                 }
                 b.player = p;
                 b.opponent = o;
-                book_elem.value = value;
-                book_elem.level = level;
+                book_elem.value = (int)value;
+                book_elem.level = (int)level;
                 n_book += register_symmetric_book(b, book_elem);
             }
             if (*stop_loading){
@@ -743,27 +743,8 @@ class Book{
             if (!contain(b))
                 return res;
             res = book[b];
-            Flip flip;
-            for (Book_value &elem: res.moves){
-                calc_flip(&flip, &b, elem.policy);
-                b.move_board(&flip);
-                    if (b.get_legal()){
-                        if (contain(b)){
-                            elem.value = -book[b].value;
-                        }
-                    } else{
-                        b.pass();
-                            if (contain(b)){
-                                elem.value = book[b].value;
-                            }
-                        b.pass();
-                    }
-                b.undo_board(&flip);
-            }
-            book[b] = res; // update book
-            for (Book_value &elem: res.moves){
+            for (Book_value &elem: res.moves)
                 elem.policy = convert_coord_from_representative_board(elem.policy, idx);
-            }
             return res;
         }
 
@@ -1096,6 +1077,7 @@ class Book{
             Book_elem book_elem;
             Flip flip;
             int t = 0;
+            Board nb;
             for (Board &b: boards){
                 ++t;
                 if (t % 16384 == 0)
@@ -1105,14 +1087,14 @@ class Book{
                     calc_flip(&flip, &b, elem.policy);
                     b.move_board(&flip);
                         if (b.get_legal()){
-                            if (contain(b)){
-                                elem.value = -book[b].value;
-                            }
+                            nb = get_representative_board(&b);
+                            if (contain(nb))
+                                elem.value = -book[nb].value;
                         } else{
                             b.pass();
-                                if (contain(b)){
-                                    elem.value = book[b].value;
-                                }
+                                nb = get_representative_board(&b);
+                                if (contain(nb))
+                                    elem.value = book[nb].value;
                             b.pass();
                         }
                     b.undo_board(&flip);
