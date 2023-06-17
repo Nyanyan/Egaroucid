@@ -528,6 +528,6 @@ Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint_fa
         res.alt_depth = -1;
         res.alt_probability = -1;
     }
-    transposition_table.update_date();
+    // transposition_table.update_date();
     return res;
 }

@@ -1246,10 +1246,8 @@ private:
             analyze_info.idx = idx++;
             analyze_info.sgn = node.player ? -1 : 1;
             analyze_info.board = node.board;
-            ai_status.analyze_task_stack.emplace_back(std::make_pair(analyze_info, std::bind(ai, node.board, getData().menu_elements.level, getData().menu_elements.use_book, BOOK_ACCURACY_LEVEL_INF -  getData().menu_elements.book_acc_level, true, true))); // HACK: no need to update date in analyze
+            ai_status.analyze_task_stack.emplace_back(std::make_pair(analyze_info, std::bind(ai, node.board, getData().menu_elements.level, getData().menu_elements.use_book, BOOK_ACCURACY_LEVEL_INF -  getData().menu_elements.book_acc_level, true, true)));
         }
-        ++date;
-        date = manage_date(date);
         std::cerr << "analyze " << ai_status.analyze_task_stack.size() << " tasks" << std::endl;
         ai_status.analyzing = true;
         analyze_do_task();
