@@ -566,7 +566,7 @@ class Book{
             int t = 0;
             for (auto itr = book_old.book.begin(); itr != book_old.book.end(); ++itr){
                 ++t;
-                if (t % 65536 == 0)
+                if (t % 16384 == 0)
                     std::cerr << "converting book " << (t * 100 / (int)book_old.book.size()) << "%" << std::endl;
                 Book_elem book_elem;
                 book_elem.value = itr->second;
@@ -1089,12 +1089,12 @@ class Book{
                         if (b.get_legal()){
                             nb = get_representative_board(&b);
                             if (contain(nb))
-                                elem.value = -book[nb].value;
+                                elem.value = book[nb].value;
                         } else{
                             b.pass();
                                 nb = get_representative_board(&b);
                                 if (contain(nb))
-                                    elem.value = book[nb].value;
+                                    elem.value = -book[nb].value;
                             b.pass();
                         }
                     b.undo_board(&flip);
