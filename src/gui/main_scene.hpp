@@ -39,7 +39,6 @@ private:
     bool need_start_game_button;
     Umigame_status umigame_status;
     bool changing_scene;
-    uint8_t date;
     bool taking_screen_shot;
 
 public:
@@ -59,7 +58,6 @@ public:
         start_game_button.init(START_GAME_BUTTON_SX, START_GAME_BUTTON_SY, START_GAME_BUTTON_WIDTH, START_GAME_BUTTON_HEIGHT, START_GAME_BUTTON_RADIUS, language.get("play", "start_game"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
         need_start_game_button_calculation();
         changing_scene = false;
-        date = INIT_DATE;
         taking_screen_shot = false;
         std::cerr << "main scene loaded" << std::endl;
     }
@@ -738,10 +736,8 @@ private:
                 if (legal) {
                     stop_calculating();
                     resume_calculating();
-                    ai_status.ai_future = std::async(std::launch::async, ai, getData().history_elem.board, getData().menu_elements.level, getData().menu_elements.use_book, BOOK_ACCURACY_LEVEL_INF -  getData().menu_elements.book_acc_level, true, true, date);
+                    ai_status.ai_future = std::async(std::launch::async, ai, getData().history_elem.board, getData().menu_elements.level, getData().menu_elements.use_book, BOOK_ACCURACY_LEVEL_INF -  getData().menu_elements.book_acc_level, true, true);
                     ai_status.ai_thinking = true;
-                    ++date;
-                    date = manage_date(date);
                 }
             }
             else if (ai_status.ai_future.valid()) {
@@ -1168,14 +1164,12 @@ private:
                     board = getData().history_elem.board;
                     calc_flip(&flip, &board, (uint_fast8_t)(HW2_M1 - value_cell.second));
                     board.move_board(&flip);
-                    ai_status.hint_task_stack.emplace_back(std::make_pair(value_cell.second, std::bind(ai_hint, board, ai_status.hint_level, getData().menu_elements.use_book, ai_status.hint_use_multi_thread, false, date)));
+                    ai_status.hint_task_stack.emplace_back(std::make_pair(value_cell.second, std::bind(ai_hint, board, ai_status.hint_level, getData().menu_elements.use_book, ai_status.hint_use_multi_thread, false)));
                 }
             }
             ai_status.hint_n_doing_tasks = 0;
             ai_status.hint_calculating = true;
-            std::cerr << "hint search level " << ai_status.hint_level << " n_tasks " << ai_status.hint_task_stack.size() << " multi_threading " << ai_status.hint_use_multi_thread << " date " << (int)date << std::endl;
-            ++date;
-            date = manage_date(date);
+            std::cerr << "hint search level " << ai_status.hint_level << " n_tasks " << ai_status.hint_task_stack.size() << " multi_threading " << ai_status.hint_use_multi_thread << std::endl;
         }
     }
 
@@ -1252,7 +1246,7 @@ private:
             analyze_info.idx = idx++;
             analyze_info.sgn = node.player ? -1 : 1;
             analyze_info.board = node.board;
-            ai_status.analyze_task_stack.emplace_back(std::make_pair(analyze_info, std::bind(ai, node.board, getData().menu_elements.level, getData().menu_elements.use_book, BOOK_ACCURACY_LEVEL_INF -  getData().menu_elements.book_acc_level, true, true, date))); // HACK: no need to update date in analyze
+            ai_status.analyze_task_stack.emplace_back(std::make_pair(analyze_info, std::bind(ai, node.board, getData().menu_elements.level, getData().menu_elements.use_book, BOOK_ACCURACY_LEVEL_INF -  getData().menu_elements.book_acc_level, true, true))); // HACK: no need to update date in analyze
         }
         ++date;
         date = manage_date(date);

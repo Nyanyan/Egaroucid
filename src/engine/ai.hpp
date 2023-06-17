@@ -164,6 +164,7 @@ inline Search_result tree_search(Board board, int depth, uint_fast8_t mpc_level,
             std::cerr << search.n_nodes_discs[i] << " ";
         std::cerr << std::endl;
     #endif
+    transposition_table.update_date();
     return res;
 }
 
@@ -211,6 +212,7 @@ inline Search_result tree_search_iterative_deepening(Board board, int depth, uin
     res.value = g;
     res.is_end_search = is_end_search;
     res.probability = SELECTIVITY_PERCENTAGE[mpc_level];
+    transposition_table.update_date();
     return res;
 }
 
@@ -241,7 +243,9 @@ inline int tree_search_window(Board board, int depth, int alpha, int beta, uint_
     int clog_res = clog_search(board, &clog_n_nodes);
     if (clog_res != CLOG_NOT_FOUND)
         return clog_res;
-    return nega_scout(&search, alpha, beta, depth, false, LEGAL_UNDEFINED, is_end_search, &searching);
+    int res = nega_scout(&search, alpha, beta, depth, false, LEGAL_UNDEFINED, is_end_search, &searching);
+    transposition_table.update_date();
+    return res;
 }
 
 /*
@@ -524,5 +528,6 @@ Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint_fa
         res.alt_depth = -1;
         res.alt_probability = -1;
     }
+    transposition_table.update_date();
     return res;
 }
