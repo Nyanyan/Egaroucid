@@ -416,13 +416,11 @@ class Book_old{
     @brief book data
 
     @param book                 book data
-    @param n_book               number of boards registered
 */
 class Book{
     private:
         std::unordered_map<Board, Book_elem, Book_hash> book;
         std::unordered_map<Board, int, Book_hash> n_lines;
-        int n_book;
 
     public:
         /*
@@ -483,54 +481,56 @@ class Book{
                 return false;
             }
             if (fread(&n_boards, 4, 1, fp) < 1){
-                std::cerr << "[ERROR] book NOT FULLY imported " << n_book << " boards" << std::endl;
+                std::cerr << "[ERROR] book NOT FULLY imported " << book.size() << " boards" << std::endl;
                 fclose(fp);
                 return false;
             }
+            if (show_log)
+                std::cerr << n_boards << " boards to read" << std::endl;
             for (i = 0; i < n_boards; ++i) {
                 if (*stop_loading)
                     break;
                 if (i % 32768 == 0 && show_log)
                     std::cerr << "loading book " << (i * 100 / n_boards) << "%" << std::endl;
                 if (fread(&p, 8, 1, fp) < 1) {
-                    std::cerr << "[ERROR] book NOT FULLY imported " << n_book << " boards" << std::endl;
+                    std::cerr << "[ERROR] book NOT FULLY imported " << book.size() << " boards" << std::endl;
                     fclose(fp);
                     return false;
                 }
                 if (fread(&o, 8, 1, fp) < 1) {
-                    std::cerr << "[ERROR] book NOT FULLY imported " << n_book << " boards" << std::endl;
+                    std::cerr << "[ERROR] book NOT FULLY imported " << book.size() << " boards" << std::endl;
                     fclose(fp);
                     return false;
                 }
                 if (fread(&value, 1, 1, fp) < 1) {
-                    std::cerr << "[ERROR] book NOT FULLY imported " << n_book << " boards" << std::endl;
+                    std::cerr << "[ERROR] book NOT FULLY imported " << book.size() << " boards" << std::endl;
                     fclose(fp);
                     return false;
                 }
                 if (value < -HW2 || HW2 < value) {
-                    std::cerr << "[ERROR] book NOT FULLY imported got value " << value << " " << n_book << " boards" << std::endl;
+                    std::cerr << "[ERROR] book NOT FULLY imported got value " << value << " " << book.size() << " boards" << std::endl;
                     fclose(fp);
                     return false;
                 }
                 if (fread(&level, 1, 1, fp) < 1) {
-                    std::cerr << "[ERROR] book NOT FULLY imported " << n_book << " boards" << std::endl;
+                    std::cerr << "[ERROR] book NOT FULLY imported " << book.size() << " boards" << std::endl;
                     fclose(fp);
                     return false;
                 }
                 book_elem.moves.clear();
                 if (fread(&n_moves, 1, 1, fp) < 1) {
-                    std::cerr << "[ERROR] book NOT FULLY imported " << n_book << " boards" << std::endl;
+                    std::cerr << "[ERROR] book NOT FULLY imported " << book.size() << " boards" << std::endl;
                     fclose(fp);
                     return false;
                 }
                 for (uint8_t i = 0; i < n_moves; ++i){
                     if (fread(&val, 1, 1, fp) < 1) {
-                        std::cerr << "[ERROR] book NOT FULLY imported " << n_book << " boards" << std::endl;
+                        std::cerr << "[ERROR] book NOT FULLY imported " << book.size() << " boards" << std::endl;
                         fclose(fp);
                         return false;
                     }
                     if (fread(&mov, 1, 1, fp) < 1) {
-                        std::cerr << "[ERROR] book NOT FULLY imported " << n_book << " boards" << std::endl;
+                        std::cerr << "[ERROR] book NOT FULLY imported " << book.size() << " boards" << std::endl;
                         fclose(fp);
                         return false;
                     }
@@ -540,7 +540,7 @@ class Book{
                 b.opponent = o;
                 book_elem.value = (int)value;
                 book_elem.level = (int)level;
-                n_book += register_symmetric_book(b, book_elem);
+                register_symmetric_book(b, book_elem);
             }
             if (*stop_loading){
                 std::cerr << "stop loading book" << std::endl;
@@ -548,7 +548,7 @@ class Book{
                 return false;
             }
             if (show_log)
-                std::cerr << "book imported " << n_book << " boards" << std::endl;
+                std::cerr << "book imported " << book.size() << " boards" << std::endl;
             fclose(fp);
             return true;
         }
@@ -577,7 +577,7 @@ class Book{
                 book_elem.value = itr->second;
                 book_elem.level = 21; // fixed
                 book_elem.moves = book_old.get_all_moves_with_value(itr->first);
-                n_book += merge(itr->first, book_elem);
+                merge(itr->first, book_elem);
             }
         }
 
@@ -690,10 +690,10 @@ class Book{
                 }
                 book_elem.value = value;
                 book_elem.level = level;
-                n_book += register_symmetric_book(b, book_elem);
+                register_symmetric_book(b, book_elem);
             }
             if (show_log)
-                std::cerr << "book imported " << n_book << " boards" << std::endl;
+                std::cerr << "book imported " << book.size() << " boards" << std::endl;
             return true;
         }
 
@@ -704,7 +704,7 @@ class Book{
             @param elem                 book element
         */
         inline void reg(Board b, Book_elem elem){
-            n_book += register_symmetric_book(b, elem);
+            register_symmetric_book(b, elem);
         }
 
         /*
@@ -714,7 +714,7 @@ class Book{
             @param elem                 book element
         */
         inline void reg(Board *b, Book_elem elem){
-            n_book += register_symmetric_book(b->copy(), elem);
+            register_symmetric_book(b->copy(), elem);
         }
 
         /*
@@ -889,7 +889,7 @@ class Book{
             @return number of registered boards
         */
         inline int get_n_book(){
-            return n_book;
+            return (int)book.size();
         }
 
         /*
@@ -907,7 +907,6 @@ class Book{
                 elem.value = value;
                 elem.level = level;
                 register_symmetric_book(b, elem);
-                ++n_book;
             }
         }
 
@@ -929,10 +928,9 @@ class Book{
         */
         inline void delete_elem(Board b){
             if (delete_symmetric_book(b)){
-                n_book--;
-                std::cerr << "deleted book elem " << n_book << std::endl;
+                std::cerr << "deleted book elem " << book.size() << std::endl;
             } else
-                std::cerr << "book elem NOT deleted " << n_book << std::endl;
+                std::cerr << "book elem NOT deleted " << book.size() << std::endl;
         }
 
         /*
@@ -941,7 +939,6 @@ class Book{
         inline void delete_all(){
             book.clear();
             reg_first_board();
-            n_book = 1;
         }
 
         /*
@@ -966,6 +963,7 @@ class Book{
             fout.write((char*)&egaroucid_str, 9);
             char book_version = 2;
             fout.write((char*)&book_version, 1);
+            int n_book = (int)book.size();
             fout.write((char*)&n_book, 4);
             int t = 0;
             for (auto itr = book.begin(); itr != book.end(); ++itr){
@@ -989,7 +987,7 @@ class Book{
             }
             fout.close();
             int book_size = (int)book.size();
-            std::cerr << "saved " << t << " boards , book_size " << book_size << " " << n_book << std::endl;
+            std::cerr << "saved " << t << " boards , book_size " << book_size << std::endl;
         }
 
         /*
