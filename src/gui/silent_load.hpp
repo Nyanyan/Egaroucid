@@ -30,7 +30,7 @@ void init_default_settings(const Directories* directories, const Resources* reso
 	settings->n_threads = std::min(32, (int)std::thread::hardware_concurrency());
 	settings->auto_update_check = 1;
 	settings->lang_name = "japanese";
-	settings->book_file = directories->document_dir + "Egaroucid/book.egbk";
+	settings->book_file = directories->document_dir + "Egaroucid/book.egbk2";
 	settings->use_book = true;
 	settings->level = DEFAULT_LEVEL;
 	settings->ai_put_black = false;
