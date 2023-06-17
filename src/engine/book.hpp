@@ -455,17 +455,18 @@ class Book{
             uint64_t p, o;
             uint8_t elem;
             uint8_t level, n_moves, val, mov;
-            char egaroucid_str[] = "EGAROUCID";
+            char egaroucid_str[10];
+            char egaroucid_str_ans[] = "DICUORAGE";
             char elem_char;
             char book_version;
+            if (fread(egaroucid_str, 1, 9, fp) < 9) {
+                std::cerr << "[ERROR] file broken" << std::endl;
+                fclose(fp);
+                return false;
+            }
             for (int i = 0; i < 9; ++i){
-                if (fread(&elem_char, 1, 1, fp) < 1) {
-                    std::cerr << "[ERROR] file broken" << std::endl;
-                    fclose(fp);
-                    return false;
-                }
-                if (elem_char != egaroucid_str[i]){
-                    std::cerr << "[ERROR] This is not Egarocuid book version 2, found " << elem_char << " at char " << i << std::endl;
+                if (egaroucid_str[i] != egaroucid_str_ans[i]){
+                    std::cerr << "[ERROR] This is not Egarocuid book version 2, found " << egaroucid_str[i] << ", " << (int)egaroucid_str[i] << " at char " << i << ", expected " << egaroucid_str_ans[i] << " , " << (int)egaroucid_str_ans[i] << std::endl;
                     fclose(fp);
                     return false;
                 }
@@ -476,7 +477,7 @@ class Book{
                 return false;
             }
             if (book_version != 2){
-                std::cerr << "[ERROR] This is not Egarocuid book version 2, found version" << book_version << std::endl;
+                std::cerr << "[ERROR] This is not Egarocuid book version 2, found version" << (int)book_version << std::endl;
                 fclose(fp);
                 return false;
             }

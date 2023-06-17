@@ -74,7 +74,7 @@ Options get_options(std::vector<Commandline_option> commandline_options, std::st
             std::cerr << "[ERROR] hash argument out of range" << std::endl;
         }
     }
-    res.book_file = binary_path + "resources/book.egbk";
+    res.book_file = binary_path + "resources/book.egbk2";
     str = find_commandline_option(commandline_options, ID_BOOK_FILE);
     if (str != OPTION_NOT_FOUND)
         res.book_file = str;
