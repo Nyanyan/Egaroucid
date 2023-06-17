@@ -153,9 +153,7 @@ Search_result go_noprint(Board_info *board, Options *options, State *state){
         Search_result res;
         return res;
     }
-    Search_result result = ai(board->board, options->level, true, BOOK_ACCURACY_LEVEL_INF, true, options->show_log, state->date);
-    ++state->date;
-    state->date = manage_date(state->date);
+    Search_result result = ai(board->board, options->level, true, BOOK_ACCURACY_LEVEL_INF, true, options->show_log);
     Flip flip;
     calc_flip(&flip, &board->board, result.policy);
     board->board.move_board(&flip);
@@ -278,17 +276,13 @@ void hint(Board_info *board, Options *options, State *state, std::string arg){
         Board n_board = board->board.copy();
         for (Flip_value &flip_value: move_list){
             n_board.move_board(&flip_value.flip);
-                flip_value.value = -ai(n_board, presearch_level, true, BOOK_ACCURACY_LEVEL_INF, true, false, state->date).value;
-                ++state->date;
-                state->date = manage_date(state->date);
+                flip_value.value = -ai(n_board, presearch_level, true, BOOK_ACCURACY_LEVEL_INF, true, false).value;
             n_board.undo_board(&flip_value.flip);
         }
         std::sort(move_list.rbegin(), move_list.rend());
         for (int i = 0; i < n_check; ++i){
             n_board.move_board(&move_list[i].flip);
-                Search_result elem = ai(n_board, options->level, true, BOOK_ACCURACY_LEVEL_INF, true, false, state->date);
-                ++state->date;
-                state->date = manage_date(state->date);
+                Search_result elem = ai(n_board, options->level, true, BOOK_ACCURACY_LEVEL_INF, true, false);
                 elem.value *= -1;
                 elem.policy = move_list[i].flip.pos;
             n_board.undo_board(&move_list[i].flip);
@@ -309,9 +303,7 @@ inline void analyze(Board_info *board, Options *options, State *state){
         uint64_t played_board = (n_board.player | n_board.opponent) ^ (board->boards[i + 1].player | board->boards[i + 1].opponent);
         if (pop_count_ull(played_board) == 1){
             uint_fast8_t played_move = ntz(played_board);
-            Analyze_result result = ai_analyze(n_board, options->level, true, state->date, played_move);
-            ++state->date;
-            state->date = manage_date(state->date);
+            Analyze_result result = ai_analyze(n_board, options->level, true, played_move);
             std::string judge = "";
             ++summary[board->players[i]].n_ply;
             if (result.alt_score > result.played_score){

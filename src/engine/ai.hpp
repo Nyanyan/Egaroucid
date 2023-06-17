@@ -32,10 +32,9 @@
     @param mpc_level            MPC level
     @param show_log             show log?
     @param use_multi_thread     search in multi thread?
-    @param date                 search date (to rewrite old hash data)
     @return the result in Search_result structure
 */
-inline Search_result tree_search(Board board, int depth, uint_fast8_t mpc_level, bool show_log, bool use_multi_thread, uint8_t date){
+inline Search_result tree_search(Board board, int depth, uint_fast8_t mpc_level, bool show_log, bool use_multi_thread){
     uint64_t strt;
     Search_result res;
     depth = std::min(HW2 - board.n_discs(), depth);
@@ -57,7 +56,6 @@ inline Search_result tree_search(Board board, int depth, uint_fast8_t mpc_level,
     int g = SCORE_UNDEFINED, policy = -1;
     std::pair<int, int> result;
     search.init_board(&board);
-    search.date = date;
     search.n_nodes = 0ULL;
     #if USE_SEARCH_STATISTICS
         for (int i = 0; i < HW2; ++i)
@@ -182,7 +180,7 @@ inline Search_result tree_search(Board board, int depth, uint_fast8_t mpc_level,
     @param use_multi_thread     search in multi thread?
     @return the result in Search_result structure
 */
-inline Search_result tree_search_iterative_deepening(Board board, int depth, uint_fast8_t mpc_level, bool show_log, bool use_multi_thread, uint8_t date){
+inline Search_result tree_search_iterative_deepening(Board board, int depth, uint_fast8_t mpc_level, bool show_log, bool use_multi_thread){
     Search search;
     int g = 0, policy = -1;
     std::pair<int, int> result;
@@ -192,7 +190,6 @@ inline Search_result tree_search_iterative_deepening(Board board, int depth, uin
     search.n_nodes = 0ULL;
     search.mpc_level = mpc_level;
     search.use_multi_thread = use_multi_thread;
-    search.date = date;
     calc_features(&search);
     std::vector<Clog_result> clogs;
     uint64_t strt = tim();
@@ -228,10 +225,9 @@ inline Search_result tree_search_iterative_deepening(Board board, int depth, uin
     @param beta                 beta of the search window
     @param mpc_level            MPC probability
     @param use_multi_thread     search in multi thread?
-    @param date                 search date (to rewrite old hash data)
     @return the score of the board
 */
-inline int tree_search_window(Board board, int depth, int alpha, int beta, uint_fast8_t mpc_level, bool use_multi_thread, uint8_t date){
+inline int tree_search_window(Board board, int depth, int alpha, int beta, uint_fast8_t mpc_level, bool use_multi_thread){
     Search search;
     depth = std::min(HW2 - board.n_discs(), depth);
     bool is_end_search = (HW2 - board.n_discs() == depth);
@@ -239,7 +235,6 @@ inline int tree_search_window(Board board, int depth, int alpha, int beta, uint_
     search.n_nodes = 0ULL;
     search.mpc_level = mpc_level;
     search.use_multi_thread = use_multi_thread;
-    search.date = date;
     calc_features(&search);
     bool searching = true;
     uint64_t clog_n_nodes = 0ULL;
@@ -261,10 +256,9 @@ inline int tree_search_window(Board board, int depth, int alpha, int beta, uint_
 	@param book_acc_level		book accuracy level
     @param use_multi_thread     search in multi thread?
     @param show_log             show log?
-    @param date                 search date (to rewrite old hash data)
     @return the result in Search_result structure
 */
-Search_result ai(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint8_t date){
+Search_result ai(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log){
     Search_result res;
     int value_sign = 1;
     if (board.get_legal() == 0ULL){
@@ -309,7 +303,7 @@ Search_result ai(Board board, int level, bool use_book, int book_acc_level, bool
         get_level(level, board.n_discs() - 4, &is_mid_search, &depth, &mpc_level);
         if (show_log)
             std::cerr << "level status " << level << " " << board.n_discs() - 4 << " discs depth " << depth << "@" << SELECTIVITY_PERCENTAGE[mpc_level] << "%" << std::endl;
-        res = tree_search(board, depth, mpc_level, show_log, use_multi_thread, date);
+        res = tree_search(board, depth, mpc_level, show_log, use_multi_thread);
         res.value *= value_sign;
     }
     return res;
@@ -325,10 +319,9 @@ Search_result ai(Board board, int level, bool use_book, int book_acc_level, bool
     @param use_book             use book?
     @param use_multi_thread     search in multi thread?
     @param show_log             show log?
-    @param date                 search date (to rewrite old hash data)
     @return the result in Search_result structure
 */
-Search_result ai_hint(Board board, int level, bool use_book, bool use_multi_thread, bool show_log, uint8_t date){
+Search_result ai_hint(Board board, int level, bool use_book, bool use_multi_thread, bool show_log){
     Search_result res;
     int value_sign = 1;
     if (board.get_legal() == 0ULL){
@@ -373,7 +366,7 @@ Search_result ai_hint(Board board, int level, bool use_book, bool use_multi_thre
         get_level(level, board.n_discs() - 4, &is_mid_search, &depth, &mpc_level);
         if (show_log)
             std::cerr << "level status " << level << " " << board.n_discs() - 4 << " discs depth " << depth << "@" << SELECTIVITY_PERCENTAGE[mpc_level] << "%" << std::endl;
-        res = tree_search_iterative_deepening(board, depth, mpc_level, show_log, use_multi_thread, date);
+        res = tree_search_iterative_deepening(board, depth, mpc_level, show_log, use_multi_thread);
         res.value *= value_sign;
     }
     return res;
@@ -389,10 +382,9 @@ Search_result ai_hint(Board board, int level, bool use_book, bool use_multi_thre
     @param alpha                alpha of the search window
     @param beta                 beta of the search window
     @param use_multi_thread     search in multi thread?
-    @param date                 search date (to rewrite old hash data)
     @return the score of the board
 */
-int ai_window(Board board, int level, int alpha, int beta, bool use_multi_thread, uint8_t date){
+int ai_window(Board board, int level, int alpha, int beta, bool use_multi_thread){
     int value_sign = 1;
     if (board.get_legal() == 0ULL){
         board.pass();
@@ -410,7 +402,7 @@ int ai_window(Board board, int level, int alpha, int beta, bool use_multi_thread
         bool is_mid_search;
         uint_fast8_t mpc_level;
         get_level(level, board.n_discs() - 4, &is_mid_search, &depth, &mpc_level);
-    return value_sign * tree_search_window(board, depth, alpha, beta, mpc_level, use_multi_thread, date);
+    return value_sign * tree_search_window(board, depth, alpha, beta, mpc_level, use_multi_thread);
 }
 
 /*
@@ -455,10 +447,9 @@ void ai_opponent_move(Board board, double res[]){
     @param board                board to solve
     @param level                level of AI
     @param use_multi_thread     search in multi thread?
-    @param date                 search date (to rewrite old hash data)
     @return the result in Search_result structure
 */
-Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint8_t date, uint_fast8_t played_move){
+Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint_fast8_t played_move){
     Analyze_result res;
     res.played_move = played_move;
     int got_depth, depth;
@@ -471,7 +462,6 @@ Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint8_t
         depth = got_depth;
     Search search;
     search.init_board(&board);
-    search.date = date;
     search.n_nodes = 0ULL;
     search.mpc_level = mpc_level;
     #if USE_SEARCH_STATISTICS

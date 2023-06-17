@@ -12,10 +12,8 @@
 
 struct State{
     bool book_changed;
-    uint8_t date;
 
     State(){
         book_changed = false;
-        date = INIT_DATE;
     }
 };

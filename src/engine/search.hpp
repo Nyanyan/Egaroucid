@@ -250,7 +250,6 @@ class Search{
         #if USE_SEARCH_STATISTICS
             uint64_t n_nodes_discs[HW2];
         #endif
-        uint8_t date;
 
     public:
         /*

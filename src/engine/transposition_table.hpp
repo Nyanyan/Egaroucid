@@ -261,6 +261,7 @@ class Transposition_table{
         Hash_node table_stack[TRANSPOSITION_TABLE_STACK_SIZE];
         Hash_node *table_heap;
         size_t table_size;
+        uint8_t date;
 
     public:
         /*
@@ -269,6 +270,18 @@ class Transposition_table{
         Transposition_table(){
             table_heap = nullptr;
             table_size = 0;
+            date = INIT_DATE;
+        }
+
+        /*
+            @brief Update transposition table date
+        */
+        inline void update_date(){
+            ++date;
+            if (date > MAX_DATE){
+                reset_date();
+                date = INIT_DATE;
+            }
         }
 
         /*
@@ -398,7 +411,7 @@ class Transposition_table{
         */
         inline void reg(const Search *search, uint32_t hash, const int depth, int alpha, int beta, int value, int policy){
             Hash_node *node = get_node(hash);
-            const uint32_t level = get_level_write_common(search->date, depth, search->mpc_level);
+            const uint32_t level = get_level_write_common(date, depth, search->mpc_level);
             uint32_t node_level;
             for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
                 if (node->data.get_level_write() <= level){
@@ -409,13 +422,13 @@ class Transposition_table{
                                 if (node_level == level)
                                     node->data.reg_same_level(alpha, beta, value, policy);
                                 else
-                                    node->data.reg_new_level(depth, search->mpc_level, search->date, alpha, beta, value, policy);
+                                    node->data.reg_new_level(depth, search->mpc_level, date, alpha, beta, value, policy);
                                 node->lock.unlock();
                                 return;
                             } else{
                                 node->board.player = search->board.player;
                                 node->board.opponent = search->board.opponent;
-                                node->data.reg_new_data(depth, search->mpc_level, search->date, alpha, beta, value, policy);
+                                node->data.reg_new_data(depth, search->mpc_level, date, alpha, beta, value, policy);
                                 node->lock.unlock();
                                 return;
                             }
@@ -441,7 +454,7 @@ class Transposition_table{
         */
         inline void reg_nompc(const Search *search, uint32_t hash, const int depth, int alpha, int beta, int value, int policy){
             Hash_node *node = get_node(hash);
-            const uint32_t level = get_level_write_common(search->date, depth, MPC_100_LEVEL);
+            const uint32_t level = get_level_write_common(date, depth, MPC_100_LEVEL);
             uint32_t node_level;
             for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
                 if (node->data.get_level_write() <= level){
@@ -452,13 +465,13 @@ class Transposition_table{
                                 if (node_level == level)
                                     node->data.reg_same_level(alpha, beta, value, policy);
                                 else
-                                    node->data.reg_new_level(depth, MPC_100_LEVEL, search->date, alpha, beta, value, policy);
+                                    node->data.reg_new_level(depth, MPC_100_LEVEL, date, alpha, beta, value, policy);
                                 node->lock.unlock();
                                 return;
                             } else{
                                 node->board.player = search->board.player;
                                 node->board.opponent = search->board.opponent;
-                                node->data.reg_new_data(depth, MPC_100_LEVEL, search->date, alpha, beta, value, policy);
+                                node->data.reg_new_data(depth, MPC_100_LEVEL, date, alpha, beta, value, policy);
                                 node->lock.unlock();
                                 return;
                             }
@@ -482,7 +495,6 @@ class Transposition_table{
         */
         inline void get(const Search *search, uint32_t hash, const int depth, int *lower, int *upper, uint_fast8_t moves[]){
             Hash_node *node = get_node(hash);
-            //const uint32_t level = ((uint32_t)search->date << 24) | ((uint32_t)depth << 16) | ((uint32_t)search->mpc_level << 8);
             const uint32_t level = get_level_read_common(depth, search->mpc_level);
             for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
                 if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
@@ -512,7 +524,6 @@ class Transposition_table{
         */
         inline void get(const Search *search, uint32_t hash, const int depth, int *lower, int *upper){
             Hash_node *node = get_node(hash);
-            //const uint32_t level = ((uint32_t)search->date << 24) | ((uint32_t)depth << 16) | ((uint32_t)search->mpc_level << 8);
             const uint32_t level = get_level_read_common(depth, search->mpc_level);
             for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
                 if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
@@ -625,19 +636,6 @@ bool hash_resize(int hash_level_failed, int hash_level, std::string binary_path,
         std::cerr << "hash resized to level " << hash_level << " elements " << hash_sizes[hash_level] << " size " << size_mb << " MB" << std::endl;
     }
     return true;
-}
-
-/*
-    @brief manage date
-
-    @return new date
-*/
-uint8_t manage_date(uint8_t date){
-    if (date > MAX_DATE){
-        transposition_table.reset_date();
-        return INIT_DATE;
-    }
-    return date;
 }
 
 /*
