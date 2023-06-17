@@ -50,11 +50,16 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
     round_rect.drawFrame(INFO_RECT_THICKNESS, colors.white);
     if (history_elem.board.get_legal()) {
         fonts.font(Format(history_elem.board.n_discs() - 3) + language.get("info", "moves")).draw(13, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + 5));
+        String ai_human_str;
+        if ((menu_elements.ai_put_black && history_elem.player == BLACK) || (menu_elements.ai_put_white && history_elem.player == WHITE))
+            ai_human_str = language.get("info", "ai");
+        else
+            ai_human_str = language.get("info", "human");
         if (history_elem.player == BLACK) {
-            fonts.font(language.get("info", "black")).draw(20, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + 22));
+            fonts.font(language.get("info", "black") + U" " + ai_human_str).draw(20, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + 22));
         }
         else {
-            fonts.font(language.get("info", "white")).draw(20, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + 22));
+            fonts.font(language.get("info", "white") + U" " + ai_human_str).draw(20, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + 22));
         }
     }
     else {
