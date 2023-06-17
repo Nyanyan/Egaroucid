@@ -120,7 +120,7 @@ class Umigame{
                 return umigame_res;
             if (depth == 0)
                 return umigame_res;
-			if (book.get(b) == -INF)
+			if (!book.contain(b))
 				return umigame_res;
             umigame_res = get_umigame(b);
             if (umigame_res.b != UMIGAME_UNDEFINED)
@@ -137,8 +137,8 @@ class Umigame{
             for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
                 calc_flip(&flip, b, cell);
                 b->move_board(&flip);
-                    val = book.get(b);
-                    if (val != -INF && val >= max_val) {
+                    val = book.get(b).value;
+                    if (val != SCORE_UNDEFINED && val >= max_val) {
                         if (val > max_val) {
                             boards.clear();
                             max_val = val;

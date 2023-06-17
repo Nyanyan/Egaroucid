@@ -140,7 +140,7 @@ class Book_old{
         */
         bool init(std::string file, bool show_log, bool *stop_loading){
             delete_all();
-            return import_file_bin(file, show_log, stop_loading);
+            return import_file_bin_egbk(file, show_log, stop_loading);
         }
 
         /*
@@ -207,7 +207,7 @@ class Book_old{
             return true;
         }
 
-        inline bool import_file_bin(std::string file, bool show_log){
+        inline bool import_file_bin_egbk(std::string file, bool show_log){
             bool stop_loading = false;
             return import_file_bin_egbk(file, show_log, &stop_loading);
         }
@@ -262,17 +262,17 @@ class Book_old{
             @param b                    a board pointer to find
             @return vector of moves
         */
-        inline std::vector<Book_value> get_all_moves_with_value(Board *b){
+        inline std::vector<Book_value> get_all_moves_with_value(Board b){
             std::vector<Book_value> policies;
-            if (get(b) == -INF)
+            if (get(&b) == -INF)
                 return policies;
             Board nb;
-            uint64_t legal = b->get_legal();
+            uint64_t legal = b.get_legal();
             Flip flip;
             int value;
             for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-                calc_flip(&flip, b, cell);
-                nb = b->move_copy(&flip);
+                calc_flip(&flip, &b, cell);
+                nb = b.move_copy(&flip);
                 value = get(&nb);
                 if (value != -INF){
                     Book_value elem;
@@ -434,6 +434,7 @@ class Book{
                 return false;
             }
             Board b;
+            Book_elem book_elem;
             int n_boards, i, value;
             uint64_t p, o;
             uint8_t elem;
@@ -498,7 +499,7 @@ class Book{
                     fclose(fp);
                     return false;
                 }
-                std::vector<Book_value> moves;
+                book_elem.moves.clear();
                 if (fread(&n_moves, 1, 1, fp) < 1) {
                     std::cerr << "[ERROR] book NOT FULLY imported " << n_book << " boards" << std::endl;
                     fclose(fp);
@@ -515,11 +516,13 @@ class Book{
                         fclose(fp);
                         return false;
                     }
-                    moves.emplace_back(Book_value{(int)mov, (int)val});
+                    book_elem.moves.emplace_back(Book_value{(int)mov, (int)val});
                 }
                 b.player = p;
                 b.opponent = o;
-                n_book += register_symmetric_book(b, Book_elem{value, level, moves});
+                book_elem.value = value;
+                book_elem.level = level;
+                n_book += register_symmetric_book(b, book_elem);
             }
             if (*stop_loading){
                 std::cerr << "stop loading book" << std::endl;
@@ -540,13 +543,13 @@ class Book{
         */
         inline bool import_file_bin_egbk(std::string file, bool show_log, bool *stop_loading){
             Book_old book_old;
-            if (!book_old.init(file, show_log, *stop_loading))
+            if (!book_old.init(file, show_log, stop_loading))
                 return false;
             for (auto itr = book_old.book.begin(); itr != book_old.book.end(); ++itr){
                 Book_elem book_elem;
                 book_elem.value = itr->second;
                 book_elem.level = 21; // fixed
-                book_elem.moves = book_old.get_all_moves_with_value(&(itr->first));
+                book_elem.moves = book_old.get_all_moves_with_value(itr->first);
                 n_book += merge(itr->first, book_elem);
             }
         }
@@ -592,6 +595,7 @@ class Book{
             char link = 0, link_value, link_move, level;
             Board b;
             Flip flip;
+            Book_elem book_elem;
             for (i = 0; i < n_boards; ++i){
                 if (i % 32768 == 0 && show_log)
                     std::cerr << "loading edax book " << (i * 100 / n_boards) << "%" << std::endl;
@@ -637,7 +641,7 @@ class Book{
                 b.player = player;
                 b.opponent = opponent;
                 value *=- -1;
-                std::vector<Book_value> moves;
+                book_elem.moves.clear();
                 for (j = 0; j < (int)link + 1; ++j) {
                     if (fread(&link_value, 1, 1, fp) < 1) {
                         std::cerr << "[ERROR] file broken" << std::endl;
@@ -651,10 +655,15 @@ class Book{
                     }
                     if (link_move < HW2) {
                         link_value *=- -1;
-                        moves.emplace_back(Book_value{(int)link_move, (int)link_value});
+                        Book_value book_value;
+                        book_value.policy = link_move;
+                        book_value.value = link_value;
+                        book_elem.moves.emplace_back(book_value);
                     }
                 }
-                n_book += register_symmetric_book(b, Book_elem{(int)value, (int)level, moves});
+                book_elem.value = value;
+                book_elem.level = level;
+                n_book += register_symmetric_book(b, book_elem);
             }
             if (show_log)
                 std::cerr << "book imported " << n_book << " boards" << std::endl;
@@ -745,6 +754,17 @@ class Book{
         }
 
         /*
+            @brief get registered score with all rotation
+
+            @param b                    a board to find
+            @return registered value (if not registered, returns -INF)
+        */
+        inline Book_elem get(Board b){
+            Board representive_board = get_representative_board(b);
+            return get_onebook(representive_board);
+        }
+
+        /*
             @brief get all best moves
 
             @param b                    a board pointer to find
@@ -826,13 +846,14 @@ class Book{
             double rnd = myrandom();
             double s = 0.0;
             bool res_got = false;
+            Flip flip;
             for (std::pair<double, int> &elem: value_policies){
                 s += elem.first;
                 if (s >= rnd){
                     res.policy = elem.second;
                     calc_flip(&flip, b, res.policy);
                     Board nb = b->move_copy(&flip);
-                    res.value = get(&nb);
+                    res.value = get(&nb).value;
                     res_got = true;
                     break;
                 }
@@ -841,7 +862,7 @@ class Book{
                 res.policy = value_policies.back().second;
                 calc_flip(&flip, b, res.policy);
                 Board nb = b->move_copy(&flip);
-                res.value = get(&nb);
+                res.value = get(&nb).value;
             }
             return res;
         }
@@ -1007,6 +1028,7 @@ class Book{
             Book_elem book_elem;
             char link_value, link_move;
             char leaf_val = 0, leaf_move = 65;
+            char n_link;
             for (auto itr = book.begin(); itr != book.end(); ++itr){
                 ++t;
                 if (t % 16384 == 0)
@@ -1023,11 +1045,12 @@ class Book{
                 fout.write((char*)&short_val, 2);
                 fout.write((char*)&short_val, 2);
                 fout.write((char*)&short_val, 2);
+                n_link = (char)book_elem.moves.size();
                 fout.write((char*)&n_link, 1);
                 fout.write((char*)&char_level, 1);
                 for (Book_value &book_value: book_elem.moves){
                     link_value = book_value.value;
-                    link_move = book_value.move;
+                    link_move = book_value.policy;
                     fout.write((char*)&link_value, 1);
                     fout.write((char*)&link_move, 1);
                 }
@@ -1047,7 +1070,7 @@ class Book{
                 boards.emplace_back(itr->first);
             Book_elem book_elem;
             Flip flip;
-            for (Board &board: b){
+            for (Board &b: boards){
                 book_elem = book[b];
                 for (Book_value &elem: book_elem.moves){
                     calc_flip(&flip, &b, elem.policy);

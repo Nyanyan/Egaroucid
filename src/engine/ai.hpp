@@ -342,7 +342,7 @@ Search_result ai_hint(Board board, int level, bool use_book, bool use_multi_thre
             value_sign = -1;
         }
     }
-    int book_result = book.get(&board);
+    int book_result = book.get(&board).value;
     if (book_result != -INF && use_book){
         if (show_log)
             std::cerr << "book " << idx_to_coord(book_result) << std::endl;
@@ -397,7 +397,7 @@ int ai_window(Board board, int level, int alpha, int beta, bool use_multi_thread
         else
             value_sign = -1;
     }
-    int book_result = book.get(&board);
+    int book_result = book.get(&board).value;
     if (book_result != -INF)
         return -value_sign * book_result;
     else if (level == 0)
@@ -478,8 +478,8 @@ Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint_fa
     calc_flip(&flip, &search.board, played_move);
     eval_move(&search, &flip);
     search.move(&flip);
-        res.played_score = book.get(&search.board);
-        if (res.played_score != -INF){
+        res.played_score = book.get(&search.board).value;
+        if (res.played_score != SCORE_UNDEFINED){
             res.played_depth = SEARCH_BOOK;
             res.played_probability = SELECTIVITY_PERCENTAGE[MPC_100_LEVEL];
         } else{
@@ -498,8 +498,8 @@ Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint_fa
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
             calc_flip(&flip, &search.board, cell);
             search.board.move_board(&flip);
-                g = book.get(&search.board);
-                if (g != -INF){
+                g = book.get(&search.board).value;
+                if (g != SCORE_UNDEFINED){
                     book_found = true;
                     if (v < g){
                         v = g;
