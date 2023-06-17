@@ -667,7 +667,6 @@ class Book{
                 }
                 b.player = player;
                 b.opponent = opponent;
-                value *=- -1;
                 book_elem.moves.clear();
                 for (j = 0; j < (int)link + 1; ++j) {
                     if (fread(&link_value, 1, 1, fp) < 1) {
@@ -681,14 +680,13 @@ class Book{
                         return false;
                     }
                     if (link_move < HW2) {
-                        link_value *=- -1;
                         Book_value book_value;
                         book_value.policy = link_move;
-                        book_value.value = link_value;
+                        book_value.value = -link_value;
                         book_elem.moves.emplace_back(book_value);
                     }
                 }
-                book_elem.value = value;
+                book_elem.value = -value;
                 book_elem.level = level;
                 register_symmetric_book(b, book_elem);
             }
