@@ -32,7 +32,7 @@ int ai_window(Board board, int level, int alpha, int beta, bool use_multi_thread
     @return a score of the board
 */
 inline int book_enlarge_calc_value(Board board, int level){
-    return ai(board, level, true, BOOK_ACCURACY_LEVEL_INF, true, false).value;
+    return ai(board, level, true, 0, true, false).value;
 }
 
 /*
@@ -104,7 +104,7 @@ int book_widen_search(Board board, int level, const int book_depth, int expected
         board.pass();
         return g;
     }
-    Search_result best_move = ai(board, level, true, BOOK_ACCURACY_LEVEL_INF, true, false);
+    Search_result best_move = ai(board, level, true, 0, true, false);
     std::cerr << "time " << ms_to_time_short(tim() - strt) << " depth " << board.n_discs() - 4 << " BM value " << best_move.value << std::endl;
     Flip flip;
     calc_flip(&flip, &board, (uint_fast8_t)best_move.policy);
@@ -151,7 +151,7 @@ int book_widen_search(Board board, int level, const int book_depth, int expected
 }
 
 int calc_book_widen_sum_error(Board root_board, int book_depth, int expected_error){
-    return std::max(expected_error, (book_depth + 4 - root_board.n_discs()) * expected_error / 12);
+    return std::max(expected_error, (book_depth + 4 - root_board.n_discs()) * expected_error / 8);
 }
 
 /*
