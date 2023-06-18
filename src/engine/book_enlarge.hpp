@@ -36,22 +36,6 @@ inline int book_enlarge_calc_value(Board board, int level){
 }
 
 /*
-    @brief Get adoptable error
-
-    @param level                search level
-    @param expected_error       expected error set by users
-    @param book_depth           book depth
-    @param n_discs              number of discs
-
-    @return adoptable error
-*/
-int calc_adoptable_error(int level, int expected_error, int book_depth, int n_discs){
-    if (get_level_complete_depth(level) >= HW2 - n_discs)
-        return 0;
-    return std::max(expected_error, (book_depth + 4 - n_discs) * expected_error / 5);
-}
-
-/*
     @brief Widen a book recursively
 
     This function widen the book.
@@ -151,7 +135,7 @@ int book_widen_search(Board board, int level, const int book_depth, int expected
 }
 
 int calc_book_widen_sum_error(Board root_board, int book_depth, int expected_error){
-    return std::max(expected_error, (book_depth + 4 - root_board.n_discs()) * expected_error / 8);
+    return std::max(expected_error, (book_depth + 4 - root_board.n_discs()) * expected_error / 12);
 }
 
 /*

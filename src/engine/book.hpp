@@ -762,6 +762,36 @@ class Book{
             if (!contain(b))
                 return res;
             res = book[b];
+            /*
+            uint64_t legal = b.get_legal();
+            Flip flip;
+            for (Book_value &elem: res.moves)
+                legal ^= 1ULL << elem.policy;
+            if (legal){
+                for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+                    calc_flip(&flip, &b, cell);
+                    b.move_board(&flip);
+                        if (b.get_legal()){
+                            if (contain_symmetry(b)){
+                                Book_value move;
+                                move.policy = cell;
+                                move.value = -get(b).value;
+                                res.moves.emplace_back(move);
+                            }
+                        } else{
+                            b.pass();
+                                if (contain_symmetry(b)){
+                                    Book_value move;
+                                    move.policy = cell;
+                                    move.value = get(b).value;
+                                    res.moves.emplace_back(move);
+                                }
+                            b.pass();
+                        }
+                    b.undo_board(&flip);
+                }
+            }
+            */
             for (Book_value &elem: res.moves)
                 elem.policy = convert_coord_from_representative_board(elem.policy, idx);
             return res;
@@ -1137,6 +1167,7 @@ class Book{
             link_book(stop);
             Board root_board;
             root_board.reset();
+            std::cerr << "negamaxing book..." << std::endl;
             negamax_book(root_board, stop);
         }
 
@@ -1148,6 +1179,7 @@ class Book{
             link_book(&stop);
             Board root_board;
             root_board.reset();
+            std::cerr << "negamaxing book..." << std::endl;
             negamax_book(root_board, &stop);
         }
 
@@ -1197,7 +1229,6 @@ class Book{
                     book[b] = book_elem;
                 }
             }
-            std::cerr << "negamaxing book..." << std::endl;
         }
 
         Book_negamax negamax_book(Board board, bool *stop){

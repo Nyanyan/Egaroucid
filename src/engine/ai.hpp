@@ -398,8 +398,8 @@ int ai_window(Board board, int level, int alpha, int beta, bool use_multi_thread
             value_sign = -1;
     }
     int book_result = book.get(&board).value;
-    if (book_result != -INF)
-        return -value_sign * book_result;
+    if (book_result != SCORE_UNDEFINED)
+        return value_sign * book_result;
     else if (level == 0)
         return value_sign * mid_evaluate(&board);
     int depth;
