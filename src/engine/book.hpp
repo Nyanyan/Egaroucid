@@ -1074,12 +1074,14 @@ class Book{
                 b = itr->first;
                 for (Book_value &book_value: book_elem.moves){
                     calc_flip(&flip, &b, (uint_fast8_t)book_value.policy);
-                    if (contain_symmetry(b.move_copy(&flip)))
-                        links.emplace_back(book_value);
-                    else if (leaf_val < book_value.value){
-                        leaf_val = book_value.value;
-                        leaf_move = book_value.policy;
-                    }
+                    b.move_board(&flip);
+                        if (get(b).moves.size())
+                            links.emplace_back(book_value);
+                        else if (leaf_val < book_value.value){
+                            leaf_val = book_value.value;
+                            leaf_move = book_value.policy;
+                        }
+                    b.undo_board(&flip);
                 }
                 n_link = (char)links.size();
                 if (leaf_move == 65){
