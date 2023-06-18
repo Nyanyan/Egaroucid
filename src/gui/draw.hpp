@@ -56,10 +56,10 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
         else
             ai_human_str = language.get("info", "human");
         if (history_elem.player == BLACK) {
-            fonts.font(language.get("info", "black") + U" " + ai_human_str).draw(20, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + 22));
+            fonts.font(language.get("info", "black") + U" " + ai_human_str).draw(18, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + 22));
         }
         else {
-            fonts.font(language.get("info", "white") + U" " + ai_human_str).draw(20, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + 22));
+            fonts.font(language.get("info", "white") + U" " + ai_human_str).draw(18, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + 22));
         }
     }
     else {
