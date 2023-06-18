@@ -19,13 +19,15 @@
         "game": "Game",
         "new_game": "New Game",
         "analyze": "Analyze",
-        "start_game": "Start"
+        "start_game": "Start",
+        "pass": "Pass"
     },
     "settings": {
         "settings": "Settings",
         "play": {
             "ai_put_black": "AI as Black",
-            "ai_put_white": "AI as White"
+            "ai_put_white": "AI as White",
+            "pause_when_pass": "Pause when Pass"
         },
         "thread": {
             "thread": "Threads"
@@ -44,8 +46,10 @@
         "right_click_to_modify": "Right-click to Change",
         "book_widen": "Book Widen",
         "book_deepen": "Book Deepen",
+        "book_fix": "Book Fix",
         "learning": "Calculating...",
         "stop_learn": "Stop",
+        "force_stop": "Stop",
         "stopping": "Terminating...",
         "complete": "Done",
         "settings": "Settings",
@@ -132,6 +136,7 @@
         "game_end": "Game Over",
         "opening_name": "Opening",
         "ai": "AI",
+        "human": "Human",
         "lookahead": " moves",
         "to_last_move": "Till End",
         "light": "Light",

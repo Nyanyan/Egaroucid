@@ -19,13 +19,15 @@
         "game": "対局",
         "new_game": "新規対局",
         "analyze": "分析",
-        "start_game": "対局開始"
+        "start_game": "対局開始",
+        "pass": "パス"
     },
     "settings": {
         "settings": "設定",
         "play": {
             "ai_put_black": "AIが黒に着手",
-            "ai_put_white": "AIが白に着手"
+            "ai_put_white": "AIが白に着手",
+            "pause_when_pass": "パスで一時停止"
         },
         "thread": {
             "thread": "スレッド数"
@@ -44,8 +46,10 @@
         "right_click_to_modify": "右クリックで編集",
         "book_widen": "Book拡張",
         "book_deepen": "Book深化",
+        "book_fix": "Book修正",
         "learning": "学習中...",
         "stop_learn": "学習停止",
+        "force_stop": "強制停止",
         "stopping": "終了中...",
         "complete": "完了",
         "settings": "book学習の設定",
@@ -132,6 +136,7 @@
         "game_end": "終局",
         "opening_name": "定石",
         "ai": "AI",
+        "human": "人間",
         "lookahead": "手読み",
         "to_last_move": "読み切り",
         "light": "軽量",
