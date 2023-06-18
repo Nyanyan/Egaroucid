@@ -548,7 +548,7 @@ class Book{
                 b.opponent = o;
                 book_elem.value = (int)value;
                 book_elem.level = (int)level;
-                register_symmetric_book(b, book_elem);
+                merge(b, book_elem);
             }
             if (*stop_loading){
                 std::cerr << "stop loading book" << std::endl;
@@ -690,13 +690,13 @@ class Book{
                     if (link_move < HW2) {
                         Book_value book_value;
                         book_value.policy = link_move;
-                        book_value.value = -link_value;
+                        book_value.value = link_value;
                         book_elem.moves.emplace_back(book_value);
                     }
                 }
-                book_elem.value = -value;
+                book_elem.value = value;
                 book_elem.level = level;
-                register_symmetric_book(b, book_elem);
+                merge(b, book_elem);
             }
             if (show_log)
                 std::cerr << "book imported " << book.size() << " boards" << std::endl;

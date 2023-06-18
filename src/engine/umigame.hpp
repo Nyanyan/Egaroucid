@@ -118,11 +118,9 @@ class Umigame{
             Umigame_result umigame_res;
 			if (!global_searching)
                 return umigame_res;
-            if (depth == 0)
-                return umigame_res;
 			if (!book.contain_symmetry(b)){
-				//umigame_res.b = 1;
-                //umigame_res.w = 1;
+				umigame_res.b = 1;
+                umigame_res.w = 1;
                 return umigame_res;
             }
             umigame_res = get_umigame(b);
@@ -194,6 +192,8 @@ class Umigame{
         */
         inline Umigame_result get_oneumigame(Board b){
             Umigame_result res;
+            res.b = UMIGAME_UNDEFINED;
+            res.w = UMIGAME_UNDEFINED;
             if (umigame.find(b) != umigame.end())
                 res = umigame[b];
             return res;
