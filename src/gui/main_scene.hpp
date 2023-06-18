@@ -217,7 +217,7 @@ public:
         }
 
         // legal drawing
-        if (getData().menu_elements.show_legal) {
+        if (getData().menu_elements.show_legal && !pausing_in_pass) {
             draw_legal(legal_ignore);
         }
 
