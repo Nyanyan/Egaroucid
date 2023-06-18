@@ -68,6 +68,11 @@ struct Book_elem{
     }
 };
 
+struct Book_negamax{
+    int value;
+    int level;
+};
+
 /*
     @brief array for calculating hash code for book
 */
@@ -182,6 +187,7 @@ class Book_old{
                 fclose(fp);
                 return false;
             }
+            std::cerr << n_boards << " boards" << std::endl;
             for (i = 0; i < n_boards; ++i) {
                 if (*stop_loading)
                     break;
@@ -576,7 +582,7 @@ class Book{
                 if (t % 16384 == 0)
                     std::cerr << "converting book " << (t * 100 / (int)book_old.book.size()) << "%" << std::endl;
                 Book_elem book_elem;
-                book_elem.value = itr->second;
+                book_elem.value = -itr->second;
                 book_elem.level = 21; // fixed
                 book_elem.moves = book_old.get_all_moves_with_value(itr->first);
                 merge(itr->first, book_elem);
@@ -841,7 +847,7 @@ class Book{
                 value_policies.emplace_back(std::make_pair((double)elem.value, elem.policy));
             }
             Book_value res;
-            if (value_policies.size() == 0 || best_score < -board_elem.value - BOOK_LOSS_IGNORE_THRESHOLD){
+            if (value_policies.size() == 0 || best_score < board_elem.value - BOOK_LOSS_IGNORE_THRESHOLD){
                 res.policy = -1;
                 res.value = -INF;
                 return res;
@@ -1122,10 +1128,17 @@ class Book{
         }
 
         /*
-            @brief fix each link
+            @brief fix book
         */
         inline void fix(){
-            std::cerr << "fixing book..." << std::endl;
+            link_book();
+            Board root_board;
+            root_board.reset();
+            negamax_book(root_board);
+        }
+
+        void link_book(){
+            std::cerr << "linking book..." << std::endl;
             std::vector<Board> boards;
             for (auto itr = book.begin(); itr != book.end(); ++itr)
                 boards.emplace_back(itr->first);
@@ -1133,29 +1146,86 @@ class Book{
             Flip flip;
             int t = 0;
             Board nb;
+            uint64_t legal;
             for (Board &b: boards){
                 ++t;
                 if (t % 16384 == 0)
-                    std::cerr << "fixing book " << (t * 100 / (int)boards.size()) << "%" << std::endl;
+                    std::cerr << "linking book " << (t * 100 / (int)boards.size()) << "%" << std::endl;
                 book_elem = book[b];
-                for (Book_value &elem: book_elem.moves){
-                    calc_flip(&flip, &b, elem.policy);
+                legal = b.get_legal();
+                for (Book_value &elem: book_elem.moves)
+                    legal ^= 1ULL << elem.policy;
+                for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+                    calc_flip(&flip, &b, cell);
                     b.move_board(&flip);
                         if (b.get_legal()){
-                            nb = get_representative_board(&b);
-                            if (contain(nb))
-                                elem.value = book[nb].value;
+                            if (contain_symmetry(b)){
+                                Book_value move;
+                                move.policy = cell;
+                                move.value = -get(b).value;
+                                book_elem.moves.emplace_back(move);
+                            }
                         } else{
                             b.pass();
-                                nb = get_representative_board(&b);
-                                if (contain(nb))
-                                    elem.value = -book[nb].value;
+                                if (contain_symmetry(b)){
+                                    Book_value move;
+                                    move.policy = cell;
+                                    move.value = get(b).value;
+                                    book_elem.moves.emplace_back(move);
+                                }
                             b.pass();
                         }
                     b.undo_board(&flip);
                 }
                 book[b] = book_elem;
             }
+            std::cerr << "negamaxing book..." << std::endl;
+        }
+
+        Book_negamax negamax_book(Board board){
+            Book_elem book_elem = get(board);
+            Book_negamax res;
+            if (book_elem.value == SCORE_UNDEFINED){
+                res.value = SCORE_UNDEFINED;
+                res.level = -1;
+                return res;
+            }
+            Flip flip;
+            int best_score = -SCORE_INF;
+            int best_level = -1;
+            Book_negamax child;
+            int best_registered_score = -SCORE_INF;
+            for (Book_value &move: book_elem.moves){
+                best_registered_score = std::max(best_registered_score, move.value);
+                calc_flip(&flip, &board, move.policy);
+                board.move_board(&flip);
+                    child = negamax_book(board);
+                board.undo_board(&flip);
+                if (best_score < -child.value && best_level < child.level){
+                    best_score = -child.value;
+                    best_level = child.level;
+                }
+                move.value = -child.value;
+            }
+            bool do_not_update_this_node = best_registered_score < book_elem.value - BOOK_LOSS_IGNORE_THRESHOLD;
+            if (best_level >= book_elem.level && !do_not_update_this_node){
+                res.value = best_score;
+                res.level = best_level;
+
+                for (Book_value &move: book_elem.moves)
+                    std::cerr << idx_to_coord(move.policy) << " " << move.value << std::endl;
+                board.print();
+                std::cerr << best_registered_score << "  " << book_elem.value << " " << book_elem.level << "  " << best_score << " " << best_level << std::endl;
+                char e;
+                std::cin >> e;
+
+                change(board, best_score, best_level);
+
+            } else{
+                res.value = book_elem.value;
+                res.level = book_elem.level;
+            }
+            return res;
         }
 
 
