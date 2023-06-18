@@ -347,7 +347,7 @@ Search_result ai_hint(Board board, int level, bool use_book, bool use_multi_thre
         if (show_log)
             std::cerr << "book " << idx_to_coord(book_result) << std::endl;
         res.policy = -1;
-        res.value = -value_sign * book_result;
+        res.value = value_sign * book_result;
         res.depth = SEARCH_BOOK;
         res.nps = 0;
         res.is_end_search = false;

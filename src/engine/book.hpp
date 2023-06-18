@@ -1201,7 +1201,7 @@ class Book{
                 board.move_board(&flip);
                     child = negamax_book(board);
                 board.undo_board(&flip);
-                if (best_score < -child.value && best_level < child.level){
+                if (best_score < -child.value){
                     best_score = -child.value;
                     best_level = child.level;
                 }
@@ -1211,14 +1211,14 @@ class Book{
             if (best_level >= book_elem.level && !do_not_update_this_node){
                 res.value = best_score;
                 res.level = best_level;
-
+                /*
                 for (Book_value &move: book_elem.moves)
                     std::cerr << idx_to_coord(move.policy) << " " << move.value << std::endl;
                 board.print();
                 std::cerr << best_registered_score << "  " << book_elem.value << " " << book_elem.level << "  " << best_score << " " << best_level << std::endl;
                 char e;
                 std::cin >> e;
-
+                */
                 change(board, best_score, best_level);
 
             } else{
