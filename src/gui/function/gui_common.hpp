@@ -304,6 +304,7 @@ struct Settings {
     bool show_next_move;
     int hash_level;
 	int book_acc_level;
+    bool pause_when_pass;
 };
 
 struct Fonts {
@@ -329,6 +330,7 @@ struct Menu_elements {
     // player
     bool ai_put_black;
     bool ai_put_white;
+    bool pause_when_pass;
 
     // display
     bool use_disc_hint;
@@ -398,6 +400,7 @@ struct Menu_elements {
         hash_level = settings->hash_level;
         ai_put_black = settings->ai_put_black;
         ai_put_white = settings->ai_put_white;
+        pause_when_pass = settings->pause_when_pass;
 
         use_disc_hint = settings->use_disc_hint;
         n_disc_hint = settings->n_disc_hint;

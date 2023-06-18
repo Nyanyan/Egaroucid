@@ -805,6 +805,9 @@ private:
         menu_e.init_check(language.get("settings", "play", "ai_put_white"), &menu_elements->ai_put_white, menu_elements->ai_put_white);
         title.push(menu_e);
 
+        menu_e.init_check(language.get("settings", "play", "pause_when_pass"), &menu_elements->pause_when_pass, menu_elements->pause_when_pass);
+        title.push(menu_e);
+
         menu.push(title);
 
 

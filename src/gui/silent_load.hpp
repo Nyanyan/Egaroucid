@@ -50,20 +50,24 @@ void init_default_settings(const Directories* directories, const Resources* reso
 	settings->show_next_move = true;
 	settings->hash_level = DEFAULT_HASH_LEVEL;
 	settings->book_acc_level = 0;
+	settings->pause_when_pass = false;
 }
 
 int init_settings_import_int(TextReader* reader, int* res) {
 	String line;
+	int pre_res = *res;
 	if (reader->readLine(line)) {
 		try {
 			*res = Parse<int32>(line);
 			return ERR_OK;
 		}
 		catch (const ParseError& e) {
+			*res = pre_res;
 			return ERR_IMPORT_SETTINGS;
 		}
 	}
 	else {
+		*res = pre_res;
 		return ERR_IMPORT_SETTINGS;
 	}
 }
@@ -100,109 +104,111 @@ int init_settings_import_str(TextReader* reader, std::string* res) {
 }
 
 void init_settings(const Directories* directories, const Resources* resources, Settings* settings) {
+	init_default_settings(directories, resources, settings);
 	TextReader reader(U"{}Egaroucid/setting.txt"_fmt(Unicode::Widen(directories->appdata_dir)));
 	if (!reader) {
 		std::cerr << "err-1" << std::endl;
-		goto use_default_settings;
+		return;
 	}
 	else {
 		if (init_settings_import_int(&reader, &settings->n_threads) != ERR_OK) {
 			std::cerr << "err0" << std::endl;
-			goto use_default_settings;
+			return;
 		}
 		if (init_settings_import_bool(&reader, &settings->auto_update_check) != ERR_OK) {
 			std::cerr << "err1" << std::endl;
-			goto use_default_settings;
+			return;
 		}
 		if (init_settings_import_str(&reader, &settings->lang_name) != ERR_OK) {
 			std::cerr << "err2" << std::endl;
-			goto use_default_settings;
+			return;
 		}
 		if (init_settings_import_str(&reader, &settings->book_file) != ERR_OK) {
 			std::cerr << "err3" << std::endl;
-			goto use_default_settings;
+			return;
 		}
 		if (init_settings_import_bool(&reader, &settings->use_book) != ERR_OK) {
 			std::cerr << "err4" << std::endl;
-			goto use_default_settings;
+			return;
 		}
 		if (init_settings_import_int(&reader, &settings->level) != ERR_OK) {
 			std::cerr << "err5" << std::endl;
-			goto use_default_settings;
+			return;
 		}
 		if (init_settings_import_bool(&reader, &settings->ai_put_black) != ERR_OK) {
 			std::cerr << "err6" << std::endl;
-			goto use_default_settings;
+			return;
 		}
 		if (init_settings_import_bool(&reader, &settings->ai_put_white) != ERR_OK) {
 			std::cerr << "err7" << std::endl;
-			goto use_default_settings;
+			return;
 		}
 		if (init_settings_import_bool(&reader, &settings->use_disc_hint) != ERR_OK) {
 			std::cerr << "err8" << std::endl;
-			goto use_default_settings;
+			return;
 		}
 		if (init_settings_import_bool(&reader, &settings->use_umigame_value) != ERR_OK) {
 			std::cerr << "err9" << std::endl;
-			goto use_default_settings;
+			return;
 		}
 		if (init_settings_import_int(&reader, &settings->n_disc_hint) != ERR_OK) {
 			std::cerr << "err10" << std::endl;
-			goto use_default_settings;
+			return;
 		}
 		if (init_settings_import_bool(&reader, &settings->show_legal) != ERR_OK) {
 			std::cerr << "err11" << std::endl;
-			goto use_default_settings;
+			return;
 		}
 		if (init_settings_import_bool(&reader, &settings->show_graph) != ERR_OK) {
 			std::cerr << "err12" << std::endl;
-			goto use_default_settings;
+			return;
 		}
 		if (init_settings_import_bool(&reader, &settings->show_opening_on_cell) != ERR_OK) {
 			std::cerr << "err13" << std::endl;
-			goto use_default_settings;
+			return;
 		}
 		if (init_settings_import_bool(&reader, &settings->show_log) != ERR_OK) {
 			std::cerr << "err14" << std::endl;
-			goto use_default_settings;
+			return;
 		}
 		if (init_settings_import_int(&reader, &settings->book_learn_depth) != ERR_OK) {
 			std::cerr << "err15" << std::endl;
-			goto use_default_settings;
+			return;
 		}
 		if (init_settings_import_int(&reader, &settings->book_learn_error) != ERR_OK) {
 			std::cerr << "err16" << std::endl;
-			goto use_default_settings;
+			return;
 		}
 		if (init_settings_import_bool(&reader, &settings->show_stable_discs) != ERR_OK) {
 			std::cerr << "err17" << std::endl;
-			goto use_default_settings;
+			return;
 		}
 		if (init_settings_import_bool(&reader, &settings->change_book_by_right_click) != ERR_OK) {
 			std::cerr << "err18" << std::endl;
-			goto use_default_settings;
+			return;
 		}
 		if (init_settings_import_bool(&reader, &settings->show_last_move) != ERR_OK) {
 			std::cerr << "err20" << std::endl;
-			goto use_default_settings;
+			return;
 		}
 		if (init_settings_import_bool(&reader, &settings->show_next_move) != ERR_OK) {
 			std::cerr << "err21" << std::endl;
-			goto use_default_settings;
+			return;
 		}
 		if (init_settings_import_int(&reader, &settings->hash_level) != ERR_OK) {
 			std::cerr << "err22" << std::endl;
-			goto use_default_settings;
+			return;
 		} else
 			settings->hash_level = std::max(settings->hash_level, DEFAULT_HASH_LEVEL);
 		if (init_settings_import_int(&reader, &settings->book_acc_level) != ERR_OK) {
 			std::cerr << "err23" << std::endl;
-			goto use_default_settings;
+			return;
+		}
+		if (init_settings_import_bool(&reader, &settings->pause_when_pass) != ERR_OK) {
+			std::cerr << "err24" << std::endl;
+			return;
 		}
 	}
-	return;
-use_default_settings:
-	init_default_settings(directories, resources, settings);
 }
 
 int init_resources(Resources* resources, Settings* settings) {
