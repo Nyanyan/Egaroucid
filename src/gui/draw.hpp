@@ -45,17 +45,19 @@ void draw_board(Fonts fonts, Colors colors, History_elem history_elem) {
     }
 }
 
-void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_elements menu_elements) {
+void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_elements menu_elements, bool pausing_in_pass) {
     RoundRect round_rect{ INFO_SX, INFO_SY, INFO_WIDTH, INFO_HEIGHT, INFO_RECT_RADIUS };
     round_rect.drawFrame(INFO_RECT_THICKNESS, colors.white);
     if (history_elem.board.get_legal()) {
         fonts.font(Format(history_elem.board.n_discs() - 3) + language.get("info", "moves")).draw(13, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + 5));
         String ai_human_str;
-        if ((menu_elements.ai_put_black && history_elem.player == BLACK) || (menu_elements.ai_put_white && history_elem.player == WHITE))
+        bool ai_to_move = (menu_elements.ai_put_black && history_elem.player == BLACK) || (menu_elements.ai_put_white && history_elem.player == WHITE);
+        bool black_to_move = history_elem.player == BLACK;
+        if (ai_to_move ^ pausing_in_pass)
             ai_human_str = language.get("info", "ai");
         else
             ai_human_str = language.get("info", "human");
-        if (history_elem.player == BLACK) {
+        if (black_to_move ^ pausing_in_pass) {
             fonts.font(language.get("info", "black") + U" " + ai_human_str).draw(18, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + 22));
         }
         else {

@@ -365,7 +365,7 @@ public:
         //}
         Scene::SetBackground(getData().colors.green);
         draw_board(getData().fonts, getData().colors, history_elem);
-        draw_info(getData().colors, history_elem, getData().fonts, getData().menu_elements);
+        draw_info(getData().colors, history_elem, getData().fonts, getData().menu_elements, false);
         getData().fonts.font(language.get("book", "book_widen")).draw(25, 480, 190, getData().colors.white);
         getData().fonts.font(language.get("book", "depth") + U": " + Format(getData().menu_elements.book_learn_depth)).draw(15, 480, 300, getData().colors.white);
         getData().fonts.font(language.get("book", "accept") + U": " + Format(getData().menu_elements.book_learn_error)).draw(15, 480, 320, getData().colors.white);
@@ -429,7 +429,7 @@ public:
         //}
         Scene::SetBackground(getData().colors.green);
         draw_board(getData().fonts, getData().colors, history_elem);
-        draw_info(getData().colors, history_elem, getData().fonts, getData().menu_elements);
+        draw_info(getData().colors, history_elem, getData().fonts, getData().menu_elements, false);
         getData().fonts.font(language.get("book", "book_deepen")).draw(25, 480, 190, getData().colors.white);
         getData().fonts.font(language.get("book", "depth") + U": " + Format(getData().menu_elements.book_learn_depth)).draw(15, 480, 300, getData().colors.white);
         getData().fonts.font(language.get("book", "accept") + U": " + Format(getData().menu_elements.book_learn_error)).draw(15, 480, 320, getData().colors.white);

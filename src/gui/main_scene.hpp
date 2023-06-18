@@ -36,10 +36,12 @@ private:
     Move_board_button_status move_board_button_status;
     AI_status ai_status;
     Button start_game_button;
+    Button pass_button;
     bool need_start_game_button;
     Umigame_status umigame_status;
     bool changing_scene;
     bool taking_screen_shot;
+    bool pausing_in_pass;
 
 public:
     Main_scene(const InitData& init) : IScene{ init } {
@@ -56,9 +58,11 @@ public:
             getData().graph_resources.nodes[getData().graph_resources.put_mode].emplace_back(getData().history_elem);
         }
         start_game_button.init(START_GAME_BUTTON_SX, START_GAME_BUTTON_SY, START_GAME_BUTTON_WIDTH, START_GAME_BUTTON_HEIGHT, START_GAME_BUTTON_RADIUS, language.get("play", "start_game"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
+        pass_button.init(PASS_BUTTON_SX, PASS_BUTTON_SY, PASS_BUTTON_WIDTH, PASS_BUTTON_HEIGHT, PASS_BUTTON_RADIUS, language.get("play", "pass"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
         need_start_game_button_calculation();
         changing_scene = false;
         taking_screen_shot = false;
+        pausing_in_pass = false;
         std::cerr << "main scene loaded" << std::endl;
     }
 
@@ -140,7 +144,8 @@ public:
             !getData().history_elem.board.is_end() && 
             getData().graph_resources.put_mode == GRAPH_MODE_NORMAL &&
             ((getData().history_elem.player == BLACK && getData().menu_elements.ai_put_black) || (getData().history_elem.player == WHITE && getData().menu_elements.ai_put_white)) &&
-            getData().history_elem.board.n_discs() == getData().graph_resources.nodes[GRAPH_MODE_NORMAL][getData().graph_resources.nodes[GRAPH_MODE_NORMAL].size() - 1].board.n_discs();
+            getData().history_elem.board.n_discs() == getData().graph_resources.nodes[GRAPH_MODE_NORMAL][getData().graph_resources.nodes[GRAPH_MODE_NORMAL].size() - 1].board.n_discs() && 
+            !pausing_in_pass;
         bool ignore_move = (getData().book_information.changing != BOOK_CHANGE_NO_CELL) || 
             ai_status.analyzing;
         if (need_start_game_button) {
@@ -152,11 +157,22 @@ public:
                 resume_calculating();
             }
         }
+        if (pausing_in_pass){
+            bool ai_to_move = ((getData().history_elem.player == BLACK && getData().menu_elements.ai_put_black) || (getData().history_elem.player == WHITE && getData().menu_elements.ai_put_white));
+            if (!ai_to_move)
+                pausing_in_pass = false;
+            else{
+                pass_button.draw();
+                if (pass_button.clicked()){
+                    pausing_in_pass = false;
+                }
+            }
+        }
         if (!ignore_move) {
             if (ai_should_move) {
                 ai_move();
             }
-            else if (!getData().menu.active() && !need_start_game_button) {
+            else if (!getData().menu.active() && !need_start_game_button && !pausing_in_pass) {
                 interact_move();
             }
         }
@@ -189,7 +205,7 @@ public:
         uint64_t legal_ignore = 0ULL;
 
         // hint calculating & drawing
-        bool hint_ignore = ai_should_move || ai_status.analyzing || need_start_game_button;
+        bool hint_ignore = ai_should_move || ai_status.analyzing || need_start_game_button || pausing_in_pass;
         if (!hint_ignore) {
             if (getData().menu_elements.use_disc_hint) {
                 if (!ai_status.hint_calculating && ai_status.hint_level < getData().menu_elements.level) {
@@ -227,7 +243,7 @@ public:
         //level_display.draw(getData().menu_elements.level, getData().history_elem.board.n_discs());
 
         // info drawing
-        draw_info(getData().colors, getData().history_elem, getData().fonts, getData().menu_elements);
+        draw_info(getData().colors, getData().history_elem, getData().fonts, getData().menu_elements, pausing_in_pass);
 
         // opening on cell drawing
         if (getData().menu_elements.show_opening_on_cell) {
@@ -314,6 +330,7 @@ private:
             getData().game_information.init();
             resume_calculating();
             need_start_game_button_calculation();
+            pausing_in_pass = false;
         }
         if (getData().menu_elements.analyze && !ai_status.ai_thinking && !ai_status.analyzing) {
             stop_calculating();
@@ -603,6 +620,7 @@ private:
                         getData().settings.lang_name = getData().resources.language_names[i];
                         getData().menu = create_menu(&getData().menu_elements);
                         start_game_button.init(START_GAME_BUTTON_SX, START_GAME_BUTTON_SY, START_GAME_BUTTON_WIDTH, START_GAME_BUTTON_HEIGHT, START_GAME_BUTTON_RADIUS, language.get("play", "start_game"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
+                        pass_button.init(PASS_BUTTON_SX, PASS_BUTTON_SY, PASS_BUTTON_WIDTH, PASS_BUTTON_HEIGHT, PASS_BUTTON_RADIUS, language.get("play", "pass"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
                         re_calculate_openings();
                     }
                 }
@@ -744,10 +762,13 @@ private:
                 if (ai_status.ai_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                     Search_result search_result = ai_status.ai_future.get();
                     if (1 & (legal >> search_result.policy)) {
+                        int player_bef = getData().history_elem.player;
                         int sgn = getData().history_elem.player == 0 ? 1 : -1;
                         getData().graph_resources.nodes[getData().graph_resources.put_mode].back().v = sgn * search_result.value;
                         getData().graph_resources.nodes[getData().graph_resources.put_mode].back().level = getData().menu_elements.level;
                         move_processing(HW2_M1 - search_result.policy);
+                        if (getData().history_elem.player == player_bef && (getData().menu_elements.ai_put_black ^ getData().menu_elements.ai_put_white) && getData().menu_elements.pause_when_pass && !getData().history_elem.board.is_end())
+                            pausing_in_pass = true;
                     }
                     ai_status.ai_thinking = false;
                 }

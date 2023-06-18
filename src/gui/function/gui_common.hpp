@@ -73,6 +73,13 @@ constexpr int BOARD_CELL_SIZE = BOARD_SIZE / HW;
 #define START_GAME_BUTTON_HEIGHT 30
 #define START_GAME_BUTTON_RADIUS 10
 
+// main pass button constants
+#define PASS_BUTTON_SX 470
+#define PASS_BUTTON_SY 45
+#define PASS_BUTTON_WIDTH 80
+#define PASS_BUTTON_HEIGHT 30
+#define PASS_BUTTON_RADIUS 10
+
 // graph drawing constants
 #define GRAPH_RESOLUTION 8
 constexpr int GRAPH_SX = BOARD_SX + BOARD_SIZE + 60;

@@ -40,6 +40,7 @@ void save_settings(Menu_elements menu_elements, Settings settings, Directories d
         writer.writeln((int)menu_elements.show_next_move);
         writer.writeln(menu_elements.hash_level);
 		writer.writeln(menu_elements.book_acc_level);
+        writer.writeln((int)menu_elements.pause_when_pass);
     }
 }
 
