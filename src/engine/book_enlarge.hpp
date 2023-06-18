@@ -74,7 +74,7 @@ int book_widen_search(Board board, int level, const int book_depth, int expected
         book.change(board, -g, level);
         return g;
     }
-    if (get_level_complete_depth(level) >= HW2 - board.n_discs() || max_sum_error < 0)
+    if (get_level_complete_depth(level) >= HW2 - board.n_discs() || max_sum_error <= 0)
         expected_error = 0;
     uint64_t legal = board.get_legal();
     if (legal == 0ULL){
