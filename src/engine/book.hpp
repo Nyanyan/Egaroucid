@@ -905,9 +905,10 @@ class Book{
             @param value                a value to change or register
         */
         inline void change(Board b, int value, int level){
-            if (contain(b)){
-                book[b].value = value;
-                book[b].level = level;
+            if (contain_symmetry(b)){
+                Board bb = get_representative_board(b);
+                book[bb].value = value;
+                book[bb].level = level;
             } else{
                 Book_elem elem;
                 elem.value = value;
@@ -1155,29 +1156,31 @@ class Book{
                 legal = b.get_legal();
                 for (Book_value &elem: book_elem.moves)
                     legal ^= 1ULL << elem.policy;
-                for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-                    calc_flip(&flip, &b, cell);
-                    b.move_board(&flip);
-                        if (b.get_legal()){
-                            if (contain_symmetry(b)){
-                                Book_value move;
-                                move.policy = cell;
-                                move.value = -get(b).value;
-                                book_elem.moves.emplace_back(move);
-                            }
-                        } else{
-                            b.pass();
+                if (legal){
+                    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+                        calc_flip(&flip, &b, cell);
+                        b.move_board(&flip);
+                            if (b.get_legal()){
                                 if (contain_symmetry(b)){
                                     Book_value move;
                                     move.policy = cell;
-                                    move.value = get(b).value;
+                                    move.value = -get(b).value;
                                     book_elem.moves.emplace_back(move);
                                 }
-                            b.pass();
-                        }
-                    b.undo_board(&flip);
+                            } else{
+                                b.pass();
+                                    if (contain_symmetry(b)){
+                                        Book_value move;
+                                        move.policy = cell;
+                                        move.value = get(b).value;
+                                        book_elem.moves.emplace_back(move);
+                                    }
+                                b.pass();
+                            }
+                        b.undo_board(&flip);
+                    }
+                    book[b] = book_elem;
                 }
-                book[b] = book_elem;
             }
             std::cerr << "negamaxing book..." << std::endl;
         }
