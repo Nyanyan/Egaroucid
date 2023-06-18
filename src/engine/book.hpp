@@ -875,7 +875,7 @@ class Book{
                     res.policy = elem.second;
                     calc_flip(&flip, b, res.policy);
                     Board nb = b->move_copy(&flip);
-                    res.value = get(&nb).value;
+                    res.value = -get(&nb).value;
                     res_got = true;
                     break;
                 }
