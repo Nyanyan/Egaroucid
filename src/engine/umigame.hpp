@@ -120,13 +120,17 @@ class Umigame{
                 return umigame_res;
             if (depth == 0)
                 return umigame_res;
-			if (!book.contain_symmetry(b))
-				return umigame_res;
+			if (!book.contain_symmetry(b)){
+				//umigame_res.b = 1;
+                //umigame_res.w = 1;
+                return umigame_res;
+            }
             umigame_res = get_umigame(b);
             if (umigame_res.b != UMIGAME_UNDEFINED)
                 return umigame_res;
-            int val, max_val = -INF;
+            int max_val = -INF;
             std::vector<Board> boards;
+            std::vector<uint_fast8_t> best_moves;
             uint64_t legal = b->get_legal();
             if (legal == 0ULL){
                 player ^= 1;
@@ -134,24 +138,26 @@ class Umigame{
                 legal = b->get_legal();
             }
             Flip flip;
-            for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-                calc_flip(&flip, b, cell);
-                b->move_board(&flip);
-                    val = book.get(b).value;
-                    if (val != SCORE_UNDEFINED && val >= max_val) {
-                        if (val > max_val) {
-                            boards.clear();
-                            max_val = val;
-                        }
-                        boards.emplace_back(b->copy());
-                    }
-                b->undo_board(&flip);
+            Book_elem book_elem = book.get(b);
+            for (Book_value &move: book_elem.moves){
+                if (max_val < move.value){
+                    best_moves.clear();
+                    max_val = move.value;
+                }
+                if (max_val == move.value)
+                    best_moves.emplace_back(move.policy);
             }
-            if (boards.size() == 0){
+            //b->print();
+            //std::cerr << book_elem.value << " " << max_val << "  " << book_elem.moves.size() << std::endl;
+            if (best_moves.size() == 0){
                 umigame_res.b = 1;
                 umigame_res.w = 1;
 				reg(b, umigame_res);
                 return umigame_res;
+            }
+            for (uint_fast8_t cell: best_moves){
+                calc_flip(&flip, b, cell);
+                boards.emplace_back(b->move_copy(&flip));
             }
             if (player == BLACK){
                 umigame_res.b = INF;

@@ -1236,6 +1236,16 @@ class Book{
             Book_elem elem;
             elem.value = 0;
             elem.level = LEVEL_HUMAN;
+            Book_value move;
+            move.value = 0;
+            move.policy = 19;
+            elem.moves.emplace_back(move);
+            move.policy = 26;
+            elem.moves.emplace_back(move);
+            move.policy = 37;
+            elem.moves.emplace_back(move);
+            move.policy = 44;
+            elem.moves.emplace_back(move);
             book[board] = elem;
         }
 
@@ -1379,6 +1389,42 @@ class Book{
             return res;
         }
 
+        inline int rev_convert_coord_from_representative_board(int cell, int idx){
+            int res;
+            int y = cell / HW;
+            int x = cell % HW;
+            switch (idx){
+                case 0:
+                    res = cell;
+                    break;
+                case 1:
+                    res = (HW_M1 - y) * HW + x; // vertical
+                    break;
+                case 2:
+                    res = (HW_M1 - x) * HW + (HW_M1 - y); // black line
+                    break;
+                case 3:
+                    res = x * HW + (HW_M1 - y); // black line + vertical ( = rotate 90 clockwise)
+                    break;
+                case 4:
+                    res = (HW_M1 - x) * HW + y; // black line + horizontal ( = rotate 90 counterclockwise)
+                    break;
+                case 5:
+                    res = x * HW + y; // black line + horizontal + vertical ( = white line)
+                    break;
+                case 6:
+                    res = y * HW + (HW_M1 - x); // horizontal
+                    break;
+                case 7:
+                    res = (HW_M1 - y) * HW + (HW_M1 - x); // horizontal + vertical ( = rotate180)
+                    break;
+                default:
+                    std::cerr << "converting coord error in book" << std::endl;
+                    break;
+            }
+            return res;
+        }
+
         inline Board get_representative_board(Board *b){
             return get_representative_board(b->copy());
         }
@@ -1391,7 +1437,10 @@ class Book{
             @return 1 if board is new else 0
         */
         inline int register_symmetric_book(Board b, Book_elem elem){
-            Board representive_board = get_representative_board(b);
+            int idx;
+            Board representive_board = get_representative_board(b, &idx);
+            for (Book_value &move: elem.moves)
+                move.policy = rev_convert_coord_from_representative_board(move.policy, idx);
             return register_book(representive_board, elem);
         }
 
@@ -1407,9 +1456,9 @@ class Book{
         }
 
         inline int merge(Board b, Book_elem elem){
-            if (!contain(b))
+            if (!contain_symmetry(b))
                 return register_symmetric_book(b, elem);
-            Book_elem book_elem = book[b];
+            Book_elem book_elem = get(b);
             book_elem.value = elem.value;
             book_elem.level = elem.level;
             for (Book_value &move: elem.moves){
@@ -1425,7 +1474,7 @@ class Book{
                     book_elem.moves.emplace_back(move);
                 }
             }
-            book[b] = book_elem;
+            register_symmetric_book(b, book_elem);
             return 0;
         }
 
