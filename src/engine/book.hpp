@@ -1131,14 +1131,25 @@ class Book{
         /*
             @brief fix book
         */
-        inline void fix(){
-            link_book();
+        inline void fix(bool *stop){
+            link_book(stop);
             Board root_board;
             root_board.reset();
-            negamax_book(root_board);
+            negamax_book(root_board, stop);
         }
 
-        void link_book(){
+        /*
+            @brief fix book
+        */
+        inline void fix(){
+            bool stop = false;
+            link_book(&stop);
+            Board root_board;
+            root_board.reset();
+            negamax_book(root_board, &stop);
+        }
+
+        void link_book(bool *stop){
             std::cerr << "linking book..." << std::endl;
             std::vector<Board> boards;
             for (auto itr = book.begin(); itr != book.end(); ++itr)
@@ -1149,6 +1160,8 @@ class Book{
             Board nb;
             uint64_t legal;
             for (Board &b: boards){
+                if (*stop)
+                    break;
                 ++t;
                 if (t % 16384 == 0)
                     std::cerr << "linking book " << (t * 100 / (int)boards.size()) << "%" << std::endl;
@@ -1185,9 +1198,14 @@ class Book{
             std::cerr << "negamaxing book..." << std::endl;
         }
 
-        Book_negamax negamax_book(Board board){
-            Book_elem book_elem = get(board);
+        Book_negamax negamax_book(Board board, bool *stop){
             Book_negamax res;
+            Book_elem book_elem = get(board);
+            if (*stop){
+                res.value = book_elem.value;
+                res.level = book_elem.level;
+                return res;
+            }
             if (book_elem.value == SCORE_UNDEFINED){
                 res.value = SCORE_UNDEFINED;
                 res.level = -1;
@@ -1202,7 +1220,7 @@ class Book{
                 best_registered_score = std::max(best_registered_score, move.value);
                 calc_flip(&flip, &board, move.policy);
                 board.move_board(&flip);
-                    child = negamax_book(board);
+                    child = negamax_book(board, stop);
                 board.undo_board(&flip);
                 if (best_score < -child.value){
                     best_score = -child.value;
@@ -1518,4 +1536,8 @@ bool book_init(std::string file, bool show_log, bool *stop_loading){
 
 void book_save_as_edax(std::string file){
     book.save_bin_edax(file);
+}
+
+void book_fix(bool *stop){
+    book.fix(stop);
 }

@@ -354,6 +354,7 @@ struct Menu_elements {
     // book
     bool book_start_widen;
     bool book_start_deepen;
+    bool book_start_fix;
     int book_learn_depth;
     int book_learn_error;
     bool book_import;
@@ -422,6 +423,7 @@ struct Menu_elements {
 
         book_start_widen = false;
         book_start_deepen = false;
+        book_start_fix = false;
         book_learn_depth = settings->book_learn_depth;
         book_learn_error = settings->book_learn_error;
         book_import = false;

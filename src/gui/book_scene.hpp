@@ -464,3 +464,46 @@ public:
 
     }
 };
+
+class Fix_book : public App::Scene {
+private:
+    Button stop_button;
+    bool done;
+    bool stop;
+    std::future<void> book_fix_future;
+    Board root_board;
+
+public:
+    Fix_book(const InitData& init) : IScene{ init } {
+        stop_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("book", "force_stop"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        done = false;
+        stop = false;
+        book_fix_future = std::async(std::launch::async, book_fix, &stop);
+    }
+
+    void update() override {
+        //if (System::GetUserActions() & UserAction::CloseButtonClicked) {
+        //    changeScene(U"Close", SCENE_FADE_TIME);
+        //}
+        Scene::SetBackground(getData().colors.green);
+        getData().fonts.font(language.get("book", "book_fix")).draw(25, 50, 50, getData().colors.white);
+        stop_button.draw();
+        if (stop_button.clicked())
+            stop = true;
+        if (!done) {
+            if (book_fix_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                book_fix_future.get();
+                done = true;
+                global_searching = true;
+            }
+        } else{
+            umigame.delete_all();
+            getData().book_information.changed = true;
+            changeScene(U"Main_scene", SCENE_FADE_TIME);
+        }
+    }
+
+    void draw() const override {
+
+    }
+};
