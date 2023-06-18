@@ -1392,7 +1392,7 @@ class Book{
             return res;
         }
 
-        inline int rev_convert_coord_from_representative_board(int cell, int idx){
+        inline int convert_coord_to_representative_board(int cell, int idx){
             int res;
             int y = cell / HW;
             int x = cell % HW;
@@ -1443,7 +1443,7 @@ class Book{
             int idx;
             Board representive_board = get_representative_board(b, &idx);
             for (Book_value &move: elem.moves)
-                move.policy = rev_convert_coord_from_representative_board(move.policy, idx);
+                move.policy = convert_coord_to_representative_board(move.policy, idx);
             return register_book(representive_board, elem);
         }
 
@@ -1477,8 +1477,7 @@ class Book{
                     book_elem.moves.emplace_back(move);
                 }
             }
-            register_symmetric_book(b, book_elem);
-            return 0;
+            return register_symmetric_book(b, book_elem);
         }
 
         int count_n_line(Board board){
