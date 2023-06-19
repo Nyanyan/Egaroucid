@@ -65,13 +65,13 @@ int book_widen_search(Board board, int level, const int book_depth, int expected
     if (board.is_end()){
         g = board.score_player();
         std::cerr << "time " << ms_to_time_short(tim() - strt) << " depth " << board.n_discs() - 4 << " LF value " << g << std::endl;
-        book.change(board, -g, level);
+        book.change(board, g, level);
         return g;
     }
     if (board.n_discs() >= 4 + book_depth){
         g = book_enlarge_calc_value(board, level);
         std::cerr << "time " << ms_to_time_short(tim() - strt) << " depth " << board.n_discs() - 4 << " LF value " << g << std::endl;
-        book.change(board, -g, level);
+        book.change(board, g, level);
         return g;
     }
     if (get_level_complete_depth(level) >= HW2 - board.n_discs() || max_sum_error <= 0)
@@ -129,7 +129,7 @@ int book_widen_search(Board board, int level, const int book_depth, int expected
     }
     if (global_searching && v >= -HW2 && v <= HW2){
         std::cerr << "time " << ms_to_time_short(tim() - strt) << " depth " << board.n_discs() - 4 << " RG value " << v << std::endl;
-        book.change(board, -v, level);
+        book.change(board, v, level);
     }
     return v;
 }
@@ -233,7 +233,7 @@ int book_deepen_search(Board board, int level, const int book_depth, int expecte
     }
     if (global_searching && v >= -HW2 && v <= HW2 && book_val != v){
         std::cerr << "time " << ms_to_time_short(tim() - strt) << " depth " << board.n_discs() - 4 << " RW value " << v << std::endl;
-        book.change(board, -v, level);
+        book.change(board, v, level);
     }
     return v;
 }
