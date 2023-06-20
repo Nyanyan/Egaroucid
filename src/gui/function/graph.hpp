@@ -210,13 +210,13 @@ private:
 		y_min = -resolution;
 		y_max = resolution;
 		for (const History_elem& b : nodes1) {
-			if (b.v != GRAPH_IGNORE_VALUE) {
+			if (-HW2 <= b.v && b.v <= HW2) {
 				y_min = std::min(y_min, b.v);
 				y_max = std::max(y_max, b.v);
 			}
 		}
 		for (const History_elem& b : nodes2) {
-			if (b.v != GRAPH_IGNORE_VALUE) {
+			if (-HW2 <= b.v && b.v <= HW2) {
 				y_min = std::min(y_min, b.v);
 				y_max = std::max(y_max, b.v);
 			}
