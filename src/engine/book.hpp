@@ -1284,7 +1284,8 @@ class Book{
                     best_score = -child.value;
                     best_level = child.level;
                 }
-                book_elem.moves[task.first].value = -child.value;
+                if (-HW2 <= child.value && child.value <= HW2)
+                    book_elem.moves[task.first].value = -child.value;
             }
             bool do_not_update_this_node = best_registered_score < book_elem.value - BOOK_LOSS_IGNORE_THRESHOLD;
             if (best_level >= book_elem.level && !do_not_update_this_node){
