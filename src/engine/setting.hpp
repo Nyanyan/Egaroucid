@@ -14,10 +14,17 @@
 #define EGAROUCID_ENGINE_VERSION "6.3"
 #define USE_BETA_VERSION true
 
+/*
+    @brief Major settings
+*/
+
 // use SIMD
 #ifndef HAS_NO_AVX2
     #define USE_SIMD true
 #endif
+
+// GUI portable mode
+#define GUI_PORTABLE_MODE true
 
 #ifdef _WIN64
     #if USE_SIMD
@@ -200,18 +207,6 @@
 
 // thread monitor
 #define USE_THREAD_MONITOR false
-
-
-
-
-
-
-/*
-    @brief GUI settings
-*/
-
-// portable mode
-#define GUI_PORTABLE_MODE true
 
 
 
