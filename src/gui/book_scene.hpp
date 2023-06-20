@@ -216,7 +216,7 @@ public:
             }
             default_button.draw();
             if (default_button.clicked()) {
-                book_file = getData().directories.document_dir + "Egaroucid/book.egbk2";
+                book_file = getData().directories.document_dir + "book.egbk2";
             }
             go_button.draw();
             if (go_button.clicked() || return_pressed || file_dragged) {
@@ -279,7 +279,7 @@ public:
     Save_book_Edax(const InitData& init) : IScene{ init } {
         back_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         go_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("book", "export"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-        book_file = getData().directories.document_dir + "Egaroucid/edax_book.dat";
+        book_file = getData().directories.document_dir + "edax_book.dat";
         book_saving_edax = false;
         done = false;
     }

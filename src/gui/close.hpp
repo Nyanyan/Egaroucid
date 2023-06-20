@@ -15,7 +15,7 @@
 #include "function/function_all.hpp"
 
 void save_settings(Menu_elements menu_elements, Settings settings, Directories directories) {
-    TextWriter writer(U"{}Egaroucid/setting.txt"_fmt(Unicode::Widen(directories.appdata_dir)));
+    TextWriter writer(U"{}setting.txt"_fmt(Unicode::Widen(directories.appdata_dir)));
     if (writer) {
         writer.writeln(menu_elements.n_threads);
         writer.writeln((int)menu_elements.auto_update_check);

@@ -226,10 +226,10 @@ private:
                 json[n_discs][GAME_NEXT_POLICY] = -1;
             }
         }
-        const String save_path = Unicode::Widen(getData().directories.document_dir) + U"Egaroucid/games/" + date + U".json";
+        const String save_path = Unicode::Widen(getData().directories.document_dir) + U"games/" + date + U".json";
         json.save(save_path);
 
-        const String csv_path = Unicode::Widen(getData().directories.document_dir) + U"Egaroucid/games/summary.csv";
+        const String csv_path = Unicode::Widen(getData().directories.document_dir) + U"games/summary.csv";
         CSV csv{ csv_path };
         String memo_summary_all = getData().game_information.memo.replaced(U"\r", U"").replaced(U"\n", U" ");
         String memo_summary;

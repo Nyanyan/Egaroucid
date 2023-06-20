@@ -119,7 +119,7 @@ public:
             Image image_clip = image.clipped(clip_rect);
             Clipboard::SetImage(image_clip);
             String img_date = Unicode::Widen(calc_date());
-            String save_path = Unicode::Widen(getData().directories.document_dir) + U"Egaroucid/screenshots/" + img_date + U".png";
+            String save_path = Unicode::Widen(getData().directories.document_dir) + U"screenshots/" + img_date + U".png";
             image_clip.save(save_path);
             taking_screen_shot = false;
             std::cerr << "screen shot saved to " << save_path.narrow() << " and copied to clipboard" << std::endl;

@@ -445,7 +445,7 @@ public:
         strt_idx = 0;
         back_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         failed = false;
-        const String csv_path = Unicode::Widen(getData().directories.document_dir) + U"Egaroucid/games/summary.csv";
+        const String csv_path = Unicode::Widen(getData().directories.document_dir) + U"games/summary.csv";
         const CSV csv{ csv_path };
         if (csv) {
             for (size_t row = 0; row < csv.rows(); ++row) {
@@ -568,7 +568,7 @@ public:
 
 private:
     void import_game(int idx) {
-        const String json_path = Unicode::Widen(getData().directories.document_dir) + U"Egaroucid/games/" + games[idx].date + U".json";
+        const String json_path = Unicode::Widen(getData().directories.document_dir) + U"games/" + games[idx].date + U".json";
         JSON game_json = JSON::Load(json_path);
         if (not game_json) {
             std::cerr << "can't open game" << std::endl;

@@ -20,8 +20,8 @@ void init_directories(Directories* directories) {
         directories->document_dir = "./document/";
         directories->appdata_dir = "./appdata/";
     #else
-        directories->document_dir = FileSystem::GetFolderPath(SpecialFolder::Documents).narrow();
-        directories->appdata_dir = FileSystem::GetFolderPath(SpecialFolder::LocalAppData).narrow();
+        directories->document_dir = FileSystem::GetFolderPath(SpecialFolder::Documents).narrow() + "Egaroucid/";
+        directories->appdata_dir = FileSystem::GetFolderPath(SpecialFolder::LocalAppData).narrow() + "Egaroucid/";
     #endif
     std::cerr << "document_dir " << directories->document_dir << std::endl;
     std::cerr << "appdata_dir " << directories->appdata_dir << std::endl;
@@ -35,7 +35,7 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->n_threads = std::min(32, (int)std::thread::hardware_concurrency());
     settings->auto_update_check = 1;
     settings->lang_name = "japanese";
-    settings->book_file = directories->document_dir + "Egaroucid/book.egbk2";
+    settings->book_file = directories->document_dir + "book.egbk2";
     settings->use_book = true;
     settings->level = DEFAULT_LEVEL;
     settings->ai_put_black = false;
@@ -110,7 +110,7 @@ int init_settings_import_str(TextReader* reader, std::string* res) {
 
 void init_settings(const Directories* directories, const Resources* resources, Settings* settings) {
     init_default_settings(directories, resources, settings);
-    TextReader reader(U"{}Egaroucid/setting.txt"_fmt(Unicode::Widen(directories->appdata_dir)));
+    TextReader reader(U"{}setting.txt"_fmt(Unicode::Widen(directories->appdata_dir)));
     if (!reader) {
         std::cerr << "err-1" << std::endl;
         return;
