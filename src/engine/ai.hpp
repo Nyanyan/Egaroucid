@@ -268,7 +268,7 @@ Search_result ai(Board board, int level, bool use_book, int book_acc_level, bool
     if (board.get_legal() == 0ULL){
         board.pass();
         if (board.get_legal() == 0ULL){
-            res.policy = -1;
+            res.policy = 64;
             res.value = -board.score_player();
             res.depth = 0;
             res.nps = 0;

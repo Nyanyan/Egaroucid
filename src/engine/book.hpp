@@ -1273,7 +1273,8 @@ class Book{
                         best_score = -child.value;
                         best_level = child.level;
                     }
-                    move.value = -child.value;
+                    if (-HW2 <= child.value && child.value <= HW2)
+                        move.value = -child.value;
                 }
                 ++move_idx;
             }

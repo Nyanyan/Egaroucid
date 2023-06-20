@@ -16,6 +16,7 @@
 
 int init_ai(Settings* settings, const Directories* directories, bool *stop_loading) {
     thread_pool.resize(settings->n_threads - 1);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
     std::cerr << "there are " << thread_pool.size() << " additional threads" << std::endl;
     bit_init();
     mobility_init();
