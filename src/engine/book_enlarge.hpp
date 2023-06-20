@@ -115,7 +115,7 @@ int book_widen_search(Board board, int level, const int book_depth, int expected
                 alpha = std::max(-HW2, v - expected_error);
                 g = -ai_window(board, level, -v, -alpha + 1, true);
                 if (global_searching && g >= alpha){
-                    int pre_error = std::max(0, v - g);
+                    int pre_error = std::max(1, v - g);
                     g = -book_widen_search(board, level, book_depth, expected_error, max_sum_error - pre_error, board_copy, player, strt_tim, book_file, book_bak, strt);
                     if (global_searching && g >= -HW2 && g <= HW2){
                         v = std::max(v, g);
@@ -135,7 +135,7 @@ int book_widen_search(Board board, int level, const int book_depth, int expected
 }
 
 int calc_book_widen_sum_error(Board root_board, int book_depth, int expected_error){
-    return std::max(expected_error, (book_depth + 4 - root_board.n_discs()) * expected_error / 12);
+    return std::max(expected_error, (book_depth + 4 - root_board.n_discs()) * expected_error / 4);
 }
 
 /*
