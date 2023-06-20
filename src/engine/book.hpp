@@ -73,6 +73,8 @@ struct Book_negamax{
     int level;
 };
 
+Book_negamax negamax_book_global(Board board, bool *stop);
+
 /*
     @brief array for calculating hash code for book
 */
@@ -731,7 +733,6 @@ class Book{
             @return if contains, true, else false
         */
         inline bool contain(Board b){
-            std::lock_guard<std::mutex> lock(mtx);
             return book.find(b) != book.end();
         }
 
@@ -760,7 +761,6 @@ class Book{
             @return registered value (if not registered, returns -INF)
         */
         inline Book_elem get_onebook(Board b, int idx){
-            std::lock_guard<std::mutex> lock(mtx);
             Book_elem res;
             if (!contain(b))
                 return res;
@@ -938,7 +938,6 @@ class Book{
             @param value                a value to change or register
         */
         inline void change(Board b, int value, int level){
-            std::lock_guard<std::mutex> lock(mtx);
             if (contain_symmetry(b)){
                 Board bb = get_representative_board(b);
                 book[bb].value = value;
@@ -978,7 +977,6 @@ class Book{
             @brief delete all board in this book
         */
         inline void delete_all(){
-            std::lock_guard<std::mutex> lock(mtx);
             book.clear();
             reg_first_board();
         }
@@ -1189,7 +1187,6 @@ class Book{
         }
 
         void link_book(bool *stop){
-            std::lock_guard<std::mutex> lock(mtx);
             std::cerr << "linking book..." << std::endl;
             std::vector<Board> boards;
             for (auto itr = book.begin(); itr != book.end(); ++itr)
@@ -1300,7 +1297,9 @@ class Book{
                 char e;
                 std::cin >> e;
                 */
-                change(board, best_score, best_level);
+                mtx.lock();
+                    change(board, best_score, best_level);
+                mtx.unlock();
 
             } else{
                 res.value = book_elem.value;
@@ -1338,7 +1337,6 @@ class Book{
             @return is this board new?
         */
         inline bool register_book(Board b, Book_elem elem){
-            std::lock_guard<std::mutex> lock(mtx);
             int f_size = book.size();
             book[b] = elem;
             return book.size() - f_size > 0;
@@ -1351,7 +1349,6 @@ class Book{
             @return board deleted?
         */
         inline bool delete_book(Board b){
-            std::lock_guard<std::mutex> lock(mtx);
             if (book.find(b) != book.end()){
                 book.erase(b);
                 return true;
@@ -1605,5 +1602,5 @@ void book_fix(bool *stop){
 }
 
 Book_negamax negamax_book_global(Board board, bool *stop){
-    book.negamax_book(board, stop);
+    return book.negamax_book(board, stop);
 }
