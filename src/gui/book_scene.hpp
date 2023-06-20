@@ -391,6 +391,7 @@ public:
             if (back_button.clicked()) {
                 getData().graph_resources.need_init = false;
                 umigame.delete_all();
+                getData().book_information.changed = true;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
         }
@@ -455,6 +456,7 @@ public:
             if (back_button.clicked()) {
                 getData().graph_resources.need_init = false;
                 umigame.delete_all();
+                getData().book_information.changed = true;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
         }

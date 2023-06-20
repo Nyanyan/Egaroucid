@@ -425,6 +425,7 @@ class Book_old{
 */
 class Book{
     private:
+        std::mutex mtx;
         std::unordered_map<Board, Book_elem, Book_hash> book;
         std::unordered_map<Board, int, Book_hash> n_lines;
 
@@ -730,6 +731,7 @@ class Book{
             @return if contains, true, else false
         */
         inline bool contain(Board b){
+            std::lock_guard<std::mutex> lock(mtx);
             return book.find(b) != book.end();
         }
 
@@ -758,6 +760,7 @@ class Book{
             @return registered value (if not registered, returns -INF)
         */
         inline Book_elem get_onebook(Board b, int idx){
+            std::lock_guard<std::mutex> lock(mtx);
             Book_elem res;
             if (!contain(b))
                 return res;
@@ -935,6 +938,7 @@ class Book{
             @param value                a value to change or register
         */
         inline void change(Board b, int value, int level){
+            std::lock_guard<std::mutex> lock(mtx);
             if (contain_symmetry(b)){
                 Board bb = get_representative_board(b);
                 book[bb].value = value;
@@ -974,6 +978,7 @@ class Book{
             @brief delete all board in this book
         */
         inline void delete_all(){
+            std::lock_guard<std::mutex> lock(mtx);
             book.clear();
             reg_first_board();
         }
@@ -1184,6 +1189,7 @@ class Book{
         }
 
         void link_book(bool *stop){
+            std::lock_guard<std::mutex> lock(mtx);
             std::cerr << "linking book..." << std::endl;
             std::vector<Board> boards;
             for (auto itr = book.begin(); itr != book.end(); ++itr)
@@ -1249,17 +1255,38 @@ class Book{
             int best_level = -1;
             Book_negamax child;
             int best_registered_score = -SCORE_INF;
+            std::vector<std::pair<int, std::future<Book_negamax>>> parallel_tasks;
+            bool pushed;
+            int move_idx = 0;
             for (Book_value &move: book_elem.moves){
                 best_registered_score = std::max(best_registered_score, move.value);
                 calc_flip(&flip, &board, move.policy);
                 board.move_board(&flip);
-                    child = negamax_book(board, stop);
+                    pushed = false;
+                    if (thread_pool.get_n_idle()){
+                        parallel_tasks.emplace_back(std::make_pair(move_idx, thread_pool.push(&pushed, std::bind(&negamax_book_global, board, stop))));
+                        if (!pushed)
+                            parallel_tasks.pop_back();
+                    }
+                    if (!pushed)
+                        child = negamax_book(board, stop);
                 board.undo_board(&flip);
+                if (!pushed){
+                    if (best_score < -child.value){
+                        best_score = -child.value;
+                        best_level = child.level;
+                    }
+                    move.value = -child.value;
+                }
+                ++move_idx;
+            }
+            for (std::pair<int, std::future<Book_negamax>> &task: parallel_tasks){
+                child = task.second.get();
                 if (best_score < -child.value){
                     best_score = -child.value;
                     best_level = child.level;
                 }
-                move.value = -child.value;
+                book_elem.moves[task.first].value = -child.value;
             }
             bool do_not_update_this_node = best_registered_score < book_elem.value - BOOK_LOSS_IGNORE_THRESHOLD;
             if (best_level >= book_elem.level && !do_not_update_this_node){
@@ -1311,6 +1338,7 @@ class Book{
             @return is this board new?
         */
         inline bool register_book(Board b, Book_elem elem){
+            std::lock_guard<std::mutex> lock(mtx);
             int f_size = book.size();
             book[b] = elem;
             return book.size() - f_size > 0;
@@ -1323,6 +1351,7 @@ class Book{
             @return board deleted?
         */
         inline bool delete_book(Board b){
+            std::lock_guard<std::mutex> lock(mtx);
             if (book.find(b) != book.end()){
                 book.erase(b);
                 return true;
@@ -1573,4 +1602,8 @@ void book_save_as_edax(std::string file){
 
 void book_fix(bool *stop){
     book.fix(stop);
+}
+
+Book_negamax negamax_book_global(Board board, bool *stop){
+    book.negamax_book(board, stop);
 }
