@@ -135,7 +135,7 @@ int book_widen_search(Board board, int level, const int book_depth, int expected
 }
 
 int calc_book_widen_sum_error(Board root_board, int book_depth, int expected_error){
-    return std::max(expected_error, (book_depth + 4 - root_board.n_discs()) * expected_error / 4);
+    return std::max(expected_error, (book_depth + 4 - root_board.n_discs()) * expected_error / 6);
 }
 
 /*
