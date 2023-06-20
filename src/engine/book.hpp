@@ -908,7 +908,10 @@ class Book{
                     res.policy = elem.second;
                     calc_flip(&flip, b, res.policy);
                     Board nb = b->move_copy(&flip);
-                    res.value = -get(&nb).value;
+                    for (Book_value elem: board_elem.moves){
+                        if (elem.policy == res.policy)
+                            res.value = elem.value;
+                    }
                     res_got = true;
                     break;
                 }
@@ -938,15 +941,17 @@ class Book{
             @param value                a value to change or register
         */
         inline void change(Board b, int value, int level){
-            if (contain_symmetry(b)){
-                Board bb = get_representative_board(b);
-                book[bb].value = value;
-                book[bb].level = level;
-            } else{
-                Book_elem elem;
-                elem.value = value;
-                elem.level = level;
-                register_symmetric_book(b, elem);
+            if (-HW2 <= value && value <= HW2){
+                if (contain_symmetry(b)){
+                    Board bb = get_representative_board(b);
+                    book[bb].value = value;
+                    book[bb].level = level;
+                } else{
+                    Book_elem elem;
+                    elem.value = value;
+                    elem.level = level;
+                    register_symmetric_book(b, elem);
+                }
             }
         }
 
@@ -1339,6 +1344,16 @@ class Book{
             @return is this board new?
         */
         inline bool register_book(Board b, Book_elem elem){
+            /*
+            if (elem.value < -HW2 && HW2 < elem.value)
+                return false;
+            std::vector<Book_value> moves;
+            for (Book_value &move: elem.moves){
+                if (-HW2 <= move.value && move.value <= HW2)
+                    moves.emplace_back(move);
+            }
+            elem.moves = moves;
+            */
             int f_size = book.size();
             book[b] = elem;
             return book.size() - f_size > 0;
