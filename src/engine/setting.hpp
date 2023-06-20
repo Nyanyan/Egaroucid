@@ -207,7 +207,21 @@
 
 
 /*
+    @brief GUI settings
+*/
+
+// portable mode
+#define GUI_PORTABLE_MODE true
+
+
+
+
+
+
+
+/*
     @brief tuning
 */
+
 // move ordering
 #define TUNE_MOVE_ORDERING_END false

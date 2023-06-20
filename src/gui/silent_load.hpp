@@ -16,8 +16,13 @@
 
 void init_directories(Directories* directories) {
     // system directory
-    directories->document_dir = FileSystem::GetFolderPath(SpecialFolder::Documents).narrow();
-    directories->appdata_dir = FileSystem::GetFolderPath(SpecialFolder::LocalAppData).narrow();
+    #if GUI_PORTABLE_MODE
+        directories->document_dir = "./document/";
+        directories->appdata_dir = "./appdata/";
+    #else
+        directories->document_dir = FileSystem::GetFolderPath(SpecialFolder::Documents).narrow();
+        directories->appdata_dir = FileSystem::GetFolderPath(SpecialFolder::LocalAppData).narrow();
+    #endif
     std::cerr << "document_dir " << directories->document_dir << std::endl;
     std::cerr << "appdata_dir " << directories->appdata_dir << std::endl;
 
