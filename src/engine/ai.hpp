@@ -403,9 +403,9 @@ int ai_window(Board board, int level, int alpha, int beta, bool use_multi_thread
     else if (level == 0)
         return value_sign * mid_evaluate(&board);
     int depth;
-        bool is_mid_search;
-        uint_fast8_t mpc_level;
-        get_level(level, board.n_discs() - 4, &is_mid_search, &depth, &mpc_level);
+    bool is_mid_search;
+    uint_fast8_t mpc_level;
+    get_level(level, board.n_discs() - 4, &is_mid_search, &depth, &mpc_level);
     return value_sign * tree_search_window(board, depth, alpha, beta, mpc_level, use_multi_thread);
 }
 
