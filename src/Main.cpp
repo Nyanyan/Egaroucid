@@ -29,11 +29,12 @@ void Main() {
 	Scene::SetResizeMode(ResizeMode::Virtual);
 	Window::SetTitle(U"Egaroucid {}"_fmt(EGAROUCID_VERSION));
 	System::SetTerminationTriggers(UserAction::NoAction);
-	//Console.open();
 	std::stringstream logger_stream;
 	std::cerr.rdbuf(logger_stream.rdbuf());
+	//Console.open();
 	std::string logger;
 	String logger_String;
+	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	
 	App scene_manager;
 	scene_manager.add <Silent_load> (U"Silent_load");

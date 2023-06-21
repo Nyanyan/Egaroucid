@@ -217,7 +217,7 @@ int book_deepen_search(Board board, int level, const int book_depth, int expecte
     //}
     int g, v = SCORE_UNDEFINED;
     if (board.is_end())
-        return book.get(&board).value;
+        return board.score_player();
     if (board.n_discs() >= 4 + book_depth)
         return book.get(&board).value;
     uint64_t legal = board.get_legal();
@@ -233,7 +233,6 @@ int book_deepen_search(Board board, int level, const int book_depth, int expecte
         return g;
     }
     std::vector<int> best_moves = book.get_all_best_moves(&board);
-    int book_val = book.get(&board).value;
     if (best_moves.size() == 0){
         double max_sum_error = calc_book_widen_sum_error(board, book_depth, expected_error);
         return book_widen_search(board, level, book_depth, expected_error, max_sum_error, board_copy, player, strt_tim, book_file, book_bak, strt);
@@ -248,9 +247,10 @@ int book_deepen_search(Board board, int level, const int book_depth, int expecte
         board.undo_board(&flip);
         board.copy(board_copy);
         *player ^= 1;
-        v = std::max(v, g);
+        if (-HW2 <= g && g <= HW2)
+            v = std::max(v, g);
     }
-    if (global_searching && -HW2 <= v && v <= HW2 && book_val != v){
+    if (global_searching && -HW2 <= v && v <= HW2){
         std::cerr << "time " << ms_to_time_short(tim() - strt) << " depth " << board.n_discs() - 4 << " RW value " << v << std::endl;
         book.change(board, v, level);
     }
