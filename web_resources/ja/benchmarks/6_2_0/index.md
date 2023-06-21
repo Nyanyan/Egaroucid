@@ -225,9 +225,7 @@
 
 bookは双方未使用です。
 
-Egaroucid勝率が0.5を上回っていればEgaroucidがEdaxに勝ち越しています。
-
-### Egaroucidが黒番
+Egaroucid勝率が0.5を上回っていればEgaroucidがEdaxに勝ち越しています。また、カッコ内の数字はEgaroucidが黒番/白番のときのそれぞれの値です。全ての条件でEgaroucidが勝ち越しています。
 
 <table>
 <tr>
@@ -239,79 +237,30 @@ Egaroucid勝率が0.5を上回っていればEgaroucidがEdaxに勝ち越して�
 </tr>
 <tr>
 <td>1</td>
-<td>615</td>
-<td>23</td>
-<td>362</td>
-<td>0.63</td>
+<td>1234(黒: 615 白: 619)</td>
+<td>49(黒: 23 白: 26)</td>
+<td>717(黒: 362 白: 355)</td>
+<td>0.632</td>
 </tr>
 <tr>
 <td>5</td>
-<td>566</td>
-<td>48</td>
-<td>386</td>
-<td>0.59</td>
+<td>1101(黒: 566 白: 535)</td>
+<td>92(黒: 48 白: 44)</td>
+<td>807(黒: 386 白: 421)</td>
+<td>0.577</td>
 </tr>
 <tr>
 <td>10</td>
-<td>589</td>
-<td>115</td>
-<td>296</td>
-<td>0.67</td>
+<td>1040(黒: 589 白: 451)</td>
+<td>234(黒: 115 白: 119)</td>
+<td>726(黒: 296 白: 430)</td>
+<td>0.589</td>
 </tr>
 <tr>
 <td>15</td>
-<td>114</td>
-<td>31</td>
-<td>55</td>
-<td>0.67</td>
+<td>222(黒: 114 白: 108)</td>
+<td>67(黒: 31 白: 36)</td>
+<td>111(黒: 55 白: 56)</td>
+<td>0.667</td>
 </tr>
 </table>
-
-
-
-
-
-
-
-### Egaroucidが白番
-
-<table>
-<tr>
-<th>レベル</th>
-<th>Egaroucid勝ち</th>
-<th>引分</th>
-<th>Edax勝ち</th>
-<th>Egaroucid勝率</th>
-</tr>
-<tr>
-<td>1</td>
-<td>619</td>
-<td>26</td>
-<td>355</td>
-<td>0.64</td>
-</tr>
-<tr>
-<td>5</td>
-<td>535</td>
-<td>44</td>
-<td>421</td>
-<td>0.56</td>
-</tr>
-<tr>
-<td>10</td>
-<td>451</td>
-<td>119</td>
-<td>430</td>
-<td>0.51</td>
-</tr>
-<tr>
-<td>15</td>
-<td>108</td>
-<td>36</td>
-<td>56</td>
-<td>0.66</td>
-</tr>
-</table>
-
-
-

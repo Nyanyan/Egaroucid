@@ -181,6 +181,22 @@ I would like to thank these people for great contributions.
 </ul>
 
 
+## Other Othello AIs
+
+Recent great Othello AIs:
+
+<ul>
+    <li>[Edax 4.4](https://github.com/abulmo/edax-reversi) Strong and famous. Egaroucid borrows many ideas from Edax.</li>
+	<li>[Edax 4.5](https://github.com/okuhara/edax-reversi-AVX) Edax 4.4 optimized for AVX. Strong and very fast. Egaroucid borrows some ideas from Edax 4.5.</li>
+	<li>[Master Reversi](http://t-ishii.la.coocan.jp/hp/mr/) Strong and very fast.</li>
+	<li>[FOREST](https://ocasile.pagesperso-orange.fr/forest.htm) Uses alpha-beta pruning with neural-network-based evaluation function. The accuracy of its evaluation function is very good.</li>
+    <li>[dekunobou](https://dekunobou.jj1guj.net/) An unique Othello AI which uses alpha-beta pruning with an evaluation function optimized by genetic algorithm. The developer is also famous for shogi AI.</li>
+    <li>[WZebra](http://www.radagast.se/othello/download.html) Development stopped in around 2005. Egaroucid's default book is based on WZebra's book under a permission of its developer. Although the development has already stopped, I would like to introduce it with respect.</li>
+    <li>[Logistello](https://skatgame.net/mburo/log.html) The first Othello AI to win against world champion Takeshi Murakami in 1997. The idea of this AI is used in Egaroucid even now. Although the development has already stopped, I would like to introduce it with respect.</li>
+</ul>
+
+
+
 
 
 ## Creator

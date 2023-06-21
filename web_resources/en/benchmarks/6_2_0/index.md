@@ -222,13 +222,11 @@ I used Core i9-11900K for testing.
 
 If I set the game from the very beginning, same line appears a lot. To avoid this, I set the game from many different near-draw lines.
 
-No opening books used.
-
-If Egaroucid Win Ratio is over 0.5, then Egaroucid wins more than Edax do.
-
 I used <a href="https://berg.earthlingz.de/xot/index.php" target="_blank" el=”noopener noreferrer”>XOT</a> for its testcases.
 
-### Egaroucid played Black
+No opening books used.
+
+If Egaroucid Win Ratio is over 0.5, then Egaroucid wins more than Edax do. "Black" and "White" means Egaroucid played black/white. In all conditions, Egaroucid is stronger than Edax.
 
 <table>
 <tr>
@@ -240,79 +238,32 @@ I used <a href="https://berg.earthlingz.de/xot/index.php" target="_blank" el=”
 </tr>
 <tr>
 <td>1</td>
-<td>615</td>
-<td>23</td>
-<td>362</td>
-<td>0.63</td>
+<td>1234(Black: 615 White: 619)</td>
+<td>49(Black: 23 White: 26)</td>
+<td>717(Black: 362 White: 355)</td>
+<td>0.632</td>
 </tr>
 <tr>
 <td>5</td>
-<td>566</td>
-<td>48</td>
-<td>386</td>
-<td>0.59</td>
+<td>1101(Black: 566 White: 535)</td>
+<td>92(Black: 48 White: 44)</td>
+<td>807(Black: 386 White: 421)</td>
+<td>0.577</td>
 </tr>
 <tr>
 <td>10</td>
-<td>589</td>
-<td>115</td>
-<td>296</td>
-<td>0.67</td>
+<td>1040(Black: 589 White: 451)</td>
+<td>234(Black: 115 White: 119)</td>
+<td>726(Black: 296 White: 430)</td>
+<td>0.589</td>
 </tr>
 <tr>
 <td>15</td>
-<td>114</td>
-<td>31</td>
-<td>55</td>
-<td>0.67</td>
+<td>222(Black: 114 White: 108)</td>
+<td>67(Black: 31 White: 36)</td>
+<td>111(Black: 55 White: 56)</td>
+<td>0.667</td>
 </tr>
 </table>
-
-
-
-
-
-
-
-### Egaroucid played White
-
-<table>
-<tr>
-<th>Level</th>
-<th>Egaroucid win</th>
-<th>Draw</th>
-<th>Edax Win</th>
-<th>Egaroucid Win Ratio</th>
-</tr>
-<tr>
-<td>1</td>
-<td>619</td>
-<td>26</td>
-<td>355</td>
-<td>0.64</td>
-</tr>
-<tr>
-<td>5</td>
-<td>535</td>
-<td>44</td>
-<td>421</td>
-<td>0.56</td>
-</tr>
-<tr>
-<td>10</td>
-<td>451</td>
-<td>119</td>
-<td>430</td>
-<td>0.51</td>
-</tr>
-<tr>
-<td>15</td>
-<td>108</td>
-<td>36</td>
-<td>56</td>
-<td>0.66</td>
-</tr>
-</table>
-
 
 
