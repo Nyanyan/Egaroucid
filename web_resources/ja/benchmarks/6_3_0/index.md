@@ -1,4 +1,4 @@
-# Egaroucid 6.2.0 ベンチマーク
+# Egaroucid 6.3.0 ベンチマーク
 
 ## The FFO endgame test suite
 

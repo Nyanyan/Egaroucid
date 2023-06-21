@@ -1,4 +1,4 @@
-# Egaroucid 6.2.0 Benchmarks
+# Egaroucid 6.3.0 Benchmarks
 
 ## The FFO endgame test suite
 
@@ -6,7 +6,7 @@
 
 I used Core i9-11900K for testing.
 
-### Egaroucid for Console 6.2.0 Windows x64 SIMD
+### Egaroucid for Console 6.3.0 Windows x64 SIMD
 
 <table>
 <tr>
