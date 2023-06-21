@@ -260,11 +260,12 @@ If Egaroucid Win Ratio is over 0.5, then Egaroucid wins more than Edax do. "Blac
 </tr>
 <tr>
 <td>15</td>
-<td>194(Black: 95 White: 99)</td>
-<td>76(Black: 38 White: 38)</td>
-<td>130(Black: 67 White: 63)</td>
-<td>0.599</td>
+<td>302(Black: 162 White: 140)</td>
+<td>114(Black: 51 White: 63)</td>
+<td>184(Black: 87 White: 97)</td>
+<td>0.621</td>
 </tr>
 </table>
+
 
 
