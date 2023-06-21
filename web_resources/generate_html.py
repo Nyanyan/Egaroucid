@@ -115,7 +115,9 @@ def create_html(dr):
     for i, elem in enumerate(md_split):
         html_elems = re.findall('\<.+?\>', elem)
         for html_elem in html_elems:
-            if html_elem[:2] == '</':
+            if html_elem[:4] == '<img':
+                pass
+            elif html_elem[:2] == '</':
                 raw_html -= 1
             else:
                 raw_html += 1
