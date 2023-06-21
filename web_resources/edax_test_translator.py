@@ -2,6 +2,8 @@ import pyperclip
 import sys
 
 if sys.argv[1] == 'ja':
+    BLACK = '黒'
+    WHITE = '白'
     head = '''<table>
 <tr>
 <th>レベル</th>
@@ -12,6 +14,8 @@ if sys.argv[1] == 'ja':
 </tr>
 '''
 else:
+    BLACK = 'Black'
+    WHITE = 'White'
     head = '''<table>
 <tr>
 <th>Level</th>
@@ -37,9 +41,8 @@ idxes = [1, 14]
 #idxes = [1, 9]
 idxes = [1, 15]
 '''
-# 6.1.0
-idxes = [1, 6]
-#idxes = [1, 12]
+# 6.1.0から
+idxes = [1, 6, 12] # level, black, white
 
 res = head
 while True:
@@ -49,12 +52,13 @@ while True:
         for idx in idxes:
             use_data.append(data[idx])
         res += '<tr>\n'
-        res += '<td>' + use_data[0] + '</td>\n'
-        wdl = use_data[1].split('-')
+        res += '<td>' + use_data[0] + '</td>\n' # level
+        wdl_black = [int(elem) for elem in use_data[1].split('-')] # Egaroucid black
+        wdl_white = [int(elem) for elem in use_data[2].split('-')] # Egaroucid white
         for i in range(3):
-            res += '<td>' + wdl[i] + '</td>\n'
-        win_rate = int(wdl[0]) / (int(wdl[0]) + int(wdl[2]))
-        res += '<td>' + str(round(win_rate, 2)) + '</td>\n'
+            res += '<td>' + str(wdl_black[i] + wdl_white[i]) + '(' + BLACK + ': ' + str(wdl_black[i]) + ' ' + WHITE + ': ' + str(wdl_white[i]) + ')' + '</td>\n'
+        win_rate = (wdl_black[0] + wdl_white[0]) / (wdl_black[0] + wdl_white[0] + wdl_black[2] + wdl_white[2])
+        res += '<td>' + str(round(win_rate, 3)) + '</td>\n'
         res += '</tr>\n'
     except:
         break
