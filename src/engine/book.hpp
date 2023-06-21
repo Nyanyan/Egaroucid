@@ -1079,7 +1079,9 @@ class Book{
             fout.write((char*)&second, 1);
             char dummy = 0;
             fout.write((char*)&dummy, 1);
-            int level = 21; // fixed
+            int level = 60;
+            for (auto itr = book.begin(); itr != book.end(); ++itr)
+                level = std::min(level, itr->second.level);
             fout.write((char*)&level, 4);
             int n_empties = HW2;
             for (auto itr = book.begin(); itr != book.end(); ++itr)
