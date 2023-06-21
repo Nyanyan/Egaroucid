@@ -501,6 +501,7 @@ public:
         } else{
             umigame.delete_all();
             getData().book_information.changed = true;
+            getData().graph_resources.need_init = false;
             changeScene(U"Main_scene", SCENE_FADE_TIME);
         }
     }
