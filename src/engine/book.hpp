@@ -24,6 +24,9 @@
 #define LEVEL_HUMAN 70
 #define BOOK_LOSS_IGNORE_THRESHOLD 4
 
+#define FORCE_BOOK_LEVEL false
+#define FORCE_BOOK_DEPTH false
+
 /*
     @brief book result structure
 
@@ -549,9 +552,19 @@ class Book{
                 }
                 b.player = p;
                 b.opponent = o;
-                book_elem.value = (int)value;
-                book_elem.level = (int)level;
-                merge(b, book_elem);
+                #if FORCE_BOOK_DEPTH
+                    if (b.n_discs() <= 4 + 30){
+                #endif
+                        book_elem.value = (int)value;
+                        #if FORCE_BOOK_LEVEL
+                            book_elem.level = 21;
+                        #else
+                            book_elem.level = (int)level;
+                        #endif
+                        merge(b, book_elem);
+                #if FORCE_BOOK_DEPTH
+                    }
+                #endif
             }
             if (*stop_loading){
                 std::cerr << "stop loading book" << std::endl;
