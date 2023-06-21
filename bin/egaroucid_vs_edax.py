@@ -12,7 +12,7 @@ level = int(sys.argv[1])
 n_games = int(sys.argv[2])
 
 egaroucid = subprocess.Popen(('Egaroucid_for_console.exe -quiet -nobook -thread 19 -level ' + str(level)).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-edax = subprocess.Popen(('edax-4.4 -q -level ' + str(level)).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+edax = subprocess.Popen(('wEdax-x64-modern.exe -q -level ' + str(level)).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 egaroucid_win = [0, 0]
 edax_win = [0, 0]
 draw = [0, 0]
