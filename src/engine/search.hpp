@@ -31,6 +31,7 @@
     @brief Search switch parameters
 */
 #define MID_FAST_DEPTH 1
+#define MID_FAST_NWS_DEPTH 2
 #define END_FAST_DEPTH 6
 #define END_SIMPLE_DEPTH 10
 #define MID_TO_END_DEPTH 13
