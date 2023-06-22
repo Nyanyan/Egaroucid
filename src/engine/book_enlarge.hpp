@@ -16,7 +16,7 @@
 #include "ai.hpp"
 
 // automatically save book in this time (milliseconds)
-#define AUTO_BOOK_SAVE_TIME 60000
+#define AUTO_BOOK_SAVE_TIME 3600000 // 1 hour
 
 Search_result ai(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log);
 int ai_window(Board board, int level, int alpha, int beta, bool use_multi_thread);
@@ -57,10 +57,10 @@ inline int book_enlarge_calc_value(Board board, int level){
 int book_widen_search(Board board, int level, const int book_depth, int expected_error, double max_sum_error, Board *board_copy, int *player, uint64_t *strt_tim, std::string book_file, std::string book_bak, uint64_t strt){
     if (!global_searching)
         return SCORE_UNDEFINED;
-    //if (tim() - *strt_tim > AUTO_BOOK_SAVE_TIME){
-    //    book.save_bin(book_file, book_bak);
-    //    *strt_tim = tim();
-    //}
+    if (tim() - *strt_tim > AUTO_BOOK_SAVE_TIME){
+        book.save_bin(book_file, book_bak);
+        *strt_tim = tim();
+    }
     int g, v = SCORE_UNDEFINED;
     if (board.is_end()){
         g = board.score_player();
@@ -184,7 +184,7 @@ inline void book_widen(Board root_board, int level, const int book_depth, int ex
     *player = before_player;
     transposition_table.reset_date();
     book.fix();
-    //book.save_bin(book_file, book_bak);
+    book.save_bin(book_file, book_bak);
     std::cerr << "time " << ms_to_time_short(tim() - all_strt) << " book widen finished value " << g << std::endl;
     *book_learning = false;
 }
@@ -211,10 +211,10 @@ inline void book_widen(Board root_board, int level, const int book_depth, int ex
 int book_deepen_search(Board board, int level, const int book_depth, int expected_error, Board *board_copy, int *player, uint64_t *strt_tim, std::string book_file, std::string book_bak, uint64_t strt){
     if (!global_searching)
         return SCORE_UNDEFINED;
-    //if (tim() - *strt_tim > AUTO_BOOK_SAVE_TIME){
-    //    book.save_bin(book_file, book_bak);
-    //    *strt_tim = tim();
-    //}
+    if (tim() - *strt_tim > AUTO_BOOK_SAVE_TIME){
+        book.save_bin(book_file, book_bak);
+        *strt_tim = tim();
+    }
     int g, v = SCORE_UNDEFINED;
     if (board.is_end())
         return board.score_player();
@@ -282,7 +282,7 @@ inline void book_deepen(Board root_board, int level, const int book_depth, int e
     *player = before_player;
     transposition_table.reset_date();
     book.fix();
-    //book.save_bin(book_file, book_bak);
+    book.save_bin(book_file, book_bak);
     std::cerr << "time " << ms_to_time_short(tim() - all_strt) << " book deepen finished value " << g << std::endl;
     *book_learning = false;
 }
