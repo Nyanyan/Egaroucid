@@ -133,10 +133,15 @@ inline int nega_alpha_eval1_nws(Search *search, int alpha, bool skipped, const b
         if (upper <= alpha)
             return upper;
         #if USE_MID_MPC
-            if (depth >= USE_MPC_DEPTH){
+            #if 1 + 1 < USE_MPC_DEPTH
+                if (depth >= USE_MPC_DEPTH){
+                    if (mpc(search, alpha, alpha + 1, depth, legal, false, &v, searching))
+                        return v;
+                }
+            #else
                 if (mpc(search, alpha, alpha + 1, depth, legal, false, &v, searching))
                     return v;
-            }
+            #endif
         #endif
         int best_move = TRANSPOSITION_TABLE_UNDEFINED;
         int g;
@@ -234,10 +239,15 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
     if (upper <= alpha)
         return upper;
     #if USE_MID_MPC
-        if (depth >= USE_MPC_DEPTH){
+        #if MID_FAST_NWS_DEPTH + 1 < USE_MPC_DEPTH
+            if (depth >= USE_MPC_DEPTH){
+                if (mpc(search, alpha, alpha + 1, depth, legal, is_end_search, &v, searching))
+                    return v;
+            }
+        #else
             if (mpc(search, alpha, alpha + 1, depth, legal, is_end_search, &v, searching))
                 return v;
-        }
+        #endif
     #endif
     int best_move = TRANSPOSITION_TABLE_UNDEFINED;
     int g;
