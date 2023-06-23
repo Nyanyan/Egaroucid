@@ -1294,11 +1294,11 @@ class Book{
                         child = negamax_book(board, stop);
                 board.undo_board(&flip);
                 if (!pushed){
-                    if (best_score < -child.value){
-                        best_score = -child.value;
-                        best_level = child.level;
-                    }
                     if (-HW2 <= child.value && child.value <= HW2){
+                        if (best_score < -child.value){
+                            best_score = -child.value;
+                            best_level = child.level;
+                        }
                         move.value = -child.value;
                         node_updated = true;
                     }
@@ -1307,17 +1307,17 @@ class Book{
             }
             for (std::pair<int, std::future<Book_negamax>> &task: parallel_tasks){
                 child = task.second.get();
-                if (best_score < -child.value){
-                    best_score = -child.value;
-                    best_level = child.level;
-                }
                 if (-HW2 <= child.value && child.value <= HW2){
+                    if (best_score < -child.value){
+                        best_score = -child.value;
+                        best_level = child.level;
+                    }
                     book_elem.moves[task.first].value = -child.value;
                     node_updated = true;
                 }
             }
             bool do_not_update_this_node = best_registered_score < book_elem.value - BOOK_LOSS_IGNORE_THRESHOLD;
-            if ((best_level >= book_elem.level || book_elem.level == LEVEL_HUMAN) && !do_not_update_this_node){
+            if (best_level >= book_elem.level && !do_not_update_this_node && -HW2 <= best_score && best_score <= HW2){
                 res.value = best_score;
                 res.level = best_level;
                 /*
