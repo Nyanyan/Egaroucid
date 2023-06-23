@@ -6,7 +6,7 @@
 
 
 
-Egaroucid is an Othello app with one of the strongest othello solver AI. The light version got the first place in the world ([CodinGame Othello](https://www.codingame.com/multiplayer/bot-programming/othello-1)) as of March, 2023.
+Egaroucid is an Othello app with one of the strongest othello solver AI. The light version got the first place in the world ([CodinGame Othello](https://www.codingame.com/multiplayer/bot-programming/othello-1)) as of June, 2023.
 
 
 
@@ -27,7 +27,7 @@ Completely free software. Egaroucid and Egaroucid for Console use the same (stro
     </tr>
     <tr>
         <td>Egaroucid for Console</td>
-        <td>Windows/Linux</td>
+        <td>Windows/MacOS/Linux</td>
         <td>[Download](./console/)</td>
     </tr>
     <tr>
@@ -36,6 +36,7 @@ Completely free software. Egaroucid and Egaroucid for Console use the same (stro
         <td>[Play Now](./web/)</td>
     </tr>
 </table>
+
 
 
 
