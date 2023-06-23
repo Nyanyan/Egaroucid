@@ -22,7 +22,7 @@
 
 #define LEVEL_UNDEFINED -1
 #define LEVEL_HUMAN 70
-#define BOOK_LOSS_IGNORE_THRESHOLD 4
+#define BOOK_LOSS_IGNORE_THRESHOLD 8
 
 #define FORCE_BOOK_LEVEL false
 #define FORCE_BOOK_DEPTH false
@@ -904,6 +904,7 @@ class Book{
                 if (elem.first < acceptable_min_value)
                     elem.first = 0.0;
                 else{
+                    std::cerr << idx_to_coord(elem.second) << " " << elem.first << std::endl;
                     double exp_val = (exp(elem.first - best_score) + 1.5) / 3.0;
                     elem.first = pow(exp_val, BOOK_ACCURACY_LEVEL_INF - acc_level);
                 }
@@ -1216,6 +1217,7 @@ class Book{
             int t = 0;
             Board nb;
             uint64_t legal;
+            bool elem_changed;
             for (Board &b: boards){
                 if (*stop)
                     break;
@@ -1227,6 +1229,7 @@ class Book{
                 for (Book_value &elem: book_elem.moves)
                     legal ^= 1ULL << elem.policy;
                 if (legal){
+                    elem_changed = false;
                     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
                         calc_flip(&flip, &b, cell);
                         b.move_board(&flip);
@@ -1236,6 +1239,7 @@ class Book{
                                     move.policy = cell;
                                     move.value = -get(b).value;
                                     book_elem.moves.emplace_back(move);
+                                    elem_changed = true;
                                 }
                             } else{
                                 b.pass();
@@ -1244,12 +1248,14 @@ class Book{
                                         move.policy = cell;
                                         move.value = get(b).value;
                                         book_elem.moves.emplace_back(move);
+                                        elem_changed = true;
                                     }
                                 b.pass();
                             }
                         b.undo_board(&flip);
                     }
-                    book[b] = book_elem;
+                    if (elem_changed)
+                        book[b] = book_elem;
                 }
             }
         }
@@ -1257,16 +1263,14 @@ class Book{
         Book_negamax negamax_book(Board board, bool *stop){
             Book_negamax res;
             Book_elem book_elem = get(board);
-            if (*stop){
-                res.value = book_elem.value;
-                res.level = book_elem.level;
+            res.value = book_elem.value;
+            res.level = book_elem.level;
+            if (*stop)
                 return res;
-            }
-            if (book_elem.value == SCORE_UNDEFINED){
-                res.value = SCORE_UNDEFINED;
-                res.level = -1;
+            if (book_elem.value == SCORE_UNDEFINED)
                 return res;
-            }
+            if (book_elem.moves.size() == 0)
+                return res;
             Flip flip;
             int best_score = -SCORE_INF;
             int best_level = -1;
@@ -1275,6 +1279,7 @@ class Book{
             std::vector<std::pair<int, std::future<Book_negamax>>> parallel_tasks;
             bool pushed;
             int move_idx = 0;
+            bool node_updated = false;
             for (Book_value &move: book_elem.moves){
                 best_registered_score = std::max(best_registered_score, move.value);
                 calc_flip(&flip, &board, move.policy);
@@ -1293,8 +1298,10 @@ class Book{
                         best_score = -child.value;
                         best_level = child.level;
                     }
-                    if (-HW2 <= child.value && child.value <= HW2)
+                    if (-HW2 <= child.value && child.value <= HW2){
                         move.value = -child.value;
+                        node_updated = true;
+                    }
                 }
                 ++move_idx;
             }
@@ -1304,11 +1311,13 @@ class Book{
                     best_score = -child.value;
                     best_level = child.level;
                 }
-                if (-HW2 <= child.value && child.value <= HW2)
+                if (-HW2 <= child.value && child.value <= HW2){
                     book_elem.moves[task.first].value = -child.value;
+                    node_updated = true;
+                }
             }
             bool do_not_update_this_node = best_registered_score < book_elem.value - BOOK_LOSS_IGNORE_THRESHOLD;
-            if (best_level >= book_elem.level && !do_not_update_this_node){
+            if ((best_level >= book_elem.level || book_elem.level == LEVEL_HUMAN) && !do_not_update_this_node){
                 res.value = best_score;
                 res.level = best_level;
                 /*
@@ -1319,13 +1328,14 @@ class Book{
                 char e;
                 std::cin >> e;
                 */
+                book_elem.value = best_score;
+                book_elem.level = best_level;
+                node_updated = true;
+            }
+            if (node_updated){
                 mtx.lock();
-                    change(board, best_score, best_level);
+                    register_symmetric_book(board, book_elem);
                 mtx.unlock();
-
-            } else{
-                res.value = book_elem.value;
-                res.level = book_elem.level;
             }
             return res;
         }
