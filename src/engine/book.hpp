@@ -1107,6 +1107,7 @@ class Book{
             char char_level;
             Book_elem book_elem;
             char link_value, link_move;
+            int max_link_value;
             char leaf_val, leaf_move;
             char n_link;
             Flip flip;
@@ -1125,12 +1126,16 @@ class Book{
                 std::vector<Book_value> links;
                 leaf_val = -65;
                 leaf_move = 65;
+                max_link_value = -65;
                 b = itr->first;
                 for (Book_value &book_value: book_elem.moves){
                     calc_flip(&flip, &b, (uint_fast8_t)book_value.policy);
                     b.move_board(&flip);
-                        if (get(b).moves.size())
+                        if (get(b).moves.size()){
                             links.emplace_back(book_value);
+                            if (book_value.value > max_link_value)
+                                max_link_value = book_value.value;
+                        }
                         else if (leaf_val < book_value.value){
                             leaf_val = book_value.value;
                             leaf_move = book_value.policy;
@@ -1148,6 +1153,8 @@ class Book{
                             calc_flip(&flip, &b, cell);
                             b.move_board(&flip);
                                 int g = -mid_evaluate(&b);
+                                if (g > max_link_value)
+                                    g = max_link_value;
                             b.undo_board(&flip);
                             if (leaf_val < g){
                                 leaf_val = g;
