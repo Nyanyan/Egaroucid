@@ -16,9 +16,14 @@
 #include "evaluate.hpp"
 #include "board.hpp"
 #include "search.hpp"
+#include "ai.hpp"
+
+inline Search_result tree_search(Board board, int depth, uint_fast8_t mpc_level, bool show_log, bool use_multi_thread);
+Search_result ai(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log);
 
 #define BOOK_N_ACCEPT_LEVEL 11
 #define BOOK_ACCURACY_LEVEL_INF 10
+#define BOOK_LEAF_LEVEL 5
 
 #define LEVEL_UNDEFINED -1
 #define LEVEL_HUMAN 70
@@ -1143,6 +1148,9 @@ class Book{
                     b.undo_board(&flip);
                 }
                 n_link = (char)links.size();
+                //int leaf_max_value = book_elem.value;
+                //if (max_link_value > -65)
+                //    leaf_max_value = std::min(leaf_max_value, max_link_value);
                 if (leaf_move == 65){
                     uint64_t legal = b.get_legal();
                     for (Book_value &link: links)
@@ -1153,8 +1161,13 @@ class Book{
                             calc_flip(&flip, &b, cell);
                             b.move_board(&flip);
                                 int g = -mid_evaluate(&b);
-                                if (g > max_link_value)
-                                    g = max_link_value;
+                                /*
+                                int depth_leaf;
+                                uint_fast8_t mpc_leaf;
+                                bool is_mid_search;
+                                get_level(BOOK_LEAF_LEVEL, b.n_discs() - 4, &is_mid_search, &depth_leaf, &mpc_leaf);
+                                int g = -tree_search(b, depth_leaf, mpc_leaf, false, true).value;
+                                */
                             b.undo_board(&flip);
                             if (leaf_val < g){
                                 leaf_val = g;
@@ -1165,6 +1178,8 @@ class Book{
                 }
                 if (leaf_val == -65)
                     leaf_val = 0;
+                if (std::max((int)leaf_val, max_link_value) != book_elem.value)
+                    leaf_val = book_elem.value;
                 n_line = 0; //count_n_line(itr->first);
                 fout.write((char*)&itr->first.player, 8);
                 fout.write((char*)&itr->first.opponent, 8);
