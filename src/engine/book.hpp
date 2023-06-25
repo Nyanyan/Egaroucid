@@ -1103,7 +1103,7 @@ class Book{
             int t = 0;
             int n_win = 0, n_draw = 0, n_lose = 0;
             int n_line;
-            short short_val;
+            short short_val, short_val_min = -HW2, short_val_max = HW2;
             char char_level;
             Book_elem book_elem;
             char link_value, link_move;
@@ -1173,8 +1173,8 @@ class Book{
                 fout.write((char*)&n_lose, 4);
                 fout.write((char*)&n_line, 4);
                 fout.write((char*)&short_val, 2);
-                fout.write((char*)&short_val, 2);
-                fout.write((char*)&short_val, 2);
+                fout.write((char*)&short_val_min, 2);
+                fout.write((char*)&short_val_max, 2);
                 fout.write((char*)&n_link, 1);
                 fout.write((char*)&char_level, 1);
                 for (Book_value &book_value: links){
