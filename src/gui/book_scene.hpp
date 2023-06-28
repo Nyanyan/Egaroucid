@@ -240,6 +240,8 @@ public:
             else if (book_importing) {
                 if (import_book_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                     failed = import_book_future.get();
+                    if (getData().settings.book_file.size() < 6 || getData().settings.book_file.substr(getData().settings.book_file.size() - 6, 6) != ".egbk2")
+                        getData().settings.book_file += ".egbk2";
                     book_importing = false;
                     done = true;
                 }
