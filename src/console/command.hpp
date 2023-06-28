@@ -153,7 +153,7 @@ Search_result go_noprint(Board_info *board, Options *options, State *state){
         Search_result res;
         return res;
     }
-    Search_result result = ai(board->board, options->level, true, BOOK_ACCURACY_LEVEL_INF, true, options->show_log);
+    Search_result result = ai(board->board, options->level, true, 0, true, options->show_log);
     Flip flip;
     calc_flip(&flip, &board->board, result.policy);
     board->board.move_board(&flip);
@@ -279,13 +279,13 @@ void hint(Board_info *board, Options *options, State *state, std::string arg){
         Board n_board = board->board.copy();
         for (Flip_value &flip_value: move_list){
             n_board.move_board(&flip_value.flip);
-                flip_value.value = -ai(n_board, presearch_level, true, BOOK_ACCURACY_LEVEL_INF, true, false).value;
+                flip_value.value = -ai(n_board, presearch_level, true, 0, true, false).value;
             n_board.undo_board(&flip_value.flip);
         }
         std::sort(move_list.rbegin(), move_list.rend());
         for (int i = 0; i < n_check; ++i){
             n_board.move_board(&move_list[i].flip);
-                Search_result elem = ai(n_board, options->level, true, BOOK_ACCURACY_LEVEL_INF, true, false);
+                Search_result elem = ai(n_board, options->level, true, 0, true, false);
                 elem.value *= -1;
                 elem.policy = move_list[i].flip.pos;
             n_board.undo_board(&move_list[i].flip);
