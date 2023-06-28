@@ -1193,7 +1193,7 @@ class Book{
                             }
                         }
                         if ((int)leaf_val >= min_link_value)
-                            leaf_val = min_link_value - 1;
+                            leaf_val = (char)std::max(-HW2, min_link_value - 1);
                         ++n_leaf_add;
                     }
                 } else
