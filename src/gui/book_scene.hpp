@@ -111,6 +111,7 @@ public:
             back_button.draw();
             if (back_button.clicked() || KeyEscape.pressed()) {
                 umigame.delete_all();
+                getData().graph_resources.need_init = false;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
             if (DragDrop::HasNewFilePaths()) {
@@ -131,12 +132,14 @@ public:
                 back_button.draw();
                 if (back_button.clicked() || KeyEscape.pressed()) {
                     umigame.delete_all();
+                    getData().graph_resources.need_init = false;
                     changeScene(U"Main_scene", SCENE_FADE_TIME);
                 }
             }
             else {
-                getData().book_information.changed = true;
                 umigame.delete_all();
+                getData().book_information.changed = true;
+                getData().graph_resources.need_init = false;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
         }
@@ -212,6 +215,7 @@ public:
             back_button.draw();
             if (back_button.clicked() || KeyEscape.pressed()) {
                 umigame.delete_all();
+                getData().graph_resources.need_init = false;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
             default_button.draw();
@@ -253,11 +257,13 @@ public:
                 single_back_button.draw();
                 if (single_back_button.clicked() || KeyEscape.pressed()) {
                     umigame.delete_all();
+                    getData().graph_resources.need_init = false;
                     changeScene(U"Main_scene", SCENE_FADE_TIME);
                 }
             }
             else {
                 umigame.delete_all();
+                getData().graph_resources.need_init = false;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
         }
@@ -318,6 +324,7 @@ public:
             getData().fonts.font(book_file_str + U'|' + editingText).draw(15, text_area.stretched(-4), getData().colors.black);
             back_button.draw();
             if (back_button.clicked() || KeyEscape.pressed()) {
+                getData().graph_resources.need_init = false;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
             go_button.draw();
@@ -329,6 +336,7 @@ public:
         else {
             getData().fonts.font(language.get("book", "exporting")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
 			if (save_book_edax_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                getData().graph_resources.need_init = false;
 				changeScene(U"Main_scene", SCENE_FADE_TIME);
 			}
         }
@@ -391,9 +399,9 @@ public:
             getData().fonts.font(language.get("book", "complete")).draw(20, 480, 230, getData().colors.white);
             back_button.draw();
             if (back_button.clicked()) {
-                getData().graph_resources.need_init = false;
                 umigame.delete_all();
                 getData().book_information.changed = true;
+                getData().graph_resources.need_init = false;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
         }
@@ -456,9 +464,9 @@ public:
             getData().fonts.font(language.get("book", "complete")).draw(20, 480, 230, getData().colors.white);
             back_button.draw();
             if (back_button.clicked()) {
-                getData().graph_resources.need_init = false;
                 umigame.delete_all();
                 getData().book_information.changed = true;
+                getData().graph_resources.need_init = false;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
         }
