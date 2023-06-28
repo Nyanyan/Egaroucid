@@ -158,6 +158,7 @@ I would like to thank these people for great contributions.
     </li>
     <li>User Test
         <ul>
+            <li>Satoshi Kurahashi</li>
             <li>Taiki Demoto</li>
             <li>Mathica</li>
             <li>Nettle</li>
