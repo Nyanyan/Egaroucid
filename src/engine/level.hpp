@@ -169,12 +169,9 @@ constexpr Level level_definition[N_LEVEL] = {
     @param mpc_level            MPC level
 */
 void get_level(int level, int n_moves, bool *is_mid_search, int *depth, uint_fast8_t *mpc_level){
-    if (level <= 0){
-        *is_mid_search = true;
-        *depth = 0;
-        *mpc_level = MPC_100_LEVEL;
-        return;
-    } else if (level > 60)
+    if (level < 1)
+        level = 1;
+    if (level > 60)
         level = 60;
     Level level_status = level_definition[level];
     int n_empties = 60 - n_moves;
@@ -208,6 +205,10 @@ void get_level(int level, int n_moves, bool *is_mid_search, int *depth, uint_fas
     @return use MPC (Multi-ProbCut)?
 */
 bool get_level_use_mpc(int level, int n_moves){
+    if (level < 1)
+        level = 1;
+    if (level > 60)
+        level = 60;
     Level level_status = level_definition[level];
     int n_empties = 60 - n_moves;
     if (n_empties < level_status.complete0){
@@ -237,7 +238,10 @@ bool get_level_use_mpc(int level, int n_moves){
     @param end_depth            integer to store endgame lookahead depth
 */
 void get_level_depth(int level, int *mid_depth, int *end_depth){
-    level = std::max(0, std::min(60, level));
+    if (level < 1)
+        level = 1;
+    if (level > 60)
+        level = 60;
     *mid_depth = level_definition[level].mid_lookahead;
     *end_depth = level_definition[level].complete0;
 }
@@ -252,9 +256,9 @@ void get_level_depth(int level, int *mid_depth, int *end_depth){
     @return midgame search?
 */
 bool get_level_midsearch(int level, int n_moves){
-    if (level <= 0){
-        return true;
-    } else if (level > 60)
+    if (level < 1)
+        level = 1;
+    if (level > 60)
         level = 60;
     Level level_status = level_definition[level];
     int n_empties = 60 - n_moves;

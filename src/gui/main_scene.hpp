@@ -821,7 +821,7 @@ private:
         title.push(menu_e);
         menu_e.init_bar(language.get("ai_settings", "book_accuracy_level"), &menu_elements->book_acc_level, menu_elements->book_acc_level, 0, BOOK_ACCURACY_LEVEL_INF);
         title.push(menu_e);
-        menu_e.init_bar(language.get("ai_settings", "level"), &menu_elements->level, menu_elements->level, 0, 60);
+        menu_e.init_bar(language.get("ai_settings", "level"), &menu_elements->level, menu_elements->level, 1, 60);
         title.push(menu_e);
         menu_e.init_bar(language.get("settings", "thread", "thread"), &menu_elements->n_threads, menu_elements->n_threads, 1, 32);
         title.push(menu_e);

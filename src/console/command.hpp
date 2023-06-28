@@ -218,7 +218,7 @@ void setboard(Board_info *board, std::string board_str){
 void set_level(Options *options, std::string level_str){
     try {
         int level = std::stoi(level_str);
-        if (0 <= level && level < N_LEVEL){
+        if (1 <= level && level < N_LEVEL){
             options->level = level;
             if (options->show_log)
                 std::cerr << "level set to " << options->level << std::endl;
