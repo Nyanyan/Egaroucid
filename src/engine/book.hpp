@@ -713,6 +713,15 @@ class Book{
                         book_value.policy = link_move;
                         book_value.value = link_value;
                         book_elem.moves.emplace_back(book_value);
+                        calc_flip(&flip, &b, link_move);
+                        b.move_board(&flip);
+                            if (!contain_symmetry(b)){
+                                Book_elem link_book_elem;
+                                link_book_elem.level = level;
+                                link_book_elem.value = -link_value;
+                                merge(b, link_book_elem);
+                            }
+                        b.undo_board(&flip);
                     }
                 }
                 book_elem.value = value;
@@ -1105,7 +1114,7 @@ class Book{
                     ++n_position;
             }
             fout.write((char*)&n_position, 4);
-            int t = 0;
+            uint64_t t = 0, n_leaf_sep = 0, n_leaf_add = 0;
             int n_win = 0, n_draw = 0, n_lose = 0;
             int n_line;
             short short_val, short_val_min = -HW2, short_val_max = HW2;
@@ -1141,7 +1150,7 @@ class Book{
                             if (book_value.value > max_link_value)
                                 max_link_value = book_value.value;
                         }
-                        else if (leaf_val < book_value.value){
+                        else if (book_value.value > leaf_val){
                             leaf_val = book_value.value;
                             leaf_move = book_value.policy;
                         }
@@ -1174,12 +1183,14 @@ class Book{
                                 leaf_move = cell;
                             }
                         }
+                        if (std::max((int)leaf_val, max_link_value) != book_elem.value)
+                            leaf_val = book_elem.value;
+                        ++n_leaf_add;
                     }
-                }
-                if (leaf_val == -65)
-                    leaf_val = 0;
-                if (std::max((int)leaf_val, max_link_value) != book_elem.value)
-                    leaf_val = book_elem.value;
+                } else
+                    ++n_leaf_sep;
+                //if (leaf_val == -65)
+                //    leaf_val = 0;
                 n_line = 0; //count_n_line(itr->first);
                 fout.write((char*)&itr->first.player, 8);
                 fout.write((char*)&itr->first.opponent, 8);
@@ -1203,7 +1214,7 @@ class Book{
             }
             fout.close();
             n_lines.clear();
-            std::cerr << "saved " << t << " boards as a edax-formatted book " << n_position << " " << book.size() << std::endl;
+            std::cerr << "saved " << t << " boards as a edax-formatted book " << n_position << " " << book.size() << " " << n_leaf_sep << " " << n_leaf_add << std::endl;
         }
 
         /*
