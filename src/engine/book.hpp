@@ -1121,11 +1121,13 @@ class Book{
             char char_level;
             Book_elem book_elem;
             char link_value, link_move;
-            int max_link_value;
+            int max_link_value, min_link_value;
             char leaf_val, leaf_move;
             char n_link;
             Flip flip;
             Board b;
+            Search search;
+            bool searching = true;
             for (auto itr = book.begin(); itr != book.end(); ++itr){
                 book_elem = itr->second;
                 if (book_elem.moves.size() == 0)
@@ -1141,6 +1143,7 @@ class Book{
                 leaf_val = -65;
                 leaf_move = 65;
                 max_link_value = -65;
+                min_link_value = 65;
                 b = itr->first;
                 for (Book_value &book_value: book_elem.moves){
                     calc_flip(&flip, &b, (uint_fast8_t)book_value.policy);
@@ -1149,6 +1152,8 @@ class Book{
                             links.emplace_back(book_value);
                             if (book_value.value > max_link_value)
                                 max_link_value = book_value.value;
+                            if (book_value.value < min_link_value)
+                                min_link_value = book_value.value;
                         }
                         else if (book_value.value > leaf_val){
                             leaf_val = book_value.value;
@@ -1169,7 +1174,11 @@ class Book{
                         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
                             calc_flip(&flip, &b, cell);
                             b.move_board(&flip);
-                                int g = -mid_evaluate(&b);
+                                //int g = -mid_evaluate(&b);
+                                search.n_nodes = 0;
+                                search.init_board(&b);
+                                calc_features(&search);
+                                int g = -nega_alpha_eval1(&search, -HW2, HW2, false, &searching);
                                 /*
                                 int depth_leaf;
                                 uint_fast8_t mpc_leaf;
@@ -1183,8 +1192,8 @@ class Book{
                                 leaf_move = cell;
                             }
                         }
-                        if (std::max((int)leaf_val, max_link_value) != book_elem.value)
-                            leaf_val = book_elem.value;
+                        if ((int)leaf_val >= min_link_value)
+                            leaf_val = min_link_value - 1;
                         ++n_leaf_add;
                     }
                 } else
