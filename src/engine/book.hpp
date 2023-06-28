@@ -918,7 +918,7 @@ class Book{
                 if (elem.first < acceptable_min_value)
                     elem.first = 0.0;
                 else{
-                    std::cerr << idx_to_coord(elem.second) << " " << elem.first << std::endl;
+                    //std::cerr << idx_to_coord(elem.second) << " " << elem.first << std::endl;
                     double exp_val = (exp(elem.first - best_score) + 1.5) / 3.0;
                     elem.first = pow(exp_val, BOOK_ACCURACY_LEVEL_INF - acc_level);
                 }
