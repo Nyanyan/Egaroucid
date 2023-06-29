@@ -68,7 +68,9 @@
         "exporting": "Exporting...",
         "use_default": "Default",
         "ignore": "Overwrite Existing Values",
-        "save_as_edax_book": "Save as Edax book"
+        "save_as_edax_book": "Save as Edax book",
+        "book_align_depth": "Depth Align",
+        "book_rewrite_level": "Rewrite Level"
     },
     "in_out": {
         "in_out": "In/Out",
