@@ -1368,11 +1368,6 @@ class Book{
                 itr->second.level = level;
         }
 
-        void leave_best_move(int level){
-            
-        }
-
-
     private:
         void reg_first_board(){
             Board board;
