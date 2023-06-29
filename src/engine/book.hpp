@@ -792,36 +792,6 @@ class Book{
             if (!contain(b))
                 return res;
             res = book[b];
-            /*
-            uint64_t legal = b.get_legal();
-            Flip flip;
-            for (Book_value &elem: res.moves)
-                legal ^= 1ULL << elem.policy;
-            if (legal){
-                for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-                    calc_flip(&flip, &b, cell);
-                    b.move_board(&flip);
-                        if (b.get_legal()){
-                            if (contain_symmetry(b)){
-                                Book_value move;
-                                move.policy = cell;
-                                move.value = -get(b).value;
-                                res.moves.emplace_back(move);
-                            }
-                        } else{
-                            b.pass();
-                                if (contain_symmetry(b)){
-                                    Book_value move;
-                                    move.policy = cell;
-                                    move.value = get(b).value;
-                                    res.moves.emplace_back(move);
-                                }
-                            b.pass();
-                        }
-                    b.undo_board(&flip);
-                }
-            }
-            */
             for (Book_value &elem: res.moves)
                 elem.policy = convert_coord_from_representative_board(elem.policy, idx);
             return res;
@@ -1380,6 +1350,26 @@ class Book{
                 mtx.unlock();
             }
             return res;
+        }
+
+        void cut_depth_book(int max_depth){
+            std::vector<Board> boards;
+            for (auto itr = book.begin(); itr != book.end(); ++itr)
+                boards.emplace_back(itr->first);
+            for (Board &board: boards){
+                if (board.n_discs() > 4 + max_depth){
+                    book.erase(board);
+                }
+            }
+        }
+
+        void rewrite_level(int level){
+            for (auto itr = book.begin(); itr != book.end(); ++itr)
+                itr->second.level = level;
+        }
+
+        void leave_best_move(int level){
+            
         }
 
 
