@@ -30,11 +30,19 @@ void init_directories(Directories* directories) {
     directories->eval_file = "resources/eval.egev";
 }
 
+std::string get_default_language(){
+    std::string default_language = System::DefaultLanguage().narrow();
+    std::string res = "english";
+    if (default_language == "ja-JP")
+        res = "japanese";
+    return res;
+}
+
 void init_default_settings(const Directories* directories, const Resources* resources, Settings* settings) {
     std::cerr << "use default settings" << std::endl;
     settings->n_threads = std::min(32, (int)std::thread::hardware_concurrency());
     settings->auto_update_check = 1;
-    settings->lang_name = "japanese";
+    settings->lang_name = get_default_language();
     settings->book_file = directories->document_dir + "book.egbk2";
     settings->use_book = true;
     settings->level = DEFAULT_LEVEL;
