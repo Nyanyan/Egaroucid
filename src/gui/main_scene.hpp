@@ -565,6 +565,20 @@ private:
             changeScene(U"Fix_book", SCENE_FADE_TIME);
             return;
         }
+        if (getData().menu_elements.book_start_aligning) {
+            stop_calculating();
+            resume_calculating();
+            changing_scene = true;
+            changeScene(U"Depth_align_book", SCENE_FADE_TIME);
+            return;
+        }
+        if (getData().menu_elements.book_start_rewriting_level) {
+            stop_calculating();
+            resume_calculating();
+            changing_scene = true;
+            changeScene(U"Rewrite_level_book", SCENE_FADE_TIME);
+            return;
+        }
         if (getData().menu_elements.book_import) {
             stop_calculating();
             resume_calculating();
@@ -950,6 +964,10 @@ private:
         side_menu.init_button(language.get("book", "book_deepen"), &menu_elements->book_start_deepen);
         menu_e.push(side_menu);
         side_menu.init_button(language.get("book", "book_fix"), &menu_elements->book_start_fix);
+        menu_e.push(side_menu);
+        side_menu.init_button(language.get("book", "book_align_depth"), &menu_elements->book_start_aligning);
+        menu_e.push(side_menu);
+        side_menu.init_button(language.get("book", "book_rewrite_level"), &menu_elements->book_start_rewriting_level);
         menu_e.push(side_menu);
         title.push(menu_e);
 

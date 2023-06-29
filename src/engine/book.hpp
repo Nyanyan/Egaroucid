@@ -1352,20 +1352,35 @@ class Book{
             return res;
         }
 
-        void cut_depth_book(int max_depth){
+        void depth_align(int max_depth, bool *stop){
             std::vector<Board> boards;
             for (auto itr = book.begin(); itr != book.end(); ++itr)
                 boards.emplace_back(itr->first);
+            uint64_t t = 0;
             for (Board &board: boards){
+                if (*stop)
+                    break;
+                ++t;
+                if (t % 16384 == 0)
+                    std::cerr << "cutting book " << (t * 100 / (int)boards.size()) << "%" << std::endl;
                 if (board.n_discs() > 4 + max_depth){
                     book.erase(board);
                 }
             }
+            fix(stop);
         }
 
-        void rewrite_level(int level){
-            for (auto itr = book.begin(); itr != book.end(); ++itr)
+        void rewrite_level(int level, bool *stop){
+            uint64_t t = 0;
+            for (auto itr = book.begin(); itr != book.end(); ++itr){
+                if (*stop)
+                    break;
+                ++t;
+                if (t % 16384 == 0)
+                    std::cerr << "rewriting book level " << (t * 100 / (int)book.size()) << "%" << std::endl;
                 itr->second.level = level;
+            }
+            fix(stop);
         }
 
     private:
@@ -1672,4 +1687,12 @@ void book_fix(bool *stop){
 
 Book_negamax negamax_book_global(Board board, bool *stop){
     return book.negamax_book(board, stop);
+}
+
+void book_depth_align(int depth, bool *stop){
+    book.depth_align(depth, stop);
+}
+
+void book_rewrite_level(int level, bool *stop){
+    book.rewrite_level(level, stop);
 }
