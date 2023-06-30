@@ -20,7 +20,7 @@ dirs = [
 
 n_all_lines = 0
 for d in dirs:
-    path = './../../../train_data/transcript/' + dirs + '/*.txt'
+    path = './../../../train_data/transcript/' + d + '/*.txt'
     files = glob.glob(path)
     n_lines = 0
     for file in files:
