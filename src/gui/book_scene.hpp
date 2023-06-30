@@ -349,24 +349,27 @@ public:
 
 class Widen_book : public App::Scene {
 private:
+    Button start_button;
     Button stop_button;
     Button back_button;
     History_elem history_elem;
     bool book_learning;
     bool done;
+    bool before_start;
     std::future<void> book_learn_future;
     Board root_board;
 
 public:
     Widen_book(const InitData& init) : IScene{ init } {
+        start_button.init(BUTTON2_VERTICAL_SX, BUTTON2_VERTICAL_2_SY - 65, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("book", "start"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         stop_button.init(BUTTON2_VERTICAL_SX, BUTTON2_VERTICAL_2_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("book", "stop_learn"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         back_button.init(BUTTON2_VERTICAL_SX, BUTTON2_VERTICAL_2_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         root_board = getData().history_elem.board;
         history_elem = getData().history_elem;
         history_elem.policy = -1;
-        book_learning = true;
+        book_learning = false;
         done = false;
-        book_learn_future = std::async(std::launch::async, book_widen, root_board, getData().menu_elements.level, getData().menu_elements.book_learn_depth, getData().menu_elements.book_learn_error, &history_elem.board, &history_elem.player, getData().settings.book_file, getData().settings.book_file + ".bak", &book_learning);
+        before_start = true;
     }
 
     void update() override {
@@ -377,8 +380,8 @@ public:
         draw_board(getData().fonts, getData().colors, history_elem);
         draw_info(getData().colors, history_elem, getData().fonts, getData().menu_elements, false);
         getData().fonts.font(language.get("book", "book_widen")).draw(25, 480, 190, getData().colors.white);
-        getData().fonts.font(language.get("book", "depth") + U": " + Format(getData().menu_elements.book_learn_depth)).draw(15, 480, 300, getData().colors.white);
-        getData().fonts.font(language.get("book", "accept") + U": " + Format(getData().menu_elements.book_learn_error)).draw(15, 480, 320, getData().colors.white);
+        getData().fonts.font(language.get("book", "depth") + U": " + Format(getData().menu_elements.book_learn_depth)).draw(15, 480, 280, getData().colors.white);
+        getData().fonts.font(language.get("book", "accept") + U": " + Format(getData().menu_elements.book_learn_error)).draw(15, 480, 300, getData().colors.white);
         if (book_learning) {
             getData().fonts.font(language.get("book", "learning")).draw(20, 480, 230, getData().colors.white);
             stop_button.draw();
@@ -386,16 +389,27 @@ public:
                 global_searching = false;
                 book_learning = false;
             }
-        }
-        else if (!done) {
+        } else if (before_start){
+            start_button.draw();
+            if (start_button.clicked()){
+                before_start = false;
+                book_learning = true;
+                book_learn_future = std::async(std::launch::async, book_widen, root_board, getData().menu_elements.level, getData().menu_elements.book_learn_depth, getData().menu_elements.book_learn_error, &history_elem.board, &history_elem.player, getData().settings.book_file, getData().settings.book_file + ".bak", &book_learning);
+            }
+            back_button.draw();
+            if (back_button.clicked() || KeyEscape.pressed()){
+                getData().graph_resources.need_init = false;
+                changeScene(U"Main_scene", SCENE_FADE_TIME);
+            }
+        } else if (!done) {
             getData().fonts.font(language.get("book", "stopping")).draw(20, 480, 230, getData().colors.white);
             if (book_learn_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 book_learn_future.get();
+                book_learning = false;
                 done = true;
                 global_searching = true;
             }
-        }
-        else {
+        } else {
             getData().fonts.font(language.get("book", "complete")).draw(20, 480, 230, getData().colors.white);
             back_button.draw();
             if (back_button.clicked()) {
@@ -414,24 +428,27 @@ public:
 
 class Deepen_book : public App::Scene {
 private:
+    Button start_button;
     Button stop_button;
     Button back_button;
     History_elem history_elem;
     bool book_learning;
     bool done;
+    bool before_start;
     std::future<void> book_learn_future;
     Board root_board;
 
 public:
     Deepen_book(const InitData& init) : IScene{ init } {
+        start_button.init(BUTTON2_VERTICAL_SX, BUTTON2_VERTICAL_2_SY - 65, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("book", "start"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         stop_button.init(BUTTON2_VERTICAL_SX, BUTTON2_VERTICAL_2_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("book", "stop_learn"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         back_button.init(BUTTON2_VERTICAL_SX, BUTTON2_VERTICAL_2_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         root_board = getData().history_elem.board;
         history_elem = getData().history_elem;
         history_elem.policy = -1;
-        book_learning = true;
+        book_learning = false;
         done = false;
-        book_learn_future = std::async(std::launch::async, book_deepen, root_board, getData().menu_elements.level, getData().menu_elements.book_learn_depth, getData().menu_elements.book_learn_error, &history_elem.board, &history_elem.player, getData().settings.book_file, getData().settings.book_file + ".bak", &book_learning);
+        before_start = true;
     }
 
     void update() override {
@@ -442,8 +459,8 @@ public:
         draw_board(getData().fonts, getData().colors, history_elem);
         draw_info(getData().colors, history_elem, getData().fonts, getData().menu_elements, false);
         getData().fonts.font(language.get("book", "book_deepen")).draw(25, 480, 190, getData().colors.white);
-        getData().fonts.font(language.get("book", "depth") + U": " + Format(getData().menu_elements.book_learn_depth)).draw(15, 480, 300, getData().colors.white);
-        getData().fonts.font(language.get("book", "accept") + U": " + Format(getData().menu_elements.book_learn_error)).draw(15, 480, 320, getData().colors.white);
+        getData().fonts.font(language.get("book", "depth") + U": " + Format(getData().menu_elements.book_learn_depth)).draw(15, 480, 280, getData().colors.white);
+        getData().fonts.font(language.get("book", "accept") + U": " + Format(getData().menu_elements.book_learn_error)).draw(15, 480, 300, getData().colors.white);
         if (book_learning) {
             getData().fonts.font(language.get("book", "learning")).draw(20, 480, 230, getData().colors.white);
             stop_button.draw();
@@ -451,16 +468,27 @@ public:
                 global_searching = false;
                 book_learning = false;
             }
-        }
-        else if (!done) {
+        } else if (before_start){
+            start_button.draw();
+            if (start_button.clicked()){
+                before_start = false;
+                book_learning = true;
+                book_learn_future = std::async(std::launch::async, book_deepen, root_board, getData().menu_elements.level, getData().menu_elements.book_learn_depth, getData().menu_elements.book_learn_error, &history_elem.board, &history_elem.player, getData().settings.book_file, getData().settings.book_file + ".bak", &book_learning);
+            }
+            back_button.draw();
+            if (back_button.clicked() || KeyEscape.pressed()){
+                getData().graph_resources.need_init = false;
+                changeScene(U"Main_scene", SCENE_FADE_TIME);
+            }
+        } else if (!done) {
             getData().fonts.font(language.get("book", "stopping")).draw(20, 480, 230, getData().colors.white);
             if (book_learn_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 book_learn_future.get();
+                book_learning = false;
                 done = true;
                 global_searching = true;
             }
-        }
-        else {
+        } else {
             getData().fonts.font(language.get("book", "complete")).draw(20, 480, 230, getData().colors.white);
             back_button.draw();
             if (back_button.clicked()) {
@@ -479,18 +507,22 @@ public:
 
 class Fix_book : public App::Scene {
 private:
+    Button start_button;
+    Button back_button;
     Button stop_button;
+    bool before_start;
     bool done;
     bool stop;
-    std::future<void> book_fix_future;
-    Board root_board;
+    std::future<void> task_future;
 
 public:
     Fix_book(const InitData& init) : IScene{ init } {
+        start_button.init(BACK_BUTTON_SX, BUTTON2_VERTICAL_1_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("book", "start"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        back_button.init(BACK_BUTTON_SX, BUTTON2_VERTICAL_2_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         stop_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("book", "force_stop"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        before_start = true;
         done = false;
         stop = false;
-        book_fix_future = std::async(std::launch::async, book_fix, &stop);
     }
 
     void update() override {
@@ -499,12 +531,23 @@ public:
         //}
         Scene::SetBackground(getData().colors.green);
         getData().fonts.font(language.get("book", "book_fix")).draw(25, 50, 50, getData().colors.white);
-        stop_button.draw();
-        if (stop_button.clicked())
-            stop = true;
-        if (!done) {
-            if (book_fix_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-                book_fix_future.get();
+        if (before_start){
+            start_button.draw();
+            if (start_button.clicked()){
+                before_start = false;
+                task_future = std::async(std::launch::async, book_fix, &stop);
+            }
+            back_button.draw();
+            if (back_button.clicked() || KeyEscape.pressed()){
+                getData().graph_resources.need_init = false;
+                changeScene(U"Main_scene", SCENE_FADE_TIME);
+            }
+        } else if (!done){
+            stop_button.draw();
+            if (stop_button.clicked())
+                stop = true;
+            if (task_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                task_future.get();
                 done = true;
                 global_searching = true;
             }
@@ -523,18 +566,22 @@ public:
 
 class Depth_align_book : public App::Scene {
 private:
+    Button start_button;
+    Button back_button;
     Button stop_button;
+    bool before_start;
     bool done;
     bool stop;
     std::future<void> task_future;
-    Board root_board;
 
 public:
     Depth_align_book(const InitData& init) : IScene{ init } {
+        start_button.init(BACK_BUTTON_SX, BUTTON2_VERTICAL_1_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("book", "start"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        back_button.init(BACK_BUTTON_SX, BUTTON2_VERTICAL_2_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         stop_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("book", "force_stop"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        before_start = true;
         done = false;
         stop = false;
-        task_future = std::async(std::launch::async, book_depth_align, getData().menu_elements.book_learn_depth, &stop);
     }
 
     void update() override {
@@ -543,10 +590,21 @@ public:
         //}
         Scene::SetBackground(getData().colors.green);
         getData().fonts.font(language.get("book", "book_align_depth")).draw(25, 50, 50, getData().colors.white);
-        stop_button.draw();
-        if (stop_button.clicked())
-            stop = true;
-        if (!done) {
+        if (before_start){
+            start_button.draw();
+            if (start_button.clicked()){
+                before_start = false;
+                task_future = std::async(std::launch::async, book_depth_align, getData().menu_elements.book_learn_depth, &stop);
+            }
+            back_button.draw();
+            if (back_button.clicked() || KeyEscape.pressed()){
+                getData().graph_resources.need_init = false;
+                changeScene(U"Main_scene", SCENE_FADE_TIME);
+            }
+        } else if (!done){
+            stop_button.draw();
+            if (stop_button.clicked())
+                stop = true;
             if (task_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 task_future.get();
                 done = true;
@@ -567,18 +625,22 @@ public:
 
 class Rewrite_level_book : public App::Scene {
 private:
+    Button start_button;
+    Button back_button;
     Button stop_button;
+    bool before_start;
     bool done;
     bool stop;
     std::future<void> task_future;
-    Board root_board;
 
 public:
     Rewrite_level_book(const InitData& init) : IScene{ init } {
+        start_button.init(BACK_BUTTON_SX, BUTTON2_VERTICAL_1_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("book", "start"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        back_button.init(BACK_BUTTON_SX, BUTTON2_VERTICAL_2_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         stop_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("book", "force_stop"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        before_start = true;
         done = false;
         stop = false;
-        task_future = std::async(std::launch::async, book_rewrite_level, getData().menu_elements.level, &stop);
     }
 
     void update() override {
@@ -587,10 +649,21 @@ public:
         //}
         Scene::SetBackground(getData().colors.green);
         getData().fonts.font(language.get("book", "book_rewrite_level")).draw(25, 50, 50, getData().colors.white);
-        stop_button.draw();
-        if (stop_button.clicked())
-            stop = true;
-        if (!done) {
+        if (before_start){
+            start_button.draw();
+            if (start_button.clicked()){
+                before_start = false;
+                task_future = std::async(std::launch::async, book_rewrite_level, getData().menu_elements.level, &stop);
+            }
+            back_button.draw();
+            if (back_button.clicked() || KeyEscape.pressed()){
+                getData().graph_resources.need_init = false;
+                changeScene(U"Main_scene", SCENE_FADE_TIME);
+            }
+        } else if (!done){
+            stop_button.draw();
+            if (stop_button.clicked())
+                stop = true;
             if (task_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 task_future.get();
                 done = true;
