@@ -4,27 +4,20 @@
 /*
     @brief evaluation pattern definition
 */
-// disc pattern
-#define ADJ_N_PATTERNS 16
+#define ADJ_N_PATTERNS 23
 #define ADJ_N_SYMMETRY_PATTERNS 62
+#define ADJ_N_ADDITIONAL_EVALS 3
+#define ADJ_N_CANPUT_PATTERNS 4
 #define ADJ_MAX_PATTERN_CELLS 10
 #define ADJ_MAX_CELL_PATTERNS 13
-
-// additional features
-#define ADJ_N_ADDITIONAL_EVALS 3
 #define ADJ_MAX_SURROUND 64
 #define ADJ_MAX_CANPUT 35
 #define ADJ_MAX_STONE_NUM 65
-
-// legal pattern
-#define ADJ_N_CANPUT_PATTERNS 4
-
-// overall
 #define ADJ_MAX_EVALUATE_IDX 65536
+
 #define ADJ_N_EVAL (16 + 3 + 4)
 #define ADJ_N_FEATURES (62 + 3 + 16)
 
-// phase
 #define ADJ_N_PHASES 30
 #define ADJ_N_PHASE_DISCS 2 // 60 / ADJ_N_PHASES
 
@@ -519,12 +512,4 @@ uint16_t adj_calc_rev_idx(int feature, int idx){
         }
     }
     return res;
-}
-
-int calc_phase(Board *board, int16_t player){
-    return (pop_count_ull(board->player | board->opponent) - 4) / ADJ_N_PHASE_DISCS;
-}
-
-void evaluation_definition_init(){
-    mobility_init();
 }
