@@ -2,7 +2,8 @@
 
 * ```Egaroucid/train_data/transcript/recordsX```内にf5d6形式の棋譜を収録する
   * 連番で収録する
-* ```data_translate.py```で```Egaroucid/train_data/bin_data/日付/フェーズ```内にデータを変換する
+* ```tools/transcript_expansion```の```all_expand_transcript.py```あたりを実行して棋譜をボードデータに変換する
+* ```data_translate.py```で```Egaroucid/train_data/board_data/recordsX```から```Egaroucid/train_data/bin_data/日付/フェーズ```内にデータを変換する
   * コマンドライン引数はないが、30フェーズに固定してある。
   * すべてのデータを一気に変換するようになっている
   * ```data_board_to_idx.cpp```をラップしてある
