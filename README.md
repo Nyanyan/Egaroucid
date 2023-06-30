@@ -22,6 +22,7 @@ Totally free application
   
 * **[Egaroucid for Console](https://www.egaroucid.nyanyan.dev/en/console) - Console application**
   
+  * Windows / MacOS / Linux
   * Edax-like format / Go Text Protocol(GTP)
   * English
   
@@ -50,7 +51,7 @@ Download [here](https://www.egaroucid.nyanyan.dev/en/download/), then execute th
 
 I think you can use it without any reference.
 
-Need translation? Please contact me [here](https://docs.google.com/forms/d/e/1FAIpQLSd6ML1T1fc707luPEefBXuImMnlM9cQP8j-YHKiSyFoS-8rmQ/viewform)!
+Any Help? Need translation? Please contact me [here](https://docs.google.com/forms/d/e/1FAIpQLSd6ML1T1fc707luPEefBXuImMnlM9cQP8j-YHKiSyFoS-8rmQ/viewform)!
 
 
 

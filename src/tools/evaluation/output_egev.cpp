@@ -5,7 +5,8 @@
 #include <ios>
 #include <iomanip>
 
-#define EVAL_MAX 30000 //4090
+#define EVAL_MAX 4091
+#define SIMD_EVAL_OFFSET 4092
 
 int main(int argc, char* argv[]){
     if (argc < 3){
@@ -38,6 +39,7 @@ int main(int argc, char* argv[]){
                 elem = -EVAL_MAX;
             max_elem = std::max(max_elem, elem);
             min_elem = std::min(min_elem, elem);
+            elem += SIMD_EVAL_OFFSET;
             fout.write((char*)&elem, 2);
             ++t;
         }

@@ -1,5 +1,7 @@
 #pragma once
-#include "./../../engine/board.hpp"
+#ifndef OPTIMIZER_INCLUDE
+    #include "./../../engine/board.hpp"
+#endif
 
 /*
     @brief evaluation pattern definition
@@ -411,6 +413,8 @@ constexpr int adj_feature_to_eval_idx[ADJ_N_FEATURES] = {
     22, 22, 22, 22
 };
 
+#ifndef OPTIMIZER_INCLUDE
+
 /*
     @brief calculate surround value used in evaluation function
 
@@ -528,3 +532,5 @@ int calc_phase(Board *board, int16_t player){
 void evaluation_definition_init(){
     mobility_init();
 }
+
+#endif

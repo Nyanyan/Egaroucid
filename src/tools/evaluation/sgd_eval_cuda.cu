@@ -12,13 +12,14 @@
 #include <iterator>
 #include <random>
 #include <algorithm>
+#define OPTIMIZER_INCLUDE
 #include "evaluation_definition.hpp"
 
 #define ADJ_MAX_N_FILES 64
 
 #define ADJ_N_MIN_DATA_FEATURES 100
 
-#define ADJ_EVAL_MAX 4090 // 16380
+#define ADJ_EVAL_MAX 4091
 
 #define BATCH_THREAD_SIZE 256
 #define BATCH_BLOCK_SIZE 128
