@@ -12,7 +12,7 @@
 #include <string>
 #include <vector>
 
-#define N_COMMANDLINE_OPTIONS 14
+#define N_COMMANDLINE_OPTIONS 15
 
 #define ID_VERSION 0
 #define ID_HELP 1
@@ -28,6 +28,7 @@
 #define ID_MODE 11
 #define ID_GTP 12
 #define ID_QUIET 13
+#define ID_SELF_PLAY 14
 
 struct Commandline_option_info{
     int id;
@@ -50,5 +51,6 @@ const Commandline_option_info commandline_option_data[N_COMMANDLINE_OPTIONS] = {
     {ID_SOLVE,      {"-s", "-solve", "-sol"},                           "<problem file>",   "Solve problems written in <problem file>"},
     {ID_MODE,       {"-m", "-mode"},                                    "<mode>",           "Set mode to <mode> (0: You vs Egaroucid, 1: Egaroucid vs You, 2: Egaroucid vs Egaroucid, 3: You vs You)"},
     {ID_GTP,        {"-gtp"},                                           "",                 "Use GTP (Go Text Protocol) mode"},
-    {ID_QUIET,      {"-q", "-quiet", "-silent"},                        "",                 "Quiet mode"}
+    {ID_QUIET,      {"-q", "-quiet", "-silent"},                        "",                 "Quiet mode"},
+    {ID_SELF_PLAY,  {"-selfplay"},                                      "<n>",              "Self play n games (play randomly first m moves, where 10 <= m <= 19)"}
 };

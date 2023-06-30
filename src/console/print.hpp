@@ -426,5 +426,8 @@ void execute_special_commandline_tasks(std::vector<Commandline_option> commandli
     if (find_commandline_option(commandline_options, ID_SOLVE) != OPTION_NOT_FOUND){
         solve_problems(find_commandline_option(commandline_options, ID_SOLVE), options, state);
         std::exit(0);
+    } else if (find_commandline_option(commandline_options, ID_SELF_PLAY) != OPTION_NOT_FOUND){
+        self_play(find_commandline_option(commandline_options, ID_SELF_PLAY), options, state);
+        std::exit(0);
     }
 }
