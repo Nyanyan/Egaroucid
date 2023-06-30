@@ -70,7 +70,8 @@
         "ignore": "Overwrite Existing Values",
         "save_as_edax_book": "Save as Edax book",
         "book_align_depth": "Depth Align",
-        "book_rewrite_level": "Rewrite Level"
+        "book_rewrite_level": "Rewrite Level",
+        "start": "Start"
     },
     "in_out": {
         "in_out": "In/Out",
