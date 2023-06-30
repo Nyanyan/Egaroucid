@@ -1231,7 +1231,7 @@ class Book{
             uint64_t legal;
             bool elem_changed;
             for (Board &b: boards){
-                if (*stop)
+                if (*stop || !global_searching)
                     break;
                 ++t;
                 if (t % 16384 == 0)
@@ -1277,7 +1277,7 @@ class Book{
             Book_elem book_elem = get(board);
             res.value = book_elem.value;
             res.level = book_elem.level;
-            if (*stop)
+            if (*stop || !global_searching)
                 return res;
             if (book_elem.value == SCORE_UNDEFINED)
                 return res;
