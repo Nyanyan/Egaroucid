@@ -85,6 +85,17 @@ link21 = '<a href="'
 link22 = '">'
 link23 = '</a>'
 
+def judge_raw_html(html_elem):
+    if html_elem[:2] == '</':
+        return -1
+    html_tags = ['table', 'tr', 'td', 'th', 'a', 'div', 'ul', 'li', 'p', 'span', 'canvas', 'details', 'summary', 'code', 'label', 'script']
+    for tag in html_tags:
+        if html_elem[:1 + len(tag)] == '<' + tag:
+            return 1
+    #print(html_elem)
+    # ignore img, input, br
+    return 0
+
 def create_html(dr):
     noenglish = False
     try:
@@ -115,12 +126,18 @@ def create_html(dr):
     for i, elem in enumerate(md_split):
         html_elems = re.findall('\<.+?\>', elem)
         for html_elem in html_elems:
+            raw_html += judge_raw_html(html_elem)
+            #print(dr, raw_html)
+            '''
             if html_elem[:4] == '<img':
                 pass
             elif html_elem[:2] == '</':
                 raw_html -= 1
+                print('m', raw_html, html_elem)
             else:
                 raw_html += 1
+                print('p', raw_html, html_elem)
+            '''
         # section tags
         if elem[:2] == '# ':
             elem = '<h1>' + elem[2:] + '</h1>'
