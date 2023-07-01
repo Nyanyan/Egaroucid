@@ -653,7 +653,7 @@ inline int end_evaluate_odd(Board *b, int e){
     int score = b->count_player() * 2 + e;
     score += (((score >> 5) & 2) - 1) * e;
     return score - HW2;
-
+}
 /*
     @brief calculate surround value used in evaluation function
 
