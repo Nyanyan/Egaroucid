@@ -305,6 +305,30 @@ class Search{
         }
 
         /*
+            @brief Move board and other variables except eval_features
+
+            @param flip                 Flip information
+        */
+        inline void move_lastN(const Flip *flip) {
+            board.move_board(flip);
+            #if !USE_SIMD
+                parity ^= cell_div4[flip->pos];
+            #endif
+        }
+
+        /*
+            @brief Undo board and other variables except eval_features
+
+            @param flip                 Flip information
+        */
+        inline void undo_lastN(const Flip *flip) {
+            board.undo_board(flip);
+            #if !USE_SIMD
+                parity ^= cell_div4[flip->pos];
+            #endif
+        }
+
+        /*
             @brief Get evaluation phase
         */
         inline int phase(){

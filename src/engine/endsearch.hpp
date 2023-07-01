@@ -56,9 +56,9 @@ inline int last2(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
     if (bit_around[p0] & search->board.opponent){
         calc_flip(&flip, &search->board, p0);
         if (flip.flip){
-            search->move(&flip);
+            search->move_lastN(&flip);
                 v = -last1(search, -beta, p1);
-            search->undo(&flip);
+            search->undo_lastN(&flip);
             if (alpha < v){
                 if (beta <= v)
                     return v;
@@ -69,9 +69,9 @@ inline int last2(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
     if (bit_around[p1] & search->board.opponent){
         calc_flip(&flip, &search->board, p1);
         if (flip.flip){
-            search->move(&flip);
+            search->move_lastN(&flip);
                 int g = -last1(search, -beta, p0);
-            search->undo(&flip);
+            search->undo_lastN(&flip);
             if (v < g)
                 return g;
             else
@@ -159,9 +159,9 @@ inline int last3(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
     if (bit_around[p0] & search->board.opponent){
         calc_flip(&flip, &search->board, p0);
         if (flip.flip){
-            search->move(&flip);
+            search->move_lastN(&flip);
                 v = -last2(search, -beta, -alpha, p1, p2, false);
-            search->undo(&flip);
+            search->undo_lastN(&flip);
             if (alpha < v){
                 if (beta <= v)
                     return v;
@@ -173,9 +173,9 @@ inline int last3(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
     if (bit_around[p1] & search->board.opponent){
         calc_flip(&flip, &search->board, p1);
         if (flip.flip){
-            search->move(&flip);
+            search->move_lastN(&flip);
                 g = -last2(search, -beta, -alpha, p0, p2, false);
-            search->undo(&flip);
+            search->undo_lastN(&flip);
             if (v < g){
                 if (alpha < g){
                     if (beta <= g)
@@ -189,9 +189,9 @@ inline int last3(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
     if (bit_around[p2] & search->board.opponent){
         calc_flip(&flip, &search->board, p2);
         if (flip.flip){
-            search->move(&flip);
+            search->move_lastN(&flip);
                 g = -last2(search, -beta, -alpha, p0, p1, false);
-            search->undo(&flip);
+            search->undo_lastN(&flip);
             if (v < g)
                 return g;
             else
@@ -310,9 +310,9 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
     if (bit_around[p0] & search->board.opponent){
         calc_flip(&flip, &search->board, p0);
         if (flip.flip){
-            search->move(&flip);
+            search->move_lastN(&flip);
                 v = -last3(search, -beta, -alpha, p1, p2, p3, false, searching);
-            search->undo(&flip);
+            search->undo_lastN(&flip);
             if (alpha < v){
                 if (beta <= v)
                     return v;
@@ -324,9 +324,9 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
     if (bit_around[p1] & search->board.opponent){
         calc_flip(&flip, &search->board, p1);
         if (flip.flip){
-            search->move(&flip);
+            search->move_lastN(&flip);
                 g = -last3(search, -beta, -alpha, p0, p2, p3, false, searching);
-            search->undo(&flip);
+            search->undo_lastN(&flip);
             if (v < g){
                 if (alpha < g){
                     if (beta <= g)
@@ -340,9 +340,9 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
     if (bit_around[p2] & search->board.opponent){
         calc_flip(&flip, &search->board, p2);
         if (flip.flip){
-            search->move(&flip);
+            search->move_lastN(&flip);
                 g = -last3(search, -beta, -alpha, p0, p1, p3, false, searching);
-            search->undo(&flip);
+            search->undo_lastN(&flip);
             if (v < g){
                 if (alpha < g){
                     if (beta <= g)
@@ -356,9 +356,9 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
     if (bit_around[p3] & search->board.opponent){
         calc_flip(&flip, &search->board, p3);
         if (flip.flip){
-            search->move(&flip);
+            search->move_lastN(&flip);
                 g = -last3(search, -beta, -alpha, p0, p1, p2, false, searching);
-            search->undo(&flip);
+            search->undo_lastN(&flip);
             if (v < g)
                 return g;
         }
