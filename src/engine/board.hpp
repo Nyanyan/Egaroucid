@@ -332,7 +332,7 @@ class Board {
         inline int score_player(){
             int e = pop_count_ull(~(player | opponent));
             int score = pop_count_ull(player) * 2 + e;
-            score += (((score >> 5) & 2) + (((score + HW2_M1) >> 6) & 2) - 2) / 2 * e;
+            score += (((score >> 6) & 1) + (((score + HW2_M1) >> 7) & 1) - 1) * e;
             return score - HW2;
         }
 
@@ -344,7 +344,7 @@ class Board {
         inline int score_opponent(){
             int e = pop_count_ull(~(player | opponent));
             int score = pop_count_ull(opponent) * 2 + e;
-            score += (((score >> 5) & 2) + (((score + HW2_M1) >> 6) & 2) - 2) / 2 * e;
+            score += (((score >> 6) & 1) + (((score + HW2_M1) >> 7) & 1) - 1) * e;
             return score - HW2;
         }
 

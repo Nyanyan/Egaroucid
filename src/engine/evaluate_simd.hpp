@@ -638,7 +638,7 @@ inline int end_evaluate(Board *b){
 */
 inline int end_evaluate(Board *b, int e){
     int score = b->count_player() * 2 + e;
-    score += (((score >> 5) & 2) + (((score + HW2_M1) >> 6) & 2) - 2) / 2 * e;
+    score += (((score >> 6) & 1) + (((score + HW2_M1) >> 7) & 1) - 1) * e;
     return score - HW2;
 }
 
