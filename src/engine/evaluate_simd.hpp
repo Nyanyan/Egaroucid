@@ -637,12 +637,9 @@ inline int end_evaluate(Board *b){
     @return final score
 */
 inline int end_evaluate(Board *b, int e){
-    int score = b->count_player() * 2 + e - HW2;
-    if (score > 0)
-        score += e;
-    else if (score < 0)
-        score -= e;
-    return score;
+    int score = b->count_player() * 2 + e;
+    score += (((score >> 5) & 2) + (((score + HW2_M1) >> 6) & 2) - 2) / 2 * e;
+    return score - HW2;
 }
 
 /*
@@ -654,7 +651,7 @@ inline int end_evaluate(Board *b, int e){
 */
 inline int end_evaluate_odd(Board *b, int e){
     int score = b->count_player() * 2 + e;
-    score += ((score >> 5) - 1) * e;
+    score += (((score >> 5) & 2) - 1) * e;
     return score - HW2;
 
 /*

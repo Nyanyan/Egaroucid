@@ -330,13 +330,10 @@ class Board {
             @return score of player
         */
         inline int score_player(){
-            int p_score = pop_count_ull(player), o_score = pop_count_ull(opponent);
-            int score = p_score - o_score, vacant_score = HW2 - p_score - o_score;
-            if (score > 0)
-                score += vacant_score;
-            else if (score < 0)
-                score -= vacant_score;
-            return score;
+            int e = pop_count_ull(~(player | opponent));
+            int score = pop_count_ull(player) * 2 + e;
+            score += (((score >> 5) & 2) + (((score + HW2_M1) >> 6) & 2) - 2) / 2 * e;
+            return score - HW2;
         }
 
         /*
@@ -345,13 +342,10 @@ class Board {
             @return score of opponent
         */
         inline int score_opponent(){
-            int p_score = pop_count_ull(player), o_score = pop_count_ull(opponent);
-            int score = o_score - p_score, vacant_score = HW2 - o_score - p_score;
-            if (score > 0)
-                score += vacant_score;
-            else if (score < 0)
-                score -= vacant_score;
-            return score;
+            int e = pop_count_ull(~(player | opponent));
+            int score = pop_count_ull(opponent) * 2 + e;
+            score += (((score >> 5) & 2) + (((score + HW2_M1) >> 6) & 2) - 2) / 2 * e;
+            return score - HW2;
         }
 
         /*
