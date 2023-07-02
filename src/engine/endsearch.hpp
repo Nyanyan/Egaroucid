@@ -53,6 +53,8 @@ inline int last2(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
     #endif
     int v = -SCORE_INF;
     Flip flip;
+    //if ((bit_around[p0] & search->board.player) == 0)
+    //    std::swap(p0, p1);
     if (bit_around[p0] & search->board.opponent){
         calc_flip(&flip, &search->board, p0);
         if (flip.flip){
