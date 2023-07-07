@@ -18,5 +18,6 @@ for phase in range(30):
         n_files_str = str(len(glob.glob(input_dir + '/*.dat')))
         out_file = bin_dir + '/' + str(board_sub_dir_num) + '.dat'
         cmd = 'data_board_to_idx.out ' + input_dir + ' 0 ' + n_files_str + ' ' + out_file + ' ' + str(phase)
+        #print(cmd)
         print(phase, board_sub_dir_num)
         subprocess.run(cmd.split(), stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
