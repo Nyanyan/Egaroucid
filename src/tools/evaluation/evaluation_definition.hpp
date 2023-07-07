@@ -22,7 +22,6 @@
 #define ADJ_N_PATTERNS 16
 #define ADJ_N_SYMMETRY_PATTERNS 62
 #define ADJ_MAX_PATTERN_CELLS 10
-#define ADJ_MAX_CELL_PATTERNS 13
 
 // additional features
 #define ADJ_N_ADDITIONAL_EVALS 3
@@ -49,9 +48,9 @@
 
     Raw score is STEP times larger than the real score.
 */
-#define ADJ_STEP 256
-#define ADJ_STEP_2 128
-#define ADJ_STEP_SHIFT 8
+#define ADJ_STEP 128
+#define ADJ_STEP_2 64
+//#define ADJ_STEP_SHIFT 7
 
 #ifndef PNO
     /*
@@ -274,7 +273,7 @@ constexpr Adj_Feature_to_coord adj_feature_to_coord[ADJ_N_SYMMETRY_PATTERNS] = {
     {10, {COORD_H8, COORD_G8, COORD_H7, COORD_G7, COORD_F7, COORD_E7, COORD_D7, COORD_G6, COORD_G5, COORD_G4}}  // 61
 };
 
-constexpr int adj_pattern_n_cells[ADJ_N_PATTERNS] = {8, 8, 8, 5, 6, 7, 8, 10, 10, 10, 10, 9, 10, 10, 10, 10};
+constexpr int adj_pattern_n_cells[ADJ_N_PATTERNS] = {8, 8, 8, 5, 6, 7, 8, 9, 10, 10, 10, 10, 10, 10, 10, 10};
 
 constexpr int adj_rev_patterns[ADJ_N_PATTERNS][ADJ_MAX_PATTERN_CELLS] = {
     {7, 6, 5, 4, 3, 2, 1, 0}, // 0 hv2
