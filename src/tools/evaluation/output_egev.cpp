@@ -5,7 +5,7 @@
 #include <ios>
 #include <iomanip>
 
-#define EVAL_MAX 4091
+#define EVAL_MAX 4090
 //#define SIMD_EVAL_OFFSET 4092
 
 int main(int argc, char* argv[]){
@@ -32,11 +32,12 @@ int main(int argc, char* argv[]){
         std::string line;
         int t = 0;
         while (std::getline(ifs, line)){
-            elem = stoi(line);
-            if (elem > EVAL_MAX)
-                elem = EVAL_MAX;
-            else if (elem < -EVAL_MAX)
-                elem = -EVAL_MAX;
+            int elem_int = stoi(line);
+            if (elem_int > EVAL_MAX)
+                elem_int = EVAL_MAX;
+            else if (elem_int < -EVAL_MAX)
+                elem_int = -EVAL_MAX;
+            elem = (short)elem_int;
             max_elem = std::max(max_elem, elem);
             min_elem = std::min(min_elem, elem);
             //elem += SIMD_EVAL_OFFSET;
