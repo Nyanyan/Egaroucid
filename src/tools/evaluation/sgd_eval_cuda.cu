@@ -12,6 +12,8 @@
 #include <iterator>
 #include <random>
 #include <algorithm>
+#include <time.h>
+#include <chrono>
 #define OPTIMIZER_INCLUDE
 #include "evaluation_definition.hpp"
 
@@ -28,6 +30,15 @@
 #define MAX_BATCH_DO_IDX (BATCH_SIZE / N_FLOOR_UNIQUE_FEATURES)
 
 #define ADJ_PRINT_INTERVAL 16
+
+/*
+    @brief timing function
+
+    @return time in milliseconds
+*/
+inline uint64_t tim(){
+    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+}
 
 struct Adj_Data {
     uint16_t features[ADJ_N_FEATURES];

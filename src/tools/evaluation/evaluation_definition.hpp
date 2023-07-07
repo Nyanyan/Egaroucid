@@ -3,6 +3,18 @@
     #include "./../../engine/board.hpp"
 #endif
 
+#ifndef HW
+    #define HW 8
+#endif
+
+#ifndef HW2
+    #define HW2 64
+#endif
+
+#ifndef SCORE_MAX
+    #define SCORE_MAX 64
+#endif
+
 /*
     @brief evaluation pattern definition
 */
@@ -413,6 +425,32 @@ constexpr int adj_feature_to_eval_idx[ADJ_N_FEATURES] = {
     22, 22, 22, 22
 };
 
+int adj_pick_digit3(int num, int d, int n_digit){
+    num /= adj_pow3[n_digit - 1 - d];
+    return num % 3;
+}
+
+int adj_pick_digit2(int num, int d){
+    return 1 & (num >> d);
+}
+
+uint16_t adj_calc_rev_idx(int feature, int idx){
+    uint16_t res = 0;
+    if (feature < ADJ_N_PATTERNS){
+        for (int i = 0; i < adj_pattern_n_cells[feature]; ++i){
+            res += adj_pick_digit3(idx, adj_rev_patterns[feature][i], adj_pattern_n_cells[feature]) * adj_pow3[adj_pattern_n_cells[feature] - 1 - i];
+        }
+    } else if (feature < ADJ_N_PATTERNS + ADJ_N_ADDITIONAL_EVALS) {
+        res = idx;
+    } else{
+        for (int i = 0; i < 8; ++i){
+            res |= adj_pick_digit2(idx, i) << (7 - i);
+            res |= adj_pick_digit2(idx, i + 8) << (15 - i);
+        }
+    }
+    return res;
+}
+
 #ifndef OPTIMIZER_INCLUDE
 
 /*
@@ -497,32 +535,6 @@ void adj_calc_features(Board *board, uint16_t res[]){
     res[idx++] = adj_calc_legal_feature(board);
     res[idx++] = adj_calc_num_feature(board);
     adj_calc_legal_features(board, res, &idx);
-}
-
-int adj_pick_digit3(int num, int d, int n_digit){
-    num /= adj_pow3[n_digit - 1 - d];
-    return num % 3;
-}
-
-int adj_pick_digit2(int num, int d){
-    return 1 & (num >> d);
-}
-
-uint16_t adj_calc_rev_idx(int feature, int idx){
-    uint16_t res = 0;
-    if (feature < ADJ_N_PATTERNS){
-        for (int i = 0; i < adj_pattern_n_cells[feature]; ++i){
-            res += adj_pick_digit3(idx, adj_rev_patterns[feature][i], adj_pattern_n_cells[feature]) * adj_pow3[adj_pattern_n_cells[feature] - 1 - i];
-        }
-    } else if (feature < ADJ_N_PATTERNS + ADJ_N_ADDITIONAL_EVALS) {
-        res = idx;
-    } else{
-        for (int i = 0; i < 8; ++i){
-            res |= adj_pick_digit2(idx, i) << (7 - i);
-            res |= adj_pick_digit2(idx, i + 8) << (15 - i);
-        }
-    }
-    return res;
 }
 
 int calc_phase(Board *board, int16_t player){
