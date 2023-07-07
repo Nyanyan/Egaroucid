@@ -20,12 +20,12 @@ else:
 
 train_data = [str(elem) + '.dat' for elem in train_data_nums]
 
-train_root_dir = './../../../train_data/bin_data/20230206/'
+train_root_dir = './../../../train_data/bin_data/20230707/'
 
 #train_dirs = [train_root_dir + str(4 + elem) + '/' for elem in range(int(phase) * 2, int(phase) * 2 + 2)]
 train_dirs = [train_root_dir + str(int(phase)) + '/']
 
-model_dir = './../../../model/20230210/'
+model_dir = './../../../model/20230707/'
 #model_dir = './../../../model/nomodel/'
 
 additional_params = ''
@@ -34,7 +34,7 @@ for tfile in train_data:
         additional_params += ' ' + train_dir + tfile
 
 #executable = 'gd_eval.out'
-executable = 'sgd_eval_cuda.exe'
+executable = 'sgd_cuda_12_2_0.exe'
 
 cmd = executable + ' ' + phase + ' ' + hour + ' ' + minute + ' ' + second + ' ' + beta + ' ' + model_dir + phase + '.txt' + additional_params
 print(cmd, file=sys.stderr)

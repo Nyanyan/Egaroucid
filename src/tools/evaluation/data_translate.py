@@ -2,9 +2,9 @@ import subprocess
 import os
 import glob
 
-bin_root_dir = './../../../train_data/bin_data/20230206/'
+bin_root_dir = './../../../train_data/bin_data/20230707/'
 input_root_dir = './../../../train_data/board_data/'
-board_sub_dir_nums = [1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 15, 16, 99]
+board_sub_dir_nums = [1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 15, 16, 17, 99]
 #board_sub_dir_nums = [16]
 
 for phase in range(30):
