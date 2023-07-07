@@ -6,7 +6,7 @@
 #include <iomanip>
 
 #define EVAL_MAX 4091
-#define SIMD_EVAL_OFFSET 4092
+//#define SIMD_EVAL_OFFSET 4092
 
 int main(int argc, char* argv[]){
     if (argc < 3){

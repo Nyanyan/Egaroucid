@@ -16,7 +16,7 @@ else:
 if int(phase) < 10:
     train_data_nums = [1, 2, 3, 4, 6, 7, 8, 9, 11, 15, 16, 17, 18, 99]
 else:
-    train_data_nums = [3, 4, 6, 7, 8, 9, 10, 11, 15, 16,  99]
+    train_data_nums = [3, 4, 6, 7, 8, 9, 10, 11, 15, 16, 17, 18, 99]
 
 train_data = [str(elem) + '.dat' for elem in train_data_nums]
 
