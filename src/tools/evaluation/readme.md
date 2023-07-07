@@ -37,3 +37,4 @@
 * ```count_n_games.py```でデータ数(対局数)をカウントできる
   * コマンドライン引数はなし
   * ```Egaroucid/train_data/transcript```内の指定された```recordsX```の```番号.txt```に書かれた棋譜を全部カウントする
+  * ```train_data/board_data/log.txt```に対局数は記録してあるのでそれを見ると良いが。
