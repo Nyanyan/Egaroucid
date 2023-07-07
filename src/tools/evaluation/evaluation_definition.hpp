@@ -283,11 +283,11 @@ constexpr int adj_rev_patterns[ADJ_N_PATTERNS][ADJ_MAX_PATTERN_CELLS] = {
     {5, 4, 3, 2, 1, 0}, // 4 d6
     {6, 5, 4, 3, 2, 1, 0}, // 5 d7
     {7, 6, 5, 4, 3, 2, 1, 0}, // 6 d8
-    {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}, // 7 edge + 2x
-    {0, 4, 7, 9, 1, 5, 8, 2, 6, 3}, // 8 triangle
-    {5, 4, 3, 2, 1, 0, 9, 8, 7, 6}, // 9 corner + block
-    {0, 1, 2, 3, 7, 8, 9, 4, 5, 6}, // 10 cross
-    {0, 3, 6, 1, 4, 7, 2, 5, 8}, // 11 corner9
+    {0, 3, 6, 1, 4, 7, 2, 5, 8}, // 7 corner9
+    {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}, // 8 edge + 2x
+    {0, 4, 7, 9, 1, 5, 8, 2, 6, 3}, // 9 triangle
+    {5, 4, 3, 2, 1, 0, 9, 8, 7, 6}, // 10 corner + block
+    {0, 1, 2, 3, 7, 8, 9, 4, 5, 6}, // 11 cross
     {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}, // 12 edge + y
     {0, 5, 7, 8, 9, 1, 6, 2, 3, 4}, // 13 narrow triangle
     {0, 2, 1, 3, 6, 8, 4, 7, 5, 9}, // 14 fish
@@ -295,8 +295,8 @@ constexpr int adj_rev_patterns[ADJ_N_PATTERNS][ADJ_MAX_PATTERN_CELLS] = {
 };
 
 constexpr int adj_eval_sizes[ADJ_N_EVAL] = {
-    P38, P38, P38, P35, P36, P37, P38, 
-    P310, P310, P310, P310, P39, P310, P310, P310, P310, 
+    P38, P38, P38, P35, P36, P37, P38, P39, 
+    P310, P310, P310, P310, P310, P310, P310, P310, 
     ADJ_MAX_SURROUND * ADJ_MAX_SURROUND, 
     ADJ_MAX_CANPUT * ADJ_MAX_CANPUT, 
     ADJ_MAX_STONE_NUM * ADJ_MAX_STONE_NUM, 
