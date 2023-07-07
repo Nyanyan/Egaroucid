@@ -4,7 +4,7 @@ import glob
 
 transcript_root_dir = './../../../train_data/transcript/'
 board_root_dir = './../../../train_data/board_data/'
-#board_sub_dir_nums = [1, 2, 3, 4, 6, 7, 8, 9, 11, 15, 16, 17, 99]
+#board_sub_dir_nums = [1, 2, 3, 4, 6, 7, 8, 9, 11, 15, 16, 17, 18, 99]
 board_sub_dir_nums = [18]
 out_file_name = '0.dat'
 log_file = './../../../train_data/board_data/log.txt'

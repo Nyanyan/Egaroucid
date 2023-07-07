@@ -452,9 +452,6 @@ uint16_t adj_calc_rev_idx(int feature, int idx){
 
 #ifndef OPTIMIZER_INCLUDE
 
-__m256i eval_surround_mask;
-__m128i eval_surround_shift1879;
-
 /*
     @brief calculate surround value used in evaluation function
 
@@ -462,13 +459,17 @@ __m128i eval_surround_shift1879;
     @param empties              a bitboard representing empties
     @return surround value
 */
+inline uint64_t calc_surround_part(const uint64_t player, const int dr){
+    return (player << dr) | (player >> dr);
+}
+
 inline int calc_surround(const uint64_t player, const uint64_t empties){
-    __m256i pl = _mm256_set1_epi64x(player);
-    pl = _mm256_and_si256(pl, eval_surround_mask);
-    pl = _mm256_or_si256(_mm256_sll_epi64(pl, eval_surround_shift1879), _mm256_srl_epi64(pl, eval_surround_shift1879));
-    __m128i res = _mm_or_si128(_mm256_castsi256_si128(pl), _mm256_extracti128_si256(pl, 1));
-    res = _mm_or_si128(res, _mm_shuffle_epi32(res, 0x4e));
-    return pop_count_ull(_mm_cvtsi128_si64(res));
+    return pop_count_ull(empties & (
+        calc_surround_part(player & 0b0111111001111110011111100111111001111110011111100111111001111110ULL, 1) | 
+        calc_surround_part(player & 0b0000000011111111111111111111111111111111111111111111111100000000ULL, HW) | 
+        calc_surround_part(player & 0b0000000001111110011111100111111001111110011111100111111000000000ULL, HW_M1) | 
+        calc_surround_part(player & 0b0000000001111110011111100111111001111110011111100111111000000000ULL, HW_P1)
+    ));
 }
 
 int adj_calc_surround_feature(Board *board){
@@ -546,8 +547,6 @@ int calc_phase(Board *board, int16_t player){
 
 void evaluation_definition_init(){
     mobility_init();
-    eval_surround_mask = _mm256_set_epi64x(0x7E7E7E7E7E7E7E7EULL, 0x00FFFFFFFFFFFF00ULL, 0x007E7E7E7E7E7E00ULL, 0x007E7E7E7E7E7E00ULL);
-    eval_surround_shift1879 = _mm_set_epi32(1, HW, HW_M1, HW_P1);
 }
 
 #endif
