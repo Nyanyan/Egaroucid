@@ -133,8 +133,8 @@
         }
     },
     "info": {
-        "black": "Black to Play",
-        "white": "White to Play",
+        "black": "Black",
+        "white": "White",
         "moves": " moves",
         "game_end": "Game Over",
         "opening_name": "Opening",

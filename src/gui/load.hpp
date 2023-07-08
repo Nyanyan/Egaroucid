@@ -55,7 +55,7 @@ int init_ai(Settings* settings, const Directories* directories, bool *stop_loadi
 }
 
 int check_update(const Directories* directories, String *new_version) {
-    const FilePath version_save_path = U"{}Egaroucid/version.txt"_fmt(Unicode::Widen(directories->appdata_dir));
+    const FilePath version_save_path = U"{}version.txt"_fmt(Unicode::Widen(directories->appdata_dir));
     if (SimpleHTTP::Save(VERSION_URL, version_save_path).isOK()) {
         TextReader reader(version_save_path);
         if (reader) {
