@@ -41,7 +41,7 @@ need_coord_translate = -1
 idxes = [0, 2, 6, 4, 10, 8, 12]
 need_coord_translate = -1
 '''
-#6.1.0
+#6.1.0-
 idxes = [0, 2, 3, 4, 5, 6, 7]
 need_coord_translate = -1
 
@@ -71,6 +71,8 @@ while True:
                     use_data.append(tim)
                     whole_time += tim_float
                 else:
+                    if idx == idxes[1]:
+                        data[idx] = data[idx].replace('@100%', '')
                     use_data.append(data[idx])
                 if idx == idxes[5]:
                     whole_nodes += int(data[idx])

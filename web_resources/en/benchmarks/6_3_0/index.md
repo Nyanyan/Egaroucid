@@ -24,7 +24,7 @@ In this testcase, Egaroucid is faster than Edax 4.4
 </tr>
 <tr>
 <td>#40</td>
-<td>20@100%</td>
+<td>20</td>
 <td>a2</td>
 <td>+38</td>
 <td>0.049</td>
@@ -33,7 +33,7 @@ In this testcase, Egaroucid is faster than Edax 4.4
 </tr>
 <tr>
 <td>#41</td>
-<td>22@100%</td>
+<td>22</td>
 <td>h4</td>
 <td>+0</td>
 <td>0.078</td>
@@ -42,7 +42,7 @@ In this testcase, Egaroucid is faster than Edax 4.4
 </tr>
 <tr>
 <td>#42</td>
-<td>22@100%</td>
+<td>22</td>
 <td>g2</td>
 <td>+6</td>
 <td>0.151</td>
@@ -51,7 +51,7 @@ In this testcase, Egaroucid is faster than Edax 4.4
 </tr>
 <tr>
 <td>#43</td>
-<td>23@100%</td>
+<td>23</td>
 <td>g3</td>
 <td>-12</td>
 <td>0.293</td>
@@ -60,7 +60,7 @@ In this testcase, Egaroucid is faster than Edax 4.4
 </tr>
 <tr>
 <td>#44</td>
-<td>23@100%</td>
+<td>23</td>
 <td>b8</td>
 <td>-14</td>
 <td>0.098</td>
@@ -69,7 +69,7 @@ In this testcase, Egaroucid is faster than Edax 4.4
 </tr>
 <tr>
 <td>#45</td>
-<td>24@100%</td>
+<td>24</td>
 <td>b2</td>
 <td>+6</td>
 <td>0.975</td>
@@ -78,7 +78,7 @@ In this testcase, Egaroucid is faster than Edax 4.4
 </tr>
 <tr>
 <td>#46</td>
-<td>24@100%</td>
+<td>24</td>
 <td>b3</td>
 <td>-8</td>
 <td>0.218</td>
@@ -87,7 +87,7 @@ In this testcase, Egaroucid is faster than Edax 4.4
 </tr>
 <tr>
 <td>#47</td>
-<td>25@100%</td>
+<td>25</td>
 <td>g2</td>
 <td>+4</td>
 <td>0.101</td>
@@ -96,7 +96,7 @@ In this testcase, Egaroucid is faster than Edax 4.4
 </tr>
 <tr>
 <td>#48</td>
-<td>25@100%</td>
+<td>25</td>
 <td>f6</td>
 <td>+28</td>
 <td>0.74</td>
@@ -105,7 +105,7 @@ In this testcase, Egaroucid is faster than Edax 4.4
 </tr>
 <tr>
 <td>#49</td>
-<td>26@100%</td>
+<td>26</td>
 <td>e1</td>
 <td>+16</td>
 <td>0.685</td>
@@ -114,7 +114,7 @@ In this testcase, Egaroucid is faster than Edax 4.4
 </tr>
 <tr>
 <td>#50</td>
-<td>26@100%</td>
+<td>26</td>
 <td>d8</td>
 <td>+10</td>
 <td>4.368</td>
@@ -123,7 +123,7 @@ In this testcase, Egaroucid is faster than Edax 4.4
 </tr>
 <tr>
 <td>#51</td>
-<td>27@100%</td>
+<td>27</td>
 <td>e2</td>
 <td>+6</td>
 <td>1.544</td>
@@ -132,7 +132,7 @@ In this testcase, Egaroucid is faster than Edax 4.4
 </tr>
 <tr>
 <td>#52</td>
-<td>27@100%</td>
+<td>27</td>
 <td>a3</td>
 <td>+0</td>
 <td>1.359</td>
@@ -141,7 +141,7 @@ In this testcase, Egaroucid is faster than Edax 4.4
 </tr>
 <tr>
 <td>#53</td>
-<td>28@100%</td>
+<td>28</td>
 <td>d8</td>
 <td>-2</td>
 <td>7.906</td>
@@ -150,7 +150,7 @@ In this testcase, Egaroucid is faster than Edax 4.4
 </tr>
 <tr>
 <td>#54</td>
-<td>28@100%</td>
+<td>28</td>
 <td>c7</td>
 <td>-2</td>
 <td>11.145</td>
@@ -159,7 +159,7 @@ In this testcase, Egaroucid is faster than Edax 4.4
 </tr>
 <tr>
 <td>#55</td>
-<td>29@100%</td>
+<td>29</td>
 <td>g6</td>
 <td>+0</td>
 <td>30.522</td>
@@ -168,7 +168,7 @@ In this testcase, Egaroucid is faster than Edax 4.4
 </tr>
 <tr>
 <td>#56</td>
-<td>29@100%</td>
+<td>29</td>
 <td>h5</td>
 <td>+2</td>
 <td>3.927</td>
@@ -177,7 +177,7 @@ In this testcase, Egaroucid is faster than Edax 4.4
 </tr>
 <tr>
 <td>#57</td>
-<td>30@100%</td>
+<td>30</td>
 <td>a6</td>
 <td>-10</td>
 <td>5.891</td>
@@ -186,7 +186,7 @@ In this testcase, Egaroucid is faster than Edax 4.4
 </tr>
 <tr>
 <td>#58</td>
-<td>30@100%</td>
+<td>30</td>
 <td>g1</td>
 <td>+4</td>
 <td>4.673</td>
@@ -195,7 +195,7 @@ In this testcase, Egaroucid is faster than Edax 4.4
 </tr>
 <tr>
 <td>#59</td>
-<td>34@100%</td>
+<td>34</td>
 <td>e8</td>
 <td>+64</td>
 <td>0.298</td>
@@ -227,7 +227,7 @@ In this testcase, Egaroucid is faster than Edax 4.4
 </tr>
 <tr>
 <td>#40</td>
-<td>20@100%</td>
+<td>20</td>
 <td>a2</td>
 <td>+38</td>
 <td>0.035</td>
@@ -236,7 +236,7 @@ In this testcase, Egaroucid is faster than Edax 4.4
 </tr>
 <tr>
 <td>#41</td>
-<td>22@100%</td>
+<td>22</td>
 <td>h4</td>
 <td>+0</td>
 <td>0.065</td>
@@ -245,7 +245,7 @@ In this testcase, Egaroucid is faster than Edax 4.4
 </tr>
 <tr>
 <td>#42</td>
-<td>22@100%</td>
+<td>22</td>
 <td>g2</td>
 <td>+6</td>
 <td>0.124</td>
@@ -254,7 +254,7 @@ In this testcase, Egaroucid is faster than Edax 4.4
 </tr>
 <tr>
 <td>#43</td>
-<td>23@100%</td>
+<td>23</td>
 <td>g3</td>
 <td>-12</td>
 <td>0.2</td>
@@ -263,7 +263,7 @@ In this testcase, Egaroucid is faster than Edax 4.4
 </tr>
 <tr>
 <td>#44</td>
-<td>23@100%</td>
+<td>23</td>
 <td>b8</td>
 <td>-14</td>
 <td>0.091</td>
@@ -272,7 +272,7 @@ In this testcase, Egaroucid is faster than Edax 4.4
 </tr>
 <tr>
 <td>#45</td>
-<td>24@100%</td>
+<td>24</td>
 <td>b2</td>
 <td>+6</td>
 <td>0.532</td>
@@ -281,7 +281,7 @@ In this testcase, Egaroucid is faster than Edax 4.4
 </tr>
 <tr>
 <td>#46</td>
-<td>24@100%</td>
+<td>24</td>
 <td>b3</td>
 <td>-8</td>
 <td>0.179</td>
@@ -290,7 +290,7 @@ In this testcase, Egaroucid is faster than Edax 4.4
 </tr>
 <tr>
 <td>#47</td>
-<td>25@100%</td>
+<td>25</td>
 <td>g2</td>
 <td>+4</td>
 <td>0.097</td>
@@ -299,7 +299,7 @@ In this testcase, Egaroucid is faster than Edax 4.4
 </tr>
 <tr>
 <td>#48</td>
-<td>25@100%</td>
+<td>25</td>
 <td>f6</td>
 <td>+28</td>
 <td>0.483</td>
@@ -308,7 +308,7 @@ In this testcase, Egaroucid is faster than Edax 4.4
 </tr>
 <tr>
 <td>#49</td>
-<td>26@100%</td>
+<td>26</td>
 <td>e1</td>
 <td>+16</td>
 <td>0.472</td>
@@ -317,7 +317,7 @@ In this testcase, Egaroucid is faster than Edax 4.4
 </tr>
 <tr>
 <td>#50</td>
-<td>26@100%</td>
+<td>26</td>
 <td>d8</td>
 <td>+10</td>
 <td>2.488</td>
@@ -326,7 +326,7 @@ In this testcase, Egaroucid is faster than Edax 4.4
 </tr>
 <tr>
 <td>#51</td>
-<td>27@100%</td>
+<td>27</td>
 <td>e2</td>
 <td>+6</td>
 <td>1.127</td>
@@ -335,7 +335,7 @@ In this testcase, Egaroucid is faster than Edax 4.4
 </tr>
 <tr>
 <td>#52</td>
-<td>27@100%</td>
+<td>27</td>
 <td>a3</td>
 <td>+0</td>
 <td>1.016</td>
@@ -344,7 +344,7 @@ In this testcase, Egaroucid is faster than Edax 4.4
 </tr>
 <tr>
 <td>#53</td>
-<td>28@100%</td>
+<td>28</td>
 <td>d8</td>
 <td>-2</td>
 <td>5.134</td>
@@ -353,7 +353,7 @@ In this testcase, Egaroucid is faster than Edax 4.4
 </tr>
 <tr>
 <td>#54</td>
-<td>28@100%</td>
+<td>28</td>
 <td>c7</td>
 <td>-2</td>
 <td>7.075</td>
@@ -362,7 +362,7 @@ In this testcase, Egaroucid is faster than Edax 4.4
 </tr>
 <tr>
 <td>#55</td>
-<td>29@100%</td>
+<td>29</td>
 <td>g6</td>
 <td>+0</td>
 <td>18.67</td>
@@ -371,7 +371,7 @@ In this testcase, Egaroucid is faster than Edax 4.4
 </tr>
 <tr>
 <td>#56</td>
-<td>29@100%</td>
+<td>29</td>
 <td>h5</td>
 <td>+2</td>
 <td>2.586</td>
@@ -380,7 +380,7 @@ In this testcase, Egaroucid is faster than Edax 4.4
 </tr>
 <tr>
 <td>#57</td>
-<td>30@100%</td>
+<td>30</td>
 <td>a6</td>
 <td>-10</td>
 <td>4.026</td>
@@ -389,7 +389,7 @@ In this testcase, Egaroucid is faster than Edax 4.4
 </tr>
 <tr>
 <td>#58</td>
-<td>30@100%</td>
+<td>30</td>
 <td>g1</td>
 <td>+4</td>
 <td>3.434</td>
@@ -398,7 +398,7 @@ In this testcase, Egaroucid is faster than Edax 4.4
 </tr>
 <tr>
 <td>#59</td>
-<td>34@100%</td>
+<td>34</td>
 <td>e8</td>
 <td>+64</td>
 <td>0.486</td>
