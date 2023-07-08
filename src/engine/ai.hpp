@@ -473,12 +473,13 @@ Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint_fa
             search.n_nodes_discs[i] = 0;
     #endif
     search.use_multi_thread = use_multi_thread;
+    Book_elem book_elem = book.get(&search.board);
     calc_features(&search);
     Flip flip;
     calc_flip(&flip, &search.board, played_move);
     eval_move(&search, &flip);
     search.move(&flip);
-        res.played_score = book.get(&search.board).value;
+        res.played_score = book_elem.value;
         if (res.played_score != SCORE_UNDEFINED){
             res.played_depth = SEARCH_BOOK;
             res.played_probability = SELECTIVITY_PERCENTAGE[MPC_100_LEVEL];
@@ -498,7 +499,13 @@ Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint_fa
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
             calc_flip(&flip, &search.board, cell);
             search.board.move_board(&flip);
-                g = book.get(&search.board).value;
+                g = SCORE_UNDEFINED;
+                for (Book_value book_value: book_elem.moves){
+                    if (book_value.policy == cell){
+                        g = book_value.value;
+                        break;
+                    }
+                }
                 if (g != SCORE_UNDEFINED){
                     book_found = true;
                     if (v < g){
