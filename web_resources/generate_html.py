@@ -144,9 +144,9 @@ def create_html(dr):
         elif elem[:3] == '## ':
             elem = '<h2>' + elem[3:] + '</h2>'
         elif elem[:4] == '### ':
-            elem = '<h3>' + elem[3:] + '</h3>'
+            elem = '<h3>' + elem[4:] + '</h3>'
         elif elem[:5] == '#### ':
-            elem = '<h4>' + elem[3:] + '</h4>'
+            elem = '<h4>' + elem[5:] + '</h4>'
         # links
         links = re.findall('\[.+?\]\(.+?\)', elem)
         for link in links:
