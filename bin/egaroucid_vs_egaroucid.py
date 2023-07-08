@@ -13,6 +13,9 @@ n_games = int(sys.argv[2])
 eval0 = sys.argv[3]
 eval1 = sys.argv[4]
 
+print('0 eval', eval0)
+print('1 eval', eval1)
+
 egaroucids = [
     subprocess.Popen(('Egaroucid_for_console.exe -quiet -nobook -level ' + str(level) + ' -eval ' + eval0).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL),
     subprocess.Popen(('Egaroucid_for_console.exe -quiet -nobook -level ' + str(level) + ' -eval ' + eval1).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
@@ -29,10 +32,11 @@ def create_res_str(arr):
     res = 'level: ' + str(level) + ' '
     res += '(0W-D-0L) 0=black: '
     res += str(arr[0][0]) + '-' + str(arr[2][0]) + '-' + str(arr[1][0])
-    res += ' ' + str(round(arr[0][0] / max(1, arr[0][0] + arr[1][0]) * 100, 1)) + '% '
+    res += ' ' + str(round(arr[0][0] / max(1, arr[0][0] + arr[1][0]) * 100, 2)) + '% '
     res += ' 0=white: '
     res += str(arr[0][1]) + '-' + str(arr[2][1]) + '-' + str(arr[1][1])
-    res += ' ' + str(round(arr[0][1] / max(1, arr[0][1] + arr[1][1]) * 100, 1)) + '%'
+    res += ' ' + str(round(arr[0][1] / max(1, arr[0][1] + arr[1][1]) * 100, 2)) + '%'
+    res += ' all ' + str(round((arr[0][0] + arr[0][1]) / max(1, arr[0][0] + arr[0][1] + arr[1][0] + arr[1][1]) * 100, 2)) + '%'
     return res
 
 for num in range(max_num):
