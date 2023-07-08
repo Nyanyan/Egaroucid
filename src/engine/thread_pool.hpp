@@ -42,7 +42,7 @@ class Thread_pool {
             for (int i = 0; i < n_thread; ++i)
                 threads[i] = std::thread(&Thread_pool::worker, this);
             running = true;
-            n_idle = new_n_thread;
+            n_idle = 0;
         }
 
         void exit_thread(){
@@ -118,6 +118,7 @@ class Thread_pool {
             for (;;){
                 {
                     std::unique_lock<std::mutex> lock(mtx);
+                    ++n_idle;
                     condition.wait(lock, [&] {return !tasks.empty() || !running;});
                     if (!running)
                         return;
@@ -125,10 +126,6 @@ class Thread_pool {
                     tasks.pop();
                 }
                 task();
-                {
-                    std::unique_lock<std::mutex> lock(mtx);
-                    ++n_idle;
-                }
             }
         }
 };
