@@ -7,9 +7,9 @@ if sys.argv[1] == 'ja':
 <th>番号</th>
 <th>深さ</th>
 <th>最善手</th>
-<th>手番の評価値</th>
-<th>探索時間(秒)</th>
-<th>訪問ノード数</th>
+<th>評価値</th>
+<th>時間(秒)</th>
+<th>ノード数</th>
 <th>NPS</th>
 </tr>
 '''

@@ -10,9 +10,7 @@ I used Core i9-11900K for testing.
 
 In this testcase, Egaroucid is faster than Edax 4.4
 
-#### Core i9 11900K
-
-Used 19 threads
+#### Core i9 11900K @ 19 threads
 
 <table>
 <tr>
@@ -215,9 +213,7 @@ Used 19 threads
 </tr>
 </table>
 
-#### Core i9 13900K
-
-Used 32 threads
+#### Core i9 13900K @ 32 threads
 
 <table>
 <tr>
