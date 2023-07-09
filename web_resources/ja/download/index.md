@@ -1,6 +1,6 @@
 # Egaroucid ダウンロード
 
-ダウンロードおよびインストールが必要です。
+インストール版とZip版があります。
 
 
 
@@ -14,30 +14,40 @@ EgaroucidはSIMDバージョン(AVX2が必要)に最適化して作っていま�
 
 
 
+インストール版はインストールが必要です。
+
+
+
+Zip版はZipファイルを解凍し、中の```Egaroucid_[バージョン情報].exe```を実行してください。
+
+
+
 <table>
     <tr>
         <th>OS</th>
         <th>CPU</th>
         <th>追加要件</th>
         <th>リリース日</th>
-        <th>ダウンロード</th>
+        <th>インストール版</th>
+        <th>Zip版</th>
     </tr>
     <tr>
         <td>Windows</td>
         <td>x64</td>
         <td>AVX2(標準)</td>
-        <td>2023/03/15</td>
-        <td>[Egaroucid 6.2.0 Windows x64 SIMD](https://github.com/Nyanyan/Egaroucid/releases/download/v6.2.0/Egaroucid_6_2_0_SIMD_installer.exe)</td>
+        <td>2023/07/09</td>
+        <td>[Egaroucid 6.3.0 SIMD インストーラ](https://github.com/Nyanyan/Egaroucid/releases/download/v6.3.0/Egaroucid_6_3_0_SIMD_installer.exe)</td>
+        <td>[Egaroucid 6.3.0 SIMD Zip](https://github.com/Nyanyan/Egaroucid/releases/download/v6.3.0/Egaroucid_6_3_0_Windows_x64_SIMD_Portable.zip)</td>
     </tr>
     <tr>
         <td>Windows</td>
         <td>x64</td>
         <td>-</td>
-        <td>2023/03/15</td>
-        <td>[Egaroucid 6.2.0 Windows x64 Generic](https://github.com/Nyanyan/Egaroucid/releases/download/v6.2.0/Egaroucid_6_2_0_Generic_installer.exe)</td>
+        <td>2023/07/09</td>
+        <td>[Egaroucid 6.3.0 Generic インストーラ](https://github.com/Nyanyan/Egaroucid/releases/download/v6.3.0/Egaroucid_6_3_0_Generic_installer.exe)</td>
+        <td>[Egaroucid 6.3.0 Generic Zip](https://github.com/Nyanyan/Egaroucid/releases/download/v6.3.0/Egaroucid_6_3_0_Windows_x64_Generic_Portable.zip)</td>
     </tr>
 </table>
-
 
 
 
@@ -47,7 +57,7 @@ EgaroucidはSIMDバージョン(AVX2が必要)に最適化して作っていま�
 
 ## インストール
 
-ダウンロードしたインストーラを実行してください。管理者権限が必要です。
+インストール版の場合、ダウンロードしたインストーラを実行してください。管理者権限が必要です。
 
 
 
@@ -62,8 +72,13 @@ EgaroucidはSIMDバージョン(AVX2が必要)に最適化して作っていま�
 
 ## 実行
 
-インストールした<code>Egaroucid6.exe</code>を実行するとEgaroucidが起動します。
+インストールまたは解凍した<code>Egaroucid_[バージョン情報].exe</code>を実行するとEgaroucidが起動します。
 
 <div class="centering_box">
     <img class="pic" src="img/egaroucid.png">
 </div>
+
+
+## book形式の変更について
+
+Egaroucidはバージョン6.3.0からbook形式を変更しました。新しいbookの拡張子は```.egbk2```です。6.2.0以前のバージョンをお使いで新しく6.3.0をインストールした場合、初回起動時に古い```.egbk```形式のbookを自動で変換します。また、古い形式もbookの参照および統合機能が使えます。ただし、保存形式は新しい```.egbk2```形式になります。
