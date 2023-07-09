@@ -47,7 +47,7 @@ Options get_options(std::vector<Commandline_option> commandline_options, std::st
             std::cerr << "[ERROR] level argument out of range" << std::endl;
         }
     }
-    res.n_threads = std::min(32, (int)std::thread::hardware_concurrency());
+    res.n_threads = std::min(48, (int)std::thread::hardware_concurrency());
     str = find_commandline_option(commandline_options, ID_THREAD);
     if (str != OPTION_NOT_FOUND){
         try {
