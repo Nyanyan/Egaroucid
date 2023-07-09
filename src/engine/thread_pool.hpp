@@ -104,12 +104,14 @@ class Thread_pool {
                 throw std::runtime_error("Cannot schedule new task after shutdown.");
             bool pushed = false;
             if (n_idle > 0){
-                std::unique_lock<std::mutex> lock(mtx);
-                if (n_idle > 0){
-                    pushed = true;
-                    tasks.push(std::function<void()>(task));
-                    condition.notify_one();
-                }
+                mtx.lock();
+                    if (n_idle > 0){
+                        pushed = true;
+                        tasks.push(std::function<void()>(task));
+                        --n_idle;
+                        condition.notify_one();
+                    }
+                mtx.unlock();
             }
             return pushed;
         }
@@ -119,13 +121,10 @@ class Thread_pool {
             for (;;){
                 {
                     std::unique_lock<std::mutex> lock(mtx);
-                    if (tasks.empty()){
-                        ++n_idle;
-                        condition.wait(lock, [&] {return !tasks.empty() || !running;});
-                        --n_idle;
-                        if (!running)
-                            return;
-                    }
+                    ++n_idle;
+                    condition.wait(lock, [&] {return !tasks.empty() || !running;});
+                    if (!running)
+                        return;
                     task = std::move(tasks.front());
                     tasks.pop();
                 }
