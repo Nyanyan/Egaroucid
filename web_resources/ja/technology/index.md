@@ -4,19 +4,11 @@
 
 ## ベンチマーク
 
-各バージョンのベンチマークを公開します。一番上が最新版です。
+各バージョンのベンチマークを公開します。
 
 
 
-Egaroucidの性能の確認として2種類のベンチマークを使用しています。
-
-
-
-1つ目は[The FFO endgame test suite](http://www.radagast.se/othello/ffotest.html)です。これは、終盤の完全読みにかかる時間に関するベンチマークです。
-
-
-
-2つ目は他の強豪オセロAIとの対戦として、[Edax 4.4](https://github.com/abulmo/edax-reversi/releases/tag/v4.4)との対戦です。単純に評価関数の強さを計測するため、bookを使わず、複数のレベル(読み深さ)で、[XOT](https://berg.earthlingz.de/xot/aboutxot.php?lang=en)という初期局面集を用いて対戦させました。
+Egaroucidの性能の確認として2種類のベンチマークを使用しています。1つ目は[The FFO endgame test suite](http://www.radagast.se/othello/ffotest.html)です。これは、終盤の完全読みにかかる時間に関するベンチマークです。2つ目は他の強豪オセロAIとの対戦として、[Edax 4.4](https://github.com/abulmo/edax-reversi/releases/tag/v4.4)との対戦です。単純に評価関数の強さを計測するため、bookを使わず、複数のレベル(読み深さ)で、[XOT](https://berg.earthlingz.de/xot/aboutxot.php?lang=en)という初期局面集を用いて対戦させました。
 
 
 
@@ -72,6 +64,7 @@ Egaroucidの性能の確認として2種類のベンチマークを使用して�
 </table>
 
 
+
 以下はThe FFO endgame test suiteをCore i9 11900Kで実行した結果をバージョンを横軸に取ってグラフにしたものです。
 
 <div class="centering_box">
@@ -89,9 +82,3 @@ Egaroucidの性能の確認として2種類のベンチマークを使用して�
 日本語のみでEgaroucidの[技術解説](./explanation)を書きました。のんびりと追記します。
 
 
-
-
-
-## 対局データ配布
-
-Egaroucidの評価関数作成に使ったオセロAI同士の自己対戦のデータを公開します。

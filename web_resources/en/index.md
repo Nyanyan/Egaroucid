@@ -107,12 +107,6 @@ I would like to hear your voice! Please contact me freely!
 
 
 
-## Technology Explanation
-
-Here is an [explanation of technologies](https://www.egaroucid.nyanyan.dev/ja/technology/) in Japanese. This page will be updated irregularly.
-
-
-
 ## Welcome your contribution on Egaroucid
 
 Egaroucid is an open source software under GPL-3.0 license. All source codes are available on [GitHub here](https://github.com/Nyanyan/Egaroucid). I welcome your contributions such as pull requests!

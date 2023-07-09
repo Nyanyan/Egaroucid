@@ -1,1 +1,0 @@
-Windows インストーラをダウンロード https://github.com/Nyanyan/Egaroucid/releases/download/v6.0.0/Egaroucid_6_0_0_setup_Windows.exe

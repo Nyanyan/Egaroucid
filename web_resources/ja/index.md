@@ -110,12 +110,6 @@ Egaroucidは世界最強クラスのオセロAIを搭載した無料のオセロ
 
 
 
-## 技術解説
-
-[技術解説ページ](https://www.egaroucid.nyanyan.dev/ja/technology/)(日本語のみ)を作りました。のんびりと追記していきます。
-
-
-
 ## OSSへの貢献を歓迎します
 
 EgaroucidはGPL-3.0ライセンスの下で作られたオープンソースソフトウェアです。[GitHub](https://github.com/Nyanyan/Egaroucid)にて全てのコードを公開しています。プルリクエストなどによる貢献を歓迎しています。

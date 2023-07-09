@@ -28,6 +28,7 @@ with open(elements_dir + '/head.html', 'r', encoding='utf-8') as f:
 with open(elements_dir + '/head2.html', 'r', encoding='utf-8') as f:
     head2 = f.read()
 
+'''
 with open(elements_dir + '/download.txt', 'r', encoding='utf-8') as f:
     raw_download_data = f.read().splitlines()
 download_data = []
@@ -36,6 +37,7 @@ for datum in raw_download_data:
     text = datum.replace(' ' + link, '')
     datum_html = '<div class="download_button"><a class="download_a" href="' + link + '">' + text + '</a></div>\n'
     download_data.append(datum_html)
+'''
 
 menu = '<div class="menu_bar">\n'
 #menu += '<a class="menu_a" href="' + main_page_url + elements_dir + '"><img class="bar_icon" src="https://raw.githubusercontent.com/Nyanyan/Nyanyan.github.io/master/img/favicon.jpg"></a>\n'
