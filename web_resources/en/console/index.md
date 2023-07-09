@@ -36,24 +36,25 @@ Egaroucid is optimized to SIMD version, which requires AVX2  instructions, but o
         <td>Windows</td>
         <td>x64(Standard)</td>
         <td>AVX2(Standard)</td>
-        <td>2023/03/15</td>
-        <td>[Egaroucid for Console 6.2.0 Windows x64 SIMD](https://github.com/Nyanyan/Egaroucid/releases/download/console_v6.2.0/Egaroucid_for_Console_6_2_0_Windows_x64_SIMD.zip)</td>
+        <td>2023/07/09</td>
+        <td>[Egaroucid for Console 6.3.0 Windows x64 SIMD](https://github.com/Nyanyan/Egaroucid/releases/download/console_v6.3.0/Egaroucid_for_Console_6_3_0_Windows_x64_SIMD.zip)</td>
     </tr>
     <tr>
         <td>Windows</td>
         <td>x64(Standard)</td>
         <td>-</td>
-        <td>2023/03/15</td>
-        <td>[Egaroucid for Console 6.2.0 Windows x64 Generic](https://github.com/Nyanyan/Egaroucid/releases/download/console_v6.2.0/Egaroucid_for_Console_6_2_0_Windows_x64_Generic.zip)</td>
+        <td>2023/07/09</td>
+        <td>[Egaroucid for Console 6.3.0 Windows x64 Generic](https://github.com/Nyanyan/Egaroucid/releases/download/console_v6.3.0/Egaroucid_for_Console_6_3_0_Windows_x64_Generic.zip)</td>
     </tr>
     <tr>
         <td>Windows</td>
         <td>x86</td>
         <td>-</td>
-        <td>2023/03/15</td>
-        <td>[Egaroucid for Console 6.2.0 Windows x86 Generic](https://github.com/Nyanyan/Egaroucid/releases/download/console_v6.2.0/Egaroucid_for_Console_6_2_0_Windows_x86_Generic.zip)</td>
+        <td>2023/07/09</td>
+        <td>[Egaroucid for Console 6.3.0 Windows x86 Generic](https://github.com/Nyanyan/Egaroucid/releases/download/console_v6.3.0/Egaroucid_for_Console_6_3_0_Windows_x86_Generic.zip)</td>
     </tr>
 </table>
+
 
 
 
@@ -68,7 +69,7 @@ Please build on your own. You can use cmake or g++.
 
 ### Build with cmake
 
-Please download source codes [here](https://github.com/Nyanyan/Egaroucid/archive/refs/tags/console_v6.2.0.zip), then unzip it.
+Please download source codes ([console_v6.3.0.zip](https://github.com/Nyanyan/Egaroucid/archive/refs/tags/console_v6.3.0.zip)) from GitHub Release, then unzip it.
 
 
 
@@ -144,7 +145,7 @@ Requirements are:
     <li>C++17</li>
 </ul>
 
-Please download source codes [here](https://github.com/Nyanyan/Egaroucid/archive/refs/tags/console_v6.2.0.zip), then unzip it.
+Please download source codes ([console_v6.3.0.zip](https://github.com/Nyanyan/Egaroucid/archive/refs/tags/console_v6.3.0.zip)) from GitHub Release, then unzip it.
 
 
 

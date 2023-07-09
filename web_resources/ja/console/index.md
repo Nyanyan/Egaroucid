@@ -36,25 +36,24 @@ Egaroucidはx64のSIMDバージョン(AVX2を使用)に最適化して作って�
         <td>Windows</td>
         <td>x64(標準)</td>
         <td>AVX2(標準)</td>
-        <td>2023/03/15</td>
-        <td>[Egaroucid for Console 6.2.0 Windows x64 SIMD](https://github.com/Nyanyan/Egaroucid/releases/download/console_v6.2.0/Egaroucid_for_Console_6_2_0_Windows_x64_SIMD.zip)</td>
+        <td>2023/07/09</td>
+        <td>[Egaroucid for Console 6.3.0 Windows x64 SIMD](https://github.com/Nyanyan/Egaroucid/releases/download/console_v6.3.0/Egaroucid_for_Console_6_3_0_Windows_x64_SIMD.zip)</td>
     </tr>
     <tr>
         <td>Windows</td>
         <td>x64(標準)</td>
         <td>-</td>
-        <td>2023/03/15</td>
-        <td>[Egaroucid for Console 6.2.0 Windows x64 Generic](https://github.com/Nyanyan/Egaroucid/releases/download/console_v6.2.0/Egaroucid_for_Console_6_2_0_Windows_x64_Generic.zip)</td>
+        <td>2023/07/09</td>
+        <td>[Egaroucid for Console 6.3.0 Windows x64 Generic](https://github.com/Nyanyan/Egaroucid/releases/download/console_v6.3.0/Egaroucid_for_Console_6_3_0_Windows_x64_Generic.zip)</td>
     </tr>
     <tr>
         <td>Windows</td>
         <td>x86</td>
         <td>-</td>
-        <td>2023/03/15</td>
-        <td>[Egaroucid for Console 6.2.0 Windows x86 Generic](https://github.com/Nyanyan/Egaroucid/releases/download/console_v6.2.0/Egaroucid_for_Console_6_2_0_Windows_x86_Generic.zip)</td>
+        <td>2023/07/09</td>
+        <td>[Egaroucid for Console 6.3.0 Windows x86 Generic](https://github.com/Nyanyan/Egaroucid/releases/download/console_v6.3.0/Egaroucid_for_Console_6_3_0_Windows_x86_Generic.zip)</td>
     </tr>
 </table>
-
 
 
 
@@ -70,7 +69,7 @@ cmakeでビルドするか、直接g++を使ってビルドすることができ
 
 ### cmakeでビルド
 
-[こちら](https://github.com/Nyanyan/Egaroucid/archive/refs/tags/console_v6.2.0.zip)からコードを入手し、任意の場所に解凍します。
+GitHubのリリースからコード([console_v6.3.0.zip](https://github.com/Nyanyan/Egaroucid/archive/refs/tags/console_v6.3.0.zip))を入手し、任意の場所に解凍します。
 
 
 
@@ -141,7 +140,7 @@ cmakeでビルドするか、直接g++を使ってビルドすることができ
     </li>
     <li>C++17の機能が必要</li>
 </ul>
-[こちら](https://github.com/Nyanyan/Egaroucid/archive/refs/tags/console_v6.2.0.zip)からコードを入手し、任意の場所に解凍します。
+GitHubのリリースからコード([console_v6.3.0.zip](https://github.com/Nyanyan/Egaroucid/archive/refs/tags/console_v6.3.0.zip))を入手し、任意の場所に解凍します。
 
 
 
