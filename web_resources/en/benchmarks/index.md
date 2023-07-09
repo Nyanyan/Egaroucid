@@ -23,7 +23,7 @@ For each version, the detailed conditions may be different. Please see each page
 	</tr>
     <tr>
 		<td><a href="./6_3_0/">6.3.0</a></td>
-		<td>TBD</td>
+		<td>2023/07/09</td>
 	</tr>
     <tr>
 		<td><a href="./6_2_0/">6.2.0</a></td>
