@@ -72,5 +72,26 @@ Egaroucidの性能の確認として2種類のベンチマークを使用して�
 </table>
 
 
-以下はThe FFO endgame test suiteの結果をバージョンを横軸に取ってグラフにしたものです。
+以下はThe FFO endgame test suiteをCore i9 11900Kで実行した結果をバージョンを横軸に取ってグラフにしたものです。
 
+<div class="centering_box">
+	<img class="pic2" src="img/ffo_time.png">
+    <img class="pic2" src="img/ffo_node.png">
+    <img class="pic2" src="img/ffo_nps.png">
+</div>
+
+
+
+
+
+## 技術解説
+
+日本語のみでEgaroucidの[技術解説](./explanation)を書きました。のんびりと追記します。
+
+
+
+
+
+## 対局データ配布
+
+Egaroucidの評価関数作成に使ったオセロAI同士の自己対戦のデータを公開します。
