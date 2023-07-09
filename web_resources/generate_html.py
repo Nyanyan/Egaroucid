@@ -161,6 +161,11 @@ def create_html(dr):
         for bold in bolds:
             html_bold = '<b>' + bold[2:-2] + '</b>'
             elem = elem.replace(bold, html_bold)
+        # code
+        codes = re.findall('```.+?```', elem)
+        for code in codes:
+            html_code = '<code>' + code[3:-3] + '</code>'
+            elem = elem.replace(code, html_code)
         # paragraph
         if raw_html == 0:
             elem = '<p>' + elem + '</p>'
