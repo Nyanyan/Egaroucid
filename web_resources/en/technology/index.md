@@ -83,3 +83,8 @@ There are some graphs of results of The FFO endgame test suite on Core i9 11900K
 
 I wrote [Technology Explanation](https://www.egaroucid.nyanyan.dev/ja/technology/explanation/) only in Japanese. Please translate by yourself.
 
+
+
+## Download Transcript
+
+Huge dataset of games played by Egaroucid is available. Please see [Download Transcript](./transcript) page.
