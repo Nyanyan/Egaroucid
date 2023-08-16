@@ -3,6 +3,18 @@ import os
 import shutil
 import sys
 import re
+from PIL import Image
+
+MAX_IMG_SIZE = 256
+
+def resize_img(file):
+    img = Image.open(file)
+    longer_side = max(img.width, img.height)
+    ratio = min(1, MAX_IMG_SIZE / longer_side)
+    width = int(img.width * ratio)
+    height = int(img.height * ratio)
+    img_resized = img.resize((width, height))
+    return img_resized
 
 elements_dir = sys.argv[1]
 
@@ -217,10 +229,13 @@ def create_html(dr):
     with open(out_dr + '/index.html', 'w', encoding='utf-8') as f:
         f.write(head + alternate + og_image + additional_head + head_title + head2 + menu + html + foot)
     shutil.copy(css_file, out_dr + '/style.css')
-    try:
-        shutil.copytree(dr + '/img', out_dr + '/img')
-    except:
-        pass
+    if os.path.exists(dr + '/img'):
+        img_files = glob.glob(dr + '/img/**')
+        os.mkdir(out_dr + '/img')
+        for file in img_files:
+            resized_img = resize_img(file)
+            file_name = file.split('\\')[-1]
+            resized_img.save(out_dr + '/img/' + file_name)
     try:
         with open(dr + '/additional_files.txt', 'r', encoding='utf-8') as f:
             additional_files = f.read().splitlines()
