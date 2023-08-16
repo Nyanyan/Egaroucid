@@ -43,9 +43,9 @@ Egaroucidは世界最強クラスのオセロAIを搭載した無料のオセロ
 
 
 <div class="centering_box">
-	<img class="pic2" src="img/egaroucid.png">
-    <img class="pic2" src="img/egaroucid_for_console.png">
-    <img class="pic2" src="img/egaroucid_for_web.png">
+	<img class="pic2" src="img/egaroucid.png" alt="Egaroucid">
+    <img class="pic2" src="img/egaroucid_for_console.png" alt="Egaroucid for Console">
+    <img class="pic2" src="img/egaroucid_for_web.png" alt="Egaroucid for Web">
 </div>
 
 

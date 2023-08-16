@@ -66,9 +66,10 @@ Pictures below are example in Japanese.
 
 
 <div class="centering_box">
-    <img class="pic2" src="img/cant_run1.png">
-    <img class="pic2" src="img/cant_run2.png">
+    <img class="pic2" src="img/cant_run1.png" alt="running accross Windows protected your PC">
+    <img class="pic2" src="img/cant_run2.png" alt="Press More Info and then you can run Egaroucid">
 </div>
+
 
 
 
@@ -77,7 +78,7 @@ Pictures below are example in Japanese.
 Please execute <code>Egaroucid_[version].exe</code> to run Egaroucid!
 
 <div class="centering_box">
-    <img class="pic2" src="img/egaroucid.png">
+    <img class="pic2" src="img/egaroucid.png" alt="Egaroucid">
 </div>
 
 

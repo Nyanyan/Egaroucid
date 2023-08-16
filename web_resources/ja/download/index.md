@@ -64,9 +64,10 @@ Zip版はZipファイルを解凍し、中の```Egaroucid_[バージョン情報
 「WindowsによってPCが保護されました」と出た場合は、「詳細情報」をクリックすると実行することができます。ただし、この操作は自己責任で行ってください。
 
 <div class="centering_box">
-    <img class="pic2" src="img/cant_run1.png">
-    <img class="pic2" src="img/cant_run2.png">
+    <img class="pic2" src="img/cant_run1.png" alt="「WindowsによってPCが保護されました」という画面">
+    <img class="pic2" src="img/cant_run2.png" alt="「WindowsによってPCが保護されました」という画面において「詳細情報」を押して実行する">
 </div>
+
 
 
 
@@ -75,7 +76,7 @@ Zip版はZipファイルを解凍し、中の```Egaroucid_[バージョン情報
 インストールまたは解凍した<code>Egaroucid_[バージョン情報].exe</code>を実行するとEgaroucidが起動します。
 
 <div class="centering_box">
-    <img class="pic2" src="img/egaroucid.png">
+    <img class="pic2" src="img/egaroucid.png" alt="Egaroucid">
 </div>
 
 
