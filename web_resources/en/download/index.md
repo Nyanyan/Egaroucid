@@ -77,7 +77,7 @@ Pictures below are example in Japanese.
 Please execute <code>Egaroucid_[version].exe</code> to run Egaroucid!
 
 <div class="centering_box">
-    <img class="pic" src="img/egaroucid.png">
+    <img class="pic2" src="img/egaroucid.png">
 </div>
 
 

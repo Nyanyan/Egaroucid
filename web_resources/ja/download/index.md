@@ -75,7 +75,7 @@ Zip版はZipファイルを解凍し、中の```Egaroucid_[バージョン情報
 インストールまたは解凍した<code>Egaroucid_[バージョン情報].exe</code>を実行するとEgaroucidが起動します。
 
 <div class="centering_box">
-    <img class="pic" src="img/egaroucid.png">
+    <img class="pic2" src="img/egaroucid.png">
 </div>
 
 
