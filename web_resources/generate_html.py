@@ -99,6 +99,31 @@ link21 = '<a href="'
 link22 = '">'
 link23 = '</a>'
 
+tex_js = '''
+<script type="text/javascript" async>
+    window.MathJax = {
+        chtml: {
+        matchFontHeight: false
+        },
+        tex: {
+        inlineMath: [['$', '$']]
+        },
+        svg: {
+        fontCache: 'global'
+        }
+    };
+    (function () {
+        const script = document.createElement('script');
+        if (navigator.userAgent.includes("Chrome") || navigator.userAgent.includes("Firefox"))
+            script.src = "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js";
+        else
+            script.src = "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js";
+        script.async = true;
+        document.head.appendChild(script);
+    })();
+</script>
+'''
+
 def judge_raw_html(html_elem):
     if html_elem[:2] == '</':
         return -1
@@ -115,6 +140,12 @@ def create_html(dr):
     try:
         with open(dr + '/noenglish.txt', 'r', encoding='utf-8') as f:
             noenglish = True
+    except:
+        pass
+    need_tex_js = False
+    try:
+        with open(dr + '/need_tex_js.txt', 'r', encoding='utf-8') as f:
+            need_tex_js = True
     except:
         pass
     alternate = ''
@@ -211,6 +242,8 @@ def create_html(dr):
             additional_head += f.read()
     except:
         pass
+    if need_tex_js:
+        additional_head += tex_js
     last_empty = False
     for line in md_split:
         if (not last_empty) and line == '':
