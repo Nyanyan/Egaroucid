@@ -169,6 +169,8 @@ def create_html(dr):
     md_split = md.splitlines()
     raw_html = 0
     for i, elem in enumerate(md_split):
+        while elem[:4] == '    ':
+            elem = elem[4:]
         html_elems = re.findall('\<.+?\>', elem)
         for html_elem in html_elems:
             raw_html += judge_raw_html(html_elem)
@@ -214,6 +216,20 @@ def create_html(dr):
         # paragraph
         if raw_html == 0:
             elem = '<p>' + elem + '</p>'
+        # img
+        if elem[:4] == '<img':
+            img_file_name = ''
+            for elem_elem in elem.split():
+                if elem_elem[:4] == 'src=':
+                    img_file_name = elem_elem[5:-1]
+                    img_file_name = img_file_name.replace('"', '').replace('>', '')
+            if img_file_name:
+                img = Image.open(dr + '/' + img_file_name)
+                longer_side = max(img.width, img.height)
+                ratio = min(1, MAX_IMG_SIZE / longer_side)
+                img_width = int(img.width * ratio)
+                img_height = int(img.height * ratio)
+                elem = '<img width="' + str(img_width) + '" height="' + str(img_height) + '"' + elem[4:]
         # modify data
         md_split[i] = elem
     html = ''
@@ -222,6 +238,7 @@ def create_html(dr):
     head_title = '<title>' + page_title + '</title>\n'
     og_image = '<meta property="og:image" content="' + this_page_url + '/img/eyecatch.png" />\n'
     html += '<p></p>\n'
+    html += tweet.replace('DATA_URL', this_page_url).replace('DATA_TEXT', page_title) + ' \n'
     if not noenglish:
         for lang_dr, lang_name in langs:
             original_lang = dr.split('/')[0]
@@ -230,7 +247,6 @@ def create_html(dr):
             modified_dr = dr[len(original_lang) + 1:]
             lang_link = main_page_url + lang_dr + '/' + modified_dr
             html += link21 + lang_link + link22 + lang_name + link23 + ' \n'
-    html += tweet.replace('DATA_URL', this_page_url).replace('DATA_TEXT', page_title) + ' \n'
     additional_head = '<meta property="og:url" content="' + this_page_url + '/" />\n'
     additional_head += '<meta property="og:title" content="' + page_title + '" />\n'
     #additional_head += '<meta property="og:description" content="' + main_page_description + '" />\n'
