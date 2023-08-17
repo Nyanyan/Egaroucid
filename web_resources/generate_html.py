@@ -238,7 +238,7 @@ def create_html(dr):
     head_title = '<title>' + page_title + '</title>\n'
     og_image = '<meta property="og:image" content="' + this_page_url + '/img/eyecatch.png" />\n'
     html += '<p></p>\n'
-    html += tweet.replace('DATA_URL', this_page_url).replace('DATA_TEXT', page_title) + ' \n'
+    #html += tweet.replace('DATA_URL', this_page_url).replace('DATA_TEXT', page_title) + ' \n'
     if not noenglish:
         for lang_dr, lang_name in langs:
             original_lang = dr.split('/')[0]
