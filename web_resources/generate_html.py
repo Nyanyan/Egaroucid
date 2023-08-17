@@ -7,7 +7,7 @@ from PIL import Image
 
 MAX_IMG_SIZE = 400
 
-def resize_img(file):
+def convert_img(file):
     img = Image.open(file)
     longer_side = max(img.width, img.height)
     ratio = min(1, MAX_IMG_SIZE / longer_side)
@@ -266,7 +266,7 @@ def create_html(dr):
         img_files = glob.glob(dr + '/img/**')
         os.mkdir(out_dr + '/img')
         for file in img_files:
-            resized_img = resize_img(file)
+            resized_img = convert_img(file)
             file_name = file.split('\\')[-1]
             resized_img.save(out_dr + '/img/' + file_name)
     try:

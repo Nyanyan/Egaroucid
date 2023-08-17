@@ -38,7 +38,7 @@ table{
 .box{
     width: min(80vh, 90vw);
     text-align: start;
-    margin: 0 auto;
+    margin: auto;
 }
 
 h1{
@@ -48,7 +48,6 @@ h1{
 h2{
     text-align: center;
     background-color:  #8dc5ac;
-    
 }
 
 h3{
@@ -81,12 +80,6 @@ h4{
     vertical-align: middle;
 }
 
-.bar_icon{
-    height: min(5vw, 50px);
-    width: min(5vw, 50px);
-    vertical-align: middle;
-}
-
 .menu_button{
     width: min(20vw, 130px);
     height: min(8vw, 50px);
@@ -96,24 +89,6 @@ h4{
     display: table;
     vertical-align: middle;
     font-size: min(2.5vw, 12pt);
-}
-
-.download_a{
-    text-decoration: none;
-    height: 100%;
-    color: white;
-    display: table-cell;
-    vertical-align: middle;
-}
-
-.download_button{
-    width: 100%;
-    height: min(5vw, 50px);
-    background-color:  #3F9770;
-    display: inline-block; 
-    text-align: center;
-    display: table;
-    vertical-align: middle;
 }
 
 .centering_box{
