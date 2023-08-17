@@ -38,7 +38,7 @@ table{
 .box{
     width: min(80vh, 90vw);
     text-align: start;
-    margin: auto;
+    margin: 0 auto;
 }
 
 h1{

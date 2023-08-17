@@ -95,7 +95,7 @@ link1 = '<a href="'
 link2 = '" target="_blank" el=”noopener noreferrer”>'
 link3 = '</a>'
 
-link21 = '<a href="'
+link21 = '<a font-size="1.5em" href="'
 link22 = '">'
 link23 = '</a>'
 
@@ -222,7 +222,6 @@ def create_html(dr):
     head_title = '<title>' + page_title + '</title>\n'
     og_image = '<meta property="og:image" content="' + this_page_url + '/img/eyecatch.png" />\n'
     html += '<p></p>\n'
-    html += tweet.replace('DATA_URL', this_page_url).replace('DATA_TEXT', page_title) + ' \n'
     if not noenglish:
         for lang_dr, lang_name in langs:
             original_lang = dr.split('/')[0]
@@ -231,6 +230,7 @@ def create_html(dr):
             modified_dr = dr[len(original_lang) + 1:]
             lang_link = main_page_url + lang_dr + '/' + modified_dr
             html += link21 + lang_link + link22 + lang_name + link23 + ' \n'
+    html += tweet.replace('DATA_URL', this_page_url).replace('DATA_TEXT', page_title) + ' \n'
     additional_head = '<meta property="og:url" content="' + this_page_url + '/" />\n'
     additional_head += '<meta property="og:title" content="' + page_title + '" />\n'
     #additional_head += '<meta property="og:description" content="' + main_page_description + '" />\n'
