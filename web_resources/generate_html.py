@@ -169,8 +169,8 @@ def create_html(dr):
     md_split = md.splitlines()
     raw_html = 0
     for i, elem in enumerate(md_split):
-        while elem[:4] == '    ':
-            elem = elem[4:]
+        while elem and (elem[0] == ' ' or elem[0] == '\t'):
+            elem = elem[1:]
         html_elems = re.findall('\<.+?\>', elem)
         for html_elem in html_elems:
             raw_html += judge_raw_html(html_elem)
