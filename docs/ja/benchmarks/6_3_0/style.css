@@ -70,7 +70,7 @@ h4{
 .menu_bar{
     width: 100%;
     height: min(8vw, 50px);
-    background-color:  #3F9770;
+    background-color:  #308761;
     display: flex;
     align-items: center;
 }
@@ -86,7 +86,7 @@ h4{
 .menu_button{
     width: min(20vw, 130px);
     height: min(8vw, 50px);
-    background-color:  #3F9770;
+    background-color:  #308762;
     display: inline-block; 
     text-align: center;
     display: table;
@@ -110,7 +110,7 @@ code {
 }
 
 .footer{
-    background-color:  #3F9770;
+    background-color:  #308762;
     color: white;
     text-align: right;
     padding: 1%;
