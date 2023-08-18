@@ -29,10 +29,12 @@ table{
     display: block;
     margin: auto;
     width: 50vmin;
+    height: auto;
 }
 
 .pic2{
     width: min(25vh, 45%);
+    height: auto;
 }
 
 .box{
