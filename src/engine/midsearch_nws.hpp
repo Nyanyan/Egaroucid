@@ -340,32 +340,3 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
         transposition_table.reg(search, hash_code, depth, alpha, alpha + 1, v, best_move);
     return v;
 }
-
-/*
-int nega_alpha_ordering_nws_lazy_smp(Search *search, int alpha, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching){
-    std::vector<Search> searches;
-    std::vector<std::future<int>> parallel_tasks;
-    int n_idle = thread_pool.get_n_idle();
-    for (int i = 0; i < n_idle; ++i){
-        Search n_search;
-        n_search.init_board(&search->board);
-        n_search.mpc_level = search->mpc_level;
-        n_search.n_nodes = 0ULL;
-        n_search.use_multi_thread = false;
-        calc_features(&n_search);
-        searches.emplace_back(n_search);
-    }
-    for (int i = 0; i < n_idle && thread_pool.get_n_idle(); ++i){
-        bool pushed;
-        parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&nega_alpha_ordering_nws, &searches[i], alpha, depth, skipped, legal, is_end_search, searching)));
-        if (!pushed)
-            parallel_tasks.pop_back();
-    }
-    int res = nega_alpha_ordering_nws(search, alpha, depth, skipped, legal, is_end_search, searching);
-    for (std::future<int> &task: parallel_tasks)
-        task.get();
-    for (Search &n_search: searches)
-        search->n_nodes += n_search.n_nodes;
-    return res;
-}
-*/

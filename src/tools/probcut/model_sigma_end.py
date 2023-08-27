@@ -9,8 +9,6 @@ import math
 
 #data_file = 'data/end.txt'
 
-const_weight = 2.0
-
 #with open(data_file, 'r') as f:
 #    raw_data = f.read().splitlines()
 
@@ -19,11 +17,12 @@ data = [[[] for _ in range(61)] for _ in range(65)] # n_discs, depth
 #for datum in raw_data:
 #    n_discs, depth, error = [int(elem) for elem in datum.split()]
 #    data[n_discs][depth].append(error)
-
 x_n_discs = []
 y_depth = []
 z_error = []
 weight = []
+
+'''
 
 for n_discs in range(len(data)):
     if n_discs >= 64 - 13:
@@ -36,26 +35,27 @@ for n_discs in range(len(data)):
             y_depth.append(depth)
             z_error.append(sigma + const_weight)
             weight.append(1 / len(data[n_discs][depth]))
+'''
 
 for n_discs in range(80):
     depth = 64 - n_discs + 5
     x_n_discs.append(n_discs)
     y_depth.append(depth)
-    z_error.append(1.2 + const_weight)
+    z_error.append(2.0)
     weight.append(0.001)
 
 for n_discs in range(60):
     depth = 0
     x_n_discs.append(n_discs)
     y_depth.append(depth)
-    z_error.append(12.0 - (n_discs - 4 - depth) / 60 * 11.0 + const_weight)
+    z_error.append(13.0 - (n_discs - 4 - depth) / 60 * 12.0)
     weight.append(0.008)
 
 for n_discs in range(60):
     depth = (64 - n_discs) / 2
     x_n_discs.append(n_discs)
     y_depth.append(depth)
-    z_error.append(5.0 - (n_discs - 4 - depth) / 60 * 4.0 + const_weight)
+    z_error.append(5.0 - (n_discs - 4 - depth) / 60 * 4.0)
     weight.append(0.008)
 
 
@@ -86,9 +86,13 @@ def plot_fit_result(params):
 
 probcut_params_before = [1.0 for _ in range(10)]
 
+probcut_params_old = [1.7618824674282139, 1.6761979186286653, -1.5368514045644108, 5.649224423285564, -12.020118030448877, 14.261869478626625, 1.0, 1.0, 1.0, 1.0]
+
 popt, pcov = curve_fit(f, (x_n_discs, y_depth), z_error, np.array(probcut_params_before), sigma=weight, absolute_sigma=True)
 #popt = probcut_params_before
 print([float(elem) for elem in popt])
 for i in range(len(popt)):
     print('#define probcut_end_' + chr(ord('a') + i), popt[i])
+
 plot_fit_result(popt)
+#plot_fit_result(probcut_params_old)

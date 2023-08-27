@@ -558,35 +558,6 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
 }
 
 /*
-int nega_scout_lazy_smp(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching){
-    std::vector<Search> searches;
-    std::vector<std::future<int>> parallel_tasks;
-    int n_idle = thread_pool.get_n_idle();
-    for (int i = 0; i < n_idle; ++i){
-        Search n_search;
-        n_search.init_board(&search->board);
-        n_search.mpc_level = search->mpc_level;
-        n_search.n_nodes = 0ULL;
-        n_search.use_multi_thread = false;
-        calc_features(&n_search);
-        searches.emplace_back(n_search);
-    }
-    for (int i = 0; i < n_idle && thread_pool.get_n_idle(); ++i){
-        bool pushed;
-        parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&nega_scout, &searches[i], alpha, beta, depth, skipped, legal, is_end_search, searching)));
-        if (!pushed)
-            parallel_tasks.pop_back();
-    }
-    int res = nega_scout(search, alpha, beta, depth, skipped, legal, is_end_search, searching);
-    for (std::future<int> &task: parallel_tasks)
-        task.get();
-    for (Search &n_search: searches)
-        search->n_nodes += n_search.n_nodes;
-    return res;
-}
-*/
-
-/*
     @brief aspiration search used in endgame search
 
     Used in PV node, if predicted value is available
