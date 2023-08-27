@@ -121,7 +121,8 @@ for num in range(max_num):
         else:
             edax_win[player] += 1
             #print(record)
-        print('\r', num, max_num, ' ', egaroucid_win, draw, edax_win, sum(egaroucid_win), sum(edax_win), sum(egaroucid_win) / max(1, sum(egaroucid_win) + sum(edax_win)), end='                ')
+        print('\r', num, max_num, ' ', egaroucid_win, draw, edax_win, sum(egaroucid_win), sum(edax_win), 
+              (sum(egaroucid_win) + sum(draw) * 0.5) / max(1, sum(egaroucid_win) + sum(edax_win) + sum(draw)), end='                ')
 
 egaroucid.stdin.write('quit\n'.encode('utf-8'))
 egaroucid.stdin.flush()
@@ -129,4 +130,7 @@ edax.stdin.write('quit\n'.encode('utf-8'))
 edax.stdin.flush()
 print('')
 
-print('level: ', level, ' Egaroucid plays black WDL: ', egaroucid_win[0], '-', draw[0], '-', edax_win[0], ' ', egaroucid_win[0] / (egaroucid_win[0] + edax_win[0]), ' Egaroucid plays white WDL: ', egaroucid_win[1], '-', draw[1], '-', edax_win[1], ' ', egaroucid_win[1] / (egaroucid_win[1] + edax_win[1]), ' Egaroucid win rate: ', sum(egaroucid_win) / max(1, sum(egaroucid_win) + sum(edax_win)), sep='')
+print('level: ', level, 
+      ' Egaroucid plays black WDL: ', egaroucid_win[0], '-', draw[0], '-', edax_win[0], ' ', (egaroucid_win[0] + draw[0] * 0.5) / (egaroucid_win[0] + edax_win[0] + draw[0]), 
+      ' Egaroucid plays white WDL: ', egaroucid_win[1], '-', draw[1], '-', edax_win[1], ' ', (egaroucid_win[1] + draw[1] * 0.5) / (egaroucid_win[1] + edax_win[1] + draw[1]), 
+      ' Egaroucid win rate: ', (sum(egaroucid_win) + sum(draw) * 0.5) / max(1, sum(egaroucid_win) + sum(edax_win) + sum(draw)), sep='')
