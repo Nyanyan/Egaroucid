@@ -3,10 +3,8 @@ from othello_py import *
 import sys
 from random import shuffle
 
-with open('problem/openingssmall.txt', 'r') as f:
+with open('problem/xot_small_shuffled.txt', 'r') as f:
     tactic = [elem for elem in f.read().splitlines()]
-
-shuffle(tactic)
 
 level = int(sys.argv[1])
 n_games = int(sys.argv[2])

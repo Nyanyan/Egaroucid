@@ -2,7 +2,7 @@ import subprocess
 from othello_py import *
 import sys
 
-with open('problem/openingssmall.txt', 'r') as f:
+with open('problem/xot_small_shuffled.txt', 'r') as f:
     tactic = [elem for elem in f.read().splitlines()]
 
 #shuffle(tactic)
