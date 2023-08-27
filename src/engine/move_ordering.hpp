@@ -35,11 +35,12 @@
 #define MOVE_ORDERING_VALUE_OFFSET_BETA 10
 #define MOVE_ORDERING_NWS_VALUE_OFFSET_ALPHA 10
 #define MOVE_ORDERING_NWS_VALUE_OFFSET_BETA 3
-#define MOVE_ORDERING_MPC_LEVEL MPC_95_LEVEL
+#define MOVE_ORDERING_MPC_LEVEL MPC_81_LEVEL //MPC_95_LEVEL
 
 #define W_END_MOBILITY 32
 #define W_END_PARITY 4
-#define W_END_VALUE 6
+#define W_END_POTENTIAL_MOBILITY -32
+#define W_END_VALUE 4
 
 #define N_CELL_TYPES 10
 #define MAX_SAME_CELL_TYPE 8
@@ -219,22 +220,10 @@ inline void move_evaluate_end(Search *search, Flip_value *flip_value){
     flip_value->value = cell_weight[flip_value->flip.pos];
     if (search->parity & cell_div4[flip_value->flip.pos])
         flip_value->value += W_END_PARITY;
-    //eval_move(search, &flip_value->flip);
-    search->move(&flip_value->flip);
-        flip_value->n_legal = search->board.get_legal();
-        flip_value->value -= pop_count_ull(flip_value->n_legal) * W_END_MOBILITY;
-        //flip_value->value -= mid_evaluate_diff(search) * W_END_VALUE;
-    search->undo(&flip_value->flip);
-    //eval_undo(search, &flip_value->flip);
-    /*
-    flip_value->value = cell_weight[flip_value->flip.pos];
-    if (search->parity & cell_div4[flip_value->flip.pos])
-        flip_value->value += W_END_PARITY;
     search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
         flip_value->value -= pop_count_ull(flip_value->n_legal) * W_END_MOBILITY;
     search->undo(&flip_value->flip);
-    */
 }
 
 /*
@@ -251,6 +240,8 @@ inline void move_evaluate_end_nws(Search *search, Flip_value *flip_value){
     search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
         flip_value->value -= pop_count_ull(flip_value->n_legal) * W_END_MOBILITY;
+        //uint64_t empties = ~(search->board.player | search->board.opponent);
+        //flip_value->value += get_potential_mobility(search->board.player, empties) * W_END_POTENTIAL_MOBILITY;
     search->undo(&flip_value->flip);
 }
 
@@ -269,6 +260,8 @@ inline void move_evaluate_end_nws_eval(Search *search, Flip_value *flip_value){
     search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
         flip_value->value -= pop_count_ull(flip_value->n_legal) * W_END_MOBILITY;
+        //uint64_t empties = ~(search->board.player | search->board.opponent);
+        //flip_value->value += get_potential_mobility(search->board.player, empties) * W_END_POTENTIAL_MOBILITY;
         flip_value->value -= mid_evaluate_diff(search) * W_END_VALUE;
     search->undo(&flip_value->flip);
     eval_undo(search, &flip_value->flip);
@@ -470,10 +463,6 @@ inline void move_list_evaluate_end_simple_nws(Search *search, Flip_value move_li
         return;
     for (int i = 0; i < canput; ++i)
         move_evaluate_end_simple_nws(search, &move_list[i]);
-    /*
-    for (Flip_value &flip_value: move_list)
-        move_evaluate_end_nws(search, &flip_value);
-    */
 }
 
 /*

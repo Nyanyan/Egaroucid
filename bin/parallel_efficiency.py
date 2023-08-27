@@ -46,7 +46,7 @@ answer = answer.splitlines()
 
 data = []
 
-for n_thread in range(1, 25):
+for n_thread in range(1, 33):
     cmd = 'Egaroucid_for_Console.exe -l 60 -nobook -hash 25 -solve problem/ffo40-49.txt -thread ' + str(n_thread)
     print(cmd)
     egaroucid = subprocess.Popen((cmd).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
