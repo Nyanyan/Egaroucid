@@ -28,9 +28,9 @@
 
 #if MID_TO_END_DEPTH > YBWC_END_SPLIT_MIN_DEPTH
     inline bool ybwc_split_end_nws(const Search *search, int alpha, uint64_t legal, const bool *searching, uint_fast8_t policy, const int canput, const int pv_idx, const int split_count, std::vector<std::future<Parallel_task>> &parallel_tasks);
-    inline void ybwc_get_end_tasks(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, int *v, int *best_move);
+    inline void ybwc_get_end_tasks(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *running_count);
     inline void ybwc_wait_all(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks);
-    inline void ybwc_wait_all_nws(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int alpha, bool *searching);
+    inline void ybwc_wait_all_nws(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *running_count, int alpha, const bool *searching, bool *n_searching);
 #endif
 
 /*
@@ -694,15 +694,15 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
                 constexpr bool seems_to_be_all_node = false;
             #endif
             if (search->use_multi_thread && search->n_discs <= HW2 - YBWC_END_SPLIT_MIN_DEPTH){
-                int split_count = 0;
+                int running_count = 0;
                 std::vector<std::future<Parallel_task>> parallel_tasks;
                 bool n_searching = true;
                 for (int move_idx = 0; move_idx < canput; ++move_idx){
                     swap_next_best_move(move_list, move_idx, canput);
                     search->move(&move_list[move_idx].flip);
                     eval_move(search, &move_list[move_idx].flip);
-                        if (ybwc_split_end_nws(search, -alpha - 1, move_list[move_idx].n_legal, &n_searching, move_list[move_idx].flip.pos, canput, pv_idx++, seems_to_be_all_node, split_count, parallel_tasks)){
-                            ++split_count;
+                        if (ybwc_split_end_nws(search, -alpha - 1, move_list[move_idx].n_legal, &n_searching, move_list[move_idx].flip.pos, canput, pv_idx++, seems_to_be_all_node, running_count, parallel_tasks)){
+                            ++running_count;
                         } else{
                             g = -nega_alpha_end_nws(search, -alpha - 1, false, move_list[move_idx].n_legal, searching);
                             if (v < g){
@@ -714,8 +714,8 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
                                     break;
                                 }
                             }
-                            if (split_count){
-                                ybwc_get_end_tasks(search, parallel_tasks, &v, &best_move);
+                            if (running_count){
+                                ybwc_get_end_tasks(search, parallel_tasks, &v, &best_move, &running_count);
                                 if (alpha < v){
                                     eval_undo(search, &move_list[move_idx].flip);
                                     search->undo(&move_list[move_idx].flip);
@@ -726,12 +726,12 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
                     eval_undo(search, &move_list[move_idx].flip);
                     search->undo(&move_list[move_idx].flip);
                 }
-                if (split_count){
+                if (running_count){
                     if (alpha < v || !(*searching)){
                         n_searching = false;
                         ybwc_wait_all(search, parallel_tasks);
                     } else
-                        ybwc_wait_all_nws(search, parallel_tasks, &v, &best_move, alpha, &n_searching);
+                        ybwc_wait_all_nws(search, parallel_tasks, &v, &best_move, &running_count, alpha, searching, &n_searching);
                 }
             } else{
                 for (int move_idx = 0; move_idx < canput; ++move_idx){

@@ -220,7 +220,7 @@ inline bool ybwc_split_nws(const Search *search, int alpha, int depth, uint64_t 
         @param parallel_tasks       vector of splitted tasks
         @return task splitted?
     */
-    inline bool ybwc_split_end_nws(const Search *search, int alpha, uint64_t legal, const bool *searching, uint_fast8_t policy, const int canput, const int pv_idx, const bool seems_to_be_all_node, const int split_count, std::vector<std::future<Parallel_task>> &parallel_tasks){
+    inline bool ybwc_split_end_nws(const Search *search, int alpha, uint64_t legal, const bool *searching, uint_fast8_t policy, const int canput, const int pv_idx, const bool seems_to_be_all_node, const int running_count, std::vector<std::future<Parallel_task>> &parallel_tasks){
         if (thread_pool.get_n_idle() &&
             (pv_idx || seems_to_be_all_node)){
                 bool pushed;
