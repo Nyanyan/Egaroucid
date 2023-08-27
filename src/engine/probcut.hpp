@@ -45,6 +45,30 @@
     int mpc_error_end[N_SELECTIVITY_LEVEL][HW2 + 1][HW2 - 3];
 #endif
 
+int mpc_search_depth_arr[2][61] = {
+    {
+        0, 1, 0, 1, 2, 3, 2, 3, 4, 5, 
+        4, 5, 6, 7, 6, 7, 8, 9, 8, 9, 
+        10, 11, 10, 11, 12, 13, 12, 13, 14, 15, 
+        14, 15, 16, 17, 16, 17, 18, 19, 18, 19, 
+        20, 21, 20, 21, 22, 23, 22, 23, 24, 25, 
+        24, 25, 26, 27, 26, 27, 28, 29, 28, 29, 
+        30
+    }, {
+        0, 1, 0, 1, 0, 1, 0, 1, 2, 3, 
+        2, 3, 2, 3, 2, 3, 4, 5, 4, 5, 
+        4, 5, 4, 5, 6, 7, 6, 7, 6, 7, 
+        6, 7, 8, 9, 8, 9, 8, 9, 8, 9, 
+        10, 11, 10, 11, 10, 11, 10, 11, 12, 13, 
+        12, 13, 12, 13, 12, 13, 14, 15, 14, 15, 
+        14
+    }
+};
+
+int mpc_search_depth_mid_arr[61] = {
+    
+};
+
 /*
     @brief ProbCut error calculation for midgame
 
@@ -122,11 +146,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
 inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, bool is_end_search, int* v, const bool* searching) {
     if (search->mpc_level == MPC_100_LEVEL)
         return false;
-    int search_depth;
-    if (is_end_search)
-        search_depth = ((depth >> 2) & 0xFE) ^ (depth & 1);
-    else
-        search_depth = ((depth >> 1) & 0xFE) ^ (depth & 1);
+    int search_depth = mpc_search_depth_arr[is_end_search][depth];
     if (is_end_search) {
         alpha -= (alpha + SCORE_MAX) & 1;
         beta += (beta + SCORE_MAX) & 1;

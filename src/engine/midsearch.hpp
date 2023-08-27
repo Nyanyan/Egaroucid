@@ -439,7 +439,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
             bool search_splitted;
             for (int move_idx = 0; move_idx < canput && *searching; ++move_idx){
                 swap_next_best_move(move_list, move_idx, canput);
-                #if USE_MID_ETC || USE_MID_MPC || USE_END_MPC
+                #if USE_MID_ETC
                     if (move_list[move_idx].flip.flip == 0ULL)
                         break;
                 #endif
@@ -530,7 +530,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     #endif
             for (int move_idx = 0; move_idx < canput && *searching; ++move_idx){
                 swap_next_best_move(move_list, move_idx, canput);
-                #if USE_MID_ETC || USE_MID_MPC || USE_END_MPC
+                #if USE_MID_ETC
                     if (move_list[move_idx].flip.flip == 0ULL)
                         break;
                 #endif

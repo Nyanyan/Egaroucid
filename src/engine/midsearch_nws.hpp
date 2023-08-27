@@ -296,7 +296,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
         bool n_searching = true;
         for (int move_idx = 0; move_idx < canput && *searching && n_searching; ++move_idx){
             swap_next_best_move(move_list, move_idx, canput);
-            #if USE_MID_ETC || USE_MID_MPC || USE_END_MPC
+            #if USE_MID_ETC
                 if (move_list[move_idx].flip.flip == 0ULL)
                     break;
             #endif
@@ -330,7 +330,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
     } else{
         for (int move_idx = 0; move_idx < canput && *searching; ++move_idx){
             swap_next_best_move(move_list, move_idx, canput);
-            #if USE_MID_ETC || USE_MID_MPC || USE_END_MPC
+            #if USE_MID_ETC
                 if (move_list[move_idx].flip.flip == 0ULL)
                     break;
             #endif
