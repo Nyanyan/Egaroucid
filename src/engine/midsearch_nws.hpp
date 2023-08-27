@@ -260,9 +260,10 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
             return SCORE_MAX;
         ++idx;
     }
+    int etc_done_idx = 0;
     #if USE_MID_ETC
         if (depth >= MID_ETC_DEPTH){
-            if (etc_nws(search, move_list, depth, alpha, &v))
+            if (etc_nws(search, move_list, depth, alpha, &v, &etc_done_idx))
                 return v;
         }
     #endif
@@ -294,7 +295,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
         int running_count = 0;
         std::vector<std::future<Parallel_task>> parallel_tasks;
         bool n_searching = true;
-        for (int move_idx = 0; move_idx < canput && *searching && n_searching; ++move_idx){
+        for (int move_idx = 0; move_idx < canput - etc_done_idx && *searching && n_searching; ++move_idx){
             swap_next_best_move(move_list, move_idx, canput);
             #if USE_MID_ETC
                 if (move_list[move_idx].flip.flip == 0ULL)
@@ -302,7 +303,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
             #endif
             eval_move(search, &move_list[move_idx].flip);
             search->move(&move_list[move_idx].flip);
-                if (ybwc_split_nws(search, -alpha - 1, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].flip.pos, move_idx, canput, running_count, seems_to_be_all_node, parallel_tasks)){
+                if (ybwc_split_nws(search, -alpha - 1, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].flip.pos, move_idx, canput - etc_done_idx, running_count, seems_to_be_all_node, parallel_tasks)){
                     ++running_count;
                 } else{
                     g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
@@ -328,7 +329,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
                 ybwc_wait_all_nws(search, parallel_tasks, &v, &best_move, &running_count, alpha, searching, &n_searching);
         }
     } else{
-        for (int move_idx = 0; move_idx < canput && *searching; ++move_idx){
+        for (int move_idx = 0; move_idx < canput - etc_done_idx && *searching; ++move_idx){
             swap_next_best_move(move_list, move_idx, canput);
             #if USE_MID_ETC
                 if (move_list[move_idx].flip.flip == 0ULL)

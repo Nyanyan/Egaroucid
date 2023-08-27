@@ -408,9 +408,10 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
             return SCORE_MAX;
         ++idx;
     }
+    int etc_done_idx = 0;
     #if USE_MID_ETC
         if (depth >= MID_ETC_DEPTH){
-            if (etc(search, move_list, depth, &alpha, &beta, &v))
+            if (etc(search, move_list, depth, &alpha, &beta, &v, &etc_done_idx))
                 return v;
         }
     #endif
@@ -437,7 +438,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
             std::vector<int> additional_search_windows;
             bool n_searching = true;
             bool search_splitted;
-            for (int move_idx = 0; move_idx < canput && *searching; ++move_idx){
+            for (int move_idx = 0; move_idx < canput - etc_done_idx && *searching; ++move_idx){
                 swap_next_best_move(move_list, move_idx, canput);
                 #if USE_MID_ETC
                     if (move_list[move_idx].flip.flip == 0ULL)
@@ -450,7 +451,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
                     else{
                         search_splitted = false;
                         if (move_idx >= YBWC_WINDOW_SPLIT_BROTHER_THRESHOLD){
-                            if (ybwc_split_nws(search, -alpha - 1, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].flip.pos, move_idx, canput, running_count, false, parallel_tasks)){
+                            if (ybwc_split_nws(search, -alpha - 1, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].flip.pos, move_idx, canput - etc_done_idx, running_count, false, parallel_tasks)){
                                 ++running_count;
                                 parallel_alphas.emplace_back(alpha);
                                 parallel_idxes.emplace_back(move_idx);
@@ -528,7 +529,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
             }
         } else{
     #endif
-            for (int move_idx = 0; move_idx < canput && *searching; ++move_idx){
+            for (int move_idx = 0; move_idx < canput - etc_done_idx && *searching; ++move_idx){
                 swap_next_best_move(move_list, move_idx, canput);
                 #if USE_MID_ETC
                     if (move_list[move_idx].flip.flip == 0ULL)

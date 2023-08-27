@@ -645,7 +645,8 @@ bool hash_resize(int hash_level_failed, int hash_level, std::string binary_path,
     @param hash_level           new hash level
     @return hash resized?
 */
-inline bool etc(Search *search, std::vector<Flip_value> &move_list, int depth, int *alpha, int *beta, int *v){
+inline bool etc(Search *search, std::vector<Flip_value> &move_list, int depth, int *alpha, int *beta, int *v, int *etc_done_idx){
+    *etc_done_idx = 0;
     int l, u, n_beta = *alpha;
     for (Flip_value &flip_value: move_list){
         l = -SCORE_MAX;
@@ -661,6 +662,7 @@ inline bool etc(Search *search, std::vector<Flip_value> &move_list, int depth, i
             if (*v < -l)
                 *v = -l;
             flip_value.flip.flip = 0ULL; // make this move invalid
+            ++(*etc_done_idx);
         } else if (-(*beta) < u && u < -(*alpha) && *v < -u){ // child window is [-beta, u]
             *v = -u;
             if (*alpha < -u)
@@ -679,7 +681,8 @@ inline bool etc(Search *search, std::vector<Flip_value> &move_list, int depth, i
     @param hash_level           new hash level
     @return hash resized?
 */
-inline bool etc_nws(Search *search, std::vector<Flip_value> &move_list, int depth, int alpha, int *v){
+inline bool etc_nws(Search *search, std::vector<Flip_value> &move_list, int depth, int alpha, int *v, int *etc_done_idx){
+    *etc_done_idx = 0;
     int l, u;
     for (Flip_value &flip_value: move_list){
         l = -SCORE_MAX;
@@ -695,6 +698,7 @@ inline bool etc_nws(Search *search, std::vector<Flip_value> &move_list, int dept
             if (*v < -l)
                 *v = -l;
             flip_value.flip.flip = 0ULL; // make this move invalid
+            ++(*etc_done_idx);
         }
     }
     return false;

@@ -21,10 +21,10 @@
 /*
     @brief YBWC splitting depth threshold
 */
-#define YBWC_MID_SPLIT_MIN_DEPTH 4
+#define YBWC_MID_SPLIT_MIN_DEPTH 3
 #define YBWC_END_SPLIT_MIN_DEPTH 13
 
-#define YBWC_MAX_RUNNING_COUNT 3
+#define YBWC_MAX_RUNNING_COUNT 5
 #define YBWC_SPLIT_MIN_MOVES 2
 
 #define YBWC_WINDOW_SPLIT_BROTHER_THRESHOLD 2
@@ -88,12 +88,11 @@ Parallel_task ybwc_do_task_nws(uint64_t player, uint64_t opponent, int_fast8_t n
     @return task splitted?
 */
 inline bool ybwc_split_nws(const Search *search, int alpha, int depth, uint64_t legal, bool is_end_search, const bool *searching, uint_fast8_t policy, const int move_idx, const int canput, const int running_count, const bool seems_to_be_all_node, std::vector<std::future<Parallel_task>> &parallel_tasks){
-    //std::cout << thread_pool.get_n_idle() << std::endl;
     if (
-            //thread_pool.get_n_idle() &&               // There is an idle thread
+            thread_pool.get_n_idle() &&               // There is an idle thread
             (move_idx || seems_to_be_all_node) &&     // The elderest brother is already searched or this node seems to be an ALL node
-            move_idx < canput - YBWC_SPLIT_MIN_MOVES //&&                // This node is not the youngest brother
-            //running_count < YBWC_MAX_RUNNING_COUNT  // Do not split too many nodes
+            move_idx < canput - YBWC_SPLIT_MIN_MOVES  //&&                // This node is not the (some) youngest brother
+            // running_count < YBWC_MAX_RUNNING_COUNT  // Do not split too many nodes
     ){
             bool pushed;
             parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&ybwc_do_task_nws, search->board.player, search->board.opponent, search->n_discs, search->parity, search->mpc_level, alpha, depth, legal, is_end_search, policy, searching)));
