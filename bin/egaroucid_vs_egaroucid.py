@@ -32,10 +32,10 @@ def create_res_str(arr):
     res = 'level: ' + str(level) + ' '
     res += '(0W-D-0L) 0=black: '
     res += str(arr[0][0]) + '-' + str(arr[2][0]) + '-' + str(arr[1][0])
-    res += ' ' + str(round(arr[0][0] / max(1, arr[0][0] + arr[1][0]) * 100, 2)) + '% '
+    res += ' ' + str((round((arr[0][0] + arr[2][0] * 0.5) / max(1, arr[0][0] + arr[1][0] + arr[2][0])) * 100, 2)) + '% '
     res += ' 0=white: '
     res += str(arr[0][1]) + '-' + str(arr[2][1]) + '-' + str(arr[1][1])
-    res += ' ' + str(round(arr[0][1] / max(1, arr[0][1] + arr[1][1]) * 100, 2)) + '%'
+    res += ' ' + str((round((arr[0][1] + arr[2][1] * 0.5) / max(1, arr[0][1] + arr[1][1] + arr[2][1])) * 100, 2)) + '% '
     res += ' all ' + str(round((arr[0][0] + arr[0][1]) / max(1, arr[0][0] + arr[0][1] + arr[1][0] + arr[1][1]) * 100, 2)) + '%'
     return res
 
