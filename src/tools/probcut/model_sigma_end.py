@@ -7,18 +7,18 @@ from scipy.optimize import curve_fit
 from matplotlib import animation
 import math
 
-data_file = 'data/end.txt'
+#data_file = 'data/end.txt'
 
-const_weight = 0.0
+const_weight = 2.0
 
-with open(data_file, 'r') as f:
-    raw_data = f.read().splitlines()
+#with open(data_file, 'r') as f:
+#    raw_data = f.read().splitlines()
 
 data = [[[] for _ in range(61)] for _ in range(65)] # n_discs, depth
 
-for datum in raw_data:
-    n_discs, depth, error = [int(elem) for elem in datum.split()]
-    data[n_discs][depth].append(error)
+#for datum in raw_data:
+#    n_discs, depth, error = [int(elem) for elem in datum.split()]
+#    data[n_discs][depth].append(error)
 
 x_n_discs = []
 y_depth = []
@@ -45,11 +45,18 @@ for n_discs in range(80):
     weight.append(0.001)
 
 for n_discs in range(60):
-    for depth in [0]:
-        x_n_discs.append(n_discs)
-        y_depth.append(depth)
-        z_error.append(5.0 * (60 - depth) / 60 * math.exp((64 - n_discs) / 64) + const_weight)
-        weight.append(0.008)
+    depth = 0
+    x_n_discs.append(n_discs)
+    y_depth.append(depth)
+    z_error.append(12.0 - (n_discs - 4 - depth) / 60 * 11.0 + const_weight)
+    weight.append(0.008)
+
+for n_discs in range(60):
+    depth = (64 - n_discs) / 2
+    x_n_discs.append(n_discs)
+    y_depth.append(depth)
+    z_error.append(5.0 - (n_discs - 4 - depth) / 60 * 4.0 + const_weight)
+    weight.append(0.008)
 
 
 def f(xy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g, probcut_h, probcut_i, probcut_j):
@@ -65,7 +72,8 @@ def f_max(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f,
 
 def plot_fit_result(params):
     fig = plt.figure()
-    ax = Axes3D(fig)
+    #ax = Axes3D(fig)
+    ax = fig.add_subplot(111, projection='3d')
     #ax.plot(xs, ys, zs, ms=3, marker="o",linestyle='None')
     #ax.plot(sdxs, sdys, sdzs, ms=3, marker="o",linestyle='None')
     ax.plot(x_n_discs, y_depth, z_error, ms=3, marker="o",linestyle='None')
