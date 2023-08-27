@@ -564,6 +564,41 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
 }
 
 /*
+int nega_scout_lazy_smp(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching){
+    std::vector<std::future<int>> parallel_tasks;
+    std::vector<Search> searches;
+    int n_idle = thread_pool.get_n_idle();
+    for (int i = 0; i < n_idle; ++i){
+        Search n_search;
+        n_search.init_board(&search->board);
+        n_search.mpc_level = search->mpc_level;
+        n_search.n_nodes = 0ULL;
+        n_search.use_multi_thread = false;
+        calc_features(&n_search);
+        searches.emplace_back(n_search);
+    }
+    for (int i = 0; i < n_idle; ++i){
+        bool pushed;
+        parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&nega_scout, &searches[i], alpha, beta, depth, skipped, legal, is_end_search, searching)));
+        if (!pushed){
+            parallel_tasks.pop_back();
+            break;
+        }
+        if (n_idle <= thread_pool.get_n_idle())
+            break;
+    }
+    std::cerr << parallel_tasks.size() + 1 << " parallel" << std::endl;
+    int res = nega_scout(search, alpha, beta, depth, skipped, legal, is_end_search, searching);
+    uint64_t s = tim();
+    for (std::future<int> &task: parallel_tasks)
+        task.get();
+    for (int i = 0; i < n_idle; ++i)
+        search->n_nodes += searches[i].n_nodes;
+    return res;
+}
+*/
+
+/*
     @brief aspiration search used in endgame search
 
     Used in PV node, if predicted value is available
@@ -585,10 +620,10 @@ int pv_aspiration_search(Search *search, int alpha, int beta, int predicted_valu
     if (predicted_value < alpha || beta <= predicted_value)
         return nega_scout(search, alpha, beta, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
     int g1 = nega_alpha_ordering_nws(search, predicted_value - 1, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
-    if (g1 < predicted_value) // when exact value < predicted value
-        return nega_scout(search, alpha, g1 + 1, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
+    if (g1 < predicted_value) // when exact value < predicted value, exact value <= g1
+        return nega_scout(search, alpha, g1, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
     int g2 = nega_alpha_ordering_nws(search, predicted_value, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
-    if (predicted_value < g2) // when predicted value < exact value
+    if (predicted_value < g2) // when predicted value < exact value, g2 <= exact value
         return nega_scout(search, g2, beta, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
     return predicted_value;
 }
