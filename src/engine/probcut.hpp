@@ -206,7 +206,7 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
                 return true;
             }
         }
-        }
+    }
     return false;
 }
 
