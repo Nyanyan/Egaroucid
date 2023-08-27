@@ -414,6 +414,12 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
                 return v;
         }
     #endif
+    #if USE_MID_MPC && false
+        if (depth >= USE_MPC_DEPTH + 1){
+            if (enhanced_mpc(search, move_list, depth, alpha, beta, is_end_search, searching, &v))
+                return v;
+        }
+    #endif
     move_list_evaluate(search, move_list, moves, depth, alpha, beta, searching);
     #if USE_YBWC_NEGASCOUT
         if (
@@ -433,7 +439,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
             bool search_splitted;
             for (int move_idx = 0; move_idx < canput && *searching; ++move_idx){
                 swap_next_best_move(move_list, move_idx, canput);
-                #if USE_MID_ETC
+                #if USE_MID_ETC || USE_MID_MPC || USE_END_MPC
                     if (move_list[move_idx].flip.flip == 0ULL)
                         break;
                 #endif
@@ -524,7 +530,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     #endif
             for (int move_idx = 0; move_idx < canput && *searching; ++move_idx){
                 swap_next_best_move(move_list, move_idx, canput);
-                #if USE_MID_ETC
+                #if USE_MID_ETC || USE_MID_MPC || USE_END_MPC
                     if (move_list[move_idx].flip.flip == 0ULL)
                         break;
                 #endif

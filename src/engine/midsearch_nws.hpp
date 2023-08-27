@@ -266,6 +266,17 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
                 return v;
         }
     #endif
+    #if USE_MID_MPC && false
+        #if MID_FAST_NWS_DEPTH < USE_MPC_DEPTH
+            if (depth >= USE_MPC_DEPTH + 1){
+                if (enhanced_mpc(search, move_list, depth, alpha, alpha + 1, is_end_search, searching, &v))
+                    return v;
+            }
+        #else
+            if (enhanced_mpc(search, move_list, depth, alpha, alpha + 1, is_end_search, searching, &v))
+                return v;
+        #endif
+    #endif
     move_list_evaluate_nws(search, move_list, moves, depth, alpha, searching);
     #if USE_ALL_NODE_PREDICTION
         const bool seems_to_be_all_node = predict_all_node(search, alpha, depth, LEGAL_UNDEFINED, is_end_search, searching);
@@ -285,7 +296,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
         bool n_searching = true;
         for (int move_idx = 0; move_idx < canput && *searching && n_searching; ++move_idx){
             swap_next_best_move(move_list, move_idx, canput);
-            #if USE_MID_ETC
+            #if USE_MID_ETC || USE_MID_MPC || USE_END_MPC
                 if (move_list[move_idx].flip.flip == 0ULL)
                     break;
             #endif
@@ -319,7 +330,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
     } else{
         for (int move_idx = 0; move_idx < canput && *searching; ++move_idx){
             swap_next_best_move(move_list, move_idx, canput);
-            #if USE_MID_ETC
+            #if USE_MID_ETC || USE_MID_MPC || USE_END_MPC
                 if (move_list[move_idx].flip.flip == 0ULL)
                     break;
             #endif

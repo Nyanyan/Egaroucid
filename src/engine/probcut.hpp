@@ -312,3 +312,31 @@ inline bool mpc_nws(Search *search, int alpha, int depth, uint64_t legal, bool i
         }
     }
 #endif
+
+bool enhanced_mpc(Search *search, std::vector<Flip_value> &move_list, int depth, int alpha, int beta, bool is_end_search, const bool *searching, int *v){
+    int val;
+    bool mpc_cut;
+    bool all_fail_low = true;
+    for (Flip_value &flip_value: move_list){
+        eval_move(search, &flip_value.flip);
+        search->move(&flip_value.flip);
+            mpc_cut = mpc(search, -beta, -alpha, depth - 1, LEGAL_UNDEFINED, is_end_search, &val, searching);
+        search->undo(&flip_value.flip);
+        eval_undo(search, &flip_value.flip);
+        if (mpc_cut){ // mpc cutoff done
+            flip_value.flip.flip = 0ULL;
+            if (-val >= alpha) // not fail low at parent node
+                all_fail_low = false;
+            if (-val >= beta){ // fail high at parent node
+                *v = -val;
+                return true;
+            }
+        } else
+            all_fail_low = false;
+    }
+    if (all_fail_low){
+        *v = alpha;
+        return true;
+    }
+    return false;
+}
