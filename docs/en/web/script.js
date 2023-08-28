@@ -122,6 +122,9 @@ function start() {
     var show_graph_elem = document.getElementById('show_graph');
     show_graph_elem.disabled = true;
     show_graph = show_graph_elem.checked;
+    var show_legal_elem = document.getElementById('show_legal');
+    show_legal_elem.disabled = true;
+    show_legal = show_legal_elem.checked;
     record = [];
     document.getElementById('record').innerText = '';
     ai_player = -1;
