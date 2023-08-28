@@ -2,9 +2,9 @@
 cmake_minimum_required(VERSION 3.25)
 project(Egaroucid_for_Console CXX)
 if(APPLE)
-    add_compile_options(-mtune=native -pthread -std=c++17 -Wall -Wextra)
+    add_compile_options(-O2 -mtune=native -pthread -std=c++17 -Wall -Wextra)
 else()
-    add_compile_options(-mtune=native -march=native -mfpmath=both -pthread -std=c++17 -Wall -Wextra)
+    add_compile_options(-O2 -mtune=native -march=native -mfpmath=both -pthread -std=c++17 -Wall -Wextra)
 endif()
 
 # AVX2 option
