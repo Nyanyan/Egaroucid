@@ -751,7 +751,7 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
                 swap_next_best_move(move_list, move_idx, canput);
                 search->move(&move_list[move_idx].flip);
                 eval_move(search, &move_list[move_idx].flip);
-                    g = -nega_alpha_end_nws(search, -alpha - 1, false, move_list[move_idx].n_legal, pv_idx++ > 2, searching);
+                    g = -nega_alpha_end_nws(search, -alpha - 1, false, move_list[move_idx].n_legal, pv_idx++ > FAIL_HIGH_WISH_THRESHOLD_END_NWS, searching);
                 eval_undo(search, &move_list[move_idx].flip);
                 search->undo(&move_list[move_idx].flip);
                 if (v < g){
