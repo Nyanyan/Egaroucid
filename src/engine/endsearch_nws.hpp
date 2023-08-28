@@ -607,7 +607,7 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, bool skipped, uint64_t 
     @param searching            flag for terminating this search
     @return the final score
 */
-int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, const bool *searching){
+int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, bool wish_fail_high, const bool *searching){
     if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
     if (search->n_discs >= HW2 - END_SIMPLE_DEPTH)
@@ -632,7 +632,7 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
             return end_evaluate(&search->board);
         search->eval_feature_reversed ^= 1;
         search->board.pass();
-            v = -nega_alpha_end_nws(search, -alpha - 1, true, LEGAL_UNDEFINED, searching);
+            v = -nega_alpha_end_nws(search, -alpha - 1, true, LEGAL_UNDEFINED, false, searching);
         search->board.pass();
         search->eval_feature_reversed ^= 1;
         return v;
@@ -650,9 +650,7 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
     Flip flip_best;
     int best_move = TRANSPOSITION_TABLE_UNDEFINED;
     int g;
-    #if MID_TO_END_DEPTH > YBWC_END_SPLIT_MIN_DEPTH
-        int pv_idx = 0;
-    #endif
+    int pv_idx = 0;
     for (uint_fast8_t i = 0; i < N_TRANSPOSITION_MOVES; ++i){
         if (moves[i] == TRANSPOSITION_TABLE_UNDEFINED)
             break;
@@ -660,7 +658,7 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
             calc_flip(&flip_best, &search->board, moves[i]);
             search->move(&flip_best);
             eval_move(search, &flip_best);
-                g = -nega_alpha_end_nws(search, -alpha - 1, false, LEGAL_UNDEFINED, searching);
+                g = -nega_alpha_end_nws(search, -alpha - 1, false, LEGAL_UNDEFINED, false, searching);
             eval_undo(search, &flip_best);
             search->undo(&flip_best);
             if (v < g){
@@ -670,9 +668,7 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
                     break;
             }
             legal ^= 1ULL << moves[i];
-            #if MID_TO_END_DEPTH > YBWC_END_SPLIT_MIN_DEPTH
-                ++pv_idx;
-            #endif
+            ++pv_idx;
         }
     }
     if (v <= alpha && legal){
@@ -686,8 +682,8 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
                 return SCORE_MAX;
             ++idx;
         }
-        move_list_evaluate_end_nws(search, move_list, canput, best_move == TRANSPOSITION_TABLE_UNDEFINED);
-        //move_list_evaluate_end_nws(search, move_list, canput, true);
+        //move_list_evaluate_end_nws(search, move_list, canput, best_move == TRANSPOSITION_TABLE_UNDEFINED);
+        move_list_evaluate_end_nws(search, move_list, canput, wish_fail_high);
         #if MID_TO_END_DEPTH > YBWC_END_SPLIT_MIN_DEPTH
             #if USE_ALL_NODE_PREDICTION
                 const bool seems_to_be_all_node = predict_all_node(search, alpha, HW2 - search->n_discs, LEGAL_UNDEFINED, true, searching);
@@ -755,7 +751,7 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
                 swap_next_best_move(move_list, move_idx, canput);
                 search->move(&move_list[move_idx].flip);
                 eval_move(search, &move_list[move_idx].flip);
-                    g = -nega_alpha_end_nws(search, -alpha - 1, false, move_list[move_idx].n_legal, searching);
+                    g = -nega_alpha_end_nws(search, -alpha - 1, false, move_list[move_idx].n_legal, pv_idx++ > 2, searching);
                 eval_undo(search, &move_list[move_idx].flip);
                 search->undo(&move_list[move_idx].flip);
                 if (v < g){
