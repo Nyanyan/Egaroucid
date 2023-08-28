@@ -303,7 +303,6 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
         flip_value->value += get_weighted_n_moves(flip_value->n_legal) * W_NWS_MOBILITY;
         uint64_t empties = ~(search->board.player | search->board.opponent);
         flip_value->value += get_potential_mobility(search->board.player, empties) * W_NWS_POTENTIAL_MOBILITY;
-        //int64_t bef_n_nodes = search->n_nodes;
         if (depth == 0)
             flip_value->value += mid_evaluate_diff(search) * W_NWS_VALUE_SHALLOW;
         else
