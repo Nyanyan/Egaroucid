@@ -329,8 +329,9 @@ inline uint_fast8_t next_bit(uint64_t *x){
         @param t                    a type of the line
     */
     inline uint8_t join_v_line(uint64_t x, int_fast8_t t){
-        x = (x >> t) & 0x101010101010101ULL;
-        return (x * 0x102040810204080ULL) >> 56;
+        //return (uint8_t)_mm_movemask_epi8(_mm_set_epi64x(0ULL, x << (7 - t)));
+        x = (x >> t) & 0x0101010101010101ULL;
+        return (x * 0x0102040810204080ULL) >> 56;
     }
 
     /*

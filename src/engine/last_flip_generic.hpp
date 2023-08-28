@@ -68,3 +68,6 @@ inline int_fast8_t count_last_flip(uint64_t player, const uint_fast8_t place){
         n_flip_pre_calc[join_d7_line(player, u + t)][std::min(t, 7 - u)] + 
         n_flip_pre_calc[join_d9_line(player, u + 7 - t)][std::min(t, u)];
 }
+
+inline void last_flip_init(){
+}

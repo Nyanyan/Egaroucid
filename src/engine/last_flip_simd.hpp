@@ -51,6 +51,10 @@ constexpr int_fast8_t n_flip_pre_calc[N_8BIT][HW] = {
     {2, 1, 0, 0, 0, 0, 0, 0}, {0, 1, 1, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0}, {1, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0}
 };
 
+#if USE_BIT_GATHER_OPTIMIZE
+    __m128i last_flip_d9_d7_mask[HW2];
+#endif
+
 /*
     @brief calculate number of flipped discs in the last move
 
@@ -61,9 +65,61 @@ constexpr int_fast8_t n_flip_pre_calc[N_8BIT][HW] = {
 inline int_fast8_t count_last_flip(uint64_t player, const uint_fast8_t place){
     const int t = place >> 3;
     const int u = place & 7;
-    return
-        n_flip_pre_calc[join_h_line(player, t)][u] + 
-        n_flip_pre_calc[join_v_line(player, u)][t] + 
-        n_flip_pre_calc[join_d7_line(player, u + t)][std::min(t, 7 - u)] + 
-        n_flip_pre_calc[join_d9_line(player, u + 7 - t)][std::min(t, u)];
+    #if USE_BIT_GATHER_OPTIMIZE
+        __m128i pp_128 = _mm_set1_epi64x(player);
+        uint16_t d9_d7 = _mm_movemask_epi8(_mm_sub_epi8(_mm_setzero_si128(), _mm_and_si128(pp_128, last_flip_d9_d7_mask[place])));
+        return
+            n_flip_pre_calc[join_h_line(player, t)][u] + 
+            n_flip_pre_calc[join_v_line(player, u)][t] + 
+            n_flip_pre_calc[d9_d7 & 0xFF][t] + 
+            n_flip_pre_calc[d9_d7 >> 8][t];
+    #else
+        return
+            n_flip_pre_calc[join_h_line(player, t)][u] + 
+            n_flip_pre_calc[join_v_line(player, u)][t] + 
+            n_flip_pre_calc[join_d7_line(player, u + t)][std::min(t, 7 - u)] + 
+            n_flip_pre_calc[join_d9_line(player, u + 7 - t)][std::min(t, u)];
+    #endif
+}
+
+inline void last_flip_init(){
+    #if USE_BIT_GATHER_OPTIMIZE
+        for (int i = 0; i < HW2; ++i){
+            uint64_t d9 = 0ULL;
+            uint64_t d7 = 0ULL;
+            bool d9_wall = false;
+            bool d7_wall = false;
+            for (int j = 0; j < HW; ++j){
+                if (i + j * 9 < HW2 && !d9_wall){
+                    d9 |= 1ULL << (i + j * 9);
+                    if (d9 & 0x8080808080808080ULL)
+                        d9_wall = true;
+                }
+                if (i + j * 7 < HW2 && !d7_wall){
+                    d7 |= 1ULL << (i + j * 7);
+                    if (d7 & 0x0101010101010101ULL)
+                        d7_wall = true;
+                }
+            }
+            d9_wall = false;
+            d7_wall = false;
+            for (int j = 0; j < HW; ++j){
+                if (i - j * 9 >= 0 && !d9_wall){
+                    d9 |= 1ULL << (i - j * 9);
+                    if (d9 & 0x0101010101010101ULL)
+                        d9_wall = true;
+                }
+                if (i - j * 7 >= 0 && !d7_wall){
+                    d7 |= 1ULL << (i - j * 7);
+                    if (d7 & 0x8080808080808080ULL)
+                        d7_wall = true;
+                }
+            }
+            if (pop_count_ull(d9) <= 2)
+                d9 = 0ULL;
+            if (pop_count_ull(d7) <= 2)
+                d7 = 0ULL;
+            last_flip_d9_d7_mask[i] = _mm_set_epi64x(d9, d7);
+        }
+    #endif
 }

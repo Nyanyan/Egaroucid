@@ -17,6 +17,7 @@ void init_console(Options options){
     bit_init();
     mobility_init();
     flip_init();
+    last_flip_init();
     endsearch_init();
     #if USE_MPC_PRE_CALCULATION
         mpc_init();
