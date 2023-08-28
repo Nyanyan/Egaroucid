@@ -23,8 +23,8 @@ constexpr Color graph_history_not_calculated_color = Color(200, 200, 200);
 constexpr Color graph_fork_not_calculated_color = Color(65, 65, 65);
 constexpr double graph_transparency = 1.0;
 
-constexpr Color color_81 = Color(190, 46, 221);
-constexpr Color color_95 = Color(247, 143, 179);
+constexpr Color color_80 = Color(190, 46, 221);
+constexpr Color color_93 = Color(247, 143, 179);
 constexpr Color color_98 = Color(227, 88, 72);
 constexpr Color color_99 = Color(240, 135, 20);
 constexpr Color color_100 = Color(51, 161, 255);
@@ -81,13 +81,13 @@ public:
 		rect_prob.draw(graph_color);
 		font(language.get("info", "probability")).draw(font_size, Arg::center(info_x + LEVEL_PROB_WIDTH / 2, info_y + LEVEL_INFO_HEIGHT / 2), level_prob_color);
 		info_x += LEVEL_PROB_WIDTH;
-		Rect rect_81{ info_x, info_y, LEVEL_INFO_WIDTH, LEVEL_INFO_HEIGHT };
-		rect_81.draw(color_81);
-		font(U"81%").draw(font_size, Arg::center(info_x + LEVEL_INFO_WIDTH / 2, info_y + LEVEL_INFO_HEIGHT / 2), level_info_color);
+		Rect rect_80{ info_x, info_y, LEVEL_INFO_WIDTH, LEVEL_INFO_HEIGHT };
+		rect_80.draw(color_80);
+		font(U"80%").draw(font_size, Arg::center(info_x + LEVEL_INFO_WIDTH / 2, info_y + LEVEL_INFO_HEIGHT / 2), level_info_color);
 		info_x += LEVEL_INFO_WIDTH;
-		Rect rect_95{ info_x, info_y, LEVEL_INFO_WIDTH, LEVEL_INFO_HEIGHT };
-		rect_95.draw(color_95);
-		font(U"95%").draw(font_size, Arg::center(info_x + LEVEL_INFO_WIDTH / 2, info_y + LEVEL_INFO_HEIGHT / 2), level_info_color);
+		Rect rect_93{ info_x, info_y, LEVEL_INFO_WIDTH, LEVEL_INFO_HEIGHT };
+		rect_93.draw(color_93);
+		font(U"93%").draw(font_size, Arg::center(info_x + LEVEL_INFO_WIDTH / 2, info_y + LEVEL_INFO_HEIGHT / 2), level_info_color);
 		info_x += LEVEL_INFO_WIDTH;
 		Rect rect_98{ info_x, info_y, LEVEL_INFO_WIDTH, LEVEL_INFO_HEIGHT };
 		rect_98.draw(color_98);
@@ -112,11 +112,11 @@ public:
 			get_level(level, x, &is_mid_search, &depth, &mpc_level);
 			Color color = color_100;
 			int probability = SELECTIVITY_PERCENTAGE[mpc_level];
-			if (probability == 81) {
-				color = color_81;
+			if (probability == 80) {
+				color = color_80;
 			}
-			else if (probability == 95) {
-				color = color_95;
+			else if (probability == 93) {
+				color = color_93;
 			}
 			else if (probability == 98) {
 				color = color_98;
