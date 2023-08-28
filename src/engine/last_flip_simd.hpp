@@ -51,7 +51,7 @@ constexpr int_fast8_t n_flip_pre_calc[N_8BIT][HW] = {
     {2, 1, 0, 0, 0, 0, 0, 0}, {0, 1, 1, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0}, {1, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0}
 };
 
-#if USE_BIT_GATHER_OPTIMIZE
+#if USE_BIT_GATHER_OPTIMIZE && false
     __m128i last_flip_d9_d7_mask[HW2];
 #endif
 
@@ -65,7 +65,7 @@ constexpr int_fast8_t n_flip_pre_calc[N_8BIT][HW] = {
 inline int_fast8_t count_last_flip(uint64_t player, const uint_fast8_t place){
     const int t = place >> 3;
     const int u = place & 7;
-    #if USE_BIT_GATHER_OPTIMIZE
+    #if USE_BIT_GATHER_OPTIMIZE && false
         __m128i pp_128 = _mm_set1_epi64x(player);
         uint16_t d9_d7 = _mm_movemask_epi8(_mm_sub_epi8(_mm_setzero_si128(), _mm_and_si128(pp_128, last_flip_d9_d7_mask[place])));
         return
@@ -83,7 +83,7 @@ inline int_fast8_t count_last_flip(uint64_t player, const uint_fast8_t place){
 }
 
 inline void last_flip_init(){
-    #if USE_BIT_GATHER_OPTIMIZE
+    #if USE_BIT_GATHER_OPTIMIZE && false
         for (int i = 0; i < HW2; ++i){
             uint64_t d9 = 0ULL;
             uint64_t d7 = 0ULL;

@@ -21,6 +21,7 @@ int init_ai(Settings* settings, const Directories* directories, bool *stop_loadi
     bit_init();
     mobility_init();
     flip_init();
+    last_flip_init();
     endsearch_init();
     #if USE_MPC_PRE_CALCULATION
         mpc_init();
