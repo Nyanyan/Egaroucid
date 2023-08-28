@@ -39,7 +39,7 @@
 /*
     @brief Search hack parameters
 */
-#define FAIL_HIGH_WISH_THRESHOLD_END_NWS 3
+#define FAIL_HIGH_WISH_THRESHOLD_END_NWS 4
 
 #define SCORE_UNDEFINED -SCORE_INF
 
