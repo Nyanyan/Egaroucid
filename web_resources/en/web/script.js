@@ -30,14 +30,12 @@ var level_idx = 0;
 let level_names = ['Level 0', 'Level 1', 'Level 2', 'Level 3', 'Level 4', 'Level 5', 'Level 6', 'Level 7', 'Level 8', 'Level 9', 'Level 10', 'Level 11', 'Level 12', 'Level 13', 'Level 14', 'Level 15'];
 var game_end = false;
 var value_calced = false;
-var div_mcts = 20;
-var mcts_progress = 0;
-var interval_id = -1;
 let record = [];
 var step = 0;
 var isstart = true;
 var show_value = true;
 var show_graph = true;
+var show_legal = true;
 var ai_initialized = 1;
 let graph_values = [];
 var ctx = document.getElementById("graph");
@@ -165,10 +163,14 @@ function show(r, c) {
                 }
             } else if (grid[y][x] == 2) {
                 if (r == -1 || inside(r, c)) {
-                    if (player == 0) {
-                        table.rows[y].cells[x].firstChild.className ="legal_stone_black";
+                    if (show_legal) {
+                        if (player == 0) {
+                            table.rows[y].cells[x].firstChild.className ="legal_stone_black";
+                        } else {
+                            table.rows[y].cells[x].firstChild.className ="legal_stone_white";
+                        }
                     } else {
-                        table.rows[y].cells[x].firstChild.className ="legal_stone_white";
+                        table.rows[y].cells[x].firstChild.className ="empty_stone";
                     }
                     table.rows[y].cells[x].setAttribute('onclick', "move(this.parentNode.rowIndex, this.cellIndex)");
                 } else {

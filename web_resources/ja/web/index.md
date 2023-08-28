@@ -12,6 +12,7 @@
 <p align="center">
     <input type="checkbox" id="show_value" unchecked><label class="setting" for="show_value">ヒント</label>
     <input type="checkbox" id="show_graph" checked><label class="setting" for="show_graph">グラフ</label>
+    <input type="checkbox" id="show_legal" checked><label class="setting" for="show_legal">合法手</label>
 </p>
 <div align="center" id="div_start">
     <input type="submit" class="setting" value="AI読込中" onclick="start()" id="start" disabled>
