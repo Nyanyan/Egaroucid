@@ -503,9 +503,10 @@ function end_game() {
     document.getElementById('start').disabled = false;
     var show_value_elem = document.getElementById('show_value');
     show_value_elem.disabled = false;
-    show_value = show_value_elem.checked;
     var show_graph_elem = document.getElementById('show_graph');
     show_graph_elem.disabled = false;
+    var show_legal_elem = document.getElementById('show_legal');
+    show_legal_elem.disabled = false;
     level_range.disabled = false;
     let players = document.getElementsByName('ai_player');
     for (var i = 0; i < 2; ++i)
