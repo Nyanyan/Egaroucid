@@ -37,15 +37,17 @@
 #define MID_TO_END_DEPTH 13
 
 /*
-    @brief Search hack parameters
+    @brief Search hyperparameters
 */
 #define FAIL_HIGH_WISH_THRESHOLD_END_NWS 4
+#define MID_ETC_DEPTH 14
 
-#define SCORE_UNDEFINED -SCORE_INF
+
 
 /*
     @brief Search constant
 */
+#define SCORE_UNDEFINED -SCORE_INF
 #ifndef SEARCH_BOOK
     #define SEARCH_BOOK -1
 #endif

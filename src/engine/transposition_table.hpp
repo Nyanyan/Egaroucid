@@ -26,8 +26,6 @@
 constexpr size_t TRANSPOSITION_TABLE_STACK_SIZE = hash_sizes[DEFAULT_HASH_LEVEL] + TRANSPOSITION_TABLE_N_LOOP - 1;
 #define N_TRANSPOSITION_MOVES 2
 
-#define MID_ETC_DEPTH 15
-
 // date manager
 #define MAX_DATE 127
 #define INIT_DATE 1
