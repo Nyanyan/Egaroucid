@@ -36,6 +36,11 @@
 #define END_SIMPLE_DEPTH 10
 #define MID_TO_END_DEPTH 13
 
+/*
+    @brief Search hack parameters
+*/
+#define FAIL_HIGH_WISH_THRESHOLD_END_NWS 3
+
 #define SCORE_UNDEFINED -SCORE_INF
 
 /*
