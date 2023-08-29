@@ -318,6 +318,8 @@ private:
             getData().graph_resources.init();
             getData().graph_resources.nodes[getData().graph_resources.put_mode].emplace_back(getData().history_elem);
             getData().game_information.init();
+            getData().menu_elements.ai_put_black = false;
+            getData().menu_elements.ai_put_white = false;
             resume_calculating();
             need_start_game_button_calculation();
             pausing_in_pass = false;

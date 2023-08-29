@@ -17,7 +17,10 @@
     "closing": "Closing...",
     "play": {
         "game": "Game",
-        "new_game": "New Game",
+        "new_game": "New Game (Human vs Human)",
+        "new_game_human_black": "New Game (You as Black)",
+        "new_game_human_white": "New Game (You as White)",
+        "new_selfplay": "New Selfplay",
         "analyze": "Analyze",
         "start_game": "Start",
         "pass": "Pass"
