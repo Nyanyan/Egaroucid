@@ -93,7 +93,8 @@
         "export_until_this_board": "Save till set position",
         "player_name": "Player Name",
         "memo": "Memo",
-        "screen_shot": "Screen Shot (Copy & Save)"
+        "screen_shot": "Screen Shot (Copy & Save)",
+        "board_image": "Edit and Save Board Image"
     },
     "display": {
         "display": "Display",
@@ -167,6 +168,16 @@
         "skip": "Skip",
         "license_siv3d": "License of Siv3D",
         "license_egaroucid": "License of Egaroucid"
+    },
+    "board_image": {
+        "screen_shot": "Screenshot",
+        "rect": "■",
+        "star": "★",
+        "nomark": "Delete (Clicking same mark also works)",
+        "default": "Default",
+        "monochrome": "Monochrome",
+        "mark": "Mark",
+        "color": "Color"
     },
     "tips": {
         "do_you_know": "Do you know?",
