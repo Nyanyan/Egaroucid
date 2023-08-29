@@ -322,6 +322,42 @@ private:
             need_start_game_button_calculation();
             pausing_in_pass = false;
         }
+        if (getData().menu_elements.start_game_human_black) {
+            stop_calculating();
+            getData().history_elem.reset();
+            getData().graph_resources.init();
+            getData().graph_resources.nodes[getData().graph_resources.put_mode].emplace_back(getData().history_elem);
+            getData().game_information.init();
+            getData().menu_elements.ai_put_black = false;
+            getData().menu_elements.ai_put_white = true;
+            resume_calculating();
+            need_start_game_button_calculation();
+            pausing_in_pass = false;
+        }
+        if (getData().menu_elements.start_game_human_white) {
+            stop_calculating();
+            getData().history_elem.reset();
+            getData().graph_resources.init();
+            getData().graph_resources.nodes[getData().graph_resources.put_mode].emplace_back(getData().history_elem);
+            getData().game_information.init();
+            getData().menu_elements.ai_put_black = true;
+            getData().menu_elements.ai_put_white = false;
+            resume_calculating();
+            need_start_game_button_calculation();
+            pausing_in_pass = false;
+        }
+        if (getData().menu_elements.start_selfplay) {
+            stop_calculating();
+            getData().history_elem.reset();
+            getData().graph_resources.init();
+            getData().graph_resources.nodes[getData().graph_resources.put_mode].emplace_back(getData().history_elem);
+            getData().game_information.init();
+            getData().menu_elements.ai_put_black = true;
+            getData().menu_elements.ai_put_white = true;
+            resume_calculating();
+            need_start_game_button_calculation();
+            pausing_in_pass = false;
+        }
         if (getData().menu_elements.analyze && !ai_status.ai_thinking && !ai_status.analyzing) {
             stop_calculating();
             init_analyze();
@@ -817,6 +853,12 @@ private:
         title.init(language.get("play", "game"));
 
         menu_e.init_button(language.get("play", "new_game"), &menu_elements->start_game);
+        title.push(menu_e);
+        menu_e.init_button(language.get("play", "new_game_human_black"), &menu_elements->start_game_human_black);
+        title.push(menu_e);
+        menu_e.init_button(language.get("play", "new_game_human_white"), &menu_elements->start_game_human_white);
+        title.push(menu_e);
+        menu_e.init_button(language.get("play", "new_selfplay"), &menu_elements->start_selfplay);
         title.push(menu_e);
         menu_e.init_button(language.get("play", "analyze"), &menu_elements->analyze);
         title.push(menu_e);

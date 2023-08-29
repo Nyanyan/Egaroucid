@@ -326,6 +326,9 @@ struct Menu_elements {
 
     // game
     bool start_game;
+    bool start_game_human_black;
+    bool start_game_human_white;
+    bool start_selfplay;
     bool analyze;
 
     // settings
@@ -403,6 +406,9 @@ struct Menu_elements {
         dummy = false;
 
         start_game = false;
+        start_game_human_black = false;
+        start_game_human_white = false;
+        start_selfplay = false;
         analyze = false;
 
         use_book = settings->use_book;

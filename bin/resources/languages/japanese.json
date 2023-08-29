@@ -17,7 +17,10 @@
     "closing": "終了中...",
     "play": {
         "game": "対局",
-        "new_game": "新規対局",
+        "new_game": "新規対局 (人間同士)",
+        "new_game_human_black": "新規対局 (人間黒番)",
+        "new_game_human_white": "新規対局 (人間白番)",
+        "new_selfplay": "新規自己対戦",
         "analyze": "分析",
         "start_game": "対局開始",
         "pass": "パス"
