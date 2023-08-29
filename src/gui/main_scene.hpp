@@ -14,6 +14,7 @@
 #include "./../engine/engine_all.hpp"
 #include "function/function_all.hpp"
 #include "draw.hpp"
+#include "screen_shot.hpp"
 
 #define HINT_SINGLE_TASK_N_THREAD 4
 
@@ -110,19 +111,8 @@ public:
 
         // screen shot
         if (taking_screen_shot) {
-            Image image = ScreenCapture::GetFrame();
-            const int clip_sx = BOARD_SX - BOARD_ROUND_FRAME_WIDTH - BOARD_COORD_SIZE;
-            const int clip_sy = BOARD_SY - BOARD_ROUND_FRAME_WIDTH - BOARD_COORD_SIZE;
-            const int clip_size_x = BOARD_CELL_SIZE * HW + BOARD_ROUND_FRAME_WIDTH * 2 + BOARD_COORD_SIZE + 7;
-            const int clip_size_y = BOARD_CELL_SIZE * HW + BOARD_ROUND_FRAME_WIDTH * 2 + BOARD_COORD_SIZE + 7;
-            const Rect clip_rect(clip_sx * getData().window_state.window_scale, clip_sy * getData().window_state.window_scale, clip_size_x * getData().window_state.window_scale, clip_size_y * getData().window_state.window_scale);
-            Image image_clip = image.clipped(clip_rect);
-            Clipboard::SetImage(image_clip);
-            String img_date = Unicode::Widen(calc_date());
-            String save_path = Unicode::Widen(getData().directories.document_dir) + U"screenshots/" + img_date + U".png";
-            image_clip.save(save_path);
+            take_screen_shot(getData().window_state.window_scale, getData().directories.document_dir);
             taking_screen_shot = false;
-            std::cerr << "screen shot saved to " << save_path.narrow() << " and copied to clipboard" << std::endl;
         }
 
         // menu
@@ -381,6 +371,13 @@ private:
         if (getData().menu_elements.screen_shot) {
             taking_screen_shot = true;
             getData().menu_elements.screen_shot = false; // because skip drawing menu in next frame
+        }
+        if (getData().menu_elements.board_image) {
+            stop_calculating();
+            resume_calculating();
+            changing_scene = true;
+            changeScene(U"Board_image", SCENE_FADE_TIME);
+            return;
         }
     }
 
@@ -939,6 +936,8 @@ private:
         side_menu.init_button(language.get("in_out", "output_game"), &menu_elements->save_game);
         menu_e.push(side_menu);
         side_menu.init_button(language.get("in_out", "screen_shot"), &menu_elements->screen_shot);
+        menu_e.push(side_menu);
+        side_menu.init_button(language.get("in_out", "board_image"), &menu_elements->board_image);
         menu_e.push(side_menu);
         title.push(menu_e);
 

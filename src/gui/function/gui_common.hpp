@@ -63,6 +63,7 @@ constexpr int Y_CENTER = WINDOW_SIZE_Y / 2;
 #define BOARD_ROUND_FRAME_WIDTH 10
 #define BOARD_ROUND_DIAMETER 20
 #define BOARD_SY 60
+#define BOARD_DISC_FRAME_WIDTH 2
 constexpr int BOARD_SX = LEFT_LEFT + BOARD_COORD_SIZE;
 constexpr int BOARD_CELL_SIZE = BOARD_SIZE / HW;
 
@@ -374,6 +375,7 @@ struct Menu_elements {
     bool copy_transcript;
     bool save_game;
     bool screen_shot;
+    bool board_image;
 
     // manipulation
     bool stop_calculating;
@@ -441,6 +443,7 @@ struct Menu_elements {
         copy_transcript = false;
         save_game = false;
         screen_shot = false;
+        board_image = false;
 
         stop_calculating = false;
         forward = false;

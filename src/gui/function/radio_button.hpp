@@ -26,9 +26,10 @@ public:
 	int y;
 	bool checked;
 	RectF region;
+	Color color;
 
 public:
-	void init(int xx, int yy, Font f, int fs, String s, bool c) {
+	void init(int xx, int yy, Font f, int fs, String s, bool c, Color cl) {
 		x = xx;
 		y = yy;
 		font = f;
@@ -41,6 +42,11 @@ public:
 		region = font(str).region(font_size, Arg::leftCenter = Vec2{ x + radio_button_margin, y });
 		region.x = x;
 		region.w += radio_button_margin;
+		color = cl;
+	}
+
+	void init(int xx, int yy, Font f, int fs, String s, bool c) {
+		init(xx, yy, f, fs, s, c, Palette::White);
 	}
 
 	bool clicked() {
@@ -51,7 +57,7 @@ public:
 		if (checked) {
 			circle.draw(Palette::Cyan);
 		}
-		font(str).draw(font_size, Arg::leftCenter = Vec2{ x + radio_button_margin, y }, Palette::White);
+		font(str).draw(font_size, Arg::leftCenter = Vec2{ x + radio_button_margin, y }, color);
 	}
 };
 
