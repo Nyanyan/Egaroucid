@@ -474,14 +474,14 @@ function end_game() {
     if (stones[ai_player] < stones[1 - ai_player]) {
         document.getElementById('result_text').innerHTML = "You Win!";
         var dis = stones[1 - ai_player] - stones[ai_player] + hw2 - stones[ai_player] - stones[1 - ai_player];
-        tweet_str = "I won against the world No.1 Othello AI " + level_names[level_idx] + " " + hint + " by " + dis + "discs! :)";
+        tweet_str = "I won against the Othello AI Egaroucid for Web " + level_names[level_idx] + " " + hint + " by " + dis + "discs! :)";
     } else if (stones[ai_player] > stones[1 - ai_player]) {
         document.getElementById('result_text').innerHTML = "AI Win!";
         var dis = stones[ai_player] - stones[1 - ai_player] + hw2 - stones[ai_player] - stones[1 - ai_player];
-        tweet_str = "I lose against the world No.1 Othello AI " + level_names[level_idx] + " " + hint + " by " + dis + "discs... :(";
+        tweet_str = "I lose against the Othello AI Egaroucid for Web " + level_names[level_idx] + " " + hint + " by " + dis + "discs... :(";
     } else {
         document.getElementById('result_text').innerHTML = "Draw!";
-        tweet_str = "I tied against the world No.1 Othello AI " + level_names[level_idx] + " " + hint + " by " + dis + "discs... :|";
+        tweet_str = "I tied against the Othello AI Egaroucid for Web " + level_names[level_idx] + " " + hint + " by " + dis + "discs... :|";
     }
     var tweet_result = document.getElementById('tweet_result');
     tweet_result.innerHTML = 'Tweet this result!<a href="https://twitter.com/share?ref_src=twsrc%5Etfw" class="twitter-share-button" data-text="' + tweet_str + '" data-url="https://www.egaroucid.nyanyan.dev/en/web/" data-hashtags="egaroucid" data-related="takuto_yamana" data-show-count="false">Tweet</a><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>';
