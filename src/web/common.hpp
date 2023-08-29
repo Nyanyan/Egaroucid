@@ -31,7 +31,7 @@ using namespace std;
 #define VACANT 2
 
 #define N_PHASES 10
-#define PHASE_N_STONES 6
+#define PHASE_N_STONES 4
 
 #define INF 100000000
 

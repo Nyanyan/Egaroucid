@@ -124,7 +124,7 @@ class Search{
         }
 
         inline int phase(){
-            return min(N_PHASES - 1, (n_discs - 4) / PHASE_N_STONES);
+            return max(0, min(N_PHASES - 1, (n_discs - 24) / PHASE_N_STONES));
         }
 };
 
