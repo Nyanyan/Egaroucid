@@ -1,6 +1,6 @@
 # Egaroucid for Console
 
-OSによって操作が異なります。WindowsとLinuxに対応しています
+OSによって操作が異なります。WindowsとLinux、MacOSに対応しています
 
 
 

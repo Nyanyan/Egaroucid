@@ -1,6 +1,6 @@
 # Egaroucid for Console
 
-Operations differ depending on your OS. This software is for Windows and Linux.
+Operations differ depending on your OS. This software is for Windows, Linux and MacOS.
 
 
 
