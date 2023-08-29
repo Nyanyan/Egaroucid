@@ -3,5 +3,4 @@
 コンソール版 /console/
 Web版 /web/
 技術 /technology/
-バグ報告 https://docs.google.com/forms/d/e/1FAIpQLSd6ML1T1fc707luPEefBXuImMnlM9cQP8j-YHKiSyFoS-8rmQ/viewform?usp=sf_link
 作者 https://nyanyan.dev/ja/
