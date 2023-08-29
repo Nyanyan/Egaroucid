@@ -9,8 +9,8 @@ MAX_IMG_SIZE = 400
 
 def convert_img(file):
     img = Image.open(file)
-    longer_side = max(img.width, img.height)
-    ratio = min(1, MAX_IMG_SIZE / longer_side)
+    shorter_side = min(img.width, img.height)
+    ratio = min(1, MAX_IMG_SIZE / shorter_side)
     width = int(img.width * ratio)
     height = int(img.height * ratio)
     img_resized = img.resize((width, height))
@@ -225,8 +225,8 @@ def create_html(dr):
                     img_file_name = img_file_name.replace('"', '').replace('>', '')
             if img_file_name:
                 img = Image.open(dr + '/' + img_file_name)
-                longer_side = max(img.width, img.height)
-                ratio = min(1, MAX_IMG_SIZE / longer_side)
+                shorter_side = min(img.width, img.height)
+                ratio = min(1, MAX_IMG_SIZE / shorter_side)
                 img_width = int(img.width * ratio)
                 img_height = int(img.height * ratio)
                 elem = '<img width="' + str(img_width) + '" height="' + str(img_height) + '"' + elem[4:]
