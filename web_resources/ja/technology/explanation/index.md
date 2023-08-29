@@ -4,7 +4,7 @@
 
 このページは日本語のみで、のんびりと気が向いたときに書き足していきます。
 
-
+INSERT_TABLE_OF_CONTENTS_HERE
 
 ## minimaxかMCTSか
 

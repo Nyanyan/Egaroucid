@@ -166,6 +166,8 @@ def create_html(dr):
     with open(dr + '/index.md', 'r', encoding='utf-8') as f:
         md = f.read()
     #page_title = ''
+    need_table_of_contents = md.find('INSERT_TABLE_OF_CONTENTS_HERE') != -1
+    table_of_contents = []
     md_split = md.splitlines()
     raw_html = 0
     for i, elem in enumerate(md_split):
@@ -189,9 +191,13 @@ def create_html(dr):
         if elem[:2] == '# ':
             elem = '<h1>' + elem[2:] + '</h1>'
         elif elem[:3] == '## ':
-            elem = '<h2>' + elem[3:] + '</h2>'
+            if need_table_of_contents:
+                table_of_contents.append([elem[3:], []])
+            elem = '<h2 id="' + elem[3:] + '">' + elem[3:] + '</h2>'
         elif elem[:4] == '### ':
-            elem = '<h3>' + elem[4:] + '</h3>'
+            if need_table_of_contents:
+                table_of_contents[-1][1].append([elem[4:], []])
+            elem = '<h3 id="' + elem[4:] + '">' + elem[4:] + '</h3>'
         elif elem[:5] == '#### ':
             elem = '<h4>' + elem[5:] + '</h4>'
         # links
@@ -232,6 +238,20 @@ def create_html(dr):
                 elem = '<img width="' + str(img_width) + '" height="' + str(img_height) + '"' + elem[4:]
         # modify data
         md_split[i] = elem
+    if need_table_of_contents:
+        table_of_contents_html = '<div><ol>'
+        for name1, children1 in table_of_contents:
+            table_of_contents_html += '<li><a href="#' + name1 + '">' + name1 + '</a>'
+            if children1:
+                table_of_contents_html += '<ol>'
+                for name2, _ in children1:
+                    table_of_contents_html += '<li><a href="#' + name2 + '">' + name2 + '</a></li>'
+                table_of_contents_html += '</ol>'
+            table_of_contents_html += '</li>'
+        table_of_contents_html += '</li></div>'
+        for i in range(len(md_split)):
+            if 'INSERT_TABLE_OF_CONTENTS_HERE' in md_split[i]:
+                md_split[i] = md_split[i].replace('INSERT_TABLE_OF_CONTENTS_HERE', table_of_contents_html)
     html = ''
     html += '<div class="box">\n'
     this_page_url = main_page_url + dr
