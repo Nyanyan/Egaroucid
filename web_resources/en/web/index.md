@@ -14,6 +14,7 @@
     <input type="checkbox" id="show_value" unchecked><label class="setting" for="show_value">Hint</label>
     <input type="checkbox" id="show_graph" checked><label class="setting" for="show_graph">Graph</label>
     <input type="checkbox" id="show_legal" checked><label class="setting" for="show_legal">Moves</label>
+    <input type="checkbox" id="auto_pass" checked><label class="setting" for="auto_pass">Auto-Pass</label>
 </p>
 <div align="center" id="div_start">
     <input type="submit" class="setting" value="AI Initializing" onclick="start()" id="start" disabled>
@@ -28,6 +29,9 @@
         <p align="center" class="text">Click black area to close</p>
     </div>
     <div class="black-background" id="js-black-bg"></div>
+</div>
+<div align="center">
+    <input type="submit" class="setting" value="Pass" onclick="pass()" id="pass" disabled>
 </div>
 <div id="main">
     <table class="coords" id="coord_top" align="center"></table>

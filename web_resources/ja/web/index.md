@@ -13,6 +13,7 @@
     <input type="checkbox" id="show_value" unchecked><label class="setting" for="show_value">ヒント</label>
     <input type="checkbox" id="show_graph" checked><label class="setting" for="show_graph">グラフ</label>
     <input type="checkbox" id="show_legal" checked><label class="setting" for="show_legal">合法手</label>
+    <input type="checkbox" id="auto_pass" checked><label class="setting" for="auto_pass">自動パス</label>
 </p>
 <div align="center" id="div_start">
     <input type="submit" class="setting" value="AI読込中" onclick="start()" id="start" disabled>
@@ -27,6 +28,9 @@
         <p align="center" class="text">周りをタップするとポップアップが消えます。</p>
     </div>
     <div class="black-background" id="js-black-bg"></div>
+</div>
+<div align="center">
+    <input type="submit" class="setting" value="パス" onclick="pass()" id="pass" disabled>
 </div>
 <div id="main">
     <table class="coords" id="coord_top" align="center"></table>

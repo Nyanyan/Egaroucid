@@ -125,6 +125,9 @@ function start() {
     var show_legal_elem = document.getElementById('show_legal');
     show_legal_elem.disabled = true;
     show_legal = show_legal_elem.checked;
+    var auto_pass_elem = document.getElementById('auto_pass');
+    auto_pass_elem.disabled = true;
+    auto_pass = auto_pass_elem.checked;
     record = [];
     document.getElementById('record').innerText = '';
     ai_player = -1;
@@ -143,12 +146,24 @@ function start() {
     setInterval(ai_check, 250);
 }
 
+function pass(){
+    var pass_elem = document.getElementById('pass');
+    pass_elem.disabled = true;
+    player = 1 - player;
+}
+
 function show(r, c) {
     var table = document.getElementById("board");
+    var waiting_pass = false;
     if (!check_mobility()) {
         player = 1 - player;
         if (!check_mobility()) {
             player = 2;
+        } else if (!auto_pass){
+            player = 1 - player;
+            var pass_elem = document.getElementById('pass');
+            pass_elem.disabled = false;
+            waiting_pass = true;
         }
     }
     for (var y = 0; y < 8; ++y) {
@@ -164,7 +179,7 @@ function show(r, c) {
                     table.rows[y].cells[x].innerHTML = '<span class="white_stone"></span>';
                     table.rows[y].cells[x].setAttribute('onclick', "");
                 }
-            } else if (grid[y][x] == 2) {
+            } else if (grid[y][x] == 2 && !waiting_pass) {
                 if (r == -1 || inside(r, c)) {
                     if (show_legal) {
                         if (player == 0) {
@@ -507,6 +522,8 @@ function end_game() {
     show_graph_elem.disabled = false;
     var show_legal_elem = document.getElementById('show_legal');
     show_legal_elem.disabled = false;
+    var auto_pass_elem = document.getElementById('auto_pass');
+    auto_pass_elem.disabled = false;
     level_range.disabled = false;
     let players = document.getElementsByName('ai_player');
     for (var i = 0; i < 2; ++i)
@@ -620,6 +637,8 @@ function reset(){
     show_graph_elem.disabled = false;
     var show_legal_elem = document.getElementById('show_legal');
     show_legal_elem.disabled = false;
+    var auto_pass_elem = document.getElementById('auto_pass');
+    auto_pass_elem.disabled = false;
     level_range.disabled = false;
     let players = document.getElementsByName('ai_player');
     for (var i = 0; i < 2; ++i){
@@ -642,5 +661,5 @@ function reset(){
     graph.data.labels = [];
     graph.update();
     game_end= true;
-    show(-1, -1);
+    show(-2, -2);
 }
