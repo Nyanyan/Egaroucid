@@ -1367,7 +1367,7 @@ class Book{
                     book.erase(board);
                 }
             }
-            fix(stop);
+            //fix(stop);
         }
 
         void rewrite_level(int level, bool *stop){
@@ -1380,7 +1380,7 @@ class Book{
                     std::cerr << "rewriting book level " << (t * 100 / (int)book.size()) << "%" << std::endl;
                 itr->second.level = level;
             }
-            fix(stop);
+            //fix(stop);
         }
 
     private:
