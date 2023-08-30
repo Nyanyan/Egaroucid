@@ -105,9 +105,9 @@ void print_level_info(){
     std::cout << "Level definition:" << std::endl;
     std::cout << COUT_TAB;
     std::cout << "Endgame probability" << std::endl;
-    std::cout << COUT_TAB << COUT_TAB << " 78%: " << probability_char[MPC_70_LEVEL] << std::endl;
-    std::cout << COUT_TAB << COUT_TAB << " 81%: " << probability_char[MPC_80_LEVEL] << std::endl;
-    std::cout << COUT_TAB << COUT_TAB << " 95%: " << probability_char[MPC_93_LEVEL] << std::endl;
+    std::cout << COUT_TAB << COUT_TAB << " 70%: " << probability_char[MPC_70_LEVEL] << std::endl;
+    std::cout << COUT_TAB << COUT_TAB << " 80%: " << probability_char[MPC_80_LEVEL] << std::endl;
+    std::cout << COUT_TAB << COUT_TAB << " 93%: " << probability_char[MPC_93_LEVEL] << std::endl;
     std::cout << COUT_TAB << COUT_TAB << " 98%: " << probability_char[MPC_98_LEVEL] << std::endl;
     std::cout << COUT_TAB << COUT_TAB << " 99%: " << probability_char[MPC_99_LEVEL] << std::endl;
     std::cout << COUT_TAB << COUT_TAB << "100%: " << probability_char[MPC_100_LEVEL] << std::endl;
