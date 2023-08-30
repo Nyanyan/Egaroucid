@@ -48,10 +48,8 @@ private:
 	Font font{ FontMethod::MSDF, FONT_DEFAULT_SIZE };
 	int y_max;
 	int y_min;
-	int dy;
-	int dx;
-	int adj_y;
-	int adj_x;
+	double dy;
+	double dx;
 
 public:
 	void draw(std::vector<History_elem> nodes1, std::vector<History_elem> nodes2, int n_discs, bool show_graph, int level) {
@@ -68,10 +66,8 @@ public:
 		else {
 			y_min = -resolution;
 			y_max = resolution;
-			dy = size_y / (y_max - y_min);
-			dx = size_x / 60;
-			adj_y = size_y - dy * (y_max - y_min);
-			adj_x = size_x - dx * 60;
+			dy = (double)size_y / (y_max - y_min);
+			dx = (double)size_x / 60;
 		}
 		RoundRect round_rect{ sx + GRAPH_RECT_DX, sy + GRAPH_RECT_DY, GRAPH_RECT_WIDTH, GRAPH_RECT_HEIGHT, GRAPH_RECT_RADIUS };
 		round_rect.drawFrame(GRAPH_RECT_THICKNESS, graph_rect_color);
@@ -106,8 +102,8 @@ public:
 		double mpct;
 		int first_endsearch_n_moves = -1;
 		for (int x = 0; x < 60; ++x) {
-			int x_coord1 = sx + x * dx + adj_x * x / 60;
-			int x_coord2 = sx + (x + 1) * dx + adj_x * (x + 1) / 60;
+			int x_coord1 = sx + dx * x;
+			int x_coord2 = sx + dx * (x + 1);
 			Rect rect{ x_coord1, sy, x_coord2 - x_coord1, size_y };
 			get_level(level, x, &is_mid_search, &depth, &mpc_level);
 			Color color = color_100;
@@ -142,12 +138,12 @@ public:
 			font(language.get("info", "to_last_move")).draw(font_size, Arg::topCenter(sx + size_x / 2, sy + LEVEL_DEPTH_DY - 18), graph_color);
 		}
 		else {
-			int endsearch_bound_coord = sx + first_endsearch_n_moves * dx + adj_x * first_endsearch_n_moves / 60;
+			int endsearch_bound_coord = sx + dx * first_endsearch_n_moves;
 			font(Format(level) + language.get("info", "lookahead")).draw(font_size, Arg::topCenter((sx + endsearch_bound_coord) / 2, sy + LEVEL_DEPTH_DY - 18), graph_color);
 			font(language.get("info", "to_last_move")).draw(font_size, Arg::topCenter((sx + size_x + endsearch_bound_coord) / 2, sy + LEVEL_DEPTH_DY - 18), graph_color);
 		}
 		for (int y = 0; y <= y_max - y_min; y += resolution) {
-			int yy = sy + y * dy + adj_y * y / (y_max - y_min);
+			int yy = sy + dy * y;
 			font(y_max - y).draw(font_size, sx - font(y_max - y).region(font_size, Point{ 0, 0 }).w - 12, yy - font(y_max - y).region(font_size, Point{ 0, 0 }).h / 2, graph_color);
 			if (y_max - y == 0)
 				Line{ sx, yy, sx + size_x, yy }.draw(2, graph_color);
@@ -155,8 +151,8 @@ public:
 				Line{ sx, yy, sx + size_x, yy }.draw(1, graph_color);
 		}
 		for (int x = 0; x <= 60; x += 10) {
-			font(x).draw(font_size, sx + x * dx + adj_x * x / 60 - font(x).region(font_size, Point{0, 0}).w / 2, sy + size_y + 5, graph_color);
-			Line{ sx + x * dx + adj_x * x / 60, sy, sx + x * dx + adj_x * x / 60, sy + size_y }.draw(1, graph_color);
+			font(x).draw(font_size, sx + dx * x - font(x).region(font_size, Point{0, 0}).w / 2, sy + size_y + 5, graph_color);
+			Line{ sx + dx * x, sy, sx + dx * x, sy + size_y }.draw(1, graph_color);
 		}
 		if (show_graph) {
 			draw_graph(nodes1, graph_history_color, graph_history_not_calculated_color);
@@ -166,7 +162,7 @@ public:
 			draw_graph_not_calculated(nodes1, graph_history_not_calculated_color);
 			draw_graph_not_calculated(nodes2, graph_fork_not_calculated_color);
 		}
-		int place_x = sx + (n_discs - 4) * dx + (n_discs - 4) * adj_x / 60;
+		int place_x = sx + dx * (n_discs - 4);
 		Circle(sx, sy, 7).draw(Palette::Black);
 		Circle(sx, sy + size_y, 7).draw(Palette::White);
 		Line(place_x, sy, place_x, sy + size_y).draw(3, graph_place_color);
@@ -180,14 +176,14 @@ public:
 			int cursor_x = Cursor::Pos().x;
 			int min_err = INF;
 			for (int i = 0; i < (int)nodes1.size(); ++i) {
-				int x = sx + (nodes1[i].board.n_discs() - 4) * dx + (nodes1[i].board.n_discs() - 4) * adj_x / 60;
+				int x = sx + dx * (nodes1[i].board.n_discs() - 4);
 				if (abs(x - cursor_x) < min_err) {
 					min_err = abs(x - cursor_x);
 					n_discs = nodes1[i].board.n_discs();
 				}
 			}
 			for (int i = 0; i < (int)nodes2.size(); ++i) {
-				int x = sx + (nodes2[i].board.n_discs() - 4) * dx + (nodes2[i].board.n_discs() - 4) * adj_x / 60;
+				int x = sx + dx * (nodes2[i].board.n_discs() - 4);
 				if (abs(x - cursor_x) < min_err) {
 					min_err = abs(x - cursor_x);
 					n_discs = nodes2[i].board.n_discs();
@@ -225,24 +221,22 @@ private:
 		y_max += (resolution - (y_max + HW2) % resolution) % resolution;
 		y_min = std::max(-HW2, y_min);
 		y_max = std::min(HW2, y_max);
-		dy = size_y / (y_max - y_min);
-		dx = size_x / 60;
-		adj_y = size_y - dy * (y_max - y_min);
-		adj_x = size_x - dx * 60;
+		dy = (double)size_y / (y_max - y_min);
+		dx = (double)size_x / 60;
 	}
 
 	void draw_graph(std::vector<History_elem> nodes, Color color, Color color2) {
 		std::vector<std::pair<int, int>> values;
 		for (const History_elem& b : nodes) {
 			if (abs(b.v) <= HW2) {
-				int xx = sx + (b.board.n_discs() - 4) * dx + (b.board.n_discs() - 4) * adj_x / 60;
-				int yy = sy + (y_max - b.v) * dy + adj_y * (y_max - b.v) / (y_max - y_min);
+				int xx = sx + dx * (b.board.n_discs() - 4);
+				int yy = sy + dy * (y_max - b.v);
 				values.emplace_back(std::make_pair(xx, yy));
 				Circle{ xx, yy, 3 }.draw(color);
 			}
 			else {
-				int yy = sy + y_max * dy + adj_y * y_max / (y_max - y_min);
-				Circle{ sx + (b.board.n_discs() - 4) * dx + (b.board.n_discs() - 4) * adj_x / 60, yy, 2.5 }.draw(color2);
+				int yy = sy + dy * y_max;
+				Circle{ sx + dx * (b.board.n_discs() - 4), yy, 2.5 }.draw(color2);
 			}
 		}
 		for (int i = 0; i < (int)values.size() - 1; ++i) {
@@ -253,8 +247,8 @@ private:
 	void draw_graph_not_calculated(std::vector<History_elem> nodes, Color color) {
 		std::vector<std::pair<int, int>> values;
 		for (const History_elem& b : nodes) {
-			int yy = sy + y_max * dy + adj_y * y_max / (y_max - y_min);
-			Circle{ sx + (b.board.n_discs() - 4) * dx + (b.board.n_discs() - 4) * adj_x / 60, yy, 2.5 }.draw(color);
+			int yy = sy + dy * y_max;
+			Circle{ sx + dx * (b.board.n_discs() - 4), yy, 2.5 }.draw(color);
 		}
 	}
 };
