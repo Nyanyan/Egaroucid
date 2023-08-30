@@ -434,7 +434,7 @@ private:
                 ++getData().graph_resources.n_discs;
                 getData().graph_resources.delta = 1;
             }
-            if (getData().menu_elements.undo || KeyBackspace.down()) {
+            if (getData().menu_elements.undo || (KeyBackspace.down() && getData().book_information.changing == BOOK_CHANGE_NO_CELL)) {
                 bool player_ignore = 
                     (getData().menu_elements.ai_put_black && getData().history_elem.player == BLACK) || 
                     (getData().menu_elements.ai_put_white && getData().history_elem.player == WHITE);
