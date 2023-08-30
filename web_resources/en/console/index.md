@@ -4,12 +4,6 @@ Operations differ depending on your OS. This software is for Windows, Linux and 
 
 
 
-## About Changing Book Format
-
-Book format is changed in Egaroucid for Console 6.3.0. The new book's filename extension is ```.egbk2``` and it uses ```resources/book.egbk2``` as default book, but you can also use old book, which extension is ```.egbk```. If you want to use another book or old book, you can execute like this: ```Egaroucid_for_Console.exe -book [Book File]```.
-
-
-
 ## Windows
 
 Please download the zip file and unzip it, then you can use it. For the best performance, you can also build it on your own. Please see documents for Linux to build it.
@@ -240,6 +234,10 @@ Egaroucid for Console uses some external files. If you've got a trouble, please 
     </li>
 </ul>
 
+
+## About Changing Book Format
+
+Book format is changed in Egaroucid for Console 6.3.0. The new book's filename extension is ```.egbk2``` and it uses ```resources/book.egbk2``` as default book, but you can also use old book, which extension is ```.egbk```. If you want to use another book or old book, you can execute like this: ```Egaroucid_for_Console.exe -book [Book File]```.
 
 
 

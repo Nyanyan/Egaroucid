@@ -4,12 +4,6 @@ OSによって操作が異なります。WindowsとLinux、MacOSに対応して�
 
 
 
-## book形式の変更について
-
-Egaroucid for Consoleはバージョン6.3.0からbook形式を変更しました。新しいbookの拡張子は```.egbk2```で、標準では```resources/book.egbk2```というbookを読み込みますが、古い```.egbk```形式のbookも読み込むことができます。標準以外のbookや古いbookを使いたい場合は```Egaroucid_for_Console.exe -book [bookファイル名]```として起動してください。
-
-
-
 ## Windows
 
 zipファイルをダウンロードして解凍するだけで使用可能です。なお、Linux版の手法を使って手元でコンパイルするとお使いのパソコンに最適化できるためパフォーマンスが上がる可能性があります。
@@ -236,6 +230,10 @@ Egaroucid for Consoleはいくつかの外部ファイルを必要とします�
     </li>
 </ul>
 
+
+## book形式の変更について
+
+Egaroucid for Consoleはバージョン6.3.0からbook形式を変更しました。新しいbookの拡張子は```.egbk2```で、標準では```resources/book.egbk2```というbookを読み込みますが、古い```.egbk```形式のbookも読み込むことができます。標準以外のbookや古いbookを使いたい場合は```Egaroucid_for_Console.exe -book [bookファイル名]```として起動してください。
 
 
 
