@@ -173,7 +173,7 @@
         "license_egaroucid": "Egaroucidのライセンス"
     },
     "board_image": {
-        "screen_shot": "スクリーンショット",
+        "save_image": "画像を保存",
         "rect": "■",
         "star": "★",
         "nomark": "削除 (同じマークでクリックでも可)",

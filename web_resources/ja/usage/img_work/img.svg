@@ -1629,7 +1629,10 @@ dEIIIYQQQggh5Khzg/w/KyXZQdMei1IAAAAASUVORK5CYII=
 "
        id="image5119"
        x="2.2564104"
-       y="378.22772" /><image
+       y="378.22772"
+       inkscape:export-filename="release\game_start_game_button.png"
+       inkscape:export-xdpi="96"
+       inkscape:export-ydpi="96" /><image
        width="264.58334"
        height="175.41875"
        preserveAspectRatio="none"

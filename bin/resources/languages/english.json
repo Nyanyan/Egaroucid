@@ -173,7 +173,7 @@
         "license_egaroucid": "License of Egaroucid"
     },
     "board_image": {
-        "screen_shot": "Screenshot",
+        "save_image": "Save Image",
         "rect": "■",
         "star": "★",
         "nomark": "Delete (Clicking same mark also works)",
