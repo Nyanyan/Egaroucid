@@ -772,6 +772,11 @@ private:
         }
         getData().graph_resources.nodes[getData().graph_resources.put_mode].emplace_back(getData().history_elem);
         getData().graph_resources.n_discs++;
+        if (getData().history_elem.board.is_end()){
+            int sgn = getData().history_elem.player == 0 ? 1 : -1;
+            getData().graph_resources.nodes[getData().graph_resources.put_mode].back().v = sgn * getData().history_elem.board.score_player();
+            getData().graph_resources.nodes[getData().graph_resources.put_mode].back().level = N_LEVEL - 1;
+        }
         reset_hint();
         reset_umigame();
     }
