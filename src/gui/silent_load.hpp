@@ -56,7 +56,8 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->show_opening_on_cell = true;
     settings->show_log = true;
     settings->book_learn_depth = 30;
-    settings->book_learn_error = 2;
+    settings->book_learn_error_per_move = 2;
+    settings->book_learn_error_sum = 8;
     settings->show_stable_discs = false;
     settings->change_book_by_right_click = false;
     settings->show_last_move = true;
@@ -188,7 +189,7 @@ void init_settings(const Directories* directories, const Resources* resources, S
             std::cerr << "err15" << std::endl;
             return;
         }
-        if (init_settings_import_int(&reader, &settings->book_learn_error) != ERR_OK) {
+        if (init_settings_import_int(&reader, &settings->book_learn_error_per_move) != ERR_OK) {
             std::cerr << "err16" << std::endl;
             return;
         }
@@ -219,6 +220,10 @@ void init_settings(const Directories* directories, const Resources* resources, S
         }
         if (init_settings_import_bool(&reader, &settings->pause_when_pass) != ERR_OK) {
             std::cerr << "err24" << std::endl;
+            return;
+        }
+        if (init_settings_import_int(&reader, &settings->book_learn_error_sum) != ERR_OK) {
+            std::cerr << "err16" << std::endl;
             return;
         }
     }
@@ -282,28 +287,18 @@ int silent_load(Directories* directories, Resources* resources, Settings* settin
 
 class Silent_load : public App::Scene {
 private:
-    std::future<int> silent_load_future;
-    bool silent_load_failed;
-
+    bool loaded;
 public:
     Silent_load(const InitData& init) : IScene{ init } {
-        silent_load_future = std::async(std::launch::async, silent_load, &getData().directories, &getData().resources, &getData().settings);
-        silent_load_failed = false;
-        std::cerr << "start silent loading" << std::endl;
+        int load_code = silent_load(&getData().directories, &getData().resources, &getData().settings);
+        loaded = load_code == ERR_OK;
     }
 
     void update() override {
-        if (silent_load_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-            int load_code = silent_load_future.get();
-            if (load_code == ERR_OK) {
-                std::cerr << "silent loaded" << std::endl;
-                changeScene(U"Load", SCENE_FADE_TIME);
-            }
-            else {
-                silent_load_failed = true;
-            }
-        }
-        if (silent_load_failed) {
+        if (loaded){
+            std::cerr << "silent loaded" << std::endl;
+            changeScene(U"Load", SCENE_FADE_TIME);
+        } else{
             getData().fonts.font(U"BASIC DATA NOT LOADED. PLEASE RE-INSTALL.").draw(30, LEFT_LEFT, Y_CENTER + 50, getData().colors.white);
         }
     }
