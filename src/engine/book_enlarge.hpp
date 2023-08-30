@@ -190,7 +190,7 @@ inline void book_widen(Board root_board, int level, int book_depth, int max_erro
     root_board.copy(board_copy);
     *player = before_player;
     transposition_table.reset_date();
-    book.fix();
+    //book.fix();
     book.save_bin(book_file, book_bak);
     std::cerr << "time " << ms_to_time_short(tim() - all_strt) << " book widen finished value " << book.get(root_board).value << std::endl;
     *book_learning = false;

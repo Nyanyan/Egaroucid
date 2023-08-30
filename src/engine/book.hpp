@@ -1194,6 +1194,8 @@ class Book{
         */
         inline void fix(bool *stop){
             link_book(stop);
+            delete_isolated_node(stop);
+            //negamax_book_delete_suspicious(stop);
             negamax_book(stop);
         }
 
@@ -1202,8 +1204,7 @@ class Book{
         */
         inline void fix(){
             bool stop = false;
-            link_book(&stop);
-            negamax_book(&stop);
+            fix(&stop);
         }
 
         void link_book(bool *stop){
@@ -1255,6 +1256,47 @@ class Book{
                     }
                     if (elem_changed)
                         book[b] = book_elem;
+                }
+            }
+        }
+
+        void delete_isolated_node(bool *stop){
+            std::cerr << "deleting isolated nodes..." << std::endl;
+            std::unordered_set<Board, Book_hash> child_boards;
+            Board root_board;
+            root_board.reset();
+            register_tree_node(root_board, child_boards, stop);
+            std::vector<Board> boards;
+            for (auto itr = book.begin(); itr != book.end(); ++itr)
+                boards.emplace_back(itr->first);
+            uint64_t n_delete = 0;
+            for (Board &board: boards){
+                if (*stop)
+                    break;
+                if (child_boards.find(board) == child_boards.end()){
+                    delete_book(board);
+                    ++n_delete;
+                }
+            }
+            std::cerr << "deleted " << n_delete << " isolated nodes " << std::endl;
+        }
+
+        void register_tree_node(Board board, std::unordered_set<Board, Book_hash> &child_boards, const bool *stop){
+            if (*stop)
+                return;
+            Board rep_board = get_representative_board(board);
+            if (child_boards.find(rep_board) != child_boards.end())
+                return;
+            child_boards.emplace(rep_board);
+            if (contain_symmetry(&board)){
+                std::cerr << "connected book size " << child_boards.size() << std::endl;
+                Book_elem book_elem = get(board);
+                Flip flip;
+                for (Book_value &elem: book_elem.moves){
+                    calc_flip(&flip, &board, elem.policy);
+                    board.move_board(&flip);
+                        register_tree_node(board, child_boards, stop);
+                    board.undo_board(&flip);
                 }
             }
         }
@@ -1313,6 +1355,87 @@ class Book{
                                 root_boards.emplace_back(std::make_pair(root_board, max_value));
                             }
                         }
+                    }
+                    if (root_board_n_discs){
+                        for (std::pair<Board, int> &elem: root_boards){
+                            Board bb = get_representative_board(elem.first);
+                            book[bb].value = elem.second;
+                        }
+                        n_fixed += root_boards.size();
+                        looped = true;
+                    }
+                    std::cerr << "negamaxing book... fixed " << n_fixed << " boards" << std::endl;
+                }
+            }
+            std::cerr << "negamaxed book with " << n_fixed << " fix" << std::endl;
+        }
+
+        void negamax_book_delete_suspicious(bool *stop){
+            std::cerr << "negamaxing book..." << std::endl;
+            std::vector<std::pair<Board, int>> root_boards;
+            std::vector<Board> suspicious_boards;
+            Book_elem book_elem;
+            uint64_t n_fixed = 0;
+            bool looped = true;
+            while (looped){
+                looped = false;
+                int root_board_n_discs = 1;
+                while (root_board_n_discs && !(*stop)){
+                    root_boards.clear();
+                    suspicious_boards.clear();
+                    root_board_n_discs = 0;
+                    for (auto itr = book.begin(); itr != book.end(); ++itr){
+                        if (itr->first.n_discs() >= root_board_n_discs && itr->second.moves.size()){
+                            book_elem = itr->second;
+                            int max_value = -INF;
+                            Board b;
+                            b.player = itr->first.player;
+                            b.opponent = itr->first.opponent;
+                            Flip flip;
+                            bool is_leaf;
+                            for (Book_value &elem: book_elem.moves){
+                                is_leaf = true;
+                                calc_flip(&flip, &b, elem.policy);
+                                b.move_board(&flip);
+                                    if (b.get_legal()){
+                                        if (contain_symmetry(b)){
+                                            max_value = std::max(max_value, -get(b).value);
+                                            is_leaf = false;
+                                        }
+                                    } else{
+                                        b.pass();
+                                            if (contain_symmetry(b)){
+                                                max_value = std::max(max_value, get(b).value);
+                                                is_leaf = false;
+                                            }
+                                        b.pass();
+                                    }
+                                b.undo_board(&flip);
+                                if (is_leaf)
+                                    max_value = std::max(max_value, elem.value);
+                            }
+                            if (max_value != book_elem.value){
+                                Board root_board;
+                                root_board.player = itr->first.player;
+                                root_board.opponent = itr->first.opponent;
+                                if (abs(max_value - book_elem.value) > 6){
+                                    suspicious_boards.emplace_back(root_board);
+                                } else{
+                                    int n_discs = root_board.n_discs();
+                                    if (n_discs > root_board_n_discs){
+                                        root_board_n_discs = n_discs;
+                                        root_boards.clear();
+                                    }
+                                    root_boards.emplace_back(std::make_pair(root_board, max_value));
+                                }
+                            }
+                        }
+                    }
+                    if (suspicious_boards.size()){
+                        for (Board &board: suspicious_boards){
+                            delete_book(board);
+                        }
+                        looped = true;
                     }
                     if (root_board_n_discs){
                         for (std::pair<Board, int> &elem: root_boards){
