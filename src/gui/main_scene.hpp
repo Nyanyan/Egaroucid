@@ -586,13 +586,6 @@ private:
             changeScene(U"Widen_book", SCENE_FADE_TIME);
             return;
         }
-        if (getData().menu_elements.book_start_deepen) {
-            stop_calculating();
-            resume_calculating();
-            changing_scene = true;
-            changeScene(U"Deepen_book", SCENE_FADE_TIME);
-            return;
-        }
         if (getData().menu_elements.book_start_fix) {
             stop_calculating();
             resume_calculating();
@@ -1000,7 +993,9 @@ private:
         menu_e.init_button(language.get("book", "settings"), &menu_elements->dummy);
         side_menu.init_bar(language.get("book", "depth"), &menu_elements->book_learn_depth, menu_elements->book_learn_depth, 0, 60);
         menu_e.push(side_menu);
-        side_menu.init_bar(language.get("book", "accept"), &menu_elements->book_learn_error, menu_elements->book_learn_error, 0, 32);
+        side_menu.init_bar(language.get("book", "error_per_move"), &menu_elements->book_learn_error_per_move, menu_elements->book_learn_error_per_move, 0, 24);
+        menu_e.push(side_menu);
+        side_menu.init_bar(language.get("book", "error_sum"), &menu_elements->book_learn_error_sum, menu_elements->book_learn_error_sum, 0, 32);
         menu_e.push(side_menu);
         title.push(menu_e);
 
@@ -1008,8 +1003,6 @@ private:
         side_menu.init_check(language.get("book", "right_click_to_modify"), &menu_elements->change_book_by_right_click, menu_elements->change_book_by_right_click);
         menu_e.push(side_menu);
         side_menu.init_button(language.get("book", "book_widen"), &menu_elements->book_start_widen);
-        menu_e.push(side_menu);
-        side_menu.init_button(language.get("book", "book_deepen"), &menu_elements->book_start_deepen);
         menu_e.push(side_menu);
         side_menu.init_button(language.get("book", "book_fix"), &menu_elements->book_start_fix);
         menu_e.push(side_menu);

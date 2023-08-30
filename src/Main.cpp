@@ -43,7 +43,6 @@ void Main() {
 	scene_manager.add <Import_book>(U"Import_book");
 	scene_manager.add <Refer_book>(U"Refer_book");
 	scene_manager.add <Widen_book>(U"Widen_book");
-	scene_manager.add <Deepen_book>(U"Deepen_book");
 	scene_manager.add <Fix_book>(U"Fix_book");
 	scene_manager.add <Depth_align_book>(U"Depth_align_book");
 	scene_manager.add <Rewrite_level_book>(U"Rewrite_level_book");

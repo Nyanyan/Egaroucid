@@ -305,7 +305,8 @@ struct Settings {
     bool show_opening_on_cell;
     bool show_log;
     int book_learn_depth;
-    int book_learn_error;
+    int book_learn_error_per_move;
+    int book_learn_error_sum;
     bool show_stable_discs;
     bool change_book_by_right_click;
     bool show_last_move;
@@ -360,7 +361,8 @@ struct Menu_elements {
     bool book_start_deepen;
     bool book_start_fix;
     int book_learn_depth;
-    int book_learn_error;
+    int book_learn_error_per_move;
+    int book_learn_error_sum;
     bool book_import;
     bool book_reference;
     bool change_book_by_right_click;
@@ -435,7 +437,8 @@ struct Menu_elements {
         book_start_deepen = false;
         book_start_fix = false;
         book_learn_depth = settings->book_learn_depth;
-        book_learn_error = settings->book_learn_error;
+        book_learn_error_per_move = settings->book_learn_error_per_move;
+        book_learn_error_sum = settings->book_learn_error_sum;
         book_import = false;
         book_reference = false;
         change_book_by_right_click = settings->change_book_by_right_click;
