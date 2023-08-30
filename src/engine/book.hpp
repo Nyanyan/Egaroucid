@@ -76,13 +76,6 @@ struct Book_elem{
     }
 };
 
-struct Book_negamax{
-    int value;
-    int level;
-};
-
-Book_negamax negamax_book_global(Board board, bool *stop);
-
 /*
     @brief array for calculating hash code for book
 */
@@ -1201,10 +1194,7 @@ class Book{
         */
         inline void fix(bool *stop){
             link_book(stop);
-            Board root_board;
-            root_board.reset();
-            std::cerr << "negamaxing book..." << std::endl;
-            negamax_book(root_board, stop);
+            negamax_book(stop);
         }
 
         /*
@@ -1213,10 +1203,7 @@ class Book{
         inline void fix(){
             bool stop = false;
             link_book(&stop);
-            Board root_board;
-            root_board.reset();
-            std::cerr << "negamaxing book..." << std::endl;
-            negamax_book(root_board, &stop);
+            negamax_book(&stop);
         }
 
         void link_book(bool *stop){
@@ -1272,84 +1259,73 @@ class Book{
             }
         }
 
-        Book_negamax negamax_book(Board board, bool *stop){
-            Book_negamax res;
-            Book_elem book_elem = get(board);
-            res.value = book_elem.value;
-            res.level = book_elem.level;
-            if (*stop || !global_searching)
-                return res;
-            if (book_elem.value == SCORE_UNDEFINED)
-                return res;
-            if (book_elem.moves.size() == 0)
-                return res;
-            Flip flip;
-            int best_score = -SCORE_INF;
-            int best_level = -1;
-            Book_negamax child;
-            int best_registered_score = -SCORE_INF;
-            std::vector<std::pair<int, std::future<Book_negamax>>> parallel_tasks;
-            bool pushed;
-            int move_idx = 0;
-            bool node_updated = false;
-            for (Book_value &move: book_elem.moves){
-                best_registered_score = std::max(best_registered_score, move.value);
-                calc_flip(&flip, &board, move.policy);
-                board.move_board(&flip);
-                    pushed = false;
-                    if (thread_pool.get_n_idle()){
-                        parallel_tasks.emplace_back(std::make_pair(move_idx, thread_pool.push(&pushed, std::bind(&negamax_book_global, board, stop))));
-                        if (!pushed)
-                            parallel_tasks.pop_back();
-                    }
-                    if (!pushed)
-                        child = negamax_book(board, stop);
-                board.undo_board(&flip);
-                if (!pushed){
-                    if (-HW2 <= child.value && child.value <= HW2){
-                        if (best_score < -child.value){
-                            best_score = -child.value;
-                            best_level = child.level;
+        void negamax_book(bool *stop){
+            std::cerr << "negamaxing book..." << std::endl;
+            std::vector<std::pair<Board, int>> root_boards;
+            Book_elem book_elem;
+            uint64_t n_fixed = 0;
+            bool looped = true;
+            while (looped){
+                looped = false;
+                int root_board_n_discs = 1;
+                while (root_board_n_discs && !(*stop)){
+                    root_boards.clear();
+                    root_board_n_discs = 0;
+                    for (auto itr = book.begin(); itr != book.end(); ++itr){
+                        if (itr->first.n_discs() >= root_board_n_discs && itr->second.moves.size()){
+                            book_elem = itr->second;
+                            int max_value = -INF;
+                            Board b;
+                            b.player = itr->first.player;
+                            b.opponent = itr->first.opponent;
+                            Flip flip;
+                            bool is_leaf;
+                            for (Book_value &elem: book_elem.moves){
+                                is_leaf = true;
+                                calc_flip(&flip, &b, elem.policy);
+                                b.move_board(&flip);
+                                    if (b.get_legal()){
+                                        if (contain_symmetry(b)){
+                                            max_value = std::max(max_value, -get(b).value);
+                                            is_leaf = false;
+                                        }
+                                    } else{
+                                        b.pass();
+                                            if (contain_symmetry(b)){
+                                                max_value = std::max(max_value, get(b).value);
+                                                is_leaf = false;
+                                            }
+                                        b.pass();
+                                    }
+                                b.undo_board(&flip);
+                                if (is_leaf)
+                                    max_value = std::max(max_value, elem.value);
+                            }
+                            if (max_value != book_elem.value){
+                                Board root_board;
+                                root_board.player = itr->first.player;
+                                root_board.opponent = itr->first.opponent;
+                                int n_discs = root_board.n_discs();
+                                if (n_discs > root_board_n_discs){
+                                    root_board_n_discs = n_discs;
+                                    root_boards.clear();
+                                }
+                                root_boards.emplace_back(std::make_pair(root_board, max_value));
+                            }
                         }
-                        move.value = -child.value;
-                        node_updated = true;
                     }
-                }
-                ++move_idx;
-            }
-            for (std::pair<int, std::future<Book_negamax>> &task: parallel_tasks){
-                child = task.second.get();
-                if (-HW2 <= child.value && child.value <= HW2){
-                    if (best_score < -child.value){
-                        best_score = -child.value;
-                        best_level = child.level;
+                    if (root_board_n_discs){
+                        for (std::pair<Board, int> &elem: root_boards){
+                            Board bb = get_representative_board(elem.first);
+                            book[bb].value = elem.second;
+                        }
+                        n_fixed += root_boards.size();
+                        looped = true;
                     }
-                    book_elem.moves[task.first].value = -child.value;
-                    node_updated = true;
+                    std::cerr << "negamaxing book... fixed " << n_fixed << " boards" << std::endl;
                 }
             }
-            bool do_not_update_this_node = best_registered_score < book_elem.value - BOOK_LOSS_IGNORE_THRESHOLD;
-            if (best_level >= book_elem.level && !do_not_update_this_node && -HW2 <= best_score && best_score <= HW2){
-                res.value = best_score;
-                res.level = best_level;
-                /*
-                for (Book_value &move: book_elem.moves)
-                    std::cerr << idx_to_coord(move.policy) << " " << move.value << std::endl;
-                board.print();
-                std::cerr << best_registered_score << "  " << book_elem.value << " " << book_elem.level << "  " << best_score << " " << best_level << std::endl;
-                char e;
-                std::cin >> e;
-                */
-                book_elem.value = best_score;
-                book_elem.level = best_level;
-                node_updated = true;
-            }
-            if (node_updated){
-                mtx.lock();
-                    register_symmetric_book(board, book_elem);
-                mtx.unlock();
-            }
-            return res;
+            std::cerr << "negamaxed book with " << n_fixed << " fix" << std::endl;
         }
 
         void depth_align(int max_depth, bool *stop){
@@ -1683,10 +1659,6 @@ void book_save_as_edax(std::string file){
 
 void book_fix(bool *stop){
     book.fix(stop);
-}
-
-Book_negamax negamax_book_global(Board board, bool *stop){
-    return book.negamax_book(board, stop);
 }
 
 void book_depth_align(int depth, bool *stop){
