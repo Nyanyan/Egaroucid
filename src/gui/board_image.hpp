@@ -32,7 +32,7 @@
 class Board_image : public App::Scene {
 private:
     Button back_button;
-    Button screen_shot_button;
+    Button save_image_button;
     Radio_button mark_radio;
     Radio_button color_radio;
     int marks[HW2];
@@ -42,7 +42,7 @@ private:
 public:
     Board_image(const InitData& init) : IScene{ init } {
         back_button.init(BUTTON2_VERTICAL_SX, BUTTON2_VERTICAL_1_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-        screen_shot_button.init(BUTTON2_VERTICAL_SX, BUTTON2_VERTICAL_2_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("board_image", "screen_shot"), 20, getData().fonts.font, getData().colors.white, getData().colors.black);
+        save_image_button.init(BUTTON2_VERTICAL_SX, BUTTON2_VERTICAL_2_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("board_image", "save_image"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         Radio_button_element radio_button_elem;
 
         mark_radio.init();
@@ -148,10 +148,10 @@ public:
             }
         }
 
-        screen_shot_button.draw();
+        save_image_button.draw();
         back_button.draw();
 
-        if (screen_shot_button.clicked()){
+        if (save_image_button.clicked()){
             taking_screen_shot = true;
             ScreenCapture::RequestCurrentFrame();
         }
