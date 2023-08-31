@@ -170,6 +170,7 @@ def create_html(dr):
     table_of_contents = []
     md_split = md.splitlines()
     raw_html = 0
+    last_h3_title = ''
     for i, elem in enumerate(md_split):
         while elem and (elem[0] == ' ' or elem[0] == '\t'):
             elem = elem[1:]
@@ -192,12 +193,13 @@ def create_html(dr):
             elem = '<h1>' + elem[2:] + '</h1>'
         elif elem[:3] == '## ':
             if need_table_of_contents:
-                table_of_contents.append([elem[3:], []])
+                table_of_contents.append([elem[3:], elem[3:], []])
+            last_h3_title = elem[3:]
             elem = '<h2 id="' + elem[3:] + '">' + elem[3:] + '</h2>'
         elif elem[:4] == '### ':
             if need_table_of_contents:
-                table_of_contents[-1][1].append([elem[4:], []])
-            elem = '<h3 id="' + elem[4:] + '">' + elem[4:] + '</h3>'
+                table_of_contents[-1][2].append([elem[4:], last_h3_title + '_' + elem[4:], []])
+            elem = '<h3 id="' + last_h3_title + '_' + elem[4:] + '">' + elem[4:] + '</h3>'
         elif elem[:5] == '#### ':
             elem = '<h4>' + elem[5:] + '</h4>'
         # links
@@ -239,13 +241,13 @@ def create_html(dr):
         # modify data
         md_split[i] = elem
     if need_table_of_contents:
-        table_of_contents_html = '<div><ol>'
-        for name1, children1 in table_of_contents:
-            table_of_contents_html += '<li><a href="#' + name1 + '">' + name1 + '</a>'
+        table_of_contents_html = '<div class="table_of_contents_div"><ol class="table_of_contents_ol">'
+        for name1, id1, children1 in table_of_contents:
+            table_of_contents_html += '<li class="table_of_contents_li"><a href="#' + id1 + '">' + name1 + '</a>'
             if children1:
                 table_of_contents_html += '<ol>'
-                for name2, _ in children1:
-                    table_of_contents_html += '<li><a href="#' + name2 + '">' + name2 + '</a></li>'
+                for name2, id2, _ in children1:
+                    table_of_contents_html += '<li><a href="#' + id2 + '">' + name2 + '</a></li>'
                 table_of_contents_html += '</ol>'
             table_of_contents_html += '</li>'
         table_of_contents_html += '</li></div>'

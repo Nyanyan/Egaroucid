@@ -116,3 +116,23 @@ code {
     text-align: right;
     padding: 1%;
 }
+
+.table_of_contents_div {
+    width: 90%;
+    margin: 0 auto;
+}
+
+.table_of_contents_ol {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    text-align: left;
+}
+
+.table_of_contents_li {
+    margin: 5px;
+    width: 30%;
+    text-align: left;
+}
