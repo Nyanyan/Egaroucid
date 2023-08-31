@@ -1340,10 +1340,10 @@ class Book{
                                         b.pass();
                                     }
                                 b.undo_board(&flip);
-                                if (is_leaf)
-                                    max_value = std::max(max_value, elem.value);
+                                //if (is_leaf)
+                                //    max_value = std::max(max_value, elem.value);
                             }
-                            if (max_value != book_elem.value){
+                            if (max_value != book_elem.value && max_value != -INF){
                                 Board root_board;
                                 root_board.player = itr->first.player;
                                 root_board.opponent = itr->first.opponent;
@@ -1411,10 +1411,10 @@ class Book{
                                         b.pass();
                                     }
                                 b.undo_board(&flip);
-                                if (is_leaf)
-                                    max_value = std::max(max_value, elem.value);
+                                //if (is_leaf)
+                                //    max_value = std::max(max_value, elem.value);
                             }
-                            if (max_value != book_elem.value){
+                            if (max_value != book_elem.value && max_value != -INF){
                                 Board root_board;
                                 root_board.player = itr->first.player;
                                 root_board.opponent = itr->first.opponent;

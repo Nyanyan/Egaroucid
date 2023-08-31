@@ -23,7 +23,8 @@ constexpr Color graph_history_not_calculated_color = Color(200, 200, 200);
 constexpr Color graph_fork_not_calculated_color = Color(65, 65, 65);
 constexpr double graph_transparency = 1.0;
 
-constexpr Color color_80 = Color(190, 46, 221);
+constexpr Color color_75 = Color(190, 46, 221);
+constexpr Color color_88 = Color(116, 125, 140);
 constexpr Color color_93 = Color(247, 143, 179);
 constexpr Color color_98 = Color(227, 88, 72);
 constexpr Color color_99 = Color(240, 135, 20);
@@ -71,15 +72,19 @@ public:
 		}
 		RoundRect round_rect{ sx + GRAPH_RECT_DX, sy + GRAPH_RECT_DY, GRAPH_RECT_WIDTH, GRAPH_RECT_HEIGHT, GRAPH_RECT_RADIUS };
 		round_rect.drawFrame(GRAPH_RECT_THICKNESS, graph_rect_color);
-		int info_x = sx + GRAPH_RECT_DX + GRAPH_RECT_WIDTH / 2 - (LEVEL_INFO_WIDTH * 5 + LEVEL_PROB_WIDTH) / 2;
+		int info_x = sx + LEVEL_INFO_DX + GRAPH_RECT_DX + GRAPH_RECT_WIDTH / 2 - (LEVEL_INFO_WIDTH * 5 + LEVEL_PROB_WIDTH) / 2;
 		int info_y = sy + LEVEL_INFO_DY;
 		Rect rect_prob{info_x, info_y, LEVEL_PROB_WIDTH, LEVEL_INFO_HEIGHT};
 		rect_prob.draw(graph_color);
 		font(language.get("info", "probability")).draw(font_size, Arg::center(info_x + LEVEL_PROB_WIDTH / 2, info_y + LEVEL_INFO_HEIGHT / 2), level_prob_color);
 		info_x += LEVEL_PROB_WIDTH;
-		Rect rect_80{ info_x, info_y, LEVEL_INFO_WIDTH, LEVEL_INFO_HEIGHT };
-		rect_80.draw(color_80);
-		font(U"80%").draw(font_size, Arg::center(info_x + LEVEL_INFO_WIDTH / 2, info_y + LEVEL_INFO_HEIGHT / 2), level_info_color);
+		Rect rect_75{ info_x, info_y, LEVEL_INFO_WIDTH, LEVEL_INFO_HEIGHT };
+		rect_75.draw(color_75);
+		font(U"75%").draw(font_size, Arg::center(info_x + LEVEL_INFO_WIDTH / 2, info_y + LEVEL_INFO_HEIGHT / 2), level_info_color);
+		info_x += LEVEL_INFO_WIDTH;
+		Rect rect_88{ info_x, info_y, LEVEL_INFO_WIDTH, LEVEL_INFO_HEIGHT };
+		rect_88.draw(color_88);
+		font(U"88%").draw(font_size, Arg::center(info_x + LEVEL_INFO_WIDTH / 2, info_y + LEVEL_INFO_HEIGHT / 2), level_info_color);
 		info_x += LEVEL_INFO_WIDTH;
 		Rect rect_93{ info_x, info_y, LEVEL_INFO_WIDTH, LEVEL_INFO_HEIGHT };
 		rect_93.draw(color_93);
@@ -108,8 +113,11 @@ public:
 			get_level(level, x, &is_mid_search, &depth, &mpc_level);
 			Color color = color_100;
 			int probability = SELECTIVITY_PERCENTAGE[mpc_level];
-			if (probability == 80) {
-				color = color_80;
+			if (probability == 75) {
+				color = color_75;
+			}
+			else if (probability == 88) {
+				color = color_88;
 			}
 			else if (probability == 93) {
 				color = color_93;

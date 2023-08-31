@@ -1,9 +1,7 @@
 import glob
 
 str_replaces = [
-    ['MPC_78_LEVEL', 'MPC_70_LEVEL'],
-    ['MPC_81_LEVEL', 'MPC_80_LEVEL'],
-    ['MPC_95_LEVEL', 'MPC_93_LEVEL'],
+    ['MPC_81_LEVEL', 'MPC_88_LEVEL']
 ]
 
 files = glob.glob('./**/*.cpp', recursive=True)
