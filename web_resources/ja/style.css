@@ -117,11 +117,6 @@ code {
     padding: 1%;
 }
 
-.table_of_contents_div {
-    width: 90%;
-    margin: 0 auto;
-}
-
 .table_of_contents_ol {
     list-style-type: none;
     padding: 0;
@@ -133,6 +128,6 @@ code {
 
 .table_of_contents_li {
     margin: 5px;
-    width: 30%;
+    width: max(400px, 32%);
     text-align: left;
 }

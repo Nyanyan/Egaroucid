@@ -241,7 +241,7 @@ def create_html(dr):
         # modify data
         md_split[i] = elem
     if need_table_of_contents:
-        table_of_contents_html = '<div class="table_of_contents_div"><ol class="table_of_contents_ol">'
+        table_of_contents_html = '<div><ol class="table_of_contents_ol">'
         for name1, id1, children1 in table_of_contents:
             table_of_contents_html += '<li class="table_of_contents_li"><a href="#' + id1 + '">' + name1 + '</a>'
             if children1:
