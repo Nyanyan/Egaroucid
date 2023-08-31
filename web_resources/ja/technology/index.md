@@ -22,6 +22,10 @@ Egaroucidの性能の確認として2種類のベンチマークを使用して�
 		<th>リリース時期</th>
 	</tr>
     <tr>
+		<td><a href="./benchmarks/6_4_0/">6.4.0</a></td>
+		<td>TBD</td>
+	</tr>
+    <tr>
 		<td><a href="./benchmarks/6_3_0/">6.3.0</a></td>
 		<td>2023/07/09</td>
 	</tr>
@@ -65,7 +69,7 @@ Egaroucidの性能の確認として2種類のベンチマークを使用して�
 
 
 
-以下はThe FFO endgame test suiteをCore i9 11900Kで実行した結果をバージョンを横軸に取ってグラフにしたものです。
+以下はThe FFO endgame test suiteをCore i9 13900Kで実行した結果をバージョンを横軸に取ってグラフにしたものです。
 
 <div class="centering_box">
 	<img class="pic2" src="img/ffo_time.png">

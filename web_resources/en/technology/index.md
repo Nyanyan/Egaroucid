@@ -24,6 +24,10 @@ For each version, the detailed conditions may be different. Please see each page
 		<th>Date</th>
 	</tr>
     <tr>
+		<td><a href="./benchmarks/6_4_0/">6.4.0</a></td>
+		<td>TBD</td>
+	</tr>
+    <tr>
 		<td><a href="./benchmarks/6_3_0/">6.3.0</a></td>
 		<td>2023/07/09</td>
 	</tr>
@@ -67,7 +71,8 @@ For each version, the detailed conditions may be different. Please see each page
 
 
 
-There are some graphs of results of The FFO endgame test suite on Core i9 11900K.
+
+There are some graphs of results of The FFO endgame test suite on Core i9 13900K.
 
 <div class="centering_box">
 	<img class="pic2" src="img/ffo_time.png">

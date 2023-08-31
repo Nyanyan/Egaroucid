@@ -57,7 +57,7 @@ while True:
         wdl_white = [int(elem) for elem in use_data[2].split('-')] # Egaroucid white
         for i in range(3):
             res += '<td>' + str(wdl_black[i] + wdl_white[i]) + '(' + BLACK + ': ' + str(wdl_black[i]) + ' ' + WHITE + ': ' + str(wdl_white[i]) + ')' + '</td>\n'
-        win_rate = (wdl_black[0] + wdl_white[0]) / (wdl_black[0] + wdl_white[0] + wdl_black[2] + wdl_white[2])
+        win_rate = (wdl_black[0] + wdl_white[0] + wdl_black[1] * 0.5 + wdl_white[1] * 0.5) / (sum(wdl_black) + sum(wdl_white))
         res += '<td>' + str(round(win_rate, 3)) + '</td>\n'
         res += '</tr>\n'
     except:
