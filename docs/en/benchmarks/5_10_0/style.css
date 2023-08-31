@@ -33,7 +33,7 @@ table{
 }
 
 .pic2{
-    width: min(25vh, 45%);
+    width: max(30%, 350px);
     height: auto;
 }
 
