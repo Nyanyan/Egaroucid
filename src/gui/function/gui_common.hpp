@@ -396,6 +396,7 @@ struct Menu_elements {
     bool cache_clear;
 
     // help
+    bool usage;
     bool website;
     bool bug_report;
     bool auto_update_check;
@@ -465,6 +466,7 @@ struct Menu_elements {
         convert_whiteline = false;
         cache_clear = false;
 
+        usage = false;
         website = false;
         bug_report = false;
         auto_update_check = settings->auto_update_check;

@@ -631,6 +631,9 @@ private:
     }
 
     void menu_help() {
+        if (getData().menu_elements.usage) {
+            System::LaunchBrowser(U"https://www.egaroucid.nyanyan.dev/ja/usage/");
+        }
         if (getData().menu_elements.website) {
             if (language.get("lang_name") == U"日本語") {
                 System::LaunchBrowser(U"https://www.egaroucid.nyanyan.dev/ja/");
@@ -1027,6 +1030,8 @@ private:
 
 
         title.init(language.get("help", "help"));
+        menu_e.init_button(language.get("help", "usage"), &menu_elements->usage);
+        title.push(menu_e);
         menu_e.init_button(language.get("help", "website"), &menu_elements->website);
         title.push(menu_e);
         menu_e.init_button(language.get("help", "bug_report"), &menu_elements->bug_report);
