@@ -1,5 +1,6 @@
 ホーム /
 ダウンロード /download/
+使い方 /usage/
 コンソール版 /console/
 Web版 /web/
 技術 /technology/

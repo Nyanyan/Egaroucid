@@ -1,4 +1,5 @@
 Home /
+Usage (Japanese) https://www.egaroucid.nyanyan.dev/ja/usage/
 Download /download/
 Console Version /console/
 Web Version /web/
