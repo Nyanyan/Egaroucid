@@ -127,7 +127,7 @@ void print_level_info(){
         std::cout << "|";
     }
     std::cout << std::endl;
-    for (int level = 0; level < N_LEVEL; ++level){
+    for (int level = 1; level < N_LEVEL; ++level){
         std::cout << COUT_TAB;
         std::cout << "|";
         std::cout << std::right << std::setw(LEVEL_INFO_TAB_SIZE) << level;
