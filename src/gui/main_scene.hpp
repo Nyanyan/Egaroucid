@@ -910,12 +910,12 @@ private:
         menu_e.push(side_menu);
         side_menu.init_check(language.get("display", "cell", "opening"), &menu_elements->show_opening_on_cell, menu_elements->show_opening_on_cell);
         menu_e.push(side_menu);
+        side_menu.init_check(language.get("display", "cell", "next_move"), &menu_elements->show_last_move, menu_elements->show_last_move);
+        menu_e.push(side_menu);
         title.push(menu_e);
 
         menu_e.init_button(language.get("display", "disc", "display_on_disc"), &menu_elements->dummy);
-        side_menu.init_check(language.get("display", "disc", "last_move"), &menu_elements->show_last_move, menu_elements->show_last_move);
-        menu_e.push(side_menu);
-        side_menu.init_check(language.get("display", "disc", "next_move"), &menu_elements->show_next_move, menu_elements->show_next_move);
+        side_menu.init_check(language.get("display", "disc", "last_move"), &menu_elements->show_next_move, menu_elements->show_next_move);
         menu_e.push(side_menu);
         side_menu.init_check(language.get("display", "disc", "stable"), &menu_elements->show_stable_discs, menu_elements->show_stable_discs);
         menu_e.push(side_menu);
