@@ -107,12 +107,12 @@
             "disc_value": "石差評価",
             "disc_value_number": "表示個数",
             "umigame_value": "うみがめ数",
-            "opening": "定石"
+            "opening": "定石",
+            "next_move": "直後の手"
         },
         "disc": {
             "display_on_disc": "石への表示",
             "last_move": "直前の手",
-            "next_move": "直後の手",
             "stable": "確定石"
         },
         "graph": "グラフ",
@@ -162,6 +162,7 @@
     },
     "help": {
         "help": "ヘルプ",
+        "usage": "使い方",
         "website": "Webサイト",
         "bug_report": "バグレポート",
         "auto_update_check": "自動更新確認",

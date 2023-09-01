@@ -107,12 +107,12 @@
             "disc_value": "Evaluation",
             "disc_value_number": "Number",
             "umigame_value": "Umigame Number",
-            "opening": "Opening"
+            "opening": "Opening",
+            "next_move": "Next Move"
         },
         "disc": {
             "display_on_disc": "On Disc",
             "last_move": "Last Move",
-            "next_move": "Next Move",
             "stable": "Stable"
         },
         "graph": "Graph",
@@ -162,6 +162,7 @@
     },
     "help": {
         "help": "Help",
+        "usage": "Usage (Japanese)",
         "website": "Website",
         "bug_report": "Report Bugs",
         "auto_update_check": "Auto Check Updates",
