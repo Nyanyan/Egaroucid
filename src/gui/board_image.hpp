@@ -126,7 +126,7 @@ public:
                 if (marks[cell] == BOARD_IMAGE_BRECT) {
                     rect.draw(getData().colors.black);
                     if (board_arr[cell] == BLACK)
-                        rect.drawFrame(0, BOARD_IMAGE_FRAME_WIDTH, getData().colors.white);
+                        rect.drawFrame(BOARD_IMAGE_FRAME_WIDTH, 0, getData().colors.white);
                 }
                 else if (marks[cell] == BOARD_IMAGE_WRECT) {
                     rect.draw(getData().colors.white);
