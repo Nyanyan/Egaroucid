@@ -6,7 +6,9 @@
 
 
 
-Egaroucid is an Othello app with one of the strongest othello solver AI. The light version got the first place in the world ([CodinGame Othello](https://www.codingame.com/multiplayer/bot-programming/othello-1)) as of June, 2023.
+Egaroucid is an Othello app with one of the strongest othello solver AI. 
+
+The author is World No.1 in [CodinGame Othello](https://www.codingame.com/multiplayer/bot-programming/othello-1), Othello AI contest.
 
 
 
