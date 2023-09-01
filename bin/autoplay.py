@@ -1,15 +1,26 @@
 import subprocess
 from tqdm import trange
 
+IDX_START = 0
+
 LEVEL = 11
-N_GAMES = 1000
+N_GAMES_PER_FILE = 10000
+N_PARALLEL = 2
+N_THREAD = 32 // N_PARALLEL
 
-egaroucid = subprocess.Popen(('Egaroucid_for_Console_6_3_0_x64_SIMD.exe -l ' + str(LEVEL) + ' -thread 32 -selfplay ' + str(N_GAMES)).split(), stdout=subprocess.PIPE)
+def fill0(n, r):
+    res = str(n)
+    return '0' * (r - len(res)) + res
 
+cmd = 'Egaroucid_for_Console_6_4_0_x64_SIMD.exe -nobook -l ' + str(LEVEL) + ' -thread ' + str(N_THREAD) + ' -selfplay ' + str(N_GAMES_PER_FILE // N_PARALLEL)
+print(cmd)
 
-with open('transcript/selfplay_' + str(LEVEL) + '_' + str(N_GAMES) + '.txt', 'w') as f:
-    for i in trange(N_GAMES):
-        line = egaroucid.stdout.readline().decode().replace('\r', '').replace('\n', '') + '\n'
-        f.write(line)
-
-egaroucid.kill()
+for idx in range(IDX_START, IDX_START + 100):
+    egaroucids = [subprocess.Popen(cmd.split(), stdout=subprocess.PIPE) for _ in range(N_PARALLEL)]
+    with open('transcript/' + fill0(idx, 7) + '.txt', 'w') as f:
+        for i in trange(N_GAMES_PER_FILE):
+            eg_idx = i % N_PARALLEL
+            line = egaroucids[eg_idx].stdout.readline().decode().replace('\r', '').replace('\n', '') + '\n'
+            f.write(line)
+    for i in range(N_PARALLEL):
+        egaroucids[i].kill()
