@@ -561,6 +561,10 @@ Egaroucidは<a href="#入出力_出力 > 対局保存">対局を独自形式で�
 
 白黒印刷で綺麗に見えるよう、モノクロ画像への変換もできます。
 
+「画像を保存」で、クリップボードに画像をコピーしつつ、画像を保存します。保存先はドキュメントフォルダ内のEgaroucid/screenshotsフォルダで、日時をファイル名とします。
+
+ショートカットキーとしてEscを「戻る」に割り当てました。
+
 <div class="centering_box">
     <img class="pic2" src="img/edit_board_image.png">
     <img class="pic2" src="img/edit_board_image_monochrome.png">
