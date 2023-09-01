@@ -1,8 +1,8 @@
 /*
     Egaroucid Project
 
-    @file input.hpp
-        Input scenes
+    @file board_image.hpp
+        Edit board image
     @date 2021-2023
     @author Takuto Yamana
     @license GPL-3.0 license
@@ -130,7 +130,7 @@ public:
                 }
                 else if (marks[cell] == BOARD_IMAGE_WRECT) {
                     rect.draw(getData().colors.white);
-                    if (board_arr[cell] == WHITE)
+                    if (board_arr[cell] == WHITE || (board_arr[cell] == VACANT || color_radio.checked == BOARD_IMAGE_COLOR_MONOCHROME))
                         rect.drawFrame(0, BOARD_IMAGE_FRAME_WIDTH, getData().colors.black);
                 }
             }
@@ -142,7 +142,7 @@ public:
                 }
                 else if (marks[cell] == BOARD_IMAGE_WSTAR) {
                     Shape2D::Star(BOARD_IMAGE_STAR_SIZE, Vec2{ x_center, y_center }).draw(getData().colors.white);
-                    if (board_arr[cell] == WHITE)
+                    if (board_arr[cell] == WHITE || (board_arr[cell] == VACANT && color_radio.checked == BOARD_IMAGE_COLOR_MONOCHROME))
                         Shape2D::Star(BOARD_IMAGE_STAR_SIZE, Vec2{ x_center, y_center }).drawFrame(BOARD_IMAGE_FRAME_WIDTH, getData().colors.black);
                 }
             }

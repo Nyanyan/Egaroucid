@@ -44,7 +44,7 @@ void draw_board(Fonts fonts, Colors colors, History_elem history_elem, bool mono
         }
         else if (board_arr[cell] == WHITE) {
             if (monochrome) {
-                Circle(x, y, DISC_SIZE).draw(colors.white).drawFrame(0, BOARD_DISC_FRAME_WIDTH, colors.black);
+                Circle(x, y, DISC_SIZE).draw(colors.white).drawFrame(BOARD_DISC_FRAME_WIDTH, 0, colors.black);
             }
             else {
                 Circle(x, y, DISC_SIZE).draw(colors.white);
