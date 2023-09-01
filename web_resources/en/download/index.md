@@ -35,19 +35,20 @@ Egaroucid is optimized to SIMD version, which requires AVX2 instructions, but ol
         <td>Windows</td>
         <td>x64</td>
         <td>AVX2 (Standard)</td>
-        <td>2023/07/09</td>
-        <td>[Egaroucid 6.3.0 SIMD Installer](https://github.com/Nyanyan/Egaroucid/releases/download/v6.3.0/Egaroucid_6_3_0_SIMD_installer.exe)</td>
-        <td>[Egaroucid 6.3.0 SIMD Zip](https://github.com/Nyanyan/Egaroucid/releases/download/v6.3.0/Egaroucid_6_3_0_Windows_x64_SIMD_Portable.zip)</td>
+        <td>2023/09/01</td>
+        <td>[Egaroucid 6.4.0 SIMD Installer](https://github.com/Nyanyan/Egaroucid/releases/download/v6.4.0/Egaroucid_6_4_0_SIMD_installer.exe)</td>
+        <td>[Egaroucid 6.4.0 SIMD Zip](https://github.com/Nyanyan/Egaroucid/releases/download/v6.4.0/Egaroucid_6_4_0_Windows_x64_SIMD_Portable.zip)</td>
     </tr>
     <tr>
         <td>Windows</td>
         <td>x64</td>
         <td>-</td>
-        <td>2023/07/09</td>
-        <td>[Egaroucid 6.3.0 Generic Installer](https://github.com/Nyanyan/Egaroucid/releases/download/v6.3.0/Egaroucid_6_3_0_Generic_installer.exe)</td>
-        <td>[Egaroucid 6.3.0 Generic Zip](https://github.com/Nyanyan/Egaroucid/releases/download/v6.3.0/Egaroucid_6_3_0_Windows_x64_Generic_Portable.zip)</td>
+        <td>2023/09/01</td>
+        <td>[Egaroucid 6.4.0 Generic Installer](https://github.com/Nyanyan/Egaroucid/releases/download/v6.4.0/Egaroucid_6_4_0_Generic_installer.exe)</td>
+        <td>[Egaroucid 6.4.0 Generic Zip](https://github.com/Nyanyan/Egaroucid/releases/download/v6.4.0/Egaroucid_6_4_0_Windows_x64_Generic_Portable.zip)</td>
     </tr>
 </table>
+
 
 
 

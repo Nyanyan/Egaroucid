@@ -25,7 +25,7 @@ For each version, the detailed conditions may be different. Please see each page
 	</tr>
     <tr>
 		<td><a href="./benchmarks/6_4_0/">6.4.0</a></td>
-		<td>TBD</td>
+		<td>2023/09/01</td>
 	</tr>
     <tr>
 		<td><a href="./benchmarks/6_3_0/">6.3.0</a></td>
