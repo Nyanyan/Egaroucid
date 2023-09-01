@@ -130,7 +130,7 @@ public:
                 }
                 else if (marks[cell] == BOARD_IMAGE_WRECT) {
                     rect.draw(getData().colors.white);
-                    if (board_arr[cell] == WHITE || (board_arr[cell] == VACANT || color_radio.checked == BOARD_IMAGE_COLOR_MONOCHROME))
+                    if (board_arr[cell] == WHITE || (board_arr[cell] == VACANT && color_radio.checked == BOARD_IMAGE_COLOR_MONOCHROME))
                         rect.drawFrame(0, BOARD_IMAGE_FRAME_WIDTH, getData().colors.black);
                 }
             }
