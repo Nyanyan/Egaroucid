@@ -28,14 +28,14 @@ Egaroucid is optimized to SIMD version, which requires AVX2  instructions, but o
     </tr>
     <tr>
         <td>Windows</td>
-        <td>x64(Standard)</td>
-        <td>AVX2(Standard)</td>
+        <td>x64 (Standard)</td>
+        <td>AVX2 (Standard)</td>
         <td>2023/07/09</td>
         <td>[Egaroucid for Console 6.3.0 Windows x64 SIMD](https://github.com/Nyanyan/Egaroucid/releases/download/console_v6.3.0/Egaroucid_for_Console_6_3_0_Windows_x64_SIMD.zip)</td>
     </tr>
     <tr>
         <td>Windows</td>
-        <td>x64(Standard)</td>
+        <td>x64 (Standard)</td>
         <td>-</td>
         <td>2023/07/09</td>
         <td>[Egaroucid for Console 6.3.0 Windows x64 Generic](https://github.com/Nyanyan/Egaroucid/releases/download/console_v6.3.0/Egaroucid_for_Console_6_3_0_Windows_x64_Generic.zip)</td>

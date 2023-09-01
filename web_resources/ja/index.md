@@ -27,7 +27,7 @@ Egaroucidは世界最強クラスのオセロAIを搭載した無料のオセロ
     </tr>
     <tr>
         <td>Egaroucid for Console</td>
-        <td>Windows/MacOS/Linux</td>
+        <td>Windows MacOS Linux</td>
         <td>[ダウンロード](./console/)</td>
     </tr>
     <tr>

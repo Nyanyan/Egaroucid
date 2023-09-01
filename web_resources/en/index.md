@@ -27,7 +27,7 @@ Completely free software. Egaroucid and Egaroucid for Console use the same (stro
     </tr>
     <tr>
         <td>Egaroucid for Console</td>
-        <td>Windows/MacOS/Linux</td>
+        <td>Windows MacOS Linux</td>
         <td>[Download](./console/)</td>
     </tr>
     <tr>
