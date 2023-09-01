@@ -27,7 +27,7 @@
 #define BOARD_IMAGE_NOT_CLICKED 2
 #define BOARD_IMAGE_RECT_SIZE 20
 #define BOARD_IMAGE_STAR_SIZE 15
-#define BOARD_IMAGE_FRAME_WIDTH 3
+#define BOARD_IMAGE_FRAME_WIDTH 2
 
 class Board_image : public App::Scene {
 private:
@@ -126,12 +126,12 @@ public:
                 if (marks[cell] == BOARD_IMAGE_BRECT) {
                     rect.draw(getData().colors.black);
                     if (board_arr[cell] == BLACK)
-                        rect.drawFrame(BOARD_IMAGE_FRAME_WIDTH, 0, getData().colors.white);
+                        rect.drawFrame(BOARD_IMAGE_FRAME_WIDTH / 2, BOARD_IMAGE_FRAME_WIDTH / 2, getData().colors.white);
                 }
                 else if (marks[cell] == BOARD_IMAGE_WRECT) {
                     rect.draw(getData().colors.white);
                     if (board_arr[cell] == WHITE || (board_arr[cell] == VACANT && color_radio.checked == BOARD_IMAGE_COLOR_MONOCHROME))
-                        rect.drawFrame(BOARD_IMAGE_FRAME_WIDTH, 0, getData().colors.black);
+                        rect.drawFrame(BOARD_IMAGE_FRAME_WIDTH / 2, BOARD_IMAGE_FRAME_WIDTH / 2, getData().colors.black);
                 }
             }
             else if (marks[cell] == BOARD_IMAGE_BSTAR || marks[cell] == BOARD_IMAGE_WSTAR) {
