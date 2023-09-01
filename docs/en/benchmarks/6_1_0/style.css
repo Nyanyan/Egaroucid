@@ -4,7 +4,6 @@ html, body {
 
 table{
     border-collapse:  collapse;
-    font-size: min(12pt, 2.9vw);
 }
 
 tr:nth-child(odd){
