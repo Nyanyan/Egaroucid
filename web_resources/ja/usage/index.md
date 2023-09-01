@@ -547,6 +547,8 @@ Egaroucidは<a href="#入出力_出力 > 対局保存">対局を独自形式で�
 
 盤面のスクリーンショットを撮れます。クリップボードに画像をコピーする他、ドキュメントフォルダ内のEgaroucid/screenshotsフォルダに日時をファイル名として画像が保存されます。
 
+画像の解像度は、Egaroucidの画面の大きさに依存します。高解像度画像が欲しい場合には最大化してからスクリーンショットを撮ってください。
+
 <div class="centering_box">
     <img class="pic2" src="img/screen_shot.png">
 </div>
@@ -565,10 +567,15 @@ Egaroucidは<a href="#入出力_出力 > 対局保存">対局を独自形式で�
 
 ショートカットキーとしてEscを「戻る」に割り当てました。
 
+画像の解像度は、Egaroucidの画面の大きさに依存します。高解像度画像が欲しい場合には最大化してから画像を保存してください。
+
 <div class="centering_box">
     <img class="pic2" src="img/edit_board_image.png">
     <img class="pic2" src="img/edit_board_image_monochrome.png">
+    <img class="pic2" src="img/edit_board_image_shot_color.png">
+    <img class="pic2" src="img/edit_board_image_shot_monochrome.png">
 </div>
+
 
 
 
