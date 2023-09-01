@@ -31,4 +31,6 @@ for idx in range(IDX_START, IDX_START + 1000):
             eg_idx = i % N_PARALLEL
             line = egaroucids[eg_idx].stdout.readline().decode().replace('\r', '').replace('\n', '') + '\n'
             f.write(line)
-
+            if (i + 1) % (N_GAMES_PER_FILE // N_ADDITIONAL_DIVISION) == 0:
+                for i in range(N_PARALLEL):
+                    egaroucids[i].kill()
