@@ -152,7 +152,7 @@
         <tr>
             <td class="text">11</td>
             <td class="text">11手</td>
-            <td class="text">22手</td>
+            <td class="text">20手</td>
             <td class="text">20手</td>
         </tr>
         <tr>
@@ -164,8 +164,8 @@
         <tr>
             <td class="text">13</td>
             <td class="text">13手</td>
-            <td class="text">24手</td>
             <td class="text">22手</td>
+            <td class="text">20手</td>
         </tr>
         <tr>
             <td class="text">14</td>

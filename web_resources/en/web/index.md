@@ -66,7 +66,7 @@
 <div align="center">
     <div class="sub_title" id="usage">Usage</div>
     <div class="text">
-        
+
         Select your turn and AI strength, then press "Start" button.<br>
         Graph shows how good the AI seems to be. If the value is big, AI seems to win. If small, you seems to win.<br>
         You can check the graph after the game though you don't check the "Graph" checkbox.<br>
@@ -153,7 +153,7 @@
         <tr>
             <td class="text">11</td>
             <td class="text">11 moves</td>
-            <td class="text">22 moves</td>
+            <td class="text">20 moves</td>
             <td class="text">20 moves</td>
         </tr>
         <tr>
@@ -165,8 +165,8 @@
         <tr>
             <td class="text">13</td>
             <td class="text">13 moves</td>
-            <td class="text">24 moves</td>
             <td class="text">22 moves</td>
+            <td class="text">20 moves</td>
         </tr>
         <tr>
             <td class="text">14</td>

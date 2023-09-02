@@ -43,25 +43,22 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
         
         if (depth >= 14){
             search.first_depth = depth / 2;
-            search.mpct = 1.0;
             search.use_mpc = true;
+            search.mpct = mpct;
+            //search.use_mpc = use_mpc;
+            //search.mpct = mpct;
             result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search.first_depth, false, false, false, TRANSPOSE_TABLE_UNDEFINED);
             g = result.first;
             if (show_log)
                 cerr << "presearch depth " << search.first_depth << " value " << g << " policy " << idx_to_coord(result.second) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
         }
-        if (depth >= 23){
-            double presearch_mpct;
-            if (use_mpc)
-                presearch_mpct = mpct - 0.4;
-            else
-                presearch_mpct = 1.8 + 0.05 * (depth - 23);
-            search.first_depth = depth;
-            search.mpct = presearch_mpct;
+        if (depth >= 18){
+            search.first_depth = depth * 3 / 4;
             search.use_mpc = true;
-            alpha = -SCORE_MAX;
-            beta = SCORE_MAX;
-            result = first_nega_scout(&search, alpha, beta, search.first_depth, false, true, false, result.second);
+            search.mpct = mpct;
+            //search.use_mpc = use_mpc;
+            //search.mpct = mpct;
+            result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search.first_depth, false, true, false, result.second);
             g = result.first;
             if (show_log)
                 cerr << "presearch depth " << depth << " value " << g << " policy " << idx_to_coord(result.second) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
@@ -70,29 +67,6 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
         search.first_depth = depth;
         search.use_mpc = use_mpc;
         search.mpct = mpct;
-        /*
-        if (!use_mpc && false){
-            alpha = -INF;
-            beta = -INF;
-            while ((g <= alpha || beta <= g) && global_searching){
-                if (g % 2){
-                    alpha = max(-SCORE_MAX, g - 2);
-                    beta = min(SCORE_MAX, g + 2);
-                } else{
-                    alpha = max(-SCORE_MAX, g - 1);
-                    beta = min(SCORE_MAX, g + 1);
-                }
-                result = first_nega_scout(&search, alpha, beta, search.first_depth, false, true, show_log, result.second);
-                g = result.first;
-                if (show_log)
-                    cerr << "mainsearch doing depth " << search.first_depth << " t=" << search.mpct << " [" << alpha << "," << beta << "] " << g << " " << idx_to_coord(result.second) << endl;
-                if (alpha == -SCORE_MAX && g == -SCORE_MAX)
-                    break;
-                if (beta == SCORE_MAX && g == SCORE_MAX)
-                    break;
-            }
-        } else{
-        */
         result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search.first_depth, false, true, show_log, result.second);
         g = result.first;
         //}
@@ -103,22 +77,29 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
     } else{
         strt = tim();
         result.second = TRANSPOSE_TABLE_UNDEFINED;
-        /*
-        if (depth >= 15){
-            search.first_depth = depth - 1;
-            search.use_mpc = true;
-            search.mpct = 0.6;
-            result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search.first_depth, false, false, false, TRANSPOSE_TABLE_UNDEFINED);
-            g = result.first;
-            policy = result.second;
-            if (show_log)
-                cerr << "presearch depth " << depth - 1 << " value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
-        }
-        */
         search.first_depth = depth - 1;
         search.use_mpc = true;
         search.mpct = 0.7;
+        //search.use_mpc = use_mpc;
+        //search.mpct = mpct;
         g = -INF;
+        if (depth >= 10){
+            search.first_depth = depth  - 4;
+            result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search.first_depth, false, false, false, result.second);
+            g = result.first;
+            policy = result.second;
+            if (show_log)
+                cerr << "presearch depth " << search.first_depth << " value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
+        }
+        if (depth >= 12){
+            search.first_depth = depth  - 2;
+            result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search.first_depth, false, false, false, result.second);
+            g = result.first;
+            policy = result.second;
+            if (show_log)
+                cerr << "presearch depth " << search.first_depth << " value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
+        }
+        /*
         if (depth - 1 >= 1){
             search.first_depth = depth - 1;
             result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search.first_depth, false, false, false, result.second);
@@ -127,14 +108,15 @@ inline Search_result tree_search(Board board, int depth, bool use_mpc, double mp
             if (show_log)
                 cerr << "presearch depth " << depth - 1 << " value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
         }
+        */
         search.first_depth = depth;
         search.use_mpc = use_mpc;
         search.mpct = mpct;
         result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, search.first_depth, false, false, show_log, result.second);
-        if (g == -INF)
-            g = result.first;
-        else
-            g = round((0.8 * g + 1.2 * result.first) / 2.0);
+        //if (g == -INF)
+        g = result.first;
+        //else
+        //    g = round((0.8 * g + 1.2 * result.first) / 2.0);
         policy = result.second;
         if (show_log)
             cerr << "mainsearch depth " << depth << " value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << search.n_nodes * 1000 / max(1ULL, tim() - strt) << endl;
