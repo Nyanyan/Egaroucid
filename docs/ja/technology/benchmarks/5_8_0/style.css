@@ -37,7 +37,7 @@ table{
 }
 
 .box{
-    width: min(80vh, 90vw);
+    width: min(1000px, 95vw);
     text-align: start;
     margin: 0 auto;
 }
