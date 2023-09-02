@@ -127,6 +127,6 @@ code {
 
 .table_of_contents_li {
     margin: 5px;
-    width: max(333px, 33%);
+    width: max(320px, 32%);
     text-align: left;
 }
