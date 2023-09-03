@@ -62,7 +62,7 @@ cmakeでビルドするか、直接g++を使ってビルドすることができ
 
 ### cmakeでビルド
 
-GitHubのリリースからコード([console_v6.3.0.zip](https://github.com/Nyanyan/Egaroucid/archive/refs/tags/console_v6.3.0.zip))を入手し、任意の場所に解凍します。
+GitHubのリリースからコード([console_v6.4.0.zip](https://github.com/Nyanyan/Egaroucid/archive/refs/tags/console_v6.4.0.zip))を入手し、任意の場所に解凍します。
 
 
 
@@ -133,7 +133,7 @@ GitHubのリリースからコード([console_v6.3.0.zip](https://github.com/Nya
     </li>
     <li>C++17の機能が必要</li>
 </ul>
-GitHubのリリースからコード([console_v6.3.0.zip](https://github.com/Nyanyan/Egaroucid/archive/refs/tags/console_v6.3.0.zip))を入手し、任意の場所に解凍します。
+GitHubのリリースからコード([console_v6.4.0.zip](https://github.com/Nyanyan/Egaroucid/archive/refs/tags/console_v6.4.0.zip))を入手し、任意の場所に解凍します。
 
 
 
