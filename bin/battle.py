@@ -180,7 +180,7 @@ for i in range(N_SET_GAMES):
     print(i)
     print_result()
     print_all_result()
-    output_plt()
+    #output_plt()
 
 print('done', N_SET_GAMES)
 print_all_result()
