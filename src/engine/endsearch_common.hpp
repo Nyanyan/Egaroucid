@@ -5,6 +5,7 @@
         Common things for endgame search
     @date 2021-2023
     @author Takuto Yamana
+    @author Toshihiko Okuhara
     @license GPL-3.0 license
 */
 
@@ -17,51 +18,75 @@
 #include "board.hpp"
 #include "search.hpp"
 
+const uint8_t parity_case[64] = {        /* p3p2p1p0 = */
+    /*0000*/  0, /*0001*/  0, /*0010*/  1, /*0011*/  9, /*0100*/  2, /*0101*/ 10, /*0110*/ 11, /*0111*/  3,
+    /*0002*/  0, /*0003*/  0, /*0012*/  0, /*0013*/  0, /*0102*/  4, /*0103*/  4, /*0112*/  5, /*0113*/  5,
+    /*0020*/  1, /*0021*/  0, /*0030*/  1, /*0031*/  0, /*0120*/  6, /*0121*/  7, /*0130*/  6, /*0131*/  7,
+    /*0022*/  9, /*0023*/  0, /*0032*/  0, /*0033*/  9, /*0122*/  8, /*0123*/  0, /*0132*/  0, /*0133*/  8,
+    /*0200*/  2, /*0201*/  4, /*0210*/  6, /*0211*/  8, /*0300*/  2, /*0301*/  4, /*0310*/  6, /*0311*/  8,
+    /*0202*/ 10, /*0203*/  4, /*0212*/  7, /*0213*/  0, /*0302*/  4, /*0303*/ 10, /*0312*/  0, /*0313*/  7,
+    /*0220*/ 11, /*0221*/  5, /*0230*/  6, /*0231*/  0, /*0320*/  6, /*0321*/  0, /*0330*/ 11, /*0331*/  5,
+    /*0222*/  3, /*0223*/  5, /*0232*/  7, /*0233*/  8, /*0322*/  8, /*0323*/  7, /*0332*/  5, /*0333*/  3
+};
+
 #if USE_SIMD
-    __m128i parity_ordering_shuffle_mask_last4[64];
-    __m128i parity_ordering_shuffle_mask_last3[64];
+//  __m128i parity_ordering_shuffle_mask_last4[64];
+//  __m128i parity_ordering_shuffle_mask_last3[64];
+
+    union V4SI {
+        unsigned int ui[4];
+        __m128i v4;
+    };
+    const V4SI parity_ordering_shuffle_mask_last4[] = {      // make search order identical to endsearch.hpp
+        {{ 0x03020100, 0x02030100, 0x01030200, 0x00030201 }},   //  0: 1(p0) 3(p1 p2 p3), 1(p0) 1(p1) 2(p2 p3), 1 1 1 1, 4
+        {{ 0x03020100, 0x02030100, 0x01020300, 0x00020301 }},   //  1: 1(p1) 3(p0 p2 p3)
+        {{ 0x03010200, 0x02010300, 0x01030200, 0x00010203 }},   //  2: 1(p2) 3(p0 p1 p3)
+        {{ 0x03000102, 0x02000103, 0x01000203, 0x00030201 }},   //  3: 1(p3) 3(p0 p1 p2)
+        {{ 0x03010200, 0x01030200, 0x02030100, 0x00030102 }},   //  4: 1(p0) 1(p2) 2(p1 p3)     p1<->p2
+        {{ 0x03000102, 0x00030102, 0x01030002, 0x02030001 }},   //  5: 1(p0) 1(p3) 2(p1 p2)     p1<->p3
+        {{ 0x01020300, 0x02010300, 0x03010200, 0x00010203 }},   //  6: 1(p1) 1(p2) 2(p0 p3)     p0<->p2
+        {{ 0x00020103, 0x02000103, 0x01000203, 0x03000201 }},   //  7: 1(p1) 1(p3) 2(p0 p2)     p0<->p3
+        {{ 0x01000302, 0x00010302, 0x03010002, 0x02010003 }},   //  8: 1(p2) 1(p3) 2(p0 p1)     p0<->p2, p1<->p3
+        {{ 0x03020100, 0x02030100, 0x01000203, 0x00010203 }},   //  9: 2(p0 p1) 2(p2 p3)
+        {{ 0x03010200, 0x02000103, 0x01030200, 0x00020301 }},   // 10: 2(p0 p2) 2(p1 p3)
+        {{ 0x03000102, 0x02010300, 0x01020300, 0x00030201 }}    // 11: 2(p0 p3) 2(p1 p2)
+    };
 #endif
 
 /*
-    @brief Get a final score with last 1 empty
+    @brief Get a final score from bitboard with last 1 empty
 
     Special optimization from an idea of https://github.com/abulmo/edax-reversi/blob/1ae7c9fe5322ac01975f1b3196e788b0d25c1e10/src/endgame.c#L85
 
-    @param search               search information
-    @param alpha                alpha value
+    @param search               search information (board ignored)
+    @param player               player bitboard
+    @param beta                 beta value
     @param p0                   last empty square
     @return the final score
 */
-inline int last1(Search *search, int alpha, uint_fast8_t p0){
+inline int last1n(Search *search, uint64_t player, int beta, uint_fast8_t p0){
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
         ++search->n_nodes_discs[search->n_discs];
     #endif
-    int score = HW2 - 2 * search->board.count_opponent();
-    int n_flip;
-    n_flip = count_last_flip(search->board.player, p0);
-    if (n_flip == 0){
+    int n_flip = count_last_flip(player, p0);
+    int score = HW2 - 2 * (pop_count_ull(player) + n_flip + 1);	// (HW2 - 1 - P - n_flip) - (P + n_flip + 1)
+    if (n_flip == 0) {
         ++search->n_nodes;
-        if (score <= 0){
-            score -= 2;
-            if (score >= alpha){
-                n_flip = count_last_flip(search->board.opponent, p0);
-                score -= 2 * n_flip;
-            }
-        } else{
-            if (score >= alpha){
-                n_flip = count_last_flip(search->board.opponent, p0);
-                if (n_flip)
-                    score -= 2 * n_flip + 2;
-            }
+        int score2 = score + 2;	// empty for player
+        if (score >= 0)
+            score = score2;
+        if (score < beta) {
+            n_flip = count_last_flip(~player, p0);
+            if (n_flip)
+                score = score2 + 2 * n_flip;
         }
-    } else
-        score += 2 * n_flip;
+    }
     return score;
 }
 
 void endsearch_init(){
-    #if USE_SIMD
+    #if 0 // USE_SIMD
         constexpr uint32_t parity_ordering_shuffle_mask_last4_32bit[64] = {
             0x3020100U, 0x3020100U, 0x3020100U, 0x3020100U, 0x3020100U, 0x3020100U, 0x3020100U, 0x3020100U, 
             0x3020100U, 0x3020100U, 0x1000302U, 0x1000302U, 0x2010300U, 0x2010300U, 0x2000301U, 0x2000301U,
@@ -88,3 +113,192 @@ void endsearch_init(){
             parity_ordering_shuffle_mask_last3[i] = _mm_cvtsi32_si128(parity_ordering_shuffle_mask_last3_32bit[i]);
     #endif
 }
+
+#if USE_SIMD
+// vector otpimized version from Edax AVX
+
+#if defined(_MSC_VER) || defined(__clang__)
+#define	vectorcall	__vectorcall
+#else
+#define	vectorcall
+#endif
+
+#define	SWAP64	0x4e	// for _mm_shuffle_epi32
+#define	DUPHI	0xee
+#define ROTR32  0x39
+
+static inline int vectorcall TESTZ_FLIP(__m128i X) { return _mm_testz_si128(X, X); }
+
+/*
+    @brief evaluation function for game over
+
+    @param b                    board.player
+    @param e                    number of empty squares
+    @return final score
+*/
+static inline int end_evaluate(uint64_t b, int e) {
+    int score = pop_count_ull(b) * 2 - HW2;	// in case of opponents win
+    int diff = score + e;		// = n_discs_p - (64 - e - n_discs_p)
+
+    if (diff == 0)
+        score = diff;
+    else if (diff > 0)
+        score = diff + e;
+    return score;
+}
+
+/**
+ * @brief Compute a board resulting of a move played on a previous board.
+ *
+ * @param OP board to play the move on.
+ * @param x move to play.
+ * @param flipped flipped returned from mm_Flip.
+ * @return resulting board.
+ */
+static inline __m128i vectorcall board_flip_next(__m128i OP, int x, __m128i flipped)
+{
+    /** coordinate to bit table converter */
+    static constexpr uint64_t X_TO_BIT[] = {
+        0x0000000000000001, 0x0000000000000002, 0x0000000000000004, 0x0000000000000008,
+        0x0000000000000010, 0x0000000000000020, 0x0000000000000040, 0x0000000000000080,
+        0x0000000000000100, 0x0000000000000200, 0x0000000000000400, 0x0000000000000800,
+        0x0000000000001000, 0x0000000000002000, 0x0000000000004000, 0x0000000000008000,
+        0x0000000000010000, 0x0000000000020000, 0x0000000000040000, 0x0000000000080000,
+        0x0000000000100000, 0x0000000000200000, 0x0000000000400000, 0x0000000000800000,
+        0x0000000001000000, 0x0000000002000000, 0x0000000004000000, 0x0000000008000000,
+        0x0000000010000000, 0x0000000020000000, 0x0000000040000000, 0x0000000080000000,
+        0x0000000100000000, 0x0000000200000000, 0x0000000400000000, 0x0000000800000000,
+        0x0000001000000000, 0x0000002000000000, 0x0000004000000000, 0x0000008000000000,
+        0x0000010000000000, 0x0000020000000000, 0x0000040000000000, 0x0000080000000000,
+        0x0000100000000000, 0x0000200000000000, 0x0000400000000000, 0x0000800000000000,
+        0x0001000000000000, 0x0002000000000000, 0x0004000000000000, 0x0008000000000000,
+        0x0010000000000000, 0x0020000000000000, 0x0040000000000000, 0x0080000000000000,
+        0x0100000000000000, 0x0200000000000000, 0x0400000000000000, 0x0800000000000000,
+        0x1000000000000000, 0x2000000000000000, 0x4000000000000000, 0x8000000000000000
+    };
+
+    OP = _mm_xor_si128(OP, _mm_or_si128(flipped, _mm_loadl_epi64((__m128i*) & X_TO_BIT[x])));
+    return _mm_shuffle_epi32(OP, SWAP64);
+}
+
+/*
+    @brief Get a final score with last 1 empty
+
+    @param search               search information (board ignored)
+    @param PO                   vectored board (O ignored)
+    @param beta                 beta value
+    @param place                last empty
+    @return the final opponent's score
+*/
+static inline int vectorcall last1n(Search *search, __m128i PO, int beta, int place) {
+    union V4DI {
+        uint64_t ull[4];
+        __m128i v2[2];
+    };
+    static constexpr V4DI mask_dvhd[64] = {
+	{{ 0x0000000000000001, 0x00000000000000ff, 0x0101010101010101, 0x8040201008040201 }},
+	{{ 0x0000000000000102, 0x00000000000000ff, 0x0202020202020202, 0x0080402010080402 }},
+	{{ 0x0000000000010204, 0x00000000000000ff, 0x0404040404040404, 0x0000804020100804 }},
+	{{ 0x0000000001020408, 0x00000000000000ff, 0x0808080808080808, 0x0000008040201008 }},
+	{{ 0x0000000102040810, 0x00000000000000ff, 0x1010101010101010, 0x0000000080402010 }},
+	{{ 0x0000010204081020, 0x00000000000000ff, 0x2020202020202020, 0x0000000000804020 }},
+	{{ 0x0001020408102040, 0x00000000000000ff, 0x4040404040404040, 0x0000000000008040 }},
+	{{ 0x0102040810204080, 0x00000000000000ff, 0x8080808080808080, 0x0000000000000080 }},
+	{{ 0x0000000000000102, 0x000000000000ff00, 0x0101010101010101, 0x4020100804020100 }},
+	{{ 0x0000000000010204, 0x000000000000ff00, 0x0202020202020202, 0x8040201008040201 }},
+	{{ 0x0000000001020408, 0x000000000000ff00, 0x0404040404040404, 0x0080402010080402 }},
+	{{ 0x0000000102040810, 0x000000000000ff00, 0x0808080808080808, 0x0000804020100804 }},
+	{{ 0x0000010204081020, 0x000000000000ff00, 0x1010101010101010, 0x0000008040201008 }},
+	{{ 0x0001020408102040, 0x000000000000ff00, 0x2020202020202020, 0x0000000080402010 }},
+	{{ 0x0102040810204080, 0x000000000000ff00, 0x4040404040404040, 0x0000000000804020 }},
+	{{ 0x0204081020408000, 0x000000000000ff00, 0x8080808080808080, 0x0000000000008040 }},
+	{{ 0x0000000000010204, 0x0000000000ff0000, 0x0101010101010101, 0x2010080402010000 }},
+	{{ 0x0000000001020408, 0x0000000000ff0000, 0x0202020202020202, 0x4020100804020100 }},
+	{{ 0x0000000102040810, 0x0000000000ff0000, 0x0404040404040404, 0x8040201008040201 }},
+	{{ 0x0000010204081020, 0x0000000000ff0000, 0x0808080808080808, 0x0080402010080402 }},
+	{{ 0x0001020408102040, 0x0000000000ff0000, 0x1010101010101010, 0x0000804020100804 }},
+	{{ 0x0102040810204080, 0x0000000000ff0000, 0x2020202020202020, 0x0000008040201008 }},
+	{{ 0x0204081020408000, 0x0000000000ff0000, 0x4040404040404040, 0x0000000080402010 }},
+	{{ 0x0408102040800000, 0x0000000000ff0000, 0x8080808080808080, 0x0000000000804020 }},
+	{{ 0x0000000001020408, 0x00000000ff000000, 0x0101010101010101, 0x1008040201000000 }},
+	{{ 0x0000000102040810, 0x00000000ff000000, 0x0202020202020202, 0x2010080402010000 }},
+	{{ 0x0000010204081020, 0x00000000ff000000, 0x0404040404040404, 0x4020100804020100 }},
+	{{ 0x0001020408102040, 0x00000000ff000000, 0x0808080808080808, 0x8040201008040201 }},
+	{{ 0x0102040810204080, 0x00000000ff000000, 0x1010101010101010, 0x0080402010080402 }},
+	{{ 0x0204081020408000, 0x00000000ff000000, 0x2020202020202020, 0x0000804020100804 }},
+	{{ 0x0408102040800000, 0x00000000ff000000, 0x4040404040404040, 0x0000008040201008 }},
+	{{ 0x0810204080000000, 0x00000000ff000000, 0x8080808080808080, 0x0000000080402010 }},
+	{{ 0x0000000102040810, 0x000000ff00000000, 0x0101010101010101, 0x0804020100000000 }},
+	{{ 0x0000010204081020, 0x000000ff00000000, 0x0202020202020202, 0x1008040201000000 }},
+	{{ 0x0001020408102040, 0x000000ff00000000, 0x0404040404040404, 0x2010080402010000 }},
+	{{ 0x0102040810204080, 0x000000ff00000000, 0x0808080808080808, 0x4020100804020100 }},
+	{{ 0x0204081020408000, 0x000000ff00000000, 0x1010101010101010, 0x8040201008040201 }},
+	{{ 0x0408102040800000, 0x000000ff00000000, 0x2020202020202020, 0x0080402010080402 }},
+	{{ 0x0810204080000000, 0x000000ff00000000, 0x4040404040404040, 0x0000804020100804 }},
+	{{ 0x1020408000000000, 0x000000ff00000000, 0x8080808080808080, 0x0000008040201008 }},
+	{{ 0x0000010204081020, 0x0000ff0000000000, 0x0101010101010101, 0x0402010000000000 }},
+	{{ 0x0001020408102040, 0x0000ff0000000000, 0x0202020202020202, 0x0804020100000000 }},
+	{{ 0x0102040810204080, 0x0000ff0000000000, 0x0404040404040404, 0x1008040201000000 }},
+	{{ 0x0204081020408000, 0x0000ff0000000000, 0x0808080808080808, 0x2010080402010000 }},
+	{{ 0x0408102040800000, 0x0000ff0000000000, 0x1010101010101010, 0x4020100804020100 }},
+	{{ 0x0810204080000000, 0x0000ff0000000000, 0x2020202020202020, 0x8040201008040201 }},
+	{{ 0x1020408000000000, 0x0000ff0000000000, 0x4040404040404040, 0x0080402010080402 }},
+	{{ 0x2040800000000000, 0x0000ff0000000000, 0x8080808080808080, 0x0000804020100804 }},
+	{{ 0x0001020408102040, 0x00ff000000000000, 0x0101010101010101, 0x0201000000000000 }},
+	{{ 0x0102040810204080, 0x00ff000000000000, 0x0202020202020202, 0x0402010000000000 }},
+	{{ 0x0204081020408000, 0x00ff000000000000, 0x0404040404040404, 0x0804020100000000 }},
+	{{ 0x0408102040800000, 0x00ff000000000000, 0x0808080808080808, 0x1008040201000000 }},
+	{{ 0x0810204080000000, 0x00ff000000000000, 0x1010101010101010, 0x2010080402010000 }},
+	{{ 0x1020408000000000, 0x00ff000000000000, 0x2020202020202020, 0x4020100804020100 }},
+	{{ 0x2040800000000000, 0x00ff000000000000, 0x4040404040404040, 0x8040201008040201 }},
+	{{ 0x4080000000000000, 0x00ff000000000000, 0x8080808080808080, 0x0080402010080402 }},
+	{{ 0x0102040810204080, 0xff00000000000000, 0x0101010101010101, 0x0100000000000000 }},
+	{{ 0x0204081020408000, 0xff00000000000000, 0x0202020202020202, 0x0201000000000000 }},
+	{{ 0x0408102040800000, 0xff00000000000000, 0x0404040404040404, 0x0402010000000000 }},
+	{{ 0x0810204080000000, 0xff00000000000000, 0x0808080808080808, 0x0804020100000000 }},
+	{{ 0x1020408000000000, 0xff00000000000000, 0x1010101010101010, 0x1008040201000000 }},
+	{{ 0x2040800000000000, 0xff00000000000000, 0x2020202020202020, 0x2010080402010000 }},
+	{{ 0x4080000000000000, 0xff00000000000000, 0x4040404040404040, 0x4020100804020100 }},
+	{{ 0x8000000000000000, 0xff00000000000000, 0x8080808080808080, 0x8040201008040201 }}
+    };
+    __m128i M0 = mask_dvhd[place].v2[0];
+    __m128i M1 = mask_dvhd[place].v2[1];
+    __m128i PP = _mm_shuffle_epi32(PO, DUPHI);
+    __m128i II = _mm_sad_epu8(_mm_and_si128(PP, M0), _mm_setzero_si128());
+    const int x = place & 7;
+    const int y = place >> 3;
+
+    ++search->n_nodes;
+    #if USE_SEARCH_STATISTICS
+        ++search->n_nodes_discs[search->n_discs];
+    #endif
+    uint_fast8_t n_flip = n_flip_pre_calc[_mm_extract_epi16(II, 4)][x];
+    n_flip += n_flip_pre_calc[_mm_cvtsi128_si32(II)][x];
+    int t = _mm_movemask_epi8(_mm_sub_epi8(_mm_setzero_si128(), _mm_and_si128(PP, M1)));
+    n_flip += n_flip_pre_calc[t >> 8][y];
+    n_flip += n_flip_pre_calc[t & 0xFF][y];
+
+    int score = HW2 - 2 * (pop_count_ull(_mm_cvtsi128_si64(PP)) + n_flip + 1);	// (HW2 - 1 - P - n_flip) - (P + n_flip + 1)
+
+    if (n_flip == 0) {
+        ++search->n_nodes;
+        int score2 = score + 2;	// empty for player
+        if (score >= 0)
+            score = score2;
+
+        if (score < beta) {	// lazy cut-off
+            II = _mm_sad_epu8(_mm_andnot_si128(PP, M0), _mm_setzero_si128());
+            n_flip = n_flip_pre_calc[_mm_extract_epi16(II, 4)][x];
+            n_flip += n_flip_pre_calc[_mm_cvtsi128_si32(II)][x];
+            t = _mm_movemask_epi8(_mm_sub_epi8(_mm_setzero_si128(), _mm_andnot_si128(PP, M1)));
+            n_flip += n_flip_pre_calc[t >> 8][y];
+            n_flip += n_flip_pre_calc[t & 0xFF][y];
+
+            if (n_flip != 0)
+                score = score2 + 2 * n_flip;
+        }
+    }
+
+    return score;
+}
+#endif

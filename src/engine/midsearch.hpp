@@ -312,12 +312,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
             return nega_alpha_end_fast(search, alpha, beta, skipped, false, searching);
     #else
         if (is_end_search && search->n_discs == 60){
-            uint64_t empties = ~(search->board.player | search->board.opponent);
-            uint_fast8_t p0 = first_bit(&empties);
-            uint_fast8_t p1 = next_bit(&empties);
-            uint_fast8_t p2 = next_bit(&empties);
-            uint_fast8_t p3 = next_bit(&empties);
-            return last4(search, alpha, beta, p0, p1, p2, p3, false, searching);
+            return last4(search, alpha, beta);
         }
     #endif
     if (!is_end_search){
