@@ -35,10 +35,10 @@ for name, cmd in player_info:
         ]
     )    
 
-with open('problem/openingslarge.txt', 'r') as f:
+with open('problem/xot_small_shuffled.txt', 'r') as f:
     openings = [elem for elem in f.read().splitlines()]
 
-shuffle(openings)
+#shuffle(openings)
 
 def play_battle(p0_idx, p1_idx, opening_idx):
     player_idxes = [p0_idx, p1_idx]
@@ -126,6 +126,11 @@ def print_result():
         print(i, players[i][NAME_IDX], w + d + l, w, d, l, r, sep='\t')
 
 def print_all_result():
+    print('', end='\t')
+    for i in range(len(players)):
+        name = players[i][NAME_IDX]
+        print(name, end='\t')
+    print('all')
     for i in range(len(players)):
         name = players[i][NAME_IDX]
         result = players[i][RESULT_IDX]
@@ -182,9 +187,9 @@ for i in range(N_SET_GAMES):
     print_all_result()
     #output_plt()
 
-print('done', N_SET_GAMES)
+print(N_SET_GAMES * 2, 'games played for each winning rate')
 print_all_result()
-    
+
 
 for i in range(len(players)):
     players[i][SUBPROCESS_IDX].stdin.write('quit\n'.encode('utf-8'))
