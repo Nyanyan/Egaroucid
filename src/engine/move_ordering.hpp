@@ -24,7 +24,7 @@
 /*
     @brief if wipeout found, it must be searched first.
 */
-#define W_WIPEOUT INF
+// #define W_WIPEOUT INF
 #define W_1ST_MOVE 10000000
 #define W_2ND_MOVE 1000000
 
