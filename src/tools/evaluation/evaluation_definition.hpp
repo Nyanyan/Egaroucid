@@ -41,8 +41,8 @@
 #define ADJ_N_FEATURES 62
 
 // phase
-#define ADJ_N_PHASES 30
-#define ADJ_N_PHASE_DISCS 2 // 60 / ADJ_N_PHASES
+#define ADJ_N_PHASES 60
+#define ADJ_N_PHASE_DISCS 1 // 60 / ADJ_N_PHASES
 
 //#define ADJ_SCORE_MAX HW2
 
@@ -299,11 +299,11 @@ constexpr int adj_rev_patterns[ADJ_N_PATTERNS][ADJ_MAX_PATTERN_CELLS] = {
 
 constexpr int adj_eval_sizes[ADJ_N_EVAL] = {
     P38, P38, P38, P35, P36, P37, P38, P39, 
-    P310, P310, P310, P310, P310, P310, P310, P310, 
-    ADJ_MAX_SURROUND * ADJ_MAX_SURROUND, 
-    ADJ_MAX_CANPUT * ADJ_MAX_CANPUT, 
-    ADJ_MAX_STONE_NUM * ADJ_MAX_STONE_NUM, 
-    P44 * P44, P44 * P44, P44 * P44, P44 * P44
+    P310, P310, P310, P310, P310, P310, P310, P310
+    //ADJ_MAX_SURROUND * ADJ_MAX_SURROUND, 
+    //ADJ_MAX_CANPUT * ADJ_MAX_CANPUT, 
+    //ADJ_MAX_STONE_NUM * ADJ_MAX_STONE_NUM, 
+    //P44 * P44, P44 * P44, P44 * P44, P44 * P44
 };
 
 constexpr int adj_feature_to_eval_idx[ADJ_N_FEATURES] = {
@@ -322,14 +322,14 @@ constexpr int adj_feature_to_eval_idx[ADJ_N_FEATURES] = {
     12, 12, 12, 12, 
     13, 13, 13, 13, 
     14, 14, 14, 14, 
-    15, 15, 15, 15, 
-    16, 
-    17, 
-    18, 
-    19, 19, 19, 19, 
-    20, 20, 20, 20, 
-    21, 21, 21, 21, 
-    22, 22, 22, 22
+    15, 15, 15, 15
+    //16, 
+    //17, 
+    //18, 
+    //19, 19, 19, 19, 
+    //20, 20, 20, 20, 
+    //21, 21, 21, 21, 
+    //22, 22, 22, 22
 };
 
 int adj_pick_digit3(int num, int d, int n_digit){
