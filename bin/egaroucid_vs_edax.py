@@ -15,9 +15,9 @@ file = None
 if len(sys.argv) == 4:
     file = sys.argv[3]
     print('egaroucid eval ', file)
-    egaroucid = subprocess.Popen(('Egaroucid_for_console.exe -eval ' + file + ' -quiet -nobook -thread 19 -level ' + str(level)).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    egaroucid = subprocess.Popen(('Egaroucid_for_console.exe -eval ' + file + ' -quiet -nobook -level ' + str(level)).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
 else:
-    egaroucid = subprocess.Popen(('Egaroucid_for_console.exe -quiet -nobook -thread 19 -level ' + str(level)).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    egaroucid = subprocess.Popen(('Egaroucid_for_console.exe -quiet -nobook -level ' + str(level)).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
 edax = subprocess.Popen(('wEdax-x64-modern.exe -q -level ' + str(level)).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 egaroucid_win = [0, 0]
 edax_win = [0, 0]
