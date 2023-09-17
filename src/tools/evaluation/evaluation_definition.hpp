@@ -33,9 +33,12 @@
 #define ADJ_N_CANPUT_PATTERNS 4
 
 // overall
-#define ADJ_MAX_EVALUATE_IDX 65536
-#define ADJ_N_EVAL (16 + 3 + 4)
-#define ADJ_N_FEATURES (62 + 3 + 16)
+//#define ADJ_MAX_EVALUATE_IDX 65536
+//#define ADJ_N_EVAL (16 + 3 + 4)
+//#define ADJ_N_FEATURES (62 + 3 + 16)
+#define ADJ_MAX_EVALUATE_IDX 59049
+#define ADJ_N_EVAL 16
+#define ADJ_N_FEATURES 62
 
 // phase
 #define ADJ_N_PHASES 30
@@ -440,10 +443,10 @@ void adj_calc_features(Board *board, uint16_t res[]){
     int idx = 0;
     for (int i = 0; i < ADJ_N_SYMMETRY_PATTERNS; ++i)
         res[idx++] = adj_pick_pattern(b_arr, i);
-    res[idx++] = adj_calc_surround_feature(board);
-    res[idx++] = adj_calc_legal_feature(board);
-    res[idx++] = adj_calc_num_feature(board);
-    adj_calc_legal_features(board, res, &idx);
+    //res[idx++] = adj_calc_surround_feature(board);
+    //res[idx++] = adj_calc_legal_feature(board);
+    //res[idx++] = adj_calc_num_feature(board);
+    //adj_calc_legal_features(board, res, &idx);
 }
 
 int calc_phase(Board *board, int16_t player){
