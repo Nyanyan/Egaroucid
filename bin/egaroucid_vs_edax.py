@@ -5,6 +5,7 @@ from random import shuffle
 
 with open('problem/xot_small_shuffled.txt', 'r') as f:
     tactic = [elem for elem in f.read().splitlines()]
+print(len(tactic), 'openings found')
 
 level = int(sys.argv[1])
 n_games = int(sys.argv[2])

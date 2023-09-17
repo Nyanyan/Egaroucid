@@ -425,6 +425,7 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
                 return false;
             }
         }
+        /*
         if (fread(eval_sur0_sur1_arr[phase_idx], 2, MAX_SURROUND * MAX_SURROUND, fp) < MAX_SURROUND * MAX_SURROUND){
             std::cerr << "[ERROR] [FATAL] evaluation file broken" << std::endl;
             fclose(fp);
@@ -445,6 +446,7 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
             fclose(fp);
             return false;
         }
+        */
     }
     if (thread_pool.size() >= 2){
         std::future<void> tasks[N_PHASES * N_PATTERNS];
@@ -496,7 +498,7 @@ bool evaluate_init(const std::string file, bool show_log){
     @return evaluation function conpletely initialized?
 */
 bool evaluate_init(bool show_log){
-    return init_evaluation_calc("resources/eval.egev", show_log);
+    return init_evaluation_calc("resources/eval.egev2", show_log);
 }
 
 /*
@@ -628,26 +630,26 @@ inline int mid_evaluate(Board *board){
     Search search;
     search.init_board(board);
     calc_features(&search);
-    uint64_t player_mobility, opponent_mobility;
-    player_mobility = calc_legal(search.board.player, search.board.opponent);
-    opponent_mobility = calc_legal(search.board.opponent, search.board.player);
-    if ((player_mobility | opponent_mobility) == 0ULL)
-        return end_evaluate(&search.board);
-    int phase_idx, sur0, sur1, canput0, canput1, num0, num1;
-    uint64_t empties;
+    //uint64_t player_mobility, opponent_mobility;
+    //player_mobility = calc_legal(search.board.player, search.board.opponent);
+    //opponent_mobility = calc_legal(search.board.opponent, search.board.player);
+    //if ((player_mobility | opponent_mobility) == 0ULL)
+    //    return end_evaluate(&search.board);
+    int phase_idx; //, sur0, sur1, canput0, canput1, num0, num1;
+    //uint64_t empties;
     phase_idx = search.phase();
-    canput0 = pop_count_ull(player_mobility);
-    canput1 = pop_count_ull(opponent_mobility);
-    empties = ~(search.board.player | search.board.opponent);
-    sur0 = calc_surround(search.board.player, empties);
-    sur1 = calc_surround(search.board.opponent, empties);
-    num0 = pop_count_ull(search.board.player);
-    num1 = search.n_discs - num0;
-    int res = calc_pattern_diff(phase_idx, &search) + 
-        eval_sur0_sur1_arr[phase_idx][sur0][sur1] + 
-        eval_canput0_canput1_arr[phase_idx][canput0][canput1] + 
-        eval_num0_num1_arr[phase_idx][num0][num1] + 
-        calc_mobility_pattern(phase_idx, player_mobility, opponent_mobility);
+    //canput0 = pop_count_ull(player_mobility);
+    //canput1 = pop_count_ull(opponent_mobility);
+    //empties = ~(search.board.player | search.board.opponent);
+    //sur0 = calc_surround(search.board.player, empties);
+    //sur1 = calc_surround(search.board.opponent, empties);
+    //num0 = pop_count_ull(search.board.player);
+    //num1 = search.n_discs - num0;
+    int res = calc_pattern_diff(phase_idx, &search); // + 
+    //    eval_sur0_sur1_arr[phase_idx][sur0][sur1] + 
+    //    eval_canput0_canput1_arr[phase_idx][canput0][canput1] + 
+    //    eval_num0_num1_arr[phase_idx][num0][num1] + 
+    //    calc_mobility_pattern(phase_idx, player_mobility, opponent_mobility);
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
     if (res > SCORE_MAX)
@@ -664,26 +666,26 @@ inline int mid_evaluate(Board *board){
     @return evaluation value
 */
 inline int mid_evaluate_diff(Search *search){
-    uint64_t player_mobility, opponent_mobility;
-    player_mobility = calc_legal(search->board.player, search->board.opponent);
-    opponent_mobility = calc_legal(search->board.opponent, search->board.player);
-    if ((player_mobility | opponent_mobility) == 0ULL)
-        return end_evaluate(&search->board);
-    int phase_idx, sur0, sur1, canput0, canput1, num0, num1;
-    uint64_t empties;
+    //uint64_t player_mobility, opponent_mobility;
+    //player_mobility = calc_legal(search->board.player, search->board.opponent);
+    //opponent_mobility = calc_legal(search->board.opponent, search->board.player);
+    //if ((player_mobility | opponent_mobility) == 0ULL)
+    //    return end_evaluate(&search->board);
+    int phase_idx; //, sur0, sur1, canput0, canput1, num0, num1;
+    //uint64_t empties;
     phase_idx = search->phase();
-    canput0 = pop_count_ull(player_mobility);
-    canput1 = pop_count_ull(opponent_mobility);
-    empties = ~(search->board.player | search->board.opponent);
-    sur0 = calc_surround(search->board.player, empties);
-    sur1 = calc_surround(search->board.opponent, empties);
-    num0 = pop_count_ull(search->board.player);
-    num1 = search->n_discs - num0;
-    int res = calc_pattern_diff(phase_idx, search) + 
-        eval_sur0_sur1_arr[phase_idx][sur0][sur1] + 
-        eval_canput0_canput1_arr[phase_idx][canput0][canput1] + 
-        eval_num0_num1_arr[phase_idx][num0][num1] + 
-        calc_mobility_pattern(phase_idx, player_mobility, opponent_mobility);
+    //canput0 = pop_count_ull(player_mobility);
+    //canput1 = pop_count_ull(opponent_mobility);
+    //empties = ~(search->board.player | search->board.opponent);
+    //sur0 = calc_surround(search->board.player, empties);
+    //sur1 = calc_surround(search->board.opponent, empties);
+    //num0 = pop_count_ull(search->board.player);
+    //num1 = search->n_discs - num0;
+    int res = calc_pattern_diff(phase_idx, search); // + 
+    //    eval_sur0_sur1_arr[phase_idx][sur0][sur1] + 
+    //    eval_canput0_canput1_arr[phase_idx][canput0][canput1] + 
+    //    eval_num0_num1_arr[phase_idx][num0][num1] + 
+    //    calc_mobility_pattern(phase_idx, player_mobility, opponent_mobility);
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
     if (res > SCORE_MAX)
