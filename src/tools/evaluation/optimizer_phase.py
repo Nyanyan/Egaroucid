@@ -11,7 +11,7 @@ else:
     hour = '0'
     minute = '1'
     second = '0'
-    beta = '0.01'
+    beta = '0.1'
 
 #if int(phase) < 20:
 train_data_nums = [1, 2, 3, 4, 6, 7, 8, 9, 11, 15, 16, 17, 18, 19, 99]
@@ -20,13 +20,13 @@ train_data_nums = [1, 2, 3, 4, 6, 7, 8, 9, 11, 15, 16, 17, 18, 19, 99]
 
 train_data = [str(elem) + '.dat' for elem in train_data_nums]
 
-train_root_dir = './../../../train_data/bin_data/20230917/'
+train_root_dir = './../../../train_data/bin_data/20230918/'
 
 #train_dirs = [train_root_dir + str(4 + elem) + '/' for elem in range(int(phase) * 2, int(phase) * 2 + 2)]
 train_dirs = [train_root_dir + str(int(phase)) + '/']
 
-model_dir = './../../../model/20230918_3/'
-#model_dir = './../../../model/nomodel/'
+#model_dir = './../../../model/20230918_3/'
+model_dir = './../../../model/nomodel/'
 
 additional_params = ''
 for tfile in train_data:

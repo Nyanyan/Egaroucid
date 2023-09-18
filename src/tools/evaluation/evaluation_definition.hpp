@@ -37,8 +37,8 @@
 //#define ADJ_N_EVAL (16 + 3 + 4)
 //#define ADJ_N_FEATURES (62 + 3 + 16)
 #define ADJ_MAX_EVALUATE_IDX 59049
-#define ADJ_N_EVAL 16
-#define ADJ_N_FEATURES 62
+#define ADJ_N_EVAL (16 + 3)
+#define ADJ_N_FEATURES (62 + 3)
 
 // phase
 #define ADJ_N_PHASES 60
@@ -299,10 +299,10 @@ constexpr int adj_rev_patterns[ADJ_N_PATTERNS][ADJ_MAX_PATTERN_CELLS] = {
 
 constexpr int adj_eval_sizes[ADJ_N_EVAL] = {
     P38, P38, P38, P35, P36, P37, P38, P39, 
-    P310, P310, P310, P310, P310, P310, P310, P310
-    //ADJ_MAX_SURROUND * ADJ_MAX_SURROUND, 
-    //ADJ_MAX_CANPUT * ADJ_MAX_CANPUT, 
-    //ADJ_MAX_STONE_NUM * ADJ_MAX_STONE_NUM, 
+    P310, P310, P310, P310, P310, P310, P310, P310,
+    ADJ_MAX_SURROUND * ADJ_MAX_SURROUND, 
+    ADJ_MAX_CANPUT * ADJ_MAX_CANPUT, 
+    ADJ_MAX_STONE_NUM * ADJ_MAX_STONE_NUM
     //P44 * P44, P44 * P44, P44 * P44, P44 * P44
 };
 
@@ -322,10 +322,10 @@ constexpr int adj_feature_to_eval_idx[ADJ_N_FEATURES] = {
     12, 12, 12, 12, 
     13, 13, 13, 13, 
     14, 14, 14, 14, 
-    15, 15, 15, 15
-    //16, 
-    //17, 
-    //18, 
+    15, 15, 15, 15,
+    16, 
+    17, 
+    18
     //19, 19, 19, 19, 
     //20, 20, 20, 20, 
     //21, 21, 21, 21, 
@@ -443,9 +443,9 @@ void adj_calc_features(Board *board, uint16_t res[]){
     int idx = 0;
     for (int i = 0; i < ADJ_N_SYMMETRY_PATTERNS; ++i)
         res[idx++] = adj_pick_pattern(b_arr, i);
-    //res[idx++] = adj_calc_surround_feature(board);
-    //res[idx++] = adj_calc_legal_feature(board);
-    //res[idx++] = adj_calc_num_feature(board);
+    res[idx++] = adj_calc_surround_feature(board);
+    res[idx++] = adj_calc_legal_feature(board);
+    res[idx++] = adj_calc_num_feature(board);
     //adj_calc_legal_features(board, res, &idx);
 }
 
