@@ -35,7 +35,7 @@
 #define SIMD_EVAL_OFFSET 4092
 #define N_SIMD_EVAL_OFFSET_BEF 2
 #define N_SIMD_EVAL_OFFSET_AFT 3
-#define N_PATTERN_PARAMS 521478
+#define N_PATTERN_PARAMS 639576
 #define N_PATTERN_PARAMS_FIRST 29403
 #define SIMD_EVAL_DUMMY_ADDR 29404
 #define N_PATTERN_PARAMS_SECOND 610173
@@ -614,7 +614,7 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
         pattern_starts[12], pattern_starts[12], pattern_starts[12], pattern_starts[12], 
         pattern_starts[13], pattern_starts[13], pattern_starts[13], pattern_starts[13]
     );
-    eval_simd_offsets_aft[5] = _mm256_set_epi32(
+    eval_simd_offsets_aft[4] = _mm256_set_epi32(
         pattern_starts[17], pattern_starts[17], pattern_starts[17], pattern_starts[17], 
         pattern_starts[17], pattern_starts[17], pattern_starts[17], pattern_starts[17]
     );
