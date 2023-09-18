@@ -159,7 +159,7 @@ function show(r, c) {
         player = 1 - player;
         if (!check_mobility()) {
             player = 2;
-        } else if (!auto_pass){
+        } else if (!auto_pass && player == ai_player){
             player = 1 - player;
             var pass_elem = document.getElementById('pass');
             pass_elem.disabled = false;

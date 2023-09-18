@@ -299,6 +299,7 @@ void hint(Board_info *board, Options *options, State *state, std::string arg){
 }
 
 inline void analyze(Board_info *board, Options *options, State *state){
+    print_transcript(board->boards);
     print_analyze_head();
     Analyze_summary summary[2];
     for (int i = (int)board->boards.size() - 2; i >= 0; --i){

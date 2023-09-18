@@ -409,6 +409,18 @@ inline void print_analyze_foot(Analyze_summary summary[]){
     }
 }
 
+void print_transcript(std::vector<Board> boards){
+    for (int i = 0; i < (int)boards.size() - 1; ++i){
+        Board n_board = boards[i].copy();
+        uint64_t played_board = (n_board.player | n_board.opponent) ^ (boards[i + 1].player | boards[i + 1].opponent);
+        if (pop_count_ull(played_board) == 1){
+            uint_fast8_t played_move = ntz(played_board);
+            std::cout << idx_to_coord(played_move);
+        }
+    }
+    std::cout << std::endl;
+}
+
 void print_special_commandline_options(std::vector<Commandline_option> commandline_options){
     if (find_commandline_option(commandline_options, ID_VERSION) == OPTION_FOUND){
         print_version();

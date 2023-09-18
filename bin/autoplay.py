@@ -1,15 +1,15 @@
 import subprocess
 from tqdm import trange
 
-IDX_START = 52
-IDX_END = 1000
+IDX_START = 1012
+IDX_END = 10000
 
 LEVEL = 11
 N_GAMES_PER_FILE = 10000
-N_THREAD = 32
+N_THREAD = 16
 
-N_PARALLEL = 4
-N_ADDITIONAL_DIVISION = 20
+N_PARALLEL = 16
+N_ADDITIONAL_DIVISION = 1
 N_THREAD_PER_EXE = N_THREAD // N_PARALLEL
 
 N_PLAY_PER_AI = N_GAMES_PER_FILE / N_ADDITIONAL_DIVISION / N_PARALLEL
@@ -25,7 +25,7 @@ def fill0(n, r):
 cmd = 'Egaroucid_for_Console_6_4_0_x64_SIMD.exe -nobook -l ' + str(LEVEL) + ' -thread ' + str(N_THREAD_PER_EXE) + ' -selfplay ' + str(N_PLAY_PER_AI)
 print(cmd)
 
-for idx in range(IDX_START, IDX_END):
+for idx in range(IDX_START, IDX_END + 1):
     print(fill0(idx, 7))
     with open('transcript/' + fill0(idx, 7) + '.txt', 'w') as f:
         for i in trange(N_GAMES_PER_FILE):
