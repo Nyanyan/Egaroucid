@@ -1,8 +1,8 @@
 import subprocess
 from tqdm import trange
 
-IDX_START = 1538
-IDX_END = 2000
+IDX_START = 1000
+IDX_END = 10000
 
 LEVEL = 11
 N_GAMES_PER_FILE = 10000
