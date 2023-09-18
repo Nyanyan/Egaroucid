@@ -56,7 +56,8 @@ const uint8_t parity_case[64] = {        /* p3p2p1p0 = */
 /*
     @brief Get a final score from bitboard with last 1 empty
 
-    Special optimization from an idea of https://github.com/abulmo/edax-reversi/blob/1ae7c9fe5322ac01975f1b3196e788b0d25c1e10/src/endgame.c#L85
+    Special optimization from an idea of https://github.com/abulmo/edax-reversi/blob/1ae7c9fe5322ac01975f1b3196e788b0d25c1e10/src/endgame.c#L85 ,
+    which has been adapted from Zebra by Gunnar Anderson.
 
     @param search               search information (board ignored)
     @param player               player bitboard
@@ -115,7 +116,7 @@ void endsearch_init(){
 }
 
 #if USE_SIMD
-// vector otpimized version from Edax AVX
+// vector otpimized version imported from Edax AVX, (C) 1998 - 2018 Richard Delorme, 2014 - 23 Toshihiko Okuhara
 
 #if defined(_MSC_VER) || defined(__clang__)
 #define	vectorcall	__vectorcall
