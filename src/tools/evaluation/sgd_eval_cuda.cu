@@ -422,8 +422,10 @@ void adj_import_test_data(int n_files, char* files[], int use_phase, double beta
     for (i = 0; i < ADJ_N_EVAL; ++i) {
         for (j = 0; j < adj_eval_sizes[i]; ++j) {
             int n_data_feature = adj_alpha_occurance[i][j];
-            if (adj_rev_idxes[i][j] != j)
+            if (adj_rev_idxes[i][j] != j){
                 n_data_feature += adj_alpha_occurance[i][adj_rev_idxes[i][j]];
+                n_data_feature /= 2.0;
+            }
             adj_alpha[i][j] = beta / (double)std::max(ADJ_N_MIN_DATA_FEATURES, n_data_feature);
         }
     }
