@@ -22,19 +22,10 @@
     @brief evaluation pattern definition
 */
 // disc patterns
-#define N_PATTERNS 18
+#define N_PATTERNS 20
 #define MAX_PATTERN_CELLS 10
-#define MAX_CELL_PATTERNS 15
+#define MAX_CELL_PATTERNS 17
 #define MAX_EVALUATE_IDX 59049
-
-// additional features
-#define MAX_SURROUND 64
-#define MAX_CANPUT 35
-#define MAX_STONE_NUM 65
-
-// mobility patterns
-#define N_CANPUT_PATTERNS 4
-#define MOBILITY_PATTERN_SIZE 256
 
 /*
     @brief value definition
@@ -276,7 +267,27 @@ constexpr Feature_to_coord feature_to_coord[N_SYMMETRY_PATTERNS] = {
     {10, {COORD_G2, COORD_F2, COORD_F3, COORD_E3, COORD_D3, COORD_C3, COORD_F4, COORD_E4, COORD_D4, COORD_C4}}, // 74
     {10, {COORD_B7, COORD_C7, COORD_C6, COORD_D6, COORD_E6, COORD_F6, COORD_C5, COORD_D5, COORD_E5, COORD_F5}}, // 75
     {10, {COORD_G2, COORD_G3, COORD_F3, COORD_F4, COORD_F5, COORD_F6, COORD_E3, COORD_E4, COORD_E5, COORD_E6}}, // 76
-    {10, {COORD_B7, COORD_B6, COORD_C6, COORD_C5, COORD_C4, COORD_C3, COORD_D6, COORD_D5, COORD_D4, COORD_D3}}  // 77
+    {10, {COORD_B7, COORD_B6, COORD_C6, COORD_C5, COORD_C4, COORD_C3, COORD_D6, COORD_D5, COORD_D4, COORD_D3}}, // 77
+
+    // 18 inner block
+    {10, {COORD_A1, COORD_B1, COORD_C2, COORD_D2, COORD_E2, COORD_F2, COORD_C3, COORD_D3, COORD_E3, COORD_F3}}, // 78
+    {10, {COORD_H8, COORD_H7, COORD_G6, COORD_G5, COORD_G4, COORD_G3, COORD_F6, COORD_F5, COORD_F4, COORD_F3}}, // 79
+    {10, {COORD_A1, COORD_A2, COORD_B3, COORD_B4, COORD_B5, COORD_B6, COORD_C3, COORD_C4, COORD_C5, COORD_C6}}, // 80
+    {10, {COORD_H8, COORD_G8, COORD_F7, COORD_E7, COORD_D7, COORD_C7, COORD_F6, COORD_E6, COORD_D6, COORD_C6}}, // 81
+    {10, {COORD_H1, COORD_G1, COORD_F2, COORD_E2, COORD_D2, COORD_C2, COORD_F3, COORD_E3, COORD_D3, COORD_C3}}, // 82
+    {10, {COORD_A8, COORD_B8, COORD_C7, COORD_D7, COORD_E7, COORD_F7, COORD_C6, COORD_D6, COORD_E6, COORD_F6}}, // 83
+    {10, {COORD_H1, COORD_H2, COORD_G3, COORD_G4, COORD_G5, COORD_G6, COORD_F3, COORD_F4, COORD_F5, COORD_F6}}, // 84
+    {10, {COORD_A8, COORD_A7, COORD_B6, COORD_B5, COORD_B4, COORD_B3, COORD_C6, COORD_C5, COORD_C4, COORD_C3}}, // 85
+
+    // 19 2 edge
+    {10, {COORD_C1, COORD_D1, COORD_E1, COORD_F1, COORD_B2, COORD_C2, COORD_A3, COORD_B3, COORD_A4, COORD_B4}}, // 86
+    {10, {COORD_H6, COORD_H5, COORD_H4, COORD_H3, COORD_G7, COORD_G6, COORD_F8, COORD_F7, COORD_E8, COORD_E7}}, // 87
+    {10, {COORD_A3, COORD_A4, COORD_A5, COORD_A6, COORD_B2, COORD_B3, COORD_C1, COORD_C2, COORD_D1, COORD_D2}}, // 88
+    {10, {COORD_F8, COORD_E8, COORD_D8, COORD_C8, COORD_G7, COORD_F7, COORD_H6, COORD_G6, COORD_H5, COORD_G5}}, // 89
+    {10, {COORD_F1, COORD_E1, COORD_D1, COORD_C1, COORD_G2, COORD_F2, COORD_H3, COORD_G3, COORD_H4, COORD_G4}}, // 90
+    {10, {COORD_C8, COORD_D8, COORD_E8, COORD_F8, COORD_B7, COORD_C7, COORD_A6, COORD_B6, COORD_A5, COORD_B5}}, // 91
+    {10, {COORD_H3, COORD_H4, COORD_H5, COORD_H6, COORD_G2, COORD_G3, COORD_F1, COORD_F2, COORD_E1, COORD_E2}}, // 92
+    {10, {COORD_A6, COORD_A5, COORD_A4, COORD_A3, COORD_B7, COORD_B6, COORD_C8, COORD_C7, COORD_D8, COORD_D7}}  // 93
 };
 
 /*
@@ -306,70 +317,70 @@ struct Coord_to_feature{
 };
 
 constexpr Coord_to_feature coord_to_feature[HW2] = {
-    {13, {{24, P30}, {29, P38}, {32, P31}, {33, P31}, {37, P39}, {40, P34}, {41, P34}, {45, P39}, {48, P31}, {49, P31}, {53, P39}, {57, P39}, {61, P39}, { 0, PNO}, { 0, PNO}}}, // COORD_H8
-    {11, {{ 3, P30}, {22, P30}, {29, P37}, {32, P32}, {37, P38}, {45, P35}, {48, P32}, {53, P38}, {57, P38}, {61, P38}, {63, P39}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_G8
-    { 9, {{ 7, P30}, {18, P30}, {29, P36}, {32, P33}, {37, P37}, {40, P35}, {48, P33}, {53, P37}, {63, P37}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_F8
-    { 9, {{11, P30}, {14, P30}, {32, P34}, {37, P36}, {40, P36}, {48, P34}, {52, P35}, {53, P36}, {63, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E8
-    { 9, {{ 9, P30}, {15, P30}, {32, P35}, {36, P36}, {40, P37}, {48, P35}, {52, P36}, {53, P35}, {69, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D8
-    { 9, {{ 5, P30}, {19, P30}, {28, P36}, {32, P36}, {36, P37}, {40, P38}, {48, P36}, {52, P37}, {69, P37}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_C8
-    {11, {{ 1, P30}, {23, P30}, {28, P37}, {32, P37}, {36, P38}, {44, P35}, {48, P37}, {52, P38}, {56, P38}, {60, P38}, {69, P39}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_B8
-    {13, {{25, P30}, {28, P38}, {31, P31}, {32, P38}, {36, P39}, {39, P34}, {40, P39}, {44, P39}, {47, P31}, {48, P38}, {52, P39}, {56, P39}, {60, P39}, { 0, PNO}, { 0, PNO}}}, // COORD_A8
-    {11, {{ 2, P30}, {20, P30}, {29, P35}, {33, P32}, {37, P35}, {45, P32}, {49, P32}, {53, P34}, {57, P37}, {61, P37}, {65, P39}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_H7
-    {15, {{ 2, P31}, { 3, P31}, {24, P31}, {29, P34}, {32, P30}, {33, P30}, {37, P34}, {45, P38}, {53, P33}, {57, P36}, {61, P36}, {63, P38}, {65, P38}, {71, P39}, {73, P39}}}, // COORD_G7
-    {12, {{ 2, P32}, { 7, P31}, {22, P31}, {29, P33}, {37, P33}, {40, P30}, {45, P34}, {48, P30}, {57, P35}, {61, P35}, {63, P36}, {73, P38}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_F7
-    { 9, {{ 2, P33}, {11, P31}, {15, P31}, {18, P31}, {40, P31}, {57, P34}, {60, P33}, {61, P34}, {63, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E7
-    { 9, {{ 2, P34}, { 9, P31}, {14, P31}, {19, P31}, {40, P32}, {56, P34}, {60, P34}, {61, P33}, {69, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D7
-    {12, {{ 2, P35}, { 5, P31}, {23, P31}, {28, P33}, {36, P33}, {40, P33}, {44, P34}, {48, P39}, {56, P35}, {60, P35}, {69, P36}, {75, P38}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_C7
-    {15, {{ 1, P31}, { 2, P36}, {25, P31}, {28, P34}, {31, P30}, {32, P39}, {36, P34}, {44, P38}, {52, P33}, {56, P36}, {60, P36}, {67, P38}, {69, P38}, {75, P39}, {77, P39}}}, // COORD_B7
-    {11, {{ 2, P37}, {21, P30}, {28, P35}, {31, P32}, {36, P35}, {44, P32}, {47, P32}, {52, P34}, {56, P37}, {60, P37}, {67, P39}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_A7
-    { 9, {{ 6, P30}, {16, P30}, {29, P32}, {33, P33}, {37, P32}, {41, P35}, {49, P33}, {53, P32}, {65, P37}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_H6
-    {12, {{ 3, P32}, { 6, P31}, {20, P31}, {29, P31}, {37, P31}, {41, P30}, {45, P31}, {49, P30}, {57, P33}, {61, P32}, {65, P36}, {71, P38}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_G6
-    {13, {{ 6, P32}, { 7, P32}, {15, P32}, {24, P32}, {29, P30}, {45, P37}, {57, P32}, {63, P35}, {65, P35}, {71, P37}, {73, P37}, {75, P34}, {76, P34}, { 0, PNO}, { 0, PNO}}}, // COORD_F6
-    {11, {{ 6, P33}, {11, P32}, {19, P32}, {22, P32}, {45, P33}, {63, P31}, {65, P34}, {71, P33}, {73, P36}, {75, P35}, {76, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E6
-    {11, {{ 6, P34}, { 9, P32}, {18, P32}, {23, P32}, {44, P33}, {67, P34}, {69, P31}, {72, P30}, {73, P35}, {75, P36}, {77, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D6
-    {13, {{ 5, P32}, { 6, P35}, {14, P32}, {25, P32}, {28, P30}, {44, P37}, {56, P32}, {67, P35}, {69, P35}, {72, P34}, {73, P34}, {75, P37}, {77, P37}, { 0, PNO}, { 0, PNO}}}, // COORD_C6
-    {12, {{ 1, P32}, { 6, P36}, {21, P31}, {28, P31}, {36, P31}, {39, P30}, {44, P31}, {47, P30}, {56, P33}, {60, P32}, {67, P36}, {77, P38}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_B6
-    { 9, {{ 6, P37}, {17, P30}, {28, P32}, {31, P33}, {36, P32}, {39, P35}, {47, P33}, {52, P32}, {67, P37}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_A6
-    { 9, {{10, P30}, {12, P30}, {33, P34}, {37, P30}, {41, P36}, {49, P34}, {51, P30}, {53, P31}, {65, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_H5
-    { 9, {{ 3, P33}, {10, P31}, {15, P33}, {16, P31}, {41, P31}, {57, P31}, {59, P30}, {61, P31}, {65, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_G5
-    {11, {{ 7, P33}, {10, P32}, {19, P33}, {20, P32}, {45, P30}, {63, P34}, {65, P31}, {71, P36}, {73, P33}, {75, P30}, {76, P35}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_F5
-    {12, {{10, P33}, {11, P33}, {23, P33}, {24, P33}, {45, P36}, {57, P30}, {63, P30}, {65, P30}, {71, P32}, {73, P32}, {75, P31}, {76, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E5
-    {12, {{ 9, P33}, {10, P34}, {22, P33}, {25, P33}, {44, P36}, {56, P30}, {67, P30}, {69, P30}, {72, P31}, {73, P31}, {75, P32}, {77, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D5
-    {11, {{ 5, P33}, {10, P35}, {18, P33}, {21, P32}, {44, P30}, {67, P31}, {69, P34}, {72, P35}, {73, P30}, {75, P33}, {77, P36}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_C5
-    { 9, {{ 1, P33}, {10, P36}, {14, P33}, {17, P31}, {39, P31}, {56, P31}, {58, P30}, {60, P31}, {67, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_B5
-    { 9, {{10, P37}, {13, P30}, {31, P34}, {36, P30}, {39, P36}, {47, P34}, {50, P30}, {52, P31}, {67, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_A5
-    { 9, {{ 8, P30}, {15, P34}, {33, P35}, {35, P30}, {41, P37}, {49, P35}, {51, P31}, {53, P30}, {66, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_H4
-    { 9, {{ 3, P34}, { 8, P31}, {12, P31}, {19, P34}, {41, P32}, {55, P31}, {59, P31}, {61, P30}, {66, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_G4
-    {11, {{ 7, P34}, { 8, P32}, {16, P32}, {23, P34}, {43, P30}, {66, P31}, {68, P34}, {70, P30}, {71, P35}, {74, P33}, {76, P36}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_F4
-    {12, {{ 8, P33}, {11, P34}, {20, P33}, {25, P34}, {43, P36}, {55, P30}, {66, P30}, {68, P30}, {70, P31}, {71, P31}, {74, P32}, {76, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E4
-    {12, {{ 8, P34}, { 9, P34}, {21, P33}, {24, P34}, {42, P36}, {54, P30}, {62, P30}, {64, P30}, {70, P32}, {72, P32}, {74, P31}, {77, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D4
-    {11, {{ 5, P34}, { 8, P35}, {17, P32}, {22, P34}, {42, P30}, {62, P31}, {64, P34}, {70, P33}, {72, P36}, {74, P30}, {77, P35}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_C4
-    { 9, {{ 1, P34}, { 8, P36}, {13, P31}, {18, P34}, {39, P32}, {54, P31}, {58, P31}, {60, P30}, {62, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_B4
-    { 9, {{ 8, P37}, {14, P34}, {31, P35}, {34, P30}, {39, P37}, {47, P35}, {50, P31}, {52, P30}, {62, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_A4
-    { 9, {{ 4, P30}, {19, P35}, {27, P32}, {33, P36}, {35, P32}, {41, P38}, {49, P36}, {51, P32}, {66, P37}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_H3
-    {12, {{ 3, P35}, { 4, P31}, {23, P35}, {27, P31}, {35, P31}, {41, P33}, {43, P31}, {49, P39}, {55, P33}, {59, P32}, {66, P36}, {76, P38}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_G3
-    {13, {{ 4, P32}, { 7, P35}, {12, P32}, {25, P35}, {27, P30}, {43, P37}, {55, P32}, {66, P35}, {68, P35}, {70, P34}, {71, P34}, {74, P37}, {76, P37}, { 0, PNO}, { 0, PNO}}}, // COORD_F3
-    {11, {{ 4, P33}, {11, P35}, {16, P33}, {21, P34}, {43, P33}, {66, P34}, {68, P31}, {70, P35}, {71, P30}, {74, P36}, {76, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E3
-    {11, {{ 4, P34}, { 9, P35}, {17, P33}, {20, P34}, {42, P33}, {62, P34}, {64, P31}, {70, P36}, {72, P33}, {74, P35}, {77, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D3
-    {13, {{ 4, P35}, { 5, P35}, {13, P32}, {24, P35}, {26, P30}, {42, P37}, {54, P32}, {62, P35}, {64, P35}, {70, P37}, {72, P37}, {74, P34}, {77, P34}, { 0, PNO}, { 0, PNO}}}, // COORD_C3
-    {12, {{ 1, P35}, { 4, P36}, {22, P35}, {26, P31}, {34, P31}, {39, P33}, {42, P31}, {47, P39}, {54, P33}, {58, P32}, {62, P36}, {72, P38}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_B3
-    { 9, {{ 4, P37}, {18, P35}, {26, P32}, {31, P36}, {34, P32}, {39, P38}, {47, P36}, {50, P32}, {62, P37}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_A3
-    {11, {{ 0, P30}, {23, P36}, {27, P35}, {33, P37}, {35, P35}, {43, P32}, {49, P37}, {51, P34}, {55, P37}, {59, P37}, {66, P39}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_H2
-    {15, {{ 0, P31}, { 3, P36}, {25, P36}, {27, P34}, {30, P30}, {33, P39}, {35, P34}, {43, P38}, {51, P33}, {55, P36}, {59, P36}, {66, P38}, {68, P38}, {74, P39}, {76, P39}}}, // COORD_G2
-    {12, {{ 0, P32}, { 7, P36}, {21, P35}, {27, P33}, {35, P33}, {38, P30}, {43, P34}, {46, P30}, {55, P35}, {59, P35}, {68, P36}, {74, P38}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_F2
-    { 9, {{ 0, P33}, {11, P36}, {12, P33}, {17, P34}, {38, P31}, {55, P34}, {58, P33}, {59, P34}, {68, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E2
-    { 9, {{ 0, P34}, { 9, P36}, {13, P33}, {16, P34}, {38, P32}, {54, P34}, {58, P34}, {59, P33}, {64, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D2
-    {12, {{ 0, P35}, { 5, P36}, {20, P35}, {26, P33}, {34, P33}, {38, P33}, {42, P34}, {46, P39}, {54, P35}, {58, P35}, {64, P36}, {70, P38}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_C2
-    {15, {{ 0, P36}, { 1, P36}, {24, P36}, {26, P34}, {30, P39}, {31, P39}, {34, P34}, {42, P38}, {50, P33}, {54, P36}, {58, P36}, {62, P38}, {64, P38}, {70, P39}, {72, P39}}}, // COORD_B2
-    {11, {{ 0, P37}, {22, P36}, {26, P35}, {31, P37}, {34, P35}, {42, P32}, {47, P37}, {50, P34}, {54, P37}, {58, P37}, {62, P39}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_A2
-    {13, {{25, P37}, {27, P38}, {30, P31}, {33, P38}, {35, P39}, {38, P34}, {41, P39}, {43, P39}, {46, P31}, {49, P38}, {51, P39}, {55, P39}, {59, P39}, { 0, PNO}, { 0, PNO}}}, // COORD_H1
-    {11, {{ 3, P37}, {21, P36}, {27, P37}, {30, P32}, {35, P38}, {43, P35}, {46, P32}, {51, P38}, {55, P38}, {59, P38}, {68, P39}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_G1
-    { 9, {{ 7, P37}, {17, P35}, {27, P36}, {30, P33}, {35, P37}, {38, P35}, {46, P33}, {51, P37}, {68, P37}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_F1
-    { 9, {{11, P37}, {13, P34}, {30, P34}, {35, P36}, {38, P36}, {46, P34}, {50, P35}, {51, P36}, {68, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E1
-    { 9, {{ 9, P37}, {12, P34}, {30, P35}, {34, P36}, {38, P37}, {46, P35}, {50, P36}, {51, P35}, {64, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D1
-    { 9, {{ 5, P37}, {16, P35}, {26, P36}, {30, P36}, {34, P37}, {38, P38}, {46, P36}, {50, P37}, {64, P37}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_C1
-    {11, {{ 1, P37}, {20, P36}, {26, P37}, {30, P37}, {34, P38}, {42, P35}, {46, P37}, {50, P38}, {54, P38}, {58, P38}, {64, P39}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_B1
-    {13, {{24, P37}, {26, P38}, {30, P38}, {31, P38}, {34, P39}, {38, P39}, {39, P39}, {42, P39}, {46, P38}, {47, P38}, {50, P39}, {54, P39}, {58, P39}, { 0, PNO}, { 0, PNO}}}, // COORD_A1
+    {15, {{24, P30}, {29, P38}, {32, P31}, {33, P31}, {37, P39}, {40, P34}, {41, P34}, {45, P39}, {48, P31}, {49, P31}, {53, P39}, {57, P39}, {61, P39}, {79, P39}, {81, P39}, { 0, PNO}, { 0, PNO}}}, // COORD_H8
+    {12, {{ 3, P30}, {22, P30}, {29, P37}, {32, P32}, {37, P38}, {45, P35}, {48, P32}, {53, P38}, {57, P38}, {61, P38}, {63, P39}, {81, P38}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_G8
+    {12, {{ 7, P30}, {18, P30}, {29, P36}, {32, P33}, {37, P37}, {40, P35}, {48, P33}, {53, P37}, {63, P37}, {87, P33}, {89, P39}, {91, P36}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_F8
+    {12, {{11, P30}, {14, P30}, {32, P34}, {37, P36}, {40, P36}, {48, P34}, {52, P35}, {53, P36}, {63, P33}, {87, P31}, {89, P38}, {91, P37}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E8
+    {12, {{ 9, P30}, {15, P30}, {32, P35}, {36, P36}, {40, P37}, {48, P35}, {52, P36}, {53, P35}, {69, P33}, {89, P37}, {91, P38}, {93, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D8
+    {12, {{ 5, P30}, {19, P30}, {28, P36}, {32, P36}, {36, P37}, {40, P38}, {48, P36}, {52, P37}, {69, P37}, {89, P36}, {91, P39}, {93, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_C8
+    {12, {{ 1, P30}, {23, P30}, {28, P37}, {32, P37}, {36, P38}, {44, P35}, {48, P37}, {52, P38}, {56, P38}, {60, P38}, {69, P39}, {83, P38}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_B8
+    {15, {{25, P30}, {28, P38}, {31, P31}, {32, P38}, {36, P39}, {39, P34}, {40, P39}, {44, P39}, {47, P31}, {48, P38}, {52, P39}, {56, P39}, {60, P39}, {83, P39}, {85, P39}, { 0, PNO}, { 0, PNO}}}, // COORD_A8
+    {12, {{ 2, P30}, {20, P30}, {29, P35}, {33, P32}, {37, P35}, {45, P32}, {49, P32}, {53, P34}, {57, P37}, {61, P37}, {65, P39}, {79, P38}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_H7
+    {17, {{ 2, P31}, { 3, P31}, {24, P31}, {29, P34}, {32, P30}, {33, P30}, {37, P34}, {45, P38}, {53, P33}, {57, P36}, {61, P36}, {63, P38}, {65, P38}, {71, P39}, {73, P39}, {87, P35}, {89, P35}}}, // COORD_G7
+    {16, {{ 2, P32}, { 7, P31}, {22, P31}, {29, P33}, {37, P33}, {40, P30}, {45, P34}, {48, P30}, {57, P35}, {61, P35}, {63, P36}, {73, P38}, {81, P37}, {83, P34}, {87, P32}, {89, P34}, { 0, PNO}}}, // COORD_F7
+    {12, {{ 2, P33}, {11, P31}, {15, P31}, {18, P31}, {40, P31}, {57, P34}, {60, P33}, {61, P34}, {63, P32}, {81, P36}, {83, P35}, {87, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E7
+    {12, {{ 2, P34}, { 9, P31}, {14, P31}, {19, P31}, {40, P32}, {56, P34}, {60, P34}, {61, P33}, {69, P32}, {81, P35}, {83, P36}, {93, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D7
+    {16, {{ 2, P35}, { 5, P31}, {23, P31}, {28, P33}, {36, P33}, {40, P33}, {44, P34}, {48, P39}, {56, P35}, {60, P35}, {69, P36}, {75, P38}, {81, P34}, {83, P37}, {91, P34}, {93, P32}, { 0, PNO}}}, // COORD_C7
+    {17, {{ 1, P31}, { 2, P36}, {25, P31}, {28, P34}, {31, P30}, {32, P39}, {36, P34}, {44, P38}, {52, P33}, {56, P36}, {60, P36}, {67, P38}, {69, P38}, {75, P39}, {77, P39}, {91, P35}, {93, P35}}}, // COORD_B7
+    {12, {{ 2, P37}, {21, P30}, {28, P35}, {31, P32}, {36, P35}, {44, P32}, {47, P32}, {52, P34}, {56, P37}, {60, P37}, {67, P39}, {85, P38}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_A7
+    {12, {{ 6, P30}, {16, P30}, {29, P32}, {33, P33}, {37, P32}, {41, P35}, {49, P33}, {53, P32}, {65, P37}, {87, P39}, {89, P33}, {92, P36}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_H6
+    {16, {{ 3, P32}, { 6, P31}, {20, P31}, {29, P31}, {37, P31}, {41, P30}, {45, P31}, {49, P30}, {57, P33}, {61, P32}, {65, P36}, {71, P38}, {79, P37}, {84, P34}, {87, P34}, {89, P32}, { 0, PNO}}}, // COORD_G6
+    {17, {{ 6, P32}, { 7, P32}, {15, P32}, {24, P32}, {29, P30}, {45, P37}, {57, P32}, {63, P35}, {65, P35}, {71, P37}, {73, P37}, {75, P34}, {76, P34}, {79, P33}, {81, P33}, {83, P30}, {84, P30}}}, // COORD_F6
+    {13, {{ 6, P33}, {11, P32}, {19, P32}, {22, P32}, {45, P33}, {63, P31}, {65, P34}, {71, P33}, {73, P36}, {75, P35}, {76, P30}, {81, P32}, {83, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E6
+    {13, {{ 6, P34}, { 9, P32}, {18, P32}, {23, P32}, {44, P33}, {67, P34}, {69, P31}, {72, P30}, {73, P35}, {75, P36}, {77, P33}, {81, P31}, {83, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D6
+    {17, {{ 5, P32}, { 6, P35}, {14, P32}, {25, P32}, {28, P30}, {44, P37}, {56, P32}, {67, P35}, {69, P35}, {72, P34}, {73, P34}, {75, P37}, {77, P37}, {80, P30}, {81, P30}, {83, P33}, {85, P33}}}, // COORD_C6
+    {16, {{ 1, P32}, { 6, P36}, {21, P31}, {28, P31}, {36, P31}, {39, P30}, {44, P31}, {47, P30}, {56, P33}, {60, P32}, {67, P36}, {77, P38}, {80, P34}, {85, P37}, {91, P32}, {93, P34}, { 0, PNO}}}, // COORD_B6
+    {12, {{ 6, P37}, {17, P30}, {28, P32}, {31, P33}, {36, P32}, {39, P35}, {47, P33}, {52, P32}, {67, P37}, {88, P36}, {91, P33}, {93, P39}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_A6
+    {12, {{10, P30}, {12, P30}, {33, P34}, {37, P30}, {41, P36}, {49, P34}, {51, P30}, {53, P31}, {65, P33}, {87, P38}, {89, P31}, {92, P37}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_H5
+    {12, {{ 3, P33}, {10, P31}, {15, P33}, {16, P31}, {41, P31}, {57, P31}, {59, P30}, {61, P31}, {65, P32}, {79, P36}, {84, P35}, {89, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_G5
+    {13, {{ 7, P33}, {10, P32}, {19, P33}, {20, P32}, {45, P30}, {63, P34}, {65, P31}, {71, P36}, {73, P33}, {75, P30}, {76, P35}, {79, P32}, {84, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_F5
+    {12, {{10, P33}, {11, P33}, {23, P33}, {24, P33}, {45, P36}, {57, P30}, {63, P30}, {65, P30}, {71, P32}, {73, P32}, {75, P31}, {76, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E5
+    {12, {{ 9, P33}, {10, P34}, {22, P33}, {25, P33}, {44, P36}, {56, P30}, {67, P30}, {69, P30}, {72, P31}, {73, P31}, {75, P32}, {77, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D5
+    {13, {{ 5, P33}, {10, P35}, {18, P33}, {21, P32}, {44, P30}, {67, P31}, {69, P34}, {72, P35}, {73, P30}, {75, P33}, {77, P36}, {80, P31}, {85, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_C5
+    {12, {{ 1, P33}, {10, P36}, {14, P33}, {17, P31}, {39, P31}, {56, P31}, {58, P30}, {60, P31}, {67, P32}, {80, P35}, {85, P36}, {91, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_B5
+    {12, {{10, P37}, {13, P30}, {31, P34}, {36, P30}, {39, P36}, {47, P34}, {50, P30}, {52, P31}, {67, P33}, {88, P37}, {91, P31}, {93, P38}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_A5
+    {12, {{ 8, P30}, {15, P34}, {33, P35}, {35, P30}, {41, P37}, {49, P35}, {51, P31}, {53, P30}, {66, P33}, {87, P37}, {90, P31}, {92, P38}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_H4
+    {12, {{ 3, P34}, { 8, P31}, {12, P31}, {19, P34}, {41, P32}, {55, P31}, {59, P31}, {61, P30}, {66, P32}, {79, P35}, {84, P36}, {90, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_G4
+    {13, {{ 7, P34}, { 8, P32}, {16, P32}, {23, P34}, {43, P30}, {66, P31}, {68, P34}, {70, P30}, {71, P35}, {74, P33}, {76, P36}, {79, P31}, {84, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_F4
+    {12, {{ 8, P33}, {11, P34}, {20, P33}, {25, P34}, {43, P36}, {55, P30}, {66, P30}, {68, P30}, {70, P31}, {71, P31}, {74, P32}, {76, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E4
+    {12, {{ 8, P34}, { 9, P34}, {21, P33}, {24, P34}, {42, P36}, {54, P30}, {62, P30}, {64, P30}, {70, P32}, {72, P32}, {74, P31}, {77, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D4
+    {13, {{ 5, P34}, { 8, P35}, {17, P32}, {22, P34}, {42, P30}, {62, P31}, {64, P34}, {70, P33}, {72, P36}, {74, P30}, {77, P35}, {80, P32}, {85, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_C4
+    {12, {{ 1, P34}, { 8, P36}, {13, P31}, {18, P34}, {39, P32}, {54, P31}, {58, P31}, {60, P30}, {62, P32}, {80, P36}, {85, P35}, {86, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_B4
+    {12, {{ 8, P37}, {14, P34}, {31, P35}, {34, P30}, {39, P37}, {47, P35}, {50, P31}, {52, P30}, {62, P33}, {86, P31}, {88, P38}, {93, P37}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_A4
+    {12, {{ 4, P30}, {19, P35}, {27, P32}, {33, P36}, {35, P32}, {41, P38}, {49, P36}, {51, P32}, {66, P37}, {87, P36}, {90, P33}, {92, P39}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_H3
+    {16, {{ 3, P35}, { 4, P31}, {23, P35}, {27, P31}, {35, P31}, {41, P33}, {43, P31}, {49, P39}, {55, P33}, {59, P32}, {66, P36}, {76, P38}, {79, P34}, {84, P37}, {90, P32}, {92, P34}, { 0, PNO}}}, // COORD_G3
+    {17, {{ 4, P32}, { 7, P35}, {12, P32}, {25, P35}, {27, P30}, {43, P37}, {55, P32}, {66, P35}, {68, P35}, {70, P34}, {71, P34}, {74, P37}, {76, P37}, {78, P30}, {79, P30}, {82, P33}, {84, P33}}}, // COORD_F3
+    {13, {{ 4, P33}, {11, P35}, {16, P33}, {21, P34}, {43, P33}, {66, P34}, {68, P31}, {70, P35}, {71, P30}, {74, P36}, {76, P33}, {78, P31}, {82, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E3
+    {13, {{ 4, P34}, { 9, P35}, {17, P33}, {20, P34}, {42, P33}, {62, P34}, {64, P31}, {70, P36}, {72, P33}, {74, P35}, {77, P30}, {78, P32}, {82, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D3
+    {17, {{ 4, P35}, { 5, P35}, {13, P32}, {24, P35}, {26, P30}, {42, P37}, {54, P32}, {62, P35}, {64, P35}, {70, P37}, {72, P37}, {74, P34}, {77, P34}, {78, P33}, {80, P33}, {82, P30}, {85, P30}}}, // COORD_C3
+    {16, {{ 1, P35}, { 4, P36}, {22, P35}, {26, P31}, {34, P31}, {39, P33}, {42, P31}, {47, P39}, {54, P33}, {58, P32}, {62, P36}, {72, P38}, {80, P37}, {85, P34}, {86, P32}, {88, P34}, { 0, PNO}}}, // COORD_B3
+    {12, {{ 4, P37}, {18, P35}, {26, P32}, {31, P36}, {34, P32}, {39, P38}, {47, P36}, {50, P32}, {62, P37}, {86, P33}, {88, P39}, {93, P36}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_A3
+    {12, {{ 0, P30}, {23, P36}, {27, P35}, {33, P37}, {35, P35}, {43, P32}, {49, P37}, {51, P34}, {55, P37}, {59, P37}, {66, P39}, {84, P38}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_H2
+    {17, {{ 0, P31}, { 3, P36}, {25, P36}, {27, P34}, {30, P30}, {33, P39}, {35, P34}, {43, P38}, {51, P33}, {55, P36}, {59, P36}, {66, P38}, {68, P38}, {74, P39}, {76, P39}, {90, P35}, {92, P35}}}, // COORD_G2
+    {16, {{ 0, P32}, { 7, P36}, {21, P35}, {27, P33}, {35, P33}, {38, P30}, {43, P34}, {46, P30}, {55, P35}, {59, P35}, {68, P36}, {74, P38}, {78, P34}, {82, P37}, {90, P34}, {92, P32}, { 0, PNO}}}, // COORD_F2
+    {12, {{ 0, P33}, {11, P36}, {12, P33}, {17, P34}, {38, P31}, {55, P34}, {58, P33}, {59, P34}, {68, P32}, {78, P35}, {82, P36}, {92, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E2
+    {12, {{ 0, P34}, { 9, P36}, {13, P33}, {16, P34}, {38, P32}, {54, P34}, {58, P34}, {59, P33}, {64, P32}, {78, P36}, {82, P35}, {88, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D2
+    {16, {{ 0, P35}, { 5, P36}, {20, P35}, {26, P33}, {34, P33}, {38, P33}, {42, P34}, {46, P39}, {54, P35}, {58, P35}, {64, P36}, {70, P38}, {78, P37}, {82, P34}, {86, P34}, {88, P32}, { 0, PNO}}}, // COORD_C2
+    {17, {{ 0, P36}, { 1, P36}, {24, P36}, {26, P34}, {30, P39}, {31, P39}, {34, P34}, {42, P38}, {50, P33}, {54, P36}, {58, P36}, {62, P38}, {64, P38}, {70, P39}, {72, P39}, {86, P35}, {88, P35}}}, // COORD_B2
+    {12, {{ 0, P37}, {22, P36}, {26, P35}, {31, P37}, {34, P35}, {42, P32}, {47, P37}, {50, P34}, {54, P37}, {58, P37}, {62, P39}, {80, P38}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_A2
+    {15, {{25, P37}, {27, P38}, {30, P31}, {33, P38}, {35, P39}, {38, P34}, {41, P39}, {43, P39}, {46, P31}, {49, P38}, {51, P39}, {55, P39}, {59, P39}, {82, P39}, {84, P39}, { 0, PNO}, { 0, PNO}}}, // COORD_H1
+    {12, {{ 3, P37}, {21, P36}, {27, P37}, {30, P32}, {35, P38}, {43, P35}, {46, P32}, {51, P38}, {55, P38}, {59, P38}, {68, P39}, {82, P38}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_G1
+    {12, {{ 7, P37}, {17, P35}, {27, P36}, {30, P33}, {35, P37}, {38, P35}, {46, P33}, {51, P37}, {68, P37}, {86, P36}, {90, P39}, {92, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_F1
+    {12, {{11, P37}, {13, P34}, {30, P34}, {35, P36}, {38, P36}, {46, P34}, {50, P35}, {51, P36}, {68, P33}, {86, P37}, {90, P38}, {92, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E1
+    {12, {{ 9, P37}, {12, P34}, {30, P35}, {34, P36}, {38, P37}, {46, P35}, {50, P36}, {51, P35}, {64, P33}, {86, P38}, {88, P31}, {90, P37}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D1
+    {12, {{ 5, P37}, {16, P35}, {26, P36}, {30, P36}, {34, P37}, {38, P38}, {46, P36}, {50, P37}, {64, P37}, {86, P39}, {88, P33}, {90, P36}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_C1
+    {12, {{ 1, P37}, {20, P36}, {26, P37}, {30, P37}, {34, P38}, {42, P35}, {46, P37}, {50, P38}, {54, P38}, {58, P38}, {64, P39}, {78, P38}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_B1
+    {15, {{24, P37}, {26, P38}, {30, P38}, {31, P38}, {34, P39}, {38, P39}, {39, P39}, {42, P39}, {46, P38}, {47, P38}, {50, P39}, {54, P39}, {58, P39}, {78, P39}, {80, P39}, { 0, PNO}, { 0, PNO}}}  // COORD_A1
 };
 
 /*
@@ -381,10 +392,6 @@ constexpr uint_fast16_t pow3[11] = {1, P31, P32, P33, P34, P35, P36, P37, P38, P
     @brief evaluation parameters
 */
 int16_t pattern_arr[2][N_PHASES][N_PATTERNS][MAX_EVALUATE_IDX];
-int16_t eval_sur0_sur1_arr[N_PHASES][MAX_SURROUND][MAX_SURROUND];
-int16_t eval_canput0_canput1_arr[N_PHASES][MAX_CANPUT][MAX_CANPUT];
-int16_t eval_num0_num1_arr[N_PHASES][MAX_STONE_NUM][MAX_STONE_NUM];
-int16_t eval_mobility_pattern[N_PHASES][N_CANPUT_PATTERNS][MOBILITY_PATTERN_SIZE][MOBILITY_PATTERN_SIZE];
 
 /*
     @brief used for unzipping the evaluation function
@@ -439,7 +446,7 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
     constexpr int pattern_sizes[N_PATTERNS] = {
         8, 8, 8, 5, 6, 7, 8, 9, 
         10, 10, 10, 10, 10, 10, 10, 10, 
-        10, 10
+        10, 10, 10, 10
     };
     for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
         for (pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx){
@@ -449,28 +456,6 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
                 return false;
             }
         }
-        /*
-        if (fread(eval_sur0_sur1_arr[phase_idx], 2, MAX_SURROUND * MAX_SURROUND, fp) < MAX_SURROUND * MAX_SURROUND){
-            std::cerr << "[ERROR] [FATAL] evaluation file broken" << std::endl;
-            fclose(fp);
-            return false;
-        }
-        if (fread(eval_canput0_canput1_arr[phase_idx], 2, MAX_CANPUT * MAX_CANPUT, fp) < MAX_CANPUT * MAX_CANPUT){
-            std::cerr << "[ERROR] [FATAL] evaluation file broken" << std::endl;
-            fclose(fp);
-            return false;
-        }
-        if (fread(eval_num0_num1_arr[phase_idx], 2, MAX_STONE_NUM * MAX_STONE_NUM, fp) < MAX_STONE_NUM * MAX_STONE_NUM){
-            std::cerr << "[ERROR] [FATAL] evaluation file broken" << std::endl;
-            fclose(fp);
-            return false;
-        }
-        if (fread(eval_mobility_pattern[phase_idx], 2, N_CANPUT_PATTERNS * MOBILITY_PATTERN_SIZE * MOBILITY_PATTERN_SIZE, fp) < N_CANPUT_PATTERNS * MOBILITY_PATTERN_SIZE * MOBILITY_PATTERN_SIZE){
-            std::cerr << "[ERROR] [FATAL] evaluation file broken" << std::endl;
-            fclose(fp);
-            return false;
-        }
-        */
     }
     if (thread_pool.size() >= 2){
         std::future<void> tasks[N_PHASES * N_PATTERNS];
@@ -562,26 +547,6 @@ inline int end_evaluate_odd(Board *b, int e){
 }
 
 /*
-    @brief calculate surround value used in evaluation function
-
-    @param player               a bitboard representing player
-    @param empties              a bitboard representing empties
-    @return surround value
-*/
-inline uint64_t calc_surround_part(const uint64_t player, const int dr){
-    return (player << dr) | (player >> dr);
-}
-
-inline int calc_surround(const uint64_t player, const uint64_t empties){
-    return pop_count_ull(empties & (
-        calc_surround_part(player & 0b0111111001111110011111100111111001111110011111100111111001111110ULL, 1) | 
-        calc_surround_part(player & 0b0000000011111111111111111111111111111111111111111111111100000000ULL, HW) | 
-        calc_surround_part(player & 0b0000000001111110011111100111111001111110011111100111111000000000ULL, HW_M1) | 
-        calc_surround_part(player & 0b0000000001111110011111100111111001111110011111100111111000000000ULL, HW_P1)
-    ));
-}
-
-/*
     @brief pattern evaluation
 
     @param phase_idx            evaluation phase
@@ -609,42 +574,14 @@ inline int calc_pattern_diff(const int phase_idx, Search *search){
         pattern_arr[search->eval_feature_reversed][phase_idx][16][search->eval_features[62]] + pattern_arr[search->eval_feature_reversed][phase_idx][16][search->eval_features[63]] + pattern_arr[search->eval_feature_reversed][phase_idx][16][search->eval_features[64]] + pattern_arr[search->eval_feature_reversed][phase_idx][16][search->eval_features[65]] + 
         pattern_arr[search->eval_feature_reversed][phase_idx][16][search->eval_features[66]] + pattern_arr[search->eval_feature_reversed][phase_idx][16][search->eval_features[67]] + pattern_arr[search->eval_feature_reversed][phase_idx][16][search->eval_features[68]] + pattern_arr[search->eval_feature_reversed][phase_idx][16][search->eval_features[69]] + 
         pattern_arr[search->eval_feature_reversed][phase_idx][17][search->eval_features[70]] + pattern_arr[search->eval_feature_reversed][phase_idx][17][search->eval_features[71]] + pattern_arr[search->eval_feature_reversed][phase_idx][17][search->eval_features[72]] + pattern_arr[search->eval_feature_reversed][phase_idx][17][search->eval_features[73]] + 
-        pattern_arr[search->eval_feature_reversed][phase_idx][17][search->eval_features[74]] + pattern_arr[search->eval_feature_reversed][phase_idx][17][search->eval_features[75]] + pattern_arr[search->eval_feature_reversed][phase_idx][17][search->eval_features[76]] + pattern_arr[search->eval_feature_reversed][phase_idx][17][search->eval_features[77]];
+        pattern_arr[search->eval_feature_reversed][phase_idx][17][search->eval_features[74]] + pattern_arr[search->eval_feature_reversed][phase_idx][17][search->eval_features[75]] + pattern_arr[search->eval_feature_reversed][phase_idx][17][search->eval_features[76]] + pattern_arr[search->eval_feature_reversed][phase_idx][17][search->eval_features[77]] + 
+        pattern_arr[search->eval_feature_reversed][phase_idx][18][search->eval_features[78]] + pattern_arr[search->eval_feature_reversed][phase_idx][18][search->eval_features[79]] + pattern_arr[search->eval_feature_reversed][phase_idx][18][search->eval_features[80]] + pattern_arr[search->eval_feature_reversed][phase_idx][18][search->eval_features[81]] + 
+        pattern_arr[search->eval_feature_reversed][phase_idx][18][search->eval_features[82]] + pattern_arr[search->eval_feature_reversed][phase_idx][18][search->eval_features[83]] + pattern_arr[search->eval_feature_reversed][phase_idx][18][search->eval_features[84]] + pattern_arr[search->eval_feature_reversed][phase_idx][18][search->eval_features[85]] + 
+        pattern_arr[search->eval_feature_reversed][phase_idx][19][search->eval_features[86]] + pattern_arr[search->eval_feature_reversed][phase_idx][19][search->eval_features[87]] + pattern_arr[search->eval_feature_reversed][phase_idx][19][search->eval_features[88]] + pattern_arr[search->eval_feature_reversed][phase_idx][19][search->eval_features[89]] + 
+        pattern_arr[search->eval_feature_reversed][phase_idx][19][search->eval_features[90]] + pattern_arr[search->eval_feature_reversed][phase_idx][19][search->eval_features[91]] + pattern_arr[search->eval_feature_reversed][phase_idx][19][search->eval_features[92]] + pattern_arr[search->eval_feature_reversed][phase_idx][19][search->eval_features[93]];
 }
 
-/*
-    @brief mobility pattern evaluation
-
-    @param phase_idx            evaluation phase
-    @param player_mobility      player's legal moves in bitboard
-    @param opponent_mobility    opponent's legal moves in bitboard
-    @return mobility pattern evaluation value
-*/
-inline int calc_mobility_pattern(const int phase_idx, const uint64_t player_mobility, const uint64_t opponent_mobility){
-    uint8_t *ph = (uint8_t*)&player_mobility;
-    uint8_t *oh = (uint8_t*)&opponent_mobility;
-    uint64_t p90 = black_line_mirror(player_mobility);
-    uint64_t o90 = black_line_mirror(opponent_mobility);
-    uint8_t *pv = (uint8_t*)&p90;
-    uint8_t *ov = (uint8_t*)&o90;
-    return 
-        eval_mobility_pattern[phase_idx][0][oh[0]][ph[0]] + 
-        eval_mobility_pattern[phase_idx][0][oh[7]][ph[7]] + 
-        eval_mobility_pattern[phase_idx][0][ov[0]][pv[0]] + 
-        eval_mobility_pattern[phase_idx][0][ov[7]][pv[7]] + 
-        eval_mobility_pattern[phase_idx][1][oh[1]][ph[1]] + 
-        eval_mobility_pattern[phase_idx][1][oh[6]][ph[6]] + 
-        eval_mobility_pattern[phase_idx][1][ov[1]][pv[1]] + 
-        eval_mobility_pattern[phase_idx][1][ov[6]][pv[6]] + 
-        eval_mobility_pattern[phase_idx][2][oh[2]][ph[2]] + 
-        eval_mobility_pattern[phase_idx][2][oh[5]][ph[5]] + 
-        eval_mobility_pattern[phase_idx][2][ov[2]][pv[2]] + 
-        eval_mobility_pattern[phase_idx][2][ov[5]][pv[5]] + 
-        eval_mobility_pattern[phase_idx][3][oh[3]][ph[3]] + 
-        eval_mobility_pattern[phase_idx][3][oh[4]][ph[4]] + 
-        eval_mobility_pattern[phase_idx][3][ov[3]][pv[3]] + 
-        eval_mobility_pattern[phase_idx][3][ov[4]][pv[4]];
-}
+inline void calc_features(Search *search);
 
 /*
     @brief midgame evaluation function
@@ -652,32 +589,12 @@ inline int calc_mobility_pattern(const int phase_idx, const uint64_t player_mobi
     @param b                    board
     @return evaluation value
 */
-inline void calc_features(Search *search);
-
 inline int mid_evaluate(Board *board){
     Search search;
     search.init_board(board);
     calc_features(&search);
-    //uint64_t player_mobility, opponent_mobility;
-    //player_mobility = calc_legal(search.board.player, search.board.opponent);
-    //opponent_mobility = calc_legal(search.board.opponent, search.board.player);
-    //if ((player_mobility | opponent_mobility) == 0ULL)
-    //    return end_evaluate(&search.board);
-    int phase_idx; //, sur0, sur1, canput0, canput1, num0, num1;
-    //uint64_t empties;
-    phase_idx = search.phase();
-    //canput0 = pop_count_ull(player_mobility);
-    //canput1 = pop_count_ull(opponent_mobility);
-    //empties = ~(search.board.player | search.board.opponent);
-    //sur0 = calc_surround(search.board.player, empties);
-    //sur1 = calc_surround(search.board.opponent, empties);
-    //num0 = pop_count_ull(search.board.player);
-    //num1 = search.n_discs - num0;
-    int res = calc_pattern_diff(phase_idx, &search); // + 
-    //    eval_sur0_sur1_arr[phase_idx][sur0][sur1] + 
-    //    eval_canput0_canput1_arr[phase_idx][canput0][canput1] + 
-    //    eval_num0_num1_arr[phase_idx][num0][num1] + 
-    //    calc_mobility_pattern(phase_idx, player_mobility, opponent_mobility);
+    int phase_idx = search.phase();
+    int res = calc_pattern_diff(phase_idx, &search);
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
     if (res > SCORE_MAX)
@@ -694,26 +611,8 @@ inline int mid_evaluate(Board *board){
     @return evaluation value
 */
 inline int mid_evaluate_diff(Search *search){
-    //uint64_t player_mobility, opponent_mobility;
-    //player_mobility = calc_legal(search->board.player, search->board.opponent);
-    //opponent_mobility = calc_legal(search->board.opponent, search->board.player);
-    //if ((player_mobility | opponent_mobility) == 0ULL)
-    //    return end_evaluate(&search->board);
-    int phase_idx; //, sur0, sur1, canput0, canput1, num0, num1;
-    //uint64_t empties;
-    phase_idx = search->phase();
-    //canput0 = pop_count_ull(player_mobility);
-    //canput1 = pop_count_ull(opponent_mobility);
-    //empties = ~(search->board.player | search->board.opponent);
-    //sur0 = calc_surround(search->board.player, empties);
-    //sur1 = calc_surround(search->board.opponent, empties);
-    //num0 = pop_count_ull(search->board.player);
-    //num1 = search->n_discs - num0;
-    int res = calc_pattern_diff(phase_idx, search); // + 
-    //    eval_sur0_sur1_arr[phase_idx][sur0][sur1] + 
-    //    eval_canput0_canput1_arr[phase_idx][canput0][canput1] + 
-    //    eval_num0_num1_arr[phase_idx][num0][num1] + 
-    //    calc_mobility_pattern(phase_idx, player_mobility, opponent_mobility);
+    int phase_idx = search->phase();
+    int res = calc_pattern_diff(phase_idx, search);
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
     if (res > SCORE_MAX)
