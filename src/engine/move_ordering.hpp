@@ -39,7 +39,6 @@
 
 #define W_END_MOBILITY 32
 #define W_END_PARITY 4
-#define W_END_POTENTIAL_MOBILITY -32
 #define W_END_VALUE 4
 
 #define N_CELL_TYPES 10
@@ -48,13 +47,13 @@
 
 #define W_CELL_WEIGHT 7
 #define W_MOBILITY -14
-#define W_POTENTIAL_MOBILITY -28
-#define W_VALUE -77
-#define W_VALUE_DEEP_ADDITIONAL -218
+//#define W_POTENTIAL_MOBILITY -28
+#define W_VALUE -80
+#define W_VALUE_DEEP_ADDITIONAL -230
 
-#define W_NWS_MOBILITY -14
-#define W_NWS_POTENTIAL_MOBILITY -8
-#define W_NWS_VALUE -16
+#define W_NWS_MOBILITY -10
+//#define W_NWS_POTENTIAL_MOBILITY -8
+#define W_NWS_VALUE -18
 #define W_NWS_VALUE_SHALLOW -14
 
 /*
@@ -120,6 +119,7 @@ inline int get_weighted_n_moves(uint64_t legal){
     @param empties              a bitboard representing empty squares
     @return potential mobility
 */
+/*
 #if USE_SIMD
     inline int get_potential_mobility(uint64_t opponent, uint64_t empties){
         const __m256i eval_surround_mask = _mm256_set_epi64x(0x7E7E7E7E7E7E7E7EULL, 0x00FFFFFFFFFFFF00ULL, 0x007E7E7E7E7E7E00ULL, 0x007E7E7E7E7E7E00ULL);
@@ -144,6 +144,7 @@ inline int get_weighted_n_moves(uint64_t legal){
         return pop_count_ull(empties & res);
     }
 #endif
+*/
 
 /*
     @brief Evaluate a move in midgame
@@ -162,8 +163,8 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
     search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
         flip_value->value += get_weighted_n_moves(flip_value->n_legal) * W_MOBILITY;
-        uint64_t empties = ~(search->board.player | search->board.opponent);
-        flip_value->value += get_potential_mobility(search->board.player, empties) * W_POTENTIAL_MOBILITY;
+        //uint64_t empties = ~(search->board.player | search->board.opponent);
+        //flip_value->value += get_potential_mobility(search->board.player, empties) * W_POTENTIAL_MOBILITY;
         switch (depth){
             case 0:
                 flip_value->value += mid_evaluate_diff(search) * W_VALUE;
@@ -281,8 +282,8 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
     search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
         flip_value->value += get_weighted_n_moves(flip_value->n_legal) * W_NWS_MOBILITY;
-        uint64_t empties = ~(search->board.player | search->board.opponent);
-        flip_value->value += get_potential_mobility(search->board.player, empties) * W_NWS_POTENTIAL_MOBILITY;
+        //uint64_t empties = ~(search->board.player | search->board.opponent);
+        //flip_value->value += get_potential_mobility(search->board.player, empties) * W_NWS_POTENTIAL_MOBILITY;
         if (depth == 0)
             flip_value->value += mid_evaluate_diff(search) * W_NWS_VALUE_SHALLOW;
         else
