@@ -26,7 +26,6 @@
 */
 static int vectorcall last2_nws(Search* search, __m128i OP, int alpha, __m128i empties_simd) {
     __m128i flipped;
-    int nodes, v;
     int p0 = _mm_extract_epi16(empties_simd, 1);
     int p1 = _mm_extract_epi16(empties_simd, 0);
     uint64_t opponent = _mm_extract_epi64(OP, 1);;
@@ -36,6 +35,7 @@ static int vectorcall last2_nws(Search* search, __m128i OP, int alpha, __m128i e
         ++search->n_nodes_discs[search->n_discs];
     #endif
     int beta = alpha + 1;
+    int v;
     if ((bit_around[p0] & opponent) && !TESTZ_FLIP(flipped = Flip::calc_flip(OP, p0))) {
         v = last1n(search, _mm_xor_si128(OP, flipped), beta, p1);
  
@@ -50,6 +50,7 @@ static int vectorcall last2_nws(Search* search, __m128i OP, int alpha, __m128i e
         v = last1n(search, _mm_xor_si128(OP, flipped), beta, p0);
  
     else {	// pass
+        ++search->n_nodes;
         beta = -alpha;
         __m128i PO = _mm_shuffle_epi32(OP, SWAP64);
         if (!TESTZ_FLIP(flipped = Flip::calc_flip(PO, p0))) {
@@ -57,7 +58,7 @@ static int vectorcall last2_nws(Search* search, __m128i OP, int alpha, __m128i e
 
             if ((v < beta) && !TESTZ_FLIP(flipped = Flip::calc_flip(PO, p1))) {
                 int g = last1n(search, _mm_xor_si128(PO, flipped), beta, p0);
-                if (v > g)
+                if (v < g)
                     v = g;
             }
         }

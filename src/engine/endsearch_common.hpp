@@ -63,7 +63,7 @@ const uint8_t parity_case[64] = {        /* p3p2p1p0 = */
     @param player               player bitboard
     @param beta                 beta value
     @param p0                   last empty square
-    @return the final score
+    @return the final opponent score
 */
 inline int last1n(Search *search, uint64_t player, int beta, uint_fast8_t p0){
     ++search->n_nodes;
@@ -74,7 +74,7 @@ inline int last1n(Search *search, uint64_t player, int beta, uint_fast8_t p0){
     int score = HW2 - 2 * (pop_count_ull(player) + n_flip + 1);	// (HW2 - 1 - P - n_flip) - (P + n_flip + 1)
     if (n_flip == 0) {
         ++search->n_nodes;
-        int score2 = score + 2;	// empty for player
+        int score2 = score + 2;	// empty for opponent
         if (score >= 0)
             score = score2;
         if (score < beta) {

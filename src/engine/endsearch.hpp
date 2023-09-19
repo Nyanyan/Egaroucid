@@ -3,6 +3,7 @@
 
     @file endsearch.hpp
         Search near endgame
+        last2/3/4 imported from Edax AVX, (C) 1998 - 2018 Richard Delorme, 2014 - 23 Toshihiko Okuhara
     @date 2021-2023
     @author Takuto Yamana
     @author Toshihiko Okuhara
@@ -13,7 +14,6 @@
 #include <iostream>
 #include <vector>
 #include <functional>
-#include <assert.h>
 #include "setting.hpp"
 #include "common.hpp"
 #include "board.hpp"
@@ -56,45 +56,43 @@ static int last2(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
     #if USE_SEARCH_STATISTICS
         ++search->n_nodes_discs[search->n_discs];
     #endif
-    int v = -SCORE_INF;
+    int v;
     Flip flip;
     //if ((bit_around[p0] & board.player) == 0)
     //    std::swap(p0, p1);
-    if (bit_around[p0] & board.opponent) {
-        calc_flip(&flip, &board, p0);
-        if (flip.flip) {
-            v = last1n(search, board.opponent ^ flip.flip, beta, p1);
-            if (beta <= v)
-                return v;
-        }
-    }
-    if (bit_around[p1] & board.opponent) {
-        calc_flip(&flip, &board, p1);
-        if (flip.flip) {
+    if ((bit_around[p0] & board.opponent) && calc_flip(&flip, &board, p0)) {
+        v = last1n(search, board.opponent ^ flip.flip, beta, p1);
+
+        if ((v < beta) && (bit_around[p1] & board.opponent) && calc_flip(&flip, &board, p1)) {
             int g = last1n(search, board.opponent ^ flip.flip, beta, p0);
             if (v < g)
                 v = g;
-            return v;
         }
     }
-    if (v == -SCORE_INF){	// pass
+
+    else if ((bit_around[p1] & board.opponent) && calc_flip(&flip, &board, p1))
+         v = last1n(search, board.opponent ^ flip.flip, beta, p0);
+
+    else {	// pass
         ++search->n_nodes;
-        v = SCORE_INF;
-        flip.calc_flip(board.opponent, board.player, p0);
-        if (flip.flip) {
-            v = -last1n(search, board.player ^ flip.flip, -alpha, p1);
-            if (alpha >= v)
-                return v;
-        }
-        flip.calc_flip(board.opponent, board.player, p1);
-        if (flip.flip) {
-            int g = -last1n(search, board.player ^ flip.flip, -alpha, p0);
-            if (v > g)
-                v = g;
+        beta = -alpha;
+        if (flip.calc_flip(board.opponent, board.player, p0)) {
+            v = last1n(search, board.player ^ flip.flip, beta, p1);
+
+            if ((v < beta) && (flip.calc_flip(board.opponent, board.player, p1))) {
+                int g = last1n(search, board.player ^ flip.flip, beta, p0);
+                if (v < g)
+                    v = g;
+            }
         }
 
-        if (v == SCORE_INF)	// gameover
-            v = end_evaluate(&board, 2);
+        else if (flip.calc_flip(board.opponent, board.player, p1))
+            v = last1n(search, board.player ^ flip.flip, beta, p0);
+
+        else	// gameover
+            return end_evaluate(&board, 2);
+
+        v = -v;
     }
     return v;
 }
@@ -147,42 +145,33 @@ inline int last3(Search *search, int alpha, int beta, int sort3, uint_fast8_t p0
         ++search->n_nodes;
         int t = alpha;  alpha = -beta;  beta = -t;
         int v = SCORE_INF;	// Negative score
-        if (bit_around[p0] & board.opponent) {
-            calc_flip(&flip, &board, p0);
-            if (flip.flip) {
-                board.move_copy(&flip, &board2);
-                v = last2(search, alpha, beta, p1, p2, board2);
-                if (alpha >= v)
-                    return v * pol;
-                if (beta > v)
-                    beta = v;
-            }
+        if ((bit_around[p0] & board.opponent) && (calc_flip(&flip, &board, p0))) {
+            board.move_copy(&flip, &board2);
+            v = last2(search, alpha, beta, p1, p2, board2);
+            if (alpha >= v)
+                return v * pol;
+            if (beta > v)
+                beta = v;
         }
 
         int g;
-        if (bit_around[p1] & board.opponent) {
-            calc_flip(&flip, &board, p1);
-            if (flip.flip) {
-                board.move_copy(&flip, &board2);
-                g = last2(search, alpha, beta, p0, p2, board2);
-                if (alpha >= g)
-                    return g * pol;
-                if (v > g)
-                    v = g;
-                if (beta > g)
-                    beta = g;
-            }
+        if ((bit_around[p1] & board.opponent) && calc_flip(&flip, &board, p1)) {
+            board.move_copy(&flip, &board2);
+            g = last2(search, alpha, beta, p0, p2, board2);
+            if (alpha >= g)
+                return g * pol;
+            if (v > g)
+                v = g;
+            if (beta > g)
+                beta = g;
         }
 
-        if (bit_around[p2] & board.opponent) {
-            calc_flip(&flip, &board, p2);
-            if (flip.flip) {
-                board.move_copy(&flip, &board2);
-                g = last2(search, alpha, beta, p0, p1, board2);
-                if (v > g)
-                    v = g;
-                return v * pol;
-            }
+        if ((bit_around[p2] & board.opponent) && calc_flip(&flip, &board, p2)) {
+            board.move_copy(&flip, &board2);
+            g = last2(search, alpha, beta, p0, p1, board2);
+            if (v > g)
+                v = g;
+            return v * pol;
         }
 
         if (v < SCORE_INF)
@@ -284,56 +273,44 @@ int last4(Search *search, int alpha, int beta) {
         ++search->n_nodes;
         int t = alpha;  alpha = -beta;  beta = -t;
         int v = SCORE_INF;	// Negative score
-        if (bit_around[p0] & board4.opponent) {
-            calc_flip(&flip, &board4, p0);
-            if (flip.flip) {
-                board4.move_copy(&flip, &board3);
-                v = last3(search, alpha, beta, sort3, p1, p2, p3, board3);
-                if (alpha >= v)
-                    return v * pol;
-                if (beta > v)
-                    beta = v;
-            }
+        if ((bit_around[p0] & board4.opponent) && calc_flip(&flip, &board4, p0)) {
+            board4.move_copy(&flip, &board3);
+            v = last3(search, alpha, beta, sort3, p1, p2, p3, board3);
+            if (alpha >= v)
+                return v * pol;
+            if (beta > v)
+                beta = v;
         }
 
         int g;
-        if (bit_around[p1] & board4.opponent) {
-            calc_flip(&flip, &board4, p1);
-            if (flip.flip) {
-                board4.move_copy(&flip, &board3);
-                g = last3(search, alpha, beta, sort3 >> 4, p0, p2, p3, board3);
-                if (alpha >= g)
-                    return g * pol;
-                if (v > g)
-                    v = g;
-                if (beta > g)
-                    beta = g;
-            }
+        if ((bit_around[p1] & board4.opponent) && calc_flip(&flip, &board4, p1)) {
+            board4.move_copy(&flip, &board3);
+            g = last3(search, alpha, beta, sort3 >> 4, p0, p2, p3, board3);
+            if (alpha >= g)
+                return g * pol;
+            if (v > g)
+                v = g;
+            if (beta > g)
+                beta = g;
         }
 
-        if (bit_around[p2] & board4.opponent) {
-            calc_flip(&flip, &board4, p2);
-            if (flip.flip) {
-                board4.move_copy(&flip, &board3);
-                g = last3(search, alpha, beta, sort3 >> 8, p0, p1, p3, board3);
-                if (alpha >= g)
-                    return g * pol;
-                if (v > g)
-                    v = g;
-                if (beta > g)
-                    beta = g;
-            }
+        if ((bit_around[p2] & board4.opponent) && calc_flip(&flip, &board4, p2)) {
+            board4.move_copy(&flip, &board3);
+            g = last3(search, alpha, beta, sort3 >> 8, p0, p1, p3, board3);
+            if (alpha >= g)
+                return g * pol;
+            if (v > g)
+                v = g;
+            if (beta > g)
+                beta = g;
         }
 
-        if (bit_around[p3] & board4.opponent) {
-            calc_flip(&flip, &board4, p3);
-            if (flip.flip) {
-                board4.move_copy(&flip, &board3);
-                g = last3(search, alpha, beta, sort3 >> 12, p0, p1, p2, board3);
-                if (v > g)
-                    v = g;
-                return v * pol;
-            }
+        if ((bit_around[p3] & board4.opponent) && calc_flip(&flip, &board4, p3)) {
+            board4.move_copy(&flip, &board3);
+            g = last3(search, alpha, beta, sort3 >> 12, p0, p1, p2, board3);
+            if (v > g)
+                v = g;
+            return v * pol;
         }
 
         if (v < SCORE_INF)

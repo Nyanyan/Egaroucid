@@ -2,7 +2,8 @@
     Egaroucid Project
 
     @file endsearch_simd.hpp
-        Search near endgame, imported from Edax AVX
+        Search near endgame
+        imported from Edax AVX, (C) 1998 - 2018 Richard Delorme, 2014 - 23 Toshihiko Okuhara
     @date 2021-2023
     @author Takuto Yamana
     @author Toshihiko Okuhara
@@ -26,7 +27,6 @@
 */
 static int vectorcall last2(Search* search, __m128i OP, int alpha, int beta, __m128i empties_simd) {
     __m128i flipped;
-    int nodes, v;
     int p0 = _mm_extract_epi16(empties_simd, 1);
     int p1 = _mm_extract_epi16(empties_simd, 0);
     uint64_t opponent = _mm_extract_epi64(OP, 1);;
@@ -35,6 +35,7 @@ static int vectorcall last2(Search* search, __m128i OP, int alpha, int beta, __m
     #if USE_SEARCH_STATISTICS
         ++search->n_nodes_discs[search->n_discs];
     #endif
+    int v;
     if ((bit_around[p0] & opponent) && !TESTZ_FLIP(flipped = Flip::calc_flip(OP, p0))) {
         v = last1n(search, _mm_xor_si128(OP, flipped), beta, p1);
  
@@ -49,6 +50,7 @@ static int vectorcall last2(Search* search, __m128i OP, int alpha, int beta, __m
         v = last1n(search, _mm_xor_si128(OP, flipped), beta, p0);
  
     else {	// pass
+        ++search->n_nodes;
         beta = -alpha;
         __m128i PO = _mm_shuffle_epi32(OP, SWAP64);
         if (!TESTZ_FLIP(flipped = Flip::calc_flip(PO, p0))) {
@@ -56,7 +58,7 @@ static int vectorcall last2(Search* search, __m128i OP, int alpha, int beta, __m
  
            if ((v < beta) && !TESTZ_FLIP(flipped = Flip::calc_flip(PO, p1))) {
                 int g = last1n(search, _mm_xor_si128(PO, flipped), beta, p0);
-                if (v > g)
+                if (v < g)
                     v = g;
             }
         }
