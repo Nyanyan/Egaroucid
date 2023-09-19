@@ -2,7 +2,6 @@
 #include <fstream>
 #include <sstream>
 #include <iomanip>
-#include <fstream>
 #include "evaluation_definition.hpp"
 
 int main(int argc, char *argv[]){
