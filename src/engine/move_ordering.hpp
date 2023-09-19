@@ -49,7 +49,7 @@
 #define W_CELL_WEIGHT 7
 #define W_MOBILITY -14
 #define W_POTENTIAL_MOBILITY -28
-#define W_VALUE -76
+#define W_VALUE -77
 #define W_VALUE_DEEP_ADDITIONAL -218
 
 #define W_NWS_MOBILITY -14

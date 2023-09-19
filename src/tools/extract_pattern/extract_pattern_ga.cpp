@@ -5,6 +5,7 @@
 #include <fstream>
 #include <sstream>
 #include <iomanip>
+#include <unordered_set>
 #ifdef _MSC_VER
     #include <intrin.h>
 #else
@@ -20,7 +21,7 @@
 #define MIN_N_DISCS 24
 #define GA_SCORE_UNDEFINED -1.0
 #define POW2_2N_CELLS_IN_PATTERN 262144
-#define N_SHOW_RESULT 30
+#define N_SHOW_RESULT 40
 
 struct Gene{
     uint64_t pattern;
@@ -92,13 +93,18 @@ void scoring(Gene *gene){
     gene->score = res;
 }
 
+uint64_t generate_random_pattern(){
+    uint64_t res = 0;
+    while (pop_count_ull(res) < N_CELLS_IN_PATTERN)
+        res |= 1ULL << myrandrange(0, 64);
+    return res;
+}
+
 void init_ga(){
     for (int i = 0; i < N_GENES; ++i){
         if ((i & 0b11111) == 0)
             std::cerr << '\r' << ((double)i / N_GENES);
-        genes[i].pattern = 0;
-        while (pop_count_ull(genes[i].pattern) < N_CELLS_IN_PATTERN)
-            genes[i].pattern |= 1ULL << myrandrange(0, 64);
+        genes[i].pattern = generate_random_pattern();
         scoring(&genes[i]);
     }
     std::cerr << std::endl;
@@ -124,14 +130,14 @@ void ga(){
         if (genes[parent1].pattern & (1ULL << i))
             pattern_bits[1][idx1++] = i;
     }
-    int idx_div = myrandrange(1, N_CELLS_IN_PATTERN - 1);
-    for (int i = 0; i < idx_div; ++i){
-        new_genes[2].pattern |= 1ULL << pattern_bits[0][i];
-        new_genes[3].pattern |= 1ULL << pattern_bits[1][i];
-    }
-    for (int i = idx_div; i < N_CELLS_IN_PATTERN; ++i){
-        new_genes[2].pattern |= 1ULL << pattern_bits[1][i];
-        new_genes[3].pattern |= 1ULL << pattern_bits[0][i];
+    for (int i = 0; i < N_CELLS_IN_PATTERN; ++i){
+        if (myrandom() < 0.5){
+            new_genes[2].pattern |= 1ULL << pattern_bits[0][i];
+            new_genes[3].pattern |= 1ULL << pattern_bits[1][i];
+        } else{
+            new_genes[2].pattern |= 1ULL << pattern_bits[1][i];
+            new_genes[3].pattern |= 1ULL << pattern_bits[0][i];
+        }
     }
     scoring(&new_genes[2]);
     scoring(&new_genes[3]);
@@ -166,24 +172,39 @@ std::string ga_idx_to_coord(int cell){
     return std::string(res);
 }
 
-void output_result(){
+void delete_same_patterns(){
+    std::unordered_set<uint64_t> patterns;
+    for (int i = 0; i < N_GENES; ++i){
+        if (patterns.find(genes[i].pattern) != patterns.end()){
+            while (patterns.find(genes[i].pattern) != patterns.end())
+                genes[i].pattern = generate_random_pattern();
+            scoring(&genes[i]);
+        }
+    }
+}
+
+void output_result(uint64_t t, uint64_t strt){
     std::sort(genes, genes + N_GENES, comp_gene);
-    std::cerr << genes[0].score << std::endl;
+    std::cerr << t << " " << tim() - strt << " " << genes[0].score << std::endl;
+    std::ofstream ofs;
+    ofs.open("log.txt", std::ios_base::app);
+    ofs << t << " " << tim() - strt << " ";
     for (int i = 0; i < N_SHOW_RESULT; ++i){
-        std::cout << genes[i].score << " ";
+        ofs << genes[i].score << " ";
         int n_shown = 0;
         for (int j = 0; j < HW2; ++j){
             if (1 & (genes[i].pattern >> j)){
-                std::cout << "COORD_" + ga_idx_to_coord(j);
+                ofs << "COORD_" + ga_idx_to_coord(j);
                 ++n_shown;
                 if (n_shown == N_CELLS_IN_PATTERN){
-                    std::cout << std::endl;
+                    ofs << std::endl;
                 } else{
-                    std::cout << ", ";
+                    ofs << ", ";
                 }
             }
         }
     }
+    ofs.close();
 }
 
 int main(){
@@ -192,17 +213,14 @@ int main(){
     std::cerr << "initializing..." << std::endl;
     init_ga();
     std::cerr << "start!" << std::endl;
-    output_result();
     uint64_t strt = tim();
-    uint64_t interval_strt = strt;
     uint64_t t = 0;
+    output_result(t, strt);
     while (true){
         ga();
-        if (tim() - interval_strt >= 10000){
-            interval_strt = tim();
-            std::cout << t << " " << tim() - strt << std::endl;
-            std::cerr << t << " " << tim() - strt << " ";
-            output_result();
+        if ((t & 0b1111) == 0){
+            delete_same_patterns();
+            output_result(t, strt);
         }
         ++t;
     }
