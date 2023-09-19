@@ -1,9 +1,7 @@
 import subprocess
-from random import shuffle
 from tqdm import trange
-from random import shuffle, choice
+from random import shuffle
 import matplotlib.pyplot as plt
-#import japanize_matplotlib
 from othello_py import *
 
 LEVEL = 1
@@ -13,10 +11,10 @@ N_SET_GAMES = 500
 player_info = [
     ['beta ', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -quiet -nobook'],
     ['6.4.0', 'versions/Egaroucid_for_Console_6_4_0_Windows_x64_SIMD/Egaroucid_for_Console_6_4_0_x64_SIMD.exe -quiet -nobook'],
-    #['6.3.0', 'versions/Egaroucid_for_Console_6_3_0_Windows_x64_SIMD/Egaroucid_for_Console_6_3_0_x64_SIMD.exe -quiet -nobook'],
-    #['6.2.0', 'versions/Egaroucid_for_Console_6_2_0_Windows_x64_SIMD/Egaroucid_for_Console.exe -quiet -nobook'],
-    #['6.1.0', 'versions/Egaroucid_for_Console_6_1_0_Windows_x64_SIMD/Egaroucid_for_Console.exe -quiet -nobook'],
-    #['Edax ', 'versions/edax_4_4/edax-4.4 -q'],
+    ['6.3.0', 'versions/Egaroucid_for_Console_6_3_0_Windows_x64_SIMD/Egaroucid_for_Console_6_3_0_x64_SIMD.exe -quiet -nobook'],
+    ['6.2.0', 'versions/Egaroucid_for_Console_6_2_0_Windows_x64_SIMD/Egaroucid_for_Console.exe -quiet -nobook'],
+    ['6.1.0', 'versions/Egaroucid_for_Console_6_1_0_Windows_x64_SIMD/Egaroucid_for_Console.exe -quiet -nobook'],
+    ['Edax ', 'versions/edax_4_4/edax-4.4 -q'],
 ]
 
 NAME_IDX = 0
