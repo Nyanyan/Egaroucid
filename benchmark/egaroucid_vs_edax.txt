@@ -615,4 +615,12 @@ level: 10 Egaroucid plays black WDL: 623-97-280 0.6715 Egaroucid plays white WDL
 level: 15 Egaroucid plays black WDL: 234-74-192 0.542 Egaroucid plays white WDL: 246-85-169 0.577 Egaroucid win rate: 0.5595
 level: 21 Egaroucid plays black WDL: 56-25-19 0.685 Egaroucid plays white WDL: 30-27-43 0.435 Egaroucid win rate: 0.56
 
-
+2023/09/20 update evaluation function with old model
+python egaroucid_vs_edax.py 1 1000 resources_exp\20230920_1.egev 
+3623 openings found
+egaroucid eval  resources_exp\20230920_1.egev
+level 1
+openings 3623
+play 1000 games
+ 999 1000   [675, 662] [18, 26] [307, 312] 1337 619 0.6795
+level: 1 Egaroucid plays black WDL: 675-18-307 0.684 Egaroucid plays white WDL: 662-26-312 0.675 Egaroucid win rate: 0.6795

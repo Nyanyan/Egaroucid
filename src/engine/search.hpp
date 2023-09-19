@@ -22,9 +22,9 @@
 /*
     @brief Evaluation constant
 */
-#define N_SYMMETRY_PATTERNS 94
+#define N_SYMMETRY_PATTERNS 62
 #if USE_SIMD_EVALUATION
-    #define N_SIMD_EVAL_FEATURES 6
+    #define N_SIMD_EVAL_FEATURES 4
 #endif
 
 /*
