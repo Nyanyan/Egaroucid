@@ -195,14 +195,16 @@ int main(){
     output_result();
     uint64_t strt = tim();
     uint64_t interval_strt = strt;
+    uint64_t t = 0;
     while (true){
         ga();
         if (tim() - interval_strt >= 10000){
             interval_strt = tim();
-            std::cout << tim() - strt << std::endl;
-            std::cerr << tim() - strt << " ";
+            std::cout << t << " " << tim() - strt << std::endl;
+            std::cerr << t << " " << tim() - strt << " ";
             output_result();
         }
+        ++t;
     }
     return 0;
 }
