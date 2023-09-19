@@ -46,9 +46,6 @@
 #define MAX_SAME_CELL_TYPE 8
 #define MOVE_ORDERING_CELL_SCORE_MAX 256
 
-// 5 -10 -20 -70 -25
-// 4 -8 -16 -48 -157
-// 7 -14 -28 -77 -218
 #define W_CELL_WEIGHT 7
 #define W_MOBILITY -14
 #define W_POTENTIAL_MOBILITY -28
@@ -90,26 +87,6 @@ int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, const bo
     int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped, const bool *searching);
 #endif
 int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
-
-/*
-    @brief Calculate openness
-
-    Not used for now
-
-    @param board                board
-    @param flip                 flip information
-    @return openness
-*/
-/*
-inline int calc_openness(const Board *board, const Flip *flip){
-    uint64_t f = flip->flip;
-    uint64_t around = 0ULL;
-    for (uint_fast8_t cell = first_bit(&f); f; cell = next_bit(&f))
-        around |= bit_around[cell];
-    around &= ~flip->flip;
-    return pop_count_ull(~(board->player | board->opponent | (1ULL << flip->pos)) & around);
-}
-*/
 
 /*
     @brief Get number of corner mobility

@@ -1,7 +1,7 @@
 import subprocess
 from tqdm import trange
 
-IDX_START = 1012
+IDX_START = 2026
 IDX_END = 10000
 
 LEVEL = 11
