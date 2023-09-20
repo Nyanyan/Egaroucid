@@ -202,21 +202,6 @@ inline int last3_nws(Search *search, int alpha, int sort3, uint_fast8_t p0, uint
 */
 int last4_nws(Search *search, int alpha) {
 #if USE_END_PO
-    int sort3;	// for move sorting on 3 empties
-    static constexpr uint16_t sort3_shuf[] = {
-        0x0000,	//  0: 1(p0) 3(p1 p2 p3), 1(p0) 1(p1) 2(p2 p3), 1 1 1 1, 4
-        0x1100,	//  1: 1(p1) 3(p0 p2 p3)	p3p1p0p2-p2p1p0p3-p1p0p2p3-p0p1p2p3
-        0x2011,	//  2: 1(p2) 3(p0 p1 p3)	p3p2p1p0-p2p0p1p3-p1p2p0p3-p0p2p1p3
-        0x0222,	//  3: 1(p3) 3(p0 p1 p2)	p3p0p1p2-p2p3p1p0-p1p3p2p0-p0p3p2p1
-        0x0000,	//  4: 1(p0) 1(p2) 2(p1 p3)
-        0x0000,	//  5: 1(p0) 1(p3) 2(p1 p2)
-        0x0000,	//  6: 1(p1) 1(p2) 2(p0 p3)
-        0x0000,	//  7: 1(p1) 1(p3) 2(p0 p2)
-        0x0000,	//  8: 1(p2) 1(p3) 2(p0 p1)
-        0x2200,	//  9: 2(p0 p1) 2(p2 p3)	p3p2p1p0-p2p3p1p0-p1p0p2p3-p0p1p2p3
-        0x1021,	// 10: 2(p0 p2) 2(p1 p3)	p3p1p0p2-p2p0p1p3-p1p3p2p0-p0p2p1p3
-        0x0112	// 11: 2(p0 p3) 2(p1 p2)	p3p0p1p2-p2p1p0p3-p1p2p0p3-p0p3p2p1
-    };
 #endif
     uint64_t empties = ~(search->board.player | search->board.opponent);
     uint_fast8_t p0 = first_bit(&empties);
@@ -256,7 +241,9 @@ int last4_nws(Search *search, int alpha) {
                 std::swap(p1, p2);
                 break;
         }
-        sort3 = sort3_shuf[paritysort];     // for move sorting on 3 empties
+        int sort3 = parity_ordering_last3[paritysort];     // for move sorting on 3 empties
+    #else
+        constexpr int sort3 = 0;
     #endif
 
     Flip flip;

@@ -176,14 +176,14 @@ int last4_nws(Search* search, int alpha) {
             return stab_res;
         }
     #endif
-    __m128i empties_simd = _mm_cvtsi32_si128((p0 << 24) | (p1 << 16) | (p2 << 8) | p3);
+    __m128i empties_simd = _mm_cvtsi32_si128((p3 << 24) | (p2 << 16) | (p1 << 8) | p0);
     #if USE_END_PO
                 // parity ordering optimization
                 // I referred to http://www.amy.hi-ho.ne.jp/okuhara/edaxopt.htm
         const int paritysort = parity_case[((p2 ^ p3) & 0x24) + ((((p1 ^ p3) & 0x24) * 2 + ((p0 ^ p3) & 0x24)) >> 2)];
         empties_simd = _mm_shuffle_epi8(empties_simd, parity_ordering_shuffle_mask_last4[paritysort].v4);
     #else
-        empties_simd = _mm_shuffle_epi8(empties_simd, _mm_set_epi32(0x00030201, 0x01030200, 0x02030100, 0x03020100));
+        empties_simd = _mm_shuffle_epi8(empties_simd, _mm_set_epi32(0x03000102, 0x02000103, 0x01000203, 0x00010203));
     #endif
 
     int pol = -1;
