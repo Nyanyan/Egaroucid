@@ -89,9 +89,10 @@ void flip_init() {
         );
 
         for (int y = 0; y < 8; ++y) {
-            __m128i yshift = _mm_cvtsi32_si128(y * 8);
-            lmask_v4[y * 8 + x] = _mm256_sll_epi64(lmask, yshift);
-            rmask_v4[(7 - y) * 8 + x] = _mm256_srl_epi64(rmask, yshift);
+            lmask_v4[y * 8 + x] = lmask;
+            rmask_v4[(7 - y) * 8 + x] = rmask;
+            lmask = _mm256_slli_epi64(lmask, 8);
+            rmask = _mm256_srli_epi64(rmask, 8);
         }
     }
 }
