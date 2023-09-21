@@ -8,7 +8,6 @@
 
 #pragma once
 #include <iostream>
-#include <algorithm>
 #include <vector>
 #include <future>
 #include "setting.hpp"
@@ -431,29 +430,32 @@ pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, 
         int idx = 0;
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
             calc_flip(&move_list[idx++].flip, &search->board, cell);
-        move_ordering(search, move_list, depth, alpha, beta, is_end_search, &searching);
-        for (const Flip_value &flip_value: move_list){
-            eval_move(search, &flip_value.flip);
-            search->move(&flip_value.flip);
+        //move_ordering(search, move_list, depth, alpha, beta, is_end_search, &searching);
+        //for (const Flip_value &flip_value: move_list){
+        move_list_evaluate(search, move_list, depth, alpha, beta, is_end_search, &searching);
+        for (int move_idx = 0; move_idx < canput; ++move_idx){
+            swap_next_best_move(move_list, move_idx, canput);
+            eval_move(search, &move_list[move_idx].flip);
+            search->move(&move_list[move_idx].flip);
                 if (v == -INF)
-                    g = -nega_scout(search, -beta, -alpha, depth - 1, false, flip_value.n_legal, is_end_search, &searching);
+                    g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, &searching);
                 else{
-                    g = -nega_alpha_ordering(search, -alpha - 1, -alpha, depth - 1, false, flip_value.n_legal, is_end_search, &searching);
+                    g = -nega_alpha_ordering(search, -alpha - 1, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, &searching);
                     if (alpha < g && g < beta)
-                        g = -nega_scout(search, -beta, -g, depth - 1, false, flip_value.n_legal, is_end_search, &searching);
+                        g = -nega_scout(search, -beta, -g, depth - 1, false, move_list[move_idx].n_legal, is_end_search, &searching);
                 }
                 if (is_main_search){
                     if (g <= alpha)
-                        cerr << mobility_idx << "/" << canput_all << " [" << alpha << "," << beta << "] mpct " << search->mpct << " " << idx_to_coord((int)flip_value.flip.pos) << " value " << g << " or lower" << endl;
+                        cerr << mobility_idx << "/" << canput_all << " [" << alpha << "," << beta << "] mpct " << search->mpct << " " << idx_to_coord((int)move_list[move_idx].flip.pos) << " value " << g << " or lower" << endl;
                     else
-                        cerr << mobility_idx << "/" << canput_all << " [" << alpha << "," << beta << "] mpct " << search->mpct << " " << idx_to_coord((int)flip_value.flip.pos) << " value " << g << endl;
+                        cerr << mobility_idx << "/" << canput_all << " [" << alpha << "," << beta << "] mpct " << search->mpct << " " << idx_to_coord((int)move_list[move_idx].flip.pos) << " value " << g << endl;
                 }
                 ++mobility_idx;
-            search->undo(&flip_value.flip);
-            eval_undo(search, &flip_value.flip);
+            search->undo(&move_list[move_idx].flip);
+            eval_undo(search, &move_list[move_idx].flip);
             if (v < g){
                 v = g;
-                best_move = flip_value.flip.pos;
+                best_move = move_list[move_idx].flip.pos;
                 alpha = max(alpha, g);
             }
             if (beta <= alpha)
