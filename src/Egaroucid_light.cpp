@@ -55,4 +55,5 @@ int main(){
         Search_result search_result = ai(board, level, use_book, false, show_log);
         std::cout << idx_to_coord(search_result.policy) << " " << search_result.value << std::endl;
     }
+    return 0;
 }
