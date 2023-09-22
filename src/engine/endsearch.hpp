@@ -121,7 +121,7 @@ static int last2(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
         1 - 0 - 0 > need to sort
         1 - 1 - 1
 */
-inline int last3(Search *search, int alpha, int beta, int sort3, uint_fast8_t p0, uint_fast8_t p1, uint_fast8_t p2, Board board) {
+static int last3(Search *search, int alpha, int beta, int sort3, uint_fast8_t p0, uint_fast8_t p1, uint_fast8_t p2, Board board) {
     // if (!global_searching || !(*searching))
     //  return SCORE_UNDEFINED;
     #if USE_SEARCH_STATISTICS
@@ -207,27 +207,12 @@ inline int last3(Search *search, int alpha, int beta, int sort3, uint_fast8_t p0
         1 - 1 - 1 - 1
 */
 int last4(Search *search, int alpha, int beta) {
-#if USE_END_PO
-    static constexpr uint16_t sort3_shuf[] = {
-        0x0000,	//  0: 1(p0) 3(p1 p2 p3), 1(p0) 1(p1) 2(p2 p3), 1 1 1 1, 4
-        0x1100,	//  1: 1(p1) 3(p0 p2 p3)	p3p1p0p2-p2p1p0p3-p1p0p2p3-p0p1p2p3
-        0x2011,	//  2: 1(p2) 3(p0 p1 p3)	p3p2p1p0-p2p0p1p3-p1p2p0p3-p0p2p1p3
-        0x0222,	//  3: 1(p3) 3(p0 p1 p2)	p3p0p1p2-p2p3p1p0-p1p3p2p0-p0p3p2p1
-        0x0000,	//  4: 1(p0) 1(p2) 2(p1 p3)     p1<->p2
-        0x0000,	//  5: 1(p0) 1(p3) 2(p1 p2)     p1<->p3
-        0x0000,	//  6: 1(p1) 1(p2) 2(p0 p3)     p0<->p2
-        0x0000,	//  7: 1(p1) 1(p3) 2(p0 p2)     p0<->p3
-        0x0000,	//  8: 1(p2) 1(p3) 2(p0 p1)     p0<->p2, p1<->p3
-        0x2200,	//  9: 2(p0 p1) 2(p2 p3)	p3p2p1p0-p2p3p1p0-p1p0p2p3-p0p1p2p3
-        0x1021,	// 10: 2(p0 p2) 2(p1 p3)	p3p1p0p2-p2p0p1p3-p1p3p2p0-p0p2p1p3
-        0x0112	// 11: 2(p0 p3) 2(p1 p2)	p3p0p1p2-p2p1p0p3-p1p2p0p3-p0p3p2p1
-    };
-#endif
     uint64_t empties = ~(search->board.player | search->board.opponent);
     uint_fast8_t p0 = first_bit(&empties);
     uint_fast8_t p1 = next_bit(&empties);
     uint_fast8_t p2 = next_bit(&empties);
     uint_fast8_t p3 = next_bit(&empties);
+
     // if (!global_searching || !(*searching))
     //  return SCORE_UNDEFINED;
     #if USE_SEARCH_STATISTICS
@@ -389,7 +374,6 @@ int last4(Search *search, int alpha, int beta) {
                     g = -last4(search, -beta, -alpha);
                     if (beta <= g) {
                         board0.copy(&search->board);
-                        search->parity = parity0;
                         return g;
                     }
                     if (v < g)
@@ -410,8 +394,8 @@ int last4(Search *search, int alpha, int beta) {
                     g = -nega_alpha_end_fast(search, -beta, -alpha, false, true, searching);
                     if (beta <= g) {
                         --search->n_discs;
-                        board0.copy(&search->board);
                         search->parity = parity0;
+                        board0.copy(&search->board);
                         return g;
                     }
                     if (v < g)
@@ -421,9 +405,9 @@ int last4(Search *search, int alpha, int beta) {
                 }
             } while ((prioritymoves = legal));
             --search->n_discs;
+            search->parity = parity0;
         }
         board0.copy(&search->board);
-        search->parity = parity0;
         return v;
     }
 #endif
