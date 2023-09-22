@@ -302,6 +302,7 @@ int last4_nws(Search *search, int alpha) {
     @brief Get a final score with few empties (NWS)
 
     Only with parity-based ordering.
+    imported from search_shallow of Edax AVX, (C) 1998 - 2018 Richard Delorme, 2014 - 23 Toshihiko Okuhara
 
     @param search               search information
     @param alpha                alpha value (beta value is alpha + 1)
@@ -309,7 +310,7 @@ int last4_nws(Search *search, int alpha) {
     @param searching            flag for terminating this search
     @return the final score
 */
-int nega_alpha_end_fast_nws(Search *search, int alpha, bool skipped, const bool *searching){
+int nega_alpha_end_fast_nws(Search *search, int alpha, bool skipped, const bool *searching) {
     if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
     ++search->n_nodes;
@@ -325,131 +326,68 @@ int nega_alpha_end_fast_nws(Search *search, int alpha, bool skipped, const bool 
         }
     #endif
     uint64_t legal = search->board.get_legal();
-    int v = -SCORE_INF;
     if (legal == 0ULL){
         if (skipped)
             return end_evaluate(&search->board);
         search->board.pass();
-            v = -nega_alpha_end_fast_nws(search, -alpha - 1, true, searching);
+            int v = -nega_alpha_end_fast_nws(search, -alpha - 1, true, searching);
         search->board.pass();
         return v;
     }
+
+    Board board0;
+    search->board.copy(&board0);
+    int v = -SCORE_INF;
+    uint_fast8_t parity0 = search->parity;
     int g;
     Flip flip;
     uint_fast8_t cell;
+    uint64_t prioritymoves = legal;
     #if USE_END_PO
-        uint64_t legal_copy;
-        if (0 < search->parity && search->parity < 15){
-            uint64_t legal_mask = parity_table[search->parity];
-            if (search->n_discs == 59){
-                uint64_t empties;
-                uint_fast8_t p0, p1, p2, p3;
-                legal_copy = legal & legal_mask;
-                for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
-                    calc_flip(&flip, &search->board, cell);
-                    search->move(&flip);
-                        g = -last4_nws(search, -alpha - 1);
-                    search->undo(&flip);
-                    if (v < g){
-                        if (alpha < g)
-                            return g;
-                        v = g;
-                    }
-                }
-                legal_copy = legal & ~legal_mask;
-                for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
-                    calc_flip(&flip, &search->board, cell);
-                    search->move(&flip);
-                        g = -last4_nws(search, -alpha - 1);
-                    search->undo(&flip);
-                    if (v < g){
-                        if (alpha < g)
-                            return g;
-                        v = g;
-                    }
-                }
-            } else{
-                legal_copy = legal & legal_mask;
-                for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
-                    calc_flip(&flip, &search->board, cell);
-                    search->move(&flip);
-                        g = -nega_alpha_end_fast_nws(search, -alpha - 1, false, searching);
-                    search->undo(&flip);
-                    if (v < g){
-                        if (alpha < g)
-                            return g;
-                        v = g;
-                    }
-                }
-                legal_copy = legal & ~legal_mask;
-                for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
-                    calc_flip(&flip, &search->board, cell);
-                    search->move(&flip);
-                        g = -nega_alpha_end_fast_nws(search, -alpha - 1, false, searching);
-                    search->undo(&flip);
-                    if (v < g){
-                        if (alpha < g)
-                            return g;
-                        v = g;
-                    }
-                }
-            }
-        } else{
-            if (search->n_discs == 59){
-                uint64_t empties;
-                uint_fast8_t p0, p1, p2, p3;
-                for (cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-                    calc_flip(&flip, &search->board, cell);
-                    search->move(&flip);
-                        g = -last4_nws(search, -alpha - 1);
-                    search->undo(&flip);
-                    if (v < g){
-                        if (alpha < g)
-                            return g;
-                        v = g;
-                    }
-                }
-            } else{
-                for (cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-                    calc_flip(&flip, &search->board, cell);
-                    search->move(&flip);
-                        g = -nega_alpha_end_fast_nws(search, -alpha - 1, false, searching);
-                    search->undo(&flip);
-                    if (v < g){
-                        if (alpha < g)
-                            return g;
-                        v = g;
-                    }
-                }
-            }
-        }
-    #else
-        if (search->n_discs == 59){
-            for (cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-                calc_flip(&flip, &search->board, cell);
-                search->move(&flip);
-                    g = -last4_nws(search, -alpha - 1);
-                search->undo(&flip);
-                if (v < g){
-                    if (alpha < g)
-                        return g;
-                    v = g;
-                }
-            }
-        } else{
-            for (cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-                calc_flip(&flip, &search->board, cell);
-                search->move(&flip);
-                    g = -nega_alpha_end_fast_nws(search, -alpha - 1, false, searching);
-                search->undo(&flip);
-                if (v < g){
-                    if (alpha < g)
-                        return g;
-                    v = g;
-                }
-            }
-        }
+        prioritymoves &= parity_table[parity0];
+        if (prioritymoves == 0) // all even
+            prioritymoves = legal;
     #endif
+
+    if (search->n_discs == 59)      // transfer to lastN, no longer uses n_discs, parity
+        do {
+            legal ^= prioritymoves;
+            for (cell = first_bit(&prioritymoves); prioritymoves; cell = next_bit(&prioritymoves)) {
+                calc_flip(&flip, &board0, cell);
+                board0.move_copy(&flip, &search->board);
+                g = -last4_nws(search, -alpha - 1);
+                if (alpha < g) {
+                    board0.copy(&search->board);
+                    return g;
+                }
+                if (v < g)
+                    v = g;
+            }
+        } while ((prioritymoves = legal));
+
+   else {
+        ++search->n_discs;  // for next depth
+        do {
+            legal ^= prioritymoves;
+            for (cell = first_bit(&prioritymoves); prioritymoves; cell = next_bit(&prioritymoves)) {
+                calc_flip(&flip, &board0, cell);
+                board0.move_copy(&flip, &search->board);
+                search->parity = parity0 ^ cell_div4[cell];
+                g = -nega_alpha_end_fast_nws(search, -alpha - 1, false, searching);
+                if (alpha < g) {
+                    --search->n_discs;
+                    search->parity = parity0;
+                    board0.copy(&search->board);
+                    return g;
+                }
+                if (v < g)
+                    v = g;
+            }
+        } while ((prioritymoves = legal));
+        --search->n_discs;
+        search->parity = parity0;
+    }
+    board0.copy(&search->board);
     return v;
 }
 
