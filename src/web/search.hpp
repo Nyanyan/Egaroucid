@@ -9,7 +9,6 @@
 #pragma once
 #include <iostream>
 #include <fstream>
-#include <algorithm>
 #include "setting.hpp"
 #include "common.hpp"
 #include "board.hpp"

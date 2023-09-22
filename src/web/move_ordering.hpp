@@ -142,10 +142,12 @@ inline bool move_evaluate_fast_first(Search *search, Flip_value *flip_value){
     return false;
 }
 
-inline void swap_next_best_move(vector<Flip_value> &move_list, const int strt, const int siz){
+inline void swap_next_best_move(std::vector<Flip_value> &move_list, const int strt, const int siz){
+    if (strt == siz - 1)
+        return;
     int top_idx = strt;
-    int best_value = -INF;
-    for (int i = strt; i < siz; ++i){
+    int best_value = move_list[strt].value;
+    for (int i = strt + 1; i < siz; ++i){
         if (best_value < move_list[i].value){
             best_value = move_list[i].value;
             top_idx = i;
@@ -184,10 +186,12 @@ inline void move_list_evaluate(Search *search, vector<Flip_value> &move_list, in
     }
 }
 
+/*
 inline void move_ordering(Search *search, vector<Flip_value> &move_list, int depth, int alpha, int beta, bool is_end_search, const bool *searching){
     move_list_evaluate(search, move_list, depth, alpha, beta, is_end_search, searching);
     sort(move_list.begin(), move_list.end(), cmp_move_ordering);
 }
+*/
 
 inline void move_list_evaluate_fast_first(Search *search, vector<Flip_value> &move_list){
     if (move_list.size() == 1){
@@ -204,7 +208,9 @@ inline void move_list_evaluate_fast_first(Search *search, vector<Flip_value> &mo
     }
 }
 
+/*
 inline void move_ordering_fast_first(Search *search, vector<Flip_value> &move_list){
     move_list_evaluate_fast_first(search, move_list);
     sort(move_list.begin(), move_list.end(), cmp_move_ordering);
 }
+*/

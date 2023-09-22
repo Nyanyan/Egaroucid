@@ -78,7 +78,7 @@ Options get_options(std::vector<Commandline_option> commandline_options, std::st
     str = find_commandline_option(commandline_options, ID_BOOK_FILE);
     if (str != OPTION_NOT_FOUND)
         res.book_file = str;
-    res.eval_file = binary_path + "resources/eval.egev2";
+    res.eval_file = binary_path + "resources/eval.egev";
     str = find_commandline_option(commandline_options, ID_EVAL_FILE);
     if (str != OPTION_NOT_FOUND)
         res.eval_file = str;
