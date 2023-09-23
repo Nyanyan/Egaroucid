@@ -13,7 +13,9 @@
 #include "level.hpp"
 #include "setting.hpp"
 #include "midsearch.hpp"
-#include "book.hpp"
+#ifndef NO_BOOK
+    #include "book.hpp"
+#endif
 #include "util.hpp"
 
 #define SEARCH_FINAL 100
@@ -204,17 +206,20 @@ Search_result ai(Board board, int level, bool use_book, bool use_multi_thread, b
             value_sign = -1;
         }
     }
-    Book_value book_result = book.get_random(&board, 0);
-    if (book_result.policy != -1 && use_book){
-        if (show_log)
-            cerr << "book " << idx_to_coord(book_result.policy) << " " << book_result.value << endl;
-        res.policy = book_result.policy;
-        res.value = value_sign * book_result.value;
-        res.depth = SEARCH_BOOK;
-        res.nps = 0;
-        res.is_end_search = false;
-        res.probability = 100;
-    } else if (level == 0){
+    #ifndef NO_BOOK
+        Book_value book_result = book.get_random(&board, 0);
+        if (book_result.policy != -1 && use_book){
+            if (show_log)
+                cerr << "book " << idx_to_coord(book_result.policy) << " " << book_result.value << endl;
+            res.policy = book_result.policy;
+            res.value = value_sign * book_result.value;
+            res.depth = SEARCH_BOOK;
+            res.nps = 0;
+            res.is_end_search = false;
+            res.probability = 100;
+        } else
+    #endif
+    if (level == 0){
         uint64_t legal = board.get_legal();
         vector<int> move_lst;
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
@@ -255,17 +260,20 @@ Search_result ai_hint(Board board, int level, bool use_book, bool use_multi_thre
             value_sign = -1;
         }
     }
-    int book_result = book.get(&board);
-    if (book_result != -INF && use_book){
-        if (show_log)
-            cerr << "book " << idx_to_coord(book_result) << endl;
-        res.policy = -1;
-        res.value = -value_sign * book_result;
-        res.depth = SEARCH_BOOK;
-        res.nps = 0;
-        res.is_end_search = false;
-        res.probability = 100;
-    } else if (level == 0){
+    #ifndef NO_BOOK
+        int book_result = book.get(&board);
+        if (book_result != -INF && use_book){
+            if (show_log)
+                cerr << "book " << idx_to_coord(book_result) << endl;
+            res.policy = -1;
+            res.value = -value_sign * book_result;
+            res.depth = SEARCH_BOOK;
+            res.nps = 0;
+            res.is_end_search = false;
+            res.probability = 100;
+        } else 
+    #endif
+    if (level == 0){
         uint64_t legal = board.get_legal();
         vector<int> move_lst;
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
@@ -298,10 +306,13 @@ int ai_window(Board board, int level, int alpha, int beta, bool use_multi_thread
         else
             value_sign = -1;
     }
-    int book_result = book.get(&board);
-    if (book_result != -INF)
-        return -value_sign * book_result;
-    else if (level == 0)
+    #ifndef NO_BOOK
+        int book_result = book.get(&board);
+        if (book_result != -INF)
+            return -value_sign * book_result;
+        else 
+    #endif
+    if (level == 0)
         return value_sign * mid_evaluate(&board);
     int depth;
         bool use_mpc, is_mid_search;

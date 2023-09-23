@@ -471,10 +471,10 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
                     ybwc_get_end_tasks_negascout(search, parallel_tasks, parallel_alphas, additional_search_windows, &running_count);
                     for (int i = 0; i < (int)parallel_tasks.size(); ++i){
                         if (additional_search_windows[i] != SCORE_UNDEFINED){
-                            alpha = std::max(additional_search_windows[i], alpha);
+                            additional_search_windows[i] = std::max(additional_search_windows[i], alpha);
                             eval_move(search, &move_list[parallel_idxes[i]].flip);
                             search->move(&move_list[parallel_idxes[i]].flip);
-                                g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[parallel_idxes[i]].n_legal, is_end_search, searching);
+                                g = -nega_scout(search, -beta, -additional_search_windows[i], depth - 1, false, move_list[parallel_idxes[i]].n_legal, is_end_search, searching);
                             search->undo(&move_list[parallel_idxes[i]].flip);
                             eval_undo(search, &move_list[parallel_idxes[i]].flip);
                             additional_search_windows[i] = SCORE_UNDEFINED;
@@ -497,10 +497,10 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
                 ybwc_wait_all_negascout(search, parallel_tasks, parallel_alphas, additional_search_windows, &running_count);
                 for (int i = 0; i < (int)parallel_tasks.size(); ++i){
                     if (additional_search_windows[i] != SCORE_UNDEFINED){
-                        alpha = std::max(additional_search_windows[i], alpha);
+                        additional_search_windows[i] = std::max(additional_search_windows[i], alpha);
                         eval_move(search, &move_list[parallel_idxes[i]].flip);
                         search->move(&move_list[parallel_idxes[i]].flip);
-                            g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[parallel_idxes[i]].n_legal, is_end_search, searching);
+                            g = -nega_scout(search, -beta, -additional_search_windows[i], depth - 1, false, move_list[parallel_idxes[i]].n_legal, is_end_search, searching);
                         search->undo(&move_list[parallel_idxes[i]].flip);
                         eval_undo(search, &move_list[parallel_idxes[i]].flip);
                         additional_search_windows[i] = SCORE_UNDEFINED;
@@ -606,7 +606,7 @@ int nega_scout_lazy_smp(Search *search, int alpha, int beta, int depth, bool ski
     @param legal                legal moves in bitboard
     @return pair of value and best move
 */
-int aspiration_search(Search *search, int alpha, int beta, int predicted_value, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching){
+int pv_aspiration_search(Search *search, int alpha, int beta, int predicted_value, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching){
     if (predicted_value < alpha || beta <= predicted_value)
         return nega_scout(search, alpha, beta, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
     int g1 = nega_alpha_ordering_nws(search, predicted_value - 1, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
@@ -678,7 +678,7 @@ std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int pr
                         if (predicted_value == SCORE_UNDEFINED || !is_end_search)
                             g = -nega_scout(search, -beta, -alpha, depth - 1, false, LEGAL_UNDEFINED, is_end_search, &searching);
                         else
-                            g = -aspiration_search(search, -beta, -alpha, -predicted_value, depth - 1, false, LEGAL_UNDEFINED, is_end_search, &searching);
+                            g = -pv_aspiration_search(search, -beta, -alpha, -predicted_value, depth - 1, false, LEGAL_UNDEFINED, is_end_search, &searching);
                     } else{
                         g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, LEGAL_UNDEFINED, is_end_search, &searching);
                         if (alpha <= g && g < beta)
@@ -699,7 +699,7 @@ std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int pr
                     if (best_move != moves[i])
                         std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " best " << idx_to_coord(best_move) << " [" << alpha << "," << beta << "] " << idx_to_coord(moves[i]) << " value <= " << g << " time " << tim() - strt << std::endl;
                     else
-                        std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " best " << idx_to_coord(best_move) << " [" << alpha << "," << beta << "] " << idx_to_coord(moves[i]) << " value == " << g << " time " << tim() - strt << std::endl;
+                        std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " best " << idx_to_coord(best_move) << " [" << alpha << "," << beta << "] " << idx_to_coord(moves[i]) << " value = " << g << " time " << tim() - strt << std::endl;
                 }
                 legal ^= 1ULL << moves[i];
                 ++pv_idx;
@@ -724,7 +724,7 @@ std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int pr
                         if (predicted_value == SCORE_UNDEFINED || !is_end_search)
                             g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, &searching);
                         else
-                            g = -aspiration_search(search, -beta, -alpha, -predicted_value, depth - 1, false, move_list[move_idx].n_legal, is_end_search, &searching);
+                            g = -pv_aspiration_search(search, -beta, -alpha, -predicted_value, depth - 1, false, move_list[move_idx].n_legal, is_end_search, &searching);
                     } else{
                         g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, &searching);
                         if (alpha <= g && g < beta)
@@ -745,7 +745,7 @@ std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int pr
                     if (best_move != move_list[move_idx].flip.pos)
                         std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " best " << idx_to_coord(best_move) << " [" << alpha << "," << beta << "] " << idx_to_coord(move_list[move_idx].flip.pos) << " value <= " << g << " time " << tim() - strt << std::endl;
                     else
-                        std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " best " << idx_to_coord(best_move) << " [" << alpha << "," << beta << "] " << idx_to_coord(move_list[move_idx].flip.pos) << " value == " << g << " time " << tim() - strt << std::endl;
+                        std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " best " << idx_to_coord(best_move) << " [" << alpha << "," << beta << "] " << idx_to_coord(move_list[move_idx].flip.pos) << " value = " << g << " time " << tim() - strt << std::endl;
                 }
                 ++pv_idx;
             }
@@ -851,7 +851,7 @@ int first_nega_scout_value(Search *search, int alpha, int beta, int depth, bool 
                     if (best_move != moves[i])
                         std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " best " << idx_to_coord(best_move) << " [" << alpha << "," << beta << "] " << idx_to_coord(moves[i]) << " value <= " << g << std::endl;
                     else
-                        std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " best " << idx_to_coord(best_move) << " [" << alpha << "," << beta << "] " << idx_to_coord(moves[i]) << " value == " << g << std::endl;
+                        std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " best " << idx_to_coord(best_move) << " [" << alpha << "," << beta << "] " << idx_to_coord(moves[i]) << " value = " << g << std::endl;
                 }
                 legal ^= 1ULL << moves[i];
                 ++pv_idx;
@@ -894,7 +894,7 @@ int first_nega_scout_value(Search *search, int alpha, int beta, int depth, bool 
                     if (best_move != move_list[move_idx].flip.pos)
                         std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " best " << idx_to_coord(best_move) << " [" << alpha << "," << beta << "] " << idx_to_coord(move_list[move_idx].flip.pos) << " value <= " << g << std::endl;
                     else
-                        std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " best " << idx_to_coord(best_move) << " [" << alpha << "," << beta << "] " << idx_to_coord(move_list[move_idx].flip.pos) << " value == " << g << std::endl;
+                        std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " best " << idx_to_coord(best_move) << " [" << alpha << "," << beta << "] " << idx_to_coord(move_list[move_idx].flip.pos) << " value = " << g << std::endl;
                 }
                 ++pv_idx;
             }

@@ -24,7 +24,7 @@
 /*
     @brief if wipeout found, it must be searched first.
 */
-// #define W_WIPEOUT INF
+#define W_WIPEOUT INF
 #define W_1ST_MOVE 10000000
 #define W_2ND_MOVE 1000000
 
@@ -46,6 +46,9 @@
 #define MAX_SAME_CELL_TYPE 8
 #define MOVE_ORDERING_CELL_SCORE_MAX 256
 
+// 5 -10 -20 -70 -25
+// 4 -8 -16 -48 -157
+// 7 -14 -28 -77 -218
 #define W_CELL_WEIGHT 7
 #define W_MOBILITY -14
 #define W_POTENTIAL_MOBILITY -28
@@ -89,6 +92,26 @@ int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, const bo
 int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
 
 /*
+    @brief Calculate openness
+
+    Not used for now
+
+    @param board                board
+    @param flip                 flip information
+    @return openness
+*/
+/*
+inline int calc_openness(const Board *board, const Flip *flip){
+    uint64_t f = flip->flip;
+    uint64_t around = 0ULL;
+    for (uint_fast8_t cell = first_bit(&f); f; cell = next_bit(&f))
+        around |= bit_around[cell];
+    around &= ~flip->flip;
+    return pop_count_ull(~(board->player | board->opponent | (1ULL << flip->pos)) & around);
+}
+*/
+
+/*
     @brief Get number of corner mobility
 
     Optimized for corner mobility
@@ -122,14 +145,7 @@ inline int get_weighted_n_moves(uint64_t legal){
 */
 #if USE_SIMD
     inline int get_potential_mobility(uint64_t opponent, uint64_t empties){
-        const __m256i eval_surround_mask = _mm256_set_epi64x(0x7E7E7E7E7E7E7E7EULL, 0x00FFFFFFFFFFFF00ULL, 0x007E7E7E7E7E7E00ULL, 0x007E7E7E7E7E7E00ULL);
-        const __m128i eval_surround_shift1879 = _mm_set_epi32(1, HW, HW_M1, HW_P1);
-        __m256i pl = _mm256_set1_epi64x(opponent);
-        pl = _mm256_and_si256(pl, eval_surround_mask);
-        pl = _mm256_or_si256(_mm256_sll_epi64(pl, eval_surround_shift1879), _mm256_srl_epi64(pl, eval_surround_shift1879));
-        __m128i res = _mm_or_si128(_mm256_castsi256_si128(pl), _mm256_extracti128_si256(pl, 1));
-        res = _mm_or_si128(res, _mm_shuffle_epi32(res, 0x4e));
-        return pop_count_ull(_mm_cvtsi128_si64(res));
+        return calc_surround(opponent, empties);
     }
 #else
     inline int get_potential_mobility(uint64_t opponent, uint64_t empties){
@@ -224,6 +240,8 @@ inline void move_evaluate_end_nws(Search *search, Flip_value *flip_value){
     search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
         flip_value->value -= pop_count_ull(flip_value->n_legal) * W_END_MOBILITY;
+        //uint64_t empties = ~(search->board.player | search->board.opponent);
+        //flip_value->value += get_potential_mobility(search->board.player, empties) * W_END_POTENTIAL_MOBILITY;
     search->undo(&flip_value->flip);
 }
 
@@ -242,6 +260,8 @@ inline void move_evaluate_end_nws_eval(Search *search, Flip_value *flip_value){
     search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
         flip_value->value -= pop_count_ull(flip_value->n_legal) * W_END_MOBILITY;
+        //uint64_t empties = ~(search->board.player | search->board.opponent);
+        //flip_value->value += get_potential_mobility(search->board.player, empties) * W_END_POTENTIAL_MOBILITY;
         flip_value->value -= mid_evaluate_diff(search) * W_END_VALUE;
     search->undo(&flip_value->flip);
     eval_undo(search, &flip_value->flip);

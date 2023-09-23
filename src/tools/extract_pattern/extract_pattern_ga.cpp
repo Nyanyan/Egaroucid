@@ -14,14 +14,15 @@
 #include "./../../engine/board.hpp"
 
 
-#define N_CELLS_IN_PATTERN 9
-#define N_VARIATION_IN_PATTERN 19683
-#define N_GENES 1000
+#define N_CELLS_IN_PATTERN 10
+#define N_VARIATION_IN_PATTERN 59049
+#define POW2_2N_CELLS_IN_PATTERN 1048576
+#define N_GENES 2000
 #define N_DATA 10000000
 #define MIN_N_DISCS 24
-#define GA_SCORE_UNDEFINED -1.0
-#define POW2_2N_CELLS_IN_PATTERN 262144
+#define MAX_N_DISCS 54
 #define N_SHOW_RESULT 40
+#define DUPLICATE_THRESHOLD 20
 
 struct Gene{
     uint64_t pattern;
@@ -45,31 +46,119 @@ void get_data(std::string file){
         std::cerr << "can't open " << file << std::endl;
         return;
     }
-    Board board;
-    char player, policy, score;
+    uint64_t player, opponent;
+    char p, policy, score;
     while (data.size() < N_DATA){
-        if (fread(&(board.player), 8, 1, fp) < 1)
+        if (fread(&player, 8, 1, fp) < 1)
             break;
-        fread(&(board.opponent), 8, 1, fp);
-        fread(&player, 1, 1, fp);
+        fread(&opponent, 8, 1, fp);
+        fread(&p, 1, 1, fp);
         fread(&policy, 1, 1, fp);
         fread(&score, 1, 1, fp);
-        if (board.n_discs() >= MIN_N_DISCS){
+        if (pop_count_ull(player | opponent) >= MIN_N_DISCS && pop_count_ull(player | opponent) <= MAX_N_DISCS){
+            int rotate_rnd = myrandrange(0, 8);
+            switch(rotate_rnd){
+                case 0:
+                    break;
+                case 1:
+                    player = black_line_mirror(player);
+                    opponent = black_line_mirror(opponent);
+                    break;
+                case 2:
+                    player = white_line_mirror(player);
+                    opponent = white_line_mirror(opponent);
+                    break;
+                case 3:
+                    player = rotate_180(player);
+                    opponent = rotate_180(opponent);
+                    break;
+                case 4:
+                    player = horizontal_mirror(player);
+                    opponent = horizontal_mirror(opponent);
+                    break;
+                case 5:
+                    player = vertical_mirror(player);
+                    opponent = vertical_mirror(opponent);
+                    break;
+                case 6:
+                    player = vertical_mirror(player);
+                    opponent = vertical_mirror(opponent);
+                    player = black_line_mirror(player);
+                    opponent = black_line_mirror(opponent);
+                    break;
+                case 7:
+                    player = horizontal_mirror(player);
+                    opponent = horizontal_mirror(opponent);
+                    player = black_line_mirror(player);
+                    opponent = black_line_mirror(opponent);
+                    break;
+                default:
+                    break;
+
+            }
             Datum datum;
-            datum.board = board;
+            datum.board.player = player;
+            datum.board.opponent = opponent;
             datum.score = score;
             data.emplace_back(datum);
         }
     }
 }
 
+int get_gathered_idx(uint64_t player, uint64_t opponent, uint64_t pattern){
+    int gathered_idx = _pext_u64(player, pattern) << N_CELLS_IN_PATTERN;
+    gathered_idx |= _pext_u64(opponent, pattern);
+    return gathered_idx;
+}
+
 void scoring(Gene *gene){
     for (int i = 0; i < POW2_2N_CELLS_IN_PATTERN; ++i)
         duplication[i].clear();
     for (Datum &datum: data){
-        int gathered_idx = _pext_u64(datum.board.player, gene->pattern) << N_CELLS_IN_PATTERN;
-        gathered_idx |= _pext_u64(datum.board.opponent, gene->pattern);
+        uint64_t player = datum.board.player;
+        uint64_t opponent = datum.board.opponent;
+        int gathered_idx = get_gathered_idx(player, opponent, gene->pattern);
         duplication[gathered_idx].emplace_back(datum.score);
+
+        /*
+        
+        player = black_line_mirror(player);
+        opponent = black_line_mirror(opponent);
+        gathered_idx = get_gathered_idx(player, opponent, gene->pattern);
+        duplication[gathered_idx].emplace_back(datum.score);
+
+        player = white_line_mirror(player);
+        opponent = white_line_mirror(opponent);
+        gathered_idx = get_gathered_idx(player, opponent, gene->pattern);
+        duplication[gathered_idx].emplace_back(datum.score);
+
+        player = black_line_mirror(player);
+        opponent = black_line_mirror(opponent);
+        gathered_idx = get_gathered_idx(player, opponent, gene->pattern);
+        duplication[gathered_idx].emplace_back(datum.score);
+
+        player = horizontal_mirror(player);
+        opponent = horizontal_mirror(opponent);
+        gathered_idx = get_gathered_idx(player, opponent, gene->pattern);
+        duplication[gathered_idx].emplace_back(datum.score);
+
+        player = white_line_mirror(player);
+        opponent = white_line_mirror(opponent);
+        gathered_idx = get_gathered_idx(player, opponent, gene->pattern);
+        duplication[gathered_idx].emplace_back(datum.score);
+
+        player = black_line_mirror(player);
+        opponent = black_line_mirror(opponent);
+        gathered_idx = get_gathered_idx(player, opponent, gene->pattern);
+        duplication[gathered_idx].emplace_back(datum.score);
+
+        player = white_line_mirror(player);
+        opponent = white_line_mirror(opponent);
+        gathered_idx = get_gathered_idx(player, opponent, gene->pattern);
+        duplication[gathered_idx].emplace_back(datum.score);
+
+        */
+
     }
     int n_duplication = 0;
     double res = 0.0;
@@ -118,10 +207,6 @@ void ga(){
     Gene new_genes[4];
     new_genes[0] = genes[parent0];
     new_genes[1] = genes[parent1];
-    new_genes[2].score = GA_SCORE_UNDEFINED;
-    new_genes[3].score = GA_SCORE_UNDEFINED;
-    new_genes[2].pattern = 0;
-    new_genes[3].pattern = 0;
     int pattern_bits[2][N_CELLS_IN_PATTERN];
     int idx0 = 0, idx1 = 0;
     for (int i = 0; i < HW2; ++i){
@@ -130,14 +215,27 @@ void ga(){
         if (genes[parent1].pattern & (1ULL << i))
             pattern_bits[1][idx1++] = i;
     }
+    bool dups[2][N_CELLS_IN_PATTERN];
+    for (int i = 0; i < N_CELLS_IN_PATTERN; ++i){
+        dups[0][i] = false;
+        dups[1][i] = false;
+        for (int j = 0; j < N_CELLS_IN_PATTERN; ++j){
+            dups[0][i] |= pattern_bits[0][i] == pattern_bits[1][j];
+            dups[1][i] |= pattern_bits[1][i] == pattern_bits[0][j];
+        }
+    }
     for (int i = 0; i < N_CELLS_IN_PATTERN; ++i){
         if (myrandom() < 0.5){
-            new_genes[2].pattern |= 1ULL << pattern_bits[0][i];
-            new_genes[3].pattern |= 1ULL << pattern_bits[1][i];
-        } else{
-            new_genes[2].pattern |= 1ULL << pattern_bits[1][i];
-            new_genes[3].pattern |= 1ULL << pattern_bits[0][i];
+            int rand_idx = myrandrange(0, N_CELLS_IN_PATTERN);
+            if (!dups[0][i] && !dups[1][rand_idx])
+                std::swap(pattern_bits[0][i], pattern_bits[1][rand_idx]);
         }
+    }
+    new_genes[2].pattern = 0;
+    new_genes[3].pattern = 0;
+    for (int i = 0; i < N_CELLS_IN_PATTERN; ++i){
+        new_genes[2].pattern |= 1ULL << pattern_bits[0][i];
+        new_genes[3].pattern |= 1ULL << pattern_bits[1][i];
     }
     scoring(&new_genes[2]);
     scoring(&new_genes[3]);
@@ -180,6 +278,7 @@ void delete_same_patterns(){
                 genes[i].pattern = generate_random_pattern();
             scoring(&genes[i]);
         }
+        patterns.emplace(genes[i].pattern);
     }
 }
 
@@ -188,20 +287,39 @@ void output_result(uint64_t t, uint64_t strt){
     std::cerr << t << " " << tim() - strt << " " << genes[0].score << std::endl;
     std::ofstream ofs;
     ofs.open("log.txt", std::ios_base::app);
-    ofs << t << " " << tim() - strt << " ";
-    for (int i = 0; i < N_SHOW_RESULT; ++i){
-        ofs << genes[i].score << " ";
-        int n_shown = 0;
+    ofs << t << " " << tim() - strt << std::endl;
+    int n_cell_shown[HW2];
+    for (int i = 0; i < HW2; ++i)
+        n_cell_shown[i] = 0;
+    int n_res_shown = 0;
+    for (int i = 0; i < N_GENES && n_res_shown < N_SHOW_RESULT; ++i){
+        int cell_duplicate = 0;
         for (int j = 0; j < HW2; ++j){
-            if (1 & (genes[i].pattern >> j)){
-                ofs << "COORD_" + ga_idx_to_coord(j);
-                ++n_shown;
-                if (n_shown == N_CELLS_IN_PATTERN){
-                    ofs << std::endl;
-                } else{
-                    ofs << ", ";
+            if (1 & (genes[i].pattern >> j))
+                cell_duplicate += n_cell_shown[j];
+        }
+        if (cell_duplicate <= DUPLICATE_THRESHOLD * n_res_shown){
+            ofs << genes[i].score << " ";
+            int n_shown = 0;
+            for (int j = 0; j < HW2; ++j){
+                if (1 & (genes[i].pattern >> j)){
+                    ++n_cell_shown[j];
+                    ++n_cell_shown[(7 - j / HW) * HW + (j % HW)]; // vertical
+                    ++n_cell_shown[(j / HW) * HW + (7 - j % HW)]; // horizontal
+                    ++n_cell_shown[HW2_M1 - j]; // 180
+                    if (j / HW != j % HW){
+                        ++n_cell_shown[(j / HW) + (j % HW) * HW]; // white
+                        ++n_cell_shown[(7 - j / HW) + (j % HW) * HW]; // white + h
+                        ++n_cell_shown[(j / HW) + (7 - j % HW) * HW]; // white + v
+                        ++n_cell_shown[(7 - j / HW) + (7 - j % HW) * HW]; // white + 180
+                    }
+                    ofs << "COORD_" + ga_idx_to_coord(j);
+                    if (++n_shown < N_CELLS_IN_PATTERN)
+                        ofs << ", ";
                 }
             }
+            ofs << std::endl;
+            ++n_res_shown;
         }
     }
     ofs.close();
@@ -215,14 +333,12 @@ int main(){
     std::cerr << "start!" << std::endl;
     uint64_t strt = tim();
     uint64_t t = 0;
-    output_result(t, strt);
     while (true){
         ga();
-        if ((t & 0b1111) == 0){
+        if ((t++ & 0b1111111) == 0){
             delete_same_patterns();
             output_result(t, strt);
         }
-        ++t;
     }
     return 0;
 }

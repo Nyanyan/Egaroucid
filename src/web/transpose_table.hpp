@@ -11,7 +11,6 @@
 #include "common.hpp"
 #include "board.hpp"
 #include <future>
-#include <atomic>
 
 using namespace std;
 
@@ -31,44 +30,44 @@ inline double data_strength(const double t, const int d){
 
 class Node_child_transpose_table{
     private:
-        atomic<uint64_t> player;
-        atomic<uint64_t> opponent;
-        atomic<int> best_move;
+        uint64_t player;
+        uint64_t opponent;
+        int best_move;
 
     public:
 
         inline void init(){
-            player.store(0ULL);
-            opponent.store(0ULL);
-            best_move.store(0);
+            player = 0ULL;
+            opponent = 0ULL;
+            best_move = 0;
         }
 
         inline void register_value_with_board(const Board *board, const int policy){
-            player.store(board->player);
-            opponent.store(board->opponent);
-            best_move.store(policy);
+            player = board->player;
+            opponent = board->opponent;
+            best_move = policy;
         }
 
         inline void register_value_with_board(Node_child_transpose_table *from){
-            player.store(from->player.load());
-            opponent.store(from->opponent.load());
-            best_move.store(from->best_move.load());
+            player = from->player;
+            opponent = from->opponent;
+            best_move = from->best_move;
         }
 
         inline int get(const Board *board){
             int res;
-            if (board->player != player.load(memory_order_relaxed) || board->opponent != opponent.load(memory_order_relaxed))
+            if (board->player != player || board->opponent != opponent)
                 res = TRANSPOSE_TABLE_UNDEFINED;
             else{
-                res = best_move.load(memory_order_relaxed);
-                if (board->player != player.load(memory_order_relaxed) || board->opponent != opponent.load(memory_order_relaxed))
+                res = best_move;
+                if (board->player != player || board->opponent != opponent)
                     res = TRANSPOSE_TABLE_UNDEFINED;
             }
             return res;
         }
 
         inline int n_stones(){
-            return pop_count_ull(player.load(memory_order_relaxed) | opponent.load(memory_order_relaxed));
+            return pop_count_ull(player | opponent);
         }
 };
 
@@ -98,56 +97,56 @@ class Child_transpose_table{
 
 class Node_parent_transpose_table{
     private:
-        atomic<uint64_t> player;
-        atomic<uint64_t> opponent;
-        atomic<int> lower;
-        atomic<int> upper;
-        atomic<double> mpct;
-        atomic<int> depth;
+        uint64_t player;
+        uint64_t opponent;
+        int lower;
+        int upper;
+        double mpct;
+        int depth;
 
     public:
 
         inline void init(){
-            player.store(0ULL);
-            opponent.store(0ULL);
-            lower.store(-INF);
-            upper.store(INF);
-            mpct.store(0.0);
-            depth.store(0);
+            player = 0ULL;
+            opponent = 0ULL;
+            lower = -INF;
+            upper = INF;
+            mpct = 0.0;
+            depth = 0;
         }
 
         inline void register_value_with_board(const Board *board, const int l, const int u, const double t, const int d){
-            if (board->player == player.load(memory_order_relaxed) && board->opponent == opponent.load(memory_order_relaxed) && data_strength(mpct.load(memory_order_relaxed), depth.load(memory_order_relaxed)) > data_strength(t, d))
+            if (board->player == player && board->opponent == opponent && data_strength(mpct, depth) > data_strength(t, d))
                 return;
-            player.store(board->player);
-            opponent.store(board->opponent);
-            lower.store(l);
-            upper.store(u);
-            mpct.store(t);
-            depth.store(d);
+            player = board->player;
+            opponent = board->opponent;
+            lower = l;
+            upper = u;
+            mpct = t;
+            depth = d;
         }
 
         inline void register_value_with_board(Node_parent_transpose_table *from){
-            player.store(from->player);
-            opponent.store(from->opponent);
-            lower.store(from->lower);
-            upper.store(from->upper);
-            mpct.store(from->mpct);
-            depth.store(from->depth);
+            player = from->player;
+            opponent = from->opponent;
+            lower = from->lower;
+            upper = from->upper;
+            mpct = from->mpct;
+            depth = from->depth;
         }
 
         inline void get(const Board *board, int *l, int *u, const double t, const int d){
-            if (data_strength(mpct.load(memory_order_relaxed), depth.load(memory_order_relaxed)) < data_strength(t, d)){
+            if (data_strength(mpct, depth) < data_strength(t, d)){
                 *l = -INF;
                 *u = INF;
             } else{
-                if (board->player != player.load(memory_order_relaxed) || board->opponent != opponent.load(memory_order_relaxed)){
+                if (board->player != player || board->opponent != opponent){
                     *l = -INF;
                     *u = INF;
                 } else{
-                    *l = lower.load(memory_order_relaxed);
-                    *u = upper.load(memory_order_relaxed);
-                    if (board->player != player.load(memory_order_relaxed) || board->opponent != opponent.load(memory_order_relaxed)){
+                    *l = lower;
+                    *u = upper;
+                    if (board->player != player || board->opponent != opponent){
                         *l = -INF;
                         *u = INF;
                     }
@@ -156,11 +155,11 @@ class Node_parent_transpose_table{
         }
 
         inline bool contain(const Board *board){
-            return board->player == player.load(memory_order_relaxed) && board->opponent == opponent.load(memory_order_relaxed);
+            return board->player == player && board->opponent == opponent;
         }
 
         inline int n_stones() const{
-            return pop_count_ull(player.load(memory_order_relaxed) | opponent.load(memory_order_relaxed));
+            return pop_count_ull(player | opponent);
         }
 };
 
