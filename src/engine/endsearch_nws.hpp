@@ -214,7 +214,7 @@ int last4_nws(Search *search, int alpha) {
         ++search->n_nodes_discs[search->n_discs];
     #endif
     #if USE_LAST4_SC
-        int stab_res = stability_cut(search, &alpha, &beta);
+        int stab_res = stability_cut_nws(search, alpha);
         if (stab_res != SCORE_UNDEFINED){
             return stab_res;
         }
