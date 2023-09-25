@@ -32,7 +32,7 @@ class Flip{
         uint64_t flip;
     
     public:
-        inline void calc_flip(const uint64_t player, const uint64_t opponent, const int place){
+        inline uint64_t calc_flip(const uint64_t player, const uint64_t opponent, const int place){
             pos = place;
             const int t = place >> 3;
             const int u = place & 7;
@@ -40,6 +40,7 @@ class Flip{
             flip |= split_v_line(flip_pre_calc[join_v_line(player, u)][join_v_line(opponent, u)][t], u);
             flip |= split_d7_line(flip_pre_calc[join_d7_line(player, u + t)][join_d7_line(opponent, u + t)][std::min(t, 7 - u)], u + t);
             flip |= split_d9_line(flip_pre_calc[join_d9_line(player, u + 7 - t)][join_d9_line(opponent, u + 7 - t)][std::min(t, u)], u + 7 - t);
+            return flip;
         }
 };
 

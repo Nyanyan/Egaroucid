@@ -32,13 +32,12 @@ class Flip{
     public:
         // original code from http://www.amy.hi-ho.ne.jp/okuhara/bitboard.htm
         // by Toshihiko Okuhara
-        inline void calc_flip(const uint64_t player, const uint64_t opponent, const uint_fast8_t place) {
+        static inline __m128i calc_flip(__m128i OP, const uint_fast8_t place) {
             __m256i  PP, OO, flip4, outflank, eraser, mask;
             __m128i  flip2;
 
-            pos = place;
-            PP = _mm256_broadcastq_epi64(_mm_cvtsi64_si128(player));
-            OO = _mm256_broadcastq_epi64(_mm_cvtsi64_si128(opponent));
+            PP = _mm256_broadcastq_epi64(OP);
+            OO = _mm256_permute4x64_epi64(_mm256_castsi128_si256(OP), 0x55);
 
             mask = rmask_v4[place];
               // isolate non-opponent MS1B by clearing lower bits
@@ -61,11 +60,14 @@ class Flip{
             flip4 = _mm256_or_si256(flip4, _mm256_andnot_si256(eraser, mask));
 
             flip2 = _mm_or_si128(_mm256_castsi256_si128(flip4), _mm256_extracti128_si256(flip4, 1));
-            flip2 = _mm_or_si128(flip2, _mm_shuffle_epi32(flip2, 0x4e));  // SWAP64
-
-            flip = _mm_cvtsi128_si64(flip2);
+            return _mm_or_si128(flip2, _mm_shuffle_epi32(flip2, 0x4e));	// SWAP64
         }
 
+        inline uint64_t calc_flip(const uint64_t player, const uint64_t opponent, const uint_fast8_t place) {
+            pos = place;
+            flip = _mm_cvtsi128_si64(calc_flip(_mm_set_epi64x(opponent, player), place));
+            return flip;
+        }
 };
 
 /*
@@ -87,9 +89,10 @@ void flip_init() {
         );
 
         for (int y = 0; y < 8; ++y) {
-            __m128i yshift = _mm_cvtsi32_si128(y * 8);
-            lmask_v4[y * 8 + x] = _mm256_sll_epi64(lmask, yshift);
-            rmask_v4[(7 - y) * 8 + x] = _mm256_srl_epi64(rmask, yshift);
+            lmask_v4[y * 8 + x] = lmask;
+            rmask_v4[(7 - y) * 8 + x] = rmask;
+            lmask = _mm256_slli_epi64(lmask, 8);
+            rmask = _mm256_srli_epi64(rmask, 8);
         }
     }
 }

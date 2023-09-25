@@ -3,8 +3,10 @@
 
     @file endsearch.hpp
         Search near endgame
+        last2/3/4 imported from Edax AVX, (C) 1998 - 2018 Richard Delorme, 2014 - 23 Toshihiko Okuhara
     @date 2021-2023
     @author Takuto Yamana
+    @author Toshihiko Okuhara
     @license GPL-3.0 license
 */
 
@@ -33,61 +35,64 @@
     inline void ybwc_wait_all(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *alpha, int beta, bool *searching);
 #endif
 
+#if USE_SIMD
+#include "endsearch_simd.hpp"
+#else
 /*
     @brief Get a final score with last 2 empties
 
     No move ordering. Just search it.
 
-    @param search               search information
+    @param search               search information (board ignored)
     @param alpha                alpha value
     @param beta                 beta value
     @param p0                   empty square 1/2
     @param p1                   empty square 2/2
-    @param skipped              already passed?
+    @param board                bitboard
     @return the final score
 */
-inline int last2(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast8_t p1, bool skipped){
+static int last2(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast8_t p1, Board board) {
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
         ++search->n_nodes_discs[search->n_discs];
     #endif
-    int v = -SCORE_INF;
+    int v;
     Flip flip;
-    //if ((bit_around[p0] & search->board.player) == 0)
+    //if ((bit_around[p0] & board.player) == 0)
     //    std::swap(p0, p1);
-    if (bit_around[p0] & search->board.opponent){
-        calc_flip(&flip, &search->board, p0);
-        if (flip.flip){
-            search->move_lastN(&flip);
-                v = -last1(search, -beta, p1);
-            search->undo_lastN(&flip);
-            if (alpha < v){
-                if (beta <= v)
-                    return v;
-                alpha = v;
+    if ((bit_around[p0] & board.opponent) && calc_flip(&flip, &board, p0)) {
+        v = last1n(search, board.opponent ^ flip.flip, beta, p1);
+
+        if ((v < beta) && (bit_around[p1] & board.opponent) && calc_flip(&flip, &board, p1)) {
+            int g = last1n(search, board.opponent ^ flip.flip, beta, p0);
+            if (v < g)
+                v = g;
+        }
+    }
+
+    else if ((bit_around[p1] & board.opponent) && calc_flip(&flip, &board, p1))
+         v = last1n(search, board.opponent ^ flip.flip, beta, p0);
+
+    else {	// pass
+        ++search->n_nodes;
+        beta = -alpha;
+        if (flip.calc_flip(board.opponent, board.player, p0)) {
+            v = last1n(search, board.player ^ flip.flip, beta, p1);
+
+            if ((v < beta) && (flip.calc_flip(board.opponent, board.player, p1))) {
+                int g = last1n(search, board.player ^ flip.flip, beta, p0);
+                if (v < g)
+                    v = g;
             }
         }
-    }
-    if (bit_around[p1] & search->board.opponent){
-        calc_flip(&flip, &search->board, p1);
-        if (flip.flip){
-            search->move_lastN(&flip);
-                int g = -last1(search, -beta, p0);
-            search->undo_lastN(&flip);
-            if (v < g)
-                return g;
-            else
-                return v;
-        }
-    }
-    if (v == -SCORE_INF){
-        if (skipped)
-            v = end_evaluate(&search->board, 2);
-        else{
-            search->board.pass();
-                v = -last2(search, -beta, -alpha, p0, p1, true);
-            search->board.pass();
-        }
+
+        else if (flip.calc_flip(board.opponent, board.player, p1))
+            v = last1n(search, board.player ^ flip.flip, beta, p0);
+
+        else	// gameover
+            return end_evaluate(&board, 2);
+
+        v = -v;
     }
     return v;
 }
@@ -97,14 +102,14 @@ inline int last2(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
 
     Only with parity-based ordering.
 
-    @param search               search information
+    @param search               search information (board ignored)
     @param alpha                alpha value
     @param beta                 beta value
+    @param sort3                parity sort (lower 2 bits for this node)
     @param p0                   empty square 1/3
     @param p1                   empty square 2/3
     @param p2                   empty square 3/3
-    @param skipped              already passed?
-    @param searching            flag for terminating this search
+    @param board                bitboard
     @return the final score
 
     This board contains only 3 empty squares, so empty squares on each part will be:
@@ -116,100 +121,66 @@ inline int last2(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
         1 - 0 - 0 > need to sort
         1 - 1 - 1
 */
-inline int last3(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast8_t p1, uint_fast8_t p2, bool skipped, const bool *searching){
-    if (!global_searching || !(*searching))
-        return SCORE_UNDEFINED;
-    ++search->n_nodes;
+static int last3(Search *search, int alpha, int beta, int sort3, uint_fast8_t p0, uint_fast8_t p1, uint_fast8_t p2, Board board) {
+    // if (!global_searching || !(*searching))
+    //  return SCORE_UNDEFINED;
     #if USE_SEARCH_STATISTICS
         ++search->n_nodes_discs[search->n_discs];
     #endif
     #if USE_END_PO
-        if (!skipped){
-            #if USE_SIMD
-                // parity ordering optimization
-                // I referred to http://www.amy.hi-ho.ne.jp/okuhara/edaxopt.htm
-                const uint_fast8_t parities = 
-                    ((p0 ^ p1) & 0x24) | 
-                    (((p1 ^ p2) & 0x24) >> 1);
-                __m128i empties_simd = _mm_cvtsi32_si128((p2 << 16) | (p1 << 8) | p0);
-                empties_simd = _mm_shuffle_epi8(empties_simd, parity_ordering_shuffle_mask_last3[parities]);
-                uint32_t empties_32 = _mm_cvtsi128_si32(empties_simd);
-                //std::cerr << (int)parities << "  " << (int)p0 << " " << (int)p1 << " " << (int)p2 << "  ";
-                p0 = empties_32 & 0xFF;
-                p1 = (empties_32 >> 8) & 0xFF;
-                p2 = empties_32 >> 16;
-                //std::cerr << (int)p0 << " " << (int)p1 << " " << (int)p2 << "  " << empties_32 << std::endl;
-            #else
-                const uint_fast8_t parities = 
-                    (((search->parity & cell_div4[p0]) >> cell_div4_log[p0]) << 1) | 
-                    ((search->parity & cell_div4[p1]) >> cell_div4_log[p1]);
-                switch (parities){
-                    case 0:
-                        std::swap(p0, p2);
-                        break;
-                    case 1:
-                        std::swap(p0, p1);
-                        break;
-                    default:
-                        break;
-                }
-            #endif
+        switch (sort3 & 3){
+            case 2:
+                std::swap(p0, p2);
+                break;
+            case 1:
+                std::swap(p0, p1);
+                break;
         }
     #endif
-    int v = -SCORE_INF;
+
     Flip flip;
-    if (bit_around[p0] & search->board.opponent){
-        calc_flip(&flip, &search->board, p0);
-        if (flip.flip){
-            search->move_lastN(&flip);
-                v = -last2(search, -beta, -alpha, p1, p2, false);
-            search->undo_lastN(&flip);
-            if (alpha < v){
-                if (beta <= v)
-                    return v;
-                alpha = v;
-            }
+    Board board2;
+    int pol = -1;
+    do {
+        ++search->n_nodes;
+        int t = alpha;  alpha = -beta;  beta = -t;
+        int v = SCORE_INF;	// Negative score
+        if ((bit_around[p0] & board.opponent) && (calc_flip(&flip, &board, p0))) {
+            board.move_copy(&flip, &board2);
+            v = last2(search, alpha, beta, p1, p2, board2);
+            if (alpha >= v)
+                return v * pol;
+            if (beta > v)
+                beta = v;
         }
-    }
-    int g;
-    if (bit_around[p1] & search->board.opponent){
-        calc_flip(&flip, &search->board, p1);
-        if (flip.flip){
-            search->move_lastN(&flip);
-                g = -last2(search, -beta, -alpha, p0, p2, false);
-            search->undo_lastN(&flip);
-            if (v < g){
-                if (alpha < g){
-                    if (beta <= g)
-                        return g;
-                    alpha = g;
-                }
+
+        int g;
+        if ((bit_around[p1] & board.opponent) && calc_flip(&flip, &board, p1)) {
+            board.move_copy(&flip, &board2);
+            g = last2(search, alpha, beta, p0, p2, board2);
+            if (alpha >= g)
+                return g * pol;
+            if (v > g)
                 v = g;
-            }
+            if (beta > g)
+                beta = g;
         }
-    }
-    if (bit_around[p2] & search->board.opponent){
-        calc_flip(&flip, &search->board, p2);
-        if (flip.flip){
-            search->move_lastN(&flip);
-                g = -last2(search, -beta, -alpha, p0, p1, false);
-            search->undo_lastN(&flip);
-            if (v < g)
-                return g;
-            else
-                return v;
+
+        if ((bit_around[p2] & board.opponent) && calc_flip(&flip, &board, p2)) {
+            board.move_copy(&flip, &board2);
+            g = last2(search, alpha, beta, p0, p1, board2);
+            if (v > g)
+                v = g;
+            return v * pol;
         }
-    }
-    if (v == -SCORE_INF){
-        if (skipped)
-            v = end_evaluate_odd(&search->board, 3);
-        else{
-            search->board.pass();
-                v = -last3(search, -beta, -alpha, p0, p1, p2, true, searching);
-            search->board.pass();
-        }
-    }
-    return v;
+
+        if (v < SCORE_INF)
+            return v * pol;
+
+	board.pass();
+    } while ((pol = -pol) >= 0);
+
+    return end_evaluate_odd(&board, 3);	// gameover
 }
 
 /*
@@ -220,12 +191,6 @@ inline int last3(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
     @param search               search information
     @param alpha                alpha value
     @param beta                 beta value
-    @param p0                   empty square 1/4
-    @param p1                   empty square 2/4
-    @param p2                   empty square 3/4
-    @param p3                   empty square 4/4
-    @param skipped              already passed?
-    @param searching            flag for terminating this search
     @return the final score
 
     This board contains only 4 empty squares, so empty squares on each part will be:
@@ -241,10 +206,15 @@ inline int last3(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
         1 - 1 - 0 - 0 > need to sort
         1 - 1 - 1 - 1
 */
-inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast8_t p1, uint_fast8_t p2, uint_fast8_t p3, bool skipped, const bool *searching){
-    if (!global_searching || !(*searching))
-        return SCORE_UNDEFINED;
-    ++search->n_nodes;
+int last4(Search *search, int alpha, int beta) {
+    uint64_t empties = ~(search->board.player | search->board.opponent);
+    uint_fast8_t p0 = first_bit(&empties);
+    uint_fast8_t p1 = next_bit(&empties);
+    uint_fast8_t p2 = next_bit(&empties);
+    uint_fast8_t p3 = next_bit(&empties);
+
+    // if (!global_searching || !(*searching))
+    //  return SCORE_UNDEFINED;
     #if USE_SEARCH_STATISTICS
         ++search->n_nodes_discs[search->n_discs];
     #endif
@@ -255,133 +225,96 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
         }
     #endif
     #if USE_END_PO
-        if (!skipped){
-            #if USE_SIMD
-                // parity ordering optimization
-                // I referred to http://www.amy.hi-ho.ne.jp/okuhara/edaxopt.htm
-                const uint_fast8_t parities = 
-                    ((p0 ^ p1) & 0x24) | 
-                    (((p1 ^ p2) & 0x24) >> 1) | 
-                    (((p2 ^ p3) & 0x24) >> 2);
-                __m128i empties_simd = _mm_cvtsi32_si128((p3 << 24) | (p2 << 16) | (p1 << 8) | p0);
-                empties_simd = _mm_shuffle_epi8(empties_simd, parity_ordering_shuffle_mask_last4[parities]);
-                uint32_t empties_32 = _mm_cvtsi128_si32(empties_simd);
-                //std::cerr << (int)parities << "  " << (int)p0 << " " << (int)p1 << " " << (int)p2 << " " << (int)p3 << "  ";
-                uint8_t *empties_8 = (uint8_t*)&empties_32;
-                p0 = empties_8[0];
-                p1 = empties_8[1];
-                p2 = empties_8[2];
-                p3 = empties_8[3];
-                /*
-                p0 = empties_32 & 0xFF;
-                p1 = (empties_32 >> 8) & 0xFF;
-                p2 = (empties_32 >> 16) & 0xFF;
-                p3 = empties_32 >> 24;
-                */
-                //std::cerr << (int)p0 << " " << (int)p1 << " " << (int)p2 << " " << (int)p3 << "  " << empties_32 << std::endl;
-            #else
-                const uint_fast8_t parities = 
-                    (((search->parity & cell_div4[p0]) >> cell_div4_log[p0]) << 2) | 
-                    (((search->parity & cell_div4[p1]) >> cell_div4_log[p1]) << 1) | 
-                    ((search->parity & cell_div4[p2]) >> cell_div4_log[p2]);
-                switch (parities){
-                    case 1:
-                        std::swap(p0, p2);
-                        std::swap(p1, p3);
-                        break;
-                    case 2:
-                        std::swap(p0, p3);
-                        break;
-                    case 3:
-                        std::swap(p0, p2);
-                        break;
-                    case 4:
-                        std::swap(p1, p3);
-                        break;
-                    case 5:
-                        std::swap(p1, p2);
-                        break;
-                    default:
-                        break;
-                }
-            #endif
+        // parity ordering optimization
+        // I referred to http://www.amy.hi-ho.ne.jp/okuhara/edaxopt.htm
+        const int paritysort = parity_case[((p2 ^ p3) & 0x24) + ((((p1 ^ p3) & 0x24) * 2 + ((p0 ^ p3) & 0x24)) >> 2)];
+        switch (paritysort) {
+            case 8:     // case 1(p2) 1(p3) 2(p0 p1)
+                std::swap(p0, p2);
+                std::swap(p1, p3);
+                break;
+            case 7:     // case 1(p1) 1(p3) 2(p0 p2)
+                std::swap(p0, p3);
+                break;
+            case 6:     // case 1(p1) 1(p2) 2(p0 p3)
+                std::swap(p0, p2);
+                break;
+            case 5:     // case 1(p0) 1(p3) 2(p1 p2)
+                std::swap(p1, p3);
+                break;
+            case 4:     // case 1(p0) 1(p2) 2(p1 p3)
+                std::swap(p1, p2);
+                break;
         }
+        int sort3 = parity_ordering_last3[paritysort];     // for move sorting on 3 empties
+    #else
+        constexpr int sort3 = 0;
     #endif
-    int v = -SCORE_INF;
+
     Flip flip;
-    if (bit_around[p0] & search->board.opponent){
-        calc_flip(&flip, &search->board, p0);
-        if (flip.flip){
-            search->move_lastN(&flip);
-                v = -last3(search, -beta, -alpha, p1, p2, p3, false, searching);
-            search->undo_lastN(&flip);
-            if (alpha < v){
-                if (beta <= v)
-                    return v;
-                alpha = v;
-            }
+    Board board3, board4;
+    search->board.copy(&board4);
+    int pol = -1;
+    do {
+        ++search->n_nodes;
+        int t = alpha;  alpha = -beta;  beta = -t;
+        int v = SCORE_INF;	// Negative score
+        if ((bit_around[p0] & board4.opponent) && calc_flip(&flip, &board4, p0)) {
+            board4.move_copy(&flip, &board3);
+            v = last3(search, alpha, beta, sort3, p1, p2, p3, board3);
+            if (alpha >= v)
+                return v * pol;
+            if (beta > v)
+                beta = v;
         }
-    }
-    int g;
-    if (bit_around[p1] & search->board.opponent){
-        calc_flip(&flip, &search->board, p1);
-        if (flip.flip){
-            search->move_lastN(&flip);
-                g = -last3(search, -beta, -alpha, p0, p2, p3, false, searching);
-            search->undo_lastN(&flip);
-            if (v < g){
-                if (alpha < g){
-                    if (beta <= g)
-                        return g;
-                    alpha = g;
-                }
+
+        int g;
+        if ((bit_around[p1] & board4.opponent) && calc_flip(&flip, &board4, p1)) {
+            board4.move_copy(&flip, &board3);
+            g = last3(search, alpha, beta, sort3 >> 4, p0, p2, p3, board3);
+            if (alpha >= g)
+                return g * pol;
+            if (v > g)
                 v = g;
-            }
+            if (beta > g)
+                beta = g;
         }
-    }
-    if (bit_around[p2] & search->board.opponent){
-        calc_flip(&flip, &search->board, p2);
-        if (flip.flip){
-            search->move_lastN(&flip);
-                g = -last3(search, -beta, -alpha, p0, p1, p3, false, searching);
-            search->undo_lastN(&flip);
-            if (v < g){
-                if (alpha < g){
-                    if (beta <= g)
-                        return g;
-                    alpha = g;
-                }
+
+        if ((bit_around[p2] & board4.opponent) && calc_flip(&flip, &board4, p2)) {
+            board4.move_copy(&flip, &board3);
+            g = last3(search, alpha, beta, sort3 >> 8, p0, p1, p3, board3);
+            if (alpha >= g)
+                return g * pol;
+            if (v > g)
                 v = g;
-            }
+            if (beta > g)
+                beta = g;
         }
-    }
-    if (bit_around[p3] & search->board.opponent){
-        calc_flip(&flip, &search->board, p3);
-        if (flip.flip){
-            search->move_lastN(&flip);
-                g = -last3(search, -beta, -alpha, p0, p1, p2, false, searching);
-            search->undo_lastN(&flip);
-            if (v < g)
-                return g;
+
+        if ((bit_around[p3] & board4.opponent) && calc_flip(&flip, &board4, p3)) {
+            board4.move_copy(&flip, &board3);
+            g = last3(search, alpha, beta, sort3 >> 12, p0, p1, p2, board3);
+            if (v > g)
+                v = g;
+            return v * pol;
         }
-    }
-    if (v == -SCORE_INF){
-        if (skipped)
-            v = end_evaluate(&search->board, 4);
-        else{
-            search->board.pass();
-                v = -last4(search, -beta, -alpha, p0, p1, p2, p3, true, searching);
-            search->board.pass();
-        }
-    }
-    return v;
+
+        if (v < SCORE_INF)
+            return v * pol;
+
+        board4.pass();
+    } while ((pol = -pol) >= 0);
+
+    return end_evaluate(&search->board, 4);	// gameover
 }
+#endif
 
 #if USE_NEGA_ALPHA_END_FAST
     /*
         @brief Get a final score with few empties
 
         Only with parity-based ordering.
+        imported from search_shallow of Edax AVX, (C) 1998 - 2018 Richard Delorme, 2014 - 23 Toshihiko Okuhara
 
         @param search               search information
         @param alpha                alpha value
@@ -391,11 +324,11 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
         @param searching            flag for terminating this search
         @return the final score
     */
-    int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped, bool stab_cut, const bool *searching){
+    int nega_alpha_end_fast(Search *search, int alpha, int beta, bool skipped, bool stab_cut, const bool *searching) {
+        if (alpha + 1 == beta)
+            return nega_alpha_end_fast_nws(search, alpha, skipped, searching);
         if (!global_searching || !(*searching))
             return SCORE_UNDEFINED;
-        if (alpha + 1 == beta)
-            return nega_alpha_end_fast_nws(search, alpha, skipped, stab_cut, searching);
         ++search->n_nodes;
         #if USE_SEARCH_STATISTICS
             ++search->n_nodes_discs[search->n_discs];
@@ -409,177 +342,72 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
             }
         #endif
         uint64_t legal = search->board.get_legal();
-        int v = -SCORE_INF;
         if (legal == 0ULL){
             if (skipped)
                 return end_evaluate(&search->board);
             search->board.pass();
-                v = -nega_alpha_end_fast(search, -beta, -alpha, true, false, searching);
+                int v = -nega_alpha_end_fast(search, -beta, -alpha, true, false, searching);
             search->board.pass();
             return v;
         }
+
+        Board board0;
+        search->board.copy(&board0);
+        int v = -SCORE_INF;
+        uint_fast8_t parity0 = search->parity;
         int g;
         Flip flip;
         uint_fast8_t cell;
+        uint64_t prioritymoves = legal;
         #if USE_END_PO
-            uint64_t legal_copy;
-            if (0 < search->parity && search->parity < 15){
-                uint64_t legal_mask = parity_table[search->parity];
-                if (search->n_discs == 59){
-                    uint64_t empties;
-                    uint_fast8_t p0, p1, p2, p3;
-                    legal_copy = legal & legal_mask;
-                    for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
-                        calc_flip(&flip, &search->board, cell);
-                        search->move(&flip);
-                            empties = ~(search->board.player | search->board.opponent);
-                            p0 = first_bit(&empties);
-                            p1 = next_bit(&empties);
-                            p2 = next_bit(&empties);
-                            p3 = next_bit(&empties);
-                            g = -last4(search, -beta, -alpha, p0, p1, p2, p3, false, searching);
-                        search->undo(&flip);
-                        if (v < g){
-                            if (alpha < g){
-                                if (beta <= g)
-                                    return g;
-                                alpha = g;
-                            }
-                            v = g;
-                        }
-                    }
-                    legal_copy = legal & ~legal_mask;
-                    for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
-                        calc_flip(&flip, &search->board, cell);
-                        search->move(&flip);
-                            empties = ~(search->board.player | search->board.opponent);
-                            p0 = first_bit(&empties);
-                            p1 = next_bit(&empties);
-                            p2 = next_bit(&empties);
-                            p3 = next_bit(&empties);
-                            g = -last4(search, -beta, -alpha, p0, p1, p2, p3, false, searching);
-                        search->undo(&flip);
-                        if (v < g){
-                            if (alpha < g){
-                                if (beta <= g)
-                                    return g;
-                                alpha = g;
-                            }
-                            v = g;
-                        }
-                    }
-                } else{
-                    legal_copy = legal & legal_mask;
-                    for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
-                        calc_flip(&flip, &search->board, cell);
-                        search->move(&flip);
-                            g = -nega_alpha_end_fast(search, -beta, -alpha, false, true, searching);
-                        search->undo(&flip);
-                        if (v < g){
-                            if (alpha < g){
-                                if (beta <= g)
-                                    return g;
-                                alpha = g;
-                            }
-                            v = g;
-                        }
-                    }
-                    legal_copy = legal & ~legal_mask;
-                    for (cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)){
-                        calc_flip(&flip, &search->board, cell);
-                        search->move(&flip);
-                            g = -nega_alpha_end_fast(search, -beta, -alpha, false, true, searching);
-                        search->undo(&flip);
-                        if (v < g){
-                            if (alpha < g){
-                                if (beta <= g)
-                                    return g;
-                                alpha = g;
-                            }
-                            v = g;
-                        }
-                    }
-                }
-            } else{
-                if (search->n_discs == 59){
-                    uint64_t empties;
-                    uint_fast8_t p0, p1, p2, p3;
-                    for (cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-                        calc_flip(&flip, &search->board, cell);
-                        search->move(&flip);
-                            empties = ~(search->board.player | search->board.opponent);
-                            p0 = first_bit(&empties);
-                            p1 = next_bit(&empties);
-                            p2 = next_bit(&empties);
-                            p3 = next_bit(&empties);
-                            g = -last4(search, -beta, -alpha, p0, p1, p2, p3, false, searching);
-                        search->undo(&flip);
-                        if (v < g){
-                            if (alpha < g){
-                                if (beta <= g)
-                                    return g;
-                                alpha = g;
-                            }
-                            v = g;
-                        }
-                    }
-                } else{
-                    for (cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-                        calc_flip(&flip, &search->board, cell);
-                        search->move(&flip);
-                            g = -nega_alpha_end_fast(search, -beta, -alpha, false, true, searching);
-                        search->undo(&flip);
-                        if (v < g){
-                            if (alpha < g){
-                                if (beta <= g)
-                                    return g;
-                                alpha = g;
-                            }
-                            v = g;
-                        }
-                    }
-                }
-            }
-        #else
-            if (search->n_discs == 59){
-                uint64_t empties;
-                uint_fast8_t p0, p1, p2, p3;
-                for (cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-                    calc_flip(&flip, &search->board, cell);
-                    search->move(&flip);
-                        empties = ~(search->board.player | search->board.opponent);
-                        p0 = first_bit(&empties);
-                        p1 = next_bit(&empties);
-                        p2 = next_bit(&empties);
-                        p3 = next_bit(&empties);
-                        g = -last4(search, -beta, -alpha, p0, p1, p2, p3, false);
-                    search->undo(&flip);
-                    if (v < g){
-                        if (alpha < g){
-                            if (beta <= g)
-                                return g;
-                            alpha = g;
-                        }
-                        v = g;
-                    }
-                }
-            } else{
-                for (cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-                    calc_flip(&flip, &search->board, cell);
-                    search->move(&flip);
-                        g = -nega_alpha_end_fast(search, -beta, -alpha, false, true, searching);
-                    search->undo(&flip);
-                    if (v < g){
-                        if (alpha < g){
-                            if (beta <= g)
-                                return g;
-                            alpha = g;
-                        }
-                        v = g;
-                    }
-                }
-            }
+            prioritymoves &= parity_table[parity0];
+            if (prioritymoves == 0) // all even
+                prioritymoves = legal;
         #endif
+
+        if (search->n_discs == 59)	// transfer to lastN, no longer uses n_discs, parity
+            do {
+                legal ^= prioritymoves;
+                for (cell = first_bit(&prioritymoves); prioritymoves; cell = next_bit(&prioritymoves)) {
+                    calc_flip(&flip, &board0, cell);
+                    board0.move_copy(&flip, &search->board);
+                    g = -last4(search, -beta, -alpha);
+                    if (beta <= g) {
+                        board0.copy(&search->board);
+                        return g;
+                    }
+                    if (v < g)
+                        v = g;
+                    if (alpha < g)
+                        alpha = g;
+                }
+            } while ((prioritymoves = legal));
+
+       else {
+            ++search->n_discs;	// for next depth
+            do {
+                legal ^= prioritymoves;
+                for (cell = first_bit(&prioritymoves); prioritymoves; cell = next_bit(&prioritymoves)) {
+                    calc_flip(&flip, &board0, cell);
+                    board0.move_copy(&flip, &search->board);
+                    search->parity = parity0 ^ cell_div4[cell];
+                    g = -nega_alpha_end_fast(search, -beta, -alpha, false, true, searching);
+                    if (beta <= g) {
+                        --search->n_discs;
+                        search->parity = parity0;
+                        board0.copy(&search->board);
+                        return g;
+                    }
+                    if (v < g)
+                        v = g;
+                    if (alpha < g)
+                        alpha = g;
+                }
+            } while ((prioritymoves = legal));
+            --search->n_discs;
+            search->parity = parity0;
+        }
+        board0.copy(&search->board);
         return v;
     }
 #endif
@@ -608,12 +436,7 @@ inline int last4(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
                 return nega_alpha_end_fast(search, alpha, beta, skipped, false, searching);
         #else
             if (search->n_discs == 60){
-                uint64_t empties = ~(search->board.player | search->board.opponent);
-                uint_fast8_t p0 = first_bit(&empties);
-                uint_fast8_t p1 = next_bit(&empties);
-                uint_fast8_t p2 = next_bit(&empties);
-                uint_fast8_t p3 = next_bit(&empties);
-                return last4(search, alpha, beta, p0, p1, p2, p3, false, searching);
+                return last4(search, alpha, beta);
             }
         #endif
         ++search->n_nodes;

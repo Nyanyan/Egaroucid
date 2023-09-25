@@ -451,7 +451,8 @@ bool operator!=(const Board& a, const Board& b){
     @param flip                 flip structure to store result
     @param board                board class
     @param place                cell to put disc
+    @return flip.flip
 */
-inline void calc_flip(Flip *flip, Board *board, uint_fast8_t place){
-    flip->calc_flip(board->player, board->opponent, place);
+inline uint64_t calc_flip(Flip *flip, Board *board, uint_fast8_t place){
+    return flip->calc_flip(board->player, board->opponent, place);
 }
