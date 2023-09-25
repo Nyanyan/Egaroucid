@@ -28,7 +28,7 @@ static int vectorcall last2_nws(Search* search, __m128i OP, int alpha, __m128i e
     __m128i flipped;
     int p0 = _mm_extract_epi16(empties_simd, 1);
     int p1 = _mm_extract_epi16(empties_simd, 0);
-    uint64_t opponent = _mm_extract_epi64(OP, 1);;
+    uint64_t opponent = _mm_extract_epi64(OP, 1);
 
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
@@ -93,6 +93,7 @@ static int vectorcall last3_nws(Search* search, __m128i OP, int alpha, __m128i e
 #if USE_SEARCH_STATISTICS
         ++search->n_nodes_discs[search->n_discs];
 #endif
+    empties_simd = _mm_cvtepu8_epi16(empties_simd);
     int pol = -1;
     do {
         ++search->n_nodes;
@@ -109,7 +110,7 @@ static int vectorcall last3_nws(Search* search, __m128i OP, int alpha, __m128i e
         int g;
         x = _mm_extract_epi16(empties_simd, 1);
         if ((bit_around[x] & opponent) && !TESTZ_FLIP(flipped = Flip::calc_flip(OP, x))) {
-            g = last2_nws(search, board_flip_next(OP, x, flipped), alpha, _mm_shufflelo_epi16(empties_simd, 0xd8));
+            g = last2_nws(search, board_flip_next(OP, x, flipped), alpha, _mm_shufflelo_epi16(empties_simd, 0xd8));	// (d3d1)d2d0
             if (alpha >= g)
                 return g * pol;
             if (v > g)
@@ -118,7 +119,7 @@ static int vectorcall last3_nws(Search* search, __m128i OP, int alpha, __m128i e
 
         x = _mm_extract_epi16(empties_simd, 0);
         if ((bit_around[x] & opponent) && !TESTZ_FLIP(flipped = Flip::calc_flip(OP, x))) {
-            g = last2_nws(search, board_flip_next(OP, x, flipped), alpha, _mm_shufflelo_epi16(empties_simd, 0xc9));
+            g = last2_nws(search, board_flip_next(OP, x, flipped), alpha, _mm_shufflelo_epi16(empties_simd, 0xc9));	// (d3d0)d2d1
             if (v > g)
                 v = g;
             return v * pol;
@@ -194,36 +195,33 @@ int last4_nws(Search* search, int alpha) {
         opponent = _mm_extract_epi64(OP, 1);
         p0 = _mm_extract_epi8(empties_simd, 3);
         if ((bit_around[p0] & opponent) && !TESTZ_FLIP(flipped = Flip::calc_flip(OP, p0))) {
-            v = last3_nws(search, board_flip_next(OP, p0, flipped), alpha, _mm_cvtepu8_epi16(empties_simd));
+            v = last3_nws(search, board_flip_next(OP, p0, flipped), alpha, empties_simd);
             if (alpha >= v)
                 return v * pol;
         }
 
         int g;
-        empties_simd = _mm_shuffle_epi32(empties_simd, ROTR32);
-        p1 = _mm_extract_epi8(empties_simd, 3);
+        p1 = _mm_extract_epi8(empties_simd, 7);
         if ((bit_around[p1] & opponent) && !TESTZ_FLIP(flipped = Flip::calc_flip(OP, p1))) {
-            g = last3_nws(search, board_flip_next(OP, p1, flipped), alpha, _mm_cvtepu8_epi16(empties_simd));
+            g = last3_nws(search, board_flip_next(OP, p1, flipped), alpha, _mm_srli_si128(empties_simd, 4));
             if (alpha >= g)
                 return g * pol;
             if (v > g)
                 v = g;
         }
  
-        empties_simd = _mm_shuffle_epi32(empties_simd, ROTR32);
-        p2 = _mm_extract_epi8(empties_simd, 3);
+        p2 = _mm_extract_epi8(empties_simd, 11);
         if ((bit_around[p2] & opponent) && !TESTZ_FLIP(flipped = Flip::calc_flip(OP, p2))) {
-            g = last3_nws(search, board_flip_next(OP, p2, flipped), alpha, _mm_cvtepu8_epi16(empties_simd));
+            g = last3_nws(search, board_flip_next(OP, p2, flipped), alpha, _mm_srli_si128(empties_simd, 8));
             if (alpha >= g)
                 return g * pol;
             if (v > g)
                 v = g;
         }
  
-        empties_simd = _mm_shuffle_epi32(empties_simd, ROTR32);
-        p3 = _mm_extract_epi8(empties_simd, 3);
+        p3 = _mm_extract_epi8(empties_simd, 15);
         if ((bit_around[p3] & opponent) && !TESTZ_FLIP(flipped = Flip::calc_flip(OP, p3))) {
-            g = last3_nws(search, board_flip_next(OP, p3, flipped), alpha, _mm_cvtepu8_epi16(empties_simd));
+            g = last3_nws(search, board_flip_next(OP, p3, flipped), alpha, _mm_srli_si128(empties_simd, 12));
             if (v > g)
                 v = g;
             return v * pol;
@@ -233,7 +231,6 @@ int last4_nws(Search* search, int alpha) {
             return v * pol;
 
         OP = _mm_shuffle_epi32(OP, SWAP64);	// pass
-        empties_simd = _mm_shuffle_epi32(empties_simd, ROTR32);
     } while ((pol = -pol) >= 0);
 
     return end_evaluate(opponent, 4);	// gameover

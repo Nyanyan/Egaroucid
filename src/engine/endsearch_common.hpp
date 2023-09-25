@@ -112,7 +112,6 @@ inline int last1n(Search *search, uint64_t player, int beta, uint_fast8_t p0){
 
 #define	SWAP64	0x4e	// for _mm_shuffle_epi32
 #define	DUPHI	0xee
-#define ROTR32  0x39
 
 /** coordinate to bit table converter */
 static uint64_t X_TO_BIT[64];
