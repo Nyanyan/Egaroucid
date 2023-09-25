@@ -45,6 +45,10 @@ answer = '''#40 38  a2
 answer = answer.splitlines()
 
 cmd = 'Egaroucid_for_Console.exe -l 60 -nobook -hash 25 -solve problem/ffo40-59.txt -thread 32'
+if len(sys.argv) == 2:
+    eval_file = sys.argv[1]
+    print('eval ', eval_file)
+    cmd += ' -eval ' + eval_file
 print(cmd)
 
 egaroucid = subprocess.Popen((cmd).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
