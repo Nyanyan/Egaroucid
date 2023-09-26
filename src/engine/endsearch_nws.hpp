@@ -50,7 +50,7 @@
     @param board                bitboard
     @return the final max score
 */
-inline int last2_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1, Board board) {
+static int last2_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1, Board board) {
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
         ++search->n_nodes_discs[search->n_discs];
@@ -71,7 +71,7 @@ inline int last2_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
     }
 
     else if ((bit_around[p1] & board.opponent) && calc_flip(&flip, &board, p1))
-         v = last1(search, board.opponent ^ flip.flip, beta, p0);
+        v = last1(search, board.opponent ^ flip.flip, beta, p0);
 
     else {	// pass
         ++search->n_nodes;
@@ -120,7 +120,7 @@ inline int last2_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
         1 - 0 - 0 > need to sort
         1 - 1 - 1
 */
-inline int last3_nws(Search *search, int alpha, int sort3, uint_fast8_t p0, uint_fast8_t p1, uint_fast8_t p2, Board board) {
+static int last3_nws(Search *search, int alpha, int sort3, uint_fast8_t p0, uint_fast8_t p1, uint_fast8_t p2, Board board) {
     // if (!global_searching || !(*searching))
     //  return SCORE_UNDEFINED;
     #if USE_SEARCH_STATISTICS
@@ -196,19 +196,18 @@ inline int last3_nws(Search *search, int alpha, int sort3, uint_fast8_t p0, uint
         1 - 1 - 1 - 1
     then the parities for squares will be:
         0 - 0 - 0 - 0
-        1 - 1 - 1 - 1
+        1 - 1 - 0 - 0
         0 - 0 - 0 - 0
         1 - 1 - 0 - 0 > need to sort
         1 - 1 - 1 - 1
 */
 int last4_nws(Search *search, int alpha) {
-#if USE_END_PO
-#endif
     uint64_t empties = ~(search->board.player | search->board.opponent);
     uint_fast8_t p0 = first_bit(&empties);
     uint_fast8_t p1 = next_bit(&empties);
     uint_fast8_t p2 = next_bit(&empties);
     uint_fast8_t p3 = next_bit(&empties);
+
     // if (!global_searching || !(*searching))
     //  return SCORE_UNDEFINED;
     #if USE_SEARCH_STATISTICS
@@ -216,13 +215,13 @@ int last4_nws(Search *search, int alpha) {
     #endif
     #if USE_LAST4_SC
         int stab_res = stability_cut_nws(search, alpha);
-        if (stab_res != SCORE_UNDEFINED){
+        if (stab_res != SCORE_UNDEFINED) {
             return stab_res;
         }
     #endif
     #if USE_END_PO
-        // parity ordering optimization
-        // I referred to http://www.amy.hi-ho.ne.jp/okuhara/edaxopt.htm
+                // parity ordering optimization
+                // I referred to http://www.amy.hi-ho.ne.jp/okuhara/edaxopt.htm
         const int paritysort = parity_case[((p2 ^ p3) & 0x24) + ((((p1 ^ p3) & 0x24) * 2 + ((p0 ^ p3) & 0x24)) >> 2)];
         switch (paritysort) {
             case 8:     // case 1(p2) 1(p3) 2(p0 p1)

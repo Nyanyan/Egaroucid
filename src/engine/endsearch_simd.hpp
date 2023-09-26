@@ -25,7 +25,7 @@
     @param empties_simd         vectored empties (2 Words)
     @return the final max score
 */
-static int vectorcall last2(Search* search, __m128i OP, int alpha, int beta, __m128i empties_simd) {
+static int vectorcall last2(Search *search, __m128i OP, int alpha, int beta, __m128i empties_simd) {
     __m128i flipped;
     int p0 = _mm_extract_epi16(empties_simd, 1);
     int p1 = _mm_extract_epi16(empties_simd, 0);
@@ -86,14 +86,14 @@ static int vectorcall last2(Search* search, __m128i OP, int alpha, int beta, __m
     @param empties_simd         vectored empties (3 Bytes)
     @return the final min score
 */
-static int vectorcall last3(Search* search, __m128i OP, int alpha, int beta, __m128i empties_simd) {
+static int vectorcall last3(Search *search, __m128i OP, int alpha, int beta, __m128i empties_simd) {
     __m128i flipped;
 
     // if (!global_searching || !(*searching))
     //  return SCORE_UNDEFINED;
-#if USE_SEARCH_STATISTICS
+    #if USE_SEARCH_STATISTICS
         ++search->n_nodes_discs[search->n_discs];
-#endif
+    #endif
     empties_simd = _mm_cvtepu8_epi16(empties_simd);
     int v = SCORE_INF;	// min stage
     int pol = 1;
@@ -147,7 +147,6 @@ static int vectorcall last3(Search* search, __m128i OP, int alpha, int beta, __m
     @param search               search information
     @param alpha                alpha value
     @param beta                 beta value
-    @param skipped              already passed?
     @return the final max score
 
     This board contains only 4 empty squares, so empty squares on each part will be:
@@ -163,7 +162,7 @@ static int vectorcall last3(Search* search, __m128i OP, int alpha, int beta, __m
         1 - 1 - 0 - 0 > need to sort
         1 - 1 - 1 - 1
 */
-int last4(Search* search, int alpha, int beta) {
+int last4(Search *search, int alpha, int beta) {
     __m128i flipped;
     uint64_t opponent;
     __m128i OP = _mm_loadu_si128((__m128i*) & search->board);

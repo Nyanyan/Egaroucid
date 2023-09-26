@@ -30,7 +30,7 @@
 
 #if USE_NEGA_ALPHA_END && MID_TO_END_DEPTH > YBWC_END_SPLIT_MIN_DEPTH
     inline bool ybwc_split_end(const Search *search, int alpha, int beta, uint64_t legal, const bool *searching, uint_fast8_t policy, const int canput, const int pv_idx, const int split_count, std::vector<std::future<Parallel_task>> &parallel_tasks);
-    inline void ybwc_get_end_tasks(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *alpha);
+    inline void ybwc_get_end_tasks(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *running_count);
     inline void ybwc_wait_all(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks);
     inline void ybwc_wait_all(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *alpha, int beta, bool *searching);
 #endif
@@ -144,7 +144,7 @@ static int last3(Search *search, int alpha, int beta, int sort3, uint_fast8_t p0
     int pol = 1;
     for (;;) {
         ++search->n_nodes;
-        if ((bit_around[p0] & board.opponent) && (calc_flip(&flip, &board, p0))) {
+        if ((bit_around[p0] & board.opponent) && calc_flip(&flip, &board, p0)) {
             board.move_copy(&flip, &board2);
             v = last2(search, alpha, beta, p1, p2, board2);
             if (alpha >= v)
@@ -202,7 +202,7 @@ static int last3(Search *search, int alpha, int beta, int sort3, uint_fast8_t p0
         1 - 1 - 1 - 1
     then the parities for squares will be:
         0 - 0 - 0 - 0
-        1 - 1 - 1 - 1
+        1 - 1 - 0 - 0
         0 - 0 - 0 - 0
         1 - 1 - 0 - 0 > need to sort
         1 - 1 - 1 - 1
@@ -221,13 +221,13 @@ int last4(Search *search, int alpha, int beta) {
     #endif
     #if USE_LAST4_SC
         int stab_res = stability_cut(search, &alpha, &beta);
-        if (stab_res != SCORE_UNDEFINED){
+        if (stab_res != SCORE_UNDEFINED) {
             return stab_res;
         }
     #endif
     #if USE_END_PO
-        // parity ordering optimization
-        // I referred to http://www.amy.hi-ho.ne.jp/okuhara/edaxopt.htm
+                // parity ordering optimization
+                // I referred to http://www.amy.hi-ho.ne.jp/okuhara/edaxopt.htm
         const int paritysort = parity_case[((p2 ^ p3) & 0x24) + ((((p1 ^ p3) & 0x24) * 2 + ((p0 ^ p3) & 0x24)) >> 2)];
         switch (paritysort) {
             case 8:     // case 1(p2) 1(p3) 2(p0 p1)
