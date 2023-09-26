@@ -44,8 +44,8 @@ for n_discs in range(61):
         w_n_discs.append(n_discs)
         x_depth1.append(depth1)
         y_depth2.append(depth2)
-        s = 15.0 + 5.0 * n_discs / 60 #max(10.0, min(21.0, 18.0 + (21.0 - 18.0) * n_discs / 30)) # d2 = 60
-        e = 2.0 + 3.0 * n_discs / 60 #max(5.0, min(13.0, 8.0 + (13.0 - 8.0) * n_discs / 30)) # d2 = 0
+        s = 10.0 + 5.0 * (-1 / 1600 * ((n_discs - 40) ** 2) + 1)
+        e = 2.0 + 3.0 * (-1 / 1600 * ((n_discs - 40) ** 2) + 1)
         z_error.append(e + (s - e) * depth2 / 60)
         weight.append(0.001)
 
@@ -55,8 +55,8 @@ for n_discs in range(61):
         w_n_discs.append(n_discs)
         x_depth1.append(depth1)
         y_depth2.append(depth2)
-        s = 9.0 + 3.0 * n_discs / 60 #max(10.0, min(18.0, 18.0 + (10.0 - 18.0) * n_discs / 30)) # d2 = 60
-        e = 3.0 + 2.0 * n_discs / 60 #max(5.0, min(10.0, 10.0 + (6.0 - 10.0) * n_discs / 30)) # d2 = 0
+        s = 8.0 + 2.0 * (-1 / 1600 * ((n_discs - 40) ** 2) + 1)
+        e = 3.0 + 2.0 * (-1 / 1600 * ((n_discs - 40) ** 2) + 1)
         z_error.append(e + (s - e) * depth2 / 60)
         weight.append(0.001)
 
@@ -102,6 +102,7 @@ def plot_fit_result_onephase(n_discs, params):
     ax.set_xlabel('depth1')
     ax.set_ylabel('depth2')
     ax.set_zlabel('error')
+    ax.set_zlim((0, 18))
     plt.show()
 
 probcut_params_before = [1.0 for _ in range(10)]
@@ -114,6 +115,6 @@ print([float(elem) for elem in popt])
 for i in range(len(popt)):
     print('#define probcut_' + chr(ord('a') + i), popt[i])
 
-for i in [10, 30, 50]:
+for i in [10, 20, 30, 40, 50]:
     plot_fit_result_onephase(i, popt)
     #plot_fit_result_onephase(i, probcut_params_old)

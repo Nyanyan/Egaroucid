@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 
 
+duplication = [[0 for _ in range(8)] for _ in range(8)]
 while True:
     s = input()
     if s == '':
@@ -25,7 +26,17 @@ while True:
         print(coord, x, y)
         p = Rectangle(xy=(7 - x, 7 - y), height=1, width=1, facecolor='k')
         ax.add_patch(p)
+        duplication[y][x] += 1
+        duplication[7 - y][x] += 1
+        duplication[y][7 - x] += 1
+        duplication[7 - y][7 - x] += 1
+        duplication[x][y] += 1
+        duplication[7 - x][y] += 1
+        duplication[x][7 - y] += 1
+        duplication[7 - x][7 - y] += 1
     plt.xlim((0, 8))
     plt.ylim((0, 8))
     plt.tight_layout()
+    for arr in duplication:
+        print(arr)
     plt.show()
