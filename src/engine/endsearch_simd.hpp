@@ -14,7 +14,7 @@
 #include "search.hpp"
 
 /*
-    @brief Get a final score with last 2 empties
+    @brief Get a final max score with last 2 empties
 
     No move ordering. Just search it.
 
@@ -22,8 +22,8 @@
     @param OP                   vectored board
     @param alpha                alpha value
     @param beta                 beta value
-    @param empties_simd         vectored empties
-    @return the final score
+    @param empties_simd         vectored empties (2 Words)
+    @return the final max score
 */
 static int vectorcall last2(Search* search, __m128i OP, int alpha, int beta, __m128i empties_simd) {
     __m128i flipped;
@@ -37,34 +37,34 @@ static int vectorcall last2(Search* search, __m128i OP, int alpha, int beta, __m
     #endif
     int v;
     if ((bit_around[p0] & opponent) && !TESTZ_FLIP(flipped = Flip::calc_flip(OP, p0))) {
-        v = last1n(search, _mm_xor_si128(OP, flipped), beta, p1);
+        v = last1(search, _mm_xor_si128(OP, flipped), beta, p1);
  
         if ((v < beta) && (bit_around[p1] & opponent) && !TESTZ_FLIP(flipped = Flip::calc_flip(OP, p1))) {
-            int g = last1n(search, _mm_xor_si128(OP, flipped), beta, p0);
+            int g = last1(search, _mm_xor_si128(OP, flipped), beta, p0);
             if (v < g)
                 v = g;
         }
     }
 
     else if ((bit_around[p1] & opponent) && !TESTZ_FLIP(flipped = Flip::calc_flip(OP, p1)))
-        v = last1n(search, _mm_xor_si128(OP, flipped), beta, p0);
+        v = last1(search, _mm_xor_si128(OP, flipped), beta, p0);
  
     else {	// pass
         ++search->n_nodes;
         beta = -alpha;
         __m128i PO = _mm_shuffle_epi32(OP, SWAP64);
         if (!TESTZ_FLIP(flipped = Flip::calc_flip(PO, p0))) {
-            v = last1n(search, _mm_xor_si128(PO, flipped), beta, p1);
+            v = last1(search, _mm_xor_si128(PO, flipped), beta, p1);
  
            if ((v < beta) && !TESTZ_FLIP(flipped = Flip::calc_flip(PO, p1))) {
-                int g = last1n(search, _mm_xor_si128(PO, flipped), beta, p0);
+                int g = last1(search, _mm_xor_si128(PO, flipped), beta, p0);
                 if (v < g)
                     v = g;
             }
         }
 
         else if (!TESTZ_FLIP(flipped = Flip::calc_flip(PO, p1)))
-            v = last1n(search, _mm_xor_si128(PO, flipped), beta, p0);
+            v = last1(search, _mm_xor_si128(PO, flipped), beta, p0);
 
         else	// gameover
             v = end_evaluate(opponent, 2);
@@ -75,7 +75,7 @@ static int vectorcall last2(Search* search, __m128i OP, int alpha, int beta, __m
 }
 
 /*
-    @brief Get a final score with last 3 empties
+    @brief Get a final min score with last 3 empties
 
     Only with parity-based ordering.
 
@@ -83,8 +83,8 @@ static int vectorcall last2(Search* search, __m128i OP, int alpha, int beta, __m
     @param OP                   vectored board
     @param alpha                alpha value
     @param beta                 beta value
-    @param empties_simd         vectored empties
-    @return the final score
+    @param empties_simd         vectored empties (3 Bytes)
+    @return the final min score
 */
 static int vectorcall last3(Search* search, __m128i OP, int alpha, int beta, __m128i empties_simd) {
     __m128i flipped;
@@ -95,11 +95,10 @@ static int vectorcall last3(Search* search, __m128i OP, int alpha, int beta, __m
         ++search->n_nodes_discs[search->n_discs];
 #endif
     empties_simd = _mm_cvtepu8_epi16(empties_simd);
-    int pol = -1;
+    int v = SCORE_INF;	// min stage
+    int pol = 1;
     do {
         ++search->n_nodes;
-        int t = alpha;  alpha = -beta;  beta = -t;
-        int v = SCORE_INF;	// Negative score
         uint64_t opponent = _mm_extract_epi64(OP, 1);
         int x = _mm_extract_epi16(empties_simd, 2);
         if ((bit_around[x] & opponent) && !TESTZ_FLIP(flipped = Flip::calc_flip(OP, x))) {
@@ -134,13 +133,14 @@ static int vectorcall last3(Search* search, __m128i OP, int alpha, int beta, __m
             return v * pol;
 
         OP = _mm_shuffle_epi32(OP, SWAP64);	// pass
-    } while ((pol = -pol) >= 0);
+        int t = alpha;  alpha = -beta;  beta = -t;
+    } while ((pol = -pol) < 0);
 
-    return end_evaluate(_mm_cvtsi128_si64(OP), 3);	// gameover	// = end_evaluate(opponent, 3)
+    return end_evaluate(_mm_extract_epi64(OP, 1), 3);	// gameover
 }
 
 /*
-    @brief Get a final score with last 4 empties
+    @brief Get a final max score with last 4 empties
 
     Only with parity-based ordering.
 
@@ -148,7 +148,7 @@ static int vectorcall last3(Search* search, __m128i OP, int alpha, int beta, __m
     @param alpha                alpha value
     @param beta                 beta value
     @param skipped              already passed?
-    @return the final score
+    @return the final max score
 
     This board contains only 4 empty squares, so empty squares on each part will be:
         4 - 0 - 0 - 0
@@ -194,57 +194,57 @@ int last4(Search* search, int alpha, int beta) {
         empties_simd = _mm_shuffle_epi8(empties_simd, _mm_set_epi32(0x03000102, 0x02000103, 0x01000203, 0x00010203));
     #endif
 
-    int pol = -1;
+    int v = -SCORE_INF;
+    int pol = 1;
     do {
         ++search->n_nodes;
-        int t = alpha;  alpha = -beta;  beta = -t;
-        int v = SCORE_INF;	// Negative score
         opponent = _mm_extract_epi64(OP, 1);
         p0 = _mm_extract_epi8(empties_simd, 3);
         if ((bit_around[p0] & opponent) && !TESTZ_FLIP(flipped = Flip::calc_flip(OP, p0))) {
             v = last3(search, board_flip_next(OP, p0, flipped), alpha, beta, empties_simd);
-            if (alpha >= v)
+            if (beta <= v)
                 return v * pol;
-            if (beta > v)
-                beta = v;
+            if (alpha < v)
+                alpha = v;
         }
 
         int g;
         p1 = _mm_extract_epi8(empties_simd, 7);
         if ((bit_around[p1] & opponent) && !TESTZ_FLIP(flipped = Flip::calc_flip(OP, p1))) {
             g = last3(search, board_flip_next(OP, p1, flipped), alpha, beta, _mm_srli_si128(empties_simd, 4));
-            if (alpha >= g)
+            if (beta <= g)
                 return g * pol;
-            if (v > g)
+            if (v < g)
                 v = g;
-            if (beta > g)
-                beta = g;
+            if (alpha < g)
+                alpha = g;
         }
  
         p2 = _mm_extract_epi8(empties_simd, 11);
         if ((bit_around[p2] & opponent) && !TESTZ_FLIP(flipped = Flip::calc_flip(OP, p2))) {
             g = last3(search, board_flip_next(OP, p2, flipped), alpha, beta, _mm_srli_si128(empties_simd, 8));
-            if (alpha >= g)
+            if (beta <= g)
                 return g * pol;
-            if (v > g)
+            if (v < g)
                 v = g;
-            if (beta > g)
-                beta = g;
+            if (alpha < g)
+                alpha = g;
         }
  
         p3 = _mm_extract_epi8(empties_simd, 15);
         if ((bit_around[p3] & opponent) && !TESTZ_FLIP(flipped = Flip::calc_flip(OP, p3))) {
             g = last3(search, board_flip_next(OP, p3, flipped), alpha, beta, _mm_srli_si128(empties_simd, 12));
-            if (v > g)
+            if (v < g)
                 v = g;
             return v * pol;
         }
 
-        if (v < SCORE_INF)
+        if (v > -SCORE_INF)
             return v * pol;
 
         OP = _mm_shuffle_epi32(OP, SWAP64);	// pass
-    } while ((pol = -pol) >= 0);
+        int t = alpha;  alpha = -beta;  beta = -t;
+    } while ((pol = -pol) < 0);
 
-    return end_evaluate(opponent, 4);	// gameover
+    return end_evaluate(opponent, 4);	// gameover (opponent is P here)
 }

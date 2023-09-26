@@ -80,7 +80,7 @@
     @param p0                   last empty square
     @return the final opponent score
 */
-inline int last1n(Search *search, uint64_t player, int beta, uint_fast8_t p0){
+inline int last1(Search *search, uint64_t player, int beta, uint_fast8_t p0){
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
         ++search->n_nodes_discs[search->n_discs];
@@ -115,7 +115,7 @@ inline int last1n(Search *search, uint64_t player, int beta, uint_fast8_t p0){
 
 /** coordinate to bit table converter */
 static uint64_t X_TO_BIT[64];
-/** last1n simd mask */
+/** last1 simd mask */
 static __m128i mask_dvhd[64][2];
 
 static inline int vectorcall TESTZ_FLIP(__m128i X) { return _mm_testz_si128(X, X); }
@@ -161,7 +161,7 @@ static inline __m128i vectorcall board_flip_next(__m128i OP, int x, __m128i flip
     @param place                last empty
     @return the final opponent's score
 */
-static inline int vectorcall last1n(Search *search, __m128i PO, int beta, int place) {
+static inline int vectorcall last1(Search *search, __m128i PO, int beta, int place) {
     __m128i M0 = mask_dvhd[place][0];
     __m128i M1 = mask_dvhd[place][1];
     __m128i PP = _mm_shuffle_epi32(PO, DUPHI);

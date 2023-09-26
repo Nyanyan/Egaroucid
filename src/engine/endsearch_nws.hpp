@@ -39,7 +39,7 @@
 #include "endsearch_nws_simd.hpp"
 #else
 /*
-    @brief Get a final score with last 2 empties (NWS)
+    @brief Get a final max score with last 2 empties (NWS)
 
     No move ordering. Just search it.
 
@@ -48,7 +48,7 @@
     @param p0                   empty square 1/2
     @param p1                   empty square 2/2
     @param board                bitboard
-    @return the final score
+    @return the final max score
 */
 inline int last2_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1, Board board) {
     ++search->n_nodes;
@@ -61,33 +61,33 @@ inline int last2_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
     //if ((bit_around[p0] & board.player) == 0)
     //    std::swap(p0, p1);
     if ((bit_around[p0] & board.opponent) && calc_flip(&flip, &board, p0)) {
-        v = last1n(search, board.opponent ^ flip.flip, beta, p1);
+        v = last1(search, board.opponent ^ flip.flip, beta, p1);
 
         if ((v < beta) && (bit_around[p1] & board.opponent) && calc_flip(&flip, &board, p1)) {
-            int g = last1n(search, board.opponent ^ flip.flip, beta, p0);
+            int g = last1(search, board.opponent ^ flip.flip, beta, p0);
             if (v < g)
                 v = g;
         }
     }
 
     else if ((bit_around[p1] & board.opponent) && calc_flip(&flip, &board, p1))
-         v = last1n(search, board.opponent ^ flip.flip, beta, p0);
+         v = last1(search, board.opponent ^ flip.flip, beta, p0);
 
     else {	// pass
         ++search->n_nodes;
-        beta = -alpha;
+        beta = -(beta - 1);	// -alpha
         if (flip.calc_flip(board.opponent, board.player, p0)) {
-            v = last1n(search, board.player ^ flip.flip, beta, p1);
+            v = last1(search, board.player ^ flip.flip, beta, p1);
 
             if ((v < beta) && (flip.calc_flip(board.opponent, board.player, p1))) {
-                int g = last1n(search, board.player ^ flip.flip, beta, p0);
+                int g = last1(search, board.player ^ flip.flip, beta, p0);
                 if (v < g)
                     v = g;
             }
         }
 
         else if (flip.calc_flip(board.opponent, board.player, p1))
-            v = last1n(search, board.player ^ flip.flip, beta, p0);
+            v = last1(search, board.player ^ flip.flip, beta, p0);
 
         else	// gameover
             return end_evaluate(&board, 2);
@@ -98,7 +98,7 @@ inline int last2_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
 }
 
 /*
-    @brief Get a final score with last 3 empties (NWS)
+    @brief Get a final min score with last 3 empties (NWS)
 
     Only with parity-based ordering.
 
@@ -109,7 +109,7 @@ inline int last2_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
     @param p1                   empty square 2/3
     @param p2                   empty square 3/3
     @param board                bitboard
-    @return the final score
+    @return the final min score
 
     This board contains only 3 empty squares, so empty squares on each part will be:
         3 - 0 - 0 - 0
@@ -139,11 +139,10 @@ inline int last3_nws(Search *search, int alpha, int sort3, uint_fast8_t p0, uint
 
     Flip flip;
     Board board2;
-    int pol = -1;
-    do {
+    int v = SCORE_INF;	// min stage
+    int pol = 1;
+    for (;;) {
         ++search->n_nodes;
-        alpha = -alpha - 1;
-        int v = SCORE_INF;	// Negative score
         if ((bit_around[p0] & board.opponent) && calc_flip(&flip, &board, p0)) {
             board.move_copy(&flip, &board2);
             v = last2_nws(search, alpha, p1, p2, board2);
@@ -172,20 +171,22 @@ inline int last3_nws(Search *search, int alpha, int sort3, uint_fast8_t p0, uint
         if (v < SCORE_INF)
             return v * pol;
 
-	board.pass();
-    } while ((pol = -pol) >= 0);
+        if ((pol = -pol) >= 0)
+            return end_evaluate_odd(&board, 3);	// gameover
 
-    return end_evaluate_odd(&board, 3);	// gameover
+        board.pass();
+        alpha = -alpha - 1;
+    }
 }
 
 /*
-    @brief Get a final score with last 4 empties (NWS)
+    @brief Get a final max score with last 4 empties (NWS)
 
     Only with parity-based ordering.
 
     @param search               search information
     @param alpha                alpha value (beta value is alpha + 1)
-    @return the final score
+    @return the final max score
 
     This board contains only 4 empty squares, so empty squares on each part will be:
         4 - 0 - 0 - 0
@@ -249,15 +250,14 @@ int last4_nws(Search *search, int alpha) {
     Flip flip;
     Board board3, board4;
     search->board.copy(&board4);
-    int pol = -1;
+    int v = -SCORE_INF;
+    int pol = 1;
     do {
         ++search->n_nodes;
-        alpha = -alpha - 1;
-        int v = SCORE_INF;	// Negative score
         if ((bit_around[p0] & board4.opponent) && calc_flip(&flip, &board4, p0)) {
             board4.move_copy(&flip, &board3);
             v = last3_nws(search, alpha, sort3, p1, p2, p3, board3);
-            if (alpha >= v)
+            if (alpha < v)
                 return v * pol;
         }
 
@@ -265,34 +265,35 @@ int last4_nws(Search *search, int alpha) {
         if ((bit_around[p1] & board4.opponent) && calc_flip(&flip, &board4, p1)) {
             board4.move_copy(&flip, &board3);
             g = last3_nws(search, alpha, sort3 >> 4, p0, p2, p3, board3);
-            if (alpha >= g)
+            if (alpha < g)
                 return g * pol;
-            if (v > g)
+            if (v < g)
                 v = g;
         }
 
         if ((bit_around[p2] & board4.opponent) && calc_flip(&flip, &board4, p2)) {
             board4.move_copy(&flip, &board3);
             g = last3_nws(search, alpha, sort3 >> 8, p0, p1, p3, board3);
-            if (alpha >= g)
+            if (alpha < g)
                 return g * pol;
-            if (v > g)
+            if (v < g)
                 v = g;
         }
 
         if ((bit_around[p3] & board4.opponent) && calc_flip(&flip, &board4, p3)) {
             board4.move_copy(&flip, &board3);
             g = last3_nws(search, alpha, sort3 >> 12, p0, p1, p2, board3);
-            if (v > g)
+            if (v < g)
                 v = g;
             return v * pol;
         }
 
-        if (v < SCORE_INF)
+        if (v > -SCORE_INF)
             return v * pol;
 
         board4.pass();
-    } while ((pol = -pol) >= 0);
+        alpha = -alpha - 1;
+    } while ((pol = -pol) < 0);
 
     return end_evaluate(&search->board, 4);	// gameover
 }
