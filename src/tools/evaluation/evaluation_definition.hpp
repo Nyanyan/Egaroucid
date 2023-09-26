@@ -39,8 +39,8 @@
 #define N_FLOOR_UNIQUE_FEATURES 16 // floorpow2(ADJ_N_EVAL)
 
 // phase
-#define ADJ_N_PHASES 60
-#define ADJ_N_PHASE_DISCS 1 // 60 / ADJ_N_PHASES
+#define ADJ_N_PHASES 30
+#define ADJ_N_PHASE_DISCS 2 // 60 / ADJ_N_PHASES
 
 //#define ADJ_SCORE_MAX HW2
 
