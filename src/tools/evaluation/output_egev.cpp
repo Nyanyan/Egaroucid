@@ -16,7 +16,7 @@ int main(int argc, char* argv[]){
     std::string model_dir = std::string(argv[1]);
     int n_phases = atoi(argv[2]);
     std::ofstream fout;
-    fout.open("eval.egev", std::ios::out|std::ios::binary|std::ios::trunc);
+    fout.open("trained/eval.egev", std::ios::out|std::ios::binary|std::ios::trunc);
     if (!fout){
         std::cerr << "can't open eval.egev" << std::endl;
         return 1;

@@ -9,7 +9,7 @@ if len(sys.argv) > 3:
     beta = str(sys.argv[5])
 else:
     hour = '0'
-    minute = '1'
+    minute = '2'
     second = '0'
     beta = '0.1'
 
@@ -20,7 +20,7 @@ else:
 
 train_data = [str(elem) + '.dat' for elem in train_data_nums]
 
-train_root_dir = './../../../train_data/bin_data/20230926_1/'
+train_root_dir = './../../../train_data/bin_data/20230926_2/'
 
 #train_dirs = [train_root_dir + str(elem) + '/' for elem in range(int(phase) * 2, int(phase) * 2 + 2)]
 train_dirs = [train_root_dir + str(int(phase)) + '/']
@@ -41,5 +41,5 @@ p = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
 result = p.stdout.readline().decode().replace('\r\n', '\n').replace('\n', '')
 print(result)
 param = p.stdout.read().decode().replace('\r\n', '\n')
-with open(phase + '.txt', 'w') as f:
+with open('trained/' + phase + '.txt', 'w') as f:
     f.write(param)
