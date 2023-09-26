@@ -120,7 +120,7 @@ void self_play(std::string str_n_games, Options *options, State *state){
     int n_games_done = 0;
     std::vector<std::future<std::string>> tasks;
     while (n_games_done < n_games){
-        if (thread_pool.get_n_idle()){
+        if (thread_pool.get_n_idle() && (int)tasks.size() < n_games){
             bool pushed = false;
             tasks.emplace_back(thread_pool.push(&pushed, std::bind(&self_play_task, options)));
             if (!pushed)
