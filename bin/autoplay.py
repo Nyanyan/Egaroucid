@@ -2,7 +2,7 @@ import subprocess
 from tqdm import trange
 
 IDX_START = 0
-IDX_END = 10000
+IDX_END = 1
 
 LEVEL = 11
 N_GAMES_PER_FILE = 10000
@@ -13,7 +13,7 @@ def fill0(n, r):
     return '0' * (r - len(res)) + res
 
 #cmd = 'Egaroucid_for_Console_6_4_0_x64_SIMD.exe -nobook -l ' + str(LEVEL) + ' -thread ' + str(N_THREAD_PER_EXE) + ' -selfplay ' + str(N_PLAY_PER_AI)
-cmd = 'Egaroucid_for_Console.exe -nobook -l ' + str(LEVEL) + ' -thread ' + str(N_THREAD) + ' -selfplay ' + str(N_GAMES_PER_FILE)
+cmd = 'Egaroucid_for_Console.exe -nobook -l ' + str(LEVEL) + ' -thread ' + str(N_THREAD + 1) + ' -selfplay ' + str(N_GAMES_PER_FILE)
 print(cmd)
 
 for idx in range(IDX_START, IDX_END + 1):

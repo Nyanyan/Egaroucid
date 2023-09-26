@@ -117,22 +117,29 @@ void self_play(std::string str_n_games, Options *options, State *state){
         std::cout << str_n_games << " out of range" << std::endl;
         std::exit(1);
     }
-    int n_games_done = 0;
-    std::vector<std::future<std::string>> tasks;
-    while (n_games_done < n_games){
-        if (thread_pool.get_n_idle() && (int)tasks.size() < n_games){
-            bool pushed = false;
-            tasks.emplace_back(thread_pool.push(&pushed, std::bind(&self_play_task, options)));
-            if (!pushed)
-                tasks.pop_back();
+    if (thread_pool.size() == 0){
+        for (int i = 0; i < n_games; ++i){
+            std::string transcript = self_play_task(options);
+            std::cout << transcript << std::endl;
         }
-        for (std::future<std::string> &task: tasks){
-            if (task.valid()){
-                if (task.wait_for(std::chrono::seconds(0)) == std::future_status::ready){
-                    std::string transcript = task.get();
-                    std::cout << transcript << std::endl;
-                    ++n_games_done;
-                    break;
+    } else{
+        int n_games_done = 0;
+        std::vector<std::future<std::string>> tasks;
+        while (n_games_done < n_games){
+            if (thread_pool.get_n_idle() && (int)tasks.size() < n_games){
+                bool pushed = false;
+                tasks.emplace_back(thread_pool.push(&pushed, std::bind(&self_play_task, options)));
+                if (!pushed)
+                    tasks.pop_back();
+            }
+            for (std::future<std::string> &task: tasks){
+                if (task.valid()){
+                    if (task.wait_for(std::chrono::seconds(0)) == std::future_status::ready){
+                        std::string transcript = task.get();
+                        std::cout << transcript << std::endl;
+                        ++n_games_done;
+                        break;
+                    }
                 }
             }
         }
