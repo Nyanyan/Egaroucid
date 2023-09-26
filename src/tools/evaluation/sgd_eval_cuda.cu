@@ -19,14 +19,16 @@
 
 #define ADJ_MAX_N_FILES 64
 
-#define ADJ_N_MIN_DATA_FEATURES 100
+#define ADJ_N_MIN_DATA_FEATURES 200
 
 #define ADJ_EVAL_MAX 4091
 
 #define BATCH_THREAD_SIZE 256
 #define BATCH_BLOCK_SIZE 256
 #define BATCH_SIZE (BATCH_THREAD_SIZE * BATCH_BLOCK_SIZE)
-#define N_FLOOR_UNIQUE_FEATURES 16 // floorpow2(ADJ_N_EVAL)
+//#ifndef N_FLOOR_UNIQUE_FEATURES
+//    #define N_FLOOR_UNIQUE_FEATURES 16 // floorpow2(ADJ_N_EVAL)
+//#endif
 #define MAX_BATCH_DO_IDX (BATCH_SIZE / N_FLOOR_UNIQUE_FEATURES)
 
 #define ADJ_PRINT_INTERVAL 16
@@ -274,7 +276,7 @@ void adj_eval_round() {
     }
 }
 
-void adj_stochastic_gradient_descent(uint64_t tl, int phase) {
+void adj_stochastic_gradient_descent(uint64_t tl, int phase, double beta) {
     int n_eval_params = 0;
     for (int i = 0; i < ADJ_N_EVAL; ++i) {
         n_eval_params += adj_eval_sizes[i];
@@ -337,7 +339,7 @@ void adj_stochastic_gradient_descent(uint64_t tl, int phase) {
     adj_get_eval_arr(device_eval_arr);
     adj_eval_round();
     calc_mse_mae(&mse, &mae);
-    std::cout << phase << " " << tl / 1000 << " " << adj_test_data.size() << " " << t << " " << mse << " " << mae << " " << additional_learn_rate << std::endl;
+    std::cout << "phase " << phase << " tl " << tl / 1000 << " data " << adj_test_data.size() << " n " << t << " mse " << mse << " mae " << mae << " beta " << beta << " alr " << additional_learn_rate << std::endl;
     cudaFree(device_test_data);
     cudaFree(device_eval_arr);
     cudaFree(device_feature_to_eval_idx);
@@ -461,7 +463,7 @@ int main(int argc, char* argv[]) {
     adj_init_arr();
     adj_import_eval(in_file);
     adj_import_test_data(argc - 7, test_files, phase, beta);
-    adj_stochastic_gradient_descent(second * 1000, phase);
+    adj_stochastic_gradient_descent(second * 1000, phase, beta);
     adj_output_param();
     return 0;
 }
