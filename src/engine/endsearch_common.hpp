@@ -76,26 +76,26 @@
 
     @param search               search information (board ignored)
     @param player               player bitboard
-    @param beta                 beta value
+    @param alpha                alpha value
     @param p0                   last empty square
-    @return the final opponent score
+    @return the final score
 */
-inline int last1(Search *search, uint64_t player, int beta, uint_fast8_t p0){
+inline int last1(Search *search, uint64_t player, int alpha, uint_fast8_t p0){
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
         ++search->n_nodes_discs[search->n_discs];
     #endif
     int n_flip = count_last_flip(player, p0);
-    int score = HW2 - 2 * (pop_count_ull(player) + n_flip + 1);	// (HW2 - 1 - P - n_flip) - (P + n_flip + 1)
+    int score = 2 * (pop_count_ull(player) + n_flip + 1) - HW2;	// (P + n_flip + 1) - (HW2 - 1 - P - n_flip)
     if (n_flip == 0) {
         ++search->n_nodes;
-        int score2 = score + 2;	// empty for opponent
-        if (score >= 0)
+        int score2 = score - 2;	// empty for opponent
+        if (score <= 0)
             score = score2;
-        if (score < beta) {
+        if (score > alpha) {
             n_flip = count_last_flip(~player, p0);
             if (n_flip)
-                score = score2 + 2 * n_flip;
+                score = score2 - 2 * n_flip;
         }
     }
     return score;
@@ -157,11 +157,11 @@ static inline __m128i vectorcall board_flip_next(__m128i OP, int x, __m128i flip
 
     @param search               search information (board ignored)
     @param PO                   vectored board (O ignored)
-    @param beta                 beta value
+    @param alpha                alpha value
     @param place                last empty
     @return the final opponent's score
 */
-static inline int vectorcall last1(Search *search, __m128i PO, int beta, int place) {
+static inline int vectorcall last1(Search *search, __m128i PO, int alpha, int place) {
     __m128i M0 = mask_dvhd[place][0];
     __m128i M1 = mask_dvhd[place][1];
     __m128i PP = _mm_shuffle_epi32(PO, DUPHI);
@@ -179,15 +179,15 @@ static inline int vectorcall last1(Search *search, __m128i PO, int beta, int pla
     n_flip += n_flip_pre_calc[t >> 8][y];
     n_flip += n_flip_pre_calc[t & 0xFF][y];
 
-    int score = HW2 - 2 * (pop_count_ull(_mm_cvtsi128_si64(PP)) + n_flip + 1);	// (HW2 - 1 - P - n_flip) - (P + n_flip + 1)
+    int score = 2 * (pop_count_ull(_mm_cvtsi128_si64(PP)) + n_flip + 1) - HW2;	// (n_P + n_flip + 1) - (HW2 - 1 - n_P - n_flip)
 
     if (n_flip == 0) {
         ++search->n_nodes;
-        int score2 = score + 2;	// empty for player
-        if (score >= 0)
+        int score2 = score - 2;	// empty for player
+        if (score <= 0)
             score = score2;
 
-        if (score < beta) {	// lazy cut-off
+        if (score > alpha) {	// lazy cut-off
             II = _mm_sad_epu8(_mm_andnot_si128(PP, M0), _mm_setzero_si128());
             n_flip = n_flip_pre_calc[_mm_extract_epi16(II, 4)][x];
             n_flip += n_flip_pre_calc[_mm_cvtsi128_si32(II)][x];
@@ -196,7 +196,7 @@ static inline int vectorcall last1(Search *search, __m128i PO, int beta, int pla
             n_flip += n_flip_pre_calc[t & 0xFF][y];
 
             if (n_flip != 0)
-                score = score2 + 2 * n_flip;
+                score = score2 - 2 * n_flip;
         }
     }
 

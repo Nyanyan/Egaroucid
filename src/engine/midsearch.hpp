@@ -312,7 +312,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
             return nega_alpha_end_fast(search, alpha, beta, skipped, false, searching);
     #else
         if (is_end_search && search->n_discs == 60){
-            return last4(search, alpha, beta);
+            return -last4(search, -beta, -alpha);
         }
     #endif
     if (!is_end_search){
