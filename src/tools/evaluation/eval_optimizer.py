@@ -9,5 +9,5 @@ for phase in range(strt_phase, end_phase):
     cmd = 'python optimizer_phase.py ' + str(phase)
     p = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
     line = p.stdout.readline().decode().replace('\r', '').replace('\n', '')
-    with open('opt_log.txt', 'a') as f:
+    with open('trained/opt_log.txt', 'a') as f:
         f.write(line + '\n')

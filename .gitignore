@@ -40,3 +40,4 @@ bin/result
 bin/resources_exp
 bin/transcript
 bin/versions
+src/tools/evaluation/trained

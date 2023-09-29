@@ -76,6 +76,36 @@ bool execute_special_tasks_loop(Board_info *board, State *state, Options *option
     return false;
 }
 
+std::string self_play_task(Options *options){
+    int n_random_moves = myrandrange(10, 20);
+    Board board;
+    Flip flip;
+    Search_result result;
+    board.reset();
+    std::string res;
+    for (int j = 0; j < n_random_moves && board.check_pass(); ++j){
+        uint64_t legal = board.get_legal();
+        int random_idx = myrandrange(0, pop_count_ull(legal));
+        int t = 0;
+        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+            if (t == random_idx){
+                calc_flip(&flip, &board, cell);
+                break;
+            }
+            ++t;
+        }
+        res += idx_to_coord(flip.pos);
+        board.move_board(&flip);
+    }
+    while (board.check_pass()){
+        result = ai(board, options->level, true, 0, false, options->show_log); // search in single thread
+        calc_flip(&flip, &board, result.policy);
+        res += idx_to_coord(flip.pos);
+        board.move_board(&flip);
+    }
+    return res;
+}
+
 void self_play(std::string str_n_games, Options *options, State *state){
     int n_games;
     try{
@@ -87,32 +117,32 @@ void self_play(std::string str_n_games, Options *options, State *state){
         std::cout << str_n_games << " out of range" << std::endl;
         std::exit(1);
     }
-    for (int i = 0; i < n_games; ++i){
-        int n_random_moves = myrandrange(10, 20);
-        Board board;
-        Flip flip;
-        Search_result result;
-        board.reset();
-        for (int j = 0; j < n_random_moves && board.check_pass(); ++j){
-            uint64_t legal = board.get_legal();
-            int random_idx = myrandrange(0, pop_count_ull(legal));
-            int t = 0;
-            for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-                if (t == random_idx){
-                    calc_flip(&flip, &board, cell);
-                    break;
-                }
-                ++t;
+    if (thread_pool.size() == 0){
+        for (int i = 0; i < n_games; ++i){
+            std::string transcript = self_play_task(options);
+            std::cout << transcript << std::endl;
+        }
+    } else{
+        int n_games_done = 0;
+        std::vector<std::future<std::string>> tasks;
+        while (n_games_done < n_games){
+            if (thread_pool.get_n_idle() && (int)tasks.size() < n_games){
+                bool pushed = false;
+                tasks.emplace_back(thread_pool.push(&pushed, std::bind(&self_play_task, options)));
+                if (!pushed)
+                    tasks.pop_back();
             }
-            std::cout << idx_to_coord(flip.pos);
-            board.move_board(&flip);
+            for (std::future<std::string> &task: tasks){
+                if (task.valid()){
+                    if (task.wait_for(std::chrono::seconds(0)) == std::future_status::ready){
+                        std::string transcript = task.get();
+                        std::cout << transcript << std::endl;
+                        ++n_games_done;
+                        break;
+                    }
+                }
+            }
         }
-        while (board.check_pass()){
-            result = ai(board, options->level, true, 0, true, options->show_log);
-            calc_flip(&flip, &board, result.policy);
-            std::cout << idx_to_coord(flip.pos);
-            board.move_board(&flip);
-        }
-        std::cout << std::endl;
     }
+    global_searching = false;
 }

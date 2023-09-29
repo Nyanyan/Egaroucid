@@ -369,10 +369,10 @@ class Transposition_table{
                 for (int i = 0; i < thread_size; ++i){
                     e = std::min(std::min(table_size, (size_t)TRANSPOSITION_TABLE_STACK_SIZE), s + delta);
                     bool pushed = false;
-                    while (!pushed){
-                        tasks.emplace_back(thread_pool.push(&pushed, std::bind(&reset_date_transposition_table, table_stack, s, e)));
-                        if (!pushed)
-                            tasks.pop_back();
+                    tasks.emplace_back(thread_pool.push(&pushed, std::bind(&reset_date_transposition_table, table_stack, s, e)));
+                    if (!pushed){
+                        tasks.pop_back();
+                        reset_date_transposition_table(table_stack, s, e);
                     }
                     s = e;
                 }
@@ -382,10 +382,10 @@ class Transposition_table{
                     for (int i = 0; i < thread_size; ++i){
                         e = std::min(table_size - (size_t)TRANSPOSITION_TABLE_STACK_SIZE, s + delta);
                         bool pushed = false;
-                        while (!pushed){
-                            tasks.emplace_back(thread_pool.push(&pushed, std::bind(&reset_date_transposition_table, table_heap, s, e)));
-                            if (!pushed)
-                                tasks.pop_back();
+                        tasks.emplace_back(thread_pool.push(&pushed, std::bind(&reset_date_transposition_table, table_heap, s, e)));
+                        if (!pushed){
+                            tasks.pop_back();
+                            reset_date_transposition_table(table_heap, s, e);
                         }
                         s = e;
                     }

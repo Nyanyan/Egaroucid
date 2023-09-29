@@ -9,9 +9,9 @@ if len(sys.argv) > 3:
     beta = str(sys.argv[5])
 else:
     hour = '0'
-    minute = '6'
+    minute = '3'
     second = '0'
-    beta = '0.025'
+    beta = '0.1'
 
 if int(phase) < 10:
     train_data_nums = [1, 2, 3, 4, 6, 7, 8, 9, 11, 15, 16, 17, 18, 19, 99]
@@ -21,7 +21,6 @@ else:
 train_data = [str(elem) + '.dat' for elem in train_data_nums]
 
 train_root_dir = './../../../train_data/bin_data/20230707/'
-#train_root_dir = './../../../train_data/bin_data/20230918_3/'
 
 #train_dirs = [train_root_dir + str(elem) + '/' for elem in range(int(phase) * 2, int(phase) * 2 + 2)]
 train_dirs = [train_root_dir + str(int(phase)) + '/']
@@ -34,7 +33,6 @@ for tfile in train_data:
     for train_dir in train_dirs:
         additional_params += ' ' + train_dir + tfile
 
-#executable = 'gd_eval.out'
 executable = 'sgd_cuda_12_2_0.exe'
 
 cmd = executable + ' ' + phase + ' ' + hour + ' ' + minute + ' ' + second + ' ' + beta + ' ' + model_dir + phase + '.txt' + additional_params
@@ -43,5 +41,5 @@ p = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
 result = p.stdout.readline().decode().replace('\r\n', '\n').replace('\n', '')
 print(result)
 param = p.stdout.read().decode().replace('\r\n', '\n')
-with open(phase + '.txt', 'w') as f:
+with open('trained/' + phase + '.txt', 'w') as f:
     f.write(param)
