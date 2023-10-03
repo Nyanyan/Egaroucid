@@ -83,12 +83,15 @@
 inline int last1(Search *search, uint64_t player, int alpha, uint_fast8_t p0){
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
-        ++search->n_nodes_discs[search->n_discs];
+        ++search->n_nodes_discs[63];
     #endif
     int n_flip = count_last_flip(player, p0);
     int score = 2 * (pop_count_ull(player) + n_flip + 1) - HW2;	// (P + n_flip + 1) - (HW2 - 1 - P - n_flip)
     if (n_flip == 0) {
         ++search->n_nodes;
+        #if USE_SEARCH_STATISTICS
+            ++search->n_nodes_discs[63];
+        #endif
         int score2 = score - 2;	// empty for opponent
         if (score <= 0)
             score = score2;
@@ -116,7 +119,12 @@ inline int last1(Search *search, uint64_t player, int alpha, uint_fast8_t p0){
 /** coordinate to bit table converter */
 static uint64_t X_TO_BIT[64];
 /** last1 simd mask */
-static __m128i mask_dvhd[64][2];
+union V4DI {
+    uint64_t u64[4];
+    __m256i v4;
+    __m128i v2[2];
+};
+static V4DI mask_dvhd[64];
 
 static inline int vectorcall TESTZ_FLIP(__m128i X) { return _mm_testz_si128(X, X); }
 
@@ -151,57 +159,6 @@ static inline __m128i vectorcall board_flip_next(__m128i OP, int x, __m128i flip
     OP = _mm_xor_si128(OP, _mm_or_si128(flipped, _mm_loadl_epi64((__m128i*) & X_TO_BIT[x])));
     return _mm_shuffle_epi32(OP, SWAP64);
 }
-
-/*
-    @brief Get a final score with last 1 empty
-
-    @param search               search information (board ignored)
-    @param PO                   vectored board (O ignored)
-    @param alpha                alpha value
-    @param place                last empty
-    @return the final opponent's score
-*/
-static inline int vectorcall last1(Search *search, __m128i PO, int alpha, int place) {
-    __m128i M0 = mask_dvhd[place][0];
-    __m128i M1 = mask_dvhd[place][1];
-    __m128i PP = _mm_shuffle_epi32(PO, DUPHI);
-    __m128i II = _mm_sad_epu8(_mm_and_si128(PP, M0), _mm_setzero_si128());
-    const int x = place & 7;
-    const int y = place >> 3;
-
-    ++search->n_nodes;
-    #if USE_SEARCH_STATISTICS
-        ++search->n_nodes_discs[search->n_discs];
-    #endif
-    uint_fast8_t n_flip = n_flip_pre_calc[_mm_extract_epi16(II, 4)][x];
-    n_flip += n_flip_pre_calc[_mm_cvtsi128_si32(II)][x];
-    int t = _mm_movemask_epi8(_mm_sub_epi8(_mm_setzero_si128(), _mm_and_si128(PP, M1)));
-    n_flip += n_flip_pre_calc[t >> 8][y];
-    n_flip += n_flip_pre_calc[t & 0xFF][y];
-
-    int score = 2 * (pop_count_ull(_mm_cvtsi128_si64(PP)) + n_flip + 1) - HW2;	// (n_P + n_flip + 1) - (HW2 - 1 - n_P - n_flip)
-
-    if (n_flip == 0) {
-        ++search->n_nodes;
-        int score2 = score - 2;	// empty for player
-        if (score <= 0)
-            score = score2;
-
-        if (score > alpha) {	// lazy cut-off
-            II = _mm_sad_epu8(_mm_andnot_si128(PP, M0), _mm_setzero_si128());
-            n_flip = n_flip_pre_calc[_mm_extract_epi16(II, 4)][x];
-            n_flip += n_flip_pre_calc[_mm_cvtsi128_si32(II)][x];
-            t = _mm_movemask_epi8(_mm_sub_epi8(_mm_setzero_si128(), _mm_andnot_si128(PP, M1)));
-            n_flip += n_flip_pre_calc[t >> 8][y];
-            n_flip += n_flip_pre_calc[t & 0xFF][y];
-
-            if (n_flip != 0)
-                score = score2 - 2 * n_flip;
-        }
-    }
-
-    return score;
-}
 #endif
 
 void endsearch_init(){
@@ -214,10 +171,12 @@ void endsearch_init(){
             int y = i >> 3;
             int s = (7 - y) - x;
             uint64_t d = (s >= 0) ? 0x0102040810204080 >> (s * 8) : 0x0102040810204080 << (-s * 8);
-            mask_dvhd[i][0] = _mm_set_epi64x(0xffULL << (i & 0x38), d);
+            mask_dvhd[i].u64[0] = d;
+            mask_dvhd[i].u64[1] = 0xffULL << (i & 0x38);
             s = y - x;
             d = (s >= 0) ? 0x8040201008040201 << (s * 8) : 0x8040201008040201 >> (-s * 8);
-            mask_dvhd[i][1] = _mm_set_epi64x(d, 0x0101010101010101 << (i & 7));
+            mask_dvhd[i].u64[2] = 0x0101010101010101 << (i & 7);
+            mask_dvhd[i].u64[3] = d;
         }
     #endif
 }

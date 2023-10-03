@@ -15,7 +15,14 @@
 #include "common.hpp"
 #include "bit.hpp"
 
-__m256i lmask_v4[HW2], rmask_v4[HW2];
+union V8DI {
+    unsigned long long      ull[8];
+    __m256i v4[2];
+    #ifdef __AVX512F__
+        __m512i v8;
+    #endif
+} V8DI;
+V8DI lrmask[HW2];
 
 /*
     @brief Flip class
@@ -39,7 +46,7 @@ class Flip{
             PP = _mm256_broadcastq_epi64(OP);
             OO = _mm256_permute4x64_epi64(_mm256_castsi128_si256(OP), 0x55);
 
-            mask = rmask_v4[place];
+            mask = lrmask[place].v4[1];
               // isolate non-opponent MS1B by clearing lower bits
             eraser = _mm256_andnot_si256(OO, mask);
             outflank = _mm256_sllv_epi64(_mm256_and_si256(PP, mask), _mm256_set_epi64x(7, 9, 8, 1));
@@ -50,7 +57,7 @@ class Flip{
               // set mask bits higher than outflank
             flip4 = _mm256_and_si256(mask, _mm256_sub_epi64(_mm256_setzero_si256(), outflank));
 
-            mask = lmask_v4[place];
+            mask = lrmask[place].v4[0];
               // look for non-opponent LS1B
             outflank = _mm256_andnot_si256(OO, mask);
             outflank = _mm256_and_si256(outflank, _mm256_sub_epi64(_mm256_setzero_si256(), outflank));  // LS1B
@@ -89,8 +96,8 @@ void flip_init() {
         );
 
         for (int y = 0; y < 8; ++y) {
-            lmask_v4[y * 8 + x] = lmask;
-            rmask_v4[(7 - y) * 8 + x] = rmask;
+            lrmask[y * 8 + x].v4[0] = lmask;
+            lrmask[(7 - y) * 8 + x].v4[1] = rmask;
             lmask = _mm256_slli_epi64(lmask, 8);
             rmask = _mm256_srli_epi64(rmask, 8);
         }

@@ -14,6 +14,60 @@
 #include "search.hpp"
 
 /*
+    @brief Get a final score with last 1 empty
+
+    @param search               search information (board ignored)
+    @param PO                   vectored board (O ignored)
+    @param alpha                alpha value
+    @param place                last empty
+    @return the final opponent's score
+*/
+static inline int vectorcall last1(Search *search, __m128i PO, int alpha, int place) {
+    __m128i M0 = mask_dvhd[place].v2[0];
+    __m128i M1 = mask_dvhd[place].v2[1];
+    __m128i PP = _mm_shuffle_epi32(PO, DUPHI);
+    __m128i II = _mm_sad_epu8(_mm_and_si128(PP, M0), _mm_setzero_si128());
+    const int x = place & 7;
+    const int y = place >> 3;
+
+    ++search->n_nodes;
+    #if USE_SEARCH_STATISTICS
+        ++search->n_nodes_discs[63];
+    #endif
+    uint_fast8_t n_flip = n_flip_pre_calc[_mm_extract_epi16(II, 4)][x];
+    n_flip += n_flip_pre_calc[_mm_cvtsi128_si32(II)][x];
+    int t = _mm_movemask_epi8(_mm_sub_epi8(_mm_setzero_si128(), _mm_and_si128(PP, M1)));
+    n_flip += n_flip_pre_calc[t >> 8][y];
+    n_flip += n_flip_pre_calc[t & 0xFF][y];
+
+    int score = 2 * (pop_count_ull(_mm_cvtsi128_si64(PP)) + n_flip + 1) - HW2;	// (n_P + n_flip + 1) - (HW2 - 1 - n_P - n_flip)
+
+    if (n_flip == 0) {
+        ++search->n_nodes;
+        #if USE_SEARCH_STATISTICS
+            ++search->n_nodes_discs[63];
+        #endif
+        int score2 = score - 2;	// empty for player
+        if (score <= 0)
+            score = score2;
+
+        if (score > alpha) {	// lazy cut-off
+            II = _mm_sad_epu8(_mm_andnot_si128(PP, M0), _mm_setzero_si128());
+            n_flip = n_flip_pre_calc[_mm_extract_epi16(II, 4)][x];
+            n_flip += n_flip_pre_calc[_mm_cvtsi128_si32(II)][x];
+            t = _mm_movemask_epi8(_mm_sub_epi8(_mm_setzero_si128(), _mm_andnot_si128(PP, M1)));
+            n_flip += n_flip_pre_calc[t >> 8][y];
+            n_flip += n_flip_pre_calc[t & 0xFF][y];
+
+            if (n_flip != 0)
+                score = score2 - 2 * n_flip;
+        }
+    }
+
+    return score;
+}
+
+/*
     @brief Get a final min score with last 2 empties
 
     No move ordering. Just search it.
@@ -33,7 +87,7 @@ static int vectorcall last2(Search *search, __m128i OP, int alpha, int beta, __m
 
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
-        ++search->n_nodes_discs[search->n_discs];
+        ++search->n_nodes_discs[62];
     #endif
     int v;
     if ((bit_around[p0] & opponent) && !TESTZ_FLIP(flipped = Flip::calc_flip(OP, p0))) {
@@ -51,6 +105,9 @@ static int vectorcall last2(Search *search, __m128i OP, int alpha, int beta, __m
  
     else {	// pass
         ++search->n_nodes;
+        #if USE_SEARCH_STATISTICS
+            ++search->n_nodes_discs[62];
+        #endif
         alpha = -beta;
         __m128i PO = _mm_shuffle_epi32(OP, SWAP64);
         if (!TESTZ_FLIP(flipped = Flip::calc_flip(PO, p0))) {
@@ -92,14 +149,14 @@ static int vectorcall last3(Search *search, __m128i OP, int alpha, int beta, __m
 
     // if (!global_searching || !(*searching))
     //  return SCORE_UNDEFINED;
-    #if USE_SEARCH_STATISTICS
-        ++search->n_nodes_discs[search->n_discs];
-    #endif
     empties_simd = _mm_cvtepu8_epi16(empties_simd);
     int v = -SCORE_INF;
     int pol = 1;
     do {
         ++search->n_nodes;
+        #if USE_SEARCH_STATISTICS
+            ++search->n_nodes_discs[61];
+        #endif
         opponent = _mm_extract_epi64(OP, 1);
         int x = _mm_extract_epi16(empties_simd, 2);
         if ((bit_around[x] & opponent) && !TESTZ_FLIP(flipped = Flip::calc_flip(OP, x))) {
@@ -175,9 +232,6 @@ int last4(Search *search, int alpha, int beta) {
 
     // if (!global_searching || !(*searching))
     //  return SCORE_UNDEFINED;
-    #if USE_SEARCH_STATISTICS
-        ++search->n_nodes_discs[search->n_discs];
-    #endif
     #if USE_LAST4_SC
         int stab_res = stability_cut_last4(search, &alpha, beta);
         if (stab_res != SCORE_UNDEFINED) {
@@ -198,6 +252,9 @@ int last4(Search *search, int alpha, int beta) {
     int pol = 1;
     do {
         ++search->n_nodes;
+        #if USE_SEARCH_STATISTICS
+            ++search->n_nodes_discs[60];
+        #endif
         opponent = _mm_extract_epi64(OP, 1);
         p0 = _mm_extract_epi8(empties_simd, 3);
         if ((bit_around[p0] & opponent) && !TESTZ_FLIP(flipped = Flip::calc_flip(OP, p0))) {

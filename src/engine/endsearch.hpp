@@ -54,7 +54,7 @@
 static int last2(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast8_t p1, Board board) {
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
-        ++search->n_nodes_discs[search->n_discs];
+        ++search->n_nodes_discs[62];
     #endif
     int v;
     Flip flip;
@@ -75,6 +75,9 @@ static int last2(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
 
     else {	// pass
         ++search->n_nodes;
+        #if USE_SEARCH_STATISTICS
+            ++search->n_nodes_discs[62];
+        #endif
         alpha = -beta;
         if (flip.calc_flip(board.opponent, board.player, p0)) {
             v = last1(search, board.player ^ flip.flip, alpha, p1);
@@ -124,9 +127,6 @@ static int last2(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
 static int last3(Search *search, int alpha, int beta, int sort3, uint_fast8_t p0, uint_fast8_t p1, uint_fast8_t p2, Board board) {
     // if (!global_searching || !(*searching))
     //  return SCORE_UNDEFINED;
-    #if USE_SEARCH_STATISTICS
-        ++search->n_nodes_discs[search->n_discs];
-    #endif
     #if USE_END_PO
         switch (sort3 & 3){
             case 2:
@@ -144,6 +144,9 @@ static int last3(Search *search, int alpha, int beta, int sort3, uint_fast8_t p0
     int pol = 1;
     do {
         ++search->n_nodes;
+        #if USE_SEARCH_STATISTICS
+            ++search->n_nodes_discs[61];
+        #endif
         if ((bit_around[p0] & board.opponent) && calc_flip(&flip, &board, p0)) {
             board.move_copy(&flip, &board2);
             v = last2(search, alpha, beta, p1, p2, board2);
@@ -215,9 +218,6 @@ int last4(Search *search, int alpha, int beta) {
 
     // if (!global_searching || !(*searching))
     //  return SCORE_UNDEFINED;
-    #if USE_SEARCH_STATISTICS
-        ++search->n_nodes_discs[search->n_discs];
-    #endif
     #if USE_LAST4_SC
         int stab_res = stability_cut_last4(search, &alpha, beta);
         if (stab_res != SCORE_UNDEFINED) {
@@ -258,6 +258,9 @@ int last4(Search *search, int alpha, int beta) {
     int pol = 1;
     do {
         ++search->n_nodes;
+        #if USE_SEARCH_STATISTICS
+            ++search->n_nodes_discs[60];
+        #endif
         if ((bit_around[p0] & board4.opponent) && calc_flip(&flip, &board4, p0)) {
             board4.move_copy(&flip, &board3);
             v = last3(search, alpha, beta, sort3, p1, p2, p3, board3);

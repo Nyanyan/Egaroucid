@@ -1,7 +1,7 @@
 /*
     Egaroucid Project
 
-    @file endsearch.hpp
+    @file endsearch_nws.hpp
         Search near endgame with NWS (Null Window Search)
         last2/3/4_nws imported from Edax AVX, (C) 1998 - 2018 Richard Delorme, 2014 - 23 Toshihiko Okuhara
     @date 2021-2023
@@ -53,7 +53,7 @@
 static int last2_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1, Board board) {
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
-        ++search->n_nodes_discs[search->n_discs];
+        ++search->n_nodes_discs[62];
     #endif
     int v;
     Flip flip;
@@ -74,7 +74,10 @@ static int last2_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
 
     else {	// pass
         ++search->n_nodes;
-	alpha = -alpha - 1;
+        #if USE_SEARCH_STATISTICS
+            ++search->n_nodes_discs[62];
+        #endif
+        alpha = -alpha - 1;
         if (flip.calc_flip(board.opponent, board.player, p0)) {
             v = last1(search, board.player ^ flip.flip, alpha, p1);
 
@@ -122,9 +125,6 @@ static int last2_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
 static int last3_nws(Search *search, int alpha, int sort3, uint_fast8_t p0, uint_fast8_t p1, uint_fast8_t p2, Board board) {
     // if (!global_searching || !(*searching))
     //  return SCORE_UNDEFINED;
-    #if USE_SEARCH_STATISTICS
-        ++search->n_nodes_discs[search->n_discs];
-    #endif
     #if USE_END_PO
         switch (sort3 & 3){
             case 2:
@@ -142,6 +142,9 @@ static int last3_nws(Search *search, int alpha, int sort3, uint_fast8_t p0, uint
     int pol = 1;
     do {
         ++search->n_nodes;
+        #if USE_SEARCH_STATISTICS
+            ++search->n_nodes_discs[61];
+        #endif
         if ((bit_around[p0] & board.opponent) && calc_flip(&flip, &board, p0)) {
             board.move_copy(&flip, &board2);
             v = last2_nws(search, alpha, p1, p2, board2);
@@ -208,9 +211,6 @@ int last4_nws(Search *search, int alpha) {
 
     // if (!global_searching || !(*searching))
     //  return SCORE_UNDEFINED;
-    #if USE_SEARCH_STATISTICS
-        ++search->n_nodes_discs[search->n_discs];
-    #endif
     #if USE_LAST4_SC
         int stab_res = stability_cut_last4_nws(search, alpha);
         if (stab_res != SCORE_UNDEFINED) {
@@ -251,6 +251,9 @@ int last4_nws(Search *search, int alpha) {
     int pol = 1;
     do {
         ++search->n_nodes;
+        #if USE_SEARCH_STATISTICS
+            ++search->n_nodes_discs[60];
+        #endif
         if ((bit_around[p0] & board4.opponent) && calc_flip(&flip, &board4, p0)) {
             board4.move_copy(&flip, &board3);
             v = last3_nws(search, alpha, sort3, p1, p2, p3, board3);
