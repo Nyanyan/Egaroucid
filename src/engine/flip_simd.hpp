@@ -16,12 +16,12 @@
 #include "bit.hpp"
 
 union V8DI {
-    unsigned long long      ull[8];
+    uint64_t ull[8];
     __m256i v4[2];
     #ifdef __AVX512F__
         __m512i v8;
     #endif
-} V8DI;
+};
 V8DI lrmask[HW2];
 
 /*
