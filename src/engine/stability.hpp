@@ -293,6 +293,18 @@ inline int stability_cut(Search *search, int *alpha, int *beta){
     return SCORE_UNDEFINED;
 }
 
+// last4 (min stage)
+inline int stability_cut_last4(Search *search, int *alpha, int beta){
+    if (*alpha <= -stability_threshold[60]){
+        int n_alpha = 2 * pop_count_ull(calc_stability(search->board.opponent, search->board.player)) - HW2;
+        if (n_alpha >= beta)
+            return n_alpha;
+        else if (n_alpha > *alpha)
+            *alpha = n_alpha;
+    }
+    return SCORE_UNDEFINED;
+}
+
 /*
     @brief Stability cutoff for NWS (Null Window Search)
 
@@ -309,6 +321,16 @@ inline int stability_cut_nws(Search *search, int alpha){
         int n_beta = HW2 - 2 * pop_count_ull(calc_stability(search->board.opponent, search->board.player));
         if (n_beta <= alpha)
             return n_beta;
+    }
+    return SCORE_UNDEFINED;
+}
+
+// last4 (min stage)
+inline int stability_cut_last4_nws(Search *search, int alpha){
+    if (alpha < -stability_threshold_nws[60]){
+        int n_alpha = 2 * pop_count_ull(calc_stability(search->board.opponent, search->board.player)) - HW2;
+        if (n_alpha > alpha)
+            return n_alpha;
     }
     return SCORE_UNDEFINED;
 }

@@ -30,7 +30,7 @@
 
 #if USE_NEGA_ALPHA_END && MID_TO_END_DEPTH > YBWC_END_SPLIT_MIN_DEPTH
     inline bool ybwc_split_end(const Search *search, int alpha, int beta, uint64_t legal, const bool *searching, uint_fast8_t policy, const int canput, const int pv_idx, const int split_count, std::vector<std::future<Parallel_task>> &parallel_tasks);
-    inline void ybwc_get_end_tasks(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *alpha);
+    inline void ybwc_get_end_tasks(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *running_count);
     inline void ybwc_wait_all(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks);
     inline void ybwc_wait_all(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *alpha, int beta, bool *searching);
 #endif
@@ -39,7 +39,7 @@
 #include "endsearch_simd.hpp"
 #else
 /*
-    @brief Get a final score with last 2 empties
+    @brief Get a final min score with last 2 empties
 
     No move ordering. Just search it.
 
@@ -49,48 +49,51 @@
     @param p0                   empty square 1/2
     @param p1                   empty square 2/2
     @param board                bitboard
-    @return the final score
+    @return the final min score
 */
 static int last2(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast8_t p1, Board board) {
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
-        ++search->n_nodes_discs[search->n_discs];
+        ++search->n_nodes_discs[62];
     #endif
     int v;
     Flip flip;
     //if ((bit_around[p0] & board.player) == 0)
     //    std::swap(p0, p1);
     if ((bit_around[p0] & board.opponent) && calc_flip(&flip, &board, p0)) {
-        v = last1n(search, board.opponent ^ flip.flip, beta, p1);
+        v = last1(search, board.opponent ^ flip.flip, alpha, p1);
 
-        if ((v < beta) && (bit_around[p1] & board.opponent) && calc_flip(&flip, &board, p1)) {
-            int g = last1n(search, board.opponent ^ flip.flip, beta, p0);
-            if (v < g)
+        if ((v > alpha) && (bit_around[p1] & board.opponent) && calc_flip(&flip, &board, p1)) {
+            int g = last1(search, board.opponent ^ flip.flip, alpha, p0);
+            if (v > g)
                 v = g;
         }
     }
 
     else if ((bit_around[p1] & board.opponent) && calc_flip(&flip, &board, p1))
-         v = last1n(search, board.opponent ^ flip.flip, beta, p0);
+         v = last1(search, board.opponent ^ flip.flip, alpha, p0);
 
     else {	// pass
         ++search->n_nodes;
-        beta = -alpha;
+        #if USE_SEARCH_STATISTICS
+            ++search->n_nodes_discs[62];
+        #endif
+        alpha = -beta;
         if (flip.calc_flip(board.opponent, board.player, p0)) {
-            v = last1n(search, board.player ^ flip.flip, beta, p1);
+            v = last1(search, board.player ^ flip.flip, alpha, p1);
 
-            if ((v < beta) && (flip.calc_flip(board.opponent, board.player, p1))) {
-                int g = last1n(search, board.player ^ flip.flip, beta, p0);
-                if (v < g)
+            if ((v > alpha) && (flip.calc_flip(board.opponent, board.player, p1))) {
+                int g = last1(search, board.player ^ flip.flip, alpha, p0);
+                if (v > g)
                     v = g;
             }
         }
 
         else if (flip.calc_flip(board.opponent, board.player, p1))
-            v = last1n(search, board.player ^ flip.flip, beta, p0);
+            v = last1(search, board.player ^ flip.flip, alpha, p0);
 
         else	// gameover
-            return end_evaluate(&board, 2);
+            v = end_evaluate(&board, 2);
 
         v = -v;
     }
@@ -98,7 +101,7 @@ static int last2(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
 }
 
 /*
-    @brief Get a final score with last 3 empties
+    @brief Get a final max score with last 3 empties
 
     Only with parity-based ordering.
 
@@ -110,7 +113,7 @@ static int last2(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
     @param p1                   empty square 2/3
     @param p2                   empty square 3/3
     @param board                bitboard
-    @return the final score
+    @return the final max score
 
     This board contains only 3 empty squares, so empty squares on each part will be:
         3 - 0 - 0 - 0
@@ -124,9 +127,6 @@ static int last2(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
 static int last3(Search *search, int alpha, int beta, int sort3, uint_fast8_t p0, uint_fast8_t p1, uint_fast8_t p2, Board board) {
     // if (!global_searching || !(*searching))
     //  return SCORE_UNDEFINED;
-    #if USE_SEARCH_STATISTICS
-        ++search->n_nodes_discs[search->n_discs];
-    #endif
     #if USE_END_PO
         switch (sort3 & 3){
             case 2:
@@ -140,58 +140,61 @@ static int last3(Search *search, int alpha, int beta, int sort3, uint_fast8_t p0
 
     Flip flip;
     Board board2;
-    int pol = -1;
+    int v = -SCORE_INF;
+    int pol = 1;
     do {
         ++search->n_nodes;
-        int t = alpha;  alpha = -beta;  beta = -t;
-        int v = SCORE_INF;	// Negative score
-        if ((bit_around[p0] & board.opponent) && (calc_flip(&flip, &board, p0))) {
+        #if USE_SEARCH_STATISTICS
+            ++search->n_nodes_discs[61];
+        #endif
+        if ((bit_around[p0] & board.opponent) && calc_flip(&flip, &board, p0)) {
             board.move_copy(&flip, &board2);
             v = last2(search, alpha, beta, p1, p2, board2);
-            if (alpha >= v)
+            if (beta <= v)
                 return v * pol;
-            if (beta > v)
-                beta = v;
+            if (alpha < v)
+                alpha = v;
         }
 
         int g;
         if ((bit_around[p1] & board.opponent) && calc_flip(&flip, &board, p1)) {
             board.move_copy(&flip, &board2);
             g = last2(search, alpha, beta, p0, p2, board2);
-            if (alpha >= g)
+            if (beta <= g)
                 return g * pol;
-            if (v > g)
+            if (v < g)
                 v = g;
-            if (beta > g)
-                beta = g;
+            if (alpha < g)
+                alpha = g;
         }
 
         if ((bit_around[p2] & board.opponent) && calc_flip(&flip, &board, p2)) {
             board.move_copy(&flip, &board2);
             g = last2(search, alpha, beta, p0, p1, board2);
-            if (v > g)
+            if (v < g)
                 v = g;
             return v * pol;
         }
 
-        if (v < SCORE_INF)
+        if (v > -SCORE_INF)
             return v * pol;
 
-	board.pass();
-    } while ((pol = -pol) >= 0);
+        board.pass();
+        int t = alpha;  alpha = -beta;  beta = -t;
+    } while ((pol = -pol) < 0);
 
     return end_evaluate_odd(&board, 3);	// gameover
 }
 
 /*
-    @brief Get a final score with last 4 empties
+    @brief Get a final min score with last 4 empties
 
     Only with parity-based ordering.
 
     @param search               search information
     @param alpha                alpha value
     @param beta                 beta value
-    @return the final score
+    @return the final min score
 
     This board contains only 4 empty squares, so empty squares on each part will be:
         4 - 0 - 0 - 0
@@ -201,7 +204,7 @@ static int last3(Search *search, int alpha, int beta, int sort3, uint_fast8_t p0
         1 - 1 - 1 - 1
     then the parities for squares will be:
         0 - 0 - 0 - 0
-        1 - 1 - 1 - 1
+        1 - 1 - 0 - 0
         0 - 0 - 0 - 0
         1 - 1 - 0 - 0 > need to sort
         1 - 1 - 1 - 1
@@ -215,18 +218,15 @@ int last4(Search *search, int alpha, int beta) {
 
     // if (!global_searching || !(*searching))
     //  return SCORE_UNDEFINED;
-    #if USE_SEARCH_STATISTICS
-        ++search->n_nodes_discs[search->n_discs];
-    #endif
     #if USE_LAST4_SC
-        int stab_res = stability_cut(search, &alpha, &beta);
-        if (stab_res != SCORE_UNDEFINED){
+        int stab_res = stability_cut_last4(search, &alpha, beta);
+        if (stab_res != SCORE_UNDEFINED) {
             return stab_res;
         }
     #endif
     #if USE_END_PO
-        // parity ordering optimization
-        // I referred to http://www.amy.hi-ho.ne.jp/okuhara/edaxopt.htm
+                // parity ordering optimization
+                // I referred to http://www.amy.hi-ho.ne.jp/okuhara/edaxopt.htm
         const int paritysort = parity_case[((p2 ^ p3) & 0x24) + ((((p1 ^ p3) & 0x24) * 2 + ((p0 ^ p3) & 0x24)) >> 2)];
         switch (paritysort) {
             case 8:     // case 1(p2) 1(p3) 2(p0 p1)
@@ -254,11 +254,13 @@ int last4(Search *search, int alpha, int beta) {
     Flip flip;
     Board board3, board4;
     search->board.copy(&board4);
-    int pol = -1;
+    int v = SCORE_INF;	// min stage
+    int pol = 1;
     do {
         ++search->n_nodes;
-        int t = alpha;  alpha = -beta;  beta = -t;
-        int v = SCORE_INF;	// Negative score
+        #if USE_SEARCH_STATISTICS
+            ++search->n_nodes_discs[60];
+        #endif
         if ((bit_around[p0] & board4.opponent) && calc_flip(&flip, &board4, p0)) {
             board4.move_copy(&flip, &board3);
             v = last3(search, alpha, beta, sort3, p1, p2, p3, board3);
@@ -303,9 +305,10 @@ int last4(Search *search, int alpha, int beta) {
             return v * pol;
 
         board4.pass();
-    } while ((pol = -pol) >= 0);
+        int t = alpha;  alpha = -beta;  beta = -t;
+    } while ((pol = -pol) < 0);
 
-    return end_evaluate(&search->board, 4);	// gameover
+    return -end_evaluate(&search->board, 4);	// gameover
 }
 #endif
 
@@ -371,7 +374,7 @@ int last4(Search *search, int alpha, int beta) {
                 for (cell = first_bit(&prioritymoves); prioritymoves; cell = next_bit(&prioritymoves)) {
                     calc_flip(&flip, &board0, cell);
                     board0.move_copy(&flip, &search->board);
-                    g = -last4(search, -beta, -alpha);
+                    g = last4(search, alpha, beta);
                     if (beta <= g) {
                         board0.copy(&search->board);
                         return g;
@@ -436,7 +439,7 @@ int last4(Search *search, int alpha, int beta) {
                 return nega_alpha_end_fast(search, alpha, beta, skipped, false, searching);
         #else
             if (search->n_discs == 60){
-                return last4(search, alpha, beta);
+                return -last4(search, -beta, -alpha);
             }
         #endif
         ++search->n_nodes;
