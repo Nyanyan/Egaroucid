@@ -261,13 +261,15 @@ WindowsにてGoGuiを用いた動作確認を、UbuntuにてQuarryを用いた�
 
 ### GoGui
 
+GoGuiはWindowsにて[バージョン1.5.1](https://github.com/Remi-Coulom/gogui/releases/tag/v1.5.1)を使って動作を確認しました。これ以外のバージョンのGoGuiでの動作保証はできていません。
+
 GoGuiでの動作画面は以下のようになります。
 
 <div class="centering_box">
     <img class="pic2" src="img/gogui_with_egaroucid.png">
 </div>
 
-まず、<code>プログラム>新規プログラム</code>からEgaroucidを登録します。その際、コマンドには<code>-gtp</code>を追加し、ワーキングディレクトリは<code>Egaroucid/src</code>にしてください。
+まず、<code>プログラム>新規プログラム</code>からEgaroucidを登録します。その際、コマンドには<code>-gtp</code>を追加し、ワーキングディレクトリはEgaroucidの実行ファイルがある場所にしてください。
 
 <div class="centering_box">
     <img class="pic2" src="img/gogui_new_program.png">

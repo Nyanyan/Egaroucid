@@ -263,12 +263,14 @@ I tested it works with GoGui on Windows and Quarry on Ubuntu.
 
 ### GoGui
 
+I used [GoGui 1.5.1](https://github.com/Remi-Coulom/gogui/releases/tag/v1.5.1) on Windows.
+
 GoGui with Egaroucid is something like this.
 
 <div class="centering_box">
     <img class="pic2" src="img/gogui_with_egaroucid.png">
 </div>
-First, you have to register Egaroucid. Please add <code>-gtp</code> to the command, and set working directory <code>Egaroucid/src</code>.
+First, you have to register Egaroucid. Please add <code>-gtp</code> to the command, and set working directory as the directory on the executable.
 
 <div class="centering_box">
     <img class="pic2" src="img/gogui_new_program.png">
