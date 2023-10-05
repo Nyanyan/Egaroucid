@@ -52,8 +52,9 @@ class Flip{
             outflank = _mm256_sllv_epi64(_mm256_and_si256(PP, mask), _mm256_set_epi64x(7, 9, 8, 1));
             eraser = _mm256_or_si256(eraser, _mm256_srlv_epi64(eraser, _mm256_set_epi64x(7, 9, 8, 1)));
             outflank = _mm256_andnot_si256(eraser, outflank);
+            eraser = _mm256_srlv_epi64(eraser, _mm256_set_epi64x(14, 18, 16, 2));
+            outflank = _mm256_andnot_si256(eraser, outflank);
             outflank = _mm256_andnot_si256(_mm256_srlv_epi64(eraser, _mm256_set_epi64x(14, 18, 16, 2)), outflank);
-            outflank = _mm256_andnot_si256(_mm256_srlv_epi64(eraser, _mm256_set_epi64x(28, 36, 32, 4)), outflank);
               // set mask bits higher than outflank
             flip4 = _mm256_and_si256(mask, _mm256_sub_epi64(_mm256_setzero_si256(), outflank));
 
