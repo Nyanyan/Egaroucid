@@ -54,6 +54,9 @@ static inline int vectorcall last1_nws(Search *search, __m128i PO, int alpha, in
             #if USE_SEARCH_STATISTICS
                 ++search->n_nodes_discs[63];
             #endif
+            // if (score - 38 > alpha)
+            //     return score - 38;
+
             	// n_flip = count_last_flip(~P, place);
             const int y = place >> 3;
             t = _mm256_movemask_epi8(_mm256_sub_epi8(_mm256_setzero_si256(), _mm256_andnot_si256(PP, mask_dvhd[place].v4)));
@@ -65,6 +68,9 @@ static inline int vectorcall last1_nws(Search *search, __m128i PO, int alpha, in
         } else  score += 2;	// min flip
 
     } else {	// if player cannot move, low cut-off will occur whether opponent can move.
+        // if (score + 36 <= alpha)
+        //     return score + 36;
+
         	// n_flip = count_last_flip(P, place);
         const int y = place >> 3;
         t = _mm256_movemask_epi8(_mm256_sub_epi8(_mm256_setzero_si256(), _mm256_and_si256(PP, mask_dvhd[place].v4)));
