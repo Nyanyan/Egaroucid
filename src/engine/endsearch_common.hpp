@@ -126,7 +126,7 @@ union V4DI {
 };
 static V4DI mask_dvhd[64];
 
-static inline int vectorcall TESTZ_FLIP(__m128i X) { return _mm_testz_si128(X, X); }
+static inline int vectorcall TESTZ_FLIP(__m256i X) { return _mm256_testz_si256(X, X); }
 
 /*
     @brief evaluation function for game over
@@ -154,9 +154,9 @@ static inline int end_evaluate(uint64_t b, int e) {
  * @param flipped flipped returned from mm_Flip.
  * @return resulting board.
  */
-static inline __m128i vectorcall board_flip_next(__m128i OP, int x, __m128i flipped)
+static inline __m128i vectorcall board_flip_next(__m128i OP, int x, __m256i flipped)
 {
-    OP = _mm_xor_si128(OP, _mm_or_si128(flipped, _mm_loadl_epi64((__m128i*) & X_TO_BIT[x])));
+    OP = _mm_xor_si128(OP, _mm_or_si128(Flip::reduce_vflip(flipped), _mm_loadl_epi64((__m128i*) & X_TO_BIT[x])));
     return _mm_shuffle_epi32(OP, SWAP64);
 }
 #endif

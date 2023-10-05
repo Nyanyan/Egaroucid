@@ -97,7 +97,7 @@ static inline int vectorcall last1_nws(Search *search, __m128i PO, int alpha, in
     @return the final min score
 */
 static int vectorcall last2_nws(Search *search, __m128i OP, int alpha, __m128i empties_simd) {
-    __m128i flipped;
+    __m256i flipped;
     int p0 = _mm_extract_epi16(empties_simd, 1);
     int p1 = _mm_extract_epi16(empties_simd, 0);
     uint64_t opponent = _mm_extract_epi64(OP, 1);
@@ -108,17 +108,17 @@ static int vectorcall last2_nws(Search *search, __m128i OP, int alpha, __m128i e
     #endif
     int v;
     if ((bit_around[p0] & opponent) && !TESTZ_FLIP(flipped = Flip::calc_flip(OP, p0))) {
-        v = last1_nws(search, _mm_xor_si128(OP, flipped), alpha, p1);
+        v = last1_nws(search, _mm_xor_si128(OP, Flip::reduce_vflip(flipped)), alpha, p1);
  
         if ((v > alpha) && (bit_around[p1] & opponent) && !TESTZ_FLIP(flipped = Flip::calc_flip(OP, p1))) {
-            int g = last1_nws(search, _mm_xor_si128(OP, flipped), alpha, p0);
+            int g = last1_nws(search, _mm_xor_si128(OP, Flip::reduce_vflip(flipped)), alpha, p0);
             if (v > g)
                 v = g;
         }
     }
 
     else if ((bit_around[p1] & opponent) && !TESTZ_FLIP(flipped = Flip::calc_flip(OP, p1)))
-        v = last1_nws(search, _mm_xor_si128(OP, flipped), alpha, p0);
+        v = last1_nws(search, _mm_xor_si128(OP, Flip::reduce_vflip(flipped)), alpha, p0);
  
     else {	// pass
         ++search->n_nodes;
@@ -128,17 +128,17 @@ static int vectorcall last2_nws(Search *search, __m128i OP, int alpha, __m128i e
         alpha = -(alpha + 1);	// -beta
         __m128i PO = _mm_shuffle_epi32(OP, SWAP64);
         if (!TESTZ_FLIP(flipped = Flip::calc_flip(PO, p0))) {
-            v = last1_nws(search, _mm_xor_si128(PO, flipped), alpha, p1);
+            v = last1_nws(search, _mm_xor_si128(PO, Flip::reduce_vflip(flipped)), alpha, p1);
 
             if ((v > alpha) && !TESTZ_FLIP(flipped = Flip::calc_flip(PO, p1))) {
-                int g = last1_nws(search, _mm_xor_si128(PO, flipped), alpha, p0);
+                int g = last1_nws(search, _mm_xor_si128(PO, Flip::reduce_vflip(flipped)), alpha, p0);
                 if (v > g)
                     v = g;
             }
         }
 
         else if (!TESTZ_FLIP(flipped = Flip::calc_flip(PO, p1)))
-            v = last1_nws(search, _mm_xor_si128(PO, flipped), alpha, p0);
+            v = last1_nws(search, _mm_xor_si128(PO, Flip::reduce_vflip(flipped)), alpha, p0);
 
         else	// gameover
             v = end_evaluate(_mm_extract_epi64(PO, 1), 2);
@@ -160,7 +160,7 @@ static int vectorcall last2_nws(Search *search, __m128i OP, int alpha, __m128i e
     @return the final max score
 */
 static int vectorcall last3_nws(Search *search, __m128i OP, int alpha, __m128i empties_simd) {
-    __m128i flipped;
+    __m256i flipped;
     uint64_t opponent;
 
     // if (!global_searching || !(*searching))
@@ -232,7 +232,7 @@ static int vectorcall last3_nws(Search *search, __m128i OP, int alpha, __m128i e
         1 - 1 - 1 - 1
 */
 int last4_nws(Search *search, int alpha) {
-    __m128i flipped;
+    __m256i flipped;
     uint64_t opponent;
     __m128i OP = _mm_loadu_si128((__m128i*) & search->board);
     uint64_t empties = ~(search->board.player | search->board.opponent);
