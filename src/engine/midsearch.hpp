@@ -327,6 +327,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
         #endif
     }
     ++search->n_nodes;
+    int first_alpha = alpha;
     #if USE_SEARCH_STATISTICS
         ++search->n_nodes_discs[search->n_discs];
     #endif
@@ -393,7 +394,6 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
         }
     #endif
     int best_move = TRANSPOSITION_TABLE_UNDEFINED;
-    int first_alpha = alpha;
     const int canput = pop_count_ull(legal);
     std::vector<Flip_value> move_list(canput);
     int idx = 0;
