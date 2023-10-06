@@ -552,6 +552,9 @@ Egaroucidは<a href="#入出力_出力 > 対局保存">対局を独自形式で�
 <div class="centering_box">
     <img class="pic2" src="img/screen_shot.png">
 </div>
+<ul>
+    <li>この機能は<a href="#入出力_出力 > ボードの画像を編集">ボードの画像を編集</a>の簡易版+評価値表示をつけたものという位置づけです。</li>
+</ul>
 
 ### 出力 > ボードの画像を編集
 
