@@ -108,7 +108,8 @@
             "disc_value_number": "表示個数",
             "umigame_value": "うみがめ数",
             "opening": "定石",
-            "next_move": "直後の手"
+            "next_move": "直後の手",
+            "next_move_change_view": "表示変更"
         },
         "disc": {
             "display_on_disc": "石への表示",

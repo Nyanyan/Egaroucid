@@ -108,7 +108,8 @@
             "disc_value_number": "Number",
             "umigame_value": "Umigame Number",
             "opening": "Opening",
-            "next_move": "Next Move"
+            "next_move": "Next Move",
+            "next_move_change_view": "Change View"
         },
         "disc": {
             "display_on_disc": "On Disc",
