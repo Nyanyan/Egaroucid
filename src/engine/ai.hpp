@@ -68,7 +68,7 @@ inline Search_result tree_search(Board board, int depth, uint_fast8_t mpc_level,
         strt = tim();
         if (show_log)
             std::cerr << "start!" << std::endl;
-        uint_fast8_t mpc_level_presearch = 0;
+        uint_fast8_t mpc_level_presearch = std::min((int)mpc_level, MPC_88_LEVEL);
         //int depth_presearch = std::min(22, depth);
         int depth_presearch = depth;
         while ((depth - depth_presearch) + (mpc_level - mpc_level_presearch) >= 1){
