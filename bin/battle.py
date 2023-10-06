@@ -17,6 +17,8 @@ player_info = [
     ['Edax ', 'versions/edax_4_4/edax-4.4 -q'],
 ]
 
+EDAX_IDX = -1
+
 NAME_IDX = 0
 SUBPROCESS_IDX = 1
 RESULT_IDX = 2
@@ -32,7 +34,7 @@ for name, cmd in player_info:
             # W D L
             [[0, 0, 0] for _ in range(len(player_info))]
         ]
-    )    
+    )
 
 with open('problem/xot_small_shuffled.txt', 'r') as f:
     openings = [elem for elem in f.read().splitlines()]
@@ -110,7 +112,18 @@ def play_battle(p0_idx, p1_idx, opening_idx):
         else:
             players[p0_idx][RESULT_IDX][p1_idx][1] += 1
             players[p1_idx][RESULT_IDX][p0_idx][1] += 1
-    
+        
+        if p0_idx == EDAX_IDX or p1_idx == EDAX_IDX:
+            players[EDAX_IDX][SUBPROCESS_IDX].kill()
+            cmd_with_level = player_info[EDAX_IDX] + ' -l ' + str(LEVEL)
+            players[EDAX_IDX][SUBPROCESS_IDX] = subprocess.Popen(cmd_with_level.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        if p0_idx != EDAX_IDX:
+            players[p0_idx][SUBPROCESS_IDX].stdin.write('clearcache\n'.encode('utf-8'))
+            players[p0_idx][SUBPROCESS_IDX].stdin.flush()
+        if p1_idx != EDAX_IDX:
+            players[p1_idx][SUBPROCESS_IDX].stdin.write('clearcache\n'.encode('utf-8'))
+            players[p1_idx][SUBPROCESS_IDX].stdin.flush()
+
 
 def print_result():
     for i in range(len(players)):
