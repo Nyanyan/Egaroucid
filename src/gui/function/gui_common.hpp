@@ -315,6 +315,7 @@ struct Settings {
     int hash_level;
 	int book_acc_level;
     bool pause_when_pass;
+    bool show_last_move_change_view;
 };
 
 struct Fonts {
@@ -356,6 +357,7 @@ struct Menu_elements {
     bool show_log;
     bool show_last_move;
     bool show_next_move;
+    bool show_last_move_change_view;
 
     // book
     bool book_start_widen;
@@ -434,6 +436,7 @@ struct Menu_elements {
         show_log = settings->show_log;
         show_last_move = settings->show_last_move;
         show_next_move = settings->show_next_move;
+        show_last_move_change_view = settings->show_last_move_change_view;
 
         book_start_widen = false;
         book_start_deepen = false;

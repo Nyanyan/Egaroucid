@@ -911,6 +911,8 @@ private:
         side_menu.init_check(language.get("display", "cell", "opening"), &menu_elements->show_opening_on_cell, menu_elements->show_opening_on_cell);
         menu_e.push(side_menu);
         side_menu.init_check(language.get("display", "cell", "next_move"), &menu_elements->show_last_move, menu_elements->show_last_move);
+        side_side_menu.init_check(language.get("display", "cell", "next_move_change_view"), &menu_elements->show_last_move_change_view, menu_elements->show_last_move_change_view);
+        side_menu.push(side_side_menu);
         menu_e.push(side_menu);
         title.push(menu_e);
 
@@ -1086,13 +1088,18 @@ private:
         if (0 <= getData().history_elem.next_policy && getData().history_elem.next_policy <= HW2) {
             uint64_t legal = getData().history_elem.board.get_legal();
             if (1 & (legal >> getData().history_elem.next_policy)) {
-                int x = BOARD_SX + (HW_M1 - getData().history_elem.next_policy % HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
-                int y = BOARD_SY + (HW_M1 - getData().history_elem.next_policy / HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
-                if (getData().history_elem.player == WHITE) {
-                    Circle(x, y, DISC_SIZE).draw(ColorF(getData().colors.white, 0.2));
-                }
-                else {
-                    Circle(x, y, DISC_SIZE).draw(ColorF(getData().colors.black, 0.2));
+                if (getData().menu_elements.show_last_move_change_view){
+                    int sx = BOARD_SX + (HW_M1 - getData().history_elem.next_policy % HW) * BOARD_CELL_SIZE;
+                    int sy = BOARD_SY + (HW_M1 - getData().history_elem.next_policy / HW) * BOARD_CELL_SIZE;
+                    Rect(sx, sy, BOARD_CELL_SIZE, BOARD_CELL_SIZE).drawFrame(8, 0, ColorF(Palette::Yellow, 0.4));
+                } else {
+                    int x = BOARD_SX + (HW_M1 - getData().history_elem.next_policy % HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
+                    int y = BOARD_SY + (HW_M1 - getData().history_elem.next_policy / HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
+                    if (getData().history_elem.player == WHITE) {
+                        Circle(x, y, DISC_SIZE).draw(ColorF(getData().colors.white, 0.2));
+                    } else {
+                        Circle(x, y, DISC_SIZE).draw(ColorF(getData().colors.black, 0.2));
+                    }
                 }
             }
         }

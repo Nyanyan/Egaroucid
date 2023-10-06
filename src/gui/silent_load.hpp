@@ -65,6 +65,7 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->hash_level = DEFAULT_HASH_LEVEL;
     settings->book_acc_level = 0;
     settings->pause_when_pass = false;
+    settings->show_last_move_change_view = false;
 }
 
 int init_settings_import_int(TextReader* reader, int* res) {
@@ -223,7 +224,11 @@ void init_settings(const Directories* directories, const Resources* resources, S
             return;
         }
         if (init_settings_import_int(&reader, &settings->book_learn_error_sum) != ERR_OK) {
-            std::cerr << "err16" << std::endl;
+            std::cerr << "err25" << std::endl;
+            return;
+        }
+        if (init_settings_import_bool(&reader, &settings->show_last_move_change_view) != ERR_OK) {
+            std::cerr << "err26" << std::endl;
             return;
         }
     }

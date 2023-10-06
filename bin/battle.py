@@ -8,23 +8,22 @@ LEVEL = 1
 
 N_SET_GAMES = 100
 
+# name, cmd, cacheclear?
 player_info = [
-    ['beta ', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -quiet -nobook'],
-    ['6.4.0', 'versions/Egaroucid_for_Console_6_4_0_Windows_x64_SIMD/Egaroucid_for_Console_6_4_0_x64_SIMD.exe -quiet -nobook'],
-    ['6.3.0', 'versions/Egaroucid_for_Console_6_3_0_Windows_x64_SIMD/Egaroucid_for_Console_6_3_0_x64_SIMD.exe -quiet -nobook'],
-    ['6.2.0', 'versions/Egaroucid_for_Console_6_2_0_Windows_x64_SIMD/Egaroucid_for_Console.exe -quiet -nobook'],
-    ['6.1.0', 'versions/Egaroucid_for_Console_6_1_0_Windows_x64_SIMD/Egaroucid_for_Console.exe -quiet -nobook'],
-    ['Edax ', 'versions/edax_4_4/edax-4.4 -q'],
+    ['beta ', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -quiet -nobook -t 1', True],
+    ['6.4.0', 'versions/Egaroucid_for_Console_6_4_0_Windows_x64_SIMD/Egaroucid_for_Console_6_4_0_x64_SIMD.exe -quiet -nobook -t 1', False],
+    ['6.3.0', 'versions/Egaroucid_for_Console_6_3_0_Windows_x64_SIMD/Egaroucid_for_Console_6_3_0_x64_SIMD.exe -quiet -nobook -t 1', False],
+    ['6.2.0', 'versions/Egaroucid_for_Console_6_2_0_Windows_x64_SIMD/Egaroucid_for_Console.exe -quiet -nobook -t 1', False],
+    ['6.1.0', 'versions/Egaroucid_for_Console_6_1_0_Windows_x64_SIMD/Egaroucid_for_Console.exe -quiet -nobook -t 1', False],
+    ['Edax ', 'versions/edax_4_4/edax-4.4 -q -cpu', False],
 ]
-
-EDAX_IDX = -1
 
 NAME_IDX = 0
 SUBPROCESS_IDX = 1
 RESULT_IDX = 2
 
 players = []
-for name, cmd in player_info:
+for name, cmd, _ in player_info:
     cmd_with_level = cmd + ' -l ' + str(LEVEL)
     print(name, cmd_with_level)
     players.append(
@@ -113,16 +112,14 @@ def play_battle(p0_idx, p1_idx, opening_idx):
             players[p0_idx][RESULT_IDX][p1_idx][1] += 1
             players[p1_idx][RESULT_IDX][p0_idx][1] += 1
         
-        if p0_idx == EDAX_IDX or p1_idx == EDAX_IDX:
-            players[EDAX_IDX][SUBPROCESS_IDX].kill()
-            cmd_with_level = player_info[EDAX_IDX] + ' -l ' + str(LEVEL)
-            players[EDAX_IDX][SUBPROCESS_IDX] = subprocess.Popen(cmd_with_level.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-        if p0_idx != EDAX_IDX:
-            players[p0_idx][SUBPROCESS_IDX].stdin.write('clearcache\n'.encode('utf-8'))
-            players[p0_idx][SUBPROCESS_IDX].stdin.flush()
-        if p1_idx != EDAX_IDX:
-            players[p1_idx][SUBPROCESS_IDX].stdin.write('clearcache\n'.encode('utf-8'))
-            players[p1_idx][SUBPROCESS_IDX].stdin.flush()
+        for pidx in [p0_idx, p1_idx]:
+            if player_info[pidx][2]:
+                players[pidx][SUBPROCESS_IDX].stdin.write('clearcache\n'.encode('utf-8'))
+                players[pidx][SUBPROCESS_IDX].stdin.flush()
+            else:
+                players[pidx][SUBPROCESS_IDX].kill()
+                cmd_with_level = player_info[pidx][1] + ' -l ' + str(LEVEL)
+                players[pidx][SUBPROCESS_IDX] = subprocess.Popen(cmd_with_level.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
 
 
 def print_result():
