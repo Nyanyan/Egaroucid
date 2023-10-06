@@ -1,5 +1,9 @@
 # Egaroucid for Web
 
+<div align="center">
+    This is simplified version and weaker than [download version](./../download/).
+</div>
+
 <p align="center">
     <input type="radio" class="radio_size" name="ai_player" value="1" id="white" checked><label for="white" class="setting">Black(First): You White(Second): AI</label>
     <input type="radio" class="radio_size" name="ai_player" value="0" id="black"><label for="black" class="setting">Black(First): AI White(Second): You</label>

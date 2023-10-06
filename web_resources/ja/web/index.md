@@ -1,5 +1,9 @@
 # Egaroucid for Web
 
+<div align="center">
+    これは[ダウンロード版](./../download/)よりも弱い簡易バージョンです。
+</div>
+
 <p align="center">
     <input type="radio" class="radio_size" name="ai_player" value="1" id="white" checked><label for="white" class="setting">黒(先手): あなた 白(後手): AI</label>
     <input type="radio" class="radio_size" name="ai_player" value="0" id="black"><label for="black" class="setting">黒(先手): AI 白(後手): あなた</label>
