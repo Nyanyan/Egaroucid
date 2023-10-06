@@ -18,9 +18,10 @@ print('0 eval', eval0)
 print('1 eval', eval1)
 
 egaroucids = [
-    subprocess.Popen(('Egaroucid_for_console.exe -quiet -nobook -level ' + str(level) + ' -eval ' + eval0).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL),
-    subprocess.Popen(('Egaroucid_for_console.exe -quiet -nobook -level ' + str(level) + ' -eval ' + eval1).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    subprocess.Popen(('Egaroucid_for_Console.exe -quiet -nobook -level ' + str(level) + ' -eval ' + eval0).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL),
+    subprocess.Popen(('Egaroucid_for_Console.exe -quiet -nobook -level ' + str(level) + ' -eval ' + eval1).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
 ]
+
 results = [[0, 0], [0, 0], [0, 0]] # 0 win (0 plays black / white), 0 lose (0 plays black / white), draw (0 plays black / white)
 
 print('level', level)
@@ -107,6 +108,7 @@ for num in range(max_num):
 for i in range(2):
     egaroucids[i].stdin.write('quit\n'.encode('utf-8'))
     egaroucids[i].stdin.flush()
+
 print('')
 
 print(create_res_str(results))
