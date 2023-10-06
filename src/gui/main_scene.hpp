@@ -56,7 +56,7 @@ public:
         if (getData().graph_resources.need_init) {
             getData().game_information.init();
             getData().graph_resources.init();
-            getData().graph_resources.nodes[getData().graph_resources.put_mode].emplace_back(getData().history_elem);
+            getData().graph_resources.nodes[getData().graph_resources.branch].emplace_back(getData().history_elem);
         }
         start_game_button.init(START_GAME_BUTTON_SX, START_GAME_BUTTON_SY, START_GAME_BUTTON_WIDTH, START_GAME_BUTTON_HEIGHT, START_GAME_BUTTON_RADIUS, language.get("play", "start_game"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
         pass_button.init(PASS_BUTTON_SX, PASS_BUTTON_SY, PASS_BUTTON_WIDTH, PASS_BUTTON_HEIGHT, PASS_BUTTON_RADIUS, language.get("play", "pass"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
@@ -132,7 +132,7 @@ public:
         bool ai_should_move =
             !need_start_game_button &&
             !getData().history_elem.board.is_end() && 
-            getData().graph_resources.put_mode == GRAPH_MODE_NORMAL &&
+            getData().graph_resources.branch == GRAPH_MODE_NORMAL &&
             ((getData().history_elem.player == BLACK && getData().menu_elements.ai_put_black) || (getData().history_elem.player == WHITE && getData().menu_elements.ai_put_white)) &&
             getData().history_elem.board.n_discs() == getData().graph_resources.nodes[GRAPH_MODE_NORMAL][getData().graph_resources.nodes[GRAPH_MODE_NORMAL].size() - 1].board.n_discs() && 
             !pausing_in_pass;
@@ -316,7 +316,7 @@ private:
             stop_calculating();
             getData().history_elem.reset();
             getData().graph_resources.init();
-            getData().graph_resources.nodes[getData().graph_resources.put_mode].emplace_back(getData().history_elem);
+            getData().graph_resources.nodes[getData().graph_resources.branch].emplace_back(getData().history_elem);
             getData().game_information.init();
             getData().menu_elements.ai_put_black = false;
             getData().menu_elements.ai_put_white = false;
@@ -328,7 +328,7 @@ private:
             stop_calculating();
             getData().history_elem.reset();
             getData().graph_resources.init();
-            getData().graph_resources.nodes[getData().graph_resources.put_mode].emplace_back(getData().history_elem);
+            getData().graph_resources.nodes[getData().graph_resources.branch].emplace_back(getData().history_elem);
             getData().game_information.init();
             getData().menu_elements.ai_put_black = false;
             getData().menu_elements.ai_put_white = true;
@@ -340,7 +340,7 @@ private:
             stop_calculating();
             getData().history_elem.reset();
             getData().graph_resources.init();
-            getData().graph_resources.nodes[getData().graph_resources.put_mode].emplace_back(getData().history_elem);
+            getData().graph_resources.nodes[getData().graph_resources.branch].emplace_back(getData().history_elem);
             getData().game_information.init();
             getData().menu_elements.ai_put_black = true;
             getData().menu_elements.ai_put_white = false;
@@ -352,7 +352,7 @@ private:
             stop_calculating();
             getData().history_elem.reset();
             getData().graph_resources.init();
-            getData().graph_resources.nodes[getData().graph_resources.put_mode].emplace_back(getData().history_elem);
+            getData().graph_resources.nodes[getData().graph_resources.branch].emplace_back(getData().history_elem);
             getData().game_information.init();
             getData().menu_elements.ai_put_black = true;
             getData().menu_elements.ai_put_white = true;
@@ -445,23 +445,23 @@ private:
                         before_player = WHITE;
                     else if (getData().menu_elements.ai_put_white)
                         before_player = BLACK;
-                    if (getData().graph_resources.put_mode != 0 || getData().graph_resources.nodes[0].size() > 1) {
-                        while (getData().graph_resources.nodes[getData().graph_resources.put_mode].back().board.n_discs() >= before_history_elem_n_discs || (before_player != -1 && before_player != getData().history_elem.player)) {
-                            getData().graph_resources.nodes[getData().graph_resources.put_mode].pop_back();
+                    if (getData().graph_resources.branch != 0 || getData().graph_resources.nodes[0].size() > 1) {
+                        while (getData().graph_resources.nodes[getData().graph_resources.branch].back().board.n_discs() >= before_history_elem_n_discs || (before_player != -1 && before_player != getData().history_elem.player)) {
+                            getData().graph_resources.nodes[getData().graph_resources.branch].pop_back();
                             History_elem n_history_elem = getData().history_elem;
-                            if (getData().graph_resources.put_mode == 1 && getData().graph_resources.nodes[1].size() == 0){
-                                getData().graph_resources.put_mode = 0;
+                            if (getData().graph_resources.branch == 1 && getData().graph_resources.nodes[1].size() == 0){
+                                getData().graph_resources.branch = 0;
                                 getData().graph_resources.nodes[0][getData().graph_resources.node_find(0, getData().history_elem.board.n_discs())].next_policy = -1;
                                 n_history_elem = getData().graph_resources.nodes[0][getData().graph_resources.node_find(0, getData().history_elem.board.n_discs())];
                             } else {
-                                getData().graph_resources.nodes[getData().graph_resources.put_mode].back().next_policy = -1;
-                                n_history_elem = getData().graph_resources.nodes[getData().graph_resources.put_mode].back();
+                                getData().graph_resources.nodes[getData().graph_resources.branch].back().next_policy = -1;
+                                n_history_elem = getData().graph_resources.nodes[getData().graph_resources.branch].back();
                             }
                             n_history_elem.next_policy = -1;
                             getData().history_elem = n_history_elem;
                             getData().graph_resources.n_discs = getData().history_elem.board.n_discs();
                             reset_hint();
-                            if (getData().graph_resources.put_mode == 0 && getData().graph_resources.nodes[0].size() <= 1) {
+                            if (getData().graph_resources.branch == 0 && getData().graph_resources.nodes[0].size() <= 1) {
                                 break;
                             }
                         }
@@ -469,7 +469,7 @@ private:
                 }
             }
             if (getData().menu_elements.save_this_branch) {
-                if (getData().graph_resources.put_mode == 1) {
+                if (getData().graph_resources.branch == 1) {
                     std::vector<History_elem> new_branch;
                     int fork_start_idx = getData().graph_resources.node_find(0, getData().graph_resources.nodes[1].front().board.n_discs());
                     for (int i = 0; i < fork_start_idx; ++i) {
@@ -485,7 +485,7 @@ private:
                     for (History_elem elem: new_branch) {
                         getData().graph_resources.nodes[0].emplace_back(elem);
                     }
-                    getData().graph_resources.put_mode = 0;
+                    getData().graph_resources.branch = 0;
                 }
             }
         }
@@ -706,21 +706,21 @@ private:
     }
 
     void update_n_discs() {
-        int max_n_discs = getData().graph_resources.nodes[getData().graph_resources.put_mode].back().board.n_discs();
+        int max_n_discs = getData().graph_resources.nodes[getData().graph_resources.branch].back().board.n_discs();
         getData().graph_resources.n_discs = std::min(getData().graph_resources.n_discs, max_n_discs);
         int min_n_discs = getData().graph_resources.nodes[GRAPH_MODE_NORMAL][0].board.n_discs();
         if (getData().graph_resources.nodes[GRAPH_MODE_INSPECT].size()) {
             min_n_discs = std::min(min_n_discs, getData().graph_resources.nodes[GRAPH_MODE_INSPECT][0].board.n_discs());
         }
         getData().graph_resources.n_discs = std::max(getData().graph_resources.n_discs, min_n_discs);
-        if (getData().graph_resources.put_mode == GRAPH_MODE_INSPECT && getData().graph_resources.nodes[GRAPH_MODE_INSPECT].size()) {
+        if (getData().graph_resources.branch == GRAPH_MODE_INSPECT && getData().graph_resources.nodes[GRAPH_MODE_INSPECT].size()) {
             if (getData().graph_resources.n_discs < getData().graph_resources.nodes[GRAPH_MODE_INSPECT][0].board.n_discs()) {
-                getData().graph_resources.put_mode = GRAPH_MODE_NORMAL;
+                getData().graph_resources.branch = GRAPH_MODE_NORMAL;
                 getData().graph_resources.nodes[1].clear();
             }
         }
-        int node_idx = getData().graph_resources.node_find(getData().graph_resources.put_mode, getData().graph_resources.n_discs);
-        if (node_idx == -1 && getData().graph_resources.put_mode == GRAPH_MODE_INSPECT) {
+        int node_idx = getData().graph_resources.node_find(getData().graph_resources.branch, getData().graph_resources.n_discs);
+        if (node_idx == -1 && getData().graph_resources.branch == GRAPH_MODE_INSPECT) {
             getData().graph_resources.nodes[GRAPH_MODE_INSPECT].clear();
             int node_idx_0 = getData().graph_resources.node_find(GRAPH_MODE_NORMAL, getData().graph_resources.n_discs);
             if (node_idx_0 == -1) {
@@ -728,30 +728,30 @@ private:
                 return;
             }
             getData().graph_resources.nodes[GRAPH_MODE_INSPECT].emplace_back(getData().graph_resources.nodes[GRAPH_MODE_NORMAL][node_idx_0]);
-            node_idx = getData().graph_resources.node_find(getData().graph_resources.put_mode, getData().graph_resources.n_discs);
+            node_idx = getData().graph_resources.node_find(getData().graph_resources.branch, getData().graph_resources.n_discs);
         }
         while (node_idx == -1) {
             //std::cerr << "history vector element not found 1" << std::endl;
             getData().graph_resources.n_discs += getData().graph_resources.delta;
             node_idx = getData().graph_resources.node_find(GRAPH_MODE_NORMAL, getData().graph_resources.n_discs);
         }
-        if (getData().history_elem.board != getData().graph_resources.nodes[getData().graph_resources.put_mode][node_idx].board) {
+        if (getData().history_elem.board != getData().graph_resources.nodes[getData().graph_resources.branch][node_idx].board) {
             stop_calculating();
             resume_calculating();
         }
-        getData().history_elem = getData().graph_resources.nodes[getData().graph_resources.put_mode][node_idx];
+        getData().history_elem = getData().graph_resources.nodes[getData().graph_resources.branch][node_idx];
     }
 
     void move_processing(int_fast8_t cell) {
-        int parent_idx = getData().graph_resources.node_find(getData().graph_resources.put_mode, getData().history_elem.board.n_discs());
+        int parent_idx = getData().graph_resources.node_find(getData().graph_resources.branch, getData().history_elem.board.n_discs());
         if (parent_idx != -1) {
-            if (getData().graph_resources.nodes[getData().graph_resources.put_mode][parent_idx].next_policy == HW2_M1 - cell && parent_idx + 1 < (int)getData().graph_resources.nodes[getData().graph_resources.put_mode].size()) {
+            if (getData().graph_resources.nodes[getData().graph_resources.branch][parent_idx].next_policy == HW2_M1 - cell && parent_idx + 1 < (int)getData().graph_resources.nodes[getData().graph_resources.branch].size()) {
                 ++getData().graph_resources.n_discs;
                 return;
             }
-            getData().graph_resources.nodes[getData().graph_resources.put_mode][parent_idx].next_policy = HW2_M1 - cell;
-            while (getData().graph_resources.nodes[getData().graph_resources.put_mode].size() > parent_idx + 1) {
-                getData().graph_resources.nodes[getData().graph_resources.put_mode].pop_back();
+            getData().graph_resources.nodes[getData().graph_resources.branch][parent_idx].next_policy = HW2_M1 - cell;
+            while (getData().graph_resources.nodes[getData().graph_resources.branch].size() > parent_idx + 1) {
+                getData().graph_resources.nodes[getData().graph_resources.branch].pop_back();
             }
         }
         Flip flip;
@@ -766,12 +766,12 @@ private:
             getData().history_elem.board.pass();
             getData().history_elem.player ^= 1;
         }
-        getData().graph_resources.nodes[getData().graph_resources.put_mode].emplace_back(getData().history_elem);
+        getData().graph_resources.nodes[getData().graph_resources.branch].emplace_back(getData().history_elem);
         getData().graph_resources.n_discs++;
         if (getData().history_elem.board.is_end()){
             int sgn = getData().history_elem.player == 0 ? 1 : -1;
-            getData().graph_resources.nodes[getData().graph_resources.put_mode].back().v = sgn * getData().history_elem.board.score_player();
-            getData().graph_resources.nodes[getData().graph_resources.put_mode].back().level = N_LEVEL - 1;
+            getData().graph_resources.nodes[getData().graph_resources.branch].back().v = sgn * getData().history_elem.board.score_player();
+            getData().graph_resources.nodes[getData().graph_resources.branch].back().level = N_LEVEL - 1;
         }
         reset_hint();
         reset_umigame();
@@ -785,14 +785,14 @@ private:
                 int y = cell / HW;
                 Rect cell_rect(BOARD_SX + x * BOARD_CELL_SIZE, BOARD_SY + y * BOARD_CELL_SIZE, BOARD_CELL_SIZE, BOARD_CELL_SIZE);
                 if (cell_rect.leftClicked()) {
-                    if (getData().graph_resources.put_mode == GRAPH_MODE_NORMAL) {
+                    if (getData().graph_resources.branch == GRAPH_MODE_NORMAL) {
                         int parent_idx = getData().graph_resources.node_find(GRAPH_MODE_NORMAL, getData().history_elem.board.n_discs());
                         if (parent_idx != -1) {
                             bool go_to_inspection_mode =
                                 getData().history_elem.board.n_discs() != getData().graph_resources.nodes[GRAPH_MODE_NORMAL][getData().graph_resources.nodes[GRAPH_MODE_NORMAL].size() - 1].board.n_discs() &&
                                 HW2_M1 - cell != getData().graph_resources.nodes[GRAPH_MODE_NORMAL][parent_idx].next_policy;
                             if (go_to_inspection_mode) {
-                                getData().graph_resources.put_mode = GRAPH_MODE_INSPECT;
+                                getData().graph_resources.branch = GRAPH_MODE_INSPECT;
                             }
                         }
                     }
@@ -821,8 +821,8 @@ private:
                     if (1 & (legal >> search_result.policy)) {
                         int player_bef = getData().history_elem.player;
                         int sgn = getData().history_elem.player == 0 ? 1 : -1;
-                        getData().graph_resources.nodes[getData().graph_resources.put_mode].back().v = sgn * search_result.value;
-                        getData().graph_resources.nodes[getData().graph_resources.put_mode].back().level = getData().menu_elements.level;
+                        getData().graph_resources.nodes[getData().graph_resources.branch].back().v = sgn * search_result.value;
+                        getData().graph_resources.nodes[getData().graph_resources.branch].back().level = getData().menu_elements.level;
                         move_processing(HW2_M1 - search_result.policy);
                         if (getData().history_elem.player == player_bef && (getData().menu_elements.ai_put_black ^ getData().menu_elements.ai_put_white) && getData().menu_elements.pause_when_pass && !getData().history_elem.board.is_end())
                             pausing_in_pass = true;
@@ -837,12 +837,12 @@ private:
         std::string new_opening = opening.get(getData().history_elem.board, getData().history_elem.player ^ 1);
         if (new_opening.size() && getData().history_elem.opening_name != new_opening) {
             getData().history_elem.opening_name = new_opening;
-            int node_idx = getData().graph_resources.node_find(getData().graph_resources.put_mode, getData().graph_resources.n_discs);
+            int node_idx = getData().graph_resources.node_find(getData().graph_resources.branch, getData().graph_resources.n_discs);
             if (node_idx == -1) {
                 std::cerr << "history vector element not found 2" << std::endl;
                 return;
             }
-            getData().graph_resources.nodes[getData().graph_resources.put_mode][node_idx].opening_name = new_opening;
+            getData().graph_resources.nodes[getData().graph_resources.branch][node_idx].opening_name = new_opening;
         }
     }
 
@@ -1114,11 +1114,11 @@ private:
             sort(hint_infos.begin(), hint_infos.end(), compare_hint_info);
             if (hint_infos.size()) {
                 int sgn = getData().history_elem.player == 0 ? 1 : -1;
-                int node_idx = getData().graph_resources.node_find(getData().graph_resources.put_mode, getData().graph_resources.n_discs);
+                int node_idx = getData().graph_resources.node_find(getData().graph_resources.branch, getData().graph_resources.n_discs);
                 if (node_idx != -1) {
-                    if (getData().graph_resources.nodes[getData().graph_resources.put_mode][node_idx].level < hint_infos[0].type) {
-                        getData().graph_resources.nodes[getData().graph_resources.put_mode][node_idx].v = sgn * (int)round(hint_infos[0].value);
-                        getData().graph_resources.nodes[getData().graph_resources.put_mode][node_idx].level = hint_infos[0].type;
+                    if (getData().graph_resources.nodes[getData().graph_resources.branch][node_idx].level < hint_infos[0].type) {
+                        getData().graph_resources.nodes[getData().graph_resources.branch][node_idx].v = sgn * (int)round(hint_infos[0].value);
+                        getData().graph_resources.nodes[getData().graph_resources.branch][node_idx].level = hint_infos[0].type;
                     }
                 }
             }
@@ -1338,7 +1338,7 @@ private:
     void init_analyze() {
         ai_status.analyze_task_stack.clear();
         int idx = 0;
-        for (History_elem& node : getData().graph_resources.nodes[getData().graph_resources.put_mode]) {
+        for (History_elem& node : getData().graph_resources.nodes[getData().graph_resources.branch]) {
             Analyze_info analyze_info;
             analyze_info.idx = idx++;
             analyze_info.sgn = node.player ? -1 : 1;
@@ -1354,8 +1354,8 @@ private:
         if (!changing_scene) {
             if (ai_status.analyze_task_stack.size() == 0) {
                 ai_status.analyzing = false;
-                getData().history_elem = getData().graph_resources.nodes[getData().graph_resources.put_mode].back();
-                getData().graph_resources.n_discs = getData().graph_resources.nodes[getData().graph_resources.put_mode].back().board.n_discs();
+                getData().history_elem = getData().graph_resources.nodes[getData().graph_resources.branch].back();
+                getData().graph_resources.n_discs = getData().graph_resources.nodes[getData().graph_resources.branch].back().board.n_discs();
                 return;
             }
             std::pair<Analyze_info, std::function<Search_result()>> task = ai_status.analyze_task_stack.back();
@@ -1377,8 +1377,8 @@ private:
                 if (ai_status.analyze_future[i].wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                     Search_result search_result = ai_status.analyze_future[i].get();
                     int value = ai_status.analyze_sgn[i] * search_result.value;
-                    getData().graph_resources.nodes[getData().graph_resources.put_mode][i].v = value;
-                    getData().graph_resources.nodes[getData().graph_resources.put_mode][i].level = getData().menu_elements.level;
+                    getData().graph_resources.nodes[getData().graph_resources.branch][i].v = value;
+                    getData().graph_resources.nodes[getData().graph_resources.branch][i].level = getData().menu_elements.level;
                     task_finished = true;
                 }
             }
@@ -1391,7 +1391,7 @@ private:
     void copy_transcript() {
         std::string transcript;
         int inspect_switch_n_discs = INF;
-        if (getData().graph_resources.put_mode == 1) {
+        if (getData().graph_resources.branch == 1) {
             if (getData().graph_resources.nodes[GRAPH_MODE_INSPECT].size()) {
                 inspect_switch_n_discs = getData().graph_resources.nodes[GRAPH_MODE_INSPECT][0].board.n_discs();
             }
@@ -1429,7 +1429,7 @@ private:
         need_start_game_button =
             ((getData().history_elem.player == BLACK && getData().menu_elements.ai_put_black) ||
             (getData().history_elem.player == WHITE && getData().menu_elements.ai_put_white)) &&
-            getData().history_elem.board.n_discs() == getData().graph_resources.nodes[getData().graph_resources.put_mode].back().board.n_discs() &&
+            getData().history_elem.board.n_discs() == getData().graph_resources.nodes[getData().graph_resources.branch].back().board.n_discs() &&
             !getData().history_elem.board.is_end();
     }
 
@@ -1624,13 +1624,13 @@ private:
         }
         getData().history_elem.opening_name = opening.get(getData().history_elem.board, getData().history_elem.player ^ 1);
         if (getData().history_elem.opening_name.size() == 0) {
-            int now_node_idx = getData().graph_resources.node_find(getData().graph_resources.put_mode, getData().history_elem.board.n_discs());
+            int now_node_idx = getData().graph_resources.node_find(getData().graph_resources.branch, getData().history_elem.board.n_discs());
             if (now_node_idx == -1) {
                 std::cerr << "history vector element not found" << std::endl;
             }
             else {
                 now_node_idx = std::max(0, now_node_idx - 1);
-                getData().history_elem.opening_name = getData().graph_resources.nodes[getData().graph_resources.put_mode][now_node_idx].opening_name;
+                getData().history_elem.opening_name = getData().graph_resources.nodes[getData().graph_resources.branch][now_node_idx].opening_name;
             }
         }
     }

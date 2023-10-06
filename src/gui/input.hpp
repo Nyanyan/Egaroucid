@@ -85,7 +85,7 @@ public:
                 done = true;
             }
             if (import_from_position_button.clicked()) {
-                for (History_elem history_elem : getData().graph_resources.nodes[getData().graph_resources.put_mode]) {
+                for (History_elem history_elem : getData().graph_resources.nodes[getData().graph_resources.branch]) {
                     if (getData().history_elem.board.n_discs() >= history_elem.board.n_discs()) {
                         n_history.emplace_back(history_elem);
                     }
@@ -104,20 +104,20 @@ public:
                     getData().game_information.init();
                 }
                 else {
-                    getData().graph_resources.nodes[getData().graph_resources.put_mode] = n_history;
+                    getData().graph_resources.nodes[getData().graph_resources.branch] = n_history;
                 }
                 std::string opening_name, n_opening_name;
-                for (int i = 0; i < (int)getData().graph_resources.nodes[getData().graph_resources.put_mode].size(); ++i) {
+                for (int i = 0; i < (int)getData().graph_resources.nodes[getData().graph_resources.branch].size(); ++i) {
                     n_opening_name.clear();
-                    n_opening_name = opening.get(getData().graph_resources.nodes[getData().graph_resources.put_mode][i].board, getData().graph_resources.nodes[getData().graph_resources.put_mode][i].player ^ 1);
+                    n_opening_name = opening.get(getData().graph_resources.nodes[getData().graph_resources.branch][i].board, getData().graph_resources.nodes[getData().graph_resources.branch][i].player ^ 1);
                     if (n_opening_name.size()) {
                         opening_name = n_opening_name;
                     }
-                    getData().graph_resources.nodes[getData().graph_resources.put_mode][i].opening_name = opening_name;
+                    getData().graph_resources.nodes[getData().graph_resources.branch][i].opening_name = opening_name;
                 }
-                getData().graph_resources.n_discs = getData().graph_resources.nodes[getData().graph_resources.put_mode].back().board.n_discs();
+                getData().graph_resources.n_discs = getData().graph_resources.nodes[getData().graph_resources.branch].back().board.n_discs();
                 getData().graph_resources.need_init = false;
-                getData().history_elem = getData().graph_resources.nodes[getData().graph_resources.put_mode].back();
+                getData().history_elem = getData().graph_resources.nodes[getData().graph_resources.branch].back();
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
             else {
@@ -402,10 +402,10 @@ public:
             history_elem.level = -1;
             getData().history_elem = history_elem;
             int n_discs = history_elem.board.n_discs();
-            int insert_place = (int)getData().graph_resources.nodes[getData().graph_resources.put_mode].size();
+            int insert_place = (int)getData().graph_resources.nodes[getData().graph_resources.branch].size();
             int replace_place = -1;
-            for (int i = 0; i < (int)getData().graph_resources.nodes[getData().graph_resources.put_mode].size(); ++i) {
-                int node_n_discs = getData().graph_resources.nodes[getData().graph_resources.put_mode][i].board.n_discs();
+            for (int i = 0; i < (int)getData().graph_resources.nodes[getData().graph_resources.branch].size(); ++i) {
+                int node_n_discs = getData().graph_resources.nodes[getData().graph_resources.branch][i].board.n_discs();
                 if (node_n_discs == n_discs) {
                     replace_place = i;
                     insert_place = -1;
@@ -418,15 +418,15 @@ public:
             }
             if (replace_place != -1) {
                 std::cerr << "replace" << std::endl;
-                getData().graph_resources.nodes[getData().graph_resources.put_mode][replace_place] = history_elem;
+                getData().graph_resources.nodes[getData().graph_resources.branch][replace_place] = history_elem;
             }
             else {
                 std::cerr << "insert" << std::endl;
-                getData().graph_resources.nodes[getData().graph_resources.put_mode].insert(getData().graph_resources.nodes[getData().graph_resources.put_mode].begin() + insert_place, history_elem);
+                getData().graph_resources.nodes[getData().graph_resources.branch].insert(getData().graph_resources.nodes[getData().graph_resources.branch].begin() + insert_place, history_elem);
             }
             getData().graph_resources.n_discs = n_discs;
             getData().graph_resources.need_init = false;
-            getData().history_elem = getData().graph_resources.nodes[getData().graph_resources.put_mode].back();
+            getData().history_elem = getData().graph_resources.nodes[getData().graph_resources.branch].back();
             changeScene(U"Main_scene", SCENE_FADE_TIME);
         }
     }

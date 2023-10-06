@@ -494,7 +494,7 @@ struct Graph_resources {
     std::vector<History_elem> nodes[2];
     int n_discs;
     int delta;
-    int put_mode;
+    int branch;
     bool need_init;
 
     Graph_resources() {
@@ -506,7 +506,7 @@ struct Graph_resources {
         nodes[1].clear();
         n_discs = 4;
         delta = 0;
-        put_mode = 0;
+        branch = 0;
         need_init = true;
     }
 

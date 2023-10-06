@@ -156,7 +156,7 @@ public:
         if (export_this_board_button.clicked()) {
             std::vector<History_elem> history;
             int inspect_switch_n_discs = INF;
-            if (getData().graph_resources.put_mode == 1) {
+            if (getData().graph_resources.branch == 1) {
                 if (getData().graph_resources.nodes[GRAPH_MODE_INSPECT].size()) {
                     inspect_switch_n_discs = getData().graph_resources.nodes[GRAPH_MODE_INSPECT][0].board.n_discs();
                 }
