@@ -384,13 +384,13 @@ inline void ybwc_get_end_tasks_negascout(Search *search, std::vector<std::future
             if (parallel_tasks[i].wait_for(std::chrono::seconds(0)) == std::future_status::ready){
                 got_task = parallel_tasks[i].get();
                 --(*running_count);
+                search->n_nodes += got_task.n_nodes;
                 if (*best_score < got_task.value){
                     *best_score = got_task.value;
                     *best_idx = i;
                 }
                 if (parallel_alphas[i] < got_task.value)
                     search_windows[i] = got_task.value;
-                search->n_nodes += got_task.n_nodes;
             }
         }
     }
@@ -405,20 +405,26 @@ inline void ybwc_get_end_tasks_negascout(Search *search, std::vector<std::future
     @param best_move            best move to store
     @param running_count        number of running tasks
 */
-inline void ybwc_wait_all_negascout(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, std::vector<int> &parallel_alphas, std::vector<int> &search_windows, int *running_count, int *best_score, int *best_idx){
+inline void ybwc_wait_all_negascout(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, std::vector<int> &parallel_alphas, std::vector<int> &search_windows, int *running_count, int *best_score, int *best_idx, int beta, bool *n_searching){
     ybwc_get_end_tasks_negascout(search, parallel_tasks, parallel_alphas, search_windows, running_count, best_score, best_idx);
+    if (beta <= *best_score)
+        *n_searching = false;
     Parallel_task got_task;
     for (int i = 0; i < (int)parallel_tasks.size(); ++i){
         if (parallel_tasks[i].valid()){
             got_task = parallel_tasks[i].get();
             --(*running_count);
-            if (*best_score < got_task.value){
-                *best_score = got_task.value;
-                *best_idx = i;
-            }
-            if (parallel_alphas[i] < got_task.value)
-                search_windows[i] = got_task.value;
             search->n_nodes += got_task.n_nodes;
+            if (*n_searching){
+                if (*best_score < got_task.value){
+                    *best_score = got_task.value;
+                    *best_idx = i;
+                    if (beta <= got_task.value)
+                        *n_searching = false;
+                }
+                if (parallel_alphas[i] < got_task.value)
+                    search_windows[i] = got_task.value;
+            }
         }
     }
 }
