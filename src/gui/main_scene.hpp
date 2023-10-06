@@ -452,16 +452,11 @@ private:
                     getData().history_elem = n_history_elem;
                     getData().graph_resources.n_discs = getData().history_elem.board.n_discs();
                     reset_hint();
-                    if (getData().graph_resources.branch == GRAPH_MODE_NORMAL && getData().graph_resources.nodes[GRAPH_MODE_NORMAL].size() == 1){
-                        break;
-                    }
                 }
-                if (((getData().menu_elements.ai_put_black && getData().history_elem.player == BLACK) || (getData().menu_elements.ai_put_white && getData().history_elem.player == WHITE)) && getData().graph_resources.branch == GRAPH_MODE_NORMAL){
-                    need_start_game_button = true;
-                }
+                need_start_game_button_calculation();
             }
             if (getData().menu_elements.save_this_branch) {
-                if (getData().graph_resources.branch == 1) {
+                if (getData().graph_resources.branch == GRAPH_MODE_INSPECT) {
                     std::vector<History_elem> new_branch;
                     int fork_start_idx = getData().graph_resources.node_find(0, getData().graph_resources.nodes[1].front().board.n_discs());
                     for (int i = 0; i < fork_start_idx; ++i) {
@@ -478,7 +473,20 @@ private:
                         getData().graph_resources.nodes[0].emplace_back(elem);
                     }
                     getData().graph_resources.branch = 0;
+                } else if (getData().graph_resources.branch == GRAPH_MODE_NORMAL){
+                    int n_discs_before = getData().history_elem.board.n_discs();
+                    while (getData().graph_resources.nodes[GRAPH_MODE_NORMAL].back().board.n_discs() > n_discs_before && getData().graph_resources.nodes[GRAPH_MODE_NORMAL].size() > 1) {
+                        getData().graph_resources.nodes[GRAPH_MODE_NORMAL].pop_back();
+                        History_elem n_history_elem = getData().history_elem;
+                        getData().graph_resources.nodes[GRAPH_MODE_NORMAL].back().next_policy = -1;
+                        n_history_elem = getData().graph_resources.nodes[GRAPH_MODE_NORMAL].back();
+                        n_history_elem.next_policy = -1;
+                        getData().history_elem = n_history_elem;
+                        getData().graph_resources.n_discs = getData().history_elem.board.n_discs();
+                        reset_hint();
+                    }
                 }
+                need_start_game_button_calculation();
             }
         }
         if (getData().menu_elements.convert_180) {
