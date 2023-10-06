@@ -506,7 +506,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
                 }
             }
             if (running_count){
-                ybwc_wait_all_negascout(search, parallel_tasks, parallel_alphas, additional_search_windows, &running_count, &g, &ybwc_idx, beta, &n_searching);
+                ybwc_wait_all_negascout(search, parallel_tasks, parallel_alphas, additional_search_windows, &running_count, &g, &ybwc_idx, beta, searching, &n_searching);
                 if (g != SCORE_UNDEFINED && v < g){
                     v = g;
                     best_move = move_list[parallel_idxes[ybwc_idx]].flip.pos;

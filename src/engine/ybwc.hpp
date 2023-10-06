@@ -320,7 +320,7 @@ inline void ybwc_wait_all_nws(Search *search, std::vector<std::future<Parallel_t
     *n_searching &= alpha >= (*v);
     Parallel_task got_task;
     for (std::future<Parallel_task> &task: parallel_tasks){
-        *n_searching &= (*searching) & global_searching;
+        *n_searching &= (*searching);
         if (task.valid()){
             got_task = task.get();
             --(*running_count);
@@ -405,12 +405,13 @@ inline void ybwc_get_end_tasks_negascout(Search *search, std::vector<std::future
     @param best_move            best move to store
     @param running_count        number of running tasks
 */
-inline void ybwc_wait_all_negascout(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, std::vector<int> &parallel_alphas, std::vector<int> &search_windows, int *running_count, int *best_score, int *best_idx, int beta, bool *n_searching){
+inline void ybwc_wait_all_negascout(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, std::vector<int> &parallel_alphas, std::vector<int> &search_windows, int *running_count, int *best_score, int *best_idx, int beta, const bool *searching, bool *n_searching){
     ybwc_get_end_tasks_negascout(search, parallel_tasks, parallel_alphas, search_windows, running_count, best_score, best_idx);
     if (beta <= *best_score)
         *n_searching = false;
     Parallel_task got_task;
     for (int i = 0; i < (int)parallel_tasks.size(); ++i){
+        *n_searching &= (*searching);
         if (parallel_tasks[i].valid()){
             got_task = parallel_tasks[i].get();
             --(*running_count);
