@@ -382,6 +382,9 @@ void check_command(Board_info *board, State *state, Options *options){
         case CMD_ID_ANALYZE:
             analyze(board, options, state);
             break;
+        case CMD_ID_CLEARCACHE:
+            transposition_table.init();
+            break;
         default:
             break;
     }

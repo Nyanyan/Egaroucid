@@ -104,6 +104,9 @@ for num in range(max_num):
         wdl_idx = 0 if o.n_stones[player] > o.n_stones[1 - player] else 1 if o.n_stones[player] < o.n_stones[1 - player] else 2
         results[wdl_idx][player] += 1
         print('\r', num, max_num, ' ', create_res_str(results), end='          ')
+        for i in range(2):
+            egaroucids[i].stdin.write('clearcache\n'.encode('utf-8'))
+            egaroucids[i].stdin.flush()
 
 for i in range(2):
     egaroucids[i].stdin.write('quit\n'.encode('utf-8'))
