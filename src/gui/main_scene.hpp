@@ -435,37 +435,29 @@ private:
                 getData().graph_resources.delta = 1;
             }
             if (getData().menu_elements.undo || (KeyBackspace.down() && getData().book_information.changing == BOOK_CHANGE_NO_CELL)) {
-                bool player_ignore = 
-                    (getData().menu_elements.ai_put_black && getData().history_elem.player == BLACK) || 
-                    (getData().menu_elements.ai_put_white && getData().history_elem.player == WHITE);
-                if (!player_ignore){
-                    int before_history_elem_n_discs = getData().history_elem.board.n_discs();
-                    int before_player = -1;
-                    if (getData().menu_elements.ai_put_black)
-                        before_player = WHITE;
-                    else if (getData().menu_elements.ai_put_white)
-                        before_player = BLACK;
-                    if (getData().graph_resources.branch != 0 || getData().graph_resources.nodes[0].size() > 1) {
-                        while (getData().graph_resources.nodes[getData().graph_resources.branch].back().board.n_discs() >= before_history_elem_n_discs || (before_player != -1 && before_player != getData().history_elem.player)) {
-                            getData().graph_resources.nodes[getData().graph_resources.branch].pop_back();
-                            History_elem n_history_elem = getData().history_elem;
-                            if (getData().graph_resources.branch == 1 && getData().graph_resources.nodes[1].size() == 0){
-                                getData().graph_resources.branch = 0;
-                                getData().graph_resources.nodes[0][getData().graph_resources.node_find(0, getData().history_elem.board.n_discs())].next_policy = -1;
-                                n_history_elem = getData().graph_resources.nodes[0][getData().graph_resources.node_find(0, getData().history_elem.board.n_discs())];
-                            } else {
-                                getData().graph_resources.nodes[getData().graph_resources.branch].back().next_policy = -1;
-                                n_history_elem = getData().graph_resources.nodes[getData().graph_resources.branch].back();
-                            }
-                            n_history_elem.next_policy = -1;
-                            getData().history_elem = n_history_elem;
-                            getData().graph_resources.n_discs = getData().history_elem.board.n_discs();
-                            reset_hint();
-                            if (getData().graph_resources.branch == 0 && getData().graph_resources.nodes[0].size() <= 1) {
-                                break;
-                            }
-                        }
+                int n_discs_before = getData().history_elem.board.n_discs();
+                while (getData().graph_resources.nodes[getData().graph_resources.branch].back().board.n_discs() >= n_discs_before && 
+                    ((getData().graph_resources.branch == GRAPH_MODE_NORMAL && getData().graph_resources.nodes[GRAPH_MODE_NORMAL].size() > 1) || (getData().graph_resources.branch == GRAPH_MODE_INSPECT && getData().graph_resources.nodes[GRAPH_MODE_INSPECT].size() > 0))) {
+                    getData().graph_resources.nodes[getData().graph_resources.branch].pop_back();
+                    History_elem n_history_elem = getData().history_elem;
+                    if (getData().graph_resources.branch == GRAPH_MODE_INSPECT && getData().graph_resources.nodes[GRAPH_MODE_INSPECT].size() == 0){
+                        getData().graph_resources.branch = GRAPH_MODE_NORMAL;
+                        getData().graph_resources.nodes[GRAPH_MODE_NORMAL][getData().graph_resources.node_find(0, getData().history_elem.board.n_discs())].next_policy = -1;
+                        n_history_elem = getData().graph_resources.nodes[0][getData().graph_resources.node_find(0, getData().history_elem.board.n_discs())];
+                    } else {
+                        getData().graph_resources.nodes[getData().graph_resources.branch].back().next_policy = -1;
+                        n_history_elem = getData().graph_resources.nodes[getData().graph_resources.branch].back();
                     }
+                    n_history_elem.next_policy = -1;
+                    getData().history_elem = n_history_elem;
+                    getData().graph_resources.n_discs = getData().history_elem.board.n_discs();
+                    reset_hint();
+                    if (getData().graph_resources.branch == GRAPH_MODE_NORMAL && getData().graph_resources.nodes[GRAPH_MODE_NORMAL].size() == 1){
+                        break;
+                    }
+                }
+                if (((getData().menu_elements.ai_put_black && getData().history_elem.player == BLACK) || (getData().menu_elements.ai_put_white && getData().history_elem.player == WHITE)) && getData().graph_resources.branch == GRAPH_MODE_NORMAL){
+                    need_start_game_button = true;
                 }
             }
             if (getData().menu_elements.save_this_branch) {
