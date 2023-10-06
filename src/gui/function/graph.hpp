@@ -57,11 +57,13 @@ public:
 		bool fix_resolution_flag = false;
 		if (show_graph) {
 			calc_range(nodes1, nodes2);
-			if (y_max - y_min > 80) {
+			if (y_max - y_min > 80) { // range is too wide
 				fix_resolution_flag = true;
 				resolution *= 2;
 				y_min -= (y_min + HW2) % resolution;
 				y_max += (resolution - (y_max + HW2) % resolution) % resolution;
+				dy = (double)size_y / (y_max - y_min);
+				dx = (double)size_x / 60;
 			}
 		}
 		else {
