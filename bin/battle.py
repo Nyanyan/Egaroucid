@@ -10,12 +10,12 @@ N_SET_GAMES = 100
 
 # name, cmd, cacheclear?
 player_info = [
-    ['beta ', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -quiet -nobook -t 1', True],
-    ['6.4.0', 'versions/Egaroucid_for_Console_6_4_0_Windows_x64_SIMD/Egaroucid_for_Console_6_4_0_x64_SIMD.exe -quiet -nobook -t 1', False],
-    ['6.3.0', 'versions/Egaroucid_for_Console_6_3_0_Windows_x64_SIMD/Egaroucid_for_Console_6_3_0_x64_SIMD.exe -quiet -nobook -t 1', False],
-    ['6.2.0', 'versions/Egaroucid_for_Console_6_2_0_Windows_x64_SIMD/Egaroucid_for_Console.exe -quiet -nobook -t 1', False],
-    ['6.1.0', 'versions/Egaroucid_for_Console_6_1_0_Windows_x64_SIMD/Egaroucid_for_Console.exe -quiet -nobook -t 1', False],
-    ['Edax ', 'versions/edax_4_4/edax-4.4 -q -cpu', False],
+    ['beta ', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -quiet -nobook', True],
+    ['6.4.0', 'versions/Egaroucid_for_Console_6_4_0_Windows_x64_SIMD/Egaroucid_for_Console_6_4_0_x64_SIMD.exe -quiet -nobook', False],
+    ['6.3.0', 'versions/Egaroucid_for_Console_6_3_0_Windows_x64_SIMD/Egaroucid_for_Console_6_3_0_x64_SIMD.exe -quiet -nobook', False],
+    ['6.2.0', 'versions/Egaroucid_for_Console_6_2_0_Windows_x64_SIMD/Egaroucid_for_Console.exe -quiet -nobook', False],
+    ['6.1.0', 'versions/Egaroucid_for_Console_6_1_0_Windows_x64_SIMD/Egaroucid_for_Console.exe -quiet -nobook', False],
+    ['Edax ', 'versions/edax_4_4/edax-4.4 -q', False],
 ]
 
 NAME_IDX = 0
@@ -43,7 +43,9 @@ with open('problem/xot_small_shuffled.txt', 'r') as f:
 def play_battle(p0_idx, p1_idx, opening_idx):
     player_idxes = [p0_idx, p1_idx]
     opening = openings[opening_idx]
-    for player in range(2): # which plays black. p0 plays `player`, p1 plays `1 - player`
+    shuffled_range2 = [0, 1]
+    shuffle(shuffled_range2)
+    for player in shuffled_range2: # which plays black. p0 plays `player`, p1 plays `1 - player`
         record = ''
         o = othello()
         # play opening
@@ -112,14 +114,14 @@ def play_battle(p0_idx, p1_idx, opening_idx):
             players[p0_idx][RESULT_IDX][p1_idx][1] += 1
             players[p1_idx][RESULT_IDX][p0_idx][1] += 1
         
-        for pidx in [p0_idx, p1_idx]:
-            if player_info[pidx][2]:
-                players[pidx][SUBPROCESS_IDX].stdin.write('clearcache\n'.encode('utf-8'))
-                players[pidx][SUBPROCESS_IDX].stdin.flush()
-            else:
-                players[pidx][SUBPROCESS_IDX].kill()
-                cmd_with_level = player_info[pidx][1] + ' -l ' + str(LEVEL)
-                players[pidx][SUBPROCESS_IDX] = subprocess.Popen(cmd_with_level.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        #for pidx in [p0_idx, p1_idx]:
+        #    if player_info[pidx][2]:
+        #        players[pidx][SUBPROCESS_IDX].stdin.write('clearcache\n'.encode('utf-8'))
+        #        players[pidx][SUBPROCESS_IDX].stdin.flush()
+        #    else:
+        #        players[pidx][SUBPROCESS_IDX].kill()
+        #        cmd_with_level = player_info[pidx][1] + ' -l ' + str(LEVEL)
+        #        players[pidx][SUBPROCESS_IDX] = subprocess.Popen(cmd_with_level.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
 
 
 def print_result():

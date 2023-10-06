@@ -12,12 +12,17 @@ n_games = int(sys.argv[2])
 
 
 file = None
+cmd = 'Egaroucid_for_console.exe -quiet -nobook -level ' + str(level)
 if len(sys.argv) == 4:
     file = sys.argv[3]
     print('egaroucid eval ', file)
-    egaroucid = subprocess.Popen(('Egaroucid_for_console.exe -eval ' + file + ' -quiet -nobook -level ' + str(level)).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-else:
-    egaroucid = subprocess.Popen(('Egaroucid_for_console.exe -quiet -nobook -level ' + str(level)).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    cmd += ' -eval ' + file
+
+#if level <= 2:
+#    cmd += ' -t 1'
+
+print(cmd)
+egaroucid = subprocess.Popen(cmd.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
 egaroucid_win = [0, 0]
 edax_win = [0, 0]
 draw = [0, 0]
@@ -29,10 +34,14 @@ max_num = min(len(tactic), n_games)
 smpl = range(len(tactic))
 print('play', max_num, 'games')
 
+edax = subprocess.Popen(('wEdax-x64-modern.exe -q -level ' + str(level)).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+
 for num in range(max_num):
     tactic_idx = smpl[num % len(tactic)]
-    for player in range(2):
-        edax = subprocess.Popen(('wEdax-x64-modern.exe -q -level ' + str(level)).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    shuffled_range2 = [0, 1]
+    shuffle(shuffled_range2)
+    for player in shuffled_range2:
+        #edax = subprocess.Popen(('wEdax-x64-modern.exe -q -level ' + str(level)).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         record = ''
         boards = []
         o = othello()
@@ -122,9 +131,9 @@ for num in range(max_num):
             #print(record)
         print('\r', num, max_num, ' ', egaroucid_win, draw, edax_win, sum(egaroucid_win), sum(edax_win), 
               (sum(egaroucid_win) + sum(draw) * 0.5) / max(1, sum(egaroucid_win) + sum(edax_win) + sum(draw)), end='                ')
-        egaroucid.stdin.write('clearcache\n'.encode('utf-8'))
-        egaroucid.stdin.flush()
-        edax.kill()
+        #egaroucid.stdin.write('clearcache\n'.encode('utf-8'))
+        #egaroucid.stdin.flush()
+        #edax.kill()
 
 egaroucid.stdin.write('quit\n'.encode('utf-8'))
 egaroucid.stdin.flush()
