@@ -1091,7 +1091,7 @@ private:
                 if (getData().menu_elements.show_last_move_change_view){
                     int sx = BOARD_SX + (HW_M1 - getData().history_elem.next_policy % HW) * BOARD_CELL_SIZE;
                     int sy = BOARD_SY + (HW_M1 - getData().history_elem.next_policy / HW) * BOARD_CELL_SIZE;
-                    Rect(sx, sy, BOARD_CELL_SIZE, BOARD_CELL_SIZE).drawFrame(8, 0, ColorF(getData().colors.yellow, 0.4));
+                    Rect(sx, sy, BOARD_CELL_SIZE, BOARD_CELL_SIZE).drawFrame(8, 0, ColorF(getData().colors.purple, 0.7));
                 } else {
                     int x = BOARD_SX + (HW_M1 - getData().history_elem.next_policy % HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
                     int y = BOARD_SY + (HW_M1 - getData().history_elem.next_policy / HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;

@@ -267,7 +267,7 @@ struct Colors {
     Color white{ Palette::White };
     Color dark_gray{ Color(51, 51, 51) };
     Color cyan{ Color(100, 255, 255) };
-    Color yellow{ Palette::Yellow };
+    Color purple{ Color(142, 68, 173) };
     Color red{ Palette::Red };
     Color light_cyan{ Palette::Lightcyan };
     Color chocolate{ Color(210, 105, 30) };
