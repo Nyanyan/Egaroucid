@@ -47,6 +47,7 @@ void solve_problems(std::string file, Options *options, State *state){
         #endif
         Search_result res = go_noprint(&board, options, state);
         print_search_result_body(res, options->level);
+        transposition_table.init();
         total.nodes += res.nodes;
         total.time += res.time;
     }
