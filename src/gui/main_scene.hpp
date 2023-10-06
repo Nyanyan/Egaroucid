@@ -1091,7 +1091,7 @@ private:
                 if (getData().menu_elements.show_last_move_change_view){
                     int sx = BOARD_SX + (HW_M1 - getData().history_elem.next_policy % HW) * BOARD_CELL_SIZE;
                     int sy = BOARD_SY + (HW_M1 - getData().history_elem.next_policy / HW) * BOARD_CELL_SIZE;
-                    Rect(sx, sy, BOARD_CELL_SIZE, BOARD_CELL_SIZE).drawFrame(8, 0, ColorF(Palette::Yellow, 0.4));
+                    Rect(sx, sy, BOARD_CELL_SIZE, BOARD_CELL_SIZE).drawFrame(8, 0, ColorF(getData().colors.yellow, 0.4));
                 } else {
                     int x = BOARD_SX + (HW_M1 - getData().history_elem.next_policy % HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
                     int y = BOARD_SY + (HW_M1 - getData().history_elem.next_policy / HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
@@ -1134,18 +1134,20 @@ private:
                 int sx = BOARD_SX + (hint_infos[i].cell % HW) * BOARD_CELL_SIZE;
                 int sy = BOARD_SY + (hint_infos[i].cell / HW) * BOARD_CELL_SIZE;
                 Color color = getData().colors.white;
+                Font font = getData().fonts.font;
                 if (hint_infos[i].value == hint_infos[0].value) {
                     color = getData().colors.cyan;
+                    font = getData().fonts.font_heavy;
                 }
-                getData().fonts.font_bold((int)round(hint_infos[i].value)).draw(17, sx + 2, sy, color);
+                font((int)round(hint_infos[i].value)).draw(18, sx + 2, sy, color);
                 if (hint_infos[i].type == HINT_TYPE_BOOK) {
-                    getData().fonts.font(U"book").draw(11, sx + 2, sy + 18, color);
+                    getData().fonts.font(U"book").draw(10, sx + 2, sy + 19, color);
                 }
                 else if (hint_infos[i].type > HINT_MAX_LEVEL) {
-                    getData().fonts.font(Format(hint_infos[i].type) + U"%").draw(11, sx + 2, sy + 18, color);
+                    getData().fonts.font(Format(hint_infos[i].type) + U"%").draw(10, sx + 2, sy + 19, color);
                 }
                 else {
-                    getData().fonts.font(U"Lv." + Format(hint_infos[i].type)).draw(11, sx + 2, sy + 18, color);
+                    getData().fonts.font(U"Lv." + Format(hint_infos[i].type)).draw(10, sx + 2, sy + 19, color);
                 }
                 res |= 1ULL << (HW2_M1 - hint_infos[i].cell);
             }
