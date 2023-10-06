@@ -348,6 +348,11 @@ bookに登録されている局面について、うみがめ数を計算して�
 <div class="centering_box">
     <img class="pic2" src="img/next_move.png">
 </div>
+なお、ここで「合法手への表示 > 直後の手 > 表示変更」を選択すると、紫の四角による表示に変更できます。
+
+<div class="centering_box">
+    <img class="pic2" src="img/next_move_changed.png">
+</div>
 
 ### 石への表示 > 直前の手
 
