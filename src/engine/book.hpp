@@ -1304,7 +1304,6 @@ class Book{
         void negamax_book(bool *stop){
             std::cerr << "negamaxing book..." << std::endl;
             std::vector<std::pair<Board, int>> root_boards;
-            Book_elem book_elem;
             uint64_t n_fixed = 0;
             bool looped = true;
             while (looped){
@@ -1315,14 +1314,13 @@ class Book{
                     root_board_n_discs = 0;
                     for (auto itr = book.begin(); itr != book.end(); ++itr){
                         if (itr->first.n_discs() >= root_board_n_discs && itr->second.moves.size()){
-                            book_elem = itr->second;
                             int max_value = -INF;
                             Board b;
                             b.player = itr->first.player;
                             b.opponent = itr->first.opponent;
                             Flip flip;
                             bool is_leaf;
-                            for (Book_value &elem: book_elem.moves){
+                            for (Book_value &elem: itr->second.moves){
                                 is_leaf = true;
                                 calc_flip(&flip, &b, elem.policy);
                                 b.move_board(&flip);
@@ -1343,7 +1341,7 @@ class Book{
                                 //if (is_leaf)
                                 //    max_value = std::max(max_value, elem.value);
                             }
-                            if (max_value != book_elem.value && max_value != -INF){
+                            if (max_value != itr->second.value && max_value != -INF){
                                 Board root_board;
                                 root_board.player = itr->first.player;
                                 root_board.opponent = itr->first.opponent;
