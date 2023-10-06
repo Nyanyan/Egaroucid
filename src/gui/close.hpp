@@ -42,7 +42,7 @@ void save_settings(Menu_elements menu_elements, Settings settings, Directories d
 		writer.writeln(menu_elements.book_acc_level);
         writer.writeln((int)menu_elements.pause_when_pass);
         writer.writeln(menu_elements.book_learn_error_sum);
-        writer.writeln((int)menu_elements.show_last_move_change_view);
+        writer.writeln((int)menu_elements.show_next_move_change_view);
     }
 }
 

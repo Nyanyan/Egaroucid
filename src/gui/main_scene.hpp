@@ -910,14 +910,14 @@ private:
         menu_e.push(side_menu);
         side_menu.init_check(language.get("display", "cell", "opening"), &menu_elements->show_opening_on_cell, menu_elements->show_opening_on_cell);
         menu_e.push(side_menu);
-        side_menu.init_check(language.get("display", "cell", "next_move"), &menu_elements->show_last_move, menu_elements->show_last_move);
-        side_side_menu.init_check(language.get("display", "cell", "next_move_change_view"), &menu_elements->show_last_move_change_view, menu_elements->show_last_move_change_view);
+        side_menu.init_check(language.get("display", "cell", "next_move"), &menu_elements->show_next_move, menu_elements->show_next_move);
+        side_side_menu.init_check(language.get("display", "cell", "next_move_change_view"), &menu_elements->show_next_move_change_view, menu_elements->show_next_move_change_view);
         side_menu.push(side_side_menu);
         menu_e.push(side_menu);
         title.push(menu_e);
 
         menu_e.init_button(language.get("display", "disc", "display_on_disc"), &menu_elements->dummy);
-        side_menu.init_check(language.get("display", "disc", "last_move"), &menu_elements->show_next_move, menu_elements->show_next_move);
+        side_menu.init_check(language.get("display", "disc", "last_move"), &menu_elements->show_last_move, menu_elements->show_last_move);
         menu_e.push(side_menu);
         side_menu.init_check(language.get("display", "disc", "stable"), &menu_elements->show_stable_discs, menu_elements->show_stable_discs);
         menu_e.push(side_menu);
@@ -1088,7 +1088,7 @@ private:
         if (0 <= getData().history_elem.next_policy && getData().history_elem.next_policy <= HW2) {
             uint64_t legal = getData().history_elem.board.get_legal();
             if (1 & (legal >> getData().history_elem.next_policy)) {
-                if (getData().menu_elements.show_last_move_change_view){
+                if (getData().menu_elements.show_next_move_change_view){
                     int sx = BOARD_SX + (HW_M1 - getData().history_elem.next_policy % HW) * BOARD_CELL_SIZE;
                     int sy = BOARD_SY + (HW_M1 - getData().history_elem.next_policy / HW) * BOARD_CELL_SIZE;
                     Rect(sx, sy, BOARD_CELL_SIZE, BOARD_CELL_SIZE).drawFrame(8, 0, ColorF(getData().colors.purple, 0.7));
