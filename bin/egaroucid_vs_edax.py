@@ -18,7 +18,6 @@ if len(sys.argv) == 4:
     egaroucid = subprocess.Popen(('Egaroucid_for_console.exe -eval ' + file + ' -quiet -nobook -level ' + str(level)).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
 else:
     egaroucid = subprocess.Popen(('Egaroucid_for_console.exe -quiet -nobook -level ' + str(level)).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-edax = subprocess.Popen(('wEdax-x64-modern.exe -q -level ' + str(level)).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 egaroucid_win = [0, 0]
 edax_win = [0, 0]
 draw = [0, 0]
@@ -33,6 +32,7 @@ print('play', max_num, 'games')
 for num in range(max_num):
     tactic_idx = smpl[num % len(tactic)]
     for player in range(2):
+        edax = subprocess.Popen(('wEdax-x64-modern.exe -q -level ' + str(level)).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         record = ''
         boards = []
         o = othello()
@@ -122,6 +122,9 @@ for num in range(max_num):
             #print(record)
         print('\r', num, max_num, ' ', egaroucid_win, draw, edax_win, sum(egaroucid_win), sum(edax_win), 
               (sum(egaroucid_win) + sum(draw) * 0.5) / max(1, sum(egaroucid_win) + sum(edax_win) + sum(draw)), end='                ')
+        egaroucid.stdin.write('clearcache\n'.encode('utf-8'))
+        egaroucid.stdin.flush()
+        edax.kill()
 
 egaroucid.stdin.write('quit\n'.encode('utf-8'))
 egaroucid.stdin.flush()
