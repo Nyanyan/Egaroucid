@@ -138,6 +138,8 @@
         // use fast join_h_line
         #define USE_FAST_JOIN_H_LINE true
     #endif
+
+    #define USE_TEST_FLIP_BEFORE_REDUCE_VFLIP !(_WIN64 || _WIN32)
 #else
     // NTZ
     #define USE_MINUS_NTZ false
