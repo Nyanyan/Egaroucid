@@ -39,7 +39,7 @@ class Flip{
     public:
         // original code from http://www.amy.hi-ho.ne.jp/okuhara/bitboard.htm
         // by Toshihiko Okuhara
-        static inline __m256i calc_flip(__m128i OP, const uint_fast8_t place) {
+        static inline __m256i vectorcall calc_flip(__m128i OP, const uint_fast8_t place) {
             __m256i  PP, OO, flip4, outflank, eraser, mask;
 
             PP = _mm256_broadcastq_epi64(OP);
@@ -69,7 +69,7 @@ class Flip{
             return flip4;
         }
 
-        static inline __m128i reduce_vflip(__m256i flip4) {
+        static inline __m128i vectorcall reduce_vflip(__m256i flip4) {
             __m128i flip2 = _mm_or_si128(_mm256_castsi256_si128(flip4), _mm256_extracti128_si256(flip4, 1));
             return _mm_or_si128(flip2, _mm_shuffle_epi32(flip2, 0x4e));	// SWAP64
         }

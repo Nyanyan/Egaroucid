@@ -13,8 +13,10 @@
 #include <iostream>
 #ifdef _MSC_VER
     #include <intrin.h>
+    #define	vectorcall	__vectorcall
 #else
     #include <x86intrin.h>
+    #define	vectorcall
 #endif
 #include "common.hpp"
 

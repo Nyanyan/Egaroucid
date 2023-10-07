@@ -107,12 +107,6 @@ inline int last1(Search *search, uint64_t player, int alpha, uint_fast8_t p0){
 #if USE_SIMD
 // vector otpimized version imported from Edax AVX, (C) 1998 - 2018 Richard Delorme, 2014 - 23 Toshihiko Okuhara
 
-#if defined(_MSC_VER) || defined(__clang__)
-#define	vectorcall	__vectorcall
-#else
-#define	vectorcall
-#endif
-
 #define	SWAP64	0x4e	// for _mm_shuffle_epi32
 #define	DUPHI	0xee
 
