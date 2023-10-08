@@ -23,7 +23,7 @@ constexpr Color graph_history_not_calculated_color = Color(200, 200, 200);
 constexpr Color graph_fork_not_calculated_color = Color(65, 65, 65);
 constexpr double graph_transparency = 1.0;
 
-constexpr Color color_75 = Color(190, 46, 221);
+constexpr Color color_80 = Color(190, 46, 221);
 constexpr Color color_88 = Color(116, 125, 140);
 constexpr Color color_93 = Color(247, 143, 179);
 constexpr Color color_98 = Color(227, 88, 72);
@@ -80,9 +80,9 @@ public:
 		rect_prob.draw(graph_color);
 		font(language.get("info", "probability")).draw(font_size, Arg::center(info_x + LEVEL_PROB_WIDTH / 2, info_y + LEVEL_INFO_HEIGHT / 2), level_prob_color);
 		info_x += LEVEL_PROB_WIDTH;
-		Rect rect_75{ info_x, info_y, LEVEL_INFO_WIDTH, LEVEL_INFO_HEIGHT };
-		rect_75.draw(color_75);
-		font(U"75%").draw(font_size, Arg::center(info_x + LEVEL_INFO_WIDTH / 2, info_y + LEVEL_INFO_HEIGHT / 2), level_info_color);
+		Rect rect_80{ info_x, info_y, LEVEL_INFO_WIDTH, LEVEL_INFO_HEIGHT };
+		rect_80.draw(color_80);
+		font(U"80%").draw(font_size, Arg::center(info_x + LEVEL_INFO_WIDTH / 2, info_y + LEVEL_INFO_HEIGHT / 2), level_info_color);
 		info_x += LEVEL_INFO_WIDTH;
 		Rect rect_88{ info_x, info_y, LEVEL_INFO_WIDTH, LEVEL_INFO_HEIGHT };
 		rect_88.draw(color_88);
@@ -115,8 +115,8 @@ public:
 			get_level(level, x, &is_mid_search, &depth, &mpc_level);
 			Color color = color_100;
 			int probability = SELECTIVITY_PERCENTAGE[mpc_level];
-			if (probability == 75) {
-				color = color_75;
+			if (probability == 80) {
+				color = color_80;
 			}
 			else if (probability == 88) {
 				color = color_88;
