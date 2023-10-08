@@ -23,8 +23,7 @@ void init_directories(Directories* directories) {
         directories->document_dir = FileSystem::GetFolderPath(SpecialFolder::Documents).narrow() + "Egaroucid/";
         directories->appdata_dir = FileSystem::GetFolderPath(SpecialFolder::LocalAppData).narrow() + "Egaroucid/";
     #endif
-    std::cerr << "document_dir " << directories->document_dir << std::endl;
-    std::cerr << "appdata_dir " << directories->appdata_dir << std::endl;
+    std::cerr << "document_dir " << directories->document_dir << " appdata_dir " << directories->appdata_dir << std::endl;
 
     // file directories
     directories->eval_file = "resources/eval.egev";
