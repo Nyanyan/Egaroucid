@@ -23,12 +23,14 @@ constexpr Color graph_history_not_calculated_color = Color(200, 200, 200);
 constexpr Color graph_fork_not_calculated_color = Color(65, 65, 65);
 constexpr double graph_transparency = 1.0;
 
-constexpr Color color_80 = Color(190, 46, 221);
-constexpr Color color_88 = Color(116, 125, 140);
-constexpr Color color_93 = Color(247, 143, 179);
-constexpr Color color_98 = Color(227, 88, 72);
-constexpr Color color_99 = Color(240, 135, 20);
-constexpr Color color_100 = Color(51, 161, 255);
+constexpr Color color_selectivity[N_SELECTIVITY_LEVEL] = {
+	Color(126, 87, 194), 
+	Color(255, 167, 38), 
+	Color(0, 137, 123), 
+	Color(239, 108, 0), 
+	Color(40, 53, 147), 
+	Color(38, 198, 218)
+};
 constexpr Color midsearch_color = Color(51, 51, 51);
 constexpr Color endsearch_color = Palette::White;
 constexpr Color level_info_color = Palette::White;
@@ -80,29 +82,12 @@ public:
 		rect_prob.draw(graph_color);
 		font(language.get("info", "probability")).draw(font_size, Arg::center(info_x + LEVEL_PROB_WIDTH / 2, info_y + LEVEL_INFO_HEIGHT / 2), level_prob_color);
 		info_x += LEVEL_PROB_WIDTH;
-		Rect rect_80{ info_x, info_y, LEVEL_INFO_WIDTH, LEVEL_INFO_HEIGHT };
-		rect_80.draw(color_80);
-		font(U"80%").draw(font_size, Arg::center(info_x + LEVEL_INFO_WIDTH / 2, info_y + LEVEL_INFO_HEIGHT / 2), level_info_color);
-		info_x += LEVEL_INFO_WIDTH;
-		Rect rect_88{ info_x, info_y, LEVEL_INFO_WIDTH, LEVEL_INFO_HEIGHT };
-		rect_88.draw(color_88);
-		font(U"88%").draw(font_size, Arg::center(info_x + LEVEL_INFO_WIDTH / 2, info_y + LEVEL_INFO_HEIGHT / 2), level_info_color);
-		info_x += LEVEL_INFO_WIDTH;
-		Rect rect_93{ info_x, info_y, LEVEL_INFO_WIDTH, LEVEL_INFO_HEIGHT };
-		rect_93.draw(color_93);
-		font(U"93%").draw(font_size, Arg::center(info_x + LEVEL_INFO_WIDTH / 2, info_y + LEVEL_INFO_HEIGHT / 2), level_info_color);
-		info_x += LEVEL_INFO_WIDTH;
-		Rect rect_98{ info_x, info_y, LEVEL_INFO_WIDTH, LEVEL_INFO_HEIGHT };
-		rect_98.draw(color_98);
-		font(U"98%").draw(font_size, Arg::center(info_x + LEVEL_INFO_WIDTH / 2, info_y + LEVEL_INFO_HEIGHT / 2), level_info_color);
-		info_x += LEVEL_INFO_WIDTH;
-		Rect rect_99{ info_x, info_y, LEVEL_INFO_WIDTH, LEVEL_INFO_HEIGHT };
-		rect_99.draw(color_99);
-		font(U"99%").draw(font_size, Arg::center(info_x + LEVEL_INFO_WIDTH / 2, info_y + LEVEL_INFO_HEIGHT / 2), level_info_color);
-		info_x += LEVEL_INFO_WIDTH;
-		Rect rect_100{ info_x, info_y, LEVEL_INFO_WIDTH, LEVEL_INFO_HEIGHT };
-		rect_100.draw(color_100);
-		font(U"100%").draw(font_size, Arg::center(info_x + LEVEL_INFO_WIDTH / 2, info_y + LEVEL_INFO_HEIGHT / 2), level_info_color);
+		for (int i = 0; i < N_SELECTIVITY_LEVEL; ++i){
+			Rect rect_selectivity{ info_x, info_y, LEVEL_INFO_WIDTH, LEVEL_INFO_HEIGHT };
+			rect_selectivity.draw(color_selectivity[i]);
+			font(Format(SELECTIVITY_PERCENTAGE[i]) + U"%").draw(font_size, Arg::center(info_x + LEVEL_INFO_WIDTH / 2, info_y + LEVEL_INFO_HEIGHT / 2), level_info_color);
+			info_x += LEVEL_INFO_WIDTH;
+		}
 		bool is_mid_search;
 		int depth;
 		uint_fast8_t mpc_level;
@@ -113,23 +98,7 @@ public:
 			int x_coord2 = sx + dx * (x + 1);
 			Rect rect{ x_coord1, sy, x_coord2 - x_coord1, size_y };
 			get_level(level, x, &is_mid_search, &depth, &mpc_level);
-			Color color = color_100;
-			int probability = SELECTIVITY_PERCENTAGE[mpc_level];
-			if (probability == 80) {
-				color = color_80;
-			}
-			else if (probability == 88) {
-				color = color_88;
-			}
-			else if (probability == 93) {
-				color = color_93;
-			}
-			else if (probability == 98) {
-				color = color_98;
-			}
-			else if (probability == 99) {
-				color = color_99;
-			}
+			Color color = color_selectivity[mpc_level];
 			rect.draw(color);
 			if (!is_mid_search) {
 				if (first_endsearch_n_moves == -1) {
