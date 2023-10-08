@@ -45,7 +45,7 @@ for n_discs in range(61):
         x_depth1.append(depth1)
         y_depth2.append(depth2)
         s = 10.0 + 5.0 * (-1 / 1600 * ((n_discs - 40) ** 2) + 1)
-        e = 1.5 + 3.0 * (-1 / 1600 * ((n_discs - 40) ** 2) + 1)
+        e = 2.0 + 3.0 * (-1 / 1600 * ((n_discs - 40) ** 2) + 1)
         z_error.append(e + (s - e) * depth2 / 60)
         weight.append(0.001)
 
@@ -56,7 +56,7 @@ for n_discs in range(61):
         x_depth1.append(depth1)
         y_depth2.append(depth2)
         s = 8.0 + 2.0 * (-1 / 1600 * ((n_discs - 40) ** 2) + 1)
-        e = 2.5 + 2.0 * (-1 / 1600 * ((n_discs - 40) ** 2) + 1)
+        e = 3.0 + 2.0 * (-1 / 1600 * ((n_discs - 40) ** 2) + 1)
         z_error.append(e + (s - e) * depth2 / 60)
         weight.append(0.001)
 
