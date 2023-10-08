@@ -31,7 +31,7 @@
 #define probcut_d 0.8431454514755922
 #define probcut_e -3.013459627561517
 #define probcut_f 8.3298545018757
-#define probcut_g 2.539773029643781
+#define probcut_g 2.739773029643781
 
 #define probcut_end_a 1.908798448361043
 #define probcut_end_b 1.6468299594064413
