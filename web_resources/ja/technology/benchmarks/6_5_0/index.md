@@ -1,22 +1,22 @@
-# Egaroucid 6.4.0 Benchmarks
+# Egaroucid 6.5.0 ベンチマーク
 
 ## The FFO endgame test suite
 
-<a href="http://radagast.se/othello/ffotest.html" target="_blank" el=”noopener noreferrer”>The FFO endgame test suite</a> is a common benchmark for endgame searching. Computer completely solves each testcase, and find the best move. This benchmark evaluates the exact time for searching and the speed (NPS: Nodes Per Second).
+<a href="http://radagast.se/othello/ffotest.html" target="_blank" el=”noopener noreferrer”>The FFO endgame test suite</a>はオセロAIの終盤探索力の指標として広く使われるベンチマークです。各テストケースを完全読みし、最善手を計算します。探索時間と訪問ノード数を指標に性能を評価します。NPSはNodes Per Secondの略で、1秒あたりの訪問ノード数を表します。
 
-### Egaroucid for Console 6.4.0 Windows x64 SIMD
+### Egaroucid for Console 6.5.0 Windows x64 SIMD
 
 
-#### Core i9 13900K @ 32 threads
+#### Core i9 13900K @ 32並列
 
 <table>
 <tr>
-<th>No.</th>
-<th>Depth</th>
-<th>Best Move</th>
-<th>Score</th>
-<th>Time (sec)</th>
-<th>Nodes</th>
+<th>番号</th>
+<th>深さ</th>
+<th>最善手</th>
+<th>評価値</th>
+<th>時間(秒)</th>
+<th>ノード数</th>
 <th>NPS</th>
 </tr>
 <tr>
@@ -200,7 +200,7 @@
 <td>13217558</td>
 </tr>
 <tr>
-<td>All</td>
+<td>全体</td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
@@ -211,20 +211,21 @@
 </table>
 
 
-### Egaroucid for Console 6.4.0 Windows x64 Generic
 
-Without speedup by SIMD
+### Egaroucid for Console 6.5.0 Windows x64 Generic
 
-#### Core i9 13900K @ 32 threads
+SIMDによる高速化をしていないバージョンです。
+
+#### Core i9 13900K @ 32並列
 
 <table>
 <tr>
-<th>No.</th>
-<th>Depth</th>
-<th>Best Move</th>
-<th>Score</th>
-<th>Time (sec)</th>
-<th>Nodes</th>
+<th>番号</th>
+<th>深さ</th>
+<th>最善手</th>
+<th>評価値</th>
+<th>時間(秒)</th>
+<th>ノード数</th>
 <th>NPS</th>
 </tr>
 <tr>
@@ -408,7 +409,7 @@ Without speedup by SIMD
 <td>14339982</td>
 </tr>
 <tr>
-<td>All</td>
+<td>全体</td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
@@ -422,59 +423,65 @@ Without speedup by SIMD
 
 
 
-## Play against Edax 4.4
 
-<a href="https://github.com/abulmo/edax-reversi" target="_blank" el=”noopener noreferrer”>Edax 4.4</a> is one of the best Othello AI in the world.
 
-If I set the game from the very beginning, same line appears a lot. To avoid this, I set the game from many different near-draw lines.
 
-I used <a href="https://berg.earthlingz.de/xot/index.php" target="_blank" el=”noopener noreferrer”>XOT</a> for its testcases.
 
-No opening books used.
+## Edax 4.4との対戦
 
-If Egaroucid Win Ratio is over 0.5, then Egaroucid wins more than Edax do. "Black" and "White" means Egaroucid played black/white. In all conditions, Egaroucid is stronger than Edax.
+現状世界最強とも言われるオセロAI、<a href="https://github.com/abulmo/edax-reversi" target="_blank" el=”noopener noreferrer”>Edax 4.4</a>との対戦結果です。
+
+初手からの対戦では同じ進行ばかりになって評価関数の強さは計測できないので、初期局面から8手進めた互角に近いと言われる状態から打たせて勝敗を数えました。このとき、同じ進行に対して両者が必ず先手と後手の双方を1回ずつ持つようにしました。こうすることで、両者の強さが全く同じであれば勝率は50%となるはずです。
+
+テストには<a href="https://berg.earthlingz.de/xot/index.php" target="_blank" el=”noopener noreferrer”>XOT</a>に収録されている局面を使用しました。
+
+bookは双方未使用です。
+
+Egaroucid勝率が0.5を上回っていればEgaroucidがEdaxに勝ち越しています。また、カッコ内の数字はEgaroucidが黒番/白番のときのそれぞれの値です。全ての条件でEgaroucidが勝ち越しています。
+
+バージョン6.3.0までは引き分けを省いて(勝ち)/(勝ち+負け)で勝率を計算していましたが、一般的ではなかったので、バージョン6.4.0からは引き分けを0.5勝として(勝ち+0.5*引き分け)/(勝ち+引き分け+負け)で計算しました。
 
 <table>
 <tr>
-<th>Level</th>
-<th>Egaroucid win</th>
-<th>Draw</th>
-<th>Edax Win</th>
-<th>Egaroucid Win Ratio</th>
+<th>レベル</th>
+<th>Egaroucid勝ち</th>
+<th>引分</th>
+<th>Edax勝ち</th>
+<th>Egaroucid勝率</th>
 </tr>
 <tr>
 <td>1</td>
-<td>1246(Black: 602 White: 644)</td>
-<td>59(Black: 29 White: 30)</td>
-<td>695(Black: 369 White: 326)</td>
+<td>1246(黒: 602 白: 644)</td>
+<td>59(黒: 29 白: 30)</td>
+<td>695(黒: 369 白: 326)</td>
 <td>0.638</td>
 </tr>
 <tr>
 <td>5</td>
-<td>1152(Black: 586 White: 566)</td>
-<td>101(Black: 50 White: 51)</td>
-<td>747(Black: 364 White: 383)</td>
+<td>1152(黒: 586 白: 566)</td>
+<td>101(黒: 50 白: 51)</td>
+<td>747(黒: 364 白: 383)</td>
 <td>0.601</td>
 </tr>
 <tr>
 <td>10</td>
-<td>1062(Black: 623 White: 439)</td>
-<td>223(Black: 97 White: 126)</td>
-<td>715(Black: 280 White: 435)</td>
+<td>1062(黒: 623 白: 439)</td>
+<td>223(黒: 97 白: 126)</td>
+<td>715(黒: 280 白: 435)</td>
 <td>0.587</td>
 </tr>
 <tr>
 <td>15</td>
-<td>480(Black: 234 White: 246)</td>
-<td>159(Black: 74 White: 85)</td>
-<td>361(Black: 192 White: 169)</td>
+<td>480(黒: 234 白: 246)</td>
+<td>159(黒: 74 白: 85)</td>
+<td>361(黒: 192 白: 169)</td>
 <td>0.559</td>
 </tr>
 <tr>
 <td>21</td>
-<td>86(Black: 56 White: 30)</td>
-<td>52(Black: 25 White: 27)</td>
-<td>62(Black: 19 White: 43)</td>
+<td>86(黒: 56 白: 30)</td>
+<td>52(黒: 25 白: 27)</td>
+<td>62(黒: 19 白: 43)</td>
 <td>0.56</td>
 </tr>
 </table>

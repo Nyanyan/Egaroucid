@@ -4,7 +4,7 @@
 
 <a href="http://radagast.se/othello/ffotest.html" target="_blank" el=”noopener noreferrer”>The FFO endgame test suite</a>はオセロAIの終盤探索力の指標として広く使われるベンチマークです。各テストケースを完全読みし、最善手を計算します。探索時間と訪問ノード数を指標に性能を評価します。NPSはNodes Per Secondの略で、1秒あたりの訪問ノード数を表します。
 
-### Egaroucid for Console 6.3.0 Windows x64 SIMD
+### Egaroucid for Console 6.4.0 Windows x64 SIMD
 
 
 #### Core i9 13900K @ 32並列
@@ -211,7 +211,7 @@
 </table>
 
 
-### Egaroucid for Console 6.3.0 Windows x64 Generic
+### Egaroucid for Console 6.4.0 Windows x64 Generic
 
 SIMDによる高速化をしていないバージョンです。
 

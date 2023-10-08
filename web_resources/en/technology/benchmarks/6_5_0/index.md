@@ -1,10 +1,10 @@
-# Egaroucid 6.4.0 Benchmarks
+# Egaroucid 6.5.0 Benchmarks
 
 ## The FFO endgame test suite
 
 <a href="http://radagast.se/othello/ffotest.html" target="_blank" el=”noopener noreferrer”>The FFO endgame test suite</a> is a common benchmark for endgame searching. Computer completely solves each testcase, and find the best move. This benchmark evaluates the exact time for searching and the speed (NPS: Nodes Per Second).
 
-### Egaroucid for Console 6.4.0 Windows x64 SIMD
+### Egaroucid for Console 6.5.0 Windows x64 SIMD
 
 
 #### Core i9 13900K @ 32 threads
@@ -211,7 +211,7 @@
 </table>
 
 
-### Egaroucid for Console 6.4.0 Windows x64 Generic
+### Egaroucid for Console 6.5.0 Windows x64 Generic
 
 Without speedup by SIMD
 

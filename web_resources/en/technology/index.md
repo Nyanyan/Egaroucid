@@ -8,20 +8,17 @@ I used 2 benchmarks for evaluating Egaroucid. The first one is [The FFO endgame 
 
 ### The FFO endgame test suite
 
-終盤探索は、以下3つの指標で評価しています。
+The endgame search is evaluated by 3 features:
 
 <ul>
-    <li>計算時間</li>
-    <li>訪問ノード数</li>
-    <li>NPS (1秒あたりのノード訪問回数)</li>
+    <li>Search time</li>
+    <li>Number of nodes visited</li>
+    <li>NPS (Nodes Per Second)</li>
 </ul>
 
+The most important feature for users is the search time. This feature is shown as the actual time (second) to solve [The FFO endgame test suite](http://www.radagast.se/othello/ffotest.html) #40 to #59. This value is good if it decreases.
 
-ユーザにとって一番重要なのは計算時間です。決まったテストケースを処理するのにかかる時間を秒数で表します。ここでは[The FFO endgame test suite](http://www.radagast.se/othello/ffotest.html)の40から59番のテストケース(20から34手完全読み)にかかる時間を使いました。これは減ると嬉しい値です。
-
-計算時間を短くするには、まず(厳密に)無駄な探索を減らせば良いです。無駄な探索が多いと訪問ノード数(探索した盤面の数)が増えます。これも減ると嬉しい値です。
-
-計算時間を短くするためのもう一つの観点は、1秒あたりのノード訪問回数を上げることです。これはNodes Per Secondの頭文字を取ってNPSと言われます。これは上がると嬉しい値です。
+To shorten the search time, we can do two things: decrease the number of nodes and increase the number of nodes visited in a unit time.
 
 There are some graphs of results of The FFO endgame test suite on Core i9 13900K.
 
@@ -32,14 +29,11 @@ There are some graphs of results of The FFO endgame test suite on Core i9 13900K
 </div>
 
 
+### Battles with XOT
 
-### XOTによる対戦
+It is the best way to evaluate the strength of Othello AI that we have battles with some engines. The result of battles by each version of Egaroucid and [Edax 4.4](https://github.com/abulmo/edax-reversi/releases/tag/v4.4) is below.
 
-オセロAIの強さを評価するためには、対戦するのが一番でしょう。ここでは、各バージョンに[Edax 4.4](https://github.com/abulmo/edax-reversi/releases/tag/v4.4)を加え、総当たり戦をした結果を掲載します。
-
-対戦はレベル1(中盤1手読み、終盤2手完全読み)で行いました。
-
-対戦にはそれぞれXOTの進行を初期盤面として使い、各進行では先手後手それぞれ1回ずつ対戦させています。
+To avoid same lines, I used [XOT](https://berg.earthlingz.de/xot/aboutxot.php?lang=en) as the beginning board. Each battle is done in level 1 (lookahead depth is 1 for the midgame, 2 for the endgame).
 
 <table>
 <tr>
@@ -67,18 +61,21 @@ There are some graphs of results of The FFO endgame test suite on Core i9 13900K
 </tr>
 </table>
 
-対戦の詳細は[こちら](./battle.txt)
 
-### バージョンごとの詳細
+The further log is available [here](./battle.txt).
 
-各バージョンのベンチマークを公開します。上で載せなかった古いバージョンのベンチマークもあります。
+### Details
 
-こちらの詳細はバージョンごとに少し条件が違うものもありますので、詳細はそれぞれのページをご覧ください。
+There are detailed benchmarks for each version including older versions.
 
 <table>
 	<tr>
 		<th>Version</th>
 		<th>Date</th>
+	</tr>
+    <tr>
+		<td><a href="./benchmarks/6_5_0/">6.5.0</a></td>
+		<td>2023/10/XX</td>
 	</tr>
     <tr>
 		<td><a href="./benchmarks/6_4_0/">6.4.0</a></td>
@@ -125,6 +122,7 @@ There are some graphs of results of The FFO endgame test suite on Core i9 13900K
 		<td>2022/03/02</td>
 	</tr>
 </table>
+
 
 
 
