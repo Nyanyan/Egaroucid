@@ -62,7 +62,6 @@ Parallel_task ybwc_do_task_nws(uint64_t player, uint64_t opponent, int_fast8_t n
     search.mpc_level = mpc_level;
     search.n_nodes = 0ULL;
     search.use_multi_thread = depth > YBWC_MID_SPLIT_MIN_DEPTH;
-    search.stopped = false;
     calc_features(&search);
     Parallel_task task;
     task.value = -nega_alpha_ordering_nws(&search, alpha, depth, false, legal, is_end_search, searching);

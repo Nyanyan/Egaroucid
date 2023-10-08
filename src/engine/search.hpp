@@ -258,7 +258,6 @@ class Search{
         #if USE_SEARCH_STATISTICS
             uint64_t n_nodes_discs[HW2];
         #endif
-        bool stopped;
 
     public:
         /*

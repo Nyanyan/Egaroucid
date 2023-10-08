@@ -27,7 +27,7 @@ constexpr size_t TRANSPOSITION_TABLE_STACK_SIZE = hash_sizes[DEFAULT_HASH_LEVEL]
 #define N_TRANSPOSITION_MOVES 2
 
 // date manager
-#define MAX_DATE 253
+#define MAX_DATE 127
 #define INIT_DATE 1
 
 inline uint32_t get_level_read_common(uint8_t depth, uint8_t mpc_level){
@@ -275,13 +275,11 @@ class Transposition_table{
             @brief Update transposition table date
         */
         inline void update_date(){
-            global_searching = false;
-                ++date;
-                if (date > MAX_DATE){
-                    reset_date();
-                    date = INIT_DATE;
-                }
-            global_searching = true;
+            ++date;
+            if (date > MAX_DATE){
+                reset_date();
+                date = INIT_DATE;
+            }
         }
 
         /*

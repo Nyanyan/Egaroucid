@@ -40,10 +40,8 @@
     @return the value
 */
 inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, const bool *searching){
-    if (!global_searching || !(*searching)){
-        search->stopped = true;
+    if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
-    }
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
         ++search->n_nodes_discs[search->n_discs];
@@ -97,10 +95,8 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, c
         @return the value
     */
     int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped, const bool *searching){
-        if (!global_searching || !(*searching)){
-            search->stopped = true;
+        if (!global_searching || !(*searching))
             return SCORE_UNDEFINED;
-        }
         if (alpha + 1 == beta)
             return nega_alpha_nws(search, alpha, depth, skipped, searching);
         if (depth == 1)
@@ -161,10 +157,8 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, c
         @return the value
     */
     int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching){
-        if (!global_searching || !(*searching)){
-            search->stopped = true;
+        if (!global_searching || !(*searching))
             return SCORE_UNDEFINED;
-        }
         if (alpha + 1 == beta)
             return nega_alpha_ordering_nws(search, alpha, depth, skipped, legal, is_end_search, searching);
         if (is_end_search && depth <= MID_TO_END_DEPTH)
@@ -306,10 +300,8 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, c
     @return the value
 */
 int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching){
-    if (!global_searching || !(*searching)){
-        search->stopped = true;
+    if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
-    }
     if (alpha + 1 == beta)
         return nega_alpha_ordering_nws(search, alpha, depth, skipped, legal, is_end_search, searching);
     #if USE_NEGA_ALPHA_END
