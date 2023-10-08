@@ -40,29 +40,31 @@ To avoid same lines, I used [XOT](https://berg.earthlingz.de/xot/aboutxot.php?la
 <th>Name</th>
 <th>Winning Rate</th>
 <tr>
-<td>Edax</td>
-<td>0.3969</td>
-</tr>
-<tr>
-<td>6.1.0</td>
-<td>0.5713</td>
-</tr>
-<tr>
-<td>6.2.0</td>
-<td>0.4750</td>
-</tr>
-<tr>
-<td>6.3.0</td>
-<td>0.4750</td>
+<td>6.5.0</td>
+<td>0.6338</td>
 </tr>
 <tr>
 <td>6.4.0</td>
-<td>0.5819</td>
+<td>0.5306</td>
+</tr>
+<tr>
+<td>6.3.0</td>
+<td>0.4425</td>
+</tr>
+<tr>
+<td>6.1.0</td>
+<td>0.5450</td>
+</tr>
+<tr>
+<td>Edax</td>
+<td>0.3481</td>
 </tr>
 </table>
 
 
 The further log is available [here](./battle.txt).
+
+Egaroucid 6.2.0 is omitted because it has the same evaluation function as 6.3.0.
 
 ### Details
 
