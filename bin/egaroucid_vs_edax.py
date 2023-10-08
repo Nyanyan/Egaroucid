@@ -129,7 +129,7 @@ for num in range(max_num):
         else:
             edax_win[player] += 1
             #print(record)
-        print('\r', num, max_num, ' ', egaroucid_win, draw, edax_win, sum(egaroucid_win), sum(edax_win), 
+        print('\r', num, max_num, ' ', egaroucid_win, draw, edax_win, sum(egaroucid_win) + sum(draw) * 0.5, sum(edax_win) + sum(draw) * 0.5, 
               (sum(egaroucid_win) + sum(draw) * 0.5) / max(1, sum(egaroucid_win) + sum(edax_win) + sum(draw)), end='                ')
         #egaroucid.stdin.write('clearcache\n'.encode('utf-8'))
         #egaroucid.stdin.flush()
