@@ -39,7 +39,7 @@ std::string get_default_language(){
 }
 
 void init_default_settings(const Directories* directories, const Resources* resources, Settings* settings) {
-    std::cerr << "use default settings" << std::endl;
+    //std::cerr << "use default settings" << std::endl;
     settings->n_threads = std::min(32, (int)std::thread::hardware_concurrency());
     settings->auto_update_check = 1;
     settings->lang_name = get_default_language();
