@@ -312,8 +312,10 @@ int last4_nws(Search *search, int alpha) {
     @return the final score
 */
 int nega_alpha_end_fast_nws(Search *search, int alpha, bool skipped, const bool *searching) {
-    if (!global_searching || !(*searching))
+    if (!global_searching || !(*searching)){
+        search->stopped = true;
         return SCORE_UNDEFINED;
+    }
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
         ++search->n_nodes_discs[search->n_discs];
@@ -405,8 +407,10 @@ int nega_alpha_end_fast_nws(Search *search, int alpha, bool skipped, const bool 
     @return the final score
 */
 int nega_alpha_end_simple_nws(Search *search, int alpha, bool skipped, uint64_t legal, const bool *searching){
-    if (!global_searching || !(*searching))
+    if (!global_searching || !(*searching)){
+        search->stopped = true;
         return SCORE_UNDEFINED;
+    }
     if (search->n_discs >= HW2 - END_FAST_DEPTH)
         return nega_alpha_end_fast_nws(search, alpha, skipped, searching);
     ++search->n_nodes;
@@ -471,8 +475,10 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, bool skipped, uint64_t 
     @return the final score
 */
 int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, bool wish_fail_high, const bool *searching){
-    if (!global_searching || !(*searching))
+    if (!global_searching || !(*searching)){
+        search->stopped = true;
         return SCORE_UNDEFINED;
+    }
     if (search->n_discs >= HW2 - END_SIMPLE_DEPTH)
         return nega_alpha_end_simple_nws(search, alpha, skipped, legal, searching);
     ++search->n_nodes;

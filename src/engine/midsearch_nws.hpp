@@ -43,8 +43,10 @@ inline void ybwc_wait_all_nws(Search *search, std::vector<std::future<Parallel_t
     @return the value
 */
 inline int nega_alpha_eval1_nws(Search *search, int alpha, bool skipped, const bool *searching){
-    if (!global_searching || !(*searching))
+    if (!global_searching || !(*searching)){
+        search->stopped = true;
         return SCORE_UNDEFINED;
+    }
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
         ++search->n_nodes_discs[search->n_discs];
@@ -95,8 +97,10 @@ inline int nega_alpha_eval1_nws(Search *search, int alpha, bool skipped, const b
         @return the value
     */
     int nega_alpha_nws(Search *search, int alpha, int depth, bool skipped, const bool *searching){
-        if (!global_searching || !(*searching))
+        if (!global_searching || !(*searching)){
+            search->stopped = true;
             return SCORE_UNDEFINED;
+        }
         ++search->n_nodes;
         #if USE_SEARCH_STATISTICS
             ++search->n_nodes_discs[search->n_discs];
@@ -191,8 +195,10 @@ inline int nega_alpha_eval1_nws(Search *search, int alpha, bool skipped, const b
     @return the value
 */
 int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching){
-    if (!global_searching || !(*searching))
+    if (!global_searching || !(*searching)){
+        search->stopped = true;
         return SCORE_UNDEFINED;
+    }
     if (is_end_search && depth <= MID_TO_END_DEPTH)
         return nega_alpha_end_nws(search, alpha, skipped, legal, false, searching);
     if (!is_end_search){
