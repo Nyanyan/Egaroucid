@@ -10,7 +10,7 @@
     },
     "loading": {
         "loading": "Loading...",
-        "load_failed": "Load Failed.\nPlease check resiource files.",
+        "load_failed": "Load Failed.\nPlease check resource files.",
         "book_failed": "Cannot load book.\nYou can start anyway",
         "launch": "Start"
     },
