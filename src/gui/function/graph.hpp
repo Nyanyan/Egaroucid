@@ -48,14 +48,13 @@ public:
 
 private:
 	int font_size{ 12 };
-	Font font{ FontMethod::MSDF, FONT_DEFAULT_SIZE };
 	int y_max;
 	int y_min;
 	double dy;
 	double dx;
 
 public:
-	void draw(std::vector<History_elem> nodes1, std::vector<History_elem> nodes2, int n_discs, bool show_graph, int level) {
+	void draw(std::vector<History_elem> nodes1, std::vector<History_elem> nodes2, int n_discs, bool show_graph, int level, Font font) {
 		bool fix_resolution_flag = false;
 		if (show_graph) {
 			calc_range(nodes1, nodes2);

@@ -227,6 +227,10 @@ constexpr int BUTTON3_3_SX = X_CENTER + BUTTON3_WIDTH / 2 + 10;
 // font constant
 #define FONT_DEFAULT_SIZE 50
 
+// default language
+#define DEFAULT_LANGUAGE "english"
+#define DEFAULT_OPENING_LANG_NAME "english"
+
 struct History_elem {
     Board board;
     int player;
@@ -320,9 +324,48 @@ struct Settings {
 };
 
 struct Fonts {
-    Font font{ FontMethod::MSDF, FONT_DEFAULT_SIZE };
-    Font font_bold{ FontMethod::MSDF, FONT_DEFAULT_SIZE, Typeface::Bold };
-    Font font_heavy{ FontMethod::MSDF, FONT_DEFAULT_SIZE, Typeface::Heavy };
+    Font font;
+    Font font_bold;
+    Font font_heavy;
+
+    // japanese / english
+    Font font_default{ FontMethod::MSDF, FONT_DEFAULT_SIZE };
+    Font font_bold_default{ FontMethod::MSDF, FONT_DEFAULT_SIZE, Typeface::Bold };
+    Font font_heavy_default{ FontMethod::MSDF, FONT_DEFAULT_SIZE, Typeface::Heavy };
+
+    // chinese
+    Font font_SC{ FontMethod::MSDF, FONT_DEFAULT_SIZE, Typeface::CJK_Regular_SC };
+    Font font_bold_SC{ FontMethod::MSDF, FONT_DEFAULT_SIZE, Typeface::CJK_Regular_SC, FontStyle::Bold };
+    Font font_heavy_SC{ FontMethod::MSDF, FONT_DEFAULT_SIZE, Typeface::CJK_Regular_SC, FontStyle::Bold };
+
+    void init(std::string lang){
+        std::cerr << "font init " << lang << std::endl;
+        if (lang == "chinese"){
+            font = font_SC;
+            font_bold = font_bold_SC;
+            font_heavy = font_heavy_SC;
+            std::cerr << "changed font for your language" << std::endl;
+        } else{ // japanese / english
+            font = font_default;
+            font_bold = font_bold_default;
+            font_heavy = font_heavy_default;
+        }
+        add_fallback();
+    }
+
+    void add_fallback(){
+        std::cerr << "adding fallback for your font" << std::endl;
+
+        // japanese / english
+        font.addFallback(font_default);
+        font_bold.addFallback(font_bold_default);
+        font_heavy.addFallback(font_heavy_default);
+
+        // chinese
+        font.addFallback(font_SC);
+        font_bold.addFallback(font_bold_SC);
+        font_heavy.addFallback(font_heavy_SC);
+    }
 };
 
 struct Menu_elements {

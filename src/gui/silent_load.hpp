@@ -233,7 +233,7 @@ void init_settings(const Directories* directories, const Resources* resources, S
     }
 }
 
-int init_resources(Resources* resources, Settings* settings) {
+int init_resources(Resources* resources, Settings* settings, Fonts *fonts) {
     // language names
     std::ifstream ifs_lang("resources/languages/languages.txt");
     if (ifs_lang.fail()) {
@@ -258,8 +258,14 @@ int init_resources(Resources* resources, Settings* settings) {
     // language
     std::string lang_file = "resources/languages/" + settings->lang_name + ".json";
     if (!language.init(lang_file)) {
-        return ERR_LANG_NOT_LOADED;
+        std::cerr << "language file not found. use alternative language" << std::endl;
+        settings->lang_name = DEFAULT_LANGUAGE;
+        lang_file = "resources/languages/" + settings->lang_name + ".json";
+        if (!language.init(lang_file))
+            return ERR_LANG_NOT_LOADED;
     }
+
+    fonts->init(settings->lang_name);
 
     // textures
     Texture icon(U"resources/img/icon.png", TextureDesc::Mipped);
@@ -276,17 +282,19 @@ int init_resources(Resources* resources, Settings* settings) {
 
     // opening
     if (!opening_init(settings->lang_name)) {
-        return ERR_OPENING_NOT_LOADED;
+        std::cerr << "opening file not found. use alternative opening file" << std::endl;
+        if (!opening_init(DEFAULT_OPENING_LANG_NAME))
+            return ERR_OPENING_NOT_LOADED;
     }
 
     return ERR_OK;
 
 }
 
-int silent_load(Directories* directories, Resources* resources, Settings* settings) {
+int silent_load(Directories* directories, Resources* resources, Settings* settings, Fonts *fonts) {
     init_directories(directories);
     init_settings(directories, resources, settings);
-    return init_resources(resources, settings);
+    return init_resources(resources, settings, fonts);
 }
 
 class Silent_load : public App::Scene {
@@ -294,7 +302,7 @@ private:
     bool loaded;
 public:
     Silent_load(const InitData& init) : IScene{ init } {
-        int load_code = silent_load(&getData().directories, &getData().resources, &getData().settings);
+        int load_code = silent_load(&getData().directories, &getData().resources, &getData().settings, &getData().fonts);
         loaded = load_code == ERR_OK;
     }
 

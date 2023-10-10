@@ -857,7 +857,7 @@ class Book{
             @brief get a best move
 
             @param b                    a board pointer to find
-            @param acc_level            accuracy level, 0 is very bad, 10 is very good
+            @param acc_level            accuracy level, 0 is very good, 10 is very bad
             @return best move and value as Book_value structure
         */
         inline Book_value get_random(Board *b, int acc_level){

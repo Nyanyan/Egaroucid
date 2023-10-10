@@ -227,7 +227,7 @@ public:
         }
 
         // graph drawing
-        graph.draw(getData().graph_resources.nodes[0], getData().graph_resources.nodes[1], getData().graph_resources.n_discs, getData().menu_elements.show_graph, getData().menu_elements.level);
+        graph.draw(getData().graph_resources.nodes[0], getData().graph_resources.nodes[1], getData().graph_resources.n_discs, getData().menu_elements.show_graph, getData().menu_elements.level, getData().fonts.font);
 
         // level display drawing
         //level_display.draw(getData().menu_elements.level, getData().history_elem.board.n_discs());
@@ -664,17 +664,16 @@ private:
                         lang_file = "resources/languages/" + getData().settings.lang_name + ".json";
                         language.init(lang_file);
                     }
-                    else if (!opening_init(getData().resources.language_names[i])) {
+                    if (!opening_init(getData().resources.language_names[i])) {
                         std::cerr << "opening setting error" << std::endl;
-                        opening_init(getData().settings.lang_name);
+                        opening_init(DEFAULT_OPENING_LANG_NAME);
                     }
-                    else {
-                        getData().settings.lang_name = getData().resources.language_names[i];
-                        getData().menu = create_menu(&getData().menu_elements);
-                        start_game_button.init(START_GAME_BUTTON_SX, START_GAME_BUTTON_SY, START_GAME_BUTTON_WIDTH, START_GAME_BUTTON_HEIGHT, START_GAME_BUTTON_RADIUS, language.get("play", "start_game"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
-                        pass_button.init(PASS_BUTTON_SX, PASS_BUTTON_SY, PASS_BUTTON_WIDTH, PASS_BUTTON_HEIGHT, PASS_BUTTON_RADIUS, language.get("play", "pass"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
-                        re_calculate_openings();
-                    }
+                    getData().settings.lang_name = getData().resources.language_names[i];
+                    getData().fonts.init(getData().settings.lang_name);
+                    getData().menu = create_menu(&getData().menu_elements);
+                    start_game_button.init(START_GAME_BUTTON_SX, START_GAME_BUTTON_SY, START_GAME_BUTTON_WIDTH, START_GAME_BUTTON_HEIGHT, START_GAME_BUTTON_RADIUS, language.get("play", "start_game"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
+                    pass_button.init(PASS_BUTTON_SX, PASS_BUTTON_SY, PASS_BUTTON_WIDTH, PASS_BUTTON_HEIGHT, PASS_BUTTON_RADIUS, language.get("play", "pass"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
+                    re_calculate_openings();
                 }
             }
         }
@@ -1352,7 +1351,7 @@ private:
             analyze_info.idx = idx++;
             analyze_info.sgn = node.player ? -1 : 1;
             analyze_info.board = node.board;
-            ai_status.analyze_task_stack.emplace_back(std::make_pair(analyze_info, std::bind(ai, node.board, getData().menu_elements.level, getData().menu_elements.use_book, getData().menu_elements.book_acc_level, true, true)));
+            ai_status.analyze_task_stack.emplace_back(std::make_pair(analyze_info, std::bind(ai, node.board, getData().menu_elements.level, getData().menu_elements.use_book, 0, true, true)));
         }
         std::cerr << "analyze " << ai_status.analyze_task_stack.size() << " tasks" << std::endl;
         ai_status.analyzing = true;
