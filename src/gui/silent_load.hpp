@@ -32,8 +32,10 @@ void init_directories(Directories* directories) {
 std::string get_default_language(){
     std::string default_language = System::DefaultLanguage().narrow();
     std::string res = "english";
-    if (default_language == "ja-JP")
+    if (default_language == "ja-JP") // japanese
         res = "japanese";
+    if (default_language == "zh-CN" || default_language == "zh-cmn-Hans") // chinese
+        res = "chinese";
     return res;
 }
 
