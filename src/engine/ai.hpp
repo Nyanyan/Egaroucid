@@ -303,7 +303,7 @@ Search_result ai(Board board, int level, bool use_book, int book_acc_level, bool
     Book_value book_result = book.get_random(&board, book_acc_level);
     if (book_result.policy != -1 && use_book){
         if (show_log)
-            std::cerr << "book " << idx_to_coord(book_result.policy) << " " << book_result.value << std::endl;
+            std::cerr << "book " << idx_to_coord(book_result.policy) << " " << book_result.value << " at book error level " << book_acc_level << std::endl;
         res.policy = book_result.policy;
         res.value = value_sign * book_result.value;
         res.depth = SEARCH_BOOK;

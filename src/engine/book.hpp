@@ -864,7 +864,9 @@ class Book{
             std::vector<std::pair<double, int>> value_policies;
             Book_elem board_elem = get(b);
             double best_score = -INF;
+            //std::cerr << "val " << board_elem.value << std::endl;
             for (Book_value elem: board_elem.moves){
+                //std::cerr << idx_to_coord(elem.policy) << " " << elem.value << std::endl;
                 if (elem.value > best_score)
                     best_score = (double)elem.value;
                 value_policies.emplace_back(std::make_pair((double)elem.value, elem.policy));
@@ -892,13 +894,13 @@ class Book{
             double rnd = myrandom();
             double s = 0.0;
             bool res_got = false;
-            Flip flip;
+            //Flip flip;
             for (std::pair<double, int> &elem: value_policies){
                 s += elem.first;
                 if (s >= rnd){
                     res.policy = elem.second;
-                    calc_flip(&flip, b, res.policy);
-                    Board nb = b->move_copy(&flip);
+                    //calc_flip(&flip, b, res.policy);
+                    //Board nb = b->move_copy(&flip);
                     for (Book_value elem: board_elem.moves){
                         if (elem.policy == res.policy)
                             res.value = elem.value;
@@ -909,9 +911,13 @@ class Book{
             }
             if (!res_got){
                 res.policy = value_policies.back().second;
-                calc_flip(&flip, b, res.policy);
-                Board nb = b->move_copy(&flip);
-                res.value = get(&nb).value;
+                for (Book_value elem: board_elem.moves){
+                    if (elem.policy == res.policy)
+                        res.value = elem.value;
+                }
+                //calc_flip(&flip, b, res.policy);
+                //Board nb = b->move_copy(&flip);
+                //res.value = get(&nb).value;
             }
             return res;
         }
@@ -1301,9 +1307,68 @@ class Book{
             }
         }
 
+        void get_need_to_change_tasks(std::vector<std::pair<Board, Book_elem>> &root_boards, int *root_board_n_discs){
+            for (auto itr = book.begin(); itr != book.end(); ++itr){
+                if (itr->first.n_discs() >= *root_board_n_discs && itr->second.moves.size()){
+                    int max_value = -INF;
+                    Board b;
+                    b.player = itr->first.player;
+                    b.opponent = itr->first.opponent;
+                    Flip flip;
+                    bool is_leaf;
+                    std::vector<Book_value> new_moves;
+                    bool update_child_value = false;
+                    for (const Book_value &elem: itr->second.moves){
+                        is_leaf = true;
+                        calc_flip(&flip, &b, elem.policy);
+                        int child_value = SCORE_UNDEFINED;
+                        b.move_board(&flip);
+                            if (b.get_legal()){
+                                if (contain_symmetry(b))
+                                    child_value = -get(b).value;
+                            } else{
+                                b.pass();
+                                    if (contain_symmetry(b))
+                                        child_value = get(b).value;
+                                b.pass();
+                            }
+                        b.undo_board(&flip);
+                        if (child_value != SCORE_UNDEFINED){
+                            max_value = std::max(max_value, child_value);
+                            is_leaf = false;
+                        }
+                        Book_value child_book_value;
+                        child_book_value.policy = elem.policy;
+                        child_book_value.value = child_value;
+                        new_moves.emplace_back(child_book_value);
+                        update_child_value |= elem.value != child_value;
+                    }
+                    bool update_parent_value = max_value != itr->second.value && max_value != -INF;
+                    if (update_parent_value || update_child_value){
+                        Board root_board;
+                        root_board.player = itr->first.player;
+                        root_board.opponent = itr->first.opponent;
+                        int n_discs = root_board.n_discs();
+                        if (n_discs > *root_board_n_discs){
+                            *root_board_n_discs = n_discs;
+                            root_boards.clear();
+                        }
+                        Book_elem new_elem;
+                        if (update_parent_value)
+                            new_elem.value = max_value;
+                        else
+                            new_elem.value = itr->second.value;
+                        new_elem.moves = new_moves; // always update
+                        new_elem.level = itr->second.level;
+                        root_boards.emplace_back(std::make_pair(root_board, new_elem));
+                    }
+                }
+            }
+        }
+
         void negamax_book(bool *stop){
             std::cerr << "negamaxing book..." << std::endl;
-            std::vector<std::pair<Board, int>> root_boards;
+            std::vector<std::pair<Board, Book_elem>> root_boards;
             uint64_t n_fixed = 0;
             bool looped = true;
             while (looped){
@@ -1312,52 +1377,12 @@ class Book{
                 while (root_board_n_discs && !(*stop)){
                     root_boards.clear();
                     root_board_n_discs = 0;
-                    for (auto itr = book.begin(); itr != book.end(); ++itr){
-                        if (itr->first.n_discs() >= root_board_n_discs && itr->second.moves.size()){
-                            int max_value = -INF;
-                            Board b;
-                            b.player = itr->first.player;
-                            b.opponent = itr->first.opponent;
-                            Flip flip;
-                            bool is_leaf;
-                            for (Book_value &elem: itr->second.moves){
-                                is_leaf = true;
-                                calc_flip(&flip, &b, elem.policy);
-                                b.move_board(&flip);
-                                    if (b.get_legal()){
-                                        if (contain_symmetry(b)){
-                                            max_value = std::max(max_value, -get(b).value);
-                                            is_leaf = false;
-                                        }
-                                    } else{
-                                        b.pass();
-                                            if (contain_symmetry(b)){
-                                                max_value = std::max(max_value, get(b).value);
-                                                is_leaf = false;
-                                            }
-                                        b.pass();
-                                    }
-                                b.undo_board(&flip);
-                                //if (is_leaf)
-                                //    max_value = std::max(max_value, elem.value);
-                            }
-                            if (max_value != itr->second.value && max_value != -INF){
-                                Board root_board;
-                                root_board.player = itr->first.player;
-                                root_board.opponent = itr->first.opponent;
-                                int n_discs = root_board.n_discs();
-                                if (n_discs > root_board_n_discs){
-                                    root_board_n_discs = n_discs;
-                                    root_boards.clear();
-                                }
-                                root_boards.emplace_back(std::make_pair(root_board, max_value));
-                            }
-                        }
-                    }
+                    get_need_to_change_tasks(root_boards, &root_board_n_discs);
                     if (root_board_n_discs){
-                        for (std::pair<Board, int> &elem: root_boards){
+                        for (std::pair<Board, Book_elem> &elem: root_boards){
                             Board bb = get_representative_board(elem.first);
-                            book[bb].value = elem.second;
+                            //book[bb] = elem.second;
+                            book.insert_or_assign(bb, elem.second);
                         }
                         n_fixed += root_boards.size();
                         looped = true;
