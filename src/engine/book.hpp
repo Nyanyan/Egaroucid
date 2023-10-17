@@ -1295,7 +1295,8 @@ class Book{
                 return;
             child_boards.emplace(rep_board);
             if (contain_symmetry(&board)){
-                std::cerr << "connected book size " << child_boards.size() << std::endl;
+                size_t siz = child_boards.size();
+                std::cerr << "connected book size " << siz << std::endl;
                 Book_elem book_elem = get(board);
                 Flip flip;
                 for (Book_value &elem: book_elem.moves){
