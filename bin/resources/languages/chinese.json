@@ -117,7 +117,8 @@
             "stable": "稳定子"
         },
         "graph": "图像",
-        "log": "记录"
+        "log": "记录",
+        "change_color_type": "色调变化"
     },
     "operation": {
         "operation": "操作",

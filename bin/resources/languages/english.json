@@ -117,7 +117,8 @@
             "stable": "Stable"
         },
         "graph": "Graph",
-        "log": "Log"
+        "log": "Log",
+        "change_color_type": "Change Color Type"
     },
     "operation": {
         "operation": "Operate",

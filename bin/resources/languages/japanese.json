@@ -117,7 +117,8 @@
             "stable": "確定石"
         },
         "graph": "グラフ",
-        "log": "ログ"
+        "log": "ログ",
+        "change_color_type": "色調変更"
     },
     "operation": {
         "operation": "操作",
