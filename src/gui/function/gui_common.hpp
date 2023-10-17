@@ -103,6 +103,7 @@ constexpr int GRAPH_HEIGHT = WINDOW_SIZE_Y - GRAPH_SY - 60;
 #define GRAPH_RECT_THICKNESS 5
 constexpr int GRAPH_RECT_WIDTH = WINDOW_SIZE_X - (GRAPH_SX + GRAPH_RECT_DX) - 10;
 constexpr int GRAPH_RECT_HEIGHT = GRAPH_HEIGHT - GRAPH_RECT_DY + 27;
+#define N_GRPAPH_COLOR_TYPES 2
 /*
 #define LEVEL_INFO_WIDTH 40
 #define LEVEL_HEIGHT 15
@@ -321,6 +322,7 @@ struct Settings {
 	int book_acc_level;
     bool pause_when_pass;
     bool show_next_move_change_view;
+    bool change_color_type;
 };
 
 struct Fonts {
@@ -402,6 +404,7 @@ struct Menu_elements {
     bool show_last_move;
     bool show_next_move;
     bool show_next_move_change_view;
+    bool change_color_type;
 
     // book
     bool book_start_widen;
@@ -481,6 +484,7 @@ struct Menu_elements {
         show_last_move = settings->show_last_move;
         show_next_move = settings->show_next_move;
         show_next_move_change_view = settings->show_next_move_change_view;
+        change_color_type = settings->change_color_type;
 
         book_start_widen = false;
         book_start_deepen = false;

@@ -67,6 +67,7 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->book_acc_level = 0;
     settings->pause_when_pass = false;
     settings->show_next_move_change_view = false;
+    settings->change_color_type = false;
 }
 
 int init_settings_import_int(TextReader* reader, int* res) {
@@ -230,6 +231,10 @@ void init_settings(const Directories* directories, const Resources* resources, S
         }
         if (init_settings_import_bool(&reader, &settings->show_next_move_change_view) != ERR_OK) {
             std::cerr << "err26" << std::endl;
+            return;
+        }
+        if (init_settings_import_bool(&reader, &settings->change_color_type) != ERR_OK) {
+            std::cerr << "err27" << std::endl;
             return;
         }
     }

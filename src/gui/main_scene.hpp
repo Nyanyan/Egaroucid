@@ -227,7 +227,7 @@ public:
         }
 
         // graph drawing
-        graph.draw(getData().graph_resources.nodes[0], getData().graph_resources.nodes[1], getData().graph_resources.n_discs, getData().menu_elements.show_graph, getData().menu_elements.level, getData().fonts.font);
+        graph.draw(getData().graph_resources.nodes[0], getData().graph_resources.nodes[1], getData().graph_resources.n_discs, getData().menu_elements.show_graph, getData().menu_elements.level, getData().fonts.font, getData().menu_elements.change_color_type);
 
         // level display drawing
         //level_display.draw(getData().menu_elements.level, getData().history_elem.board.n_discs());
@@ -925,6 +925,8 @@ private:
         menu_e.init_check(language.get("display", "graph"), &menu_elements->show_graph, menu_elements->show_graph);
         title.push(menu_e);
         menu_e.init_check(language.get("display", "log"), &menu_elements->show_log, menu_elements->show_log);
+        title.push(menu_e);
+        menu_e.init_check(language.get("display", "change_color_type"), &menu_elements->change_color_type, menu_elements->change_color_type);
         title.push(menu_e);
 
         menu.push(title);

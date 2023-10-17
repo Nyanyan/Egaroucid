@@ -23,13 +23,23 @@ constexpr Color graph_history_not_calculated_color = Color(200, 200, 200);
 constexpr Color graph_fork_not_calculated_color = Color(65, 65, 65);
 constexpr double graph_transparency = 1.0;
 
-constexpr Color color_selectivity[N_SELECTIVITY_LEVEL] = {
-	Color(126, 87, 194), 
-	Color(255, 167, 38), 
-	Color(0, 137, 123), 
-	Color(239, 108, 0), 
-	Color(40, 53, 147), 
-	Color(38, 198, 218)
+constexpr Color color_selectivity[N_GRPAPH_COLOR_TYPES][N_SELECTIVITY_LEVEL] = {
+	{
+		Color(190, 46, 221),
+		Color(116, 125, 140),
+		Color(247, 143, 179),
+		Color(227, 88, 72),
+		Color(240, 135, 20),
+		Color(51, 161, 255)
+	},
+	{
+		Color(115, 28, 106),
+		Color(122, 41, 196),
+		Color(97, 38, 255),
+		Color(133, 122, 255),
+		Color(145, 179, 255),
+		Color(160, 207, 255)
+	}
 };
 constexpr Color midsearch_color = Color(51, 51, 51);
 constexpr Color endsearch_color = Palette::White;
@@ -54,7 +64,7 @@ private:
 	double dx;
 
 public:
-	void draw(std::vector<History_elem> nodes1, std::vector<History_elem> nodes2, int n_discs, bool show_graph, int level, Font font) {
+	void draw(std::vector<History_elem> nodes1, std::vector<History_elem> nodes2, int n_discs, bool show_graph, int level, Font font, int color_type) {
 		bool fix_resolution_flag = false;
 		if (show_graph) {
 			calc_range(nodes1, nodes2);
@@ -83,7 +93,7 @@ public:
 		info_x += LEVEL_PROB_WIDTH;
 		for (int i = 0; i < N_SELECTIVITY_LEVEL; ++i){
 			Rect rect_selectivity{ info_x, info_y, LEVEL_INFO_WIDTH, LEVEL_INFO_HEIGHT };
-			rect_selectivity.draw(color_selectivity[i]);
+			rect_selectivity.draw(color_selectivity[color_type][i]);
 			font(Format(SELECTIVITY_PERCENTAGE[i]) + U"%").draw(font_size, Arg::center(info_x + LEVEL_INFO_WIDTH / 2, info_y + LEVEL_INFO_HEIGHT / 2), level_info_color);
 			info_x += LEVEL_INFO_WIDTH;
 		}
@@ -97,7 +107,7 @@ public:
 			int x_coord2 = sx + dx * (x + 1);
 			Rect rect{ x_coord1, sy, x_coord2 - x_coord1, size_y };
 			get_level(level, x, &is_mid_search, &depth, &mpc_level);
-			Color color = color_selectivity[mpc_level];
+			Color color = color_selectivity[color_type][mpc_level];
 			rect.draw(color);
 			if (!is_mid_search) {
 				if (first_endsearch_n_moves == -1) {
