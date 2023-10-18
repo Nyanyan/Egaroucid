@@ -64,7 +64,7 @@ Please build on your own. You can use cmake or g++.
 
 ### Build with cmake
 
-Please download source codes ([console_v6.4.0.zip](https://github.com/Nyanyan/Egaroucid/archive/refs/tags/console_v6.4.0.zip)) from GitHub Release, then unzip it.
+Please download [source codes](https://github.com/Nyanyan/Egaroucid/archive/refs/tags/console_v6.4.0.zip) from GitHub Release, then unzip it.
 
 
 
@@ -140,7 +140,7 @@ Requirements are:
     <li>C++17</li>
 </ul>
 
-Please download source codes ([console_v6.4.0.zip](https://github.com/Nyanyan/Egaroucid/archive/refs/tags/console_v6.4.0.zip)) from GitHub Release, then unzip it.
+Please download [source codes](https://github.com/Nyanyan/Egaroucid/archive/refs/tags/console_v6.4.0.zip) from GitHub Release, then unzip it.
 
 
 

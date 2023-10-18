@@ -152,6 +152,11 @@ I would like to thank these people for great contributions.
             <li>Gunnar Andersson</li>
         </ul>
     </li>
+    <li>Translation
+        <ul>
+            <li>ZhangHengge (Chinese)</li>
+        </ul>
+    </li>
     <li>User Test
         <ul>
             <li>Satoshi Kurahashi</li>
@@ -167,6 +172,7 @@ I would like to thank these people for great contributions.
         </ul>
     </li>
 </ul>
+
 
 
 ## Links
