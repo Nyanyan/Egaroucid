@@ -17,7 +17,7 @@ Totally free application
 * **[Egaroucid](https://www.egaroucid.nyanyan.dev/en/) - GUI application**
   
   * Desktop application for Windows
-  * Japanese / English
+  * Japanese / English / Chinese
   * GUI with [Siv3D](https://github.com/Siv3D)
   
 * **[Egaroucid for Console](https://www.egaroucid.nyanyan.dev/en/console) - Console application**
