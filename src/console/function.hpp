@@ -77,6 +77,7 @@ bool execute_special_tasks_loop(Board_info *board, State *state, Options *option
     return false;
 }
 
+
 std::string self_play_task(Options *options){
     int n_random_moves = myrandrange(10, 20);
     Board board;
@@ -118,6 +119,7 @@ void self_play(std::string str_n_games, Options *options, State *state){
         std::cout << str_n_games << " out of range" << std::endl;
         std::exit(1);
     }
+    uint64_t strt = tim();
     if (thread_pool.size() == 0){
         for (int i = 0; i < n_games; ++i){
             std::string transcript = self_play_task(options);
@@ -146,4 +148,50 @@ void self_play(std::string str_n_games, Options *options, State *state){
         }
     }
     global_searching = false;
+    std::cerr << "done in " << tim() - strt << " ms" << std::endl;
 }
+
+/*
+void self_play(std::string str_n_games, Options *options, State *state){
+    int n_games;
+    try{
+        n_games = std::stoi(str_n_games);
+    } catch (const std::invalid_argument& e) {
+        std::cout << str_n_games << " invalid argument" << std::endl;
+        std::exit(1);
+    } catch (const std::out_of_range& e) {
+        std::cout << str_n_games << " out of range" << std::endl;
+        std::exit(1);
+    }
+    uint64_t strt = tim();
+    for (int i = 0; i < n_games; ++i){
+        int n_random_moves = myrandrange(10, 20);
+        Board board;
+        Flip flip;
+        Search_result result;
+        board.reset();
+        for (int j = 0; j < n_random_moves && board.check_pass(); ++j){
+            uint64_t legal = board.get_legal();
+            int random_idx = myrandrange(0, pop_count_ull(legal));
+            int t = 0;
+            for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+                if (t == random_idx){
+                    calc_flip(&flip, &board, cell);
+                    break;
+                }
+                ++t;
+            }
+            std::cout << idx_to_coord(flip.pos);
+            board.move_board(&flip);
+        }
+        while (board.check_pass()){
+            result = ai(board, options->level, true, 0, true, options->show_log);
+            calc_flip(&flip, &board, result.policy);
+            std::cout << idx_to_coord(flip.pos);
+            board.move_board(&flip);
+        }
+        std::cout << std::endl;
+    }
+    std::cerr << "done in " << tim() - strt << " ms" << std::endl;
+}
+*/
