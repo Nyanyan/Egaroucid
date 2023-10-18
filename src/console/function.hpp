@@ -20,6 +20,8 @@
     #include "./../engine/thread_monitor.hpp"
 #endif
 
+#define SELFPLAY_TT_DATE_MARGIN 5
+
 void setboard(Board_info *board, std::string board_str);
 Search_result go_noprint(Board_info *board, Options *options, State *state);
 void print_search_result_head();
@@ -78,7 +80,7 @@ bool execute_special_tasks_loop(Board_info *board, State *state, Options *option
 }
 
 
-std::string self_play_task(Options *options){
+std::string self_play_task(Options *options, bool use_multi_thread){
     int n_random_moves = myrandrange(10, 20);
     Board board;
     Flip flip;
@@ -100,6 +102,7 @@ std::string self_play_task(Options *options){
         board.move_board(&flip);
     }
     while (board.check_pass()){
+        while (use_multi_thread && transposition_table.get_date() >= MAX_DATE - thread_pool.size() - SELFPLAY_TT_DATE_MARGIN);
         result = ai(board, options->level, true, 0, false, options->show_log); // search in single thread
         calc_flip(&flip, &board, result.policy);
         res += idx_to_coord(flip.pos);
@@ -122,16 +125,20 @@ void self_play(std::string str_n_games, Options *options, State *state){
     uint64_t strt = tim();
     if (thread_pool.size() == 0){
         for (int i = 0; i < n_games; ++i){
-            std::string transcript = self_play_task(options);
+            std::string transcript = self_play_task(options, false);
             std::cout << transcript << std::endl;
         }
     } else{
         int n_games_done = 0;
         std::vector<std::future<std::string>> tasks;
         while (n_games_done < n_games){
+            if (transposition_table.get_date() >= MAX_DATE - thread_pool.size() - SELFPLAY_TT_DATE_MARGIN){
+                //transposition_table.reset_date_new_thread(thread_pool.size());
+                transposition_table.reset_date();
+            }
             if (thread_pool.get_n_idle() && (int)tasks.size() < n_games){
                 bool pushed = false;
-                tasks.emplace_back(thread_pool.push(&pushed, std::bind(&self_play_task, options)));
+                tasks.emplace_back(thread_pool.push(&pushed, std::bind(&self_play_task, options, true)));
                 if (!pushed)
                     tasks.pop_back();
             }

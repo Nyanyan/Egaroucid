@@ -27,7 +27,7 @@ constexpr size_t TRANSPOSITION_TABLE_STACK_SIZE = hash_sizes[DEFAULT_HASH_LEVEL]
 #define N_TRANSPOSITION_MOVES 2
 
 // date manager
-#define MAX_DATE 127
+#define MAX_DATE 250
 #define INIT_DATE 1
 
 inline uint32_t get_level_read_common(uint8_t depth, uint8_t mpc_level){
@@ -276,10 +276,15 @@ class Transposition_table{
         */
         inline void update_date(){
             ++date;
-            if (date > MAX_DATE){
+            if (date > MAX_DATE)
                 reset_date();
-                date = INIT_DATE;
-            }
+        }
+
+        /*
+            @brief returns date
+        */
+        inline uint8_t get_date(){
+            return date;
         }
 
         /*
@@ -393,6 +398,35 @@ class Transposition_table{
                 for (std::future<void> &task: tasks)
                     task.get();
             }
+            date = INIT_DATE;
+        }
+
+        /*
+            @brief set all date to 0
+
+            create new thread
+        */
+        inline void reset_date_new_thread(int thread_size){
+            size_t delta = (std::min(table_size, (size_t)TRANSPOSITION_TABLE_STACK_SIZE) + thread_size - 1) / thread_size;
+            size_t s = 0, e;
+            std::vector<std::future<void>> tasks;
+            for (int i = 0; i < thread_size; ++i){
+                e = std::min(std::min(table_size, (size_t)TRANSPOSITION_TABLE_STACK_SIZE), s + delta);
+                tasks.emplace_back(std::async(std::launch::async, std::bind(&reset_date_transposition_table, table_stack, s, e)));
+                s = e;
+            }
+            if (table_size > TRANSPOSITION_TABLE_STACK_SIZE){
+                delta = (table_size - (size_t)TRANSPOSITION_TABLE_STACK_SIZE + thread_size - 1) / thread_size;
+                s = 0;
+                for (int i = 0; i < thread_size; ++i){
+                    e = std::min(table_size - (size_t)TRANSPOSITION_TABLE_STACK_SIZE, s + delta);
+                    tasks.emplace_back(std::async(std::launch::async, std::bind(&reset_date_transposition_table, table_heap, s, e)));
+                    s = e;
+                }
+            }
+            for (std::future<void> &task: tasks)
+                task.get();
+            date = INIT_DATE;
         }
 
         /*
