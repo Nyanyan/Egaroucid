@@ -33,12 +33,12 @@ constexpr Color color_selectivity[N_GRPAPH_COLOR_TYPES][N_SELECTIVITY_LEVEL] = {
 		Color(51, 161, 255)   // light blue
 	},
 	{
-		Color(245, 58, 58),
-		Color(178, 28, 108),
-		Color(214, 56, 248),
-		Color(18, 4, 171),
-		Color(66, 109, 255),
-		Color(44, 166, 167)
+		Color(245, 58, 58),  // red
+		Color(178, 28, 108), // dark purple
+		Color(214, 56, 248), // purple
+		Color(18, 4, 171),   // blue
+		Color(66, 109, 255), // light blue
+		Color(44, 166, 167)  // cyan
 	}
 };
 constexpr Color midsearch_color = Color(51, 51, 51);
