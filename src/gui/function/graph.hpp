@@ -25,20 +25,20 @@ constexpr double graph_transparency = 1.0;
 
 constexpr Color color_selectivity[N_GRPAPH_COLOR_TYPES][N_SELECTIVITY_LEVEL] = {
 	{
-		Color(190, 46, 221),
-		Color(116, 125, 140),
-		Color(247, 143, 179),
-		Color(227, 88, 72),
-		Color(240, 135, 20),
-		Color(51, 161, 255)
+		Color(190, 46, 221),  // purple
+		Color(227, 78, 62),   // red
+		Color(240, 135, 20),  // oragne
+		Color(247, 143, 179), // pink
+		Color(82, 62, 212),   // blue
+		Color(51, 161, 255)   // light blue
 	},
 	{
-		Color(115, 28, 106),
-		Color(122, 41, 196),
-		Color(97, 38, 255),
-		Color(133, 122, 255),
-		Color(145, 179, 255),
-		Color(160, 207, 255)
+		Color(245, 58, 58),
+		Color(178, 28, 108),
+		Color(214, 56, 248),
+		Color(18, 4, 171),
+		Color(66, 109, 255),
+		Color(44, 166, 167)
 	}
 };
 constexpr Color midsearch_color = Color(51, 51, 51);
