@@ -64,6 +64,8 @@ To avoid same lines, I used [XOT](https://berg.earthlingz.de/xot/aboutxot.php?la
 
 The further log is available [here](./battle.txt).
 
+
+
 Egaroucid 6.2.0 is omitted because it has the same evaluation function as 6.3.0.
 
 ### Details

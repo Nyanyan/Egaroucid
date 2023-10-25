@@ -63,8 +63,9 @@ Egaroucidの性能の確認として2種類のベンチマークを使用して�
 <td>0.3481</td>
 </tr>
 </table>
-
 対戦の詳細は[こちら](./battle.txt)
+
+
 
 Egaroucid 6.2.0はEgaroucid 6.3.0と同一の評価関数のため、省いています。
 
