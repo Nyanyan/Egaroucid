@@ -36,16 +36,16 @@ Zip版はZipファイルを解凍し、中の```Egaroucid_[バージョン情報
         <td>x64</td>
         <td>AVX2(標準)</td>
         <td>2023/09/01</td>
-        <td>[Egaroucid 6.4.0 SIMD インストーラ](https://github.com/Nyanyan/Egaroucid/releases/download/v6.4.0/Egaroucid_6_4_0_SIMD_installer.exe)</td>
-        <td>[Egaroucid 6.4.0 SIMD Zip](https://github.com/Nyanyan/Egaroucid/releases/download/v6.4.0/Egaroucid_6_4_0_Windows_x64_SIMD_Portable.zip)</td>
+        <td>[Egaroucid 6.5.0 SIMD インストーラ](https://github.com/Nyanyan/Egaroucid/releases/download/v6.5.0/Egaroucid_6_5_0_SIMD_installer.exe)</td>
+        <td>[Egaroucid 6.5.0 SIMD Zip](https://github.com/Nyanyan/Egaroucid/releases/download/v6.5.0/Egaroucid_6_5_0_Windows_x64_SIMD_Portable.zip)</td>
     </tr>
     <tr>
         <td>Windows</td>
         <td>x64</td>
         <td>-</td>
         <td>2023/09/01</td>
-        <td>[Egaroucid 6.4.0 Generic インストーラ](https://github.com/Nyanyan/Egaroucid/releases/download/v6.4.0/Egaroucid_6_4_0_Generic_installer.exe)</td>
-        <td>[Egaroucid 6.4.0 Generic Zip](https://github.com/Nyanyan/Egaroucid/releases/download/v6.4.0/Egaroucid_6_4_0_Windows_x64_Generic_Portable.zip)</td>
+        <td>[Egaroucid 6.5.0 Generic インストーラ](https://github.com/Nyanyan/Egaroucid/releases/download/v6.5.0/Egaroucid_6_5_0_Generic_installer.exe)</td>
+        <td>[Egaroucid 6.5.0 Generic Zip](https://github.com/Nyanyan/Egaroucid/releases/download/v6.5.0/Egaroucid_6_5_0_Windows_x64_Generic_Portable.zip)</td>
     </tr>
 </table>
 

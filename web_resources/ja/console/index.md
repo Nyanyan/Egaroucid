@@ -31,21 +31,21 @@ Egaroucidはx64のSIMDバージョン(AVX2を使用)に最適化して作って�
         <td>x64 (標準)</td>
         <td>AVX2 (標準)</td>
         <td>2023/09/01</td>
-        <td>[Egaroucid for Console 6.4.0 Windows x64 SIMD](https://github.com/Nyanyan/Egaroucid/releases/download/console_v6.4.0/Egaroucid_for_Console_6_4_0_Windows_x64_SIMD.zip)</td>
+        <td>[Egaroucid for Console 6.5.0 Windows x64 SIMD](https://github.com/Nyanyan/Egaroucid/releases/download/console_v6.5.0/Egaroucid_for_Console_6_5_0_Windows_x64_SIMD.zip)</td>
     </tr>
     <tr>
         <td>Windows</td>
         <td>x64 (標準)</td>
         <td>-</td>
         <td>2023/09/01</td>
-        <td>[Egaroucid for Console 6.4.0 Windows x64 Generic](https://github.com/Nyanyan/Egaroucid/releases/download/console_v6.4.0/Egaroucid_for_Console_6_4_0_Windows_x64_Generic.zip)</td>
+        <td>[Egaroucid for Console 6.5.0 Windows x64 Generic](https://github.com/Nyanyan/Egaroucid/releases/download/console_v6.5.0/Egaroucid_for_Console_6_5_0_Windows_x64_Generic.zip)</td>
     </tr>
     <tr>
         <td>Windows</td>
         <td>x86</td>
         <td>-</td>
         <td>2023/09/01</td>
-        <td>[Egaroucid for Console 6.4.0 Windows x86 Generic](https://github.com/Nyanyan/Egaroucid/releases/download/console_v6.4.0/Egaroucid_for_Console_6_4_0_Windows_x86_Generic.zip)</td>
+        <td>[Egaroucid for Console 6.5.0 Windows x86 Generic](https://github.com/Nyanyan/Egaroucid/releases/download/console_v6.5.0/Egaroucid_for_Console_6_5_0_Windows_x86_Generic.zip)</td>
     </tr>
 </table>
 
@@ -62,7 +62,7 @@ cmakeでビルドするか、直接g++を使ってビルドすることができ
 
 ### cmakeでビルド
 
-GitHubのリリースから[コード](https://github.com/Nyanyan/Egaroucid/archive/refs/tags/console_v6.4.0.zip)を入手し、任意の場所に解凍します。
+GitHubのリリースから[コード](https://github.com/Nyanyan/Egaroucid/archive/refs/tags/console_v6.5.0.zip)を入手し、任意の場所に解凍します。
 
 
 
@@ -133,7 +133,7 @@ GitHubのリリースから[コード](https://github.com/Nyanyan/Egaroucid/arch
     </li>
     <li>C++17の機能が必要</li>
 </ul>
-GitHubのリリースから[コード](https://github.com/Nyanyan/Egaroucid/archive/refs/tags/console_v6.4.0.zip)を入手し、任意の場所に解凍します。
+GitHubのリリースから[コード](https://github.com/Nyanyan/Egaroucid/archive/refs/tags/console_v6.5.0.zip)を入手し、任意の場所に解凍します。
 
 
 

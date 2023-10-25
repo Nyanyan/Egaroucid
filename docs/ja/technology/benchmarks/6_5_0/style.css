@@ -1,0 +1,132 @@
+html, body {
+    font-family: "Arial", "メイリオ";
+}
+
+table{
+    border-collapse:  collapse;
+}
+
+tr:nth-child(odd){
+    background-color:  #eee;
+}
+
+th{
+    padding: 5px 10px;
+    background-color:  #ddd;
+    text-align: left;
+}
+
+td{
+    padding: 5px 10px;
+}
+
+table{
+    margin: auto;
+}
+
+.pic{
+    display: block;
+    margin: auto;
+    width: 50vmin;
+    height: auto;
+}
+
+.pic2{
+    width: max(30%, min(90vw, 300px));
+    height: auto;
+}
+
+.box{
+    width: min(1000px, 95vw);
+    text-align: start;
+    margin: 0 auto;
+}
+
+h1{
+    text-align: center;
+}
+
+h2{
+    text-align: center;
+    background-color:  #8dc5ac;
+    
+}
+
+h3{
+    text-align: center;
+    background-color:  #cbc5de;
+}
+
+h4{
+    text-align: center;
+}
+
+.h3_left{
+    font-size: larger;
+    font-weight: bold;
+    text-align: left;
+}
+
+.menu_bar{
+    width: 100%;
+    height: min(8vw, 50px);
+    background-color:  #2a7253;
+    display: flex;
+    align-items: center;
+}
+
+.menu_a{
+    text-decoration: none;
+    height: 100%;
+    color: white;
+    display: table-cell;
+    vertical-align: middle;
+}
+
+.menu_button{
+    width: min(20vw, 130px);
+    height: min(8vw, 50px);
+    background-color:  #2a7253;
+    display: inline-block; 
+    text-align: center;
+    display: table;
+    vertical-align: middle;
+    font-size: min(2.5vw, 12pt);
+}
+
+.centering_box{
+    width: 100%;
+    text-align: center;
+}
+
+code {
+    display: inline-block;
+    padding: 0.1em 0.25em;
+    color: #444;
+    background-color: #e7edf3;
+    border-radius: 3px;
+    border: solid 1px #d6dde4;
+    font-family: Consolas, Menlo, Monaco, -apple-system, BlinkMacSystemFont, "Segoe UI", Meiryo, monospace;
+}
+
+.footer{
+    background-color:  #2a7253;
+    color: white;
+    text-align: right;
+    padding: 1%;
+}
+
+.table_of_contents_ol {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    text-align: left;
+}
+
+.table_of_contents_li {
+    margin: 5px;
+    width: max(320px, 32%);
+    text-align: left;
+}
