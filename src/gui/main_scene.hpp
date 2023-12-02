@@ -1112,7 +1112,6 @@ private:
             std::vector<Hint_info> hint_infos;
             for (int cell = 0; cell < HW2; ++cell) {
                 if (ai_status.hint_use_stable[cell]) {
-                    //std::cerr << idx_to_coord(63 - cell) << " " << ai_status.hint_values_stable[cell] << " " << ai_status.hint_types_stable[cell] << std::endl;
                     Hint_info hint_info;
                     hint_info.value = ai_status.hint_values_stable[cell];
                     hint_info.cell = cell;
