@@ -26,6 +26,9 @@
 // GUI portable mode
 #define GUI_PORTABLE_MODE true
 
+// Open Console?
+#define GUI_OPEN_CONSOLE true
+
 #ifdef _WIN64
     #if USE_SIMD
         #define EGAROUCID_ENGINE_ENV_VERSION "Windows x64 SIMD"

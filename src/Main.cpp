@@ -30,8 +30,11 @@ void Main() {
 	Window::SetTitle(U"Egaroucid {}"_fmt(EGAROUCID_VERSION));
 	System::SetTerminationTriggers(UserAction::NoAction);
 	std::stringstream logger_stream;
-	std::cerr.rdbuf(logger_stream.rdbuf());
-	//Console.open();
+	#if GUI_OPEN_CONSOLE
+		Console.open();
+	#else
+		std::cerr.rdbuf(logger_stream.rdbuf());
+	#endif
 	std::string logger;
 	String logger_String;
 	//std::this_thread::sleep_for(std::chrono::milliseconds(100));
