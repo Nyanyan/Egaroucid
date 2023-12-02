@@ -1112,6 +1112,7 @@ private:
             std::vector<Hint_info> hint_infos;
             for (int cell = 0; cell < HW2; ++cell) {
                 if (ai_status.hint_use_stable[cell]) {
+                    //std::cerr << idx_to_coord(63 - cell) << " " << ai_status.hint_values_stable[cell] << " " << ai_status.hint_types_stable[cell] << std::endl;
                     Hint_info hint_info;
                     hint_info.value = ai_status.hint_values_stable[cell];
                     hint_info.cell = cell;
@@ -1119,14 +1120,17 @@ private:
                     hint_infos.emplace_back(hint_info);
                 }
             }
-            sort(hint_infos.begin(), hint_infos.end(), compare_hint_info);
             if (hint_infos.size()) {
+                sort(hint_infos.begin(), hint_infos.end(), compare_hint_info);
                 int sgn = getData().history_elem.player == 0 ? 1 : -1;
                 int node_idx = getData().graph_resources.node_find(getData().graph_resources.branch, getData().graph_resources.n_discs);
                 if (node_idx != -1) {
-                    if (getData().graph_resources.nodes[getData().graph_resources.branch][node_idx].level < hint_infos[0].type) {
+                    int min_hint_type = 1000;
+                    for (Hint_info &hint_info: hint_infos)
+                        min_hint_type = std::min(min_hint_type, hint_info.type);
+                    if (getData().graph_resources.nodes[getData().graph_resources.branch][node_idx].level < min_hint_type) {
                         getData().graph_resources.nodes[getData().graph_resources.branch][node_idx].v = sgn * (int)round(hint_infos[0].value);
-                        getData().graph_resources.nodes[getData().graph_resources.branch][node_idx].level = hint_infos[0].type;
+                        getData().graph_resources.nodes[getData().graph_resources.branch][node_idx].level = min_hint_type;
                     }
                 }
             }
@@ -1215,8 +1219,8 @@ private:
                 ai_status.hint_types[cell] = HINT_NOT_CALCULATING;
             }
             for (int cell = 0; cell < HW2; ++cell) {
-                ai_status.hint_use_stable[cell] = ai_status.hint_use[cell];
                 ai_status.hint_values_stable[cell] = ai_status.hint_values[cell];
+                ai_status.hint_use_stable[cell] = ai_status.hint_use[cell];
                 ai_status.hint_types_stable[cell] = ai_status.hint_types[cell];
             }
         }
