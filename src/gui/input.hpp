@@ -50,6 +50,7 @@ public:
         if (!done) {
             getData().fonts.font(language.get("in_out", "input_transcript")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             Rect text_area{ X_CENTER - 300, sy + 40, 600, 70 };
+            getData().fonts.font(language.get("in_out", "you_can_paste_with_ctrl_v")).draw(13, Arg::topCenter(X_CENTER, sy + 120), getData().colors.white);
             text_area.draw(getData().colors.light_cyan).drawFrame(2, getData().colors.black);
             String str = Unicode::Widen(transcript);
             TextInput::UpdateText(str);
@@ -231,6 +232,7 @@ public:
             getData().fonts.font(language.get("in_out", "input_board")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             Rect text_area{ X_CENTER - 300, sy + 40, 600, 70 };
             text_area.draw(getData().colors.light_cyan).drawFrame(2, getData().colors.black);
+            getData().fonts.font(language.get("in_out", "you_can_paste_with_ctrl_v")).draw(13, Arg::topCenter(X_CENTER, sy + 120), getData().colors.white);
             String str = Unicode::Widen(board_str);
             TextInput::UpdateText(str);
             const String editingText = TextInput::GetEditingText();

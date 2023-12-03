@@ -97,7 +97,8 @@
         "player_name": "プレイヤー名",
         "memo": "メモ",
         "screen_shot": "スクリーンショット (コピー/保存)",
-        "board_image": "ボードの画像を編集"
+        "board_image": "ボードの画像を編集",
+        "you_can_paste_with_ctrl_v": "Ctrl+Vで貼り付け可能"
     },
     "display": {
         "display": "表示",

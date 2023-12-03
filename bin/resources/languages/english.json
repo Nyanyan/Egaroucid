@@ -97,7 +97,8 @@
         "player_name": "Player Name",
         "memo": "Memo",
         "screen_shot": "Screen Shot (Copy & Save)",
-        "board_image": "Edit and Save Board Image"
+        "board_image": "Edit and Save Board Image",
+        "you_can_paste_with_ctrl_v": "You can paste with Ctrl+V"
     },
     "display": {
         "display": "Display",

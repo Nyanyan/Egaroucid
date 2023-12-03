@@ -97,7 +97,8 @@
         "player_name": "玩家名称",
         "memo": "备注",
         "screen_shot": "截图(复制/保存)",
-        "board_image": "编辑和保存当前棋盘图片"
+        "board_image": "编辑和保存当前棋盘图片",
+        "you_can_paste_with_ctrl_v": "您可以使用 Ctrl+V 粘贴"
     },
     "display": {
         "display": "显示",
