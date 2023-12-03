@@ -9,7 +9,7 @@
 */
 
 #pragma once
-#include <Siv3D.hpp> // OpenSiv3D v0.6.3
+#include <Siv3D.hpp>
 #include <iostream>
 #include <fstream>
 #include <vector>

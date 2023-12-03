@@ -7,7 +7,7 @@
 */
 
 #pragma once
-#include <Siv3D.hpp> // OpenSiv3D v0.6.3
+#include <Siv3D.hpp>
 #include "./../../engine/setting.hpp"
 
 #define EGAROUCID_GUI_VERSION "1"
