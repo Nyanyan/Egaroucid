@@ -115,7 +115,8 @@
         "disc": {
             "display_on_disc": "On Disc",
             "last_move": "Last Move",
-            "stable": "Stable"
+            "stable": "Stable",
+            "play_ordering": "Play Ordering"
         },
         "graph": "Graph",
         "log": "Log",

@@ -920,6 +920,8 @@ private:
         menu_e.push(side_menu);
         side_menu.init_check(language.get("display", "disc", "stable"), &menu_elements->show_stable_discs, menu_elements->show_stable_discs);
         menu_e.push(side_menu);
+        side_menu.init_check(language.get("display", "disc", "play_ordering"), &menu_elements->show_play_ordering, menu_elements->show_play_ordering);
+        menu_e.push(side_menu);
         title.push(menu_e);
 
         menu_e.init_check(language.get("display", "graph"), &menu_elements->show_graph, menu_elements->show_graph);

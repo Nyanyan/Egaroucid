@@ -323,6 +323,7 @@ struct Settings {
     bool pause_when_pass;
     bool show_next_move_change_view;
     bool change_color_type;
+    bool show_play_ordering;
 };
 
 struct Fonts {
@@ -400,6 +401,7 @@ struct Menu_elements {
     bool show_graph;
     bool show_opening_on_cell;
     bool show_stable_discs;
+    bool show_play_ordering;
     bool show_log;
     bool show_last_move;
     bool show_next_move;
@@ -480,6 +482,7 @@ struct Menu_elements {
         show_graph = settings->show_graph;
         show_opening_on_cell = settings->show_opening_on_cell;
         show_stable_discs = settings->show_stable_discs;
+        show_play_ordering = settings->show_play_ordering;
         show_log = settings->show_log;
         show_last_move = settings->show_last_move;
         show_next_move = settings->show_next_move;

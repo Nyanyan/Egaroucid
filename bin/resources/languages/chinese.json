@@ -115,7 +115,8 @@
         "disc": {
             "display_on_disc": "棋盘显示",
             "last_move": "上次落点",
-            "stable": "稳定子"
+            "stable": "稳定子",
+            "play_ordering": "播放顺序"
         },
         "graph": "图像",
         "log": "记录",

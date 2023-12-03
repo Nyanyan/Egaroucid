@@ -115,7 +115,8 @@
         "disc": {
             "display_on_disc": "石への表示",
             "last_move": "直前の手",
-            "stable": "確定石"
+            "stable": "確定石",
+            "play_ordering": "着手順"
         },
         "graph": "グラフ",
         "log": "ログ",
