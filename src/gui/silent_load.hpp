@@ -69,6 +69,7 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->show_next_move_change_view = false;
     settings->change_color_type = false;
     settings->show_play_ordering = false;
+    settings->generate_random_board_moves = 20;
 }
 
 int init_settings_import_int(TextReader* reader, int* res) {
@@ -240,6 +241,10 @@ void init_settings(const Directories* directories, const Resources* resources, S
         }
         if (init_settings_import_bool(&reader, &settings->show_play_ordering) != ERR_OK) {
             std::cerr << "err28" << std::endl;
+            return;
+        }
+        if (init_settings_import_int(&reader, &settings->generate_random_board_moves) != ERR_OK) {
+            std::cerr << "err29" << std::endl;
             return;
         }
     }

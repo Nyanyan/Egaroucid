@@ -496,7 +496,7 @@ private:
                 need_start_game_button_calculation();
             }
             if (getData().menu_elements.generate_random_board){
-                int max_n_moves = 20;
+                int max_n_moves = getData().menu_elements.generate_random_board_moves;
                 int level = 2;
                 std::random_device seed_gen;
                 std::default_random_engine engine(seed_gen());
@@ -1007,7 +1007,11 @@ private:
         title.push(menu_e);
         menu_e.init_button(language.get("operation", "save_this_branch"), &menu_elements->save_this_branch);
         title.push(menu_e);
-        menu_e.init_button(language.get("operation", "generate_random_board"), &menu_elements->generate_random_board);
+        menu_e.init_button(language.get("operation", "generate_random_board", "generate_random_board"), &menu_elements->dummy);
+        side_menu.init_button(language.get("operation", "generate_random_board", "generate"), &menu_elements->generate_random_board);
+        menu_e.push(side_menu);
+        side_menu.init_bar(language.get("operation", "generate_random_board", "generate_n_moves"), &menu_elements->generate_random_board_moves, menu_elements->generate_random_board_moves, 1, 60);
+        menu_e.push(side_menu);
         title.push(menu_e);
 
         menu_e.init_button(language.get("operation", "convert", "convert"), &menu_elements->dummy);

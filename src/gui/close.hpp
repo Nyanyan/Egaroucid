@@ -45,6 +45,7 @@ void save_settings(Menu_elements menu_elements, Settings settings, Directories d
         writer.writeln((int)menu_elements.show_next_move_change_view);
         writer.writeln((int)menu_elements.change_color_type);
         writer.writeln((int)menu_elements.show_play_ordering);
+        writer.writeln(menu_elements.generate_random_board_moves);
     }
 }
 
