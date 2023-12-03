@@ -128,7 +128,11 @@
         "backward": "后退 (<-/A)",
         "undo": "撤销 (BS)",
         "save_this_branch": "保存此变化",
-        "generate_random_board": "生成随机情况",
+        "generate_random_board": {
+            "generate_random_board": "生成随机情况",
+            "generate": "产生",
+            "generate_n_moves": "生成的移动次数"
+        },
         "convert": {
             "convert": "转换视角",
             "vertical": "旋转180度",

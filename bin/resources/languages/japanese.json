@@ -128,7 +128,11 @@
         "backward": "戻る (<-/A)",
         "undo": "待った (BS)",
         "save_this_branch": "この分岐を保存",
-        "generate_random_board": "ランダム局面を生成",
+        "generate_random_board": {
+            "generate_random_board": "ランダム局面を生成",
+            "generate": "生成",
+            "generate_n_moves": "生成手数"
+        },
         "convert": {
             "convert": "変換",
             "vertical": "180度",
