@@ -182,11 +182,23 @@ public:
         // board drawing
         draw_board(getData().fonts, getData().colors, getData().history_elem);
 
+        // draw on discs
         // last move drawing
         if (getData().menu_elements.show_last_move) {
             draw_last_move();
         }
 
+        // stable drawing
+        if (getData().menu_elements.show_stable_discs) {
+            draw_stable_discs();
+        }
+
+        // play ordering drawing
+        if (getData().menu_elements.show_play_ordering){
+            draw_play_ordering();
+        }
+
+        // draw on cells
         // next move drawing
         if (getData().menu_elements.show_next_move) {
             draw_next_move();
@@ -219,11 +231,6 @@ public:
             else {
                 calculate_umigame();
             }
-        }
-
-        // stable drawing
-        if (getData().menu_elements.show_stable_discs) {
-            draw_stable_discs();
         }
 
         // graph drawing
@@ -1104,6 +1111,22 @@ private:
                         Circle(x, y, DISC_SIZE).draw(ColorF(getData().colors.black, 0.2));
                     }
                 }
+            }
+        }
+    }
+
+    void draw_play_ordering() {
+        for (History_elem &elem: getData().graph_resources.nodes[getData().graph_resources.branch]){
+            int cell = elem.policy;
+            if (0 <= cell && cell < HW2 && ((getData().history_elem.board.player | getData().history_elem.board.opponent) & (1ULL << cell))){
+                int x = BOARD_SX + ((HW2_M1 - cell) % HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
+                int y = BOARD_SY + ((HW2_M1 - cell) / HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
+                bool is_black_disc = getData().history_elem.player == BLACK && (getData().history_elem.board.player & (1ULL << cell)) != 0;
+                is_black_disc |= getData().history_elem.player == WHITE && (getData().history_elem.board.opponent & (1ULL << cell)) != 0;
+                Color color = getData().colors.black;
+                if (is_black_disc)
+                    color = getData().colors.white;
+                getData().fonts.font_bold(elem.board.n_discs() - 4).draw(24, Arg::center(x, y), color);
             }
         }
     }
