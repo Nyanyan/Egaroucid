@@ -495,6 +495,60 @@ private:
                 }
                 need_start_game_button_calculation();
             }
+            if (getData().menu_elements.generate_random_board){
+                int max_n_moves = 20;
+                int level = 2;
+                std::random_device seed_gen;
+                std::default_random_engine engine(seed_gen());
+                std::normal_distribution<> dist(0.0, 3.0); // acceptable loss avg = 0.0, sd = 3.0 discs
+                stop_calculating();
+                getData().history_elem.reset();
+                getData().graph_resources.init();
+                getData().graph_resources.nodes[getData().graph_resources.branch].emplace_back(getData().history_elem);
+                getData().game_information.init();
+                pausing_in_pass = false;
+                resume_calculating();
+                for (int i = 0; i < max_n_moves; ++i){
+                    if (getData().history_elem.board.get_legal() == 0)
+                        break;
+                    int acceptable_loss = std::abs(std::round(dist(engine)));
+                    Search_result search_result = ai(getData().history_elem.board, level, true, 0, true, false);
+                    int policy = search_result.policy;
+                    std::cerr << acceptable_loss << " " << idx_to_coord(policy) << " " << search_result.value << std::endl;
+                    //getData().history_elem.board.print();
+                    if (acceptable_loss > 0){
+                        uint64_t legal = getData().history_elem.board.get_legal();
+                        std::vector<int> legals;
+                        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
+                            legals.emplace_back(cell);
+                        std::shuffle(legals.begin(), legals.end(), engine);
+                        while (legals.size()){
+                            int p = legals.back();
+                            legals.pop_back();
+                            Board board = getData().history_elem.board.copy();
+                            Flip flip;
+                            calc_flip(&flip, &board, p);
+                            board.move_board(&flip);
+                            int v = SCORE_UNDEFINED, sgn = 1;
+                            if (board.get_legal() == 0){
+                                board.pass();
+                                sgn = -1;
+                                if (board.get_legal() == 0)
+                                    v = sgn * board.count_player();
+                            }
+                            if (v == SCORE_UNDEFINED)
+                                v = -sgn * ai_hint(board, level - 1, true, true, false).value;
+                            if (search_result.value - v <= acceptable_loss){
+                                policy = p;
+                                std::cerr << "update policy " << idx_to_coord(p) << " " << search_result.value << " " << v << std::endl;
+                                break;
+                            }
+                        }
+                    }
+                    move_processing(HW2_M1 - policy);
+                }
+                need_start_game_button_calculation();
+            }
         }
         if (getData().menu_elements.convert_180) {
             stop_calculating();
@@ -952,6 +1006,8 @@ private:
         menu_e.init_button(language.get("operation", "undo"), &menu_elements->undo);
         title.push(menu_e);
         menu_e.init_button(language.get("operation", "save_this_branch"), &menu_elements->save_this_branch);
+        title.push(menu_e);
+        menu_e.init_button(language.get("operation", "generate_random_board"), &menu_elements->generate_random_board);
         title.push(menu_e);
 
         menu_e.init_button(language.get("operation", "convert", "convert"), &menu_elements->dummy);

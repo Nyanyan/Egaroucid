@@ -440,6 +440,7 @@ struct Menu_elements {
     bool backward;
     bool undo;
     bool save_this_branch;
+    bool generate_random_board;
     // conversion
     bool convert_180;
     bool convert_blackline;
@@ -515,6 +516,7 @@ struct Menu_elements {
         backward = false;
         undo = false;
         save_this_branch = false;
+        generate_random_board = false;
         convert_180 = false;
         convert_blackline = false;
         convert_whiteline = false;

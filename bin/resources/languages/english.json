@@ -128,6 +128,7 @@
         "backward": "Backward (<-/A)",
         "undo": "Undo (BS)",
         "save_this_branch": "Save this Branch",
+        "generate_random_board": "Generate Random Board",
         "convert": {
             "convert": "Convert",
             "vertical": "Rotate 180",
