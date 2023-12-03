@@ -1200,7 +1200,7 @@ class Book{
         */
         inline void fix(bool *stop){
             link_book(stop);
-            delete_isolated_node(stop);
+            //delete_isolated_node(stop);
             //negamax_book_delete_suspicious(stop);
             negamax_book(stop);
         }
