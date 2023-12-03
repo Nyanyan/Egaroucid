@@ -500,7 +500,7 @@ private:
                 int level = 2;
                 std::random_device seed_gen;
                 std::default_random_engine engine(seed_gen());
-                std::normal_distribution<> dist(0.0, 3.0); // acceptable loss avg = 0.0, sd = 3.0 discs
+                std::normal_distribution<> dist(0.0, 4.0); // acceptable loss avg = 0.0, sd = 4.0 discs
                 stop_calculating();
                 getData().history_elem.reset();
                 getData().graph_resources.init();
@@ -512,7 +512,7 @@ private:
                     if (getData().history_elem.board.get_legal() == 0)
                         break;
                     int acceptable_loss = std::abs(std::round(dist(engine)));
-                    Search_result search_result = ai(getData().history_elem.board, level, true, 0, true, false);
+                    Search_result search_result = ai_hint(getData().history_elem.board, level, true, true, false);
                     int policy = search_result.policy;
                     std::cerr << acceptable_loss << " " << idx_to_coord(policy) << " " << search_result.value << std::endl;
                     //getData().history_elem.board.print();
