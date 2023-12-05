@@ -48,6 +48,7 @@
     @brief Search constant
 */
 #define SCORE_UNDEFINED -SCORE_INF
+#define MOVE_UNDEFINED -1
 #ifndef SEARCH_BOOK
     #define SEARCH_BOOK -1
 #endif
