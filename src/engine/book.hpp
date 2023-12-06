@@ -28,6 +28,7 @@ Search_result ai(Board board, int level, bool use_book, int book_acc_level, bool
 #define LEVEL_UNDEFINED -1
 #define LEVEL_HUMAN 70
 #define BOOK_LOSS_IGNORE_THRESHOLD 8
+#define LEAF_CALCULATE_LEVEL 5
 
 #define FORCE_BOOK_LEVEL false
 #define FORCE_BOOK_DEPTH false
@@ -370,7 +371,7 @@ class Book{
         }
 
 
-        void add_link(Board *board, int8_t value, int8_t policy){
+        void add_leaf(Board *board, int8_t value, int8_t policy){
             int rotate_idx;
             Board representive_board = get_representative_board(board, &rotate_idx);
             int8_t rotated_policy = convert_coord_from_representative_board((int)policy, rotate_idx);
@@ -380,59 +381,67 @@ class Book{
             book[representive_board].leaf = leaf;
         }
 
-        void add_all_leaf(bool *stop){
+        void add_leaf_all_undefined(){
             std::vector<Board> boards;
             for (auto itr = book.begin(); itr != book.end(); ++itr)
                 boards.emplace_back(itr->first);
-            Search search;
-            bool searching = true;
+            Flip flip;
+            for (Board &board: boards){
+                int leaf_move = book[board].leaf.move;
+                calc_flip(&flip, &board, leaf_move);
+                board.move_board(&flip);
+                    bool need_to_rewrite_leaf = contain(&board);
+                board.undo_board(&flip);
+                if (need_to_rewrite_leaf){
+                    int8_t new_leaf_value = SCORE_UNDEFINED, new_leaf_move = MOVE_UNDEFINED;
+                    add_leaf(&board, new_leaf_value, new_leaf_move);
+                }
+            }
+        }
+
+        void add_leaf_all_search(int level, bool *stop){
+            std::vector<Board> boards;
+            for (auto itr = book.begin(); itr != book.end(); ++itr)
+                boards.emplace_back(itr->first);
+            Flip flip;
             for (Board &board: boards){
                 if (*stop)
                     break;
-                if (book[board].leaf.value != SCORE_UNDEFINED)
-                    continue;
-                uint64_t legal = board.get_legal();
-                uint64_t legal_loop = legal;
-                Flip flip;
-                for (uint_fast8_t cell = first_bit(&legal_loop); legal_loop; cell = next_bit(&legal_loop)){
-                    calc_flip(&flip, &board, cell);
-                    board.move_board(&flip);
-                        int sgn = -1;
-                        if (board.get_legal() == 0ULL){
-                            sgn = 1;
-                            board.pass();
-                        }
-                        if (contain(board)){
-                            legal ^= 1ULL << cell;
-                        }
-                        if (sgn == 1)
-                            board.pass();
-                    board.undo_board(&flip);
-                }
-                if (legal){
-                    int leaf_val = -65;
-                    int leaf_move = MOVE_UNDEFINED;
-                    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-                        calc_flip(&flip, &board, cell);
-                        board.move_board(&flip);
-                            search.n_nodes = 0;
-                            search.init_board(&board);
-                            calc_features(&search);
-                            int g = -nega_alpha_eval1(&search, -HW2, HW2, false, &searching);
-                        board.undo_board(&flip);
-                        if (leaf_val < g){
-                            leaf_val = g;
-                            leaf_move = cell;
+                int leaf_move = book[board].leaf.move;
+                calc_flip(&flip, &board, leaf_move);
+                bool need_to_rewrite_leaf = false;
+                board.move_board(&flip);
+                    if (board.get_legal() == 0){
+                        board.pass();
+                            need_to_rewrite_leaf = contain(&board);
+                        board.pass();
+                    } else
+                        need_to_rewrite_leaf = contain(&board);
+                board.undo_board(&flip);
+                if (need_to_rewrite_leaf){
+                    int8_t new_leaf_value = SCORE_UNDEFINED, new_leaf_move = MOVE_UNDEFINED;
+                    std::vector<Book_value> links = get_all_moves_with_value(&board);
+                    uint64_t legal = board.get_legal();
+                    bool passed = false;
+                    if (legal == 0){
+                        board.pass();
+                        passed = true;
+                    }
+                    for (Book_value &link: links)
+                        legal ^= 1ULL << link.policy;
+                    if (legal){
+                        Search_result ai_result = ai_specified_moves(board, level, false, 0, true, false, legal);
+                        if (ai_result.value != SCORE_UNDEFINED){
+                            new_leaf_value = ai_result.value;
+                            new_leaf_move = ai_result.policy;
                         }
                     }
-                    add_link(&board, leaf_val, leaf_move);
-                } else{
-                    add_link(&board, SCORE_UNDEFINED, MOVE_UNDEFINED);
+                    if (passed)
+                        board.pass();
+                    add_leaf(&board, new_leaf_value, new_leaf_move);
                 }
             }
-            
         }
-
 
         /*
             @brief import Egaroucid-formatted book (old)
@@ -561,7 +570,7 @@ class Book{
                     }
                 #endif
             }
-            add_all_leaf(stop_loading);
+            add_leaf_all_undefined();
             if (*stop_loading){
                 std::cerr << "stop loading book" << std::endl;
                 fclose(fp);
@@ -654,7 +663,7 @@ class Book{
                     }
                 #endif
             }
-            add_all_leaf(stop_loading);
+            add_leaf_all_undefined();
             if (*stop_loading){
                 std::cerr << "stop loading book" << std::endl;
                 fclose(fp);
@@ -1100,39 +1109,34 @@ class Book{
             return policies;
         }
 
-        /*
-            @brief get a best move
-
-            @param b                    a board pointer to find
-            @param acc_level            accuracy level, 0 is very good, 10 is very bad
-            @return best move and value as Book_value structure
-        */
-        inline Book_value get_random(Board *b, int acc_level){
+        inline Book_value get_random_specified_moves(Board *b, int acc_level, uint64_t use_legal){
             std::vector<std::pair<double, int>> value_policies;
             std::vector<std::pair<int, int>> value_policies_memo;
             uint64_t legal = b->get_legal();
             double best_score = -INF;
             Flip flip;
             for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-                calc_flip(&flip, b, cell);
-                b->move_board(&flip);
-                    int sgn = -1;
-                    if (b->get_legal() == 0ULL){
-                        sgn = 1;
-                        b->pass();
-                    }
-                    if (contain(b)){
-                        Book_value book_value;
-                        book_value.policy = cell;
-                        book_value.value = sgn * get(b).value;
-                        if (book_value.value > best_score)
-                            best_score = (double)book_value.value;
-                        value_policies.emplace_back(std::make_pair((double)book_value.value, cell));
-                        value_policies_memo.emplace_back(std::make_pair(book_value.value, cell));
-                    }
-                    if (sgn == 1)
-                        b->pass();
-                b->undo_board(&flip);
+                if ((1ULL << cell) & use_legal){
+                    calc_flip(&flip, b, cell);
+                    b->move_board(&flip);
+                        int sgn = -1;
+                        if (b->get_legal() == 0ULL){
+                            sgn = 1;
+                            b->pass();
+                        }
+                        if (contain(b)){
+                            Book_value book_value;
+                            book_value.policy = cell;
+                            book_value.value = sgn * get(b).value;
+                            if (book_value.value > best_score)
+                                best_score = (double)book_value.value;
+                            value_policies.emplace_back(std::make_pair((double)book_value.value, cell));
+                            value_policies_memo.emplace_back(std::make_pair(book_value.value, cell));
+                        }
+                        if (sgn == 1)
+                            b->pass();
+                    b->undo_board(&flip);
+                }
             }
             Book_elem board_elem = get(b);
             Book_value res;
@@ -1177,6 +1181,17 @@ class Book{
                 }
             }
             return res;
+        }
+
+        /*
+            @brief get a best move
+
+            @param b                    a board pointer to find
+            @param acc_level            accuracy level, 0 is very good, 10 is very bad
+            @return best move and value as Book_value structure
+        */
+        inline Book_value get_random(Board *b, int acc_level){
+            return get_random_specified_moves(b, acc_level, b->get_legal());
         }
 
         /*

@@ -21,7 +21,7 @@
 Search_result ai(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log);
 int ai_window(Board board, int level, int alpha, int beta, bool use_multi_thread);
 
-struct Book_enlarge_params{
+struct Book_deviate_params{
     int level;
     int depth;
     int max_error_per_move;
@@ -41,7 +41,7 @@ inline int book_widen_calc_value(Board board, int level){
     return ai(board, level, true, 0, true, false).value;
 }
 
-int book_widen_search(Board board, Book_enlarge_params params, int remaining_error, Board *board_copy, int *player, uint64_t *strt_tim, std::string book_file, std::string book_bak, uint64_t strt){
+int book_widen_search(Board board, Book_deviate_params params, int remaining_error, Board *board_copy, int *player, uint64_t *strt_tim, std::string book_file, std::string book_bak, uint64_t strt){
     if (!global_searching)
         return SCORE_UNDEFINED;
     if (tim() - *strt_tim > AUTO_BOOK_SAVE_TIME){
@@ -162,6 +162,10 @@ int book_widen_search(Board board, Book_enlarge_params params, int remaining_err
     return best_value;
 }
 
+void get_book_deviate_todo(Board board, int book_depth, int max_error_per_move, int lower, int upper, std::vector<Board> &book_deviate_todo){
+
+}
+
 /*
     @brief Enlarge book
 
@@ -177,15 +181,26 @@ int book_widen_search(Board board, Book_enlarge_params params, int remaining_err
     @param book_bak             book backup file name
     @param book_learning        a flag for screen drawing
 */
-inline void book_widen(Board root_board, int level, int book_depth, int max_error_per_move, int remaining_error, Board *board_copy, int *player, std::string book_file, std::string book_bak, bool *book_learning){
+inline void book_deviate(Board root_board, int level, int book_depth, int max_error_per_move, int max_error_sum, Board *board_copy, int *player, std::string book_file, std::string book_bak, bool *book_learning){
     uint64_t strt_tim = tim();
     uint64_t all_strt = strt_tim;
-    std::cerr << "book widen started" << std::endl;
+    std::cerr << "book deviate started" << std::endl;
     int before_player = *player;
-    Book_enlarge_params params;
+    Book_deviate_params params;
     params.depth = book_depth;
     params.level = level;
     params.max_error_per_move = max_error_per_move;
+    Book_elem book_elem = book.get(root_board);
+    if (book_elem.value == SCORE_UNDEFINED)
+        book_elem.value = ai(root_board, level, true, 0, true, true).value;
+    int lower = book_elem.value - max_error_sum;
+    int upper = book_elem.value + max_error_sum;
+    if (lower < -SCORE_MAX)
+        lower = -SCORE_MAX;
+    if (upper > SCORE_MAX)
+        upper = SCORE_MAX;
+    std::vector<Board> book_deviate_todo;
+    get_book_deviate_todo(root_board, book_depth, max_error_per_move, lower, upper, book_deviate_todo);
     int g = book_widen_search(root_board, params, remaining_error, board_copy, player, &strt_tim, book_file, book_bak, all_strt);
     root_board.copy(board_copy);
     *player = before_player;
