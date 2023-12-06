@@ -184,7 +184,9 @@ class Book{
         bool init(std::string file, bool show_log, bool *stop_loading){
             delete_all();
             if (!import_file_egbk3(file, show_log, stop_loading)){ // try egbk3 format
+                std::cerr << "failed egbk3 formatted book. trying egbk2 format." << std;:endl;
                 if (!import_file_egbk2(file, show_log, stop_loading)){ // try egbk2 format
+                std::cerr << "failed egbk2 formatted book. trying egbk format." << std;:endl;
                     return import_file_egbk(file, show_log, stop_loading); // try egbk format
                 }
             }
@@ -869,28 +871,8 @@ class Book{
                 ++t;
                 short_val = book_elem.value;
                 char_level = 21; // fixed
-                std::vector<Book_value> links;
                 b = itr->first;
-                uint64_t legal = b.get_legal();
-                Flip flip;
-                for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-                    calc_flip(&flip, &b, cell);
-                    b.move_board(&flip);
-                        int sgn = -1;
-                        if (b.get_legal() == 0ULL){
-                            sgn = 1;
-                            b.pass();
-                        }
-                        if (contain(b)){
-                            Book_value book_value;
-                            book_value.value = sgn * get(b).value;
-                            book_value.policy = cell;
-                            links.emplace_back(book_value);
-                        }
-                        if (sgn == 1)
-                            b.pass();
-                    b.undo_board(&flip);
-                }
+                std::vector<Book_value> links = get_all_moves_with_value(&b);
                 n_link = (char)links.size();
                 leaf_val = itr->second.leaf.value;
                 leaf_move = itr->second.leaf.move;
@@ -1218,9 +1200,6 @@ class Book{
             @brief fix book
         */
         inline void fix(bool *stop){
-            link_book(stop);
-            //delete_isolated_node(stop);
-            //negamax_book_delete_suspicious(stop);
             negamax_book(stop);
         }
 
@@ -1232,115 +1211,21 @@ class Book{
             fix(&stop);
         }
 
-        void link_book(bool *stop){
-            std::cerr << "linking book..." << std::endl;
-            std::vector<Board> boards;
-            for (auto itr = book.begin(); itr != book.end(); ++itr)
-                boards.emplace_back(itr->first);
-            Book_elem book_elem;
-            Flip flip;
-            int t = 0;
-            Board nb;
-            uint64_t legal;
-            bool elem_changed;
-            for (Board &b: boards){
-                if (*stop || !global_searching)
-                    break;
-                ++t;
-                if (t % 16384 == 0)
-                    std::cerr << "linking book " << (t * 100 / (int)boards.size()) << "%" << std::endl;
-                book_elem = book[b];
-                legal = b.get_legal();
-                for (Book_value &elem: book_elem.moves)
-                    legal ^= 1ULL << elem.policy;
-                if (legal){
-                    elem_changed = false;
-                    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-                        calc_flip(&flip, &b, cell);
-                        b.move_board(&flip);
-                            if (b.get_legal()){
-                                if (contain(b)){
-                                    Book_value move;
-                                    move.policy = cell;
-                                    move.value = -get(b).value;
-                                    book_elem.moves.emplace_back(move);
-                                    elem_changed = true;
-                                }
-                            } else{
-                                b.pass();
-                                    if (contain(b)){
-                                        Book_value move;
-                                        move.policy = cell;
-                                        move.value = get(b).value;
-                                        book_elem.moves.emplace_back(move);
-                                        elem_changed = true;
-                                    }
-                                b.pass();
-                            }
-                        b.undo_board(&flip);
-                    }
-                    if (elem_changed)
-                        book[b] = book_elem;
-                }
-            }
-        }
-
-        void delete_isolated_node(bool *stop){
-            std::cerr << "deleting isolated nodes..." << std::endl;
-            std::unordered_set<Board, Book_hash> child_boards;
-            Board root_board;
-            root_board.reset();
-            register_tree_node(root_board, child_boards, stop);
-            std::vector<Board> boards;
-            for (auto itr = book.begin(); itr != book.end(); ++itr)
-                boards.emplace_back(itr->first);
-            uint64_t n_delete = 0;
-            for (Board &board: boards){
-                if (*stop)
-                    break;
-                if (child_boards.find(board) == child_boards.end()){
-                    delete_representative_board(board);
-                    ++n_delete;
-                }
-            }
-            std::cerr << "deleted " << n_delete << " isolated nodes " << std::endl;
-        }
-
-        void register_tree_node(Board board, std::unordered_set<Board, Book_hash> &child_boards, const bool *stop){
-            if (*stop)
-                return;
-            Board rep_board = get_representative_board(board);
-            if (child_boards.find(rep_board) != child_boards.end())
-                return;
-            child_boards.emplace(rep_board);
-            if (contain(&board)){
-                size_t siz = child_boards.size();
-                std::cerr << "connected book size " << siz << std::endl;
-                Book_elem book_elem = get(board);
-                Flip flip;
-                for (Book_value &elem: book_elem.moves){
-                    calc_flip(&flip, &board, elem.policy);
-                    board.move_board(&flip);
-                        register_tree_node(board, child_boards, stop);
-                    board.undo_board(&flip);
-                }
-            }
-        }
-
         void get_need_to_change_tasks(std::vector<std::pair<Board, Book_elem>> &root_boards, int *root_board_n_discs){
+            Board b;
             for (auto itr = book.begin(); itr != book.end(); ++itr){
-                if (itr->first.n_discs() >= *root_board_n_discs && itr->second.moves.size()){
+                b = itr->first;
+                std::vector<Book_value> links = get_all_moves_with_value(&b);
+                if (itr->first.n_discs() >= *root_board_n_discs && links.size()){
                     int max_value = -INF;
                     Board b;
                     b.player = itr->first.player;
                     b.opponent = itr->first.opponent;
                     Flip flip;
-                    bool is_leaf;
                     std::vector<Book_value> new_moves;
                     bool update_child_value = false;
-                    for (const Book_value &elem: itr->second.moves){
-                        is_leaf = true;
-                        calc_flip(&flip, &b, elem.policy);
+                    for (const Book_value &link: links){
+                        calc_flip(&flip, &b, link.policy);
                         int child_value = SCORE_UNDEFINED;
                         b.move_board(&flip);
                             if (b.get_legal()){
@@ -1353,15 +1238,9 @@ class Book{
                                 b.pass();
                             }
                         b.undo_board(&flip);
-                        if (child_value != SCORE_UNDEFINED){
+                        if (child_value != SCORE_UNDEFINED)
                             max_value = std::max(max_value, child_value);
-                            is_leaf = false;
-                        }
-                        Book_value child_book_value;
-                        child_book_value.policy = elem.policy;
-                        child_book_value.value = child_value;
-                        new_moves.emplace_back(child_book_value);
-                        update_child_value |= elem.value != child_value;
+                        update_child_value |= link.value != child_value;
                     }
                     bool update_parent_value = max_value != itr->second.value && max_value != -INF;
                     if (update_parent_value || update_child_value){
@@ -1378,8 +1257,6 @@ class Book{
                             new_elem.value = max_value;
                         else
                             new_elem.value = itr->second.value;
-                        new_elem.moves = new_moves; // always update
-                        new_elem.level = itr->second.level;
                         root_boards.emplace_back(std::make_pair(root_board, new_elem));
                     }
                 }
@@ -1413,114 +1290,23 @@ class Book{
             std::cerr << "negamaxed book with " << n_fixed << " fix" << std::endl;
         }
 
-        void negamax_book_delete_suspicious(bool *stop){
-            std::cerr << "negamaxing book..." << std::endl;
-            std::vector<std::pair<Board, int>> root_boards;
-            std::vector<Board> suspicious_boards;
-            Book_elem book_elem;
-            uint64_t n_fixed = 0;
-            bool looped = true;
-            while (looped){
-                looped = false;
-                int root_board_n_discs = 1;
-                while (root_board_n_discs && !(*stop)){
-                    root_boards.clear();
-                    suspicious_boards.clear();
-                    root_board_n_discs = 0;
-                    for (auto itr = book.begin(); itr != book.end(); ++itr){
-                        if (itr->first.n_discs() >= root_board_n_discs && itr->second.moves.size()){
-                            book_elem = itr->second;
-                            int max_value = -INF;
-                            Board b;
-                            b.player = itr->first.player;
-                            b.opponent = itr->first.opponent;
-                            Flip flip;
-                            bool is_leaf;
-                            for (Book_value &elem: book_elem.moves){
-                                is_leaf = true;
-                                calc_flip(&flip, &b, elem.policy);
-                                b.move_board(&flip);
-                                    if (b.get_legal()){
-                                        if (contain(b)){
-                                            max_value = std::max(max_value, -get(b).value);
-                                            is_leaf = false;
-                                        }
-                                    } else{
-                                        b.pass();
-                                            if (contain(b)){
-                                                max_value = std::max(max_value, get(b).value);
-                                                is_leaf = false;
-                                            }
-                                        b.pass();
-                                    }
-                                b.undo_board(&flip);
-                                //if (is_leaf)
-                                //    max_value = std::max(max_value, elem.value);
-                            }
-                            if (max_value != book_elem.value && max_value != -INF){
-                                Board root_board;
-                                root_board.player = itr->first.player;
-                                root_board.opponent = itr->first.opponent;
-                                if (abs(max_value - book_elem.value) > 6){
-                                    suspicious_boards.emplace_back(root_board);
-                                } else{
-                                    int n_discs = root_board.n_discs();
-                                    if (n_discs > root_board_n_discs){
-                                        root_board_n_discs = n_discs;
-                                        root_boards.clear();
-                                    }
-                                    root_boards.emplace_back(std::make_pair(root_board, max_value));
-                                }
-                            }
-                        }
-                    }
-                    if (suspicious_boards.size()){
-                        for (Board &board: suspicious_boards){
-                            delete_representative_board(board);
-                        }
-                        looped = true;
-                    }
-                    if (root_board_n_discs){
-                        for (std::pair<Board, int> &elem: root_boards){
-                            Board bb = get_representative_board(elem.first);
-                            book[bb].value = elem.second;
-                        }
-                        n_fixed += root_boards.size();
-                        looped = true;
-                    }
-                    std::cerr << "negamaxing book... fixed " << n_fixed << " boards" << std::endl;
-                }
-            }
-            std::cerr << "negamaxed book with " << n_fixed << " fix" << std::endl;
-        }
-
         void depth_align(int max_depth, bool *stop){
             std::vector<Board> boards;
             for (auto itr = book.begin(); itr != book.end(); ++itr)
                 boards.emplace_back(itr->first);
             uint64_t t = 0;
+            int percent = -1;
             for (Board &board: boards){
                 if (*stop)
                     break;
+                if (100 * t / boards.size() > percent){
+                    percent = 100 * t / boards.size();
+                    std::cerr << "converting book " << percent << "%" << std::endl;
+                }
                 ++t;
-                if (t % 16384 == 0)
-                    std::cerr << "cutting book " << (t * 100 / (int)boards.size()) << "%" << std::endl;
                 if (board.n_discs() > 4 + max_depth){
                     book.erase(board);
                 }
-            }
-            //fix(stop);
-        }
-
-        void rewrite_level(int level, bool *stop){
-            uint64_t t = 0;
-            for (auto itr = book.begin(); itr != book.end(); ++itr){
-                if (*stop)
-                    break;
-                ++t;
-                if (t % 16384 == 0)
-                    std::cerr << "rewriting book level " << (t * 100 / (int)book.size()) << "%" << std::endl;
-                itr->second.level = level;
             }
             //fix(stop);
         }
@@ -1531,17 +1317,8 @@ class Book{
             board.reset();
             Book_elem elem;
             elem.value = 0;
-            elem.level = LEVEL_HUMAN;
-            Book_value move;
-            move.value = 0;
-            move.policy = 19;
-            elem.moves.emplace_back(move);
-            move.policy = 26;
-            elem.moves.emplace_back(move);
-            move.policy = 37;
-            elem.moves.emplace_back(move);
-            move.policy = 44;
-            elem.moves.emplace_back(move);
+            elem.leaf.value = 0;
+            elem.leaf.move = 19;
             book[board] = elem;
         }
 
@@ -1745,8 +1522,7 @@ class Book{
         inline int register_symmetric_book(Board b, Book_elem elem){
             int idx;
             Board representive_board = get_representative_board(b, &idx);
-            for (Book_value &move: elem.moves)
-                move.policy = convert_coord_to_representative_board(move.policy, idx);
+            elem.leaf.move = convert_coord_to_representative_board(elem.leaf.move, idx);
             return register_representative(representive_board, elem);
         }
 
@@ -1765,42 +1541,13 @@ class Book{
             if (!contain(b))
                 return register_symmetric_book(b, elem);
             Book_elem book_elem = get(b);
-            book_elem.value = elem.value;
-            book_elem.level = elem.level;
-            for (Book_value &move: elem.moves){
-                bool already_registered = false;
-                for (int i = 0; i < (int)book_elem.moves.size(); ++i){
-                    if (book_elem.moves[i].policy == move.policy){
-                        already_registered = true;
-                        book_elem.moves[i].value = move.value;
-                        break;
-                    }
-                }
-                if (!already_registered){
-                    book_elem.moves.emplace_back(move);
-                }
+            if (elem.value != SCORE_UNDEFINED)
+                book_elem.value = elem.value;
+            if (elem.leaf.value != SCORE_UNDEFINED){
+                book_elem.leaf.value = elem.leaf.value;
+                book_elem.leaf.move = elem.leaf.move;
             }
             return register_symmetric_book(b, book_elem);
-        }
-
-        int count_n_line(Board board){
-            auto itr = n_lines.find(board);
-            if (itr != n_lines.end())
-                return itr->second;
-            Flip flip;
-            Book_elem book_elem = get(board);
-            if (book_elem.moves.size() == 0)
-                return 1;
-            int res = 0;
-            for (Book_value &move: book_elem.moves){
-                calc_flip(&flip, &board, move.policy);
-                board.move_board(&flip);
-                    if (contain(&board))
-                        res += count_n_line(board);
-                board.undo_board(&flip);
-            }
-            n_lines[board] = res;
-            return res;
         }
 };
 
@@ -1811,7 +1558,7 @@ class Book{
 
 
 
-Book_egbk2 book;
+Book book;
 
 bool book_init(std::string file, bool show_log){
     //book_hash_init(show_log);
@@ -1836,8 +1583,4 @@ void book_fix(bool *stop){
 
 void book_depth_align(int depth, bool *stop){
     book.depth_align(depth, stop);
-}
-
-void book_rewrite_level(int level, bool *stop){
-    book.rewrite_level(level, stop);
 }
