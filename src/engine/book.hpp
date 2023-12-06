@@ -32,6 +32,8 @@ Search_result ai(Board board, int level, bool use_book, int book_acc_level, bool
 #define FORCE_BOOK_LEVEL false
 #define FORCE_BOOK_DEPTH false
 
+#define BOOK_EXTENSION ".egbk3"
+
 /*
     @brief book result structure
 
@@ -191,6 +193,46 @@ class Book{
                 }
             }
             return true;
+        }
+
+        inline bool import_book_extension_determination(std::string file, bool *stop){
+            bool result = false;
+            std::vector<std::string> lst;
+            auto offset = std::string::size_type(0);
+            while (1) {
+                auto pos = file.find(".", offset);
+                if (pos == std::string::npos) {
+                    lst.push_back(file.substr(offset));
+                    break;
+                }
+                lst.push_back(file.substr(offset, pos - offset));
+                offset = pos + 1;
+            }
+            if (lst[lst.size() - 1] == "egbk3") {
+                std::cerr << "importing Egaroucid book (.egbk3)" << std::endl;
+                result = import_file_egbk3(file, stop);
+            }
+            if (lst[lst.size() - 1] == "egbk2") {
+                std::cerr << "importing Egaroucid legacy book (.egbk2)" << std::endl;
+                result = import_file_egbk2(file, stop);
+            }
+            else if (lst[lst.size() - 1] == "egbk") {
+                std::cerr << "importing Egaroucid legacy book (.egbk)" << std::endl;
+                result = import_file_egbk(file, stop);
+            }
+            else if (lst[lst.size() - 1] == "dat") {
+                std::cerr << "importing Edax book" << std::endl;
+                result = import_file_edax(file, stop);
+            }
+            else {
+                std::cerr << "this is not a book" << std::endl;
+            }
+            return resule;
+        }
+
+        inline bool import_book_extension_determination(std::string file){
+            bool stop = false;
+            return import_book_extension_determination(file, &stop);
         }
 
         /*

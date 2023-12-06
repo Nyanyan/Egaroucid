@@ -22,61 +22,7 @@ void delete_book() {
 
 bool import_book(std::string file) {
     std::cerr << "book import" << std::endl;
-    bool result = true;
-    std::vector<std::string> lst;
-    auto offset = std::string::size_type(0);
-    while (1) {
-        auto pos = file.find(".", offset);
-        if (pos == std::string::npos) {
-            lst.push_back(file.substr(offset));
-            break;
-        }
-        lst.push_back(file.substr(offset, pos - offset));
-        offset = pos + 1;
-    }
-    if (lst[lst.size() - 1] == "egbk2") {
-        std::cerr << "importing Egaroucid book" << std::endl;
-        result = !book.import_file_bin(file, true);
-    }
-    else if (lst[lst.size() - 1] == "egbk") {
-        std::cerr << "importing Egaroucid book (old version)" << std::endl;
-        result = !book.import_file_bin_egbk(file, true);
-    }
-    else if (lst[lst.size() - 1] == "dat") {
-        std::cerr << "importing Edax book" << std::endl;
-        result = !book.import_edax_book(file, true);
-    }
-    else {
-        std::cerr << "this is not a book" << std::endl;
-    }
-    umigame.delete_all();
-    return result;
-}
-
-bool import_book_egaroucid(std::string file) {
-    std::cerr << "book import" << std::endl;
-    bool result = true;
-    std::vector<std::string> lst;
-    auto offset = std::string::size_type(0);
-    while (1) {
-        auto pos = file.find(".", offset);
-        if (pos == std::string::npos) {
-            lst.push_back(file.substr(offset));
-            break;
-        }
-        lst.push_back(file.substr(offset, pos - offset));
-        offset = pos + 1;
-    }
-    if (lst[lst.size() - 1] == "egbk2") {
-        std::cerr << "importing Egaroucid book" << std::endl;
-        result = !book.import_file_bin(file, true);
-    } else if (lst[lst.size() - 1] == "egbk") {
-        std::cerr << "importing Egaroucid book (old version)" << std::endl;
-        result = !book.import_file_bin_egbk(file, true);
-    }
-    else {
-        std::cerr << "this is not an Egaroucid book" << std::endl;
-    }
+    bool result = book.import_book_extension_determination(file);
     umigame.delete_all();
     return result;
 }
@@ -122,7 +68,7 @@ public:
         else if (!imported) {
             getData().fonts.font(language.get("book", "loading")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             if (import_book_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-                failed = import_book_future.get();
+                failed = !import_book_future.get();
                 imported = true;
             }
         }
@@ -237,13 +183,13 @@ public:
                 if (delete_book_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                     delete_book_future.get();
                     book_deleting = false;
-                    import_book_future = std::async(std::launch::async, import_book_egaroucid, getData().settings.book_file);
+                    import_book_future = std::async(std::launch::async, import_book, getData().settings.book_file);
                     book_importing = true;
                 }
             }
             else if (book_importing) {
                 if (import_book_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-                    failed = import_book_future.get();
+                    failed = !import_book_future.get();
                     if (getData().settings.book_file.size() < 6 || getData().settings.book_file.substr(getData().settings.book_file.size() - 6, 6) != ".egbk2")
                         getData().settings.book_file += ".egbk2";
                     book_importing = false;

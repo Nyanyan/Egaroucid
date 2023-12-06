@@ -44,7 +44,7 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->n_threads = std::min(32, (int)std::thread::hardware_concurrency());
     settings->auto_update_check = 1;
     settings->lang_name = get_default_language();
-    settings->book_file = directories->document_dir + "book.egbk2";
+    settings->book_file = directories->document_dir + "book" + BOOK_EXTENSION;
     settings->use_book = true;
     settings->level = DEFAULT_LEVEL;
     settings->ai_put_black = false;

@@ -421,7 +421,6 @@ struct Menu_elements {
     bool change_book_by_right_click;
 	bool save_as_edax_book;
     bool book_start_aligning;
-    bool book_start_rewriting_level;
 
     // input / output
     // input
@@ -502,7 +501,6 @@ struct Menu_elements {
         book_reference = false;
         change_book_by_right_click = settings->change_book_by_right_click;
         book_start_aligning = false;
-        book_start_rewriting_level = false;
 
         input_transcript = false;
         input_board = false;
