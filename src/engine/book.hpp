@@ -146,7 +146,7 @@ void book_hash_init(bool show_log){
     @return hash code
 */
 struct Book_hash {
-    size_t operator()(Board board) const{
+    size_t operator()(Board &board) const{
         const uint16_t *p = (uint16_t*)&board.player;
         const uint16_t *o = (uint16_t*)&board.opponent;
         return 

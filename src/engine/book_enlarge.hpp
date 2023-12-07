@@ -27,143 +27,60 @@ struct Book_deviate_params{
     int max_error_per_move;
 };
 
-/*
-    @brief Get a value of the given board
 
-    This function is a wrapper for convenience
 
-    @param board                board to solve
-    @param level                level to search
-
-    @return a score of the board
-*/
-inline int book_widen_calc_value(Board board, int level){
-    return ai(board, level, true, 0, true, false).value;
-}
-
-int book_widen_search(Board board, Book_deviate_params params, int remaining_error, Board *board_copy, int *player, uint64_t *strt_tim, std::string book_file, std::string book_bak, uint64_t strt){
-    if (!global_searching)
-        return SCORE_UNDEFINED;
-    if (tim() - *strt_tim > AUTO_BOOK_SAVE_TIME){
-        book.save_bin(book_file, book_bak);
-        *strt_tim = tim();
-    }
-    int g;
-    // leaf
-    if (board.is_end()){
-        g = board.score_player();
-        std::cerr << "time " << ms_to_time_short(tim() - strt) << " depth " << board.n_discs() - 4 << " LF value " << g << std::endl;
-        book.change(board, g, params.level);
-        return g;
-    }
-    if (board.n_discs() >= 4 + params.depth){
-        g = book_widen_calc_value(board, params.level);
-        std::cerr << "time " << ms_to_time_short(tim() - strt) << " depth " << board.n_discs() - 4 << " LF value " << g << std::endl;
-        book.change(board, g, params.level);
-        return g;
-    }
-
-    // pass
-    uint64_t legal = board.get_legal();
-    if (legal == 0ULL){
+void get_book_deviate_todo(Board board, int book_depth, int max_error_per_move, int lower, int upper, std::unordered_set<Board, Book_hash> &book_deviate_todo, uint64_t all_strt){
+    // pass?
+    if (board.get_legal() == 0){
         board.pass();
-        *player ^= 1;
-            if (board.get_legal() != 0ULL)
-                g = -book_widen_search(board, params, remaining_error, board_copy, player, strt_tim, book_file, book_bak, strt);
-            else
-                g = -board.score_player();
-        *player ^= 1;
-        board.pass();
-        return g;
+        if (board.get_legal() == 0)
+            return; // game over
+        get_book_deviate_todo(board, book_depth, max_error_per_move, -upper, -lower, book_deviate_todo);
     }
-    
-    // main search
-    // first, search best move
-    Flip flip;
-    int best_value;
-    Search_result prev_best_move = ai(board, params.level, true, 0, true, false);
-    calc_flip(&flip, &board, prev_best_move.policy);
-    board.move_board(&flip);
-    board.copy(board_copy);
-    *player ^= 1;
-        best_value = -book_widen_search(board, params, remaining_error, board_copy, player, strt_tim, book_file, book_bak, strt);
-        if (global_searching && -HW2 <= best_value && best_value <= HW2){
-            std::cerr << "time " << ms_to_time_short(tim() - strt) << " depth " << board.n_discs() - 4 << " BM value " << best_value << std::endl;
-        } else
-            return SCORE_UNDEFINED;
-    board.undo_board(&flip);
-    board.copy(board_copy);
-    *player ^= 1;
-    legal ^= 1ULL << prev_best_move.policy;
-
-    // second, see book and search moves in book
-    std::vector<Book_value> book_best_moves = book.get_all_moves_with_value(&board);
-    for (Book_value &elem: book_best_moves){
-        if (legal & (1ULL << elem.policy)){
-            int n_remaining_error = remaining_error - std::max(0, best_value - elem.value);
-            if (n_remaining_error >= 0 && best_value - elem.value <= params.max_error_per_move){
-                calc_flip(&flip, &board, (uint_fast8_t)elem.policy);
+    // already searched?
+    if (book_deviate_todo.find(board) != book_deviate_todo.end())
+        return;
+    // check depth
+    if (board.n_discs() > book_depth + 4)
+        return;
+    Book_elem book_elem = book.get(board);
+    // expand links
+    if (lower <= book_elem.value && book_elem.value <= upper){
+        std::vector<Book_value> links = book.get_all_moves_with_value(&board);
+        Flip flip;
+        for (Book_value &link: links){
+            if (link.value >= book_elem.value - max_error_per_move){
+                calc_flip(&flip, &board, link.policy);
                 board.move_board(&flip);
-                board.copy(board_copy);
-                *player ^= 1;
-                    g = -book_widen_search(board, params, n_remaining_error, board_copy, player, strt_tim, book_file, book_bak, strt);
-                    if (global_searching && -HW2 <= g && g <= HW2){
-                        std::cerr << "time " << ms_to_time_short(tim() - strt) << " depth " << board.n_discs() - 4 << " BK value " << g << " best " << best_value << " remaining error " << n_remaining_error << std::endl;
-                    } else
-                        return SCORE_UNDEFINED;
+                    get_book_deviate_todo(board, book_depth, max_error_per_move, -upper, -lower, book_deviate_todo);
                 board.undo_board(&flip);
-                board.copy(board_copy);
-                *player ^= 1;
-                best_value = std::max(best_value, g);
             }
-            legal ^= 1ULL << elem.policy;
         }
     }
-
-    // third, other moves
-    if (legal){
-        for (uint_fast8_t policy = first_bit(&legal); legal; policy = next_bit(&legal)){
-            calc_flip(&flip, &board, policy);
-            board.move_board(&flip);
-            board.copy(board_copy);
-            *player ^= 1;
-                int pre_value;
-                //int alpha = best_value - params.max_error_per_move - 1;
-                int alpha = std::max(-HW2, best_value - 1 - std::max(params.max_error_per_move, remaining_error));
-                int beta = best_value;
-                if (board.get_legal() == 0ULL){
-                    board.pass();
-                        if (board.get_legal() == 0ULL)
-                            pre_value = board.score_player();
-                        else
-                            pre_value = ai_window(board, params.level, alpha, beta, true);
-                    board.pass();
-                } else
-                    pre_value = -ai_window(board, params.level, -beta, -alpha, true);
-                int n_remaining_error = remaining_error - std::max(0, best_value - pre_value);
-                if (n_remaining_error >= 0 && best_value - pre_value <= params.max_error_per_move){
-                    g = -book_widen_search(board, params, n_remaining_error, board_copy, player, strt_tim, book_file, book_bak, strt);
-                    if (global_searching && -HW2 <= g && g <= HW2){
-                        std::cerr << "time " << ms_to_time_short(tim() - strt) << " depth " << board.n_discs() - 4 << " OT value " << g << " best " << best_value << " remaining error " << n_remaining_error << std::endl;
-                    } else
-                        return SCORE_UNDEFINED;
-                    best_value = std::max(best_value, g);
-                }
-            board.undo_board(&flip);
-            board.copy(board_copy);
-            *player ^= 1;
-        }
+    // check leaf
+    if (book_elem.leaf.value >= book_elem.value - max_error_per_move && lower <= book_elem.leaf.value && book_elem.leaf.value <= upper){
+        book_deviate_todo.emplace(board);
+        if (book_deviate_todo.size() % 10 == 0)
+            std::cerr << "book deviate todo " << book_deviate_todo.size() << " calculating... time " << tim() - all_strt << " ms" << std::endl;
     }
-
-    if (global_searching && -HW2 <= best_value && best_value <= HW2){
-        std::cerr << "time " << ms_to_time_short(tim() - strt) << " depth " << board.n_discs() - 4 << " RG value " << best_value << std::endl;
-        book.change(board, best_value, params.level);
-    }
-    return best_value;
 }
 
-void get_book_deviate_todo(Board board, int book_depth, int max_error_per_move, int lower, int upper, std::vector<Board> &book_deviate_todo){
+void expand_leaf(int level, Board board){
+    Book_elem book_elem = book.get(board);
+    Flip flip;
+    calc_flip(&flip, &board, book_elem.leaf.move);
+    board.move_board(&flip);
+        
+    board.undo_board(&flip);
+}
 
+void expand_leafs(int level, std::unordered_set<Board, Book_hash> &book_deviate_todo){
+    int n_all = book_deviate_todo.size();
+    int i = 0;
+    for (Board &board: book_deviate_todo){
+        expand_leaf(level, board);
+        std::cerr << "book deviating " << ++i << "/" << n_all << " time " << tim() - all_strt << " ms" << std::endl;
+    }
 }
 
 /*
@@ -199,14 +116,19 @@ inline void book_deviate(Board root_board, int level, int book_depth, int max_er
         lower = -SCORE_MAX;
     if (upper > SCORE_MAX)
         upper = SCORE_MAX;
-    std::vector<Board> book_deviate_todo;
-    get_book_deviate_todo(root_board, book_depth, max_error_per_move, lower, upper, book_deviate_todo);
-    int g = book_widen_search(root_board, params, remaining_error, board_copy, player, &strt_tim, book_file, book_bak, all_strt);
+    while (true){
+        std::unordered_set<Board, Book_hash> book_deviate_todo;
+        get_book_deviate_todo(root_board, book_depth, max_error_per_move, lower, upper, book_deviate_todo, all_strt);
+        std::cerr << "book deviate todo " << book_deviate_todo.size() << " calculated time " << tim() - all_strt << " ms" << std::endl;
+        if (book_deviate_todo.size() == 0)
+            break;
+        expand_leafs(level, book_deviate_todo);
+    }
     root_board.copy(board_copy);
     *player = before_player;
     transposition_table.reset_date();
     //book.fix();
-    book.save_bin(book_file, book_bak);
-    std::cerr << "time " << ms_to_time_short(tim() - all_strt) << " book widen finished value " << book.get(root_board).value << std::endl;
+    book.save_egbk3(book_file, book_bak);
+    std::cerr << "book deviate finished value " << book.get(root_board).value << " time " << ms_to_time_short(tim() - all_strt) << std::endl;
     *book_learning = false;
 }
