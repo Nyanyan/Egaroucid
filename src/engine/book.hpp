@@ -874,6 +874,8 @@ class Book{
             @param bak_file             backup file name
         */
         inline void save_bin_edax(std::string file){
+            bool stop = false;
+            add_leaf_all_search(1, &stop);
             std::ofstream fout;
             fout.open(file.c_str(), std::ios::out|std::ios::binary|std::ios::trunc);
             if (!fout){

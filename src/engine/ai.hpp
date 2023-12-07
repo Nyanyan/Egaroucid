@@ -509,12 +509,12 @@ Search_result ai_hint(Board board, int level, bool use_book, bool use_multi_thre
             value_sign = -1;
         }
     }
-    Book_value book_value = book.get_random(&board, 0);
-    if (book_value.policy != -1 && use_book){
+    Book_elem book_elem = book.get(&board);
+    if (book_elem.value != SCORE_UNDEFINED){
         if (show_log)
-            std::cerr << "book " << idx_to_coord(book_value.policy) << std::endl;
-        res.policy = book_value.policy;
-        res.value = value_sign * book_value.value;
+            std::cerr << "book " << book_elem.value << std::endl;
+        res.policy = MOVE_UNDEFINED;
+        res.value = value_sign * book_elem.value;
         res.depth = SEARCH_BOOK;
         res.nps = 0;
         res.is_end_search = false;
