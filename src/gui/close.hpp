@@ -54,7 +54,7 @@ void close_app(Menu_elements menu_elements, Settings settings, Directories direc
 		save_settings(menu_elements, settings, directories);
 	}
     if (book_information.changed) {
-        book.save_bin(settings.book_file, settings.book_file + ".bak");
+        book.save_egbk3(settings.book_file, settings.book_file + ".bak");
     }
 }
 

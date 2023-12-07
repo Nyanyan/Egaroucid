@@ -118,7 +118,7 @@ class Umigame{
             Umigame_result umigame_res;
 			if (!global_searching)
                 return umigame_res;
-			if (!book.contain_symmetry(b)){
+			if (!book.contain(b)){
 				umigame_res.b = 1;
                 umigame_res.w = 1;
                 return umigame_res;
@@ -137,7 +137,8 @@ class Umigame{
             }
             Flip flip;
             Book_elem book_elem = book.get(b);
-            for (Book_value &move: book_elem.moves){
+            std::vector<Book_value> links = book.get_all_moves_with_value(b);
+            for (Book_value &move: links){
                 if (max_val < move.value){
                     best_moves.clear();
                     max_val = move.value;
@@ -146,7 +147,6 @@ class Umigame{
                     best_moves.emplace_back(move.policy);
             }
             //b->print();
-            //std::cerr << book_elem.value << " " << max_val << "  " << book_elem.moves.size() << std::endl;
             if (best_moves.size() == 0){
                 umigame_res.b = 1;
                 umigame_res.w = 1;

@@ -341,7 +341,7 @@ public:
             if (start_button.clicked()){
                 before_start = false;
                 book_learning = true;
-                book_learn_future = std::async(std::launch::async, book_widen, root_board, getData().menu_elements.level, getData().menu_elements.book_learn_depth, getData().menu_elements.book_learn_error_per_move, getData().menu_elements.book_learn_error_sum, &history_elem.board, &history_elem.player, getData().settings.book_file, getData().settings.book_file + ".bak", &book_learning);
+                book_learn_future = std::async(std::launch::async, book_deviate, root_board, getData().menu_elements.level, getData().menu_elements.book_learn_depth, getData().menu_elements.book_learn_error_per_move, getData().menu_elements.book_learn_error_sum, &history_elem.board, &history_elem.player, getData().settings.book_file, getData().settings.book_file + ".bak", &book_learning);
             }
             back_button.draw();
             if (back_button.clicked() || KeyEscape.pressed()){
@@ -463,65 +463,6 @@ public:
             if (start_button.clicked()){
                 before_start = false;
                 task_future = std::async(std::launch::async, book_depth_align, getData().menu_elements.book_learn_depth, &stop);
-            }
-            back_button.draw();
-            if (back_button.clicked() || KeyEscape.pressed()){
-                getData().graph_resources.need_init = false;
-                changeScene(U"Main_scene", SCENE_FADE_TIME);
-            }
-        } else if (!done){
-            stop_button.draw();
-            if (stop_button.clicked())
-                stop = true;
-            if (task_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-                task_future.get();
-                done = true;
-                global_searching = true;
-            }
-        } else{
-            umigame.delete_all();
-            getData().book_information.changed = true;
-            getData().graph_resources.need_init = false;
-            changeScene(U"Main_scene", SCENE_FADE_TIME);
-        }
-    }
-
-    void draw() const override {
-
-    }
-};
-
-class Rewrite_level_book : public App::Scene {
-private:
-    Button start_button;
-    Button back_button;
-    Button stop_button;
-    bool before_start;
-    bool done;
-    bool stop;
-    std::future<void> task_future;
-
-public:
-    Rewrite_level_book(const InitData& init) : IScene{ init } {
-        start_button.init(BACK_BUTTON_SX, BUTTON2_VERTICAL_1_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("book", "start"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-        back_button.init(BACK_BUTTON_SX, BUTTON2_VERTICAL_2_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-        stop_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("book", "force_stop"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-        before_start = true;
-        done = false;
-        stop = false;
-    }
-
-    void update() override {
-        //if (System::GetUserActions() & UserAction::CloseButtonClicked) {
-        //    changeScene(U"Close", SCENE_FADE_TIME);
-        //}
-        Scene::SetBackground(getData().colors.green);
-        getData().fonts.font(language.get("book", "book_rewrite_level")).draw(25, 50, 50, getData().colors.white);
-        if (before_start){
-            start_button.draw();
-            if (start_button.clicked()){
-                before_start = false;
-                task_future = std::async(std::launch::async, book_rewrite_level, getData().menu_elements.level, &stop);
             }
             back_button.draw();
             if (back_button.clicked() || KeyEscape.pressed()){

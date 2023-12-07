@@ -20,6 +20,7 @@
 
 inline Search_result tree_search(Board board, int depth, uint_fast8_t mpc_level, bool show_log, bool use_multi_thread);
 Search_result ai(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log);
+Search_result ai_specified_moves(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t use_legal);
 
 #define BOOK_N_ACCEPT_LEVEL 11
 #define BOOK_ACCURACY_LEVEL_INF 10
@@ -146,7 +147,7 @@ void book_hash_init(bool show_log){
     @return hash code
 */
 struct Book_hash {
-    size_t operator()(Board &board) const{
+    size_t operator()(Board board) const{
         const uint16_t *p = (uint16_t*)&board.player;
         const uint16_t *o = (uint16_t*)&board.opponent;
         return 
@@ -187,9 +188,9 @@ class Book{
         bool init(std::string file, bool show_log, bool *stop_loading){
             delete_all();
             if (!import_file_egbk3(file, show_log, stop_loading)){ // try egbk3 format
-                std::cerr << "failed egbk3 formatted book. trying egbk2 format." << std;:endl;
+                std::cerr << "failed egbk3 formatted book. trying egbk2 format." << std::endl;
                 if (!import_file_egbk2(file, show_log, stop_loading)){ // try egbk2 format
-                std::cerr << "failed egbk2 formatted book. trying egbk format." << std;:endl;
+                std::cerr << "failed egbk2 formatted book. trying egbk format." << std::endl;
                     return import_file_egbk(file, show_log, stop_loading); // try egbk format
                 }
             }
@@ -211,24 +212,24 @@ class Book{
             }
             if (lst[lst.size() - 1] == "egbk3") {
                 std::cerr << "importing Egaroucid book (.egbk3)" << std::endl;
-                result = import_file_egbk3(file, stop);
+                result = import_file_egbk3(file, true, stop);
             }
             if (lst[lst.size() - 1] == "egbk2") {
                 std::cerr << "importing Egaroucid legacy book (.egbk2)" << std::endl;
-                result = import_file_egbk2(file, stop);
+                result = import_file_egbk2(file, true, stop);
             }
             else if (lst[lst.size() - 1] == "egbk") {
                 std::cerr << "importing Egaroucid legacy book (.egbk)" << std::endl;
-                result = import_file_egbk(file, stop);
+                result = import_file_egbk(file, true, stop);
             }
             else if (lst[lst.size() - 1] == "dat") {
                 std::cerr << "importing Edax book" << std::endl;
-                result = import_file_edax(file, stop);
+                result = import_file_edax(file, true, stop);
             }
             else {
                 std::cerr << "this is not a book" << std::endl;
             }
-            return resule;
+            return result;
         }
 
         inline bool import_book_extension_determination(std::string file){
@@ -278,7 +279,7 @@ class Book{
                 return false;
             }
             if (book_version != 3){
-                std::cerr << "[ERROR] This is not Egarocuid book version 3, found version" << (int)book_version << std::endl;
+                std::cerr << "[ERROR] This is not Egarocuid book version 3, found version " << (int)book_version << std::endl;
                 fclose(fp);
                 return false;
             }
@@ -365,9 +366,9 @@ class Book{
             return true;
         }
 
-        inline bool import_file_bin_egbk3(std::string file, bool show_log){
+        inline bool import_file_egbk3(std::string file, bool show_log){
             bool stop_loading = false;
-            return import_file_bin_egbk3(file, show_log, &stop_loading);
+            return import_file_egbk3(file, show_log, &stop_loading);
         }
 
 
@@ -493,7 +494,7 @@ class Book{
                 return false;
             }
             if (book_version != 2){
-                std::cerr << "[ERROR] This is not Egarocuid book version 2, found version" << (int)book_version << std::endl;
+                std::cerr << "[ERROR] This is not Egarocuid book version 2, found version " << (int)book_version << std::endl;
                 fclose(fp);
                 return false;
             }
@@ -694,7 +695,7 @@ class Book{
             @param file                 book file (.dat file)
             @return book completely imported?
         */
-        inline bool import_file_edax(std::string file, bool show_log) {
+        inline bool import_file_edax(std::string file, bool show_log, bool *stop) {
             if (show_log)
                 std::cerr << "importing " << file << std::endl;
             FILE* fp;
@@ -728,6 +729,8 @@ class Book{
             Book_elem book_elem;
             int percent = -1;
             for (int i = 0; i < n_boards; ++i){
+                if (*stop)
+                    return false;
                 if (100 * i / n_boards > percent && show_log){
                     percent = 100 * i / n_boards;
                     std::cerr << "loading book " << percent << "%" << std::endl;

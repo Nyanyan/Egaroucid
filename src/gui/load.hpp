@@ -49,8 +49,11 @@ int init_ai(Settings* settings, const Directories* directories, bool *stop_loadi
         offset = pos + 1;
     }
     if (lst[lst.size() - 1] == "egbk"){
-        settings->book_file += "2"; // force book version 2
-        book.save_bin(settings->book_file, settings->book_file + ".bak");
+        settings->book_file += "2"; // force book version 3
+        book.save_egbk3(settings->book_file, settings->book_file + ".bak");
+    } else if (lst[lst.size() - 1] == "egbk2"){
+        settings->book_file[settings->book_file.size() - 1] = '3'; // force book version 3
+        book.save_egbk3(settings->book_file, settings->book_file + ".bak");
     }
     return ERR_OK;
 }
