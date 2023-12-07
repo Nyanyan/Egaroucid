@@ -296,8 +296,8 @@ class Book{
             for (int i = 0; i < n_boards; ++i) {
                 if (*stop_loading)
                     break;
-                if (100 * i / n_boards > percent && show_log){
-                    percent = 100 * i / n_boards;
+                if (100LL * i / n_boards > percent && show_log){
+                    percent = 100LL * i / n_boards;
                     std::cerr << "loading book " << percent << "%" << std::endl;
                 }
                 // read board, player
@@ -405,15 +405,20 @@ class Book{
             for (auto itr = book.begin(); itr != book.end(); ++itr)
                 boards.emplace_back(itr->first);
             Flip flip;
-            int percent = -1, i = 0, n_boards = (int)boards.size();
+            std::cerr << "add leaf to book" << std::endl;
+            int percent = -1, t = 0, n_boards = (int)boards.size();
             for (Board &board: boards){
-                if (100 * i / n_boards > percent){
-                    percent = 100 * i / n_boards;
+                if (100LL * t / n_boards > percent){
+                    percent = 100LL * t / n_boards;
                     std::cerr << "adding leaf " << percent << "%" << std::endl;
                 }
-                ++i;
+                ++t;
                 if (*stop)
                     break;
+                
+                std::cerr << (int)book[board].leaf.value << " " <<idx_to_coord(book[board].leaf.move) << std::endl;
+                board.print();
+                
                 int leaf_move = book[board].leaf.move;
                 calc_flip(&flip, &board, leaf_move);
                 bool need_to_rewrite_leaf = false;
@@ -511,8 +516,8 @@ class Book{
             for (int i = 0; i < n_boards; ++i) {
                 if (*stop_loading)
                     break;
-                if (100 * i / n_boards > percent && show_log){
-                    percent = 100 * i / n_boards;
+                if (100LL * i / n_boards > percent && show_log){
+                    percent = 100LL * i / n_boards;
                     std::cerr << "loading book " << percent << "%" << std::endl;
                 }
                 // read board player
@@ -631,8 +636,8 @@ class Book{
             for (int i = 0; i < n_boards; ++i) {
                 if (*stop_loading)
                     break;
-                if (100 * i / n_boards > percent && show_log){
-                    percent = 100 * i / n_boards;
+                if (100LL * i / n_boards > percent && show_log){
+                    percent = 100LL * i / n_boards;
                     std::cerr << "loading book " << percent << "%" << std::endl;
                 }
                 // read board player
@@ -721,6 +726,7 @@ class Book{
                 return false;
             }
             int n_boards = elem_int;
+            std::cerr << n_boards << " boards found" << std::endl;
             uint64_t player, opponent;
             int16_t value;
             char link = 0, link_value, link_move, level, leaf_value, leaf_move;
@@ -731,8 +737,8 @@ class Book{
             for (int i = 0; i < n_boards; ++i){
                 if (*stop)
                     return false;
-                if (100 * i / n_boards > percent && show_log){
-                    percent = 100 * i / n_boards;
+                if (100LL * i / n_boards > percent && show_log){
+                    percent = 100LL * i / n_boards;
                     std::cerr << "loading book " << percent << "%" << std::endl;
                 }
                 // read board player
@@ -849,9 +855,9 @@ class Book{
             int t = 0, percent = -1, n_boards = (int)book.size();
             for (auto itr = book.begin(); itr != book.end(); ++itr){
                 ++t;
-                if (100 * t / n_boards > percent){
-                    percent = 100 * t / n_boards;
-                    std::cerr << "loading book " << percent << "%" << std::endl;
+                if (100LL * t / n_boards > percent){
+                    percent = 100LL * t / n_boards;
+                    std::cerr << "saving book " << percent << "%" << std::endl;
                 }
                 fout.write((char*)&itr->first.player, 8);
                 fout.write((char*)&itr->first.opponent, 8);
@@ -914,7 +920,6 @@ class Book{
             fout.write((char*)&verb, 4);
             int n_position = book.size();
             fout.write((char*)&n_position, 4);
-            uint64_t t = 0, n_leaf_add = 0;
             int n_win = 0, n_draw = 0, n_lose = 0;
             int n_line;
             short short_val, short_val_min = -HW2, short_val_max = HW2;
@@ -928,10 +933,12 @@ class Book{
             Board b;
             bool searching = true;
             int percent = -1;
+            int n_boards = (int)book.size();
+            int t = 0;
             for (auto itr = book.begin(); itr != book.end(); ++itr){
                 book_elem = itr->second;
-                if (100 * t / book.size() > percent){
-                    percent = 100 * t / book.size();
+                if (100LL * t / n_boards > percent){
+                    percent = 100LL * t / n_boards;
                     std::cerr << "converting book " << percent << "%" << std::endl;
                 }
                 ++t;
@@ -968,7 +975,7 @@ class Book{
                 fout.write((char*)&leaf_move, 1);
             }
             fout.close();
-            std::cerr << "saved " << t << " boards as a edax-formatted book " << n_position << " " << book.size() << " " << n_leaf_add << std::endl;
+            std::cerr << "saved " << t << " boards as a edax-formatted book " << n_position << " " << book.size() << std::endl;
         }
 
         /*
@@ -1371,8 +1378,8 @@ class Book{
             for (Board &board: boards){
                 if (*stop)
                     break;
-                if (100 * t / boards.size() > percent){
-                    percent = 100 * t / boards.size();
+                if (100LL * t / boards.size() > percent){
+                    percent = 100LL * t / boards.size();
                     std::cerr << "converting book " << percent << "%" << std::endl;
                 }
                 ++t;
@@ -1381,6 +1388,10 @@ class Book{
                 }
             }
             //fix(stop);
+        }
+
+        uint64_t size(){
+            return book.size();
         }
 
     private:
