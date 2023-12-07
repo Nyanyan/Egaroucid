@@ -846,11 +846,13 @@ class Book{
             fout.write((char*)&book_version, 1);
             int n_book = (int)book.size();
             fout.write((char*)&n_book, 4);
-            int t = 0;
+            int t = 0, percent = -1, n_boards = (int)book.size();
             for (auto itr = book.begin(); itr != book.end(); ++itr){
                 ++t;
-                if (t % 65536 == 0)
-                    std::cerr << "saving book " << (t * 100 / (int)book.size()) << "%" << std::endl;
+                if (100 * t / n_boards > percent){
+                    percent = 100 * t / n_boards;
+                    std::cerr << "loading book " << percent << "%" << std::endl;
+                }
                 fout.write((char*)&itr->first.player, 8);
                 fout.write((char*)&itr->first.opponent, 8);
                 elem = (char)itr->second.value;
