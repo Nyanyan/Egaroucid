@@ -404,7 +404,13 @@ class Book{
             for (auto itr = book.begin(); itr != book.end(); ++itr)
                 boards.emplace_back(itr->first);
             Flip flip;
+            int percent = -1, i = 0, n_boards = (int)boards.size();
             for (Board &board: boards){
+                if (100 * i / n_boards > percent){
+                    percent = 100 * i / n_boards;
+                    std::cerr << "adding leaf " << percent << "%" << std::endl;
+                }
+                ++i;
                 if (*stop)
                     break;
                 int leaf_move = book[board].leaf.move;
@@ -435,6 +441,8 @@ class Book{
                             new_leaf_value = ai_result.value;
                             new_leaf_move = ai_result.policy;
                         }
+                    } else{
+                        new_leaf_move = MOVE_PASS;
                     }
                     if (passed)
                         board.pass();

@@ -30,6 +30,8 @@ struct Book_deviate_params{
 
 
 void get_book_deviate_todo(Board board, int book_depth, int max_error_per_move, int lower, int upper, std::unordered_set<Board, Book_hash> &book_deviate_todo, uint64_t all_strt){
+    if (!global_searching)
+        break;
     // pass?
     if (board.get_legal() == 0){
         board.pass();
@@ -70,7 +72,14 @@ void expand_leaf(int level, Board board){
     Flip flip;
     calc_flip(&flip, &board, book_elem.leaf.move);
     board.move_board(&flip);
-        
+        if (!book.contain(&board)){ 
+            Search_result search_result = ai(board, level, false, 0, true, false);
+            Book_elem book_elem;
+            book_elem.value = search_result.value;
+            book_elem.leaf.value = SCORE_UNDEFINED;
+            book_elem.leaf.move  = MOVE_UNDEFINED;
+            book.merge(board, book_elem);
+        }
     board.undo_board(&flip);
 }
 
@@ -78,6 +87,8 @@ void expand_leafs(int level, std::unordered_set<Board, Book_hash> &book_deviate_
     int n_all = book_deviate_todo.size();
     int i = 0;
     for (Board &board: book_deviate_todo){
+        if (!global_searching)
+            break;
         expand_leaf(level, board);
         std::cerr << "book deviating " << ++i << "/" << n_all << " time " << tim() - all_strt << " ms" << std::endl;
     }
@@ -123,6 +134,7 @@ inline void book_deviate(Board root_board, int level, int book_depth, int max_er
         if (book_deviate_todo.size() == 0)
             break;
         expand_leafs(level, book_deviate_todo);
+        book.add_leaf_all_search(level, &global_searching);
     }
     root_board.copy(board_copy);
     *player = before_player;

@@ -605,6 +605,7 @@ Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint_fa
     #endif
     search.use_multi_thread = use_multi_thread;
     Book_elem book_elem = book.get(&search.board);
+    std::vector<Book_value> links = book.get_all_moves_with_value(search.board);
     calc_features(&search);
     Flip flip;
     calc_flip(&flip, &search.board, played_move);
@@ -631,7 +632,7 @@ Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint_fa
             calc_flip(&flip, &search.board, cell);
             search.board.move_board(&flip);
                 g = SCORE_UNDEFINED;
-                for (Book_value book_value: book_elem.moves){
+                for (Book_value book_value: links){
                     if (book_value.policy == cell){
                         g = book_value.value;
                         break;
