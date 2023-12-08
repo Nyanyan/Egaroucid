@@ -1324,17 +1324,25 @@ class Book{
                     Flip flip;
                     std::vector<Book_value> new_moves;
                     bool update_child_value = false;
+                    int32_t n_lines = 1;
+                    Book_elem child;
                     for (const Book_value &link: links){
                         calc_flip(&flip, &b, link.policy);
                         int child_value = SCORE_UNDEFINED;
                         b.move_board(&flip);
                             if (b.get_legal()){
-                                if (contain(b))
-                                    child_value = -get(b).value;
+                                if (contain(b)){
+                                    child = get(b);
+                                    child_value = -child.value;
+                                    n_lines += child.n_lines;
+                                }
                             } else{
                                 b.pass();
-                                    if (contain(b))
-                                        child_value = get(b).value;
+                                    if (contain(b)){
+                                        child = get(b);
+                                        child_value = child.value;
+                                        n_lines += child.n_lines;
+                                    }
                                 b.pass();
                             }
                         b.undo_board(&flip);
@@ -1343,7 +1351,8 @@ class Book{
                         update_child_value |= link.value != child_value;
                     }
                     bool update_parent_value = max_value != itr->second.value && max_value != -INF;
-                    if (update_parent_value || update_child_value){
+                    bool update_n_lines = n_lines != itr->second.n_lines;
+                    if (update_parent_value || update_child_value || update_n_lines){
                         Board root_board;
                         root_board.player = itr->first.player;
                         root_board.opponent = itr->first.opponent;
@@ -1357,6 +1366,7 @@ class Book{
                             new_elem.value = max_value;
                         else
                             new_elem.value = itr->second.value;
+                        new_elem.n_lines = n_lines;
                         root_boards.emplace_back(std::make_pair(root_board, new_elem));
                     }
                 }
@@ -1378,7 +1388,6 @@ class Book{
                     if (root_board_n_discs){
                         for (std::pair<Board, Book_elem> &elem: root_boards){
                             Board bb = get_representative_board(elem.first);
-                            //book[bb] = elem.second;
                             book.insert_or_assign(bb, elem.second);
                         }
                         n_fixed += root_boards.size();
