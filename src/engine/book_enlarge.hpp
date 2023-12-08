@@ -30,6 +30,21 @@ struct Book_deviate_params{
 struct Book_deviate_todo_elem{
     Board board;
     int player;
+
+    void move(Flip *flip){
+        board.move_board(flip);
+        player ^= 1;
+    }
+
+    void undo(Flip *flip){
+        board.move_board(flip);
+        player ^= 1;
+    }
+
+    void pass(){
+        board.pass();
+        player ^= 1;
+    }
 };
 
 bool operator==(const Book_deviate_todo_elem& a, const Book_deviate_todo_elem& b){
@@ -52,46 +67,37 @@ struct Book_deviate_hash {
     }
 };
 
-void get_book_deviate_todo(Board board, int book_depth, int max_error_per_move, int lower, int upper, std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> &book_deviate_todo, uint64_t all_strt, bool *book_learning, Board *board_copy, int *player){
+void get_book_deviate_todo(Book_deviate_todo_elem todo_elem, int book_depth, int max_error_per_move, int lower, int upper, std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> &book_deviate_todo, uint64_t all_strt, bool *book_learning, Board *board_copy, int *player){
     if (!global_searching || !(*book_learning))
         return;
+    *board_copy = todo_elem.board;
+    *player = todo_elem.player;
     // pass?
-    if (board.get_legal() == 0){
-        board.pass();
-        if (board.get_legal() == 0)
+    if (todo_elem.board.get_legal() == 0){
+        todo_elem.pass();
+        if (todo_elem.board.get_legal() == 0)
             return; // game over
-        *board_copy = board.copy();
-        *player ^= 1;
-            get_book_deviate_todo(board, book_depth, max_error_per_move, -upper, -lower, book_deviate_todo, all_strt, book_learning, board_copy, player);
-        *board_copy = board.copy();
-        *player ^= 1;
-        board.pass();
+            get_book_deviate_todo(todo_elem, book_depth, max_error_per_move, -upper, -lower, book_deviate_todo, all_strt, book_learning, board_copy, player);
+        todo_elem.pass();
         return;
     }
     // already searched?
-    Book_deviate_todo_elem todo_elem;
-    todo_elem.board = board;
-    todo_elem.player = *player;
     if (book_deviate_todo.find(todo_elem) != book_deviate_todo.end())
         return;
     // check depth
-    if (board.n_discs() > book_depth + 4)
+    if (todo_elem.board.n_discs() > book_depth + 4)
         return;
-    Book_elem book_elem = book.get(board);
+    Book_elem book_elem = book.get(todo_elem.board);
     // expand links
     if (lower <= book_elem.value && book_elem.value <= upper){
-        std::vector<Book_value> links = book.get_all_moves_with_value(&board);
+        std::vector<Book_value> links = book.get_all_moves_with_value(&todo_elem.board);
         Flip flip;
         for (Book_value &link: links){
             if (link.value >= book_elem.value - max_error_per_move){
-                calc_flip(&flip, &board, link.policy);
-                board.move_board(&flip);
-                *board_copy = board.copy();
-                *player ^= 1;
-                    get_book_deviate_todo(board, book_depth, max_error_per_move, -upper, -lower, book_deviate_todo, all_strt, book_learning, board_copy, player);
-                board.undo_board(&flip);
-                *board_copy = board.copy();
-                *player ^= 1;
+                calc_flip(&flip, &todo_elem.board, link.policy);
+                todo_elem.move(&flip);
+                    get_book_deviate_todo(todo_elem, book_depth, max_error_per_move, -upper, -lower, book_deviate_todo, all_strt, book_learning, board_copy, player);
+                todo_elem.undo(&flip);
             }
         }
     }
@@ -165,7 +171,10 @@ inline void book_deviate(Board root_board, int level, int book_depth, int max_er
         bool stop = false;
         book.add_leaf_all_search(level, &stop);
         std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> book_deviate_todo;
-        get_book_deviate_todo(root_board, book_depth, max_error_per_move, lower, upper, book_deviate_todo, all_strt, book_learning, board_copy, player);
+        Book_deviate_todo_elem root_elem;
+        root_elem.board = root_board;
+        root_elem.player = *player;
+        get_book_deviate_todo(root_elem, book_depth, max_error_per_move, lower, upper, book_deviate_todo, all_strt, book_learning, board_copy, player);
         std::cerr << "book deviate todo " << book_deviate_todo.size() << " calculated time " << tim() - all_strt << " ms" << std::endl;
         if (book_deviate_todo.size() == 0)
             break;
