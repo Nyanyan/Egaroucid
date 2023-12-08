@@ -37,7 +37,7 @@ struct Book_deviate_todo_elem{
     }
 
     void undo(Flip *flip){
-        board.move_board(flip);
+        board.undo_board(flip);
         player ^= 1;
     }
 
@@ -115,7 +115,7 @@ void expand_leaf(int level, Board board){
     calc_flip(&flip, &board, book_elem.leaf.move);
     board.move_board(&flip);
         if (!book.contain(&board)){ 
-            Search_result search_result = ai(board, level, false, 0, true, false);
+            Search_result search_result = ai(board, level, true, 0, true, false);
             book.change(board, search_result.value);
         }
     board.undo_board(&flip);
@@ -167,13 +167,13 @@ inline void book_deviate(Board root_board, int level, int book_depth, int max_er
         lower = -SCORE_MAX;
     if (upper > SCORE_MAX)
         upper = SCORE_MAX;
+    Book_deviate_todo_elem root_elem;
+    root_elem.board = root_board;
+    root_elem.player = *player;
     while (true){
         bool stop = false;
-        book.add_leaf_all_search(level, &stop);
+        book.add_leaf_all_search(level / 2, &stop);
         std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> book_deviate_todo;
-        Book_deviate_todo_elem root_elem;
-        root_elem.board = root_board;
-        root_elem.player = *player;
         get_book_deviate_todo(root_elem, book_depth, max_error_per_move, lower, upper, book_deviate_todo, all_strt, book_learning, board_copy, player);
         std::cerr << "book deviate todo " << book_deviate_todo.size() << " calculated time " << tim() - all_strt << " ms" << std::endl;
         if (book_deviate_todo.size() == 0)
