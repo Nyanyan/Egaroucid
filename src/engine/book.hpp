@@ -456,14 +456,17 @@ class Book{
                     if (legal){
                         int use_level = level;
                         if (level == ADD_LEAF_SPECIAL_LEVEL)
-                            use_level = 1;
+                            use_level = 3;
                         Search_result ai_result = ai_specified_moves(board, use_level, false, 0, true, false, legal);
                         if (ai_result.value != SCORE_UNDEFINED){
-                            new_leaf_value = -ai_result.value;
-                            new_leaf_move = ai_result.policy;
+                            new_leaf_value = ai_result.value;
                             if (level == ADD_LEAF_SPECIAL_LEVEL)
                                 new_leaf_value = book_elem.value;
-                            //std::cerr << "recalc leaf " << (int)new_leaf_value << " " << (int)new_leaf_move << " " << idx_to_coord(new_leaf_move) << std::endl;
+                            new_leaf_move = ai_result.policy;
+                            std::cerr << "recalc leaf " << (int)new_leaf_value << " " << (int)new_leaf_move << " " << idx_to_coord(new_leaf_move) << std::endl;
+                            for (Book_value &link: links)
+                                std::cerr << "link " << idx_to_coord(link.policy) << std::endl;
+                            board.print();
                         }
                     } else
                         new_leaf_move = MOVE_NOMOVE;

@@ -177,7 +177,7 @@ inline void book_deviate(Board root_board, int level, int book_depth, int max_er
             book.save_egbk3(book_file, book_bak);
         }
         bool stop = false;
-        book.add_leaf_all_search(level / 2, &stop);
+        book.add_leaf_all_search(level, &stop);
         std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> book_deviate_todo;
         get_book_deviate_todo(root_elem, book_depth, max_error_per_move, lower, upper, book_deviate_todo, all_strt, book_learning, board_copy, player);
         std::cerr << "book deviate todo " << book_deviate_todo.size() << " calculated time " << ms_to_time_short(tim() - all_strt) << std::endl;
