@@ -422,6 +422,7 @@ class Book{
             Flip flip;
             std::cerr << "add leaf to book" << std::endl;
             int percent = -1, t = 0, n_boards = (int)boards.size();
+            Book_elem book_elem;
             for (Board &board: boards){
                 if (100LL * t / n_boards > percent){
                     percent = 100LL * t / n_boards;
@@ -430,10 +431,8 @@ class Book{
                 ++t;
                 if (*stop)
                     break;
-                
-                int leaf_move = book[board].leaf.move;
-                //std::cerr << "leaf " << (int)book[board].leaf.value << " " << (int)leaf_move << " " << idx_to_coord(leaf_move) << std::endl;
-                //board.print();
+                book_elem = book[board];
+                int leaf_move = book_elem.leaf.move;
                 calc_flip(&flip, &board, leaf_move);
                 bool need_to_rewrite_leaf = leaf_move < 0 || MOVE_UNDEFINED <= leaf_move;
                 if (!need_to_rewrite_leaf){
@@ -457,6 +456,8 @@ class Book{
                         if (ai_result.value != SCORE_UNDEFINED){
                             new_leaf_value = -ai_result.value;
                             new_leaf_move = ai_result.policy;
+                            if (level == 0)
+                                new_leaf_value = book_elem.value;
                             //std::cerr << "recalc leaf " << (int)new_leaf_value << " " << (int)new_leaf_move << " " << idx_to_coord(new_leaf_move) << std::endl;
                         }
                     } else
@@ -593,7 +594,9 @@ class Book{
                     }
                 #endif
             }
-            add_leaf_all_undefined();
+            //add_leaf_all_undefined();
+            bool stop = false;
+            add_leaf_all_search(0, &stop);
             if (*stop_loading){
                 std::cerr << "stop loading book" << std::endl;
                 fclose(fp);
@@ -686,7 +689,9 @@ class Book{
                     }
                 #endif
             }
-            add_leaf_all_undefined();
+            //add_leaf_all_undefined();
+            bool stop = false;
+            add_leaf_all_search(0, &stop);
             if (*stop_loading){
                 std::cerr << "stop loading book" << std::endl;
                 fclose(fp);
@@ -899,7 +904,7 @@ class Book{
         */
         inline void save_bin_edax(std::string file, int level){
             bool stop = false;
-            add_leaf_all_search(1, &stop);
+            add_leaf_all_search(0, &stop);
             std::ofstream fout;
             fout.open(file.c_str(), std::ios::out|std::ios::binary|std::ios::trunc);
             if (!fout){
@@ -1299,6 +1304,7 @@ class Book{
             @brief fix book
         */
         inline void fix(bool *stop){
+            add_leaf_all_search(0, stop);
             negamax_book(stop);
         }
 
@@ -1322,7 +1328,6 @@ class Book{
                     b.opponent = itr->first.opponent;
                     Flip flip;
                     std::vector<Book_value> new_moves;
-                    bool update_child_value = false;
                     int32_t n_lines = 1;
                     Book_elem child;
                     for (const Book_value &link: links){
@@ -1347,11 +1352,10 @@ class Book{
                         b.undo_board(&flip);
                         if (child_value != SCORE_UNDEFINED)
                             max_value = std::max(max_value, child_value);
-                        update_child_value |= link.value != child_value;
                     }
                     bool update_parent_value = max_value != itr->second.value && max_value != -INF;
                     bool update_n_lines = n_lines != itr->second.n_lines;
-                    if (update_parent_value || update_child_value || update_n_lines){
+                    if (update_parent_value || update_n_lines){
                         Board root_board;
                         root_board.player = itr->first.player;
                         root_board.opponent = itr->first.opponent;
@@ -1365,7 +1369,10 @@ class Book{
                             new_elem.value = max_value;
                         else
                             new_elem.value = itr->second.value;
-                        new_elem.n_lines = n_lines;
+                        if (update_n_lines)
+                            new_elem.n_lines = n_lines;
+                        else
+                            new_elem.n_lines = itr->second.n_lines;
                         root_boards.emplace_back(std::make_pair(root_board, new_elem));
                     }
                 }
