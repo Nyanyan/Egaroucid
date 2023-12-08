@@ -897,7 +897,7 @@ class Book{
             @param file                 file name to save
             @param bak_file             backup file name
         */
-        inline void save_bin_edax(std::string file){
+        inline void save_bin_edax(std::string file, int level){
             bool stop = false;
             add_leaf_all_search(1, &stop);
             std::ofstream fout;
@@ -924,7 +924,6 @@ class Book{
             fout.write((char*)&second, 1);
             char dummy = 0;
             fout.write((char*)&dummy, 1);
-            int level = 21; // fixed
             fout.write((char*)&level, 4);
             int n_empties = HW2;
             for (auto itr = book.begin(); itr != book.end(); ++itr)
@@ -961,7 +960,7 @@ class Book{
                 }
                 ++t;
                 short_val = book_elem.value;
-                char_level = 21; // fixed
+                char_level = level; // fixed
                 b = itr->first;
                 std::vector<Book_value> links = get_all_moves_with_value(&b);
                 n_link = (char)links.size();
@@ -1687,8 +1686,8 @@ bool book_init(std::string file, bool show_log, bool *stop_loading){
     return book.init(file, show_log, stop_loading);
 }
 
-void book_save_as_edax(std::string file){
-    book.save_bin_edax(file);
+void book_save_as_edax(std::string file, int level){
+    book.save_bin_edax(file, level);
 }
 
 void book_fix(bool *stop){
