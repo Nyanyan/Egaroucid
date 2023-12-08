@@ -225,6 +225,7 @@ private:
     Button back_button;
     Button go_button;
     std::string book_file;
+    int level;
     std::future<void> save_book_edax_future;
     bool book_saving_edax;
     bool done;
@@ -234,6 +235,7 @@ public:
         back_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         go_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("book", "export"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         book_file = getData().directories.document_dir + "edax_book.dat";
+        level = 21;
         book_saving_edax = false;
         done = false;
     }
@@ -249,7 +251,7 @@ public:
         int sy = 20 + icon_width + 50;
         if (!book_saving_edax) {
             getData().fonts.font(language.get("book", "export_book_as_edax")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
-            Rect text_area{ X_CENTER - 300, sy + 40, 600, 70 };
+            Rect text_area{ X_CENTER - 300, sy + 40, 600, 50 };
             text_area.draw(getData().colors.light_cyan).drawFrame(2, getData().colors.black);
             String book_file_str = Unicode::Widen(book_file);
             TextInput::UpdateText(book_file_str);
@@ -268,6 +270,24 @@ public:
             }
             book_file = book_file_str.narrow();
             getData().fonts.font(book_file_str + U'|' + editingText).draw(15, text_area.stretched(-4), getData().colors.black);
+
+            Rect bar_rect{X_CENTER - 220, sy + 100, 440, 20};
+            bar_rect.draw(bar_color); // Palette::Lightskyblue
+            if (bar_rect.leftPressed()){
+                int min_error = INF;
+                int cursor_x = Cursor::Pos().x;
+                for (int i = 0; i <= 60; ++i) {
+                    int x = round((double)X_CENTER - 200.0 + 400.0 * (double)i / 61.0);
+                    if (abs(cursor_x - x) < min_error) {
+                        min_error = abs(cursor_x - x);
+                        level = i;
+                    }
+                }
+            }
+            Circle bar_circle{X_CENTER - 200 + 400 * level / 61, sy + 110, 12};
+            getData().fonts.font(language.get("ai_settings", "level") + Format(level)).draw(20, Arg::topRight(X_CENTER - 230, sy + 100), getData().colors.white);
+            bar_circle.draw(bar_circle_color);
+
             back_button.draw();
             if (back_button.clicked() || KeyEscape.pressed()) {
                 getData().graph_resources.need_init = false;
@@ -275,7 +295,7 @@ public:
             }
             go_button.draw();
             if (go_button.clicked() || return_pressed) {
-                save_book_edax_future = std::async(std::launch::async, book_save_as_edax, book_file);
+                save_book_edax_future = std::async(std::launch::async, book_save_as_edax, book_file, level);
                 book_saving_edax = true;
             }
         }
