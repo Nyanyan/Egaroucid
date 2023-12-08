@@ -96,7 +96,7 @@ void get_book_deviate_todo(Board board, int book_depth, int max_error_per_move, 
         }
     }
     // check leaf
-    if (book_elem.leaf.value >= book_elem.value - max_error_per_move && lower <= book_elem.leaf.value && book_elem.leaf.value <= upper){
+    if (book_elem.leaf.value >= book_elem.value - max_error_per_move && is_valid_policy(book_elem.leaf.move) && lower <= book_elem.leaf.value && book_elem.leaf.value <= upper){
         book_deviate_todo.emplace(todo_elem);
         if (book_deviate_todo.size() % 10 == 0)
             std::cerr << "book deviate todo " << book_deviate_todo.size() << " calculating... time " << tim() - all_strt << " ms" << std::endl;

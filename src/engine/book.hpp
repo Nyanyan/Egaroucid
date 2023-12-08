@@ -375,7 +375,9 @@ class Book{
         void add_leaf(Board *board, int8_t value, int8_t policy){
             int rotate_idx;
             Board representive_board = get_representative_board(board, &rotate_idx);
-            int8_t rotated_policy = convert_coord_from_representative_board((int)policy, rotate_idx);
+            int8_t rotated_policy = policy;
+            if (is_valid_policy(policy))
+                rotated_policy = convert_coord_from_representative_board((int)policy, rotate_idx);
             Leaf leaf;
             leaf.value = value;
             leaf.move = rotated_policy;
@@ -391,7 +393,7 @@ class Book{
                 int leaf_move = book[board].leaf.move;
                 bool need_to_rewrite_leaf = leaf_move < 0 || MOVE_UNDEFINED <= leaf_move;
                 if (!need_to_rewrite_leaf){
-                calc_flip(&flip, &board, leaf_move);
+                    calc_flip(&flip, &board, leaf_move);
                     board.move_board(&flip);
                         need_to_rewrite_leaf = contain(&board);
                     board.undo_board(&flip);
@@ -440,7 +442,6 @@ class Book{
                     uint64_t legal = board.get_legal();
                     for (Book_value &link: links)
                         legal ^= 1ULL << link.policy;
-                    
                     if (legal){
                         Search_result ai_result = ai_specified_moves(board, level, false, 0, true, false, legal);
                         if (ai_result.value != SCORE_UNDEFINED){
@@ -448,9 +449,8 @@ class Book{
                             new_leaf_move = ai_result.policy;
                             //std::cerr << "recalc leaf " << (int)new_leaf_value << " " << (int)new_leaf_move << " " << idx_to_coord(new_leaf_move) << std::endl;
                         }
-                    } else{
-                        new_leaf_move = MOVE_PASS;
-                    }
+                    } else
+                        new_leaf_move = MOVE_NOMOVE;
                     add_leaf(&board, new_leaf_value, new_leaf_move);
                 }
             }
@@ -1036,7 +1036,8 @@ class Book{
             if (!contain_representative(b))
                 return res;
             res = book[b];
-            res.leaf.move = convert_coord_from_representative_board(res.leaf.move, idx);
+            if (is_valid_policy(res.leaf.move))
+                res.leaf.move = convert_coord_from_representative_board(res.leaf.move, idx);
             return res;
         }
 
