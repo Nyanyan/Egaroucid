@@ -257,6 +257,7 @@ class Book{
             Book_elem book_elem;
             int n_boards;
             char value, leaf_value, leaf_move;
+            uint32_t n_lines;
             uint64_t p, o;
             char egaroucid_str[10];
             char egaroucid_str_ans[] = "DICUORAGE";
