@@ -463,10 +463,10 @@ class Book{
                             if (level == ADD_LEAF_SPECIAL_LEVEL)
                                 new_leaf_value = book_elem.value;
                             new_leaf_move = ai_result.policy;
-                            std::cerr << "recalc leaf " << (int)new_leaf_value << " " << (int)new_leaf_move << " " << idx_to_coord(new_leaf_move) << std::endl;
-                            for (Book_value &link: links)
-                                std::cerr << "link " << idx_to_coord(link.policy) << std::endl;
-                            board.print();
+                            //std::cerr << "recalc leaf " << (int)new_leaf_value << " " << (int)new_leaf_move << " " << idx_to_coord(new_leaf_move) << std::endl;
+                            //for (Book_value &link: links)
+                            //    std::cerr << "link " << idx_to_coord(link.policy) << std::endl;
+                            //board.print();
                         }
                     } else
                         new_leaf_move = MOVE_NOMOVE;
