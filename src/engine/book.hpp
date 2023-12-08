@@ -82,9 +82,11 @@ struct Leaf{
 struct Book_elem{
     int8_t value;
     Leaf leaf;
+    uint32_t n_lines;
 
     Book_elem(){
         value = SCORE_UNDEFINED;
+        n_lines = 0;
     }
 };
 
@@ -329,6 +331,12 @@ class Book{
                     fclose(fp);
                     return false;
                 }
+                // read n_lines
+                if (fread(&n_lines, 4, 1, fp) < 1) {
+                    std::cerr << "[ERROR] book NOT FULLY imported " << book.size() << " boards" << std::endl;
+                    fclose(fp);
+                    return false;
+                }
                 // read leaf value
                 if (fread(&leaf_value, 1, 1, fp) < 1) {
                     std::cerr << "[ERROR] book NOT FULLY imported " << book.size() << " boards" << std::endl;
@@ -350,6 +358,7 @@ class Book{
                         book_elem.value = value;
                         book_elem.leaf.value = leaf_value;
                         book_elem.leaf.move = leaf_move;
+                        book_elem.n_lines = n_lines;
                         merge(board, book_elem);
                 #if FORCE_BOOK_DEPTH
                     }
@@ -375,7 +384,9 @@ class Book{
         void add_leaf(Board *board, int8_t value, int8_t policy){
             int rotate_idx;
             Board representive_board = get_representative_board(board, &rotate_idx);
-            int8_t rotated_policy = convert_coord_from_representative_board((int)policy, rotate_idx);
+            int8_t rotated_policy = policy;
+            if (is_valid_policy(policy))
+                rotated_policy = convert_coord_from_representative_board((int)policy, rotate_idx);
             Leaf leaf;
             leaf.value = value;
             leaf.move = rotated_policy;
@@ -391,7 +402,7 @@ class Book{
                 int leaf_move = book[board].leaf.move;
                 bool need_to_rewrite_leaf = leaf_move < 0 || MOVE_UNDEFINED <= leaf_move;
                 if (!need_to_rewrite_leaf){
-                calc_flip(&flip, &board, leaf_move);
+                    calc_flip(&flip, &board, leaf_move);
                     board.move_board(&flip);
                         need_to_rewrite_leaf = contain(&board);
                     board.undo_board(&flip);
@@ -440,7 +451,6 @@ class Book{
                     uint64_t legal = board.get_legal();
                     for (Book_value &link: links)
                         legal ^= 1ULL << link.policy;
-                    
                     if (legal){
                         Search_result ai_result = ai_specified_moves(board, level, false, 0, true, false, legal);
                         if (ai_result.value != SCORE_UNDEFINED){
@@ -448,9 +458,8 @@ class Book{
                             new_leaf_move = ai_result.policy;
                             //std::cerr << "recalc leaf " << (int)new_leaf_value << " " << (int)new_leaf_move << " " << idx_to_coord(new_leaf_move) << std::endl;
                         }
-                    } else{
-                        new_leaf_move = MOVE_PASS;
-                    }
+                    } else
+                        new_leaf_move = MOVE_NOMOVE;
                     add_leaf(&board, new_leaf_value, new_leaf_move);
                 }
             }
@@ -728,6 +737,7 @@ class Book{
             std::cerr << n_boards << " boards found" << std::endl;
             uint64_t player, opponent;
             int16_t value;
+            uint32_t n_lines;
             char link = 0, link_value, link_move, level, leaf_value, leaf_move;
             Board board;
             Flip flip;
@@ -752,13 +762,19 @@ class Book{
                     fclose(fp);
                     return false;
                 }
-                // read additional data
-                for (int j = 0; j < 4; ++j) {
+                // read additional data (w/d/l)
+                for (int j = 0; j < 3; ++j) {
                     if (fread(&elem_int, 4, 1, fp) < 1) {
                         std::cerr << "[ERROR] file broken" << std::endl;
                         fclose(fp);
                         return false;
                     }
+                }
+                // read n_lines
+                if (fread(&n_lines, 4, 1, fp) < 1) {
+                    std::cerr << "[ERROR] file broken" << std::endl;
+                    fclose(fp);
+                    return false;
                 }
                 // read value
                 if (fread(&value, 2, 1, fp) < 1) {
@@ -820,6 +836,7 @@ class Book{
                 book_elem.value = value;
                 book_elem.leaf.value = leaf_value;
                 book_elem.leaf.move = leaf_move;
+                book_elem.n_lines = n_lines;
                 merge(board, book_elem);
             }
             if (show_log)
@@ -862,6 +879,7 @@ class Book{
                 fout.write((char*)&itr->first.opponent, 8);
                 elem = (char)itr->second.value;
                 fout.write((char*)&elem, 1);
+                fout.write((char*)&itr->second.n_lines, 4);
                 elem = (char)itr->second.leaf.value;
                 fout.write((char*)&elem, 1);
                 elem = (char)itr->second.leaf.move;
@@ -920,7 +938,7 @@ class Book{
             int n_position = book.size();
             fout.write((char*)&n_position, 4);
             int n_win = 0, n_draw = 0, n_lose = 0;
-            int n_line;
+            uint32_t n_lines;
             short short_val, short_val_min = -HW2, short_val_max = HW2;
             char char_level;
             Book_elem book_elem;
@@ -952,13 +970,13 @@ class Book{
                     leaf_val = 0;
                     leaf_move = 65;
                 }
-                n_line = 0; //count_n_line(itr->first);
+                n_lines = itr->second.n_lines; //count_n_line(itr->first);
                 fout.write((char*)&itr->first.player, 8);
                 fout.write((char*)&itr->first.opponent, 8);
                 fout.write((char*)&n_win, 4);
                 fout.write((char*)&n_draw, 4);
                 fout.write((char*)&n_lose, 4);
-                fout.write((char*)&n_line, 4);
+                fout.write((char*)&n_lines, 4);
                 fout.write((char*)&short_val, 2);
                 fout.write((char*)&short_val_min, 2);
                 fout.write((char*)&short_val_max, 2);
@@ -1036,7 +1054,8 @@ class Book{
             if (!contain_representative(b))
                 return res;
             res = book[b];
-            res.leaf.move = convert_coord_from_representative_board(res.leaf.move, idx);
+            if (is_valid_policy(res.leaf.move))
+                res.leaf.move = convert_coord_from_representative_board(res.leaf.move, idx);
             return res;
         }
 
