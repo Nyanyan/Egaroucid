@@ -251,7 +251,7 @@ public:
         int sy = 20 + icon_width + 50;
         if (!book_saving_edax) {
             getData().fonts.font(language.get("book", "export_book_as_edax")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
-            Rect text_area{ X_CENTER - 300, sy + 40, 600, 50 };
+            Rect text_area{ X_CENTER - 300, sy + 40, 600, 80 };
             text_area.draw(getData().colors.light_cyan).drawFrame(2, getData().colors.black);
             String book_file_str = Unicode::Widen(book_file);
             TextInput::UpdateText(book_file_str);
@@ -271,7 +271,7 @@ public:
             book_file = book_file_str.narrow();
             getData().fonts.font(book_file_str + U'|' + editingText).draw(15, text_area.stretched(-4), getData().colors.black);
 
-            Rect bar_rect{X_CENTER - 220, sy + 100, 440, 20};
+            Rect bar_rect{X_CENTER - 220, sy + 130, 440, 20};
             bar_rect.draw(bar_color); // Palette::Lightskyblue
             if (bar_rect.leftPressed()){
                 int min_error = INF;
@@ -284,8 +284,8 @@ public:
                     }
                 }
             }
-            Circle bar_circle{X_CENTER - 200 + 400 * level / 61, sy + 110, 12};
-            getData().fonts.font(language.get("ai_settings", "level") + Format(level)).draw(20, Arg::topRight(X_CENTER - 230, sy + 100), getData().colors.white);
+            Circle bar_circle{X_CENTER - 200 + 400 * level / 61, sy + 140, 12};
+            getData().fonts.font(language.get("ai_settings", "level") + Format(level)).draw(20, Arg::rightCenter(X_CENTER - 230, sy + 140), getData().colors.white);
             bar_circle.draw(bar_circle_color);
 
             back_button.draw();
