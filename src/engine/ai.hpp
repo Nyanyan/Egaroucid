@@ -157,6 +157,36 @@ inline Search_result tree_search(Board board, int depth, uint_fast8_t mpc_level,
 inline Search_result tree_search_specified_moves(Board board, int depth, uint_fast8_t mpc_level, bool show_log, bool use_multi_thread, uint64_t use_legal){
     uint64_t strt;
     Search_result res;
+    // special optimization for level 1
+    if (depth == 1 && mpc_level == MPC_100_LEVEL){
+        strt = tim();
+        Flip flip;
+        Search search;
+        search.init_board(&board);
+        search.n_nodes = 0ULL;
+        calc_features(&search);
+        int v = SCORE_UNDEFINED;
+        int policy = MOVE_UNDEFINED;
+        for (uint_fast8_t cell = first_bit(&use_legal); use_legal; cell = next_bit(&use_legal)){
+            calc_flip(&flip, &board, cell);
+            search.move(&flip);
+                int g = -mid_evaluate_diff(&search);
+            search.undo(&flip);
+            if (g > v){
+                v = g;
+                policy = cell;
+            }
+        }
+        res.depth = depth;
+        res.nodes = search.n_nodes;
+        res.time = tim() - strt;
+        res.nps = calc_nps(res.nodes, res.time);
+        res.policy = policy;
+        res.value = v;
+        res.is_end_search = board.n_discs() == HW2 - 1;
+        res.probability = SELECTIVITY_PERCENTAGE[mpc_level];
+        return res;
+    }
     depth = std::min(HW2 - board.n_discs(), depth);
     bool is_end_search = (HW2 - board.n_discs() == depth);
     std::vector<Clog_result> clogs;

@@ -36,6 +36,8 @@ Search_result ai_specified_moves(Board board, int level, bool use_book, int book
 
 #define BOOK_EXTENSION ".egbk3"
 
+#define ADD_LEAF_SPECIAL_LEVEL -1
+
 /*
     @brief book result structure
 
@@ -452,11 +454,14 @@ class Book{
                     for (Book_value &link: links)
                         legal ^= 1ULL << link.policy;
                     if (legal){
-                        Search_result ai_result = ai_specified_moves(board, level, false, 0, true, false, legal);
+                        int use_level = level;
+                        if (level == ADD_LEAF_SPECIAL_LEVEL)
+                            use_level = 1;
+                        Search_result ai_result = ai_specified_moves(board, use_level, false, 0, true, false, legal);
                         if (ai_result.value != SCORE_UNDEFINED){
                             new_leaf_value = -ai_result.value;
                             new_leaf_move = ai_result.policy;
-                            if (level == 0)
+                            if (level == ADD_LEAF_SPECIAL_LEVEL)
                                 new_leaf_value = book_elem.value;
                             //std::cerr << "recalc leaf " << (int)new_leaf_value << " " << (int)new_leaf_move << " " << idx_to_coord(new_leaf_move) << std::endl;
                         }
@@ -596,7 +601,7 @@ class Book{
             }
             //add_leaf_all_undefined();
             bool stop = false;
-            add_leaf_all_search(0, &stop);
+            add_leaf_all_search(ADD_LEAF_SPECIAL_LEVEL, &stop);
             if (*stop_loading){
                 std::cerr << "stop loading book" << std::endl;
                 fclose(fp);
@@ -691,7 +696,7 @@ class Book{
             }
             //add_leaf_all_undefined();
             bool stop = false;
-            add_leaf_all_search(0, &stop);
+            add_leaf_all_search(ADD_LEAF_SPECIAL_LEVEL, &stop);
             if (*stop_loading){
                 std::cerr << "stop loading book" << std::endl;
                 fclose(fp);
@@ -904,7 +909,7 @@ class Book{
         */
         inline void save_bin_edax(std::string file, int level){
             bool stop = false;
-            add_leaf_all_search(0, &stop);
+            add_leaf_all_search(ADD_LEAF_SPECIAL_LEVEL, &stop);
             std::ofstream fout;
             fout.open(file.c_str(), std::ios::out|std::ios::binary|std::ios::trunc);
             if (!fout){
@@ -1304,7 +1309,7 @@ class Book{
             @brief fix book
         */
         inline void fix(bool *stop){
-            add_leaf_all_search(0, stop);
+            add_leaf_all_search(ADD_LEAF_SPECIAL_LEVEL, stop);
             negamax_book(stop);
         }
 
