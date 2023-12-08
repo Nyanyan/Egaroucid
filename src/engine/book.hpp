@@ -389,10 +389,13 @@ class Book{
             Flip flip;
             for (Board &board: boards){
                 int leaf_move = book[board].leaf.move;
+                bool need_to_rewrite_leaf = leaf_move < 0 || MOVE_UNDEFINED <= leaf_move;
+                if (!need_to_rewrite_leaf){
                 calc_flip(&flip, &board, leaf_move);
-                board.move_board(&flip);
-                    bool need_to_rewrite_leaf = contain(&board);
-                board.undo_board(&flip);
+                    board.move_board(&flip);
+                        need_to_rewrite_leaf = contain(&board);
+                    board.undo_board(&flip);
+                }
                 if (need_to_rewrite_leaf){
                     int8_t new_leaf_value = SCORE_UNDEFINED, new_leaf_move = MOVE_UNDEFINED;
                     add_leaf(&board, new_leaf_value, new_leaf_move);
@@ -416,42 +419,38 @@ class Book{
                 if (*stop)
                     break;
                 
-                std::cerr << (int)book[board].leaf.value << " " <<idx_to_coord(book[board].leaf.move) << std::endl;
-                board.print();
-                
                 int leaf_move = book[board].leaf.move;
+                //std::cerr << "leaf " << (int)book[board].leaf.value << " " << (int)leaf_move << " " << idx_to_coord(leaf_move) << std::endl;
+                //board.print();
                 calc_flip(&flip, &board, leaf_move);
-                bool need_to_rewrite_leaf = false;
-                board.move_board(&flip);
-                    if (board.get_legal() == 0){
-                        board.pass();
+                bool need_to_rewrite_leaf = leaf_move < 0 || MOVE_UNDEFINED <= leaf_move;
+                if (!need_to_rewrite_leaf){
+                    board.move_board(&flip);
+                        if (board.get_legal() == 0){
+                            board.pass();
+                                need_to_rewrite_leaf = contain(&board);
+                            board.pass();
+                        } else
                             need_to_rewrite_leaf = contain(&board);
-                        board.pass();
-                    } else
-                        need_to_rewrite_leaf = contain(&board);
-                board.undo_board(&flip);
+                    board.undo_board(&flip);
+                }
                 if (need_to_rewrite_leaf){
                     int8_t new_leaf_value = SCORE_UNDEFINED, new_leaf_move = MOVE_UNDEFINED;
                     std::vector<Book_value> links = get_all_moves_with_value(&board);
                     uint64_t legal = board.get_legal();
-                    bool passed = false;
-                    if (legal == 0){
-                        board.pass();
-                        passed = true;
-                    }
                     for (Book_value &link: links)
                         legal ^= 1ULL << link.policy;
+                    
                     if (legal){
                         Search_result ai_result = ai_specified_moves(board, level, false, 0, true, false, legal);
                         if (ai_result.value != SCORE_UNDEFINED){
-                            new_leaf_value = ai_result.value;
+                            new_leaf_value = -ai_result.value;
                             new_leaf_move = ai_result.policy;
+                            //std::cerr << "recalc leaf " << (int)new_leaf_value << " " << (int)new_leaf_move << " " << idx_to_coord(new_leaf_move) << std::endl;
                         }
                     } else{
                         new_leaf_move = MOVE_PASS;
                     }
-                    if (passed)
-                        board.pass();
                     add_leaf(&board, new_leaf_value, new_leaf_move);
                 }
             }
@@ -1239,6 +1238,8 @@ class Book{
                 } else{
                     Book_elem elem;
                     elem.value = value;
+                    elem.leaf.move = MOVE_UNDEFINED;
+                    elem.leaf.value = SCORE_UNDEFINED;
                     register_symmetric_book(b, elem);
                 }
             }
@@ -1605,7 +1606,8 @@ class Book{
         inline int register_symmetric_book(Board b, Book_elem elem){
             int idx;
             Board representive_board = get_representative_board(b, &idx);
-            elem.leaf.move = convert_coord_to_representative_board(elem.leaf.move, idx);
+            if (elem.leaf.move != MOVE_UNDEFINED)
+                elem.leaf.move = convert_coord_to_representative_board(elem.leaf.move, idx);
             return register_representative(representive_board, elem);
         }
 

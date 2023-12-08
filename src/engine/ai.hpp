@@ -166,6 +166,7 @@ inline Search_result tree_search_specified_moves(Board board, int depth, uint_fa
         Clog_result clog;
         clog.pos = cell;
         clog.val = -SCORE_MAX - 1;
+        clogs.emplace_back(clog);
     }
     res.clog_nodes = 0ULL;
     Search search;
