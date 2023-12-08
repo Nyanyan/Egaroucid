@@ -410,7 +410,7 @@ struct Menu_elements {
     bool change_color_type;
 
     // book
-    bool book_start_widen;
+    bool book_start_deviate;
     bool book_start_deepen;
     bool book_start_fix;
     int book_learn_depth;
@@ -491,7 +491,7 @@ struct Menu_elements {
         show_next_move_change_view = settings->show_next_move_change_view;
         change_color_type = settings->change_color_type;
 
-        book_start_widen = false;
+        book_start_deviate = false;
         book_start_deepen = false;
         book_start_fix = false;
         book_learn_depth = settings->book_learn_depth;

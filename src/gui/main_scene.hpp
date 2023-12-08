@@ -640,7 +640,7 @@ private:
     }
 
     void menu_book() {
-        if (getData().menu_elements.book_start_widen) {
+        if (getData().menu_elements.book_start_deviate) {
             stop_calculating();
             resume_calculating();
             changing_scene = true;
@@ -1070,7 +1070,7 @@ private:
         menu_e.init_button(language.get("book", "book_operation"), &menu_elements->dummy);
         side_menu.init_check(language.get("book", "right_click_to_modify"), &menu_elements->change_book_by_right_click, menu_elements->change_book_by_right_click);
         menu_e.push(side_menu);
-        side_menu.init_button(language.get("book", "book_widen"), &menu_elements->book_start_widen);
+        side_menu.init_button(language.get("book", "book_deviate"), &menu_elements->book_start_deviate);
         menu_e.push(side_menu);
         side_menu.init_button(language.get("book", "book_fix"), &menu_elements->book_start_fix);
         menu_e.push(side_menu);
