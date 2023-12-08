@@ -927,7 +927,7 @@ class Book{
             fout.write((char*)&level, 4);
             int n_empties = HW2;
             for (auto itr = book.begin(); itr != book.end(); ++itr)
-                n_empties = std::min(n_empties, HW2 - itr->first.n_discs());
+                n_empties = std::min(n_empties, HW2 + 1 - itr->first.n_discs());
             fout.write((char*)&n_empties, 4);
             int err_mid = 0;
             fout.write((char*)&err_mid, 4);
