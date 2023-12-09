@@ -158,15 +158,6 @@ inline void book_deviate(Board root_board, int level, int book_depth, int max_er
     params.depth = book_depth;
     params.level = level;
     params.max_error_per_move = max_error_per_move;
-    Book_elem book_elem = book.get(root_board);
-    if (book_elem.value == SCORE_UNDEFINED)
-        book_elem.value = ai(root_board, level, true, 0, true, true).value;
-    int lower = book_elem.value - max_error_sum;
-    int upper = book_elem.value + max_error_sum;
-    if (lower < -SCORE_MAX)
-        lower = -SCORE_MAX;
-    if (upper > SCORE_MAX)
-        upper = SCORE_MAX;
     Book_deviate_todo_elem root_elem;
     root_elem.board = root_board;
     root_elem.player = *player;
@@ -176,6 +167,15 @@ inline void book_deviate(Board root_board, int level, int book_depth, int max_er
             ++n_saved;
             book.save_egbk3(book_file, book_bak);
         }
+        Book_elem book_elem = book.get(root_board);
+        if (book_elem.value == SCORE_UNDEFINED)
+            book_elem.value = ai(root_board, level, true, 0, true, true).value;
+        int lower = book_elem.value - max_error_sum;
+        int upper = book_elem.value + max_error_sum;
+        if (lower < -SCORE_MAX)
+            lower = -SCORE_MAX;
+        if (upper > SCORE_MAX)
+            upper = SCORE_MAX;
         bool stop = false;
         book.add_leaf_all_search(level, &stop);
         std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> book_deviate_todo;
