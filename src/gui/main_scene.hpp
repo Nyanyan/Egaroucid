@@ -1591,7 +1591,9 @@ private:
                 if (book.contain(board)){
                     int n_lines = book.get(board).n_lines;
                     String n_lines_str = Format(n_lines);
-                    if (n_lines >= 1000000){
+                    if (n_lines >= 1000000000){
+                        n_lines_str = Format(n_lines / 1000000000) + U"G";
+                    } else if (n_lines >= 1000000){
                         n_lines_str = Format(n_lines / 1000000) + U"M";
                     } else if (n_lines >= 1000){
                         n_lines_str = Format(n_lines / 1000) + U"K";
