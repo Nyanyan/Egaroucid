@@ -426,6 +426,8 @@ class Book{
             int percent = -1, t = 0, n_boards = (int)boards.size();
             Book_elem book_elem;
             for (Board &board: boards){
+                if (!global_searching)
+                    break;
                 if (100LL * t / n_boards > percent){
                     percent = 100LL * t / n_boards;
                     std::cerr << "adding leaf " << percent << "%" << std::endl;
@@ -456,7 +458,7 @@ class Book{
                     if (legal){
                         int use_level = level;
                         if (level == ADD_LEAF_SPECIAL_LEVEL)
-                            use_level = 3;
+                            use_level = 1;
                         Search_result ai_result = ai_specified_moves(board, use_level, false, 0, true, false, legal);
                         if (ai_result.value != SCORE_UNDEFINED){
                             new_leaf_value = ai_result.value;
@@ -1312,8 +1314,8 @@ class Book{
             @brief fix book
         */
         inline void fix(bool *stop){
-            add_leaf_all_search(ADD_LEAF_SPECIAL_LEVEL, stop);
             negamax_book(stop);
+            add_leaf_all_search(ADD_LEAF_SPECIAL_LEVEL, stop);
         }
 
         /*
@@ -1326,7 +1328,7 @@ class Book{
 
         void get_need_to_change_tasks(std::vector<std::pair<Board, Book_elem>> &root_boards, int *root_board_n_discs){
             Board b;
-            for (auto itr = book.begin(); itr != book.end(); ++itr){
+            for (auto itr = book.begin(); itr != book.end() && global_searching; ++itr){
                 b = itr->first;
                 std::vector<Book_value> links = get_all_moves_with_value(&b);
                 if (itr->first.n_discs() >= *root_board_n_discs && links.size()){
@@ -1345,14 +1347,16 @@ class Book{
                             if (b.get_legal()){
                                 if (contain(b)){
                                     child = get(b);
-                                    child_value = -child.value;
+                                    if (child.value != SCORE_UNDEFINED)
+                                        child_value = -child.value;
                                     n_lines += child.n_lines;
                                 }
                             } else{
                                 b.pass();
                                     if (contain(b)){
                                         child = get(b);
-                                        child_value = child.value;
+                                        if (child.value != SCORE_UNDEFINED)
+                                            child_value = child.value;
                                         n_lines += child.n_lines;
                                     }
                                 b.pass();
@@ -1392,7 +1396,7 @@ class Book{
             std::vector<std::pair<Board, Book_elem>> root_boards;
             uint64_t n_fixed = 0;
             bool looped = true;
-            while (looped){
+            while (looped && global_searching){
                 looped = false;
                 int root_board_n_discs = 1;
                 while (root_board_n_discs && !(*stop)){
