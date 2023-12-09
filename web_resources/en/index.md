@@ -159,6 +159,7 @@ I would like to thank these people for great contributions.
     </li>
     <li>User Test
         <ul>
+            <li>OGA NAO</li>
             <li>Satoshi Kurahashi</li>
             <li>Taiki Demoto</li>
             <li>Mathica</li>
@@ -172,6 +173,7 @@ I would like to thank these people for great contributions.
         </ul>
     </li>
 </ul>
+
 
 
 
