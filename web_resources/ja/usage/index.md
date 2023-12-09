@@ -338,6 +338,17 @@ bookに登録されている局面について、うみがめ数を計算して�
 <div class="centering_box">
     <img class="pic2" src="img/umigame.png">
 </div>
+### 合法手への表示 > Bookライン数
+
+Bookの内部情報である、ライン数を表示できます。チェックを入れるとbook値の下に小さく数字が表示されます。この値が大きければ大きいほど、book値が正確になる傾向があります。
+
+ある局面におけるライン数は、ある局面から着手を進めてたどり着くことができる局面のうち、bookに登録されている局面の数を表します。
+
+数字が大きくなる場合にはK(1000倍)やM(1000000倍)などをつけて表示しています。
+
+<div class="centering_box">
+    <img class="pic2" src="img/book_n_lines.png">
+</div>
 
 ### 合法手への表示 > 定石
 
@@ -361,6 +372,7 @@ bookに登録されている局面について、うみがめ数を計算して�
 <div class="centering_box">
     <img class="pic2" src="img/next_move_changed.png">
 </div>
+
 
 ### 石への表示 > 直前の手
 
