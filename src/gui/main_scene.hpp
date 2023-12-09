@@ -246,6 +246,11 @@ public:
             }
         }
 
+        // book n_lines drawing
+        if (getData().menu_elements.show_book_n_lines && !hint_ignore){
+            draw_book_n_lines(legal_ignore);
+        }
+
         // graph drawing
         graph.draw(getData().graph_resources.nodes[0], getData().graph_resources.nodes[1], getData().graph_resources.n_discs, getData().menu_elements.show_graph, getData().menu_elements.level, getData().fonts.font, getData().menu_elements.change_color_type);
 
@@ -956,6 +961,8 @@ private:
         menu_e.push(side_menu);
         side_menu.init_check(language.get("display", "cell", "umigame_value"), &menu_elements->use_umigame_value, menu_elements->use_umigame_value);
         menu_e.push(side_menu);
+        side_menu.init_check(language.get("display", "cell", "show_book_n_lines"), &menu_elements->show_book_n_lines, menu_elements->show_book_n_lines);
+        menu_e.push(side_menu);
         side_menu.init_check(language.get("display", "cell", "opening"), &menu_elements->show_opening_on_cell, menu_elements->show_opening_on_cell);
         menu_e.push(side_menu);
         side_menu.init_check(language.get("display", "cell", "next_move"), &menu_elements->show_next_move, menu_elements->show_next_move);
@@ -1567,6 +1574,28 @@ private:
                     getData().fonts.font_heavy(umigame_status.umigame[cell].b).draw(13, Arg::bottomRight(sx + BOARD_CELL_SIZE - 3, sy + BOARD_CELL_SIZE - 17), getData().colors.black);
                     getData().fonts.font_heavy(umigame_status.umigame[cell].w).draw(13, Arg::bottomRight(sx + BOARD_CELL_SIZE - 3, sy + BOARD_CELL_SIZE - 1), getData().colors.white);
                 }
+            }
+        }
+    }
+
+    void draw_book_n_lines(uint64_t legal_ignore) {
+        uint64_t legal = getData().history_elem.board.get_legal();
+        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
+            if (1 & (legal_ignore >> cell)) {
+                int sx = BOARD_SX + ((HW2_M1 - cell) % HW) * BOARD_CELL_SIZE;
+                int sy = BOARD_SY + ((HW2_M1 - cell) / HW) * BOARD_CELL_SIZE;
+                Board board = getData().history_elem.board;
+                Flip flip;
+                calc_flip(&flip, &board, cell);
+                board.move_board(&flip);
+                int n_lines = book.get(board).n_lines;
+                String n_lines_str = Format(n_lines);
+                if (n_lines >= 1000000){
+                    n_lines_str = Format(n_lines / 1000000) + U"M";
+                } else if (n_lines >= 1000){
+                    n_lines_str = Format(n_lines / 1000) + U"K";
+                }
+                getData().fonts.font_heavy(n_lines_str).draw(10, sx + 3, sy + BOARD_CELL_SIZE - 15, getData().colors.white);
             }
         }
     }

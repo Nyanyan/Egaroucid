@@ -70,6 +70,7 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->change_color_type = false;
     settings->show_play_ordering = false;
     settings->generate_random_board_moves = 20;
+    settings->show_book_n_lines = false;
 }
 
 int init_settings_import_int(JSON &json, String key, int* res) {
@@ -365,6 +366,9 @@ void init_settings(const Directories* directories, const Resources* resources, S
     }
     if (init_settings_import_int(setting_json, U"generate_random_board_moves", &settings->generate_random_board_moves) != ERR_OK) {
         std::cerr << "err29" << std::endl;
+    }
+    if (init_settings_import_bool(setting_json, U"show_book_n_lines", &settings->show_book_n_lines) != ERR_OK) {
+        std::cerr << "err30" << std::endl;
     }
 }
 
