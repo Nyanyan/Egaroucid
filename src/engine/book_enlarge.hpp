@@ -125,7 +125,9 @@ void expand_leaves(int level, std::unordered_set<Book_deviate_todo_elem, Book_de
         *board_copy = elem.board;
         *player = elem.player;
         expand_leaf(level, elem.board);
-        std::cerr << "book deviating " << ++i << "/" << n_all << " time " << ms_to_time_short(tim() - all_strt) << std::endl;
+        ++i;
+        int percent = 100ULL * i / n_all;
+        std::cerr << "book deviating " << percent << " % " <<  i << "/" << n_all << " time " << ms_to_time_short(tim() - all_strt) << std::endl;
     }
 }
 
@@ -238,7 +240,9 @@ void book_recalculate_leaves(int level, std::unordered_set<Book_deviate_todo_ele
         *board_copy = elem.board;
         *player = elem.player;
         book.search_leaf(elem.board, level);
-        std::cerr << "book recalculating leaf " << ++i << "/" << n_all << " time " << ms_to_time_short(tim() - all_strt) << std::endl;
+        ++i;
+        int percent = 100ULL * i / n_all;
+        std::cerr << "book recalculating leaves " << percent << " % " <<  i << "/" << n_all << " time " << ms_to_time_short(tim() - all_strt) << std::endl;
     }
 }
 
