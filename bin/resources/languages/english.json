@@ -28,8 +28,8 @@
     "settings": {
         "settings": "Settings",
         "play": {
-            "ai_put_black": "AI as Black",
-            "ai_put_white": "AI as White",
+            "ai_put_black": "AI as Black (B)",
+            "ai_put_white": "AI as White (W)",
             "pause_when_pass": "Pause when Pass"
         },
         "thread": {

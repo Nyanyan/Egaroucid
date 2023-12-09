@@ -28,8 +28,8 @@
     "settings": {
         "settings": "設定",
         "play": {
-            "ai_put_black": "AIが黒に着手",
-            "ai_put_white": "AIが白に着手",
+            "ai_put_black": "AIが黒に着手 (B)",
+            "ai_put_white": "AIが白に着手 (W)",
             "pause_when_pass": "パスで一時停止"
         },
         "thread": {

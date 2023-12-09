@@ -28,8 +28,8 @@
     "settings": {
         "settings": "设置",
         "play": {
-            "ai_put_black": "电脑执黑",
-            "ai_put_white": "电脑执白",
+            "ai_put_black": "电脑执黑 (B)",
+            "ai_put_white": "电脑执白 (W)",
             "pause_when_pass": "当pass时暂停"
         },
         "thread": {
