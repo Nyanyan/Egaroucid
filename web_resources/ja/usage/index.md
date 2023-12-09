@@ -780,7 +780,7 @@ Egaroucidのbookは独自フォーマットのバイナリファイル(リトル
 
 最新のフォーマットです。
 
-<table>
+<div class="table_wrapper"><table>
     <tr>
     	<th>項目</th>
        	<th>データ量(バイト)</th>
@@ -806,11 +806,11 @@ Egaroucidのbookは独自フォーマットのバイナリファイル(リトル
         <td>23*登録局面数</td>
         <td>登録されている局面のデータ(下記参照)</td>
     </tr>
-</table>
+    </table></div>
 
 登録局面ごとに、以下のデータが保存されています。
 
-<table>
+<div class="table_wrapper"><table>
     <tr>
     	<th>項目</th>
        	<th>データ量(バイト)</th>
@@ -846,7 +846,7 @@ Egaroucidのbookは独自フォーマットのバイナリファイル(リトル
         <td>1</td>
         <td>bookに未登録の手のうち、一番良さそうな手</td>
     </tr>
-</table>
+    </table></div>
 
 #### egbk2フォーマット
 
