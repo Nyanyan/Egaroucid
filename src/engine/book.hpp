@@ -722,7 +722,7 @@ class Book{
                     fclose(fp);
                     return false;
                 }
-                value = (int8_t)value_raw - HW2;
+                value = -((int8_t)value_raw - HW2);
                 if (value < -HW2 || HW2 < value) {
                     std::cerr << "[ERROR] book NOT FULLY imported got value " << (int)value << " " << book.size() << " boards" << std::endl;
                     fclose(fp);
