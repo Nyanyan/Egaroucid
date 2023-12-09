@@ -73,6 +73,7 @@
         "ignore": "既存book値を上書き",
         "save_as_edax_book": "Edax形式で保存",
         "book_align_depth": "深さ上限設定",
+        "book_recalculate_leaf": "リーフ再計算",
         "start": "開始"
     },
     "in_out": {

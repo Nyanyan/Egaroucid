@@ -73,6 +73,7 @@
         "ignore": "覆盖现有的数值",
         "save_as_edax_book": "以Edax开局库的形式保存",
         "book_align_depth": "深度校准",
+        "book_recalculate_leaf": "Recalculate Leaves",
         "start": "开始"
     },
     "in_out": {
