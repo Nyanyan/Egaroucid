@@ -13,7 +13,7 @@ In this testcase, Egaroucid is faster than Edax 4.4
 
 #### Core i9 13900K @ 32 threads
 
-<table>
+<div class="table_wrapper"><table>
 <tr>
 <th>No.</th>
 <th>Depth</th>
@@ -212,11 +212,12 @@ In this testcase, Egaroucid is faster than Edax 4.4
 <td>24847574333</td>
 <td>518359744</td>
 </tr>
-</table>
+    </table></div>
+
 
 #### Core i9 11900K @ 19 threads
 
-<table>
+<div class="table_wrapper"><table>
 <tr>
 <th>No.</th>
 <th>Depth</th>
@@ -415,7 +416,8 @@ In this testcase, Egaroucid is faster than Edax 4.4
 <td>22775825401</td>
 <td>297272442</td>
 </tr>
-</table>
+    </table></div>
+
 
 ### Egaroucid for Console 6.3.0 Windows x64 Generic
 
@@ -423,7 +425,7 @@ Without speedup by SIMD
 
 #### Core i9 13900K @ 32 threads
 
-<table>
+<div class="table_wrapper"><table>
 <tr>
 <th>No.</th>
 <th>Depth</th>
@@ -622,7 +624,8 @@ Without speedup by SIMD
 <td>26425639893</td>
 <td>383915038</td>
 </tr>
-</table>
+    </table></div>
+
 
 
 
@@ -639,7 +642,7 @@ No opening books used.
 
 If Egaroucid Win Ratio is over 0.5, then Egaroucid wins more than Edax do. "Black" and "White" means Egaroucid played black/white. In all conditions, Egaroucid is stronger than Edax.
 
-<table>
+<div class="table_wrapper"><table>
 <tr>
 <th>Level</th>
 <th>Egaroucid win</th>
@@ -675,6 +678,6 @@ If Egaroucid Win Ratio is over 0.5, then Egaroucid wins more than Edax do. "Blac
 <td>184(Black: 87 White: 97)</td>
 <td>0.621</td>
 </tr>
-</table>
+    </table></div>
 
 

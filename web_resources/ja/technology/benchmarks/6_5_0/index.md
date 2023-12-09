@@ -9,7 +9,7 @@
 
 #### Core i9 13900K @ 32並列
 
-<table>
+<div class="table_wrapper"><table>
 <tr>
 <th>番号</th>
 <th>深さ</th>
@@ -208,7 +208,8 @@
 <td>25129728758</td>
 <td>720028903</td>
 </tr>
-</table>
+</table></div>
+
 
 
 
@@ -220,7 +221,7 @@ SIMDによる高速化をしていないバージョンです。
 
 #### Core i9 13900K @ 32並列
 
-<table>
+<div class="table_wrapper"><table>
 <tr>
 <th>番号</th>
 <th>深さ</th>
@@ -419,7 +420,8 @@ SIMDによる高速化をしていないバージョンです。
 <td>25582499996</td>
 <td>507821029</td>
 </tr>
-</table>
+    </table></div>
+
 
 
 
@@ -439,7 +441,7 @@ Egaroucid勝率が0.5を上回っていればEgaroucidがEdaxに勝ち越して�
 
 バージョン6.3.0までは引き分けを省いて(勝ち)/(勝ち+負け)で勝率を計算していましたが、一般的ではなかったので、バージョン6.4.0からは引き分けを0.5勝として(勝ち+0.5*引き分け)/(勝ち+引き分け+負け)で計算しました。
 
-<table>
+<div class="table_wrapper"><table>
 <tr>
 <th>レベル</th>
 <th>Egaroucid勝ち</th>
@@ -482,7 +484,6 @@ Egaroucid勝率が0.5を上回っていればEgaroucidがEdaxに勝ち越して�
 <td>59(黒: 24 白: 35)</td>
 <td>0.555</td>
 </tr>
-</table>
-
+    </table></div>
 
 

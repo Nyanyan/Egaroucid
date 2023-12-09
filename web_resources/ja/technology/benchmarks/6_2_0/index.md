@@ -8,7 +8,7 @@
 
 ### Egaroucid for Console 6.2.0 Windows x64 SIMD
 
-<table>
+<div class="table_wrapper"><table>
 <tr>
 <th>番号</th>
 <th>深さ</th>
@@ -207,7 +207,8 @@
 <td>28747666237</td>
 <td>264857806</td>
 </tr>
-</table>
+    </table></div>
+
 
 
 
@@ -227,7 +228,7 @@ bookは双方未使用です。
 
 Egaroucid勝率が0.5を上回っていればEgaroucidがEdaxに勝ち越しています。また、カッコ内の数字はEgaroucidが黒番/白番のときのそれぞれの値です。全ての条件でEgaroucidが勝ち越しています。
 
-<table>
+<div class="table_wrapper"><table>
 <tr>
 <th>レベル</th>
 <th>Egaroucid勝ち</th>
@@ -263,4 +264,4 @@ Egaroucid勝率が0.5を上回っていればEgaroucidがEdaxに勝ち越して�
 <td>111(黒: 55 白: 56)</td>
 <td>0.667</td>
 </tr>
-</table>
+    </table></div>

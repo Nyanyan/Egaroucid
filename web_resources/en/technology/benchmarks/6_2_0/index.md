@@ -8,7 +8,7 @@ I used Core i9-11900K for testing.
 
 ### Egaroucid for Console 6.2.0 Windows x64 SIMD
 
-<table>
+<div class="table_wrapper"><table>
 <tr>
 <th>No.</th>
 <th>Depth</th>
@@ -207,7 +207,8 @@ I used Core i9-11900K for testing.
 <td>28747666237</td>
 <td>264857806</td>
 </tr>
-</table>
+    </table></div>
+
 
 
 
@@ -228,7 +229,7 @@ No opening books used.
 
 If Egaroucid Win Ratio is over 0.5, then Egaroucid wins more than Edax do. "Black" and "White" means Egaroucid played black/white. In all conditions, Egaroucid is stronger than Edax.
 
-<table>
+<div class="table_wrapper"><table>
 <tr>
 <th>Level</th>
 <th>Egaroucid win</th>
@@ -264,6 +265,6 @@ If Egaroucid Win Ratio is over 0.5, then Egaroucid wins more than Edax do. "Blac
 <td>111(Black: 55 White: 56)</td>
 <td>0.667</td>
 </tr>
-</table>
+    </table></div>
 
 

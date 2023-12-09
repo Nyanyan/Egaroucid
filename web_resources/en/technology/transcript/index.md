@@ -52,7 +52,7 @@ Since this data was generated for training Egaroucid's evaluation function, the 
 
 The details of the data for each directory are summarized below.
 
-<table>
+<div class="table_wrapper"><table>
 <tr>
 	<th>Directory</th>
 	<th>0000_egaroucid_6_3_0_lv11</th>
@@ -77,13 +77,13 @@ The details of the data for each directory are summarized below.
 	<td> $N_{max}$ </td>
 	<td>19</td>
 </tr>
-</table>
+    </table></div>
 
 
 
 ## History
 
-<table>
+<div class="table_wrapper"><table>
 <tr>
 	<th>Date</th>
 	<th>Done</th>
@@ -92,4 +92,4 @@ The details of the data for each directory are summarized below.
 	<td>2023/07/17</td>
 	<td>First Release</td>
 </tr>
-</table>
+    </table></div>

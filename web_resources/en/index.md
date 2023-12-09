@@ -16,7 +16,7 @@ The author is World No.1 in [CodinGame Othello](https://www.codingame.com/multip
 
 Completely free software. Egaroucid and Egaroucid for Console use the same (strong) engine, but Egaroucid for Web uses a simple (weaker) engine.
 
-<table>
+<div class="table_wrapper"><table>
     <tr>
         <th>Name</th>
         <th>OS</th>
@@ -37,7 +37,7 @@ Completely free software. Egaroucid and Egaroucid for Console use the same (stro
         <td>Any Web Browser</td>
         <td>[Play Now](./web/)</td>
     </tr>
-</table>
+    </table></div>
 
 
 

@@ -22,7 +22,7 @@ Egaroucid is optimized to SIMD version, which requires AVX2 instructions, but ol
 
 
 
-<table>
+<div class="table_wrapper"><table>
     <tr>
         <th>OS</th>
         <th>CPU</th>
@@ -47,7 +47,7 @@ Egaroucid is optimized to SIMD version, which requires AVX2 instructions, but ol
         <td>[Egaroucid 6.5.0 Generic Installer](https://github.com/Nyanyan/Egaroucid/releases/download/v6.5.0/Egaroucid_6_5_0_Generic_installer.exe)</td>
         <td>[Egaroucid 6.5.0 Generic Zip](https://github.com/Nyanyan/Egaroucid/releases/download/v6.5.0/Egaroucid_6_5_0_Windows_x64_Generic_Portable.zip)</td>
     </tr>
-</table>
+    </table></div>
 
 
 

@@ -4,6 +4,7 @@ html, body {
 
 table{
     border-collapse:  collapse;
+    margin: auto;
 }
 
 tr:nth-child(odd){
@@ -20,8 +21,8 @@ td{
     padding: 5px 10px;
 }
 
-table{
-    margin: auto;
+.table_wrapper{
+    overflow-x: scroll;
 }
 
 .pic{

@@ -16,7 +16,7 @@ Egaroucidは世界最強クラスのオセロAIを搭載した無料のオセロ
 
 全てフリーソフトとして公開しています。EgaroucidとEgaroucid for Consoleは同一の強い思考エンジンですが、Egaroucid for Webは簡易的な思考エンジンを搭載しています。
 
-<table>
+<div class="table_wrapper"><table>
     <tr>
         <th>名称</th>
         <th>対応OS</th>
@@ -37,7 +37,7 @@ Egaroucidは世界最強クラスのオセロAIを搭載した無料のオセロ
         <td>任意のWebブラウザ</td>
         <td>[今すぐ遊ぶ](./web/)</td>
     </tr>
-</table>
+    </table></div>
 
 
 

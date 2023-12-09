@@ -18,7 +18,7 @@ Egaroucidはx64のSIMDバージョン(AVX2を使用)に最適化して作って�
 
 
 
-<table>
+<div class="table_wrapper"><table>
     <tr>
         <th>OS</th>
         <th>CPU</th>
@@ -47,7 +47,7 @@ Egaroucidはx64のSIMDバージョン(AVX2を使用)に最適化して作って�
         <td>2023/10/25</td>
         <td>[Egaroucid for Console 6.5.0 Windows x86 Generic](https://github.com/Nyanyan/Egaroucid/releases/download/console_v6.5.0/Egaroucid_for_Console_6_5_0_Windows_x86_Generic.zip)</td>
     </tr>
-</table>
+    </table></div>
 
 
 

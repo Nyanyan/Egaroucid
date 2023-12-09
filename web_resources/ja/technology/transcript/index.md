@@ -52,7 +52,7 @@ GitHubレポジトリ: [https://github.com/Nyanyan/Egaroucid](https://github.com
 
 フォルダごとの棋譜の詳細は以下にまとめました。
 
-<table>
+<div class="table_wrapper"><table>
 <tr>
 	<th>フォルダ名</th>
 	<th>0000_egaroucid_6_3_0_lv11</th>
@@ -77,13 +77,14 @@ GitHubレポジトリ: [https://github.com/Nyanyan/Egaroucid](https://github.com
 	<td> $N_{max}$ </td>
 	<td>19</td>
 </tr>
-</table>
+    </table></div>
+
 
 
 
 ## 変更履歴
 
-<table>
+<div class="table_wrapper"><table>
 <tr>
 	<th>日付</th>
 	<th>内容</th>
@@ -92,4 +93,4 @@ GitHubレポジトリ: [https://github.com/Nyanyan/Egaroucid](https://github.com
 	<td>2023/07/17</td>
 	<td>公開</td>
 </tr>
-</table>
+    </table></div>

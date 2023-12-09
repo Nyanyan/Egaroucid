@@ -11,7 +11,7 @@
 
 #### Core i9 13900K @ 32並列
 
-<table>
+<div class="table_wrapper"><table>
 <tr>
 <th>番号</th>
 <th>深さ</th>
@@ -210,11 +210,12 @@
 <td>24847574333</td>
 <td>518359744</td>
 </tr>
-</table>
+    </table></div>
+
 
 #### Core i9 11900K @ 19並列
 
-<table>
+<div class="table_wrapper"><table>
 <tr>
 <th>番号</th>
 <th>深さ</th>
@@ -413,7 +414,8 @@
 <td>22775825401</td>
 <td>297272442</td>
 </tr>
-</table>
+    </table></div>
+
 
 ### Egaroucid for Console 6.3.0 Windows x64 Generic
 
@@ -421,7 +423,7 @@ SIMDによる高速化をしていないバージョンです。
 
 #### Core i9 13900K @ 32並列
 
-<table>
+<div class="table_wrapper"><table>
 <tr>
 <th>番号</th>
 <th>深さ</th>
@@ -620,7 +622,8 @@ SIMDによる高速化をしていないバージョンです。
 <td>26425639893</td>
 <td>383915038</td>
 </tr>
-</table>
+    </table></div>
+
 
 
 
@@ -638,7 +641,7 @@ bookは双方未使用です。
 
 Egaroucid勝率が0.5を上回っていればEgaroucidがEdaxに勝ち越しています。また、カッコ内の数字はEgaroucidが黒番/白番のときのそれぞれの値です。全ての条件でEgaroucidが勝ち越しています。
 
-<table>
+<div class="table_wrapper"><table>
 <tr>
 <th>レベル</th>
 <th>Egaroucid勝ち</th>
@@ -674,6 +677,6 @@ Egaroucid勝率が0.5を上回っていればEgaroucidがEdaxに勝ち越して�
 <td>184(黒: 87 白: 97)</td>
 <td>0.621</td>
 </tr>
-</table>
+    </table></div>
 
 

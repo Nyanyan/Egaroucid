@@ -9,7 +9,7 @@
 
 #### Core i9 13900K @ 32 threads
 
-<table>
+<div class="table_wrapper"><table>
 <tr>
 <th>No.</th>
 <th>Depth</th>
@@ -208,7 +208,8 @@
 <td>25129728758</td>
 <td>720028903</td>
 </tr>
-</table>
+    </table></div>
+
 
 
 
@@ -219,7 +220,7 @@ Without speedup by SIMD
 
 #### Core i9 13900K @ 32 threads
 
-<table>
+<div class="table_wrapper"><table>
 <tr>
 <th>No.</th>
 <th>Depth</th>
@@ -418,7 +419,8 @@ Without speedup by SIMD
 <td>25582499996</td>
 <td>507821029</td>
 </tr>
-</table>
+    </table></div>
+
 
 
 
@@ -436,7 +438,7 @@ No opening books used.
 
 If Egaroucid Win Ratio is over 0.5, then Egaroucid wins more than Edax do. "Black" and "White" means Egaroucid played black/white. In all conditions, Egaroucid is stronger than Edax.
 
-<table>
+<div class="table_wrapper"><table>
 <tr>
 <th>Level</th>
 <th>Egaroucid win</th>
@@ -479,7 +481,6 @@ If Egaroucid Win Ratio is over 0.5, then Egaroucid wins more than Edax do. "Blac
 <td>59(Black: 24 White: 35)</td>
 <td>0.555</td>
 </tr>
-</table>
-
+    </table></div>
 
 

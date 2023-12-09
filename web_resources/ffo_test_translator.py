@@ -2,7 +2,8 @@ import pyperclip
 import sys
 
 if sys.argv[1] == 'ja':
-    head = '''<table>
+    head = '''<div class="table_wrapper">
+<table>
 <tr>
 <th>番号</th>
 <th>深さ</th>
@@ -14,7 +15,8 @@ if sys.argv[1] == 'ja':
 </tr>
 '''
 else:
-    head = '''<table>
+    head = '''<div class="table_wrapper">
+<table>
 <tr>
 <th>No.</th>
 <th>Depth</th>
@@ -106,7 +108,8 @@ else:
 <td>''' + str(round(whole_nodes / whole_time)) + '''</td>
 </tr>
 '''
-res += '</table>'
+res += '''</table>
+</div>'''
 
 #print(res)
 
