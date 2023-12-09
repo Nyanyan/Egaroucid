@@ -411,7 +411,6 @@ struct Menu_elements {
 
     // book
     bool book_start_deviate;
-    bool book_start_deepen;
     bool book_start_fix;
     int book_learn_depth;
     int book_learn_error_per_move;
@@ -421,6 +420,7 @@ struct Menu_elements {
     bool change_book_by_right_click;
 	bool save_as_edax_book;
     bool book_start_aligning;
+    bool book_start_recalculate_leaf;
 
     // input / output
     // input
@@ -492,7 +492,6 @@ struct Menu_elements {
         change_color_type = settings->change_color_type;
 
         book_start_deviate = false;
-        book_start_deepen = false;
         book_start_fix = false;
         book_learn_depth = settings->book_learn_depth;
         book_learn_error_per_move = settings->book_learn_error_per_move;
@@ -501,6 +500,7 @@ struct Menu_elements {
         book_reference = false;
         change_book_by_right_click = settings->change_book_by_right_click;
         book_start_aligning = false;
+        book_start_recalculate_leaf = false;
 
         input_transcript = false;
         input_board = false;

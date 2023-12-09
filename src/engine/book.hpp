@@ -426,15 +426,13 @@ class Book{
             int percent = -1, t = 0, n_boards = (int)boards.size();
             Book_elem book_elem;
             for (Board &board: boards){
-                if (!global_searching)
+                if (!global_searching || *stop)
                     break;
                 if (100LL * t / n_boards > percent){
                     percent = 100LL * t / n_boards;
                     std::cerr << "adding leaf " << percent << "%" << std::endl;
                 }
                 ++t;
-                if (*stop)
-                    break;
                 book_elem = book[board];
                 int leaf_move = book_elem.leaf.move;
                 calc_flip(&flip, &board, leaf_move);
@@ -474,6 +472,46 @@ class Book{
                         new_leaf_move = MOVE_NOMOVE;
                     add_leaf(&board, new_leaf_value, new_leaf_move);
                 }
+            }
+        }
+
+        void recalculate_leaf(int level, bool *stop){
+            std::vector<Board> boards;
+            for (auto itr = book.begin(); itr != book.end(); ++itr)
+                boards.emplace_back(itr->first);
+            Flip flip;
+            std::cerr << "add leaf to book" << std::endl;
+            int percent = -1, t = 0, n_boards = (int)boards.size();
+            Book_elem book_elem;
+            for (Board &board: boards){
+                if (!global_searching || *stop)
+                    break;
+                if (100LL * t / n_boards > percent){
+                    percent = 100LL * t / n_boards;
+                    std::cerr << "adding leaf " << percent << "%" << std::endl;
+                }
+                ++t;
+                book_elem = book[board];
+                int8_t new_leaf_value = SCORE_UNDEFINED, new_leaf_move = MOVE_UNDEFINED;
+                std::vector<Book_value> links = get_all_moves_with_value(&board);
+                uint64_t legal = board.get_legal();
+                for (Book_value &link: links)
+                    legal ^= 1ULL << link.policy;
+                if (legal){
+                    Search_result ai_result = ai_specified_moves(board, level, false, 0, true, false, legal);
+                    if (ai_result.value != SCORE_UNDEFINED){
+                        new_leaf_value = ai_result.value;
+                        if (level == ADD_LEAF_SPECIAL_LEVEL)
+                            new_leaf_value = book_elem.value;
+                        new_leaf_move = ai_result.policy;
+                        //std::cerr << "recalc leaf " << (int)new_leaf_value << " " << (int)new_leaf_move << " " << idx_to_coord(new_leaf_move) << std::endl;
+                        //for (Book_value &link: links)
+                        //    std::cerr << "link " << idx_to_coord(link.policy) << std::endl;
+                        //board.print();
+                    }
+                } else
+                    new_leaf_move = MOVE_NOMOVE;
+                add_leaf(&board, new_leaf_value, new_leaf_move);
             }
         }
 
@@ -1715,4 +1753,8 @@ void book_fix(bool *stop){
 
 void book_depth_align(int depth, bool *stop){
     book.depth_align(depth, stop);
+}
+
+void book_recalculate_leaf(int level, bool *stop){
+    book.recalculate_leaf(level, stop);
 }
