@@ -725,7 +725,7 @@ bookの自動学習と同様に、1手あたりの誤差、および手筋の合
 
 Egaroucid起動時に読み込んだbookに新たなbookを統合し、競合する場合は新たなbookで上書きします。
 
-Egaroucid形式のbookの他、Edax形式のbookも使えます。そのため、空のbook(ドキュメントフォルダ内のEgaroucid/empty_book.egbk3)を読み込ませて起動してから、Edaxのbookを統合すればEdaxのbookをEgaroucid形式に変換できます。
+Egaroucid形式のbook(egbk3、egbk2、egbk形式)の他、Edax形式のbookも使えます。そのため、空のbook(ドキュメントフォルダ内のEgaroucid/empty_book.egbk3)を読み込ませて起動してから、Edaxのbookを統合すればEdaxのbookをEgaroucid形式に変換できます。
 
 ### ファイル操作 > bookの参照
 
@@ -736,6 +736,12 @@ Egaroucid形式のbookの他、Edax形式のbookも使えます。そのため�
 ### ファイル操作 > Edax形式で保存
 
 Egaroucid形式のbookをEdax形式で保存できます。完璧な互換性を保証するものではありません。
+
+Egaroucid形式ではbookのレベルという概念がありませんが、Edaxにはあるため、Edax形式で出力するときにはbookのレベルをユーザが設定できるようにしてあります。下部のバーで好きなレベルに設定してから書き出せば、そのレベルのbookとして保存されます。
+
+<div class="centering_box">
+    <img class="pic2" src="img/export_as_edax_book.png">
+</div>
 
 ### Bookファイルの構造
 
