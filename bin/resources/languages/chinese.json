@@ -17,7 +17,7 @@
     "closing": "正在关闭...",
     "play": {
         "game": "对局",
-        "new_game": "新建对局 (玩家对弈)",
+        "new_game": "新建对局 (玩家对弈) (N)",
         "new_game_human_black": "新建对局 (玩家执黑)",
         "new_game_human_white": "新建对局 (玩家执白)",
         "new_selfplay": "新建对局 (电脑自弈)",
