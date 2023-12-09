@@ -508,7 +508,7 @@ private:
                 }
                 need_start_game_button_calculation();
             }
-            if (getData().menu_elements.generate_random_board){
+            if (getData().menu_elements.generate_random_board || KeyR.down()){
                 int max_n_moves = getData().menu_elements.generate_random_board_moves;
                 int level = 2;
                 std::random_device seed_gen;
