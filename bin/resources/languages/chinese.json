@@ -105,7 +105,7 @@
         "cell": {
             "display_on_cell": "棋子显示",
             "legal": "可行步",
-            "disc_value": "显示估值数量",
+            "disc_value": "显示估值数量 (V)",
             "disc_value_number": "数量",
             "umigame_value": "游戏数量",
             "opening": "定式",
@@ -126,7 +126,7 @@
         "operation": "操作",
         "forward": "前进 (->/D)",
         "backward": "后退 (<-/A)",
-        "undo": "撤销 (BS)",
+        "undo": "撤销 (BackSpace)",
         "save_this_branch": "保存此变化",
         "generate_random_board": {
             "generate_random_board": "生成随机情况",

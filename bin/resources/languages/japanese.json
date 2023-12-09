@@ -105,7 +105,7 @@
         "cell": {
             "display_on_cell": "合法手への表示",
             "legal": "合法手",
-            "disc_value": "石差評価",
+            "disc_value": "石差評価 (V)",
             "disc_value_number": "表示個数",
             "umigame_value": "うみがめ数",
             "opening": "定石",
@@ -126,7 +126,7 @@
         "operation": "操作",
         "forward": "進む (->/D)",
         "backward": "戻る (<-/A)",
-        "undo": "待った (BS)",
+        "undo": "待った (BackSpace)",
         "save_this_branch": "この分岐を保存",
         "generate_random_board": {
             "generate_random_board": "ランダム局面を生成",
