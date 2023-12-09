@@ -439,6 +439,35 @@ AIの計算中、ログには評価値が現れるので、本気で対戦した
 <div class="centering_box">
     <img class="pic2" src="img/save_fork_graph.png">
 </div>
+### ランダム局面を生成
+
+中盤局面をランダムに自動生成します。ヒントを非表示にして局面を生成しその局面の形勢を判断する、というオセロの勉強のために実装しました。
+
+生成ボタンを押すと自動で中盤局面が生成されます。また、生成手数を変更することで、何手目の局面を生成するかを選択できます。
+
+この機能では、各着手に対して68%の確率で4石損以下、95%の確率で8石損以下の手を選びます。
+
+<div class="centering_box">
+    <img class="pic2" src="img/generate_random_board.png">
+</div>
+
+この機能は、指定された手数までの各着手に対して以下の計算によって手を選んでいます。
+
+平均0、標準偏差4の正規分布に従ってランダムに数値を出力する関数を$\mathrm{randdst_{0,4}()}$とします。
+
+$E=\mathrm{round\left(\mathrm{randdst_{0,4}()}\right)}$
+
+として、許容誤差$E$を整数で決定します。
+
+与えられた局面に対して、評価値の集合を$A=\{(v,m)\}$とします。ここで、$v$は(手番目線の)評価値、$m$は手です。
+
+$B=\left\{(v,m)\in A\middle|v\geq v_{\mathrm{max}}-E\right\}$
+
+で定義される$B$を作り、$E$石損以下の手を厳選します。なお、$v_{\mathrm{max}}$は最善手の評価値です。
+
+この$B$の中から手をランダムに選択します。
+
+なお、この機能では強い手を選ぶ必要がないため、手の評価値はbook登録値または2手読みの評価値を使用しています。
 
 ### 変換
 
@@ -627,7 +656,7 @@ Egaroucidでは深さ、1手あたりの誤差、手筋の誤差という3つの
 
 編集したbookはEgaroucidの終了時に自動で保存されます。
 
-デフォルトの保存場所はドキュメントフォルダ内のEgaroucid/book.egbk2です。
+デフォルトの保存場所はドキュメントフォルダ内のEgaroucid/book.egbk3です。
 
 ### Book操作 > Book拡張
 
@@ -641,7 +670,7 @@ Egaroucidでは深さ、1手あたりの誤差、手筋の誤差という3つの
 
 編集したbookはEgaroucidの終了時に自動で保存されます。
 
-デフォルトの保存場所はドキュメントフォルダ内のEgaroucid/book.egbk2です。
+デフォルトの保存場所はドキュメントフォルダ内のEgaroucid/book.egbk3です。
 
 <div class="centering_box">
     <img class="pic2" src="img/book_widen.png">
@@ -653,7 +682,7 @@ bookに登録された局面の繋がりを再計算し、末端からbook値を
 
 修正したbookはEgaroucidの終了時に自動で保存されます。
 
-デフォルトの保存場所はドキュメントフォルダ内のEgaroucid/book.egbk2です。
+デフォルトの保存場所はドキュメントフォルダ内のEgaroucid/book.egbk3です。
 
 ### Book操作 > 深さ上限設定
 
@@ -661,7 +690,7 @@ bookの深さの上限$D$を変更できます。深さ30のbookを切り出し�
 
 修正したbookはEgaroucidの終了時に自動で保存されます。
 
-デフォルトの保存場所はドキュメントフォルダ内のEgaroucid/book.egbk2です。
+デフォルトの保存場所はドキュメントフォルダ内のEgaroucid/book.egbk3です。
 
 ### Book操作 > レベル上書き
 
@@ -673,13 +702,13 @@ bookには、計算したAIのレベルを保存してあります。この値�
 
 Egaroucid起動時に読み込んだbookに新たなbookを統合し、競合する場合は新たなbookで上書きします。
 
-Egaroucid形式のbookの他、Edax形式のbookも使えます。そのため、空のbook(ドキュメントフォルダ内のEgaroucid/empty_book.egbk)を読み込ませて起動してから、Edaxのbookを統合すればEdaxのbookをEgaroucid形式に変換できます。
+Egaroucid形式のbookの他、Edax形式のbookも使えます。そのため、空のbook(ドキュメントフォルダ内のEgaroucid/empty_book.egbk3)を読み込ませて起動してから、Edaxのbookを統合すればEdaxのbookをEgaroucid形式に変換できます。
 
 ### ファイル操作 > bookの参照
 
 起動時に読み込むbookを変更できます。パスを入力するか、ドラッグ&ドロップしてください。
 
-デフォルトはドキュメントフォルダ内のEgaroucid/book.egbk2です。
+デフォルトはドキュメントフォルダ内のEgaroucid/book.egbk3です。
 
 ### ファイル操作 > Edax形式で保存
 
