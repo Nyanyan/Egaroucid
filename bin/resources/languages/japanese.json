@@ -110,7 +110,8 @@
             "umigame_value": "うみがめ数 (U)",
             "opening": "定石",
             "next_move": "直後の手",
-            "next_move_change_view": "表示変更"
+            "next_move_change_view": "表示変更",
+            "show_book_n_lines": "Bookライン数"
         },
         "disc": {
             "display_on_disc": "石への表示",

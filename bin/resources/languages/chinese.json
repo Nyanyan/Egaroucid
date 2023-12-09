@@ -110,7 +110,8 @@
             "umigame_value": "游戏数量 (U)",
             "opening": "定式",
             "next_move": "落点提示",
-            "next_move_change_view": "改变视图"
+            "next_move_change_view": "改变视图",
+            "show_book_n_lines": "Book Number of Lines"
         },
         "disc": {
             "display_on_disc": "棋盘显示",

@@ -110,7 +110,8 @@
             "umigame_value": "Umigame Number (U)",
             "opening": "Opening",
             "next_move": "Next Move",
-            "next_move_change_view": "Change View"
+            "next_move_change_view": "Change View",
+            "show_book_n_lines": "Book Number of Lines"
         },
         "disc": {
             "display_on_disc": "On Disc",
