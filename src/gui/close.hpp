@@ -15,38 +15,37 @@
 #include "function/function_all.hpp"
 
 void save_settings(Menu_elements menu_elements, Settings settings, Directories directories) {
-    TextWriter writer(U"{}setting.txt"_fmt(Unicode::Widen(directories.appdata_dir)));
-    if (writer) {
-        writer.writeln(menu_elements.n_threads);
-        writer.writeln((int)menu_elements.auto_update_check);
-        writer.writeln(Unicode::Widen(settings.lang_name));
-        writer.writeln(Unicode::Widen(settings.book_file));
-        writer.writeln((int)menu_elements.use_book);
-        writer.writeln(menu_elements.level);
-        writer.writeln((int)menu_elements.ai_put_black);
-        writer.writeln((int)menu_elements.ai_put_white);
-        writer.writeln((int)menu_elements.use_disc_hint);
-        writer.writeln((int)menu_elements.use_umigame_value);
-        writer.writeln(menu_elements.n_disc_hint);
-        writer.writeln((int)menu_elements.show_legal);
-        writer.writeln((int)menu_elements.show_graph);
-        writer.writeln((int)menu_elements.show_opening_on_cell);
-        writer.writeln((int)menu_elements.show_log);
-        writer.writeln(menu_elements.book_learn_depth);
-        writer.writeln(menu_elements.book_learn_error_per_move);
-        writer.writeln((int)menu_elements.show_stable_discs);
-        writer.writeln((int)menu_elements.change_book_by_right_click);
-        writer.writeln((int)menu_elements.show_last_move);
-        writer.writeln((int)menu_elements.show_next_move);
-        writer.writeln(menu_elements.hash_level);
-		writer.writeln(menu_elements.book_acc_level);
-        writer.writeln((int)menu_elements.pause_when_pass);
-        writer.writeln(menu_elements.book_learn_error_sum);
-        writer.writeln((int)menu_elements.show_next_move_change_view);
-        writer.writeln((int)menu_elements.change_color_type);
-        writer.writeln((int)menu_elements.show_play_ordering);
-        writer.writeln(menu_elements.generate_random_board_moves);
-    }
+    JSON setting_json;
+    setting_json[U"n_threads"] = menu_elements.n_threads;
+    setting_json[U"auto_update_check"] = menu_elements.auto_update_check;
+    setting_json[U"lang_name"] = Unicode::Widen(settings.lang_name);
+    setting_json[U"book_file"] = Unicode::Widen(settings.book_file);
+    setting_json[U"use_book"] = menu_elements.use_book;
+    setting_json[U"level"] = menu_elements.level;
+    setting_json[U"ai_put_black"] = menu_elements.ai_put_black;
+    setting_json[U"ai_put_white"] = menu_elements.ai_put_white;
+    setting_json[U"use_disc_hint"] = menu_elements.use_disc_hint;
+    setting_json[U"use_umigame_value"] = menu_elements.use_umigame_value;
+    setting_json[U"n_disc_hint"] = menu_elements.n_disc_hint;
+    setting_json[U"show_legal"] = menu_elements.show_legal;
+    setting_json[U"show_graph"] = menu_elements.show_graph;
+    setting_json[U"show_opening_on_cell"] = menu_elements.show_opening_on_cell;
+    setting_json[U"show_log"] = menu_elements.show_log;
+    setting_json[U"book_learn_depth"] = menu_elements.book_learn_depth;
+    setting_json[U"book_learn_error_per_move"] = menu_elements.book_learn_error_per_move;
+    setting_json[U"show_stable_discs"] = menu_elements.show_stable_discs;
+    setting_json[U"change_book_by_right_click"] = menu_elements.change_book_by_right_click;
+    setting_json[U"show_last_move"] = menu_elements.show_last_move;
+    setting_json[U"show_next_move"] = menu_elements.show_next_move;
+    setting_json[U"hash_level"] = menu_elements.hash_level;
+    setting_json[U"book_acc_level"] = menu_elements.book_acc_level;
+    setting_json[U"pause_when_pass"] = menu_elements.pause_when_pass;
+    setting_json[U"book_learn_error_sum"] = menu_elements.book_learn_error_sum;
+    setting_json[U"show_next_move_change_view"] = menu_elements.show_next_move_change_view;
+    setting_json[U"change_color_type"] = menu_elements.change_color_type;
+    setting_json[U"show_play_ordering"] = menu_elements.show_play_ordering;
+    setting_json[U"generate_random_board_moves"] = menu_elements.generate_random_board_moves;
+    setting_json.save(U"{}setting.json"_fmt(Unicode::Widen(directories.appdata_dir)));
 }
 
 void close_app(Menu_elements menu_elements, Settings settings, Directories directories, Book_information book_information, Window_state window_state) {
