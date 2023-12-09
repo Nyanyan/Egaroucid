@@ -177,7 +177,7 @@ inline void book_deviate(Board root_board, int level, int book_depth, int max_er
         if (book_deviate_todo.size() == 0)
             break;
         expand_leaves(level, book_deviate_todo, all_strt, book_learning, board_copy, player);
-        book.fix();
+        //book.fix();
         std::cerr << "book deviated size " << book.size() << std::endl;
     }
     root_board.copy(board_copy);
