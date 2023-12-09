@@ -421,6 +421,9 @@ AIの計算中、ログには評価値が現れるので、本気で対戦した
 <div class="centering_box">
     <img class="pic2" src="img/operate.png">
 </div>
+### AIに1手打たせる
+
+今の局面からAIに1手打たせることができます。ショートカットキーとしてGを割り当ててあります。
 
 ### 進む/戻る
 
@@ -868,3 +871,4 @@ Egaroucidのライセンス、およびEgaroucidで使用しているライブ�
 <div class="centering_box">
     <img class="pic2" src="img/language.png">
 </div>
+
