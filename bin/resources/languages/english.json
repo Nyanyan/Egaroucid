@@ -131,7 +131,7 @@
         "save_this_branch": "Save this Branch",
         "generate_random_board": {
             "generate_random_board": "Generate Random Board",
-            "generate": "Generate",
+            "generate": "Generate (R)",
             "generate_n_moves": "Moves"
         },
         "convert": {
