@@ -400,6 +400,26 @@ class Book{
             book[representive_board].leaf = leaf;
         }
 
+        void search_leaf(Board board, int level){
+            Book_elem book_elem = book[board];
+            int8_t new_leaf_value = SCORE_UNDEFINED, new_leaf_move = MOVE_UNDEFINED;
+            std::vector<Book_value> links = get_all_moves_with_value(&board);
+            uint64_t legal = board.get_legal();
+            for (Book_value &link: links)
+                legal ^= 1ULL << link.policy;
+            if (legal){
+                Search_result ai_result = ai_specified_moves(board, level, false, 0, true, false, legal);
+                if (ai_result.value != SCORE_UNDEFINED){
+                    new_leaf_value = ai_result.value;
+                    if (level == ADD_LEAF_SPECIAL_LEVEL)
+                        new_leaf_value = book_elem.value;
+                    new_leaf_move = ai_result.policy;
+                }
+            } else
+                new_leaf_move = MOVE_NOMOVE;
+            add_leaf(&board, new_leaf_value, new_leaf_move);
+        }
+
         void add_leaf_all_undefined(){
             std::vector<Board> boards;
             for (auto itr = book.begin(); itr != book.end(); ++itr)
@@ -479,14 +499,13 @@ class Book{
             }
         }
 
-        void recalculate_leaf(int level, bool *stop){
+        void recalculate_leaf_all(int level, bool *stop){
             std::vector<Board> boards;
             for (auto itr = book.begin(); itr != book.end(); ++itr)
                 boards.emplace_back(itr->first);
             Flip flip;
             std::cerr << "add leaf to book" << std::endl;
             int percent = -1, t = 0, n_boards = (int)boards.size();
-            Book_elem book_elem;
             for (Board &board: boards){
                 if (!global_searching || *stop)
                     break;
@@ -495,27 +514,7 @@ class Book{
                     std::cerr << "adding leaf " << percent << "%" << std::endl;
                 }
                 ++t;
-                book_elem = book[board];
-                int8_t new_leaf_value = SCORE_UNDEFINED, new_leaf_move = MOVE_UNDEFINED;
-                std::vector<Book_value> links = get_all_moves_with_value(&board);
-                uint64_t legal = board.get_legal();
-                for (Book_value &link: links)
-                    legal ^= 1ULL << link.policy;
-                if (legal){
-                    Search_result ai_result = ai_specified_moves(board, level, false, 0, true, false, legal);
-                    if (ai_result.value != SCORE_UNDEFINED){
-                        new_leaf_value = ai_result.value;
-                        if (level == ADD_LEAF_SPECIAL_LEVEL)
-                            new_leaf_value = book_elem.value;
-                        new_leaf_move = ai_result.policy;
-                        //std::cerr << "recalc leaf " << (int)new_leaf_value << " " << (int)new_leaf_move << " " << idx_to_coord(new_leaf_move) << std::endl;
-                        //for (Book_value &link: links)
-                        //    std::cerr << "link " << idx_to_coord(link.policy) << std::endl;
-                        //board.print();
-                    }
-                } else
-                    new_leaf_move = MOVE_NOMOVE;
-                add_leaf(&board, new_leaf_value, new_leaf_move);
+                search_leaf(board, level);
             }
         }
 
@@ -1495,6 +1494,22 @@ class Book{
             return book.size();
         }
 
+        inline Board get_representative_board(Board b){
+            Board res = b;
+            first_update_representative_board(&res, &b);
+            b.board_black_line_mirror();
+            update_representative_board(&res, &b);
+            b.board_horizontal_mirror();
+            update_representative_board(&res, &b);
+            b.board_white_line_mirror();
+            update_representative_board(&res, &b);
+            return res;
+        }
+
+        inline Board get_representative_board(Board *b, int *idx){
+            return get_representative_board(b->copy(), idx);
+        }
+
     private:
         void reg_first_board(){
             Board board;
@@ -1563,18 +1578,6 @@ class Book{
             }
         }
 
-        inline Board get_representative_board(Board b){
-            Board res = b;
-            first_update_representative_board(&res, &b);
-            b.board_black_line_mirror();
-            update_representative_board(&res, &b);
-            b.board_horizontal_mirror();
-            update_representative_board(&res, &b);
-            b.board_white_line_mirror();
-            update_representative_board(&res, &b);
-            return res;
-        }
-
         inline void first_update_representative_board(Board *res, Board *sym, int *idx, int *cnt){
             uint64_t vp = vertical_mirror(sym->player);
             uint64_t vo = vertical_mirror(sym->opponent);
@@ -1614,10 +1617,6 @@ class Book{
             b.board_white_line_mirror();
             update_representative_board(&res, &b, idx, &cnt);
             return res;
-        }
-
-        inline Board get_representative_board(Board *b, int *idx){
-            return get_representative_board(b->copy(), idx);
         }
 
         inline int convert_coord_from_representative_board(int cell, int idx){
@@ -1770,6 +1769,6 @@ void book_depth_align(int depth, bool *stop){
     book.depth_align(depth, stop);
 }
 
-void book_recalculate_leaf(int level, bool *stop){
-    book.recalculate_leaf(level, stop);
+void book_recalculate_leaf_all(int level, bool *stop){
+    book.recalculate_leaf_all(level, stop);
 }
