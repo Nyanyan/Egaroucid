@@ -859,3 +859,12 @@ Egaroucidは過去バージョンとの互換性を極力高めて開発して�
 
 Egaroucidのライセンス、およびEgaroucidで使用しているライブラリであるSiv3Dのライセンスを表示できます。
 
+
+
+## Language
+
+言語を変更できます。日本語、英語、中国語に対応しています。jsonファイルで言語パックを作ることで他の言語にも対応可能(なはず)(フォントが対応している限り…)です。
+
+<div class="centering_box">
+    <img class="pic2" src="img/language.png">
+</div>
