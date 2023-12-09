@@ -332,9 +332,11 @@ class Book{
                     return false;
                 }
                 if (value < -HW2 || HW2 < value) {
-                    std::cerr << "[ERROR] book NOT FULLY imported got value " << value << " " << book.size() << " boards" << std::endl;
+                    std::cerr << "[ERROR] book NOT FULLY imported got value " << (int)value << " " << book.size() << " boards" << std::endl;
                     fclose(fp);
                     return false;
+                    //std::cerr << "[WARNING] value error found " << (int)value << " " << book.size() << " boards" << std::endl;
+                    //value = SCORE_UNDEFINED;
                 }
                 // read n_lines
                 if (fread(&n_lines, 4, 1, fp) < 1) {
@@ -838,6 +840,13 @@ class Book{
                     fclose(fp);
                     return false;
                 }
+                if (value < -HW2 || HW2 < value) {
+                    //std::cerr << "[ERROR] book NOT FULLY imported got value " << (int)value << " " << book.size() << " boards" << std::endl;
+                    //fclose(fp);
+                    //return false;
+                    //std::cerr << "[WARNING] value error found " << (int)value << " " << book.size() << " boards" << std::endl;
+                    value = SCORE_UNDEFINED;
+                }
                 // read additional data
                 for (int j = 0; j < 2; ++j) {
                     if (fread(&elem_short, 2, 1, fp) < 1) {
@@ -887,13 +896,15 @@ class Book{
                     leaf_value = SCORE_UNDEFINED;
                     leaf_move = MOVE_UNDEFINED;
                 }
-                board.player = player;
-                board.opponent = opponent;
-                book_elem.value = value;
-                book_elem.leaf.value = leaf_value;
-                book_elem.leaf.move = leaf_move;
-                book_elem.n_lines = n_lines;
-                merge(board, book_elem);
+                if (value != SCORE_UNDEFINED){
+                    board.player = player;
+                    board.opponent = opponent;
+                    book_elem.value = value;
+                    book_elem.leaf.value = leaf_value;
+                    book_elem.leaf.move = leaf_move;
+                    book_elem.n_lines = n_lines;
+                    merge(board, book_elem);
+                }
             }
             if (show_log)
                 std::cerr << "imported " << book.size() << " boards to book" << std::endl;
