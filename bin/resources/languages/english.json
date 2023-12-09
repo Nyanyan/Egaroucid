@@ -128,7 +128,7 @@
         "forward": "Forward (->/D)",
         "backward": "Backward (<-/A)",
         "undo": "Undo (BackSpace)",
-        "save_this_branch": "Save this Branch",
+        "save_this_branch": "Save this Branch (L)",
         "generate_random_board": {
             "generate_random_board": "Generate Random Board",
             "generate": "Generate (R)",
