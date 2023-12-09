@@ -309,30 +309,30 @@ class Book{
                 }
                 // read board, player
                 if (fread(&p, 8, 1, fp) < 1) {
-                    std::cerr << "[ERROR] book NOT FULLY imported " << book.size() << " boards" << std::endl;
+                    std::cerr << "[ERROR] book NOT FULLY imported 0 " << book.size() << " boards" << std::endl;
                     fclose(fp);
                     return false;
                 }
                 // read board, opponent
                 if (fread(&o, 8, 1, fp) < 1) {
-                    std::cerr << "[ERROR] book NOT FULLY imported " << book.size() << " boards" << std::endl;
+                    std::cerr << "[ERROR] book NOT FULLY imported 1 " << book.size() << " boards" << std::endl;
                     fclose(fp);
                     return false;
                 }
                 // board error check
                 if (p & o){
-                    std::cerr << "[ERROR] book NOT FULLY imported " << book.size() << " boards" << std::endl;
+                    std::cerr << "[ERROR] book NOT FULLY imported 2 " << book.size() << " boards" << std::endl;
                     fclose(fp);
                     return false;
                 }
                 // read value
                 if (fread(&value, 1, 1, fp) < 1) {
-                    std::cerr << "[ERROR] book NOT FULLY imported " << book.size() << " boards" << std::endl;
+                    std::cerr << "[ERROR] book NOT FULLY imported 3 " << book.size() << " boards" << std::endl;
                     fclose(fp);
                     return false;
                 }
                 if (value < -HW2 || HW2 < value) {
-                    std::cerr << "[ERROR] book NOT FULLY imported got value " << (int)value << " " << book.size() << " boards" << std::endl;
+                    std::cerr << "[ERROR] book NOT FULLY imported 4 got value " << (int)value << " " << book.size() << " boards" << std::endl;
                     fclose(fp);
                     return false;
                     //std::cerr << "[WARNING] value error found " << (int)value << " " << book.size() << " boards" << std::endl;
@@ -340,19 +340,19 @@ class Book{
                 }
                 // read n_lines
                 if (fread(&n_lines, 4, 1, fp) < 1) {
-                    std::cerr << "[ERROR] book NOT FULLY imported " << book.size() << " boards" << std::endl;
+                    std::cerr << "[ERROR] book NOT FULLY imported 5 " << book.size() << " boards" << std::endl;
                     fclose(fp);
                     return false;
                 }
                 // read leaf value
                 if (fread(&leaf_value, 1, 1, fp) < 1) {
-                    std::cerr << "[ERROR] book NOT FULLY imported " << book.size() << " boards" << std::endl;
+                    std::cerr << "[ERROR] book NOT FULLY imported 6 " << book.size() << " boards" << std::endl;
                     fclose(fp);
                     return false;
                 }
                 // read leaf move
                 if (fread(&leaf_move, 1, 1, fp) < 1) {
-                    std::cerr << "[ERROR] book NOT FULLY imported " << book.size() << " boards" << std::endl;
+                    std::cerr << "[ERROR] book NOT FULLY imported 7 " << book.size() << " boards" << std::endl;
                     fclose(fp);
                     return false;
                 }
@@ -601,7 +601,7 @@ class Book{
                     return false;
                 }
                 if (value < -HW2 || HW2 < value) {
-                    std::cerr << "[ERROR] book NOT FULLY imported got value " << value << " " << book.size() << " boards" << std::endl;
+                    std::cerr << "[ERROR] book NOT FULLY imported got value " << (int)value << " " << book.size() << " boards" << std::endl;
                     fclose(fp);
                     return false;
                 }
@@ -724,7 +724,7 @@ class Book{
                 }
                 value = (int8_t)value_raw - HW2;
                 if (value < -HW2 || HW2 < value) {
-                    std::cerr << "[ERROR] book NOT FULLY imported got value " << value << " " << book.size() << " boards" << std::endl;
+                    std::cerr << "[ERROR] book NOT FULLY imported got value " << (int)value << " " << book.size() << " boards" << std::endl;
                     fclose(fp);
                     return false;
                 }
@@ -896,7 +896,7 @@ class Book{
                     leaf_value = SCORE_UNDEFINED;
                     leaf_move = MOVE_UNDEFINED;
                 }
-                if (value != SCORE_UNDEFINED){
+                if (value != SCORE_UNDEFINED && (player & opponent) == 0ULL){
                     board.player = player;
                     board.opponent = opponent;
                     book_elem.value = value;
