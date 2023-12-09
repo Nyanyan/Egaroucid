@@ -1588,14 +1588,16 @@ private:
                 Flip flip;
                 calc_flip(&flip, &board, cell);
                 board.move_board(&flip);
-                int n_lines = book.get(board).n_lines;
-                String n_lines_str = Format(n_lines);
-                if (n_lines >= 1000000){
-                    n_lines_str = Format(n_lines / 1000000) + U"M";
-                } else if (n_lines >= 1000){
-                    n_lines_str = Format(n_lines / 1000) + U"K";
+                if (book.contain(board)){
+                    int n_lines = book.get(board).n_lines;
+                    String n_lines_str = Format(n_lines);
+                    if (n_lines >= 1000000){
+                        n_lines_str = Format(n_lines / 1000000) + U"M";
+                    } else if (n_lines >= 1000){
+                        n_lines_str = Format(n_lines / 1000) + U"K";
+                    }
+                    getData().fonts.font_heavy(n_lines_str).draw(10, sx + 3, sy + BOARD_CELL_SIZE - 15, getData().colors.white);
                 }
-                getData().fonts.font_heavy(n_lines_str).draw(10, sx + 3, sy + BOARD_CELL_SIZE - 15, getData().colors.white);
             }
         }
     }
