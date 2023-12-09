@@ -131,6 +131,10 @@ public:
         }
 
         // move
+        if (KeyB.down())
+            getData().menu_elements.ai_put_black = !getData().menu_elements.ai_put_black;
+        if (KeyW.down())
+            getData().menu_elements.ai_put_white = !getData().menu_elements.ai_put_white;
         bool ai_should_move =
             !need_start_game_button &&
             !getData().history_elem.board.is_end() && 
