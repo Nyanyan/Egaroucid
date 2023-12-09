@@ -231,6 +231,8 @@ public:
         }
 
         // umigame calculating / drawing
+        if (KeyU.down())
+            getData().menu_elements.use_umigame_value = !getData().menu_elements.use_umigame_value;
         if (getData().menu_elements.use_umigame_value && !hint_ignore) {
             if (umigame_status.umigame_calculated) {
                 draw_umigame(legal_ignore);
