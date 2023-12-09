@@ -208,6 +208,8 @@ public:
 
         // hint calculating & drawing
         bool hint_ignore = ai_should_move || ai_status.analyzing || need_start_game_button || pausing_in_pass;
+        if (KeyV.down())
+            getData().menu_elements.use_disc_hint = !getData().menu_elements.use_disc_hint;
         if (!hint_ignore) {
             if (getData().menu_elements.use_disc_hint) {
                 if (!ai_status.hint_calculating && ai_status.hint_level < getData().menu_elements.level) {
