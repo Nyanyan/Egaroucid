@@ -38,7 +38,7 @@ Egaroucidの性能の確認として2種類のベンチマークを使用して�
 
 対戦にはそれぞれ[XOT](https://berg.earthlingz.de/xot/aboutxot.php?lang=en)の進行を初期盤面として使い、各進行では先手後手それぞれ1回ずつ対戦させています。
 
-<table>
+<div class="table_wrapper"><table>
 <tr>
 <th>名称</th>
 <th>勝率</th>
@@ -62,7 +62,8 @@ Egaroucidの性能の確認として2種類のベンチマークを使用して�
 <td>Edax</td>
 <td>0.3481</td>
 </tr>
-</table>
+    </table></div>
+
 対戦の詳細は[こちら](./battle.txt)
 
 
@@ -75,7 +76,7 @@ Egaroucid 6.2.0はEgaroucid 6.3.0と同一の評価関数のため、省いて�
 
 こちらの詳細はバージョンごとに少し条件が違うものもありますので、詳細はそれぞれのページをご覧ください。
 
-<table>
+<div class="table_wrapper"><table>
 	<tr>
 		<th>バージョン</th>
 		<th>リリース時期</th>
@@ -128,7 +129,8 @@ Egaroucid 6.2.0はEgaroucid 6.3.0と同一の評価関数のため、省いて�
 		<td><a href="./benchmarks/5_4_1/">5.4.1</a></td>
 		<td>2022/03/02</td>
 	</tr>
-</table>
+    </table></div>
+
 
 
 

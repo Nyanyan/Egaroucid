@@ -86,7 +86,7 @@ GitHubのリリースから[コード](https://github.com/Nyanyan/Egaroucid/arch
 
 
 
-<table>
+<div class="table_wrapper"><table>
     <tr>
         <th>状況</th>
         <th>追加するオプション</th>
@@ -103,7 +103,8 @@ GitHubのリリースから[コード](https://github.com/Nyanyan/Egaroucid/arch
         <td>32bit環境で動かす場合</td>
         <td>-DHAS_32_BIT_OS=ON</td>
     </tr>
-</table>
+    </table></div>
+
 
 
 
@@ -157,7 +158,7 @@ GitHubのリリースから[コード](https://github.com/Nyanyan/Egaroucid/arch
 
 
 
-<table>
+<div class="table_wrapper"><table>
     <tr>
         <th>状況</th>
         <th>追加するオプション</th>
@@ -174,7 +175,7 @@ GitHubのリリースから[コード](https://github.com/Nyanyan/Egaroucid/arch
         <td>32bit環境で動かす場合</td>
         <td>-DHAS_32_BIT_OS</td>
     </tr>
-</table>
+    </table></div>
 
 
 

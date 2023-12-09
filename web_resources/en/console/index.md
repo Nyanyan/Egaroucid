@@ -89,7 +89,7 @@ You can add additional options in <code>[options]</code>. Available options are:
 
 
 
-<table>
+<div class="table_wrapper"><table>
     <tr>
         <th>You want to</th>
         <th>Add this option</th>
@@ -106,7 +106,8 @@ You can add additional options in <code>[options]</code>. Available options are:
         <td>Use 32-bit environment</td>
         <td>-DHAS_32_BIT_OS=ON</td>
     </tr>
-</table>
+    </table></div>
+
 
 
 
@@ -163,7 +164,7 @@ Then compile it with <code>g++</code> command. You can change the output name.
 
 You can add additional options in <code>[options]</code>. Available options are:
 
-<table>
+<div class="table_wrapper"><table>
     <tr>
         <th>You want to</th>
         <th>Add this option</th>
@@ -180,7 +181,7 @@ You can add additional options in <code>[options]</code>. Available options are:
         <td>Use 32-bit environment</td>
         <td>-DHAS_32_BIT_OS</td>
     </tr>
-</table>
+    </table></div>
 
 
 
