@@ -512,39 +512,9 @@ private:
                     if (getData().history_elem.board.get_legal() == 0)
                         break;
                     int acceptable_loss = std::abs(std::round(dist(engine)));
-                    Search_result search_result = ai_hint(getData().history_elem.board, level, true, true, false);
+                    Search_result search_result = ai_accept_loss(getData().history_elem.board, level, acceptable_loss);
                     int policy = search_result.policy;
                     std::cerr << acceptable_loss << " " << idx_to_coord(policy) << " " << search_result.value << std::endl;
-                    //getData().history_elem.board.print();
-                    if (acceptable_loss > 0){
-                        uint64_t legal = getData().history_elem.board.get_legal();
-                        std::vector<int> legals;
-                        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
-                            legals.emplace_back(cell);
-                        std::shuffle(legals.begin(), legals.end(), engine);
-                        while (legals.size()){
-                            int p = legals.back();
-                            legals.pop_back();
-                            Board board = getData().history_elem.board.copy();
-                            Flip flip;
-                            calc_flip(&flip, &board, p);
-                            board.move_board(&flip);
-                            int v = SCORE_UNDEFINED, sgn = 1;
-                            if (board.get_legal() == 0){
-                                board.pass();
-                                sgn = -1;
-                                if (board.get_legal() == 0)
-                                    v = sgn * board.count_player();
-                            }
-                            if (v == SCORE_UNDEFINED)
-                                v = -sgn * ai_hint(board, level - 1, true, true, false).value;
-                            if (search_result.value - v <= acceptable_loss){
-                                policy = p;
-                                std::cerr << "update policy " << idx_to_coord(p) << " " << search_result.value << " " << v << std::endl;
-                                break;
-                            }
-                        }
-                    }
                     move_processing(HW2_M1 - policy);
                 }
                 need_start_game_button_calculation();

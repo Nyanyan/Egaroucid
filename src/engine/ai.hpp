@@ -21,6 +21,37 @@
 
 #define SEARCH_BOOK -1
 
+inline Search_result tree_search_level1(Board board, uint64_t legal){
+    uint64_t strt = tim();
+    Flip flip;
+    Search search;
+    search.init_board(&board);
+    search.n_nodes = 0ULL;
+    calc_features(&search);
+    int v = SCORE_UNDEFINED;
+    int policy = MOVE_UNDEFINED;
+    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+        calc_flip(&flip, &board, cell);
+        search.move(&flip);
+            int g = -mid_evaluate_diff(&search);
+        search.undo(&flip);
+        if (g > v){
+            v = g;
+            policy = cell;
+        }
+    }
+    Search_result res;
+    res.depth = 1;
+    res.nodes = search.n_nodes;
+    res.time = tim() - strt;
+    res.nps = calc_nps(res.nodes, res.time);
+    res.policy = policy;
+    res.value = v;
+    res.is_end_search = board.n_discs() == HW2 - 1;
+    res.probability = SELECTIVITY_PERCENTAGE[MPC_100_LEVEL];
+    return res;
+}
+
 /*
     @brief Get a result of a search
 
@@ -35,8 +66,12 @@
     @return the result in Search_result structure
 */
 inline Search_result tree_search(Board board, int depth, uint_fast8_t mpc_level, bool show_log, bool use_multi_thread){
-    uint64_t strt;
+    // special optimization for level 1
+    if (depth == 1 && mpc_level == MPC_100_LEVEL){
+        return tree_search_level1(board, board.get_legal());
+    }
     Search_result res;
+    uint64_t strt;
     depth = std::min(HW2 - board.n_discs(), depth);
     bool is_end_search = (HW2 - board.n_discs() == depth);
     std::vector<Clog_result> clogs;
@@ -155,38 +190,12 @@ inline Search_result tree_search(Board board, int depth, uint_fast8_t mpc_level,
 }
 
 inline Search_result tree_search_specified_moves(Board board, int depth, uint_fast8_t mpc_level, bool show_log, bool use_multi_thread, uint64_t use_legal){
-    uint64_t strt;
-    Search_result res;
     // special optimization for level 1
     if (depth == 1 && mpc_level == MPC_100_LEVEL){
-        strt = tim();
-        Flip flip;
-        Search search;
-        search.init_board(&board);
-        search.n_nodes = 0ULL;
-        calc_features(&search);
-        int v = SCORE_UNDEFINED;
-        int policy = MOVE_UNDEFINED;
-        for (uint_fast8_t cell = first_bit(&use_legal); use_legal; cell = next_bit(&use_legal)){
-            calc_flip(&flip, &board, cell);
-            search.move(&flip);
-                int g = -mid_evaluate_diff(&search);
-            search.undo(&flip);
-            if (g > v){
-                v = g;
-                policy = cell;
-            }
-        }
-        res.depth = depth;
-        res.nodes = search.n_nodes;
-        res.time = tim() - strt;
-        res.nps = calc_nps(res.nodes, res.time);
-        res.policy = policy;
-        res.value = v;
-        res.is_end_search = board.n_discs() == HW2 - 1;
-        res.probability = SELECTIVITY_PERCENTAGE[mpc_level];
-        return res;
+        return tree_search_level1(board, use_legal);
     }
+    uint64_t strt;
+    Search_result res;
     depth = std::min(HW2 - board.n_discs(), depth);
     bool is_end_search = (HW2 - board.n_discs() == depth);
     std::vector<Clog_result> clogs;
@@ -702,4 +711,36 @@ Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint_fa
     return res;
 }
 
-
+Search_result ai_accept_loss(Board board, int level, int acceptable_loss){
+    uint64_t strt = tim();
+    Flip flip;
+    int v = SCORE_UNDEFINED;
+    uint64_t legal = board.get_legal();
+    std::vector<std::pair<int, int>> moves;
+    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+        calc_flip(&flip, &board, cell);
+        board.move_board(&flip);
+            int g = -ai_hint(board, level, true, true, false).value;
+        board.undo_board(&flip);
+        v = std::max(v, g);
+        moves.emplace_back(std::make_pair(g, cell));
+    }
+    std::vector<std::pair<int, int>> acceptable_moves;
+    for (std::pair<int, int> move: moves){
+        if (move.first >= v - acceptable_loss)
+            acceptable_moves.emplace_back(move);
+    }
+    int rnd_idx = myrandrange(0, (int)acceptable_moves.size());
+    int use_policy = acceptable_moves[rnd_idx].second;
+    int use_value = acceptable_moves[rnd_idx].first;
+    Search_result res;
+    res.depth = 1;
+    res.nodes = 0;
+    res.time = tim() - strt;
+    res.nps = calc_nps(res.nodes, res.time);
+    res.policy = use_policy;
+    res.value = use_value;
+    res.is_end_search = board.n_discs() == HW2 - 1;
+    res.probability = SELECTIVITY_PERCENTAGE[MPC_100_LEVEL];
+    return res;
+}
