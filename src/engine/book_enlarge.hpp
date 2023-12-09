@@ -89,7 +89,7 @@ void get_book_deviate_todo(Book_deviate_todo_elem todo_elem, int book_depth, int
         return;
     Book_elem book_elem = book.get(todo_elem.board);
     // expand links
-    if (lower <= book_elem.value && book_elem.value <= upper){
+    if (lower <= book_elem.value){
         std::vector<Book_value> links = book.get_all_moves_with_value(&todo_elem.board);
         Flip flip;
         for (Book_value &link: links){
@@ -102,7 +102,7 @@ void get_book_deviate_todo(Book_deviate_todo_elem todo_elem, int book_depth, int
         }
     }
     // check leaf
-    if (book_elem.leaf.value >= book_elem.value - max_error_per_move && is_valid_policy(book_elem.leaf.move) && lower <= book_elem.leaf.value && book_elem.leaf.value <= upper){
+    if (book_elem.leaf.value >= book_elem.value - max_error_per_move && is_valid_policy(book_elem.leaf.move) && lower <= book_elem.leaf.value){
         book_deviate_todo.emplace(todo_elem);
         if (book_deviate_todo.size() % 10 == 0)
             std::cerr << "book deviate todo " << book_deviate_todo.size() << " calculating... time " << ms_to_time_short(tim() - all_strt) << std::endl;
