@@ -124,6 +124,7 @@
     },
     "operation": {
         "operation": "Operate",
+        "put_1_move_by_ai": "Put 1 Move by AI (G)",
         "forward": "Forward (->/D)",
         "backward": "Backward (<-/A)",
         "undo": "Undo (BackSpace)",

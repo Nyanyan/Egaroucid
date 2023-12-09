@@ -124,6 +124,7 @@
     },
     "operation": {
         "operation": "操作",
+        "put_1_move_by_ai": "AIに1手打たせる (G)",
         "forward": "進む (->/D)",
         "backward": "戻る (<-/A)",
         "undo": "待った (BackSpace)",

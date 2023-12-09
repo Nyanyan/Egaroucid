@@ -124,6 +124,7 @@
     },
     "operation": {
         "operation": "操作",
+        "put_1_move_by_ai": "Put 1 Move by AI (G)",
         "forward": "前进 (->/D)",
         "backward": "后退 (<-/A)",
         "undo": "撤销 (BackSpace)",
