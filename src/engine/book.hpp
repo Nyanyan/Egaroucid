@@ -38,7 +38,7 @@ Search_result ai_specified_moves(Board board, int level, bool use_book, int book
 
 #define ADD_LEAF_SPECIAL_LEVEL -1
 
-#define MAX_N_LINES 1000000000
+#define MAX_N_LINES 4000000000
 
 /*
     @brief book result structure
@@ -1399,8 +1399,10 @@ class Book{
                                     child = get(b);
                                     if (child.value != SCORE_UNDEFINED)
                                         child_value = -child.value;
-                                    n_lines += child.n_lines;
-                                    n_lines = std::min(n_lines, MAX_N_LINES);
+                                    if (n_lines + child.n_lines < n_lines)
+                                        n_lines = MAX_N_LINES;
+                                    else
+                                        n_lines += child.n_lines;
                                 }
                             } else{
                                 b.pass();
@@ -1408,8 +1410,10 @@ class Book{
                                         child = get(b);
                                         if (child.value != SCORE_UNDEFINED)
                                             child_value = child.value;
-                                        n_lines += child.n_lines;
-                                        n_lines = std::min(n_lines, MAX_N_LINES);
+                                        if (n_lines + child.n_lines < n_lines)
+                                            n_lines = MAX_N_LINES;
+                                        else
+                                            n_lines += child.n_lines;
                                     }
                                 b.pass();
                             }
